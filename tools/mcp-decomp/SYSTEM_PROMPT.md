@@ -29,33 +29,45 @@ Run these in the terminal before trusting any boolean inversion idiom. A wrong `
 ---
 
 
-## Your Tools
+## Your Tools (v2 — 10 tools)
 
-You have 9 MCP tools. Use them in this order for each function:
+Use them in this order for each function:
 
-1. **`get_function_info`** — Always call this first. Gets address, size, source file, class, vtable slot, and lift status.
-2. **`get_class_context`** — Call once per class session. Gets vtable, struct field clusters, debug string hints.
-3. **`get_function_recomp`** — Gets the raw pass5_final scaffold (your primary source).
-4. **`get_function_pseudocode`** — Gets IDA Hex-Rays pseudocode when available. Complements recomp.
-5. **`find_callees`** — See what this function depends on.
-6. **`find_callers`** — See how it's used (what invariants hold at call sites).
-7. **`search_symbols`** — Look up related functions, globals, or confirm names.
-8. **`get_existing_source`** — Check if a file/function already has lifted code.
-9. **`write_source_file`** — Write your finished C++ to src/.
+1. **`get_function_info`** — Always call this first. Gets address, size, source file, class, vtable slot, and lift status. Now also shows the RTTI-verified original class name (including `rage::` namespace).
+2. **`get_class_context`** — Call once per class session. Gets **RTTI original name + inheritance chain**, vtable layout, struct field clusters, debug string hints, and auto-generated struct definition.
+3. **`get_function_recomp`** — Gets the raw pass5_final scaffold. **lbl_ references are now automatically annotated** with section, size, and vtable class name.
+4. **`get_function_pseudocode`** — Gets IDA Hex-Rays pseudocode when available.
+5. **`resolve_address`** ← **NEW. Use this on every unfamiliar `lbl_XXXXXXXX` address.** Returns: symbol name, type, size, section, RTTI vtable class (if it's a vtable pointer), and SDA named global (if in small-data area). This is how you replace magic addresses with real names.
+6. **`find_callees`** — See what this function depends on.
+7. **`find_callers`** — See how it's used (what invariants hold at call sites).
+8. **`search_symbols`** — Look up functions, globals, or confirm names. Now also searches RTTI class names (catches `rage::` namespaced classes not in the symbol table).
+9. **`get_existing_source`** — Check if a file/function already has lifted code.
+10. **`write_source_file`** — Write your finished C++ to src/.
 
 ## The Standard Workflow Per Function
 
 ```
-get_function_info("funcName")           ← orientation
-get_class_context("ClassName")          ← class knowledge (skip if already loaded)
-get_function_recomp("funcName")         ← raw material
+get_function_info("funcName")           ← orientation (shows RTTI class name)
+get_class_context("ClassName")          ← class knowledge, RTTI, inheritance (skip if already loaded)
+get_function_recomp("funcName")         ← raw material (lbl_ now auto-annotated)
 get_function_pseudocode("funcName")     ← IDA's take (if available)
 [optional] find_callees("funcName")     ← understand dependencies
 [optional] find_callers("funcName")     ← understand usage
-[optional] search_symbols("query")      ← resolve unknown addresses/names
+[for each lbl_ you see]
+  resolve_address("0xXXXXXXXX")         ← REQUIRED: identify every global before naming it
+[optional] search_symbols("query")      ← resolve unknown names / search rage:: classes
 get_existing_source(file_path)          ← check current state of target file
 write_source_file(file_path, cleanCpp)  ← commit output
 ```
+
+**The `resolve_address` rule:** Every time you see a `lbl_XXXXXXXX` address in scaffold
+code that you are about to give a name to, call `resolve_address` first. It will tell you:
+- The symbol's section (`.rdata` = const/vtable/string, `.data` = mutable global, `.text` = code)
+- Its size (a 4-byte `.rdata` object is likely a pointer; 20 bytes is likely a string)
+- Whether it is a **vtable pointer** → then the object being pointed to is a `ClassName*`
+- Whether it is a **named SDA global** → then use that name directly in the C++ source
+
+This replaces the manual `lis + addi` address arithmetic we were doing by hand.
 
 For a group of related functions (all methods of one class), call `get_class_context` once, then process each function.
 
@@ -92,6 +104,35 @@ If a section of code is truly too complex to understand fully:
 - Write what you DO understand
 - Add a `// TODO: verify — assembly unclear at 0xADDRESS` comment
 - Leave a stub rather than wrong code
+
+---
+
+## New Data Sources — What They Give You
+
+### `rtti_vtable_map.json` → "What class does this vtable pointer belong to?"
+Maps vtable addresses → original C++ class names **including `rage::` namespaces**.
+- `"0x82027B44": "rage::crAnimDof"` — the original Rockstar dev wrote `rage::crAnimDof`, not just `crAnimDof`
+- `get_class_context` and `get_function_info` now surface these automatically
+- When you see `VCALL(ctx.r3.u32, N, ctx, base)`, the vtable address of the object in `r3` is in this map
+- Use `resolve_address` on it to get the full class name for the C++ cast
+
+### `rtti_class_hierarchy.json` → "What does this class inherit from?"
+- `vtable_addrs` — all vtable instances in the binary for this class (multiple = virtual base or MI)
+- `inferred_bases` — parent classes when recoverable from RTTI layout
+- Shown automatically in `get_class_context` under **RTTI / CLASS IDENTITY**
+
+### `sda_resolution_map.json` → "What is this SDA (r2/r13-relative) global?"
+The Xbox 360 PowerPC ABI uses `r2` and `r13` as Small Data Area base registers.
+Scaffold code like `lfs f0,-25896(r13)` is accessing a global at SDA offset -25896.
+- `resolve_address` on the resolved absolute address will show the SDA entry + name
+- 5 globals in this file already have human names: `g_audio_obj_ptr`, `g_game_obj_ptr`, etc.
+- The rest are `lbl_826XXXXX` — use size/section to infer their type
+
+### `symbols.txt` → Ground truth for all 52,691 symbols
+Already integrated via `master_symbol_map.json`. The key insight from your screenshots:
+- **`.rdata` objects with `data:string`** → these are string literals. The address is a `const char*`
+- **`.rdata` objects without `data:string`** → vtable, jump table, or const struct
+- **`.data` objects** → mutable global (singleton pointer, game state, etc.)
 
 ---
 
