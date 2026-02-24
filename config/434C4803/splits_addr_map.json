@@ -1,0 +1,242 @@
+[
+  {
+    "start": "0x820c0000",
+    "end": "0x820c0038",
+    "source": "src/crt/string.c"
+  },
+  {
+    "start": "0x820c0038",
+    "end": "0x820c00c0",
+    "source": "src/crt/entry.c"
+  },
+  {
+    "start": "0x820c00c0",
+    "end": "0x820c0120",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x820c0128",
+    "end": "0x820c016c",
+    "source": "src/crt/entry.c"
+  },
+  {
+    "start": "0x820c0378",
+    "end": "0x820c0b40",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x820f8a00",
+    "end": "0x820f8afc",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x82100b78",
+    "end": "0x82100cb4",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x8214fa58",
+    "end": "0x8214fc2c",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x821540d0",
+    "end": "0x82154128",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x8215cb60",
+    "end": "0x8215cc18",
+    "source": "src/rage/app_init.c"
+  },
+  {
+    "start": "0x82176878",
+    "end": "0x82176a74",
+    "source": "src/rage/app_init.c"
+  },
+  {
+    "start": "0x821861a0",
+    "end": "0x8218629c",
+    "source": "src/crt/heap.c"
+  },
+  {
+    "start": "0x82186358",
+    "end": "0x82186418",
+    "source": "src/crt/string.c"
+  },
+  {
+    "start": "0x82186418",
+    "end": "0x82186690",
+    "source": "src/rage/main.c"
+  },
+  {
+    "start": "0x82186780",
+    "end": "0x82186ca8",
+    "source": "src/rage/main.c"
+  },
+  {
+    "start": "0x82186ca8",
+    "end": "0x82186d98",
+    "source": "src/crt/entry.c"
+  },
+  {
+    "start": "0x82186e40",
+    "end": "0x82187178",
+    "source": "src/crt/heap.c"
+  },
+  {
+    "start": "0x821871c0",
+    "end": "0x821874d4",
+    "source": "src/crt/heap.c"
+  },
+  {
+    "start": "0x821c77e8",
+    "end": "0x821c7900",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x82221ed0",
+    "end": "0x82222638",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x822227a8",
+    "end": "0x82222800",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x82222930",
+    "end": "0x82222a74",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x82228f30",
+    "end": "0x82229638",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x82229760",
+    "end": "0x82229f3c",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x82243e20",
+    "end": "0x82243ea8",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x822bc2d0",
+    "end": "0x822bc440",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x822c07e0",
+    "end": "0x822c0c48",
+    "source": "src/rage/scene_render.c"
+  },
+  {
+    "start": "0x822e17b0",
+    "end": "0x822e1984",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x822e2430",
+    "end": "0x822e250c",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x822e3040",
+    "end": "0x822e30b8",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x822e3828",
+    "end": "0x822e39ac",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x822e3b38",
+    "end": "0x822e3ba8",
+    "source": "src/rage/game_loop.c"
+  },
+  {
+    "start": "0x8234b510",
+    "end": "0x8234b614",
+    "source": "src/rage/render_loop.c"
+  },
+  {
+    "start": "0x8242b8a8",
+    "end": "0x8242b958",
+    "source": "src/rage/app_init.c"
+  },
+  {
+    "start": "0x8242bb70",
+    "end": "0x8242bd14",
+    "source": "src/crt/version.c"
+  },
+  {
+    "start": "0x8242bd20",
+    "end": "0x8242c178",
+    "source": "src/crt/startup.c"
+  },
+  {
+    "start": "0x8242c178",
+    "end": "0x8242c2c0",
+    "source": "src/crt/heap.c"
+  },
+  {
+    "start": "0x8242c2c0",
+    "end": "0x8242c318",
+    "source": "src/crt/startup.c"
+  },
+  {
+    "start": "0x8242f6b0",
+    "end": "0x8242f7b0",
+    "source": "src/crt/exit.c"
+  },
+  {
+    "start": "0x8242f7d0",
+    "end": "0x8242f7fc",
+    "source": "src/crt/exit.c"
+  },
+  {
+    "start": "0x8242f9d0",
+    "end": "0x8242fadc",
+    "source": "src/crt/exit.c"
+  },
+  {
+    "start": "0x8242fb60",
+    "end": "0x8242fb70",
+    "source": "src/crt/startup.c"
+  },
+  {
+    "start": "0x8242fdc8",
+    "end": "0x8242fed0",
+    "source": "src/crt/startup.c"
+  },
+  {
+    "start": "0x8242fed0",
+    "end": "0x8242fef0",
+    "source": "src/crt/memory.c"
+  },
+  {
+    "start": "0x8242ff70",
+    "end": "0x8242ffac",
+    "source": "src/crt/memory.c"
+  },
+  {
+    "start": "0x82434100",
+    "end": "0x82434520",
+    "source": "src/crt/memory.c"
+  },
+  {
+    "start": "0x82566ac8",
+    "end": "0x82566b4c",
+    "source": "src/rage/app_init.c"
+  },
+  {
+    "start": "0x825836e8",
+    "end": "0x825836f4",
+    "source": "src/crt/entry.c"
+  }
+]

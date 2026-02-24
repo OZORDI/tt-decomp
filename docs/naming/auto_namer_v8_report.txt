@@ -1,0 +1,1247 @@
+auto_namer_v8 Results
+======================================================================
+
+Input:  symbols_autonamed_v7.txt
+Output: symbols_autonamed_v8.txt
+
+Pass P0      :     0
+Pass P0b     :     0
+Pass P0c     :   266
+Pass P1      :     0
+Pass P1r     :     2
+Pass P2      :     0
+Pass P3      :     0
+Pass P4f     :    13
+Pass P4r     :     0
+Pass P4fw    :    61
+Pass P4rh    :    81
+Pass P5      :     0
+Pass P5r     :    80
+Pass P6      :   247
+Pass P6r     :   154
+Pass P7      :   280
+Pass P8      :     9
+Pass P9      :    21
+
+Total renames:    1214
+fn_8 fixed:       946
+Remaining fn_8:   3814
+Quality renames:  268
+
+======================================================================
+DETAIL
+======================================================================
+  [P6   ]* 0x820C2BA0  crAnimDofFloat_2BA0_2h                                   2-hop 'crAnimDofFloat' 2/2
+  [P6   ]* 0x820C2CF0  crAnimDofFloat_2CF0_2h                                   2-hop 'crAnimDofFloat' 3/3
+  [P6r  ]* 0x820C7DB8  ServeStartedMessage_7DB8_2hr                             2-hop relaxed 'ServeStartedMessage' 1/1
+  [P6r  ]* 0x820CB088  pongPlayer_B088_2hr                                      2-hop relaxed 'pongPlayer' 1/1
+  [P6   ]* 0x820CEB78  crAnimDofFloat_EB78_2h                                   2-hop 'crAnimDofFloat' 2/3
+  [P7   ]* 0x820D3408  pongLocomotionController_3408_sp                         spatial score=101/116 class='pongLocomotionController'
+  [P6r  ]* 0x820D6EE0  pongLerpQueue_6EE0_2hr                                   2-hop relaxed 'pongLerpQueue' 1/1
+  [P6r  ]* 0x820D9C18  atSingleton_9C18_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x820DB458  crAnimDofFloat_B458_2h                                   2-hop 'crAnimDofFloat' 5/6
+  [P6   ]* 0x820DB7E0  crAnimDofFloat_B7E0_2h                                   2-hop 'crAnimDofFloat' 5/7
+  [P6   ]* 0x820DD568  crAnimDofFloat_D568_2h                                   2-hop 'crAnimDofFloat' 7/9
+  [P4fw ]* 0x820DDB78  pcrSwingBlend_DB78_fw                                    single callee 'pcrSwingBlend' (no size cap)
+  [P6r  ]* 0x820DE1E0  crAnimDofFloat_E1E0_2hr                                  2-hop relaxed 'crAnimDofFloat' 1/2
+  [P4fw ]* 0x820DE578  pcrSwingBlend_E578_fw                                    single callee 'pcrSwingBlend' (no size cap)
+  [P6r  ]* 0x820DF380  LocomotionController_F380_2hr                            2-hop relaxed 'LocomotionController' 1/1
+  [P4fw ]* 0x820DF698  crAnimDofFloat_F698_fw                                   single callee 'crAnimDofFloat' (no size cap)
+  [P6r  ]* 0x820E3758  crAnimDofFloat_3758_2hr                                  2-hop relaxed 'crAnimDofFloat' 1/1
+  [P4rh ]* 0x820E4188  atSingleton_4188_h                                       single caller 'atSingleton' (no size cap)
+  [P6r  ]* 0x820E6930  LocomotionController_6930_2hr                            2-hop relaxed 'LocomotionController' 1/2
+  [P4fw ]* 0x820E9F98  pcrSwingBlend_9F98_fw                                    single callee 'pcrSwingBlend' (no size cap)
+  [P6   ]* 0x820EB690  crAnimDofFloat_B690_2h                                   2-hop 'crAnimDofFloat' 2/4
+  [P6r  ]* 0x820EBA98  pcrPostPointBlender_BA98_2hr                             2-hop relaxed 'pcrPostPointBlender' 1/1
+  [P6r  ]* 0x820EBB50  crAnimDofFloat_BB50_2hr                                  2-hop relaxed 'crAnimDofFloat' 1/2
+  [P4rh ]* 0x820F0468  atSingleton_0468_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x820F19C8  fragDrawable_19C8_h                                      single caller 'fragDrawable' (no size cap)
+  [P4fw ]* 0x820F1C00  fragDrawable_1C00_fw                                     single callee 'fragDrawable' (no size cap)
+  [P4rh ]* 0x820F2228  net_2228_h                                               single caller 'net' (no size cap)
+  [P6r  ]* 0x820F39E0  fragDrawable_39E0_2hr                                    2-hop relaxed 'rage::fragDrawable' 1/1
+  [P6   ]* 0x820F3A40  fragDrawable_3A40_2h                                     2-hop 'rage::fragDrawable' 2/2
+  [P6   ]* 0x820F3C10  fragDrawable_3C10_2h                                     2-hop 'rage::fragDrawable' 3/3
+  [P6   ]* 0x820F3C30  fragDrawable_3C30_2h                                     2-hop 'rage::fragDrawable' 4/4
+  [P4rh ]* 0x821058E0  Timer_58E0_h                                             single caller 'Timer' (no size cap)
+  [P5r  ]* 0x82109F40  statePointScoringNet_9F40_p                              fn-ptr single signal 'gmLogicSinglesMatch::statePointScoringNet'
+  [P4rh ]* 0x82109F68  atSingleton_9F68_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x8210A558  pg_A558_h                                                single caller 'pg' (no size cap)
+  [P5r  ]* 0x8210AF58  stateReplayNegotiation_AF58_p                            fn-ptr single signal 'gmLogicSinglesMatch::stateReplayNegotiation'
+  [P4rh ]* 0x82114108  net_4108_h                                               single caller 'net' (no size cap)
+  [P6r  ]* 0x82115178  net_5178_2hr                                             2-hop relaxed 'net' 1/1
+  [P8   ]* 0x821180C8  util_80C8                                                utility called by 2 classes: pg,gmLogicSinglesMatch::statePostPoint
+  [P6r  ]* 0x82121328  pongCreatureInst_1328_2hr                                2-hop relaxed 'pongCreatureInst' 1/1
+  [P6r  ]* 0x82125788  fragDrawable_5788_2hr                                    2-hop relaxed 'rage::fragDrawable' 1/1
+  [P6   ]* 0x821259A8  fragDrawable_59A8_2h                                     2-hop 'rage::fragDrawable' 3/3
+  [P6r  ]* 0x82126BD0  phArticulatedCollider_6BD0_2hr                           2-hop relaxed 'rage::phArticulatedCollider' 1/1
+  [P4f  ]* 0x8212A0B0  phPolytree_A0B0                                          BFS 2.0/2.0 'phPolytree'
+  [P6r  ]* 0x8212B750  atSingleton_B750_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x8214BEE8  atSingleton_BEE8_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x82158040  fragDrawable_8040_2hr                                    2-hop relaxed 'rage::fragDrawable' 1/1
+  [P6r  ]* 0x821580C8  fragDrawable_80C8_2hr                                    2-hop relaxed 'rage::fragDrawable' 1/1
+  [P6   ]* 0x82158150  fragDrawable_8150_2h                                     2-hop 'rage::fragDrawable' 4/4
+  [P6   ]* 0x821581D0  fragDrawable_81D0_2h                                     2-hop 'rage::fragDrawable' 8/8
+  [P6r  ]* 0x82160698  atSingleton_0698_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P4rh ]* 0x82164648  audBank_4648_h                                           single caller 'audBank' (no size cap)
+  [P8   ]* 0x82165140  util_5140                                                utility called by 2 classes: atSingleton,audBank
+  [P6r  ]* 0x82166370  camShotMgr_6370_2hr                                      2-hop relaxed 'camShotMgr' 1/1
+  [P6r  ]* 0x82167DF0  pongCameraMgr_7DF0_2hr                                   2-hop relaxed 'pongCameraMgr' 1/1
+  [P6r  ]* 0x82168CB0  pongCameraMgr_8CB0_2hr                                   2-hop relaxed 'pongCameraMgr' 1/1
+  [P6r  ]* 0x82169220  pongInlineCinematics_9220_2hr                            2-hop relaxed 'pongInlineCinematics' 1/1
+  [P6r  ]* 0x82169560  atSingleton_9560_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x8216B908  pg_B908_2hr                                              2-hop relaxed 'pg' 1/1
+  [P6   ]* 0x8216BA10  pg_BA10_2h                                               2-hop 'pg' 2/2
+  [P6r  ]* 0x8216C100  charViewCS_C100_2hr                                      2-hop relaxed 'charViewCS' 1/1
+  [P6r  ]* 0x82172AE8  pg_2AE8_2hr                                              2-hop relaxed 'pg' 1/1
+  [P6r  ]* 0x821734D0  pongCameraMgr_34D0_2hr                                   2-hop relaxed 'pongCameraMgr' 1/1
+  [P6r  ]* 0x82173548  pongCameraMgr_3548_2hr                                   2-hop relaxed 'pongCameraMgr' 1/1
+  [P6   ]* 0x821735C0  pongCameraMgr_35C0_2h                                    2-hop 'pongCameraMgr' 4/4
+  [P6   ]* 0x82173638  pongCameraMgr_3638_2h                                    2-hop 'pongCameraMgr' 6/6
+  [P6   ]* 0x821736C8  atSingleton_36C8_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x821738F8  pg_38F8_2h                                               2-hop 'pg' 2/2
+  [P6   ]* 0x82173EF0  pongInlineCinematics_3EF0_2h                             2-hop 'pongInlineCinematics' 2/2
+  [P6r  ]* 0x82174858  atSingleton_4858_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x82174918  atSingleton_4918_2h                                      2-hop 'atSingleton' 2/2
+  [P4rh ]* 0x82174988  atSingleton_4988_h                                       single caller 'atSingleton' (no size cap)
+  [P4fw ]* 0x82176A78  atSingleton_6A78_fw                                      single callee 'atSingleton' (no size cap)
+  [P6   ]* 0x82179728  atSingleton_9728_2h                                      2-hop 'atSingleton' 16/16
+  [P0c  ]  0x82184550  cmAnimCamPosition_vfn_4                                  non-RTTI vtable quality rename class=rage::cmAnimCamPosition
+  [P0c  ]  0x82184978  cmAnimCamPosition_vfn_3                                  non-RTTI vtable quality rename class=rage::cmAnimCamPosition
+  [P0c  ]  0x821849F8  cmAnimCamPosition_vfn_2_49F8_1                           non-RTTI vtable quality rename class=rage::cmAnimCamPosition
+  [P4fw ]* 0x821875E0  atSingleton_75E0_fw                                      single callee 'atSingleton' (no size cap)
+  [P1r  ]  0x8218D200  pongPlayerShaderParams_UpdateParams                      string ref (was pongPlayer_Update2)
+  [P8   ]* 0x82194D30  util_4D30                                                utility called by 2 classes: pg,NetBallHitManagerFreeList
+  [P4rh ]* 0x8219A070  pg_A070_h                                                single caller 'pg' (no size cap)
+  [P5r  ]* 0x821A81F8  xmlTree_81F8_p                                           fn-ptr single signal 'rage::xmlTree'
+  [P5r  ]* 0x821ACFE0  pgStreamer_CFE0_p                                        fn-ptr single signal 'pgStreamer'
+  [P4rh ]* 0x821B5A68  atSingleton_5A68_h                                       single caller 'atSingleton' (no size cap)
+  [P7   ]* 0x821BCB7C  pg_CB7C_sp                                               spatial score=10/10 class='pg'
+  [P7   ]* 0x821BCBAC  pg_CBAC_sp                                               spatial score=10/10 class='pg'
+  [P7   ]* 0x821BCBD0  pg_CBD0_sp                                               spatial score=10/10 class='pg'
+  [P4rh ]* 0x821CB120  pongLerpQueue_B120_h                                     single caller 'pongLerpQueue' (no size cap)
+  [P6r  ]* 0x821CB978  atSingleton_B978_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x821CBA10  atSingleton_BA10_2h                                      2-hop 'atSingleton' 2/2
+  [P6r  ]* 0x821CF1F8  pongLerpQueue_F1F8_2hr                                   2-hop relaxed 'pongLerpQueue' 1/1
+  [P6   ]* 0x821CF298  pongLerpQueue_F298_2h                                    2-hop 'pongLerpQueue' 2/2
+  [P6r  ]* 0x821CF998  pongLerpQueue_F998_2hr                                   2-hop relaxed 'pongLerpQueue' 1/1
+  [P6   ]* 0x821CFA10  pongLerpQueue_FA10_2h                                    2-hop 'pongLerpQueue' 2/2
+  [P6   ]* 0x821D38E8  atSingleton_38E8_2h                                      2-hop 'atSingleton' 3/3
+  [P4fw ]* 0x821D5AD8  atSingleton_5AD8_fw                                      single callee 'atSingleton' (no size cap)
+  [P6r  ]* 0x821D6D08  pongNetMessageHolder_6D08_2hr                            2-hop relaxed 'pongNetMessageHolder' 1/1
+  [P6r  ]* 0x821D7668  pongNetMessageHolder_7668_2hr                            2-hop relaxed 'pongNetMessageHolder' 1/1
+  [P6r  ]* 0x821D8440  atSingleton_8440_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x821D85D8  atSingleton_85D8_2h                                      2-hop 'atSingleton' 2/2
+  [P8   ]* 0x821D8990  util_8990                                                utility called by 2 classes: atSingleton,gdBallPredictData
+  [P8   ]* 0x821D8A30  util_8A30                                                utility called by 2 classes: atSingleton,gdBallPredictData
+  [P6   ]* 0x821D8AD0  atSingleton_8AD0_2h                                      2-hop 'atSingleton' 4/4
+  [P4rh ]* 0x821D9238  atSingleton_9238_h                                       single caller 'atSingleton' (no size cap)
+  [P6r  ]* 0x821D93F0  ballPredict_93F0_2hr                                     2-hop relaxed 'ballPredict' 1/1
+  [P6r  ]* 0x821D99A0  gdBallPredictData_99A0_2hr                               2-hop relaxed 'gdBallPredictData' 1/1
+  [P6r  ]* 0x821DC2F8  lvlLevelMgr_C2F8_2hr                                     2-hop relaxed 'lvlLevelMgr' 1/1
+  [P4fw ]* 0x821DC880  pg_C880_fw                                               single callee 'pg' (no size cap)
+  [P4fw ]* 0x821DFDF0  pg_FDF0_fw                                               single callee 'pg' (no size cap)
+  [P4rh ]* 0x821E43A8  pg_43A8_h                                                single caller 'pg' (no size cap)
+  [P4rh ]* 0x821E58B8  atSingleton_58B8_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x821E6570  atSingleton_6570_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x821E8540  atSingleton_8540_h                                       single caller 'atSingleton' (no size cap)
+  [P6   ]* 0x821EEF20  atSingleton_EF20_2h                                      2-hop 'atSingleton' 2/2
+  [P0c  ]  0x821EFD10  msgMsgSink_vfn_59                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P9   ]* 0x821F3128  set_3128                                                 store to r3; blr (setter)
+  [P6   ]* 0x821F3ED8  pongCameraMgr_3ED8_2h                                    2-hop 'pongCameraMgr' 3/3
+  [P6   ]* 0x821F78D8  pongCameraMgr_78D8_2h                                    2-hop 'pongCameraMgr' 3/3
+  [P9   ]* 0x821F98A8  get_98A8                                                 load r3+blr (getter multi)
+  [P9   ]* 0x821F98B8  get_98B8                                                 load r3+blr (getter multi)
+  [P9   ]* 0x821F98C8  get_98C8                                                 load r3+blr (getter multi)
+  [P4rh ]* 0x8220D158  atSingleton_D158_h                                       single caller 'atSingleton' (no size cap)
+  [P4fw ]* 0x8220D318  atSingleton_D318_fw                                      single callee 'atSingleton' (no size cap)
+  [P4f  ]* 0x8220F5C8  atSingleton_F5C8                                         BFS 2.8/2.8 'atSingleton'
+  [P4rh ]* 0x82211AF0  XGetLanguage_1AF0_h                                      single caller 'XGetLanguage' (no size cap)
+  [P4f  ]* 0x822123F0  atSingleton_23F0                                         BFS 2.8/2.8 'atSingleton'
+  [P4fw ]* 0x82212CC8  atSingleton_2CC8_fw                                      single callee 'atSingleton' (no size cap)
+  [P6r  ]* 0x82215CE8  pongCameraMgr_5CE8_2hr                                   2-hop relaxed 'pongCameraMgr' 1/1
+  [P6   ]* 0x82217278  pongCameraMgr_7278_2h                                    2-hop 'pongCameraMgr' 2/2
+  [P6r  ]* 0x82226F00  atSingleton_6F00_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P4fw ]* 0x8222AB48  atSingleton_AB48_fw                                      single callee 'atSingleton' (no size cap)
+  [P6r  ]* 0x8222CAB8  LocomotionStateMf_CAB8_2hr                               2-hop relaxed 'LocomotionStateMf' 1/1
+  [P6   ]* 0x8222CCF8  crAnimDofFloat_CCF8_2h                                   2-hop 'crAnimDofFloat' 3/4
+  [P6   ]* 0x8222D398  crAnimDofFloat_D398_2h                                   2-hop 'crAnimDofFloat' 2/2
+  [P6r  ]* 0x8222DE38  LocomotionStateMf_DE38_2hr                               2-hop relaxed 'LocomotionStateMf' 1/1
+  [P4rh ]* 0x82230870  cvCurveNurbsWM_0870_h                                    single caller 'cvCurveNurbsWM' (no size cap)
+  [P4rh ]* 0x822309A0  cvCurveNurbsWM_09A0_h                                    single caller 'cvCurveNurbsWM' (no size cap)
+  [P4rh ]* 0x82232130  cvCurveNurbsWM_2130_h                                    single caller 'cvCurveNurbsWM' (no size cap)
+  [P4rh ]* 0x82232260  cvCurveNurbsWM_2260_h                                    single caller 'cvCurveNurbsWM' (no size cap)
+  [P4rh ]* 0x822330F0  LocomotionStateMf_30F0_h                                 single caller 'LocomotionStateMf' (no size cap)
+  [P4fw ]* 0x82233210  atSingleton_3210_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x82234BD0  cvCurveNurbsWM_4BD0_fw                                   single callee 'cvCurveNurbsWM' (no size cap)
+  [P4rh ]* 0x822380C8  mfMotionClipRAGE_80C8_h                                  single caller 'mfMotionClipRAGE' (no size cap)
+  [P6   ]* 0x82239B48  parStreamInXml_9B48_2h                                   2-hop 'parStreamInXml' 2/2
+  [P6r  ]* 0x82239CD0  parStreamInXml_9CD0_2hr                                  2-hop relaxed 'parStreamInXml' 1/1
+  [P6   ]* 0x82239F50  parStreamInXml_9F50_2h                                   2-hop 'parStreamInXml' 2/2
+  [P6r  ]* 0x8223A0A0  parStreamInXml_A0A0_2hr                                  2-hop relaxed 'parStreamInXml' 1/1
+  [P6   ]* 0x8223A978  phJoint3Dof_A978_2h                                      2-hop 'phJoint3Dof' 3/3
+  [P6r  ]* 0x8223D350  phBoundCapsule_D350_2hr                                  2-hop relaxed 'rage::phBoundCapsule' 1/2
+  [P6   ]* 0x8223D8A8  phBoundBox_D8A8_2h                                       2-hop 'rage::phBoundBox' 3/3
+  [P6r  ]* 0x8223DD28  phBoundGeometry_DD28_2hr                                 2-hop relaxed 'rage::phBoundGeometry' 1/1
+  [P6r  ]* 0x8223E120  pongCameraMgr_E120_2hr                                   2-hop relaxed 'pongCameraMgr' 1/1
+  [P6r  ]* 0x8223E4A0  phBoundQuadtree_E4A0_2hr                                 2-hop relaxed 'phBoundQuadtree' 1/1
+  [P6   ]* 0x822480B0  crAnimDofFloat_80B0_2h                                   2-hop 'crAnimDofFloat' 2/2
+  [P4fw ]* 0x8224AB00  crAnimDofFloat_AB00_fw                                   single callee 'crAnimDofFloat' (no size cap)
+  [P6r  ]* 0x8224B6F0  lvlLevelPiece_B6F0_2hr                                   2-hop relaxed 'lvlLevelPiece' 1/1
+  [P4fw ]* 0x82253780  phJoint1Dof_3780_fw                                      single callee 'phJoint1Dof' (no size cap)
+  [P6   ]* 0x822553B8  phArticulatedCollider_53B8_2h                            2-hop 'phArticulatedCollider' 2/2
+  [P4rh ]* 0x822567D8  phArticulatedCollider_67D8_h                             single caller 'phArticulatedCollider' (no size cap)
+  [P6r  ]* 0x82257D10  phSimulator_7D10_2hr                                     2-hop relaxed 'rage::phSimulator' 1/1
+  [P6   ]* 0x82257E10  phSimulator_7E10_2h                                      2-hop 'rage::phSimulator' 4/4
+  [P6   ]* 0x82257FE8  phSimulator_7FE8_2h                                      2-hop 'rage::phSimulator' 2/2
+  [P6r  ]* 0x82259108  phArticulatedCollider_9108_2hr                           2-hop relaxed 'phArticulatedCollider' 1/1
+  [P4rh ]* 0x8225B498  phJoint3Dof_B498_h                                       single caller 'phJoint3Dof' (no size cap)
+  [P5r  ]* 0x8225EB38  atSingleton_EB38_p                                       fn-ptr single signal 'atSingleton'
+  [P4fw ]* 0x8225EE98  atSingleton_EE98_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225F010  atSingleton_F010_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225F188  atSingleton_F188_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225F300  atSingleton_F300_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225F478  atSingleton_F478_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225F5F0  atSingleton_F5F0_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225F768  atSingleton_F768_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225F8E0  atSingleton_F8E0_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225FA58  atSingleton_FA58_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225FBD0  atSingleton_FBD0_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225FD48  atSingleton_FD48_fw                                      single callee 'atSingleton' (no size cap)
+  [P4fw ]* 0x8225FEB8  atSingleton_FEB8_fw                                      single callee 'atSingleton' (no size cap)
+  [P6   ]* 0x82280358  atSingleton_0358_2h                                      2-hop 'atSingleton' 2/2
+  [P4fw ]* 0x82282C50  pg_2C50_fw                                               single callee 'pg' (no size cap)
+  [P1r  ]  0x82287B50  ballPredict_ProcessHit                                   string ref (was gdBallPredictData_SetInitialBallAngVelocity)
+  [P4rh ]* 0x82289A08  atSingleton_9A08_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x82289E90  atSingleton_9E90_h                                       single caller 'atSingleton' (no size cap)
+  [P6   ]* 0x8228A4E8  atSingleton_A4E8_2h                                      2-hop 'atSingleton' 3/3
+  [P4rh ]* 0x8228A688  atSingleton_A688_h                                       single caller 'atSingleton' (no size cap)
+  [P6r  ]* 0x8228D788  phBoundGeometry_D788_2hr                                 2-hop relaxed 'rage::phBoundGeometry' 1/1
+  [P6r  ]* 0x82295098  phBoundRibbon_5098_2hr                                   2-hop relaxed 'phBoundRibbon' 1/1
+  [P4rh ]* 0x82299940  phBoundGeometry_9940_h                                   single caller 'phBoundGeometry' (no size cap)
+  [P4f  ]* 0x82299D68  phPolytree_9D68                                          BFS 2.8/2.8 'phPolytree'
+  [P6   ]* 0x82299FF0  phPolytree_9FF0_2h                                       2-hop 'phPolytree' 2/3
+  [P4rh ]* 0x8229A5C0  phPolytree_A5C0_h                                        single caller 'phPolytree' (no size cap)
+  [P6   ]* 0x8229A930  phPolytree_A930_2h                                       2-hop 'phPolytree' 5/5
+  [P6r  ]* 0x8229EF38  phBoundRibbon_EF38_2hr                                   2-hop relaxed 'rage::phBoundRibbon' 1/1
+  [P4rh ]* 0x822A0268  atSingleton_0268_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x822A1C18  atSingleton_1C18_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x822A6E20  phBoundBox_6E20_h                                        single caller 'phBoundBox' (no size cap)
+  [P6r  ]* 0x822A8CA0  phBoundBox_8CA0_2hr                                      2-hop relaxed 'rage::phBoundBox' 1/1
+  [P6   ]* 0x822A8E18  phBoundBox_8E18_2h                                       2-hop 'rage::phBoundBox' 2/2
+  [P4rh ]* 0x822AF7D8  phBoundGeometry_F7D8_h                                   single caller 'phBoundGeometry' (no size cap)
+  [P4f  ]* 0x822AFC00  phPolytree_FC00                                          BFS 2.8/2.8 'phPolytree'
+  [P6r  ]* 0x822B0750  phBoundGeometry_0750_2hr                                 2-hop relaxed 'rage::phBoundGeometry' 1/1
+  [P6   ]* 0x822BB338  phBoundQuadtree_B338_2h                                  2-hop 'phBoundQuadtree' 2/2
+  [P4rh ]* 0x822BB788  phPolytree_B788_h                                        single caller 'phPolytree' (no size cap)
+  [P6   ]* 0x822BB9F0  phPolytree_B9F0_2h                                       2-hop 'phPolytree' 5/5
+  [P4rh ]* 0x822C1328  atSingleton_1328_h                                       single caller 'atSingleton' (no size cap)
+  [P6   ]* 0x822C1B30  atSingleton_1B30_2h                                      2-hop 'atSingleton' 4/6
+  [P4rh ]* 0x822C3688  phSimulator_3688_h                                       single caller 'phSimulator' (no size cap)
+  [P6   ]* 0x822C3E90  phSimulator_3E90_2h                                      2-hop 'rage::phSimulator' 2/2
+  [P6   ]* 0x822C4D10  atSingleton_4D10_2h                                      2-hop 'atSingleton' 3/5
+  [P4rh ]* 0x822C63A0  phLevelNew_63A0_h                                        single caller 'phLevelNew' (no size cap)
+  [P6   ]* 0x822C6CD0  phLevelNew_6CD0_2h                                       2-hop 'phLevelNew' 2/3
+  [P4fw ]* 0x822C82B8  phBoundComposite_82B8_fw                                 single callee 'phBoundComposite' (no size cap)
+  [P6r  ]* 0x822CCF38  atSingleton_CF38_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x822CD848  phSimulator_D848_2hr                                     2-hop relaxed 'rage::phSimulator' 1/1
+  [P6r  ]* 0x822CE140  phSimulator_E140_2hr                                     2-hop relaxed 'phSimulator' 1/2
+  [P6r  ]* 0x822CE2F0  phSimulator_E2F0_2hr                                     2-hop relaxed 'rage::phSimulator' 1/1
+  [P6   ]* 0x822CE450  phSimulator_E450_2h                                      2-hop 'rage::phSimulator' 2/2
+  [P6   ]* 0x822CE858  phJoint3Dof_E858_2h                                      2-hop 'phJoint3Dof' 2/2
+  [P6r  ]* 0x822CED98  phJoint3Dof_ED98_2hr                                     2-hop relaxed 'phJoint3Dof' 1/1
+  [P6   ]* 0x822CF000  phJoint3Dof_F000_2h                                      2-hop 'phJoint3Dof' 2/2
+  [P6   ]* 0x822CF6A0  phSimulator_F6A0_2h                                      2-hop 'rage::phSimulator' 6/9
+  [P6   ]* 0x822D1908  phJoint3Dof_1908_2h                                      2-hop 'phJoint3Dof' 8/8
+  [P6   ]* 0x822D2C98  atSingleton_2C98_2h                                      2-hop 'atSingleton' 2/4
+  [P6   ]* 0x822D2F78  phJoint3Dof_2F78_2h                                      2-hop 'phJoint3Dof' 4/4
+  [P6   ]* 0x822D4680  atSingleton_4680_2h                                      2-hop 'atSingleton' 2/4
+  [P6r  ]* 0x822D4BD8  phPolytree_4BD8_2hr                                      2-hop relaxed 'phPolytree' 1/1
+  [P6   ]* 0x822D4D08  phPolytree_4D08_2h                                       2-hop 'phPolytree' 2/2
+  [P6   ]* 0x822D6E88  phSimulator_6E88_2h                                      2-hop 'rage::phSimulator' 2/2
+  [P6   ]* 0x822D7008  phSimulator_7008_2h                                      2-hop 'rage::phSimulator' 4/4
+  [P6   ]* 0x822D71D8  phSimulator_71D8_2h                                      2-hop 'rage::phSimulator' 5/5
+  [P6r  ]* 0x822D7420  phSimulator_7420_2hr                                     2-hop relaxed 'rage::phSimulator' 1/1
+  [P6r  ]* 0x822D7BA8  phSimulator_7BA8_2hr                                     2-hop relaxed 'rage::phSimulator' 1/1
+  [P6   ]* 0x822D8D88  phPolytree_8D88_2h                                       2-hop 'phPolytree' 2/2
+  [P6   ]* 0x822D9670  phSimulator_9670_2h                                      2-hop 'rage::phSimulator' 3/3
+  [P6   ]* 0x822D97D0  phSimulator_97D0_2h                                      2-hop 'rage::phSimulator' 2/2
+  [P6   ]* 0x822D9920  phSimulator_9920_2h                                      2-hop 'rage::phSimulator' 3/3
+  [P6   ]* 0x822D9CB0  phSimulator_9CB0_2h                                      2-hop 'rage::phSimulator' 3/3
+  [P6   ]* 0x822D9DB8  phSimulator_9DB8_2h                                      2-hop 'rage::phSimulator' 5/5
+  [P6   ]* 0x822DA678  phSimulator_A678_2h                                      2-hop 'rage::phSimulator' 2/3
+  [P6r  ]* 0x822DE810  phJoint3Dof_E810_2hr                                     2-hop relaxed 'phJoint3Dof' 1/2
+  [P6r  ]* 0x822DEA88  phJoint3Dof_EA88_2hr                                     2-hop relaxed 'phJoint3Dof' 1/2
+  [P6   ]* 0x822DEC28  phSimulator_EC28_2h                                      2-hop 'rage::phSimulator' 2/2
+  [P4rh ]* 0x822DFBB0  atSingleton_FBB0_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x822E4110  fiDevice_4110_h                                          single caller 'fiDevice' (no size cap)
+  [P4rh ]* 0x822E7280  fiSerialize_7280_h                                       single caller 'rage::fiSerialize' (no size cap)
+  [P4rh ]* 0x822E7F28  fiDevice_7F28_h                                          single caller 'fiDevice' (no size cap)
+  [P4rh ]* 0x822E8D80  atSingleton_8D80_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x822E8F98  atSingleton_8F98_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x822E9BD8  atSingleton_9BD8_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x822E9CF8  atSingleton_9CF8_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x822EA128  atSingleton_A128_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x82308D58  pg_8D58_h                                                single caller 'pg' (no size cap)
+  [P6r  ]* 0x823116A8  atSingleton_16A8_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x823136F0  pg_36F0_2hr                                              2-hop relaxed 'pg' 1/2
+  [P6   ]* 0x82329DD0  pongLeaderboardContext_9DD0_2h                           2-hop 'pongLeaderboardContext' 2/2
+  [P6r  ]* 0x82336FF8  pongLeaderboardContext_6FF8_2hr                          2-hop relaxed 'pongLeaderboardContext' 1/1
+  [P6   ]* 0x82337D28  lvlTable_7D28_2h                                         2-hop 'lvlTable' 3/3
+  [P6r  ]* 0x82339980  lvlTable_9980_2hr                                        2-hop relaxed 'lvlTable' 1/2
+  [P6   ]* 0x82339AC8  lvlTable_9AC8_2h                                         2-hop 'lvlTable' 2/3
+  [P6r  ]* 0x823453C0  phArticulatedCollider_53C0_2hr                           2-hop relaxed 'phArticulatedCollider' 1/1
+  [P4rh ]* 0x82345FD8  phBoundGeometry_5FD8_h                                   single caller 'rage::phBoundGeometry' (no size cap)
+  [P4rh ]* 0x82346E28  pg_6E28_h                                                single caller 'pg' (no size cap)
+  [P6   ]* 0x8234C7B0  atSingleton_C7B0_2h                                      2-hop 'atSingleton' 2/2
+  [P6r  ]* 0x82350808  phJoint3Dof_0808_2hr                                     2-hop relaxed 'phJoint3Dof' 1/2
+  [P6r  ]* 0x82350900  phJoint3Dof_0900_2hr                                     2-hop relaxed 'phJoint3Dof' 1/1
+  [P6r  ]* 0x82351780  phArticulatedCollider_1780_2hr                           2-hop relaxed 'rage::phArticulatedCollider' 1/1
+  [P6   ]* 0x82351B90  phJoint3Dof_1B90_2h                                      2-hop 'phJoint3Dof' 4/4
+  [P6   ]* 0x82351C18  phSimulator_1C18_2h                                      2-hop 'rage::phSimulator' 5/5
+  [P9   ]* 0x82354728  get_4728                                                 load r3+blr (getter multi)
+  [P9   ]* 0x823548C0  set_48C0                                                 store to r3; blr (setter)
+  [P9   ]* 0x82354918  get_4918                                                 load r3+blr (getter multi)
+  [P9   ]* 0x82354968  get_4968                                                 load r3+blr (getter multi)
+  [P9   ]* 0x823549B8  get_49B8                                                 load r3+blr (getter multi)
+  [P9   ]* 0x823550D8  get_50D8                                                 load r3+blr (getter multi)
+  [P9   ]* 0x82355108  get_5108                                                 load r3+blr (getter multi)
+  [P9   ]* 0x823553E8  set_53E8                                                 store to r3; blr (setter)
+  [P9   ]* 0x82355890  get_5890                                                 load r3+blr (getter multi)
+  [P9   ]* 0x82355A58  get_5A58                                                 load r3+blr (getter multi)
+  [P9   ]* 0x82355AD8  get_5AD8                                                 load r3+blr (getter multi)
+  [P9   ]* 0x82364040  get_4040                                                 load r3+blr (getter multi)
+  [P0c  ]  0x823681C0  atSingleton_vfn_4_81C0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82368318  atSingleton_vfn_5_8318_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x823684F8  atSingleton_vfn_0_84F8_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x823685D0  atSingleton_vfn_3_85D0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82368898  atSingleton_vfn_6_8898_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82368B20  atSingleton_vfn_8_8B20_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82368BC0  atSingleton_vfn_10_8BC0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82368C18  atSingleton_vfn_9_8C18_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P4rh ]* 0x82369BA0  xam_9BA0_h                                               single caller 'xam' (no size cap)
+  [P6r  ]* 0x8236D2C0  atSingleton_D2C0_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x8236D348  atSingleton_D348_2h                                      2-hop 'atSingleton' 3/3
+  [P4rh ]* 0x82373650  atSingleton_3650_h                                       single caller 'atSingleton' (no size cap)
+  [P6r  ]* 0x82379748  pongBinkMovie_9748_2hr                                   2-hop relaxed 'pongBinkMovie' 1/1
+  [P6r  ]* 0x8237E810  fxAmbientMgr_E810_2hr                                    2-hop relaxed 'fxAmbientMgr' 1/2
+  [P4rh ]* 0x8237F3E0  atSingleton_F3E0_h                                       single caller 'atSingleton' (no size cap)
+  [P8   ]* 0x8237F530  util_F530                                                utility called by 2 classes: fxAmbientMgr,atSingleton
+  [P4rh ]* 0x8237F938  fxAmbAnimSet_F938_h                                      single caller 'fxAmbAnimSet' (no size cap)
+  [P6r  ]* 0x8238B988  fxAmbientMgr_B988_2hr                                    2-hop relaxed 'fxAmbientMgr' 1/1
+  [P4rh ]* 0x82391570  atSingleton_1570_h                                       single caller 'atSingleton' (no size cap)
+  [P4f  ]* 0x82391D80  NetDataQuery_1D80                                        BFS 2.0/2.8 'NetDataQuery'
+  [P4fw ]* 0x823966F0  atSingleton_66F0_fw                                      single callee 'atSingleton' (no size cap)
+  [P6r  ]* 0x8239C478  atSingleton_C478_2hr                                     2-hop relaxed 'atSingleton' 1/2
+  [P6r  ]* 0x8239C608  pongRemotePlayer_C608_2hr                                2-hop relaxed 'pongRemotePlayer' 1/1
+  [P6r  ]* 0x8239C720  ServeReadyMessage_C720_2hr                               2-hop relaxed 'ServeReadyMessage' 1/2
+  [P6r  ]* 0x8239CCA8  ServeStartedMessage_CCA8_2hr                             2-hop relaxed 'ServeStartedMessage' 1/1
+  [P6   ]* 0x8239CFE8  ServeStartedMessage_CFE8_2h                              2-hop 'ServeStartedMessage' 2/5
+  [P6r  ]* 0x8239D110  SinglesNetworkClient_D110_2hr                            2-hop relaxed 'SinglesNetworkClient' 1/2
+  [P6r  ]* 0x8239D258  PlayerMovementMessage_D258_2hr                           2-hop relaxed 'PlayerMovementMessage' 1/3
+  [P4rh ]* 0x823A01B0  atSingleton_01B0_h                                       single caller 'atSingleton' (no size cap)
+  [P4fw ]* 0x823B2EE8  atSingleton_2EE8_fw                                      single callee 'atSingleton' (no size cap)
+  [P4rh ]* 0x823B5A50  pg_5A50_h                                                single caller 'pg' (no size cap)
+  [P4rh ]* 0x823B66E8  atSingleton_66E8_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x823B8E10  atSingleton_8E10_h                                       single caller 'atSingleton' (no size cap)
+  [P4f  ]* 0x823CA2A0  NetDataQuery_A2A0                                        BFS 3.0/3.8 'NetDataQuery'
+  [P4rh ]* 0x823CC818  atSingleton_C818_h                                       single caller 'atSingleton' (no size cap)
+  [P6r  ]* 0x823CD580  SpectatorNetworkClient_D580_2hr                          2-hop relaxed 'SpectatorNetworkClient' 1/1
+  [P4rh ]* 0x823CF878  NetBallHitManagerFreeList_F878_h                         single caller 'NetBallHitManagerFreeList' (no size cap)
+  [P8   ]* 0x823D0338  util_0338                                                utility called by 2 classes: NetBallHitManager,NetBallHitManagerFreeList
+  [P6r  ]* 0x823D03E8  NetBallHitManagerFreeList_03E8_2hr                       2-hop relaxed 'NetBallHitManagerFreeList' 1/2
+  [P8   ]* 0x823D0520  util_0520                                                utility called by 2 classes: NetBallHitManager,NetBallHitManagerFreeList
+  [P6   ]* 0x823D06E0  NetBallHitManagerFreeList_06E0_2h                        2-hop 'NetBallHitManagerFreeList' 3/7
+  [P8   ]* 0x823D0820  util_0820                                                utility called by 2 classes: NetBallHitManager,NetBallHitManagerFreeList
+  [P4rh ]* 0x823D1E38  atSingleton_1E38_h                                       single caller 'atSingleton' (no size cap)
+  [P6   ]* 0x823D2A30  NetDataQuery_2A30_2h                                     2-hop 'NetDataQuery' 2/3
+  [P6   ]* 0x823D38D0  NetDataQuery_38D0_2h                                     2-hop 'NetDataQuery' 2/2
+  [P6r  ]* 0x823D3A50  atSingleton_3A50_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x823D3F30  atSingleton_3F30_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P4rh ]* 0x823D5160  spdShaft_5160_h                                          single caller 'spdShaft' (no size cap)
+  [P6r  ]* 0x823D85B8  lvlTable_85B8_2hr                                        2-hop relaxed 'lvlTable' 1/1
+  [P6r  ]* 0x823EB678  atSingleton_B678_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x823EB700  atSingleton_B700_2h                                      2-hop 'atSingleton' 3/3
+  [P7   ]* 0x823FB4F0  swfINSTANCE_B4F0_sp                                      spatial score=80/99 class='rage::swfINSTANCE'
+  [P6r  ]* 0x823FCA50  swfCONTEXT_CA50_2hr                                      2-hop relaxed 'rage::swfCONTEXT' 1/1
+  [P4rh ]* 0x823FE8D0  atSingleton_E8D0_h                                       single caller 'atSingleton' (no size cap)
+  [P7   ]* 0x823FECA8  swfACTIONFUNC_ECA8_sp                                    spatial score=88/176 class='rage::swfACTIONFUNC'
+  [P4rh ]* 0x823FEDE8  atSingleton_EDE8_h                                       single caller 'atSingleton' (no size cap)
+  [P4fw ]* 0x824049A0  atSingleton_49A0_fw                                      single callee 'atSingleton' (no size cap)
+  [P4f  ]* 0x82404CF8  atSingleton_4CF8                                         BFS 2.0/2.8 'atSingleton'
+  [P6r  ]* 0x82405E38  swfFILE_5E38_2hr                                         2-hop relaxed 'rage::swfFILE' 1/2
+  [P6r  ]* 0x824090D0  atSingleton_90D0_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P4rh ]* 0x8240A600  atSingleton_A600_h                                       single caller 'atSingleton' (no size cap)
+  [P4rh ]* 0x82410328  fxBallSpinTex_0328_h                                     single caller 'fxBallSpinTex' (no size cap)
+  [P6r  ]* 0x82410BF8  pongSurface_0BF8_2hr                                     2-hop relaxed 'pongSurface' 1/1
+  [P4rh ]* 0x82418F40  netHardware_8F40_h                                       single caller 'netHardware' (no size cap)
+  [P4rh ]* 0x82419128  netHardware_9128_h                                       single caller 'netHardware' (no size cap)
+  [P6r  ]* 0x82419488  parStreamOutXml_9488_2hr                                 2-hop relaxed 'rage::parStreamOutXml' 1/2
+  [P6r  ]* 0x824194E8  parStreamInXml_94E8_2hr                                  2-hop relaxed 'parStreamInXml' 1/1
+  [P4fw ]* 0x8241B350  fiAsciiTokenizer_B350_fw                                 single callee 'fiAsciiTokenizer' (no size cap)
+  [P4f  ]* 0x8241B3B8  fiAsciiTokenizer_B3B8                                    BFS 2.0/2.0 'fiAsciiTokenizer'
+  [P4fw ]* 0x8241B4A0  fiAsciiTokenizer_B4A0_fw                                 single callee 'fiAsciiTokenizer' (no size cap)
+  [P4rh ]* 0x8241B708  fiAsciiTokenizer_B708_h                                  single caller 'fiAsciiTokenizer' (no size cap)
+  [P4f  ]* 0x8241B8C8  fiAsciiTokenizer_B8C8                                    BFS 2.0/3.8 'fiAsciiTokenizer'
+  [P6   ]* 0x8241F038  fragDrawable_F038_2h                                     2-hop 'rage::fragDrawable' 4/4
+  [P4fw ]* 0x82426BA0  net_6BA0_fw                                              single callee 'net' (no size cap)
+  [P5r  ]* 0x82427E28  cmNamedValueSet_7E28_p                                   fn-ptr single signal 'rage::cmNamedValueSet'
+  [P4fw ]* 0x82428838  sysMemSimpleAllocator_8838_fw                            single callee 'sysMemSimpleAllocator' (no size cap)
+  [P4fw ]* 0x824288C0  sysMemSimpleAllocator_88C0_fw                            single callee 'sysMemSimpleAllocator' (no size cap)
+  [P4fw ]* 0x8242E9B8  RtlLeaveCriticalSection_E9B8_fw                          single callee 'RtlLeaveCriticalSection' (no size cap)
+  [P7   ]* 0x82431EA0  except_1EA0_sp                                           spatial score=10/19 class='except'
+  [P9   ]* 0x824365C4  get_65C4                                                 load r3+blr (getter multi)
+  [P4fw ]* 0x82439A38  RtlInitializeCriticalSection_9A38_fw                     single callee 'RtlInitializeCriticalSection' (no size cap)
+  [P7   ]* 0x8243DC78  except_DC78_sp                                           spatial score=23/44 class='except'
+  [P7   ]* 0x82448A60  msgMsgSink_8A60_sp                                       spatial score=10/18 class='msgMsgSink'
+  [P6r  ]* 0x82448BA8  msgMsgSink_8BA8_2hr                                      2-hop relaxed 'msgMsgSink' 1/3
+  [P4fw ]* 0x82449000  RtlInitializeCriticalSection_9000_fw                     single callee 'RtlInitializeCriticalSection' (no size cap)
+  [P4rh ]* 0x8244A158  RtlEnterCriticalSection_A158_h                           single caller 'RtlEnterCriticalSection' (no size cap)
+  [P0c  ]  0x8244A578  atSingleton_vfn_17                                       non-RTTI vtable quality rename class=atSingleton
+  [P6r  ]* 0x8244A670  msgMsgSink_A670_2hr                                      2-hop relaxed 'msgMsgSink' 1/1
+  [P6   ]* 0x8244A970  msgMsgSink_A970_2h                                       2-hop 'msgMsgSink' 2/2
+  [P4fw ]* 0x8244B230  snNotifyGamerAdded_B230_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P7   ]* 0x8244D168  msgMsgSink_D168_sp                                       spatial score=56/74 class='msgMsgSink'
+  [P7   ]* 0x8244D1D8  msgMsgSink_D1D8_sp                                       spatial score=58/76 class='msgMsgSink'
+  [P0c  ]  0x8244D2B8  msgMsgSink_vfn_0_D2B8_1                                  non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x8244D310  RtlEnterCriticalSection_D310_fw                          single callee 'RtlEnterCriticalSection' (no size cap)
+  [P4fw ]* 0x8244D6F0  RtlEnterCriticalSection_D6F0_fw                          single callee 'RtlEnterCriticalSection' (no size cap)
+  [P0c  ]  0x8244DB58  msgMsgSink_vfn_52                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244DCF0  msgMsgSink_vfn_25                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244DD50  msgMsgSink_vfn_22                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244DDF8  msgMsgSink_vfn_23                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244DEC0  msgMsgSink_vfn_33                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244DF58  msgMsgSink_vfn_38                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244DFF8  msgMsgSink_vfn_24                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E050  msgMsgSink_vfn_39                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E0C0  msgMsgSink_vfn_40                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E138  msgMsgSink_vfn_43                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E148  msgMsgSink_vfn_46                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E160  msgMsgSink_vfn_26                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E1D8  msgMsgSink_vfn_34                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E2A0  msgMsgSink_vfn_35                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E3B0  msgMsgSink_vfn_27                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E4C0  msgMsgSink_vfn_28                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E568  msgMsgSink_vfn_29                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E628  msgMsgSink_vfn_49                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E680  msgMsgSink_vfn_50                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244E6D0  msgMsgSink_vfn_30                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P4f  ]* 0x8244E790  snNotifyGamerAdded_E790                                  BFS 2.0/2.0 'snNotifyGamerAdded'
+  [P0c  ]  0x8244EA58  msgMsgSink_vfn_36                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244ED38  msgMsgSink_vfn_42                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244EE88  msgMsgSink_vfn_20                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244EE90  msgMsgSink_vfn_21                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244EF08  msgMsgSink_vfn_39_EF08_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244EF20  msgMsgSink_vfn_37                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244EF38  msgMsgSink_vfn_54                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244EFA8  msgMsgSink_vfn_43_EFA8_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244EFE8  msgMsgSink_vfn_42_EFE8_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244F268  msgMsgSink_vfn_31                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244F330  msgMsgSink_vfn_32                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244F768  msgMsgSink_vfn_119                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244F7B8  msgMsgSink_vfn_115                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244F8A8  msgMsgSink_vfn_55                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244F8B0  msgMsgSink_vfn_89                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244F9E8  msgMsgSink_vfn_130                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244FC80  msgMsgSink_vfn_128                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244FE80  msgMsgSink_vfn_129                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244FEE8  msgMsgSink_vfn_131                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8244FF38  msgMsgSink_vfn_126                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P4rh ]* 0x824501D0  snNotifyGamerAdded_01D0_h                                single caller 'snNotifyGamerAdded' (no size cap)
+  [P4fw ]* 0x82450518  snNotifyGamerAdded_0518_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x824505C8  msgMsgSink_vfn_147                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824505D0  msgMsgSink_vfn_125                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82450610  msgMsgSink_vfn_123                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x82450830  snNotifyGamerAdded_0830_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x824508A8  msgMsgSink_vfn_148                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x82451208  snNotifyGamerAdded_1208_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x824513D0  msgMsgSink_vfn_79                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824514E8  msgMsgSink_vfn_78                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x824514F0  snNotifyGamerAdded_14F0_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P6   ]* 0x82451E18  atSingleton_1E18_2h                                      2-hop 'atSingleton' 2/2
+  [P7   ]* 0x82451E60  atSingleton_1E60_sp                                      spatial score=40/61 class='atSingleton'
+  [P6r  ]* 0x82452048  atSingleton_2048_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P0c  ]  0x824522E0  atSingleton_vfn_29                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82452740  atSingleton_vfn_5_2740_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82452760  atSingleton_vfn_3_2760_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P6r  ]* 0x82453C80  RtlLeaveCriticalSection_3C80_2hr                         2-hop relaxed 'RtlLeaveCriticalSection' 1/2
+  [P6r  ]* 0x82454158  msgMsgSink_4158_2hr                                      2-hop relaxed 'msgMsgSink' 1/1
+  [P0c  ]  0x824544F0  msgMsgSink_vfn_0_44F0_1                                  non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82454B78  msgMsgSink_vfn_3                                         non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x82454CF0  snNotifyGamerAdded_4CF0_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x82454E60  msgMsgSink_vfn_1_4E60_1                                  non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455540  msgMsgSink_vfn_14                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x82455550  snNotifyGamerAdded_5550_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P6r  ]* 0x82455598  msgMsgSink_5598_2hr                                      2-hop relaxed 'msgMsgSink' 1/1
+  [P0c  ]  0x82455630  msgMsgSink_vfn_12                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455640  msgMsgSink_vfn_13                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455688  msgMsgSink_vfn_11                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455698  msgMsgSink_vfn_8                                         non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824557C8  msgMsgSink_vfn_9                                         non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x82455940  snNotifyGamerAdded_5940_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x82455988  msgMsgSink_vfn_21_5988_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455998  msgMsgSink_vfn_22_5998_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824559E0  msgMsgSink_vfn_20_59E0_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824559F0  msgMsgSink_vfn_17                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455A60  msgMsgSink_vfn_19                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455AB0  msgMsgSink_vfn_18                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455D50  msgMsgSink_vfn_25_5D50_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455DC0  msgMsgSink_vfn_24_5DC0_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82455FD0  msgMsgSink_vfn_36_5FD0_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456030  msgMsgSink_vfn_37_6030_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x82456090  snNotifyGamerAdded_6090_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x82456130  msgMsgSink_vfn_23_6130_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456278  msgMsgSink_vfn_75                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456378  msgMsgSink_vfn_109                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824564A0  msgMsgSink_vfn_120                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824564C0  msgMsgSink_vfn_60                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x824565B0  snNotifyGamerAdded_65B0_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x82456688  msgMsgSink_vfn_41                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456690  msgMsgSink_vfn_38_6690_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456810  msgMsgSink_vfn_65                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456920  msgMsgSink_vfn_66                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456968  msgMsgSink_vfn_67                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456B78  msgMsgSink_vfn_55_6B78_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456CC0  msgMsgSink_vfn_49_6CC0_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P4rh ]* 0x82456D70  RtlEnterCriticalSection_6D70_h                           single caller 'RtlEnterCriticalSection' (no size cap)
+  [P0c  ]  0x82456E38  msgMsgSink_vfn_56                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456EB0  msgMsgSink_vfn_57                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82456F28  msgMsgSink_vfn_68                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82457130  msgMsgSink_vfn_61                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82457540  msgMsgSink_vfn_63                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824577D0  msgMsgSink_vfn_45                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P4rh ]* 0x824579C8  RtlEnterCriticalSection_79C8_h                           single caller 'RtlEnterCriticalSection' (no size cap)
+  [P0c  ]  0x82457B40  msgMsgSink_vfn_44                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82457C10  msgMsgSink_vfn_62                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x82457D50  snNotifyGamerAdded_7D50_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x82457DD0  msgMsgSink_vfn_77                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82457E58  msgMsgSink_vfn_89_7E58_1                                 non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82457FF0  msgMsgSink_vfn_95                                        non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82457FF8  msgMsgSink_vfn_105                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824580C0  msgMsgSink_vfn_108                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82458218  msgMsgSink_vfn_113                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x824584F0  msgMsgSink_vfn_116                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P4fw ]* 0x824585A0  snNotifyGamerAdded_85A0_fw                               single callee 'snNotifyGamerAdded' (no size cap)
+  [P0c  ]  0x82458708  msgMsgSink_vfn_114                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x82458A88  msgMsgSink_vfn_121                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P7   ]* 0x82458DA0  msgMsgSink_8DA0_sp                                       spatial score=50/56 class='msgMsgSink'
+  [P7   ]* 0x82458DE0  msgMsgSink_8DE0_sp                                       spatial score=47/53 class='msgMsgSink'
+  [P7   ]* 0x82458E00  msgMsgSink_8E00_sp                                       spatial score=45/51 class='msgMsgSink'
+  [P7   ]* 0x82458E20  msgMsgSink_8E20_sp                                       spatial score=44/50 class='msgMsgSink'
+  [P7   ]* 0x82458E40  msgMsgSink_8E40_sp                                       spatial score=44/50 class='msgMsgSink'
+  [P7   ]* 0x82458E60  msgMsgSink_8E60_sp                                       spatial score=41/47 class='msgMsgSink'
+  [P7   ]* 0x82458E88  msgMsgSink_8E88_sp                                       spatial score=40/46 class='msgMsgSink'
+  [P0c  ]  0x824598A0  msgMsgSink_vfn_122                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P0c  ]  0x8245A0F8  atSingleton_vfn_0_A0F8_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245A6F0  atSingleton_vfn_1_A6F0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245A7A0  atSingleton_vfn_2_A7A0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P6r  ]* 0x8245A828  atSingleton_A828_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P0c  ]  0x8245AA78  atSingleton_vfn_6_AA78_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P6r  ]* 0x8245AC18  RtlEnterCriticalSection_AC18_2hr                         2-hop relaxed 'RtlEnterCriticalSection' 1/3
+  [P7   ]* 0x8245B0E8  atSingleton_B0E8_sp                                      spatial score=86/111 class='atSingleton'
+  [P0c  ]  0x8245B468  atSingleton_vfn_7_B468_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P6r  ]* 0x8245B4B8  RtlEnterCriticalSection_B4B8_2hr                         2-hop relaxed 'RtlEnterCriticalSection' 1/1
+  [P6   ]* 0x8245B540  RtlEnterCriticalSection_B540_2h                          2-hop 'RtlEnterCriticalSection' 2/4
+  [P0c  ]  0x8245B5E0  atSingleton_vfn_8_B5E0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245B650  atSingleton_vfn_14                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245B6F8  atSingleton_vfn_10_B6F8_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245B7D0  atSingleton_vfn_11_B7D0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245B8B8  atSingleton_vfn_15_B8B8_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245B998  atSingleton_vfn_16_B998_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245BA50  atSingleton_vfn_9_BA50_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245C108  atSingleton_vfn_21                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245C200  atSingleton_vfn_12_C200_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245C238  atSingleton_vfn_23_C238_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245C420  atSingleton_vfn_25                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245C4E8  atSingleton_vfn_26_C4E8_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245C638  atSingleton_vfn_24_C638_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245CB18  atSingleton_vfn_19_CB18_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245CFA8  atSingleton_vfn_20_CFA8_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245CFD8  atSingleton_vfn_18_CFD8_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D030  atSingleton_vfn_16_D030_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D098  atSingleton_vfn_17_D098_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D100  atSingleton_vfn_18_D100_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D168  atSingleton_vfn_29_D168_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D1D0  atSingleton_vfn_30                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D238  atSingleton_vfn_19_D238_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D2A0  atSingleton_vfn_20_D2A0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D308  atSingleton_vfn_21_D308_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D388  atSingleton_vfn_23_D388_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D3D8  atSingleton_vfn_43                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D458  atSingleton_vfn_12_D458_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D460  atSingleton_vfn_1_D460_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D4E0  atSingleton_vfn_15_D4E0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D580  atSingleton_vfn_13_D580_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D5F0  atSingleton_vfn_4_D5F0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D630  atSingleton_vfn_8_D630_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D688  atSingleton_vfn_10_D688_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D718  atSingleton_vfn_28_D718_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D780  atSingleton_vfn_0_D780_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D818  atSingleton_vfn_2_D818_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245D960  atSingleton_vfn_3_D960_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245DA10  atSingleton_vfn_22_DA10_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245DA80  atSingleton_vfn_31_DA80_1                                non-RTTI vtable quality rename class=atSingleton
+  [P6   ]* 0x8245DB50  atSingleton_DB50_2h                                      2-hop 'atSingleton' 2/2
+  [P0c  ]  0x8245DB60  atSingleton_vfn_37_DB60_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245DBC8  atSingleton_vfn_40                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245DCC8  atSingleton_vfn_38                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245DDE0  atSingleton_vfn_42                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245DE50  atSingleton_vfn_43_DE50_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E000  atSingleton_vfn_44                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E2E8  atSingleton_vfn_0_E2E8_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E358  atSingleton_vfn_1_E358_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E538  atSingleton_vfn_45                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E588  atSingleton_vfn_2_E588_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E848  atSingleton_vfn_5_E848_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E8B0  atSingleton_vfn_6_E8B0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245E9D0  atSingleton_vfn_7_E9D0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245EC30  atSingleton_vfn_11_EC30_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245EC68  atSingleton_vfn_10_EC68_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245ED20  atSingleton_vfn_1_ED20_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245ED80  atSingleton_vfn_5_ED80_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245EDE0  atSingleton_vfn_0_EDE0_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245EE70  atSingleton_vfn_2_EE70_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245EED0  atSingleton_vfn_11_EED0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245EF50  atSingleton_vfn_53                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245EFC0  atSingleton_vfn_33                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F038  atSingleton_vfn_58                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F040  atSingleton_vfn_5_F040_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F0A8  atSingleton_vfn_6_F0A8_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F130  atSingleton_vfn_35                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F1E8  atSingleton_vfn_47                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F288  atSingleton_vfn_56                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F368  atSingleton_vfn_42_F368_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F3C8  atSingleton_vfn_63                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F4F0  atSingleton_vfn_44_F4F0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F4F8  atSingleton_vfn_7_F4F8_1                                 non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F510  atSingleton_vfn_59                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F518  atSingleton_vfn_60                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F520  atSingleton_vfn_54                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F5E8  atSingleton_vfn_34                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F760  atSingleton_vfn_31_F760_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F7D0  atSingleton_vfn_32_F7D0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F868  atSingleton_vfn_64                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245F8D0  atSingleton_vfn_65                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245FA18  atSingleton_vfn_70                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245FA50  atSingleton_vfn_69                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245FB68  atSingleton_vfn_39                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8245FE98  atSingleton_vfn_79                                       non-RTTI vtable quality rename class=atSingleton
+  [P7   ]* 0x8245FEA8  atSingleton_FEA8_sp                                      spatial score=149/157 class='atSingleton'
+  [P7   ]* 0x8245FED0  atSingleton_FED0_sp                                      spatial score=147/155 class='atSingleton'
+  [P0c  ]  0x824601A0  atSingleton_vfn_74                                       non-RTTI vtable quality rename class=atSingleton
+  [P7   ]* 0x82461488  vt8308_1488_sp                                           spatial score=12/12 class='vt8308'
+  [P7   ]* 0x82461540  vt8308_1540_sp                                           spatial score=11/11 class='vt8308'
+  [P6r  ]* 0x82465D40  vt8308_5D40_2hr                                          2-hop relaxed 'vt8308' 1/1
+  [P6r  ]* 0x8246B618  MmGetPhysicalAddress_B618_2hr                            2-hop relaxed 'MmGetPhysicalAddress' 1/1
+  [P6r  ]* 0x8246BB20  vt8308_BB20_2hr                                          2-hop relaxed 'vt8308' 1/1
+  [P6r  ]* 0x8246BB40  vt8308_BB40_2hr                                          2-hop relaxed 'vt8308' 1/1
+  [P6r  ]* 0x8246BB60  RtlEnterCriticalSection_BB60_2hr                         2-hop relaxed 'RtlEnterCriticalSection' 1/2
+  [P0c  ]  0x8246BC00  msgMsgSink_vfn_118                                       non-RTTI vtable quality rename class=msgMsgSink
+  [P6r  ]* 0x8246C5C0  vt8308_C5C0_2hr                                          2-hop relaxed 'vt8308' 1/1
+  [P0c  ]  0x8247E2D0  vt8308_vfn_48                                            non-RTTI vtable quality rename class=vt8308
+  [P6r  ]* 0x8247EFF8  vt8308_EFF8_2hr                                          2-hop relaxed 'vt8308' 1/1
+  [P6   ]* 0x8247F9B0  vt8308_F9B0_2h                                           2-hop 'vt8308' 2/2
+  [P6   ]* 0x8247FD60  vt8308_FD60_2h                                           2-hop 'vt8308' 3/3
+  [P6   ]* 0x82481B50  netHardware_1B50_2h                                      2-hop 'netHardware' 2/2
+  [P6r  ]* 0x82481BA0  fiDeviceTcpIp_1BA0_2hr                                   2-hop relaxed 'rage::fiDeviceTcpIp' 1/1
+  [P6   ]* 0x82481D40  netHardware_1D40_2h                                      2-hop 'netHardware' 3/5
+  [P0c  ]  0x824829E0  vt8308_vfn_10                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82482A40  vt8308_vfn_12                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82482A90  vt8308_vfn_14                                            non-RTTI vtable quality rename class=vt8308
+  [P9   ]* 0x82483348  set_3348                                                 store to r3; blr (setter)
+  [P0c  ]  0x82483350  atSingleton_vfn_27                                       non-RTTI vtable quality rename class=atSingleton
+  [P9   ]* 0x82483498  set_3498                                                 store to r3; blr (setter)
+  [P0c  ]  0x824834A0  atSingleton_vfn_25_34A0_1                                non-RTTI vtable quality rename class=atSingleton
+  [P9   ]* 0x824834A8  set_34A8                                                 store to r3; blr (setter)
+  [P9   ]* 0x824834B0  set_34B0                                                 store to r3; blr (setter)
+  [P0c  ]  0x824834B8  atSingleton_vfn_57                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x824834D8  atSingleton_vfn_46                                       non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x82483E30  vt8308_vfn_22                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82483EB0  vt8308_vfn_21                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82483F28  vt8308_vfn_25                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82483FD8  vt8308_vfn_23                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82484018  vt8308_vfn_11                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x824840A0  vt8308_vfn_18                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82484268  vt8308_vfn_20                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82484650  vt8308_vfn_24                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x824846D8  vt8308_vfn_0                                             non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82487840  vt8308_vfn_77                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82487890  vt8308_vfn_76                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x824879A0  vt8308_vfn_75                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82487A20  vt8308_vfn_74                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82487AA8  vt8308_vfn_78                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82487CE0  vt8308_vfn_79                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82487E60  vt8308_vfn_80                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82487FD8  vt8308_vfn_64                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82488028  vt8308_vfn_65                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82488480  vt8308_vfn_71                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82488828  atSingleton_vfn_37                                       non-RTTI vtable quality rename class=atSingleton
+  [P4fw ]* 0x824888F8  vt8DF0_88F8_fw                                           single callee 'vt8DF0' (no size cap)
+  [P6   ]* 0x82489450  vt8918_9450_2h                                           2-hop 'vt8918' 2/2
+  [P0c  ]  0x8248B888  vt8308_vfn_12_B888_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248B8C8  vt8308_vfn_16                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248B8D0  vt8308_vfn_19                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248B950  vt8308_vfn_0_B950_1                                      non-RTTI vtable quality rename class=vt8308
+  [P4fw ]* 0x8248BA30  vt8DF0_BA30_fw                                           single callee 'vt8DF0' (no size cap)
+  [P6   ]* 0x8248BAD0  atSingleton_BAD0_2h                                      2-hop 'atSingleton' 2/3
+  [P4rh ]* 0x8248C330  atSingleton_C330_h                                       single caller 'atSingleton' (no size cap)
+  [P0c  ]  0x8248D758  vt8308_vfn_32                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D7C8  vt8308_vfn_9                                             non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D808  vt8308_vfn_38                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D810  vt8308_vfn_44                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D818  vt8308_vfn_39                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D820  vt8308_vfn_45                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D828  vt8308_vfn_14_D828_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D840  vt8308_vfn_17                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D848  vt8308_vfn_35                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D860  vt8308_vfn_42                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D868  vt8308_vfn_34                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D880  vt8308_vfn_40                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D888  vt8308_vfn_15                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D8A0  vt8308_vfn_18_D8A0_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D960  vt8308_vfn_20_D960_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248D9C8  vt8308_vfn_58                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DA68  vt8308_vfn_59                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DA88  vt8308_vfn_60                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DAA8  vt8308_vfn_61                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DAC8  vt8308_vfn_62                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DAE8  vt8308_vfn_63                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DB08  vt8308_vfn_64_DB08_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DB28  vt8308_vfn_65_DB28_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DB48  vt8308_vfn_66                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DB68  vt8308_vfn_67                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DB88  vt8308_vfn_68                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DBA8  vt8308_vfn_69                                            non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x8248DBC8  atSingleton_vfn_28_DBC8_1                                non-RTTI vtable quality rename class=atSingleton
+  [P0c  ]  0x8248E078  vt8308_vfn_46                                            non-RTTI vtable quality rename class=vt8308
+  [P6r  ]* 0x82492EE8  vt8918_2EE8_2hr                                          2-hop relaxed 'vt8918' 1/1
+  [P6r  ]* 0x824930A8  vt8918_30A8_2hr                                          2-hop relaxed 'vt8918' 1/1
+  [P0c  ]  0x82494140  vt8308_vfn_10_4140_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82494158  vt8308_vfn_11_4158_1                                     non-RTTI vtable quality rename class=vt8308
+  [P0c  ]  0x82494160  vt8308_vfn_13                                            non-RTTI vtable quality rename class=vt8308
+  [P6r  ]* 0x82494350  atSingleton_4350_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x82494520  atSingleton_4520_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824946E0  atSingleton_46E0_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x824948D8  atSingleton_48D8_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x82496700  atSingleton_6700_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x82496BF0  atSingleton_6BF0_2h                                      2-hop 'atSingleton' 11/11
+  [P6   ]* 0x82496FC0  atSingleton_6FC0_2h                                      2-hop 'atSingleton' 4/5
+  [P6   ]* 0x8249FDD0  atSingleton_FDD0_2h                                      2-hop 'atSingleton' 3/4
+  [P6   ]* 0x824C1D90  fiAsciiTokenizer_1D90_2h                                 2-hop 'rage::fiAsciiTokenizer' 2/2
+  [P6   ]* 0x824C1E98  fiAsciiTokenizer_1E98_2h                                 2-hop 'rage::fiAsciiTokenizer' 4/4
+  [P6   ]* 0x824C1EF8  fiAsciiTokenizer_1EF8_2h                                 2-hop 'rage::fiAsciiTokenizer' 6/7
+  [P6r  ]* 0x824C2120  fiAsciiTokenizer_2120_2hr                                2-hop relaxed 'rage::fiAsciiTokenizer' 1/1
+  [P5r  ]* 0x824C2428  fiAsciiTokenizer_2428_p                                  fn-ptr single signal 'rage::fiAsciiTokenizer'
+  [P6   ]* 0x824CAE28  atSingleton_AE28_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x824CAE58  atSingleton_AE58_2h                                      2-hop 'atSingleton' 4/4
+  [P6r  ]* 0x824CC9E8  atSingleton_C9E8_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824CCFC8  atSingleton_CFC8_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x824CD028  atSingleton_D028_2h                                      2-hop 'atSingleton' 6/6
+  [P6   ]* 0x824CD3C8  atSingleton_D3C8_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x824CD458  atSingleton_D458_2h                                      2-hop 'atSingleton' 6/6
+  [P6r  ]* 0x824CE240  atSingleton_E240_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x824D0AF0  fiAsciiTokenizer_0AF0_2hr                                2-hop relaxed 'rage::fiAsciiTokenizer' 1/1
+  [P6   ]* 0x824D1C18  atSingleton_1C18_2h                                      2-hop 'atSingleton' 11/12
+  [P6   ]* 0x824D1D88  atSingleton_1D88_2h                                      2-hop 'atSingleton' 12/13
+  [P6   ]* 0x824D2818  atSingleton_2818_2h                                      2-hop 'atSingleton' 30/30
+  [P6   ]* 0x824D2988  atSingleton_2988_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824D2A28  atSingleton_2A28_2h                                      2-hop 'atSingleton' 6/6
+  [P6   ]* 0x824D2A60  atSingleton_2A60_2h                                      2-hop 'atSingleton' 15/15
+  [P6   ]* 0x824D9E78  atSingleton_9E78_2h                                      2-hop 'atSingleton' 17/17
+  [P6r  ]* 0x824DA930  atSingleton_A930_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824DBA90  atSingleton_BA90_2h                                      2-hop 'atSingleton' 5/5
+  [P6   ]* 0x824DBB50  atSingleton_BB50_2h                                      2-hop 'atSingleton' 15/15
+  [P6   ]* 0x824E12B8  atSingleton_12B8_2h                                      2-hop 'atSingleton' 9/9
+  [P6   ]* 0x824E1A38  atSingleton_1A38_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824E4840  atSingleton_4840_2h                                      2-hop 'atSingleton' 5/6
+  [P6   ]* 0x824E4D58  atSingleton_4D58_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x824E90E8  atSingleton_90E8_2h                                      2-hop 'atSingleton' 9/9
+  [P6   ]* 0x824EA430  atSingleton_A430_2h                                      2-hop 'atSingleton' 6/6
+  [P4fw ]* 0x824EA6E0  atSingleton_A6E0_fw                                      single callee 'atSingleton' (no size cap)
+  [P6r  ]* 0x824EE8D0  atSingleton_E8D0_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824EEC78  atSingleton_EC78_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824EEE70  atSingleton_EE70_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824EF510  atSingleton_F510_2h                                      2-hop 'atSingleton' 8/8
+  [P6   ]* 0x824EF728  atSingleton_F728_2h                                      2-hop 'atSingleton' 2/2
+  [P6r  ]* 0x824EFF98  atSingleton_FF98_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824F0BA0  atSingleton_0BA0_2h                                      2-hop 'atSingleton' 5/5
+  [P6   ]* 0x824F0FE8  atSingleton_0FE8_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x824F1018  atSingleton_1018_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x824F2C40  atSingleton_2C40_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824F2EE0  atSingleton_2EE0_2h                                      2-hop 'atSingleton' 2/2
+  [P6r  ]* 0x824F4CB0  atSingleton_4CB0_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6r  ]* 0x824F55F0  atSingleton_55F0_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824F5750  atSingleton_5750_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824F5E00  atSingleton_5E00_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x824F6508  atSingleton_6508_2h                                      2-hop 'atSingleton' 4/4
+  [P6r  ]* 0x824F7698  atSingleton_7698_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824F76D8  atSingleton_76D8_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824F7CA0  atSingleton_7CA0_2h                                      2-hop 'atSingleton' 16/16
+  [P6   ]* 0x824F7D58  atSingleton_7D58_2h                                      2-hop 'atSingleton' 13/13
+  [P6   ]* 0x824F7D70  atSingleton_7D70_2h                                      2-hop 'atSingleton' 15/15
+  [P6   ]* 0x824FA2D0  atSingleton_A2D0_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x824FD678  atSingleton_D678_2h                                      2-hop 'atSingleton' 9/9
+  [P6   ]* 0x824FD828  atSingleton_D828_2h                                      2-hop 'atSingleton' 10/10
+  [P6   ]* 0x824FDF10  atSingleton_DF10_2h                                      2-hop 'atSingleton' 19/19
+  [P6r  ]* 0x824FE380  atSingleton_E380_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x824FF020  atSingleton_F020_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x824FF608  atSingleton_F608_2h                                      2-hop 'atSingleton' 3/3
+  [P6r  ]* 0x82507258  atSingleton_7258_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x82507B68  atSingleton_7B68_2h                                      2-hop 'atSingleton' 5/5
+  [P6   ]* 0x825106A8  atSingleton_06A8_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x82511440  atSingleton_1440_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82511D30  atSingleton_1D30_2h                                      2-hop 'atSingleton' 44/45
+  [P6   ]* 0x82512C38  atSingleton_2C38_2h                                      2-hop 'atSingleton' 6/6
+  [P6r  ]* 0x82513418  atSingleton_3418_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x825136A8  atSingleton_36A8_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x82513850  atSingleton_3850_2h                                      2-hop 'atSingleton' 19/19
+  [P6   ]* 0x82514A60  atSingleton_4A60_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x82514C18  atSingleton_4C18_2h                                      2-hop 'atSingleton' 6/6
+  [P6   ]* 0x82514F70  atSingleton_4F70_2h                                      2-hop 'atSingleton' 5/5
+  [P6   ]* 0x825152B0  atSingleton_52B0_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x82515440  atSingleton_5440_2h                                      2-hop 'atSingleton' 10/10
+  [P6   ]* 0x82515760  atSingleton_5760_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x82515A78  atSingleton_5A78_2h                                      2-hop 'atSingleton' 10/10
+  [P6   ]* 0x82516D98  atSingleton_6D98_2h                                      2-hop 'atSingleton' 6/6
+  [P6   ]* 0x82516E60  atSingleton_6E60_2h                                      2-hop 'atSingleton' 8/8
+  [P6   ]* 0x82516F28  atSingleton_6F28_2h                                      2-hop 'atSingleton' 8/8
+  [P6r  ]* 0x82518648  atSingleton_8648_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x825198B8  atSingleton_98B8_2h                                      2-hop 'atSingleton' 8/8
+  [P6   ]* 0x8251AE78  atSingleton_AE78_2h                                      2-hop 'atSingleton' 3/4
+  [P6   ]* 0x8251FE38  atSingleton_FE38_2h                                      2-hop 'atSingleton' 26/26
+  [P6   ]* 0x82520D90  atSingleton_0D90_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82523738  atSingleton_3738_2h                                      2-hop 'atSingleton' 17/17
+  [P6   ]* 0x82524EC0  atSingleton_4EC0_2h                                      2-hop 'atSingleton' 11/11
+  [P6   ]* 0x82524F58  atSingleton_4F58_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x82525090  atSingleton_5090_2h                                      2-hop 'atSingleton' 7/7
+  [P6   ]* 0x82525248  atSingleton_5248_2h                                      2-hop 'atSingleton' 11/11
+  [P6   ]* 0x825254D8  atSingleton_54D8_2h                                      2-hop 'atSingleton' 11/11
+  [P6   ]* 0x825295A0  atSingleton_95A0_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82529688  atSingleton_9688_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x82529770  atSingleton_9770_2h                                      2-hop 'atSingleton' 9/9
+  [P6   ]* 0x82529AB0  atSingleton_9AB0_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82529B58  atSingleton_9B58_2h                                      2-hop 'atSingleton' 11/11
+  [P6   ]* 0x82529E98  atSingleton_9E98_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x8252A890  atSingleton_A890_2h                                      2-hop 'atSingleton' 6/6
+  [P6   ]* 0x8252AD00  atSingleton_AD00_2h                                      2-hop 'atSingleton' 16/16
+  [P6   ]* 0x82531D60  atSingleton_1D60_2h                                      2-hop 'atSingleton' 8/8
+  [P6   ]* 0x82533FE0  atSingleton_3FE0_2h                                      2-hop 'atSingleton' 16/16
+  [P6   ]* 0x82535BB0  atSingleton_5BB0_2h                                      2-hop 'atSingleton' 12/12
+  [P6   ]* 0x82535F98  atSingleton_5F98_2h                                      2-hop 'atSingleton' 17/17
+  [P6r  ]* 0x82536840  atSingleton_6840_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x82536FD0  atSingleton_6FD0_2h                                      2-hop 'atSingleton' 15/15
+  [P6   ]* 0x8253F088  atSingleton_F088_2h                                      2-hop 'atSingleton' 10/10
+  [P6   ]* 0x8253F358  atSingleton_F358_2h                                      2-hop 'atSingleton' 6/6
+  [P6   ]* 0x8253F478  atSingleton_F478_2h                                      2-hop 'atSingleton' 20/20
+  [P6   ]* 0x8253FA40  atSingleton_FA40_2h                                      2-hop 'atSingleton' 12/12
+  [P6r  ]* 0x8253FB60  atSingleton_FB60_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x8253FBF0  atSingleton_FBF0_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x8253FC70  atSingleton_FC70_2h                                      2-hop 'atSingleton' 11/11
+  [P6   ]* 0x8253FED8  atSingleton_FED8_2h                                      2-hop 'atSingleton' 11/11
+  [P6   ]* 0x8253FFA0  atSingleton_FFA0_2h                                      2-hop 'atSingleton' 24/24
+  [P6   ]* 0x82548708  atSingleton_8708_2h                                      2-hop 'atSingleton' 2/2
+  [P6r  ]* 0x825496A0  atSingleton_96A0_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x8254AD88  atSingleton_AD88_2h                                      2-hop 'atSingleton' 10/11
+  [P6r  ]* 0x82550210  atSingleton_0210_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x825502D8  atSingleton_02D8_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x82550430  atSingleton_0430_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x82550750  atSingleton_0750_2h                                      2-hop 'atSingleton' 5/5
+  [P6   ]* 0x825509E0  atSingleton_09E0_2h                                      2-hop 'atSingleton' 8/8
+  [P6   ]* 0x82550F68  atSingleton_0F68_2h                                      2-hop 'atSingleton' 9/9
+  [P6   ]* 0x82551038  atSingleton_1038_2h                                      2-hop 'atSingleton' 9/9
+  [P6   ]* 0x825510F0  atSingleton_10F0_2h                                      2-hop 'atSingleton' 25/25
+  [P6r  ]* 0x82551868  atSingleton_1868_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x82551A88  atSingleton_1A88_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x825524B8  atSingleton_24B8_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82552DA8  atSingleton_2DA8_2h                                      2-hop 'atSingleton' 10/10
+  [P6   ]* 0x82552F40  atSingleton_2F40_2h_2F40_1                               2-hop 'atSingleton' 6/6
+  [P6   ]* 0x82552FE0  atSingleton_2FE0_2h                                      2-hop 'atSingleton' 8/8
+  [P6r  ]* 0x82553698  atSingleton_3698_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P7   ]* 0x825538C8  atSingleton_38C8_sp                                      spatial score=53/53 class='atSingleton'
+  [P6r  ]* 0x82553B00  atSingleton_3B00_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x82553B50  atSingleton_3B50_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82553BD8  atSingleton_3BD8_2h                                      2-hop 'atSingleton' 13/13
+  [P6   ]* 0x82555718  atSingleton_5718_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82557450  atSingleton_7450_2h                                      2-hop 'atSingleton' 6/6
+  [P7   ]* 0x82557B70  atSingleton_7B70_sp                                      spatial score=16/16 class='atSingleton'
+  [P7   ]* 0x82557EB8  atSingleton_7EB8_sp                                      spatial score=17/17 class='atSingleton'
+  [P6   ]* 0x825584B8  atSingleton_84B8_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x82558A60  atSingleton_8A60_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82559358  atSingleton_9358_2h                                      2-hop 'atSingleton' 5/5
+  [P6   ]* 0x82559928  atSingleton_9928_2h                                      2-hop 'atSingleton' 7/7
+  [P6r  ]* 0x8255A7D8  atSingleton_A7D8_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x8255AC50  atSingleton_AC50_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x8255AE80  atSingleton_AE80_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x8255BB38  atSingleton_BB38_2h                                      2-hop 'atSingleton' 8/8
+  [P6   ]* 0x8255C150  atSingleton_C150_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x8255D6A8  atSingleton_D6A8_2h                                      2-hop 'atSingleton' 2/2
+  [P6   ]* 0x8255D850  atSingleton_D850_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x8255DA90  atSingleton_DA90_2h                                      2-hop 'atSingleton' 4/4
+  [P6   ]* 0x8255DE50  atSingleton_DE50_2h                                      2-hop 'atSingleton' 5/5
+  [P6   ]* 0x8255DF98  atSingleton_DF98_2h                                      2-hop 'atSingleton' 17/17
+  [P7   ]* 0x8255E800  atSingleton_E800_sp                                      spatial score=23/23 class='atSingleton'
+  [P6   ]* 0x8255F5E0  atSingleton_F5E0_2h                                      2-hop 'atSingleton' 8/8
+  [P6   ]* 0x8255FA18  atSingleton_FA18_2h                                      2-hop 'atSingleton' 4/4
+  [P7   ]* 0x82562A48  atSingleton_2A48_sp                                      spatial score=13/13 class='atSingleton'
+  [P6r  ]* 0x825637D0  atSingleton_37D0_2hr                                     2-hop relaxed 'atSingleton' 1/1
+  [P6   ]* 0x825638E8  atSingleton_38E8_2h_38E8_1                               2-hop 'atSingleton' 2/2
+  [P6   ]* 0x825639F0  atSingleton_39F0_2h                                      2-hop 'atSingleton' 3/3
+  [P6   ]* 0x82563A20  atSingleton_3A20_2h                                      2-hop 'atSingleton' 4/4
+  [P7   ]* 0x82566EA8  pg_6EA8_sp                                               spatial score=28/50 class='pg'
+  [P6r  ]* 0x82567590  atSingleton_7590_2hr                                     2-hop relaxed 'atSingleton' 1/2
+  [P7   ]* 0x82569380  xam_9380_sp                                              spatial score=71/115 class='xam'
+  [P6   ]* 0x82569980  atSingleton_9980_2h                                      2-hop 'atSingleton' 18/18
+  [P4fw ]* 0x82569990  RtlUnwind_9990_fw                                        single callee 'RtlUnwind' (no size cap)
+  [P6r  ]* 0x8256AB18  xam_AB18_2hr                                             2-hop relaxed 'xam' 1/1
+  [P7   ]* 0x8256AB38  xam_AB38_sp                                              spatial score=106/106 class='xam'
+  [P7   ]* 0x8256AFA0  xam_AFA0_sp                                              spatial score=67/67 class='xam'
+  [P6   ]* 0x8256C200  xam_C200_2h                                              2-hop 'xam' 2/2
+  [P7   ]* 0x8256C600  xam_C600_sp                                              spatial score=28/28 class='xam'
+  [P6   ]* 0x8256C608  xam_C608_2h                                              2-hop 'xam' 2/2
+  [P6r  ]* 0x8256CF88  xam_CF88_2hr                                             2-hop relaxed 'xam' 1/1
+  [P7   ]* 0x8256D760  xam_D760_sp                                              spatial score=42/51 class='xam'
+  [P6   ]* 0x8256D778  xam_D778_2h                                              2-hop 'xam' 4/6
+  [P7   ]* 0x8256D7A0  xam_D7A0_sp                                              spatial score=42/51 class='xam'
+  [P7   ]* 0x8256D7C8  xam_D7C8_sp                                              spatial score=42/52 class='xam'
+  [P7   ]* 0x8256D7F0  xam_D7F0_sp                                              spatial score=43/53 class='xam'
+  [P7   ]* 0x8256D818  xam_D818_sp                                              spatial score=43/53 class='xam'
+  [P7   ]* 0x8256D830  xam_D830_sp                                              spatial score=43/53 class='xam'
+  [P6   ]* 0x8256DFD0  xam_DFD0_2h                                              2-hop 'xam' 5/7
+  [P6   ]* 0x8256E190  xam_E190_2h                                              2-hop 'xam' 3/5
+  [P6r  ]* 0x8256E248  xam_E248_2hr                                             2-hop relaxed 'xam' 9/27
+  [P4rh ]* 0x8256E5B0  phBoundCapsule_E5B0_h                                    single caller 'rage::phBoundCapsule' (no size cap)
+  [P6r  ]* 0x8256E6A8  xam_E6A8_2hr                                             2-hop relaxed 'xam' 1/1
+  [P4rh ]* 0x8256EC98  RtlEnterCriticalSection_EC98_h                           single caller 'RtlEnterCriticalSection' (no size cap)
+  [P4f  ]* 0x8256F030  xam_F030                                                 BFS 2.2/3.6 'xam'
+  [P6r  ]* 0x8256F948  xam_F948_2hr                                             2-hop relaxed 'xam' 1/1
+  [P6r  ]* 0x82570370  xam_0370_2hr                                             2-hop relaxed 'xam' 1/3
+  [P6   ]* 0x825703E8  xam_03E8_2h                                              2-hop 'xam' 2/4
+  [P6   ]* 0x82570768  xam_0768_2h                                              2-hop 'xam' 3/5
+  [P6   ]* 0x82571178  xam_1178_2h                                              2-hop 'xam' 2/4
+  [P6   ]* 0x82571638  xam_1638_2h                                              2-hop 'xam' 2/4
+  [P6   ]* 0x825716B0  xam_16B0_2h                                              2-hop 'xam' 3/5
+  [P6   ]* 0x82571850  xam_1850_2h                                              2-hop 'xam' 4/6
+  [P6   ]* 0x825718A0  xam_18A0_2h                                              2-hop 'xam' 2/4
+  [P6   ]* 0x82574700  xam_4700_2h                                              2-hop 'xam' 3/3
+  [P4rh ]* 0x82574840  xam_4840_h                                               single caller 'xam' (no size cap)
+  [P7   ]* 0x8257B028  xam_B028_sp                                              spatial score=82/90 class='xam'
+  [P4fw ]* 0x8257B4D0  XMsgCancelIORequest_B4D0_fw                              single callee 'XMsgCancelIORequest' (no size cap)
+  [P7   ]* 0x8257B940  xam_B940_sp                                              spatial score=83/95 class='xam'
+  [P7   ]* 0x8257B960  xam_B960_sp                                              spatial score=83/95 class='xam'
+  [P7   ]* 0x8257B980  xam_B980_sp                                              spatial score=82/94 class='xam'
+  [P7   ]* 0x8257B9A0  xam_B9A0_sp                                              spatial score=81/93 class='xam'
+  [P7   ]* 0x8257B9C0  xam_B9C0_sp                                              spatial score=80/92 class='xam'
+  [P7   ]* 0x8257B9E0  xam_B9E0_sp                                              spatial score=80/92 class='xam'
+  [P7   ]* 0x8257BA00  xam_BA00_sp                                              spatial score=79/91 class='xam'
+  [P7   ]* 0x8257BA20  xam_BA20_sp                                              spatial score=78/90 class='xam'
+  [P7   ]* 0x8257BA40  xam_BA40_sp                                              spatial score=78/90 class='xam'
+  [P7   ]* 0x8257BA60  xam_BA60_sp                                              spatial score=77/89 class='xam'
+  [P7   ]* 0x8257BA80  xam_BA80_sp                                              spatial score=75/88 class='xam'
+  [P7   ]* 0x8257BAA0  xam_BAA0_sp                                              spatial score=75/88 class='xam'
+  [P7   ]* 0x8257BAC0  xam_BAC0_sp                                              spatial score=75/88 class='xam'
+  [P7   ]* 0x8257BAE0  xam_BAE0_sp                                              spatial score=75/87 class='xam'
+  [P7   ]* 0x8257BB00  xam_BB00_sp                                              spatial score=75/87 class='xam'
+  [P7   ]* 0x8257BB20  xam_BB20_sp                                              spatial score=74/86 class='xam'
+  [P7   ]* 0x8257BB40  xam_BB40_sp                                              spatial score=73/85 class='xam'
+  [P7   ]* 0x8257BB60  xam_BB60_sp                                              spatial score=73/85 class='xam'
+  [P7   ]* 0x8257BB80  xam_BB80_sp                                              spatial score=72/84 class='xam'
+  [P7   ]* 0x8257BBA0  xam_BBA0_sp                                              spatial score=71/83 class='xam'
+  [P7   ]* 0x8257BBC0  xam_BBC0_sp                                              spatial score=70/82 class='xam'
+  [P7   ]* 0x8257BC00  xam_BC00_sp                                              spatial score=69/81 class='xam'
+  [P7   ]* 0x8257BC20  xam_BC20_sp                                              spatial score=68/80 class='xam'
+  [P7   ]* 0x8257BC40  xam_BC40_sp                                              spatial score=68/80 class='xam'
+  [P7   ]* 0x8257BCB8  xam_BCB8_sp                                              spatial score=65/78 class='xam'
+  [P7   ]* 0x8257BCE8  xam_BCE8_sp                                              spatial score=65/77 class='xam'
+  [P7   ]* 0x8257BD08  xam_BD08_sp                                              spatial score=65/77 class='xam'
+  [P7   ]* 0x8257BD28  xam_BD28_sp                                              spatial score=64/76 class='xam'
+  [P7   ]* 0x8257BD48  xam_BD48_sp                                              spatial score=63/75 class='xam'
+  [P7   ]* 0x8257BD98  xam_BD98_sp                                              spatial score=62/74 class='xam'
+  [P7   ]* 0x8257BDB8  xam_BDB8_sp                                              spatial score=60/72 class='xam'
+  [P7   ]* 0x8257BEA0  xam_BEA0_sp                                              spatial score=55/68 class='xam'
+  [P7   ]* 0x8257BEC0  xam_BEC0_sp                                              spatial score=55/68 class='xam'
+  [P7   ]* 0x8257BEE0  xam_BEE0_sp                                              spatial score=55/67 class='xam'
+  [P7   ]* 0x8257BFC0  xam_BFC0_sp                                              spatial score=50/62 class='xam'
+  [P7   ]* 0x8257BFE0  xam_BFE0_sp                                              spatial score=50/62 class='xam'
+  [P7   ]* 0x8257C000  xam_C000_sp                                              spatial score=49/61 class='xam'
+  [P7   ]* 0x8257C020  xam_C020_sp                                              spatial score=48/60 class='xam'
+  [P7   ]* 0x8257C040  xam_C040_sp                                              spatial score=48/60 class='xam'
+  [P7   ]* 0x8257C060  xam_C060_sp                                              spatial score=47/59 class='xam'
+  [P7   ]* 0x8257C080  xam_C080_sp                                              spatial score=43/56 class='xam'
+  [P7   ]* 0x8257C0A0  xam_C0A0_sp                                              spatial score=43/56 class='xam'
+  [P7   ]* 0x8257C0C0  xam_C0C0_sp                                              spatial score=43/56 class='xam'
+  [P7   ]* 0x8257C0E0  xam_C0E0_sp                                              spatial score=43/55 class='xam'
+  [P7   ]* 0x8257C100  xam_C100_sp                                              spatial score=43/55 class='xam'
+  [P7   ]* 0x8257C120  xam_C120_sp                                              spatial score=42/54 class='xam'
+  [P7   ]* 0x8257C140  xam_C140_sp                                              spatial score=41/53 class='xam'
+  [P7   ]* 0x8257C160  xam_C160_sp                                              spatial score=41/53 class='xam'
+  [P7   ]* 0x8257C180  xam_C180_sp                                              spatial score=40/52 class='xam'
+  [P7   ]* 0x8257C1A0  xam_C1A0_sp                                              spatial score=39/51 class='xam'
+  [P7   ]* 0x8257C1E0  xam_C1E0_sp                                              spatial score=36/48 class='xam'
+  [P7   ]* 0x8257C200  xam_C200_sp                                              spatial score=35/47 class='xam'
+  [P7   ]* 0x8257C220  xam_C220_sp                                              spatial score=34/46 class='xam'
+  [P7   ]* 0x8257C250  xam_C250_sp                                              spatial score=34/46 class='xam'
+  [P7   ]* 0x8257C270  xam_C270_sp                                              spatial score=34/46 class='xam'
+  [P7   ]* 0x8257C290  xam_C290_sp                                              spatial score=32/45 class='xam'
+  [P7   ]* 0x8257C2B0  xam_C2B0_sp                                              spatial score=32/45 class='xam'
+  [P7   ]* 0x8257C2D0  xam_C2D0_sp                                              spatial score=32/44 class='xam'
+  [P7   ]* 0x8257C2F0  xam_C2F0_sp                                              spatial score=32/44 class='xam'
+  [P7   ]* 0x8257C310  xam_C310_sp                                              spatial score=32/44 class='xam'
+  [P7   ]* 0x8257C330  xam_C330_sp                                              spatial score=29/41 class='xam'
+  [P7   ]* 0x8257C350  xam_C350_sp                                              spatial score=28/40 class='xam'
+  [P7   ]* 0x8257C370  xam_C370_sp                                              spatial score=28/40 class='xam'
+  [P7   ]* 0x8257C390  xam_C390_sp                                              spatial score=25/37 class='xam'
+  [P7   ]* 0x8257C3B0  xam_C3B0_sp                                              spatial score=24/36 class='xam'
+  [P7   ]* 0x8257C3D0  xam_C3D0_sp                                              spatial score=24/36 class='xam'
+  [P7   ]* 0x8257C3F0  xam_C3F0_sp                                              spatial score=24/36 class='xam'
+  [P7   ]* 0x8257C410  xam_C410_sp                                              spatial score=20/32 class='xam'
+  [P7   ]* 0x8257C430  xam_C430_sp                                              spatial score=20/32 class='xam'
+  [P7   ]* 0x8257C450  xam_C450_sp                                              spatial score=20/32 class='xam'
+  [P7   ]* 0x8257C470  xam_C470_sp                                              spatial score=20/35 class='xam'
+  [P7   ]* 0x8257C490  xam_C490_sp                                              spatial score=16/32 class='xam'
+  [P6r  ]* 0x8257C678  audControl3d_C678_2hr                                    2-hop relaxed 'audControl3d' 1/1
+  [P7   ]* 0x8257C700  atSingleton_C700_sp                                      spatial score=23/45 class='atSingleton'
+  [P7   ]* 0x8257C720  atSingleton_C720_sp                                      spatial score=24/46 class='atSingleton'
+  [P7   ]* 0x8257C740  atSingleton_C740_sp                                      spatial score=24/43 class='atSingleton'
+  [P7   ]* 0x8257C760  atSingleton_C760_sp                                      spatial score=24/43 class='atSingleton'
+  [P7   ]* 0x8257C780  atSingleton_C780_sp                                      spatial score=25/44 class='atSingleton'
+  [P7   ]* 0x8257C7A0  atSingleton_C7A0_sp                                      spatial score=25/43 class='atSingleton'
+  [P7   ]* 0x8257C7C0  atSingleton_C7C0_sp                                      spatial score=25/41 class='atSingleton'
+  [P7   ]* 0x8257C7E0  atSingleton_C7E0_sp                                      spatial score=26/42 class='atSingleton'
+  [P7   ]* 0x8257C800  atSingleton_C800_sp                                      spatial score=26/42 class='atSingleton'
+  [P7   ]* 0x8257C820  atSingleton_C820_sp                                      spatial score=26/39 class='atSingleton'
+  [P7   ]* 0x8257C840  atSingleton_C840_sp                                      spatial score=26/39 class='atSingleton'
+  [P7   ]* 0x8257C860  atSingleton_C860_sp                                      spatial score=26/39 class='atSingleton'
+  [P7   ]* 0x8257C880  atSingleton_C880_sp                                      spatial score=28/37 class='atSingleton'
+  [P7   ]* 0x8257C8A0  atSingleton_C8A0_sp                                      spatial score=28/37 class='atSingleton'
+  [P7   ]* 0x8257C8C0  atSingleton_C8C0_sp                                      spatial score=29/38 class='atSingleton'
+  [P7   ]* 0x8257C8E0  atSingleton_C8E0_sp                                      spatial score=30/39 class='atSingleton'
+  [P7   ]* 0x8257C900  atSingleton_C900_sp                                      spatial score=30/39 class='atSingleton'
+  [P7   ]* 0x8257C920  atSingleton_C920_sp                                      spatial score=31/40 class='atSingleton'
+  [P7   ]* 0x8257C940  atSingleton_C940_sp                                      spatial score=31/40 class='atSingleton'
+  [P7   ]* 0x8257C958  atSingleton_C958_sp                                      spatial score=31/40 class='atSingleton'
+  [P7   ]* 0x8257C978  atSingleton_C978_sp                                      spatial score=32/41 class='atSingleton'
+  [P7   ]* 0x8257C998  atSingleton_C998_sp                                      spatial score=32/41 class='atSingleton'
+  [P7   ]* 0x8257C9B8  atSingleton_C9B8_sp                                      spatial score=32/41 class='atSingleton'
+  [P7   ]* 0x8257C9D8  atSingleton_C9D8_sp                                      spatial score=33/42 class='atSingleton'
+  [P7   ]* 0x8257CAA8  atSingleton_CAA8_sp                                      spatial score=38/46 class='atSingleton'
+  [P7   ]* 0x8257CAC8  atSingleton_CAC8_sp                                      spatial score=39/47 class='atSingleton'
+  [P7   ]* 0x8257CAE8  atSingleton_CAE8_sp                                      spatial score=40/48 class='atSingleton'
+  [P7   ]* 0x8257CCE8  atSingleton_CCE8_sp                                      spatial score=48/55 class='atSingleton'
+  [P7   ]* 0x8257CD38  atSingleton_CD38_sp                                      spatial score=49/56 class='atSingleton'
+  [P7   ]* 0x8257CD58  atSingleton_CD58_sp                                      spatial score=49/56 class='atSingleton'
+  [P7   ]* 0x8257CD78  atSingleton_CD78_sp                                      spatial score=53/60 class='atSingleton'
+  [P7   ]* 0x8257CD98  atSingleton_CD98_sp                                      spatial score=53/60 class='atSingleton'
+  [P7   ]* 0x8257CDB8  atSingleton_CDB8_sp                                      spatial score=53/60 class='atSingleton'
+  [P7   ]* 0x8257CDD8  atSingleton_CDD8_sp                                      spatial score=54/61 class='atSingleton'
+  [P7   ]* 0x8257CDF8  atSingleton_CDF8_sp                                      spatial score=54/61 class='atSingleton'
+  [P7   ]* 0x8257CE18  atSingleton_CE18_sp                                      spatial score=55/62 class='atSingleton'
+  [P7   ]* 0x8257CE38  atSingleton_CE38_sp                                      spatial score=55/62 class='atSingleton'
+  [P7   ]* 0x8257CE58  atSingleton_CE58_sp                                      spatial score=55/62 class='atSingleton'
+  [P7   ]* 0x8257CE78  atSingleton_CE78_sp                                      spatial score=56/62 class='atSingleton'
+  [P7   ]* 0x8257CE98  atSingleton_CE98_sp                                      spatial score=57/63 class='atSingleton'
+  [P7   ]* 0x8257CEB8  atSingleton_CEB8_sp                                      spatial score=57/63 class='atSingleton'
+  [P7   ]* 0x8257CED8  atSingleton_CED8_sp                                      spatial score=59/65 class='atSingleton'
+  [P7   ]* 0x8257CEF8  atSingleton_CEF8_sp                                      spatial score=59/65 class='atSingleton'
+  [P7   ]* 0x8257CF18  atSingleton_CF18_sp                                      spatial score=60/66 class='atSingleton'
+  [P7   ]* 0x8257CF38  atSingleton_CF38_sp                                      spatial score=60/66 class='atSingleton'
+  [P7   ]* 0x8257CF58  atSingleton_CF58_sp                                      spatial score=60/66 class='atSingleton'
+  [P7   ]* 0x8257CF78  atSingleton_CF78_sp                                      spatial score=62/68 class='atSingleton'
+  [P7   ]* 0x8257CF98  atSingleton_CF98_sp                                      spatial score=62/68 class='atSingleton'
+  [P7   ]* 0x8257CFB8  atSingleton_CFB8_sp                                      spatial score=62/68 class='atSingleton'
+  [P7   ]* 0x8257CFD8  atSingleton_CFD8_sp                                      spatial score=63/69 class='atSingleton'
+  [P7   ]* 0x8257CFF8  atSingleton_CFF8_sp                                      spatial score=63/69 class='atSingleton'
+  [P7   ]* 0x8257D018  atSingleton_D018_sp                                      spatial score=64/70 class='atSingleton'
+  [P7   ]* 0x8257D038  atSingleton_D038_sp                                      spatial score=64/70 class='atSingleton'
+  [P7   ]* 0x8257D058  atSingleton_D058_sp                                      spatial score=64/70 class='atSingleton'
+  [P7   ]* 0x8257D078  atSingleton_D078_sp                                      spatial score=65/70 class='atSingleton'
+  [P7   ]* 0x8257D098  atSingleton_D098_sp                                      spatial score=66/71 class='atSingleton'
+  [P7   ]* 0x8257D0B8  atSingleton_D0B8_sp                                      spatial score=66/74 class='atSingleton'
+  [P7   ]* 0x8257D0D8  atSingleton_D0D8_sp                                      spatial score=68/76 class='atSingleton'
+  [P7   ]* 0x8257D0F8  atSingleton_D0F8_sp                                      spatial score=68/76 class='atSingleton'
+  [P7   ]* 0x8257D118  atSingleton_D118_sp                                      spatial score=69/77 class='atSingleton'
+  [P7   ]* 0x8257D138  atSingleton_D138_sp                                      spatial score=69/77 class='atSingleton'
+  [P7   ]* 0x8257D158  atSingleton_D158_sp                                      spatial score=69/77 class='atSingleton'
+  [P7   ]* 0x8257D178  atSingleton_D178_sp                                      spatial score=71/79 class='atSingleton'
+  [P7   ]* 0x8257D198  atSingleton_D198_sp                                      spatial score=71/79 class='atSingleton'
+  [P7   ]* 0x8257D1B8  atSingleton_D1B8_sp                                      spatial score=71/79 class='atSingleton'
+  [P7   ]* 0x8257D1D8  atSingleton_D1D8_sp                                      spatial score=72/80 class='atSingleton'
+  [P7   ]* 0x8257D1F8  atSingleton_D1F8_sp                                      spatial score=72/80 class='atSingleton'
+  [P7   ]* 0x8257D218  atSingleton_D218_sp                                      spatial score=73/81 class='atSingleton'
+  [P7   ]* 0x8257D238  atSingleton_D238_sp                                      spatial score=73/81 class='atSingleton'
+  [P7   ]* 0x8257D258  atSingleton_D258_sp                                      spatial score=73/81 class='atSingleton'
+  [P7   ]* 0x8257D2B8  atSingleton_D2B8_sp                                      spatial score=75/83 class='atSingleton'
+  [P7   ]* 0x8257D340  atSingleton_D340_sp                                      spatial score=78/86 class='atSingleton'
+  [P7   ]* 0x8257D420  atSingleton_D420_sp                                      spatial score=82/93 class='atSingleton'
+  [P7   ]* 0x8257D440  atSingleton_D440_sp                                      spatial score=82/93 class='atSingleton'
+  [P5r  ]* 0x8257D460  atSingleton_D460_p                                       fn-ptr single signal 'atSingleton'
+  [P5r  ]* 0x8257D4B8  atSingleton_D4B8_p                                       fn-ptr single signal 'atSingleton'
+  [P5r  ]* 0x8257D510  atSingleton_D510_p                                       fn-ptr single signal 'atSingleton'
+  [P5r  ]* 0x8257D568  atSingleton_D568_p                                       fn-ptr single signal 'atSingleton'
+  [P5r  ]* 0x8257D5C0  atSingleton_D5C0_p                                       fn-ptr single signal 'atSingleton'
+  [P7   ]* 0x8257D618  atSingleton_D618_sp                                      spatial score=86/98 class='atSingleton'
+  [P7   ]* 0x8257D638  atSingleton_D638_sp                                      spatial score=86/98 class='atSingleton'
+  [P7   ]* 0x8257D658  atSingleton_D658_sp                                      spatial score=86/98 class='atSingleton'
+  [P5r  ]* 0x8257D678  atSingleton_D678_p                                       fn-ptr single signal 'atSingleton'
+  [P5r  ]* 0x8257D6D0  atSingleton_D6D0_p                                       fn-ptr single signal 'atSingleton'
+  [P7   ]* 0x8257D758  atSingleton_D758_sp                                      spatial score=83/96 class='atSingleton'
+  [P7   ]* 0x8257D778  atSingleton_D778_sp                                      spatial score=83/96 class='atSingleton'
+  [P7   ]* 0x8257D798  atSingleton_D798_sp                                      spatial score=83/96 class='atSingleton'
+  [P7   ]* 0x8257D7B8  atSingleton_D7B8_sp                                      spatial score=83/96 class='atSingleton'
+  [P7   ]* 0x8257D7D8  atSingleton_D7D8_sp                                      spatial score=82/95 class='atSingleton'
+  [P7   ]* 0x8257D7F8  atSingleton_D7F8_sp                                      spatial score=82/95 class='atSingleton'
+  [P7   ]* 0x8257D8C8  atSingleton_D8C8_sp                                      spatial score=80/95 class='atSingleton'
+  [P7   ]* 0x8257D8E8  atSingleton_D8E8_sp                                      spatial score=79/94 class='atSingleton'
+  [P5r  ]* 0x8257DA00  atSingleton_DA00_p                                       fn-ptr single signal 'atSingleton'
+  [P7   ]* 0x8257DA98  atSingleton_DA98_sp                                      spatial score=75/92 class='atSingleton'
+  [P7   ]* 0x8257DAB8  atSingleton_DAB8_sp                                      spatial score=74/92 class='atSingleton'
+  [P7   ]* 0x8257DAD8  atSingleton_DAD8_sp                                      spatial score=73/91 class='atSingleton'
+  [P7   ]* 0x8257DAF8  atSingleton_DAF8_sp                                      spatial score=73/91 class='atSingleton'
+  [P7   ]* 0x8257DB18  atSingleton_DB18_sp                                      spatial score=72/90 class='atSingleton'
+  [P7   ]* 0x8257DB38  atSingleton_DB38_sp                                      spatial score=72/90 class='atSingleton'
+  [P7   ]* 0x8257DB58  atSingleton_DB58_sp                                      spatial score=72/91 class='atSingleton'
+  [P7   ]* 0x8257DB68  atSingleton_DB68_sp                                      spatial score=72/91 class='atSingleton'
+  [P7   ]* 0x8257DB88  atSingleton_DB88_sp                                      spatial score=72/91 class='atSingleton'
+  [P7   ]* 0x8257DBB0  atSingleton_DBB0_sp                                      spatial score=72/91 class='atSingleton'
+  [P7   ]* 0x8257DBD8  atSingleton_DBD8_sp                                      spatial score=71/90 class='atSingleton'
+  [P7   ]* 0x8257DBF8  atSingleton_DBF8_sp                                      spatial score=71/90 class='atSingleton'
+  [P7   ]* 0x8257DC18  atSingleton_DC18_sp                                      spatial score=70/90 class='atSingleton'
+  [P7   ]* 0x8257DC38  atSingleton_DC38_sp                                      spatial score=70/90 class='atSingleton'
+  [P7   ]* 0x8257DC58  atSingleton_DC58_sp                                      spatial score=70/90 class='atSingleton'
+  [P7   ]* 0x8257DC88  atSingleton_DC88_sp                                      spatial score=68/88 class='atSingleton'
+  [P7   ]* 0x8257DCA8  atSingleton_DCA8_sp                                      spatial score=68/88 class='atSingleton'
+  [P7   ]* 0x8257DCC8  atSingleton_DCC8_sp                                      spatial score=67/88 class='atSingleton'
+  [P7   ]* 0x8257DCF8  atSingleton_DCF8_sp                                      spatial score=66/87 class='atSingleton'
+  [P4f  ]* 0x8257DD60  atSingleton_DD60                                         BFS 2.1/2.1 'atSingleton'
+  [P6r  ]* 0x8257E0B0  phDemoWorld_E0B0_2hr                                     2-hop relaxed 'phDemoWorld' 1/1
+  [P6   ]* 0x8257E400  phDemoWorld_E400_2h                                      2-hop 'phDemoWorld' 2/2
+  [P6   ]* 0x8257E750  phDemoWorld_E750_2h                                      2-hop 'phDemoWorld' 3/5
+  [P7   ]* 0x8257EAA0  pongNetMessageHolder_EAA0_sp                             spatial score=35/61 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EAC0  pongNetMessageHolder_EAC0_sp                             spatial score=36/61 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EAD8  pongNetMessageHolder_EAD8_sp                             spatial score=37/62 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EB00  pongNetMessageHolder_EB00_sp                             spatial score=38/63 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EB20  pongNetMessageHolder_EB20_sp                             spatial score=41/66 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EB40  pongNetMessageHolder_EB40_sp                             spatial score=42/67 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EB60  pongNetMessageHolder_EB60_sp                             spatial score=43/66 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EC48  pongNetMessageHolder_EC48_sp                             spatial score=52/74 class='pongNetMessageHolder'
+  [P7   ]* 0x8257ECC0  pongNetMessageHolder_ECC0_sp                             spatial score=58/79 class='pongNetMessageHolder'
+  [P7   ]* 0x8257ED70  pongNetMessageHolder_ED70_sp                             spatial score=68/85 class='pongNetMessageHolder'
+  [P7   ]* 0x8257ED90  pongNetMessageHolder_ED90_sp                             spatial score=69/86 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EDB0  pongNetMessageHolder_EDB0_sp                             spatial score=70/87 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EDD0  pongNetMessageHolder_EDD0_sp                             spatial score=71/88 class='pongNetMessageHolder'
+  [P7   ]* 0x8257EE08  pongNetMessageHolder_EE08_sp                             spatial score=75/91 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F048  pongNetMessageHolder_F048_sp                             spatial score=109/122 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F068  pongNetMessageHolder_F068_sp                             spatial score=111/124 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F098  pongNetMessageHolder_F098_sp                             spatial score=113/126 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F0D8  pongNetMessageHolder_F0D8_sp                             spatial score=118/128 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F0F8  pongNetMessageHolder_F0F8_sp                             spatial score=120/130 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F118  pongNetMessageHolder_F118_sp                             spatial score=121/131 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F138  pongNetMessageHolder_F138_sp                             spatial score=125/135 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F158  pongNetMessageHolder_F158_sp                             spatial score=127/136 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F178  pongNetMessageHolder_F178_sp                             spatial score=129/138 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F198  pongNetMessageHolder_F198_sp                             spatial score=130/139 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F1B8  pongNetMessageHolder_F1B8_sp                             spatial score=134/143 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F1D8  pongNetMessageHolder_F1D8_sp                             spatial score=136/145 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F1F8  pongNetMessageHolder_F1F8_sp                             spatial score=137/146 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F218  pongNetMessageHolder_F218_sp                             spatial score=138/146 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F238  pongNetMessageHolder_F238_sp                             spatial score=142/150 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F258  pongNetMessageHolder_F258_sp                             spatial score=144/152 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F278  pongNetMessageHolder_F278_sp                             spatial score=146/154 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F298  pongNetMessageHolder_F298_sp                             spatial score=149/157 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F2B8  pongNetMessageHolder_F2B8_sp                             spatial score=151/159 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F2D8  pongNetMessageHolder_F2D8_sp                             spatial score=153/161 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F340  pongNetMessageHolder_F340_sp                             spatial score=162/170 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F360  pongNetMessageHolder_F360_sp                             spatial score=164/171 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F380  pongNetMessageHolder_F380_sp                             spatial score=165/172 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F3A0  pongNetMessageHolder_F3A0_sp                             spatial score=169/176 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F3C0  pongNetMessageHolder_F3C0_sp                             spatial score=171/178 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F428  pongNetMessageHolder_F428_sp                             spatial score=179/183 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F458  pongNetMessageHolder_F458_sp                             spatial score=182/186 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F478  pongNetMessageHolder_F478_sp                             spatial score=186/190 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F498  pongNetMessageHolder_F498_sp                             spatial score=188/192 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F4C8  pongNetMessageHolder_F4C8_sp                             spatial score=192/196 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F4E8  pongNetMessageHolder_F4E8_sp                             spatial score=194/198 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F508  pongNetMessageHolder_F508_sp                             spatial score=195/199 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F528  pongNetMessageHolder_F528_sp                             spatial score=197/201 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F548  pongNetMessageHolder_F548_sp                             spatial score=199/203 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F568  pongNetMessageHolder_F568_sp                             spatial score=201/204 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F588  pongNetMessageHolder_F588_sp                             spatial score=202/205 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F5A8  pongNetMessageHolder_F5A8_sp                             spatial score=204/207 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F5C8  pongNetMessageHolder_F5C8_sp                             spatial score=206/209 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F5E8  pongNetMessageHolder_F5E8_sp                             spatial score=211/214 class='pongNetMessageHolder'
+  [P7   ]* 0x8257F608  pongNetMessageHolder_F608_sp                             spatial score=213/216 class='pongNetMessageHolder'
+  [P5r  ]* 0x8257F668  pongNetMessageHolder_F668_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257F6E0  pongNetMessageHolder_F6E0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257F758  pongNetMessageHolder_F758_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257F7D0  pongNetMessageHolder_F7D0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257F848  pongNetMessageHolder_F848_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257F8C0  pongNetMessageHolder_F8C0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257F938  pongNetMessageHolder_F938_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257F9B0  pongNetMessageHolder_F9B0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FA28  pongNetMessageHolder_FA28_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FAA0  pongNetMessageHolder_FAA0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FB18  pongNetMessageHolder_FB18_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FB90  pongNetMessageHolder_FB90_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FC08  pongNetMessageHolder_FC08_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FC80  pongNetMessageHolder_FC80_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FCF8  pongNetMessageHolder_FCF8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FD70  pongNetMessageHolder_FD70_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FDE8  pongNetMessageHolder_FDE8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FE60  pongNetMessageHolder_FE60_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FED8  pongNetMessageHolder_FED8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FF50  pongNetMessageHolder_FF50_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x8257FFC8  pongNetMessageHolder_FFC8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580040  pongNetMessageHolder_0040_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825800B8  pongNetMessageHolder_00B8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580130  pongNetMessageHolder_0130_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825801A8  pongNetMessageHolder_01A8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580220  pongNetMessageHolder_0220_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580298  pongNetMessageHolder_0298_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580310  pongNetMessageHolder_0310_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580388  pongNetMessageHolder_0388_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580400  pongNetMessageHolder_0400_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580478  pongNetMessageHolder_0478_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825805E0  pongNetMessageHolder_05E0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580658  pongNetMessageHolder_0658_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825806D0  pongNetMessageHolder_06D0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580748  pongNetMessageHolder_0748_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825807C0  pongNetMessageHolder_07C0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580838  pongNetMessageHolder_0838_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825808B0  pongNetMessageHolder_08B0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580928  pongNetMessageHolder_0928_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825809A0  pongNetMessageHolder_09A0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580A18  pongNetMessageHolder_0A18_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580A90  pongNetMessageHolder_0A90_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580B08  pongNetMessageHolder_0B08_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580C70  pongNetMessageHolder_0C70_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580CE8  pongNetMessageHolder_0CE8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580D60  pongNetMessageHolder_0D60_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580DD8  pongNetMessageHolder_0DD8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580E50  pongNetMessageHolder_0E50_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580EC8  pongNetMessageHolder_0EC8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580F40  pongNetMessageHolder_0F40_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82580FB8  pongNetMessageHolder_0FB8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581030  pongNetMessageHolder_1030_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825810A8  pongNetMessageHolder_10A8_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581120  pongNetMessageHolder_1120_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581198  pongNetMessageHolder_1198_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581210  pongNetMessageHolder_1210_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581288  pongNetMessageHolder_1288_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581300  pongNetMessageHolder_1300_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581378  pongNetMessageHolder_1378_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825813F0  pongNetMessageHolder_13F0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581468  pongNetMessageHolder_1468_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825814E0  pongNetMessageHolder_14E0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581558  pongNetMessageHolder_1558_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x825815D0  pongNetMessageHolder_15D0_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P5r  ]* 0x82581648  pongNetMessageHolder_1648_p                              fn-ptr single signal 'pongNetMessageHolder'
+  [P7   ]* 0x82581860  pongNetMessageHolder_1860_sp                             spatial score=174/174 class='pongNetMessageHolder'
+  [P7   ]* 0x82581878  pongNetMessageHolder_1878_sp                             spatial score=172/172 class='pongNetMessageHolder'
+  [P7   ]* 0x82581898  pongNetMessageHolder_1898_sp                             spatial score=170/170 class='pongNetMessageHolder'
+  [P7   ]* 0x825818B8  pongNetMessageHolder_18B8_sp                             spatial score=166/166 class='pongNetMessageHolder'
+  [P7   ]* 0x825834C8  pongNetMessageHolder_34C8_sp                             spatial score=23/23 class='pongNetMessageHolder'
+  [P7   ]* 0x825834E8  pongNetMessageHolder_34E8_sp                             spatial score=26/26 class='pongNetMessageHolder'
+  [P7   ]* 0x82583508  pongNetMessageHolder_3508_sp                             spatial score=27/27 class='pongNetMessageHolder'
+  [P7   ]* 0x82583528  pongNetMessageHolder_3528_sp                             spatial score=27/27 class='pongNetMessageHolder'
+  [P7   ]* 0x825836C0  pongNetMessageHolder_36C0_sp                             spatial score=48/48 class='pongNetMessageHolder'
+  [P6r  ]* 0x82585CA8  RtlInitializeCriticalSection_5CA8_2hr                    2-hop relaxed 'RtlInitializeCriticalSection' 1/1
+  [P6r  ]* 0x82585CC0  RtlInitializeCriticalSection_5CC0_2hr                    2-hop relaxed 'RtlInitializeCriticalSection' 1/1
+  [P6r  ]* 0x82585CD8  RtlInitializeCriticalSection_5CD8_2hr                    2-hop relaxed 'RtlInitializeCriticalSection' 1/1

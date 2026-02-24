@@ -1,0 +1,1718 @@
+{
+  "pongPlayer": [
+    {
+      "method": "Activate",
+      "string": "pongPlayer::Activate() - creature already activated",
+      "field_hints": [
+        {
+          "field": "m_pCreature",
+          "type": "ptr",
+          "evidence": "pongPlayer::Activate() - creature already activated"
+        }
+      ]
+    },
+    {
+      "method": "Draw",
+      "string": "pongPlayer::Draw() - player is not active",
+      "field_hints": [
+        {
+          "field": "m_bActive",
+          "type": "bool",
+          "evidence": "pongPlayer::Draw() - player is not active"
+        }
+      ]
+    },
+    {
+      "method": "Render",
+      "string": "pongPlayer::Render() - player[%d] is not active",
+      "field_hints": [
+        {
+          "field": "m_bActive",
+          "type": "bool",
+          "evidence": "pongPlayer::Render() - player[%d] is not active"
+        },
+        {
+          "field": "m_playerIndex",
+          "type": "int",
+          "evidence": "pongPlayer::Render() - player[%d] is not active"
+        }
+      ]
+    },
+    {
+      "method": "Process",
+      "string": "pongPlayer::Process() - player is not active",
+      "field_hints": [
+        {
+          "field": "m_bActive",
+          "type": "bool",
+          "evidence": "pongPlayer::Process() - player is not active"
+        }
+      ]
+    },
+    {
+      "method": "Teleport",
+      "string": "pongPlayer::Teleport() - teleporting player[%d] to [%f,%f,%f]",
+      "field_hints": [
+        {
+          "field": "m_playerIndex",
+          "type": "int",
+          "evidence": "pongPlayer::Teleport() - teleporting player[%d] to [%f,%f,%f]"
+        },
+        {
+          "field": "m_position",
+          "type": "Vector3",
+          "evidence": "pongPlayer::Teleport() - teleporting player[%d] to [%f,%f,%f]"
+        }
+      ]
+    },
+    {
+      "method": "StartSwing",
+      "string": "pongPlayer::StartSwing() %s",
+      "field_hints": []
+    },
+    {
+      "method": "Deactivate",
+      "string": "pongPlayer::Deactivate() - SetLocalRemoteStatus()",
+      "field_hints": []
+    },
+    {
+      "method": "Deactivate",
+      "string": "pongPlayer::Deactivate() - UnRegisterMessages()",
+      "field_hints": []
+    },
+    {
+      "method": "Deactivate",
+      "string": "pongPlayer::Deactivate() - StopClothThreads()",
+      "field_hints": []
+    },
+    {
+      "method": "Deactivate",
+      "string": "pongPlayer::Deactivate() - RemoveCreatureFromLevel()",
+      "field_hints": []
+    },
+    {
+      "method": "Activate",
+      "string": "pongPlayer::Activate() - creature already deactivated",
+      "field_hints": [
+        {
+          "field": "m_pCreature",
+          "type": "ptr",
+          "evidence": "pongPlayer::Activate() - creature already deactivated"
+        }
+      ]
+    },
+    {
+      "method": "PostUpdate",
+      "string": "pongPlayer::PostUpdate() - player is not active",
+      "field_hints": [
+        {
+          "field": "m_bActive",
+          "type": "bool",
+          "evidence": "pongPlayer::PostUpdate() - player is not active"
+        }
+      ]
+    },
+    {
+      "method": "Update2",
+      "string": "pongPlayer::Update2() - player is not active",
+      "field_hints": [
+        {
+          "field": "m_bActive",
+          "type": "bool",
+          "evidence": "pongPlayer::Update2() - player is not active"
+        }
+      ]
+    },
+    {
+      "method": "UpdateReplay",
+      "string": "pongPlayer::UpdateReplay() - player is not active",
+      "field_hints": [
+        {
+          "field": "m_bActive",
+          "type": "bool",
+          "evidence": "pongPlayer::UpdateReplay() - player is not active"
+        }
+      ]
+    },
+    {
+      "method": "FinalizeServe",
+      "string": "pongPlayer::FinalizeServe() %s",
+      "field_hints": []
+    },
+    {
+      "method": "FinalizeSwing",
+      "string": "pongPlayer::FinalizeSwing() %s",
+      "field_hints": []
+    }
+  ],
+  "pongMover": [
+    {
+      "method": "CalcInitMatrix",
+      "string": "pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]",
+      "field_hints": [
+        {
+          "field": "m_position",
+          "type": "Vector3",
+          "evidence": "pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]"
+        },
+        {
+          "field": "m_restMatrix",
+          "type": "Matrix34",
+          "evidence": "pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]"
+        },
+        {
+          "field": "m_remoteRestMatrix",
+          "type": "Matrix34",
+          "evidence": "pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]"
+        }
+      ]
+    }
+  ],
+  "pongCreature": [
+    {
+      "method": "Teleport",
+      "string": "pongCreature::Teleport() - teleporting player[%d] to [%f,%f,%f]",
+      "field_hints": [
+        {
+          "field": "m_playerIndex",
+          "type": "int",
+          "evidence": "pongCreature::Teleport() - teleporting player[%d] to [%f,%f,%f]"
+        },
+        {
+          "field": "m_position",
+          "type": "Vector3",
+          "evidence": "pongCreature::Teleport() - teleporting player[%d] to [%f,%f,%f]"
+        }
+      ]
+    },
+    {
+      "method": "Activate",
+      "string": "pongCreature::Activate() - already activated",
+      "field_hints": [
+        {
+          "field": "m_pCreature",
+          "type": "ptr",
+          "evidence": "pongCreature::Activate() - already activated"
+        }
+      ]
+    },
+    {
+      "method": "Draw",
+      "string": "pongCreature::Draw() - creature is not active",
+      "field_hints": [
+        {
+          "field": "m_pCreature",
+          "type": "ptr",
+          "evidence": "pongCreature::Draw() - creature is not active"
+        }
+      ]
+    },
+    {
+      "method": "StartEmote",
+      "string": "pongCreature::StartEmote() - '%s' playing '%s' anim at (%.2f, %.2f, %.2f)",
+      "field_hints": []
+    },
+    {
+      "method": "StartEmote",
+      "string": "pongCreature::StartEmote() - trying to play nonexistent anim '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "StartEmote",
+      "string": "pongCreature::StartEmote() - specify an animation before starting to play",
+      "field_hints": []
+    }
+  ],
+  "pongLiveManager": [
+    {
+      "method": "GetAvailablePeerIndex",
+      "string": "pongLiveManager::GetAvailablePeerIndex() Out of peer indexes!!!",
+      "field_hints": [
+        {
+          "field": "m_peerSlots",
+          "type": "array",
+          "evidence": "pongLiveManager::GetAvailablePeerIndex() Out of peer indexes!!!"
+        }
+      ]
+    },
+    {
+      "method": "SetSpectatorSlot",
+      "string": "pongLiveManager::SetSpectatorSlot - spectator slot %d out of range",
+      "field_hints": [
+        {
+          "field": "m_spectatorSlots",
+          "type": "array",
+          "evidence": "pongLiveManager::SetSpectatorSlot - spectator slot %d out of range"
+        }
+      ]
+    },
+    {
+      "method": "GetAvailableSpectatorIndex",
+      "string": "pongLiveManager::GetAvailableSpectatorIndex() Out of peer indexes!!!",
+      "field_hints": [
+        {
+          "field": "m_peerSlots",
+          "type": "array",
+          "evidence": "pongLiveManager::GetAvailableSpectatorIndex() Out of peer indexes!!!"
+        }
+      ]
+    },
+    {
+      "method": "EndSession",
+      "string": "pongLiveManager::EndSession() called..",
+      "field_hints": []
+    },
+    {
+      "method": "EndSession",
+      "string": "pongLiveManager::EndSession() -- user is offline, can't end or write stats",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler -- EXHIBITION STATS!",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - Working on gamer: %s row: %d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - valid row - weekly losses=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - invalid row - weekly losses=0",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - valid row - yearly losses=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - invalid row - yearly losses=0",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - valid row - yearly wins=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - invalid row - yearly wins=0",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - valid row - weekly wins=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - invalid row - weekly wins=0",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler -- TOURNAMENT STATS!",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - Working on Gamer: %s",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 8pWeekWins=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 8pYearWins=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 4pWeekWins=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 4pYearWins=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d WeekLosses=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d YearLosses=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - Saving Totals for Gamer:%s wk_win=%d yr_win=%d wk_loss=%d yr_loss=%d",
+      "field_hints": []
+    },
+    {
+      "method": "StatsReaderNotifyHandler",
+      "string": "pongLiveManager::StatsReaderNotifyHandler - Stats read complete",
+      "field_hints": []
+    }
+  ],
+  "pongDrawBucketManager": [
+    {
+      "method": "AddEntry",
+      "string": "pongDrawBucketManager::AddEntry - failed, draw bucket full",
+      "field_hints": [
+        {
+          "field": "m_buckets",
+          "type": "array",
+          "evidence": "pongDrawBucketManager::AddEntry - failed, draw bucket full"
+        }
+      ]
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucketManager::Load() - cannot load draw bucket config file '%s.%s'",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucketManager::Load() - cannot have more than %d draw buckets!",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucketManager::Load() - cannot have %d draw buckets!",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucketManager::Load() - invalid default bucket: %d",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucketManager::Load() - cannot have more than %d entries in bucket '%s'!",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucketManager::Load() - cannot have %d entries in draw bucket '%s'!",
+      "field_hints": []
+    }
+  ],
+  "phSimulator": [
+    {
+      "method": "FindWeakestInst",
+      "string": "phSimulator::FindWeakestInst(): Maximum number of breakable components %d exceeded: %d",
+      "field_hints": [
+        {
+          "field": "m_maxBreakableComponents",
+          "type": "int",
+          "evidence": "phSimulator::FindWeakestInst(): Maximum number of breakable components %d exceeded: %d"
+        }
+      ]
+    }
+  ],
+  "fiDevice": [
+    {
+      "method": "Mount",
+      "string": "fiDevice::Mount - mount name must end in a slash",
+      "field_hints": [
+        {
+          "field": "m_mountName",
+          "type": "const char*",
+          "evidence": "fiDevice::Mount - mount name must end in a slash"
+        }
+      ]
+    },
+    {
+      "method": "GetDevice",
+      "string": "fiDevice::GetDevice - Filename '%s' not in mount list, no default device",
+      "field_hints": []
+    }
+  ],
+  "pongBallInstance": [
+    {
+      "method": "ActivateBall",
+      "string": "pongBallInstance::ActivateBall() - ball already active",
+      "field_hints": []
+    }
+  ],
+  "pongCameraMgr": [
+    {
+      "method": "ChangeCamera",
+      "string": "pongCameraMgr::ChangeCamera - no camera set",
+      "field_hints": []
+    }
+  ],
+  "gmLogicSinglesMatch": [
+    {
+      "method": "MidGame",
+      "string": "gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d",
+      "field_hints": [
+        {
+          "field": "m_PointsPerGame",
+          "type": "enum",
+          "enum_name": "PointsPerGame",
+          "evidence": "gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d"
+        }
+      ]
+    }
+  ],
+  "phBoundBox": [
+    {
+      "method": "FindImpactsToBox",
+      "string": "phBoundBox::FindImpactsToBox() -- MAX_NUM_IMPACTS %d exceeded",
+      "field_hints": [
+        {
+          "field": "m_maxImpacts",
+          "type": "int",
+          "evidence": "phBoundBox::FindImpactsToBox() -- MAX_NUM_IMPACTS %d exceeded"
+        }
+      ]
+    }
+  ],
+  "crIKSpine": [
+    {
+      "method": "LoadConfig",
+      "string": "crIKSpine::LoadConfig - could not find root bone '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "Init",
+      "string": "crIKSpine::Init - failed to find spine bone %d",
+      "field_hints": []
+    },
+    {
+      "method": "Init",
+      "string": "crIKSpine::Init - failed to find pelvis bone",
+      "field_hints": []
+    }
+  ],
+  "crIKLimb": [
+    {
+      "method": "LoadConfig",
+      "string": "crIKLimb::LoadConfig - could not find spine bone '%s'",
+      "field_hints": []
+    }
+  ],
+  "crIKHead": [
+    {
+      "method": "LoadConfig",
+      "string": "crIKHead::LoadConfig - could not find neck bone '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "Init",
+      "string": "crIKHead::Init - failed to find head bone",
+      "field_hints": []
+    },
+    {
+      "method": "Init",
+      "string": "crIKHead::Init - failed to find neck bone %d",
+      "field_hints": []
+    },
+    {
+      "method": "Init",
+      "string": "crIKHead::Init - neck bone count < 1",
+      "field_hints": []
+    },
+    {
+      "method": "Init",
+      "string": "crIKHead::Init - failed to find spine bone",
+      "field_hints": []
+    }
+  ],
+  "gdBallPredictData": [
+    {
+      "method": "GetAngularVelocity",
+      "string": "gdBallPredictData::GetAngularVelocity - no samples",
+      "field_hints": []
+    },
+    {
+      "method": "FindNearestHittableSample",
+      "string": "gdBallPredictData::FindNearestHittableSample - Could not find a hittable samples!",
+      "field_hints": []
+    },
+    {
+      "method": "SetInitialBallAngVelocity",
+      "string": "gdBallPredictData::SetInitialBallAngVelocity() - angVelocity is bad",
+      "field_hints": []
+    }
+  ],
+  "gdCameraDef": [
+    {
+      "method": "Load",
+      "string": "gdCameraDef::Load - unknown player side '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCameraDef::PostLoadProperties--no name specified",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCameraDef::PostLoadProperties--'PickOneOf' must be less than or equal to %i\\n",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCameraDef::PostLoadProperties--'PlayerSide' attribute=%i is out of range\\n",
+      "field_hints": []
+    }
+  ],
+  "gdTrainingDrillData": [
+    {
+      "method": "Load",
+      "string": "gdTrainingDrillData::Load - aim delay must be > 0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'TotalNumTries' must be positive",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MinNumSuccesses' cannot be greater than 'TotalNumTries'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MinNumSuccesses' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MinBallSpeed' must be in [0, %f]",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MinBallSpeed' cannot be greater than 'MaxBallSpeed'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpeed' must be in [0, %f]",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' must be in [0, 1]",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' cannot be greater than 'MaxBallSpin'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpin' must be in [0, 1]",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'KickPitchOffset' cannot be greater than %d",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'KickPitchOffset' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'TableTargetSetID' is %d, but it should not be greater than %d",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'AimDelay' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'PostPointDelay' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'NumEasyShots' cannot be greater than 'TotalNumTries'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'NumEasyShots' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'ProbSameShot' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - 'ProbSameShot' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTrainingDrillData::PostLoadProperties() - '%s', (%f, %f), is outside the allowed [-1.0f, 1.0f] range",
+      "field_hints": []
+    }
+  ],
+  "pgStreamer": [
+    {
+      "method": "OpenResource",
+      "string": "pgStreamer::OpenResource - failed to open '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "Read",
+      "string": "pgStreamer::Read - command queue is full",
+      "field_hints": []
+    },
+    {
+      "method": "Read",
+      "string": "pgStreamer::Read - invalid handle",
+      "field_hints": []
+    },
+    {
+      "method": "Open",
+      "string": "pgStreamer::Open - out of handles",
+      "field_hints": []
+    },
+    {
+      "method": "Open",
+      "string": "pgStreamer::Open - unable to find device",
+      "field_hints": []
+    },
+    {
+      "method": "Close",
+      "string": "pgStreamer::Close - waiting for pending reads",
+      "field_hints": []
+    },
+    {
+      "method": "Close",
+      "string": "pgStreamer::Close - invalid handle",
+      "field_hints": []
+    },
+    {
+      "method": "Drain",
+      "string": "pgStreamer::Drain - waiting for pending operations",
+      "field_hints": []
+    }
+  ],
+  "SinglesNetworkClient": [
+    {
+      "method": "HandleBallHitMessage",
+      "string": "SinglesNetworkClient::HandleBallHitMessage - invalid ball hit data",
+      "field_hints": []
+    }
+  ],
+  "pongLadder": [
+    {
+      "method": "LoadTier",
+      "string": "pongLadder::LoadTier - unknown opponent type '%s'",
+      "field_hints": []
+    }
+  ],
+  "pongDrawBucket": [
+    {
+      "method": "AddEntry",
+      "string": "pongDrawBucket::AddEntry() -- pongDrawBucket full!",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucket::Load() - unknown sort type '%s' for bucket '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucket::Load() - unknown pre-draw callback '%s' for bucket '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "pongDrawBucket::Load() - unknown post-draw callback '%s' for bucket '%s'",
+      "field_hints": []
+    },
+    {
+      "method": "InitStatics",
+      "string": "pongDrawBucket::InitStatics() - this function should only be called once!",
+      "field_hints": []
+    },
+    {
+      "method": "AddEntry",
+      "string": "pongDrawBucket::AddEntry() - adding more than %d entries to bucket '%s'",
+      "field_hints": []
+    }
+  ],
+  "audVoiceSfx": [
+    {
+      "method": "Play",
+      "string": "audVoiceSfx::Play() - sfx ref is null",
+      "field_hints": [
+        {
+          "field": "m_sfxRef",
+          "type": "ptr",
+          "evidence": "audVoiceSfx::Play() - sfx ref is null"
+        }
+      ]
+    },
+    {
+      "method": "SetReverbVolume",
+      "string": "audVoiceSfx::SetReverbVolume - bank not resident for SFX entry (%p)",
+      "field_hints": []
+    },
+    {
+      "method": "SetEffectVolume",
+      "string": "audVoiceSfx::SetEffectVolume - bank not resident for SFX entry (%p)",
+      "field_hints": []
+    }
+  ],
+  "audVoiceStream": [
+    {
+      "method": "Play",
+      "string": "audVoiceStream::Play() - stream ref is null",
+      "field_hints": [
+        {
+          "field": "m_streamRef",
+          "type": "ptr",
+          "evidence": "audVoiceStream::Play() - stream ref is null"
+        }
+      ]
+    },
+    {
+      "method": "Prime",
+      "string": "audVoiceStream::Prime - bank not resident for audBankEntry (%p)",
+      "field_hints": []
+    },
+    {
+      "method": "PlayByEntry",
+      "string": "audVoiceStream::PlayByEntry - bank not resident for audBankEntry (%p)",
+      "field_hints": []
+    },
+    {
+      "method": "SetReverbVolume",
+      "string": "audVoiceStream::SetReverbVolume - bank not resident for stream entry (%p)",
+      "field_hints": []
+    },
+    {
+      "method": "SetEffectVolume",
+      "string": "audVoiceStream::SetEffectVolume - bank not resident for stream entry (%p)",
+      "field_hints": []
+    }
+  ],
+  "phArchetype": [
+    {
+      "method": "Load",
+      "string": "phArchetype::Load() -- .phys file %s does not exist",
+      "field_hints": []
+    }
+  ],
+  "pongBlendShapeController": [
+    {
+      "method": "UpdateBlendShape",
+      "string": "pongBlendShapeController::UpdateBlendShape() - blend function '%s' not supported",
+      "field_hints": []
+    },
+    {
+      "method": "CalcBoneValue",
+      "string": "pongBlendShapeController::CalcBoneValue() - interpolation function '%s' not supported",
+      "field_hints": []
+    },
+    {
+      "method": "CalcBoneValue",
+      "string": "pongBlendShapeController::CalcBoneValue() - average function '%s' not supported",
+      "field_hints": []
+    }
+  ],
+  "pongLookAtDriver": [
+    {
+      "method": "VirtualConstructFromPtr",
+      "string": "pongLookAtDriver::VirtualConstructFromPtr--resource fried for unimplemented pongLookAtDriver subclass rsc c-tor",
+      "field_hints": []
+    }
+  ],
+  "pcrFaceAnimBlender": [
+    {
+      "method": "StartPostPoint",
+      "string": "pcrFaceAnimBlender::StartPostPoint - body=(%s) face=(%s)",
+      "field_hints": []
+    }
+  ],
+  "pongBlendLookAtDriver": [
+    {
+      "method": "UpdateBody",
+      "string": "pongBlendLookAtDriver::UpdateBody--%i poses not supported.\\n",
+      "field_hints": []
+    },
+    {
+      "method": "UpdateFace",
+      "string": "pongBlendLookAtDriver::UpdateFace--%i poses not supported.\\n",
+      "field_hints": []
+    }
+  ],
+  "pongSkelLookAtDriver": [
+    {
+      "method": "UpdateBody",
+      "string": "pongSkelLookAtDriver::UpdateBody--bones are missing.",
+      "field_hints": []
+    }
+  ],
+  "pcrSwingBlender": [
+    {
+      "method": "UpdatePhase",
+      "string": "pcrSwingBlender::UpdatePhase--anim %s is kAnimFrozenAtEnd\\n",
+      "field_hints": []
+    }
+  ],
+  "LocomotionStateAnim": [
+    {
+      "method": "Load",
+      "string": "LocomotionStateAnim::Load - failed to load alternative anim file '%s%s",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateAnim::Load - missing base animation '%d'",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateAnim::Load - missing alt animation '%d'",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateAnim::Load - failed to load anim file '%s%s",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateAnim::Load - failed to find anim",
+      "field_hints": []
+    },
+    {
+      "method": "Update",
+      "string": "LocomotionStateAnim::Update - selecting new alternative idle animation '%s'\\n",
+      "field_hints": []
+    }
+  ],
+  "LocomotionStateMf": [
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - invalid number of clips '%d'",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - failed to load anim for clip '%d' file '%s",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - failed to create clip '%d' file '%s",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - missing registration curve",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - unknown pattern type",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - unknown direction type",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - unknown/unexpected approach direction type",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - bad number of limits %d",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - bad limit magnitude [%d] %f",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - bad / non sequential limit heading [%d] %f",
+      "field_hints": []
+    },
+    {
+      "method": "Load",
+      "string": "LocomotionStateMf::Load - missing limit [%d]",
+      "field_hints": []
+    }
+  ],
+  "fxCloth": [
+    {
+      "method": "CreateClothSim",
+      "string": "fxCloth::CreateClothSim() originally:  m_nIterations = %d, m_nIterationsPerCollision = %d",
+      "field_hints": []
+    },
+    {
+      "method": "CreateClothSim",
+      "string": "fxCloth::CreateClothSim() changed to: m_nIterations = %d, m_nIterationsPerCollision = %d",
+      "field_hints": []
+    }
+  ],
+  "pongTrainingDrill": [
+    {
+      "method": "IncreaseNumSuccesses",
+      "string": "pongTrainingDrill::IncreaseNumSuccesses() - winning more than total possible, something is wrong",
+      "field_hints": []
+    },
+    {
+      "method": "ChooseRobotTarget",
+      "string": "pongTrainingDrill::ChooseRobotTarget() - unable to find centered target, pick first one",
+      "field_hints": []
+    }
+  ],
+  "pongDrillSmash": [
+    {
+      "method": "ChooseRobotTarget",
+      "string": "pongDrillSmash::ChooseRobotTarget() - no robot target on the same side as table target, pick first one",
+      "field_hints": []
+    }
+  ],
+  "pongShadowMap": [
+    {
+      "method": "GenerateShadowMaps",
+      "string": "pongShadowMap::GenerateShadowMaps() - Missing bone data for %s",
+      "field_hints": []
+    }
+  ],
+  "audBank": [
+    {
+      "method": "LoadBank",
+      "string": "audBank::LoadBank - TD file for bank: '%s' uses an old version (%3.2f)",
+      "field_hints": []
+    }
+  ],
+  "geomBoxes": [
+    {
+      "method": "TestSegmentToBox",
+      "string": "geomBoxes::TestSegmentToBox() - single hit returned in t2=%f",
+      "field_hints": []
+    }
+  ],
+  "sysMemSimpleAllocator": [
+    {
+      "method": "Allocate",
+      "string": "sysMemSimpleAllocator::Allocate - memory node at %p had guard word trashed!\\n",
+      "field_hints": []
+    },
+    {
+      "method": "Free",
+      "string": "sysMemSimpleAllocator::Free - memory at %p already marked free",
+      "field_hints": []
+    },
+    {
+      "method": "Free",
+      "string": "sysMemSimpleAllocator::Free - memory at %p had guard word trashed!\\n",
+      "field_hints": []
+    }
+  ],
+  "pongPlayerShaderParams": [
+    {
+      "method": "UpdateParams",
+      "string": "pongPlayerShaderParams::UpdateParams() called before m_player is set!",
+      "field_hints": []
+    }
+  ],
+  "gdGameData": [
+    {
+      "method": "CalculateVariation",
+      "string": "gdGameData::CalculateVariation() - unable to find unique variation for player %d",
+      "field_hints": [
+        {
+          "field": "m_playerIndex",
+          "type": "int",
+          "evidence": "gdGameData::CalculateVariation() - unable to find unique variation for player %d"
+        }
+      ]
+    }
+  ],
+  "pongLerpQueue": [
+    {
+      "method": "FindNeighborIndices",
+      "string": "pongLerpQueue::FindNeighborIndices - queue is empty!",
+      "field_hints": []
+    }
+  ],
+  "gdCrAttachmentData": [
+    {
+      "method": "PostLoadCreature",
+      "string": "gdCrAttachmentData::PostLoadCreature() - bone '%s' does not exist",
+      "field_hints": []
+    }
+  ],
+  "Timer": [
+    {
+      "method": "SetAlert",
+      "string": "Timer::SetAlert - could not set alert as the alert queue is full!",
+      "field_hints": []
+    }
+  ],
+  "gdDrillMovementData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'TargetRadius' cannot be greater than 0.8",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'TargetRadius' must be positive",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'DetectRadius' cannot be greater than 'TargetRadius'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'DetectRadius' must be positive",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'DrillTime' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'HighestRankTime' cannot be greater than 'DrillTime'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'HighestRankTime' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'UrgentTime' cannot be greater than 'DrillTime'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'UrgentTime' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillMovementData::PostLoadProperties() - 'TargetHitTime' cannot be negative",
+      "field_hints": []
+    }
+  ],
+  "gdDrillServingData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillServingData::PostLoadProperties() - 'TryTime' must be positive",
+      "field_hints": []
+    }
+  ],
+  "gdDrillSoftShotData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be greater than 'TotalNumTries'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be negative",
+      "field_hints": []
+    }
+  ],
+  "gdDrillChargingData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillChargingData::PostLoadProperties() - 'DrillTime' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillChargingData::PostLoadProperties() - 'ChargePerFrame' must be positive",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillChargingData::PostLoadProperties() - 'MinNumFullCharges' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillChargingData::PostLoadProperties() - 'HiRankNumFullCharges' cannot be less than 'MinNumFullCharges'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillChargingData::PostLoadProperties() - 'HiRankNumFullCharges' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillChargingData::PostLoadProperties() - 'UrgentTime' cannot be greater than 'DrillTime'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillChargingData::PostLoadProperties() - 'UrgentTime' cannot be negative",
+      "field_hints": []
+    }
+  ],
+  "gdDrillSpinData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative",
+      "field_hints": []
+    }
+  ],
+  "gdDrillFocusShotData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be negative",
+      "field_hints": []
+    }
+  ],
+  "gdDrillCounterSpinData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MinPrimarySpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be greater than 1.0",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be negative",
+      "field_hints": []
+    }
+  ],
+  "gdRivalryData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdRivalryData::PostLoadProperties() - 'CharacterName' not specified",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdRivalryData::PostLoadProperties() - 'RivalName' not specified",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdRivalryData::PostLoadProperties() - unknown rival character '%s'",
+      "field_hints": []
+    }
+  ],
+  "gdTierMember": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTierMember::PostLoadProperties() - 'CharacterName' not specified",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTierMember::PostLoadProperties() - unknown character '%s'",
+      "field_hints": []
+    }
+  ],
+  "gdTier": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdTier::PostLoadProperties() - 'TierName' not specified",
+      "field_hints": []
+    }
+  ],
+  "gdDifficultyLadder": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdDifficultyLadder::PostLoadProperties() - invalid level value '%d'",
+      "field_hints": []
+    }
+  ],
+  "gdCameraDest": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCameraDest::PostLoadProperties--no name specified",
+      "field_hints": []
+    }
+  ],
+  "gdVibEvent": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdVibEvent::PostLoadProperties - Could not find effect '%s'",
+      "field_hints": []
+    }
+  ],
+  "cmNaryOperator": [
+    {
+      "method": "Evaluate",
+      "string": "cmNaryOperator::Evaluate - Can't evaluate to 'Pointer'",
+      "field_hints": []
+    }
+  ],
+  "ballPredict": [
+    {
+      "method": "ProcessHit",
+      "string": "ballPredict::ProcessHit() - postHitAngVel is bad",
+      "field_hints": []
+    },
+    {
+      "method": "ProcessHit",
+      "string": "ballPredict::ProcessHit() - buffer will be immediately consumed!",
+      "field_hints": []
+    }
+  ],
+  "phBoundGeometry": [
+    {
+      "method": "Load_v110",
+      "string": "phBoundGeometry::Load_v110(%s) -- 'centroid:' not supported",
+      "field_hints": []
+    }
+  ],
+  "phPolytree": [
+    {
+      "method": "TestProbe",
+      "string": "phPolytree::TestProbe() precision error",
+      "field_hints": []
+    }
+  ],
+  "fiPackfile": [
+    {
+      "method": "Open",
+      "string": "fiPackfile::Open(%s) - inflateInit failed.",
+      "field_hints": []
+    }
+  ],
+  "pongFrontendState": [
+    {
+      "method": "WaitForCharLoadToEnd",
+      "string": "pongFrontendState::WaitForCharLoadToEnd() - waiting for player[%d] load to finish",
+      "field_hints": [
+        {
+          "field": "m_playerIndex",
+          "type": "int",
+          "evidence": "pongFrontendState::WaitForCharLoadToEnd() - waiting for player[%d] load to finish"
+        }
+      ]
+    },
+    {
+      "method": "WaitForCharLoadToEnd",
+      "string": "pongFrontendState::WaitForCharLoadToEnd() - need to deactivate player[%d]",
+      "field_hints": [
+        {
+          "field": "m_playerIndex",
+          "type": "int",
+          "evidence": "pongFrontendState::WaitForCharLoadToEnd() - need to deactivate player[%d]"
+        }
+      ]
+    }
+  ],
+  "hudTrainingPopUp": [
+    {
+      "method": "Restart",
+      "string": "hudTrainingPopUp::Restart() - invalid user index %d for player 0",
+      "field_hints": []
+    }
+  ],
+  "pongCutSceneManager": [
+    {
+      "method": "Load",
+      "string": "pongCutSceneManager::Load() - cannot load cut scene '%s'",
+      "field_hints": []
+    }
+  ],
+  "pongCSActionCamAnim": [
+    {
+      "method": "Play",
+      "string": "pongCSActionCamAnim::Play() - empty camera shot sequence",
+      "field_hints": []
+    }
+  ],
+  "grmEdgeModel": [
+    {
+      "method": "Create",
+      "string": "grmEdgeModel::Create - '%s' is not an em file",
+      "field_hints": []
+    }
+  ],
+  "fxAmbAnimSet": [
+    {
+      "method": "AddAnimation",
+      "string": "fxAmbAnimSet::AddAnimation() - animation '%s' not found!",
+      "field_hints": []
+    }
+  ],
+  "fxString": [
+    {
+      "method": "Init",
+      "string": "fxString::Init() - cannot find bone '%s'!",
+      "field_hints": []
+    }
+  ],
+  "gmLogicSpectator": [
+    {
+      "method": "stateReplay",
+      "string": "gmLogicSpectator::stateReplay - replay buffer is not done recording; skipping replay",
+      "field_hints": []
+    }
+  ],
+  "NetTimer": [
+    {
+      "method": "Release",
+      "string": "NetTimer::Release() called with bad ref count %d",
+      "field_hints": []
+    }
+  ],
+  "PongNetGameModeCoordinator": [
+    {
+      "method": "Reset",
+      "string": "PongNetGameModeCoordinator::Reset()",
+      "field_hints": []
+    }
+  ],
+  "NetBallHitManagerFreeList": [
+    {
+      "method": "Get",
+      "string": "NetBallHitManagerFreeList::Get() failed",
+      "field_hints": []
+    }
+  ],
+  "pongGameContext": [
+    {
+      "method": "Process",
+      "string": "pongGameContext::Process()  msgNet::kTourneyNextMatchReady messsage -- Loading into next match",
+      "field_hints": []
+    },
+    {
+      "method": "Process",
+      "string": "pongGameContext::Process()  msgUI::kPostNetTourneyUIEnd messsage -- Tourney finished (back to frontend)",
+      "field_hints": []
+    },
+    {
+      "method": "Process",
+      "string": "pongGameContext::Process -- Got kJoinFromHudRequested message",
+      "field_hints": []
+    }
+  ],
+  "SYMTAB": [
+    {
+      "method": "Delete",
+      "string": "SYMTAB::Delete(%s) failed",
+      "field_hints": []
+    }
+  ],
+  "gdCSCharCamShotName": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCharCamShotName::PostLoadProperties() - missing property 'ShotNameNegZ'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCharCamShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'",
+      "field_hints": []
+    }
+  ],
+  "gdCSCharCamShotNameSeq": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCharCamShotNameSeq::PostLoadProperties() - cannot have negative weight",
+      "field_hints": []
+    }
+  ],
+  "gdCSCharAnimData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCharAnimData::PostLoadProperties() - missing property 'FileName'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCharAnimData::PostLoadProperties() - 'TimeOffset' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCharAnimData::PostLoadProperties() - cannot have negative weight",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCharAnimData::PostLoadProperties() - invalid emote range",
+      "field_hints": []
+    }
+  ],
+  "gdCSCharAnimNames": [
+    {
+      "method": "FindRandAnimData",
+      "string": "gdCSCharAnimNames::FindRandAnimData() - no animation data at all",
+      "field_hints": []
+    }
+  ],
+  "gdCSCamAnimShotName": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCamAnimShotName::PostLoadProperties() - cannot have negative weight",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCamAnimShotName::PostLoadProperties() - missing property 'ShotName'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCamAnimShotName::PostLoadProperties() - 'TimeOffset' cannot be negative",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCamAnimShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'",
+      "field_hints": []
+    }
+  ],
+  "gdCSCamAnimShotNameSeq": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSCamAnimShotNameSeq::PostLoadProperties() - cannot have negative weight",
+      "field_hints": []
+    }
+  ],
+  "gdCSNameData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSNameData::PostLoadProperties() - missing property 'FileName'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSNameData::PostLoadProperties() - unknown trigger message '%s'",
+      "field_hints": []
+    }
+  ],
+  "gdCutSceneData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCutSceneData::PostLoadProperties() - unknown skip message '%s'",
+      "field_hints": []
+    }
+  ],
+  "gdCSActionCamAnimData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionCamAnimData::PostLoadProperties() - missing property 'FileName'",
+      "field_hints": []
+    }
+  ],
+  "gdCSActionCharAnimData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionCharAnimData::PostLoadProperties() - missing property 'PlayerID'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionCharAnimData::PostLoadProperties() - missing property 'FileName'",
+      "field_hints": []
+    }
+  ],
+  "gdCSActionCharVisibleData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionCharVisibleData::PostLoadProperties() - missing property 'PlayerID'",
+      "field_hints": []
+    }
+  ],
+  "gdCSActionPlayAudioData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEventType'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEvent'",
+      "field_hints": []
+    }
+  ],
+  "gdCSActionLvlAnimData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionLvlAnimData::PostLoadProperties() - missing property 'AnimName'",
+      "field_hints": []
+    }
+  ],
+  "gdCSActionLvlAmbAnimData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionLvlAmbAnimData::PostLoadProperties() - missing property 'AmbName'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionLvlAmbAnimData::PostLoadProperties() - missing property 'AnimName'",
+      "field_hints": []
+    }
+  ],
+  "gdCSActionCharAmbAnimData": [
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionCharAmbAnimData::PostLoadProperties() - missing property 'PlayerID'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionCharAmbAnimData::PostLoadProperties() - missing property 'AmbName'",
+      "field_hints": []
+    },
+    {
+      "method": "PostLoadProperties",
+      "string": "gdCSActionCharAmbAnimData::PostLoadProperties() - missing property 'AnimName'",
+      "field_hints": []
+    }
+  ],
+  "netHardware": [
+    {
+      "method": "StartNetwork",
+      "string": "netHardware::StartNetwork() failed",
+      "field_hints": []
+    }
+  ],
+  "phBound": [
+    {
+      "method": "Load_v110",
+      "string": "phBound::Load_v110 - not defined for this bound type (%d)",
+      "field_hints": []
+    }
+  ]
+}

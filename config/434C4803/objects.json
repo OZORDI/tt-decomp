@@ -1,0 +1,26 @@
+{
+    "crt": {
+        "cflags": "crt",
+        "objects": {
+            "src/crt/string.c": "NonMatching",
+            "src/crt/entry.c": "NonMatching",
+            "src/crt/heap.c": "NonMatching",
+            "src/crt/startup.c": "NonMatching",
+            "src/crt/exit.c": "NonMatching",
+            "src/crt/memory.c": "NonMatching",
+            "src/crt/version.c": "NonMatching",
+            "src/crt/cinit.c": "NonMatching"
+        }
+    },
+    "rage": {
+        "cflags": "rage",
+        "objects": {
+            "src/rage/main.c": "NonMatching",
+            "src/rage/app_init.c": "NonMatching",
+            "src/rage/game_loop.c": "NonMatching",
+            "src/rage/render_loop.c": "NonMatching",
+            "src/rage/scene_render.c": "NonMatching",
+            "src/rage/subsystem_init.c": "NonMatching"
+        }
+    }
+}

@@ -1,0 +1,445 @@
+auto_namer_v6 Results
+======================================================================
+
+Pass P1    :     0
+Pass P1r   :     2
+Pass P2    :     0
+Pass P6    :     0
+Pass P7    :     0
+Pass P8f   :    58
+Pass P8fw  :    12
+Pass P8r   :    39
+Pass P8rh  :    81
+Pass P9    :     0
+Pass P10   :   231
+Total renames:    423
+fn_8 fixed:       421
+Remaining:        4983
+Coverage:         7.8%
+
+======================================================================
+DETAIL
+======================================================================
+  [P10  ] 0x820C36A8  util_36A8                                                utility fn called by 2 classes: rage,rage::grcTextureDictionaryReference
+  [P10  ] 0x820C4248  util_4248                                                utility fn called by 4 classes: rage::crAnimDofQuaternion,rage::crIKSolverIterativeLimb
+  [P10  ] 0x820C42D8  util_42D8                                                utility fn called by 5 classes: rage::crAnimDofQuaternion,game
+  [P10  ] 0x820C4340  util_4340                                                utility fn called by 4 classes: rage::crAnimDofQuaternion,rage::crIKSolverIterativeLimb
+  [P8fw ] 0x820CB6A0  game_B6A0_w                                              fwd tiny 'game' sz=80
+  [P10  ] 0x820CB6F0  util_B6F0                                                utility fn called by 4 classes: game,charViewCS
+  [P8r  ] 0x820CB800  game_B800_B800_1                                         rev 3/6 callers 'game'
+  [P8f  ] 0x820D18B0  game_18B0                                                fwd 2/3 'game'
+  [P10  ] 0x820D2038  util_2038                                                utility fn called by 5 classes: rage::phBoundCapsule,gmBallNode
+  [P10  ] 0x820D4F88  util_4F88                                                utility fn called by 3 classes: phJoint3Dof,phConstrainedCollider
+  [P10  ] 0x820D7830  util_7830                                                utility fn called by 9 classes: ForceMatchTimeSyncMessage,StateSyncRequestMessage
+  [P10  ] 0x820D7970  util_7970                                                utility fn called by 13 classes: ServeFaultMessage,util
+  [P10  ] 0x820D7A08  util_7A08                                                utility fn called by 9 classes: util,HitMessage
+  [P10  ] 0x820D7DE0  util_7DE0                                                utility fn called by 2 classes: game,ph
+  [P8f  ] 0x820DAC40  game_AC40                                                fwd 2/5 'game'
+  [P8r  ] 0x820DBA60  game_BA60_BA60_1                                         rev 2/2 callers 'game'
+  [P8r  ] 0x820DBB48  game_BB48                                                rev 2/2 callers 'game'
+  [P8r  ] 0x820DBBF8  game_BBF8                                                rev 2/5 callers 'game'
+  [P8f  ] 0x820DBDF0  game_BDF0                                                fwd 2/10 'game'
+  [P8rh ] 0x820DC8E0  game_C8E0_h                                              rev private helper 'game' sz=84
+  [P10  ] 0x820DE690  util_E690                                                utility fn called by 4 classes: pcrAnimEvent,pcrAnimEventFootAud
+  [P10  ] 0x820DECD8  util_ECD8                                                utility fn called by 2 classes: game,LocomotionStateAnim
+  [P8rh ] 0x820DEFA0  LocomotionState_EFA0_h                                   rev private helper 'LocomotionState' sz=84
+  [P10  ] 0x820DF0A8  util_F0A8                                                utility fn called by 7 classes: game,rage::dcamPolarCam
+  [P8rh ] 0x820DF4E8  game_F4E8_h                                              rev private helper 'game' sz=96
+  [P10  ] 0x820DF870  util_F870                                                utility fn called by 3 classes: LocomotionState,LocomotionStateMf
+  [P8f  ] 0x820DFC78  game_FC78_FC78_1                                         fwd 2/4 'game'
+  [P8f  ] 0x820E2ED0  game_2ED0                                                fwd 2/9 'game'
+  [P8f  ] 0x820E76D8  game_76D8                                                fwd 2/3 'game'
+  [P10  ] 0x820EE988  util_E988                                                utility fn called by 2 classes: rage,game
+  [P8rh ] 0x820F3410  pongLoadingContext_3410_h                                rev private helper 'pongLoadingContext' sz=88
+  [P10  ] 0x82101668  util_1668                                                utility fn called by 3 classes: ReplayEmoteMessage,game
+  [P10  ] 0x821059E0  util_59E0                                                utility fn called by 3 classes: gmLogicSinglesMatch::stateServeToss,gmLogicSinglesMatch::stateServeBounce
+  [P10  ] 0x82106CB0  util_6CB0                                                utility fn called by 4 classes: gmLogicSinglesMatch::statePointScoringNet,gmLogicSinglesMatch::statePrePreServe
+  [P10  ] 0x82106D18  util_6D18                                                utility fn called by 8 classes: gmLogicSinglesMatch::stateAwaitServeReturnHit,gmLogicSinglesMatch::stateInit
+  [P10  ] 0x82108DD0  util_8DD0                                                utility fn called by 3 classes: gmLogicSinglesMatch::stateAwaitServeReturnHit,gmLogicSinglesMatch::stateAwaitReturnHit
+  [P8rh ] 0x82112B00  fxAmbient_2B00_h                                         rev private helper 'fxAmbient' sz=84
+  [P10  ] 0x82113C38  util_3C38                                                utility fn called by 3 classes: gmLogicSwingPractice::stateReturnHit,pongDrillServeMeter
+  [P8rh ] 0x82115028  gdLadderMatch_5028_h                                     rev private helper 'gdLadderMatch' sz=96
+  [P8r  ] 0x82115280  game_5280_5280_1                                         rev 7/9 callers 'game'
+  [P10  ] 0x821184E0  util_84E0                                                utility fn called by 2 classes: ph,xe
+  [P8rh ] 0x8211CFB0  pongCreatureInst_CFB0_h                                  rev private helper 'pongCreatureInst' sz=96
+  [P10  ] 0x8211D048  util_D048                                                utility fn called by 2 classes: game,rage::phJoint3Dof
+  [P8f  ] 0x8211F060  game_F060                                                fwd 2/3 'game'
+  [P10  ] 0x82126FF8  util_6FF8                                                utility fn called by 2 classes: xe,ph
+  [P10  ] 0x821270F0  util_70F0                                                utility fn called by 3 classes: pongCreatureInst,ph
+  [P8f  ] 0x82127808  game_7808                                                fwd 2/10 'game'
+  [P8f  ] 0x8212B830  game_B830                                                fwd 2/10 'game'
+  [P10  ] 0x8212DCE8  util_DCE8                                                utility fn called by 2 classes: game,rage
+  [P8rh ] 0x82136668  ke_6668_h                                                rev private helper 'ke' sz=100
+  [P8rh ] 0x821368C8  ke_68C8_h                                                rev private helper 'ke' sz=100
+  [P8r  ] 0x82137940  ke_7940                                                  rev 2/2 callers 'ke'
+  [P10  ] 0x82137A60  util_7A60                                                utility fn called by 3 classes: rage::crIKSolverSimpleSpine,game
+  [P10  ] 0x82137D70  util_7D70                                                utility fn called by 3 classes: rage::crIKSolverSimpleSpine,rage::crIKSolverGleicherLimb
+  [P10  ] 0x82137DF0  util_7DF0                                                utility fn called by 3 classes: rage::crIKSolverSimpleSpine,rage::crIKSolverGleicherLimb
+  [P10  ] 0x82137E68  util_7E68                                                utility fn called by 4 classes: rage::crIKSolverIterativeLimb,rage::crIKSolverGleicherLimb
+  [P8rh ] 0x8213CC50  grc_CC50_h                                               rev private helper 'grc' sz=88
+  [P8rh ] 0x8213EB68  game_EB68_h                                              rev private helper 'game' sz=92
+  [P10  ] 0x821403C0  util_03C0                                                utility fn called by 3 classes: game,pongScrnTransFreezeAndFadeOut
+  [P8r  ] 0x8214C6D0  rage_C6D0                                                rev 2/6 callers 'rage'
+  [P10  ] 0x8214C880  util_C880                                                utility fn called by 4 classes: pongCreature,fxAmbient
+  [P8rh ] 0x82151068  grcDevice_1068_h                                         rev private helper 'grcDevice' sz=92
+  [P10  ] 0x82154628  util_4628                                                utility fn called by 5 classes: pongPaddle,grc
+  [P10  ] 0x82155B08  util_5B08                                                utility fn called by 2 classes: game,rage
+  [P10  ] 0x821584E8  util_84E8                                                utility fn called by 5 classes: atSingleton,dcamPolarCam
+  [P10  ] 0x82159CF0  util_9CF0                                                utility fn called by 2 classes: rage::grmShaderFx,rage
+  [P10  ] 0x8215AB40  util_AB40                                                utility fn called by 2 classes: jumptable,game
+  [P10  ] 0x82161568  util_1568                                                utility fn called by 7 classes: charViewCS,gmBallRobot
+  [P10  ] 0x821624C8  util_24C8                                                utility fn called by 3 classes: rage::audControl3d,util
+  [P10  ] 0x821690B0  util_90B0                                                utility fn called by 2 classes: game,pongInlineCinematics
+  [P8rh ] 0x8216BBF0  jumptable_BBF0_h                                         rev private helper 'jumptable' sz=84
+  [P8rh ] 0x8216D060  game_D060_h                                              rev private helper 'game' sz=96
+  [P8f  ] 0x8216DB10  game_DB10                                                fwd 2/2 'game'
+  [P10  ] 0x82178B00  util_8B00                                                utility fn called by 2 classes: pongCameraMgr,CMtoCSAdapter
+  [P10  ] 0x821792D8  util_92D8                                                utility fn called by 49 classes: cmCond,cmLinearRemap
+  [P10  ] 0x82179350  util_9350                                                utility fn called by 71 classes: cmLookup,cmLinearRemap
+  [P8r  ] 0x82179668  game_9668_9668_1                                         rev 2/4 callers 'game'
+  [P8f  ] 0x821797F8  game_97F8                                                fwd 2/2 'game'
+  [P8f  ] 0x821798A8  game_98A8                                                fwd 2/2 'game'
+  [P8f  ] 0x82179918  game_9918_9918_1                                         fwd 2/2 'game'
+  [P8f  ] 0x821799D0  game_99D0_99D0_1                                         fwd 2/2 'game'
+  [P8f  ] 0x82179A88  game_9A88_9A88_1                                         fwd 3/3 'game'
+  [P8f  ] 0x82179B30  game_9B30                                                fwd 3/3 'game'
+  [P8f  ] 0x82179BD8  game_9BD8_9BD8_1                                         fwd 2/7 'game'
+  [P8f  ] 0x8217A060  game_A060_A060_1                                         fwd 3/5 'game'
+  [P8f  ] 0x8217A7B8  game_A7B8_A7B8_1                                         fwd 3/5 'game'
+  [P8f  ] 0x8217A968  game_A968_A968_1                                         fwd 2/4 'game'
+  [P8f  ] 0x8217B718  game_B718                                                fwd 2/4 'game'
+  [P8f  ] 0x8217B890  game_B890_B890_1                                         fwd 3/5 'game'
+  [P8f  ] 0x8217BC40  game_BC40_BC40_1                                         fwd 4/8 'game'
+  [P8f  ] 0x8217BE70  game_BE70                                                fwd 2/2 'game'
+  [P10  ] 0x82184BD8  util_4BD8                                                utility fn called by 16 classes: cmSwitch,cmCond
+  [P10  ] 0x821854C8  util_54C8                                                utility fn called by 14 classes: rage::cmDifferential,rage::cmNormalizedTimer
+  [P10  ] 0x82185698  util_5698                                                utility fn called by 16 classes: rage::cmMultiply,rage::cmOr
+  [P10  ] 0x82185868  util_5868                                                utility fn called by 9 classes: rage::cmAngleLerp,rage::cmPowerApproach
+  [P10  ] 0x82187AE8  util_7AE8                                                utility fn called by 2 classes: xe,game
+  [P10  ] 0x82187E48  util_7E48                                                utility fn called by 3 classes: rage::rlGamer,util
+  [P10  ] 0x8218A2E8  util_A2E8                                                utility fn called by 3 classes: game,jumptable
+  [P1r  ] 0x8218D200  pongPlayerShaderParams_UpdateParams                      string ref (was pongPlayer_Update2)
+  [P10  ] 0x82199F28  util_9F28                                                utility fn called by 2 classes: pongGameContext,xe
+  [P10  ] 0x821A77A8  util_77A8                                                utility fn called by 3 classes: PongNetGameModeCoordinator,HitDataMessage
+  [P8rh ] 0x821AA060  xmlTree_A060_h                                           rev private helper 'rage::xmlTree' sz=92
+  [P8r  ] 0x821AA680  game_A680                                                rev 2/4 callers 'game'
+  [P10  ] 0x821CCBD0  util_CBD0                                                utility fn called by 3 classes: game,lvlTable
+  [P10  ] 0x821CCE00  util_CE00                                                utility fn called by 8 classes: pg,game
+  [P10  ] 0x821CD0F8  util_D0F8                                                utility fn called by 2 classes: pongGameContext,ballPredict
+  [P8r  ] 0x821CDED8  game_DED8                                                rev 3/6 callers 'game'
+  [P10  ] 0x821D2458  util_2458                                                utility fn called by 8 classes: gdUnlockConditionChar,gdUnlockConditionVersus
+  [P10  ] 0x821D5538  util_5538                                                utility fn called by 3 classes: HitDataMessage,SpectatorBallHitMessage
+  [P8rh ] 0x821D5938  jumptable_5938_h                                         rev private helper 'jumptable' sz=92
+  [P8rh ] 0x821D9BB8  game_9BB8_h                                              rev private helper 'game' sz=84
+  [P8r  ] 0x821DC418  game_C418_C418_1                                         rev 3/4 callers 'game'
+  [P10  ] 0x821DE330  util_E330                                                utility fn called by 9 classes: gdDrillMovementData,gdDrillServingData
+  [P10  ] 0x821E0068  util_0068                                                utility fn called by 3 classes: pongPlayer,game
+  [P10  ] 0x821E6470  util_6470                                                utility fn called by 4 classes: NetBallHitManagerFreeList,game
+  [P10  ] 0x821E84B0  util_84B0                                                utility fn called by 2 classes: gmLogicSinglesMatch::statePostGame,atSingleton
+  [P8rh ] 0x821EFA98  jumptable_FA98_h                                         rev private helper 'jumptable' sz=96
+  [P8rh ] 0x821F2EE0  atSingleton_2EE0_h                                       rev private helper 'atSingleton' sz=96
+  [P10  ] 0x821F2FC0  util_2FC0                                                utility fn called by 7 classes: atSingleton,gdStatsOfflineGeneral
+  [P10  ] 0x821F3078  util_3078                                                utility fn called by 4 classes: MatchStatsMessage,ref
+  [P10  ] 0x821F3130  util_3130                                                utility fn called by 6 classes: gdStatsOfflineHumanCPU,gdStatsOnlineGeneral
+  [P8rh ] 0x8220BB80  gdCameraDest_BB80_h                                      rev private helper 'gdCameraDest' sz=100
+  [P10  ] 0x8220E1B0  util_E1B0                                                utility fn called by 5 classes: game,fxBallSplash2D
+  [P8rh ] 0x8221F038  jumptable_F038_h                                         rev private helper 'jumptable' sz=84
+  [P8r  ] 0x82220E08  ke_0E08                                                  rev 2/6 callers 'ke'
+  [P10  ] 0x82221110  util_1110                                                utility fn called by 3 classes: game,ke
+  [P8r  ] 0x82228EA0  game_8EA0                                                rev 2/6 callers 'game'
+  [P8rh ] 0x8222AEE0  xe_AEE0_h                                                rev private helper 'xe' sz=100
+  [P8f  ] 0x8222B1E8  game_B1E8_B1E8_1                                         fwd 2/10 'game'
+  [P10  ] 0x8222B8F8  util_B8F8                                                utility fn called by 2 classes: LocomotionStateMf,game
+  [P10  ] 0x8222BEC8  util_BEC8                                                utility fn called by 2 classes: LocomotionStateMf,game
+  [P10  ] 0x8222BF90  util_BF90                                                utility fn called by 2 classes: LocomotionStateMf,game
+  [P8f  ] 0x8222CC50  game_CC50                                                fwd 2/4 'game'
+  [P8f  ] 0x8222D278  game_D278                                                fwd 2/6 'game'
+  [P8f  ] 0x8222D958  game_D958                                                fwd 2/6 'game'
+  [P8rh ] 0x8222DD78  game_DD78_h                                              rev private helper 'game' sz=84
+  [P8r  ] 0x8222E2B0  game_E2B0                                                rev 2/6 callers 'game'
+  [P10  ] 0x82233C60  util_3C60                                                utility fn called by 2 classes: LocomotionStateMf,game
+  [P8f  ] 0x82234210  game_4210_4210_1                                         fwd 2/5 'game'
+  [P8f  ] 0x82237618  game_7618                                                fwd 2/5 'game'
+  [P8f  ] 0x822383B0  rage_83B0                                                fwd 2/8 'rage'
+  [P8f  ] 0x82238598  game_8598_8598_1                                         fwd 2/3 'game'
+  [P10  ] 0x82238D60  util_8D60                                                utility fn called by 4 classes: game,jumptable
+  [P10  ] 0x82239410  util_9410                                                utility fn called by 5 classes: rage::parStreamInRbf,parStreamInXml
+  [P8r  ] 0x82239698  jumptable_9698                                           rev 2/6 callers 'jumptable'
+  [P8rh ] 0x82239748  parStreamInXml_9748_h                                    rev private helper 'parStreamInXml' sz=96
+  [P8rh ] 0x8223A578  jumptable_A578_h                                         rev private helper 'jumptable' sz=88
+  [P8f  ] 0x8223AED0  game_AED0_AED0_1                                         fwd 2/4 'game'
+  [P10  ] 0x8223B6A8  util_B6A8                                                utility fn called by 3 classes: rage::crIKSolverSimpleSpine,rage::crIKSolverIterativeLimb
+  [P10  ] 0x8223B8D0  util_B8D0                                                utility fn called by 3 classes: rage::crIKSolverGleicherLimb,rage::crIKSolverIterativeLimb
+  [P10  ] 0x8223B9A8  util_B9A8                                                utility fn called by 4 classes: rage::crIKSolverSimpleSpine,game
+  [P10  ] 0x8223BBB0  util_BBB0                                                utility fn called by 5 classes: rage::crIKSolverGleicherLimb,game
+  [P10  ] 0x8223BCB0  util_BCB0                                                utility fn called by 5 classes: rage::crIKSolverIterativeLimb,rage::crIKSolverGleicherLimb
+  [P10  ] 0x8223C460  util_C460                                                utility fn called by 3 classes: rage::phBoundCapsule,rage::phBoundTaperedCapsule
+  [P10  ] 0x8223C8B8  util_C8B8                                                utility fn called by 4 classes: rage::phBoundBox,rage::phBoundCapsule
+  [P10  ] 0x8223F840  util_F840                                                utility fn called by 5 classes: fxBallSpinTex,game
+  [P8rh ] 0x82244CB8  crAnimChannelQuantizeFloat_4CB8_h                        rev private helper 'rage::crAnimChannelQuantizeFloat' sz=96
+  [P10  ] 0x822484B8  util_84B8                                                utility fn called by 2 classes: game,ke
+  [P8r  ] 0x822488E0  game_88E0                                                rev 7/22 callers 'game'
+  [P8f  ] 0x82248AF8  game_8AF8                                                fwd 2/4 'game'
+  [P8r  ] 0x8224BEF8  game_BEF8_BEF8_1                                         rev 6/12 callers 'game'
+  [P10  ] 0x8224C930  util_C930                                                utility fn called by 2 classes: pcrEmoteBlender,game
+  [P10  ] 0x8224CDF0  util_CDF0                                                utility fn called by 3 classes: pcrEmoteBlender,pcrPostPointBlender
+  [P10  ] 0x822556E0  util_56E0                                                utility fn called by 2 classes: rage::phJoint1Dof,phArticulatedCollider
+  [P10  ] 0x8225B8A0  util_B8A0                                                utility fn called by 2 classes: ph,game
+  [P10  ] 0x8225EA68  util_EA68                                                utility fn called by 2 classes: pcrAnimEventMsg,gdVibEvent
+  [P10  ] 0x8225FFF8  util_FFF8                                                utility fn called by 16 classes: game,NetStateSync::stateWaitForSyncState
+  [P10  ] 0x82260AF0  util_0AF0                                                utility fn called by 16 classes: game,InternalMessageRelay
+  [P8r  ] 0x822610B8  game_10B8                                                rev 5/16 callers 'game'
+  [P8r  ] 0x82261148  game_1148                                                rev 10/17 callers 'game'
+  [P10  ] 0x82270E30  util_0E30                                                utility fn called by 4 classes: rage::cmNormalizedTimer,rage::cmPowerApproach
+  [P10  ] 0x82272150  util_2150                                                utility fn called by 2 classes: rage::cmSampleCamActions::P_VelocityFollow,rage::cmSampleCamActions::H_SmoothLookAt_LimitedTilt
+  [P8f  ] 0x82274870  game_4870_4870_1                                         fwd 2/2 'game'
+  [P10  ] 0x82275380  util_5380                                                utility fn called by 9 classes: rage::cmMemory,rage::cmPowerApproach
+  [P10  ] 0x82275640  util_5640                                                utility fn called by 4 classes: rage::cmNamedValueSet,rage
+  [P8r  ] 0x82275CC8  game_5CC8                                                rev 12/23 callers 'game'
+  [P8r  ] 0x82276E48  game_6E48                                                rev 4/12 callers 'game'
+  [P10  ] 0x82277AC8  util_7AC8                                                utility fn called by 3 classes: rage::cmSampleCamActions::P_VelocityFollow,rage::cmAnglePowerApproach
+  [P10  ] 0x82277CD8  util_7CD8                                                utility fn called by 3 classes: rage::cmMinPauseApproach,rage::cmExpandPauseApproach
+  [P10  ] 0x822796F0  util_96F0                                                utility fn called by 5 classes: rage::cmNormalProbe,rage::cmDepthProbe
+  [P10  ] 0x8227D150  util_D150                                                utility fn called by 2 classes: game,ph
+  [P8f  ] 0x82282A50  game_2A50                                                fwd 2/9 'game'
+  [P10  ] 0x82287040  util_7040                                                utility fn called by 3 classes: HitDataMessage,ServeStartedMessage
+  [P8f  ] 0x82287930  game_7930                                                fwd 2/9 'game'
+  [P1r  ] 0x82287B50  ballPredict_ProcessHit                                   string ref (was gdBallPredictData_SetInitialBallAngVelocity)
+  [P10  ] 0x8228DA50  util_DA50                                                utility fn called by 3 classes: rage::phBound,rage::phBoundCapsule
+  [P8rh ] 0x8228E7B8  pongCreatureInst_E7B8_h                                  rev private helper 'pongCreatureInst' sz=100
+  [P10  ] 0x8228E888  util_E888                                                utility fn called by 3 classes: ph,ke
+  [P10  ] 0x8228ECB0  util_ECB0                                                utility fn called by 3 classes: ph,ke
+  [P10  ] 0x8228EF10  util_EF10                                                utility fn called by 3 classes: ph,rage::phBoundComposite
+  [P10  ] 0x8228F098  util_F098                                                utility fn called by 3 classes: ph,ke
+  [P10  ] 0x8228F250  util_F250                                                utility fn called by 3 classes: ph,ke
+  [P10  ] 0x82294330  util_4330                                                utility fn called by 3 classes: rage::phSimulator,rage::phArticulatedCollider
+  [P10  ] 0x822943E8  util_43E8                                                utility fn called by 3 classes: rage::phArticulatedCollider,rage::phSimulator
+  [P10  ] 0x82294548  util_4548                                                utility fn called by 2 classes: rage::phBoundComposite,rage::phLevelNew
+  [P10  ] 0x822946B8  util_46B8                                                utility fn called by 5 classes: rage::phBoundTaperedCapsule,rage::phBoundCapsule
+  [P10  ] 0x82294AB8  util_4AB8                                                utility fn called by 3 classes: ph,phBoundRibbon
+  [P10  ] 0x822953D0  util_53D0                                                utility fn called by 5 classes: rage::phBoundTaperedCapsule,rage::phBoundCapsule
+  [P8rh ] 0x822B48F8  ph_48F8_h                                                rev private helper 'ph' sz=100
+  [P10  ] 0x822B4D20  util_4D20                                                utility fn called by 3 classes: rage::phBoundOctree,rage::phBoundGeometry
+  [P8rh ] 0x822C1B98  game_1B98_h                                              rev private helper 'game' sz=100
+  [P8r  ] 0x822C1C00  game_1C00_1C00_1                                         rev 2/2 callers 'game'
+  [P10  ] 0x822C8FD0  util_8FD0                                                utility fn called by 3 classes: rage::phInst,rage::phClothVerletInst
+  [P10  ] 0x822C9D98  util_9D98                                                utility fn called by 6 classes: game,rage
+  [P10  ] 0x822CB680  util_B680                                                utility fn called by 4 classes: xe,rage::phCollider
+  [P10  ] 0x822D5710  util_5710                                                utility fn called by 2 classes: rage::phArticulatedCollider,rage::phSimulator
+  [P8rh ] 0x822DF168  game_F168_h                                              rev private helper 'game' sz=100
+  [P10  ] 0x822E39B0  util_39B0                                                utility fn called by 10 classes: rage::fiBinTokenizer,rage::fiSerialize
+  [P10  ] 0x822E3DC0  util_3DC0                                                utility fn called by 9 classes: grc,rage::fiSerialize
+  [P10  ] 0x822E5A70  util_5A70                                                utility fn called by 6 classes: rage,LocomotionStateAnim
+  [P10  ] 0x822EDAD8  util_DAD8                                                utility fn called by 3 classes: hudHUD,PongNetGameModeCoordinator
+  [P8f  ] 0x822F6470  game_6470_6470_1                                         fwd 4/6 'game'
+  [P8rh ] 0x82305B30  atSingleton_5B30_h                                       rev private helper 'atSingleton' sz=96
+  [P8f  ] 0x8231BD58  game_BD58_BD58_1                                         fwd 5/7 'game'
+  [P10  ] 0x8231C5F0  util_C5F0                                                utility fn called by 3 classes: rage,hudTrainingLoadScreen
+  [P8r  ] 0x8232FC08  ref_FC08                                                 rev 2/6 callers 'ref'
+  [P10  ] 0x8234CE30  util_CE30                                                utility fn called by 2 classes: rage::parStructure,cmMetafileTuningSet
+  [P8rh ] 0x8234DA78  xe_DA78_h                                                rev private helper 'xe' sz=100
+  [P8rh ] 0x8234E0D8  parMemberArray_E0D8_h                                    rev private helper 'rage::parMemberArray' sz=96
+  [P8r  ] 0x82352E78  rage_2E78                                                rev 2/5 callers 'rage'
+  [P10  ] 0x82353010  util_3010                                                utility fn called by 2 classes: ke,rage
+  [P8rh ] 0x823561B8  rage_61B8_h                                              rev private helper 'rage' sz=84
+  [P8rh ] 0x82356BA0  rage_6BA0_h                                              rev private helper 'rage' sz=88
+  [P8rh ] 0x82356BF8  rage_6BF8_h                                              rev private helper 'rage' sz=88
+  [P8rh ] 0x82359858  grc_9858_h                                               rev private helper 'grc' sz=88
+  [P10  ] 0x8235B5E0  util_B5E0                                                utility fn called by 3 classes: rage,ke
+  [P8r  ] 0x8236A178  game_A178                                                rev 2/2 callers 'game'
+  [P8fw ] 0x8236A3A0  game_A3A0_w                                              fwd tiny 'game' sz=80
+  [P8rh ] 0x8236A3F0  game_A3F0_h_A3F0_1                                       rev private helper 'game' sz=84
+  [P8f  ] 0x8236B6F0  game_B6F0_B6F0_1                                         fwd 3/4 'game'
+  [P8f  ] 0x8236B8F8  game_B8F8_B8F8_1                                         fwd 3/9 'game'
+  [P8rh ] 0x8236C8A0  atSingleton_C8A0_h                                       rev private helper 'atSingleton' sz=96
+  [P8rh ] 0x8236D1B8  atSingleton_D1B8_h                                       rev private helper 'atSingleton' sz=52
+  [P10  ] 0x82371A48  util_1A48                                                utility fn called by 3 classes: rage::rlSession::JoinWorker,rage::rlSession::LeaveWorker
+  [P8rh ] 0x82371FD8  xam_1FD8_h                                               rev private helper 'xam' sz=84
+  [P8rh ] 0x82372600  game_2600_h                                              rev private helper 'game' sz=88
+  [P8rh ] 0x823727E8  jumptable_27E8_h                                         rev private helper 'jumptable' sz=84
+  [P8f  ] 0x82375248  game_5248_5248_1                                         fwd 2/3 'game'
+  [P8f  ] 0x823764A0  game_64A0                                                fwd 2/10 'game'
+  [P10  ] 0x82379420  util_9420                                                utility fn called by 3 classes: atSingleton,hudTrainingLoadScreen
+  [P10  ] 0x823794B8  util_94B8                                                utility fn called by 15 classes: game,pongAttractContext
+  [P10  ] 0x8237E8E8  util_E8E8                                                utility fn called by 2 classes: pongCSActionLvlAmbAnim,fxAmbientMgr
+  [P8f  ] 0x82380540  game_0540                                                fwd 2/3 'game'
+  [P8f  ] 0x82385C88  game_5C88_5C88_1                                         fwd 2/4 'game'
+  [P8r  ] 0x82386380  game_6380                                                rev 2/2 callers 'game'
+  [P8f  ] 0x82386710  game_6710_6710_1                                         fwd 2/4 'game'
+  [P8f  ] 0x82386A20  game_6A20                                                fwd 2/4 'game'
+  [P10  ] 0x82388100  util_8100                                                utility fn called by 3 classes: fxBallSpinLineData,fxBallSpinTexData
+  [P8f  ] 0x8238AE10  game_AE10_AE10_1                                         fwd 2/9 'game'
+  [P10  ] 0x82391480  util_1480                                                utility fn called by 11 classes: pongPlayer,game
+  [P10  ] 0x823941F8  util_41F8                                                utility fn called by 3 classes: gmLogicSinglesMatch::stateAwaitServeReturnHit,SinglesNetworkClient
+  [P10  ] 0x823961F0  util_61F0                                                utility fn called by 6 classes: gmLogicSinglesMatch::statePreServeSync,gmLogicSinglesMatch::statePrePreServe
+  [P8r  ] 0x82397038  game_7038_7038_1                                         rev 17/22 callers 'game'
+  [P8fw ] 0x82399998  game_9998_w                                              fwd tiny 'game' sz=68
+  [P10  ] 0x8239A6A0  util_A6A0                                                utility fn called by 2 classes: NetworkClient,ref
+  [P10  ] 0x8239AA38  util_AA38                                                utility fn called by 3 classes: ph,NetDataQuery
+  [P8rh ] 0x8239E2C8  game_E2C8_h                                              rev private helper 'game' sz=96
+  [P8f  ] 0x823A2E80  game_2E80_2E80_1                                         fwd 2/4 'game'
+  [P8f  ] 0x823A6308  game_6308_6308_1                                         fwd 6/8 'game'
+  [P10  ] 0x823A9BF8  util_9BF8                                                utility fn called by 5 classes: rage::snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting,rage::snSessionFinder::slfRoot
+  [P10  ] 0x823ACF10  util_CF10                                                utility fn called by 5 classes: game,PongNetRoundRobinCoordinator
+  [P8f  ] 0x823B26C0  game_26C0_26C0_1                                         fwd 2/2 'game'
+  [P10  ] 0x823B34D8  util_34D8                                                utility fn called by 6 classes: rage::snSessionFinder::slfRoot,hsmState
+  [P10  ] 0x823BB478  util_B478                                                utility fn called by 3 classes: game,PongNetRoundRobinCoordinator
+  [P10  ] 0x823BD730  util_D730                                                utility fn called by 3 classes: SinglesNetworkClient,SpectatorNetworkClient
+  [P10  ] 0x823BF0B0  util_F0B0                                                utility fn called by 4 classes: PongNetGameModeCoordinator,SessionMessageRequester
+  [P10  ] 0x823BF1B0  util_F1B0                                                utility fn called by 2 classes: PongNetExhibitionCoordinator,game
+  [P10  ] 0x823C9AA8  util_9AA8                                                utility fn called by 2 classes: game,SessionMessageRequester
+  [P8fw ] 0x823CE798  game_E798_w                                              fwd tiny 'game' sz=68
+  [P10  ] 0x823CEA38  util_EA38                                                utility fn called by 4 classes: SinglesNetworkClient,NetTimer
+  [P8f  ] 0x823D7788  game_7788_7788_1                                         fwd 2/3 'game'
+  [P10  ] 0x823DD170  util_D170                                                utility fn called by 7 classes: rage::snJoinMachine,rage::snMigrateMachine
+  [P10  ] 0x823DDA08  util_DA08                                                utility fn called by 34 classes: game,rage::snMigrateMachine::snMigratingAsGuest::snMigrating
+  [P10  ] 0x823E0500  util_0500                                                utility fn called by 4 classes: rage::snJoinMachine,rage::snJoinMachine::snHsmRequestingJoin::snHsmWaitingForReply
+  [P10  ] 0x823E2508  util_2508                                                utility fn called by 3 classes: rage::snSession::snRoot::snCreating,game
+  [P10  ] 0x823E53A8  util_53A8                                                utility fn called by 2 classes: rage::snSession::snRoot::snCreating,rage::snCreateMachine
+  [P10  ] 0x823E5900  util_5900                                                utility fn called by 2 classes: rage::snSession::snRoot::snLeaving,rage::snLeaveMachine
+  [P10  ] 0x823E5B50  util_5B50                                                utility fn called by 2 classes: rage::snMigrateMachine,rage::snSession::snRoot::snMigrating
+  [P10  ] 0x823E5C58  util_5C58                                                utility fn called by 2 classes: rage::snSession::snRoot::snChangingPresence::snWaitingForReplies,rage::snSession::snRoot::snChangingPresence
+  [P10  ] 0x823E5E20  util_5E20                                                utility fn called by 3 classes: rage::snSession::snRoot::snActive::snStarting,rage::snSession::snRoot::snDestroying
+  [P10  ] 0x823E6178  util_6178                                                utility fn called by 4 classes: rage::snArbMachine,rage::snSession::snRoot::snActive::snIdle
+  [P10  ] 0x823E6300  util_6300                                                utility fn called by 3 classes: game,rage::snJoinMachine::snHsmRequestingJoin::snHsmWaitingForReply
+  [P10  ] 0x823E6420  util_6420                                                utility fn called by 3 classes: util,rage::snLeaveMachine::snHsmRequestingLeave::snHsmWaitingForReply
+  [P10  ] 0x823E6558  util_6558                                                utility fn called by 4 classes: util,rage::snMigrateMachine::snAcquiringHost::snNotifyingGuests
+  [P10  ] 0x823E8E10  util_8E10                                                utility fn called by 3 classes: game,rage::snJoinMachine::snHsmLocalJoinPending
+  [P10  ] 0x823E8E78  util_8E78                                                utility fn called by 2 classes: rage::snLeaveMachine::snHsmLocalLeavePending,rage::snLeaveMachine::snHsmRequestingLeave
+  [P10  ] 0x823E8F48  util_8F48                                                utility fn called by 3 classes: rage::snMigrateMachine::snAcquiringHost,rage::snMigrateMachine::snMigratingAsGuest
+  [P10  ] 0x823E9010  util_9010                                                utility fn called by 9 classes: rage::snSession::snRoot::snCreating,rage::snSession::snRoot::snActive::snIdle
+  [P10  ] 0x823E93D0  util_93D0                                                utility fn called by 5 classes: rage::snCreateMachine::snHsmCreatingGuest,rage::snCreateMachine::snHsmCreatingOffline
+  [P10  ] 0x823EA768  util_A768                                                utility fn called by 3 classes: atSafeDLListSimple,game
+  [P10  ] 0x823EA9B8  util_A9B8                                                utility fn called by 2 classes: game,rage::snArbMachine
+  [P10  ] 0x823EAB70  util_AB70                                                utility fn called by 3 classes: game,rage::snSession::snRoot::snChangingPresence::snChanging
+  [P8fw ] 0x823EC438  game_C438_w                                              fwd tiny 'game' sz=68
+  [P8f  ] 0x823EC480  game_C480                                                fwd 2/4 'game'
+  [P10  ] 0x823ED188  util_D188                                                utility fn called by 4 classes: rage::hsmContext,rage
+  [P8rh ] 0x823ED3B0  game_D3B0_h                                              rev private helper 'game' sz=96
+  [P10  ] 0x823ED4F8  util_D4F8                                                utility fn called by 8 classes: rage::snMigrateMachine::snMigratingAsGuest::snWaitingForMigrateMsg,rage::snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting
+  [P10  ] 0x823ED6A8  util_D6A8                                                utility fn called by 3 classes: game,rage::hsmContext
+  [P10  ] 0x823ED788  util_D788                                                utility fn called by 2 classes: rage,util
+  [P10  ] 0x823ED988  util_D988                                                utility fn called by 34 classes: rage::snSession::snRoot::snChangingPresence,rage::snSession::snRoot::snActive::snStarting
+  [P10  ] 0x823EDA90  util_DA90                                                utility fn called by 36 classes: rage::snSession::snRoot::snChangingPresence,rage::snSession::snRoot::snActive::snStarting
+  [P8rh ] 0x823EEFB0  game_EFB0_h                                              rev private helper 'game' sz=92
+  [P10  ] 0x823EF850  util_F850                                                utility fn called by 13 classes: rage::snCreateMachine,rage::snMigrateMachine::snAcquiringHost
+  [P10  ] 0x823EFEB8  util_FEB8                                                utility fn called by 4 classes: rage::snJoinMachine::snHsmLocalJoinPending,rage::snJoinMachine::snHsmAcceptingJoinRequest
+  [P10  ] 0x823F1550  util_1550                                                utility fn called by 4 classes: rage::snLeaveMachine::snHsmLocalLeavePending,rage::snLeaveMachine::snHsmAcceptingLeaveRequest
+  [P10  ] 0x823F6920  util_6920                                                utility fn called by 2 classes: phDemoWorld,rage::dcamPolarCam
+  [P10  ] 0x823F8A38  util_8A38                                                utility fn called by 2 classes: rage::swfINSTANCE,rage::swfBUTTON
+  [P8r  ] 0x823FA1E0  game_A1E0                                                rev 2/5 callers 'game'
+  [P10  ] 0x823FA320  util_A320                                                utility fn called by 2 classes: game,rage::swfBUTTON
+  [P10  ] 0x823FA768  util_A768_A768_1                                         utility fn called by 7 classes: rage::swfINSTANCE,rage::swfSCRIPTOBJECT
+  [P8r  ] 0x823FB018  game_B018                                                rev 2/3 callers 'game'
+  [P10  ] 0x823FB188  util_B188                                                utility fn called by 2 classes: game,rage::swfBUTTON
+  [P8f  ] 0x823FD078  game_D078                                                fwd 2/9 'game'
+  [P8f  ] 0x823FD450  game_D450_D450_1                                         fwd 2/10 'game'
+  [P10  ] 0x823FEF98  util_EF98                                                utility fn called by 2 classes: rage::swfINSTANCE,game
+  [P10  ] 0x823FF7E8  util_F7E8                                                utility fn called by 4 classes: swfCMD,rage::swfCMD_DoInitAction
+  [P10  ] 0x82406010  util_6010                                                utility fn called by 2 classes: game,jumptable
+  [P10  ] 0x82413840  util_3840                                                utility fn called by 3 classes: game,xe
+  [P8rh ] 0x82415940  game_5940_h                                              rev private helper 'game' sz=84
+  [P10  ] 0x82416650  util_6650                                                utility fn called by 4 classes: rage::snCreateMachine::snHsmCreatingHost,rage::snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting
+  [P8rh ] 0x82417158  game_7158_h                                              rev private helper 'game' sz=100
+  [P8rh ] 0x82418CE8  game_8CE8_h                                              rev private helper 'game' sz=100
+  [P10  ] 0x8241B870  util_B870                                                utility fn called by 2 classes: rage::parStreamOutXml,jumptable
+  [P8fw ] 0x824245B0  game_45B0_w                                              fwd tiny 'game' sz=80
+  [P10  ] 0x82424A20  util_4A20                                                utility fn called by 3 classes: ref,rage
+  [P10  ] 0x82424D78  util_4D78                                                utility fn called by 3 classes: ref,rage
+  [P10  ] 0x82425648  util_5648                                                utility fn called by 2 classes: rage::snSessionFinder::slfRoot::slfFinal,game
+  [P10  ] 0x82425A98  util_5A98                                                utility fn called by 3 classes: game,rage
+  [P10  ] 0x82426108  util_6108                                                utility fn called by 3 classes: ref,atSafeDLListSimple
+  [P10  ] 0x824265F8  util_65F8                                                utility fn called by 3 classes: ref,atSafeDLListSimple
+  [P10  ] 0x82426A90  util_6A90                                                utility fn called by 3 classes: ref,rage
+  [P10  ] 0x82426D68  util_6D68                                                utility fn called by 3 classes: ref,rage
+  [P8rh ] 0x82429168  rmPtxSystem_9168_h                                       rev private helper 'rage::rmPtxSystem' sz=88
+  [P10  ] 0x8242C930  util_C930_C930_1                                         utility fn called by 2 classes: ke,nt
+  [P8r  ] 0x8242FB40  game_FB40                                                rev 3/10 callers 'game'
+  [P10  ] 0x82431D78  util_1D78                                                utility fn called by 7 classes: game,LocomotionStateAnim
+  [P10  ] 0x82432130  util_2130                                                utility fn called by 4 classes: game,fxAmbientMgr
+  [P10  ] 0x824321F0  util_21F0                                                utility fn called by 3 classes: pongDrillCharging,rage
+  [P8r  ] 0x82432450  jumptable_2450                                           rev 3/9 callers 'jumptable'
+  [P10  ] 0x82432460  util_2460                                                utility fn called by 2 classes: jumptable,vt97D4
+  [P8r  ] 0x82432478  aud_2478                                                 rev 2/6 callers 'aud'
+  [P8r  ] 0x82432B80  jumptable_2B80                                           rev 2/6 callers 'jumptable'
+  [P10  ] 0x82432C38  util_2C38                                                utility fn called by 4 classes: rage::xmlNodeStructVector2,rage::xmlNodeStructMatrix34
+  [P8f  ] 0x82432C98  game_2C98_2C98_1                                         fwd 6/8 'game'
+  [P10  ] 0x82433748  util_3748                                                utility fn called by 2 classes: vt8A48,rage::parStreamOutRbf
+  [P10  ] 0x82433DF8  util_3DF8                                                utility fn called by 5 classes: vtABEC,vtAC14
+  [P8rh ] 0x824396E0  ke_96E0_h                                                rev private helper 'ke' sz=92
+  [P8rh ] 0x82439830  ke_9830_h                                                rev private helper 'ke' sz=88
+  [P8r  ] 0x8243A1F8  game_A1F8_A1F8_1                                         rev 2/2 callers 'game'
+  [P8rh ] 0x8243D900  ke_D900_h                                                rev private helper 'ke' sz=24
+  [P10  ] 0x8243DB88  util_DB88                                                utility fn called by 5 classes: vtAD04,vtACBC
+  [P8r  ] 0x82448D10  game_8D10_8D10_1                                         rev 3/6 callers 'game'
+  [P10  ] 0x8244B158  util_B158                                                utility fn called by 2 classes: ph,game
+  [P8rh ] 0x8244C928  game_C928_h                                              rev private helper 'game' sz=88
+  [P10  ] 0x8244F7C8  util_F7C8                                                utility fn called by 2 classes: game,jumptable
+  [P8rh ] 0x82450928  game_0928_h                                              rev private helper 'game' sz=96
+  [P8rh ] 0x82450988  game_0988_h                                              rev private helper 'game' sz=96
+  [P8rh ] 0x824512C0  ph_12C0_h                                                rev private helper 'ph' sz=88
+  [P8rh ] 0x82453F68  game_3F68_h                                              rev private helper 'game' sz=100
+  [P8rh ] 0x824541C0  jumptable_41C0_h                                         rev private helper 'jumptable' sz=100
+  [P8rh ] 0x82455C70  game_5C70_h                                              rev private helper 'game' sz=92
+  [P8r  ] 0x82458D80  game_8D80_8D80_1                                         rev 2/3 callers 'game'
+  [P8rh ] 0x82459C10  game_9C10_h                                              rev private helper 'game' sz=100
+  [P8rh ] 0x82459D58  game_9D58_h                                              rev private helper 'game' sz=24
+  [P8f  ] 0x82459E40  game_9E40                                                fwd 2/2 'game'
+  [P8rh ] 0x8245A318  game_A318_h                                              rev private helper 'game' sz=100
+  [P8rh ] 0x8245A698  jumptable_A698_h                                         rev private helper 'jumptable' sz=88
+  [P8r  ] 0x8245BFC0  game_BFC0_BFC0_1                                         rev 2/2 callers 'game'
+  [P8rh ] 0x8245DD88  jumptable_DD88_h                                         rev private helper 'jumptable' sz=88
+  [P8rh ] 0x8245E290  jumptable_E290_h                                         rev private helper 'jumptable' sz=88
+  [P8r  ] 0x8245F998  jumptable_F998                                           rev 3/4 callers 'jumptable'
+  [P8r  ] 0x8245FC40  jumptable_FC40                                           rev 2/2 callers 'jumptable'
+  [P10  ] 0x82460850  util_0850                                                utility fn called by 2 classes: vt8B80,game
+  [P8rh ] 0x82460AF8  vt8308_0AF8_h                                            rev private helper 'vt8308' sz=88
+  [P8rh ] 0x82460BB0  vt8308_0BB0_h                                            rev private helper 'vt8308' sz=88
+  [P10  ] 0x82465DA8  util_5DA8                                                utility fn called by 7 classes: ph,CBiquadFilterEffect
+  [P10  ] 0x824667C0  util_67C0                                                utility fn called by 3 classes: game,ph
+  [P8rh ] 0x8246AFF0  ke_AFF0_h                                                rev private helper 'ke' sz=96
+  [P8rh ] 0x8246B0B8  ke_B0B8_h                                                rev private helper 'ke' sz=92
+  [P10  ] 0x8247F8E8  util_F8E8                                                utility fn called by 3 classes: ph,game
+  [P10  ] 0x82481AF8  util_1AF8                                                utility fn called by 2 classes: rage,xe
+  [P10  ] 0x82481B10  util_1B10                                                utility fn called by 2 classes: rage::fiDeviceTcpIp,xe
+  [P10  ] 0x82481B88  util_1B88                                                utility fn called by 2 classes: rage::fiDeviceTcpIp,xe
+  [P8rh ] 0x82487410  jumptable_7410_h                                         rev private helper 'jumptable' sz=84
+  [P10  ] 0x82488580  util_8580                                                utility fn called by 3 classes: game,vt8B80
+  [P10  ] 0x824885C8  util_85C8                                                utility fn called by 9 classes: game,vt8B08
+  [P10  ] 0x824887E0  util_87E0                                                utility fn called by 2 classes: game,vt8308
+  [P10  ] 0x82491BF8  util_1BF8                                                utility fn called by 2 classes: jumptable,rage
+  [P10  ] 0x82492340  util_2340                                                utility fn called by 2 classes: rage,jumptable
+  [P10  ] 0x82492368  util_2368                                                utility fn called by 2 classes: jumptable,rage
+  [P10  ] 0x824923D8  util_23D8                                                utility fn called by 2 classes: jumptable,rage
+  [P10  ] 0x82492448  util_2448                                                utility fn called by 2 classes: jumptable,rage
+  [P10  ] 0x824ADC30  util_DC30                                                utility fn called by 2 classes: jumptable,game
+  [P10  ] 0x824ADC40  util_DC40                                                utility fn called by 3 classes: vt8A48,jumptable
+  [P8rh ] 0x824B0C20  jumptable_0C20_h                                         rev private helper 'jumptable' sz=92
+  [P10  ] 0x824D2748  util_2748                                                utility fn called by 2 classes: jumptable,ph
+  [P8fw ] 0x825666C8  thunk_66C8_w                                             fwd tiny 'thunk' sz=68
+  [P10  ] 0x82566898  util_6898                                                utility fn called by 5 classes: game,util
+  [P10  ] 0x82566C20  util_6C20                                                utility fn called by 2 classes: plrPropMgr,game
+  [P10  ] 0x825670A8  util_70A8                                                utility fn called by 3 classes: xe,game
+  [P10  ] 0x82567550  util_7550                                                utility fn called by 2 classes: game,nt
+  [P8rh ] 0x82567E68  fiDeviceLocal_7E68_h                                     rev private helper 'rage::fiDeviceLocal' sz=88
+  [P8rh ] 0x82567FA0  fiDeviceLocal_7FA0_h                                     rev private helper 'rage::fiDeviceLocal' sz=88
+  [P10  ] 0x825681B0  util_81B0                                                utility fn called by 3 classes: vt8B08,aud
+  [P10  ] 0x82568680  util_8680                                                utility fn called by 2 classes: rage,ph
+  [P10  ] 0x82568858  util_8858                                                utility fn called by 2 classes: jumptable,game
+  [P10  ] 0x825693C0  util_93C0                                                utility fn called by 2 classes: rage,ke
+  [P8fw ] 0x825699E8  game_99E8_w                                              fwd tiny 'game' sz=68
+  [P8rh ] 0x8256A6A8  xe_A6A8_h                                                rev private helper 'xe' sz=92
+  [P8rh ] 0x8256A930  xam_A930_h                                               rev private helper 'xam' sz=88
+  [P10  ] 0x8256AB80  util_AB80                                                utility fn called by 2 classes: rage,game
+  [P10  ] 0x8256C5E8  util_C5E8                                                utility fn called by 2 classes: xam,game
+  [P10  ] 0x8256C788  util_C788                                                utility fn called by 2 classes: xam,rage
+  [P8rh ] 0x8256E880  xam_E880_h                                               rev private helper 'xam' sz=88
+  [P8f  ] 0x8256E8D8  game_E8D8                                                fwd 2/10 'game'
+  [P8rh ] 0x82575140  aud_5140_h                                               rev private helper 'aud' sz=24
+  [P8rh ] 0x825756F8  aud_56F8_h                                               rev private helper 'aud' sz=84
+  [P8rh ] 0x825758B8  aud_58B8_h                                               rev private helper 'aud' sz=92
+  [P8fw ] 0x825778A8  game_78A8_w                                              fwd tiny 'game' sz=72
+  [P8rh ] 0x8257B138  game_B138_h                                              rev private helper 'game' sz=96
+  [P8fw ] 0x82583B68  game_3B68_w                                              fwd tiny 'game' sz=76
+  [P8fw ] 0x82583BB8  game_3BB8_w                                              fwd tiny 'game' sz=68
+  [P8fw ] 0x82583EC0  game_3EC0_w                                              fwd tiny 'game' sz=72

@@ -1,0 +1,75 @@
+# ReXGlue Configuration for Rockstar Table Tennis (Xbox 360)
+# Generated for tt-decomp project
+
+# === Required Fields ===
+project_name = "RockstarTableTennis"
+file_path = "/Users/Ozordi/Downloads/tt-decomp/orig/434C4803/default.xex"
+out_directory_path = "rexglue_output"
+
+# === Code Generation Options ===
+# These optimize the generated C++ for readability and maintainability
+skip_lr = false                                    # Keep link register tracking
+skip_msr = true                                    # Skip machine state register (rarely used)
+ctr_as_local = true                                # Count register as local variable
+xer_as_local = true                                # XER register as local variable
+cr_as_local = false                                # Condition register fields as locals
+non_argument_as_local = false                      # Non-argument GPRs as locals
+non_volatile_as_local = false                      # Non-volatile GPRs as locals
+reserved_as_local = false                          # Reserved registers as locals
+
+# === Analysis Configuration ===
+[analysis]
+max_jump_extension = 65536                         # Max bytes to extend function for jump tables
+data_region_threshold = 16                         # Consecutive invalid instructions = data
+large_function_threshold = 1048576                 # Warn if function > 1MB
+
+# === Function Definitions ===
+# Format: [functions."0xADDRESS"]
+# Options: size = N (bytes) OR end = 0xADDRESS
+#          name = "custom_name" (optional)
+#          parent = 0xADDRESS (for discontinuous chunks)
+
+# Example: Entry point function
+# [functions."0x82000290"]
+# size = 0x100
+# name = "game_entry"
+
+# === Known Functions from symbols.txt ===
+# You can add specific functions here from your symbols.txt file
+# The tool will auto-discover most functions, but manual entries help with:
+# - Functions with unusual control flow
+# - Discontinuous code regions (chunks)
+# - Functions that need specific size boundaries
+
+# === Invalid Instruction Hints ===
+# Data embedded in code sections (constants, padding, etc.)
+# [[invalid_instructions]]
+# data = 0x82001000
+# size = 0x10
+
+# === Indirect Call Hints ===
+# bctr instructions that are vtable dispatches or computed calls (not switch tables)
+# indirect_calls = [
+#     0x82001234,
+#     0x82005678
+# ]
+
+# === Manual Switch Table Definitions ===
+# Use when auto-detection fails
+# [[switch_tables]]
+# address = 0x82001000      # bctr instruction address
+# register = 11             # Index register (r11)
+# labels = [                # Jump targets
+#     0x82001100,
+#     0x82001200,
+#     0x82001300
+# ]
+
+# === Mid-Assembly Hooks ===
+# Custom hooks for special handling (advanced usage)
+# [[midasm_hook]]
+# address = 0x82001000
+# name = "my_hook"
+# registers = ["r3", "r4"]
+# return = false
+# after_instruction = false

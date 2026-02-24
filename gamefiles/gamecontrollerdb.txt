@@ -1,0 +1,15 @@
+# Game Controller DB
+# SDL2 game controller mappings for various controllers
+# This file is used by SDL2 to map controller inputs
+
+# Xbox 360 Controller
+030000005e0400008e02000014010000,Xbox 360 Controller,platform:Mac OS X,a:b0,b:b1,x:b2,y:b3,back:b9,guide:b10,start:b8,leftstick:b6,rightstick:b7,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,
+
+# Xbox One Controller
+030000005e040000d102000001010000,Xbox One Controller,platform:Mac OS X,a:b0,b:b1,x:b2,y:b3,back:b9,guide:b10,start:b8,leftstick:b6,rightstick:b7,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a3,lefttrigger:a4,righttrigger:a5,
+
+# PS4 Controller
+030000004c050000c405000000010000,PS4 Controller,platform:Mac OS X,a:b1,b:b2,x:b0,y:b3,back:b8,guide:b12,start:b9,leftstick:b10,rightstick:b11,leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,righty:a5,lefttrigger:a3,righttrigger:a4,
+
+# Add more controller mappings as needed
+# Format: GUID,Name,platform:Platform,mappings...

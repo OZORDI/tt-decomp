@@ -1,0 +1,136 @@
+# IDE folders
+.idea/
+.vs/
+
+# Caches
+__pycache__
+.mypy_cache
+.cache/
+
+# Original files
+orig/*/*
+!orig/*/.gitkeep
+*.dol
+*.rel
+*.elf
+*.o
+*.map
+*.MAP
+
+# Build files
+build/
+.ninja_*
+build.ninja
+
+# decompctx output
+ctx.*
+*.ctx
+
+# Generated configs
+objdiff.json
+compile_commands.json
+
+# Miscellaneous
+/*.txt
+alt-docs/
+*.exe
+.ninja_log
+.DS_Store
+
+# re3-style ignores
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.obj
+*.o
+*.d
+*.log
+*.ninja
+*.ninja_deps
+*.ninja_log
+compile_commands.json
+build.ninja
+.ninja_*
+
+# Build directories
+build/
+bin/
+obj/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+*.egg
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Original game files
+orig/
+gamefiles/*
+!gamefiles/.gitkeep
+!gamefiles/README.md
+*.xex
+*.iso
+
+# Backup files
+*-backup-*.tar.gz
+
+# Analysis outputs
+utils/analysis/*_analysis.txt
+utils/analysis/*_disasm.txt
+utils/analysis/filtered_files.txt
+utils/naming/*_report.txt
+utils/naming/*_results.txt
+
+# Old symbol versions (keep only latest)
+config/*/symbols_autonamed_v[0-9].txt
+config/*/symbols_autonamed_v1[0-6].txt
+config/*/symbols_pre_*.txt
+config/*/*_deadcode.txt
+
+# Build artifacts
+*.ninja
+*.ninja_deps
+*.ninja_log
+compile_commands.json
+build.ninja
+
+# Temporary/WIP docs
+docs/**/*_wip.md
+docs/**/*_old.md
+docs/**/README_*.md
+
+# Internal research and tooling (not for public release)
+docs/
+orig/
+utils/
+scripts/__pycache__/
+scripts/*.bak*
+
+# Kiro IDE
+.kiro/
+
+# Legacy recomp passes
+recomp/legacy/
+
+# Reference projects (link to them instead)
+Reference Projects/

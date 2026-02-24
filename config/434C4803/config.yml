@@ -1,0 +1,16 @@
+# Rockstar Games Presents Table Tennis (Xbox 360)
+# Internal name: pong_xenon_final.pe
+# Built: Wed May 10 20:40:52 2006
+# Entry point: 0x8242BD20
+
+object: orig/434C4803/default.xex
+
+symbols: config/434C4803/symbols.txt
+splits: config/434C4803/splits.txt
+
+quick_analysis: false
+detect_objects: true
+detect_strings: true
+write_asm: true
+symbols_known: false
+fill_gaps: true

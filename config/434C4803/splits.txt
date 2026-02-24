@@ -1,0 +1,90 @@
+Sections:
+	.rdata      type:rodata align:65536
+	.pdata      type:rodata align:65536
+	BINKBSS     type:rodata align:65536
+	.text       type:code align:65536
+	.no_bbt     type:code align:65536
+	.embsec_    type:code align:65536
+	.embsec_    type:code align:65536
+	.embsec_    type:code align:65536
+	.embsec_    type:code align:65536
+	.embsec_    type:code align:65536
+	.embsec_    type:code align:65536
+	.embsec_    type:code align:65536
+	BINK        type:code align:65536
+	.data       type:data align:65536
+	BINKDATA    type:data align:65536
+	.tls        type:data align:65536
+	.idata      type:data align:65536
+
+src/crt/string.c:
+	.text       start:0x820c0000 end:0x820c0038
+	.text       start:0x82186358 end:0x82186418
+
+src/crt/entry.c:
+	.text       start:0x820c0038 end:0x820c00c0
+	.text       start:0x820c0128 end:0x820c016c
+	.text       start:0x82186ca8 end:0x82186d98
+	.text       start:0x825836e8 end:0x825836f4
+
+src/rage/render_loop.c:
+	.text       start:0x820c00c0 end:0x820c0120
+	.text       start:0x8214fa58 end:0x8214fc2c
+	.text       start:0x821540d0 end:0x82154128
+	.text       start:0x822227a8 end:0x82222800
+	.text       start:0x82222930 end:0x82222a74
+	.text       start:0x82228f30 end:0x82229638
+	.text       start:0x82229760 end:0x82229f3c
+	.text       start:0x82243e20 end:0x82243ea8
+	.text       start:0x822bc2d0 end:0x822bc440
+	.text       start:0x8234b510 end:0x8234b614
+
+src/rage/game_loop.c:
+	.text       start:0x820c0378 end:0x820c0b40
+	.text       start:0x820f8a00 end:0x820f8afc
+	.text       start:0x82100b78 end:0x82100cb4
+	.text       start:0x821c77e8 end:0x821c7900
+	.text       start:0x82221ed0 end:0x82222638
+	.text       start:0x822e17b0 end:0x822e1984
+	.text       start:0x822e2430 end:0x822e250c
+	.text       start:0x822e3040 end:0x822e30b8
+	.text       start:0x822e3828 end:0x822e39ac
+	.text       start:0x822e3b38 end:0x822e3ba8
+
+src/rage/app_init.c:
+	.text       start:0x8215cb60 end:0x8215cc18
+	.text       start:0x82176878 end:0x82176a74
+	.text       start:0x8242b8a8 end:0x8242b958
+	.text       start:0x82566ac8 end:0x82566b4c
+
+src/crt/heap.c:
+	.text       start:0x821861a0 end:0x8218629c
+	.text       start:0x82186e40 end:0x82187178
+	.text       start:0x821871c0 end:0x821874d4
+	.text       start:0x8242c178 end:0x8242c2c0
+
+src/rage/main.c:
+	.text       start:0x82186418 end:0x82186690
+	.text       start:0x82186780 end:0x82186ca8
+
+src/rage/scene_render.c:
+	.text       start:0x822c07e0 end:0x822c0c48
+
+src/crt/version.c:
+	.text       start:0x8242bb70 end:0x8242bd14
+
+src/crt/startup.c:
+	.text       start:0x8242bd20 end:0x8242c178
+	.text       start:0x8242c2c0 end:0x8242c318
+	.text       start:0x8242fb60 end:0x8242fb70
+	.text       start:0x8242fdc8 end:0x8242fed0
+
+src/crt/exit.c:
+	.text       start:0x8242f6b0 end:0x8242f7b0
+	.text       start:0x8242f7d0 end:0x8242f7fc
+	.text       start:0x8242f9d0 end:0x8242fadc
+
+src/crt/memory.c:
+	.text       start:0x8242fed0 end:0x8242fef0
+	.text       start:0x8242ff70 end:0x8242ffac
+	.text       start:0x82434100 end:0x82434520

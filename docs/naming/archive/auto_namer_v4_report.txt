@@ -1,0 +1,400 @@
+auto_namer_v4.py Results
+======================================================================
+
+Pass P1   :     0
+Pass P1r  :   125
+Pass P2   :     0
+Pass P3   :     0
+Pass P3w  :     1
+Pass P4   :     0
+Pass P5   :     0
+Pass P6   :   195
+Pass P6b  :     0
+Pass P6bw :     0
+Pass P7   :    51
+Pass P8   :     2
+Pass P8w  :     0
+─────────────────────────────────────────────
+Total renames:                           374
+  Unnamed (fn_8) fixed:                  249
+  Partial names fixed:                   125
+Previously unnamed:                     6922
+Coverage (fn_8 fixed):                 3.6%
+
+======================================================================
+DETAIL (sorted by address)
+======================================================================
+  [P6  ] 0x820C52F0  pongLookAtController_rtti_7AEC_0                         RTTI vtable 0x82027AEC slot 0 class=pongLookAtController
+  [P1r ] 0x820C7530  pongCreature_StartEmote                                  string ref (was pongCreature_StartEmote_7530_7530_7530_7530_7530_7530_7530_7530): 'pongCreature::StartEmote'
+  [P1r ] 0x820C8D08  xmlNodeStructAnimHashEntryArray_Save                     string ref (was xmlNodeStructAnimHashEntryArray_Save_8D08_8D08_8D08_8D08_8D08_8D08_8D08_8D08): 'xmlNodeStructAnimHashEntryArray::Save'
+  [P1r ] 0x820C96A0  pongBlendShapeController_CalcBoneValue                   string ref (was pongBlendShapeController_CalcBoneValue_96A0_96A0_96A0_96A0_96A0_96A0_96A0_96A0): 'pongBlendShapeController::CalcBoneValue'
+  [P1r ] 0x820C9D98  pongLookAtDriver_VirtualConstructFromPtr                 string ref (was pongLookAtDriver_VirtualConstructFromPtr_9D98_9D98_9D98_9D98_9D98_9D98_9D98_9D98): 'pongLookAtDriver::VirtualConstructFromPtr'
+  [P7  ] 0x820CB5F0  pongMover_ctor_B5F0                                      stores vtable 0x820280DC (pongMover) into 0(r3)
+  [P6  ] 0x820CD3B8  pongBlender_rtti_8260_1                                  RTTI vtable 0x82028260 slot 1 class=pongBlender
+  [P6  ] 0x820CEB70  pongBlender_rtti_8260_0                                  RTTI vtable 0x82028260 slot 0 class=pongBlender
+  [P1r ] 0x820D0DA0  pongBlendLookAtDriver_UpdateBody                         string ref (was pongBlendLookAtDriver_UpdateBody_0DA0_0DA0_0DA0_0DA0_0DA0_0DA0_0DA0_0DA0): 'pongBlendLookAtDriver::UpdateBody'
+  [P1r ] 0x820D10B0  pongBlendLookAtDriver_UpdateFace                         string ref (was pongBlendLookAtDriver_UpdateFace_10B0_10B0_10B0_10B0_10B0_10B0_10B0_10B0): 'pongBlendLookAtDriver::UpdateFace'
+  [P6  ] 0x820D28E0  pongLookAtController_rtti_7AEC_1                         RTTI vtable 0x82027AEC slot 1 class=pongLookAtController
+  [P1r ] 0x820D5A78  pongSkelLookAtDriver_UpdateBody                          string ref (was pongSkelLookAtDriver_UpdateBody_5A78_5A78_5A78_5A78_5A78_5A78_5A78_5A78): 'pongSkelLookAtDriver::UpdateBody'
+  [P1r ] 0x820DA6F0  pcrSwingBlender_UpdatePhase                              string ref (was pcrSwingBlender_UpdatePhase_A6F0_A6F0_A6F0_A6F0_A6F0_A6F0_A6F0_A6F0): 'pcrSwingBlender::UpdatePhase'
+  [P6  ] 0x820DB500  pcrSwingBlender_rtti_89E8_0                              RTTI vtable 0x820289E8 slot 0 class=pcrSwingBlender
+  [P7  ] 0x820DC428  pcrSwingBlend_ctor_C428                                  stores vtable 0x82028A84 (pcrSwingBlend) into 0(r3)
+  [P7  ] 0x820DE8A8  pcrAnimEvent_ctor_E8A8                                   stores vtable 0x82028CE4 (pcrAnimEvent) into 0(r3)
+  [P1r ] 0x820E0190  LocomotionStateAnim_Load                                 string ref (was LocomotionStateAnim_Load_0190_0190_0190_0190_0190_0190_0190_0190): 'LocomotionStateAnim::Load'
+  [P1r ] 0x820E16C0  LocomotionStateMf_Load                                   string ref (was LocomotionStateMf_Load_16C0_16C0_16C0_16C0_16C0_16C0_16C0_16C0): 'LocomotionStateMf::Load'
+  [P7  ] 0x820EB888  pcrSwingData_ctor_B888                                   stores vtable 0x8202E9AC (pcrSwingData) into 0(r3)
+  [P1r ] 0x820F3CA0  grmModelFactory_sm_DeclMap                               string ref (was grmModelFactory_sm_DeclMap_3CA0_3CA0_3CA0_3CA0_3CA0_3CA0_3CA0_3CA0): 'grmModelFactory::sm_DeclMap'
+  [P1r ] 0x820F8318  pgStreamer_Read                                          string ref (was pgStreamer_Read_8318_8318_8318_8318_8318_8318_8318_8318): 'pgStreamer::Read'
+  [P1r ] 0x820F8520  pgStreamer_Open                                          string ref (was pgStreamer_Open_8520_8520_8520_8520_8520_8520_8520_8520): 'pgStreamer::Open'
+  [P1r ] 0x820F88F8  pgStreamer_Close                                         string ref (was pgStreamer_Close_88F8_88F8_88F8_88F8_88F8_88F8_88F8_88F8): 'pgStreamer::Close'
+  [P1r ] 0x820F8B00  pgStreamer_Drain                                         string ref (was pgStreamer_Drain_8B00_8B00_8B00_8B00_8B00_8B00_8B00_8B00): 'pgStreamer::Drain'
+  [P1r ] 0x820F9DC0  fxCloth_CreateClothSim                                   string ref (was fxCloth_CreateClothSim_9DC0_9DC0_9DC0_9DC0_9DC0_9DC0_9DC0_9DC0): 'fxCloth::CreateClothSim'
+  [P1r ] 0x820FF078  fxHair_Init                                              string ref (was fxHair_Init_F078_F078_F078_F078_F078_F078_F078_F078): 'fxHair::Init'
+  [P6  ] 0x82101B48  gmLogicNode_rtti_01DC_1                                  RTTI vtable 0x820301DC slot 1 class=gmLogicNode
+  [P6  ] 0x82101F08  gmLogicNode_rtti_01DC_0                                  RTTI vtable 0x820301DC slot 0 class=gmLogicNode
+  [P1r ] 0x8210D400  pongTrainingDrill_IncreaseNumSuccesses                   string ref (was pongTrainingDrill_IncreaseNumSuccesses_D400_D400_D400_D400_D400_D400_D400_D400): 'pongTrainingDrill::IncreaseNumSuccesses'
+  [P1r ] 0x8210D844  pongTrainingDrill_SetUpBallSpin                          string ref (was pongTrainingDrill_SetUpBallSpin_D844_D844_D844_D844_D844_D844_D844_D844): 'pongTrainingDrill::SetUpBallSpin'
+  [P1r ] 0x8210D8B0  pongTrainingDrill_ChooseRobotTarget                      string ref (was pongTrainingDrill_ChooseRobotTarget_D8B0_D8B0_D8B0_D8B0_D8B0_D8B0_D8B0_D8B0): 'pongTrainingDrill::ChooseRobotTarget'
+  [P1r ] 0x8210F448  pongDrillSoftShot_SetUpBallHitData                       string ref (was pongDrillSoftShot_SetUpBallHitData_F448_F448_F448_F448_F448_F448_F448_F448): 'pongDrillSoftShot::SetUpBallHitData'
+  [P1r ] 0x8211031C  pongDrillSpin_Process                                    string ref (was pongDrillSpin_Process_031C_031C_031C_031C_031C_031C_031C_031C): 'pongDrillSpin::Process'
+  [P1r ] 0x82110E6C  pongDrillCounterSpin_Process                             string ref (was pongDrillCounterSpin_Process_0E6C_0E6C_0E6C_0E6C_0E6C_0E6C_0E6C_0E6C): 'pongDrillCounterSpin::Process'
+  [P1r ] 0x821110E8  pongDrillCounterSpin_IncreaseNumTries                    string ref (was pongDrillCounterSpin_IncreaseNumTries_10E8_10E8_10E8_10E8_10E8_10E8_10E8_10E8): 'pongDrillCounterSpin::IncreaseNumTries'
+  [P1r ] 0x82111A98  pongDrillSmash_ChooseRobotTarget                         string ref (was pongDrillSmash_ChooseRobotTarget_1A98_1A98_1A98_1A98_1A98_1A98_1A98_1A98): 'pongDrillSmash::ChooseRobotTarget'
+  [P6  ] 0x821120A8  gmBallRobot_rtti_2338_0                                  RTTI vtable 0x82032338 slot 0 class=gmBallRobot
+  [P6  ] 0x821129C8  gmBallRobot_rtti_2344_0                                  RTTI vtable 0x82032344 slot 0 class=gmBallRobot
+  [P6  ] 0x82113490  gmPracticeTarget_rtti_2428_0                             RTTI vtable 0x82032428 slot 0 class=gmPracticeTarget
+  [P6  ] 0x82116EB0  atSingleton_rtti_9240_1                                  RTTI vtable 0x82059240 slot 1 class=atSingleton
+  [P1r ] 0x821366D0  crIKSpine_Init                                           string ref (was cr_IKSpine_Init_66D0_66D0_66D0_66D0_66D0_66D0_66D0): 'crIKSpine::Init'
+  [P1r ] 0x82136930  crIKHead_Init                                            string ref (was cr_IKHead_Init_6930_6930_6930_6930_6930_6930_6930): 'crIKHead::Init'
+  [P7  ] 0x8213F160  pongPostEffects_ctor_F160                                stores vtable 0x820342F0 (pongPostEffects) into 0(r3)
+  [P7  ] 0x821444B0  pongShadowMap_ctor_44B0                                  stores vtable 0x820346D0 (pongShadowMap) into 0(r3)
+  [P1r ] 0x82161960  audVoiceSfx_GetSfxRef                                    string ref (was audVoiceSfx_GetSfxRef_1960_1960_1960_1960_1960_1960_1960_1960): 'audVoiceSfx::GetSfxRef'
+  [P1r ] 0x82163498  audVoiceSfx_PlayByEntry                                  string ref (was audVoiceSfx_PlayByEntry_3498_3498_3498_3498_3498_3498_3498_3498): 'audVoiceSfx::PlayByEntry'
+  [P1r ] 0x821639A0  audVoiceSfx_SetReverbVolume                              string ref (was audVoiceSfx_SetReverbVolume_39A0_39A0_39A0_39A0_39A0_39A0_39A0_39A0): 'audVoiceSfx::SetReverbVolume'
+  [P1r ] 0x82163A28  audVoiceSfx_SetEffectVolume                              string ref (was audVoiceSfx_SetEffectVolume_3A28_3A28_3A28_3A28_3A28_3A28_3A28_3A28): 'audVoiceSfx::SetEffectVolume'
+  [P1r ] 0x82163D28  audVoiceStream_GetStreamRef                              string ref (was audVoiceStream_GetStreamRef_3D28_3D28_3D28_3D28_3D28_3D28_3D28_3D28): 'audVoiceStream::GetStreamRef'
+  [P1r ] 0x82163E50  audVoiceStream_Prime                                     string ref (was audVoiceStream_Prime_3E50_3E50_3E50_3E50_3E50_3E50_3E50_3E50): 'audVoiceStream::Prime'
+  [P1r ] 0x82163ED8  audVoiceStream_PlayByEntry                               string ref (was audVoiceStream_PlayByEntry_3ED8_3ED8_3ED8_3ED8_3ED8_3ED8_3ED8_3ED8): 'audVoiceStream::PlayByEntry'
+  [P1r ] 0x821643F0  audVoiceStream_SetReverbVolume                           string ref (was audVoiceStream_SetReverbVolume_43F0_43F0_43F0_43F0_43F0_43F0_43F0_43F0): 'audVoiceStream::SetReverbVolume'
+  [P1r ] 0x82164478  audVoiceStream_SetEffectVolume                           string ref (was audVoiceStream_SetEffectVolume_4478_4478_4478_4478_4478_4478_4478_4478): 'audVoiceStream::SetEffectVolume'
+  [P1r ] 0x82164768  audBank_LoadBank                                         string ref (was audBank_LoadBank_4768_4768_4768_4768_4768_4768_4768_4768): 'audBank::LoadBank'
+  [P1r ] 0x82164AB0  audBank_RemoveUser                                       string ref (was audBank_RemoveUser_4AB0_4AB0_4AB0_4AB0_4AB0_4AB0_4AB0_4AB0): 'audBank::RemoveUser'
+  [P6  ] 0x82166678  pongCameraMgr_rtti_5EA8_1                                RTTI vtable 0x82035EA8 slot 1 class=pongCameraMgr
+  [P6  ] 0x82166DB8  pongCameraMgr_rtti_5EA8_0                                RTTI vtable 0x82035EA8 slot 0 class=pongCameraMgr
+  [P6  ] 0x82169A98  pongInlineCinematics_rtti_6298_1                         RTTI vtable 0x82036298 slot 1 class=pongInlineCinematics
+  [P6  ] 0x8216BBE8  pongInlineCinematics_rtti_6298_0                         RTTI vtable 0x82036298 slot 0 class=pongInlineCinematics
+  [P6  ] 0x82177950  datParser_rtti_74A0_0                                    RTTI vtable 0x820374A0 slot 0 class=rage::datParser
+  [P6  ] 0x8217E6D0  cmActionCtor_rtti_7A28_0                                 RTTI vtable 0x82037A28 slot 0 class=cmActionCtor
+  [P6  ] 0x8217E778  cmActionCtor_rtti_7A34_0                                 RTTI vtable 0x82037A34 slot 0 class=cmActionCtor
+  [P6  ] 0x82182B00  cmSampleCamConfigurationState_rtti_7DD4_0                RTTI vtable 0x82037DD4 slot 0 class=rage::cmSampleCamConfigurationState
+  [P6  ] 0x82182BD8  cmSampleCamConfigurationState_rtti_7DD4_1                RTTI vtable 0x82037DD4 slot 1 class=rage::cmSampleCamConfigurationState
+  [P1r ] 0x82186E40  sysMemSimpleAllocator_Allocate                           string ref (was sysMemSimpleAllocator_Allocate_6E40_6E40_6E40_6E40_6E40_6E40_6E40): 'sysMemSimpleAllocator::Allocate'
+  [P1r ] 0x821874D8  sysMemSimpleAllocator_GetSize                            string ref (was sysMemSimpleAllocator_GetSize_74D8_74D8_74D8_74D8_74D8_74D8_74D8_74D8): 'sysMemSimpleAllocator::GetSize'
+  [P6  ] 0x82187BA0  sysTimeManager_rtti_8CA8_0                               RTTI vtable 0x82038CA8 slot 0 class=rage::sysTimeManager
+  [P6  ] 0x82187BE8  sysTimeManager_rtti_8CA8_1                               RTTI vtable 0x82038CA8 slot 1 class=rage::sysTimeManager
+  [P6  ] 0x82189B48  plrPlayerMgr_rtti_9AB0_1                                 RTTI vtable 0x82039AB0 slot 1 class=plrPlayerMgr
+  [P6  ] 0x8218B2D8  plrPlayerMgr_rtti_9AB0_0                                 RTTI vtable 0x82039AB0 slot 0 class=plrPlayerMgr
+  [P1r ] 0x8218BCD8  pongPlayer_Activate                                      string ref (was pongPlayer_Activate_BCD8_BCD8_BCD8_BCD8_BCD8_BCD8_BCD8_BCD8): 'pongPlayer::Activate'
+  [P1r ] 0x8218BDC0  pongPlayer_Deactivate                                    string ref (was pongPlayer_Activate_BDC0_BDC0_BDC0_BDC0_BDC0_BDC0_BDC0_BDC0): 'pongPlayer::Deactivate'
+  [P1r ] 0x8218CE00  pongPlayer_PostUpdate                                    string ref (was pongPlayer_PostUpdate_CE00_CE00_CE00_CE00_CE00_CE00_CE00_CE00): 'pongPlayer::PostUpdate'
+  [P1r ] 0x8218CF08  pongPlayer_Update                                        string ref (was pongPlayer_Update_CF08_CF08_CF08_CF08_CF08_CF08_CF08_CF08): 'pongPlayer::Update'
+  [P1r ] 0x8218CF30  pongPlayer_Update1                                       string ref (was pongPlayer_Update1_CF30_CF30_CF30_CF30_CF30_CF30_CF30_CF30): 'pongPlayer::Update1'
+  [P1r ] 0x8218D200  pongPlayerShaderParams_UpdateParams                      string ref (was pongPlayer_Update2_D200_D200_D200_D200_D200_D200_D200_D200): 'pongPlayerShaderParams::UpdateParams'
+  [P1r ] 0x8218E178  pongPlayer_UpdateReplay                                  string ref (was pongPlayer_UpdateReplay_E178_E178_E178_E178_E178_E178_E178_E178): 'pongPlayer::UpdateReplay'
+  [P1r ] 0x8218E1E0  pongPlayer_Draw                                          string ref (was pongPlayer_Draw_E1E0_E1E0_E1E0_E1E0_E1E0_E1E0_E1E0_E1E0): 'pongPlayer::Draw'
+  [P1r ] 0x8218E860  pongPlayer_SaveDrawData                                  string ref (was pongPlayer_SaveDrawData_E860_E860_E860_E860_E860_E860_E860_E860): 'pongPlayer::SaveDrawData'
+  [P1r ] 0x82196348  pongPlayer_Process                                       string ref (was pongPlayer_Process_6348_6348_6348_6348_6348_6348_6348_6348): 'pongPlayer::Process'
+  [P6  ] 0x82199100  pongPlayer_rtti_A46C_0                                   RTTI vtable 0x8203A46C slot 0 class=pongPlayer
+  [P6  ] 0x8219C528  atSingleton_rtti_92D4_1                                  RTTI vtable 0x820592D4 slot 1 class=atSingleton
+  [P6  ] 0x821B8C90  pongAmbiencePlayer_rtti_C36C_0                           RTTI vtable 0x8203C36C slot 0 class=pongAmbiencePlayer
+  [P7  ] 0x821C5090  parRTStructure_ctor_5090                                 stores vtable 0x82065AE0 (rage::parRTStructure) into 0(r3)
+  [P6  ] 0x821C7680  pongSaveFile_rtti_CB30_1                                 RTTI vtable 0x8203CB30 slot 1 class=pongSaveFile
+  [P6  ] 0x821C7720  pongSaveFile_rtti_CB30_0                                 RTTI vtable 0x8203CB30 slot 0 class=pongSaveFile
+  [P6  ] 0x821C7788  gdUnlockProfile_rtti_CE2C_1                              RTTI vtable 0x8203CE2C slot 1 class=gdUnlockProfile
+  [P6  ] 0x821CAD40  atSingleton_rtti_CE54_0                                  RTTI vtable 0x8203CE54 slot 0 class=atSingleton
+  [P6  ] 0x821CAD50  atSingleton_rtti_CFA4_0                                  RTTI vtable 0x8203CFA4 slot 0 class=atSingleton
+  [P6  ] 0x821CAD58  gdTrainingSaveData_rtti_CFCC_0                           RTTI vtable 0x8203CFCC slot 0 class=gdTrainingSaveData
+  [P6  ] 0x821CAD60  atSingleton_rtti_CFF4_0                                  RTTI vtable 0x8203CFF4 slot 0 class=atSingleton
+  [P6  ] 0x821CAD68  atSingleton_rtti_D01C_0                                  RTTI vtable 0x8203D01C slot 0 class=atSingleton
+  [P1r ] 0x821CF698  pongLerpQueue_FindNeighborIndices                        string ref (was pongLerpQueue_FindNeighborIndices_F698_F698_F698_F698_F698_F698_F698_F698): 'pongLerpQueue::FindNeighborIndices'
+  [P6  ] 0x821D6AA8  atSingleton_rtti_CEC4_1                                  RTTI vtable 0x8203CEC4 slot 1 class=atSingleton
+  [P1r ] 0x821D8298  gdBallPredictData_FindNearestHittableSample              string ref (was gdBallPredictData_FindNearestHittableSample_8298_8298_8298_8298_8298_8298_8298_8298): 'gdBallPredictData::FindNearestHittableSample'
+  [P1r ] 0x821DAEF0  gdLevelData_AddValues                                    string ref (was gd_LevelData_AddValues_AEF0_AEF0_AEF0_AEF0_AEF0_AEF0_AEF0): 'gdLevelData::AddValues'
+  [P6  ] 0x821DC708  TimerAlert_rtti_0CB8_0                                   RTTI vtable 0x82030CB8 slot 0 class=TimerAlert
+  [P6  ] 0x821DC750  sAlerts_rtti_F258_0                                      RTTI vtable 0x8203F258 slot 0 class=Timer::sAlerts
+  [P1r ] 0x821DC7A0  Timer_SetAlert                                           string ref (was Timer_SetAlert_C7A0_C7A0_C7A0_C7A0_C7A0_C7A0_C7A0_C7A0): 'Timer::SetAlert'
+  [P1r ] 0x821DE5C8  gdTrainingDrillData_PostLoadProperties                   string ref (was gdTrainingDrillData_PostLoadProperties_E5C8_E5C8_E5C8_E5C8_E5C8_E5C8_E5C8_E5C8): 'gdTrainingDrillData::PostLoadProperties'
+  [P7  ] 0x821DE900  gdDrillMovementData_ctor_E900                            stores vtable 0x82040FF4 (gdDrillMovementData) into 0(r3)
+  [P1r ] 0x821DEAC8  gdDrillMovementData_PostLoadProperties                   string ref (was gd_DrillMovementData_PostLoadProperties_EAC8_EAC8_EAC8_EAC8_EAC8_EAC8_EAC8): 'gdDrillMovementData::PostLoadProperties'
+  [P7  ] 0x821DEC68  gdDrillServeMeterData_ctor_EC68                          stores vtable 0x8204105C (gdDrillServeMeterData) into 0(r3)
+  [P7  ] 0x821DEDA0  gdDrillServingData_ctor_EDA0                             stores vtable 0x820410C4 (gdDrillServingData) into 0(r3)
+  [P1r ] 0x821DEE20  gdDrillServingData_PostLoadProperties                    string ref (was gd_DrillServingData_PostLoadProperties_EE20_EE20_EE20_EE20_EE20_EE20_EE20): 'gdDrillServingData::PostLoadProperties'
+  [P7  ] 0x821DEED8  gdDrillReturnData_ctor_EED8                              stores vtable 0x8204112C (gdDrillReturnData) into 0(r3)
+  [P7  ] 0x821DEFB0  gdDrillPlacementData_ctor_EFB0                           stores vtable 0x82041194 (gdDrillPlacementData) into 0(r3)
+  [P1r ] 0x821DF200  gdDrillSoftShotData_PostLoadProperties                   string ref (was gd_DrillSoftShotData_PostLoadProperties_F200_F200_F200_F200_F200_F200_F200): 'gdDrillSoftShotData::PostLoadProperties'
+  [P1r ] 0x821DF520  gdDrillChargingData_PostLoadProperties                   string ref (was gd_DrillChargingData_PostLoadProperties_F520_F520_F520_F520_F520_F520_F520): 'gdDrillChargingData::PostLoadProperties'
+  [P7  ] 0x821DF678  gdDrillSpinData_ctor_F678                                stores vtable 0x820412CC (gdDrillSpinData) into 0(r3)
+  [P1r ] 0x821DF700  gdDrillSpinData_PostLoadProperties                       string ref (was gd_DrillSpinData_PostLoadProperties_F700_F700_F700_F700_F700_F700_F700): 'gdDrillSpinData::PostLoadProperties'
+  [P7  ] 0x821DF810  gdDrillFocusShotData_ctor_F810                           stores vtable 0x82041334 (gdDrillFocusShotData) into 0(r3)
+  [P1r ] 0x821DF910  gdDrillFocusShotData_PostLoadProperties                  string ref (was gd_DrillFocusShotData_PostLoadProperties_F910_F910_F910_F910_F910_F910_F910): 'gdDrillFocusShotData::PostLoadProperties'
+  [P7  ] 0x821DFA20  gdDrillCounterSpinData_ctor_FA20                         stores vtable 0x8204139C (gdDrillCounterSpinData) into 0(r3)
+  [P1r ] 0x821DFB90  gdDrillCounterSpinData_PostLoadProperties                string ref (was gd_DrillCounterSpinData_PostLoadProperties_FB90_FB90_FB90_FB90_FB90_FB90_FB90): 'gdDrillCounterSpinData::PostLoadProperties'
+  [P7  ] 0x821DFD20  gdDrillSmashData_ctor_FD20                               stores vtable 0x82041404 (gdDrillSmashData) into 0(r3)
+  [P6  ] 0x821E0D48  gdStatsProfileNamedGroup_rtti_1630_1                     RTTI vtable 0x82041630 slot 1 class=gdStatsProfileNamedGroup
+  [P6  ] 0x821E0DB8  gdStatsProfileGroup_rtti_1640_1                          RTTI vtable 0x82041640 slot 1 class=gdStatsProfileGroup
+  [P6  ] 0x821E0EA0  gdStatsProfile_rtti_1650_1                               RTTI vtable 0x82041650 slot 1 class=gdStatsProfile
+  [P7  ] 0x821E15B0  gdStatsMgr_ctor_15B0                                     stores vtable 0x82041660 (gdStatsMgr) into 0(r3)
+  [P6  ] 0x821E7FF8  gdTourneySaveValues_rtti_1754_0                          RTTI vtable 0x82041754 slot 0 class=gdTourneySaveValues
+  [P7  ] 0x821E81D0  gdTourneySaveValues_ctor_81D0                            stores vtable 0x82041754 (gdTourneySaveValues) into 0(r3)
+  [P6  ] 0x821E8358  atSingleton_rtti_CFA4_1                                  RTTI vtable 0x8203CFA4 slot 1 class=atSingleton
+  [P6  ] 0x821EDCA8  gdUnlockProfileRule_rtti_2340_0                          RTTI vtable 0x82042340 slot 0 class=gdUnlockProfileRule
+  [P6  ] 0x821EDCB8  gdUnlockProfileItem_rtti_234C_0                          RTTI vtable 0x8204234C slot 0 class=gdUnlockProfileItem
+  [P6  ] 0x821EFB68  gdUnlockMgr_rtti_2370_0                                  RTTI vtable 0x82042370 slot 0 class=gdUnlockMgr
+  [P1r ] 0x821F07A8  gdRivalryData_PostLoadProperties                         string ref (was gd_RivalryData_PostLoadProperties_07A8_07A8_07A8_07A8_07A8_07A8_07A8): 'gdRivalryData::PostLoadProperties'
+  [P1r ] 0x821F09D0  gdRivalry_PostLoadChildren                               string ref (was gd_Rivalry_PostLoadChildren_09D0_09D0_09D0_09D0_09D0_09D0_09D0): 'gdRivalry::PostLoadChildren'
+  [P1r ] 0x821F0C88  gdTierMember_PostLoadProperties                          string ref (was gdTier_Member_PostLoadProperties_0C88_0C88_0C88_0C88_0C88_0C88_0C88): 'gdTierMember::PostLoadProperties'
+  [P1r ] 0x821F0EA0  gdTier_PostLoadProperties                                string ref (was gdTier_PostLoadProperties_0EA0_0EA0_0EA0_0EA0_0EA0_0EA0_0EA0_0EA0): 'gdTier::PostLoadProperties'
+  [P1r ] 0x821F0F10  gdTier_PostLoadChildren                                  string ref (was gdTier_PostLoadChildren_0F10_0F10_0F10_0F10_0F10_0F10_0F10_0F10): 'gdTier::PostLoadChildren'
+  [P1r ] 0x821F11D0  gdLadderCommonData_PostLoadChildren                      string ref (was gd_LadderCommonData_PostLoadChildren_11D0_11D0_11D0_11D0_11D0_11D0_11D0): 'gdLadderCommonData::PostLoadChildren'
+  [P1r ] 0x821F15F0  gdLadderMatch_PostLoadProperties                         string ref (was gd_LadderMatch_PostLoadProperties_15F0_15F0_15F0_15F0_15F0_15F0_15F0): 'gdLadderMatch::PostLoadProperties'
+  [P1r ] 0x821F1D30  gdDifficultyLadder_PostLoadProperties                    string ref (was gdDifficultyLadder_PostLoadProperties_1D30_1D30_1D30_1D30_1D30_1D30_1D30_1D30): 'gdDifficultyLadder::PostLoadProperties'
+  [P1r ] 0x821F1D80  gdDifficultyLadder_PostLoadChildren                      string ref (was gdDifficultyLadder_PostLoadChildren_1D80_1D80_1D80_1D80_1D80_1D80_1D80_1D80): 'gdDifficultyLadder::PostLoadChildren'
+  [P1r ] 0x821F1FE8  gdLadder_PostLoadChildren                                string ref (was gd_Ladder_PostLoadChildren_1FE8_1FE8_1FE8_1FE8_1FE8_1FE8_1FE8): 'gdLadder::PostLoadChildren'
+  [P6  ] 0x821F2130  hitTipData_rtti_3300_0                                   RTTI vtable 0x82043300 slot 0 class=hitTipData
+  [P6  ] 0x821F2158  serveTipData_rtti_3398_0                                 RTTI vtable 0x82043398 slot 0 class=serveTipData
+  [P6  ] 0x821F2180  backspinTipData_rtti_3660_0                              RTTI vtable 0x82043660 slot 0 class=backspinTipData
+  [P1r ] 0x8220BE70  gdCameraDest_PostLoadProperties                          string ref (was gd_CameraDest_PostLoadProperties_BE70_BE70_BE70_BE70_BE70_BE70_BE70): 'gdCameraDest::PostLoadProperties'
+  [P1r ] 0x8220C2C0  gdCameraInst_PostLoadProperties                          string ref (was gd_CameraInst_PostLoadProperties_C2C0_C2C0_C2C0_C2C0_C2C0_C2C0_C2C0): 'gdCameraInst::PostLoadProperties'
+  [P1r ] 0x8220C7A8  gdCameraDef_PostLoadProperties                           string ref (was gd_CameraDef_PostLoadProperties_C7A8_C7A8_C7A8_C7A8_C7A8_C7A8_C7A8): 'gdCameraDef::PostLoadProperties'
+  [P1r ] 0x8220FB18  gdVibEvent_PostLoadProperties                            string ref (was gdVibEvent_PostLoadProperties_FB18_FB18_FB18_FB18_FB18_FB18_FB18_FB18): 'gdVibEvent::PostLoadProperties'
+  [P6  ] 0x82211760  gdProfileOptionsValues_rtti_A57C_0                       RTTI vtable 0x8204A57C slot 0 class=gdProfileOptionsValues
+  [P6  ] 0x82211770  gdOptionsValues_rtti_A588_0                              RTTI vtable 0x8204A588 slot 0 class=gdOptionsValues
+  [P6  ] 0x82212E78  gdTrainingSaveValues_rtti_A870_0                         RTTI vtable 0x8204A870 slot 0 class=gdTrainingSaveValues
+  [P6  ] 0x82213078  gdTrainingSaveData_rtti_CFCC_1                           RTTI vtable 0x8203CFCC slot 1 class=gdTrainingSaveData
+  [P7  ] 0x822134F8  gdUnlockItemData_ctor_34F8                               stores vtable 0x8204ADC4 (gdUnlockItemData) into 0(r3)
+  [P7  ] 0x82220B48  evtInstance_ctor_0B48                                    stores vtable 0x8204DA90 (rage::evtInstance) into 0(r3)
+  [P1r ] 0x822260B8  pongDrawBucket_InitStatics                               string ref (was pongDrawBucket_InitStatics_60B8_60B8_60B8_60B8_60B8_60B8_60B8_60B8): 'pongDrawBucket::InitStatics'
+  [P1r ] 0x82227430  pongDrawBucketManager_Load                               string ref (was pongDrawBucket_Manager_Load_7430_7430_7430_7430_7430_7430_7430): 'pongDrawBucketManager::Load'
+  [P8  ] 0x8222E0C0  cvCurve_E0C0                                             pass8 3x 'cvCurve' (3/4)
+  [P7  ] 0x82230AE0  cvCurve_ctor_0AE0                                        stores vtable 0x8204ED54 (cvCurve) into 0(r3)
+  [P7  ] 0x822323A0  cvCurve_ctor_23A0                                        stores vtable 0x8204EDA4 (cvCurve) into 0(r3)
+  [P8  ] 0x822349E0  cvCurve_49E0                                             pass8 2x 'cvCurve' (2/3)
+  [P7  ] 0x82236F60  cvCurve_ctor_6F60                                        stores vtable 0x8204EE90 (cvCurve) into 0(r3)
+  [P7  ] 0x822371B8  cvCurve_ctor_71B8                                        stores vtable 0x8204EEE0 (cvCurve) into 0(r3)
+  [P6  ] 0x82241280  lvlLevelMgr_rtti_F348_0                                  RTTI vtable 0x8204F348 slot 0 class=lvlLevelMgr
+  [P6  ] 0x822432A0  lvlTable_rtti_F6D4_0                                     RTTI vtable 0x8204F6D4 slot 0 class=lvlTable
+  [P7  ] 0x82246740  crAnimChannelCurveFloat_ctor_6740                        stores vtable 0x8204F964 (rage::crAnimChannelCurveFloat) into 0(r3)
+  [P7  ] 0x82248F98  crAnimation_ctor_8F98                                    stores vtable 0x8204FCB0 (rage::crAnimation) into 0(r3)
+  [P7  ] 0x8224A968  crAnimDofFloat_ctor_A968                                 stores vtable 0x82036884 (rage::crAnimDofFloat) into 0(r3)
+  [P6  ] 0x8225EBD0  msgEventHandler_rtti_01A8_1                              RTTI vtable 0x820501A8 slot 1 class=msgEventHandler
+  [P6  ] 0x8225EE50  msgEventHandler_rtti_01A8_0                              RTTI vtable 0x820501A8 slot 0 class=msgEventHandler
+  [P6  ] 0x82274A60  cmReporterCtor_rtti_6454_0                               RTTI vtable 0x82056454 slot 0 class=cmReporterCtor
+  [P6  ] 0x82274B00  cmReporterCtor_rtti_6460_0                               RTTI vtable 0x82056460 slot 0 class=cmReporterCtor
+  [P6  ] 0x82274BA0  cmReporterCtor_rtti_646C_0                               RTTI vtable 0x8205646C slot 0 class=cmReporterCtor
+  [P6  ] 0x82274C40  cmReporterCtor_rtti_6478_0                               RTTI vtable 0x82056478 slot 0 class=cmReporterCtor
+  [P6  ] 0x82274CE0  cmReporterCtor_rtti_6484_0                               RTTI vtable 0x82056484 slot 0 class=cmReporterCtor
+  [P6  ] 0x82274D80  cmReporterCtor_rtti_6490_0                               RTTI vtable 0x82056490 slot 0 class=cmReporterCtor
+  [P6  ] 0x82274E20  cmReporterCtor_rtti_649C_0                               RTTI vtable 0x8205649C slot 0 class=cmReporterCtor
+  [P6  ] 0x82274EC0  cmReporterCtor_rtti_64A8_0                               RTTI vtable 0x820564A8 slot 0 class=cmReporterCtor
+  [P6  ] 0x82274F28  cmReporterCtor_rtti_64B4_0                               RTTI vtable 0x820564B4 slot 0 class=cmReporterCtor
+  [P6  ] 0x82274FB0  cmReporterCtor_rtti_64C0_0                               RTTI vtable 0x820564C0 slot 0 class=cmReporterCtor
+  [P6  ] 0x82275050  cmReporterCtor_rtti_64CC_0                               RTTI vtable 0x820564CC slot 0 class=cmReporterCtor
+  [P6  ] 0x822750F0  cmReporterCtor_rtti_64D8_0                               RTTI vtable 0x820564D8 slot 0 class=cmReporterCtor
+  [P6  ] 0x82275190  cmReporterCtor_rtti_64E4_0                               RTTI vtable 0x820564E4 slot 0 class=cmReporterCtor
+  [P6  ] 0x82275240  cmReporterCtor_rtti_64F0_0                               RTTI vtable 0x820564F0 slot 0 class=cmReporterCtor
+  [P6  ] 0x822803F0  pongBallInstance_rtti_7094_1                             RTTI vtable 0x82057094 slot 1 class=pongBallInstance
+  [P6  ] 0x82280890  pongBallInstance_rtti_7094_0                             RTTI vtable 0x82057094 slot 0 class=pongBallInstance
+  [P7  ] 0x822812A8  fxTrail_ctor_12A8                                        stores vtable 0x8206ACDC (fxTrail) into 0(r3)
+  [P6  ] 0x82281CF8  gmBallNode_rtti_7288_0                                   RTTI vtable 0x82057288 slot 0 class=gmBallNode
+  [P6  ] 0x82281D10  gmBallNode_rtti_7298_1                                   RTTI vtable 0x82057298 slot 1 class=gmBallNode
+  [P6  ] 0x82282498  gmBallNode_rtti_7298_0                                   RTTI vtable 0x82057298 slot 0 class=gmBallNode
+  [P6  ] 0x822824A0  fxBallSpinTex_rtti_72CC_0                                RTTI vtable 0x820572CC slot 0 class=fxBallSpinTex
+  [P6  ] 0x822824A8  pongBallHit_rtti_73A8_0                                  RTTI vtable 0x820573A8 slot 0 class=pongBallHit
+  [P1r ] 0x82287B50  ballPredict_ProcessHit                                   string ref (was gdBallPredictData_SetInitialBallAngVelocity_7B50_7B50_7B50_7B50_7B50_7B50_7B50_7B50): 'ballPredict::ProcessHit'
+  [P7  ] 0x8228AC30  audControl3d_ctor_AC30                                   stores vtable 0x82035594 (rage::audControl3d) into 0(r3)
+  [P1r ] 0x822914F8  phBoundGeometry_Load_v110                                string ref (was phBoundGeometry_Load_v110_14F8_14F8_14F8_14F8_14F8_14F8_14F8_14F8): 'phBoundGeometry::Load_v110'
+  [P1r ] 0x822978C0  phBoundOctree_FindImpactsToPoly                          string ref (was phBoundOctree_FindImpactsToPoly_78C0_78C0_78C0_78C0_78C0_78C0_78C0_78C0): 'phBoundOctree::FindImpactsToPoly'
+  [P1r ] 0x822994A8  phPolytree_TestProbe                                     string ref (was phPolytree_TestProbe_94A8_94A8_94A8_94A8_94A8_94A8_94A8_94A8): 'phPolytree::TestProbe'
+  [P7  ] 0x822A2668  phBoundRibbon_ctor_2668                                  stores vtable 0x820589BC (rage::phBoundRibbon) into 0(r3)
+  [P1r ] 0x822A8000  phBoundBox_FindImpactsToBox                              string ref (was phBoundBox_FindImpactsToBox_8000_8000_8000_8000_8000_8000_8000_8000): 'phBoundBox::FindImpactsToBox'
+  [P7  ] 0x822BC1B8  shInit_ctor_C1B8                                         stores vtable 0x820590C4 (shInit) into 0(r3)
+  [P6  ] 0x822C0358  atSingleton_rtti_9240_0                                  RTTI vtable 0x82059240 slot 0 class=atSingleton
+  [P6  ] 0x822C0360  atSingleton_rtti_942C_0                                  RTTI vtable 0x8205942C slot 0 class=atSingleton
+  [P6  ] 0x822C0368  atSingleton_rtti_9498_0                                  RTTI vtable 0x82059498 slot 0 class=atSingleton
+  [P1r ] 0x822C5430  phLevelNew_SetExtents                                    string ref (was phLevelNew_SetExtents_5430_5430_5430_5430_5430_5430_5430_5430): 'phLevelNew::SetExtents'
+  [P6  ] 0x822DD6E8  phArchetypeMgr_rtti_9F18_0                               RTTI vtable 0x82059F18 slot 0 class=rage::phArchetypeMgr
+  [P1r ] 0x822E14E8  fiDevice_Mount                                           string ref (was fiDevice_Mount_14E8_14E8_14E8_14E8_14E8_14E8_14E8_14E8): 'fiDevice::Mount'
+  [P6  ] 0x822EA430  fiDeviceLocal_rtti_A244_2                                RTTI vtable 0x8205A244 slot 2 class=rage::fiDeviceLocal
+  [P6  ] 0x822EA788  fiDeviceLocal_rtti_A244_20                               RTTI vtable 0x8205A244 slot 20 class=rage::fiDeviceLocal
+  [P6  ] 0x822ED0C8  atSingleton_rtti_92B0_1                                  RTTI vtable 0x820592B0 slot 1 class=atSingleton
+  [P6  ] 0x822ED740  atSingleton_rtti_92B0_0                                  RTTI vtable 0x820592B0 slot 0 class=atSingleton
+  [P6  ] 0x822ED968  pongScreenCapture_rtti_B0EC_0                            RTTI vtable 0x8205B0EC slot 0 class=pongScreenCapture
+  [P6  ] 0x822EDA60  MessageHandler_rtti_C750_0                               RTTI vtable 0x8205C750 slot 0 class=rage::snConnectionManager::MessageHandler
+  [P6  ] 0x822F9758  hudHUD_rtti_C794_0                                       RTTI vtable 0x8205C794 slot 0 class=hudHUD
+  [P6  ] 0x822F9888  NotifyHandler_rtti_C7A4_0                                RTTI vtable 0x8205C7A4 slot 0 class=rage::2::VsnNotifyBase::rage::VsnSession::?$rlNotifier::NotifyHandler
+  [P6  ] 0x822F9CD8  atSingleton_rtti_942C_1                                  RTTI vtable 0x8205942C slot 1 class=atSingleton
+  [P6  ] 0x822FA518  hudTrainingHUD_rtti_CB88_1                               RTTI vtable 0x8205CB88 slot 1 class=hudTrainingHUD
+  [P6  ] 0x822FB250  hudTrainingHUD_rtti_CB88_0                               RTTI vtable 0x8205CB88 slot 0 class=hudTrainingHUD
+  [P6  ] 0x822FBCA8  pongFrontendLive_rtti_DEB4_0                             RTTI vtable 0x8205DEB4 slot 0 class=pongFrontendLive
+  [P6  ] 0x822FD3F0  pongFrontendLive_rtti_DEB4_1                             RTTI vtable 0x8205DEB4 slot 1 class=pongFrontendLive
+  [P6  ] 0x82305A70  pongAttractContext_rtti_E158_0                           RTTI vtable 0x8205E158 slot 0 class=pongAttractContext
+  [P6  ] 0x82307320  pongTrainingUIContext_rtti_E73C_1                        RTTI vtable 0x8205E73C slot 1 class=pongTrainingUIContext
+  [P6  ] 0x82307628  pongTrainingUIState_rtti_E68C_11                         RTTI vtable 0x8205E68C slot 11 class=pongTrainingUIState
+  [P6  ] 0x823078A0  pongTrainingUIContext_rtti_E73C_0                        RTTI vtable 0x8205E73C slot 0 class=pongTrainingUIContext
+  [P6  ] 0x82308ED8  pongPauseContext_rtti_EB1C_1                             RTTI vtable 0x8205EB1C slot 1 class=pongPauseContext
+  [P6  ] 0x82309350  pongPauseContext_rtti_EB1C_0                             RTTI vtable 0x8205EB1C slot 0 class=pongPauseContext
+  [P6  ] 0x82309FD0  pongAttractContext_rtti_E158_1                           RTTI vtable 0x8205E158 slot 1 class=pongAttractContext
+  [P6  ] 0x8230A310  pongCreditsContext_rtti_EE6C_0                           RTTI vtable 0x8205EE6C slot 0 class=pongCreditsContext
+  [P6  ] 0x8230ABA8  pongCharViewContext_rtti_F224_1                          RTTI vtable 0x8205F224 slot 1 class=pongCharViewContext
+  [P6  ] 0x8230C788  pongCharViewContext_rtti_F224_0                          RTTI vtable 0x8205F224 slot 0 class=pongCharViewContext
+  [P6  ] 0x8230C9A8  pongDialogContext_rtti_F384_1                            RTTI vtable 0x8205F384 slot 1 class=pongDialogContext
+  [P6  ] 0x8230CF88  pongDialogContext_rtti_F384_0                            RTTI vtable 0x8205F384 slot 0 class=pongDialogContext
+  [P6  ] 0x8230EE00  pongFrontendContext_rtti_F848_1                          RTTI vtable 0x8205F848 slot 1 class=pongFrontendContext
+  [P1r ] 0x82310D00  pongFrontendState_WaitForCharLoadToEnd                   string ref (was pongFrontendState_WaitForCharLoadToEnd_0D00_0D00_0D00_0D00_0D00_0D00_0D00_0D00): 'pongFrontendState::WaitForCharLoadToEnd'
+  [P6  ] 0x82310EB8  pongFrontendContext_rtti_F848_0                          RTTI vtable 0x8205F848 slot 0 class=pongFrontendContext
+  [P6  ] 0x82311988  SpectatorHudItemPage_rtti_FCF8_0                         RTTI vtable 0x8205FCF8 slot 0 class=SpectatorHudItemPage
+  [P6  ] 0x823179A0  pongBinkMovie_rtti_0B94_5                                RTTI vtable 0x82060B94 slot 5 class=pongBinkMovie
+  [P1r ] 0x82318E28  hudTrainingPopUp_Restart                                 string ref (was hudTrainingPopUp_Restart_8E28_8E28_8E28_8E28_8E28_8E28_8E28_8E28): 'hudTrainingPopUp::Restart'
+  [P6  ] 0x82322D78  pongStatsContext_rtti_2978_1                             RTTI vtable 0x82062978 slot 1 class=pongStatsContext
+  [P6  ] 0x82322EC0  pongStatsContext_rtti_2978_0                             RTTI vtable 0x82062978 slot 0 class=pongStatsContext
+  [P6  ] 0x82323190  pongLeaderboardContext_rtti_2A1C_1                       RTTI vtable 0x82062A1C slot 1 class=pongLeaderboardContext
+  [P6  ] 0x82323230  pongLeaderboardContext_rtti_2A1C_0                       RTTI vtable 0x82062A1C slot 0 class=pongLeaderboardContext
+  [P6  ] 0x823254B0  hudFrontEnd_rtti_4470_5                                  RTTI vtable 0x82064470 slot 5 class=hudFrontEnd
+  [P1r ] 0x8232EE88  hudLeaderboard_SetNumColumns                             string ref (was hudLeaderboard_SetNumColumns_EE88_EE88_EE88_EE88_EE88_EE88_EE88_EE88): 'hudLeaderboard::SetNumColumns'
+  [P6  ] 0x82336F38  NotifyHandler_rtti_4F44_0                                RTTI vtable 0x82064F44 slot 0 class=rage::X::rage::VrlStatsReader::?$rlNotifier::NotifyHandler
+  [P7  ] 0x82345D08  phMorphGeometry_ctor_5D08                                stores vtable 0x820650F4 (rage::phMorphGeometry) into 0(r3)
+  [P6  ] 0x82346F48  atSingleton_rtti_920C_1                                  RTTI vtable 0x8205920C slot 1 class=atSingleton
+  [P1r ] 0x82347A70  pongCutSceneManager_Load                                 string ref (was pongCutSceneManager_Load_7A70_7A70_7A70_7A70_7A70_7A70_7A70_7A70): 'pongCutSceneManager::Load'
+  [P6  ] 0x82347E90  atSingleton_rtti_91FC_1                                  RTTI vtable 0x820591FC slot 1 class=atSingleton
+  [P6  ] 0x8234A038  pongCSActionCamAnim_rtti_5854_3                          RTTI vtable 0x82065854 slot 3 class=pongCSActionCamAnim
+  [P6  ] 0x8234A108  pongCSActionCamAnim_rtti_5854_4                          RTTI vtable 0x82065854 slot 4 class=pongCSActionCamAnim
+  [P1r ] 0x8234A1D0  pongCSActionCamAnim_Play                                 string ref (was pongCSActionCamAnim_Play_A1D0_A1D0_A1D0_A1D0_A1D0_A1D0_A1D0_A1D0): 'pongCSActionCamAnim::Play'
+  [P6  ] 0x8234AC28  pongCSActionPlayAudio_rtti_5908_6                        RTTI vtable 0x82065908 slot 6 class=pongCSActionPlayAudio
+  [P6  ] 0x8234D348  parStructure_rtti_5A9C_1                                 RTTI vtable 0x82065A9C slot 1 class=rage::parStructure
+  [P7  ] 0x82368EF8  atSafeDLListSimple_ctor_8EF8                             stores vtable 0x820668EC (atSafeDLListSimple) into 0(r3)
+  [P6  ] 0x82369CA0  PresenceWorker_rtti_68DC_1                               RTTI vtable 0x820668DC slot 1 class=rage::rlGamer::PresenceWorker
+  [P7  ] 0x8236D610  atSafeDLListSimple_ctor_D610                             stores vtable 0x82068140 (atSafeDLListSimple) into 0(r3)
+  [P6  ] 0x82371900  PresenceWorker_rtti_68DC_0                               RTTI vtable 0x820668DC slot 0 class=rage::rlGamer::PresenceWorker
+  [P6  ] 0x82371AB0  JoinWorker_rtti_8104_1                                   RTTI vtable 0x82068104 slot 1 class=rage::rlSession::JoinWorker
+  [P6  ] 0x82371B08  LeaveWorker_rtti_8114_1                                  RTTI vtable 0x82068114 slot 1 class=rage::rlSession::LeaveWorker
+  [P6  ] 0x82371B58  MigrateWorker_rtti_8124_1                                RTTI vtable 0x82068124 slot 1 class=rage::rlSession::MigrateWorker
+  [P6  ] 0x82371D90  NotifyHandler_rtti_8134_0                                RTTI vtable 0x82068134 slot 0 class=rage::X::rage::VrlGamer::?$rlNotifier::NotifyHandler
+  [P6  ] 0x8237A4B8  fxLightShaftMgr_rtti_A624_0                              RTTI vtable 0x8206A624 slot 0 class=fxLightShaftMgr
+  [P6  ] 0x8237E518  fxAmbientMgr_rtti_A980_1                                 RTTI vtable 0x8206A980 slot 1 class=fxAmbientMgr
+  [P6  ] 0x8237EEF0  fxAmbientMgr_rtti_A980_0                                 RTTI vtable 0x8206A980 slot 0 class=fxAmbientMgr
+  [P6  ] 0x8237EF58  fxLvlAnimData_rtti_AA64_1                                RTTI vtable 0x8206AA64 slot 1 class=fxLvlAnimData
+  [P6  ] 0x8237F0E0  fxAmbAnimData_rtti_AA74_1                                RTTI vtable 0x8206AA74 slot 1 class=fxAmbAnimData
+  [P7  ] 0x8237F5D8  crAnimFrame_ctor_F5D8                                    stores vtable 0x8204FCBC (rage::crAnimFrame) into 0(r3)
+  [P7  ] 0x82380D38  fxTrailData_ctor_0D38                                    stores vtable 0x8206AC9C (fxTrailData) into 0(r3)
+  [P6  ] 0x823849B8  fxReticle_rtti_AEAC_1                                    RTTI vtable 0x8206AEAC slot 1 class=fxReticle
+  [P6  ] 0x82384B30  fxReticle_rtti_AEBC_0                                    RTTI vtable 0x8206AEBC slot 0 class=fxReticle
+  [P6  ] 0x823856D8  fxReticle_rtti_AEAC_0                                    RTTI vtable 0x8206AEAC slot 0 class=fxReticle
+  [P6  ] 0x82387E40  fxAmbient_rtti_B0BC_1                                    RTTI vtable 0x8206B0BC slot 1 class=fxAmbient
+  [P6  ] 0x82387EC0  fxAmbient_rtti_B0BC_0                                    RTTI vtable 0x8206B0BC slot 0 class=fxAmbient
+  [P6  ] 0x82388408  fxBallSpinLineData_rtti_B37C_0                           RTTI vtable 0x8206B37C slot 0 class=fxBallSpinLineData
+  [P6  ] 0x82388500  fxBallSpinTexData_rtti_B388_0                            RTTI vtable 0x8206B388 slot 0 class=fxBallSpinTexData
+  [P6  ] 0x823885B8  fxBallSpinWispData_rtti_B394_0                           RTTI vtable 0x8206B394 slot 0 class=fxBallSpinWispData
+  [P6  ] 0x82388A88  fxBallSpinTex_rtti_72CC_1                                RTTI vtable 0x820572CC slot 1 class=fxBallSpinTex
+  [P1r ] 0x82388D70  fxBallSpinLines_Update                                   string ref (was fx_BallSpinLines_Update_8D70_8D70_8D70_8D70_8D70_8D70_8D70): 'fxBallSpinLines::Update'
+  [P6  ] 0x82389C50  fxBallSplash2D_rtti_7198_1                               RTTI vtable 0x82057198 slot 1 class=fxBallSplash2D
+  [P6  ] 0x8238A328  fxBallSplash2D_rtti_71A8_1                               RTTI vtable 0x820571A8 slot 1 class=fxBallSplash2D
+  [P6  ] 0x8238A488  fxBallSplash2D_rtti_71A8_0                               RTTI vtable 0x820571A8 slot 0 class=fxBallSplash2D
+  [P6  ] 0x8238AA68  fxBallShadow_rtti_7188_1                                 RTTI vtable 0x82057188 slot 1 class=fxBallShadow
+  [P1r ] 0x8238CA38  gmLogicSinglesMatch_MidGame                              string ref (was gmLogicSinglesMatch_MidGame_CA38_CA38_CA38_CA38_CA38_CA38_CA38_CA38): 'gmLogicSinglesMatch::MidGame'
+  [P1r ] 0x8238F5F0  gmLogicSpectator_stateReplay                             string ref (was gmLogic_Spectator_stateReplay_F5F0_F5F0_F5F0_F5F0_F5F0_F5F0_F5F0): 'gmLogicSpectator::stateReplay'
+  [P3w ] 0x823999E0  gmLogicSinglesMatch_99E0_wrap                            small wrapper 1x 'gmLogicSinglesMatch' (size=20)
+  [P1r ] 0x8239C360  NetTimer_Release                                         string ref (was NetTimer_Release_C360_C360_C360_C360_C360_C360_C360_C360): 'NetTimer::Release'
+  [P7  ] 0x8239C9B0  pongRemotePlayer_ctor_C9B0                               stores vtable 0x8206C528 (pongRemotePlayer) into 0(r3)
+  [P6  ] 0x8239E288  PongNetGameModeManager_rtti_D47C_1                       RTTI vtable 0x8206D47C slot 1 class=PongNetGameModeManager
+  [P1r ] 0x8239FEB0  pongLiveManager_StartSession                             string ref (was pongLiveManager_StartSession_FEB0_FEB0_FEB0_FEB0_FEB0_FEB0_FEB0_FEB0): 'pongLiveManager::StartSession'
+  [P6  ] 0x823A6588  PongNetGameModeManager_rtti_D47C_0                       RTTI vtable 0x8206D47C slot 0 class=PongNetGameModeManager
+  [P6  ] 0x823A9B20  MessageHandler_rtti_E640_0                               RTTI vtable 0x8206E640 slot 0 class=rage::netConnectionManager::MessageHandler
+  [P1r ] 0x823AD240  pongLiveManager_GetAvailablePeerIndex                    string ref (was pongLiveManager_GetAvailablePeerIndex_D240_D240_D240_D240_D240_D240_D240_D240): 'pongLiveManager::GetAvailablePeerIndex'
+  [P1r ] 0x823AD300  pongLiveManager_GetAvailableSpectatorIndex               string ref (was pongLiveManager_GetAvailableSpectatorIndex_D300_D300_D300_D300_D300_D300_D300_D300): 'pongLiveManager::GetAvailableSpectatorIndex'
+  [P1r ] 0x823ADD68  pongLiveManager_EndSession                               string ref (was pongLiveManager_EndSession_DD68_DD68_DD68_DD68_DD68_DD68_DD68_DD68): 'pongLiveManager::EndSession'
+  [P1r ] 0x823B0D38  pongLiveManager_StatsReaderNotifyHandler                 string ref (was pongLiveManager_StatsReaderNotifyHandler_0D38_0D38_0D38_0D38_0D38_0D38_0D38_0D38): 'pongLiveManager::StatsReaderNotifyHandler'
+  [P6  ] 0x823B22B8  atSingleton_rtti_BFD8_1                                  RTTI vtable 0x8206BFD8 slot 1 class=atSingleton
+  [P6  ] 0x823B3938  NotifyHandler_rtti_E69C_0                                RTTI vtable 0x8206E69C slot 0 class=rage::X::rage::VrlFriendsReader::?$rlNotifier::NotifyHandler
+  [P6  ] 0x823B39B0  NotifyHandler_rtti_E6A8_0                                RTTI vtable 0x8206E6A8 slot 0 class=rage::X::rage::VrlAchievementWriter::?$rlNotifier::NotifyHandler
+  [P6  ] 0x823B3A28  NotifyHandler_rtti_E6B4_0                                RTTI vtable 0x8206E6B4 slot 0 class=rage::X::rage::VrlAchievementReader::?$rlNotifier::NotifyHandler
+  [P6  ] 0x823B3AA0  NotifyHandler_rtti_E6C0_0                                RTTI vtable 0x8206E6C0 slot 0 class=rage::X::rage::VrlGamerProfileReader::?$rlNotifier::NotifyHandler
+  [P6  ] 0x823B3B18  NotifyHandler_rtti_E6CC_0                                RTTI vtable 0x8206E6CC slot 0 class=rage::12::UQosResult::rage::VrlQos::?$rlNotifier::NotifyHandler
+  [P6  ] 0x823B3B90  NotifyHandler_rtti_E6D8_0                                RTTI vtable 0x8206E6D8 slot 0 class=rage::X::rage::VrlSessionFinder::?$rlNotifier::NotifyHandler
+  [P6  ] 0x823B3C08  NotifyHandler_rtti_E6E4_0                                RTTI vtable 0x8206E6E4 slot 0 class=rage::2::VsnNotifyBase::rage::VsnSessionFinder::?$rlNotifier::NotifyHandler
+  [P1r ] 0x823B6128  HitMessage_Use                                           string ref (was HitMessage_Use_6128_6128_6128_6128_6128_6128_6128_6128): 'HitMessage::Use'
+  [P1r ] 0x823B6950  SpectatorBallHitMessage_Use                              string ref (was SpectatorBallHitMessage_Use_6950_6950_6950_6950_6950_6950_6950_6950): 'SpectatorBallHitMessage::Use'
+  [P7  ] 0x823B9B08  pcrSwingBlend_ctor_9B08                                  stores vtable 0x82028A84 (pcrSwingBlend) into 0(r3)
+  [P7  ] 0x823C69C8  BallHitMessage_ctor_69C8                                 stores vtable 0x8206FA9C (BallHitMessage) into 0(r3)
+  [P7  ] 0x823C7910  ScoreMessage_ctor_7910                                   stores vtable 0x8206FE24 (ScoreMessage) into 0(r3)
+  [P7  ] 0x823C7D28  InternalMessageRelay_ctor_7D28                           stores vtable 0x8206FE74 (InternalMessageRelay) into 0(r3)
+  [P6  ] 0x823C82A8  pongPresence_rtti_0914_0                                 RTTI vtable 0x82070914 slot 0 class=pongPresence
+  [P1r ] 0x823C94A4  pongPresence_SetInGamePresence                           string ref (was pongPresence_SetInGamePresence_94A4_94A4_94A4_94A4_94A4_94A4_94A4_94A4): 'pongPresence::SetInGamePresence'
+  [P6  ] 0x823C9560  pongPresence_rtti_0914_1                                 RTTI vtable 0x82070914 slot 1 class=pongPresence
+  [P1r ] 0x823C9F38  SessionMessageRequester_stateRequestingMessage           string ref (was SessionMessageRequester_stateRequestingMessage_9F38_9F38_9F38_9F38_9F38_9F38_9F3): 'SessionMessageRequester::stateRequestingMessage'
+  [P7  ] 0x823CA458  NetDataQuery_ctor_A458                                   stores vtable 0x8207116C (NetDataQuery) into 0(r3)
+  [P6  ] 0x823CF590  EventBase_rtti_0DC4_0                                    RTTI vtable 0x82070DC4 slot 0 class=EventBase
+  [P6  ] 0x823CF5A8  EventSwingStart_rtti_0DD0_0                              RTTI vtable 0x82070DD0 slot 0 class=EventSwingStart
+  [P1r ] 0x823D0138  NetBallHitManagerFreeList_Get                            string ref (was NetBallHitManagerFreeList_Get_0138_0138_0138_0138_0138_0138_0138_0138): 'NetBallHitManagerFreeList::Get'
+  [P1r ] 0x823D0220  PongBallHitDataStack_Insert                              string ref (was PongBallHitDataStack_Insert_0220_0220_0220_0220_0220_0220_0220_0220): 'PongBallHitDataStack::Insert'
+  [P7  ] 0x823D1530  NetDataQuery_ctor_1530                                   stores vtable 0x8207116C (NetDataQuery) into 0(r3)
+  [P6  ] 0x823D1968  stateRequestData_rtti_11FC_11                            RTTI vtable 0x820711FC slot 11 class=NetDataQuery::stateRequestData
+  [P6  ] 0x823D19C8  stateRequestData_rtti_11FC_13                            RTTI vtable 0x820711FC slot 13 class=NetDataQuery::stateRequestData
+  [P1r ] 0x823D5B00  pongGameContext_Process                                  string ref (was pongGameContext_Process_5B00_5B00_5B00_5B00_5B00_5B00_5B00_5B00): 'pongGameContext::Process'
+  [P6  ] 0x823D7928  pongGameContext_rtti_1B50_0                              RTTI vtable 0x82071B50 slot 0 class=pongGameContext
+  [P6  ] 0x823D9338  sgPhysicalObject_rtti_F408_0                             RTTI vtable 0x8204F408 slot 0 class=sgPhysicalObject
+  [P6  ] 0x823D9498  sgPhysicalObject_rtti_F408_1                             RTTI vtable 0x8204F408 slot 1 class=sgPhysicalObject
+  [P6  ] 0x823D9E90  sgTraverseInitialize_rtti_1D4C_0                         RTTI vtable 0x82071D4C slot 0 class=sgTraverseInitialize
+  [P6  ] 0x823D9F10  sgTraverseInitialize_rtti_1D4C_1                         RTTI vtable 0x82071D4C slot 1 class=sgTraverseInitialize
+  [P6  ] 0x823D9F28  sgTraverseReset_rtti_1D5C_1                              RTTI vtable 0x82071D5C slot 1 class=sgTraverseReset
+  [P6  ] 0x823D9F40  sgTraverseRestart_rtti_1D6C_1                            RTTI vtable 0x82071D6C slot 1 class=sgTraverseRestart
+  [P6  ] 0x823D9F58  sgTraverseUpdate_rtti_1D7C_1                             RTTI vtable 0x82071D7C slot 1 class=sgTraverseUpdate
+  [P6  ] 0x823D9F70  sgTraversePostUpdate_rtti_1D8C_1                         RTTI vtable 0x82071D8C slot 1 class=sgTraversePostUpdate
+  [P6  ] 0x823D9F88  sgTraverseDraw_rtti_1D9C_1                               RTTI vtable 0x82071D9C slot 1 class=sgTraverseDraw
+  [P6  ] 0x823D9FA0  sgTraverseDrawDebug_rtti_1DAC_1                          RTTI vtable 0x82071DAC slot 1 class=sgTraverseDrawDebug
+  [P6  ] 0x823D9FB8  sgTraverseTerminate_rtti_1DBC_1                          RTTI vtable 0x82071DBC slot 1 class=sgTraverseTerminate
+  [P7  ] 0x823DA798  atSafeDLListSimple_ctor_A798                             stores vtable 0x82071F30 (atSafeDLListSimple) into 0(r3)
+  [P6  ] 0x823E0678  EvtAcceptLeaveRequestSucceeded_rtti_315C_1               RTTI vtable 0x8207315C slot 1 class=rage::EvtAcceptLeaveRequestSucceeded
+  [P6  ] 0x823E0688  EvtAcceptLeaveRequestSucceeded_rtti_315C_2               RTTI vtable 0x8207315C slot 2 class=rage::EvtAcceptLeaveRequestSucceeded
+  [P7  ] 0x823E6750  atSafeDLListSimple_ctor_6750                             stores vtable 0x82073D3C (atSafeDLListSimple) into 0(r3)
+  [P6  ] 0x823E7210  snSession_rtti_2854_1                                    RTTI vtable 0x82072854 slot 1 class=rage::snSession
+  [P6  ] 0x823E9078  NotifyHandler_rtti_3BC4_0                                RTTI vtable 0x82073BC4 slot 0 class=rage::X::rage::VrlSession::?$rlNotifier::NotifyHandler
+  [P6  ] 0x823EC2D8  snSession_rtti_2854_0                                    RTTI vtable 0x82072854 slot 0 class=rage::snSession
+  [P7  ] 0x823ED570  hsmContext_ctor_D570                                     stores vtable 0x82073F08 (rage::hsmContext) into 0(r3)
+  [P6  ] 0x823ED820  hsmContext_rtti_3F08_1                                   RTTI vtable 0x82073F08 slot 1 class=rage::hsmContext
+  [P6  ] 0x823EE1F0  snNotifySyslinkRequest_rtti_4100_0                       RTTI vtable 0x82074100 slot 0 class=rage::snNotifySyslinkRequest
+  [P6  ] 0x823EE258  snNotifyFoundSyslink_rtti_410C_0                         RTTI vtable 0x8207410C slot 0 class=rage::snNotifyFoundSyslink
+  [P6  ] 0x823EF250  snSessionFinder_rtti_4124_1                              RTTI vtable 0x82074124 slot 1 class=rage::snSessionFinder
+  [P6  ] 0x823EFD88  snNotifyJoinRequest_rtti_43B0_0                          RTTI vtable 0x820743B0 slot 0 class=rage::snNotifyJoinRequest
+  [P6  ] 0x823EFE58  snNotifyJoin_rtti_43BC_0                                 RTTI vtable 0x820743BC slot 0 class=rage::snNotifyJoin
+  [P6  ] 0x823F0F20  EvtJoinReply_rtti_2E20_0                                 RTTI vtable 0x82072E20 slot 0 class=rage::EvtJoinReply
+  [P6  ] 0x823F8138  audControl3dWrapper_rtti_4B98_0                          RTTI vtable 0x82074B98 slot 0 class=rage::audControl3dWrapper
+  [P7  ] 0x823F8AE0  swfSCRIPTOBJECT_ctor_8AE0                                stores vtable 0x82074D14 (rage::swfSCRIPTOBJECT) into 0(r3)
+  [P1r ] 0x82403824  swfOBJECT_Fixup                                          string ref (was swfOBJECT_Fixup_3824_3824_3824_3824_3824_3824_3824_3824): 'swfOBJECT::Fixup'
+  [P1r ] 0x82405E90  swfCMD_Fixup                                             string ref (was swfCMD_Fixup_5E90_5E90_5E90_5E90_5E90_5E90_5E90_5E90): 'swfCMD::Fixup'
+  [P6  ] 0x824081B0  swfCMD_PlaceObject2_rtti_565C_1                          RTTI vtable 0x8207565C slot 1 class=rage::swfCMD_PlaceObject2
+  [P7  ] 0x824086E0  swfCMD_PlaceObject2_ctor_86E0                            stores vtable 0x8207565C (rage::swfCMD_PlaceObject2) into 0(r3)
+  [P7  ] 0x82408758  swfCMD_PlaceObject2ClipEvent_ctor_8758                   stores vtable 0x8207567C (rage::swfCMD_PlaceObject2ClipEvent) into 0(r3)
+  [P1r ] 0x8240C5C0  gdCSCharCamShotName_PostLoadProperties                   string ref (was gd_CSCharCamShotName_PostLoadProperties_C5C0_C5C0_C5C0_C5C0_C5C0_C5C0_C5C0): 'gdCSCharCamShotName::PostLoadProperties'
+  [P1r ] 0x8240C878  gdCSCharCamShotNameSeq_PostLoadProperties                string ref (was gd_CSCharCamShotNameSeq_PostLoadProperties_C878_C878_C878_C878_C878_C878_C878): 'gdCSCharCamShotNameSeq::PostLoadProperties'
+  [P7  ] 0x8240CA50  gdCSCharAnimData_ctor_CA50                               stores vtable 0x82076D4C (gdCSCharAnimData) into 0(r3)
+  [P1r ] 0x8240CD00  gdCSCharAnimData_PostLoadProperties                      string ref (was gd_CSCharAnimData_PostLoadProperties_CD00_CD00_CD00_CD00_CD00_CD00_CD00): 'gdCSCharAnimData::PostLoadProperties'
+  [P1r ] 0x8240D4A8  gdCSCharAnimNames_FindRandAnimData                       string ref (was gd_CSCharAnimNames_FindRandAnimData_D4A8_D4A8_D4A8_D4A8_D4A8_D4A8_D4A8): 'gdCSCharAnimNames::FindRandAnimData'
+  [P1r ] 0x8240DDC0  gdCSCamAnimShotName_PostLoadProperties                   string ref (was gd_CSCamAnimShotName_PostLoadProperties_DDC0_DDC0_DDC0_DDC0_DDC0_DDC0_DDC0): 'gdCSCamAnimShotName::PostLoadProperties'
+  [P1r ] 0x8240E038  gdCSCamAnimShotNameSeq_PostLoadProperties                string ref (was gd_CSCamAnimShotNameSeq_PostLoadProperties_E038_E038_E038_E038_E038_E038_E038): 'gdCSCamAnimShotNameSeq::PostLoadProperties'
+  [P1r ] 0x8240E828  gdCSNameData_PostLoadProperties                          string ref (was gd_CSNameData_PostLoadProperties_E828_E828_E828_E828_E828_E828_E828): 'gdCSNameData::PostLoadProperties'
+  [P1r ] 0x8240ED80  gdCSActionIfData_PostLoadProperties                      string ref (was gdCSActionIfData_PostLoadProperties_ED80_ED80_ED80_ED80_ED80_ED80_ED80_ED80): 'gdCSActionIfData::PostLoadProperties'
+  [P1r ] 0x8240F2A0  gdCSActionCamAnimData_PostLoadProperties                 string ref (was gd_CSActionCamAnimData_PostLoadProperties_F2A0_F2A0_F2A0_F2A0_F2A0_F2A0_F2A0): 'gdCSActionCamAnimData::PostLoadProperties'
+  [P1r ] 0x8240F450  gdCSActionCharAnimData_PostLoadProperties                string ref (was gd_CSActionCharAnimData_PostLoadProperties_F450_F450_F450_F450_F450_F450_F450): 'gdCSActionCharAnimData::PostLoadProperties'
+  [P1r ] 0x8240F5C0  gdCSActionCharVisibleData_PostLoadProperties             string ref (was gd_CSActionCharVisibleData_PostLoadProperties_F5C0_F5C0_F5C0_F5C0_F5C0_F5C0_F5C0): 'gdCSActionCharVisibleData::PostLoadProperties'
+  [P1r ] 0x8240F6F0  gdCSActionPlayAudioData_PostLoadProperties               string ref (was gd_CSActionPlayAudioData_PostLoadProperties_F6F0_F6F0_F6F0_F6F0_F6F0_F6F0_F6F0): 'gdCSActionPlayAudioData::PostLoadProperties'
+  [P1r ] 0x8240F8D8  gdCSActionLvlAnimData_PostLoadProperties                 string ref (was gd_CSActionLvlAnimData_PostLoadProperties_F8D8_F8D8_F8D8_F8D8_F8D8_F8D8_F8D8): 'gdCSActionLvlAnimData::PostLoadProperties'
+  [P1r ] 0x8240FAA0  gdCSActionLvlAmbAnimData_PostLoadProperties              string ref (was gd_CSActionLvlAmbAnimData_PostLoadProperties_FAA0_FAA0_FAA0_FAA0_FAA0_FAA0_FAA0): 'gdCSActionLvlAmbAnimData::PostLoadProperties'
+  [P1r ] 0x8240FCC8  gdCSActionCharAmbAnimData_PostLoadProperties             string ref (was gd_CSActionCharAmbAnimData_PostLoadProperties_FCC8_FCC8_FCC8_FCC8_FCC8_FCC8_FCC8): 'gdCSActionCharAmbAnimData::PostLoadProperties'
+  [P6  ] 0x82422498  pongCSReplayDirector_rtti_9100_1                         RTTI vtable 0x82079100 slot 1 class=pongCSReplayDirector
+  [P6  ] 0x82423D90  pongCSReplayDirector_rtti_9100_0                         RTTI vtable 0x82079100 slot 0 class=pongCSReplayDirector
+  [P6  ] 0x82424550  atSafeDLListSimple_rtti_9220_0                           RTTI vtable 0x82079220 slot 0 class=atSafeDLListSimple
+  [P6  ] 0x82427B28  fxSpecialFx_rtti_9840_0                                  RTTI vtable 0x82079840 slot 0 class=fxSpecialFx
+  [P7  ] 0x824297C0  rmPtxBirth_ctor_97C0                                     stores vtable 0x82079A94 (rage::rmPtxBirth) into 0(r3)
+  [P6  ] 0x824298E0  rmPtxBirth_rtti_9A94_1                                   RTTI vtable 0x82079A94 slot 1 class=rage::rmPtxBirth
+  [P1r ] 0x824868D0  CCalChannel_SetMediaInfo                                 string ref (was CCalChannel_SetMediaInfo_68D0_68D0_68D0_68D0_68D0_68D0_68D0_68D0): 'CCalChannel::SetMediaInfo'
+  [P1r ] 0x8248E790  CCalMoviePlayer_Seek                                     string ref (was CCalMoviePlayer_Seek_E790_E790_E790_E790_E790_E790_E790_E790): 'CCalMoviePlayer::Seek'

@@ -1,0 +1,570 @@
+================================================================================
+BRIDGE FUNCTION ANALYSIS REPORT — Approach 4
+v9 state: 84.2% coverage | 2692 fn_8 remaining | 843 game_ remaining
+================================================================================
+
+  #      Address  Name                       fn8   Size Callers  DominantClass(votes)
+--------------------------------------------------------------------------------
+  1 0x821A9420  game_9420                    9    124B     128  atSingleton(2)
+  2 0x820D83C8  game_83C8                    6   1228B       1  pongPlayer(0)
+  3 0x823E4CF0  game_4CF0                    5    448B       1  SinglesNetworkClient(0)
+  4 0x823764A0  game_64A0                    5   5996B       1  grmEdgeModel(1)
+  5 0x822EDA08  game_DA08                    5     88B      12  SinglesNetworkClient(1)
+  6 0x82222800  game_2800                    5    184B     100  stateInit(4)
+  7 0x820D7F40  game_7F40                    5   1160B       1  pongPlayer(1)
+  8 0x8247EE00  game_EE00                    4    172B       4  vt8308(1)
+  9 0x824608B8  game_08B8                    4    100B      12  vt8308(1)
+ 10 0x8222B1E8  game_B1E8_B1E8_1             4    980B       1  LocomotionStateMf(1)
+ 11 0x82174298  game_4298                    4    640B       4  phBoundCapsule(1)
+ 12 0x8246D720  game_D720                    3    268B       1  vt8308(0)
+ 13 0x823D99A0  game_99A0                    3    260B       2  crAnimDofFloat(0)
+ 14 0x823D3828  game_3828                    3    168B       4  AckHandling(1)
+ 15 0x820D2610  game_2610                    3    288B       1  pongPlayer(0)
+ 16 0x82571220  game_1220                    2    640B       2  RtlLeaveCriticalSection(0)
+ 17 0x8256ADB0  game_ADB0_ADB0               2    492B       0  xam(0)
+ 18 0x82461860  game_vt58B0_13               2    668B       0  phDemoWorld(0)
+ 19 0x82461278  game_1278                    2     92B       5  msgMsgSink(0)
+ 20 0x82432A70  game_2A70                    2     12B       4  parStreamOutXml(1)
+ 21 0x82430EA0  game_0EA0                    2     88B      13  phMaterialMgrImpl(1)
+ 22 0x823EF438  game_F438                    2    248B       0  snSession(0)
+ 23 0x823DC7E8  game_C7E8                    2   1268B       2  SinglesNetworkClient(1)
+ 24 0x823845D8  game_45D8                    2    216B       1  fxBallTrail(0)
+ 25 0x8225E408  game_E408                    2    120B      24  SinglesNetworkClient(2)
+ 26 0x82224AD8  game_4AD8                    2    876B       4  crAnimDofFloat(1)
+ 27 0x822110F8  game_10F8                    2    100B       3  PongNetRoundRobinCoordinator(1)
+ 28 0x821B5038  game_5038                    2    524B       1  atSingleton(0)
+ 29 0x821A6D70  game_6D70                    2    204B       1  fxBallTrail(0)
+ 30 0x8219B848  game_B848                    2   3292B       1  atSingleton(1)
+ 31 0x8214B8D8  game_B8D8                    2    176B      13  gmBallRobot(1)
+ 32 0x820D6D48  game_6D48                    2    272B       6  LocomotionStateAnim(1)
+ 33 0x820D5040  game_5040                    2     96B       5  pongCreatureInst(1)
+ 34 0x820C7F58  game_7F58                    2    480B       1  phBoundCapsule(0)
+ 35 0x825778A8  game_78A8_w                  1     72B       1  phBoundCapsule(0)
+ 36 0x825699E8  game_99E8_w                  1     68B       1  fiAsciiTokenizer(0)
+ 37 0x82485DF0  game_5DF0                    1    684B       1  vt8A48(1)
+ 38 0x824648F8  game_vt58B0_15               1    380B       0  phDemoWorld(0)
+ 39 0x824612D8  game_12D8                    1     92B       6  msgMsgSink(0)
+ 40 0x82461270  game_1270                    1      8B       3  vt8DF0(0)
+ 41 0x82460C58  game_0C58                    1     88B       3  vt8308(1)
+ 42 0x82460A48  game_0A48                    1     84B       6  phBoundCapsule(1)
+ 43 0x8245A318  game_A318_h                  1    100B       1  msgMsgSink(0)
+ 44 0x8245A150  game_A150                    1    156B       2  phBoundCapsule(1)
+ 45 0x82453590  game_vt4A34_15               1     72B       0  RtlLeaveCriticalSection(0)
+ 46 0x824534A8  game_vt4A34_7                1     76B       0  vt8308(0)
+ 47 0x82451670  game_vt4520_57               1    224B       0  atSingleton(0)
+ 48 0x824508B0  game_vt4520_11               1    112B       0  ?(0)
+ 49 0x8244C928  game_C928_h                  1     88B       1  phBoundCapsule(1)
+ 50 0x82446330  game_6330                    1     60B       2  grmShaderFx(1)
+
+MATH (Python-verified):
+  Direct fn_8 unlock — top 10: 52 (1.93%), top 20: 78 (2.90%), top 50: 122 (4.53%)
+  Cascade estimate (2x-3x multiplier): top 10 → 104-156 fn_8 total
+  Expected coverage after naming top 10+cascade: 84.8% to 85.1%
+  Expected coverage after naming top 50+cascade: 85.6% to 86.4%
+
+================================================================================
+DETAILED ANALYSIS PER FUNCTION
+================================================================================
+
+━━ #01 0x821A9420 — game_9420 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 124B  |  fn_8 neighbors: 9  |  callers: 128  |  callees: 1
+   Caller classes: atSingleton(2), pcrSwingBlend(2), pcrSwingSpace(1), gdMotionRange(1), gdTier(1), gdUnlockItemData(1)
+   Named callers:  assetVersionsCharSpecific_vfn_0, assetVersionsChar_vfn_0, assetVersions_vfn_0, atSingleton_6490_g, atSingleton_6570_h, cellData_vfn_0, charViewData_vfn_0, creditsData_vfn_0
+   r3 offsets:     [0]
+   2-hop classes:  atSingleton(55), pongPlayer(6), SinglesNetworkClient(5), xmlTree(4)
+   ★ Dominant class: atSingleton (25% of 8 named callers, score=2)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: atSingleton_9420
+   REASON:         Class atSingleton dominant (2/8 callers)
+
+━━ #02 0x820D83C8 — game_83C8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 1228B  |  fn_8 neighbors: 6  |  callers: 1  |  callees: 17
+   Named callers:  game_7F40
+   Calls (named):  util_7DE0, __savegprlr_23, pongPlayer_6AA0_g, pongPlayer_6F48_g, LocomotionStateAnim_AED8_fw, pongPlayer_8B90_fw, ph_ctor_69F8_69F8_69F8_69F8
+   2-hop classes:  pongPlayer(11), LocomotionStateAnim(4), phBoundCapsule(4), pongLerpQueue(4)
+   ★ 2-hop class: pongPlayer (score=11)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #03 0x823E4CF0 — game_4CF0 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 448B  |  fn_8 neighbors: 5  |  callers: 1  |  callees: 7
+   Named callers:  game_4BC0
+   Calls (named):  SinglesNetworkClient_54F8_g, __savegprlr_29
+   2-hop classes:  SinglesNetworkClient(4), hsmContext(1), NetDataQuery(1)
+   ★ 2-hop class: SinglesNetworkClient (score=4)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #04 0x823764A0 — game_64A0 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 5996B  |  fn_8 neighbors: 5  |  callers: 1  |  callees: 10
+   Caller classes: grmEdgeModel(1)
+   Named callers:  grmEdgeModel_Create
+   Calls (named):  __savegprlr_14, atSingleton_Find_90D0, nop_8240E6D0, xe_main_thread_init_0038_0038_0038_0038_0038_0038_0038
+   r3 offsets:     [0], [6]
+   String:         "verts:"  (0x82058078)
+   String:         "tris:"  (0x82069FEC)
+   String:         "edges:"  (0x820580FC)
+   2-hop classes:  atSingleton(289), SinglesNetworkClient(113), cmOperatorCtor(113), pg(59)
+   ★ Dominant class: grmEdgeModel (100% of 1 named callers, score=1)
+   → LARGE: complex method or init
+   → Accesses low r3 offsets: likely vtable/header fields
+   → References strings → likely has debug/assert output
+   SUGGESTED NAME: grmEdgeModel_verts_64A0
+   REASON:         String hint + class grmEdgeModel
+
+━━ #05 0x822EDA08 — game_DA08 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 88B  |  fn_8 neighbors: 5  |  callers: 12  |  callees: 1
+   Caller classes: SinglesNetworkClient(1), NetDataQuery(1)
+   Named callers:  NetDataQuery_A8D8, SinglesNetworkClient_54F8_g, game_4BC0, game_4CF0, game_DB00, game_DB58, game_E328
+   Calls (named):  __savegprlr_28, ke_1B00_1B00_1B00_1B00_1B00_1B00
+   2-hop classes:  SinglesNetworkClient(28), NetDataQuery(3), hsmContext(2), xam(2)
+   ★ Dominant class: SinglesNetworkClient (50% of 2 named callers, score=1)
+   SUGGESTED NAME: SinglesNetworkClient_DA08
+   REASON:         Class SinglesNetworkClient dominant (1/2 callers)
+
+━━ #06 0x82222800 — game_2800 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 184B  |  fn_8 neighbors: 5  |  callers: 100  |  callees: 2
+   Caller classes: stateInit(4), stateReturnHit(3), Find(2), stateWaitForSyncState(2), statePreInit(2), SaveIcon(2)
+   Named callers:  Find_vfn_10, Find_vfn_11, Load_vfn_10, Remove_vfn_10, Remove_vfn_11, SaveIcon_vfn_10, SaveIcon_vfn_11, Save_vfn_10
+   Calls (named):  __savegprlr_29, nop_8240E6D0
+   String:         "Attempting to set next machine state to %s (%d) when it is already %s (%d)"  (0x8204DC98)
+   String:         "Invalid state transition (%s -> %s)"  (0x8204DCE4)
+   2-hop classes:  SinglesNetworkClient(233), atSingleton(159), pg(115), xam(49)
+   ★ Dominant class: stateInit (27% of 15 named callers, score=4)
+   → References strings → likely has debug/assert output
+   SUGGESTED NAME: stateInit_Attempting_to_set_ne_2800
+   REASON:         String hint + class stateInit
+
+━━ #07 0x820D7F40 — game_7F40 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 1160B  |  fn_8 neighbors: 5  |  callers: 1  |  callees: 18
+   Caller classes: pongPlayer(1)
+   Named callers:  pongPlayer_BF18_g
+   Calls (named):  LocomotionStateAnim_7B90_g, phBoundCapsule_3F98_g, pongPlayer_6AA0_g, phBoundCapsule_9730_fw, pongPlayer_6F48_g, LocomotionStateAnim_3AD8_g, phBoundCapsule_8CD8_fw, pongLerpQueue_8FE8_8FE8_8FE8_8FE8_8FE8_8FE8_8FE8_8FE8
+   r3 offsets:     [12]
+   2-hop classes:  LocomotionStateAnim(19), pongPlayer(14), phBoundCapsule(12), atSingleton(5)
+   ★ Dominant class: pongPlayer (100% of 1 named callers, score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: pongPlayer_7F40
+   REASON:         Class pongPlayer dominant (1/1 callers)
+
+━━ #08 0x8247EE00 — game_EE00 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 172B  |  fn_8 neighbors: 4  |  callers: 4  |  callees: 2
+   Caller classes: vt8308(1)
+   Named callers:  game_D720, vt8308_D138_g
+   Calls (named):  __savegprlr_28
+   2-hop classes:  vt8308(8)
+   ★ Dominant class: vt8308 (100% of 1 named callers, score=1)
+   SUGGESTED NAME: vt8308_EE00
+   REASON:         Class vt8308 dominant (1/1 callers)
+
+━━ #09 0x824608B8 — game_08B8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 100B  |  fn_8 neighbors: 4  |  callers: 12  |  callees: 2
+   Caller classes: vt8308(1), pg(1)
+   Named callers:  game_1220, game_3B68_w, game_3BB8_w, game_CDA0, game_vt4A34_20, game_vt4A34_23, pg_E710_g, vt8308_43
+   Calls (named):  RtlEnterCriticalSection, RtlLeaveCriticalSection
+   2-hop classes:  msgMsgSink(62), xam(20), RtlEnterCriticalSection(12), pg(7)
+   ★ Dominant class: vt8308 (50% of 2 named callers, score=1)
+   SUGGESTED NAME: vt8308_08B8
+   REASON:         Class vt8308 dominant (1/2 callers)
+
+━━ #10 0x8222B1E8 — game_B1E8_B1E8_1 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 980B  |  fn_8 neighbors: 4  |  callers: 1  |  callees: 9
+   Caller classes: LocomotionStateMf(1)
+   Named callers:  LocomotionStateMf_Load
+   Calls (named):  __savegprlr_22, fiAsciiTokenizer_D278_g, memmove, rage_0CF0, atSingleton_B3F8_g, xe_main_thread_init_0038_0038_0038_0038_0038_0038_0038
+   r3 offsets:     [0]
+   2-hop classes:  cmOperatorCtor(113), atSingleton(51), cmRefreshableCtor(20), cmWorldRefreshableCtor(18)
+   ★ Dominant class: LocomotionStateMf (100% of 1 named callers, score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: LocomotionStateMf_B1E8
+   REASON:         Class LocomotionStateMf dominant (1/1 callers)
+
+━━ #11 0x82174298 — game_4298 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 640B  |  fn_8 neighbors: 4  |  callers: 4  |  callees: 6
+   Caller classes: phBoundCapsule(1)
+   Named callers:  game_9E00, game_A308, phBoundCapsule_AB30_g
+   Calls (named):  pongCameraMgr_2F00, util_90B0, __savegprlr_29
+   2-hop classes:  pongInlineCinematics(7), pongCameraMgr(5), atSingleton(2), pg(1)
+   ★ Dominant class: phBoundCapsule (100% of 1 named callers, score=1)
+   SUGGESTED NAME: phBoundCapsule_4298
+   REASON:         Class phBoundCapsule dominant (1/1 callers)
+
+━━ #12 0x8246D720 — game_D720 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 268B  |  fn_8 neighbors: 3  |  callers: 1  |  callees: 5
+   Named callers:  game_12D8
+   Calls (named):  ke_D5E0_D5E0_D5E0_D5E0_D5E0_D5E0_D5E0_D5E0, __savegprlr_28
+   r3 offsets:     [0]
+   2-hop classes:  vt8308(4), KfLowerIrql(1), phDemoWorld(1), RtlEnterCriticalSection(1)
+   ★ 2-hop class: vt8308 (score=4)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #13 0x823D99A0 — game_99A0 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 260B  |  fn_8 neighbors: 3  |  callers: 2  |  callees: 3
+   Named callers:  game_1B30, ke_3A68_3A68_3A68_3A68_3A68_3A68
+   2-hop classes:  crAnimDofFloat(1), pongCreatureInst(1)
+   ★ 2-hop class: crAnimDofFloat (score=1)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #14 0x823D3828 — game_3828 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 168B  |  fn_8 neighbors: 3  |  callers: 4  |  callees: 0
+   Caller classes: AckHandling(1)
+   Named callers:  AckHandling_ProcessSequence
+   r3 offsets:     [26]
+   2-hop classes:  SinglesNetworkClient(3), SpectatorNetworkClient(2), AckHandling(1)
+   ★ Dominant class: AckHandling (100% of 1 named callers, score=1)
+   SUGGESTED NAME: AckHandling_3828_leaf
+   REASON:         Leaf fn, 1/1 callers are AckHandling
+
+━━ #15 0x820D2610 — game_2610 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 288B  |  fn_8 neighbors: 3  |  callers: 1  |  callees: 3
+   Named callers:  game_2950
+   2-hop classes:  pongPlayer(1)
+   ★ 2-hop class: pongPlayer (score=1)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #16 0x82571220 — game_1220 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 640B  |  fn_8 neighbors: 2  |  callers: 2  |  callees: 3
+   Calls (named):  __savegprlr_24, util_0850
+   r3 offsets:     [0]
+   2-hop classes:  RtlLeaveCriticalSection(3), RtlEnterCriticalSection(3), vt8B80(1), xam(1)
+   ★ 2-hop class: RtlLeaveCriticalSection (score=3)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #17 0x8256ADB0 — game_ADB0_ADB0 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 492B  |  fn_8 neighbors: 2  |  callers: 0  |  callees: 7
+   Calls (named):  util_AB80, __savegprlr_23, util_C5E8, util_6898
+   2-hop classes:  xam(9), vt8308(3), RtlLeaveCriticalSection(3), RtlEnterCriticalSection(3)
+   ★ 2-hop class: xam (score=9)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #18 0x82461860 — game_vt58B0_13 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 668B  |  fn_8 neighbors: 2  |  callers: 0  |  callees: 8
+   Calls (named):  ke_KeReleaseSpinLockFromRaisedIrql_631C_631C_631C_631C_631C_631C, ke_KeAcquireSpinLockAtRaisedIrql_634C_634C_634C_634C_634C_634C, KfLowerIrql, __savegprlr_26, phBoundCapsule_DD10_g, ke_KeRaiseIrqlToDpcLevel_653C_653C_653C_653C_653C_653C
+   2-hop classes:  phDemoWorld(8), phBoundCapsule(2), atSingleton(1)
+   ★ 2-hop class: phDemoWorld (score=8)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #19 0x82461278 — game_1278 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 92B  |  fn_8 neighbors: 2  |  callers: 5  |  callees: 3
+   Named callers:  game_3860_3860, game_DA20, rage_BC00_BC00_BC00_BC00_BC00_BC00
+   Calls (named):  vt8308_D138_g, __savegprlr_29, RtlEnterCriticalSection, RtlLeaveCriticalSection
+   2-hop classes:  msgMsgSink(62), xam(19), RtlEnterCriticalSection(12), vt8308(9)
+   ★ 2-hop class: msgMsgSink (score=62)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #20 0x82432A70 — game_2A70 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 12B  |  fn_8 neighbors: 2  |  callers: 4  |  callees: 0
+   Caller classes: parStreamOutXml(1)
+   Named callers:  game_F1A8, parStreamOutXml_3E40
+   2-hop classes:  vt8E70(3), sysMemSimpleAllocator(2), fiAsciiTokenizer(1), SpectatorHudItem(1)
+   ★ Dominant class: parStreamOutXml (100% of 1 named callers, score=1)
+   → SMALL: simple accessor/helper
+   SUGGESTED NAME: parStreamOutXml_2A70_leaf
+   REASON:         Leaf fn, 1/1 callers are parStreamOutXml
+
+━━ #21 0x82430EA0 — game_0EA0 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 88B  |  fn_8 neighbors: 2  |  callers: 13  |  callees: 0
+   Caller classes: phMaterialMgrImpl(1), grmShaderBasic(1), fiAsciiTokenizer(1), grmShaderFactoryStandard(1), atSingleton(1)
+   Named callers:  atSingleton_8958_g, fiAsciiTokenizer_A908_g, grmShaderBasic_vfn_2, grmShaderFactoryStandard_vfn_7, phMaterialMgrImpl_vfn_1, ph_9398_9398_9398_9398_9398_9398_9398_9398, rage_25D8_25D8_25D8_25D8_25D8_25D8_25D8_25D8, rage_8990_8990_8990_8990_8990_8990_8990_8990
+   r3 offsets:     [0]
+   2-hop classes:  atSingleton(10), fiAsciiTokenizer(5), fiDevice(4), LocomotionStateAnim(4)
+   ★ Dominant class: phMaterialMgrImpl (20% of 5 named callers, score=1)
+   → LEAF with many callers: utility/calculation
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: phMaterialMgrImpl_0EA0_leaf
+   REASON:         Leaf fn, 1/5 callers are phMaterialMgrImpl
+
+━━ #22 0x823EF438 — game_F438 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 248B  |  fn_8 neighbors: 2  |  callers: 0  |  callees: 5
+   Calls (named):  SinglesNetworkClient_4E88_g, __savegprlr_26, snSession_1BF8_g
+   2-hop classes:  snSession(16), SinglesNetworkClient(10), xam(4), snMigrateMachine(2)
+   ★ 2-hop class: snSession (score=16)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #23 0x823DC7E8 — game_C7E8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 1268B  |  fn_8 neighbors: 2  |  callers: 2  |  callees: 3
+   Caller classes: SinglesNetworkClient(1)
+   Named callers:  SinglesNetworkClient_B200_g, game_CCE0
+   Calls (named):  __savegprlr_29
+   r3 offsets:     [72], [76], [80]
+   2-hop classes:  SinglesNetworkClient(8), atSafeDLListSimple(1)
+   ★ Dominant class: SinglesNetworkClient (100% of 1 named callers, score=1)
+   SUGGESTED NAME: SinglesNetworkClient_C7E8
+   REASON:         Class SinglesNetworkClient dominant (1/1 callers)
+
+━━ #24 0x823845D8 — game_45D8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 216B  |  fn_8 neighbors: 2  |  callers: 1  |  callees: 2
+   Named callers:  game_8BA0
+   Calls (named):  __savegprlr_29
+   r3 offsets:     [0]
+   2-hop classes:  fxBallTrail(1)
+   ★ 2-hop class: fxBallTrail (score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #25 0x8225E408 — game_E408 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 120B  |  fn_8 neighbors: 2  |  callers: 24  |  callees: 1
+   Caller classes: SinglesNetworkClient(2), atSingleton(2), pongFrontendContext(1), gdVibEvent(1), pongInlineCinematics(1), pongCSReplayDirector(1)
+   Named callers:  NetBallHitManagerFreeList_F878_h, SinglesNetworkClient_6828_g, SinglesNetworkClient_vfn_5, atSingleton_rtti_9240_1, atSingleton_vfn_1_A720_1, fxReticle_rtti_AEAC_1, game_9E00, game_B848
+   Calls (named):  nop_8240E6D0
+   r3 offsets:     [2]
+   String:         "GetPlayerID - msg tgt not player 0 ^ 1!"  (0x82050080)
+   2-hop classes:  SinglesNetworkClient(220), atSingleton(133), pg(92), pongPlayer(56)
+   ★ Dominant class: SinglesNetworkClient (25% of 8 named callers, score=2)
+   → Accesses low r3 offsets: likely vtable/header fields
+   → References strings → likely has debug/assert output
+   SUGGESTED NAME: SinglesNetworkClient_GetPlayerID___msg_tg_E408
+   REASON:         String hint + class SinglesNetworkClient
+
+━━ #26 0x82224AD8 — game_4AD8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 876B  |  fn_8 neighbors: 2  |  callers: 4  |  callees: 5
+   Caller classes: crAnimDofFloat(1)
+   Named callers:  crAnimDofFloat_75C0_g, ke_30F8_30F8_30F8_30F8_30F8_30F8, ke_4A88_4A88_4A88_4A88_4A88_4A88
+   Calls (named):  fxCloth_CreateClothSim, ke_CAC0_CAC0_CAC0_CAC0_CAC0_CAC0, __savegprlr_26
+   2-hop classes:  crAnimDofFloat(2)
+   ★ Dominant class: crAnimDofFloat (100% of 1 named callers, score=1)
+   SUGGESTED NAME: crAnimDofFloat_4AD8
+   REASON:         Class crAnimDofFloat dominant (1/1 callers)
+
+━━ #27 0x822110F8 — game_10F8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 100B  |  fn_8 neighbors: 2  |  callers: 3  |  callees: 0
+   Caller classes: PongNetRoundRobinCoordinator(1)
+   Named callers:  PongNetRoundRobinCoordinator_00E0_g
+   r3 offsets:     [29]
+   2-hop classes:  vt05E0(2), PongNetRoundRobinCoordinator(2), RoundRobinDataMessage(1), pongNetMessageHolder(1)
+   ★ Dominant class: PongNetRoundRobinCoordinator (100% of 1 named callers, score=1)
+   SUGGESTED NAME: PongNetRoundRobinCoordinator_10F8_leaf
+   REASON:         Leaf fn, 1/1 callers are PongNetRoundRobinCoordinator
+
+━━ #28 0x821B5038 — game_5038 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 524B  |  fn_8 neighbors: 2  |  callers: 1  |  callees: 4
+   Named callers:  rage_4648_4648_4648_4648_4648_4648_4648_4648
+   Calls (named):  pg_5268_g, __savegprlr_25, atSingleton_Find_90D0
+   r3 offsets:     [0]
+   2-hop classes:  atSingleton(88), pg(5), net(4), phJoint3Dof(3)
+   ★ 2-hop class: atSingleton (score=88)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #29 0x821A6D70 — game_6D70 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 204B  |  fn_8 neighbors: 2  |  callers: 1  |  callees: 2
+   Named callers:  game_8BA0
+   2-hop classes:  fxBallTrail(1)
+   ★ 2-hop class: fxBallTrail (score=1)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #30 0x8219B848 — game_B848 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 3292B  |  fn_8 neighbors: 2  |  callers: 1  |  callees: 5
+   Caller classes: atSingleton(1)
+   Named callers:  atSingleton_rtti_92D4_1
+   Calls (named):  pg_E6E0_E6E0_E6E0_E6E0_E6E0_E6E0, __savegprlr_27
+   r3 offsets:     [0]
+   2-hop classes:  pg(56), SinglesNetworkClient(18), pongPlayer(15), atSingleton(11)
+   ★ Dominant class: atSingleton (100% of 1 named callers, score=1)
+   → LARGE: complex method or init
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: atSingleton_B848
+   REASON:         Class atSingleton dominant (1/1 callers)
+
+━━ #31 0x8214B8D8 — game_B8D8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 176B  |  fn_8 neighbors: 2  |  callers: 13  |  callees: 0
+   Caller classes: gmBallRobot(1), mfMotionClipRAGE(1), pongPlayer(1), gdCrAttachmentData(1), fxString(1), LocomotionState(1)
+   Named callers:  LocomotionState_vfn_3, fxHair_Init, fxString_Init, gdCrAttachmentData_PostLoadCreature, gmBallRobot_vfn_1, mfMotionClipRAGE_80C8_h, ph_1EF8_1EF8_1EF8_1EF8_1EF8_1EF8_1EF8_1EF8, ph_9398_9398_9398_9398_9398_9398_9398_9398
+   r3 offsets:     [0], [12]
+   2-hop classes:  LocomotionStateAnim(7), pongPlayer(7), pongShadowMap(4), phBoundCapsule(3)
+   ★ Dominant class: gmBallRobot (17% of 6 named callers, score=1)
+   → LEAF with many callers: utility/calculation
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: gmBallRobot_B8D8_leaf
+   REASON:         Leaf fn, 1/6 callers are gmBallRobot
+
+━━ #32 0x820D6D48 — game_6D48 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 272B  |  fn_8 neighbors: 2  |  callers: 6  |  callees: 1
+   Caller classes: LocomotionStateAnim(1), pongLerpQueue(1)
+   Named callers:  LocomotionStateAnim_BBC8_g, game_7F40, game_83C8, ph_ctor_69F8_69F8_69F8_69F8, pongLerpQueue_9330_h
+   r3 offsets:     [304], [306], [308], [310], [312], [313], [314]
+   2-hop classes:  pongPlayer(6), LocomotionStateAnim(5), pongLerpQueue(4), phBoundCapsule(3)
+   ★ Dominant class: LocomotionStateAnim (50% of 2 named callers, score=1)
+   SUGGESTED NAME: LocomotionStateAnim_6D48
+   REASON:         Class LocomotionStateAnim dominant (1/2 callers)
+
+━━ #33 0x820D5040 — game_5040 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 96B  |  fn_8 neighbors: 2  |  callers: 5  |  callees: 1
+   Caller classes: pongCreatureInst(1), pg(1)
+   Named callers:  game_27D8, pg_AB78_g, pongCreatureInst_vfn_28
+   2-hop classes:  pongCreatureInst(6), LocomotionStateAnim(3), pg(3), phBoundGeometry(1)
+   ★ Dominant class: pongCreatureInst (50% of 2 named callers, score=1)
+   SUGGESTED NAME: pongCreatureInst_5040
+   REASON:         Class pongCreatureInst dominant (1/2 callers)
+
+━━ #34 0x820C7F58 — game_7F58 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 480B  |  fn_8 neighbors: 2  |  callers: 1  |  callees: 3
+   Calls (named):  phBoundCapsule_3DA0_g, pongCreature_8FA8_g
+   r3 offsets:     [320]
+   2-hop classes:  phBoundCapsule(8), vt72A8(2), pongCreature(2), pg(1)
+   ★ 2-hop class: phBoundCapsule (score=8)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #35 0x825778A8 — game_78A8_w ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 72B  |  fn_8 neighbors: 1  |  callers: 1  |  callees: 1
+   Calls (named):  phBoundCapsule_0E88_g, __savegprlr_29
+   2-hop classes:  phBoundCapsule(17), pongBlendShapeController(1), vt31EC(1)
+   ★ 2-hop class: phBoundCapsule (score=17)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #36 0x825699E8 — game_99E8_w ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 68B  |  fn_8 neighbors: 1  |  callers: 1  |  callees: 1
+   Calls (named):  fiAsciiTokenizer_FC68_g
+   2-hop classes:  fiAsciiTokenizer(3)
+   ★ 2-hop class: fiAsciiTokenizer (score=3)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #37 0x82485DF0 — game_5DF0 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 684B  |  fn_8 neighbors: 1  |  callers: 1  |  callees: 3
+   Caller classes: vt8A48(1)
+   Named callers:  vt8A48_30
+   Calls (named):  vt8308_34D0_g, __savegprlr_17, atSingleton_vfn_46
+   r3 offsets:     [0]
+   2-hop classes:  vt8308(4), CCalChannel(2), vt8A48(2), vt8B80(1)
+   ★ Dominant class: vt8A48 (100% of 1 named callers, score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: vt8A48_5DF0
+   REASON:         Class vt8A48 dominant (1/1 callers)
+
+━━ #38 0x824648F8 — game_vt58B0_15 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 380B  |  fn_8 neighbors: 1  |  callers: 0  |  callees: 5
+   Calls (named):  util_5DA8, util_81B0, phDemoWorld_6018_g
+   r3 offsets:     [4]
+   2-hop classes:  phDemoWorld(2), atSingleton(1), vt8B08(1), vtB598(1)
+   ★ 2-hop class: phDemoWorld (score=2)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #39 0x824612D8 — game_12D8 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 92B  |  fn_8 neighbors: 1  |  callers: 6  |  callees: 3
+   Named callers:  game_1220, game_C628, game_DA20, rage_BC00_BC00_BC00_BC00_BC00_BC00, rage_C228_C228_C228_C228_C228_C228
+   Calls (named):  __savegprlr_29, RtlEnterCriticalSection, RtlLeaveCriticalSection
+   2-hop classes:  msgMsgSink(62), xam(19), RtlEnterCriticalSection(12), vt8308(6)
+   ★ 2-hop class: msgMsgSink (score=62)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #40 0x82461270 — game_1270 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 8B  |  fn_8 neighbors: 1  |  callers: 3  |  callees: 0
+   Named callers:  game_3860_3860, rage_BC00_BC00_BC00_BC00_BC00_BC00
+   2-hop classes:  vt8DF0(1), vt8308(1)
+   ★ 2-hop class: vt8DF0 (score=1)
+   → TINY (<=8B): pure getter/trampoline
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #41 0x82460C58 — game_0C58 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 88B  |  fn_8 neighbors: 1  |  callers: 3  |  callees: 2
+   Caller classes: vt8308(1)
+   Named callers:  game_CDA0, vt8308_53
+   Calls (named):  __savegprlr_29, RtlEnterCriticalSection, RtlLeaveCriticalSection
+   2-hop classes:  msgMsgSink(62), xam(18), RtlEnterCriticalSection(12), vt8308(7)
+   ★ Dominant class: vt8308 (100% of 1 named callers, score=1)
+   SUGGESTED NAME: vt8308_0C58
+   REASON:         Class vt8308 dominant (1/1 callers)
+
+━━ #42 0x82460A48 — game_0A48 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 84B  |  fn_8 neighbors: 1  |  callers: 6  |  callees: 2
+   Caller classes: phBoundCapsule(1)
+   Named callers:  game_C920, game_vt4A34_17, game_vt4A34_18, jumptable_821AB6E8, phBoundCapsule_E5B0_h
+   Calls (named):  __savegprlr_29, RtlEnterCriticalSection, RtlLeaveCriticalSection
+   2-hop classes:  msgMsgSink(62), xam(19), RtlEnterCriticalSection(12), vt8308(6)
+   ★ Dominant class: phBoundCapsule (100% of 1 named callers, score=1)
+   SUGGESTED NAME: phBoundCapsule_0A48
+   REASON:         Class phBoundCapsule dominant (1/1 callers)
+
+━━ #43 0x8245A318 — game_A318_h ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 100B  |  fn_8 neighbors: 1  |  callers: 1  |  callees: 1
+   Named callers:  game_A650_h
+   2-hop classes:  msgMsgSink(1)
+   ★ 2-hop class: msgMsgSink (score=1)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #44 0x8245A150 — game_A150 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 156B  |  fn_8 neighbors: 1  |  callers: 2  |  callees: 3
+   Caller classes: phBoundCapsule(1), msgMsgSink(1)
+   Named callers:  msgMsgSink_5098_g, phBoundCapsule_2A30_g
+   Calls (named):  __savegprlr_29
+   r3 offsets:     [0]
+   2-hop classes:  atSingleton(5), msgMsgSink(3), RtlLeaveCriticalSection(1), phBoundCapsule(1)
+   ★ Dominant class: phBoundCapsule (50% of 2 named callers, score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: phBoundCapsule_A150
+   REASON:         Class phBoundCapsule dominant (1/2 callers)
+
+━━ #45 0x82453590 — game_vt4A34_15 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 72B  |  fn_8 neighbors: 1  |  callers: 0  |  callees: 1
+   r3 offsets:     [4]
+   2-hop classes:  RtlLeaveCriticalSection(1), RtlEnterCriticalSection(1)
+   ★ 2-hop class: RtlLeaveCriticalSection (score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #46 0x824534A8 — game_vt4A34_7 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 76B  |  fn_8 neighbors: 1  |  callers: 0  |  callees: 1
+   r3 offsets:     [4]
+   2-hop classes:  vt8308(1), RtlEnterCriticalSection(1), RtlLeaveCriticalSection(1)
+   ★ 2-hop class: vt8308 (score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #47 0x82451670 — game_vt4520_57 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 224B  |  fn_8 neighbors: 1  |  callers: 0  |  callees: 5
+   Calls (named):  rage_01B8_01B8_01B8_01B8_01B8_01B8_01B8_01B8, _locale_register, msgMsgSink_7EF8_g
+   2-hop classes:  atSingleton(36), msgMsgSink(25), vt8308(9), vt93F8(5)
+   ★ 2-hop class: atSingleton (score=36)
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #48 0x824508B0 — game_vt4520_11 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 112B  |  fn_8 neighbors: 1  |  callers: 0  |  callees: 2
+   Calls (named):  __savegprlr_28
+   SUGGESTED NAME: (insufficient signal — manual analysis needed)
+
+━━ #49 0x8244C928 — game_C928_h ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 88B  |  fn_8 neighbors: 1  |  callers: 1  |  callees: 1
+   Caller classes: phBoundCapsule(1)
+   Named callers:  phBoundCapsule_2A30_g
+   r3 offsets:     [0]
+   2-hop classes:  atSingleton(2), phBoundCapsule(1)
+   ★ Dominant class: phBoundCapsule (100% of 1 named callers, score=1)
+   → Accesses low r3 offsets: likely vtable/header fields
+   SUGGESTED NAME: phBoundCapsule_C928
+   REASON:         Class phBoundCapsule dominant (1/1 callers)
+
+━━ #50 0x82446330 — game_6330 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Size: 60B  |  fn_8 neighbors: 1  |  callers: 2  |  callees: 1
+   Caller classes: grmShaderFx(1)
+   Named callers:  game_00D0, grmShaderFx_vfn_2
+   r3 offsets:     [608], [620]
+   2-hop classes:  atSingleton(3), grmShaderFx(2)
+   ★ Dominant class: grmShaderFx (100% of 1 named callers, score=1)
+   SUGGESTED NAME: grmShaderFx_6330
+   REASON:         Class grmShaderFx dominant (1/1 callers)
+
+================================================================================
+MANUAL_SEEDS FOR auto_namer_v10.py (high-confidence only)
+================================================================================
+
+MANUAL_SEEDS = {
+    0x823764A0: ('grmEdgeModel_64A0', 'manual: 1/1 callers=grmEdgeModel (100%) | callers: grmEdgeModel_Create'),
+    0x82222800: ('stateInit_2800', 'manual: 4/15 callers=stateInit (27%) | callers: Find_vfn_10, Find_vfn_11, Load_vfn_10'),
+    0x820D7F40: ('pongPlayer_7F40', 'manual: 1/1 callers=pongPlayer (100%) | callers: pongPlayer_BF18_g'),
+    0x8247EE00: ('vt8308_EE00', 'manual: 1/1 callers=vt8308 (100%) | callers: game_D720, vt8308_D138_g'),
+    0x8222B1E8: ('LocomotionStateMf_B1E8', 'manual: 1/1 callers=LocomotionStateMf (100%) | callers: LocomotionStateMf_Load'),
+    0x82174298: ('phBoundCapsule_4298', 'manual: 1/1 callers=phBoundCapsule (100%) | callers: game_9E00, game_A308, phBoundCapsule_AB30_g'),
+    0x823D3828: ('AckHandling_3828', 'manual: 1/1 callers=AckHandling (100%) | callers: AckHandling_ProcessSequence'),
+    0x82432A70: ('parStreamOutXml_2A70', 'manual: 1/1 callers=parStreamOutXml (100%) | callers: game_F1A8, parStreamOutXml_3E40'),
+    0x823DC7E8: ('SinglesNetworkClient_C7E8', 'manual: 1/1 callers=SinglesNetworkClient (100%) | callers: SinglesNetworkClient_B200_g, game_CCE0'),
+    0x82224AD8: ('crAnimDofFloat_4AD8', 'manual: 1/1 callers=crAnimDofFloat (100%) | callers: crAnimDofFloat_75C0_g, ke_30F8_30F8_30F8_30F8_30F8_30F8, ke_4A88_4A88_4A88_4A88_4A88_4A88'),
+    0x822110F8: ('PongNetRoundRobinCoordinator_10F8', 'manual: 1/1 callers=PongNetRoundRobinCoordinator (100%) | callers: PongNetRoundRobinCoordinator_00E0_g'),
+    0x8219B848: ('atSingleton_B848', 'manual: 1/1 callers=atSingleton (100%) | callers: atSingleton_rtti_92D4_1'),
+    0x82485DF0: ('vt8A48_5DF0', 'manual: 1/1 callers=vt8A48 (100%) | callers: vt8A48_30'),
+    0x82460C58: ('vt8308_0C58', 'manual: 1/1 callers=vt8308 (100%) | callers: game_CDA0, vt8308_53'),
+    0x82460A48: ('phBoundCapsule_0A48', 'manual: 1/1 callers=phBoundCapsule (100%) | callers: game_C920, game_vt4A34_17, game_vt4A34_18'),
+    0x8244C928: ('phBoundCapsule_C928', 'manual: 1/1 callers=phBoundCapsule (100%) | callers: phBoundCapsule_2A30_g'),
+    0x82446330: ('grmShaderFx_6330', 'manual: 1/1 callers=grmShaderFx (100%) | callers: game_00D0, grmShaderFx_vfn_2'),
+}
+# 17 high-confidence seeds generated

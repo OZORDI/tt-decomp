@@ -1,0 +1,18 @@
+cross_match_gta4_v4_fast — 5 seeds
+================================================================================
+
+Match types:
+  vtable_slot                             : 5
+
+================================================================================
+Class distribution:
+  grcSetup                                : 5
+
+================================================================================
+SEEDS
+================================================================================
+0x82161D40  vt5594_5                                  ->  grcSetup_vfn_2                                      GTA4:0x826F26B8 cls=rage::grcSetup vtable_slot conf=85
+0x82161DB8  vt5594_6                                  ->  grcSetup_vfn_3                                      GTA4:0x82484858 cls=rage::grcSetup vtable_slot conf=85
+0x821620D0  vt5594_9                                  ->  grcSetup_vfn_6                                      GTA4:0x82126C28 cls=rage::grcSetup vtable_slot conf=85
+0x82162178  vt5594_8                                  ->  grcSetup_vfn_5                                      GTA4:0x82484B88 cls=rage::grcSetup vtable_slot conf=85
+0x82162420  vt5594_16                                 ->  grcSetup_vfn_13                                     GTA4:0x82126C68 cls=rage::grcSetup vtable_slot conf=85

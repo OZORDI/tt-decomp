@@ -1,0 +1,275 @@
+#!/usr/bin/env python3
+"""
+Phase 3B: Function Call Renaming
+==================================
+Transforms structured_pass5a/ -> structured_pass5b/
+
+Renames every sub_XXXXXXXX to its real symbol name from symbols_autonamed_v18.txt.
+Also updates:
+  - PPC_FUNC_IMPL declarations
+  - __attribute__((alias)) lines
+  - PPC_WEAK_FUNC declarations
+  - PPC_EXTERN_IMPORT in init.h
+
+Generates include/generated_symbols.h with extern declarations for all 16,653 named functions.
+
+Usage:
+  cd /Users/Ozordi/Downloads/tt-decomp
+  python3 scripts/stage3_rename.py [--dry-run] [--file N]
+"""
+
+import re, json, os, sys, shutil, argparse
+from pathlib import Path
+from collections import defaultdict
+
+BASE       = Path("/Users/Ozordi/Downloads/tt-decomp")
+CFG        = BASE / "config/434C4803"
+INPUT_DIR  = BASE / "recomp/structured_pass5a"
+OUTPUT_DIR = BASE / "recomp/structured_pass5b"
+INCLUDE_DIR = BASE / "include"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Load symbol map
+# ─────────────────────────────────────────────────────────────────────────────
+
+def load_symbol_map():
+    with open(CFG / "master_symbol_map.json") as f:
+        msm = json.load(f)
+
+    # Build: hex_addr_str -> name (only functions)
+    func_map = {}   # "820C0038" -> "xe_main_thread_init_0038"  (8 hex digits, upper)
+    for addr_hex, entry in msm["by_address"].items():
+        if entry["type"] == "function":
+            # Normalize to 8 uppercase hex digits without '0x' prefix
+            addr_int = int(addr_hex, 16)
+            key = f"{addr_int:08X}"
+            name = entry["name"]
+            # Sanitize: ensure name is valid C identifier
+            # Replace any remaining problematic chars
+            safe_name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+            func_map[key] = safe_name
+
+    print(f"  Loaded {len(func_map)} function symbols")
+    return func_map
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Regex patterns
+# ─────────────────────────────────────────────────────────────────────────────
+
+# sub_XXXXXXXX in any context (calls, declarations, aliases)
+RE_SUB_HEX = re.compile(r'\bsub_([0-9A-Fa-f]{8})\b')
+
+# PPC_FUNC_IMPL(__imp__sub_XXXXXXXX)
+RE_FUNC_IMPL = re.compile(r'(PPC_FUNC_IMPL\(__imp__)sub_([0-9A-Fa-f]{8})(\))')
+
+# __attribute__((alias("__imp__sub_XXXXXXXX"))) PPC_WEAK_FUNC(sub_XXXXXXXX);
+RE_ALIAS = re.compile(r'__attribute__\(\(alias\("__imp__sub_([0-9A-Fa-f]{8})"\)\)\)')
+RE_WEAK  = re.compile(r'PPC_WEAK_FUNC\(sub_([0-9A-Fa-f]{8})\)')
+
+# PPC_EXTERN_IMPORT(sub_XXXXXXXX) in .h files
+RE_EXTERN = re.compile(r'(PPC_EXTERN_IMPORT\()sub_([0-9A-Fa-f]{8})(\))')
+
+
+def rename_line(line, func_map, stats):
+    """Apply all renaming substitutions to a single line."""
+    original = line
+
+    # 1. PPC_FUNC_IMPL - rename both the __imp__ and the body
+    def replace_func_impl(m):
+        addr = m.group(2).upper()
+        if addr in func_map:
+            stats["func_impl_renamed"] += 1
+            return f"{m.group(1)}{func_map[addr]}{m.group(3)}"
+        return m.group(0)
+    line = RE_FUNC_IMPL.sub(replace_func_impl, line)
+
+    # 2. alias attribute
+    def replace_alias(m):
+        addr = m.group(1).upper()
+        if addr in func_map:
+            stats["alias_renamed"] += 1
+            return f'__attribute__((alias("__imp__{func_map[addr]}")))'
+        return m.group(0)
+    line = RE_ALIAS.sub(replace_alias, line)
+
+    # 3. PPC_WEAK_FUNC
+    def replace_weak(m):
+        addr = m.group(1).upper()
+        if addr in func_map:
+            stats["weak_renamed"] += 1
+            return f'PPC_WEAK_FUNC({func_map[addr]})'
+        return m.group(0)
+    line = RE_WEAK.sub(replace_weak, line)
+
+    # 4. General sub_XXXXXXXX (calls, any remaining refs)
+    def replace_sub(m):
+        addr = m.group(1).upper()
+        if addr in func_map:
+            stats["call_renamed"] += 1
+            return func_map[addr]
+        return m.group(0)
+    line = RE_SUB_HEX.sub(replace_sub, line)
+
+    if line != original:
+        stats["lines_changed"] += 1
+
+    return line
+
+
+def rename_line_header(line, func_map, stats):
+    """Apply renaming to header file lines (PPC_EXTERN_IMPORT)."""
+    def replace_extern(m):
+        addr = m.group(2).upper()
+        if addr in func_map:
+            stats["extern_renamed"] += 1
+            return f"{m.group(1)}{func_map[addr]}{m.group(3)}"
+        return m.group(0)
+    return RE_EXTERN.sub(replace_extern, line)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Generate include/generated_symbols.h
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_symbols_header(func_map):
+    """Generate a header with extern declarations for all named functions."""
+    out_path = INCLUDE_DIR / "generated_symbols.h"
+
+    lines = [
+        "// AUTO-GENERATED by stage3_rename.py — DO NOT EDIT\n",
+        "// Contains extern declarations for all 16,653 named functions\n",
+        "// Addresses are Rockstar Table Tennis Xbox 360 (title 434C4803)\n",
+        "#pragma once\n",
+        "#include <rex/runtime/guest.h>\n",
+        "using namespace rex::runtime::guest;\n",
+        "\n",
+        "// Function declarations\n",
+    ]
+
+    # Group by class prefix for readability
+    by_class = defaultdict(list)
+    for addr_hex, name in func_map.items():
+        prefix = name.split('_')[0] if '_' in name else name[:8]
+        by_class[prefix].append((addr_hex, name))
+
+    written = set()
+    for prefix in sorted(by_class.keys()):
+        lines.append(f"\n// --- {prefix} ---\n")
+        for addr_hex, name in sorted(by_class[prefix], key=lambda x: x[0]):
+            if name not in written:
+                lines.append(f"PPC_EXTERN_IMPORT({name}); // 0x{addr_hex}\n")
+                written.add(name)
+
+    with open(out_path, "w") as f:
+        f.writelines(lines)
+
+    print(f"  Generated {out_path.name} with {len(written)} extern declarations")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Process files
+# ─────────────────────────────────────────────────────────────────────────────
+
+def process_cpp(in_path, out_path, func_map, stats, dry_run=False):
+    with open(in_path) as f:
+        lines = f.readlines()
+
+    out_lines = [rename_line(line, func_map, stats) for line in lines]
+
+    if not dry_run:
+        with open(out_path, "w") as f:
+            f.writelines(out_lines)
+    stats["files_processed"] += 1
+
+
+def process_header(in_path, out_path, func_map, stats, dry_run=False):
+    with open(in_path) as f:
+        lines = f.readlines()
+
+    out_lines = [rename_line_header(line, func_map, stats) for line in lines]
+
+    if not dry_run:
+        with open(out_path, "w") as f:
+            f.writelines(out_lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main
+# ─────────────────────────────────────────────────────────────────────────────
+
+def main():
+    parser = argparse.ArgumentParser(description="Stage 3B: Function Call Renaming")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--file", type=str, help="Process only file N")
+    parser.add_argument("--verbose", action="store_true")
+    args = parser.parse_args()
+
+    print("=" * 60)
+    print("Stage 3B: Function Call Renaming")
+    print(f"Input:  {INPUT_DIR}")
+    print(f"Output: {OUTPUT_DIR}")
+    print("=" * 60)
+
+    func_map = load_symbol_map()
+
+    input_files = sorted(INPUT_DIR.glob("tt-decomp_recomp.*.cpp"))
+    input_files += [INPUT_DIR / "tt-decomp_init.cpp"]
+
+    if args.file is not None:
+        if args.file == "init":
+            input_files = [INPUT_DIR / "tt-decomp_init.cpp"]
+        else:
+            target = f"tt-decomp_recomp.{args.file}.cpp"
+            input_files = [f for f in input_files if f.name == target]
+
+    stats = defaultdict(int)
+
+    if not args.dry_run:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        # Copy static files
+        for static in ["sources.cmake", "tt-decomp_config.h"]:
+            src = INPUT_DIR / static
+            if src.exists():
+                shutil.copy2(src, OUTPUT_DIR / static)
+        # Process the header
+        init_h_in = INPUT_DIR / "tt-decomp_init.h"
+        if not init_h_in.exists():
+            init_h_in = BASE / "recomp/structured_pass4/tt-decomp_init.h"
+        if init_h_in.exists():
+            process_header(init_h_in, OUTPUT_DIR / "tt-decomp_init.h", func_map, stats)
+            print(f"  Renamed tt-decomp_init.h ({stats['extern_renamed']} PPC_EXTERN_IMPORT entries)")
+
+    total = len(input_files)
+    for idx, in_path in enumerate(input_files):
+        out_path = OUTPUT_DIR / in_path.name
+        if args.verbose:
+            print(f"  [{idx+1}/{total}] {in_path.name}")
+        else:
+            print(f"  [{idx+1}/{total}] {in_path.name}", end="\r")
+        process_cpp(in_path, out_path, func_map, stats, dry_run=args.dry_run)
+
+    print()
+
+    if not args.dry_run:
+        generate_symbols_header(func_map)
+
+    print("\n--- Phase 3B Results ---")
+    print(f"  Files processed:         {stats['files_processed']}")
+    print(f"  PPC_FUNC_IMPL renamed:   {stats['func_impl_renamed']}")
+    print(f"  alias attrs renamed:     {stats['alias_renamed']}")
+    print(f"  PPC_WEAK_FUNC renamed:   {stats['weak_renamed']}")
+    print(f"  Sub_ calls renamed:      {stats['call_renamed']}")
+    print(f"  Extern imports renamed:  {stats['extern_renamed']}")
+    print(f"  Total lines changed:     {stats['lines_changed']}")
+
+    total_renames = stats['func_impl_renamed'] + stats['alias_renamed'] + stats['weak_renamed'] + stats['call_renamed']
+    print(f"\n  TOTAL substitutions:     {total_renames}")
+
+    if not args.dry_run:
+        print(f"\nOutput: {OUTPUT_DIR}")
+    print("Phase 3B complete.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,36 @@
+{
+    "progress_categories": {
+        "crt": "CRT Code",
+        "rage": "RAGE Engine",
+        "game": "Game Code"
+    },
+    "asflags": [],
+    "ldflags": [],
+    "cflags": {
+        "base": {
+            "flags": [
+                "/nologo",
+                "/c",
+                "/Zi",
+                "/O2",
+                "/Ob2",
+                "/GF",
+                "/Gy",
+                "/W3",
+                "/wd4996"
+            ]
+        },
+        "crt": {
+            "base": "base",
+            "flags": []
+        },
+        "rage": {
+            "base": "base",
+            "flags": []
+        },
+        "game": {
+            "base": "base",
+            "flags": []
+        }
+    }
+}

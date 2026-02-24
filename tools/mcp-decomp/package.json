@@ -1,0 +1,16 @@
+{
+  "name": "tt-decomp-phase5-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Phase 5 lifting of Rockstar Table Tennis decompilation",
+  "main": "server.js",
+  "type": "module",
+  "bin": {
+    "tt-decomp-mcp": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
