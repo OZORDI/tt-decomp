@@ -188,3 +188,348 @@ void pongSaveFile::DestructorThunk(pongSaveFile* ptr) {
     pongSaveFile* adjusted = (pongSaveFile*)((char*)ptr - 12);
     adjusted->~pongSaveFile();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// assetVersions  [vtable @ 0x8204E6FC]
+// assetVersionsChar  [vtable @ 0x8204E764]
+// assetVersionsCharSpecific  [vtable @ 0x8204E7CC]
+//
+// These three classes form a hierarchy that tracks asset format version numbers
+// for save-game compatibility inside RAGE's serialization system.
+//
+// assetVersions (base)
+//   — 23 uint32 version slots at offsets +0x10 … +0x68 (fields 16–104, step 4)
+//   — Registers all 23 via the field-registration helper (sub_821A8F58)
+//   — IsSupported() checks against three known historical version constants
+//
+// assetVersionsChar (character-asset variant)
+//   — 1 version slot at +0x10
+//
+// assetVersionsCharSpecific (per-character, specific asset variant)
+//   — 3 version slots at +0x10, +0x14, +0x18
+//   — Extra owned-pointer cleanup at +0x10 in its destructor
+//
+// The field-registration function (sub_821A8F58 / game_8F58) stores a triplet
+// {fieldNameString, fieldPtr, contextPtr} into a SDA-resident array.  The
+// "field name" strings passed in are string constants from .rdata and serve as
+// key identifiers; many appear to be suffix-optimised substrings sharing storage
+// with other string constants elsewhere in the binary (compiler string-pooling).
+//
+// Serialize context global: lbl_825CAF90 @ 0x825CAF90 (.data, runtime init)
+// IsSupported version globals:
+//   assetVersions     version A: [0x825C5864]   (runtime init)
+//   assetVersionsChar version A: [0x825C5868]
+//   assetVersionsCharSpecific A: [0x825C586C]
+//   shared            version B: [0x825C803C]
+//   shared            version C: [0x825C8038]
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Forward declarations for helpers used by all three classes
+extern void sub_821A8F58(void* obj, const char* fieldName,
+                         void* fieldPtr, void* serCtx, int flags);   // @ 0x821A8F58
+extern void sub_821A9420(void* obj);                                   // @ 0x821A9420  atSingleton cleanup
+extern void rage_free_00C0(void* ptr);                                 // @ 0x820C00C0  RAGE heap free
+
+// Serialisation context pointer stored in the SDA (r13-relative), runtime-init
+static void** g_serCtx = nullptr;   // @ 0x825CAF90
+
+// Per-class supported-version globals (runtime-init)
+static uint32_t g_assetVersions_verA     = 0;  // @ 0x825C5864
+static uint32_t g_assetVersionsChar_verA = 0;  // @ 0x825C5868
+static uint32_t g_assetVersionsCS_verA   = 0;  // @ 0x825C586C
+static uint32_t g_assetVersions_verB     = 0;  // @ 0x825C803C  shared across all three
+static uint32_t g_assetVersions_verC     = 0;  // @ 0x825C8038  shared across all three
+
+// ── assetVersions ────────────────────────────────────────────────────────────
+
+/**
+ * assetVersions::~assetVersions() @ 0x82227FE8 | size: 0x58
+ *
+ * Standard RAGE deleting destructor.
+ * Restores the vtable pointer, calls atSingleton base-class cleanup,
+ * then conditionally frees the object itself (bit 0 of the flags arg).
+ */
+assetVersions::~assetVersions()
+{
+    // Restore vtable to this class (vtable @ 0x8204E6FC)
+    // (The base-class cleanup may have clobbered it.)
+    m_vtable = &assetVersions_vtable;   // 0x8204E6FC
+
+    sub_821A9420(this);                 // atSingleton destructor chain
+
+    // If the delete-self flag (bit 0) is set, free the object allocation.
+    // The flag is passed via r4 at call time; the scaffold captures it as
+    // 'var_r30 & 1'.  We represent it via the standard C++ deleteing-dtor
+    // convention; callers that pass flags=1 pass ownership.
+    //   if (flags & 1) rage_free_00C0(this);
+}
+
+/**
+ * assetVersions::IsSupported() @ 0x82228048 | size: 0x4C
+ *
+ * Returns true if 'version' matches any of the three version constants this
+ * class was compiled to understand.  Used during save-game load to validate
+ * that a stored asset-version record can be deserialised by the current build.
+ *
+ * @param version  Candidate version number read from save data.
+ * @return         Non-zero (true) if the version is known/supported.
+ */
+bool assetVersions::IsSupported(uint32_t version) const
+{
+    // Fast path: match the primary (most-recent) version for this class
+    if (version == g_assetVersions_verA)
+        return true;
+
+    // Check the two shared legacy versions accepted by all three classes
+    if (version == g_assetVersions_verB)
+        return true;
+
+    return (version == g_assetVersions_verC);
+}
+
+/**
+ * assetVersions::RegisterFields() @ 0x82227D30 | size: 0x134
+ *
+ * Registers all 23 serialisable version-number fields with the RAGE
+ * field-registration system (sub_821A8F58).  Called once during startup to
+ * build the runtime metadata table that drives serialisation of this class.
+ *
+ * Each call passes:
+ *   sub_821A8F58(this, fieldNameStr, &this->fieldN, serCtx, 0)
+ *
+ * Field layout:
+ *   +0x10  [field 0]   — "PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0"
+ *   +0x14  [field 1]   — "Index"
+ *   +0x18  [field 2]   — "ItemIndex"  (compiler suffix-share of "SubItemIndex")
+ *   +0x1C  [field 3]   — "Text%d"
+ *   +0x20  [field 4]   — "Type%d"     (compiler suffix-share of "Type%d")
+ *   +0x24  [field 5]   — "Invalid column type found[ %d ], using default[ %d ]"
+ *   +0x28  [field 6]   — "[%d]"
+ *   +0x2C  [field 7]   — "found[ %d ], using default[ %d ]"
+ *   +0x30  [field 8]   — "ng default[ %d ]"     (tail of above string)
+ *   +0x34  [field 9]   — ""                      (empty / null-terminated at that offset)
+ *   +0x38  [field 10]  — "MinScrollDelay"         (suffix-share → "lDelay")
+ *   +0x3C  [field 11]  — "MaxScrollDelay"         (suffix-share → "crollDelay")
+ *   +0x40  [field 12]  — "ScrollAcceleration"
+ *   +0x44  [field 13]  — "ScrollAcceleration"     (suffix-share → "ration")
+ *   +0x48  [field 14]  — "None"
+ *   +0x4C  [field 15]  — "None"
+ *   +0x50  [field 16]  — "None"
+ *   +0x54  [field 17]  — "None"
+ *   +0x58  [field 18]  — "None"
+ *   +0x5C  [field 19]  — "None"
+ *   +0x60  [field 20]  — "None"
+ *   +0x64  [field 21]  — "None"
+ *   +0x68  [field 22]  — "None"
+ *
+ * NOTE: many apparent field-name strings are compiler-optimised suffixes of
+ *       longer strings elsewhere in .rdata.  The string VALUES shown above are
+ *       the actual C-string content starting at each pointer address.
+ *
+ * TODO: cross-reference with the original asset-type enum to map field indices
+ *       to meaningful asset-category names (characters, animations, maps, …).
+ */
+void assetVersions::RegisterFields()
+{
+    // The serialisation context is a runtime-initialised global pointer
+    void* ctx = g_serCtx;
+
+    // Field-name string constants (from .rdata; addresses shown for reference)
+    static const char* const kFieldNames[23] = {
+        /* +0x10 @ 0x82042C90 */ "PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0",
+        /* +0x14 @ 0x8204E30C */ "Index",
+        /* +0x18 @ 0x8204E318 */ "temIndex",       // TODO: tail of "SubItemIndex"
+        /* +0x1C @ 0x8204E324 */ "Text%d",
+        /* +0x20 @ 0x8204E330 */ "%d",             // TODO: tail of "Type%d"
+        /* +0x24 @ 0x8204E33C */ "column type found[ %d ], using default[ %d ]",
+        /* +0x28 @ 0x8203B888 */ "[%d]",
+        /* +0x2C @ 0x8204E348 */ "found[ %d ], using default[ %d ]",
+        /* +0x30 @ 0x8204E358 */ "ng default[ %d ]",
+        /* +0x34 @ 0x8204E368 */ "",
+        /* +0x38 @ 0x8204E374 */ "lDelay",         // TODO: tail of "MinScrollDelay"
+        /* +0x3C @ 0x8204E380 */ "crollDelay",     // TODO: tail of "MaxScrollDelay"
+        /* +0x40 @ 0x8204E38C */ "ScrollAcceleration",
+        /* +0x44 @ 0x8204E398 */ "ration",         // TODO: tail of "ScrollAcceleration"
+        /* +0x48 @ 0x8204E3A8 */ "None",
+        /* +0x4C @ 0x8204E3BC */ "None",
+        /* +0x50 @ 0x8204E3CC */ "None",
+        /* +0x54 @ 0x8204E3DC */ "None",
+        /* +0x58 @ 0x8204E3E8 */ "None",
+        /* +0x5C @ 0x8204E3F4 */ "None",
+        /* +0x60 @ 0x8204E3FC */ "None",
+        /* +0x64 @ 0x8204E408 */ "None",
+        /* +0x68 @ 0x8204E418 */ "None",
+    };
+
+    for (int i = 0; i < 23; i++) {
+        sub_821A8F58(this, kFieldNames[i],
+                     reinterpret_cast<char*>(this) + 0x10 + i * 4,
+                     ctx, 0);
+    }
+}
+
+/**
+ * assetVersions::GetTypeDescriptor() @ 0x82228090 | size: 0xC
+ *
+ * Returns a pointer to the RAGE type-descriptor (parStructure / atHashString
+ * or similar) for this class.  The returned pointer (0x8204E424) lies in the
+ * .rdata section and holds a vtable-shaped data block; it is NOT a plain
+ * const char* name string.
+ *
+ * TODO: determine the exact RAGE type returned (parStructure*, atTypeInfo*, …).
+ */
+const void* assetVersions::GetTypeDescriptor() const
+{
+    return reinterpret_cast<const void*>(0x8204E424);
+}
+
+
+// ── assetVersionsChar ─────────────────────────────────────────────────────────
+
+/**
+ * assetVersionsChar::~assetVersionsChar() @ 0x82228198 | size: 0x4C
+ *
+ * Identical pattern to assetVersions destructor, but restores to
+ * assetVersionsChar vtable (0x8204E764).
+ */
+assetVersionsChar::~assetVersionsChar()
+{
+    m_vtable = &assetVersionsChar_vtable;   // 0x8204E764
+    sub_821A9420(this);
+    // if (flags & 1) rage_free_00C0(this);
+}
+
+/**
+ * assetVersionsChar::IsSupported() @ 0x822281F8 | size: 0x4C
+ *
+ * Same version-check logic as assetVersions::IsSupported but uses the
+ * character-specific version-A global (0x825C5868 / g_assetVersionsChar_verA).
+ */
+bool assetVersionsChar::IsSupported(uint32_t version) const
+{
+    if (version == g_assetVersionsChar_verA)
+        return true;
+    if (version == g_assetVersions_verB)
+        return true;
+    return (version == g_assetVersions_verC);
+}
+
+/**
+ * assetVersionsChar::RegisterFields() @ 0x82228178 | size: 0x28
+ *
+ * Registers the single character-asset version field at +0x10.
+ * Field name key: "None" (@ 0x8204E434 in .rdata).
+ */
+void assetVersionsChar::RegisterFields()
+{
+    void* ctx = g_serCtx;
+    // Only one field — the character-asset version number at +0x10
+    static const char kFieldName[] = "None";   // @ 0x8204E434
+    sub_821A8F58(this, kFieldName,
+                 reinterpret_cast<char*>(this) + 0x10,
+                 ctx, 0);
+}
+
+/**
+ * assetVersionsChar::GetTypeDescriptor() @ 0x82228240 | size: 0xC
+ *
+ * Returns type descriptor pointer 0x8204E440 (binary .rdata block, not a
+ * plain string).
+ */
+const void* assetVersionsChar::GetTypeDescriptor() const
+{
+    return reinterpret_cast<const void*>(0x8204E440);
+}
+
+
+// ── assetVersionsCharSpecific ─────────────────────────────────────────────────
+
+/**
+ * assetVersionsCharSpecific::~assetVersionsCharSpecific() @ 0x82228360 | size: 0x58
+ *
+ * Extended destructor: also frees the heap object pointed to by the first
+ * version field (m_fields[0] at +0x10) before handing off to the atSingleton
+ * cleanup chain.  This implies +0x10 is an owned heap pointer in this subclass
+ * rather than a plain version integer.
+ */
+assetVersionsCharSpecific::~assetVersionsCharSpecific()
+{
+    // Free the owned pointer at +0x10 (unlike the base classes, this field
+    // holds a heap allocation in assetVersionsCharSpecific)
+    void* ownedPtr = *reinterpret_cast<void**>(
+                         reinterpret_cast<char*>(this) + 0x10);
+    rage_free_00C0(ownedPtr);
+
+    // Restore vtable and run atSingleton base-class teardown
+    m_vtable = &assetVersionsCharSpecific_vtable;   // 0x8204E7CC
+    sub_821A9420(this);
+    // if (flags & 1) rage_free_00C0(this);
+}
+
+/**
+ * assetVersionsCharSpecific::IsSupported() @ 0x822283C8 | size: 0x4C
+ *
+ * Same three-version check; uses per-character-specific version A at
+ * 0x825C586C (g_assetVersionsCS_verA).
+ */
+bool assetVersionsCharSpecific::IsSupported(uint32_t version) const
+{
+    if (version == g_assetVersionsCS_verA)
+        return true;
+    if (version == g_assetVersions_verB)
+        return true;
+    return (version == g_assetVersions_verC);
+}
+
+/**
+ * assetVersionsCharSpecific::RegisterFields() @ 0x822282D0 | size: 0x94
+ *
+ * Registers three fields for the per-character-specific asset-version record.
+ * Uses two different serialize-context pointers:
+ *   First field  uses lbl_825CAF88 (@ 0x825CAF88) as context — a secondary ctx
+ *   Fields 2–3  use lbl_825CAF90 (@ 0x825CAF90) as context  — primary ctx
+ *
+ * Field name keys (all .rdata):
+ *   +0x10 @ 0x8202E5A8 : "i"     (1-character key; tail of a longer string)
+ *   +0x14 @ 0x82033444 : binary  (pointer data — key is a non-ASCII address
+ *                                  likely pointing into a RAGE type-descriptor)
+ *   +0x18 @ 0x8204E454 : binary  (same — points into vtable region)
+ *
+ * TODO: the field+20 and field+24 name pointers resolve to binary .rdata data
+ *       rather than null-terminated strings.  Their values may be RAGE
+ *       atHashString* or parMemberType* descriptors rather than plain char*.
+ */
+void assetVersionsCharSpecific::RegisterFields()
+{
+    // lbl_825CAF88 is used as the context for the FIRST field registration
+    void* ctx2 = *reinterpret_cast<void**>(0x825CAF88);  // secondary context
+    void* ctx1 = g_serCtx;                                // primary  context
+
+    // Field 0: +0x10 — name key "i" (@ 0x8202E5A8), secondary context
+    sub_821A8F58(this,
+                 reinterpret_cast<const char*>(0x8202E5A8),   // "i"
+                 reinterpret_cast<char*>(this) + 0x10,
+                 ctx2, 0);
+
+    // Field 1: +0x14 — name key @ 0x82033444 (binary/descriptor), primary ctx
+    sub_821A8F58(this,
+                 reinterpret_cast<const char*>(0x82033444),   // TODO: non-ASCII key
+                 reinterpret_cast<char*>(this) + 0x14,
+                 ctx1, 0);
+
+    // Field 2: +0x18 — name key @ 0x8204E454 (binary/descriptor), primary ctx
+    sub_821A8F58(this,
+                 reinterpret_cast<const char*>(0x8204E454),   // TODO: non-ASCII key
+                 reinterpret_cast<char*>(this) + 0x18,
+                 ctx1, 0);
+}
+
+/**
+ * assetVersionsCharSpecific::GetTypeDescriptor() @ 0x82228410 | size: 0xC
+ *
+ * Returns type descriptor pointer 0x8204E460 (.rdata, binary block).
+ */
+const void* assetVersionsCharSpecific::GetTypeDescriptor() const
+{
+    return reinterpret_cast<const void*>(0x8204E460);
+}

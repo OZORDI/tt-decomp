@@ -51,39 +51,48 @@ struct aiSpin {
 };
 
 // ── assetVersions  [vtable @ 0x8204E6FC] ──────────────────────────
+// Tracks 23 uint32 asset-format version slots for save-game compatibility.
+// Inherits from atSingleton/RAGE serializable base.
+// Struct size: ≥ 0x6C bytes (vtable@+0, 23×uint32 fields at +0x10…+0x68)
 struct assetVersions {
-    void**      vtable;           // +0x00
+    void** m_vtable;                   // +0x00  vtable @ 0x8204E6FC
+    uint8_t _pad[0xC];                 // +0x04  base-class fields (atSingleton)
+    uint32_t m_versions[23];           // +0x10  version numbers, one per asset category
 
-    // ── virtual methods ──
-    virtual ~assetVersions();                  // [0] @ 0x82227fe8
-    virtual void vfn_20();  // [20] @ 0x82228048
-    virtual void vfn_21();  // [21] @ 0x82227d30
-    virtual void vfn_22();  // [22] @ 0x82228090
+    virtual ~assetVersions();                               // [0]  @ 0x82227FE8
+    virtual bool     IsSupported(uint32_t version) const;   // [20] @ 0x82228048
+    virtual void     RegisterFields();                      // [21] @ 0x82227D30
+    virtual const void* GetTypeDescriptor() const;          // [22] @ 0x82228090
 };
 
 // ── assetVersionsChar  [vtable @ 0x8204E764] ──────────────────────────
+// Character-asset variant: single version slot at +0x10.
 struct assetVersionsChar {
-    void**      vtable;           // +0x00
+    void** m_vtable;                   // +0x00  vtable @ 0x8204E764
+    uint8_t _pad[0xC];                 // +0x04  base-class fields
+    uint32_t m_version;                // +0x10  character-asset version number
 
-    // ── virtual methods ──
-    virtual ~assetVersionsChar();                  // [0] @ 0x82228198
-    virtual void vfn_20();  // [20] @ 0x822281f8
-    virtual void vfn_21();  // [21] @ 0x82228178
-    virtual void vfn_22();  // [22] @ 0x82228240
+    virtual ~assetVersionsChar();                               // [0]  @ 0x82228198
+    virtual bool     IsSupported(uint32_t version) const;       // [20] @ 0x822281F8
+    virtual void     RegisterFields();                          // [21] @ 0x82228178
+    virtual const void* GetTypeDescriptor() const;              // [22] @ 0x82228240
 };
 
 // ── assetVersionsCharSpecific  [vtable @ 0x8204E7CC] ──────────────────────────
+// Per-character specific variant: 3 slots (+0x10 is an owned heap pointer).
 struct assetVersionsCharSpecific {
-    void**      vtable;           // +0x00
+    void** m_vtable;                   // +0x00  vtable @ 0x8204E7CC
+    uint8_t _pad[0xC];                 // +0x04  base-class fields
+    void*    m_pOwnedData;             // +0x10  owned heap allocation (freed in dtor)
+    uint32_t m_versionB;               // +0x14  version slot B
+    uint32_t m_versionC;               // +0x18  version slot C
 
-    // ── virtual methods ──
-    virtual ~assetVersionsCharSpecific();                  // [0] @ 0x82228360
-    virtual void vfn_20();  // [20] @ 0x822283c8
-    virtual void vfn_21();  // [21] @ 0x822282d0
-    virtual void vfn_22();  // [22] @ 0x82228410
+    virtual ~assetVersionsCharSpecific();                               // [0]  @ 0x82228360
+    virtual bool     IsSupported(uint32_t version) const;               // [20] @ 0x822283C8
+    virtual void     RegisterFields();                                  // [21] @ 0x822282D0
+    virtual const void* GetTypeDescriptor() const;                      // [22] @ 0x82228410
 };
 
-// ── cellData  [vtable @ 0x82076684] ──────────────────────────
 struct cellData {
     void**      vtable;           // +0x00
 
