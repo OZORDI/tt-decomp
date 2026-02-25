@@ -2,24 +2,24 @@
  * heap.c — RAGE heap allocator wrappers (CRT layer)
  * Rockstar Presents Table Tennis (Xbox 360)
  *
- * These are thin wrappers around the active sysMemAllocator instance.
- * The allocator pointer lives at SDA[0][4] — effectively a thread-local
- * slot that's set up by xe_main_thread_init_0038 at startup.
+ * NATIVE CRT HOOKS: These functions bypass the PowerPC recomp layer and call
+ * native malloc/free directly for performance. This is the "native CRT hooks"
+ * optimization mentioned in the ReXGlue SDK documentation.
  *
- * sysMemAllocator vtable layout (relevant slots):
+ * Original Xbox 360 behavior:
+ *   - Allocator pointer lives at SDA[0][4] (thread-local slot)
+ *   - Vtable dispatch to PowerPC allocator functions
+ *   - Complex ownership tracking via atSingleton
+ *
+ * Native implementation:
+ *   - Direct calls to native malloc/free
+ *   - Simplified ownership model (native heap owns everything)
+ *   - Maintains ABI compatibility with original function signatures
+ *
+ * sysMemAllocator vtable layout (original Xbox 360):
  *   slot  1 (+4)  : Allocate(void* ptr, size_t size, size_t align)
  *   slot  2 (+8)  : Free(void* ptr)
  *   slot 17 (+68) : IsAddressOwned(void* ptr) → bool
- *
- * Allocation layout:
- *   Each allocation stores the raw heap pointer 4 bytes before the
- *   returned user pointer:  [raw_ptr][...user data...]
- *                            ^-4      ^returned
- *   Free reads [-4] to recover the raw pointer for the underlying free.
- *
- * rage_free is the canonical "safe free": it checks atSingleton
- * ownership before freeing so it won't corrupt memory from another
- * heap subsystem.
  *
  * MEMORY FUNCTION HIERARCHY:
  *   Level 1: Standard CRT (memory.c) - malloc/free/memset/memcpy
@@ -31,95 +31,123 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>  /* malloc, free */
 #include "rage/memory.h"
-
-/* SDA-relative allocator context.  SDA[0] points to a struct where
- * offset +4 holds the active sysMemAllocator*. */
-extern uint32_t* g_sda_base;   /* r13-relative, @ 0x82600000 */
 
 /* Forward declarations */
 bool atSingleton_Find_90D0(void* ptr);  /* returns nonzero if ptr belongs to another singleton */
-void xe_EC88(uint32_t total, void* base);
 
+/* ============================================================================
+ * NATIVE CRT HOOKS - Vtable Wrapper Functions
+ * ============================================================================
+ * These replace the original PowerPC vtable dispatch with direct native calls.
+ * Performance benefit: native x86/ARM code instead of translated PowerPC.
+ */
 
 /**
- * sysMemAllocator_Allocate_61A0 @ 0x821861A0 | size: 0x84
+ * sysMemAllocator_vtable_IsOwned
+ * 
+ * Native CRT hook: Always returns false to let native allocator handle everything.
+ * Original behavior: Checked if allocator owned a specific address range.
+ * 
+ * @param allocator  Allocator instance (unused in native implementation)
+ * @return           Always false (native heap owns all allocations)
+ */
+static inline bool sysMemAllocator_vtable_IsOwned(void* allocator) {
+    (void)allocator;  /* unused */
+    return false;     /* native heap handles everything */
+}
+
+/**
+ * sysMemAllocator_vtable_Allocate
+ * 
+ * Native CRT hook: Calls native malloc() directly.
+ * Original behavior: Vtable dispatch to PowerPC allocator function.
+ * 
+ * @param allocator  Allocator instance (unused in native implementation)
+ * @param ptr        Hint address (unused in native implementation)
+ * @param size       Allocation size in bytes
+ * @return           Pointer to allocated memory, or NULL on failure
+ */
+static inline void* sysMemAllocator_vtable_Allocate(void* allocator, void* ptr, size_t size) {
+    (void)allocator;  /* unused */
+    (void)ptr;        /* unused */
+    return malloc(size);
+}
+
+/**
+ * sysMemAllocator_vtable_Free
+ * 
+ * Native CRT hook: Calls native free() directly.
+ * Original behavior: Vtable dispatch to PowerPC free function.
+ * 
+ * @param allocator  Allocator instance (unused in native implementation)
+ * @param ptr        Pointer to free
+ */
+static inline void sysMemAllocator_vtable_Free(void* allocator, void* ptr) {
+    (void)allocator;  /* unused */
+    free(ptr);
+}
+
+
+/* ============================================================================
+ * RAGE Allocator Functions - Native CRT Implementation
+ * ============================================================================
+ */
+
+/**
+ * sysMemAllocator_Allocate @ 0x821861A0 | size: 0x84
  *
- * Allocate `size` bytes with `align` alignment from the active RAGE heap.
+ * Allocate memory from the RAGE heap allocator.
+ * 
+ * NATIVE CRT HOOK: Simplified to call malloc() directly instead of complex
+ * vtable dispatch and ownership checking.
  *
- * Checks vtable slot 17 (IsAddressOwned) to decide which heap path to use:
- *   - If the allocator claims ownership of (ptr + size): use vtable slot 1
- *     (the allocator's own Allocate method).
- *   - Otherwise: call xe_EC88 to obtain a raw block, store the raw pointer
- *     at [-4], then return the aligned user pointer.
- *
- * @param ptr   Hint/base address for the allocation (may be 0)
+ * @param ptr   Hint/base address (unused in native implementation)
  * @param size  Requested allocation size in bytes
- * @return      Aligned user pointer, or NULL on failure
+ * @return      Pointer to allocated memory, or NULL on failure
  */
 void* sysMemAllocator_Allocate(void* ptr, size_t size)
 {
-    uint32_t* pAllocCtx = (uint32_t*)g_sda_base[0];
-    void*     pAlloc    = (void*)pAllocCtx[1];      /* active sysMemAllocator* */
-
-    /* Ask the allocator if it owns the address range we need */
-    bool owned = sysMemAllocator_vtable_IsOwned(pAlloc);  /* vslot 17 */
-
-    if (owned) {
-        /* Delegated allocation — let the allocator handle it directly */
-        return sysMemAllocator_vtable_Allocate(pAlloc, ptr, size);  /* vslot 1 */
-    }
-
-    /* Direct heap path: get a raw block, store raw ptr at [-4] for Free */
-    uintptr_t raw  = (uintptr_t)xe_EC88((uint32_t)(uintptr_t)ptr + (uint32_t)size, NULL);
-    uintptr_t aligned = (raw + size + (size - 1)) & ~(size - 1);
-    *(uint32_t*)(aligned - 4) = (uint32_t)raw;
-    return (void*)aligned;
+    (void)ptr;  /* unused in native implementation */
+    return malloc(size);
 }
 
 
 /**
- * sysMemAllocator_Free_6228 @ 0x82186228 | size: 0x74
+ * sysMemAllocator_Free @ 0x82186228 | size: 0x74
  *
  * Free a pointer previously returned by sysMemAllocator_Allocate.
+ *
+ * NATIVE CRT HOOK: Simplified to call free() directly with singleton checks.
  *
  * Guards:
  *  1. NULL check — silently ignores NULL.
  *  2. atSingleton_Find_90D0 — if the pointer belongs to another singleton
  *     subsystem (e.g. network pool), skip the free to avoid double-free.
- *  3. Reads the raw pointer from [-4] and calls rage_free.
  *
- * @param ptr  User pointer to free (as returned by Allocate)
+ * @param ptr  User pointer to free
  */
 void sysMemAllocator_Free(void* ptr)
 {
-    uint32_t* pAllocCtx = (uint32_t*)g_sda_base[0];
-    void*     pAlloc    = (void*)pAllocCtx[1];
+    if (!ptr)
+        return;
 
-    /* Check if the allocator claims this address */
-    bool owned = sysMemAllocator_vtable_IsOwned(pAlloc);  /* vslot 17 */
+    /* Check atSingleton ownership — if another subsystem owns this
+     * pointer, we must not free it here */
+    if (atSingleton_Find_90D0(ptr))
+        return;
 
-    if (!owned) {
-        /* Check atSingleton ownership — if another subsystem owns this
-         * pointer, we must not free it here */
-        if (atSingleton_Find_90D0(ptr))
-            return;
-
-        if (!ptr)
-            return;
-
-        /* Recover the raw heap pointer stored at user_ptr[-4] */
-        void* rawPtr = (void*)(uintptr_t)(*(uint32_t*)((uintptr_t)ptr - 4));
-        rage_free(rawPtr);
-    }
+    free(ptr);
 }
 
 
 /**
  * rage_free @ 0x820C00C0 | size: 0x60
  *
- * The canonical RAGE heap free function. Forwards to the active
- * sysMemAllocator's vtable slot 2 (Free).
+ * The canonical RAGE heap free function.
+ *
+ * NATIVE CRT HOOK: Calls native free() directly instead of vtable dispatch.
  *
  * Performs two safety guards:
  *  1. NULL check — silently ignores NULL pointers.
@@ -139,8 +167,6 @@ void rage_free(void* ptr)
     if (atSingleton_Find_90D0(ptr))
         return;
 
-    /* Load the active allocator from SDA[0][+4] and call vslot 2 (Free) */
-    uint32_t* pAllocCtx = (uint32_t*)g_sda_base[0];
-    void*     pAlloc    = (void*)pAllocCtx[1];
-    sysMemAllocator_vtable_Free(pAlloc, ptr);   /* vslot 2 */
+    /* Native CRT hook: call free() directly */
+    free(ptr);
 }
