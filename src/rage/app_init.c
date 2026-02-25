@@ -206,8 +206,8 @@ void grcSetup_Shutdown(void)
 
         // Free the backing allocation stored at renderer+24
         void* rendererBacking = *(void**)((uint8_t*)g_pGrcRenderer + 24);
-        rage_free_00C0(rendererBacking);
-        rage_free_00C0(g_pGrcRenderer);
+        rage_free(rendererBacking);
+        rage_free(g_pGrcRenderer);
         g_pGrcRenderer = NULL;
     }
 

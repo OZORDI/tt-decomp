@@ -54,7 +54,7 @@ pcrFaceAnimBlender::~pcrFaceAnimBlender()
 
     // Memory ownership is tracked at the call site via the flags word.
     // When the object was new'd, bit 0 is set and the runtime calls
-    // rage_free_00C0 here to release the allocation.
+    // rage_free here to release the allocation.
     // (In lifted C++ the delete expression handles this automatically.)
 }
 

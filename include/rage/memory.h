@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 /**
- * rage_free_00C0 @ 0x820C00C0 | size: 0x60
+ * rage_free @ 0x820C00C0 | size: 0x60
  *
  * The canonical RAGE heap free function.
  *
@@ -27,13 +27,13 @@ extern "C" {
  *  3. Forwards to active sysMemAllocator vtable slot 2 (Free method)
  *
  * This is NOT the same as crt_free():
- *  - rage_free_00C0 checks singleton ownership
- *  - rage_free_00C0 uses RAGE allocator vtable from TLS
+ *  - rage_free checks singleton ownership
+ *  - rage_free uses RAGE allocator vtable from TLS
  *  - crt_free() is a simple wrapper for standard free()
  *
  * @param ptr  Raw heap pointer to free (may be NULL)
  */
-void rage_free_00C0(void* ptr);
+void rage_free(void* ptr);
 
 /**
  * sysMemAllocator_Allocate_61A0 @ 0x821861A0 | size: 0x84
@@ -58,7 +58,7 @@ void* sysMemAllocator_Allocate(void* ptr, size_t size);
  * Guards:
  *  1. NULL check
  *  2. atSingleton ownership check
- *  3. Recovers raw pointer from [-4] and calls rage_free_00C0
+ *  3. Recovers raw pointer from [-4] and calls rage_free
  *
  * @param ptr  User pointer to free (as returned by Allocate)
  */
@@ -71,10 +71,10 @@ void sysMemAllocator_Free(void* ptr);
 namespace rage {
     /**
      * Free memory allocated by the RAGE allocator system.
-     * Wrapper for rage_free_00C0 with C++ namespace.
+     * Wrapper for rage_free with C++ namespace.
      */
     inline void Free(void* ptr) {
-        rage_free_00C0(ptr);
+        rage_free(ptr);
     }
 }
 #endif

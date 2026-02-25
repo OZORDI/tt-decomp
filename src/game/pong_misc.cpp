@@ -111,7 +111,7 @@ pongSaveFile::pongSaveFile() {
     
     // Free data if flags indicate ownership
     if (m_flags != 0 && m_pData) {
-        rage_free_00C0(m_pData);
+        rage_free(m_pData);
     }
     
     // Set base class vtable

@@ -17,14 +17,14 @@
  *                            ^-4      ^returned
  *   Free reads [-4] to recover the raw pointer for the underlying free.
  *
- * rage_free_00C0 is the canonical "safe free": it checks atSingleton
+ * rage_free is the canonical "safe free": it checks atSingleton
  * ownership before freeing so it won't corrupt memory from another
  * heap subsystem.
  *
  * MEMORY FUNCTION HIERARCHY:
  *   Level 1: Standard CRT (memory.c) - malloc/free/memset/memcpy
  *   Level 2: CRT Wrappers (crt_crossplatform.h) - crt_malloc/crt_free
- *   Level 3: RAGE Allocator (heap.c) - rage_free_00C0, sysMemAllocator_*
+ *   Level 3: RAGE Allocator (heap.c) - rage_free, sysMemAllocator_*
  *   Level 4: C++ Interface (rage/allocator.h) - rage::Allocator class
  */
 
@@ -87,7 +87,7 @@ void* sysMemAllocator_Allocate(void* ptr, size_t size)
  *  1. NULL check — silently ignores NULL.
  *  2. atSingleton_Find_90D0 — if the pointer belongs to another singleton
  *     subsystem (e.g. network pool), skip the free to avoid double-free.
- *  3. Reads the raw pointer from [-4] and calls rage_free_00C0.
+ *  3. Reads the raw pointer from [-4] and calls rage_free.
  *
  * @param ptr  User pointer to free (as returned by Allocate)
  */
@@ -110,13 +110,13 @@ void sysMemAllocator_Free(void* ptr)
 
         /* Recover the raw heap pointer stored at user_ptr[-4] */
         void* rawPtr = (void*)(uintptr_t)(*(uint32_t*)((uintptr_t)ptr - 4));
-        rage_free_00C0(rawPtr);
+        rage_free(rawPtr);
     }
 }
 
 
 /**
- * rage_free_00C0 @ 0x820C00C0 | size: 0x60
+ * rage_free @ 0x820C00C0 | size: 0x60
  *
  * The canonical RAGE heap free function. Forwards to the active
  * sysMemAllocator's vtable slot 2 (Free).
@@ -130,7 +130,7 @@ void sysMemAllocator_Free(void* ptr)
  *
  * @param ptr  Raw heap pointer to free
  */
-void rage_free_00C0(void* ptr)
+void rage_free(void* ptr)
 {
     if (!ptr)
         return;

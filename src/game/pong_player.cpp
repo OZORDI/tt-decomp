@@ -778,7 +778,7 @@ bool pongPlayer::IsInReturnPosition() const
 // if the `flags` argument has bit 0 set (the C++ "delete after dtor" ABI
 // convention used throughout this codebase).
 //
-// @param flags  Bit 0 set → free this pointer via rage_free_00C0 after dtor.
+// @param flags  Bit 0 set → free this pointer via rage_free after dtor.
 // ===========================================================================
 pongPlayer::~pongPlayer()
 {
@@ -789,7 +789,7 @@ void pongPlayer::ScalarDtor(int flags)
 {
     atSingleton_B410_h(this, 0);  // base class dtor chain
     if (flags & 1)
-        rage_free_00C0(this);     // ABI-level "delete" — free the allocation
+        rage_free(this);     // ABI-level "delete" — free the allocation
 }
 
 

@@ -38,19 +38,19 @@ typedef struct rageAllocator {
 // ============================================================================
 
 /**
- * rage_free_00C0
+ * rage_free
  * @ 0x820C00C0 | size: 0x60
  * 
  * Frees memory allocated by RAGE allocator.
  * Validates pointer before freeing.
  */
-void rage_free_00C0(void* ptr);
+void rage_free(void* ptr);
 
 /**
  * rage_free_alias
  * @ 0x820C0120 | size: 0x8
  * 
- * Alias for rage_free_00C0.
+ * Alias for rage_free.
  */
 void rage_free_alias(void* ptr);
 

@@ -8,7 +8,7 @@
 #include "gd_data.hpp"
 
 // External function declarations
-extern void rage_free_00C0(void* ptr);
+extern void rage_free(void* ptr);
 extern void atSingleton_9420(void* obj);
 extern void game_8EE8(void* obj);                    // @ 0x820F8EE8 - Object cleanup
 extern void util_6C20(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
@@ -115,7 +115,7 @@ plrPlayerMgr::~plrPlayerMgr() {
     atSingleton_9420(this);
     
     // Note: Conditional free handled by caller
-    // If (flags & 1), caller will invoke rage_free_00C0(this)
+    // If (flags & 1), caller will invoke rage_free(this)
 }
 
 

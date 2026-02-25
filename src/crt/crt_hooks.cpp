@@ -11,7 +11,7 @@
  *
  * WHY NOT HOOK THE RAGE HEAP?
  * ----------------------------
- * sysMemAllocator_Allocate / Free / rage_free_00C0 are intentionally left
+ * sysMemAllocator_Allocate / Free / rage_free are intentionally left
  * un-hooked. The RAGE heap subsystem owns its own virtual address ranges,
  * uses per-allocator ownership tables (atSingleton), and stores a raw
  * pointer 4 bytes before every user allocation for bookkeeping. Routing
