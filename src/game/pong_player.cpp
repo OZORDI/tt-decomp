@@ -17,7 +17,7 @@
 // ---------------------------------------------------------------------------
 
 // Face animation blender — starts the post-point anim.
-#include "pcr_anim_blenders.hpp"
+#include "pong_creature.hpp"
 
 // Update function called from D228; purpose: TODO — likely syncs state.
 extern void pongPlayer_C678_g(pongPlayerState* state);
@@ -160,8 +160,11 @@ void pongPlayerState::UpdateAnimationState() {
             reinterpret_cast<uintptr_t>(m_pCreatureState2) + 424);
         if (postPointFlag) {
             // TODO: Get pcrFaceAnimBlender instance and call StartPostPoint
-            // pcrFaceAnimBlender* blender = GetFaceAnimBlender();
-            // blender->StartPostPoint(m_pCreatureState2);
+            // The blender should be accessible through the creature state
+            // pcrFaceAnimBlender* blender = m_pCreatureState2->GetFaceAnimBlender();
+            // if (blender) {
+            //     blender->StartPostPoint();
+            // }
         }
     }
 
