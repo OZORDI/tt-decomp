@@ -22,7 +22,7 @@
  */
 
 #include "texture_reference.hpp"
-#include "../rage/memory.hpp"
+#include "rage/memory.h"
 
 namespace rage {
 

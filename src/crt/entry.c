@@ -14,24 +14,41 @@
  * and TLS allocator are online before game code runs.
  */
 
-#include "xe_tls_host.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
-/* Forward declarations */
+/* ── XeTlsBlock — Xbox 360 Thread Frame descriptor ──────────────────
+ * Minimal struct definition matching the fields accessed by entry.c.
+ * Full layout TBD as more thread-management functions are decompiled. */
+struct XeTlsBlock {
+    void*    m_pVtable;     /* +0x00  type tag / vtable pointer          */
+    uint8_t  m_padding[76]; /* +0x04  (fields not yet identified)        */
+    uint32_t m_stackSz;     /* +0x50  stack size in bytes                */
+    uint8_t  m_pad2[103];   /* +0x54  (fields not yet identified)        */
+    uint8_t  m_flags;       /* +0xB8  thread flags (arg3 of alloc)       */
+    uint8_t  m_pad3[7];     /* +0xB9                                     */
+    uint8_t  m_physFlag;    /* +0xC0  bit 7 = has physical allocation    */
+};
+
+/* ── Forward declarations ──────────────────────────────────────────── */
 void rage_main_6970(void* parms, void* base);
-void atexit(void (*fn)(void));
+int  atexit(void (*fn)(void));
 static void xe_main_thread_cleanup(void);
+void* xe_phys_alloc(uint32_t size, uint32_t align, int flags);
+void  xe_log_alloc_failure(uint32_t sizeKB);
+void  xe_thread_ctx_init(struct XeTlsBlock* pXtf, void* pStack, uint32_t size);
 
-/* Global SDA-relative allocator context base — offset +4 holds the
+/* ── Globals ───────────────────────────────────────────────────────── */
+
+/* SDA-relative allocator context base — offset +4 holds the
  * active sysMemAllocator vtable pointer. @ 0x82600000 (SDA base) */
 extern uint32_t* g_sda_base;                    /* r13-relative */
 
 /* Main thread XTF descriptor @ 0x8271B114 */
 extern struct XeTlsBlock g_mainThreadXtf;
 
-/* Allocator initialization flag — bit 0 indicates already-initialized.
- * Located at SDA-relative offset -20008 from g_sda_base upper half. */
+/* Allocator initialization flag — bit 0 indicates already-initialized. */
 extern uint32_t g_allocatorInitFlag;            /* @ ~0x8271XXXX */
 
 

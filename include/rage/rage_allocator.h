@@ -1,8 +1,17 @@
 /**
- * RAGE Allocator Interface
+ * rage_allocator.h — RAGE sysMemAllocator interface
  * Rockstar Presents Table Tennis (Xbox 360)
- * 
- * Memory allocation system for RAGE engine.
+ *
+ * Defines the vtable layout and struct for the engine's allocator system.
+ * The active allocator is stored in the SDA (Small Data Area) at r13+0,
+ * with the allocator pointer at offset +4 from that base.
+ *
+ * Vtable layout (confirmed from recomp scaffold):
+ *   slot  0 (+0x00) : destructor / bind
+ *   slot  1 (+0x04) : Allocate(self, ptr, size)
+ *   slot  2 (+0x08) : Free(self, ptr)
+ *   slots 3-16      : reserved / other methods
+ *   slot 17 (+0x44) : IsAddressOwned(self) -> bool
  */
 
 #pragma once
@@ -14,72 +23,58 @@
 extern "C" {
 #endif
 
-// ============================================================================
-// RAGE Allocator Vtable
-// ============================================================================
+/* ============================================================================
+ * sysMemAllocator Vtable
+ * ============================================================================ */
 
 typedef struct rageAllocatorVtable {
-    void* (*Allocate)(void* self, size_t size, size_t alignment);  // +0x00
-    void* reserved1;                                                // +0x04
-    void (*Free)(void* self, void* ptr);                           // +0x08
+    void  (*Destroy)(void* self);                                      /* +0x00 slot 0  */
+    void* (*Allocate)(void* self, void* ptr, size_t size);             /* +0x04 slot 1  */
+    void  (*Free)(void* self, void* ptr);                              /* +0x08 slot 2  */
+    void* reserved3;                                                   /* +0x0C slot 3  */
+    void* reserved4;                                                   /* +0x10 slot 4  */
+    void* reserved5;                                                   /* +0x14 slot 5  */
+    void* reserved6;                                                   /* +0x18 slot 6  */
+    void* reserved7;                                                   /* +0x1C slot 7  */
+    void* reserved8;                                                   /* +0x20 slot 8  */
+    void* reserved9;                                                   /* +0x24 slot 9  */
+    void* reserved10;                                                  /* +0x28 slot 10 */
+    void* reserved11;                                                  /* +0x2C slot 11 */
+    void* reserved12;                                                  /* +0x30 slot 12 */
+    void* reserved13;                                                  /* +0x34 slot 13 */
+    void* reserved14;                                                  /* +0x38 slot 14 */
+    void* reserved15;                                                  /* +0x3C slot 15 */
+    void* reserved16;                                                  /* +0x40 slot 16 */
+    uint8_t (*IsAddressOwned)(void* self);                             /* +0x44 slot 17 */
 } rageAllocatorVtable;
 
-// ============================================================================
-// RAGE Allocator Base Class
-// ============================================================================
+/* ============================================================================
+ * sysMemAllocator Instance
+ * ============================================================================ */
 
 typedef struct rageAllocator {
-    rageAllocatorVtable* vtable;  // +0x00
-    // Additional members TBD
+    rageAllocatorVtable* vtable;    /* +0x00 */
 } rageAllocator;
 
-// ============================================================================
-// Memory Management Functions
-// ============================================================================
+/* ============================================================================
+ * Function Declarations
+ * ============================================================================ */
 
-/**
- * rage_free
- * @ 0x820C00C0 | size: 0x60
- * 
- * Frees memory allocated by RAGE allocator.
- * Validates pointer before freeing.
- */
+/** rage_free @ 0x820C00C0 | size: 0x60 */
 void rage_free(void* ptr);
 
-/**
- * rage_free_alias
- * @ 0x820C0120 | size: 0x8
- * 
- * Alias for rage_free.
- */
+/** thunk_rage_free @ 0x820C0120 | size: 0x8 — tail-call to rage_free */
 void rage_free_alias(void* ptr);
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
+/** sysMemAllocator_Allocate @ 0x821861A0 | size: 0x84 */
+void* sysMemAllocator_Allocate(void* ptr, size_t size);
 
-/**
- * rage_IsValidPointer
- * @ 0x820F90D0
- * 
- * Validates if a pointer is within valid memory ranges.
- * Returns 0 if valid, non-zero if invalid.
- */
-uint8_t rage_IsValidPointer(void* ptr);
+/** sysMemAllocator_Free @ 0x82186228 | size: 0x74 */
+void sysMemAllocator_Free(void* ptr);
 
-/**
- * rage_GetAllocatorFromTLS
- * 
- * Gets the current thread's RAGE allocator from TLS.
- */
-void* rage_GetAllocatorFromTLS(void);
-
-/**
- * rage_SetAllocatorInTLS
- * 
- * Sets the current thread's RAGE allocator in TLS.
- */
-void rage_SetAllocatorInTLS(void* allocator);
+/** atSingleton_Find_90D0 @ 0x820F90D0 | size: 0xA4
+ *  Returns nonzero if pointer is owned by a registered singleton. */
+uint8_t atSingleton_Find_90D0(void* ptr);
 
 #ifdef __cplusplus
 }

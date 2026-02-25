@@ -6,46 +6,38 @@
 namespace rage {
 
 /**
- * Allocator
- * 
+ * Allocator (sysMemAllocator)
+ *
  * Base class for RAGE engine memory allocators.
  * The engine uses a vtable-based allocator system where different
  * allocators can be swapped in for different contexts.
- * 
- * Original vtable slots:
- * [0] Destructor/Bind
- * [1] Allocate(size, alignment)
- * [2] Free(ptr)
- * [3] Release(buffer)
- * [6] InnerOp(inner, arg)
+ *
+ * Vtable layout (from recomp scaffold):
+ *   slot  0 (+0x00) : destructor
+ *   slot  1 (+0x04) : Allocate(ptr, size)
+ *   slot  2 (+0x08) : Free(ptr)
+ *   slots 3-16      : reserved / other methods
+ *   slot 17 (+0x44) : IsAddressOwned() -> bool
  */
 class Allocator {
 public:
     virtual ~Allocator() {}
-    
+
     /**
-     * Allocate memory with specified size and alignment.
-     * 
+     * Allocate memory.
+     *
+     * @param ptr  Hint/base address for alignment (may be NULL)
      * @param size Size in bytes to allocate
-     * @param alignment Alignment requirement (typically 16 bytes)
      * @return Pointer to allocated memory, or nullptr on failure
      */
-    virtual void* Allocate(size_t size, size_t alignment = 16) = 0;
-    
+    virtual void* Allocate(void* ptr, size_t size) = 0;
+
     /**
      * Free previously allocated memory.
-     * 
+     *
      * @param ptr Pointer to memory to free
      */
     virtual void Free(void* ptr) = 0;
-    
-    /**
-     * Release a buffer back to the allocator pool.
-     * Similar to Free but may have different semantics for pooled allocators.
-     * 
-     * @param buffer Buffer to release
-     */
-    virtual void Release(void* buffer) = 0;
 };
 
 /**
