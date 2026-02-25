@@ -6,9 +6,9 @@
  */
 
 #include "pong_ball.hpp"
+#include "rage/memory.h"
 
 // External function declarations
-extern void rage_free_00C0(void* ptr);
 extern void util_1568(void* obj);
 extern void atSingleton_9420(void* singleton);
 extern void* xe_EC88(uint32_t size);

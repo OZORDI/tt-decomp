@@ -10,6 +10,7 @@
  */
 
 #include "pong_player.hpp"
+#include "rage/memory.h"
 #include <cstring>   // memset
 
 // ---------------------------------------------------------------------------

@@ -20,10 +20,18 @@
  * rage_free_00C0 is the canonical "safe free": it checks atSingleton
  * ownership before freeing so it won't corrupt memory from another
  * heap subsystem.
+ *
+ * MEMORY FUNCTION HIERARCHY:
+ *   Level 1: Standard CRT (memory.c) - malloc/free/memset/memcpy
+ *   Level 2: CRT Wrappers (crt_crossplatform.h) - crt_malloc/crt_free
+ *   Level 3: RAGE Allocator (heap.c) - rage_free_00C0, sysMemAllocator_*
+ *   Level 4: C++ Interface (rage/allocator.h) - rage::Allocator class
  */
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include "rage/memory.h"
 
 /* SDA-relative allocator context.  SDA[0] points to a struct where
  * offset +4 holds the active sysMemAllocator*. */
@@ -108,15 +116,17 @@ void sysMemAllocator_Free(void* ptr)
 
 
 /**
- * rage_free_00C0 @ 0x820C00C0 | size: 0x4C
+ * rage_free_00C0 @ 0x820C00C0 | size: 0x60
  *
- * The primary RAGE heap free function. Forwards to the active
+ * The canonical RAGE heap free function. Forwards to the active
  * sysMemAllocator's vtable slot 2 (Free).
  *
  * Performs two safety guards:
  *  1. NULL check — silently ignores NULL pointers.
  *  2. atSingleton_Find_90D0 check — skips free if pointer belongs to
  *     another singleton's memory region (prevents cross-heap corruption).
+ *
+ * C++ code should use rage::Free(ptr) wrapper from rage/memory.h.
  *
  * @param ptr  Raw heap pointer to free
  */

@@ -65,6 +65,8 @@ extern void*  g_pGrcSceneB;     // @ (lis(-32161) + -17884)
 // Hardware device vtable (16-byte grcDevice objects get this stamped)
 extern void*  g_grcDeviceVtable[];  // @ 0x824DC5C4 (lis(-32253) + 21764)
 
+#include "rage/memory.h"
+
 // Subsystem calls
 void  xe_main_thread_init_0038(void);          // thread/heap init
 void* sysMemAllocator_Alloc(size_t sz, size_t align, int flags);  // vtable slot 1
@@ -72,7 +74,6 @@ void  ph_ctor_DE00(void* mem);                 // physics world ctor @ 0x8215DE0
 void  grc_13A0(void);                          // grc device sub-init @ 0x821513A0
 void* xe_86E8(void* target, int flags, int sz, int align, int maxSz); // block alloc @ 0x821586E8
 void  rage_2E18(void* ptr);                    // decrement refcount / release @ 0x820C2E18
-void  rage_free_00C0(void* ptr);               // safe RAGE heap free @ 0x820C00C0
 void  atSingleton_1C70_fw(void* mgr);          // singleton remove @ 0x82151C70
 void  nop_8240E6D0(const char* name, int id);  // debug/log nop @ 0x8240E6D0
 void  rage_FC30(void);                         // grc pre-present fence @ 0x8214FC30

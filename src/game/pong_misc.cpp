@@ -70,8 +70,9 @@ fsmMachine::~fsmMachine()
 //   Slot 3: offset 0xED30 (60720 bytes) - initialized first
 // ─────────────────────────────────────────────────────────────────────────────
 
+#include "rage/memory.h"
+
 // External function declarations
-extern void rage_free_00C0(void* ptr);
 extern void util_CE30(void* obj);  // @ 0x8234CE30 - Initialize rage::parStructure
 extern void atSingleton_E998_g(void* obj, void* param2, void* outIndex);
 
