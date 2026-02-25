@@ -256,3 +256,37 @@ Before calling `write_source_file`, ask yourself:
 - [ ] Does the function signature make sense from a C++ perspective?
 
 If the answer to any is no, keep refining.
+
+
+---
+
+## Final Step: Commit and Push Your Work
+
+After completing your decompilation work, **ALWAYS** commit and push your changes to the repository:
+
+```bash
+# Stage all changes
+git add -A
+
+# Commit with a descriptive message
+git commit -m "Lift [FunctionName] @ 0xADDRESS
+
+- Brief description of what was implemented
+- Any notable findings or TODOs
+- Struct layouts discovered"
+
+# Push to remote repository
+git push
+```
+
+**This is mandatory.** Every decompilation session must end with a commit and push to preserve your work and maintain project history.
+
+If you encounter any git errors (like "no upstream branch"), use:
+```bash
+git push --set-upstream origin main
+```
+
+Or if you need to force push (use with caution):
+```bash
+git push -f
+```
