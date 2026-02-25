@@ -1,9 +1,11 @@
+// pong_drill.cpp — Training drill implementations | Rockstar Presents Table Tennis (Xbox 360, 2006)
+
 /**
  * Training Drill Classes Implementation
  * Rockstar Presents Table Tennis (Xbox 360)
  */
 
-#include "game/pong_training_drills.hpp"
+#include "pong_drill.hpp"
 #include <stdio.h>
 
 // External function declarations

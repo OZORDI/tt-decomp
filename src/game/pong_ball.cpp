@@ -1,9 +1,11 @@
+// pong_ball.cpp — Ball / robot classes | Rockstar Presents Table Tennis (Xbox 360, 2006)
+
 /**
  * gm_ball_robot.cpp — Ball-serving robot implementation
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  */
 
-#include "gm_ball_robot.hpp"
+#include "pong_ball.hpp"
 
 // External function declarations
 extern void rage_free_00C0(void* ptr);

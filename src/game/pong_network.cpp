@@ -1,3 +1,5 @@
+// pong_network.cpp — Network message implementations | Rockstar Presents Table Tennis (Xbox 360, 2006)
+
 /**
  * serve_started_message.cpp — ServeStartedMessage network message class
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
@@ -34,7 +36,7 @@
  *   g_szServeStartedTypeName @ 0x8206E9D0  (lis -32249 + -5680)
  */
 
-#include "serve_started_message.hpp"
+#include "pong_network.hpp"
 #include "pong_player.hpp"
 
 // ── External functions ─────────────────────────────────────────────────────
