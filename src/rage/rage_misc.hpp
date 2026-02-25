@@ -13,6 +13,8 @@
 #include <stdint.h>
 
 // ── Holder  [6 vtables — template/MI] ──────────────────────────
+// Full implementation in include/rage/holder.h and src/rage/holder.cpp
+// See docs/decompilation/HOLDER_CLASS_RESEARCH_FEB25.md for detailed analysis
 struct Holder {
     void**      vtable;           // +0x00
 

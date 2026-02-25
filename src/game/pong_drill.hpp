@@ -223,16 +223,31 @@ struct gdTrainingSaveValues {
 };
 
 // ── hitTipData  [2 vtables — template/MI] ──────────────────────────
+// XML data node for hit tip configuration during gameplay.
+// Inherits from rage::xmlNodeStruct via multiple inheritance.
+// Vtable 1 @ 0x82043300 (primary, 12 bytes)
+// Vtable 2 @ 0x8204330C (secondary, 100 bytes)
 struct hitTipData {
     void**      vtable;           // +0x00
 
+    // ── padding for MI secondary vtable area ──
+    uint32_t    m_reserved[3];    // +0x04..+0x0C (MI bookkeeping)
+
+    // ── XML properties (registered by LoadProperties) ──
+    int32_t     m_shotType;               // +0x10 (16) — Shot type enum [0..5], registered as "ShotType"
+    int32_t     m_minScore;               // +0x14 (20) — Minimum score threshold, registered as "MinScore"
+    int32_t     m_scoreThreshold;         // +0x18 (24) — Score threshold, registered as "Score"
+    int32_t     m_consecutiveThreshold;   // +0x1C (28) — Consecutive shots required, registered as "InARow"
+    int32_t     m_enabled;                // +0x20 (32) — Active flag, registered as "Active"
+
     // ── virtual methods ──
-    virtual ~hitTipData();                  // [0] @ 0x821f2ab8
-    virtual void vfn_2();  // [2] @ 0x821f2298
-    virtual void vfn_20();  // [20] @ 0x821f2188
-    virtual void vfn_21();  // [21] @ 0x821f21d0
-    virtual void vfn_22();  // [22] @ 0x82115bd8
+    virtual ~hitTipData();                          // [0] @ 0x821F2AB8
+    virtual void PostLoadProperties();              // [2] @ 0x821F2298
+    virtual bool IsApplicable(uint32_t typeHash);   // [20] @ 0x821F2188
+    virtual void LoadProperties();                  // [21] @ 0x821F21D0
+    virtual const char* GetNodeTypeName();          // [22] @ 0x82115BD8
 };
+
 
 namespace hitTipData {
 
