@@ -34,11 +34,17 @@ struct CCompEffect {
 };
 
 // ── CDelayEffect  [vtable @ 0x8203B570] ──────────────────────────
+// Delay/echo audio effect for reverb and echo effects.
+// Reference-counted Xbox 360 XAudio2 effect wrapper.
 struct CDelayEffect {
-    void**      vtable;           // +0x00
+    void**      m_vtable;         // +0x00 - vtable @ 0x8203B570
+    int32_t     m_refCount;       // +0x04 - Reference count
+    // ... effect parameters ...
+    void*       m_pEffectData1;   // +0x1C (+28) - Effect data pointer 1
+    void*       m_pEffectData2;   // +0x20 (+32) - Effect data pointer 2
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x821b1e30
+    virtual void ScalarDtor(int flags); // [1] @ 0x821b1e30 - Decrement refcount, cleanup
     virtual void vfn_2();  // [2] @ 0x821b1a30
     virtual void vfn_3();  // [3] @ 0x821b1a50
     virtual void vfn_4();  // [4] @ 0x821b1b28
@@ -47,12 +53,18 @@ struct CDelayEffect {
 };
 
 // ── CPeakMeterEffect  [vtable @ 0x8203B260] ──────────────────────────
+// Peak meter audio effect for monitoring audio levels (VU meters).
+// Reference-counted Xbox 360 XAudio2 effect wrapper.
 struct CPeakMeterEffect {
-    void**      vtable;           // +0x00
+    void**      m_vtable;         // +0x00 - vtable @ 0x8203B260
+    int32_t     m_refCount;       // +0x04 - Reference count
+    // ... effect parameters ...
+    void*       m_pEffectData1;   // +0x1C (+28) - Effect data pointer 1
+    void*       m_pEffectData2;   // +0x20 (+32) - Effect data pointer 2
 
     // ── virtual methods ──
-    virtual ~CPeakMeterEffect();                  // [0] @ 0x821add88
-    virtual void ScalarDtor(int flags); // [1] @ 0x821adda0
+    virtual ~CPeakMeterEffect();                  // [0] @ 0x821add88 - Increment refcount
+    virtual void ScalarDtor(int flags); // [1] @ 0x821adda0 - Decrement refcount, cleanup
     virtual void vfn_2();  // [2] @ 0x821ad9d8
     virtual void vfn_3();  // [3] @ 0x821ad9f8
     virtual void vfn_4();  // [4] @ 0x821adc40
@@ -62,12 +74,18 @@ struct CPeakMeterEffect {
 };
 
 // ── CShelvingFilterEffect  [vtable @ 0x8203B288] ──────────────────────────
+// Shelving filter audio effect (low-shelf/high-shelf EQ for bass/treble).
+// Reference-counted Xbox 360 XAudio2 effect wrapper.
 struct CShelvingFilterEffect {
-    void**      vtable;           // +0x00
+    void**      m_vtable;         // +0x00 - vtable @ 0x8203B288
+    int32_t     m_refCount;       // +0x04 - Reference count
+    // ... effect parameters ...
+    void*       m_pEffectData1;   // +0x1C (+28) - Effect data pointer 1
+    void*       m_pEffectData2;   // +0x20 (+32) - Effect data pointer 2
 
     // ── virtual methods ──
-    virtual ~CShelvingFilterEffect();                  // [0] @ 0x821b26a8
-    virtual void ScalarDtor(int flags); // [1] @ 0x821ae618
+    virtual ~CShelvingFilterEffect();                  // [0] @ 0x821b26a8 - Increment refcount
+    virtual void ScalarDtor(int flags); // [1] @ 0x821ae618 - Decrement refcount, cleanup
     virtual void vfn_2();  // [2] @ 0x821ae198
     virtual void vfn_3();  // [3] @ 0x821ae1b8
     virtual void vfn_4();  // [4] @ 0x821ae2c8

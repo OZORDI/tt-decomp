@@ -1425,9 +1425,24 @@ struct gdaiSkillStats {
     virtual void vfn_22();  // [22] @ 0x821e9e58
 };
 
-// ── plrPlayerMgr  [2 vtables — template/MI] ──────────────────────────
+// ── plrPlayerMgr  [2 vtables @ 0x82039A24, 0x82039AB0 — Multiple Inheritance] ──────────────────────────
+// Player manager with multiple inheritance and sub-object array
+// Size: 68+ bytes (0x44+)
 struct plrPlayerMgr {
-    void**      vtable;           // +0x00
+    void**      m_vtable1;        // +0x00 - Primary vtable @ 0x82039A24
+    uint32_t    m_padding[3];     // +0x04 - Padding to secondary vtable
+    void**      m_vtable2;        // +0x10 (16) - Secondary vtable @ 0x82039AB0
+    
+    // Sub-object array (48 bytes total, 2 objects × 24 bytes each)
+    // Each sub-object has 2 pointers: primary object and singleton-managed object
+    struct SubObject {
+        void*   m_pObject1;       // +0x00 - Primary object pointer
+        uint32_t m_padding[3];    // +0x04 - Padding
+        void*   m_pObject2;       // +0x10 (16) - Singleton-managed object pointer
+        uint32_t m_padding2;      // +0x14 - Padding
+    };
+    
+    SubObject   m_subObjects[2];  // +0x14 (20) - Array of 2 sub-objects
 
     // ── virtual methods ──
     virtual ~plrPlayerMgr();                  // [0] @ 0x82188d40

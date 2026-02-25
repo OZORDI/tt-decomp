@@ -32,7 +32,6 @@ Run these in the terminal before trusting any boolean inversion idiom. A wrong `
 ## Your Tools (v2 — 10 tools)
 
 Use them in this order for each function:
-
 1. **`get_function_info`** — Always call this first. Gets address, size, source file, class, vtable slot, and lift status. Now also shows the RTTI-verified original class name (including `rage::` namespace).
 2. **`get_class_context`** — Call once per class session. Gets **RTTI original name + inheritance chain**, vtable layout, struct field clusters, debug string hints, and auto-generated struct definition.
 3. **`get_function_recomp`** — Gets the raw pass5_final scaffold. **lbl_ references are now automatically annotated** with section, size, and vtable class name.
@@ -41,7 +40,7 @@ Use them in this order for each function:
 6. **`find_callees`** — See what this function depends on.
 7. **`find_callers`** — See how it's used (what invariants hold at call sites).
 8. **`search_symbols`** — Look up functions, globals, or confirm names. Now also searches RTTI class names (catches `rage::` namespaced classes not in the symbol table).
-9. **`get_existing_source`** — Check if a file/function already has lifted code.
+9. **`get_existing_source`** — Check if a file/function already has lifted code.check if class is already defined in *.hpp or elsewhere.
 10. **`write_source_file`** — Write your finished C++ to src/.
 
 ## The Standard Workflow Per Function

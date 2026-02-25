@@ -12,6 +12,42 @@
 #pragma once
 #include <stdint.h>
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Game Event System
+// ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GameEventID — Event system identifiers
+ * 
+ * 16-bit event IDs organized by category (hex range).
+ * Discovered via execution tracing through 117 unique event comparisons.
+ * 
+ * Event ranges:
+ *   0x0800-0x08FF (2048-2303): Game events (ball robot, gameplay)
+ *   0x1000-0x10FF (4096-4351): System events
+ *   0x1800-0x18FF (6144-6399): UI/Menu events
+ *   0x2000-0x20FF (8192-8447): Save/Profile events
+ */
+enum GameEventID : uint16_t {
+    // ── Game Events (0x0800-0x08FF) ──────────────────────────────
+    EVENT_GAME_BASE         = 0x0800,  // 2048
+    EVENT_BALL_ROBOT_INIT   = 0x0817,  // 2071 - gmBallRobot initialization (event 37 deactivation)
+    
+    // ── System Events (0x1000-0x10FF) ────────────────────────────
+    EVENT_SYSTEM_BASE       = 0x1000,  // 4096
+    
+    // ── UI/Menu Events (0x1800-0x18FF) ───────────────────────────
+    EVENT_UI_BASE           = 0x1800,  // 6144
+    
+    // ── Save/Profile Events (0x2000-0x20FF) ──────────────────────
+    EVENT_SAVE_BASE         = 0x2000,  // 8192
+    EVENT_SAVE_LOAD         = 0x200E,  // 8206 - Load save file from storage
+    EVENT_SAVE_WRITE        = 0x200F,  // 8207 - Write save file to storage
+    EVENT_SAVE_UNKNOWN      = 0x2019,  // 8217 - Unknown save operation
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 // ── NetMatchTimer  [vtable @ 0x8206C4B4] ──────────────────────────
 struct NetMatchTimer {
     void**      vtable;           // +0x00
@@ -946,12 +982,38 @@ struct pongPlayer {
     void FinalizeSwing();
 };
 
-// ── pongSaveFile  [2 vtables — template/MI] ──────────────────────────
+// ── pongSaveFile  [2 vtables @ +0 and +12, MI with 24-byte offset] ────
+// Save file manager with 4 save slots using rage::parStructure
+// Size: ~60176 bytes (0xEB10)
+// RTTI: 0x8203CB18, 0x8203CB30
+//
+// Each slot is a rage::parStructure (15044 bytes / 0x3AC4) for serialized save data.
+// Slot offsets from base: 0x3CE4, 0x77A8, 0xB26C, 0xED30
+//
+// Save/Load Flow:
+//   HandleEvent(8207) [save] or HandleEvent(8206) [load]
+//   → atSingleton_E998_g gets active slot index (0-3)
+//   → atSingleton_8F98_h manages slot access
+//   → XamContentCreate @ 0x825861AC (Xbox kernel API)
+//   → rage::parStructure serializes game data
+//   → XamContentClose @ 0x825861CC
 struct pongSaveFile {
-    void**      vtable;           // +0x00
+    void**      m_vtable1;        // +0x00 - Primary vtable @ 0x8203CB18
+    void*       m_pData;          // +0x04 - Data pointer
+    uint16_t    m_flags;          // +0x0A - Flags
+    void**      m_vtable2;        // +0x0C - Secondary vtable @ 0x8203CB30
+    uint8_t     m_saveSlots[60176]; // +0x10 - Four rage::parStructure save slots
+    uint32_t    m_eventData;      // +0xEB20 - Event state
+    uint8_t     m_eventFlag1;     // +0xEB24
+    uint8_t     m_eventFlag2;     // +0xEB25
 
     // ── virtual methods ──
     virtual ~pongSaveFile();                  // [0] @ 0x821c5210
+    
+    // ── methods ──
+    pongSaveFile();                           // @ 0x821c5260 - Initializes 4 parStructure slots
+    void HandleEvent(uint16_t eventType);     // @ 0x821c7680 - Save (8207) / Load (8206)
+    static void DestructorThunk(pongSaveFile* ptr); // @ 0x821c7720 - MI thunk (-12 bytes)
 };
 
 // ── pongXMVMovie  [vtable @ 0x82060AF4] ──────────────────────────
