@@ -1,13 +1,12 @@
 /**
- * Global Variables Declarations
- * Rockstar Presents Table Tennis (Xbox 360)
- * 
- * These globals match the original Xbox 360 memory layout.
- * Addresses are documented for reference but not enforced in the rewrite.
+ * globals.h — Global Variables and Constants
+ * Rockstar Presents Table Tennis (Xbox 360, 2006)
+ *
+ * Central header for all global variables, pointers, and constants
+ * used throughout the game engine.
  */
 
-#ifndef GLOBALS_H
-#define GLOBALS_H
+#pragma once
 
 #include <stdint.h>
 
@@ -15,41 +14,58 @@
 extern "C" {
 #endif
 
-/* Include shared type definitions */
-#ifdef __cplusplus
-#include "tabletennis_types.h"
-#endif
+// ────────────────────────────────────────────────────────────────────────────
+// Graphics System Globals
+// ────────────────────────────────────────────────────────────────────────────
 
-/* Table tennis game state */
-extern BallState    g_ball;
-extern PaddleState  g_paddles[2];
+// Global graphics device pointer (grcDevice singleton)
+// @ 0x8271A81C (r2-22500)
+extern void* g_grcDevice;
 
-/* RAGE engine global objects */
-extern void* g_render_obj_ptr;   /* 0x825EAB2C - Root game object */
-extern void* g_input_obj_ptr;    /* 0x825FAB2C - Input system */
-extern void* g_scene_obj_ptr;    /* 0x825FAB28 - Scene object */
-extern void* g_grc_device_ptr;   /* 0x8272A358 - Graphics device */
-extern void* g_loop_obj_ptr;     /* 0x825EAB30 - Game loop object */
+// ────────────────────────────────────────────────────────────────────────────
+// UI System Globals
+// ────────────────────────────────────────────────────────────────────────────
 
-/* Frame counters */
-extern uint32_t g_frame_counter;    /* Matches g_grc_frame_count @ 0x82606348 */
-extern uint32_t g_frame_counter_1;  /* @ 0x826065DC - Used by rage_render_default */
-extern uint32_t g_frame_counter_2;  /* @ 0x825C???? - Second frame counter */
-extern void*    g_render_list_head;
+// Global UI manager pointer
+// @ 0x8271A358 (r2-23720)
+extern void* g_uiManager;
 
-/* CRT globals */
-extern void* (*g_crt_tls_alloc)(void);
-extern void* (*g_crt_tls_get)(void*);
-extern int   (*g_crt_tls_set)(void*, void*);
-extern void  (*g_crt_tls_free)(void*);
-extern int    g_cinit_retval;
-extern void*  g_doexit_fptr;
+// ────────────────────────────────────────────────────────────────────────────
+// Game State Globals
+// ────────────────────────────────────────────────────────────────────────────
 
-/* Monitor data */
-extern void* __imp_KeDebugMonitorData;
+// Global game object pointer (main game state)
+// @ 0x82606604 (r13+26116)
+extern void* g_gameObject;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Audio System Globals
+// ────────────────────────────────────────────────────────────────────────────
+
+// Global audio object pointer
+// @ r13+25444
+extern void* g_audioObject;
+
+// Global audio config pointer
+// @ r13+25448
+extern void* g_audioConfig;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Display System Globals
+// ────────────────────────────────────────────────────────────────────────────
+
+// Global display object pointer
+// @ r13+26340
+extern void* g_displayObject;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Asset System Globals
+// ────────────────────────────────────────────────────────────────────────────
+
+// Cached asset path pointer
+// @ r13+25836
+extern void* g_cachedAssetPath;
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* GLOBALS_H */
