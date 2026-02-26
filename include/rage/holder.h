@@ -64,68 +64,89 @@ public:
 protected:
     // +0x00: vtable pointer (implicit in C++)
     
-    // +0x04-0x0C: Tuning parameters (set dynamically via external calls)
-    // These are set by SetParam1/2/3 which call external vtable slot 5
-    float m_tuningValue1;                           // +0x04 - set by SetParam1
-    float m_tuningValue2;                           // +0x08 - set by SetParam2
-    float m_tuningValue3;                           // +0x0C - set by SetParam3
+    // +0x04-0x0C: Dynamic tuning parameters (set via SetParam1/2/3)
+    // These call external vtable slot 5 to retrieve values from fragment data
+    float m_tuningParam1;                           // +0x04 - set by SetParam1
+    float m_tuningParam2;                           // +0x08 - set by SetParam2
+    float m_tuningParam3;                           // +0x0C - set by SetParam3
     
-    // +0x10-0x1C: Default vector (initialized to 0.0 in constructor)
-    // 4 consecutive floats forming a vec4 or quaternion identity
-    float m_defaultX;                               // +0x10 - initialized to 0.0
-    float m_defaultY;                               // +0x14 - initialized to 0.0
-    float m_defaultZ;                               // +0x18 - initialized to 0.0
-    float m_defaultW;                               // +0x1C - initialized to 0.0
+    // +0x10-0x1C: Default identity vector (initialized to zero in constructor)
+    // Used as default position, zero vector, or identity quaternion component
+    float m_defaultVectorX;                         // +0x10 - initialized to 0.0
+    float m_defaultVectorY;                         // +0x14 - initialized to 0.0
+    float m_defaultVectorZ;                         // +0x18 - initialized to 0.0
+    float m_defaultVectorW;                         // +0x1C - initialized to 0.0
     
-    // +0x20-0x8F: Unknown region (likely more parameters or embedded structures)
+    // +0x20-0x8F: Reserved region (uninitialized - may be parent class data or reserved)
     uint8_t _pad0x20[0x70];                         // +0x20 to +0x8F (112 bytes)
     
-    // +0x90-0x98: Additional tuning parameters (set dynamically)
-    float m_tuningValue8;                           // +0x90 (144) - set by SetParam8
-    float m_tuningValue9;                           // +0x94 (148) - set by SetParam9
-    float m_tuningValue10;                          // +0x98 (152) - set by SetParam10
+    // +0x90-0x98: Extended tuning parameters (set dynamically)
+    float m_tuningParam8;                           // +0x90 (144) - set by SetParam8
+    float m_tuningParam9;                           // +0x94 (148) - set by SetParam9
+    float m_tuningParam10;                          // +0x98 (152) - set by SetParam10
     
-    // +0x99: Initialization flags
-    uint8_t m_flags;                                // +0x99 (153) - bit 0 = initialized
+    // +0x99: Initialization status flags
+    uint8_t m_initFlags;                            // +0x99 (153) - bit 0 = initialized
     
-    // +0x9A-0xDF: Unknown region
+    // +0x9A-0xDF: Reserved region (uninitialized)
     uint8_t _pad0x9A[0x46];                         // +0x9A to +0xDF (70 bytes)
     
-    // +0xE0-0x12F: Vector data (AltiVec/VMX optimized, 16-byte aligned)
-    // Likely 4x4 matrices or vec4 arrays for transforms/physics
-    float m_vectorData[20];                         // +0xE0 (224) - 5 vec4s = 80 bytes
+    // +0xE0-0x11F: Constant transform data (loaded from global data @ 0x82032F48)
+    // 4 x vec4 (64 bytes) - likely identity matrix or default transform constants
+    float m_constantVectors[16];                    // +0xE0 (224) - 4 vec4s = 64 bytes
     
-    // +0x130-0x14F: Float array (additional parameters)
-    float m_floatArray[8];                          // +0x130 (304) - 32 bytes
+    // +0x120-0x12F: Padding between constant and tuning data
+    uint8_t _pad0x120[0x10];                        // +0x120 to +0x12F (16 bytes)
     
-    // +0x150-0x1AF: Unknown region
+    // +0x130-0x14F: Tuning parameter array (initialized to 0.0 in constructor)
+    // Used for blend weights, animation params, or physics tuning
+    float m_tuningParams[8];                        // +0x130 (304) - 8 floats = 32 bytes
+    
+    // +0x150-0x1AF: Reserved region (uninitialized)
     uint8_t _pad0x150[0x60];                        // +0x150 to +0x1AF (96 bytes)
     
-    // +0x1B0-0x20F: Vector region (cleared in constructor loop)
-    float m_vectorRegion[24];                       // +0x1B0 (432) - 6 vec4s = 96 bytes
+    // +0x1B0-0x20F: Transform cache (cleared in constructor loop)
+    // 6 x vec4 (96 bytes) - likely cached transforms, bone matrices, or physics state
+    float m_transformCache[24];                     // +0x1B0 (432) - 6 vec4s = 96 bytes
     
-    // +0x210-0x28F: Vector loop region (cleared in constructor loop)
-    float m_vectorLoop[32];                         // +0x210 (528) - 8 vec4s = 128 bytes
+    // +0x210-0x28F: Animation/state data (cleared in constructor loop)
+    // 8 x vec4 (128 bytes) - likely animation blend data or state vectors
+    float m_animationState[32];                     // +0x210 (528) - 8 vec4s = 128 bytes
     
-    // +0x290-0x2BF: Unknown region
-    uint8_t _pad0x290[0x30];                        // +0x290 to +0x2BF (48 bytes)
+    // +0x290-0x2B3: Extended tuning parameters (initialized to 0.0 in constructor)
+    // 7 floats with gaps suggesting interleaved int/enum fields
+    float m_extendedParam0;                         // +0x290 (656) - initialized to 0.0
+    float m_extendedParam1;                         // +0x294 (660) - initialized to 0.0
+    float m_extendedParam2;                         // +0x298 (664) - initialized to 0.0
+    uint32_t _pad0x29C;                             // +0x29C (668) - gap (likely int/enum)
+    float m_extendedParam3;                         // +0x2A0 (672) - initialized to 0.0
+    float m_extendedParam4;                         // +0x2A4 (676) - initialized to 0.0
+    float m_extendedParam5;                         // +0x2A8 (680) - initialized to 0.0
+    uint32_t _pad0x2AC;                             // +0x2AC (684) - gap (likely int/enum)
+    float m_extendedParam6;                         // +0x2B0 (688) - initialized to 0.0
+    uint8_t _pad0x2B4[0x0C];                        // +0x2B4 to +0x2BF (12 bytes)
     
-    // +0x2C0-0x2C1: State flags
-    uint8_t m_stateFlag1;                           // +0x2C0 (704) - cleared in constructor
-    uint8_t m_stateFlag2;                           // +0x2C1 (705) - cleared in constructor
+    // +0x2C0-0x2C1: State tracking flags (cleared in constructor)
+    uint8_t m_stateFlags;                           // +0x2C0 (704) - general state flags
+    uint8_t m_statusFlags;                          // +0x2C1 (705) - status flags
     
     // Padding to 16-byte alignment
     uint8_t _pad0x2C2[0x0E];                        // +0x2C2 to +0x2CF (14 bytes)
     
 } __attribute__((aligned(16)));  // 16-byte alignment for AltiVec operations
 
-// Compile-time size verification
+// Compile-time size and offset verification
 static_assert(sizeof(Holder) == 720, "Holder struct size mismatch - should be 720 bytes (16-byte aligned)");
-static_assert(offsetof(Holder, m_tuningValue1) == 0x04, "Holder::m_tuningValue1 offset mismatch");
-static_assert(offsetof(Holder, m_tuningValue8) == 0x90, "Holder::m_tuningValue8 offset mismatch");
-static_assert(offsetof(Holder, m_flags) == 0x99, "Holder::m_flags offset mismatch");
-static_assert(offsetof(Holder, m_vectorData) == 0xE0, "Holder::m_vectorData offset mismatch");
-static_assert(offsetof(Holder, m_stateFlag1) == 0x2C0, "Holder::m_stateFlag1 offset mismatch");
+static_assert(offsetof(Holder, m_tuningParam1) == 0x04, "Holder::m_tuningParam1 offset mismatch");
+static_assert(offsetof(Holder, m_defaultVectorX) == 0x10, "Holder::m_defaultVectorX offset mismatch");
+static_assert(offsetof(Holder, m_tuningParam8) == 0x90, "Holder::m_tuningParam8 offset mismatch");
+static_assert(offsetof(Holder, m_initFlags) == 0x99, "Holder::m_initFlags offset mismatch");
+static_assert(offsetof(Holder, m_constantVectors) == 0xE0, "Holder::m_constantVectors offset mismatch");
+static_assert(offsetof(Holder, m_tuningParams) == 0x130, "Holder::m_tuningParams offset mismatch");
+static_assert(offsetof(Holder, m_transformCache) == 0x1B0, "Holder::m_transformCache offset mismatch");
+static_assert(offsetof(Holder, m_animationState) == 0x210, "Holder::m_animationState offset mismatch");
+static_assert(offsetof(Holder, m_extendedParam0) == 0x290, "Holder::m_extendedParam0 offset mismatch");
+static_assert(offsetof(Holder, m_stateFlags) == 0x2C0, "Holder::m_stateFlags offset mismatch");
 
 // Global singleton array (6 specializations, 28 bytes each)
 // Each Holder_vfn_1 variant returns a different entry from this array

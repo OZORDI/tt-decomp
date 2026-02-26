@@ -86,51 +86,74 @@ void* Holder::AllocateAndInitialize() {
  * Holder::Holder (constructor)
  * @ 0x82122798 | size: 0x11C
  * 
- * Initializes a Holder instance with default values.
- * Sets all float parameters to 0.0, clears vector data regions using AltiVec,
- * and initializes state flags.
+ * Initializes a Holder instance with default values for fragment/tuning management.
  * 
- * This constructor is called when creating fragment type holders for game
- * resources and tuning data (see IDA pseudocode: "$/tune/types/fragments").
+ * This constructor is called when creating fragment type holders for game resources
+ * and tuning data (see IDA pseudocode: "$/tune/types/fragments"). It initializes:
+ * - Default identity vector to (0,0,0,0)
+ * - Constant transform data from global memory (4 x vec4 @ 0x82032F48)
+ * - Tuning parameter arrays to 0.0
+ * - Transform cache and animation state regions (cleared with AltiVec)
+ * - Extended parameters to 0.0
+ * - State flags to 0
  * 
- * Initialization sequence:
- * 1. Set vtable pointer (done by compiler)
- * 2. Initialize float parameters +0x10 through +0x1C to 0.0
- * 3. Clear vector data at +0xE0 (224) using AltiVec
- * 4. Clear vector region at +0x1B0 (432) in loop (6 iterations)
- * 5. Clear vector loop at +0x210 (528) in loop (8 iterations)
- * 6. Set state flags at +0x2C0 and +0x2C1 to 0
+ * Note: m_tuningParam1/2/3 and m_tuningParam8/9/10 are NOT initialized here -
+ * they're set later via SetParamX methods which call external vtable slot 5.
  */
 Holder::Holder() {
     // Vtable pointer is set by compiler
     
-    // Initialize default vector to 0.0
-    // Original loads float constant from 0x8202D110 (likely 0.0f) and stores multiple times
-    m_defaultX = 0.0f;  // +0x10
-    m_defaultY = 0.0f;  // +0x14
-    m_defaultZ = 0.0f;  // +0x18
-    m_defaultW = 0.0f;  // +0x1C
+    // Initialize default identity vector to (0,0,0,0)
+    // Original loads float constant 0.0f from 0x8202D110
+    m_defaultVectorX = 0.0f;  // +0x10
+    m_defaultVectorY = 0.0f;  // +0x14
+    m_defaultVectorZ = 0.0f;  // +0x18
+    m_defaultVectorW = 0.0f;  // +0x1C
     
-    // Clear vector data blocks using AltiVec operations
-    // Original uses lvx128/stvx for 16-byte aligned loads/stores
-    memset(m_vectorData, 0, sizeof(m_vectorData));      // +0xE0, 80 bytes
-    memset(m_floatArray, 0, sizeof(m_floatArray));      // +0x130, 32 bytes
+    // Load constant transform data from global memory @ 0x82032F48
+    // Original uses lvx128 to load 4 x 16-byte vectors (64 bytes total)
+    // These are likely identity matrix or default transform constants
+    // For now, we'll zero them until we can extract the actual global data
+    memset(m_constantVectors, 0, sizeof(m_constantVectors));  // +0xE0, 64 bytes
     
-    // Clear vector region (6 x 16-byte vectors)
+    // Initialize tuning parameter array to 0.0
+    // Original stores 8 consecutive floats at +0x130 (304) through +0x14C (332)
+    m_tuningParams[0] = 0.0f;  // +0x130 (304)
+    m_tuningParams[1] = 0.0f;  // +0x134 (308)
+    m_tuningParams[2] = 0.0f;  // +0x138 (312)
+    m_tuningParams[3] = 0.0f;  // +0x13C (316)
+    m_tuningParams[4] = 0.0f;  // +0x140 (320)
+    m_tuningParams[5] = 0.0f;  // +0x144 (324)
+    m_tuningParams[6] = 0.0f;  // +0x148 (328)
+    m_tuningParams[7] = 0.0f;  // +0x14C (332)
+    
+    // Clear transform cache (6 x vec4 = 96 bytes)
     // Original: loop with vxor v0, v0, v0; stvx v0, r0, r11
-    memset(m_vectorRegion, 0, sizeof(m_vectorRegion));  // +0x1B0, 96 bytes
+    memset(m_transformCache, 0, sizeof(m_transformCache));  // +0x1B0, 96 bytes
     
-    // Clear vector loop region (8 x 16-byte vectors)
+    // Clear animation state (8 x vec4 = 128 bytes)
     // Original: loop with vxor v12, v0, v0; stvx v12, r0, r11
-    memset(m_vectorLoop, 0, sizeof(m_vectorLoop));      // +0x210, 128 bytes
+    memset(m_animationState, 0, sizeof(m_animationState));  // +0x210, 128 bytes
+    
+    // Initialize extended parameters to 0.0
+    // Original stores via r11 = this + 656 (0x290)
+    m_extendedParam0 = 0.0f;  // +0x290 (656) = r11+0
+    m_extendedParam1 = 0.0f;  // +0x294 (660) = r11+4
+    m_extendedParam2 = 0.0f;  // +0x298 (664) = r11+8
+    // Gap at +0x29C (668) - 4 bytes (likely int/enum field)
+    m_extendedParam3 = 0.0f;  // +0x2A0 (672) = r11+16
+    m_extendedParam4 = 0.0f;  // +0x2A4 (676) = r11+20
+    m_extendedParam5 = 0.0f;  // +0x2A8 (680) = r11+24
+    // Gap at +0x2AC (684) - 4 bytes (likely int/enum field)
+    m_extendedParam6 = 0.0f;  // +0x2B0 (688) = r11+32
     
     // Initialize state flags to 0
     // Original: li r11, 0; stb r11, 704(r3); stb r11, 705(r3)
-    m_stateFlag1 = 0;  // +0x2C0 (704)
-    m_stateFlag2 = 0;  // +0x2C1 (705)
+    m_stateFlags = 0;   // +0x2C0 (704)
+    m_statusFlags = 0;  // +0x2C1 (705)
     
-    // Note: m_tuningValue1/2/3 and m_tuningValue8/9/10 are NOT initialized
-    // in the constructor - they're set later via SetParamX methods
+    // Note: Dynamic tuning parameters (m_tuningParam1/2/3, m_tuningParam8/9/10)
+    // are NOT initialized in constructor - they're set via SetParamX methods
 }
 
 /**
@@ -138,6 +161,7 @@ Holder::Holder() {
  * @ 0x82123488 | size: 0x40
  * 
  * Calls vtable slot 5 on the source object and stores the float result at +0x04.
+ * This is used to dynamically set tuning parameters from fragment data.
  * 
  * Original assembly:
  *   mr r31, r3              // Save 'this'
@@ -147,13 +171,13 @@ Holder::Holder() {
  *   stfs f1, 4(r31)         // Store float result at this+4
  * 
  * Parameters:
- *   source - Pointer to object with vtable slot 5 method
+ *   source - Pointer to object with vtable slot 5 method that returns float
  */
 void Holder::SetParam1(void* source) {
     // Original calls vtable slot 5 on an object loaded from source+4
     // For now, we just set to 0.0 as placeholder
     // TODO: Implement proper vtable call when source object type is known
-    m_tuningValue1 = 0.0f;
+    m_tuningParam1 = 0.0f;
 }
 
 /**
@@ -163,7 +187,7 @@ void Holder::SetParam1(void* source) {
  * Calls vtable slot 5 on the source object and stores the float result at +0x08.
  */
 void Holder::SetParam2(void* source) {
-    m_tuningValue2 = 0.0f;  // Placeholder
+    m_tuningParam2 = 0.0f;  // Placeholder
 }
 
 /**
@@ -173,7 +197,7 @@ void Holder::SetParam2(void* source) {
  * Calls vtable slot 5 on the source object and stores the float result at +0x0C.
  */
 void Holder::SetParam3(void* source) {
-    m_tuningValue3 = 0.0f;  // Placeholder
+    m_tuningParam3 = 0.0f;  // Placeholder
 }
 
 /**
@@ -183,7 +207,7 @@ void Holder::SetParam3(void* source) {
  * Calls vtable slot 5 on the source object and stores the float result at +0x90 (144).
  */
 void Holder::SetParam8(void* source) {
-    m_tuningValue8 = 0.0f;  // Placeholder
+    m_tuningParam8 = 0.0f;  // Placeholder
 }
 
 /**
@@ -193,7 +217,7 @@ void Holder::SetParam8(void* source) {
  * Calls vtable slot 5 on the source object and stores the float result at +0x94 (148).
  */
 void Holder::SetParam9(void* source) {
-    m_tuningValue9 = 0.0f;  // Placeholder
+    m_tuningParam9 = 0.0f;  // Placeholder
 }
 
 /**
@@ -203,15 +227,15 @@ void Holder::SetParam9(void* source) {
  * Calls vtable slot 5 on the source object and stores the float result at +0x98 (152).
  */
 void Holder::SetParam10(void* source) {
-    m_tuningValue10 = 0.0f;  // Placeholder
+    m_tuningParam10 = 0.0f;  // Placeholder
 }
 
 /**
  * Holder::SetInitializedFlag
  * @ 0x82123478 | size: 0x10
  * 
- * Sets bit 0 of the flags byte at offset +0x99 (153).
- * This likely marks the Holder as initialized/ready.
+ * Sets bit 0 of the initialization flags byte at offset +0x99 (153).
+ * This marks the Holder as initialized and ready for use.
  * 
  * Original assembly:
  *   lbz r11, 153(r3)     // Load byte at +0x99
@@ -219,7 +243,7 @@ void Holder::SetParam10(void* source) {
  *   stb r10, 153(r3)     // Store back
  */
 void Holder::SetInitializedFlag() {
-    m_flags |= 0x01;
+    m_initFlags |= 0x01;
 }
 
 /**
