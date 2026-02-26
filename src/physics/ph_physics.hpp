@@ -69,6 +69,14 @@ struct phMaterialMgrImpl {
 struct phUpdateObject {
     void**      vtable;           // +0x00
 
+    // ── field access (from dtor scaffold) ──
+    uint8_t     _pad0004[16];
+    uint32_t    field_0x0014;     // +0x14  R:1 — if NULL, dtor early-outs
+    uint8_t     _pad0018[108];
+    uint32_t    field_0x0080;     // +0x80  pointer to indexed array (+128)
+    uint8_t     _pad0084[1];
+    uint8_t     field_0x0085;     // +0x85  flag byte
+
     // ── virtual methods ──
     virtual ~phUpdateObject();                  // [0] @ 0x8227da08
     virtual void ScalarDtor(int flags); // [1] @ 0x8227d960

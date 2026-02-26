@@ -177,28 +177,46 @@ struct xmlNodeStructColType {
 } // namespace listItemData
 
 // ── msgEventHandler  [2 vtables — template/MI] ──────────────────────────
+// Object size: 28 bytes (0x1C)
+// Factory: msgEventHandler::Create() @ 0x8225EC68
 struct msgEventHandler {
-    void**      vtable;           // +0x00
+    void**      vtable;           // +0x00  primary vtable
+    void**      m_ppHandlers;     // +0x04  array of handler object pointers
+    uint16_t    m_nHandlers;      // +0x08  handler count
+    uint8_t     _pad0A[2];        // +0x0A
+    void*       m_pMsgChain;      // +0x0C  linked list head for message dispatch
+    void**      vtable2;          // +0x10  secondary vtable (MI)
+    void*       m_pOwnedData;     // +0x14  heap-allocated data (freed in dtor)
+    uint16_t    m_field_18;       // +0x18
+    uint16_t    m_ownedFlag;      // +0x1A  if non-zero, m_pOwnedData is freed
 
     // ── virtual methods ──
     virtual ~msgEventHandler();                  // [0] @ 0x8225eb50
-    virtual void vfn_3();  // [3] @ 0x8225ed50
-    virtual void vfn_20();  // [20] @ 0x8225ed08
-    virtual void vfn_22();  // [22] @ 0x8225ec58
+    virtual void vfn_3();  // [3] @ 0x8225ed50 — cleanup + dispatch
+    virtual void AcceptsMessage(uint32_t msgType); // [20] @ 0x8225ed08
+    virtual const char* GetName();  // [22] @ 0x8225ec58
+
+    // ── non-virtual methods ──
+    static msgEventHandler* Create();            // @ 0x8225ec68 — allocate + init
+    void Unregister();                           // @ 0x8225e8c0 — remove from global array
+    void DispatchMessage(void* msg);             // rtti_01A8_1 — dispatch to handlers
 };
 
 // ── msgMsgSink  [vtable @ 0x82027B34] ──────────────────────────
+// Constructor: @ 0x822EC7F8 | Destructor: @ 0x822808A0
+// Massive object (~15 KB).  Offsets +0x18 through +0x35F are zeroed
+// in the ctor.  Offset +0x360 starts a 32-element array with 1152-byte
+// stride (32 × 0x480 = 0x9000 bytes, ending at +0x9360).
 struct msgMsgSink {
-    void**      vtable;           // +0x00
-
-    // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:26 W:27
-    uint32_t     field_0x0008;  // +0x0008  R:28 W:21
+    void**      vtable;           // +0x00  runtime vtable (ctor: 0x8205B0D0)
+    uint32_t     field_0x0004;  // +0x0004  R:26 W:27  (ctor: 0x8205B0DC)
+    uint8_t      field_0x0008;  // +0x0008  R:28 W:21  (ctor: 0)
+    uint8_t      _pad0009[2];
     uint16_t     field_0x000b;  // +0x000b  R:1 W:0
-    uint32_t     field_0x000c;  // +0x000c  R:24 W:13
+    uint32_t     field_0x000c;  // +0x000c  R:24 W:13  (ctor: 0)
     uint32_t     field_0x0010;  // +0x0010  R:12 W:9
-    uint32_t     field_0x0014;  // +0x0014  R:20 W:13
-    uint32_t     field_0x0018;  // +0x0018  R:14 W:14
+    uint32_t     field_0x0014;  // +0x0014  R:20 W:13  (ctor: 0)
+    uint32_t     field_0x0018;  // +0x0018  R:14 W:14  (ctor: zeroed block start)
     uint32_t     field_0x001c;  // +0x001c  R:22 W:3
     uint32_t     field_0x0020;  // +0x0020  R:13 W:3
     uint16_t     field_0x0022;  // +0x0022  R:2 W:0
@@ -408,6 +426,9 @@ struct msgMsgSink {
     uint32_t     field_0x3b44;  // +0x3b44  R:0 W:1
     uint8_t     _pad0x3c40[248];
     uint32_t     field_0x3c40;  // +0x3c40  R:3 W:0
+
+    // ── constructor ──
+    msgMsgSink();                               // @ 0x822ec7f8
 
     // ── virtual methods ──
     virtual ~msgMsgSink();                  // [0] @ 0x822808a0
