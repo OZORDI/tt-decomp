@@ -40,11 +40,12 @@ Run these in the terminal before trusting any boolean inversion idiom. A wrong `
 
 ---
 
-## Tools (11 total)
+## Tools (12 total)
 
 Use them in this order for each function:
 
-1. **`suggest_unimplemented_class`** — Call at session start. Returns a random unimplemented class family with all related sub-classes, matching pass5_final functions, and recommended next steps. Pass an optional `prefix` (e.g. `"rage::sn"`, `"pong"`) to restrict to a subsystem.
+1. **`suggest_unimplemented_class`** — Call at session start to get a random unimplemented class family.
+1. **`suggest_unimplemented_func`** — Call when you want to target a specific individual function rather than a whole class. Returns: address, size, owning class with RTTI name, every direct callee with its class and lift status, all VCALL virtual-dispatch sites with resolved vtable classes, and a deduplicated list of every class the function touches. Pass optional `prefix` (e.g. `"pongBall"`) and `min_size` to filter. Use the classes-touched list to decide what to read in src/ before writing a single line. Returns a random unimplemented class family with all related sub-classes, matching pass5_final functions, and recommended next steps. Pass an optional `prefix` (e.g. `"rage::sn"`, `"pong"`) to restrict to a subsystem.
 2. **`get_function_info`** — Always call this first for any function. Gets address, size, source file, class, vtable slot, lift status, and the RTTI-verified original class name including `rage::` namespace.
 3. **`get_class_context`** — Call once per class session. Gets RTTI original name and inheritance chain, vtable layout, struct field clusters, debug string hints, and auto-generated struct definition.
 4. **`get_function_recomp`** — Gets the raw pass5_final scaffold. `lbl_` references are automatically annotated with section, size, and vtable class name.

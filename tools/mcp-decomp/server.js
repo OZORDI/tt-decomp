@@ -72,6 +72,22 @@ let _funcIndex   = null;
 let _stringCache = null;  // NEW: addr -> string content from binary
 let _methodMap   = null;  // NEW: className -> { methodName -> [{addr,string}] }
 let _binRaw      = null;  // NEW: raw binary buffer
+let _symbolFuncs = null;  // parsed symbols.txt function list: [{name,addr,size}]
+
+/** Parse symbols.txt and return all type:function entries as an array */
+function symbolFuncs() {
+  if (_symbolFuncs) return _symbolFuncs;
+  const SYM_FILE = `${CFG}/symbols.txt`;
+  _symbolFuncs = [];
+  const RE = /^(\S+)\s*=\s*\.text:(0x[0-9A-Fa-f]+);.*?size:(0x[0-9A-Fa-f]+)/;
+  for (const line of fs.readFileSync(SYM_FILE, 'utf8').split('\n')) {
+    if (!line.includes('type:function')) continue;
+    const m = RE.exec(line);
+    if (!m) continue;
+    _symbolFuncs.push({ name: m[1], addr: m[2], size: parseInt(m[3], 16) });
+  }
+  return _symbolFuncs;
+}
 
 function msm() {
   if (!_msm) {
@@ -1058,6 +1074,17 @@ const TOOLS = [
       }
     },
   },
+  {
+    name: "suggest_unimplemented_func",
+    description: "Randomly picks a named, unlifted function from symbols.txt and returns a rich context card: function address/size/class, RTTI name, every direct callee with its owning class and lift status, all VCALL virtual-dispatch sites with resolved vtable classes, and a deduplicated list of every class the function touches. Use this to pick an individual function to lift and immediately understand its full dependency surface before reading any scaffold code. Pass optional prefix to filter by class name (e.g. 'pongBall') and optional min_size (bytes) to skip trivial stubs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        prefix:   { type: "string",  description: "Optional function name prefix filter, e.g. 'pongBall' or 'rage::sn'" },
+        min_size: { type: "integer", description: "Skip functions smaller than this many bytes (default 32)" }
+      }
+    },
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1089,6 +1116,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "suggest_file_placement": result = tool_suggest_file_placement(args); break;
       case "get_existing_source":     result = tool_get_existing_source(args);    break;
       case "suggest_unimplemented_class": result = tool_suggest_unimplemented_class(args); break;
+      case "suggest_unimplemented_func":  result = tool_suggest_unimplemented_func(args);  break;
       default:
         return { content:[{ type:"text", text:`Unknown tool: ${name}` }], isError:true };
     }
@@ -1615,6 +1643,184 @@ function tool_suggest_unimplemented_class({ prefix = "" } = {}) {
     lines.push(`    2. get_function_info("${relatedFuncs[0]}")`);
   }
   lines.push(`    3. suggest_file_placement("${chosen}")`);
+
+  return lines.join('\n');
+}
+
+/**
+ * TOOL: suggest_unimplemented_func
+ *
+ * Randomly picks a named, unlifted function from symbols.txt and returns a
+ * rich context card showing:
+ *   - Function address, size, inferred class, RTTI name
+ *   - Whether the owning class already has src/ coverage
+ *   - Every direct callee from the pass5_final scaffold, with:
+ *       - callee address and size
+ *       - callee's inferred class and RTTI original name
+ *       - whether that callee class is already lifted in src/
+ *   - Every VCALL (virtual dispatch) site with the vtable class resolved
+ *   - Lift status (already in src/ or not)
+ *
+ * Optional filters:
+ *   prefix  - restrict to functions whose name starts with this string
+ *   min_size - skip functions smaller than this many bytes (default 0x20)
+ *              to avoid trivial stubs
+ */
+function tool_suggest_unimplemented_func({ prefix = '', min_size = 0x20 } = {}) {
+  const allFuncs = symbolFuncs();
+  const idx      = funcIndex();
+  const r        = rtti();
+  const byAddr   = msm().by_address;
+
+  // Helper: infer owning class from function name (matches inferClass logic)
+  function inferOwner(name) {
+    const vt = Object.keys(vtable()).sort((a, b) => b.length - a.length);
+    for (const cls of vt) {
+      if (name.startsWith(cls + '_') || name === cls) return cls;
+    }
+    // fallback: everything before the last underscore+hex segment
+    const m = name.match(/^([A-Za-z_][A-Za-z0-9_]*?)(?:_[0-9A-Fa-f]{4}|_[A-Z][a-z])/);
+    return m ? m[1] : name.split('_')[0];
+  }
+
+  // Helper: is a class already in src/?
+  const _liftedClassCache = new Map();
+  function classIsLifted(cls) {
+    if (_liftedClassCache.has(cls)) return _liftedClassCache.get(cls);
+    const files = grepSrc(cls);
+    const result = files.length > 0;
+    _liftedClassCache.set(cls, result);
+    return result;
+  }
+
+  // Filter to candidates: named (not pure hex stub), right size, right prefix
+  const STUB_RE = /^(rage|game|ref|thunk_fn)_[0-9A-Fa-f]+(_[a-z])?$/;
+  const candidates = allFuncs.filter(f => {
+    if (f.size < min_size) return false;
+    if (STUB_RE.test(f.name)) return false;
+    if (prefix && !f.name.toLowerCase().startsWith(prefix.toLowerCase())) return false;
+    return true;
+  });
+
+  if (!candidates.length) {
+    return `No named functions found matching prefix "${prefix}" with size >= 0x${min_size.toString(16)}.`;
+  }
+
+  // Separate already-lifted from unlifted
+  const unlifted = candidates.filter(f => grepSrc(f.name).length === 0);
+
+  if (!unlifted.length) {
+    return `All ${candidates.length} candidate functions${prefix ? ` matching "${prefix}"` : ''} appear to be lifted already.`;
+  }
+
+  // Pick a random unlifted function
+  const chosen = unlifted[Math.floor(Math.random() * unlifted.length)];
+  const ownerClass = inferOwner(chosen.name);
+  const rttiName   = rttiOriginalName(ownerClass) || ownerClass;
+  const ownerLifted = classIsLifted(ownerClass);
+  const srcRange   = srcFile(parseInt(chosen.addr, 16));
+
+  const lines = [
+    `// -- Suggested function to implement --`,
+    ``,
+    `  Function   : ${chosen.name}`,
+    `  Address    : ${chosen.addr}`,
+    `  Size       : 0x${chosen.size.toString(16)} bytes`,
+    `  Owning class : ${rttiName}${rttiName !== ownerClass ? ` (inferred: ${ownerClass})` : ''}`,
+    `  Class lifted : ${ownerLifted ? 'YES - existing code to read before writing' : 'no'}`,
+    `  Source file  : ${srcRange || 'not in splits.txt'}`,
+    `  Pseudocode   : ${(() => { try { return fs.readdirSync(PSEUDO_DIR).find(f => f.toUpperCase().startsWith(chosen.addr.replace(/^0x/i,'').toUpperCase())) || 'none'; } catch { return 'none'; } })()}`,
+    ``,
+  ];
+
+  // ── Callee analysis from pass5_final ───────────────────────────────────────
+  const scaffoldInfo = idx.get(chosen.name.toLowerCase());
+  if (scaffoldInfo) {
+    const rawText = scaffoldInfo.rawText;
+
+    // Direct named callees
+    const calleeNames = getCallees(rawText);
+    if (calleeNames.length) {
+      lines.push(`  Direct callees (${calleeNames.length}):`);
+      const seen = new Set();
+      for (const callee of calleeNames) {
+        if (seen.has(callee)) continue;
+        seen.add(callee);
+        const s = sym(callee);
+        const calleeAddr = s ? s.address : '?';
+        const calleeSize = s ? `0x${parseInt(s.size || 0).toString(16)}` : '?';
+        const calleeClass = inferOwner(callee);
+        const calleeRtti  = rttiOriginalName(calleeClass) || calleeClass;
+        const calleeLifted = classIsLifted(calleeClass);
+        const calleeSrc   = s ? srcFile(parseInt(s.address, 16)) : null;
+        lines.push(
+          `    ${callee.padEnd(48)}` +
+          `  @ ${calleeAddr}  sz:${calleeSize}` +
+          `  [class: ${calleeRtti}${calleeLifted ? ' - LIFTED' : ' - not lifted'}]` +
+          (calleeSrc ? `  [${calleeSrc}]` : '')
+        );
+      }
+      lines.push(``);
+    }
+
+    // VCALL sites — resolve vtable class for each
+    const vcallMatches = [...rawText.matchAll(/VCALL\((\w+(?:\.\w+)*),\s*(\d+),/g)];
+    // Also look for lbl_ addresses near VCALLs to identify the vtable
+    const lblMatches = [...rawText.matchAll(/lbl_([0-9A-Fa-f]{8})/g)];
+    const vtableClasses = new Set();
+    for (const [, hex] of lblMatches) {
+      const addr = '0x' + hex.toLowerCase();
+      const cls  = rttiClassName(addr);
+      if (cls) vtableClasses.add(cls);
+    }
+
+    if (vcallMatches.length || vtableClasses.size) {
+      lines.push(`  Virtual dispatch sites:`);
+      lines.push(`    VCALL count : ${vcallMatches.length}`);
+      if (vtableClasses.size) {
+        for (const cls of vtableClasses) {
+          const lifted = classIsLifted(cls.split('::').pop());
+          lines.push(`    vtable class: ${cls}  [${lifted ? 'LIFTED' : 'not lifted'}]`);
+        }
+      }
+      lines.push(``);
+    }
+
+    // Classes touched — deduplicated set of all class owners across callees + vtables
+    const touchedClasses = new Set();
+    for (const callee of calleeNames) touchedClasses.add(inferOwner(callee));
+    for (const cls of vtableClasses) touchedClasses.add(cls.split('::')[0] + (cls.includes('::') ? '::' + cls.split('::')[1] : ''));
+    touchedClasses.delete(ownerClass);
+
+    if (touchedClasses.size) {
+      lines.push(`  Classes this function touches:`);
+      for (const cls of [...touchedClasses].sort()) {
+        const rn = rttiOriginalName(cls) || cls;
+        const lifted = classIsLifted(cls);
+        lines.push(`    ${rn.padEnd(40)}  [${lifted ? 'src/ present - read it first' : 'not yet lifted'}]`);
+      }
+      lines.push(``);
+    }
+
+  } else {
+    lines.push(`  NOTE: Function not found in pass5_final scaffold. May be fully inlined.`);
+    lines.push(`  Try: get_function_recomp("${chosen.name}")`);
+    lines.push(``);
+  }
+
+  // Progress
+  const totalCandidates = candidates.length;
+  const remaining = unlifted.length;
+  lines.push(`  Progress: ${totalCandidates - remaining}/${totalCandidates} candidate functions have src/ coverage`);
+  lines.push(`  (${remaining} unimplemented functions remaining${prefix ? ` for prefix "${prefix}"` : ''})`);
+
+  lines.push(``, `  -- Recommended next steps --`);
+  lines.push(`    1. get_function_info("${chosen.name}")`);
+  lines.push(`    2. get_class_context("${rttiName}")`);
+  if (ownerLifted) {
+    lines.push(`    3. get_existing_source for the owning class file -- read it before writing`);
+  }
+  lines.push(`    4. get_function_recomp("${chosen.name}")`);
 
   return lines.join('\n');
 }

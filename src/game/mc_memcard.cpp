@@ -26,11 +26,12 @@
 
 #include "game/mc_memcard.hpp"
 #include "rage/heap.hpp"       // rage_free
-#include "rage/fsm_machine.hpp"
+// #include "rage/fsm_machine.hpp"  // struct defined inline below
 
 // ── Forward declarations ──────────────────────────────────────────────────────
 
 class mcMemcardControl;
+
 
 
 // ── mcMemcardStatus – base class for all inner state objects ─────────────────
@@ -484,6 +485,38 @@ void fsmMachine::~fsmMachine(bool shouldFree)
 {
     fsmMachine_DestructorBody(this);
 
+    if (shouldFree) {
+        rage_free(this);
+    }
+}
+
+
+// ── mcSegmentContainer::~mcSegmentContainer @ 0x8221EDC8 | size: 0x78 ─────────
+//
+// Destructor (vfn_0 / vtable slot 0).
+// Two-stage destructor pattern: first resets mcSegmentContainer vtable and
+// frees the segment data buffer if allocated, then resets to rage::datBase
+// vtable and optionally frees 'this' if heap-allocated.
+//
+// This follows the standard RAGE engine destructor pattern for classes that
+// inherit from rage::datBase.
+
+void mcSegmentContainer::~mcSegmentContainer(bool shouldFree)
+{
+    // Stage 1: mcSegmentContainer cleanup
+    // Restore mcSegmentContainer vtable @ 0x8204D9B0
+    m_pVtable = (void*)0x8204D9B0;
+    
+    // Free segment data buffer if allocated
+    if (m_bHasData != 0) {
+        rage_free(m_pSegmentData);
+    }
+    
+    // Stage 2: rage::datBase cleanup
+    // Reset vtable to rage::datBase @ 0x820276C4
+    m_pVtable = (void*)0x820276C4;
+    
+    // Conditionally free this (heap-allocated instance)
     if (shouldFree) {
         rage_free(this);
     }
