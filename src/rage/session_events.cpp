@@ -11,7 +11,6 @@
  */
 
 #include "rage/session_events.hpp"
-#include "rage/memory.h"
 
 namespace rage {
 
