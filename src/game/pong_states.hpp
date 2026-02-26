@@ -15,51 +15,106 @@
 // charViewCharData and charViewData moved to include/game/char_view.hpp
 // See that file for full implementation
 
-// ── creditsData  [vtable @ 0x820766EC] ──────────────────────────
+// Forward declarations
+class pongPageGroup;    // UI page group (type unknown beyond the pointer)
+class pongCreditsContext;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// creditsData  [vtable @ 0x820766EC]
+//
+// Data singleton that holds the loaded credits roll content.
+// Inherits from an atSingleton-style base (hence slot 20 = IsSupported,
+// slot 21 = RegisterFields, slot 22 = GetKey).
+// ─────────────────────────────────────────────────────────────────────────────
 struct creditsData {
-    void**      vtable;           // +0x00
+    // +0x00 vtable pointer (implicit)
+    // +0x04..+0x1F  base class (atSingleton) data
+    void*       m_pNodeList;       // +0x0C  linked list of raw entry nodes
+    void*       m_pEntries;        // +0x20  loaded entry array (after RegisterFields)
+    void*       m_strName;         // +0x1C  (offset approx — serialised string)
+    void*       m_pActiveEntries;  // +0x20  built by BuildActiveList (slot 3)
+    uint16_t    m_activeCount;     // +0x26  number of active entries
+    uint16_t    m_entryCount;      // +0x26  raw node count (same region, see dtor)
+    void*       m_pArray;          // +0x20  final array ptr (slot 3 result)
 
-    // ── virtual methods ──
-    virtual ~creditsData();                  // [0] @ 0x8240c0b8
-    virtual void vfn_3();  // [3] @ 0x8240c188
-    virtual void vfn_20();  // [20] @ 0x8240c070
-    virtual void vfn_21();  // [21] @ 0x8240c120
-    virtual void vfn_22();  // [22] @ 0x8231f358
+    virtual ~creditsData();                        // [0]  @ 0x8240C0B8
+    virtual void BuildActiveList();                // [3]  @ 0x8240C188
+    virtual bool IsSupported(uint32_t assetId) const; // [20] @ 0x8240C070
+    virtual void RegisterFields();                 // [21] @ 0x8240C120
+    virtual const char* GetKey() const;            // [22] @ 0x8231F358
 };
 
-// ── creditsSettings  [vtable @ 0x82076754] ──────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// creditsSettings  [vtable @ 0x82076754]
+//
+// Data singleton for credits display parameters (scroll speed, timing, etc.).
+// Inherits from an atSingleton-style base.  Fields at offsets +16 through +44
+// are floats/values registered with RegisterFields().
+// ─────────────────────────────────────────────────────────────────────────────
 struct creditsSettings {
-    void**      vtable;           // +0x00
+    // +0x00 vtable pointer (implicit)
+    // +0x04..+0x0F  base class data
+    float   m_scrollSpeed;    // +0x10  pixels/sec scroll rate
+    float   m_fadeInTime;     // +0x14
+    float   m_fadeOutTime;    // +0x18
+    float   m_holdTime;       // +0x1C
+    float   m_textScale;      // +0x20
+    float   m_lineSpacing;    // +0x24
+    float   m_pageSpacing;    // +0x28
+    float   m_colour;         // +0x2C  (or colour struct, registered separately)
 
-    // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8240c2c0
-    virtual void vfn_21();  // [21] @ 0x8240c308
+    virtual bool IsSupported(uint32_t assetId) const; // [20] @ 0x8240C2C0
+    virtual void RegisterFields();                     // [21] @ 0x8240C308
 };
 
-// ── dialogData  [vtable @ 0x82075EBC] ──────────────────────────
-struct dialogData {
-    void**      vtable;           // +0x00
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreditsContext  [vtable @ 0x8205EE04 / secondary @ 0x8205EE6C]
+//
+// HSM context for the credits screen.  Embedded multiple-inheritance layout:
+//   +0x00  primary vtable ptr  (26 slots, primary base)
+//   +0x04  primary base data   (up to +0x13)
+//   +0x14  secondary vtable ptr (4 slots, inner hsmContext MI base)
+//   +0x18  m_pPageGroup        (the UI page group for the credits roll)
+//   +0x1C  m_bActive           (byte — whether the credits are currently active)
+// ─────────────────────────────────────────────────────────────────────────────
+struct pongCreditsContext {
+    // (primary vtable implicit)
+    uint8_t         _pad_primary[20];       // +0x04..+0x13  base class data
+    void*           _secondary_vtable;      // +0x14  MI secondary vtable @ 0x8205EE6C
+    pongPageGroup*  m_pPageGroup;           // +0x18  UI page group (null until Init)
+    uint8_t         m_bActive;              // +0x1C  credits currently showing
 
-    // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x8240af20
-    virtual void vfn_20();  // [20] @ 0x8240ae68
-    virtual void vfn_21();  // [21] @ 0x8240aeb0
-    virtual void vfn_22();  // [22] @ 0x822ec760
+    virtual ~pongCreditsContext(bool shouldFree = false); // [0]  @ 0x82309C38
+    virtual bool CanTransition();          // [11] @ 0x82309D38
+    virtual void OnEnterCredits();         // [16] @ 0x82309E18
+    virtual void OnExitCredits();          // [18] @ 0x82309F38
+    virtual void RegisterWithCreditsRoll();// [23] @ 0x82309CA0 (thunk)
 };
 
-// ── dialogManager  [2 vtables — template/MI] ──────────────────────────
-struct dialogManager {
-    void**      vtable;           // +0x00
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreditsState  [vtable @ 0x8205EE7C]
+//
+// HSM leaf state that drives the credits sequence.
+// Inherits from pongAttractState.
+//   +0x00  vtable ptr
+//   +0x04  m_pHSMContext  — rage::hsmContext* (passed to transition helpers)
+//   +0x08  m_pContext     — pongCreditsContext* allocated in Init()
+// ─────────────────────────────────────────────────────────────────────────────
+struct pongCreditsState : public pongAttractState {
+    void*               m_pHSMContext;   // +0x04  rage::hsmContext for transitions
+    pongCreditsContext* m_pContext;      // +0x08  the live credits context
 
-// ── frontendData  [vtable @ 0x820763D4] ──────────────────────────
-struct frontendData {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8240bbf0
-    virtual void vfn_21();  // [21] @ 0x8240bc38
+    virtual ~pongCreditsState(bool shouldFree = false); // [0]  @ 0x8230A000
+    virtual void OnEnter(int prevStateIdx);             // [11] @ 0x8230A150
+    virtual void OnExit(int nextStateIdx);              // [12] @ 0x8230A268
+    virtual void* GetContext();                         // [13] @ 0x82309C28
+    virtual void Init();                                // [14] @ 0x8230A068
 };
+// Helper shared by pongCreditsContext::CanTransition and pongCreditsState::OnEnter
+// Sets the page group's visible state and clears the context's m_bActive flag.
+void pongCreditsState_9D68_h(pongCreditsContext* ctx, uint8_t visible);  // @ 0x82309D68
+
+
 
 // ── hsmState  [7 vtables — template/MI] ──────────────────────────
 struct hsmState {
@@ -108,31 +163,6 @@ struct pongBootState {
 // pongCharViewContext and pongCharViewState moved to include/game/char_view.hpp
 // See that file for full implementation with proper inheritance and structure
 
-// ── pongCreditsContext  [2 vtables — template/MI] ──────────────────────────
-struct pongCreditsContext {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~pongCreditsContext();                  // [0] @ 0x82309c38
-    virtual void vfn_11();  // [11] @ 0x82309d38
-    virtual void vfn_16();  // [16] @ 0x82309e18
-    virtual void vfn_18();  // [18] @ 0x82309f38
-    virtual void vfn_23();  // [23] @ 0x82309ca0
-};
-
-// ── pongCreditsState  [vtable @ 0x8205EE7C] ──────────────────────────
-struct pongCreditsState {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~pongCreditsState();                  // [0] @ 0x8230a000
-    virtual void vfn_11();  // [11] @ 0x8230a150
-    virtual void vfn_12();  // [12] @ 0x8230a268
-    virtual void vfn_13();  // [13] @ 0x82309c28
-    virtual void vfn_14();  // [14] @ 0x8230a068
-};
-
-// ── pongDialogContext  [2 vtables — template/MI] ──────────────────────────
 struct pongDialogContext {
     void**      vtable;           // +0x00
 
