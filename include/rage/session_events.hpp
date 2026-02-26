@@ -289,4 +289,33 @@ public:
     virtual ~EvtApplyConfigFailed() = default;
 };
 
+// ── Session Finder Events ──
+
+/**
+ * EvtFindSessionCancel @ 0x820740C4
+ * Notification to cancel session search.
+ */
+class EvtFindSessionCancel : public snNotifyBase {
+public:
+    virtual ~EvtFindSessionCancel() = default;
+};
+
+/**
+ * EvtFindSessionSyslink @ 0x820740D8
+ * Notification to search for sessions via system link.
+ */
+class EvtFindSessionSyslink : public snNotifyBase {
+public:
+    virtual ~EvtFindSessionSyslink() = default;
+};
+
+/**
+ * EvtFindSessionOnline @ 0x820740EC
+ * Notification to search for sessions via Xbox Live online.
+ */
+class EvtFindSessionOnline : public snNotifyBase {
+public:
+    virtual ~EvtFindSessionOnline() = default;
+};
+
 } // namespace rage
