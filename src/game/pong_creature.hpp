@@ -907,8 +907,21 @@ struct pongCreatureInst {
 };
 
 // ── pongCreatureType  [vtable @ 0x8202776C] ──────────────────────────
+// Inherits from rage::datBase (vtable 0x820276C4).
+// Constructor: ke_30F8 @ 0x820C30F8 (initializes crAnimDofFloat at +12)
+// Destructor body: @ 0x820C2E80 (inlined into ~pongCreatureType)
 struct pongCreatureType {
     void**      vtable;           // +0x00
+    uint32_t    field_0x0004;     // +0x04
+    void*       m_pOwnedArray;    // +0x08  array with metadata at ptr-4
+    // +0x0C: atHashMap subobject (bucket array ptr +0, count +4, capacity +6)
+    uint32_t    m_hashMapBuckets; // +0x0C  bucket array pointer
+    uint16_t    m_hashMapCount;   // +0x10  bucket count
+    uint16_t    m_hashMapCap;     // +0x12  capacity/flags
+    void*       m_pChild20;       // +0x14  owned child (freed in dtor)
+    void*       m_pChild24;       // +0x18  owned child (freed in dtor)
+    uint8_t     _pad001C[60];
+    void*       m_pChild96;       // +0x60  owned child (freed in dtor)  (+96 decimal)
 
     // ── virtual methods ──
     virtual ~pongCreatureType();                  // [0] @ 0x820c2da0
