@@ -17,6 +17,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// Forward declaration
+void* memcpy(void* dst, const void* src, size_t count);
+
 
 /**
  * memset @ 0x8242FED0 | size: 0x20

@@ -1045,6 +1045,16 @@ const TOOLS = [
     description: "Given a class or function name, returns: which .hpp header to declare it in, which .cpp to implement it in, full src-relative paths, whether those files already exist, whether it is already lifted, and the 10 closest sibling-class prefixes that live in the same file. Call this BEFORE write_source_file to know exactly where to put new code.",
     inputSchema: { type:"object", properties:{ class_or_function_name:{type:"string"} }, required:["class_or_function_name"] },
   },
+  {
+    name: "suggest_unimplemented_class",
+    description: "Randomly picks a class from rtti_vtable_map.json that is not yet implemented in src/, then returns its full family of related sub-classes to implement together (e.g. rage::snJoinMachine plus all its nested HSM states). Pass optional prefix to filter by subsystem (e.g. 'rage::sn' or 'pong'). Call this at the start of every session to get a work assignment.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        prefix: { type: "string", description: "Optional class name prefix filter, e.g. 'rage::sn' or 'pong'" }
+      }
+    },
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1075,6 +1085,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "write_source_file":       result = tool_write_source_file(args);      break;
       case "suggest_file_placement": result = tool_suggest_file_placement(args); break;
       case "get_existing_source":     result = tool_get_existing_source(args);    break;
+      case "suggest_unimplemented_class": result = tool_suggest_unimplemented_class(args); break;
       default:
         return { content:[{ type:"text", text:`Unknown tool: ${name}` }], isError:true };
     }
@@ -1477,3 +1488,131 @@ function tool_suggest_file_placement({ class_or_function_name }) {
 
   return lines.join("\n");
 }
+
+
+/**
+ * NEW TOOL: suggest_unimplemented_class
+ *
+ * Randomly picks a root class from rtti_vtable_map.json that has NO presence
+ * in src/ yet, and returns the full family of related sub-classes to implement
+ * together in one session.
+ *
+ * "Family" = all RTTI entries whose name starts with the same root prefix,
+ * e.g. rage::snJoinMachine + all rage::snJoinMachine::* nested states.
+ *
+ * Optional filter: pass a `prefix` string (e.g. "rage::sn") to restrict
+ * suggestions to a particular subsystem.
+ */
+function tool_suggest_unimplemented_class({ prefix = "" } = {}) {
+  const rttiMap = rtti();
+
+  // ── Build family map: rootKey -> Set<className> ──────────────────────────
+  // Root = first two segments for rage:: classes (rage::Foo), else just first.
+  const familyMap = new Map();
+  for (const className of Object.values(rttiMap)) {
+    const parts = className.split('::');
+    const rootKey = (parts[0] === 'rage' && parts.length >= 2)
+      ? parts[0] + '::' + parts[1]
+      : parts[0];
+    if (!familyMap.has(rootKey)) familyMap.set(rootKey, new Set());
+    familyMap.get(rootKey).add(className);
+  }
+
+  // ── Apply optional prefix filter ─────────────────────────────────────────
+  const candidateRoots = prefix
+    ? [...familyMap.keys()].filter(k => k.toLowerCase().startsWith(prefix.toLowerCase()))
+    : [...familyMap.keys()];
+
+  if (!candidateRoots.length) {
+    return `No classes found matching prefix "${prefix}".`;
+  }
+
+  // ── Determine which roots are already implemented in src/ ─────────────────
+  const implementedRoots = new Set();
+  for (const rootKey of candidateRoots) {
+    // grep for the exact class name (or its bare form without namespace)
+    const bare = rootKey.split('::').pop();
+    const searchTerms = [rootKey, bare].filter(Boolean);
+    for (const term of searchTerms) {
+      try {
+        const result = execSync(
+          `grep -rl ${JSON.stringify(term)} ${JSON.stringify(SRC_DIR)} 2>/dev/null`,
+          { encoding: 'utf8', timeout: 5000 }
+        ).trim();
+        if (result) { implementedRoots.add(rootKey); break; }
+      } catch {}
+    }
+  }
+
+  // ── Filter to unimplemented ───────────────────────────────────────────────
+  const unimplemented = candidateRoots.filter(k => !implementedRoots.has(k));
+
+  if (!unimplemented.length) {
+    const scope = prefix ? `matching "${prefix}"` : 'in the binary';
+    return `All classes ${scope} appear to have src/ coverage. Nothing left!`;
+  }
+
+  // ── Pick a random one ─────────────────────────────────────────────────────
+  const chosen = unimplemented[Math.floor(Math.random() * unimplemented.length)];
+  const family = [...familyMap.get(chosen)].sort();
+
+  // ── Find matching functions in pass5_final ────────────────────────────────
+  const idx = funcIndex();
+  const bareName = chosen.split('::').pop().toLowerCase();
+  // Try camelCase collision: rage::snJoinMachine -> snJoinMachine_*
+  const relatedFuncs = [];
+  for (const [k, info] of idx) {
+    if (k.startsWith(bareName + '_') || k === bareName ||
+        k.startsWith(bareName.replace(/_/g, '') + '_')) {
+      relatedFuncs.push(info.name);
+    }
+  }
+
+  // ── Format output ─────────────────────────────────────────────────────────
+  const lines = [
+    `// -- Suggested class batch to implement --`,
+    ``,
+    `  Root class   : ${chosen}`,
+    `  Family size  : ${family.length} class(es) in the hierarchy`,
+    ``,
+    `  Implement these together in one session:`,
+  ];
+  for (const cls of family) {
+    const isRoot = cls === chosen;
+    lines.push(`    ${isRoot ? "[root] " : "       "}${cls}`);
+  }
+  lines.push(`  ---`);
+
+  lines.push(``);
+  lines.push(`  Why together? Sub-classes share struct layout, vtable, and state machine`);
+  lines.push(`  logic. Lifting them in a single session avoids re-loading class context.`);
+
+  if (relatedFuncs.length) {
+    lines.push(``, `  Known functions in pass5_final (${relatedFuncs.length} total, first 15):`);
+    for (const f of relatedFuncs.slice(0, 15)) lines.push(`    ${f}`);
+    if (relatedFuncs.length > 15) lines.push(`    ... and ${relatedFuncs.length - 15} more`);
+  } else {
+    lines.push(``);
+    lines.push(`  NOTE: No directly-named functions found in pass5_final.`);
+    lines.push(`    This class may be fully inlined, or use a different naming convention.`);
+    lines.push(`    Try: search_symbols("${bareName}")`);
+  }
+
+  const totalUnimpl = prefix
+    ? unimplemented.length
+    : [...familyMap.keys()].filter(k => !implementedRoots.has(k)).length;
+  const totalRoot = prefix ? candidateRoots.length : familyMap.size;
+  lines.push(``);
+  lines.push(`  Progress: ~${totalRoot - totalUnimpl}/${totalRoot} root classes have src/ coverage`);
+  lines.push(`  (${totalUnimpl} unimplemented root classes remaining${prefix ? ` for prefix "${prefix}"` : ''})`);
+
+  lines.push(``, `  ── Recommended next steps ────────────────────────────────────────────`);
+  lines.push(`    1. get_class_context("${family[0]}")`);
+  if (relatedFuncs.length) {
+    lines.push(`    2. get_function_info("${relatedFuncs[0]}")`);
+  }
+  lines.push(`    3. suggest_file_placement("${chosen}")`);
+
+  return lines.join('\n');
+}
+

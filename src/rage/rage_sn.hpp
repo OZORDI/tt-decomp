@@ -832,14 +832,16 @@ struct hsmEvent {
 
     // ── virtual methods ──
     virtual ~hsmEvent();                  // [0] @ 0x823dd6e8
+    virtual void* GetTypeInfo() = 0;      // [1] Returns RTTI type info pointer
+    virtual const char* GetName() = 0;    // [2] Returns event name string
 };
 
 // ── rage::hsmEventTimeout  [vtable @ 0x82073F64] ──────────────────────────
-struct hsmEventTimeout {
+struct hsmEventTimeout : public hsmEvent {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x823ed168
+    virtual const char* GetName();  // [2] @ 0x823ed168
 };
 
 // ── rage::hsmStateBase  [vtable @ 0x82073F1C] ──────────────────────────
@@ -1008,7 +1010,7 @@ struct snHsmStartingSession {
 namespace rage {
 
 // ── rage::snEvent  [vtable @ 0x82072878] ──────────────────────────
-struct snEvent {
+struct snEvent : public hsmEvent {
     void**      vtable;           // +0x00
 };
 

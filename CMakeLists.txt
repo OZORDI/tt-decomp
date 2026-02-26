@@ -70,6 +70,7 @@ set(SOURCES
     src/game/pong_network.cpp
     src/game/pong_player.cpp
     src/game/pong_render.cpp
+    src/game/pong_states.cpp
     
     # Animation
     src/anim/pcr_anim_blenders.cpp

@@ -42,7 +42,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "ppc_recomp.h"   /* PPC_FUNC_IMPL, PPCRegContext, g_mem_base */
+#include "crt/ppc_recomp.h"   /* PPC_FUNC_IMPL, PPCRegContext, g_mem_base */
 
 /* ── Guest address constants ──────────────────────────────────────── */
 

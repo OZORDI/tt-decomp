@@ -29,8 +29,9 @@
  *   g_kOneMinusAlpha @ 0x8202CFE8  — float: 1 - EMA alpha
  */
 
-#include "rage_system.hpp"
+#include "rage/rage_system.hpp"
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 // ---------------------------------------------------------------------------

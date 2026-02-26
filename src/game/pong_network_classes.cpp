@@ -28,40 +28,78 @@ extern uint32_t g_playerPropType2;      // @ 0x820693D0
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * FloatAverager — Utility class for averaging float values
+ * FloatAverager — Utility class for averaging float values over time
  * 
- * Simple averaging utility used throughout the networking code for
- * smoothing values like ping times, frame deltas, etc.
+ * A lightweight utility class used throughout the networking subsystem for
+ * smoothing time-varying values like ping times, frame deltas, and network
+ * latency measurements.
+ * 
+ * VTABLE VARIANTS (4 total):
+ * - 0x8207166C: Primary vtable (base class)
+ * - 0x8203A91C: Template instantiation variant 1
+ * - 0x82070D78: Template instantiation variant 2
+ * - 0x8203A910: Template instantiation variant 3
+ * 
+ * The multiple vtable addresses suggest this is either:
+ * 1. A template class instantiated with different parameters
+ * 2. Part of a multiple inheritance hierarchy
+ * 3. Used in different compilation units with different linkage
+ * 
+ * Structure (minimal - only destructor visible):
+ * +0x00: vtable pointer
+ * +0x04+: Unknown fields (likely: sum, count, window_size, current_avg)
+ * 
+ * The actual field layout needs to be discovered through:
+ * - Finding constructor implementations
+ * - Analyzing methods that access fields beyond vtable
+ * - Examining usage patterns in networking code
  */
 struct FloatAverager {
     void** vtable;  // +0x00
-    // Additional fields would be discovered through usage analysis
+    
+    // Fields to be discovered:
+    // float m_sum;           // Running sum of values
+    // uint32_t m_count;      // Number of samples
+    // uint32_t m_windowSize; // Maximum samples to average
+    // float m_currentAvg;    // Cached average value
 };
 
 /**
  * FloatAverager::~FloatAverager @ 0x821A7AA0 | size: 0x48
  * 
- * Destructor - sets vtable and conditionally frees memory.
+ * Primary destructor - sets vtable to primary address and conditionally frees.
+ * 
+ * @param self Pointer to FloatAverager instance
+ * @param flags Destruction flags (bit 0: free memory if set)
  */
 void FloatAverager_vfn_0(FloatAverager* self, int flags) {
-    // Set vtable to FloatAverager vtable @ 0x8207166C
+    // Set vtable to primary FloatAverager vtable @ 0x8207166C
+    // This is the base class vtable address
     self->vtable = (void**)0x8207166C;
     
     // If bit 0 is set in flags, free the object memory
+    // This follows the standard RAGE engine destruction pattern
     if (flags & 0x1) {
         rage_free_00C0(self);
     }
 }
 
 /**
- * FloatAverager::~FloatAverager (variant) @ 0x821A7AE8 | size: 0x48
+ * FloatAverager::~FloatAverager (variant 1) @ 0x821A7AE8 | size: 0x48
  * 
- * Destructor variant with different vtable address.
- * Used for different inheritance scenarios.
+ * Destructor variant for template instantiation or MI scenario.
+ * Uses alternate vtable @ 0x8203A91C.
+ * 
+ * Assembly calculation:
+ *   lis r11, -32252  ; Load high 16 bits
+ *   addi r11, r11, -22244  ; Add low 16 bits
+ *   Result: 0x8203A91C
  */
 void FloatAverager_vfn_0_7AE8_1(FloatAverager* self, int flags) {
     // Set vtable to alternate FloatAverager vtable @ 0x8203A91C
-    // Python: (lis(-32252) << 16) + -22244 = 0x8203A91C
+    // Python verification:
+    //   r11 = (-32252 << 16) + (-22244)
+    //   print(f"0x{r11 & 0xFFFFFFFF:08X}")  # 0x8203A91C
     self->vtable = (void**)0x8203A91C;
     
     if (flags & 0x1) {
@@ -70,9 +108,10 @@ void FloatAverager_vfn_0_7AE8_1(FloatAverager* self, int flags) {
 }
 
 /**
- * FloatAverager::~FloatAverager (variant) @ 0x823CD538 | size: 0x48
+ * FloatAverager::~FloatAverager (variant 2) @ 0x823CD538 | size: 0x48
  * 
- * Another destructor variant with different vtable @ 0x82070D78.
+ * Destructor variant with vtable @ 0x82070D78.
+ * Likely used in a different inheritance context.
  */
 void FloatAverager_vfn_0_D538_1(FloatAverager* self, int flags) {
     // Set vtable to alternate FloatAverager vtable @ 0x82070D78
@@ -84,13 +123,20 @@ void FloatAverager_vfn_0_D538_1(FloatAverager* self, int flags) {
 }
 
 /**
- * FloatAverager::~FloatAverager (variant) @ 0x823D3EE8 | size: 0x48
+ * FloatAverager::~FloatAverager (variant 3) @ 0x823D3EE8 | size: 0x48
  * 
- * Yet another destructor variant with different vtable @ 0x8203A910.
+ * Destructor variant with vtable @ 0x8203A910.
+ * 
+ * Assembly calculation:
+ *   lis r11, -32252  ; Load high 16 bits
+ *   addi r11, r11, -22256  ; Add low 16 bits
+ *   Result: 0x8203A910
  */
 void FloatAverager_vfn_0_3EE8_1(FloatAverager* self, int flags) {
     // Set vtable to alternate FloatAverager vtable @ 0x8203A910
-    // Python: (lis(-32252) << 16) + -22256 = 0x8203A910
+    // Python verification:
+    //   r11 = (-32252 << 16) + (-22256)
+    //   print(f"0x{r11 & 0xFFFFFFFF:08X}")  # 0x8203A910
     self->vtable = (void**)0x8203A910;
     
     if (flags & 0x1) {

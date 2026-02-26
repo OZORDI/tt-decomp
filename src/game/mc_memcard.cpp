@@ -24,7 +24,7 @@
  * Inherits from  rage::datBase  (vtable @ 0x820276C4, embedded @ +0x2C)
  */
 
-#include "mc_memcard.hpp"
+#include "game/mc_memcard.hpp"
 #include "rage/heap.hpp"       // rage_free
 #include "rage/fsm_machine.hpp"
 

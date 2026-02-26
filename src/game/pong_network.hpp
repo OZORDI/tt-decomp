@@ -169,8 +169,28 @@ struct ExitPostGameMessage {
 };
 
 // ── FloatAverager  [4 vtables — template/MI] ──────────────────────────
+/**
+ * FloatAverager — Utility class for averaging float values over time
+ * 
+ * Lightweight utility used throughout the networking subsystem for smoothing
+ * time-varying values like ping times, frame deltas, and network latency.
+ * 
+ * VTABLE VARIANTS (4 total):
+ * - 0x8207166C: Primary vtable (base class)
+ * - 0x8203A91C: Template instantiation variant 1
+ * - 0x82070D78: Template instantiation variant 2
+ * - 0x8203A910: Template instantiation variant 3
+ * 
+ * Multiple vtables suggest template instantiation or multiple inheritance.
+ */
 struct FloatAverager {
     void**      vtable;           // +0x00
+    
+    // Fields to be discovered through usage analysis:
+    // float m_sum;           // Running sum of values
+    // uint32_t m_count;      // Number of samples
+    // uint32_t m_windowSize; // Maximum samples to average
+    // float m_currentAvg;    // Cached average value
 
     // ── virtual methods ──
     virtual ~FloatAverager();                  // [0] @ 0x821a7aa0

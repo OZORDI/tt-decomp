@@ -449,3 +449,19 @@ struct rlConcreteStatsView {
     // ── virtual methods ──
     virtual ~rlConcreteStatsView();                  // [0] @ 0x82336fb0
 };
+
+// ── frontendData  [vtable @ 0x820763D4] ──────────────────────────
+/**
+ * frontendData — Serializable data container for frontend UI assets
+ * 
+ * Part of the RAGE asset system. Implements IsSupported() and RegisterFields()
+ * virtuals for asset loading and serialization.
+ */
+struct frontendData {
+    void**      vtable;           // +0x00
+    // ... additional fields at +0x10, +0x14 (registered in RegisterFields)
+    
+    // ── virtual methods ──
+    virtual bool IsSupported(uint32_t assetId) const;  // [20] @ 0x8240BBF0
+    virtual void RegisterFields();                      // [21] @ 0x8240BC38
+};

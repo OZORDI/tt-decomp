@@ -1370,3 +1370,60 @@ void pongDialogState::OnExit(int nextStateIdx) {
     void* transReq = game_28B8(m_pHSMContext, nextStateIdx);
     nop_8240E6D0("pongDialogState::OnExit generic", transReq, nextStateIdx);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// frontendData  [vtable @ 0x820763D4]
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External globals for asset ID validation
+extern uint32_t g_frontendAssetId_A;   // @ 0x825C2BBC
+extern uint32_t g_frontendAssetId_B;   // @ 0x825C803C
+extern uint32_t g_frontendAssetId_C;   // @ 0x825C8038
+
+// External field registration helper
+extern void game_8F58(void* obj, const void* schema, void* fieldPtr, 
+                      const void* desc, int flags);   // @ 0x821A8F58
+
+/**
+ * frontendData::IsSupported  @ 0x8240BBF0  |  size: 0x48
+ *
+ * Slot 20.  Returns true if assetId matches any of the three asset-type IDs
+ * registered for frontendData.  Used by the asset manager to route loads.
+ */
+bool frontendData::IsSupported(uint32_t assetId) const {
+    // Check primary asset ID
+    if (assetId == g_frontendAssetId_A) {
+        return true;
+    }
+    
+    // Check secondary asset ID
+    if (assetId == g_frontendAssetId_B) {
+        return true;
+    }
+    
+    // Check tertiary asset ID
+    return (assetId == g_frontendAssetId_C);
+}
+
+/**
+ * frontendData::RegisterFields  @ 0x8240BC38  |  size: 0x64
+ *
+ * Slot 21.  Registers two serializable fields of this data object with
+ * the RAGE data system.  Called during asset load/bind.
+ * Registers fields at offsets +16 and +20.
+ */
+void frontendData::RegisterFields() {
+    // External schema descriptors
+    extern const void* g_frontendFieldSchema_1;   // @ 0x825CAF90
+    extern const void* g_frontendFieldDesc_1;     // @ 0x82576088 (phBoundCapsule_5F98_2h + 0xf0)
+    extern const void* g_frontendFieldSchema_2;   // @ 0x825CAF94
+    extern const void* g_frontendFieldDesc_2;     // @ 0x825763BC (phBoundCapsule_62A8 + 0x114)
+    
+    // Register first field at offset +16
+    game_8F58(this, g_frontendFieldDesc_1, (uint8_t*)this + 16, 
+              &g_frontendFieldSchema_1, 0);
+    
+    // Register second field at offset +20
+    game_8F58(this, g_frontendFieldDesc_2, (uint8_t*)this + 20, 
+              &g_frontendFieldSchema_2, 0);
+}

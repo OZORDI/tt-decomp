@@ -15,7 +15,8 @@
  *   rage_run_6780           — main run-loop (blocks until exit)
  */
 
-#include "rage_system.hpp"
+#include "rage/rage_system.hpp"
+#include "rage/rage_allocator.h"
 #include <stdint.h>
 
 // ---------------------------------------------------------------------------

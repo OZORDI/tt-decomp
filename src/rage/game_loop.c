@@ -10,7 +10,7 @@
  *                               opens each device via fiDevice_GetDevice.
  */
 
-#include "rage_system.hpp"
+#include "rage/rage_system.hpp"
 #include "audio_system.hpp"
 #include <stdint.h>
 #include <stdio.h>   /* _snprintf */
