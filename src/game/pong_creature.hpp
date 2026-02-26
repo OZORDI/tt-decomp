@@ -226,13 +226,33 @@ struct xmlNodeStructCategory {
 } // namespace pcrActivationCategory
 
 // ── pcrAnimEvent  [vtable @ 0x82028CE4] ──────────────────────────
+// Base animation event class.  Serialised from creature resource packs.
+// String fields are packed as RAGE atString { ptr, len, cap } pairs.
 struct pcrAnimEvent {
-    void**      vtable;           // +0x00
+    void**       vtable;        // +0x00
+    uint32_t     m_field_04;    // +0x04  (zeroed on fixup)
+    uint32_t     m_field_08;    // +0x08
+    uint32_t     m_field_0C;    // +0x0C
+    uint32_t     m_field_10;    // +0x10
+    const char*  m_name;        // +0x14  atString ptr (heap-owned when m_nameCap != 0)
+    int16_t      m_nameLen;     // +0x18
+    uint16_t     m_nameCap;     // +0x1A
+    const char*  m_value;       // +0x1C  atString ptr (e.g. bone name)
+    int16_t      m_valueLen;    // +0x20
+    uint16_t     m_valueCap;    // +0x22
+    const char*  m_extra;       // +0x24  raw ptr (not heap-owned here)
 
-    // ── virtual methods ──
-    virtual ~pcrAnimEvent();                  // [0] @ 0x820de640
-    virtual void vfn_20();  // [20] @ 0x820de7d8
-    virtual void vfn_21();  // [21] @ 0x820de820
+    virtual ~pcrAnimEvent();                           // [0]  @ 0x820DE640
+    virtual bool MatchesType(uint32_t type) const;     // [20] @ 0x820DE7D8
+    virtual void Process();                            // [21] @ 0x820DE820
+
+    // Fixup serialised string offsets to runtime pointers after pack load.
+    // @ 0x820DE8A8
+    void FixupPointers(const void* loadCtx);
+
+    // Factory: placement-construct the correct subclass into dst.
+    // @ 0x820DEB38
+    static void CreateEvent(pcrAnimEvent* dst, const void* loadCtx);
 };
 
 // ── pcrAnimEventFootAud  [vtable @ 0x8202EBDC] ──────────────────────────
@@ -247,65 +267,49 @@ struct pcrAnimEventFootAud {
 };
 
 // ── pcrAnimEventFootContact  [vtable @ 0x8202EC4C] ──────────────────────────
-struct pcrAnimEventFootContact {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_22();  // [22] @ 0x820dead8
-    virtual void vfn_24();  // [24] @ 0x820ebda8
+struct pcrAnimEventFootContact : pcrAnimEvent {
+    virtual const char* GetTypeName() const;  // [22] @ 0x820DEAD8  returns "FootContact"
+    virtual void vfn_24();                    // [24] @ 0x820EBDA8
 };
 
 // ── pcrAnimEventFootScuff  [vtable @ 0x8202ECBC] ──────────────────────────
-struct pcrAnimEventFootScuff {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_22();  // [22] @ 0x820deae8
-    virtual void vfn_24();  // [24] @ 0x820ebdb0
+struct pcrAnimEventFootScuff : pcrAnimEvent {
+    virtual const char* GetTypeName() const;  // [22] @ 0x820DEAE8  returns "FootScuff"
+    virtual void vfn_24();                    // [24] @ 0x820EBDB0
 };
 
 // ── pcrAnimEventFootStep  [vtable @ 0x8202ED2C] ──────────────────────────
-struct pcrAnimEventFootStep {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_22();  // [22] @ 0x820deaf8
-    virtual void vfn_24();  // [24] @ 0x820ebdb8
+struct pcrAnimEventFootStep : pcrAnimEvent {
+    virtual const char* GetTypeName() const;  // [22] @ 0x820DEAF8  returns "FootStep"
+    virtual void vfn_24();                    // [24] @ 0x820EBDB8
 };
 
 // ── pcrAnimEventFootStomp  [vtable @ 0x8202ED9C] ──────────────────────────
-struct pcrAnimEventFootStomp {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_22();  // [22] @ 0x820deb08
-    virtual void vfn_24();  // [24] @ 0x820ebdc0
+struct pcrAnimEventFootStomp : pcrAnimEvent {
+    virtual const char* GetTypeName() const;  // [22] @ 0x820DEB08  returns "FootStomp"
+    virtual void vfn_24();                    // [24] @ 0x820EBDC0
 };
 
 // ── pcrAnimEventMsg  [vtable @ 0x8202EE3C] ──────────────────────────
-struct pcrAnimEventMsg {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~pcrAnimEventMsg();                  // [0] @ 0x820ebdc8
-    virtual void vfn_2();  // [2] @ 0x820ebed8
-    virtual void vfn_20();  // [20] @ 0x820ebe30
-    virtual void vfn_21();  // [21] @ 0x820ebe88
-    virtual void vfn_22();  // [22] @ 0x820deb18
-    virtual void vfn_23();  // [23] @ 0x820ebf30
-    virtual void vfn_24();  // [24] @ 0x820ebf50
+struct pcrAnimEventMsg : pcrAnimEvent {
+    virtual ~pcrAnimEventMsg();                        // [0]  @ 0x820EBDC8
+    virtual void vfn_2();                              // [2]  @ 0x820EBED8
+    virtual bool MatchesType(uint32_t type) const;     // [20] @ 0x820EBE30
+    virtual void Process();                            // [21] @ 0x820EBE88
+    virtual const char* GetTypeName() const;           // [22] @ 0x820DEB18  returns "Msg"
+    virtual void vfn_23();                             // [23] @ 0x820EBF30
+    virtual void vfn_24();                             // [24] @ 0x820EBF50
 };
 
 // ── pcrAnimEventMsg_s  [vtable @ 0x8202EEAC] ──────────────────────────
-struct pcrAnimEventMsg_s {
-    void**      vtable;           // +0x00
+struct pcrAnimEventMsg_s : pcrAnimEventMsg {
+    const char*  m_stringParam;  // +0x30  extra string; fixed up from pack if non-null
 
-    // ── virtual methods ──
-    virtual ~pcrAnimEventMsg_s();                  // [0] @ 0x820ebf70
-    virtual void vfn_20();  // [20] @ 0x820ebff0
-    virtual void vfn_21();  // [21] @ 0x820ec010
-    virtual void vfn_22();  // [22] @ 0x820deb28
-    virtual void vfn_24();  // [24] @ 0x820ec088
+    virtual ~pcrAnimEventMsg_s();                        // [0]  @ 0x820EBF70
+    virtual bool MatchesType(uint32_t type) const;       // [20] @ 0x820EBFF0
+    virtual void Process();                              // [21] @ 0x820EC010
+    virtual const char* GetTypeName() const;             // [22] @ 0x820DEB28  returns "Msg_s"
+    virtual void vfn_24();                               // [24] @ 0x820EC088
 };
 
 // ── pcrAnimObserved  [vtable @ 0x82028354] ──────────────────────────
@@ -337,21 +341,37 @@ struct pcrAnimObserverHash {
 };
 
 // ── pcrEmoteBlender  [vtable @ 0x82028220] ──────────────────────────
+// Controls emote / reaction clip playback (celebration, frustration, etc.).
+// Inherits from pongBlender (base vtable pair @ +0x00 / +0x10).
 struct pcrEmoteBlender {
-    void**      vtable;           // +0x00
+    void**       vtable;           // +0x00  primary vtable
+    void*        m_pPlayer;        // +0x04  owning pongPlayer
+    // ... (+0x08..+0x0F omitted, base fields) ...
+    void*        m_animSubStruct;  // +0x10  inline locomotion-blender sub-object
+    // ... (+0x14..+0x53 omitted, sub-struct body) ...
+    void*        m_pCurrentClip;   // +0x54  active crAnimClip*
+    void*        m_pSessionInfo;   // +0x5C
+    uint16_t     m_state;          // +0x58  playback state (1 = active)
+    uint16_t     m_bShouldStop;    // +0x5A  stop-after-cycle flag
+    float        m_blendWeightA;   // +0x60  (in sub-struct at +16+80)
+    float        m_blendWeightB;   // +0x64  (in sub-struct at +16+84)
+    float        m_targetBlend;    // +0x68  target blend weight (at +100)
+    uint32_t     m_emoteIndex;     // +0x180 (384) which emote anim is active
 
-    // ── virtual methods ──
-    virtual ~pcrEmoteBlender();                  // [0] @ 0x820cb878
-    virtual void ScalarDtor(int flags); // [1] @ 0x820db508
-    virtual void vfn_2();  // [2] @ 0x820cb8d0
-    virtual void vfn_3();  // [3] @ 0x820db518
-    virtual void vfn_4();  // [4] @ 0x820db520
-    virtual void vfn_5();  // [5] @ 0x820db620
-    virtual void vfn_6();  // [6] @ 0x820cb8d8
-    virtual void vfn_7();  // [7] @ 0x820db5f8
-    virtual void vfn_8();  // [8] @ 0x820cb908
-    virtual void vfn_9();  // [9] @ 0x820db6e8
-    virtual void vfn_10();  // [10] @ 0x820db728
+    virtual ~pcrEmoteBlender();                            // [0]  @ 0x820CB878
+    virtual void SetPlayer(void* pPlayer, void* pSes);    // [1]  @ 0x820DB508
+    virtual void SetEmoteIndex(uint32_t index);            // [2]  @ 0x820CB8D0
+    virtual void Reset();                                  // [3]  @ 0x820DB518
+    virtual void Update();                                 // [4]  @ 0x820DB520
+    virtual void StartEmote(const void* clip,
+                            uint32_t flags,
+                            float blendDur);               // [5]  @ 0x820DB620
+    virtual bool IsActive() const;                         // [6]  @ 0x820CB8D8
+    virtual bool IsFinished() const;                       // [7]  @ 0x820DB5F8
+    virtual void* GetCurrentClip();                        // [8]  @ 0x820CB908
+    virtual bool GetBlendWeights(float* outA,
+                                 float* outB) const;       // [9]  @ 0x820DB6E8
+    virtual void ComputeBlend(void* outVec);               // [10] @ 0x820DB728
 };
 
 // ── pcrEmoteData  [vtable @ 0x8202EB64] ──────────────────────────
@@ -365,16 +385,38 @@ struct pcrEmoteData {
     virtual void vfn_22();  // [22] @ 0x820eb948
 };
 
+// ── pcrCreatureState  (internal data block, no vtable) ──────────────────────
+// Shared state block owned by each creature instance.  pcrFaceAnimBlender
+// and pcrPostPointBlender both hold a pointer to this structure.
+//
+// Key fields confirmed from StartPostPoint and related scaffolding:
+struct pcrCreatureState {
+    // +0x00..+0x03  reserved / flags
+    bool         m_bFaceAnimEnabled;  // +0x04  gates face-anim path in StartPostPoint
+    // +0x05..+0x3F  (other creature state fields omitted)
+    void*        m_pFaceAnimHandle;   // +0x44  active face-anim handle (timer at handle+0x14)
+    // +0x48..+0xAF  (other fields)
+    // +0xB0  phFaceMaterialTable m_faceMaterial
+    //        — hash table mapping clip data ptrs → face material entries
+    //        — passed to phMaterialMgrImpl_C208_g as the first argument
+    uint8_t      m_faceMaterial[0x40]; // +0xB0  inline hash-table (size estimated)
+};
+
 // ── pcrFaceAnimBlender  [vtable @ 0x820276D0] ──────────────────────────
-// Confirmed methods: StartPostPoint
+// Drives facial expression blending after a point is scored.
+// Inherits from crAnimDof (base dtor @ 0x820C1188).
 struct pcrFaceAnimBlender {
-    void**      vtable;           // +0x00
+    void**            vtable;            // +0x00
+    // ... (crAnimDof base fields +0x04..+0x83 omitted) ...
+    void*             m_pCreatureState;  // +0x84 (132)  pcrCreatureState*
+    // ... (+0x88..+0x8F omitted) ...
+    void*             m_pAnimObj;        // +0x90 (144)  crAnimDof-family object
 
-    // ── virtual methods ──
-    virtual ~pcrFaceAnimBlender();                  // [0] @ 0x820c0c50
+    virtual ~pcrFaceAnimBlender();  // [0] @ 0x820C0C50
 
-    // ── non-virtual methods (from debug strings) ──
-    void StartPostPoint();
+    // Activate the post-point body clip and install the matching face material.
+    // @ 0x820CC490
+    void* StartPostPoint();
 };
 
 // ── pcrJunkSwingData  [vtable @ 0x8202EAF4] ──────────────────────────
@@ -388,17 +430,42 @@ struct pcrJunkSwingData {
 };
 
 // ── pcrPostPointBlender  [vtable @ 0x82028C64] ──────────────────────────
+// Controls the full-body post-point animation sequence.
+// Inherits from pongBlender (base vtable pair @ +0x00 / +0x10).
 struct pcrPostPointBlender {
-    void**      vtable;           // +0x00
+    void**       vtable;             // +0x00  primary vtable
+    void*        m_pPlayer;          // +0x04  owning pongPlayer
+    // ... (+0x08..+0x0F omitted, base fields) ...
+    void*        m_animSubStruct;    // +0x10  inline crAnimBlender sub-object
+    // ... (+0x14..+0x53 omitted, sub-struct body) ...
+    void*        m_pCurrentClip;     // +0x54  (in sub-struct; active clip)
+    void*        m_pSessionInfo;     // +0x5C
+    uint16_t     m_currentState;     // +0x58  (at +88)
+    uint16_t     m_bShouldStop;      // +0x5A  (at +90) bit 0 = active
+    float        m_blendWeight;      // +0x70  blend weight for this layer
+    void*        m_pActiveClipObj;   // +0x54  active clip obj ptr (at +84)
+    void*        m_clipArray;        // +0x190 (400)  crAnimClip* array
+    void*        m_clipRefCounts;    // +0x1A0 (416)  per-slot play-count array
+    void*        m_pRefCountArray;   // +0x1AC_area   at +432
+    int32_t      m_activeClipIdx;    // +0x1AC (428)  -1 = none
+    uint8_t      m_bForced;          // +0x1A8 (424)  set when force-started
+    uint32_t     m_emoteIndex;       // mirrored from pcrEmoteBlender context
+    // atString fields for celebratory clip name lookup
+    const char*  m_pCelebNameC;      // +0x190 (400)
+    uint16_t     m_celebNameCCap;    // +0x406
+    const char*  m_pCelebNameB;      // +0x408
+    uint16_t     m_celebNameBCap;    // +0x414
+    const char*  m_pCelebNameA;      // +0x416 area
+    uint16_t     m_celebNameCap;     // +0x422
+    void*        m_animSubStruct2;   // +0x436  second sub-struct (rage_8070 managed)
 
-    // ── virtual methods ──
-    virtual ~pcrPostPointBlender();                  // [0] @ 0x820ddcb8
-    virtual void ScalarDtor(int flags); // [1] @ 0x820ddd78
-    virtual void vfn_3();  // [3] @ 0x820dde28
-    virtual void vfn_4();  // [4] @ 0x820dde48
-    virtual void vfn_5();  // [5] @ 0x820dde60
-    virtual void vfn_6();  // [6] @ 0x820ddff8
-    virtual void vfn_7();  // [7] @ 0x820ddfb0
+    virtual ~pcrPostPointBlender();                      // [0] @ 0x820DDCB8
+    virtual void Init(void* pPlayer, void* pSes);        // [1] @ 0x820DDD78
+    virtual void ResetState();                           // [3] @ 0x820DDE28
+    virtual bool IsPlaying() const;                      // [4] @ 0x820DDE48
+    virtual void Update();                               // [5] @ 0x820DDE60
+    virtual bool IsActive() const;                       // [6] @ 0x820DDFF8
+    virtual bool IsFinished() const;                     // [7] @ 0x820DDFB0
 };
 
 // ── pcrServeBlender  [vtable @ 0x82028B0C] ──────────────────────────
