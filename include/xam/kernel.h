@@ -449,6 +449,177 @@ typedef struct _RTL_CRITICAL_SECTION {
 uint32_t RtlTryEnterCriticalSection(RTL_CRITICAL_SECTION* CriticalSection);
 
 //=============================================================================
+// Spinlock Functions
+//=============================================================================
+
+// Spinlock type (maps to pthread_spinlock_t or mutex)
+typedef uint32_t KSPIN_LOCK;
+
+/**
+ * KeAcquireSpinLockAtRaisedIrql @ 0x82000760 | ordinal: varies
+ * 
+ * Acquires a spinlock at raised IRQL (already at DISPATCH_LEVEL).
+ * Caller must have already raised IRQL using KeRaiseIrqlToDpcLevel.
+ * 
+ * @param SpinLock Pointer to spinlock
+ */
+void KeAcquireSpinLockAtRaisedIrql(KSPIN_LOCK* SpinLock);
+
+/**
+ * KeReleaseSpinLockFromRaisedIrql @ 0x82000754 | ordinal: varies
+ * 
+ * Releases a spinlock acquired at raised IRQL.
+ * Does not lower IRQL - caller must do that separately.
+ * 
+ * @param SpinLock Pointer to spinlock
+ */
+void KeReleaseSpinLockFromRaisedIrql(KSPIN_LOCK* SpinLock);
+
+/**
+ * KeTryToAcquireSpinLockAtRaisedIrql @ 0x82000800 | ordinal: varies
+ * 
+ * Attempts to acquire a spinlock without blocking.
+ * 
+ * @param SpinLock Pointer to spinlock
+ * @return TRUE (1) if acquired, FALSE (0) if already held
+ */
+uint32_t KeTryToAcquireSpinLockAtRaisedIrql(KSPIN_LOCK* SpinLock);
+
+/**
+ * KeRaiseIrqlToDpcLevel @ 0x820007ec | ordinal: varies
+ * 
+ * Raises IRQL to DISPATCH_LEVEL (DPC level).
+ * Returns previous IRQL for later restoration.
+ * 
+ * @return Previous IRQL value
+ */
+uint32_t KeRaiseIrqlToDpcLevel(void);
+
+//=============================================================================
+// L2 Cache Lock Functions
+//=============================================================================
+
+/**
+ * KeLockL2 @ 0x820007e0 | ordinal: varies
+ * 
+ * Locks the L2 cache for exclusive access.
+ * Used for cache-coherent operations on Xbox 360.
+ * 
+ * Cross-platform: No-op (modern CPUs handle cache coherency automatically)
+ */
+void KeLockL2(void);
+
+/**
+ * KeUnlockL2 @ 0x820007e4 | ordinal: varies
+ * 
+ * Unlocks the L2 cache.
+ * 
+ * Cross-platform: No-op
+ */
+void KeUnlockL2(void);
+
+//=============================================================================
+// System Time Functions
+//=============================================================================
+
+/**
+ * KeQuerySystemTime @ 0x82000850 | ordinal: varies
+ * 
+ * Queries the current system time.
+ * Returns time as 100-nanosecond intervals since January 1, 1601 (Windows FILETIME).
+ * 
+ * @param CurrentTime Pointer to receive current time
+ */
+void KeQuerySystemTime(LARGE_INTEGER* CurrentTime);
+
+//=============================================================================
+// Thread Delay Functions
+//=============================================================================
+
+/**
+ * KeDelayExecutionThread @ 0x82000874 | ordinal: varies
+ * 
+ * Delays execution of the current thread.
+ * 
+ * @param WaitMode    0 = KernelMode, 1 = UserMode
+ * @param Alertable   TRUE if wait is alertable
+ * @param Interval    Delay interval in 100-nanosecond units (negative = relative, positive = absolute)
+ * @return STATUS_SUCCESS or error code
+ */
+NTSTATUS KeDelayExecutionThread(uint32_t WaitMode, uint32_t Alertable, LARGE_INTEGER* Interval);
+
+//=============================================================================
+// Event Functions (Extended)
+//=============================================================================
+
+/**
+ * NtCreateEvent @ 0x820008ec | ordinal: varies
+ * 
+ * Creates an event object.
+ * 
+ * @param EventHandle      Pointer to receive event handle
+ * @param DesiredAccess    Access rights (usually 0x001F0003)
+ * @param ObjectAttributes Object attributes (can be NULL)
+ * @param EventType        0 = NotificationEvent (manual-reset), 1 = SynchronizationEvent (auto-reset)
+ * @param InitialState     TRUE if initially signaled
+ * @return STATUS_SUCCESS or error code
+ */
+NTSTATUS NtCreateEvent(HANDLE* EventHandle, uint32_t DesiredAccess, void* ObjectAttributes,
+                       uint32_t EventType, uint32_t InitialState);
+
+/**
+ * NtSetEvent @ 0x8200082c | ordinal: varies
+ * 
+ * Sets an event to the signaled state.
+ * 
+ * @param EventHandle   Event handle
+ * @param PreviousState Pointer to receive previous state (can be NULL)
+ * @return STATUS_SUCCESS or error code
+ */
+NTSTATUS NtSetEvent(HANDLE EventHandle, int32_t* PreviousState);
+
+/**
+ * NtClearEvent @ 0x82000844 | ordinal: varies
+ * 
+ * Clears an event to the non-signaled state.
+ * 
+ * @param EventHandle Event handle
+ * @return STATUS_SUCCESS or error code
+ */
+NTSTATUS NtClearEvent(HANDLE EventHandle);
+
+//=============================================================================
+// Thread Management Functions
+//=============================================================================
+
+/**
+ * ExCreateThread @ 0x820007dc | ordinal: varies
+ * 
+ * Creates a new thread.
+ * 
+ * @param ThreadHandle  Pointer to receive thread handle
+ * @param StackSize     Stack size in bytes (0 = default)
+ * @param ThreadId      Pointer to receive thread ID (can be NULL)
+ * @param StartAddress  Thread start function
+ * @param Parameter     Parameter to pass to thread function
+ * @param CreationFlags Creation flags (0 = start immediately, 1 = create suspended)
+ * @return STATUS_SUCCESS or error code
+ */
+NTSTATUS ExCreateThread(HANDLE* ThreadHandle, uint32_t StackSize, uint32_t* ThreadId,
+                        void* StartAddress, void* Parameter, uint32_t CreationFlags);
+
+/**
+ * ExTerminateThread @ 0x82000840 | ordinal: varies
+ * 
+ * Terminates a thread.
+ * 
+ * @param ThreadHandle Thread handle
+ * @param ExitStatus   Exit status code
+ * @return STATUS_SUCCESS or error code
+ */
+NTSTATUS ExTerminateThread(HANDLE ThreadHandle, NTSTATUS ExitStatus);
+
+//=============================================================================
 // Exception Handling Functions
 //=============================================================================
 

@@ -699,6 +699,377 @@ uint32_t RtlTryEnterCriticalSection(RTL_CRITICAL_SECTION* CriticalSection) {
 }
 
 //=============================================================================
+// Spinlock Implementation
+//=============================================================================
+
+// Spinlock implementation using atomic operations
+// On Xbox 360, spinlocks are used for very short critical sections at raised IRQL
+
+#ifdef _WIN32
+#include <windows.h>
+#define SPINLOCK_INIT 0
+#define spinlock_lock(lock) while (InterlockedCompareExchange((volatile LONG*)(lock), 1, 0) != 0) { _mm_pause(); }
+#define spinlock_unlock(lock) InterlockedExchange((volatile LONG*)(lock), 0)
+#define spinlock_trylock(lock) (InterlockedCompareExchange((volatile LONG*)(lock), 1, 0) == 0)
+#else
+#include <stdatomic.h>
+#define SPINLOCK_INIT 0
+#define spinlock_lock(lock) while (atomic_exchange_explicit((_Atomic uint32_t*)(lock), 1, memory_order_acquire) != 0) { __asm__ __volatile__("pause" ::: "memory"); }
+#define spinlock_unlock(lock) atomic_store_explicit((_Atomic uint32_t*)(lock), 0, memory_order_release)
+#define spinlock_trylock(lock) (atomic_exchange_explicit((_Atomic uint32_t*)(lock), 1, memory_order_acquire) == 0)
+#endif
+
+// Thread-local IRQL level (simplified)
+static __thread uint32_t g_current_irql = 0;
+
+/**
+ * KeRaiseIrqlToDpcLevel @ 0x820007ec
+ * 
+ * Raises IRQL to DISPATCH_LEVEL.
+ */
+uint32_t KeRaiseIrqlToDpcLevel(void) {
+    uint32_t old_irql = g_current_irql;
+    g_current_irql = 2;  // DISPATCH_LEVEL
+    return old_irql;
+}
+
+/**
+ * KeAcquireSpinLockAtRaisedIrql @ 0x82000760
+ * 
+ * Acquires a spinlock at raised IRQL.
+ */
+void KeAcquireSpinLockAtRaisedIrql(KSPIN_LOCK* SpinLock) {
+    if (!SpinLock) {
+        return;
+    }
+    
+    spinlock_lock(SpinLock);
+}
+
+/**
+ * KeReleaseSpinLockFromRaisedIrql @ 0x82000754
+ * 
+ * Releases a spinlock at raised IRQL.
+ */
+void KeReleaseSpinLockFromRaisedIrql(KSPIN_LOCK* SpinLock) {
+    if (!SpinLock) {
+        return;
+    }
+    
+    spinlock_unlock(SpinLock);
+}
+
+/**
+ * KeTryToAcquireSpinLockAtRaisedIrql @ 0x82000800
+ * 
+ * Attempts to acquire a spinlock without blocking.
+ */
+uint32_t KeTryToAcquireSpinLockAtRaisedIrql(KSPIN_LOCK* SpinLock) {
+    if (!SpinLock) {
+        return 0;
+    }
+    
+    return spinlock_trylock(SpinLock) ? 1 : 0;
+}
+
+//=============================================================================
+// L2 Cache Lock Implementation
+//=============================================================================
+
+/**
+ * KeLockL2 @ 0x820007e0
+ * 
+ * Locks the L2 cache (Xbox 360 specific).
+ * Cross-platform: No-op (modern CPUs handle cache coherency automatically).
+ */
+void KeLockL2(void) {
+    // No-op on modern systems
+    // Xbox 360 has explicit L2 cache locking for DMA operations
+}
+
+/**
+ * KeUnlockL2 @ 0x820007e4
+ * 
+ * Unlocks the L2 cache.
+ */
+void KeUnlockL2(void) {
+    // No-op on modern systems
+}
+
+//=============================================================================
+// System Time Implementation
+//=============================================================================
+
+/**
+ * KeQuerySystemTime @ 0x82000850
+ * 
+ * Queries the current system time.
+ * Returns time as 100-nanosecond intervals since January 1, 1601 (Windows FILETIME).
+ */
+void KeQuerySystemTime(LARGE_INTEGER* CurrentTime) {
+    if (!CurrentTime) {
+        return;
+    }
+    
+#ifdef _WIN32
+    // Windows: Use GetSystemTimeAsFileTime
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    *CurrentTime = ((int64_t)ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+#else
+    // POSIX: Convert from Unix epoch (1970) to Windows epoch (1601)
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    
+    // Unix epoch (1970-01-01) is 11644473600 seconds after Windows epoch (1601-01-01)
+    const int64_t UNIX_EPOCH_OFFSET = 116444736000000000LL;
+    
+    // Convert to 100-nanosecond intervals
+    int64_t time_100ns = (int64_t)ts.tv_sec * 10000000LL + ts.tv_nsec / 100;
+    *CurrentTime = time_100ns + UNIX_EPOCH_OFFSET;
+#endif
+}
+
+//=============================================================================
+// Thread Delay Implementation
+//=============================================================================
+
+/**
+ * KeDelayExecutionThread @ 0x82000874
+ * 
+ * Delays execution of the current thread.
+ */
+NTSTATUS KeDelayExecutionThread(uint32_t WaitMode, uint32_t Alertable, LARGE_INTEGER* Interval) {
+    (void)WaitMode;
+    (void)Alertable;
+    
+    if (!Interval) {
+        return STATUS_INVALID_PARAMETER;
+    }
+    
+    // Interval is in 100-nanosecond units
+    // Negative = relative time, Positive = absolute time
+    int64_t delay_100ns = *Interval;
+    
+    if (delay_100ns >= 0) {
+        // Absolute time - not commonly used, treat as relative
+        // In a full implementation, we'd calculate time until target
+        return STATUS_SUCCESS;
+    }
+    
+    // Relative time (negative value)
+    delay_100ns = -delay_100ns;
+    
+    // Convert to nanoseconds
+    int64_t delay_ns = delay_100ns * 100;
+    
+    // Sleep
+#ifdef _WIN32
+    // Windows: Use Sleep (milliseconds)
+    DWORD delay_ms = (DWORD)(delay_ns / 1000000);
+    if (delay_ms == 0 && delay_ns > 0) {
+        delay_ms = 1;  // Minimum 1ms
+    }
+    Sleep(delay_ms);
+#else
+    // POSIX: Use nanosleep
+    struct timespec ts;
+    ts.tv_sec = delay_ns / 1000000000LL;
+    ts.tv_nsec = delay_ns % 1000000000LL;
+    nanosleep(&ts, NULL);
+#endif
+    
+    return STATUS_SUCCESS;
+}
+
+//=============================================================================
+// Event Functions (Extended) Implementation
+//=============================================================================
+
+/**
+ * NtCreateEvent @ 0x820008ec
+ * 
+ * Creates an event object.
+ */
+NTSTATUS NtCreateEvent(HANDLE* EventHandle, uint32_t DesiredAccess, void* ObjectAttributes,
+                       uint32_t EventType, uint32_t InitialState) {
+    (void)DesiredAccess;
+    (void)ObjectAttributes;
+    
+    if (!EventHandle) {
+        return STATUS_INVALID_PARAMETER;
+    }
+    
+    // Allocate event structure
+    KernelEvent* event = (KernelEvent*)malloc(sizeof(KernelEvent));
+    if (!event) {
+        return STATUS_NO_MEMORY;
+    }
+    
+    // Initialize mutex and condition variable
+    pthread_mutex_init(&event->mutex, NULL);
+    pthread_cond_init(&event->cond, NULL);
+    
+    // Set initial state
+    event->signaled = InitialState ? 1 : 0;
+    
+    // Set event type (0 = manual-reset, 1 = auto-reset)
+    event->manual_reset = (EventType == 0) ? 1 : 0;
+    
+    *EventHandle = (HANDLE)event;
+    return STATUS_SUCCESS;
+}
+
+/**
+ * NtSetEvent @ 0x8200082c
+ * 
+ * Sets an event to the signaled state.
+ */
+NTSTATUS NtSetEvent(HANDLE EventHandle, int32_t* PreviousState) {
+    if (!EventHandle) {
+        return STATUS_INVALID_PARAMETER;
+    }
+    
+    KernelEvent* event = (KernelEvent*)EventHandle;
+    pthread_mutex_lock(&event->mutex);
+    
+    if (PreviousState) {
+        *PreviousState = event->signaled;
+    }
+    
+    event->signaled = 1;
+    
+    // Wake up waiting threads
+    if (event->manual_reset) {
+        pthread_cond_broadcast(&event->cond);
+    } else {
+        pthread_cond_signal(&event->cond);
+    }
+    
+    pthread_mutex_unlock(&event->mutex);
+    return STATUS_SUCCESS;
+}
+
+/**
+ * NtClearEvent @ 0x82000844
+ * 
+ * Clears an event to the non-signaled state.
+ */
+NTSTATUS NtClearEvent(HANDLE EventHandle) {
+    if (!EventHandle) {
+        return STATUS_INVALID_PARAMETER;
+    }
+    
+    KernelEvent* event = (KernelEvent*)EventHandle;
+    pthread_mutex_lock(&event->mutex);
+    
+    event->signaled = 0;
+    
+    pthread_mutex_unlock(&event->mutex);
+    return STATUS_SUCCESS;
+}
+
+//=============================================================================
+// Thread Management Implementation
+//=============================================================================
+
+// Thread start wrapper structure
+typedef struct {
+    void* (*start_routine)(void*);
+    void* parameter;
+} ThreadStartInfo;
+
+// Thread start wrapper function
+static void* thread_start_wrapper(void* arg) {
+    ThreadStartInfo* info = (ThreadStartInfo*)arg;
+    void* (*start_routine)(void*) = info->start_routine;
+    void* parameter = info->parameter;
+    free(info);
+    
+    return start_routine(parameter);
+}
+
+/**
+ * ExCreateThread @ 0x820007dc
+ * 
+ * Creates a new thread.
+ */
+NTSTATUS ExCreateThread(HANDLE* ThreadHandle, uint32_t StackSize, uint32_t* ThreadId,
+                        void* StartAddress, void* Parameter, uint32_t CreationFlags) {
+    (void)StackSize;  // pthread doesn't easily support custom stack size
+    (void)CreationFlags;  // Simplified: always start immediately
+    
+    if (!ThreadHandle || !StartAddress) {
+        return STATUS_INVALID_PARAMETER;
+    }
+    
+    // Allocate thread start info
+    ThreadStartInfo* info = (ThreadStartInfo*)malloc(sizeof(ThreadStartInfo));
+    if (!info) {
+        return STATUS_NO_MEMORY;
+    }
+    
+    info->start_routine = (void* (*)(void*))StartAddress;
+    info->parameter = Parameter;
+    
+    // Create thread
+    pthread_t* thread = (pthread_t*)malloc(sizeof(pthread_t));
+    if (!thread) {
+        free(info);
+        return STATUS_NO_MEMORY;
+    }
+    
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    
+    int result = pthread_create(thread, &attr, thread_start_wrapper, info);
+    pthread_attr_destroy(&attr);
+    
+    if (result != 0) {
+        free(thread);
+        free(info);
+        return STATUS_NO_MEMORY;
+    }
+    
+    *ThreadHandle = (HANDLE)thread;
+    
+    if (ThreadId) {
+        // pthread_t is not directly convertible to uint32_t on all platforms
+        // Use a hash or just cast (simplified)
+        *ThreadId = (uint32_t)(uintptr_t)thread;
+    }
+    
+    return STATUS_SUCCESS;
+}
+
+/**
+ * ExTerminateThread @ 0x82000840
+ * 
+ * Terminates a thread.
+ */
+NTSTATUS ExTerminateThread(HANDLE ThreadHandle, NTSTATUS ExitStatus) {
+    (void)ExitStatus;
+    
+    if (!ThreadHandle) {
+        return STATUS_INVALID_PARAMETER;
+    }
+    
+    pthread_t* thread = (pthread_t*)ThreadHandle;
+    
+    // Cancel the thread
+    pthread_cancel(*thread);
+    
+    // Wait for it to terminate
+    pthread_join(*thread, NULL);
+    
+    // Free the handle
+    free(thread);
+    
+    return STATUS_SUCCESS;
+}
+
+//=============================================================================
 // Exception Handling Functions Implementation
 //=============================================================================
 
