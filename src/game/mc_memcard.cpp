@@ -521,3 +521,38 @@ void mcSegmentContainer::~mcSegmentContainer(bool shouldFree)
         rage_free(this);
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// mcFileSegment  [vtable @ 0x8203CE14]
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * mcFileSegment — UNUSED CLASS
+ *
+ * This class exists in the RTTI data with a single vtable pointer but has:
+ *   - No virtual methods (beyond base class)
+ *   - No field accesses in any function
+ *   - No debug string hints
+ *   - No global instances
+ *   - No references in the recomp output
+ *
+ * Interesting detail: The vtable address (0x8203CE14) contains the string
+ * " mastering effect(s)..." which suggests this may have been intended for:
+ *   1. Audio mastering/effects processing during save operations
+ *   2. Segmented file I/O for large save files
+ *   3. Streaming save data in chunks
+ *
+ * However, the actual memory card implementation (mcMemcardControl) uses a
+ * monolithic 4936-byte content buffer with no segmentation, suggesting this
+ * feature was planned but never implemented.
+ *
+ * Related classes that ARE implemented:
+ *   - mcMemcardControl (FSM for save/load operations)
+ *   - mcSaveOp (embedded save operation state)
+ *   - mcSegmentContainer (container for segments, vtable @ 0x8204D9B0)
+ *
+ * No implementation required - this class is never instantiated or referenced.
+ */
+
+// No methods to implement - class is unused
