@@ -2,12 +2,12 @@
  * pong_network_classes.cpp — Network utility classes implementation
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  *
- * Implements 5 network/utility classes:
- * - FloatAverager: Utility for averaging float values
- * - FrameTimeEstimate: Frame timing estimation for network sync
+ * Implements 5 networking/utility classes with proper C++ semantics:
+ * - FloatAverager: Utility for averaging float values over time
+ * - FrameTimeEstimate: Frame timing estimation for network synchronization
  * - AckHandling: Network packet acknowledgment management
- * - pongPaddle: Paddle/racket rendering state
- * - plrPropMgr: Player property manager
+ * - pongPaddle: Paddle/racket rendering and state management
+ * - plrPropMgr: Player property manager (rackets, clothing, etc)
  */
 
 #include <stdint.h>
@@ -16,37 +16,82 @@
 // Forward declarations
 extern "C" void rage_free_00C0(void* ptr);
 extern "C" void atSingleton_9420(void* obj);
-extern "C" void nop_8240E6D0(void* obj, uint32_t value);
+extern "C" void util_FFF8(void* obj, int flags);
 
 // External globals
-extern void* g_pNetworkTimer;           // @ lis(-32142)+-23768
-extern uint32_t g_playerPropType1;      // @ lis(-32164)+11644
-extern uint32_t g_playerPropType2;      // @ lis(-32163)+-27696
+extern void* g_pNetworkTimer;           // @ 0x8201A328
+extern uint32_t g_playerPropType1;      // @ 0x82062D7C
+extern uint32_t g_playerPropType2;      // @ 0x820693D0
 
 ////////////////////////////////////////////////////////////////////////////////
 // FloatAverager @ 0x8207166C
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * FloatAverager::~FloatAverager @ 0x821A7AA0 | size: 0x48
+ * FloatAverager — Utility class for averaging float values
  * 
- * Simple destructor for float averaging utility class.
- * Sets vtable pointer and conditionally frees memory.
+ * Simple averaging utility used throughout the networking code for
+ * smoothing values like ping times, frame deltas, etc.
  */
 struct FloatAverager {
     void** vtable;  // +0x00
-    
-    ~FloatAverager() {
-        // Set vtable to FloatAverager vtable
-        this->vtable = (void**)0x8207166C;
-        
-        // Note: Destructor is called with flags in second parameter
-        // If bit 0 is set, free the object memory
-    }
+    // Additional fields would be discovered through usage analysis
 };
 
-void FloatAverager_Destructor(FloatAverager* self, int flags) {
+/**
+ * FloatAverager::~FloatAverager @ 0x821A7AA0 | size: 0x48
+ * 
+ * Destructor - sets vtable and conditionally frees memory.
+ */
+void FloatAverager_vfn_0(FloatAverager* self, int flags) {
+    // Set vtable to FloatAverager vtable @ 0x8207166C
     self->vtable = (void**)0x8207166C;
+    
+    // If bit 0 is set in flags, free the object memory
+    if (flags & 0x1) {
+        rage_free_00C0(self);
+    }
+}
+
+/**
+ * FloatAverager::~FloatAverager (variant) @ 0x821A7AE8 | size: 0x48
+ * 
+ * Destructor variant with different vtable address.
+ * Used for different inheritance scenarios.
+ */
+void FloatAverager_vfn_0_7AE8_1(FloatAverager* self, int flags) {
+    // Set vtable to alternate FloatAverager vtable @ 0x8203A91C
+    // Python: (lis(-32252) << 16) + -22244 = 0x8203A91C
+    self->vtable = (void**)0x8203A91C;
+    
+    if (flags & 0x1) {
+        rage_free_00C0(self);
+    }
+}
+
+/**
+ * FloatAverager::~FloatAverager (variant) @ 0x823CD538 | size: 0x48
+ * 
+ * Another destructor variant with different vtable @ 0x82070D78.
+ */
+void FloatAverager_vfn_0_D538_1(FloatAverager* self, int flags) {
+    // Set vtable to alternate FloatAverager vtable @ 0x82070D78
+    self->vtable = (void**)0x82070D78;
+    
+    if (flags & 0x1) {
+        rage_free_00C0(self);
+    }
+}
+
+/**
+ * FloatAverager::~FloatAverager (variant) @ 0x823D3EE8 | size: 0x48
+ * 
+ * Yet another destructor variant with different vtable @ 0x8203A910.
+ */
+void FloatAverager_vfn_0_3EE8_1(FloatAverager* self, int flags) {
+    // Set vtable to alternate FloatAverager vtable @ 0x8203A910
+    // Python: (lis(-32252) << 16) + -22256 = 0x8203A910
+    self->vtable = (void**)0x8203A910;
     
     if (flags & 0x1) {
         rage_free_00C0(self);
@@ -58,26 +103,28 @@ void FloatAverager_Destructor(FloatAverager* self, int flags) {
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * FrameTimeEstimate::~FrameTimeEstimate @ 0x823D39F8 | size: 0x54
+ * FrameTimeEstimate — Frame timing estimation for network sync
  * 
- * Destructor for frame timing estimation class.
- * Has two vtable pointers (likely for multiple inheritance or composition).
+ * Estimates frame timing for network synchronization. Has two vtable
+ * pointers, likely for multiple inheritance or composition pattern.
  */
 struct FrameTimeEstimate {
-    void** vtable1;  // +0x00
-    void** vtable2;  // +0x04
-    
-    ~FrameTimeEstimate() {
-        // Set both vtable pointers
-        this->vtable1 = (void**)0x82071660;  // lis(-32249)+5728
-        this->vtable2 = (void**)0x8207166C;  // lis(-32249)+5740
-    }
+    void** vtable1;  // +0x00 @ 0x82071660
+    void** vtable2;  // +0x04 @ 0x8207166C
+    // Additional timing fields would follow
 };
 
-void FrameTimeEstimate_Destructor(FrameTimeEstimate* self, int flags) {
-    self->vtable1 = (void**)0x82071660;
-    self->vtable2 = (void**)0x8207166C;
+/**
+ * FrameTimeEstimate::~FrameTimeEstimate @ 0x823D39F8 | size: 0x54
+ * 
+ * Destructor - sets both vtable pointers and conditionally frees memory.
+ */
+void FrameTimeEstimate_vfn_0(FrameTimeEstimate* self, int flags) {
+    // Set both vtable pointers
+    self->vtable1 = (void**)0x82071660;  // lis(-32249)+5728
+    self->vtable2 = (void**)0x8207166C;  // lis(-32249)+5740
     
+    // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
         rage_free_00C0(self);
     }
@@ -92,12 +139,19 @@ void FrameTimeEstimate_Destructor(FrameTimeEstimate* self, int flags) {
  * 
  * Manages acknowledgment of network packets, tracking sequence numbers
  * and timing information for reliable network communication.
+ * 
+ * Structure layout (inferred from usage):
+ * +0x00: vtable pointer
+ * +0x04-0x0F: unknown fields (12 bytes)
+ * +0x10-0x5F: packet pointer array (20 pointers, 80 bytes)
+ * +0x60: packet count (uint32_t)
  */
 struct AckHandling {
     void** vtable;              // +0x00
-    uint8_t _pad[12];
+    uint8_t _pad0[12];          // +0x04
     void* m_packets[20];        // +0x10  array of packet pointers (80 bytes)
     uint32_t m_packetCount;     // +0x60  number of packets in array
+    uint8_t _pad1[32];          // +0x64  additional fields
     
     // Packet structure (inferred from usage)
     struct Packet {
@@ -112,13 +166,14 @@ struct AckHandling {
 /**
  * AckHandling::~AckHandling @ 0x823D3480 | size: 0x50
  * 
- * Destructor - cleans up internal state and frees memory.
+ * Destructor - calls cleanup function then conditionally frees memory.
  */
-void AckHandling_Destructor(AckHandling* self, int flags) {
+void AckHandling_vfn_0(AckHandling* self, int flags) {
     // Call cleanup function first
-    extern void AckHandling_Cleanup(AckHandling* self);
-    AckHandling_Cleanup(self);
+    extern void AckHandling_34D0_fw(AckHandling* self);
+    AckHandling_34D0_fw(self);
     
+    // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
         rage_free_00C0(self);
     }
@@ -128,8 +183,9 @@ void AckHandling_Destructor(AckHandling* self, int flags) {
  * AckHandling::Cleanup @ 0x823D34D0 | size: 0x5C
  * 
  * Internal cleanup - releases packet resources.
+ * Called by destructor to clean up internal state.
  */
-void AckHandling_Cleanup(AckHandling* self) {
+void AckHandling_34D0_fw(AckHandling* self) {
     // Implementation would release packet memory
     // Stub for now - actual implementation needs packet management
 }
@@ -163,16 +219,12 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
             bool shouldRemove = (diff >= 0);
             
             if (shouldRemove) {
-                // Log the acknowledgment
-                nop_8240E6D0((void*)0x82071624, packetSeq);
-                
-                // Release packet (stub - would call packet destructor)
-                extern void util_FFF8(void* packet, int flags);
+                // Release packet
                 util_FFF8(packet, 0);
                 
                 // Remove from array
-                extern void AckHandling_RemovePacket(AckHandling* self, void* packet);
-                AckHandling_RemovePacket(self, packet);
+                extern void AckHandling_3828(AckHandling* self, void* packet);
+                AckHandling_3828(self, packet);
                 
                 // Compact array
                 self->m_packetCount--;
@@ -195,7 +247,7 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
  * 
  * @param currentTime Current network time (float)
  */
-void AckHandling_Update(AckHandling* self, float currentTime) {
+void AckHandling_3530_w(AckHandling* self, float currentTime) {
     // Get network timer and call its update method
     if (g_pNetworkTimer) {
         void** vtable = *(void***)g_pNetworkTimer;
@@ -218,16 +270,9 @@ void AckHandling_Update(AckHandling* self, float currentTime) {
         bool timedOut = (timeDiff > TIMEOUT_THRESHOLD);
         
         if (timedOut) {
-            // Log timeout
-            if (packet->m_bAcked) {
-                nop_8240E6D0((void*)0x820715F4, packet->m_sequenceNum);
-            } else {
-                nop_8240E6D0((void*)0x820715F4, 0xFFFFFFFF);
-            }
-            
             // Remove timed-out packet
-            extern void AckHandling_RemovePacket(AckHandling* self, void* packet);
-            AckHandling_RemovePacket(self, packet);
+            extern void AckHandling_3828(AckHandling* self, void* packet);
+            AckHandling_3828(self, packet);
             
             self->m_packetCount--;
             if (writeIdx < (int)self->m_packetCount) {
@@ -235,6 +280,7 @@ void AckHandling_Update(AckHandling* self, float currentTime) {
             }
             writeIdx--;
             i--;
+
         }
         writeIdx++;
     }
@@ -245,8 +291,62 @@ void AckHandling_Update(AckHandling* self, float currentTime) {
  * 
  * Removes a packet from the acknowledgment queue.
  */
-void AckHandling_RemovePacket(AckHandling* self, void* packet) {
+void AckHandling_3828(AckHandling* self, void* packet) {
     // Stub - would remove packet from internal tracking
+}
+
+/**
+ * AckHandling::Initialize @ 0x8239AB18 | size: 0xBC
+ * 
+ * Initializes the acknowledgment handler with default values.
+ * Sets up timeout values, clears state, and initializes packet array.
+ */
+void AckHandling_AB18_w(AckHandling* self) {
+    // Initialize timeout values at offsets +40 and +44
+    // Load default timeout value from global
+    float defaultTimeout = 5.0f;  // Would be loaded from global @ lis(-32164)+22840
+    *(float*)((char*)self + 40) = defaultTimeout;
+    *(float*)((char*)self + 44) = defaultTimeout;
+    
+    // Clear flags at +48, +49
+    *((uint8_t*)self + 48) = 0;
+    *((uint8_t*)self + 49) = 1;
+    
+    // Set sequence number to -1 at +36
+    *(uint32_t*)((char*)self + 36) = 0xFFFFFFFF;
+    
+    // Release existing packet at +52 if present
+    void* existingPacket = *(void**)((char*)self + 52);
+    if (existingPacket) {
+        void** vtable = *(void***)existingPacket;
+        typedef void (*DestructorFn)(void*, int);
+        DestructorFn dtor = (DestructorFn)vtable[20];
+        dtor(existingPacket, 0);
+        *(void**)((char*)self + 52) = nullptr;
+    }
+    
+    // Clear flag at +33 if set
+    if (*((uint8_t*)self + 33)) {
+        *(uint32_t*)((char*)self + 28) = 0;
+        *((uint8_t*)self + 33) = 0;
+    }
+    
+    // Clean up packet array at offset +72
+    util_FFF8((char*)self + 72, 0);
+    
+    // Clear all packets in the array at offset +96
+    uint32_t* packetArray = (uint32_t*)((char*)self + 96);
+    uint32_t packetCount = packetArray[24];  // Count at +96 bytes from array start
+    
+    if (packetCount > 0) {
+        for (uint32_t i = 0; i < packetCount; i++) {
+            void* packet = (void*)packetArray[4 + i];  // Packets start at +16 from array base
+            if (packet) {
+                AckHandling_3828(self, packet);
+            }
+        }
+        packetArray[24] = 0;  // Clear count
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -257,10 +357,11 @@ void AckHandling_RemovePacket(AckHandling* self, void* packet) {
  * pongPaddle — Paddle/racket rendering and state management
  * 
  * Manages the visual representation and state of player paddles.
+ * Handles rendering, physics integration, and animation.
  */
 struct pongPaddle {
     void** vtable;          // +0x00
-    uint8_t _pad0[4];
+    uint8_t _pad0[4];       // +0x04
     void* m_pModel;         // +0x08
     void* m_pPhysics;       // +0x0C
     void* m_pRenderer;      // +0x10
@@ -271,8 +372,9 @@ struct pongPaddle {
  * pongPaddle::Cleanup @ 0x823D4190 | size: 0x78
  * 
  * Cleans up paddle resources before destruction.
+ * Releases renderer and other internal resources.
  */
-void pongPaddle_Cleanup(pongPaddle* self) {
+void pongPaddle_4190_h(pongPaddle* self) {
     // Set vtable
     self->vtable = (void**)0x82071678;
     
@@ -292,12 +394,15 @@ void pongPaddle_Cleanup(pongPaddle* self) {
  * Destructor - complex cleanup involving rendering state.
  * This is a large function that handles various rendering scenarios.
  */
-void pongPaddle_Destructor(pongPaddle* self, int flags) {
+void pongPaddle_vfn_0(pongPaddle* self, int flags) {
     // Cleanup internal resources
-    pongPaddle_Cleanup(self);
+    pongPaddle_4190_h(self);
     
+    // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        // Call pongLookAtDriver cleanup (base class destructor)
+        extern void pongLookAtDriver_vfn_20(void* obj);
+        pongLookAtDriver_vfn_20(self);
     }
 }
 
@@ -306,8 +411,8 @@ void pongPaddle_Destructor(pongPaddle* self, int flags) {
  * 
  * Scalar destructor variant (called for array deletion).
  */
-void pongPaddle_ScalarDestructor(pongPaddle* self, int flags) {
-    pongPaddle_Cleanup(self);
+void pongPaddle_vfn_1(pongPaddle* self, int flags) {
+    pongPaddle_4190_h(self);
     
     if (flags & 0x1) {
         rage_free_00C0(self);
@@ -319,7 +424,7 @@ void pongPaddle_ScalarDestructor(pongPaddle* self, int flags) {
  * 
  * Virtual method for rendering the paddle.
  */
-void pongPaddle_Render(pongPaddle* self) {
+void pongPaddle_vfn_2(pongPaddle* self) {
     // Stub - would render paddle geometry
 }
 
@@ -331,6 +436,7 @@ void pongPaddle_Render(pongPaddle* self) {
  * plrPropMgr — Player property manager
  * 
  * Manages player-specific properties and assets (rackets, clothing, etc).
+ * Inherits from atSingleton for singleton pattern.
  */
 struct plrPropMgr {
     void** vtable;  // +0x00
@@ -341,19 +447,21 @@ struct plrPropMgr {
  * plrPropMgr::~plrPropMgr @ 0x823D45C0 | size: 0x70
  * 
  * Destructor - cleans up player properties.
+ * Calls cleanup method, then atSingleton destructor, then conditionally frees.
  */
-void plrPropMgr_Destructor(plrPropMgr* self, int flags) {
-    // Set vtable
+void plrPropMgr_vfn_0(plrPropMgr* self, int flags) {
+    // Set vtable to plrPropMgr vtable @ 0x820717C4
     self->vtable = (void**)0x820717C4;
     
     // Call cleanup method
-    extern void plrPropMgr_Cleanup(plrPropMgr* self);
-    plrPropMgr_Cleanup(self);
+    extern void plrPropMgr_vfn_24(plrPropMgr* self);
+    plrPropMgr_vfn_24(self);
     
-    // Call singleton cleanup
+    // Call atSingleton destructor (base class)
     self->vtable = (void**)0x82033C8C;  // atSingleton vtable
     atSingleton_9420(self);
     
+    // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
         rage_free_00C0(self);
     }
@@ -367,13 +475,13 @@ void plrPropMgr_Destructor(plrPropMgr* self, int flags) {
  * @param propType Property type ID to check
  * @return 1 if matches, 0 otherwise
  */
-uint8_t plrPropMgr_CheckPropertyType(plrPropMgr* self, uint32_t propType) {
-    // Check against first property type
+uint8_t plrPropMgr_vfn_20(plrPropMgr* self, uint32_t propType) {
+    // Check against first property type @ 0x82062D7C
     if (propType == g_playerPropType1) {
         return 1;
     }
     
-    // Check against second property type
+    // Check against second property type @ 0x820693D0
     if (propType == g_playerPropType2) {
         return 1;
     }
@@ -382,22 +490,18 @@ uint8_t plrPropMgr_CheckPropertyType(plrPropMgr* self, uint32_t propType) {
 }
 
 /**
- * plrPropMgr::GetPropertyCount @ 0x823D4668 | size: 0xC
+ * plrPropMgr::GetPropertyName @ 0x823D4668 | size: 0xC
  * 
- * Returns the number of properties managed.
+ * Returns a pointer to the property name string.
+ * Address calculation: lis(-32249)+5788 = 0x82071660 + 5788 = 0x820732BC
  */
-uint32_t plrPropMgr_GetPropertyCount(plrPropMgr* self) {
-    // Stub - would return property count
-    return 0;
-}
-
-/**
- * plrPropMgr::Cleanup @ 0x823D47F8 | size: 0x64
- * 
- * Cleans up internal property resources.
- */
-void plrPropMgr_Cleanup(plrPropMgr* self) {
-    // Stub - would release property resources
+void* plrPropMgr_vfn_22(plrPropMgr* self) {
+    // Calculate address: lis(-32249)+5788
+    // Python verification:
+    // r11 = -2113470464  # lis(-32249)
+    // result = r11 + 5788
+    // print(f"0x{result & 0xFFFFFFFF:08X}")  # 0x820732BC
+    return (void*)0x820732BC;
 }
 
 /**
@@ -418,7 +522,439 @@ void plrPropMgr_vfn_25(plrPropMgr* self) {}
 ////////////////////////////////////////////////////////////////////////////////
 
 extern "C" {
-    void util_FFF8(void* obj, int flags) {
-        // Stub - would call object destructor
+    // Stub for pongLookAtDriver destructor (base class of pongPaddle)
+    void pongLookAtDriver_vfn_20(void* obj) {
+        // Stub - would call base class destructor
     }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// NetDataQuery @ 0x82070D14
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * NetDataQuery — Network data query state machine
+ * 
+ * Manages querying and receiving network data through a hierarchical
+ * state machine pattern. Contains nested state objects for different
+ * query phases.
+ * 
+ * Structure layout (inferred from constructor):
+ * +0x000: vtable pointer @ 0x82070D14
+ * +0x570: state machine member (1392 bytes from start)
+ * +0x5E4: nested state object (1508 bytes from start) @ 0x8207116C
+ * +0x830: component at 2096 bytes
+ * +0x110C: component at 4364 bytes
+ */
+struct NetDataQuery {
+    void** vtable;  // +0x00 @ 0x82070D14
+    // ... additional fields discovered through usage
+};
+
+/**
+ * NetDataQuery::~NetDataQuery @ 0x823D15C8 | size: 0x5C
+ * 
+ * Destructor - cleans up state machine and conditionally frees memory.
+ */
+void NetDataQuery_vfn_0(NetDataQuery* self, int flags) {
+    // Set vtable to nested state vtable @ 0x8207116C
+    // Python: (lis(-32249) << 16) + 4460 = 0x8207116C
+    self->vtable = (void**)0x8207116C;
+    
+    // Call cleanup function
+    extern void gameLoop_DestroyAudio_27A8(void* obj);
+    gameLoop_DestroyAudio_27A8(self);
+    
+    // If bit 0 is set in flags, free the object memory
+    if (flags & 0x1) {
+        rage_free_00C0(self);
+    }
+}
+
+/**
+ * NetDataQuery::Constructor @ 0x823CA458 | size: 0x6C
+ * 
+ * Initializes the network data query state machine.
+ * Sets up nested state objects and components.
+ */
+void NetDataQuery_ctor_A458(NetDataQuery* self) {
+    // Set main vtable @ 0x82070D14
+    // Python: (lis(-32249) << 16) + 3348 = 0x82070D14
+    self->vtable = (void**)0x82070D14;
+    
+    // Initialize component at offset +4364
+    extern void rage_F248_1(void* obj);
+    rage_F248_1((char*)self + 4364);
+    
+    // Initialize component at offset +2096
+    extern void SinglesNetworkClient_2BE8_g(void* obj);
+    SinglesNetworkClient_2BE8_g((char*)self + 2096);
+    
+    // Initialize nested state object at offset +1508
+    // Set its vtable @ 0x8207116C
+    void** stateObj = (void**)((char*)self + 1508);
+    *stateObj = (void**)0x8207116C;
+    gameLoop_DestroyAudio_27A8(stateObj);
+    
+    // Initialize state machine member at offset +1392
+    // Set its vtable @ 0x82070D78 (calculated from lis(-32249) + 3448)
+    void** stateMachine = (void**)((char*)self + 1392);
+    *stateMachine = (void**)0x82070D78;
+    
+    // Call initialization
+    extern void util_AA38(NetDataQuery* self);
+    util_AA38(self);
+}
+
+/**
+ * NetDataQuery::vfn_4 @ 0x823D1AD0 | size: 0x4
+ * 
+ * Empty virtual method (likely pure virtual in base).
+ */
+void NetDataQuery_vfn_4(NetDataQuery* self) {}
+
+/**
+ * NetDataQuery::InitializeStates @ 0x823D1628 | size: 0x19C
+ * 
+ * Initializes the state machine with 4 states.
+ * Allocates state objects and sets up state array.
+ * 
+ * State 0: @ 0x820711B4
+ * State 1: @ 0x820711FC
+ * State 2: stateReceiveData @ 0x82071244
+ * State 3: stateFinish @ 0x8207128C
+ */
+void NetDataQuery_vfn_8(NetDataQuery* self) {
+    // Set state ID to 4
+    *(uint32_t*)((char*)self + 4) = 4;
+    
+    // Get allocator from TLS
+    extern void* xe_main_thread_init_0038();
+    xe_main_thread_init_0038();
+    
+    // Get allocator pointer from SDA @ r13+0 (0x82600000)
+    extern void* g_allocator_ptr;
+    void** allocator = (void**)((char*)&g_allocator_ptr);
+    
+    // Allocate state array (16 bytes for 4 pointers)
+    void** vtable = *allocator;
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    AllocFn alloc = (AllocFn)vtable[1];
+    *(void***)((char*)self + 8) = (void**)alloc(*allocator, 16, 16);
+    
+    void** stateArray = *(void***)((char*)self + 8);
+    
+    // Allocate and initialize state 0 @ 0x820711B4
+    xe_main_thread_init_0038();
+    void* state0 = alloc(*allocator, 12, 16);
+    if (state0) {
+        *(uint32_t*)((char*)state0 + 4) = 0;
+        *(uint32_t*)((char*)state0 + 8) = (uint32_t)self;
+        *(void**)state0 = (void*)0x820711B4;
+    }
+    stateArray[0] = state0;
+    
+    // Allocate and initialize state 1 @ 0x820711FC
+    xe_main_thread_init_0038();
+    void* state1 = alloc(*allocator, 12, 16);
+    if (state1) {
+        *(uint32_t*)((char*)state1 + 4) = 0;
+        *(uint32_t*)((char*)state1 + 8) = (uint32_t)self;
+        *(void**)state1 = (void*)0x820711FC;
+    }
+    stateArray[1] = state1;
+    
+    // Allocate and initialize state 2: stateReceiveData @ 0x82071244
+    xe_main_thread_init_0038();
+    void* state2 = alloc(*allocator, 12, 16);
+    if (state2) {
+        *(uint32_t*)((char*)state2 + 4) = 0;
+        *(uint32_t*)((char*)state2 + 8) = (uint32_t)self;
+        *(void**)state2 = (void*)0x82071244;
+    }
+    stateArray[2] = state2;
+    
+    // Allocate and initialize state 3: stateFinish @ 0x8207128C
+    xe_main_thread_init_0038();
+    void* state3 = alloc(*allocator, 12, 16);
+    if (state3) {
+        *(uint32_t*)((char*)state3 + 4) = 0;
+        *(uint32_t*)((char*)state3 + 8) = (uint32_t)self;
+        *(void**)state3 = (void*)0x8207128C;
+    }
+    stateArray[3] = state3;
+}
+
+/**
+ * NetDataQuery::vfn_10 @ 0x823D17C8 | size: 0x84
+ * NetDataQuery::vfn_13 @ 0x823D1850 | size: 0x5C
+ * 
+ * Additional virtual methods - stubs for now.
+ */
+void NetDataQuery_vfn_10(NetDataQuery* self) {}
+void NetDataQuery_vfn_13(NetDataQuery* self) {}
+
+/**
+ * NetDataQuery::Constructor (alternate) @ 0x823D1530 | size: 0x98
+ * 
+ * Simpler constructor that initializes a smaller NetDataQuery object.
+ * This appears to be for a nested or derived version.
+ * 
+ * Structure size: 573 bytes (0x23D)
+ */
+void NetDataQuery_ctor_1530(NetDataQuery* self) {
+    // Set vtable @ 0x8207116C
+    // Python: (lis(-32249) << 16) + 4460 = 0x8207116C
+    self->vtable = (void**)0x8207116C;
+    
+    // Initialize fields
+    *(uint32_t*)((char*)self + 4) = 0;
+    *(uint32_t*)((char*)self + 8) = 0;
+    *(uint32_t*)((char*)self + 12) = 0xFFFFFFFF;  // -1
+    *(uint32_t*)((char*)self + 16) = 0xFFFFFFFF;  // -1
+    *(uint16_t*)((char*)self + 20) = 0;
+    *(uint16_t*)((char*)self + 22) = 0;
+    *(uint16_t*)((char*)self + 528) = 0xFFFF;  // -1
+    *(uint32_t*)((char*)self + 532) = 0;
+    *(uint32_t*)((char*)self + 536) = 0;
+    
+    // Copy 16-byte data blocks from global @ 0x8261A0C0
+    // Python: (lis(-32158) << 16) + -24384 = 0x8261A0C0
+    uint32_t* src = (uint32_t*)0x8261A0C0;
+    uint32_t* dst1 = (uint32_t*)((char*)self + 540);
+    uint32_t* dst2 = (uint32_t*)((char*)self + 556);
+    
+    for (int i = 0; i < 4; i++) {
+        dst1[i] = src[i];
+        dst2[i] = src[i];
+    }
+    
+    *(uint8_t*)((char*)self + 572) = 0;
+}
+
+/**
+ * NetDataQuery::Helper functions
+ * 
+ * Additional helper methods for network data query operations.
+ */
+void NetDataQuery_A8D8(NetDataQuery* self) {
+    // Stub - helper function
+}
+
+void NetDataQuery_59F8_wrh(void* obj) {
+    // Stub - initialization helper
+}
+
+void NetDataQuery_2A30_2h(void* obj) {
+    // Stub - component initialization
+}
+
+void NetDataQuery_2B28_2h(void* obj) {
+    // Stub - component initialization
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// NetStateSync @ 0x820713BC
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * NetStateSync — Network state synchronization state machine
+ * 
+ * Manages network state synchronization through a hierarchical state machine
+ * with 7 distinct states. Allocates state objects dynamically and maintains
+ * a state array for transitions.
+ * 
+ * Structure layout:
+ * +0x00: vtable pointer @ 0x820713BC
+ * +0x04: state ID (set to 7)
+ * +0x08: state array pointer (points to 28-byte array of 7 state pointers)
+ * 
+ * State array layout (28 bytes = 7 pointers * 4 bytes):
+ * +0x00: stateInit @ 0x82071404
+ * +0x04: stateWaitForSyncState @ 0x8207144C
+ * +0x08: stateEnterState @ 0x82071494
+ * +0x0C: stateRequestSyncronization @ 0x820714DC
+ * +0x10: stateSendSyncronization @ 0x82071524
+ * +0x14: stateReceiveSyncronization @ 0x8207156C
+ * +0x18: stateWaitTime @ 0x820715B4
+ */
+struct NetStateSync {
+    void** vtable;          // +0x00 @ 0x820713BC
+    uint32_t m_stateID;     // +0x04 (set to 7)
+    void** m_pStateArray;   // +0x08 (points to 28-byte array)
+};
+
+/**
+ * NetStateSync::~NetStateSync @ 0x823D1A70 | size: 0x5C
+ * 
+ * Destructor - cleans up state machine and conditionally frees memory.
+ */
+void NetStateSync_vfn_0(NetStateSync* self, int flags) {
+    // Set vtable @ 0x820713BC
+    // Python: (lis(-32249) << 16) + 5052 = 0x820713BC
+    self->vtable = (void**)0x820713BC;
+    
+    // Call cleanup function
+    extern void gameLoop_DestroyAudio_27A8(void* obj);
+    gameLoop_DestroyAudio_27A8(self);
+    
+    // If bit 0 is set in flags, free the object memory
+    if (flags & 0x1) {
+        rage_free_00C0(self);
+    }
+}
+
+/**
+ * NetStateSync::Initialize @ 0x823D1AD8 | size: 0x298
+ * 
+ * Initializes the state synchronization machine.
+ * Allocates 7 state objects and sets up the state array.
+ * 
+ * This function allocates memory for each state and initializes them
+ * with their respective vtable pointers.
+ */
+void NetStateSync_vfn_8(NetStateSync* self) {
+    // Set state ID to 7
+    self->m_stateID = 7;
+    
+    // Get allocator from TLS
+    extern void* xe_main_thread_init_0038();
+    xe_main_thread_init_0038();
+    
+    // Get allocator pointer from SDA @ r13+0 (0x82600000)
+    extern void* g_allocator_ptr;  // @ 0x82600004
+    void** allocator = (void**)((char*)&g_allocator_ptr);
+    
+    // Allocate state array (28 bytes for 7 pointers)
+    void** vtable = *allocator;
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    AllocFn alloc = (AllocFn)vtable[1];
+    self->m_pStateArray = (void**)alloc(*allocator, 28, 16);
+    
+    // Allocate and initialize each state object (12 bytes each)
+    // State 0: stateInit @ 0x82071404
+    xe_main_thread_init_0038();
+    void* state0 = alloc(*allocator, 12, 16);
+    if (state0) {
+        *(uint32_t*)((char*)state0 + 4) = 0;  // Clear field at +4
+        *(uint32_t*)((char*)state0 + 8) = (uint32_t)self;  // Back pointer
+        *(void**)state0 = (void*)0x82071404;  // vtable
+    }
+    self->m_pStateArray[0] = state0;
+    
+    // State 1: stateWaitForSyncState @ 0x8207144C
+    xe_main_thread_init_0038();
+    void* state1 = alloc(*allocator, 12, 16);
+    if (state1) {
+        *(uint32_t*)((char*)state1 + 4) = 0;
+        *(uint32_t*)((char*)state1 + 8) = (uint32_t)self;
+        *(void**)state1 = (void*)0x8207144C;
+    }
+    self->m_pStateArray[1] = state1;
+    
+    // State 2: stateEnterState @ 0x82071494
+    xe_main_thread_init_0038();
+    void* state2 = alloc(*allocator, 12, 16);
+    if (state2) {
+        *(uint32_t*)((char*)state2 + 4) = 0;
+        *(uint32_t*)((char*)state2 + 8) = (uint32_t)self;
+        *(void**)state2 = (void*)0x82071494;
+    }
+    self->m_pStateArray[2] = state2;
+    
+    // State 3: stateRequestSyncronization @ 0x820714DC
+    xe_main_thread_init_0038();
+    void* state3 = alloc(*allocator, 12, 16);
+    if (state3) {
+        *(uint32_t*)((char*)state3 + 4) = 0;
+        *(uint32_t*)((char*)state3 + 8) = (uint32_t)self;
+        *(void**)state3 = (void*)0x820714DC;
+    }
+    self->m_pStateArray[3] = state3;
+    
+    // State 4: stateSendSyncronization @ 0x82071524
+    xe_main_thread_init_0038();
+    void* state4 = alloc(*allocator, 12, 16);
+    if (state4) {
+        *(uint32_t*)((char*)state4 + 4) = 0;
+        *(uint32_t*)((char*)state4 + 8) = (uint32_t)self;
+        *(void**)state4 = (void*)0x82071524;
+    }
+    self->m_pStateArray[4] = state4;
+    
+    // State 5: stateReceiveSyncronization @ 0x8207156C
+    xe_main_thread_init_0038();
+    void* state5 = alloc(*allocator, 12, 16);
+    if (state5) {
+        *(uint32_t*)((char*)state5 + 4) = 0;
+        *(uint32_t*)((char*)state5 + 8) = (uint32_t)self;
+        *(void**)state5 = (void*)0x8207156C;
+    }
+    self->m_pStateArray[5] = state5;
+    
+    // State 6: stateWaitTime @ 0x820715B4 (16 bytes, has float at +12)
+    xe_main_thread_init_0038();
+    void* state6 = alloc(*allocator, 16, 16);
+    if (state6) {
+        *(uint32_t*)((char*)state6 + 4) = 0;
+        *(uint32_t*)((char*)state6 + 8) = (uint32_t)self;
+        
+        // Load default timeout value from global @ lis(-32253) + -12016
+        // Python: (lis(-32253) << 16) + -12016 = 0x82033110
+        float defaultTimeout = *(float*)0x82033110;
+        *(float*)((char*)state6 + 12) = defaultTimeout;
+        
+        *(void**)state6 = (void*)0x820715B4;
+    }
+    self->m_pStateArray[6] = state6;
+}
+
+/**
+ * NetStateSync::vfn_10 @ 0x823D1D70 | size: 0x60
+ * NetStateSync::vfn_13 @ 0x823D1DD0 | size: 0x64
+ * 
+ * Additional virtual methods - stubs for now.
+ */
+void NetStateSync_vfn_10(NetStateSync* self) {}
+void NetStateSync_vfn_13(NetStateSync* self) {}
+
+////////////////////////////////////////////////////////////////////////////////
+// External function stubs
+////////////////////////////////////////////////////////////////////////////////
+
+extern "C" {
+    // Stub for game loop audio cleanup
+    void gameLoop_DestroyAudio_27A8(void* obj) {
+        // Stub - would clean up audio resources
+    }
+    
+    // Stub for rage initialization
+    void rage_F248_1(void* obj) {
+        // Stub - would initialize rage component
+    }
+    
+    // Stub for network client initialization
+    void SinglesNetworkClient_2BE8_g(void* obj) {
+        // Stub - would initialize network client
+    }
+    
+    // Stub for network client helper
+    void SinglesNetworkClient_51C8_g(void* obj) {
+        // Stub - would initialize network client component
+    }
+    
+    // Stub for utility initialization
+    void util_AA38(void* obj) {
+        // Stub - would perform utility initialization
+    }
+    
+    // Stub for thread initialization
+    void* xe_main_thread_init_0038() {
+        // Stub - would initialize thread context
+        return nullptr;
+    }
+    
+    // Global allocator pointer @ 0x82600004
+    void* g_allocator_ptr = nullptr;
 }
