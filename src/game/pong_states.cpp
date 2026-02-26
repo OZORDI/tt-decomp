@@ -1,12 +1,16 @@
 /**
- * pong_states.cpp — Credits screen state/context + data classes
+ * pong_states.cpp — HSM state/context classes for UI screens
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  *
- * Covers 4 classes:
+ * Covers 8 classes:
  *   creditsData        — serialisable data container for credits roll assets
  *   creditsSettings    — serialisable settings for credits display params
  *   pongCreditsContext — HSM context managing the credits UI page group
  *   pongCreditsState   — HSM leaf state that drives the credits sequence
+ *   pongLegalsContext  — HSM context for the legal/EULA display screen
+ *   pongLegalsState    — HSM leaf state for the legals sequence
+ *   pongDialogContext  — HSM context for dialog popups (MI layout)
+ *   pongDialogState    — HSM leaf state for dialog popup sequences
  *
  * Architecture:
  *   creditsData / creditsSettings are pure data objects loaded from disk
@@ -14,12 +18,12 @@
  *   expose IsSupported(assetId) and RegisterFields() virtuals common to
  *   all Rockstar data assets.
  *
- *   pongCreditsContext is a rage::hsmContext subclass (multiple inheritance —
- *   it embeds a secondary base vtable at +0x14).  It owns the UI page-group
- *   pointer and an "active" flag.
+ *   The Context classes are rage::hsmContext subclasses (some with
+ *   multiple inheritance, embedding a secondary base vtable at +0x14).
+ *   They own UI page-group pointers and state flags.
  *
- *   pongCreditsState inherits from pongAttractState and holds a back-pointer
- *   to its context.  The state machine calls Enter/Exit/GetContext in the
+ *   The State classes inherit from pongAttractState and hold a back-pointer
+ *   to their context.  The state machine calls Enter/Exit/GetContext in the
  *   usual HSM pattern.
  */
 
@@ -666,4 +670,703 @@ void pongCreditsState_9D68_h(pongCreditsContext* ctx, uint8_t visible) {
     } else {
         ctx->m_bActive = 0;
     }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// pongLegalsContext  [vtable @ 0x8205F8FC]
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * pongLegalsContext::~pongLegalsContext  @ 0x82310ED0  |  size: 0x8C
+ *
+ * Destructor.  If a page-group sub-object exists at +0x14, destroys it
+ * via its virtual destructor (slot 0 with shouldFree=1), then resets
+ * the primary vtable to the base class and conditionally frees self.
+ */
+pongLegalsContext::~pongLegalsContext(bool shouldFree) {
+    // Install pongLegalsContext vtable (for correct dtor dispatch)
+    // vtable @ 0x8205F8FC
+
+    // Destroy page group sub-object if present
+    if (m_pPageGroup != nullptr) {
+        // VCALL slot 0 (destructor) with shouldFree = 1
+        typedef void (*DtorFn)(void*, bool);
+        DtorFn dtor = *(DtorFn*)(*(uint32_t*)m_pPageGroup);
+        dtor(m_pPageGroup, true);
+        m_pPageGroup = nullptr;
+    }
+
+    // Restore base class vtable @ 0x820276C4
+    // (base class does its own cleanup)
+
+    if (shouldFree) {
+        rage_free(this);
+    }
+}
+
+/**
+ * pongLegalsContext::CanTransition  @ 0x82310F60  |  size: 0x54
+ *
+ * Slot 12.  Destroys the page-group sub-object (if any) and returns
+ * true, allowing the HSM to proceed with the transition.
+ */
+bool pongLegalsContext::CanTransition() {
+    if (m_pPageGroup != nullptr) {
+        // Destroy via virtual dtor with shouldFree=1
+        typedef void (*DtorFn)(void*, bool);
+        DtorFn dtor = *(DtorFn*)(*(uint32_t*)m_pPageGroup);
+        dtor(m_pPageGroup, true);
+        m_pPageGroup = nullptr;
+    }
+    return true;
+}
+
+/**
+ * pongLegalsContext_InputPoll  @ 0x82311098  |  size: 0x104
+ *
+ * Helper called by Update().  Polls all 4 controller ports for any
+ * button input.  If any button is pressed on any controller, performs
+ * additional state checks (loads page group, queries button state,
+ * looks up "SAVING" string, and notifies the page group).
+ * Sets m_bInputDetected to 1 when input is found.
+ *
+ * The input check examines three byte-string regions per controller
+ * at offsets +8, +16, and +48 from each controller's 808-byte record.
+ */
+static void pongLegalsContext_InputPoll(pongLegalsContext* ctx) {
+    if (ctx->m_bInputDetected != 0) {
+        return;  // Already detected input
+    }
+
+    // Controller array base: loaded from g_loop_obj_ptr (+808 offset)
+    extern uint32_t g_controllerArrayBase;   // @ 0x8271A31C → load → +808
+    uint32_t* controllerBase = (uint32_t*)(*(uint32_t*)(&g_controllerArrayBase) + 808);
+
+    for (int i = 0; i < 4; ++i) {
+        uint32_t controllerAddr = controllerBase[i * (808 / 4)];
+        // Check three button regions at +8, +16, +48
+        bool btn1 = pg_FFF8_g((uint8_t*)controllerAddr + 8);
+        if (btn1) goto input_found;
+
+        bool btn2 = pg_FFF8_g((uint8_t*)controllerAddr + 16);
+        if (btn2) goto input_found;
+
+        bool btn3 = pg_FFF8_g((uint8_t*)controllerAddr + 48);
+        if (btn3) goto input_found;
+    }
+    return;  // No input detected on any controller
+
+input_found:
+    {
+        void* pageGroup = ctx->m_pPageGroup;
+        uint8_t buttonState = SinglesNetworkClient_B2A8_g(pageGroup);
+
+        // Check HSM manager's context pointer (+556)
+        extern void* g_hsmMgrPtr;   // @ 0x825EAB30 (g_loop_obj_ptr)
+        void* hsmMgr = *(void**)(*(uint32_t*)&g_hsmMgrPtr + (-21712 & 0xFFFF));
+        // TODO: verify — complex HSM manager field check at +556 and flag at 0x826065EB
+
+        // Look up "SAVING" in the page group's text table
+        extern const char* k_SAVING;   // @ 0x8205DFB0
+        void* textEntry = SinglesNetworkClient_9318_g(
+            *(uint32_t*)((uint8_t*)pageGroup + 92), k_SAVING);
+
+        uint32_t savingState = 1;
+        if (textEntry != nullptr) {
+            *(uint32_t*)textEntry = 1;
+            *(uint32_t*)((uint8_t*)textEntry + 4) = 3;
+        }
+
+        if ((buttonState & 0xFF) != 0) {
+            SinglesNetworkClient_B320_g(pageGroup);
+        }
+
+        ctx->m_bInputDetected = 1;
+    }
+}
+
+/**
+ * pongLegalsContext::Update  @ 0x82310FB8  |  size: 0xB4
+ *
+ * Slot 16.  Main update for the legals screen.  If the page group exists:
+ *   1. Polls all controllers for input via the InputPoll helper.
+ *   2. Calls the page group's Update (vtable slot 2).
+ *   3. Checks whether the user pressed a button (via B2A8 / B1E8).
+ *   4. Looks for a "SAVING" text entry; if found and has positive value,
+ *      transitions to state 6 (attract/main menu).
+ */
+void pongLegalsContext::Update() {
+    if (m_pPageGroup == nullptr) {
+        return;
+    }
+
+    // Poll all controllers for input
+    pongLegalsContext_InputPoll(this);
+
+    // Call page group Update (vtable slot 2)
+    typedef void (*UpdateFn)(void*);
+    UpdateFn updateFn = (UpdateFn)(*(uint32_t*)(*(uint32_t*)m_pPageGroup + 8));
+    updateFn(m_pPageGroup);
+
+    // Now working with the page group directly
+    void* pg = m_pPageGroup;
+    int32_t resultValue = 0;
+
+    // Check button state
+    uint8_t buttonState = SinglesNetworkClient_B2A8_g(pg);
+
+    // Process input
+    SinglesNetworkClient_B1E8_g(pg);
+
+    // Look up "SAVING" string in page group
+    extern const char* k_SAVING;   // @ 0x8205DFB8
+    void* savingEntry = SinglesNetworkClient_9280_g(pg, k_SAVING);
+    if (savingEntry != nullptr) {
+        resultValue = SinglesNetworkClient_A5C8_g(savingEntry);
+    }
+
+    // If button was pressed, notify
+    if ((buttonState & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(pg);
+    }
+
+    // If saving entry had a positive value, transition to state 6
+    if (resultValue > 0) {
+        extern void* g_hsmContextPtr;   // @ loaded from 0x825EAB30
+        hsmContext_SetNextState_2800(g_hsmContextPtr, 6);
+    }
+}
+
+/**
+ * pongLegalsContext::OnExit  @ 0x82311070  |  size: 0x24
+ *
+ * Slot 18.  If the page group exists, forwards to its vtable slot 6
+ * (Close/Hide) as a tail call.
+ */
+void pongLegalsContext::OnExit() {
+    if (m_pPageGroup == nullptr) {
+        return;
+    }
+    // VCALL slot 6 (byte offset 24) on page group — Close/Hide
+    typedef void (*CloseFn)(void*);
+    CloseFn closeFn = (CloseFn)(*(uint32_t*)(*(uint32_t*)m_pPageGroup + 24));
+    closeFn(m_pPageGroup);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// pongLegalsState  [vtable @ 0x8205F964]
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * pongLegalsState::GetContext  @ 0x82310EC0  |  size: 0xC
+ *
+ * Slot 13.  Returns the static state descriptor used by the HSM to
+ * identify this state type.
+ */
+void* pongLegalsState::GetContext() {
+    return (void*)0x8205F854;   // static descriptor in .rdata
+}
+
+/**
+ * pongLegalsState::Init  @ 0x823111A8  |  size: 0xD0
+ *
+ * Slot 14.  Initialises the legals state:
+ *   1. Allocates a pongLegalsContext (28 bytes, 16-byte aligned).
+ *   2. Zeros all fields, sets its vtable to 0x8205F8FC.
+ *   3. Stores the context in m_pContext (this+8).
+ *   4. Allocates a 240-byte page group sub-object via game_9358.
+ *   5. Stores the page group in the context's m_pPageGroup (+20).
+ *   6. Calls SinglesNetworkClient_9510_g to register.
+ */
+void pongLegalsState::Init() {
+    xe_main_thread_init_0038();
+
+    // Allocate pongLegalsContext (28 bytes, 16-byte aligned)
+    extern void* g_mainAllocTable;   // SDA @ 0x82600000
+    uint32_t* allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
+    void* allocator = (void*)allocBase[1];   // [+4 = allocator pointer]
+    void* ctxMem = VCALL_ALLOC(allocator, /*size=*/28, /*align=*/16);
+
+    pongLegalsContext* ctx = nullptr;
+    if (ctxMem != nullptr) {
+        ctx = (pongLegalsContext*)ctxMem;
+        // Zero all fields
+        ctx->m_baseData[0] = 0;   // +0x04
+        ctx->m_baseData[1] = 0;   // +0x08
+        ctx->m_baseData[2] = 0;   // +0x0C
+        ctx->m_baseData[3] = 0;   // +0x10
+        ctx->m_pPageGroup = nullptr;       // +0x14
+        ctx->m_bInputDetected = 0;         // +0x18
+        // Set vtable to pongLegalsContext @ 0x8205F8FC
+        *(void**)ctx = (void*)0x8205F8FC;
+    }
+
+    m_pContext = ctx;
+
+    // Debug log
+    nop_8240E6D0("pongLegalsState::Init - context");   // @ 0x8205F864
+
+    // Allocate page-group sub-object (240 bytes, 16-byte aligned)
+    xe_main_thread_init_0038();
+    allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
+    allocator = (void*)allocBase[1];
+    void* pgMem = VCALL_ALLOC(allocator, /*size=*/240, /*align=*/16);
+
+    void* pageGroup = nullptr;
+    if (pgMem != nullptr) {
+        pageGroup = game_9358(pgMem);   // construct page group
+    }
+
+    // Store page group in context (+20)
+    if (ctx != nullptr) {
+        ctx->m_pPageGroup = pageGroup;
+    }
+
+    // Register with the state manager
+    SinglesNetworkClient_9510_g(pageGroup);
+
+    nop_8240E6D0("pongLegalsState::Init - done");   // @ 0x8205F880
+}
+
+/**
+ * pongLegalsState::OnEnter  @ 0x82311280  |  size: 0xD0
+ *
+ * Slot 11.  State entry handler.
+ *
+ *   prevState == 3  → Coming from boot/logos: check HSM context for
+ *                     active session, set up notification, clear context
+ *                     active flag, show legals page group, set credits
+ *                     roll mode = 2 and store context.
+ *   other           → Generic: post transition via game_28B8.
+ */
+void pongLegalsState::OnEnter(int prevStateIdx) {
+    if (prevStateIdx != 3) {
+        // Generic previous state: post a transition request
+        void* transReq = game_28B8(m_pHSMContext, prevStateIdx);
+        nop_8240E6D0("pongLegalsState::OnEnter generic", transReq, prevStateIdx);
+        return;
+    }
+
+    // Coming from state 3 (logos)
+    // Check HSM manager session context
+    extern void* g_hsmMgrPtr;   // loaded from 0x825EAB30
+    void* hsmMgr = *(void**)((uint8_t*)g_hsmMgrPtr + (-21712 & 0xFFFF));
+    // TODO: verify exact address computation
+    void* sessionCtx = *(void**)((uint8_t*)hsmMgr + 556);
+
+    if (sessionCtx != nullptr) {
+        uint8_t sessionActive = *(uint8_t*)((uint8_t*)sessionCtx + 4);
+        if (sessionActive == 0) {
+            // Set up notification: struct on stack {0, vtable_ptr, 1, 0}
+            // Calls pg_0708_g to queue HSM notification
+            // @ 0x82300000 area vtable for notification
+            pg_0708_g(sessionCtx);
+        }
+    }
+
+    // Access context
+    pongLegalsContext* ctx = m_pContext;
+
+    // Clear input-detected flag
+    ctx->m_bInputDetected = 0;
+
+    // If page group exists, call SetVisible (vtable slot 5)
+    if (ctx->m_pPageGroup != nullptr) {
+        typedef void (*SetVisibleFn)(void*);
+        SetVisibleFn fn = (SetVisibleFn)(*(uint32_t*)(*(uint32_t*)ctx->m_pPageGroup + 20));
+        fn(ctx->m_pPageGroup);
+    }
+
+    // Set credits roll mode = 2 and store context pointer
+    extern void* g_creditsRoll;   // @ 0x8271A358
+    *(uint32_t*)((uint8_t*)g_creditsRoll + 52) = 2;
+    *(uint32_t*)((uint8_t*)g_creditsRoll + 56) = (uint32_t)(uintptr_t)m_pContext;
+}
+
+/**
+ * pongLegalsState::OnExit  @ 0x82311368  |  size: 0x54
+ *
+ * Slot 12.  State exit handler.
+ *
+ *   nextState == 6  → Leaving to attract/frontend: call game_AAF8
+ *                     on the credits roll with (0, 0).
+ *   other           → Post transition via game_28B8 + log.
+ */
+void pongLegalsState::OnExit(int nextStateIdx) {
+    if (nextStateIdx != 6) {
+        // Generic next state
+        void* transReq = game_28B8(m_pHSMContext, nextStateIdx);
+        nop_8240E6D0("pongLegalsState::OnExit generic", transReq, nextStateIdx);
+        return;
+    }
+
+    // Leaving to state 6 (attract)
+    extern void* g_creditsRoll;   // @ 0x8271A358
+    game_AAF8(g_creditsRoll, 0, 0);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// pongDialogContext  [vtable @ 0x8205F31C / secondary @ 0x8205F384]
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * pongDialogContext::~pongDialogContext  @ 0x8230C7A0  |  size: 0x68
+ *
+ * Destructor.  Resets the secondary vtable at +0x14 to the derived
+ * value (0x8205F384), clears the page-group pointer, then restores
+ * both vtable pointers to their base-class values before optionally
+ * freeing the object.
+ */
+pongDialogContext::~pongDialogContext(bool shouldFree) {
+    // Set derived secondary vtable at +0x14
+    *(void**)((uint8_t*)this + 20) = (void*)0x8205F384;
+    // Clear page-group pointer
+    *(uint32_t*)((uint8_t*)this + 24) = 0;
+    // Restore base secondary vtable
+    *(void**)((uint8_t*)this + 20) = (void*)0x82027B34;
+    // Restore base primary vtable
+    *(void**)this = (void*)0x820276C4;
+
+    if (shouldFree) {
+        rage_free(this);
+    }
+}
+
+/**
+ * pongDialogContext_secondaryBase_dtor  (MI thunk)  @ 0x8230CF70
+ *
+ * The secondary vtable slot 0 adjusts `this` by -20 bytes to recover
+ * the true `this` pointer, then delegates to the primary destructor.
+ */
+static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
+    pongDialogContext* self = (pongDialogContext*)((uint8_t*)base - 20);
+    self->~pongDialogContext(shouldFree);
+}
+
+/**
+ * pongDialogContext::Register  @ 0x8230C808  |  size: 0x94
+ *
+ * Slot 23.  Allocates and initialises the dialog page group (1508 bytes),
+ * then registers this context with the dialog system.
+ *
+ * Steps:
+ *   1. Asserts main thread via xe_main_thread_init_0038.
+ *   2. Allocates 1508 bytes (16-byte aligned) from the main allocator.
+ *   3. Constructs the page group via game_1620.
+ *   4. Stores the result in m_pPageGroup (+24).
+ *   5. Loads the dialog manager name from g_pDialogRollObj (+50).
+ *   6. Registers this context via rage_ADF8 with category 204.
+ *   7. Stores the page group in g_dialogPageGroup global.
+ */
+void pongDialogContext::Register() {
+    nop_8240E6D0("pongDialogContext::Register enter");   // @ 0x8205F240
+
+    xe_main_thread_init_0038();
+
+    // Allocate dialog page group (1508 bytes, 16-byte aligned)
+    extern void* g_mainAllocTable;   // SDA @ 0x82600000
+    uint32_t* allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
+    void* allocator = (void*)allocBase[1];
+    void* pgMem = VCALL_ALLOC(allocator, /*size=*/1508, /*align=*/16);
+
+    void* pageGroup = nullptr;
+    if (pgMem != nullptr) {
+        pageGroup = game_1620(pgMem);   // construct dialog page group
+    }
+    m_pPageGroup = pageGroup;
+
+    // Register with the dialog manager
+    extern void* g_pDialogRollObj;   // @ 0x82606514  [.data, 4 bytes]
+    const char* nameStr = (const char*)((uint8_t*)g_pDialogRollObj + 50);
+    rage_ADF8(this, /*category=*/204, nameStr);
+
+    // Store page group in global
+    extern void* g_dialogPageGroup;   // @ 0x82606628  [.data, 4 bytes]
+    g_dialogPageGroup = m_pPageGroup;
+
+    nop_8240E6D0("pongDialogContext::Register done");   // @ 0x8205F258
+}
+
+/**
+ * pongDialogContext::Update  @ 0x8230C8A8  |  size: 0x70
+ *
+ * Slot 16.  Checks whether the dialog is ready to advance.
+ * If the page group exists:
+ *   1. Calls Open (vtable slot 2) on the page group.
+ *   2. Calls SinglesNetworkClient_2470_g to check if dialog completed.
+ *   3. If completed, transitions to m_nextStateIdx via the HSM manager.
+ */
+void pongDialogContext::Update() {
+    if (m_pPageGroup == nullptr) {
+        return;
+    }
+
+    // Open/present the dialog page group (vtable slot 2)
+    typedef void (*OpenFn)(void*);
+    OpenFn openFn = (OpenFn)(*(uint32_t*)(*(uint32_t*)m_pPageGroup + 8));
+    openFn(m_pPageGroup);
+
+    // Check if the dialog has finished
+    uint8_t isReady = SinglesNetworkClient_2470_g(m_pPageGroup);
+    if ((isReady & 0xFF) == 0) {
+        return;   // Not yet ready
+    }
+
+    // Transition to the stored next state
+    extern void* g_hsmContextPtr;   // loaded from 0x825EAB30 area
+    hsmContext_SetNextState_2800(g_hsmContextPtr, m_nextStateIdx);
+}
+
+/**
+ * pongDialogContext::OnExit  @ 0x8230C918  |  size: 0x5C
+ *
+ * Slot 18.  Called when leaving the dialog context.
+ * If the page group exists:
+ *   - If m_bSkipClose is set: just clear the flag (don't close).
+ *   - Otherwise: call Close (vtable slot 6) on the page group, then clear flag.
+ * If no page group: just clear the skip-close flag.
+ */
+void pongDialogContext::OnExit() {
+    if (m_pPageGroup != nullptr) {
+        if (m_bSkipClose != 0) {
+            // Suppress close — just clear the flag
+            m_bSkipClose = 0;
+            return;
+        }
+        // Call Close (vtable slot 6) on the page group
+        typedef void (*CloseFn)(void*);
+        CloseFn closeFn = (CloseFn)(*(uint32_t*)(*(uint32_t*)m_pPageGroup + 24));
+        closeFn(m_pPageGroup);
+        m_bSkipClose = 0;
+        return;
+    }
+
+    m_bSkipClose = 0;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// pongDialogState  [vtable @ 0x8205F2D4]
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * pongDialogState::~pongDialogState  @ 0x8230CC20  |  size: 0x68
+ *
+ * Destructor.  Sets the derived vtable, calls Teardown() to destroy
+ * the dialog context, restores the base vtable, then conditionally
+ * frees the object.
+ */
+pongDialogState::~pongDialogState(bool shouldFree) {
+    // Install pongDialogState vtable @ 0x8205F2D4
+    *(void**)this = (void*)0x8205F2D4;
+
+    // Destroy context via Teardown
+    Teardown();
+
+    // Restore base vtable @ 0x820276C4
+    *(void**)this = (void*)0x820276C4;
+
+    if (shouldFree) {
+        rage_free(this);
+    }
+}
+
+/**
+ * pongDialogState::ProcessInput  @ 0x8230CC88  |  size: 0x18
+ *
+ * Slot 7.  Forwards to the dialog context's sub-object vtable slot 4
+ * (ProcessInput/Update on the dialog UI) with r4=0.
+ */
+void pongDialogState::ProcessInput() {
+    void* ctx = *(void**)((uint8_t*)this + 12);   // m_pContext
+    // Tail call: context's vtable slot 4 (byte +16)
+    typedef void (*ProcessFn)(void*, int);
+    ProcessFn fn = (ProcessFn)(*(uint32_t*)(*(uint32_t*)ctx + 16));
+    fn(ctx, 0);
+}
+
+/**
+ * pongDialogState::Teardown  @ 0x8230CD60  |  size: 0x58
+ *
+ * Slot 8.  Tears down the dialog context:
+ *   1. If m_pContext is non-null, calls its vtable slot 5 (Shutdown).
+ *   2. Then calls the context's destructor with shouldFree=1.
+ *   3. Nulls out m_pContext.
+ */
+void pongDialogState::Teardown() {
+    if (m_pContext == nullptr) {
+        return;
+    }
+
+    // Call Shutdown (vtable slot 5) on the context
+    typedef void (*ShutdownFn)(void*);
+    ShutdownFn shutdownFn = (ShutdownFn)(*(uint32_t*)(*(uint32_t*)m_pContext + 20));
+    shutdownFn(m_pContext);
+
+    // Destroy context with shouldFree=1
+    if (m_pContext != nullptr) {
+        typedef void (*DtorFn)(void*, bool);
+        DtorFn dtor = *(DtorFn*)(*(uint32_t*)m_pContext);
+        dtor(m_pContext, true);
+    }
+
+    m_pContext = nullptr;
+}
+
+/**
+ * pongDialogState::GetContext  @ 0x8230C790  |  size: 0xC
+ *
+ * Slot 13.  Returns the static state descriptor for dialog states.
+ */
+void* pongDialogState::GetContext() {
+    return (void*)0x8205F230;   // static descriptor in .rdata
+}
+
+/**
+ * pongDialogState::Init  @ 0x8230CCA0  |  size: 0x98
+ *
+ * Slot 14.  Initialises the dialog state:
+ *   1. Allocates a pongDialogContext (36 bytes, 16-byte aligned).
+ *   2. Zeros all fields, sets up MI vtable pointers.
+ *   3. Sets m_nextStateIdx to -1 (no pending transition).
+ *   4. Stores the context in m_pContext (this+12).
+ *   5. Calls the context's Register (slot 23) to set up the page group.
+ */
+void pongDialogState::Init() {
+    xe_main_thread_init_0038();
+
+    // Allocate pongDialogContext (36 bytes, 16-byte aligned)
+    extern void* g_mainAllocTable;
+    uint32_t* allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
+    void* allocator = (void*)allocBase[1];
+    void* ctxMem = VCALL_ALLOC(allocator, /*size=*/36, /*align=*/16);
+
+    pongDialogContext* ctx = nullptr;
+    if (ctxMem != nullptr) {
+        ctx = (pongDialogContext*)ctxMem;
+        // Zero base class fields
+        *(uint32_t*)((uint8_t*)ctx + 4)  = 0;
+        *(uint32_t*)((uint8_t*)ctx + 8)  = 0;
+        *(uint32_t*)((uint8_t*)ctx + 12) = 0;
+        *(uint32_t*)((uint8_t*)ctx + 16) = 0;
+        // Set MI vtable pointers
+        *(void**)((uint8_t*)ctx + 20) = (void*)0x8205F384;   // secondary vtable
+        *(void**)ctx = (void*)0x8205F31C;                     // primary vtable (overwrites secondary init)
+        // Note: secondary was written then overwritten by primary — PPC instruction scheduling
+        // The final state has: +0 = 0x8205F31C, +20 = 0x8205F384
+        *(void**)((uint8_t*)ctx + 20) = (void*)0x8205F384;   // re-apply secondary
+        // Init fields
+        ctx->m_pPageGroup = nullptr;         // +0x18
+        ctx->m_nextStateIdx = -1;            // +0x1C
+        ctx->m_bSkipClose = 0;               // +0x20
+    }
+
+    m_pContext = ctx;
+
+    // Register the context (calls slot 23 → allocates page group)
+    if (m_pContext != nullptr) {
+        m_pContext->Register();
+    }
+}
+
+/**
+ * pongDialogState::OnEnter  @ 0x8230CDD0  |  size: 0x100
+ *
+ * Slot 11.  State entry handler.  Actions depend on the previous state:
+ *
+ *   prevState in [5..11] or 13 → "Dialog states": saves the current HSM
+ *       overlay flag, forces it to 1, stores prevStateIdx in the context's
+ *       m_nextStateIdx, and adds the context to the credits-roll entry list.
+ *       If overlay was previously off, calls SetVisible on the page group
+ *       and sets m_bSkipClose.
+ *
+ *   other → Generic: posts a transition request via game_28B8.
+ */
+void pongDialogState::OnEnter(int prevStateIdx) {
+    pg_E6E0(2051 /*DIALOG_ENTER_MSG*/, 64, 0, 0);
+
+    // Save and set HSM overlay flag
+    extern void* g_hsmMgrPtr;   // loaded from address computation
+    void* hsmMgr = *(void**)&g_hsmMgrPtr;   // TODO: verify exact load path
+    uint8_t prevOverlay = *(uint8_t*)((uint8_t*)hsmMgr + 493);
+    m_savedOverlay = prevOverlay;
+    if (prevOverlay == 0) {
+        *(uint8_t*)((uint8_t*)hsmMgr + 493) = 1;
+    }
+
+    // Store prevStateIdx in context's m_nextStateIdx
+    if (m_pContext != nullptr) {
+        m_pContext->m_nextStateIdx = prevStateIdx;
+    }
+
+    // Check if this is a dialog-type state (5..11 or 13)
+    bool isDialogState = (prevStateIdx >= 5 && prevStateIdx <= 11) ||
+                         (prevStateIdx == 13);
+
+    if (isDialogState) {
+        // Add this context to the credits-roll entry list
+        extern void* g_creditsRoll;   // @ 0x8271A358
+        uint32_t count = *(uint32_t*)((uint8_t*)g_creditsRoll + 48);
+        count += 1;
+        *(uint32_t*)((uint8_t*)g_creditsRoll + 48) = count;
+        uint32_t* entryArray = *(uint32_t**)((uint8_t*)g_creditsRoll + 44);
+        entryArray[count - 1] = (uint32_t)(uintptr_t)m_pContext;
+
+        // Notify of new count
+        game_AD40(g_creditsRoll, count);
+
+        // If overlay was not previously set, show the page group
+        if (m_savedOverlay == 0) {
+            pongDialogContext* ctx = m_pContext;
+            if (ctx->m_pPageGroup != nullptr) {
+                // Call SetVisible (vtable slot 5)
+                typedef void (*SetVisibleFn)(void*);
+                SetVisibleFn fn = (SetVisibleFn)(*(uint32_t*)(*(uint32_t*)ctx->m_pPageGroup + 20));
+                fn(ctx->m_pPageGroup);
+            }
+            ctx->m_bSkipClose = 1;
+        }
+        return;
+    }
+
+    // Generic previous state: post transition
+    void* transReq = game_28B8(m_pHSMContext, prevStateIdx);
+    nop_8240E6D0("pongDialogState::OnEnter generic", transReq, prevStateIdx);
+}
+
+/**
+ * pongDialogState::OnExit  @ 0x8230CED0  |  size: 0x9C
+ *
+ * Slot 12.  State exit handler.
+ *   - Posts DIALOG_EXIT_MSG.
+ *   - If saved overlay was 0, restores HSM overlay to 0.
+ *   - If nextState in [5..11] or 13: calls game_AAF8 on credits roll.
+ *   - Otherwise: posts generic transition via game_28B8.
+ */
+void pongDialogState::OnExit(int nextStateIdx) {
+    pg_E6E0(2052 /*DIALOG_EXIT_MSG*/, 64, 0, 0);
+
+    // Restore HSM overlay if we changed it
+    if (m_savedOverlay == 0) {
+        extern void* g_hsmMgrPtr;
+        void* hsmMgr = *(void**)&g_hsmMgrPtr;
+        *(uint8_t*)((uint8_t*)hsmMgr + 493) = 0;
+    }
+
+    // Check if this is a dialog-type state
+    bool isDialogState = (nextStateIdx >= 5 && nextStateIdx <= 11) ||
+                         (nextStateIdx == 13);
+
+    if (isDialogState) {
+        extern void* g_creditsRoll;
+        game_AAF8(g_creditsRoll, 0, 0);
+        return;
+    }
+
+    // Generic next state
+    void* transReq = game_28B8(m_pHSMContext, nextStateIdx);
+    nop_8240E6D0("pongDialogState::OnExit generic", transReq, nextStateIdx);
 }

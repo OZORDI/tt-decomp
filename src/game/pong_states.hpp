@@ -163,28 +163,56 @@ struct pongBootState {
 // pongCharViewContext and pongCharViewState moved to include/game/char_view.hpp
 // See that file for full implementation with proper inheritance and structure
 
+// ─────────────────────────────────────────────────────────────────────────────
+// pongDialogContext  [vtable @ 0x8205F31C / secondary @ 0x8205F384]
+//
+// HSM context for dialog popups (save confirmation, network errors, etc.).
+// Multiple-inheritance layout with primary + secondary base vtable.
+//
+// Layout (36 bytes):
+//   +0x00  primary vtable
+//   +0x04..+0x13  base class data (zeroed, 16 bytes)
+//   +0x14  secondary vtable ptr (@ 0x8205F384)
+//   +0x18  m_pPageGroup      — dialog UI page group (1508 bytes)
+//   +0x1C  m_nextStateIdx    — int, state to transition to (-1 = none)
+//   +0x20  m_bSkipClose      — byte, if set suppresses Close on exit
+// ─────────────────────────────────────────────────────────────────────────────
 struct pongDialogContext {
-    void**      vtable;           // +0x00
+    // +0x00: primary vtable (implicit)
+    uint8_t     _pad_primary[16];       // +0x04..+0x13  base class data
+    void*       _secondary_vtable;      // +0x14  MI secondary vtable
+    void*       m_pPageGroup;           // +0x18  dialog page group (null until Register)
+    int32_t     m_nextStateIdx;         // +0x1C  state to transition to (-1 init)
+    uint8_t     m_bSkipClose;           // +0x20  suppress Close on exit
 
-    // ── virtual methods ──
-    virtual ~pongDialogContext();                  // [0] @ 0x8230c7a0
-    virtual void vfn_16();  // [16] @ 0x8230c8a8
-    virtual void vfn_18();  // [18] @ 0x8230c918
-    virtual void vfn_23();  // [23] @ 0x8230c808
+    virtual ~pongDialogContext(bool shouldFree = false); // [0]  @ 0x8230C7A0
+    virtual void Update();              // [16] @ 0x8230C8A8  — checks dialog ready, transitions
+    virtual void OnExit();              // [18] @ 0x8230C918  — closes dialog page group
+    virtual void Register();            // [23] @ 0x8230C808  — allocates page group, registers
 };
 
-// ── pongDialogState  [vtable @ 0x8205F2D4] ──────────────────────────
-struct pongDialogState {
-    void**      vtable;           // +0x00
+// ─────────────────────────────────────────────────────────────────────────────
+// pongDialogState  [vtable @ 0x8205F2D4]
+//
+// HSM leaf state that drives dialog popup sequences.
+// Inherits from pongAttractState.
+//   +0x00  vtable ptr
+//   +0x04  m_pHSMContext    — rage::hsmContext*
+//   +0x08  m_savedOverlay   — byte: previous HSM overlay flag (restored on exit)
+//   +0x0C  m_pContext       — pongDialogContext* allocated in Init()
+// ─────────────────────────────────────────────────────────────────────────────
+struct pongDialogState : public pongAttractState {
+    void*               m_pHSMContext;   // +0x04  rage::hsmContext
+    uint8_t             m_savedOverlay;  // +0x08  saved overlay state
+    pongDialogContext*  m_pContext;      // +0x0C  the live dialog context
 
-    // ── virtual methods ──
-    virtual ~pongDialogState();                  // [0] @ 0x8230cc20
-    virtual void vfn_7();  // [7] @ 0x8230cc88
-    virtual void vfn_8();  // [8] @ 0x8230cd60
-    virtual void vfn_11();  // [11] @ 0x8230cdd0
-    virtual void vfn_12();  // [12] @ 0x8230ced0
-    virtual void vfn_13();  // [13] @ 0x8230c790
-    virtual void vfn_14();  // [14] @ 0x8230cca0
+    virtual ~pongDialogState(bool shouldFree = false);   // [0]  @ 0x8230CC20
+    virtual void ProcessInput();         // [7]  @ 0x8230CC88  — forwards to context slot 4
+    virtual void Teardown();             // [8]  @ 0x8230CD60  — destroys context
+    virtual void OnEnter(int prevStateIdx);  // [11] @ 0x8230CDD0
+    virtual void OnExit(int nextStateIdx);   // [12] @ 0x8230CED0
+    virtual void* GetContext();              // [13] @ 0x8230C790
+    virtual void Init();                     // [14] @ 0x8230CCA0
 };
 
 // ── pongFrontendContext  [2 vtables — template/MI] ──────────────────────────
@@ -233,26 +261,49 @@ struct pongLeaderboardContext {
     virtual void vfn_23();  // [23] @ 0x82322f30
 };
 
-// ── pongLegalsContext  [vtable @ 0x8205F8FC] ──────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// pongLegalsContext  [vtable @ 0x8205F8FC]
+//
+// HSM context for the legal/EULA display screen (shown after boot logos).
+// Owns a page-group sub-object for the legals UI and an "input detected"
+// flag.  Single vtable, no MI.
+//
+// Layout (28 bytes):
+//   +0x00  vtable pointer
+//   +0x04  base class data (20 bytes, zeroed)
+//   +0x14  m_pPageGroup  — UI page group for legals display (240 bytes)
+//   +0x18  m_bInputDetected — byte flag, set when any controller input seen
+// ─────────────────────────────────────────────────────────────────────────────
 struct pongLegalsContext {
-    void**      vtable;           // +0x00
+    // +0x00: vtable (implicit)
+    uint32_t    m_baseData[4];          // +0x04..+0x13  base class data (zeroed)
+    void*       m_field10;              // +0x10  base class data (zeroed)
+    void*       m_pPageGroup;           // +0x14  UI page group (null until Init)
+    uint8_t     m_bInputDetected;       // +0x18  input detected → ready to advance
 
-    // ── virtual methods ──
-    virtual ~pongLegalsContext();                  // [0] @ 0x82310ed0
-    virtual void vfn_12();  // [12] @ 0x82310f60
-    virtual void vfn_16();  // [16] @ 0x82310fb8
-    virtual void vfn_18();  // [18] @ 0x82311070
+    virtual ~pongLegalsContext(bool shouldFree = false); // [0]  @ 0x82310ED0
+    virtual bool CanTransition();       // [12] @ 0x82310F60  — destroys page group, returns true
+    virtual void Update();              // [16] @ 0x82310FB8  — polls input, transitions when ready
+    virtual void OnExit();              // [18] @ 0x82311070  — forwards Close to page group
 };
 
-// ── pongLegalsState  [vtable @ 0x8205F964] ──────────────────────────
-struct pongLegalsState {
-    void**      vtable;           // +0x00
+// ─────────────────────────────────────────────────────────────────────────────
+// pongLegalsState  [vtable @ 0x8205F964]
+//
+// HSM leaf state for the EULA/legal-notice screen.
+// Inherits from pongAttractState.
+//   +0x00  vtable ptr
+//   +0x04  m_pHSMContext — rage::hsmContext* for transitions
+//   +0x08  m_pContext    — pongLegalsContext* allocated in Init()
+// ─────────────────────────────────────────────────────────────────────────────
+struct pongLegalsState : public pongAttractState {
+    void*               m_pHSMContext;  // +0x04  rage::hsmContext
+    pongLegalsContext*  m_pContext;     // +0x08  the live legals context
 
-    // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x82311280
-    virtual void vfn_12();  // [12] @ 0x82311368
-    virtual void vfn_13();  // [13] @ 0x82310ec0
-    virtual void vfn_14();  // [14] @ 0x823111a8
+    virtual void OnEnter(int prevStateIdx);  // [11] @ 0x82311280
+    virtual void OnExit(int nextStateIdx);   // [12] @ 0x82311368
+    virtual void* GetContext();              // [13] @ 0x82310EC0
+    virtual void Init();                     // [14] @ 0x823111A8
 };
 
 // ── pongLoadingContext  [vtable @ 0x8205E8BC] ──────────────────────────
