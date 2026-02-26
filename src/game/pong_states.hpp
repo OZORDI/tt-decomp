@@ -288,24 +288,37 @@ struct pongLoadingState {
 };
 
 // ── pongLogosContext  [vtable @ 0x8205E564] ──────────────────────────
+// HSM context for the boot logos sequence. Manages the UI state
+// for displaying publisher and developer logos during boot.
 struct pongLogosContext {
-    void**      vtable;           // +0x00
+    void*       vtable;           // +0x00
+    uint32_t    m_field04;        // +0x04
+    uint32_t    m_field08;        // +0x08
+    uint32_t    m_field0C;        // +0x0C
+    uint32_t    m_field10;        // +0x10
+    void*       m_pOwnerState;    // +0x14  pongLogosState* owner
+    void*       m_pUIContext;     // +0x18  UI context object
+    uint8_t     m_bActive;        // +0x1C  active flag
 
     // ── virtual methods ──
-    virtual void vfn_14();  // [14] @ 0x82306d48
-    virtual void vfn_16();  // [16] @ 0x82306d58
-    virtual void vfn_18();  // [18] @ 0x82306da8
+    virtual uint32_t GetType();     // [14] @ 0x82306d48 - returns 1
+    virtual void Update();          // [16] @ 0x82306d58 - checks completion, transitions
+    virtual void Render();          // [18] @ 0x82306da8 - renders logos
 };
 
 // ── pongLogosState  [vtable @ 0x8205E51C] ──────────────────────────
+// HSM state that drives the boot logos display sequence.
+// First screen shown after boot, before main menu.
 struct pongLogosState {
-    void**      vtable;           // +0x00
+    void*       vtable;           // +0x00
+    void*       m_pHSMContext;    // +0x04  HSM context for transitions
+    void*       m_pLogosContext;  // +0x08  pongLogosContext* allocated in Init
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x82306f18
-    virtual void vfn_12();  // [12] @ 0x82306fd8
-    virtual void vfn_13();  // [13] @ 0x82306d38
-    virtual void vfn_14();  // [14] @ 0x82306db8
+    virtual void OnEnter(uint32_t prevStateIdx);  // [11] @ 0x82306f18
+    virtual void OnExit(uint32_t nextStateIdx);   // [12] @ 0x82306fd8
+    virtual const char* GetName();                 // [13] @ 0x82306d38 - returns "pongLogosState"
+    virtual void Init();                           // [14] @ 0x82306db8 - allocates context
 };
 
 // ── pongPauseContext  [2 vtables — template/MI] ──────────────────────────

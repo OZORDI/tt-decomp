@@ -6,6 +6,25 @@
  * These classes handle character model display, camera control, and
  * UI state for character selection screens.
  * 
+ * Architecture:
+ *   - pongAttractState: Base state machine state for all attract mode screens
+ *     (logos, menus, character selection). Manages UI screen object lifecycle.
+ *   
+ *   - pongCharViewState: Derived state for character viewing/selection.
+ *     Handles input, transitions, and rendering for character selection UI.
+ *   
+ *   - charViewData: Main data container with serialized XML fields.
+ *     Manages array of 2D positions for character placement in UI.
+ *   
+ *   - charViewCharData: Per-character view data (positions, animations).
+ *     Serialized from XML configuration files.
+ *   
+ *   - charViewCS: Camera shot controller for character view screens.
+ *     Manages camera positioning and transitions.
+ *   
+ *   - pongCharViewContext: Context/controller with multiple inheritance.
+ *     Coordinates the overall character viewing experience.
+ * 
  * Classes:
  *   - charViewCharData: Per-character view data (positions, animations)
  *   - charViewData: Main character view data container
@@ -38,6 +57,8 @@ class atSingleton;
  * Structure:
  *   Inherits hsmState fields (+0x00 to +0x14)
  *   +0x18: m_pScreenObject - UI screen object (32 bytes, allocated/freed)
+ * 
+ * Size: 0x1C (28 bytes) = hsmState (0x18) + m_pScreenObject (0x4)
  */
 class pongAttractState : public hsmState {
 public:
@@ -94,6 +115,9 @@ protected:
     void* m_pScreenObject;        // +0x18 - UI screen object (32 bytes)
 };
 
+// Verify struct size matches PowerPC layout
+static_assert(sizeof(pongAttractState) == 0x1C, "pongAttractState size mismatch");
+
 // ────────────────────────────────────────────────────────────────────────────
 // charViewCharData — Per-Character View Data
 // @ vtable 0x820762F4
@@ -105,6 +129,8 @@ protected:
  * 
  * Serialized fields (XML):
  *   - field_10, field_14, field_18 (exact names TBD from XML)
+ * 
+ * Size: 0x1C (28 bytes) = vtable (4) + padding (12) + 3 fields (12)
  */
 class charViewCharData {
 public:
@@ -139,6 +165,8 @@ protected:
     uint32_t m_field_18;          // +0x18 - XML field name TBD
 };
 
+static_assert(sizeof(charViewCharData) == 0x1C, "charViewCharData size mismatch");
+
 // ────────────────────────────────────────────────────────────────────────────
 // charViewData — Main Character View Data Container
 // @ vtable 0x8207635C
@@ -151,11 +179,19 @@ protected:
  * Contains a large number of serialized fields (22+ fields) and manages
  * a dynamically allocated array of view elements (2D positions per character).
  * 
+ * Data Flow:
+ *   1. LoadViewData() allocates array based on character count from game data manager
+ *   2. Initializes each element to (0.0f, 0.0f)
+ *   3. Processes linked list of character data (m_pLinkedListHead)
+ *   4. For each character matching type filter, looks up index and sets position
+ * 
  * Serialized fields (XML):
  *   - field_10, field_14, field_18, field_1C, field_20, field_24
  *   - field_28, field_2C, field_40, field_44, field_4C, field_50
  *   - field_58, field_5C, field_60, field_64
  *   - field_F0, field_F4, field_120, field_124, field_150, field_154
+ * 
+ * Size: 0x184 (388 bytes)
  */
 class charViewData : public atSingleton {
 public:
@@ -244,6 +280,8 @@ protected:
     uint16_t m_currentCount;      // +0x180 (384) - current element count
     uint16_t m_allocatedSize;     // +0x182 (386) - allocated array size
 };
+
+static_assert(sizeof(charViewData) == 0x184, "charViewData size mismatch");
 
 // ────────────────────────────────────────────────────────────────────────────
 // charViewCS — Character View Camera Shot

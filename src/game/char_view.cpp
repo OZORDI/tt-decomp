@@ -7,6 +7,7 @@
  */
 
 #include "game/char_view.hpp"
+#include "game/char_view_globals.hpp"
 #include <cstring>
 
 // External function declarations
@@ -25,11 +26,6 @@ extern "C" {
     void game_28B8(void* manager, int32_t eventType);
     void pg_61E8_g(void* context, float param, int p2, int p3, int p4, int p5);
 }
-
-// Global data references
-extern uint32_t* g_characterTypeIds;      // @ 0x825C2BC0
-extern float g_defaultFloatZero;          // @ 0x825CAF94
-extern float g_defaultFloatValue;         // @ 0x825CAF88
 
 // ────────────────────────────────────────────────────────────────────────────
 // pongAttractState Implementation
@@ -80,39 +76,36 @@ void pongAttractState::OnExit() {
  * pongAttractState::OnEvent @ 0x823058E0 | size: 0xC8
  * 
  * Handles input and system events.
- * Event 6: Creates UI state
- * Events 9, 12: No-op
+ * Event 6: Creates UI state and initializes UI context
+ * Events 9, 12: No-op (ignored events)
  * Other events: Forwarded to manager
  */
 void pongAttractState::OnEvent(int32_t eventType) {
-    // Call some initialization function
+    // Call initialization function
     pg_E6E0(2055, 64, 0, 0);
     
     if (eventType == 6) {
-        // Special event - create UI state
-        // Set up global UI state
-        uint32_t* pGlobalUIState = (uint32_t*)0x8271A348;  // Global UI state array
-        pGlobalUIState[13] = 2;  // State type
-        pGlobalUIState[14] = (uint32_t)m_pScreenObject;
+        // Event 6: Create UI state
+        // Set up global UI state array
+        g_global_ui_state[13] = 2;  // State type
+        g_global_ui_state[14] = (uint32_t)m_pScreenObject;  // Screen object pointer
         
-        // Call UI initialization
-        void* pUIContext = (void*)0x8271A81C;
-        pg_61E8_g(pUIContext, 0.0f, 1, 0, 0, 0);
+        // Initialize UI context
+        pg_61E8_g(g_ui_context, 0.0f, 1, 0, 0, 0);
         
         // Clear flag on screen object
         if (m_pScreenObject) {
             *(uint8_t*)((char*)m_pScreenObject + 28) = 0;
         }
     } else if (eventType == 9 || eventType == 12) {
-        // No-op events
+        // Events 9 and 12: No-op (ignored)
         return;
     } else {
-        // Forward event to manager
+        // Forward unhandled event to manager
         game_28B8(m_pManager, eventType);
         
-        // Log unhandled event
-        const char* errorMsg = (const char*)0x8205E110;  // Error message string
-        nop_8240E6D0(errorMsg, m_pManager, (void*)(intptr_t)eventType);
+        // Log unhandled event error
+        nop_8240E6D0(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);
     }
 }
 
@@ -140,42 +133,40 @@ int32_t pongAttractState::GetStateId() const {
  * pongAttractState::OnEnter @ 0x82305800 | size: 0xE0
  * 
  * Called when entering this state - allocates and initializes UI screen object.
+ * Creates a pongAttractContext object (32 bytes) with dual vtables for multiple inheritance.
  */
 void pongAttractState::OnEnter() {
     xe_main_thread_init_0038();
     
-    // Get allocator from TLS
-    void** pTLS = *(void***)0x82600000;  // TLS base (r13)
-    void* pAllocator = pTLS[1];
+    // Get allocator from TLS (thread-local storage)
+    void** pTLS = g_tls_base;
+    void* pAllocator = pTLS[1];  // Allocator is at TLS offset +4
     
-    // Allocate 32-byte screen object
+    // Allocate 32-byte pongAttractContext object
     typedef void* (*AllocFunc)(void*, uint32_t, uint32_t);
     void** allocVtable = *(void***)pAllocator;
     AllocFunc alloc = (AllocFunc)allocVtable[1];
-    void* pScreen = alloc(pAllocator, 32, 16);
+    void* pScreen = alloc(pAllocator, 32, 16);  // 32 bytes, 16-byte aligned
     
     if (pScreen) {
-        // Initialize screen object
+        // Initialize screen object to zero
         memset(pScreen, 0, 32);
         
-        // Set vtables
-        *(void**)pScreen = (void*)0x8205E0F4;  // Primary vtable
-        *(void**)((char*)pScreen + 20) = (void*)0x8205E108;  // Secondary vtable
+        // Set vtables for pongAttractContext (multiple inheritance)
+        *(void**)pScreen = g_vtable_pong_attract_context;  // +0: Primary vtable
+        *(void**)((char*)pScreen + 20) = g_vtable_pong_attract_context_2;  // +20: Secondary vtable
         
-        // Set back-pointer to state
-        *(void**)((char*)pScreen + 24) = this;
+        // Set back-pointer to owning state
+        *(void**)((char*)pScreen + 24) = this;  // +24: Parent state pointer
         
         // Register with global UI system
-        uint32_t* pGlobalUI = (uint32_t*)0x827F3864;
-        uint32_t index = pGlobalUI[0];
-        uint32_t* pUIArray1 = (uint32_t*)0x827F3868;
-        uint32_t* pUIArray2 = (uint32_t*)0x827F3AC8;
-        uint8_t* pUIFlags = (uint8_t*)0x827F3D28;
+        uint32_t index = g_ui_state_counter;
         
-        pUIArray1[index] = 16;
-        pUIArray2[index] = (uint32_t)((char*)pScreen + 20);
-        pUIFlags[index] = 128;
-        pGlobalUI[0] = index + 1;
+        g_ui_object_types[index] = 16;  // UI object type ID
+        g_ui_object_ptrs[index] = (void*)((char*)pScreen + 20);  // Pointer to secondary vtable
+        g_ui_object_flags[index] = 128;  // Active flag
+        
+        g_ui_state_counter = index + 1;  // Increment counter
         
         m_pScreenObject = pScreen;
     } else {
@@ -191,37 +182,33 @@ void pongAttractState::OnEnter() {
  * charViewCharData::IsCharacterType @ 0x8240B238 | size: 0x48
  * 
  * Checks if the provided type ID matches one of the known character types.
+ * Used for filtering characters in view data loading.
  */
 bool charViewCharData::IsCharacterType(uint32_t typeId) {
     // Check against three known character type IDs
-    uint32_t typeId1 = *(uint32_t*)0x825C2BC0;
-    if (typeId == typeId1) {
+    if (typeId == g_character_type_id) {
         return true;
     }
     
-    uint32_t typeId2 = *(uint32_t*)0x825C803C;
-    if (typeId == typeId2) {
+    if (typeId == g_character_type_id_2) {
         return true;
     }
     
-    uint32_t typeId3 = *(uint32_t*)0x825C8038;
-    return (typeId == typeId3);
+    return (typeId == g_character_type_id_3);
 }
 
 /**
  * charViewCharData::Serialize @ 0x8240B280 | size: 0x8C
  * 
  * Serializes character view data to XML or binary format.
+ * Uses xmlNodeStruct_SerializeField to write three character-specific fields.
  */
 void charViewCharData::Serialize(void* serializer) {
-    void* defaultVal = (void*)0x825CAF94;
-    void* defaultVal2 = (void*)0x825CAF88;
-    
-    // Serialize three character-specific fields
+    // Serialize three character-specific fields with default values
     // TODO: Extract actual XML field names from string table
-    xmlNodeStruct_SerializeField(this, "field_10", &m_field_10, defaultVal2, 0);
-    xmlNodeStruct_SerializeField(this, "field_14", &m_field_14, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_18", &m_field_18, defaultVal, 0);
+    xmlNodeStruct_SerializeField(this, "field_10", &m_field_10, (void*)&g_default_float_value, 0);
+    xmlNodeStruct_SerializeField(this, "field_14", &m_field_14, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_18", &m_field_18, (void*)&g_default_float_zero, 0);
 }
 
 /**
@@ -266,6 +253,8 @@ void charViewData::Initialize() {
  * charViewData::LoadViewData @ 0x8240B5C0 | size: 0x1AC
  * 
  * Loads and initializes character view data from game data manager.
+ * Allocates array for 2D position elements (one per character), then
+ * processes linked list of character data to populate positions.
  */
 void charViewData::LoadViewData() {
     struct GameDataMgr {
@@ -273,9 +262,8 @@ void charViewData::LoadViewData() {
         uint32_t characterCount;  // +28
     };
     
-    // Get character count from game data manager
-    GameDataMgr** ppGameData = (GameDataMgr**)0x825CA174;
-    GameDataMgr* pGameData = *ppGameData;
+    // Get character count from game data manager singleton
+    GameDataMgr* pGameData = *(GameDataMgr**)&g_game_data_manager;
     uint32_t charCount = pGameData ? pGameData->characterCount : 0;
     
     // Allocate array for character view elements (2D positions)
@@ -292,7 +280,7 @@ void charViewData::LoadViewData() {
     m_allocatedSize = (uint16_t)charCount;
     m_currentCount = 0;
     
-    // Initialize array elements with default values (2 floats per element: x, y)
+    // Initialize array elements with default 2D positions (0.0f, 0.0f)
     if (charCount > 0) {
         struct ViewElement {
             float x;
@@ -300,7 +288,7 @@ void charViewData::LoadViewData() {
         };
         
         ViewElement** pArray = (ViewElement**)m_pAllocatedData;
-        void** pTLS = *(void***)0x82600000;
+        void** pTLS = g_tls_base;
         void* pAllocator = pTLS[1];
         
         for (uint32_t i = 0; i < charCount; i++) {
@@ -333,7 +321,6 @@ void charViewData::LoadViewData() {
     };
     
     CharDataNode* pNode = (CharDataNode*)m_pLinkedListHead;
-    uint32_t typeId = *(uint32_t*)0x825C2BC0;
     
     while (pNode != nullptr) {
         // Check if this character type should be included
@@ -341,7 +328,7 @@ void charViewData::LoadViewData() {
         void** vtable = pNode->vtable;
         TypeCheckFunc checkType = (TypeCheckFunc)vtable[20];
         
-        if (checkType(pNode, typeId)) {
+        if (checkType(pNode, g_character_type_id)) {
             // Character matches type - get index and populate array
             if (pNode->pName) {
                 int32_t index = util_2458_FindCharacterIndex(pGameData, pNode->pName);
@@ -361,7 +348,7 @@ void charViewData::LoadViewData() {
                 }
             }
         } else {
-            // Character doesn't match - log error
+            // Character doesn't match type - log error
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName1 = (GetNameFunc)vtable[19];
             GetNameFunc getName2 = (GetNameFunc)m_vtable[19];
@@ -369,7 +356,7 @@ void charViewData::LoadViewData() {
             const char* name1 = getName1(pNode);
             const char* name2 = getName2(this);
             
-            nop_8240E6D0((const char*)0x8203F2E0, (void*)name2, (void*)name1);
+            nop_8240E6D0(g_error_type_mismatch, (void*)name2, (void*)name1);
         }
         
         pNode = pNode->pNext;
@@ -390,35 +377,33 @@ bool charViewData::ValidateData(uint32_t param) {
  * charViewData::Serialize @ 0x8240B770 | size: 0x47C
  * 
  * Serializes all character view data fields to XML or binary format.
+ * Writes 22+ fields with default float values.
  */
 void charViewData::Serialize(void* serializer) {
-    void* defaultVal = (void*)0x825CAF94;
-    void* defaultVal2 = (void*)0x825CAF90;
-    
-    // Serialize all 22+ fields
+    // Serialize all 22+ fields with appropriate default values
     // TODO: Extract actual XML field names from string table
-    xmlNodeStruct_SerializeField(this, "field_20", &m_field_20, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_10", &m_field_10, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_14", &m_field_14, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_18", &m_field_18, defaultVal2, 0);
-    xmlNodeStruct_SerializeField(this, "field_1C", &m_field_1C, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_24", &m_field_24, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_F4", &m_field_F4, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_F0", &m_field_F0, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_124", &m_field_124, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_120", &m_field_120, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_154", &m_field_154, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_150", &m_field_150, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_28", &m_field_28, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_2C", &m_field_2C, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_40", &m_field_40, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_4C", &m_field_4C, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_44", &m_field_44, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_50", &m_field_50, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_58", &m_field_58, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_5C", &m_field_5C, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_64", &m_field_64, defaultVal, 0);
-    xmlNodeStruct_SerializeField(this, "field_60", &m_field_60, defaultVal, 0);
+    xmlNodeStruct_SerializeField(this, "field_20", &m_field_20, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_10", &m_field_10, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_14", &m_field_14, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_18", &m_field_18, (void*)&g_default_float_value_2, 0);
+    xmlNodeStruct_SerializeField(this, "field_1C", &m_field_1C, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_24", &m_field_24, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_F4", &m_field_F4, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_F0", &m_field_F0, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_124", &m_field_124, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_120", &m_field_120, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_154", &m_field_154, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_150", &m_field_150, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_28", &m_field_28, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_2C", &m_field_2C, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_40", &m_field_40, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_4C", &m_field_4C, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_44", &m_field_44, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_50", &m_field_50, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_58", &m_field_58, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_5C", &m_field_5C, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_64", &m_field_64, (void*)&g_default_float_zero, 0);
+    xmlNodeStruct_SerializeField(this, "field_60", &m_field_60, (void*)&g_default_float_zero, 0);
 }
 
 /**
@@ -445,7 +430,7 @@ charViewCS::~charViewCS() {
     util_1568(&m_embeddedObject);
     
     // Update vtable pointer
-    m_vtable = (void**)0x8203F454;
+    m_vtable = (void**)g_vtable_char_view_cs;
     
     // Call base cleanup
     rage_7630(this);
@@ -458,17 +443,17 @@ charViewCS::~charViewCS() {
 /**
  * pongCharViewState::~pongCharViewState @ 0x8230C490 | size: 0x68
  * 
- * Destructor - calls base class destructor.
+ * Destructor - calls base class destructor chain.
  */
 pongCharViewState::~pongCharViewState() {
     // Update vtable to base class
-    m_vtable = (void**)0x8205E0AC;  // pongAttractState vtable
+    m_vtable = (void**)g_vtable_pong_attract_state;
     
     // Call base class OnExit
     OnExit();
     
     // Update to final vtable
-    m_vtable = (void**)0x8205F174;
+    m_vtable = (void**)g_vtable_pong_char_view_state;
 }
 
 /**
@@ -515,13 +500,14 @@ void pongCharViewState::OnExitState() {
  * pongCharViewContext::~pongCharViewContext @ 0x8230A600 | size: 0xAC
  * 
  * Destructor - cleans up managed object and embedded object.
+ * Uses multiple inheritance with three vtables.
  */
 pongCharViewContext::~pongCharViewContext() {
     // Update primary vtable
-    m_vtable = (void**)0x8205F1BC;
+    m_vtable = (void**)g_vtable_pong_char_view_context;
     
     // Update secondary vtable at +20
-    m_vtable2 = (void**)0x8205F1D4;
+    m_vtable2 = (void**)g_vtable_pong_char_view_context_2;
     
     // Delete managed object at +44 if it exists
     if (m_pManagedObject != nullptr) {
@@ -538,7 +524,7 @@ pongCharViewContext::~pongCharViewContext() {
     rage_8070(&m_embeddedObject);
     
     // Update vtables to final state
-    m_vtable2 = (void**)0x8205F7B4;
-    m_vtable = (void**)0x8205F174;
+    m_vtable2 = (void**)g_vtable_pong_char_view_context_3;
+    m_vtable = (void**)g_vtable_pong_char_view_state;
 }
 

@@ -48,12 +48,27 @@ struct SpectatorHudItemWithText {
 };
 
 // ── hudBoot  [2 vtables — template/MI] ──────────────────────────
+// Boot HUD class that manages initial boot sequence UI elements.
+// Uses multiple inheritance (2 vtables) and handles network client
+// initialization during boot.
+//
+// Vtables: 0x8205E444 (primary), 0x8205E46C (secondary)
 struct hudBoot {
-    void**      vtable;           // +0x00
+    void*       vtable_primary;      // +0x00
+    void*       vtable_secondary;    // +0x04
+    uint8_t     _pad_08[56];         // +0x08..+0x3F
+    void*       m_pInnerObject;      // +0x40  freed in destructor
+    uint8_t     _pad_44[28];         // +0x44..+0x5F
+    uint8_t     m_bInitialized;      // +0x60
+    uint8_t     _pad_61[3];          // +0x61..+0x63
+    uint32_t    m_xboxHandle1;       // +0x64  Xbox system handle
+    uint32_t    m_xboxHandle2;       // +0x68  Xbox system handle
+    uint32_t    m_pNetworkClient;    // +0x6C  network client pointer
+    char        m_buffer[1024];      // +0x70  network config buffer
 
     // ── virtual methods ──
-    virtual ~hudBoot();                  // [0] @ 0x82306988
-    virtual void vfn_5();  // [5] @ 0x82306a50
+    virtual ~hudBoot(bool shouldFree = false);  // [0] @ 0x82306988
+    virtual void Initialize();                   // [5] @ 0x82306a50
 };
 
 // ── hudCharView  [2 vtables — template/MI] ──────────────────────────
