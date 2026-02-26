@@ -14,6 +14,8 @@ extern "C" {
     void rage_free_00C0(void* ptr);
     void atSingleton_9420(void* ptr);
     void rage_9AF8_1(void* ptr);
+    void RegisterSerializableField(void* obj, const char* fieldName, 
+                                   void* fieldPtr, void* serCtx, int flags);  // @ 0x821A8F58
 }
 
 // Global type IDs for RTTI
@@ -204,17 +206,31 @@ void sgRMDrawable::SetTransform(const float matrix[4][4]) {
 }
 
 /**
- * sgRMDrawable::OnResourceChanged
+ * sgRMDrawable::RegisterFields
  * @ 0x823D8F18 | size: 0x64
  * 
- * Called when the mesh/material resource changes.
- * Updates internal state and invalidates caches.
+ * Registers serializable fields with RAGE's parStructure system.
+ * Called during initialization to set up save/load metadata.
+ * 
+ * Registers two fields:
+ * 1. m_pResource at offset +80 (mesh/material data pointer)
+ * 2. m_transform at offset +16 (4x4 transformation matrix)
+ * 
+ * This is part of RAGE's reflection/serialization system that allows
+ * scene graph nodes to be saved and loaded from disk.
  */
-void sgRMDrawable::OnResourceChanged() {
-    // TODO: Implement resource change handling
-    // - Update bounding volumes
-    // - Invalidate render caches
-    // - Notify dependent systems
+void sgRMDrawable::RegisterFields() {
+    // Get serialization contexts from globals
+    void* serCtx1 = *(void**)0x825CAF88;  // Context for resource field
+    void* serCtx2 = *(void**)0x825CAFA4;  // Context for transform field
+    
+    // Register resource pointer field
+    const char* resourceFieldName = (const char*)0x82071C48;
+    RegisterSerializableField(this, resourceFieldName, &m_pResource, serCtx1, 0);
+    
+    // Register transform matrix field
+    const char* transformFieldName = (const char*)0x82071C50;
+    RegisterSerializableField(this, transformFieldName, &m_transform, serCtx2, 0);
 }
 
 /**
@@ -237,12 +253,23 @@ void sgRMDrawable::Render() {
  * 
  * Updates the bounding volume for this drawable.
  * Used for culling and collision detection.
+ * 
+ * If the drawable has an associated resource (m_pResource at +84),
+ * calls a virtual method on that resource to compute bounds,
+ * then submits the result to the rendering system.
  */
 void sgRMDrawable::UpdateBounds() {
-    // TODO: Implement bounds calculation
-    // - Transform local bounds by m_transform
-    // - Update world-space AABB
-    // - Propagate to parent nodes
+    // Check if we have a resource
+    void* resource = *(void**)((char*)this + 84);
+    if (!resource) {
+        return;
+    }
+    
+    // Call virtual method on resource to get bounds
+    // VCALL(resource, 31, ...) - gets bounding volume
+    // Then VCALL(resource, 5, ...) - updates rendering system
+    
+    // TODO: Implement full bounds calculation and submission
 }
 
 // ────────────────────────────────────────────────────────────────────────────
