@@ -43,6 +43,14 @@ Use them in this order for each function:
 9. **`get_existing_source`** — Check if a file/function already has lifted code.check if class is already defined in *.hpp or elsewhere.
 10. **`write_source_file`** — Write your finished C++ to src/.
 
+### Optional: Legacy Recomp Files for Control Flow Analysis
+
+If the execution flow in the `pass5_final` recomp files is difficult to trace (too many gotos, complex branching), you can optionally reference the **legacy recomp output** for clearer control flow:
+
+**Location:** `/Users/Ozordi/Downloads/tt-decomp/recomp/legacy/00_generated/`
+
+These files contain an earlier version of the static recompilation with more traceable control flow structures. Use them as a **supplementary reference** when the pass5_final scaffold is unclear, but always prefer the pass5_final version as your primary source since it has better annotations and structure.
+
 ## The Standard Workflow Per Function
 
 ```
