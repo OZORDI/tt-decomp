@@ -61,9 +61,8 @@ struct audControl {
 };
 
 // ── rage::audControl2dWrapper  [vtable @ 0x82074BA8] ──────────────────────────
-struct audControl2dWrapper {
-    void**      vtable;           // +0x00
-};
+// See include/rage/audio_control_wrappers.hpp for full definition
+struct audControl2dWrapper;
 
 // ── rage::audControl3d  [vtable @ 0x82035594] ──────────────────────────
 struct audControl3d {
@@ -87,9 +86,8 @@ struct audControl3d {
 };
 
 // ── rage::audControl3dWrapper  [vtable @ 0x82074B98] ──────────────────────────
-struct audControl3dWrapper {
-    void**      vtable;           // +0x00
-};
+// See include/rage/audio_control_wrappers.hpp for full definition
+struct audControl3dWrapper;
 
 // ── rage::audControlGroup  [vtable @ 0x8203572C] ──────────────────────────
 struct audControlGroup {
@@ -121,12 +119,8 @@ struct audControlMgr {
 };
 
 // ── rage::audControlWrapper  [vtable @ 0x82074B88] ──────────────────────────
-struct audControlWrapper {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~audControlWrapper();                  // [0] @ 0x823f7c88
-};
+// See include/rage/audio_control_wrappers.hpp for full definition
+struct audControlWrapper;
 
 // ── rage::audVoice  [vtable @ 0x82035A9C] ──────────────────────────
 struct audVoice {
