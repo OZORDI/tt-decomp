@@ -80,7 +80,8 @@ get_function_pseudocode("funcName")     -- IDA pseudocode if available
 [optional] find_callees("funcName")     -- understand dependencies
 [optional] find_callers("funcName")     -- understand usage
 [optional] search_symbols("query")      -- resolve unknown names
-get_existing_source(file_path)          -- check current state of target file
+get_existing_source(dest_file_path)     -- read the ENTIRE destination file before writing anything
+get_existing_source(parent_class_file)  -- read parent class implementation if already lifted
 suggest_file_placement("ClassName")     -- confirm correct file paths
 write_source_file(file_path, cleanCpp)  -- commit output
 ```
@@ -108,6 +109,36 @@ rage::snJoinMachine::snHsmRequestingJoin::snHsmJoinPending
 ```
 
 These sub-classes share the same parent struct layout and field offsets, vtable entries that cross-call each other, and the same state machine context. Lifting them together in one session avoids reloading class context repeatedly and produces more coherent output because the full state machine is visible at once.
+
+---
+
+## Project Coverage Context
+
+The decompilation is in its final stage. Approximately 1,076 of 1,081 root class families have src/ coverage. The class you are assigned in any given session is one of the last few remaining, which means the surrounding codebase is almost entirely written.
+
+This has a direct consequence for how you work. The patterns, struct layouts, field names, type aliases, and include conventions used by neighboring classes are already established in the existing source files. You are not writing in isolation. You are completing the last pieces of a nearly finished codebase, and your output must be consistent with everything around it.
+
+### Before writing any new code, read the existing file it will land in
+
+The target file for your class almost certainly already contains implemented code from related classes. Before writing a single line of lifted C++, call `get_existing_source` on the destination file and read what is there. Look for:
+
+- What struct fields neighboring classes have defined at overlapping offsets. If `rage::snCreateMachine` already defines `m_pSession` at offset +0x10, your class that also accesses +0x10 through a session pointer must use the same field name and type.
+- What base class structs, typedefs, and forward declarations are already in the header. Do not re-declare anything that is already present.
+- What include directives are already at the top of the file. Match them exactly and do not duplicate.
+- What naming style the existing functions in this file use for locals, parameters, and inline comments.
+
+### Read the parent class implementation before the child
+
+If the RTTI hierarchy shows your class inherits from a class that is already implemented, call `get_existing_source` on that parent class first. Its struct definition tells you the memory layout your class starts from. Its method implementations show you the calling conventions and invariants your overrides must respect.
+
+### Read callers and callees that are already lifted
+
+Use `find_callers` and `find_callees`, then call `get_existing_source` on any results that are already in src/. If a caller already passes a typed pointer to your function, your function's parameter type is already decided by the existing call site. If a callee is already lifted with a known signature, your call to it must match exactly.
+
+### The coherence standard at this coverage level
+
+At 99.5% coverage, inconsistency is immediately visible. A struct field named `m_nState` in one class and `m_state` in an adjacent class that accesses the same memory region is a bug, not a style preference. A type written as `uint32_t` in one file and `int` in another for the same underlying value creates real integration problems. Read first, then write. The goal is that a reader examining the completed src/ tree cannot tell which classes were the last five to be lifted.
+
 
 ---
 

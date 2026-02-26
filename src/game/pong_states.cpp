@@ -1366,29 +1366,29 @@ void pongDialogState::OnExit(int nextStateIdx) {
         return;
     }
 
-    // Generic next state
-    void* transReq = game_28B8(m_pHSMContext, nextStateIdx);
-    nop_8240E6D0("pongDialogState::OnExit generic", transReq, nextStateIdx);
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // frontendData  [vtable @ 0x820763D4]
 // ─────────────────────────────────────────────────────────────────────────────
 
-// External globals for asset ID validation
-extern uint32_t g_frontendAssetId_A;   // @ 0x825C2BBC
-extern uint32_t g_frontendAssetId_B;   // @ 0x825C803C
-extern uint32_t g_frontendAssetId_C;   // @ 0x825C8038
+// External globals for asset ID validation (runtime-initialized .data objects)
+extern uint32_t g_frontendAssetId_A;   // @ 0x825C2BBC (.data, 4 bytes)
+extern uint32_t g_frontendAssetId_B;   // @ 0x825C803C (.data, 4 bytes)
+extern uint32_t g_frontendAssetId_C;   // @ 0x825C8038 (.data, 4 bytes)
 
 // External field registration helper
-extern void game_8F58(void* obj, const void* schema, void* fieldPtr, 
-                      const void* desc, int flags);   // @ 0x821A8F58
+// Signature: game_8F58(obj, fieldNameStr, fieldPtr, schemaDesc, flags)
+extern void game_8F58(void* obj, const char* fieldName, void* fieldPtr, 
+                      const void* schemaDesc, int flags);   // @ 0x821A8F58
 
 /**
  * frontendData::IsSupported  @ 0x8240BBF0  |  size: 0x48
  *
  * Slot 20.  Returns true if assetId matches any of the three asset-type IDs
  * registered for frontendData.  Used by the asset manager to route loads.
+ * 
+ * This follows the standard RAGE asset-validation pattern: three global IDs
+ * are checked in sequence (primary, secondary, tertiary).  The IDs are
+ * runtime-initialized from the asset manifest during engine startup.
  */
 bool frontendData::IsSupported(uint32_t assetId) const {
     // Check primary asset ID
@@ -1410,20 +1410,31 @@ bool frontendData::IsSupported(uint32_t assetId) const {
  *
  * Slot 21.  Registers two serializable fields of this data object with
  * the RAGE data system.  Called during asset load/bind.
- * Registers fields at offsets +16 and +20.
+ * 
+ * Field layout:
+ *   +0x10 (16): First field  — registered with schema @ 0x825CAF90
+ *   +0x14 (20): Second field — registered with schema @ 0x825CAF94
+ * 
+ * The field name strings are embedded constants in the .text section
+ * (inside phBoundCapsule functions at +0xF0 and +0x114 offsets).  This is
+ * a common PowerPC pattern where string literals are placed near the code
+ * that references them for better cache locality.
  */
 void frontendData::RegisterFields() {
-    // External schema descriptors
+    // Field name strings (embedded in .text section for cache locality)
+    extern const char* k_frontendFieldName_1;   // @ 0x82576088 (in phBoundCapsule_5F98_2h + 0xF0)
+    extern const char* k_frontendFieldName_2;   // @ 0x825763BC (in phBoundCapsule_62A8 + 0x114)
+    
+    // Schema descriptors (.data section, runtime-initialized)
     extern const void* g_frontendFieldSchema_1;   // @ 0x825CAF90
-    extern const void* g_frontendFieldDesc_1;     // @ 0x82576088 (phBoundCapsule_5F98_2h + 0xf0)
     extern const void* g_frontendFieldSchema_2;   // @ 0x825CAF94
-    extern const void* g_frontendFieldDesc_2;     // @ 0x825763BC (phBoundCapsule_62A8 + 0x114)
     
     // Register first field at offset +16
-    game_8F58(this, g_frontendFieldDesc_1, (uint8_t*)this + 16, 
+    // game_8F58(this, fieldNameStr, &field, &schemaDesc, flags)
+    game_8F58(this, k_frontendFieldName_1, (uint8_t*)this + 16, 
               &g_frontendFieldSchema_1, 0);
     
     // Register second field at offset +20
-    game_8F58(this, g_frontendFieldDesc_2, (uint8_t*)this + 20, 
+    game_8F58(this, k_frontendFieldName_2, (uint8_t*)this + 20, 
               &g_frontendFieldSchema_2, 0);
 }
