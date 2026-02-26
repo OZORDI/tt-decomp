@@ -1,50 +1,46 @@
-#include "scene/sg_node.hpp"
+#include "sg_node.hpp"
 
-// Forward declarations
-extern "C" void atSingleton_9420(void* ctx, void* base);
-extern "C" void rage_free_00C0(void* ptr);
+// RAGE engine heap free — canonical name declared in rage/rage_cm_types.hpp
+extern void rage_free(void* ptr);               // @ 0x820C00C0
+
+// atSingleton base-class destructor body @ 0x821A9420
+// Tears down the XML/atSingleton child-node list at field +0x000C,
+// then resets the vtable pointer to the base atSingleton vtable.
+// Equivalent to the body of atSingleton::~atSingleton() in the source tree.
+extern void atSingleton_9420(void* obj);        // @ 0x821A9420
 
 /**
  * sgNode::~sgNode
  * @ 0x8212B350 | size: 0x5C
- * 
- * Destructor for base scene graph node.
- * Stores vtable pointer, calls atSingleton destructor, and optionally frees memory.
- * 
- * Original assembly pattern:
- *   lis r11,-32253
- *   addi r11,r11,13196  -> vtable @ 0x8203338C
- *   stw r11,0(r31)
- *   bl atSingleton_9420
- *   clrlwi r11,r30,31   -> check delete flag
- *   beq skip
- *   bl rage_free_00C0
+ *
+ * Resets the vtable to sgNode's own vtable, then invokes the atSingleton
+ * base destructor which walks and destroys the child-node list.
+ * The conditional rage_free(this) (delete-flag check in r4) is generated
+ * by the scalar-dtor wrapper in the recomp ABI and is not written here.
  */
 sgNode::~sgNode() {
-    // Vtable pointer stored by compiler
-    // Call atSingleton destructor (placeholder for now)
-    // atSingleton_9420(this, nullptr);
-    
-    // Note: Memory freeing handled by caller via delete flag in r4
-    // If (deleteFlag & 0x1), caller will call rage_free_00C0(this)
+    atSingleton_9420(this);
 }
 
 /**
- * sgNode::Clone
+ * sgNode::IsType
  * @ 0x8212B330 | size: 0x20
- * 
- * Clone/copy operation for scene graph nodes.
+ *
+ * Compares typeId against the global sgNode type-ID stored in the SDA.
+ * Returns 1 if the type matches, 0 otherwise.
  */
-void sgNode::Clone() {
-    // TODO: Implement cloning logic
+int sgNode::IsType(uint32_t typeId) {
+    // TODO: load global sgNode typeId from SDA and compare
+    (void)typeId;
+    return 0;
 }
 
 /**
- * sgNode::Render
- * @ 0x8212B2A0 | size: 0xC
- * 
- * Render operation for scene graph nodes.
+ * sgNode::GetTypeName
+ * @ 0x8212B2A0 | size: 0x0C
+ *
+ * Returns the static class-name string for RAGE RTTI queries.
  */
-void sgNode::Render() {
-    // TODO: Implement rendering logic
+const char* sgNode::GetTypeName() const {
+    return "sgNode";
 }

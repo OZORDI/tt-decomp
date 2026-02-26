@@ -1,25 +1,23 @@
-#include "scene/sg_scene_graph.hpp"
+#include "sg_scene_graph.hpp"
 
-// Forward declarations
-extern "C" void rage_free_00C0(void* ptr);
-extern "C" void rage_9AF8_1(void* ctx, void* base);
+// RAGE engine heap free — canonical name declared in rage/rage_cm_types.hpp
+extern void rage_free(void* ptr);               // @ 0x820C00C0
+
+// sgSceneGraph internal destructor body @ 0x823D9AF8
+// Frees the seven traverse-list pointers at offsets +0x10..+0x2C
+// (skipping +0x1C), then calls rage_8070 (rage::gameObject base dtor).
+// Named after its address in the translation unit that contains sgSceneGraph.
+extern void sgSceneGraph_FreeLists(void* obj);  // @ 0x823D9AF8
 
 /**
  * sgSceneGraph::~sgSceneGraph
  * @ 0x823D9AA8 | size: 0x50
- * 
- * Destructor for scene graph root container.
- * Calls cleanup function and optionally frees memory.
- * 
- * Original assembly:
- *   bl rage_9AF8_1           -> cleanup
- *   clrlwi r11,r30,31        -> check delete flag
- *   beq skip
- *   bl rage_free_00C0        -> free object
+ *
+ * Resets the vtable to rage::gameObject's vtable, then calls
+ * sgSceneGraph_FreeLists which frees all seven traversal-list
+ * allocations and invokes the rage::gameObject base destructor.
+ * The scalar-dtor wrapper handles the optional rage_free(this).
  */
 sgSceneGraph::~sgSceneGraph() {
-    // Call cleanup function
-    // rage_9AF8_1(this, nullptr);
-    
-    // Note: Object freeing handled by caller via delete flag
+    sgSceneGraph_FreeLists(this);
 }
