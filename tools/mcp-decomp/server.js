@@ -821,7 +821,9 @@ function tool_write_source_file({ file_path, content = "", mode, start_line, end
     return `Error: unknown mode '${mode}'.\nValid modes: create | append | insert_at_line | replace_lines | delete_lines\n\nNote: full-overwrite ('write') has been removed to prevent accidental data loss.\n  To add new code:   use 'append' or 'insert_at_line'\n  To fix code:       use 'replace_lines' or 'delete_lines'\n  To start new file: use 'create'`;
   }
 
-  const abs = path.isAbsolute(file_path) ? file_path : path.join(SRC_DIR, file_path);
+  // Normalise: strip a leading "src/" so both "src/game/foo.cpp" and "game/foo.cpp" work
+  const normPath = file_path.replace(/^\//, '').replace(/^src\//, '');
+  const abs = path.isAbsolute(file_path) ? file_path : path.join(SRC_DIR, normPath);
   const resolved = path.resolve(abs);
   if (!resolved.startsWith(path.resolve(SRC_DIR))) {
     return `Error: path must be inside src/\nResolved to: ${resolved}`;
@@ -935,7 +937,8 @@ function previewLines(lines, start, end) {
 
 function tool_get_existing_source({ file_path, function_name }) {
   if (file_path) {
-    const abs = path.isAbsolute(file_path) ? file_path : path.join(SRC_DIR, file_path);
+    const normFP = file_path.replace(/^\//, '').replace(/^src\//, '');
+    const abs = path.isAbsolute(file_path) ? file_path : path.join(SRC_DIR, normFP);
     const resolved = path.resolve(abs);
     if (!fs.existsSync(resolved)) {
       const fname = path.basename(resolved);

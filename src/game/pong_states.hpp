@@ -465,3 +465,22 @@ struct frontendData {
     virtual bool IsSupported(uint32_t assetId) const;  // [20] @ 0x8240BBF0
     virtual void RegisterFields();                      // [21] @ 0x8240BC38
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dialogData  [vtable @ 0x82075EBC]
+//
+// Data singleton for dialog popup content and configuration.
+// Inherits from an atSingleton-style base (hence slot 20 = IsSupported,
+// slot 21 = RegisterFields, slot 22 = GetKey).
+// ─────────────────────────────────────────────────────────────────────────────
+struct dialogData {
+    // +0x00 vtable pointer (implicit)
+    // +0x04..+0x0F  base class (atSingleton) data
+    int32_t     m_dialogType;      // +0x10  dialog type ID (validated 0-209)
+    int32_t     m_buttonCount;     // +0x14  number of buttons (validated >= 1)
+
+    virtual void Validate();                           // [2]  @ 0x8240AF20
+    virtual bool IsSupported(uint32_t assetId) const;  // [20] @ 0x8240AE68
+    virtual void RegisterFields();                     // [21] @ 0x8240AEB0
+    virtual const char* GetKey() const;                // [22] @ 0x822EC760
+};

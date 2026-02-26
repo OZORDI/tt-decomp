@@ -1438,3 +1438,111 @@ void frontendData::RegisterFields() {
     game_8F58(this, k_frontendFieldName_2, (uint8_t*)this + 20, 
               &g_frontendFieldSchema_2, 0);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dialogData  [vtable @ 0x82075EBC]
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * dialogData::GetKey  @ 0x822EC760  |  size: 0xC
+ *
+ * Slot 22.  Returns the static key string used to identify this
+ * data class in the asset registry.  The string " '%s' (%d)" is
+ * a format string used for debug logging of dialog data.
+ */
+const char* dialogData::GetKey() const {
+    // Returns pointer to static format string in .rdata @ 0x8205AFB0
+    // String content: " '%s' (%d)"
+    static const char* k_key = (const char*)0x8205AFB0;
+    return k_key;
+}
+
+/**
+ * dialogData::IsSupported  @ 0x8240AE68  |  size: 0x48
+ *
+ * Slot 20.  Returns true if assetId matches any of the three asset-type IDs
+ * registered for dialogData (checked against global singleton asset tables).
+ * Slot 20 in the vtable — used by the asset manager to route loads.
+ */
+bool dialogData::IsSupported(uint32_t assetId) const {
+    // First global singleton ID check
+    extern uint32_t g_dialogAssetId_A;   // @ 0x825C2BCC
+    if (assetId == g_dialogAssetId_A) {
+        return true;
+    }
+    
+    // Second global ID check
+    extern uint32_t g_dialogAssetId_B;   // @ 0x825C803C
+    if (assetId == g_dialogAssetId_B) {
+        return true;
+    }
+    
+    // Third global ID check
+    extern uint32_t g_dialogAssetId_C;   // @ 0x825C8038
+    return (assetId == g_dialogAssetId_C);
+}
+
+/**
+ * dialogData::RegisterFields  @ 0x8240AEB0  |  size: 0x6C
+ *
+ * Slot 21.  Registers the two serializable fields of this data object with
+ * the RAGE data system.  Slot 21 — called during asset load/bind.
+ * 
+ * Field layout:
+ *   +0x10 (16): m_dialogType   — int32, dialog type ID
+ *   +0x14 (20): m_buttonCount  — int32, number of buttons
+ * 
+ * Both fields use the same schema descriptor @ 0x825CAF90.
+ */
+void dialogData::RegisterFields() {
+    // Field name strings (embedded in .rdata section)
+    extern const char* k_dialogTypeField;     // @ 0x82075E6C (3 bytes)
+    extern const char* k_buttonCountField;    // @ 0x82075E70 (6 bytes)
+    
+    // Schema descriptor (.data section, runtime-initialized)
+    extern const void* g_dialogFieldSchema;   // @ 0x825CAF90
+    
+    // Register m_dialogType field at offset +16
+    // game_8F58(this, fieldNameStr, &field, &schemaDesc, flags)
+    game_8F58(this, k_dialogTypeField, (uint8_t*)this + 16, 
+              &g_dialogFieldSchema, 0);
+    
+    // Register m_buttonCount field at offset +20
+    game_8F58(this, k_buttonCountField, (uint8_t*)this + 20, 
+              &g_dialogFieldSchema, 0);
+}
+
+/**
+ * dialogData::Validate  @ 0x8240AF20  |  size: 0x6C
+ *
+ * Slot 2.  Validates the loaded dialog data fields to ensure they are
+ * within acceptable ranges.  Logs warnings via nop_8240E6D0 if values
+ * are out of bounds, then delegates to the base class validation
+ * (xmlNodeStruct_vfn_2).
+ * 
+ * Validation rules:
+ *   - m_dialogType must be in range [1, 209]
+ *   - m_buttonCount must be >= 1
+ * 
+ * The debug strings reference "hsmDebug" @ 0x82075E90, suggesting this
+ * validation is part of the HSM (Hierarchical State Machine) debug system.
+ */
+void dialogData::Validate() {
+    // Validate m_dialogType is in valid range [1, 209]
+    if (m_dialogType <= 0 || m_dialogType >= 210) {
+        // Log validation error for dialog type
+        extern const char* k_dialogTypeError;   // @ 0x82075E78 (22 bytes)
+        nop_8240E6D0(k_dialogTypeError);
+    }
+    
+    // Validate m_buttonCount is at least 1
+    if (m_buttonCount < 1) {
+        // Log validation error for button count
+        // String references m_dialogType value in error message
+        extern const char* k_buttonCountError;  // @ 0x82075E90 (44 bytes, starts with "hsmDebug")
+        nop_8240E6D0(k_buttonCountError, m_dialogType);
+    }
+    
+    // Delegate to base class validation (xmlNodeStruct)
+    xmlNodeStruct_vfn_2(this);
+}
