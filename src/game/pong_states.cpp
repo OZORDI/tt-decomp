@@ -1546,3 +1546,32 @@ void dialogData::Validate() {
     // Delegate to base class validation (xmlNodeStruct)
     xmlNodeStruct_vfn_2(this);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dialogManager  [vtable @ 0x8205B0D0 / secondary @ 0x8205B0DC]
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * dialogManager — UNUSED CLASS
+ *
+ * This class exists in the RTTI data with two vtable pointers but has:
+ *   - No virtual methods (beyond base class)
+ *   - No field accesses in any function
+ *   - No debug string hints
+ *   - No global instances
+ *   - No references in the recomp output
+ *
+ * Analysis suggests this was either:
+ *   1. A planned dialog management system that was never implemented
+ *   2. A development artifact that remained in the RTTI
+ *   3. An abstract base that was replaced by pongDialogContext/pongDialogState
+ *
+ * The actual dialog functionality is implemented through:
+ *   - pongDialogContext (HSM context for dialog popups)
+ *   - pongDialogState (HSM state for dialog sequences)
+ *   - dialogData (data singleton for dialog content)
+ *
+ * No implementation required - this class is never instantiated or referenced.
+ */
+
+// No methods to implement - class is unused

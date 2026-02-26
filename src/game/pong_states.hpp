@@ -484,3 +484,24 @@ struct dialogData {
     virtual void RegisterFields();                     // [21] @ 0x8240AEB0
     virtual const char* GetKey() const;                // [22] @ 0x822EC760
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dialogManager  [vtable @ 0x8205B0D0 / secondary @ 0x8205B0DC]
+//
+// RTTI-declared class with no observable implementation.
+// Multiple-inheritance layout (2 vtables) but no virtual methods, field accesses,
+// or instantiation sites found in the binary.
+//
+// This appears to be an unused class - likely a planned feature that was never
+// implemented or a development artifact that remained in the RTTI data.
+//
+// Status: UNUSED - No implementation required (no code references this class)
+// ─────────────────────────────────────────────────────────────────────────────
+struct dialogManager {
+    // Primary vtable @ 0x8205B0D0 (12 bytes)
+    // Secondary vtable @ 0x8205B0DC (16 bytes)
+    // No virtual methods beyond base class
+    // No field accesses observed
+    // No global instances
+    // No references in recomp output
+};
