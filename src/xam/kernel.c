@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <errno.h>
+#include <signal.h>
 
 #ifdef __APPLE__
 #include <mach/mach_time.h>
@@ -516,4 +517,241 @@ void DbgBreakPoint(void) {
     // Fallback: raise SIGTRAP
     raise(SIGTRAP);
 #endif
+}
+
+//=============================================================================
+// String Functions Implementation
+//=============================================================================
+
+/**
+ * RtlInitAnsiString @ 0x8258664C
+ * 
+ * Initializes an ANSI_STRING structure.
+ */
+void RtlInitAnsiString(ANSI_STRING* DestinationString, const char* SourceString) {
+    if (!DestinationString) {
+        return;
+    }
+    
+    if (SourceString == NULL) {
+        DestinationString->Length = 0;
+        DestinationString->MaximumLength = 0;
+        DestinationString->Buffer = NULL;
+    } else {
+        size_t length = strlen(SourceString);
+        
+        // Clamp to UINT16_MAX
+        if (length > 0xFFFE) {
+            length = 0xFFFE;
+        }
+        
+        DestinationString->Length = (uint16_t)length;
+        DestinationString->MaximumLength = (uint16_t)(length + 1);  // Include null terminator
+        DestinationString->Buffer = (char*)SourceString;
+    }
+}
+
+//=============================================================================
+// Error Code Conversion Implementation
+//=============================================================================
+
+/**
+ * RtlNtStatusToDosError @ 0x82585E5C
+ * 
+ * Converts NTSTATUS to Win32 error code.
+ */
+uint32_t RtlNtStatusToDosError(NTSTATUS Status) {
+    // Common NTSTATUS to Win32 error mappings
+    switch (Status) {
+        case STATUS_SUCCESS:
+            return ERROR_SUCCESS;
+        
+        case STATUS_TIMEOUT:
+            return 0x000005B4;  // ERROR_TIMEOUT
+        
+        case STATUS_PENDING:
+            return 0x000003E5;  // ERROR_IO_PENDING
+        
+        case STATUS_NO_MEMORY:
+            return 0x00000008;  // ERROR_NOT_ENOUGH_MEMORY
+        
+        case STATUS_INVALID_PARAMETER:
+            return 0x00000057;  // ERROR_INVALID_PARAMETER
+        
+        case 0xC0000001:  // STATUS_UNSUCCESSFUL
+            return 0x0000001F;  // ERROR_GEN_FAILURE
+        
+        case 0xC0000002:  // STATUS_NOT_IMPLEMENTED
+            return 0x00000078;  // ERROR_CALL_NOT_IMPLEMENTED
+        
+        case 0xC0000008:  // STATUS_INVALID_HANDLE
+            return 0x00000006;  // ERROR_INVALID_HANDLE
+        
+        case 0xC000000F:  // STATUS_NO_SUCH_FILE
+            return 0x00000002;  // ERROR_FILE_NOT_FOUND
+        
+        case 0xC0000010:  // STATUS_INVALID_DEVICE_REQUEST
+            return 0x00000001;  // ERROR_INVALID_FUNCTION
+        
+        case 0xC0000022:  // STATUS_ACCESS_DENIED
+            return 0x00000005;  // ERROR_ACCESS_DENIED
+        
+        case 0xC0000034:  // STATUS_OBJECT_NAME_NOT_FOUND
+            return 0x00000002;  // ERROR_FILE_NOT_FOUND
+        
+        case 0xC0000035:  // STATUS_OBJECT_NAME_COLLISION
+            return 0x000000B7;  // ERROR_ALREADY_EXISTS
+        
+        case 0xC000009A:  // STATUS_INSUFFICIENT_RESOURCES
+            return 0x00000008;  // ERROR_NOT_ENOUGH_MEMORY
+        
+        case 0xC00000BB:  // STATUS_NOT_SUPPORTED
+            return 0x00000032;  // ERROR_NOT_SUPPORTED
+        
+        default:
+            // For unknown status codes, return generic failure
+            return 0x0000001F;  // ERROR_GEN_FAILURE
+    }
+}
+
+//=============================================================================
+// XEX Header Functions Implementation
+//=============================================================================
+
+/**
+ * RtlImageXexHeaderField @ 0x82585E3C
+ * 
+ * Retrieves a field from the XEX header.
+ * 
+ * Note: This is a stub implementation for cross-platform compatibility.
+ * On Xbox 360, this would parse the actual XEX header structure.
+ */
+void* RtlImageXexHeaderField(void* XexHeaderBase, uint32_t ImageField) {
+    (void)XexHeaderBase;
+    (void)ImageField;
+    
+    // Stub: Return NULL for all fields
+    // In a full implementation, this would parse the XEX header structure
+    // and return pointers to the requested field data
+    
+    return NULL;
+}
+
+//=============================================================================
+// Physical Memory Functions Implementation
+//=============================================================================
+
+/**
+ * MmGetPhysicalAddress @ 0x8258630C
+ * 
+ * Converts virtual address to physical address.
+ * 
+ * On Xbox 360, memory is directly mapped, so virtual == physical for most addresses.
+ * For cross-platform, we just return the virtual address as a 64-bit value.
+ */
+uint64_t MmGetPhysicalAddress(void* BaseAddress) {
+    // On Xbox 360, virtual addresses are directly mapped to physical
+    // For cross-platform, return the virtual address
+    return (uint64_t)(uintptr_t)BaseAddress;
+}
+
+//=============================================================================
+// Critical Section Functions (Extended) Implementation
+//=============================================================================
+
+// Map RTL_CRITICAL_SECTION to pthread_mutex_t
+// We store the pthread_mutex_t in the LockSemaphore field
+static pthread_mutex_t* get_mutex_from_cs(RTL_CRITICAL_SECTION* cs) {
+    if (!cs->LockSemaphore) {
+        // Lazy initialization
+        pthread_mutex_t* mutex = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(mutex, &attr);
+        pthread_mutexattr_destroy(&attr);
+        cs->LockSemaphore = mutex;
+    }
+    return (pthread_mutex_t*)cs->LockSemaphore;
+}
+
+/**
+ * RtlTryEnterCriticalSection @ 0x8258625C
+ * 
+ * Attempts to enter a critical section without blocking.
+ */
+uint32_t RtlTryEnterCriticalSection(RTL_CRITICAL_SECTION* CriticalSection) {
+    if (!CriticalSection) {
+        return 0;
+    }
+    
+    pthread_mutex_t* mutex = get_mutex_from_cs(CriticalSection);
+    
+    int result = pthread_mutex_trylock(mutex);
+    if (result == 0) {
+        // Successfully acquired
+        CriticalSection->RecursionCount++;
+        return 1;
+    }
+    
+    // Failed to acquire (already locked by another thread)
+    return 0;
+}
+
+//=============================================================================
+// Exception Handling Functions Implementation
+//=============================================================================
+
+/**
+ * RtlCaptureContext @ 0x8258628C
+ * 
+ * Captures the current CPU context.
+ * 
+ * Note: This is a simplified stub implementation.
+ * Full implementation would capture all CPU registers.
+ */
+void RtlCaptureContext(CONTEXT* ContextRecord) {
+    if (!ContextRecord) {
+        return;
+    }
+    
+    // Zero out the context
+    memset(ContextRecord, 0, sizeof(CONTEXT));
+    
+    // Set context flags to indicate what's valid
+    ContextRecord->ContextFlags = 0x00000001;  // CONTEXT_CONTROL
+    
+    // On x86/x64, we could use inline assembly or compiler intrinsics
+    // For cross-platform, we provide a minimal stub
+    
+#if defined(__GNUC__) || defined(__clang__)
+    // Capture program counter (return address)
+    ContextRecord->Pc = (uint32_t)(uintptr_t)__builtin_return_address(0);
+    
+    // Capture frame pointer
+    ContextRecord->Gpr[1] = (uint32_t)(uintptr_t)__builtin_frame_address(0);
+#endif
+}
+
+/**
+ * RtlUnwind @ 0x8258629C
+ * 
+ * Unwinds the stack for exception handling.
+ * 
+ * Note: This is a stub implementation for cross-platform compatibility.
+ * Full implementation would walk the stack and call exception handlers.
+ */
+void RtlUnwind(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue) {
+    (void)TargetFrame;
+    (void)TargetIp;
+    (void)ExceptionRecord;
+    (void)ReturnValue;
+    
+    // Stub: In a full implementation, this would:
+    // 1. Walk the stack from current frame to TargetFrame
+    // 2. Call exception handlers for each frame
+    // 3. Restore context to TargetFrame
+    // 4. Jump to TargetIp with ReturnValue
+    
+    // For cross-platform, we rely on C++ exceptions instead
 }

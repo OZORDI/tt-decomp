@@ -320,6 +320,181 @@ uint32_t MmQueryAddressProtect(void* pAddress);
  */
 void DbgBreakPoint(void);
 
+//=============================================================================
+// String Functions
+//=============================================================================
+
+// ANSI_STRING structure (NT kernel counted string)
+typedef struct _ANSI_STRING {
+    uint16_t Length;        // Length of string in bytes (not including null terminator)
+    uint16_t MaximumLength; // Maximum length of buffer in bytes
+    char* Buffer;           // Pointer to string buffer
+} ANSI_STRING, *PANSI_STRING;
+
+// UNICODE_STRING structure (NT kernel counted wide string)
+typedef struct _UNICODE_STRING {
+    uint16_t Length;        // Length of string in bytes (not including null terminator)
+    uint16_t MaximumLength; // Maximum length of buffer in bytes
+    uint16_t* Buffer;       // Pointer to wide string buffer
+} UNICODE_STRING, *PUNICODE_STRING;
+
+/**
+ * RtlInitAnsiString @ 0x8258664C | ordinal: varies
+ * 
+ * Initializes an ANSI_STRING structure.
+ * Calculates the length of the source string and sets up the structure.
+ * 
+ * @param DestinationString Pointer to ANSI_STRING to initialize
+ * @param SourceString      Pointer to null-terminated source string (can be NULL)
+ */
+void RtlInitAnsiString(ANSI_STRING* DestinationString, const char* SourceString);
+
+//=============================================================================
+// Error Code Conversion Functions
+//=============================================================================
+
+/**
+ * RtlNtStatusToDosError @ 0x82585E5C | ordinal: varies
+ * 
+ * Converts an NTSTATUS code to a Win32/DOS error code.
+ * 
+ * @param Status NTSTATUS code to convert
+ * @return Corresponding Win32 error code
+ */
+uint32_t RtlNtStatusToDosError(NTSTATUS Status);
+
+//=============================================================================
+// XEX Header Functions
+//=============================================================================
+
+// XEX header field IDs
+#define XEX_HEADER_RESOURCE_INFO        0x000002FF
+#define XEX_HEADER_FILE_FORMAT_INFO     0x000003FF
+#define XEX_HEADER_BASE_REFERENCE       0x00000405
+#define XEX_HEADER_DELTA_PATCH_DESCRIPTOR 0x000005FF
+#define XEX_HEADER_BOUNDING_PATH        0x000080FF
+#define XEX_HEADER_DEVICE_ID            0x00008105
+#define XEX_HEADER_ORIGINAL_BASE_ADDRESS 0x00010001
+#define XEX_HEADER_ENTRY_POINT          0x00010100
+#define XEX_HEADER_IMAGE_BASE_ADDRESS   0x00010201
+#define XEX_HEADER_IMPORT_LIBRARIES     0x000103FF
+#define XEX_HEADER_CHECKSUM_TIMESTAMP   0x00018002
+#define XEX_HEADER_ENABLED_FOR_CALLCAP  0x00018102
+#define XEX_HEADER_ENABLED_FOR_FASTCAP  0x00018200
+#define XEX_HEADER_ORIGINAL_PE_NAME     0x000183FF
+#define XEX_HEADER_STATIC_LIBRARIES     0x000200FF
+#define XEX_HEADER_TLS_INFO             0x00020104
+#define XEX_HEADER_DEFAULT_STACK_SIZE   0x00020200
+#define XEX_HEADER_DEFAULT_FILESYSTEM_CACHE_SIZE 0x00020301
+#define XEX_HEADER_DEFAULT_HEAP_SIZE    0x00020401
+#define XEX_HEADER_PAGE_HEAP_SIZE_AND_FLAGS 0x00028002
+#define XEX_HEADER_SYSTEM_FLAGS         0x00030000
+#define XEX_HEADER_EXECUTION_INFO       0x00040006
+#define XEX_HEADER_TITLE_WORKSPACE_SIZE 0x00040201
+#define XEX_HEADER_GAME_RATINGS         0x00040310
+#define XEX_HEADER_LAN_KEY              0x00040404
+#define XEX_HEADER_XBOX360_LOGO         0x000405FF
+#define XEX_HEADER_MULTIDISC_MEDIA_IDS  0x000406FF
+#define XEX_HEADER_ALTERNATE_TITLE_IDS  0x000407FF
+#define XEX_HEADER_ADDITIONAL_TITLE_MEMORY 0x00040801
+
+/**
+ * RtlImageXexHeaderField @ 0x82585E3C | ordinal: varies
+ * 
+ * Retrieves a field from the XEX (Xbox Executable) header.
+ * 
+ * @param XexHeaderBase Pointer to XEX header
+ * @param ImageField    Field ID to retrieve
+ * @return Pointer to field data, or NULL if not found
+ */
+void* RtlImageXexHeaderField(void* XexHeaderBase, uint32_t ImageField);
+
+//=============================================================================
+// Physical Memory Functions
+//=============================================================================
+
+/**
+ * MmGetPhysicalAddress @ 0x8258630C | ordinal: varies
+ * 
+ * Converts a virtual address to a physical address.
+ * On Xbox 360, memory is directly mapped.
+ * 
+ * @param BaseAddress Virtual address to convert
+ * @return Physical address (on Xbox 360, typically same as virtual)
+ */
+uint64_t MmGetPhysicalAddress(void* BaseAddress);
+
+//=============================================================================
+// Critical Section Functions (Extended)
+//=============================================================================
+
+// RTL_CRITICAL_SECTION structure (matches Windows CRITICAL_SECTION)
+typedef struct _RTL_CRITICAL_SECTION {
+    void* DebugInfo;
+    int32_t LockCount;
+    int32_t RecursionCount;
+    void* OwningThread;
+    void* LockSemaphore;
+    uint32_t SpinCount;
+} RTL_CRITICAL_SECTION, *PRTL_CRITICAL_SECTION;
+
+/**
+ * RtlTryEnterCriticalSection @ 0x8258625C | ordinal: varies
+ * 
+ * Attempts to enter a critical section without blocking.
+ * 
+ * @param CriticalSection Pointer to critical section
+ * @return TRUE (1) if acquired, FALSE (0) if already owned by another thread
+ */
+uint32_t RtlTryEnterCriticalSection(RTL_CRITICAL_SECTION* CriticalSection);
+
+//=============================================================================
+// Exception Handling Functions
+//=============================================================================
+
+// CONTEXT structure (simplified - full structure is platform-specific)
+typedef struct _CONTEXT {
+    // General purpose registers
+    uint32_t Gpr[32];
+    
+    // Floating point registers
+    double Fpr[32];
+    
+    // Special registers
+    uint32_t Cr;   // Condition register
+    uint32_t Lr;   // Link register
+    uint32_t Ctr;  // Count register
+    uint32_t Xer;  // Fixed-point exception register
+    uint32_t Pc;   // Program counter
+    uint32_t Msr;  // Machine state register
+    
+    // Additional state
+    uint32_t ContextFlags;
+} CONTEXT, *PCONTEXT;
+
+/**
+ * RtlCaptureContext @ 0x8258628C | ordinal: varies
+ * 
+ * Captures the current CPU context (register state).
+ * Used for exception handling and stack traces.
+ * 
+ * @param ContextRecord Pointer to CONTEXT structure to fill
+ */
+void RtlCaptureContext(CONTEXT* ContextRecord);
+
+/**
+ * RtlUnwind @ 0x8258629C | ordinal: varies
+ * 
+ * Unwinds the stack for exception handling.
+ * Calls exception handlers during the unwind process.
+ * 
+ * @param TargetFrame   Target frame to unwind to (NULL = unwind all)
+ * @param TargetIp      Target instruction pointer
+ * @param ExceptionRecord Exception record (can be NULL)
+ * @param ReturnValue   Value to return from exception
+ */
+void RtlUnwind(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* ReturnValue);
+
 #ifdef __cplusplus
 }
 #endif
