@@ -12,28 +12,8 @@
 #pragma once
 #include <stdint.h>
 
-// ── charViewCharData  [vtable @ 0x820762F4] ──────────────────────────
-struct charViewCharData {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8240b238
-    virtual void vfn_21();  // [21] @ 0x8240b280
-    virtual void vfn_22();  // [22] @ 0x8230a4f8
-};
-
-// ── charViewData  [vtable @ 0x8207635C] ──────────────────────────
-struct charViewData {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~charViewData();                  // [0] @ 0x8240b530
-    virtual void vfn_2();  // [2] @ 0x8240b598
-    virtual void vfn_3();  // [3] @ 0x8240b5c0
-    virtual void vfn_20();  // [20] @ 0x8240b310
-    virtual void vfn_21();  // [21] @ 0x8240b770
-    virtual void vfn_22();  // [22] @ 0x8231f408
-};
+// charViewCharData and charViewData moved to include/game/char_view.hpp
+// See that file for full implementation
 
 // ── creditsData  [vtable @ 0x820766EC] ──────────────────────────
 struct creditsData {
@@ -125,31 +105,8 @@ struct pongBootState {
     virtual void vfn_13();  // [13] @ 0x822c1210
 };
 
-// ── pongCharViewContext  [2 vtables — template/MI] ──────────────────────────
-struct pongCharViewContext {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~pongCharViewContext();                  // [0] @ 0x8230a600
-    virtual void vfn_11();  // [11] @ 0x8230a898
-    virtual void vfn_12();  // [12] @ 0x8230ab50
-    virtual void vfn_16();  // [16] @ 0x8230ac90
-    virtual void vfn_17();  // [17] @ 0x8230af50
-    virtual void vfn_18();  // [18] @ 0x8230c0a8
-    virtual void vfn_23();  // [23] @ 0x8230a8f8
-};
-
-// ── pongCharViewState  [vtable @ 0x8205F174] ──────────────────────────
-struct pongCharViewState {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~pongCharViewState();                  // [0] @ 0x8230c490
-    virtual void vfn_11();  // [11] @ 0x8230c5f8
-    virtual void vfn_12();  // [12] @ 0x8230c6b0
-    virtual void vfn_13();  // [13] @ 0x8230a4e8
-    virtual void vfn_14();  // [14] @ 0x8230c4f8
-};
+// pongCharViewContext and pongCharViewState moved to include/game/char_view.hpp
+// See that file for full implementation with proper inheritance and structure
 
 // ── pongCreditsContext  [2 vtables — template/MI] ──────────────────────────
 struct pongCreditsContext {
