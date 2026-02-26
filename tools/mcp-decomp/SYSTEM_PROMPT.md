@@ -234,23 +234,7 @@ void pongPlayer::Update() {
     // Clean, idiomatic C++
 }
 ```
-
----
-
-## Priority Functions to Lift
-
-Start with the **menu boot critical path** (from DECOMPILATION_GUIDE.md):
-
-1. CRT layer: `src/crt/` — memory, string, entry
-2. `rage_free_00C0` @ 0x820C00C0 — heap free  
-3. `rage_main_6970` @ 0x82186970 — main entry
-4. `rage_game_obj_init` @ 0x8215CB60 — object init
-5. `rage_subsystem_init` @ 0x822E2430 — subsystem init
-6. `audSystem_init` @ 0x82221ED0 — audio init
-
-For player logic, start with the simpler state query functions in `pongPlayer` (D598, D5F0, D550, D660) before tackling the complex ones (5FB8, 7038).
-
----
+ 
 
 ## Quality Check
 
