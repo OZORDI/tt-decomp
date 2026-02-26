@@ -9,6 +9,8 @@
  * 1. Name/Identifier classes - Store references to animations and shots
  * 2. Data classes - Core cutscene data and configuration
  * 3. Action classes - Cutscene script actions (loop, if, wait, etc.)
+ * 
+ * All classes are XML-serializable and use the xmlNodeStruct base system.
  */
 
 #pragma once
@@ -38,63 +40,81 @@ struct gdCSCharCamShotName {
 };
 
 /**
- * gdCSCharAnimData @ vtable 0x82076D4C
+ * gdCSCharAnimData @ vtable 0x82076D4C | size: 0x64 (100 bytes)
  * 
  * Character animation data for cutscenes.
- * Contains animation name, timing, and playback parameters.
+ * Contains animation file name, timing, weight, and emote range parameters.
+ * 
+ * XML Properties:
+ * - FileName: Animation file name
+ * - Enabled: Whether animation is enabled (default: true)
+ * - TimeOffset: Time offset for animation start (default: -1.0)
+ * - Duration: Animation duration
+ * - Weight: Animation selection weight (default: 1)
+ * - EmoteRangeMin: Minimum emote range value (default: 0.0)
+ * - EmoteRangeMax: Maximum emote range value (default: 1.0)
+ * - IsEmote: Whether this is an emote animation
  */
 struct gdCSCharAnimData {
-    void* vtable;  // +0x00
-    uint32_t m_field_04;
-    uint32_t m_field_08;
-    uint32_t m_field_0C;
-    const char* m_pAnimName;  // +0x10 - Animation name string
-    uint32_t m_field_14;
-    uint32_t m_field_18;
-    uint32_t m_field_1C;
-    uint32_t m_field_20;
-    uint32_t m_field_24;
-    uint32_t m_field_28;
-    uint32_t m_field_2C;
-    uint32_t m_field_30;
-    uint32_t m_field_34;
-    uint32_t m_field_38;
-    uint32_t m_field_3C;
-    float m_duration;  // +0x40 - Animation duration
-    int32_t m_field_44;  // +0x44
-    float m_startTime;  // +0x48 - Start time
-    float m_endTime;  // +0x4C - End time
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    uint32_t m_field_08;            // +0x08
+    uint32_t m_field_0C;            // +0x0C
+    const char* m_pFileName;        // +0x10 - Animation file name
+    uint8_t m_bEnabled;             // +0x14 - Enabled flag (default: 1)
+    uint8_t m_padding_15[11];       // +0x15 - Padding
+    float m_timeOffset;             // +0x20 - Time offset (default: -1.0)
+    float m_field_24;               // +0x24 - (default: -1.0)
+    float m_field_28;               // +0x28 - (default: -1.0)
+    uint32_t m_field_2C;            // +0x2C
+    float m_field_30;               // +0x30 - (default: 0.0)
+    float m_field_34;               // +0x34 - (default: 0.0)
+    float m_field_38;               // +0x38 - (default: 0.0)
+    uint32_t m_field_3C;            // +0x3C
+    float m_duration;               // +0x40 - Animation duration (default: 0.0)
+    int32_t m_weight;               // +0x44 - Selection weight (default: 1)
+    float m_emoteRangeMin;          // +0x48 - Emote range min (default: 0.0)
+    float m_emoteRangeMax;          // +0x4C - Emote range max (default: 1.0)
+    uint8_t m_bIsEmote;             // +0x50 - Is emote flag (default: 0)
+    uint8_t m_padding_51[3];        // +0x51 - Padding
+    uint32_t m_field_54;            // +0x54
+    uint16_t m_field_58;            // +0x58
+    uint16_t m_field_5A;            // +0x5A
+    uint32_t m_field_5C;            // +0x5C
+    uint16_t m_field_60;            // +0x60
+    uint16_t m_field_62;            // +0x62
     
     // Virtual methods
     virtual ~gdCSCharAnimData() = default;
     virtual void vfn_20();  // @ 0x8240C990
-    virtual void vfn_21();  // @ 0x8240CBD0
+    virtual void vfn_21();  // @ 0x8240CBD0 - Register XML properties
     virtual const char* GetTypeName();  // @ 0x8240C9D8
     virtual void vfn_3();  // @ 0x8240CDE8
     
     // Methods
-    void PostLoadProperties();  // @ 0x8240CD00
+    void PostLoadProperties();  // @ 0x8240CD00 - Validate animation data
 };
 
 /**
  * gdCSCharAnimNames @ vtable 0x82076DB4
  * 
  * Collection of character animation names with random selection support.
+ * Supports weighted random selection and name filtering.
  */
 struct gdCSCharAnimNames {
-    void* vtable;  // +0x00
-    uint32_t m_field_04;
-    uint32_t m_field_08;
-    uint32_t m_field_0C;
+    void* vtable;                       // +0x00
+    uint32_t m_field_04;                // +0x04
+    uint32_t m_field_08;                // +0x08
+    uint32_t m_field_0C;                // +0x0C
     gdCSCharAnimData** m_pAnimDataArray;  // +0x10 - Array of animation data pointers
-    uint16_t m_animCount;  // +0x14 - Number of animations
-    uint16_t m_field_16;
-    uint32_t* m_pSelectionFlags;  // +0x18 - Flags for which anims are selected
-    uint16_t m_field_1C;
-    uint16_t m_field_1E;
-    uint32_t* m_pNameMatchFlags;  // +0x20 - Flags for name matching
-    uint16_t m_field_24;
-    uint16_t m_field_26;
+    uint16_t m_animCount;               // +0x14 - Number of animations (also at +0x1C)
+    uint16_t m_field_16;                // +0x16
+    uint32_t* m_pSelectionFlags;        // +0x18 - Flags for which anims pass time filter
+    uint16_t m_field_1C;                // +0x1C - Also animation count
+    uint16_t m_field_1E;                // +0x1E
+    uint32_t* m_pNameMatchFlags;        // +0x20 - Flags for name matching
+    uint16_t m_field_24;                // +0x24 - Also animation count
+    uint16_t m_field_26;                // +0x26
     
     // Virtual methods
     virtual ~gdCSCharAnimNames() = default;
@@ -104,7 +124,7 @@ struct gdCSCharAnimNames {
     virtual void vfn_3();  // @ 0x8240D340
     
     // Methods
-    void FindRandAnimData(uint32_t param1, uint32_t param2, uint32_t param3);  // @ 0x8240D4A8
+    void FindRandAnimData(uint32_t randomSeed, uint32_t selectionMode, uint32_t nameFilter);  // @ 0x8240D4A8
 };
 
 /**
@@ -163,18 +183,18 @@ struct gdCSNameData {
  * gdCutSceneData @ vtable 0x82077AAC
  * 
  * Main cutscene data container.
- * Stores cutscene name and references to cutscene assets.
+ * Stores cutscene name and resolves it to an ID during PostLoadProperties.
  */
 struct gdCutSceneData {
-    void* vtable;  // +0x00
-    uint32_t m_field_04;
-    uint32_t m_field_08;
-    uint32_t m_field_0C;
-    uint32_t m_field_10;
-    const char* m_pCutsceneName;  // +0x14 - Cutscene name string
-    uint32_t m_field_18;
-    uint16_t m_cutsceneId;  // +0x1C - Cutscene ID
-    uint16_t m_field_1E;
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    uint32_t m_field_08;            // +0x08
+    uint32_t m_field_0C;            // +0x0C
+    uint32_t m_field_10;            // +0x10
+    const char* m_pCutsceneName;    // +0x14 - Cutscene name string
+    uint32_t m_field_18;            // +0x18
+    uint16_t m_cutsceneId;          // +0x1C - Resolved cutscene ID
+    uint16_t m_field_1E;            // +0x1E
     
     // Virtual methods
     virtual ~gdCutSceneData() = default;
@@ -183,7 +203,7 @@ struct gdCutSceneData {
     virtual const char* GetTypeName();  // @ 0x82347030
     
     // Methods
-    void PostLoadProperties();  // @ 0x8240EA10
+    void PostLoadProperties();  // @ 0x8240EA10 - Resolve name to ID
 };
 
 // ============================================================================
@@ -207,120 +227,169 @@ struct gdCSActionLoopData {
 };
 
 /**
- * gdCSActionIfData @ vtable 0x82077B7C
+ * gdCSActionIfData @ vtable 0x82077B7C | size: ~0x30 (48 bytes)
  * 
  * Conditional action for cutscene scripts.
- * Executes actions based on conditions.
+ * Executes actions based on game state conditions.
+ * 
+ * Supported condition types:
+ * - PLAYER_SCORE_EQUAL (0)
+ * - PLAYER_SCORE_GREATER (1)
+ * - PLAYER_SCORE_LESS (2)
+ * - OPPONENT_SCORE_EQUAL (3)
+ * - OPPONENT_SCORE_GREATER (4)
+ * - OPPONENT_SCORE_LESS (5)
+ * - RANDOM_PERCENT (6)
  */
 struct gdCSActionIfData {
-    void* vtable;  // +0x00
-    uint32_t m_field_04;
-    uint32_t m_field_08;
-    uint32_t m_field_0C;
-    uint32_t m_field_10;
-    const char* m_pConditionType;  // +0x14 - Condition type string
-    uint32_t m_field_18;
-    uint32_t m_field_1C;
-    void* m_pThenActions;  // +0x20 - Actions to execute if true
-    void* m_pElseActions;  // +0x24 - Actions to execute if false
-    uint32_t m_conditionEnum;  // +0x28 - Parsed condition type enum
-    uint32_t m_conditionParam;  // +0x2C - Condition parameter
+    void* vtable;                       // +0x00
+    uint32_t m_field_04;                // +0x04
+    uint32_t m_field_08;                // +0x08
+    uint32_t m_field_0C;                // +0x0C
+    uint32_t m_field_10;                // +0x10
+    const char* m_pConditionType;       // +0x14 - Condition type string
+    uint32_t m_field_18;                // +0x18
+    uint32_t m_field_1C;                // +0x1C
+    void* m_pThenActions;               // +0x20 - Actions to execute if true
+    void* m_pElseActions;               // +0x24 - Actions to execute if false
+    uint32_t m_conditionEnum;           // +0x28 - Parsed condition type (0-6, 7=invalid)
+    uint32_t m_conditionParam;          // +0x2C - Condition parameter (score value, etc.)
     
     // Virtual methods
     virtual ~gdCSActionIfData();  // @ 0x8240EC40 - Frees action lists
     virtual void vfn_20();  // @ 0x8240EBE8
     virtual void vfn_21();  // @ 0x8240ECB0
-    virtual const char* GetTypeName();  // @ 0x823472A8
+    virtual const char* GetTypeName();  // @ 0x823472A8 - Returns "If"
     
     // Methods
-    void PostLoadProperties();  // @ 0x8240ED80
+    void PostLoadProperties();  // @ 0x8240ED80 - Parse condition and validate
 };
 
 /**
- * gdCSActionWaitData @ vtable 0x82077BE4
+ * gdCSActionWaitData @ vtable 0x82077BE4 | size: ~0x18 (24 bytes)
  * 
  * Wait/delay action for cutscene scripts.
+ * 
+ * XML Properties:
+ * - WaitType: Type of wait condition
+ * - Duration: Wait duration in seconds
  */
 struct gdCSActionWaitData {
-    void* vtable;  // +0x00
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    uint32_t m_field_08;            // +0x08
+    uint32_t m_field_0C;            // +0x0C
+    const char* m_pWaitType;        // +0x10 - Wait type string
+    float m_duration;               // +0x14 - Wait duration
     
     // Virtual methods
     virtual ~gdCSActionWaitData() = default;
     virtual void vfn_20();  // @ 0x8240F0F8
-    virtual void vfn_21();  // @ 0x8240F150
-    virtual const char* GetTypeName();  // @ 0x823473F8
+    virtual void vfn_21();  // @ 0x8240F150 - Register XML properties
+    virtual const char* GetTypeName();  // @ 0x823473F8 - Returns "Wait"
 };
 
 /**
- * gdCSActionCamAnimData @ vtable 0x82077C4C
+ * gdCSActionCamAnimData @ vtable 0x82077C4C | size: ~0x18 (24 bytes)
  * 
  * Camera animation action for cutscenes.
  */
 struct gdCSActionCamAnimData {
-    void* vtable;  // +0x00
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    uint32_t m_field_08;            // +0x08
+    uint32_t m_field_0C;            // +0x0C
+    uint32_t m_field_10;            // +0x10
+    const char* m_pCameraName;      // +0x14 - Camera animation name
     
     // Virtual methods
     virtual ~gdCSActionCamAnimData() = default;
     virtual void vfn_20();  // @ 0x8240F1B8
     virtual void vfn_21();  // @ 0x8240F210
-    virtual const char* GetTypeName();  // @ 0x82347498
+    virtual const char* GetTypeName();  // @ 0x82347498 - Returns "CamAnim"
     
     // Methods
-    void PostLoadProperties();  // @ 0x8240F2A0
+    void PostLoadProperties();  // @ 0x8240F2A0 - Validate camera name
 };
 
 /**
- * gdCSActionCharAnimData @ vtable 0x82077CB4
+ * gdCSActionCharAnimData @ vtable 0x82077CB4 | size: ~0x1C (28 bytes)
  * 
  * Character animation action for cutscenes.
  */
 struct gdCSActionCharAnimData {
-    void* vtable;  // +0x00
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    uint32_t m_field_08;            // +0x08
+    uint32_t m_field_0C;            // +0x0C
+    uint32_t m_field_10;            // +0x10
+    int32_t m_characterId;          // +0x14 - Character ID (-1 = invalid)
+    const char* m_pAnimName;        // +0x18 - Animation name
     
     // Virtual methods
     virtual ~gdCSActionCharAnimData() = default;
     virtual void vfn_20();  // @ 0x8240F310
     virtual void vfn_21();  // @ 0x8240F368
-    virtual const char* GetTypeName();  // @ 0x82347538
+    virtual const char* GetTypeName();  // @ 0x82347538 - Returns "CharAnim"
     
     // Methods
-    void PostLoadProperties();  // @ 0x8240F450
+    void PostLoadProperties();  // @ 0x8240F450 - Validate character ID and anim name
 };
 
 /**
- * gdCSActionCharVisibleData @ vtable 0x82077D1C
+ * gdCSActionCharVisibleData @ vtable 0x82077D1C | size: ~0x18 (24 bytes)
  * 
  * Character visibility toggle action for cutscenes.
  */
 struct gdCSActionCharVisibleData {
-    void* vtable;  // +0x00
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    uint32_t m_field_08;            // +0x08
+    uint32_t m_field_0C;            // +0x0C
+    uint32_t m_field_10;            // +0x10
+    int32_t m_characterId;          // +0x14 - Character ID (-1 = invalid)
     
     // Virtual methods
     virtual ~gdCSActionCharVisibleData() = default;
     virtual void vfn_20();  // @ 0x8240F4D8
     virtual void vfn_21();  // @ 0x8240F530
-    virtual const char* GetTypeName();  // @ 0x823475E8
+    virtual const char* GetTypeName();  // @ 0x823475E8 - Returns "CharVisible"
     
     // Methods
-    void PostLoadProperties();  // @ 0x8240F5C0
+    void PostLoadProperties();  // @ 0x8240F5C0 - Validate character ID
 };
 
 /**
- * gdCSActionPlayAudioData @ vtable 0x82077D84
+ * gdCSActionPlayAudioData @ vtable 0x82077D84 | size: ~0x24 (36 bytes)
  * 
  * Audio playback action for cutscenes.
+ * 
+ * Audio types:
+ * - "MUSIC" (0)
+ * - "SOUND" (1)
+ * 
+ * Special audio names:
+ * - "NONE" (ID: 7)
  */
 struct gdCSActionPlayAudioData {
-    void* vtable;  // +0x00
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    uint32_t m_field_08;            // +0x08
+    uint32_t m_field_0C;            // +0x0C
+    uint32_t m_field_10;            // +0x10
+    const char* m_pAudioType;       // +0x14 - "MUSIC" or "SOUND"
+    const char* m_pAudioName;       // +0x18 - Audio asset name
+    uint32_t m_audioTypeEnum;       // +0x1C - 0=MUSIC, 1=SOUND
+    uint32_t m_audioId;             // +0x20 - Resolved audio ID (7="NONE")
     
     // Virtual methods
     virtual ~gdCSActionPlayAudioData() = default;
     virtual void vfn_20();  // @ 0x8240F608
     virtual void vfn_21();  // @ 0x8240F660
-    virtual const char* GetTypeName();  // @ 0x82347688
+    virtual const char* GetTypeName();  // @ 0x82347688 - Returns "PlayAudio"
     
     // Methods
-    void PostLoadProperties();  // @ 0x8240F6F0
+    void PostLoadProperties();  // @ 0x8240F6F0 - Parse audio type and validate
 };
 
 /**
@@ -335,7 +404,7 @@ struct gdCSActionLvlAmbAnimData {
     virtual ~gdCSActionLvlAmbAnimData() = default;
     virtual void vfn_20();  // @ 0x8240F948
     virtual void vfn_21();  // @ 0x8240FA08
-    virtual const char* GetTypeName();  // @ 0x823477C8
+    virtual const char* GetTypeName();  // @ 0x823477C8 - Returns "LvlAmbAnim"
     
     // Methods
     void PostLoadProperties();  // @ 0x8240FAA0
@@ -353,7 +422,7 @@ struct gdCSActionCharAmbAnimData {
     virtual ~gdCSActionCharAmbAnimData() = default;
     virtual void vfn_20();  // @ 0x8240FB50
     virtual void vfn_21();  // @ 0x8240FC10
-    virtual const char* GetTypeName();  // @ 0x82347868
+    virtual const char* GetTypeName();  // @ 0x82347868 - Returns "CharAmbAnim"
     
     // Methods
     void PostLoadProperties();  // @ 0x8240FCC8
@@ -371,5 +440,5 @@ struct gdCSActionShowAllAmbientsData {
     virtual ~gdCSActionShowAllAmbientsData() = default;
     virtual void vfn_20();  // @ 0x8240FD90
     virtual void vfn_21();  // @ 0x8240FDE8
-    virtual const char* GetTypeName();  // @ 0x82347910
+    virtual const char* GetTypeName();  // @ 0x82347910 - Returns "ShowAllAmbients"
 };

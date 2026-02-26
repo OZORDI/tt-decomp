@@ -13,11 +13,12 @@
 // External dependencies
 extern "C" {
     void xmlNodeStruct_vfn_2(void* node);
-    void atSingleton_F6B8_p39(const char* name);
+    uint16_t atSingleton_F6B8_p39(const char* name);
     void atSingleton_9420(void* obj);
     void nop_8240E6D0(const char* msg, ...);
     void rage_free_00C0(void* ptr);
     int _stricmp(const char* str1, const char* str2);
+    void game_8F58(void* obj, const char* propName, void* target, void* defaultVal, uint32_t flags);
 }
 
 // ============================================================================
@@ -28,42 +29,44 @@ extern "C" {
  * gdCSCharAnimData::PostLoadProperties @ 0x8240CD00 | size: 0xE8
  * 
  * Validates animation data after loading from XML.
- * Checks duration, timing, and parameter ranges.
+ * Checks:
+ * - FileName property exists and is non-empty
+ * - Duration is non-negative
+ * - Weight is non-negative
+ * - Emote range is valid (min >= 0.0, max <= 1.0, min <= max)
  */
 void gdCSCharAnimData::PostLoadProperties() {
     // Call base class PostLoadProperties
     xmlNodeStruct_vfn_2(this);
     
-    // Validate animation name exists
-    if (!m_pAnimName || m_pAnimName[0] == '\0') {
-        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - no anim name");
+    // Validate FileName exists
+    if (!m_pFileName || m_pFileName[0] == '\0') {
+        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - missing property 'FileName'");
         return;
     }
     
-    // Validate duration is positive
-    // lbl_8202D108 @ 0x8202D108 contains validation constants
-    const float MIN_DURATION = 0.0f;  // From offset +8
+    // Validate duration is non-negative
+    const float MIN_DURATION = 0.0f;
     if (m_duration < MIN_DURATION) {
-        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - duration < 0");
+        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - 'TimeOffset' cannot be negative");
     }
     
-    // Validate field_44 is non-negative
-    if (m_field_44 < 0) {
-        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - field_44 < 0");
+    // Validate weight is non-negative
+    if (m_weight < 0) {
+        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - cannot have negative weight");
     }
     
-    // Validate time range
-    // lbl_82075938 @ 0x82075938 contains 0.0f constant
+    // Validate emote range
     const float ZERO = 0.0f;
     const float ONE = 1.0f;
     
-    if (m_startTime >= ZERO && m_endTime <= ONE) {
-        if (m_startTime <= m_endTime) {
+    if (m_emoteRangeMin >= ZERO && m_emoteRangeMax <= ONE) {
+        if (m_emoteRangeMin <= m_emoteRangeMax) {
             return;  // Valid range
         }
     }
     
-    nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - invalid time range");
+    nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - invalid emote range");
 }
 
 // ============================================================================
@@ -74,6 +77,7 @@ void gdCSCharAnimData::PostLoadProperties() {
  * gdCutSceneData::PostLoadProperties @ 0x8240EA10 | size: 0x68
  * 
  * Resolves cutscene name to ID after loading.
+ * Logs warning if cutscene name is not found in the registry.
  */
 void gdCutSceneData::PostLoadProperties() {
     // Call base class PostLoadProperties
@@ -84,9 +88,7 @@ void gdCutSceneData::PostLoadProperties() {
     }
     
     // Look up cutscene ID by name
-    atSingleton_F6B8_p39(m_pCutsceneName);
-    // Result is returned in a register, stored to m_cutsceneId
-    // (Assembly shows: sth r3,28(r30) - store halfword at offset 28)
+    m_cutsceneId = atSingleton_F6B8_p39(m_pCutsceneName);
     
     if (m_cutsceneId == 0) {
         nop_8240E6D0("gdCutSceneData::PostLoadProperties() - unknown cutscene name '%s'", 
@@ -103,21 +105,16 @@ void gdCutSceneData::PostLoadProperties() {
  * 
  * Validates loop action properties.
  * Checks if property name matches known loop property types.
+ * Returns 1 if property is valid, 0 if unknown.
  */
 void gdCSActionLoopData::vfn_20() {
     // This function compares a property name (in r4) against known property types
-    // Returns 1 if property is valid, 0 if unknown
-    
-    // The function loads three property name pointers and compares against them:
-    // - lbl_82075B2C @ offset 11052 (0x2B2C)
-    // - lbl_82075B1C @ offset 11036 (0x2B1C)  
-    // - lbl_825D803C @ offset -32708
-    // - lbl_825D8038 @ offset -32712
-    
+    // The function loads property name pointers and compares against them
     // If any match, return 1 (property is valid)
     // Otherwise return 0 (unknown property)
     
     // Note: This is a property validation function used during XML parsing
+    // The actual implementation requires access to the property name parameter
 }
 
 /**
@@ -126,7 +123,6 @@ void gdCSActionLoopData::vfn_20() {
  * Returns the type name string for this action.
  */
 const char* gdCSActionLoopData::GetTypeName() {
-    // Returns pointer to string "Loop" at 0x820652FC
     return "Loop";
 }
 
@@ -157,9 +153,6 @@ gdCSActionIfData::~gdCSActionIfData() {
     
     // Call base destructor
     atSingleton_9420(this);
-    
-    // Note: The assembly checks bit 0 of the destructor flags parameter (r30)
-    // If set, it also frees the object itself
 }
 
 /**
@@ -168,15 +161,13 @@ gdCSActionIfData::~gdCSActionIfData() {
  * Parses condition type string and validates parameters.
  * 
  * Supported condition types:
- * - "PLAYER_SCORE_EQUAL"
- * - "PLAYER_SCORE_GREATER"
- * - "PLAYER_SCORE_LESS"
- * - "OPPONENT_SCORE_EQUAL"
- * - "OPPONENT_SCORE_GREATER"
- * - "OPPONENT_SCORE_LESS"
- * - "RANDOM_PERCENT"
- * - "PLAYER_SERVE"
- * - "OPPONENT_SERVE"
+ * - "PLAYER_SCORE_EQUAL" (0)
+ * - "PLAYER_SCORE_GREATER" (1)
+ * - "PLAYER_SCORE_LESS" (2)
+ * - "OPPONENT_SCORE_EQUAL" (3)
+ * - "OPPONENT_SCORE_GREATER" (4) - Must be <= 100
+ * - "OPPONENT_SCORE_LESS" (5)
+ * - "RANDOM_PERCENT" (6)
  */
 void gdCSActionIfData::PostLoadProperties() {
     // Call base class PostLoadProperties
@@ -189,9 +180,6 @@ void gdCSActionIfData::PostLoadProperties() {
     }
     
     // Parse condition type string
-    // The function uses a string comparison loop to match against known types
-    // Stored at lbl_82075B34 @ offset 11060 (array of 7 string pointers)
-    
     const char* conditionTypes[] = {
         "PLAYER_SCORE_EQUAL",      // 0
         "PLAYER_SCORE_GREATER",    // 1
@@ -234,24 +222,159 @@ void gdCSActionIfData::PostLoadProperties() {
             if (m_conditionParam == 0xFFFFFFFF) {
                 nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - score condition missing parameter");
             } else if (m_conditionParam > 100) {
-                nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - score parameter > 100", 100);
+                nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - score parameter > %d", 100);
             }
             break;
             
         case 5:  // OPPONENT_SCORE_LESS
-            // Requires m_field_20 to be set
+            // Requires then actions to be set
             if (!m_pThenActions) {
                 nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - missing then actions");
             }
             break;
             
         case 6:  // RANDOM_PERCENT
-            // Requires m_field_24 to be set
+            // Requires else actions to be set
             if (!m_pElseActions) {
                 nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - missing else actions");
             }
             break;
     }
+}
+
+const char* gdCSActionIfData::GetTypeName() {
+    return "If";
+}
+
+// ============================================================================
+// gdCSActionWaitData Implementation
+// ============================================================================
+
+const char* gdCSActionWaitData::GetTypeName() {
+    return "Wait";
+}
+
+// ============================================================================
+// gdCSActionCamAnimData Implementation
+// ============================================================================
+
+/**
+ * gdCSActionCamAnimData::PostLoadProperties @ 0x8240F2A0 | size: 0x6C
+ * 
+ * Validates camera animation name is not empty.
+ */
+void gdCSActionCamAnimData::PostLoadProperties() {
+    xmlNodeStruct_vfn_2(this);
+    
+    if (!m_pCameraName || m_pCameraName[0] == '\0') {
+        nop_8240E6D0("gdCSActionCamAnimData::PostLoadProperties() - missing camera name");
+    }
+}
+
+const char* gdCSActionCamAnimData::GetTypeName() {
+    return "CamAnim";
+}
+
+// ============================================================================
+// gdCSActionCharAnimData Implementation
+// ============================================================================
+
+/**
+ * gdCSActionCharAnimData::PostLoadProperties @ 0x8240F450 | size: 0x84
+ * 
+ * Validates character ID and animation name.
+ */
+void gdCSActionCharAnimData::PostLoadProperties() {
+    xmlNodeStruct_vfn_2(this);
+    
+    // Validate character ID is set
+    if (m_characterId == -1) {
+        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing character ID");
+    }
+    
+    // Validate animation name is not empty
+    if (!m_pAnimName || m_pAnimName[0] == '\0') {
+        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing animation name");
+    }
+}
+
+const char* gdCSActionCharAnimData::GetTypeName() {
+    return "CharAnim";
+}
+
+// ============================================================================
+// gdCSActionCharVisibleData Implementation
+// ============================================================================
+
+/**
+ * gdCSActionCharVisibleData::PostLoadProperties @ 0x8240F5C0 | size: 0x44
+ * 
+ * Validates character ID is set.
+ */
+void gdCSActionCharVisibleData::PostLoadProperties() {
+    xmlNodeStruct_vfn_2(this);
+    
+    if (m_characterId == -1) {
+        nop_8240E6D0("gdCSActionCharVisibleData::PostLoadProperties() - missing character ID");
+    }
+}
+
+const char* gdCSActionCharVisibleData::GetTypeName() {
+    return "CharVisible";
+}
+
+// ============================================================================
+// gdCSActionPlayAudioData Implementation
+// ============================================================================
+
+/**
+ * gdCSActionPlayAudioData::PostLoadProperties @ 0x8240F6F0 | size: 0x128
+ * 
+ * Parses audio type and validates audio name.
+ * 
+ * Audio types:
+ * - "MUSIC" -> m_audioTypeEnum = 0
+ * - "SOUND" -> m_audioTypeEnum = 1
+ * 
+ * Special audio names:
+ * - "NONE" -> m_audioId = 7
+ */
+void gdCSActionPlayAudioData::PostLoadProperties() {
+    xmlNodeStruct_vfn_2(this);
+    
+    // Validate audio type is not empty
+    if (!m_pAudioType || m_pAudioType[0] == '\0') {
+        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing audio type");
+    }
+    
+    // Validate audio name is not empty
+    if (!m_pAudioName || m_pAudioName[0] == '\0') {
+        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing audio name");
+    }
+    
+    // Parse audio type
+    if (_stricmp(m_pAudioType, "MUSIC") == 0) {
+        m_audioTypeEnum = 0;
+    } else if (_stricmp(m_pAudioType, "SOUND") == 0) {
+        m_audioTypeEnum = 1;
+    } else {
+        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - unknown audio type '%s'", 
+                     m_pAudioType);
+    }
+    
+    // Check for special "NONE" audio name
+    if (_stricmp(m_pAudioName, "NONE") == 0) {
+        m_audioId = 7;
+    } else {
+        // For MUSIC type, validate audio name
+        if (m_audioTypeEnum == 0) {
+            // Additional validation for music names could go here
+        }
+    }
+}
+
+const char* gdCSActionPlayAudioData::GetTypeName() {
+    return "PlayAudio";
 }
 
 // ============================================================================
@@ -262,43 +385,46 @@ void gdCSActionIfData::PostLoadProperties() {
  * gdCSCharAnimNames::FindRandAnimData @ 0x8240D4A8 | size: 0x718
  * 
  * Finds a random animation from the collection based on:
- * - Random value (param1)
- * - Selection criteria (param2)
- * - Name filter (param3)
+ * - Random value (randomSeed) - used to index into random table
+ * - Selection criteria (selectionMode)
+ * - Name filter (nameFilter)
  * 
- * This is a complex function that:
- * 1. Validates the random value is in valid range
- * 2. Filters animations by enabled state
- * 3. Filters by time range overlap
- * 4. Filters by name matching
- * 5. Selects one animation based on weighted random selection
+ * Algorithm:
+ * 1. Get random float value from random table based on randomSeed
+ * 2. For each animation in m_pAnimDataArray:
+ *    - Check if enabled (m_bIsEmote field)
+ *    - Check if time range overlaps with random value
+ *    - Mark in m_pSelectionFlags
+ * 3. Filter by name if nameFilter is provided
+ * 4. Select final animation based on weighted probabilities
  */
 void gdCSCharAnimNames::FindRandAnimData(uint32_t randomSeed, uint32_t selectionMode, uint32_t nameFilter) {
-    // Note: This function is very complex (928 lines of assembly)
-    // It performs weighted random selection of animations with multiple filtering criteria
+    // Validate we have animation data
+    if (m_animCount == 0) {
+        nop_8240E6D0("gdCSCharAnimNames::FindRandAnimData() - no animation data at all");
+        return;
+    }
+    
+    // TODO: Full implementation requires understanding the random table structure
+    // and the exact weighting algorithm used
     
     // The function uses several temporary arrays:
     // - m_pSelectionFlags: Marks which animations pass time range filter
     // - m_pNameMatchFlags: Marks which animations match name filter
     
-    // Key steps:
-    // 1. Get random float value from random table based on randomSeed
-    // 2. For each animation in m_pAnimDataArray:
-    //    - Check if enabled (field at +80)
-    //    - Check if time range overlaps with random value
+    // Key steps from assembly analysis:
+    // 1. Get random float value from random table (lbl_825D1C44 + offset)
+    // 2. For each animation:
+    //    - Check m_bIsEmote flag at offset +80
+    //    - Check time range (m_emoteRangeMin, m_emoteRangeMax)
     //    - Mark in m_pSelectionFlags
-    // 3. Filter by name if nameFilter is provided
-    // 4. Select final animation based on weighted probabilities
-    
-    // TODO: Full implementation requires understanding the random table structure
-    // and the exact weighting algorithm used
+    // 3. If nameFilter provided, compare animation names
+    // 4. Select based on weighted random
 }
 
 // ============================================================================
-// Stub Implementations for Remaining Classes
+// Stub Implementations for Remaining Virtual Methods
 // ============================================================================
-
-// These are placeholder implementations - full lifting requires more analysis
 
 void gdCSCharCamShotName::vfn_20() {
     // TODO: Implement property validation
@@ -312,6 +438,23 @@ const char* gdCSCharCamShotName::GetTypeName() {
     return "CharCamShotName";
 }
 
+void gdCSCharAnimData::vfn_20() {
+    // TODO: Implement property validation
+}
+
+void gdCSCharAnimData::vfn_21() {
+    // TODO: Register XML properties
+    // Properties: FileName, Enabled, TimeOffset, Duration, Weight, EmoteRangeMin, EmoteRangeMax, IsEmote
+}
+
+const char* gdCSCharAnimData::GetTypeName() {
+    return "CharAnimData";
+}
+
+void gdCSCharAnimData::vfn_3() {
+    // TODO: Implement
+}
+
 void gdCSCharAnimNames::vfn_20() {
     // TODO: Implement property validation
 }
@@ -322,6 +465,10 @@ void gdCSCharAnimNames::vfn_21() {
 
 const char* gdCSCharAnimNames::GetTypeName() {
     return "CharAnimNames";
+}
+
+void gdCSCharAnimNames::vfn_3() {
+    // TODO: Implement
 }
 
 void gdCSCamAnimShotName::vfn_20() {
@@ -389,20 +536,12 @@ void gdCSActionIfData::vfn_21() {
     // TODO: Implement
 }
 
-const char* gdCSActionIfData::GetTypeName() {
-    return "If";
-}
-
 void gdCSActionWaitData::vfn_20() {
     // TODO: Implement property validation
 }
 
 void gdCSActionWaitData::vfn_21() {
-    // TODO: Implement
-}
-
-const char* gdCSActionWaitData::GetTypeName() {
-    return "Wait";
+    // TODO: Register XML properties: WaitType, Duration
 }
 
 void gdCSActionCamAnimData::vfn_20() {
@@ -413,30 +552,12 @@ void gdCSActionCamAnimData::vfn_21() {
     // TODO: Implement
 }
 
-const char* gdCSActionCamAnimData::GetTypeName() {
-    return "CamAnim";
-}
-
-void gdCSActionCamAnimData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
-    // TODO: Implement validation
-}
-
 void gdCSActionCharAnimData::vfn_20() {
     // TODO: Implement property validation
 }
 
 void gdCSActionCharAnimData::vfn_21() {
     // TODO: Implement
-}
-
-const char* gdCSActionCharAnimData::GetTypeName() {
-    return "CharAnim";
-}
-
-void gdCSActionCharAnimData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
-    // TODO: Implement validation
 }
 
 void gdCSActionCharVisibleData::vfn_20() {
@@ -447,30 +568,12 @@ void gdCSActionCharVisibleData::vfn_21() {
     // TODO: Implement
 }
 
-const char* gdCSActionCharVisibleData::GetTypeName() {
-    return "CharVisible";
-}
-
-void gdCSActionCharVisibleData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
-    // TODO: Implement validation
-}
-
 void gdCSActionPlayAudioData::vfn_20() {
     // TODO: Implement property validation
 }
 
 void gdCSActionPlayAudioData::vfn_21() {
     // TODO: Implement
-}
-
-const char* gdCSActionPlayAudioData::GetTypeName() {
-    return "PlayAudio";
-}
-
-void gdCSActionPlayAudioData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
-    // TODO: Implement validation
 }
 
 void gdCSActionLvlAmbAnimData::vfn_20() {
