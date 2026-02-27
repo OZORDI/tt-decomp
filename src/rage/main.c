@@ -416,11 +416,13 @@ bool rage_IsAppStarted(void)
     if (g_gate_appStarted.m_pTypeName != NULL)
         return true;
 
-    /* Gate not active: treat disc-based exe as "not yet started". */
+    /* Gate not active: exe must reside on disc (path starts with "A:").
+     * Assembly: strncmp==0 (match) -> li r11,1 -> return true
+     *           strncmp!=0 (miss)  -> bne skips, r11=0 -> return false */
     if (g_pExeName && strncmp(g_pExeName, k_disc_path_prefix, 2) == 0)
-        return false;
+        return true;
 
-    return true;
+    return false;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

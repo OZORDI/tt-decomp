@@ -322,3 +322,440 @@ void pgStreamer_Init(void)
     }
 }
 
+
+
+// ===========================================================================
+// fiStreamBuf — RAGE file-stream ring buffer
+//
+// The three functions rage_obj_factory_create_3040, rage_obj_bind_3828, and
+// rage_obj_finalize_3B38 (along with the helper rage_obj_close_3BA8) all
+// operate on the same ring-buffer object that mediates async file reads via
+// the fiDevice virtual-device abstraction.
+//
+// Struct layout (offsets confirmed from scaffolds):
+//   +0x00  void*    vtable     — virtual dispatch (fiDevice-compatible layout)
+//   +0x04  uint32_t flags      — open-mode flags passed to virtual Open
+//   +0x08  uint8_t* pBuffer    — backing store (allocated by device Open)
+//   +0x0C  int32_t  writePos   — absolute stream position of buffer end
+//   +0x10  int32_t  readPos    — start of unconsumed data within pBuffer
+//   +0x14  int32_t  endPos     — exclusive end of buffered data (0 = empty)
+//   +0x18  int32_t  capacity   — maximum fetch size (buffer size limit)
+//
+// The device-enumeration factory object (first arg to fiStreamBuf_OpenAll)
+// has two relevant fields:
+//   +0x600 (1536)  const char*  m_pBasePath  — base directory path
+//   +0x604 (1540)  int32_t      m_nDevices   — number of devices to open
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Supporting path utility — fiPath_RemoveParentDir @ 0x822E2A20 | size: 0x12C
+//
+// Removes one occurrence of a "../" (or "..\") component from a path string
+// in-place.  Called in a loop by fiPath_Build until all ../ are gone.
+//
+// Algorithm:
+//   1. Find the first '.' character at or after pPath (using ph_21B0 with
+//      delim=46 i.e. '.').
+//   2. Verify it is preceded by '/' or '\' and followed by "./" or ".\".
+//   3. Walk backward from the found '..' to find the parent-directory boundary.
+//   4. Collapse the "<parent>/../" sequence: memmove to remove it.
+//   Returns: 1 if a collapse was performed, 0 if not.
+// ---------------------------------------------------------------------------
+extern void* ph_21B0(const char* s, int delim);  /* strchr-like @ 0x824321B0 */
+
+static int fiPath_RemoveParentDir(char* pPath)
+{
+    // Find first '.' in the path
+    char* pDot = (char*)ph_21B0(pPath, 46 /* '.' */);
+    if (pDot == NULL || (uintptr_t)pDot <= (uintptr_t)pPath) {
+        return 0;
+    }
+
+    // Verify the character before pDot is a directory separator
+    char cBefore = pDot[-1];
+    if (cBefore != '/' && cBefore != '\\') {
+        return 0;
+    }
+
+    // Verify character after pDot is '.' (i.e. we have "..")
+    if (pDot[1] != 46 /* '.' */) {
+        return 0;
+    }
+
+    // Verify the character after ".." is a separator
+    char cAfter = pDot[2];
+    if (cAfter != '/' && cAfter != '\\') {
+        return 0;
+    }
+
+    // Walk backward past the parent directory component to find its separator
+    char* pParentSep = pDot - 2;
+    char* pLimit     = pPath + 2;
+    while (pParentSep > pLimit) {
+        char c = pParentSep[-1];
+        if (c == '/' || c == '\\') {
+            break;
+        }
+        --pParentSep;
+    }
+
+    // Measure the tail (everything after the "../")
+    char*   pTail    = pDot + 3;
+    size_t  tailLen  = 0;
+    while (pTail[tailLen]) { ++tailLen; }
+
+    // Collapse: move tail over the "<parent>/../" region
+    memmove(pParentSep - 1, pTail, tailLen + 1);
+    return 1;
+}
+
+
+// ---------------------------------------------------------------------------
+// fiPath_Build @ 0x822E2B50 | size: 0x1E0
+//
+// Constructs a canonicalized file path into pOutBuf (max outLen chars) by
+// combining pBasePath and pRelPath:
+//   1. If pRelPath is an absolute path (starts with '/' or '\', or has a
+//      drive letter e.g. "C:"), copy it verbatim and skip the base path.
+//   2. Otherwise: if pBase is set on pFactory (offset +1536), try to prepend
+//      the factory base path.  If that base path is also absolute, use it
+//      alone; otherwise combine base + relPath.
+//   3. After assembly, call fiPath_RemoveParentDir in a loop to eliminate
+//      all "../" components.
+//   4. Finally call fiDeviceMemory_2830(pFactory, pOutBuf, relPath, basePath,
+//      devIndex) — registers the opened device with the factory.
+//
+// Parameters:
+//   pFactory    (r3) — device-enumeration factory object
+//   pOutBuf     (r4) — output buffer (PATH_MAX = 256 bytes)
+//   outLen      (r5) — output buffer length (always 256 at call site)
+//   pRelPath    (r6) — relative or absolute file path to open
+//   devIndex    (r7) — device index within the factory's list
+//   entryIdx    (r8) — entry index (passed through to fiDeviceMemory_2830)
+// ---------------------------------------------------------------------------
+extern void fiDeviceMemory_2830(void* pFactory, char* pOutBuf,
+                                const char* pRelPath, const char* pBasePath,
+                                int devIndex);  /* @ 0x822E2830 */
+extern void rage_0888(void* pDst, const char* pSrc, size_t n,
+                      const char* pFmt);  /* @ 0x820F0888 — formatted strncpy */
+
+static void fiPath_Build(void* pFactory, char* pOutBuf, int outLen,
+                         const char* pRelPath, int devIndex, int entryIdx)
+{
+    uint8_t* pFact = (uint8_t*)pFactory;
+
+    // Determine if pRelPath is an absolute path (starts with '/' or '\',
+    // or contains a ':' drive-letter separator).
+    int bAbsRelPath = 0;
+    if (pRelPath != NULL) {
+        char c = pRelPath[0];
+        if (c == '/' || c == '\\') {
+            bAbsRelPath = 1;
+        } else {
+            // Check for drive letter (contains ':')
+            if ((char*)ph_21B0(pRelPath, 58 /* ':' */) != NULL) {
+                bAbsRelPath = 1;
+            }
+        }
+    }
+
+    // Build slot base address within factory: slot = entryIdx * 128
+    int slotBase = *(int32_t*)(pFact + 1540);  // reuse as temp; real slot:
+    (void)slotBase;
+
+    int   factBase = *(int32_t*)(pFact + 1536); // base path index
+    char* pSrcBase = (factBase != 0)
+                        ? (char*)(pFact + 3 + (uint32_t)((factBase + 3) & ~3))
+                        : NULL;
+
+    // Copy relative portion into pOutBuf (up to outLen-1 chars)
+    {
+        int  remaining = outLen - 1;
+        char* pDst     = pOutBuf;
+        if (pRelPath != NULL && !bAbsRelPath) {
+            // Prepend base path from factory if available and non-absolute
+            const char* pBase = pSrcBase;
+            if (pBase != NULL) {
+                while (remaining > 0 && *pBase) {
+                    *pDst++ = *pBase++;
+                    --remaining;
+                }
+            }
+        }
+        // Append relative path
+        if (pRelPath != NULL) {
+            while (remaining > 0 && *pRelPath) {
+                *pDst++ = *pRelPath++;
+                --remaining;
+            }
+        }
+        *pDst = '\0';
+    }
+
+    // Normalize: collapse all "../" sequences
+    while (fiPath_RemoveParentDir(pOutBuf)) { /* loop */ }
+
+    // Register with factory
+    fiDeviceMemory_2830(pFactory, pOutBuf, pRelPath, pSrcBase, devIndex);
+}
+
+
+// ---------------------------------------------------------------------------
+// fiStreamBuf struct definition
+// ---------------------------------------------------------------------------
+typedef struct {
+    void*       vtable;    // +0x00 virtual dispatch
+    uint32_t    flags;     // +0x04 open-mode flags
+    uint8_t*    pBuffer;   // +0x08 ring buffer backing store
+    int32_t     writePos;  // +0x0C absolute stream write offset
+    int32_t     readPos;   // +0x10 read cursor within pBuffer
+    int32_t     endPos;    // +0x14 exclusive end of buffered data (0 = empty)
+    int32_t     capacity;  // +0x18 maximum capacity (buffer size)
+} fiStreamBuf;
+
+
+// ---------------------------------------------------------------------------
+// fiStreamBuf_FetchChunk @ 0x822E3BA8 | size: 0xC0
+//
+// Fetches the next chunk of data from the underlying device into pBuf:
+//
+//   Case A (endPos != 0, data queued for commit):
+//     If endPos != readPos (partial buffer used):
+//       call vtable[5](this, flags, pBuffer+readPos, 0, endPos-readPos)
+//       — "write commit" for the buffered window
+//     Else (entire ring used up to capacity):
+//       call vtable[4](this, flags, pBuffer)
+//       — "flush full buffer"
+//
+//   Case B (endPos == 0, buffer empty but readPos != 0):
+//     call vtable[4](this, flags, pBuffer)
+//     — "re-use empty buffer from readPos"
+//
+//   After either case:
+//     Clear endPos = 0, readPos = 0.
+//     Advance writePos += old endPos.
+//     Call vtable[8](this, flags) — "notify write complete".
+//
+//   Returns: 0 on success, -1 on failure (propagated from virtual calls).
+// ---------------------------------------------------------------------------
+static int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf)
+{
+    if (pBuf->endPos != 0) {
+        int32_t oldEnd  = pBuf->endPos;
+        int32_t oldRead = pBuf->readPos;
+
+        if (oldEnd != oldRead) {
+            // Partial buffer: commit [readPos .. endPos)
+            typedef int (*CommitFn)(void*, uint32_t, uint8_t*, int, int);
+            int r = ((CommitFn)(*(void**)pBuf->vtable)[5])(
+                        pBuf, pBuf->flags,
+                        pBuf->pBuffer + oldRead,
+                        0,
+                        oldEnd - oldRead);
+            if (r != 0) {
+                return -1;
+            }
+        } else {
+            // Full buffer: flush from base
+            typedef int (*FlushFn)(void*, uint32_t, uint8_t*);
+            int r = ((FlushFn)(*(void**)pBuf->vtable)[4])(
+                        pBuf, pBuf->flags, pBuf->pBuffer);
+            if (r != 0) {
+                return -1;
+            }
+        }
+
+        // Reset buffer window and advance absolute write position
+        pBuf->readPos  = 0;
+        pBuf->endPos   = 0;
+        pBuf->writePos += oldEnd;
+
+    } else if (pBuf->readPos != 0) {
+        // Empty but offset: re-use from base
+        typedef int (*FlushFn)(void*, uint32_t, uint8_t*);
+        int r = ((FlushFn)(*(void**)pBuf->vtable)[4])(
+                    pBuf, pBuf->flags, pBuf->pBuffer);
+        if (r != 0) {
+            return -1;
+        }
+
+        int32_t oldRead = pBuf->readPos;
+        pBuf->readPos  = 0;
+        pBuf->endPos   = 0;
+        pBuf->writePos += oldRead;
+    } else {
+        // Nothing to flush
+        return 0;
+    }
+
+    // Notify write complete (vtable slot 8)
+    typedef void (*NotifyFn)(void*, uint32_t);
+    ((NotifyFn)(*(void**)pBuf->vtable)[8])(pBuf, pBuf->flags);
+    return 0;
+}
+
+
+// ---------------------------------------------------------------------------
+// rage_obj_bind_3828 / fiStreamBuf_Read @ 0x822E3828 | size: 0x184
+// Reads `size` bytes from the ring buffer into pDst.
+//
+// Algorithm:
+//   1. If endPos == 0 && readPos != 0 (buffer consumed, more to fetch):
+//      call FetchChunk; if it fails return -1.
+//   2. Compute available = endPos - readPos.
+//   3. If size > available:
+//        a. If there is partial buffered data (endPos != readPos):
+//             Copy buffered data to pDst; advance pDst, size, and
+//             note how many bytes were pre-copied (r28).
+//        b. Call vtable[3](this, flags, pDst, size, capacity)
+//             — "request more data" virtual; fills pDst up to capacity.
+//           If result < 0: reset readPos/endPos to 0; return -1.
+//        c. Store new endPos = result; reset readPos = 0.
+//        d. Return accumulated (r26 + size_requested).
+//   4. If size <= available:
+//        Clamp size to min(size, endPos - readPos).
+//        Copy pBuffer[readPos..readPos+size] to pDst.
+//        readPos += size.
+//        Return r26 + size.
+//
+// Parameters:
+//   pBuf  (r3) — fiStreamBuf*
+//   pDst  (r4) — destination buffer
+//   size  (r5) — bytes to read
+//   (r6, r7 used internally)
+//   r7    (r7) — passed to vtable[3] as 5th arg
+// ---------------------------------------------------------------------------
+int fiStreamBuf_Read(fiStreamBuf* pBuf, uint8_t* pDst, int32_t size, int r6, int r7)
+{
+    int32_t accumulated = 0;
+
+    // If endPos is exhausted but readPos is advanced, we need more data.
+    // NOTE: condition is (endPos == 0 && readPos != 0), NOT readPos == 0.
+    // A fresh buffer at position 0,0 needs no fetch — the device call below
+    // handles first-fetch.  Only a buffer where we consumed data (readPos>0)
+    // but then wrapped back to endPos=0 needs an explicit FetchChunk here.
+    if (pBuf->endPos == 0 && pBuf->readPos != 0) {
+        int rc = fiStreamBuf_FetchChunk(pBuf);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+
+
+    int32_t available = pBuf->endPos - pBuf->readPos;
+
+    if (size > available) {
+        int32_t preCopied = 0;
+
+        // Pre-copy whatever is currently buffered into pDst
+        if (pBuf->endPos != pBuf->readPos) {
+            int32_t partialLen = pBuf->endPos - pBuf->readPos;
+            memcpy(pDst, pBuf->pBuffer + pBuf->readPos, (size_t)partialLen);
+            pBuf->readPos  = 0;  // consumed
+            pBuf->endPos   = 0;
+            pBuf->writePos += partialLen;
+            pDst           += partialLen;
+            size           -= partialLen;
+            preCopied       = partialLen;
+            accumulated    += partialLen;
+        }
+
+        // Request more data from device through vtable slot 3
+        typedef int (*RequestFn)(void*, uint32_t, uint8_t*, int32_t, int32_t);
+        int32_t got = ((RequestFn)(*(void**)pBuf->vtable)[3])(
+                          pBuf, pBuf->flags, pDst, size, pBuf->capacity);
+
+        if (got < 0) {
+            pBuf->readPos = 0;
+            pBuf->endPos  = 0;
+            return -1;
+        }
+
+        pBuf->readPos = 0;
+        pBuf->endPos  = got;
+
+        return accumulated + preCopied;
+
+    } else {
+        // Sufficient data in buffer: clamp and copy
+        int32_t clampedSize = (size < available) ? size : available;
+        memcpy(pDst, pBuf->pBuffer + pBuf->readPos, (size_t)clampedSize);
+        pBuf->readPos += clampedSize;
+        return accumulated + clampedSize;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// rage_obj_finalize_3B38 / fiStreamBuf_Close @ 0x822E3B38 | size: 0x70
+//
+// Closes the stream buffer:
+//   1. If endPos == 0 and readPos != 0: call FetchChunk (flush pending data).
+//      NOTE: assembly does NOT check FetchChunk's return value here and
+//      does NOT return early — it proceeds to vtable Close unconditionally.
+//   2. Call vtable[6](this, flags) — virtual Close (byte offset 24 in vtable).
+//   3. Set flags = -1, vtable = NULL (marks the object as destroyed).
+//   Returns: 0.
+// ---------------------------------------------------------------------------
+int fiStreamBuf_Close(fiStreamBuf* pBuf)
+{
+    // Flush trailing data if the buffer window is empty but stream advanced.
+    // The assembly calls FetchChunk but ignores its return value — no early exit.
+    if (pBuf->endPos == 0 && pBuf->readPos != 0) {
+        fiStreamBuf_FetchChunk(pBuf);   /* result intentionally discarded */
+    }
+
+    // Virtual Close — vtable slot 6 (byte offset 24)
+    typedef void (*CloseFn)(void*, uint32_t);
+    ((CloseFn)(*(void**)pBuf->vtable)[6])(pBuf, pBuf->flags);
+
+    // Invalidate the object so double-close is detectable
+    pBuf->flags  = (uint32_t)-1;
+    pBuf->vtable = NULL;
+    return 0;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// rage_obj_factory_create_3040 / fiStreamBuf_OpenAll @ 0x822E3040 | size: 0x78
+//
+// Device-enumeration loop: for each of the factory's m_nDevices entries,
+// builds the full path and opens a fiStream.
+//
+// Parameters:
+//   pFactory (r3) — factory/enumerator object
+//   pRelPath (r4) — base relative path (e.g. "game.rpf")
+//   pAux     (r5) — auxiliary data pointer passed to fiPath_Build
+//   (r6 unused)
+//   pExtra   (r7) — extra parameter forwarded to fiStream_Open
+//
+// For each device i (0..m_nDevices-1):
+//   1. Build path: fiPath_Build(pFactory, stackBuf, 256, pRelPath, pAux, i)
+//   2. Open stream: fiStream_Open(stackBuf, pExtra)
+//   3. If stream is opened (returns non-null handle), stop early.
+//      Assembly: r3 is tested at the top of each loop iteration;
+//      any non-zero return from fiStream_Open causes an immediate exit.
+// ---------------------------------------------------------------------------
+extern uint32_t fiStream_Open(char* pPath, void* pExtra);  /* @ 0x822E3518 */
+
+void fiStreamBuf_OpenAll(void* pFactory, const char* pRelPath,
+                         void* pAux, void* pUnused, void* pExtra)
+{
+    uint8_t* pFact    = (uint8_t*)pFactory;
+    int32_t  nDevices = *(int32_t*)(pFact + 1540);
+
+    char    pathBuf[256];
+    uint32_t result = 0;
+
+    for (int i = 0; i < nDevices; ++i) {
+        // Early-exit: a previous iteration successfully opened a stream
+        if (result != 0)
+            break;
+
+        // Build the full path for device i
+        fiPath_Build(pFactory, pathBuf, 256, pRelPath, i, (int)(uintptr_t)pAux);
+
+        // Open the stream; capture result — non-null means success, stops loop
+        result = fiStream_Open(pathBuf, pExtra);
+    }
+}
