@@ -375,3 +375,70 @@ void grcSetup_PresentFrame(struct grcSetup* self, bool doFlip)
 
     self->m_presentTimestamp = __mftb();   // +16
 }
+
+
+// ===========================================================================
+// xe_SetThreadProcessor  @ 0x8242B8A8 | size: 0xB0
+// (symbol name: xe_sleep_B8A8 — name is misleading; this is XSetThreadProcessor)
+//
+// Sets the hardware processor affinity for the given thread handle.
+// Xbox 360 has 3 physical cores × 2 hardware threads = processors 0–5.
+//
+// Algorithm:
+//   1. If processorNum >= 6 → invalid, report STATUS_INVALID_PARAMETER and return -1.
+//   2. Resolve the thread handle to a KTHREAD via ObReferenceObjectByHandle.
+//   3. Call KeSetAffinityThread(kthread, 1 << processorNum, &oldAffinity).
+//   4. Release the KTHREAD reference.
+//   5. Decode the old processor number from oldAffinity via bit scan (31 - clz).
+//
+// Parameters:
+//   threadHandle   — Xbox 360 kernel thread handle
+//   processorNum   — target hardware processor (0–5)
+//
+// Returns:
+//   Previous hardware processor number (0–5) on success, -1 on error.
+//
+// Callers: main (game loop), rage_thread_register_7FD0, CCalMoviePlayer
+// ===========================================================================
+
+extern void**    __imp_ExThreadObjectType;           /* @ 0x82000900 */
+extern void      thunk_game_C330(int32_t errorCode); /* @ 0x8242BF10 */
+
+/* Xbox 360 kernel thread management */
+typedef int32_t NTSTATUS;
+typedef void    KTHREAD;
+
+extern NTSTATUS ObReferenceObjectByHandle(uint32_t handle, uint32_t access,
+                                          void** objectType, KTHREAD** ppObject);
+extern void     KeSetAffinityThread(KTHREAD* thread, uint32_t affinity,
+                                    uint32_t* pOldAffinity);
+extern void     ObDereferenceObject(KTHREAD* object);
+
+int xe_SetThreadProcessor(uint32_t threadHandle, uint32_t processorNum)
+{
+    if (processorNum >= 6u) {
+        /* STATUS_INVALID_PARAMETER = 0xC000000D */
+        thunk_game_C330((int32_t)0xC000000D);
+        return -1;
+    }
+
+    KTHREAD* kthread = NULL;
+    NTSTATUS status = ObReferenceObjectByHandle(threadHandle, 0,
+                                                (void**)__imp_ExThreadObjectType,
+                                                &kthread);
+    if (status < 0) {
+        thunk_game_C330(status);
+        return -1;
+    }
+
+    /* Set affinity: place thread on the requested hardware processor. */
+    uint32_t oldAffinity = 0;
+    KeSetAffinityThread(kthread, 1u << processorNum, &oldAffinity);
+    ObDereferenceObject(kthread);
+
+    /* Decode old processor number from bitmask: highest set bit = 31 - clz. */
+    if (oldAffinity != 0u)
+        return 31 - __builtin_clz(oldAffinity);
+
+    return 0;
+}

@@ -203,3 +203,89 @@ void audSystem_init(void) {
         // @ 0x82222040 — verify loop-back condition.
     }
 }
+
+
+// ===========================================================================
+// grcDevice_init  @ 0x820F8A00 | size: 0xFC
+//
+// Allocates and initializes the grcDevice command-pool free list, then
+// starts the render thread if it hasn't been registered yet.
+//
+// Memory layout (globals at 0x825EB26C):
+//   g_grcCmdPool.capacity    @ 0x825EB26C — 256 (pool size)
+//   g_grcCmdPool.freeHead    @ 0x825EB270 — head index of free list (0)
+//   g_grcCmdPool.pMemory     @ 0x825EB274 — pointer to the 40960-byte pool
+//
+// Pool structure:
+//   256 entries, each 160 bytes apart, forming a singly-linked free list.
+//   Each node layout:
+//     [+0]  uint32  index           — node's own index (0–255)
+//     [+4]  uint32  state           — 0xFFFFFFFF (unused/free sentinel)
+//     [+16] uint32  nextFreeIndex   — next node in free list (256 = end)
+//
+// Render thread registration (guarded by g_grcInitGate):
+//   Thread function : pg_8250_g @ 0x820F8250
+//   Stack size      : 65536 bytes (0x10000)
+//   Priority        : 6
+//   Parameter       : pool memory pointer
+// ===========================================================================
+
+// Pool descriptor (layout straddles 0x825EB26C–0x825EB274)
+typedef struct grcCmdPool {
+    uint32_t capacity;   /* +0  @ 0x825EB26C — always 256 */
+    uint32_t freeHead;   /* +4  @ 0x825EB270 — index of first free node */
+    void*    pMemory;    /* +8  @ 0x825EB274 — backing allocation */
+} grcCmdPool;
+
+extern grcCmdPool g_grcCmdPool;  /* @ 0x825EB26C */
+
+// Init gate: non-null m_pName means render thread already registered.
+typedef struct {
+    uint32_t m_vftable;
+    uint8_t* m_pName;
+} grcInitGate;
+extern grcInitGate g_grcInitGate;  /* @ 0x825CA074 */
+
+// Render thread entry function (pg_8250_g @ 0x820F8250)
+extern void pg_8250_g(void* pCmdPool);
+
+void grcDevice_init(void) {
+    g_grcCmdPool.capacity = 256;
+
+    // Ensure main thread context is ready before allocating.
+    xe_main_thread_init_0038();
+
+    // Allocate the command pool: 256 nodes * 160 bytes = 40960 (0xA000) bytes,
+    // 16-byte aligned, via the RAGE memory allocator (VCALL slot 1).
+    extern uint32_t* g_sda_base;  /* SDA r13 base */
+    uint32_t*  allocCtx  = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void*      allocObj  = (void*)(uintptr_t)allocCtx[1];  /* [allocCtx+4] */
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    AllocFn    allocFn   = ((AllocFn*)*(void**)allocObj)[1]; /* vtable slot 1 */
+    void*      pool      = allocFn(allocObj, 0xA000u, 16u);
+    g_grcCmdPool.pMemory = pool;
+
+    // Initialise free list: 256 nodes, each spaced 160 bytes apart.
+    uint8_t* base = (uint8_t*)pool;
+    for (int i = 0; i < 256; ++i) {
+        uint8_t* node = base + i * 160;
+        *(uint32_t*)(node +  0) = (uint32_t)i;           /* own index     */
+        *(uint32_t*)(node +  4) = 0xFFFFFFFFu;           /* free sentinel */
+        *(uint32_t*)(node + 16) = (uint32_t)(i + 1);     /* next (256 = end) */
+    }
+
+    g_grcCmdPool.freeHead = 0;
+
+    // Only register the render thread if the init gate is not yet set.
+    if (g_grcInitGate.m_pName == NULL) {
+        rage_thread_register_7FD0(
+            (void*)pg_8250_g,  /* thread entry function      */
+            pool,              /* parameter: command pool    */
+            65536u,            /* stack size (0x10000)       */
+            6u,                /* priority / affinity flags  */
+            (void*)"%s",       /* thread name format string  */
+            1u,                /* flags                      */
+            0u                 /* reserved                   */
+        );
+    }
+}
