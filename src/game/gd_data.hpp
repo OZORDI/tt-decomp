@@ -17,9 +17,9 @@ struct gdAssetData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x82212580
-    virtual void vfn_21();  // [21] @ 0x822125d8
-    virtual void vfn_22();  // [22] @ 0x822125c8
+    virtual void PostLoadProperties();  // [20] @ 0x82212580
+    virtual void Validate();  // [21] @ 0x822125d8
+    virtual void PostLoadChildren();  // [22] @ 0x822125c8
 };
 
 // ── gdAssetDataFile  [vtable @ 0x8204A788] ──────────────────────────
@@ -73,9 +73,9 @@ struct gdAudData {
 
     // ── virtual methods ──
     virtual ~gdAudData();                  // [0] @ 0x82217580
-    virtual void vfn_20();  // [20] @ 0x82217690
-    virtual void vfn_21();  // [21] @ 0x822176d8
-    virtual void vfn_22();  // [22] @ 0x822175f8
+    virtual void PostLoadProperties();  // [20] @ 0x82217690
+    virtual void Validate();  // [21] @ 0x822176d8
+    virtual void PostLoadChildren();  // [22] @ 0x822175f8
 };
 
 // ── gdBTgtBoneName  [vtable @ 0x8203D854] ──────────────────────────
@@ -84,9 +84,9 @@ struct gdBTgtBoneName {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x821d4df8
-    virtual void vfn_20();  // [20] @ 0x821d4b60
-    virtual void vfn_21();  // [21] @ 0x821d4c98
-    virtual void vfn_22();  // [22] @ 0x821d4ba8
+    virtual void PostLoadProperties();  // [20] @ 0x821d4b60
+    virtual void Validate();  // [21] @ 0x821d4c98
+    virtual void PostLoadChildren();  // [22] @ 0x821d4ba8
 };
 
 namespace gdBTgtBoneName {
@@ -116,9 +116,9 @@ struct gdBlendTargetName {
     // ── virtual methods ──
     virtual ~gdBlendTargetName();                  // [0] @ 0x821d05d8
     virtual void vfn_3();  // [3] @ 0x821d48e8
-    virtual void vfn_20();  // [20] @ 0x821d4760
-    virtual void vfn_21();  // [21] @ 0x821d4860
-    virtual void vfn_22();  // [22] @ 0x821d47a8
+    virtual void PostLoadProperties();  // [20] @ 0x821d4760
+    virtual void Validate();  // [21] @ 0x821d4860
+    virtual void PostLoadChildren();  // [22] @ 0x821d47a8
 };
 
 namespace gdBlendTargetName {
@@ -139,8 +139,8 @@ struct gdBlendTargets {
 
     // ── virtual methods ──
     virtual void vfn_3();  // [3] @ 0x821d46d0
-    virtual void vfn_20();  // [20] @ 0x821d45f8
-    virtual void vfn_22();  // [22] @ 0x821d4640
+    virtual void PostLoadProperties();  // [20] @ 0x821d45f8
+    virtual void PostLoadChildren();  // [22] @ 0x821d4640
 };
 
 // ── gdCamData  [vtable @ 0x8204C1A4] ──────────────────────────
@@ -150,9 +150,9 @@ struct gdCamData {
     // ── virtual methods ──
     virtual ~gdCamData();                  // [0] @ 0x82217858
     virtual void vfn_2();  // [2] @ 0x82217ba0
-    virtual void vfn_20();  // [20] @ 0x822178d0
-    virtual void vfn_21();  // [21] @ 0x822179f8
-    virtual void vfn_22();  // [22] @ 0x82217918
+    virtual void PostLoadProperties();  // [20] @ 0x822178d0
+    virtual void Validate();  // [21] @ 0x822179f8
+    virtual void PostLoadChildren();  // [22] @ 0x82217918
 };
 
 namespace gdCamData {
@@ -183,9 +183,9 @@ struct gdCharData {
     virtual ~gdCharData();                  // [0] @ 0x821d1988
     virtual void vfn_2();  // [2] @ 0x821d1b18
     virtual void vfn_3();  // [3] @ 0x821d1b58
-    virtual void vfn_20();  // [20] @ 0x821d1940
-    virtual void vfn_21();  // [21] @ 0x821d19f8
-    virtual void vfn_22();  // [22] @ 0x821d1858
+    virtual void PostLoadProperties();  // [20] @ 0x821d1940
+    virtual void Validate();  // [21] @ 0x821d19f8
+    virtual void PostLoadChildren();  // [22] @ 0x821d1858
 };
 
 // ── gdCharDataMgr  [vtable @ 0x8203DAB8] ──────────────────────────
@@ -198,9 +198,9 @@ struct gdCharEmoFactors {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821d2d08
-    virtual void vfn_21();  // [21] @ 0x821d2df8
-    virtual void vfn_22();  // [22] @ 0x821d2d50
+    virtual void PostLoadProperties();  // [20] @ 0x821d2d08
+    virtual void Validate();  // [21] @ 0x821d2df8
+    virtual void PostLoadChildren();  // [22] @ 0x821d2d50
 };
 
 // ── gdCharIntensityFactors  [vtable @ 0x8203DDFC] ──────────────────────────
@@ -209,9 +209,9 @@ struct gdCharIntensityFactors {
 
     // ── virtual methods ──
     virtual ~gdCharIntensityFactors();                  // [0] @ 0x821d2500
-    virtual void vfn_20();  // [20] @ 0x821d2820
-    virtual void vfn_21();  // [21] @ 0x821d28e0
-    virtual void vfn_22();  // [22] @ 0x821d2868
+    virtual void PostLoadProperties();  // [20] @ 0x821d2820
+    virtual void Validate();  // [21] @ 0x821d28e0
+    virtual void PostLoadChildren();  // [22] @ 0x821d2868
 };
 
 // ── gdCharPlayerBias  [vtable @ 0x8203DD94] ──────────────────────────
@@ -220,9 +220,9 @@ struct gdCharPlayerBias {
 
     // ── virtual methods ──
     virtual ~gdCharPlayerBias();                  // [0] @ 0x821d2750
-    virtual void vfn_20();  // [20] @ 0x821d2670
-    virtual void vfn_21();  // [21] @ 0x821d27b8
-    virtual void vfn_22();  // [22] @ 0x821d26b8
+    virtual void PostLoadProperties();  // [20] @ 0x821d2670
+    virtual void Validate();  // [21] @ 0x821d27b8
+    virtual void PostLoadChildren();  // [22] @ 0x821d26b8
 };
 
 // ── gdCharSweatFactors  [vtable @ 0x8203DECC] ──────────────────────────
@@ -230,9 +230,9 @@ struct gdCharSweatFactors {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821d2eb8
-    virtual void vfn_21();  // [21] @ 0x821d2fb0
-    virtual void vfn_22();  // [22] @ 0x821d2f00
+    virtual void PostLoadProperties();  // [20] @ 0x821d2eb8
+    virtual void Validate();  // [21] @ 0x821d2fb0
+    virtual void PostLoadChildren();  // [22] @ 0x821d2f00
 };
 
 // ── gdCrAttachmentData  [vtable @ 0x8203D6B4] ──────────────────────────
@@ -242,9 +242,9 @@ struct gdCrAttachmentData {
 
     // ── virtual methods ──
     virtual ~gdCrAttachmentData();                  // [0] @ 0x821d0168
-    virtual void vfn_20();  // [20] @ 0x821d06f8
-    virtual void vfn_21();  // [21] @ 0x821d0740
-    virtual void vfn_22();  // [22] @ 0x821d0638
+    virtual void PostLoadProperties();  // [20] @ 0x821d06f8
+    virtual void Validate();  // [21] @ 0x821d0740
+    virtual void PostLoadChildren();  // [22] @ 0x821d0638
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadCreature();
@@ -256,9 +256,9 @@ struct gdCrData {
 
     // ── virtual methods ──
     virtual ~gdCrData();                  // [0] @ 0x821d03c0
-    virtual void vfn_20();  // [20] @ 0x821d0b58
-    virtual void vfn_21();  // [21] @ 0x821d1038
-    virtual void vfn_22();  // [22] @ 0x821d0ae0
+    virtual void PostLoadProperties();  // [20] @ 0x821d0b58
+    virtual void Validate();  // [21] @ 0x821d1038
+    virtual void PostLoadChildren();  // [22] @ 0x821d0ae0
 };
 
 // ── gdDrillServingData  [vtable @ 0x820410C4] ──────────────────────────
@@ -267,8 +267,8 @@ struct gdDrillServingData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821ded38
-    virtual void vfn_22();  // [22] @ 0x821ded90
+    virtual void PostLoadProperties();  // [20] @ 0x821ded38
+    virtual void PostLoadChildren();  // [22] @ 0x821ded90
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -280,9 +280,9 @@ struct gdEnvelope {
 
     // ── virtual methods ──
     virtual ~gdEnvelope();                  // [0] @ 0x8220bb20
-    virtual void vfn_20();  // [20] @ 0x8220ca08
-    virtual void vfn_21();  // [21] @ 0x8220cb08
-    virtual void vfn_22();  // [22] @ 0x8220ca50
+    virtual void PostLoadProperties();  // [20] @ 0x8220ca08
+    virtual void Validate();  // [21] @ 0x8220cb08
+    virtual void PostLoadChildren();  // [22] @ 0x8220ca50
 };
 
 // ── gdITZData  [vtable @ 0x8204A934] ──────────────────────────
@@ -292,9 +292,9 @@ struct gdITZData {
     // ── virtual methods ──
     virtual ~gdITZData();                  // [0] @ 0x822131a8
     virtual void vfn_2();  // [2] @ 0x822133c8
-    virtual void vfn_20();  // [20] @ 0x82213208
-    virtual void vfn_21();  // [21] @ 0x82213308
-    virtual void vfn_22();  // [22] @ 0x82213250
+    virtual void PostLoadProperties();  // [20] @ 0x82213208
+    virtual void Validate();  // [21] @ 0x82213308
+    virtual void PostLoadChildren();  // [22] @ 0x82213250
 };
 
 // ── gdITZDataMgr  [vtable @ 0x8204A998] ──────────────────────────
@@ -331,8 +331,8 @@ struct gdLevelData {
     virtual ~gdLevelData();                  // [0] @ 0x821dad98
     virtual void vfn_2();  // [2] @ 0x821db9d0
     virtual void vfn_3();  // [3] @ 0x821dba38
-    virtual void vfn_20();  // [20] @ 0x821dae30
-    virtual void vfn_22();  // [22] @ 0x821dae78
+    virtual void PostLoadProperties();  // [20] @ 0x821dae30
+    virtual void PostLoadChildren();  // [22] @ 0x821dae78
 };
 
 // ── gdLevelDataManager  [vtable @ 0x8203F1F0] ──────────────────────────
@@ -346,8 +346,8 @@ struct gdLevelDataRoot {
 
     // ── virtual methods ──
     virtual ~gdLevelDataRoot();                  // [0] @ 0x821dbe80
-    virtual void vfn_20();  // [20] @ 0x821dbee0
-    virtual void vfn_22();  // [22] @ 0x821dbf28
+    virtual void PostLoadProperties();  // [20] @ 0x821dbee0
+    virtual void PostLoadChildren();  // [22] @ 0x821dbf28
 };
 
 // ── gdLevelPieceData  [vtable @ 0x8203F0BC] ──────────────────────────
@@ -357,9 +357,9 @@ struct gdLevelPieceData {
     // ── virtual methods ──
     virtual ~gdLevelPieceData();                  // [0] @ 0x821da720
     virtual void vfn_2();  // [2] @ 0x821da978
-    virtual void vfn_20();  // [20] @ 0x821da7a0
-    virtual void vfn_21();  // [21] @ 0x821da8b0
-    virtual void vfn_22();  // [22] @ 0x821da7e8
+    virtual void PostLoadProperties();  // [20] @ 0x821da7a0
+    virtual void Validate();  // [21] @ 0x821da8b0
+    virtual void PostLoadChildren();  // [22] @ 0x821da7e8
 };
 
 // ── gdLevelRegionalBias  [vtable @ 0x8203F054] ──────────────────────────
@@ -368,9 +368,9 @@ struct gdLevelRegionalBias {
 
     // ── virtual methods ──
     virtual ~gdLevelRegionalBias();                  // [0] @ 0x821da570
-    virtual void vfn_20();  // [20] @ 0x821da5d8
-    virtual void vfn_21();  // [21] @ 0x821da6b8
-    virtual void vfn_22();  // [22] @ 0x821da620
+    virtual void PostLoadProperties();  // [20] @ 0x821da5d8
+    virtual void Validate();  // [21] @ 0x821da6b8
+    virtual void PostLoadChildren();  // [22] @ 0x821da620
 };
 
 // ── gdLogicalClipDataMgr  [vtable @ 0x82049800] ──────────────────────────
@@ -389,9 +389,9 @@ struct gdMotionRange {
     virtual ~gdMotionRange();                  // [0] @ 0x821da008
     virtual void vfn_2();  // [2] @ 0x821da240
     virtual void vfn_3();  // [3] @ 0x821da280
-    virtual void vfn_20();  // [20] @ 0x821da118
-    virtual void vfn_21();  // [21] @ 0x821da160
-    virtual void vfn_22();  // [22] @ 0x821da068
+    virtual void PostLoadProperties();  // [20] @ 0x821da118
+    virtual void Validate();  // [21] @ 0x821da160
+    virtual void PostLoadChildren();  // [22] @ 0x821da068
 };
 
 // ── gdMotionRangeMgr  [vtable @ 0x8203EA20] ──────────────────────────
@@ -406,9 +406,9 @@ struct gdMovieData {
     // ── virtual methods ──
     virtual ~gdMovieData();                  // [0] @ 0x8240aff0
     virtual void vfn_2();  // [2] @ 0x8240b168
-    virtual void vfn_20();  // [20] @ 0x8240afa8
-    virtual void vfn_21();  // [21] @ 0x8240b058
-    virtual void vfn_22();  // [22] @ 0x82305a78
+    virtual void PostLoadProperties();  // [20] @ 0x8240afa8
+    virtual void Validate();  // [21] @ 0x8240b058
+    virtual void PostLoadChildren();  // [22] @ 0x82305a78
 };
 
 namespace gdMovieData {
@@ -430,9 +430,9 @@ struct gdNetData {
 
     // ── virtual methods ──
     virtual ~gdNetData();                  // [0] @ 0x82211310
-    virtual void vfn_20();  // [20] @ 0x821effc8
-    virtual void vfn_21();  // [21] @ 0x821f0098
-    virtual void vfn_22();  // [22] @ 0x821f0020
+    virtual void PostLoadProperties();  // [20] @ 0x821effc8
+    virtual void Validate();  // [21] @ 0x821f0098
+    virtual void PostLoadChildren();  // [22] @ 0x821f0020
 };
 
 // ── gdNetDataFile  [vtable @ 0x8204255C] ──────────────────────────
@@ -482,9 +482,9 @@ struct gdPlyrAttr {
 
     // ── virtual methods ──
     virtual ~gdPlyrAttr();                  // [0] @ 0x8220da58
-    virtual void vfn_20();  // [20] @ 0x8220dbe0
-    virtual void vfn_21();  // [21] @ 0x8220dc28
-    virtual void vfn_22();  // [22] @ 0x8220dab8
+    virtual void PostLoadProperties();  // [20] @ 0x8220dbe0
+    virtual void Validate();  // [21] @ 0x8220dc28
+    virtual void PostLoadChildren();  // [22] @ 0x8220dab8
 };
 
 // ── gdPlyrLimits  [vtable @ 0x82049F84] ──────────────────────────
@@ -493,9 +493,9 @@ struct gdPlyrLimits {
 
     // ── virtual methods ──
     virtual ~gdPlyrLimits();                  // [0] @ 0x8220e150
-    virtual void vfn_20();  // [20] @ 0x8220e3a0
-    virtual void vfn_21();  // [21] @ 0x8220e3e8
-    virtual void vfn_22();  // [22] @ 0x8220e328
+    virtual void PostLoadProperties();  // [20] @ 0x8220e3a0
+    virtual void Validate();  // [21] @ 0x8220e3e8
+    virtual void PostLoadChildren();  // [22] @ 0x8220e328
 };
 
 // ── gdProfileOptionsValues  [vtable @ 0x8204A57C] ──────────────────────────
@@ -508,9 +508,9 @@ struct gdPropData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x82211380
-    virtual void vfn_21();  // [21] @ 0x82211478
-    virtual void vfn_22();  // [22] @ 0x822113d8
+    virtual void PostLoadProperties();  // [20] @ 0x82211380
+    virtual void Validate();  // [21] @ 0x82211478
+    virtual void PostLoadChildren();  // [22] @ 0x822113d8
 };
 
 namespace gdPropData {
@@ -555,9 +555,9 @@ struct gdShotData {
     // ── virtual methods ──
     virtual ~gdShotData();                  // [0] @ 0x821dcac8
     virtual void vfn_2();  // [2] @ 0x821dccb0
-    virtual void vfn_20();  // [20] @ 0x821dcb40
-    virtual void vfn_21();  // [21] @ 0x821dcc28
-    virtual void vfn_22();  // [22] @ 0x821dcb88
+    virtual void PostLoadProperties();  // [20] @ 0x821dcb40
+    virtual void Validate();  // [21] @ 0x821dcc28
+    virtual void PostLoadChildren();  // [22] @ 0x821dcb88
 };
 
 // ── gdShotDataMgr  [vtable @ 0x8203F63C] ──────────────────────────
@@ -575,9 +575,9 @@ struct gdShotMultiSet {
     // ── virtual methods ──
     virtual ~gdShotMultiSet();                  // [0] @ 0x821dd428
     virtual void vfn_3();  // [3] @ 0x821dd5c0
-    virtual void vfn_20();  // [20] @ 0x821dd4a0
-    virtual void vfn_21();  // [21] @ 0x821dd038
-    virtual void vfn_22();  // [22] @ 0x821dd4f8
+    virtual void PostLoadProperties();  // [20] @ 0x821dd4a0
+    virtual void Validate();  // [21] @ 0x821dd038
+    virtual void PostLoadChildren();  // [22] @ 0x821dd4f8
     virtual void vfn_24();  // [24] @ 0x821dd750
     virtual void vfn_25();  // [25] @ 0x821dd770
     virtual void vfn_26();  // [26] @ 0x821dd790
@@ -594,9 +594,9 @@ struct gdShotName {
 
     // ── virtual methods ──
     virtual ~gdShotName();                  // [0] @ 0x821dcd20
-    virtual void vfn_20();  // [20] @ 0x821dcd88
-    virtual void vfn_21();  // [21] @ 0x821dce60
-    virtual void vfn_22();  // [22] @ 0x821dcdd0
+    virtual void PostLoadProperties();  // [20] @ 0x821dcd88
+    virtual void Validate();  // [21] @ 0x821dce60
+    virtual void PostLoadChildren();  // [22] @ 0x821dcdd0
 };
 
 // ── gdShotSet  [vtable @ 0x8203F5B4] ──────────────────────────
@@ -606,8 +606,8 @@ struct gdShotSet {
     // ── virtual methods ──
     virtual ~gdShotSet();                  // [0] @ 0x821dce80
     virtual void vfn_3();  // [3] @ 0x821dd0a0
-    virtual void vfn_20();  // [20] @ 0x821dcf40
-    virtual void vfn_22();  // [22] @ 0x821dcf88
+    virtual void PostLoadProperties();  // [20] @ 0x821dcf40
+    virtual void PostLoadChildren();  // [22] @ 0x821dcf88
     virtual void vfn_23();  // [23] @ 0x821dd1d8
     virtual void vfn_24();  // [24] @ 0x821dd1e0
     virtual void vfn_25();  // [25] @ 0x821dd218
@@ -761,9 +761,9 @@ struct gdUnlockConditionAce {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221a9b0
-    virtual void vfn_21();  // [21] @ 0x8221aa78
-    virtual void vfn_22();  // [22] @ 0x82214130
+    virtual void PostLoadProperties();  // [20] @ 0x8221a9b0
+    virtual void Validate();  // [21] @ 0x8221aa78
+    virtual void PostLoadChildren();  // [22] @ 0x82214130
     virtual void vfn_23();  // [23] @ 0x8221a9f8
 };
 
@@ -772,9 +772,9 @@ struct gdUnlockConditionBeatAllTourneys {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221acf0
-    virtual void vfn_21();  // [21] @ 0x8221ae00
-    virtual void vfn_22();  // [22] @ 0x822142f0
+    virtual void PostLoadProperties();  // [20] @ 0x8221acf0
+    virtual void Validate();  // [21] @ 0x8221ae00
+    virtual void PostLoadChildren();  // [22] @ 0x822142f0
     virtual void vfn_23();  // [23] @ 0x8221ad38
 };
 
@@ -783,9 +783,9 @@ struct gdUnlockConditionBeatTraining {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221abd8
-    virtual void vfn_21();  // [21] @ 0x8221acd0
-    virtual void vfn_22();  // [22] @ 0x82214260
+    virtual void PostLoadProperties();  // [20] @ 0x8221abd8
+    virtual void Validate();  // [21] @ 0x8221acd0
+    virtual void PostLoadChildren();  // [22] @ 0x82214260
     virtual void vfn_23();  // [23] @ 0x8221ac20
 };
 
@@ -795,9 +795,9 @@ struct gdUnlockConditionCPUMatchWinsData {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x822198e0
-    virtual void vfn_20();  // [20] @ 0x822197f0
-    virtual void vfn_21();  // [21] @ 0x8221abb8
-    virtual void vfn_22();  // [22] @ 0x82213988
+    virtual void PostLoadProperties();  // [20] @ 0x822197f0
+    virtual void Validate();  // [21] @ 0x8221abb8
+    virtual void PostLoadChildren();  // [22] @ 0x82213988
     virtual void vfn_23();  // [23] @ 0x82219838
 };
 
@@ -807,8 +807,8 @@ struct gdUnlockConditionChar {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x8221a760
-    virtual void vfn_20();  // [20] @ 0x8221a698
-    virtual void vfn_22();  // [22] @ 0x82214008
+    virtual void PostLoadProperties();  // [20] @ 0x8221a698
+    virtual void PostLoadChildren();  // [22] @ 0x82214008
     virtual void vfn_23();  // [23] @ 0x8221a6e0
 };
 
@@ -818,8 +818,8 @@ struct gdUnlockConditionCharMatchCountData {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x82219a48
-    virtual void vfn_20();  // [20] @ 0x82219928
-    virtual void vfn_22();  // [22] @ 0x82213a20
+    virtual void PostLoadProperties();  // [20] @ 0x82219928
+    virtual void PostLoadChildren();  // [22] @ 0x82213a20
     virtual void vfn_23();  // [23] @ 0x82219970
 };
 
@@ -829,9 +829,9 @@ struct gdUnlockConditionFinalHitData {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x82219f88
-    virtual void vfn_20();  // [20] @ 0x82219cf0
-    virtual void vfn_21();  // [21] @ 0x82219eb8
-    virtual void vfn_22();  // [22] @ 0x82213be8
+    virtual void PostLoadProperties();  // [20] @ 0x82219cf0
+    virtual void Validate();  // [21] @ 0x82219eb8
+    virtual void PostLoadChildren();  // [22] @ 0x82213be8
     virtual void vfn_23();  // [23] @ 0x82219d38
 };
 
@@ -869,9 +869,9 @@ struct gdUnlockConditionGameDeficit {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x8221a3e8
-    virtual void vfn_20();  // [20] @ 0x8221a318
-    virtual void vfn_21();  // [21] @ 0x8221a3c8
-    virtual void vfn_22();  // [22] @ 0x82213e48
+    virtual void PostLoadProperties();  // [20] @ 0x8221a318
+    virtual void Validate();  // [21] @ 0x8221a3c8
+    virtual void PostLoadChildren();  // [22] @ 0x82213e48
     virtual void vfn_23();  // [23] @ 0x8221a360
 };
 
@@ -880,8 +880,8 @@ struct gdUnlockConditionHighestSkill {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221b410
-    virtual void vfn_22();  // [22] @ 0x822147d8
+    virtual void PostLoadProperties();  // [20] @ 0x8221b410
+    virtual void PostLoadChildren();  // [22] @ 0x822147d8
     virtual void vfn_23();  // [23] @ 0x8221b458
 };
 
@@ -891,8 +891,8 @@ struct gdUnlockConditionLevel {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x8221a650
-    virtual void vfn_20();  // [20] @ 0x8221a558
-    virtual void vfn_22();  // [22] @ 0x82213f78
+    virtual void PostLoadProperties();  // [20] @ 0x8221a558
+    virtual void PostLoadChildren();  // [22] @ 0x82213f78
     virtual void vfn_23();  // [23] @ 0x8221a5a0
 };
 
@@ -901,9 +901,9 @@ struct gdUnlockConditionMatchTimeData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x82219a90
-    virtual void vfn_21();  // [21] @ 0x82219b70
-    virtual void vfn_22();  // [22] @ 0x82213ab8
+    virtual void PostLoadProperties();  // [20] @ 0x82219a90
+    virtual void Validate();  // [21] @ 0x82219b70
+    virtual void PostLoadChildren();  // [22] @ 0x82213ab8
     virtual void vfn_23();  // [23] @ 0x82219ad8
 };
 
@@ -912,8 +912,8 @@ struct gdUnlockConditionMultiBounce {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221a170
-    virtual void vfn_22();  // [22] @ 0x82213c98
+    virtual void PostLoadProperties();  // [20] @ 0x8221a170
+    virtual void PostLoadChildren();  // [22] @ 0x82213c98
     virtual void vfn_23();  // [23] @ 0x8221a1b8
 };
 
@@ -922,8 +922,8 @@ struct gdUnlockConditionNetHit {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221a1f0
-    virtual void vfn_22();  // [22] @ 0x82213d28
+    virtual void PostLoadProperties();  // [20] @ 0x8221a1f0
+    virtual void PostLoadChildren();  // [22] @ 0x82213d28
     virtual void vfn_23();  // [23] @ 0x8221a238
 };
 
@@ -932,9 +932,9 @@ struct gdUnlockConditionOnlineMatches {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221b4e0
-    virtual void vfn_21();  // [21] @ 0x8221b610
-    virtual void vfn_22();  // [22] @ 0x822146b0
+    virtual void PostLoadProperties();  // [20] @ 0x8221b4e0
+    virtual void Validate();  // [21] @ 0x8221b610
+    virtual void PostLoadChildren();  // [22] @ 0x822146b0
     virtual void vfn_23();  // [23] @ 0x8221b528
 };
 
@@ -943,9 +943,9 @@ struct gdUnlockConditionPlayTime {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221ae20
-    virtual void vfn_21();  // [21] @ 0x8221af58
-    virtual void vfn_22();  // [22] @ 0x82214380
+    virtual void PostLoadProperties();  // [20] @ 0x8221ae20
+    virtual void Validate();  // [21] @ 0x8221af58
+    virtual void PostLoadChildren();  // [22] @ 0x82214380
     virtual void vfn_23();  // [23] @ 0x8221ae68
 };
 
@@ -955,9 +955,9 @@ struct gdUnlockConditionPointDeficit {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x8221a508
-    virtual void vfn_20();  // [20] @ 0x8221a438
-    virtual void vfn_21();  // [21] @ 0x8221a4e8
-    virtual void vfn_22();  // [22] @ 0x82213ee0
+    virtual void PostLoadProperties();  // [20] @ 0x8221a438
+    virtual void Validate();  // [21] @ 0x8221a4e8
+    virtual void PostLoadChildren();  // [22] @ 0x82213ee0
     virtual void vfn_23();  // [23] @ 0x8221a480
 };
 
@@ -966,8 +966,8 @@ struct gdUnlockConditionRallyCount {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221aae0
-    virtual void vfn_22();  // [22] @ 0x822141c8
+    virtual void PostLoadProperties();  // [20] @ 0x8221aae0
+    virtual void PostLoadChildren();  // [22] @ 0x822141c8
     virtual void vfn_23();  // [23] @ 0x8221ab28
 };
 
@@ -976,8 +976,8 @@ struct gdUnlockConditionRankedSkunks {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221b0a0
-    virtual void vfn_22();  // [22] @ 0x822144b0
+    virtual void PostLoadProperties();  // [20] @ 0x8221b0a0
+    virtual void PostLoadChildren();  // [22] @ 0x822144b0
     virtual void vfn_23();  // [23] @ 0x8221b0e8
 };
 
@@ -986,9 +986,9 @@ struct gdUnlockConditionRankedTourneyWins {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221b1a8
-    virtual void vfn_21();  // [21] @ 0x8221b4c0
-    virtual void vfn_22();  // [22] @ 0x82214540
+    virtual void PostLoadProperties();  // [20] @ 0x8221b1a8
+    virtual void Validate();  // [21] @ 0x8221b4c0
+    virtual void PostLoadChildren();  // [22] @ 0x82214540
     virtual void vfn_23();  // [23] @ 0x8221b1f0
 };
 
@@ -997,8 +997,8 @@ struct gdUnlockConditionRankedWinStreak {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221b290
-    virtual void vfn_22();  // [22] @ 0x82214620
+    virtual void PostLoadProperties();  // [20] @ 0x8221b290
+    virtual void PostLoadChildren();  // [22] @ 0x82214620
     virtual void vfn_23();  // [23] @ 0x8221b2d8
 };
 
@@ -1007,9 +1007,9 @@ struct gdUnlockConditionSettingsData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x82219630
-    virtual void vfn_21();  // [21] @ 0x82219728
-    virtual void vfn_22();  // [22] @ 0x822138e0
+    virtual void PostLoadProperties();  // [20] @ 0x82219630
+    virtual void Validate();  // [21] @ 0x82219728
+    virtual void PostLoadChildren();  // [22] @ 0x822138e0
     virtual void vfn_23();  // [23] @ 0x82219678
 };
 
@@ -1054,9 +1054,9 @@ struct gdUnlockConditionSkunk {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221a268
-    virtual void vfn_21();  // [21] @ 0x8221b188
-    virtual void vfn_22();  // [22] @ 0x82213db8
+    virtual void PostLoadProperties();  // [20] @ 0x8221a268
+    virtual void Validate();  // [21] @ 0x8221b188
+    virtual void PostLoadChildren();  // [22] @ 0x82213db8
     virtual void vfn_23();  // [23] @ 0x8221a2b0
 };
 
@@ -1065,8 +1065,8 @@ struct gdUnlockConditionSpectatedMatch {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221b378
-    virtual void vfn_22();  // [22] @ 0x82214748
+    virtual void PostLoadProperties();  // [20] @ 0x8221b378
+    virtual void PostLoadChildren();  // [22] @ 0x82214748
     virtual void vfn_23();  // [23] @ 0x8221b3c0
 };
 
@@ -1075,8 +1075,8 @@ struct gdUnlockConditionTourneyTimeData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x82219be0
-    virtual void vfn_22();  // [22] @ 0x82213b50
+    virtual void PostLoadProperties();  // [20] @ 0x82219be0
+    virtual void PostLoadChildren();  // [22] @ 0x82213b50
     virtual void vfn_23();  // [23] @ 0x82219c28
 };
 
@@ -1085,9 +1085,9 @@ struct gdUnlockConditionUnlockedGroup {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x8221afc0
-    virtual void vfn_21();  // [21] @ 0x8221b080
-    virtual void vfn_22();  // [22] @ 0x82214420
+    virtual void PostLoadProperties();  // [20] @ 0x8221afc0
+    virtual void Validate();  // [21] @ 0x8221b080
+    virtual void PostLoadChildren();  // [22] @ 0x82214420
     virtual void vfn_23();  // [23] @ 0x8221b008
 };
 
@@ -1098,9 +1098,9 @@ struct gdUnlockConditionVersus {
     // ── virtual methods ──
     virtual ~gdUnlockConditionVersus();                  // [0] @ 0x8240e948
     virtual void vfn_2();  // [2] @ 0x8221a950
-    virtual void vfn_20();  // [20] @ 0x8221a7d0
-    virtual void vfn_21();  // [21] @ 0x8221a8e8
-    virtual void vfn_22();  // [22] @ 0x82214098
+    virtual void PostLoadProperties();  // [20] @ 0x8221a7d0
+    virtual void Validate();  // [21] @ 0x8221a8e8
+    virtual void PostLoadChildren();  // [22] @ 0x82214098
     virtual void vfn_23();  // [23] @ 0x8221a818
 };
 
@@ -1109,8 +1109,8 @@ struct gdUnlockConditionWinMatchData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x82219580
-    virtual void vfn_22();  // [22] @ 0x82213850
+    virtual void PostLoadProperties();  // [20] @ 0x82219580
+    virtual void PostLoadChildren();  // [22] @ 0x82213850
     virtual void vfn_23();  // [23] @ 0x822195c8
 };
 
@@ -1119,8 +1119,8 @@ struct gdUnlockConditionWinTournamentData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x822194b0
-    virtual void vfn_22();  // [22] @ 0x822137c0
+    virtual void PostLoadProperties();  // [20] @ 0x822194b0
+    virtual void PostLoadChildren();  // [22] @ 0x822137c0
     virtual void vfn_23();  // [23] @ 0x822194f8
 };
 
@@ -1140,9 +1140,9 @@ struct gdUnlockGroupData {
     virtual ~gdUnlockGroupData();                  // [0] @ 0x82213748
     virtual void vfn_2();  // [2] @ 0x8221c930
     virtual void vfn_3();  // [3] @ 0x8221c7c0
-    virtual void vfn_20();  // [20] @ 0x8221c6d0
-    virtual void vfn_21();  // [21] @ 0x8221c718
-    virtual void vfn_22();  // [22] @ 0x82213680
+    virtual void PostLoadProperties();  // [20] @ 0x8221c6d0
+    virtual void Validate();  // [21] @ 0x8221c718
+    virtual void PostLoadChildren();  // [22] @ 0x82213680
 };
 
 namespace gdUnlockGroupData {
@@ -1165,9 +1165,9 @@ struct gdUnlockItemData {
     virtual ~gdUnlockItemData();                  // [0] @ 0x82213610
     virtual void vfn_2();  // [2] @ 0x8221c600
     virtual void vfn_3();  // [3] @ 0x8221c4c8
-    virtual void vfn_20();  // [20] @ 0x8221c380
-    virtual void vfn_21();  // [21] @ 0x8221c3c8
-    virtual void vfn_22();  // [22] @ 0x82213598
+    virtual void PostLoadProperties();  // [20] @ 0x8221c380
+    virtual void Validate();  // [21] @ 0x8221c3c8
+    virtual void PostLoadChildren();  // [22] @ 0x82213598
 };
 
 // ── gdUnlockItemRuleData  [vtable @ 0x8204AE9C] ──────────────────────────
@@ -1176,9 +1176,9 @@ struct gdUnlockItemRuleData {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x8221c308
-    virtual void vfn_20();  // [20] @ 0x8221c258
-    virtual void vfn_21();  // [21] @ 0x8221c2a0
-    virtual void vfn_22();  // [22] @ 0x82213460
+    virtual void PostLoadProperties();  // [20] @ 0x8221c258
+    virtual void Validate();  // [21] @ 0x8221c2a0
+    virtual void PostLoadChildren();  // [22] @ 0x82213460
 };
 
 // ── gdUnlockMgr  [2 vtables — template/MI] ──────────────────────────
@@ -1215,9 +1215,9 @@ struct gdUnlockRuleData {
     virtual ~gdUnlockRuleData();                  // [0] @ 0x82214938
     virtual void vfn_2();  // [2] @ 0x8221b7a8
     virtual void vfn_3();  // [3] @ 0x8221b858
-    virtual void vfn_20();  // [20] @ 0x8221b698
-    virtual void vfn_21();  // [21] @ 0x8221b6e0
-    virtual void vfn_22();  // [22] @ 0x82214868
+    virtual void PostLoadProperties();  // [20] @ 0x8221b698
+    virtual void Validate();  // [21] @ 0x8221b6e0
+    virtual void PostLoadChildren();  // [22] @ 0x82214868
 };
 
 // ── gdVibActuator  [vtable @ 0x8204A16C] ──────────────────────────
@@ -1227,9 +1227,9 @@ struct gdVibActuator {
     // ── virtual methods ──
     virtual ~gdVibActuator();                  // [0] @ 0x8220e940
     virtual void vfn_3();  // [3] @ 0x8220ebd8
-    virtual void vfn_20();  // [20] @ 0x8220eb70
-    virtual void vfn_21();  // [21] @ 0x8220ebb8
-    virtual void vfn_22();  // [22] @ 0x8220ead0
+    virtual void PostLoadProperties();  // [20] @ 0x8220eb70
+    virtual void Validate();  // [21] @ 0x8220ebb8
+    virtual void PostLoadChildren();  // [22] @ 0x8220ead0
 };
 
 // ── gdVibEffect  [vtable @ 0x8204A1D4] ──────────────────────────
@@ -1239,9 +1239,9 @@ struct gdVibEffect {
     // ── virtual methods ──
     virtual ~gdVibEffect();                  // [0] @ 0x8240dcb8
     virtual void vfn_3();  // [3] @ 0x8220ee28
-    virtual void vfn_20();  // [20] @ 0x8220edc0
-    virtual void vfn_21();  // [21] @ 0x8220ee08
-    virtual void vfn_22();  // [22] @ 0x8220ed28
+    virtual void PostLoadProperties();  // [20] @ 0x8220edc0
+    virtual void Validate();  // [21] @ 0x8220ee08
+    virtual void PostLoadChildren();  // [22] @ 0x8220ed28
 };
 
 // ── gdVibEvent  [vtable @ 0x8204A244] ──────────────────────────
@@ -1251,9 +1251,9 @@ struct gdVibEvent {
 
     // ── virtual methods ──
     virtual ~gdVibEvent();                  // [0] @ 0x8220f8b0
-    virtual void vfn_20();  // [20] @ 0x8220fa50
-    virtual void vfn_21();  // [21] @ 0x8220faa8
-    virtual void vfn_22();  // [22] @ 0x8220f9b0
+    virtual void PostLoadProperties();  // [20] @ 0x8220fa50
+    virtual void Validate();  // [21] @ 0x8220faa8
+    virtual void PostLoadChildren();  // [22] @ 0x8220f9b0
     virtual void vfn_23();  // [23] @ 0x8220f918
 
     // ── non-virtual methods (from debug strings) ──
@@ -1274,9 +1274,9 @@ struct gdVibSample {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x8220e8f8
-    virtual void vfn_20();  // [20] @ 0x8220e840
-    virtual void vfn_21();  // [21] @ 0x8220e888
-    virtual void vfn_22();  // [22] @ 0x8220e7a0
+    virtual void PostLoadProperties();  // [20] @ 0x8220e840
+    virtual void Validate();  // [21] @ 0x8220e888
+    virtual void PostLoadChildren();  // [22] @ 0x8220e7a0
 };
 
 // ── gdVibrator  [vtable @ 0x8204A0F4] ──────────────────────────
@@ -1291,9 +1291,9 @@ struct gdViewData {
     // ── virtual methods ──
     virtual ~gdViewData();                  // [0] @ 0x82217d60
     virtual void vfn_2();  // [2] @ 0x82217f68
-    virtual void vfn_20();  // [20] @ 0x82217dc8
-    virtual void vfn_21();  // [21] @ 0x82217eb8
-    virtual void vfn_22();  // [22] @ 0x82217e10
+    virtual void PostLoadProperties();  // [20] @ 0x82217dc8
+    virtual void Validate();  // [21] @ 0x82217eb8
+    virtual void PostLoadChildren();  // [22] @ 0x82217e10
 };
 
 // ── gdaiComeBackLogic  [vtable @ 0x8204215C] ──────────────────────────
@@ -1303,8 +1303,8 @@ struct gdaiComeBackLogic {
     // ── virtual methods ──
     virtual ~gdaiComeBackLogic();                  // [0] @ 0x821ea040
     virtual void vfn_3();  // [3] @ 0x821ea1b8
-    virtual void vfn_20();  // [20] @ 0x821ea0c8
-    virtual void vfn_22();  // [22] @ 0x821ea110
+    virtual void PostLoadProperties();  // [20] @ 0x821ea0c8
+    virtual void PostLoadChildren();  // [22] @ 0x821ea110
 };
 
 // ── gdaiData  [vtable @ 0x82041D4C] ──────────────────────────
@@ -1313,9 +1313,9 @@ struct gdaiData {
 
     // ── virtual methods ──
     virtual ~gdaiData();                  // [0] @ 0x821e88f0
-    virtual void vfn_20();  // [20] @ 0x821e8950
-    virtual void vfn_21();  // [21] @ 0x821e8bc0
-    virtual void vfn_22();  // [22] @ 0x821e8998
+    virtual void PostLoadProperties();  // [20] @ 0x821e8950
+    virtual void Validate();  // [21] @ 0x821e8bc0
+    virtual void PostLoadChildren();  // [22] @ 0x821e8998
 };
 
 // ── gdaiDataMgr  [vtable @ 0x820421C0] ──────────────────────────
@@ -1332,9 +1332,9 @@ struct gdaiDefPos {
 
     // ── virtual methods ──
     virtual ~gdaiDefPos();                  // [0] @ 0x821e8d50
-    virtual void vfn_20();  // [20] @ 0x821e8db0
-    virtual void vfn_21();  // [21] @ 0x821e8ea8
-    virtual void vfn_22();  // [22] @ 0x821e8df8
+    virtual void PostLoadProperties();  // [20] @ 0x821e8db0
+    virtual void Validate();  // [21] @ 0x821e8ea8
+    virtual void PostLoadChildren();  // [22] @ 0x821e8df8
 };
 
 // ── gdaiDeficit  [vtable @ 0x8204208C] ──────────────────────────
@@ -1343,9 +1343,9 @@ struct gdaiDeficit {
 
     // ── virtual methods ──
     virtual ~gdaiDeficit();                  // [0] @ 0x821ea670
-    virtual void vfn_20();  // [20] @ 0x821ea6d0
-    virtual void vfn_21();  // [21] @ 0x821ea7c0
-    virtual void vfn_22();  // [22] @ 0x821ea718
+    virtual void PostLoadProperties();  // [20] @ 0x821ea6d0
+    virtual void Validate();  // [21] @ 0x821ea7c0
+    virtual void PostLoadChildren();  // [22] @ 0x821ea718
 };
 
 // ── gdaiDifficulty  [vtable @ 0x82041FBC] ──────────────────────────
@@ -1355,8 +1355,8 @@ struct gdaiDifficulty {
     // ── virtual methods ──
     virtual ~gdaiDifficulty();                  // [0] @ 0x821e9968
     virtual void vfn_3();  // [3] @ 0x821e9ab0
-    virtual void vfn_20();  // [20] @ 0x821e99c8
-    virtual void vfn_22();  // [22] @ 0x821e9a10
+    virtual void PostLoadProperties();  // [20] @ 0x821e99c8
+    virtual void PostLoadChildren();  // [22] @ 0x821e9a10
 };
 
 // ── gdaiLead  [vtable @ 0x820420F4] ──────────────────────────
@@ -1365,9 +1365,9 @@ struct gdaiLead {
 
     // ── virtual methods ──
     virtual ~gdaiLead();                  // [0] @ 0x821ea850
-    virtual void vfn_20();  // [20] @ 0x821ea8b0
-    virtual void vfn_21();  // [21] @ 0x821ea9a0
-    virtual void vfn_22();  // [22] @ 0x821ea8f8
+    virtual void PostLoadProperties();  // [20] @ 0x821ea8b0
+    virtual void Validate();  // [21] @ 0x821ea9a0
+    virtual void PostLoadChildren();  // [22] @ 0x821ea8f8
 };
 
 // ── gdaiMeterLogic  [vtable @ 0x82041E84] ──────────────────────────
@@ -1376,9 +1376,9 @@ struct gdaiMeterLogic {
 
     // ── virtual methods ──
     virtual ~gdaiMeterLogic();                  // [0] @ 0x821e9160
-    virtual void vfn_20();  // [20] @ 0x821e91c0
-    virtual void vfn_21();  // [21] @ 0x821e92b0
-    virtual void vfn_22();  // [22] @ 0x821e9208
+    virtual void PostLoadProperties();  // [20] @ 0x821e91c0
+    virtual void Validate();  // [21] @ 0x821e92b0
+    virtual void PostLoadChildren();  // [22] @ 0x821e9208
 };
 
 // ── gdaiOffPos  [vtable @ 0x82041E1C] ──────────────────────────
@@ -1387,9 +1387,9 @@ struct gdaiOffPos {
 
     // ── virtual methods ──
     virtual ~gdaiOffPos();                  // [0] @ 0x821e8f68
-    virtual void vfn_20();  // [20] @ 0x821e8fc8
-    virtual void vfn_21();  // [21] @ 0x821e90b8
-    virtual void vfn_22();  // [22] @ 0x821e9010
+    virtual void PostLoadProperties();  // [20] @ 0x821e8fc8
+    virtual void Validate();  // [21] @ 0x821e90b8
+    virtual void PostLoadChildren();  // [22] @ 0x821e9010
 };
 
 // ── gdaiShotSelection  [vtable @ 0x82041EEC] ──────────────────────────
@@ -1398,9 +1398,9 @@ struct gdaiShotSelection {
 
     // ── virtual methods ──
     virtual ~gdaiShotSelection();                  // [0] @ 0x821e9378
-    virtual void vfn_20();  // [20] @ 0x821e93d8
-    virtual void vfn_21();  // [21] @ 0x821e94f8
-    virtual void vfn_22();  // [22] @ 0x821e9420
+    virtual void PostLoadProperties();  // [20] @ 0x821e93d8
+    virtual void Validate();  // [21] @ 0x821e94f8
+    virtual void PostLoadChildren();  // [22] @ 0x821e9420
 };
 
 // ── gdaiSkillSet  [vtable @ 0x82041F54] ──────────────────────────
@@ -1409,9 +1409,9 @@ struct gdaiSkillSet {
 
     // ── virtual methods ──
     virtual ~gdaiSkillSet();                  // [0] @ 0x821e96f0
-    virtual void vfn_20();  // [20] @ 0x821e9750
-    virtual void vfn_21();  // [21] @ 0x821e9850
-    virtual void vfn_22();  // [22] @ 0x821e9798
+    virtual void PostLoadProperties();  // [20] @ 0x821e9750
+    virtual void Validate();  // [21] @ 0x821e9850
+    virtual void PostLoadChildren();  // [22] @ 0x821e9798
 };
 
 // ── gdaiSkillStats  [vtable @ 0x82042024] ──────────────────────────
@@ -1420,9 +1420,9 @@ struct gdaiSkillStats {
 
     // ── virtual methods ──
     virtual ~gdaiSkillStats();                  // [0] @ 0x821e9db0
-    virtual void vfn_20();  // [20] @ 0x821e9e10
-    virtual void vfn_21();  // [21] @ 0x821e9f10
-    virtual void vfn_22();  // [22] @ 0x821e9e58
+    virtual void PostLoadProperties();  // [20] @ 0x821e9e10
+    virtual void Validate();  // [21] @ 0x821e9f10
+    virtual void PostLoadChildren();  // [22] @ 0x821e9e58
 };
 
 // ── plrPlayerMgr  [2 vtables — template/MI] ──────────────────────────
@@ -1431,9 +1431,9 @@ struct plrPlayerMgr {
 
     // ── virtual methods ──
     virtual ~plrPlayerMgr();                  // [0] @ 0x82188d40
-    virtual void vfn_20();  // [20] @ 0x82188b38
-    virtual void vfn_21();  // [21] @ 0x82189ad8
-    virtual void vfn_22();  // [22] @ 0x82188b70
+    virtual void PostLoadProperties();  // [20] @ 0x82188b38
+    virtual void Validate();  // [21] @ 0x82189ad8
+    virtual void PostLoadChildren();  // [22] @ 0x82188b70
     virtual void vfn_23();  // [23] @ 0x82188dd8
     virtual void vfn_24();  // [24] @ 0x821893d8
     virtual void vfn_25();  // [25] @ 0x821894c8
@@ -1451,9 +1451,9 @@ struct plrPropMgr {
 
     // ── virtual methods ──
     virtual ~plrPropMgr();                  // [0] @ 0x823d45c0
-    virtual void vfn_20();  // [20] @ 0x823d4630
-    virtual void vfn_21();  // [21] @ 0x823d4730
-    virtual void vfn_22();  // [22] @ 0x823d4668
+    virtual void PostLoadProperties();  // [20] @ 0x823d4630
+    virtual void Validate();  // [21] @ 0x823d4730
+    virtual void PostLoadChildren();  // [22] @ 0x823d4668
     virtual void vfn_23();  // [23] @ 0x823d47a0
     virtual void vfn_24();  // [24] @ 0x823d47f8
     virtual void vfn_25();  // [25] @ 0x823d4860

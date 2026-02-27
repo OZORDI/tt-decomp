@@ -82,7 +82,7 @@ struct pongLogosContext {
  * Address calculated: lis r11,-32250; addi r3,r11,-7048
  * = 0x8205E478 (likely "pongLogosState" or "LogosState")
  */
-extern "C" const char* pongLogosState_vfn_13(pongLogosState* self) {
+extern "C" const char* pongLogosState_GetName(pongLogosState* self) {
     return (const char*)0x8205E478;
 }
 
@@ -94,7 +94,7 @@ extern "C" const char* pongLogosState_vfn_13(pongLogosState* self) {
  * 
  * Returns 1 (likely CONTEXT_TYPE_LOGOS or similar enum value).
  */
-extern "C" uint32_t pongLogosContext_vfn_14(pongLogosContext* self) {
+extern "C" uint32_t pongLogosContext_ProcessInput(pongLogosContext* self) {
     return 1;
 }
 
@@ -107,7 +107,7 @@ extern "C" uint32_t pongLogosContext_vfn_14(pongLogosContext* self) {
  * 
  * This is slot 16 in the hsmContext vtable.
  */
-extern "C" void pongLogosContext_vfn_16(pongLogosContext* self) {
+extern "C" void pongLogosContext_OnUpdate(pongLogosContext* self) {
     // Check if graphics device has finished displaying logos
     void* grcDevice = g_grcDevice_ptr;
     uint8_t isComplete = pg_60D8_g(grcDevice);
@@ -130,7 +130,7 @@ extern "C" void pongLogosContext_vfn_16(pongLogosContext* self) {
  * 
  * This is slot 18 in the hsmContext vtable.
  */
-extern "C" void pongLogosContext_vfn_18(pongLogosContext* self) {
+extern "C" void pongLogosContext_OnShutdown(pongLogosContext* self) {
     void* grcDevice = g_grcDevice_ptr;
     pg_6000_g(grcDevice);
 }
@@ -144,7 +144,7 @@ extern "C" void pongLogosContext_vfn_18(pongLogosContext* self) {
  * 
  * This is slot 11 in the hsmState vtable.
  */
-extern "C" void pongLogosState_vfn_11(pongLogosState* self, uint32_t prevStateIdx) {
+extern "C" void pongLogosState_OnEnter(pongLogosState* self, uint32_t prevStateIdx) {
     if (prevStateIdx == 2) {
         // Normal transition from previous state
         void* hsmContext = self->m_pHSMContext;
@@ -203,7 +203,7 @@ extern "C" void pongLogosState_vfn_11(pongLogosState* self, uint32_t prevStateId
  * 
  * This is slot 12 in the hsmState vtable.
  */
-extern "C" void pongLogosState_vfn_12(pongLogosState* self, uint32_t nextStateIdx) {
+extern "C" void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateIdx) {
     if (nextStateIdx == 4) {
         // Transitioning to next screen (main menu or loading)
         // Fade out the logos
@@ -239,7 +239,7 @@ extern "C" void pongLogosState_vfn_12(pongLogosState* self, uint32_t nextStateId
  * 
  * This is slot 14 in the hsmState vtable.
  */
-extern "C" void pongLogosState_vfn_14(pongLogosState* self) {
+extern "C" void pongLogosState_ProcessInput(pongLogosState* self) {
     // Get allocator from SDA (Small Data Area)
     xe_main_thread_init_0038();  // Ensure TLS is initialized
     

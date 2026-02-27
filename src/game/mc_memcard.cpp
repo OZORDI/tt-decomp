@@ -122,7 +122,7 @@ struct mcMemcardControl::Unformat     : mcMemcardStatus { /* vtable @ 0x8204D954
 
 // ── mcMemcardControl::~mcMemcardControl @ 0x822BFFF8 | size: 0x68 ─────────────
 //
-// Destructor (vfn_0 / vtable slot 0).
+// Destructor (vtable slot 0).
 // Resets both vtable pointers (main + embedded mcSaveOp), then delegates to
 // the fsmMachine destructor body to free the states array.  Optionally frees
 // 'this' if r4 == 1 (heap-allocated instance).
@@ -162,7 +162,7 @@ void mcMemcardControl::~mcMemcardControl(bool shouldFree)
 
 // ── mcMemcardControl::Init @ 0x8221E628 | size: 0x488 ─────────────────────────
 //
-// vfn_8 — Constructor / Init.
+// Init (vtable slot 8) — Constructor / Init.
 // Sets m_stateCount = 11, allocates the states array (44 bytes, 16-byte aligned),
 // zeros it, then allocates and constructs each of the 11 concrete state objects
 // in order (Idle → Unformat).  Each state object receives its concrete vtable
@@ -335,7 +335,7 @@ void mcMemcardControl::Init()
 
 // ── mcMemcardControl::Shutdown @ 0x8221EAB0 | size: 0x1CC ────────────────────
 //
-// vfn_9 — Destructor helper / Shutdown.
+// Shutdown (vtable slot 9) — Destructor helper / Shutdown.
 // Walks the states array in reverse-dependency order, calling the virtual
 // delete destructor (slot 0, r4=1) on each non-null state object.
 // After all states are released, frees the states array itself and nulls
@@ -369,7 +369,7 @@ void mcMemcardControl::Shutdown()
 
 // ── mcMemcardControl::Reset @ 0x8221EC80 | size: 0x44 ────────────────────────
 //
-// vfn_10 — Reset all operational state back to defaults.
+// Reset (vtable slot 10) — Reset all operational state back to defaults.
 // Clears both result fields, resets the embedded mcSaveOp metadata, and
 // zeroes the content filename buffer.  Does NOT re-allocate or re-init
 // the state objects — only data fields are affected.
@@ -394,7 +394,7 @@ void mcMemcardControl::Reset()
 
 // ── mcMemcardControl::IsTransitionAllowed @ 0x8221ECC8 | size: 0x54 ──────────
 //
-// vfn_13 — Query whether a state transition from m_currentState → targetState
+// CanTransition (vtable slot 13) — Query whether a state transition from m_currentState → targetState
 // is legal.
 //
 // Transition table:
@@ -437,7 +437,7 @@ bool mcMemcardControl::IsTransitionAllowed(int32_t targetState) const
 
 // ── mcMemcardControl::RequestOp @ 0x8221ED20 | size: 0x18 ────────────────────
 //
-// vfn_14 — Mark that a new operation should be initiated.
+// BeginOperation (vtable slot 14) — Mark that a new operation should be initiated.
 // Only effective when the machine is in the Idle state (m_currentState == 0);
 // sets m_pendingOp = 1 to signal the update loop that work is waiting.
 
@@ -478,7 +478,7 @@ void fsmMachine_DestructorBody(fsmMachine* self)
 
 // ── fsmMachine::~fsmMachine @ 0x82222758 | size: 0x50 ────────────────────────
 //
-// vfn_0 of fsmMachine.  Delegates to fsmMachine_DestructorBody, then optionally
+// Destructor of fsmMachine.  Delegates to fsmMachine_DestructorBody, then optionally
 // frees 'this' when called as delete destructor (shouldFree = true).
 
 void fsmMachine::~fsmMachine(bool shouldFree)
@@ -493,7 +493,7 @@ void fsmMachine::~fsmMachine(bool shouldFree)
 
 // ── mcSegmentContainer::~mcSegmentContainer @ 0x8221EDC8 | size: 0x78 ─────────
 //
-// Destructor (vfn_0 / vtable slot 0).
+// Destructor (vtable slot 0).
 // Two-stage destructor pattern: first resets mcSegmentContainer vtable and
 // frees the segment data buffer if allocated, then resets to rage::datBase
 // vtable and optionally frees 'this' if heap-allocated.

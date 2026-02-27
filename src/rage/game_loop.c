@@ -124,95 +124,116 @@ void rage_subsystem_init(void) {
     );
 }
 
-// ---------------------------------------------------------------------------
-// Audio system globals (used by audSystem_init below)
-// ---------------------------------------------------------------------------
-extern const char* g_audDevicePaths[];  /* null-terminated list @ 0x825D1D40 */
-extern const char  g_audBasePath[];     /* base path prefix      @ 0x8204DAA4 */
-extern const char  g_audPathFmt[];      /* "%s%s" format         @ 0x82027434 */
-extern const char  g_audPathFmt2[];     /* alternate fmt         @ 0x8204DBFC */
-
-
-
-
-// audSystem_init  @ 0x82221ED0 | size: 0x18C
-//
-// Scans the global audio-device path list (g_audDevicePaths) and opens each
-// device through the RAGE file-system layer.
-//
-// Algorithm:
-//   For each non-null entry in g_audDevicePaths:
-//     1. Measure the path string's length.
-//     2. If non-empty, build two formatted paths with _snprintf:
-//          fullPath[256]:   g_audPathFmt  % g_audBasePath + entryStr
-//          strippedPath[256]: g_audPathFmt2 % g_audBasePath + entryStr
-//     3. Walk strippedPath from the end to find the last non-backslash
-//        segment, copying it into the end of fullPath (replacing backslash-
-//        delimited components one character at a time).
-//     4. Null-terminate the assembled path and open it via
-//        fiDevice_GetDevice(fullPath, 1 /*open*/).
-//     5. Append a backslash separator (ASCII 92) and the stripped component.
-//
-// TODO: the inner path-stripping loop (0x82221FB8–0x82222040) is complex.
-//       The current implementation is a faithful structural translation but
-//       the exact semantics of the "replace last component" pattern need
-//       verification against additional callers.
 // ===========================================================================
-void audSystem_init(void) {
-    struct fiDevice* device = fiDevice_GetDevice(g_audBasePath, 1);
+// audSystem_init_1ED0  @ 0x82221ED0 | size: 0x18C
+//
+// Opens the audio render-output device ("RN_OUT") then mounts each component
+// path in the audio-device table.
+//
+// The audio-device table (g_audPathTable @ 0x825D1D40, 96 bytes) is an array
+// of 12 eight-byte records:
+//
+//   struct AudPathRecord {
+//       const char* m_pPath;   // +0  — path string; NULL ends iteration
+//       uint32_t    m_fHasMore;// +4  — non-null means at least one more entry
+//   };
+//
+// For each non-empty entry:
+//   1. Build fullPath:     _snprintf(buf, 256, g_audPathFmt,  "RN_OUT", entry)
+//   2. Build strippedPath: _snprintf(buf, 256, g_audPathFmt2, "RN_OUT", entry)
+//   3. pos = strlen(strippedPath)   ← prefix length
+//   4. Inner loop — walk fullPath from pos, split on '\\':
+//        a. Copy chars fullPath[pos..pos+n] to strippedPath[pos..pos+n]
+//           until '\\' or '\0' is found.
+//        b. Null-terminate strippedPath[pos+n].
+//        c. device->vtable[10](device, strippedPath)  ← mount this component.
+//        d. Restore strippedPath[pos+n] = '\\'.
+//        e. pos += n + 1 (skip the backslash).
+//        f. Repeat until fullPath[pos] == '\0'.
+//
+// Key globals:
+//   g_audPathTable   @ 0x825D1D40  — 12-entry AudPathRecord array
+//   k_audBasePath    @ 0x8204DAA4  — "RN_OUT"  (14 bytes incl. null)
+//   k_audPathFmt     @ 0x82027434  — format1: "%s%s" or similar (6 bytes)
+//   k_audPathFmt2    @ 0x8204DBFC  — format2: "NameChant" label (4 bytes)
+// ===========================================================================
 
-    // Walk null-terminated list of device sub-paths.
-    for (int i = 0; g_audDevicePaths[i] != NULL; ++i) {
-        const char* entry = g_audDevicePaths[i];
+// Entry in the audio-device path table (8 bytes each, 12 entries @ 0x825D1D40).
+typedef struct AudPathRecord {
+    const char* m_pPath;    /* +0 — path string pointer; NULL = end of list */
+    uint32_t    m_fHasMore; /* +4 — non-null means successor entry exists   */
+} AudPathRecord;
 
-        // Measure length.
-        int len = 0;
-        while (entry[len]) len++;
+extern AudPathRecord g_audPathTable[12]; /* @ 0x825D1D40 */
+extern const char    k_audBasePath[];    /* "RN_OUT"     @ 0x8204DAA4 */
+extern const char    k_audPathFmt[];     /* path format1 @ 0x82027434 */
+extern const char    k_audPathFmt2[];    /* path format2 @ 0x8204DBFC */
 
-        if (len == 0) {
+// Virtual-call helper: fiDevice::Mount (vtable slot 10, byte offset 40)
+typedef int (*fiDevice_MountFn)(struct fiDevice*, const char*);
+#define fiDevice_Mount(dev, path) \
+    ((fiDevice_MountFn)(*(void***)(dev))[10])((dev), (path))
+
+void audSystem_init(void)
+{
+    // Open the base audio output device ("RN_OUT").
+    struct fiDevice* device = fiDevice_GetDevice(k_audBasePath, 1);
+
+    // First-entry guard: if the first record has no successor, bail.
+    if (g_audPathTable[0].m_fHasMore == 0)
+        return;
+
+    // Walk each path record in the table.
+    for (int i = 0; g_audPathTable[i].m_pPath != NULL; ++i) {
+        const char* entry = g_audPathTable[i].m_pPath;
+
+        // Measure path length; skip empty entries.
+        int elen = 0;
+        while (entry[elen]) elen++;
+        if (elen == 0)
             continue;
+
+        // Build the two formatted path buffers on the stack.
+        char strippedPath[256];   /* sp+80  in original frame  */
+        char fullPath[256];       /* sp+336 in original frame  */
+        _snprintf(fullPath,     sizeof(fullPath),     k_audPathFmt,  k_audBasePath, entry);
+        _snprintf(strippedPath, sizeof(strippedPath), k_audPathFmt2, k_audBasePath, entry);
+
+        // pos starts at end of the prefix (strippedPath's filled length).
+        int pos = 0;
+        while (strippedPath[pos]) pos++;
+
+        // Inner loop: split fullPath on '\\' from position pos onward,
+        // mounting each component via the device vtable.
+        // Assembly: loc_82221FB8 — loc_82222040.
+        for (;;) {
+            // Copy chars from fullPath[pos..] into strippedPath[pos..]
+            // until we hit '\\' or '\0'.
+            int start = pos;
+            for (;;) {
+                char c = fullPath[pos];
+                if (c == '\\' || c == '\0')
+                    break;
+                strippedPath[pos] = c;   /* stbx r10, r8, r11 (r8 = sp+80-sp+336 = -256) */
+                pos++;
+            }
+
+            // Null-terminate and mount this component path.
+            strippedPath[pos] = '\0';
+            fiDevice_Mount(device, strippedPath);
+
+            // Restore the backslash separator and advance past it.
+            strippedPath[pos] = '\\';
+            char next = fullPath[pos];   /* lbzx r7, r31, r8 — char AT pos */
+            pos++;                        /* addi r31, r31, 1  */
+
+            // Stop when we've consumed the full path.
+            if (next == '\0')
+                break;
         }
 
-        // Build full path and stripped path into local buffers.
-        char fullPath[256];
-        char strippedPath[256];
-        _snprintf(fullPath,    sizeof(fullPath),    g_audPathFmt,  g_audBasePath, entry);
-        _snprintf(strippedPath, sizeof(strippedPath), g_audPathFmt2, g_audBasePath, entry);
-
-        // Measure stripped path.
-        int slen = 0;
-        while (strippedPath[slen]) slen++;
-
-        // Walk from the end of fullPath, replacing with characters from
-        // strippedPath until we hit a backslash or the start.
-        int pos = slen;
-        while (pos < (int)sizeof(fullPath)) {
-            char c = fullPath[pos];
-            if (c == '\\') {
-                // Stop at backslash boundary.
-                break;
-            }
-            if (c == '\0') {
-                break;
-            }
-            // Copy character into strippedPath at corresponding offset.
-            strippedPath[pos - slen] = c;
-            pos++;
-        }
-
-        // Null-terminate and open.
-        strippedPath[pos - slen] = '\0';
-
-        // Re-open device with assembled path.
-        device = fiDevice_GetDevice(strippedPath, 1);
-
-        // Append separator (ASCII 92 = '\\') to the stripped path slot.
-        strippedPath[pos - slen] = (char)92;  // '\\'
-
-        // Step through remaining characters.
-        // TODO: the scaffold continues iterating at loc_82221FB8 after the
-        //       open call — this outer loop may need an additional pass.
-        // @ 0x82222040 — verify loop-back condition.
+        // Advance to next record and check the "has more" flag.
+        // (The loop condition re-evaluates g_audPathTable[i].m_pPath.)
     }
 }
 

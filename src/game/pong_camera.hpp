@@ -35,7 +35,7 @@ struct camShot {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_13();  // [13] @ 0x82165448
+    virtual void GetName();  // [13] @ 0x82165448
 };
 
 // ── camShotMgr  [2 vtables — template/MI] ──────────────────────────
@@ -48,7 +48,7 @@ struct camShotMgr {
     virtual void vfn_8();  // [8] @ 0x82165468
     virtual void vfn_9();  // [9] @ 0x82165558
     virtual void vfn_10();  // [10] @ 0x821655d8
-    virtual void vfn_13();  // [13] @ 0x821655f0
+    virtual void GetName();  // [13] @ 0x821655f0
     virtual void vfn_14();  // [14] @ 0x82165608
 };
 
@@ -83,7 +83,7 @@ struct charViewCS {
     virtual void vfn_7();  // [7] @ 0x82177840
     virtual void vfn_9();  // [9] @ 0x8216c200
     virtual void vfn_10();  // [10] @ 0x8216bed0
-    virtual void vfn_11();  // [11] @ 0x8216db88
+    virtual void OnEnter();  // [11] @ 0x8216db88
 };
 
 // ── gdCameraDef  [vtable @ 0x82049664] ──────────────────────────
@@ -94,9 +94,9 @@ struct gdCameraDef {
     // ── virtual methods ──
     virtual ~gdCameraDef();                  // [0] @ 0x8220c508
     virtual void vfn_3();  // [3] @ 0x8220c838
-    virtual void vfn_20();  // [20] @ 0x8220c5d0
-    virtual void vfn_21();  // [21] @ 0x8220c6d8
-    virtual void vfn_22();  // [22] @ 0x8220c618
+    virtual void PostLoadProperties();  // [20] @ 0x8220c5d0
+    virtual void Validate();  // [21] @ 0x8220c6d8
+    virtual void PostLoadChildren();  // [22] @ 0x8220c618
 
     // ── non-virtual methods (from debug strings) ──
     void Load();
@@ -110,9 +110,9 @@ struct gdCameraDest {
 
     // ── virtual methods ──
     virtual ~gdCameraDest();                  // [0] @ 0x8220bbe8
-    virtual void vfn_20();  // [20] @ 0x8220bc38
-    virtual void vfn_21();  // [21] @ 0x8220bd48
-    virtual void vfn_22();  // [22] @ 0x8220bc80
+    virtual void PostLoadProperties();  // [20] @ 0x8220bc38
+    virtual void Validate();  // [21] @ 0x8220bd48
+    virtual void PostLoadChildren();  // [22] @ 0x8220bc80
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -125,9 +125,9 @@ struct gdCameraInst {
     // ── virtual methods ──
     virtual ~gdCameraInst();                  // [0] @ 0x8220c068
     virtual void vfn_3();  // [3] @ 0x8220c338
-    virtual void vfn_20();  // [20] @ 0x8220c138
-    virtual void vfn_21();  // [21] @ 0x8220c230
-    virtual void vfn_22();  // [22] @ 0x8220c180
+    virtual void PostLoadProperties();  // [20] @ 0x8220c138
+    virtual void Validate();  // [21] @ 0x8220c230
+    virtual void PostLoadChildren();  // [22] @ 0x8220c180
 };
 
 // ── pongCMCamera  [vtable @ 0x82036508] ──────────────────────────
@@ -202,8 +202,8 @@ struct pongCameraMgr {
 
     // ── virtual methods ──
     virtual ~pongCameraMgr();                  // [0] @ 0x821658e0
-    virtual void vfn_20();  // [20] @ 0x821657f8
-    virtual void vfn_22();  // [22] @ 0x82165830
+    virtual void PostLoadProperties();  // [20] @ 0x821657f8
+    virtual void PostLoadChildren();  // [22] @ 0x82165830
     virtual void vfn_23();  // [23] @ 0x82165960
     virtual void vfn_24();  // [24] @ 0x82165f30
     virtual void vfn_25();  // [25] @ 0x82166068

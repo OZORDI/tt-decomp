@@ -122,7 +122,7 @@ enum ScreenID {
  * Returns the state name string for debugging/logging.
  * This is slot 13 in the hsmState vtable.
  */
-extern "C" const char* pongLogosState_vfn_13(pongLogosState* self) {
+extern "C" const char* pongLogosState_GetName(pongLogosState* self) {
     return STR_LOGOS_STATE_NAME;
 }
 
@@ -132,7 +132,7 @@ extern "C" const char* pongLogosState_vfn_13(pongLogosState* self) {
  * Returns the context type ID. This is slot 14 in the
  * hsmContext vtable, used for RTTI-style type checking.
  */
-extern "C" uint32_t pongLogosContext_vfn_14(pongLogosContext* self) {
+extern "C" uint32_t pongLogosContext_ProcessInput(pongLogosContext* self) {
     return 1;  // CONTEXT_TYPE_LOGOS
 }
 
@@ -145,7 +145,7 @@ extern "C" uint32_t pongLogosContext_vfn_14(pongLogosContext* self) {
  * 
  * This is slot 16 in the hsmContext vtable.
  */
-extern "C" void pongLogosContext_vfn_16(pongLogosContext* self) {
+extern "C" void pongLogosContext_OnUpdate(pongLogosContext* self) {
     // Check if graphics device has finished displaying logos
     uint8_t isComplete = grcDevice_IsRenderComplete(g_grcDevice);
     
@@ -164,7 +164,7 @@ extern "C" void pongLogosContext_vfn_16(pongLogosContext* self) {
  * 
  * This is slot 18 in the hsmContext vtable.
  */
-extern "C" void pongLogosContext_vfn_18(pongLogosContext* self) {
+extern "C" void pongLogosContext_OnShutdown(pongLogosContext* self) {
     grcDevice_Render(g_grcDevice);
 }
 
@@ -177,7 +177,7 @@ extern "C" void pongLogosContext_vfn_18(pongLogosContext* self) {
  * 
  * This is slot 11 in the hsmState vtable.
  */
-extern "C" void pongLogosState_vfn_11(pongLogosState* self, uint32_t prevStateIdx) {
+extern "C" void pongLogosState_OnEnter(pongLogosState* self, uint32_t prevStateIdx) {
     if (prevStateIdx == STATE_BOOT) {
         // Normal transition from boot state
         char contextName[128];
@@ -219,7 +219,7 @@ extern "C" void pongLogosState_vfn_11(pongLogosState* self, uint32_t prevStateId
  * 
  * This is slot 12 in the hsmState vtable.
  */
-extern "C" void pongLogosState_vfn_12(pongLogosState* self, uint32_t nextStateIdx) {
+extern "C" void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateIdx) {
     if (nextStateIdx == STATE_MAIN_MENU) {
         // Transitioning to main menu - fade out the logos
         grcDevice_SetFade(g_grcDevice, 1.0f, 0xFFFFFFFF, 0, 0);  // Fade out mode
@@ -244,7 +244,7 @@ extern "C" void pongLogosState_vfn_12(pongLogosState* self, uint32_t nextStateId
  * 
  * This is slot 14 in the hsmState vtable.
  */
-extern "C" void pongLogosState_vfn_14(pongLogosState* self) {
+extern "C" void pongLogosState_ProcessInput(pongLogosState* self) {
     // Ensure TLS is initialized
     xe_InitThreadLocalStorage();
     

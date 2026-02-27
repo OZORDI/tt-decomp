@@ -123,9 +123,9 @@ struct hsmState {
     // ── virtual methods ──
     virtual ~hsmState();                  // [0] @ 0x823b3d30
     virtual void vfn_2();  // [2] @ 0x823ed280
-    virtual void vfn_3();  // [3] @ 0x823ed290
-    virtual void vfn_4();  // [4] @ 0x823e8d58
-    virtual void vfn_12();  // [12] @ 0x823ed3a0
+    virtual void Start();  // [3] @ 0x823ed290
+    virtual void Stop();  // [4] @ 0x823e8d58
+    virtual void OnExit();  // [12] @ 0x823ed3a0
 };
 
 // ── pongAttractContext  [2 vtables — template/MI] ──────────────────────────
@@ -134,8 +134,8 @@ struct pongAttractContext {
 
     // ── virtual methods ──
     virtual ~pongAttractContext();                  // [0] @ 0x823055a0
-    virtual void vfn_16();  // [16] @ 0x82305600
-    virtual void vfn_18();  // [18] @ 0x82305790
+    virtual void OnEnterCredits();  // [16] @ 0x82305600
+    virtual void OnExitCredits();  // [18] @ 0x82305790
 };
 
 // ── pongAttractState  [vtable @ 0x8205E0AC] ──────────────────────────
@@ -143,12 +143,12 @@ struct pongAttractState {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_7();  // [7] @ 0x823057e8
-    virtual void vfn_8();  // [8] @ 0x82306ea8
-    virtual void vfn_11();  // [11] @ 0x823058e0
-    virtual void vfn_12();  // [12] @ 0x823059a8
-    virtual void vfn_13();  // [13] @ 0x82305a60
-    virtual void vfn_14();  // [14] @ 0x82305800
+    virtual void Reset();  // [7] @ 0x823057e8
+    virtual void Shutdown();  // [8] @ 0x82306ea8
+    virtual void OnEnter();  // [11] @ 0x823058e0
+    virtual void OnExit();  // [12] @ 0x823059a8
+    virtual void GetName();  // [13] @ 0x82305a60
+    virtual void ProcessInput();  // [14] @ 0x82305800
 };
 
 // ── pongBootState  [vtable @ 0x82059684] ──────────────────────────
@@ -156,8 +156,8 @@ struct pongBootState {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x822c1220
-    virtual void vfn_13();  // [13] @ 0x822c1210
+    virtual void OnEnter();  // [11] @ 0x822c1220
+    virtual void GetName();  // [13] @ 0x822c1210
 };
 
 // pongCharViewContext and pongCharViewState moved to include/game/char_view.hpp
@@ -221,11 +221,11 @@ struct pongFrontendContext {
 
     // ── virtual methods ──
     virtual ~pongFrontendContext();                  // [0] @ 0x8230d110
-    virtual void vfn_11();  // [11] @ 0x8230d198
-    virtual void vfn_12();  // [12] @ 0x8230d958
-    virtual void vfn_14();  // [14] @ 0x8230da70
-    virtual void vfn_17();  // [17] @ 0x8230eae8
-    virtual void vfn_18();  // [18] @ 0x8230ec00
+    virtual void OnEnter();  // [11] @ 0x8230d198
+    virtual void OnExit();  // [12] @ 0x8230d958
+    virtual void ProcessInput();  // [14] @ 0x8230da70
+    virtual void HandleMessage();  // [17] @ 0x8230eae8
+    virtual void OnExitCredits();  // [18] @ 0x8230ec00
 };
 
 // ── pongFrontendLive  [vtable @ 0x8205DEB4] ──────────────────────────
@@ -240,10 +240,10 @@ struct pongFrontendState {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x82310750
-    virtual void vfn_12();  // [12] @ 0x82310b20
-    virtual void vfn_13();  // [13] @ 0x82310ea8
-    virtual void vfn_14();  // [14] @ 0x823106e0
+    virtual void OnEnter();  // [11] @ 0x82310750
+    virtual void OnExit();  // [12] @ 0x82310b20
+    virtual void GetName();  // [13] @ 0x82310ea8
+    virtual void ProcessInput();  // [14] @ 0x823106e0
 
     // ── non-virtual methods (from debug strings) ──
     void WaitForCharLoadToEnd();
@@ -255,9 +255,9 @@ struct pongLeaderboardContext {
 
     // ── virtual methods ──
     virtual ~pongLeaderboardContext();                  // [0] @ 0x82322ec8
-    virtual void vfn_11();  // [11] @ 0x82323020
-    virtual void vfn_16();  // [16] @ 0x82323050
-    virtual void vfn_18();  // [18] @ 0x82323138
+    virtual void OnEnter();  // [11] @ 0x82323020
+    virtual void OnEnterCredits();  // [16] @ 0x82323050
+    virtual void OnExitCredits();  // [18] @ 0x82323138
     virtual void vfn_23();  // [23] @ 0x82322f30
 };
 
@@ -311,9 +311,9 @@ struct pongLoadingContext {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x823078a8
-    virtual void vfn_16();  // [16] @ 0x82307a18
-    virtual void vfn_18();  // [18] @ 0x82307b00
+    virtual void OnEnter();  // [11] @ 0x823078a8
+    virtual void OnEnterCredits();  // [16] @ 0x82307a18
+    virtual void OnExitCredits();  // [18] @ 0x82307b00
     virtual void vfn_23();  // [23] @ 0x823078e0
     virtual void vfn_24();  // [24] @ 0x82307980
     virtual void vfn_25();  // [25] @ 0x823079c8
@@ -330,12 +330,12 @@ struct pongLoadingState {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_7();  // [7] @ 0x82308440
-    virtual void vfn_8();  // [8] @ 0x823085a8
-    virtual void vfn_11();  // [11] @ 0x82308660
-    virtual void vfn_12();  // [12] @ 0x823087d8
-    virtual void vfn_13();  // [13] @ 0x82308938
-    virtual void vfn_14();  // [14] @ 0x82308498
+    virtual void Reset();  // [7] @ 0x82308440
+    virtual void Shutdown();  // [8] @ 0x823085a8
+    virtual void OnEnter();  // [11] @ 0x82308660
+    virtual void OnExit();  // [12] @ 0x823087d8
+    virtual void GetName();  // [13] @ 0x82308938
+    virtual void ProcessInput();  // [14] @ 0x82308498
 };
 
 // ── pongLogosContext  [vtable @ 0x8205E564] ──────────────────────────
@@ -378,9 +378,9 @@ struct pongPauseContext {
 
     // ── virtual methods ──
     virtual ~pongPauseContext();                  // [0] @ 0x82308a08
-    virtual void vfn_11();  // [11] @ 0x82308a70
-    virtual void vfn_16();  // [16] @ 0x82308b68
-    virtual void vfn_18();  // [18] @ 0x82308d20
+    virtual void OnEnter();  // [11] @ 0x82308a70
+    virtual void OnEnterCredits();  // [16] @ 0x82308b68
+    virtual void OnExitCredits();  // [18] @ 0x82308d20
     virtual void vfn_23();  // [23] @ 0x82308ad0
 };
 
@@ -390,10 +390,10 @@ struct pongPauseState {
 
     // ── virtual methods ──
     virtual ~pongPauseState();                  // [0] @ 0x82308fe8
-    virtual void vfn_11();  // [11] @ 0x82309108
-    virtual void vfn_12();  // [12] @ 0x82309250
-    virtual void vfn_13();  // [13] @ 0x823089f8
-    virtual void vfn_14();  // [14] @ 0x82309050
+    virtual void OnEnter();  // [11] @ 0x82309108
+    virtual void OnExit();  // [12] @ 0x82309250
+    virtual void GetName();  // [13] @ 0x823089f8
+    virtual void ProcessInput();  // [14] @ 0x82309050
 };
 
 // ── pongStatsContext  [2 vtables — template/MI] ──────────────────────────
@@ -402,9 +402,9 @@ struct pongStatsContext {
 
     // ── virtual methods ──
     virtual ~pongStatsContext();                  // [0] @ 0x82322530
-    virtual void vfn_11();  // [11] @ 0x82322598
-    virtual void vfn_16();  // [16] @ 0x82322c10
-    virtual void vfn_18();  // [18] @ 0x82322e28
+    virtual void OnEnter();  // [11] @ 0x82322598
+    virtual void OnEnterCredits();  // [16] @ 0x82322c10
+    virtual void OnExitCredits();  // [18] @ 0x82322e28
 };
 
 // ── pongTrainingLoadingContext  [vtable @ 0x8205E944] ──────────────────────────
@@ -423,10 +423,10 @@ struct pongTrainingUIContext {
 
     // ── virtual methods ──
     virtual ~pongTrainingUIContext();                  // [0] @ 0x82307080
-    virtual void vfn_11();  // [11] @ 0x82307120
-    virtual void vfn_12();  // [12] @ 0x82307180
-    virtual void vfn_16();  // [16] @ 0x823071b8
-    virtual void vfn_18();  // [18] @ 0x823072e0
+    virtual void OnEnter();  // [11] @ 0x82307120
+    virtual void OnExit();  // [12] @ 0x82307180
+    virtual void OnEnterCredits();  // [16] @ 0x823071b8
+    virtual void OnExitCredits();  // [18] @ 0x823072e0
     virtual void vfn_23();  // [23] @ 0x82307420
 };
 
@@ -436,10 +436,10 @@ struct pongTrainingUIState {
 
     // ── virtual methods ──
     virtual ~pongTrainingUIState();                  // [0] @ 0x82307520
-    virtual void vfn_8();  // [8] @ 0x823075a8
-    virtual void vfn_12();  // [12] @ 0x82307728
-    virtual void vfn_13();  // [13] @ 0x82307070
-    virtual void vfn_14();  // [14] @ 0x823077e0
+    virtual void Shutdown();  // [8] @ 0x823075a8
+    virtual void OnExit();  // [12] @ 0x82307728
+    virtual void GetName();  // [13] @ 0x82307070
+    virtual void ProcessInput();  // [14] @ 0x823077e0
 };
 
 // ── rlConcreteStatsView  [2 vtables — template/MI] ──────────────────────────

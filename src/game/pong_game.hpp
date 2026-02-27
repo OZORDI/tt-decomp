@@ -6,8 +6,10 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * Vtable naming conventions:
+ *   HSM State: Init/OnEnter/OnExit/GetName/ProcessInput
+ *   HSM Context: OnExit/ProcessInput/OnUpdate/OnRender/OnShutdown
+ *   gdData: PostLoadProperties/Validate/PostLoadChildren
  */
 #pragma once
 #include <stdint.h>
@@ -33,9 +35,9 @@ struct lvlLevelMgr {
     // ── virtual methods ──
     virtual ~lvlLevelMgr();                  // [0] @ 0x8223fcf0
     virtual void ScalarDtor(int flags); // [1] @ 0x8223feb0
-    virtual void vfn_20();  // [20] @ 0x8223fd78
-    virtual void vfn_21();  // [21] @ 0x8223fe28
-    virtual void vfn_22();  // [22] @ 0x8223fdb0
+    virtual void PostLoadProperties();          // [20] @ 0x8223fd78
+    virtual void Validate();                    // [21] @ 0x8223fe28
+    virtual void PostLoadChildren();            // [22] @ 0x8223fdb0
     virtual void vfn_23();  // [23] @ 0x82240010
     virtual void vfn_24();  // [24] @ 0x82240378
 };
@@ -90,7 +92,7 @@ struct pongControlGroup {
     virtual void vfn_8();  // [8] @ 0x821b6800
     virtual void vfn_9();  // [9] @ 0x821b69c8
     virtual void vfn_10();  // [10] @ 0x821b6a60
-    virtual void vfn_11();  // [11] @ 0x821b6af8
+    virtual void OnEnter();  // [11] @ 0x821b6af8
     virtual void vfn_12();  // [12] @ 0x821b67f8
 };
 
@@ -106,12 +108,12 @@ struct pongGameContext {
 
     // ── virtual methods ──
     virtual ~pongGameContext();                  // [0] @ 0x823d5328
-    virtual void vfn_12();  // [12] @ 0x823d5388
-    virtual void vfn_14();  // [14] @ 0x823d5440
-    virtual void vfn_16();  // [16] @ 0x823d54e8
-    virtual void vfn_17();  // [17] @ 0x823d5720
-    virtual void vfn_18();  // [18] @ 0x823d58f0
-    virtual void vfn_22();  // [22] @ 0x823d5a30
+    virtual void OnExit();                      // [12] @ 0x823d5388
+    virtual void ProcessInput();                // [14] @ 0x823d5440
+    virtual void OnUpdate();                    // [16] @ 0x823d54e8
+    virtual void OnRender();                    // [17] @ 0x823d5720
+    virtual void OnShutdown();                  // [18] @ 0x823d58f0
+    virtual void PostLoadChildren();            // [22] @ 0x823d5a30
 
     // ── non-virtual methods (from debug strings) ──
     void Process();
@@ -123,11 +125,11 @@ struct pongGameState {
 
     // ── virtual methods ──
     virtual ~pongGameState();                  // [0] @ 0x823d6bf8
-    virtual void vfn_10();  // [10] @ 0x823d6c80
-    virtual void vfn_11();  // [11] @ 0x823d6ec8
-    virtual void vfn_12();  // [12] @ 0x823d72d8
-    virtual void vfn_13();  // [13] @ 0x823d5318
-    virtual void vfn_14();  // [14] @ 0x823d7598
+    virtual void Init();                        // [10] @ 0x823d6c80
+    virtual void OnEnter(int prevStateIdx);     // [11] @ 0x823d6ec8
+    virtual void OnExit(int nextStateIdx);      // [12] @ 0x823d72d8
+    virtual const char* GetName();              // [13] @ 0x823d5318
+    virtual void ProcessInput();                // [14] @ 0x823d7598
 };
 
 // ── pongRandomizer  [vtable @ 0x8203607C] ──────────────────────────
@@ -148,8 +150,8 @@ struct shEnd {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x82228e80
-    virtual void vfn_13();  // [13] @ 0x82228e90
+    virtual void OnEnter(int prevStateIdx);     // [11] @ 0x82228e80
+    virtual const char* GetName();              // [13] @ 0x82228e90
 };
 
 // ── shInit  [vtable @ 0x820590C4] ──────────────────────────
@@ -157,9 +159,9 @@ struct shInit {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_7();  // [7] @ 0x82228e00
-    virtual void vfn_11();  // [11] @ 0x82228e60
-    virtual void vfn_13();  // [13] @ 0x82228e70
+    virtual void Reset();                       // [7]  @ 0x82228e00
+    virtual void OnEnter(int prevStateIdx);     // [11] @ 0x82228e60
+    virtual const char* GetName();              // [13] @ 0x82228e70
 };
 
 // ── shShell  [vtable @ 0x8204E9AC] ──────────────────────────

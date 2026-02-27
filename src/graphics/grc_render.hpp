@@ -134,3 +134,19 @@ struct grcTextureXenon {
 };
 
 } // namespace rage
+
+// ── grcDevice GPU command submission ──────────────────────────────────────
+// Non-class free functions that operate on the two flavours of grcDevice.
+
+// grcDevice_beginScene_5E78 @ 0x82305E78
+// Gates scene start on render-state conditions, then dispatches to the
+// attached grcRenderTargetXenon.  pDevice points to the 0x8271A81C instance.
+extern void grcDevice_beginScene(void* pDevice);
+
+// grcDevice_clear_9290 @ 0x82379290
+// Advances the render-command ring, copies viewport rects into the new
+// entry, executes it, then resets queue state.  pDevice points to 0x8271A320.
+extern void grcDevice_clear(void* pDevice);
+
+// Default viewport rectangle (16 bytes, float[4]) @ 0x8261A0C0
+extern const uint8_t g_defaultViewportRect[16];

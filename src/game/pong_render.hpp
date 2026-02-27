@@ -71,9 +71,9 @@ struct pongLightGlowCapsule {
 
     // ── virtual methods ──
     virtual ~pongLightGlowCapsule();                  // [0] @ 0x823795f0
-    virtual void vfn_20();  // [20] @ 0x8237ca50
-    virtual void vfn_21();  // [21] @ 0x8237cb68
-    virtual void vfn_22();  // [22] @ 0x8237ca98
+    virtual void PostLoadProperties();  // [20] @ 0x8237ca50
+    virtual void Validate();  // [21] @ 0x8237cb68
+    virtual void PostLoadChildren();  // [22] @ 0x8237ca98
 };
 
 // ── pongLightGlowMgr  [vtable @ 0x8206A768] ──────────────────────────
@@ -90,9 +90,9 @@ struct pongLightGlowSquare {
 
     // ── virtual methods ──
     virtual ~pongLightGlowSquare();                  // [0] @ 0x82379650
-    virtual void vfn_20();  // [20] @ 0x8237c8a0
-    virtual void vfn_21();  // [21] @ 0x8237c9a8
-    virtual void vfn_22();  // [22] @ 0x8237c8e8
+    virtual void PostLoadProperties();  // [20] @ 0x8237c8a0
+    virtual void Validate();  // [21] @ 0x8237c9a8
+    virtual void PostLoadChildren();  // [22] @ 0x8237c8e8
 };
 
 // ── pongPostEffects  [vtable @ 0x820342F0] ──────────────────────────

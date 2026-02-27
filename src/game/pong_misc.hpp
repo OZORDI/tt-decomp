@@ -99,9 +99,9 @@ struct cellData {
     // ── virtual methods ──
     virtual ~cellData();                  // [0] @ 0x8240f9a0
     virtual void vfn_2();  // [2] @ 0x8240bfb0
-    virtual void vfn_20();  // [20] @ 0x8240beb8
-    virtual void vfn_21();  // [21] @ 0x8240bf00
-    virtual void vfn_22();  // [22] @ 0x8231f2a8
+    virtual void PostLoadProperties();  // [20] @ 0x8240beb8
+    virtual void Validate();  // [21] @ 0x8240bf00
+    virtual void PostLoadChildren();  // [22] @ 0x8231f2a8
 };
 
 // ── ctxManager  [vtable @ 0x8204EB50] ──────────────────────────
@@ -115,9 +115,9 @@ struct fontData {
 
     // ── virtual methods ──
     virtual void vfn_2();  // [2] @ 0x8240bdf0
-    virtual void vfn_20();  // [20] @ 0x8240bcc0
-    virtual void vfn_21();  // [21] @ 0x8240bd08
-    virtual void vfn_22();  // [22] @ 0x8231f1f8
+    virtual void PostLoadProperties();  // [20] @ 0x8240bcc0
+    virtual void Validate();  // [21] @ 0x8240bd08
+    virtual void PostLoadChildren();  // [22] @ 0x8231f1f8
 };
 
 namespace fontData {
@@ -147,9 +147,9 @@ struct listData {
     // ── virtual methods ──
     virtual ~listData();                  // [0] @ 0x822184f0
     virtual void vfn_3();  // [3] @ 0x822185e0
-    virtual void vfn_20();  // [20] @ 0x822184a8
-    virtual void vfn_21();  // [21] @ 0x82218558
-    virtual void vfn_22();  // [22] @ 0x821e0fc0
+    virtual void PostLoadProperties();  // [20] @ 0x822184a8
+    virtual void Validate();  // [21] @ 0x82218558
+    virtual void PostLoadChildren();  // [22] @ 0x821e0fc0
 };
 
 // ── listItemData  [vtable @ 0x8204C3A4] ──────────────────────────
@@ -159,9 +159,9 @@ struct listItemData {
     // ── virtual methods ──
     virtual ~listItemData();                  // [0] @ 0x822182f0
     virtual void vfn_2();  // [2] @ 0x82218440
-    virtual void vfn_20();  // [20] @ 0x822182a8
-    virtual void vfn_21();  // [21] @ 0x82218340
-    virtual void vfn_22();  // [22] @ 0x821e0f00
+    virtual void PostLoadProperties();  // [20] @ 0x822182a8
+    virtual void Validate();  // [21] @ 0x82218340
+    virtual void PostLoadChildren();  // [22] @ 0x821e0f00
 };
 
 namespace listItemData {
@@ -436,16 +436,16 @@ struct msgMsgSink {
     virtual void vfn_3();  // [3] @ 0x82454b78
     virtual void vfn_8();  // [8] @ 0x82455698
     virtual void vfn_9();  // [9] @ 0x824557c8
-    virtual void vfn_11();  // [11] @ 0x82455688
+    virtual void OnEnter();  // [11] @ 0x82455688
     virtual void vfn_12();  // [12] @ 0x82455630
-    virtual void vfn_13();  // [13] @ 0x82455640
+    virtual void GetName();  // [13] @ 0x82455640
     virtual void vfn_14();  // [14] @ 0x82455540
     virtual void vfn_17();  // [17] @ 0x824559f0
     virtual void vfn_18();  // [18] @ 0x82455ab0
     virtual void vfn_19();  // [19] @ 0x82455a60
-    virtual void vfn_20();  // [20] @ 0x8244ee88
-    virtual void vfn_21();  // [21] @ 0x8244ee90
-    virtual void vfn_22();  // [22] @ 0x8244dd50
+    virtual void PostLoadProperties();  // [20] @ 0x8244ee88
+    virtual void Validate();  // [21] @ 0x8244ee90
+    virtual void PostLoadChildren();  // [22] @ 0x8244dd50
     virtual void vfn_23();  // [23] @ 0x8244ddf8
     virtual void vfn_24();  // [24] @ 0x8244dff8
     virtual void vfn_25();  // [25] @ 0x8244dcf0
@@ -525,18 +525,18 @@ struct pongBinkMovie {
     virtual void vfn_7();  // [7] @ 0x82317a10
     virtual void vfn_8();  // [8] @ 0x82317a70
     virtual void vfn_10();  // [10] @ 0x82317b28
-    virtual void vfn_11();  // [11] @ 0x82317b48
+    virtual void OnEnter();  // [11] @ 0x82317b48
     virtual void vfn_12();  // [12] @ 0x82317b68
-    virtual void vfn_13();  // [13] @ 0x82317b70
+    virtual void GetName();  // [13] @ 0x82317b70
     virtual void vfn_14();  // [14] @ 0x82317b80
     virtual void vfn_15();  // [15] @ 0x82317b88
     virtual void vfn_16();  // [16] @ 0x82317b90
     virtual void vfn_17();  // [17] @ 0x82317bb0
     virtual void vfn_18();  // [18] @ 0x82317ba0
     virtual void vfn_19();  // [19] @ 0x82317bc0
-    virtual void vfn_20();  // [20] @ 0x82317bc8
-    virtual void vfn_21();  // [21] @ 0x82317d20
-    virtual void vfn_22();  // [22] @ 0x82317dd0
+    virtual void PostLoadProperties();  // [20] @ 0x82317bc8
+    virtual void Validate();  // [21] @ 0x82317d20
+    virtual void PostLoadChildren();  // [22] @ 0x82317dd0
 };
 
 // ── pongMovie  [vtable @ 0x82060A8C] ──────────────────────────
@@ -996,14 +996,14 @@ struct pongXMVMovie {
     virtual void vfn_8();  // [8] @ 0x823172f8
     virtual void vfn_9();  // [9] @ 0x823173b0
     virtual void vfn_10();  // [10] @ 0x823173d0
-    virtual void vfn_11();  // [11] @ 0x823173d8
+    virtual void OnEnter();  // [11] @ 0x823173d8
     virtual void vfn_12();  // [12] @ 0x823173e0
-    virtual void vfn_13();  // [13] @ 0x823173e8
+    virtual void GetName();  // [13] @ 0x823173e8
     virtual void vfn_14();  // [14] @ 0x823173f8
     virtual void vfn_15();  // [15] @ 0x82317410
     virtual void vfn_16();  // [16] @ 0x82317428
     virtual void vfn_19();  // [19] @ 0x82317438
-    virtual void vfn_20();  // [20] @ 0x82317440
-    virtual void vfn_21();  // [21] @ 0x823174c8
-    virtual void vfn_22();  // [22] @ 0x82317530
+    virtual void PostLoadProperties();  // [20] @ 0x82317440
+    virtual void Validate();  // [21] @ 0x823174c8
+    virtual void PostLoadChildren();  // [22] @ 0x82317530
 };

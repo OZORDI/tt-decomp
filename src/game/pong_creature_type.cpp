@@ -36,7 +36,7 @@ static void** const kDatBase_Vtable          = (void**)0x820276C4;  // rage::dat
 /**
  * pongCreatureType::~pongCreatureType()
  *
- * Virtual destructor entry: pongCreatureType_vfn_0 @ 0x820C2DA0 | size: 0x38
+ * Virtual destructor entry: pongCreatureType_Destroy @ 0x820C2DA0 | size: 0x38
  * Destructor body:          pongCreatureType_Destroy @ 0x820C2E80 | size: 0xB0
  *
  * pongCreatureType inherits from rage::datBase (vtable 0x820276C4).
@@ -55,7 +55,7 @@ static void** const kDatBase_Vtable          = (void**)0x820276C4;  // rage::dat
  *   8. Calls atHashMap_Clear on hash-table subobject at +12
  *   9. Sets vtable to rage::datBase (0x820276C4) — base class chain
  *
- * The vfn_0 entry then checks (flags & 1) to conditionally free the object.
+ * The destructor entry then checks (flags & 1) to conditionally free the object.
  */
 pongCreatureType::~pongCreatureType()
 {

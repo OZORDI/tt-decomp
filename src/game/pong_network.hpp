@@ -494,7 +494,7 @@ struct NetDataQuery {
     virtual void vfn_4();  // [4] @ 0x823d1ad0
     virtual void vfn_8();  // [8] @ 0x823d1628
     virtual void vfn_10();  // [10] @ 0x823d17c8
-    virtual void vfn_13();  // [13] @ 0x823d1850
+    virtual void GetName();  // [13] @ 0x823d1850
 };
 
 namespace NetDataQuery {
@@ -504,8 +504,8 @@ struct stateFinish {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x823d1a20
-    virtual void vfn_13();  // [13] @ 0x823d1a60
+    virtual void OnEnter();  // [11] @ 0x823d1a20
+    virtual void GetName();  // [13] @ 0x823d1a60
 };
 
 // ── NetDataQuery::stateInit  [vtable @ 0x820711B4] ──────────────────────────
@@ -514,9 +514,9 @@ struct stateInit {
 
     // ── virtual methods ──
     virtual void vfn_10();  // [10] @ 0x8238dbe8
-    virtual void vfn_11();  // [11] @ 0x821036a0
+    virtual void OnEnter();  // [11] @ 0x821036a0
     virtual void vfn_12();  // [12] @ 0x82106b18
-    virtual void vfn_13();  // [13] @ 0x823d1958
+    virtual void GetName();  // [13] @ 0x823d1958
     virtual void vfn_14();  // [14] @ 0x823d1f70
     virtual void vfn_15();  // [15] @ 0x821071f0
     virtual void vfn_16();  // [16] @ 0x821037a8
@@ -530,8 +530,8 @@ struct stateReceiveData {
 
     // ── virtual methods ──
     virtual void vfn_10();  // [10] @ 0x823d19e8
-    virtual void vfn_11();  // [11] @ 0x823d19d8
-    virtual void vfn_13();  // [13] @ 0x823d1a10
+    virtual void OnEnter();  // [11] @ 0x823d19d8
+    virtual void GetName();  // [13] @ 0x823d1a10
 };
 
 // ── NetDataQuery::stateRequestData  [vtable @ 0x820711FC] ──────────────────────────
@@ -557,7 +557,7 @@ struct NetStateSync {
     virtual ~NetStateSync();                  // [0] @ 0x823d1a70
     virtual void vfn_8();  // [8] @ 0x823d1ad8
     virtual void vfn_10();  // [10] @ 0x823d1d70
-    virtual void vfn_13();  // [13] @ 0x823d1dd0
+    virtual void GetName();  // [13] @ 0x823d1dd0
 };
 
 namespace NetStateSync {
@@ -567,8 +567,8 @@ struct stateEnterState {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x823d2070
-    virtual void vfn_13();  // [13] @ 0x823d2080
+    virtual void OnEnter();  // [11] @ 0x823d2070
+    virtual void GetName();  // [13] @ 0x823d2080
 };
 
 // ── NetStateSync::stateInit  [vtable @ 0x82071404] ──────────────────────────
@@ -577,9 +577,9 @@ struct stateInit {
 
     // ── virtual methods ──
     virtual void vfn_10();  // [10] @ 0x8238dbe8
-    virtual void vfn_11();  // [11] @ 0x821036a0
+    virtual void OnEnter();  // [11] @ 0x821036a0
     virtual void vfn_12();  // [12] @ 0x82106b18
-    virtual void vfn_13();  // [13] @ 0x823d1958
+    virtual void GetName();  // [13] @ 0x823d1958
     virtual void vfn_14();  // [14] @ 0x823d1f70
     virtual void vfn_15();  // [15] @ 0x821071f0
     virtual void vfn_16();  // [16] @ 0x821037a8
@@ -593,7 +593,7 @@ struct stateReceiveSyncronization {
 
     // ── virtual methods ──
     virtual void vfn_10();  // [10] @ 0x823d2210
-    virtual void vfn_13();  // [13] @ 0x823d2288
+    virtual void GetName();  // [13] @ 0x823d2288
     virtual void vfn_14();  // [14] @ 0x823d2268
 };
 
@@ -602,8 +602,8 @@ struct stateRequestSyncronization {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x823d2090
-    virtual void vfn_13();  // [13] @ 0x823d2138
+    virtual void OnEnter();  // [11] @ 0x823d2090
+    virtual void GetName();  // [13] @ 0x823d2138
 };
 
 // ── NetStateSync::stateSendSyncronization  [vtable @ 0x82071524] ──────────────────────────
@@ -611,8 +611,8 @@ struct stateSendSyncronization {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x823d2148
-    virtual void vfn_13();  // [13] @ 0x823d2200
+    virtual void OnEnter();  // [11] @ 0x823d2148
+    virtual void GetName();  // [13] @ 0x823d2200
     virtual void vfn_14();  // [14] @ 0x823d21e0
 };
 
@@ -622,8 +622,8 @@ struct stateWaitForSyncState {
 
     // ── virtual methods ──
     virtual void vfn_10();  // [10] @ 0x823d2008
-    virtual void vfn_11();  // [11] @ 0x823d1f90
-    virtual void vfn_13();  // [13] @ 0x823d2060
+    virtual void OnEnter();  // [11] @ 0x823d1f90
+    virtual void GetName();  // [13] @ 0x823d2060
 };
 
 // ── NetStateSync::stateWaitTime  [vtable @ 0x820715B4] ──────────────────────────
@@ -632,8 +632,8 @@ struct stateWaitTime {
 
     // ── virtual methods ──
     virtual void vfn_10();  // [10] @ 0x823d22e0
-    virtual void vfn_11();  // [11] @ 0x823d2298
-    virtual void vfn_13();  // [13] @ 0x823d2390
+    virtual void OnEnter();  // [11] @ 0x823d2298
+    virtual void GetName();  // [13] @ 0x823d2390
 };
 
 } // namespace NetStateSync
@@ -797,11 +797,11 @@ struct PongNetExhibitionCoordinator {
     virtual void vfn_6();  // [6] @ 0x823a5598
     virtual void vfn_9();  // [9] @ 0x823a58c0
     virtual void vfn_10();  // [10] @ 0x823a5970
-    virtual void vfn_11();  // [11] @ 0x823a5978
+    virtual void OnEnter();  // [11] @ 0x823a5978
     virtual void vfn_12();  // [12] @ 0x823a4508
     virtual void vfn_16();  // [16] @ 0x823a4600
     virtual void vfn_17();  // [17] @ 0x823a46c8
-    virtual void vfn_22();  // [22] @ 0x823a5f18
+    virtual void PostLoadChildren();  // [22] @ 0x823a5f18
     virtual void vfn_23();  // [23] @ 0x823a6030
 };
 
@@ -816,11 +816,11 @@ struct PongNetGameModeCoordinator {
     virtual void vfn_2();  // [2] @ 0x8239e8e0
     virtual void vfn_5();  // [5] @ 0x8239e9e8
     virtual void vfn_6();  // [6] @ 0x8239eca8
-    virtual void vfn_13();  // [13] @ 0x8239e6b0
+    virtual void GetName();  // [13] @ 0x8239e6b0
     virtual void vfn_14();  // [14] @ 0x8239e7d0
     virtual void vfn_19();  // [19] @ 0x8239e6a8
-    virtual void vfn_20();  // [20] @ 0x8239faa8
-    virtual void vfn_22();  // [22] @ 0x8239fb40
+    virtual void PostLoadProperties();  // [20] @ 0x8239faa8
+    virtual void PostLoadChildren();  // [22] @ 0x8239fb40
     virtual void vfn_23();  // [23] @ 0x8239fc30
     virtual void vfn_24();  // [24] @ 0x8239fca0
 
@@ -870,14 +870,14 @@ struct PongNetRoundRobinCoordinator {
     virtual void vfn_6();  // [6] @ 0x823a2370
     virtual void vfn_9();  // [9] @ 0x823a2778
     virtual void vfn_10();  // [10] @ 0x823a2830
-    virtual void vfn_11();  // [11] @ 0x823a2868
+    virtual void OnEnter();  // [11] @ 0x823a2868
     virtual void vfn_12();  // [12] @ 0x823a09e8
     virtual void vfn_15();  // [15] @ 0x823a0b48
     virtual void vfn_16();  // [16] @ 0x823a0b58
     virtual void vfn_17();  // [17] @ 0x823a15a8
     virtual void vfn_18();  // [18] @ 0x823a1868
-    virtual void vfn_20();  // [20] @ 0x823a30d0
-    virtual void vfn_22();  // [22] @ 0x823a31a0
+    virtual void PostLoadProperties();  // [20] @ 0x823a30d0
+    virtual void PostLoadChildren();  // [22] @ 0x823a31a0
     virtual void vfn_23();  // [23] @ 0x823a3808
 };
 
@@ -1052,7 +1052,7 @@ struct SessionMessageRequester {
     virtual ~SessionMessageRequester();                  // [0] @ 0x823c9980
     virtual void vfn_4();  // [4] @ 0x823c9ba0
     virtual void vfn_8();  // [8] @ 0x823c9c40
-    virtual void vfn_13();  // [13] @ 0x823c9d80
+    virtual void GetName();  // [13] @ 0x823c9d80
 };
 
 namespace SessionMessageRequester {
@@ -1063,8 +1063,8 @@ struct stateAwaitingMessage {
 
     // ── virtual methods ──
     virtual void vfn_10();  // [10] @ 0x823ca158
-    virtual void vfn_11();  // [11] @ 0x823ca0f8
-    virtual void vfn_13();  // [13] @ 0x823ca1a0
+    virtual void OnEnter();  // [11] @ 0x823ca0f8
+    virtual void GetName();  // [13] @ 0x823ca1a0
 };
 
 // ── SessionMessageRequester::stateIdle  [vtable @ 0x82070AFC] ──────────────────────────
@@ -1072,7 +1072,7 @@ struct stateIdle {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_11();  // [11] @ 0x823c9e98
+    virtual void OnEnter();  // [11] @ 0x823c9e98
     virtual void vfn_12();  // [12] @ 0x823c9ed8
 };
 
@@ -1082,7 +1082,7 @@ struct stateRequestingMessage {
 
     // ── virtual methods ──
     virtual void vfn_9();  // [9] @ 0x823c9f28
-    virtual void vfn_13();  // [13] @ 0x823ca0e8
+    virtual void GetName();  // [13] @ 0x823ca0e8
     virtual void vfn_14();  // [14] @ 0x823ca0d0
 };
 
@@ -1555,17 +1555,17 @@ struct SinglesNetworkClient {
     virtual void vfn_8();  // [8] @ 0x8239b420
     virtual void vfn_9();  // [9] @ 0x823941d0
     virtual void vfn_10();  // [10] @ 0x8239ad40
-    virtual void vfn_11();  // [11] @ 0x8239adc0
+    virtual void OnEnter();  // [11] @ 0x8239adc0
     virtual void vfn_12();  // [12] @ 0x8239af80
-    virtual void vfn_13();  // [13] @ 0x8239af98
+    virtual void GetName();  // [13] @ 0x8239af98
     virtual void vfn_14();  // [14] @ 0x8239afb0
     virtual void vfn_15();  // [15] @ 0x8239afe0
     virtual void vfn_16();  // [16] @ 0x8239b030
     virtual void vfn_17();  // [17] @ 0x8239b000
     virtual void vfn_18();  // [18] @ 0x8239b080
     virtual void vfn_19();  // [19] @ 0x8239b0d0
-    virtual void vfn_20();  // [20] @ 0x8239b1f0
-    virtual void vfn_22();  // [22] @ 0x82392070
+    virtual void PostLoadProperties();  // [20] @ 0x8239b1f0
+    virtual void PostLoadChildren();  // [22] @ 0x82392070
     virtual void vfn_23();  // [23] @ 0x82393b58
 
     // ── non-virtual methods (from debug strings) ──
@@ -1619,7 +1619,7 @@ struct SpectatorNetworkClient {
     virtual void vfn_5();  // [5] @ 0x823ca630
     virtual void vfn_6();  // [6] @ 0x823caa48
     virtual void vfn_7();  // [7] @ 0x823cc3c8
-    virtual void vfn_22();  // [22] @ 0x823ca4c8
+    virtual void PostLoadChildren();  // [22] @ 0x823ca4c8
 };
 
 // ── SpectatorQuitMessage  [vtable @ 0x8206FC6C] ──────────────────────────

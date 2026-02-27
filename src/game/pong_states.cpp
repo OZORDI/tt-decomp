@@ -449,7 +449,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
  * pongCreditsState::~pongCreditsState  @ 0x8230A000  |  size: 0x60
  *
  * Destructor.  Resets vtable, delegates to pongAttractState base-class
- * cleanup (vfn_8 = the shared attract state teardown), then restores
+ * cleanup (Shutdown = the shared attract state teardown), then restores
  * the pongCreditsState vtable before the conditional free.
  */
 pongCreditsState::~pongCreditsState(bool shouldFree) {
@@ -457,7 +457,7 @@ pongCreditsState::~pongCreditsState(bool shouldFree) {
     *(void**)this = (void*)g_pongCreditsState_vtable;   // @ 0x8205EE7C
 
     // Delegate attract-state common cleanup
-    pongAttractState_vfn_8(this);
+    pongAttractState_Shutdown(this);
 
     // Re-install pongCreditsState vtable for destructor finish
     // (base class restored theirs; we re-apply ours, then pongAttractState base)
@@ -1518,7 +1518,7 @@ void dialogData::RegisterFields() {
  * Slot 2.  Validates the loaded dialog data fields to ensure they are
  * within acceptable ranges.  Logs warnings via nop_8240E6D0 if values
  * are out of bounds, then delegates to the base class validation
- * (xmlNodeStruct_vfn_2).
+ * (xmlNodeStruct_Init).
  * 
  * Validation rules:
  *   - m_dialogType must be in range [1, 209]
@@ -1544,7 +1544,7 @@ void dialogData::Validate() {
     }
     
     // Delegate to base class validation (xmlNodeStruct)
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Init(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

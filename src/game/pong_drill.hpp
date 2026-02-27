@@ -17,8 +17,8 @@ struct backspinTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821f2910
-    virtual void vfn_22();  // [22] @ 0x821161c0
+    virtual void PostLoadProperties();  // [20] @ 0x821f2910
+    virtual void PostLoadChildren();  // [22] @ 0x821161c0
 };
 
 // ── badSoftShotTipData  [2 vtables — template/MI] ──────────────────────────
@@ -26,10 +26,10 @@ struct badSoftShotTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x821f28c0
-    virtual void vfn_20();  // [20] @ 0x821f2858
-    virtual void vfn_21();  // [21] @ 0x821f28a0
-    virtual void vfn_22();  // [22] @ 0x821160e8
+    virtual void CallInit();  // [2] @ 0x821f28c0
+    virtual void PostLoadProperties();  // [20] @ 0x821f2858
+    virtual void Validate();  // [21] @ 0x821f28a0
+    virtual void PostLoadChildren();  // [22] @ 0x821160e8
 };
 
 // ── firstServeTipData  [2 vtables — template/MI] ──────────────────────────
@@ -37,8 +37,8 @@ struct firstServeTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821f2958
-    virtual void vfn_22();  // [22] @ 0x82116288
+    virtual void PostLoadProperties();  // [20] @ 0x821f2958
+    virtual void PostLoadChildren();  // [22] @ 0x82116288
 };
 
 // ── focusMeterTipData  [2 vtables — template/MI] ──────────────────────────
@@ -46,10 +46,10 @@ struct focusMeterTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x821f2550
-    virtual void vfn_20();  // [20] @ 0x821f2498
-    virtual void vfn_21();  // [21] @ 0x821f24e0
-    virtual void vfn_22();  // [22] @ 0x82115d90
+    virtual void CallInit();  // [2] @ 0x821f2550
+    virtual void PostLoadProperties();  // [20] @ 0x821f2498
+    virtual void Validate();  // [21] @ 0x821f24e0
+    virtual void PostLoadChildren();  // [22] @ 0x82115d90
 };
 
 // ── forcedFromTableCenterTipData  [2 vtables — template/MI] ──────────────────────────
@@ -57,10 +57,10 @@ struct forcedFromTableCenterTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x821f2628
-    virtual void vfn_20();  // [20] @ 0x821f25c0
-    virtual void vfn_21();  // [21] @ 0x821f2608
-    virtual void vfn_22();  // [22] @ 0x82115e68
+    virtual void CallInit();  // [2] @ 0x821f2628
+    virtual void PostLoadProperties();  // [20] @ 0x821f25c0
+    virtual void Validate();  // [21] @ 0x821f2608
+    virtual void PostLoadChildren();  // [22] @ 0x82115e68
 };
 
 // ── gdDrillChargingData  [vtable @ 0x82041264] ──────────────────────────
@@ -69,9 +69,9 @@ struct gdDrillChargingData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821df330
-    virtual void vfn_21();  // [21] @ 0x821df448
-    virtual void vfn_22();  // [22] @ 0x821df388
+    virtual void PostLoadProperties();  // [20] @ 0x821df330
+    virtual void Validate();  // [21] @ 0x821df448
+    virtual void PostLoadChildren();  // [22] @ 0x821df388
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -83,9 +83,9 @@ struct gdDrillCounterSpinData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821df9b8
-    virtual void vfn_21();  // [21] @ 0x821dfac8
-    virtual void vfn_22();  // [22] @ 0x821dfa10
+    virtual void PostLoadProperties();  // [20] @ 0x821df9b8
+    virtual void Validate();  // [21] @ 0x821dfac8
+    virtual void PostLoadChildren();  // [22] @ 0x821dfa10
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -97,8 +97,8 @@ struct gdDrillFocusShotData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821df7a8
-    virtual void vfn_22();  // [22] @ 0x821df800
+    virtual void PostLoadProperties();  // [20] @ 0x821df7a8
+    virtual void PostLoadChildren();  // [22] @ 0x821df800
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -110,9 +110,9 @@ struct gdDrillMovementData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821de898
-    virtual void vfn_21();  // [21] @ 0x821de9c8
-    virtual void vfn_22();  // [22] @ 0x821de8f0
+    virtual void PostLoadProperties();  // [20] @ 0x821de898
+    virtual void Validate();  // [21] @ 0x821de9c8
+    virtual void PostLoadChildren();  // [22] @ 0x821de8f0
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -123,8 +123,8 @@ struct gdDrillPlacementData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821def48
-    virtual void vfn_22();  // [22] @ 0x821defa0
+    virtual void PostLoadProperties();  // [20] @ 0x821def48
+    virtual void PostLoadChildren();  // [22] @ 0x821defa0
 };
 
 // ── gdDrillReturnData  [vtable @ 0x8204112C] ──────────────────────────
@@ -132,8 +132,8 @@ struct gdDrillReturnData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821dee70
-    virtual void vfn_22();  // [22] @ 0x821deec8
+    virtual void PostLoadProperties();  // [20] @ 0x821dee70
+    virtual void PostLoadChildren();  // [22] @ 0x821deec8
 };
 
 // ── gdDrillServeMeterData  [vtable @ 0x8204105C] ──────────────────────────
@@ -141,9 +141,9 @@ struct gdDrillServeMeterData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821dec00
-    virtual void vfn_21();  // [21] @ 0x821dece8
-    virtual void vfn_22();  // [22] @ 0x821dec58
+    virtual void PostLoadProperties();  // [20] @ 0x821dec00
+    virtual void Validate();  // [21] @ 0x821dece8
+    virtual void PostLoadChildren();  // [22] @ 0x821dec58
 };
 
 // ── gdDrillSmashData  [vtable @ 0x82041404] ──────────────────────────
@@ -151,8 +151,8 @@ struct gdDrillSmashData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821dfcb8
-    virtual void vfn_22();  // [22] @ 0x821dfd10
+    virtual void PostLoadProperties();  // [20] @ 0x821dfcb8
+    virtual void PostLoadChildren();  // [22] @ 0x821dfd10
 };
 
 // ── gdDrillSoftShotData  [vtable @ 0x820411FC] ──────────────────────────
@@ -161,9 +161,9 @@ struct gdDrillSoftShotData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821df020
-    virtual void vfn_21();  // [21] @ 0x821df130
-    virtual void vfn_22();  // [22] @ 0x821df078
+    virtual void PostLoadProperties();  // [20] @ 0x821df020
+    virtual void Validate();  // [21] @ 0x821df130
+    virtual void PostLoadChildren();  // [22] @ 0x821df078
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -175,9 +175,9 @@ struct gdDrillSpinData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821df610
-    virtual void vfn_21();  // [21] @ 0x821df898
-    virtual void vfn_22();  // [22] @ 0x821df668
+    virtual void PostLoadProperties();  // [20] @ 0x821df610
+    virtual void Validate();  // [21] @ 0x821df898
+    virtual void PostLoadChildren();  // [22] @ 0x821df668
 
     // ── non-virtual methods (from debug strings) ──
     void PostLoadProperties();
@@ -190,9 +190,9 @@ struct gdTrainingDrillData {
 
     // ── virtual methods ──
     virtual ~gdTrainingDrillData();                  // [0] @ 0x821dfd90
-    virtual void vfn_20();  // [20] @ 0x821de2d8
-    virtual void vfn_21();  // [21] @ 0x821de3c0
-    virtual void vfn_22();  // [22] @ 0x821de320
+    virtual void PostLoadProperties();  // [20] @ 0x821de2d8
+    virtual void Validate();  // [21] @ 0x821de3c0
+    virtual void PostLoadChildren();  // [22] @ 0x821de320
 
     // ── non-virtual methods (from debug strings) ──
     void Load();
@@ -204,8 +204,8 @@ struct gdTrainingDrills {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x821de200
-    virtual void vfn_22();  // [22] @ 0x821de248
+    virtual void PostLoadProperties();  // [20] @ 0x821de200
+    virtual void PostLoadChildren();  // [22] @ 0x821de248
 };
 
 // ── gdTrainingSaveData  [2 vtables — template/MI] ──────────────────────────
@@ -214,7 +214,7 @@ struct gdTrainingSaveData {
 
     // ── virtual methods ──
     virtual ~gdTrainingSaveData();                  // [0] @ 0x821cacd8
-    virtual void vfn_3();  // [3] @ 0x82212ff0
+    virtual void Init();  // [3] @ 0x82212ff0
 };
 
 // ── gdTrainingSaveValues  [vtable @ 0x8204A870] ──────────────────────────
@@ -256,7 +256,7 @@ struct xmlNodeStructGroupType {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_5();  // [5] @ 0x821f2148
+    virtual void OnStart();  // [5] @ 0x821f2148
 };
 
 } // namespace hitTipData
@@ -266,10 +266,10 @@ struct noSoftShotsTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x821f2730
-    virtual void vfn_20();  // [20] @ 0x821f2678
-    virtual void vfn_21();  // [21] @ 0x821f26c0
-    virtual void vfn_22();  // [22] @ 0x82115f38
+    virtual void CallInit();  // [2] @ 0x821f2730
+    virtual void PostLoadProperties();  // [20] @ 0x821f2678
+    virtual void Validate();  // [21] @ 0x821f26c0
+    virtual void PostLoadChildren();  // [22] @ 0x82115f38
 };
 
 // ── pongDrillCharging  [vtable @ 0x8203202C] ──────────────────────────
@@ -278,17 +278,17 @@ struct pongDrillCharging {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8210f600
-    virtual void vfn_3();  // [3] @ 0x8210f668
-    virtual void vfn_4();  // [4] @ 0x8210f6c0
-    virtual void vfn_6();  // [6] @ 0x8210f718
-    virtual void vfn_7();  // [7] @ 0x8210fa20
-    virtual void vfn_8();  // [8] @ 0x8210fa68
-    virtual void vfn_9();  // [9] @ 0x8210fc70
-    virtual void vfn_14();  // [14] @ 0x8210fcb0
-    virtual void vfn_18();  // [18] @ 0x8210ccb0
-    virtual void vfn_21();  // [21] @ 0x8210ccc0
-    virtual void vfn_26();  // [26] @ 0x8210fcd8
-    virtual void vfn_27();  // [27] @ 0x8210fed8
+    virtual void Init();  // [3] @ 0x8210f668
+    virtual void Update();  // [4] @ 0x8210f6c0
+    virtual void OnEnd();  // [6] @ 0x8210f718
+    virtual void OnReset();  // [7] @ 0x8210fa20
+    virtual void Process();  // [8] @ 0x8210fa68
+    virtual void Tick();  // [9] @ 0x8210fc70
+    virtual void GetDescription();  // [14] @ 0x8210fcb0
+    virtual void OnPause();  // [18] @ 0x8210ccb0
+    virtual void Validate();  // [21] @ 0x8210ccc0
+    virtual void OnBallServed();  // [26] @ 0x8210fcd8
+    virtual void OnBallHit();  // [27] @ 0x8210fed8
 };
 
 // ── pongDrillCounterSpin  [vtable @ 0x820321DC] ──────────────────────────
@@ -297,12 +297,12 @@ struct pongDrillCounterSpin {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x82110c60
-    virtual void vfn_3();  // [3] @ 0x82110cc8
-    virtual void vfn_5();  // [5] @ 0x82110d18
-    virtual void vfn_17();  // [17] @ 0x8210cd30
-    virtual void vfn_18();  // [18] @ 0x8210cd38
-    virtual void vfn_21();  // [21] @ 0x8210cd48
-    virtual void vfn_30();  // [30] @ 0x82111738
+    virtual void Init();  // [3] @ 0x82110cc8
+    virtual void OnStart();  // [5] @ 0x82110d18
+    virtual void HandleEvent();  // [17] @ 0x8210cd30
+    virtual void OnPause();  // [18] @ 0x8210cd38
+    virtual void Validate();  // [21] @ 0x8210cd48
+    virtual void OnPointScored();  // [30] @ 0x82111738
 };
 
 // ── pongDrillFocusShot  [vtable @ 0x8203214C] ──────────────────────────
@@ -311,10 +311,10 @@ struct pongDrillFocusShot {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x82110720
-    virtual void vfn_8();  // [8] @ 0x82110788
-    virtual void vfn_9();  // [9] @ 0x82110a08
-    virtual void vfn_17();  // [17] @ 0x8210ccf8
-    virtual void vfn_18();  // [18] @ 0x8210cd00
+    virtual void Process();  // [8] @ 0x82110788
+    virtual void Tick();  // [9] @ 0x82110a08
+    virtual void HandleEvent();  // [17] @ 0x8210ccf8
+    virtual void OnPause();  // [18] @ 0x8210cd00
 };
 
 // ── pongDrillMovement  [vtable @ 0x82031CCC] ──────────────────────────
@@ -323,15 +323,15 @@ struct pongDrillMovement {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8210dae0
-    virtual void vfn_3();  // [3] @ 0x8210db48
-    virtual void vfn_4();  // [4] @ 0x8210dba0
-    virtual void vfn_5();  // [5] @ 0x8210dc48
-    virtual void vfn_6();  // [6] @ 0x8210dc78
-    virtual void vfn_7();  // [7] @ 0x8210de88
-    virtual void vfn_9();  // [9] @ 0x8210dec0
-    virtual void vfn_18();  // [18] @ 0x8210cbe0
-    virtual void vfn_22();  // [22] @ 0x8210cbf0
-    virtual void vfn_27();  // [27] @ 0x8210e208
+    virtual void Init();  // [3] @ 0x8210db48
+    virtual void Update();  // [4] @ 0x8210dba0
+    virtual void OnStart();  // [5] @ 0x8210dc48
+    virtual void OnEnd();  // [6] @ 0x8210dc78
+    virtual void OnReset();  // [7] @ 0x8210de88
+    virtual void Tick();  // [9] @ 0x8210dec0
+    virtual void OnPause();  // [18] @ 0x8210cbe0
+    virtual void PostLoadChildren();  // [22] @ 0x8210cbf0
+    virtual void OnBallHit();  // [27] @ 0x8210e208
 };
 
 // ── pongDrillPlacement  [vtable @ 0x82031F0C] ──────────────────────────
@@ -340,7 +340,7 @@ struct pongDrillPlacement {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8210ed38
-    virtual void vfn_18();  // [18] @ 0x8210cc60
+    virtual void OnPause();  // [18] @ 0x8210cc60
 };
 
 // ── pongDrillReturn  [vtable @ 0x82031E7C] ──────────────────────────
@@ -349,11 +349,11 @@ struct pongDrillReturn {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8210ea68
-    virtual void vfn_3();  // [3] @ 0x8210ead0
-    virtual void vfn_8();  // [8] @ 0x8210eb08
-    virtual void vfn_9();  // [9] @ 0x82111a60
-    virtual void vfn_18();  // [18] @ 0x8210cc48
-    virtual void vfn_21();  // [21] @ 0x8210cd80
+    virtual void Init();  // [3] @ 0x8210ead0
+    virtual void Process();  // [8] @ 0x8210eb08
+    virtual void Tick();  // [9] @ 0x82111a60
+    virtual void OnPause();  // [18] @ 0x8210cc48
+    virtual void Validate();  // [21] @ 0x8210cd80
 };
 
 // ── pongDrillServeMeter  [vtable @ 0x82031D5C] ──────────────────────────
@@ -362,14 +362,14 @@ struct pongDrillServeMeter {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8210e490
-    virtual void vfn_3();  // [3] @ 0x8210e4f8
-    virtual void vfn_6();  // [6] @ 0x8210e538
-    virtual void vfn_8();  // [8] @ 0x8210e658
-    virtual void vfn_9();  // [9] @ 0x8210e918
-    virtual void vfn_18();  // [18] @ 0x8210cbf8
-    virtual void vfn_21();  // [21] @ 0x8210cc20
-    virtual void vfn_25();  // [25] @ 0x8210e9c8
-    virtual void vfn_27();  // [27] @ 0x8210f148
+    virtual void Init();  // [3] @ 0x8210e4f8
+    virtual void OnEnd();  // [6] @ 0x8210e538
+    virtual void Process();  // [8] @ 0x8210e658
+    virtual void Tick();  // [9] @ 0x8210e918
+    virtual void OnPause();  // [18] @ 0x8210cbf8
+    virtual void Validate();  // [21] @ 0x8210cc20
+    virtual void SetDifficulty();  // [25] @ 0x8210e9c8
+    virtual void OnBallHit();  // [27] @ 0x8210f148
 };
 
 // ── pongDrillServing  [vtable @ 0x82031DEC] ──────────────────────────
@@ -378,7 +378,7 @@ struct pongDrillServing {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8210ea00
-    virtual void vfn_18();  // [18] @ 0x8210cc10
+    virtual void OnPause();  // [18] @ 0x8210cc10
 };
 
 // ── pongDrillSmash  [vtable @ 0x8203226C] ──────────────────────────
@@ -388,9 +388,9 @@ struct pongDrillSmash {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x82111798
-    virtual void vfn_8();  // [8] @ 0x82111800
-    virtual void vfn_17();  // [17] @ 0x8210cd68
-    virtual void vfn_18();  // [18] @ 0x8210cd70
+    virtual void Process();  // [8] @ 0x82111800
+    virtual void HandleEvent();  // [17] @ 0x8210cd68
+    virtual void OnPause();  // [18] @ 0x8210cd70
 
     // ── non-virtual methods (from debug strings) ──
     void ChooseRobotTarget();
@@ -402,12 +402,12 @@ struct pongDrillSoftShot {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8210eda0
-    virtual void vfn_3();  // [3] @ 0x8210ee08
-    virtual void vfn_4();  // [4] @ 0x8210ee50
-    virtual void vfn_8();  // [8] @ 0x8210ee88
-    virtual void vfn_9();  // [9] @ 0x8210f110
-    virtual void vfn_18();  // [18] @ 0x8210cc78
-    virtual void vfn_21();  // [21] @ 0x8210cc88
+    virtual void Init();  // [3] @ 0x8210ee08
+    virtual void Update();  // [4] @ 0x8210ee50
+    virtual void Process();  // [8] @ 0x8210ee88
+    virtual void Tick();  // [9] @ 0x8210f110
+    virtual void OnPause();  // [18] @ 0x8210cc78
+    virtual void Validate();  // [21] @ 0x8210cc88
 };
 
 // ── pongDrillSpin  [vtable @ 0x820320BC] ──────────────────────────
@@ -416,12 +416,12 @@ struct pongDrillSpin {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x82110178
-    virtual void vfn_3();  // [3] @ 0x821101e0
-    virtual void vfn_8();  // [8] @ 0x82110218
-    virtual void vfn_9();  // [9] @ 0x82110530
-    virtual void vfn_17();  // [17] @ 0x8210cce0
-    virtual void vfn_18();  // [18] @ 0x8210cce8
-    virtual void vfn_21();  // [21] @ 0x8210cd10
+    virtual void Init();  // [3] @ 0x821101e0
+    virtual void Process();  // [8] @ 0x82110218
+    virtual void Tick();  // [9] @ 0x82110530
+    virtual void HandleEvent();  // [17] @ 0x8210cce0
+    virtual void OnPause();  // [18] @ 0x8210cce8
+    virtual void Validate();  // [21] @ 0x8210cd10
 };
 
 // ── pongTrainingDrill  [vtable @ 0x82031C3C] ──────────────────────────
@@ -450,27 +450,27 @@ struct pongTrainingDrill {
     // ── virtual methods ──
     virtual ~pongTrainingDrill();                  // [0] @ 0x82111750
     virtual void ScalarDtor(int flags); // [1] @ 0x8210cda0
-    virtual void vfn_2();  // [2] @ 0x8210cda8
-    virtual void vfn_3();  // [3] @ 0x8210cdb8
-    virtual void vfn_4();  // [4] @ 0x8210cde8
-    virtual void vfn_5();  // [5] @ 0x8210cff0
-    virtual void vfn_6();  // [6] @ 0x8210d098
-    virtual void vfn_7();  // [7] @ 0x8210d0e8
-    virtual void vfn_9();  // [9] @ 0x8210d128
-    virtual void vfn_10();  // [10] @ 0x8210d290
-    virtual void vfn_11();  // [11] @ 0x8210d310
-    virtual void vfn_12();  // [12] @ 0x8210d320
-    virtual void vfn_13();  // [13] @ 0x8210d340
-    virtual void vfn_14();  // [14] @ 0x8210d350
-    virtual void vfn_15();  // [15] @ 0x8210cc70
-    virtual void vfn_16();  // [16] @ 0x8210d360
-    virtual void vfn_23();  // [23] @ 0x8210cbd8
-    virtual void vfn_24();  // [24] @ 0x8210d370
-    virtual void vfn_25();  // [25] @ 0x8210d380
-    virtual void vfn_27();  // [27] @ 0x8210d488
-    virtual void vfn_28();  // [28] @ 0x8210d5d0
-    virtual void vfn_29();  // [29] @ 0x8210d660
-    virtual void vfn_30();  // [30] @ 0x8210d738
+    virtual void CallInit();  // [2] @ 0x8210cda8
+    virtual void Init();  // [3] @ 0x8210cdb8
+    virtual void Update();  // [4] @ 0x8210cde8
+    virtual void OnStart();  // [5] @ 0x8210cff0
+    virtual void OnEnd();  // [6] @ 0x8210d098
+    virtual void OnReset();  // [7] @ 0x8210d0e8
+    virtual void Tick();  // [9] @ 0x8210d128
+    virtual void Render();  // [10] @ 0x8210d290
+    virtual void OnEnter();  // [11] @ 0x8210d310
+    virtual void OnFailure();  // [12] @ 0x8210d320
+    virtual void GetName();  // [13] @ 0x8210d340
+    virtual void GetDescription();  // [14] @ 0x8210d350
+    virtual void IsComplete();  // [15] @ 0x8210cc70
+    virtual void GetProgress();  // [16] @ 0x8210d360
+    virtual void CanAdvance();  // [23] @ 0x8210cbd8
+    virtual void GetDifficulty();  // [24] @ 0x8210d370
+    virtual void SetDifficulty();  // [25] @ 0x8210d380
+    virtual void OnBallHit();  // [27] @ 0x8210d488
+    virtual void OnBallMiss();  // [28] @ 0x8210d5d0
+    virtual void OnRallyEnd();  // [29] @ 0x8210d660
+    virtual void OnPointScored();  // [30] @ 0x8210d738
 
     // ── non-virtual methods (from debug strings) ──
     void IncreaseNumSuccesses();
@@ -482,10 +482,10 @@ struct reviewOnlyTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x821f2a68
-    virtual void vfn_20();  // [20] @ 0x821f29a0
-    virtual void vfn_21();  // [21] @ 0x821f2a48
-    virtual void vfn_22();  // [22] @ 0x82116358
+    virtual void CallInit();  // [2] @ 0x821f2a68
+    virtual void PostLoadProperties();  // [20] @ 0x821f29a0
+    virtual void Validate();  // [21] @ 0x821f2a48
+    virtual void PostLoadChildren();  // [22] @ 0x82116358
 };
 
 // ── serveTipData  [2 vtables — template/MI] ──────────────────────────
@@ -493,10 +493,10 @@ struct serveTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x821f2410
-    virtual void vfn_20();  // [20] @ 0x821f2320
-    virtual void vfn_21();  // [21] @ 0x821f2368
-    virtual void vfn_22();  // [22] @ 0x82115cb8
+    virtual void CallInit();  // [2] @ 0x821f2410
+    virtual void PostLoadProperties();  // [20] @ 0x821f2320
+    virtual void Validate();  // [21] @ 0x821f2368
+    virtual void PostLoadChildren();  // [22] @ 0x82115cb8
 };
 
 namespace serveTipData {
@@ -506,7 +506,7 @@ struct xmlNodeStructGroupType {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_5();  // [5] @ 0x821f2148
+    virtual void OnStart();  // [5] @ 0x821f2148
 };
 
 } // namespace serveTipData
@@ -516,10 +516,10 @@ struct statsThresholdData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x82218828
-    virtual void vfn_20();  // [20] @ 0x82218718
-    virtual void vfn_21();  // [21] @ 0x82218760
-    virtual void vfn_22();  // [22] @ 0x821e1070
+    virtual void CallInit();  // [2] @ 0x82218828
+    virtual void PostLoadProperties();  // [20] @ 0x82218718
+    virtual void Validate();  // [21] @ 0x82218760
+    virtual void PostLoadChildren();  // [22] @ 0x821e1070
 };
 
 // ── tooFarFromTableTipData  [2 vtables — template/MI] ──────────────────────────
@@ -527,10 +527,10 @@ struct tooFarFromTableTipData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x821f2808
-    virtual void vfn_20();  // [20] @ 0x821f27a0
-    virtual void vfn_21();  // [21] @ 0x821f27e8
-    virtual void vfn_22();  // [22] @ 0x82116010
+    virtual void CallInit();  // [2] @ 0x821f2808
+    virtual void PostLoadProperties();  // [20] @ 0x821f27a0
+    virtual void Validate();  // [21] @ 0x821f27e8
+    virtual void PostLoadChildren();  // [22] @ 0x82116010
 };
 
 

@@ -24,9 +24,9 @@ struct LocomotionController {
     virtual void vfn_5();  // [5] @ 0x820df638
     virtual void vfn_9();  // [9] @ 0x820e4408
     virtual void vfn_10();  // [10] @ 0x820df5c8
-    virtual void vfn_11();  // [11] @ 0x820e6c48
+    virtual void OnEnter();  // [11] @ 0x820e6c48
     virtual void vfn_12();  // [12] @ 0x820df618
-    virtual void vfn_13();  // [13] @ 0x820e6c38
+    virtual void GetName();  // [13] @ 0x820e6c38
     virtual void vfn_15();  // [15] @ 0x820d3478
 };
 
@@ -176,7 +176,7 @@ struct LocomotionStateAnim {
     virtual void vfn_7();  // [7] @ 0x820e0a10
     virtual void vfn_9();  // [9] @ 0x820e0df8
     virtual void vfn_10();  // [10] @ 0x820e0fb0
-    virtual void vfn_11();  // [11] @ 0x820e0fd0
+    virtual void OnEnter();  // [11] @ 0x820e0fd0
     virtual void vfn_15();  // [15] @ 0x820df208
 
     // ── non-virtual methods (from debug strings) ──
@@ -198,9 +198,9 @@ struct LocomotionStateMf {
     virtual void vfn_7();  // [7] @ 0x820e2218
     virtual void vfn_9();  // [9] @ 0x820e2598
     virtual void vfn_10();  // [10] @ 0x820e2658
-    virtual void vfn_11();  // [11] @ 0x820e26c8
+    virtual void OnEnter();  // [11] @ 0x820e26c8
     virtual void vfn_12();  // [12] @ 0x820e2718
-    virtual void vfn_13();  // [13] @ 0x820e3140
+    virtual void GetName();  // [13] @ 0x820e3140
     virtual void vfn_14();  // [14] @ 0x820e31b0
     virtual void vfn_16();  // [16] @ 0x820e2820
 
@@ -700,7 +700,7 @@ struct pongBlendLookAtDriver {
     virtual void vfn_7();  // [7] @ 0x820d1750
     virtual void vfn_9();  // [9] @ 0x820d1758
     virtual void vfn_12();  // [12] @ 0x820d0c80
-    virtual void vfn_13();  // [13] @ 0x820d0c90
+    virtual void GetName();  // [13] @ 0x820d0c90
     virtual void vfn_18();  // [18] @ 0x820d0ca0
     virtual void vfn_20();  // [20] @ 0x820d0cd0
 
@@ -950,7 +950,7 @@ struct pongCreatureInst {
     virtual void vfn_6();  // [6] @ 0x822c9108
     virtual void vfn_9();  // [9] @ 0x822c90b0
     virtual void vfn_10();  // [10] @ 0x822c90a0
-    virtual void vfn_11();  // [11] @ 0x821210a8
+    virtual void OnEnter();  // [11] @ 0x821210a8
     virtual void vfn_14();  // [14] @ 0x822c90e0
     virtual void vfn_19();  // [19] @ 0x824ff7c8
     virtual void vfn_22();  // [22] @ 0x8211ddb8
@@ -1023,9 +1023,9 @@ struct pongLocomotionController {
     virtual void vfn_8();  // [8] @ 0x820d44a0
     virtual void vfn_9();  // [9] @ 0x820d3550
     virtual void vfn_10();  // [10] @ 0x820d34e8
-    virtual void vfn_11();  // [11] @ 0x820d3f18
+    virtual void OnEnter();  // [11] @ 0x820d3f18
     virtual void vfn_12();  // [12] @ 0x820d3f68
-    virtual void vfn_13();  // [13] @ 0x820d3fa8
+    virtual void GetName();  // [13] @ 0x820d3fa8
     virtual void vfn_14();  // [14] @ 0x820d3ef0
     virtual void vfn_15();  // [15] @ 0x820d4050
     virtual void vfn_16();  // [16] @ 0x822c94f0
@@ -1049,9 +1049,9 @@ struct pongLookAtDriver {
     virtual void vfn_8();  // [8] @ 0x820c9a20
     virtual void vfn_9();  // [9] @ 0x820c9a28
     virtual void vfn_10();  // [10] @ 0x820c9a38
-    virtual void vfn_11();  // [11] @ 0x820c9a48
+    virtual void OnEnter();  // [11] @ 0x820c9a48
     virtual void vfn_12();  // [12] @ 0x820c9a50
-    virtual void vfn_13();  // [13] @ 0x820c9a60
+    virtual void GetName();  // [13] @ 0x820c9a60
     virtual void vfn_14();  // [14] @ 0x820c9a70
     virtual void vfn_15();  // [15] @ 0x820c9a78
     virtual void vfn_16();  // [16] @ 0x820c9a90

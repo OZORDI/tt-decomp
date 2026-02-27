@@ -5,7 +5,7 @@
  * Reconstructed from:
  *   - Offset-frequency clustering (279 methods, 52k symbols)
  *   - Debug string field hints (Activate/Draw/Render/Process/Teleport/StartSwing/Deactivate)
- *   - Lifted method bodies (D550 through 7C78, vfn_0/7/9)
+ *   - Lifted method bodies (D550 through 7C78, Destroy/Reset/Update)
  *   - Caller names: pongPlayer_Update1, pongPlayer_StartSwing, pongPlayer_StartServe,
  *                   pongPlayerShaderParams_UpdateParams, ServeStartedMessage_5728
  *   - RAGE engine naming conventions (m_ prefix, PascalCase methods)
@@ -71,10 +71,10 @@
  *   +0x1D0  int32_t             m_inputSlotIdx       player's button/input slot index
  *                                                    (used in vtable slot 7, 9; also as +464)
  *   +0x1EC  ?                                        R:23 W:0
- *   +0x1F0  void*               m_pActionState       passed to pongPlayer_1460_g in vfn_9
+ *   +0x1F0  void*               m_pActionState       passed to pongPlayer_1460_g in Update
  *
  *   NOTE: +0x1D0 above is the MOST ACCESSED field (R:112 W:2). At first I called this
- *         m_pMatch, but vfn_7 and vfn_9 use it as an integer input slot index.
+ *         m_pMatch, but Reset and Update use it as an integer input slot index.
  *         Revising to m_inputSlotIdx. The two writes are initial assignment.
  *         The 112 reads are the per-frame input polling.
  *

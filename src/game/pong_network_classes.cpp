@@ -72,7 +72,7 @@ struct FloatAverager {
  * @param self Pointer to FloatAverager instance
  * @param flags Destruction flags (bit 0: free memory if set)
  */
-void FloatAverager_vfn_0(FloatAverager* self, int flags) {
+void FloatAverager_Destroy(FloatAverager* self, int flags) {
     // Set vtable to primary FloatAverager vtable @ 0x8207166C
     // This is the base class vtable address
     self->vtable = (void**)0x8207166C;
@@ -95,7 +95,7 @@ void FloatAverager_vfn_0(FloatAverager* self, int flags) {
  *   addi r11, r11, -22244  ; Add low 16 bits
  *   Result: 0x8203A91C
  */
-void FloatAverager_vfn_0_7AE8_1(FloatAverager* self, int flags) {
+void FloatAverager_Destroy_7AE8(FloatAverager* self, int flags) {
     // Set vtable to alternate FloatAverager vtable @ 0x8203A91C
     // Python verification:
     //   r11 = (-32252 << 16) + (-22244)
@@ -113,7 +113,7 @@ void FloatAverager_vfn_0_7AE8_1(FloatAverager* self, int flags) {
  * Destructor variant with vtable @ 0x82070D78.
  * Likely used in a different inheritance context.
  */
-void FloatAverager_vfn_0_D538_1(FloatAverager* self, int flags) {
+void FloatAverager_Destroy_D538(FloatAverager* self, int flags) {
     // Set vtable to alternate FloatAverager vtable @ 0x82070D78
     self->vtable = (void**)0x82070D78;
     
@@ -132,7 +132,7 @@ void FloatAverager_vfn_0_D538_1(FloatAverager* self, int flags) {
  *   addi r11, r11, -22256  ; Add low 16 bits
  *   Result: 0x8203A910
  */
-void FloatAverager_vfn_0_3EE8_1(FloatAverager* self, int flags) {
+void FloatAverager_Destroy_3EE8(FloatAverager* self, int flags) {
     // Set vtable to alternate FloatAverager vtable @ 0x8203A910
     // Python verification:
     //   r11 = (-32252 << 16) + (-22256)
@@ -165,7 +165,7 @@ struct FrameTimeEstimate {
  * 
  * Destructor - sets both vtable pointers and conditionally frees memory.
  */
-void FrameTimeEstimate_vfn_0(FrameTimeEstimate* self, int flags) {
+void FrameTimeEstimate_Destroy(FrameTimeEstimate* self, int flags) {
     // Set both vtable pointers
     self->vtable1 = (void**)0x82071660;  // lis(-32249)+5728
     self->vtable2 = (void**)0x8207166C;  // lis(-32249)+5740
@@ -214,7 +214,7 @@ struct AckHandling {
  * 
  * Destructor - calls cleanup function then conditionally frees memory.
  */
-void AckHandling_vfn_0(AckHandling* self, int flags) {
+void AckHandling_Destroy(AckHandling* self, int flags) {
     // Call cleanup function first
     extern void AckHandling_34D0_fw(AckHandling* self);
     AckHandling_34D0_fw(self);
@@ -440,15 +440,15 @@ void pongPaddle_4190_h(pongPaddle* self) {
  * Destructor - complex cleanup involving rendering state.
  * This is a large function that handles various rendering scenarios.
  */
-void pongPaddle_vfn_0(pongPaddle* self, int flags) {
+void pongPaddle_Destroy(pongPaddle* self, int flags) {
     // Cleanup internal resources
     pongPaddle_4190_h(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
         // Call pongLookAtDriver cleanup (base class destructor)
-        extern void pongLookAtDriver_vfn_20(void* obj);
-        pongLookAtDriver_vfn_20(self);
+        extern void pongLookAtDriver_PostLoadProperties(void* obj);
+        pongLookAtDriver_PostLoadProperties(self);
     }
 }
 
@@ -457,7 +457,7 @@ void pongPaddle_vfn_0(pongPaddle* self, int flags) {
  * 
  * Scalar destructor variant (called for array deletion).
  */
-void pongPaddle_vfn_1(pongPaddle* self, int flags) {
+void pongPaddle_ScalarDtor(pongPaddle* self, int flags) {
     pongPaddle_4190_h(self);
     
     if (flags & 0x1) {
@@ -470,7 +470,7 @@ void pongPaddle_vfn_1(pongPaddle* self, int flags) {
  * 
  * Virtual method for rendering the paddle.
  */
-void pongPaddle_vfn_2(pongPaddle* self) {
+void pongPaddle_Init(pongPaddle* self) {
     // Stub - would render paddle geometry
 }
 
@@ -495,13 +495,13 @@ struct plrPropMgr {
  * Destructor - cleans up player properties.
  * Calls cleanup method, then atSingleton destructor, then conditionally frees.
  */
-void plrPropMgr_vfn_0(plrPropMgr* self, int flags) {
+void plrPropMgr_Destroy(plrPropMgr* self, int flags) {
     // Set vtable to plrPropMgr vtable @ 0x820717C4
     self->vtable = (void**)0x820717C4;
     
     // Call cleanup method
-    extern void plrPropMgr_vfn_24(plrPropMgr* self);
-    plrPropMgr_vfn_24(self);
+    extern void plrPropMgr_OnActivate(plrPropMgr* self);
+    plrPropMgr_OnActivate(self);
     
     // Call atSingleton destructor (base class)
     self->vtable = (void**)0x82033C8C;  // atSingleton vtable
@@ -521,7 +521,7 @@ void plrPropMgr_vfn_0(plrPropMgr* self, int flags) {
  * @param propType Property type ID to check
  * @return 1 if matches, 0 otherwise
  */
-uint8_t plrPropMgr_vfn_20(plrPropMgr* self, uint32_t propType) {
+uint8_t plrPropMgr_GetPropertyInfo(plrPropMgr* self, uint32_t propType) {
     // Check against first property type @ 0x82062D7C
     if (propType == g_playerPropType1) {
         return 1;
@@ -541,7 +541,7 @@ uint8_t plrPropMgr_vfn_20(plrPropMgr* self, uint32_t propType) {
  * Returns a pointer to the property name string.
  * Address calculation: lis(-32249)+5788 = 0x82071660 + 5788 = 0x820732BC
  */
-void* plrPropMgr_vfn_22(plrPropMgr* self) {
+void* plrPropMgr_PostLoadChildren(plrPropMgr* self) {
     // Calculate address: lis(-32249)+5788
     // Python verification:
     // r11 = -2113470464  # lis(-32249)
@@ -558,10 +558,10 @@ void* plrPropMgr_vfn_22(plrPropMgr* self) {
  * 
  * Additional virtual methods - stubs for now.
  */
-void plrPropMgr_vfn_21(plrPropMgr* self) {}
-void plrPropMgr_vfn_23(plrPropMgr* self) {}
-void plrPropMgr_vfn_24(plrPropMgr* self) {}
-void plrPropMgr_vfn_25(plrPropMgr* self) {}
+void plrPropMgr_Validate(plrPropMgr* self) {}
+void plrPropMgr_PostLoadSetup(plrPropMgr* self) {}
+void plrPropMgr_OnActivate(plrPropMgr* self) {}
+void plrPropMgr_OnDeactivate(plrPropMgr* self) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // External function stubs
@@ -569,7 +569,7 @@ void plrPropMgr_vfn_25(plrPropMgr* self) {}
 
 extern "C" {
     // Stub for pongLookAtDriver destructor (base class of pongPaddle)
-    void pongLookAtDriver_vfn_20(void* obj) {
+    void pongLookAtDriver_PostLoadProperties(void* obj) {
         // Stub - would call base class destructor
     }
 }
@@ -603,7 +603,7 @@ struct NetDataQuery {
  * 
  * Destructor - cleans up state machine and conditionally frees memory.
  */
-void NetDataQuery_vfn_0(NetDataQuery* self, int flags) {
+void NetDataQuery_Destroy(NetDataQuery* self, int flags) {
     // Set vtable to nested state vtable @ 0x8207116C
     // Python: (lis(-32249) << 16) + 4460 = 0x8207116C
     self->vtable = (void**)0x8207116C;
@@ -658,7 +658,7 @@ void NetDataQuery_ctor_A458(NetDataQuery* self) {
  * 
  * Empty virtual method (likely pure virtual in base).
  */
-void NetDataQuery_vfn_4(NetDataQuery* self) {}
+void NetDataQuery_Reset(NetDataQuery* self) {}
 
 /**
  * NetDataQuery::InitializeStates @ 0x823D1628 | size: 0x19C
@@ -671,7 +671,7 @@ void NetDataQuery_vfn_4(NetDataQuery* self) {}
  * State 2: stateReceiveData @ 0x82071244
  * State 3: stateFinish @ 0x8207128C
  */
-void NetDataQuery_vfn_8(NetDataQuery* self) {
+void NetDataQuery_Process(NetDataQuery* self) {
     // Set state ID to 4
     *(uint32_t*)((char*)self + 4) = 4;
     
@@ -738,8 +738,8 @@ void NetDataQuery_vfn_8(NetDataQuery* self) {
  * 
  * Additional virtual methods - stubs for now.
  */
-void NetDataQuery_vfn_10(NetDataQuery* self) {}
-void NetDataQuery_vfn_13(NetDataQuery* self) {}
+void NetDataQuery_OnComplete(NetDataQuery* self) {}
+void NetDataQuery_GetName(NetDataQuery* self) {}
 
 /**
  * NetDataQuery::Constructor (alternate) @ 0x823D1530 | size: 0x98
@@ -836,7 +836,7 @@ struct NetStateSync {
  * 
  * Destructor - cleans up state machine and conditionally frees memory.
  */
-void NetStateSync_vfn_0(NetStateSync* self, int flags) {
+void NetStateSync_Destroy(NetStateSync* self, int flags) {
     // Set vtable @ 0x820713BC
     // Python: (lis(-32249) << 16) + 5052 = 0x820713BC
     self->vtable = (void**)0x820713BC;
@@ -860,7 +860,7 @@ void NetStateSync_vfn_0(NetStateSync* self, int flags) {
  * This function allocates memory for each state and initializes them
  * with their respective vtable pointers.
  */
-void NetStateSync_vfn_8(NetStateSync* self) {
+void NetStateSync_Process(NetStateSync* self) {
     // Set state ID to 7
     self->m_stateID = 7;
     
@@ -962,8 +962,8 @@ void NetStateSync_vfn_8(NetStateSync* self) {
  * 
  * Additional virtual methods - stubs for now.
  */
-void NetStateSync_vfn_10(NetStateSync* self) {}
-void NetStateSync_vfn_13(NetStateSync* self) {}
+void NetStateSync_OnComplete(NetStateSync* self) {}
+void NetStateSync_GetName(NetStateSync* self) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // External function stubs
