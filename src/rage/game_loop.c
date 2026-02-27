@@ -25,12 +25,17 @@
 extern uint32_t xam_6C88_g(uint32_t type, uint32_t initCount,
                             uint32_t maxCount, uint32_t flags); // @ 0x82566C88
 
-// RAGE main-thread registration.
-// Registers a named thread with the given stack size and priority flags.
-extern uint32_t rage_thread_register_7FD0(void* nameStr, uint32_t stackSize,
-                                          uint32_t flags, uint32_t priority,
-                                          void* param, uint32_t paramSize,
-                                          uint32_t affinity, uint8_t suspended); // @ 0x82187FD0
+// RAGE kernel thread registration.
+// r3=func, r4=param, r5=stack_size, r6=base_priority_delta,
+// r7=name_fmt_str, r8=start_suspended, r9=processor_affinity
+// Returns the kernel thread handle (or 0/-1 on failure).
+extern uint32_t rage_thread_register_7FD0(void* func, void* param,
+                                          uint32_t stackSize,
+                                          uint32_t basePriorityDelta,
+                                          void* nameFmt,
+                                          uint32_t startSuspended,
+                                          uint32_t processorAffinity); // @ 0x82187FD0
+
 
 // "Assert / log" function called when the subsystem init guard fails
 // (lock count is zero — double-init or premature call).
@@ -41,88 +46,95 @@ extern struct fiDevice* fiDevice_GetDevice(const char* path,
                                            uint32_t openForWrite); // @ 0x822E12A0
 
 // Globals
-// g_lockCount — nesting counter protecting subsystem re-init @ (lis(-32160)+7760)
-extern uint32_t g_lockCount;  // @ 0x82066530 (approx)
 
-// g_semRender, g_semUpdate, g_semIO — three XAM semaphore handles
-extern uint32_t g_semRender;   // @ 0x820665F8
-extern uint32_t g_semUpdate;   // @ 0x820665FC
-extern uint32_t g_semIO;       // @ 0x82066600
+// g_semRender, g_semUpdate, g_semIO — three XAM kernel semaphore handles
+// Stored at r31+26104/26108/26112 where r31 = lis(-32160) = 0x82600000
+extern uint32_t g_semRender;   /* @ 0x826065F8 */
+extern uint32_t g_semUpdate;   /* @ 0x826065FC */
+extern uint32_t g_semIO;       /* @ 0x82606600 */
 
-// g_mainThreadHandle — handle returned by rage_thread_register
-extern uint32_t g_mainThreadHandle;  // @ 0x825D0078
+// g_mainThreadHandle — kernel handle for the RAGE main-loop scheduler thread
+extern uint32_t g_mainThreadHandle;  /* @ 0x825D0078 */
 
-// Audio device path list — null-terminated array of (char*) pointers
-// @ 0x825D1D40  (addi r25, lis(-32163), 7488)
-extern const char* g_audDevicePaths[];  // @ 0x825D1D40
+// atSingleton_2598_w — RAGE main-loop scheduler thread entry function
+// Registered by rage_subsystem_init as the primary game-loop thread.
+extern void atSingleton_2598_w(void* gameObjPtr);  /* @ 0x822E2598 */
 
-// Base audio path prefix string  @ 0x8204DAA4
-extern const char g_audBasePath[];   // @ 0x8204DAA4
-
-// Audio path format strings
-extern const char g_audPathFmt[];    // @ 0x82027434  — e.g. "%s%s"
-extern const char g_audPathFmt2[];   // @ 0x8204DBFC  — alternate format
-
-// Thread name string for the RAGE main thread @ (lis(-32210)+9624)
-extern const char g_mainThreadName[];  // @ 0x822DA988 (approx)
-
-// Subsystem guard address  @ (lis(-32160)+26116)
-extern uint32_t g_subsystemInitGuard;  // @ 0x82066804 (approx)
+// Subsystem init debug strings (.rdata, release no-ops via nop_8240E6D0)
+extern const char k_subsysInitErrFmt[];   /* @ 0x8205A30C */
+extern const char k_rageThreadNameFmt[];  /* @ 0x8205A340 — debug thread name */
 
 
 // ===========================================================================
 // rage_subsystem_init  @ 0x822E2430 | size: 0xDC
 //
-// Initialises the core Xbox subsystems needed by the RAGE game loop:
+// Initialises the three RAGE scheduler semaphores and registers the RAGE
+// main-loop scheduler thread (atSingleton_2598_w @ 0x822E2598).
 //
-//  1. Guard check — if g_subsystemInitGuard is zero, logs an error and
-//     returns early (prevents spurious re-init from unrelated threads).
+// Step 1: Guard — aborts (with debug log) if g_game_obj_ptr is null.
+//         The root game object must be created before subsystems can init.
 //
-//  2. Allocates three XAM semaphores (render, update, IO) with initial count
-//     0 and max count 1, storing their handles in the corresponding globals.
+// Step 2: Allocate three XAM kernel semaphores via xam_6C88_g:
+//           g_semRender (0x826065F8): type=0, init=1, max=0, flags=0
+//           g_semUpdate (0x826065FC): type=0, init=1, max=0, flags=0
+//           g_semIO     (0x82606600): type=0, init=1, max=1, flags=0
+//         NOTE: max=0 for render/update (binary semaphores), max=1 for IO.
 //
-//  3. Registers the RAGE main thread with the Xbox scheduler via
-//     rage_thread_register, specifying a 64 KB stack, a specific affinity
-//     mask (0x18000), and priority 8.  Saves the returned thread handle to
-//     g_mainThreadHandle.
+// Step 3: Register the RAGE main-loop scheduler thread:
+//           func   = atSingleton_2598_w (game-loop scheduler)
+//           param  = g_game_obj_ptr     (startup arg: root game object)
+//           stack  = 0x18000 (98304 bytes)
+//           basePriorityDelta = 8  → KeSetBasePriorityThread(h, 8-8=0)
+//           nameFmt = k_rageThreadNameFmt (debug name, no-op in release)
+//           startSuspended = 1   → thread starts suspended
+//           processorAffinity = 0 → run on processor 0
+//         Handle stored to g_mainThreadHandle @ 0x825D0078.
+//
+// Key globals (all at lis(-32160)+offset, base=0x82600000):
+//   g_game_obj_ptr @ 0x82606604  — root game object pointer (guard + thread param)
+//   g_semRender    @ 0x826065F8  — render semaphore handle
+//   g_semUpdate    @ 0x826065FC  — update semaphore handle
+//   g_semIO        @ 0x82606600  — IO semaphore handle
 // ===========================================================================
 void rage_subsystem_init(void) {
-    // Guard: abort if subsystem has not been marked as ready.
-    if (g_subsystemInitGuard == 0) {
-        nop_8240E6D0("subsystem init called before guard set");
+    // Guard: root game object must exist.
+    if (g_game_obj_ptr == NULL) {
+        nop_8240E6D0(k_subsysInitErrFmt);
         return;
     }
 
-    // Allocate render semaphore (type=0, init=1, max=1, flags=0).
-    g_semRender = xam_6C88_g(0, 1, 1, 0);
+    // Allocate render semaphore: binary (max=0), starts signalled (init=1).
+    g_semRender = xam_6C88_g(0, 1, 0, 0);
 
-    // Allocate update semaphore (type=0, init=1, max=1, flags=0).
-    g_semUpdate = xam_6C88_g(0, 1, 1, 0);
+    // Allocate update semaphore: binary (max=0), starts signalled (init=1).
+    g_semUpdate = xam_6C88_g(0, 1, 0, 0);
 
-    // Allocate IO semaphore (type=0, init=1, max=1, flags=1 — signalled?).
-    g_semIO = xam_6C88_g(0, 1, 1, 1);
+    // Allocate IO semaphore: counting (max=1), starts signalled (init=1).
+    g_semIO = xam_6C88_g(0, 1, 1, 0);
 
-    // Register main RAGE thread.
-    //  stack    = 0x18000 (98304 bytes)
-    //  priority = 8
-    //  affinity = g_subsystemInitGuard (hardware thread bitmap)
-    //  suspended = 1 (starts suspended)
+    // Register the RAGE main-loop scheduler thread.
     g_mainThreadHandle = rage_thread_register_7FD0(
-        (void*)g_mainThreadName,
-        (uint32_t)g_audDevicePaths,  // TODO: verify — r4 = addi(r11) at call site
-        98304,                        // 0x18000
-        8,
-        (void*)g_subsystemInitGuard,
-        0,
-        1,
-        0
+        (void*)atSingleton_2598_w, /* r3: thread entry function             */
+        (void*)g_game_obj_ptr,     /* r4: startup param = root game object  */
+        98304u,                    /* r5: stack size = 0x18000              */
+        8u,                        /* r6: base priority delta (8-8=0)       */
+        (void*)k_rageThreadNameFmt,/* r7: debug thread name fmt             */
+        1u,                        /* r8: start suspended                   */
+        0u                         /* r9: processor affinity = CPU 0        */
     );
-    // TODO: the exact argument mapping for rage_thread_register_7FD0 needs
-    //       cross-checking once that function is lifted (@ 0x82187FD0).
 }
 
+// ---------------------------------------------------------------------------
+// Audio system globals (used by audSystem_init below)
+// ---------------------------------------------------------------------------
+extern const char* g_audDevicePaths[];  /* null-terminated list @ 0x825D1D40 */
+extern const char  g_audBasePath[];     /* base path prefix      @ 0x8204DAA4 */
+extern const char  g_audPathFmt[];      /* "%s%s" format         @ 0x82027434 */
+extern const char  g_audPathFmt2[];     /* alternate fmt         @ 0x8204DBFC */
 
-// ===========================================================================
+
+
+
 // audSystem_init  @ 0x82221ED0 | size: 0x18C
 //
 // Scans the global audio-device path list (g_audDevicePaths) and opens each
@@ -205,87 +217,108 @@ void audSystem_init(void) {
 }
 
 
+
 // ===========================================================================
-// grcDevice_init  @ 0x820F8A00 | size: 0xFC
+// pgStreamer_Init  @ 0x820F8A00 | size: 0xFC
 //
-// Allocates and initializes the grcDevice command-pool free list, then
-// starts the render thread if it hasn't been registered yet.
+// Initialises the pgStreamer asynchronous streaming pool and starts the
+// pgStreamer background reader thread (pg_8250_g).
 //
-// Memory layout (globals at 0x825EB26C):
-//   g_grcCmdPool.capacity    @ 0x825EB26C — 256 (pool size)
-//   g_grcCmdPool.freeHead    @ 0x825EB270 — head index of free list (0)
-//   g_grcCmdPool.pMemory     @ 0x825EB274 — pointer to the 40960-byte pool
+// This function lives in the pgStreamer compilation unit, immediately between
+// pgStreamer_Close (0x820F88F8) and pgStreamer_Drain (0x820F8B00) in the
+// binary layout.  The name "grcDevice_init_8A00" from the call-tree doc was
+// a provisional label; the true subsystem is the pgStreamer asset streamer.
 //
-// Pool structure:
-//   256 entries, each 160 bytes apart, forming a singly-linked free list.
-//   Each node layout:
-//     [+0]  uint32  index           — node's own index (0–255)
-//     [+4]  uint32  state           — 0xFFFFFFFF (unused/free sentinel)
-//     [+16] uint32  nextFreeIndex   — next node in free list (256 = end)
+// Steps:
+//  1. Stamp pool capacity (256) into g_pgStreamerPool.capacity.
+//  2. Ensure the main-thread heap context is live (xe_main_thread_init_0038).
+//  3. Allocate the backing pool via the RAGE sysMemAllocator vtable slot 1:
+//       Alloc(size=0xA000, align=16)  →  256 × 160 bytes = 40 960 bytes.
+//  4. Build a singly-linked free list across all 256 nodes:
+//       node[+0]  = i             (self-index)
+//       node[+4]  = 0xFFFFFFFF   (free sentinel)
+//       node[+16] = i + 1        (next-free; 256 = end-of-list)
+//  5. Reset freeHead = 0 (all nodes free, head at slot 0).
+//  6. If g_pgThreadInitGate is unarmed, register pg_8250_g as a background
+//     kernel thread:
+//       stack  = 65 536 bytes (0x10000)
+//       base-priority delta = 6  →  KeSetBasePriorityThread(h, 8-6=2)
+//       processor = 0  →  XSetThreadProcessor(h, 0)
 //
-// Render thread registration (guarded by g_grcInitGate):
-//   Thread function : pg_8250_g @ 0x820F8250
-//   Stack size      : 65536 bytes (0x10000)
-//   Priority        : 6
-//   Parameter       : pool memory pointer
+// Key globals:
+//   g_pgStreamerPool.capacity @ 0x825EB26C  — written here (256)
+//   g_pgStreamerPool.freeHead @ 0x825EB270  — written here (0)
+//   g_pgStreamerPool.pMemory  @ 0x825EB274  — written here (alloc ptr)
+//   g_pgQueue                @ 0x82607AA8  — 16-slot ring + semaphores (408 B)
+//                                             (used by pg_8250_g via SDA)
+//   g_pgThreadInitGate       @ 0x825CA074  — RTTI-gate; m_pName != NULL → skip
+//   k_pgThreadNameFmt        @ 0x8202FB00  — "%s" thread name format
 // ===========================================================================
 
-// Pool descriptor (layout straddles 0x825EB26C–0x825EB274)
-typedef struct grcCmdPool {
-    uint32_t capacity;   /* +0  @ 0x825EB26C — always 256 */
-    uint32_t freeHead;   /* +4  @ 0x825EB270 — index of first free node */
-    void*    pMemory;    /* +8  @ 0x825EB274 — backing allocation */
-} grcCmdPool;
+// Three adjacent .data symbols form the pool descriptor:
+//   lbl_825EB25C (20 B) — stats header (touched by pgStreamer_ProcessEntry)
+//     +0x10 of that symbol = capacity field below
+//   lbl_825EB270 (4 B)  — freeHead
+//   lbl_825EB274 (8 B)  — pMemory + padding
+// We model just the three fields this function writes:
+typedef struct pgStreamerPool {
+    uint32_t capacity;   /* @ 0x825EB26C — always 256 */
+    uint32_t freeHead;   /* @ 0x825EB270 — head of free list */
+    void*    pMemory;    /* @ 0x825EB274 — backing allocation */
+} pgStreamerPool;
 
-extern grcCmdPool g_grcCmdPool;  /* @ 0x825EB26C */
+extern pgStreamerPool g_pgStreamerPool;  /* anchored at 0x825EB26C */
 
-// Init gate: non-null m_pName means render thread already registered.
+// Gate: non-null m_pName = thread already registered
 typedef struct {
     uint32_t m_vftable;
     uint8_t* m_pName;
-} grcInitGate;
-extern grcInitGate g_grcInitGate;  /* @ 0x825CA074 */
+} pgThreadInitGate;
+extern pgThreadInitGate g_pgThreadInitGate;  /* @ 0x825CA074 */
 
-// Render thread entry function (pg_8250_g @ 0x820F8250)
-extern void pg_8250_g(void* pCmdPool);
+extern void           pg_8250_g(void);        /* pgStreamer reader thread @ 0x820F8250 */
+extern const char     k_pgThreadNameFmt[];    /* "%s" @ 0x8202FB00 */
 
-void grcDevice_init(void) {
-    g_grcCmdPool.capacity = 256;
+void pgStreamer_Init(void)
+{
+    g_pgStreamerPool.capacity = 256;
 
-    // Ensure main thread context is ready before allocating.
+    // Ensure the main-thread allocator heap is ready.
     xe_main_thread_init_0038();
 
-    // Allocate the command pool: 256 nodes * 160 bytes = 40960 (0xA000) bytes,
-    // 16-byte aligned, via the RAGE memory allocator (VCALL slot 1).
-    extern uint32_t* g_sda_base;  /* SDA r13 base */
-    uint32_t*  allocCtx  = (uint32_t*)(uintptr_t)g_sda_base[0];
-    void*      allocObj  = (void*)(uintptr_t)allocCtx[1];  /* [allocCtx+4] */
+    // Allocate backing pool: 256 nodes × 160 bytes = 0xA000 bytes, 16-byte aligned.
+    // VCALL: allocObj = *(g_sda_base[0] + 4);  call allocObj->vtable[1](size, align)
+    extern uint32_t* g_sda_base;
+    uint32_t* allocRoot = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void*     allocObj  = (void*)(uintptr_t)allocRoot[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
-    AllocFn    allocFn   = ((AllocFn*)*(void**)allocObj)[1]; /* vtable slot 1 */
-    void*      pool      = allocFn(allocObj, 0xA000u, 16u);
-    g_grcCmdPool.pMemory = pool;
+    AllocFn   allocFn   = ((AllocFn*)*(void**)allocObj)[1];
+    void*     pool      = allocFn(allocObj, 0xA000u, 16u);
+    g_pgStreamerPool.pMemory = pool;
 
-    // Initialise free list: 256 nodes, each spaced 160 bytes apart.
+    // Build free list: node stride = 160 bytes.
     uint8_t* base = (uint8_t*)pool;
     for (int i = 0; i < 256; ++i) {
-        uint8_t* node = base + i * 160;
-        *(uint32_t*)(node +  0) = (uint32_t)i;           /* own index     */
-        *(uint32_t*)(node +  4) = 0xFFFFFFFFu;           /* free sentinel */
-        *(uint32_t*)(node + 16) = (uint32_t)(i + 1);     /* next (256 = end) */
+        uint8_t* node = base + (uint32_t)i * 160u;
+        *(uint32_t*)(node +  0) = (uint32_t)i;       /* own index (0-255)    */
+        *(uint32_t*)(node +  4) = 0xFFFFFFFFu;       /* free sentinel        */
+        *(uint32_t*)(node + 16) = (uint32_t)(i + 1); /* next (256 = end)     */
     }
+    g_pgStreamerPool.freeHead = 0;
 
-    g_grcCmdPool.freeHead = 0;
-
-    // Only register the render thread if the init gate is not yet set.
-    if (g_grcInitGate.m_pName == NULL) {
+    // Register the reader thread if not already started.
+    // r4 = 0 at the call site (result of gate-null clrlwi left 0 in r4).
+    // The thread uses g_pgQueue (SDA global) rather than a startup param.
+    if (g_pgThreadInitGate.m_pName == NULL) {
         rage_thread_register_7FD0(
-            (void*)pg_8250_g,  /* thread entry function      */
-            pool,              /* parameter: command pool    */
-            65536u,            /* stack size (0x10000)       */
-            6u,                /* priority / affinity flags  */
-            (void*)"%s",       /* thread name format string  */
-            1u,                /* flags                      */
-            0u                 /* reserved                   */
+            (void*)pg_8250_g,         /* r3: thread function                */
+            NULL,                     /* r4: startup param (0 — uses SDA)  */
+            65536u,                   /* r5: stack size = 0x10000           */
+            6u,                       /* r6: base-priority delta (8-6 = 2) */
+            (void*)k_pgThreadNameFmt, /* r7: "%s" name format               */
+            1u,                       /* r8: start suspended = 1            */
+            0u                        /* r9: processor affinity = 0         */
         );
     }
 }
+
