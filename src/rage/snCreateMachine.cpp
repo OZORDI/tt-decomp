@@ -12,26 +12,26 @@
 
 namespace rage {
 
-// Forward declarations for utility functions
-extern void util_D988(void* ctx, void* base);
-extern void util_DA90(void* ctx, void* base);
-extern void util_DA08(void* ctx, void* base);
-extern void util_93D0(void* ctx, void* base);
-extern void util_D4F8(void* ctx, void* base);
-extern void util_53A8(void* ctx, void* base);
-extern void util_D170(void* ctx, void* base);
-extern void util_6650(void* ctx, void* base);
+// Forward declarations for HSM / session utility functions
+extern void snSession_AssociateConnection(void* ctx, void* base);       // @ 0x823ED988 — "associating connection:%d with session"
+extern void snSession_ProcessPendingConnections(void* ctx, void* base); // @ 0x823EDA90
+extern void snHsmState_Init(void* ctx, void* base);                     // @ 0x823DDA08 — init HSM state, set vtables
+extern void snSession_AddChildNode(void* ctx, void* base);              // @ 0x823E93D0 — allocates + links child node into session list
+extern void snHsmContext_SetMaxTransitions(void* ctx, void* base);      // @ 0x823ED4F8 — sets max transition count + flag
+extern void snSession_DestroyState(void* ctx, void* base);              // @ 0x823E53A8 — tears down notify handlers
+extern void snLinkedList_InsertNode(void* ctx, void* base);             // @ 0x823DD170 — doubly-linked list insert
+extern void snSession_GetSessionHandle(void* ctx, void* base);          // @ 0x82416650 — returns session handle
 
 // External functions
-extern void rage_free_00C0(void* ptr);
-extern void SinglesNetworkClient_A940_g(void* ctx, void* base);
-extern void SinglesNetworkClient_C2B0_g(void* ctx, void* base);
-extern void SinglesNetworkClient_2178_g(void* ctx, void* base);
-extern void SinglesNetworkClient_0978_g(void* ctx, void* base);
-extern void nop_8240E6D0(void* ctx, void* base);
-extern void snSession_AddNode_C068(void* ctx, void* base);
-extern void xam_D900_g(void* ctx, void* base);
-extern void xam_D758_g(void* ctx, void* base);
+extern void rage_free(void* ptr);                                       // @ 0x820C00C0 — canonical heap free (see src/crt/heap.c)
+extern void snSession_QueryConfigStatus(void* ctx, void* base);         // @ 0x823DA940
+extern void snSession_RetrieveConfig(void* ctx, void* base);            // @ 0x823DC2B0
+extern void snSession_ProcessJoinRequest(void* ctx, void* base);        // @ 0x823F2178
+extern void snConnectionRef_InitBroadcast(void* ctx, void* base);       // @ 0x82430978
+extern void rage_DebugLogNop(void* ctx, void* base);                    // @ 0x8240E6D0 — 4-byte no-op (stripped debug logging)
+extern void snSession_AddNode(void* ctx, void* base);                   // @ 0x823EC068
+extern void xamSession_Create(void* ctx, void* base);                   // @ 0x8236D900 — XAM session creation wrapper
+extern void xamSession_Modify(void* ctx, void* base);                   // @ 0x8236D758 — XAM session modification wrapper
 
 // Global state type identifiers (from analysis @ 0x825D187C, 0x825D1888, 0x825D1894)
 extern uint32_t g_stateType_CreatingHost;
@@ -50,10 +50,10 @@ extern uint32_t g_stateType_CreatingOffline;
  */
 snCreateMachine::~snCreateMachine() {
     // Call base state cleanup
-    util_53A8(this, nullptr);
+    snSession_DestroyState(this, nullptr);
     
     // Note: Memory freeing handled by caller based on flags
-    // If delete flag is set, rage_free_00C0 is called
+    // If delete flag is set, rage_free is called
 }
 
 /**
@@ -90,7 +90,7 @@ void snCreateMachine::OnUpdate() {
     void* stateContext = m_pStateContext;
     if (m_pNetworkClient) {
         // Call network client initialization
-        util_D170(this, nullptr);
+        snLinkedList_InsertNode(this, nullptr);
     }
 }
 
@@ -124,8 +124,8 @@ void snCreateMachine::OnEnter() {
             void* hostStateData = reinterpret_cast<void*>(
                 reinterpret_cast<uint8_t*>(this) + 84
             );
-            util_D988(this, hostStateData);
-            util_DA90(this, hostStateData);
+            snSession_AssociateConnection(this, hostStateData);
+            snSession_ProcessPendingConnections(this, hostStateData);
         }
         return;
     }
@@ -138,8 +138,8 @@ void snCreateMachine::OnEnter() {
             void* guestStateData = reinterpret_cast<void*>(
                 reinterpret_cast<uint8_t*>(this) + 108
             );
-            util_D988(this, guestStateData);
-            util_DA90(this, guestStateData);
+            snSession_AssociateConnection(this, guestStateData);
+            snSession_ProcessPendingConnections(this, guestStateData);
         }
         return;
     }
@@ -152,15 +152,15 @@ void snCreateMachine::OnEnter() {
             void* offlineStateData = reinterpret_cast<void*>(
                 reinterpret_cast<uint8_t*>(this) + 132
             );
-            util_D988(this, offlineStateData);
-            util_DA90(this, offlineStateData);
+            snSession_AssociateConnection(this, offlineStateData);
+            snSession_ProcessPendingConnections(this, offlineStateData);
         }
         return;
     }
     
     // Unknown state type - create error notification
-    util_DA08(this, nullptr);
-    util_93D0(this, nullptr);
+    snHsmState_Init(this, nullptr);
+    snSession_AddChildNode(this, nullptr);
 }
 
 /**
@@ -238,7 +238,7 @@ void snHsmCreatingHost::OnUpdate() {
     // SinglesNetworkClient_0978_g creates the session
     
     // Get session handle
-    uint64_t sessionHandle = util_6650(nullptr, nullptr);
+    uint64_t sessionHandle = snSession_GetSessionHandle(nullptr, nullptr);
     
     // Store session data in machine
     // machine->m_sessionHandle = sessionHandle;
@@ -394,8 +394,8 @@ void snHsmRequestingConfig::OnUpdate() {
     
     if (timedOut) {
         // Timeout - transition to error state
-        util_DA08(this, nullptr);
-        util_93D0(this, nullptr);
+        snHsmState_Init(this, nullptr);
+        snSession_AddChildNode(this, nullptr);
         return;
     }
     
@@ -404,13 +404,13 @@ void snHsmRequestingConfig::OnUpdate() {
         machine->m_retryCount++;
         
         // Schedule retry after 500ms
-        util_D4F8(this, nullptr);
+        snHsmContext_SetMaxTransitions(this, nullptr);
         return;
     }
     
     // Config is ready - transition to applying config state
     // Create transition notification
-    util_DA08(this, nullptr);
+    snHsmState_Init(this, nullptr);
     
     // Add node to session
     // snSession_AddNode_C068 handles node addition

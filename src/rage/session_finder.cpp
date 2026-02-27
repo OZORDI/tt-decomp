@@ -12,14 +12,14 @@
 
 // External function declarations
 extern "C" {
-    void SinglesNetworkClient_0268_g(void* client);
-    void rage_free_00C0(void* ptr);
-    void util_D788(void* obj);
-    void SinglesNetworkClient_0978_g(void* obj, void* p1, void* p2, void* p3, int p4);
-    void snJoinMachine_03D0_g(void* machine, int p1);
-    void SinglesNetworkClient_08C8_g(void* machine, void* p1, void* p2, void* p3);
-    void util_D988(void* p1, void* p2, void* p3);
-    void util_DA90(void* p1, void* p2, void* p3);
+    void snConnectionRef_Release(void* client);                              // @ 0x82260268 — decrement refcount, cleanup, zero struct
+    void rage_free(void* ptr);                                               // @ 0x820C00C0 — canonical heap free (see src/crt/heap.c)
+    void snHsmContext_Reset(void* obj);                                      // @ 0x823ED788 — clears HSM state fields, destroys pending nodes
+    void snConnectionRef_InitBroadcast(void* obj, void* p1, void* p2, void* p3, int p4); // @ 0x82430978
+    void snJoinMachine_SetCapacity(void* machine, int p1);                   // @ 0x822603D0 — sets max player/connection capacity
+    void snConnectionRef_InitJoin(void* machine, void* p1, void* p2, void* p3); // @ 0x822608C8
+    void snSession_AssociateConnection(void* p1, void* p2, void* p3);        // @ 0x823ED988 — "associating connection:%d with session"
+    void snSession_ProcessPendingConnections(void* p1, void* p2, void* p3);  // @ 0x823EDA90
 }
 
 namespace rage {
@@ -41,12 +41,12 @@ namespace rage {
  */
 snNotifySyslinkRequest::~snNotifySyslinkRequest() {
     // Destroy second client at offset +108
-    SinglesNetworkClient_0268_g(reinterpret_cast<void*>(
+    snConnectionRef_Release(reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(this) + 108
     ));
     
     // Destroy first client at offset +4
-    SinglesNetworkClient_0268_g(reinterpret_cast<void*>(
+    snConnectionRef_Release(reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(this) + 4
     ));
     
@@ -54,7 +54,7 @@ snNotifySyslinkRequest::~snNotifySyslinkRequest() {
     // This is done automatically by the compiler for base class destructor
     
     // Note: The destructor flag check (bit 0 of second parameter)
-    // and potential rage_free_00C0 call is handled by the calling code
+    // and potential rage_free call is handled by the calling code
 }
 
 // ── snNotifyFoundSyslink Implementation ──
@@ -68,7 +68,7 @@ snNotifySyslinkRequest::~snNotifySyslinkRequest() {
  */
 snNotifyFoundSyslink::~snNotifyFoundSyslink() {
     // Destroy client at offset +4
-    SinglesNetworkClient_0268_g(reinterpret_cast<void*>(
+    snConnectionRef_Release(reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(this) + 4
     ));
     
@@ -94,7 +94,7 @@ snNotifyFoundSyslink::~snNotifyFoundSyslink() {
  */
 snSessionFinder::snSessionFinder(void* param1, void* param2) {
     // Call base initialization (util_D788)
-    util_D788(this);
+    snHsmContext_Reset(this);
     
     // Store param2 at +0x04
     m_pParam2 = param2;

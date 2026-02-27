@@ -19,8 +19,8 @@ namespace rage {
 
 namespace rage {
 
-// Forward declaration of rage_free (from memory system)
-extern "C" void rage_free_00C0(void* ptr);
+// Forward declaration — canonical rage_free @ 0x820C00C0 (see src/crt/heap.c)
+extern "C" void rage_free(void* ptr);
 
 /**
  * audControlWrapper::cleanupControl @ 0x823F7C28 | size: 0x5C
@@ -73,7 +73,7 @@ void audControlWrapper::cleanupControl() {
  *   mr r3,r31                    ; Restore 'this'
  *   cmplwi cr6,r11,0             ; Check delete flag
  *   beq cr6,0x823f7cc0           ; Skip if not set
- *   bl 0x820c00c0                ; rage_free_00C0(this)
+ *   bl 0x820c00c0                ; rage_free(this)
  *   mr r3,r31                    ; Return 'this'
  */
 audControlWrapper::~audControlWrapper() {
@@ -126,7 +126,7 @@ audControlWrapper::~audControlWrapper() {
  *   cmplwi cr6,r7,0
  *   beq cr6,0x823f81d4
  *   mr r3,r28                    ; Point to count
- *   bl 0x820c00c0                ; rage_free_00C0
+ *   bl 0x820c00c0                ; rage_free
  */
 audControl3dWrapper::~audControl3dWrapper() {
     // The assembly checks bit 1 of the flags parameter (r4)
@@ -161,7 +161,7 @@ audControl3dWrapper::~audControl3dWrapper() {
     //         }
     //         
     //         // Free the array (including count prefix)
-    //         rage_free_00C0(countPtr);
+    //         rage_free(countPtr);
     //     }
     // }
 }

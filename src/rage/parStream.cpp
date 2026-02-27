@@ -252,7 +252,7 @@ parStreamInRbf::~parStreamInRbf() {
     // Check flag at offset +74 (m_ownsBuffer)
     // If set, free buffer at offset +68
     if (m_pRbfData) {
-        // rage_free_00C0 would be called here
+        // rage_free would be called here
         m_pRbfData = nullptr;
     }
 }

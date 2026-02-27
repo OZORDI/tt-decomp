@@ -34,7 +34,7 @@ namespace rage {
  * Original assembly shows this is a standard virtual destructor that:
  * 1. Sets vtable to snNotifyBase vtable (0x82072A1C)
  * 2. Checks delete flag (bit 0 of second parameter)
- * 3. Calls rage_free_00C0 if flag is set
+ * 3. Calls rage_free if flag is set
  */
 snNotifyBase::~snNotifyBase() {
     // Vtable is automatically set by compiler

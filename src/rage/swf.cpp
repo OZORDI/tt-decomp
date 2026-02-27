@@ -13,12 +13,12 @@
 
 // External functions
 extern "C" {
-    void rage_free_00C0(void* ptr);  // @ 0x820C00C0
-    void rage_9B80(void* ctx);       // @ 0x823F9B80
-    uint8_t atSingleton_Find_90D0(void* ptr);  // @ 0x820F90D0 - returns uint8_t
-    void rage_C0E0(void* ptr);       // @ 0x8234C0E0
-    void swfFILE_35B0_p24b(void* ptr);  // @ 0x824035B0
-    void swfINSTANCE_B670_w(void* ptr);  // @ 0x823FB670
+    void rage_free(void* ptr);                  // @ 0x820C00C0 — canonical heap free (see src/crt/heap.c)
+    void swfContext_Cleanup(void* ctx);         // @ 0x823F9B80 — cleanup stub (no-op in final binary)
+    uint8_t atSingleton_Find(void* ptr);        // @ 0x820F90D0 — singleton registry lookup, returns nonzero if found
+    void atHashMap_Clear(void* ptr);            // @ 0x8234C0E0 — iterates linked-list hash buckets, frees all nodes
+    void swfFile_DestroyResources(void* ptr);   // @ 0x824035B0 — releases child resource array entries
+    void swfInstance_Cleanup(void* ptr);        // @ 0x823FB670 — unlinks instance from display list
 }
 
 // Global SWF object pools (SDA - Small Data Area)
@@ -50,7 +50,7 @@ void swfBASE_ScalarDestructor(swfBASE* obj, int flags) {
     // Calculation: (-32249 << 16) + 19660 = 0x82074D0C
     
     if (flags & 0x1) {
-        rage_free_00C0(obj);
+        rage_free(obj);
     }
 }
 
@@ -140,14 +140,14 @@ void swfSCRIPTOBJECT_ScalarDestructor(swfSCRIPTOBJECT* obj, int flags) {
  * Destructor. Cleans up the ActionScript execution context.
  */
 swfCONTEXT::~swfCONTEXT() {
-    rage_9B80(this);
+    swfContext_Cleanup(this);
 }
 
 void swfCONTEXT::ScalarDestructor(int flags) {
-    rage_9B80(this);
+    swfContext_Cleanup(this);
     
     if (flags & 0x1) {
-        rage_free_00C0(this);
+        rage_free(this);
     }
 }
 
@@ -186,7 +186,7 @@ swfFILE::~swfFILE() {
     // Free the resource array if it exists
     if (m_pResourceArray) {
         // Check if array is in singleton pool
-        uint8_t found = atSingleton_Find_90D0(m_pResourceArray);
+        uint8_t found = atSingleton_Find(m_pResourceArray);
         if (found == 0) {
             // Not found in singleton pool, need to free it
             // TODO: Get allocator and free the array
@@ -194,8 +194,8 @@ swfFILE::~swfFILE() {
     }
     
     // Clean up additional file resources
-    rage_C0E0((char*)this + 52);
-    swfFILE_35B0_p24b(this);
+    atHashMap_Clear((char*)this + 52);
+    swfFile_DestroyResources(this);
 }
 
 void swfFILE::vfn_10() {
@@ -214,11 +214,11 @@ void swfFILE::vfn_10() {
  * from the instance pool.
  */
 swfINSTANCE::~swfINSTANCE() {
-    swfINSTANCE_B670_w(this);
+    swfInstance_Cleanup(this);
 }
 
 void swfINSTANCE_ScalarDestructor(swfINSTANCE* obj, int flags) {
-    swfINSTANCE_B670_w(obj);
+    swfInstance_Cleanup(obj);
     
     if (flags & 0x1) {
         if (obj) {

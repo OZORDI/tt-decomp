@@ -69,16 +69,16 @@ extern void*  g_grcDeviceVtable[];  // @ 0x824DC5C4 (lis(-32253) + 21764)
 #include "rage/memory.h"
 
 // Subsystem calls
-void  xe_main_thread_init_0038(void);          // thread/heap init
+void  rage_InitMainThreadHeap(void);             // thread/heap init @ 0x82186038
 void* sysMemAllocator_Alloc(size_t sz, size_t align, int flags);  // vtable slot 1
-void  ph_ctor_DE00(void* mem);                 // physics world ctor @ 0x8215DE00
-void  grc_13A0(void);                          // grc device sub-init @ 0x821513A0
-void* xe_86E8(void* target, int flags, int sz, int align, int maxSz); // block alloc @ 0x821586E8
-void  rage_2E18(void* ptr);                    // decrement refcount / release @ 0x820C2E18
-void  atSingleton_1C70_fw(void* mgr);          // singleton remove @ 0x82151C70
-void  nop_8240E6D0(const char* name, int id);  // debug/log nop @ 0x8240E6D0
-void  rage_FC30(void);                         // grc pre-present fence @ 0x8214FC30
-void  grc_F088(uint32_t flags, int width, int height, float scale, bool flip, int a6); // present @ 0x8214F088
+void  phWorld_Construct(void* mem);               // physics world ctor @ 0x8215DE00
+void  grcDevice_SubInit(void);                    // grc device sub-init @ 0x821513A0
+void* rage_BlockAlloc(void* target, int flags, int sz, int align, int maxSz); // block alloc @ 0x821586E8
+void  datRef_Release(void* ptr);                  // decrement refcount / release @ 0x820C2E18
+void  atSingleton_Remove(void* mgr);              // singleton remove @ 0x82151C70
+void  rage_DebugLog(const char* name, int id);    // debug/log nop @ 0x8240E6D0
+void  grcDevice_WaitFence(void);                  // grc pre-present fence @ 0x8214FC30
+void  grcDevice_Present(uint32_t flags, int width, int height, float scale, bool flip, int a6); // present @ 0x8214F088
 
 
 // ===========================================================================
@@ -149,7 +149,7 @@ void grcSetup_Startup(void)
 
     if (sub2Live) {
         // Small path: allocate a lightweight grcDevice shell (16 bytes, align 4).
-        xe_main_thread_init_0038();
+        rage_InitMainThreadHeap();
         void* dev = sysMemAllocator_Alloc(/*size*/ 16, /*align*/ 4, /*flags*/ 4);
         if (dev) {
             *(void**)dev = g_grcDeviceVtable;   // stamp vtable
@@ -159,10 +159,10 @@ void grcSetup_Startup(void)
         }
     } else {
         // Large path: allocate a full physics-world object (76 bytes, align 4).
-        xe_main_thread_init_0038();
+        rage_InitMainThreadHeap();
         void* phys = sysMemAllocator_Alloc(/*size*/ 76, /*align*/ 4, /*flags*/ 4);
         if (phys) {
-            ph_ctor_DE00(phys);
+            phWorld_Construct(phys);
             g_pGrcDevice = phys;
         } else {
             g_pGrcDevice = NULL;
@@ -170,11 +170,11 @@ void grcSetup_Startup(void)
     }
 
     // ── Step 3: initialise grc renderer subsystem ───────────────────────
-    grc_13A0();
+    grcDevice_SubInit();
 
     // ── Step 4: allocate 8-byte frame-timing buffer; store in both refs ─
     // xe_86E8(target=subsystem_base, flags=1, size=8, align=8, maxSz=127)
-    void* frameBuf = xe_86E8(NULL, /*flags*/ 1, /*sz*/ 8, /*align*/ 8, /*max*/ 127);
+    void* frameBuf = rage_BlockAlloc(NULL, /*flags*/ 1, /*sz*/ 8, /*align*/ 8, /*max*/ 127);
     g_pGrcRenderer  = frameBuf;
     g_pGrcRenderer2 = frameBuf;
 }
@@ -203,7 +203,7 @@ void grcSetup_Shutdown(void)
         // Release the renderer's internal resource (refcount decrement / GPU sync)
         void* rendererResource = *(void**)g_pGrcRenderer;
         if (rendererResource)
-            rage_2E18(rendererResource);
+            datRef_Release(rendererResource);
 
         // Free the backing allocation stored at renderer+24
         void* rendererBacking = *(void**)((uint8_t*)g_pGrcRenderer + 24);
@@ -213,21 +213,21 @@ void grcSetup_Shutdown(void)
     }
 
     // ── 2. Release scene resource A ─────────────────────────────────────
-    rage_2E18(g_pGrcScene);
+    datRef_Release(g_pGrcScene);
     if (g_pGrcScene) {
         // Log/debug: report scene name (id at +6)
         uint16_t sceneId = *(uint16_t*)((uint8_t*)g_pGrcScene + 6);
-        nop_8240E6D0("grcSetup_Shutdown scene", sceneId);
+        rage_DebugLog("grcSetup_Shutdown scene", sceneId);
     }
     g_pGrcScene = NULL;
 
     // ── 3. Release scene resource B + deregister singleton ──────────────
-    rage_2E18(g_pGrcSceneB);
+    datRef_Release(g_pGrcSceneB);
     g_pGrcSceneB = NULL;
-    atSingleton_1C70_fw(NULL);  // unregister grc scene singleton
+    atSingleton_Remove(NULL);  // unregister grc scene singleton
 
     // ── 4. Release game-loop singleton ───────────────────────────────────
-    rage_2E18(g_pGameLoop);
+    datRef_Release(g_pGameLoop);
 
     // ── 5. Destroy device object via vtable destructor ───────────────────
     if (g_pGrcDevice) {
@@ -355,7 +355,7 @@ void grcSetup_UpdateRenderTime(struct grcSetup* self)
 // ===========================================================================
 void grcSetup_PresentFrame(struct grcSetup* self, bool doFlip)
 {
-    rage_FC30();   // GPU fence / pre-present sync
+    grcDevice_WaitFence();   // GPU fence / pre-present sync
 
     if (doFlip) {
         if (self->m_renderState == 2) {
@@ -365,7 +365,7 @@ void grcSetup_PresentFrame(struct grcSetup* self, bool doFlip)
         }
 
         // Submit: flags=self->flags, width=1, height=1, scale=0.0f, flip=true, a6=0
-        grc_F088(self->flags, /*width*/ 1, /*height*/ 1, /*scale*/ 0.0f, /*flip*/ true, /*a6*/ 0);
+        grcDevice_Present(self->flags, /*width*/ 1, /*height*/ 1, /*scale*/ 0.0f, /*flip*/ true, /*a6*/ 0);
 
         if (self->m_renderState == 1) {
             // Submission acknowledged — advance state to "submitted"
