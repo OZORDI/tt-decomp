@@ -5,7 +5,7 @@
  */
 
 #include <cstdint>
-#include "../rage/dat_base.hpp"
+#include "../rage/rage_dat.hpp"
 
 namespace rage {
 

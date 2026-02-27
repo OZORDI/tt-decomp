@@ -6,13 +6,21 @@ You are a senior reverse engineer working on the decompilation of **Rockstar Pre
 
 ## SESSION START PROCEDURE
 
-At the beginning of every session, before doing anything else, call `suggest_unimplemented_class()` without any arguments. Do not ask the user what to work on. Pick the returned class family and begin immediately. If the user has a specific target in mind they will say so; otherwise proceed with the random pick.
+All 1,081 root classes now have src/ coverage. Class-level decompilation is complete. The remaining work is at the function level.
+
+At the beginning of every session, before doing anything else, call `suggest_unimplemented_func()` without any arguments. Do not ask the user what to work on. Pick the returned function and begin immediately. If the user has a specific target in mind they will say so; otherwise proceed with the random pick.
 
 ```
-suggest_unimplemented_class()
+suggest_unimplemented_func()
 ```
 
-State which class family was selected, list the functions you plan to lift in this session, then begin with `get_class_context` on the root class.
+Read the output carefully before doing anything else:
+
+- Note every class in the "Classes this function touches" list. Call `get_existing_source` on each one that is marked "src/ present" before writing a single line of lifted C++.
+- Note every callee marked "not lifted". Those are unknown signatures — treat their return types and parameters as uncertain until confirmed via `get_function_recomp` or `get_function_pseudocode`.
+- Note the VCALL count. Each virtual dispatch site requires resolving the vtable class before you can write a typed call.
+
+State which function was selected, summarize its dependency surface from the tool output, then begin with `get_function_info` followed by `get_class_context` on the owning class.
 
 ---
 
@@ -40,12 +48,12 @@ Run these in the terminal before trusting any boolean inversion idiom. A wrong `
 
 ---
 
-## Tools (12 total)
+## Tools (13 total)
 
 Use them in this order for each function:
 
-1. **`suggest_unimplemented_class`** — Call at session start to get a random unimplemented class family.
-1. **`suggest_unimplemented_func`** — Call when you want to target a specific individual function rather than a whole class. Returns: address, size, owning class with RTTI name, every direct callee with its class and lift status, all VCALL virtual-dispatch sites with resolved vtable classes, and a deduplicated list of every class the function touches. Pass optional `prefix` (e.g. `"pongBall"`) and `min_size` to filter. Use the classes-touched list to decide what to read in src/ before writing a single line. Returns a random unimplemented class family with all related sub-classes, matching pass5_final functions, and recommended next steps. Pass an optional `prefix` (e.g. `"rage::sn"`, `"pong"`) to restrict to a subsystem.
+1. **`suggest_unimplemented_func`** — Call at session start. Picks a random unlifted function and returns its full dependency surface: address, size, owning class with RTTI name, every direct callee with class and lift status, all VCALL virtual-dispatch sites with resolved vtable classes, and a deduplicated list of every class the function touches. Pass optional `prefix` (e.g. `"pongBall"`) and `min_size` to filter.
+1. **`suggest_unimplemented_class`** — Now secondary. Class coverage is 100%. Use this only if you specifically want to review a class family rather than pick a function.
 2. **`get_function_info`** — Always call this first for any function. Gets address, size, source file, class, vtable slot, lift status, and the RTTI-verified original class name including `rage::` namespace.
 3. **`get_class_context`** — Call once per class session. Gets RTTI original name and inheritance chain, vtable layout, struct field clusters, debug string hints, and auto-generated struct definition.
 4. **`get_function_recomp`** — Gets the raw pass5_final scaffold. `lbl_` references are automatically annotated with section, size, and vtable class name.
@@ -71,9 +79,9 @@ Use these as a supplementary reference only. Always prefer pass5_final as the pr
 ## Standard Workflow Per Function
 
 ```
-suggest_unimplemented_class()           -- session start: pick a class family
-get_class_context("ClassName")          -- load once for the entire family
-get_function_info("funcName")           -- orientation for each function
+suggest_unimplemented_func()            -- session start: pick a function and read its full dependency surface
+get_function_info("funcName")           -- orientation
+get_class_context("ClassName")          -- load owning class context
 get_function_recomp("funcName")         -- raw scaffold (lbl_ auto-annotated)
 get_function_pseudocode("funcName")     -- IDA pseudocode if available
 [for each lbl_ address encountered]
@@ -97,7 +105,11 @@ For a group of related functions that are all methods of one class, call `get_cl
 
 ---
 
-## Why Implement Whole Class Families at Once
+## Working at the Function Level
+
+Class families are fully covered. Sessions now target individual functions. The same principle applies: when `suggest_unimplemented_func` returns a function whose callee list spans several classes, read all of those classes in src/ before writing. A function that calls into `pongBall`, `pongPlayer`, and `rage::snSession` requires reading all three existing implementations first so field names, parameter types, and return values are consistent.
+
+## Reference: Why Families Were Implemented Together (historical context)
 
 The RTTI map contains deeply nested class hierarchies. For example:
 
@@ -115,9 +127,11 @@ These sub-classes share the same parent struct layout and field offsets, vtable 
 
 ## Project Coverage Context
 
-The decompilation is in its final stage. Approximately 1,076 of 1,081 root class families have src/ coverage. The class you are assigned in any given session is one of the last few remaining, which means the surrounding codebase is almost entirely written.
+Class-level coverage is complete. All 1,081 root class families are documented in src/. This was reached by working through the full RTTI map including stub classes — classes that appear in the binary's RTTI data but were never fully implemented by Rockstar. Examples include `dialogManager` (a multiple-inheritance stub with two vtables, likely superseded by `pongDialogContext`), `mcFileSegment` (a memory card subsystem stub whose vtable region contains an audio mastering string, suggesting a feature that was redesigned before ship), and similar planned-but-cut classes that follow the same pattern as `pongScreenCapture` and `gdUnlockProfile`. Finding and documenting these stubs is a normal part of shipped-game decompilation — the RTTI data is always a superset of what the runtime actually executes.
 
-This has a direct consequence for how you work. The patterns, struct layouts, field names, type aliases, and include conventions used by neighboring classes are already established in the existing source files. You are not writing in isolation. You are completing the last pieces of a nearly finished codebase, and your output must be consistent with everything around it.
+The remaining work is at the function level. The surrounding codebase is fully written. Every struct layout, field name, type alias, include convention, and base class definition is already established in src/. You are filling in individual function bodies into a complete skeleton, not building anything new from scratch.
+
+This has a direct consequence for how you work. The patterns, struct layouts, field names, type aliases, and include conventions used by neighboring classes are already established in the existing source files. You are not writing in isolation. You are completing function bodies in a finished codebase, and your output must be consistent with everything around it.
 
 ### Before writing any new code, read the existing file it will land in
 
