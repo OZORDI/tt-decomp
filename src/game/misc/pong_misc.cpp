@@ -761,3 +761,46 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
     // Return true if processing succeeded (non-zero result)
     return (result != 0);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pg (Page Group) — UI/Menu System Functions
+//
+// The "pg" prefix indicates page group functions, which are part of the game's
+// UI and menu management system. These functions handle UI state, input
+// processing, and page transitions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Forward declaration for pg_6F68 (not yet lifted)
+extern "C" uint8_t pg_6F68(void* arg1, void* arg2, int param1, 
+                           uint32_t* stackData, int param2, int param3);
+
+/**
+ * pg_6770_fw @ 0x821F6770 | size: 0x5C
+ *
+ * Boolean wrapper for pg_6F68 with argument swapping.
+ * 
+ * This function swaps the first two arguments before calling pg_6F68,
+ * passes a stack-allocated structure {4, 0}, and returns a boolean result.
+ * The "_fw" suffix likely indicates "forward" or "wrapper".
+ *
+ * @param arg1 First argument (becomes second in pg_6F68 call)
+ * @param arg2 Second argument (becomes first in pg_6F68 call)
+ * @return true if pg_6F68 returns non-zero, false otherwise
+ */
+bool pg_6770_fw(void* arg1, void* arg2) {
+    // Stack-allocated structure passed to pg_6F68
+    // First element: 4, Second element: 0
+    uint32_t stackData[2] = { 4, 0 };
+    
+    // Call pg_6F68 with swapped arguments:
+    //   - arg2 becomes first parameter
+    //   - arg1 becomes second parameter
+    //   - 9 is a constant parameter
+    //   - stackData is the structure pointer
+    //   - 1 is a flag parameter
+    //   - 0 is the final parameter
+    uint8_t result = pg_6F68(arg2, arg1, 9, stackData, 1, 0);
+    
+    // Return true if result is non-zero, false otherwise
+    return (result != 0);
+}

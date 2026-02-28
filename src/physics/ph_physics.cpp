@@ -252,3 +252,38 @@ void rage::phBoundRibbon::CopyFrom(const rage::phBoundRibbon* source) {
     this->field_0xA0 = source->field_0xA0;  // +160
     this->field_0xA4 = source->field_0xA4;  // +164
 }
+
+/**
+ * ph_1B58_h @ 0x82451B58 | size: 0x3C
+ *
+ * Constructor for a small physics object with intrusive linked list support.
+ * Initializes the object with a vtable, sets up circular list pointers
+ * (prev/next both point to self initially), and copies a 20-byte identifier
+ * from the source buffer.
+ *
+ * This pattern is common in RAGE for objects that need to be part of
+ * intrusive doubly-linked lists (e.g., active physics objects, collision
+ * candidates, or named resource pools).
+ *
+ * @param name - Pointer to 20-byte name/identifier buffer to copy
+ */
+void ph_1B58_h(void* thisPtr, const char* name) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    
+    // Set vtable pointer at offset 0
+    *(void**)(obj + 0) = (void*)0x8200460C;
+    
+    // Initialize circular doubly-linked list pointers
+    // Both prev and next point to self initially
+    *(void**)(obj + 4) = thisPtr;  // prev = this
+    *(void**)(obj + 8) = thisPtr;  // next = this
+    
+    // Copy 20-byte name/identifier from source to offset +16
+    // Using byte-by-byte copy as in original assembly (mtctr + loop)
+    const char* src = name;
+    char* dst = (char*)(obj + 16);
+    
+    for (int i = 0; i < 20; i++) {
+        dst[i] = src[i];
+    }
+}
