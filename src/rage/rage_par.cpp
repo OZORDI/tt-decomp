@@ -540,14 +540,14 @@ void* parMemberArray::vfn_0(std::uint32_t freeSelf) {
  * rage::parMember vtable pointer.
  */
 void parMemberArray::E0D8_h() {
-    *reinterpret_cast<std::uint32_t*>(this) = kParMemberArrayVtable;
+    m_pVtable = reinterpret_cast<void**>(static_cast<std::uintptr_t>(kParMemberArrayVtable));
 
     if (m_pElementSerializer != nullptr) {
         using ScalarDtorFn = void (*)(void* self, std::uint32_t freeSelf);
         GetVirtualSlot<ScalarDtorFn>(m_pElementSerializer, 0)(m_pElementSerializer, 1u);
     }
 
-    *reinterpret_cast<std::uint32_t*>(this) = kParMemberVtable;
+    m_pVtable = reinterpret_cast<void**>(static_cast<std::uintptr_t>(kParMemberVtable));
 }
 
 /**
