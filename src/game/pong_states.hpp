@@ -84,7 +84,7 @@ struct pongCreditsContext {
     pongPageGroup*  m_pPageGroup;           // +0x18  UI page group (null until Init)
     uint8_t         m_bActive;              // +0x1C  credits currently showing
 
-    virtual ~pongCreditsContext(bool shouldFree = false); // [0]  @ 0x82309C38
+    virtual ~pongCreditsContext(); // [0]  @ 0x82309C38
     virtual bool CanTransition();          // [11] @ 0x82309D38
     virtual void OnEnterCredits();         // [16] @ 0x82309E18
     virtual void OnExitCredits();          // [18] @ 0x82309F38
@@ -100,11 +100,23 @@ struct pongCreditsContext {
 //   +0x04  m_pHSMContext  — rage::hsmContext* (passed to transition helpers)
 //   +0x08  m_pContext     — pongCreditsContext* allocated in Init()
 // ─────────────────────────────────────────────────────────────────────────────
+struct pongAttractState {
+    void**      vtable;           // +0x00
+
+    // ── virtual methods ──
+    virtual void Reset();  // [7] @ 0x823057e8
+    virtual void Shutdown();  // [8] @ 0x82306ea8
+    virtual void OnEnter();  // [11] @ 0x823058e0
+    virtual void OnExit();  // [12] @ 0x823059a8
+    virtual void GetName();  // [13] @ 0x82305a60
+    virtual void ProcessInput();  // [14] @ 0x82305800
+};
+
 struct pongCreditsState : public pongAttractState {
     void*               m_pHSMContext;   // +0x04  rage::hsmContext for transitions
     pongCreditsContext* m_pContext;      // +0x08  the live credits context
 
-    virtual ~pongCreditsState(bool shouldFree = false); // [0]  @ 0x8230A000
+    virtual ~pongCreditsState(); // [0]  @ 0x8230A000
     virtual void OnEnter(int prevStateIdx);             // [11] @ 0x8230A150
     virtual void OnExit(int nextStateIdx);              // [12] @ 0x8230A268
     virtual void* GetContext();                         // [13] @ 0x82309C28
@@ -139,17 +151,7 @@ struct pongAttractContext {
 };
 
 // ── pongAttractState  [vtable @ 0x8205E0AC] ──────────────────────────
-struct pongAttractState {
-    void**      vtable;           // +0x00
 
-    // ── virtual methods ──
-    virtual void Reset();  // [7] @ 0x823057e8
-    virtual void Shutdown();  // [8] @ 0x82306ea8
-    virtual void OnEnter();  // [11] @ 0x823058e0
-    virtual void OnExit();  // [12] @ 0x823059a8
-    virtual void GetName();  // [13] @ 0x82305a60
-    virtual void ProcessInput();  // [14] @ 0x82305800
-};
 
 // ── pongBootState  [vtable @ 0x82059684] ──────────────────────────
 struct pongBootState {
@@ -185,7 +187,7 @@ struct pongDialogContext {
     int32_t     m_nextStateIdx;         // +0x1C  state to transition to (-1 init)
     uint8_t     m_bSkipClose;           // +0x20  suppress Close on exit
 
-    virtual ~pongDialogContext(bool shouldFree = false); // [0]  @ 0x8230C7A0
+    virtual ~pongDialogContext(); // [0]  @ 0x8230C7A0
     virtual void Update();              // [16] @ 0x8230C8A8  — checks dialog ready, transitions
     virtual void OnExit();              // [18] @ 0x8230C918  — closes dialog page group
     virtual void Register();            // [23] @ 0x8230C808  — allocates page group, registers
@@ -206,7 +208,7 @@ struct pongDialogState : public pongAttractState {
     uint8_t             m_savedOverlay;  // +0x08  saved overlay state
     pongDialogContext*  m_pContext;      // +0x0C  the live dialog context
 
-    virtual ~pongDialogState(bool shouldFree = false);   // [0]  @ 0x8230CC20
+    virtual ~pongDialogState();   // [0]  @ 0x8230CC20
     virtual void ProcessInput();         // [7]  @ 0x8230CC88  — forwards to context slot 4
     virtual void Teardown();             // [8]  @ 0x8230CD60  — destroys context
     virtual void OnEnter(int prevStateIdx);  // [11] @ 0x8230CDD0
@@ -281,7 +283,7 @@ struct pongLegalsContext {
     void*       m_pPageGroup;           // +0x14  UI page group (null until Init)
     uint8_t     m_bInputDetected;       // +0x18  input detected → ready to advance
 
-    virtual ~pongLegalsContext(bool shouldFree = false); // [0]  @ 0x82310ED0
+    virtual ~pongLegalsContext(); // [0]  @ 0x82310ED0
     virtual bool CanTransition();       // [12] @ 0x82310F60  — destroys page group, returns true
     virtual void Update();              // [16] @ 0x82310FB8  — polls input, transitions when ready
     virtual void OnExit();              // [18] @ 0x82311070  — forwards Close to page group

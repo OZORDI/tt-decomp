@@ -30,6 +30,8 @@
  */
 
 #include "rage/rage_system.hpp"
+#include "grc/grc_setup_types.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -65,6 +67,7 @@ extern void*  g_pGrcSceneB;     // @ (lis(-32161) + -17884)
 
 // Hardware device vtable (16-byte grcDevice objects get this stamped)
 extern void*  g_grcDeviceVtable[];  // @ 0x824DC5C4 (lis(-32253) + 21764)
+extern uint32_t g_grcInstanceIdSeed;  // @ 0x824DC690 — per-object instance ID seed
 
 #include "rage/memory.h"
 
@@ -140,12 +143,12 @@ void grcSetup_Init(struct grcSetup* self)
 void grcSetup_Startup(void)
 {
     // ── Step 1: check grc subsystem 1 availability ──────────────────────
-    bool sub1Live = (g_grcSubsystem1.ptr != NULL);
+    bool sub1Live = (g_grcSubsystem1.pInstance != NULL);
     if (sub1Live)
         g_grcReadyFlag = 1;
 
     // ── Step 2: create device or physics object ─────────────────────────
-    bool sub2Live = (g_grcSubsystem2.ptr != NULL);
+    bool sub2Live = (g_grcSubsystem2.pInstance != NULL);
 
     if (sub2Live) {
         // Small path: allocate a lightweight grcDevice shell (16 bytes, align 4).

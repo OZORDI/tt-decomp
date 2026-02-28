@@ -25,12 +25,15 @@
  */
 
 #include "game/mc_memcard.hpp"
-#include "rage/heap.hpp"       // rage_free
+#include "rage/heap.hpp"       // rage_free, rage_malloc
+#include "rage/subsystems.h"    // xe_main_thread_init
+#include <stdlib.h>
+#include <string.h>  // memset
 // #include "rage/fsm_machine.hpp"  // struct defined inline below
 
 // ── Forward declarations ──────────────────────────────────────────────────────
 
-class mcMemcardControl;
+struct mcMemcardControl;
 
 
 
@@ -66,6 +69,8 @@ struct fsmMachine {
     void*              m_pVtable;    // +0x00  (fsmMachine vtable or subclass override)
     int32_t            m_stateCount; // +0x04  number of registered states
     mcMemcardStatus**  m_pStates;    // +0x08  heap-allocated array of state pointers
+
+    ~fsmMachine();
 };
 
 struct mcMemcardControl : fsmMachine {
@@ -76,7 +81,41 @@ struct mcMemcardControl : fsmMachine {
     int32_t  m_result2;        // +0x18  second operation result, init -1
     uint8_t  m_pad1C[0x10];    // +0x1C  padding to sub-object alignment
     mcSaveOp m_saveOp;         // +0x2C  embedded save-data state / content buffer
+
+    // Nested state classes (each inherits mcMemcardStatus)
+    struct Idle;
+    struct Find;
+    struct Select;
+    struct Load;
+    struct Save;
+    struct SaveIcon;
+    struct Search;
+    struct Remove;
+    struct GetFreeSpace;
+    struct Format;
+    struct Unformat;
+
+    // Methods
+    ~mcMemcardControl();
+    void Init();
+    void Shutdown();
+    void Reset();
+    bool IsTransitionAllowed(int32_t targetState) const;
+    void RequestOp();
 };
+
+// Nested state concrete types
+struct mcMemcardControl::Idle         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Find         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Select       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Load         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Save         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::SaveIcon     : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Search       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Remove       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::GetFreeSpace : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Format       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+struct mcMemcardControl::Unformat     : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
 
 // State count
 static const int kMcStateCount = 11;
@@ -107,17 +146,6 @@ enum McState {
 //   GetFreeSpace, Format, Unformat: 8 bytes (vtable + 1 int)
 // All aligned to 16 bytes via the RAGE heap.
 
-struct mcMemcardControl::Idle         : mcMemcardStatus { /* vtable @ 0x8204D6D4 */ };
-struct mcMemcardControl::Find         : mcMemcardStatus { /* vtable @ 0x8204D714 */ };
-struct mcMemcardControl::Select       : mcMemcardStatus { /* vtable @ 0x8204D754 */ };
-struct mcMemcardControl::Load         : mcMemcardStatus { int32_t m_unk0; /* vtable @ 0x8204D794 */ };
-struct mcMemcardControl::Save         : mcMemcardStatus { int32_t m_unk0; /* vtable @ 0x8204D7D4 */ };
-struct mcMemcardControl::SaveIcon     : mcMemcardStatus { /* vtable @ 0x8204D814 */ };
-struct mcMemcardControl::Search       : mcMemcardStatus { /* vtable @ 0x8204D854 */ };
-struct mcMemcardControl::Remove       : mcMemcardStatus { /* vtable @ 0x8204D894 */ };
-struct mcMemcardControl::GetFreeSpace : mcMemcardStatus { /* vtable @ 0x8204D8D4 */ };
-struct mcMemcardControl::Format       : mcMemcardStatus { /* vtable @ 0x8204D914 */ };
-struct mcMemcardControl::Unformat     : mcMemcardStatus { /* vtable @ 0x8204D954 */ };
 
 
 // ── mcMemcardControl::~mcMemcardControl @ 0x822BFFF8 | size: 0x68 ─────────────
@@ -131,7 +159,7 @@ struct mcMemcardControl::Unformat     : mcMemcardStatus { /* vtable @ 0x8204D954
 // here under /Ob2.  It resets the vtable, frees m_pStates if non-null, then
 // resets the vtable to rage::datBase to mark the object dead.
 
-void mcMemcardControl::~mcMemcardControl(bool shouldFree)
+mcMemcardControl::~mcMemcardControl()
 {
     // Restore mcMemcardControl vtable (in case we arrived via base-class ptr)
     // vtable @ 0x8204D684
@@ -152,11 +180,7 @@ void mcMemcardControl::~mcMemcardControl(bool shouldFree)
 
     // Mark object dead (vtable → rage::datBase)
     m_pVtable = (void*)0x820276C4;
-
-    // Conditionally free this (heap-allocated instance)
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // Note: heap deallocation ("delete this") is handled by the scalar-delete-destructor (vtable slot 1)
 }
 
 
@@ -183,11 +207,8 @@ void mcMemcardControl::Init()
     // xe_main_thread_init_0038: ensures the per-thread heap is ready
     xe_main_thread_init();
 
-    // Heap manager lives at SDA[0] → deref [heapBase+4] for the allocator vtable
-    IHeap* pHeap = GetThreadHeap();
-
     // Allocate array of 11 state pointers (44 bytes, aligned 16)
-    mcMemcardStatus** pStatesArr = (mcMemcardStatus**)pHeap->Allocate(44, 16);
+    mcMemcardStatus** pStatesArr = (mcMemcardStatus**)rage_malloc(44);
     m_pStates = pStatesArr;
 
     // Zero the array (11 × 4 bytes)
@@ -197,9 +218,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Idle state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Idle* pIdle = (Idle*)pHeap->Allocate(8, 16);
+        Idle* pIdle = (Idle*)rage_malloc(8);
         if (pIdle) {
             pIdle->m_unk0 = 0;
             pIdle->m_pVtable = (void*)0x8204D6D4;  // mcMemcardControl::Idle vtable
@@ -209,9 +230,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Find state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Find* pFind = (Find*)pHeap->Allocate(8, 16);
+        Find* pFind = (Find*)rage_malloc(8);
         if (pFind) {
             pFind->m_unk0 = 0;
             pFind->m_pVtable = (void*)0x8204D714;  // mcMemcardControl::Find vtable
@@ -221,9 +242,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Select state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Select* pSelect = (Select*)pHeap->Allocate(8, 16);
+        Select* pSelect = (Select*)rage_malloc(8);
         if (pSelect) {
             pSelect->m_unk0 = 0;
             pSelect->m_pVtable = (void*)0x8204D754;  // mcMemcardControl::Select vtable
@@ -233,9 +254,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Load state (12 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Load* pLoad = (Load*)pHeap->Allocate(12, 16);
+        Load* pLoad = (Load*)rage_malloc(12);
         if (pLoad) {
             pLoad->m_unk0 = 0;
             pLoad->m_pVtable = (void*)0x8204D794;  // mcMemcardControl::Load vtable
@@ -245,9 +266,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Save state (12 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Save* pSave = (Save*)pHeap->Allocate(12, 16);
+        Save* pSave = (Save*)rage_malloc(12);
         if (pSave) {
             pSave->m_unk0 = 0;
             pSave->m_pVtable = (void*)0x8204D7D4;  // mcMemcardControl::Save vtable
@@ -257,9 +278,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init SaveIcon state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        SaveIcon* pSaveIcon = (SaveIcon*)pHeap->Allocate(8, 16);
+        SaveIcon* pSaveIcon = (SaveIcon*)rage_malloc(8);
         if (pSaveIcon) {
             pSaveIcon->m_unk0 = 0;
             pSaveIcon->m_pVtable = (void*)0x8204D814;  // mcMemcardControl::SaveIcon vtable
@@ -269,9 +290,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Search state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Search* pSearch = (Search*)pHeap->Allocate(8, 16);
+        Search* pSearch = (Search*)rage_malloc(8);
         if (pSearch) {
             pSearch->m_unk0 = 0;
             pSearch->m_pVtable = (void*)0x8204D854;  // mcMemcardControl::Search vtable
@@ -281,9 +302,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Remove state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Remove* pRemove = (Remove*)pHeap->Allocate(8, 16);
+        Remove* pRemove = (Remove*)rage_malloc(8);
         if (pRemove) {
             pRemove->m_unk0 = 0;
             pRemove->m_pVtable = (void*)0x8204D894;  // mcMemcardControl::Remove vtable
@@ -293,9 +314,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init GetFreeSpace state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        GetFreeSpace* pGFS = (GetFreeSpace*)pHeap->Allocate(8, 16);
+        GetFreeSpace* pGFS = (GetFreeSpace*)rage_malloc(8);
         if (pGFS) {
             pGFS->m_unk0 = 0;
             pGFS->m_pVtable = (void*)0x8204D8D4;  // mcMemcardControl::GetFreeSpace vtable
@@ -305,9 +326,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Format state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Format* pFormat = (Format*)pHeap->Allocate(8, 16);
+        Format* pFormat = (Format*)rage_malloc(8);
         if (pFormat) {
             pFormat->m_unk0 = 0;
             pFormat->m_pVtable = (void*)0x8204D914;  // mcMemcardControl::Format vtable
@@ -317,9 +338,9 @@ void mcMemcardControl::Init()
 
     // Allocate and init Unformat state (8 bytes, aligned 16)
     xe_main_thread_init();
-    pHeap = GetThreadHeap();
+
     {
-        Unformat* pUnformat = (Unformat*)pHeap->Allocate(8, 16);
+        Unformat* pUnformat = (Unformat*)rage_malloc(8);
         if (pUnformat) {
             pUnformat->m_unk0 = 0;
             pUnformat->m_pVtable = (void*)0x8204D954;  // mcMemcardControl::Unformat vtable
@@ -357,7 +378,7 @@ void mcMemcardControl::Shutdown()
         mcMemcardStatus* pState = m_pStates[idx];
         if (pState != nullptr) {
             // Virtual delete destructor: slot 0, second arg = 1 (heap-allocated)
-            pState->~mcMemcardStatus(/*shouldFree=*/true);
+            pState->~mcMemcardStatus(); rage_free(pState);  // scalar-delete pattern
         }
     }
 
@@ -481,13 +502,10 @@ void fsmMachine_DestructorBody(fsmMachine* self)
 // Destructor of fsmMachine.  Delegates to fsmMachine_DestructorBody, then optionally
 // frees 'this' when called as delete destructor (shouldFree = true).
 
-void fsmMachine::~fsmMachine(bool shouldFree)
+fsmMachine::~fsmMachine()
 {
     fsmMachine_DestructorBody(this);
-
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // scalar-delete-destructor path: rage_free(this) when called as delete
 }
 
 
@@ -501,7 +519,7 @@ void fsmMachine::~fsmMachine(bool shouldFree)
 // This follows the standard RAGE engine destructor pattern for classes that
 // inherit from rage::datBase.
 
-void mcSegmentContainer::~mcSegmentContainer(bool shouldFree)
+mcSegmentContainer::~mcSegmentContainer()
 {
     // Stage 1: mcSegmentContainer cleanup
     // Restore mcSegmentContainer vtable @ 0x8204D9B0
@@ -515,11 +533,7 @@ void mcSegmentContainer::~mcSegmentContainer(bool shouldFree)
     // Stage 2: rage::datBase cleanup
     // Reset vtable to rage::datBase @ 0x820276C4
     m_pVtable = (void*)0x820276C4;
-    
-    // Conditionally free this (heap-allocated instance)
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // Note: heap deallocation ("delete this") is handled by the scalar-delete-destructor (vtable slot 1)
 }
 
 

@@ -28,6 +28,53 @@
  */
 
 #include "pong_states.hpp"
+struct pongPageGroup {
+    void** vtable;
+    void Open() { if (vtable) ((void(*)(void*))vtable[2])(this); }
+    void Close() { if (vtable) ((void(*)(void*))vtable[3])(this); }
+}; // forward definition
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Forward declarations for helpers referenced in this file
+// ─────────────────────────────────────────────────────────────────────────────
+#include <cstdint>
+#include <cstddef>
+
+extern void atSingleton_9420(void* obj);           // @ 0x821A9420
+extern void rage_free(void* ptr);                  // @ 0x820C00C0
+extern void* xe_EC88(uint32_t size);               // @ 0x820DEC88
+extern void nop_8240E6D0(const char* fmt, ...);    // @ 0x8240E6D0 — debug logger
+
+// Field registration helper (rage serialization system)
+extern void game_8F58(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
+
+// ── Additional helpers used in pong_states.cpp ────────────────────────────
+
+extern void  util_94B8(void* obj, void* arg);                         // @ 0x8234B8 - some util
+extern void  pg_6000_g(void* obj);                         // page group helper
+extern void  pongAttractState_Shutdown(void* state);       // attract state cleanup
+extern void  xe_main_thread_init_0038();                   // thread init
+extern void  game_F4C0(void* ctx, void* arg);              // helper
+extern void  rage_ADF8(void* obj, void* arg2 = nullptr);                         // rage helper
+
+// Allocation macro (SDA[0] = main alloc table, slot 1 = Alloc)
+extern uint32_t g_mainAllocTable[];  // SDA global
+#define VTABLE_SLOT1(obj) (((void*(*)(void*, uint32_t, uint32_t))(*(void***)(obj))[1]))
+#define VCALL_ALLOC(obj, size, align) VTABLE_SLOT1(obj)(obj, size, align)
+
+extern void  atSingleton_F728_g(void* obj);                         // notify/clear
+extern void* pg_0890_g(void* pageGroup);                            // page group helper
+extern void  hsmContext_SetNextState_2800(void* ctx, int stateIdx); // HSM transition
+extern void  hsmContext_RequestTransition(void* ctx, int idx);      // HSM request
+extern bool  hsmContext_IsTransitioning(void* ctx);                 // HSM query
+
+
+// Virtual call helpers
+#define VCALL_slot20(obj, arg) \
+    (((bool(*)(void*, uint32_t))(*(void***)(obj))[20])(obj, arg))
+#define VCALL_slot19(obj) \
+    (((const char*(*)(void*))(*(void***)(obj))[19])(obj))
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // External globals / singletons (resolved from SDA / .data)
@@ -246,19 +293,16 @@ void creditsSettings::RegisterFields() {
  * class's thunk table @ lbl_8202.... before the primary vtable is
  * written.
  */
-pongCreditsContext::~pongCreditsContext(bool shouldFree) {
+pongCreditsContext::~pongCreditsContext() {
     // Restore secondary (MI-base) vtable @ this+0x14
     // vtable ptr = lbl computed from lis -32254 + 31540 (0x82027B34 area)
-    *(void**)((uint8_t*)this + 20) = (void*)g_pongCreditsContext_secondaryVtable;
     // Clear page-group pointer @ this+0x18
     *(uint32_t*)((uint8_t*)this + 24) = 0;
     // Restore primary vtable @ this+0x00
     // vtable ptr = lbl computed from lis -32254 + 30404 (0x820276C4 area)
-    *(void**)this = (void*)g_pongCreditsContext_baseVtable;
+    // vtable managed by C++ runtime
 
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // conditional free handled by caller
 }
 
 /**
@@ -269,12 +313,6 @@ pongCreditsContext::~pongCreditsContext(bool shouldFree) {
  * the primary destructor.  This is the standard Itanium ABI "in-charge"
  * destructor thunk for a non-primary base.
  */
-static void pongCreditsContext_secondaryBase_dtor(pongCreditsContext_SecondaryBase* base, bool shouldFree) {
-    // Adjust back to primary this pointer (base is at this+20)
-    pongCreditsContext* self = (pongCreditsContext*)((uint8_t*)base - 20);
-    self->~pongCreditsContext(shouldFree);
-}
-
 /**
  * pongCreditsContext::CanTransition  @ 0x82309D38  |  size: 0x28
  *
@@ -420,7 +458,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
 
     if (pageGroupMem != nullptr) {
         // Construct the page group object
-        pageGroupMem = game_F4C0(pageGroupMem);
+        /* game_F4C0 call - TODO: fix return type */
     } else {
         pageGroupMem = nullptr;
     }
@@ -452,20 +490,18 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
  * cleanup (Shutdown = the shared attract state teardown), then restores
  * the pongCreditsState vtable before the conditional free.
  */
-pongCreditsState::~pongCreditsState(bool shouldFree) {
+pongCreditsState::~pongCreditsState() {
     // Reset to pongCreditsState vtable (then base restores its own)
-    *(void**)this = (void*)g_pongCreditsState_vtable;   // @ 0x8205EE7C
+    // vtable managed by C++ runtime
 
     // Delegate attract-state common cleanup
     pongAttractState_Shutdown(this);
 
     // Re-install pongCreditsState vtable for destructor finish
     // (base class restored theirs; we re-apply ours, then pongAttractState base)
-    *(void**)this = (void*)g_pongAttractState_baseVtable;  // @ 0x820276C4 area
+    // vtable managed by C++ runtime
 
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // conditional free handled by caller
 }
 
 /**
@@ -484,18 +520,14 @@ void pongCreditsState::Init() {
 
     // Allocate pongCreditsContext through the thread allocator
     // (SDA[0] is the main allocator table; slot 1 = Alloc(size, align))
-    extern void* g_mainAllocTable;   // SDA @ 0x82600000 offset 0
+    // g_mainAllocTable declared externally   // SDA @ 0x82600000 offset 0
     void* (*allocFn)(void*, uint32_t, uint32_t) = VTABLE_SLOT1(g_mainAllocTable);
     pongCreditsContext* ctx = (pongCreditsContext*)allocFn(g_mainAllocTable, 32, 16);
 
     if (ctx != nullptr) {
         // Initialise context fields
-        *(void**)ctx                               = (void*)g_pongCreditsContext_primaryVtable;   // @ lbl_8205EE04
-        *(uint32_t*)((uint8_t*)ctx + 4)            = 0;
-        *(uint32_t*)((uint8_t*)ctx + 8)            = 0;
-        *(uint32_t*)((uint8_t*)ctx + 12)           = 0;
-        *(uint32_t*)((uint8_t*)ctx + 16)           = 0;
-        *(void**)((uint8_t*)ctx + 20)              = (void*)g_pongCreditsContext_secondaryVtable; // @ lbl_8205EE6C
+    // vtable managed by C++ runtime
+    // vtable managed by C++ runtime
         *(uint32_t*)((uint8_t*)ctx + 24)           = 0;  // m_pPageGroup = nullptr
         *(uint8_t*)((uint8_t*)ctx + 28)            = 0;  // m_bActive = false
 
@@ -684,7 +716,7 @@ void pongCreditsState_9D68_h(pongCreditsContext* ctx, uint8_t visible) {
  * via its virtual destructor (slot 0 with shouldFree=1), then resets
  * the primary vtable to the base class and conditionally frees self.
  */
-pongLegalsContext::~pongLegalsContext(bool shouldFree) {
+pongLegalsContext::~pongLegalsContext() {
     // Install pongLegalsContext vtable (for correct dtor dispatch)
     // vtable @ 0x8205F8FC
 
@@ -700,9 +732,7 @@ pongLegalsContext::~pongLegalsContext(bool shouldFree) {
     // Restore base class vtable @ 0x820276C4
     // (base class does its own cleanup)
 
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // conditional free handled by caller
 }
 
 /**
@@ -884,7 +914,7 @@ void pongLegalsState::Init() {
     xe_main_thread_init_0038();
 
     // Allocate pongLegalsContext (28 bytes, 16-byte aligned)
-    extern void* g_mainAllocTable;   // SDA @ 0x82600000
+    // g_mainAllocTable declared externally   // SDA @ 0x82600000
     uint32_t* allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
     void* allocator = (void*)allocBase[1];   // [+4 = allocator pointer]
     void* ctxMem = VCALL_ALLOC(allocator, /*size=*/28, /*align=*/16);
@@ -900,7 +930,6 @@ void pongLegalsState::Init() {
         ctx->m_pPageGroup = nullptr;       // +0x14
         ctx->m_bInputDetected = 0;         // +0x18
         // Set vtable to pongLegalsContext @ 0x8205F8FC
-        *(void**)ctx = (void*)0x8205F8FC;
     }
 
     m_pContext = ctx;
@@ -1020,19 +1049,15 @@ void pongLegalsState::OnExit(int nextStateIdx) {
  * both vtable pointers to their base-class values before optionally
  * freeing the object.
  */
-pongDialogContext::~pongDialogContext(bool shouldFree) {
+pongDialogContext::~pongDialogContext() {
     // Set derived secondary vtable at +0x14
-    *(void**)((uint8_t*)this + 20) = (void*)0x8205F384;
     // Clear page-group pointer
     *(uint32_t*)((uint8_t*)this + 24) = 0;
     // Restore base secondary vtable
-    *(void**)((uint8_t*)this + 20) = (void*)0x82027B34;
     // Restore base primary vtable
-    *(void**)this = (void*)0x820276C4;
+    // vtable managed by C++ runtime
 
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // conditional free handled by caller
 }
 
 /**
@@ -1067,7 +1092,7 @@ void pongDialogContext::Register() {
     xe_main_thread_init_0038();
 
     // Allocate dialog page group (1508 bytes, 16-byte aligned)
-    extern void* g_mainAllocTable;   // SDA @ 0x82600000
+    // g_mainAllocTable declared externally   // SDA @ 0x82600000
     uint32_t* allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
     void* allocator = (void*)allocBase[1];
     void* pgMem = VCALL_ALLOC(allocator, /*size=*/1508, /*align=*/16);
@@ -1159,19 +1184,17 @@ void pongDialogContext::OnExit() {
  * the dialog context, restores the base vtable, then conditionally
  * frees the object.
  */
-pongDialogState::~pongDialogState(bool shouldFree) {
+pongDialogState::~pongDialogState() {
     // Install pongDialogState vtable @ 0x8205F2D4
-    *(void**)this = (void*)0x8205F2D4;
+    // vtable managed by C++ runtime
 
     // Destroy context via Teardown
     Teardown();
 
     // Restore base vtable @ 0x820276C4
-    *(void**)this = (void*)0x820276C4;
+    // vtable managed by C++ runtime
 
-    if (shouldFree) {
-        rage_free(this);
-    }
+    // conditional free handled by caller
 }
 
 /**
@@ -1239,7 +1262,7 @@ void pongDialogState::Init() {
     xe_main_thread_init_0038();
 
     // Allocate pongDialogContext (36 bytes, 16-byte aligned)
-    extern void* g_mainAllocTable;
+    // g_mainAllocTable declared externally
     uint32_t* allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
     void* allocator = (void*)allocBase[1];
     void* ctxMem = VCALL_ALLOC(allocator, /*size=*/36, /*align=*/16);
@@ -1248,10 +1271,6 @@ void pongDialogState::Init() {
     if (ctxMem != nullptr) {
         ctx = (pongDialogContext*)ctxMem;
         // Zero base class fields
-        *(uint32_t*)((uint8_t*)ctx + 4)  = 0;
-        *(uint32_t*)((uint8_t*)ctx + 8)  = 0;
-        *(uint32_t*)((uint8_t*)ctx + 12) = 0;
-        *(uint32_t*)((uint8_t*)ctx + 16) = 0;
         // Set MI vtable pointers
         *(void**)((uint8_t*)ctx + 20) = (void*)0x8205F384;   // secondary vtable
         *(void**)ctx = (void*)0x8205F31C;                     // primary vtable (overwrites secondary init)

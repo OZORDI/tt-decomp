@@ -30,7 +30,7 @@ struct LocomotionController {
     virtual void vfn_15();  // [15] @ 0x820d3478
 };
 
-namespace LocomotionController {
+namespace LocomotionControllerInner {
 
 // ── LocomotionController::xmlNodeStructEntryPose  [vtable @ 0x8202E294] ──────────────────────────
 struct xmlNodeStructEntryPose {
@@ -40,7 +40,7 @@ struct xmlNodeStructEntryPose {
     virtual void vfn_5();  // [5] @ 0x820df128
 };
 
-} // namespace LocomotionController
+} // namespace LocomotionControllerInner
 
 // ── LocomotionState  [vtable @ 0x8202E154] ──────────────────────────
 struct LocomotionState {
@@ -488,7 +488,7 @@ struct pcrServeData {
     virtual void vfn_22();  // [22] @ 0x820dd9f0
 };
 
-namespace pcrServeData {
+namespace pcrServeDataInner {
 
 // ── pcrServeData::xmlNodeStructServeType  [vtable @ 0x82028C00] ──────────────────────────
 struct xmlNodeStructServeType {
@@ -499,7 +499,7 @@ struct xmlNodeStructServeType {
     virtual void vfn_6();  // [6] @ 0x8210cc08
 };
 
-} // namespace pcrServeData
+} // namespace pcrServeDataInner
 
 // ── pcrSwingAbortData  [vtable @ 0x8202EA64] ──────────────────────────
 struct pcrSwingAbortData {
@@ -512,7 +512,7 @@ struct pcrSwingAbortData {
     virtual void vfn_22();  // [22] @ 0x820eb510
 };
 
-namespace pcrSwingAbortData {
+namespace pcrSwingAbortDataInner {
 
 // ── pcrSwingAbortData::xmlNodeStructApproxHitZone  [vtable @ 0x8202EAC8] ──────────────────────────
 struct xmlNodeStructApproxHitZone {
@@ -523,7 +523,7 @@ struct xmlNodeStructApproxHitZone {
     virtual void vfn_6();  // [6] @ 0x8210cca8
 };
 
-} // namespace pcrSwingAbortData
+} // namespace pcrSwingAbortDataInner
 
 // ── pcrSwingAbortSet  [vtable @ 0x8202E484] ──────────────────────────
 struct pcrSwingAbortSet {
@@ -638,7 +638,7 @@ struct pcrSwingSet {
     virtual void vfn_22();  // [22] @ 0x820ea238
 };
 
-namespace pcrSwingSet {
+namespace pcrSwingSetInner {
 
 // ── pcrSwingSet::xmlNodeStructSpecialty  [vtable @ 0x8202E978] ──────────────────────────
 struct xmlNodeStructSpecialty {
@@ -648,7 +648,7 @@ struct xmlNodeStructSpecialty {
     virtual void vfn_5();  // [5] @ 0x820eb200
 };
 
-} // namespace pcrSwingSet
+} // namespace pcrSwingSetInner
 
 // ── pcrSwingSolver  [vtable @ 0x82028964] ──────────────────────────
 struct pcrSwingSolver {
@@ -1068,44 +1068,78 @@ struct pongLookAtDriver {
 // Confirmed methods: CalcInitMatrix
 // Field hints: m_position:Vector3, m_remoteRestMatrix:Matrix34, m_restMatrix:Matrix34
 struct pongMover {
-    void**      vtable;           // +0x00
+    /* Confirmed field layout — derived from pongMover_ctor_B5F0,
+     * pongMover_Reset, and pongMover_CalcInitMatrix scaffolds.
+     *
+     *  +0x00  vtable*
+     *  +0x04..+0x0F  unknown (not touched by ctor/Reset)
+     *  +0x10..+0x3F  twelve floats (zeroed by ctor; X/Y set from initMatrix in Reset)
+     *  +0x40  m_flags byte  (bit 4 = useRemoteMatrix; bits 1,2 cleared by Reset)
+     *  +0x41..+0x43  pad
+     *  +0x44  m_creatureIndex  (uint32 index into global creature table)
+     *  +0x48..+0x57  four floats (zeroed by Reset)
+     *  +0x58..+0x5F  pad
+     *  +0x60..+0x6F  16 bytes zeroed by Reset (vxor/stvx)
+     *  +0x70  m_pCreature  (creature object back-pointer, adjusted by ctor)
+     *  +0x74  m_bIsMoving  (byte, set 1 by Reset)
+     *  +0x75..+0x77  pad
+     *  +0x78  m_moveTimer  (float, zeroed by Reset)
+     *  +0x7C  m_targetTimer (float, zeroed by Reset)
+     *  +0x80..+0x83  unknown
+     *  +0x84  m_bHasTarget    (byte, zeroed by Reset)
+     *  +0x85  m_bTargetReached (byte, zeroed by Reset)
+     *  +0x86  m_bPathBlocked  (byte, zeroed by Reset)
+     *  +0x87..+0x8F  pad
+     *  +0x90..+0xCF  m_remoteRestMatrix[16]  (64-byte 4x4 float matrix)
+     *  +0xD0..+0xDF  m_pathData[4]  (16 bytes, zeroed by Reset)
+     *  +0xE0  m_unkE0  (zeroed by ctor)
+     *  +0xE4  m_unkE4  (zeroed by ctor)
+     */
+    void**      vtable;                    /* +0x00 */
+    uint8_t     _pad04[12];               /* +0x04..+0x0F */
+    float       m_posX;                   /* +0x10  X from initMatrix col 3 row 0 */
+    float       m_posY;                   /* +0x14  Y from initMatrix col 3 row 1 */
+    float       m_posZ;                   /* +0x18  Z (zeroed by Reset) */
+    float       m_unk1C;                  /* +0x1C */
+    float       m_unk20;                  /* +0x20 */
+    float       m_unk24;                  /* +0x24 */
+    float       m_unk28;                  /* +0x28 */
+    float       m_unk2C;                  /* +0x2C */
+    float       m_unk30;                  /* +0x30 */
+    float       m_unk34;                  /* +0x34 */
+    float       m_unk38;                  /* +0x38 */
+    float       m_unk3C;                  /* +0x3C */
+    uint8_t     m_flags;                  /* +0x40  bit4=useRemoteMtx; bits1,2 cleared by Reset */
+    uint8_t     _pad41[3];               /* +0x41 */
+    uint32_t    m_creatureIndex;          /* +0x44  index into g_pCreaturePool table */
+    float       m_unk48;                  /* +0x48 */
+    float       m_unk4C;                  /* +0x4C */
+    float       m_unk50;                  /* +0x50 */
+    float       m_unk54;                  /* +0x54 */
+    uint8_t     _pad58[8];               /* +0x58..+0x5F */
+    float       m_unk60[4];              /* +0x60  16 bytes zeroed by Reset */
+    void*       m_pCreature;             /* +0x70  creature object pointer (adjusted by ctor) */
+    uint8_t     m_bIsMoving;             /* +0x74  set 1 by Reset */
+    uint8_t     _pad75[3];               /* +0x75 */
+    float       m_moveTimer;             /* +0x78  time since last movement */
+    float       m_targetTimer;           /* +0x7C  time since target acquired */
+    uint8_t     _unk80[4];               /* +0x80 */
+    uint8_t     m_bHasTarget;            /* +0x84 */
+    uint8_t     m_bTargetReached;        /* +0x85 */
+    uint8_t     m_bPathBlocked;          /* +0x86 */
+    uint8_t     _pad87[9];               /* +0x87..+0x8F */
+    float       m_remoteRestMatrix[16];  /* +0x90  64-byte 4x4 matrix (remote-source rest pose) */
+    float       m_pathData[4];           /* +0xD0  16-byte path state, zeroed by Reset */
+    uint32_t    m_unkE0;                 /* +0xE0 */
+    uint32_t    m_unkE4;                 /* +0xE4 */
 
-    // ── field access clusters ──
-    uint32_t     field_0x0010;  // +0x0010  R:0 W:1
-    uint32_t     field_0x0014;  // +0x0014  R:0 W:1
-    uint32_t     field_0x0018;  // +0x0018  R:0 W:1
-    uint32_t     field_0x001c;  // +0x001c  R:0 W:1
-    uint32_t     field_0x0020;  // +0x0020  R:0 W:1
-    uint32_t     field_0x0024;  // +0x0024  R:0 W:1
-    uint32_t     field_0x0028;  // +0x0028  R:0 W:1
-    uint32_t     field_0x002c;  // +0x002c  R:0 W:1
-    uint32_t     field_0x0030;  // +0x0030  R:0 W:2
-    uint32_t     field_0x0034;  // +0x0034  R:0 W:2
-    uint32_t     field_0x0038;  // +0x0038  R:0 W:3
-    uint32_t     field_0x003c;  // +0x003c  R:0 W:1
-    uint8_t      field_0x0040;  // +0x0040  R:0 W:1
-    uint32_t     field_0x0044;  // +0x0044  R:1 W:0
-    uint32_t     field_0x0048;  // +0x0048  R:0 W:1
-    uint32_t     field_0x004c;  // +0x004c  R:0 W:1
-    uint32_t     field_0x0050;  // +0x0050  R:0 W:1
-    uint32_t     field_0x0054;  // +0x0054  R:0 W:1
-    uint8_t     _pad0x0070[24];
-    uint32_t     field_0x0070;  // +0x0070  R:2 W:1
-    uint8_t      field_0x0074;  // +0x0074  R:0 W:1
-    uint32_t     field_0x0078;  // +0x0078  R:0 W:1
-    uint32_t     field_0x007c;  // +0x007c  R:0 W:1
-    uint8_t      field_0x0084;  // +0x0084  R:0 W:1
-    uint8_t      field_0x0085;  // +0x0085  R:0 W:1
-    uint8_t      field_0x0086;  // +0x0086  R:0 W:1
-    uint8_t     _pad0x00e0[86];
-    uint32_t     field_0x00e0;  // +0x00e0  R:0 W:1
-    uint32_t     field_0x00e4;  // +0x00e4  R:0 W:1
-
-    // ── virtual methods ──
-    virtual ~pongMover();                  // [0] @ 0x820c9ef8
-
-    // ── non-virtual methods (from debug strings) ──
-    bool CalcInitMatrix();
+    /* non-virtual methods */
+    pongMover(void* creaturePool);              /* @ 0x820CB5F0 */
+    ~pongMover();                               /* @ 0x820C9EF8 */
+    void Reset(void* creaturePool);             /* @ 0x820C9F40 */
+    /* Called by Reset. outMatrix and self must be 16-byte aligned.
+     * bAltData: if low byte non-zero, uses global alt matrix source. */
+    void CalcInitMatrix(float* outMatrix, pongMover* self, uint8_t bAltData); /* @ 0x820CAC78 */
 };
 
 // ── pongPlayerShaderParams  [vtable @ 0x8203A8F8] ──────────────────────────

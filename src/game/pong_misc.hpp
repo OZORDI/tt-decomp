@@ -118,19 +118,13 @@ struct fontData {
     virtual void PostLoadProperties();  // [20] @ 0x8240bcc0
     virtual void Validate();  // [21] @ 0x8240bd08
     virtual void PostLoadChildren();  // [22] @ 0x8231f1f8
+
+    // ── fontData::xmlNodeStructFaceType  [vtable @ 0x82076658] ──
+    struct xmlNodeStructFaceType {
+        void**      vtable;           // +0x00
+        virtual void vfn_5();  // [5] @ 0x8240bcb0
+    };
 };
-
-namespace fontData {
-
-// ── fontData::xmlNodeStructFaceType  [vtable @ 0x82076658] ──────────────────────────
-struct xmlNodeStructFaceType {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_5();  // [5] @ 0x8240bcb0
-};
-
-} // namespace fontData
 
 // ── fsmMachine  [vtable @ 0x8204DD14] ──────────────────────────
 struct fsmMachine {
@@ -164,17 +158,11 @@ struct listItemData {
     virtual void PostLoadChildren();  // [22] @ 0x821e0f00
 };
 
-namespace listItemData {
-
-// ── listItemData::xmlNodeStructColType  [vtable @ 0x8204C408] ──────────────────────────
-struct xmlNodeStructColType {
+// listItemData::xmlNodeStructColType is a nested class; declared separately to avoid name conflict
+struct listItemData_xmlNodeStructColType {
     void**      vtable;           // +0x00
-
-    // ── virtual methods ──
     virtual void vfn_5();  // [5] @ 0x82218298
 };
-
-} // namespace listItemData
 
 // ── msgEventHandler  [2 vtables — template/MI] ──────────────────────────
 // Object size: 28 bytes (0x1C)
@@ -977,11 +965,25 @@ struct pongPlayer {
 };
 
 // ── pongSaveFile  [2 vtables — template/MI] ──────────────────────────
+// Save file event types
+static const uint16_t EVENT_SAVE_WRITE = 0x200F;  // 8207
+static const uint16_t EVENT_SAVE_LOAD  = 0x200E;  // 8206
+
 struct pongSaveFile {
-    void**      vtable;           // +0x00
+    // Layout (from binary analysis of pongSaveFile_5260):
+    //   +0x00 vtable (primary) @ 0x8203CB18
+    //   +0x04 m_pData — owned heap pointer (freed in dtor when m_entryCount != 0)
+    //   +0x08 m_entryCount — uint16_t, controls free of m_pData
+    //   +0x0C vtable2 (secondary, MI) @ 0x8203CB30
+    void*       m_pData;          // +0x04  owned heap pointer
+    uint16_t    m_entryCount;     // +0x08  entry count (non-zero triggers free)
+    uint8_t     _pad0A[2];        // +0x0A
 
     // ── virtual methods ──
-    virtual ~pongSaveFile();                  // [0] @ 0x821c5210
+    virtual ~pongSaveFile();                         // [0] @ 0x821c5210
+    void HandleEvent(uint16_t eventType);            // @ 0x821c7680
+    static void DestructorThunk(pongSaveFile* ptr);  // @ 0x821c7720
+    pongSaveFile();                                  // @ 0x821c5260
 };
 
 // ── pongXMVMovie  [vtable @ 0x82060AF4] ──────────────────────────

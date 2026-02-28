@@ -497,7 +497,7 @@ struct NetDataQuery {
     virtual void GetName();  // [13] @ 0x823d1850
 };
 
-namespace NetDataQuery {
+namespace NetDataQueryInner {
 
 // ── NetDataQuery::stateFinish  [vtable @ 0x8207128C] ──────────────────────────
 struct stateFinish {
@@ -539,7 +539,7 @@ struct stateRequestData {
     void**      vtable;           // +0x00
 };
 
-} // namespace NetDataQuery
+} // namespace NetDataQueryInner
 
 // ── NetLoadingThread  [vtable @ 0x8207114C] ──────────────────────────
 struct NetLoadingThread {
@@ -560,7 +560,7 @@ struct NetStateSync {
     virtual void GetName();  // [13] @ 0x823d1dd0
 };
 
-namespace NetStateSync {
+namespace NetStateSyncInner {
 
 // ── NetStateSync::stateEnterState  [vtable @ 0x82071494] ──────────────────────────
 struct stateEnterState {
@@ -636,7 +636,7 @@ struct stateWaitTime {
     virtual void GetName();  // [13] @ 0x823d2390
 };
 
-} // namespace NetStateSync
+} // namespace NetStateSyncInner
 
 // ── NetTimedMessageSortedQueue  [vtable @ 0x82070D84] ──────────────────────────
 struct NetTimedMessageSortedQueue {
@@ -1025,11 +1025,22 @@ struct ServeStartedMessage {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b8f68
-    virtual void vfn_2();  // [2] @ 0x823b9050
+    virtual void Deserialise(void* client);  // [2] @ 0x823b9050 (net packet read)
     virtual void vfn_4();  // [4] @ 0x823b9100
     virtual void vfn_5();  // [5] @ 0x823b8d28
     virtual void vfn_6();  // [6] @ 0x823b8df0
     virtual void vfn_7();  // [7] @ 0x823b8e00
+
+    // ── message payload ──
+    uint8_t  _pad[0xC8];         // alignment to known fields
+    float    m_timingRef;        // +0xC8  serve timing reference
+    float    m_targetPos[4];     // +0xCC  target position (16-byte vector)
+    float    m_velocityX;        // +0xDC  velocity components
+    float    m_velocityY;
+    float    m_velocityZ;
+    uint8_t  m_playerIndex;      // +0xE0  who is serving
+    uint8_t  m_bNotServer;       // +0xE1  is-not-server flag
+    uint8_t  m_bSecondaryPlayer; // +0xE2  secondary player flag
 };
 
 // ── ServeUnlockMessage  [vtable @ 0x8206FAF4] ──────────────────────────
@@ -1055,7 +1066,7 @@ struct SessionMessageRequester {
     virtual void GetName();  // [13] @ 0x823c9d80
 };
 
-namespace SessionMessageRequester {
+namespace SessionMessageRequesterInner {
 
 // ── SessionMessageRequester::stateAwaitingMessage  [vtable @ 0x82070B8C] ──────────────────────────
 struct stateAwaitingMessage {
@@ -1086,7 +1097,7 @@ struct stateRequestingMessage {
     virtual void vfn_14();  // [14] @ 0x823ca0d0
 };
 
-} // namespace SessionMessageRequester
+} // namespace SessionMessageRequesterInner
 
 // ── SessionTimeSyncMessage  [vtable @ 0x8206F5CC] ──────────────────────────
 struct SessionTimeSyncMessage {
@@ -1767,7 +1778,7 @@ struct pongLiveManager {
     void StatsReaderNotifyHandler();
 };
 
-namespace pongLiveManager {
+namespace pongLiveManagerInner {
 
 // ── pongLiveManager::SessionManager  [vtable @ 0x8206E65C] ──────────────────────────
 struct SessionManager {
@@ -1779,7 +1790,7 @@ struct SessionManager {
     virtual void vfn_2();  // [2] @ 0x823a9f80
 };
 
-} // namespace pongLiveManager
+} // namespace pongLiveManagerInner
 
 // ── pongNetMessageHolder  [73 vtables — template/MI] ──────────────────────────
 struct pongNetMessageHolder {
@@ -2003,41 +2014,6 @@ struct pongRemotePlayer {
 struct vec3;
 struct lfs_vec4 { float x, y, z, w; };
 
-struct ServeStartedMessage {
-    // ── vtable ─────────────────────────────────────────────────────────
-    void**    vtable;               // +0x000
-
-    // ── timing / position payload ───────────────────────────────────────
-    float     m_timingRef;          // +0x004  serve start timing reference
-    uint8_t   _pad0[8];
-    lfs_vec4  m_targetPos;          // +0x010  target position (16-byte aligned)
-    uint8_t   _pad1[0xBC];
-
-    // ── velocity / spin payload ─────────────────────────────────────────
-    float     m_velocityX;          // +0x0D0  (+208)
-    float     m_velocityY;          // +0x0D4  (+212)
-    float     m_velocityZ;          // +0x0D8  (+216)
-    float     m_spin;               // +0x0DC  (+220) spin/power value
-
-    // ── flag bytes ───────────────────────────────────────────────────────
-    uint8_t   m_playerIdx;          // +0x0E0  (+224) player index: who is serving (0 or 1)
-    uint8_t   m_bNotServer;         // +0x0E1  (+225) 0=this player is server, 1=not server
-                                    //                (inverted when stored as m_bIsServer)
-    uint8_t   m_playerIdx2;         // +0x0E2  (+226) secondary player / handedness flag
-
-    // ── vtable methods ───────────────────────────────────────────────────
-    virtual void       Deserialise(void* client);     // slot 1 — read fields from net stream
-    virtual void       Serialise(void* client);       // slot 2 — write fields to net stream
-    virtual void       Process(void* matchObj);       // slot 4 — apply to live game state
-    virtual uint16_t   GetIndexInPool() const;        // slot 5 — index in message pool
-    virtual void*      GetSingleton();                // slot 6 — pool/factory singleton
-    virtual const char* GetTypeName();                // slot 7 — ASCII type name string
-
-    // ── global singletons ────────────────────────────────────────────────
-    // g_pNetMsgSingleton   @ 0x825D11D0  — pool singleton pointer
-    // g_szServeStartedTypeName @ 0x8206E9D0
-    // g_pPlayerLerpTable   @ lis(-32158)+-23600, stride=416 bytes/player
-};
 
 // ── Global refs needed by Process() ────────────────────────────────────────
 extern void*    g_pNetMsgSingleton;         // @ 0x825D11D0

@@ -27,6 +27,7 @@
 
 #include "rage/rage_system.hpp"
 #include <stdint.h>
+#include "rage/grc_setup_types.h"  /* __mftb() */
 
 /* ── Forward declarations ─────────────────────────────────────────────────── */
 
@@ -52,7 +53,7 @@ extern void    pg_C3B8_g(void* pPgObj, int32_t mode);
 extern void    pg_6C40_g(void* pStream);
 
 /* gameLoop struct defined in render_loop.c / rage_system.hpp */
-typedef struct gameLoop gameLoop;
+#include "rage/game_loop_types.h"
 
 /* ── Globals ──────────────────────────────────────────────────────────────── */
 
@@ -341,8 +342,7 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
     }
 
     /* 3. Capture render-start timestamp for optional profiling. */
-    uint64_t tStart;
-    __asm__ volatile ("mftb %0" : "=r"(tStart));
+    uint64_t tStart = __mftb();
 
     /* 4. pgStreamer profiling bracket.
      *    The assembly calls pg_C3B8_g twice: once with mode=0 (start) and,
@@ -359,9 +359,8 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
     /* 5. If profiling is active: compute elapsed time and log it.
      *    Two back-to-back mftb reads capture start and current timebase. */
     if (g_bProfilingActive) {
-        uint64_t tNow1, tNow2;
-        __asm__ volatile ("mftb %0" : "=r"(tNow1));
-        __asm__ volatile ("mftb %0" : "=r"(tNow2));
+        uint64_t tNow1 = __mftb();
+        uint64_t tNow2 = __mftb();
 
         float elapsed_a = (float)(tNow1 - tStart) * g_renderTicksToSecondsB;
         float elapsed_b = (float)(tNow2 - tStart) * g_renderTicksToSecondsA;

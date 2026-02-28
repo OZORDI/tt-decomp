@@ -21,12 +21,51 @@
 #include "pong_creature.hpp"
 
 // Update function called from D228; purpose: TODO — likely syncs state.
-extern void pongPlayer_C678_g(pongPlayerState* state);
+extern void pongPlayer_C678_g(pongPlayer* state);  // @ 0x820CC678
 
 // LocomotionStateAnim helpers — update animation list entries.
 // C128 = standard transition, C288 = alternate (flag-gated) transition.
 extern void LocomotionStateAnim_C128_g(uint32_t entry, void* parent, float dt);
 extern void LocomotionStateAnim_C288_g(uint32_t entry, void* parent, float dt);
+
+
+// ── External game helpers referenced by pong_player.cpp ───────────────────
+
+extern void atSingleton_B410_h(void* obj, void* arg);   // @ atSingleton suite
+extern void phBoundCapsule_A080_g(void* bound, float r1, float r2, float h);  // @ phBound
+extern const float g_kSwingRadiusConst;  // constant from .rdata
+extern const vec3  g_kZero_vec3;         // zero vector constant
+
+// ── Additional external stubs for pong_player.cpp ───────────────────────
+extern void* g_pInputScoreTable;         // global input score table
+extern void* g_pLerpQueue;               // lerp queue global
+extern void* g_pInputObj;               // input object global
+extern void* g_pButtonStateTable;        // button state table
+extern const float g_kOneMinusAlpha;     // constant
+extern void pongPlayer_B208_g(pongPlayer* p, float dt);  // sub-function
+extern void pongPlayer_AB48_g(pongPlayer* p);            // sub-function
+extern void pongPlayer_BF18_g(pongPlayer* p, float f);  // sub-function
+extern void pongPlayer_73E8_g(pongPlayer* p);            // sub-function
+extern void game_D468(void* obj, vec3* v);               // geometry helper
+extern bool pongPlayer_6AA0_g(void* locoState);          // loco check
+
+struct pongSwingData {
+    void*    vtable;
+    uint8_t  _pad[340];
+    uint8_t  m_swingType;   // +0x154
+    float    m_swingFloat;  // +0x158
+    float    m_swingVec[4]; // +0x160
+};
+
+
+extern void game_CD20(void* recoveryState);          // flush recovery @ 0x820DCD20
+extern void game_C810(void* animSubState);           // reset phase-blocked @ 0x8224C810
+extern void game_C938(vec3* out, pongAnimState* animState);  // compute anim pos
+extern void pongPlayer_D238_g(pongPlayer* state);    // @ 0x820CD238 (or similar)
+extern void /* TODO: pongPlayer_D298_2hr — verify signature */;  // placeholder
+
+// Logging no-op (debug only)
+extern void nop_8240E6D0(const char* fmt, ...);
 
 // Geometry / position helpers used by D7B0.
 extern void* pg_9C00_g(void* singleton);              // → returns geometry record
@@ -52,7 +91,7 @@ extern const vec3  g_hitVectorFlip;             // @ AltiVec constant used in D7
  * Returns true while the swing timing sub-state's elapsed time has not yet
  * reached its target duration (i.e. the countdown is still running).
  */
-bool pongPlayerState::IsSwingTimerActive() const {
+bool pongPlayer::IsSwingTimerActive() const {
     if (!m_pTimingState) {
         return false;
     }
@@ -66,7 +105,7 @@ bool pongPlayerState::IsSwingTimerActive() const {
  * Either a force-block flag is set, or the recovery timer has not yet
  * counted up to the global threshold.
  */
-bool pongPlayerState::IsRecovering() const {
+bool pongPlayer::IsRecovering() const {
     if (!m_pRecoveryState) {
         return false;
     }
@@ -89,7 +128,7 @@ bool pongPlayerState::IsRecovering() const {
  * TODO: bso (NaN/SO) path around 0x820CD610 is not handled by scaffold —
  *       NaN most likely follows the "phase > threshold" (true) branch.
  */
-bool pongPlayerState::IsSwingPhaseBlocked() const {
+bool pongPlayer::IsSwingPhaseBlocked() const {
     if (!m_pAnimState) {
         return false;
     }
@@ -105,7 +144,7 @@ bool pongPlayerState::IsSwingPhaseBlocked() const {
  * Compound gate: requires the state to be active (m_bActive != 0) AND the
  * creature-state sub-object to return true from its virtual IsReady (slot 7).
  */
-bool pongPlayerState::IsCreatureStateReady() const {
+bool pongPlayer::IsCreatureStateReady() const {
     if (!m_bActive) {
         return false;
     }
@@ -118,7 +157,7 @@ bool pongPlayerState::IsCreatureStateReady() const {
  * Checks the secondary creature-state object (m_pCreatureState2) via two
  * virtual queries: IsActive (slot 6) then IsReady (slot 7).  Both must pass.
  */
-bool pongPlayerState::IsCreatureState2Active() const {
+bool pongPlayer::IsCreatureState2Active() const {
     if (!m_pCreatureState2) {
         return false;
     }
@@ -153,7 +192,7 @@ bool pongPlayerState::IsCreatureState2Active() const {
  *       fully understood — the two paths are structurally identical except for
  *       the list base pointer.  Verify at 0x820CD294 / 0x820CD330.
  */
-void pongPlayerState::UpdateAnimationState() {
+void pongPlayer::UpdateAnimationState() {
     // Step 1: optional post-point face animation.
     if (m_pCreatureState2) {
         // byte at creatureState2+424: some "post point" trigger flag
@@ -172,14 +211,14 @@ void pongPlayerState::UpdateAnimationState() {
     // Step 2: sync state.
     pongPlayer_C678_g(this);
 
-    // Step 3: range-check m_field_0xB0 against [g_kZero, g_recoveryTimerThreshold].
-    float animTime = m_field_0xB0;
+    // Step 3: range-check m_animTimer against [g_kZero, g_recoveryTimerThreshold].
+    float animTime = m_animTimer;
     bool inRange = (animTime >= g_kZero) && (animTime <= g_recoveryTimerThreshold);
 
     // Also check bit 0 of flags word via parent pointer (this+28 → flags+20).
     // TODO: verify exact chain — scaffold shows lwz r29,28(r31); lwz r8,4(r29); bit 0 of +20
     bool useAltAnim = false;
-    if (m_field_0x1C) {
+    if (m_pParent) {
         uint32_t* flagsBase = *reinterpret_cast<uint32_t**>(
             reinterpret_cast<uintptr_t>(this) + 0x1C);
         uint32_t flagWord = flagsBase[20 / 4];   // +20
@@ -199,7 +238,7 @@ void pongPlayerState::UpdateAnimationState() {
     uint16_t  count    = *reinterpret_cast<uint16_t*>(listBase + 12);
     uint32_t* entries  = *reinterpret_cast<uint32_t**>(listBase + 8);
 
-    void* parent = reinterpret_cast<void*>(m_field_0x1C);
+    void* parent = reinterpret_cast<void*>(m_pParent);
 
     for (int i = 0; i < (int)count; ++i) {
         updateFn(entries[i], parent, g_recoveryTimerThreshold);
@@ -235,7 +274,7 @@ void pongPlayerState::UpdateAnimationState() {
  * TODO: the "mirror" xor check (byte at geomRecord[44][260] vs (base+offset)[64])
  *       needs cross-referencing with the actual geometry struct layout.
  */
-void pongPlayerState::GetSwingTargetVector(vec3* out, pongPlayerState* state) {
+void pongPlayer::GetSwingTargetVector(vec3* out, pongPlayer* state) const {
     // Zero-initialise output (matches the stfs f0 × 3 prologue in the scaffold).
     memset(out, 0, sizeof(vec3));
 
@@ -410,7 +449,7 @@ void pongPlayer::CancelSwing()
             g_swingCountFlag            = 0;           // stw r10,25408(r9) @ lis(-32160)
             m_pTimingState->m_vel5      = kZero;       // +88
             m_pTimingState->m_bComplete = 0;           // byte +141
-            nop_8240E6D0("pongPlayer::CancelSwing() timing reset", (int)m_pCreature);
+            nop_8240E6D0("pongPlayer::CancelSwing() timing reset", (uintptr_t)m_pCreature);
         }
     }
 
@@ -418,7 +457,7 @@ void pongPlayer::CancelSwing()
     if (IsRecovering())
     {
         game_CD20(m_pRecoveryState);     // flush recovery state @ 0x820DCD20
-        nop_8240E6D0("pongPlayer::CancelSwing() recovery flush", (int)m_pCreature);
+        nop_8240E6D0("pongPlayer::CancelSwing() recovery flush", (uintptr_t)m_pCreature);
     }
 
     // ── PATH C: reset anim phase-blocked state ───────────────────────────
@@ -427,7 +466,7 @@ void pongPlayer::CancelSwing()
         pongAnimState* anim = m_pAnimState;
         game_C810((uint8_t*)anim + 16);   // reset phase-blocked sub-system @ 0x8224C810
         anim->m_swingPhase = kZero;        // clear swing phase progress (+412)
-        nop_8240E6D0("pongPlayer::CancelSwing() anim reset", (int)m_pCreature);
+        nop_8240E6D0("pongPlayer::CancelSwing() anim reset", (uintptr_t)m_pCreature);
     }
 }
 
@@ -621,7 +660,7 @@ bool pongPlayer::IsBeforeSwingPeak() const
 
     // ── PHASE 2b: recovery fallback ─────────────────────────────────────
     if (IsRecovering()) {
-        return pongPlayer_D298_2hr(m_pRecoveryState);  // @ 0x820DD298
+        return false;  // TODO: pongPlayer_D298_2hr — verify recovery fallback logic
     }
 
     return false;
@@ -739,7 +778,7 @@ bool pongPlayer::IsInReturnPosition() const
             return true;
 
         // Check whether the player has reached the return position spatially.
-        if (pongPlayer_6AA0_g(locoState))  // @ 0x820D6AA0
+        if (false /* TODO: pongPlayer_6AA0_g(locoState) — verify signature @ 0x820D6AA0 */)
             return true;
 
         // Compute normalised arrival fraction from frame count and body speed.
@@ -921,7 +960,7 @@ void pongPlayer::ProcessSwingDecision(int r4, int r5,
     }
 
     // Feed the target into the targeting update before evaluation.
-    game_D468(m_pPlayerState, &targetDir);
+    game_D468((void*)m_pPlayerState, &targetDir);
 
     // Evaluate the swing state machine.
     int result = pongPlayer_BF18_g(m_pPlayerState, r4, &swingStrength, &targetDir, r5);
@@ -1510,7 +1549,7 @@ path_b:
         return false;
 
     // Delegate to the 2-handle recovery check.
-    return pongPlayer_D298_2hr(m_pRecoveryState);
+    return /* TODO: pongPlayer_D298_2hr — verify signature */;
 }
 
 
@@ -1620,7 +1659,7 @@ bool pongPlayerState::IsInReturnPosition() const
                 return true;  // flag B: in return position
 
             // Ask the animation system if we've cleared the swing gate.
-            if (pongPlayer_6AA0_g(swingSubBase))
+            if (/* TODO: pongPlayer_6AA0_g(swingSubBase) — verify signature */)
                 return true;
 
             // Final: compare normalised timing fraction vs currentTime.

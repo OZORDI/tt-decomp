@@ -32,13 +32,12 @@ struct mcSegmentContainer /* : rage::datBase */ {
     uint32_t m_unk08;          // +0x08  unknown field
     uint16_t m_bHasData;       // +0x0A  flag: 1 if m_pSegmentData is allocated
     // ... additional fields
+
+    ~mcSegmentContainer();
 };
 
 // Memory card control structure
-typedef struct mcMemcardControl {
-    uint32_t state;
-    uint32_t flags;
-} mcMemcardControl;
+/* mcMemcardControl is fully defined in mc_memcard.cpp */
 
 // Memory card functions
 void mcMemcardControl_Init(mcMemcardControl* ctrl);

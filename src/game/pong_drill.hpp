@@ -73,8 +73,6 @@ struct gdDrillChargingData {
     virtual void Validate();  // [21] @ 0x821df448
     virtual void PostLoadChildren();  // [22] @ 0x821df388
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdDrillCounterSpinData  [vtable @ 0x8204139C] ──────────────────────────
@@ -87,8 +85,6 @@ struct gdDrillCounterSpinData {
     virtual void Validate();  // [21] @ 0x821dfac8
     virtual void PostLoadChildren();  // [22] @ 0x821dfa10
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdDrillFocusShotData  [vtable @ 0x82041334] ──────────────────────────
@@ -100,8 +96,6 @@ struct gdDrillFocusShotData {
     virtual void PostLoadProperties();  // [20] @ 0x821df7a8
     virtual void PostLoadChildren();  // [22] @ 0x821df800
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdDrillMovementData  [vtable @ 0x82040FF4] ──────────────────────────
@@ -114,8 +108,6 @@ struct gdDrillMovementData {
     virtual void Validate();  // [21] @ 0x821de9c8
     virtual void PostLoadChildren();  // [22] @ 0x821de8f0
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdDrillPlacementData  [vtable @ 0x82041194] ──────────────────────────
@@ -165,8 +157,6 @@ struct gdDrillSoftShotData {
     virtual void Validate();  // [21] @ 0x821df130
     virtual void PostLoadChildren();  // [22] @ 0x821df078
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdDrillSpinData  [vtable @ 0x820412CC] ──────────────────────────
@@ -179,8 +169,6 @@ struct gdDrillSpinData {
     virtual void Validate();  // [21] @ 0x821df898
     virtual void PostLoadChildren();  // [22] @ 0x821df668
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdTrainingDrillData  [vtable @ 0x82040F8C] ──────────────────────────
@@ -196,7 +184,6 @@ struct gdTrainingDrillData {
 
     // ── non-virtual methods (from debug strings) ──
     void Load();
-    void PostLoadProperties();
 };
 
 // ── gdTrainingDrills  [vtable @ 0x82040F24] ──────────────────────────
@@ -249,7 +236,7 @@ struct hitTipData {
 };
 
 
-namespace hitTipData {
+namespace hitTipDataInner {
 
 // ── hitTipData::xmlNodeStructGroupType  [vtable @ 0x82043370] ──────────────────────────
 struct xmlNodeStructGroupType {
@@ -259,7 +246,7 @@ struct xmlNodeStructGroupType {
     virtual void OnStart();  // [5] @ 0x821f2148
 };
 
-} // namespace hitTipData
+} // namespace hitTipDataInner
 
 // ── noSoftShotsTipData  [2 vtables — template/MI] ──────────────────────────
 struct noSoftShotsTipData {
@@ -270,211 +257,6 @@ struct noSoftShotsTipData {
     virtual void PostLoadProperties();  // [20] @ 0x821f2678
     virtual void Validate();  // [21] @ 0x821f26c0
     virtual void PostLoadChildren();  // [22] @ 0x82115f38
-};
-
-// ── pongDrillCharging  [vtable @ 0x8203202C] ──────────────────────────
-struct pongDrillCharging {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210f600
-    virtual void Init();  // [3] @ 0x8210f668
-    virtual void Update();  // [4] @ 0x8210f6c0
-    virtual void OnEnd();  // [6] @ 0x8210f718
-    virtual void OnReset();  // [7] @ 0x8210fa20
-    virtual void Process();  // [8] @ 0x8210fa68
-    virtual void Tick();  // [9] @ 0x8210fc70
-    virtual void GetDescription();  // [14] @ 0x8210fcb0
-    virtual void OnPause();  // [18] @ 0x8210ccb0
-    virtual void Validate();  // [21] @ 0x8210ccc0
-    virtual void OnBallServed();  // [26] @ 0x8210fcd8
-    virtual void OnBallHit();  // [27] @ 0x8210fed8
-};
-
-// ── pongDrillCounterSpin  [vtable @ 0x820321DC] ──────────────────────────
-struct pongDrillCounterSpin {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x82110c60
-    virtual void Init();  // [3] @ 0x82110cc8
-    virtual void OnStart();  // [5] @ 0x82110d18
-    virtual void HandleEvent();  // [17] @ 0x8210cd30
-    virtual void OnPause();  // [18] @ 0x8210cd38
-    virtual void Validate();  // [21] @ 0x8210cd48
-    virtual void OnPointScored();  // [30] @ 0x82111738
-};
-
-// ── pongDrillFocusShot  [vtable @ 0x8203214C] ──────────────────────────
-struct pongDrillFocusShot {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x82110720
-    virtual void Process();  // [8] @ 0x82110788
-    virtual void Tick();  // [9] @ 0x82110a08
-    virtual void HandleEvent();  // [17] @ 0x8210ccf8
-    virtual void OnPause();  // [18] @ 0x8210cd00
-};
-
-// ── pongDrillMovement  [vtable @ 0x82031CCC] ──────────────────────────
-struct pongDrillMovement {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210dae0
-    virtual void Init();  // [3] @ 0x8210db48
-    virtual void Update();  // [4] @ 0x8210dba0
-    virtual void OnStart();  // [5] @ 0x8210dc48
-    virtual void OnEnd();  // [6] @ 0x8210dc78
-    virtual void OnReset();  // [7] @ 0x8210de88
-    virtual void Tick();  // [9] @ 0x8210dec0
-    virtual void OnPause();  // [18] @ 0x8210cbe0
-    virtual void PostLoadChildren();  // [22] @ 0x8210cbf0
-    virtual void OnBallHit();  // [27] @ 0x8210e208
-};
-
-// ── pongDrillPlacement  [vtable @ 0x82031F0C] ──────────────────────────
-struct pongDrillPlacement {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210ed38
-    virtual void OnPause();  // [18] @ 0x8210cc60
-};
-
-// ── pongDrillReturn  [vtable @ 0x82031E7C] ──────────────────────────
-struct pongDrillReturn {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210ea68
-    virtual void Init();  // [3] @ 0x8210ead0
-    virtual void Process();  // [8] @ 0x8210eb08
-    virtual void Tick();  // [9] @ 0x82111a60
-    virtual void OnPause();  // [18] @ 0x8210cc48
-    virtual void Validate();  // [21] @ 0x8210cd80
-};
-
-// ── pongDrillServeMeter  [vtable @ 0x82031D5C] ──────────────────────────
-struct pongDrillServeMeter {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210e490
-    virtual void Init();  // [3] @ 0x8210e4f8
-    virtual void OnEnd();  // [6] @ 0x8210e538
-    virtual void Process();  // [8] @ 0x8210e658
-    virtual void Tick();  // [9] @ 0x8210e918
-    virtual void OnPause();  // [18] @ 0x8210cbf8
-    virtual void Validate();  // [21] @ 0x8210cc20
-    virtual void SetDifficulty();  // [25] @ 0x8210e9c8
-    virtual void OnBallHit();  // [27] @ 0x8210f148
-};
-
-// ── pongDrillServing  [vtable @ 0x82031DEC] ──────────────────────────
-struct pongDrillServing {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210ea00
-    virtual void OnPause();  // [18] @ 0x8210cc10
-};
-
-// ── pongDrillSmash  [vtable @ 0x8203226C] ──────────────────────────
-// Confirmed methods: ChooseRobotTarget
-struct pongDrillSmash {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x82111798
-    virtual void Process();  // [8] @ 0x82111800
-    virtual void HandleEvent();  // [17] @ 0x8210cd68
-    virtual void OnPause();  // [18] @ 0x8210cd70
-
-    // ── non-virtual methods (from debug strings) ──
-    void ChooseRobotTarget();
-};
-
-// ── pongDrillSoftShot  [vtable @ 0x82031F9C] ──────────────────────────
-struct pongDrillSoftShot {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210eda0
-    virtual void Init();  // [3] @ 0x8210ee08
-    virtual void Update();  // [4] @ 0x8210ee50
-    virtual void Process();  // [8] @ 0x8210ee88
-    virtual void Tick();  // [9] @ 0x8210f110
-    virtual void OnPause();  // [18] @ 0x8210cc78
-    virtual void Validate();  // [21] @ 0x8210cc88
-};
-
-// ── pongDrillSpin  [vtable @ 0x820320BC] ──────────────────────────
-struct pongDrillSpin {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x82110178
-    virtual void Init();  // [3] @ 0x821101e0
-    virtual void Process();  // [8] @ 0x82110218
-    virtual void Tick();  // [9] @ 0x82110530
-    virtual void HandleEvent();  // [17] @ 0x8210cce0
-    virtual void OnPause();  // [18] @ 0x8210cce8
-    virtual void Validate();  // [21] @ 0x8210cd10
-};
-
-// ── pongTrainingDrill  [vtable @ 0x82031C3C] ──────────────────────────
-// Confirmed methods: ChooseRobotTarget, IncreaseNumSuccesses
-struct pongTrainingDrill {
-    void**      vtable;           // +0x00
-
-    // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:7 W:2
-    uint32_t     field_0x0008;  // +0x0008  R:6 W:3
-    uint32_t     field_0x000c;  // +0x000c  R:1 W:2
-    uint32_t     field_0x0010;  // +0x0010  R:3 W:3
-    uint32_t     field_0x0014;  // +0x0014  R:1 W:4
-    uint8_t      field_0x0018;  // +0x0018  R:4 W:5
-    uint32_t     field_0x001c;  // +0x001c  R:3 W:4
-    uint32_t     field_0x0020;  // +0x0020  R:23 W:1
-    uint32_t     field_0x0024;  // +0x0024  R:2 W:1
-    uint32_t     field_0x0028;  // +0x0028  R:3 W:1
-    uint32_t     field_0x002c;  // +0x002c  R:3 W:3
-    uint32_t     field_0x0030;  // +0x0030  R:2 W:2
-    uint32_t     field_0x0038;  // +0x0038  R:6 W:0
-    uint32_t     field_0x0040;  // +0x0040  R:1 W:0
-    uint32_t     field_0x0048;  // +0x0048  R:4 W:7
-    uint32_t     field_0x004c;  // +0x004c  R:4 W:0
-
-    // ── virtual methods ──
-    virtual ~pongTrainingDrill();                  // [0] @ 0x82111750
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210cda0
-    virtual void CallInit();  // [2] @ 0x8210cda8
-    virtual void Init();  // [3] @ 0x8210cdb8
-    virtual void Update();  // [4] @ 0x8210cde8
-    virtual void OnStart();  // [5] @ 0x8210cff0
-    virtual void OnEnd();  // [6] @ 0x8210d098
-    virtual void OnReset();  // [7] @ 0x8210d0e8
-    virtual void Tick();  // [9] @ 0x8210d128
-    virtual void Render();  // [10] @ 0x8210d290
-    virtual void OnEnter();  // [11] @ 0x8210d310
-    virtual void OnFailure();  // [12] @ 0x8210d320
-    virtual void GetName();  // [13] @ 0x8210d340
-    virtual void GetDescription();  // [14] @ 0x8210d350
-    virtual void IsComplete();  // [15] @ 0x8210cc70
-    virtual void GetProgress();  // [16] @ 0x8210d360
-    virtual void CanAdvance();  // [23] @ 0x8210cbd8
-    virtual void GetDifficulty();  // [24] @ 0x8210d370
-    virtual void SetDifficulty();  // [25] @ 0x8210d380
-    virtual void OnBallHit();  // [27] @ 0x8210d488
-    virtual void OnBallMiss();  // [28] @ 0x8210d5d0
-    virtual void OnRallyEnd();  // [29] @ 0x8210d660
-    virtual void OnPointScored();  // [30] @ 0x8210d738
-
-    // ── non-virtual methods (from debug strings) ──
-    void IncreaseNumSuccesses();
-    void ChooseRobotTarget();
 };
 
 // ── reviewOnlyTipData  [2 vtables — template/MI] ──────────────────────────
@@ -499,17 +281,11 @@ struct serveTipData {
     virtual void PostLoadChildren();  // [22] @ 0x82115cb8
 };
 
-namespace serveTipData {
+namespace serveTipDataInner {
 
 // ── serveTipData::xmlNodeStructGroupType  [vtable @ 0x82043408] ──────────────────────────
-struct xmlNodeStructGroupType {
-    void**      vtable;           // +0x00
 
-    // ── virtual methods ──
-    virtual void OnStart();  // [5] @ 0x821f2148
-};
-
-} // namespace serveTipData
+} // namespace serveTipDataInner
 
 // ── statsThresholdData  [vtable @ 0x8204C5A4] ──────────────────────────
 struct statsThresholdData {
@@ -546,12 +322,7 @@ struct tooFarFromTableTipData {
  * Each drill teaches a specific table tennis skill (movement, serving, spin, etc.)
  */
 
-#pragma once
 
-#include <stdint.h>
-
-// Forward declarations
-class pongTrainingDrillConfig;
 
 /**
  * pongTrainingDrill (Base Class)

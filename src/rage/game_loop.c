@@ -11,8 +11,12 @@
  */
 
 #include "rage/rage_system.hpp"
-#include "audio_system.hpp"
+/* audio_system.hpp removed: C file needs no C++ headers */
 #include <stdint.h>
+#include <string.h>
+extern void*    g_game_obj_ptr;
+extern void     xe_main_thread_init_0038(void);
+
 #include <stdio.h>   /* _snprintf */
 
 // ---------------------------------------------------------------------------
@@ -139,8 +143,8 @@ void rage_subsystem_init(void) {
 //   };
 //
 // For each non-empty entry:
-//   1. Build fullPath:     _snprintf(buf, 256, g_audPathFmt,  "RN_OUT", entry)
-//   2. Build strippedPath: _snprintf(buf, 256, g_audPathFmt2, "RN_OUT", entry)
+//   1. Build fullPath:     snprintf(buf, 256, g_audPathFmt,  "RN_OUT", entry)
+//   2. Build strippedPath: snprintf(buf, 256, g_audPathFmt2, "RN_OUT", entry)
 //   3. pos = strlen(strippedPath)   ← prefix length
 //   4. Inner loop — walk fullPath from pos, split on '\\':
 //        a. Copy chars fullPath[pos..pos+n] to strippedPath[pos..pos+n]
@@ -196,8 +200,8 @@ void audSystem_init(void)
         // Build the two formatted path buffers on the stack.
         char strippedPath[256];   /* sp+80  in original frame  */
         char fullPath[256];       /* sp+336 in original frame  */
-        _snprintf(fullPath,     sizeof(fullPath),     k_audPathFmt,  k_audBasePath, entry);
-        _snprintf(strippedPath, sizeof(strippedPath), k_audPathFmt2, k_audBasePath, entry);
+        snprintf(fullPath,     sizeof(fullPath),     k_audPathFmt,  k_audBasePath, entry);
+        snprintf(strippedPath, sizeof(strippedPath), k_audPathFmt2, k_audBasePath, entry);
 
         // pos starts at end of the prefix (strippedPath's filled length).
         int pos = 0;
@@ -568,7 +572,7 @@ static int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf)
         if (oldEnd != oldRead) {
             // Partial buffer: commit [readPos .. endPos)
             typedef int (*CommitFn)(void*, uint32_t, uint8_t*, int, int);
-            int r = ((CommitFn)(*(void**)pBuf->vtable)[5])(
+            int r = ((CommitFn)((void**)pBuf->vtable)[5])(
                         pBuf, pBuf->flags,
                         pBuf->pBuffer + oldRead,
                         0,
@@ -579,7 +583,7 @@ static int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf)
         } else {
             // Full buffer: flush from base
             typedef int (*FlushFn)(void*, uint32_t, uint8_t*);
-            int r = ((FlushFn)(*(void**)pBuf->vtable)[4])(
+            int r = ((FlushFn)((void**)pBuf->vtable)[4])(
                         pBuf, pBuf->flags, pBuf->pBuffer);
             if (r != 0) {
                 return -1;
@@ -594,7 +598,7 @@ static int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf)
     } else if (pBuf->readPos != 0) {
         // Empty but offset: re-use from base
         typedef int (*FlushFn)(void*, uint32_t, uint8_t*);
-        int r = ((FlushFn)(*(void**)pBuf->vtable)[4])(
+        int r = ((FlushFn)((void**)pBuf->vtable)[4])(
                     pBuf, pBuf->flags, pBuf->pBuffer);
         if (r != 0) {
             return -1;
@@ -611,7 +615,7 @@ static int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf)
 
     // Notify write complete (vtable slot 8)
     typedef void (*NotifyFn)(void*, uint32_t);
-    ((NotifyFn)(*(void**)pBuf->vtable)[8])(pBuf, pBuf->flags);
+    ((NotifyFn)((void**)pBuf->vtable)[8])(pBuf, pBuf->flags);
     return 0;
 }
 
@@ -683,7 +687,7 @@ int fiStreamBuf_Read(fiStreamBuf* pBuf, uint8_t* pDst, int32_t size, int r6, int
 
         // Request more data from device through vtable slot 3
         typedef int (*RequestFn)(void*, uint32_t, uint8_t*, int32_t, int32_t);
-        int32_t got = ((RequestFn)(*(void**)pBuf->vtable)[3])(
+        int32_t got = ((RequestFn)((void**)pBuf->vtable)[3])(
                           pBuf, pBuf->flags, pDst, size, pBuf->capacity);
 
         if (got < 0) {
@@ -727,7 +731,7 @@ int fiStreamBuf_Close(fiStreamBuf* pBuf)
 
     // Virtual Close — vtable slot 6 (byte offset 24)
     typedef void (*CloseFn)(void*, uint32_t);
-    ((CloseFn)(*(void**)pBuf->vtable)[6])(pBuf, pBuf->flags);
+    ((CloseFn)((void**)pBuf->vtable)[6])(pBuf, pBuf->flags);
 
     // Invalidate the object so double-close is detectable
     pBuf->flags  = (uint32_t)-1;

@@ -317,12 +317,27 @@ function getCallees(rawText) {
   return [...found];
 }
 
+let _grepCache = null;
+
+function grepCache() {
+  if (_grepCache) return _grepCache;
+  _grepCache = new Map();
+  return _grepCache;
+}
+
 function grepSrc(pattern) {
+  const cache = grepCache();
+  if (cache.has(pattern)) return cache.get(pattern);
   try {
-    return execSync(`grep -rl "${pattern}" "${SRC_DIR}" 2>/dev/null`, {
+    const result = execSync(`grep -rl "${pattern}" "${SRC_DIR}" 2>/dev/null`, {
       encoding: "utf8", timeout: 6000,
     }).trim().split("\n").filter(Boolean);
-  } catch { return []; }
+    cache.set(pattern, result);
+    return result;
+  } catch { 
+    cache.set(pattern, []);
+    return []; 
+  }
 }
 
 function truncate(text, maxLines) {

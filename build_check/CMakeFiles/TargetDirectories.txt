@@ -1,0 +1,7 @@
+/Users/Ozordi/Downloads/tt-decomp/build_check/CMakeFiles/RockstarTableTennis.dir
+/Users/Ozordi/Downloads/tt-decomp/build_check/CMakeFiles/edit_cache.dir
+/Users/Ozordi/Downloads/tt-decomp/build_check/CMakeFiles/rebuild_cache.dir
+/Users/Ozordi/Downloads/tt-decomp/build_check/CMakeFiles/list_install_components.dir
+/Users/Ozordi/Downloads/tt-decomp/build_check/CMakeFiles/install.dir
+/Users/Ozordi/Downloads/tt-decomp/build_check/CMakeFiles/install/local.dir
+/Users/Ozordi/Downloads/tt-decomp/build_check/CMakeFiles/install/strip.dir

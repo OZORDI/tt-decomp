@@ -101,13 +101,23 @@
 // Forward declarations
 struct pcrCreature;
 struct pongTimingState;
-struct pongTimingSubState;
+// pongTimingSubState: swing timing sub-state
+struct pongTimingSubState {
+    void*       vtable;           // +0x00
+    uint8_t     _pad04[156];      // +0x04..+0x9F placeholder
+    float       m_swingProgress;  // +0xA0 (160) — used by CanAcceptSwingInput
+    uint8_t     _padA4[4];        // +0xA4
+    uint32_t    m_frameId;        // +0xA8 — frame counter / animation frame reference
+};
 struct pongRecoveryState;
 struct pongAnimState;
 struct pongCreatureState;
 struct pongSwingData;
 struct pongPlayerState;
-struct vec3;
+struct vec3 {
+    float x, y, z;
+    float _pad;  // 16-byte aligned on PPC AltiVec
+};
 
 
 // ── Sub-struct: pongTimingState ──────────────────────────────────────────
@@ -145,7 +155,7 @@ struct pongRecoveryState {
     float       m_vec0[4];       // +0x50  recovery target vector slot A (copied in SetupRecoverySlots)
     float       m_vec1[4];       // +0x60  recovery target vector slot B
     float       m_swingPhase;    // somewhere; TODO: verify exact offset
-    float       m_recoveryProgress; // +0xAC (172) — compared vs threshold in DA58
+    float       m_recoveryTimer;    // +0xAC (172) — compared vs g_recoveryTimerThreshold in D598
 };
 
 // ── Sub-struct: pongAnimState ────────────────────────────────────────────
@@ -194,13 +204,15 @@ struct pongPlayer {
     pongRecoveryState*  m_pRecoveryState;    // +0x080
     uint32_t            _unk_0x084;          // +0x084
     pongAnimState*      m_pAnimState;        // +0x088
-    pongCreatureState*  m_pCreatureState2;   // +0x08C
-    uint32_t            _unk_0x090;          // +0x090
+    pongCreatureState*  m_pCreatureState;    // +0x08C  (IsCreatureStateReady, D660)
+    pongCreatureState*  m_pCreatureState2;   // +0x090  (IsCreatureState2Active, D6B8)
     pongSwingData*      m_pSwingData;        // +0x094  byte@+341, float@+344, vec3@+352
     uint8_t             _pad6[12];
     void*               m_pPhysicsBody;      // +0x0A4  vtable slot3 = physics pose update
     void*               m_pPhysicsBound;     // +0x0A8  phBoundCapsule; floats +56,+60,+64,+72
-    uint8_t             _pad7[16];
+    uint8_t             _pad7_AC[4];         // +0x0AC
+    float               m_animTimer;         // +0x0B0  compared vs g_recoveryTimerThreshold in D228
+    uint8_t             _pad7_B4[8];         // +0x0B4
     pongPlayerState*    m_pPlayerState;      // +0x0BC
     uint8_t             _pad8[8];
     uint8_t             m_bSwingActive;      // +0x0C5  logged by SetSwingActiveState

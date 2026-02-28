@@ -3,8 +3,8 @@
 **Project:** Rockstar Table Tennis (Xbox 360) Decompilation  
 **Analysis Date:** February 26, 2026  
 **Binary:** pong_xenon_final.pe  
-**Entry Point:** 0x8242BD20 (xstart)  
-**First Draw Call:** rage_render_default_08D8 @ 0x822C07E0
+**Entry Point:** 0x8242BD20 (__mainCRTStartup)
+**First Draw Call:** rage_render_default_08D8 @ 0x822C08D8
 
 ---
 
@@ -12,14 +12,14 @@
 
 This document traces the complete execution path from the game's entry point to the first graphics draw call that renders the boot screen. It identifies all critical functions, classes, and subsystems that must be decompiled to achieve a working boot screen.
 
-**Key Finding:** The first draw call occurs in `rage_render_default_08D8`, which is called from the main game loop after initialization completes. This function calls `grcDevice_beginScene` and `grcDevice_clear` to render the first frame.
+**Key Finding:** The first draw call occurs in `rage_render_default_08D8` @ 0x822C08D8, which is called via `rage_render_scene_0B18` from the game loop's Render phase. This function builds per-frame clear flags, updates the render-command ring buffer, calls `grcDevice_beginScene` and `grcDevice_clear`, then polls input and invokes the page manager.
 
 ---
 
 ## Complete Call Tree: Entry → First Draw
 
 ```
-xstart @ 0x8242BD20 (CRT Entry Point)
+__mainCRTStartup @ 0x8242BD20 (CRT Entry Point)
 │
 ├─ PHASE 1: C Runtime Initialization
 │  ├─ _heap_init_check @ 0x8242C2C0
@@ -45,8 +45,8 @@ xstart @ 0x8242BD20 (CRT Entry Point)
          │
          ├─ Network Initialization
          │  ├─ netHardware_1C60_v12 @ 0x82481C60
-         │  ├─ util_1AF8 @ 0x82481AF8
-         │  └─ rage_1B08 @ 0x82481B08
+         │  ├─ rage_WSAStartup (util_1AF8) @ 0x82481AF8
+         │  └─ rage_WSACleanup (rage_1B08) @ 0x82481B08
          │
          ├─ rage_app_init_6418 @ 0x82186418
          │  ├─ Stores globals (exe name, argc, argv)
@@ -81,21 +81,21 @@ xstart @ 0x8242BD20 (CRT Entry Point)
                │  ├─ xe_alloc_thread_ctx_6CA8 @ 0x82186CA8
                │  │  └─ Allocates additional thread context
                │  │
-               │  ├─ grcDevice_init_8A00 @ 0x820F8A00 ← GRAPHICS INIT
-               │  │  └─ Initializes graphics device (Xenos GPU)
+               │  ├─ pgStreamer_Init (grcDevice_init_8A00) @ 0x820F8A00 ← STREAMING INIT
+               │  │  └─ Initializes pgStreamer async pool (256 nodes) + reader thread
                │  │
-               │  └─ rage_scheduler_init_ED0 @ 0x82221ED0
-               │     └─ Initializes frame scheduler
+               │  └─ audSystem_init_1ED0 @ 0x82221ED0
+               │     └─ Initializes audio device path table + mounts audio devices
                │
                └─ MAIN GAME LOOP
                   │
                   ├─ Loop Condition Check
                   │  └─ rage_is_app_started_6BE8 @ 0x82186BE8
                   │
-                  ├─ State Machine Update
-                  │  ├─ rage_obj_factory_create_3040 @ 0x822E3040
-                  │  ├─ rage_obj_bind_3828 @ 0x822E3828
-                  │  └─ rage_obj_finalize_3B38 @ 0x822E3B38
+                  ├─ File I/O Stream Operations
+                  │  ├─ fiStreamBuf_OpenAll (rage_obj_factory_create_3040) @ 0x822E3040
+                  │  ├─ fiStreamBuf_Read (rage_obj_bind_3828) @ 0x822E3828
+                  │  └─ fiStreamBuf_Close (rage_obj_finalize_3B38) @ 0x822E3B38
                   │
                   ├─ Game Loop Phases
                   │  │
@@ -116,16 +116,18 @@ xstart @ 0x8242BD20 (CRT Entry Point)
                   │  │
                   │  ├─ gameLoop_Render_9A58 @ 0x82229A58
                   │  │  │
-                  │  │  └─ rage_render_default_08D8 @ 0x822C07E0 ← FIRST DRAW
+                  │  │  └─ rage_render_scene_0B18 @ 0x822C0B18 ← SCENE RENDER CONTROLLER
                   │  │     │
-                  │  │     ├─ grcDevice_beginScene_5E78 @ 0x82305E78
-                  │  │     │  └─ Begins rendering to framebuffer
-                  │  │     │
-                  │  │     ├─ grcDevice_clear_9290 @ 0x82379290
-                  │  │     │  └─ Clears color/depth/stencil buffers
-                  │  │     │
-                  │  │     └─ rage_render_scene_0B18 @ 0x822C0B18
-                  │  │        └─ Renders scene geometry
+                  │  │     └─ rage_render_default_08D8 @ 0x822C08D8 ← FIRST DRAW
+                  │  │        │
+                  │  │        ├─ grcDevice_beginScene_5E78 @ 0x82305E78
+                  │  │        │  └─ Begins rendering to framebuffer
+                  │  │        │
+                  │  │        ├─ grcDevice_clear_9290 @ 0x82379290
+                  │  │        │  └─ Clears color/depth/stencil buffers
+                  │  │        │
+                  │  │        └─ io_Input_poll @ 0x821C9D68 + pg_EDE0_gen @ 0x823CEDE0
+                  │  │           └─ Input poll + page manager notification
                   │  │
                   │  ├─ gameLoop_EndRender_9AF8 @ 0x82229AF8
                   │  │  └─ End render phase
@@ -147,7 +149,7 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 
 | Function | Address | Purpose | Status |
 |----------|---------|---------|--------|
-| `xstart` | 0x8242BD20 | Entry point | ✅ Implemented |
+| `__mainCRTStartup` | 0x8242BD20 | Entry point | ✅ Implemented |
 | `_heap_init_check` | 0x8242C2C0 | Heap initialization | ⏳ Needed |
 | `_initterm_e` | 0x8242C118 | Static initializers (error-checking) | ⏳ Needed |
 | `_cinit_setup` | 0x8242FDC8 | C init table setup | ⏳ Needed |
@@ -170,62 +172,63 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 
 | Function | Address | Purpose | Status |
 |----------|---------|---------|--------|
-| `rage_main_6970` | 0x82186970 | RAGE engine entry | ⏳ Needed |
-| `rage_setup_args_67F8` | 0x821867F8 | Argument processing | ⏳ Needed |
-| `netHardware_1C60_v12` | 0x82481C60 | Network hardware init | ⏳ Needed |
-| `util_1AF8` | 0x82481AF8 | Utility initialization | ⏳ Needed |
-| `rage_1B08` | 0x82481B08 | RAGE subsystem | ⏳ Needed |
-| `rage_app_init_6418` | 0x82186418 | Application init | ⏳ Needed |
-| `rage_stricmp_6358` | 0x82186358 | String comparison | ⏳ Needed |
-| `rage_run_6780` | 0x82186780 | Main loop wrapper | ⏳ Needed |
-| `rage_is_app_started_6BE8` | 0x82186BE8 | App state check | ⏳ Needed |
-| `rage_get_exe_name_6628` | 0x82186628 | Executable name getter | ⏳ Needed |
+| `rage_Main` (rage_main_6970) | 0x82186970 | RAGE engine entry (632 bytes) | ✅ Implemented |
+| `rage_ParseCommandLine` (rage_setup_args_67F8) | 0x821867F8 | Argument processing (376 bytes) | ✅ Implemented |
+| `netHardware_1C60_v12` | 0x82481C60 | Network hardware init (12 bytes) | ✅ Implemented |
+| `rage_WSAStartup` (util_1AF8) | 0x82481AF8 | Winsock startup | ✅ Implemented |
+| `rage_WSACleanup` (rage_1B08) | 0x82481B08 | Winsock cleanup | ✅ Implemented |
+| `rage_app_init_6418` | 0x82186418 | Application init (524 bytes) | ✅ Implemented |
+| `rage_stricmp_6358` | 0x82186358 | String comparison (192 bytes) | ✅ Implemented |
+| `rage_run_6780` | 0x82186780 | Main loop wrapper (92 bytes) | ✅ Implemented |
+| `rage_IsAppStarted` (rage_is_app_started_6BE8) | 0x82186BE8 | App state check (112 bytes) | ✅ Implemented |
+| `rage_get_exe_name_6628` | 0x82186628 | Executable name getter (104 bytes) | ✅ Implemented |
 
-### Phase 4: Game Object System (5 functions)
-
-| Function | Address | Purpose | Status |
-|----------|---------|---------|--------|
-| `main` | 0x820C0378 | Game main function | ⏳ Needed |
-| `rage_game_obj_init_CB60` | 0x8215CB60 | Game object init | ⏳ Needed |
-| `rage_subsystem_init_2430` | 0x822E2430 | Subsystem init | ⏳ Needed |
-| `rage_obj_factory_create_3040` | 0x822E3040 | Object factory | ⏳ Needed |
-| `rage_obj_bind_3828` | 0x822E3828 | Object binding | ⏳ Needed |
-| `rage_obj_finalize_3B38` | 0x822E3B38 | Object finalization | ⏳ Needed |
-
-### Phase 5: Graphics Initialization (3 functions)
+### Phase 4: Game Object System + File I/O (6 functions)
 
 | Function | Address | Purpose | Status |
 |----------|---------|---------|--------|
-| `grcDevice_init_8A00` | 0x820F8A00 | Graphics device init | ✅ Implemented |
+| `main` | 0x820C0378 | Game main function (1992 bytes) | ⏳ Needed |
+| `grcSetup::Init` (rage_game_obj_init_CB60) | 0x8215CB60 | Graphics setup init | ✅ Implemented |
+| `rage_subsystem_init` (rage_subsystem_init_2430) | 0x822E2430 | Semaphores + scheduler thread | ✅ Implemented |
+| `fiStreamBuf_OpenAll` (rage_obj_factory_create_3040) | 0x822E3040 | Device enumeration + stream open | ✅ Implemented |
+| `fiStreamBuf_Read` (rage_obj_bind_3828) | 0x822E3828 | Ring-buffer stream read | ✅ Implemented |
+| `fiStreamBuf_Close` (rage_obj_finalize_3B38) | 0x822E3B38 | Stream close + cleanup | ✅ Implemented |
+
+### Phase 5: Streaming + Audio Initialization (3 functions)
+
+| Function | Address | Purpose | Status |
+|----------|---------|---------|--------|
+| `pgStreamer_Init` (grcDevice_init_8A00) | 0x820F8A00 | Async streaming pool (256 nodes) + reader thread | ✅ Implemented |
 | `grcRenderer_init_0B78` | 0x82100B78 | Renderer init | ⏳ Needed |
-| `rage_scheduler_init_ED0` | 0x82221ED0 | Frame scheduler init | ⏳ Needed |
+| `audSystem_init` (audSystem_init_1ED0) | 0x82221ED0 | Audio device path table + mount | ✅ Implemented |
 
 ### Phase 6: Game Loop (13 functions)
 
 | Function | Address | Purpose | Status |
 |----------|---------|---------|--------|
-| `gameLoop_Init_8F30` | 0x82228F30 | Game loop init | ⏳ Needed |
-| `gameLoop_StepFrame_9760` | 0x82229760 | Frame advance | ⏳ Needed |
-| `gameLoop_Update_9768` | 0x82229768 | State update | ⏳ Needed |
-| `gameLoop_Tick_97D8` | 0x822297D8 | Physics/logic tick | ⏳ Needed |
-| `gameLoop_PreRender_9938` | 0x82229938 | Pre-render setup | ⏳ Needed |
-| `gameLoop_BeginRender_9950` | 0x82229950 | Begin render | ⏳ Needed |
-| `gameLoop_Render_9A58` | 0x82229A58 | Main render | ⏳ Needed |
-| `gameLoop_EndRender_9AF8` | 0x82229AF8 | End render | ⏳ Needed |
-| `gameLoop_PostRender_9BA0` | 0x82229BA0 | Post-render/UI | ⏳ Needed |
-| `gameLoop_Present_9F30` | 0x82229F30 | Frame present | ⏳ Needed |
-| `gameLoop_init_C2D0` | 0x822BC2D0 | Loop initialization | ⏳ Needed |
-| `gameLoop_Shutdown_94B8` | 0x822294B8 | Loop shutdown | ⏳ Needed |
-| `gameLoop_DestroyAudio_27A8` | 0x822227A8 | Audio cleanup | ⏳ Needed |
+| `gameLoop_Init_8F30` | 0x82228F30 | Game loop init | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_StepFrame_9760` | 0x82229760 | Frame advance (thunk -> gmLogic::StepFrame) | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_Update_9768` | 0x82229768 | Per-frame logic update | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_Tick_97D8` | 0x822297D8 | Physics & AI tick | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_PreRender_9938` | 0x82229938 | Pre-render state-machine dispatch | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_BeginRender_9950` | 0x82229950 | Begin render, time the pass | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_Render_9A58` | 0x82229A58 | Main scene render dispatch | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_EndRender_9AF8` | 0x82229AF8 | Finish render, flip flags | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_PostRender_9BA0` | 0x82229BA0 | FPS overlay, aspect-ratio adjust | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_Present_9F30` | 0x82229F30 | Mark frame as presented | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_init_C2D0` | 0x822BC2D0 | Loop initialization | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_Shutdown_94B8` | 0x822294B8 | Loop shutdown | ✅ Implemented (`src/rage/render_loop.c`) |
+| `gameLoop_DestroyAudio_27A8` | 0x822227A8 | fsmMachine destructor body | ✅ Implemented (`src/game/pong_network_classes.cpp`) |
 
-### Phase 7: Rendering Pipeline (5 functions)
+### Phase 7: Rendering Pipeline (6 functions)
 
 | Function | Address | Purpose | Status |
 |----------|---------|---------|--------|
-| `rage_render_default_08D8` | 0x822C07E0 | **FIRST DRAW CALL** | ⏳ Needed |
+| `rage_render_scene` (rage_render_scene_0B18) | 0x822C0B18 | Scene render controller (wraps first draw) | ✅ Implemented |
+| `rage_render_default` (rage_render_default_08D8) | 0x822C08D8 | **FIRST DRAW CALL** (576 bytes) | ✅ Implemented |
+| `rage_scene_cleanup_07E0` | 0x822C07E0 | Scene cleanup (248 bytes) | ⏳ Needed |
 | `grcDevice_beginScene_5E78` | 0x82305E78 | Begin scene | ✅ Implemented |
 | `grcDevice_clear_9290` | 0x82379290 | Clear buffers | ✅ Implemented |
-| `rage_render_scene_0B18` | 0x822C0B18 | Scene rendering | ⏳ Needed |
 | `grcDevice_shutdown_FA58` | 0x8214FA58 | Device shutdown | ⏳ Needed |
 
 ---
@@ -235,19 +238,20 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 ### Graphics System Classes
 
 #### 1. `grcDevice`
-**Purpose:** Graphics device abstraction (Xenos GPU → OpenGL)  
-**Location:** `src/grc/device.cpp`, `include/grc/device.h`  
-**Status:** ✅ Partially implemented
+**Purpose:** Graphics device abstraction (Xenos GPU → OpenGL)
+**Location:** `include/grc/device.h` (header only; `src/grc/` directory does not exist yet)
+**Status:** ✅ Partially implemented (beginScene, clear implemented)
 
 **Key Methods:**
-- `grcDevice_init_8A00` @ 0x820F8A00 - Initialize device
 - `grcDevice_beginScene_5E78` @ 0x82305E78 - Begin rendering
 - `grcDevice_clear_9290` @ 0x82379290 - Clear framebuffer
 - `grcDevice_shutdown_FA58` @ 0x8214FA58 - Cleanup
 
+**NOTE:** `grcDevice_init_8A00` @ 0x820F8A00 is actually `pgStreamer_Init` (asset streaming), not graphics device init.
+
 #### 2. `grcRenderer`
-**Purpose:** High-level rendering interface  
-**Location:** `src/grc/renderer.cpp`, `include/grc/renderer.h`  
+**Purpose:** High-level rendering interface
+**Location:** `include/grc/renderer.h` (header only; `src/grc/renderer.cpp` does not exist yet)
 **Status:** ⏳ Not implemented
 
 **Key Methods:**
@@ -264,12 +268,14 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 ### Game Loop Classes
 
 #### 4. `gameLoop`
-**Purpose:** Main game loop controller  
-**Location:** `src/rage/game_loop.c`  
-**Status:** ⏳ Not implemented
+**Purpose:** Main game loop controller
+**Location:** `src/rage/render_loop.c`
+**Status:** ✅ Implemented (all 13 functions)
 
 **Key Methods:**
-- `gameLoop_Init_8F30` - Initialize loop
+- `gameLoop_init_C2D0` - Constructor
+- `gameLoop_Init_8F30` - Post-construction init
+- `gameLoop_Shutdown_94B8` - Teardown
 - `gameLoop_StepFrame_9760` - Advance frame
 - `gameLoop_Update_9768` - Update state
 - `gameLoop_Tick_97D8` - Physics tick
@@ -278,31 +284,33 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 
 ### RAGE Engine Classes
 
-#### 5. `rage_GameObject` (Base Class)
-**Purpose:** Root game object  
-**Location:** `src/rage/game_object.cpp`  
-**Status:** ⏳ Not implemented
-
-**Key Methods:**
-- `rage_game_obj_init_CB60` @ 0x8215CB60
-
-#### 6. `rage_Scheduler`
-**Purpose:** Frame scheduling and timing  
-**Location:** `src/rage/scheduler.cpp`  
+#### 5. `grcSetup` (was rage_GameObject)
+**Purpose:** Graphics/streaming setup initialization
+**Location:** `src/rage/app_init.c`
 **Status:** ✅ Implemented
 
 **Key Methods:**
-- `rage_scheduler_init_ED0` @ 0x82221ED0
+- `grcSetup::Init` (rage_game_obj_init_CB60) @ 0x8215CB60
 
-#### 7. `rage_ObjectFactory`
-**Purpose:** Object creation and management  
-**Location:** `src/rage/object_factory.cpp`  
-**Status:** ⏳ Not implemented
+#### 6. `audSystem` (was rage_Scheduler)
+**Purpose:** Audio device initialization and path mounting
+**Location:** `src/rage/game_loop.c`
+**Status:** ✅ Implemented
 
 **Key Methods:**
-- `rage_obj_factory_create_3040` @ 0x822E3040
-- `rage_obj_bind_3828` @ 0x822E3828
-- `rage_obj_finalize_3B38` @ 0x822E3B38
+- `audSystem_init` (audSystem_init_1ED0) @ 0x82221ED0
+
+**NOTE:** This was previously misidentified as a frame scheduler. It is actually the audio system init that walks the audio-device path table and mounts audio devices via fiDevice.
+
+#### 7. `fiStreamBuf` (was rage_ObjectFactory)
+**Purpose:** Ring-buffered async file I/O stream
+**Location:** `src/rage/game_loop.c`
+**Status:** ✅ Implemented
+
+**Key Methods:**
+- `fiStreamBuf_OpenAll` (rage_obj_factory_create_3040) @ 0x822E3040 - Device enumeration + open
+- `fiStreamBuf_Read` (rage_obj_bind_3828) @ 0x822E3828 - Ring-buffer read
+- `fiStreamBuf_Close` (rage_obj_finalize_3B38) @ 0x822E3B38 - Stream close
 
 ### State Machine Classes
 
@@ -318,8 +326,8 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 - `pongLogosState_vfn_14` @ 0x82306DB8
 
 #### 9. `hudTrainingLoadScreen`
-**Purpose:** Loading screen HUD  
-**Location:** `src/game/hud_screens.cpp`  
+**Purpose:** Loading screen HUD
+**Location:** `src/ui/hud_boot.cpp` (nearest existing file; `src/game/hud_screens.cpp` does not exist)
 **Status:** ⏳ Not implemented
 
 **Key Methods:**
@@ -345,9 +353,9 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 | 0x825EBCE8 | `g_exe_name_ptr` | Executable name | 4 bytes |
 | 0x825EBCEC | `g_argc_stored` | Argument count | 4 bytes |
 | 0x825EBCF0 | `g_argv_stored` | Argument vector | 4 bytes |
-| 0x825CAE68 | `rage_GameObject` | Root game object | Unknown |
-| 0x825CAE88 | `rage_GameObject` | Game object instance | Unknown |
-| 0x825CAE54 | `rage_GameObject` | Game object instance | Unknown |
+| 0x825CAE68 | `g_gate_startLogging` (lbl_825CAE68) | FeatureGate struct | 20 bytes |
+| 0x825CAE54 | `g_gate_dumpLeaks` (lbl_825CAE54) | FeatureGate struct | 20 bytes |
+| 0x82606604 | `g_game_obj_ptr` | Root game object pointer (SDA) | 4 bytes |
 
 ---
 
@@ -365,53 +373,65 @@ xstart @ 0x8242BD20 (CRT Entry Point)
 - Memory allocator singleton creation
 
 ### 3. RAGE Engine Init (100-200ms)
-- Network hardware detection
+- Network hardware detection (Winsock WSAStartup/WSACleanup)
 - Argument processing
-- Subsystem registration
-- Object factory setup
+- Subsystem registration (semaphores + scheduler thread)
+- File I/O stream setup (fiStreamBuf)
 
-### 4. Graphics Init (200-300ms)
-- `grcDevice_init` - Create OpenGL context
+### 4. Streaming + Audio Init (200-300ms)
+- `pgStreamer_Init` - Async streaming pool (256 nodes) + reader thread
 - `grcRenderer_init` - Setup renderer
-- Render target creation
-- Shader compilation (if needed)
+- `audSystem_init` - Audio device path table mounting
 
 ### 5. Game Loop Start (300ms+)
-- Scheduler initialization
-- First frame begins
+- Game loop begins
+- First frame enters render phase
 - State machine enters `pongLogosState`
-- **First draw call executes**
+- `rage_render_scene` calls `rage_render_default` — **first draw call executes**
 
 ---
 
 ## First Draw Call Details
 
-### Function: `rage_render_default_08D8`
-**Address:** 0x822C07E0  
-**File:** `src/rage/scene_render.c`  
-**Size:** 0x468 bytes
+### Function: `rage_render_default` (rage_render_default_08D8)
+**Address:** 0x822C08D8
+**File:** `src/rage/scene_render.c`
+**Size:** 0x240 bytes (576 bytes)
+
+**NOTE:** The previous address 0x822C07E0 was incorrect — that is `rage_scene_cleanup_07E0` (a separate 248-byte cleanup function). The actual first draw call is at 0x822C08D8.
 
 **Call Sequence:**
 ```
 gameLoop_Render_9A58 @ 0x82229A58
-└─ rage_render_default_08D8 @ 0x822C07E0
-   ├─ grcDevice_beginScene_5E78 @ 0x82305E78
-   │  └─ Binds default framebuffer
-   │  └─ Sets viewport
+└─ rage_render_scene_0B18 @ 0x822C0B18 (scene render controller, 304 bytes)
+   │  ├─ pgStreamer profiling bracket (pg_C3B8_g)
+   │  └─ Post-render stream flush (pg_6C40_g)
    │
-   ├─ grcDevice_clear_9290 @ 0x82379290
-   │  └─ glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-   │  └─ Clear color: likely black or dark blue
-   │
-   └─ rage_render_scene_0B18 @ 0x822C0B18
-      └─ Renders scene geometry (if any)
-      └─ On boot: likely just logo textures
+   └─ rage_render_default_08D8 @ 0x822C08D8 ← FIRST DRAW CALL
+      │
+      ├─ Build clear-flags from gameLoop singleton:
+      │  bit 0 = m_bClearStencil (+0x242)
+      │  bit 1 = m_bClearColor   (+0x240)
+      │  bit 2 = m_bClearDepth   (+0x241)
+      │
+      ├─ Frame ring-buffer update (double-buffered GPU sync)
+      │
+      ├─ grcDevice_beginScene_5E78 @ 0x82305E78
+      │  └─ Begins rendering to framebuffer (if color or stencil clear)
+      │
+      ├─ grcDevice_clear_9290 @ 0x82379290
+      │  └─ Clears color/depth/stencil buffers
+      │
+      ├─ GPU command buffer stencil flag writes
+      │
+      └─ io_Input_poll @ 0x821C9D68 + pg_EDE0_gen @ 0x823CEDE0
+         └─ Input poll + page manager notification (if secondary device)
 ```
 
 **What Gets Drawn:**
-1. Clear screen to background color
-2. Rockstar Games logo (texture quad)
-3. Possibly loading indicator
+1. Clear screen to background color (via clear-flags bitmask)
+2. Subsequent frames: Rockstar Games logo via page manager
+3. Frame render counter incremented each call
 
 ---
 
@@ -424,15 +444,15 @@ To achieve a working boot screen, implement in this order:
 2. Thread setup (5 functions)
 3. `rage_main_6970` and entry functions (10 functions)
 4. `main` function @ 0x820C0378
-5. `grcDevice_init_8A00`
+5. `pgStreamer_Init` (grcDevice_init_8A00) + `audSystem_init`
 6. Game loop structure (13 functions)
-7. `rage_render_default_08D8` and rendering (5 functions)
+7. `rage_render_default_08D8` @ 0x822C08D8 and rendering (6 functions)
 
 **Total: ~44 functions**
 
 ### Priority 2: State Management (Should Have)
-1. `rage_GameObject` class
-2. `rage_ObjectFactory` class
+1. `grcSetup` class (game object init)
+2. `fiStreamBuf` class (file I/O streams)
 3. `pongLogosState` class
 4. State machine transitions
 
@@ -514,10 +534,11 @@ To achieve a working boot screen, implement in this order:
 ### Source Files
 - `src/crt/startup.c` - CRT entry point
 - `src/rage/main.c` - RAGE engine main
-- `src/rage/game_loop.c` - Game loop
-- `src/rage/scene_render.c` - Scene rendering
-- `src/grc/device.cpp` - Graphics device
-- `src/grc/renderer.cpp` - Renderer
+- `src/rage/app_init.c` - Graphics/streaming setup init
+- `src/rage/game_loop.c` - Subsystem init, audio init, file I/O streams
+- `src/rage/scene_render.c` - Scene rendering (first draw call)
+- `include/grc/device.h` - Graphics device header
+- `include/grc/renderer.h` - Renderer header
 
 ### Documentation
 - `docs/decompilation/INIT_FLOW_ANALYSIS.md` - Initialization flow
@@ -662,7 +683,7 @@ The document's original analysis was correct for the **boot screen**, but to act
 
 ---
 
-**Document Version:** 2.0 (CORRECTED)  
-**Last Updated:** February 26, 2026  
-**Author:** Kiro AI Assistant  
-**Status:** Complete - Verified for actual gameplay requirements
+**Document Version:** 3.0 (VERIFIED against symbol map + lifted source)
+**Last Updated:** February 27, 2026
+**Verified By:** Claude Code (cross-referenced master_symbol_map.json, recomp scaffolds, lifted src/)
+**Status:** Corrected — 5 critical errors fixed (wrong address, misidentified functions, false status claims)

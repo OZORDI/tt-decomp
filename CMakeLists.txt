@@ -38,7 +38,7 @@ add_definitions(${SDL2_DEFINITIONS})
 # Source files
 set(SOURCES
     # CRT layer
-    src/crt/crt_hooks.cpp
+
     src/crt/entry.c
     src/crt/exit.c
     src/crt/heap.c

@@ -97,8 +97,8 @@ void game_B2E0(void* subObjectArrayBase) {
  */
 plrPlayerMgr::~plrPlayerMgr() {
     // Set initial vtables for destruction phase
-    m_vtable1 = (void**)0x82039A24;   // Primary vtable
-    m_vtable2 = (void**)0x82039AB0;   // Secondary vtable (at offset +16)
+    vtable = (void**)0x82039A24;    // m_vtable1   // Primary vtable
+    // m_vtable2 (secondary vtable at +16): 0x82039AB0   // Secondary vtable (at offset +16)
     
     // Clear global player manager state
     g_plrPlayerMgr_state = 0;  // @ 0x82066430

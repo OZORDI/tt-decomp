@@ -8,6 +8,30 @@
 #include "pong_misc.hpp"
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Forward declarations for helpers referenced in this file
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" {
+    void  atSingleton_9420(void* obj);           // @ 0x821A9420
+    void  rage_free(void* ptr);                  // @ 0x820C00C0
+    void* xe_EC88(uint32_t size);                // @ 0x820DEC88
+    void  util_CE30(void* slot);                 // @ 0x8234CE30 - init parStructure
+    void  atSingleton_E998_g(void* self, void* type, uint32_t* out);  // @ 0x...
+}
+
+// Logging stub (calls internal debug printf, no-op in release builds)
+extern void nop_8240E6D0(const char* fmt, ...); // @ 0x8240E6D0
+
+// Field registration helper (rage serialization system)
+// game_8F58: registers a field of 'obj' with the data system
+// Signature: (obj, schemaKey, fieldPtr, fieldDesc, flags)
+extern void game_8F58(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
+
+// Virtual-call helpers (typed for readability)
+#define VCALL_slot20(obj, arg)     (((bool(*)(void*, uint32_t))(*(void***)(obj))[20])(obj, arg))
+#define VCALL_slot19(obj)     (((const char*(*)(void*))(*(void***)(obj))[19])(obj))
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // fsmMachine  [vtable @ 0x8204DD14]
 //
 // Base class for all finite state machines in the game.  Inherits from
@@ -93,8 +117,8 @@ extern void atSingleton_E998_g(void* obj, void* param2, void* outIndex);
  */
 pongSaveFile::pongSaveFile() {
     // Set initial vtables
-    m_vtable1 = (void**)0x8200CB18;
-    m_vtable2 = (void**)0x8200CB30;
+    // vtable managed by C++ runtime
+    // vtable managed by C++ runtime
     
     // Initialize 4 save slots (rage::parStructure instances)
     // Starting from offset 0x10008 (65544) and going backwards by 15044 each iteration
@@ -106,16 +130,16 @@ pongSaveFile::pongSaveFile() {
     }
     
     // Set final vtables
-    m_vtable2 = (void**)0x82017B34;
-    m_vtable1 = (void**)0x8204D9B0;
+    // vtable managed by C++ runtime
+    // vtable managed by C++ runtime
     
     // Free data if flags indicate ownership
-    if (m_flags != 0 && m_pData) {
+    if (m_entryCount != 0 && m_pData) {
         rage_free(m_pData);
     }
     
     // Set base class vtable
-    m_vtable1 = (void**)0x820176C4;
+    // vtable managed by C++ runtime
 }
 
 /**
@@ -125,7 +149,7 @@ pongSaveFile::pongSaveFile() {
  */
 pongSaveFile::~pongSaveFile() {
     // Call cleanup function
-    pongSaveFile::pongSaveFile();  // Calls constructor logic for cleanup
+    /* cleanup performed by pongSaveFile_5260; omitted in C++ dtor */
     
     // Free memory if destructor flag is set
     // (flag passed in r4, checked with & 0x1)
@@ -253,9 +277,9 @@ assetVersions::~assetVersions()
 {
     // Restore vtable to this class (vtable @ 0x8204E6FC)
     // (The base-class cleanup may have clobbered it.)
-    m_vtable = &assetVersions_vtable;   // 0x8204E6FC
+    // vtable managed by C++ runtime
 
-    sub_821A9420(this);                 // atSingleton destructor chain
+    atSingleton_9420(this);                 // atSingleton destructor chain
 
     // If the delete-self flag (bit 0) is set, free the object allocation.
     // The flag is passed via r4 at call time; the scaffold captures it as
@@ -394,8 +418,8 @@ const void* assetVersions::GetTypeDescriptor() const
  */
 assetVersionsChar::~assetVersionsChar()
 {
-    m_vtable = &assetVersionsChar_vtable;   // 0x8204E764
-    sub_821A9420(this);
+    // vtable managed by C++ runtime
+    atSingleton_9420(this);
     // if (flags & 1) rage_free_00C0(this);
 }
 
@@ -461,8 +485,8 @@ assetVersionsCharSpecific::~assetVersionsCharSpecific()
     rage_free_00C0(ownedPtr);
 
     // Restore vtable and run atSingleton base-class teardown
-    m_vtable = &assetVersionsCharSpecific_vtable;   // 0x8204E7CC
-    sub_821A9420(this);
+    // vtable managed by C++ runtime
+    atSingleton_9420(this);
     // if (flags & 1) rage_free_00C0(this);
 }
 

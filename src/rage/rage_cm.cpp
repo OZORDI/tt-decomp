@@ -93,6 +93,13 @@ extern const float g_cm_zeroFloat;  // @ 0x8202D110
 
 // {-1.f, -1.f, -1.f, -1.f} used by cmNegate's vector evaluation.
 extern float g_cm_negateVec[4]; // @ 0x825C5938
+// ── Missing forward declarations ──────────────────────────────────────────────
+extern float g_cm_frameRate;       // @ 0x829DAEC8 — per-frame rate constant (Differential)
+void*  rage_alloc_aligned(size_t size, size_t align); // RAGE heap aligned alloc
+void   rage_free(void* ptr);                          // RAGE heap free
+static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
+static uint8_t cmNode_GetBool(const cmNodePort* port);
+
 
 // ── PORT / DATA STRUCTURES ───────────────────────────────────────────────────
 
@@ -113,14 +120,6 @@ struct cmDataObj {
     uint8_t  m_pad[3];       // +0x11
 };
 
-/**
- * cmNodePort — describes one input connection slot on a node.
- * Stored inline inside cmNode at fixed offsets.
- */
-struct cmNodePort {
-    void*   m_pData;    // +0x00  raw value ptr (type==DIRECT) or upstream cmNode* (type==NODE)
-    int32_t m_type;     // +0x04  CM_PORT_NONE / CM_PORT_DIRECT / CM_PORT_NODE
-};
 
 // Port type codes
 static constexpr int CM_PORT_NONE   = 0;
@@ -153,57 +152,10 @@ struct cmPortDesc {
 
 // ── BASE NODE ─────────────────────────────────────────────────────────────────
 
-/**
- * cmNodeBase — base header present in all cm* node objects.
- * Derived structs lay ports immediately after this header.
- */
-struct cmNodeBase {
-    void**   m_pVtable;     // +0x00
-    int32_t  m_outputType;  // +0x04  CM_DIM_* set by TryConnect when ports match
-    int32_t  m_flags;       // +0x08  bit flags; bit3 toggled by Update()
-};
 
-/**
- * cmUnaryNode — node with exactly one input port (uses util_54C8 / TryConnectUnary).
- * Examples: cmNegate, cmSine, cmCosine, cmAbs, cmDifferential
- */
-struct cmUnaryNode : cmNodeBase {
-    cmNodePort portA;        // +0x0C / +0x10
-    int32_t    m_nConnected; // +0x14  count of connected ports (0 or 1)
-};
 
-/**
- * cmBinaryNode — node with two input ports (uses util_5698 / TryConnect).
- * Examples: cmAdd, cmSubtract, cmMultiply, cmLerp
- */
-struct cmBinaryNode : cmNodeBase {
-    cmNodePort portA;        // +0x0C / +0x10
-    cmNodePort portB;        // +0x14 / +0x18
-    int32_t    m_nConnected; // +0x1C  count of connected ports (0, 1, or 2)
-};
 
-/**
- * cmStatefulNode — binary node extended with result storage pointers.
- * Examples: cmMemory, cmIntegrate, cmIntegrate0
- */
-struct cmStatefulNode : cmBinaryNode {
-    void*   m_pCurrentValue;  // +0x20  16-byte aligned buffer for current output
-    void*   m_pPreviousValue; // +0x24  16-byte aligned buffer for previous frame
-};
 
-/**
- * cmApproachNode — approach operator with 2 rate/target ports and a result ptr.
- * Offset shift: portA starts at +0x14 (not +0x0C).
- */
-struct cmApproachNode : cmNodeBase {
-    uint8_t    m_pad[8];      // +0x0C  (purpose unclear — speed or ID field)
-    cmNodePort portA;         // +0x14 / +0x18  rate/input signal
-    cmNodePort portB;         // +0x1C / +0x20  target value
-    int32_t    m_nConnected;  // +0x24
-    uint8_t    m_pad2[4];     // +0x28
-    void*      m_pResult;     // +0x28  16-byte aligned buffer for current state
-                              // TODO: verify exact offset (40 in assembly = 0x28)
-};
 
 // ── PORT EVALUATION UTILITIES (lifted from util_92D8, util_9350, etc.) ────────
 
@@ -502,8 +454,8 @@ void cmNegate::GetFloat(float* out) {
 // Uses same descriptor set as cmAdd (aliased to cmAdd::RegisterPorts).
 // The unary semantic is enforced by portB always being unconnected.
 void cmNegate::RegisterPorts(cmBinaryNode* node) {
-    // Aliased to cmAdd::RegisterPorts — shares the same binary code.
-    cmAdd::RegisterPorts(node);
+    // Aliased to cmAdd::RegisterPorts — same binary code. Call via cmAdd vtable on this.
+    reinterpret_cast<cmAdd*>(this)->cmAdd::RegisterPorts(node);
 }
 
 // ── cmAbs — absolute value of input. vtable @ 0x82053E8C ─────────────────────

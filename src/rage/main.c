@@ -109,6 +109,11 @@ extern const char  k_winsock_no_dll[];    /* "InitWinSock - Couldn't find a usab
 extern const char  k_winsock_bad_ver[];   /* "InitWinSock - Couldn't find a usable WinSock DLL (version=%x)" @ 0x8205ADC4 */
 extern const char  k_disc_path_prefix[];  /* "A:"                                      @ 0x8203860C */
 
+/* Forward declarations for network helper functions (not yet in a header) */
+extern int   util_1AF8(int version, void* wsaData);   /* WSAStartup wrapper @ 0x82481AF8 */
+extern void  nop_8240E6D0(const char* fmt, ...);       /* Debug log no-op    @ 0x8240E6D0 */
+extern void  rage_1B08(void);                          /* WSock error handler @ 0x82481B08 */
+
 /* ─── CmdArgRecord — registered command-line option node ──────────────── */
 
 typedef struct CmdArgRecord {

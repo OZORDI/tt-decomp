@@ -67,11 +67,12 @@ pongMover::pongMover() {
     if (m_pCreature) {
         // Calculate pool-relative offset
         // This adjusts the creature pointer based on its position in the object pool
-        uint32_t basePtr = *(uint32_t*)(m_pCreaturePool + 4);
-        uint32_t stride = *(uint32_t*)(m_pCreaturePool + 76);
+        uint8_t* pool = (uint8_t*)m_pCreaturePool;
+        uint32_t basePtr = *(uint32_t*)(pool + 4);
+        uint32_t stride = *(uint32_t*)(pool + 76);
         
         if (stride > 0) {
-            uint32_t offset = ((uint32_t)m_pCreature - basePtr) / stride;
+            uint32_t offset = ((uint32_t)((uintptr_t)m_pCreature) - basePtr) / stride;
             uint32_t* poolArray = (uint32_t*)m_pCreaturePool;
             m_pCreature = (void*)poolArray[offset + 2];
         }
@@ -178,7 +179,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
         game_3C70(remoteMatrixObj);
         
         // If valid, copy remote rest matrix
-        if (/* result != 0 */) {
+        { // TODO: check game_3C70 return value
             float* remoteMatrix = (float*)((char*)mover + 192);
             
             nop_8240E6D0("pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]",
@@ -192,7 +193,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
             uint32_t creatureIndex = *(uint32_t*)((char*)mover + 68);
             
             void* playerCreature = (void*)((char*)player + creatureIndex);
-            void* creatureInfo = pg_9C00_g(player, creatureIndex);
+            void* creatureInfo = (void*)pg_9C00_g(player, creatureIndex);
             void* creatureStats = *(void**)((char*)creatureInfo + 44);
             
             // Check if mirrored
@@ -245,7 +246,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
     
     pongPlayer_9CD0_g(player, creatureIndex, tempMatrix1, tempMatrix2);
     
-    void* creatureInfo = pg_9C00_g(player, creatureIndex);
+    void* creatureInfo = (void*)pg_9C00_g(player, creatureIndex);
     void* creatureStats = *(void**)((char*)creatureInfo + 44);
     
     // Get height offset

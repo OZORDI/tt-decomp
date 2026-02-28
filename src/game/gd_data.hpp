@@ -47,7 +47,7 @@ struct gdAssetRootMgr {
     virtual ~gdAssetRootMgr();                  // [0] @ 0x822121c8
 };
 
-namespace gdAssetRootMgr {
+namespace gdAssetRootMgrInner {
 
 // ── gdAssetRootMgr::Root  [vtable @ 0x8204A61C] ──────────────────────────
 struct Root {
@@ -57,7 +57,7 @@ struct Root {
     virtual ~Root();                  // [0] @ 0x82212158
 };
 
-} // namespace gdAssetRootMgr
+} // namespace gdAssetRootMgrInner
 
 // ── gdAttributeBuffer  [vtable @ 0x8204BB94] ──────────────────────────
 struct gdAttributeBuffer {
@@ -89,7 +89,7 @@ struct gdBTgtBoneName {
     virtual void PostLoadChildren();  // [22] @ 0x821d4ba8
 };
 
-namespace gdBTgtBoneName {
+namespace gdBTgtBoneNameInner {
 
 // ── gdBTgtBoneName::xmlNodeStructAvgFcnType  [vtable @ 0x8203E068] ──────────────────────────
 struct xmlNodeStructAvgFcnType {
@@ -107,7 +107,7 @@ struct xmlNodeStructInterpFcnType {
     virtual void vfn_5();  // [5] @ 0x821d45d8
 };
 
-} // namespace gdBTgtBoneName
+} // namespace gdBTgtBoneNameInner
 
 // ── gdBlendTargetName  [vtable @ 0x8203D7EC] ──────────────────────────
 struct gdBlendTargetName {
@@ -121,7 +121,7 @@ struct gdBlendTargetName {
     virtual void PostLoadChildren();  // [22] @ 0x821d47a8
 };
 
-namespace gdBlendTargetName {
+namespace gdBlendTargetNameInner {
 
 // ── gdBlendTargetName::xmlNodeStructBlendFcnType  [vtable @ 0x8203E018] ──────────────────────────
 struct xmlNodeStructBlendFcnType {
@@ -131,7 +131,7 @@ struct xmlNodeStructBlendFcnType {
     virtual void vfn_5();  // [5] @ 0x821d45c8
 };
 
-} // namespace gdBlendTargetName
+} // namespace gdBlendTargetNameInner
 
 // ── gdBlendTargets  [vtable @ 0x8203D784] ──────────────────────────
 struct gdBlendTargets {
@@ -155,7 +155,7 @@ struct gdCamData {
     virtual void PostLoadChildren();  // [22] @ 0x82217918
 };
 
-namespace gdCamData {
+namespace gdCamDataInner {
 
 // ── gdCamData::xmlNodeStructCamType  [vtable @ 0x8204C208] ──────────────────────────
 struct xmlNodeStructCamType {
@@ -173,7 +173,7 @@ struct xmlNodeStructSubCamType {
     virtual void vfn_5();  // [5] @ 0x82217848
 };
 
-} // namespace gdCamData
+} // namespace gdCamDataInner
 
 // ── gdCharData  [vtable @ 0x8203DA54] ──────────────────────────
 struct gdCharData {
@@ -270,8 +270,6 @@ struct gdDrillServingData {
     virtual void PostLoadProperties();  // [20] @ 0x821ded38
     virtual void PostLoadChildren();  // [22] @ 0x821ded90
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdEnvelope  [vtable @ 0x82049734] ──────────────────────────
@@ -411,7 +409,7 @@ struct gdMovieData {
     virtual void PostLoadChildren();  // [22] @ 0x82305a78
 };
 
-namespace gdMovieData {
+namespace gdMovieDataInner {
 
 // ── gdMovieData::xmlNodeStructMovieType  [vtable @ 0x82076018] ──────────────────────────
 struct xmlNodeStructMovieType {
@@ -422,7 +420,7 @@ struct xmlNodeStructMovieType {
     virtual void vfn_6();  // [6] @ 0x8240afa0
 };
 
-} // namespace gdMovieData
+} // namespace gdMovieDataInner
 
 // ── gdNetData  [vtable @ 0x820424CC] ──────────────────────────
 struct gdNetData {
@@ -513,7 +511,7 @@ struct gdPropData {
     virtual void PostLoadChildren();  // [22] @ 0x822113d8
 };
 
-namespace gdPropData {
+namespace gdPropDataInner {
 
 // ── gdPropData::xmlNodeStructPropType  [vtable @ 0x8204A3CC] ──────────────────────────
 struct xmlNodeStructPropType {
@@ -523,7 +521,7 @@ struct xmlNodeStructPropType {
     virtual void vfn_5();  // [5] @ 0x82211300
 };
 
-} // namespace gdPropData
+} // namespace gdPropDataInner
 
 // ── gdPropDataFile  [vtable @ 0x8204A3F4] ──────────────────────────
 struct gdPropDataFile {
@@ -835,7 +833,7 @@ struct gdUnlockConditionFinalHitData {
     virtual void vfn_23();  // [23] @ 0x82219d38
 };
 
-namespace gdUnlockConditionFinalHitData {
+namespace gdUnlockConditionFinalHitDataInner {
 
 // ── gdUnlockConditionFinalHitData::xmlNodeStructHitType  [vtable @ 0x8204CB0C] ──────────────────────────
 struct xmlNodeStructHitType {
@@ -861,7 +859,7 @@ struct xmlNodeStructSwingType {
     virtual void vfn_5();  // [5] @ 0x821d6948
 };
 
-} // namespace gdUnlockConditionFinalHitData
+} // namespace gdUnlockConditionFinalHitDataInner
 
 // ── gdUnlockConditionGameDeficit  [vtable @ 0x8204B37C] ──────────────────────────
 struct gdUnlockConditionGameDeficit {
@@ -1013,7 +1011,7 @@ struct gdUnlockConditionSettingsData {
     virtual void vfn_23();  // [23] @ 0x82219678
 };
 
-namespace gdUnlockConditionSettingsData {
+namespace gdUnlockConditionSettingsDataInner {
 
 // ── gdUnlockConditionSettingsData::xmlNodeStructDifficulty  [vtable @ 0x8204CA44] ──────────────────────────
 struct xmlNodeStructDifficulty {
@@ -1047,7 +1045,7 @@ struct xmlNodeStructPointsPerGame {
     virtual void vfn_5();  // [5] @ 0x82219460
 };
 
-} // namespace gdUnlockConditionSettingsData
+} // namespace gdUnlockConditionSettingsDataInner
 
 // ── gdUnlockConditionSkunk  [vtable @ 0x8204B314] ──────────────────────────
 struct gdUnlockConditionSkunk {
@@ -1145,7 +1143,7 @@ struct gdUnlockGroupData {
     virtual void PostLoadChildren();  // [22] @ 0x82213680
 };
 
-namespace gdUnlockGroupData {
+namespace gdUnlockGroupDataInner {
 
 // ── gdUnlockGroupData::xmlNodeStructGroupType  [vtable @ 0x8204CCFC] ──────────────────────────
 struct xmlNodeStructGroupType {
@@ -1155,7 +1153,7 @@ struct xmlNodeStructGroupType {
     virtual void vfn_5();  // [5] @ 0x821f2148
 };
 
-} // namespace gdUnlockGroupData
+} // namespace gdUnlockGroupDataInner
 
 // ── gdUnlockItemData  [vtable @ 0x8204ADC4] ──────────────────────────
 struct gdUnlockItemData {
@@ -1256,8 +1254,6 @@ struct gdVibEvent {
     virtual void PostLoadChildren();  // [22] @ 0x8220f9b0
     virtual void vfn_23();  // [23] @ 0x8220f918
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdVibMgr  [vtable @ 0x8204A238] ──────────────────────────
@@ -1426,8 +1422,17 @@ struct gdaiSkillStats {
 };
 
 // ── plrPlayerMgr  [2 vtables — template/MI] ──────────────────────────
+// Multiple-inheritance object: has two vtable pointers at +0 and +16.
+// Sub-object array starts at +20 (2 objects × 24 bytes = 48 bytes).
 struct plrPlayerMgr {
-    void**      vtable;           // +0x00
+    void**      vtable;           // +0x00 (m_vtable1 — primary vtable)
+    uint32_t    _pad04[3];        // +0x04..+0x0F
+    void**      m_vtable2;        // +0x10 (secondary vtable, MI base)
+    uint32_t    _pad14;           // +0x14..+0x17
+    uint8_t     m_subObjects[48]; // +0x14  two embedded sub-objects (2 × 24 bytes)
+
+    // primary vtable alias (used in dtor to restore after destruction)
+    void**& m_vtable1 = vtable;
 
     // ── virtual methods ──
     virtual ~plrPlayerMgr();                  // [0] @ 0x82188d40
@@ -1481,8 +1486,14 @@ struct plrSwingLogic {
 
 #include <stdint.h>
 
-// Forward declarations
-class xmlNodeStruct;
+// xmlNodeStruct — base class for XML-serializable data nodes
+struct xmlNodeStruct {
+    void** vtable;  // +0x00
+    virtual ~xmlNodeStruct() {}
+    virtual void PostLoadProperties() {}
+    virtual void Validate() {}
+    virtual void PostLoadChildren() {}
+};
 class gdCharData;
 
 /**
