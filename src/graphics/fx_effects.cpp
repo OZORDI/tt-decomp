@@ -39,3 +39,27 @@ void fxBallTrail::SetEffectParameters(int effectIndex, uint32_t intensity, uint3
     // Store duration at offset 15404 (0x3C2C)
     *(uint32_t*)((char*)this + 15404) = duration;
 }
+
+
+/**
+ * fxCrowdGfx::~fxCrowdGfx @ 0x823856E0 | size: 0x50
+ * [vtable slot 2 - destructor]
+ *
+ * Destructor for crowd graphics effect.
+ * Calls base class cleanup (rage_5908) and optionally frees the object
+ * memory if the delete-self flag (bit 0 of flags parameter) is set.
+ *
+ * @param flags Destructor flags (bit 0 = delete self)
+ */
+fxCrowdGfx::~fxCrowdGfx(int flags) {
+    // Call base class cleanup
+    extern void rage_5908(void*);
+    rage_5908(this);
+    
+    // Check if we should free the object memory (bit 0 of flags)
+    if (flags & 0x1) {
+        // Free the object using RAGE memory allocator
+        extern void rage_free_00C0(void*);
+        rage_free_00C0(this);
+    }
+}
