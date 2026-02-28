@@ -58,6 +58,9 @@ struct LocomotionState {
     virtual void vfn_8();  // [8] @ 0x820dfde0
     virtual void vfn_9();  // [9] @ 0x820dfe48
     virtual void vfn_12();  // [12] @ 0x820df138
+    
+    // ── non-virtual methods ──
+    void ValidateAnimationTiming(uint32_t& animSetIndex, uint32_t& animIndex, float& outTiming);  // @ 0x820DF220
 };
 
 // ── LocomotionStateAnim  [vtable @ 0x8202E1A4] ──────────────────────────
@@ -711,6 +714,9 @@ struct pongBlendLookAtDriver {
     // ── non-virtual methods (from debug strings) ──
     void UpdateBody();
     void UpdateFace();
+    
+    // ── implemented methods ──
+    float CalculateBlendFactor();  // @ 0x820D0CA0 [vtable slot 18]
 };
 
 // ── pongBlender  [2 vtables — template/MI] ──────────────────────────
