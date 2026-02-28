@@ -1387,3 +1387,80 @@ uint32_t SinglesNetworkClient::ReadStringFromStream(const char* stringBuffer) {
     // Return string length + 1
     return stringLength + 1;
 }
+
+
+// ===========================================================================
+// pongNetMessageHolder::InitializeInternalArray (vfn_1) @ 0x823C2CC8 | size: 0x54
+//
+// Lazy initialization of the internal message array.
+// Allocates 1296 bytes (0x510) if the array hasn't been created yet,
+// then calls the initialization function to set it up.
+//
+// This is vtable slot 1, likely called during first use of the message holder.
+// ===========================================================================
+void pongNetMessageHolder::InitializeInternalArray()
+{
+    // Check if internal array is already allocated
+    if (m_pInternalArray == nullptr) {
+        // Allocate 1296 bytes for the internal array
+        void* newArray = xe_EC88(1296);
+        
+        if (newArray != nullptr) {
+            // Initialize the allocated array
+            pongNetMessageHolder_7700_wrh(newArray);
+        }
+        
+        // Store the result (may be nullptr if allocation failed)
+        m_pInternalArray = newArray;
+    }
+}
+
+
+// ===========================================================================
+// pongNetMessageHolder::RemoveFromThreadPoolList @ 0x82585C58 | size: 0x50
+//
+// Removes a node from the global threadpool linked list.
+// Traverses the list starting from g_threadpool_head, looking for a specific
+// sentinel node, and removes it if found. Then calls cleanup function.
+//
+// The linked list nodes have the structure:
+//   +0x00: node data
+//   +0x14 (20): next pointer
+// ===========================================================================
+void pongNetMessageHolder::RemoveFromThreadPoolList()
+{
+    // Global threadpool list head @ 0x825EBCBC
+    extern uint32_t* g_threadpool_head;  // @ 0x825EBCBC
+    
+    // Sentinel node address @ 0x8271A2CC
+    const uint32_t sentinelAddr = 0x8271A2CC;
+    
+    // Get the head of the list
+    uint32_t* current = g_threadpool_head;
+    
+    // Check if list is not empty
+    if (*current != 0) {
+        // Traverse the list looking for the sentinel or end
+        uint32_t* prev = current;
+        uint32_t* node = (uint32_t*)*current;
+        
+        while (node != nullptr && (uint32_t)node != sentinelAddr) {
+            // Move to next node (offset +20 is the next pointer)
+            prev = (uint32_t*)((char*)node + 20);
+            node = (uint32_t*)*prev;
+        }
+        
+        // If we found a node (not at sentinel), remove it from the list
+        if (node != nullptr) {
+            // Get the next pointer from the node we're removing
+            uint32_t* next = (uint32_t*)*((uint32_t*)((char*)node + 20));
+            
+            // Update the previous node's next pointer to skip this node
+            *prev = (uint32_t)next;
+        }
+    }
+    
+    // Call threadpool cleanup function
+    extern void rage_threadpool_cleanup_6878();  // @ 0x82176878
+    rage_threadpool_cleanup_6878();
+}

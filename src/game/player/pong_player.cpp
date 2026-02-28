@@ -1985,3 +1985,191 @@ void pongPlayer::InitializeCollisionGrid(int r4, uint8_t metadataByte)
         memcpy(mirrorBase, gridBase, 16);
     }
 }
+
+
+// ===========================================================================
+// SECTION 8 — 0050: ProcessInputVector  @ 0x821A0050 | size: 0x2A0
+// ===========================================================================
+/**
+ * pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags)
+ *   @ 0x821A0050
+ *
+ * Processes 3D input vector (likely from analog stick or motion input) and
+ * applies it to the player's movement/aim system. The function:
+ *
+ *  1. Loads the current player's input slot data from global tables
+ *  2. Calls a helper function (pongPlayer_6470_g) twice to compute intermediate
+ *     vectors based on player state and input
+ *  3. Scales the input by player-specific factors (from this+36, this+40)
+ *  4. Applies clamping and quantization to produce a final integer value
+ *     in the range [-31, 31]
+ *  5. Stores the result to the player's input data structure
+ *
+ * The function has several conditional paths based on:
+ *  - flags parameter (r4): controls special processing modes
+ *  - Player state byte at +6626: enables range clamping to [-4, 31]
+ *  - Input magnitude thresholds: determines if input should be zeroed
+ *
+ * @param x      Input X component (f1)
+ * @param y      Input Y component (f2)
+ * @param z      Input Z component (f3)
+ * @param flags  Processing flags byte (r4)
+ *
+ * TODO: This function needs deeper analysis to understand:
+ *  - The exact purpose of the two pongPlayer_6470_g calls
+ *  - The meaning of the various thresholds and scaling factors
+ *  - The relationship between the input vector and the final integer output
+ *  - Whether this is stick input, motion input, or AI targeting
+ */
+void pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags) {
+    // Load player's input slot index from this+44 (m_pBody) -> +464
+    void* body = reinterpret_cast<void*>(
+        *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + 44));
+    int32_t inputSlot = *reinterpret_cast<int32_t*>(
+        reinterpret_cast<uintptr_t>(body) + 464);
+
+    // Load global input data table base
+    // TODO: Resolve exact global addresses and structure layout
+    extern uint8_t* g_pPlayerInputTable;  // @ lis(-32158) + -23600
+    extern int32_t  g_currentInputSlot;   // @ lis(-32160) + 25976
+    
+    // Calculate offset into input table: inputSlot * 416 bytes per entry
+    uint32_t tableOffset = inputSlot * 416;
+    uint8_t* inputData = g_pPlayerInputTable + tableOffset;
+    
+    // Load current position vector from inputData+240 (16-byte aligned)
+    vec3 currentPos;
+    memcpy(&currentPos, inputData + 240, sizeof(vec3));
+    
+    // Call helper function to compute intermediate vector
+    vec3 tempVec1;
+    pongPlayer_6470_g(&tempVec1, inputData);
+    
+    // Scale input by player-specific factors
+    float scaleX = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + 36);
+    float scaleY = *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(this) + 40);
+    
+    // Load scaling constant from data section
+    extern const float g_kInputScale;  // @ 0x825C5938 + 22840
+    
+    // Compute scaled deltas
+    float deltaX = scaleX * x * g_kInputScale;
+    float deltaY = scaleX * y * g_kInputScale;
+    float deltaZ = scaleY * z;
+    
+    // Store scaled vector to stack temp
+    vec3 scaledInput = { deltaZ, 0.0f, deltaX, 0.0f };  // Note: component reordering
+    
+    // Store to inputData+240
+    memcpy(inputData + 240, &scaledInput, sizeof(vec3));
+    
+    // Call helper again with updated data
+    vec3 tempVec2;
+    pongPlayer_6470_g(&tempVec2, inputData);
+    
+    // Add the two computed vectors
+    vec3 finalVec;
+    finalVec.x = tempVec2.x + scaledInput.x;
+    finalVec.y = tempVec2.y + scaledInput.y;
+    finalVec.z = tempVec2.z + scaledInput.z;
+    
+    // Store result to this+48 (16-byte aligned)
+    memcpy(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(this) + 48),
+           &finalVec, sizeof(vec3));
+    
+    // Load array pointer and compute index
+    extern void** g_pInputArrayTable;  // @ 0x825EAB28
+    int32_t arrayIndex = inputSlot + 17;
+    void* arrayEntry = g_pInputArrayTable[arrayIndex];
+    
+    // Load threshold value from entry+56
+    float threshold = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(arrayEntry) + 56);
+    
+    // Compute scaled threshold check
+    float scaledThreshold = threshold * deltaX;
+    
+    // Load comparison constants
+    extern const float g_kInputThresholdLow;   // @ 0x8202D108
+    extern const float g_kInputThresholdHigh;  // @ 0x8202D110
+    extern const float g_kZeroThreshold;       // @ 0x8202D108
+    
+    // Initialize output value
+    int32_t outputValue = 0;
+    
+    // Check if input magnitude is significant
+    if (fabs(deltaX) >= g_kZeroThreshold) {
+        // Quantize the input to integer range
+        // This complex section converts float input to clamped integer
+        
+        // Determine sign and apply scaling
+        float absInput = fabs(deltaX);
+        
+        // Load quantization constants
+        extern const float g_kQuantScale1;  // @ 0x82079FFC
+        extern const float g_kQuantScale2;  // @ 0x82079FF8
+        extern const float g_kQuantMult;    // @ 0x82079FF4
+        
+        float quantScale = (deltaY <= g_kInputThresholdHigh) ? 
+                          g_kQuantScale1 : g_kQuantScale2;
+        
+        // Apply quantization
+        int32_t quantX = static_cast<int32_t>(deltaY);
+        int32_t quantY = static_cast<int32_t>(absInput * quantScale);
+        
+        // Compute product
+        int32_t product = quantX * quantY;
+        
+        // Adjust based on sign of deltaZ
+        if (product < 0) {
+            int32_t absZ = static_cast<int32_t>(fabs(deltaZ));
+            product = product - absZ;
+        } else if (product > 3) {
+            product = 3;
+        }
+        
+        // Clamp to [-31, 31] range
+        if (product < -31) {
+            product = -31;
+        } else if (product > 31) {
+            product = 31;
+        }
+        
+        outputValue = product;
+    }
+    
+    // Check flags parameter
+    if (flags != 0) {
+        // Load threshold for special mode
+        extern const float g_kSpecialThreshold;  // @ 0x825C8A50
+        
+        if (threshold > g_kSpecialThreshold) {
+            outputValue = 31;
+        } else {
+            // Check inputData+156 for state value
+            int32_t stateValue = *reinterpret_cast<int32_t*>(
+                reinterpret_cast<uintptr_t>(inputData) + 156);
+            
+            if (stateValue == 3 && outputValue >= 0) {
+                outputValue = 0;
+            }
+        }
+    }
+    
+    // Check body state byte at +6626
+    uint8_t bodyState = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(body) + 6626);
+    
+    if (bodyState != 0) {
+        // Apply tighter clamping: [-4, 31]
+        if (outputValue < -4) {
+            outputValue = -4;
+        } else if (outputValue > 31) {
+            outputValue = 31;
+        }
+    }
+    
+    // Store final result to inputData+48
+    *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(inputData) + 48) = 
+        outputValue;
+}

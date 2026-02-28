@@ -731,3 +731,33 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
     // Return true if processing succeeded (non-zero result)
     return result;
 }
+
+/**
+ * pg_4900_fw @ 0x821F4900 | size: 0x5C
+ * 
+ * Page group input handler wrapper.
+ * Swaps parameters and calls pg_6F68 with fixed event type and parameters.
+ * 
+ * Parameters:
+ *   - pPageGroup: Page group context object
+ *   - pInputValue: Pointer to input value
+ * 
+ * Returns:
+ *   - true if input was processed successfully (non-zero result)
+ *   - false if processing failed (zero result)
+ */
+bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
+    // Build parameter array on stack
+    // Array layout: [3, 1]
+    uint32_t params[2];
+    params[0] = 3;
+    params[1] = 1;
+    
+    // Call page group processor with swapped parameters
+    // Note: pg_6F68 expects (inputValue, pageGroup, ...) but we receive (pageGroup, inputValue)
+    // Parameters: (inputValue, pageGroup, eventType=16, params, paramCount=1)
+    uint8_t result = pg_6F68(pInputValue, pPageGroup, 16, params, 1);
+    
+    // Return true if processing succeeded (non-zero result)
+    return (result != 0);
+}
