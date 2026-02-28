@@ -81,4 +81,50 @@ struct parMemberString {
     void vfn_8(std::uint32_t memberOffset);
 };
 
+/**
+ * rage::parMemberArray @ 0x82065BD0
+ *
+ * Array-specialized parameter descriptor used by the par serialization layer.
+ * It resolves backing storage for array fields and marshals cmOperator lists.
+ */
+struct parMemberArray {
+    void** m_pVtable;             // +0x00
+    void* m_pMemberDesc;          // +0x04
+    void* m_pElementSerializer;   // +0x08
+
+    /**
+     * parMemberArray::vfn_0 @ 0x8234E088 | size: 0x50
+     * Scalar destructor with optional self-free.
+     */
+    void* vfn_0(std::uint32_t freeSelf);
+
+    /**
+     * parMemberArray::E0D8_h @ 0x8234E0D8 | size: 0x60
+     * Releases the array serializer sub-object and restores base vtable state.
+     */
+    void E0D8_h();
+
+    /**
+     * parMemberArray::E138 @ 0x8234E138 | size: 0x234
+     * Resolves the array data address and logical element count for a member.
+     */
+    void E138(
+        std::uint32_t memberOffset,
+        std::uint32_t* outDataAddress,
+        std::uint32_t* outElementCount
+    );
+
+    /**
+     * parMemberArray::vfn_6 @ 0x8234E370 | size: 0x394
+     * Exports the array member into a cmOperator payload/list representation.
+     */
+    cmOperator* vfn_6(std::uint32_t memberOffset);
+
+    /**
+     * parMemberArray::vfn_7 @ 0x8234E708 | size: 0x37C
+     * Imports cmOperator array data/list nodes back into member storage.
+     */
+    void vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+};
+
 } // namespace rage

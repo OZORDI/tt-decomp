@@ -1,572 +1,306 @@
 /**
- * mcMemcardControl — Xbox 360 memory card / save-data state machine
+ * mc_memcard.cpp — Xbox 360 memory card/save-data state machine
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
- *
- * mcMemcardControl is a finite state machine (inherits fsmMachine) that
- * orchestrates all memory-card I/O operations: finding existing saves,
- * selecting a device, loading/saving game data, writing the save icon,
- * searching for content, removing stale saves, querying free space, and
- * formatting / unformatting the storage device.
- *
- * Each operation is modelled as an inner state class derived from
- * mcMemcardStatus.  The FSM enforces a narrow set of legal transitions:
- *   Idle  → any state          (start any operation)
- *   any   → Idle               (complete / cancel)
- *   Save  → SaveIcon or Remove (write icon, or clear space first)
- *   Remove → Save              (retry save after clearing space)
- *
- * A datBase-derived embedded sub-object (m_saveOp) tracks the pending
- * operation's result handle and carries a 4936-byte content data buffer
- * plus a 42-character filename field at the end.
- *
- * Vtable layout  (mcMemcardControl @ 0x8204D684, size 0x44 = 17 slots)
- * Inherits from  fsmMachine     (vtable @ 0x8204DD14)
- * Inherits from  rage::datBase  (vtable @ 0x820276C4, embedded @ +0x2C)
  */
 
-#include "game/mc_memcard.hpp"
-#include "rage/heap.hpp"       // rage_free, rage_malloc
-#include "rage/subsystems.h"    // xe_main_thread_init
-#include <stdlib.h>
-#include <string.h>  // memset
-// #include "rage/fsm_machine.hpp"  // struct defined inline below
+#include "mc_memcard.hpp"
 
-// ── Forward declarations ──────────────────────────────────────────────────────
+#include "rage/heap.hpp"
+#include "rage/subsystems.h"
 
-struct mcMemcardControl;
+#include <cstdint>
+#include <cstring>
 
+extern "C" {
+void atSingleton_2E60_g(void* singleton);  // @ 0x822E2E60
+void* rage_obj_factory_create_3040(void* singleton,
+                                   const void* typeInfo,
+                                   const void* typeOps,
+                                   std::int32_t flags,
+                                   std::int32_t isRootType);  // @ 0x822E3040
+void rage_obj_bind_3828(void* factoryContext, void* storage, std::uint32_t size);  // @ 0x822E3828
+void rage_obj_finalize_3B38(void* factoryContext);  // @ 0x822E3B38
+void nop_8240E6D0(const void* messageTag,
+                  const void* typeInfo,
+                  const void* typeOps,
+                  std::uint32_t typeSize);  // @ 0x8240E6D0
+}
 
+namespace {
 
-// ── mcMemcardStatus – base class for all inner state objects ─────────────────
-//
-// Vtable @ 0x8204D6C8, size 0x0C (3 slots).
-// Each concrete state class expands this to 0x40 (16 slots).
+constexpr std::int32_t kMemcardStateCount = 11;
 
-struct mcMemcardStatus /* : virtual base */ {
-    virtual ~mcMemcardStatus() = 0;  // slot 0 — scalar delete destructor
-    // slot 1, slot 2: provided by concrete states
+constexpr std::uintptr_t kDatBaseVtable               = 0x820276C4;
+constexpr std::uintptr_t kFsmMachineVtable            = 0x8204DD14;
+constexpr std::uintptr_t kMemcardControlVtable        = 0x8204D684;
+constexpr std::uintptr_t kMemcardTypeInfoDescriptor   = 0x8204D650;
+constexpr std::uintptr_t kMemcardTypeOpsDescriptor    = 0x8204D660;
+constexpr std::uintptr_t kMemcardTypeDebugLabel       = 0x8204D664;
+constexpr std::uintptr_t kTypeFactorySingletonAddress = 0x825D0080;
+constexpr std::uintptr_t kTypeFactoryRefCountAddress  = 0x825D0680;
+
+constexpr std::uintptr_t kIdleStateVtable         = 0x8204D6D4;
+constexpr std::uintptr_t kFindStateVtable         = 0x8204D714;
+constexpr std::uintptr_t kSelectStateVtable       = 0x8204D754;
+constexpr std::uintptr_t kLoadStateVtable         = 0x8204D794;
+constexpr std::uintptr_t kSaveStateVtable         = 0x8204D7D4;
+constexpr std::uintptr_t kSaveIconStateVtable     = 0x8204D814;
+constexpr std::uintptr_t kSearchStateVtable       = 0x8204D854;
+constexpr std::uintptr_t kRemoveStateVtable       = 0x8204D894;
+constexpr std::uintptr_t kGetFreeSpaceStateVtable = 0x8204D8D4;
+constexpr std::uintptr_t kFormatStateVtable       = 0x8204D914;
+constexpr std::uintptr_t kUnformatStateVtable     = 0x8204D954;
+constexpr std::uintptr_t kSegmentContainerVtable  = 0x8204D9B0;
+
+constexpr mcMemcardControl::State kShutdownOrder[kMemcardStateCount] = {
+    mcMemcardControl::STATE_UNFORMAT,
+    mcMemcardControl::STATE_FORMAT,
+    mcMemcardControl::STATE_GET_FREE_SPACE,
+    mcMemcardControl::STATE_REMOVE,
+    mcMemcardControl::STATE_SAVE,
+    mcMemcardControl::STATE_SAVE_ICON,
+    mcMemcardControl::STATE_SEARCH,
+    mcMemcardControl::STATE_LOAD,
+    mcMemcardControl::STATE_SELECT,
+    mcMemcardControl::STATE_FIND,
+    mcMemcardControl::STATE_IDLE,
 };
 
-
-// ── mcMemcardControl struct ───────────────────────────────────────────────────
-//
-// Total size ≥ 0x13CF bytes (≈ 5071 bytes).
-// The fsmMachine base occupies the first 0x0C bytes; mcMemcardControl
-// appends its own fields starting at +0x0C.
-
-struct mcSaveOp /* : rage::datBase */ {
-    void*    m_pVtable;         // +0x00  rage::datBase vtable @ 0x820276C4
-    int32_t  m_deviceResult;    // +0x04  device/handle result, init -1
-    int32_t  m_opStatus;        // +0x08  operation status,   init  0
-    int32_t  m_pendingOp;       // +0x0C  pending-op flag,    init  0; set 1 when idle
-    // +0x10 .. +0x1337  — 4936-byte raw content data buffer (m_contentData)
-    uint8_t  m_contentData[4936]; // +0x10
-    // Xbox 360 content filename (max 42 chars + NUL)
-    char     m_szContentFileName[43]; // +0x1348  (offset +4952 from mcSaveOp base)
+struct mcFactoryBuildContext {
+    void* m_pFactoryObject;
+    void* m_pFactoryType;
 };
 
-struct fsmMachine {
-    void*              m_pVtable;    // +0x00  (fsmMachine vtable or subclass override)
-    int32_t            m_stateCount; // +0x04  number of registered states
-    mcMemcardStatus**  m_pStates;    // +0x08  heap-allocated array of state pointers
+using QueryFactoryObjectSizeFn = std::uint32_t (*)(void*, void*);
+using DeletingStateDtorFn = void (*)(mcMemcardState*, std::uint32_t);
 
-    ~fsmMachine();
-};
+static void DestroyFsmMachineStorage(fsmMachine* machine)
+{
+    machine->m_pVtable = reinterpret_cast<void*>(kFsmMachineVtable);
 
-struct mcMemcardControl : fsmMachine {
-    // fsmMachine fields occupy +0x00..+0x0B
-    int32_t  m_currentState;   // +0x0C  index of active state (0 = Idle/none)
-    uint32_t m_unk10;          // +0x10  (reserved / padding)
-    int32_t  m_result1;        // +0x14  first operation result,  init -1
-    int32_t  m_result2;        // +0x18  second operation result, init -1
-    uint8_t  m_pad1C[0x10];    // +0x1C  padding to sub-object alignment
-    mcSaveOp m_saveOp;         // +0x2C  embedded save-data state / content buffer
+    if (machine->m_ppRegisteredStates != nullptr) {
+        rage_free(machine->m_ppRegisteredStates);
+        machine->m_ppRegisteredStates = nullptr;
+    }
 
-    // Nested state classes (each inherits mcMemcardStatus)
-    struct Idle;
-    struct Find;
-    struct Select;
-    struct Load;
-    struct Save;
-    struct SaveIcon;
-    struct Search;
-    struct Remove;
-    struct GetFreeSpace;
-    struct Format;
-    struct Unformat;
+    machine->m_pVtable = reinterpret_cast<void*>(kDatBaseVtable);
+}
 
-    // Methods
-    ~mcMemcardControl();
-    void Init();
-    void Shutdown();
-    void Reset();
-    bool IsTransitionAllowed(int32_t targetState) const;
-    void RequestOp();
-};
+static mcMemcardControl::StateRecord* AllocateStateRecord(std::uintptr_t stateVtable)
+{
+    xe_main_thread_init();
 
-// Nested state concrete types
-struct mcMemcardControl::Idle         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Find         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Select       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Load         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Save         : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::SaveIcon     : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Search       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Remove       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::GetFreeSpace : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Format       : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
-struct mcMemcardControl::Unformat     : mcMemcardStatus { void* m_pVtable; int32_t m_unk0; };
+    auto* state = static_cast<mcMemcardControl::StateRecord*>(
+        rage_malloc(sizeof(mcMemcardControl::StateRecord)));
+    if (state == nullptr) {
+        return nullptr;
+    }
 
-// State count
-static const int kMcStateCount = 11;
+    state->m_pVtable = reinterpret_cast<void*>(stateVtable);
+    state->m_statePhase = 0;
+    return state;
+}
 
-// State indices (match the RTTI inner-class vtable order)
-enum McState {
-    MC_STATE_IDLE         = 0,
-    MC_STATE_FIND         = 1,
-    MC_STATE_SELECT       = 2,
-    MC_STATE_LOAD         = 3,
-    MC_STATE_SAVE         = 4,
-    MC_STATE_SAVE_ICON    = 5,
-    MC_STATE_SEARCH       = 6,
-    MC_STATE_REMOVE       = 7,
-    MC_STATE_GET_FREE     = 8,
-    MC_STATE_FORMAT       = 9,
-    MC_STATE_UNFORMAT     = 10,
-};
+static mcMemcardControl::ExtendedStateRecord* AllocateExtendedStateRecord(std::uintptr_t stateVtable)
+{
+    xe_main_thread_init();
 
+    auto* state = static_cast<mcMemcardControl::ExtendedStateRecord*>(
+        rage_malloc(sizeof(mcMemcardControl::ExtendedStateRecord)));
+    if (state == nullptr) {
+        return nullptr;
+    }
 
-// ── mcMemcardControl inner state concrete classes ─────────────────────────────
-//
-// Each inner state has its own vtable (0x40 bytes = 16 slots).
-// Concrete allocations sizes observed in the constructor:
-//   Idle, Find, Select:            8 bytes  (vtable + 1 int)
-//   Load, Save:                   12 bytes  (vtable + 2 ints)
-//   SaveIcon, Search, Remove,
-//   GetFreeSpace, Format, Unformat: 8 bytes (vtable + 1 int)
-// All aligned to 16 bytes via the RAGE heap.
+    state->m_pVtable = reinterpret_cast<void*>(stateVtable);
+    state->m_statePhase = 0;
+    state->m_stateToken = 0;
+    return state;
+}
 
+static void DestroyStateRecord(mcMemcardState* state)
+{
+    if (state == nullptr) {
+        return;
+    }
 
+    auto** vtable = *reinterpret_cast<void***>(state);
+    auto deletingDestructor = reinterpret_cast<DeletingStateDtorFn>(vtable[0]);
+    deletingDestructor(state, 1);
+}
 
-// ── mcMemcardControl::~mcMemcardControl @ 0x822BFFF8 | size: 0x68 ─────────────
-//
-// Destructor (vtable slot 0).
-// Resets both vtable pointers (main + embedded mcSaveOp), then delegates to
-// the fsmMachine destructor body to free the states array.  Optionally frees
-// 'this' if r4 == 1 (heap-allocated instance).
-//
-// NOTE: The fsmMachine destructor body (fsmMachine_Destructor_27A8) is inlined
-// here under /Ob2.  It resets the vtable, frees m_pStates if non-null, then
-// resets the vtable to rage::datBase to mark the object dead.
+static std::uint32_t QueryFactoryObjectSize(void* factoryContext)
+{
+    if (factoryContext == nullptr) {
+        return 0;
+    }
+
+    auto* buildContext = static_cast<mcFactoryBuildContext*>(factoryContext);
+    if (buildContext->m_pFactoryObject == nullptr) {
+        return 0;
+    }
+
+    auto** vtable = *reinterpret_cast<void***>(buildContext->m_pFactoryObject);
+    auto querySize = reinterpret_cast<QueryFactoryObjectSizeFn>(vtable[7]);
+    return querySize(buildContext->m_pFactoryObject, buildContext->m_pFactoryType);
+}
+
+}  // namespace
 
 mcMemcardControl::~mcMemcardControl()
 {
-    // Restore mcMemcardControl vtable (in case we arrived via base-class ptr)
-    // vtable @ 0x8204D684
-    m_pVtable = (void*)0x8204D684;
-
-    // Restore embedded sub-object vtable (reset to rage::datBase @ 0x820276C4)
-    m_saveOp.m_pVtable = (void*)0x820276C4;
-
-    // -- inlined fsmMachine destructor body --
-    // Reset main vtable to fsmMachine @ 0x8204DD14
-    m_pVtable = (void*)0x8204DD14;
-
-    // Free the states array if allocated
-    if (m_pStates != nullptr) {
-        rage_free(m_pStates);
-        m_pStates = nullptr;
-    }
-
-    // Mark object dead (vtable → rage::datBase)
-    m_pVtable = (void*)0x820276C4;
-    // Note: heap deallocation ("delete this") is handled by the scalar-delete-destructor (vtable slot 1)
+    m_pVtable = reinterpret_cast<void*>(kMemcardControlVtable);
+    m_saveOperation.m_pVtable = reinterpret_cast<void*>(kDatBaseVtable);
+    DestroyFsmMachineStorage(this);
 }
-
-
-// ── mcMemcardControl::Init @ 0x8221E628 | size: 0x488 ─────────────────────────
-//
-// Init (vtable slot 8) — Constructor / Init.
-// Sets m_stateCount = 11, allocates the states array (44 bytes, 16-byte aligned),
-// zeros it, then allocates and constructs each of the 11 concrete state objects
-// in order (Idle → Unformat).  Each state object receives its concrete vtable
-// and is stored into m_pStates[i].
-//
-// After the states are set up, the function continues (in the truncated region)
-// to initialise the embedded mcSaveOp sub-object and any additional fields via
-// the RAGE three-step factory (create / bind / finalize) for the datBase layer.
-//
-// All allocations go through the per-thread RAGE heap (retrieved from the SDA
-// global at r13+0, then dereferenced at [heapBase + 4]).
 
 void mcMemcardControl::Init()
 {
-    // Mark stateCount and allocate the states pointer array
-    m_stateCount = kMcStateCount;
+    m_registeredStateCount = kMemcardStateCount;
 
-    // xe_main_thread_init_0038: ensures the per-thread heap is ready
     xe_main_thread_init();
-
-    // Allocate array of 11 state pointers (44 bytes, aligned 16)
-    mcMemcardStatus** pStatesArr = (mcMemcardStatus**)rage_malloc(44);
-    m_pStates = pStatesArr;
-
-    // Zero the array (11 × 4 bytes)
-    for (int i = 0; i < kMcStateCount; i++) {
-        pStatesArr[i] = nullptr;
+    m_ppRegisteredStates = static_cast<mcMemcardState**>(
+        rage_malloc(sizeof(mcMemcardState*) * kMemcardStateCount));
+    if (m_ppRegisteredStates == nullptr) {
+        return;
     }
 
-    // Allocate and init Idle state (8 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        Idle* pIdle = (Idle*)rage_malloc(8);
-        if (pIdle) {
-            pIdle->m_unk0 = 0;
-            pIdle->m_pVtable = (void*)0x8204D6D4;  // mcMemcardControl::Idle vtable
-        }
-        m_pStates[MC_STATE_IDLE] = pIdle;
+    for (std::int32_t i = 0; i < kMemcardStateCount; ++i) {
+        m_ppRegisteredStates[i] = nullptr;
     }
 
-    // Allocate and init Find state (8 bytes, aligned 16)
-    xe_main_thread_init();
+    m_ppRegisteredStates[STATE_IDLE] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kIdleStateVtable));
+    m_ppRegisteredStates[STATE_FIND] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kFindStateVtable));
+    m_ppRegisteredStates[STATE_SELECT] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kSelectStateVtable));
+    m_ppRegisteredStates[STATE_LOAD] = reinterpret_cast<mcMemcardState*>(
+        AllocateExtendedStateRecord(kLoadStateVtable));
+    m_ppRegisteredStates[STATE_SAVE] = reinterpret_cast<mcMemcardState*>(
+        AllocateExtendedStateRecord(kSaveStateVtable));
+    m_ppRegisteredStates[STATE_SAVE_ICON] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kSaveIconStateVtable));
+    m_ppRegisteredStates[STATE_SEARCH] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kSearchStateVtable));
+    m_ppRegisteredStates[STATE_REMOVE] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kRemoveStateVtable));
+    m_ppRegisteredStates[STATE_GET_FREE_SPACE] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kGetFreeSpaceStateVtable));
+    m_ppRegisteredStates[STATE_FORMAT] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kFormatStateVtable));
+    m_ppRegisteredStates[STATE_UNFORMAT] =
+        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kUnformatStateVtable));
 
-    {
-        Find* pFind = (Find*)rage_malloc(8);
-        if (pFind) {
-            pFind->m_unk0 = 0;
-            pFind->m_pVtable = (void*)0x8204D714;  // mcMemcardControl::Find vtable
-        }
-        m_pStates[MC_STATE_FIND] = pFind;
+    m_typeRegistration.m_pTypeInfo = reinterpret_cast<const void*>(kMemcardTypeInfoDescriptor);
+    m_typeRegistration.m_pTypeOps = reinterpret_cast<const void*>(kMemcardTypeOpsDescriptor);
+    m_typeRegistration.m_pTypeStorage = nullptr;
+    m_typeRegistration.m_typeStorageSize = 0;
+
+    void* typeFactorySingleton = reinterpret_cast<void*>(kTypeFactorySingletonAddress);
+    atSingleton_2E60_g(typeFactorySingleton);
+
+    void* factoryContext = rage_obj_factory_create_3040(typeFactorySingleton,
+                                                        m_typeRegistration.m_pTypeInfo,
+                                                        m_typeRegistration.m_pTypeOps,
+                                                        0,
+                                                        1);
+
+    if (factoryContext != nullptr) {
+        m_typeRegistration.m_typeStorageSize = QueryFactoryObjectSize(factoryContext);
+
+        xe_main_thread_init();
+        m_typeRegistration.m_pTypeStorage = rage_malloc(m_typeRegistration.m_typeStorageSize);
+
+        rage_obj_bind_3828(factoryContext,
+                           m_typeRegistration.m_pTypeStorage,
+                           m_typeRegistration.m_typeStorageSize);
+        rage_obj_finalize_3B38(factoryContext);
     }
 
-    // Allocate and init Select state (8 bytes, aligned 16)
-    xe_main_thread_init();
+    nop_8240E6D0(reinterpret_cast<const void*>(kMemcardTypeDebugLabel),
+                 m_typeRegistration.m_pTypeInfo,
+                 m_typeRegistration.m_pTypeOps,
+                 m_typeRegistration.m_typeStorageSize);
 
-    {
-        Select* pSelect = (Select*)rage_malloc(8);
-        if (pSelect) {
-            pSelect->m_unk0 = 0;
-            pSelect->m_pVtable = (void*)0x8204D754;  // mcMemcardControl::Select vtable
-        }
-        m_pStates[MC_STATE_SELECT] = pSelect;
-    }
-
-    // Allocate and init Load state (12 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        Load* pLoad = (Load*)rage_malloc(12);
-        if (pLoad) {
-            pLoad->m_unk0 = 0;
-            pLoad->m_pVtable = (void*)0x8204D794;  // mcMemcardControl::Load vtable
-        }
-        m_pStates[MC_STATE_LOAD] = pLoad;
-    }
-
-    // Allocate and init Save state (12 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        Save* pSave = (Save*)rage_malloc(12);
-        if (pSave) {
-            pSave->m_unk0 = 0;
-            pSave->m_pVtable = (void*)0x8204D7D4;  // mcMemcardControl::Save vtable
-        }
-        m_pStates[MC_STATE_SAVE] = pSave;
-    }
-
-    // Allocate and init SaveIcon state (8 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        SaveIcon* pSaveIcon = (SaveIcon*)rage_malloc(8);
-        if (pSaveIcon) {
-            pSaveIcon->m_unk0 = 0;
-            pSaveIcon->m_pVtable = (void*)0x8204D814;  // mcMemcardControl::SaveIcon vtable
-        }
-        m_pStates[MC_STATE_SAVE_ICON] = pSaveIcon;
-    }
-
-    // Allocate and init Search state (8 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        Search* pSearch = (Search*)rage_malloc(8);
-        if (pSearch) {
-            pSearch->m_unk0 = 0;
-            pSearch->m_pVtable = (void*)0x8204D854;  // mcMemcardControl::Search vtable
-        }
-        m_pStates[MC_STATE_SEARCH] = pSearch;
-    }
-
-    // Allocate and init Remove state (8 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        Remove* pRemove = (Remove*)rage_malloc(8);
-        if (pRemove) {
-            pRemove->m_unk0 = 0;
-            pRemove->m_pVtable = (void*)0x8204D894;  // mcMemcardControl::Remove vtable
-        }
-        m_pStates[MC_STATE_REMOVE] = pRemove;
-    }
-
-    // Allocate and init GetFreeSpace state (8 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        GetFreeSpace* pGFS = (GetFreeSpace*)rage_malloc(8);
-        if (pGFS) {
-            pGFS->m_unk0 = 0;
-            pGFS->m_pVtable = (void*)0x8204D8D4;  // mcMemcardControl::GetFreeSpace vtable
-        }
-        m_pStates[MC_STATE_GET_FREE] = pGFS;
-    }
-
-    // Allocate and init Format state (8 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        Format* pFormat = (Format*)rage_malloc(8);
-        if (pFormat) {
-            pFormat->m_unk0 = 0;
-            pFormat->m_pVtable = (void*)0x8204D914;  // mcMemcardControl::Format vtable
-        }
-        m_pStates[MC_STATE_FORMAT] = pFormat;
-    }
-
-    // Allocate and init Unformat state (8 bytes, aligned 16)
-    xe_main_thread_init();
-
-    {
-        Unformat* pUnformat = (Unformat*)rage_malloc(8);
-        if (pUnformat) {
-            pUnformat->m_unk0 = 0;
-            pUnformat->m_pVtable = (void*)0x8204D954;  // mcMemcardControl::Unformat vtable
-        }
-        m_pStates[MC_STATE_UNFORMAT] = pUnformat;
-    }
-
-    // TODO: lines 300–522 (truncated) — initialise mcSaveOp sub-object at +0x2C
-    // using fiStreamBuf_OpenAll / rage_obj_bind_3828 / fiStreamBuf_Close
-    // and rage::GetFactory; also resets m_currentState, m_result1, m_result2.
+    --(*reinterpret_cast<std::uint32_t*>(kTypeFactoryRefCountAddress));
 }
-
-
-// ── mcMemcardControl::Shutdown @ 0x8221EAB0 | size: 0x1CC ────────────────────
-//
-// Shutdown (vtable slot 9) — Destructor helper / Shutdown.
-// Walks the states array in reverse-dependency order, calling the virtual
-// delete destructor (slot 0, r4=1) on each non-null state object.
-// After all states are released, frees the states array itself and nulls
-// the m_pStates pointer.
-//
-// Destruction order observed in assembly: 10, 9, 8, 7, 4, 5, 6, 3, 2, 1, 0
-// (roughly reverse of Init, with states 4-6 re-ordered for dependency reasons).
 
 void mcMemcardControl::Shutdown()
 {
-    if (m_pStates == nullptr)
+    if (m_ppRegisteredStates == nullptr) {
         return;
-
-    // Destroy in dependency order (reverse of construction, with reordering)
-    static const int kDestroyOrder[] = { 10, 9, 8, 7, 4, 5, 6, 3, 2, 1, 0 };
-
-    for (int i = 0; i < kMcStateCount; i++) {
-        int idx = kDestroyOrder[i];
-        mcMemcardStatus* pState = m_pStates[idx];
-        if (pState != nullptr) {
-            // Virtual delete destructor: slot 0, second arg = 1 (heap-allocated)
-            pState->~mcMemcardStatus(); rage_free(pState);  // scalar-delete pattern
-        }
     }
 
-    // Free the states array and clear the pointer
-    rage_free(m_pStates);
-    m_pStates = nullptr;
+    for (std::int32_t i = 0; i < kMemcardStateCount; ++i) {
+        const State stateIndex = kShutdownOrder[i];
+        DestroyStateRecord(m_ppRegisteredStates[stateIndex]);
+        m_ppRegisteredStates[stateIndex] = nullptr;
+    }
+
+    rage_free(m_ppRegisteredStates);
+    m_ppRegisteredStates = nullptr;
 }
-
-
-// ── mcMemcardControl::Reset @ 0x8221EC80 | size: 0x44 ────────────────────────
-//
-// Reset (vtable slot 10) — Reset all operational state back to defaults.
-// Clears both result fields, resets the embedded mcSaveOp metadata, and
-// zeroes the content filename buffer.  Does NOT re-allocate or re-init
-// the state objects — only data fields are affected.
 
 void mcMemcardControl::Reset()
 {
-    // Reset operation results (both to "no result / invalid")
-    m_result1 = -1;
-    m_result2 = -1;
+    m_primaryResultCode = -1;
+    m_secondaryResultCode = -1;
 
-    // Reset embedded save-op metadata
-    mcSaveOp* pOp = &m_saveOp;
-    pOp->m_deviceResult = -1;
-    pOp->m_opStatus     =  0;
-    pOp->m_pendingOp    =  0;
+    m_saveOperation.m_deviceResultCode = -1;
+    m_saveOperation.m_operationResultCode = 0;
+    m_saveOperation.m_hasPendingRequest = false;
 
-    // Zero the content filename buffer (42 chars + NUL = 43 bytes)
-    // Assembly: 10 × stw (40 bytes) + sth (2 bytes) + stb (1 byte) = 43 bytes
-    memset(pOp->m_szContentFileName, 0, sizeof(pOp->m_szContentFileName));
+    std::memset(m_saveOperation.m_szContentFileName,
+                0,
+                sizeof(m_saveOperation.m_szContentFileName));
 }
 
-
-// ── mcMemcardControl::IsTransitionAllowed @ 0x8221ECC8 | size: 0x54 ──────────
-//
-// CanTransition (vtable slot 13) — Query whether a state transition from m_currentState → targetState
-// is legal.
-//
-// Transition table:
-//   Idle (0)   → any           always allowed
-//   any        → Idle (0)      always allowed
-//   Save (4)   → SaveIcon (5)  allowed
-//   Save (4)   → Remove  (7)   allowed (clear space before saving)
-//   Remove (7) → Save    (4)   allowed (retry save after clearing space)
-//   all other transitions      DENIED
-//
-// Returns: 1 if allowed, 0 if denied.
-
-bool mcMemcardControl::IsTransitionAllowed(int32_t targetState) const
+bool mcMemcardControl::IsTransitionAllowed(std::int32_t targetState) const
 {
-    if (m_currentState == 0) {
-        // From Idle: any transition is valid
+    if (m_activeState == STATE_IDLE) {
         return true;
     }
 
-    // From any active state: always allow going back to Idle
-    if (targetState == 0) {
+    if (targetState == STATE_IDLE) {
         return true;
     }
 
-    // Save can branch to SaveIcon or Remove
-    if (m_currentState == MC_STATE_SAVE) {
-        if (targetState == MC_STATE_SAVE_ICON) return true;
-        if (targetState == MC_STATE_REMOVE)    return true;
-    }
-
-    // Remove can loop back to Save (after clearing space)
-    if (m_currentState == MC_STATE_REMOVE && targetState == MC_STATE_SAVE) {
+    if (m_activeState == STATE_SAVE &&
+        (targetState == STATE_SAVE_ICON || targetState == STATE_REMOVE)) {
         return true;
     }
 
-    // All other transitions are forbidden
+    if (m_activeState == STATE_REMOVE && targetState == STATE_SAVE) {
+        return true;
+    }
+
     return false;
 }
 
-
-// ── mcMemcardControl::RequestOp @ 0x8221ED20 | size: 0x18 ────────────────────
-//
-// BeginOperation (vtable slot 14) — Mark that a new operation should be initiated.
-// Only effective when the machine is in the Idle state (m_currentState == 0);
-// sets m_pendingOp = 1 to signal the update loop that work is waiting.
-
 void mcMemcardControl::RequestOp()
 {
-    if (m_currentState != 0) {
-        // Already busy — ignore the request
+    if (m_activeState != STATE_IDLE) {
         return;
     }
 
-    m_saveOp.m_pendingOp = 1;
+    m_saveOperation.m_hasPendingRequest = true;
 }
-
-
-// ── fsmMachine destructor body @ 0x822227A8 | size: 0x58 ─────────────────────
-//
-// (fsmMachine_Destructor_27A8 in the scaffold — originally auto-named as gameLoop_DestroyAudio_27A8)
-//
-// Shared destructor body called by both fsmMachine::~fsmMachine() and
-// (inlined into) mcMemcardControl::~mcMemcardControl().
-// Resets the vtable to fsmMachine, frees m_pStates, resets to rage::datBase.
-
-void fsmMachine_DestructorBody(fsmMachine* self)
-{
-    // Reset to fsmMachine vtable while we free resources
-    self->m_pVtable = (void*)0x8204DD14;  // fsmMachine vtable
-
-    // Release state array if present
-    if (self->m_pStates != nullptr) {
-        rage_free(self->m_pStates);
-        self->m_pStates = nullptr;
-    }
-
-    // Object is now dead — downgrade vtable to base
-    self->m_pVtable = (void*)0x820276C4;  // rage::datBase vtable
-}
-
-
-// ── fsmMachine::~fsmMachine @ 0x82222758 | size: 0x50 ────────────────────────
-//
-// Destructor of fsmMachine.  Delegates to fsmMachine_DestructorBody, then optionally
-// frees 'this' when called as delete destructor (shouldFree = true).
 
 fsmMachine::~fsmMachine()
 {
-    fsmMachine_DestructorBody(this);
-    // scalar-delete-destructor path: rage_free(this) when called as delete
+    DestroyFsmMachineStorage(this);
 }
-
-
-// ── mcSegmentContainer::~mcSegmentContainer @ 0x8221EDC8 | size: 0x78 ─────────
-//
-// Destructor (vtable slot 0).
-// Two-stage destructor pattern: first resets mcSegmentContainer vtable and
-// frees the segment data buffer if allocated, then resets to rage::datBase
-// vtable and optionally frees 'this' if heap-allocated.
-//
-// This follows the standard RAGE engine destructor pattern for classes that
-// inherit from rage::datBase.
 
 mcSegmentContainer::~mcSegmentContainer()
 {
-    // Stage 1: mcSegmentContainer cleanup
-    // Restore mcSegmentContainer vtable @ 0x8204D9B0
-    m_pVtable = (void*)0x8204D9B0;
-    
-    // Free segment data buffer if allocated
-    if (m_bHasData != 0) {
+    m_pVtable = reinterpret_cast<void*>(kSegmentContainerVtable);
+
+    if (m_hasSegmentData != 0) {
         rage_free(m_pSegmentData);
     }
-    
-    // Stage 2: rage::datBase cleanup
-    // Reset vtable to rage::datBase @ 0x820276C4
-    m_pVtable = (void*)0x820276C4;
-    // Note: heap deallocation ("delete this") is handled by the scalar-delete-destructor (vtable slot 1)
+
+    m_pVtable = reinterpret_cast<void*>(kDatBaseVtable);
 }
 
+// mcFileSegment has RTTI/vtable presence but no observed usage in the game code.
 
-// ─────────────────────────────────────────────────────────────────────────────
-// mcFileSegment  [vtable @ 0x8203CE14]
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * mcFileSegment — UNUSED CLASS
- *
- * This class exists in the RTTI data with a single vtable pointer but has:
- *   - No virtual methods (beyond base class)
- *   - No field accesses in any function
- *   - No debug string hints
- *   - No global instances
- *   - No references in the recomp output
- *
- * Interesting detail: The vtable address (0x8203CE14) contains the string
- * " mastering effect(s)..." which suggests this may have been intended for:
- *   1. Audio mastering/effects processing during save operations
- *   2. Segmented file I/O for large save files
- *   3. Streaming save data in chunks
- *
- * However, the actual memory card implementation (mcMemcardControl) uses a
- * monolithic 4936-byte content buffer with no segmentation, suggesting this
- * feature was planned but never implemented.
- *
- * Related classes that ARE implemented:
- *   - mcMemcardControl (FSM for save/load operations)
- *   - mcSaveOp (embedded save operation state)
- *   - mcSegmentContainer (container for segments, vtable @ 0x8204D9B0)
- *
- * No implementation required - this class is never instantiated or referenced.
- */
-
-// No methods to implement - class is unused
