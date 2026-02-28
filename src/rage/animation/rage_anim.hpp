@@ -160,7 +160,7 @@ struct crAnimDofFloat {
     uint32_t     field_0x0004;  // +0x0004  R:49 W:21
     uint8_t      field_0x0005;  // +0x0005  R:1 W:0
     uint16_t     field_0x0006;  // +0x0006  R:1 W:0
-    uint32_t     field_0x0008;  // +0x0008  R:20 W:15
+    float        m_value;         // +0x0008  R:20 W:15  Current animated value
     uint32_t     field_0x000c;  // +0x000c  R:13 W:5
     uint32_t     field_0x0010;  // +0x0010  R:15 W:8
     uint32_t     field_0x0014;  // +0x0014  R:11 W:6
@@ -236,7 +236,7 @@ struct crAnimDofFloat {
     virtual void vfn_4();  // [4] @ 0x8216eb28
     virtual void vfn_5();  // [5] @ 0x8216eb58
     virtual void vfn_6();  // [6] @ 0x8216ebf0
-    virtual void vfn_7();  // [7] @ 0x8216ec30
+    virtual void Blend(void* targetObj, float blendFactor);  // [7] @ 0x8216ec30
     virtual void vfn_8();  // [8] @ 0x8216eca8
     virtual void vfn_9();  // [9] @ 0x8216ed00
     virtual void vfn_10();  // [10] @ 0x8216ed80

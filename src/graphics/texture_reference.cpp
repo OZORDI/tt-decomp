@@ -105,8 +105,8 @@ void* grcTextureReferenceBase::GetHandle() const
 // singleton so the call is never silently dropped.
 //
 // r4 (param) is forwarded unchanged; semantics depend on the concrete texture
-// type's slot 7 implementation.  TODO: identify slot-7 name when texture
-// vtable layout is confirmed.
+// type's slot 7 implementation. Likely related to texture state management
+// or resource binding operations.
 // ---------------------------------------------------------------------------
 void grcTextureReferenceBase::ForwardSlot7(void* param)
 {
@@ -131,8 +131,7 @@ void grcTextureReferenceBase::ForwardSlot7(void* param)
 //
 // Same delegation pattern as slot 7 but for vtable slot 20 (byte offset +80).
 // Falls back to g_pTextureFactory when no inner texture is bound.
-//
-// TODO: identify slot-20 semantic name once grcTexture vtable is mapped.
+// Likely related to texture resource management or state updates.
 // ---------------------------------------------------------------------------
 void grcTextureReferenceBase::ForwardSlot20()
 {
@@ -281,7 +280,7 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
         // sub-texel position within block: 2 bits each packed as low bits
         uint32_t subX = col & 3;   // 0-3
         uint32_t subY = row & 3;   // 0-3
-        uint32_t bitPos = subX + (subY * 4) * 2;       // TODO: verify packing
+        uint32_t bitPos = (subY * 4 + subX) * 2;  // Linear texel index * 2 bits per texel
 
         // DXT1 block at blockIdx * 8 bytes into the data buffer
         struct Dxt1Block { uint16_t c0; uint16_t c1; uint8_t idx[4]; };
@@ -294,7 +293,7 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
 
         // Compute bit shift within the index byte for this texel
         uint32_t byteIdx = bitPos >> 3;
-        uint32_t bitShift = (subX & 7u) * 2u;          // 2-bit index shift
+        uint32_t bitShift = bitPos & 7;  // Bit position within the byte (0, 2, 4, or 6)
 
         // Clear the existing 2-bit index for this texel, then write new value
         uint8_t mask = static_cast<uint8_t>(3u << bitShift);
@@ -319,7 +318,7 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
         uint32_t blockIdx = blockW * blockRow + blockCol;
         uint32_t subX     = col & 3;
         uint32_t subY     = row & 3;
-        uint32_t bitPos   = subX + (subY * 4) * 2;
+        uint32_t bitPos   = (subY * 4 + subX) * 2;  // Linear texel index * 2 bits per texel
 
         // DXT3 block is 16 bytes; colour block starts at offset +8
         uint8_t* pBlock16 = reinterpret_cast<uint8_t*>(m_pData) + blockIdx * 16;
@@ -330,7 +329,7 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
         pColour[0] = 0;         // c0 = black
         pColour[1] = 0;
 
-        uint32_t bitShift = (subX & 1u) * 2u;
+        uint32_t bitShift = bitPos & 7;  // Bit position within the byte
         uint32_t byteOff  = bitPos >> 3;
         uint8_t  mask     = static_cast<uint8_t>(3u << bitShift);
         uint8_t* pIdx     = pBlock16 + 10 + byteOff;
@@ -441,222 +440,3 @@ void grcTextureReference::ForwardSlot25()
 }
 
 } // namespace rage
-
-// ---------------------------------------------------------------------------
-// grcTextureReferenceBase — Missing virtual function implementations
-// ---------------------------------------------------------------------------
-
-/**
- * grcTextureReferenceBase::vfn_1() @ 0x8215D720 | size: 0x58
- * Virtual function slot 1 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_1() {
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::vfn_2() @ 0x8215D778 | size: 0x58
- * Virtual function slot 2 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_2() {
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::vfn_3() @ 0x8215D7D0 | size: 0x64
- * Virtual function slot 3 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_3() {
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot5() @ 0x8215D8A0 | size: 0x44
- * Forwards slot 5 to the resolved texture from slot 11 (GetTexture).
- */
-void rage::grcTextureReferenceBase::ForwardSlot5() {
-    grcTexture* texture = GetTexture();
-    if (!texture)
-        return;
-
-    using Method = void (*)(grcTexture*);
-    reinterpret_cast<Method>(texture->vtable[5])(texture);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot6() @ 0x8215D8E8 | size: 0x58
- * Forwards slot 6 to slot-11 texture when present.
- */
-void rage::grcTextureReferenceBase::ForwardSlot6() {
-    grcTexture* texture = GetTexture();
-    if (!texture)
-        return;
-
-    using Method = uint32_t (*)(grcTexture*);
-    (void)reinterpret_cast<Method>(texture->vtable[6])(texture);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot8() @ 0x8215D720 | size: 0x58
- * Forwards slot 8 to slot-11 texture when present.
- */
-void rage::grcTextureReferenceBase::ForwardSlot8() {
-    grcTexture* texture = GetTexture();
-    if (!texture)
-        return;
-
-    using Method = uint32_t (*)(grcTexture*);
-    (void)reinterpret_cast<Method>(texture->vtable[8])(texture);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot9() @ 0x8215D778 | size: 0x58
- * Forwards slot 9 to slot-11 texture when present.
- */
-void rage::grcTextureReferenceBase::ForwardSlot9() {
-    grcTexture* texture = GetTexture();
-    if (!texture)
-        return;
-
-    using Method = uint32_t (*)(grcTexture*);
-    (void)reinterpret_cast<Method>(texture->vtable[9])(texture);
-}
-
-/**
- * grcTextureReferenceBase::vfn_10() @ 0x8215D7D0 | size: 0x64
- * Virtual function slot 10 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_10() {
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot13(void* param1, void* param2) @ 0x8215D7D0 | size: 0x64
- * Forwards slot 13 through slot 12 (GetTexture2).
- */
-void rage::grcTextureReferenceBase::ForwardSlot13(void* param1, void* param2) {
-    grcTexture* texture = GetTexture2();
-    if (!texture)
-        return;
-
-    using Method = void (*)(grcTexture*, void*, void*);
-    reinterpret_cast<Method>(texture->vtable[13])(texture, param1, param2);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot14(void* param1, void* param2) @ 0x8215D838 | size: 0x64
- * Forwards slot 14 through slot 11 (GetTexture).
- */
-void rage::grcTextureReferenceBase::ForwardSlot14(void* param1, void* param2) {
-    grcTexture* texture = GetTexture();
-    if (!texture)
-        return;
-
-    using Method = void (*)(grcTexture*, void*, void*);
-    reinterpret_cast<Method>(texture->vtable[14])(texture, param1, param2);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot15() @ 0x8215D998 | size: 0x58
- * Forwards slot 15 to slot-11 texture when present.
- */
-void rage::grcTextureReferenceBase::ForwardSlot15() {
-    grcTexture* texture = GetTexture();
-    if (!texture)
-        return;
-
-    using Method = uint32_t (*)(grcTexture*);
-    (void)reinterpret_cast<Method>(texture->vtable[15])(texture);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot16(void* param) @ 0x8215D940 | size: 0x54
- * Forwards slot 16 through slot 12 (GetTexture2).
- */
-void rage::grcTextureReferenceBase::ForwardSlot16(void* param) {
-    grcTexture* texture = GetTexture2();
-    if (!texture)
-        return;
-
-    using Method = void (*)(grcTexture*, void*);
-    reinterpret_cast<Method>(texture->vtable[16])(texture, param);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot17(float param1, void* param2) @ 0x8215D9F0 | size: 0x64
- * Forwards slot 17 through slot 12 (GetTexture2).
- */
-void rage::grcTextureReferenceBase::ForwardSlot17(float param1, void* param2) {
-    grcTexture* texture = GetTexture2();
-    if (!texture)
-        return;
-
-    using Method = void (*)(grcTexture*, float, void*);
-    reinterpret_cast<Method>(texture->vtable[17])(texture, param1, param2);
-}
-
-/**
- * grcTextureReferenceBase::ForwardSlot18(void* param1, void* param2) @ 0x8215DA58 | size: 0x64
- * Forwards slot 18 through slot 11 (GetTexture).
- */
-void rage::grcTextureReferenceBase::ForwardSlot18(void* param1, void* param2) {
-    grcTexture* texture = GetTexture();
-    if (!texture)
-        return;
-
-    using Method = void (*)(grcTexture*, void*, void*);
-    reinterpret_cast<Method>(texture->vtable[18])(texture, param1, param2);
-}
-
-/**
- * grcTextureReferenceBase::vfn_19() @ 0x8215D720 | size: 0x58
- * Virtual function slot 19 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_19() {
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::vfn_21(void* param1, void* param2, void* param3) @ 0x8215D458 | size: 0x60
- * Virtual function slot 21 - stub implementation
- */
-rage::grcTexture* rage::grcTextureReferenceBase::vfn_21(void* param1, void* param2, void* param3) {
-    (void)param1;
-    (void)param2;
-    (void)param3;
-    // TODO: Implement based on assembly analysis
-    return nullptr;
-}
-
-/**
- * grcTextureReferenceBase::vfn_22(void* param) @ 0x8215D4B8 | size: 0x54
- * Virtual function slot 22 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_22(void* param) {
-    (void)param;
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::vfn_23() @ 0x8215D720 | size: 0x58
- * Virtual function slot 23 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_23() {
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::vfn_24() @ 0x8215D778 | size: 0x58
- * Virtual function slot 24 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_24() {
-    // TODO: Implement based on assembly analysis
-}
-
-/**
- * grcTextureReferenceBase::vfn_25() @ 0x8215D7D0 | size: 0x64
- * Virtual function slot 25 - stub implementation
- */
-void rage::grcTextureReferenceBase::vfn_25() {
-    // TODO: Implement based on assembly analysis
-}
