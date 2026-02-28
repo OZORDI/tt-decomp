@@ -45,6 +45,8 @@ set(SOURCES
     src/crt/memory.c
     src/crt/startup.c
     src/crt/string.c
+    src/globals.c
+    src/globals_extended.c
     
     # RAGE engine
     src/rage/app_init.c

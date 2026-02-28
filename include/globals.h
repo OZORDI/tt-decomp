@@ -66,10 +66,6 @@ extern void* g_displayObject;
 // @ r13+25836
 extern void* g_cachedAssetPath;
 
-#ifdef __cplusplus
-}
-#endif
-
 // ────────────────────────────────────────────────────────────────────────────
 // Template Registry System
 // ────────────────────────────────────────────────────────────────────────────
@@ -82,11 +78,11 @@ struct TemplateRegistryEntry {
 };
 
 struct TemplateRegistry {
-    TemplateRegistryEntry entries[8192];  // Array of template entries (8 bytes each)
-    uint32_t count;                       // Number of active templates (at offset +0x10000)
+    struct TemplateRegistryEntry entries[8192];  // Array of template entries (8 bytes each)
+    uint32_t count;                              // Number of active templates (at offset +0x10000)
 };
 
-extern TemplateRegistry g_templateRegistry;  // @ 0x82607C40 (SDA r13+31808)
+extern struct TemplateRegistry g_templateRegistry;  // @ 0x82607C40 (SDA r13+31808)
 
 // ────────────────────────────────────────────────────────────────────────────
 // Matrix Comparison System
@@ -99,3 +95,7 @@ extern const float g_identityMatrixRef[16];
 // SIMD comparison mask for matrix identity checks
 // @ 0x82619BE0 (16 bytes)
 extern const uint32_t g_vectorComparisonMask[4];
+
+#ifdef __cplusplus
+}
+#endif

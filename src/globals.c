@@ -3,6 +3,7 @@
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  */
 
+#include <stddef.h>
 #include "globals.h"
 
 // Graphics System
@@ -39,7 +40,7 @@ const uint8_t g_defaultViewportRect[16] = { 0 };  /* @ 0x8261A0C0 */
 
 // Template Registry System
 // @ 0x82607C40 (SDA r13+31808)
-TemplateRegistry g_templateRegistry = {0};
+struct TemplateRegistry g_templateRegistry = {0};
 
 // Matrix Comparison System
 // Reference identity matrix @ 0x825CB800
