@@ -38,7 +38,6 @@ add_definitions(${SDL2_DEFINITIONS})
 # Source files
 set(SOURCES
     # CRT layer
-
     src/crt/entry.c
     src/crt/exit.c
     src/crt/heap.c
@@ -67,14 +66,18 @@ set(SOURCES
     src/rage/timer.cpp
     
     # Game logic
+    src/game/char_view.cpp
     src/game/gd_data.cpp
+    src/game/gd_vib_event.cpp
     src/game/mc_memcard.cpp
     src/game/pong_audio.cpp
+    src/game/pong_audio_effects.cpp
     src/game/pong_ball.cpp
     src/game/pong_creature.cpp
     src/game/pong_drill.cpp
     src/game/pong_misc.cpp
     src/game/pong_network.cpp
+    src/game/pong_network_classes.cpp
     src/game/pong_player.cpp
     src/game/pong_render.cpp
     src/game/pong_states.cpp

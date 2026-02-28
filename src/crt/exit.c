@@ -181,3 +181,39 @@ void _doexit(int exitCode, int callExit, int quick)
         KeBugCheck(0);
     }
 }
+
+
+/**
+ * __run_table
+ *
+ * Runs a table of function pointers from start to end.
+ * Used to execute static initializers and exit handlers.
+ *
+ * @param start  Pointer to first function pointer in table
+ * @param end    Pointer past last function pointer in table
+ */
+void __run_table(void** start, void** end) {
+    _run_table(start, end);
+}
+
+/**
+ * _run_table
+ *
+ * Internal implementation of __run_table.
+ * Walks the function pointer table and calls each non-NULL entry.
+ *
+ * @param start  Pointer to first function pointer in table
+ * @param end    Pointer past last function pointer in table
+ */
+void _run_table(void** start, void** end) {
+    if (!start || !end || start >= end) {
+        return;
+    }
+    
+    for (void** p = start; p < end; p++) {
+        if (*p) {
+            void (*fn)(void) = (void(*)(void))*p;
+            fn();
+        }
+    }
+}

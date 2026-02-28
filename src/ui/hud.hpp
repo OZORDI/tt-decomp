@@ -59,9 +59,13 @@
 //
 // This class owns a Flash movie context, a page-group object, and various
 // render state fields.  Field names are inferred from access-frequency
-// clustering, virtual-method cross-referencing, and debug strings.
-//
-// Confirmed field layout (offsets in bytes):
+    virtual ~hudFlashBase();           // [0] @ 0x822EAD38
+    virtual void BeginTransition();    // [1] @ 0x822EAFC8  reads m_pPageGroup size,
+                                       //   computes float ratio, then calls Update(dt)
+                                       //   (same binary as Update per PPC_WEAK alias);
+                                       //   also triggers connection if already active.
+                                       //   TODO: confirm exact semantics — may be
+                                       //   "start page-group animated transition".
 //   +0x00  vtable          — primary vtable pointer   (implicit in C++)
 //   +0x04  vtable2         — secondary MI vtable ptr  (implicit in C++)
 //   +0x38  m_pResource1    — pointer freed in base dtor (rage_2E18 called)
@@ -131,15 +135,13 @@ public:
                                  //   configures SinglesNetworkClient settings
                                  //   for online/offline mode, fills m_buffer
 
-    // Known fields (see layout comment above):
-    void*       m_pInnerObject;  // +0x40
-    uint8_t     m_bInitialized;  // +0x60
-    uint8_t     _pad_61[3];
-    uint32_t    m_xboxHandle1;   // +0x64
-    uint32_t    m_xboxHandle2;   // +0x68
-    uint32_t    m_pNetworkClient;// +0x6C  pointer; cleared in dtor (not owned)
-    char        m_buffer[1024];  // +0x70
-};
+    // hudBoot-specific fields (hudFlashBase fields at +0x00..+0x5F are inherited):
+    uint8_t     m_bInitialized;  // +0x60  cleared in OnEnter; true once setup complete
+    uint32_t    m_xboxHandle1;   // +0x64  Xbox system handle (XAM_CreateHandle)
+    uint32_t    m_xboxHandle2;   // +0x68  Xbox system handle (XAM_CreateHandle)
+    void*       m_pNetworkClient;// +0x6C  cached network client ref; zeroed in dtor
+    char        m_buffer[1024];  // +0x70  scratch buffer for tourney name string
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────

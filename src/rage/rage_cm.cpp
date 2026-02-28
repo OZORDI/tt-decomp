@@ -98,7 +98,7 @@ extern float g_cm_frameRate;       // @ 0x829DAEC8 — per-frame rate constant (
 void*  rage_alloc_aligned(size_t size, size_t align); // RAGE heap aligned alloc
 void   rage_free(void* ptr);                          // RAGE heap free
 static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
-static uint8_t cmNode_GetBool(const cmNodePort* port);
+uint8_t cmNode_GetBool(const cmNodePort* port);
 
 
 // ── PORT / DATA STRUCTURES ───────────────────────────────────────────────────
@@ -601,6 +601,15 @@ void cmMemory::GetInt32(int32_t* out) {
     *out = *reinterpret_cast<int32_t*>(m_pPreviousValue);
 }
 
+// cmMemory::Sync @ 0x822714C8 (vtable slot 8)
+// Synchronizes the memory node state. This is a virtual function that
+// ensures the node's internal state is consistent before reading values.
+void cmMemory::Sync() {
+    // TODO: Implement full synchronization logic
+    // For now, just call SyncInput to update current value
+    SyncInput();
+}
+
 // cmMemory::GetVector @ 0x822715A0
 // Syncs, then copies the 16-byte vec4 from m_pPreviousValue to out.
 void cmMemory::GetVector(float* out) {
@@ -988,3 +997,29 @@ float rage_sinf_approx(float angle) {
 // cmDifferentiate — TODO (vfn_10 @ 0x822782D0)
 
 } // namespace rage
+
+
+/**
+ * cmNode_GetBool @ 0x82184C40  (util_4C40)
+ *
+ * Reads a boolean from a port.
+ * - DIRECT: returns *(uint8_t*)port.m_pData
+ * - NODE  : calls vcall slot 3 (GetBool)
+ * - NONE  : returns 0
+ */
+uint8_t cmNode_GetBool(const rage::cmNodePort* port) {
+    switch (port->m_type) {
+    case rage::CM_PORT_DIRECT:
+        return *reinterpret_cast<const uint8_t*>(port->m_pData);
+    case rage::CM_PORT_NODE: {
+        struct cmNode { void** vtable; };
+        auto* node = reinterpret_cast<cmNode*>(port->m_pData);
+        uint8_t tmp = 0;
+        using GetBoolFn = void(*)(void*, uint8_t*);
+        reinterpret_cast<GetBoolFn>(node->vtable[3])(node, &tmp);
+        return tmp;
+    }
+    default:
+        return 0;
+    }
+}

@@ -6,117 +6,144 @@
  */
 
 #include "rage_audio.hpp"
+
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 namespace rage {
 
-// Forward declarations for external functions
-extern "C" void nop_8240E6D0(const char* fmt, ...);  // Debug logging no-op
-extern "C" void fiAsciiTokenizer_ParseToken(void* ctx, void* base);  // Token processing
+// External engine entry points.
+extern "C" void nop_8240E6D0(const char* fmt, ...);
+extern "C" float aud_2458(void* context);
 
-// Forward declaration for audVoiceStream function
 extern void audVoiceStream_B328_fw(
     void* streamRef,
-    int32_t entryFlags,
-    void* entryPtr,
-    float param1,
-    float param2,
-    float param3,
-    float param4,
-    uint32_t param5,
-    uint32_t param6,
-    uint8_t param7
+    int32_t bankSlot,
+    void* bankEntryData,
+    float volume,
+    float pitch,
+    float pan,
+    float playVariance,
+    uint32_t userParamA,
+    uint32_t userParamB,
+    uint8_t userParamC
 );
 
-// Global constant - audio threshold
-extern const float g_audioThreshold;  // @ 0x8202D110
+// Binary globals resolved from pass5_final.
+extern const float lbl_8202D110;      // randomization trigger
+extern const float lbl_8202D998[3];   // randomization constants table
+extern uint32_t lbl_825EE220;         // audio command write index
+extern uint32_t* lbl_825EBD2C;        // audio command ring buffer
 
-/**
- * audVoiceSfx::PlayByEntry @ 0x82163498 | size: 0x11C
- *
- * Plays a sound effect by entry descriptor.
- * 
- * This function validates the entry, optionally scales volume based on a threshold,
- * and delegates to the underlying stream playback system.
- *
- * @param entry Pointer to sound effect entry descriptor
- * @param volume Base volume level (f1)
- * @param pitch Pitch adjustment (f2)
- * @param pan Pan position (f3)
- * @param priority Priority value (f4)
- * @param param5 Additional parameter (r9)
- * @param param6 Additional parameter (r10)
- * @param param7 Additional parameter (stack)
- */
+namespace {
+
+constexpr int32_t kInvalidBankSlot = -1;
+constexpr uint8_t kAudioCommandClass = 2;
+constexpr uint16_t kSfxPlayCommandId = 16387;
+
+const float& g_playVarianceThreshold = lbl_8202D110;
+const float& g_playVarianceScale = lbl_8202D998[1];
+
+uint32_t& g_audioCommandWriteIndex = lbl_825EE220;
+uint32_t*& g_pAudioCommandRing = lbl_825EBD2C;
+
+struct audCommandHeader {
+    uint8_t m_class;
+    uint8_t m_channel;
+    uint16_t m_commandId;
+};
+
+class audSfxEntryView {
+public:
+    explicit audSfxEntryView(const void* rawEntry)
+        : m_pRaw(static_cast<const uint8_t*>(rawEntry)) {}
+
+    bool IsNull() const {
+        return m_pRaw == nullptr;
+    }
+
+    int32_t GetBankSlot() const {
+        return Read<int32_t>(kBankSlotOffset);
+    }
+
+    void* GetBankEntryData() const {
+        return Read<void*>(kBankEntryOffset);
+    }
+
+    bool ShouldEmitPlayEvent() const {
+        return Read<uint8_t>(kEmitPlayEventOffset) != 0;
+    }
+
+private:
+    template <typename T>
+    T Read(std::size_t offset) const {
+        T value{};
+        std::memcpy(&value, m_pRaw + offset, sizeof(value));
+        return value;
+    }
+
+    static constexpr std::size_t kBankSlotOffset = 0x04;
+    static constexpr std::size_t kBankEntryOffset = 0x08;
+    static constexpr std::size_t kEmitPlayEventOffset = 0x0D;
+
+    const uint8_t* m_pRaw;
+};
+
+void PushSfxPlayCommand(uint32_t streamHandle) {
+    audCommandHeader* const header =
+        reinterpret_cast<audCommandHeader*>(&g_pAudioCommandRing[g_audioCommandWriteIndex]);
+
+    header->m_class = kAudioCommandClass;
+    header->m_channel = kAudioCommandClass;
+    header->m_commandId = kSfxPlayCommandId;
+
+    g_pAudioCommandRing[g_audioCommandWriteIndex + 1] = streamHandle;
+    g_audioCommandWriteIndex += 2;
+}
+
+} // namespace
+
 void audVoiceSfx::PlayByEntry(
     void* entry,
     float volume,
     float pitch,
     float pan,
-    float priority,
-    uint32_t param5,
-    uint32_t param6,
-    uint8_t param7)
+    float playVariance,
+    uint32_t userParamA,
+    uint32_t userParamB,
+    uint8_t userParamC)
 {
-    // Entry structure layout (inferred from assembly):
-    //   +0x04: flags (int32_t)
-    //   +0x08: data pointer
-    //   +0x0D: tracking flag (uint8_t)
-    
-    int32_t* entryFlags = (int32_t*)((char*)entry + 4);
-    void** entryData = (void**)((char*)entry + 8);
-    uint8_t* trackingFlag = (uint8_t*)((char*)entry + 13);
-    
-    // Check if entry is invalid (flags == -1)
-    if (*entryFlags == -1) {
-        nop_8240E6D0("audVoiceSfx::PlayByEntry - invalid entry");
+    const audSfxEntryView bankEntry(entry);
+    if (bankEntry.IsNull() || bankEntry.GetBankSlot() == kInvalidBankSlot) {
+        nop_8240E6D0("audVoiceSfx::PlayByEntry - invalid entry (%p)", entry);
         return;
     }
-    
-    // Load audio threshold constant
-    const float threshold = g_audioThreshold;  // @ 0x8202D110
-    
-    // If volume exceeds threshold, apply scaling
-    if (volume > threshold) {
-        // Call audio processing function (sets some global state)
-        // This is a wrapper that calls fiAsciiTokenizer_ParseToken with r4=26
-        // aud_2458(ctx, base);
-        
-        // Scale the priority parameter
-        // Assembly: lfs f0, 2188(r30); fmuls f4, f13, f0
-        // This loads a scale factor and multiplies
-        const float scaleFactor = *(float*)((char*)&g_audioThreshold + 2188);
-        priority = volume * scaleFactor;
+
+    if (playVariance > g_playVarianceThreshold) {
+        const float randomSample = aud_2458(this);
+        playVariance = randomSample * g_playVarianceScale;
     }
-    
-    // If tracking flag is set, perform event logging
-    if (*trackingFlag != 0) {
-        // This section writes to some global tracking arrays
-        // The assembly shows:
-        //   - Reading/incrementing a global counter
-        //   - Writing event data to arrays
-        //   - Storing entry information
-        // 
-        // This is likely audio event tracking for debugging/profiling
-        // TODO: Implement proper event tracking when globals are identified
+
+    if (bankEntry.ShouldEmitPlayEvent()) {
+        uint32_t streamHandle = 0;
+        std::memcpy(&streamHandle, m_pSfxRef, sizeof(streamHandle));
+        PushSfxPlayCommand(streamHandle);
     }
-    
-    // Delegate to stream playback system
-    // m_pSfxRef is at +0x0C (field_0x000c in the header)
-    void* sfxRef = *(void**)((char*)this + 12);
-    
+
     audVoiceStream_B328_fw(
-        sfxRef,
-        *entryFlags,
-        *entryData,
+        m_pSfxRef,
+        bankEntry.GetBankSlot(),
+        bankEntry.GetBankEntryData(),
         volume,
         pitch,
         pan,
-        priority,
-        param5,
-        param6,
-        param7
+        playVariance,
+        userParamA,
+        userParamB,
+        userParamC
     );
 }
 
 } // namespace rage
+

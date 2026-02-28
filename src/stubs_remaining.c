@@ -110,10 +110,6 @@ void _crt_tls_fiber_setup(void) {
     // TLS fiber setup
 }
 
-void __heap_init_impl(void) {
-    // Heap initialization
-}
-
 void __run_table(void* start, void* end) {
     (void)start;
     (void)end;

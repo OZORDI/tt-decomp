@@ -145,3 +145,23 @@ void sysMemAllocator_Free(void* ptr)
     }
     /* If owned, the allocator manages its own memory — nothing to do */
 }
+
+
+/* ============================================================================
+ * __heap_init_impl
+ *
+ * Initializes the heap subsystem. Called during CRT startup.
+ * This is a no-op on modern platforms where malloc is always available.
+ * 
+ * @return 1 on success, 0 on failure
+ * ============================================================================
+ */
+int __heap_init_impl(void) {
+    /* No-op - heap is always available on modern platforms */
+    return 1;  /* Success */
+}
+
+/* Alias for compatibility */
+int _heap_init_impl(void) {
+    return __heap_init_impl();
+}

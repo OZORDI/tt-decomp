@@ -441,3 +441,181 @@ void grcTextureReference::ForwardSlot25()
 }
 
 } // namespace rage
+
+// ---------------------------------------------------------------------------
+// grcTextureReferenceBase — Missing virtual function implementations
+// ---------------------------------------------------------------------------
+
+/**
+ * grcTextureReferenceBase::vfn_1() @ 0x8215D720 | size: 0x58
+ * Virtual function slot 1 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_1() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_2() @ 0x8215D778 | size: 0x58
+ * Virtual function slot 2 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_2() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_3() @ 0x8215D7D0 | size: 0x64
+ * Virtual function slot 3 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_3() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_5() @ 0x8215D8A0 | size: 0x44
+ * Virtual function slot 5 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_5() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_6() @ 0x8215D8E8 | size: 0x58
+ * Virtual function slot 6 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_6() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_8() @ 0x8215D720 | size: 0x58
+ * Virtual function slot 8 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_8() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_9() @ 0x8215D778 | size: 0x58
+ * Virtual function slot 9 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_9() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_10() @ 0x8215D7D0 | size: 0x64
+ * Virtual function slot 10 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_10() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_13(void* param1, void* param2) @ 0x8215D7D0 | size: 0x64
+ * Virtual function slot 13 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_13(void* param1, void* param2) {
+    (void)param1;
+    (void)param2;
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_14(void* param1, void* param2) @ 0x8215D838 | size: 0x64
+ * Virtual function slot 14 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_14(void* param1, void* param2) {
+    (void)param1;
+    (void)param2;
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_15() @ 0x8215D998 | size: 0x58
+ * Virtual function slot 15 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_15() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_16(void* param) @ 0x8215D940 | size: 0x54
+ * Virtual function slot 16 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_16(void* param) {
+    (void)param;
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_17(float param1, void* param2) @ 0x8215D9F0 | size: 0x64
+ * Virtual function slot 17 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_17(float param1, void* param2) {
+    (void)param1;
+    (void)param2;
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_18(void* param1, void* param2) @ 0x8215DA58 | size: 0x64
+ * Virtual function slot 18 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_18(void* param1, void* param2) {
+    (void)param1;
+    (void)param2;
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_19() @ 0x8215D720 | size: 0x58
+ * Virtual function slot 19 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_19() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_21(void* param1, void* param2, void* param3) @ 0x8215D458 | size: 0x60
+ * Virtual function slot 21 - stub implementation
+ */
+rage::grcTexture* rage::grcTextureReferenceBase::vfn_21(void* param1, void* param2, void* param3) {
+    (void)param1;
+    (void)param2;
+    (void)param3;
+    // TODO: Implement based on assembly analysis
+    return nullptr;
+}
+
+/**
+ * grcTextureReferenceBase::vfn_22(void* param) @ 0x8215D4B8 | size: 0x54
+ * Virtual function slot 22 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_22(void* param) {
+    (void)param;
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_23() @ 0x8215D720 | size: 0x58
+ * Virtual function slot 23 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_23() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_24() @ 0x8215D778 | size: 0x58
+ * Virtual function slot 24 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_24() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * grcTextureReferenceBase::vfn_25() @ 0x8215D7D0 | size: 0x64
+ * Virtual function slot 25 - stub implementation
+ */
+void rage::grcTextureReferenceBase::vfn_25() {
+    // TODO: Implement based on assembly analysis
+}

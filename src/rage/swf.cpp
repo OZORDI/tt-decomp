@@ -111,6 +111,69 @@ swfSCRIPTOBJECT::~swfSCRIPTOBJECT() {
     // The actual unlinking from pool happens in the scalar destructor
 }
 
+/**
+ * swfSCRIPTOBJECT::vfn_6() @ 0x823FED10 | size: 0x8
+ * 
+ * Virtual function slot 6 - returns immediately (no-op).
+ */
+void swfSCRIPTOBJECT::vfn_6() {
+    // No-op - just returns
+}
+
+/**
+ * swfSCRIPTOBJECT::vfn_8() @ 0x823F8B48 | size: 0x24
+ * 
+ * Virtual function slot 8 - minimal implementation.
+ */
+void swfSCRIPTOBJECT::vfn_8() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * swfSCRIPTOBJECT::vfn_9() @ 0x823FC1A0 | size: 0x8
+ * 
+ * Virtual function slot 9 - returns immediately (no-op).
+ */
+void swfSCRIPTOBJECT::vfn_9() {
+    // No-op - just returns
+}
+
+/**
+ * swfSCRIPTOBJECT::vfn_10() @ 0x823FBFC0 | size: 0x1DC
+ * 
+ * Virtual function slot 10 - complex implementation.
+ */
+void swfSCRIPTOBJECT::vfn_10() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * swfSCRIPTOBJECT::vfn_11() @ 0x823FC8A8 | size: 0x5C
+ * 
+ * Virtual function slot 11.
+ */
+void swfSCRIPTOBJECT::vfn_11() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * swfSCRIPTOBJECT::vfn_12() @ 0x823FC848 | size: 0x60
+ * 
+ * Virtual function slot 12.
+ */
+void swfSCRIPTOBJECT::vfn_12() {
+    // TODO: Implement based on assembly analysis
+}
+
+/**
+ * swfSCRIPTOBJECT::vfn_13() @ 0x823FEA28 | size: 0x120
+ * 
+ * Virtual function slot 13.
+ */
+void swfSCRIPTOBJECT::vfn_13() {
+    // TODO: Implement based on assembly analysis
+}
+
 void swfSCRIPTOBJECT_ScalarDestructor(swfSCRIPTOBJECT* obj, int flags) {
     // Call constructor to reset vtable
     new (obj) swfSCRIPTOBJECT();
