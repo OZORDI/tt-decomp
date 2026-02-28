@@ -188,3 +188,91 @@ struct parMemberStruct {
 };
 
 } // namespace rage
+
+/**
+ * MemberDescriptor — internal descriptor structure
+ * Contains type information and default values for simple types
+ */
+struct MemberDescriptor {
+    uint32_t m_typeId;              // +0x00
+    uint32_t m_defaultValue;        // +0x04
+    uint16_t m_dataType;            // +0x08
+    uint8_t m_formatFlags;          // +0x0A
+    uint8_t m_additionalFlags;      // +0x0B
+    float m_defaultValueFloat;      // +0x0C
+};
+
+/**
+ * rage::parMemberSimple @ 0x82065A68
+ *
+ * Simple-type parameter member descriptor for the par serialization system.
+ * Handles primitive types (bool, int8, uint8, int16, uint16, int32, uint32, float)
+ * and simple vector types (vec2, vec3, vec4) with type conversion and cmOperator
+ * marshaling for editor integration.
+ */
+struct parMemberSimple {
+    void** m_pVtable;                // +0x00
+    MemberDescriptor* m_pMemberDesc; // +0x04
+
+    /**
+     * parMemberSimple::~parMemberSimple() @ 0x8234CA38 | size: 0x50
+     * Destructor with optional self-free (vtable slot 0)
+     */
+    void* vfn_0(uint32_t freeSelf);
+
+    /**
+     * parMemberSimple::vfn_1 @ 0x8234F690 | size: 0xC
+     * Get type identifier from member descriptor (vtable slot 1)
+     */
+    uint32_t vfn_1() const;
+
+    /**
+     * parMemberSimple::vfn_2 @ 0x8234F6A0 | size: 0xC
+     * Get default value from member descriptor (vtable slot 2)
+     */
+    uint32_t vfn_2() const;
+
+    /**
+     * parMemberSimple::vfn_3 @ 0x8234F6B0 | size: 0xC
+     * Set default value in member descriptor (vtable slot 3)
+     */
+    void vfn_3(uint32_t value);
+
+    /**
+     * parMemberSimple::vfn_4 @ 0x8234F6C0 | size: 0xC
+     * Get data type from member descriptor (vtable slot 4)
+     */
+    uint16_t vfn_4() const;
+
+    /**
+     * parMemberSimple::vfn_5 @ 0x8234F6D0 | size: 0xC
+     * Get data format flags from member descriptor (vtable slot 5)
+     */
+    uint8_t vfn_5() const;
+
+    /**
+     * parMemberSimple::vfn_6 @ 0x8234FA48 | size: 0x3FC
+     * Export member value to cmOperator representation (vtable slot 6)
+     */
+    cmOperator* vfn_6(uint32_t memberOffset);
+
+    /**
+     * parMemberSimple::vfn_7 @ 0x8234FE48 | size: 0x390
+     * Import cmOperator value into member storage (vtable slot 7)
+     */
+    void vfn_7(const cmOperator* pValueOperator, uint32_t memberOffset);
+
+    /**
+     * parMemberSimple::vfn_8 @ 0x8234F778 | size: 0x2CC
+     * Write value to member storage with type conversion (vtable slot 8)
+     */
+    void vfn_8(uint32_t memberOffset);
+
+    /**
+     * parMemberSimple::vfn_10 @ 0x8234F6E0 | size: 0xC
+     * Get additional flags from member descriptor (vtable slot 10)
+     */
+    uint8_t vfn_10() const;
+};
+
+} // namespace rage

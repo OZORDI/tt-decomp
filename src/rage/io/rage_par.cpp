@@ -1339,3 +1339,333 @@ std::uint32_t parMemberStruct::vfn_9(const cmOperator* pValueOperator, std::uint
 }
 
 } // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::parMemberSimple Implementation
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * parMemberSimple::~parMemberSimple() @ 0x8234CA38 | size: 0x50
+ * Destructor with optional self-free (vtable slot 0)
+ */
+void* rage::parMemberSimple::vfn_0(uint32_t freeSelf) {
+    rage_F6F0();
+    
+    if (freeSelf & 0x1) {
+        rage_free_00C0(this);
+    }
+    
+    return this;
+}
+
+/**
+ * parMemberSimple::vfn_1 @ 0x8234F690 | size: 0xC
+ * Get type identifier from member descriptor (vtable slot 1)
+ */
+uint32_t rage::parMemberSimple::vfn_1() const {
+    return m_pMemberDesc->m_typeId;
+}
+
+/**
+ * parMemberSimple::vfn_2 @ 0x8234F6A0 | size: 0xC
+ * Get default value from member descriptor (vtable slot 2)
+ */
+uint32_t rage::parMemberSimple::vfn_2() const {
+    return m_pMemberDesc->m_defaultValue;
+}
+
+/**
+ * parMemberSimple::vfn_3 @ 0x8234F6B0 | size: 0xC
+ * Set default value in member descriptor (vtable slot 3)
+ */
+void rage::parMemberSimple::vfn_3(uint32_t value) {
+    m_pMemberDesc->m_defaultValue = value;
+}
+
+/**
+ * parMemberSimple::vfn_4 @ 0x8234F6C0 | size: 0xC
+ * Get data type from member descriptor (vtable slot 4)
+ */
+uint16_t rage::parMemberSimple::vfn_4() const {
+    return m_pMemberDesc->m_dataType;
+}
+
+/**
+ * parMemberSimple::vfn_5 @ 0x8234F6D0 | size: 0xC
+ * Get data format flags from member descriptor (vtable slot 5)
+ */
+uint8_t rage::parMemberSimple::vfn_5() const {
+    return m_pMemberDesc->m_formatFlags;
+}
+
+/**
+ * parMemberSimple::vfn_10 @ 0x8234F6E0 | size: 0xC
+ * Get additional flags from member descriptor (vtable slot 10)
+ */
+uint8_t rage::parMemberSimple::vfn_10() const {
+    return m_pMemberDesc->m_additionalFlags;
+}
+
+/**
+ * parMemberSimple::vfn_8 @ 0x8234F778 | size: 0x2CC
+ * Write value to member storage with type conversion (vtable slot 8)
+ */
+void rage::parMemberSimple::vfn_8(uint32_t memberOffset) {
+    uint8_t dataType = vfn_5();
+    
+    if (dataType > 13) {
+        return;
+    }
+    
+    uint8_t* pStorage = reinterpret_cast<uint8_t*>(vfn_2()) + memberOffset;
+    float defaultValue = m_pMemberDesc->m_defaultValueFloat;
+    
+    switch (dataType) {
+        case 0: {
+            const float epsilon = 0.0001f;
+            bool boolValue = (std::abs(defaultValue) > epsilon);
+            *pStorage = boolValue ? 1 : 0;
+            break;
+        }
+        
+        case 1: {
+            int8_t byteValue = static_cast<int8_t>(defaultValue);
+            *pStorage = static_cast<uint8_t>(byteValue);
+            break;
+        }
+        
+        case 2: {
+            uint8_t byteValue = static_cast<uint8_t>(defaultValue);
+            *pStorage = byteValue;
+            break;
+        }
+        
+        case 3: {
+            int16_t shortValue = static_cast<int16_t>(defaultValue);
+            *reinterpret_cast<uint16_t*>(pStorage) = static_cast<uint16_t>(shortValue);
+            break;
+        }
+        
+        case 4: {
+            uint16_t shortValue = static_cast<uint16_t>(defaultValue);
+            *reinterpret_cast<uint16_t*>(pStorage) = shortValue;
+            break;
+        }
+        
+        case 5: {
+            int32_t intValue = static_cast<int32_t>(defaultValue);
+            *reinterpret_cast<uint32_t*>(pStorage) = static_cast<uint32_t>(intValue);
+            break;
+        }
+        
+        case 6: {
+            uint32_t intValue = static_cast<uint32_t>(defaultValue);
+            *reinterpret_cast<uint32_t*>(pStorage) = intValue;
+            break;
+        }
+        
+        case 7: {
+            *reinterpret_cast<float*>(pStorage) = defaultValue;
+            break;
+        }
+        
+        case 8: {
+            float* pVec = reinterpret_cast<float*>(pStorage);
+            pVec[0] = defaultValue;
+            pVec[1] = defaultValue;
+            break;
+        }
+        
+        case 9: {
+            float* pVec = reinterpret_cast<float*>(pStorage);
+            pVec[0] = defaultValue;
+            pVec[1] = defaultValue;
+            pVec[2] = defaultValue;
+            break;
+        }
+        
+        case 10: {
+            float* pVec = reinterpret_cast<float*>(pStorage);
+            pVec[0] = defaultValue;
+            pVec[1] = defaultValue;
+            pVec[2] = defaultValue;
+            pVec[3] = defaultValue;
+            break;
+        }
+        
+        case 11:
+        case 12:
+        case 13:
+            break;
+    }
+}
+
+/**
+ * parMemberSimple::vfn_6 @ 0x8234FA48 | size: 0x3FC
+ * Export member value to cmOperator representation (vtable slot 6)
+ */
+rage::cmOperator* rage::parMemberSimple::vfn_6(uint32_t memberOffset) {
+    uint8_t dataType = vfn_5();
+    
+    if (dataType > 13) {
+        return nullptr;
+    }
+    
+    uint8_t* pStorage = reinterpret_cast<uint8_t*>(vfn_2()) + memberOffset;
+    cmOperator* pOperator = nullptr;
+    
+    switch (dataType) {
+        case 7: {
+            float value = *reinterpret_cast<float*>(pStorage);
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            cmOperatorCtor_DAE0_w(pOperator, *reinterpret_cast<uint32_t*>(&value), 0);
+            break;
+        }
+        
+        case 1: {
+            int8_t value = *reinterpret_cast<int8_t*>(pStorage);
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            break;
+        }
+        
+        case 2: {
+            uint8_t value = *pStorage;
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            break;
+        }
+        
+        case 3: {
+            int16_t value = *reinterpret_cast<int16_t*>(pStorage);
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            break;
+        }
+        
+        case 4: {
+            uint16_t value = *reinterpret_cast<uint16_t*>(pStorage);
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            break;
+        }
+        
+        case 5: {
+            int32_t value = *reinterpret_cast<int32_t*>(pStorage);
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            break;
+        }
+        
+        case 6: {
+            uint32_t value = *reinterpret_cast<uint32_t*>(pStorage);
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            break;
+        }
+        
+        case 0: {
+            uint8_t value = *pStorage;
+            pOperator = reinterpret_cast<cmOperator*>(vfn_1());
+            break;
+        }
+        
+        default:
+            break;
+    }
+    
+    return pOperator;
+}
+
+/**
+ * parMemberSimple::vfn_7 @ 0x8234FE48 | size: 0x390
+ * Import cmOperator value into member storage (vtable slot 7)
+ */
+void rage::parMemberSimple::vfn_7(const cmOperator* pValueOperator, uint32_t memberOffset) {
+    uint8_t dataType = vfn_5();
+    
+    if (dataType > 13) {
+        return;
+    }
+    
+    uint8_t* pStorage = reinterpret_cast<uint8_t*>(vfn_2()) + memberOffset;
+    
+    switch (dataType) {
+        case 7: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            float value = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            *reinterpret_cast<float*>(pStorage) = value;
+            break;
+        }
+        
+        case 1:
+        case 2: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            break;
+        }
+        
+        case 3:
+        case 4: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            break;
+        }
+        
+        case 5:
+        case 6: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            break;
+        }
+        
+        case 0: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            bool value = jumptable_A578_h(const_cast<cmOperator*>(pValueOperator));
+            *pStorage = value ? 1 : 0;
+            break;
+        }
+        
+        case 8: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            float* pVec = reinterpret_cast<float*>(pStorage);
+            pVec[0] = x;
+            pVec[1] = y;
+            break;
+        }
+        
+        case 9: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "z");
+            float z = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            float* pVec = reinterpret_cast<float*>(pStorage);
+            pVec[0] = x;
+            pVec[1] = y;
+            pVec[2] = z;
+            break;
+        }
+        
+        case 10: {
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "z");
+            float z = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            rage_97A8(const_cast<cmOperator*>(pValueOperator), "w");
+            float w = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            float* pVec = reinterpret_cast<float*>(pStorage);
+            pVec[0] = x;
+            pVec[1] = y;
+            pVec[2] = z;
+            pVec[3] = w;
+            break;
+        }
+        
+        default:
+            break;
+    }
+}
