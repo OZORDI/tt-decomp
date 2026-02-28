@@ -254,7 +254,7 @@ struct noSoftShotsTipData {
 
     // ── virtual methods ──
     virtual void CallInit();  // [2] @ 0x821f2730
-    virtual void PostLoadProperties();  // [20] @ 0x821f2678
+    virtual bool PostLoadProperties(uint32_t typeHash);  // [20] @ 0x821f2678
     virtual void Validate();  // [21] @ 0x821f26c0
     virtual void PostLoadChildren();  // [22] @ 0x82115f38
 };

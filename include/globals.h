@@ -117,3 +117,13 @@ extern uint8_t g_uiInputFlag;
 extern uint32_t* g_aiTypeId_1;  // @ 0x825C60B4
 extern uint32_t* g_aiTypeId_2;  // @ 0x825C803C
 extern uint32_t* g_aiTypeId_3;  // @ 0x825C8038
+
+// ────────────────────────────────────────────────────────────────────────────
+// Training Drill Tip Data Validation
+// ────────────────────────────────────────────────────────────────────────────
+
+// Shot type validation globals for noSoftShotsTipData
+// Used by PostLoadProperties @ 0x821F2678 to validate allowed shot types
+extern uint32_t g_shotType1_825C5F50;  // @ 0x825C5F50
+extern uint32_t g_shotType2_825C803C;  // @ 0x825C803C
+extern uint32_t g_shotType3_825C8038;  // @ 0x825C8038

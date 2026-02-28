@@ -206,3 +206,44 @@ void msgMsgSink::ProcessMessageWithIndex(uint32_t param1, uint16_t msgIndex, uin
     // Call the actual message processing function
     msgMsgSink_E860_g(this, param1, param2, calculatedOffset);
 }
+
+/**
+ * msgMsgSink::DispatchVirtualMethod() @ 0x824542D0 | size: 0x30
+ * [vtable slot 12]
+ *
+ * Dispatches a virtual method call through a chain of object pointers.
+ * This is a common pattern in the RAGE engine for delegating operations
+ * through a hierarchy of objects.
+ *
+ * Call chain:
+ *   this->field_0x0028 (offset +40)
+ *     ->field_0x0018 (offset +24)
+ *       ->field_0x0024 (offset +36)
+ *         ->vtable[9] (offset +36 in vtable)
+ *
+ * Returns early if any pointer in the chain is null.
+ */
+void msgMsgSink::DispatchVirtualMethod() {
+    // Get first object pointer at offset +40
+    void* obj1 = *(void**)((char*)this + 40);
+    if (obj1 == nullptr) {
+        return;
+    }
+    
+    // Get second object pointer at offset +24 from first object
+    void* obj2 = *(void**)((char*)obj1 + 24);
+    
+    // Get third object pointer at offset +36 from second object
+    void* obj3 = *(void**)((char*)obj2 + 36);
+    if (obj3 == nullptr) {
+        return;
+    }
+    
+    // Get vtable from third object
+    void** vtable = *(void***)obj3;
+    
+    // Call virtual method at slot 9 (offset +36 in vtable)
+    typedef void (*VirtualMethod)(void*);
+    VirtualMethod method = (VirtualMethod)vtable[9];
+    method(obj3);
+}

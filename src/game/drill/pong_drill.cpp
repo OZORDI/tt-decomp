@@ -6,6 +6,7 @@
  */
 
 #include "pong_drill.hpp"
+#include "globals.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -497,4 +498,27 @@ void pongDrillSoftShot::ScalarDestructor(int flags) {
     if (needsExtendedCleanup != 0) {
         *(uint32_t*)((uint8_t*)this + 56) = flags;
     }
+}
+
+/**
+ * noSoftShotsTipData::PostLoadProperties @ 0x821F2678 | size: 0x48
+ * 
+ * Validates that the provided type hash matches one of the allowed shot types
+ * for the "no soft shots" tip. Returns true if the type is valid.
+ * 
+ * This tip data validates against three specific shot type hashes stored in globals.
+ */
+bool noSoftShotsTipData::PostLoadProperties(uint32_t typeHash) {
+    // Check against first allowed type
+    if (typeHash == g_shotType1_825C5F50) {
+        return true;
+    }
+    
+    // Check against second allowed type
+    if (typeHash == g_shotType2_825C803C) {
+        return true;
+    }
+    
+    // Check against third allowed type
+    return (typeHash == g_shotType3_825C8038);
 }

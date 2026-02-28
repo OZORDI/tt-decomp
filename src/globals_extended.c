@@ -400,3 +400,9 @@ const char* kFaceAnimStartPhase = "0.0";
 // Drill cleanup parameter @ 0x825C74FC (.data, 4 bytes)
 // Used by pongDrillSoftShot::ScalarDestructor for cleanup validation
 uint32_t g_drillCleanupParam = 0;
+
+// Shot type validation globals for noSoftShotsTipData
+// Used by PostLoadProperties @ 0x821F2678 to validate allowed shot types
+uint32_t g_shotType1_825C5F50 = 0;  // @ 0x825C5F50 (.data, 4 bytes)
+uint32_t g_shotType2_825C803C = 0;  // @ 0x825C803C (.data, 4 bytes)
+uint32_t g_shotType3_825C8038 = 0;  // @ 0x825C8038 (.data, 4 bytes)

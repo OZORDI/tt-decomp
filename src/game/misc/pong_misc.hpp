@@ -501,6 +501,11 @@ struct msgMsgSink {
     virtual void vfn_131();  // [131] @ 0x8244fee8
     virtual void vfn_147();  // [147] @ 0x824505c8
     virtual void vfn_148();  // [148] @ 0x824508a8
+    
+    // ── non-virtual methods (implemented) ──
+    void InitializeExtended();  // @ 0x8245C078
+    void ProcessMessageWithIndex(uint32_t param1, uint16_t msgIndex, uint32_t param2);  // @ 0x8244E978
+    void DispatchVirtualMethod();  // @ 0x824542D0 [related to vtable slot 12]
 };
 
 // ── pongBinkMovie  [vtable @ 0x82060B94] ──────────────────────────
