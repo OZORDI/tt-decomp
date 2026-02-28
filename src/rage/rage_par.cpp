@@ -175,7 +175,7 @@ struct parArrayResizeContext32 {
     Address32 m_pad00;
     Address32 m_pad04;
     Address32 m_pad08;
-    void (*m_pResizeFn)(parArrayResizeContext32* self, Address32 memberData, std::uint32_t elementCount);
+    Address32 m_pResizeFn;
 };
 static_assert(sizeof(parArrayResizeContext32) == 0x10, "parArrayResizeContext32 layout mismatch");
 
@@ -758,12 +758,12 @@ void parMemberArray::vfn_7(const cmOperator* pValueOperator, std::uint32_t membe
         descriptor->m_storageMode == 6u ||
         descriptor->m_storageMode == 7u) {
         const Address32 memberAddress = GetArrayMemberBaseAddress(this) + memberOffset;
-        if (descriptor->m_resizeContext.m_pResizeFn != nullptr) {
-            descriptor->m_resizeContext.m_pResizeFn(
-                &descriptor->m_resizeContext,
-                memberAddress,
-                incomingElementCount
+        if (descriptor->m_resizeContext.m_pResizeFn != 0u) {
+            using ResizeFn = void (*)(parArrayResizeContext32* self, Address32 memberData, std::uint32_t elementCount);
+            auto* resizeFn = reinterpret_cast<ResizeFn>(
+                static_cast<std::uintptr_t>(descriptor->m_resizeContext.m_pResizeFn)
             );
+            resizeFn(&descriptor->m_resizeContext, memberAddress, incomingElementCount);
         }
     }
 

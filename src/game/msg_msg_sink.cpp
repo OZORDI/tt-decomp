@@ -148,3 +148,61 @@ void msgMsgSink::InitializeExtended() {
         array[i] = 0;
     }
 }
+
+/**
+ * msgMsgSink::ProcessMessageWithIndex() @ 0x8244E978 | size: 0x84
+ *
+ * Processes a message with index validation. Retrieves a message object
+ * from the sink's internal storage, validates its type and index range,
+ * then dispatches it for processing.
+ *
+ * Parameters:
+ *   r3 (this) - msgMsgSink instance
+ *   r4 - message parameter 1
+ *   r6 - message index (uint16_t)
+ *   r9 - message parameter 2
+ *
+ * Returns: void (calls msgMsgSink_E860_g for actual processing)
+ */
+void msgMsgSink::ProcessMessageWithIndex(uint32_t param1, uint16_t msgIndex, uint32_t param2) {
+    // Get message object from internal storage at offset +284 (0x11C)
+    void* msgObj = msgMsgSink_F518_wrh(this->field_0x011c);
+    
+    uint32_t calculatedOffset = 0;
+    
+    if (msgObj != nullptr) {
+        // Load vtable/flags from message object
+        uint32_t objHeader = *(uint32_t*)msgObj;
+        
+        // Extract message type from lower 5 bits
+        uint32_t msgType = objHeader & 0x1F;  // clrlwi r10,r10,27
+        
+        // Extract some field by rotating and masking
+        // rlwinm r6,r10,27,8,31 - rotate left 27, keep bits 8-31
+        uint32_t rotatedField = ((objHeader << 27) | (objHeader >> 5)) & 0x00FFFFFF;
+        
+        // Extract lower 16 bits of index
+        uint16_t indexLower = msgIndex & 0xFFFF;  // clrlwi r11,r31,16
+        
+        // Check if index is non-zero and message type is 18
+        if (indexLower != 0 && msgType == 18) {
+            // Load a 32-bit value from offset +11 in the message object
+            uint32_t msgData = *(uint32_t*)((uint8_t*)msgObj + 11);
+            
+            // Extract upper 16 bits (count/limit)
+            uint16_t msgCount = (uint16_t)(msgData >> 16);
+            
+            // Check if index is within valid range
+            if (msgCount > indexLower) {
+                // Extract lower 16 bits (stride/multiplier)
+                uint16_t msgStride = (uint16_t)(msgData & 0xFFFF);
+                
+                // Calculate offset: stride * index
+                calculatedOffset = msgStride * indexLower;
+            }
+        }
+    }
+    
+    // Call the actual message processing function
+    msgMsgSink_E860_g(this, param1, param2, calculatedOffset);
+}
