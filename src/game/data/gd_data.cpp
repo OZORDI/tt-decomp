@@ -6,11 +6,14 @@
  */
 
 #include "gd_data.hpp"
+#include <cstddef>
+#include <cstdint>
 
 // External function declarations
 extern void rage_free(void* ptr);
 extern void game_8EE8(void* obj);                    // @ 0x820F8EE8 - Object cleanup
 extern void util_6C20(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
+extern void xe_main_thread_init_0038(void);          // @ 0x820C0038 - Main thread init
 
 namespace rage {
     void  ReleaseSingleton(void* obj);               // @ 0x821A9420
@@ -18,8 +21,20 @@ namespace rage {
     void* UnregisterSingleton(const void* key);      // @ 0x820C29E0
 }
 
+// RAGE allocator structure (minimal definition for this file)
+struct rageAllocatorVTable {
+    void (*Destructor)(void* self);
+    void* (*Allocate)(void* self, void* hint, size_t size);
+    void (*Free)(void* self, void* ptr);
+};
+
+struct rageAllocator {
+    rageAllocatorVTable* vtable;
+};
+
 // Global state
 extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
+extern uint32_t* g_sda_base;            // @ SDA:0x82600000 - Small Data Area base
 
 /**
  * game_B2E0 @ 0x8218B2E0 | size: 0x90
@@ -327,4 +342,53 @@ void RegisterSerializedField(void* obj,
     ((void**)fieldRegistry)[1] = fieldPtr;       // +0x04: field pointer
     ((void**)fieldRegistry)[2] = (void*)schemaDesc;  // +0x08: schema descriptor
     ((uint32_t*)fieldRegistry)[3] = 0;           // +0x0C: clear in-progress flag
+}
+
+/**
+ * xe_13E8_1 @ 0x822113E8 | size: 0x90
+ * 
+ * Allocates and initializes a gdPropData object.
+ * 
+ * This is a factory function that:
+ * 1. Ensures the main thread heap context is initialized
+ * 2. Allocates 32 bytes with 16-byte alignment from the RAGE heap
+ * 3. Initializes the gdPropData structure with its vtable and zero-filled fields
+ * 4. Sets the last field to -1 (likely an invalid index sentinel)
+ * 
+ * @return Pointer to newly allocated gdPropData, or NULL if allocation failed
+ */
+gdPropData* xe_13E8_1(void) {
+    // Ensure main thread heap is initialized
+    xe_main_thread_init_0038();
+    
+    // Get the active allocator from SDA context
+    // The SDA base (r13) points to a context struct where offset +4 holds the allocator pointer
+    uint32_t* sdaBase = (uint32_t*)(uintptr_t)g_sda_base[0];
+    rageAllocator* allocator = (rageAllocator*)(uintptr_t)sdaBase[1];
+    
+    // Allocate 32 bytes with 16-byte alignment via allocator vtable slot 1
+    gdPropData* propData = (gdPropData*)allocator->vtable->Allocate(
+        allocator,
+        (void*)16,  // alignment hint
+        32          // size in bytes
+    );
+    
+    if (propData != NULL) {
+        // Initialize the gdPropData structure
+        propData->vtable = (void**)0x8204A364;  // gdPropData vtable
+        
+        // Zero-initialize data fields
+        uint32_t* fields = (uint32_t*)((char*)propData + 4);
+        fields[0] = 0;  // +4
+        fields[1] = 0;  // +8
+        fields[2] = 0;  // +12
+        fields[3] = 0;  // +16
+        fields[4] = 0;  // +20
+        fields[5] = 0;  // +24
+        
+        // Set last field to -1 (invalid index sentinel)
+        ((int32_t*)fields)[6] = -1;  // +28
+    }
+    
+    return propData;
 }
