@@ -463,3 +463,39 @@ const char* hitTipData_xmlNodeStructGroupType_GetGroupName(void* self) {
     // Original: rlwinm r9,r10,2,0,29 → index * 4
     return g_shotTypeNames[groupIndex];
 }
+
+/**
+ * pongDrillSoftShot::ScalarDestructor
+ * @ 0x8210EDA0 | size: 0x64 (100 bytes)
+ * vtable slot 1
+ *
+ * Scalar destructor for pongDrillSoftShot. Stores destruction flags
+ * and conditionally updates extended state based on a virtual call result.
+ *
+ * This is the deleting destructor variant used for array deletion.
+ * It stores the destruction flag at two locations (+32 and conditionally +56)
+ * after calling a virtual function to check if extended cleanup is needed.
+ *
+ * @param flags Destruction flags (typically 1 for delete, 0 for in-place)
+ */
+void pongDrillSoftShot::ScalarDestructor(int flags) {
+    // Store destruction flag at offset +32
+    // This appears to be a cleanup state flag in the derived class
+    *(uint32_t*)((uint8_t*)this + 32) = flags;
+    
+    // Load parameter from global data section
+    // Address: 0x825C74FC (.data, 4 bytes)
+    extern uint32_t g_drillCleanupParam;  // @ 0x825C74FC
+    
+    // Call virtual function slot 20 with the global parameter
+    // This is likely a cleanup validation or state check function
+    typedef uint8_t (*CleanupCheckFn)(void*, uint32_t);
+    CleanupCheckFn checkFn = (CleanupCheckFn)(((void***)this)[0][20]);
+    uint8_t needsExtendedCleanup = checkFn(this, g_drillCleanupParam);
+    
+    // If the check returns non-zero, store flag at extended offset +56
+    // This suggests conditional cleanup of additional derived class state
+    if (needsExtendedCleanup != 0) {
+        *(uint32_t*)((uint8_t*)this + 56) = flags;
+    }
+}

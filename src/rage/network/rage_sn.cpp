@@ -65,3 +65,31 @@ hsmContext::hsmContext() {
 }
 
 } // namespace rage
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snMigrateMachine deleting destructor @ 0x823E5F28
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Forward declarations
+extern "C" void util_5B50(void* obj);           // @ 0x823E5B50 - Base class destructor
+extern "C" void rage_free_00C0(void* ptr);      // @ 0x820C00C0 - Free memory
+
+/**
+ * snMigrateMachine_vfn_0 @ 0x823E5F28 | size: 0x50
+ *
+ * Deleting destructor for rage::snMigrateMachine (vtable slot 0).
+ * Calls the base class destructor to clean up internal state,
+ * then conditionally frees the object's memory if the delete flag is set.
+ *
+ * @param obj Pointer to the snMigrateMachine instance
+ * @param flags Destruction flags (bit 0: free memory if set)
+ */
+extern "C" void snMigrateMachine_vfn_0(void* obj, int flags) {
+    // Call base class destructor to clean up internal state
+    util_5B50(obj);
+    
+    // If delete flag is set, free the object's memory
+    if (flags & 0x1) {
+        rage_free_00C0(obj);
+    }
+}
