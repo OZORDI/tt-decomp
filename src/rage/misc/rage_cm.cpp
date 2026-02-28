@@ -1134,3 +1134,48 @@ void cmNormalizedTimer::SetValue() {
     // Dispatch to the generic setter to copy the value
     cmNode_SetFromPort_Dispatch(m_pCurrentValue, &tempPort, m_outputType);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PROBE NODES (collision/raycast query nodes)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * cmNormalProbe::GetVector @ 0x82279940
+ * 
+ * Returns the surface normal vector from a collision probe result.
+ * Lazily initializes the probe data on first access by calling util_96F0.
+ * 
+ * The probe data structure contains:
+ *   +0x10: position vec4
+ *   +0x20: normal vec4
+ *   +0x71: initialized flag (uint8_t)
+ */
+void cmNormalProbe::GetVector(float* out) {
+    // Load pointer to probe data structure (at +0x0C in the node)
+    struct ProbeData {
+        uint8_t _pad0[16];        // +0x00
+        float position[4];         // +0x10
+        float normal[4];           // +0x20
+        uint8_t _pad1[81];        // +0x30
+        uint8_t initialized;       // +0x71
+    };
+    
+    ProbeData* probeData = *reinterpret_cast<ProbeData**>(
+        reinterpret_cast<uint8_t*>(this) + 0x0C
+    );
+    
+    // Lazy initialization: if not yet initialized, call util_96F0 to compute probe
+    if (!probeData->initialized) {
+        // util_96F0 performs the actual raycast/collision query
+        // TODO: implement util_96F0 when needed
+        // util_96F0(probeData);
+        probeData->initialized = 1;
+    }
+    
+    // Copy the normal vector to output (16-byte aligned vec4)
+    out[0] = probeData->normal[0];
+    out[1] = probeData->normal[1];
+    out[2] = probeData->normal[2];
+    out[3] = probeData->normal[3];
+}
+

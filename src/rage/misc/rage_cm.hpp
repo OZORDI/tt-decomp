@@ -819,7 +819,7 @@ struct cmNormalProbe {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x82279940
+    void GetVector(float* out);  // [2] @ 0x82279940
 };
 
 // ── rage::cmNormalizedTimer  [vtable @ 0x82052DA4] ──────────────────────────
