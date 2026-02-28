@@ -954,3 +954,114 @@ void* SinglesNetworkClient::PopMessageFromQueue()
 
     return headNode;
 }
+
+
+// External references for SinglesNetworkClient
+extern void* g_pNetworkBase;  // @ 0x8271A7B0
+extern void net_6BA0_fw(void* session, void* param1, void* param2);
+extern void snSession_6C98_h(void* session);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ProcessSessions @ 0x822FDDC0 | size: 0x150
+//
+// Processes all active network sessions in two phases:
+// 1. First loop: Calls net_6BA0_fw and snSession_6C98_h on each session
+// 2. Second loop: Copies session data to client buffer at offset +5572
+//
+// Returns:
+//   0 if early exit condition met (byte at +5972 is non-zero)
+//   1 on successful completion
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient::ProcessSessions()
+{
+    // Get base pointer and calculate session array address
+    void* basePtr = *(void**)g_pNetworkBase;
+    uint32_t sessionArrayOffset = 94288;  // 0x17050 (lis 1 + ori 28752)
+    void* sessionArray = (char*)basePtr + sessionArrayOffset;
+    
+    // Get session count from array header
+    int sessionCount = *(int*)sessionArray;
+    
+    // Phase 1: Process each active session
+    if (sessionCount > 0) {
+        // Calculate session data pointers
+        // Session structure: 104 bytes per entry, starts at basePtr + 0x17058
+        void* sessionData = (char*)basePtr + 94296;  // basePtr + 0x17058
+        void* sessionParams = (char*)basePtr + 75152;  // basePtr + 0x12590 (addis +1, addi 9584)
+        
+        for (int i = 0; i < sessionCount; i++) {
+            // Check if session has valid data at offset +28
+            void* sessionPtr = (char*)sessionData + (i * 104);
+            uint32_t sessionFlag = *(uint32_t*)((char*)sessionPtr + 28);
+            
+            // If session is inactive, call net_6BA0_fw
+            if (sessionFlag == 0) {
+                void* param1 = (char*)sessionParams + (i * 384);
+                void* param2 = (char*)param1 + 60;
+                net_6BA0_fw(sessionPtr, param1, param2);
+            }
+            
+            // Always call snSession_6C98_h
+            snSession_6C98_h(sessionPtr);
+        }
+    }
+    
+    // Phase 2: Copy session data to client buffer
+    sessionCount = *(int*)((char*)basePtr + sessionArrayOffset);
+    
+    if (sessionCount > 0) {
+        // Check early exit condition
+        uint8_t exitFlag = *((uint8_t*)this + 5972);
+        if (exitFlag != 0) {
+            return 1;
+        }
+        
+        // Source: basePtr + 0x27AB8 (addis +2, addi -31576)
+        void* sourceData = (char*)basePtr + 162488;
+        
+        // Destination: this + 5572
+        uint32_t* destBuffer = (uint32_t*)((char*)this + 5572);
+        
+        const uint32_t CONSTANT_999999 = 999999;  // 0xF423F
+        
+        for (int i = 0; i < sessionCount; i++) {
+            // Check exit flag again
+            exitFlag = *((uint8_t*)this + 5972);
+            if (exitFlag != 0) {
+                return 1;
+            }
+            
+            // Check if session entry is active (byte at +17)
+            void* entryPtr = (char*)sourceData + (i * 20);
+            uint8_t isActive = *((uint8_t*)entryPtr + 17);
+            
+            if (isActive == 0) {
+                return 0;  // Inactive entry - early exit
+            }
+            
+            // Copy 16 bytes from source entry to stack temp
+            uint32_t temp[4];
+            temp[0] = *(uint32_t*)((char*)entryPtr + 0);
+            temp[1] = *(uint32_t*)((char*)entryPtr + 4);
+            temp[2] = *(uint32_t*)((char*)entryPtr + 8);
+            temp[3] = *(uint32_t*)((char*)entryPtr + 12);
+            
+            // Store first value (0) to destination
+            destBuffer[i * 2] = 0;
+            
+            // Check flag at byte +16 of entry
+            uint8_t flag = *((uint8_t*)entryPtr + 16);
+            
+            if (flag != 0) {
+                // If flag set: store (temp[1] >> 1) to destination +4
+                // rlwinm r5,r8,31,1,31 = rotate left 31 (= right 1) and mask
+                destBuffer[i * 2 + 1] = temp[1] >> 1;
+            } else {
+                // If flag clear: store constant 999999
+                destBuffer[i * 2 + 1] = CONSTANT_999999;
+            }
+        }
+    }
+    
+    return 1;
+}
