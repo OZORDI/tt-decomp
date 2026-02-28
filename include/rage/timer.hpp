@@ -1,52 +1,49 @@
 /**
- * Timer and TimerAlert Classes
- * Rockstar Presents Table Tennis (Xbox 360)
- * 
- * Core timer system with alert/callback functionality.
- * Supports up to 4 simultaneous alerts per timer.
+ * Timer and TimerAlert declarations.
+ * Rockstar Presents Table Tennis (Xbox 360, 2006)
  */
-
 #pragma once
 
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
 
-// Forward declarations
-class Timer;
+// 16-byte callback payload copied verbatim by Timer::SetAlert.
+struct TimerAlertCallbackPayload {
+    uint32_t m_aWords[4];
+};
 
-/**
- * TimerAlert
- * @ RTTI: 0x82030CB8
- * 
- * Represents a timed alert/callback that can be registered with a Timer.
- * Contains timing information, callback data, and flags.
- */
+// Runtime bytes at the tail of each 32-byte alert slot.
+struct TimerAlertRuntimeState {
+    uint8_t m_phase;
+    uint8_t m_subPhase;
+    bool m_isQueued;
+    uint8_t m_aReserved[3];
+};
+
 class TimerAlert {
 public:
-    // @ 0x821DC708 | size: 0x48
     TimerAlert();
-    virtual ~TimerAlert() {}
-    float m_time;                    // +0x04 - Time value for the alert
-    uint8_t m_callbackData[16];      // +0x08 - Callback function pointer and context data
-    uint16_t m_flags;                // +0x18 - Alert flags/state
-    uint8_t m_padding[6];            // +0x1A - Padding to 32-byte boundary
+    virtual ~TimerAlert() = default;
+
+    float m_triggerTime;
+    TimerAlertCallbackPayload m_callbackPayload;
+    uint16_t m_flags;
+    TimerAlertRuntimeState m_runtimeState;
 };
 
-/**
- * Timer
- * @ RTTI: 0x8203F258 (Timer::sAlerts)
- * 
- * Timer class that manages up to 4 TimerAlert objects.
- * Alerts are stored in a fixed-size array with 32-byte slots.
- */
 class Timer {
 public:
-    // @ 0x821DC7A0 | size: 0xE0
-    void SetAlert(TimerAlert* alert);
+    static constexpr uint32_t kMaxAlerts = 4;
 
-    uint8_t m_padding[44];           // +0x00 to +0x2B - Unknown fields
-    TimerAlert m_alerts[4];          // +0x2C (44) - Array of 4 alerts, 32 bytes each = 128 bytes
-    uint32_t m_alertCount;           // +0xAC (172) - Number of active alerts (max 4)
+    void SetAlert(const TimerAlert* pAlert);
+
+    // Fields before +0x2C are still only partially understood.
+    bool m_isEnabled;
+    uint8_t m_aReserved00[3];
+    uint32_t m_alertMode;
+    float m_currentTime;
+    float m_previousTime;
+    uint8_t m_aInternalState[28];
+
+    TimerAlert m_aAlerts[kMaxAlerts];
+    uint32_t m_numQueuedAlerts;
 };
-
-/* size verification removed: offsetof requires public members */

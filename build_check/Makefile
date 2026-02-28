@@ -342,6 +342,30 @@ src/crt/string.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/crt/string.c.s
 .PHONY : src/crt/string.c.s
 
+src/game/char_view.o: src/game/char_view.cpp.o
+.PHONY : src/game/char_view.o
+
+# target to build an object file
+src/game/char_view.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/char_view.cpp.o
+.PHONY : src/game/char_view.cpp.o
+
+src/game/char_view.i: src/game/char_view.cpp.i
+.PHONY : src/game/char_view.i
+
+# target to preprocess a source file
+src/game/char_view.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/char_view.cpp.i
+.PHONY : src/game/char_view.cpp.i
+
+src/game/char_view.s: src/game/char_view.cpp.s
+.PHONY : src/game/char_view.s
+
+# target to generate assembly for a file
+src/game/char_view.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/char_view.cpp.s
+.PHONY : src/game/char_view.cpp.s
+
 src/game/gd_data.o: src/game/gd_data.cpp.o
 .PHONY : src/game/gd_data.o
 
@@ -365,6 +389,30 @@ src/game/gd_data.s: src/game/gd_data.cpp.s
 src/game/gd_data.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.s
 .PHONY : src/game/gd_data.cpp.s
+
+src/game/gd_vib_event.o: src/game/gd_vib_event.cpp.o
+.PHONY : src/game/gd_vib_event.o
+
+# target to build an object file
+src/game/gd_vib_event.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/gd_vib_event.cpp.o
+.PHONY : src/game/gd_vib_event.cpp.o
+
+src/game/gd_vib_event.i: src/game/gd_vib_event.cpp.i
+.PHONY : src/game/gd_vib_event.i
+
+# target to preprocess a source file
+src/game/gd_vib_event.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/gd_vib_event.cpp.i
+.PHONY : src/game/gd_vib_event.cpp.i
+
+src/game/gd_vib_event.s: src/game/gd_vib_event.cpp.s
+.PHONY : src/game/gd_vib_event.s
+
+# target to generate assembly for a file
+src/game/gd_vib_event.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/gd_vib_event.cpp.s
+.PHONY : src/game/gd_vib_event.cpp.s
 
 src/game/mc_memcard.o: src/game/mc_memcard.cpp.o
 .PHONY : src/game/mc_memcard.o
@@ -413,6 +461,30 @@ src/game/pong_audio.s: src/game/pong_audio.cpp.s
 src/game/pong_audio.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.s
 .PHONY : src/game/pong_audio.cpp.s
+
+src/game/pong_audio_effects.o: src/game/pong_audio_effects.cpp.o
+.PHONY : src/game/pong_audio_effects.o
+
+# target to build an object file
+src/game/pong_audio_effects.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio_effects.cpp.o
+.PHONY : src/game/pong_audio_effects.cpp.o
+
+src/game/pong_audio_effects.i: src/game/pong_audio_effects.cpp.i
+.PHONY : src/game/pong_audio_effects.i
+
+# target to preprocess a source file
+src/game/pong_audio_effects.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio_effects.cpp.i
+.PHONY : src/game/pong_audio_effects.cpp.i
+
+src/game/pong_audio_effects.s: src/game/pong_audio_effects.cpp.s
+.PHONY : src/game/pong_audio_effects.s
+
+# target to generate assembly for a file
+src/game/pong_audio_effects.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio_effects.cpp.s
+.PHONY : src/game/pong_audio_effects.cpp.s
 
 src/game/pong_ball.o: src/game/pong_ball.cpp.o
 .PHONY : src/game/pong_ball.o
@@ -534,6 +606,30 @@ src/game/pong_network.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.s
 .PHONY : src/game/pong_network.cpp.s
 
+src/game/pong_network_classes.o: src/game/pong_network_classes.cpp.o
+.PHONY : src/game/pong_network_classes.o
+
+# target to build an object file
+src/game/pong_network_classes.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_network_classes.cpp.o
+.PHONY : src/game/pong_network_classes.cpp.o
+
+src/game/pong_network_classes.i: src/game/pong_network_classes.cpp.i
+.PHONY : src/game/pong_network_classes.i
+
+# target to preprocess a source file
+src/game/pong_network_classes.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_network_classes.cpp.i
+.PHONY : src/game/pong_network_classes.cpp.i
+
+src/game/pong_network_classes.s: src/game/pong_network_classes.cpp.s
+.PHONY : src/game/pong_network_classes.s
+
+# target to generate assembly for a file
+src/game/pong_network_classes.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_network_classes.cpp.s
+.PHONY : src/game/pong_network_classes.cpp.s
+
 src/game/pong_player.o: src/game/pong_player.cpp.o
 .PHONY : src/game/pong_player.o
 
@@ -605,6 +701,54 @@ src/game/pong_states.s: src/game/pong_states.cpp.s
 src/game/pong_states.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.s
 .PHONY : src/game/pong_states.cpp.s
+
+src/globals.o: src/globals.c.o
+.PHONY : src/globals.o
+
+# target to build an object file
+src/globals.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals.c.o
+.PHONY : src/globals.c.o
+
+src/globals.i: src/globals.c.i
+.PHONY : src/globals.i
+
+# target to preprocess a source file
+src/globals.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals.c.i
+.PHONY : src/globals.c.i
+
+src/globals.s: src/globals.c.s
+.PHONY : src/globals.s
+
+# target to generate assembly for a file
+src/globals.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals.c.s
+.PHONY : src/globals.c.s
+
+src/globals_extended.o: src/globals_extended.c.o
+.PHONY : src/globals_extended.o
+
+# target to build an object file
+src/globals_extended.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.o
+.PHONY : src/globals_extended.c.o
+
+src/globals_extended.i: src/globals_extended.c.i
+.PHONY : src/globals_extended.i
+
+# target to preprocess a source file
+src/globals_extended.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.i
+.PHONY : src/globals_extended.c.i
+
+src/globals_extended.s: src/globals_extended.c.s
+.PHONY : src/globals_extended.s
+
+# target to generate assembly for a file
+src/globals_extended.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.s
+.PHONY : src/globals_extended.c.s
 
 src/graphics/texture_reference.o: src/graphics/texture_reference.cpp.o
 .PHONY : src/graphics/texture_reference.o
@@ -678,6 +822,30 @@ src/rage/audio_control_wrappers.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.s
 .PHONY : src/rage/audio_control_wrappers.cpp.s
 
+src/rage/fsmMachine.o: src/rage/fsmMachine.c.o
+.PHONY : src/rage/fsmMachine.o
+
+# target to build an object file
+src/rage/fsmMachine.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o
+.PHONY : src/rage/fsmMachine.c.o
+
+src/rage/fsmMachine.i: src/rage/fsmMachine.c.i
+.PHONY : src/rage/fsmMachine.i
+
+# target to preprocess a source file
+src/rage/fsmMachine.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.i
+.PHONY : src/rage/fsmMachine.c.i
+
+src/rage/fsmMachine.s: src/rage/fsmMachine.c.s
+.PHONY : src/rage/fsmMachine.s
+
+# target to generate assembly for a file
+src/rage/fsmMachine.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.s
+.PHONY : src/rage/fsmMachine.c.s
+
 src/rage/game_loop.o: src/rage/game_loop.c.o
 .PHONY : src/rage/game_loop.o
 
@@ -750,6 +918,54 @@ src/rage/rage_cm.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.s
 .PHONY : src/rage/rage_cm.cpp.s
 
+src/rage/rage_dat.o: src/rage/rage_dat.cpp.o
+.PHONY : src/rage/rage_dat.o
+
+# target to build an object file
+src/rage/rage_dat.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_dat.cpp.o
+.PHONY : src/rage/rage_dat.cpp.o
+
+src/rage/rage_dat.i: src/rage/rage_dat.cpp.i
+.PHONY : src/rage/rage_dat.i
+
+# target to preprocess a source file
+src/rage/rage_dat.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_dat.cpp.i
+.PHONY : src/rage/rage_dat.cpp.i
+
+src/rage/rage_dat.s: src/rage/rage_dat.cpp.s
+.PHONY : src/rage/rage_dat.s
+
+# target to generate assembly for a file
+src/rage/rage_dat.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_dat.cpp.s
+.PHONY : src/rage/rage_dat.cpp.s
+
+src/rage/rage_globals.o: src/rage/rage_globals.cpp.o
+.PHONY : src/rage/rage_globals.o
+
+# target to build an object file
+src/rage/rage_globals.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_globals.cpp.o
+.PHONY : src/rage/rage_globals.cpp.o
+
+src/rage/rage_globals.i: src/rage/rage_globals.cpp.i
+.PHONY : src/rage/rage_globals.i
+
+# target to preprocess a source file
+src/rage/rage_globals.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_globals.cpp.i
+.PHONY : src/rage/rage_globals.cpp.i
+
+src/rage/rage_globals.s: src/rage/rage_globals.cpp.s
+.PHONY : src/rage/rage_globals.s
+
+# target to generate assembly for a file
+src/rage/rage_globals.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_globals.cpp.s
+.PHONY : src/rage/rage_globals.cpp.s
+
 src/rage/rage_grm.o: src/rage/rage_grm.cpp.o
 .PHONY : src/rage/rage_grm.o
 
@@ -773,6 +989,30 @@ src/rage/rage_grm.s: src/rage/rage_grm.cpp.s
 src/rage/rage_grm.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.s
 .PHONY : src/rage/rage_grm.cpp.s
+
+src/rage/rage_memory.o: src/rage/rage_memory.cpp.o
+.PHONY : src/rage/rage_memory.o
+
+# target to build an object file
+src/rage/rage_memory.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_memory.cpp.o
+.PHONY : src/rage/rage_memory.cpp.o
+
+src/rage/rage_memory.i: src/rage/rage_memory.cpp.i
+.PHONY : src/rage/rage_memory.i
+
+# target to preprocess a source file
+src/rage/rage_memory.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_memory.cpp.i
+.PHONY : src/rage/rage_memory.cpp.i
+
+src/rage/rage_memory.s: src/rage/rage_memory.cpp.s
+.PHONY : src/rage/rage_memory.s
+
+# target to generate assembly for a file
+src/rage/rage_memory.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_memory.cpp.s
+.PHONY : src/rage/rage_memory.cpp.s
 
 src/rage/render_loop.o: src/rage/render_loop.c.o
 .PHONY : src/rage/render_loop.o
@@ -1014,6 +1254,30 @@ src/scene/sg_scene_graph.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.s
 .PHONY : src/scene/sg_scene_graph.cpp.s
 
+src/stubs_remaining.o: src/stubs_remaining.c.o
+.PHONY : src/stubs_remaining.o
+
+# target to build an object file
+src/stubs_remaining.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_remaining.c.o
+.PHONY : src/stubs_remaining.c.o
+
+src/stubs_remaining.i: src/stubs_remaining.c.i
+.PHONY : src/stubs_remaining.i
+
+# target to preprocess a source file
+src/stubs_remaining.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_remaining.c.i
+.PHONY : src/stubs_remaining.c.i
+
+src/stubs_remaining.s: src/stubs_remaining.c.s
+.PHONY : src/stubs_remaining.s
+
+# target to generate assembly for a file
+src/stubs_remaining.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_remaining.c.s
+.PHONY : src/stubs_remaining.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -1048,15 +1312,24 @@ help:
 	@echo "... src/crt/string.o"
 	@echo "... src/crt/string.i"
 	@echo "... src/crt/string.s"
+	@echo "... src/game/char_view.o"
+	@echo "... src/game/char_view.i"
+	@echo "... src/game/char_view.s"
 	@echo "... src/game/gd_data.o"
 	@echo "... src/game/gd_data.i"
 	@echo "... src/game/gd_data.s"
+	@echo "... src/game/gd_vib_event.o"
+	@echo "... src/game/gd_vib_event.i"
+	@echo "... src/game/gd_vib_event.s"
 	@echo "... src/game/mc_memcard.o"
 	@echo "... src/game/mc_memcard.i"
 	@echo "... src/game/mc_memcard.s"
 	@echo "... src/game/pong_audio.o"
 	@echo "... src/game/pong_audio.i"
 	@echo "... src/game/pong_audio.s"
+	@echo "... src/game/pong_audio_effects.o"
+	@echo "... src/game/pong_audio_effects.i"
+	@echo "... src/game/pong_audio_effects.s"
 	@echo "... src/game/pong_ball.o"
 	@echo "... src/game/pong_ball.i"
 	@echo "... src/game/pong_ball.s"
@@ -1072,6 +1345,9 @@ help:
 	@echo "... src/game/pong_network.o"
 	@echo "... src/game/pong_network.i"
 	@echo "... src/game/pong_network.s"
+	@echo "... src/game/pong_network_classes.o"
+	@echo "... src/game/pong_network_classes.i"
+	@echo "... src/game/pong_network_classes.s"
 	@echo "... src/game/pong_player.o"
 	@echo "... src/game/pong_player.i"
 	@echo "... src/game/pong_player.s"
@@ -1081,6 +1357,12 @@ help:
 	@echo "... src/game/pong_states.o"
 	@echo "... src/game/pong_states.i"
 	@echo "... src/game/pong_states.s"
+	@echo "... src/globals.o"
+	@echo "... src/globals.i"
+	@echo "... src/globals.s"
+	@echo "... src/globals_extended.o"
+	@echo "... src/globals_extended.i"
+	@echo "... src/globals_extended.s"
 	@echo "... src/graphics/texture_reference.o"
 	@echo "... src/graphics/texture_reference.i"
 	@echo "... src/graphics/texture_reference.s"
@@ -1090,6 +1372,9 @@ help:
 	@echo "... src/rage/audio_control_wrappers.o"
 	@echo "... src/rage/audio_control_wrappers.i"
 	@echo "... src/rage/audio_control_wrappers.s"
+	@echo "... src/rage/fsmMachine.o"
+	@echo "... src/rage/fsmMachine.i"
+	@echo "... src/rage/fsmMachine.s"
 	@echo "... src/rage/game_loop.o"
 	@echo "... src/rage/game_loop.i"
 	@echo "... src/rage/game_loop.s"
@@ -1099,9 +1384,18 @@ help:
 	@echo "... src/rage/rage_cm.o"
 	@echo "... src/rage/rage_cm.i"
 	@echo "... src/rage/rage_cm.s"
+	@echo "... src/rage/rage_dat.o"
+	@echo "... src/rage/rage_dat.i"
+	@echo "... src/rage/rage_dat.s"
+	@echo "... src/rage/rage_globals.o"
+	@echo "... src/rage/rage_globals.i"
+	@echo "... src/rage/rage_globals.s"
 	@echo "... src/rage/rage_grm.o"
 	@echo "... src/rage/rage_grm.i"
 	@echo "... src/rage/rage_grm.s"
+	@echo "... src/rage/rage_memory.o"
+	@echo "... src/rage/rage_memory.i"
+	@echo "... src/rage/rage_memory.s"
 	@echo "... src/rage/render_loop.o"
 	@echo "... src/rage/render_loop.i"
 	@echo "... src/rage/render_loop.s"
@@ -1132,6 +1426,9 @@ help:
 	@echo "... src/scene/sg_scene_graph.o"
 	@echo "... src/scene/sg_scene_graph.i"
 	@echo "... src/scene/sg_scene_graph.s"
+	@echo "... src/stubs_remaining.o"
+	@echo "... src/stubs_remaining.i"
+	@echo "... src/stubs_remaining.s"
 .PHONY : help
 
 

@@ -7,15 +7,11 @@ C_DEFINES =
 
 C_INCLUDES = -I/opt/homebrew/Cellar/sdl2/2.32.10/include -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks -I/Users/Ozordi/Downloads/tt-decomp/include -isystem /opt/homebrew/Cellar/sdl2/2.32.10/include/SDL2 -isystem /opt/homebrew/include
 
-C_FLAGSarm64 = -g -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks 
-
-C_FLAGS = -g -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks 
+C_FLAGS = -g -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks 
 
 CXX_DEFINES = 
 
 CXX_INCLUDES = -I/opt/homebrew/Cellar/sdl2/2.32.10/include -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks -I/Users/Ozordi/Downloads/tt-decomp/include -isystem /opt/homebrew/Cellar/sdl2/2.32.10/include/SDL2 -isystem /opt/homebrew/include
 
-CXX_FLAGSarm64 =  -Wall -Wextra -g -g -O0 -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks 
-
-CXX_FLAGS =  -Wall -Wextra -g -g -O0 -std=gnu++17 -arch arm64 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks 
+CXX_FLAGS =  -Wall -Wextra -g -g -O0 -std=gnu++17 -F/Library/Developer/CommandLineTools/SDKs/MacOSX26.sdk/System/Library/Frameworks 
 

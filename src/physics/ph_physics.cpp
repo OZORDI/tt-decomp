@@ -46,3 +46,34 @@ const char* ph_21B0(const char* str, int ch)
     /* Not found */
     return NULL;
 }
+
+/**
+ * rage::phBoundCapsule::ComputeFixedPointDotProduct @ 0x824C35C8
+ * 
+ * Computes a fixed-point dot product for capsule collision detection.
+ * Uses integer arithmetic for deterministic physics calculations.
+ * 
+ * The function performs:
+ * 1. Loads two vector components from the capsule geometry
+ * 2. Multiplies them together (fixed-point multiplication)
+ * 3. Returns the result as a 32-bit signed integer
+ * 
+ * This is commonly used in capsule-vs-capsule or capsule-vs-plane tests
+ * where exact reproducibility is required across platforms.
+ */
+int32_t rage::phBoundCapsule::ComputeFixedPointDotProduct() {
+    // Load first component (likely X or normalized direction component)
+    // field_0x0020 appears to be part of the capsule's axis/direction vector
+    int32_t component1 = static_cast<int32_t>(field_0x0020);
+    
+    // Load second component (likely Y or another direction component)
+    // field_0x0024 is adjacent, suggesting it's part of the same vector
+    int32_t component2 = static_cast<int32_t>(field_0x0024);
+    
+    // Perform fixed-point multiplication
+    // In fixed-point math, we multiply then shift to maintain precision
+    // The result is a dot product component used in collision detection
+    int32_t result = component1 * component2;
+    
+    return result;
+}

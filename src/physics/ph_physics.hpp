@@ -709,6 +709,9 @@ struct phBoundCapsule {
     virtual void vfn_34();        // [34] @ 0x822A2F28
     virtual void vfn_36();        // [36] @ 0x822A6828
     virtual void vfn_37();        // [37] @ 0x822A2FE8
+
+    // Non-virtual methods
+    int32_t ComputeFixedPointDotProduct();  // @ 0x824C35C8
 };
 
 // ── rage::phBoundComposite  [vtable @ 0x82057FD4] ────────────────────────────

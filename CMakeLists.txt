@@ -48,6 +48,9 @@ set(SOURCES
     src/globals_extended.c
     src/stubs_remaining.c
     
+    # XAM (Xbox Application Model)
+    src/xam/static_init.c
+    
     # RAGE engine
     src/rage/app_init.c
     src/rage/audio_control_wrappers.cpp
@@ -86,6 +89,9 @@ set(SOURCES
     
     # Animation
     src/anim/pcr_anim_blenders.cpp
+    
+    # Physics
+    src/physics/ph_physics.cpp
     
     # Graphics
     src/graphics/texture_reference.cpp

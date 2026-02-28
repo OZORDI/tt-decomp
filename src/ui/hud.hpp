@@ -58,14 +58,12 @@
 //   Secondary vtable: 0x8205AFA4  (virtual-base / MI)
 //
 // This class owns a Flash movie context, a page-group object, and various
-// render state fields.  Field names are inferred from access-frequency
-    virtual ~hudFlashBase();           // [0] @ 0x822EAD38
-    virtual void BeginTransition();    // [1] @ 0x822EAFC8  reads m_pPageGroup size,
-                                       //   computes float ratio, then calls Update(dt)
-                                       //   (same binary as Update per PPC_WEAK alias);
-                                       //   also triggers connection if already active.
-                                       //   TODO: confirm exact semantics — may be
-                                       //   "start page-group animated transition".
+// render state fields. Field names are inferred from access-frequency data.
+// Core virtuals:
+//   [0] ~hudFlashBase()      @ 0x822EAD38
+//   [1] BeginTransition()    @ 0x822EAFC8 (alias overlap with Update path)
+// The concrete declarations live in the class definition below.
+
 //   +0x00  vtable          — primary vtable pointer   (implicit in C++)
 //   +0x04  vtable2         — secondary MI vtable ptr  (implicit in C++)
 //   +0x38  m_pResource1    — pointer freed in base dtor (rage_2E18 called)
@@ -143,6 +141,8 @@ public:
     char        m_buffer[1024];  // +0x70  scratch buffer for tourney name string
 
 
+
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // hudCharView — character selection view  [2 vtables]
