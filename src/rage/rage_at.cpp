@@ -43,3 +43,52 @@ void atSingleton::ConditionalVirtualDispatch() {
         func11(this);
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::LookupStringIndex @ 0x8225F250 | size: 0x70
+// 
+// Searches for a string in a global lookup table and returns its index + 0x1001.
+// The lookup table is at 0x825C5320 and contains 35 string pointer entries.
+// Returns 0 if not found, otherwise returns (index + 0x1001) masked to 16 bits.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t atSingleton::LookupStringIndex(const char* searchStr) {
+    // Global string lookup table at 0x825C5320
+    // Each entry is 8 bytes: [const char* str, uint32_t data]
+    extern const char* g_atSingletonStringTable[];  // 35 entries
+    
+    const char** tablePtr = (const char**)0x825C5320;
+    const char** tableEnd = (const char**)((uintptr_t)tablePtr + 280);
+    
+    int index = 0;
+    
+    // Iterate through the lookup table
+    while (tablePtr < tableEnd) {
+        const char* tableStr = *tablePtr;
+        const char* searchPtr = searchStr;
+        const char* tableStrPtr = tableStr;
+        
+        // Compare strings character by character
+        int diff = 0;
+        while (*tableStrPtr != '\0') {
+            diff = *tableStrPtr - *searchPtr;
+            if (diff != 0) {
+                break;
+            }
+            tableStrPtr++;
+            searchPtr++;
+        }
+        
+        // If strings match (diff == 0 after null terminator)
+        if (diff == 0) {
+            // Return index + 0x1001, masked to 16 bits
+            return (uint16_t)((index + 0x1001) & 0xFFFF);
+        }
+        
+        // Move to next entry (8 bytes per entry)
+        tablePtr = (const char**)((uintptr_t)tablePtr + 8);
+        index++;
+    }
+    
+    // Not found
+    return 0;
+}

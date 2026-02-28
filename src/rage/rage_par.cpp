@@ -1,5 +1,6 @@
 #include "rage_par.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -23,6 +24,18 @@ void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags);
 void fiAsciiTokenizer_CFA8_w(void* pStringValue, const char* pBegin, const char* pEnd);
 void rage_EC58(void* pStringValue, const char* pText);
 void* xe_EC88(std::uint32_t size);
+void rage_free_00C0(void* ptr);
+void nop_8240E6D0(const char* fmt, ...);
+void jumptable_9498(
+    void* pOperator,
+    const char* pPrimaryName,
+    const char* pSecondaryName,
+    std::uint32_t copyPrimary,
+    std::uint32_t copySecondary
+);
+void cmOperatorCtor_D8C0_w(void* pOperator, const void* pValueData, std::uint32_t valueSize);
+void atSingleton_DA18_p46(void* pNode, void* pRootNode);
+std::uint8_t jumptable_E058_h(void* pMemberArray);
 }
 
 namespace {
@@ -97,8 +110,8 @@ T* ResolveAddress(Address32 address) {
     return reinterpret_cast<T*>(static_cast<std::uintptr_t>(address));
 }
 
-template <typename FnType>
-FnType GetParMemberVirtual(const rage::parMemberString* self, std::size_t slot) {
+template <typename FnType, typename SelfType>
+FnType GetParMemberVirtual(SelfType* self, std::size_t slot) {
     return reinterpret_cast<FnType>(self->m_pVtable[slot]);
 }
 
@@ -138,6 +151,187 @@ struct cmOperatorStringPayload32 {
     std::uint32_t m_textLength;     // +0x24
 };
 static_assert(sizeof(cmOperatorStringPayload32) == 0x28, "cmOperatorStringPayload32 must match PPC layout");
+
+constexpr std::uint32_t kParMemberVtable = 0x82065A38;
+constexpr std::uint32_t kParMemberArrayVtable = 0x82065BD0;
+constexpr Address32 kParArrayLegacyProbeString = 0x82065B68;
+constexpr Address32 kParArrayTypeRootLabel = 0x82065B30;
+constexpr Address32 kParArrayTypeLabelByte = 0x82065B6C;
+constexpr Address32 kParArrayTypeLabelShort = 0x82065B78;
+constexpr Address32 kParArrayTypeLabelInt = 0x82065B84;
+constexpr Address32 kParArrayTypeLabelFloat = 0x82065B90;
+constexpr Address32 kParArrayTypeLabelBool = 0x82065B9C;
+constexpr Address32 kParArrayTypeLabelVector3 = 0x82065BAC;
+constexpr Address32 kParArrayTypeLabelVector4 = 0x82065BBC;
+constexpr std::uint32_t kParArrayLargeStorageOffset = 0x10000;
+
+struct parArrayTypeInfo32 {
+    std::uint8_t m_pad00[10];
+    std::uint8_t m_valueType;
+};
+static_assert(offsetof(parArrayTypeInfo32, m_valueType) == 10, "parArrayTypeInfo32 layout mismatch");
+
+struct parArrayResizeContext32 {
+    Address32 m_pad00;
+    Address32 m_pad04;
+    Address32 m_pad08;
+    void (*m_pResizeFn)(parArrayResizeContext32* self, Address32 memberData, std::uint32_t elementCount);
+};
+static_assert(sizeof(parArrayResizeContext32) == 0x10, "parArrayResizeContext32 layout mismatch");
+
+struct parMemberDescriptor32 {
+    Address32 m_pOwner;
+    Address32 m_pMemberBase;
+    std::uint16_t m_flags;
+    std::uint8_t m_valueType;
+    std::uint8_t m_storageMode;
+    std::uint32_t m_elementStride;
+    std::uint32_t m_elementCapacity;
+    Address32 m_pArrayTypeInfo;
+    parArrayResizeContext32 m_resizeContext;
+};
+static_assert(offsetof(parMemberDescriptor32, m_storageMode) == 11, "parMemberDescriptor32 storage mode offset mismatch");
+static_assert(offsetof(parMemberDescriptor32, m_elementStride) == 12, "parMemberDescriptor32 stride offset mismatch");
+static_assert(offsetof(parMemberDescriptor32, m_elementCapacity) == 16, "parMemberDescriptor32 capacity offset mismatch");
+static_assert(offsetof(parMemberDescriptor32, m_pArrayTypeInfo) == 20, "parMemberDescriptor32 type info offset mismatch");
+static_assert(offsetof(parMemberDescriptor32, m_resizeContext) == 24, "parMemberDescriptor32 resize context offset mismatch");
+
+struct cmOperatorArrayPayload32 {
+    Address32 m_pOwner;
+    std::uint8_t m_flags;
+    std::uint8_t m_pad05[3];
+    Address32 m_pInlineData;
+    std::uint16_t m_pad0C;
+    std::uint16_t m_pad0E;
+    std::uint32_t m_runtimeToken;
+    Address32 m_pad14;
+    Address32 m_pad18;
+    Address32 m_pFirstChild;
+    Address32 m_pValueBuffer;
+    std::uint32_t m_valueSize;
+    std::uint8_t m_hasInlineValue;
+    std::uint8_t m_pad29[3];
+};
+static_assert(offsetof(cmOperatorArrayPayload32, m_pFirstChild) == 28, "cmOperatorArrayPayload32 list offset mismatch");
+static_assert(offsetof(cmOperatorArrayPayload32, m_pValueBuffer) == 32, "cmOperatorArrayPayload32 payload offset mismatch");
+static_assert(offsetof(cmOperatorArrayPayload32, m_valueSize) == 36, "cmOperatorArrayPayload32 size offset mismatch");
+static_assert(offsetof(cmOperatorArrayPayload32, m_hasInlineValue) == 40, "cmOperatorArrayPayload32 flag offset mismatch");
+static_assert(sizeof(cmOperatorArrayPayload32) == 44, "cmOperatorArrayPayload32 size mismatch");
+
+struct cmOperatorArrayNode32 {
+    std::uint8_t m_pad00[24];
+    Address32 m_pNext;
+};
+static_assert(offsetof(cmOperatorArrayNode32, m_pNext) == 24, "cmOperatorArrayNode32 next offset mismatch");
+
+parMemberDescriptor32* GetArrayDescriptor(rage::parMemberArray* self) {
+    return static_cast<parMemberDescriptor32*>(self->m_pMemberDesc);
+}
+
+Address32 GetArrayOwnerAddress(rage::parMemberArray* self) {
+    using Fn = Address32 (*)(rage::parMemberArray*);
+    return GetParMemberVirtual<Fn>(self, 1)(self);
+}
+
+Address32 GetArrayMemberBaseAddress(rage::parMemberArray* self) {
+    using Fn = Address32 (*)(rage::parMemberArray*);
+    return GetParMemberVirtual<Fn>(self, 2)(self);
+}
+
+std::uint8_t GetArrayValueType(rage::parMemberArray* self) {
+    const parMemberDescriptor32* descriptor = GetArrayDescriptor(self);
+    if (descriptor == nullptr || descriptor->m_pArrayTypeInfo == 0u) {
+        return 0xFFu;
+    }
+
+    return ResolveAddress<parArrayTypeInfo32>(descriptor->m_pArrayTypeInfo)->m_valueType;
+}
+
+template <typename FnType>
+FnType GetVirtualSlot(void* object, std::size_t slot) {
+    return reinterpret_cast<FnType>((*reinterpret_cast<void***>(object))[slot]);
+}
+
+void SelectElementSerializerEntry(void* pSerializer, std::uint32_t offsetBytes) {
+    using Fn = void* (*)(void* self, std::uint32_t offsetBytes);
+    GetVirtualSlot<Fn>(pSerializer, 3)(pSerializer, offsetBytes);
+}
+
+cmOperator* ExportSerializedElement(void* pSerializer, Address32 memberDataAddress) {
+    using Fn = cmOperator* (*)(void* self, Address32 memberDataAddress);
+    return GetVirtualSlot<Fn>(pSerializer, 6)(pSerializer, memberDataAddress);
+}
+
+void ImportElementFromNode(void* pSerializer, const cmOperator* pNode, Address32 memberDataAddress) {
+    using Fn = void (*)(void* self, const cmOperator* pNode, Address32 memberDataAddress);
+    GetVirtualSlot<Fn>(pSerializer, 7)(pSerializer, pNode, memberDataAddress);
+}
+
+void RestoreSerializerDefault(void* pSerializer, Address32 memberDataAddress) {
+    using Fn = void (*)(void* self, Address32 memberDataAddress);
+    GetVirtualSlot<Fn>(pSerializer, 8)(pSerializer, memberDataAddress);
+}
+
+Address32 GetArrayTypeLabel(std::uint8_t valueType) {
+    switch (valueType) {
+        case 1:
+        case 2:
+            return kParArrayTypeLabelShort;
+        case 3:
+        case 4:
+            return kParArrayTypeLabelInt;
+        case 5:
+        case 6:
+            return kParArrayTypeLabelByte;
+        case 7:
+            return kParArrayTypeLabelFloat;
+        case 8:
+            return kParArrayTypeLabelBool;
+        case 9:
+            return kParArrayTypeLabelVector3;
+        case 10:
+            return kParArrayTypeLabelVector4;
+        default:
+            return 0u;
+    }
+}
+
+void InitializeArrayOperator(cmOperatorArrayPayload32* pOperator) {
+    if (pOperator == nullptr) {
+        return;
+    }
+
+    pOperator->m_pOwner = 0u;
+    pOperator->m_flags = 0u;
+    pOperator->m_pInlineData = 0u;
+    pOperator->m_pad0C = 0u;
+    pOperator->m_pad0E = 0u;
+    pOperator->m_runtimeToken = *ResolveAddress<std::uint16_t>(
+        static_cast<Address32>(reinterpret_cast<std::uintptr_t>(pOperator) + 18u)
+    );
+    *ResolveAddress<std::uint16_t>(
+        static_cast<Address32>(reinterpret_cast<std::uintptr_t>(pOperator) + 18u)
+    ) = 0u;
+    pOperator->m_pad14 = 0u;
+    pOperator->m_pad18 = 0u;
+    pOperator->m_pFirstChild = 0u;
+    pOperator->m_pValueBuffer = 0u;
+    pOperator->m_valueSize = 0u;
+    pOperator->m_hasInlineValue = 0u;
+}
+
+void AttachOperatorOwner(cmOperatorArrayPayload32* pOperator, Address32 ownerAddress) {
+    if (pOperator == nullptr) {
+        return;
+    }
+
+    if ((pOperator->m_flags & 0x1u) != 0u && pOperator->m_pOwner != 0u) {
+        rage_free_00C0(ResolveAddress<void>(pOperator->m_pOwner));
+    }
+
+    pOperator->m_pOwner = ownerAddress;
+    pOperator->m_flags &= ~0x1u;
+}
 
 } // namespace
 
