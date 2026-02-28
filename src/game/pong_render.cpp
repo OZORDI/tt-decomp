@@ -317,3 +317,233 @@ void pongScrnTransFreezeAndCrossFade::Update(float deltaTime) {
         m_alpha = g_floatEpsilon;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransSwipe Implementation
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External globals
+extern const float g_floatZero;        // @ 0x8202D110 (.rdata) = 0.0f
+extern const float g_floatOne;         // @ 0x8202D10C (.rdata) = 1.0f
+
+// Swipe pattern lookup table @ 0x825D09A0 (.data, size: 0x550 = 1360 bytes)
+// Contains 17 patterns (1360 / 80 = 17), each 80 bytes (0x50)
+// Pattern structure (per entry, 80 bytes):
+//   +0x00: float duration
+//   +0x04: float field_04 (timing parameter)
+//   +0x08: vec4 startCorner1  (16 bytes)
+//   +0x18: vec4 endCorner1    (16 bytes)
+//   +0x28: vec4 startCorner2  (16 bytes)
+//   +0x38: vec4 endCorner2    (16 bytes)
+//   +0x40: uint8_t reverseFlag (at offset +64 from base)
+//   +0x41: uint8_t pauseFlag   (at offset +65 from base)
+struct SwipePattern {
+    float duration;           // +0x00
+    float timingParam;        // +0x04
+    float startCorner1[4];    // +0x08
+    float startCorner2[4];    // +0x18
+    float endCorner1[4];      // +0x28
+    float endCorner2[4];      // +0x38
+    uint8_t reverseFlag;      // +0x40
+    uint8_t pauseFlag;        // +0x41
+    uint8_t _pad[14];         // padding to 80 bytes
+};
+
+extern SwipePattern g_swipePatterns[17];  // @ 0x825D09A0
+
+// External function references
+extern void util_FFF8(void* obj, int param);  // @ 0x8225FFF8
+extern void util_F840(void* v1, void* v2, void* v3, void* v4);  // @ 0x8223F840
+extern void hudFlashBase_0420_g(void* hudObj, void* corner1, void* corner2, 
+                                 float alpha, int reverseFlag);  // @ 0x82140420
+extern void pongScrnTransFadeIn_vfn_5(void* obj);  // @ 0x82378460
+
+// Global pointers (accessed via SDA and absolute addresses)
+extern void* g_hudFlashBase;           // @ 0x82606454 (SDA, r2+25556)
+extern void* g_someRenderObj1;         // @ 0x82606654 (via r11+25844)
+extern void* g_someRenderObj2;         // @ 0x825FEAB0 (via r11-21712)
+
+// Random number generator state (for pattern selection)
+extern uint64_t g_randomState;         // @ 0x825DA268 (via r11-23864)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransSwipe::vfn_2()  [vtable slot 2 @ 0x82378AB0]
+//
+// Initialize/reset the swipe transition. Sets up the pattern index, duration,
+// and initial state. If m_randomize is true, picks a random pattern from the
+// 17 available patterns. Otherwise uses a deterministic pattern selection.
+//
+// Struct layout verified:
+//   +0x04: m_duration (float)
+//   +0x08: m_elapsedTime (float)
+//   +0x0C: m_finished (bool)
+//   +0x10: field at +16 (passed to util_FFF8)
+//   +0x1C: field_0x1C (checked for non-zero)
+//   +0x34: m_patternIndex (uint32_t, 0-16)
+//   +0x38: m_randomize (uint8_t)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransSwipe::vfn_2() {
+    // If field at +28 is non-zero, call utility function
+    if (*(uint32_t*)((uint8_t*)this + 28) != 0) {
+        util_FFF8((void*)((uint8_t*)this + 16), 0);
+    }
+
+    // Reset elapsed time and finished flag
+    m_elapsedTime = g_floatZero;
+    m_finished = false;
+
+    // Determine pattern index
+    if (m_randomize) {
+        // Random pattern selection using linear congruential generator
+        // Formula: state = state * 1597334873 + upper32(state)
+        const uint64_t multiplier = 0x5DEECE66D;  // 1597334873 in hex
+        uint64_t state = g_randomState;
+        uint64_t newState = (state & 0xFFFFFFFF) * multiplier + (state >> 32);
+        g_randomState = newState;
+        
+        // Extract 23-bit random value (bits 9-31)
+        uint32_t randomBits = (uint32_t)(newState & 0x7FFFFF);
+        
+        // Scale to 0-16 range: randomBits * (1.0 / 8388608.0) * 17.0
+        // 8388608 = 2^23, so this gives uniform distribution over [0, 17)
+        const float scale = 1.0f / 8388608.0f;  // @ 0x82038358
+        float normalized = (float)randomBits * scale;
+        m_patternIndex = (uint32_t)(normalized * 17.0f);
+    } else {
+        // Increment pattern index, wrapping at 17
+        m_patternIndex++;
+        if (m_patternIndex >= 17) {
+            m_patternIndex = 0;
+        }
+    }
+
+    // Load pattern data
+    SwipePattern* pattern = &g_swipePatterns[m_patternIndex];
+    m_duration = pattern->duration;
+
+    // If this pattern has the pause flag set, disable rendering on two objects
+    if (pattern->pauseFlag) {
+        *(uint8_t*)((uint8_t*)g_someRenderObj1 + 80) = 0;
+        *(uint8_t*)((uint8_t*)g_someRenderObj2 + 492) = 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransSwipe::Update()  [vtable slot 3 @ 0x82378BD0]
+//
+// Update the transition by advancing elapsed time and calculating progress.
+// Progress is clamped to [0.0, 1.0] and stored for use by the render function.
+//
+// Parameters:
+//   deltaTime (f1) - time delta to add to elapsed time
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransSwipe::Update(float deltaTime) {
+    // Advance elapsed time
+    m_elapsedTime += deltaTime;
+
+    // Check if transition is complete
+    if (m_elapsedTime >= m_duration) {
+        m_elapsedTime = m_duration;
+        m_finished = true;
+    }
+
+    // Calculate normalized progress (0.0 to 1.0)
+    if (m_duration > g_floatZero) {
+        m_progress = m_elapsedTime / m_duration;
+    } else {
+        m_progress = g_floatZero;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransSwipe::Render()  [vtable slot 4 @ 0x82378C20]
+//
+// Render the swipe effect by interpolating between start and end corners
+// based on the current progress value. Uses the pattern's corner positions
+// and applies the reverse flag to determine swipe direction.
+//
+// The function:
+//   1. Loads the current pattern's corner data
+//   2. Applies reverse flag (inverts progress if needed)
+//   3. Interpolates corner positions: lerp(start, end, progress)
+//   4. Calls utility functions to set up and render the swipe quad
+//   5. Passes alpha and reverse flag to HUD flash renderer
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransSwipe::Render() {
+    SwipePattern* pattern = &g_swipePatterns[m_patternIndex];
+    
+    // Calculate effective progress (may be inverted based on reverse flag)
+    float effectiveProgress = m_progress;
+    if (pattern->reverseFlag) {
+        effectiveProgress = g_floatOne - m_progress;
+    }
+
+    // Load pattern corner data
+    // Pattern index calculation: patternIdx * 5 * 16 = patternIdx * 80
+    // This gives us the base offset into the 80-byte pattern structure
+    uint32_t patternOffset = m_patternIndex * 80;
+    
+    // Interpolate corner 1: lerp(startCorner1, endCorner1, progress)
+    float corner1[4];
+    for (int i = 0; i < 4; i++) {
+        float start = pattern->startCorner1[i] + g_floatOne;
+        float end = pattern->endCorner1[i] + g_floatOne;
+        float delta = end - start;
+        corner1[i] = start + delta * effectiveProgress;
+    }
+
+    // Interpolate corner 2: lerp(startCorner2, endCorner2, progress)
+    float corner2[4];
+    for (int i = 0; i < 4; i++) {
+        float start = pattern->startCorner2[i] + g_floatOne;
+        float end = pattern->endCorner2[i] + g_floatOne;
+        float delta = end - start;
+        corner2[i] = start + delta * effectiveProgress;
+    }
+
+    // Call utility function to prepare rendering (purpose unclear from scaffold)
+    util_F840(corner1, corner2, nullptr, nullptr);
+
+    // Calculate alpha value from timing parameter
+    // Alpha = timingParam * constant * progress
+    const float alphaScale = 0.00390625f;  // @ 0x8202D10C (1/256)
+    float alpha = pattern->timingParam * alphaScale * effectiveProgress;
+
+    // Render the swipe quad via HUD flash system
+    hudFlashBase_0420_g(g_hudFlashBase, corner1, corner2, alpha, pattern->reverseFlag);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransSwipe::OnComplete()  [vtable slot 5 @ 0x82378D98]
+//
+// Called when the transition completes. Re-enables rendering on objects that
+// were disabled during initialization (if the pattern had the pause flag set).
+// Then delegates to the base class completion handler.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransSwipe::OnComplete() {
+    SwipePattern* pattern = &g_swipePatterns[m_patternIndex];
+    
+    // If this pattern had the pause flag, re-enable rendering
+    if (pattern->pauseFlag) {
+        *(uint8_t*)((uint8_t*)g_someRenderObj1 + 80) = 1;
+        *(uint8_t*)((uint8_t*)g_someRenderObj2 + 492) = 1;
+    }
+
+    // Delegate to base class (pongScrnTransFadeIn) completion handler
+    pongScrnTransFadeIn_vfn_5(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransSwipe::Reset()  [vtable slot 6 @ 0x82378DE0]
+//
+// Reset the transition to its initial state. Clears all timing values,
+// resets the pattern index, and sets the randomize flag.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransSwipe::Reset() {
+    m_finished = false;
+    m_patternIndex = 0;
+    m_duration = g_floatOne;
+    m_elapsedTime = g_floatZero;
+    m_progress = g_floatZero;
+    m_randomize = true;
+}
