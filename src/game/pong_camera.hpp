@@ -100,7 +100,6 @@ struct gdCameraDef {
 
     // ── non-virtual methods (from debug strings) ──
     void Load();
-    void PostLoadProperties();
 };
 
 // ── gdCameraDest  [vtable @ 0x8204979C] ──────────────────────────
@@ -113,9 +112,6 @@ struct gdCameraDest {
     virtual void PostLoadProperties();  // [20] @ 0x8220bc38
     virtual void Validate();  // [21] @ 0x8220bd48
     virtual void PostLoadChildren();  // [22] @ 0x8220bc80
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCameraInst  [vtable @ 0x820496CC] ──────────────────────────
@@ -150,55 +146,24 @@ struct pongCamGovernor {
 // Confirmed methods: ChangeCamera
 struct pongCameraMgr {
     void**      vtable;           // +0x00
-
-    // ── field access clusters ──
-    uint8_t      field_0x0001;  // +0x0001  R:0 W:1
-    uint8_t      field_0x0002;  // +0x0002  R:0 W:1
-    uint32_t     field_0x0004;  // +0x0004  R:13 W:9
-    uint16_t     field_0x0006;  // +0x0006  R:1 W:1
-    uint64_t     field_0x0008;  // +0x0008  R:9 W:5
-    uint32_t     field_0x000c;  // +0x000c  R:8 W:3
-    uint64_t     field_0x0010;  // +0x0010  R:15 W:6
-    uint32_t     field_0x0014;  // +0x0014  R:3 W:4
-    uint32_t     field_0x0018;  // +0x0018  R:4 W:4
-    uint32_t     field_0x001c;  // +0x001c  R:4 W:2
-    uint32_t     field_0x0020;  // +0x0020  R:5 W:3
-    uint32_t     field_0x0024;  // +0x0024  R:1 W:1
-    uint32_t     field_0x0028;  // +0x0028  R:6 W:2
-    uint32_t     field_0x002c;  // +0x002c  R:2 W:2
-    uint32_t     field_0x0030;  // +0x0030  R:2 W:1
-    uint32_t     field_0x0034;  // +0x0034  R:2 W:1
-    uint32_t     field_0x0038;  // +0x0038  R:0 W:2
-    uint32_t     field_0x003c;  // +0x003c  R:0 W:1
-    uint32_t     field_0x0040;  // +0x0040  R:0 W:1
-    uint8_t      field_0x0044;  // +0x0044  R:0 W:1
-    uint8_t     _pad0x0060[24];
-    uint32_t     field_0x0060;  // +0x0060  R:0 W:1
-    uint32_t     field_0x0064;  // +0x0064  R:0 W:1
-    uint8_t      field_0x0068;  // +0x0068  R:0 W:1
-    uint8_t      field_0x0069;  // +0x0069  R:0 W:1
-    uint8_t     _pad0x0094[39];
-    uint32_t     field_0x0094;  // +0x0094  R:0 W:1
-    uint32_t     field_0x0098;  // +0x0098  R:0 W:1
-    uint8_t     _pad0x012c[144];
-    uint32_t     field_0x012c;  // +0x012c  R:0 W:1
-    uint32_t     field_0x0130;  // +0x0130  R:2 W:1
-    uint8_t     _pad0x0150[28];
-    uint8_t      field_0x0150;  // +0x0150  R:0 W:1
-    uint32_t     field_0x0154;  // +0x0154  R:0 W:1
-    uint32_t     field_0x0158;  // +0x0158  R:0 W:1
-    uint8_t     _pad0x0320[452];
-    uint32_t     field_0x0320;  // +0x0320  R:1 W:0
-    uint32_t     field_0x0324;  // +0x0324  R:1 W:0
-    uint8_t     _pad0x0330[8];
-    uint32_t     field_0x0330;  // +0x0330  R:1 W:0
-    uint32_t     field_0x0334;  // +0x0334  R:1 W:0
-    uint32_t     field_0x0338;  // +0x0338  R:0 W:3
-    uint32_t     field_0x033c;  // +0x033c  R:1 W:3
-    uint32_t     field_0x0340;  // +0x0340  R:0 W:3
-    uint32_t     field_0x0344;  // +0x0344  R:0 W:3
-    uint8_t     _pad0x0360[24];
-    uint8_t      field_0x0360;  // +0x0360  R:0 W:3
+    uint32_t    flags;            // +0x04
+    
+    float       m_currentTime;    // +0x08 - current timing value
+    uint32_t    field_0x000c;     // +0x0C
+    uint32_t    field_0x0010;     // +0x10
+    uint32_t    field_0x0014;     // +0x14
+    uint32_t    field_0x0018;     // +0x18
+    uint32_t    field_0x001c;     // +0x1C
+    uint32_t    field_0x0020;     // +0x20
+    uint32_t    field_0x0024;     // +0x24
+    uint32_t    field_0x0028;     // +0x28
+    uint32_t    field_0x002c;     // +0x2C
+    uint32_t    field_0x0030;     // +0x30
+    uint32_t    field_0x0034;     // +0x34
+    uint32_t    field_0x0038;     // +0x38
+    
+    // Timing array starts at offset +60 (0x3C)
+    float       m_timingArray[256];  // +0x3C - array of timing values
 
     // ── virtual methods ──
     virtual ~pongCameraMgr();                  // [0] @ 0x821658e0
@@ -209,8 +174,9 @@ struct pongCameraMgr {
     virtual void vfn_25();  // [25] @ 0x82166068
     virtual void vfn_27();  // [27] @ 0x82166118
 
-    // ── non-virtual methods (from debug strings) ──
+    // ── non-virtual methods ──
     void ChangeCamera();
+    void AdjustTimingForIndex(int index);  // @ 0x82173430
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────

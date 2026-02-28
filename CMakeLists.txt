@@ -55,6 +55,7 @@ set(SOURCES
     src/rage/game_loop.c
     src/rage/main.c
     src/rage/rage_cm.cpp
+    src/rage/rage_dat.cpp
     src/rage/rage_globals.cpp
     src/rage/rage_grm.cpp
     src/rage/rage_memory.cpp
@@ -73,6 +74,7 @@ set(SOURCES
     src/game/pong_audio.cpp
     src/game/pong_audio_effects.cpp
     src/game/pong_ball.cpp
+    src/game/pong_camera.cpp
     src/game/pong_creature.cpp
     src/game/pong_drill.cpp
     src/game/pong_misc.cpp
