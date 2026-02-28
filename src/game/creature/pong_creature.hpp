@@ -182,6 +182,10 @@ struct LocomotionStateAnim {
     // ── non-virtual methods (from debug strings) ──
     void Load();
     void Update();
+    
+    // ── implemented methods ──
+    void* FindAnimationByID(uint16_t animID_high, uint8_t animID_low);  // @ 0x8224BEF8
+    bool SetupAnimationPair(uint16_t animID1, uint16_t animID2, void* param);  // @ 0x8224C418
 };
 
 // ── LocomotionStateMf  [vtable @ 0x8202E1F4] ──────────────────────────

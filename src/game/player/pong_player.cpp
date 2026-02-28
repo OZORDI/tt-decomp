@@ -1875,3 +1875,113 @@ void pongPlayer::UpdatePositionFromSwingTarget() {
     resultPosition->z = targetDelta.z + currentOffset->z;
 }
 
+
+
+// ===========================================================================
+// SECTION 19 — InitializeCollisionGrid  @ 0x8219E008 | size: 0x2BC
+//
+// Initializes a 4x4 grid of collision/interaction points on the player.
+// Each grid cell stores normalized coordinates and associated metadata.
+//
+// The grid covers offsets +864 through +1248 (384 bytes total, 96 bytes per
+// row). Each cell contains:
+//   - 2D normalized position (x, y)
+//   - Mirrored copies at +860/+864 offsets
+//   - Metadata flags
+//
+// Grid coordinates are computed as:
+//   x = ((i + (i+1)) / 2) * 0.5 * scale
+//   y = ((j + (j+1)) / 2) * 0.5 * scale
+//
+// This creates a uniform grid from 0.25 to 1.75 in each dimension.
+//
+// @param r4  Pass-through parameter for pongPlayer_FD20_g
+// @param r6  Metadata byte (stored at grid cell +856/857)
+// ===========================================================================
+void pongPlayer::InitializeCollisionGrid(int r4, uint8_t metadataByte)
+{
+    // Load constants from .rdata
+    const float* constants = (const float*)0x8202D10C;
+    const float scale = constants[0];      // Base scale factor
+    const float zero = constants[1];       // Zero constant
+    const float halfScale = 0.5f;          // Normalization factor
+    const float epsilon = 0.01f;           // Small offset for grid adjustments
+    
+    // Initialize base state via helper function
+    pongPlayer_FD20_g(this, r4, nullptr, nullptr, 1, nullptr, nullptr, metadataByte);
+    
+    // Grid storage base pointers
+    uint8_t* gridBase = (uint8_t*)this + 864;      // +0x360
+    uint8_t* cellPtr = (uint8_t*)this + 984;       // +0x3D8 (first cell)
+    uint8_t* mirrorBase = (uint8_t*)0x82606720;    // Global mirror buffer
+    
+    // Outer loop: 4 rows (i = 0 to 3)
+    for (int i = 0; i < 4; i++) {
+        // Compute normalized X coordinate for this row
+        // x = ((i + (i+1)) / 2) * 0.5 * scale
+        float xNorm = ((float)i + (float)(i + 1)) * halfScale * halfScale * scale;
+        
+        // Inner loop: 4 columns (j = 0 to 3)
+        for (int j = 0; j < 4; j++) {
+            // Compute normalized Y coordinate for this column
+            // y = ((j + (j+1)) / 2) * 0.5 * scale
+            float yNorm = ((float)j + (float)(j + 1)) * halfScale * halfScale * scale;
+            
+            // Store primary coordinates
+            *(float*)(cellPtr + 0) = yNorm;   // Y at current position
+            *(float*)(cellPtr - 4) = xNorm;   // X at previous position
+            
+            // Store mirrored copies
+            *(float*)(cellPtr + 864) = yNorm;
+            *(float*)(cellPtr + 860) = xNorm;
+            
+            // Initialize temporary vectors for collision detection
+            vec3 tempVec = { zero, zero, zero };
+            vec3 adjustedVec = {};
+            
+            // Compute adjusted coordinates based on quadrant
+            switch (j) {
+                case 0:  // Bottom-left quadrant
+                    adjustedVec.x = xNorm - epsilon;
+                    adjustedVec.y = yNorm - epsilon;
+                    break;
+                    
+                case 1:  // Bottom-right quadrant
+                    adjustedVec.x = xNorm + epsilon;
+                    adjustedVec.y = yNorm - epsilon;
+                    break;
+                    
+                case 2:  // Top-right quadrant
+                    adjustedVec.x = xNorm + epsilon;
+                    adjustedVec.y = yNorm + epsilon;
+                    break;
+                    
+                case 3:  // Top-left quadrant
+                    adjustedVec.x = xNorm - epsilon;
+                    adjustedVec.y = yNorm + epsilon;
+                    break;
+            }
+            
+            // Call collision detection helper with adjusted coordinates
+            pongPlayer_E590_g(&adjustedVec, gridBase, nullptr, nullptr, nullptr);
+            
+            // Advance to next cell (96 bytes per cell)
+            cellPtr += 96;
+        }
+        
+        // Store metadata flags at end of row
+        *(cellPtr - 8) = metadataByte;
+        *(cellPtr - 7) = *(uint8_t*)((uint8_t*)this + 944);  // Copy player state flag
+        
+        // Copy row data to mirror buffer using AltiVec
+        // Load 16 bytes from gridBase, store to mirrorBase
+        memcpy(mirrorBase, gridBase, 16);
+        
+        // Store additional metadata
+        *(cellPtr + 856) = metadataByte;
+        *(cellPtr + 857) = *(uint8_t*)((uint8_t*)this + 944);
+        
+        // Copy to mirror buffer again
+        memcpy(mirrorBase, gridBase, 16);
+    }
+}

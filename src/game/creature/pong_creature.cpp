@@ -318,3 +318,110 @@ float pongBlendLookAtDriver::CalculateBlendFactor() {
     
     return blendFactor;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// LocomotionStateAnim - Animation State Management
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * LocomotionStateAnim::FindAnimationByID @ 0x8224BEF8 | size: 0x9C
+ * 
+ * Binary search through the animation array to find an animation entry
+ * matching the given 24-bit ID (constructed from high 16 bits + low 8 bits).
+ * 
+ * The animation array is sorted by ID, allowing efficient O(log n) lookup.
+ * Each entry stores its ID as: (byte_at_offset_5 << 16) | uint16_at_offset_6
+ * 
+ * @param animID_high Upper 16 bits of animation ID
+ * @param animID_low Lower 8 bits of animation ID (typically 0)
+ * @return Pointer to animation entry if found, nullptr otherwise
+ */
+void* LocomotionStateAnim::FindAnimationByID(uint16_t animID_high, uint8_t animID_low) {
+    // Get animation count from offset +12
+    uint16_t animCount = *(uint16_t*)((char*)this + 12);
+    
+    if (animCount == 0) {
+        return nullptr;
+    }
+    
+    // Get animation array pointer from offset +8
+    void** animArray = *(void***)((char*)this + 8);
+    
+    // Construct 24-bit search key: (animID_high << 16) | animID_low
+    uint32_t searchKey = ((uint32_t)animID_high << 16) | animID_low;
+    
+    // Binary search
+    int low = 0;
+    int high = animCount - 1;
+    
+    while (low <= high) {
+        int mid = (low + high) / 2;
+        
+        // Get animation entry at mid index
+        void* entry = animArray[mid];
+        
+        // Extract 24-bit ID from entry: (byte_at_5 << 16) | uint16_at_6
+        uint8_t idHigh = *(uint8_t*)((char*)entry + 5);
+        uint16_t idLow = *(uint16_t*)((char*)entry + 6);
+        uint32_t entryKey = ((uint32_t)idHigh << 16) | idLow;
+        
+        if (entryKey == searchKey) {
+            // Found exact match
+            return entry;
+        } else if (entryKey > searchKey) {
+            // Search lower half
+            high = mid - 1;
+        } else {
+            // Search upper half
+            low = mid + 1;
+        }
+    }
+    
+    // Not found
+    return nullptr;
+}
+
+/**
+ * LocomotionStateAnim::SetupAnimationPair @ 0x8224C418 | size: 0x90
+ * 
+ * Finds two animations by their IDs and calls virtual methods on them
+ * to set up animation blending or transition. This is commonly used for
+ * locomotion state transitions where two animations need to be blended.
+ * 
+ * The function searches for both animations, and if both are found,
+ * calls their respective virtual methods with the provided parameter.
+ * 
+ * @param animID1 First animation ID (upper 16 bits)
+ * @param animID2 Second animation ID (upper 16 bits)
+ * @param param Parameter to pass to animation virtual methods
+ * @return true if both animations found and configured, false otherwise
+ */
+bool LocomotionStateAnim::SetupAnimationPair(uint16_t animID1, uint16_t animID2, void* param) {
+    // Find first animation (ID1, 0)
+    void* anim1 = FindAnimationByID(animID1, 0);
+    
+    // Find second animation (ID2, 0)
+    void* anim2 = FindAnimationByID(animID2, 0);
+    
+    // Both animations must exist
+    if (!anim1 || !anim2) {
+        return false;
+    }
+    
+    // Call virtual method on first animation with offset parameter
+    // vtable[17] - likely SetupBlendSource or similar
+    void** vtable1 = *(void***)anim1;
+    typedef void (*AnimSetupFunc)(void*, void*);
+    AnimSetupFunc setupFunc1 = (AnimSetupFunc)vtable1[17];
+    setupFunc1(anim1, (char*)param + 16);
+    
+    // Call virtual method on second animation with base parameter
+    // vtable[18] - likely SetupBlendTarget or similar
+    void** vtable2 = *(void***)anim2;
+    typedef void (*AnimSetupFunc2)(void*, void*);
+    AnimSetupFunc2 setupFunc2 = (AnimSetupFunc2)vtable2[18];
+    setupFunc2(anim2, param);
+    
+    return true;
+}
