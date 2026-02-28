@@ -160,3 +160,20 @@ bool pongCameraMgr::TryTransition(void* gameState) {
     // Validation failed
     return false;
 }
+
+/**
+ * pongCameraMgr::IsStateNine
+ * @ 0x821F7F40 | size: 0x20
+ * 
+ * Checks if the global camera state equals 9.
+ * This appears to be checking for a specific camera mode or state condition.
+ * 
+ * @return true if global state is 9, false otherwise
+ */
+bool pongCameraMgr::IsStateNine() const {
+    // Load global camera state from .data section
+    // Address: 0x825C5EB8 (lbl_825C5EB8)
+    extern int32_t g_cameraState;  // TODO: Define this global in globals
+    
+    return g_cameraState == 9;
+}
