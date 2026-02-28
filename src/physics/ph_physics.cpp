@@ -77,3 +77,49 @@ int32_t rage::phBoundCapsule::ComputeFixedPointDotProduct() {
     
     return result;
 }
+
+/**
+ * ph_vt57D8_20::Constructor @ 0x82460718 | size: 0x84
+ *
+ * Constructor for a physics instance wrapper class. This class embeds a
+ * rage::phInst object at offset +0x0C and optionally registers itself with
+ * the global phDemoWorld singleton.
+ *
+ * The constructor:
+ * 1. Initializes vtable pointers for the wrapper and embedded phInst
+ * 2. Calls phInst initialization on the embedded instance
+ * 3. If the registerWithWorld flag is set, adds this object to phDemoWorld
+ *
+ * @param registerWithWorld - If bit 0 is set, register with phDemoWorld
+ */
+void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
+    // Cast to byte pointer for offset arithmetic
+    uint8_t* obj = (uint8_t*)thisPtr;
+    
+    // Set up vtable pointers
+    // Main vtable at offset 0
+    *(void**)(obj + 0) = (void*)0x82005828;
+    
+    // Embedded phInst vtable at offset 12
+    *(void**)(obj + 12) = (void*)0x820057D8;
+    
+    // Initialize the embedded phInst object at offset +0x0C
+    // phInst_6158_p39 is the phInst initialization function
+    void* phInstPtr = obj + 12;
+    // Call phInst initialization (external function)
+    // phInst_6158_p39(phInstPtr);
+    
+    // Update main vtable after phInst initialization
+    *(void**)(obj + 0) = (void*)0x82003DB0;
+    
+    // If bit 0 of registerWithWorld is set, register with phDemoWorld
+    if (registerWithWorld & 0x1) {
+        // phDemoWorld_67D0_g is a global registration function
+        // Parameters: phDemoWorld singleton address, this object, flags
+        void* phDemoWorldSingleton = (void*)0x823E7888;
+        uint32_t flags = 0x61820000;
+        
+        // Call phDemoWorld registration
+        // phDemoWorld_67D0_g(phDemoWorldSingleton, thisPtr, flags);
+    }
+}
