@@ -576,7 +576,6 @@ const void* assetVersionsCharSpecific::GetTypeDescriptor() const
 extern "C" {
     // External function declarations
     void hsmContext_SetNextState_2800(void* hsmContext, int stateIndex);
-    void nop_8240E6D0(const char* fmt, ...);  // Debug logging (no-op in release)
 }
 
 /**
@@ -622,14 +621,14 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     
     // Initialize structure 1 (at +20)
     uint32_t* struct1 = (uint32_t*)((char*)hsmContext + 20);
-    struct1[0] = (uint32_t)pContext;  // Base context pointer
+    struct1[0] = reinterpret_cast<uintptr_t>(pContext);  // Base context pointer
     struct1[1] = 0x82396690;          // Function pointer: SinglesNetworkClient_6690_p39
     struct1[2] = 0;                   // Zero
     struct1[3] = 4;                   // Count/size
     
     // Initialize structure 2 (at +36)
     uint32_t* struct2 = (uint32_t*)((char*)hsmContext + 36);
-    struct2[0] = (uint32_t)pContext;  // Base context pointer
+    struct2[0] = reinterpret_cast<uintptr_t>(pContext);  // Base context pointer
     struct2[1] = 0x820766A0;          // String pointer (partial): "tered for arbitration"
     struct2[2] = 0;                   // Zero
     struct2[3] = 4;                   // Count/size
