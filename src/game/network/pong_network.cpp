@@ -833,3 +833,58 @@ setup_network:
     // Mark all players as ready
     m_bAllPlayersReady = true;
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::WriteNetworkMessageHeader @ 0x82390598 | size: 0x70
+//
+// Writes a network message header containing two 16-bit indices and
+// additional data to the network stream.
+//
+// This function is used to serialize message headers that contain:
+// - A primary index (16-bit signed)
+// - A secondary index (16-bit signed)
+// - Additional data payload (variable size, determined by second index)
+//
+// The function performs three operations:
+// 1. Write first 16-bit index to stream
+// 2. Write second 16-bit index to stream
+// 3. Write additional data using the second index as a size/type parameter
+//
+// @param messageData  Pointer to message structure containing:
+//                     +0x00: int16_t primaryIndex
+//                     +0x02: int16_t secondaryIndex
+//                     +0x04: void* additionalData
+// @param client       SinglesNetworkClient managing the network stream
+// ===========================================================================
+void SinglesNetworkClient::WriteNetworkMessageHeader(void* messageData, void* client)
+{
+    uint8_t* data = (uint8_t*)messageData;
+    
+    // Load the two 16-bit indices from the message structure
+    int16_t primaryIndex = *(int16_t*)(data + 0);
+    int16_t secondaryIndex = *(int16_t*)(data + 2);
+    
+    // Write first index as 16-bit signed value
+    WriteInt8Bits(client, primaryIndex, 16);
+    
+    // Write second index as 16-bit signed value
+    WriteInt8Bits(client, secondaryIndex, 16);
+    
+    // Write additional data using the second index as a parameter
+    // The 67C8_g function handles the actual data serialization
+    void* additionalData = (void*)(data + 4);
+    SinglesNetworkClient_67C8_g(client, secondaryIndex, additionalData);
+}
+
+
+// ===========================================================================
+// C LINKAGE ALIAS FOR BACKWARD COMPATIBILITY
+// ===========================================================================
+
+extern "C" {
+    // Original name: SinglesNetworkClient_0598_g
+    void SinglesNetworkClient_0598_g(void* messageData, void* client) {
+        SinglesNetworkClient::WriteNetworkMessageHeader(messageData, client);
+    }
+}
