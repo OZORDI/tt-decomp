@@ -81,3 +81,59 @@ void hudTrainingHUD::OnEvent(void* eventData)
     
     // No matching event code - return without action
 }
+
+
+// External data structures
+extern uint32_t g_hudObjectArray[];      // @ 0x825C8ED8 (124 bytes, 31 entries)
+extern void*    g_pHudBasePointer;       // @ 0x825EB988
+extern uint32_t g_hudLookupTable[][2];   // @ 0x825B1F90 (696 bytes, 87 entries of 8 bytes)
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudFlashBase::SetPropertyById @ 0x8215B060 | size: 0x84
+//
+// Sets a property value for a HUD object identified by an ID.
+// Looks up the object ID in a global lookup table and stores the value
+// at the corresponding offset in the object array.
+//
+// The function:
+// 1. Calculates array index from objectId (objectId * 4)
+// 2. Gets the object offset from g_hudObjectArray
+// 3. Adds base pointer to get actual object address
+// 4. Calls a virtual function at offset +96 on the object
+// 5. Searches g_hudLookupTable (87 entries) for matching object offset
+// 6. When found, stores the value at the corresponding slot (offset +4)
+//
+// Parameters:
+//   objectId - ID of the HUD object (used as array index)
+//   value    - Value to store for this object
+// ─────────────────────────────────────────────────────────────────────────────
+void hudFlashBase::SetPropertyById(int objectId, int value)
+{
+    // Calculate array index: objectId * 4 (rlwinm r30,r3,2,0,29)
+    uint32_t arrayIndex = objectId * 4;
+    
+    // Get object offset from array
+    uint32_t objectOffset = g_hudObjectArray[objectId];
+    
+    // Add base pointer to get actual object address
+    void* hudObject = (char*)g_pHudBasePointer + objectOffset;
+    
+    // Call virtual function at offset +96
+    typedef void (*VirtualFunc)(void*);
+    VirtualFunc vfunc = *(VirtualFunc*)((char*)hudObject + 96);
+    vfunc(hudObject);
+    
+    // Search lookup table for matching object offset
+    // Table has 87 entries, each 8 bytes: [objectOffset, valueSlot]
+    for (int i = 0; i < 87; i++) {
+        if (g_hudLookupTable[i][0] == objectOffset) {
+            // Found match - store value at offset +4 in the entry
+            // rlwinm r6,r10,3,0,28 = i * 8 (entry size)
+            g_hudLookupTable[i][1] = value;
+            return;
+        }
+    }
+    
+    // No match found - return without storing
+}
