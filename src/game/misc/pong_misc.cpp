@@ -639,3 +639,48 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     // Store time value at offset +1088
     *(float*)((char*)pContext + 1088) = timeValue;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// io_9B88_w @ 0x822F9B88 | size: 0x9C
+//
+// State transition handler for io system.
+// Checks if state flag 2 is set, and if so:
+//   1. Sets state flag 1, clears state flag 2
+//   2. Calls io_9E30 to perform state-specific operations
+//   3. Decrements global loop counter if operation succeeded
+//   4. Checks pause/active flags to determine if credits roll should be triggered
+//
+// This appears to be part of the game's state machine that manages transitions
+// between gameplay and frontend/attract modes.
+// ─────────────────────────────────────────────────────────────────────────────
+void io_9B88_w(io* self) {
+    // Check if state flag 2 is set
+    if (self->m_stateFlag2 == 0) {
+        return;
+    }
+    
+    // Set state flag 1, clear state flag 2
+    self->m_stateFlag1 = 1;
+    self->m_stateFlag2 = 0;
+    
+    // Perform state-specific operations
+    uint8_t success = io_9E30(self);
+    
+    // Get global loop object
+    LoopObject* loopObj = g_loop_obj_ptr;
+    
+    // If operation succeeded (returned non-zero), decrement counter
+    if (success != 0) {
+        loopObj->m_counter--;
+    }
+    
+    // Check if we should trigger credits roll
+    // Logic: if NOT paused AND NOT active, return early (don't trigger)
+    // Otherwise, trigger credits roll
+    if (loopObj->m_pauseFlag == 0 && loopObj->m_activeFlag == 0) {
+        return;  // Early exit - don't trigger credits
+    }
+    
+    // Trigger credits roll
+    game_AAF8(g_creditsRoll, 0, 0);
+}

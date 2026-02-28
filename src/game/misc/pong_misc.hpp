@@ -1034,5 +1034,5 @@ extern void* g_creditsRoll;         // @ 0x8271A358
 
 // Function declarations
 void io_9B88_w(io* self);           // @ 0x822F9B88
-void io_9E30(io* self);             // @ 0x822F9E30
+uint8_t io_9E30(io* self);          // @ 0x822F9E30 - returns success flag
 void game_AAF8(void* roll, int a, int b);  // @ 0x8222AAF8
