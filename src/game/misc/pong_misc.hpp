@@ -1009,3 +1009,30 @@ struct pongXMVMovie {
     virtual void Validate();  // [21] @ 0x823174c8
     virtual void PostLoadChildren();  // [22] @ 0x82317530
 };
+
+// ── io  [no vtable] ──────────────────────────
+// Input/output state manager
+struct io {
+    uint8_t _pad[33];              // +0x00
+    uint8_t m_stateFlag1;          // +0x21 (33)
+    uint8_t m_stateFlag2;          // +0x22 (34)
+};
+
+// Global loop object structure (referenced by io functions)
+struct LoopObject {
+    uint8_t _pad[496];             // +0x00
+    int m_counter;                 // +0x1F0 (496)
+    uint8_t _pad2[80];             // +0x1F4
+    uint8_t m_pauseFlag;           // +0x240 (576)
+    uint8_t _pad3;                 // +0x241
+    uint8_t m_activeFlag;          // +0x242 (578)
+};
+
+// External declarations
+extern LoopObject* g_loop_obj_ptr;  // @ 0x825EAB30
+extern void* g_creditsRoll;         // @ 0x8271A358
+
+// Function declarations
+void io_9B88_w(io* self);           // @ 0x822F9B88
+void io_9E30(io* self);             // @ 0x822F9E30
+void game_AAF8(void* roll, int a, int b);  // @ 0x8222AAF8

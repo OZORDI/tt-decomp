@@ -739,3 +739,97 @@ void* RequestDataMessage::vfn_6() {
 const char* RequestDataMessage::vfn_7() {
     return reinterpret_cast<const char*>(0x8206EE0C);
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::CheckAllPlayersReady @ 0x82311098 | size: 0x10C
+//
+// Checks if all players have pressed their ready buttons by polling button
+// states at three specific offsets (+8, +16, +48) for each of 4 player slots.
+// If all players are ready (all button checks return 0), the function returns
+// early. Otherwise, it performs network setup and sets a ready flag.
+//
+// The function accesses a global player array with 808-byte stride per player.
+// Each player slot has button state fields that are checked via CheckButtonPressed.
+//
+// Network setup involves:
+//  - Getting network status via SinglesNetworkClient_B2A8_g
+//  - Checking a global singleton flag
+//  - Finding a network message slot via SinglesNetworkClient_9318_g
+//  - Initializing the message slot with values 1 and 3
+//  - Calling SinglesNetworkClient_B320_g if network status is non-zero
+//  - Setting the ready flag at this+24 to 1
+// ===========================================================================
+void SinglesNetworkClient::CheckAllPlayersReady()
+{
+    // Early exit if already marked as ready
+    if (m_bAllPlayersReady) {
+        return;
+    }
+
+    // Get base address of player array from global singleton
+    // Python-verified: lis(-32142) + (-23780) + 808 = player slot base
+    extern void* g_pPlayerArrayBase;  // @ 0x8211A31C
+    uint8_t* playerArray = *(uint8_t**)g_pPlayerArrayBase;
+    uint8_t* playerSlot = playerArray + 808;  // First player at offset 808
+
+    // Check all 4 players for ready state
+    for (int playerIdx = 0; playerIdx < 4; playerIdx++) {
+        // Each player has three button state fields to check
+        bool button1Pressed = CheckButtonPressed((void*)(playerSlot + 8));
+        bool button2Pressed = CheckButtonPressed((void*)(playerSlot + 16));
+        bool button3Pressed = CheckButtonPressed((void*)(playerSlot + 48));
+
+        // If any button is pressed, player is not ready - proceed to network setup
+        if (button1Pressed || button2Pressed || button3Pressed) {
+            goto setup_network;
+        }
+
+        // Move to next player slot (808-byte stride)
+        playerSlot += 808;
+    }
+
+    // All players ready - return without network setup
+    return;
+
+setup_network:
+    // Get network client pointer from this+20
+    void* networkClient = m_pNetworkClient;
+
+    // Query network status
+    uint8_t networkStatus = SinglesNetworkClient_B2A8_g(networkClient);
+
+    // Check global singleton flag at offset +556
+    extern void* g_pAtSingleton;  // @ 0x821EAB08
+    void* singleton = *(void**)g_pAtSingleton;
+    uint32_t singletonFlags = *(uint32_t*)((uint8_t*)singleton + 556);
+
+    if (singletonFlags != 0) {
+        // Check secondary flag
+        extern uint8_t g_bNetworkDebugFlag;  // @ 0x826065EB
+        if (g_bNetworkDebugFlag == 0) {
+            // Debug print (nop in release builds)
+            extern const char g_szNetworkDebugMsg[];  // @ 0x8205AE98
+            nop_8240E6D0(g_szNetworkDebugMsg);
+        }
+    }
+
+    // Find available network message slot
+    extern const char g_szMessageType[];  // @ 0x8205DFB0
+    uint32_t clientState = *(uint32_t*)((uint8_t*)networkClient + 92);
+    void* messageSlot = SinglesNetworkClient_9318_g((void*)clientState, g_szMessageType);
+
+    // Initialize message slot if found
+    if (messageSlot != nullptr) {
+        *(uint32_t*)((uint8_t*)messageSlot + 0) = 1;  // Set state to 1
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // Set type to 3
+    }
+
+    // Perform network client update if status is non-zero
+    if (networkStatus != 0) {
+        SinglesNetworkClient_B320_g(networkClient);
+    }
+
+    // Mark all players as ready
+    m_bAllPlayersReady = true;
+}
