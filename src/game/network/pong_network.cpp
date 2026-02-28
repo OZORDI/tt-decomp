@@ -1065,3 +1065,105 @@ int SinglesNetworkClient::ProcessSessions()
     
     return 1;
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::ProcessPendingMessages @ 0x82391C30 | size: 0xEC
+//
+// Processes pending network messages in a loop. This function:
+// 1. Copies 24 bytes of data from the client state to a global buffer
+// 2. Initializes two temporary message structures on the stack
+// 3. Sets a processing flag (bit 7)
+// 4. Loops through pending messages, processing each one
+//
+// The function uses a global pointer at 0x8271A7B0 to access shared network
+// state. If this pointer is null, the function uses null pointers for
+// processing (effectively skipping the operation).
+//
+// Original symbol: SinglesNetworkClient_1C30_g
+// ===========================================================================
+void SinglesNetworkClient::ProcessPendingMessages()
+{
+    // Load the flags field from this+4
+    uint32_t* flagsPtr = (uint32_t*)((uint8_t*)this + 4);
+    
+    // Load global network state pointer
+    extern uint32_t* g_pNetworkStatePtr;  // @ 0x8271A7B0
+    uint32_t* globalState = g_pNetworkStatePtr;
+    
+    // Determine source and destination pointers based on global state
+    uint8_t* sourcePtr = nullptr;
+    uint8_t* destPtr = nullptr;
+    
+    if (globalState != nullptr) {
+        sourcePtr = (uint8_t*)flagsPtr + 16;
+        destPtr = (uint8_t*)globalState + 64;
+    }
+    
+    // Copy 24 bytes (6 dwords) from source to destination+440
+    if (destPtr != nullptr) {
+        uint8_t* copyDest = destPtr + 440;
+        uint32_t* src = (uint32_t*)sourcePtr;
+        uint32_t* dst = (uint32_t*)copyDest;
+        
+        for (int i = 0; i < 6; i++) {
+            dst[i] = src[i];
+        }
+    }
+    
+    // Initialize two temporary message structures on stack
+    struct TempMessageStruct {
+        uint32_t field0;
+        uint32_t field4;
+    };
+    
+    TempMessageStruct msg1 = {0, 0};
+    TempMessageStruct msg2 = {0, 0};
+    
+    // Initialize the structures (calls ke_1B00)
+    extern void ke_1B00(void* msg);
+    ke_1B00(&msg1);
+    ke_1B00(&msg2);
+    
+    // Set up processing flag structure
+    struct ProcessingFlags {
+        uint32_t field0;
+        uint32_t field4;
+        uint8_t flags;
+    };
+    
+    ProcessingFlags procFlags;
+    procFlags.field0 = 0;
+    procFlags.field4 = 0;
+    procFlags.flags = 0x80;  // Set bit 7
+    
+    // Get the message queue pointer from destPtr+528
+    uint32_t* messageQueue = nullptr;
+    if (destPtr != nullptr) {
+        messageQueue = (uint32_t*)((uint8_t*)destPtr + 528 + 4);
+    }
+    
+    // Process messages in a loop
+    extern bool SinglesNetworkClient_5EA0_g(ProcessingFlags* flags, uint32_t* queue);
+    extern void SinglesNetworkClient_70A0_g(void* msgPtr, uint8_t* sourcePtr);
+    extern void SinglesNetworkClient_5A40_g(ProcessingFlags* flags);
+    extern void SinglesNetworkClient_5998_g(ProcessingFlags* flags);
+    
+    while (true) {
+        // Check if there are more messages to process
+        bool hasMessage = SinglesNetworkClient_5EA0_g(&procFlags, messageQueue);
+        
+        if (!hasMessage) {
+            // No more messages, clean up and exit
+            SinglesNetworkClient_5998_g(&procFlags);
+            break;
+        }
+        
+        // Process the current message
+        void* currentMsg = (void*)((uint8_t*)procFlags.field0 + 40);
+        SinglesNetworkClient_70A0_g(currentMsg, sourcePtr);
+        
+        // Advance to next message
+        SinglesNetworkClient_5A40_g(&procFlags);
+    }
+}
