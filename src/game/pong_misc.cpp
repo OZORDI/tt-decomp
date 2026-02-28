@@ -560,3 +560,83 @@ const void* assetVersionsCharSpecific::GetTypeDescriptor() const
 {
     return reinterpret_cast<const void*>(0x8204E460);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// util_61F0 @ 0x823961F0 | size: 0x114
+//
+// Utility function for initializing state machine context with debug logging.
+// Sets up dual 16-byte data structures and transitions to state 2.
+//
+// Parameters:
+//   - pContext: Pointer to context object (contains HSM at +1032)
+//   - timeValue: Float time/duration value (stored at +1088)
+//   - param: Additional parameter (stored at +52 of HSM context)
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern "C" {
+    // External function declarations
+    void hsmContext_SetNextState_2800(void* hsmContext, int stateIndex);
+    void nop_8240E6D0(const char* fmt, ...);  // Debug logging (no-op in release)
+}
+
+/**
+ * util_61F0 @ 0x823961F0 | size: 0x114
+ * 
+ * Initializes state machine context with logging and dual data structures.
+ * Only executes if the initialization flag at +1092 is not set.
+ */
+void util_61F0(void* pContext, float timeValue, uint32_t param) {
+    // Check initialization flag at offset +1092
+    uint32_t initFlag = *(uint32_t*)((char*)pContext + 1092);
+    
+    if (initFlag != 0) {
+        return;  // Already initialized
+    }
+    
+    // Get HSM context at offset +1032
+    void* hsmContext = (char*)pContext + 1032;
+    
+    // Debug logging with format string and parameters
+    // Format: "eSessionTimeSyncMessage %s"
+    // This appears to be session synchronization logging
+    const char* logFormat = (const char*)0x820712CC;  // "eSessionTimeSyncMessage %s"
+    nop_8240E6D0(logFormat, 0, 0, 0, 4, 0, 4);
+    
+    // Call virtual method slot 3 on HSM context
+    // This is likely an initialization or reset method
+    void** vtable = *(void***)hsmContext;
+    typedef void (*VirtualMethod)(void*);
+    VirtualMethod initMethod = (VirtualMethod)vtable[3];
+    initMethod(hsmContext);
+    
+    // Store parameter at offset +52
+    *(uint32_t*)((char*)hsmContext + 52) = param;
+    
+    // Set flag at offset +60 to 1 (mark as initialized)
+    *(uint32_t*)((char*)hsmContext + 60) = 1;
+    
+    // Set up dual 16-byte data structures
+    // These appear to be copied from stack-allocated structures
+    // Structure 1: at offset +20 (16 bytes)
+    // Structure 2: at offset +36 (16 bytes)
+    
+    // Initialize structure 1 (at +20)
+    uint32_t* struct1 = (uint32_t*)((char*)hsmContext + 20);
+    struct1[0] = (uint32_t)pContext;  // Base context pointer
+    struct1[1] = 0x82396690;          // Function pointer: SinglesNetworkClient_6690_p39
+    struct1[2] = 0;                   // Zero
+    struct1[3] = 4;                   // Count/size
+    
+    // Initialize structure 2 (at +36)
+    uint32_t* struct2 = (uint32_t*)((char*)hsmContext + 36);
+    struct2[0] = (uint32_t)pContext;  // Base context pointer
+    struct2[1] = 0x820766A0;          // String pointer (partial): "tered for arbitration"
+    struct2[2] = 0;                   // Zero
+    struct2[3] = 4;                   // Count/size
+    
+    // Transition to state 2
+    hsmContext_SetNextState_2800(hsmContext, 2);
+    
+    // Store time value at offset +1088
+    *(float*)((char*)pContext + 1088) = timeValue;
+}

@@ -206,3 +206,184 @@ int atSingleton::InitializeFlags() {
     // Return 0 to indicate flags were set
     return 0;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::Constructor @ 0x821CB418 | size: 0x510
+//
+// Primary constructor for atSingleton - initializes a massive structure with
+// multiple arrays and sub-structures. This appears to be a template-based
+// singleton manager that can handle up to 900 instances of various types.
+//
+// Structure layout (approximate):
+// - Offset 0: vtable pointer
+// - Offsets 16-16400: Array of 128 vector-aligned structures (128 bytes each)
+// - Offsets 16416+: Array of 900 elements (48 bytes each)
+// - Offsets 70512+: First managed sub-structure (43200 bytes)
+// - Offsets 113776+: Second managed sub-structure (43200 bytes)
+// - Offsets 157040+: Array of 12 large sub-structures (21636 bytes each)
+// - Offsets 416672+: Final array of 900 elements (12 bytes each)
+//
+// Total structure size: ~700KB (massive singleton manager)
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton::Constructor() {
+    // Set vtable pointer
+    // Note: vtable address would be set by compiler in real code
+    // This is just showing the initialization pattern
+    
+    // Initialize first large array (128 elements, 128 bytes each)
+    // Uses vector operations for bulk zero-initialization
+    float* arrayPtr = (float*)((char*)this + 16);
+    for (int i = 0; i < 128; i++) {
+        // Each element is 128 bytes with specific float fields
+        // Offsets 0, 8, 12, 16, 24, 28, 32 are floats initialized to 0.0f
+        // Offsets 40-103 are vector-initialized (16-byte aligned blocks)
+        // Offsets 104, 108, 112 are floats initialized to 0.0f
+        
+        float* elem = arrayPtr + (i * 32);  // 128 bytes = 32 floats
+        for (int j = 0; j < 32; j++) {
+            elem[j] = 0.0f;
+        }
+    }
+    
+    // Initialize field at offset 16400
+    *(int*)((char*)this + 16400) = 0;
+    
+    // Initialize second large array (900 elements, 48 bytes each)
+    float* array2Ptr = (float*)((char*)this + 16416);
+    for (int i = 0; i < 900; i++) {
+        float* elem = array2Ptr + (i * 12);  // 48 bytes = 12 floats
+        // Initialize specific float fields at offsets 0, 4, 16, 20, 24, 32, 36, 40
+        elem[0] = 0.0f;   // +0
+        elem[1] = 0.0f;   // +4
+        elem[4] = 0.0f;   // +16
+        elem[5] = 0.0f;   // +20
+        elem[6] = 0.0f;   // +24
+        elem[8] = 0.0f;   // +32
+        elem[9] = 0.0f;   // +36
+        elem[10] = 0.0f;  // +40
+    }
+    
+    // Initialize three control fields
+    *(int*)((char*)this + 16416 + 43208) = 0;
+    *(int*)((char*)this + 16416 + 43204) = 0;
+    *(int*)((char*)this + 16416 + 43200) = 0;
+    
+    // Initialize additional float fields
+    float* controlBlock = (float*)((char*)this + 16416 + 65536 - 22320);
+    controlBlock[0] = 0.0f;
+    controlBlock[1] = 0.0f;
+    controlBlock[4] = 0.0f;
+    controlBlock[5] = 0.0f;
+    controlBlock[6] = 0.0f;
+    controlBlock[8] = 0.0f;
+    controlBlock[9] = 0.0f;
+    controlBlock[10] = 0.0f;
+    
+    // Initialize first managed sub-structure at offset 70512
+    InitializeSubStructure((char*)this + 70512);
+    
+    // Initialize second managed sub-structure at offset 113776
+    InitializeSubStructure((char*)this + 113776);
+    
+    // Initialize array of 12 large sub-structures starting at offset 157040
+    char* largeArrayBase = (char*)this + 157040;
+    for (int i = 0; i < 12; i++) {
+        InitializeLargeSubStructure(largeArrayBase + (i * 21636));
+    }
+    
+    // Initialize final array (900 elements, 12 bytes each) at offset 416672
+    float* finalArrayPtr = (float*)((char*)this + 416672);
+    for (int i = 0; i < 900; i++) {
+        float* elem = finalArrayPtr + (i * 3);  // 12 bytes = 3 floats
+        elem[0] = 0.0f;  // +0
+        elem[2] = 0.0f;  // +8
+        *(int*)&elem[1] = 0;  // +4 is an int
+    }
+    
+    // Additional initialization at end of structure
+    char* endBlock = (char*)this + 416672 + 10800;
+    *(int*)(endBlock + 0) = 0;
+    *(int*)(endBlock + 4) = 0;
+    *(int*)(endBlock + 8) = 0;
+    *(float*)(endBlock + 12) = 0.0f;
+    *(float*)(endBlock + 16) = 0.0f;
+    *(float*)(endBlock + 20) = 0.0f;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::InitializeSubStructure (helper) @ 0x821CB978 | size: 0x98
+//
+// Initializes a 43200-byte sub-structure containing an array of 900 elements
+// (48 bytes each). Each element has specific float and int fields.
+//
+// @param basePtr Pointer to the start of the sub-structure
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton::InitializeSubStructure(void* basePtr) {
+    char* base = (char*)basePtr;
+    
+    // Initialize array of 900 elements (48 bytes each)
+    for (int i = 0; i < 900; i++) {
+        char* elem = base + (i * 48);
+        
+        // Initialize fields within each element
+        *(float*)(elem + 0) = 0.0f;
+        *(int*)(elem + 4) = -1;  // Special value: -1
+        *(uint16_t*)(elem + 8) = 0;
+        *(uint16_t*)(elem + 10) = 0;
+        *(float*)(elem + 16) = 0.0f;
+        *(float*)(elem + 20) = 0.0f;
+        *(float*)(elem + 24) = 0.0f;
+        *(float*)(elem + 32) = 0.0f;
+    }
+    
+    // Initialize control fields at end of array
+    *(int*)(base + 43208) = 0;
+    *(int*)(base + 43204) = 0;
+    *(int*)(base + 43200) = 0;
+    
+    // Initialize additional control block
+    char* controlBlock = base + 43216;
+    *(float*)(controlBlock + 0) = 0.0f;
+    *(int*)(controlBlock + 4) = -1;
+    *(uint16_t*)(controlBlock + 8) = 0;
+    *(uint16_t*)(controlBlock + 10) = 0;
+    *(float*)(controlBlock + 16) = 0.0f;
+    *(float*)(controlBlock + 20) = 0.0f;
+    *(float*)(controlBlock + 24) = 0.0f;
+    *(float*)(controlBlock + 32) = 0.0f;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::InitializeLargeSubStructure (helper) @ 0x821CBA10 | size: 0x60
+//
+// Initializes a 21636-byte sub-structure containing an array of 900 elements
+// (24 bytes each). Each element has specific float and int fields.
+//
+// @param basePtr Pointer to the start of the sub-structure
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton::InitializeLargeSubStructure(void* basePtr) {
+    char* base = (char*)basePtr;
+    
+    // Initialize array of 900 elements (24 bytes each)
+    for (int i = 0; i < 900; i++) {
+        char* elem = base + (i * 24);
+        
+        // Initialize fields within each element
+        *(float*)(elem + 0) = 0.0f;
+        *(int*)(elem + 8) = 0;
+        *(float*)(elem + 12) = 0.0f;
+        *(int*)(elem + 20) = 0;
+    }
+    
+    // Initialize control fields at end of array
+    *(int*)(base + 21600) = 0;
+    *(int*)(base + 21604) = 0;
+    *(int*)(base + 21608) = 0;
+    
+    // Initialize final control block
+    *(float*)(base + 21612) = 0.0f;
+    *(int*)(base + 21616) = 0;
+    *(float*)(base + 21620) = 0.0f;
+    *(int*)(base + 21624) = 0;
+    *(float*)(base + 21628) = 0.0f;
+}
