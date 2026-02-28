@@ -888,3 +888,69 @@ extern "C" {
         SinglesNetworkClient::WriteNetworkMessageHeader(messageData, client);
     }
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::PopMessageFromQueue @ 0x823BA970 | size: 0x8C
+//
+// Removes and returns the head node from a doubly-linked message queue.
+// The queue uses 20-byte nodes with 16-bit index-based linking.
+//
+// Node structure (20 bytes):
+//   +0x10 (16): prev index (uint16_t)
+//   +0x12 (18): next index (uint16_t)
+//
+// Pool header structure:
+//   +0x28 (40): node count (uint16_t)
+//   +0x2C (44): head index (uint16_t)
+//
+// Returns:
+//   Pointer to the removed node, or nullptr if queue is empty
+//
+// Python-verified:
+//   Pool pointer loaded from: 0x825D128C (lis -32163 + 4740 + 8)
+//   Node stride: 20 bytes (index * 5 * 4)
+//   Empty sentinel: 0xFFFF
+// ===========================================================================
+void* SinglesNetworkClient::PopMessageFromQueue()
+{
+    // Load the pool structure pointer from global storage.
+    // Python-verified: lis(-32163) + 4740 + 8 = 0x825D128C
+    extern void** g_pMessageQueuePool;  // @ 0x825D128C
+    uint8_t* pool = (uint8_t*)*g_pMessageQueuePool;
+
+    // Load the head index from pool header at offset +44.
+    uint16_t headIndex = *(uint16_t*)(pool + 44);
+
+    // If queue is empty (head == 0xFFFF), return nullptr.
+    if (headIndex == 0xFFFF) {
+        return nullptr;
+    }
+
+    // Calculate the head node address.
+    // Python-verified: stride = index * 20 (index + index*4, then *4)
+    uint32_t headOffset = headIndex * 20;
+    uint8_t* headNode = pool + headOffset;
+
+    // Load the next index from the head node at offset +18.
+    uint16_t nextIndex = *(uint16_t*)(headNode + 18);
+
+    // Update the pool head to point to the next node.
+    *(uint16_t*)(pool + 44) = nextIndex;
+
+    // If the new head is valid, clear its prev pointer.
+    if (nextIndex != 0xFFFF) {
+        uint32_t nextOffset = nextIndex * 20;
+        uint8_t* nextNode = pool + nextOffset;
+        *(uint16_t*)(nextNode + 16) = 0xFFFF;
+    }
+
+    // Clear the removed node's next pointer.
+    *(uint16_t*)(headNode + 18) = 0xFFFF;
+
+    // Decrement the node count in the pool header at offset +40.
+    uint16_t count = *(uint16_t*)(pool + 40);
+    *(uint16_t*)(pool + 40) = count - 1;
+
+    return headNode;
+}

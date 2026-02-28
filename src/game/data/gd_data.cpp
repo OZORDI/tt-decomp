@@ -392,3 +392,66 @@ gdPropData* xe_13E8_1(void) {
     
     return propData;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// AI Data System — gdai* classes
+////////////////////////////////////////////////////////////////////////////////
+
+// External global type identifiers for AI data validation
+extern uint32_t* g_aiTypeId_1;  // @ 0x825C60B4
+extern uint32_t* g_aiTypeId_2;  // @ 0x825C803C
+extern uint32_t* g_aiTypeId_3;  // @ 0x825C8038
+
+/**
+ * gdaiMeterLogic::ValidateTypeId (vtable slot 20)
+ * @ 0x821E91C0 | size: 0x48
+ * 
+ * Validates that the provided type identifier matches one of the expected
+ * AI data type identifiers. This is part of the RAGE serialization system's
+ * type safety mechanism.
+ * 
+ * The function checks against three global type identifiers:
+ * - g_aiTypeId_1 @ 0x825C60B4
+ * - g_aiTypeId_2 @ 0x825C803C  
+ * - g_aiTypeId_3 @ 0x825C8038
+ * 
+ * @param typeId - Type identifier to validate
+ * @return true if typeId matches any of the three expected identifiers, false otherwise
+ * 
+ * Pattern: All gdai* classes (gdaiData, gdaiDefPos, gdaiOffPos, gdaiMeterLogic,
+ * gdaiShotSelection, gdaiSkillSet, gdaiDifficulty, gdaiSkillStats) share this
+ * identical validation logic at vtable slot 20.
+ */
+bool gdaiMeterLogic::ValidateTypeId(uint32_t* typeId) {
+    // Check against first type identifier
+    if (typeId == g_aiTypeId_1) {
+        return true;
+    }
+    
+    // Check against second type identifier
+    if (typeId == g_aiTypeId_2) {
+        return true;
+    }
+    
+    // Check against third type identifier
+    if (typeId == g_aiTypeId_3) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * gdaiMeterLogic::GetTypeName (vtable slot 22)
+ * @ 0x821E9208 | size: 0xC
+ * 
+ * Returns a pointer to the type name string for this AI data class.
+ * Used for debugging and error reporting in the serialization system.
+ * 
+ * @return Pointer to type name string (appears to be part of a debug message)
+ */
+const char* gdaiMeterLogic::GetTypeName() {
+    // Returns address 0x820418FC which contains a debug string
+    // The actual string appears to be part of a larger validation message
+    return reinterpret_cast<const char*>(0x820418FC);
+}
