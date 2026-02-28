@@ -16,7 +16,7 @@
 extern "C" void PostStateTransitionRequest(void* obj);
 extern "C" void nop_8240E6D0(const char* debugStr, void* obj, uint32_t stateIdx);
 extern "C" void pg_61E8_g(void* grcDevice, float fadeValue, uint32_t p3, uint32_t p4, uint32_t p5);
-extern "C" void grcDevice_beginScene_5E78(void* grcDevice);
+extern "C" void grcDevice_beginScene(void* grcDevice);
 extern "C" void pg_6000_g(void* grcDevice);
 extern "C" void pg_60D8_g(void* grcDevice);
 extern "C" void xe_main_thread_init_0038();
@@ -172,7 +172,7 @@ extern "C" void pongLogosState_OnEnter(pongLogosState* self, uint32_t prevStateI
         pg_61E8_g(grcDevice, fadeValue, 0, 0, 0);
         
         // Begin rendering scene
-        grcDevice_beginScene_5E78(grcDevice);
+        grcDevice_beginScene(grcDevice);
         
         // Set game state flags
         struct GameState {

@@ -12,7 +12,7 @@ namespace rage {
 
 // Forward declarations for external functions
 extern "C" void nop_8240E6D0(const char* fmt, ...);  // Debug logging no-op
-extern "C" void fiAsciiTokenizer_2230_g(void* ctx, void* base);  // Token processing
+extern "C" void fiAsciiTokenizer_ParseToken(void* ctx, void* base);  // Token processing
 
 // Forward declaration for audVoiceStream function
 extern void audVoiceStream_B328_fw(
@@ -79,7 +79,7 @@ void audVoiceSfx::PlayByEntry(
     // If volume exceeds threshold, apply scaling
     if (volume > threshold) {
         // Call audio processing function (sets some global state)
-        // This is a wrapper that calls fiAsciiTokenizer_2230_g with r4=26
+        // This is a wrapper that calls fiAsciiTokenizer_ParseToken with r4=26
         // aud_2458(ctx, base);
         
         // Scale the priority parameter

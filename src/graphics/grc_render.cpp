@@ -5,7 +5,7 @@
  * Implements the two functions that form the graphics device's per-frame
  * command submission interface:
  *
- *   grcDevice_beginScene_5E78  @ 0x82305E78 (392 bytes)
+ *   grcDevice_beginScene  @ 0x82305E78 (392 bytes)
  *     — Gates scene start on multiple render-state conditions, then
  *       calls pg_5D50_g to begin the GPU pass and dispatches BeginScene
  *       + channel-flag calls to the attached grcRenderTargetXenon.
@@ -97,7 +97,7 @@ typedef struct {
 
 /*
  * Layout of the broader grcDevice instance used for beginScene.
- * Only the fields referenced by grcDevice_beginScene_5E78 are listed here.
+ * Only the fields referenced by grcDevice_beginScene are listed here.
  *
  *   +0x64 (100)   m_pRenderTarget   — grcRenderTargetXenon*
  *   +0x6C (108)   m_bColorChannel   — uint8: passed to render target vtable[11]
@@ -118,7 +118,7 @@ typedef struct {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grcDevice_beginScene_5E78 @ 0x82305E78 | size: 0x188 (392 bytes)
+ * grcDevice_beginScene @ 0x82305E78 | size: 0x188 (392 bytes)
  *
  * Gates GPU scene start on a chain of conditions, then calls pg_5D50_g to
  * begin the actual GPU pass and dispatches channel-flag calls to the render
@@ -145,7 +145,7 @@ typedef struct {
  *   5. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
  *        open profiling bracket (pg_6DC0_g(m_pStreamObj[56], 1)).
  * ═══════════════════════════════════════════════════════════════════════════ */
-void grcDevice_beginScene_5E78(grcDeviceBeginScene* pDevice)
+void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
 {
 /* ── Gate A: skip-render / camera-action check ───────────────────────── */
 

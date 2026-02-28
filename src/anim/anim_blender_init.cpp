@@ -317,10 +317,10 @@ void pcrAnimState_ComputePosition(float* out, void* animState)
         float phase2 = phaseDelta * duration;
         
         // Call locomotion position calculator
-        // LocomotionStateAnim_8C58_g @ 0x82248C58
-        extern void LocomotionStateAnim_8C58_g(void* clip, float phase1, float phase2, 
+        // LocomotionStateAnim_UpdateLocomotionState @ 0x82248C58
+        extern void LocomotionStateAnim_UpdateLocomotionState(void* clip, float phase1, float phase2, 
                                                 float* outVec);
-        LocomotionStateAnim_8C58_g(state->m_pLocomotionClip, phase1, phase2, tempVec);
+        LocomotionStateAnim_UpdateLocomotionState(state->m_pLocomotionClip, phase1, phase2, tempVec);
     }
     
     // Copy computed vector to output

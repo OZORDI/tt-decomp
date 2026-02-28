@@ -715,9 +715,9 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
     {
         uint32_t devState = *(uint32_t*)(g_grcDeviceState + 4);
         if (devState == 0) {
-            grcDevice_shutdown_FA58();
+            grcDevice_shutdown();
         } else {
-            grcDevice_shutdown_alt_40D0();
+            grcDevice_shutdownAlt();
         }
     }
 
@@ -751,7 +751,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
  *
  *   1. Set up TLS fiber, store handle at +508.
  *   2. Copy display states from config (+8, +12) to gameLoop (+532, +536).
- *   3. Initialise hsmContext with display modes via fiAsciiTokenizer_CE30_w.
+ *   3. Initialise hsmContext with display modes via fiAsciiTokenizer_InitializeTokenizer.
  *   4. Validate target FPS from config (+16) against bounds, store at +500.
  *   5. Allocate net system singleton (24 bytes) → lbl_8271A374.
  *   6. Set default screen 1280×720, apply exe-name overrides.
@@ -778,7 +778,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
 extern uint32_t _crt_tls_fiber_setup(void);
 
 /* hsmContext display-mode init @ 0x8215CE30 */
-extern void fiAsciiTokenizer_CE30_w(hsmContext* pHsm, uint32_t stateA, uint32_t stateB);
+extern void fiAsciiTokenizer_InitializeTokenizer(hsmContext* pHsm, uint32_t stateA, uint32_t stateB);
 
 /* FPS bound constants in .rdata. */
 extern const float k_fpsLowerBound;     /* lbl_8202D110 (same as k_initSceneTime) */
@@ -897,7 +897,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     pLoop->m_nDisplayStateA = *(uint32_t*)(pCfg + 8);
 
     /* 3. Initialise hsmContext with display modes. */
-    fiAsciiTokenizer_CE30_w(pSm, *(uint32_t*)(pCfg + 8), *(uint32_t*)(pCfg + 12));
+    fiAsciiTokenizer_InitializeTokenizer(pSm, *(uint32_t*)(pCfg + 8), *(uint32_t*)(pCfg + 12));
 
     /* 4. Validate target FPS from config. */
     float fTargetFPS = *(float*)(pCfg + 16);

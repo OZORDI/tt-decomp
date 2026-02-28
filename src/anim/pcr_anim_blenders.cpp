@@ -94,7 +94,7 @@ extern bool pongPlayer_DE98_g(void* player);
 // Selects the next clip index to play from the post-point clip array.
 // Returns -1 if no valid clip is found.
 // @ 0x820DE040
-extern int32_t pcrPostPointBlender_E040_fw(pcrPostPointBlender* self);
+extern int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* self);
 
 // atSingleton helpers for sub-struct setup.
 extern void rage::InitializeSingleton(void* blenderSubStruct);  // @ 0x821A8588
@@ -586,7 +586,7 @@ void pcrPostPointBlender::Update()
                 *reinterpret_cast<void**>(static_cast<char*>(m_pPlayer) + 188)))
         {
             // Try to select the next clip.
-            m_activeClipIdx = pcrPostPointBlender_E040_fw(this);  // @ +428
+            m_activeClipIdx = pcrPostPointBlender_GetActiveClipIndex(this);  // @ +428
             if (m_activeClipIdx >= 0)
             {
                 void*  clipEntry = reinterpret_cast<void**>(m_clipArray)[m_activeClipIdx];
@@ -609,7 +609,7 @@ void pcrPostPointBlender::Update()
 
                     // If the active clip index is still negative after
                     // reselection, mark as complete.
-                    m_activeClipIdx = pcrPostPointBlender_E040_fw(this);
+                    m_activeClipIdx = pcrPostPointBlender_GetActiveClipIndex(this);
                     if (m_activeClipIdx < 0)
                     {
                         m_bForced = !m_bForced ? 0 : 1;  // cntlzw/rlwinm NOT idiom

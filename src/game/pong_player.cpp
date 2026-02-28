@@ -25,8 +25,8 @@ extern void pongPlayer_C678_g(pongPlayer* state);  // @ 0x820CC678
 
 // LocomotionStateAnim helpers — update animation list entries.
 // C128 = standard transition, C288 = alternate (flag-gated) transition.
-extern void LocomotionStateAnim_C128_g(uint32_t entry, void* parent, float dt);
-extern void LocomotionStateAnim_C288_g(uint32_t entry, void* parent, float dt);
+extern void LocomotionStateAnim_BlendLocomotionAnims(uint32_t entry, void* parent, float dt);
+extern void LocomotionStateAnim_TransitionLocomotionState(uint32_t entry, void* parent, float dt);
 
 
 // ── External game helpers referenced by pong_player.cpp ───────────────────
@@ -241,8 +241,8 @@ void pongPlayer::UpdateAnimationState() {
     // Select update function.
     using AnimUpdateFn = void(*)(uint32_t, void*, float);
     AnimUpdateFn updateFn = (inRange && !useAltAnim)
-        ? LocomotionStateAnim_C128_g    // @ 0x8224C128
-        : LocomotionStateAnim_C288_g;   // @ 0x8224C288
+        ? LocomotionStateAnim_BlendLocomotionAnims    // @ 0x8224C128
+        : LocomotionStateAnim_TransitionLocomotionState;   // @ 0x8224C288
 
     // Step 4: iterate animation list.
     // List is at this+32 (in-range path) or this+80 (out-of-range path).

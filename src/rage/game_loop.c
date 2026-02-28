@@ -447,7 +447,7 @@ static int fiPath_RemoveParentDir(char* pPath)
 //      alone; otherwise combine base + relPath.
 //   3. After assembly, call fiPath_RemoveParentDir in a loop to eliminate
 //      all "../" components.
-//   4. Finally call fiDeviceMemory_2830(pFactory, pOutBuf, relPath, basePath,
+//   4. Finally call fiDeviceMemory_AllocateDeviceMemory(pFactory, pOutBuf, relPath, basePath,
 //      devIndex) — registers the opened device with the factory.
 //
 // Parameters:
@@ -456,9 +456,9 @@ static int fiPath_RemoveParentDir(char* pPath)
 //   outLen      (r5) — output buffer length (always 256 at call site)
 //   pRelPath    (r6) — relative or absolute file path to open
 //   devIndex    (r7) — device index within the factory's list
-//   entryIdx    (r8) — entry index (passed through to fiDeviceMemory_2830)
+//   entryIdx    (r8) — entry index (passed through to fiDeviceMemory_AllocateDeviceMemory)
 // ---------------------------------------------------------------------------
-extern void fiDeviceMemory_2830(void* pFactory, char* pOutBuf,
+extern void fiDeviceMemory_AllocateDeviceMemory(void* pFactory, char* pOutBuf,
                                 const char* pRelPath, const char* pBasePath,
                                 int devIndex);  /* @ 0x822E2830 */
 extern void rage_strcat_bounded(void* pDst, const char* pSrc, size_t n,
@@ -521,7 +521,7 @@ static void fiPath_Build(void* pFactory, char* pOutBuf, int outLen,
     while (fiPath_RemoveParentDir(pOutBuf)) { /* loop */ }
 
     // Register with factory
-    fiDeviceMemory_2830(pFactory, pOutBuf, pRelPath, pSrcBase, devIndex);
+    fiDeviceMemory_AllocateDeviceMemory(pFactory, pOutBuf, pRelPath, pSrcBase, devIndex);
 }
 
 

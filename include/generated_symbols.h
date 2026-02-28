@@ -982,7 +982,7 @@ PPC_EXTERN_IMPORT(LocomotionStateAnim_8308_fw); // 0x82248308
 PPC_EXTERN_IMPORT(LocomotionStateAnim_8828_g); // 0x82248828
 PPC_EXTERN_IMPORT(LocomotionStateAnim_88E0_g); // 0x822488E0
 PPC_EXTERN_IMPORT(LocomotionStateAnim_8AF8_g); // 0x82248AF8
-PPC_EXTERN_IMPORT(LocomotionStateAnim_8C58_g); // 0x82248C58
+PPC_EXTERN_IMPORT(LocomotionStateAnim_UpdateLocomotionState); // 0x82248C58
 PPC_EXTERN_IMPORT(LocomotionStateAnim_8DB0_g); // 0x82248DB0
 PPC_EXTERN_IMPORT(LocomotionStateAnim_A390_v12); // 0x8224A390
 PPC_EXTERN_IMPORT(LocomotionStateAnim_B4F8_g); // 0x8224B4F8
@@ -991,8 +991,8 @@ PPC_EXTERN_IMPORT(LocomotionStateAnim_BA28_g); // 0x8224BA28
 PPC_EXTERN_IMPORT(LocomotionStateAnim_BB98); // 0x8224BB98
 PPC_EXTERN_IMPORT(LocomotionStateAnim_BBA8_g); // 0x8224BBA8
 PPC_EXTERN_IMPORT(LocomotionStateAnim_BEF8_g); // 0x8224BEF8
-PPC_EXTERN_IMPORT(LocomotionStateAnim_C128_g); // 0x8224C128
-PPC_EXTERN_IMPORT(LocomotionStateAnim_C288_g); // 0x8224C288
+PPC_EXTERN_IMPORT(LocomotionStateAnim_BlendLocomotionAnims); // 0x8224C128
+PPC_EXTERN_IMPORT(LocomotionStateAnim_TransitionLocomotionState); // 0x8224C288
 PPC_EXTERN_IMPORT(LocomotionStateAnim_C358_g); // 0x8224C358
 PPC_EXTERN_IMPORT(LocomotionStateAnim_C418_g); // 0x8224C418
 PPC_EXTERN_IMPORT(LocomotionStateAnim_C4A8_g); // 0x8224C4A8
@@ -6710,7 +6710,7 @@ PPC_EXTERN_IMPORT(fiAsciiTokenizer_vfn_30); // 0x820C2E08
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_76D8_g); // 0x820E76D8
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_7740_h); // 0x820E7740
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_vfn_0); // 0x8210CAF8
-PPC_EXTERN_IMPORT(fiAsciiTokenizer_CE30_w); // 0x8215CE30
+PPC_EXTERN_IMPORT(fiAsciiTokenizer_InitializeTokenizer); // 0x8215CE30
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_CC50_g); // 0x8222CC50
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_CD98); // 0x8222CD98
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_CEB8_g); // 0x8222CEB8
@@ -6798,7 +6798,7 @@ PPC_EXTERN_IMPORT(fiAsciiTokenizer_FB40_g); // 0x8242FB40
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_FB50_g); // 0x8242FB50
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_FBC8_g); // 0x8242FBC8
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_FC68_g); // 0x8242FC68
-PPC_EXTERN_IMPORT(fiAsciiTokenizer_FCA8_fw); // 0x8242FCA8
+PPC_EXTERN_IMPORT(fiAsciiTokenizer_FinalizeTokenizer); // 0x8242FCA8
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_FD58_fw); // 0x8242FD58
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_0030_g); // 0x82430030
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_0388_g); // 0x82430388
@@ -6806,7 +6806,7 @@ PPC_EXTERN_IMPORT(fiAsciiTokenizer_0538_g); // 0x82430538
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_0BA8_g); // 0x82430BA8
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_1950_g); // 0x82431950
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_1F08_g); // 0x82431F08
-PPC_EXTERN_IMPORT(fiAsciiTokenizer_2230_g); // 0x82432230
+PPC_EXTERN_IMPORT(fiAsciiTokenizer_ParseToken); // 0x82432230
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_2558_w); // 0x82432558
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_2628_g); // 0x82432628
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_2878_g); // 0x82432878
@@ -6836,10 +6836,10 @@ PPC_EXTERN_IMPORT(fiAsciiTokenizer_3B28_g); // 0x82433B28
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_3BA0_w); // 0x82433BA0
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_3C68_g); // 0x82433C68
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_3CB8_g); // 0x82433CB8
-PPC_EXTERN_IMPORT(fiAsciiTokenizer_3D88_fw); // 0x82433D88
+PPC_EXTERN_IMPORT(fiAsciiTokenizer_ReadNextLine); // 0x82433D88
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_3E18_g); // 0x82433E18
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_3FB8_g); // 0x82433FB8
-PPC_EXTERN_IMPORT(fiAsciiTokenizer_4090_fw); // 0x82434090
+PPC_EXTERN_IMPORT(fiAsciiTokenizer_SkipWhitespace); // 0x82434090
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_4548_sp); // 0x82434548
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_45C8_g); // 0x824345C8
 PPC_EXTERN_IMPORT(fiAsciiTokenizer_47A0_g); // 0x824347A0
@@ -7051,7 +7051,7 @@ PPC_EXTERN_IMPORT(fiDeviceMemory_vfn_3); // 0x822E1DF8
 PPC_EXTERN_IMPORT(fiDeviceMemory_vfn_4); // 0x822E1E98
 PPC_EXTERN_IMPORT(fiDeviceMemory_vfn_6); // 0x822E1F40
 PPC_EXTERN_IMPORT(fiDeviceMemory_vfn_5); // 0x822E2020
-PPC_EXTERN_IMPORT(fiDeviceMemory_2830); // 0x822E2830
+PPC_EXTERN_IMPORT(fiDeviceMemory_AllocateDeviceMemory); // 0x822E2830
 
 // --- fiDeviceTcpIp ---
 PPC_EXTERN_IMPORT(fiDeviceTcpIp_vfn_1); // 0x822E8A18
@@ -10888,7 +10888,7 @@ PPC_EXTERN_IMPORT(pcrPostPointBlender_vfn_4); // 0x820DDE48
 PPC_EXTERN_IMPORT(pcrPostPointBlender_vfn_5); // 0x820DDE60
 PPC_EXTERN_IMPORT(pcrPostPointBlender_vfn_7); // 0x820DDFB0
 PPC_EXTERN_IMPORT(pcrPostPointBlender_vfn_6); // 0x820DDFF8
-PPC_EXTERN_IMPORT(pcrPostPointBlender_E040_fw); // 0x820DE040
+PPC_EXTERN_IMPORT(pcrPostPointBlender_GetActiveClipIndex); // 0x820DE040
 PPC_EXTERN_IMPORT(pcrPostPointBlender_E6F8_p46); // 0x820DE6F8
 PPC_EXTERN_IMPORT(pcrPostPointBlender_7D30_h); // 0x820E7D30
 PPC_EXTERN_IMPORT(pcrPostPointBlender_7FE0_fw); // 0x820E7FE0

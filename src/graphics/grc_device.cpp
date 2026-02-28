@@ -74,7 +74,7 @@ typedef struct {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grcDevice_beginScene_5E78 @ 0x82305E78 | size: 0x188 (392 bytes)
+ * grcDevice_beginScene @ 0x82305E78 | size: 0x188 (392 bytes)
  *
  * Begins a new rendering frame with multiple gate checks:
  *   1. Skip-render and camera-action gates
@@ -87,7 +87,7 @@ typedef struct {
  * This function ensures rendering only proceeds when all subsystems are ready
  * and no blocking conditions are active.
  * ═══════════════════════════════════════════════════════════════════════════ */
-void grcDevice_beginScene_5E78(grcDeviceBeginScene* pDevice)
+void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
 {
     gameLoop* pLoop = (gameLoop*)g_loop_obj_ptr;
     
@@ -173,7 +173,7 @@ void grcDevice_beginScene_5E78(grcDeviceBeginScene* pDevice)
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grcDevice_shutdown_FA58 @ 0x8214FA58 | size: 0x1D4 (468 bytes)
+ * grcDevice_shutdown @ 0x8214FA58 | size: 0x1D4 (468 bytes)
  *
  * Primary graphics device shutdown sequence:
  *   1. Clear device state flags
@@ -187,7 +187,7 @@ void grcDevice_beginScene_5E78(grcDeviceBeginScene* pDevice)
  *
  * This is the main teardown path called during normal game shutdown.
  * ═══════════════════════════════════════════════════════════════════════════ */
-void grcDevice_shutdown_FA58(void)
+void grcDevice_shutdown(void)
 {
     // Global addresses
     uint32_t* pDeviceState = (uint32_t*)0x825EBB8C;      // lbl_825EBB8C
@@ -216,7 +216,7 @@ void grcDevice_shutdown_FA58(void)
     }
     
     /* 3. Call alternate shutdown path */
-    grcDevice_shutdown_alt_40D0();
+    grcDevice_shutdownAlt();
     
     /* 4. Destroy texture cache */
     if (*ppTextureCache != NULL) {
@@ -296,7 +296,7 @@ void grcDevice_shutdown_FA58(void)
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grcDevice_shutdown_alt_40D0 @ 0x821540D0 | size: 0x58 (88 bytes)
+ * grcDevice_shutdownAlt @ 0x821540D0 | size: 0x58 (88 bytes)
  *
  * Alternate shutdown path that handles HUD overlay cleanup:
  *   1. Check if HUD overlay pointer matches device pointer
@@ -307,7 +307,7 @@ void grcDevice_shutdown_FA58(void)
  * This is called as part of the main shutdown sequence and handles the
  * specific case where the device is also registered as the HUD overlay.
  * ═══════════════════════════════════════════════════════════════════════════ */
-void grcDevice_shutdown_alt_40D0(void)
+void grcDevice_shutdownAlt(void)
 {
     void** ppDevice = (void**)0x825EBB9C;  // lbl_825EBB9C
     
