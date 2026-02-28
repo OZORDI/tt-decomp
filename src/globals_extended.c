@@ -396,3 +396,7 @@ const char* k_initSceneTime = "0.0";
 const char* k_lineSpacing = "lineSpacing";
 const char* k_SAVING = "SAVING";
 const char* kFaceAnimStartPhase = "0.0";
+
+// Drill cleanup parameter @ 0x825C74FC (.data, 4 bytes)
+// Used by pongDrillSoftShot::ScalarDestructor for cleanup validation
+uint32_t g_drillCleanupParam = 0;

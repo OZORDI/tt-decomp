@@ -349,7 +349,7 @@ class pongTrainingDrill {
 public:
     // Virtual functions
     virtual ~pongTrainingDrill() {}                          // vfn_0
-    virtual void ScalarDestructor() {}                       // vfn_1
+    virtual void ScalarDestructor(int flags) {}              // vfn_1
     virtual void CallInit() {}                               // vfn_2 - thunk to vfn_3
     virtual void Init();                                     // vfn_3 @ 0x8210CDB8
     virtual void Update() {}                                 // vfn_4
@@ -480,6 +480,7 @@ public:
  */
 class pongDrillSoftShot : public pongTrainingDrill {
 public:
+    virtual void ScalarDestructor(int flags) override;  // vfn_1 @ 0x8210EDA0
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}

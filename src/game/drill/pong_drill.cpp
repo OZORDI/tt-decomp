@@ -6,7 +6,6 @@
  */
 
 #include "pong_drill.hpp"
-#include "pong_network_io.hpp"
 #include <stdio.h>
 #include <math.h>
 

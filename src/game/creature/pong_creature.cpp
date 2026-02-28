@@ -425,3 +425,61 @@ bool LocomotionStateAnim::SetupAnimationPair(uint16_t animID1, uint16_t animID2,
     
     return true;
 }
+
+/**
+ * LocomotionState::ValidateAnimationTiming @ 0x820DF220 | size: 0x6C
+ * 
+ * Validates that the animation timing for the given animation indices is valid (>= 0.0f).
+ * If the timing is negative, it defaults both indices to 11 (idle/default animation).
+ * 
+ * This function ensures that the locomotion system doesn't try to use animations
+ * with invalid timing data, which could cause rendering or blending issues.
+ * 
+ * @param animSetIndex Index into the animation set array (r4)
+ * @param animIndex Index of the specific animation within the set (r5)
+ * @param outTiming Output parameter to receive the validated animation timing (f1)
+ */
+void LocomotionState::ValidateAnimationTiming(uint32_t& animSetIndex, uint32_t& animIndex, float& outTiming) {
+    // Threshold for valid timing (must be >= 0.0f)
+    const float TIMING_THRESHOLD = 0.0f;
+    const uint32_t DEFAULT_ANIM_INDEX = 11;  // Default/idle animation
+    
+    // Get animation set array pointer from offset 0
+    void*** animSetArray = *(void****)this;
+    
+    // Loop until we find valid timing
+    while (true) {
+        // Index into animation set array (each pointer is 4 bytes, but indexed by 8)
+        // This suggests the array might be storing pairs or have padding
+        void** animSet = (void**)((char*)animSetArray + (animSetIndex * 8));
+        
+        // Get specific animation entry (28 bytes per entry)
+        char* animEntry = (char*)(*animSet) + (animIndex * 28);
+        
+        // Get timing field at offset +24
+        float timing = *(float*)(animEntry + 24);
+        
+        // Check if timing is valid
+        if (timing >= TIMING_THRESHOLD) {
+            // Valid timing found, return it
+            outTiming = timing;
+            return;
+        }
+        
+        // Invalid timing - need to use default animation
+        if (animIndex != DEFAULT_ANIM_INDEX) {
+            // First try: set animIndex to default
+            animIndex = DEFAULT_ANIM_INDEX;
+        } else if (animSetIndex != DEFAULT_ANIM_INDEX) {
+            // Second try: set animSetIndex to default
+            animSetIndex = DEFAULT_ANIM_INDEX;
+        } else {
+            // Both already at default - this shouldn't happen, but exit to prevent infinite loop
+            // Load the timing anyway (even if invalid)
+            outTiming = timing;
+            return;
+        }
+        
+        // Loop continues with updated indices
+    }
+}
