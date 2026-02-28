@@ -177,6 +177,7 @@ struct pongCameraMgr {
     // ── non-virtual methods ──
     void ChangeCamera();
     void AdjustTimingForIndex(int index);  // @ 0x82173430
+    bool TryTransition(void* gameState);   // @ 0x821F7338
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────

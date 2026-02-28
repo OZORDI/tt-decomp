@@ -79,3 +79,84 @@ void pongCameraMgr::AdjustTimingForIndex(int index) {
     m_timingArray[clearIndex1] = 0.0f;
     m_timingArray[clearIndex2] = 0.0f;
 }
+
+/**
+ * pongCameraMgr::TryTransition
+ * @ 0x821F7338 | size: 0xE4
+ * 
+ * Attempts to transition the camera to a new state, validating the transition
+ * is within acceptable bounds. This function uses a threshold value to clamp
+ * the camera state and calls helper functions to validate and apply the transition.
+ * 
+ * @param gameState - Pointer to game state object (pg*)
+ * @return true if transition succeeded, false otherwise
+ */
+bool pongCameraMgr::TryTransition(void* gameState) {
+    // Load current camera value (appears to be at offset 0, overlapping with vtable)
+    // This is likely a union or the first field after vtable
+    float currentValue = *(float*)((char*)this + 0);
+    
+    // Load threshold constant from .data section
+    // Address: 0x825C5EC0 (calculated from lis r11,-32164 + lfs f13,24256(r11))
+    extern float g_cameraThreshold;  // TODO: Define this global
+    float threshold = g_cameraThreshold;
+    
+    // Compute clamped values using fsel pattern
+    // fsel chooses first operand if condition >= 0, else second operand
+    float diff1 = threshold - currentValue;
+    float diff2 = currentValue - threshold;
+    
+    // Clamp to minimum (choose currentValue if it's <= threshold, else threshold)
+    float clampedMin = (diff1 >= 0.0f) ? currentValue : threshold;
+    
+    // Clamp to maximum (choose currentValue if it's >= threshold, else threshold)  
+    float clampedMax = (diff2 >= 0.0f) ? currentValue : threshold;
+    
+    // Prepare parameters for validation call
+    struct TransitionParams {
+        float value;
+        uint32_t vtableOrState;  // Stores vtable pointer from this
+        uint32_t padding;
+    } params;
+    
+    params.value = clampedMin;
+    params.vtableOrState = *(uint32_t*)this;  // Copy vtable/state
+    params.padding = 0;
+    
+    struct TransitionFlags {
+        uint32_t flag1;  // Set to 3
+        uint32_t flag2;  // Set to 1
+    } flags;
+    
+    flags.flag1 = 3;
+    flags.flag2 = 1;
+    
+    // Call validation function (pongCameraMgr_6E08)
+    // Parameters: gameState, &params, 7, &flags, 1
+    // TODO: Replace with proper function signature when available
+    extern uint8_t pongCameraMgr_ValidateTransition(void* gameState, TransitionParams* params, 
+                                                     int mode, TransitionFlags* flags, int enable);
+    
+    uint8_t validationResult = pongCameraMgr_ValidateTransition(gameState, &params, 7, &flags, 1);
+    
+    if (validationResult != 0) {
+        // Validation succeeded, check if we need to apply the transition
+        float modifiedValue = params.value;
+        
+        if (modifiedValue <= clampedMax) {
+            // Value is within acceptable range, apply transition with different mode
+            // TODO: Replace with proper function signature when available
+            extern uint8_t pg_ApplyTransition(void* gameState, TransitionParams* params,
+                                             int mode, TransitionFlags* flags, int enable);
+            
+            return pg_ApplyTransition(gameState, &params, 16, &flags, 1) != 0;
+        } else {
+            // Value exceeds maximum, store it directly
+            *(float*)((char*)this + 0) = modifiedValue;
+            return true;
+        }
+    }
+    
+    // Validation failed
+    return false;
+}
