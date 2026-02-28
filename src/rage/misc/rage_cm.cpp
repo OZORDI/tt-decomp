@@ -1090,3 +1090,27 @@ void cmControlRef::GetBool(uint8_t* out) {
         *out = 0;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  cmNormalizedTimer
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * cmNormalizedTimer::SetValue @ 0x82271218  (vfn_14)
+ *
+ * Sets the current timer value from the initial data pointer.
+ * Creates a temporary DIRECT port pointing to m_pInitialData and dispatches
+ * to cmNode_SetFromPort_Dispatch to copy the value into m_pCurrentValue.
+ *
+ * This is used to reset or initialize the timer's current value from its
+ * configured initial value.
+ */
+void cmNormalizedTimer::SetValue() {
+    // Create a temporary port structure pointing to the initial data
+    cmNodePort tempPort;
+    tempPort.m_pData = m_pInitialData;
+    tempPort.m_type = CM_PORT_DIRECT;
+    
+    // Dispatch to the generic setter to copy the value
+    cmNode_SetFromPort_Dispatch(m_pCurrentValue, &tempPort, m_outputType);
+}

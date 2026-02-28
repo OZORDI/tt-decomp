@@ -828,6 +828,11 @@ struct cmNormalProbe {
 // ── rage::cmNormalizedTimer  [vtable @ 0x82052DA4] ──────────────────────────
 struct cmNormalizedTimer {
     void**      vtable;           // +0x00
+    int32_t     m_outputType;     // +0x04
+    int32_t     m_flags;          // +0x08
+    uint8_t     _pad[12];         // +0x0C-0x17
+    void*       m_pInitialData;   // +0x18 — initial value data pointer
+    cmDataObj*  m_pCurrentValue;  // +0x1C — current timer value buffer
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x82271340
@@ -837,7 +842,7 @@ struct cmNormalizedTimer {
     virtual void vfn_6();  // [6] @ 0x822785e0
     virtual void vfn_9();  // [9] @ 0x822711c8
     virtual void vfn_10();  // [10] @ 0x82278630
-    virtual void vfn_14();  // [14] @ 0x82271218
+    void SetValue();  // [14] @ 0x82271218
     virtual void vfn_16();  // [16] @ 0x822623f8
     virtual void vfn_17();  // [17] @ 0x822710b0
 };
