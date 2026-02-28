@@ -771,36 +771,36 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Forward declaration for pg_6F68 (not yet lifted)
-extern "C" uint8_t pg_6F68(void* arg1, void* arg2, int param1, 
-                           uint32_t* stackData, int param2, int param3);
+extern "C" uint8_t pg_6F68(void* pageGroup, void* context, int eventType, 
+                           uint32_t* eventData, int enableFlag, int reserved);
 
 /**
  * pg_6770_fw @ 0x821F6770 | size: 0x5C
  *
- * Boolean wrapper for pg_6F68 with argument swapping.
+ * Page group event handler wrapper with context/page group argument swap.
  * 
- * This function swaps the first two arguments before calling pg_6F68,
- * passes a stack-allocated structure {4, 0}, and returns a boolean result.
+ * This function appears to be a forwarding wrapper that swaps the context
+ * and page group arguments before dispatching to the main event handler.
  * The "_fw" suffix likely indicates "forward" or "wrapper".
  *
- * @param arg1 First argument (becomes second in pg_6F68 call)
- * @param arg2 Second argument (becomes first in pg_6F68 call)
- * @return true if pg_6F68 returns non-zero, false otherwise
+ * @param context Page group context object
+ * @param pageGroup Page group UI object
+ * @return true if event was handled successfully, false otherwise
  */
-bool pg_6770_fw(void* arg1, void* arg2) {
-    // Stack-allocated structure passed to pg_6F68
-    // First element: 4, Second element: 0
-    uint32_t stackData[2] = { 4, 0 };
+bool pg_6770_fw(void* context, void* pageGroup) {
+    // Event data structure: { type: 4, value: 0 }
+    // Type 4 may indicate a specific UI event category
+    uint32_t eventData[2] = { 4, 0 };
     
-    // Call pg_6F68 with swapped arguments:
-    //   - arg2 becomes first parameter
-    //   - arg1 becomes second parameter
-    //   - 9 is a constant parameter
-    //   - stackData is the structure pointer
-    //   - 1 is a flag parameter
-    //   - 0 is the final parameter
-    uint8_t result = pg_6F68(arg2, arg1, 9, stackData, 1, 0);
+    // Call main handler with swapped arguments:
+    //   - pageGroup becomes first parameter (the target object)
+    //   - context becomes second parameter (the calling context)
+    //   - 9 is the event type constant
+    //   - eventData contains event-specific data
+    //   - 1 enables processing
+    //   - 0 is reserved/unused
+    uint8_t handled = pg_6F68(pageGroup, context, 9, eventData, 1, 0);
     
-    // Return true if result is non-zero, false otherwise
-    return (result != 0);
+    // Return true if event was handled, false otherwise
+    return (handled != 0);
 }
