@@ -1639,3 +1639,127 @@ bool SinglesNetworkClient::IsStateActive()
             return false;
     }
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::ProcessMessageQueue @ 0x823A87E8 | size: 0x150
+//
+// Processes all pending network messages in the message queue.
+// Iterates through a linked list of messages, validates each one, and
+// dispatches them to the appropriate handlers.
+//
+// This is the main message pump for the network subsystem. It:
+// 1. Retrieves the message queue head from the global network state
+// 2. Walks the linked list of pending messages
+// 3. For each message:
+//    - Allocates/creates a message handler object
+//    - Validates the message is processable
+//    - Gets the message ID
+//    - Prepares dispatch context
+//    - Dispatches to the appropriate handler
+//    - Cleans up the context
+// 4. Moves to the next message in the queue
+//
+// The message queue is maintained at a global singleton accessed via
+// offset chains through the network state object.
+// ===========================================================================
+void SinglesNetworkClient::ProcessMessageQueue()
+{
+    // External function declarations for message processing pipeline
+    extern void* SinglesNetworkClient_0978_g(void* msg, int param1, void* rttiStr1, void* rttiStr2, int param2);
+    extern bool  SinglesNetworkClient_A250_g(void* queueBase, void* msgBuffer);
+    extern int   SinglesNetworkClient_4928_g(void* msgHandler);
+    extern void* SinglesNetworkClient_9720_g(void* stackBuf, void* client);
+    extern void  SinglesNetworkClient_4128_g(void* dispatcher, int msgId, void* context, int param1, int param2);
+    extern void  SinglesNetworkClient_0268_g(void* context);
+    extern void* SinglesNetworkClient_C838_g(void* currentMsg);
+    
+    // Global network state object
+    extern void* g_pNetworkState;  // @ 0x8271A7B0
+    
+    // RTTI strings for message type identification
+    extern const char g_szCreateMachineRTTI[];  // @ 0x825DEEB0 "uestingConfig@snCreateMachine@rage@@"
+    extern const char g_szRageRTTI[];           // @ 0x825DEECC "e@rage@@"
+    
+    // Step 1: Navigate to the message queue head
+    // Path: networkState[60] > 1 ? networkState[56] + 9680 : null
+    //       then: result[3756] = message list head
+    
+    void* networkState = g_pNetworkState;
+    int playerCount = *(int*)((char*)networkState + 60);
+    
+    void* queueBase = nullptr;
+    if (playerCount > 1) {
+        void* sessionBase = *(void**)((char*)networkState + 56);
+        queueBase = (char*)sessionBase + 9680;
+    }
+    
+    // Get the message queue head
+    void* messageHead = nullptr;
+    if (queueBase != nullptr) {
+        messageHead = *(void**)((char*)queueBase + 3756);
+    }
+    
+    // Step 2: Find the tail of the message chain
+    // Walk the linked list via msg[8] until we find the last message
+    void* currentMsg = messageHead;
+    
+    if (currentMsg != nullptr) {
+        void* nextMsg = *(void**)((char*)currentMsg + 8);
+        if (nextMsg != nullptr) {
+            // Walk to the end of the chain
+            while (true) {
+                currentMsg = nextMsg;
+                void* nextNext = *(void**)((char*)currentMsg + 8);
+                if (nextNext == nullptr) {
+                    break;
+                }
+                nextMsg = nextNext;
+            }
+        }
+    }
+    
+    // Step 3: Process messages in the queue
+    // Loop until we've processed all messages
+    while (currentMsg != nullptr) {
+        // Allocate/create a message handler object
+        // Parameters: message, 0, rttiStr1, rttiStr2, 0
+        void* msgHandler = SinglesNetworkClient_0978_g(
+            currentMsg,
+            0,
+            (void*)g_szRageRTTI,
+            (void*)g_szCreateMachineRTTI,
+            0
+        );
+        
+        // Validate the message is ready to process
+        // Check if message is in the queue and ready
+        char msgBuffer[96];  // Stack buffer at offset +96 from msgHandler
+        bool isValid = SinglesNetworkClient_A250_g(
+            (char*)networkState + 3756,  // Queue base for validation
+            (char*)msgHandler + 96
+        );
+        
+        if (isValid) {
+            // Get the message ID/type
+            int messageId = SinglesNetworkClient_4928_g(msgHandler);
+            
+            if (messageId != -1) {
+                // Prepare dispatch context on stack
+                char dispatchContext[128];  // Stack buffer at r1+80
+                void* context = SinglesNetworkClient_9720_g(dispatchContext, this);
+                
+                // Dispatch the message to the appropriate handler
+                // Parameters: dispatcher base, message ID, context, 1 (priority), 0
+                void* dispatcher = (char*)networkState + 64;
+                SinglesNetworkClient_4128_g(dispatcher, messageId, context, 1, 0);
+                
+                // Clean up the dispatch context
+                SinglesNetworkClient_0268_g(dispatchContext);
+            }
+        }
+        
+        // Move to the next message in the queue
+        currentMsg = SinglesNetworkClient_C838_g(currentMsg);
+    }
+}
