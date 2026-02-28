@@ -51,6 +51,7 @@ set(SOURCES
     # XAM (Xbox Application Model)
     src/xam/static_init.c
     src/xam/voice.c
+    src/xam/xe_graphics.c
     
     # RAGE engine
     src/rage/animation/rage_anim.cpp
