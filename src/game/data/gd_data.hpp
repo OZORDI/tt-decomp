@@ -1371,10 +1371,10 @@ struct gdaiMeterLogic {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~gdaiMeterLogic();                  // [0] @ 0x821e9160
-    virtual void PostLoadProperties();  // [20] @ 0x821e91c0
-    virtual void Validate();  // [21] @ 0x821e92b0
-    virtual void PostLoadChildren();  // [22] @ 0x821e9208
+    virtual ~gdaiMeterLogic();                           // [0] @ 0x821e9160
+    virtual bool ValidateTypeId(uint32_t* typeId);       // [20] @ 0x821e91c0
+    virtual void Validate();                             // [21] @ 0x821e92b0
+    virtual const char* GetTypeName();                   // [22] @ 0x821e9208
 };
 
 // ── gdaiOffPos  [vtable @ 0x82041E1C] ──────────────────────────

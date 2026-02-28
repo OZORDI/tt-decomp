@@ -107,3 +107,13 @@ extern uint8_t g_uiInputFlag;
 #ifdef __cplusplus
 }
 #endif
+
+// ────────────────────────────────────────────────────────────────────────────
+// AI Data System Type Identifiers
+// ────────────────────────────────────────────────────────────────────────────
+
+// Global AI data type identifiers used for validation in gdai* classes
+// These are used by the RAGE serialization system for type safety
+extern uint32_t* g_aiTypeId_1;  // @ 0x825C60B4
+extern uint32_t* g_aiTypeId_2;  // @ 0x825C803C
+extern uint32_t* g_aiTypeId_3;  // @ 0x825C8038
