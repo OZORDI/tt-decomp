@@ -177,3 +177,27 @@ bool pongCameraMgr::IsStateNine() const {
     
     return g_cameraState == 9;
 }
+
+/**
+ * pongCameraMgr::TryTransitionMode20
+ * @ 0x821F6B78 | size: 0x38
+ * 
+ * Attempts a camera transition using mode 20. This is a simple wrapper
+ * around the core transition function that validates and applies camera
+ * state changes with a specific mode parameter.
+ * 
+ * @param gameState - Pointer to game state object
+ * @return true if transition succeeded, false otherwise
+ */
+bool pongCameraMgr::TryTransitionMode20(void* gameState) {
+    // Call the core transition function with mode 20
+    // The mode parameter (r5 = 20) likely specifies a particular
+    // camera transition type or validation mode
+    extern bool pongCameraMgr_35A0_fw(void* cameraMgr, void* gameState, int mode);
+    
+    bool result = pongCameraMgr_35A0_fw(this, gameState, 20);
+    
+    // Convert to explicit boolean (the assembly does clrlwi r11,r3,24
+    // which extracts the low byte, then compares to 0)
+    return result != 0;
+}
