@@ -86,6 +86,7 @@ set(SOURCES
     src/game/camera/pong_camera.cpp
     src/game/creature/pong_creature.cpp
     src/game/drill/pong_drill.cpp
+    src/game/misc/cm_operators.cpp
     src/game/misc/pong_misc.cpp
     src/game/network/pong_network.cpp
     src/game/network/pong_network_classes.cpp
