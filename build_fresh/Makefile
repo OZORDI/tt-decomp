@@ -678,6 +678,30 @@ src/rage/audio_control_wrappers.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.s
 .PHONY : src/rage/audio_control_wrappers.cpp.s
 
+src/rage/fsmMachine.o: src/rage/fsmMachine.c.o
+.PHONY : src/rage/fsmMachine.o
+
+# target to build an object file
+src/rage/fsmMachine.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o
+.PHONY : src/rage/fsmMachine.c.o
+
+src/rage/fsmMachine.i: src/rage/fsmMachine.c.i
+.PHONY : src/rage/fsmMachine.i
+
+# target to preprocess a source file
+src/rage/fsmMachine.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.i
+.PHONY : src/rage/fsmMachine.c.i
+
+src/rage/fsmMachine.s: src/rage/fsmMachine.c.s
+.PHONY : src/rage/fsmMachine.s
+
+# target to generate assembly for a file
+src/rage/fsmMachine.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.s
+.PHONY : src/rage/fsmMachine.c.s
+
 src/rage/game_loop.o: src/rage/game_loop.c.o
 .PHONY : src/rage/game_loop.o
 
@@ -1090,6 +1114,9 @@ help:
 	@echo "... src/rage/audio_control_wrappers.o"
 	@echo "... src/rage/audio_control_wrappers.i"
 	@echo "... src/rage/audio_control_wrappers.s"
+	@echo "... src/rage/fsmMachine.o"
+	@echo "... src/rage/fsmMachine.i"
+	@echo "... src/rage/fsmMachine.s"
 	@echo "... src/rage/game_loop.o"
 	@echo "... src/rage/game_loop.i"
 	@echo "... src/rage/game_loop.s"

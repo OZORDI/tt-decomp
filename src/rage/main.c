@@ -110,7 +110,7 @@ extern const char  k_winsock_bad_ver[];   /* "InitWinSock - Couldn't find a usab
 extern const char  k_disc_path_prefix[];  /* "A:"                                      @ 0x8203860C */
 
 /* Forward declarations for network helper functions (not yet in a header) */
-extern int   util_1AF8(int version, void* wsaData);   /* WSAStartup wrapper @ 0x82481AF8 */
+extern int   WSAStartup(int version, void* wsaData);   /* WSAStartup wrapper @ 0x82481AF8 */
 extern void  nop_8240E6D0(const char* fmt, ...);       /* Debug log no-op    @ 0x8240E6D0 */
 extern void  rage_WSockErrorHandler(void);                          /* WSock error handler @ 0x82481B08 */
 
@@ -466,7 +466,7 @@ int rage_Main(int argc, const char** argv)
 
         /* WSAStartup — version 2.0, fill a WSADATA-sized buffer. */
         uint8_t wsaData[512] = {0};
-        int wsaErr = util_1AF8(2, wsaData);
+        int wsaErr = WSAStartup(2, wsaData);
         if (wsaErr != 0)
             nop_8240E6D0(k_winsock_no_dll);
 

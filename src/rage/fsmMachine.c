@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * rage/fsmMachine.c — Finite State Machine base class implementation
  * Rockstar Presents Table Tennis (Xbox 360, 2006)

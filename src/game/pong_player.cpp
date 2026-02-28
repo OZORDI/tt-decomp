@@ -1271,11 +1271,11 @@ bool pongPlayer::CheckOpponentSwingApex() const
 //     global player data table (g_pPlayerDataTable), using the vtable
 //     entry from slot 1 of our own vtable as the lookup key.
 //
-//  4. Call pg_FFF8_g on (record + 796) — checks whether this button press
+//  4. Call CheckButtonPressed on (record + 796) — checks whether this button press
 //     is "new" (first frame down) vs already-held.
 //       - If newly pressed: compute a bit mask `1 << m_inputSlotIdx` and
 //         check whether the opponent's input slot (15 - m_inputSlotIdx)
-//         is also active. Call pg_E6E0 to fire the "button down" event
+//         is also active. Call PostPageGroupMessage to fire the "button down" event
 //         with code 2125.
 //       - If held (not new): accumulate a float into the record via
 //         pongPlayer_0508_g (reads swing data) and fmadds/fadds into the
@@ -1305,7 +1305,7 @@ void pongPlayer::CheckButtonInput()
     uint8_t* record     = (uint8_t*)g_pPlayerDataTable + (slotIdx * 808) + 12;
 
     // Is this the first frame the button is down?
-    bool isNewPress = pg_FFF8_g((void*)(record + 796));
+    bool isNewPress = CheckButtonPressed((void*)(record + 796));
 
     if (isNewPress) {
         // Check if opponent's slot is also active (mirrored slot = 15 - mySlot).
@@ -1320,7 +1320,7 @@ void pongPlayer::CheckButtonInput()
 
         // Fire the "button down" event: mask = 1 << m_inputSlotIdx, code 2125.
         uint8_t buttonMask = (uint8_t)(1u << (m_inputSlotIdx & 31));
-        pg_E6E0(record, /*code*/ 2125, /*mask*/ buttonMask,
+        PostPageGroupMessage(record, /*code*/ 2125, /*mask*/ buttonMask,
                 /*unused*/ 0, /*opponentActive*/ (int)opponentActive);
     } else {
         // Button held: accumulate power into the record's score float.
@@ -1713,8 +1713,8 @@ extern void*     g_pButtonStateTable;   // already declared, redeclare omitted
 extern float     g_kPowerBlend;         // blend constant                   @ 0x825C2EA0
 extern float     g_kFrameToSecScale;    // frames-to-seconds scale factor   @ 0x8202D100 area
 
-extern bool pg_FFF8_g(void* record);                            // @ 0x8225FFF8
-extern void pg_E6E0(void* record, int code, int mask, int a3, int a4); // event dispatcher
+extern bool CheckButtonPressed(void* record);                            // @ 0x8225FFF8
+extern void PostPageGroupMessage(void* record, int code, int mask, int a3, int a4); // event dispatcher
 extern void pongPlayer_0508_g(void* obj, int maxSteps, float* outDelta); // @ 0x821E0508
 extern bool pongPlayer_5B60_gen(pongPlayer* p);                 // @ 0x82195B60
 extern void pongPlayer_1460_g(void* actionState, int released); // @ 0x821A1460

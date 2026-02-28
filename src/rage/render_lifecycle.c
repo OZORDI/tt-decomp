@@ -38,15 +38,15 @@ extern void VdQueryVideoMode(void* pMode);
 extern void memcpy(void* dst, const void* src, uint32_t size);
 
 /* Render target management */
-extern void* CreateRenderTarget_93C0(void* vtable, uint32_t flags, uint32_t param1,
+extern void* grcRenderTarget_CreatePrimary(void* vtable, uint32_t flags, uint32_t param1,
                                      uint32_t param2, uint32_t param3, uint32_t format,
                                      uint32_t param5, uint32_t param6, uint32_t param7);
-extern void* CreateRenderTarget_94E0(void* vtable, uint32_t flags, uint32_t format,
+extern void* grcRenderTarget_CreateSecondary(void* vtable, uint32_t flags, uint32_t format,
                                      uint32_t width, uint32_t param4);
-extern void FreeRenderTarget_2EE0(void* pTarget);
-extern void ConfigureRenderTarget_6290(void* pObj, uint32_t index, uint32_t param);
-extern void InitRenderTargetState_65F8(void* pObj, uint32_t param);
-extern void ConfigureRenderPipeline_61A0(void* pObj, void* pConfig);
+extern void grcRenderTarget_Free(void* pTarget);
+extern void grcRenderTarget_Configure(void* pObj, uint32_t index, uint32_t param);
+extern void grcRenderTarget_InitState(void* pObj, uint32_t param);
+extern void grcRenderPipeline_Configure(void* pObj, void* pConfig);
 
 /* Video mode structure (Xbox 360 SDK) */
 typedef struct VideoMode {
@@ -194,11 +194,11 @@ void CleanupRenderTargets(void* pRootGameObj) {
     uint32_t vtable = *(uint32_t*)(pRoot + 0);
     if (vtable != 0) {
         /* Initialize render target state */
-        InitRenderTargetState_65F8(pRootGameObj, 0);
+        grcRenderTarget_InitState(pRootGameObj, 0);
         
         /* Configure all 4 render target slots */
         for (int i = 0; i < 4; i++) {
-            ConfigureRenderTarget_6290(pRootGameObj, i, 0);
+            grcRenderTarget_Configure(pRootGameObj, i, 0);
         }
         
         /* Setup render fiber for async operations */
@@ -208,21 +208,21 @@ void CleanupRenderTargets(void* pRootGameObj) {
     /* Free render target at offset +13976 */
     void* pTarget1 = *(void**)(pRoot + 13976);
     if (pTarget1 != NULL) {
-        FreeRenderTarget_2EE0(pTarget1);
+        grcRenderTarget_Free(pTarget1);
         *(void**)(pRoot + 13976) = NULL;
     }
     
     /* Free render target at offset +13980 */
     void* pTarget2 = *(void**)(pRoot + 13980);
     if (pTarget2 != NULL) {
-        FreeRenderTarget_2EE0(pTarget2);
+        grcRenderTarget_Free(pTarget2);
         *(void**)(pRoot + 13980) = NULL;
     }
     
     /* Free render target at offset +13972 */
     void* pTarget3 = *(void**)(pRoot + 13972);
     if (pTarget3 != NULL) {
-        FreeRenderTarget_2EE0(pTarget3);
+        grcRenderTarget_Free(pTarget3);
         *(void**)(pRoot + 13972) = NULL;
     }
 }
@@ -271,7 +271,7 @@ int ConfigureRenderTargets(void* pRootGameObj, void* pConfig) {
     /* Create primary render target if needed */
     uint32_t createPrimary = *(uint32_t*)(pCfg + 60);
     if (createPrimary == 0) {
-        void* pTarget = CreateRenderTarget_93C0(
+        void* pTarget = grcRenderTarget_CreatePrimary(
             (void*)vtable, flags, 1, 1, 0, targetMode, 0, 3, 0
         );
         
@@ -285,7 +285,7 @@ int ConfigureRenderTargets(void* pRootGameObj, void* pConfig) {
     /* Create secondary render target if needed */
     uint32_t createSecondary = *(uint32_t*)(pCfg + 56);
     if (createSecondary == 0) {
-        void* pTarget = CreateRenderTarget_94E0(
+        void* pTarget = grcRenderTarget_CreateSecondary(
             (void*)vtable, flags, formatFlags, width, 0
         );
         
@@ -294,13 +294,13 @@ int ConfigureRenderTargets(void* pRootGameObj, void* pConfig) {
         }
         
         *(void**)(pRoot + 13980) = pTarget;
-        ConfigureRenderTarget_6290(pRootGameObj, 0, 0);
+        grcRenderTarget_Configure(pRootGameObj, 0, 0);
     }
     
     /* Create tertiary render target if needed */
     uint32_t createTertiary = *(uint32_t*)(pCfg + 36);
     if (createTertiary != 0) {
-        void* pTarget = CreateRenderTarget_94E0(
+        void* pTarget = grcRenderTarget_CreateSecondary(
             (void*)vtable, flags, format, width, 0
         );
         
@@ -309,7 +309,7 @@ int ConfigureRenderTargets(void* pRootGameObj, void* pConfig) {
         }
         
         *(void**)(pRoot + 13972) = pTarget;
-        InitRenderTargetState_65F8(pRootGameObj, 0);
+        grcRenderTarget_InitState(pRootGameObj, 0);
     }
     
     /* Copy configuration to root game object at offset +13736 */
@@ -326,7 +326,7 @@ int ConfigureRenderTargets(void* pRootGameObj, void* pConfig) {
     *(uint32_t*)(pRoot + 13800) = targetMode;
     
     /* Configure render pipeline */
-    ConfigureRenderPipeline_61A0(pRootGameObj, pCfg + 96);
+    grcRenderPipeline_Configure(pRootGameObj, pCfg + 96);
     
     /* Set render ready flag */
     uint8_t renderFlags = *(uint8_t*)(pRoot + 10433);

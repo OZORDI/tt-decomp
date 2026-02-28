@@ -247,7 +247,7 @@ void audSystem_init(void)
 // pgStreamer_Init  @ 0x820F8A00 | size: 0xFC
 //
 // Initialises the pgStreamer asynchronous streaming pool and starts the
-// pgStreamer background reader thread (pg_8250_g).
+// pgStreamer background reader thread (DestroyPageGroup).
 //
 // This function lives in the pgStreamer compilation unit, immediately between
 // pgStreamer_Close (0x820F88F8) and pgStreamer_Drain (0x820F8B00) in the
@@ -264,7 +264,7 @@ void audSystem_init(void)
 //       node[+4]  = 0xFFFFFFFF   (free sentinel)
 //       node[+16] = i + 1        (next-free; 256 = end-of-list)
 //  5. Reset freeHead = 0 (all nodes free, head at slot 0).
-//  6. If g_pgThreadInitGate is unarmed, register pg_8250_g as a background
+//  6. If g_pgThreadInitGate is unarmed, register DestroyPageGroup as a background
 //     kernel thread:
 //       stack  = 65 536 bytes (0x10000)
 //       base-priority delta = 6  →  KeSetBasePriorityThread(h, 8-6=2)
@@ -275,7 +275,7 @@ void audSystem_init(void)
 //   g_pgStreamerPool.freeHead @ 0x825EB270  — written here (0)
 //   g_pgStreamerPool.pMemory  @ 0x825EB274  — written here (alloc ptr)
 //   g_pgQueue                @ 0x82607AA8  — 16-slot ring + semaphores (408 B)
-//                                             (used by pg_8250_g via SDA)
+//                                             (used by DestroyPageGroup via SDA)
 //   g_pgThreadInitGate       @ 0x825CA074  — RTTI-gate; m_pName != NULL → skip
 //   k_pgThreadNameFmt        @ 0x8202FB00  — "%s" thread name format
 // ===========================================================================
@@ -301,7 +301,7 @@ typedef struct {
 } pgThreadInitGate;
 extern pgThreadInitGate g_pgThreadInitGate;  /* @ 0x825CA074 */
 
-extern void           pg_8250_g(void);        /* pgStreamer reader thread @ 0x820F8250 */
+extern void           DestroyPageGroup(void);        /* pgStreamer reader thread @ 0x820F8250 */
 extern const char     k_pgThreadNameFmt[];    /* "%s" @ 0x8202FB00 */
 
 void pgStreamer_Init(void)
@@ -336,7 +336,7 @@ void pgStreamer_Init(void)
     // The thread uses g_pgQueue (SDA global) rather than a startup param.
     if (g_pgThreadInitGate.m_pName == NULL) {
         rage_RegisterThread(
-            (void*)pg_8250_g,         /* r3: thread function                */
+            (void*)DestroyPageGroup,         /* r3: thread function                */
             NULL,                     /* r4: startup param (0 — uses SDA)  */
             65536u,                   /* r5: stack size = 0x10000           */
             6u,                       /* r6: base-priority delta (8-6 = 2) */

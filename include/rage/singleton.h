@@ -21,9 +21,16 @@ extern "C" {
  * Checks if a pointer is owned by a registered singleton.
  * Returns nonzero if the pointer belongs to a singleton (do NOT free).
  * Returns zero if the pointer is not singleton-owned (safe to free).
+ *
+ * C-linkage alias: rage_FindSingleton
  */
-uint8_t rage::FindSingleton(void* ptr);
+uint8_t rage_FindSingleton(void* ptr);
 
 #ifdef __cplusplus
+}  /* extern "C" */
+
+/* C++ namespace alias */
+namespace rage {
+    inline uint8_t FindSingleton(void* ptr) { return rage_FindSingleton(ptr); }
 }
 #endif

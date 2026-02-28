@@ -51,8 +51,8 @@ extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, 
 
 // ── Additional helpers used in pong_states.cpp ────────────────────────────
 
-extern void  util_94B8(int a, int b, void* c, int d, void* e, void* f); // @ 0x8234B8
-extern void  pg_6000_g(void* obj);                         // page group helper
+extern void  QueueGameMessage(int a, int b, void* c, int d, void* e, void* f); // @ 0x823794B8
+extern void  DismissPageGroup(void* obj);                         // page group helper
 extern void  pongAttractState_Shutdown(void* state);       // attract state cleanup
 extern void  xe_main_thread_init_0038();                   // thread init
 extern void  InitializePageGroup(void* pageGroup);         // @ 0x8231F4C0 - page group constructor
@@ -68,11 +68,11 @@ extern void* pg_0890_g(void* pageGroup);                            // page grou
 extern void  hsmContext_SetNextState_2800(void* ctx, int stateIdx); // HSM transition
 extern void  hsmContext_RequestTransition(void* ctx, int idx);      // HSM request
 extern bool  hsmContext_IsTransitioning(void* ctx);                 // HSM query
-extern void  pg_E6E0(void* record, int code, int mask, int a3, int a4); // event dispatcher @ 0x8220E6E0
+extern void  PostPageGroupMessage(void* record, int code, int mask, int a3, int a4); // event dispatcher @ 0x8220E6E0
 extern void* game_AD40(void* obj, uint32_t count);       // credits-roll notify @ 0x8240AD40
 extern void* PostStateTransitionRequest(void* hsmCtx, int stateIdx); // @ 0x822228B8
-extern void  pg_61E8_g(void* mgr, int type, int mode, float fadeTime, float param2); // UI fade
-extern bool  pg_FFF8_g(void* record);                    // input button state check @ 0x8225FFF8
+extern void  FadePageGroup(void* mgr, int type, int mode, float fadeTime, float param2); // UI fade
+extern bool  CheckButtonPressed(void* record);                    // input button state check @ 0x8225FFF8
 extern uint8_t SinglesNetworkClient_B2A8_g(void* pg);   // page group button poll
 extern void*   SinglesNetworkClient_9318_g(uint32_t table, const char* key); // text lookup
 extern void    SinglesNetworkClient_B320_g(void* pg);   // page group notify
@@ -350,7 +350,7 @@ bool pongCreditsContext::CanTransition() {
  *   1. Notifies the page group to start its presentation (slot 2 call).
  *   2. Decides whether to play a background movie or just transition
  *      to state 6 (the credits roll) via hsmContext_SetNextState.
- *   3. Queues a util_94B8 call with the current context data.
+ *   3. Queues a QueueGameMessage call with the current context data.
  *
  * If no page group or not active, falls through silently.
  */
@@ -398,7 +398,7 @@ void pongCreditsContext::OnEnterCredits() {
 
     // Queue credits context data
     extern void* g_creditsContextData;   // @ lbl_8258C000 area (-24384)
-    util_94B8(/*r4=*/2, /*r5=*/1, /*r6=*/g_creditsContextData, /*r7=*/0,
+    QueueGameMessage(/*r4=*/2, /*r5=*/1, /*r6=*/g_creditsContextData, /*r7=*/0,
               g_creditsContextData, g_creditsContextData);
 }
 
@@ -407,7 +407,7 @@ void pongCreditsContext::OnEnterCredits() {
  *
  * Slot 18.  Called when leaving the credits HSM context.
  * Checks the same main-thread gate, then if off-thread and page group
- * is valid, calls pg_6000_g to dismiss the UI and calls slot 6 on
+ * is valid, calls DismissPageGroup to dismiss the UI and calls slot 6 on
  * the page group (Close/Hide).
  */
 void pongCreditsContext::OnExitCredits() {
@@ -425,7 +425,7 @@ void pongCreditsContext::OnExitCredits() {
 
     // Dismiss the UI via the global UI manager
     extern void* g_uiManagerPtr;   // @ lbl_8271A81C
-    pg_6000_g(g_uiManagerPtr);
+    DismissPageGroup(g_uiManagerPtr);
 
     if (m_pPageGroup == nullptr) {
         return;
@@ -598,7 +598,7 @@ void* pongCreditsState::GetContext() {
  * Also enables the page group's auto-advance (+85) if present.
  */
 void pongCreditsState::OnEnter(int prevStateIdx) {
-    pg_E6E0(2053 /*CREDITS_ENTER_MSG*/, 64, 0, 0);
+    PostPageGroupMessage(2053 /*CREDITS_ENTER_MSG*/, 64, 0, 0);
 
     // Enable auto-advance on the page group if it exists
     if (m_pContext != nullptr && m_pContext->m_pPageGroup != nullptr) {
@@ -661,7 +661,7 @@ void pongCreditsState::OnEnter(int prevStateIdx) {
  * Disables page group auto-advance on exit.
  */
 void pongCreditsState::OnExit(int nextStateIdx) {
-    pg_E6E0(2054 /*CREDITS_EXIT_MSG*/, 64, 0, 0);
+    PostPageGroupMessage(2054 /*CREDITS_EXIT_MSG*/, 64, 0, 0);
 
     // Disable auto-advance on the page group
     if (m_pContext != nullptr && m_pContext->m_pPageGroup != nullptr) {
@@ -692,7 +692,7 @@ void pongCreditsState::OnExit(int nextStateIdx) {
  * pongCreditsState::OnEnter.
  *
  * Sets the credits-context display mode:
- *   If visible == 0: calls pg_61E8_g on the UI manager with fade params,
+ *   If visible == 0: calls FadePageGroup on the UI manager with fade params,
  *                    fading from 2.0f over 2 seconds.
  * In both cases, if the page group is valid, writes visible to its
  * state byte (+155) and calls slot 5 (SetVisible/Refresh), then
@@ -702,7 +702,7 @@ void pongCreditsState_9D68_h(pongCreditsContext* ctx, uint8_t visible) {
     if (visible == 0) {
         extern void* g_uiManagerPtr;   // @ lbl_8271A81C
         extern float g_fadeTime;       // @ lbl_8253C000 - 12016 (e.g. 2.0f)
-        pg_61E8_g(g_uiManagerPtr, 2 /*type*/, 1 /*mode*/, g_fadeTime, 0.0f);
+        FadePageGroup(g_uiManagerPtr, 2 /*type*/, 1 /*mode*/, g_fadeTime, 0.0f);
     }
 
     if (ctx->m_pPageGroup != nullptr) {
@@ -789,13 +789,13 @@ static void pongLegalsContext_InputPoll(pongLegalsContext* ctx) {
     for (int i = 0; i < 4; ++i) {
         uint32_t controllerAddr = controllerBase[i * (808 / 4)];
         // Check three button regions at +8, +16, +48
-        bool btn1 = pg_FFF8_g((uint8_t*)controllerAddr + 8);
+        bool btn1 = CheckButtonPressed((uint8_t*)controllerAddr + 8);
         if (btn1) goto input_found;
 
-        bool btn2 = pg_FFF8_g((uint8_t*)controllerAddr + 16);
+        bool btn2 = CheckButtonPressed((uint8_t*)controllerAddr + 16);
         if (btn2) goto input_found;
 
-        bool btn3 = pg_FFF8_g((uint8_t*)controllerAddr + 48);
+        bool btn3 = CheckButtonPressed((uint8_t*)controllerAddr + 48);
         if (btn3) goto input_found;
     }
     return;  // No input detected on any controller
@@ -1318,7 +1318,7 @@ void pongDialogState::Init() {
  *   other → Generic: posts a transition request via PostStateTransitionRequest.
  */
 void pongDialogState::OnEnter(int prevStateIdx) {
-    pg_E6E0(2051 /*DIALOG_ENTER_MSG*/, 64, 0, 0);
+    PostPageGroupMessage(2051 /*DIALOG_ENTER_MSG*/, 64, 0, 0);
 
     // Save and set HSM overlay flag
     extern void* g_hsmMgrPtr;   // loaded from address computation
@@ -1379,7 +1379,7 @@ void pongDialogState::OnEnter(int prevStateIdx) {
  *   - Otherwise: posts generic transition via PostStateTransitionRequest.
  */
 void pongDialogState::OnExit(int nextStateIdx) {
-    pg_E6E0(2052 /*DIALOG_EXIT_MSG*/, 64, 0, 0);
+    PostPageGroupMessage(2052 /*DIALOG_EXIT_MSG*/, 64, 0, 0);
 
     // Restore HSM overlay if we changed it
     if (m_savedOverlay == 0) {

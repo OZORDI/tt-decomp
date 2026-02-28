@@ -76,8 +76,8 @@ extern void util_C930(void* obj);                // @ 0x8224C930  query active c
 extern void util_CDF0(void* blender,
                       const void* clipDesc,
                       uint32_t flags);           // @ 0x8224CDF0  start clip
-extern void pg_CFE0_wrh(void* obj);              // @ 0x8224CFE0  GetCurrentClip
-extern void pg_E6E0(uint32_t msg,
+extern void SetPageGroupVisible(void* obj);              // @ 0x8224CFE0  GetCurrentClip
+extern void PostPageGroupMessage(uint32_t msg,
                     uint8_t  flags,
                     uint32_t, uint32_t,
                     uint32_t, uint32_t);         // @ 0x8225E6E0  send message
@@ -341,7 +341,7 @@ void pcrEmoteBlender::Update()
         else if (wasActive && !isNowActive)
         {
             uint32_t bit = (uint32_t(1) << m_emoteIndex);
-            pg_E6E0(0x100F,            // message id 4111
+            PostPageGroupMessage(0x100F,            // message id 4111
                     uint8_t(bit | 64), // channel flags
                     0, 0, 0, 0);
         }
@@ -421,7 +421,7 @@ bool pcrEmoteBlender::IsActive() const
  */
 void* pcrEmoteBlender::GetCurrentClip()
 {
-    pg_CFE0_wrh(&m_animSubStruct);  // fills the sub-struct's active clip field
+    SetPageGroupVisible(&m_animSubStruct);  // fills the sub-struct's active clip field
     return m_pCurrentClip;
 }
 
@@ -465,7 +465,7 @@ void pcrEmoteBlender::ComputeBlend(void* outBlendVec)
     if (m_state == 1 && m_pCurrentClip)
     {
         // Drive the locomotion blender sub-struct.
-        pg_CFE0_wrh(&m_animSubStruct);
+        SetPageGroupVisible(&m_animSubStruct);
         // TODO: full AltiVec SIMD blend computation — see recomp vfn_10 for detail.
     }
 }
@@ -603,7 +603,7 @@ void pcrPostPointBlender::Update()
 
                     // Send post-point completion message to the UI.
                     uint32_t bit = (uint32_t(1) << m_emoteIndex);
-                    pg_E6E0(0x100F,           // msg 4111
+                    PostPageGroupMessage(0x100F,           // msg 4111
                             uint8_t(bit | 64),
                             0, 0, 0, 0);
 

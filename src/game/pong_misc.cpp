@@ -11,11 +11,14 @@
 // Forward declarations for helpers referenced in this file
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" {
-    void  rage::ReleaseSingleton(void* obj);           // @ 0x821A9420 - ReleaseSingleton
     void  rage_free(void* ptr);                  // @ 0x820C00C0
     void* xe_EC88(uint32_t size);                // @ 0x820DEC88
     void  util_CE30(void* slot);                 // @ 0x8234CE30 - init parStructure
-    void  rage::NotifyObservers(void* self, void* type, uint32_t* out);  // @ 0x...
+}
+
+namespace rage {
+    void ReleaseSingleton(void* obj);            // @ 0x821A9420
+    void NotifyObservers(void* self, void* type, uint32_t* out);  // observer broadcast
 }
 
 // Logging stub (calls internal debug printf, no-op in release builds)

@@ -100,7 +100,7 @@ extern const float k_standardAspectScale;
 extern void SinglesNetworkClient_EFB8_g(void);
 
 /* Physics world addref wrapper @ 0x8222AB48 */
-extern void rage::AcquireReference(void* pObj);
+extern void rage_AcquireReference(void* pObj);  /* rage::AcquireReference @ 0x8222AB48 */
 
 /* Physics material manager per-frame update @ 0x8222AE20 */
 extern void phMaterialMgrImpl_AE20_p46(void* pObj);
@@ -208,7 +208,7 @@ void gameLoop_Tick(gameLoop* pLoop)
 
     /* Acquire physics world reference. */
     void* pWorld = g_pPhysicsWorld;
-    rage::AcquireReference(pWorld);
+    rage_AcquireReference(pWorld);
 
     /* Iterate physics objects. */
     uint8_t* pWorldBytes = (uint8_t*)pWorld;
@@ -791,7 +791,7 @@ extern void rage_GetExecutableName(const char* pKey, uint32_t* pOut);
 extern void rage_CEF0(hsmContext* pHsm);
 
 /* Net system / singleton init @ 0x8234B618 */
-extern void rage::InitializeNetSystem(void);
+extern void rage_InitializeNetSystem(void);  /* rage::InitializeNetSystem @ 0x8221EFxx */
 
 /* Allocator — accessed via global allocator pointer chain.
  * The pattern is: lwz r3, 0(r13); lwzx r3, r25, r24; VCALL slot 1.
@@ -816,7 +816,7 @@ extern void fiStreamBuf_Close(void* pObj);
 extern void nop_8240E6D0(const char* pFmt, ...);
 
 /* Display device creation @ 0x82243E20 */
-extern void grcDisplay_create_3E20(void* pDisplay);
+extern void grcDisplay_Create(void* pDisplay);
 
 /* Display device vtable (rdata). */
 extern void* grcDisplay_vtable;   /* lbl_8204EAEC */
@@ -935,7 +935,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
             *(uint16_t*)(pNet + 22) = 0;
             *(uint16_t*)(pNet + 20) = 0;
             *(uint32_t*)(pNet + 16) = 0;
-            rage::InitializeNetSystem();
+            rage_InitializeNetSystem();
             g_pNetSystem = pNetMem;
         } else {
             g_pNetSystem = NULL;
@@ -1073,7 +1073,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
             *(void**)(pDisp + 0) = &grcDisplay_vtable;
             *(uint32_t*)(pDisp + 4) = 0;
             /* Initialise grcDisplay subsystem at +8. */
-            grcDisplay_create_3E20(pDisp + 8);
+            grcDisplay_Create(pDisp + 8);
             /* Zero display mode fields. */
             *(uint16_t*)(pDisp + 74) = 0;
             *(uint16_t*)(pDisp + 72) = 0;

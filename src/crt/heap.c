@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "rage/rage_allocator.h"
+#include "rage/singleton.h"
 
 /* ── External declarations ──────────────────────────────────────────── */
 
@@ -54,7 +55,7 @@ void rage_free(void* ptr)
         return;
 
     /* If the singleton registry claims this pointer, don't free it */
-    uint8_t singletonStatus = rage::FindSingleton(ptr);
+    uint8_t singletonStatus = rage_FindSingleton(ptr);
     if (singletonStatus != 0)
         return;
 
@@ -131,7 +132,7 @@ void sysMemAllocator_Free(void* ptr)
 
     if (!isOwned) {
         /* Not owned by allocator — check singleton registry */
-        uint8_t singletonStatus = rage::FindSingleton(ptr);
+        uint8_t singletonStatus = rage_FindSingleton(ptr);
         if (singletonStatus != 0)
             return;
 

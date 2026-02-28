@@ -184,10 +184,24 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.s: cmake_
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/Ozordi/Downloads/tt-decomp/src/rage/audio_control_wrappers.cpp -o CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.s
 
+CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o: CMakeFiles/RockstarTableTennis.dir/flags.make
+CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/fsmMachine.c
+CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/fsmMachine.c
+
+CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /Users/Ozordi/Downloads/tt-decomp/src/rage/fsmMachine.c > CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.i
+
+CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/Ozordi/Downloads/tt-decomp/src/rage/fsmMachine.c -o CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.s
+
 CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/game_loop.c
 CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/game_loop.c
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.i: cmake_force
@@ -201,7 +215,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/main.c
 CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/main.c
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.i: cmake_force
@@ -215,7 +229,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/rage_cm.cpp
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/rage_cm.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.i: cmake_force
@@ -229,7 +243,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/rage_grm.cpp
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/rage_grm.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.i: cmake_force
@@ -243,7 +257,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/rage_grm.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/render_loop.c
 CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/render_loop.c
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.i: cmake_force
@@ -257,7 +271,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/scene_render.c
 CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/scene_render.c
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.i: cmake_force
@@ -271,7 +285,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/session_events.cpp
 CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/session_events.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.i: cmake_force
@@ -285,7 +299,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/session_events.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/subsystem_init.c
 CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/subsystem_init.c
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.i: cmake_force
@@ -299,7 +313,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/swf.cpp
 CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/swf.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.i: cmake_force
@@ -313,7 +327,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/swf.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/rage/timer.cpp
 CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/rage/timer.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.i: cmake_force
@@ -327,7 +341,7 @@ CMakeFiles/RockstarTableTennis.dir/src/rage/timer.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/gd_data.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/gd_data.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.i: cmake_force
@@ -341,7 +355,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/mc_memcard.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/mc_memcard.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.i: cmake_force
@@ -355,7 +369,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_audio.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_audio.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.i: cmake_force
@@ -369,7 +383,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_audio.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_ball.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_ball.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.i: cmake_force
@@ -383,7 +397,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_creature.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_creature.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.i: cmake_force
@@ -397,7 +411,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_creature.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_drill.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_drill.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.i: cmake_force
@@ -411,7 +425,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_drill.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_misc.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_misc.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.i: cmake_force
@@ -425,7 +439,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_misc.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_network.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_network.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.i: cmake_force
@@ -439,7 +453,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_network.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_player.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_player.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.i: cmake_force
@@ -453,7 +467,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_player.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_render.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_render.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.i: cmake_force
@@ -467,7 +481,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_render.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/game/pong_states.cpp
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/game/pong_states.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.i: cmake_force
@@ -481,7 +495,7 @@ CMakeFiles/RockstarTableTennis.dir/src/game/pong_states.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/anim/pcr_anim_blenders.cpp
 CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/anim/pcr_anim_blenders.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.i: cmake_force
@@ -495,7 +509,7 @@ CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/graphics/texture_reference.cpp
 CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/graphics/texture_reference.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.i: cmake_force
@@ -509,7 +523,7 @@ CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.s: cmake_f
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_node.cpp
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_node.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.i: cmake_force
@@ -523,7 +537,7 @@ CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_drawable.cpp
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_drawable.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.i: cmake_force
@@ -537,7 +551,7 @@ CMakeFiles/RockstarTableTennis.dir/src/scene/sg_drawable.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_physical.cpp
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_physical.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.i: cmake_force
@@ -551,7 +565,7 @@ CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.s: cmake_force
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o: CMakeFiles/RockstarTableTennis.dir/flags.make
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o: /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_scene_graph.cpp
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o: CMakeFiles/RockstarTableTennis.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o -MF CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o.d -o CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o -c /Users/Ozordi/Downloads/tt-decomp/src/scene/sg_scene_graph.cpp
 
 CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.i: cmake_force
@@ -572,6 +586,7 @@ RockstarTableTennis_OBJECTS = \
 "CMakeFiles/RockstarTableTennis.dir/src/crt/string.c.o" \
 "CMakeFiles/RockstarTableTennis.dir/src/rage/app_init.c.o" \
 "CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.o" \
+"CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o" \
 "CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o" \
 "CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o" \
 "CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o" \
@@ -611,6 +626,7 @@ bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/crt/startup.c.o
 bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/crt/string.c.o
 bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/rage/app_init.c.o
 bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.o
+bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o
 bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o
 bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o
 bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/src/rage/rage_cm.cpp.o
@@ -642,7 +658,7 @@ bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/build.make
 bin/RockstarTableTennis: /opt/homebrew/Cellar/sdl2/2.32.10/lib/libSDL2.dylib
 bin/RockstarTableTennis: /opt/homebrew/lib/libGLEW.2.3.1.dylib
 bin/RockstarTableTennis: CMakeFiles/RockstarTableTennis.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Linking CXX executable bin/RockstarTableTennis"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Linking CXX executable bin/RockstarTableTennis"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/RockstarTableTennis.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

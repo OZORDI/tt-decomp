@@ -9,10 +9,14 @@
 
 // External function declarations
 extern void rage_free(void* ptr);
-extern void rage::ReleaseSingleton(void* obj);
 extern void game_8EE8(void* obj);                    // @ 0x820F8EE8 - Object cleanup
 extern void util_6C20(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
-extern bool rage::FindSingleton(void* obj);        // @ 0x820F90D0 - Check if singleton exists
+
+namespace rage {
+    void  ReleaseSingleton(void* obj);               // @ 0x821A9420
+    bool  FindSingleton(void* obj);                  // @ 0x820F90D0
+    void* UnregisterSingleton(const void* key);      // @ 0x820C29E0
+}
 
 // Global state
 extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
@@ -268,7 +272,7 @@ void gdRivalry::PostLoadChildren() {
 
 // External dependencies
 extern void* atSingleton_91E0_gen(uint32_t size);      // @ 0x821A91E0 - Get singleton
-extern void* rage::UnregisterSingleton(const void* key);      // @ 0x820C29E0 - Hash field key
+// rage::UnregisterSingleton declared in namespace block above
 extern void rage_free(void* ptr);                 // @ 0x820C00C0 - Free memory
 
 // Global serialization registry (SDA offset 0)

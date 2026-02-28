@@ -7,7 +7,7 @@
  *
  *   grcDevice_beginScene  @ 0x82305E78 (392 bytes)
  *     — Gates scene start on multiple render-state conditions, then
- *       calls pg_5D50_g to begin the GPU pass and dispatches BeginScene
+ *       calls CreatePageGroup to begin the GPU pass and dispatches BeginScene
  *       + channel-flag calls to the attached grcRenderTargetXenon.
  *
  *   grcDevice_clear_9290  @ 0x82379290 (400 bytes)
@@ -35,13 +35,13 @@
 /* ── External dependencies ────────────────────────────────────────────────── */
 
 /* pg subsystem — begin GPU pass for this device @ 0x82305D50 */
-extern void pg_5D50_g(void* pDevice);
+extern void CreatePageGroup(void* pDevice);
 
 /* pgStreamer — cancel profiling bracket (mode=-1) @ 0x8242C3B8 */
-extern void pg_C3B8_g(void* pStream, int32_t mode);
+extern void GetPageGroupState(void* pStream, int32_t mode);
 
 /* pgStreamer — open profiling bracket (mode=1) @ 0x82566DC0 */
-extern void pg_6DC0_g(void* pStream, int32_t mode);
+extern void RenderPageGroup(void* pStream, int32_t mode);
 
 /* gameLoop singleton pointer (gameLoop struct defined in render_loop.c) */
 extern void* g_loop_obj_ptr;   /* @ 0x825EAB30 */
@@ -120,7 +120,7 @@ typedef struct {
 /* ═══════════════════════════════════════════════════════════════════════════
  * grcDevice_beginScene @ 0x82305E78 | size: 0x188 (392 bytes)
  *
- * Gates GPU scene start on a chain of conditions, then calls pg_5D50_g to
+ * Gates GPU scene start on a chain of conditions, then calls CreatePageGroup to
  * begin the actual GPU pass and dispatches channel-flag calls to the render
  * target vtable.
  *
@@ -134,16 +134,16 @@ typedef struct {
  *
  * After all gates pass:
  *   1. If gameLoop->m_pStreamObj == NULL or m_pStreamObj[4] == 0:
- *        call pg_5D50_g(this) to begin the GPU pass.
+ *        call CreatePageGroup(this) to begin the GPU pass.
  *   2. If !m_bDeviceReady: return.
  *   3. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
- *        cancel the profiling bracket (pg_C3B8_g(m_pStreamObj[56], -1)).
+ *        cancel the profiling bracket (GetPageGroupState(m_pStreamObj[56], -1)).
  *   4. If m_pRenderTarget != NULL:
  *        vtable[11](pRT, m_bColorChannel)
  *        vtable[12](pRT, m_bDepthChannel)
  *        vtable[8](pRT)
  *   5. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
- *        open profiling bracket (pg_6DC0_g(m_pStreamObj[56], 1)).
+ *        open profiling bracket (RenderPageGroup(m_pStreamObj[56], 1)).
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
 {
@@ -197,9 +197,9 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     }
 
     if (pStreamObj == NULL || streamActive == 0) {
-        /* No active stream — call pg_5D50_g to begin the GPU pass now. */
-        pg_5D50_g(pDevice);
-        /* Re-read gameLoop; pg_5D50_g may update global state. */
+        /* No active stream — call CreatePageGroup to begin the GPU pass now. */
+        CreatePageGroup(pDevice);
+        /* Re-read gameLoop; CreatePageGroup may update global state. */
         pLoop = (uint8_t*)g_loop_obj_ptr;
     }
 
@@ -213,7 +213,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     if (pStreamObj != NULL && ((uint8_t*)pStreamObj)[4] != 0) {
         /* An active profiling bracket is open — cancel it before proceeding. */
         void* pStream = *(void**)((uint8_t*)pStreamObj + 56);
-        pg_C3B8_g(pStream, -1);
+        GetPageGroupState(pStream, -1);
         /* Re-read gameLoop after the call. */
         pLoop = (uint8_t*)g_loop_obj_ptr;
     }
@@ -240,7 +240,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     pStreamObj = *(void**)((uint8_t*)pLoop + 556);
     if (pStreamObj != NULL && ((uint8_t*)pStreamObj)[4] != 0) {
         void* pStream = *(void**)((uint8_t*)pStreamObj + 56);
-        pg_6DC0_g(pStream, 1);
+        RenderPageGroup(pStream, 1);
     }
 }
 

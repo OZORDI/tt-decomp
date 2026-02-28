@@ -16,15 +16,15 @@ extern "C" {
     void* xe_EC88(uint32_t size);
     void xe_main_thread_init_0038();
     void rage::ReleaseSingleton(void* obj);
-    void util_1568(void* obj);
+    void audControl_Destructor(void* obj);  // @ 0x82161568
     void atArray_Destructor(void* obj);
     void atArray_Clear(void* obj);
     void xmlNodeStruct_SerializeField(void* obj, const char* name, void* target, void* defaultVal, uint32_t flags);
     int32_t util_2458_FindCharacterIndex(void* gameData, const char* name);
     void nop_8240E6D0(const char* message, void* a, void* b);
-    void pg_E6E0(int code, int param1, int param2, int param3);
+    void PostPageGroupMessage(int code, int param1, int param2, int param3);
     void PostStateTransitionRequest(void* manager, int32_t eventType);
-    void pg_61E8_g(void* context, float param, int p2, int p3, int p4, int p5);
+    void FadePageGroup(void* context, float param, int p2, int p3, int p4, int p5);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ void pongAttractState::OnExit() {
  */
 void pongAttractState::OnEvent(int32_t eventType) {
     // Call initialization function
-    pg_E6E0(2055, 64, 0, 0);
+    PostPageGroupMessage(2055, 64, 0, 0);
     
     if (eventType == 6) {
         // Event 6: Create UI state
@@ -91,7 +91,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         g_global_ui_state[14] = (uint32_t)m_pScreenObject;  // Screen object pointer
         
         // Initialize UI context
-        pg_61E8_g(g_ui_context, 0.0f, 1, 0, 0, 0);
+        FadePageGroup(g_ui_context, 0.0f, 1, 0, 0, 0);
         
         // Clear flag on screen object
         if (m_pScreenObject) {
@@ -427,7 +427,7 @@ uint32_t charViewData::GetDataInfo() {
  */
 charViewCS::~charViewCS() {
     // Clean up embedded object at +292
-    util_1568(&m_embeddedObject);
+    audControl_Destructor(&m_embeddedObject);
     
     // Update vtable pointer
     m_vtable = (void**)g_vtable_char_view_cs;

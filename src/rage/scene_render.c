@@ -46,11 +46,11 @@ extern void    pg_EDE0_gen(void* pPageObj, char flag);
 /* Assert / debug log — no-op in release @ 0x8240E6D0 */
 extern void    nop_8240E6D0(const char* msg);
 
-/* pg_C3B8_g — pgStreamer start/cancel profiling stamp @ 0x8242C3B8 */
-extern void    pg_C3B8_g(void* pPgObj, int32_t mode);
+/* GetPageGroupState — pgStreamer start/cancel profiling stamp @ 0x8242C3B8 */
+extern void    GetPageGroupState(void* pPgObj, int32_t mode);
 
-/* pg_6C40_g — pgStreamer finalize stream @ 0x82566C40 */
-extern void    pg_6C40_g(void* pStream);
+/* UpdatePageGroup — pgStreamer finalize stream @ 0x82566C40 */
+extern void    UpdatePageGroup(void* pStream);
 
 /* gameLoop struct defined in render_loop.c / rage_system.hpp */
 #include "rage/game_loop_types.h"
@@ -315,7 +315,7 @@ void rage_render_default(void)
  *   +0x00  vtable*
  *   +0x04  uint8_t  m_bInitialized   — must be 1; abort if 0
  *   +0x07  uint8_t  m_bSkipRender    — when 1, skip this frame entirely
- *   +0x14  void*    m_pStream        — stream handle for pg_6C40_g
+ *   +0x14  void*    m_pStream        — stream handle for UpdatePageGroup
  *   +0x18  void*    m_pPgObj         — pgStreamer object for profiling
  * ═══════════════════════════════════════════════════════════════════════════ */
 typedef struct {
@@ -324,7 +324,7 @@ typedef struct {
     uint8_t  _pad0[2];
     uint8_t  m_bSkipRender;   /* +0x07 — skip this frame when set */
     uint8_t  _pad1[12];
-    void*    m_pStream;       /* +0x14 — stream handle for pg_6C40_g */
+    void*    m_pStream;       /* +0x14 — stream handle for UpdatePageGroup */
     void*    m_pPgObj;        /* +0x18 — pgStreamer profiling object */
 } rageSceneRenderCtx;
 
@@ -345,14 +345,14 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
     uint64_t tStart = __mftb();
 
     /* 4. pgStreamer profiling bracket.
-     *    The assembly calls pg_C3B8_g twice: once with mode=0 (start) and,
+     *    The assembly calls GetPageGroupState twice: once with mode=0 (start) and,
      *    if the result indicates failure (cntlzw idiom returns 0), again
      *    with mode=-1 (cancel).  g_bProfilingActive is the shared gate. */
     if (!g_bProfilingActive) {
-        pg_C3B8_g(pThis->m_pPgObj, 0);  /* attempt to start profiling */
+        GetPageGroupState(pThis->m_pPgObj, 0);  /* attempt to start profiling */
         if (!g_bProfilingActive) {
             /* Profiling start failed or gate cleared — cancel the bracket. */
-            pg_C3B8_g(pThis->m_pPgObj, -1);
+            GetPageGroupState(pThis->m_pPgObj, -1);
         }
     }
 
@@ -381,5 +381,5 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
     }
 
     /* 8. Finalise / flush the render stream. */
-    pg_6C40_g(pThis->m_pStream);
+    UpdatePageGroup(pThis->m_pStream);
 }

@@ -9,10 +9,13 @@
 #include "rage/memory.h"
 
 // External function declarations
-extern void util_1568(void* obj);
-extern void rage::ReleaseSingleton(void* singleton);
+extern void audControl_Destructor(void* obj);  // @ 0x82161568
 extern void* xe_EC88(uint32_t size);
-extern void rage::BindObject(void* obj1, void* obj2, uint32_t param3, uint32_t param4);
+
+namespace rage {
+    void  ReleaseSingleton(void* singleton);         // @ 0x821A9420
+    void  BindObject(void* obj1, void* obj2, uint32_t param3, uint32_t param4);
+}
 extern void* mfMotionClipRAGE_B8D8_g(void* clip, uint32_t param2, uint32_t param3, uint32_t param4);
 
 // Global pointers
@@ -103,7 +106,7 @@ gmBallRobot::~gmBallRobot() {
     m_vtable2 = reinterpret_cast<void*>(kRobotVtableSecondary);
 
     *reinterpret_cast<void**>(&m_audControl3d[0]) = reinterpret_cast<void*>(kAudControlVtable);
-    util_1568(&m_audControl3d[0]);
+    audControl_Destructor(&m_audControl3d[0]);
     rage::ReleaseSingleton(&m_singletonData[0]);
 
     m_vtable2 = reinterpret_cast<void*>(kSingletonVtableSecondary);

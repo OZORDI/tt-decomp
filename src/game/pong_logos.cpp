@@ -15,10 +15,10 @@
 // Forward declarations
 extern "C" void PostStateTransitionRequest(void* obj);
 extern "C" void nop_8240E6D0(const char* debugStr, void* obj, uint32_t stateIdx);
-extern "C" void pg_61E8_g(void* grcDevice, float fadeValue, uint32_t p3, uint32_t p4, uint32_t p5);
+extern "C" void FadePageGroup(void* grcDevice, float fadeValue, uint32_t p3, uint32_t p4, uint32_t p5);
 extern "C" void grcDevice_beginScene(void* grcDevice);
-extern "C" void pg_6000_g(void* grcDevice);
-extern "C" void pg_60D8_g(void* grcDevice);
+extern "C" void DismissPageGroup(void* grcDevice);
+extern "C" void ShowPageGroup(void* grcDevice);
 extern "C" void xe_main_thread_init_0038();
 extern "C" void game_AC88(void* obj);
 extern "C" void hsmContext_SetNextState_2800(void* hsmContext, uint32_t nextStateIdx);
@@ -110,7 +110,7 @@ extern "C" uint32_t pongLogosContext_ProcessInput(pongLogosContext* self) {
 extern "C" void pongLogosContext_OnUpdate(pongLogosContext* self) {
     // Check if graphics device has finished displaying logos
     void* grcDevice = g_grcDevice_ptr;
-    uint8_t isComplete = pg_60D8_g(grcDevice);
+    uint8_t isComplete = ShowPageGroup(grcDevice);
     
     if (!isComplete) {
         // Logos still displaying, transition to next state
@@ -126,13 +126,13 @@ extern "C" void pongLogosContext_OnUpdate(pongLogosContext* self) {
  * pongLogosContext::Render @ 0x82306DA8 | size: 0xC
  * 
  * Renders the logos screen. Delegates to the graphics device's
- * render function (pg_6000_g).
+ * render function (DismissPageGroup).
  * 
  * This is slot 18 in the hsmContext vtable.
  */
 extern "C" void pongLogosContext_OnShutdown(pongLogosContext* self) {
     void* grcDevice = g_grcDevice_ptr;
-    pg_6000_g(grcDevice);
+    DismissPageGroup(grcDevice);
 }
 
 /**
@@ -169,7 +169,7 @@ extern "C" void pongLogosState_OnEnter(pongLogosState* self, uint32_t prevStateI
         // lfs f1,-12016(r11) loads a float constant (likely 1.0f for full opacity)
         float fadeValue = 1.0f;
         void* grcDevice = g_grcDevice_ptr;
-        pg_61E8_g(grcDevice, fadeValue, 0, 0, 0);
+        FadePageGroup(grcDevice, fadeValue, 0, 0, 0);
         
         // Begin rendering scene
         grcDevice_beginScene(grcDevice);
@@ -209,7 +209,7 @@ extern "C" void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateId
         // Fade out the logos
         float fadeValue = 1.0f;
         void* grcDevice = g_grcDevice_ptr;
-        pg_61E8_g(grcDevice, fadeValue, 0xFFFFFFFF, 0, 0);  // -1 = fade out
+        FadePageGroup(grcDevice, fadeValue, 0xFFFFFFFF, 0, 0);  // -1 = fade out
         
         // Clear UI manager state
         struct UIManager {

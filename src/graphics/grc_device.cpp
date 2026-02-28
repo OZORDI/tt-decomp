@@ -20,9 +20,9 @@ extern uint32_t g_pCamActionsFlags;    // @ 0x825D07D0 — Camera action flags
 extern void* g_pHudOverlay;            // @ 0x825EBAA0 — HUD overlay object
 
 // Graphics subsystem functions
-extern void pg_5D50_g(void* pDevice);           // @ 0x82305D50 — Begin GPU pass
-extern void pg_C3B8_g(void* pStream, int32_t mode);  // @ 0x8242C3B8 — Cancel profiling
-extern void pg_6DC0_g(void* pStream, int32_t mode);  // @ 0x82566DC0 — Open profiling
+extern void CreatePageGroup(void* pDevice);           // @ 0x82305D50 — Begin GPU pass
+extern void GetPageGroupState(void* pStream, int32_t mode);  // @ 0x8242C3B8 — Cancel profiling
+extern void RenderPageGroup(void* pStream, int32_t mode);  // @ 0x82566DC0 — Open profiling
 
 // Memory management
 extern void rage_free_00C0(void* ptr);      // @ 0x820C00C0
@@ -129,7 +129,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     
     if (!streamActive) {
         // No active profiling stream — begin GPU pass now
-        pg_5D50_g(pDevice);
+        CreatePageGroup(pDevice);
         pLoop = (gameLoop*)g_loop_obj_ptr;  // Reload after GPU call
     }
     
@@ -141,7 +141,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     /* ── Profiling Bracket: Cancel Before Render Target ─────────────────── */
     pStreamObj = (pgStreamObj*)pLoop->m_pStreamObj;
     if (pStreamObj != NULL && pStreamObj->m_bActive != 0) {
-        pg_C3B8_g(pStreamObj->m_pStream, -1);
+        GetPageGroupState(pStreamObj->m_pStream, -1);
         pLoop = (gameLoop*)g_loop_obj_ptr;
     }
     
@@ -167,7 +167,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     /* ── Profiling Bracket: Open After Render Target ────────────────────── */
     pStreamObj = (pgStreamObj*)pLoop->m_pStreamObj;
     if (pStreamObj != NULL && pStreamObj->m_bActive != 0) {
-        pg_6DC0_g(pStreamObj->m_pStream, 1);
+        RenderPageGroup(pStreamObj->m_pStream, 1);
     }
 }
 

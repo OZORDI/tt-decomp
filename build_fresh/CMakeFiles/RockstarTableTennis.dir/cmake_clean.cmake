@@ -41,6 +41,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/RockstarTableTennis.dir/src/rage/app_init.c.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.o"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/audio_control_wrappers.cpp.o.d"
+  "CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o"
+  "CMakeFiles/RockstarTableTennis.dir/src/rage/fsmMachine.c.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/game_loop.c.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/main.c.o"

@@ -4,7 +4,11 @@
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  */
 
+#ifdef __cplusplus
 #include <cstdint>
+#else
+#include <stdint.h>
+#endif
 #include "../rage/rage_dat.hpp"
 
 namespace rage {

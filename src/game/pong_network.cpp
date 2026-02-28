@@ -49,12 +49,12 @@ extern void* SinglesNetworkClient_58E8_g(uint8_t playerIdx);                  //
 // Network I/O helpers (implemented in pong_network_io.cpp)
 extern void WriteFloatToNetworkStream(void* client, float value);              // @ 0x820D6990
 extern void WriteBallHitDataToNetwork(void* ballHitData, void* client);       // @ 0x821D5738
-extern void  util_5538(void* client, void* dst, int size);  // read size-bit aligned block
-extern void  util_7040(void* dst, void* src);       // copy 16-byte vector
-extern void  util_7A08(void* client, void* field, int size); // read byte from net stream
+extern void DeserializeNetworkData(void* client, void* dst, int size);  // @ 0x821D5538 - read size-bit aligned block
+extern void CopyVectorThreadSafe(void* dst, void* src);       // @ 0x82287040 - copy 16-byte vector
+extern void ReadBitsFromStream(void* client, void* field, int size); // @ 0x820D7A08 - read byte from net stream
 // Serve setup
 extern void  ServeStartedMessage_CFE8_2h(void* matchState);
-extern void  pg_E6E0(int eventCode, int arg1, int arg2, int arg3, int arg4);
+extern void  PostPageGroupMessage(int eventCode, int arg1, int arg2, int arg3, int arg4);
 // Pool intrinsics
 extern uint8_t* g_pNetMsgPoolBase;    // @ 0x825D11D0 (singleton pointer)
 extern const char g_szServeStartedTypeName[];  // @ 0x8206E9D0
@@ -90,7 +90,7 @@ void ServeStartedMessage::Deserialise(void* client)
     m_timingRef = timingRef;
 
     // Read 16-byte target position vector.
-    util_5538(client, &m_targetPos, 32);
+    DeserializeNetworkData(client, &m_targetPos, 32);
     WriteBallHitDataToNetwork(&m_targetPos, client);  // finalise position read
 
     // Read four velocity floats.
@@ -107,9 +107,9 @@ void ServeStartedMessage::Deserialise(void* client)
     m_spin = timingRef;
 
     // Read three byte flags.
-    util_7A08(client, &m_playerIndex,   8);
-    util_7A08(client, &m_bNotServer,  8);
-    util_7A08(client, &m_bSecondaryPlayer,  8);
+    ReadBitsFromStream(client, &m_playerIndex,   8);
+    ReadBitsFromStream(client, &m_bNotServer,  8);
+    ReadBitsFromStream(client, &m_bSecondaryPlayer,  8);
 }
 
 
@@ -162,8 +162,8 @@ void ServeStartedMessage::Serialise(void* client)
 //     Stores that inverted flag at pongLerpQueue[500][+360] (m_bIsServer).
 //  7. Checks whether the inner player state is in "serve ready" (stateCode=0,
 //     subState=3) and m_bNotServer is set.  If so fires a network event
-//     pg_E6E0(14348, playerCount|0x40, 0, 0) — "serve accepted" event.
-//  8. Fires a second pg_E6E0(14377, playerCount|0x40, 0, 0) unconditionally
+//     PostPageGroupMessage(14348, playerCount|0x40, 0, 0) — "serve accepted" event.
+//  8. Fires a second PostPageGroupMessage(14377, playerCount|0x40, 0, 0) unconditionally
 //     — "serve started" broadcast event.
 //
 // Python-verified:
@@ -187,7 +187,7 @@ void ServeStartedMessage::Process(void* matchObj)
     int32_t  lerpSlot   = *(int32_t*)((uint8_t*)player + 464);
     uint8_t* lerpTable  = g_pPlayerLerpTable + (lerpSlot * 416) + 12;
     void*    lerpEntry  = (void*)(lerpTable + (lerpSlot + 17) * 4);
-    util_7040(lerpEntry, &m_targetPos);
+    CopyVectorThreadSafe(lerpEntry, &m_targetPos);
 
     // Step 4: write handedness flag into the recovery state.
     pongPlayer* pPlayer    = *(pongPlayer**)((uint8_t*)player + 452);
@@ -220,14 +220,14 @@ void ServeStartedMessage::Process(void* matchObj)
         // lerpSlot == 0 → playerCount=1, else playerCount=2
         int32_t lerpSlot2    = *(int32_t*)((uint8_t*)player + 464);
         uint8_t playerCount  = (lerpSlot2 == 0) ? 1 : 2;
-        pg_E6E0(14348, (int)(playerCount | 0x40), 0, 0, 0);
+        PostPageGroupMessage(14348, (int)(playerCount | 0x40), 0, 0, 0);
     }
 
     // Step 8: unconditional "serve started" broadcast.
     {
         int32_t lerpSlot3   = *(int32_t*)((uint8_t*)player + 464);
         uint8_t playerCount = (lerpSlot3 == 0) ? 1 : 2;
-        pg_E6E0(14377, (int)(playerCount | 0x40), 0, 0, 0);
+        PostPageGroupMessage(14377, (int)(playerCount | 0x40), 0, 0, 0);
     }
 }
 

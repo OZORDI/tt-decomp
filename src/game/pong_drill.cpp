@@ -11,7 +11,7 @@
 
 // External function declarations
 extern "C" {
-    void pg_E480(int param1, int param2, const char* param3, int param4);
+    void ProcessPageGroupInput(int param1, int param2, const char* param3, int param4);
     void nop_8240E6D0(const char* message);
     void xmlNodeStruct_vfn_2(void* self);  // @ base class PostLoadProperties
 }
@@ -83,7 +83,7 @@ void pongTrainingDrill::IncreaseNumSuccesses(int increment) {
     
     // Update UI
     // Original: li r3,20488; li r4,64; addi r5,r11,30872; li r6,1
-    pg_E480(20488, 64, nullptr, 1);
+    ProcessPageGroupInput(20488, 64, nullptr, 1);
 }
 
 /**
