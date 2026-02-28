@@ -280,3 +280,41 @@ bool IsMatrixIdentity(const float* matrix) {
 uint8_t game_3C70(const float* matrix) {
     return IsMatrixIdentity(matrix) ? 1 : 0;
 }
+
+/**
+ * pongBlendLookAtDriver::CalculateBlendFactor @ 0x820D0CA0 | size: 0x2C
+ * [vtable slot 18]
+ *
+ * Calculates a blend factor for look-at animation based on the difference
+ * between the current look-at angle and a reference angle.
+ *
+ * Formula: abs(currentAngle - refAngle) * multiplier * blendWeight
+ *
+ * @return Blend factor (float in f1)
+ */
+float pongBlendLookAtDriver::CalculateBlendFactor() {
+    // Load current look-at angle from +224
+    float currentAngle = *(float*)((char*)this + 224);
+    
+    // Load blend weight from +16
+    float blendWeight = *(float*)((char*)this + 16);
+    
+    // Load reference angle from global @ 0x8202D10C
+    extern const float g_lookAtRefAngle;  // @ 0x8202D10C
+    float refAngle = g_lookAtRefAngle;
+    
+    // Calculate angle difference
+    float angleDiff = currentAngle - refAngle;
+    
+    // Take absolute value
+    float absAngleDiff = (angleDiff < 0.0f) ? -angleDiff : angleDiff;
+    
+    // Load multiplier from global @ 0x8202D184
+    extern const float g_lookAtMultiplier;  // @ 0x8202D184
+    float multiplier = g_lookAtMultiplier;
+    
+    // Calculate final blend factor
+    float blendFactor = absAngleDiff * multiplier * blendWeight;
+    
+    return blendFactor;
+}

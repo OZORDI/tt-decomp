@@ -517,4 +517,352 @@ void parMemberString::vfn_8(std::uint32_t memberOffset) {
     *ResolveAddress<char>(memberAddress) = '\0';
 }
 
+/**
+ * parMemberArray::vfn_0 @ 0x8234E088 | size: 0x50
+ *
+ * Scalar destructor wrapper that tears down array serializer state and
+ * optionally frees this instance when the low bit in `freeSelf` is set.
+ */
+void* parMemberArray::vfn_0(std::uint32_t freeSelf) {
+    E0D8_h();
+
+    if ((freeSelf & 0x1u) != 0u) {
+        rage_free_00C0(this);
+    }
+
+    return this;
+}
+
+/**
+ * parMemberArray::E0D8_h @ 0x8234E0D8 | size: 0x60
+ *
+ * Drops the owned element serializer object and restores the base
+ * rage::parMember vtable pointer.
+ */
+void parMemberArray::E0D8_h() {
+    *reinterpret_cast<std::uint32_t*>(this) = kParMemberArrayVtable;
+
+    if (m_pElementSerializer != nullptr) {
+        using ScalarDtorFn = void (*)(void* self, std::uint32_t freeSelf);
+        GetVirtualSlot<ScalarDtorFn>(m_pElementSerializer, 0)(m_pElementSerializer, 1u);
+    }
+
+    *reinterpret_cast<std::uint32_t*>(this) = kParMemberVtable;
+}
+
+/**
+ * parMemberArray::E138 @ 0x8234E138 | size: 0x234
+ *
+ * Computes the backing data address and active element count for an array
+ * member based on the descriptor storage mode.
+ */
+void parMemberArray::E138(
+    std::uint32_t memberOffset,
+    std::uint32_t* outDataAddress,
+    std::uint32_t* outElementCount
+) {
+    if (outDataAddress == nullptr || outElementCount == nullptr) {
+        return;
+    }
+
+    *outDataAddress = 0u;
+    *outElementCount = 0u;
+
+    parMemberDescriptor32* descriptor = GetArrayDescriptor(this);
+    if (descriptor == nullptr) {
+        return;
+    }
+
+    switch (descriptor->m_storageMode) {
+        case 0: {
+            const Address32 headerAddress = GetArrayMemberBaseAddress(this) + memberOffset;
+            const std::uint16_t elementCount = *ResolveAddress<std::uint16_t>(headerAddress + 4u);
+            if (elementCount > 0u) {
+                *outDataAddress = *ResolveAddress<Address32>(headerAddress);
+                *outElementCount = elementCount;
+            }
+            return;
+        }
+
+        case 1: {
+            nop_8240E6D0(ResolveAddress<const char>(kParArrayLegacyProbeString));
+
+            const Address32 memberAddress = GetArrayMemberBaseAddress(this) + memberOffset;
+            Address32* pLargeCount = ResolveAddress<Address32>(memberAddress + kParArrayLargeStorageOffset);
+            if (*pLargeCount == 0u) {
+                *pLargeCount = 0u;
+            }
+
+            *outDataAddress = memberAddress;
+            *outElementCount = *pLargeCount;
+            return;
+        }
+
+        case 2:
+            *outDataAddress = GetArrayMemberBaseAddress(this) + memberOffset;
+            *outElementCount = descriptor->m_elementCapacity;
+            return;
+
+        case 3:
+            *outDataAddress = *ResolveAddress<Address32>(GetArrayMemberBaseAddress(this) + memberOffset);
+            *outElementCount = descriptor->m_elementCapacity;
+            return;
+
+        case 4:
+            *outDataAddress = descriptor->m_pMemberBase + memberOffset;
+            *outElementCount = descriptor->m_elementCapacity;
+            return;
+
+        case 5: {
+            const Address32 rangeAddress = GetArrayMemberBaseAddress(this) + memberOffset;
+            const Address32 rangeBegin = *ResolveAddress<Address32>(rangeAddress);
+            const Address32 rangeEnd = *ResolveAddress<Address32>(rangeAddress + 4u);
+            const std::uint32_t elementCount = (descriptor->m_elementStride != 0u)
+                ? ((rangeEnd - rangeBegin) / descriptor->m_elementStride)
+                : 0u;
+
+            if (elementCount != 0u) {
+                *outDataAddress = rangeBegin;
+                *outElementCount = elementCount;
+            }
+            return;
+        }
+
+        case 6: {
+            const Address32 headerAddress = GetArrayMemberBaseAddress(this) + memberOffset;
+            const std::uint8_t elementCount = *ResolveAddress<std::uint8_t>(headerAddress + 4u);
+            if (elementCount != 0u) {
+                *outDataAddress = *ResolveAddress<Address32>(headerAddress);
+                *outElementCount = elementCount;
+            }
+            return;
+        }
+
+        case 7: {
+            const Address32 headerAddress = GetArrayMemberBaseAddress(this) + memberOffset;
+            const std::uint32_t elementCount = *ResolveAddress<std::uint32_t>(headerAddress + 4u);
+            if (elementCount != 0u) {
+                *outDataAddress = *ResolveAddress<Address32>(headerAddress);
+                *outElementCount = elementCount;
+            }
+            return;
+        }
+
+        default:
+            return;
+    }
+}
+
+/**
+ * parMemberArray::vfn_6 @ 0x8234E370 | size: 0x394
+ *
+ * Builds a cmOperator payload for this member. Primitive arrays are copied as
+ * a single contiguous payload; complex element types are exported as child
+ * operator nodes.
+ */
+cmOperator* parMemberArray::vfn_6(std::uint32_t memberOffset) {
+    xe_main_thread_init_0038();
+
+    MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
+    auto* pOperatorData = (allocator != nullptr)
+        ? static_cast<cmOperatorArrayPayload32*>(allocator->Allocate(44u, 16u))
+        : nullptr;
+    if (pOperatorData == nullptr) {
+        return nullptr;
+    }
+
+    InitializeArrayOperator(pOperatorData);
+    AttachOperatorOwner(pOperatorData, GetArrayOwnerAddress(this));
+
+    std::uint32_t memberDataAddress = 0u;
+    std::uint32_t elementCount = 0u;
+    E138(memberOffset, &memberDataAddress, &elementCount);
+
+    parMemberDescriptor32* descriptor = GetArrayDescriptor(this);
+    const std::uint8_t valueType = GetArrayValueType(this);
+    if (descriptor == nullptr || valueType > 13u) {
+        return reinterpret_cast<cmOperator*>(pOperatorData);
+    }
+
+    const Address32 valueTypeLabel = GetArrayTypeLabel(valueType);
+    if (valueTypeLabel != 0u) {
+        jumptable_9498(
+            pOperatorData,
+            ResolveAddress<const char>(kParArrayTypeRootLabel),
+            ResolveAddress<const char>(valueTypeLabel),
+            1u,
+            1u
+        );
+        cmOperatorCtor_D8C0_w(
+            pOperatorData,
+            ResolveAddress<const void>(memberDataAddress),
+            descriptor->m_elementStride * elementCount
+        );
+        return reinterpret_cast<cmOperator*>(pOperatorData);
+    }
+
+    if (m_pElementSerializer == nullptr || elementCount == 0u) {
+        return reinterpret_cast<cmOperator*>(pOperatorData);
+    }
+
+    for (std::int32_t elementIndex = static_cast<std::int32_t>(elementCount) - 1;
+         elementIndex >= 0;
+         --elementIndex) {
+        SelectElementSerializerEntry(
+            m_pElementSerializer,
+            descriptor->m_elementStride * static_cast<std::uint32_t>(elementIndex)
+        );
+        cmOperator* pElementNode = ExportSerializedElement(m_pElementSerializer, memberDataAddress);
+        atSingleton_DA18_p46(pElementNode, pOperatorData);
+    }
+
+    return reinterpret_cast<cmOperator*>(pOperatorData);
+}
+
+/**
+ * parMemberArray::vfn_7 @ 0x8234E708 | size: 0x37C
+ *
+ * Imports cmOperator array data into member storage. It accepts both contiguous
+ * payload form and linked child-node form, then applies default fill rules for
+ * fixed-capacity array modes.
+ */
+void parMemberArray::vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset) {
+    if (pValueOperator == nullptr) {
+        return;
+    }
+
+    auto* descriptor = GetArrayDescriptor(this);
+    if (descriptor == nullptr) {
+        return;
+    }
+
+    const auto* sourceOperator = reinterpret_cast<const cmOperatorArrayPayload32*>(pValueOperator);
+    const std::uint8_t valueType = GetArrayValueType(this);
+
+    std::uint32_t incomingElementCount = 0u;
+    if ((valueType >= 1u && valueType <= 10u) &&
+        sourceOperator->m_hasInlineValue != 0u &&
+        sourceOperator->m_pFirstChild == 0u &&
+        descriptor->m_elementStride != 0u) {
+        incomingElementCount = sourceOperator->m_valueSize / descriptor->m_elementStride;
+    } else {
+        for (Address32 node = sourceOperator->m_pFirstChild; node != 0u;
+             node = ResolveAddress<cmOperatorArrayNode32>(node)->m_pNext) {
+            ++incomingElementCount;
+        }
+    }
+
+    if (descriptor->m_storageMode == 0u ||
+        descriptor->m_storageMode == 3u ||
+        descriptor->m_storageMode == 5u ||
+        descriptor->m_storageMode == 6u ||
+        descriptor->m_storageMode == 7u) {
+        const Address32 memberAddress = GetArrayMemberBaseAddress(this) + memberOffset;
+        if (descriptor->m_resizeContext.m_pResizeFn != nullptr) {
+            descriptor->m_resizeContext.m_pResizeFn(
+                &descriptor->m_resizeContext,
+                memberAddress,
+                incomingElementCount
+            );
+        }
+    }
+
+    std::uint32_t memberDataAddress = 0u;
+    std::uint32_t memberElementCount = 0u;
+    E138(memberOffset, &memberDataAddress, &memberElementCount);
+
+    const std::uint8_t resolvedValueType = GetArrayValueType(this);
+    if (resolvedValueType > 13u) {
+        return;
+    }
+
+    const bool requiresFixedTailFill = (jumptable_E058_h(this) != 0u);
+
+    switch (resolvedValueType) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 10: {
+            if (sourceOperator->m_hasInlineValue != 0u && sourceOperator->m_pFirstChild == 0u) {
+                const std::uint32_t memberCapacityBytes = descriptor->m_elementStride * memberElementCount;
+                const std::uint32_t copiedBytes = std::min(sourceOperator->m_valueSize, memberCapacityBytes);
+                std::memcpy(
+                    ResolveAddress<void>(memberDataAddress),
+                    ResolveAddress<const void>(sourceOperator->m_pValueBuffer),
+                    copiedBytes
+                );
+
+                if (!requiresFixedTailFill ||
+                    sourceOperator->m_valueSize >= memberCapacityBytes ||
+                    descriptor->m_elementStride == 0u ||
+                    m_pElementSerializer == nullptr) {
+                    return;
+                }
+
+                std::uint32_t fillIndex = sourceOperator->m_valueSize / descriptor->m_elementStride;
+                if (fillIndex >= descriptor->m_elementCapacity) {
+                    return;
+                }
+
+                for (; fillIndex < descriptor->m_elementCapacity; ++fillIndex) {
+                    SelectElementSerializerEntry(
+                        m_pElementSerializer,
+                        descriptor->m_elementStride * fillIndex
+                    );
+                    RestoreSerializerDefault(m_pElementSerializer, memberDataAddress);
+                }
+                return;
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    if (m_pElementSerializer == nullptr) {
+        return;
+    }
+
+    Address32 nodeAddress = sourceOperator->m_pFirstChild;
+    std::uint32_t elementIndex = 0u;
+    while (nodeAddress != 0u) {
+        SelectElementSerializerEntry(
+            m_pElementSerializer,
+            descriptor->m_elementStride * elementIndex
+        );
+        RestoreSerializerDefault(m_pElementSerializer, memberDataAddress);
+        ImportElementFromNode(
+            m_pElementSerializer,
+            ResolveAddress<const cmOperator>(nodeAddress),
+            memberDataAddress
+        );
+
+        ++elementIndex;
+        if (requiresFixedTailFill && elementIndex == descriptor->m_elementCapacity) {
+            break;
+        }
+
+        nodeAddress = ResolveAddress<cmOperatorArrayNode32>(nodeAddress)->m_pNext;
+    }
+
+    if (!requiresFixedTailFill || elementIndex >= descriptor->m_elementCapacity) {
+        return;
+    }
+
+    for (; elementIndex < descriptor->m_elementCapacity; ++elementIndex) {
+        SelectElementSerializerEntry(
+            m_pElementSerializer,
+            descriptor->m_elementStride * elementIndex
+        );
+        RestoreSerializerDefault(m_pElementSerializer, memberDataAddress);
+    }
+}
+
 } // namespace rage
