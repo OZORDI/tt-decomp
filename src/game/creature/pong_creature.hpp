@@ -231,13 +231,15 @@ struct xmlNodeStructCategory {
 };
 
 } // namespace pcrActivationCategory
+    // ── non-virtual methods (from debug strings) ──
+    void Load();
+    void Update();
+    
+    // ── implemented methods ──
+    void* FindAnimationByID(uint16_t animID_high, uint8_t animID_low);  // @ 0x8224BEF8
+    bool SetupAnimationPair(uint16_t animID1, uint16_t animID2, void* param);  // @ 0x8224C418
+    void CopyAnimationData();  // @ 0x8214C8F8
 
-// ── pcrAnimEvent  [vtable @ 0x82028CE4] ──────────────────────────
-// Base animation event class.  Serialised from creature resource packs.
-// String fields are packed as RAGE atString { ptr, len, cap } pairs.
-struct pcrAnimEvent {
-    void**       vtable;        // +0x00
-    uint32_t     m_field_04;    // +0x04  (zeroed on fixup)
     uint32_t     m_field_08;    // +0x08
     uint32_t     m_field_0C;    // +0x0C
     uint32_t     m_field_10;    // +0x10
