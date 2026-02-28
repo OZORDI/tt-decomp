@@ -331,8 +331,19 @@ struct tooFarFromTableTipData {
  * Base class for all training drills. Manages success/failure tracking,
  * timing, and common drill state.
  */
-// Forward declaration: pongTrainingDrillConfig is defined after pongTrainingDrill
-struct pongTrainingDrillConfig;
+/**
+ * pongTrainingDrillConfig
+ * Configuration data loaded from XML for each training drill.
+ * Fields confirmed from OnBallHit (+16/+20) and OnRallyEnd (+24/+28) scaffolds.
+ */
+struct pongTrainingDrillConfig {
+    void**   vtable;                // +0x00
+    uint8_t  _pad04[12];            // +0x04..0x0F
+    uint32_t m_nMaxSuccesses;       // +0x10 (16) — total achievable successes (cap)
+    uint32_t m_nRequiredSuccesses;  // +0x14 (20) — successes required to pass drill
+    float    m_fRangeMin;           // +0x18 (24) — min value for rally-end random range
+    float    m_fRangeMax;           // +0x1C (28) — max value for rally-end random range
+};
 
 class pongTrainingDrill {
 public:
@@ -342,7 +353,7 @@ public:
     virtual void CallInit() {}                               // vfn_2 - thunk to vfn_3
     virtual void Init();                                     // vfn_3 @ 0x8210CDB8
     virtual void Update() {}                                 // vfn_4
-    virtual void OnStart() {}                                // vfn_5
+    virtual void OnStart();                                   // vfn_5  @ 0x8210CFF0
     virtual void OnEnd() {}                                  // vfn_6
     virtual void OnReset() {}                                // vfn_7
     virtual void Process() {}                                // vfn_9
@@ -353,12 +364,13 @@ public:
     virtual void GetDescription() {}                         // vfn_14
     virtual void IsComplete() {}                             // vfn_15
     virtual void GetProgress() {}                            // vfn_16
+    virtual int  GetDrillTypeIndex() { return 0; }           // vfn_17 — drill type ID (overridden per subclass)
     virtual void CanAdvance() {}                             // vfn_23
     virtual void GetDifficulty() {}                          // vfn_24
     virtual void SetDifficulty() {}                          // vfn_25
-    virtual void OnBallHit() {}                              // vfn_27
+    virtual void OnBallHit(int bUpdateSaveData);             // vfn_27 @ 0x8210D488
     virtual void OnBallMiss() {}                             // vfn_28
-    virtual void OnRallyEnd() {}                             // vfn_29
+    virtual void OnRallyEnd(void* pRallyEvent);              // vfn_29 @ 0x8210D660
     virtual void OnPointScored() {}                          // vfn_30
 
     // @ 0x8210D400 | size: 0x84

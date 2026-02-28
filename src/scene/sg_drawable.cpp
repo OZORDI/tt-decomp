@@ -5,7 +5,7 @@ extern void rage_free(void* ptr);               // @ 0x820C00C0
 
 // atSingleton base-class destructor body @ 0x821A9420 - ReleaseSingleton
 // Tears down the XML/atSingleton child-node list and resets vtable.
-extern void rage::ReleaseSingleton(void* obj);        // @ 0x821A9420 - ReleaseSingleton
+namespace rage { void ReleaseSingleton(void* obj); }        // @ 0x821A9420 - ReleaseSingleton
 
 /**
  * sgRMDrawable::~sgRMDrawable

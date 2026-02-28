@@ -8,17 +8,33 @@
 #include "pong_drill.hpp"
 #include "pong_network_io.hpp"
 #include <stdio.h>
+#include <math.h>
 
 // External function declarations
 extern "C" {
     void ProcessPageGroupInput(int param1, int param2, const char* param3, int param4);
+    void NotifyUIEvent(int eventId, int flags, int param3, int param4);  // pg_E6E0 @ 0x8225E6E0
+    void SetTrainingState(void* pStateMachine, int nState);             // atSingleton_E9F8_w @ 0x821EE9F8
     void nop_8240E6D0(const char* message);
     void xmlNodeStruct_vfn_2(void* self);  // @ base class PostLoadProperties
 }
 
 // External globals
 extern void* g_singles_network_client;  // @ 0x82036614
-extern void  ComputeNetworkHash(void* networkClient, int numSuccesses);  // @ 0x821XX hash update
+extern void  ComputeNetworkHash(void* networkClient, int numSuccesses);
+
+// Game state globals
+extern void*      g_pGameState;              // @ SDA+25648 (0x82606430) — player/game state manager
+extern void*      g_pTrainingStateMachine;   // @ 0x8271A34C — training HSM singleton
+extern void*      g_pTrainingData;           // @ 0x8271A31C — training drill data manager
+extern uint32_t*  g_pDrillSaveData;          // @ 0x8271A35C — drill high-score save array
+
+// PRNG state (Multiply-With-Carry LCG)
+extern uint32_t   g_prngState[2];            // @ 0x825CA2C8 — [0]=seed, [1]=carry
+extern float      g_fPrngNormalize;          // @ 0x82079E68 — 1.0f / 2^23, scales 23-bit int to [0,1)
+
+// Drill score scaling constant
+extern float      g_fDrillScoreScale;        // @ 0x8202C504 — multiplier for bonus score computation
 
 /**
  * pongTrainingDrill::Init
@@ -119,6 +135,167 @@ void pongDrillMovement::Init() {
     m_isComplete = 0;
 }
 
+
+/**
+ * pongTrainingDrill::OnStart
+ * @ 0x8210CFF0 | size: 0xA4 (164 bytes)
+ *
+ * Called when the training drill begins. Notifies the UI, clears the active
+ * player's training-controller flag, resets hit/miss counters via virtual
+ * dispatch, and transitions the training state machine to state 5 (active).
+ *
+ * Global accesses:
+ *   - g_pGameState    (SDA+25648) — player manager, indexed by active slot
+ *   - g_pTrainingStateMachine (0x8271A34C) — training HSM singleton
+ */
+void pongTrainingDrill::OnStart() {
+    // Notify UI that the drill is starting
+    NotifyUIEvent(20484, 64, 0, 0);
+
+    // Access active player's training controller and clear its active flag
+    uint32_t* pGameState = (uint32_t*)g_pGameState;
+    int32_t nPlayerSlot = (int32_t)pGameState[33];                     // +132 = active player slot
+    void* pPlayer = ((void**)pGameState)[nPlayerSlot + 29];            // pointer array at +116
+    void* pTrainingCtrl = *(void**)((uint8_t*)pPlayer + 6208);        // +0x1840
+    if (pTrainingCtrl != NULL) {
+        *(uint8_t*)((uint8_t*)pTrainingCtrl + 24) = 0;                // clear active flag
+    }
+
+    // Reset hit/miss state through virtual dispatch
+    OnBallHit(1);    // vfn_27 — reset with save-data update enabled
+    OnBallMiss();    // vfn_28 — reset miss state
+
+    // Transition training state machine to state 5 (drill active)
+    SetTrainingState(g_pTrainingStateMachine, 5);
+}
+
+/**
+ * pongTrainingDrill::OnBallHit
+ * @ 0x8210D488 | size: 0x144 (324 bytes)
+ *
+ * Called when the ball is successfully hit during a drill. If the player
+ * has met or exceeded the required successes, computes a performance score
+ * based on the ratio of excess hits to the available range, scaled by a
+ * constant, floored, and clamped >= 1.
+ *
+ * If bUpdateSaveData is true, compares the computed score against the
+ * player's saved best for this drill type, and updates if improved.
+ *
+ * @param bUpdateSaveData  If nonzero, check and update drill save data
+ *
+ * Key addresses:
+ *   - g_fDrillScoreScale  (0x8202C504) — scaling multiplier for bonus score
+ *   - g_pTrainingData     (0x8271A31C) — +4 gives drill-set index
+ *   - g_pDrillSaveData    (0x8271A35C) — per-drill save array
+ */
+void pongTrainingDrill::OnBallHit(int bUpdateSaveData) {
+    int32_t nSuccesses = (int32_t)m_numSuccesses;
+    int32_t nRequired  = (int32_t)m_pConfig->m_nRequiredSuccesses;
+
+    // Only compute score if player has met or exceeded the requirement
+    if (nSuccesses < nRequired) {
+        return;
+    }
+
+    int32_t nMaxTotal = (int32_t)m_pConfig->m_nMaxSuccesses;
+    int32_t nRange = nMaxTotal - nRequired;
+
+    if (nRange == 0) {
+        // No extra shots available — assign default score of 5
+        m_numFailures = 5;
+    } else {
+        // Compute performance score: how far into the extra range the player reached
+        int32_t nExcess = nSuccesses - nRequired;
+        float fRatio  = (float)nExcess / (float)nRange;
+        float fScaled = fRatio * g_fDrillScoreScale;
+        int nScore = (int)floorf(fScaled);
+
+        // Clamp to minimum of 1
+        if (nScore < 1) {
+            nScore = 1;
+        }
+        m_numFailures = (uint32_t)nScore;
+    }
+
+    // If save-data update is enabled, check and update the player's best score
+    if ((uint8_t)bUpdateSaveData == 0) {
+        return;
+    }
+
+    // Load drill-set index from training data manager (+4)
+    int32_t nDrillSetIdx = *(int32_t*)((uint8_t*)g_pTrainingData + 4);
+
+    // Get this drill's type index via virtual dispatch (vfn_17)
+    int nDrillTypeIdx = GetDrillTypeIndex();
+
+    // Compute save data array index: stride = drillSetIdx * 12, entry = stride + typeIdx + 3
+    int nSaveIdx = nDrillSetIdx * 12 + nDrillTypeIdx + 3;
+    int32_t nSavedBest = (int32_t)g_pDrillSaveData[nSaveIdx];
+
+    // Only update if current score exceeds saved best
+    if (nSavedBest >= (int32_t)m_numFailures) {
+        return;
+    }
+
+    // Re-query drill type index (matches original — two VCALLs in scaffold)
+    nDrillTypeIdx = GetDrillTypeIndex();
+    nSaveIdx = nDrillSetIdx * 12 + nDrillTypeIdx + 3;
+
+    // Write new best score and notify UI
+    g_pDrillSaveData[nSaveIdx] = m_numFailures;
+    NotifyUIEvent(20491, 64, 0, 0);
+}
+
+/**
+ * pongTrainingDrill::OnRallyEnd
+ * @ 0x8210D660 | size: 0xD4 (212 bytes)
+ *
+ * Called when a rally ends. If the drill config specifies a valid
+ * random range (min > 0, max > 0, min <= max), generates a random
+ * float in [min, max] using a Multiply-With-Carry PRNG and stores
+ * it at pRallyEvent+128. If min == max, stores the exact value.
+ *
+ * PRNG details:
+ *   - Multiply-With-Carry LCG: next = seed * 0x5CDCFAA7 + carry
+ *   - Extracts 23-bit random, normalizes to [0,1), lerps in [min, max]
+ *   - State at 0x825CA2C8: [0]=seed, [1]=carry
+ *
+ * @param pRallyEvent  Rally event data; result written to +128
+ */
+void pongTrainingDrill::OnRallyEnd(void* pRallyEvent) {
+    float fMin = m_pConfig->m_fRangeMin;
+    float fMax = m_pConfig->m_fRangeMax;
+
+    // Validate: both must be positive and min <= max
+    if (!(fMin > 0.0f && fMax > 0.0f && fMin <= fMax)) {
+        return;
+    }
+
+    // If min == max, store exact value (no randomness needed)
+    if (fMin == fMax) {
+        *(float*)((uint8_t*)pRallyEvent + 128) = m_pConfig->m_fRangeMin;
+        return;
+    }
+
+    // Generate random float in [min, max] using MWC-LCG
+    uint32_t nSeed  = g_prngState[0];
+    uint32_t nCarry = g_prngState[1];
+    uint64_t nNext  = (uint64_t)nSeed * 0x5CDCFAA7ULL + nCarry;
+
+    uint32_t nNewSeed  = (uint32_t)nNext;
+    uint32_t nNewCarry = (uint32_t)(nNext >> 32);
+    g_prngState[0] = nNewSeed;
+    g_prngState[1] = nNewCarry;
+
+    // Extract 23-bit random value and normalize to [0, 1)
+    uint32_t nRandomBits = nNewSeed & 0x7FFFFF;
+    float fNormalized = (float)nRandomBits * g_fPrngNormalize;
+
+    // Lerp: result = min + (max - min) * t
+    float fRange  = fMax - fMin;
+    float fResult = fRange * fNormalized + fMin;
+    *(float*)((uint8_t*)pRallyEvent + 128) = fResult;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // hitTipData — XML data node for hit tip configuration

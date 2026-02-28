@@ -97,8 +97,8 @@ extern bool pongPlayer_DE98_g(void* player);
 extern int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* self);
 
 // atSingleton helpers for sub-struct setup.
-extern void rage::InitializeSingleton(void* blenderSubStruct);  // @ 0x821A8588
-extern void rage::UnregisterSingleton(void* descriptor);        // @ 0x820C29E0
+namespace rage { void InitializeSingleton(void* obj); }  // @ 0x821A8588
+namespace rage { void UnregisterSingleton(void* obj); }        // @ 0x820C29E0
 extern void atArray_Clear(void* obj);                        // @ 0x821A8070
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1038,6 +1038,54 @@ src/scene/sg_scene_graph.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.s
 .PHONY : src/scene/sg_scene_graph.cpp.s
 
+src/stubs.o: src/stubs.c.o
+.PHONY : src/stubs.o
+
+# target to build an object file
+src/stubs.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs.c.o
+.PHONY : src/stubs.c.o
+
+src/stubs.i: src/stubs.c.i
+.PHONY : src/stubs.i
+
+# target to preprocess a source file
+src/stubs.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs.c.i
+.PHONY : src/stubs.c.i
+
+src/stubs.s: src/stubs.c.s
+.PHONY : src/stubs.s
+
+# target to generate assembly for a file
+src/stubs.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs.c.s
+.PHONY : src/stubs.c.s
+
+src/stubs_cpp.o: src/stubs_cpp.cpp.o
+.PHONY : src/stubs_cpp.o
+
+# target to build an object file
+src/stubs_cpp.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_cpp.cpp.o
+.PHONY : src/stubs_cpp.cpp.o
+
+src/stubs_cpp.i: src/stubs_cpp.cpp.i
+.PHONY : src/stubs_cpp.i
+
+# target to preprocess a source file
+src/stubs_cpp.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_cpp.cpp.i
+.PHONY : src/stubs_cpp.cpp.i
+
+src/stubs_cpp.s: src/stubs_cpp.cpp.s
+.PHONY : src/stubs_cpp.s
+
+# target to generate assembly for a file
+src/stubs_cpp.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_cpp.cpp.s
+.PHONY : src/stubs_cpp.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -1159,6 +1207,12 @@ help:
 	@echo "... src/scene/sg_scene_graph.o"
 	@echo "... src/scene/sg_scene_graph.i"
 	@echo "... src/scene/sg_scene_graph.s"
+	@echo "... src/stubs.o"
+	@echo "... src/stubs.i"
+	@echo "... src/stubs.s"
+	@echo "... src/stubs_cpp.o"
+	@echo "... src/stubs_cpp.i"
+	@echo "... src/stubs_cpp.s"
 .PHONY : help
 
 

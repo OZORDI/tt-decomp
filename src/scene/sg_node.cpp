@@ -7,7 +7,7 @@ extern void rage_free(void* ptr);               // @ 0x820C00C0
 // Tears down the XML/atSingleton child-node list at field +0x000C,
 // then resets the vtable pointer to the base atSingleton vtable.
 // Equivalent to the body of atSingleton::~atSingleton() in the source tree.
-extern void rage::ReleaseSingleton(void* obj);        // @ 0x821A9420 - ReleaseSingleton
+namespace rage { void ReleaseSingleton(void* obj); }  // @ 0x821A9420
 
 /**
  * sgNode::~sgNode

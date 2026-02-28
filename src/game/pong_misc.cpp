@@ -101,7 +101,7 @@ fsmMachine::~fsmMachine()
 
 // External function declarations
 extern void util_CE30(void* obj);  // @ 0x8234CE30 - Initialize rage::parStructure
-extern void rage::NotifyObservers(void* obj, void* param2, void* outIndex);
+// rage::NotifyObservers declared in namespace block above
 
 /**
  * pongSaveFile::pongSaveFile() @ 0x821C5260 | size: 0x90

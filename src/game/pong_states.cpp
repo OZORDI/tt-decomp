@@ -41,10 +41,10 @@ struct pongPageGroup {
 #include <cstdint>
 #include <cstddef>
 
-extern void rage::ReleaseSingleton(void* obj);           // @ 0x821A9420 - ReleaseSingleton
+
 extern void rage_free(void* ptr);                  // @ 0x820C00C0
 extern void* xe_EC88(uint32_t size);               // @ 0x820DEC88
-extern void nop_8240E6D0(void* fmt, ...);    // @ 0x8240E6D0 — debug logger (no-op in release)
+extern void nop_8240E6D0(const void* fmt, ...);  // @ 0x8240E6D0 — debug logger (no-op in release)
 
 // Field registration helper (rage serialization system)
 extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
@@ -57,28 +57,42 @@ extern void  pongAttractState_Shutdown(void* state);       // attract state clea
 extern void  xe_main_thread_init_0038();                   // thread init
 extern void  InitializePageGroup(void* pageGroup);         // @ 0x8231F4C0 - page group constructor
 extern void  rage_RegisterUIContext(void* obj, uint32_t categoryId, const char* nameStr);  // @ 0x822EADF8
+extern void  xmlNodeStruct_Init(void* obj);                // XML node base init
 
 // Allocation macro (SDA[0] = main alloc table, slot 1 = Alloc)
 extern uint32_t g_mainAllocTable[];  // SDA global
 #define VTABLE_SLOT1(obj) (((void*(*)(void*, uint32_t, uint32_t))(*(void***)(obj))[1]))
 #define VCALL_ALLOC(obj, size, align) VTABLE_SLOT1(obj)(obj, size, align)
 
-extern void  rage::ClearPendingFlag(void* obj);                         // notify/clear
-extern void* pg_0890_g(void* pageGroup);                            // page group helper
+
+extern void* PageGroup_SetState(void* pageGroup);                   // @ 0x820C0890 — page group state helper
+namespace rage {
+    void ReleaseSingleton(void* obj);     // @ 0x821A9420
+    void ClearPendingFlag(void* obj);     // HSM pending flag clear
+}
+
 extern void  hsmContext_SetNextState_2800(void* ctx, int stateIdx); // HSM transition
 extern void  hsmContext_RequestTransition(void* ctx, int idx);      // HSM request
 extern bool  hsmContext_IsTransitioning(void* ctx);                 // HSM query
-extern void  PostPageGroupMessage(void* record, int code, int mask, int a3, int a4); // event dispatcher @ 0x8220E6E0
+extern void  SendContextMessage(int code, int mask, int a3, int a4);  // @ 0x8220E6E0 — broadcast msg
+extern void  PostPageGroupMessage(void* record, int code, int mask, int a3, int a4); // @ 0x8220E6E0 — targeted
 extern void* game_AD40(void* obj, uint32_t count);       // credits-roll notify @ 0x8240AD40
 extern void* PostStateTransitionRequest(void* hsmCtx, int stateIdx); // @ 0x822228B8
 extern void  FadePageGroup(void* mgr, int type, int mode, float fadeTime, float param2); // UI fade
 extern bool  CheckButtonPressed(void* record);                    // input button state check @ 0x8225FFF8
 extern uint8_t SinglesNetworkClient_B2A8_g(void* pg);   // page group button poll
-extern void*   SinglesNetworkClient_9318_g(uint32_t table, const char* key); // text lookup
+extern uint8_t Dialog_IsComplete(void* pg);             // @ 0x820C2470 — dialog completion check
+extern void*   PageGroup_LookupText(uint32_t table, const char* key); // @ 0x820C9318 — text lookup
 extern void    SinglesNetworkClient_B320_g(void* pg);   // page group notify
 extern void    SinglesNetworkClient_B1E8_g(void* pg);   // page group input clear
-extern void*   SinglesNetworkClient_9280_g(void* pg, const char* key); // text entry lookup
-extern int32_t SinglesNetworkClient_A5C8_g(void* entry); // text entry value
+extern void*   PageGroup_GetTextEntry(void* pg, const char* key); // @ 0x820C9280 — text entry lookup
+extern int32_t TextEntry_GetValue(void* entry);         // @ 0x820CA5C8 — text entry value
+extern void* game_9358(void* mem);                   // page-group constructor @ 0x8230x
+extern void  PageGroup_Register(void* pg);              // @ 0x820C9510 — register page group
+extern void  HSM_QueueNotification(void* ctx);          // @ 0x820C0708 — queue HSM notification
+extern void  game_AAF8(void* roll, int a, int b);    // credits roll toggle
+extern void* game_1620(void* mem);                   // dialog page-group constructor
+
 
 
 
@@ -374,7 +388,7 @@ void pongCreditsContext::OnEnterCredits() {
     }
 
     // Notify page group to open/present
-    pg_0890_g(m_pPageGroup);
+    PageGroup_SetState(m_pPageGroup);
     m_pPageGroup->Open();   // vtable slot 2
 
     // Check page group active state (+152) and m_bActive (+28)
@@ -598,7 +612,7 @@ void* pongCreditsState::GetContext() {
  * Also enables the page group's auto-advance (+85) if present.
  */
 void pongCreditsState::OnEnter(int prevStateIdx) {
-    PostPageGroupMessage(2053 /*CREDITS_ENTER_MSG*/, 64, 0, 0);
+    SendContextMessage(2053 /*CREDITS_ENTER_MSG*/, 64, 0, 0);
 
     // Enable auto-advance on the page group if it exists
     if (m_pContext != nullptr && m_pContext->m_pPageGroup != nullptr) {
@@ -661,7 +675,7 @@ void pongCreditsState::OnEnter(int prevStateIdx) {
  * Disables page group auto-advance on exit.
  */
 void pongCreditsState::OnExit(int nextStateIdx) {
-    PostPageGroupMessage(2054 /*CREDITS_EXIT_MSG*/, 64, 0, 0);
+    SendContextMessage(2054 /*CREDITS_EXIT_MSG*/, 64, 0, 0);
 
     // Disable auto-advance on the page group
     if (m_pContext != nullptr && m_pContext->m_pPageGroup != nullptr) {
@@ -812,7 +826,7 @@ input_found:
 
         // Look up "SAVING" in the page group's text table
         extern const char* k_SAVING;   // @ 0x8205DFB0
-        void* textEntry = SinglesNetworkClient_9318_g(
+        void* textEntry = PageGroup_LookupText(
             *(uint32_t*)((uint8_t*)pageGroup + 92), k_SAVING);
 
         uint32_t savingState = 1;
@@ -864,9 +878,9 @@ void pongLegalsContext::Update() {
 
     // Look up "SAVING" string in page group
     extern const char* k_SAVING;   // @ 0x8205DFB8
-    void* savingEntry = SinglesNetworkClient_9280_g(pg, k_SAVING);
+    void* savingEntry = PageGroup_GetTextEntry(pg, k_SAVING);
     if (savingEntry != nullptr) {
-        resultValue = SinglesNetworkClient_A5C8_g(savingEntry);
+        resultValue = TextEntry_GetValue(savingEntry);
     }
 
     // If button was pressed, notify
@@ -921,7 +935,7 @@ void* pongLegalsState::GetContext() {
  *   3. Stores the context in m_pContext (this+8).
  *   4. Allocates a 240-byte page group sub-object via game_9358.
  *   5. Stores the page group in the context's m_pPageGroup (+20).
- *   6. Calls SinglesNetworkClient_9510_g to register.
+ *   6. Calls PageGroup_Register to register.
  */
 void pongLegalsState::Init() {
     xe_main_thread_init_0038();
@@ -967,7 +981,7 @@ void pongLegalsState::Init() {
     }
 
     // Register with the state manager
-    SinglesNetworkClient_9510_g(pageGroup);
+    PageGroup_Register(pageGroup);
 
     nop_8240E6D0("pongLegalsState::Init - done");   // @ 0x8205F880
 }
@@ -1002,9 +1016,9 @@ void pongLegalsState::OnEnter(int prevStateIdx) {
         uint8_t sessionActive = *(uint8_t*)((uint8_t*)sessionCtx + 4);
         if (sessionActive == 0) {
             // Set up notification: struct on stack {0, vtable_ptr, 1, 0}
-            // Calls pg_0708_g to queue HSM notification
+            // Calls HSM_QueueNotification to queue HSM notification
             // @ 0x82300000 area vtable for notification
-            pg_0708_g(sessionCtx);
+            HSM_QueueNotification(sessionCtx);
         }
     }
 
@@ -1081,7 +1095,7 @@ pongDialogContext::~pongDialogContext() {
  */
 static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
     pongDialogContext* self = (pongDialogContext*)((uint8_t*)base - 20);
-    self->~pongDialogContext(shouldFree);
+    self->~pongDialogContext();  // shouldFree handled by caller
 }
 
 /**
@@ -1134,7 +1148,7 @@ void pongDialogContext::Register() {
  * Slot 16.  Checks whether the dialog is ready to advance.
  * If the page group exists:
  *   1. Calls Open (vtable slot 2) on the page group.
- *   2. Calls SinglesNetworkClient_2470_g to check if dialog completed.
+ *   2. Calls Dialog_IsComplete to check if dialog completed.
  *   3. If completed, transitions to m_nextStateIdx via the HSM manager.
  */
 void pongDialogContext::Update() {
@@ -1148,7 +1162,7 @@ void pongDialogContext::Update() {
     openFn(m_pPageGroup);
 
     // Check if the dialog has finished
-    uint8_t isReady = SinglesNetworkClient_2470_g(m_pPageGroup);
+    uint8_t isReady = Dialog_IsComplete(m_pPageGroup);
     if ((isReady & 0xFF) == 0) {
         return;   // Not yet ready
     }
@@ -1318,7 +1332,7 @@ void pongDialogState::Init() {
  *   other → Generic: posts a transition request via PostStateTransitionRequest.
  */
 void pongDialogState::OnEnter(int prevStateIdx) {
-    PostPageGroupMessage(2051 /*DIALOG_ENTER_MSG*/, 64, 0, 0);
+    SendContextMessage(2051 /*DIALOG_ENTER_MSG*/, 64, 0, 0);
 
     // Save and set HSM overlay flag
     extern void* g_hsmMgrPtr;   // loaded from address computation
@@ -1379,7 +1393,7 @@ void pongDialogState::OnEnter(int prevStateIdx) {
  *   - Otherwise: posts generic transition via PostStateTransitionRequest.
  */
 void pongDialogState::OnExit(int nextStateIdx) {
-    PostPageGroupMessage(2052 /*DIALOG_EXIT_MSG*/, 64, 0, 0);
+    SendContextMessage(2052 /*DIALOG_EXIT_MSG*/, 64, 0, 0);
 
     // Restore HSM overlay if we changed it
     if (m_savedOverlay == 0) {
@@ -1397,6 +1411,11 @@ void pongDialogState::OnExit(int nextStateIdx) {
         game_AAF8(g_creditsRoll, 0, 0);
         return;
     }
+
+    // Generic next state: post transition
+    void* transReq = PostStateTransitionRequest(m_pHSMContext, nextStateIdx);
+    nop_8240E6D0("pongDialogState::OnExit generic", transReq, nextStateIdx);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // frontendData  [vtable @ 0x820763D4]

@@ -53,7 +53,9 @@ set(SOURCES
     src/rage/game_loop.c
     src/rage/main.c
     src/rage/rage_cm.cpp
+    src/rage/rage_globals.cpp
     src/rage/rage_grm.cpp
+    src/rage/rage_memory.cpp
     src/rage/render_loop.c
     src/rage/scene_render.c
     src/rage/session_events.cpp

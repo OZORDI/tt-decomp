@@ -21,6 +21,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/Ozordi/Downloads/tt-decomp/src/rage/render_loop.c" "CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/rage/render_loop.c.o.d"
   "/Users/Ozordi/Downloads/tt-decomp/src/rage/scene_render.c" "CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/rage/scene_render.c.o.d"
   "/Users/Ozordi/Downloads/tt-decomp/src/rage/subsystem_init.c" "CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/rage/subsystem_init.c.o.d"
+  "/Users/Ozordi/Downloads/tt-decomp/src/stubs.c" "CMakeFiles/RockstarTableTennis.dir/src/stubs.c.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/stubs.c.o.d"
   "/Users/Ozordi/Downloads/tt-decomp/src/anim/pcr_anim_blenders.cpp" "CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/anim/pcr_anim_blenders.cpp.o.d"
   "/Users/Ozordi/Downloads/tt-decomp/src/game/gd_data.cpp" "CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/game/gd_data.cpp.o.d"
   "/Users/Ozordi/Downloads/tt-decomp/src/game/mc_memcard.cpp" "CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/game/mc_memcard.cpp.o.d"
@@ -44,6 +45,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/Ozordi/Downloads/tt-decomp/src/scene/sg_node.cpp" "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_node.cpp.o.d"
   "/Users/Ozordi/Downloads/tt-decomp/src/scene/sg_physical.cpp" "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o.d"
   "/Users/Ozordi/Downloads/tt-decomp/src/scene/sg_scene_graph.cpp" "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o.d"
+  "/Users/Ozordi/Downloads/tt-decomp/src/stubs_cpp.cpp" "CMakeFiles/RockstarTableTennis.dir/src/stubs_cpp.cpp.o" "gcc" "CMakeFiles/RockstarTableTennis.dir/src/stubs_cpp.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

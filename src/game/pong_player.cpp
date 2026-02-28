@@ -31,7 +31,7 @@ extern void LocomotionStateAnim_TransitionLocomotionState(uint32_t entry, void* 
 
 // ── External game helpers referenced by pong_player.cpp ───────────────────
 
-extern void rage::UnbindObject(void* obj, void* arg);   // @ atSingleton suite
+namespace rage { void UnbindObject(void* obj, void* arg); }  // @ atSingleton suite
 extern void phBoundCapsule_A080_g(void* bound);  // only r3 used; r4-r6 computed internally
 extern const float g_kSwingRadiusConst;  // constant from .rdata
 extern const vec3  g_kZero_vec3;         // zero vector constant
@@ -91,7 +91,21 @@ extern void* g_geomSingleton;   // @ loaded via lis+lwz pattern in D7B0
 // Global constants (data section)
 extern const float g_recoveryTimerThreshold;   // @ 0x8202D108
 extern const float g_swingPhaseThreshold;       // @ 0x8202D110
-extern const vec3  g_hitVectorFlip;             // @ AltiVec constant used in D7B0 sign flip
+extern const vec3  g_hitVectorFlip;
+// ── Additional globals for CheckButtonInput / OnButtonReleased / IsSwingApexReached ──
+extern uint32_t  g_pClockObj;                    // clock object pointer @ SDA area
+extern uint32_t* g_pPlayerSlotTable;             // per-slot index table
+extern uint8_t*  g_pPlayerDataTable;             // 808-byte-per-entry player records
+extern uint32_t  g_pPlayerDataTable_slot;        // active slot index mirror
+extern float     g_kPowerBlend;                  // power blend constant @ 0x825C2EA0
+extern float     g_kFrameToSecScale;             // frames-to-seconds   @ 0x8202D100
+
+extern bool CheckButtonPressed(void* record);                              // pg_FFF8_g @ 0x8225FFF8
+extern void PostPageGroupMessage(void* rec, int code, int mask, int a3, int opActive); // pg_E6E0
+extern void pongPlayer_0508_g(void* obj, int maxSteps, float* outDelta);   // @ 0x821E0508
+extern bool pongPlayer_5B60_gen(pongPlayer* p);                            // @ 0x82195B60
+extern void pongPlayer_1460_g(void* actionState, int released);            // @ 0x821A1460
+             // @ AltiVec constant used in D7B0 sign flip
 
 
 // ===========================================================================
@@ -1564,7 +1578,7 @@ path_b:
         return false;
 
     // Delegate to the 2-handle recovery check.
-    return /* TODO: pongPlayer_D298_2hr — verify signature */;
+    return false;  // TODO: pongPlayer_D298_2hr — verify signature
 }
 
 
@@ -1674,7 +1688,7 @@ bool pongPlayerState::IsInReturnPosition() const
                 return true;  // flag B: in return position
 
             // Ask the animation system if we've cleared the swing gate.
-            if (/* TODO: pongPlayer_6AA0_g(swingSubBase) — verify signature */)
+            if (false /* TODO: pongPlayer_6AA0_g(swingSubBase) — verify signature */)
                 return true;
 
             // Final: compare normalised timing fraction vs currentTime.
@@ -1704,17 +1718,3 @@ path_b:
     return true;       // Default: no active system → in position.
 }
 
-// ── Additional externs needed for CheckButtonInput / OnButtonReleased / IsSwingApexReached ──
-extern uint32_t  g_pClockObj;           // clock object pointer (raw addr)  @ 0x826065E0 area
-extern uint32_t* g_pPlayerSlotTable;    // per-slot index table             @ 0x826065E4 area
-extern uint8_t*  g_pPlayerDataTable;    // 808-byte-per-entry player table  @ 0x826065E8 area
-extern uint32_t  g_pPlayerDataTable_slot; // current active slot field      @ 0x826065EC area
-extern void*     g_pButtonStateTable;   // already declared, redeclare omitted
-extern float     g_kPowerBlend;         // blend constant                   @ 0x825C2EA0
-extern float     g_kFrameToSecScale;    // frames-to-seconds scale factor   @ 0x8202D100 area
-
-extern bool CheckButtonPressed(void* record);                            // @ 0x8225FFF8
-extern void PostPageGroupMessage(void* record, int code, int mask, int a3, int a4); // event dispatcher
-extern void pongPlayer_0508_g(void* obj, int maxSteps, float* outDelta); // @ 0x821E0508
-extern bool pongPlayer_5B60_gen(pongPlayer* p);                 // @ 0x82195B60
-extern void pongPlayer_1460_g(void* actionState, int released); // @ 0x821A1460

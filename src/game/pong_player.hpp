@@ -277,6 +277,9 @@ struct pongPlayer {
 // TODO: confirm whether this is a separate type or inheritance.
 struct pongPlayerState : pongPlayer {
     bool IsSwingApexReached(float threshold) const;  // @ 0x820CDA58 (pongPlayerState override)
+    bool IsBeforeSwingPeak()                const;  // @ 0x820CDCD8 (pongPlayerState override)
+    bool IsSwingSystemIdle()                const;  // @ 0x820CDC98 (pongPlayerState override)
+    bool IsInReturnPosition()               const;  // @ 0x820CDE98 (pongPlayerState override)
 };
 
 

@@ -71,6 +71,10 @@ file(REMOVE_RECURSE
   "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_physical.cpp.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o"
   "CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.o.d"
+  "CMakeFiles/RockstarTableTennis.dir/src/stubs.c.o"
+  "CMakeFiles/RockstarTableTennis.dir/src/stubs.c.o.d"
+  "CMakeFiles/RockstarTableTennis.dir/src/stubs_cpp.cpp.o"
+  "CMakeFiles/RockstarTableTennis.dir/src/stubs_cpp.cpp.o.d"
   "bin/RockstarTableTennis"
   "bin/RockstarTableTennis.pdb"
 )
