@@ -51,7 +51,7 @@ protected:
 extern "C" void SinglesNetworkClient_GetPlayerID_E408(void* client, uint32_t param);
 extern "C" void ApplyControllerVibration(void** controllers, uint32_t controllerIndex, void* vibrationPattern);
 extern "C" bool ValidateControllerVibration(void* controller);
-extern "C" void atSingleton_9420(void* obj);
+extern "C" void rage::ReleaseSingleton(void* obj);
 
 // Global controller state arrays
 extern void* g_controllerArray;      // @ 0x8271A3A8 (glob:lbl_8271A3A8)

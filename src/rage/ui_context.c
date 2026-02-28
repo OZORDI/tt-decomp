@@ -13,7 +13,7 @@
 #include <string.h>
 
 /* Forward declarations for external functions */
-extern void atSingleton_2E60_g(void* pFactory);
+extern void rage::GetFactory(void* pFactory);
 extern void* rage_obj_factory_build_2B50(void* pFactory, void* pStackBuf, 
                                           uint32_t bufSize, const char* typeName,
                                           uint32_t flags, const char* nameStr);
@@ -81,7 +81,7 @@ void rage_RegisterUIContext(void* pContext, uint32_t categoryId, const char* nam
     /* Create page group if it doesn't exist */
     if (pPageGroup == NULL) {
         /* Get UI factory singleton */
-        atSingleton_2E60_g(g_pUIFactory);
+        rage::GetFactory(g_pUIFactory);
         
         /* Build page group via factory */
         _snprintf(pathBuf, sizeof(pathBuf), "ui/layouts/%s.xml", displayName);

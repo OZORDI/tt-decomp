@@ -9,10 +9,10 @@
 
 // External function declarations
 extern void rage_free(void* ptr);
-extern void atSingleton_9420(void* obj);
+extern void rage::ReleaseSingleton(void* obj);
 extern void game_8EE8(void* obj);                    // @ 0x820F8EE8 - Object cleanup
 extern void util_6C20(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
-extern bool atSingleton_Find_90D0(void* obj);        // @ 0x820F90D0 - Check if singleton exists
+extern bool rage::FindSingleton(void* obj);        // @ 0x820F90D0 - Check if singleton exists
 
 // Global state
 extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
@@ -58,7 +58,7 @@ void game_B2E0(void* subObjectArrayBase) {
         // Handle singleton-managed object
         if (subObj->m_pObject2) {
             // Check if object is in singleton registry
-            if (!atSingleton_Find_90D0(subObj->m_pObject2)) {
+            if (!rage::FindSingleton(subObj->m_pObject2)) {
                 // Not in registry - free via allocator
                 // Get allocator from TLS and call vtable slot 2 (Free/Release)
                 // TODO: Implement proper TLS allocator access
@@ -112,7 +112,7 @@ plrPlayerMgr::~plrPlayerMgr() {
     m_vtable1 = (void**)0x8203338C;   // Base class vtable (primary)
     
     // Call singleton cleanup
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
     
     // Note: Conditional free handled by caller
     // If (flags & 1), caller will invoke rage_free(this)
@@ -268,7 +268,7 @@ void gdRivalry::PostLoadChildren() {
 
 // External dependencies
 extern void* atSingleton_91E0_gen(uint32_t size);      // @ 0x821A91E0 - Get singleton
-extern void* atSingleton_29E0_g(const void* key);      // @ 0x820C29E0 - Hash field key
+extern void* rage::UnregisterSingleton(const void* key);      // @ 0x820C29E0 - Hash field key
 extern void rage_free(void* ptr);                 // @ 0x820C00C0 - Free memory
 
 // Global serialization registry (SDA offset 0)
@@ -316,7 +316,7 @@ void RegisterSerializedField(void* obj,
     rage_free(existingMetadata);
     
     // Hash the field key to generate unique identifier
-    void* fieldHash = atSingleton_29E0_g(fieldKey);
+    void* fieldHash = rage::UnregisterSingleton(fieldKey);
     
     // Store new field metadata in the registry
     ((void**)fieldRegistry)[0] = fieldHash;      // +0x00: field hash/ID

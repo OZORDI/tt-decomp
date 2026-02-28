@@ -237,8 +237,8 @@ struct pongPlayer {
     virtual ~pongPlayer();                               // slot 0
     virtual void ScalarDtor(int flags);                  // slot 1
     virtual void Process(float dt);                      // slot 2
-    virtual void Update7();                              // slot 7 — CheckButtonInput
-    virtual void Update9();                              // slot 9 — OnButtonReleased
+    virtual void CheckButtonInput();                     // slot 7 — @ 0x8218EE10
+    virtual void OnButtonReleased();                     // slot 9 — @ 0x821935B8
 
     // ── State query methods (0x820Cxxxx block) ─────────────────────────
     bool IsSwingTimerActive()     const;  // @ 0x820CD550
@@ -249,6 +249,7 @@ struct pongPlayer {
     bool CanAcceptSwingInput()    const;  // @ 0x820CC3C8
     bool IsBeforeSwingPeak()      const;  // @ 0x820CDCD8
     bool IsSwingApexReached(float threshold) const;  // @ 0x820CDA58
+    bool IsSwingSystemIdle()       const;  // @ 0x820CDC98
     bool IsInReturnPosition()     const;                 // @ 0x820CDE98
     bool IsActionComplete()       const;                 // @ 0x820C7890
     bool CheckOpponentSwingApex() const;                 // @ 0x820C5890 (approx)
@@ -274,7 +275,9 @@ struct pongPlayer {
 // ── Inner heap state: pongPlayerState ────────────────────────────────────
 // Same layout as pongPlayer; used for the heap-allocated state sub-object.
 // TODO: confirm whether this is a separate type or inheritance.
-struct pongPlayerState : pongPlayer {};
+struct pongPlayerState : pongPlayer {
+    bool IsSwingApexReached(float threshold) const;  // @ 0x820CDA58 (pongPlayerState override)
+};
 
 
 // ── Global constants and singletons ──────────────────────────────────────

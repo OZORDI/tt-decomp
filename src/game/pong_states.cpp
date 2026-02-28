@@ -40,7 +40,7 @@ struct pongPageGroup {
 #include <cstdint>
 #include <cstddef>
 
-extern void atSingleton_9420(void* obj);           // @ 0x821A9420
+extern void rage::ReleaseSingleton(void* obj);           // @ 0x821A9420 - ReleaseSingleton
 extern void rage_free(void* ptr);                  // @ 0x820C00C0
 extern void* xe_EC88(uint32_t size);               // @ 0x820DEC88
 extern void nop_8240E6D0(const char* fmt, ...);    // @ 0x8240E6D0 — debug logger
@@ -62,7 +62,7 @@ extern uint32_t g_mainAllocTable[];  // SDA global
 #define VTABLE_SLOT1(obj) (((void*(*)(void*, uint32_t, uint32_t))(*(void***)(obj))[1]))
 #define VCALL_ALLOC(obj, size, align) VTABLE_SLOT1(obj)(obj, size, align)
 
-extern void  atSingleton_F728_g(void* obj);                         // notify/clear
+extern void  rage::ClearPendingFlag(void* obj);                         // notify/clear
 extern void* pg_0890_g(void* pageGroup);                            // page group helper
 extern void  hsmContext_SetNextState_2800(void* ctx, int stateIdx); // HSM transition
 extern void  hsmContext_RequestTransition(void* ctx, int idx);      // HSM request
@@ -105,7 +105,7 @@ creditsData::~creditsData() {
         rage_free(m_pEntries);
     }
     // Let the singleton base do its teardown
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
 
     // Note: conditional self-free (shouldFree flag from caller) is
     // handled by the generated thunk; this body covers the non-freeing path.
@@ -323,7 +323,7 @@ pongCreditsContext::~pongCreditsContext() {
  */
 bool pongCreditsContext::CanTransition() {
     if (m_pPageGroup != nullptr) {
-        atSingleton_F728_g(m_pPageGroup);
+        rage::ClearPendingFlag(m_pPageGroup);
     }
     return true;
 }

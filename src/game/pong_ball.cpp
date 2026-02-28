@@ -10,9 +10,9 @@
 
 // External function declarations
 extern void util_1568(void* obj);
-extern void atSingleton_9420(void* singleton);
+extern void rage::ReleaseSingleton(void* singleton);
 extern void* xe_EC88(uint32_t size);
-extern void atSingleton_B3F8_g(void* obj1, void* obj2, uint32_t param3, uint32_t param4);
+extern void rage::BindObject(void* obj1, void* obj2, uint32_t param3, uint32_t param4);
 extern void* mfMotionClipRAGE_B8D8_g(void* clip, uint32_t param2, uint32_t param3, uint32_t param4);
 
 // Global pointers
@@ -104,7 +104,7 @@ gmBallRobot::~gmBallRobot() {
 
     *reinterpret_cast<void**>(&m_audControl3d[0]) = reinterpret_cast<void*>(kAudControlVtable);
     util_1568(&m_audControl3d[0]);
-    atSingleton_9420(&m_singletonData[0]);
+    rage::ReleaseSingleton(&m_singletonData[0]);
 
     m_vtable2 = reinterpret_cast<void*>(kSingletonVtableSecondary);
     m_vtable1 = reinterpret_cast<void*>(kSingletonVtablePrimary);
@@ -152,7 +152,7 @@ void gmBallRobot::HandleEvent(uint16_t eventType) {
             frame->field_0x0E = 0u;
         }
 
-        atSingleton_B3F8_g(m_pMotionClip, m_pAllocatedObject, 0u, 1u);
+        rage::BindObject(m_pMotionClip, m_pAllocatedObject, 0u, 1u);
 
         void* motionClip = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(m_pAnimationData) + 4u);
         void* motionClipData = mfMotionClipRAGE_B8D8_g(

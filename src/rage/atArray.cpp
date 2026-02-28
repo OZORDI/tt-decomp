@@ -77,7 +77,7 @@ extern "C" void rage_8118(atArrayElement* pElement) {
 /**
  * atArray_Destructor @ 0x820C2980 | size: 0x5C
  * Original symbol: rage_2980
- * Also known as: atSingleton_29E0_g
+ * Also known as: rage::UnregisterSingleton
  * 
  * Destructs and frees a dynamically allocated atArray.
  * 
@@ -134,6 +134,6 @@ extern "C" void* rage_2980(void* pArray) {
     return atArray_Destructor(pArray);
 }
 
-extern "C" void* atSingleton_29E0_g(void* pArray) {
+extern "C" void* rage::UnregisterSingleton(void* pArray) {
     return atArray_Destructor(pArray);
 }

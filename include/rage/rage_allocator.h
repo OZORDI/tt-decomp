@@ -72,9 +72,9 @@ void* sysMemAllocator_Allocate(void* ptr, size_t size);
 /** sysMemAllocator_Free @ 0x82186228 | size: 0x74 */
 void sysMemAllocator_Free(void* ptr);
 
-/** atSingleton_Find_90D0 @ 0x820F90D0 | size: 0xA4
+/** rage::FindSingleton @ 0x820F90D0 | size: 0xA4
  *  Returns nonzero if pointer is owned by a registered singleton. */
-uint8_t atSingleton_Find_90D0(void* ptr);
+uint8_t rage::FindSingleton(void* ptr);
 
 #ifdef __cplusplus
 }

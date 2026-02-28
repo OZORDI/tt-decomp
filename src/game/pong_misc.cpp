@@ -11,11 +11,11 @@
 // Forward declarations for helpers referenced in this file
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" {
-    void  atSingleton_9420(void* obj);           // @ 0x821A9420
+    void  rage::ReleaseSingleton(void* obj);           // @ 0x821A9420 - ReleaseSingleton
     void  rage_free(void* ptr);                  // @ 0x820C00C0
     void* xe_EC88(uint32_t size);                // @ 0x820DEC88
     void  util_CE30(void* slot);                 // @ 0x8234CE30 - init parStructure
-    void  atSingleton_E998_g(void* self, void* type, uint32_t* out);  // @ 0x...
+    void  rage::NotifyObservers(void* self, void* type, uint32_t* out);  // @ 0x...
 }
 
 // Logging stub (calls internal debug printf, no-op in release builds)
@@ -98,7 +98,7 @@ fsmMachine::~fsmMachine()
 
 // External function declarations
 extern void util_CE30(void* obj);  // @ 0x8234CE30 - Initialize rage::parStructure
-extern void atSingleton_E998_g(void* obj, void* param2, void* outIndex);
+extern void rage::NotifyObservers(void* obj, void* param2, void* outIndex);
 
 /**
  * pongSaveFile::pongSaveFile() @ 0x821C5260 | size: 0x90
@@ -190,7 +190,7 @@ void pongSaveFile::HandleEvent(uint16_t eventType) {
     
     // Get save slot index from singleton system
     uint32_t slotIndex = 0;
-    atSingleton_E998_g(this, (void*)0x82017888, &slotIndex);
+    rage::NotifyObservers(this, (void*)0x82017888, &slotIndex);
     
     // Calculate save slot offset (each slot is 15044 bytes)
     uint32_t slotOffset = slotIndex * 15044;
@@ -251,7 +251,7 @@ void pongSaveFile::DestructorThunk(pongSaveFile* ptr) {
 // Forward declarations for helpers used by all three classes
 extern void sub_821A8F58(void* obj, const char* fieldName,
                          void* fieldPtr, void* serCtx, int flags);   // @ 0x821A8F58
-extern void sub_821A9420(void* obj);                                   // @ 0x821A9420  atSingleton cleanup
+extern void sub_821A9420(void* obj);                                   // @ 0x821A9420 - ReleaseSingleton  atSingleton cleanup
 extern void rage_free(void* ptr);                                 // @ 0x820C00C0  RAGE heap free
 
 // Serialisation context pointer stored in the SDA (r13-relative), runtime-init
@@ -279,7 +279,7 @@ assetVersions::~assetVersions()
     // (The base-class cleanup may have clobbered it.)
     // vtable managed by C++ runtime
 
-    atSingleton_9420(this);                 // atSingleton destructor chain
+    rage::ReleaseSingleton(this);                 // atSingleton::Release() destructor chain
 
     // If the delete-self flag (bit 0) is set, free the object allocation.
     // The flag is passed via r4 at call time; the scaffold captures it as
@@ -419,7 +419,7 @@ const void* assetVersions::GetTypeDescriptor() const
 assetVersionsChar::~assetVersionsChar()
 {
     // vtable managed by C++ runtime
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
     // if (flags & 1) rage_free(this);
 }
 
@@ -486,7 +486,7 @@ assetVersionsCharSpecific::~assetVersionsCharSpecific()
 
     // Restore vtable and run atSingleton base-class teardown
     // vtable managed by C++ runtime
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
     // if (flags & 1) rage_free(this);
 }
 

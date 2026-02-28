@@ -10,7 +10,7 @@
 
 extern "C" void rage_free(void* ptr);
 extern "C" bool ValidateControllerVibration(void* controller);
-extern "C" void atSingleton_9420(void* obj);
+extern "C" void rage::ReleaseSingleton(void* obj);
 
 // Global arrays
 void* g_controllerArray = nullptr;
@@ -178,7 +178,7 @@ gdVibEvent::~gdVibEvent() {
     }
     
     // Call singleton cleanup
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
     
     // Note: Memory freeing handled by caller based on destructor flags
     // If bit 0 is set, rage_free(this) is called

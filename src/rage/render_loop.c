@@ -100,7 +100,7 @@ extern const float k_standardAspectScale;
 extern void SinglesNetworkClient_EFB8_g(void);
 
 /* Physics world addref wrapper @ 0x8222AB48 */
-extern void atSingleton_AB48_fw(void* pObj);
+extern void rage::AcquireReference(void* pObj);
 
 /* Physics material manager per-frame update @ 0x8222AE20 */
 extern void phMaterialMgrImpl_AE20_p46(void* pObj);
@@ -186,7 +186,7 @@ void gameLoop_Update(gameLoop* pLoop)
  *   1. Dispatch slot 7  (pre-tick) on gameLoop.
  *   2. Dispatch slot 11 (mid-tick) on gameLoop.
  *   3. Dispatch slot 19 on gameLoop.
- *   4. Acquire physics world via atSingleton_AB48_fw(g_pPhysicsWorld).
+ *   4. Acquire physics world via rage::AcquireReference(g_pPhysicsWorld).
  *   5. For each physics object [0..m_nObjects] (world +44/+48 ptr/count):
  *        • slot 1 (IsActive) — if true, call slot 7 (Tick) on that object.
  *   6. Tick standalone ball object (world +60) if non-null.
@@ -208,7 +208,7 @@ void gameLoop_Tick(gameLoop* pLoop)
 
     /* Acquire physics world reference. */
     void* pWorld = g_pPhysicsWorld;
-    atSingleton_AB48_fw(pWorld);
+    rage::AcquireReference(pWorld);
 
     /* Iterate physics objects. */
     uint8_t* pWorldBytes = (uint8_t*)pWorld;
@@ -792,7 +792,7 @@ extern void rage_get_exe_name_6628(const char* pKey, uint32_t* pOut);
 extern void rage_CEF0(hsmContext* pHsm);
 
 /* Net system / singleton init @ 0x8234B618 */
-extern void atSingleton_B618_h(void);
+extern void rage::InitializeNetSystem(void);
 
 /* Allocator — accessed via global allocator pointer chain.
  * The pattern is: lwz r3, 0(r13); lwzx r3, r25, r24; VCALL slot 1.
@@ -936,7 +936,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
             *(uint16_t*)(pNet + 22) = 0;
             *(uint16_t*)(pNet + 20) = 0;
             *(uint32_t*)(pNet + 16) = 0;
-            atSingleton_B618_h();
+            rage::InitializeNetSystem();
             g_pNetSystem = pNetMem;
         } else {
             g_pNetSystem = NULL;

@@ -31,7 +31,7 @@ extern void LocomotionStateAnim_C288_g(uint32_t entry, void* parent, float dt);
 
 // ── External game helpers referenced by pong_player.cpp ───────────────────
 
-extern void atSingleton_B410_h(void* obj, void* arg);   // @ atSingleton suite
+extern void rage::UnbindObject(void* obj, void* arg);   // @ atSingleton suite
 extern void phBoundCapsule_A080_g(void* bound);  // only r3 used; r4-r6 computed internally
 extern const float g_kSwingRadiusConst;  // constant from .rdata
 extern const vec3  g_kZero_vec3;         // zero vector constant
@@ -825,7 +825,7 @@ bool pongPlayer::IsInReturnPosition() const
 // vtable slot 0 [destructor]
 //
 // Standard RAGE scalar destructor.  Runs the atSingleton base destructor
-// chain via atSingleton_B410_h (which in turn calls each registered sub-
+// chain via rage::UnbindObject (which in turn calls each registered sub-
 // system's Deactivate/Destroy), then conditionally frees the object itself
 // if the `flags` argument has bit 0 set (the C++ "delete after dtor" ABI
 // convention used throughout this codebase).
@@ -834,12 +834,12 @@ bool pongPlayer::IsInReturnPosition() const
 // ===========================================================================
 pongPlayer::~pongPlayer()
 {
-    atSingleton_B410_h(this, 0);  // base class dtor chain — does NOT free this
+    rage::UnbindObject(this, 0);  // base class dtor chain — does NOT free this
 }
 
 void pongPlayer::ScalarDtor(int flags)
 {
-    atSingleton_B410_h(this, 0);  // base class dtor chain
+    rage::UnbindObject(this, 0);  // base class dtor chain
     if (flags & 1)
         rage_free(this);     // ABI-level "delete" — free the allocation
 }
@@ -1703,3 +1703,18 @@ path_b:
 
     return true;       // Default: no active system → in position.
 }
+
+// ── Additional externs needed for CheckButtonInput / OnButtonReleased / IsSwingApexReached ──
+extern uint32_t  g_pClockObj;           // clock object pointer (raw addr)  @ 0x826065E0 area
+extern uint32_t* g_pPlayerSlotTable;    // per-slot index table             @ 0x826065E4 area
+extern uint8_t*  g_pPlayerDataTable;    // 808-byte-per-entry player table  @ 0x826065E8 area
+extern uint32_t  g_pPlayerDataTable_slot; // current active slot field      @ 0x826065EC area
+extern void*     g_pButtonStateTable;   // already declared, redeclare omitted
+extern float     g_kPowerBlend;         // blend constant                   @ 0x825C2EA0
+extern float     g_kFrameToSecScale;    // frames-to-seconds scale factor   @ 0x8202D100 area
+
+extern bool pg_FFF8_g(void* record);                            // @ 0x8225FFF8
+extern void pg_E6E0(void* record, int code, int mask, int a3, int a4); // event dispatcher
+extern void pongPlayer_0508_g(void* obj, int maxSteps, float* outDelta); // @ 0x821E0508
+extern bool pongPlayer_5B60_gen(pongPlayer* p);                 // @ 0x82195B60
+extern void pongPlayer_1460_g(void* actionState, int released); // @ 0x821A1460

@@ -15,7 +15,7 @@ extern "C" {
     void rage_free(void* ptr);
     void* xe_EC88(uint32_t size);
     void xe_main_thread_init_0038();
-    void atSingleton_9420(void* obj);
+    void rage::ReleaseSingleton(void* obj);
     void util_1568(void* obj);
     void rage_7630(void* obj);
     void rage_8070(void* obj);
@@ -237,7 +237,7 @@ charViewData::~charViewData() {
     }
     
     // Call base class destructor
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
 }
 
 /**

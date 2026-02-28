@@ -46,8 +46,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // RAGE base class destructor called at the end of pcrAnimEvent's own dtor.
-// atSingleton_9420 tears down the atSingleton base in the vtable chain.
-extern void atSingleton_9420(void* obj);
+// rage::ReleaseSingleton tears down the atSingleton base in the vtable chain.
+extern void rage::ReleaseSingleton(void* obj);
 
 // Heap allocator / deallocator (RAGE custom).
 extern void rage_free(void* ptr);
@@ -123,7 +123,7 @@ static void pcrAnimEvent_DtorBody(pcrAnimEvent* self)
         rage_free(const_cast<char*>(self->m_name));
 
     // Tear down the atSingleton base.
-    atSingleton_9420(self);
+    rage::ReleaseSingleton(self);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -39,7 +39,7 @@ extern "C" {
     void gdGameData_CalculateVariation(void* gdData, uint32_t r4, uint32_t r5, uint32_t r6, int32_t r7);
     void* pg_C2A0_g(void* r3, uint32_t r4);
     void game_7208(void* r3);
-    void atSingleton_E998_g(void* r4, void* r5);
+    void rage::NotifyObservers(void* r4, void* r5);
     void PongNetExhibitionCoordinator_2BA8_g(void* r3);
 }
 

@@ -26,7 +26,7 @@ struct sgNode {
     sgNode*  m_pFirstChild;    // +0x0C
 
     // slot  0 — destructor @ 0x8212B350 (size 0x5C)
-    //   Resets vtable, calls atSingleton base dtor (@ 0x821A9420), conditional free.
+    //   Resets vtable, calls atSingleton base dtor (@ 0x821A9420 - ReleaseSingleton), conditional free.
     virtual ~sgNode();
 
     // slot 20 — IsType(uint32_t typeId) @ 0x8212B330 (size 0x20)

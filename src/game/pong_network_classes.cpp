@@ -15,7 +15,7 @@
 
 // Forward declarations
 extern "C" void rage_free(void* ptr);
-extern "C" void atSingleton_9420(void* obj);
+extern "C" void rage::ReleaseSingleton(void* obj);
 extern "C" void util_FFF8(void* obj, int flags);
 
 // External globals
@@ -505,7 +505,7 @@ void plrPropMgr_Destroy(plrPropMgr* self, int flags) {
     
     // Call atSingleton destructor (base class)
     self->vtable = (void**)0x82033C8C;  // atSingleton vtable
-    atSingleton_9420(self);
+    rage::ReleaseSingleton(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {

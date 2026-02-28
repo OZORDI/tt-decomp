@@ -13,7 +13,7 @@ extern "C" {
  * Duplicates a string using RAGE's memory allocator.
  * Returns NULL if input is NULL.
  */
-char* atSingleton_29E0_g(const char* str);
+char* rage::UnregisterSingleton(const char* str);
 
 /**
  * Case-insensitive string comparison with RAGE-specific rules.

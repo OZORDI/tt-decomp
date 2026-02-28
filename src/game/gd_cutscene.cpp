@@ -14,7 +14,7 @@
 extern "C" {
     void xmlNodeStruct_vfn_2(void* node);
     uint16_t atSingleton_F6B8_p39(const char* name);
-    void atSingleton_9420(void* obj);
+    void rage::ReleaseSingleton(void* obj);
     void nop_8240E6D0(const char* msg, ...);
     void rage_free(void* ptr);
     int _stricmp(const char* str1, const char* str2);
@@ -152,7 +152,7 @@ gdCSActionIfData::~gdCSActionIfData() {
     }
     
     // Call base destructor
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
 }
 
 /**

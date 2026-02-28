@@ -3,11 +3,11 @@
 // RAGE engine heap free — canonical name declared in rage/rage_cm_types.hpp
 extern void rage_free(void* ptr);               // @ 0x820C00C0
 
-// atSingleton base-class destructor body @ 0x821A9420
+// atSingleton base-class destructor body @ 0x821A9420 - ReleaseSingleton
 // Tears down the XML/atSingleton child-node list at field +0x000C,
 // then resets the vtable pointer to the base atSingleton vtable.
 // Equivalent to the body of atSingleton::~atSingleton() in the source tree.
-extern void atSingleton_9420(void* obj);        // @ 0x821A9420
+extern void rage::ReleaseSingleton(void* obj);        // @ 0x821A9420 - ReleaseSingleton
 
 /**
  * sgNode::~sgNode
@@ -19,7 +19,7 @@ extern void atSingleton_9420(void* obj);        // @ 0x821A9420
  * by the scalar-dtor wrapper in the recomp ABI and is not written here.
  */
 sgNode::~sgNode() {
-    atSingleton_9420(this);
+    rage::ReleaseSingleton(this);
 }
 
 /**

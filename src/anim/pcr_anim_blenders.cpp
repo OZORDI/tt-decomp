@@ -97,8 +97,8 @@ extern bool pongPlayer_DE98_g(void* player);
 extern int32_t pcrPostPointBlender_E040_fw(pcrPostPointBlender* self);
 
 // atSingleton helpers for sub-struct setup.
-extern void atSingleton_8588_g(void* blenderSubStruct);  // @ 0x821A8588
-extern void atSingleton_29E0_g(void* descriptor);        // @ 0x820C29E0
+extern void rage::InitializeSingleton(void* blenderSubStruct);  // @ 0x821A8588
+extern void rage::UnregisterSingleton(void* descriptor);        // @ 0x820C29E0
 extern void rage_8070(void* obj);                        // @ 0x821A8070
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -508,7 +508,7 @@ pcrPostPointBlender::~pcrPostPointBlender()
  *
  * Initialises the blender with the owning player pointer and session info.
  * Sets up both animation sub-structs by allocating descriptors via
- * atSingleton_8588_g / atSingleton_29E0_g.
+ * rage::InitializeSingleton / rage::UnregisterSingleton.
  */
 void pcrPostPointBlender::Init(void* pPlayer, void* pSessionBlock)
 {
@@ -518,8 +518,8 @@ void pcrPostPointBlender::Init(void* pPlayer, void* pSessionBlock)
                          static_cast<char*>(pSessionBlock) + 4);
 
     // Initialise first animation sub-struct (at +444).
-    atSingleton_8588_g(&m_animSubStruct);  // at +444; allocates 16-byte block
-    // atSingleton_29E0_g resolves the descriptor string for sub-struct 1.
+    rage::InitializeSingleton(&m_animSubStruct);  // at +444; allocates 16-byte block
+    // rage::UnregisterSingleton resolves the descriptor string for sub-struct 1.
     // ... (two-step alloc pattern mirrored from recomp vfn_1 body)
     // TODO: confirm exact descriptor string addresses from SDA map.
 }

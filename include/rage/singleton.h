@@ -16,13 +16,13 @@ extern "C" {
 #endif
 
 /**
- * atSingleton_Find_90D0 @ 0x820F90D0 | size: 0xA4
+ * rage::FindSingleton @ 0x820F90D0 | size: 0xA4
  *
  * Checks if a pointer is owned by a registered singleton.
  * Returns nonzero if the pointer belongs to a singleton (do NOT free).
  * Returns zero if the pointer is not singleton-owned (safe to free).
  */
-uint8_t atSingleton_Find_90D0(void* ptr);
+uint8_t rage::FindSingleton(void* ptr);
 
 #ifdef __cplusplus
 }
