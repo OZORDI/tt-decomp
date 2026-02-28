@@ -683,3 +683,58 @@ int atSingleton::GetBufferSize() {
     // Return total size (width * height)
     return width * height;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::ValidateIndexAndDecrement @ 0x82553B00 | size: 0x50
+//
+// Validates an array index against a container's count and manages reference
+// counting. If the index is out of bounds, writes 0 to the output pointer and
+// returns. If valid, decrements the reference counter and calls a helper function.
+//
+// This appears to be part of a safe array access pattern where the singleton
+// tracks active references and validates indices before allowing access.
+//
+// @param outPtr Pointer to write result (0 if invalid index)
+// @param index Index to validate
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton::ValidateIndexAndDecrement(int* outPtr, int index) {
+    // Load container pointer from offset +12
+    void* container = *(void**)((char*)this + 12);
+    
+    // Load count from container at offset +16
+    int count = *(int*)((char*)container + 16);
+    
+    // Check if container is empty
+    if (count == 0) {
+        *outPtr = 0;
+        return;
+    }
+    
+    // Check if index is out of bounds
+    if (index > count - 1) {
+        *outPtr = 0;
+        return;
+    }
+    
+    // Handle negative index case
+    if (index < 0) {
+        // Load reference counter from offset +0
+        int refCount = *(int*)((char*)this + 0);
+        
+        // If reference count doesn't match container count, call helper
+        if (refCount != count) {
+            // Forward declaration - helper function not yet lifted
+            extern void atSingleton_38C8_sp(void*);
+            atSingleton_38C8_sp(this);
+            return;
+        }
+    }
+    
+    // Decrement reference counter at offset +0
+    int refCount = *(int*)((char*)this + 0);
+    *(int*)((char*)this + 0) = refCount - 1;
+    
+    // Call helper function for processing
+    extern void atSingleton_38C8_sp(void*);
+    atSingleton_38C8_sp(this);
+}
