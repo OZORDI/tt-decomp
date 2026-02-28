@@ -1167,3 +1167,40 @@ void SinglesNetworkClient::ProcessPendingMessages()
         SinglesNetworkClient_5A40_g(&procFlags);
     }
 }
+
+
+// ===========================================================================
+// pongNetMessageHolder::InsertIntoList @ 0x825821A8 | size: 0x40
+//
+// Inserts this message holder into the global linked list at the head position.
+// This is part of the network message lifecycle management system.
+//
+// The function:
+// 1. Gets the singleton holder (list head)
+// 2. Reads the current next pointer from the singleton
+// 3. Updates the singleton's next pointer to point to this node
+// 4. Updates this node's next pointer to point to the old head
+// 5. Increments the reference count
+//
+// This implements a classic "insert at head" linked list operation for
+// tracking active network message holders.
+//
+// Original symbol: pongNetMessageHolder_21A8_2h
+// ===========================================================================
+void pongNetMessageHolder::InsertIntoList()
+{
+    // Get the singleton holder (list head)
+    pongNetMessageHolder* singleton = pongNetMessageHolder_FAE0_isl();
+    
+    // Read the current next pointer from the singleton
+    void* oldNext = singleton->m_pInternalArray;
+    
+    // Update singleton to point to the old head
+    *(void**)((char*)singleton + 8) = oldNext;
+    
+    // Make this node point to the singleton
+    this->m_pInternalArray = singleton;
+    
+    // Increment reference count
+    this->field_0x000c++;
+}

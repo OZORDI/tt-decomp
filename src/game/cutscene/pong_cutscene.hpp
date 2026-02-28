@@ -110,6 +110,10 @@ struct gdCSActionIfData {
 // ── gdCSActionLoopData  [vtable @ 0x82077B14] ──────────────────────────
 struct gdCSActionLoopData {
     void**      vtable;           // +0x00
+    uint32_t    _pad04[3];        // +0x04-0x0F
+    bool        m_bEnabled;       // +0x10
+    uint8_t     _pad11[3];        // +0x11-0x13
+    int         m_nMaxIterations; // +0x14
 
     // ── virtual methods ──
     virtual void PostLoadProperties();  // [20] @ 0x8240eb28
@@ -418,14 +422,20 @@ struct pongCSActionIf {
 
 // ── pongCSActionLoop  [vtable @ 0x82065764] ──────────────────────────
 struct pongCSActionLoop {
-    void**      vtable;           // +0x00
+    void**                  vtable;              // +0x00
+    gdCSActionLoopData*     m_pLoopData;         // +0x04
+    void**                  m_pActionArray;      // +0x08 (array of action pointers)
+    uint16_t                m_nActionCount;      // +0x0C
+    uint16_t                _pad0E;              // +0x0E
+    gdCSActionLoopData*     m_pActionData;       // +0x10 (action data with iteration info)
+    int                     m_nCurrentIteration; // +0x14
 
     // ── virtual methods ──
-    virtual void Play();  // [5] @ 0x82349808
-    virtual void Stop();  // [6] @ 0x82349840
-    virtual void Pause();  // [7] @ 0x82349868
-    virtual void Resume();  // [8] @ 0x82349998
-    virtual void OnComplete();  // [12] @ 0x823499e0
+    virtual void Play();       // [5] @ 0x82349808
+    virtual void Stop();       // [6] @ 0x82349840
+    virtual void Pause();      // [7] @ 0x82349868
+    virtual bool Resume();     // [8] @ 0x82349998
+    virtual void OnComplete(); // [12] @ 0x823499e0
 };
 
 // ── pongCSActionLvlAmbAnim  [vtable @ 0x82065980] ──────────────────────────

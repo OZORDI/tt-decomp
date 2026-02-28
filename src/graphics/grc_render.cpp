@@ -307,3 +307,145 @@ void grcDevice_clear(grcDeviceClear* pDevice)
     memcpy(pDevice->m_viewportRect2, g_defaultViewportRect, 16);
     pDevice->m_bPendingWork = 0;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_CB48 @ 0x8235CB48 | size: 0x23c (572 bytes)
+ *
+ * Builds GPU command packets for shader constant initialization and GPU state
+ * setup. This function constructs three command packets in the GPU command
+ * buffer and sets various GPU state flags.
+ *
+ * The function:
+ *   1. Ensures buffer space is available (calls grc_3E20 if needed)
+ *   2. Builds first packet: shader constant upload (108 bytes of data)
+ *   3. Builds second packet: another shader constant (36 bytes + 12 bytes)
+ *   4. Calls grc_DBF8 to finalize packet construction
+ *   5. Builds third packet: GPU register writes for state setup
+ *   6. Manipulates 64-bit GPU state flags at device+16
+ *   7. Calls game_37B0 to submit the commands
+ *
+ * Command packet format:
+ *   +0: Command word (PM4 packet type and size)
+ *   +4: Parameter 1
+ *   +8: Parameter 2
+ *   +12: Data payload (variable size)
+ *
+ * GPU registers written:
+ *   0x2200 (8704), 0x2201 (8705), 0x2202 (8706), 0x2203 (8707)
+ *   0x2104 (8452), 0x2208 (8712)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* External function declarations */
+extern void grc_3E20(void* pDevice);
+extern void* rage_A980(void* pDevice);
+extern void grc_DBF8(void* pDevice);
+extern void game_37B0(void* pDevice);
+
+/* Shader constant data table @ 0x8202C328 (.rdata, 440 bytes) */
+extern const uint8_t g_shaderConstantData[440];
+
+void grc_CB48(void* pDevice) {
+    uint8_t* device = (uint8_t*)pDevice;
+    
+    /* Ensure buffer has space - calls grc_3E20 to expand if needed */
+    grc_3E20(pDevice);
+    
+    /* Load current write pointer and buffer end */
+    uint32_t writePtr = *(uint32_t*)(device + 0);
+    uint32_t bufferEnd = *(uint32_t*)(device + 8);
+    
+    /* Check if we need to expand buffer */
+    if (writePtr > bufferEnd) {
+        writePtr = (uint32_t)rage_A980(pDevice);
+    }
+    
+    /* ── Build first packet: shader constant upload (108 bytes data) ────── */
+    
+    uint32_t* pkt1 = (uint32_t*)(writePtr + 4);
+    pkt1[0] = 0xC01C2B00;  /* PM4 command: shader constant load */
+    pkt1[1] = 0;           /* Parameter 1 */
+    pkt1[2] = 27;          /* Parameter 2 */
+    
+    /* Copy 108 bytes of shader constant data from table+40 */
+    memcpy(&pkt1[3], &g_shaderConstantData[40], 108);
+    
+    /* Update write pointer (12 header + 108 data = 120 bytes) */
+    writePtr = (uint32_t)&pkt1[3] + 108;
+    
+    /* Check buffer space again */
+    if (writePtr > bufferEnd) {
+        writePtr = (uint32_t)rage_A980(pDevice);
+    }
+    
+    /* ── Build second packet: another shader constant (36 bytes + extras) ── */
+    
+    uint32_t* pkt2 = (uint32_t*)(writePtr + 4);
+    pkt2[0] = 0xC00A2B00;  /* PM4 command */
+    pkt2[1] = 1;           /* Parameter 1 */
+    pkt2[2] = 9;           /* Parameter 2 */
+    
+    /* Copy 36 bytes of shader constant data from table start */
+    memcpy(&pkt2[3], &g_shaderConstantData[0], 36);
+    
+    /* Add three additional 32-bit values after the data */
+    uint32_t* extra = (uint32_t*)((uint8_t*)&pkt2[3] + 36);
+    extra[0] = 0x00012180;  /* lis 1, ori 8576 */
+    extra[1] = 0x10010001;  /* lis 4097, ori 1 */
+    extra[2] = 0;
+    
+    /* Update write pointer */
+    writePtr = (uint32_t)&extra[3];
+    *(uint32_t*)(device + 0) = writePtr;
+    
+    /* Check buffer space */
+    if (writePtr > bufferEnd) {
+        writePtr = (uint32_t)rage_A980(pDevice);
+    }
+    
+    /* ── Finalize packet construction ────────────────────────────────────── */
+    
+    writePtr = (uint32_t)grc_DBF8(pDevice);
+    
+    /* ── Build third packet: GPU register writes ─────────────────────────── */
+    
+    uint32_t* pkt3 = (uint32_t*)(writePtr + 4);
+    pkt3[0] = 8704;   /* Register 0x2200 */
+    pkt3[1] = 0;
+    pkt3[2] = 8707;   /* Register 0x2203 */
+    pkt3[3] = 0;
+    
+    /* Manipulate 64-bit GPU state flags at device+16 */
+    uint64_t* flags = (uint64_t*)(device + 16);
+    
+    /* Set various GPU state bits using 64-bit OR operations */
+    flags[1] |= 0x0000200000000000ULL;  /* bit 45 (oris 8192 on upper 32 bits) */
+    flags[2] |= 0x0000000000000080ULL;  /* bit 7 (ori 128) */
+    flags[2] |= 0x0000000000000100ULL;  /* bit 8 (ori 256) */
+    flags[0] |= 0x8000000000000000ULL;  /* bit 63 (rldicr 1,63,63) */
+    flags[1] |= 0x0000002000000000ULL;  /* bit 37 (rldicr 1,37,63) */
+    flags[1] |= 0x0000000400000000ULL;  /* bit 34 (rldicr 1,34,63) */
+    flags[1] |= 0x0800000000000000ULL;  /* bit 59 (rldicr 1,59,63) */
+    
+    /* Continue building packet */
+    pkt3[4] = 8712;   /* Register 0x2208 */
+    pkt3[5] = 4;
+    pkt3[6] = 8452;   /* Register 0x2104 */
+    pkt3[7] = 0;
+    pkt3[8] = 8706;   /* Register 0x2202 */
+    pkt3[9] = 0;
+    pkt3[10] = 8705;  /* Register 0x2201 */
+    pkt3[11] = 0x00010001;  /* lis 1, ori 1 */
+    
+    /* Set more GPU state bits */
+    flags[1] |= 0x0000000800000000ULL;  /* bit 35 (rldicr 1,35,63) */
+    flags[1] |= 0x0000001000000000ULL;  /* bit 36 (rldicr 1,36,63) */
+    
+    /* Update write pointer */
+    writePtr = (uint32_t)&pkt3[12];
+    *(uint32_t*)(device + 0) = writePtr;
+    
+    /* ── Submit commands ──────────────────────────────────────────────────── */
+    
+    game_37B0(pDevice);
+}

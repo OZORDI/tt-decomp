@@ -1976,6 +1976,9 @@ struct pongNetMessageHolder {
     virtual ~pongNetMessageHolder();                  // [0] @ 0x823C5788
     virtual void ScalarDtor(int flags); // [1] @ 0x823bfba8
     virtual void CleanupInternalArray();  // [2] @ 0x823C3878
+    
+    // ── non-virtual methods ──
+    void InsertIntoList();  // @ 0x825821A8
 };
 
 // ── pongNetMessageHolderBase  [vtable @ 0x8206FA88] ──────────────────────────

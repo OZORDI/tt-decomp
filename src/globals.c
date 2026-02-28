@@ -60,3 +60,10 @@ const uint32_t g_vectorComparisonMask[4] = {
 // UI Input System
 // @ SDA+25804 (0x826064CC) - UI input enable flag
 uint8_t g_uiInputFlag = 0;
+
+/* Shader constant data table @ 0x8202C328 (.rdata, 440 bytes)
+ * Used by grc_CB48 for GPU shader constant initialization */
+const uint8_t g_shaderConstantData[440] = {
+    /* This is a placeholder - actual data would need to be extracted from binary */
+    0
+};
