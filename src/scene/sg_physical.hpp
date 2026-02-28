@@ -9,8 +9,9 @@
 
 #include "sg_drawable.hpp"
 
-// Forward declare — full definition in physics/ph_physics.hpp
-struct phInst;
+// Forward declare — full definition in physics/ph_physics.hpp (rage namespace)
+namespace rage { struct phInst; }
+using rage::phInst;
 
 // ---------------------------------------------------------------------------
 // sgPhysicalObject  —  scene node with integrated physics simulation

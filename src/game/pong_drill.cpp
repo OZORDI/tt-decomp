@@ -138,7 +138,7 @@ extern uint32_t g_xmlType_Bool;             // @ 0x825CAF94 (.data, 4 bytes) —
 
 // XML property registration function
 // Signature: RegisterProperty(this, propertyName, fieldPtr, typeDescriptor, flags)
-extern void game_8F58(void* node, const char* name, void* field, void* typedesc, int flags);
+extern void RegisterSerializedField(void* node, const char* name, void* field, void* typedesc, int flags);
 
 // Base class destructor
 extern void atSingleton_29E8_p25(void* obj);
@@ -212,21 +212,21 @@ void hitTipData::PostLoadProperties() {
 void hitTipData::LoadProperties() {
     // Register ShotType enum property
     // r4 = "ShotType" @ 0x82033438, r5 = this+16, r6 = &g_xmlType_ShotType @ 0x825CB5B4
-    game_8F58(this, "ShotType", &m_shotType, &g_xmlType_ShotType, 0);
+    RegisterSerializedField(this, "ShotType", &m_shotType, &g_xmlType_ShotType, 0);
 
     // Register integer properties with type descriptor @ 0x825CAF90
     // r4 @ 0x82043070 (8 bytes), r5 = this+20
-    game_8F58(this, "MinScore", &m_minScore, &g_xmlType_Int, 0);
+    RegisterSerializedField(this, "MinScore", &m_minScore, &g_xmlType_Int, 0);
 
     // r4 @ 0x82043078 (6 bytes), r5 = this+24
-    game_8F58(this, "Score", &m_scoreThreshold, &g_xmlType_Int, 0);
+    RegisterSerializedField(this, "Score", &m_scoreThreshold, &g_xmlType_Int, 0);
 
     // r4 @ 0x82043080 (7 bytes), r5 = this+28
-    game_8F58(this, "InARow", &m_consecutiveThreshold, &g_xmlType_Int, 0);
+    RegisterSerializedField(this, "InARow", &m_consecutiveThreshold, &g_xmlType_Int, 0);
 
     // Register boolean property with type descriptor @ 0x825CAF94
     // r4 @ 0x82043088 (7 bytes), r5 = this+32
-    game_8F58(this, "Active", &m_enabled, &g_xmlType_Bool, 0);
+    RegisterSerializedField(this, "Active", &m_enabled, &g_xmlType_Bool, 0);
 }
 
 /**

@@ -8,23 +8,22 @@
  */
 
 #include "pong_creature.hpp"
+#include "globals.h"
 #include <cstring>
 
 // External dependencies
 extern void rage_Free(void* ptr);
 extern void nop_8240E6D0(const char* msg, ...);
 extern void pongCreature_7CE8_g(void* creature, void* matrix, int param1, int param2, int param3, int param4);
-extern void game_3C70(void* obj);
 extern void* pg_9C00_g(void* player, int index);  // @ 0x82019C00 — returns creature info ptr
 extern void pongPlayer_9CD0_g(void* player, int index, void* outMatrix1, void* outMatrix2);
 
-// Global identity matrix @ 0x825D3800
-static const float g_identityMatrix[16] = {
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
-};
+// Forward declarations
+bool IsMatrixIdentity(const float* matrix);  // @ 0x820C3C70 - Matrix identity check
+
+// Global data @ 0x825CB800 and 0x82619BE0
+extern const float g_identityMatrixRef[16];      // @ 0x825CB800 - Reference identity matrix (64 bytes)
+extern const uint32_t g_vectorComparisonMask[4]; // @ 0x82619BE0 - SIMD comparison mask (16 bytes)
 
 // Global zero constant @ 0x8202D110
 static const float g_zero = 0.0f;
@@ -141,19 +140,19 @@ void pongMover::Reset(void* creatureData) {
  */
 void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatureData) {
     // Start with identity matrix
-    memcpy(outMatrix, g_identityMatrix, 64);
+    memcpy(outMatrix, g_identityMatrixRef, 64);
     
     // Check if we should use remote rest matrix
     uint8_t flags = *(uint8_t*)((char*)mover + 64);
     bool useRemoteMatrix = (flags & 0x10) != 0;
     
     if (useRemoteMatrix) {
-        // Check if remote matrix is valid
-        void* remoteMatrixObj = (void*)((char*)mover + 144);
-        game_3C70(remoteMatrixObj);
+        // Check if remote matrix is valid (identity check)
+        float* remoteMatrixObj = (float*)((char*)mover + 144);
+        bool isIdentity = IsMatrixIdentity(remoteMatrixObj);
         
-        // If valid, copy remote rest matrix
-        { // TODO: check game_3C70 return value
+        // If not identity, copy remote rest matrix
+        if (!isIdentity) {
             float* remoteMatrix = (float*)((char*)mover + 192);
             
             nop_8240E6D0("pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]",
@@ -240,4 +239,44 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
         // Additional positioning logic based on creature type...
         // (Simplified - full logic involves more complex calculations)
     }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Matrix Comparison Utilities
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * IsMatrixIdentity @ 0x820C3C70 | size: 0xD4
+ * 
+ * Checks if a 4x4 transformation matrix is the identity matrix.
+ * 
+ * Uses SIMD-style comparison with masking to allow ignoring specific
+ * components (e.g., translation values) during the check.
+ * 
+ * @param matrix Pointer to 64-byte (4x4) matrix to check
+ * @return true if matrix matches identity (after masking), false otherwise
+ */
+bool IsMatrixIdentity(const float* matrix) {
+    const uint32_t* matrixBits = (const uint32_t*)matrix;
+    const uint32_t* refBits = (const uint32_t*)g_identityMatrixRef;
+    const uint32_t* mask = g_vectorComparisonMask;
+    
+    // Compare all 16 floats (4 vectors of 4 floats each)
+    // Apply mask to both matrices before comparison
+    for (int i = 0; i < 16; i++) {
+        uint32_t maskedMatrix = matrixBits[i] & mask[i % 4];
+        uint32_t maskedRef = refBits[i] & mask[i % 4];
+        
+        if (maskedMatrix != maskedRef) {
+            return false;  // Mismatch found
+        }
+    }
+    
+    return true;  // All components match
+}
+
+// Alias for compatibility with existing code
+uint8_t game_3C70(const float* matrix) {
+    return IsMatrixIdentity(matrix) ? 1 : 0;
 }

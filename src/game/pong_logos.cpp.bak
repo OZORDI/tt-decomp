@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 // Forward declarations
-extern "C" void PostStateTransitionRequest(void* obj);
+extern "C" void game_28B8(void* obj);
 extern "C" void nop_8240E6D0(const char* debugStr, void* obj, uint32_t stateIdx);
 extern "C" void pg_61E8_g(void* grcDevice, float fadeValue, uint32_t p3, uint32_t p4, uint32_t p5);
 extern "C" void grcDevice_beginScene_5E78(void* grcDevice);
@@ -148,7 +148,7 @@ extern "C" void pongLogosState_OnEnter(pongLogosState* self, uint32_t prevStateI
     if (prevStateIdx == 2) {
         // Normal transition from previous state
         void* hsmContext = self->m_pHSMContext;
-        const char* contextName = (const char*)PostStateTransitionRequest(hsmContext);
+        const char* contextName = (const char*)game_28B8(hsmContext);
         
         // Log the state transition
         // String at 0x8205E4B4: likely "Entering logos state from %s, prev=%d"
@@ -223,7 +223,7 @@ extern "C" void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateId
     } else {
         // Normal exit, log the transition
         void* hsmContext = self->m_pHSMContext;
-        const char* contextName = (const char*)PostStateTransitionRequest(hsmContext);
+        const char* contextName = (const char*)game_28B8(hsmContext);
         
         // String at 0x8205E4E4: likely "Exiting logos state to %s, next=%d"
         const char* logFormat = (const char*)0x8205E4E4;

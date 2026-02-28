@@ -24,7 +24,7 @@ extern void nop_8240E6D0(const char* fmt, ...); // @ 0x8240E6D0
 // Field registration helper (rage serialization system)
 // game_8F58: registers a field of 'obj' with the data system
 // Signature: (obj, schemaKey, fieldPtr, fieldDesc, flags)
-extern void game_8F58(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
+extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
 
 // Virtual-call helpers (typed for readability)
 #define VCALL_slot20(obj, arg)     (((bool(*)(void*, uint32_t))(*(void***)(obj))[20])(obj, arg))
@@ -252,7 +252,7 @@ void pongSaveFile::DestructorThunk(pongSaveFile* ptr) {
 extern void sub_821A8F58(void* obj, const char* fieldName,
                          void* fieldPtr, void* serCtx, int flags);   // @ 0x821A8F58
 extern void sub_821A9420(void* obj);                                   // @ 0x821A9420  atSingleton cleanup
-extern void rage_free_00C0(void* ptr);                                 // @ 0x820C00C0  RAGE heap free
+extern void rage_free(void* ptr);                                 // @ 0x820C00C0  RAGE heap free
 
 // Serialisation context pointer stored in the SDA (r13-relative), runtime-init
 static void** g_serCtx = nullptr;   // @ 0x825CAF90
@@ -285,7 +285,7 @@ assetVersions::~assetVersions()
     // The flag is passed via r4 at call time; the scaffold captures it as
     // 'var_r30 & 1'.  We represent it via the standard C++ deleteing-dtor
     // convention; callers that pass flags=1 pass ownership.
-    //   if (flags & 1) rage_free_00C0(this);
+    //   if (flags & 1) rage_free(this);
 }
 
 /**
@@ -420,7 +420,7 @@ assetVersionsChar::~assetVersionsChar()
 {
     // vtable managed by C++ runtime
     atSingleton_9420(this);
-    // if (flags & 1) rage_free_00C0(this);
+    // if (flags & 1) rage_free(this);
 }
 
 /**
@@ -482,12 +482,12 @@ assetVersionsCharSpecific::~assetVersionsCharSpecific()
     // holds a heap allocation in assetVersionsCharSpecific)
     void* ownedPtr = *reinterpret_cast<void**>(
                          reinterpret_cast<char*>(this) + 0x10);
-    rage_free_00C0(ownedPtr);
+    rage_free(ownedPtr);
 
     // Restore vtable and run atSingleton base-class teardown
     // vtable managed by C++ runtime
     atSingleton_9420(this);
-    // if (flags & 1) rage_free_00C0(this);
+    // if (flags & 1) rage_free(this);
 }
 
 /**

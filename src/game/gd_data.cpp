@@ -218,3 +218,109 @@ void gdRivalry::PostLoadChildren() {
     // TODO: Implement rivalry initialization
     // Original processes rivalry matchup data
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// RAGE Serialization System
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * RegisterSerializedField @ 0x821A8F58 | size: 0xC8
+ *
+ * Original symbol: game_8F58
+ *
+ * RAGE serialization system field registration helper.
+ * Registers a single field of a data object with the serialization system,
+ * tracking field metadata and managing registration state.
+ *
+ * This function is called during asset load/bind (vtable slot 21 - RegisterFields)
+ * for all RAGE data singleton classes (creditsData, dialogData, frontendData, etc.)
+ *
+ * Parameters:
+ *   obj       - The data object being registered (this pointer)
+ *   fieldKey  - Field identifier (string or schema pointer)
+ *   fieldPtr  - Pointer to the field within the object
+ *   schemaDesc- Schema descriptor for the field type
+ *   flags     - Registration flags (usually 0)
+ *
+ * The function maintains registration state in a global singleton accessed via
+ * SDA offset 0 (g_serializationRegistry @ 0x82600000), tracking:
+ *   +0x04: Current registration index
+ *   +0x08: Maximum registration capacity
+ *   +0x0C: Overflow counter (incremented when capacity exceeded)
+ *   +0x10: Previous registration index (for rollback)
+ *
+ * When the current index equals capacity, the function:
+ *   1. Increments the overflow counter
+ *   2. Stores the previous index for potential rollback
+ *   3. Resets current index to the stored previous value
+ *
+ * Otherwise, it:
+ *   1. Decrements the overflow counter (if > 0)
+ *   2. Stores the previous index
+ *
+ * Finally, it:
+ *   1. Retrieves the field registry singleton (16-byte aligned)
+ *   2. Frees any existing field metadata at the current slot
+ *   3. Hashes the field key to generate a unique identifier
+ *   4. Stores the new field metadata (hash, fieldPtr, schemaDesc)
+ *   5. Clears the registration-in-progress flag
+ */
+
+// External dependencies
+extern void* atSingleton_91E0_gen(uint32_t size);      // @ 0x821A91E0 - Get singleton
+extern void* atSingleton_29E0_g(const void* key);      // @ 0x820C29E0 - Hash field key
+extern void rage_free(void* ptr);                 // @ 0x820C00C0 - Free memory
+
+// Global serialization registry (SDA offset 0)
+extern uint32_t g_serializationRegistry;  // @ 0x82600000
+
+void RegisterSerializedField(void* obj,
+                             const void* fieldKey,
+                             void* fieldPtr,
+                             const void* schemaDesc,
+                             uint32_t flags)
+{
+    // Access the global serialization registry (SDA base + 0)
+    uint32_t* registry = (uint32_t*)g_serializationRegistry;
+    
+    // Load registration state
+    uint32_t currentIdx = registry[1];   // +0x04: current index
+    uint32_t maxCapacity = registry[2];  // +0x08: max capacity
+    
+    // Check if we've hit capacity
+    if (currentIdx == maxCapacity) {
+        // Overflow: increment counter and store previous index
+        uint32_t overflowCount = registry[3];  // +0x0C
+        registry[3] = overflowCount + 1;
+        
+        uint32_t prevIdx = registry[4];  // +0x10: previous index
+        registry[4] = currentIdx;
+        registry[1] = prevIdx;  // Reset to previous
+    } else {
+        // Normal path: decrement overflow counter if needed
+        uint32_t overflowCount = registry[3];
+        if (overflowCount > 0) {
+            registry[3] = overflowCount - 1;
+        }
+        
+        // Store previous index
+        uint32_t prevIdx = registry[4];
+        registry[4] = currentIdx;
+    }
+    
+    // Get the field registry singleton (16-byte aligned allocation)
+    void* fieldRegistry = atSingleton_91E0_gen(16);
+    
+    // Free any existing field metadata at this slot
+    void* existingMetadata = ((void**)fieldRegistry)[0];
+    rage_free(existingMetadata);
+    
+    // Hash the field key to generate unique identifier
+    void* fieldHash = atSingleton_29E0_g(fieldKey);
+    
+    // Store new field metadata in the registry
+    ((void**)fieldRegistry)[0] = fieldHash;      // +0x00: field hash/ID
+    ((void**)fieldRegistry)[1] = fieldPtr;       // +0x04: field pointer
+    ((void**)fieldRegistry)[2] = (void*)schemaDesc;  // +0x08: schema descriptor
+    ((uint32_t*)fieldRegistry)[3] = 0;           // +0x0C: clear in-progress flag
+}

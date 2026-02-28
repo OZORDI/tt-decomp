@@ -23,7 +23,7 @@ extern "C" {
     int32_t util_2458_FindCharacterIndex(void* gameData, const char* name);
     void nop_8240E6D0(const char* message, void* a, void* b);
     void pg_E6E0(int code, int param1, int param2, int param3);
-    void PostStateTransitionRequest(void* manager, int32_t eventType);
+    void game_28B8(void* manager, int32_t eventType);
     void pg_61E8_g(void* context, float param, int p2, int p3, int p4, int p5);
 }
 
@@ -102,7 +102,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         return;
     } else {
         // Forward unhandled event to manager
-        PostStateTransitionRequest(m_pManager, eventType);
+        game_28B8(m_pManager, eventType);
         
         // Log unhandled event error
         nop_8240E6D0(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);

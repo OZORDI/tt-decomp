@@ -49,9 +49,15 @@ protected:
 
 // External dependencies
 extern "C" void SinglesNetworkClient_GetPlayerID_E408(void* client, uint32_t param);
-extern "C" void game_F480(void* controller, void* vibPattern, void* vibData);
+extern "C" void ApplyControllerVibration(void** controllers, uint32_t controllerIndex, void* vibrationPattern);
+extern "C" bool ValidateControllerVibration(void* controller);
 extern "C" void atSingleton_9420(void* obj);
 
 // Global controller state arrays
 extern void* g_controllerArray;      // @ 0x8271A3A8 (glob:lbl_8271A3A8)
 extern void* g_playerStateArray;     // @ 0x8271A31C (glob:lbl_8271A31C)
+
+// Global vibration state
+extern uint8_t* g_vibrationStateArray;  // @ 0x8271A364
+extern uint8_t* g_loop_obj_ptr;         // @ 0x825EAB30
+extern float g_defaultVibrationIntensity; // @ 0x8202D110

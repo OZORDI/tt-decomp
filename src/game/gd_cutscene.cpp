@@ -16,9 +16,9 @@ extern "C" {
     uint16_t atSingleton_F6B8_p39(const char* name);
     void atSingleton_9420(void* obj);
     void nop_8240E6D0(const char* msg, ...);
-    void rage_free_00C0(void* ptr);
+    void rage_free(void* ptr);
     int _stricmp(const char* str1, const char* str2);
-    void game_8F58(void* obj, const char* propName, void* target, void* defaultVal, uint32_t flags);
+    void RegisterSerializedField(void* obj, const char* propName, void* target, void* defaultVal, uint32_t flags);
 }
 
 // ============================================================================
@@ -138,17 +138,17 @@ const char* gdCSActionLoopData::GetTypeName() {
 gdCSActionIfData::~gdCSActionIfData() {
     // Free else actions
     if (m_pElseActions) {
-        rage_free_00C0(m_pElseActions);
+        rage_free(m_pElseActions);
     }
     
     // Free then actions
     if (m_pThenActions) {
-        rage_free_00C0(m_pThenActions);
+        rage_free(m_pThenActions);
     }
     
     // Free condition type string
     if (m_pConditionType) {
-        rage_free_00C0((void*)m_pConditionType);
+        rage_free((void*)m_pConditionType);
     }
     
     // Call base destructor

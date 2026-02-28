@@ -248,10 +248,10 @@ struct pongPlayer {
     bool IsCreatureState2Active() const;  // @ 0x820CD6B8
     bool CanAcceptSwingInput()    const;  // @ 0x820CC3C8
     bool IsBeforeSwingPeak()      const;  // @ 0x820CDCD8
-    bool IsSwingSystemIdle()      const;  // @ 0x820CDDC0
-    bool IsSwingApexReached(float threshold) const;      // @ 0x820CDA58
     bool IsInReturnPosition()     const;                 // @ 0x820CDE98
     bool IsActionComplete()       const;                 // @ 0x820C7890
+    bool CheckOpponentSwingApex() const;                 // @ 0x820C5890 (approx)
+
 
     // ── Swing execution ─────────────────────────────────────────────────
     void CancelSwing();                                   // @ 0x820CD908

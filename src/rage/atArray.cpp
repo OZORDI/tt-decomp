@@ -10,7 +10,7 @@
 #include <cstdint>
 
 // Forward declarations
-extern "C" void rage_free_00C0(void* ptr);
+extern "C" void rage_free(void* ptr);
 
 /**
  * atArrayElement — 12-byte array element with optional chaining
@@ -66,7 +66,7 @@ extern "C" void xmlTree_vfn_1(atArrayElement* pElement) {
     }
     
     // Free the root element's data
-    rage_free_00C0(pElement->pData);
+    rage_free(pElement->pData);
 }
 
 // Alias for compatibility
@@ -123,7 +123,7 @@ extern "C" void* atArray_Destructor(void* pArray) {
     }
     
     // Free the entire allocation (including header)
-    rage_free_00C0(pHeader);
+    rage_free(pHeader);
     
     // Return pointer to freed block
     return pHeader;

@@ -36,3 +36,22 @@ uint32_t g_pCamActionsFlags = 0;        /* @ 0x825D07D0 */
 
 /* Default viewport rectangle used to reset grcDeviceClear state */
 const uint8_t g_defaultViewportRect[16] = { 0 };  /* @ 0x8261A0C0 */
+
+// Template Registry System
+// @ 0x82607C40 (SDA r13+31808)
+TemplateRegistry g_templateRegistry = {0};
+
+// Matrix Comparison System
+// Reference identity matrix @ 0x825CB800
+const float g_identityMatrixRef[16] = {
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f
+};
+
+// SIMD comparison mask @ 0x82619BE0
+// This mask is applied during matrix comparisons to ignore certain components
+const uint32_t g_vectorComparisonMask[4] = {
+    0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+};

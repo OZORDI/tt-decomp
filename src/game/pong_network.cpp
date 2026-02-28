@@ -19,7 +19,7 @@
  *       +0xE2 (226) = secondary player index / handedness flag
  *
  * Serialisation uses SinglesNetworkClient_8DF8_g (write float, size=32) and
- * util_7A08 (write byte, size=8).  Deserialisation uses game_6990 (read float)
+ * util_7A08 (write byte, size=8).  Deserialisation uses WriteFloatToNetworkStream
  * and SinglesNetworkClient_6838_g (read byte, size=8).
  *
  * ── Vtable layout ─────────────────────────────────────────────────────────
@@ -37,6 +37,7 @@
  */
 
 #include "pong_network.hpp"
+#include "pong_network_io.hpp"
 #include "pong_player.hpp"
 
 // ── External functions ─────────────────────────────────────────────────────
@@ -44,9 +45,10 @@
 extern void  SinglesNetworkClient_8DF8_g(void* client, void* buf, int size);  // write float
 extern void  SinglesNetworkClient_6838_g(void* client, uint8_t val, int size); // write byte
 extern void* SinglesNetworkClient_58E8_g(uint8_t playerIdx);                  // lookup player
-// Game-side data helpers
-extern void  game_6990(void* client, float val);    // read/advance float from net stream
-extern void  game_5738(void* client, void* pos);    // read/advance 16-byte vector
+
+// Network I/O helpers (implemented in pong_network_io.cpp)
+extern void WriteFloatToNetworkStream(void* client, float value);              // @ 0x820D6990
+extern void WriteBallHitDataToNetwork(void* ballHitData, void* client);       // @ 0x821D5738
 extern void  util_5538(void* client, void* dst, int size);  // read size-bit aligned block
 extern void  util_7040(void* dst, void* src);       // copy 16-byte vector
 extern void  util_7A08(void* client, void* field, int size); // read byte from net stream
@@ -121,16 +123,16 @@ void ServeStartedMessage::Deserialise(void* client)
 void ServeStartedMessage::Serialise(void* client)
 {
     // Write timing reference float.
-    game_6990(client, m_timingRef);
+    WriteFloatToNetworkStream(client, m_timingRef);
 
-    // Write 16-byte target position.
-    game_5738(&m_targetPos, client);
+    // Write 16-byte target position (ball hit data structure).
+    WriteBallHitDataToNetwork(&m_targetPos, client);
 
     // Write four velocity / spin floats.
-    game_6990(client, m_velocityX);
-    game_6990(client, m_velocityY);
-    game_6990(client, m_velocityZ);
-    game_6990(client, m_spin);
+    WriteFloatToNetworkStream(client, m_velocityX);
+    WriteFloatToNetworkStream(client, m_velocityY);
+    WriteFloatToNetworkStream(client, m_velocityZ);
+    WriteFloatToNetworkStream(client, m_spin);
 
     // Write three byte flags.
     SinglesNetworkClient_6838_g(client, m_playerIndex,  8);

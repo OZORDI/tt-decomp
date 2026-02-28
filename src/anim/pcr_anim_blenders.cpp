@@ -59,7 +59,7 @@ extern void rage_1188(void* obj);
 
 // RAGE heap deallocator.
 // @ 0x820C00C0
-extern void rage_free_00C0(void* ptr);
+extern void rage_free(void* ptr);
 
 // Hash-table lookup in pcrCreatureState::m_faceMaterial.
 // Returns a pointer to the matched entry's value cell, or null on miss.
@@ -70,21 +70,21 @@ extern void* phMaterialMgrImpl_C208_g(void* table, const void* key);
 // @ 0x8240E6D0
 extern void nop_8240E6D0(const void*, const void*, uint32_t);
 
-// Locomotion-blender helpers used by pcrEmoteBlender.
-extern void game_C810(void* obj);            // @ 0x8224C810  reset/clear
-extern void util_C930(void* obj);            // @ 0x8224C930  query active clip
+// Animation blender control functions
+extern void crAnimBlenderState_Init(void* obj);  // @ 0x8224C810  reset/clear
+extern void util_C930(void* obj);                // @ 0x8224C930  query active clip
 extern void util_CDF0(void* blender,
                       const void* clipDesc,
-                      uint32_t flags);       // @ 0x8224CDF0  start clip
-extern void pg_CFE0_wrh(void* obj);          // @ 0x8224CFE0  GetCurrentClip
+                      uint32_t flags);           // @ 0x8224CDF0  start clip
+extern void pg_CFE0_wrh(void* obj);              // @ 0x8224CFE0  GetCurrentClip
 extern void pg_E6E0(uint32_t msg,
                     uint8_t  flags,
                     uint32_t, uint32_t,
-                    uint32_t, uint32_t);     // @ 0x8225E6E0  send message
-extern void game_F420(void* player,
-                      uint32_t clipRef,
-                      float weightA,
-                      float weightB);        // @ 0x820CF420
+                    uint32_t, uint32_t);         // @ 0x8225E6E0  send message
+extern void pcrAnimBlender_ApplyClipWeights(void* player,
+                                             uint32_t clipRef,
+                                             float weightA,
+                                             float weightB);  // @ 0x820CF420
 
 // pongPlayer helper: checks sequence completion and notifies the player.
 // Returns true if the player acknowledged and transitioned state.
@@ -175,7 +175,7 @@ void* pcrFaceAnimBlender::StartPostPoint()
         return activationToken;
 
     // ── Validate creature state ───────────────────────────────────────────
-    pcrCreatureState* cs = m_pCreatureState;
+    pcrCreatureState* cs = (pcrCreatureState*)m_pCreatureState;
     if (!cs)
         return activationToken;
 
@@ -295,7 +295,7 @@ void pcrEmoteBlender::SetEmoteIndex(uint32_t index)
  */
 void pcrEmoteBlender::Reset()
 {
-    game_C810(&m_animSubStruct);  // sub-struct at +0x10
+    crAnimBlenderState_Init(&m_animSubStruct);  // sub-struct at +0x10
 }
 
 /**
@@ -326,11 +326,11 @@ void pcrEmoteBlender::Update()
     // and we have a valid clip pointer, push blend weights to the player.
     if (m_state == 1 && m_pCurrentClip)
     {
-        game_F420(m_pPlayer,
-                  *reinterpret_cast<uint32_t*>(
-                      static_cast<char*>(m_pCurrentClip) + 32),
-                  m_blendWeightA,
-                  m_blendWeightB);
+        pcrAnimBlender_ApplyClipWeights(m_pPlayer,
+                                         *reinterpret_cast<uint32_t*>(
+                                             static_cast<char*>(m_pCurrentClip) + 32),
+                                         m_blendWeightA,
+                                         m_blendWeightB);
 
         // If the transition from active → inactive just occurred and we have
         // a valid emote index, send the completion message to the UI.
@@ -490,15 +490,15 @@ pcrPostPointBlender::~pcrPostPointBlender()
     rage_8070(&m_animSubStruct2);  // sub-struct 2 at +436
 
     // Free the ref-count pointer at +432 if present.
-    rage_free_00C0(m_pRefCountArray);
+    rage_free(m_pRefCountArray);
 
     // Free atString buffers conditionally on their length fields.
-    if (m_celebNameCap)   rage_free_00C0(m_pCelebNameA);  // +416 if +422 != 0
-    if (m_celebNameBCap)  rage_free_00C0(m_pCelebNameB);  // +408 if +414 != 0
-    if (m_celebNameCCap)  rage_free_00C0(m_pCelebNameC);  // +400 if +406 != 0
+    if (m_celebNameCap)   rage_free((void*)m_pCelebNameA);  // +416 if +422 != 0
+    if (m_celebNameBCap)  rage_free((void*)m_pCelebNameB);  // +408 if +414 != 0
+    if (m_celebNameCCap)  rage_free((void*)m_pCelebNameC);  // +400 if +406 != 0
 
     // The base-class destructors restore the vtable pair and, if the
-    // free-flag bit is set in r4, call rage_free_00C0 on the object itself.
+    // free-flag bit is set in r4, call rage_free on the object itself.
     // (Handled by delete in lifted C++.)
 }
 
@@ -535,7 +535,7 @@ void pcrPostPointBlender::ResetState()
 {
     m_bForced      = 0;       // +424
     m_activeClipIdx = -1;     // +428  (stored as 0xFFFFFFFF)
-    game_C810(&m_animSubStruct);  // sub-struct at +16
+    crAnimBlenderState_Init(&m_animSubStruct);  // sub-struct at +16
 }
 
 /**

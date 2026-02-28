@@ -33,7 +33,7 @@
 
 // Forward declarations for external dependencies
 extern "C" {
-    void rage_free_00C0(void* ptr);
+    void rage_free(void* ptr);
     void pongPlayer_ADE8_p42(void* r3, uint32_t r4, void* base);
     void nop_8240E6D0(void* r3, const char* format, ...);
     void gdGameData_CalculateVariation(void* gdData, uint32_t r4, uint32_t r5, uint32_t r6, int32_t r7);

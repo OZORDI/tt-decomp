@@ -30,7 +30,7 @@
  *   +0x1F0  int32  m_nPendingUpdates
  *   +0x1F4  float  m_fTargetFPS
  *   +0x1FC  uint32 m_fiberHandle
- *   +0x208  uint32 m_nScreenWidth
+ *   +0x208  float  m_fRefreshRate
  *   +0x20C  float  m_fLastSceneTime
  *   +0x210  uint8  m_bFramePresented   (bool)
  *
@@ -114,12 +114,16 @@ extern void XGetVideoMode(void* pMode);
 /* gmLogic step-frame dispatch @ 0x82222A78 */
 extern void gmLogic_vfn_3(void* pLogic);
 
-/* ── XVIDEO_MODE layout (Xbox 360 SDK, fields used here only) ─────────────── */
+/* ── XVIDEO_MODE layout (Xbox 360 SDK) ────────────────────────────────────── */
 typedef struct XVideoMode {
-    uint32_t  dwDisplayWidth;   /* +0 */
-    uint32_t  dwDisplayHeight;  /* +4 */
-    uint32_t  fIsHiDef;         /* +8  (BOOL) */
-    uint8_t   _pad[116];        /* rest of 128-byte struct */
+    uint32_t  dwDisplayWidth;   /* +0x00 */
+    uint32_t  dwDisplayHeight;  /* +0x04 */
+    uint32_t  fIsInterlaced;    /* +0x08 (BOOL) */
+    uint32_t  fIsWideScreen;    /* +0x0C (BOOL) */
+    uint32_t  fIsHiDef;         /* +0x10 (BOOL) */
+    float     fRefreshRate;     /* +0x14 */
+    uint32_t  dwVideoStandard;  /* +0x18 */
+    uint8_t   _pad[100];        /* +0x1C..0x7F — rest of 128-byte struct */
 } XVideoMode;
 
 #include "rage/game_loop_types.h"
@@ -514,7 +518,7 @@ void gameLoop_Present(gameLoop* pLoop)
  *   3. Load default FPS from rdata (lbl_8202D108) → m_fTargetFPS, m_fDefaultFPS.
  *   4. Load initial scene-time from rdata (lbl_8202D110) → m_fLastSceneTime,
  *      m_fUnknown544.
- *   5. Load initial screen-width float from rdata (lbl_825C4948) → m_nScreenWidth.
+ *   5. Load initial refresh rate float from rdata (lbl_825C4948) → m_fRefreshRate.
  *   6. Zero all flags 488–495, set m_bFullscreenMode=1, m_bFramePresented=1.
  *   7. Overwrite vtable with derived vtable (lbl_82059154).
  *   8. Zero all state fields 532–584, clear flags 576–582.
@@ -531,7 +535,7 @@ extern void rage_game_obj_init_CB60(hsmContext* pHsm);
 /* Float constants in .rdata */
 extern const float k_defaultFPS;       /* lbl_8202D108 */
 extern const float k_initSceneTime;    /* lbl_8202D110 */
-extern const float k_initScreenWidth;  /* lbl_825C4948 */
+extern const float k_initRefreshRate;  /* lbl_825C4948 */
 
 void gameLoop_init_C2D0(gameLoop* pLoop)
 {
@@ -548,8 +552,8 @@ void gameLoop_init_C2D0(gameLoop* pLoop)
     rage_game_obj_init_CB60(&pLoop->m_stateMachine);
     pLoop->m_stateMachine.vtable = &hsmContext_vtable_init;
 
-    /* Store initial screen width float. */
-    *(float*)&pLoop->m_nScreenWidth = k_initScreenWidth;
+    /* Store initial refresh rate float. */
+    pLoop->m_fRefreshRate = k_initRefreshRate;
 
     /* Zero all boolean flags 488–495. */
     pLoop->m_bUnknown488    = 0;
@@ -607,9 +611,9 @@ void gameLoop_init_C2D0(gameLoop* pLoop)
  *   1. Destroy display device via VCALL slot 2 on g_display_obj_ptr.
  *   2. Destroy audio object at g_audio_obj_ptr (SDA+25444):
  *        if refcount non-zero → VCALL slot 0 with arg 3,
- *        else → rage_free_00C0.
- *   3. Null SDA audio globals (+25444, +25436, +25440).
- *   4. Free audio config (SDA+25448) via rage_free_00C0, null it.
+ *        else → rage_free.
+ *   3. Null SDA audio globals (+25444, +25436), load +25448,
+ *      null +25440, free loaded +25448 ptr, null +25448.
  *   5. audSystem_shutdown_29C0 — full audio system teardown.
  *   6. Destroy physics world at lbl_8271A358 via VCALL slot 0.
  *   7. Shutdown hsmContext at +24 via VCALL slot 6.
@@ -650,12 +654,12 @@ extern void* g_threadpool_head;
 extern void rage_threadpool_cleanup_6878(void* pNode);
 
 /* Heap free @ 0x820C00C0 */
-extern void rage_free_00C0(void* ptr);
+extern void rage_free(void* ptr);
 
 void gameLoop_Shutdown_94B8(gameLoop* pLoop)
 {
-    /* 1. Destroy display device (VCALL slot 2). */
-    if (g_display_obj_ptr != NULL) {
+    /* 1. Destroy display device (VCALL slot 2 — no null check in scaffold). */
+    {
         typedef void (*DestroyFn)(void*);
         void** vt = *(void***)g_display_obj_ptr;
         ((DestroyFn)vt[2])(g_display_obj_ptr);
@@ -675,18 +679,20 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
             void** vt = *(void***)pAudio;
             ((DtorFn)vt[0])(pAudio, 3);
         } else {
-            rage_free_00C0(pAudioBase);
+            rage_free(pAudioBase);
         }
     }
 
-    /* 3. Null audio globals. */
-    g_audio_obj_ptr       = NULL;
-    g_audio_unknown_25436 = NULL;
-    g_audio_unknown_25440 = NULL;
-
-    /* 4. Free audio config and null it. */
-    rage_free_00C0(g_audio_config_ptr);
-    g_audio_config_ptr = NULL;
+    /* 3. Null audio globals (order matches scaffold: 25444, 25436, load 25448,
+     *    null 25440, free loaded ptr, null 25448). */
+    g_audio_obj_ptr       = NULL;  /* SDA+25444 */
+    g_audio_unknown_25436 = NULL;  /* SDA+25436 */
+    {
+        void* pCfgToFree = g_audio_config_ptr;  /* load SDA+25448 before nulling 25440 */
+        g_audio_unknown_25440 = NULL;            /* SDA+25440 */
+        rage_free(pCfgToFree);
+    }
+    g_audio_config_ptr = NULL;  /* SDA+25448 */
 
     /* 5. Full audio system shutdown. */
     audSystem_shutdown_29C0(pLoop);
@@ -721,7 +727,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
         void* pNet = g_pNetSystem;
         if (pNet != NULL) {
             netSystem_shutdown_B510(pNet);
-            rage_free_00C0(pNet);
+            rage_free(pNet);
         }
     }
 
@@ -751,11 +757,11 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
  *   5. Allocate net system singleton (24 bytes) → lbl_8271A374.
  *   6. Set default screen 1280×720, apply exe-name overrides.
  *   7. Query XGetVideoMode for hi-def / widescreen detection.
- *   8. Compute effective screen width → m_nScreenWidth (+520).
+ *   8. Compute truncated refresh rate → m_fRefreshRate (+520).
  *   9. Allocate pongPostEffects → g_pPostEffects (SDA+25556).
  *  10. Create display device via rage_obj_factory → grcDisplay (84 bytes).
  *  11. Display-mode matching loop → m_nDisplayModeIdx (+512).
- *  12. Allocate audio config object (64 bytes) → lbl_8271A358.
+ *  12. Allocate physics world container (64 bytes) → g_pPhysicsWorld (0x8271A358).
  *  13. Call audSystem_configure_2930 with config.
  *  14. Store config+20 to m_nUnknown504 (+504) on success.
  *
@@ -780,7 +786,7 @@ extern const float k_fpsLowerBound;     /* lbl_8202D110 (same as k_initSceneTime
 extern const float k_fpsUpperBound;     /* lbl_82079BE0 */
 
 /* Subsystem init helpers. */
-extern void rage_F9A8(int32_t nFPS, int32_t flag);
+extern void rage_SetRenderMode(int32_t nFPS, int32_t flag);  /* @ 0x8214F9A8 */
 extern void xe_main_thread_init_0038(void);
 extern void rage_get_exe_name_6628(const char* pKey, uint32_t* pOut);
 extern void rage_CEF0(hsmContext* pHsm);
@@ -841,10 +847,11 @@ extern const float k_refreshRateOffset; /* lbl_8202D10C */
 extern uint8_t g_bNonWidescreen;
 
 /* Misc init helpers. */
-extern void rage_F400(void);
-extern void rage_AD98(void* pObj);
-extern void rage_66F0(void* pObj);
-extern int  rage_6530(void* pObj, void* pCfg);
+/* Rendering lifecycle management functions */
+extern void InitializeRenderConfig(void);           /* rage_F400 @ 0x8214F400 */
+extern void SetupRenderFiber(void* pObj);           /* rage_AD98 @ 0x8235AD98 */
+extern void CleanupRenderTargets(void* pObj);       /* rage_66F0 @ 0x823666F0 */
+extern int  ConfigureRenderTargets(void* pObj, void* pCfg); /* rage_6530 @ 0x82366530 */
 extern void xe_5BB0(uint32_t val);
 
 /* Init-complete flag @ 0x825EE296 */
@@ -860,14 +867,14 @@ extern uint8_t g_objFactory[];
 extern void* k_factoryParam1;     /* lbl_8203AB50 */
 extern void* k_factoryVtable;     /* lbl_8204E8CC */
 
-/* Audio config vtable @ 0x8204EADC */
-extern void* audioConfig_vtable;
+/* Physics world container vtable @ 0x8204EADC */
+extern void* physicsWorld_vtable;
 
 /* Callback setup for config file. */
 extern void nt_0420(void* pPath, const char* pStr);
 
 /* Callback function pointer @ 0x82228C68 */
-extern void rage_8C68(void);
+extern void rage_RenderDebugOverlay(void);  /* @ 0x82228C68 */
 
 /* Callback store location @ 0x825C2AD8 */
 extern void* g_configCallback;
@@ -902,10 +909,10 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     }
     pLoop->m_fTargetFPS = fTargetFPS;
 
-    /* Convert FPS to integer for rage_F9A8. */
+    /* Convert FPS to integer for rage_SetRenderMode. */
     {
         int32_t nFPS = (int32_t)fTargetFPS;
-        rage_F9A8(nFPS, 1);
+        rage_SetRenderMode(nFPS, 1);
     }
 
     /* 5. Allocate net system singleton (24 bytes). */
@@ -945,37 +952,33 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         g_nScreenWidth  = width;
         g_nScreenHeight = height;
 
-        /* 7. Query XGetVideoMode, compute effective screen width. */
+        /* 7. Query XGetVideoMode, compute truncated refresh rate. */
         XVideoMode vm;
         XGetVideoMode(&vm);
 
-        /* Screen width = (int)(refreshRate + k_refreshRateOffset) as float. */
-        float fRefresh = *(float*)((uint8_t*)&vm + 20);  /* RefreshRate at +20 */
-        float fComputed = fRefresh + k_refreshRateOffset;
-        int32_t nComputed = (int32_t)fComputed;
-        pLoop->m_nScreenWidth = (uint32_t)nComputed;
+        /* refreshRate + offset → truncate to int → back to float (stfs). */
+        float fComputed = vm.fRefreshRate + k_refreshRateOffset;
+        int32_t nTruncated = (int32_t)fComputed;
+        pLoop->m_fRefreshRate = (float)nTruncated;
 
         /* Dispatch hsmContext init completion. */
         rage_CEF0(pSm);
         typedef void (*SmInitFn)(hsmContext*);
         ((SmInitFn)pSm->vtable[1])(pSm);
 
-        /* 7b. Check widescreen / hi-def mode. */
+        /* 7b. Check widescreen mode (XVideoMode+12 = fIsWideScreen). */
         XGetVideoMode(&vm);
-        uint8_t bIsWidescreen = (vm.fIsHiDef != 0) ? 1 : 0;
-        /* Note: the scaffold checks offset +12 in XVideoMode which on real
-         * Xbox 360 SDK is fIsWideScreen, not fIsHiDef at +16. The existing
-         * XVideoMode struct in this file maps +8 as fIsHiDef. */
+        uint8_t bIsWidescreen = (vm.fIsWideScreen != 0) ? 1 : 0;
 
         if (!bIsWidescreen) {
             /* Non-widescreen path: set flag, configure render. */
             g_bNonWidescreen = 0;
-            rage_F400();
+            InitializeRenderConfig();
             void* pRoot = g_pRootGameObj;
-            rage_AD98(pRoot);
-            rage_66F0(pRoot);
-            if (rage_6530(pRoot, g_nonWsConfig) == 0) {
-                rage_66F0(pRoot);
+            SetupRenderFiber(pRoot);
+            CleanupRenderTargets(pRoot);
+            if (ConfigureRenderTargets(pRoot, g_nonWsConfig) == 0) {
+                CleanupRenderTargets(pRoot);
             }
         }
     }
@@ -1028,8 +1031,8 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     {
         XVideoMode vm;
         XGetVideoMode(&vm);
-        uint8_t bHiDef = (vm.fIsHiDef != 0) ? 1 : 0;
-        float fTargetAspect = bHiDef ? k_aspectHiDef : k_aspectStandard;
+        uint8_t bWidescreen = (vm.fIsWideScreen != 0) ? 1 : 0;
+        float fTargetAspect = bWidescreen ? k_aspectHiDef : k_aspectStandard;
 
         int32_t matchIdx = -1;
         uint8_t* pEntries = g_displayModeBase + 8;
@@ -1095,12 +1098,12 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         void* pConfigPath = *(void**)(pCfg + 28);
         if (pConfigPath != NULL) {
             pLoop->m_nConfigParam540 = *(uint32_t*)(pCfg + 28);
-            g_configCallback = (void*)rage_8C68;
+            g_configCallback = (void*)rage_RenderDebugOverlay;
             nt_0420(pConfigPath, "GameConfig");
         }
     }
 
-    /* 14. Allocate audio config object (64 bytes, align 16). */
+    /* 14. Allocate physics world container (64 bytes, align 16). */
     xe_main_thread_init_0038();
     {
         typedef void* (*AllocFn)(void*, int32_t, int32_t);
@@ -1110,7 +1113,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
 
         if (pAcMem != NULL) {
             uint8_t* pAc = (uint8_t*)pAcMem;
-            /* Initialise audio config fields. */
+            /* Initialise physics world container fields. */
             *(uint8_t*)(pAc + 4)   = 0;
             *(uint32_t*)(pAc + 8)  = 0;
             *(uint8_t*)(pAc + 12)  = 0;
@@ -1126,7 +1129,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
             *(uint32_t*)(pAc + 52) = 0;
             *(uint32_t*)(pAc + 56) = 0;
             *(uint32_t*)(pAc + 60) = 0;
-            *(void**)(pAc + 0)     = &audioConfig_vtable;
+            *(void**)(pAc + 0)     = &physicsWorld_vtable;
             g_pPhysicsWorld = pAcMem;
         } else {
             g_pPhysicsWorld = NULL;
@@ -1145,7 +1148,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
             nAllocSize = (uint32_t)-1;
         }
 
-        /* Allocate backing buffer for audio config. */
+        /* Allocate backing buffer for physics world container. */
         xe_main_thread_init_0038();
         {
             typedef void* (*AllocFn)(void*, int32_t, int32_t);

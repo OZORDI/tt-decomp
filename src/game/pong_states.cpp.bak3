@@ -55,7 +55,7 @@ extern void  pg_6000_g(void* obj);                         // page group helper
 extern void  pongAttractState_Shutdown(void* state);       // attract state cleanup
 extern void  xe_main_thread_init_0038();                   // thread init
 extern void  InitializePageGroup(void* pageGroup);         // @ 0x8231F4C0 - page group constructor
-extern void  rage_RegisterUIContext(void* obj, uint32_t categoryId, const char* nameStr);  // @ 0x822EADF8
+extern void  rage_ADF8(void* obj, void* arg2 = nullptr);                         // rage helper
 
 // Allocation macro (SDA[0] = main alloc table, slot 1 = Alloc)
 extern uint32_t g_mainAllocTable[];  // SDA global
@@ -433,7 +433,7 @@ void pongCreditsContext::OnExitCredits() {
  *      (via vtable slot 1 of the SDA-resident allocator table).
  *   3. If allocation succeeds, calls InitializePageGroup to construct the page group.
  *   4. Stores the result in m_pPageGroup (this+24).
- *   5. Calls rage_RegisterUIContext to bind this context to the credits roll system,
+ *   5. Calls rage_ADF8 to bind this context to the credits roll system,
  *      passing the credits roll name string and the category tag 202.
  *
  * Debug note: the strings "cfail" / "yreadyfail" are debug log tags
@@ -458,7 +458,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
 
     if (pageGroupMem != nullptr) {
         // Construct the page group object
-        InitializePageGroup(pageGroupMem);  // Construct the page group object
+        /* game_F4C0 call - TODO: fix return type */
     } else {
         pageGroupMem = nullptr;
     }
@@ -470,7 +470,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
     // for this context lives at offset +50 within that object.
     extern void* g_pCreditsRollObj;   // @ lbl_82606520 [.data sz:4, SDA +25888]
     const char* nameStr = (const char*)((uint8_t*)g_pCreditsRollObj + 50);
-    rage_RegisterUIContext(this, /*category=*/202, nameStr);
+    rage_ADF8(this, /*category=*/202, nameStr);
 
     // Exit debug bookend: "yreadyfail" @ 0x8205ED80
     // nop_8240E6D0("yreadyfail");   // stripped in release
@@ -1083,7 +1083,7 @@ static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
  *   3. Constructs the page group via game_1620.
  *   4. Stores the result in m_pPageGroup (+24).
  *   5. Loads the dialog manager name from g_pDialogRollObj (+50).
- *   6. Registers this context via rage_RegisterUIContext with category 204.
+ *   6. Registers this context via rage_ADF8 with category 204.
  *   7. Stores the page group in g_dialogPageGroup global.
  */
 void pongDialogContext::Register() {
@@ -1106,7 +1106,7 @@ void pongDialogContext::Register() {
     // Register with the dialog manager
     extern void* g_pDialogRollObj;   // @ 0x82606514  [.data, 4 bytes]
     const char* nameStr = (const char*)((uint8_t*)g_pDialogRollObj + 50);
-    rage_RegisterUIContext(this, /*category=*/204, nameStr);
+    rage_ADF8(this, /*category=*/204, nameStr);
 
     // Store page group in global
     extern void* g_dialogPageGroup;   // @ 0x82606628  [.data, 4 bytes]

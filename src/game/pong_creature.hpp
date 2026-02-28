@@ -445,7 +445,7 @@ struct pcrPostPointBlender {
     float        m_blendWeight;      // +0x70  blend weight for this layer
     void*        m_pActiveClipObj;   // +0x54  active clip obj ptr (at +84)
     void*        m_clipArray;        // +0x190 (400)  crAnimClip* array
-    void*        m_clipRefCounts;    // +0x1A0 (416)  per-slot play-count array
+    uint32_t*    m_clipRefCounts;    // +0x1A0 (416)  per-slot play-count array (uint32_t[], indexed by activeClipIdx)
     void*        m_pRefCountArray;   // +0x1AC_area   at +432
     int32_t      m_activeClipIdx;    // +0x1AC (428)  -1 = none
     uint8_t      m_bForced;          // +0x1A8 (424)  set when force-started

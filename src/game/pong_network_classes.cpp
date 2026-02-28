@@ -14,7 +14,7 @@
 #include <cstring>
 
 // Forward declarations
-extern "C" void rage_free_00C0(void* ptr);
+extern "C" void rage_free(void* ptr);
 extern "C" void atSingleton_9420(void* obj);
 extern "C" void util_FFF8(void* obj, int flags);
 
@@ -80,7 +80,7 @@ void FloatAverager_Destroy(FloatAverager* self, int flags) {
     // If bit 0 is set in flags, free the object memory
     // This follows the standard RAGE engine destruction pattern
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -103,7 +103,7 @@ void FloatAverager_Destroy_7AE8(FloatAverager* self, int flags) {
     self->vtable = (void**)0x8203A91C;
     
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -118,7 +118,7 @@ void FloatAverager_Destroy_D538(FloatAverager* self, int flags) {
     self->vtable = (void**)0x82070D78;
     
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -140,7 +140,7 @@ void FloatAverager_Destroy_3EE8(FloatAverager* self, int flags) {
     self->vtable = (void**)0x8203A910;
     
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -172,7 +172,7 @@ void FrameTimeEstimate_Destroy(FrameTimeEstimate* self, int flags) {
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -221,7 +221,7 @@ void AckHandling_Destroy(AckHandling* self, int flags) {
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -461,7 +461,7 @@ void pongPaddle_ScalarDtor(pongPaddle* self, int flags) {
     pongPaddle_4190_h(self);
     
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -509,7 +509,7 @@ void plrPropMgr_Destroy(plrPropMgr* self, int flags) {
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -614,7 +614,7 @@ void NetDataQuery_Destroy(NetDataQuery* self, int flags) {
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -847,7 +847,7 @@ void NetStateSync_Destroy(NetStateSync* self, int flags) {
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 

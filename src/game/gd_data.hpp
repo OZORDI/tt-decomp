@@ -1577,3 +1577,91 @@ private:
 static_assert(sizeof(gdTierMember) >= 24, "gdTierMember minimum size check");
 static_assert(sizeof(gdTier) >= 32, "gdTier minimum size check");
 static_assert(sizeof(gdLadder) >= 32, "gdLadder minimum size check");
+
+
+////////////////////////////////////////////////////////////////////////////////
+// RAGE Serialization System
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * RegisterSerializedField @ 0x821A8F58
+ * Original symbol: game_8F58
+ *
+ * RAGE serialization system field registration helper.
+ * Registers a single field of a data object with the serialization system.
+ *
+ * Called during asset load/bind (vtable slot 21 - RegisterFields) for all
+ * RAGE data singleton classes (creditsData, dialogData, frontendData, etc.)
+ */
+void RegisterSerializedField(void* obj,
+                             const void* fieldKey,
+                             void* fieldPtr,
+                             const void* schemaDesc,
+                             uint32_t flags);
+
+////////////////////////////////////////////////////////////////////////////////
+// HSM State Machine Helpers
+////////////////////////////////////////////////////////////////////////////////
+
+// Forward declarations
+namespace rage {
+    class hsmContext;
+    class hsmState;
+}
+
+/**
+ * PostStateTransitionRequest @ 0x822228B8
+ * Original symbol: game_28B8
+ * 
+ * Posts a state transition request to the HSM (Hierarchical State Machine).
+ * 
+ * This is the core HSM transition mechanism used by all game states.
+ * When a state wants to transition to another state, it calls this function
+ * with the target state index.
+ * 
+ * Flow:
+ * 1. Calls vtable slot 6 on the HSM context (CanTransition check)
+ * 2. If transition is blocked, returns an error string pointer
+ * 3. If allowed, retrieves the target state object from the state array
+ * 4. Calls vtable slot 13 on the target state (CreateTransitionRequest)
+ * 5. Returns the transition request object
+ * 
+ * Used by:
+ * - All pong*State::OnEnter/OnExit methods
+ * - Network client state transitions
+ * - Game loop state management
+ * 
+ * @param hsmContext The HSM context managing state transitions
+ * @param stateIndex Index of the target state to transition to
+ * @return Transition request object, or error string if blocked
+ */
+void* PostStateTransitionRequest(rage::hsmContext* hsmContext, int stateIndex);
+
+/**
+ * InitializePageGroup @ 0x8231F4C0
+ * Original symbol: game_F4C0
+ * 
+ * Initializes a UI page group object for the frontend menu system.
+ * 
+ * A page group is a container for multiple UI pages (screens) that can be
+ * shown/hidden together. This function constructs the page group with:
+ * - Dual vtable pointers (multiple inheritance)
+ * - Two embedded rage::xmlTree objects for UI hierarchy
+ * - Zero-initialized state fields
+ * - Allocated sub-object for page management (32 bytes, 16-byte aligned)
+ * 
+ * Structure layout:
+ *   +0x00: Primary vtable pointer
+ *   +0x04: Secondary vtable pointer (MI base)
+ *   +0x60: Embedded xmlTree object 1
+ *   +0x70: Embedded xmlTree object 2
+ *   +0x40: Allocated page manager sub-object
+ *   +0x80+: State fields (counters, flags, timers)
+ * 
+ * Called by:
+ * - pongCreditsContext::RegisterWithCreditsRoll
+ * - Other frontend context initialization
+ * 
+ * @param pageGroup Pointer to uninitialized page group memory (220 bytes)
+ */
+void InitializePageGroup(void* pageGroup);

@@ -50,14 +50,14 @@
 extern void atSingleton_9420(void* obj);
 
 // Heap allocator / deallocator (RAGE custom).
-extern void rage_free_00C0(void* ptr);
+extern void rage_free(void* ptr);
 
 // RAGE animation event dispatcher.
 //   Fires this event through the crAnimEvent subsystem.
 //   arg1 = this, arg2 = type-name string, arg3 = type-registry block ptr,
 //   arg4 = &m_name, arg5 = 0, arg6 = 0.
 // @ 0x821A8F58
-extern void game_8F58(void* self,
+extern void RegisterSerializedField(void* self,
                       const char* typeName,
                       void* typeRegistry,
                       const char** pName,
@@ -116,11 +116,11 @@ static void pcrAnimEvent_DtorBody(pcrAnimEvent* self)
 
     // Free the m_value atString buffer if it is heap-owned (m_valueCap != 0).
     if (self->m_valueCap != 0)
-        rage_free_00C0(const_cast<char*>(self->m_value));
+        rage_free(const_cast<char*>(self->m_value));
 
     // Free the m_name atString buffer if it is heap-owned (m_nameCap != 0).
     if (self->m_nameCap != 0)
-        rage_free_00C0(const_cast<char*>(self->m_name));
+        rage_free(const_cast<char*>(self->m_name));
 
     // Tear down the atSingleton base.
     atSingleton_9420(self);
@@ -181,7 +181,7 @@ void pcrAnimEvent::Process()
     // Dispatch through the engine event system.
     // The type-name string identifies the class for the dispatcher;
     // &m_name gives the dispatcher the event's per-instance name.
-    game_8F58(this,
+    RegisterSerializedField(this,
               kTypeName_pcrAnimEvent,
               &g_pcrAnimEvent_typeRegistry,
               &m_name,

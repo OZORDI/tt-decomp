@@ -142,10 +142,16 @@ struct audVoice {
 struct audVoiceSfx {
     void**      vtable;           // +0x00
 
+// ── rage::audVoiceSfx  [vtable @ 0x82035AFC] ──────────────────────────
+// Confirmed methods: Play, PlayByEntry, SetEffectVolume, SetReverbVolume
+// Field hints: m_pSfxRef:ptr
+struct audVoiceSfx {
+    void**      vtable;           // +0x00
+
     // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:2 W:2
-    uint32_t     field_0x0008;  // +0x0008  R:4 W:2
-    uint32_t     field_0x000c;  // +0x000c  R:16 W:0
+    uint32_t     field_0x0004;  // +0x0004  R:2 W:2 - likely flags or state
+    uint32_t     field_0x0008;  // +0x0008  R:4 W:2 - likely control pointer
+    void*        m_pSfxRef;      // +0x000c  R:16 W:0 - sound effect reference (heavily read)
 
     // ── virtual methods ──
     virtual void vfn_5();  // [5] @ 0x821635b8
@@ -163,9 +169,12 @@ struct audVoiceSfx {
 
     // ── non-virtual methods (from debug strings) ──
     void Play();
+    void PlayByEntry(void* entry, float volume, float pitch, float pan, float priority,
+                     uint32_t param5, uint32_t param6, uint8_t param7);  // @ 0x82163498
     void SetReverbVolume();
     void SetEffectVolume();
 };
+
 
 // ── rage::audVoiceStream  [vtable @ 0x82035B5C] ──────────────────────────
 // Confirmed methods: Play, PlayByEntry, Prime, SetEffectVolume, SetReverbVolume
