@@ -1585,3 +1585,57 @@ void pongNetMessageHolder::InitializeMessageArray()
         *(uint16_t*)(entryPtr + 242) = i + 1;
     }
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::IsStateActive @ 0x823FA420 | size: 0xA8
+//
+// Checks if the network client is in an active state based on the state field.
+// Returns true/false depending on the current state value and additional checks.
+//
+// State meanings:
+//   0-1: Inactive states (return false)
+//   2:   Check vtable pointer as boolean
+//   3:   Check if vtable is non-null (return true if initialized)
+//   4:   Check if float at offset +0 equals zero constant
+//   5:   Check if vtable is non-null (return true if initialized)
+//   >5:  Invalid state (return false)
+// ===========================================================================
+bool SinglesNetworkClient::IsStateActive()
+{
+    // Load state from offset +4
+    uint32_t state = field_0x0004;
+    
+    // If state > 5, return false
+    if (state > 5) {
+        return false;
+    }
+    
+    // Handle each state case
+    switch (state) {
+        case 0:
+        case 1:
+            // Inactive states
+            return false;
+            
+        case 2:
+            // Return vtable pointer as boolean (non-zero = true)
+            return (vtable != nullptr);
+            
+        case 3:
+        case 5:
+            // Check if vtable is initialized
+            return (vtable != nullptr);
+            
+        case 4: {
+            // Check if float at offset +0 (vtable location) equals zero constant
+            // Load zero constant from global @ 0x8202D110
+            extern const float g_zeroConstant;  // @ 0x8202D110
+            float value = *(float*)&vtable;  // Reinterpret vtable pointer as float
+            return (value != g_zeroConstant);
+        }
+            
+        default:
+            return false;
+    }
+}
