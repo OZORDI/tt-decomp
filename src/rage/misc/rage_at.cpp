@@ -544,3 +544,107 @@ int atSingleton::ReadBits8() {
     
     return 0;  // Success (or error handled)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::InsertAtPosition @ 0x825537D8 | size: 0xEC
+//
+// Inserts a data pointer into a linked list at the specified position.
+// Uses a free list to allocate nodes efficiently.
+//
+// @param data Pointer to data to insert (must not be NULL)
+// @param position Position to insert at:
+//                 -1 = append to end
+//                  0 = prepend to beginning
+//                 >0 = insert after N nodes
+// @return 1 on success, 0 on failure
+// ─────────────────────────────────────────────────────────────────────────────
+int atSingleton::InsertAtPosition(void* data, int position) {
+    // Validate parameters
+    if (this == nullptr || data == nullptr) {
+        return 0;
+    }
+    
+    // Check if position is within bounds (position <= count)
+    int count = *(int*)((char*)this + 16);
+    if (position > count) {
+        return 0;
+    }
+    
+    // Pop a node from the free list (offset +8)
+    void** freeListHead = (void**)((char*)this + 8);
+    void* node = *freeListHead;
+    
+    // Get next free node and update free list head
+    void* nextFree = *(void**)node;
+    *freeListHead = nextFree;
+    
+    // If free list is now empty, clear the tail pointer
+    if (nextFree == nullptr) {
+        *(void**)((char*)this + 12) = nullptr;
+    }
+    
+    // Store data pointer in node (offset +4)
+    *((void**)((char*)node + 4)) = data;
+    
+    // Insert node based on position
+    if (position == 0) {
+        // Prepend: insert at head
+        void** headPtr = (void**)this;
+        void* oldHead = *headPtr;
+        
+        // Link new node to old head
+        *(void**)node = oldHead;
+        
+        // Update head to new node
+        *headPtr = node;
+        
+        // If list was empty, update tail
+        void** tailPtr = (void**)((char*)this + 4);
+        if (oldHead == nullptr) {
+            *tailPtr = node;
+        }
+    } else if (position == -1) {
+        // Append: insert at tail
+        void** tailPtr = (void**)((char*)this + 4);
+        void* oldTail = *tailPtr;
+        
+        // New node has no next
+        *(void**)node = nullptr;
+        
+        // Update tail to new node
+        *tailPtr = node;
+        
+        // If list was empty, update head
+        void** headPtr = (void**)this;
+        if (oldTail == nullptr) {
+            *headPtr = node;
+        } else {
+            // Link old tail to new node
+            *(void**)oldTail = node;
+        }
+    } else {
+        // Insert at position N: walk to node N-1 and insert after it
+        void* current = *(void**)this;
+        
+        // Walk to position-1
+        for (int i = 1; i < position; i++) {
+            current = *(void**)current;
+        }
+        
+        // Insert after current
+        void* next = *(void**)current;
+        *(void**)node = next;
+        *(void**)current = node;
+        
+        // If we inserted at the end, update tail
+        if (next == nullptr) {
+            *(void**)((char*)this + 4) = node;
+        }
+    }
+    
+    // Increment count
+    count++;
+    *(int*)((char*)this + 16) = count;
+    
+    return 1;
+}
