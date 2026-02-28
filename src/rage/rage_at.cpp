@@ -179,3 +179,30 @@ int atSingleton::HandleStateTransition(int transitionType) {
     
     return result;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::InitializeFlags @ 0x824DA7B0 | size: 0x30
+//
+// Conditionally initializes three flag fields based on a check at offset +3628.
+// If the field at +3628 is 0, returns 1 (early exit).
+// Otherwise, sets fields at +280, +3352, and +19376 to 1, and returns 0.
+//
+// @return 1 if already initialized (field at +3628 is 0), 0 if flags were set
+// ─────────────────────────────────────────────────────────────────────────────
+int atSingleton::InitializeFlags() {
+    // Check initialization flag at offset +3628
+    int checkValue = *(int*)((char*)this + 3628);
+    
+    if (checkValue == 0) {
+        // Already initialized - return 1
+        return 1;
+    }
+    
+    // Not initialized - set three flags to 1
+    *(int*)((char*)this + 280) = 1;
+    *(int*)((char*)this + 3352) = 1;
+    *(int*)((char*)this + 19376) = 1;
+    
+    // Return 0 to indicate flags were set
+    return 0;
+}
