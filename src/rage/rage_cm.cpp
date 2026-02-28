@@ -1023,3 +1023,70 @@ uint8_t cmNode_GetBool(const rage::cmNodePort* port) {
         return 0;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  CONTROL REFERENCE NODE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * rage::cmControlRef::GetBool @ 0x8227CCA8 | size: 0x5C (vtable slot 3)
+ *
+ * Retrieves a boolean value from a control reference by index.
+ * The control reference points to a control object that contains an array
+ * of control entries. Each entry has a type field that determines how to
+ * retrieve the boolean value.
+ *
+ * Entry types:
+ *   1 = Direct byte value - read the byte directly from the entry
+ *   2 = Object reference - call the object's GetBool virtual method (slot 3)
+ *   Other = Return false (write 0 to output)
+ *
+ * Layout:
+ *   +0x0C = pointer to control object
+ *   +0x10 = entry index (uint32_t)
+ *   Control object:
+ *     +0x54 = pointer to entry array
+ *   Entry (8 bytes each):
+ *     +0x00 = data pointer (byte* for type 1, object* for type 2)
+ *     +0x04 = type code (int32_t)
+ */
+void cmControlRef::GetBool(uint8_t* out) {
+    // Load control object pointer from +12
+    void* controlObj = *(void**)((uint8_t*)this + 12);
+    
+    // Load entry index from +16
+    uint32_t entryIndex = *(uint32_t*)((uint8_t*)this + 16);
+    
+    // Calculate byte offset: index * 8 (each entry is 8 bytes)
+    uint32_t entryOffset = entryIndex << 3;  // rlwinm r10,r10,3,0,28
+    
+    // Get pointer to entry array (at offset +84 of control object)
+    void** entryArrayPtr = (void**)((uint8_t*)controlObj + 84);
+    void* entryArray = *entryArrayPtr;
+    
+    // Get pointer to the specific entry
+    uint8_t* entry = (uint8_t*)entryArray + entryOffset;
+    
+    // Load entry type from offset +4
+    int32_t entryType = *(int32_t*)(entry + 4);
+    
+    if (entryType == 1) {
+        // Type 1: Direct byte value
+        // Load data pointer from offset +0
+        uint8_t* dataPtr = *(uint8_t**)entry;
+        // Read the byte value
+        *out = *dataPtr;
+    } else if (entryType == 2) {
+        // Type 2: Object reference with virtual GetBool method
+        // Load object pointer from offset +0
+        void** objPtr = *(void***)entry;
+        // Get vtable
+        void** vtable = (void**)*objPtr;
+        // Call virtual method at slot 3 (GetBool)
+        using GetBoolFn = void(*)(void*, uint8_t*);
+        reinterpret_cast<GetBoolFn>(vtable[3])(objPtr, out);
+    } else {
+        // Unknown type: return false
+        *out = 0;
+    }
+}

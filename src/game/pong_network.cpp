@@ -307,3 +307,37 @@ const char* ServeStartedMessage::GetTypeName()
 {
     return g_szServeStartedTypeName;  // @ 0x8206E9D0  ("ServeStartedMessage" or similar)
 }
+
+
+// ===========================================================================
+// PongNetGameModeCoordinator::CheckNetworkStatus @ 0x823B4E18 | size: 0x64
+//
+// Checks the network connection status by temporarily setting a state value
+// and querying the network client.
+//
+// Returns:
+//   0 if network check failed or returned 0
+//   1 if network check succeeded and returned non-zero
+// ===========================================================================
+int PongNetGameModeCoordinator::CheckNetworkStatus()
+{
+    // Get pointer to network client at offset +2652
+    void* networkClient = (char*)this + 2652;
+    
+    // Save current state value at offset +28
+    uint32_t savedState = *(uint32_t*)((char*)networkClient + 28);
+    
+    // Temporarily set state to 46
+    *(uint32_t*)((char*)networkClient + 28) = 46;
+    
+    // Query network status (result stored on stack at offset 80)
+    uint32_t statusResult = 0;
+    extern void SinglesNetworkClient_0E18_g(void*, uint32_t*, int);
+    SinglesNetworkClient_0E18_g(networkClient, &statusResult, 2);
+    
+    // Restore original state
+    *(uint32_t*)((char*)networkClient + 28) = savedState;
+    
+    // Return 1 if status check returned non-zero, 0 otherwise
+    return (statusResult != 0) ? 1 : 0;
+}
