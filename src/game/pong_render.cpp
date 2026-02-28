@@ -547,3 +547,90 @@ void pongScrnTransSwipe::Reset() {
     m_progress = g_floatZero;
     m_randomize = true;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScreenCapture_rtti_B0EC_0  @ 0x822ED968  size: 0x9C
+//
+// Screen capture render wrapper that saves/restores render state around a
+// Flash HUD rendering call. This function is part of the screen capture system
+// that allows taking screenshots or rendering UI elements to textures.
+//
+// The function performs a render state sandwich pattern:
+//   1. Save current render state (game_2EE0 + game_2E80 + grc_EB10)
+//   2. Render Flash HUD element with specific parameters
+//   3. Restore previous render state (game_2EE0 + game_2E80 + grc_EB10)
+//
+// Globals accessed:
+//   0x821EBA9C (pongPlayer_BA20_g + 0x7C) - previous render state pointer
+//   0x821EBAA0 (pongPlayer_BA20_g + 0x80) - current render state pointer
+//   0x821F0898 (gdRivalry_vfn_20 + 0x10) - render mode index (stored as "8@" string)
+//   0x82140110 (ref_fi_F5F0 + 0xB20) - constant float value (likely 1.0f or 0.0f)
+//   0x821FE3D4 (pongCameraMgr_D648_g + 0xD8C) - HUD Flash base object pointer
+//
+// External function references:
+//   game_2EE0 @ 0x82152EE0 - Save/restore render context (part 1)
+//   game_2E80 @ 0x82152E80 - Save/restore render context (part 2)
+//   grc_EB10 @ 0x8214EB10 - Graphics device state save/restore
+//   hudFlashBase_0F08_g @ 0x82140F08 - Render Flash HUD element
+//
+// Parameters:
+//   r3 (this) - pongScreenCapture object pointer (stored in r28)
+//
+// The function uses a stack-based state save pattern where the previous state
+// is pushed onto a global stack, the HUD is rendered, then the state is popped.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External globals (defined in globals.c or other subsystems)
+extern void* g_renderStateStack[];      // @ 0x821EBA9C (stack of render states)
+extern void* g_currentRenderState;      // @ 0x821EBAA0 (current active state)
+extern int   g_renderModeIndex;         // @ 0x821F0898 (render mode selector)
+extern float g_hudRenderParam;          // @ 0x82140110 (parameter for HUD render)
+extern void* g_hudFlashBase;            // @ 0x821FE3D4 (HUD Flash system object)
+
+// External function declarations
+extern void game_2EE0(void* renderState);
+extern void game_2E80(void* renderState);
+extern void grc_EB10(void* deviceState);
+extern void hudFlashBase_0F08_g(void* hudObj, int modeIndex, float param1, float param2,
+                                 int param3, int param4, int param5);
+
+void pongScreenCapture_rtti_B0EC_0(pongScreenCapture* this_ptr) {
+    // Save previous render state pointer
+    void* previousState = g_renderStateStack[g_renderModeIndex + 8];
+    void* currentState = g_currentRenderState;
+    
+    // Push current state onto stack
+    g_renderStateStack[g_renderModeIndex + 8] = currentState;
+    
+    // If there is a current render state, save it
+    if (currentState != nullptr) {
+        game_2EE0(currentState);
+        game_2E80(currentState);
+        
+        // Save graphics device state at offset +768 (0x300)
+        // This offset points to a grcDevice or grcContext member within the render state
+        grc_EB10((void*)((uint8_t*)currentState + 768));
+    }
+    
+    // Render the Flash HUD element
+    // The mode index is read from a global array and used to select rendering parameters
+    // The float array at (this_ptr + modeIndex*4) contains per-mode rendering parameters
+    int modeIndex = g_renderModeIndex + 8;
+    float* paramArray = (float*)((uint8_t*)this_ptr + modeIndex * 4);
+    float renderParam = *paramArray;
+    
+    hudFlashBase_0F08_g(g_hudFlashBase, modeIndex, g_hudRenderParam, renderParam,
+                        0, 0, 0);
+    
+    // Restore previous render state
+    g_renderStateStack[g_renderModeIndex + 8] = previousState;
+    
+    // If there was a previous state, restore it
+    if (previousState != nullptr) {
+        game_2EE0(previousState);
+        game_2E80(previousState);
+        
+        // Restore graphics device state
+        grc_EB10((void*)((uint8_t*)previousState + 768));
+    }
+}
