@@ -49,4 +49,36 @@ static_assert(offsetof(parRTStructure, m_slotStorage) == 0x218, "parRTStructure 
 static_assert(offsetof(parRTStructure, m_runtimeHandle) == 0x127EC, "parRTStructure runtime handle offset mismatch");
 static_assert(sizeof(parRTStructure) == 0x127F4, "parRTStructure size mismatch");
 
+struct cmOperator;
+
+/**
+ * rage::parMemberString @ 0x82065AF0
+ *
+ * String-specialized parameter member descriptor used by the par serialization
+ * system. These overrides build editor operators, import string values, and
+ * reset storage to the empty-string default.
+ */
+struct parMemberString {
+    void** m_pVtable;        // +0x00
+    void* m_pMemberDesc;     // +0x04
+
+    /**
+     * parMemberString::vfn_6 @ 0x8234F408 | size: 0x138
+     * Build a cmOperator from the current string value at memberOffset.
+     */
+    cmOperator* vfn_6(std::uint32_t memberOffset);
+
+    /**
+     * parMemberString::vfn_7 @ 0x8234F540 | size: 0x150
+     * Apply the incoming cmOperator string payload into member storage.
+     */
+    void vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+
+    /**
+     * parMemberString::vfn_8 @ 0x8234F360 | size: 0xA4
+     * Reset member storage to an empty string/null pointer default.
+     */
+    void vfn_8(std::uint32_t memberOffset);
+};
+
 } // namespace rage
