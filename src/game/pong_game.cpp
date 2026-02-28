@@ -194,3 +194,76 @@ struct pongGame {
 // 3. State flags stored in game state objects
 // 4. Multiple inheritance (pongGameContext has 2 vtables)
 // ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * game_CheckNetworkAndTransitionToState6 @ 0x823D7788 | size: 0xCC
+ *
+ * Checks network client status and transitions to state 6 if conditions are met.
+ * This function is called from various game state handlers to ensure proper
+ * network synchronization before proceeding.
+ *
+ * Logic flow:
+ *   1. Load HSM context from offset +4 of the state object
+ *   2. Check if current state (at +12) is not 6
+ *   3. If not state 6, set next state to 6 via hsmContext_SetNextState
+ *   4. Check network client status (player indices at +16 and +20)
+ *   5. If both indices are -1, call utility function with specific parameters
+ *   6. Check input object status at offset +332
+ *   7. If input is active, call SinglesNetworkClient function with -1 parameter
+ *
+ * Globals used:
+ *   0x8271A320 - Network client pointer 1
+ *   0x8271A328 - Network client pointer 2  
+ *   0x825EAB28 - g_input_obj_ptr
+ *   0x8261A0C0 - 16-byte data buffer for util call
+ */
+void game_CheckNetworkAndTransitionToState6(void* stateObj) {
+    // Load HSM context from offset +4
+    void* hsmContext = *(void**)((uint8_t*)stateObj + 4);
+    
+    // Load current state index from offset +12 of context
+    int32_t currentState = *(int32_t*)((uint8_t*)hsmContext + 12);
+    
+    // If not in state 6, transition to it
+    if (currentState != 6) {
+        // Call hsmContext_SetNextState with state index 6
+        extern void hsmContext_SetNextState_2800(void* ctx, int32_t stateIdx);
+        hsmContext_SetNextState_2800(hsmContext, 6);
+        
+        // Load network client pointer from global
+        extern void* lbl_8271A320;  // @ 0x8271A320
+        void* networkClient = lbl_8271A320;
+        
+        // Check player indices at offsets +16 and +20
+        int32_t playerIdx1 = *(int32_t*)((uint8_t*)networkClient + 16);
+        int32_t playerIdx2 = *(int32_t*)((uint8_t*)networkClient + 20);
+        
+        // If both indices are -1, network is not fully initialized
+        bool networkNotReady = (playerIdx1 == -1 && playerIdx2 == -1);
+        
+        if (!networkNotReady) {
+            // Network has at least one player - call utility function
+            extern void util_94B8(int32_t param1, int32_t param2, uint64_t* data1, uint64_t* data2);
+            extern uint64_t lbl_8261A0C0[2];  // @ 0x8261A0C0 (16-byte buffer)
+            
+            // Call with parameters: (2, 1, data, data)
+            util_94B8(2, 1, lbl_8261A0C0, lbl_8261A0C0);
+        }
+        
+        // Check input object status
+        extern void* g_input_obj_ptr;  // @ 0x825EAB28
+        void* inputObj = g_input_obj_ptr;
+        
+        // Load status byte from offset +332
+        uint8_t inputActive = *(uint8_t*)((uint8_t*)inputObj + 332);
+        
+        if (inputActive != 0) {
+            // Input is active - call network client function
+            extern void SinglesNetworkClient_1410_g(void* client, int32_t param);
+            extern void* lbl_8271A328;  // @ 0x8271A328
+            void* networkClient2 = lbl_8271A328;
+            
+            SinglesNetworkClient_1410_g(networkClient2, -1);
+        }
+    }
+}
