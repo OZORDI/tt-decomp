@@ -75,6 +75,7 @@ set(SOURCES
     
     # Game logic
     src/game/char_view/char_view.cpp
+    src/game/cutscene/pong_cutscene.cpp
     src/game/data/gd_data.cpp
     src/game/data/gd_vib_event.cpp
     src/game/save/mc_memcard.cpp
