@@ -66,6 +66,7 @@ set(SOURCES
     src/rage/render_loop.c
     src/rage/scene_render.c
     src/rage/network/session_events.cpp
+    src/rage/network/snSessionStates.cpp
     src/rage/core/subsystem_init.c
     src/rage/swf.cpp
     src/rage/core/timer.cpp
