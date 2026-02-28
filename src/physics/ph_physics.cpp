@@ -123,3 +123,85 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
         // phDemoWorld_67D0_g(phDemoWorldSingleton, thisPtr, flags);
     }
 }
+
+
+// External references
+extern void util_B8A0(void* obj);  // Base initialization
+extern const float g_floatZero;    // @ 0x8202D110
+extern const float g_floatOne;     // @ 0x8202D110 - 8
+extern void* g_fragDrawableVtable; // @ 0x82033094
+
+/**
+ * rage::fragDrawable::Constructor @ 0x82124220 | size: 0xCC
+ *
+ * Initializes a rage::fragDrawable object. This is the base drawable class
+ * for fragmented/destructible geometry in the RAGE engine.
+ *
+ * The constructor:
+ * 1. Calls base class initialization (util_B8A0)
+ * 2. Sets up the vtable pointer
+ * 3. Zeros out all state fields (256-302)
+ * 4. Initializes a 3x3 identity matrix at offset +192
+ * 5. Clears a 16-byte vector at offset +240
+ *
+ * Memory layout:
+ *   +0     vtable pointer
+ *   +192   3x3 matrix (identity: diag = 1.0f, off-diag = 0.0f)
+ *   +240   16-byte vector (zeroed)
+ *   +256   State fields (all zeroed)
+ */
+void rage::fragDrawable::Constructor() {
+    // Call base class initialization
+    util_B8A0(this);
+    
+    // Set vtable pointer
+    *(void**)this = g_fragDrawableVtable;  // @ 0x82033094
+    
+    // Zero out state fields from +256 to +302
+    *(uint32_t*)((char*)this + 256) = 0;
+    *(uint32_t*)((char*)this + 260) = 0;
+    *(uint16_t*)((char*)this + 264) = 0;
+    *(uint16_t*)((char*)this + 266) = 0;
+    *(uint32_t*)((char*)this + 268) = 0;
+    *(uint16_t*)((char*)this + 272) = 0;
+    *(uint8_t*)((char*)this + 274) = 1;    // Set flag to 1
+    *(uint8_t*)((char*)this + 275) = 0;
+    *(uint32_t*)((char*)this + 276) = 0;
+    *(uint32_t*)((char*)this + 280) = 0;
+    *(uint32_t*)((char*)this + 284) = 0;
+    *(uint32_t*)((char*)this + 288) = 0;
+    *(uint32_t*)((char*)this + 292) = 0;
+    *(uint32_t*)((char*)this + 296) = 0;
+    *(uint16_t*)((char*)this + 300) = 0;
+    *(uint16_t*)((char*)this + 302) = 0;
+    
+    // Initialize 3x3 identity matrix at offset +192
+    // Matrix layout: [m00 m01 m02] [m10 m11 m12] [m20 m21 m22]
+    float* matrix = (float*)((char*)this + 192);
+    
+    // Row 0: [1, 0, 0, 0]
+    matrix[0] = g_floatOne;   // m00 = 1.0f
+    matrix[1] = g_floatZero;  // m01 = 0.0f
+    matrix[2] = g_floatZero;  // m02 = 0.0f
+    matrix[3] = g_floatZero;  // padding
+    
+    // Row 1: [0, 1, 0, 0]
+    matrix[4] = g_floatZero;  // m10 = 0.0f
+    matrix[5] = g_floatOne;   // m11 = 1.0f
+    matrix[6] = g_floatZero;  // m12 = 0.0f
+    matrix[7] = g_floatZero;  // padding
+    
+    // Row 2: [0, 0, 1, 0]
+    matrix[8] = g_floatZero;  // m20 = 0.0f
+    matrix[9] = g_floatZero;  // m21 = 0.0f
+    matrix[10] = g_floatOne;  // m22 = 1.0f
+    matrix[11] = g_floatZero; // padding
+    
+    // Zero out 16-byte vector at offset +240 using SIMD
+    // vxor v0,v0,v0 + stvx v0,r0,r9
+    uint32_t* vec = (uint32_t*)((char*)this + 240);
+    vec[0] = 0;
+    vec[1] = 0;
+    vec[2] = 0;
+    vec[3] = 0;
+}
