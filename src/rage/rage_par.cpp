@@ -306,12 +306,9 @@ void InitializeArrayOperator(cmOperatorArrayPayload32* pOperator) {
     pOperator->m_pInlineData = 0u;
     pOperator->m_pad0C = 0u;
     pOperator->m_pad0E = 0u;
-    pOperator->m_runtimeToken = *ResolveAddress<std::uint16_t>(
-        static_cast<Address32>(reinterpret_cast<std::uintptr_t>(pOperator) + 18u)
-    );
-    *ResolveAddress<std::uint16_t>(
-        static_cast<Address32>(reinterpret_cast<std::uintptr_t>(pOperator) + 18u)
-    ) = 0u;
+    auto* rawOperator = reinterpret_cast<std::uint8_t*>(pOperator);
+    pOperator->m_runtimeToken = *reinterpret_cast<std::uint16_t*>(rawOperator + 18u);
+    *reinterpret_cast<std::uint16_t*>(rawOperator + 18u) = 0u;
     pOperator->m_pad14 = 0u;
     pOperator->m_pad18 = 0u;
     pOperator->m_pFirstChild = 0u;

@@ -107,3 +107,44 @@ msgMsgSink::~msgMsgSink()
     // Note: if (flags & 1) rage_free(this);
     // Handled by the standard RAGE deleting-destructor ABI.
 }
+
+/**
+ * msgMsgSink::InitializeExtended() @ 0x8245C078 | size: 0x90
+ *
+ * Extended initialization for msgMsgSink after base construction.
+ * Called after the primary constructor to set up additional state.
+ *
+ * Operations:
+ *   1. Calls base initialization (msgMsgSink_A970_2h)
+ *   2. Sets primary vtable at +0 to 0x820054E8
+ *   3. Sets secondary vtable at +12 to 0x82003E28
+ *   4. Clears upper 5 bits of flag byte at +212
+ *   5. Zeros fields at +68, +72, +76, +80, +84, +88, +92, +96
+ *   6. Zeros 22 uint32 array starting at +112
+ */
+void msgMsgSink::InitializeExtended() {
+    // Call base initialization
+    extern void msgMsgSink_A970_2h(void*);
+    msgMsgSink_A970_2h(this);
+    
+    // Set vtables
+    *(void**)((char*)this + 0) = (void*)0x820054E8;   // Primary vtable
+    *(void**)((char*)this + 12) = (void*)0x82003E28;  // Secondary vtable
+    
+    // Clear upper 5 bits of flag byte at +212 (keep lower 5 bits)
+    uint8_t flags = *((uint8_t*)this + 212);
+    flags &= 0x1F;  // clrlwi r7, r8, 27 - clear left 27 bits, keep right 5
+    *((uint8_t*)this + 212) = flags;
+    
+    // Zero fields at +68 through +96 (8 uint32s)
+    uint32_t* fields = (uint32_t*)((char*)this + 68);
+    for (int i = 0; i < 8; i++) {
+        fields[i] = 0;
+    }
+    
+    // Zero 22 uint32 array starting at +112
+    uint32_t* array = (uint32_t*)((char*)this + 112);
+    for (int i = 0; i < 22; i++) {
+        array[i] = 0;
+    }
+}
