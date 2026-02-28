@@ -684,3 +684,50 @@ void io_9B88_w(io* self) {
     // Trigger credits roll
     game_AAF8(g_creditsRoll, 0, 0);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pg_4A58_fw @ 0x821F4A58 | size: 0x7C
+//
+// Page group input handler with conditional flag check.
+// Builds a parameter array and delegates to pg_6F68 for processing.
+//
+// Parameters:
+//   - pPageGroup: Page group context object
+//   - pInputValue: Pointer to input value (float)
+//
+// Returns:
+//   - true if input was processed successfully
+//   - false if processing failed
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External declarations
+extern uint8_t g_uiInputFlag;  // @ SDA+25804 (0x826064CC) - UI input enable flag
+extern bool pg_6F68(void* pInputValue, void* pPageGroup, int eventType, 
+                    uint32_t* params, int paramCount);
+
+/**
+ * pg_4A58_fw @ 0x821F4A58 | size: 0x7C
+ * 
+ * Processes page group input with conditional flag checking.
+ * Builds a 4-element parameter array and calls pg_6F68 for processing.
+ */
+bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
+    // Build parameter array on stack
+    // Array layout: [1, 0, flag, 2]
+    uint32_t params[4];
+    params[0] = 1;
+    params[1] = 0;
+    
+    // Check global UI input flag at SDA+25804
+    // If flag is set, use 1; otherwise use 0
+    params[2] = (g_uiInputFlag != 0) ? 1 : 0;
+    
+    params[3] = 2;
+    
+    // Call page group processor
+    // Parameters: (inputValue, pageGroup, eventType=19, params, paramCount=2)
+    bool result = pg_6F68(pInputValue, pPageGroup, 19, params, 2);
+    
+    // Return true if processing succeeded (non-zero result)
+    return result;
+}

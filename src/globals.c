@@ -56,3 +56,7 @@ const float g_identityMatrixRef[16] = {
 const uint32_t g_vectorComparisonMask[4] = {
     0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
 };
+
+// UI Input System
+// @ SDA+25804 (0x826064CC) - UI input enable flag
+uint8_t g_uiInputFlag = 0;

@@ -96,6 +96,14 @@ extern const float g_identityMatrixRef[16];
 // @ 0x82619BE0 (16 bytes)
 extern const uint32_t g_vectorComparisonMask[4];
 
+// ────────────────────────────────────────────────────────────────────────────
+// UI Input System
+// ────────────────────────────────────────────────────────────────────────────
+
+// UI input enable flag
+// @ SDA+25804 (0x826064CC)
+extern uint8_t g_uiInputFlag;
+
 #ifdef __cplusplus
 }
 #endif
