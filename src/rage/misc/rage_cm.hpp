@@ -601,12 +601,9 @@ struct cmInverse {
 };
 
 // ── rage::cmIsValid  [vtable @ 0x82054E04] ──────────────────────────
-struct cmIsValid {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_3();  // [3] @ 0x8227b068
-    virtual void vfn_16();  // [16] @ 0x82262f18
+struct cmIsValid : cmUnaryNode {
+    void GetBool(uint8_t* out);             // [3] @ 0x8227b068
+    void RegisterPorts(cmUnaryNode* node);  // [16] @ 0x82262f18
 };
 
 // ── rage::cmLerp  [vtable @ 0x82053FEC] ──────────────────────────

@@ -521,6 +521,26 @@ void cmArcTangent::RegisterPorts(cmUnaryNode* node) {
     cmNode_TryConnectUnary(node, {CM_DIM_FLOAT, 0, 0, CM_DIM_FLOAT});
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  VALIDATION NODES
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * cmIsValid — validates that input is a valid INT32 and produces BOOL output.
+ * vtable @ 0x82054E04
+ * 
+ * This node checks if the connected input port carries a valid INT32 value.
+ * Used in the curve machine graph system for type validation and conditional logic.
+ */
+
+// cmIsValid::RegisterPorts @ 0x82262F18
+// Validates that the connected input is INT32 dimension and sets output type to BOOL.
+void cmIsValid::RegisterPorts(cmUnaryNode* node) {
+    cmNode_TryConnectUnary(node, {CM_DIM_INT32, 0, 0, CM_DIM_BOOL});
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  SIGNAL PROCESSING NODES
 // ─────────────────────────────────────────────────────────────────────────────
