@@ -43,20 +43,20 @@ struct grcTextureReferenceBase : datBase {
     virtual void  vfn_2();                                  // slot  2
     virtual void  vfn_3();                                  // slot  3
     virtual void* GetHandle() const;                        // slot  4  – returns m_pInternalData
-    virtual void  vfn_5();                                  // slot  5
-    virtual void  vfn_6();                                  // slot  6
+    virtual void  ForwardSlot5();                           // slot  5
+    virtual void  ForwardSlot6();                           // slot  6
     virtual void  ForwardSlot7(void* param);                // slot  7
-    virtual void  vfn_8();                                  // slot  8
-    virtual void  vfn_9();                                  // slot  9
+    virtual void  ForwardSlot8();                           // slot  8
+    virtual void  ForwardSlot9();                           // slot  9
     virtual void  vfn_10();                                 // slot 10  (abstract/subclass)
     virtual grcTexture* GetTexture() = 0;                   // slot 11  – abstract: returns bound texture
     virtual grcTexture* GetTexture2() = 0;                  // slot 12  – abstract variant (used by LOD path)
-    virtual void  vfn_13(void* a, void* b);                 // slot 13
-    virtual void  vfn_14(void* a, void* b);                 // slot 14
-    virtual void  vfn_15();                                 // slot 15
-    virtual void  vfn_16(void* a);                          // slot 16
-    virtual void  vfn_17(float f, void* a);                 // slot 17  – takes float arg
-    virtual void  vfn_18(void* a, void* b);                 // slot 18
+    virtual void  ForwardSlot13(void* a, void* b);          // slot 13
+    virtual void  ForwardSlot14(void* a, void* b);          // slot 14
+    virtual void  ForwardSlot15();                          // slot 15
+    virtual void  ForwardSlot16(void* a);                   // slot 16
+    virtual void  ForwardSlot17(float f, void* a);          // slot 17  – takes float arg
+    virtual void  ForwardSlot18(void* a, void* b);          // slot 18
     virtual void  vfn_19();                                 // slot 19  (abstract/subclass)
     virtual void  ForwardSlot20();                          // slot 20
     virtual grcTexture* vfn_21(void* a, void* b, void* c); // slot 21

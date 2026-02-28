@@ -471,10 +471,10 @@ void rage::grcTextureReferenceBase::vfn_3() {
 }
 
 /**
- * grcTextureReferenceBase::vfn_5() @ 0x8215D8A0 | size: 0x44
+ * grcTextureReferenceBase::ForwardSlot5() @ 0x8215D8A0 | size: 0x44
  * Forwards slot 5 to the resolved texture from slot 11 (GetTexture).
  */
-void rage::grcTextureReferenceBase::vfn_5() {
+void rage::grcTextureReferenceBase::ForwardSlot5() {
     grcTexture* texture = GetTexture();
     if (!texture)
         return;
@@ -484,10 +484,10 @@ void rage::grcTextureReferenceBase::vfn_5() {
 }
 
 /**
- * grcTextureReferenceBase::vfn_6() @ 0x8215D8E8 | size: 0x58
+ * grcTextureReferenceBase::ForwardSlot6() @ 0x8215D8E8 | size: 0x58
  * Forwards slot 6 to slot-11 texture when present.
  */
-void rage::grcTextureReferenceBase::vfn_6() {
+void rage::grcTextureReferenceBase::ForwardSlot6() {
     grcTexture* texture = GetTexture();
     if (!texture)
         return;
@@ -497,10 +497,10 @@ void rage::grcTextureReferenceBase::vfn_6() {
 }
 
 /**
- * grcTextureReferenceBase::vfn_8() @ 0x8215D720 | size: 0x58
+ * grcTextureReferenceBase::ForwardSlot8() @ 0x8215D720 | size: 0x58
  * Forwards slot 8 to slot-11 texture when present.
  */
-void rage::grcTextureReferenceBase::vfn_8() {
+void rage::grcTextureReferenceBase::ForwardSlot8() {
     grcTexture* texture = GetTexture();
     if (!texture)
         return;
@@ -510,10 +510,10 @@ void rage::grcTextureReferenceBase::vfn_8() {
 }
 
 /**
- * grcTextureReferenceBase::vfn_9() @ 0x8215D778 | size: 0x58
+ * grcTextureReferenceBase::ForwardSlot9() @ 0x8215D778 | size: 0x58
  * Forwards slot 9 to slot-11 texture when present.
  */
-void rage::grcTextureReferenceBase::vfn_9() {
+void rage::grcTextureReferenceBase::ForwardSlot9() {
     grcTexture* texture = GetTexture();
     if (!texture)
         return;
@@ -531,10 +531,10 @@ void rage::grcTextureReferenceBase::vfn_10() {
 }
 
 /**
- * grcTextureReferenceBase::vfn_13(void* param1, void* param2) @ 0x8215D7D0 | size: 0x64
+ * grcTextureReferenceBase::ForwardSlot13(void* param1, void* param2) @ 0x8215D7D0 | size: 0x64
  * Forwards slot 13 through slot 12 (GetTexture2).
  */
-void rage::grcTextureReferenceBase::vfn_13(void* param1, void* param2) {
+void rage::grcTextureReferenceBase::ForwardSlot13(void* param1, void* param2) {
     grcTexture* texture = GetTexture2();
     if (!texture)
         return;
@@ -544,10 +544,10 @@ void rage::grcTextureReferenceBase::vfn_13(void* param1, void* param2) {
 }
 
 /**
- * grcTextureReferenceBase::vfn_14(void* param1, void* param2) @ 0x8215D838 | size: 0x64
+ * grcTextureReferenceBase::ForwardSlot14(void* param1, void* param2) @ 0x8215D838 | size: 0x64
  * Forwards slot 14 through slot 11 (GetTexture).
  */
-void rage::grcTextureReferenceBase::vfn_14(void* param1, void* param2) {
+void rage::grcTextureReferenceBase::ForwardSlot14(void* param1, void* param2) {
     grcTexture* texture = GetTexture();
     if (!texture)
         return;
@@ -557,10 +557,10 @@ void rage::grcTextureReferenceBase::vfn_14(void* param1, void* param2) {
 }
 
 /**
- * grcTextureReferenceBase::vfn_15() @ 0x8215D998 | size: 0x58
+ * grcTextureReferenceBase::ForwardSlot15() @ 0x8215D998 | size: 0x58
  * Forwards slot 15 to slot-11 texture when present.
  */
-void rage::grcTextureReferenceBase::vfn_15() {
+void rage::grcTextureReferenceBase::ForwardSlot15() {
     grcTexture* texture = GetTexture();
     if (!texture)
         return;
@@ -570,10 +570,10 @@ void rage::grcTextureReferenceBase::vfn_15() {
 }
 
 /**
- * grcTextureReferenceBase::vfn_16(void* param) @ 0x8215D940 | size: 0x54
+ * grcTextureReferenceBase::ForwardSlot16(void* param) @ 0x8215D940 | size: 0x54
  * Forwards slot 16 through slot 12 (GetTexture2).
  */
-void rage::grcTextureReferenceBase::vfn_16(void* param) {
+void rage::grcTextureReferenceBase::ForwardSlot16(void* param) {
     grcTexture* texture = GetTexture2();
     if (!texture)
         return;
@@ -583,10 +583,10 @@ void rage::grcTextureReferenceBase::vfn_16(void* param) {
 }
 
 /**
- * grcTextureReferenceBase::vfn_17(float param1, void* param2) @ 0x8215D9F0 | size: 0x64
+ * grcTextureReferenceBase::ForwardSlot17(float param1, void* param2) @ 0x8215D9F0 | size: 0x64
  * Forwards slot 17 through slot 12 (GetTexture2).
  */
-void rage::grcTextureReferenceBase::vfn_17(float param1, void* param2) {
+void rage::grcTextureReferenceBase::ForwardSlot17(float param1, void* param2) {
     grcTexture* texture = GetTexture2();
     if (!texture)
         return;
@@ -596,10 +596,10 @@ void rage::grcTextureReferenceBase::vfn_17(float param1, void* param2) {
 }
 
 /**
- * grcTextureReferenceBase::vfn_18(void* param1, void* param2) @ 0x8215DA58 | size: 0x64
+ * grcTextureReferenceBase::ForwardSlot18(void* param1, void* param2) @ 0x8215DA58 | size: 0x64
  * Forwards slot 18 through slot 11 (GetTexture).
  */
-void rage::grcTextureReferenceBase::vfn_18(void* param1, void* param2) {
+void rage::grcTextureReferenceBase::ForwardSlot18(void* param1, void* param2) {
     grcTexture* texture = GetTexture();
     if (!texture)
         return;
