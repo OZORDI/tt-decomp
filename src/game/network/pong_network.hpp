@@ -930,13 +930,20 @@ struct ReplayEmoteMessage {
 };
 
 // ── RequestDataMessage  [vtable @ 0x8206FF8C] ──────────────────────────
+/**
+ * RequestDataMessage — Network message for requesting data from peer
+ * 
+ * Pool-allocated network message used to request data synchronization
+ * between network clients. Uses standard pool allocator pattern with
+ * free list management.
+ */
 struct RequestDataMessage {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_5();  // [5] @ 0x823bf058
-    virtual void vfn_6();  // [6] @ 0x823bf120
-    virtual void vfn_7();  // [7] @ 0x823bf130
+    virtual void vfn_5();           // [5] @ 0x823bf058 - Return to pool
+    virtual void* vfn_6();          // [6] @ 0x823bf120 - Get pool singleton
+    virtual const char* vfn_7();    // [7] @ 0x823bf130 - Get type name
 };
 
 // ── RoundRobinDataMessage  [vtable @ 0x8206FFDC] ──────────────────────────
@@ -1803,7 +1810,7 @@ struct pongNetMessageHolder {
     uint8_t      field_0x0005;  // +0x0005  R:0 W:3
     uint16_t     field_0x0006;  // +0x0006  R:9 W:19
     uint8_t      field_0x0007;  // +0x0007  R:0 W:1
-    uint32_t     field_0x0008;  // +0x0008  R:204 W:224
+    void*        m_pInternalArray;  // +0x0008  R:204 W:224  (pointer to array of 2 objects)
     uint8_t      field_0x0009;  // +0x0009  R:0 W:1
     uint8_t      field_0x000a;  // +0x000a  R:0 W:1
     uint32_t     field_0x000c;  // +0x000c  R:85 W:92
@@ -1966,9 +1973,9 @@ struct pongNetMessageHolder {
     uint16_t     field_0x3e84;  // +0x3e84  R:0 W:1
 
     // ── virtual methods ──
-    virtual ~pongNetMessageHolder();                  // [0] @ 0x823c4680
+    virtual ~pongNetMessageHolder();                  // [0] @ 0x823C5788
     virtual void ScalarDtor(int flags); // [1] @ 0x823bfba8
-    virtual void vfn_2();  // [2] @ 0x823bfc00
+    virtual void CleanupInternalArray();  // [2] @ 0x823C3878
 };
 
 // ── pongNetMessageHolderBase  [vtable @ 0x8206FA88] ──────────────────────────

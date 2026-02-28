@@ -1829,3 +1829,49 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
     
     *adjustmentPtr = value;
 }
+
+/**
+ * pongPlayer::UpdatePositionFromSwingTarget()  @ 0x8219E6D8 | size: 0x70
+ *
+ * Computes a 3D position from the player's swing target indices and adds
+ * it to the player's base position vector.
+ *
+ * The function:
+ * 1. Reads two indices from offsets +948 and +952 (likely row/column indices)
+ * 2. Computes array offset: ((index1 * 9 + index2 * 3) * 32) + 976
+ * 3. Calls pongPlayer_E7B0_g to get a target vector
+ * 4. Adds the target vector to the player's position at offset +880
+ * 5. Stores the result at offset +832
+ */
+void pongPlayer::UpdatePositionFromSwingTarget() {
+    // Load the two indices that determine which swing target to use
+    uint32_t index1 = *reinterpret_cast<uint32_t*>(
+        reinterpret_cast<uintptr_t>(this) + 948);
+    uint32_t index2 = *reinterpret_cast<uint32_t*>(
+        reinterpret_cast<uintptr_t>(this) + 952);
+    
+    // Compute the array offset: ((index1 * 9 + index2 * 3) * 32) + 976
+    // This matches the PPC arithmetic: r11*3, +r10, *3, *32
+    uint32_t arrayOffset = ((index1 * 9 + index2 * 3) * 32) + 976;
+    
+    // Get pointer to the swing target data
+    vec3* swingTarget = reinterpret_cast<vec3*>(
+        reinterpret_cast<uintptr_t>(this) + arrayOffset);
+    
+    // Call helper to process the swing target (returns a vec3)
+    vec3 targetDelta;
+    pongPlayer_E7B0_g(&targetDelta, swingTarget);
+    
+    // Load the current position offset vector at +880
+    vec3* currentOffset = reinterpret_cast<vec3*>(
+        reinterpret_cast<uintptr_t>(this) + 880);
+    
+    // Add the target delta to the current offset and store at +832
+    vec3* resultPosition = reinterpret_cast<vec3*>(
+        reinterpret_cast<uintptr_t>(this) + 832);
+    
+    resultPosition->x = targetDelta.x + currentOffset->x;
+    resultPosition->y = targetDelta.y + currentOffset->y;
+    resultPosition->z = targetDelta.z + currentOffset->z;
+}
+
