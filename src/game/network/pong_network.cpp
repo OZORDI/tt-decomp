@@ -1464,3 +1464,124 @@ void pongNetMessageHolder::RemoveFromThreadPoolList()
     extern void rage_threadpool_cleanup_6878();  // @ 0x82176878
     rage_threadpool_cleanup_6878();
 }
+
+
+// ===========================================================================
+// pongNetMessageHolder::InitializeMessageArray @ 0x823C72A8 | size: 0x168
+//
+// Initializes an array of 4 message holder structures (256 bytes each).
+// Sets up the message pool with default values, vtable pointers, and
+// linked list connections.
+//
+// Structure layout per entry (256 bytes):
+//   +0x00: vtable pointer (ServeStartedMessage vtable @ 0x8206F740)
+//   +0x04: float value
+//   +0x18-0x28: various float fields
+//   +0x30: flags (value 1)
+//   +0x34: counter (value 0)
+//   +0x58-0x5A: uint16 values (0, 0xFFFF)
+//   +0x5C: byte (0)
+//   +0x5E: uint16 (0)
+//   +0x78: byte (255)
+//   +0x79: byte (0)
+//   +0x7A: byte (255)
+//   +0xF0-0xF2: linked list pointers
+//
+// After initializing the array, sets up pool metadata:
+//   +1024: pool size (4)
+//   +1026: available count (4)
+//   +1028: head index (0)
+// ===========================================================================
+void pongNetMessageHolder::InitializeMessageArray()
+{
+    // Load constant float values from .rdata
+    extern const float g_floatConstant1;  // @ 0x82079AD4
+    extern const float g_floatConstant2;  // @ 0x8202D110 - 8
+    extern const float g_floatConstant3;  // @ 0x8202D110
+    extern const float g_floatConstant4;  // @ 0x825C7600
+    
+    // ServeStartedMessage vtable pointer
+    const uint32_t vtableAddr = 0x8206F740;
+    
+    // Initialize 4 message structures (loop counter starts at 3, decrements to -1)
+    uint8_t* basePtr = (uint8_t*)this + 104;  // Start at offset +104
+    
+    for (int i = 0; i < 4; i++) {
+        uint8_t* entryPtr = basePtr + (i * 256);
+        
+        // Set vtable pointer
+        *(uint32_t*)(entryPtr + 0) = vtableAddr;
+        
+        // Initialize float fields
+        *(float*)(entryPtr + 4) = g_floatConstant1;
+        *(float*)(entryPtr + 16) = g_floatConstant2;
+        *(float*)(entryPtr + 20) = g_floatConstant3;
+        *(float*)(entryPtr + 24) = g_floatConstant3;
+        
+        // Zero out 16-byte vector at offset +24 (relative to -40 from r11)
+        memset(entryPtr + 64, 0, 16);
+        
+        // Initialize more float fields to zero
+        *(float*)(entryPtr + 96) = 0.0f;
+        *(float*)(entryPtr + 100) = 0.0f;
+        *(float*)(entryPtr + 104) = 0.0f;
+        *(float*)(entryPtr + 112) = 0.0f;
+        *(float*)(entryPtr + 116) = 0.0f;
+        *(float*>(entryPtr + 120) = 0.0f;
+        *(float*)(entryPtr + 128) = 0.0f;
+        
+        // Set flags and counters
+        *(uint32_t*)(entryPtr + 152) = 1;      // +48 from r11 = enabled flag
+        *(uint32_t*)(entryPtr + 156) = 0;      // +52 from r11 = counter
+        
+        // More float initializations
+        *(float*)(entryPtr + 132) = 0.0f;
+        *(float*)(entryPtr + 140) = g_floatConstant2;
+        *(float*)(entryPtr + 144) = 0.0f;
+        *(float*)(entryPtr + 148) = g_floatConstant4;
+        *(float*)(entryPtr + 160) = 0.0f;
+        *(float*)(entryPtr + 164) = 0.0f;
+        *(float*)(entryPtr + 168) = 0.0f;
+        *(float*)(entryPtr + 176) = 0.0f;
+        *(float*)(entryPtr + 180) = 0.0f;
+        *(float*)(entryPtr + 184) = 0.0f;
+        
+        // Set uint16 and byte fields
+        *(uint16_t*)(entryPtr + 192) = 0;
+        *(uint16_t*)(entryPtr + 194) = 0xFFFF;
+        *(uint8_t*)(entryPtr + 196) = 0;
+        *(uint16_t*)(entryPtr + 198) = 0;
+        
+        // More float fields
+        *(float*)(entryPtr + 208) = 0.0f;
+        *(float*)(entryPtr + 212) = 0.0f;
+        *(float*)(entryPtr + 216) = 0.0f;
+        *(float*)(entryPtr + 220) = 0.0f;
+        
+        // Set byte flags
+        *(uint8_t*)(entryPtr + 224) = 255;
+        *(uint8_t*)(entryPtr + 225) = 0;
+        *(uint8_t*)(entryPtr + 226) = 255;
+    }
+    
+    // Initialize pool metadata
+    *(uint16_t*)((uint8_t*)this + 1028) = 0;     // Head index
+    *(uint16_t*)((uint8_t*)this + 1026) = 4;     // Available count
+    *(uint16_t*)((uint8_t*)this + 1024) = 4;     // Total pool size
+    *(uint16_t*)((uint8_t*)this + 240) = 0xFFFF; // Tail marker
+    *(uint16_t*)((uint8_t*)this + 1010) = 0xFFFF; // Another marker
+    
+    // Set up linked list connections between entries
+    uint16_t poolSize = *(uint16_t*)((uint8_t*)this + 1026);
+    
+    for (uint16_t i = 0; i < poolSize - 1; i++) {
+        uint32_t offset = i * 256;
+        uint8_t* entryPtr = (uint8_t*)this + offset;
+        
+        // Set previous pointer to i-1 (or 0xFFFF for first entry)
+        *(uint16_t*)(entryPtr + 496) = (i == 0) ? 0xFFFF : (i - 1);
+        
+        // Set next pointer to i+1
+        *(uint16_t*)(entryPtr + 242) = i + 1;
+    }
+}
