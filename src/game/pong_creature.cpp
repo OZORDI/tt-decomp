@@ -15,7 +15,7 @@ extern void rage_Free(void* ptr);
 extern void nop_8240E6D0(const char* msg, ...);
 extern void pongCreature_7CE8_g(void* creature, void* matrix, int param1, int param2, int param3, int param4);
 extern void game_3C70(void* obj);
-extern void pg_9C00_g(void* player, int index);
+extern void* pg_9C00_g(void* player, int index);  // @ 0x82019C00 — returns creature info ptr
 extern void pongPlayer_9CD0_g(void* player, int index, void* outMatrix1, void* outMatrix2);
 
 // Global identity matrix @ 0x825D3800
@@ -167,7 +167,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
             uint32_t creatureIndex = *(uint32_t*)((char*)mover + 68);
             
             void* playerCreature = (void*)((char*)player + creatureIndex);
-            void* creatureInfo = (void*)pg_9C00_g(player, creatureIndex);
+            void* creatureInfo = pg_9C00_g(player, creatureIndex);
             void* creatureStats = *(void**)((char*)creatureInfo + 44);
             
             // Check if mirrored
@@ -220,7 +220,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
     
     pongPlayer_9CD0_g(player, creatureIndex, tempMatrix1, tempMatrix2);
     
-    void* creatureInfo = (void*)pg_9C00_g(player, creatureIndex);
+    void* creatureInfo = pg_9C00_g(player, creatureIndex);
     void* creatureStats = *(void**)((char*)creatureInfo + 44);
     
     // Get height offset
