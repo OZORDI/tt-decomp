@@ -1021,26 +1021,28 @@ struct ServeReadyMessage {
 
 // ── ServeStartedMessage  [vtable @ 0x8206F740] ──────────────────────────
 struct ServeStartedMessage {
-    void**      vtable;           // +0x00
+    void**   vtable;              // +0x00
+    float    m_timingRef;         // +0x04  serve timing reference
+    uint8_t  _pad08[8];           // +0x08..+0x0F
+    float    m_targetPos[4];      // +0x10  target position (16-byte aligned vec4)
+    uint8_t  _pad20[0xB0];        // +0x20..+0xCF  base-class message fields
+    float    m_velocityX;         // +0xD0
+    float    m_velocityY;         // +0xD4
+    float    m_velocityZ;         // +0xD8
+    float    m_spin;              // +0xDC  spin / power component
+    uint8_t  m_playerIndex;       // +0xE0  serving player index
+    uint8_t  m_bNotServer;        // +0xE1  is-not-server flag
+    uint8_t  m_bSecondaryPlayer;  // +0xE2  secondary player flag
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x823b8f68
-    virtual void Deserialise(void* client);  // [2] @ 0x823b9050 (net packet read)
-    virtual void vfn_4();  // [4] @ 0x823b9100
-    virtual void vfn_5();  // [5] @ 0x823b8d28
-    virtual void vfn_6();  // [6] @ 0x823b8df0
-    virtual void vfn_7();  // [7] @ 0x823b8e00
-
-    // ── message payload ──
-    uint8_t  _pad[0xC8];         // alignment to known fields
-    float    m_timingRef;        // +0xC8  serve timing reference
-    float    m_targetPos[4];     // +0xCC  target position (16-byte vector)
-    float    m_velocityX;        // +0xDC  velocity components
-    float    m_velocityY;
-    float    m_velocityZ;
-    uint8_t  m_playerIndex;      // +0xE0  who is serving
-    uint8_t  m_bNotServer;       // +0xE1  is-not-server flag
-    uint8_t  m_bSecondaryPlayer; // +0xE2  secondary player flag
+    virtual void ScalarDtor(int flags);         // [1] @ 0x823b8f68
+    virtual void Deserialise(void* client);     // [2] @ 0x823b8f68  (net packet read)
+    virtual void Serialise(void* client);       // [3] @ 0x823b9050  (net packet write)
+    virtual void Process(void* matchObj);       // [4] @ 0x823b9100  (apply to game state)
+    virtual void vfn_5();                       // [5] @ 0x823b8d28
+    virtual uint16_t GetIndexInPool() const;    // [6] @ 0x823b8df0
+    virtual void* GetSingleton();               // [7] @ 0x823b8e00
+    virtual const char* GetTypeName();          // [7] @ 0x823b8e00 (slot 7)
 };
 
 // ── ServeUnlockMessage  [vtable @ 0x8206FAF4] ──────────────────────────

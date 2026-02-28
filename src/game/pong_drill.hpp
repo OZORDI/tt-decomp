@@ -331,6 +331,9 @@ struct tooFarFromTableTipData {
  * Base class for all training drills. Manages success/failure tracking,
  * timing, and common drill state.
  */
+// Forward declaration: pongTrainingDrillConfig is defined after pongTrainingDrill
+struct pongTrainingDrillConfig;
+
 class pongTrainingDrill {
 public:
     // Virtual functions

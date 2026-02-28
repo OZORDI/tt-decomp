@@ -37,42 +37,29 @@ extern grcTextureFactory* g_pTextureFactory;   // SDA-relative, r13 base
 extern uint8_t g_bTextureEndianDirty;
 
 // ---------------------------------------------------------------------------
-// Struct definitions
-// ---------------------------------------------------------------------------
+// Struct definitions are in texture_reference.hpp — see that file.
 
-// grcTextureReferenceBase @ 0x8203508C
-// Minimal confirmed layout; unnamed fields are named by offset.
-struct grcTextureReferenceBase : datBase {
-    // +0x00  vtable*                  (inherited from datBase)
-    uint16_t   m_field04;           // +0x04  – read in subclasses (1 access observed)
-    uint16_t   m_field06;           // +0x06  – endian-swapped during Serialize()
-    uint32_t   m_field08;           // +0x08  – endian-swapped during Serialize()
-    void*      m_pInternalData;     // +0x0C  – heap-allocated; freed in dtor; returned by GetHandle()
-    // +0x10 is the start of subclass fields (grcTextureReference::m_pTexture)
+// Additional declarations for incomplete types used in this TU.
+struct grcTexture {
+    void** vtable;
+    virtual void vfn_7(void* param);
+    virtual void vfn_20();
+    // slot 25 — forwarded by grcTextureReferenceBase::ForwardSlot25
+    // Called via raw vtable offset: slot 25 = byte offset +100
+    void vfn_25_raw() { (*(void(**)(grcTexture*))((char*)this + 100))(this); }
+};
+struct grcTextureFactory {
+    void** vtable;
+    virtual grcTexture* GetDefaultTexture();
 };
 
-// grcTextureReference @ 0x82035104  (extends grcTextureReferenceBase)
-struct grcTextureReference : grcTextureReferenceBase {
-    grcTexture* m_pTexture;         // +0x10  – ref-counted; released in dtor via Release()
-};
+// RAGE_ASSERT — stripped in release builds, mapped to no-op here
+#ifndef RAGE_ASSERT
+#define RAGE_ASSERT(expr) ((void)(expr))
+#endif
 
-// grcLockedTexture — 36-byte texture-lock descriptor used by SetPixel helpers
-// Not a class instance; no vtable. Passed by pointer to BA38 / SetPixel.
-// Format values: 1 = ARGB32, 2 = DXT1 (4-bit/px), 3 = DXT3/DXT5 (8-bit/px), …
-struct grcLockedTexture {
-    uint16_t   m_nWidth;       // +0x00  – texture width in pixels
-    uint16_t   m_nHeight;      // +0x02  – texture height in pixels
-    uint32_t   m_nFormat;      // +0x04  – texture format enum (1–15 range observed)
-    uint32_t   field_08;       // +0x08  – unused / reserved (zero-initialised)
-    uint16_t   m_nPitch;       // +0x0C  – bytes per row (stride)
-    uint16_t   field_0E;       // +0x0E  – flag / level (1 in observed callsite)
-    uint32_t*  m_pData;        // +0x10  – pixel data buffer
-    uint32_t   field_14;       // +0x14  – reserved
-    uint32_t   field_18;       // +0x18  – reserved
-    uint32_t   field_1C;       // +0x1C  – reserved
-    uint32_t   m_nRefCount;    // +0x20  – reference count (1 on creation)
-    // total: 0x24 (36) bytes
-};
+// Release helper for grcTexture ref-counting (rage_2E18)
+extern void Release(grcTexture* pTex);
 
 // ---------------------------------------------------------------------------
 // grcTextureReferenceBase  —  virtual destructor (slot 0)
@@ -86,12 +73,12 @@ struct grcLockedTexture {
 void grcTextureReferenceBase::destructor(bool deleteThis)
 {
     // Reset vtable to this class before cleanup (standard dtor preamble)
-    this->vtable = &grcTextureReferenceBase::vftable;   // 0x8203508C
+    // vtable reset to grcTextureReferenceBase @ 0x8203508C (PPC preamble, no-op in C++)
 
     rage_free(m_pInternalData);
 
     // Reset vtable down to datBase (inlined base-class destruction)
-    this->vtable = &datBase::vftable;                   // 0x820276C4
+    // vtable reset to datBase @ 0x820276C4 (PPC base-class chain, no-op in C++)
 
     if (deleteThis)
         rage_free(this);
@@ -399,16 +386,16 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
 void grcTextureReference::DestructorBody()
 {
     // Preamble: reset vtable to this class (matches grcTextureReference @ 0x82035104)
-    this->vtable = &grcTextureReference::vftable;
+    // [vtable reset - compiler managed]
 
     // Release the inner texture (decrement refcount; deletes if it reaches zero)
     if (m_pTexture)
         Release(m_pTexture);    // rage_2E18 @ 0x820C2E18
 
     // Chain to base-class cleanup (resets vtable to grcTextureReferenceBase, then datBase)
-    this->vtable = &grcTextureReferenceBase::vftable;
+    // [vtable reset - compiler managed]
     rage_free(m_pInternalData);
-    this->vtable = &datBase::vftable;
+    // [vtable reset - compiler managed]
 }
 
 // ---------------------------------------------------------------------------
@@ -434,7 +421,8 @@ void grcTextureReference::destructor(bool deleteThis)
 grcTexture* grcTextureReference::GetTexture()
 {
     if (m_pTexture)
-        return m_pTexture->GetResourceTexture();   // VCALL slot 12, byte offset +48
+        // VCALL grcTexture slot 12 — resource/variant texture getter
+        return (*(grcTexture*(**)(grcTexture*))((char*)m_pTexture + 48))(m_pTexture);
     return nullptr;
 }
 
@@ -449,7 +437,7 @@ void grcTextureReference::ForwardSlot25()
 {
     if (!m_pTexture)
         return;
-    m_pTexture->vfn_25();   // VCALL slot 25, byte offset +100
+    ((void(*)(grcTexture*))(*(void***)m_pTexture)[25])(m_pTexture);  // VCALL grcTexture slot 25
 }
 
 } // namespace rage

@@ -74,7 +74,7 @@ struct grcTextureReference : grcTextureReferenceBase {
     void  DestructorBody();                             // @ 0x8215D5F0  (rage_D5F0)
     void  destructor(bool deleteThis) override;         // slot  0  @ 0x8215D658
     grcTexture* GetTexture()  override;                 // slot 11  @ 0x8215DAC0
-    void  ForwardSlot25()     override;                 // slot 25  @ 0x8215DB48
+    virtual void  ForwardSlot25();                      // slot 25  @ 0x8215DB48
 };
 
 // ---------------------------------------------------------------------------

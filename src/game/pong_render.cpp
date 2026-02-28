@@ -11,6 +11,7 @@
  */
 
 #include "pong_render.hpp"
+#include <string.h>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Globals
@@ -19,6 +20,24 @@
 // @ 0x82606358 (SDA, r2-relative offset 25432)
 // Written by Load(), read by render-sort passes.
 extern uint32_t g_numDrawBuckets;
+
+// Static config strings (from .rdata, referenced in Load())
+static const char* s_configBasename = "settings";
+static const char* s_configExt      = "drawbucket";
+
+// Static per-bucket init data (used by pongDrawBucket::Load)
+// Placeholder: actual structure populated from XML; opaque to bucket manager
+static void* s_bucketData[32] = {};
+
+// External XML parsing helpers (called via rage tokeniser vtable)
+extern int   xml_ReadInt(const char* key);
+extern void  xml_ReadString(const char* key, char* buf, int maxLen);
+extern void* xe_EC88(int size);  // RAGE aligned alloc
+
+// Assertion macro
+#ifndef ASSERT_MSG
+#define ASSERT_MSG(cond, ...) ((void)0)
+#endif
 
 // ─────────────────────────────────────────────────────────────────────────────
 // pongDrawBucketManager::~pongDrawBucketManager()  [vtable slot 0 @ 0x822272B0]
@@ -206,7 +225,8 @@ void pongDrawBucket_AddEntry(pongDrawBucket* bucket, void* renderable, uint32_t 
         return;
 
     // Prepare renderable — vtable slot 1 (VCALL pattern-B @ +0x04)
-    renderable->vtable[1](renderable);
+    // Call vtable slot 1 on renderable (prepare-for-render callback)
+    typedef void(*VoidFn)(void*); ((VoidFn)(*(void***)renderable)[1])(renderable);
 
     int numLayers = bucket->m_numLayers;  // lhz @ +0x0C
     if (numLayers <= 0)
@@ -239,7 +259,7 @@ void pongDrawBucket_AddEntry(pongDrawBucket* bucket, void* renderable, uint32_t 
 
         // entries base ptr: *(pLayerDesc + layerIdx*8 + 36)
         // stores renderable at entries[entryCount - 1]
-        void*** pEntriesBase = *(void****)((uint8_t*)pLayerDesc + layerIdx * 8 + 36);
+        void** pEntriesBase = *(void***)((uint8_t*)pLayerDesc + layerIdx * 8 + 36);
         pEntriesBase[entryCount - 1] = renderable;
     }
 }

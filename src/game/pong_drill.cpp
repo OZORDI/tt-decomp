@@ -13,6 +13,7 @@ extern "C" {
     void SinglesNetworkClient_A818_g(void* client, int value);
     void pg_E480(int param1, int param2, const char* param3, int param4);
     void nop_8240E6D0(const char* message);
+    void xmlNodeStruct_vfn_2(void* self);  // @ base class PostLoadProperties
 }
 
 // External globals

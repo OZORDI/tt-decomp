@@ -47,7 +47,7 @@ extern void* SinglesNetworkClient_58E8_g(uint8_t playerIdx);                  //
 // Game-side data helpers
 extern void  game_6990(void* client, float val);    // read/advance float from net stream
 extern void  game_5738(void* client, void* pos);    // read/advance 16-byte vector
-extern void  util_5538(void* dst, void* client);    // read 16-byte aligned position
+extern void  util_5538(void* client, void* dst, int size);  // read size-bit aligned block
 extern void  util_7040(void* dst, void* src);       // copy 16-byte vector
 extern void  util_7A08(void* client, void* field, int size); // read byte from net stream
 // Serve setup
@@ -56,6 +56,9 @@ extern void  pg_E6E0(int eventCode, int arg1, int arg2, int arg3, int arg4);
 // Pool intrinsics
 extern uint8_t* g_pNetMsgPoolBase;    // @ 0x825D11D0 (singleton pointer)
 extern const char g_szServeStartedTypeName[];  // @ 0x8206E9D0
+extern void* g_pNetMsgSingleton;              // @ 0x825D11D0 singleton object
+extern void nop_8240E6D0(const char* fmt, ...);  // debug nop / assert print
+extern void ServeStartedMessage_5728(void* matchObj, void* slotA, void* slotB, float timingRef);  // serve-start coordinator
 
 
 // ===========================================================================
@@ -102,9 +105,9 @@ void ServeStartedMessage::Deserialise(void* client)
     m_spin = timingRef;
 
     // Read three byte flags.
-    util_7A08(client, &m_playerIdx,   8);
+    util_7A08(client, &m_playerIndex,   8);
     util_7A08(client, &m_bNotServer,  8);
-    util_7A08(client, &m_playerIdx2,  8);
+    util_7A08(client, &m_bSecondaryPlayer,  8);
 }
 
 
@@ -130,9 +133,9 @@ void ServeStartedMessage::Serialise(void* client)
     game_6990(client, m_spin);
 
     // Write three byte flags.
-    SinglesNetworkClient_6838_g(client, m_playerIdx,  8);
+    SinglesNetworkClient_6838_g(client, m_playerIndex,  8);
     SinglesNetworkClient_6838_g(client, m_bNotServer, 8);
-    SinglesNetworkClient_6838_g(client, m_playerIdx2, 8);
+    SinglesNetworkClient_6838_g(client, m_bSecondaryPlayer, 8);
 }
 
 
@@ -168,7 +171,7 @@ void ServeStartedMessage::Serialise(void* client)
 void ServeStartedMessage::Process(void* matchObj)
 {
     // Step 1: look up the serving player object by index.
-    void* player = SinglesNetworkClient_58E8_g(m_playerIdx);
+    void* player = SinglesNetworkClient_58E8_g(m_playerIndex);
 
     // Step 2: debug assert — action state must be initialised.
     int32_t actionState = *(int32_t*)((uint8_t*)player + 468);
@@ -187,7 +190,7 @@ void ServeStartedMessage::Process(void* matchObj)
     // Step 4: write handedness flag into the recovery state.
     pongPlayer* pPlayer    = *(pongPlayer**)((uint8_t*)player + 452);
     pongPlayer* innerState = pPlayer->m_pPlayerState;
-    *(uint32_t*)((uint8_t*)innerState->m_pRecoveryState + 40) = m_playerIdx2;
+    *(uint32_t*)((uint8_t*)innerState->m_pRecoveryState + 40) = m_bSecondaryPlayer;
 
     // Step 5: call the serve-start coordinator.
     // Reads lerp table floats at +52 (repeated as pSlotA.w and pSlotB.y).

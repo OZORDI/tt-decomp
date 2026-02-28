@@ -12,6 +12,23 @@
 #pragma once
 #include <stdint.h>
 
+// Forward declarations (full definition below)
+
+/**
+ * pongDrawBucket — A single render bucket that holds renderable pointers.
+ * Layout verified from pongDrawBucket_AddEntry @ 0x822278D8
+ */
+struct pongDrawBucket {
+    void**      m_pData;       // +0x08  ptr to layer descriptor array
+    uint16_t    m_numLayers;   // +0x0C  number of layers in this bucket
+    uint16_t    _pad0E;
+    uint8_t     _pad10[0x40];  // padding to +0x50
+    uint8_t     m_bEnabled;    // +0x50  skip this bucket if 0
+
+    static void InitStatics();   // init per-class static data
+    void Load(const char* name, int maxEntries, void* bucketData);
+};
+
 // ── pongDrawBucketManager  [vtable @ 0x8204E280] ──────────────────────────
 //
 // Manages a set of named pongDrawBucket render buckets loaded from an XML
