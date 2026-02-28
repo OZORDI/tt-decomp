@@ -1322,7 +1322,7 @@ struct atSingleton {
     virtual void vfn_37();  // [37] @ 0x82488828
     virtual void vfn_38();  // [38] @ 0x8245dcc8
     virtual void vfn_39();  // [39] @ 0x8245fb68
-    virtual void vfn_40();  // [40] @ 0x8245dbc8
+    virtual int GetBufferSize();  // [40] @ 0x8245dbc8
     virtual void vfn_42();  // [42] @ 0x8245dde0
     virtual void vfn_43();  // [43] @ 0x8245d3d8
     virtual void vfn_44();  // [44] @ 0x8245e000

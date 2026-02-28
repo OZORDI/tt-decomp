@@ -648,3 +648,38 @@ int atSingleton::InsertAtPosition(void* data, int position) {
     
     return 1;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::GetBufferSize @ 0x8245DBC8 | size: 0x28
+// [vtable slot 40]
+//
+// Calculates the total size of a 2D buffer by multiplying its dimensions.
+// Returns 0 if the buffer is not allocated or count is zero.
+//
+// The buffer descriptor is stored at offset +52 (0x34) and contains:
+//   +0: uint16_t width
+//   +2: uint16_t height
+//
+// The count/validity flag is at offset +56 (0x38).
+//
+// @return Total buffer size (width * height), or 0 if not allocated
+// ─────────────────────────────────────────────────────────────────────────────
+int atSingleton::GetBufferSize() {
+    // Check if buffer is allocated (count at offset +56)
+    uint16_t count = *(uint16_t*)((char*)this + 56);
+    
+    if (count == 0) {
+        // Buffer not allocated or empty
+        return 0;
+    }
+    
+    // Load buffer descriptor pointer from offset +52
+    void* bufferDesc = *(void**)((char*)this + 52);
+    
+    // Read dimensions from descriptor
+    uint16_t height = *(uint16_t*)((char*)bufferDesc + 2);
+    uint16_t width = *(uint16_t*)((char*)bufferDesc + 0);
+    
+    // Return total size (width * height)
+    return width * height;
+}
