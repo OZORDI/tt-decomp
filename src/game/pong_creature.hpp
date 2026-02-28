@@ -1139,7 +1139,7 @@ struct pongMover {
     void Reset(void* creaturePool);             /* @ 0x820C9F40 */
     /* Called by Reset. outMatrix and self must be 16-byte aligned.
      * bAltData: if low byte non-zero, uses global alt matrix source. */
-    void CalcInitMatrix(float* outMatrix, pongMover* self, uint8_t bAltData); /* @ 0x820CAC78 */
+    void CalcInitMatrix(float* outMatrix, pongMover* self, void* creaturePool); /* @ 0x820CAC78 */
 };
 
 // ── pongPlayerShaderParams  [vtable @ 0x8203A8F8] ──────────────────────────

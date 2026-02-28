@@ -102,46 +102,35 @@ void pongMover::Reset(void* creatureData) {
         nop_8240E6D0("pongMover::Reset() - no creature to reset");
     }
     
-    // Extract position from matrix (4th column)
-    m_position[0] = initMatrix[12];
-    m_position[1] = initMatrix[13];
-    m_position[2] = g_zero;
-    
-    // Zero out velocity and acceleration
-    m_velocity[0] = g_zero;
-    m_velocity[1] = g_zero;
-    m_velocity[2] = g_zero;
-    
-    m_acceleration[0] = g_zero;
-    m_acceleration[1] = g_zero;
-    m_acceleration[2] = g_zero;
-    
-    m_rotation[0] = g_zero;
-    m_rotation[1] = g_zero;
-    m_rotation[2] = g_zero;
-    
-    // Clear flags (keep only bits 0,1,2 - clear bit 3)
-    m_flags = (m_flags & 0xF9);  // Clear bit 2 (0x04) and bit 1 (0x02)
-    
-    // Reset physics state
-    m_physicsVelocity[0] = g_zero;
-    m_physicsVelocity[1] = g_zero;
-    m_physicsForce[0] = g_zero;
-    m_physicsForce[1] = g_zero;
-    
-    // Clear movement vector (16 bytes at +96)
-    memset(&m_movementVector, 0, 16);
-    
-    // Reset state flags
-    m_bIsMoving = true;
-    m_moveTimer = g_zero;
-    m_bHasTarget = false;
-    m_targetTimer = g_zero;
-    m_bTargetReached = false;
-    m_bPathBlocked = false;
-    
-    // Clear path data (16 bytes at +208)
-    memset(&m_pathData, 0, 16);
+    // Extract position from matrix column 3 (translation vector)
+    m_posX  = initMatrix[12];   // +0x10
+    m_posY  = initMatrix[13];   // +0x14
+    m_posZ  = 0.0f;             // +0x18
+
+    // Zero remaining motion floats
+    m_unk1C = m_unk20 = m_unk24 = 0.0f;
+    m_unk28 = m_unk2C = m_unk30 = 0.0f;
+    m_unk34 = m_unk38 = m_unk3C = 0.0f;
+
+    // Clear physics bits 1 and 2 from flags (+0x40), preserve all others
+    m_flags = (m_flags & 0xF9);
+
+    // Zero physics state floats (+0x48..+0x54)
+    m_unk48 = m_unk4C = m_unk50 = m_unk54 = 0.0f;
+
+    // Zero 16-byte AltiVec-aligned movement buffer (+0x60)
+    memset(m_unk60, 0, sizeof(m_unk60));
+
+    // Reset movement state (+0x74..+0x86)
+    m_bIsMoving    = 1;
+    m_moveTimer    = 0.0f;    // +0x78
+    m_targetTimer  = 0.0f;    // +0x7C
+    m_bHasTarget   = 0;       // +0x84
+    m_bTargetReached = 0;     // +0x85
+    m_bPathBlocked = 0;       // +0x86
+
+    // Zero path data (+0xD0, 16 bytes)
+    memset(m_pathData, 0, sizeof(m_pathData));
 }
 
 /**
