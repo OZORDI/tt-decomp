@@ -1126,3 +1126,45 @@ void RtlUnwind(void* TargetFrame, void* TargetIp, void* ExceptionRecord, void* R
     
     // For cross-platform, we rely on C++ exceptions instead
 }
+
+//=============================================================================
+// Critical Section Functions
+//=============================================================================
+
+/**
+ * RtlEnterCriticalSection @ 0x82585E0C
+ * 
+ * Enters a critical section, blocking if necessary.
+ */
+void RtlEnterCriticalSection(RTL_CRITICAL_SECTION* CriticalSection) {
+    if (!CriticalSection) {
+        return;
+    }
+    
+#ifdef _WIN32
+    EnterCriticalSection((CRITICAL_SECTION*)CriticalSection);
+#else
+    // On POSIX, use pthread mutex
+    pthread_mutex_t* mutex = (pthread_mutex_t*)CriticalSection;
+    pthread_mutex_lock(mutex);
+#endif
+}
+
+/**
+ * RtlLeaveCriticalSection @ 0x82585DFC
+ * 
+ * Leaves a critical section.
+ */
+void RtlLeaveCriticalSection(RTL_CRITICAL_SECTION* CriticalSection) {
+    if (!CriticalSection) {
+        return;
+    }
+    
+#ifdef _WIN32
+    LeaveCriticalSection((CRITICAL_SECTION*)CriticalSection);
+#else
+    // On POSIX, use pthread mutex
+    pthread_mutex_t* mutex = (pthread_mutex_t*)CriticalSection;
+    pthread_mutex_unlock(mutex);
+#endif
+}

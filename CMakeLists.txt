@@ -50,44 +50,44 @@ set(SOURCES
     
     # XAM (Xbox Application Model)
     src/xam/static_init.c
+    src/xam/voice.c
     
     # RAGE engine
-    src/rage/app_init.c
-    src/rage/audio_control_wrappers.cpp
-    src/rage/fsmMachine.c
-    src/rage/game_loop.c
-    src/rage/main.c
-    src/rage/rage_cm.cpp
-    src/rage/rage_dat.cpp
-    src/rage/rage_globals.cpp
+    src/rage/audio/audio_control_wrappers.cpp
+    src/rage/core/fsmMachine.c
+    src/rage/core/game_loop.c
+    src/rage/core/main.c
     src/rage/rage_grm.cpp
-    src/rage/rage_memory.cpp
-    src/rage/rage_par.cpp
-    src/rage/rage_stream_manager.cpp
+    src/rage/data/rage_dat.cpp
+    src/rage/memory/rage_memory.cpp
+    src/rage/io/rage_par.cpp
+    src/rage/io/rage_stream_manager.cpp
     src/rage/render_loop.c
     src/rage/scene_render.c
-    src/rage/session_events.cpp
-    src/rage/subsystem_init.c
+    src/rage/network/session_events.cpp
+    src/rage/core/subsystem_init.c
     src/rage/swf.cpp
-    src/rage/timer.cpp
+    src/rage/core/timer.cpp
+    src/rage/misc/rage_cm.cpp
+    src/rage/misc/rage_globals.cpp
     
     # Game logic
-    src/game/char_view.cpp
-    src/game/gd_data.cpp
-    src/game/gd_vib_event.cpp
-    src/game/mc_memcard.cpp
-    src/game/pong_audio.cpp
-    src/game/pong_audio_effects.cpp
-    src/game/pong_ball.cpp
-    src/game/pong_camera.cpp
-    src/game/pong_creature.cpp
-    src/game/pong_drill.cpp
-    src/game/pong_misc.cpp
-    src/game/pong_network.cpp
-    src/game/pong_network_classes.cpp
-    src/game/pong_player.cpp
+    src/game/char_view/char_view.cpp
+    src/game/data/gd_data.cpp
+    src/game/data/gd_vib_event.cpp
+    src/game/save/mc_memcard.cpp
+    src/game/audio/pong_audio.cpp
+    src/game/audio/pong_audio_effects.cpp
+    src/game/ball/pong_ball.cpp
+    src/game/camera/pong_camera.cpp
+    src/game/creature/pong_creature.cpp
+    src/game/drill/pong_drill.cpp
+    src/game/misc/pong_misc.cpp
+    src/game/network/pong_network.cpp
+    src/game/network/pong_network_classes.cpp
+    src/game/player/pong_player.cpp
     src/game/pong_render.cpp
-    src/game/pong_states.cpp
+    src/game/match/pong_states.cpp
     
     # Animation
     src/anim/pcr_anim_blenders.cpp

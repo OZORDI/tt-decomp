@@ -13,6 +13,10 @@ namespace rage {
 // ── rage::fragDrawable  [vtable @ 0x82033094] ──────────────────────────
 struct fragDrawable {
     void**      vtable;           // +0x00
+    uint8_t     pad_04[0x08];     // +0x04
+    uint16_t*   m_pIndices;       // +0x0C  array of geometry indices
+    uint8_t     pad_10[0x06];     // +0x10
+    uint16_t    m_geometryCount;  // +0x16
 
     // ── virtual methods ──
     virtual ~fragDrawable();                  // [0] @ 0x821242f0
@@ -32,7 +36,12 @@ struct fragDrawable {
     virtual void vfn_14();  // [14] @ 0x8225c158
     virtual void vfn_15();  // [15] @ 0x8225c238
     virtual void vfn_16();  // [16] @ 0x82124540
+    
+    // ── non-virtual methods ──
+    void ProcessGeometry(void* geometryContainer, void* param1, void* param2, 
+                        uint32_t filterType, void* param3);  // @ 0x820F1C00
 };
+
 
 // ── rage::fragHeapAllocator  [vtable @ 0x82033324] ──────────────────────────
 struct fragHeapAllocator {

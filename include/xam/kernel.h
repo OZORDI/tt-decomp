@@ -439,6 +439,24 @@ typedef struct _RTL_CRITICAL_SECTION {
 } RTL_CRITICAL_SECTION, *PRTL_CRITICAL_SECTION;
 
 /**
+ * RtlEnterCriticalSection @ 0x82585E0C | ordinal: varies
+ * 
+ * Enters a critical section, blocking if necessary.
+ * 
+ * @param CriticalSection Pointer to critical section
+ */
+void RtlEnterCriticalSection(RTL_CRITICAL_SECTION* CriticalSection);
+
+/**
+ * RtlLeaveCriticalSection @ 0x82585DFC | ordinal: varies
+ * 
+ * Leaves a critical section.
+ * 
+ * @param CriticalSection Pointer to critical section
+ */
+void RtlLeaveCriticalSection(RTL_CRITICAL_SECTION* CriticalSection);
+
+/**
  * RtlTryEnterCriticalSection @ 0x8258625C | ordinal: varies
  * 
  * Attempts to enter a critical section without blocking.
