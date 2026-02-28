@@ -764,3 +764,134 @@ void pongFrontendState::Init() {
     HSM_InitializeState();
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Match Setup Display Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * pg_CBAC_sp @ 0x821BCBAC | size: 0x24 (36 bytes)
+ * 
+ * Formats and displays game mode configuration string for match setup screen.
+ * Generates localized strings like "POINTS_5MINUTES", "BESTOF3_11POINTS", etc.
+ * 
+ * Flow:
+ * 1. Get UI display context
+ * 2. Get player 0 and player 1 controller objects
+ * 3. Randomly select character name variant (50% chance if players differ)
+ * 4. Format and display character names with separator
+ * 5. Format and display game mode string based on match settings
+ * 
+ * Match settings from g_input_obj_ptr:
+ *   +12:  bool isTimedMatch
+ *   +16:  float timeLimit (seconds)
+ *   +300: uint32_t matchType (0=5pts, 1=7pts, 2=11pts, other=21pts)
+ *   +304: uint32_t bestOfMode (0=standard, 1=best-of-3, 2=best-of-5)
+ * 
+ * Random number generation:
+ *   Uses linear congruential generator with multiplier 0x5CDCFAA75CDCFAA7
+ *   Extracts 23 bits and converts to float [0.0, 1.0) for 50/50 decision
+ */
+void pg_CBAC_sp() {
+    char buffer[176];
+    
+    // Get UI display context (returns handle for text display)
+    extern void* sub_82439698();
+    void* displayCtx = sub_82439698();
+    
+    // Get player controller objects
+    extern void* g_input_obj_ptr;
+    extern void* sub_821D3A00(void* inputSys, int playerIdx);
+    
+    void* player0Ctrl = sub_821D3A00(g_input_obj_ptr, 0);
+    void* player1Ctrl = sub_821D3A00(g_input_obj_ptr, 1);
+    
+    // Decide which character name field to use (random 50/50 if players differ)
+    bool useAlternateName = false;
+    
+    if (player0Ctrl != player1Ctrl) {
+        // Linear congruential generator for random selection
+        extern uint64_t lbl_825CA2C8;  // Random seed @ 0x825CA2C8
+        
+        uint32_t seedHigh = (uint32_t)(lbl_825CA2C8 >> 32);
+        uint64_t product = 0x5CDCFAA75CDCFAA7ULL * seedHigh;
+        uint32_t newSeed = (uint32_t)(product >> 32);
+        
+        // Update both halves of the 64-bit seed
+        lbl_825CA2C8 = ((uint64_t)newSeed << 32) | newSeed;
+        
+        // Convert to float [0.0, 1.0) and check if >= 0.5
+        uint32_t bits = newSeed & 0x7FFFFF;
+        float randValue = (float)bits * 1.1920929e-07f;
+        useAlternateName = (randValue >= 0.5f);
+    }
+    
+    // Get character name IDs from player controllers
+    // Controller +52 -> character data
+    // Character data +16 or +20 -> name ID (depends on random choice)
+    int nameFieldOffset = useAlternateName ? 20 : 16;
+    
+    void* char0Data = *(void**)((uint8_t*)player0Ctrl + 52);
+    void* char1Data = *(void**)((uint8_t*)player1Ctrl + 52);
+    
+    uint32_t char0NameId = *(uint32_t*)((uint8_t*)char0Data + nameFieldOffset);
+    uint32_t char1NameId = *(uint32_t*)((uint8_t*)char1Data + nameFieldOffset);
+    
+    // Format character names with separator
+    extern int sub_820CA940(char* buf, size_t size, const char* fmt, ...);
+    extern uint32_t lbl_82606410;  // String table base @ 0x82606410
+    
+    const char* strTableBase = (const char*)(lbl_82606410 + 704);
+    
+    // First string format (character names)
+    // Format string @ 0x8203B5BC (likely contains "%s vs %s" or similar)
+    sub_820CA940(buffer, 128, (const char*)0x8203B5BC, strTableBase, char0NameId, char1NameId);
+    
+    // Display character names
+    extern void sub_821BD8E0(void* ctx);
+    sub_821BD8E0(displayCtx);
+    
+    // Get match configuration
+    uint32_t matchType = *(uint32_t*)((uint8_t*)g_input_obj_ptr + 300);
+    uint32_t bestOfMode = *(uint32_t*)((uint8_t*)g_input_obj_ptr + 304);
+    
+    // Determine points to win
+    int pointsToWin;
+    if (matchType == 0) {
+        pointsToWin = 5;
+    } else if (matchType == 1) {
+        pointsToWin = 7;
+    } else if (matchType == 2) {
+        pointsToWin = 11;
+    } else {
+        pointsToWin = 21;
+    }
+    
+    // Format game mode string
+    bool isTimedMatch = *(uint8_t*)((uint8_t*)g_input_obj_ptr + 12) != 0;
+    
+    if (isTimedMatch) {
+        // Timed match: "POINTS_XMINUTES"
+        float timeSeconds = *(float*)((uint8_t*)g_input_obj_ptr + 16);
+        int timeMinutes = (int)(timeSeconds * 0.016666668f);
+        
+        sub_820CA940(buffer, 128, "%s:%dPOINTS_%dMINUTES", 
+                     strTableBase, pointsToWin, timeMinutes);
+    } else {
+        if (bestOfMode == 0) {
+            // Standard match: just points
+            // Format string @ 0x8203B5C8 is "---" (separator/placeholder)
+            sub_820CA940(buffer, 128, (const char*)0x8203B5C8, strTableBase, pointsToWin);
+            sub_821BD8E0(displayCtx);
+            return;
+        }
+        
+        // Best-of match: "BESTOFX_YPOINTS"
+        int bestOfCount = (bestOfMode == 1) ? 3 : 5;
+        sub_820CA940(buffer, 128, "%s:BESTOF%d_%dPOINTS", 
+                     strTableBase, bestOfCount, pointsToWin);
+    }
+    
+    // Display game mode string
+    sub_821BD8E0(displayCtx);
+}
