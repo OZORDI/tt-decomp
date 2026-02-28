@@ -472,34 +472,54 @@ void rage::grcTextureReferenceBase::vfn_3() {
 
 /**
  * grcTextureReferenceBase::vfn_5() @ 0x8215D8A0 | size: 0x44
- * Virtual function slot 5 - stub implementation
+ * Forwards slot 5 to the resolved texture from slot 11 (GetTexture).
  */
 void rage::grcTextureReferenceBase::vfn_5() {
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture();
+    if (!texture)
+        return;
+
+    using Method = void (*)(grcTexture*);
+    reinterpret_cast<Method>(texture->vtable[5])(texture);
 }
 
 /**
  * grcTextureReferenceBase::vfn_6() @ 0x8215D8E8 | size: 0x58
- * Virtual function slot 6 - stub implementation
+ * Forwards slot 6 to slot-11 texture when present.
  */
 void rage::grcTextureReferenceBase::vfn_6() {
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture();
+    if (!texture)
+        return;
+
+    using Method = uint32_t (*)(grcTexture*);
+    (void)reinterpret_cast<Method>(texture->vtable[6])(texture);
 }
 
 /**
  * grcTextureReferenceBase::vfn_8() @ 0x8215D720 | size: 0x58
- * Virtual function slot 8 - stub implementation
+ * Forwards slot 8 to slot-11 texture when present.
  */
 void rage::grcTextureReferenceBase::vfn_8() {
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture();
+    if (!texture)
+        return;
+
+    using Method = uint32_t (*)(grcTexture*);
+    (void)reinterpret_cast<Method>(texture->vtable[8])(texture);
 }
 
 /**
  * grcTextureReferenceBase::vfn_9() @ 0x8215D778 | size: 0x58
- * Virtual function slot 9 - stub implementation
+ * Forwards slot 9 to slot-11 texture when present.
  */
 void rage::grcTextureReferenceBase::vfn_9() {
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture();
+    if (!texture)
+        return;
+
+    using Method = uint32_t (*)(grcTexture*);
+    (void)reinterpret_cast<Method>(texture->vtable[9])(texture);
 }
 
 /**
@@ -512,59 +532,80 @@ void rage::grcTextureReferenceBase::vfn_10() {
 
 /**
  * grcTextureReferenceBase::vfn_13(void* param1, void* param2) @ 0x8215D7D0 | size: 0x64
- * Virtual function slot 13 - stub implementation
+ * Forwards slot 13 through slot 12 (GetTexture2).
  */
 void rage::grcTextureReferenceBase::vfn_13(void* param1, void* param2) {
-    (void)param1;
-    (void)param2;
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture2();
+    if (!texture)
+        return;
+
+    using Method = void (*)(grcTexture*, void*, void*);
+    reinterpret_cast<Method>(texture->vtable[13])(texture, param1, param2);
 }
 
 /**
  * grcTextureReferenceBase::vfn_14(void* param1, void* param2) @ 0x8215D838 | size: 0x64
- * Virtual function slot 14 - stub implementation
+ * Forwards slot 14 through slot 11 (GetTexture).
  */
 void rage::grcTextureReferenceBase::vfn_14(void* param1, void* param2) {
-    (void)param1;
-    (void)param2;
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture();
+    if (!texture)
+        return;
+
+    using Method = void (*)(grcTexture*, void*, void*);
+    reinterpret_cast<Method>(texture->vtable[14])(texture, param1, param2);
 }
 
 /**
  * grcTextureReferenceBase::vfn_15() @ 0x8215D998 | size: 0x58
- * Virtual function slot 15 - stub implementation
+ * Forwards slot 15 to slot-11 texture when present.
  */
 void rage::grcTextureReferenceBase::vfn_15() {
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture();
+    if (!texture)
+        return;
+
+    using Method = uint32_t (*)(grcTexture*);
+    (void)reinterpret_cast<Method>(texture->vtable[15])(texture);
 }
 
 /**
  * grcTextureReferenceBase::vfn_16(void* param) @ 0x8215D940 | size: 0x54
- * Virtual function slot 16 - stub implementation
+ * Forwards slot 16 through slot 12 (GetTexture2).
  */
 void rage::grcTextureReferenceBase::vfn_16(void* param) {
-    (void)param;
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture2();
+    if (!texture)
+        return;
+
+    using Method = void (*)(grcTexture*, void*);
+    reinterpret_cast<Method>(texture->vtable[16])(texture, param);
 }
 
 /**
  * grcTextureReferenceBase::vfn_17(float param1, void* param2) @ 0x8215D9F0 | size: 0x64
- * Virtual function slot 17 - stub implementation
+ * Forwards slot 17 through slot 12 (GetTexture2).
  */
 void rage::grcTextureReferenceBase::vfn_17(float param1, void* param2) {
-    (void)param1;
-    (void)param2;
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture2();
+    if (!texture)
+        return;
+
+    using Method = void (*)(grcTexture*, float, void*);
+    reinterpret_cast<Method>(texture->vtable[17])(texture, param1, param2);
 }
 
 /**
  * grcTextureReferenceBase::vfn_18(void* param1, void* param2) @ 0x8215DA58 | size: 0x64
- * Virtual function slot 18 - stub implementation
+ * Forwards slot 18 through slot 11 (GetTexture).
  */
 void rage::grcTextureReferenceBase::vfn_18(void* param1, void* param2) {
-    (void)param1;
-    (void)param2;
-    // TODO: Implement based on assembly analysis
+    grcTexture* texture = GetTexture();
+    if (!texture)
+        return;
+
+    using Method = void (*)(grcTexture*, void*, void*);
+    reinterpret_cast<Method>(texture->vtable[18])(texture, param1, param2);
 }
 
 /**

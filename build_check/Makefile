@@ -510,6 +510,30 @@ src/game/pong_ball.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_ball.cpp.s
 .PHONY : src/game/pong_ball.cpp.s
 
+src/game/pong_camera.o: src/game/pong_camera.cpp.o
+.PHONY : src/game/pong_camera.o
+
+# target to build an object file
+src/game/pong_camera.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_camera.cpp.o
+.PHONY : src/game/pong_camera.cpp.o
+
+src/game/pong_camera.i: src/game/pong_camera.cpp.i
+.PHONY : src/game/pong_camera.i
+
+# target to preprocess a source file
+src/game/pong_camera.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_camera.cpp.i
+.PHONY : src/game/pong_camera.cpp.i
+
+src/game/pong_camera.s: src/game/pong_camera.cpp.s
+.PHONY : src/game/pong_camera.s
+
+# target to generate assembly for a file
+src/game/pong_camera.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/pong_camera.cpp.s
+.PHONY : src/game/pong_camera.cpp.s
+
 src/game/pong_creature.o: src/game/pong_creature.cpp.o
 .PHONY : src/game/pong_creature.o
 
@@ -774,6 +798,30 @@ src/graphics/texture_reference.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/graphics/texture_reference.cpp.s
 .PHONY : src/graphics/texture_reference.cpp.s
 
+src/physics/ph_physics.o: src/physics/ph_physics.cpp.o
+.PHONY : src/physics/ph_physics.o
+
+# target to build an object file
+src/physics/ph_physics.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/physics/ph_physics.cpp.o
+.PHONY : src/physics/ph_physics.cpp.o
+
+src/physics/ph_physics.i: src/physics/ph_physics.cpp.i
+.PHONY : src/physics/ph_physics.i
+
+# target to preprocess a source file
+src/physics/ph_physics.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/physics/ph_physics.cpp.i
+.PHONY : src/physics/ph_physics.cpp.i
+
+src/physics/ph_physics.s: src/physics/ph_physics.cpp.s
+.PHONY : src/physics/ph_physics.s
+
+# target to generate assembly for a file
+src/physics/ph_physics.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/physics/ph_physics.cpp.s
+.PHONY : src/physics/ph_physics.cpp.s
+
 src/rage/app_init.o: src/rage/app_init.c.o
 .PHONY : src/rage/app_init.o
 
@@ -1013,6 +1061,54 @@ src/rage/rage_memory.s: src/rage/rage_memory.cpp.s
 src/rage/rage_memory.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_memory.cpp.s
 .PHONY : src/rage/rage_memory.cpp.s
+
+src/rage/rage_par.o: src/rage/rage_par.cpp.o
+.PHONY : src/rage/rage_par.o
+
+# target to build an object file
+src/rage/rage_par.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_par.cpp.o
+.PHONY : src/rage/rage_par.cpp.o
+
+src/rage/rage_par.i: src/rage/rage_par.cpp.i
+.PHONY : src/rage/rage_par.i
+
+# target to preprocess a source file
+src/rage/rage_par.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_par.cpp.i
+.PHONY : src/rage/rage_par.cpp.i
+
+src/rage/rage_par.s: src/rage/rage_par.cpp.s
+.PHONY : src/rage/rage_par.s
+
+# target to generate assembly for a file
+src/rage/rage_par.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_par.cpp.s
+.PHONY : src/rage/rage_par.cpp.s
+
+src/rage/rage_stream_manager.o: src/rage/rage_stream_manager.cpp.o
+.PHONY : src/rage/rage_stream_manager.o
+
+# target to build an object file
+src/rage/rage_stream_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_stream_manager.cpp.o
+.PHONY : src/rage/rage_stream_manager.cpp.o
+
+src/rage/rage_stream_manager.i: src/rage/rage_stream_manager.cpp.i
+.PHONY : src/rage/rage_stream_manager.i
+
+# target to preprocess a source file
+src/rage/rage_stream_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_stream_manager.cpp.i
+.PHONY : src/rage/rage_stream_manager.cpp.i
+
+src/rage/rage_stream_manager.s: src/rage/rage_stream_manager.cpp.s
+.PHONY : src/rage/rage_stream_manager.s
+
+# target to generate assembly for a file
+src/rage/rage_stream_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/rage_stream_manager.cpp.s
+.PHONY : src/rage/rage_stream_manager.cpp.s
 
 src/rage/render_loop.o: src/rage/render_loop.c.o
 .PHONY : src/rage/render_loop.o
@@ -1278,6 +1374,30 @@ src/stubs_remaining.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_remaining.c.s
 .PHONY : src/stubs_remaining.c.s
 
+src/xam/static_init.o: src/xam/static_init.c.o
+.PHONY : src/xam/static_init.o
+
+# target to build an object file
+src/xam/static_init.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/static_init.c.o
+.PHONY : src/xam/static_init.c.o
+
+src/xam/static_init.i: src/xam/static_init.c.i
+.PHONY : src/xam/static_init.i
+
+# target to preprocess a source file
+src/xam/static_init.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/static_init.c.i
+.PHONY : src/xam/static_init.c.i
+
+src/xam/static_init.s: src/xam/static_init.c.s
+.PHONY : src/xam/static_init.s
+
+# target to generate assembly for a file
+src/xam/static_init.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/static_init.c.s
+.PHONY : src/xam/static_init.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -1333,6 +1453,9 @@ help:
 	@echo "... src/game/pong_ball.o"
 	@echo "... src/game/pong_ball.i"
 	@echo "... src/game/pong_ball.s"
+	@echo "... src/game/pong_camera.o"
+	@echo "... src/game/pong_camera.i"
+	@echo "... src/game/pong_camera.s"
 	@echo "... src/game/pong_creature.o"
 	@echo "... src/game/pong_creature.i"
 	@echo "... src/game/pong_creature.s"
@@ -1366,6 +1489,9 @@ help:
 	@echo "... src/graphics/texture_reference.o"
 	@echo "... src/graphics/texture_reference.i"
 	@echo "... src/graphics/texture_reference.s"
+	@echo "... src/physics/ph_physics.o"
+	@echo "... src/physics/ph_physics.i"
+	@echo "... src/physics/ph_physics.s"
 	@echo "... src/rage/app_init.o"
 	@echo "... src/rage/app_init.i"
 	@echo "... src/rage/app_init.s"
@@ -1396,6 +1522,12 @@ help:
 	@echo "... src/rage/rage_memory.o"
 	@echo "... src/rage/rage_memory.i"
 	@echo "... src/rage/rage_memory.s"
+	@echo "... src/rage/rage_par.o"
+	@echo "... src/rage/rage_par.i"
+	@echo "... src/rage/rage_par.s"
+	@echo "... src/rage/rage_stream_manager.o"
+	@echo "... src/rage/rage_stream_manager.i"
+	@echo "... src/rage/rage_stream_manager.s"
 	@echo "... src/rage/render_loop.o"
 	@echo "... src/rage/render_loop.i"
 	@echo "... src/rage/render_loop.s"
@@ -1429,6 +1561,9 @@ help:
 	@echo "... src/stubs_remaining.o"
 	@echo "... src/stubs_remaining.i"
 	@echo "... src/stubs_remaining.s"
+	@echo "... src/xam/static_init.o"
+	@echo "... src/xam/static_init.i"
+	@echo "... src/xam/static_init.s"
 .PHONY : help
 
 

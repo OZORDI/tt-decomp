@@ -632,7 +632,21 @@ struct stateUnlockDialog {
 // ── gmLogicSpectator  [vtable @ 0x8206B8C4] ──────────────────────────
 // Confirmed methods: stateReplay
 struct gmLogicSpectator {
-    void**      vtable;           // +0x00
+    void**      vtable;                 // +0x00
+    uint32_t    field_0x04;             // +0x04
+    void**      m_stateArray;           // +0x08 - Array of state handlers
+    uint32_t    m_currentStateIndex;    // +0x0C - Current state index
+    uint32_t    field_0x10;             // +0x10
+    uint32_t    field_0x14;             // +0x14
+    uint32_t    m_isSpectatingLocalPlayer; // +0x18 - Boolean flag
+    uint32_t    field_0x1C;             // +0x1C
+    uint32_t    field_0x20;             // +0x20
+    uint32_t    field_0x24;             // +0x24
+    uint32_t    field_0x28;             // +0x28
+    void*       m_pGameObject;          // +0x2C - Pointer to game object
+    uint32_t    field_0x30;             // +0x30
+    uint32_t    field_0x34;             // +0x34
+    uint32_t    m_spectatorModeActive;  // +0x38 - Spectator mode flag
 
     // ── virtual methods ──
     virtual void vfn_3();  // [3] @ 0x8238c860
@@ -642,7 +656,7 @@ struct gmLogicSpectator {
     virtual void vfn_12();  // [12] @ 0x8238c1a0
     virtual void GetName();  // [13] @ 0x8238c958
     virtual void vfn_17();  // [17] @ 0x8238c8e8
-    virtual void vfn_18();  // [18] @ 0x8238d660
+    virtual void ProcessEvent(void* event);  // [18] @ 0x8238d660
     virtual void PostLoadProperties();  // [20] @ 0x8238d990
 
     // ── non-virtual methods (from debug strings) ──

@@ -26,6 +26,9 @@ void rage_EC58(void* pStringValue, const char* pText);
 void* xe_EC88(std::uint32_t size);
 void rage_free_00C0(void* ptr);
 void nop_8240E6D0(const char* fmt, ...);
+void* phMaterialMgrImpl_C208_g(void* pHashBucketSet, const char* pLookupName);
+void* rage_97A8(const void* pOperator, const char* pNodeName);
+void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicateOwner);
 void jumptable_9498(
     void* pOperator,
     const char* pPrimaryName,
@@ -35,6 +38,7 @@ void jumptable_9498(
 );
 void cmOperatorCtor_D8C0_w(void* pOperator, const void* pValueData, std::uint32_t valueSize);
 void atSingleton_DA18_p46(void* pNode, void* pRootNode);
+void atSingleton_D210_p46(void* pStructType, void* pStructInstance, void* pOperator);
 std::uint8_t jumptable_E058_h(void* pMemberArray);
 }
 
@@ -257,13 +261,13 @@ void SelectElementSerializerEntry(void* pSerializer, std::uint32_t offsetBytes) 
     GetVirtualSlot<Fn>(pSerializer, 3)(pSerializer, offsetBytes);
 }
 
-cmOperator* ExportSerializedElement(void* pSerializer, Address32 memberDataAddress) {
-    using Fn = cmOperator* (*)(void* self, Address32 memberDataAddress);
+rage::cmOperator* ExportSerializedElement(void* pSerializer, Address32 memberDataAddress) {
+    using Fn = rage::cmOperator* (*)(void* self, Address32 memberDataAddress);
     return GetVirtualSlot<Fn>(pSerializer, 6)(pSerializer, memberDataAddress);
 }
 
-void ImportElementFromNode(void* pSerializer, const cmOperator* pNode, Address32 memberDataAddress) {
-    using Fn = void (*)(void* self, const cmOperator* pNode, Address32 memberDataAddress);
+void ImportElementFromNode(void* pSerializer, const rage::cmOperator* pNode, Address32 memberDataAddress) {
+    using Fn = void (*)(void* self, const rage::cmOperator* pNode, Address32 memberDataAddress);
     GetVirtualSlot<Fn>(pSerializer, 7)(pSerializer, pNode, memberDataAddress);
 }
 
@@ -328,6 +332,160 @@ void AttachOperatorOwner(cmOperatorArrayPayload32* pOperator, Address32 ownerAdd
 
     pOperator->m_pOwner = ownerAddress;
     pOperator->m_flags &= ~0x1u;
+}
+
+constexpr std::uintptr_t kParStructRegistryGlobalAddr = 0x8271A374;
+constexpr Address32 kParStructNullTypeNameAddr = 0x8202E99C;
+constexpr Address32 kParStructTypeNodeKeyAddr = 0x82065C00;
+constexpr Address32 kParStructFactoryNodeKeyAddr = 0x82027738;
+
+constexpr std::uint16_t kParStructFlagIndirectStorage = 0x0008;
+constexpr std::uint16_t kParStructFlagFactoryCreate = 0x0010;
+constexpr std::uint16_t kParStructFlagDirectType = 0x0020;
+constexpr std::uint16_t kParStructFlagNullSentinel = 0x0080;
+
+struct parMemberStructDescriptor32 {
+    Address32 m_pOwner;
+    Address32 m_pMemberBase;
+    std::uint16_t m_flags;
+    std::uint8_t m_valueType;
+    std::uint8_t m_storageMode;
+    Address32 m_pStructName;
+    Address32 m_pDirectStructType;
+    Address32 m_pResolveTypeByNameFn;
+    Address32 m_pGetTypeNameFn;
+    Address32 m_pCreateFromOperatorFn;
+};
+static_assert(offsetof(parMemberStructDescriptor32, m_pStructName) == 12, "parMemberStructDescriptor32 name offset mismatch");
+static_assert(offsetof(parMemberStructDescriptor32, m_pDirectStructType) == 16, "parMemberStructDescriptor32 type offset mismatch");
+static_assert(offsetof(parMemberStructDescriptor32, m_pResolveTypeByNameFn) == 20, "parMemberStructDescriptor32 resolve fn offset mismatch");
+static_assert(offsetof(parMemberStructDescriptor32, m_pGetTypeNameFn) == 24, "parMemberStructDescriptor32 type-name fn offset mismatch");
+static_assert(offsetof(parMemberStructDescriptor32, m_pCreateFromOperatorFn) == 28, "parMemberStructDescriptor32 create fn offset mismatch");
+
+Address32 GetParStructRegistry() {
+    return *ResolveAddress<Address32>(kParStructRegistryGlobalAddr);
+}
+
+parMemberStructDescriptor32* GetStructDescriptor(rage::parMemberStruct* self) {
+    return static_cast<parMemberStructDescriptor32*>(self->m_pMemberDesc);
+}
+
+Address32 GetStructOwnerAddress(rage::parMemberStruct* self) {
+    using Fn = Address32 (*)(rage::parMemberStruct*);
+    return GetParMemberVirtual<Fn>(self, 1)(self);
+}
+
+Address32 GetStructMemberBaseAddress(rage::parMemberStruct* self) {
+    using Fn = Address32 (*)(rage::parMemberStruct*);
+    return GetParMemberVirtual<Fn>(self, 2)(self);
+}
+
+std::uint16_t GetStructFlags(rage::parMemberStruct* self) {
+    using Fn = std::uint32_t (*)(rage::parMemberStruct*);
+    return static_cast<std::uint16_t>(GetParMemberVirtual<Fn>(self, 4)(self));
+}
+
+std::uint8_t GetStructStorageMode(rage::parMemberStruct* self) {
+    using Fn = std::uint32_t (*)(rage::parMemberStruct*);
+    return static_cast<std::uint8_t>(GetParMemberVirtual<Fn>(self, 10)(self));
+}
+
+bool HasStructFlag(rage::parMemberStruct* self, std::uint16_t flagMask) {
+    return (GetStructFlags(self) & flagMask) != 0u;
+}
+
+bool AreStructNamesEqual(Address32 lhsStringAddress, Address32 rhsStringAddress) {
+    if (lhsStringAddress == 0u || rhsStringAddress == 0u) {
+        return false;
+    }
+
+    return std::strcmp(
+        ResolveAddress<const char>(lhsStringAddress),
+        ResolveAddress<const char>(rhsStringAddress)
+    ) == 0;
+}
+
+Address32 InvokeContextCall1(Address32 contextAddress, Address32 arg0) {
+    if (contextAddress == 0u) {
+        return 0u;
+    }
+
+    const Address32 callbackAddress = *ResolveAddress<Address32>(contextAddress + 12u);
+    if (callbackAddress == 0u) {
+        return 0u;
+    }
+
+    using Fn = Address32 (*)(Address32 self, Address32 arg0);
+    return reinterpret_cast<Fn>(static_cast<std::uintptr_t>(callbackAddress))(contextAddress, arg0);
+}
+
+Address32 InvokeContextCall0(Address32 contextAddress) {
+    if (contextAddress == 0u) {
+        return 0u;
+    }
+
+    const Address32 callbackAddress = *ResolveAddress<Address32>(contextAddress + 12u);
+    if (callbackAddress == 0u) {
+        return 0u;
+    }
+
+    using Fn = Address32 (*)(Address32 self);
+    return reinterpret_cast<Fn>(static_cast<std::uintptr_t>(callbackAddress))(contextAddress);
+}
+
+Address32 ResolveStructTypeByName(const parMemberStructDescriptor32* pDescriptor, Address32 typeNameAddress) {
+    if (pDescriptor == nullptr || pDescriptor->m_pResolveTypeByNameFn == 0u || typeNameAddress == 0u) {
+        return 0u;
+    }
+
+    using Fn = Address32 (*)(const char* pTypeName);
+    return reinterpret_cast<Fn>(static_cast<std::uintptr_t>(pDescriptor->m_pResolveTypeByNameFn))(
+        ResolveAddress<const char>(typeNameAddress)
+    );
+}
+
+Address32 ResolveStructTypeName(const parMemberStructDescriptor32* pDescriptor, Address32 structInstanceAddress) {
+    if (pDescriptor == nullptr || pDescriptor->m_pGetTypeNameFn == 0u) {
+        return 0u;
+    }
+
+    using Fn = Address32 (*)(Address32 structInstanceAddress);
+    return reinterpret_cast<Fn>(static_cast<std::uintptr_t>(pDescriptor->m_pGetTypeNameFn))(structInstanceAddress);
+}
+
+Address32 CreateStructFromOperator(const parMemberStructDescriptor32* pDescriptor, const rage::cmOperator* pValueOperator) {
+    if (pDescriptor == nullptr || pDescriptor->m_pCreateFromOperatorFn == 0u) {
+        return 0u;
+    }
+
+    using Fn = Address32 (*)(const rage::cmOperator* pValueOperator);
+    return reinterpret_cast<Fn>(static_cast<std::uintptr_t>(pDescriptor->m_pCreateFromOperatorFn))(pValueOperator);
+}
+
+Address32 FindStructOperatorNode(const rage::cmOperator* pValueOperator, Address32 nodeNameAddress) {
+    return static_cast<Address32>(reinterpret_cast<std::uintptr_t>(
+        rage_97A8(pValueOperator, ResolveAddress<const char>(nodeNameAddress))
+    ));
+}
+
+void ResetNestedStructMember(Address32 memberDescriptorAddress, Address32 structInstanceAddress) {
+    if (memberDescriptorAddress == 0u) {
+        return;
+    }
+
+    void* pMemberDescriptor = ResolveAddress<void>(memberDescriptorAddress);
+    using Fn = void (*)(void* self, Address32 structInstanceAddress);
+    GetVirtualSlot<Fn>(pMemberDescriptor, 8)(pMemberDescriptor, structInstanceAddress);
+}
+
+void DeserializeStruct(Address32 structTypeAddress, const rage::cmOperator* pValueOperator, Address32 structInstanceAddress) {
+    if (structTypeAddress == 0u) {
+        return;
+    }
+
+    void* pStructType = ResolveAddress<void>(structTypeAddress);
+    using Fn = void (*)(void* self, const rage::cmOperator* pValueOperator, Address32 structInstanceAddress);
+    GetVirtualSlot<Fn>(pStructType, 1)(pStructType, pValueOperator, structInstanceAddress);
 }
 
 } // namespace
@@ -863,6 +1021,321 @@ void parMemberArray::vfn_7(const cmOperator* pValueOperator, std::uint32_t membe
         );
         RestoreSerializerDefault(m_pElementSerializer, memberDataAddress);
     }
+}
+
+/**
+ * parMemberStruct_BBC0 @ 0x8234BBC0 | size: 0x6C
+ *
+ * Looks up a struct-type descriptor by name in the global par registry hash.
+ * Names prefixed with "__" are normalized to match the stored key form.
+ */
+std::uint32_t parMemberStruct::BBC0(std::uint32_t structRegistryAddress, const char* pTypeName) {
+    if (structRegistryAddress == 0u || pTypeName == nullptr) {
+        return 0u;
+    }
+
+    const char* pLookupName = pTypeName;
+    if (pLookupName[0] == '_' && pLookupName[1] == '_') {
+        pLookupName += 2;
+    }
+
+    const Address32 slotAddress = static_cast<Address32>(reinterpret_cast<std::uintptr_t>(
+        phMaterialMgrImpl_C208_g(ResolveAddress<void>(structRegistryAddress + 16u), pLookupName)
+    ));
+    if (slotAddress == 0u) {
+        return 0u;
+    }
+
+    const Address32 entryAddress = *ResolveAddress<Address32>(slotAddress);
+    if (entryAddress == 0u) {
+        return 0u;
+    }
+
+    return *ResolveAddress<Address32>(entryAddress);
+}
+
+/**
+ * parMemberStruct_D620 @ 0x8234D620 | size: 0x60
+ *
+ * Applies each child member's reset/default routine to the target struct
+ * instance address.
+ */
+void parMemberStruct::D620(std::uint32_t structTypeAddress, std::uint32_t structInstanceAddress) {
+    if (structTypeAddress == 0u) {
+        return;
+    }
+
+    const std::uint16_t childCount = *ResolveAddress<std::uint16_t>(structTypeAddress + 20u);
+    const Address32 childArrayAddress = *ResolveAddress<Address32>(structTypeAddress + 16u);
+
+    for (std::uint32_t childIndex = 0u; childIndex < childCount; ++childIndex) {
+        const Address32 childMemberAddress = *ResolveAddress<Address32>(childArrayAddress + (childIndex * 4u));
+        ResetNestedStructMember(childMemberAddress, structInstanceAddress);
+    }
+}
+
+/**
+ * parMemberStruct_EA88 @ 0x8234EA88 | size: 0x88
+ *
+ * Resolves the effective struct-type descriptor for this member, either via a
+ * direct descriptor pointer flag or via global name lookup.
+ */
+std::uint32_t parMemberStruct::EA88() {
+    auto* pDescriptor = GetStructDescriptor(this);
+    if (pDescriptor == nullptr) {
+        return 0u;
+    }
+
+    if (HasStructFlag(this, kParStructFlagDirectType)) {
+        return pDescriptor->m_pDirectStructType;
+    }
+
+    const Address32 structRegistry = GetParStructRegistry();
+    if (structRegistry == 0u) {
+        return 0u;
+    }
+
+    return BBC0(structRegistry, ResolveAddress<const char>(pDescriptor->m_pStructName));
+}
+
+/**
+ * parMemberStruct_EB10 @ 0x8234EB10 | size: 0xBC
+ *
+ * Resolves the runtime struct type for a member slot. Pointer-backed members
+ * route through the type's context resolver callback.
+ */
+std::uint32_t parMemberStruct::EB10(std::uint32_t memberOffset) {
+    const Address32 structTypeAddress = EA88();
+    if (!HasStructFlag(this, kParStructFlagIndirectStorage)) {
+        return structTypeAddress;
+    }
+
+    const Address32 memberSlotAddress = GetStructMemberBaseAddress(this) + memberOffset;
+    const Address32 structInstanceAddress = *ResolveAddress<Address32>(memberSlotAddress);
+    if (structInstanceAddress == 0u || structTypeAddress == 0u) {
+        return 0u;
+    }
+
+    const Address32 resolvedTypeAddress = InvokeContextCall1(structTypeAddress + 44u, structInstanceAddress);
+    (void)GetStructFlags(this);
+    return resolvedTypeAddress;
+}
+
+/**
+ * parMemberStruct::vfn_6 @ 0x8234EBD0 | size: 0x340
+ *
+ * Serializes the member as a cmOperator node. For pointer-backed polymorphic
+ * members this emits type-identification labels before serializing children.
+ */
+cmOperator* parMemberStruct::vfn_6(std::uint32_t memberOffset) {
+    xe_main_thread_init_0038();
+
+    MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
+    auto* pOperatorData = (allocator != nullptr)
+        ? static_cast<cmOperatorArrayPayload32*>(allocator->Allocate(44u, 16u))
+        : nullptr;
+    if (pOperatorData == nullptr) {
+        return nullptr;
+    }
+
+    InitializeArrayOperator(pOperatorData);
+    util_9410(pOperatorData, ResolveAddress<void>(GetStructOwnerAddress(this)), 0u);
+
+    const bool isIndirectMember = HasStructFlag(this, kParStructFlagIndirectStorage);
+    Address32 structInstanceAddress = GetStructMemberBaseAddress(this) + memberOffset;
+    if (isIndirectMember) {
+        structInstanceAddress = *ResolveAddress<Address32>(structInstanceAddress);
+    }
+
+    if (isIndirectMember) {
+        if (GetStructStorageMode(this) == 1u) {
+            if (structInstanceAddress == 0u) {
+                if (!HasStructFlag(this, kParStructFlagNullSentinel)) {
+                    jumptable_9498(
+                        pOperatorData,
+                        ResolveAddress<const char>(kParStructNullTypeNameAddr),
+                        ResolveAddress<const char>(kParStructTypeNodeKeyAddr),
+                        0u,
+                        0u
+                    );
+                    return reinterpret_cast<cmOperator*>(pOperatorData);
+                }
+            }
+
+            const Address32 typeNameAddress = ResolveStructTypeName(GetStructDescriptor(this), structInstanceAddress);
+            jumptable_9498(
+                pOperatorData,
+                ResolveAddress<const char>(typeNameAddress),
+                ResolveAddress<const char>(kParStructTypeNodeKeyAddr),
+                0u,
+                1u
+            );
+            return reinterpret_cast<cmOperator*>(pOperatorData);
+        }
+
+        if (structInstanceAddress == 0u) {
+            jumptable_9498(
+                pOperatorData,
+                ResolveAddress<const char>(kParStructNullTypeNameAddr),
+                ResolveAddress<const char>(kParStructFactoryNodeKeyAddr),
+                0u,
+                0u
+            );
+            return reinterpret_cast<cmOperator*>(pOperatorData);
+        }
+    }
+
+    const Address32 structTypeAddress = EB10(memberOffset);
+    if (structTypeAddress == 0u) {
+        return reinterpret_cast<cmOperator*>(pOperatorData);
+    }
+
+    auto* rawOperator = reinterpret_cast<std::uint8_t*>(pOperatorData);
+    const std::uint16_t existingTypeWord = *reinterpret_cast<std::uint16_t*>(rawOperator + 18u);
+    const std::uint32_t structTypeWord = *ResolveAddress<std::uint32_t>(structTypeAddress + 24u);
+    *reinterpret_cast<std::uint32_t*>(rawOperator + 16u) =
+        (structTypeWord & 0xFFFF0000u) | existingTypeWord;
+    *reinterpret_cast<std::uint16_t*>(rawOperator + 18u) =
+        static_cast<std::uint16_t>(structTypeWord);
+
+    if (isIndirectMember &&
+        GetStructStorageMode(this) != 1u &&
+        structInstanceAddress != 0u) {
+        const Address32 typeNameAddress = *ResolveAddress<Address32>(structTypeAddress + 4u);
+        jumptable_9498(
+            pOperatorData,
+            ResolveAddress<const char>(typeNameAddress),
+            ResolveAddress<const char>(kParStructFactoryNodeKeyAddr),
+            1u,
+            1u
+        );
+    }
+
+    (void)GetStructFlags(this);
+    atSingleton_D210_p46(
+        ResolveAddress<void>(structTypeAddress),
+        ResolveAddress<void>(structInstanceAddress),
+        pOperatorData
+    );
+    return reinterpret_cast<cmOperator*>(pOperatorData);
+}
+
+/**
+ * parMemberStruct::vfn_7 @ 0x8234EF10 | size: 0x1DC
+ *
+ * Deserializes a cmOperator node into this member, handling polymorphic
+ * pointer members and lazily creating target instances when required.
+ */
+void parMemberStruct::vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset) {
+    if (pValueOperator == nullptr) {
+        return;
+    }
+
+    if (HasStructFlag(this, kParStructFlagIndirectStorage)) {
+        const Address32 memberSlotAddress = GetStructMemberBaseAddress(this) + memberOffset;
+        Address32* pStructInstanceSlot = ResolveAddress<Address32>(memberSlotAddress);
+
+        if (GetStructStorageMode(this) == 1u) {
+            const Address32 typeNodeAddress = FindStructOperatorNode(pValueOperator, kParStructTypeNodeKeyAddr);
+            if (typeNodeAddress == 0u) {
+                *pStructInstanceSlot = 0u;
+                return;
+            }
+
+            const Address32 typeNameAddress = *ResolveAddress<Address32>(typeNodeAddress + 4u);
+            if (!HasStructFlag(this, kParStructFlagNullSentinel) &&
+                AreStructNamesEqual(typeNameAddress, kParStructNullTypeNameAddr)) {
+                *pStructInstanceSlot = 0u;
+                return;
+            }
+
+            *pStructInstanceSlot = ResolveStructTypeByName(GetStructDescriptor(this), typeNameAddress);
+            return;
+        }
+
+        if (*pStructInstanceSlot == 0u) {
+            *pStructInstanceSlot = vfn_9(pValueOperator, memberOffset);
+            if (*pStructInstanceSlot == 0u) {
+                return;
+            }
+        }
+
+        const Address32 structTypeAddress = EB10(memberOffset);
+        DeserializeStruct(structTypeAddress, pValueOperator, *pStructInstanceSlot);
+        return;
+    }
+
+    const Address32 structTypeAddress = EA88();
+    const Address32 structInstanceAddress = GetStructMemberBaseAddress(this) + memberOffset;
+    DeserializeStruct(structTypeAddress, pValueOperator, structInstanceAddress);
+}
+
+/**
+ * parMemberStruct::vfn_8 @ 0x8234F0F0 | size: 0x94
+ *
+ * Writes the default value for this member. Pointer-backed members are reset
+ * to null; direct members recurse through child-member defaults.
+ */
+void parMemberStruct::vfn_8(std::uint32_t memberOffset) {
+    if (HasStructFlag(this, kParStructFlagIndirectStorage)) {
+        *ResolveAddress<Address32>(GetStructMemberBaseAddress(this) + memberOffset) = 0u;
+        return;
+    }
+
+    const Address32 structTypeAddress = EA88();
+    const Address32 structInstanceAddress = GetStructMemberBaseAddress(this) + memberOffset;
+    D620(structTypeAddress, structInstanceAddress);
+}
+
+/**
+ * parMemberStruct::vfn_9 @ 0x8234F188 | size: 0x1D4
+ *
+ * Returns the target struct instance for a member slot, creating a new
+ * instance for pointer-backed members when the incoming operator requests one.
+ */
+std::uint32_t parMemberStruct::vfn_9(const cmOperator* pValueOperator, std::uint32_t memberOffset) {
+    if (!HasStructFlag(this, kParStructFlagIndirectStorage)) {
+        return GetStructMemberBaseAddress(this) + memberOffset;
+    }
+
+    const Address32 factoryNodeAddress = FindStructOperatorNode(pValueOperator, kParStructFactoryNodeKeyAddr);
+    if (factoryNodeAddress == 0u) {
+        return 0u;
+    }
+
+    const Address32 structTypeNameAddress = *ResolveAddress<Address32>(factoryNodeAddress + 4u);
+    if (AreStructNamesEqual(structTypeNameAddress, kParStructNullTypeNameAddr)) {
+        return 0u;
+    }
+
+    (void)EA88();
+    (void)GetStructFlags(this);
+
+    Address32 structTypeAddress = BBC0(
+        GetParStructRegistry(),
+        ResolveAddress<const char>(structTypeNameAddress)
+    );
+
+    const parMemberStructDescriptor32* pDescriptor = GetStructDescriptor(this);
+    if (pDescriptor != nullptr &&
+        (pDescriptor->m_flags & kParStructFlagFactoryCreate) != 0u &&
+        structTypeAddress == 0u &&
+        pDescriptor->m_pCreateFromOperatorFn != 0u) {
+        Address32* pMemberSlot = ResolveAddress<Address32>(GetStructMemberBaseAddress(this) + memberOffset);
+        *pMemberSlot = CreateStructFromOperator(pDescriptor, pValueOperator);
+        return *pMemberSlot;
+    }
+
+    if (structTypeAddress == 0u) {
+        return 0u;
+    }
+
+    const Address32 structInstanceAddress = InvokeContextCall0(structTypeAddress + 28u);
+    D620(structTypeAddress, structInstanceAddress);
+
+    Address32* pMemberSlot = ResolveAddress<Address32>(GetStructMemberBaseAddress(this) + memberOffset);
+    *pMemberSlot = structInstanceAddress;
+    return *pMemberSlot;
 }
 
 } // namespace rage

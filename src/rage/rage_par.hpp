@@ -127,4 +127,64 @@ struct parMemberArray {
     void vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset);
 };
 
+/**
+ * rage::parMemberStruct @ 0x82065AAC
+ *
+ * Struct-specialized parameter descriptor. It resolves runtime struct types,
+ * marshals nested members through cmOperator trees, and handles pointer-backed
+ * polymorphic struct instances.
+ */
+struct parMemberStruct {
+    void** m_pVtable;        // +0x00
+    void* m_pMemberDesc;     // +0x04
+
+    /**
+     * parMemberStruct_BBC0 @ 0x8234BBC0 | size: 0x6C
+     * Resolve a struct type by name through the global par structure registry.
+     */
+    static std::uint32_t BBC0(std::uint32_t structRegistryAddress, const char* pTypeName);
+
+    /**
+     * parMemberStruct_D620 @ 0x8234D620 | size: 0x60
+     * Reset every child member of the struct type into the target instance.
+     */
+    static void D620(std::uint32_t structTypeAddress, std::uint32_t structInstanceAddress);
+
+    /**
+     * parMemberStruct_EA88 @ 0x8234EA88 | size: 0x88
+     * Resolve the effective struct type descriptor for this member.
+     */
+    std::uint32_t EA88();
+
+    /**
+     * parMemberStruct_EB10 @ 0x8234EB10 | size: 0xBC
+     * Resolve the runtime struct type for a member slot (handles indirection).
+     */
+    std::uint32_t EB10(std::uint32_t memberOffset);
+
+    /**
+     * parMemberStruct::vfn_6 @ 0x8234EBD0 | size: 0x340
+     * Export this struct member into a cmOperator representation.
+     */
+    cmOperator* vfn_6(std::uint32_t memberOffset);
+
+    /**
+     * parMemberStruct::vfn_7 @ 0x8234EF10 | size: 0x1DC
+     * Import a cmOperator representation back into this struct member.
+     */
+    void vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+
+    /**
+     * parMemberStruct::vfn_8 @ 0x8234F0F0 | size: 0x94
+     * Reset struct member storage to its default state.
+     */
+    void vfn_8(std::uint32_t memberOffset);
+
+    /**
+     * parMemberStruct::vfn_9 @ 0x8234F188 | size: 0x1D4
+     * Acquire/create the target struct instance for this member slot.
+     */
+    std::uint32_t vfn_9(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+};
+
 } // namespace rage
