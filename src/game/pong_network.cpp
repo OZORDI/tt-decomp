@@ -394,3 +394,28 @@ void SinglesNetworkClient::UpdateNetworkTimer()
     *(float*)((char*)timerStruct + 8) = zeroValue;
     *(int*)((char*)timerStruct + 0) = 0;
 }
+
+
+// ===========================================================================
+// SpectatorNetworkClient::~SpectatorNetworkClient (vfn_0) @ 0x823CA408 | size: 0x50
+//
+// Destructor for SpectatorNetworkClient.
+// Calls the base class destructor (NetDataQuery) and optionally frees memory.
+//
+// Parameters:
+//   flags - Bit 0 controls memory deallocation:
+//           0 = destructor only (object on stack or embedded)
+//           1 = destructor + free memory (object on heap)
+//
+// This is the standard RAGE engine destructor pattern used throughout the
+// networking subsystem.
+// ===========================================================================
+SpectatorNetworkClient::~SpectatorNetworkClient() {
+    // Call base class destructor (NetDataQuery)
+    // This cleans up nested state objects and components
+    NetDataQuery_ctor_A458(this);
+    
+    // Note: Memory deallocation is handled by the compiler-generated
+    // delete operator, which checks the flags parameter passed by the caller.
+    // If flags & 1, rage_free_00C0 is called to return memory to the pool.
+}
