@@ -1326,3 +1326,64 @@ void SinglesNetworkClient::ProcessNetworkTimingUpdate(uint32_t timestamp)
         }
     }
 }
+
+/**
+ * SinglesNetworkClient::ReadStringFromStream @ 0x82260688 | size: 0xAC
+ *
+ * Reads a null-terminated string from the network stream buffer.
+ * 
+ * The function:
+ * 1. Checks available buffer space (fields +20 and +32, divided by 8)
+ * 2. Scans the input string for null terminator (max 16 bytes)
+ * 3. If string length > 0, writes it to the stream
+ * 4. Clears/resets 8 bits in the stream
+ * 5. Returns the string length + 1
+ *
+ * @param stringBuffer - Pointer to null-terminated string to read
+ * @return Length of string + 1, or 0 if no space available
+ */
+uint32_t SinglesNetworkClient::ReadStringFromStream(const char* stringBuffer) {
+    // Calculate available buffer space
+    // Fields +20 and +32 appear to be buffer pointers/positions
+    uint32_t bufferEnd = *(uint32_t*)((char*)this + 20);
+    uint32_t bufferCurrent = *(uint32_t*)((char*)this + 32);
+    int32_t availableSlots = (bufferEnd - bufferCurrent) >> 3;  // Divide by 8
+    
+    // If no space available, return 0
+    if (availableSlots <= 0) {
+        return 0;
+    }
+    
+    // Clamp to maximum 16 bytes
+    if (availableSlots > 16) {
+        availableSlots = 16;
+    }
+    
+    // Scan string for null terminator
+    uint32_t stringLength = 0;
+    if (stringBuffer[0] != '\0') {
+        // Find string length (max availableSlots-1 bytes)
+        while (stringLength < (uint32_t)(availableSlots - 1)) {
+            stringLength++;
+            if (stringBuffer[stringLength] == '\0') {
+                break;
+            }
+        }
+        
+        // If we found a non-empty string, write it to the stream
+        if (stringLength > 0) {
+            // Call SinglesNetworkClient_0738_g to write the string
+            // This is likely WriteStringToStream(this, stringBuffer, stringLength)
+            extern uint32_t SinglesNetworkClient_0738_g(void* client, const char* str, uint32_t length);
+            SinglesNetworkClient_0738_g(this, stringBuffer, stringLength);
+        }
+    }
+    
+    // Clear/reset 8 bits in the stream
+    // SinglesNetworkClient_0448_g is ReadBitsFromStream
+    extern uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bitWidth);
+    SinglesNetworkClient_0448_g(this, 0, 8);
+    
+    // Return string length + 1
+    return stringLength + 1;
+}

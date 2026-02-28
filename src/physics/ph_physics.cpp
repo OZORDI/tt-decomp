@@ -205,3 +205,50 @@ void rage::fragDrawable::Constructor() {
     vec[2] = 0;
     vec[3] = 0;
 }
+
+/**
+ * rage::phBoundRibbon::CopyFrom @ 0x82294AB8 | size: 0xD4
+ *
+ * Copy constructor / assignment operator for phBoundRibbon.
+ * Performs a deep copy of all fields including vectors and floats.
+ * 
+ * The structure contains:
+ * - 5 scalar fields at the beginning (20 bytes)
+ * - 7 SIMD vectors (112 bytes total)
+ * - 3 float values
+ * - 1 byte flag
+ * - 2 trailing fields
+ * 
+ * Total size: 168 bytes (0xA8)
+ */
+void rage::phBoundRibbon::CopyFrom(const rage::phBoundRibbon* source) {
+    // Copy first 5 scalar fields (0-19)
+    this->field_0x00 = source->field_0x00;
+    this->field_0x04 = source->field_0x04;
+    this->field_0x08 = source->field_0x08;
+    this->field_0x0C = source->field_0x0C;
+    this->field_0x10 = source->field_0x10;
+    
+    // Copy 7 SIMD vectors (32-159)
+    this->m_vec1 = source->m_vec1;    // +32
+    this->m_vec2 = source->m_vec2;    // +48
+    this->m_vec3 = source->m_vec3;    // +64
+    
+    // Copy 3 float values (80-91)
+    this->m_float1 = source->m_float1;  // +80
+    this->m_float2 = source->m_float2;  // +84
+    this->m_float3 = source->m_float3;  // +88
+    
+    // Copy byte flag (92)
+    this->m_flags = source->m_flags;
+    
+    // Copy remaining 4 vectors (96-159)
+    this->m_vec4 = source->m_vec4;    // +96
+    this->m_vec5 = source->m_vec5;    // +112
+    this->m_vec6 = source->m_vec6;    // +128
+    this->m_vec7 = source->m_vec7;    // +144
+    
+    // Copy trailing fields (160-167)
+    this->field_0xA0 = source->field_0xA0;  // +160
+    this->field_0xA4 = source->field_0xA4;  // +164
+}

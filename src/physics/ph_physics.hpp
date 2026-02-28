@@ -926,8 +926,37 @@ struct phBoundQuadtree {
 };
 
 // ── rage::phBoundRibbon  [vtable @ 0x820589BC] ───────────────────────────────
+// Physics bound for ribbon/strip geometry (likely used for cloth or flexible objects)
+// Total size: 168 bytes (0xA8)
 struct phBoundRibbon {
     void**      vtable;           // +0x00
+    uint32_t    field_0x04;       // +0x04
+    uint32_t    field_0x08;       // +0x08
+    uint32_t    field_0x0C;       // +0x0C
+    uint32_t    field_0x10;       // +0x10
+    uint8_t     _pad0x14[12];     // +0x14
+    
+    // SIMD vectors for geometry/physics data
+    float       m_vec1[4];        // +0x20 (32)  - 16-byte aligned vector
+    float       m_vec2[4];        // +0x30 (48)
+    float       m_vec3[4];        // +0x40 (64)
+    
+    // Float parameters
+    float       m_float1;         // +0x50 (80)
+    float       m_float2;         // +0x54 (84)
+    float       m_float3;         // +0x58 (88)
+    uint8_t     m_flags;          // +0x5C (92)
+    uint8_t     _pad0x5D[3];      // +0x5D
+    
+    // Additional SIMD vectors
+    float       m_vec4[4];        // +0x60 (96)
+    float       m_vec5[4];        // +0x70 (112)
+    float       m_vec6[4];        // +0x80 (128)
+    float       m_vec7[4];        // +0x90 (144)
+    
+    // Trailing fields
+    uint32_t    field_0xA0;       // +0xA0 (160)
+    uint32_t    field_0xA4;       // +0xA4 (164)
 
     virtual ~phBoundRibbon();     // [0] @ 0x8229D970
     virtual void vfn_11();        // [11] @ 0x8229D6A0
@@ -942,6 +971,9 @@ struct phBoundRibbon {
     virtual void vfn_31();        // [31] @ 0x822A1198
     virtual void vfn_36();        // [36] @ 0x822A06D0
     virtual void vfn_37();        // [37] @ 0x8229DDF8
+    
+    // @ 0x82294AB8 | size: 0xD4
+    void CopyFrom(const phBoundRibbon* source);
 };
 
 // ── rage::phBoundSphere  [vtable @ 0x82058584] ───────────────────────────────

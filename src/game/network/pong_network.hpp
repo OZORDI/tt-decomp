@@ -1593,6 +1593,7 @@ struct SinglesNetworkClient {
     
     // ── non-virtual methods (implemented) ──
     void ProcessNetworkTimingUpdate(uint32_t timestamp);  // @ 0x823E01F8
+    uint32_t ReadStringFromStream(const char* stringBuffer);  // @ 0x82260688
 };
 
 // ── SkipReplayMessage  [vtable @ 0x8206F8F8] ──────────────────────────
