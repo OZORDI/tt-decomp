@@ -387,3 +387,160 @@ void atSingleton::InitializeLargeSubStructure(void* basePtr) {
     *(int*)(base + 21624) = 0;
     *(float*)(base + 21628) = 0.0f;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::ReadBits48 @ 0x824D2748 | size: 0xCC
+//
+// Bitstream reader - reads 48 bits (6 bytes) from buffer and accumulates them
+// into the 64-bit accumulator. This is an optimized bulk read function that
+// reads 6 bytes at once, compared to ReadBits8 which reads 1 byte at a time.
+//
+// Bitstream structure (inferred from usage):
+//   +0x00: uint64_t accumulator (bit buffer)
+//   +0x08: int32_t bitPosition (negative = bits available in accumulator)
+//   +0x0C: uint8_t* readPtr (current read position in buffer)
+//   +0x10: uint8_t* endPtr (end of buffer)
+//   +0x14: int32_t field_0x14 (unknown)
+//   +0x18: int32_t errorFlag (set to 2 on underflow)
+//
+// The bitPosition field is negative when there are bits available in the
+// accumulator. For example, -32 means 32 bits are available to read.
+// When bitPosition becomes positive, the accumulator needs refilling.
+//
+// This function reads 6 bytes in big-endian order, shifts them left by
+// (48 - bitPosition) bits, and adds them to the accumulator. The new
+// bitPosition is old + 48.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton::ReadBits48() {
+    // Loop until we have enough bits or hit end of buffer
+    while (true) {
+        uint8_t* readPtr = *(uint8_t**)((char*)this + 0x0C);
+        uint8_t* endPtr = *(uint8_t**)((char*)this + 0x10);
+        
+        // Check if we have at least 6 bytes available
+        // (endPtr - 4) because we need 6 bytes, and the check is (readPtr < endPtr - 4)
+        if (readPtr >= endPtr - 4) {
+            // Not enough bytes - call ReadBits8 to handle refill/error
+            int result = ReadBits8();
+            if (result != 1) {
+                return;
+            }
+            // ReadBits8 returned 1, meaning we should retry
+            continue;
+        }
+        
+        // Read 6 bytes in big-endian order
+        uint64_t byte0 = readPtr[0];
+        uint64_t byte1 = readPtr[1];
+        uint64_t byte2 = readPtr[2];
+        uint64_t byte3 = readPtr[3];
+        uint64_t byte4 = readPtr[4];
+        uint64_t byte5 = readPtr[5];
+        
+        // Construct 48-bit value from 6 bytes (big-endian)
+        uint64_t value48 = (byte0 << 40) | (byte1 << 32) | (byte2 << 24) | 
+                           (byte3 << 16) | (byte4 << 8) | byte5;
+        
+        // Update read pointer (advance by 6 bytes)
+        *(uint8_t**)((char*)this + 0x0C) = readPtr + 6;
+        
+        // Get current bit position (negative = bits available)
+        int32_t bitPosition = *(int32_t*)((char*)this + 0x08);
+        
+        // Calculate shift amount: we want to shift left by (48 - bitPosition)
+        // Since bitPosition is negative, this becomes (48 - (-N)) = (48 + N)
+        // But we need to negate it first to get the positive shift amount
+        int32_t shiftAmount = 48 - bitPosition;
+        
+        // Shift the 48-bit value and add to accumulator
+        uint64_t accumulator = *(uint64_t*)((char*)this + 0x00);
+        accumulator += (value48 << shiftAmount);
+        *(uint64_t*)((char*)this + 0x00) = accumulator;
+        
+        // Update bit position (add 48 bits)
+        *(int32_t*)((char*)this + 0x08) = bitPosition + 48;
+        
+        return;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::ReadBits8 @ 0x824D2688 | size: 0xC0
+//
+// Bitstream reader - reads 8 bits (1 byte) from buffer and accumulates it
+// into the 64-bit accumulator. This is the single-byte read function used
+// when ReadBits48 runs out of buffer space or for small reads.
+//
+// Returns:
+//   0 = success
+//   1 = retry (buffer was refilled, call again)
+//
+// The function handles buffer underflow by checking field_0x18 and setting
+// error flags when necessary.
+// ─────────────────────────────────────────────────────────────────────────────
+int atSingleton::ReadBits8() {
+    uint8_t* readPtr = *(uint8_t**)((char*)this + 0x0C);
+    uint8_t* endPtr = *(uint8_t**)((char*)this + 0x10);
+    
+    // Check if we have at least 1 byte available
+    if (readPtr <= endPtr) {
+        // Read loop: accumulate bytes until we reach end of buffer
+        while (readPtr <= endPtr) {
+            // Read one byte
+            uint8_t byteValue = *readPtr;
+            readPtr++;
+            
+            // Get current bit position
+            int32_t bitPosition = *(int32_t*)((char*)this + 0x08);
+            
+            // Calculate shift amount: (40 - bitPosition)
+            int32_t shiftAmount = 40 - bitPosition;
+            
+            // Shift the byte and add to accumulator
+            uint64_t accumulator = *(uint64_t*)((char*)this + 0x00);
+            accumulator += ((uint64_t)byteValue << shiftAmount);
+            *(uint64_t*)((char*)this + 0x00) = accumulator;
+            
+            // Update bit position (add 8 bits)
+            *(int32_t*)((char*)this + 0x08) = bitPosition + 8;
+            
+            // Update read pointer
+            *(uint8_t**)((char*)this + 0x0C) = readPtr;
+            
+            // Reload end pointer for next iteration
+            endPtr = *(uint8_t**)((char*)this + 0x10);
+        }
+        
+        // Check if bit position is non-negative (meaning we have enough bits)
+        int32_t bitPosition = *(int32_t*)((char*)this + 0x08);
+        if (bitPosition >= 0) {
+            return 0;  // Success
+        }
+    }
+    
+    // Buffer underflow handling
+    int32_t field_0x18 = *(int32_t*)((char*)this + 0x18);
+    
+    if (field_0x18 == 1) {
+        // Call helper function to refill buffer
+        extern void atSingleton_23C0(void*);
+        atSingleton_23C0(this);
+        return 1;  // Retry
+    }
+    
+    // Check if bit position is very negative (< -16)
+    int32_t bitPosition = *(int32_t*)((char*)this + 0x08);
+    if (bitPosition < -16) {
+        // Check field_0x14
+        int32_t field_0x14 = *(int32_t*)((char*)this + 0x14);
+        if (field_0x14 == 0) {
+            // Set error flag
+            *(int32_t*)((char*)this + 0x14) = 2;
+        }
+        
+        // Reset bit position to maximum (127 = all bits consumed)
+        *(int32_t*)((char*)this + 0x08) = 127;
+    }
+    
+    return 0;  // Success (or error handled)
+}
