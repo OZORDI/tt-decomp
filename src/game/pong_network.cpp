@@ -341,3 +341,56 @@ int PongNetGameModeCoordinator::CheckNetworkStatus()
     // Return 1 if status check returned non-zero, 0 otherwise
     return (statusResult != 0) ? 1 : 0;
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::UpdateNetworkTimer @ 0x823CCEF8 | size: 0x8C
+//
+// Updates network timing state based on current timer value.
+// If timer is non-zero and state is 1, queries a global object for timing
+// and stores the result. Otherwise, resets timer and state to zero.
+// ===========================================================================
+void SinglesNetworkClient::UpdateNetworkTimer()
+{
+    // Get pointer to timer structure at offset +4532
+    void* timerStruct = (char*)this + 4532;
+    
+    // Load timer value from offset +4
+    float timerValue = *(float*)((char*)timerStruct + 4);
+    
+    // Load zero constant from global @ 0x82079AD8
+    extern const float g_zeroFloat;  // @ 0x82079AD8
+    float zeroValue = g_zeroFloat;
+    
+    // Check if timer is non-zero
+    if (timerValue != zeroValue) {
+        // Load state flag from offset +0
+        int state = *(int*)((char*)timerStruct + 0);
+        
+        // If state is 1, update timing from global object
+        if (state == 1) {
+            // Load global object pointer @ 0x8271A328
+            extern void* g_networkTimingObject;  // @ 0x8271A328
+            void* globalObj = *(void**)&g_networkTimingObject;
+            
+            // Get object at offset +20
+            void* timingObj = *(void**)((char*)globalObj + 20);
+            
+            // Call vtable slot 2 to get timing value
+            typedef float (*GetTimingFunc)(void*);
+            void** vtable = *(void***)timingObj;
+            GetTimingFunc getTime = (GetTimingFunc)vtable[2];
+            float newTime = getTime(timingObj);
+            
+            // Store result at offset +8
+            *(float*)((char*)timerStruct + 8) = newTime;
+            
+            return;
+        }
+    }
+    
+    // Reset timer and state
+    *(float*)((char*)timerStruct + 4) = zeroValue;
+    *(float*)((char*)timerStruct + 8) = zeroValue;
+    *(int*)((char*)timerStruct + 0) = 0;
+}
