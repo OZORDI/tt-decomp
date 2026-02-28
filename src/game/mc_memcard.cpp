@@ -155,7 +155,7 @@ enum McState {
 // the fsmMachine destructor body to free the states array.  Optionally frees
 // 'this' if r4 == 1 (heap-allocated instance).
 //
-// NOTE: The fsmMachine destructor body (gameLoop_DestroyAudio_27A8) is inlined
+// NOTE: The fsmMachine destructor body (fsmMachine_Destructor_27A8) is inlined
 // here under /Ob2.  It resets the vtable, frees m_pStates if non-null, then
 // resets the vtable to rage::datBase to mark the object dead.
 
@@ -475,7 +475,7 @@ void mcMemcardControl::RequestOp()
 
 // ── fsmMachine destructor body @ 0x822227A8 | size: 0x58 ─────────────────────
 //
-// (gameLoop_DestroyAudio_27A8 in the scaffold — misleading auto-name)
+// (fsmMachine_Destructor_27A8 in the scaffold — originally auto-named as gameLoop_DestroyAudio_27A8)
 //
 // Shared destructor body called by both fsmMachine::~fsmMachine() and
 // (inlined into) mcMemcardControl::~mcMemcardControl().

@@ -32,6 +32,7 @@ struct pongPageGroup {
     void** vtable;
     void Open() { if (vtable) ((void(*)(void*))vtable[2])(this); }
     void Close() { if (vtable) ((void(*)(void*))vtable[3])(this); }
+    void SetVisible() { if (vtable) ((void(*)(void*))vtable[5])(this); }
 }; // forward definition
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +68,18 @@ extern void* pg_0890_g(void* pageGroup);                            // page grou
 extern void  hsmContext_SetNextState_2800(void* ctx, int stateIdx); // HSM transition
 extern void  hsmContext_RequestTransition(void* ctx, int idx);      // HSM request
 extern bool  hsmContext_IsTransitioning(void* ctx);                 // HSM query
+extern void  pg_E6E0(void* record, int code, int mask, int a3, int a4); // event dispatcher @ 0x8220E6E0
+extern void* game_AD40(void* obj, uint32_t count);       // credits-roll notify @ 0x8240AD40
+extern void* PostStateTransitionRequest(void* hsmCtx, int stateIdx); // @ 0x822228B8
+extern void  pg_61E8_g(void* mgr, int type, int mode, float fadeTime, float param2); // UI fade
+extern bool  pg_FFF8_g(void* record);                    // input button state check @ 0x8225FFF8
+extern uint8_t SinglesNetworkClient_B2A8_g(void* pg);   // page group button poll
+extern void*   SinglesNetworkClient_9318_g(uint32_t table, const char* key); // text lookup
+extern void    SinglesNetworkClient_B320_g(void* pg);   // page group notify
+extern void    SinglesNetworkClient_B1E8_g(void* pg);   // page group input clear
+extern void*   SinglesNetworkClient_9280_g(void* pg, const char* key); // text entry lookup
+extern int32_t SinglesNetworkClient_A5C8_g(void* entry); // text entry value
+
 
 
 // Virtual call helpers

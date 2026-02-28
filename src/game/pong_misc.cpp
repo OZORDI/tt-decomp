@@ -39,7 +39,7 @@ extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, 
 // at +0x08 (m_pStates).
 //
 // The destructor pattern:
-//   1. Calls the internal state-teardown helper (gameLoop_DestroyAudio_27A8),
+//   1. Calls the internal state-teardown helper (fsmMachine_Destructor_27A8),
 //      which first resets the vtable to the base-class (rage::datBase) vtable
 //      and frees m_pStates if non-null.
 //   2. If the 'delete self' flag (bit 0 of the flags parameter) is set,
@@ -65,7 +65,7 @@ fsmMachine::~fsmMachine()
     //   if (m_pStates) { rage::MemFree(m_pStates); m_pStates = nullptr; }
     //   this->vtable    = &fsmMachine::vtable;       // 0x8204DD14 (restored)
     //
-    // The helper (gameLoop_DestroyAudio_27A8 @ 0x822227A8) handles this
+    // The helper (fsmMachine_Destructor_27A8 @ 0x822227A8) handles this
     // sequence.  After it returns the caller checks bit 0 of 'flags'; if set,
     // rage::MemFree is called on `this`.
     //

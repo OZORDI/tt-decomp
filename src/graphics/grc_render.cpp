@@ -145,7 +145,7 @@ typedef struct {
  *   5. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
  *        open profiling bracket (pg_6DC0_g(m_pStreamObj[56], 1)).
  * ═══════════════════════════════════════════════════════════════════════════ */
-void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
+void grcDevice_beginScene_5E78(grcDeviceBeginScene* pDevice)
 {
 /* ── Gate A: skip-render / camera-action check ───────────────────────── */
 

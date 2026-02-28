@@ -32,7 +32,7 @@
 /* ── Forward declarations ─────────────────────────────────────────────────── */
 
 /* Graphics device — beginScene @ 0x82305E78 */
-extern void    grcDevice_beginScene(void* pDevice);
+extern void    grcDevice_beginScene_5E78(void* pDevice);
 
 /* Graphics device — clear @ 0x82379290 */
 extern void    grcDevice_clear(void* pDevice);
@@ -259,7 +259,7 @@ void rage_render_default(void)
 
     /* 5. Begin GPU scene if any colour or stencil clearing is needed. */
     if (pLoop->m_bClearColor || pLoop->m_bClearStencil) {
-        grcDevice_beginScene(g_pGrcDevice_beginScene);
+        grcDevice_beginScene_5E78(g_pGrcDevice_beginScene);
     }
 
     /* 6. Clear the GPU framebuffer (colour, depth, and/or stencil). */

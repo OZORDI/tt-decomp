@@ -634,9 +634,8 @@ extern void* g_audio_config_ptr;    /* SDA+25448 @ 0x82606368 */
 /* Audio system shutdown @ 0x822229C0 */
 extern void audSystem_shutdown_29C0(gameLoop* pLoop);
 
-/* GRC device shutdown variants. */
-extern void grcDevice_shutdown_FA58(void);
-extern void grcDevice_shutdown_alt_40D0(void);
+/* GRC device shutdown variants (now in grc_render.hpp). */
+#include "../graphics/grc_render.hpp"
 
 /* GRC device shutdown condition flag @ 0x825CA8B8 (check +4 offset). */
 extern uint8_t g_grcDeviceState[8];  /* lbl_825CA8B8 */

@@ -608,9 +608,9 @@ void NetDataQuery_Destroy(NetDataQuery* self, int flags) {
     // Python: (lis(-32249) << 16) + 4460 = 0x8207116C
     self->vtable = (void**)0x8207116C;
     
-    // Call cleanup function
-    extern void gameLoop_DestroyAudio_27A8(void* obj);
-    gameLoop_DestroyAudio_27A8(self);
+    // Call fsmMachine base destructor
+    extern void fsmMachine_Destructor_27A8(void* obj);
+    fsmMachine_Destructor_27A8(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -641,7 +641,7 @@ void NetDataQuery_ctor_A458(NetDataQuery* self) {
     // Set its vtable @ 0x8207116C
     void** stateObj = (void**)((char*)self + 1508);
     *stateObj = (void**)0x8207116C;
-    gameLoop_DestroyAudio_27A8(stateObj);
+    fsmMachine_Destructor_27A8(stateObj);
     
     // Initialize state machine member at offset +1392
     // Set its vtable @ 0x82070D78 (calculated from lis(-32249) + 3448)
@@ -841,9 +841,9 @@ void NetStateSync_Destroy(NetStateSync* self, int flags) {
     // Python: (lis(-32249) << 16) + 5052 = 0x820713BC
     self->vtable = (void**)0x820713BC;
     
-    // Call cleanup function
-    extern void gameLoop_DestroyAudio_27A8(void* obj);
-    gameLoop_DestroyAudio_27A8(self);
+    // Call fsmMachine base destructor
+    extern void fsmMachine_Destructor_27A8(void* obj);
+    fsmMachine_Destructor_27A8(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -970,9 +970,10 @@ void NetStateSync_GetName(NetStateSync* self) {}
 ////////////////////////////////////////////////////////////////////////////////
 
 extern "C" {
-    // Stub for game loop audio cleanup
-    void gameLoop_DestroyAudio_27A8(void* obj) {
-        // Stub - would clean up audio resources
+    // fsmMachine destructor (originally auto-named as gameLoop_DestroyAudio_27A8)
+    void fsmMachine_Destructor_27A8(void* obj) {
+        // Implemented in src/rage/fsmMachine.c
+        // This is the base class destructor for finite state machines
     }
     
     // Stub for rage initialization

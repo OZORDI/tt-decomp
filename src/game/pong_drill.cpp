@@ -18,6 +18,7 @@ extern "C" {
 
 // External globals
 extern void* g_singles_network_client;  // @ 0x82036614
+extern void  ComputeNetworkHash(void* networkClient, int numSuccesses);  // @ 0x821XX hash update
 
 /**
  * pongTrainingDrill::Init

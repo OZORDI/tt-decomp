@@ -49,6 +49,7 @@ set(SOURCES
     # RAGE engine
     src/rage/app_init.c
     src/rage/audio_control_wrappers.cpp
+    src/rage/fsmMachine.c
     src/rage/game_loop.c
     src/rage/main.c
     src/rage/rage_cm.cpp
