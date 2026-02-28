@@ -270,6 +270,8 @@ struct pongPlayer {
     void UpdateAnimationState();                          // @ 0x820CD228
     void GetSwingTargetVector(vec3* out,
                               pongPlayer* state) const;   // @ 0x820CD7B0
+    void ProcessInputVector(float x, float y, float z,
+                            uint8_t flags);               // @ 0x821A0050
 };
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────
