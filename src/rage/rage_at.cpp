@@ -92,3 +92,90 @@ uint16_t atSingleton::LookupStringIndex(const char* searchStr) {
     // Not found
     return 0;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::HandleStateTransition @ 0x8245C108 | size: 0xF4
+// [vtable slot 21]
+//
+// State machine handler for singleton lifecycle transitions.
+// Manages transitions between states 3, 4, and 5 based on current state
+// and input parameter.
+//
+// State values (at offset +32):
+//   3 = Ready/Idle
+//   4 = Active/Processing
+//   5 = Complete/Finalized
+//
+// @param transitionType Type of transition requested (0 or 1)
+// @return 0 on success
+// ─────────────────────────────────────────────────────────────────────────────
+int atSingleton::HandleStateTransition(int transitionType) {
+    int result = 0;
+    
+    // Load current state from offset +32
+    int currentState = *(int*)((char*)this + 32);
+    
+    // Handle state 5 (Complete) - no transitions allowed
+    if (currentState == 5) {
+        return result;
+    }
+    
+    // Handle state 4 (Active)
+    if (currentState == 4) {
+        int counter = *(int*)((char*)this + 16);
+        
+        // If counter is 0 and transitionType is 0, return early
+        if (counter == 0 && transitionType == 0) {
+            return result;
+        }
+    }
+    
+    // Check if we're in state 3 or 4
+    if (currentState == 3 || (currentState == 4 && transitionType == 0)) {
+        // Handle transition based on type
+        if (transitionType < 1) {
+            // Type 0: Transition to state 4 with initialization
+            uint8_t flags = *((uint8_t*)this + 212);
+            flags |= 0x80;  // Set bit 7
+            *((uint8_t*)this + 212) = flags;
+            
+            // Set counter to 1
+            *(int*)((char*)this + 16) = 1;
+            
+            // Call state transition helper
+            extern void atSingleton_AA58_g(void*, int);
+            atSingleton_AA58_g(this, 4);
+            
+            // Get object at offset +36 and call its vtable slot 5
+            void* obj = *(void**)((char*)this + 36);
+            typedef void (*VTableFunc5)(void*, int);
+            void** vtable = *(void***)obj;
+            VTableFunc5 func5 = (VTableFunc5)vtable[5];
+            func5(obj, 1);
+            
+            return result;
+        } else if (transitionType == 1) {
+            // Type 1: Transition to state 4 without initialization
+            extern void atSingleton_AA58_g(void*, int);
+            atSingleton_AA58_g(this, 4);
+            
+            // Get object at offset +36 and call its vtable slot 12
+            void* obj = *(void**)((char*)this + 36);
+            typedef void (*VTableFunc12)(void*);
+            void** vtable = *(void***)obj;
+            VTableFunc12 func12 = (VTableFunc12)vtable[12];
+            func12(obj);
+            
+            // Clear flag at offset +56
+            *((uint8_t*)this + 56) = 0;
+            
+            return result;
+        }
+    }
+    
+    // Default: transition to state 5 (Complete)
+    extern void atSingleton_AA58_g(void*, int);
+    atSingleton_AA58_g(this, 5);
+    
+    return result;
+}
