@@ -55,7 +55,7 @@
 
 // crAnimDof / crAnimBlend base class destructor.
 // @ 0x820C1188
-extern void rage_1188(void* obj);
+extern void pcrAnimBlender_Initialize(void* obj);
 
 // RAGE heap deallocator.
 // @ 0x820C00C0
@@ -99,7 +99,7 @@ extern int32_t pcrPostPointBlender_E040_fw(pcrPostPointBlender* self);
 // atSingleton helpers for sub-struct setup.
 extern void rage::InitializeSingleton(void* blenderSubStruct);  // @ 0x821A8588
 extern void rage::UnregisterSingleton(void* descriptor);        // @ 0x820C29E0
-extern void rage_8070(void* obj);                        // @ 0x821A8070
+extern void atArray_Clear(void* obj);                        // @ 0x821A8070
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -133,7 +133,7 @@ extern uint8_t g_matMgrGuard[20];
  */
 pcrFaceAnimBlender::~pcrFaceAnimBlender()
 {
-    rage_1188(this);
+    pcrAnimBlender_Initialize(this);
 }
 
 /**
@@ -486,8 +486,8 @@ void pcrEmoteBlender::ComputeBlend(void* outBlendVec)
  */
 pcrPostPointBlender::~pcrPostPointBlender()
 {
-    // Destroy the clip-data sub-struct at +436 (rage_8070 handles teardown).
-    rage_8070(&m_animSubStruct2);  // sub-struct 2 at +436
+    // Destroy the clip-data sub-struct at +436 (atArray_Clear handles teardown).
+    atArray_Clear(&m_animSubStruct2);  // sub-struct 2 at +436
 
     // Free the ref-count pointer at +432 if present.
     rage_free(m_pRefCountArray);

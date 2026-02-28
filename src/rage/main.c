@@ -112,7 +112,7 @@ extern const char  k_disc_path_prefix[];  /* "A:"                               
 /* Forward declarations for network helper functions (not yet in a header) */
 extern int   util_1AF8(int version, void* wsaData);   /* WSAStartup wrapper @ 0x82481AF8 */
 extern void  nop_8240E6D0(const char* fmt, ...);       /* Debug log no-op    @ 0x8240E6D0 */
-extern void  rage_1B08(void);                          /* WSock error handler @ 0x82481B08 */
+extern void  rage_WSockErrorHandler(void);                          /* WSock error handler @ 0x82481B08 */
 
 /* ─── CmdArgRecord — registered command-line option node ──────────────── */
 
@@ -290,7 +290,7 @@ void rage_ParseCommandLine(int* pArgc, const char*** pArgv)
  * Option prefix characters: '-', '/', 0x96 (en-dash / code-page 1252).
  * Options where the first char after the prefix is '0'..'9' are positional
  * numeric arguments and are silently skipped.
- * Named options are compared case-insensitively (via rage_stricmp_6358).
+ * Named options are compared case-insensitively (via rage_stricmp).
  *   - If the match contains '=', the value is everything after '='.
  *   - If no '=' and the next argv does not start with a prefix char, the
  *     next argv entry is used as the value.
@@ -385,7 +385,7 @@ void rage_AppInit(int argc, const char** argv)
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * rage_get_exe_name_6628 @ 0x82186628 | size: 0x70
+ * rage_GetExecutableName @ 0x82186628 | size: 0x70
  *
  * Retrieves a short exe-name token from the gate object's m_pName field.
  * Passes the raw name through _xe_strcpyn_10 (copies up to 10 chars) to
@@ -479,7 +479,7 @@ int rage_Main(int argc, const char** argv)
         uint8_t wsMajor = wsaData[1];   /* low byte of big-endian u16 */
         uint8_t wsMinor = wsaData[0];   /* high byte */
         if (wsMajor != 2 || wsMinor != 0) {
-            rage_1B08();
+            rage_WSockErrorHandler();
             nop_8240E6D0(k_winsock_bad_ver,
                          (unsigned)(wsMajor | ((unsigned)wsMinor << 8)));
         }

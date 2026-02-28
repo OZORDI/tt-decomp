@@ -401,7 +401,7 @@ void grcSetup_PresentFrame(struct grcSetup* self, bool doFlip)
 // Returns:
 //   Previous hardware processor number (0–5) on success, -1 on error.
 //
-// Callers: main (game loop), rage_thread_register_7FD0, CCalMoviePlayer
+// Callers: main (game loop), rage_RegisterThread, CCalMoviePlayer
 // ===========================================================================
 
 extern void**    __imp_ExThreadObjectType;           /* @ 0x82000900 */

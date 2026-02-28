@@ -457,7 +457,7 @@ struct pcrPostPointBlender {
     uint16_t     m_celebNameBCap;    // +0x414
     const char*  m_pCelebNameA;      // +0x416 area
     uint16_t     m_celebNameCap;     // +0x422
-    void*        m_animSubStruct2;   // +0x436  second sub-struct (rage_8070 managed)
+    void*        m_animSubStruct2;   // +0x436  second sub-struct (atArray_Clear managed)
 
     virtual ~pcrPostPointBlender();                      // [0] @ 0x820DDCB8
     virtual void Init(void* pPlayer, void* pSes);        // [1] @ 0x820DDD78

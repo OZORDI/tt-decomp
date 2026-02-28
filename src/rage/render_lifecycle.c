@@ -32,7 +32,7 @@ extern uint32_t g_displayModeConfig;
 extern const float k_aspectRatioScale;   /* lbl_8202D108 @ 0x8202D108 */
 
 /* Helper functions */
-extern void rage_get_exe_name_6628(const char* pKey, uint32_t* pOut);
+extern void rage_GetExecutableName(const char* pKey, uint32_t* pOut);
 extern void _crt_tls_fiber_setup(void);
 extern void VdQueryVideoMode(void* pMode);
 extern void memcpy(void* dst, const void* src, uint32_t size);
@@ -88,8 +88,8 @@ void InitializeRenderConfig(void) {
     }
     
     /* Query screen dimensions from executable name overrides */
-    rage_get_exe_name_6628("ScreenWidth", &screenWidth);
-    rage_get_exe_name_6628("ScreenHeight", &screenHeight);
+    rage_GetExecutableName("ScreenWidth", &screenWidth);
+    rage_GetExecutableName("ScreenHeight", &screenHeight);
     
     g_nScreenWidth = screenWidth;
     g_nScreenHeight = screenHeight;

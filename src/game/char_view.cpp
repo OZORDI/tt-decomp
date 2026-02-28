@@ -17,8 +17,8 @@ extern "C" {
     void xe_main_thread_init_0038();
     void rage::ReleaseSingleton(void* obj);
     void util_1568(void* obj);
-    void rage_7630(void* obj);
-    void rage_8070(void* obj);
+    void atArray_Destructor(void* obj);
+    void atArray_Clear(void* obj);
     void xmlNodeStruct_SerializeField(void* obj, const char* name, void* target, void* defaultVal, uint32_t flags);
     int32_t util_2458_FindCharacterIndex(void* gameData, const char* name);
     void nop_8240E6D0(const char* message, void* a, void* b);
@@ -433,7 +433,7 @@ charViewCS::~charViewCS() {
     m_vtable = (void**)g_vtable_char_view_cs;
     
     // Call base cleanup
-    rage_7630(this);
+    atArray_Destructor(this);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -521,7 +521,7 @@ pongCharViewContext::~pongCharViewContext() {
     }
     
     // Clean up embedded object at +80
-    rage_8070(&m_embeddedObject);
+    atArray_Clear(&m_embeddedObject);
     
     // Update vtables to final state
     m_vtable2 = (void**)g_vtable_pong_char_view_context_3;

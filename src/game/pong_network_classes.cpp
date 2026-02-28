@@ -630,8 +630,8 @@ void NetDataQuery_ctor_A458(NetDataQuery* self) {
     self->vtable = (void**)0x82070D14;
     
     // Initialize component at offset +4364
-    extern void rage_F248_1(void* obj);
-    rage_F248_1((char*)self + 4364);
+    extern void grcDevice_FinalizeRenderSetup_1(void* obj);
+    grcDevice_FinalizeRenderSetup_1((char*)self + 4364);
     
     // Initialize component at offset +2096
     extern void SinglesNetworkClient_2BE8_g(void* obj);
@@ -976,7 +976,7 @@ extern "C" {
     }
     
     // Stub for rage initialization
-    void rage_F248_1(void* obj) {
+    void grcDevice_FinalizeRenderSetup_1(void* obj) {
         // Stub - would initialize rage component
     }
     

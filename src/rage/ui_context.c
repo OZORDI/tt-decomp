@@ -14,10 +14,10 @@
 
 /* Forward declarations for external functions */
 extern void rage::GetFactory(void* pFactory);
-extern void* rage_obj_factory_build_2B50(void* pFactory, void* pStackBuf, 
+extern void* rageObjectFactory_Build(void* pFactory, void* pStackBuf, 
                                           uint32_t bufSize, const char* typeName,
                                           uint32_t flags, const char* nameStr);
-extern void* rage_9380(const char* path, uint32_t* pWidth, uint32_t* pHeight);
+extern void* rage_LoadTexture(const char* path, uint32_t* pWidth, uint32_t* pHeight);
 extern void ke_8190(void* pDest, uint32_t width, uint32_t height);
 extern void game_9EA0(void* pPageGroup, void* pTexInfo);
 extern void ke_8220(void* pTexInfo);
@@ -86,7 +86,7 @@ void rage_RegisterUIContext(void* pContext, uint32_t categoryId, const char* nam
         /* Build page group via factory */
         _snprintf(pathBuf, sizeof(pathBuf), "ui/layouts/%s.xml", displayName);
         
-        pPageGroup = rage_obj_factory_build_2B50(
+        pPageGroup = rageObjectFactory_Build(
             g_pUIFactory,
             stackBuf,
             sizeof(stackBuf),
@@ -96,7 +96,7 @@ void rage_RegisterUIContext(void* pContext, uint32_t categoryId, const char* nam
         );
         
         /* Load texture dimensions */
-        pTexture = rage_9380(pathBuf, &texWidth, &texHeight);
+        pTexture = rage_LoadTexture(pathBuf, &texWidth, &texHeight);
         
         if (pPageGroup != NULL) {
             /* Initialize texture info structure on stack */
@@ -185,12 +185,12 @@ void rage_RenderDebugOverlay(void) {
 void rage_SetRenderMode(int32_t targetFPS, int32_t flags) {
     extern void* g_pRenderDeviceState;  /* @ 0x825C9A90 */
     extern int32_t g_nTargetFPS;        /* @ 0x825D903C */
-    extern void rage_F338(void);
-    extern void rage_F400(void);
-    extern void rage_AD98(void* pDevice);
-    extern void rage_66F0(void* pDevice);
-    extern int rage_6530(void* pDevice, void* pConfig);
-    extern void rage_F248(void);
+    extern void grcDevice_BeginRenderConfig(void);
+    extern void grcDevice_InitializeRenderConfig(void);
+    extern void grcDevice_SetupRenderFiber(void* pDevice);
+    extern void grcDevice_CleanupRenderTargets(void* pDevice);
+    extern int grcDevice_ConfigureRenderTargets(void* pDevice, void* pConfig);
+    extern void grcDevice_FinalizeRenderSetup(void);
     
     uint32_t* pState;
     uint32_t initFlag;
@@ -214,19 +214,19 @@ void rage_SetRenderMode(int32_t targetFPS, int32_t flags) {
     
     /* Initialize render device if present */
     if (g_pRenderDevice != NULL) {
-        rage_F338();
-        rage_F400();
-        rage_AD98(g_pRenderDevice);
-        rage_66F0(g_pRenderDevice);
+        grcDevice_BeginRenderConfig();
+        grcDevice_InitializeRenderConfig();
+        grcDevice_SetupRenderFiber(g_pRenderDevice);
+        grcDevice_CleanupRenderTargets(g_pRenderDevice);
         
         /* Configure render targets */
-        result = rage_6530(g_pRenderDevice, g_pRenderConfig);
+        result = grcDevice_ConfigureRenderTargets(g_pRenderDevice, g_pRenderConfig);
         
         if (result == 0) {
             /* Configuration failed - clean up */
-            rage_66F0(g_pRenderDevice);
+            grcDevice_CleanupRenderTargets(g_pRenderDevice);
         }
         
-        rage_F248();
+        grcDevice_FinalizeRenderSetup();
     }
 }

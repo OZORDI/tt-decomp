@@ -651,7 +651,7 @@ extern void netSystem_shutdown_B510(void* pNetSys);
 extern void* g_threadpool_head;
 
 /* Thread pool cleanup per-node @ 0x82176878 */
-extern void rage_threadpool_cleanup_6878(void* pNode);
+extern void rage_ThreadPool_Cleanup(void* pNode);
 
 /* Heap free @ 0x820C00C0 */
 extern void rage_free(void* ptr);
@@ -737,7 +737,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
         void* pNode = g_threadpool_head;
         g_pNetSystem = NULL;
         while (pNode != NULL) {
-            rage_threadpool_cleanup_6878(pNode);
+            rage_ThreadPool_Cleanup(pNode);
             pNode = *(void**)((uint8_t*)pNode + 20);
         }
     }
@@ -788,7 +788,7 @@ extern const float k_fpsUpperBound;     /* lbl_82079BE0 */
 /* Subsystem init helpers. */
 extern void rage_SetRenderMode(int32_t nFPS, int32_t flag);  /* @ 0x8214F9A8 */
 extern void xe_main_thread_init_0038(void);
-extern void rage_get_exe_name_6628(const char* pKey, uint32_t* pOut);
+extern void rage_GetExecutableName(const char* pKey, uint32_t* pOut);
 extern void rage_CEF0(hsmContext* pHsm);
 
 /* Net system / singleton init @ 0x8234B618 */
@@ -809,9 +809,9 @@ extern void* g_pPostEffects;
 extern uint8_t g_postRenderConfig[8]; /* lbl_825CB720 */
 
 /* Object factory creation @ 0x822E3040 / finalise @ 0x822E3B38 */
-extern void* rage_obj_factory_create_3040(void* pFactory, void* pVtable,
+extern void* fiStreamBuf_OpenAll(void* pFactory, void* pVtable,
                                           void* pParam, int bFlag1, int bFlag2);
-extern void rage_obj_finalize_3B38(void* pObj);
+extern void fiStreamBuf_Close(void* pObj);
 
 /* Warning-log no-op @ 0x8240E6D0 */
 extern void nop_8240E6D0(const char* pFmt, ...);
@@ -848,10 +848,10 @@ extern uint8_t g_bNonWidescreen;
 
 /* Misc init helpers. */
 /* Rendering lifecycle management functions */
-extern void InitializeRenderConfig(void);           /* rage_F400 @ 0x8214F400 */
-extern void SetupRenderFiber(void* pObj);           /* rage_AD98 @ 0x8235AD98 */
-extern void CleanupRenderTargets(void* pObj);       /* rage_66F0 @ 0x823666F0 */
-extern int  ConfigureRenderTargets(void* pObj, void* pCfg); /* rage_6530 @ 0x82366530 */
+extern void InitializeRenderConfig(void);           /* grcDevice_InitializeRenderConfig @ 0x8214F400 */
+extern void SetupRenderFiber(void* pObj);           /* grcDevice_SetupRenderFiber @ 0x8235AD98 */
+extern void CleanupRenderTargets(void* pObj);       /* grcDevice_CleanupRenderTargets @ 0x823666F0 */
+extern int  ConfigureRenderTargets(void* pObj, void* pCfg); /* grcDevice_ConfigureRenderTargets @ 0x82366530 */
 extern void xe_5BB0(uint32_t val);
 
 /* Init-complete flag @ 0x825EE296 */
@@ -947,8 +947,8 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     {
         uint32_t width  = 1280;
         uint32_t height = 720;
-        rage_get_exe_name_6628("ScreenWidth", &width);
-        rage_get_exe_name_6628("ScreenHeight", &height);
+        rage_GetExecutableName("ScreenWidth", &width);
+        rage_GetExecutableName("ScreenHeight", &height);
         g_nScreenWidth  = width;
         g_nScreenHeight = height;
 
@@ -1012,13 +1012,13 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
 
     /* 10. Create display device via object factory. */
     {
-        void* pCreated = rage_obj_factory_create_3040(
+        void* pCreated = fiStreamBuf_OpenAll(
             g_objFactory + 128,    /* factory instance */
             &k_factoryVtable,      /* vtable param */
             &k_factoryParam1,      /* creation param */
             1, 1);
         if (pCreated != NULL) {
-            rage_obj_finalize_3B38(pCreated);
+            fiStreamBuf_Close(pCreated);
         } else {
             nop_8240E6D0("Failed to create display device");
         }

@@ -349,7 +349,7 @@ void mcMemcardControl::Init()
     }
 
     // TODO: lines 300–522 (truncated) — initialise mcSaveOp sub-object at +0x2C
-    // using rage_obj_factory_create_3040 / rage_obj_bind_3828 / rage_obj_finalize_3B38
+    // using fiStreamBuf_OpenAll / rage_obj_bind_3828 / fiStreamBuf_Close
     // and rage::GetFactory; also resets m_currentState, m_result1, m_result2.
 }
 

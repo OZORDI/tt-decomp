@@ -1332,7 +1332,7 @@ void pongPlayer::CheckButtonInput()
         float blend = g_kPowerBlend;
         float threshold = g_kZero;
 
-        float& scoref = *(float*)(g_pButtonStateTable + 0x8CEC);  // offset 36076
+        float& scoref = *(float*)((uint8_t*)g_pButtonStateTable + 0x8CEC);  // offset 36076
 
         if (delta < threshold) {
             // Linear blend: scoref = delta * blend + threshold

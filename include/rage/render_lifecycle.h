@@ -26,7 +26,7 @@ extern "C" {
  * - Initializes render timing structures
  * - Handles non-widescreen configuration overrides
  * 
- * Original symbol: rage_F400
+ * Original symbol: grcDevice_InitializeRenderConfig
  */
 void InitializeRenderConfig(void);
 
@@ -43,7 +43,7 @@ void InitializeRenderConfig(void);
  * - Waits for render-ready state
  * - Configures async rendering context
  * 
- * Original symbol: rage_AD98
+ * Original symbol: grcDevice_SetupRenderFiber
  */
 void SetupRenderFiber(void* pRootGameObj);
 
@@ -60,7 +60,7 @@ void SetupRenderFiber(void* pRootGameObj);
  * - Resets render state to default
  * - Calls SetupRenderFiber to reinitialize
  * 
- * Original symbol: rage_66F0
+ * Original symbol: grcDevice_CleanupRenderTargets
  */
 void CleanupRenderTargets(void* pRootGameObj);
 
@@ -95,7 +95,7 @@ void CleanupRenderTargets(void* pRootGameObj);
  *   +0x44  additional params
  *   +0x60  pipeline config (28 bytes)
  * 
- * Original symbol: rage_6530
+ * Original symbol: grcDevice_ConfigureRenderTargets
  */
 int ConfigureRenderTargets(void* pRootGameObj, void* pConfig);
 

@@ -12,7 +12,7 @@ struct fiStreamBuf;
 extern "C" int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf);
 
 /**
- * rage_3AC8 @ 0x822E3AC8 | size: 0x6C
+ * fiStreamBuf_Reset @ 0x822E3AC8 | size: 0x6C
  * 
  * Resets a fiStreamBuf object by flushing any pending data and
  * calling the virtual reset method.
@@ -29,7 +29,7 @@ extern "C" int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf);
  * Returns:
  *   0 on success, -1 on failure
  */
-extern "C" int rage_3AC8(fiStreamBuf* pBuf, int resetParam) {
+extern "C" int fiStreamBuf_Reset(fiStreamBuf* pBuf, int resetParam) {
     // Flush any pending data in the stream buffer
     int result = fiStreamBuf_FetchChunk(pBuf);
     
@@ -68,7 +68,7 @@ extern "C" int rage_3AC8(fiStreamBuf* pBuf, int resetParam) {
  * - Counter = 0 (reset operation counter)
  * - Active flag = 0 (not currently active)
  * 
- * It also resets the nested fiStreamBuf by calling rage_3AC8.
+ * It also resets the nested fiStreamBuf by calling fiStreamBuf_Reset.
  * 
  * Called by ph_9398 (physics system) during initialization of
  * a large physics structure at offset 0xE6B0.
@@ -83,7 +83,7 @@ extern "C" void rage_52B0_1(void* thisPtr) {
     fiStreamBuf* pStreamBuf = *reinterpret_cast<fiStreamBuf**>(manager + 12);
     
     // Reset the stream buffer (flush and reinitialize)
-    rage_3AC8(pStreamBuf, 0);
+    fiStreamBuf_Reset(pStreamBuf, 0);
     
     // Initialize manager state fields
     *reinterpret_cast<uint32_t*>(manager + 24) = 0;      // m_counter = 0

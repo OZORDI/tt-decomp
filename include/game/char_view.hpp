@@ -406,7 +406,7 @@ protected:
     uint8_t m_data2[20];          // +0x18-0x2B
     void* m_pManagedObject;       // +0x2C (44) - deleted in destructor
     uint8_t m_data3[32];          // +0x30-0x4F
-    uint32_t m_embeddedObject;    // +0x50 (80) - rage_8070 called on it
+    uint32_t m_embeddedObject;    // +0x50 (80) - atArray_Clear called on it
 };
 
 // ────────────────────────────────────────────────────────────────────────────

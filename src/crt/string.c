@@ -2,7 +2,7 @@
  * string.c — CRT string utility functions
  * Rockstar Presents Table Tennis (Xbox 360)
  *
- * Minimal string library used by the RAGE engine. rage_stricmp_6358 is a
+ * Minimal string library used by the RAGE engine. rage_stricmp is a
  * custom case-insensitive compare that:
  *   1. Treats '=' (ASCII 0x3D) as a string terminator — lets callers pass a
  *      raw "key=value" command-line token and compare just the key portion.
@@ -31,7 +31,7 @@ size_t strlen(const char* str)
 }
 
 /**
- * rage_stricmp_6358 @ 0x82186358 | size: 0xC0
+ * rage_stricmp @ 0x82186358 | size: 0xC0
  *
  * Case-insensitive string compare with two RAGE-specific extensions:
  *   - '=' terminates the comparison (key-only match for "key=value" tokens)
@@ -39,7 +39,7 @@ size_t strlen(const char* str)
  *
  * Returns 0 if equal, (a_char - b_char) for first difference otherwise.
  */
-int rage_stricmp_6358(const char* a, const char* b)
+int rage_stricmp(const char* a, const char* b)
 {
     unsigned char ca, cb;
 

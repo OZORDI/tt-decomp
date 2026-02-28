@@ -43,14 +43,14 @@ struct pongPageGroup {
 extern void rage::ReleaseSingleton(void* obj);           // @ 0x821A9420 - ReleaseSingleton
 extern void rage_free(void* ptr);                  // @ 0x820C00C0
 extern void* xe_EC88(uint32_t size);               // @ 0x820DEC88
-extern void nop_8240E6D0(const char* fmt, ...);    // @ 0x8240E6D0 — debug logger
+extern void nop_8240E6D0(void* fmt, ...);    // @ 0x8240E6D0 — debug logger (no-op in release)
 
 // Field registration helper (rage serialization system)
 extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
 
 // ── Additional helpers used in pong_states.cpp ────────────────────────────
 
-extern void  util_94B8(void* obj, void* arg);                         // @ 0x8234B8 - some util
+extern void  util_94B8(int a, int b, void* c, int d, void* e, void* f); // @ 0x8234B8
 extern void  pg_6000_g(void* obj);                         // page group helper
 extern void  pongAttractState_Shutdown(void* state);       // attract state cleanup
 extern void  xe_main_thread_init_0038();                   // thread init
@@ -451,7 +451,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
     // The main allocator table is at SDA offset 0 (base 0x82600000);
     // index [1] (byte offset 4) holds the active allocator pointer.
     // vtable slot 1 on that allocator is Alloc(size, align).
-    extern uint32_t g_mainAllocTable;      // @ SDA offset 0 = 0x82600000
+    // g_mainAllocTable declared globally as uint32_t[]
     uint32_t* allocTableBase = (uint32_t*)g_mainAllocTable;
     void*     allocator      = (void*)allocTableBase[1];  // [4 bytes in]
     void* pageGroupMem = VCALL_ALLOC(allocator, /*size=*/220, /*align=*/16);

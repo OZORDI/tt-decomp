@@ -33,7 +33,7 @@ extern uint32_t xam_6C88_g(uint32_t type, uint32_t initCount,
 // r3=func, r4=param, r5=stack_size, r6=base_priority_delta,
 // r7=name_fmt_str, r8=start_suspended, r9=processor_affinity
 // Returns the kernel thread handle (or 0/-1 on failure).
-extern uint32_t rage_thread_register_7FD0(void* func, void* param,
+extern uint32_t rage_RegisterThread(void* func, void* param,
                                           uint32_t stackSize,
                                           uint32_t basePriorityDelta,
                                           void* nameFmt,
@@ -117,7 +117,7 @@ void rage_subsystem_init(void) {
     g_semIO = xam_6C88_g(0, 1, 1, 0);
 
     // Register the RAGE main-loop scheduler thread.
-    g_mainThreadHandle = rage_thread_register_7FD0(
+    g_mainThreadHandle = rage_RegisterThread(
         (void*)atSingleton_2598_w, /* r3: thread entry function             */
         (void*)g_game_obj_ptr,     /* r4: startup param = root game object  */
         98304u,                    /* r5: stack size = 0x18000              */
@@ -335,7 +335,7 @@ void pgStreamer_Init(void)
     // r4 = 0 at the call site (result of gate-null clrlwi left 0 in r4).
     // The thread uses g_pgQueue (SDA global) rather than a startup param.
     if (g_pgThreadInitGate.m_pName == NULL) {
-        rage_thread_register_7FD0(
+        rage_RegisterThread(
             (void*)pg_8250_g,         /* r3: thread function                */
             NULL,                     /* r4: startup param (0 — uses SDA)  */
             65536u,                   /* r5: stack size = 0x10000           */
@@ -352,8 +352,8 @@ void pgStreamer_Init(void)
 // ===========================================================================
 // fiStreamBuf — RAGE file-stream ring buffer
 //
-// The three functions rage_obj_factory_create_3040, rage_obj_bind_3828, and
-// rage_obj_finalize_3B38 (along with the helper rage_obj_close_3BA8) all
+// The three functions fiStreamBuf_OpenAll, rage_obj_bind_3828, and
+// fiStreamBuf_Close (along with the helper rage_obj_close_3BA8) all
 // operate on the same ring-buffer object that mediates async file reads via
 // the fiDevice virtual-device abstraction.
 //
@@ -461,7 +461,7 @@ static int fiPath_RemoveParentDir(char* pPath)
 extern void fiDeviceMemory_2830(void* pFactory, char* pOutBuf,
                                 const char* pRelPath, const char* pBasePath,
                                 int devIndex);  /* @ 0x822E2830 */
-extern void rage_0888(void* pDst, const char* pSrc, size_t n,
+extern void rage_strcat_bounded(void* pDst, const char* pSrc, size_t n,
                       const char* pFmt);  /* @ 0x820F0888 — formatted strncpy */
 
 static void fiPath_Build(void* pFactory, char* pOutBuf, int outLen,
@@ -711,7 +711,7 @@ int fiStreamBuf_Read(fiStreamBuf* pBuf, uint8_t* pDst, int32_t size, int r6, int
 }
 
 // ---------------------------------------------------------------------------
-// rage_obj_finalize_3B38 / fiStreamBuf_Close @ 0x822E3B38 | size: 0x70
+// fiStreamBuf_Close / fiStreamBuf_Close @ 0x822E3B38 | size: 0x70
 //
 // Closes the stream buffer:
 //   1. If endPos == 0 and readPos != 0: call FetchChunk (flush pending data).
@@ -742,7 +742,7 @@ int fiStreamBuf_Close(fiStreamBuf* pBuf)
 
 
 // ---------------------------------------------------------------------------
-// rage_obj_factory_create_3040 / fiStreamBuf_OpenAll @ 0x822E3040 | size: 0x78
+// fiStreamBuf_OpenAll / fiStreamBuf_OpenAll @ 0x822E3040 | size: 0x78
 //
 // Device-enumeration loop: for each of the factory's m_nDevices entries,
 // builds the full path and opens a fiStream.

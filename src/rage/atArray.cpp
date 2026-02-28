@@ -29,7 +29,7 @@ static_assert(sizeof(atArrayElement) == 12, "atArrayElement must be 12 bytes");
 
 /**
  * xmlTree_vfn_1 @ 0x821A8118 | size: 0x68
- * Original symbol: rage_8118
+ * Original symbol: atArrayElement_Destroy
  * 
  * Virtual destructor for XML tree nodes (vtable slot 1).
  * 
@@ -70,7 +70,7 @@ extern "C" void xmlTree_vfn_1(atArrayElement* pElement) {
 }
 
 // Alias for compatibility
-extern "C" void rage_8118(atArrayElement* pElement) {
+extern "C" void atArrayElement_Destroy(atArrayElement* pElement) {
     xmlTree_vfn_1(pElement);
 }
 

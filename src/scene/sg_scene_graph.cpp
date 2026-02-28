@@ -5,7 +5,7 @@ extern void rage_free(void* ptr);               // @ 0x820C00C0
 
 // sgSceneGraph internal destructor body @ 0x823D9AF8
 // Frees the seven traverse-list pointers at offsets +0x10..+0x2C
-// (skipping +0x1C), then calls rage_8070 (rage::gameObject base dtor).
+// (skipping +0x1C), then calls atArray_Clear (rage::gameObject base dtor).
 // Named after its address in the translation unit that contains sgSceneGraph.
 extern void sgSceneGraph_FreeLists(void* obj);  // @ 0x823D9AF8
 
