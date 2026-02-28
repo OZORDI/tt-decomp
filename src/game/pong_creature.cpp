@@ -35,47 +35,32 @@ static const float g_zero = 0.0f;
  * Constructor - initializes mover with default values.
  * Sets up position, velocity, and state flags.
  */
-pongMover::pongMover() {
+pongMover::pongMover(void* creaturePool) {
     // Set vtable pointer
     vtable = (void**)0x8202807C;  // pongMover vtable @ 0x820280DC - 0x60
-    
-    // Initialize position and velocity vectors to zero
-    m_position[0] = g_zero;
-    m_position[1] = g_zero;
-    m_position[2] = g_zero;
-    
-    m_velocity[0] = g_zero;
-    m_velocity[1] = g_zero;
-    m_velocity[2] = g_zero;
-    
-    m_acceleration[0] = g_zero;
-    m_acceleration[1] = g_zero;
-    m_acceleration[2] = g_zero;
-    
-    m_rotation[0] = g_zero;
-    m_rotation[1] = g_zero;
-    m_rotation[2] = g_zero;
-    
-    // Set active flag
-    m_bIsActive = true;
-    
-    // Clear timestamps
-    m_timestamp1 = 0;
-    m_timestamp2 = 0;
-    
-    // If creature pointer is set, adjust it based on pool offset
+
+    // Zero twelve motion floats at +0x10..+0x3C
+    m_posX  = m_posY  = m_posZ  = 0.0f;
+    m_unk1C = m_unk20 = m_unk24 = 0.0f;
+    m_unk28 = m_unk2C = m_unk30 = 0.0f;
+    m_unk34 = m_unk38 = m_unk3C = 0.0f;
+
+    // Mark slot active (+0x40 = 1)
+    m_flags = 1;
+
+    // Zero tail fields
+    m_unkE0 = 0;
+    m_unkE4 = 0;
+
+    // If creature pointer is already set (placement-new on pre-allocated memory),
+    // adjust it relative to the pool base: m_pCreature += pool[idx+2]
     if (m_pCreature) {
-        // Calculate pool-relative offset
-        // This adjusts the creature pointer based on its position in the object pool
-        uint8_t* pool = (uint8_t*)m_pCreaturePool;
-        uint32_t basePtr = *(uint32_t*)(pool + 4);
-        uint32_t stride = *(uint32_t*)(pool + 76);
-        
-        if (stride > 0) {
-            uint32_t offset = ((uint32_t)((uintptr_t)m_pCreature) - basePtr) / stride;
-            uint32_t* poolArray = (uint32_t*)m_pCreaturePool;
-            m_pCreature = (void*)poolArray[offset + 2];
-        }
+        uint32_t* pool   = (uint32_t*)creaturePool;
+        uint32_t basePtr = pool[1];         // pool+4
+        uint32_t stride  = pool[76 / 4];    // pool+76
+        // twllei: stride must be > 0 (binary traps on divide-by-zero)
+        uint32_t idx = ((uint32_t)(uintptr_t)m_pCreature - basePtr) / stride;
+        m_pCreature = (void*)(uintptr_t)(pool[idx + 2] + (uint32_t)(uintptr_t)m_pCreature);
     }
 }
 
