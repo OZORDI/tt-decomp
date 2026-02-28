@@ -808,9 +808,43 @@ namespace rage {
 // ── rage::hsmContext  [vtable @ 0x82073F08] ──────────────────────────
 struct hsmContext {
     void**      vtable;           // +0x00
+    void*       field_04;         // +0x04
+    void*       field_08;         // +0x08
+    void*       field_0C;         // +0x0C
+    
+    // Embedded Top state structure at +0x10
+    struct TopState {
+        void*   field_00;         // +0x10
+        void*   field_04;         // +0x14
+        void*   field_08;         // +0x18
+        void*   field_0C;         // +0x1C
+        void*   field_10;         // +0x20
+        void*   field_14;         // +0x24
+        void*   field_18;         // +0x28
+        void*   field_1C;         // +0x2C
+        void*   field_20;         // +0x30
+        void*   field_24;         // +0x34
+    } topState;                   // +0x10
+    
+    void*       pTopState;        // +0x38 (56) - pointer to topState
+    void**      topVtable;        // +0x3C (60) - vtable for Top
+    void*       field_40;         // +0x40 (64)
+    void*       field_44;         // +0x44 (68)
+    void*       field_48;         // +0x48 (72)
+    void*       field_4C;         // +0x4C (76)
+    void*       field_50;         // +0x50 (80)
+    void*       field_54;         // +0x54 (84)
+    void*       field_58;         // +0x58 (88)
+    void*       field_5C;         // +0x5C (92)
+    void*       field_60;         // +0x60 (96)
+    void*       field_64;         // +0x64 (100)
+    uint8_t     flags;            // +0x68 (104)
 
     // ── virtual methods ──
     virtual ~hsmContext();                  // [0] @ 0x823ed600
+    
+    // ── constructor ──
+    hsmContext();                           // @ 0x823ed570
 };
 
 } // namespace rage
