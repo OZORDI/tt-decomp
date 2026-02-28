@@ -43,15 +43,11 @@ extern void rage_Free(void* ptr);
 // Args: (0, 1, 0, 0) → returns the handle value.  @ 0x82566C88
 extern uint32_t XAM_CreateHandle(uint32_t p1, uint32_t p2, uint32_t p3, uint32_t p4);
 
-// SinglesNetworkClient helpers — see pong_states.cpp for calling conventions.
-extern uint8_t  SinglesNetworkClient_B2A8_g(void* pageGroup);   // poll button state
-extern void*    SinglesNetworkClient_B1E8_g(hudBoot* self);      // get network client obj
+// SinglesNetworkClient helpers — see pong_network_io.hpp for full documentation.
+#include "../game/pong_network_io.hpp"
+
 extern void*    SinglesNetworkClient_9318_g(void* client,
                                              const char* key);   // look up setting by key
-extern void     SinglesNetworkClient_8990_g(const char* src,
-                                             char* dst,
-                                             uint32_t size);     // string copy helper
-extern void     SinglesNetworkClient_B320_g(hudBoot* self);      // kick off connection
 
 // Global game-loop object.  @ 0x825EAB30 (r13-relative SDA global g_loop_obj_ptr)
 extern void*    g_loop_obj_ptr;
@@ -126,10 +122,10 @@ void hudBoot::OnEnter() {
     m_bInitialized = 0;
 
     // Step 4: Poll SinglesNetworkClient active state.
-    uint8_t isNetworkActive = SinglesNetworkClient_B2A8_g(this);
+    uint8_t isNetworkActive = PollButtonState(this);
 
     // Step 5: Get the network-client object and check the current mode.
-    void* networkClient = SinglesNetworkClient_B1E8_g(this);
+    void* networkClient = GetNetworkClient(this);
 
     // g_loop_obj_ptr->field_0x200: 1 = online/Xbox Live, other = offline.
     struct GameLoop { uint8_t _pad[0x200]; uint32_t networkMode; };
@@ -166,7 +162,7 @@ void hudBoot::OnEnter() {
     // Step 6d: Copy the name template into m_buffer.
     // m_buffer sits at +0x70 (112 bytes into the object).
     char* buf = m_buffer;
-    SinglesNetworkClient_8990_g(k_bootNameTemplate, buf, sizeof(m_buffer));
+    CopyNetworkString(k_bootNameTemplate, buf, sizeof(m_buffer));
 
     // Setting D — register m_buffer with the network client as a string (type 1).
     void* settingName = SinglesNetworkClient_9318_g(networkClient, k_bootNameKey);
@@ -178,7 +174,7 @@ void hudBoot::OnEnter() {
 
     // Step 7: If already connected, kick off session negotiation.
     if (isNetworkActive != 0) {
-        SinglesNetworkClient_B320_g(this);
+        InitiateConnection(this);
     }
 }
 

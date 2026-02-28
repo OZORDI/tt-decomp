@@ -6,11 +6,11 @@
  */
 
 #include "pong_drill.hpp"
+#include "pong_network_io.hpp"
 #include <stdio.h>
 
 // External function declarations
 extern "C" {
-    void SinglesNetworkClient_A818_g(void* client, int value);
     void pg_E480(int param1, int param2, const char* param3, int param4);
     void nop_8240E6D0(const char* message);
     void xmlNodeStruct_vfn_2(void* self);  // @ base class PostLoadProperties
@@ -77,7 +77,7 @@ void pongTrainingDrill::IncreaseNumSuccesses(int increment) {
     // Original: lwz r3,26132(r11) where r11 = -32160 (lis)
     // Address: 0x82036614 (g_singles_network_client)
     if (g_singles_network_client) {
-        SinglesNetworkClient_A818_g(g_singles_network_client, m_numSuccesses);
+        ComputeNetworkHash(g_singles_network_client, m_numSuccesses);
     }
     
     // Update UI

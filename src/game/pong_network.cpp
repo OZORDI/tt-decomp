@@ -91,7 +91,7 @@ void ServeStartedMessage::Deserialise(void* client)
 
     // Read 16-byte target position vector.
     util_5538(client, &m_targetPos, 32);
-    game_5738(&m_targetPos, client);  // finalise position read
+    WriteBallHitDataToNetwork(&m_targetPos, client);  // finalise position read
 
     // Read four velocity floats.
     SinglesNetworkClient_8DF8_g(client, &timingRef, 32);

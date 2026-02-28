@@ -9,14 +9,8 @@
  * information that must be synchronized across all clients.
  */
 
-#include "pong_network_io.hpp"
+#include "../include/game/pong_network_io.hpp"
 #include <stdint.h>
-
-// Forward declarations for SinglesNetworkClient methods
-extern void SinglesNetworkClient_8AE0_g(void* client);
-extern uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bitWidth);
-extern void SinglesNetworkClient_68A8_g(void* client, int8_t value, int bitWidth);
-extern void SinglesNetworkClient_6838_g(void* client, uint8_t value, int bitWidth);
 
 // Forward declaration for vector write helper
 void WriteVector3ToNetwork(void* client, void* vec3Data);
@@ -37,17 +31,17 @@ void WriteVector3ToNetwork(void* client, void* vec3Data);
 void WriteFloatToNetworkStream(void* client, float value)
 {
     // Prepare for write operation
-    SinglesNetworkClient_8AE0_g(client);
+    BeginNetworkWrite(client);
     
     // Write the float as a 32-bit value
     uint32_t floatBits = *(uint32_t*)&value;
-    uint32_t result = SinglesNetworkClient_0448_g(client, floatBits, 32);
+    uint32_t result = ReadBitsFromStream(client, floatBits, 32);
     
     // Load current bit position from client state
     uint32_t currentBitPos = *(uint32_t*)((uint8_t*)client + 16);
     
     // Prepare for alignment write
-    SinglesNetworkClient_8AE0_g(client);
+    BeginNetworkWrite(client);
     
     // Calculate byte-aligned position: (bitPos + 7) / 8
     int32_t byteAlignedPos = (currentBitPos + 7) >> 3;
@@ -57,7 +51,7 @@ void WriteFloatToNetworkStream(void* client, float value)
     *(uint32_t*)((uint8_t*)client + 32) = 32;
     
     // Write alignment marker (16-bit)
-    SinglesNetworkClient_0448_g(client, byteAlignedPos, 16);
+    ReadBitsFromStream(client, byteAlignedPos, 16);
     
     // Restore original bit position
     *(uint32_t*)((uint8_t*)client + 32) = savedBitPos;
@@ -133,7 +127,7 @@ void WriteBallHitDataToNetwork(void* ballHitData, void* client)
     WriteFloatToNetworkStream(client, *(float*)(hitData + 112));
     
     // ── Hit type/zone control byte (signed) ──
-    SinglesNetworkClient_68A8_g(client, hitTypeZone, 8);
+    WriteInt8Bits(client, hitTypeZone, 8);
     
     // ── Additional physics scalars ──
     WriteFloatToNetworkStream(client, *(float*)(hitData + 124));
@@ -143,22 +137,22 @@ void WriteBallHitDataToNetwork(void* ballHitData, void* client)
     // ── State bytes: player indices, hit flags ──
     uint8_t stateByte136 = *(uint8_t*)(hitData + 136);
     uint8_t stateByte140 = *(uint8_t*)(hitData + 140);
-    SinglesNetworkClient_6838_g(client, stateByte136, 8);
-    SinglesNetworkClient_6838_g(client, stateByte140, 8);
+    WriteUInt8Bits(client, stateByte136, 8);
+    WriteUInt8Bits(client, stateByte140, 8);
     
     // ── Flags and indices (16-bit values) ──
     uint16_t flags176 = *(uint16_t*)(hitData + 176);
     uint16_t index178 = *(uint16_t*)(hitData + 178);
-    SinglesNetworkClient_6838_g(client, flags176, 16);
-    SinglesNetworkClient_68A8_g(client, (int16_t)index178, 16);
+    WriteUInt8Bits(client, flags176, 16);
+    WriteInt8Bits(client, (int16_t)index178, 16);
     
     // ── Additional state byte ──
     uint8_t stateByte180 = *(uint8_t*)(hitData + 180);
-    SinglesNetworkClient_6838_g(client, stateByte180, 8);
+    WriteUInt8Bits(client, stateByte180, 8);
     
     // ── Extended physics flags ──
     uint16_t extendedFlags = *(uint16_t*)(hitData + 182);
-    SinglesNetworkClient_6838_g(client, extendedFlags, 16);
+    WriteUInt8Bits(client, extendedFlags, 16);
     
     // Check bit 12 (0x1000) for extended collision/surface data
     bool hasExtendedPhysics = (extendedFlags & 0x1000) != 0;
@@ -212,12 +206,12 @@ void WriteVector3ToNetwork(void* client, void* vec3Data) {
  *        ├─> WriteBallHitDataToNetwork @ 0x821D5738 (this file)
  *        │    ├─> WriteFloatToNetworkStream @ 0x820D6990 (this file) [×13 calls]
  *        │    ├─> WriteVector3ToNetwork @ 0x821D9BB8 (this file) [×2 calls]
- *        │    ├─> SinglesNetworkClient_68A8_g (signed byte write)
- *        │    └─> SinglesNetworkClient_6838_g (unsigned byte write)
+ *        │    ├─> WriteInt8Bits (signed byte write)
+ *        │    └─> WriteUInt8Bits (unsigned byte write)
  *        │
  *        └─> WriteFloatToNetworkStream @ 0x820D6990 (this file)
- *             ├─> SinglesNetworkClient_8AE0_g (prepare write)
- *             └─> SinglesNetworkClient_0448_g (core bit write primitive)
+ *             ├─> BeginNetworkWrite (prepare write)
+ *             └─> ReadBitsFromStream (core bit write primitive)
  * 
  * RELATED FUNCTIONS (to be implemented):
  * 
@@ -267,3 +261,81 @@ void WriteVector3ToNetwork(void* client, void* vec3Data) {
  * 6. Analyze prediction/interpolation algorithms
  * 7. Profile bandwidth usage and optimize further
  */
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// C LINKAGE ALIASES FOR BACKWARD COMPATIBILITY
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * These extern "C" aliases maintain backward compatibility with existing code
+ * that references the original hex-based function names. All new code should
+ * use the clean names defined in pong_network_io.hpp.
+ */
+
+extern "C" {
+    // Original name: SinglesNetworkClient_0448_g
+    uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bitWidth) {
+        return ReadBitsFromStream(client, value, bitWidth);
+    }
+    
+    // Original name: SinglesNetworkClient_8AE0_g
+    void SinglesNetworkClient_8AE0_g(void* client) {
+        BeginNetworkWrite(client);
+    }
+    
+    // Original name: SinglesNetworkClient_8DF8_g
+    void SinglesNetworkClient_8DF8_g(void* client) {
+        EndNetworkWrite(client);
+    }
+    
+    // Original name: SinglesNetworkClient_6838_g
+    void SinglesNetworkClient_6838_g(void* client, uint8_t value, int bitWidth) {
+        WriteUInt8Bits(client, value, bitWidth);
+    }
+    
+    // Original name: SinglesNetworkClient_68A8_g
+    void SinglesNetworkClient_68A8_g(void* client, int8_t value, int bitWidth) {
+        WriteInt8Bits(client, value, bitWidth);
+    }
+    
+    // Original name: SinglesNetworkClient_2BE8_g
+    void SinglesNetworkClient_2BE8_g(void* client) {
+        UpdateNetworkState(client);
+    }
+    
+    // Original name: SinglesNetworkClient_51C8_g
+    void SinglesNetworkClient_51C8_g(void* client) {
+        ProcessNetworkPacket(client);
+    }
+    
+    // Original name: SinglesNetworkClient_8990_g
+    void SinglesNetworkClient_8990_g(const char* src, char* dest, int maxSize) {
+        CopyNetworkString(src, dest, maxSize);
+    }
+    
+    // Original name: SinglesNetworkClient_A818_g
+    void SinglesNetworkClient_A818_g(void* client, int value) {
+        ComputeNetworkHash(client, value);
+    }
+    
+    // Original name: SinglesNetworkClient_B2A8_g
+    uint8_t SinglesNetworkClient_B2A8_g(void* pageGroup) {
+        return PollButtonState(pageGroup);
+    }
+    
+    // Original name: SinglesNetworkClient_B1E8_g
+    void* SinglesNetworkClient_B1E8_g(void* context) {
+        return GetNetworkClient(context);
+    }
+    
+    // Original name: SinglesNetworkClient_B320_g
+    void SinglesNetworkClient_B320_g(void* context) {
+        InitiateConnection(context);
+    }
+    
+    // Original name: SinglesNetworkClient_GetPlayerID_E408
+    void SinglesNetworkClient_GetPlayerID_E408(void* client, uint32_t param) {
+        GetPlayerID(client, param);
+    }
+}

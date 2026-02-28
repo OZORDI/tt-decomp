@@ -6,8 +6,9 @@
 #include "game/gd_vib_event.hpp"
 
 // External dependencies
+#include "../game/pong_network_io.hpp"
+
 extern "C" void rage_free(void* ptr);
-extern "C" void SinglesNetworkClient_GetPlayerID_E408(void* client, uint32_t param);
 extern "C" bool ValidateControllerVibration(void* controller);
 extern "C" void atSingleton_9420(void* obj);
 
@@ -230,7 +231,7 @@ void gdVibEvent::TriggerVibration(void* playerContext) {
     // Get player ID from context
     // playerContext is passed as r4, we need to get player ID
     uint32_t playerID;
-    SinglesNetworkClient_GetPlayerID_E408(playerContext, 1);
+    GetPlayerID(playerContext, 1);
     
     // playerID is returned in r3
     // Calculate array index: playerID + 14

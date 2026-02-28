@@ -76,7 +76,7 @@ extern void game_CD20(void* recoveryState);          // flush recovery @ 0x820DC
 extern void crAnimBlenderState_Init(void* animSubState);  // reset phase-blocked @ 0x8224C810
 extern void pcrAnimState_ComputePosition(vec3* out, pongAnimState* animState);  // compute anim pos
 extern void pongPlayer_D238_g(pongPlayer* state);    // @ 0x820CD238 (or similar)
-extern void /* TODO: pongPlayer_D298_2hr — verify signature */;  // placeholder
+// extern void pongPlayer_D298_2hr(...);  // TODO: verify signature @ ~0x820CD298
 
 // Logging no-op (debug only)
 extern void nop_8240E6D0(const char* fmt, ...);
