@@ -1590,6 +1590,9 @@ struct SinglesNetworkClient {
 
     // ── non-virtual methods (from debug strings) ──
     bool HandleBallHitMessage();
+    
+    // ── non-virtual methods (implemented) ──
+    void ProcessNetworkTimingUpdate(uint32_t timestamp);  // @ 0x823E01F8
 };
 
 // ── SkipReplayMessage  [vtable @ 0x8206F8F8] ──────────────────────────

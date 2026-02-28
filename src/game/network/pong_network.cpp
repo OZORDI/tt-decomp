@@ -1204,3 +1204,125 @@ void pongNetMessageHolder::InsertIntoList()
     // Increment reference count
     this->field_0x000c++;
 }
+
+
+// ===========================================================================
+// SinglesNetworkClient::ProcessNetworkTimingUpdate @ 0x823E01F8 | size: 0x15C
+//
+// Processes network timing updates and manages join request state machine.
+// This function is called periodically with a timestamp to advance the
+// network client's state based on timing thresholds.
+//
+// State machine:
+//   state 0: Initial join request state - calls SinglesNetworkClient_0F80_g
+//   state 1: Waiting for join response - calls SinglesNetworkClient_1178_g
+//   state 2+: Join accepted - creates EvtAcceptJoinRequestSucceeded event
+//
+// Parameters:
+//   timestamp - Current network timestamp for timing comparisons
+//
+// Fields accessed:
+//   +40: Timeout flag (if non-zero, abort timing check)
+//   +44: Next scheduled timestamp
+//   +48: Current state (0, 1, or 2+)
+//   +56: Session object pointer (for state 2+)
+//
+// ===========================================================================
+void SinglesNetworkClient::ProcessNetworkTimingUpdate(uint32_t timestamp)
+{
+    uint32_t state = *(uint32_t*)((char*)this + 48);
+    
+    if (state == 0) {
+        // State 0: Initial join request processing
+        uint32_t nextTimestamp = *(uint32_t*)((char*)this + 44);
+        int32_t timeDelta = (int32_t)(timestamp - nextTimestamp);
+        
+        if (timeDelta < 0) {
+            // Not yet time to process - check timeout flag
+            uint32_t timeoutFlag = *(uint32_t*)((char*)this + 40);
+            if (timeoutFlag != 0) {
+                return;  // Timeout active, abort
+            }
+        }
+        
+        // Time to process or timeout cleared - advance state
+        SinglesNetworkClient_0F80_g(this);
+        
+        // Schedule next update 100ms from now
+        *(uint32_t*)((char*)this + 44) = timestamp + 100;
+        
+    } else if (state == 1) {
+        // State 1: Waiting for join response
+        uint32_t nextTimestamp = *(uint32_t*)((char*)this + 44);
+        int32_t timeDelta = (int32_t)(timestamp - nextTimestamp);
+        
+        if (timeDelta < 0) {
+            // Not yet time to process - check timeout flag
+            uint32_t timeoutFlag = *(uint32_t*)((char*)this + 40);
+            if (timeoutFlag != 0) {
+                return;  // Timeout active, abort
+            }
+        }
+        
+        // Time to check join response
+        uint8_t responseResult = SinglesNetworkClient_1178_g(this);
+        
+        if (responseResult == 0) {
+            // Join request accepted - transition to accepting state
+            game_D3B0_h(this);
+            
+            // Create event object on stack
+            rage::EvtAcceptJoinRequestSucceeded evt;
+            evt.vtable = (void**)0x82072D94;  // EvtAcceptJoinRequestSucceeded vtable
+            
+            util_DA08(&evt);  // Initialize event
+            
+            // Notify HSM that join request was accepted
+            snHsmAcceptingJoinRequest_9A70(this, &evt);
+        }
+        
+        // Schedule next update 100ms from now
+        *(uint32_t*)((char*)this + 44) = timestamp + 100;
+        
+    } else {
+        // State 2+: Join accepted, add node to session
+        game_D3B0_h(this);
+        
+        // Create event object on stack
+        rage::EvtAcceptJoinRequestSucceeded evt;
+        util_DA08(&evt);
+        
+        // Get session object via vtable call (slot 11)
+        void** vtable = *(void***)this;
+        typedef void* (*GetSessionFunc)(void*);
+        GetSessionFunc getSession = (GetSessionFunc)vtable[11];
+        void* session = getSession(this);
+        
+        // Get node data from session
+        void* sessionData = *(void**)((char*)session + 56);
+        void* nodeList = *(void**)((char*)sessionData + 4);
+        
+        // Allocate node in pool (vtable slot 1)
+        void** nodeVtable = *(void***)nodeList;
+        typedef void* (*AllocNodeFunc)(void*, uint32_t, uint32_t);
+        AllocNodeFunc allocNode = (AllocNodeFunc)nodeVtable[1];
+        void* newNode = allocNode(nodeList, 12, 0);
+        
+        if (newNode != nullptr) {
+            // Initialize node with event data
+            *(void**)newNode = (void*)0x82072D94;  // EvtAcceptJoinRequestSucceeded vtable
+            
+            // Copy 8 bytes of event data (two uint32_t values)
+            uint32_t eventData1 = *(uint32_t*)((char*)&evt + 4);
+            uint32_t eventData2 = *(uint32_t*)((char*)&evt + 8);
+            
+            // Store as 64-bit value (big-endian to little-endian conversion)
+            uint64_t combinedData = ((uint64_t)eventData1 << 32) | eventData2;
+            *(uint64_t*)((char*)newNode + 4) = combinedData;
+            
+            // Add node to session
+            void* sessionNodeList = (char*)sessionData + 8;
+            snSession_AddNode_C068(sessionNodeList, newNode);
+        }
+    }
+}
