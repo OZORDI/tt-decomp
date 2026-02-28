@@ -263,3 +263,57 @@ void pongDrawBucket_AddEntry(pongDrawBucket* bucket, void* renderable, uint32_t 
         pEntriesBase[entryCount - 1] = renderable;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransFreezeAndCrossFade::Update()  [vtable slot 3 @ 0x823789A8]
+//
+// Updates the screen transition effect by advancing elapsed time and calculating
+// the fade alpha value. The alpha represents the inverse progress (1.0 - progress),
+// so it starts at 1.0 and decreases to 0.0 as the transition completes.
+//
+// Parameters:
+//   deltaTime (f1) - time delta to add to elapsed time
+//
+// Globals accessed:
+//   0x82606670 (SDA) - g_pauseFlag: if non-zero, time does not advance
+//   0x8202D108 (.rdata) - constant 1.0f
+//   0x8202D110 (.rdata) - epsilon value for duration comparison
+//
+// Struct layout verified:
+//   +0x04: m_duration (float) - total transition duration
+//   +0x08: m_elapsedTime (float) - current elapsed time
+//   +0x0C: m_finished (bool) - set to true when elapsed >= duration
+//   +0x34: m_alpha (float) - fade alpha (1.0 - progress)
+//
+// Logic:
+//   1. If not paused, increment elapsed time by deltaTime
+//   2. If elapsed >= duration, clamp to duration and set finished flag
+//   3. Calculate alpha = 1.0 - (elapsed / duration)
+//   4. If duration <= epsilon, clamp alpha to epsilon (avoid divide by zero)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransFreezeAndCrossFade::Update(float deltaTime) {
+    // External globals (defined elsewhere in the engine)
+    extern uint8_t g_pauseFlag;           // @ 0x82606670 (SDA)
+    extern const float g_floatOne;        // @ 0x8202D108 (.rdata) = 1.0f
+    extern const float g_floatEpsilon;    // @ 0x8202D110 (.rdata) = small epsilon
+
+    // Only advance time if not paused
+    if (!g_pauseFlag) {
+        m_elapsedTime += deltaTime;
+    }
+
+    // Check if transition is complete
+    if (m_elapsedTime >= m_duration) {
+        m_elapsedTime = m_duration;
+        m_finished = true;
+    }
+
+    // Calculate fade alpha (inverse progress: 1.0 - progress)
+    // If duration is very small (near zero), clamp alpha to epsilon to avoid divide by zero
+    if (m_duration > g_floatEpsilon) {
+        float progress = m_elapsedTime / m_duration;
+        m_alpha = g_floatOne - progress;
+    } else {
+        m_alpha = g_floatEpsilon;
+    }
+}

@@ -159,15 +159,22 @@ struct pongScrnTransFadeIn {
 };
 
 // ── pongScrnTransFreezeAndCrossFade  [vtable @ 0x8206A1C0] ──────────────────────────
+// Screen transition effect that freezes the current frame and cross-fades to the next screen.
+// Updates elapsed time and calculates fade alpha based on transition duration.
 struct pongScrnTransFreezeAndCrossFade {
-    void**      vtable;           // +0x00
+    void*    vtable;           // +0x00
+    float    m_duration;       // +0x04  total transition duration
+    float    m_elapsedTime;    // +0x08  current elapsed time
+    bool     m_finished;       // +0x0C  true when transition complete
+    uint8_t  _pad0D[39];       // padding to +0x34
+    float    m_alpha;          // +0x34  fade alpha (1.0 - progress)
 
     // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x82378938
-    virtual void vfn_3();  // [3] @ 0x823789a8
-    virtual void vfn_4();  // [4] @ 0x82378a18
-    virtual void vfn_5();  // [5] @ 0x82378a78
-    virtual void vfn_6();  // [6] @ 0x82378a80
+    virtual void vfn_2();      // [2] @ 0x82378938
+    virtual void Update(float deltaTime);  // [3] @ 0x823789a8
+    virtual void vfn_4();      // [4] @ 0x82378a18
+    virtual void vfn_5();      // [5] @ 0x82378a78
+    virtual void vfn_6();      // [6] @ 0x82378a80
 };
 
 // ── pongScrnTransFreezeAndFadeOut  [vtable @ 0x8206A178] ──────────────────────────
@@ -183,17 +190,7 @@ struct pongScrnTransFreezeAndFadeOut {
     virtual void vfn_6();  // [6] @ 0x823786c8
 };
 
-// ── pongScrnTransSwipe  [vtable @ 0x8206A1E4] ──────────────────────────
-struct pongScrnTransSwipe {
-    void**      vtable;           // +0x00
 
-    // ── virtual methods ──
-    virtual void vfn_2();  // [2] @ 0x82378ab0
-    virtual void vfn_3();  // [3] @ 0x82378bd0
-    virtual void vfn_4();  // [4] @ 0x82378c20
-    virtual void vfn_5();  // [5] @ 0x82378d98
-    virtual void vfn_6();  // [6] @ 0x82378de0
-};
 
 // ── pongShadowMap  [vtable @ 0x820346D0] ──────────────────────────
 // Confirmed methods: GenerateShadowMaps

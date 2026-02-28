@@ -11,63 +11,64 @@ namespace rage {
 struct fiStreamBuf;
 
 struct fiStreamBufVTable {
-    void (*m_pReserved0)();
-    void (*m_pReserved1)();
-    void (*m_pReserved2)();
+    void* m_aLifecycleSlots[3];
 
-    int (*m_pReadFromDevice)(
+    int (*m_pRead)(
         fiStreamBuf* pStreamBuffer,
-        std::uint32_t streamFlags,
+        std::uint32_t openFlags,
         std::uint8_t* pDestination,
         std::int32_t bytesToRead,
         std::int32_t streamCapacity
     );
 
-    int (*m_pFlushBuffer)(
+    int (*m_pFlushBufferedWindow)(
         fiStreamBuf* pStreamBuffer,
-        std::uint32_t streamFlags,
+        std::uint32_t openFlags,
         std::uint8_t* pBufferBase
     );
 
-    int (*m_pCommitRange)(
+    int (*m_pCommitWriteWindow)(
         fiStreamBuf* pStreamBuffer,
-        std::uint32_t streamFlags,
+        std::uint32_t openFlags,
         std::uint8_t* pRangeStart,
         std::int32_t rangeOffset,
         std::int32_t rangeSize
     );
 
-    void (*m_pClose)(fiStreamBuf* pStreamBuffer, std::uint32_t streamFlags);
-    void (*m_pReserved7)();
-    void (*m_pOnTransferComplete)(fiStreamBuf* pStreamBuffer, std::uint32_t streamFlags);
+    void (*m_pCloseStream)(fiStreamBuf* pStreamBuffer, std::uint32_t openFlags);
+    void* m_pReservedDispatchSlot;
+    void (*m_pOnTransferComplete)(fiStreamBuf* pStreamBuffer, std::uint32_t openFlags);
 };
 
 struct fiStreamBuf {
     fiStreamBufVTable* m_pVTable;
-    std::uint32_t m_flags;
-    std::uint8_t* m_pBuffer;
-    std::int32_t m_writePosition;
-    std::int32_t m_readPosition;
-    std::int32_t m_bufferedEndPosition;
-    std::int32_t m_capacityBytes;
+    std::uint32_t m_openFlags;
+    std::uint8_t* m_pDataWindow;
+    std::int32_t m_absoluteWriteOffset;
+    std::int32_t m_windowReadOffset;
+    std::int32_t m_windowEndOffset;
+    std::int32_t m_windowCapacity;
 };
 
-struct fiAsciiTokenizerState {
-    std::uint32_t m_objectWord0;
-    std::uint32_t m_streamOpenFlags;
+struct fiAsciiTokenizerRuntimeState {
+    void* m_pVTable;
+    std::uint32_t m_objectFlags;
     std::int32_t m_lineNumber;
-    fiStreamBuf* m_pInputStream;
+    fiStreamBuf* m_pStreamBuffer;
     std::int32_t m_currentChar;
-    std::int32_t m_parseMode;
-    std::int32_t m_pushbackCount;
-    char m_aPushbackBuffer[128];
-    std::uint32_t m_parseScratchState;
+    std::int32_t m_newlineEmitMode;
+    std::int32_t m_pushbackDepth;
+    char m_aPushbackChars[128];
+    const char* m_pAdditionalTokenDelimiters;
+    std::int32_t m_indentDepth;
 };
 
 int ResetStreamBuffer(fiStreamBuf* pStreamBuffer, std::int32_t resetWritePosition);
-void InitializeAsciiTokenizerState(fiAsciiTokenizerState* pTokenizerState);
+void ResetAsciiTokenizerRuntimeState(fiAsciiTokenizerRuntimeState* pTokenizerState);
 
 } // namespace rage
 
 extern "C" int fiStreamBuf_Reset(rage::fiStreamBuf* pBuf, int resetParam);
-extern "C" void rage_52B0_1(rage::fiAsciiTokenizerState* pTokenizerState);
+extern "C" void fiAsciiTokenizer_ResetState(
+    rage::fiAsciiTokenizerRuntimeState* pTokenizerState
+) __asm__("rage_52B0_1");

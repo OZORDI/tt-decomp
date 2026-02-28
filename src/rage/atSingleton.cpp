@@ -377,3 +377,72 @@ SingletonFactory* GetFactory(uint32_t hash)
 }
 
 } // namespace rage
+
+/**
+ * ApplyByteFilter @ 0x82410828 | size: 0xD4
+ * 
+ * Apply a filtering algorithm to byte array data.
+ * Uses fixed-point arithmetic with magic constants for fast division.
+ * 
+ * This appears to be some kind of predictive filter or delta encoding,
+ * possibly for image compression or data transformation.
+ * 
+ * @param data Pointer to byte array to filter in-place
+ * @param length Number of bytes to process
+ */
+void ApplyByteFilter(int8_t* data, int length)
+{
+    if (length <= 0)
+        return;
+    
+    // Magic constants for fast integer division
+    const uint32_t MAGIC_DIV_13 = 0x4EC4EC4F;  // For division by 13
+    const uint32_t MAGIC_DIV_5  = 0xCCCCCCCD;  // For division by 5
+    const uint32_t MAGIC_DIV_255 = 0x80808081; // For division by ~255
+    
+    int lastIndex = length - 1;
+    int accumulator = 0;  // Accumulates by 77 each iteration
+    
+    for (int i = 0; i < length; i++)
+    {
+        // Fast division: accumulator / 13
+        int32_t div13_high = (static_cast<int64_t>(accumulator) * MAGIC_DIV_13) >> 32;
+        int32_t div13 = (div13_high >> 2) + ((div13_high >> 31) & 1);
+        
+        // Fast division: i / 5
+        uint32_t div5_high = (static_cast<uint64_t>(i) * MAGIC_DIV_5) >> 32;
+        uint32_t div5 = div5_high >> 2;
+        
+        // Calculate modulo: i % 13
+        int32_t mod13 = accumulator - (div13 * 13);
+        
+        // Base calculation: (i/5 - i%13) + current_byte + 61
+        int32_t filtered = (div5 - mod13) + data[i] + 61;
+        
+        // Add contribution from previous byte
+        if (i > 0)
+        {
+            filtered += data[i - 1];
+        }
+        
+        // Subtract half of next byte (if exists)
+        if (i < lastIndex)
+        {
+            int8_t nextByte = data[i + 1];
+            // Arithmetic right shift with rounding
+            int32_t halfNext = (nextByte >> 1) + ((nextByte < 0 && (nextByte & 1)) ? 1 : 0);
+            filtered -= halfNext;
+        }
+        
+        // Apply final scaling using magic division by ~255
+        int32_t scale_high = (static_cast<int64_t>(filtered) * MAGIC_DIV_255) >> 32;
+        int32_t scaled = (scale_high >> 7) + ((scale_high >> 31) & 1);
+        
+        // Store filtered result
+        data[i] = static_cast<int8_t>(filtered + scaled);
+        
+        // Increment accumulator for next iteration
+        accumulator += 77;
+    }
+}
+
