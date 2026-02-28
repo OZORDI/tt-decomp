@@ -90,6 +90,7 @@ set(SOURCES
     src/game/misc/pong_misc.cpp
     src/game/network/pong_network.cpp
     src/game/network/pong_network_classes.cpp
+    src/game/network/msg_msg_sink.cpp
     src/game/player/pong_player.cpp
     src/game/pong_render.cpp
     src/game/match/pong_states.cpp

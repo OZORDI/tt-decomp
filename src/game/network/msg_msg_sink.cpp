@@ -6,11 +6,14 @@
  *                                           tt-decomp_recomp.12.cpp:28709
  */
 
-#include "pong_misc.hpp"
+#include "../misc/pong_misc.hpp"
 #include <cstring>
 
 // External dependencies
 extern void rage_free(void* ptr);
+extern void msgMsgSink_A970_2h(void*);
+extern void* msgMsgSink_F518_wrh(uint32_t);
+extern void msgMsgSink_E860_g(void*, uint32_t, uint32_t, uint32_t);
 
 // Vtable pointers (from .rdata)
 static void* const kMsgMsgSink_Vtable      = (void*)0x8205B0D0;  // derived vtable
