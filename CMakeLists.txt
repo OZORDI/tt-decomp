@@ -62,6 +62,7 @@ set(SOURCES
     src/rage/rage_globals.cpp
     src/rage/rage_grm.cpp
     src/rage/rage_memory.cpp
+    src/rage/rage_par.cpp
     src/rage/rage_stream_manager.cpp
     src/rage/render_loop.c
     src/rage/scene_render.c
