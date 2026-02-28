@@ -1718,3 +1718,114 @@ path_b:
     return true;       // Default: no active system → in position.
 }
 
+
+
+// ===========================================================================
+// SECTION 5 — FAB8: UpdateSwingTimingAdjustment  @ 0x8219FAB8 | size: 0x11C
+// ===========================================================================
+/**
+ * pongPlayer::UpdateSwingTimingAdjustment()  @ 0x8219FAB8
+ *
+ * Computes and updates a timing adjustment value (stored at +80) based on:
+ * - Current animation phase (this+68)
+ * - Target vector computation via pongPlayer_6470_g
+ * - Clock/timing state from global timing object
+ * - A math function (atan2-like) to compute angular adjustment
+ *
+ * The adjustment is clamped between 0.0 and 1.0 and appears to be used
+ * for fine-tuning swing timing based on player position and animation state.
+ *
+ * Called during swing preparation to adjust timing windows dynamically.
+ */
+void pongPlayer::UpdateSwingTimingAdjustment() {
+    vec3 targetVec;
+    
+    // Step 1: Compute target vector using creature state and index
+    // The creature object at +44 contains an index at +464 that selects
+    // from an array of 416-byte structs
+    void* creatureState = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(this) + 44);
+    uint32_t index = *reinterpret_cast<uint32_t*>(
+        reinterpret_cast<uintptr_t>(creatureState) + 464);
+    
+    // Compute address: base array + (index * 416) + 48
+    // Base address is 0x8261A3D0 + 48 = 0x8261A400
+    uintptr_t baseAddr = 0x8261A400;
+    void* targetStruct = reinterpret_cast<void*>(baseAddr + (index * 416));
+    
+    // Call helper to compute target vector
+    pongPlayer_6470_g(&targetVec, targetStruct);
+    
+    // Step 2: Load timing values
+    float animPhase = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(this) + 68);  // this+68
+    
+    // Load global clock object and extract timing value
+    extern uint32_t g_pClockObj;  // @ 0x8271A304
+    void* clockObj = *reinterpret_cast<void**>(g_pClockObj);
+    float clockValue = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(clockObj) + 24);
+    
+    // Load constants
+    extern const float g_kFrameToSecScale;  // @ 0x8202D10C
+    extern const float g_kTimingConstant;   // @ 0x825C4930
+    extern const float g_kAdjustmentScale;  // @ 0x82079BAC (inside larger struct)
+    
+    // Step 3: Compute timing values
+    float scaledPhase = animPhase * g_kFrameToSecScale;
+    float timingFactor = clockValue * g_kTimingConstant;
+    
+    // Step 4: Call math function (misnamed as fiAsciiTokenizer_2628_g)
+    // This is likely atan2 or a similar trigonometric function
+    float mathResult = fiAsciiTokenizer_2628_g(scaledPhase * g_kAdjustmentScale);
+    
+    // Step 5: Compute adjustment magnitude
+    float adjustment = mathResult * timingFactor;
+    
+    // Step 6: Check if adjustment is significant
+    extern const float g_kAdjustmentThreshold;  // @ 0x8202D110
+    if (fabsf(adjustment) > g_kAdjustmentThreshold) {
+        // Load current value at +72
+        float currentValue = *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(this) + 72);
+        
+        // Compute direction adjustment based on target vector Z component
+        float directionFactor = adjustment / timingFactor;
+        float absTargetZ = fabsf(targetVec.z);
+        float zAdjustment = directionFactor * absTargetZ;
+        
+        // Determine final adjustment based on sign
+        float finalAdjustment;
+        if (currentValue * targetVec.x >= g_kAdjustmentThreshold) {
+            finalAdjustment = currentValue + zAdjustment;
+        } else {
+            finalAdjustment = zAdjustment - currentValue;
+        }
+        
+        // Load max threshold and compute clamped value
+        extern const float g_kMaxAdjustment;  // @ 0x82079CD8
+        void* clockObj2 = *reinterpret_cast<void**>(g_pClockObj);
+        float maxThreshold = *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(clockObj2) + 16) * g_kMaxAdjustment;
+        
+        if (finalAdjustment < maxThreshold) {
+            float delta = maxThreshold - finalAdjustment;
+            *reinterpret_cast<float*>(
+                reinterpret_cast<uintptr_t>(this) + 80) = delta;
+        }
+    }
+    
+    // Step 7: Clamp the value at +80 between 0.0 and 1.0
+    float* adjustmentPtr = reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(this) + 80);
+    float value = *adjustmentPtr;
+    
+    // Clamp to [0.0, 1.0]
+    if (value < 0.0f) {
+        value = 0.0f;
+    } else if (value > 1.0f) {
+        value = 1.0f;
+    }
+    
+    *adjustmentPtr = value;
+}
