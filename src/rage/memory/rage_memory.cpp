@@ -445,3 +445,95 @@ void* atSingleton_2150_fw(void* array) {
     // Return pointer to next element
     return (void*)((char*)data + offset);
 }
+
+
+/* ── External dependencies for atSingleton bit stream ─────────────────────── */
+
+/* Bit stream refill function @ 0x824D23C0 */
+extern void atSingleton_23C0(void* pBitStream);
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * atSingleton_2688 @ 0x824D2688 | size: 0xc0 (192 bytes)
+ *
+ * Processes a bit stream by reading bytes and accumulating them into a 64-bit
+ * buffer with bit shifting.
+ *
+ * This function is part of the atSingleton bit stream reader, which maintains
+ * a sliding window of bits for efficient bit-level data access.
+ *
+ * Bit stream structure layout:
+ *   +0x00 (0)    m_accumulator  - 64-bit bit accumulator (u64)
+ *   +0x08 (8)    m_bitCount     - Number of valid bits in accumulator (s32)
+ *   +0x0C (12)   m_readPos      - Current read position in buffer (u32)
+ *   +0x10 (16)   m_endPos       - End position of buffer (u32)
+ *   +0x14 (20)   m_errorFlag    - Error state flag (u32)
+ *   +0x18 (24)   m_mode         - Stream mode (1 = needs refill) (u32)
+ *
+ * Algorithm:
+ *   1. While read position <= end position:
+ *      a. Read byte from buffer at read position
+ *      b. Calculate shift amount: 40 - current bit count
+ *      c. Shift byte left by shift amount
+ *      d. Add shifted byte to accumulator
+ *      e. Increment bit count by 8
+ *      f. Increment read position
+ *   2. If mode == 1 (refill needed), call refill function
+ *   3. If bit count < -16, set error flag and reset bit count to 127
+ *   4. Return 0 (success) or 1 (refill occurred)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+int atSingleton_2688(void* pBitStream)
+{
+    uint8_t* stream = (uint8_t*)pBitStream;
+    
+    /* Load stream state */
+    uint64_t accumulator = *(uint64_t*)(stream + 0);
+    int32_t bitCount = *(int32_t*)(stream + 8);
+    uint32_t readPos = *(uint32_t*)(stream + 12);
+    uint32_t endPos = *(uint32_t*)(stream + 16);
+    uint32_t mode = *(uint32_t*)(stream + 24);
+    
+    /* Read bytes from buffer while within bounds */
+    while (readPos <= endPos) {
+        /* Read next byte */
+        uint8_t byte = stream[readPos];
+        readPos++;
+        
+        /* Calculate shift amount (40 - bitCount) */
+        int32_t shiftAmount = 40 - bitCount;
+        
+        /* Shift byte and add to accumulator */
+        uint64_t shiftedByte = (uint64_t)byte << shiftAmount;
+        accumulator += shiftedByte;
+        
+        /* Update bit count */
+        bitCount += 8;
+    }
+    
+    /* Store updated state */
+    *(uint64_t*)(stream + 0) = accumulator;
+    *(int32_t*)(stream + 8) = bitCount;
+    *(uint32_t*)(stream + 12) = readPos;
+    
+    /* Check if bit count is valid */
+    if (bitCount >= 0) {
+        return 0;  /* Success */
+    }
+    
+    /* Check if refill is needed (mode == 1) */
+    if (mode == 1) {
+        atSingleton_23C0(pBitStream);
+        return 1;  /* Refill occurred */
+    }
+    
+    /* Handle underflow error (bit count < -16) */
+    if (bitCount < -16) {
+        uint32_t errorFlag = *(uint32_t*)(stream + 20);
+        if (errorFlag == 0) {
+            *(uint32_t*)(stream + 20) = 2;  /* Set error flag */
+        }
+        *(int32_t*)(stream + 8) = 127;  /* Reset bit count */
+    }
+    
+    return 0;
+}
