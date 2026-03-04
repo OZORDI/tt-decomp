@@ -172,6 +172,11 @@ private:
     bool ReadRbfHeader();
     bool SeekToField(const char* name);
     template<typename T> bool ReadValue(T* outValue);
+    
+    // RBF format helpers
+    void ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldId,
+                         uint32_t* outFieldData, uint32_t* outNameHash);  // @ 0x8241C260
+    bool ProcessField(const char* name, uint16_t fieldType);              // @ 0x8241C628
 };
 
 /**
