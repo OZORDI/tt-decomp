@@ -1294,3 +1294,126 @@ void cmSwitch::GetDim(int32_t* out) {
     *out = cmNode_GetDim(&defaultPort);
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  cmSwitch Template Variants (5-case and 6-case)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * NOTE: The cmSwitch class has multiple template instantiations with different
+ * case counts. The base implementation above handles 2 cases. The variants below
+ * handle 5 and 6 cases respectively, with correspondingly larger struct layouts.
+ * 
+ * All variants use the same algorithm:
+ *   1. Read selector value
+ *   2. Loop through case ports, comparing each case value to selector
+ *   3. Return matching case's output
+ *   4. Fall back to default port if no match
+ */
+
+// ── 5-case variant (loop limit r30 <= 5, defaultPort at +100) ────────────────
+
+/**
+ * cmSwitch<5>::GetVector @ 0x8226F0D8 (vfn_2)
+ * 5-case variant with defaultPort at offset +100
+ */
+void cmSwitch_5case_GetVector(cmSwitch* node, float* out) {
+    int32_t selectorValue = cmNode_GetDim(&node->selectorPort);
+    
+    // Check 5 case ports (indices 0-4)
+    for (int caseIndex = 0; caseIndex < 5; caseIndex++) {
+        cmNodePort* casePort = reinterpret_cast<cmNodePort*>(
+            reinterpret_cast<uint8_t*>(node) + 20 + (caseIndex * 16)
+        );
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            cmNode_GetVector(out, casePort);
+            return;
+        }
+    }
+    
+    // Default port at +100
+    cmNodePort* defaultPort = reinterpret_cast<cmNodePort*>(
+        reinterpret_cast<uint8_t*>(node) + 100
+    );
+    cmNode_GetVector(out, defaultPort);
+}
+
+/**
+ * cmSwitch<5>::GetBool @ 0x8226F168 (vfn_3)
+ */
+void cmSwitch_5case_GetBool(cmSwitch* node, uint8_t* out) {
+    int32_t selectorValue = cmNode_GetDim(&node->selectorPort);
+    
+    for (int caseIndex = 0; caseIndex < 5; caseIndex++) {
+        cmNodePort* casePort = reinterpret_cast<cmNodePort*>(
+            reinterpret_cast<uint8_t*>(node) + 20 + (caseIndex * 16)
+        );
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            *out = cmNode_GetBool(casePort);
+            return;
+        }
+    }
+    
+    cmNodePort* defaultPort = reinterpret_cast<cmNodePort*>(
+        reinterpret_cast<uint8_t*>(node) + 100
+    );
+    *out = cmNode_GetBool(defaultPort);
+}
+
+/**
+ * cmSwitch<5>::GetFloat @ 0x8226F060 (vfn_4)
+ */
+void cmSwitch_5case_GetFloat(cmSwitch* node, float* out) {
+    int32_t selectorValue = cmNode_GetDim(&node->selectorPort);
+    
+    for (int caseIndex = 0; caseIndex < 5; caseIndex++) {
+        cmNodePort* casePort = reinterpret_cast<cmNodePort*>(
+            reinterpret_cast<uint8_t*>(node) + 20 + (caseIndex * 16)
+        );
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            *out = cmNode_GetFloat(casePort);
+            return;
+        }
+    }
+    
+    cmNodePort* defaultPort = reinterpret_cast<cmNodePort*>(
+        reinterpret_cast<uint8_t*>(node) + 100
+    );
+    *out = cmNode_GetFloat(defaultPort);
+}
+
+// ── 6-case variant (loop limit r30 <= 6, defaultPort at +116) ────────────────
+
+/**
+ * cmSwitch<6>::GetDim @ 0x8226F258 (vfn_5)
+ * 6-case variant with defaultPort at offset +116
+ */
+void cmSwitch_6case_GetDim(cmSwitch* node, int32_t* out) {
+    int32_t selectorValue = cmNode_GetDim(&node->selectorPort);
+    
+    // Check 6 case ports (indices 0-5)
+    for (int caseIndex = 0; caseIndex < 6; caseIndex++) {
+        cmNodePort* casePort = reinterpret_cast<cmNodePort*>(
+            reinterpret_cast<uint8_t*>(node) + 20 + (caseIndex * 16)
+        );
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            *out = cmNode_GetDim(casePort);
+            return;
+        }
+    }
+    
+    // Default port at +116
+    cmNodePort* defaultPort = reinterpret_cast<cmNodePort*>(
+        reinterpret_cast<uint8_t*>(node) + 116
+    );
+    *out = cmNode_GetDim(defaultPort);
+}
+
