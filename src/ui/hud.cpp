@@ -137,3 +137,70 @@ void hudFlashBase::SetPropertyById(int objectId, int value)
     
     // No match found - return without storing
 }
+/**
+ * ui/hud.cpp — Network and UI utility functions
+ * Rockstar Presents Table Tennis (Xbox 360, 2006)
+ */
+
+#include "ui/hud.hpp"
+#include <stdint.h>
+
+/* ── External dependencies for network cleanup ────────────────────────────── */
+
+/* RAGE cleanup function @ 0x8214C788 */
+extern void rage_C788(void* pObject);
+
+/* Network cleanup function @ 0x82115B40 */
+extern void net_5B40(void* pObject, int mode);
+
+/* Vtable for rage::mfAnimationController @ 0x8205A054 */
+extern void* g_vtable_mfAnimationController;  /* @ 0x8205A054 */
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * net_F5D8 @ 0x822DF5D8 | size: 0x5c (92 bytes)
+ *
+ * Network object cleanup/destructor function.
+ *
+ * This function performs cleanup operations on a network object, setting its
+ * vtable and calling cleanup functions on embedded objects.
+ *
+ * Network object layout (partial):
+ *   +0x00 (0)    m_vtable      - Vtable pointer
+ *   +0x04 (4)    m_embedded    - Embedded object requiring cleanup
+ *   +0x1C (28)   m_pResource   - Resource pointer (at embedded+24)
+ *   +0x22 (34)   m_flags       - Status flags (at embedded+30)
+ *
+ * Algorithm:
+ *   1. Set vtable to mfAnimationController
+ *   2. Call rage_C788 on embedded object at offset +4
+ *   3. If flags at embedded+30 are non-zero:
+ *      a. Check if resource pointer at embedded+24 is non-null
+ *      b. If so, call net_5B40 with mode 3 to clean up resource
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void net_F5D8(void* pThis)
+{
+    uint8_t* netObj = (uint8_t*)pThis;
+    
+    /* Set vtable pointer */
+    *(void**)netObj = &g_vtable_mfAnimationController;
+    
+    /* Get pointer to embedded object at offset +4 */
+    void* pEmbedded = netObj + 4;
+    
+    /* Call RAGE cleanup on embedded object */
+    rage_C788(pEmbedded);
+    
+    /* Check flags at embedded+30 */
+    uint16_t flags = *(uint16_t*)((uint8_t*)pEmbedded + 30);
+    
+    if (flags != 0) {
+        /* Load resource pointer from embedded+24 */
+        void* pResource = *(void**)((uint8_t*)pEmbedded + 24);
+        
+        if (pResource != NULL) {
+            /* Clean up resource with mode 3 */
+            net_5B40(pResource, 3);
+        }
+    }
+}
