@@ -1036,3 +1036,148 @@ void pongScrnTransSwipe::Reset() {
     // Enable randomization for next transition
     m_randomize = true;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransFreezeAndCrossFade::vfn_2()  [vtable slot 2 @ 0x82378938]
+//
+// Initializes the freeze-and-cross-fade transition effect. This function sets up
+// the initial state for a screen transition that freezes the current frame and
+// cross-fades to the next screen.
+//
+// Globals accessed:
+//   0x8202D108 (.rdata) - constant 1.0f (initial alpha value)
+//   0x8202D10C (.rdata) - default duration value
+//   0x8202D110 (.rdata) - initial elapsed time (0.0f)
+//   0x825C755C (.data) - default duration fallback
+//
+// Struct layout:
+//   +0x04: m_duration (float) - total transition duration
+//   +0x08: m_elapsedTime (float) - current elapsed time (starts at 0.0)
+//   +0x0C: m_finished (bool) - completion flag (starts false)
+//   +0x1C: field at offset 28 - checked for initialization
+//   +0x10: field at offset 16 - passed to util function
+//   +0x34: m_alpha (float) - fade alpha (starts at 1.0)
+//
+// Logic:
+//   1. If field at +28 is non-zero, call util_FFF8 to initialize something at +16
+//   2. Load default duration from constant table
+//   3. Initialize elapsed time to 0.0
+//   4. Set finished flag to false
+//   5. Set initial alpha to 1.0 (fully opaque)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransFreezeAndCrossFade::vfn_2() {
+    // External constants
+    extern const float g_floatOne;        // @ 0x8202D108 = 1.0f
+    extern const float g_floatZero;       // @ 0x8202D110 = 0.0f
+    extern const float g_defaultDuration; // @ 0x825C755C
+
+    // Check if we need to initialize something at offset +16
+    uint32_t* fieldAt28 = (uint32_t*)((char*)this + 28);
+    if (*fieldAt28 != 0) {
+        void* fieldAt16 = (void*)((char*)this + 16);
+        extern void util_FFF8(void* target, int param);
+        util_FFF8(fieldAt16, 0);
+    }
+
+    // Initialize transition state
+    m_elapsedTime = g_floatZero;
+    m_finished = false;
+    m_duration = g_defaultDuration;
+    m_alpha = g_floatOne;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransFreezeAndCrossFade::vfn_4()  [vtable slot 4 @ 0x82378A18]
+//
+// Renders the freeze-and-cross-fade effect by drawing a full-screen quad with
+// the calculated alpha value. Converts the float alpha (0.0-1.0) to an 8-bit
+// integer (0-255) and constructs an RGBA color with white RGB and variable alpha.
+//
+// Globals accessed:
+//   0x82079BE0 (.rdata) - multiplier constant (255.0f) for alpha conversion
+//   0x826063D4 (.data, SDA) - pointer to render context
+//
+// Struct layout:
+//   +0x34: m_alpha (float) - fade alpha value (0.0 to 1.0)
+//
+// Logic:
+//   1. Load alpha from +52 (0x34)
+//   2. Multiply by 255.0 to convert to 0-255 range
+//   3. Convert float to integer
+//   4. Construct RGBA color: (alpha << 24) | 0x00FFFFFF (white with variable alpha)
+//   5. Call util_03C0 to render the full-screen quad with this color
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransFreezeAndCrossFade::vfn_4() {
+    // External constants and globals
+    extern const float g_alphaMultiplier; // @ 0x82079BE0 = 255.0f
+    extern void* g_renderContext;         // @ 0x826063D4 (SDA)
+    extern void util_03C0(void* context, uint32_t* colorPtr);
+
+    // Convert alpha from 0.0-1.0 to 0-255 range
+    float alphaScaled = m_alpha * g_alphaMultiplier;
+    uint32_t alphaInt = (uint32_t)alphaScaled;
+
+    // Construct RGBA color: alpha in high byte, RGB = 0xFFFFFF (white)
+    uint32_t color = (alphaInt << 24) | 0x00FFFFFF;
+
+    // Render the full-screen fade quad
+    util_03C0(g_renderContext, &color);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransFreezeAndCrossFade::vfn_5()  [vtable slot 5 @ 0x82378A78]
+//
+// Tail-call to pongScrnTransFadeIn::vfn_5. This is a simple forwarding function
+// that delegates to another transition class's implementation, likely for code
+// reuse or polymorphic behavior.
+//
+// Implementation: Direct branch to 0x82378460 (pongScrnTransFadeIn_vfn_5)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransFreezeAndCrossFade::vfn_5() {
+    // Forward to pongScrnTransFadeIn implementation
+    extern void pongScrnTransFadeIn_vfn_5(void* thisPtr);
+    pongScrnTransFadeIn_vfn_5(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongScrnTransFreezeAndCrossFade::vfn_6()  [vtable slot 6 @ 0x82378A80]
+//
+// Resets the transition state to initial values. This function is likely called
+// when restarting or reinitializing the transition effect.
+//
+// Globals accessed:
+//   0x8202D108 (.rdata) - constant 1.0f
+//   0x8202D10C (.rdata) - default duration
+//   0x8202D110 (.rdata) - constant 0.0f
+//
+// Struct layout:
+//   +0x04: m_duration (float) - reset to default duration
+//   +0x08: m_elapsedTime (float) - reset to 0.0
+//   +0x0C: m_finished (bool) - reset to false
+//   +0x30: field at offset 48 - set to 1.0
+//   +0x34: m_alpha (float) - reset to 0.0
+//
+// Logic:
+//   1. Clear finished flag
+//   2. Load default duration from constant table at +4
+//   3. Load zero constant from table at +8
+//   4. Load one constant from table at +0
+//   5. Set duration, elapsed time, and alpha fields
+// ─────────────────────────────────────────────────────────────────────────────
+void pongScrnTransFreezeAndCrossFade::vfn_6() {
+    // External constants
+    extern const float g_floatOne;        // @ 0x8202D108 = 1.0f
+    extern const float g_floatZero;       // @ 0x8202D110 = 0.0f
+    extern const float g_defaultDuration; // @ 0x8202D10C
+
+    // Reset transition state
+    m_finished = false;
+    m_duration = g_defaultDuration;
+    m_elapsedTime = g_floatZero;
+
+    // Reset alpha values (field at +48 and +52)
+    float* fieldAt48 = (float*)((char*)this + 48);
+    *fieldAt48 = g_floatOne;
+    m_alpha = g_floatZero;
+}
