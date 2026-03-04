@@ -194,6 +194,24 @@ struct pongCameraMgr {
     bool IsCameraStateOne() const;         // @ 0x821F7E40
     bool IsCameraStateTwo() const;         // @ 0x821F7E60
     bool IsCameraStateThree() const;       // @ 0x821F7E80
+    
+    // Camera transition variants
+    bool TryTransitionMode2_Variant1(void* gameState);  // @ 0x821F3910
+    bool TryTransitionMode2_Variant2(void* gameState);  // @ 0x821F3948
+    bool TryTransitionMode2_Variant3(void* gameState);  // @ 0x821F3980
+    bool TryTransitionMode5_Variant1(void* gameState);  // @ 0x821F3B88
+    bool TryTransitionMode5_Variant2(void* gameState);  // @ 0x821F3BC0
+    bool TryTransitionMode5_Variant3(void* gameState);  // @ 0x821F3BF8
+    
+    // Core transition helpers
+    bool ValidateAndClampTransition(void* gameState, int mode);  // @ 0x821F3500
+    bool ValidateAndClampTransitionWithFlags(void* gameState, int mode);  // @ 0x821F3650
+    bool ValidateAndAdjustTransition(void* gameState, int mode);  // @ 0x821F3780
+    
+    // Parameter management
+    void CopyParametersToBuffer(uint32_t param1, uint32_t param2, 
+                                uint32_t param3, uint32_t param4,
+                                uint32_t param5, uint32_t param6);  // @ 0x821F99D0
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────

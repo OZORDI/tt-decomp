@@ -291,3 +291,220 @@ bool pongCameraMgr::IsCameraStateThree() const {
     extern int32_t g_cameraState;  // @ 0x825C5EB8
     return (g_cameraState == 3);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionMode2_Variant1()  @ 0x821F3910
+// Attempts camera transition with mode 2 using variant 1 helper
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionMode2_Variant1(void* gameState) {
+    // Delegate to helper function with mode 2
+    extern bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode);
+    return pongCameraMgr_3500_fw(this, gameState, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionMode2_Variant2()  @ 0x821F3948
+// Attempts camera transition with mode 2 using variant 2 helper
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionMode2_Variant2(void* gameState) {
+    // Delegate to helper function with mode 2
+    extern bool pongCameraMgr_35A0_fw(pongCameraMgr* mgr, void* gameState, int mode);
+    return pongCameraMgr_35A0_fw(this, gameState, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionMode2_Variant3()  @ 0x821F3980
+// Attempts camera transition with mode 2 using variant 3 helper
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionMode2_Variant3(void* gameState) {
+    // Delegate to helper function with mode 2
+    extern bool pongCameraMgr_3650_fw(pongCameraMgr* mgr, void* gameState, int mode);
+    return pongCameraMgr_3650_fw(this, gameState, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionMode5_Variant1()  @ 0x821F3B88
+// Attempts camera transition with mode 5 using variant 1 helper
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionMode5_Variant1(void* gameState) {
+    // Delegate to helper function with mode 5
+    extern bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode);
+    return pongCameraMgr_3500_fw(this, gameState, 5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionMode5_Variant2()  @ 0x821F3BC0
+// Attempts camera transition with mode 5 using variant 2 helper
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionMode5_Variant2(void* gameState) {
+    // Delegate to helper function with mode 5
+    extern bool pongCameraMgr_35A0_fw(pongCameraMgr* mgr, void* gameState, int mode);
+    return pongCameraMgr_35A0_fw(this, gameState, 5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionMode5_Variant3()  @ 0x821F3BF8
+// Attempts camera transition with mode 5 using variant 3 helper
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionMode5_Variant3(void* gameState) {
+    // Delegate to helper function with mode 5
+    extern bool pongCameraMgr_3650_fw(pongCameraMgr* mgr, void* gameState, int mode);
+    return pongCameraMgr_3650_fw(this, gameState, 5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::ValidateAndClampTransition()  @ 0x821F3500
+// Core transition validation with clamping logic
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::ValidateAndClampTransition(void* gameState, int mode) {
+    // Load current camera value (stored at offset 0, overlapping with vtable in union)
+    float currentValue = *(float*)this;
+    
+    // Load threshold constant
+    extern float g_cameraThreshold;  // @ 0x825C5EC0
+    float threshold = g_cameraThreshold;
+    
+    // Clamp value to threshold range using fsel pattern
+    float diffMin = threshold - currentValue;
+    float diffMax = currentValue - threshold;
+    
+    float clampedMin = (diffMin >= 0.0f) ? currentValue : threshold;
+    float clampedMax = (diffMax >= 0.0f) ? currentValue : threshold;
+    
+    // Prepare validation parameters
+    struct TransitionParams {
+        float value;
+        uint32_t vtableOrState;
+        uint32_t padding;
+    } params;
+    
+    params.value = clampedMin;
+    params.vtableOrState = *(uint32_t*)this;
+    params.padding = 0;
+    
+    // Call validation function
+    extern uint8_t pongCameraMgr_6E08(void* gameState, TransitionParams* params, 
+                                      int mode, void* unused1, int unused2);
+    
+    uint8_t validationResult = pongCameraMgr_6E08(gameState, &params, mode, nullptr, 0);
+    
+    if (validationResult != 0) {
+        float modifiedValue = params.value;
+        
+        if (modifiedValue <= clampedMax) {
+            // Value is within range, store it
+            *(float*)this = modifiedValue;
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::ValidateAndClampTransitionWithFlags()  @ 0x821F3650
+// Transition validation with explicit flag parameters
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::ValidateAndClampTransitionWithFlags(void* gameState, int mode) {
+    // Load current camera value
+    float currentValue = *(float*)this;
+    
+    // Load threshold constant
+    extern float g_cameraThreshold;  // @ 0x825C5EC0
+    float threshold = g_cameraThreshold;
+    
+    // Clamp value to threshold range
+    float diffMin = threshold - currentValue;
+    float diffMax = currentValue - threshold;
+    
+    float clampedMin = (diffMin >= 0.0f) ? currentValue : threshold;
+    float clampedMax = (diffMax >= 0.0f) ? currentValue : threshold;
+    
+    // Prepare validation parameters with explicit flags
+    struct TransitionParams {
+        float value;
+        uint32_t vtableOrState;
+        uint32_t padding;
+    } params;
+    
+    struct TransitionFlags {
+        uint32_t flag1;  // Set to 3
+        uint32_t flag2;  // Set to 1
+    } flags;
+    
+    params.value = clampedMin;
+    params.vtableOrState = *(uint32_t*)this;
+    params.padding = 0;
+    
+    flags.flag1 = 3;
+    flags.flag2 = 1;
+    
+    // Call validation function with flags
+    extern uint8_t pongCameraMgr_6E08(void* gameState, TransitionParams* params, 
+                                      int mode, TransitionFlags* flags, int enable);
+    
+    uint8_t validationResult = pongCameraMgr_6E08(gameState, &params, mode, &flags, 1);
+    
+    if (validationResult != 0) {
+        float modifiedValue = params.value;
+        
+        if (modifiedValue <= clampedMax) {
+            // Value is within range, store it
+            *(float*)this = modifiedValue;
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::ValidateAndAdjustTransition()  @ 0x821F3780
+// Validates transition and adjusts camera value by subtracting a constant
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::ValidateAndAdjustTransition(void* gameState, int mode) {
+    // Call validation function directly with this object as parameter
+    extern uint8_t pongCameraMgr_6E08(void* gameState, pongCameraMgr* mgr, 
+                                      int mode, void* unused1, int unused2);
+    
+    uint8_t validationResult = pongCameraMgr_6E08(gameState, this, mode, nullptr, 0);
+    
+    if (validationResult != 0) {
+        // Load current value and adjustment constant
+        float currentValue = *(float*)this;
+        
+        extern float g_cameraAdjustment;  // @ 0x8202CFF4
+        float adjustment = g_cameraAdjustment;
+        
+        // Subtract adjustment from current value
+        float adjustedValue = currentValue - adjustment;
+        
+        // Store adjusted value back
+        *(float*)this = adjustedValue;
+        
+        return true;
+    }
+    
+    return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CopyParametersToBuffer()  @ 0x821F99D0
+// Copies 6 parameters (24 bytes) to a buffer allocated from the camera manager
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCameraMgr::CopyParametersToBuffer(uint32_t param1, uint32_t param2, 
+                                           uint32_t param3, uint32_t param4,
+                                           uint32_t param5, uint32_t param6) {
+    // Allocate buffer from camera manager (offset +4, size 16 bytes)
+    extern void* pongCameraMgr_B9B0_g(void* mgr, int size);
+    void* buffer = pongCameraMgr_B9B0_g((char*)this + 4, 16);
+    
+    // Copy 6 parameters (24 bytes total) to the allocated buffer
+    uint32_t* dest = (uint32_t*)buffer;
+    dest[0] = param1;
+    dest[1] = param2;
+    dest[2] = param3;
+    dest[3] = param4;
+    dest[4] = param5;
+    dest[5] = param6;
+}
