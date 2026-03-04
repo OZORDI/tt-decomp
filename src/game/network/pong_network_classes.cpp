@@ -1005,3 +1005,122 @@ extern "C" {
     // Global allocator pointer @ 0x82600004
     void* g_allocator_ptr = nullptr;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FloatAverager — Utility class for averaging float values over time
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// FloatAverager is a lightweight utility class used throughout the networking
+// subsystem for smoothing time-varying values like ping times, frame deltas,
+// and network latency. It has 4 vtable variants, likely from template
+// instantiations or different usage contexts.
+//
+// The class has 4 identical scalar destructors, one for each vtable variant:
+//   - vtable @ 0x8203A910 → FloatAverager_vfn_0 @ 0x821A7AA0
+//   - vtable @ 0x8203A91C → FloatAverager_vfn_0_7AE8_1 @ 0x821A7AE8
+//   - vtable @ 0x82070D78 → FloatAverager_vfn_0_D538_1 @ 0x823CD538
+//   - vtable @ 0x8207166C → FloatAverager_vfn_0_3EE8_1 @ 0x823D3EE8
+//
+// Each destructor follows the standard scalar destructor pattern:
+//   1. Store the vtable pointer
+//   2. Check the low bit of the flags parameter (r4 & 0x1)
+//   3. If set, call rage_free_00C0 to deallocate memory
+//
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FloatAverager::~FloatAverager()  [vtable slot 0 @ 0x821A7AA0]
+// Vtable: 0x8203A910
+//
+// Scalar destructor for FloatAverager (variant 1). Restores the vtable pointer
+// and optionally frees the object's memory if the deallocate flag is set.
+//
+// Parameters:
+//   this (r3) - pointer to FloatAverager object
+//   flags (r4) - destruction flags (bit 0: deallocate memory)
+//
+// Globals:
+//   vtable @ 0x8203A910 - FloatAverager vtable variant 1
+//
+// Logic:
+//   1. Store vtable pointer at +0x00
+//   2. Extract bit 0 of flags (r4 & 0x1)
+//   3. If bit 0 is set, call rage_free_00C0(this) to deallocate
+// ─────────────────────────────────────────────────────────────────────────────
+void FloatAverager::~FloatAverager() {
+    // Vtable address for variant 1
+    extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910
+
+    // Restore vtable pointer
+    *(void**)this = &g_FloatAverager_vtable_1;
+
+    // Note: Memory deallocation handled by scalar destructor wrapper
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FloatAverager scalar destructor variant 1  [@ 0x821A7AA0]
+// Wrapper that calls destructor and optionally frees memory
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void FloatAverager_vfn_0(FloatAverager* thisPtr, int flags) {
+    extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910
+    extern void rage_free_00C0(void* ptr);
+
+    // Restore vtable
+    *(void**)thisPtr = &g_FloatAverager_vtable_1;
+
+    // If deallocate flag is set (bit 0), free the memory
+    if (flags & 0x1) {
+        rage_free_00C0(thisPtr);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FloatAverager scalar destructor variant 2  [@ 0x821A7AE8]
+// Vtable: 0x8203A91C
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void FloatAverager_vfn_0_7AE8_1(FloatAverager* thisPtr, int flags) {
+    extern void* g_FloatAverager_vtable_2;  // @ 0x8203A91C
+    extern void rage_free_00C0(void* ptr);
+
+    // Restore vtable
+    *(void**)thisPtr = &g_FloatAverager_vtable_2;
+
+    // If deallocate flag is set (bit 0), free the memory
+    if (flags & 0x1) {
+        rage_free_00C0(thisPtr);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FloatAverager scalar destructor variant 3  [@ 0x823CD538]
+// Vtable: 0x82070D78
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void FloatAverager_vfn_0_D538_1(FloatAverager* thisPtr, int flags) {
+    extern void* g_FloatAverager_vtable_3;  // @ 0x82070D78
+    extern void rage_free_00C0(void* ptr);
+
+    // Restore vtable
+    *(void**)thisPtr = &g_FloatAverager_vtable_3;
+
+    // If deallocate flag is set (bit 0), free the memory
+    if (flags & 0x1) {
+        rage_free_00C0(thisPtr);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FloatAverager scalar destructor variant 4  [@ 0x823D3EE8]
+// Vtable: 0x8207166C
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void FloatAverager_vfn_0_3EE8_1(FloatAverager* thisPtr, int flags) {
+    extern void* g_FloatAverager_vtable_4;  // @ 0x8207166C
+    extern void rage_free_00C0(void* ptr);
+
+    // Restore vtable
+    *(void**)thisPtr = &g_FloatAverager_vtable_4;
+
+    // If deallocate flag is set (bit 0), free the memory
+    if (flags & 0x1) {
+        rage_free_00C0(thisPtr);
+    }
+}
