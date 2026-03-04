@@ -568,3 +568,69 @@ void LocomotionStateAnim::CopyAnimationData() {
         pongCreatureInst_EDC0_g(dstPtr, srcPtr, indexedDstPtr);
     }
 }
+
+/**
+ * LocomotionStateAnim::ProcessAnimationList @ 0x82380540 | size: 0xD0
+ * 
+ * Processes a list of animations by applying them to the locomotion state.
+ * This function iterates through all animations in the provided list and
+ * applies either a simple or complex animation processing function based
+ * on the animation's flags.
+ * 
+ * The function first sets up the animation state, then determines which
+ * processing method to use (simple vs complex based on bit 0 of flags),
+ * and finally applies the selected method to each animation in the array.
+ * 
+ * @param animationList Pointer to animation list structure containing animations to process
+ */
+void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
+    if (!animationList) {
+        return;
+    }
+    
+    // Set up animation state with current parameters
+    void* animContainer = *(void**)((char*)this + 36);  // Animation container at +36
+    void* containerData = *(void**)((char*)animContainer + 0);
+    void* containerParams = *(void**)((char*)animContainer + 4);
+    float currentTime = *(float*)((char*)this + 8);
+    
+    // Call setup function to prepare animations
+    LocomotionStateAnim_88E0_g(containerData, containerParams, currentTime, 1, 0);
+    
+    // Determine which processing function to use based on animation flags
+    void* animListData = *(void**)((char*)animationList + 4);
+    uint32_t animFlags = *(uint32_t*)((char*)animListData + 20);
+    
+    // Function pointer for animation processing
+    typedef void (*AnimProcessFunc)(void*, void*, float);
+    AnimProcessFunc processFunc;
+    
+    // Check bit 0 of flags to determine processing method
+    bool useSimpleProcessing = (animFlags & 0x1) == 0;
+    
+    if (useSimpleProcessing) {
+        processFunc = (AnimProcessFunc)0x8224C128;  // LocomotionStateAnim_C128_g - simple processing
+    } else {
+        processFunc = (AnimProcessFunc)0x8224C288;  // LocomotionStateAnim_C288_g - complex processing
+    }
+    
+    // Get animation array info
+    uint16_t animCount = *(uint16_t*)((char*)animListData + 12);
+    
+    if (animCount > 0) {
+        void** animArray = *(void***)((char*)animListData + 8);
+        
+        // Load blend weight constant (typically 1.0f for full blend)
+        extern const float g_animBlendWeight;  // @ 0x8202D110
+        float blendWeight = g_animBlendWeight;
+        
+        // Process each animation in the array
+        for (uint16_t i = 0; i < animCount; i++) {
+            void* animation = animArray[i];
+            processFunc(animation, animationList, blendWeight);
+        }
+    }
+    
+    // Finalize animation processing
+    LocomotionStateAnim_C8F8_g(animationList);
+}
