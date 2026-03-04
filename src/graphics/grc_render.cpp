@@ -449,3 +449,126 @@ void grc_CB48(void* pDevice) {
     
     game_37B0(pDevice);
 }
+
+
+/* ── External dependencies for texture factory ────────────────────────────── */
+
+/* Debug log function (no-op) @ 0x8240E6D0 */
+extern void nop_8240E6D0(const char* fmt, ...);
+
+/* Texture processing functions */
+extern void grc_FD68(void* pTexture, void* pDevice);  /* @ 0x8215FD68 */
+extern void grc_DC00(void* pTexture, void* pDevice);  /* @ 0x8215DC00 */
+
+/* Debug format string for invalid texture types @ 0x82035300 */
+extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grcTextureFactoryXenon_vfn_10 @ 0x8215FCB0 | size: 0xb8 (184 bytes)
+ *
+ * Processes an array of texture pointers, adjusting their addresses based on
+ * device offset calculations and dispatching to appropriate handlers based on
+ * texture type.
+ *
+ * This function is part of the texture factory's vtable (slot 10) and handles
+ * texture relocation and initialization during resource loading.
+ *
+ * Parameters:
+ *   pThis       - grcTextureFactoryXenon instance (r3, unused in this function)
+ *   pDevice     - Device/context structure with offset tables (r4)
+ *   ppTextures  - Array of texture pointers to process (r5)
+ *   count       - Number of textures in the array (r6)
+ *
+ * Device structure layout (partial):
+ *   +0x04 (4)    m_baseAddress     - Base address for offset calculations
+ *   +0x4C (76)   m_strideSize      - Size of each offset table entry
+ *   +0x08+ (8+)  m_offsetTable[]   - Array of offset values indexed by (index+2)*4
+ *
+ * Texture structure layout (partial):
+ *   +0x00 (0)    m_pData           - Pointer to texture data (adjusted by this function)
+ *   +0x04 (4)    m_type            - Texture type: 0=raw, 1=skip, 2=compressed, 3+=invalid
+ *
+ * Algorithm:
+ *   For each texture in the array:
+ *     1. If texture data pointer is non-null:
+ *        a. Calculate offset index: (dataPtr - baseAddress) / strideSize
+ *        b. Look up offset value in device table at index (offsetIndex + 2)
+ *        c. Adjust texture data pointer: dataPtr += offsetTable[offsetIndex + 2]
+ *     2. Process texture based on type:
+ *        - Type 0: Call grc_FD68 (raw texture processing)
+ *        - Type 1: Skip (already processed)
+ *        - Type 2: Call grc_DC00 (compressed texture processing)
+ *        - Type 3+: Log error via nop_8240E6D0 (invalid type)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grcTextureFactoryXenon_vfn_10(
+    void* pThis,
+    void* pDevice,
+    void** ppTextures,
+    int count)
+{
+    (void)pThis;  /* Unused in this function */
+    
+    if (count <= 0) {
+        return;
+    }
+    
+    uint8_t* device = (uint8_t*)pDevice;
+    
+    /* Load device offset calculation parameters */
+    uint32_t baseAddress = *(uint32_t*)(device + 4);
+    uint32_t strideSize = *(uint32_t*)(device + 76);
+    
+    /* Process each texture in the array */
+    for (int i = 0; i < count; i++) {
+        void** pTexture = (void**)ppTextures[i];
+        
+        if (pTexture == NULL) {
+            continue;
+        }
+        
+        /* ── Step 1: Adjust texture data pointer if non-null ────────────── */
+        
+        uint32_t dataPtr = (uint32_t)pTexture[0];
+        
+        if (dataPtr != 0) {
+            /* Calculate offset index from data pointer */
+            uint32_t offsetFromBase = dataPtr - baseAddress;
+            uint32_t offsetIndex = offsetFromBase / strideSize;
+            
+            /* Look up offset value in device table at (offsetIndex + 2) */
+            uint32_t tableIndex = (offsetIndex + 2) * 4;  /* *4 for pointer array indexing */
+            uint32_t offsetValue = *(uint32_t*)(device + tableIndex);
+            
+            /* Adjust the texture data pointer */
+            pTexture[0] = (void*)(dataPtr + offsetValue);
+        }
+        
+        /* ── Step 2: Process texture based on type ──────────────────────── */
+        
+        uint8_t* textureBytes = (uint8_t*)pTexture[0];
+        
+        if (textureBytes == NULL) {
+            continue;
+        }
+        
+        uint8_t textureType = textureBytes[4];
+        
+        if (textureType == 0) {
+            /* Type 0: Raw texture - call grc_FD68 */
+            grc_FD68(pTexture[0], pDevice);
+        }
+        else if (textureType == 1) {
+            /* Type 1: Already processed - skip */
+            continue;
+        }
+        else if (textureType == 2) {
+            /* Type 2: Compressed texture - call grc_DC00 */
+            grc_DC00(pTexture[0], pDevice);
+        }
+        else {
+            /* Type 3+: Invalid texture type - log error */
+            nop_8240E6D0(g_invalidTextureTypeMsg);
+        }
+    }
+}

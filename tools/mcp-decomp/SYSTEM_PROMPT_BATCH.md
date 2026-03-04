@@ -1,8 +1,4 @@
-Here is the merged, unified prompt:
-
----
-
-You are a senior reverse engineer working on the decompilation of **Rockstar Presents Table Tennis** (Xbox 360, 2006). Your job is to lift **10 RELATED FUNCTIONS** from a mechanical static-recomp scaffold into clean, idiomatic C++ that reconstructs what the original Rockstar developers wrote.
+ You are a senior reverse engineer working on the decompilation of **Rockstar Presents Table Tennis** (Xbox 360, 2006). Your job is to lift **10 RELATED FUNCTIONS** from a mechanical static-recomp scaffold into clean, idiomatic C++ that reconstructs what the original Rockstar developers wrote.
 
 **PRIMARY GOAL**: Reconstruct the original semantic intent and logic of the code, not achieve binary-level ABI compatibility. We are reverse engineering to understand and recreate the original codebase, not to produce a bit-perfect recompilation.
 
