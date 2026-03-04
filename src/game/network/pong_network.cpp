@@ -2991,3 +2991,81 @@ void SinglesNetworkClient::CheckNetworkInitialized()
     extern void SinglesNetworkClient_2FD8_g(void* client);
     SinglesNetworkClient_2FD8_g(this);
 }
+
+
+/* ── External dependencies for list management ────────────────────────────── */
+
+/* UI list manager structure @ 0x825D16AC (.data + 8 from 0x825D16A4) */
+extern void* g_uiListManager;  /* @ 0x825D16AC */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SinglesNetworkClient_F710_p23 @ 0x823BF710 | size: 0x8c (140 bytes)
+ *
+ * Removes an entry from a doubly-linked free list and updates the list head.
+ *
+ * This function is part of the network client's memory management system,
+ * handling the removal of entries from a free list when they are allocated
+ * for use.
+ *
+ * List structure layout (12 bytes per entry):
+ *   +0x00 (0)    (unused in this function)
+ *   +0x08 (8)    m_prevIndex  - Index of previous entry in list (u16)
+ *   +0x0A (10)   m_nextIndex  - Index of next entry in list (u16)
+ *
+ * List manager structure (at g_uiListManager):
+ *   +0x0C (12)   m_freeCount  - Number of free entries (u16)
+ *   +0x10 (16)   m_headIndex  - Index of first free entry (u16)
+ *
+ * Algorithm:
+ *   1. Load list manager and get current head index
+ *   2. If head is 0xFFFF (empty list), return NULL
+ *   3. Calculate entry address: base + (index * 12)
+ *   4. Load next index from current head entry
+ *   5. Update list head to next index
+ *   6. If next entry exists, clear its previous link
+ *   7. Clear current entry's next link
+ *   8. Increment free count
+ *   9. Return pointer to removed entry
+ *
+ * The index * 12 calculation is done as: (index + index*2) * 4 = index * 12
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void* SinglesNetworkClient_F710_p23(void)
+{
+    /* Load list manager structure */
+    uint8_t* listMgr = (uint8_t*)g_uiListManager;
+    
+    /* Get current head index from list manager */
+    uint16_t headIndex = *(uint16_t*)(listMgr + 16);
+    
+    /* Check if list is empty (head == 0xFFFF) */
+    if (headIndex == 0xFFFF) {
+        return NULL;
+    }
+    
+    /* Calculate address of head entry: base + (index * 12) */
+    uint32_t entryOffset = headIndex * 12;  /* index * 3 * 4 */
+    uint8_t* headEntry = listMgr + entryOffset;
+    
+    /* Load next index from head entry */
+    uint16_t nextIndex = *(uint16_t*)(headEntry + 10);
+    
+    /* Update list head to next entry */
+    *(uint16_t*)(listMgr + 16) = nextIndex;
+    
+    /* If next entry exists, clear its previous link */
+    if (nextIndex != 0xFFFF) {
+        uint32_t nextOffset = nextIndex * 12;
+        uint8_t* nextEntry = listMgr + nextOffset;
+        *(uint16_t*)(nextEntry + 8) = 0xFFFF;
+    }
+    
+    /* Clear current entry's next link */
+    *(uint16_t*)(headEntry + 10) = 0xFFFF;
+    
+    /* Increment free count */
+    uint16_t freeCount = *(uint16_t*)(listMgr + 12);
+    *(uint16_t*)(listMgr + 12) = freeCount + 1;
+    
+    /* Return pointer to removed entry */
+    return headEntry;
+}
