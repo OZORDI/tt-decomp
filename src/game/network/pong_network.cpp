@@ -2482,3 +2482,153 @@ const char* DataRequestMessage::GetTypeName()
 {
     return g_szDataRequestTypeName;  // @ 0x8206EA74
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DataSendMessage — Network message for sending data to another client
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * DataSendMessage is a network message sent to transmit data to another client.
+ * It carries a timing float, two 16-bit identifiers, and a variable-length data payload.
+ * 
+ * Structure layout:
+ *   +0x00  vtable pointer
+ *   +0x04  float — timing reference or send timestamp
+ *   +0x08  int16_t — data type identifier
+ *   +0x0A  int16_t — data size/length
+ *   +0x0C  variable — data payload (size determined by field at +0x0A)
+ * 
+ * Vtable layout:
+ *   slot 1 = Deserialise (read from network)
+ *   slot 2 = Serialise (write to network)
+ *   slot 5 = GetIndexInPool
+ *   slot 6 = GetSingleton
+ *   slot 7 = GetTypeName
+ */
+
+// External references
+extern uint8_t* g_pDataSendMsgPoolBase;  // @ 0x825D12B4
+extern void* g_pDataSendMsgSingleton;    // @ 0x825D12A8
+extern const char g_szDataSendTypeName[];  // @ 0x8206EA88
+
+// Network I/O helpers
+extern void util_0AF0(void* client, void* data, int16_t size);
+extern void SinglesNetworkClient_0598_g(void* data, void* client);
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataSendMessage::Deserialise  [vtable slot 1 @ 0x823BED20]
+// 
+// Reads DataSendMessage fields from the network byte stream.
+// Called when a DataSendMessage packet arrives from another client.
+// 
+// Fields populated:
+//   +0x04  float — timing reference (32-bit network field)
+//   +0x08  int16_t — data type identifier (16-bit network field)
+//   +0x0A  int16_t — data size (16-bit network field)
+//   +0x0C  variable — data payload (size bytes)
+// ─────────────────────────────────────────────────────────────────────────────
+void DataSendMessage::Deserialise(void* client)
+{
+    // Read timing float (32-bit field)
+    float timingRef;
+    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    m_timingRef = timingRef;
+    
+    // Read data type identifier (16-bit field)
+    util_7970(client, &m_dataType, 16);
+    
+    // Read data size (16-bit field)
+    util_7970(client, &m_dataSize, 16);
+    
+    // Read variable-length data payload
+    // Size is determined by m_dataSize field
+    util_0AF0(client, &m_dataPayload, m_dataSize);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataSendMessage::Serialise  [vtable slot 2 @ 0x823BED90]
+// 
+// Writes DataSendMessage fields to the outgoing network byte stream.
+// Called when the local client needs to send data to a remote client.
+// ─────────────────────────────────────────────────────────────────────────────
+void DataSendMessage::Serialise(void* client)
+{
+    // Write timing reference float
+    WriteFloatToNetworkStream(client, m_timingRef);
+    
+    // Write data payload structure (includes type, size, and data)
+    // SinglesNetworkClient_0598_g handles the complete payload serialization
+    SinglesNetworkClient_0598_g(&m_dataType, client);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataSendMessage::GetIndexInPool  [vtable slot 5 @ 0x823BAC40]
+// 
+// Returns the index of this object within the DataSendMessage pool.
+// Updates the pool's linked-list structure for message tracking.
+// 
+// Pool structure:
+//   - Base address: g_pDataSendMsgPoolBase @ 0x825D12B4
+//   - Object size: 524 bytes (0x20C)
+//   - Pool metadata at base+1048: entry count (uint16)
+//   - Pool metadata at base+1052: tail index (uint16)
+//   - Forward link at object+520
+//   - Backward link at object+522
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t DataSendMessage::GetIndexInPool() const
+{
+    uint8_t* poolBase = *(uint8_t**)g_pDataSendMsgPoolBase;
+    
+    // Compute object index: offset = (this - base), index = offset / 524
+    // Uses mulhwu with magic constant 0xFA1D2CF3 for division by 524
+    uint32_t offset = (uint32_t)((uint8_t*)this - poolBase);
+    uint64_t mulResult = (uint64_t)offset * 0xFA1D2CF3ULL;
+    uint32_t quotient = (uint32_t)(mulResult >> 32);
+    uint16_t index = (uint16_t)((quotient >> 9) & 0xFFFF);
+    
+    // Update linked-list: pool[1052] = old_tail
+    uint16_t oldTail = *(uint16_t*)(poolBase + 1052);
+    if (oldTail != 0xFFFF) {
+        // Link previous tail's forward pointer to us
+        uint32_t prevOffset = (uint32_t)oldTail * 524;
+        *(uint16_t*)(poolBase + prevOffset + 520) = index;
+    }
+    
+    // Write our index as the new tail
+    *(uint16_t*)(poolBase + index * 524 + 522) = index;
+    *(uint16_t*)(poolBase + 1052) = index;
+    
+    // Increment entry count
+    uint16_t count = *(uint16_t*)(poolBase + 1048);
+    *(uint16_t*)(poolBase + 1048) = count + 1;
+    
+    return index;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataSendMessage::GetSingleton  [vtable slot 6 @ 0x823BAD20]
+// 
+// Returns the DataSendMessage message-type singleton pointer.
+// This is the pool/factory object managing all DataSendMessage instances.
+// ─────────────────────────────────────────────────────────────────────────────
+void* DataSendMessage::GetSingleton()
+{
+    return g_pDataSendMsgSingleton;  // @ 0x825D12A8
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataSendMessage::GetTypeName  [vtable slot 7 @ 0x823BAD30]
+// 
+// Returns a pointer to the ASCII type-name string for this message class.
+// Used by the network dispatcher for message registration and debug logging.
+// ─────────────────────────────────────────────────────────────────────────────
+const char* DataSendMessage::GetTypeName()
+{
+    return g_szDataSendTypeName;  // @ 0x8206EA88
+}

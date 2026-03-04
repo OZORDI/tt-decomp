@@ -354,3 +354,20 @@ extern void  rage_free(void* ptr);                              // @ 0x820C00C0
 extern void* rage_alloc_aligned(uint32_t size, uint32_t align);// via xe_main_thread_init_0038 + vcall[1]
 
 } // namespace rage
+
+/**
+ * cmSwitch — multi-way conditional node (switch/case statement).
+ * Evaluates a selector port and returns output from the matching case port.
+ * vtable @ 0x82055B6C (and 4 other template instantiations)
+ */
+struct cmSwitch : cmNodeBase {
+    cmNodePort selectorPort;     // +0x0C  determines which case to execute
+    cmNodePort casePorts[4];     // +0x14  case outputs (only [0] and [1] checked)
+    cmNodePort defaultPort;      // +0x34  fallback when no case matches
+    
+    void GetVector(float* out);      // [2]  @ 0x8226E988
+    void GetBool(uint8_t* out);      // [3]  @ 0x8226EA18
+    void GetFloat(float* out);       // [4]  @ 0x8226E910
+    void GetDim(int32_t* out);       // [5]  @ 0x8226E898
+};
+

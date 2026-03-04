@@ -1179,3 +1179,118 @@ void cmNormalProbe::GetVector(float* out) {
     out[3] = probeData->normal[3];
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  cmSwitch — Switch/Case Node
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * cmSwitch — multi-way conditional node (switch/case statement).
+ * 
+ * Evaluates a selector port to determine which case port to return.
+ * Structure:
+ *   +0x00: vtable
+ *   +0x04: m_outputType (CM_DIM_*)
+ *   +0x08: m_flags
+ *   +0x0C: selectorPort — determines which case to execute
+ *   +0x14: casePort[0]  — returned when selector == 0
+ *   +0x1C: casePort[1]  — returned when selector == 1
+ *   +0x24: casePort[2]  — returned when selector == 2
+ *   +0x2C: casePort[3]  — returned when selector == 3
+ *   +0x34: defaultPort  — fallback when no case matches
+ * 
+ * The current implementation only checks cases 0 and 1 (loop limit r30 <= 2).
+ * Cases 2 and 3 are structurally present but unused in this variant.
+ * 
+ * vtable @ 0x82055B6C (and 4 other template instantiations)
+ */
+
+/**
+ * cmSwitch::GetVector @ 0x8226E988 (vfn_2)
+ * 
+ * Returns a vec4 from the selected case port.
+ * Reads selector value, finds matching case, returns that case's vector output.
+ */
+void cmSwitch::GetVector(float* out) {
+    // Read selector value to determine which case to execute
+    int32_t selectorValue = cmNode_GetDim(&selectorPort);
+    
+    // Check case ports 0 and 1
+    for (int caseIndex = 0; caseIndex < 2; caseIndex++) {
+        cmNodePort* casePort = &casePorts[caseIndex];
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            // Match found — return this case's vector output
+            cmNode_GetVector(out, casePort);
+            return;
+        }
+    }
+    
+    // No match — return default port's vector
+    cmNode_GetVector(out, &defaultPort);
+}
+
+/**
+ * cmSwitch::GetBool @ 0x8226EA18 (vfn_3)
+ * 
+ * Returns a boolean from the selected case port.
+ */
+void cmSwitch::GetBool(uint8_t* out) {
+    int32_t selectorValue = cmNode_GetDim(&selectorPort);
+    
+    for (int caseIndex = 0; caseIndex < 2; caseIndex++) {
+        cmNodePort* casePort = &casePorts[caseIndex];
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            *out = cmNode_GetBool(casePort);
+            return;
+        }
+    }
+    
+    *out = cmNode_GetBool(&defaultPort);
+}
+
+/**
+ * cmSwitch::GetFloat @ 0x8226E910 (vfn_4)
+ * 
+ * Returns a float from the selected case port.
+ */
+void cmSwitch::GetFloat(float* out) {
+    int32_t selectorValue = cmNode_GetDim(&selectorPort);
+    
+    for (int caseIndex = 0; caseIndex < 2; caseIndex++) {
+        cmNodePort* casePort = &casePorts[caseIndex];
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            *out = cmNode_GetFloat(casePort);
+            return;
+        }
+    }
+    
+    *out = cmNode_GetFloat(&defaultPort);
+}
+
+/**
+ * cmSwitch::GetDim @ 0x8226E898 (vfn_5)
+ * 
+ * Returns an integer dimension value from the selected case port.
+ */
+void cmSwitch::GetDim(int32_t* out) {
+    int32_t selectorValue = cmNode_GetDim(&selectorPort);
+    
+    for (int caseIndex = 0; caseIndex < 2; caseIndex++) {
+        cmNodePort* casePort = &casePorts[caseIndex];
+        int32_t caseValue = cmNode_GetDim(casePort);
+        
+        if (selectorValue == caseValue) {
+            *out = cmNode_GetDim(casePort);
+            return;
+        }
+    }
+    
+    *out = cmNode_GetDim(&defaultPort);
+}
+
