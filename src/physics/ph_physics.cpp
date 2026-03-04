@@ -934,3 +934,428 @@ void phBoundCapsule_F548_wrh(void* container, int* outIndex, float* outX, float*
         index = 11;
     }
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Capsule Collision Bound Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External float constants
+extern const float g_floatOne;   // @ 0x8202D108 = 1.0f
+extern const float g_floatZero;  // @ 0x8202D110 = 0.0f
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::GetRadius @ 0x820CB598 | size: 0x58
+//
+// Returns the effective radius of the capsule based on its configuration flags.
+// Checks bit 1 (0x02) and bit 4 (0x10) of the flags byte at offset +64.
+//
+// Returns:
+//   - 1.0f if bit 1 is set (standard capsule)
+//   - 1.0f if bit 4 is set (alternate configuration)
+//   - m_radius (field at +28) otherwise (custom radius)
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::GetRadius() const {
+    uint8_t flags = m_configFlags;  // +64
+    
+    // Check bit 1 (0x02) - standard capsule flag
+    if (flags & 0x02) {
+        return g_floatOne;
+    }
+    
+    // Check bit 4 (0x10) - alternate configuration flag
+    if (flags & 0x10) {
+        return g_floatOne;
+    }
+    
+    // Return custom radius from field +28
+    return m_radius;  // +28
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ScaleRadius @ 0x820CB6A0 | size: 0x50
+//
+// Conditionally scales the capsule radius based on the input scale factor.
+// If scale is outside the range (floatZero, floatOne), applies scaling.
+//
+// Parameters:
+//   scale - Scale factor to apply to radius
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ScaleRadius(float scale) {
+    const float* constants = (const float*)0x8202D108;
+    const float one = constants[0];    // +0 = 1.0f
+    const float zero = constants[72];  // +288 = 0.0f (offset in bytes / 4)
+    
+    // Only scale if outside valid range
+    if (scale > zero && scale < one) {
+        return;  // No scaling needed
+    }
+    
+    // Apply scaling: multiply by constant at offset +0
+    float scaleFactor = constants[0];  // 1.0f
+    float scaledValue = scale * scaleFactor;
+    
+    // Call helper function to apply the scaled value
+    phBoundCapsule_01D8_g(scaledValue);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeBounds @ 0x820D04F0 | size: 0x60
+//
+// Computes the bounding box extents for the capsule by calling two helper
+// functions and storing their results.
+//
+// Parameters:
+//   scale - Scale factor for bound computation
+//   outMin - Pointer to store minimum bound
+//   outMax - Pointer to store maximum bound
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ComputeBounds(float scale, float* outMin, float* outMax) {
+    // Compute minimum bound
+    float minBound = phBoundCapsule_02B0_g(scale);
+    *outMin = minBound;
+    
+    // Compute maximum bound using the scale
+    float maxBound = phBoundCapsule_01D8_g(scale);
+    *outMax = maxBound;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeExtent @ 0x820D0550 | size: 0x50
+//
+// Computes a single extent value based on two input parameters.
+// If both parameters are zero, returns zero. Otherwise calls helper function.
+//
+// Parameters:
+//   param1 - First extent parameter
+//   param2 - Second extent parameter
+//
+// Returns: Computed extent value
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::ComputeExtent(float param1, float param2) const {
+    const float zero = g_floatZero;
+    
+    // If param2 is zero
+    if (param2 == zero) {
+        // And param1 is also zero, return zero
+        if (param1 == zero) {
+            return zero;
+        }
+        
+        // Otherwise compute extent with param1
+        return phBoundCapsule_0FE0_g(param1);
+    }
+    
+    // General case: compute extent with both parameters
+    return phBoundCapsule_0FE0_g(param1, param2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::InitializeAxisAlignedX @ 0x820C3F10 | size: 0x84
+//
+// Initializes a capsule aligned along the X axis.
+// Sets up a 3x3 orientation matrix with X-axis alignment.
+//
+// Parameters:
+//   halfLength - Half the length of the capsule along X axis
+//   outMatrix - Pointer to 44-byte output structure (3x3 matrix + padding)
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::InitializeAxisAlignedX(float halfLength, float* outMatrix) {
+    // Compute capsule parameters
+    float minBound = phBoundCapsule_02B0_g(halfLength);
+    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    
+    const float* constants = (const float*)0x8202D110;
+    const float zero = constants[0];   // +0 = 0.0f
+    const float negOne = constants[-2]; // -8 = -1.0f
+    
+    // Initialize matrix for X-axis alignment
+    // Row 0: [-1, 0, 0]
+    outMatrix[0] = negOne;
+    outMatrix[1] = zero;
+    outMatrix[2] = zero;
+    
+    // Row 1: [0, 0, maxBound]
+    outMatrix[4] = zero;
+    outMatrix[5] = zero;
+    outMatrix[6] = maxBound;
+    
+    // Row 2: [0, minBound, 0]
+    outMatrix[8] = zero;
+    outMatrix[9] = -maxBound;  // Negated
+    outMatrix[10] = minBound;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::InitializeAxisAlignedY @ 0x820C3F98 | size: 0x84
+//
+// Initializes a capsule aligned along the Y axis.
+// Sets up a 3x3 orientation matrix with Y-axis alignment.
+//
+// Parameters:
+//   halfLength - Half the length of the capsule along Y axis
+//   outMatrix - Pointer to 44-byte output structure (3x3 matrix + padding)
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::InitializeAxisAlignedY(float halfLength, float* outMatrix) {
+    // Compute capsule parameters
+    float minBound = phBoundCapsule_02B0_g(halfLength);
+    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    
+    const float* constants = (const float*)0x8202D108;
+    const float one = constants[0];   // +0 = 1.0f
+    const float zero = constants[2];  // +8 = 0.0f
+    
+    // Initialize matrix for Y-axis alignment
+    // Row 0: [minBound, 0, 0]
+    outMatrix[0] = minBound;
+    outMatrix[1] = zero;
+    outMatrix[2] = zero;
+    
+    // Row 1: [0, 0, -maxBound]
+    outMatrix[4] = zero;
+    outMatrix[5] = zero;
+    outMatrix[6] = -maxBound;
+    
+    // Row 2: [0, one, 0]
+    outMatrix[8] = zero;
+    outMatrix[9] = one;
+    outMatrix[10] = zero;
+    
+    // Additional fields
+    outMatrix[8] = maxBound;   // +32
+    outMatrix[9] = zero;       // +36
+    outMatrix[10] = minBound;  // +40
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::InitializeAxisAlignedZ @ 0x820C4020 | size: 0x84
+//
+// Initializes a capsule aligned along the Z axis.
+// Sets up a 3x3 orientation matrix with Z-axis alignment.
+//
+// Parameters:
+//   halfLength - Half the length of the capsule along Z axis
+//   outMatrix - Pointer to 44-byte output structure (3x3 matrix + padding)
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::InitializeAxisAlignedZ(float halfLength, float* outMatrix) {
+    // Compute capsule parameters
+    float minBound = phBoundCapsule_02B0_g(halfLength);
+    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    
+    const float* constants = (const float*)0x8202D108;
+    const float one = constants[0];   // +0 = 1.0f
+    const float zero = constants[2];  // +8 = 0.0f
+    
+    // Initialize matrix for Z-axis alignment
+    // Row 0: [minBound, maxBound, 0]
+    outMatrix[0] = minBound;
+    outMatrix[1] = maxBound;
+    outMatrix[2] = zero;
+    
+    // Row 1: [0, -maxBound, 0]
+    outMatrix[4] = zero;
+    outMatrix[5] = -maxBound;
+    outMatrix[6] = zero;
+    
+    // Row 2: [0, 0, one]
+    outMatrix[8] = zero;
+    outMatrix[9] = zero;
+    outMatrix[10] = one;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::TransformByDirection @ 0x820C40A8 | size: 0x13C
+//
+// Transforms the capsule's orientation matrix based on a direction vector.
+// Performs a complex 3x3 matrix transformation using the input direction.
+//
+// Parameters:
+//   halfLength - Half the length of the capsule
+//   direction - Pointer to 3-component direction vector
+//   outMatrix - Pointer to 44-byte output structure (3x3 matrix + padding)
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::TransformByDirection(float halfLength, const float* direction, float* outMatrix) {
+    // Compute capsule parameters
+    float minBound = phBoundCapsule_02B0_g(halfLength);
+    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    
+    // Load direction components
+    float dirX = direction[0];
+    float dirY = direction[1];
+    float dirZ = direction[2];
+    
+    const float one = g_floatOne;
+    float scale = one - minBound;
+    
+    // Compute diagonal elements (scaled by direction squared)
+    float diagX = dirX * dirX * scale + minBound;
+    float diagY = dirY * dirY * scale + minBound;
+    float diagZ = dirZ * dirZ * scale + minBound;
+    
+    outMatrix[0] = diagX;   // +0
+    outMatrix[5] = diagY;   // +20
+    outMatrix[10] = diagZ;  // +40
+    
+    // Compute off-diagonal elements (cross products with maxBound)
+    float xyTerm = dirX * scale * dirY;
+    float xzScaled = maxBound * dirZ;
+    
+    outMatrix[1] = xyTerm + xzScaled;   // +4
+    outMatrix[4] = xyTerm - xzScaled;   // +16
+    
+    float xzTerm = dirX * scale * dirZ;
+    float xyScaled = maxBound * dirY;
+    
+    outMatrix[2] = xzTerm - xyScaled;   // +8
+    outMatrix[8] = xzTerm + xyScaled;   // +32
+    
+    float yzTerm = scale * dirZ * dirY;
+    float yxScaled = maxBound * dirX;
+    
+    outMatrix[6] = yzTerm + yxScaled;   // +24
+    outMatrix[9] = yzTerm - yxScaled;   // +36
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::InitializeFromDirection @ 0x820C3DA0 | size: 0x170
+//
+// High-level initialization function that dispatches to the appropriate
+// axis-aligned or direction-based initialization based on the input vector.
+//
+// Parameters:
+//   halfLength - Half the length of the capsule
+//   direction - Pointer to 3-component direction vector
+//   outMatrix - Pointer to 44-byte output structure
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::InitializeFromDirection(float halfLength, const float* direction, float* outMatrix) {
+    const float zero = g_floatZero;
+    const float one = g_floatOne;
+    
+    // Special case: zero length capsule (sphere)
+    if (halfLength == zero) {
+        // Initialize as unit sphere
+        outMatrix[0] = one;    // +0
+        outMatrix[1] = zero;   // +4
+        outMatrix[2] = zero;   // +8
+        outMatrix[4] = zero;   // +16
+        outMatrix[5] = one;    // +20
+        outMatrix[6] = zero;   // +24
+        outMatrix[8] = zero;   // +32
+        outMatrix[9] = zero;   // +36
+        outMatrix[10] = one;   // +40
+        return;
+    }
+    
+    // Load direction components
+    float dirX = direction[0];
+    float dirY = direction[1];
+    float dirZ = direction[2];
+    
+    // Check for axis-aligned cases
+    if (dirX == zero) {
+        if (dirY == zero) {
+            // Z-axis aligned
+            if (dirZ <= zero) {
+                halfLength = -halfLength;  // Flip if negative
+            }
+            InitializeAxisAlignedZ(halfLength, outMatrix);
+            return;
+        }
+        
+        if (dirZ == zero) {
+            // Y-axis aligned
+            if (dirY <= zero) {
+                halfLength = -halfLength;  // Flip if negative
+            }
+            InitializeAxisAlignedY(halfLength, outMatrix);
+            return;
+        }
+    } else if (dirY == zero && dirZ == zero) {
+        // X-axis aligned
+        if (dirX <= zero) {
+            halfLength = -halfLength;  // Flip if negative
+        }
+        InitializeAxisAlignedX(halfLength, outMatrix);
+        return;
+    }
+    
+    // General case: arbitrary direction
+    // Normalize the direction vector using SIMD operations
+    float lengthSq = dirX * dirX + dirY * dirY + dirZ * dirZ;
+    float invLength = 1.0f / sqrtf(lengthSq);
+    
+    float normalizedDir[3];
+    normalizedDir[0] = dirX * invLength;
+    normalizedDir[1] = dirY * invLength;
+    normalizedDir[2] = dirZ * invLength;
+    
+    // Transform using the normalized direction
+    TransformByDirection(halfLength, normalizedDir, outMatrix);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ApplyTransform @ 0x82147EF8 | size: 0x1C8
+//
+// Applies a transformation to all 8 corner points of the capsule's bounding box.
+// Uses SIMD operations to efficiently transform multiple points.
+//
+// Parameters:
+//   transform - Pointer to 16-byte transformation vector (scale/offset)
+//   inPoints - Pointer to source point array (8 points × 16 bytes each)
+//
+// The function:
+// 1. Loads the transformation vector
+// 2. Broadcasts the first component for SIMD multiplication
+// 3. Applies the transformation to all 8 corner points
+// 4. Stores the results back to the capsule structure
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ApplyTransform(const float* transform, const float* inPoints) {
+    // Load transformation vector (16 bytes)
+    float transformX = transform[0];
+    float transformY = transform[1];
+    float transformZ = transform[2];
+    
+    // Compute negated transform components for offset calculations
+    float negTransformX = -transformX;
+    float negTransformY = -transformY;
+    float negTransformZ = -transformZ;
+    
+    // Transform point 0 (offset +0)
+    m_point0X += negTransformX;
+    m_point0Y += negTransformY;
+    m_point0Z += transformZ;
+    
+    // Transform point 1 (offset +16)
+    m_point1X += transformX;
+    m_point1Y += negTransformY;
+    m_point1Z += transformZ;
+    
+    // Transform point 2 (offset +32)
+    m_point2X += negTransformX;
+    m_point2Y += transformY;
+    m_point2Z += transformZ;
+    
+    // Transform point 3 (offset +48)
+    m_point3X += transformX;
+    m_point3Y += transformY;
+    m_point3Z += transformZ;
+    
+    // Transform point 4 (offset +64)
+    m_point4X += negTransformX;
+    m_point4Y += negTransformY;
+    m_point4Z += -transformZ;
+    
+    // Transform point 5 (offset +80)
+    m_point5X += transformX;
+    m_point5Y += negTransformY;
+    m_point5Z += -transformZ;
+    
+    // Transform point 6 (offset +96)
+    m_point6X += negTransformX;
+    m_point6Y += transformY;
+    m_point6Z += -transformZ;
+    
+    // Transform point 7 (offset +112)
+    m_point7X += transformX;
+    m_point7Y += transformY;
+    m_point7Z += -transformZ;
+}
