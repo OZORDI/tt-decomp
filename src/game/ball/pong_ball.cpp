@@ -194,3 +194,185 @@ void gmBallRobot::DestructorThunk(gmBallRobot* ptr) {
     gmBallRobot* adjusted = reinterpret_cast<gmBallRobot*>(reinterpret_cast<uint8_t*>(ptr) - 4u);
     adjusted->~gmBallRobot();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance vtable implementations
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * pongBallInstance::~pongBallInstance() @ 0x8227F990 | size: 0x98
+ *
+ * Destructor for ball instance.
+ * Cleans up owned audio object and releases singleton resources.
+ */
+pongBallInstance::~pongBallInstance() {
+    // Set primary and secondary vtable pointers
+    constexpr uintptr_t kBallInstanceVtable1 = 0x8205700Cu;
+    constexpr uintptr_t kBallInstanceVtable2 = 0x82057094u;
+    
+    vtable = reinterpret_cast<void**>(kBallInstanceVtable1);
+    
+    // Clean up audio object at offset +88
+    void* audioObj = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(this) + 88);
+    if (audioObj != nullptr) {
+        void** audioVtable = *reinterpret_cast<void***>(audioObj);
+        void (*destructor)(void*, int) = reinterpret_cast<void (*)(void*, int)>(audioVtable[0]);
+        destructor(audioObj, 1);
+    }
+    
+    // Set secondary vtable pointer at offset +80
+    constexpr uintptr_t kUtilVtable = 0x82027B34u;
+    *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(this) + 80) = reinterpret_cast<void*>(kUtilVtable);
+    
+    // Call utility cleanup function
+    extern void util_8FD0(void* obj);
+    util_8FD0(this);
+}
+
+/**
+ * pongBallInstance::vfn_2() @ 0x82280028 | size: 0x8
+ *
+ * Returns pointer to embedded data structure at offset +96.
+ * Likely returns a pointer to transform or physics data.
+ */
+void* pongBallInstance::vfn_2() {
+    return reinterpret_cast<uint8_t*>(this) + 96;
+}
+
+/**
+ * pongBallInstance::vfn_3() @ 0x82280030 | size: 0x40
+ *
+ * Copies 64 bytes (4 x 16-byte vectors) from source to offset +96.
+ * Likely copies transform matrix or physics state.
+ */
+void pongBallInstance::vfn_3(const void* sourceData) {
+    uint8_t* dest = reinterpret_cast<uint8_t*>(this) + 96;
+    const uint8_t* src = reinterpret_cast<const uint8_t*>(sourceData);
+    
+    // Copy 4 x 16-byte vectors (64 bytes total)
+    for (int i = 0; i < 4; ++i) {
+        memcpy(dest + (i * 16), src + (i * 16), 16);
+    }
+}
+
+/**
+ * pongBallInstance::vfn_4() @ 0x8227FF38 | size: 0x78
+ *
+ * Gets ball position vector from game state.
+ * Returns position from circular buffer based on frame counter.
+ */
+void pongBallInstance::vfn_4(void* outPosition) {
+    extern void* g_game_state_ptr;  // @ 0x8271A2F8
+    
+    auto* gameState = reinterpret_cast<uint8_t*>(g_game_state_ptr);
+    if (gameState == nullptr) {
+        // Zero out the output position
+        memset(outPosition, 0, 16);
+        return;
+    }
+    
+    auto* coreState = *reinterpret_cast<uint8_t**>(gameState + 20);
+    int32_t frameCount = *reinterpret_cast<int32_t*>(coreState + 9640);
+    
+    if (frameCount <= 0) {
+        memset(outPosition, 0, 16);
+        return;
+    }
+    
+    // Calculate circular buffer index: (frameCount + 1) % 120
+    // Using fast modulo: (frameCount + 1) - ((frameCount + 1) / 120) * 120
+    int32_t index = (frameCount + 1) % 120;
+    int32_t offset = index * 80;  // 80 bytes per entry
+    
+    uint8_t* bufferBase = coreState + 32;
+    uint8_t* entry = bufferBase + offset + 32;  // +32 for position offset within entry
+    
+    memcpy(outPosition, entry, 16);
+}
+
+/**
+ * pongBallInstance::vfn_5() @ 0x8227FFB0 | size: 0x78
+ *
+ * Gets ball velocity vector from game state.
+ * Returns velocity from circular buffer based on frame counter.
+ */
+void pongBallInstance::vfn_5(void* outVelocity) {
+    extern void* g_game_state_ptr;  // @ 0x8271A2F8
+    
+    auto* gameState = reinterpret_cast<uint8_t*>(g_game_state_ptr);
+    if (gameState == nullptr) {
+        memset(outVelocity, 0, 16);
+        return;
+    }
+    
+    auto* coreState = *reinterpret_cast<uint8_t**>(gameState + 20);
+    int32_t frameCount = *reinterpret_cast<int32_t*>(coreState + 9640);
+    
+    if (frameCount <= 0) {
+        memset(outVelocity, 0, 16);
+        return;
+    }
+    
+    // Calculate circular buffer index
+    int32_t index = (frameCount + 1) % 120;
+    int32_t offset = index * 80;
+    
+    uint8_t* bufferBase = coreState + 32;
+    uint8_t* entry = bufferBase + offset + 48;  // +48 for velocity offset within entry
+    
+    memcpy(outVelocity, entry, 16);
+}
+
+/**
+ * pongBallInstance::OnEnter() @ 0x822C90D0 | size: 0x10
+ *
+ * State machine entry callback.
+ * Calls virtual function at slot 16 (likely OnEnterState).
+ */
+void pongBallInstance::OnEnter() {
+    void** vtable = *reinterpret_cast<void***>(this);
+    void (*callback)(pongBallInstance*) = reinterpret_cast<void (*)(pongBallInstance*)>(vtable[16]);
+    callback(this);
+}
+
+/**
+ * pongBallInstance::vfn_24() @ 0x8227FA48 | size: 0x364
+ *
+ * Complex ball collision/interaction handler.
+ * Handles ball-player collisions, activation, and event triggering.
+ * 
+ * This is a large function that processes ball physics interactions.
+ * TODO: Full implementation requires understanding game state structure.
+ */
+void pongBallInstance::vfn_24(void* gameState) {
+    // Stub implementation - function is very complex
+    // Full implementation requires detailed analysis of:
+    // - Ball collision detection
+    // - Player interaction logic
+    // - Event system integration
+    // - Physics state updates
+    
+    // TODO: Implement full collision handling logic
+}
+
+/**
+ * pongBallInstance::vfn_30() @ 0x8227FA28 | size: 0x20
+ *
+ * Validates parameters for ball operation.
+ * Returns 0 if any required parameter is missing.
+ */
+int pongBallInstance::vfn_30(int param1, int param2, int param3) {
+    // Check if param1 is zero
+    if (param1 == 0) {
+        // If param2 is non-zero, return 0
+        if (param2 != 0) {
+            return 0;
+        }
+        // If param3 is zero, return early
+        if (param3 == 0) {
+            return 0;
+        }
+    }
+    
+    return 0;
+}
