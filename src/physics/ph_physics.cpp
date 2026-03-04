@@ -620,3 +620,317 @@ int rage::phBoundOTGrid::WorldPositionToGridIndex(const float* position) {
     return gridIndex;
 }
 
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Batch Implementation (10 functions)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External function declarations (helper functions)
+extern float phBoundCapsule_01D0_g(float value);  // sqrt wrapper
+extern float phBoundCapsule_01D8_g(float value);  // trigonometric function
+extern float phBoundCapsule_0FE0_g(float f1, float f2);  // capsule calculation
+extern float phBoundCapsule_02B0_g(float value);  // normalization function
+extern float atSingleton_1308_g(float value, double param);  // singleton math helper
+
+// External constants
+extern const float g_floatZero;      // @ 0x8202D110
+extern const float g_floatOne;       // @ 0x8202D108
+extern const float g_capsuleRadius;  // @ 0x82079B30
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_0550_g @ 0x820D0550 | size: 0x50
+//
+// Conditional capsule calculation wrapper. If both f2 and f1 are zero,
+// returns zero. Otherwise calls the main capsule calculation function.
+// ─────────────────────────────────────────────────────────────────────────────
+float phBoundCapsule_0550_g(float f1, float f2) {
+    if (f2 == g_floatZero) {
+        if (f1 != g_floatZero) {
+            return phBoundCapsule_0FE0_g(f1, f2);
+        }
+        return g_floatZero;
+    }
+    return phBoundCapsule_0FE0_g(f1, f2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_B6A0_g @ 0x820CB6A0 | size: 0x50
+//
+// Applies a clamped trigonometric transformation to an input value.
+// If the value is outside the valid range [minThreshold, maxThreshold],
+// it's clamped. Otherwise, it's scaled and passed through a trig function.
+// ─────────────────────────────────────────────────────────────────────────────
+float phBoundCapsule_B6A0_g(float inputValue) {
+    // Load threshold constants from global data
+    const float minThreshold = *(float*)0x8202D010;  // offset +288 from base
+    const float maxThreshold = *(float*)0x8202D008;  // offset +280 from base
+    const float scaleFactor = *(float*)0x8202CFF0;   // offset +0 from base
+    
+    if (inputValue <= minThreshold) {
+        return minThreshold;
+    }
+    
+    if (inputValue >= maxThreshold) {
+        return maxThreshold;
+    }
+    
+    // Apply scaling and trigonometric transformation
+    float scaledValue = inputValue * scaleFactor;
+    return phBoundCapsule_01D8_g(scaledValue);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_B598_g @ 0x820CB598 | size: 0x58
+//
+// Returns a capsule property based on flags at offset +64.
+// Checks bit 1 (0x02) and bit 4 (0x10) to determine which value to return.
+// ─────────────────────────────────────────────────────────────────────────────
+float phBoundCapsule_B598_g(void* capsule) {
+    uint8_t* obj = (uint8_t*)capsule;
+    uint8_t flags = obj[64];
+    
+    // Check bit 1 (0x02)
+    if (flags & 0x02) {
+        return g_floatOne;
+    }
+    
+    // Check bit 4 (0x10)
+    if (flags & 0x10) {
+        return g_floatOne;
+    }
+    
+    // Return field at offset +28
+    return *(float*)(obj + 28);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_04F0_g @ 0x820D04F0 | size: 0x60
+//
+// Computes two related capsule properties and stores them in output pointers.
+// Normalizes the first input, then applies a trigonometric transformation
+// to the second input.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_04F0_g(float* outNormalized, float* outTransformed, float input1, float input2) {
+    float normalized = phBoundCapsule_02B0_g(input1);
+    *outNormalized = normalized;
+    
+    float transformed = phBoundCapsule_01D8_g(input2);
+    *outTransformed = transformed;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_3F10_g @ 0x820C3F10 | size: 0x84
+//
+// Initializes a capsule structure with computed geometry values.
+// Sets up a vertical capsule aligned along the Y axis.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_3F10_g(void* capsule, float height, float radius) {
+    uint8_t* obj = (uint8_t*)capsule;
+    
+    float normalizedHeight = phBoundCapsule_02B0_g(height);
+    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    
+    const float negOne = *(float*)0x8202D108;  // -1.0f
+    const float zero = *(float*)0x8202D110;    // 0.0f
+    
+    // Initialize capsule geometry
+    *(float*)(obj + 0) = negOne;              // Start cap X
+    *(float*)(obj + 4) = zero;                // Start cap Y
+    *(float*)(obj + 8) = zero;                // Start cap Z
+    *(float*)(obj + 16) = zero;               // Direction X
+    *(float*)(obj + 20) = normalizedHeight;   // Direction Y (height)
+    *(float*)(obj + 24) = -transformedRadius; // End cap offset
+    *(float*)(obj + 32) = zero;               // Padding
+    *(float*)(obj + 36) = -transformedRadius; // Radius (negated)
+    *(float*)(obj + 40) = normalizedHeight;   // Total height
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_3F98_g @ 0x820C3F98 | size: 0x84
+//
+// Initializes a capsule structure with computed geometry values.
+// Sets up a horizontal capsule aligned along the X axis.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_3F98_g(void* capsule, float length, float radius) {
+    uint8_t* obj = (uint8_t*)capsule;
+    
+    float normalizedLength = phBoundCapsule_02B0_g(length);
+    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    
+    const float one = *(float*)0x8202D100;   // 1.0f (offset +8 from base)
+    const float zero = *(float*)0x8202D0F8;  // 0.0f (offset +0 from base)
+    
+    // Initialize capsule geometry
+    *(float*)(obj + 0) = normalizedLength;    // Start cap X
+    *(float*)(obj + 4) = one;                 // Start cap Y
+    *(float*)(obj + 8) = -transformedRadius;  // Start cap Z (negated radius)
+    *(float*)(obj + 16) = one;                // Direction X
+    *(float*)(obj + 20) = zero;               // Direction Y
+    *(float*)(obj + 24) = one;                // Direction Z
+    *(float*)(obj + 32) = transformedRadius;  // End cap offset
+    *(float*)(obj + 36) = one;                // Padding
+    *(float*)(obj + 40) = normalizedLength;   // Total length
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_4020_g @ 0x820C4020 | size: 0x84
+//
+// Initializes a capsule structure with computed geometry values.
+// Sets up a capsule aligned along the Z axis.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_4020_g(void* capsule, float depth, float radius) {
+    uint8_t* obj = (uint8_t*)capsule;
+    
+    float normalizedDepth = phBoundCapsule_02B0_g(depth);
+    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    
+    const float one = *(float*)0x8202D100;   // 1.0f (offset +8 from base)
+    const float zero = *(float*)0x8202D0F8;  // 0.0f (offset +0 from base)
+    
+    // Initialize capsule geometry
+    *(float*)(obj + 0) = normalizedDepth;     // Start cap position
+    *(float*)(obj + 4) = transformedRadius;   // Radius
+    *(float*)(obj + 8) = one;                 // Direction component
+    *(float*)(obj + 16) = -transformedRadius; // End cap offset (negated)
+    *(float*)(obj + 20) = normalizedDepth;    // Total depth
+    *(float*)(obj + 24) = one;                // Padding
+    *(float*)(obj + 32) = one;                // Padding
+    *(float*)(obj + 36) = one;                // Padding
+    *(float*)(obj + 40) = zero;               // Padding
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_9CF8_g @ 0x820C9CF8 | size: 0xA0
+//
+// Adjusts capsule position based on a 2D offset vector and interpolation factors.
+// Computes the distance from the offset, normalizes it, and applies scaled
+// movement along the offset direction.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_9CF8_g(void* capsule, float* offsetVec, float scaleFactor, float lerpFactor) {
+    uint8_t* obj = (uint8_t*)capsule;
+    
+    // Load current capsule position
+    float currentX = *(float*)(obj + 0);
+    float currentY = *(float*)(obj + 4);
+    
+    // Load offset vector
+    float offsetX = offsetVec[0];
+    float offsetY = offsetVec[1];
+    
+    // Compute delta from current position to offset
+    float deltaX = offsetX - currentX;
+    float deltaY = offsetY - currentY;
+    
+    // Compute squared distance
+    float distSq = deltaX * deltaX + deltaY * deltaY;
+    
+    // Compute square root (distance)
+    float distance = phBoundCapsule_01D0_g(distSq);
+    
+    // Normalize and apply singleton transformation
+    const double normalizationFactor = *(double*)0x82079B30;
+    float normalizedDist = atSingleton_1308_g(distance, normalizationFactor);
+    
+    // Compute movement direction (normalized delta)
+    float dirX = normalizedDist * scaleFactor * deltaX;
+    float dirY = normalizedDist * scaleFactor * deltaY;
+    
+    // Apply lerped movement
+    float newX = currentX + dirX * lerpFactor;
+    float newY = currentY + dirY * lerpFactor;
+    
+    // Store updated position
+    *(float*)(obj + 0) = newX;
+    *(float*)(obj + 4) = newY;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_9730_fw @ 0x820D9730 | size: 0xB0
+//
+// Initializes a capsule from a template and applies transformations from
+// a source object. Copies 64 bytes of template data, then conditionally
+// applies a radius transformation based on flags.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_9730_fw(void* capsule, void* sourceObj) {
+    uint8_t* dest = (uint8_t*)capsule;
+    uint8_t* src = (uint8_t*)sourceObj;
+    
+    // Load template data address
+    const uint8_t* templateData = (const uint8_t*)0x825CB800;  // lbl_825CB800
+    
+    // Copy 64 bytes of template data (4 x 16-byte SIMD vectors)
+    for (int i = 0; i < 64; i += 16) {
+        // Copy 16 bytes at a time
+        for (int j = 0; j < 16; j++) {
+            dest[i + j] = templateData[i + j];
+        }
+    }
+    
+    // Get physics data pointer from source object
+    void* physicsData = *(void**)(src + 400);
+    const int32_t physicsOffset = *(int32_t*)0x82607A48;  // Global offset
+    uint8_t* physicsObj = (uint8_t*)physicsData + physicsOffset;
+    
+    // Check flags at offset +64
+    uint8_t flags = physicsObj[64];
+    
+    if (flags == 0) {
+        // Apply radius transformation
+        const float defaultRadius = *(float*)0x82079B30;  // g_capsuleRadius
+        phBoundCapsule_3F98_g(capsule, defaultRadius, 0.0f);
+    }
+    
+    // Copy transformation matrix from source object (offset +384, 16 bytes)
+    const uint8_t* transformMatrix = src + 384;
+    for (int i = 0; i < 16; i++) {
+        dest[48 + i] = transformMatrix[i];
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_F548_wrh @ 0x820DF548 | size: 0x80
+//
+// Extracts capsule geometry data from an array of capsule structures.
+// Searches for the first valid capsule (non-zero radius) and copies its
+// geometry parameters to output pointers.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_F548_wrh(void* container, int* outIndex, float* outX, float* outY, float* outZ, float* outRadius) {
+    uint8_t* obj = (uint8_t*)container;
+    
+    // Get capsule array pointer
+    void* capsuleArray = *(void**)(obj + 8);
+    uint8_t* capsules = (uint8_t*)capsuleArray;
+    
+    int index = *outIndex;
+    const float zero = *(float*)0x8202D110;  // g_floatZero
+    
+    // Search for first valid capsule (radius > 0)
+    while (true) {
+        // Each capsule is 104 bytes
+        uint8_t* currentCapsule = capsules + (index * 104);
+        float radius = *(float*)(currentCapsule + 40);
+        
+        if (radius >= zero) {
+            // Found valid capsule - extract geometry
+            *outX = *(float*)(currentCapsule + 36);
+            *outY = *(float*)(currentCapsule + 48);
+            *outZ = *(float*)(currentCapsule + 44);
+            *outRadius = radius;
+            *outIndex = index;
+            return;
+        }
+        
+        // Check if we've reached the last capsule (index 11)
+        if (index == 11) {
+            return;
+        }
+        
+        // Check next capsule
+        float nextRadius = *(float*)(capsules + 1184);  // Capsule 11's radius
+        if (nextRadius < zero) {
+            return;
+        }
+        
+        index = 11;
+    }
+}

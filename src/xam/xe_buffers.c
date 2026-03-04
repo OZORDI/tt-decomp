@@ -293,3 +293,357 @@ void xe_D5F8(void* structure, int32_t param) {
     float* destFloat = (float*)((uint8_t*)structure + offset3);
     *destFloat = floatValue;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_B958()  @ 0x820EB958 | size: 0x8C
+// Allocates and initializes a 24-byte pcrEmoteData structure
+// ─────────────────────────────────────────────────────────────────────────────
+extern uint32_t* g_float_one_ptr;  /* @ 0x8202D110 */
+
+void* xe_B958(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(24, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 24, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        
+        /* Store vtable pointer for pcrEmoteData @ 0x8202EB64 */
+        words[0] = 0x8202EB64;
+        
+        /* Initialize fields */
+        words[1] = 0;  /* +0x04 */
+        words[2] = 0;  /* +0x08 */
+        words[3] = 0;  /* +0x0C */
+        words[4] = 0;  /* +0x10 */
+        
+        /* Load float value from global (likely 1.0f) */
+        float* floatPtr = (float*)g_float_one_ptr;
+        float* objFloat = (float*)&words[5];
+        *objFloat = *floatPtr;  /* +0x14 */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_D100()  @ 0x820FD100 | size: 0x9C
+// Copies buffer data from source to destination (4-byte elements)
+// ─────────────────────────────────────────────────────────────────────────────
+void xe_D100(XeBuffer* dest, const XeBuffer* src) {
+    uint16_t capacity = src->count;
+    
+    /* Copy capacity to both fields */
+    dest->count = capacity;
+    dest->capacity = capacity;
+    
+    /* Allocate destination buffer if capacity > 0 */
+    if (capacity != 0) {
+        uint32_t allocSize = capacity * 4;
+        dest->data = xe_EC88(allocSize);
+    } else {
+        dest->data = NULL;
+    }
+    
+    /* Copy data if both buffers are valid */
+    if (dest->count != 0 && dest->data != NULL && src->data != NULL) {
+        uint32_t* srcData = (uint32_t*)src->data;
+        uint32_t* destData = (uint32_t*)dest->data;
+        
+        for (uint16_t i = 0; i < capacity; i++) {
+            destData[i] = srcData[i];
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_1E48()  @ 0x82101E48 | size: 0xA0
+// Allocates and initializes a 32-byte game logic structure
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_1E48(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(32, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 32, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        
+        /* Calculate addresses for initialization */
+        /* lis r11,-32254 + addi r10,r11,31540 = 0x82017B34 */
+        uint32_t addr1 = 0x82017B34;
+        /* lis r11,-32253 + addi r9,r11,340 = 0x82020154 */
+        uint32_t addr2 = 0x82020154;
+        /* lis r11,-32253 + addi r8,r11,476 = 0x820201DC */
+        uint32_t addr3 = 0x820201DC;
+        
+        /* Initialize structure fields */
+        words[0] = addr2;  /* vtable or function pointer @ +0x00 */
+        words[1] = 0;      /* +0x04 */
+        words[2] = 0;      /* +0x08 */
+        words[3] = 0;      /* +0x0C */
+        words[4] = addr3;  /* overwrite addr1 with addr3 @ +0x10 */
+        words[5] = 0;      /* +0x14 */
+        words[6] = 0;      /* +0x18 */
+        words[7] = 0;      /* +0x1C */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_3508()  @ 0x820F3508 | size: 0xBC
+// Allocates buffer with capacity check and zero-initialization
+// ─────────────────────────────────────────────────────────────────────────────
+void xe_3508(XeBuffer* buffer, uint16_t capacity) {
+    void* data = NULL;
+    
+    if (capacity != 0) {
+        /* Check for overflow: capacity > 0x3FFFFFFF */
+        uint32_t allocSize;
+        if (capacity > 0x3FFFFFFF) {
+            allocSize = 0xFFFFFFFF;  /* Overflow - use max size */
+        } else {
+            allocSize = capacity * 4;
+            /* Additional safety check: ensure allocSize + 4 doesn't overflow */
+            if (allocSize > 0xFFFFFFFB) {
+                allocSize = 0xFFFFFFFF;
+            } else {
+                allocSize += 4;  /* Add 4 bytes for header */
+            }
+        }
+        
+        data = xe_EC88(allocSize);
+        
+        if (data != NULL) {
+            uint32_t* header = (uint32_t*)data;
+            uint32_t* elements = header + 1;  /* Skip 4-byte header */
+            
+            /* Store capacity in header */
+            *header = capacity;
+            
+            /* Zero-initialize all elements */
+            for (uint16_t i = 0; i < capacity; i++) {
+                elements[i] = 0;
+            }
+            
+            /* Return pointer to elements (after header) */
+            data = elements;
+        }
+    }
+    
+    buffer->data = data;
+    buffer->capacity = capacity;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_73E0()  @ 0x820E73E0 | size: 0xD8
+// Allocates buffer for 16-byte elements with float initialization
+// ─────────────────────────────────────────────────────────────────────────────
+extern float g_float_zero;  /* @ 0x8202D108 */
+
+void xe_73E0(XeBuffer* buffer, uint16_t newCapacity) {
+    if (buffer->capacity == 0) {
+        /* First allocation */
+        buffer->capacity = newCapacity;
+        
+        if (newCapacity != 0) {
+            /* Check for overflow: capacity > 0x0FFFFFFF (max for 16-byte elements) */
+            uint32_t allocSize;
+            if (newCapacity > 0x0FFFFFFF) {
+                allocSize = 0xFFFFFFFF;  /* Overflow */
+            } else {
+                allocSize = newCapacity * 16;
+                /* Safety check for allocSize + 4 */
+                if (allocSize > 0xFFFFFFFB) {
+                    allocSize = 0xFFFFFFFF;
+                } else {
+                    allocSize += 4;  /* Add header */
+                }
+            }
+            
+            void* data = xe_EC88(allocSize);
+            
+            if (data != NULL) {
+                uint32_t* header = (uint32_t*)data;
+                uint8_t* elements = (uint8_t*)(header + 1);
+                
+                /* Store capacity in header */
+                *header = newCapacity;
+                
+                /* Initialize each 16-byte element */
+                for (uint16_t i = 0; i < newCapacity; i++) {
+                    uint32_t* elem = (uint32_t*)(elements + (i * 16));
+                    float* floatElem = (float*)(elements + (i * 16));
+                    
+                    elem[0] = 0;  /* +0x00 */
+                    elem[1] = 0;  /* +0x04 */
+                    elem[2] = 0;  /* +0x08 */
+                    floatElem[3] = g_float_zero;  /* +0x0C - float value */
+                }
+                
+                buffer->data = elements;
+            } else {
+                buffer->data = NULL;
+            }
+        } else {
+            buffer->data = NULL;
+        }
+    }
+    
+    /* Update current count */
+    buffer->count = newCapacity;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_D6F8()  @ 0x820FD6F8 | size: 0xFC
+// Allocates large buffer (100KB+) for game state management
+// ─────────────────────────────────────────────────────────────────────────────
+extern uint32_t* g_large_buffer_ptr;  /* @ 0x8260637C */
+
+void* xe_D6F8(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Allocate 100KB + 32 bytes (0x1 << 16 | 35296 = 101,920 bytes) */
+    uint32_t allocSize = 101920;
+    
+    /* Get allocator vtable and call Allocate(size, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* buffer = allocFunc(allocator, allocSize, 16);
+    
+    if (buffer != NULL) {
+        uint32_t* words = (uint32_t*)buffer;
+        
+        /* Zero-initialize first 12 bytes */
+        words[0] = 0;  /* +0x00 */
+        words[1] = 0;  /* +0x04 */
+        words[2] = 0;  /* +0x08 */
+        words[38] = 0; /* +0x98 (152) */
+        
+        /* Zero-initialize 16 words starting at offset 156 */
+        for (int i = 0; i < 16; i++) {
+            words[39 + i] = 0;  /* +0x9C to +0xDB */
+        }
+        
+        /* Initialize flags at specific offsets */
+        uint8_t* bytes = (uint8_t*)buffer;
+        bytes[0x10100] = 0;  /* +100,256 */
+        bytes[0x10101] = 0;  /* +100,257 */
+        
+        /* Check global flag to determine initialization */
+        extern uint32_t* g_system_flags;  /* @ 0x821DA170 */
+        uint32_t flagValue = g_system_flags[1];
+        
+        if (flagValue != 0) {
+            bytes[144] = 0;  /* +0x90 */
+        } else {
+            bytes[144] = 1;  /* +0x90 */
+        }
+        
+        /* Set remaining flags */
+        bytes[145] = 1;  /* +0x91 */
+        bytes[146] = 1;  /* +0x92 */
+        bytes[147] = 1;  /* +0x93 */
+        bytes[148] = 1;  /* +0x94 */
+        
+        /* Store buffer pointer in global */
+        g_large_buffer_ptr = (uint32_t*)buffer;
+        
+        return buffer;
+    }
+    
+    /* Clear global pointer on failure */
+    g_large_buffer_ptr = NULL;
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_0780()  @ 0x820F0780 | size: 0x108
+// Allocates buffer for 56-byte elements with complex initialization
+// ─────────────────────────────────────────────────────────────────────────────
+extern float g_float_values[3];  /* @ 0x8202D1A8, 0x8202D1A0, 0x8202D238 */
+
+void xe_0780(XeBuffer* buffer, uint16_t capacity) {
+    void* data = NULL;
+    
+    if (capacity != 0) {
+        /* Check for overflow: capacity > 0x049249 (max for 56-byte elements) */
+        uint32_t allocSize;
+        if (capacity > 0x049249) {
+            allocSize = 0xFFFFFFFF;  /* Overflow */
+        } else {
+            allocSize = capacity * 56;
+            if (allocSize > 0xFFFFFFFB) {
+                allocSize = 0xFFFFFFFF;
+            } else {
+                allocSize += 4;  /* Add header */
+            }
+        }
+        
+        data = xe_EC88(allocSize);
+        
+        if (data != NULL) {
+            uint32_t* header = (uint32_t*)data;
+            uint8_t* elements = (uint8_t*)(header + 1);
+            
+            /* Store capacity in header */
+            *header = capacity;
+            
+            /* Initialize each 56-byte element */
+            for (uint16_t i = 0; i < capacity; i++) {
+                uint32_t* elem = (uint32_t*)(elements + (i * 56));
+                float* floatElem = (float*)(elements + (i * 56));
+                
+                /* Zero-initialize first 32 bytes */
+                elem[0] = 0;  /* +0x00 */
+                elem[1] = 0;  /* +0x04 */
+                elem[2] = 1;  /* +0x08 - set to 1 */
+                elem[3] = 0x8202F5A8;  /* +0x0C - pointer/address */
+                elem[4] = 0;  /* +0x10 */
+                elem[5] = 0;  /* +0x14 */
+                elem[6] = 0;  /* +0x18 */
+                elem[7] = 0;  /* +0x1C */
+                elem[8] = 0;  /* +0x20 */
+                
+                /* Initialize float values */
+                floatElem[9] = g_float_values[0];   /* +0x24 */
+                floatElem[10] = g_float_values[1];  /* +0x28 */
+                floatElem[11] = g_float_values[2];  /* +0x2C */
+                
+                /* Final fields */
+                elem[12] = 1;  /* +0x30 - set to 1 */
+                elem[13] = 0;  /* +0x34 */
+            }
+            
+            data = elements;
+        }
+    }
+    
+    buffer->data = data;
+    buffer->capacity = capacity;
+}
