@@ -2632,3 +2632,362 @@ const char* DataSendMessage::GetTypeName()
 {
     return g_szDataSendTypeName;  // @ 0x8206EA88
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SinglesNetworkClient — Batch Implementation (10 utility functions)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// External references for network DLL functions
+extern "C" {
+    void NetDll_sendto(int socket, const void* buffer, int length, int flags, 
+                       const void* dest_addr, int addrlen);
+    void NetDll_recvfrom(int socket, void* buffer, int length, int flags,
+                         void* src_addr, int* addrlen);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetGPURegister7 @ 0x82329E68 | size: 0x20
+//
+// Sets GPU register value to 7 and triggers an EIEIO barrier.
+// This appears to be a graphics hardware initialization function that writes
+// to specific GPU control registers.
+//
+// Register addresses (Python-verified):
+//   lis 32712 = 0x7FC80000 (GPU register base)
+//   +12820 = 0x32 14 (control register 1)
+//   +13320 = 0x34 08 (control register 2)
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::SetGPURegister7()
+{
+    // GPU register base address
+    volatile uint32_t* gpuBase = reinterpret_cast<volatile uint32_t*>(0x7FC80000);
+    
+    // Write value 7 to control register 1
+    gpuBase[12820 / 4] = 7;
+    
+    // EIEIO barrier - enforce in-order execution of I/O operations
+    __asm__ volatile("eieio");
+    
+    // Write value 2048 to control register 2
+    gpuBase[13320 / 4] = 2048;
+    
+    // EIEIO barrier
+    __asm__ volatile("eieio");
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendToSocket @ 0x82585BF8 | size: 0x20
+//
+// Wrapper for NetDll_sendto that shifts all parameters and sets socket to 1.
+// This is a thunk function that adapts the calling convention for the network
+// DLL's sendto function.
+//
+// Parameters are shifted: r3→r4, r4→r5, r5→r6, r6→r7, r7→r8, r8→r9
+// Socket parameter (r3) is hardcoded to 1.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::SendToSocket(const void* buffer, int length, int flags,
+                                        const void* destAddr, int addrlen, int extraParam)
+{
+    // Call NetDll_sendto with socket=1 and shifted parameters
+    NetDll_sendto(1, buffer, length, flags, destAddr, addrlen);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReceiveFromSocket @ 0x82585BF8 | size: 0x20
+//
+// Wrapper for NetDll_recvfrom that shifts all parameters and sets socket to 1.
+// Mirror of SendToSocket for receiving data from the network.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::ReceiveFromSocket(void* buffer, int length, int flags,
+                                             void* srcAddr, int* addrlen, int extraParam)
+{
+    // Call NetDll_recvfrom with socket=1 and shifted parameters
+    NetDll_recvfrom(1, buffer, length, flags, srcAddr, addrlen);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CompareFlags @ 0x82329E68 | size: 0x28
+//
+// Compares the flags field (+4) of two SinglesNetworkClient objects.
+// Returns -1 if this < other, 0 if equal, 1 if this > other.
+//
+// This is used for sorting or ordering network clients in priority queues.
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient::CompareFlags(const SinglesNetworkClient* other) const
+{
+    uint32_t thisFlags = field_0x0004;
+    uint32_t otherFlags = other->field_0x0004;
+    
+    if (thisFlags == otherFlags) {
+        return 0;
+    }
+    
+    return (thisFlags < otherFlags) ? -1 : 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::MemCopyAligned @ 0x82434520 | size: 0x28
+//
+// Optimized memory copy function that handles alignment and uses word-sized
+// copies when possible. This is a performance-critical function for network
+// packet handling.
+//
+// Algorithm:
+// 1. Copy bytes until destination is 4-byte aligned
+// 2. Copy 4-byte words for the bulk of the data
+// 3. Copy remaining bytes
+//
+// Parameters:
+//   dest - Destination buffer
+//   src - Source buffer
+//   size - Number of bytes to copy (size+1 actual bytes copied)
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::MemCopyAligned(void* dest, const void* src, int size)
+{
+    uint8_t* dst = static_cast<uint8_t*>(dest);
+    const uint8_t* source = static_cast<const uint8_t*>(src);
+    int remaining = size + 1;
+    
+    // Phase 1: Copy bytes until destination is 4-byte aligned
+    while (remaining > 0 && (reinterpret_cast<uintptr_t>(dst) & 3) != 0) {
+        *dst++ = *source++;
+        remaining--;
+    }
+    
+    // Phase 2: Copy 4-byte words
+    int wordCount = remaining >> 2;
+    if (wordCount > 0) {
+        // Check if source is also 4-byte aligned for fast path
+        if ((reinterpret_cast<uintptr_t>(source) & 3) == 0) {
+            // Fast path: both aligned, use word copies
+            uint32_t* dst32 = reinterpret_cast<uint32_t*>(dst);
+            const uint32_t* src32 = reinterpret_cast<const uint32_t*>(source);
+            
+            for (int i = 0; i < wordCount; i++) {
+                *dst32++ = *src32++;
+            }
+            
+            dst = reinterpret_cast<uint8_t*>(dst32);
+            source = reinterpret_cast<const uint8_t*>(src32);
+        } else {
+            // Slow path: source unaligned, assemble words from bytes
+            uint32_t* dst32 = reinterpret_cast<uint32_t*>(dst);
+            
+            for (int i = 0; i < wordCount; i++) {
+                uint32_t word = (static_cast<uint32_t>(source[0]) << 24) |
+                               (static_cast<uint32_t>(source[1]) << 16) |
+                               (static_cast<uint32_t>(source[2]) << 8) |
+                               static_cast<uint32_t>(source[3]);
+                *dst32++ = word;
+                source += 4;
+            }
+            
+            dst = reinterpret_cast<uint8_t*>(dst32);
+        }
+        
+        remaining &= 3;
+    }
+    
+    // Phase 3: Copy remaining bytes
+    while (remaining > 0) {
+        *dst++ = *source++;
+        remaining--;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitializeTimingState [vtable slot 9] @ 0x823941D0 | size: 0x28
+//
+// Initializes network timing state fields. Sets up timing flags and loads
+// initial timing value from the global game state object.
+//
+// Fields initialized:
+//   +4110: timing enabled flag (set to 1)
+//   +4111: timing active flag (set to 0)
+//   +4112: current timing value (loaded from global state)
+//
+// Global state accessed:
+//   Python-verified: lis(-32142) + (-23768) = 0x8271A328
+//   Timing value at globalState[4][332]
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::InitializeTimingState()
+{
+    // Load global game state object
+    extern void* g_pGameStatePtr;  // @ 0x8271A328
+    void* gameState = *(void**)&g_pGameStatePtr;
+    
+    // Get timing subsystem from game state
+    void* timingSubsystem = *(void**)((char*)gameState + 4);
+    
+    // Load current timing value (float at offset +332)
+    float currentTiming = *(float*)((char*)timingSubsystem + 332);
+    
+    // Initialize timing state fields
+    *(uint8_t*)((char*)this + 4110) = 1;              // Enable timing
+    *(uint8_t*)((char*)this + 4111) = 0;              // Not active yet
+    *(float*)((char*)this + 4112) = currentTiming;    // Store current time
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetTimingValue [vtable slot 14] @ 0x8239AFB0 | size: 0x30
+//
+// Returns a computed timing value based on the global game state.
+// Reads an integer counter from the game state, converts it to float,
+// and adds it to a base timing value.
+//
+// Computation:
+//   result = gameState[12][8] + float(gameState[12][4])
+//
+// This is used for network synchronization and latency compensation.
+// ─────────────────────────────────────────────────────────────────────────────
+float SinglesNetworkClient::GetTimingValue()
+{
+    // Load global game state object
+    extern void* g_pGameStatePtr;  // @ 0x8271A328
+    void* gameState = *(void**)&g_pGameStatePtr;
+    
+    // Get timing subsystem from game state
+    void* timingSubsystem = *(void**)((char*)gameState + 12);
+    
+    // Load base timing value (float at offset +8)
+    float baseTiming = *(float*)((char*)timingSubsystem + 8);
+    
+    // Load counter value (int32 at offset +4)
+    int32_t counter = *(int32_t*)((char*)timingSubsystem + 4);
+    
+    // Convert counter to float and add to base timing
+    float counterFloat = static_cast<float>(counter);
+    
+    return baseTiming + counterFloat;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ForwardToAtSingleton [vtable slot 17] @ 0x8239B000 | size: 0x30
+//
+// Forwards a call to the atSingleton object if the network state is 2 or 3.
+// This is a state-dependent dispatch function that routes certain operations
+// to the global singleton manager.
+//
+// State meanings:
+//   0, 1: Inactive - return without action
+//   2, 3: Active - forward to atSingleton
+//   other: Invalid - return without action
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::ForwardToAtSingleton(void* param1, void* param2)
+{
+    // Check network state at offset +28
+    int32_t state = *(int32_t*)((char*)this + 28);
+    
+    // Only forward if state is 2 or 3
+    if (state != 2 && state != 3) {
+        return;
+    }
+    
+    // Load global atSingleton object
+    extern void* g_pAtSingletonPtr;  // @ 0x8271A328 (same base as game state)
+    void* atSingleton = *(void**)&g_pAtSingletonPtr;
+    
+    // Forward call to atSingleton (vtable slot 1)
+    // Parameters: atSingleton, 0 (null), param1, param2
+    typedef void (*AtSingletonFunc)(void*, int, void*, void*);
+    void** vtable = *(void***)atSingleton;
+    AtSingletonFunc func = reinterpret_cast<AtSingletonFunc>(vtable[1]);
+    func(atSingleton, 0, param1, param2);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CleanupAndCallVirtual [vtable slot 18] @ 0x8239B080 | size: 0x4C
+//
+// Cleans up internal state and calls a virtual function on a subsystem object.
+// This is part of the network client shutdown/cleanup sequence.
+//
+// Steps:
+// 1. Get global game state object
+// 2. Call virtual function (slot 1) on game state subsystem
+// 3. Call cleanup function on this+784
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::CleanupAndCallVirtual()
+{
+    // Load global game state object
+    extern void* g_pGameStatePtr;  // @ 0x8271A328
+    void* gameState = *(void**)&g_pGameStatePtr;
+    
+    // Get subsystem at offset +12
+    void* subsystem = *(void**)((char*)gameState + 12);
+    
+    // Call virtual function (slot 1) on subsystem
+    typedef void (*SubsystemFunc)(void*);
+    void** vtable = *(void***)subsystem;
+    SubsystemFunc func = reinterpret_cast<SubsystemFunc>(vtable[1]);
+    func(subsystem);
+    
+    // Call cleanup function on internal state at offset +784
+    extern void SinglesNetworkClient_2F28_g(void* state);
+    void* internalState = (char*)this + 784;
+    SinglesNetworkClient_2F28_g(internalState);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CallVirtualOnSubobject @ 0x8239DF58 | size: 0x28
+//
+// Calls a virtual function (slot 19) on a subobject if it exists.
+// Returns the result of the virtual call, or 0 if the subobject is null.
+//
+// This is a safe virtual dispatch wrapper that checks for null before calling.
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient::CallVirtualOnSubobject()
+{
+    // Load subobject pointer from offset +52
+    void* subobject = *(void**)((char*)this + 52);
+    
+    // If subobject is null, return 0
+    if (subobject == nullptr) {
+        return 0;
+    }
+    
+    // Call virtual function (slot 19) on subobject
+    typedef int (*SubobjectFunc)(void*);
+    void** vtable = *(void***)subobject;
+    SubobjectFunc func = reinterpret_cast<SubobjectFunc>(vtable[19]);
+    return func(subobject);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CheckNetworkInitialized @ 0x82391AB8 | size: 0x2C
+//
+// Checks if the network subsystem is initialized and calls a setup function
+// if it is. This is used during network client initialization to ensure
+// dependencies are ready.
+//
+// Returns early if the global network pointer is null.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::CheckNetworkInitialized()
+{
+    // Load global network base pointer
+    extern void* g_pNetworkBase;  // @ 0x8271A7B0
+    void* networkBase = *(void**)&g_pNetworkBase;
+    
+    // Check if network is initialized
+    bool isInitialized = (networkBase != nullptr);
+    
+    // If not initialized, return early
+    if (!isInitialized) {
+        return;
+    }
+    
+    // Network is initialized - call setup function
+    extern void SinglesNetworkClient_2FD8_g(void* client);
+    SinglesNetworkClient_2FD8_g(this);
+}
