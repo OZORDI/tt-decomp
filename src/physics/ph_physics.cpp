@@ -538,7 +538,7 @@ bool phBoundOTGrid::IsCellValid(int cellIndex) {
 }  // namespace rage
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundOTGrid::RoundToNearestInt @ 0x82431910 | size: 0x3C
+// rage::phBoundOTGrid::RoundToNearestInt @ 0x82431910 | size: 0x3C
 //
 // Rounds a double-precision floating point value to the nearest integer,
 // handling edge cases and clamping. Uses PowerPC fsel-based rounding logic.
@@ -548,7 +548,7 @@ bool phBoundOTGrid::IsCellValid(int cellIndex) {
 //
 // Returns: Rounded value as a double
 // ─────────────────────────────────────────────────────────────────────────────
-double phBoundOTGrid::RoundToNearestInt(double value) {
+double rage::phBoundOTGrid::RoundToNearestInt(double value) {
     // Convert to int64 and back to get truncated value
     int64_t truncated = static_cast<int64_t>(value);
     double truncatedFloat = static_cast<double>(truncated);
@@ -571,7 +571,7 @@ double phBoundOTGrid::RoundToNearestInt(double value) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundOTGrid::WorldPositionToGridIndex @ 0x8229B418 | size: 0xC8
+// rage::phBoundOTGrid::WorldPositionToGridIndex @ 0x8229B418 | size: 0xC8
 //
 // Converts a 3D world-space position to a linear grid cell index within the
 // octree grid's spatial partitioning structure.
@@ -588,7 +588,7 @@ double phBoundOTGrid::RoundToNearestInt(double value) {
 //
 // Returns: Grid cell index (>= 0) if position is within bounds, -1 otherwise
 // ─────────────────────────────────────────────────────────────────────────────
-int phBoundOTGrid::WorldPositionToGridIndex(const float* position) {
+int rage::phBoundOTGrid::WorldPositionToGridIndex(const float* position) {
     // Load grid parameters
     float scaleFactor = m_gridScaleFactor;      // +116 (0x74)
     int32_t offsetY = m_gridOffsetY;            // +120 (0x78)
@@ -619,3 +619,4 @@ int phBoundOTGrid::WorldPositionToGridIndex(const float* position) {
     int32_t gridIndex = dimensionY * cellZ + cellX;
     return gridIndex;
 }
+
