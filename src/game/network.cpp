@@ -462,3 +462,420 @@ void SinglesNetworkClient_WriteBooleanFlag2(void* client, bool flag)
     // Restore field +32
     clientData[8] = savedField32;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CheckAnyPlayerSlotOccupied @ 0x821045D0 | size: 0x60
+//
+// Checks if any of the 5 player slots (0-4) are occupied.
+// Each slot is at offset 536 + (slotIndex * 15044).
+//
+// Returns:
+//   true if at least one slot is occupied, false if all slots are empty
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_CheckAnyPlayerSlotOccupied(void* client)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Check flag at offset 75772 (0x1287C = 1*65536 + 10220)
+    uint32_t globalFlag = clientData[75772 / 4];
+    if (globalFlag != 0) {
+        return true;
+    }
+    
+    // Check each of the 5 player slots
+    for (int slotIndex = 0; slotIndex <= 4; slotIndex++) {
+        uint32_t slotOffset = 536 + (slotIndex * 15044);
+        uint32_t slotValue = clientData[slotOffset / 4];
+        
+        if (slotValue != 0) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteUInt16WithBufferSize @ 0x821D9AD8 | size: 0x68
+//
+// Writes a 16-bit value to the network message, then writes the buffer size
+// divided by 8 as a 16-bit value.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value - 16-bit value to write
+//
+// Returns:
+//   The value that was written
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t SinglesNetworkClient_WriteUInt16WithBufferSize(void* client, uint16_t value)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Call pre-write helper
+    // SinglesNetworkClient_8AE0_g(client, base);
+    
+    // Write the 16-bit value
+    // SinglesNetworkClient_0688_g(client, value, 16);
+    
+    // Get buffer size from field +16
+    uint32_t bufferSize = clientData[4];
+    
+    // Call pre-write helper again
+    // SinglesNetworkClient_8AE0_g(client, base);
+    
+    // Save current field +32 value
+    uint32_t savedField32 = clientData[8];
+    
+    // Temporarily set field +32 to 32
+    clientData[8] = 32;
+    
+    // Write buffer size divided by 8 as 16-bit value
+    uint16_t bufferSizeDiv8 = (uint16_t)((bufferSize + 7) / 8);
+    // SinglesNetworkClient_0448_g(client, bufferSizeDiv8, 16);
+    
+    // Restore field +32
+    clientData[8] = savedField32;
+    
+    return value;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidatePlayerStates @ 0x8218A3E8 | size: 0x50
+//
+// Validates that both player state objects at offsets +116 and +120 have
+// their field at offset +472 set to non-zero. If validation fails, logs
+// an error message.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   0 if validation passes, undefined if validation fails
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient_ValidatePlayerStates(void* client)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Get player state 1 at offset +116
+    uint32_t* playerState1 = (uint32_t*)clientData[116 / 4];
+    if (playerState1 == nullptr || playerState1[472 / 4] == 0) {
+        return 0;
+    }
+    
+    // Get player state 2 at offset +120
+    uint32_t* playerState2 = (uint32_t*)clientData[120 / 4];
+    if (playerState2 == nullptr || playerState2[472 / 4] == 0) {
+        return 0;
+    }
+    
+    // Both states are invalid - log error
+    // External error string at 0x82037948
+    // nop_8240E6D0("error message");
+    
+    return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadVector3 @ 0x821D9B40 | size: 0x78
+//
+// Reads three 32-bit float values from the network message into a vector.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   outVector - Pointer to output array of 3 floats
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_ReadVector3(void* client, float* outVector)
+{
+    // Read first float (X component)
+    // SinglesNetworkClient_8DF8_g(client, &tempBuffer, 32);
+    // outVector[0] = tempBuffer;
+    
+    // Read second float (Y component)
+    // SinglesNetworkClient_8DF8_g(client, &tempBuffer, 32);
+    // outVector[1] = tempBuffer;
+    
+    // Read third float (Z component)
+    // SinglesNetworkClient_8DF8_g(client, &tempBuffer, 32);
+    // outVector[2] = tempBuffer;
+    
+    // Stub implementation
+    outVector[0] = 0.0f;
+    outVector[1] = 0.0f;
+    outVector[2] = 0.0f;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadUInt64 @ 0x822609F0 | size: 0x7C
+//
+// Reads a 64-bit unsigned integer from the network message by reading two
+// 32-bit values and combining them.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   outValue - Pointer to output 64-bit value
+//
+// Returns:
+//   true if read succeeded, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_ReadUInt64(void* client, uint64_t* outValue)
+{
+    uint32_t highWord = 0;
+    uint32_t lowWord = 0;
+    
+    // Read high 32 bits
+    // bool success1 = SinglesNetworkClient_8DF8_g(client, &highWord, 32);
+    bool success1 = false;
+    
+    if (!success1) {
+        *outValue = 0;
+        return false;
+    }
+    
+    // Read low 32 bits
+    // bool success2 = SinglesNetworkClient_8DF8_g(client, &lowWord, 32);
+    bool success2 = false;
+    
+    if (!success2) {
+        *outValue = 0;
+        return false;
+    }
+    
+    // Combine into 64-bit value (high word in upper 32 bits)
+    *outValue = ((uint64_t)highWord << 32) | lowWord;
+    return true;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadString @ 0x82260A70 | size: 0x7C
+//
+// Reads a null-terminated string from the network buffer.
+// Updates the bit position counter based on string length.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   outBuffer - Output buffer for the string
+//   maxLength - Maximum length to read (16 bits)
+//
+// Returns:
+//   Number of characters read (including null terminator)
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient_ReadString(void* client, char* outBuffer, int maxLength)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Save current bit position from field +28
+    uint32_t savedBitPos = clientData[7];
+    
+    // Read string data
+    // int bytesRead = util_0AF0(client, outBuffer, maxLength);
+    int bytesRead = 0;
+    
+    if (bytesRead > 0) {
+        // Null-terminate the string
+        outBuffer[bytesRead] = '\0';
+        
+        // Update bit position: add 8 bits per character
+        clientData[7] = savedBitPos + 8;
+        
+        // Count total characters including null terminator
+        int charCount = 1;
+        for (char* p = outBuffer; *p != '\0'; p++) {
+            charCount++;
+            clientData[7] += 8;
+        }
+        
+        return charCount;
+    }
+    
+    // Read failed - write null terminator
+    outBuffer[0] = '\0';
+    return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetPlayerSlotIndex @ 0x820CE380 | size: 0x6C
+//
+// Maps a player ID (stored at offset +120) to a slot index (0-4) by comparing
+// against player IDs stored at offsets +100, +104, +108, +112, +116.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   Slot index (0-4) if player ID matches, -1 if not found
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient_GetPlayerSlotIndex(void* client)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Get current player ID from offset +120
+    uint32_t currentPlayerId = clientData[120 / 4];
+    
+    // Check slot 0 at offset +100
+    if (currentPlayerId == clientData[100 / 4]) {
+        return 0;
+    }
+    
+    // Check slot 1 at offset +104
+    if (currentPlayerId == clientData[104 / 4]) {
+        return 1;
+    }
+    
+    // Check slot 2 at offset +108
+    if (currentPlayerId == clientData[108 / 4]) {
+        return 2;
+    }
+    
+    // Check slot 3 at offset +112
+    if (currentPlayerId == clientData[112 / 4]) {
+        return 3;
+    }
+    
+    // Check slot 4 at offset +116
+    if (currentPlayerId == clientData[116 / 4]) {
+        return 4;
+    }
+    
+    // Player ID not found in any slot
+    return -1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::AllocateNetworkEvent @ 0x82243DA0 | size: 0x80
+//
+// Allocates and initializes a network event object from a pool.
+// The event object is allocated at a calculated offset based on frame timing.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   outEventPtr - Pointer to receive the allocated event object pointer
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_AllocateNetworkEvent(void* client, void** outEventPtr)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Get timestamp from outEventPtr[0]
+    uint32_t* eventData = (uint32_t*)*outEventPtr;
+    uint32_t timestamp = eventData[0];
+    
+    if (timestamp == 0) {
+        return;
+    }
+    
+    // Calculate pool index based on timing
+    uint32_t baseTime = clientData[1];  // field +4
+    uint32_t frameInterval = clientData[76 / 4];  // field +76
+    uint32_t timeDelta = timestamp - baseTime;
+    uint32_t poolIndex = timeDelta / frameInterval;
+    
+    // Get event object from pool at calculated offset
+    uint32_t poolSlotOffset = (poolIndex + 2) * 4;
+    uint32_t* poolSlot = (uint32_t*)((char*)client + poolSlotOffset);
+    uint32_t* eventObject = (uint32_t*)(*poolSlot + timestamp);
+    
+    if (eventObject == nullptr) {
+        return;
+    }
+    
+    // Initialize event object
+    // Set vtable pointer (external vtable at calculated address)
+    // eventObject[0] = vtableAddress;
+    
+    // Initialize event fields
+    // ke_1B00(eventObject + 2);  // Initialize at offset +8
+    // SinglesNetworkClient_8108_gen(eventObject + 3);  // Initialize at offset +12
+    
+    *outEventPtr = eventObject + 2;  // Return pointer to offset +8
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteUInt64 @ 0x82260578 | size: 0x78
+//
+// Writes a 64-bit unsigned integer to the network message by writing two
+// 32-bit values (low word first, then high word).
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value - 64-bit value to write
+//
+// Returns:
+//   true if write succeeded, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_WriteUInt64(void* client, uint64_t value)
+{
+    // Extract low and high 32-bit words
+    uint32_t lowWord = (uint32_t)(value & 0xFFFFFFFF);
+    uint32_t highWord = (uint32_t)(value >> 32);
+    
+    // Write low 32 bits
+    // bool success1 = SinglesNetworkClient_0448_g(client, lowWord, 32);
+    bool success1 = false;
+    
+    if (!success1) {
+        return false;
+    }
+    
+    // Write high 32 bits
+    // bool success2 = SinglesNetworkClient_0448_g(client, highWord, 32);
+    bool success2 = false;
+    
+    return success2;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteBooleanFlag @ 0x820D6918 | size: 0x78
+//
+// Writes a boolean value as a 1-bit flag to the network message.
+// Also writes the buffer size divided by 8 as a 16-bit value.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   flag - Boolean value to write
+//
+// Returns:
+//   Result of the write operation
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t SinglesNetworkClient_WriteBooleanFlag(void* client, bool flag)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Call pre-write helper
+    // SinglesNetworkClient_8AE0_g(client, base);
+    
+    // Write boolean as 1-bit value
+    uint8_t bitValue = flag ? 1 : 0;
+    // uint8_t result = SinglesNetworkClient_0448_g(client, bitValue, 1);
+    uint8_t result = 0;
+    
+    // Get buffer size from field +16
+    uint32_t bufferSize = clientData[4];
+    
+    // Call pre-write helper again
+    // SinglesNetworkClient_8AE0_g(client, base);
+    
+    // Save current field +32 value
+    uint32_t savedField32 = clientData[8];
+    
+    // Temporarily set field +32 to 32
+    clientData[8] = 32;
+    
+    // Write buffer size divided by 8 as 16-bit value
+    uint16_t bufferSizeDiv8 = (uint16_t)((bufferSize + 7) / 8);
+    // SinglesNetworkClient_0448_g(client, bufferSizeDiv8, 16);
+    
+    // Restore field +32
+    clientData[8] = savedField32;
+    
+    return result;
+}
