@@ -876,10 +876,17 @@ struct phBoundGeometry {
 struct phBoundOTGrid {
     void**      vtable;           // +0x00
 
-    uint8_t     _pad0x04[140];
-    void*       m_pGridData;      // +0x90 (144) - Pointer to grid cell array
+    uint8_t     _pad0x04[112];
+    float       m_gridScaleFactor;    // +0x74 (116) - World-to-grid scale factor
+    int32_t     m_gridOffsetY;        // +0x78 (120) - Grid Y offset
+    uint8_t     _pad0x7c[4];
+    int32_t     m_gridDimensionY;     // +0x80 (128) - Grid Y dimension
+    int32_t     m_gridOffsetX;        // +0x84 (132) - Grid X offset
+    uint8_t     _pad0x88[4];
+    int32_t     m_gridDimensionX;     // +0x8C (140) - Grid X dimension
+    void*       m_pGridData;          // +0x90 (144) - Pointer to grid cell array
 
-    uint8_t     _pad0x94[15224];
+    uint8_t     _pad0x94[15144];
     void*       m_pGridMinX;      // +0x3BBC (15292) - Min X grid cell
     void*       m_pGridMinY;      // +0x3BC0 (15296) - Min Y grid cell
     void*       m_pGridMinZ;      // +0x3BC4 (15300) - Min Z grid cell
@@ -912,6 +919,10 @@ struct phBoundOTGrid {
                           void* gridMaxX, void* gridMaxY, void* gridMaxZ,
                           float minX, float minY, float minZ,
                           float maxX, float maxY, float maxZ);  // @ 0x82508098
+
+    // Grid coordinate conversion
+    double RoundToNearestInt(double value);                     // @ 0x82431910
+    int WorldPositionToGridIndex(const float* position);        // @ 0x8229B418
 
     // Collision detection helpers (called by SetupCollisionGrid)
     int CollideLineX(float minX, float maxX, float z);

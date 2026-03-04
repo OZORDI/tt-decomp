@@ -174,12 +174,26 @@ struct pongCameraMgr {
     virtual void vfn_25();  // [25] @ 0x82166068
     virtual void vfn_27();  // [27] @ 0x82166118
 
+    // ── virtual methods ──
+    virtual ~pongCameraMgr();                  // [0] @ 0x821658e0
+    virtual bool PostLoadProperties(uint32_t value);  // [20] @ 0x821657f8
+    virtual const char* PostLoadChildren();  // [22] @ 0x82165830
+    virtual void vfn_23();  // [23] @ 0x82165960
+    virtual void vfn_24();  // [24] @ 0x82165f30
+    virtual void vfn_25();  // [25] @ 0x82166068
+    virtual void vfn_27();  // [27] @ 0x82166118
+
     // ── non-virtual methods ──
     void ChangeCamera();
     void AdjustTimingForIndex(int index);  // @ 0x82173430
     bool TryTransition(void* gameState);   // @ 0x821F7338
     bool TryTransitionMode20(void* gameState);  // @ 0x821F6B78
     bool IsStateNine() const;              // @ 0x821F7F40
+    float GetAspectRatio() const;          // @ 0x82143E98
+    bool IsCameraStateZero() const;        // @ 0x821F7E28
+    bool IsCameraStateOne() const;         // @ 0x821F7E40
+    bool IsCameraStateTwo() const;         // @ 0x821F7E60
+    bool IsCameraStateThree() const;       // @ 0x821F7E80
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────
@@ -188,7 +202,7 @@ struct pongCameraState {
 
     // ── virtual methods ──
     virtual ~pongCameraState();                  // [0] @ 0x82167770
-};
+
 
 // ── pongCineCamMgr  [vtable @ 0x82036070] ──────────────────────────
 struct pongCineCamMgr {

@@ -1983,6 +1983,9 @@ struct pongNetMessageHolder {
     
     // ── non-virtual methods ──
     void InsertIntoList();  // @ 0x825821A8
+    void InitializeTimedGameUpdateArray();  // @ 0x823C6E30
+    void CleanupNestedArrays();  // @ 0x82135C70
+    void RemoveElementByPointer(void* targetPtr);  // @ 0x82134350
 };
 
 // ── pongNetMessageHolderBase  [vtable @ 0x8206FA88] ──────────────────────────

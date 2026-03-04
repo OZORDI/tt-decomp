@@ -201,3 +201,93 @@ bool pongCameraMgr::TryTransitionMode20(void* gameState) {
     // which extracts the low byte, then compares to 0)
     return result != 0;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::PostLoadChildren()  [vtable slot 22 @ 0x82165830]
+// Returns pointer to the string "bucket" - likely a debug/editor identifier
+// ─────────────────────────────────────────────────────────────────────────────
+const char* pongCameraMgr::PostLoadChildren() {
+    return "bucket";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::PostLoadProperties()  [vtable slot 20 @ 0x821657F8]
+// Checks if parameter matches one of two global values
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::PostLoadProperties(uint32_t value) {
+    extern uint32_t g_cameraProperty1;  // @ 0x825C8A40
+    extern uint32_t g_cameraProperty2;  // @ 0x825C93D0
+    
+    if (value == g_cameraProperty1) {
+        return true;
+    }
+    
+    return (value == g_cameraProperty2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::GetAspectRatio()  @ 0x82143E98
+// Calculates aspect ratio from camera dimensions
+// ─────────────────────────────────────────────────────────────────────────────
+float pongCameraMgr::GetAspectRatio() const {
+    extern float g_floatOne;  // @ 0x8202D108 + 8
+    
+    float verticalFOV = *(float*)((char*)this + 828);  // +0x33C
+    
+    // Check if vertical FOV is zero (using constant comparison)
+    if (verticalFOV == g_floatOne) {
+        float horizontalFOV = *(float*)((char*)this + 804);  // +0x324
+        
+        if (horizontalFOV != g_floatOne) {
+            // Calculate aspect ratio from viewport dimensions
+            int32_t viewportWidth = *(int32_t*)((char*)this + 816);   // +0x330
+            int32_t viewportHeight = *(int32_t*)((char*)this + 820);  // +0x334
+            float baseWidth = *(float*)((char*)this + 800);           // +0x320
+            
+            // aspect = (viewportWidth * baseWidth) / (viewportHeight * horizontalFOV)
+            float widthRatio = (float)viewportWidth * baseWidth;
+            float heightRatio = (float)viewportHeight * horizontalFOV;
+            return widthRatio / heightRatio;
+        }
+    }
+    
+    // Default to 1.0 if FOV is zero
+    extern float g_floatZero;  // @ 0x8202D108
+    return g_floatZero;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateZero()  @ 0x821F7E28
+// Checks if global camera state is zero (returns true if zero)
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateZero() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateOne()  @ 0x821F7E40
+// Checks if global camera state equals 1
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateOne() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateTwo()  @ 0x821F7E60
+// Checks if global camera state equals 2
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateTwo() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateThree()  @ 0x821F7E80
+// Checks if global camera state equals 3
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateThree() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 3);
+}

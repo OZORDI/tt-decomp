@@ -1892,3 +1892,193 @@ const char* TournamentCompleteMessage::GetTypeName()
     extern const char g_szTournamentCompleteTypeName[];  // @ 0x8206EC40
     return g_szTournamentCompleteTypeName;
 }
+
+// ===========================================================================
+// pongNetMessageHolder::InitializeTimedGameUpdateArray @ 0x823C6E30 | size: 0xFC
+//
+// Original symbol: pongNetMessageHolder_6E30_wrh
+//
+// Initializes an array of 10 TimedGameUpdateTimerMessage structures within
+// the message holder. Each structure is 16 bytes and contains vtable pointer,
+// float timing values, and index/state fields.
+//
+// This is used for managing periodic game state update messages sent during
+// online matches to keep clients synchronized.
+// ===========================================================================
+void pongNetMessageHolder::InitializeTimedGameUpdateArray()
+{
+    // Load constant float values from .rdata
+    extern const float g_floatZero;        // @ 0x82079AD4
+    extern const float g_floatNegOne;      // @ 0x8202D110
+    
+    // TimedGameUpdateTimerMessage vtable pointer
+    const uint32_t vtableAddr = 0x8206FB74;
+    
+    // Constants for array initialization
+    const uint16_t invalidIndex = 0xFFFF;
+    const uint16_t arraySize = 10;
+    const uint16_t zeroValue = 0;
+    
+    // Initialize 10 timer message structures, each 16 bytes
+    // Structure layout (per 16-byte element):
+    //   +0x00: vtable pointer
+    //   +0x04: float - timing value 1
+    //   +0x08: float - timing value 2
+    //   +0x0C: uint16 - previous index (0xFFFF = invalid)
+    //   +0x0E: uint16 - current index
+    
+    for (int i = 0; i < arraySize; i++) {
+        uint8_t* entryPtr = (uint8_t*)this + (i * 16);
+        
+        // Set vtable pointer
+        *(uint32_t*)(entryPtr + 0) = vtableAddr;
+        
+        // Initialize timing floats
+        *(float*)(entryPtr + 4) = g_floatZero;
+        *(float*)(entryPtr + 8) = g_floatNegOne;
+        
+        // Initialize index chain (forms linked list of timer slots)
+        *(uint16_t*)(entryPtr + 12) = invalidIndex;
+        *(uint16_t*)(entryPtr + 14) = (uint16_t)i;
+    }
+    
+    // Store array metadata at fixed offsets
+    *(uint16_t*)((uint8_t*)this + 158) = invalidIndex;  // Head of free list
+    *(uint16_t*)((uint8_t*)this + 160) = arraySize;     // Total capacity
+    *(uint16_t*)((uint8_t*)this + 162) = arraySize;     // Current count
+    *(uint16_t*)((uint8_t*)this + 164) = zeroValue;     // Active count
+    
+    // Initialize the linked list of available timer slots
+    // Each slot points to the next via offset +28 (relative to its base)
+    for (uint16_t idx = 0; idx < arraySize - 1; idx++) {
+        uint8_t* entryPtr = (uint8_t*)this + (idx * 16);
+        
+        // Link this slot to the next slot in the free list
+        *(uint16_t*)(entryPtr + 28) = zeroValue;        // State: free
+        *(uint16_t*)(entryPtr + 14) = idx + 1;          // Next index
+    }
+}
+
+// ===========================================================================
+// pongNetMessageHolder::CleanupNestedArrays @ 0x82135C70 | size: 0xE0
+//
+// Original symbol: pongNetMessageHolder_5C70_wrh
+//
+// Destructor helper that cleans up nested dynamically allocated arrays within
+// the message holder. This is called during destruction to free memory for
+// internal message buffers at offsets +8, +12, +16, and +80.
+//
+// The function walks through array elements, sets their vtables to a cleanup
+// vtable (crIKPart), then frees the memory.
+// ===========================================================================
+void pongNetMessageHolder::CleanupNestedArrays()
+{
+    const uint32_t cleanupVtable = 0x82033C04;  // crIKPart vtable for cleanup
+    
+    // Clean up first array at offset +8
+    void* array1 = *(void**)((uint8_t*)this + 8);
+    if (array1 != nullptr) {
+        // Set vtable for 2 elements (192 bytes total, 96 bytes each)
+        for (int i = 1; i >= 0; i--) {
+            uint8_t* element = (uint8_t*)array1 + (i * 96);
+            *(uint32_t*)element = cleanupVtable;
+        }
+        rage_free_00C0(array1);
+    }
+    
+    // Clean up second array at offset +12
+    void* array2 = *(void**)((uint8_t*)this + 12);
+    if (array2 != nullptr) {
+        // Set vtable for 2 elements (192 bytes total, 96 bytes each)
+        for (int i = 1; i >= 0; i--) {
+            uint8_t* element = (uint8_t*)array2 + (i * 96);
+            *(uint32_t*)element = cleanupVtable;
+        }
+        rage_free_00C0(array2);
+    }
+    
+    // Clean up array at offset +80
+    uint8_t* offset80 = (uint8_t*)this + 80;
+    *(uint32_t*)offset80 = 0x820336D4;  // Set intermediate vtable
+    
+    uint16_t count80 = *(uint16_t*)(offset80 + 14);
+    if (count80 > 0) {
+        void* buffer80 = *(void**)(offset80 + 8);
+        rage_free_00C0(buffer80);
+    }
+    *(uint32_t*)offset80 = cleanupVtable;
+    
+    // Clean up array at offset +16
+    uint8_t* offset16 = (uint8_t*)this + 16;
+    *(uint32_t*)offset16 = 0x820336B0;  // Set intermediate vtable
+    
+    uint16_t count16 = *(uint16_t*)(offset16 + 14);
+    if (count16 > 0) {
+        void* buffer16 = *(void**)(offset16 + 8);
+        rage_free_00C0(buffer16);
+    }
+    *(uint32_t*)offset16 = cleanupVtable;
+    
+    // Set final vtable
+    *(uint32_t*)this = 0x8203377C;
+}
+
+// ===========================================================================
+// pongNetMessageHolder::RemoveElementByPointer @ 0x82134350 | size: 0xB8
+//
+// Original symbol: pongNetMessageHolder_4350_wrh
+//
+// Removes an element from the holder's pointer array by comparing against
+// the provided pointer value. When found, frees the element's internal
+// buffers (at offsets +8 and +16), frees the element itself, then compacts
+// the array by shifting remaining elements down.
+//
+// Parameters:
+//   targetPtr - Pointer to the element to remove
+//
+// This is used to remove message handlers from the active handler list.
+// ===========================================================================
+void pongNetMessageHolder::RemoveElementByPointer(void* targetPtr)
+{
+    uint32_t elementCount = *(uint32_t*)((uint8_t*)this + 4);
+    if (elementCount == 0) {
+        return;
+    }
+    
+    void** arrayBase = *(void***)this;
+    
+    // Search for the target pointer in the array
+    uint32_t foundIndex = 0;
+    void** currentSlot = arrayBase;
+    
+    for (foundIndex = 0; foundIndex < elementCount; foundIndex++) {
+        if (*currentSlot == targetPtr) {
+            // Found the target - free its internal buffers
+            void* element = *currentSlot;
+            if (element != nullptr) {
+                // Free buffer at offset +8
+                void* buffer1 = *(void**)((uint8_t*)element + 8);
+                rage_free_00C0(buffer1);
+                
+                // Free buffer at offset +16
+                void* buffer2 = *(void**)((uint8_t*)element + 16);
+                rage_free_00C0(buffer2);
+                
+                // Free the element itself
+                rage_free_00C0(element);
+            }
+            
+            // Decrement count
+            elementCount--;
+            *(uint32_t*)((uint8_t*)this + 4) = elementCount;
+            
+            // Compact the array by shifting remaining elements down
+            for (uint32_t i = foundIndex; i < elementCount; i++) {
+                arrayBase[i] = arrayBase[i + 1];
+            }
+            
+            return;
+        }
+        currentSlot++;
+    }
+}

@@ -536,3 +536,86 @@ bool phBoundOTGrid::IsCellValid(int cellIndex) {
 }
 
 }  // namespace rage
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::RoundToNearestInt @ 0x82431910 | size: 0x3C
+//
+// Rounds a double-precision floating point value to the nearest integer,
+// handling edge cases and clamping. Uses PowerPC fsel-based rounding logic.
+//
+// This is a helper function used by grid coordinate conversion routines to
+// convert world-space positions to discrete grid cell indices.
+//
+// Returns: Rounded value as a double
+// ─────────────────────────────────────────────────────────────────────────────
+double phBoundOTGrid::RoundToNearestInt(double value) {
+    // Convert to int64 and back to get truncated value
+    int64_t truncated = static_cast<int64_t>(value);
+    double truncatedFloat = static_cast<double>(truncated);
+    
+    // Calculate the fractional part
+    double fraction = value - truncatedFloat;
+    
+    // Adjust for rounding: if fraction >= 0.5, round up; otherwise round down
+    double rounded = (fraction >= 0.0) ? truncatedFloat : (truncatedFloat - 1.0);
+    
+    // Handle edge cases using fsel-style logic
+    double absValue = (value >= 0.0) ? value : -value;
+    double result = (fraction >= 0.0) ? rounded : truncatedFloat;
+    
+    // Clamp to valid range
+    const double MAX_SAFE_INT = 9007199254740992.0;  // 2^53
+    result = (absValue <= MAX_SAFE_INT) ? result : value;
+    
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::WorldPositionToGridIndex @ 0x8229B418 | size: 0xC8
+//
+// Converts a 3D world-space position to a linear grid cell index within the
+// octree grid's spatial partitioning structure.
+//
+// The function:
+// 1. Scales the input position by the grid's scale factor
+// 2. Rounds to integer grid coordinates
+// 3. Subtracts grid offsets to get cell indices
+// 4. Validates that the cell is within grid bounds
+// 5. Computes linear index: index = dim_y * cell_z + cell_x
+//
+// Parameters:
+//   position - Pointer to 3-component float vector [x, y, z]
+//
+// Returns: Grid cell index (>= 0) if position is within bounds, -1 otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+int phBoundOTGrid::WorldPositionToGridIndex(const float* position) {
+    // Load grid parameters
+    float scaleFactor = m_gridScaleFactor;      // +116 (0x74)
+    int32_t offsetY = m_gridOffsetY;            // +120 (0x78)
+    int32_t dimensionY = m_gridDimensionY;      // +128 (0x80)
+    int32_t offsetX = m_gridOffsetX;            // +132 (0x84)
+    int32_t dimensionX = m_gridDimensionX;      // +140 (0x8C)
+    
+    // Scale and round Z coordinate
+    float scaledZ = position[2] * scaleFactor;
+    double roundedZ = RoundToNearestInt(static_cast<double>(scaledZ));
+    int32_t cellZ = static_cast<int32_t>(roundedZ) - offsetX;
+    
+    // Scale and round X coordinate
+    float scaledX = position[0] * scaleFactor;
+    double roundedX = RoundToNearestInt(static_cast<double>(scaledX));
+    int32_t cellX = static_cast<int32_t>(roundedX) - offsetY;
+    
+    // Validate bounds
+    if (cellX < 0 || cellX >= dimensionY) {
+        return -1;  // Out of bounds in X dimension
+    }
+    
+    if (cellZ < 0 || cellZ >= dimensionX) {
+        return -1;  // Out of bounds in Z dimension
+    }
+    
+    // Compute linear grid index
+    int32_t gridIndex = dimensionY * cellZ + cellX;
+    return gridIndex;
+}
