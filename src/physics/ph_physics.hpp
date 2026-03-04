@@ -868,27 +868,60 @@ struct phBoundGeometry {
 };
 
 // ── rage::phBoundOTGrid  [vtable @ 0x82058854] ───────────────────────────────
+//
+// Octree-based spatial partitioning grid for collision detection.
+// Divides 3D space into a hierarchical grid of cells, each containing
+// collision geometry. Supports dimension reduction (3D -> 2D -> 1D) based
+// on which extents are zero.
 struct phBoundOTGrid {
     void**      vtable;           // +0x00
 
-    virtual ~phBoundOTGrid();     // [0] @ 0x8229B550
-    virtual void vfn_11();        // [11] @ 0x8229D448
-    virtual void vfn_12();        // [12] @ 0x8229D488
-    virtual void vfn_14();        // [14] @ 0x8229D4B8
-    virtual void vfn_15();        // [15] @ 0x8229D548
-    virtual void vfn_16();        // [16] @ 0x8229D508
-    virtual void vfn_17();        // [17] @ 0x8229D598
-    virtual void vfn_19();        // [19] @ 0x8229C888
-    virtual void vfn_21();        // [21] @ 0x8229CE38
-    virtual void vfn_22();        // [22] @ 0x8229D120
-    virtual void vfn_25();        // [25] @ 0x8229CA78
-    virtual void vfn_28();        // [28] @ 0x8229BCB0
-    virtual void vfn_29();        // [29] @ 0x8229BF98
-    virtual void vfn_31();        // [31] @ 0x8229C280
-    virtual void vfn_36();        // [36] @ 0x8229B8D0
-    virtual void vfn_37();        // [37] @ 0x8229B860
-    virtual void vfn_38();        // [38] @ 0x8229B5B8
-    virtual void vfn_39();        // [39] @ 0x8229B7A0
+    uint8_t     _pad0x04[140];
+    void*       m_pGridData;      // +0x90 (144) - Pointer to grid cell array
+
+    uint8_t     _pad0x94[15224];
+    void*       m_pGridMinX;      // +0x3BBC (15292) - Min X grid cell
+    void*       m_pGridMinY;      // +0x3BC0 (15296) - Min Y grid cell
+    void*       m_pGridMinZ;      // +0x3BC4 (15300) - Min Z grid cell
+    void*       m_pGridMaxX;      // +0x3BC8 (15304) - Max X grid cell
+    void*       m_pGridMaxY;      // +0x3BCC (15308) - Max Y grid cell
+    void*       m_pGridMaxZ;      // +0x3BD0 (15312) - Max Z grid cell
+
+    virtual ~phBoundOTGrid();                         // [0] @ 0x8229B550
+    virtual void GetCellAtIndex();                    // [11] @ 0x8229D448
+    virtual void* QueryCellState();                   // [12] @ 0x8229D488
+    virtual void RenderCell(int cellIndex);           // [14] @ 0x8229D4B8
+    virtual void UpdateCell(int cellIndex);           // [15] @ 0x8229D548
+    virtual void* ProcessCell(int cellIndex);         // [16] @ 0x8229D508
+    virtual bool IsCellValid(int cellIndex);          // [17] @ 0x8229D598
+    virtual void vfn_19();                            // [19] @ 0x8229C888
+    virtual void vfn_21();                            // [21] @ 0x8229CE38
+    virtual void vfn_22();                            // [22] @ 0x8229D120
+    virtual void vfn_25();                            // [25] @ 0x8229CA78
+    virtual void vfn_28();                            // [28] @ 0x8229BCB0
+    virtual void vfn_29();                            // [29] @ 0x8229BF98
+    virtual void vfn_31();                            // [31] @ 0x8229C280
+    virtual void vfn_36();                            // [36] @ 0x8229B8D0
+    virtual void vfn_37();                            // [37] @ 0x8229B860
+    virtual void vfn_38();                            // [38] @ 0x8229B5B8
+    virtual void vfn_39();                            // [39] @ 0x8229B7A0
+
+    // Non-virtual methods
+    int SetupCollisionGrid(void* gridMinX, void* gridMinY, void* gridMinZ,
+                          float extentX, float extentY, float extentZ,
+                          void* gridMaxX, void* gridMaxY, void* gridMaxZ,
+                          float minX, float minY, float minZ,
+                          float maxX, float maxY, float maxZ);  // @ 0x82508098
+
+    // Collision detection helpers (called by SetupCollisionGrid)
+    int CollideLineX(float minX, float maxX, float z);
+    int CollidePlaneXZ(float minX, float maxX, float minZ, float maxZ);
+    int CollidePlaneXY(float minX, float maxX, float y);
+    int Collide3D(float minX, float maxX, float y, float minZ, float maxZ);
+    int Collide3DYExtent(float minX, float maxX, float minY, float maxY);
+    int Collide3DFull(float minX, float maxX, float minY, float maxY, float minZ, float maxZ);
+    int CollideCapsule(float minX, float maxX, float minY, float maxY, 
+                      float minZ, float maxZ, float extentY, float extentZ);
 };
 
 // ── rage::phBoundOctree  [vtable @ 0x8205872C] ───────────────────────────────

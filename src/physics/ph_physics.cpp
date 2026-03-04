@@ -287,3 +287,252 @@ void ph_1B58_h(void* thisPtr, const char* name) {
         dst[i] = src[i];
     }
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundOTGrid — Octree Grid Collision Bound
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// External globals
+extern void* g_display_obj_ptr;  // @ 0x826066E4
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::SetupCollisionGrid @ 0x82508098 | size: 0x1A0
+//
+// Initializes the octree grid collision detection system with dimension extents
+// and grid cell pointers. Validates all parameters and dispatches to appropriate
+// collision detection routine based on which dimensions have zero extent.
+//
+// Parameters:
+//   gridMinX, gridMinY, gridMinZ - Grid cell pointers for each axis
+//   extentX, extentY, extentZ - Dimensional extents (0.0 = collapsed dimension)
+//
+// Returns: 0 on success, 7 on parameter validation failure
+// ─────────────────────────────────────────────────────────────────────────────
+int phBoundOTGrid::SetupCollisionGrid(
+    void* gridMinX, void* gridMinY, void* gridMinZ,
+    float extentX, float extentY, float extentZ,
+    void* gridMaxX, void* gridMaxY, void* gridMaxZ,
+    float minX, float minY, float minZ,
+    float maxX, float maxY, float maxZ)
+{
+    // Validate all required parameters
+    if (!this || !gridMinX || !gridMinY || !gridMinZ || 
+        !gridMaxX || !gridMaxY || !gridMaxZ) {
+        return 7;  // Invalid parameter error code
+    }
+
+    // Store grid cell pointers at offsets 0x3BBC-0x3BD0
+    m_pGridMinX = gridMinX;      // +0x3BBC (15292)
+    m_pGridMinY = gridMinY;      // +0x3BC0 (15296)
+    m_pGridMinZ = gridMinZ;      // +0x3BC4 (15300)
+    m_pGridMaxX = gridMaxX;      // +0x3BC8 (15304)
+    m_pGridMaxY = gridMaxY;      // +0x3BCC (15308)
+    m_pGridMaxZ = gridMaxZ;      // +0x3BD0 (15312)
+
+    const float ZERO_THRESHOLD = 0.0f;
+
+    // Check if all extents are zero (point collision)
+    if (extentY == ZERO_THRESHOLD && extentZ == ZERO_THRESHOLD) {
+        if (minY == maxY) {
+            if (minY == ZERO_THRESHOLD) {
+                if (maxZ == ZERO_THRESHOLD) {
+                    // 1D collision along X axis only
+                    return CollideLineX(minX, maxX, minZ);
+                }
+                // 2D collision in XZ plane
+                return CollideP lane XZ(minX, maxX, minZ, maxZ);
+            }
+            // 2D collision in XY plane with Z extent
+            if (maxZ == ZERO_THRESHOLD) {
+                return CollidePlaneXY(minX, maxX, minY);
+            }
+            // Full 3D collision
+            return Collide3D(minX, maxX, minY, minZ, maxZ);
+        }
+        // 3D collision with Y extent
+        if (maxZ == ZERO_THRESHOLD) {
+            return Collide3DYExtent(minX, maxX, minY, maxY);
+        }
+        return Collide3DFull(minX, maxX, minY, maxY, minZ, maxZ);
+    }
+
+    // General capsule collision (handles arbitrary extents)
+    return CollideCapsule(minX, maxX, minY, maxY, minZ, maxZ, extentY, extentZ);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::GetCellAtIndex (vfn_11) @ 0x8229D448 | size: 0x3C
+//
+// Retrieves the grid cell at the root level (index 0) and calls its vtable
+// slot 11 method. Falls back to global display object if grid is not initialized.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundOTGrid::GetCellAtIndex() {
+    void* gridData = m_pGridData;  // +0x90 (144)
+    
+    if (gridData) {
+        // Call vtable slot 11 on the root grid cell with parameter 0
+        void** cellVTable = *(void***)gridData;
+        typedef void (*VTableFunc)(void*, int);
+        VTableFunc func = (VTableFunc)cellVTable[11];
+        func(gridData, 0);
+        return;
+    }
+
+    // Fallback: call vtable slot 9 on global display object
+    void* displayObj = g_display_obj_ptr;
+    void** displayVTable = *(void***)displayObj;
+    typedef void (*DisplayFunc)(void*);
+    DisplayFunc fallback = (DisplayFunc)displayVTable[9];
+    fallback(displayObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::QueryCellState (vfn_12) @ 0x8229D488 | size: 0x2C
+//
+// Queries the state of the root grid cell by calling its vtable slot 12 method.
+// Returns nullptr if grid is not initialized.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phBoundOTGrid::QueryCellState() {
+    void* gridData = m_pGridData;  // +0x90 (144)
+    
+    if (gridData) {
+        // Call vtable slot 12 on the root grid cell with parameter 0
+        void** cellVTable = *(void***)gridData;
+        typedef void* (*VTableFunc)(void*, int);
+        VTableFunc func = (VTableFunc)cellVTable[12];
+        return func(gridData, 0);
+    }
+
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::RenderCell (vfn_14) @ 0x8229D4B8 | size: 0x4C
+//
+// Renders a specific grid cell by calculating its index and calling the cell's
+// vtable slot 14 method. Falls back to global display object if grid is null.
+//
+// Parameters:
+//   cellIndex - Index of the cell to render (used to calculate grid offset)
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundOTGrid::RenderCell(int cellIndex) {
+    void* gridData = m_pGridData;  // +0x90 (144)
+    
+    if (gridData) {
+        // Calculate cell offset: cellIndex * 192 bytes per cell
+        int cellOffset = cellIndex * 192;
+        void* cell = (char*)gridData + cellOffset;
+        
+        if (cell) {
+            // Call vtable slot 14 on the specific grid cell
+            void** cellVTable = *(void***)cell;
+            typedef void (*VTableFunc)(void*);
+            VTableFunc func = (VTableFunc)cellVTable[14];
+            func(cell);
+            return;
+        }
+    }
+
+    // Fallback: call vtable slot 9 on global display object
+    void* displayObj = g_display_obj_ptr;
+    void** displayVTable = *(void***)displayObj;
+    typedef void (*DisplayFunc)(void*);
+    DisplayFunc fallback = (DisplayFunc)displayVTable[9];
+    fallback(displayObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::UpdateCell (vfn_15) @ 0x8229D548 | size: 0x50
+//
+// Updates a specific grid cell by calculating its index and calling the cell's
+// vtable slot 15 method. Falls back to global display object if grid is null.
+//
+// Parameters:
+//   cellIndex - Index of the cell to update
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundOTGrid::UpdateCell(int cellIndex) {
+    void* gridData = m_pGridData;  // +0x90 (144)
+    
+    if (gridData) {
+        // Calculate cell offset: cellIndex * 192 bytes per cell
+        int cellOffset = cellIndex * 192;
+        void* cell = (char*)gridData + cellOffset;
+        
+        if (cell) {
+            // Call vtable slot 15 on the specific grid cell with parameter 0
+            void** cellVTable = *(void***)cell;
+            typedef void (*VTableFunc)(void*, int);
+            VTableFunc func = (VTableFunc)cellVTable[15];
+            func(cell, 0);
+            return;
+        }
+    }
+
+    // Fallback: call vtable slot 9 on global display object
+    void* displayObj = g_display_obj_ptr;
+    void** displayVTable = *(void***)displayObj;
+    typedef void (*DisplayFunc)(void*);
+    DisplayFunc fallback = (DisplayFunc)displayVTable[9];
+    fallback(displayObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::ProcessCell (vfn_16) @ 0x8229D508 | size: 0x3C
+//
+// Processes a specific grid cell by calculating its index and calling the cell's
+// vtable slot 16 method. Returns nullptr if grid or cell is null.
+//
+// Parameters:
+//   cellIndex - Index of the cell to process
+// ─────────────────────────────────────────────────────────────────────────────
+void* phBoundOTGrid::ProcessCell(int cellIndex) {
+    void* gridData = m_pGridData;  // +0x90 (144)
+    
+    if (gridData) {
+        // Calculate cell offset: cellIndex * 192 bytes per cell
+        int cellOffset = cellIndex * 192;
+        void* cell = (char*)gridData + cellOffset;
+        
+        if (cell) {
+            // Call vtable slot 16 on the specific grid cell
+            void** cellVTable = *(void***)cell;
+            typedef void* (*VTableFunc)(void*);
+            VTableFunc func = (VTableFunc)cellVTable[16];
+            return func(cell);
+        }
+    }
+
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::IsCellValid (vfn_17) @ 0x8229D598 | size: 0x38
+//
+// Checks if a grid cell at the specified index exists and is valid.
+//
+// Parameters:
+//   cellIndex - Index of the cell to check (must be >= 0)
+//
+// Returns: true if cell exists, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool phBoundOTGrid::IsCellValid(int cellIndex) {
+    if (cellIndex < 0) {
+        return false;
+    }
+
+    void* gridData = m_pGridData;  // +0x90 (144)
+    
+    if (!gridData) {
+        return false;
+    }
+
+    // Calculate cell offset: cellIndex * 192 bytes per cell
+    int cellOffset = cellIndex * 192;
+    void* cell = (char*)gridData + cellOffset;
+    
+    return (cell != nullptr);
+}
+
+}  // namespace rage
