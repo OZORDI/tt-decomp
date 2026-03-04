@@ -2344,3 +2344,141 @@ void pongNetMessageHolder_vfn_1_0990_1(pongNetMessageHolder* holder) {
         holder->m_pMessagePool = nullptr;
     }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DataRequestMessage — Network message for requesting player/match data
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * DataRequestMessage is a network message sent to request data from another client.
+ * It carries a timing float and a 16-bit data identifier/index.
+ * 
+ * Structure layout:
+ *   +0x00  vtable pointer
+ *   +0x04  float — timing reference or request timestamp
+ *   +0x08  int16_t — data identifier/index being requested
+ * 
+ * Vtable layout:
+ *   slot 1 = Deserialise (read from network)
+ *   slot 2 = Serialise (write to network)
+ *   slot 5 = GetIndexInPool
+ *   slot 6 = GetSingleton
+ *   slot 7 = GetTypeName
+ */
+
+// External references
+extern uint8_t* g_pDataRequestMsgPoolBase;  // @ 0x825D129C
+extern void* g_pDataRequestMsgSingleton;    // @ 0x825D1290
+extern const char g_szDataRequestTypeName[];  // @ 0x8206EA74
+
+// Network I/O helpers (already declared in pong_network.cpp)
+extern void SinglesNetworkClient_8DF8_g(void* client, void* buf, int size);
+extern void SinglesNetworkClient_68A8_g(void* client, int16_t value, int bitWidth);
+extern void WriteFloatToNetworkStream(void* client, float value);
+extern uint8_t util_7970(void* client, void* dst, int bitWidth);
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataRequestMessage::Deserialise  [vtable slot 1 @ 0x823BABE0]
+// 
+// Reads DataRequestMessage fields from the network byte stream.
+// Called when a DataRequestMessage packet arrives from another client.
+// 
+// Fields populated:
+//   +0x04  float — timing reference (32-bit network field)
+//   +0x08  int16_t — data identifier (16-bit network field)
+// ─────────────────────────────────────────────────────────────────────────────
+void DataRequestMessage::Deserialise(void* client)
+{
+    // Read timing float (32-bit field)
+    float timingRef;
+    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    m_timingRef = timingRef;
+    
+    // Read 16-bit data identifier using util_7970
+    // util_7970 reads a bit-packed value and handles sign extension
+    util_7970(client, &m_dataId, 16);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataRequestMessage::Serialise  [vtable slot 2 @ 0x823BAE28]
+// 
+// Writes DataRequestMessage fields to the outgoing network byte stream.
+// Called when the local client needs to request data from a remote client.
+// ─────────────────────────────────────────────────────────────────────────────
+void DataRequestMessage::Serialise(void* client)
+{
+    // Write timing reference float
+    WriteFloatToNetworkStream(client, m_timingRef);
+    
+    // Write 16-bit data identifier (sign-extended)
+    SinglesNetworkClient_68A8_g(client, m_dataId, 16);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataRequestMessage::GetIndexInPool  [vtable slot 5 @ 0x823BAAF8]
+// 
+// Returns the index of this object within the DataRequestMessage pool.
+// Updates the pool's linked-list structure for message tracking.
+// 
+// Pool structure:
+//   - Base address: g_pDataRequestMsgPoolBase @ 0x825D129C
+//   - Object size: 16 bytes (0x10)
+//   - Pool metadata at base+32: entry count (uint16)
+//   - Pool metadata at base+36: tail index (uint16)
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t DataRequestMessage::GetIndexInPool() const
+{
+    uint8_t* poolBase = *(uint8_t**)g_pDataRequestMsgPoolBase;
+    
+    // Compute object index: offset = (this - base), index = offset / 16
+    // rlwinm(offset, 28, 4, 31) extracts (offset >> 4) & 0x0FFFFFFF
+    uint32_t offset = (uint32_t)((uint8_t*)this - poolBase);
+    uint16_t index = (uint16_t)((offset >> 4) & 0xFFFF);
+    
+    // Update linked-list: pool[36] = old_tail
+    uint16_t oldTail = *(uint16_t*)(poolBase + 36);
+    if (oldTail != 0xFFFF) {
+        // Link previous tail's forward pointer to us
+        // rlwinm(oldTail, 4, 12, 27) = oldTail * 16 = byte offset
+        uint32_t prevOffset = (uint32_t)oldTail * 16;
+        *(uint16_t*)(poolBase + prevOffset + 14) = index;
+    }
+    
+    // Write our index as the new tail
+    *(uint16_t*)(poolBase + index * 16 + 14) = index;
+    *(uint16_t*)(poolBase + 36) = index;
+    
+    // Increment entry count
+    uint16_t count = *(uint16_t*)(poolBase + 32);
+    *(uint16_t*)(poolBase + 32) = count + 1;
+    
+    return index;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataRequestMessage::GetSingleton  [vtable slot 6 @ 0x823BABC0]
+// 
+// Returns the DataRequestMessage message-type singleton pointer.
+// This is the pool/factory object managing all DataRequestMessage instances.
+// ─────────────────────────────────────────────────────────────────────────────
+void* DataRequestMessage::GetSingleton()
+{
+    return g_pDataRequestMsgSingleton;  // @ 0x825D1290
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DataRequestMessage::GetTypeName  [vtable slot 7 @ 0x823BABD0]
+// 
+// Returns a pointer to the ASCII type-name string for this message class.
+// Used by the network dispatcher for message registration and debug logging.
+// ─────────────────────────────────────────────────────────────────────────────
+const char* DataRequestMessage::GetTypeName()
+{
+    return g_szDataRequestTypeName;  // @ 0x8206EA74
+}
