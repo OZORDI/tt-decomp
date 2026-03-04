@@ -182,3 +182,266 @@ void Release(grcTexture* texture) {
 }
 
 } // namespace rage
+
+// ═══════════════════════════════════════════════════════════════════════════
+// atSingleton Template Functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * atSingleton_9728_2h @ 0x82169728 | size: 0x18
+ * 
+ * Merges flags from source object into target singleton's flags field.
+ * Performs bitwise OR operation to combine flag bits.
+ * 
+ * @param target    Pointer to target singleton wrapper
+ * @param source    Pointer to source object containing flags at offset +16
+ */
+void atSingleton_9728_2h(void* target, void* source) {
+    // Get pointer to singleton instance from wrapper
+    uint32_t* singletonPtr = *(uint32_t**)((char*)target + 4);
+    
+    // Load existing flags from singleton
+    uint32_t existingFlags = *(uint32_t*)((char*)singletonPtr + 4);
+    
+    // Load new flags from source object
+    uint32_t newFlags = *(uint32_t*)((char*)source + 16);
+    
+    // Merge flags using bitwise OR
+    uint32_t mergedFlags = existingFlags | newFlags;
+    
+    // Store merged flags back to singleton
+    *(uint32_t*)((char*)singletonPtr + 4) = mergedFlags;
+}
+
+/**
+ * atSingleton_6F38_p33 @ 0x821C6F38 | size: 0x14
+ * 
+ * Clears a specific flag field and jumps to network client initialization.
+ * Sets field at offset 0x27EC (10220) to zero.
+ * 
+ * @param obj    Pointer to singleton object
+ */
+void atSingleton_6F38_p33(void* obj) {
+    // Calculate offset: (1 << 16) | 10220 = 0x27EC = 10220
+    const uint32_t offset = 0x27EC;
+    
+    // Clear the flag field
+    *(uint32_t*)((char*)obj + offset) = 0;
+    
+    // Continue to network client initialization
+    SinglesNetworkClient_4FB0_g(obj);
+}
+
+/**
+ * atSingleton_4D18_w @ 0x82244D18 | size: 0x20
+ * 
+ * Checks if the least significant bit of a 16-bit field is set.
+ * Returns boolean result as uint8_t.
+ * 
+ * @param obj    Pointer to object with flags at offset 0
+ * @return       1 if LSB is set, 0 otherwise
+ */
+uint8_t atSingleton_4D18_w(void* obj) {
+    // Load 16-bit value from object
+    uint16_t value = *(uint16_t*)obj;
+    
+    // Check if least significant bit is set
+    bool isSet = (value & 0x1) != 0;
+    
+    return isSet ? 1 : 0;
+}
+
+/**
+ * atSingleton_vfn_6 @ 0x82222BF0 | size: 0x24
+ * 
+ * Validates that an index is within valid range.
+ * Checks if index is non-negative and less than count stored at offset +4.
+ * 
+ * @param obj      Pointer to singleton object
+ * @param index    Index to validate
+ * @return         1 if index is valid, 0 otherwise
+ */
+uint8_t atSingleton_vfn_6(void* obj, int32_t index) {
+    // Check if index is negative
+    if (index < 0) {
+        return 0;
+    }
+    
+    // Load count from object
+    uint32_t count = *(uint32_t*)((char*)obj + 4);
+    
+    // Check if index is within bounds
+    if (index < (int32_t)count) {
+        return 1;
+    }
+    
+    return 0;
+}
+
+/**
+ * atSingleton_E3F0_p44 @ 0x82255E3F0 | size: 0x18
+ * 
+ * Clears a 16-byte region starting at offset 128.
+ * Initializes four consecutive 32-bit fields to zero.
+ * 
+ * @param obj    Pointer to object
+ */
+void atSingleton_E3F0_p44(void* obj) {
+    // Clear 16 bytes (4 x uint32_t) starting at offset 128
+    *(uint32_t*)((char*)obj + 128) = 0;
+    *(uint32_t*)((char*)obj + 132) = 0;
+    *(uint32_t*)((char*)obj + 136) = 0;
+    *(uint32_t*)((char*)obj + 140) = 0;
+}
+
+/**
+ * atSingleton_EB38_p @ 0x82256EB38 | size: 0x18
+ * 
+ * Indirect function call wrapper.
+ * Loads function pointer from object and calls it with adjusted parameters.
+ * 
+ * @param wrapper    Wrapper object containing function pointer at offset 0
+ * @param arg1       First argument (becomes r3 in call)
+ * @param arg2       Second argument (becomes r4 in call)
+ */
+void atSingleton_EB38_p(void* wrapper, void* arg1, void* arg2) {
+    // Load function pointer from wrapper
+    typedef void (*FuncPtr)(void*, void*);
+    FuncPtr func = *(FuncPtr*)wrapper;
+    
+    // Call function with arguments
+    func(arg1, arg2);
+}
+
+/**
+ * atSingleton_6BC0_w @ 0x821C6BC0 | size: 0x38
+ * 
+ * Conditional state machine dispatcher based on game mode.
+ * Routes to different handlers based on mode value at offset +12.
+ * 
+ * @param obj    Pointer to game state object
+ */
+void atSingleton_6BC0_w(void* obj) {
+    // Load global game state pointer
+    uint32_t* globalState = *(uint32_t**)0x825EA13C;
+    
+    // Load mode from global state
+    int32_t mode = *(int32_t*)((char*)globalState + 12);
+    
+    if (mode == 1) {
+        // Mode 1: Jump table handler
+        jumptable_5C20(obj);
+        return;
+    }
+    
+    if (mode == 3) {
+        // Mode 3: HSM context handler
+        hsmContext_5BC8_fw(obj);
+        return;
+    }
+    
+    // Default: Clear flag at offset 0x27EC
+    const uint32_t offset = 0x27EC;  // (1 << 16) | 10220
+    *(uint32_t*)((char*)obj + offset) = 0;
+}
+
+/**
+ * atSingleton_6108_p33 @ 0x821C6108 | size: 0x38
+ * 
+ * Similar to atSingleton_6BC0_w but routes to different handler for mode 3.
+ * Conditional state machine dispatcher with alternate mode 3 handler.
+ * 
+ * @param obj    Pointer to game state object
+ */
+void atSingleton_6108_p33(void* obj) {
+    // Load global game state pointer
+    uint32_t* globalState = *(uint32_t**)0x825EA13C;
+    
+    // Load mode from global state
+    int32_t mode = *(int32_t*)((char*)globalState + 12);
+    
+    if (mode == 1) {
+        // Mode 1: Jump table handler
+        jumptable_5C20(obj);
+        return;
+    }
+    
+    if (mode == 3) {
+        // Mode 3: Alternate HSM context handler
+        hsmContext_5B40_w(obj);
+        return;
+    }
+    
+    // Default: Clear flag at offset 0x27EC
+    const uint32_t offset = 0x27EC;  // (1 << 16) | 10220
+    *(uint32_t*)((char*)obj + offset) = 0;
+}
+
+/**
+ * atSingleton_D078_fw @ 0x8212D078 | size: 0x58
+ * 
+ * Dynamic array allocator with automatic growth.
+ * Checks if array is full and expands capacity if needed.
+ * Returns pointer to next available slot.
+ * 
+ * @param array    Pointer to dynamic array structure
+ * @return         Pointer to next available element
+ */
+void* atSingleton_D078_fw(void* array) {
+    // Load current capacity and count
+    uint32_t capacity = *(uint32_t*)((char*)array + 8);
+    uint32_t count = *(uint32_t*)((char*)array + 4);
+    
+    // Check if array is full
+    if (count == capacity) {
+        // Expand capacity by 256 elements
+        uint32_t newCapacity = capacity + 256;
+        atSingleton_22B0(array, newCapacity);
+    }
+    
+    // Get base pointer to array data
+    void* data = *(void**)array;
+    
+    // Calculate offset to next element (4 bytes per element)
+    uint32_t offset = count * 4;
+    
+    // Increment count
+    *(uint32_t*)((char*)array + 4) = count + 1;
+    
+    // Return pointer to next element
+    return (void*)((char*)data + offset);
+}
+
+/**
+ * atSingleton_2150_fw @ 0x82132150 | size: 0x58
+ * 
+ * Dynamic array allocator for larger elements (224 bytes each).
+ * Similar to atSingleton_D078_fw but with different element size.
+ * 
+ * @param array    Pointer to dynamic array structure
+ * @return         Pointer to next available element
+ */
+void* atSingleton_2150_fw(void* array) {
+    // Load current capacity and count
+    uint32_t capacity = *(uint32_t*)((char*)array + 8);
+    uint32_t count = *(uint32_t*)((char*)array + 4);
+    
+    // Check if array is full
+    if (count == capacity) {
+        // Expand capacity by 256 elements
+        uint32_t newCapacity = capacity + 256;
+        atSingleton_2038(array, newCapacity);
+    }
+    
+    // Get base pointer to array data
+    void* data = *(void**)array;
+    
+    // Calculate offset to next element (224 bytes per element)
+    uint32_t offset = count * 224;
+    
+    // Increment count
+    *(uint32_t*)((char*)array + 4) = count + 1;
+    
+    // Return pointer to next element
+    return (void*)((char*)data + offset);
+}
