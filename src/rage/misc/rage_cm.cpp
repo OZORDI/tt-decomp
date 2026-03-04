@@ -1417,3 +1417,51 @@ void cmSwitch_6case_GetDim(cmSwitch* node, int32_t* out) {
     *out = cmNode_GetDim(defaultPort);
 }
 
+
+
+/* ── External dependencies for cmNamedValueSet ────────────────────────────── */
+
+/* Camera operator function @ 0x82275FC8 */
+extern void cmOperator_5FC8_g(void* pOperator, uint32_t* pParam1, uint32_t* pParam2);
+
+/* Camera metafile tuning set vtable slot 8 @ 0x822759B0 */
+extern void cmMetafileTuningSet_vfn_8(void* pThis, uint32_t param1, uint32_t param2);
+
+
+namespace rage {
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * cmNamedValueSet::vfn_8 @ 0x82275C20 | size: 0x48 (72 bytes)
+ *
+ * Vtable slot 8 - Processes camera named value set with operator and tuning.
+ *
+ * This function coordinates between the camera operator and metafile tuning
+ * system, passing parameters through both subsystems.
+ *
+ * cmNamedValueSet layout (partial):
+ *   +0x0C (12)   m_operator  - Camera operator object
+ *
+ * Algorithm:
+ *   1. Create temporary copies of parameters on stack
+ *   2. Call cmOperator function with operator object and parameter pointers
+ *   3. Call parent class (cmMetafileTuningSet) vtable slot 8 with same parameters
+ *
+ * The stack temporaries at offsets 140 and 148 are used to pass parameters
+ * by reference to the operator function, then the original values are passed
+ * directly to the parent class method.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void cmNamedValueSet::vfn_8(uint32_t param1, uint32_t param2)
+{
+    /* Create temporary copies of parameters on stack */
+    uint32_t tempParam1 = param1;
+    uint32_t tempParam2 = param2;
+    
+    /* Call camera operator function with operator object (at offset +12) */
+    void* pOperator = (void*)((uint8_t*)this + 12);
+    cmOperator_5FC8_g(pOperator, &tempParam1, &tempParam2);
+    
+    /* Call parent class (cmMetafileTuningSet) vtable slot 8 */
+    cmMetafileTuningSet_vfn_8(this, param1, param2);
+}
+
+} // namespace rage
