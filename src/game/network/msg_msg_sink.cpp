@@ -250,3 +250,35 @@ void msgMsgSink::DispatchVirtualMethod() {
     VirtualMethod method = (VirtualMethod)vtable[9];
     method(obj3);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * msgMsgSink_8DE0_sp @ 0x82458DE0 | size: 0x20 (32 bytes)
+ *
+ * Thunk function that forwards a call to vtable slot 29 of a nested object.
+ *
+ * This function loads a pointer from offset +36 of the msgMsgSink instance,
+ * checks if it's non-null, and if so, calls vtable slot 29 on that object.
+ *
+ * msgMsgSink layout (partial):
+ *   +0x24 (36)   m_pNestedObject  - Pointer to object with vtable
+ *
+ * The nested object's vtable slot 29 (offset +116) is invoked with the
+ * nested object as the 'this' pointer.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void msgMsgSink_8DE0_sp(msgMsgSink* pThis)
+{
+    /* Load nested object pointer from offset +36 */
+    void* pNestedObject = *(void**)((uint8_t*)pThis + 36);
+    
+    /* Check if nested object exists */
+    if (pNestedObject == NULL) {
+        return;
+    }
+    
+    /* Call vtable slot 29 on the nested object */
+    typedef void (*VtableSlot29Fn)(void*);
+    void** vtable = *(void***)pNestedObject;
+    VtableSlot29Fn slot29 = (VtableSlot29Fn)vtable[29];
+    slot29(pNestedObject);
+}
