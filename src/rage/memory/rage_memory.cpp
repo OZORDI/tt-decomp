@@ -537,3 +537,59 @@ int atSingleton_2688(void* pBitStream)
     
     return 0;
 }
+
+
+/* ── External dependencies for atSingleton list operations ────────────────── */
+
+/* List node processing function @ 0x82450128 */
+extern void atSingleton_0128_wrh(void* pNode, uint32_t param);
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * atSingleton_89F8_2hr @ 0x824489F8 | size: 0x4c (76 bytes)
+ *
+ * Traverses a linked list and calls a processing function on each node.
+ *
+ * This function iterates through a singly-linked list structure, calling
+ * atSingleton_0128_wrh on each node with a provided parameter.
+ *
+ * atSingleton layout (partial):
+ *   +0x2C (44)   m_listEnd     - End sentinel for linked list
+ *   +0x30 (48)   m_listHead    - Head of linked list
+ *
+ * List node layout:
+ *   -0x0C (-12)  m_data        - Node data (offset from node pointer)
+ *   +0x04 (4)    m_next        - Pointer to next node
+ *
+ * Algorithm:
+ *   1. Load list head from offset +48
+ *   2. Calculate list end address (this + 44)
+ *   3. While current node != list end:
+ *      a. If node is non-null, calculate data pointer (node - 12)
+ *      b. Call processing function with data pointer and parameter
+ *      c. Load next node from current node + 4
+ *   4. Return when list end is reached
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void atSingleton_89F8_2hr(void* pThis, uint32_t param)
+{
+    uint8_t* singleton = (uint8_t*)pThis;
+    
+    /* Load list head and calculate list end address */
+    uint32_t currentNode = *(uint32_t*)(singleton + 48);
+    uint32_t listEnd = (uint32_t)(uintptr_t)(singleton + 44);
+    
+    /* Traverse linked list until we reach the end sentinel */
+    while (currentNode != listEnd) {
+        /* Calculate data pointer (node - 12) if node is non-null */
+        void* pData = NULL;
+        if (currentNode != 0) {
+            pData = (void*)(currentNode - 12);
+        }
+        
+        /* Call processing function on node data */
+        atSingleton_0128_wrh(pData, param);
+        
+        /* Load next node pointer from current node + 4 */
+        currentNode = *(uint32_t*)(currentNode + 4);
+    }
+}
