@@ -1359,3 +1359,258 @@ void rage::phBoundCapsule::ApplyTransform(const float* transform, const float* i
     m_point7Y += transformY;
     m_point7Z += -transformZ;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundGeometry — Collision Geometry Bound Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// External globals
+extern void* g_display_obj_ptr;  // @ 0x826066E4
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::GetDisplayObject @ 0x82228C58 | size: 0xC
+//
+// Returns the global display object pointer used for rendering debug geometry.
+// This is a simple accessor for the singleton display system.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phBoundGeometry::GetDisplayObject() {
+    return g_display_obj_ptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::GetMaterialCount (vfn_10) @ 0x82290F60 | size: 0x8
+//
+// Returns the number of materials/surfaces in this geometry bound.
+// Used for material-based collision response and friction calculations.
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t phBoundGeometry::GetMaterialCount() const {
+    return m_materialCount;  // +168
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::GetMaterialAtIndex (vfn_12) @ 0x82290F68 | size: 0x10
+//
+// Retrieves a material pointer from the material array by index.
+// The index is multiplied by 4 (sizeof pointer) to get the array offset.
+//
+// @param index - Material index (0-based)
+// @return Pointer to material at the specified index
+// ─────────────────────────────────────────────────────────────────────────────
+void* phBoundGeometry::GetMaterialAtIndex(int index) const {
+    void** materialArray = (void**)m_pMaterialArray;  // +160
+    return materialArray[index];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::SetAllMaterials (vfn_13) @ 0x82293D50 | size: 0x38
+//
+// Sets all materials in the material array to the specified material pointer,
+// then stores it as the current material at offset +164.
+//
+// @param material - Material pointer to assign to all slots
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundGeometry::SetAllMaterials(void* material) {
+    uint8_t count = m_materialCount;  // +168
+    
+    if (count > 0) {
+        void** materialArray = (void**)m_pMaterialArray;  // +160
+        for (int i = 0; i < count; i++) {
+            materialArray[i] = material;
+        }
+    }
+    
+    m_pCurrentMaterial = material;  // +164
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::RenderDebugGeometry (vfn_14) @ 0x82293BE8 | size: 0x60
+//
+// Renders debug visualization of this geometry bound by:
+// 1. Getting the current material index via vfn_16
+// 2. Looking up the material in the material array
+// 3. Calling the display object's render method (vtable slot 5)
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundGeometry::RenderDebugGeometry() {
+    // Get current material index
+    int materialIndex = GetCurrentMaterialIndex();  // vfn_16
+    
+    // Look up material in array
+    void** materialArray = (void**)m_pMaterialArray;  // +160
+    void* material = materialArray[materialIndex];
+    
+    // Get display object and call its render method
+    void* displayObj = g_display_obj_ptr;
+    void** displayVTable = *(void***)displayObj;
+    typedef void (*RenderFunc)(void*, void*);
+    RenderFunc render = (RenderFunc)displayVTable[5];
+    render(displayObj, material);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::SelectMaterialForRendering (vfn_15) @ 0x82293CF8 | size: 0x54
+//
+// Selects which material to use for rendering based on the current state:
+// - If m_pCurrentMaterial is valid (!= -1), use it via vtable slot 11
+// - If material count is 1, use material 0 via vtable slot 11
+// - Otherwise, use the display object's default material via vtable slot 9
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundGeometry::SelectMaterialForRendering() {
+    void* currentMaterial = m_pCurrentMaterial;  // +164
+    
+    if (currentMaterial != (void*)-1) {
+        // Use the explicitly set current material
+        void** vtable = *(void***)this;
+        typedef void (*MaterialFunc)(void*, void*);
+        MaterialFunc func = (MaterialFunc)vtable[11];
+        func(this, currentMaterial);
+        return;
+    }
+    
+    uint8_t materialCount = m_materialCount;  // +168
+    
+    if (materialCount == 1) {
+        // Single material - use material 0
+        void** vtable = *(void***)this;
+        typedef void (*MaterialFunc)(void*, void*);
+        MaterialFunc func = (MaterialFunc)vtable[11];
+        func(this, nullptr);  // index 0
+        return;
+    }
+    
+    // Multiple materials - use display object's default
+    void* displayObj = g_display_obj_ptr;
+    void** displayVTable = *(void***)displayObj;
+    typedef void (*DefaultMaterialFunc)(void*);
+    DefaultMaterialFunc fallback = (DefaultMaterialFunc)displayVTable[9];
+    fallback(displayObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::CheckBoundsAndUpdate (vfn_6) @ 0x82293D88 | size: 0x84
+//
+// Checks if a point is within the geometry bounds by:
+// 1. Computing the offset from the center (point - m_center)
+// 2. Masking with 0x9C0 to check specific components
+// 3. If all masked components are zero, the point is at the center
+// 4. Otherwise, calls vfn_7 to update the bounds
+//
+// @param point - 16-byte aligned vector representing the test point
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundGeometry::CheckBoundsAndUpdate(const float* point) {
+    // Compute offset from center
+    float offset[4];
+    offset[0] = point[0] - m_center[0];  // +48
+    offset[1] = point[1] - m_center[1];
+    offset[2] = point[2] - m_center[2];
+    offset[3] = point[3] - m_center[3];
+    
+    // Mask with 0x9C0 pattern (checks specific components)
+    // This is a SIMD operation that zeros out certain bits
+    const uint32_t mask[4] = {0x000009C0, 0x000009C0, 0x000009C0, 0x000009C0};
+    uint32_t* offsetBits = (uint32_t*)offset;
+    uint32_t masked[4];
+    masked[0] = offsetBits[0] & mask[0];
+    masked[1] = offsetBits[1] & mask[1];
+    masked[2] = offsetBits[2] & mask[2];
+    masked[3] = offsetBits[3] & mask[3];
+    
+    // Check if all masked components are zero (point is at center)
+    bool allZero = (masked[0] == 0 && masked[1] == 0 && 
+                    masked[2] == 0 && masked[3] == 0);
+    
+    if (!allZero) {
+        // Point is not at center - update bounds
+        UpdateBounds(offset);  // vfn_7
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::UpdateBounds (vfn_7) @ 0x82293E10 | size: 0x88
+//
+// Updates the geometry bounds by adding an offset vector to all vertices
+// and the center point. Also updates the "has offset" flag at +5.
+//
+// @param offset - 16-byte aligned offset vector to add
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundGeometry::UpdateBounds(const float* offset) {
+    int vertexCount = m_vertexCount;  // +148
+    
+    if (vertexCount > 0) {
+        float* vertices = (float*)m_pVertexData;  // +112
+        
+        // Add offset to all vertices (16 bytes per vertex)
+        for (int i = 0; i < vertexCount; i++) {
+            vertices[0] += offset[0];
+            vertices[1] += offset[1];
+            vertices[2] += offset[2];
+            vertices[3] += offset[3];
+            vertices += 4;  // Move to next vertex (16 bytes)
+        }
+    }
+    
+    // Add offset to center point
+    m_center[0] += offset[0];  // +48
+    m_center[1] += offset[1];
+    m_center[2] += offset[2];
+    m_center[3] += offset[3];
+    
+    // Check if the updated center has any non-zero masked components
+    const uint32_t mask[4] = {0x000009C0, 0x000009C0, 0x000009C0, 0x000009C0};
+    uint32_t* centerBits = (uint32_t*)m_center;
+    uint32_t masked[4];
+    masked[0] = centerBits[0] & mask[0];
+    masked[1] = centerBits[1] & mask[1];
+    masked[2] = centerBits[2] & mask[2];
+    masked[3] = centerBits[3] & mask[3];
+    
+    bool hasOffset = !(masked[0] == 0 && masked[1] == 0 && 
+                       masked[2] == 0 && masked[3] == 0);
+    
+    m_hasOffset = hasOffset ? 1 : 0;  // +5
+    
+    // Call vtable slot 37 to finalize the update
+    void** vtable = *(void***)this;
+    typedef void (*FinalizeFunc)(void*);
+    FinalizeFunc finalize = (FinalizeFunc)vtable[37];
+    finalize(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::Destructor (vfn_0) @ 0x82291008 | size: 0x50
+//
+// Destructor for phBoundGeometry. Calls base class destructor (rage_1058),
+// then frees memory if the "should free" flag (bit 0 of parameter) is set.
+//
+// @param shouldFree - If bit 0 is set, free the object's memory
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundGeometry::Destructor(int shouldFree) {
+    // Call base class destructor
+    rage_1058(this);
+    
+    // Free memory if requested
+    if (shouldFree & 0x1) {
+        rage_free_00C0(this);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundGeometry::CallVTableSlot37 (vfn_40) @ 0x82291260 | size: 0x44
+//
+// Wrapper function that calls vtable slot 37 on this object and returns true.
+// This is used as a callback or event handler that always succeeds.
+//
+// @return Always returns true (1)
+// ─────────────────────────────────────────────────────────────────────────────
+bool phBoundGeometry::CallVTableSlot37() {
+    // Call vtable slot 37
+    void** vtable = *(void***)this;
+    typedef void (*Slot37Func)(void*);
+    Slot37Func func = (Slot37Func)vtable[37];
+    func(this);
+    
+    return true;
+}
+
+} // namespace rage
