@@ -141,3 +141,56 @@ void fragDrawable::ProcessGeometry(void* geometryContainer, void* param1, void* 
 }
 
 } // namespace rage
+/**
+ * rage/rage_grm.cpp — RAGE geometry/fragment drawable system
+ * Rockstar Presents Table Tennis (Xbox 360, 2006)
+ */
+
+#include "rage/rage_grm.hpp"
+#include <stdint.h>
+
+namespace rage {
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * fragDrawable_41B8 @ 0x821241B8 | size: 0x68 (104 bytes)
+ *
+ * Compares two strings lexicographically.
+ *
+ * This function performs a signed byte-by-byte comparison of two null-terminated
+ * strings, similar to strcmp but returns a boolean result.
+ *
+ * Parameters:
+ *   pString1 - Pointer to first string (stored at offset +0 of first parameter)
+ *   pString2 - Pointer to second string (stored at offset +0 of second parameter)
+ *
+ * Returns:
+ *   1 (true) if string1 < string2 lexicographically
+ *   0 (false) otherwise
+ *
+ * Algorithm:
+ *   1. Load string pointers from offset +0 of each parameter
+ *   2. Compare bytes while both are non-zero and equal
+ *   3. When mismatch or null found, compare final bytes as signed chars
+ *   4. Return 1 if first string's byte < second string's byte, else 0
+ * ═══════════════════════════════════════════════════════════════════════════ */
+uint8_t fragDrawable_41B8(void* pParam1, void* pParam2)
+{
+    /* Load string pointers from parameters */
+    const char* str1 = *(const char**)pParam1;
+    const char* str2 = *(const char**)pParam2;
+    
+    /* Compare strings byte-by-byte */
+    while (*str1 != '\0' && *str1 == *str2) {
+        str1++;
+        str2++;
+    }
+    
+    /* Compare final bytes as signed chars */
+    int8_t byte1 = (int8_t)*str1;
+    int8_t byte2 = (int8_t)*str2;
+    
+    /* Return 1 if str1 < str2, else 0 */
+    return (byte1 < byte2) ? 1 : 0;
+}
+
+} // namespace rage
