@@ -1763,3 +1763,132 @@ void SinglesNetworkClient::ProcessMessageQueue()
         currentMsg = SinglesNetworkClient_C838_g(currentMsg);
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TournamentCompleteMessage — Tournament completion network message
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ===========================================================================
+// TournamentCompleteMessage::Process  [vtable slot 4 @ 0x823BC8C8] | size: 0x98
+//
+// Processes a tournament completion message. Checks game state and posts
+// a page group event if conditions are met.
+//
+// Logic:
+//  1. Calls nop_8240E6D0 with "top_spin" string (debug/logging)
+//  2. Checks g_loop_obj_ptr[578] (boolean flag)
+//  3. If flag is false, checks g_loop_obj_ptr[12] == 8 (state check)
+//  4. If state matches, sets g_input_obj_ptr[48] = 4
+//  5. Posts page group message with event code 14386 and m_tournamentId
+// ===========================================================================
+void TournamentCompleteMessage::Process()
+{
+    // Debug logging with "top_spin" string
+    extern const char g_szTopSpin[];  // @ 0x8206CB54
+    nop_8240E6D0(g_szTopSpin);
+    
+    // Load global loop object pointer
+    extern void* g_loop_obj_ptr;  // @ 0x825EAB30
+    void* loopObj = *(void**)&g_loop_obj_ptr;
+    
+    // Check flag at offset +578
+    uint8_t flag = *(uint8_t*)((char*)loopObj + 578);
+    
+    if (flag == 0) {
+        // Check state value at offset +12
+        int32_t state = *(int32_t*)((char*)loopObj + 12);
+        
+        if (state == 8) {
+            // Set input object state to 4
+            extern void* g_input_obj_ptr;  // @ 0x825EAB28
+            void* inputObj = *(void**)&g_input_obj_ptr;
+            *(int32_t*)((char*)inputObj + 48) = 4;
+        }
+    }
+    
+    // Post page group message with tournament ID
+    // Event code 14386, mask 128, active flag 1
+    int32_t eventData[2] = { 4, 0 };
+    eventData[0] = (int32_t)m_tournamentId;  // Sign-extend byte to int
+    PostPageGroupMessage(14386, 128, 1, 0, (int)eventData);
+}
+
+
+// ===========================================================================
+// TournamentCompleteMessage::GetIndexInPool  [vtable slot 5 @ 0x823BC7B0] | size: 0x54
+//
+// Returns the index of this message within the TournamentCompleteMessage pool.
+// Updates linked-list pointers in the pool header.
+//
+// Pool structure:
+//  - Base address at g_pTournamentMsgPool (0x825D1464)
+//  - Object size: 16 bytes (0x10)
+//  - Pool header at base+32 contains count and tail index
+//
+// Python-verified:
+//   rlwinm(offset,28,4,31) = (offset >> 4) & 0x0FFFFFFF = index
+//   rlwinm(index,4,12,27)  = (index << 4) & 0xFFFF0 = byte offset
+// ===========================================================================
+uint16_t TournamentCompleteMessage::GetIndexInPool() const
+{
+    // Load pool base address
+    extern uint8_t* g_pTournamentMsgPool;  // @ 0x825D1464
+    uint8_t* poolBase = *(uint8_t**)((char*)&g_pTournamentMsgPool + 8);
+    
+    // Compute object index: offset = (this - base), index = offset / 16
+    // Python-verified: rlwinm(offset,28,4,31) extracts (offset >> 4)
+    uint32_t offset = (uint32_t)((uint8_t*)this - poolBase);
+    uint16_t index  = (uint16_t)((offset >> 4) & 0xFFFF);
+    
+    // Compute byte offset for this entry: index * 16
+    // Python-verified: rlwinm(index,4,12,27) = (index << 4) & 0xFFFF0
+    uint32_t entryOffset = (uint32_t)index << 4;
+    
+    // Update linked-list: store old tail index at entry+14
+    uint16_t oldTail = *(uint16_t*)(poolBase + 36);
+    *(uint16_t*)(poolBase + entryOffset + 14) = oldTail;
+    
+    // If old tail was valid, link it forward to us
+    if (oldTail != 0xFFFF) {
+        uint32_t prevOffset = (uint32_t)oldTail << 4;
+        *(uint16_t*)(poolBase + prevOffset + 12) = index;
+    }
+    
+    // Store our index as new tail
+    *(uint16_t*)(poolBase + 36) = index;
+    
+    // Increment entry count
+    uint16_t count = *(uint16_t*)(poolBase + 32);
+    *(uint16_t*)(poolBase + 32) = count + 1;
+    
+    return index;
+}
+
+
+// ===========================================================================
+// TournamentCompleteMessage::GetSingleton  [vtable slot 6 @ 0x823BC878] | size: 0xC
+//
+// Returns the TournamentCompleteMessage singleton pointer.
+// Python-verified: address = 0x825D1458
+// ===========================================================================
+void* TournamentCompleteMessage::GetSingleton()
+{
+    extern void* g_pTournamentMsgSingleton;  // @ 0x825D1458
+    return *(void**)&g_pTournamentMsgSingleton;
+}
+
+
+// ===========================================================================
+// TournamentCompleteMessage::GetTypeName  [vtable slot 7 @ 0x823BC888] | size: 0xC
+//
+// Returns the type name string for this message class.
+// Python-verified: address = 0x8206EC40
+// ===========================================================================
+const char* TournamentCompleteMessage::GetTypeName()
+{
+    // String content: "rnal spectator request:%d denied"
+    // (likely part of "Internal spectator request:%d denied")
+    extern const char g_szTournamentCompleteTypeName[];  // @ 0x8206EC40
+    return g_szTournamentCompleteTypeName;
+}

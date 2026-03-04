@@ -52,14 +52,15 @@ struct evtSet {
 };
 
 // ── rage::miniheapAllocator  [vtable @ 0x82074BCC] ──────────────────────────
+// Simple bump allocator for temporary allocations
 struct miniheapAllocator {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x823f89b8
-    virtual void vfn_4();  // [4] @ 0x823f8958
-    virtual void vfn_5();  // [5] @ 0x823f8970
-    virtual void vfn_20();  // [20] @ 0x823f8988
+    virtual void* Allocate(uint32_t size, uint32_t alignment); // [1] @ 0x823f89b8
+    virtual uint32_t GetUsedSize() const;  // [4] @ 0x823f8958
+    virtual uint32_t GetFreeSize() const;  // [5] @ 0x823f8970
+    virtual bool IsInRange(uint32_t address) const;  // [20] @ 0x823f8988
 };
 
 // ── rage::netConnectionManager  [vtable @ 0x820785BC] ──────────────────────────
