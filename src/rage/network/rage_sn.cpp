@@ -93,3 +93,85 @@ extern "C" void snMigrateMachine_vfn_0(void* obj, int flags) {
         rage_free_00C0(obj);
     }
 }
+
+
+/* ── External dependencies for leave request state machine ────────────────── */
+
+/* Network client state check functions */
+extern uint8_t SinglesNetworkClient_19E0_g(void* pClient);  /* @ 0x823F19E0 */
+extern uint8_t util_1550(void* pClient);                     /* @ 0x823F1550 */
+
+/* Event initialization */
+extern void util_DA08(void* pEvent);  /* @ 0x823DDA08 */
+
+/* State transition handler */
+extern void snHsmAcceptingLeaveRequest_9E60(
+    void* pState,
+    void* pEvent);  /* @ 0x823E9E60 */
+
+/* Vtable for EvtAcceptLeaveRequestFailed event @ 0x82073170 */
+extern void* g_vtable_EvtAcceptLeaveRequestFailed;  /* @ 0x82073170 */
+
+
+namespace rage {
+namespace snLeaveMachine {
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * snHsmAcceptingLeaveRequest::vfn_14 @ 0x823E1530 | size: 0x70 (112 bytes)
+ *
+ * Vtable slot 14 - Handles leave request acceptance state logic.
+ *
+ * This function checks the network client's state to determine if a leave
+ * request can proceed. If the client is not in the correct state or fails
+ * validation, it creates an EvtAcceptLeaveRequestFailed event and transitions
+ * the state machine.
+ *
+ * State machine layout (partial):
+ *   +0x14 (20)   m_pNetworkClient  - Pointer to SinglesNetworkClient
+ *
+ * Algorithm:
+ *   1. Check if network client is ready (SinglesNetworkClient_19E0_g)
+ *   2. If ready, check if client passes validation (util_1550)
+ *   3. If both checks pass, return (stay in current state)
+ *   4. Otherwise:
+ *      a. Create EvtAcceptLeaveRequestFailed event on stack
+ *      b. Initialize event with vtable
+ *      c. Call state transition handler with event
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void snHsmAcceptingLeaveRequest::vfn_14()
+{
+    /* Load network client pointer from state machine */
+    void* pNetworkClient = *(void**)((uint8_t*)this + 20);
+    
+    /* Check if network client is ready for leave request */
+    uint8_t isReady = SinglesNetworkClient_19E0_g(pNetworkClient);
+    
+    if (isReady) {
+        /* Client is ready - perform additional validation */
+        uint8_t isValid = util_1550(pNetworkClient);
+        
+        if (isValid) {
+            /* Both checks passed - stay in current state */
+            return;
+        }
+    }
+    
+    /* ── Client not ready or validation failed - create failure event ────── */
+    
+    /* Create event object on stack (vtable pointer only) */
+    struct EvtAcceptLeaveRequestFailed {
+        void* vtable;
+    } event;
+    
+    /* Initialize event structure */
+    util_DA08(&event);
+    
+    /* Set vtable for EvtAcceptLeaveRequestFailed */
+    event.vtable = &g_vtable_EvtAcceptLeaveRequestFailed;
+    
+    /* Transition state machine with failure event */
+    snHsmAcceptingLeaveRequest_9E60(this, &event);
+}
+
+} // namespace snLeaveMachine
+} // namespace rage
