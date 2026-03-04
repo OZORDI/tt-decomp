@@ -2082,3 +2082,265 @@ void pongNetMessageHolder::RemoveElementByPointer(void* targetPtr)
         currentSlot++;
     }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// pongNetMessageHolder — Batch Implementation (10 functions)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// External references
+extern "C" void* xe_EC88(uint32_t size);  // Memory allocator @ 0x820DEC88
+extern void pongNetMessageHolder_vfn_2_1770_1(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_vfn_2_18D0_1(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_68D0_wrh(void* msg);  // AcceptMessage constructor
+extern void BallHitMessage_ctor_69C8(void* msg);       // BallHitMessage constructor
+extern void pongNetMessageHolder_6B48_wrh(void* msg);  // Message constructor
+extern void pongNetMessageHolder_6C98_wrh(void* msg);  // Message constructor
+extern void pongNetMessageHolder_6D68_wrh(void* msg);  // Message constructor
+extern void pongNetMessageHolder_6E30_wrh(void* msg);  // Message constructor
+extern void pongNetMessageHolder_6FF8_wrh(void* msg);  // Message constructor
+extern void pongNetMessageHolder_6778_wrh(void* msg);  // Message constructor
+
+// Global counter tracking live pongNetMessageHolder instances
+static uint32_t& g_netMessageHolderLiveCount = *reinterpret_cast<uint32_t*>(0x826066A4);
+
+// Global message holder instances
+static pongNetMessageHolder& g_netMessageHolder1 = *reinterpret_cast<pongNetMessageHolder*>(0x825D129C);
+static pongNetMessageHolder& g_netMessageHolder2 = *reinterpret_cast<pongNetMessageHolder*>(0x825D12B4);
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_4CB8_w @ 0x82584CB8 | size: 0x5C
+//
+// Static cleanup wrapper for network message holder instance 1.
+// Called during static deinitialization to clean up the message holder.
+// Decrements the global live instance counter.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_4CB8_w() {
+    // Set initial vtable to pongNetMessageHolder
+    g_netMessageHolder1.vtable = reinterpret_cast<void**>(0x820702AC);
+    
+    // Call initialization function
+    pongNetMessageHolder_vfn_2_1770_1(&g_netMessageHolder1);
+    
+    // Change vtable to base class (pongNetMessageHolderBase)
+    g_netMessageHolder1.vtable = reinterpret_cast<void**>(0x8206FA88);
+    
+    // Decrement global live instance counter
+    g_netMessageHolderLiveCount--;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_4D18_w @ 0x82584D18 | size: 0x5C
+//
+// Static cleanup wrapper for network message holder instance 2.
+// Identical pattern to 4CB8_w but operates on a different global instance.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_4D18_w() {
+    // Set initial vtable to pongNetMessageHolder
+    g_netMessageHolder2.vtable = reinterpret_cast<void**>(0x820702C0);
+    
+    // Call initialization function
+    pongNetMessageHolder_vfn_2_18D0_1(&g_netMessageHolder2);
+    
+    // Change vtable to base class (pongNetMessageHolderBase)
+    g_netMessageHolder2.vtable = reinterpret_cast<void**>(0x8206FA88);
+    
+    // Decrement global live instance counter
+    g_netMessageHolderLiveCount--;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_1 @ 0x823BFBA8 | size: 0x54 [vtable slot 1]
+//
+// Lazy initialization for message pool at offset +8.
+// Allocates 12016 bytes and constructs the message object if not already initialized.
+// This is the scalar destructor slot, but it's actually doing lazy initialization.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder::LazyInitMessagePool() {
+    // Check if message pool is already initialized
+    if (m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for message pool (12016 bytes)
+    void* memory = xe_EC88(12016);
+    
+    if (memory != nullptr) {
+        // Construct the message object
+        pongNetMessageHolder_6778_wrh(memory);
+        m_pMessagePool = memory;
+    } else {
+        m_pMessagePool = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_FC68_1 @ 0x823BFC68 | size: 0x54
+//
+// Lazy initialization for AcceptMessage (176 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_FC68_1(pongNetMessageHolder* holder) {
+    // Check if message is already initialized
+    if (holder->m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for AcceptMessage (176 bytes)
+    void* memory = xe_EC88(176);
+    
+    if (memory != nullptr) {
+        // Construct AcceptMessage
+        pongNetMessageHolder_68D0_wrh(memory);
+        holder->m_pMessagePool = memory;
+    } else {
+        holder->m_pMessagePool = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_FCC0_1 @ 0x823BFCC0 | size: 0x54
+//
+// Lazy initialization for BallHitMessage (256 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_FCC0_1(pongNetMessageHolder* holder) {
+    // Check if message is already initialized
+    if (holder->m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for BallHitMessage (256 bytes)
+    void* memory = xe_EC88(256);
+    
+    if (memory != nullptr) {
+        // Construct BallHitMessage
+        BallHitMessage_ctor_69C8(memory);
+        holder->m_pMessagePool = memory;
+    } else {
+        holder->m_pMessagePool = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_FD18_1 @ 0x823BFD18 | size: 0x54
+//
+// Lazy initialization for network message (8976 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_FD18_1(pongNetMessageHolder* holder) {
+    // Check if message is already initialized
+    if (holder->m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for message (8976 bytes)
+    void* memory = xe_EC88(8976);
+    
+    if (memory != nullptr) {
+        // Construct message
+        pongNetMessageHolder_6B48_wrh(memory);
+        holder->m_pMessagePool = memory;
+    } else {
+        holder->m_pMessagePool = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_FEE0_1 @ 0x823BFEE0 | size: 0x54
+//
+// Lazy initialization for network message (96 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_FEE0_1(pongNetMessageHolder* holder) {
+    // Check if message is already initialized
+    if (holder->m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for message (96 bytes)
+    void* memory = xe_EC88(96);
+    
+    if (memory != nullptr) {
+        // Construct message
+        pongNetMessageHolder_6C98_wrh(memory);
+        holder->m_pMessagePool = memory;
+    } else {
+        holder->m_pMessagePool = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_FFA0_1 @ 0x823BFFA0 | size: 0x54
+//
+// Lazy initialization for network message (368 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_FFA0_1(pongNetMessageHolder* holder) {
+    // Check if message is already initialized
+    if (holder->m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for message (368 bytes)
+    void* memory = xe_EC88(368);
+    
+    if (memory != nullptr) {
+        // Construct message
+        pongNetMessageHolder_6D68_wrh(memory);
+        holder->m_pMessagePool = memory;
+    } else {
+        holder->m_pMessagePool = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_0810_1 @ 0x823C0810 | size: 0x54
+//
+// Lazy initialization for network message (176 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_0810_1(pongNetMessageHolder* holder) {
+    // Check if message is already initialized
+    if (holder->m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for message (176 bytes)
+    void* memory = xe_EC88(176);
+    
+    if (memory != nullptr) {
+        // Construct message
+        pongNetMessageHolder_6E30_wrh(memory);
+        holder->m_pMessagePool = memory;
+    } else {
+        holder->m_pMessagePool = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_0990_1 @ 0x823C0990 | size: 0x54
+//
+// Lazy initialization for network message (16016 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_0990_1(pongNetMessageHolder* holder) {
+    // Check if message is already initialized
+    if (holder->m_pMessagePool != nullptr) {
+        return;
+    }
+    
+    // Allocate memory for message (16016 bytes)
+    void* memory = xe_EC88(16016);
+    
+    if (memory != nullptr) {
+        // Construct message
+        pongNetMessageHolder_6FF8_wrh(memory);
+        holder->m_pMessagePool = memory;
+    } else {
+        holder->m_pMessagePool = nullptr;
+    }
+}
