@@ -3069,3 +3069,73 @@ void* SinglesNetworkClient_F710_p23(void)
     /* Return pointer to removed entry */
     return headEntry;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SinglesNetworkClient_97B8_g @ 0x822F97B8 | size: 0x80 (128 bytes)
+ *
+ * Searches for a matching string in an array of network client entries.
+ *
+ * This function iterates through an array of 56-byte entries, comparing each
+ * entry's string (starting at offset 0) with the provided search string.
+ *
+ * SinglesNetworkClient layout (partial):
+ *   +0x000 (0)    m_name[56]    - Entry name string (first of array)
+ *   +0x1C0 (448)  m_entryCount  - Number of entries in array
+ *
+ * Each entry is 56 bytes, with the string starting at offset 0.
+ *
+ * Algorithm:
+ *   1. Load entry count from offset +448
+ *   2. If count <= 0, return NULL
+ *   3. For each entry (index 0 to count-1):
+ *      a. Compare entry string with search string byte-by-byte
+ *      b. If strings match (all bytes equal until null terminator), return entry pointer
+ *      c. Otherwise, advance to next entry (current + 56 bytes)
+ *   4. If no match found, return NULL
+ *
+ * Returns: Pointer to matching entry, or NULL if not found
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void* SinglesNetworkClient_97B8_g(void* pThis, const char* searchString)
+{
+    uint8_t* client = (uint8_t*)pThis;
+    
+    /* Load entry count */
+    int32_t entryCount = *(int32_t*)(client + 448);
+    
+    /* Return NULL if no entries */
+    if (entryCount <= 0) {
+        return NULL;
+    }
+    
+    /* Search through array of 56-byte entries */
+    uint8_t* currentEntry = client;
+    
+    for (int i = 0; i < entryCount; i++) {
+        /* Compare strings byte-by-byte */
+        const char* entryString = (const char*)currentEntry;
+        const char* search = searchString;
+        
+        bool match = true;
+        while (*search != '\0') {
+            if (*entryString != *search) {
+                match = false;
+                break;
+            }
+            entryString++;
+            search++;
+        }
+        
+        /* Check if we reached end of both strings (complete match) */
+        if (match && *entryString == *search) {
+            /* Found matching entry - return pointer to it */
+            return currentEntry;
+        }
+        
+        /* Advance to next entry (56 bytes) */
+        currentEntry += 56;
+    }
+    
+    /* No match found */
+    return NULL;
+}
