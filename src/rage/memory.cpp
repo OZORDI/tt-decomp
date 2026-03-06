@@ -1146,3 +1146,141 @@ void* atSingleton_8958_g(atSingleton* loader, const char* animName, uint8_t crea
     
     return animation;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_C940_sp()  @ 0x8257C940 | size: 0x14
+// 
+// Stores current PowerPC timebase counter to a global variable.
+// Used for performance profiling and timing measurements.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_C940_sp() {
+    extern uint64_t PPC_QUERY_TIMEBASE();
+    extern uint64_t g_timebase_storage;  // @ 0x825DAEF0
+    
+    g_timebase_storage = PPC_QUERY_TIMEBASE();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_FE80_p39()  @ 0x8225FE80 | size: 0x18
+// 
+// Array lookup function - retrieves pointer from indexed array.
+// Formula: array[(index * 8) - 8]
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_FE80_p39(uint32_t index) {
+    extern uint32_t g_singleton_array[];  // @ 0x825C4960
+    
+    // Calculate array offset: (index * 8) - 8
+    uint32_t offset = (index << 3) - 8;
+    return (void*)g_singleton_array[offset / 4];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_4300_g()  @ 0x82454300 | size: 0x18
+// 
+// Virtual function call through vtable slot 22.
+// Loads object from offset +48, then calls its vtable method at slot 22.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_4300_g(atSingleton* obj) {
+    atSingleton* target = (atSingleton*)((uint8_t*)obj + 48);
+    
+    // Call vtable slot 22 (offset 88 = 22 * 4)
+    void** vtable = (void**)target->vtable;
+    typedef void (*VTableFunc)(atSingleton*);
+    VTableFunc func = (VTableFunc)vtable[22];
+    func(target);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_F148_p39()  @ 0x8225F148 | size: 0x1C
+// 
+// Lookup table access - maps 16-bit ID to pointer.
+// Table base: 0x825C5320, index = (id & 0xFFFF) - 4097
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_F148_p39(uint32_t id) {
+    extern uint32_t g_lookup_table_F148[];  // @ 0x825C5320
+    
+    uint16_t index = (id & 0xFFFF) - 4097;
+    return (void*)g_lookup_table_F148[index * 2];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_EE58_p39()  @ 0x8225EE58 | size: 0x1C
+// 
+// Lookup table access - maps 16-bit ID to pointer.
+// Table base: 0x825C57A0, index = (id & 0xFFFF) - 12289
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_EE58_p39(uint32_t id) {
+    extern uint32_t g_lookup_table_EE58[];  // @ 0x825C57A0
+    
+    uint16_t index = (id & 0xFFFF) - 12289;
+    return (void*)g_lookup_table_EE58[index * 2];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_EFD0_p39()  @ 0x8225EFD0 | size: 0x1C
+// 
+// Lookup table access - maps 16-bit ID to pointer.
+// Table base: 0x825C5438, index = (id & 0xFFFF) - 2049
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_EFD0_p39(uint32_t id) {
+    extern uint32_t g_lookup_table_EFD0[];  // @ 0x825C5438
+    
+    uint16_t index = (id & 0xFFFF) - 2049;
+    return (void*)g_lookup_table_EFD0[index * 2];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_F2C0_p39()  @ 0x8225F2C0 | size: 0x1C
+// 
+// Lookup table access - maps 16-bit ID to pointer.
+// Table base: 0x825C5218, index = (id & 0xFFFF) - 18433
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_F2C0_p39(uint32_t id) {
+    extern uint32_t g_lookup_table_F2C0[];  // @ 0x825C5218
+    
+    uint16_t index = (id & 0xFFFF) - 18433;
+    return (void*)g_lookup_table_F2C0[index * 2];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_F438_p39()  @ 0x8225F438 | size: 0x1C
+// 
+// Lookup table access - maps 16-bit ID to pointer.
+// Table base: 0x825C51B0, index = (id & 0xFFFF) - 20481
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_F438_p39(uint32_t id) {
+    extern uint32_t g_lookup_table_F438[];  // @ 0x825C51B0
+    
+    uint16_t index = (id & 0xFFFF) - 20481;
+    return (void*)g_lookup_table_F438[index * 2];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_F5B0_p39()  @ 0x8225F5B0 | size: 0x1C
+// 
+// Lookup table access - maps 16-bit ID to pointer.
+// Table base: 0x825C5140, index = (id & 0xFFFF) - 10241
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_F5B0_p39(uint32_t id) {
+    extern uint32_t g_lookup_table_F5B0[];  // @ 0x825C5140
+    
+    uint16_t index = (id & 0xFFFF) - 10241;
+    return (void*)g_lookup_table_F5B0[index * 2];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_F918_2hr()  @ 0x8255F918 | size: 0x18
+// 
+// Initializes three consecutive fields and calls another initialization function.
+// Sets fields at offsets +14552, +14556, +14560 to specific values.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_F918_2hr(atSingleton* obj) {
+    extern void atSingleton_E800_sp(atSingleton* obj);
+    
+    uint32_t* fields = (uint32_t*)((uint8_t*)obj + 14552);
+    fields[0] = 1;  // +14552
+    fields[1] = 0;  // +14556
+    fields[2] = 1;  // +14560
+    
+    atSingleton_E800_sp(obj);
+}
