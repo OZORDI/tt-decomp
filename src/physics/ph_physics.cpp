@@ -1929,89 +1929,17 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     *(uint32_t*)((uint8_t*)loadContext + 16) = 4;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Physics Utility Functions — Small helper routines
-// ═════════════════════════════════════════════════════════════════════════════
-
-// External vtable reference
-extern void* g_fiAsciiTokenizerVtable;  // @ 0x8202777C
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_2DF0 @ 0x820C2DF0 | size: 0x18
-//
-// Initializes a fiAsciiTokenizer object by setting its vtable pointer and
-// clearing the internal state field at offset +160.
-//
-// This is likely a constructor or reset function for the tokenizer used in
-// file parsing and serialization.
-// ─────────────────────────────────────────────────────────────────────────────
-void ph_2DF0(void* tokenizer) {
-    // Set vtable pointer for rage::fiAsciiTokenizer
-    *(void**)tokenizer = (void*)0x8202777C;
-    
-    // Clear state field at offset +160
-    *(uint32_t*)((char*)tokenizer + 160) = 0;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_95A8_h @ 0x820F95A8 | size: 0x8
-//
-// Simple getter that returns a field at offset +148.
-// Likely retrieves a pointer or handle from a physics object.
-// ─────────────────────────────────────────────────────────────────────────────
-void* ph_95A8_h(void* obj) {
-    return *(void**)((char*)obj + 148);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_FD70 @ 0x8221FD70 | size: 0x8
-//
-// Simple setter that stores a byte value at offset +15.
-// Likely sets a flag or small state value in a physics object.
-// ─────────────────────────────────────────────────────────────────────────────
-void ph_FD70(void* obj, uint8_t value) {
-    *(uint8_t*)((char*)obj + 15) = value;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_9598 @ 0x820F9598 | size: 0xC
-//
-// Aligns a pointer or address to a 4-byte boundary by clearing the bottom 2 bits.
-// Common pattern for ensuring proper alignment for 32-bit word access.
-//
-// Returns: (ptr + 3) & ~3, which rounds up to the next 4-byte boundary
-// ─────────────────────────────────────────────────────────────────────────────
-void* ph_9598(void* ptr) {
-    uintptr_t addr = (uintptr_t)ptr;
-    return (void*)((addr + 3) & ~3);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_3AB0 @ 0x820C3AB0 | size: 0x10
-//
-// Zeros out a 16-byte SIMD vector using VMX128 instructions.
-// Loads the vector, XORs it with itself (producing zero), then stores it back.
-//
-// This is a common pattern for clearing vector data in physics calculations.
-// ─────────────────────────────────────────────────────────────────────────────
-void ph_3AB0(void* vectorPtr) {
-    // Zero out 16-byte vector using SIMD
-    // vxor v0,v0,v0 produces a zero vector
-    uint32_t* vec = (uint32_t*)vectorPtr;
-    vec[0] = 0;
-    vec[1] = 0;
-    vec[2] = 0;
-    vec[3] = 0;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ph_FC68_h @ 0x8246FC68 | size: 0x38
 //
-// Calls phInst_A3A0_p33 twice: once on an embedded phInst at offset +12,
-// and once on the object itself. This pattern suggests cleanup or finalization
-// of a composite physics object that contains an embedded phInst.
+// Dual cleanup function that calls phInst_A3A0_p33 twice:
+// 1. Once on an embedded phInst at offset +12
+// 2. Once on the object itself
 //
-// The function likely performs reference counting or resource cleanup.
+// This pattern suggests cleanup or finalization of a composite physics object
+// that contains an embedded phInst. Likely performs reference counting or
+// resource cleanup for both the container and embedded instance.
 // ─────────────────────────────────────────────────────────────────────────────
 void ph_FC68_h(void* obj) {
     // Call phInst cleanup on embedded instance at offset +12
@@ -2020,119 +1948,4 @@ void ph_FC68_h(void* obj) {
     
     // Call phInst cleanup on the object itself
     phInst_A3A0_p33(obj);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_FD58 @ 0x8221FD58 | size: 0x18
-//
-// Returns a type code based on a 16-bit field at offset +22:
-//   - Returns 3 if field is 0
-//   - Returns 4 if field is non-zero
-//
-// Likely used for physics object type identification or state queries.
-// ─────────────────────────────────────────────────────────────────────────────
-int ph_FD58(void* obj) {
-    uint16_t typeField = *(uint16_t*)((char*)obj + 22);
-    return (typeField == 0) ? 3 : 4;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_3AC0 @ 0x820C3AC0 | size: 0x18
-//
-// Computes the dot product of a 3D vector with itself (magnitude squared).
-// Uses VMX128 SIMD instruction vmsum3fp128 for efficient vector math.
-//
-// Returns: x*x + y*y + z*z (the squared length of the vector)
-// ─────────────────────────────────────────────────────────────────────────────
-float ph_3AC0(const float* vector) {
-    // Load 3D vector and compute dot product with itself
-    // vmsum3fp128 v0,v0,v0 computes x*x + y*y + z*z
-    float x = vector[0];
-    float y = vector[1];
-    float z = vector[2];
-    
-    return x*x + y*y + z*z;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_0908 @ 0x820F0908 | size: 0x64
-//
-// String conversion utility that:
-//   1. Converts uppercase letters (A-Z) to lowercase (a-z)
-//   2. Converts backslashes (\) to forward slashes (/)
-//   3. Copies up to maxLen-1 characters
-//   4. Null-terminates the output
-//
-// This is commonly used for normalizing file paths on cross-platform systems.
-//
-// @param dest - Destination buffer
-// @param src - Source string
-// @param maxLen - Maximum length including null terminator
-// ─────────────────────────────────────────────────────────────────────────────
-void ph_0908(char* dest, const char* src, int maxLen) {
-    int count = maxLen - 1;
-    char* out = dest;
-    
-    while (count > 0) {
-        char ch = *src++;
-        
-        // Stop at null terminator
-        if (ch == 0) {
-            break;
-        }
-        
-        // Convert uppercase to lowercase (A-Z → a-z)
-        if (ch >= 'A' && ch <= 'Z') {
-            ch += 32;  // 'A' + 32 = 'a'
-        }
-        // Convert backslash to forward slash
-        else if (ch == '\\') {
-            ch = '/';
-        }
-        
-        *out++ = ch;
-        count--;
-    }
-    
-    // Null-terminate
-    *out = '\0';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ph_3870_h @ 0x820C3870 | size: 0x38
-//
-// Pointer arithmetic helper for indexed array access with stride calculation.
-// Given a pointer in an array, computes the next element's address based on:
-//   1. The base pointer at offset +4
-//   2. The stride at offset +76
-//   3. An array of offsets starting at offset +8
-//
-// Formula: *ptrRef = array[((*ptrRef - base) / stride) + 2] + *ptrRef
-//
-// This pattern is common in physics systems for traversing linked structures
-// or computing neighbor relationships in spatial partitioning grids.
-// ─────────────────────────────────────────────────────────────────────────────
-void ph_3870_h(void* obj, uint32_t** ptrRef) {
-    uint32_t* currentPtr = *ptrRef;
-    
-    // Early exit if pointer is null
-    if (currentPtr == nullptr) {
-        return;
-    }
-    
-    // Load base pointer and stride from object
-    uint32_t* basePtr = *(uint32_t**)((char*)obj + 4);
-    uint32_t stride = *(uint32_t*)((char*)obj + 76);
-    
-    // Compute index: (currentPtr - basePtr) / stride
-    uint32_t offset = (uintptr_t)currentPtr - (uintptr_t)basePtr;
-    uint32_t index = offset / stride;
-    
-    // Access offset array at index + 2, multiply by 4 for word indexing
-    uint32_t arrayIndex = (index + 2) * 4;
-    uint32_t* offsetArray = (uint32_t*)obj;
-    uint32_t arrayValue = *(uint32_t*)((char*)offsetArray + arrayIndex);
-    
-    // Update pointer reference: add array value to current pointer
-    *ptrRef = (uint32_t*)((uintptr_t)currentPtr + arrayValue);
 }
