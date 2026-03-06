@@ -972,3 +972,148 @@ void* xe_5E78(void) {
     
     return NULL;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_5F48()  @ 0x82115F48 | size: 0xC8
+// Allocates and initializes a 48-byte tooFarFromTableTipData object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_5F48(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(48, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 48, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        
+        /* Initialize tooFarFromTableTipData object */
+        words[0] = 0x82043510;  /* vtable for noSoftShotsTipData (parent) */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 1;           /* +0x08 - count/flag */
+        bytes[16] = 0;          /* +0x10 - disable flag */
+        
+        /* Initialize nested structure at +20 */
+        uint32_t* nested = (uint32_t*)(bytes + 20);
+        nested[0] = 0x820282EC;  /* vtable for rage::xmlNodeStruct */
+        nested[1] = 0;           /* +0x04 */
+        nested[2] = 0;           /* +0x08 */
+        nested[3] = 0;           /* +0x0C */
+        
+        /* Overwrite nested vtable with second vtable */
+        nested[0] = 0x8204351C;  /* second vtable for noSoftShotsTipData */
+        
+        /* Initialize remaining fields */
+        words[9] = 2;            /* +0x24 - value 2 */
+        words[10] = 0;           /* +0x28 */
+        words[11] = 48;          /* +0x2C - value 48 */
+        words[3] = 5;            /* +0x0C - value 5 */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_6020()  @ 0x82116020 | size: 0xC4
+// Allocates and initializes a 44-byte badSoftShotTipData object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_6020(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(44, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 44, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        
+        /* Initialize badSoftShotTipData object */
+        words[0] = 0x82043580;  /* vtable for tooFarFromTableTipData (parent) */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 1;           /* +0x08 - count/flag */
+        bytes[16] = 1;          /* +0x10 - enable flag */
+        
+        /* Initialize nested structure at +20 */
+        uint32_t* nested = (uint32_t*)(bytes + 20);
+        nested[0] = 0x820282EC;  /* vtable for rage::xmlNodeStruct */
+        nested[1] = 0;           /* +0x04 */
+        nested[2] = 0;           /* +0x08 */
+        nested[3] = 0;           /* +0x0C */
+        
+        /* Overwrite nested vtable with second vtable */
+        nested[0] = 0x8204358C;  /* second vtable for tooFarFromTableTipData */
+        
+        /* Initialize remaining fields */
+        words[9] = 2;            /* +0x24 - value 2 */
+        words[10] = 50;          /* +0x28 - value 50 */
+        words[3] = 6;            /* +0x0C - value 6 */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_60F8()  @ 0x821160F8 | size: 0xC4
+// Allocates and initializes a 44-byte backspinTipData object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_60F8(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(44, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 44, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        
+        /* Initialize backspinTipData object */
+        words[0] = 0x820435F0;  /* vtable for badSoftShotTipData (parent) */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 1;           /* +0x08 - count/flag */
+        bytes[16] = 1;          /* +0x10 - enable flag */
+        
+        /* Initialize nested structure at +20 */
+        uint32_t* nested = (uint32_t*)(bytes + 20);
+        nested[0] = 0x820282EC;  /* vtable for rage::xmlNodeStruct */
+        nested[1] = 0;           /* +0x04 */
+        nested[2] = 0;           /* +0x08 */
+        nested[3] = 0;           /* +0x0C */
+        
+        /* Overwrite nested vtable with second vtable */
+        nested[0] = 0x820435FC;  /* second vtable for badSoftShotTipData */
+        
+        /* Initialize remaining fields */
+        words[9] = 2;            /* +0x24 - value 2 */
+        words[10] = 52;          /* +0x28 - value 52 */
+        words[3] = 7;            /* +0x0C - value 7 */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
