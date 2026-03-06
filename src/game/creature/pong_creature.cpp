@@ -634,3 +634,453 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
     // Finalize animation processing
     LocomotionStateAnim_C8F8_g(animationList);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim — Animation State Management (Batch Implementation)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External references
+extern void LocomotionState_vfn_5(void* state);
+extern void rage_free_00C0(void* ptr);
+extern void rage_FF70(void* obj);
+extern void ph_59C8(void* loader, const char* name, int flag);
+extern int util_5A70(void* loader, void* outBuffer, int maxLen, int param1, int param2);
+extern void nop_8240E6D0(const char* fmt, ...);
+extern void phBoundCapsule_5138_g(void* capsule, void* params, void* data);
+extern void LocomotionStateAnim_8278_g(void* state, void* animData);
+
+// Global constants
+extern const float g_floatZero;      // @ 0x8202D110
+extern const float g_floatOne;       // @ 0x8202D108
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::~LocomotionStateAnim()  [vtable slot 0 @ 0x820DFF20]
+// Destructor - cleans up animation state resources
+// ─────────────────────────────────────────────────────────────────────────────
+void LocomotionStateAnim::~LocomotionStateAnim() {
+    // Call parent destructor
+    rage_FF70(this);
+    
+    // Note: The 'flags' parameter (r4) determines if memory should be freed
+    // This is handled by the scalar destructor (vfn_1), not here
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::Reset()  [vtable slot 2 @ 0x820E0178]
+// Resets animation state to initial values
+// ─────────────────────────────────────────────────────────────────────────────
+void LocomotionStateAnim::Reset() {
+    // Clear animation state fields
+    *(uint32_t*)((char*)this + 60) = 0;   // Clear state flags
+    *(uint32_t*)((char*)this + 320) = 0;  // Clear animation pointer
+    *(uint32_t*)((char*)this + 324) = 0;  // Clear animation data
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::GetAnimationProgress()  [vtable slot 10 @ 0x820E0FB0]
+// Returns normalized animation progress (0.0 to 1.0)
+// ─────────────────────────────────────────────────────────────────────────────
+float LocomotionStateAnim::GetAnimationProgress() {
+    // Get current animation data
+    void* animData = *(void**)((char*)this + 320);
+    
+    // Get animation timing values
+    float currentTime = *(float*)((char*)this + 184);
+    float duration = *(float*)((char*)this + 40);
+    float animEndTime = *(float*)((char*)animData + 12);
+    
+    // Calculate progress: (endTime - currentTime) / duration
+    float remaining = animEndTime - currentTime;
+    float progress = remaining / duration;
+    
+    return progress;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::GetAnimationDuration()  [vtable slot 11 @ 0x820E0FD0]
+// Returns total animation duration in seconds
+// ─────────────────────────────────────────────────────────────────────────────
+float LocomotionStateAnim::GetAnimationDuration() {
+    // Get current animation data
+    void* animData = *(void**)((char*)this + 320);
+    
+    // Get timing values
+    float duration = *(float*)((char*)this + 40);
+    float animEndTime = *(float*)((char*)animData + 12);
+    
+    // Calculate total duration: endTime / duration
+    float totalDuration = animEndTime / duration;
+    
+    return totalDuration;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::IsAnimationComplete()  [vtable slot 15 @ 0x820DF208]
+// Returns true if animation has finished playing
+// ─────────────────────────────────────────────────────────────────────────────
+bool LocomotionStateAnim::IsAnimationComplete() {
+    // Check completion flag at offset +328
+    uint8_t isComplete = *(uint8_t*)((char*)this + 328);
+    
+    // Return inverted: 0 means complete, non-zero means still playing
+    // This is a cntlzw + rlwinm pattern: count leading zeros and extract bit
+    return (isComplete == 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::Initialize()  [vtable slot 5 @ 0x820E0EE8]
+// Initializes animation state with default blend vectors
+// ─────────────────────────────────────────────────────────────────────────────
+void LocomotionStateAnim::Initialize() {
+    // Call parent initialization
+    LocomotionState_vfn_5(this);
+    
+    // Load global constants
+    const float zero = g_floatZero;   // 0.0f
+    const float one = g_floatOne;     // 1.0f
+    
+    // Initialize first blend vector at offset +192 (12 floats)
+    float* blendVec1 = (float*)((char*)this + 192);
+    blendVec1[0] = one;   // X scale
+    blendVec1[1] = zero;  // Y offset
+    blendVec1[2] = zero;  // Z offset
+    blendVec1[4] = zero;  // Rotation X
+    blendVec1[5] = one;   // Rotation Y scale
+    blendVec1[6] = zero;  // Rotation Z
+    blendVec1[8] = zero;  // Translation X
+    blendVec1[9] = zero;  // Translation Y
+    blendVec1[10] = one;  // Translation Z scale
+    
+    // Clear 16-byte aligned buffer at +240
+    uint8_t* buffer1 = (uint8_t*)((char*)this + 240);
+    for (int i = 0; i < 16; i++) {
+        buffer1[i] = 0;
+    }
+    
+    // Initialize second blend vector at offset +256 (12 floats)
+    float* blendVec2 = (float*)((char*)this + 256);
+    blendVec2[0] = one;   // X scale
+    blendVec2[1] = zero;  // Y offset
+    blendVec2[2] = zero;  // Z offset
+    blendVec2[4] = zero;  // Rotation X
+    blendVec2[5] = one;   // Rotation Y scale
+    blendVec2[6] = zero;  // Rotation Z
+    blendVec2[8] = zero;  // Translation X
+    blendVec2[9] = zero;  // Translation Y
+    blendVec2[10] = one;  // Translation Z scale
+    
+    // Clear 16-byte aligned buffer at +304
+    uint8_t* buffer2 = (uint8_t*)((char*)this + 304);
+    for (int i = 0; i < 16; i++) {
+        buffer2[i] = 0;
+    }
+    
+    // Initialize state fields
+    *(float*)((char*)this + 184) = zero;   // Current time
+    *(uint32_t*)((char*)this + 324) = 0;   // Animation data pointer
+    *(uint32_t*)((char*)this + 320) = 0;   // Animation object pointer
+    *(float*)((char*)this + 332) = zero;   // Blend weight
+    *(uint8_t*)((char*)this + 328) = 1;    // Mark as not complete
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::CalculateBlendFactor()  @ 0x820C1910
+// Calculates animation blend factor based on timing parameters
+// ─────────────────────────────────────────────────────────────────────────────
+float LocomotionStateAnim::CalculateBlendFactor(void* timingData) {
+    // Load global constants
+    const float zero = g_floatZero;
+    const float one = g_floatOne;
+    
+    // Get timing parameters from input data
+    float targetTime = *(float*)((char*)timingData + 20);
+    float blendInTime = *(float*)((char*)timingData + 12);
+    float blendOutTime = *(float*)((char*)timingData + 8);
+    
+    // If at target time, return zero blend
+    if (targetTime == one) {
+        targetTime = zero;
+    }
+    
+    // Calculate time until blend completes
+    float timeUntilBlend = one - blendInTime;
+    
+    // Check if we're in the blend-out phase
+    if (targetTime >= timeUntilBlend) {
+        // In blend-out phase: use blend-out time
+        blendOutTime = blendInTime;
+        targetTime = one - targetTime;
+    }
+    
+    // If past blend-out time, return full blend (1.0)
+    if (targetTime >= blendOutTime) {
+        return one;
+    }
+    
+    // If before blend-in time, return zero blend
+    if (targetTime <= one) {
+        return targetTime;
+    }
+    
+    // Calculate normalized blend factor
+    float blendFactor = targetTime / blendOutTime;
+    return blendFactor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::Load()  @ 0x820E0190
+// Loads animation data from file
+// ─────────────────────────────────────────────────────────────────────────────
+bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
+    // Get animation duration from parent state
+    float duration = 0.0f;
+    {
+        void** vtable = *(void***)fileLoader;
+        typedef float (*GetDurationFunc)(void*);
+        GetDurationFunc getDuration = (GetDurationFunc)vtable[5];
+        duration = getDuration(fileLoader);
+    }
+    
+    // Store duration at offset +12
+    *(float*)((char*)this + 12) = duration;
+    
+    // Initialize animation set indices
+    *(uint32_t*)((char*)this + 8) = 0;
+    
+    // Try to load primary animation set
+    const char** animNames1 = (const char**)0x825C9B90;  // Global animation name table
+    int animIndex1 = 0;
+    
+    for (int i = 0; i < 4; i++) {
+        const char* animName = animNames1[i];
+        uint8_t found = 0;
+        
+        // Call loader to check if animation exists
+        ph_59C8(fileLoader, animName, 1);
+        // Result in r3 (0 = not found, 1 = found)
+        
+        if (found == 0) {
+            animIndex1++;
+        } else {
+            break;
+        }
+    }
+    
+    *(uint32_t*)((char*)this + 8) = animIndex1;
+    
+    // Initialize alternate animation set indices
+    *(uint32_t*)((char*)this + 4) = 0;
+    
+    // Try to load alternate animation set
+    const char** animNames2 = (const char**)0x825C9BA0;  // Alternate animation name table
+    int animIndex2 = 0;
+    
+    for (int i = 0; i < 4; i++) {
+        const char* animName = animNames2[i];
+        uint8_t found = 0;
+        
+        ph_59C8(fileLoader, animName, 1);
+        
+        if (found == 0) {
+            animIndex2++;
+        } else {
+            break;
+        }
+    }
+    
+    *(uint32_t*)((char*)this + 4) = animIndex2;
+    
+    // Load animation file name
+    char fileNameBuffer[256];
+    int result = util_5A70(fileLoader, fileNameBuffer, 255, 10, 1);
+    
+    if (result == 0) {
+        // Failed to read file name
+        return false;
+    }
+    
+    // Get animation manager from parent state
+    void* stateData = *(void**)((char*)parentState + 24);
+    void* animManager = *(void**)((char*)stateData + 96);
+    
+    // Load animation from file
+    void** animMgrVtable = *(void***)animManager;
+    typedef void* (*LoadAnimFunc)(void*, const char*);
+    LoadAnimFunc loadAnim = (LoadAnimFunc)animMgrVtable[4];
+    void* loadedAnim = loadAnim(animManager, fileNameBuffer);
+    
+    if (loadedAnim == nullptr) {
+        // Failed to load animation
+        nop_8240E6D0("LocomotionStateAnim::Load - failed to load anim file '%s'", fileNameBuffer);
+        return false;
+    }
+    
+    // Store loaded animation pointer
+    *(void**)((char*)this + 0) = loadedAnim;
+    
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim::UpdateAnimationState()  @ 0x82380268
+// Updates animation state and handles state transitions
+// ─────────────────────────────────────────────────────────────────────────────
+void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
+    const float zero = g_floatZero;
+    
+    // Get animation data pointer
+    void* animData = *(void**)((char*)this + 36);
+    
+    if (animData == nullptr) {
+        // No animation data - check if we should idle
+        uint8_t flag1 = *(uint8_t*)((char*)this + 0);
+        uint8_t flag2 = *(uint8_t*)((char*)this + 1);
+        
+        if (flag1 != 0 || flag2 != 0) {
+            // Clear state and return
+            *(float*)((char*)this + 8) = zero;
+            *(uint32_t*)((char*)this + 20) = 0;
+            return;
+        }
+        
+        // Check frame counter
+        uint32_t frameCount = *(uint32_t*)((char*)this + 28);
+        if (frameCount != 0) {
+            uint32_t currentFrame = *(uint32_t*)((char*)this + 24);
+            currentFrame++;
+            *(uint32_t*)((char*)this + 24) = currentFrame;
+            
+            if (currentFrame < frameCount) {
+                // Still counting frames
+                goto cleanup;
+            }
+            
+            // Frame count reached - trigger state change
+            uint32_t currentState = *(uint32_t*)((char*)this + 4);
+            if (currentState == 2) {
+                // Transition to state 0
+                *(uint32_t*)((char*)this + 4) = 0;
+            }
+        }
+        
+    cleanup:
+        *(float*)((char*)this + 8) = zero;
+        *(uint32_t*)((char*)this + 20) = 0;
+        return;
+    }
+    
+    // Animation data exists - process it
+    void* animSubData = (void*)((char*)animData + 16);
+    
+    // Check if we should randomize timing
+    uint8_t shouldRandomize = *(uint8_t*)((char*)animSubData + 12);
+    
+    if (shouldRandomize != 0) {
+        // Randomize animation timing using RNG
+        // This uses a linear congruential generator (LCG)
+        uint32_t* rngState = (uint32_t*)0x825C9A48;  // Global RNG state
+        
+        float minTime = *(float*)((char*)animSubData + 80);
+        float maxTime = *(float*)((char*)animSubData + 84);
+        float timeRange = maxTime - minTime;
+        
+        // Generate random value: (state * 0x5CEFA7) & 0x7FFFFF
+        uint64_t seed = rngState[0];
+        uint64_t next = seed * 0x5CEFA7 + rngState[1];
+        uint32_t randomBits = (uint32_t)(next & 0x7FFFFF);
+        
+        rngState[0] = (uint32_t)next;
+        rngState[1] = (uint32_t)(next >> 32);
+        
+        // Convert to float and scale
+        float randomFloat = (float)randomBits;
+        float scaledRandom = timeRange * randomFloat * (1.0f / 8388608.0f);  // Divide by 2^23
+        float randomTime = scaledRandom + minTime;
+        
+        *(float*)((char*)this + 16) = randomTime;
+        
+        // Generate second random value for blend weight
+        seed = rngState[0];
+        next = seed * 0x5CEFA7 + rngState[1];
+        randomBits = (uint32_t)(next & 0x7FFFFF);
+        
+        rngState[0] = (uint32_t)next;
+        rngState[1] = (uint32_t)(next >> 32);
+        
+        float blendRange = *(float*)((char*)animSubData + 16);
+        randomFloat = (float)randomBits;
+        float randomBlend = randomFloat * blendRange * (1.0f / 8388608.0f);
+        
+        *(float*)((char*)this + 12) = randomBlend;
+        
+    } else {
+        // Use fixed timing
+        float fixedTime = *(float*)((char*)animSubData + 16);
+        *(float*)((char*)this + 12) = fixedTime;
+    }
+    
+    // Update state based on timing
+    float currentTime = *(float*)((char*)this + 12);
+    
+    if (currentTime < zero) {
+        // Negative time - transition to state 2
+        uint32_t state = *(uint32_t*)((char*)this + 4);
+        if (state != 2) {
+            *(uint32_t*)((char*)this + 4) = 2;
+        }
+    } else if (currentTime == zero) {
+        // Zero time - transition to state 1
+        uint32_t state = *(uint32_t*)((char*)this + 4);
+        if (state != 1) {
+            *(uint32_t*)((char*)this + 4) = 1;
+        }
+    } else {
+        // Positive time - transition to state 0
+        uint32_t state = *(uint32_t*)((char*)this + 4);
+        if (state != 0) {
+            *(uint32_t*)((char*)this + 4) = 0;
+        }
+    }
+    
+    // Check if we should use capsule collision
+    uint8_t useCapsule = *(uint8_t*)((char*)animSubData + 48);
+    uint8_t capsuleEnabled = *(uint8_t*)((char*)animSubData + 49);
+    
+    if (useCapsule != 0 && capsuleEnabled != 0) {
+        // Copy capsule data and calculate collision
+        float capsuleData[4];
+        float* srcCapsule = (float*)((char*)animSubData + 64);
+        float* dstCapsule = (float*)((char*)outputState + 48);
+        
+        // Copy 16 bytes (4 floats)
+        for (int i = 0; i < 4; i++) {
+            dstCapsule[i] = srcCapsule[i];
+        }
+        
+        // Calculate capsule collision parameters
+        float* capsuleEnd = (float*)((char*)animSubData + 80);
+        float capsuleDiff[4];
+        for (int i = 0; i < 4; i++) {
+            capsuleDiff[i] = capsuleEnd[i] - dstCapsule[i];
+        }
+        
+        // Call capsule collision function
+        phBoundCapsule_5138_g(outputState, capsuleDiff, (void*)0x825C9B60);
+        
+    } else {
+        // Use simple animation data
+        void* simpleAnimData = (void*)((char*)animSubData + 32);
+        LocomotionStateAnim_8278_g(outputState, simpleAnimData);
+    }
+    
+    // Copy final capsule data to output
+    float* finalCapsule = (float*)((char*)animSubData + 64);
+    float* outputCapsule = (float*)((char*)outputState + 48);
+    for (int i = 0; i < 4; i++) {
+        outputCapsule[i] = finalCapsule[i];
+    }
+    
+    // Clear timing fields
+    *(float*)((char*)this + 8) = zero;
+    *(uint32_t*)((char*)this + 20) = 0;
+}

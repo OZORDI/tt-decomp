@@ -606,7 +606,7 @@ Next session: suggest_unimplemented_class() picks a different class.
 ---
 
 ## Project Coverage Context (Historical)
-
+               
 Class-level coverage is complete. All 1,081 root class families are documented in src/. This was reached by working through the full RTTI map including stub classes — classes that appear in the binary's RTTI data but were never fully implemented by Rockstar. Examples include `dialogManager` (a multiple-inheritance stub with two vtables, likely superseded by `pongDialogContext`), `mcFileSegment` (a memory card subsystem stub whose vtable region contains an audio mastering string, suggesting a feature that was redesigned before ship), and similar planned-but-cut classes that follow the same pattern as `pongScreenCapture` and `gdUnlockProfile`. Finding and documenting these stubs is a normal part of shipped-game decompilation — the RTTI data is always a superset of what the runtime actually executes.
 
 The remaining work is at the **function level**. Every struct layout, field name, type alias, include convention, and base class definition is already established in src/. You are filling in individual function bodies into a complete skeleton.

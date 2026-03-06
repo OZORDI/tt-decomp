@@ -1453,15 +1453,22 @@ struct plrPlayerMgr {
 // ── plrPropMgr  [vtable @ 0x820717C4] ──────────────────────────
 struct plrPropMgr {
     void**      vtable;           // +0x00
+    uint32_t    m_propertyId;     // +0x04
+    uint32_t    _pad1[2];         // +0x08
+    void*       m_prop1;          // +0x10 (16)
+    void*       m_prop2;          // +0x14 (20)
+    void*       m_assets[3];      // +0x18 (24, 28, 32)
+    void*       m_relatedObj1;    // +0x24 (36)
+    void*       m_relatedObj2;    // +0x28 (40)
 
     // ── virtual methods ──
     virtual ~plrPropMgr();                  // [0] @ 0x823d45c0
-    virtual void PostLoadProperties();  // [20] @ 0x823d4630
-    virtual void Validate();  // [21] @ 0x823d4730
-    virtual void PostLoadChildren();  // [22] @ 0x823d4668
-    virtual void vfn_23();  // [23] @ 0x823d47a0
-    virtual void vfn_24();  // [24] @ 0x823d47f8
-    virtual void vfn_25();  // [25] @ 0x823d4860
+    virtual uint8_t PostLoadProperties();   // [20] @ 0x823d4630
+    virtual void Validate();                // [21] @ 0x823d4730
+    virtual void* PostLoadChildren();       // [22] @ 0x823d4668
+    virtual void vfn_23();                  // [23] @ 0x823d47a0
+    virtual void vfn_24();                  // [24] @ 0x823d47f8
+    virtual void vfn_25();                  // [25] @ 0x823d4860
 };
 
 // ── plrSwingLogic  [vtable @ 0x8203A48C] ──────────────────────────
