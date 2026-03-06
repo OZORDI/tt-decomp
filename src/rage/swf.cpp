@@ -366,6 +366,31 @@ void swfCMD_PlaceObject2ClipEvent_ScalarDestructor(swfCMD_PlaceObject2ClipEvent*
     }
 }
 
+/**
+ * swfCMD_DoAction::ScalarDtor() @ 0x82408538 | size: 0x18
+ * 
+ * Scalar destructor for DoAction command. This is vtable slot 1.
+ * Simply calls the destructor with the appropriate flags.
+ */
+void swfCMD_DoAction::ScalarDtor(int flags) {
+    swfCMD_DoAction_ScalarDestructor(this, flags);
+}
+
+/**
+ * swfCMD_DoInitAction::vfn_2() @ 0x821EFC00 | size: 0x10
+ * 
+ * Virtual function slot 2 - tail calls to scalar destructor (slot 1).
+ * This is a common RAGE pattern for cleanup functions.
+ */
+void swfCMD_DoInitAction::vfn_2() {
+    // Load vtable and call slot 1 (scalar destructor)
+    void** vtable = *((void***)this);
+    typedef void (*ScalarDtorFn)(void*, int);
+    ((ScalarDtorFn)vtable[1])(this, 0);
+}
+
+
+
     // Destroy all child resources
     if (m_resourceCount > 0) {
         for (int i = 0; i < m_resourceCount; i++) {
@@ -440,6 +465,60 @@ void swfINSTANCE::vfn_6() { /* TODO */ }
 void swfINSTANCE::vfn_7() { /* TODO */ }
 void swfINSTANCE::vfn_8() { /* TODO */ }
 void swfINSTANCE::vfn_9() { /* TODO */ }
+
+/**
+ * swfACTIONFUNC::vfn_11() @ 0x823FF4A0 | size: 0x14
+ * 
+ * Virtual function slot 11 - forwards to inner object's vfn_11.
+ * The inner object is stored at offset +7332.
+ */
+void swfACTIONFUNC::vfn_11() {
+    // Load inner object at offset +7332
+    void* innerObj = *((void**)((char*)this + 7332));
+    
+    if (innerObj) {
+        // Call its virtual method at slot 11
+        void** vtable = *((void***)innerObj);
+        typedef void (*VirtualFn)(void*);
+        ((VirtualFn)vtable[11])(innerObj);
+    }
+}
+
+/**
+ * swfACTIONFUNC::vfn_12() @ 0x823FF4B8 | size: 0x14
+ * 
+ * Virtual function slot 12 - forwards to inner object's vfn_12.
+ */
+void swfACTIONFUNC::vfn_12() {
+    // Load inner object at offset +7332
+    void* innerObj = *((void**)((char*)this + 7332));
+    
+    if (innerObj) {
+        // Call its virtual method at slot 12
+        void** vtable = *((void***)innerObj);
+        typedef void (*VirtualFn)(void*);
+        ((VirtualFn)vtable[12])(innerObj);
+    }
+}
+
+/**
+ * swfACTIONFUNC::vfn_13() @ 0x823FF4D0 | size: 0x14
+ * 
+ * Virtual function slot 13 - forwards to inner object's vfn_13.
+ */
+void swfACTIONFUNC::vfn_13() {
+    // Load inner object at offset +7332
+    void* innerObj = *((void**)((char*)this + 7332));
+    
+    if (innerObj) {
+        // Call its virtual method at slot 13
+        void** vtable = *((void***)innerObj);
+        typedef void (*VirtualFn)(void*);
+        ((VirtualFn)vtable[13])(innerObj);
+    }
+}
+
+
 void swfINSTANCE::vfn_10() { /* TODO */ }
 void swfINSTANCE::vfn_11() { /* TODO */ }
 void swfINSTANCE::vfn_12() { /* TODO */ }
@@ -447,14 +526,15 @@ void swfINSTANCE::vfn_13() { /* TODO */ }
 
 
 // ===========================================================================
+// ===========================================================================
 // swfACTIONFUNC — ActionScript function object
 // ===========================================================================
+
+// Implementations moved above - see lines 469-519
 
 void swfACTIONFUNC::vfn_8() { /* TODO */ }
 void swfACTIONFUNC::vfn_9() { /* TODO */ }
 void swfACTIONFUNC::vfn_10() { /* TODO */ }
-void swfACTIONFUNC::vfn_11() { /* TODO */ }
-void swfACTIONFUNC::vfn_12() { /* TODO */ }
 
 
 // ===========================================================================
@@ -464,6 +544,8 @@ void swfACTIONFUNC::vfn_12() { /* TODO */ }
 swfSCRIPTARRAY::~swfSCRIPTARRAY() {
     // TODO: Implement destructor @ 0x823FF218
 }
+
+
 
 void swfSCRIPTARRAY::vfn_10() { /* TODO */ }
 void swfSCRIPTARRAY::vfn_11() { /* TODO */ }

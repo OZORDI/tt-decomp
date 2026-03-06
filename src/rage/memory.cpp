@@ -858,3 +858,291 @@ int atSingleton::vfn_21(int transitionType) {
     
     return result;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_9C18_2hr()  @ 0x820D9C18 | size: 0x54
+// 
+// Checks game state flags to determine if a specific condition is met.
+// 
+// Returns true if:
+//   - Bit 0 of flags is NOT set (inverted check)
+//   - AND bit 2 of flags IS set
+// Otherwise returns false.
+// 
+// This appears to check if the game is in a specific state (e.g., paused but not loading).
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t atSingleton_9C18_2hr() {
+    // Navigate through global structure chain to get flags
+    // Global at 0x82120000 - 23816 = 0x821BA0F8
+    extern uint32_t* g_gameStatePtr;  // At 0x821BA0F8
+    
+    uint32_t* level1 = *(uint32_t**)0x821BA0F8;
+    uint32_t* level2 = (uint32_t*)((uint8_t*)level1 + 20);
+    uint32_t* level3 = (uint32_t*)((uint8_t*)level2 + 9736);
+    uint32_t flags = *(uint32_t*)level3;
+    
+    // Check if bit 0 is NOT set
+    bool bit0NotSet = ((flags & 0x1) == 0);
+    
+    if (!bit0NotSet) {
+        return 0;
+    }
+    
+    // Check if bit 2 is set
+    bool bit2Set = ((flags & 0x4) != 0);
+    
+    return bit2Set ? 1 : 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_57F0()  @ 0x821257F0 | size: 0x84
+// 
+// Copies 48 bytes of data using VMX128 vector instructions, then initializes
+// additional fields.
+// 
+// Structure being initialized:
+//   +0..+31: First 32 bytes (copied via vector)
+//   +16..+47: Next 32 bytes (copied via vector)
+//   +32..+47: Additional 16 bytes (copied as scalars)
+//   +48: Result from atSingleton_29E0_g
+//   +52..+60: Zeroed fields
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_57F0(atSingleton* dest, void* param1, void* sourceData) {
+    // Copy first 32 bytes using vector load/store
+    uint8_t* src = (uint8_t*)sourceData;
+    uint8_t* dst = (uint8_t*)dest;
+    
+    // Copy bytes 0-15
+    for (int i = 0; i < 16; i++) {
+        dst[i] = src[i];
+    }
+    
+    // Copy bytes 16-31
+    for (int i = 16; i < 32; i++) {
+        dst[i] = src[i];
+    }
+    
+    // Copy bytes 32-47 as individual words
+    *(uint32_t*)(dst + 32) = *(uint32_t*)(src + 32);
+    *(uint32_t*)(dst + 36) = *(uint32_t*)(src + 36);
+    *(uint32_t*)(dst + 40) = *(uint32_t*)(src + 40);
+    *(uint32_t*)(dst + 44) = *(uint32_t*)(src + 44);
+    
+    // Get value from param1 and call function
+    uint32_t* param1Ptr = (uint32_t*)param1;
+    extern uint32_t atSingleton_29E0_g(uint32_t value);
+    uint32_t result = atSingleton_29E0_g(*param1Ptr);
+    
+    // Store result and zero remaining fields
+    *(uint32_t*)(dst + 48) = result;
+    *(uint32_t*)(dst + 52) = 0;
+    *(uint32_t*)(dst + 56) = 0;
+    *(uint32_t*)(dst + 60) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_5F48_2h()  @ 0x82125F48 | size: 0x74
+// 
+// Traverses a linked list to find the last node.
+// 
+// Algorithm:
+//   1. Start at node in field +60 of input object
+//   2. If that node exists, follow +56 links until reaching last node
+//   3. If no node at +60, check node at +52
+//   4. Validate that +52 node's +56 link points back to input
+//   5. Return the last node found, or nullptr
+// 
+// This appears to be finding the tail of a doubly-linked list.
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_5F48_2h(void* obj) {
+    uint8_t* objBytes = (uint8_t*)obj;
+    
+    // Try to get node from offset +60
+    void* node = *(void**)(objBytes + 60);
+    
+    if (node != nullptr) {
+        // Follow +56 links to find last node
+        void* nextNode = *(void**)((uint8_t*)node + 56);
+        while (nextNode != nullptr) {
+            node = nextNode;
+            nextNode = *(void**)((uint8_t*)node + 56);
+        }
+        return node;
+    }
+    
+    // No node at +60, try +52
+    void* node52 = *(void**)(objBytes + 52);
+    if (node52 == nullptr) {
+        return nullptr;
+    }
+    
+    // Validate that node52's +56 link points back to obj
+    void* backLink = *(void**)((uint8_t*)node52 + 56);
+    if (backLink == obj) {
+        return node52;
+    }
+    
+    // Recursively search from node52
+    return atSingleton_5F48_2h(node52);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_8D30_p42()  @ 0x82118D30 | size: 0x88
+// 
+// Generates a string representation and stores a result byte.
+// 
+// Algorithm:
+//   1. Create a 64-byte buffer on stack
+//   2. Zero-initialize the buffer
+//   3. Call vtable function on param's +4 field to generate string
+//   4. Look up string in global table
+//   5. Store result byte at offset +444 in destination object
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_8D30_p42(atSingleton* dest, void* param) {
+    // Create and zero-initialize 64-byte buffer
+    char buffer[64];
+    buffer[0] = 0;
+    
+    extern void memset(void* ptr, int value, size_t size);
+    memset(buffer + 1, 0, 63);
+    
+    // Get object from param's +4 field and call vtable slot 1
+    void* paramObj = *(void**)((uint8_t*)param + 4);
+    void** vtable = *(void***)paramObj;
+    typedef void (*ToStringFunc)(void*, char*, int);
+    ToStringFunc toString = (ToStringFunc)vtable[1];
+    toString(paramObj, buffer, 64);
+    
+    // Look up string in global table
+    extern uint32_t* g_globalTable;  // At 0x82200000 + 25528
+    uint32_t* globalTable = *(uint32_t**)0x82206398;
+    void* lookupTable = (void*)((uint8_t*)globalTable + 908);
+    
+    // Call lookup function (vtable slot 3)
+    void** lookupVtable = *(void***)lookupTable;
+    typedef uint8_t (*LookupFunc)(void*, const char*);
+    LookupFunc lookup = (LookupFunc)lookupVtable[3];
+    uint8_t result = lookup(lookupTable, buffer);
+    
+    // Store result at offset +444
+    *((uint8_t*)dest + 444) = result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_BF40_2h()  @ 0x8212BF40 | size: 0x74
+// 
+// Conditional vtable dispatch based on flag.
+// 
+// If byte at +4 is non-zero:
+//   - Calls vtable slot 39 (offset +156) with uint16 from output
+// Otherwise:
+//   - Calls vtable slot 3 (offset +12) and stores result in output
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_BF40_2h(void* obj, uint16_t* output) {
+    uint8_t* objBytes = (uint8_t*)obj;
+    uint8_t flag = objBytes[4];
+    void* targetObj = *(void**)objBytes;
+    
+    if (flag != 0) {
+        // Call vtable slot 39 with existing value
+        void** vtable = *(void***)targetObj;
+        typedef void (*Slot39Func)(void*, uint16_t);
+        Slot39Func func = (Slot39Func)vtable[39];
+        func(targetObj, *output);
+    } else {
+        // Call vtable slot 3 and store result
+        void** vtable = *(void***)targetObj;
+        typedef uint16_t (*Slot3Func)(void*);
+        Slot3Func func = (Slot3Func)vtable[3];
+        *output = func(targetObj);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_8958_g()  @ 0x820C8958 | size: 0x168
+// 
+// Loads an animation by name with fallback logic.
+// 
+// Algorithm:
+//   1. Try to load animation from primary source
+//   2. If not found and createIfMissing flag is false, return nullptr
+//   3. If not found, build filename with extension and try loading
+//   4. If still not found, try alternate extension
+//   5. If found, register animation with manager
+//   6. If all attempts fail, log error
+// 
+// This is a resource loading function with multiple fallback paths.
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_8958_g(atSingleton* loader, const char* animName, uint8_t createIfMissing) {
+    // Try to load from physics system
+    void* physicsSystem = *(void**)((uint8_t*)loader + 4);
+    extern void* ph_6FC8(void* system);
+    void* animation = ph_6FC8(physicsSystem);
+    
+    if (animation != nullptr) {
+        return animation;
+    }
+    
+    // If not creating missing, return nullptr
+    if (createIfMissing == 0) {
+        return nullptr;
+    }
+    
+    // Build filename with extension
+    char filename[64];
+    extern void _snprintf(char* buffer, size_t size, const char* format, ...);
+    _snprintf(filename, 64, "%s", animName);
+    
+    // Find last '.' in filename
+    extern char* game_0EA0(const char* str, int ch);
+    char* dotPos = game_0EA0(filename, '.');
+    if (dotPos != nullptr) {
+        *dotPos = '\0';  // Truncate at dot
+    }
+    
+    // Get global animation cache
+    extern uint8_t* g_animCache;  // At 0x825D0080
+    uint8_t* animCache = (uint8_t*)0x825D0080;
+    
+    // Try loading with first extension
+    void* baseObj = *(void**)loader;
+    extern void atSingleton_2E60_g(void* cache, void* obj);
+    atSingleton_2E60_g(animCache, baseObj);
+    
+    extern uint8_t rage_3118(void* cache, const char* name, const char* ext);
+    uint8_t found = rage_3118(animCache, filename, "");
+    
+    if (found) {
+        extern void* crAnimation_ctor_8F98(const char* name, int flag1, int flag2);
+        animation = crAnimation_ctor_8F98(animName, 1, 0);
+    }
+    
+    // Decrement reference count
+    uint32_t* refCount = (uint32_t*)(animCache + 1536);
+    (*refCount)--;
+    
+    if (animation == nullptr) {
+        // Try alternate extension
+        atSingleton_2E60_g(animCache, baseObj);
+        found = rage_3118(animCache, filename, "");
+        
+        if (found) {
+            animation = crAnimation_ctor_8F98(animName, 1, 0);
+        }
+        
+        (*refCount)--;
+        
+        if (animation == nullptr) {
+            // Log error
+            extern void nop_8240E6D0(const char* format, ...);
+            nop_8240E6D0("Failed to load animation: %s from %s or %s", animName, animName, animName);
+            return nullptr;
+        }
+    }
+    
+    // Register animation with manager
+    extern void atSingleton_6B60_g(void* system, const char* name, void* anim);
+    atSingleton_6B60_g(physicsSystem, animName, animation);
+    
+    return animation;
+}
