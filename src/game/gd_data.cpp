@@ -777,3 +777,60 @@ void game_8EE8(void* templateKey) {
     // Decrement count
     registry->count = count - 1;
 }
+
+
+// ===========================================================================
+// plrPlayerMgr::DrawPlayerConditional @ 0x8218A288 | size: 0x60
+//
+// Conditionally draws a player based on multiple state checks.
+//
+// This function performs a series of checks before calling pongPlayer_Draw:
+//   1. Looks up a base index from array at offset (index+33)*4
+//   2. Gets player pointer from array at offset (baseIndex+29)*4
+//   3. Returns early if player pointer is null
+//   4. Checks value at offset (baseIndex+13)*12 - must be negative
+//   5. Checks byte flag at (this+baseIndex+180) - must be zero
+//   6. If all checks pass, calls pongPlayer_Draw(player, 1)
+//
+// The complex indexing suggests this is navigating through a multi-level
+// data structure, possibly a player slot table with state flags.
+//
+// Python-verified:
+//   - (index+33)*4 = array lookup for base index
+//   - (baseIndex+29)*4 = player pointer lookup
+//   - (baseIndex+13)*3*4 = (baseIndex+13)*12 = state value lookup
+//   - baseIndex+180 = visibility/draw flag
+// ===========================================================================
+void plrPlayerMgr_DrawPlayerConditional(plrPlayerMgr* mgr, uint32_t index)
+{
+    // Step 1: Look up base index from manager's array
+    uint32_t baseIndex = mgr->m_indexArray[index + 33];
+    
+    // Step 2: Get player pointer using base index
+    pongPlayer* player = (pongPlayer*)mgr->m_indexArray[baseIndex + 29];
+    
+    // Early return if player doesn't exist
+    if (player == nullptr) {
+        return;
+    }
+    
+    // Step 3: Check state value - must be negative to proceed
+    // The *12 stride suggests this is accessing a 12-byte structure array
+    int32_t stateValue = *(int32_t*)&mgr->m_indexArray[(baseIndex + 13) * 3];
+    if (stateValue >= 0) {
+        return;
+    }
+    
+    // Step 4: Check visibility/draw flag at offset 180 from base
+    // This uses the base index as a byte offset into the manager structure
+    uint8_t* flagPtr = (uint8_t*)mgr + baseIndex;
+    uint8_t drawFlag = flagPtr[180];
+    
+    // Only draw if flag is clear (0)
+    if (drawFlag != 0) {
+        return;
+    }
+    
+    // All checks passed - draw the player with flag=1
+    pongPlayer_Draw(player, 1);
+}
