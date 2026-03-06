@@ -87,17 +87,6 @@ struct fiAsciiTokenizer {
     // ── helper methods ──
     int ReadTokenAndCompare(const char* expectedToken);  // @ 0x822E58A8
 
-    virtual void vfn_27();  // [27] @ 0x822e6828
-    virtual void vfn_28();  // [28] @ 0x822e68a8
-    virtual void vfn_29();  // [29] @ 0x822e6928
-    virtual void vfn_30();  // [30] @ 0x820c2e08
-    virtual void vfn_31();  // [31] @ 0x822e6c58
-    virtual void vfn_32();  // [32] @ 0x822e6bc0
-    virtual void vfn_33();  // [33] @ 0x822e6b30
-    virtual void vfn_34();  // [34] @ 0x822e6ab8
-    virtual void vfn_35();  // [35] @ 0x822e6a40
-    virtual void vfn_36();  // [36] @ 0x822e6998
-    virtual void vfn_37();  // [37] @ 0x822e6d00
 };
 
 // ── rage::fiBinTokenizer  [vtable @ 0x8202F3E4] ──────────────────────────
