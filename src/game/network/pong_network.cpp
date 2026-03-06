@@ -3739,3 +3739,103 @@ uint16_t SinglesNetworkClient::ReadSequenceNumber() {
     // Extract lower 16 bits
     return (uint16_t)(seqNum & 0xFFFF);
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// pongNetMessageHolder — Network Message Container
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External globals
+extern uint32_t g_netMessageHolderCount;  // @ 0x826066A4 (global instance counter)
+
+// External vtables
+extern void* g_pongNetMessageHolderVtable;      // @ 0x820701F8
+extern void* g_pongNetMessageHolderBaseVtable;  // @ 0x8206FA88
+
+// External functions
+extern void pongNetMessageHolder_vfn_2_24B8_1(void* thisPtr);  // Cleanup method
+extern void rage_free_00C0(void* ptr);                         // Memory deallocator
+
+/**
+ * pongNetMessageHolder_vfn_0_4F68_1 @ 0x823C4F68 | size: 0x78
+ *
+ * Destructor for pongNetMessageHolder (vtable slot 0).
+ * Performs cleanup and optionally frees the object's memory.
+ *
+ * The destructor:
+ * 1. Sets derived class vtable (pongNetMessageHolder)
+ * 2. Calls vfn_2 cleanup method to release resources
+ * 3. Sets base class vtable (pongNetMessageHolderBase)
+ * 4. Decrements global instance counter
+ * 5. If shouldFree flag is set, deallocates the object's memory
+ *
+ * This follows the standard RAGE engine destructor pattern with:
+ * - Vtable restoration during destruction
+ * - Global instance tracking
+ * - Optional memory deallocation
+ *
+ * @param this - Pointer to pongNetMessageHolder object
+ * @param shouldFree - If bit 0 is set, free the object's memory after cleanup
+ */
+void pongNetMessageHolder_vfn_0_4F68_1(void* thisPtr, uint32_t shouldFree) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    
+    // Set derived class vtable
+    *(void**)(obj + 0) = (void*)0x820701F8;  // g_pongNetMessageHolderVtable
+    
+    // Call cleanup method (vfn_2)
+    pongNetMessageHolder_vfn_2_24B8_1(thisPtr);
+    
+    // Set base class vtable
+    *(void**)(obj + 0) = (void*)0x8206FA88;  // g_pongNetMessageHolderBaseVtable
+    
+    // Decrement global instance counter
+    g_netMessageHolderCount--;
+    
+    // Check if we should free memory
+    bool shouldFreeMemory = (shouldFree & 0x1) != 0;
+    
+    if (shouldFreeMemory) {
+        rage_free_00C0(thisPtr);
+    }
+}
+
+/**
+ * pongNetMessageHolder_2028_2hr @ 0x82582028 | size: 0x40
+ *
+ * Inserts a network message holder into a global linked list.
+ * This function performs intrusive doubly-linked list insertion.
+ *
+ * The function:
+ * 1. Calls initialization function (pongNetMessageHolder_FAE0_isl)
+ * 2. Inserts the object into a global list at 0x825D1900
+ * 3. Increments the object's reference count
+ *
+ * Structure layout (inferred):
+ *   +8   next pointer (linked list)
+ *   +12  reference count
+ *
+ * @param this - Pointer to pongNetMessageHolder object to insert
+ */
+void pongNetMessageHolder_2028_2hr(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    
+    // Call initialization function
+    pongNetMessageHolder_FAE0_isl(thisPtr);
+    
+    // Get global list head pointer
+    void** globalListHead = (void**)0x825D1900;
+    
+    // Load current next pointer from object
+    void* currentNext = *(void**)(obj + 8);
+    
+    // Store current next in global list's next field (+8)
+    *(void**)((uint8_t*)globalListHead + 8) = currentNext;
+    
+    // Link object into list by setting its next to global list head
+    *(void**)(obj + 8) = globalListHead;
+    
+    // Increment reference count
+    uint32_t refCount = *(uint32_t*)(obj + 12);
+    refCount++;
+    *(uint32_t*)(obj + 12) = refCount;
+}

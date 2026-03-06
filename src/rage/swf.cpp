@@ -215,8 +215,25 @@ void swfCONTEXT::ScalarDestructor(int flags) {
 }
 
 void swfCONTEXT::vfn_2() {
-    // TODO: Implement vfn_2 @ 0x823F9238
+    // External function declaration
+    extern void hudFlashBase_9CA8_h(void* flashObj, void* param1, void* param2);  // @ 0x823F9CA8
+    extern void* g_currentSwfContext;  // @ 0x8260281C (SDA offset 10268)
+    
+    // Store this context as the current global context
+    g_currentSwfContext = this;
+    
+    // Call hudFlashBase processing with internal state
+    // Offsets: +24 (flashObj), +28 (param1), +32 (param2)
+    void* flashObj = *((void**)((char*)this + 24));
+    void* param1 = *((void**)((char*)this + 28));
+    void* param2 = *((void**)((char*)this + 32));
+    
+    hudFlashBase_9CA8_h(flashObj, param1, param2);
+    
+    // Clear the global context pointer
+    g_currentSwfContext = nullptr;
 }
+
 
 
 // ===========================================================================
@@ -557,19 +574,3 @@ void swfSCRIPTARRAY::vfn_11() { /* TODO */ }
 
 swfOBJECT::~swfOBJECT() { /* TODO */ }
 swfSPRITE::~swfSPRITE() { /* TODO */ }
-swfFONT::~swfFONT() { /* TODO */ }
-swfTEXT::~swfTEXT() { /* TODO */ }
-swfEDITTEXT::~swfEDITTEXT() { /* TODO */ }
-swfSHAPE::~swfSHAPE() { /* TODO */ }
-swfBUTTON::~swfBUTTON() { /* TODO */ }
-swfBITMAP::~swfBITMAP() { /* TODO */ }
-
-// ===========================================================================
-// swfCMD and derived command classes
-// ===========================================================================
-
-// Implementations moved above - see lines 234-367
-
-swfCMD_RemoveObject2::~swfCMD_RemoveObject2() { /* TODO */ }
-
-} // namespace rage
