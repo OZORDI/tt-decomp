@@ -231,8 +231,141 @@ void swfCONTEXT::vfn_2() {
  */
 swfFILE::~swfFILE() {
     // Set vtable pointer (lis r11,-32249; addi r11,r11,19820)
-    // Calculation: (-32249 << 16) + 19820 = 0x82074D8C
+/**
+ * swfCMD::~swfCMD() @ 0x82407E90 | size: 0x48
+ * 
+ * Base destructor for SWF command objects. Sets vtable and conditionally
+ * frees the object if the flags parameter has bit 0 set.
+ */
+swfCMD::~swfCMD() {
+    // Vtable is set by derived destructors
+}
+
+void swfCMD_ScalarDestructor(swfCMD* obj, int flags) {
+    if (flags & 0x1) {
+        rage_free(obj);
+    }
+}
+
+/**
+ * swfCMD_DoAction::~swfCMD_DoAction() @ 0x82407ED8 | size: 0x88
+ * 
+ * Destructor for DoAction command. Decrements reference count on the
+ * ActionScript bytecode buffer and frees it when count reaches zero.
+ */
+swfCMD_DoAction::~swfCMD_DoAction() {
+    // Access the bytecode buffer at offset +16
+    void* bytecodeBuffer = *((void**)((char*)this + 16));
     
+    if (bytecodeBuffer) {
+        // Decrement reference count (uint16_t at offset +0 of buffer)
+        uint16_t* refCountPtr = (uint16_t*)bytecodeBuffer;
+        uint16_t refCount = *refCountPtr;
+        
+        // Decrement: (refCount + 0x10000 - 1) & 0xFFFF
+        refCount = (refCount - 1) & 0xFFFF;
+        *refCountPtr = refCount;
+        
+        // Free buffer if refcount reached zero
+        if (refCount == 0) {
+            rage_free(bytecodeBuffer);
+        }
+    }
+}
+
+void swfCMD_DoAction_ScalarDestructor(swfCMD_DoAction* obj, int flags) {
+    // Call destructor
+    obj->~swfCMD_DoAction();
+    
+    if (flags & 0x1) {
+        rage_free(obj);
+    }
+}
+
+/**
+ * swfCMD_DoInitAction::~swfCMD_DoInitAction() @ 0x82407F60 | size: 0x88
+ * 
+ * Destructor for DoInitAction command. Same pattern as DoAction - decrements
+ * reference count on the ActionScript initialization bytecode buffer.
+ */
+swfCMD_DoInitAction::~swfCMD_DoInitAction() {
+    // Access the bytecode buffer at offset +16
+    void* bytecodeBuffer = *((void**)((char*)this + 16));
+    
+    if (bytecodeBuffer) {
+        // Decrement reference count (uint16_t at offset +0 of buffer)
+        uint16_t* refCountPtr = (uint16_t*)bytecodeBuffer;
+        uint16_t refCount = *refCountPtr;
+        
+        // Decrement: (refCount + 0x10000 - 1) & 0xFFFF
+        refCount = (refCount - 1) & 0xFFFF;
+        *refCountPtr = refCount;
+        
+        // Free buffer if refcount reached zero
+        if (refCount == 0) {
+            rage_free(bytecodeBuffer);
+        }
+    }
+}
+
+void swfCMD_DoInitAction_ScalarDestructor(swfCMD_DoInitAction* obj, int flags) {
+    // Call destructor
+    obj->~swfCMD_DoInitAction();
+    
+    if (flags & 0x1) {
+        rage_free(obj);
+    }
+}
+
+/**
+ * swfCMD_PlaceObject2::~swfCMD_PlaceObject2() @ 0x82407FF0 | size: 0x74
+ * 
+ * Destructor for PlaceObject2 command. Frees two allocated buffers
+ * (likely color transform and matrix data).
+ */
+swfCMD_PlaceObject2::~swfCMD_PlaceObject2() {
+    // Free color transform buffer at offset +24
+    void* colorTransform = *((void**)((char*)this + 24));
+    if (colorTransform) {
+        rage_free(colorTransform);
+    }
+    
+    // Free matrix buffer at offset +28
+    void* matrix = *((void**)((char*)this + 28));
+    if (matrix) {
+        rage_free(matrix);
+    }
+}
+
+void swfCMD_PlaceObject2_ScalarDestructor(swfCMD_PlaceObject2* obj, int flags) {
+    // Call destructor
+    obj->~swfCMD_PlaceObject2();
+    
+    if (flags & 0x1) {
+        rage_free(obj);
+    }
+}
+
+/**
+ * swfCMD_PlaceObject2ClipEvent::~swfCMD_PlaceObject2ClipEvent() @ 0x82408160 | size: 0x50
+ * 
+ * Destructor for PlaceObject2 clip event. Calls cleanup helper first.
+ */
+swfCMD_PlaceObject2ClipEvent::~swfCMD_PlaceObject2ClipEvent() {
+    // Call cleanup helper (likely frees event handler list)
+    extern void atSingleton_8068_h(void* ptr);
+    atSingleton_8068_h(this);
+}
+
+void swfCMD_PlaceObject2ClipEvent_ScalarDestructor(swfCMD_PlaceObject2ClipEvent* obj, int flags) {
+    // Call destructor
+    obj->~swfCMD_PlaceObject2ClipEvent();
+    
+    if (flags & 0x1) {
+        rage_free(obj);
+    }
+}
+
     // Destroy all child resources
     if (m_resourceCount > 0) {
         for (int i = 0; i < m_resourceCount; i++) {
@@ -349,19 +482,12 @@ swfSHAPE::~swfSHAPE() { /* TODO */ }
 swfBUTTON::~swfBUTTON() { /* TODO */ }
 swfBITMAP::~swfBITMAP() { /* TODO */ }
 
-
 // ===========================================================================
 // swfCMD and derived command classes
 // ===========================================================================
 
-swfCMD::~swfCMD() { /* TODO */ }
-swfCMD_DoAction::~swfCMD_DoAction() { /* TODO */ }
+// Implementations moved above - see lines 234-367
 
-swfCMD_DoInitAction::~swfCMD_DoInitAction() { /* TODO */ }
-void swfCMD_DoInitAction::vfn_2() { /* TODO */ }
-
-swfCMD_PlaceObject2::~swfCMD_PlaceObject2() { /* TODO */ }
-swfCMD_PlaceObject2ClipEvent::~swfCMD_PlaceObject2ClipEvent() { /* TODO */ }
 swfCMD_RemoveObject2::~swfCMD_RemoveObject2() { /* TODO */ }
 
 } // namespace rage
