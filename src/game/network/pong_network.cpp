@@ -3139,3 +3139,230 @@ void* SinglesNetworkClient_97B8_g(void* pThis, const char* searchString)
     /* No match found */
     return NULL;
 }
+
+
+// ===========================================================================
+// PlayerMovementMessage — Network message for player movement synchronization
+// ===========================================================================
+
+/**
+ * PlayerMovementMessage carries player movement data across the network.
+ * 
+ * Structure:
+ *   +0x10: float velocityX
+ *   +0x14: float velocityY (always set to -1.0f as default)
+ *   +0x18: float velocityZ
+ *   +0x1C: float unused1
+ *   +0x20: float accelerationX
+ *   +0x24: float unused2
+ *   +0x28: float accelerationZ
+ *   +0x2C: float unused3
+ *   +0x30: uint8_t playerIndex
+ *   +0x31: uint8_t isMoving
+ * 
+ * Vtable slots:
+ *   1 = Deserialise (read from network)
+ *   2 = Serialise (write to network)
+ *   4 = Process (apply to game state)
+ *   5 = ReturnToPool
+ *   6 = GetPoolSingleton
+ *   7 = GetTypeName
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerMovementMessage::Deserialise() [vtable slot 1 @ 0x823B8110]
+// 
+// Reads player movement data from network stream.
+// ─────────────────────────────────────────────────────────────────────────────
+void PlayerMovementMessage::Deserialise(void* networkClient) {
+    const float INVALID_VELOCITY = -1.0f;
+    
+    uint32_t fieldMask = 0;
+    uint8_t playerIndex = 0;
+    
+    // Read field presence bitmask (4 bits) and player index (1 byte)
+    DeserializeNetworkData(networkClient, &fieldMask, 4);
+    DeserializeNetworkData(networkClient, &playerIndex, 1);
+    
+    this->playerIndex = playerIndex;
+    
+    // Read velocityX if present (bit 0)
+    if (fieldMask & 0x1) {
+        float velocityX;
+        DeserializeNetworkData(networkClient, &velocityX, 32);
+        this->velocityX = velocityX;
+    } else {
+        this->velocityX = INVALID_VELOCITY;
+    }
+    
+    this->velocityY = INVALID_VELOCITY;  // Always set to default
+    
+    // Read velocityZ if present (bit 1)
+    if (fieldMask & 0x2) {
+        float velocityZ;
+        DeserializeNetworkData(networkClient, &velocityZ, 32);
+        this->velocityZ = velocityZ;
+    } else {
+        this->velocityZ = INVALID_VELOCITY;
+    }
+    
+    // Read accelerationX if present (bit 2)
+    if (fieldMask & 0x4) {
+        float accelerationX;
+        DeserializeNetworkData(networkClient, &accelerationX, 32);
+        this->accelerationX = accelerationX;
+    } else {
+        this->accelerationX = INVALID_VELOCITY;
+    }
+    
+    this->unused2 = INVALID_VELOCITY;  // Always set to default
+    
+    // Read accelerationZ if present (bit 3)
+    if (fieldMask & 0x8) {
+        float accelerationZ;
+        DeserializeNetworkData(networkClient, &accelerationZ, 32);
+        this->accelerationZ = accelerationZ;
+    } else {
+        this->accelerationZ = INVALID_VELOCITY;
+    }
+    
+    // Read isMoving flag
+    uint32_t movingFlag = 0;
+    DeserializeNetworkData(networkClient, &movingFlag, 1);
+    this->isMoving = (movingFlag != 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerMovementMessage::Serialise() [vtable slot 2 @ 0x823B8240]
+// 
+// Writes player movement data to network stream.
+// ─────────────────────────────────────────────────────────────────────────────
+void PlayerMovementMessage::Serialise(void* networkClient) {
+    const float INVALID_VELOCITY = -1.0f;
+    
+    // Build field presence bitmask
+    uint32_t fieldMask = 0;
+    
+    if (this->velocityX != INVALID_VELOCITY) {
+        fieldMask |= 0x1;
+    }
+    if (this->velocityZ != INVALID_VELOCITY) {
+        fieldMask |= 0x2;
+    }
+    if (this->accelerationX != INVALID_VELOCITY) {
+        fieldMask |= 0x4;
+    }
+    if (this->accelerationZ != INVALID_VELOCITY) {
+        fieldMask |= 0x8;
+    }
+    
+    // Write field mask and player index
+    SinglesNetworkClient_6838_g(networkClient, fieldMask, 4);
+    SinglesNetworkClient_6838_g(networkClient, this->playerIndex, 1);
+    
+    // Write fields that are present
+    if (fieldMask & 0x1) {
+        WriteFloatToNetworkStream(networkClient, this->velocityX);
+    }
+    if (fieldMask & 0x2) {
+        WriteFloatToNetworkStream(networkClient, this->velocityZ);
+    }
+    if (fieldMask & 0x4) {
+        WriteFloatToNetworkStream(networkClient, this->accelerationX);
+    }
+    if (fieldMask & 0x8) {
+        WriteFloatToNetworkStream(networkClient, this->accelerationZ);
+    }
+    
+    // Write isMoving flag
+    SinglesNetworkClient_6918_g(networkClient, this->isMoving);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerMovementMessage::Process() [vtable slot 4 @ 0x823B8358]
+// 
+// Applies player movement to game state.
+// ─────────────────────────────────────────────────────────────────────────────
+void PlayerMovementMessage::Process(void* matchContext) {
+    // Check if we're in network mode (mode == 2) and local user exists
+    extern int32_t g_networkMode;  // @ lis(-32163) + -26068
+    extern void* g_localUserPtr;   // @ lis(-32160) + 25500
+    
+    if (g_networkMode == 2 && g_localUserPtr == nullptr) {
+        // Local user doesn't exist, clear movement flag
+        this->isMoving = false;
+    }
+    
+    // Look up the player object by index
+    void* playerObject = SinglesNetworkClient_58E8_g(this->playerIndex);
+    
+    if (playerObject != nullptr) {
+        // Get player's physics state pointer
+        uint32_t physicsStateIndex = *(uint32_t*)((uint8_t*)playerObject + 464);
+        physicsStateIndex += 17;  // Offset to movement state
+        
+        extern void** g_physicsStateArray;  // @ lis(-32161) + -21720
+        void* physicsState = g_physicsStateArray[physicsStateIndex];
+        
+        // Copy player height from physics state
+        float playerHeight = *(float*)((uint8_t*)physicsState + 52);
+        this->velocityY = playerHeight;
+        
+        // Apply movement to player
+        PlayerMovementMessage_54B0_h(playerObject, &this->velocityX, &this->accelerationX, this->isMoving);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerMovementMessage::ReturnToPool() [vtable slot 5 @ 0x823B7EF8]
+// 
+// Returns message object to the pool allocator.
+// ─────────────────────────────────────────────────────────────────────────────
+void PlayerMovementMessage::ReturnToPool() {
+    // Pool management structure at lis(-32163) + 4452 + 8
+    extern uint8_t* g_playerMovementMsgPool;  // @ 0x825D1164
+    
+    uint8_t* poolBase = g_playerMovementMsgPool;
+    
+    // Calculate index in pool using magic division (52429 = 0xCCCD)
+    uint32_t offset = (uint8_t*)this - poolBase;
+    uint32_t index = ((uint64_t)offset * 0xCCCD) >> 38;  // Divide by 80 (0x50)
+    
+    // Get current tail index
+    uint16_t currentTail = *(uint16_t*)(poolBase + 16004);
+    
+    // Link this object into free list
+    *(uint16_t*)((uint8_t*)this + 66) = currentTail;
+    
+    // Update previous tail's next pointer if valid
+    if (currentTail != 0xFFFF) {
+        uint8_t* prevTailObject = poolBase + (currentTail * 80);
+        *(uint16_t*)(prevTailObject + 64) = (uint16_t)index;
+    }
+    
+    // Update pool tail and count
+    *(uint16_t*)(poolBase + 16004) = (uint16_t)index;
+    uint16_t freeCount = *(uint16_t*)(poolBase + 16000);
+    *(uint16_t*)(poolBase + 16000) = freeCount + 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerMovementMessage::GetPoolSingleton() [vtable slot 6 @ 0x823B8000]
+// 
+// Returns pointer to the pool singleton.
+// ─────────────────────────────────────────────────────────────────────────────
+void* PlayerMovementMessage::GetPoolSingleton() {
+    extern void* g_playerMovementMsgPoolSingleton;  // @ 0x825D1158
+    return g_playerMovementMsgPoolSingleton;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerMovementMessage::GetTypeName() [vtable slot 7 @ 0x823B8010]
+// 
+// Returns the message type name string.
+// ─────────────────────────────────────────────────────────────────────────────
+const char* PlayerMovementMessage::GetTypeName() {
+    // String at lis(-32249) + -5792 = 0x8206E960
+    // But this is actually a partial string, the full string is likely elsewhere
+    return "PlayerMovementMessage";
+}
