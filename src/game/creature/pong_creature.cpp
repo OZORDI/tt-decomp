@@ -1084,3 +1084,77 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
     *(float*)((char*)this + 8) = zero;
     *(uint32_t*)((char*)this + 20) = 0;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// pcrSwingData / pcrJunkSwingData — Swing Animation Data
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External vtable pointers
+extern void* g_pcrSwingDataVtable;      // @ 0x8202E9AC
+extern void* g_pcrJunkSwingDataVtable;  // @ 0x8202EAF4
+
+/**
+ * pcrSwingData_ctor_B888 @ 0x820EB888 | size: 0x60
+ *
+ * Constructor for pcrJunkSwingData (derived from pcrSwingData).
+ * Initializes swing animation data with optional frame adjustment.
+ *
+ * The constructor:
+ * 1. Sets base class vtable (pcrSwingData)
+ * 2. Zeros out state fields (+4, +8, +12)
+ * 3. If frame pointer (+16) is set, adjusts it based on segment data
+ * 4. Sets derived class vtable (pcrJunkSwingData)
+ *
+ * Structure layout (inferred):
+ *   +0   vtable pointer
+ *   +4   state field 1 (zeroed)
+ *   +8   state field 2 (zeroed)
+ *   +12  state field 3 (zeroed)
+ *   +16  frame pointer (adjusted if non-null)
+ *
+ * @param this - Pointer to pcrJunkSwingData object being constructed
+ * @param segmentData - Pointer to segment/array data structure for frame calculation
+ */
+void pcrSwingData_ctor_B888(void* thisPtr, void* segmentData) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    uint8_t* segments = (uint8_t*)segmentData;
+    
+    // Set base class vtable (pcrSwingData)
+    *(void**)(obj + 0) = (void*)0x8202E9AC;  // g_pcrSwingDataVtable
+    
+    // Zero out state fields
+    *(uint32_t*)(obj + 4) = 0;
+    *(uint32_t*)(obj + 8) = 0;
+    *(uint32_t*)(obj + 12) = 0;
+    
+    // Check if frame pointer is set
+    uint32_t framePtr = *(uint32_t*)(obj + 16);
+    
+    if (framePtr != 0) {
+        // Load segment metadata
+        uint32_t segmentStart = *(uint32_t*)(segments + 4);
+        uint32_t segmentStride = *(uint32_t*)(segments + 76);
+        
+        // Calculate frame offset from segment start
+        uint32_t frameOffset = framePtr - segmentStart;
+        
+        // Compute segment index (frameOffset / segmentStride)
+        // Note: Division by zero trap is present in original code
+        uint32_t segmentIndex = frameOffset / segmentStride;
+        
+        // Compute array index: segmentIndex + 2
+        uint32_t arrayIndex = segmentIndex + 2;
+        
+        // Load segment base offset from array
+        uint32_t segmentBaseOffset = *(uint32_t*)(segments + (arrayIndex * 4));
+        
+        // Adjust frame pointer by adding segment base
+        uint32_t adjustedFramePtr = segmentBaseOffset + framePtr;
+        
+        // Store adjusted frame pointer
+        *(uint32_t*)(obj + 16) = adjustedFramePtr;
+    }
+    
+    // Set derived class vtable (pcrJunkSwingData)
+    *(void**)(obj + 0) = (void*)0x8202EAF4;  // g_pcrJunkSwingDataVtable
+}
