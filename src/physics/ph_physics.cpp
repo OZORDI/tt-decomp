@@ -2103,3 +2103,151 @@ void phArticulatedCollider::ApplyImpulse(void* param1, void* param2, void* param
 }
 
 } // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Physics State Machine — ph_0CC0
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External data tables
+extern const uint32_t g_phStateTransitionTable[];  // @ 0x82006AF8 (480 bytes)
+
+/**
+ * ph_0CC0 @ 0x82470CC0 | size: 0x1C0
+ *
+ * Physics state machine update function. Manages state transitions for a
+ * bounded physics system with interpolation support.
+ *
+ * The function:
+ * 1. Validates bounds (current vs max, min vs max)
+ * 2. Computes interpolation ratio if update flag is set
+ * 3. Determines next state based on current state and transition mode
+ * 4. Dispatches to state-specific handler via function pointer
+ * 5. Returns the number of units processed
+ *
+ * Structure layout (inferred from field accesses):
+ *   +4   maxBound
+ *   +8   currentBound
+ *   +12  transitionMode (byte)
+ *   +13  currentState (byte, 1-6)
+ *   +16  numerator (for ratio calculation)
+ *   +24  minBound
+ *   +28  minBoundCheck
+ *   +32  denominator (for ratio calculation)
+ *   +44  interpolationRatio (float)
+ *   +76  stateHandlerFunc (function pointer)
+ *   +80  updateFlags
+ *   +84  transitionFlags
+ *
+ * @param stateObj - Pointer to physics state machine object
+ * @return Number of units processed (currentBound - initialBound)
+ */
+int ph_0CC0(void* stateObj) {
+    uint8_t* obj = (uint8_t*)stateObj;
+    
+    // Load bounds
+    uint32_t maxBound = *(uint32_t*)(obj + 4);
+    uint32_t currentBound = *(uint32_t*)(obj + 8);
+    uint32_t minBound = *(uint32_t*)(obj + 24);
+    uint32_t minBoundCheck = *(uint32_t*)(obj + 28);
+    
+    // Validate bounds - early exit if out of range
+    if (currentBound >= maxBound) {
+        return 0;
+    }
+    
+    if (minBoundCheck >= minBound) {
+        return 0;
+    }
+    
+    // Check if update is needed
+    uint32_t updateFlags = *(uint32_t*)(obj + 80);
+    
+    if (updateFlags != 0) {
+        // Check if we need to compute interpolation ratio
+        uint32_t flagsLow2Bits = updateFlags & 0x3;
+        
+        if (flagsLow2Bits != 0) {
+            // Load values for ratio calculation
+            uint64_t numerator = *(uint32_t*)(obj + 16);
+            uint64_t denominator = *(uint32_t*)(obj + 32);
+            uint32_t transitionFlags = *(uint32_t*)(obj + 84);
+            bool reverseFlag = (transitionFlags & 0x1) != 0;
+            
+            // Convert to double for precise division
+            double numDouble = (double)(int64_t)numerator;
+            double denomDouble = (double)(int64_t)denominator;
+            
+            // Compute ratio
+            float ratio = (float)(numDouble / denomDouble);
+            *(float*)(obj + 44) = ratio;
+            
+            // Determine transition mode based on flags
+            int transitionMode;
+            
+            if (reverseFlag) {
+                // Reverse mode transitions
+                if (numerator == denominator) {
+                    // At end boundary
+                    bool bit7Set = (transitionFlags & 0x80) != 0;
+                    transitionMode = bit7Set ? 1 : 4;
+                } else if (numerator * 2 == denominator) {
+                    // At halfway point
+                    bool bit7Set = (transitionFlags & 0x80) != 0;
+                    transitionMode = bit7Set ? 2 : 5;
+                } else {
+                    // General reverse transition
+                    bool bit7Set = (transitionFlags & 0x80) != 0;
+                    transitionMode = bit7Set ? 0 : 3;
+                }
+            } else {
+                // Forward mode transition
+                bool bit7Set = (transitionFlags & 0x80) != 0;
+                transitionMode = bit7Set ? 0 : 3;
+            }
+            
+            // Compute state table index
+            uint8_t currentState = *(uint8_t*)(obj + 13);
+            uint8_t baseMode = *(uint8_t*)(obj + 12);
+            
+            // Adjust state for table lookup
+            int adjustedState;
+            switch (currentState) {
+            case 1:
+            case 2:
+            case 4:
+            case 6:
+                // These states use (state >> 1) + 1
+                adjustedState = (currentState >> 1) + 1;
+                break;
+            case 3:
+            case 5:
+            default:
+                adjustedState = 0;
+                break;
+            }
+            
+            // Compute table index: (transitionMode * 4 + baseMode) * 3 + adjustedState
+            int tableIndex = ((transitionMode * 4 + baseMode) * 3) + adjustedState;
+            
+            // Look up state handler function pointer from table
+            const uint32_t* stateTable = (const uint32_t*)0x82006AF8;  // g_phStateTransitionTable
+            uint32_t handlerFunc = stateTable[tableIndex];
+            
+            // Store handler function pointer
+            *(uint32_t*)(obj + 76) = handlerFunc;
+        }
+        
+        // Clear update flags
+        *(uint32_t*)(obj + 80) = 0;
+    }
+    
+    // Call the state handler function
+    uint32_t handlerFunc = *(uint32_t*)(obj + 76);
+    typedef void (*StateHandlerFunc)(void*);
+    StateHandlerFunc handler = (StateHandlerFunc)handlerFunc;
+    handler(stateObj);
+    
+    // Compute and return number of units processed
+    uint32_t finalBound = *(uint32_t*)(obj + 8);
+    return (int)(finalBound - currentBound);
+}

@@ -3415,3 +3415,327 @@ void pongNetMessageHolder_vfn_2_2D20_1(pongNetMessageHolder* holder)
         holder->m_pInternalArray = nullptr;
     }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Network Stream I/O Functions — Batch Implementation
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadStringFromStream @ 0x82260A70 | size: 0x7C
+//
+// Reads a null-terminated string from the network stream into a buffer.
+// Returns the number of characters read (including null terminator).
+//
+// Parameters:
+//   buffer - Destination buffer for the string
+//   maxSize - Maximum size to read (default 16)
+//
+// Returns:
+//   Number of characters read, or 0 on failure
+// ───────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient::ReadStringFromStream(char* buffer, int maxSize) {
+    // Save current bit position
+    int savedBitPos = m_bitPosition;
+    
+    // Try to read the string data
+    extern int util_0AF0(void* ctx, void* base);  // Network read helper
+    int bytesRead = util_0AF0(this, buffer);
+    
+    if (bytesRead > 0) {
+        // Null-terminate the string
+        buffer[bytesRead + maxSize - 1] = '\0';
+        
+        // Update bit position (8 bits per character)
+        m_bitPosition = savedBitPos + 8;
+        
+        // Count the actual string length
+        int length = 1;
+        char* ptr = buffer;
+        while (*ptr != '\0') {
+            ptr++;
+            m_bitPosition += 8;
+            length++;
+        }
+        
+        return length;
+    } else {
+        // Read failed - clear buffer and return 0
+        buffer[0] = '\0';
+        return 0;
+    }
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::Read64BitValue @ 0x822609F0 | size: 0x7C
+//
+// Reads a 64-bit value from the network stream by reading two 32-bit values
+// and combining them (high 32 bits, then low 32 bits).
+//
+// Parameters:
+//   outValue - Pointer to receive the 64-bit result
+//
+// Returns:
+//   true if read succeeded, false otherwise
+// ───────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient::Read64BitValue(uint64_t* outValue) {
+    uint32_t highBits = 0;
+    uint32_t lowBits = 0;
+    
+    // Read high 32 bits (32-bit field size)
+    bool readHigh = SinglesNetworkClient_8DF8_g(this, &highBits, 32);
+    
+    if (readHigh) {
+        // Read low 32 bits
+        bool readLow = SinglesNetworkClient_8DF8_g(this, &lowBits, 32);
+        
+        if (readLow) {
+            // Combine into 64-bit value: (high << 32) | low
+            *outValue = ((uint64_t)highBits << 32) | lowBits;
+            return true;
+        }
+    }
+    
+    // Read failed - still store the partial result
+    *outValue = ((uint64_t)highBits << 32) | lowBits;
+    return false;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidateAndReadData @ 0x823F3EE8 | size: 0x6C
+//
+// Validates that sufficient data is available in the stream, then reads
+// a 64-bit value if validation passes.
+//
+// Parameters:
+//   outData - Pointer to receive the 64-bit data (offset +16 from base)
+//
+// Returns:
+//   true if validation and read succeeded, false otherwise
+// ───────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient::ValidateAndReadData(void* outData) {
+    // Check if we have at least 16 bits available
+    int available = ReadStringFromStream(nullptr, 16);
+    
+    if (available > 0) {
+        // Read 64-bit value at offset +16 from the output pointer
+        uint64_t* dataPtr = (uint64_t*)((char*)outData + 16);
+        bool success = Read64BitValue(dataPtr, 64);
+        
+        return success;
+    }
+    
+    return false;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetErrorString @ 0x82238600 | size: 0x74
+//
+// Returns an error message string based on the current error code.
+//
+// Returns:
+//   Pointer to error message string, or default message if error code invalid
+// ───────────────────────────────────────────────────────────────────────────
+const char* SinglesNetworkClient::GetErrorString() {
+    extern const char g_szInvalidError[];      // @ 0x8204EF04
+    extern const char g_szDefaultError[];      // @ 0x82027423
+    
+    // Get error code from network state
+    int errorCode = SinglesNetworkClient_8CC0_w(this);
+    
+    if (errorCode < 0) {
+        return g_szInvalidError;
+    }
+    
+    // Look up error message in error table
+    extern void* xam_singleton_init_8D60(void*);
+    void* errorTable = xam_singleton_init_8D60(this);
+    
+    void** vtable = *(void***)errorTable;
+    void** errorEntry = (void**)vtable[errorCode];
+    const char* errorMsg = (const char*)errorEntry[1];
+    
+    if (errorMsg != nullptr) {
+        return errorMsg;
+    }
+    
+    return g_szDefaultError;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitializeNetworkState @ 0x82238678 | size: 0x74
+//
+// Initializes the network client state structure, clearing all fields and
+// setting up the vtable reference.
+// ───────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::InitializeNetworkState() {
+    extern const void* g_cmRefreshableCtorVtable;  // @ 0x820533CC
+    
+    // Store vtable reference at offset +36
+    *(const void**)((char*)this + 36) = g_cmRefreshableCtorVtable;
+    
+    // Clear all state fields
+    m_vtable = nullptr;
+    m_flags = 0;
+    *(uint32_t*)((char*)this + 8) = 0;
+    *(uint32_t*)((char*)this + 12) = 0;
+    *(uint32_t*)((char*)this + 16) = 0;
+    *(uint32_t*)((char*)this + 20) = 0;
+    *(uint32_t*)((char*)this + 24) = 0;
+    m_bitPosition = 0;
+    *(uint32_t*)((char*)this + 32) = 0;
+    
+    // Initialize network buffers
+    SinglesNetworkClient_0268_g(this);
+    SinglesNetworkClient_0268_g(this);
+    
+    // Set default buffer size
+    *(uint32_t*)((char*)this + 20) = 8128;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteValueWithMask @ 0x822386F0 | size: 0x68
+//
+// Writes a value to the network stream with a 14-bit mask applied.
+//
+// Parameters:
+//   value - Value to write (lower 14 bits will be used)
+// ───────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::WriteValueWithMask(uint32_t value) {
+    // Prepare for write operation
+    SinglesNetworkClient_8AE0_g(this);
+    
+    // Save current bit positions
+    int savedBitPos = m_bitPosition;
+    int savedWritePos = *(int*)((char*)this + 32);
+    
+    // Temporarily set bit position to 16
+    m_bitPosition = 16;
+    
+    // Read current value from stream
+    uint32_t currentValue = 0;
+    SinglesNetworkClient_8DF8_g(this, &currentValue, 16);
+    
+    // Restore bit position
+    m_bitPosition = savedBitPos;
+    
+    // Apply 14-bit mask to input value and merge with current value
+    uint32_t maskedValue = (value & 0x3FFF) | (currentValue & 0xFFFFC000);
+    
+    // Temporarily set write position to 16
+    *(int*)((char*)this + 32) = 16;
+    
+    // Write the merged value
+    SinglesNetworkClient_0448_g(this, maskedValue, 16);
+    
+    // Restore write position
+    *(int*)((char*)this + 32) = savedWritePos;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::Read14BitValue @ 0x82238758 | size: 0x7C
+//
+// Reads a 14-bit value from the network stream.
+//
+// Returns:
+//   14-bit value (0-16383), or 16383 if insufficient data available
+// ───────────────────────────────────────────────────────────────────────────
+uint32_t SinglesNetworkClient::Read14BitValue() {
+    // Check if we have enough bits available
+    int bitsAvailable = *(int*)((char*)this + 16);
+    int bitsNeeded = (bitsAvailable + 7) & 0xFFFFFFF8;  // Round up to nearest 8
+    
+    if (bitsNeeded < 48) {
+        // Not enough data - return maximum 14-bit value
+        return 16383;
+    }
+    
+    // Save current bit position
+    int savedBitPos = m_bitPosition;
+    
+    // Temporarily set bit position to 16
+    m_bitPosition = 16;
+    
+    // Read 16-bit value
+    uint32_t value = 0;
+    SinglesNetworkClient_8DF8_g(this, &value, 16);
+    
+    // Restore bit position
+    m_bitPosition = savedBitPos;
+    
+    // Extract lower 14 bits
+    return value & 0x3FFF;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadTimestamp @ 0x822387D8 | size: 0x70
+//
+// Reads a timestamp value from the network stream if sufficient data available.
+//
+// Returns:
+//   Timestamp value, or 0 if insufficient data
+// ───────────────────────────────────────────────────────────────────────────
+uint32_t SinglesNetworkClient::ReadTimestamp() {
+    uint32_t timestamp = 0;
+    
+    // Check if we have enough bits available
+    int bitsAvailable = *(int*)((char*)this + 16);
+    int bitsNeeded = (bitsAvailable + 7) & 0xFFFFFFF8;  // Round up to nearest 8
+    
+    if (bitsNeeded >= 48) {
+        // Save current bit position
+        int savedBitPos = m_bitPosition;
+        
+        // Temporarily set bit position to 32
+        m_bitPosition = 32;
+        
+        // Read 16-bit timestamp
+        SinglesNetworkClient_8DF8_g(this, &timestamp, 16);
+        
+        // Restore bit position
+        m_bitPosition = savedBitPos;
+    }
+    
+    return timestamp;
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadSequenceNumber @ 0x82238848 | size: 0x74
+//
+// Reads a 16-bit sequence number from the network stream.
+//
+// Returns:
+//   16-bit sequence number, or 0 if insufficient data available
+// ───────────────────────────────────────────────────────────────────────────
+uint16_t SinglesNetworkClient::ReadSequenceNumber() {
+    uint32_t seqNum = 0;
+    
+    // Check if we have enough bits available
+    int bitsAvailable = *(int*)((char*)this + 16);
+    int bitsNeeded = (bitsAvailable + 7) & 0xFFFFFFF8;  // Round up to nearest 8
+    
+    if (bitsNeeded >= 48) {
+        // Save current bit position
+        int savedBitPos = m_bitPosition;
+        
+        // Set bit position to 0 (read from start)
+        m_bitPosition = 0;
+        
+        // Read 16-bit value
+        SinglesNetworkClient_8DF8_g(this, &seqNum, 16);
+        
+        // Restore bit position
+        m_bitPosition = savedBitPos;
+    }
+    
+    // Extract lower 16 bits
+    return (uint16_t)(seqNum & 0xFFFF);
+}
