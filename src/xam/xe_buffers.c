@@ -647,3 +647,328 @@ void xe_0780(XeBuffer* buffer, uint16_t capacity) {
     buffer->data = data;
     buffer->capacity = capacity;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_3CA8()  @ 0x82213CA8 | size: 0x7C
+// Allocates and initializes a 16-byte gdUnlockConditionMultiBounce object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_3CA8(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(16, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 16, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        
+        /* Initialize gdUnlockConditionMultiBounce object */
+        words[0] = 0x8204B244;  /* vtable for gdUnlockConditionMultiBounce */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 0;           /* +0x08 */
+        words[3] = 0;           /* +0x0C */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_75F8()  @ 0x823475F8 | size: 0x90
+// Allocates and initializes a 28-byte gdCSActionCharVisibleData object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_75F8(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(28, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 28, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        
+        /* Initialize gdCSActionCharVisibleData object */
+        words[0] = 0x82077D1C;  /* vtable for gdCSActionCharVisibleData */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 0;           /* +0x08 */
+        words[3] = 0;           /* +0x0C */
+        bytes[16] = 1;          /* +0x10 - enable flag */
+        words[5] = 0xFFFFFFFF;  /* +0x14 - -1 */
+        bytes[24] = 1;          /* +0x18 - enable flag */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_5A70()  @ 0x82115A70 | size: 0xCC
+// Allocates buffer for 8-byte elements with header
+// ─────────────────────────────────────────────────────────────────────────────
+void xe_5A70(XeBuffer* buffer, uint16_t newCapacity) {
+    if (buffer->capacity == 0) {
+        /* First allocation */
+        buffer->capacity = newCapacity;
+        buffer->count = newCapacity;
+        
+        if (newCapacity != 0) {
+            /* Check for overflow: capacity > 0x1FFFFFFF (max for 8-byte elements) */
+            uint32_t allocSize;
+            if (newCapacity > 0x1FFFFFFF) {
+                allocSize = 0xFFFFFFFF;  /* Overflow */
+            } else {
+                allocSize = newCapacity * 8;
+                /* Safety check for allocSize + 4 */
+                if (allocSize > 0xFFFFFFFB) {
+                    allocSize = 0xFFFFFFFF;
+                } else {
+                    allocSize += 4;  /* Add header */
+                }
+            }
+            
+            void* data = xe_EC88(allocSize);
+            
+            if (data != NULL) {
+                uint32_t* header = (uint32_t*)data;
+                uint8_t* elements = (uint8_t*)(header + 1);
+                
+                /* Store capacity in header */
+                *header = newCapacity;
+                
+                /* Zero-initialize each 8-byte element */
+                for (uint16_t i = 0; i < newCapacity; i++) {
+                    uint32_t* elem = (uint32_t*)(elements + (i * 8));
+                    uint16_t* halfwords = (uint16_t*)(elements + (i * 8));
+                    
+                    elem[0] = 0;        /* +0x00 */
+                    halfwords[2] = 0;   /* +0x04 */
+                    halfwords[3] = 0;   /* +0x06 */
+                }
+                
+                buffer->data = elements;
+            } else {
+                buffer->data = NULL;
+            }
+        } else {
+            buffer->data = NULL;
+        }
+    }
+    
+    /* Update current count */
+    buffer->count = newCapacity;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_5BE8()  @ 0x82115BE8 | size: 0xD0
+// Allocates and initializes a 56-byte serveTipData object with nested structure
+// ─────────────────────────────────────────────────────────────────────────────
+extern float g_float_value_22840;  /* @ offset 22840 from base */
+
+void* xe_5BE8(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(56, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 56, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        float* floats = (float*)obj;
+        
+        /* Initialize serveTipData object */
+        words[0] = 0x82043300;  /* vtable for hitTipData (parent) */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 1;           /* +0x08 - count/flag */
+        bytes[16] = 1;          /* +0x10 - enable flag */
+        
+        /* Initialize nested structure at +20 */
+        uint32_t* nested = (uint32_t*)(bytes + 20);
+        nested[0] = 0x820282EC;  /* vtable for rage::xmlNodeStruct */
+        nested[1] = 0;           /* +0x04 */
+        nested[2] = 0;           /* +0x08 */
+        nested[3] = 0;           /* +0x0C */
+        
+        /* Overwrite nested vtable with second vtable */
+        nested[0] = 0x8204330C;  /* second vtable for hitTipData */
+        
+        /* Initialize remaining fields */
+        words[9] = 0xFFFFFFFF;   /* +0x24 - -1 */
+        words[10] = 0xFFFFFFFF;  /* +0x28 - -1 */
+        words[11] = 0xFFFFFFFF;  /* +0x2C - -1 */
+        words[12] = 0xFFFFFFFF;  /* +0x30 - -1 */
+        floats[13] = g_float_value_22840;  /* +0x34 - float value */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_5CC8()  @ 0x82115CC8 | size: 0xC4
+// Allocates and initializes a 52-byte focusMeterTipData object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_5CC8(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(52, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 52, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        
+        /* Initialize focusMeterTipData object */
+        words[0] = 0x82043398;  /* vtable for serveTipData (parent) */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 1;           /* +0x08 - count/flag */
+        bytes[16] = 1;          /* +0x10 - enable flag */
+        
+        /* Initialize nested structure at +20 */
+        uint32_t* nested = (uint32_t*)(bytes + 20);
+        nested[0] = 0x820282EC;  /* vtable for rage::xmlNodeStruct */
+        nested[1] = 0;           /* +0x04 */
+        nested[2] = 0;           /* +0x08 */
+        nested[3] = 0;           /* +0x0C */
+        
+        /* Overwrite nested vtable with second vtable */
+        nested[0] = 0x820433A4;  /* second vtable for serveTipData */
+        
+        /* Initialize remaining fields */
+        words[9] = 0xFFFFFFFF;   /* +0x24 - -1 */
+        words[10] = 0xFFFFFFFF;  /* +0x28 - -1 */
+        words[11] = 0xFFFFFFFF;  /* +0x2C - -1 */
+        words[12] = 0xFFFFFFFF;  /* +0x30 - -1 */
+        words[3] = 1;            /* +0x0C - overwrite with 1 */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_5DA0()  @ 0x82115DA0 | size: 0xC8
+// Allocates and initializes a 48-byte forcedFromTableCenterTipData object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_5DA0(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(48, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 48, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        
+        /* Initialize forcedFromTableCenterTipData object */
+        words[0] = 0x82043430;  /* vtable for focusMeterTipData (parent) */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 1;           /* +0x08 - count/flag */
+        bytes[16] = 1;          /* +0x10 - enable flag */
+        
+        /* Initialize nested structure at +20 */
+        uint32_t* nested = (uint32_t*)(bytes + 20);
+        nested[0] = 0x820282EC;  /* vtable for rage::xmlNodeStruct */
+        nested[1] = 0;           /* +0x04 */
+        nested[2] = 0;           /* +0x08 */
+        nested[3] = 0;           /* +0x0C */
+        
+        /* Overwrite nested vtable with second vtable */
+        nested[0] = 0x8204343C;  /* second vtable for focusMeterTipData */
+        
+        /* Initialize remaining fields */
+        words[9] = 3;            /* +0x24 - value 3 */
+        words[10] = 0;           /* +0x28 */
+        words[11] = 6;           /* +0x2C - value 6 */
+        words[3] = 2;            /* +0x0C - value 2 */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xe_5E78()  @ 0x82115E78 | size: 0xBC
+// Allocates and initializes a 44-byte noSoftShotsTipData object
+// ─────────────────────────────────────────────────────────────────────────────
+void* xe_5E78(void) {
+    /* Ensure main thread heap is initialized */
+    xe_main_thread_init_0038();
+    
+    /* Get allocator from SDA context */
+    uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void* allocator = (void*)(uintptr_t)sdaContext[1];
+    
+    /* Get allocator vtable and call Allocate(44, 16) */
+    void** vtable = *(void***)allocator;
+    AllocatorVCall allocFunc = (AllocatorVCall)vtable[1];
+    void* obj = allocFunc(allocator, 44, 16);
+    
+    if (obj != NULL) {
+        uint32_t* words = (uint32_t*)obj;
+        uint8_t* bytes = (uint8_t*)obj;
+        
+        /* Initialize noSoftShotsTipData object */
+        words[0] = 0x820434A0;  /* vtable for forcedFromTableCenterTipData (parent) */
+        words[1] = 0;           /* +0x04 */
+        words[2] = 1;           /* +0x08 - count/flag */
+        bytes[16] = 1;          /* +0x10 - enable flag */
+        
+        /* Initialize nested structure at +20 */
+        uint32_t* nested = (uint32_t*)(bytes + 20);
+        nested[0] = 0x820282EC;  /* vtable for rage::xmlNodeStruct */
+        nested[1] = 0;           /* +0x04 */
+        nested[2] = 0;           /* +0x08 */
+        nested[3] = 0;           /* +0x0C */
+        
+        /* Overwrite nested vtable with second vtable */
+        nested[0] = 0x820434AC;  /* second vtable for forcedFromTableCenterTipData */
+        
+        /* Initialize remaining fields */
+        words[9] = 4;            /* +0x24 - value 4 */
+        words[10] = 4;           /* +0x28 - value 4 */
+        words[3] = 4;            /* +0x0C - value 4 */
+        
+        return obj;
+    }
+    
+    return NULL;
+}
