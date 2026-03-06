@@ -157,3 +157,123 @@ void atSingleton_74B8(atSingleton* obj) {
     rage_free_00C0(arrayMetadata);
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_A828_2hr()  @ 0x8245A828 | size: 0x10
+// 
+// Sets vtable pointer to 0x820054B8.
+// Constructor or vtable initialization function.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_A828_2hr(atSingleton* obj) {
+    obj->vtable = (void*)0x820054B8;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_DB50_2h()  @ 0x8245DB50 | size: 0x10
+// 
+// Sets vtable pointer to 0x82005624, then calls atSingleton_FA08_g.
+// Chained initialization pattern.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_DB50_2h(atSingleton* obj) {
+    obj->vtable = (void*)0x82005624;
+    atSingleton_FA08_g(obj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_FA08_g()  @ 0x8245FA08 | size: 0x10
+// 
+// Sets vtable pointer to 0x820057A4, then calls atSingleton_22D0_g.
+// Multi-stage initialization chain.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_FA08_g(atSingleton* obj) {
+    obj->vtable = (void*)0x820057A4;
+    atSingleton_22D0_g(obj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_6F98_g()  @ 0x824B6F98 | size: 0x10
+// 
+// Returns a value from a global structure.
+// Loads pointer from global at 0x8200084C, then returns field at offset +16.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t atSingleton_6F98_g() {
+    uint32_t* globalPtr = *(uint32_t**)0x8200084C;
+    return globalPtr[4];  // offset +16 = index 4
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_6108()  @ 0x824B6108 | size: 0x14
+// 
+// Indirect function call through function pointer at offset +4.
+// Loads first parameter from offset +0, then calls function pointer at +4.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_6108(void* obj) {
+    typedef void (*FuncPtr)(void*);
+    void* param = *(void**)obj;
+    FuncPtr func = *(FuncPtr*)((uint8_t*)obj + 4);
+    func(param);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_9980_2h()  @ 0x824F9980 | size: 0x10
+// 
+// Returns absolute value of signed integer.
+// If value is negative, returns its negation; otherwise returns early.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t atSingleton_9980_2h(int32_t value) {
+    if (value >= 0) {
+        return value;
+    }
+    return -value;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_6F38_p33()  @ 0x821C6F38 | size: 0x14
+// 
+// Stores 0 at offset 75756 (0x127EC), then calls SinglesNetworkClient_4FB0_g.
+// Network client initialization helper.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_6F38_p33(uint8_t* obj) {
+    *(uint32_t*)(obj + 75756) = 0;
+    extern void SinglesNetworkClient_4FB0_g(uint8_t* obj);
+    SinglesNetworkClient_4FB0_g(obj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_DB58_sp()  @ 0x8257DB58 | size: 0x10
+// 
+// Stores current timebase value to global at 0x82619BB0.
+// Performance counter / timing utility.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_DB58_sp() {
+    extern uint64_t PPC_QUERY_TIMEBASE();
+    uint64_t timebase = PPC_QUERY_TIMEBASE();
+    *(uint64_t*)0x82619BB0 = timebase;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_AA30_2hr()  @ 0x824FAA30 | size: 0x10
+// 
+// Calls nt_8948 with parameters (obj, 0, 32768).
+// Network or threading utility with specific flags.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_AA30_2hr(void* obj) {
+    extern void nt_8948(void* obj, uint32_t param1, uint32_t param2);
+    nt_8948(obj, 0, 32768);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_7D58_2h()  @ 0x824F7D58 | size: 0x14
+// 
+// Modulo operation: returns (value1 % value2).
+// Repeatedly subtracts value2 from value1 until result is negative,
+// then adds value2 back once to get the remainder.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t atSingleton_7D58_2h(int32_t value1, int32_t value2) {
+    int32_t result = value1;
+    while (result >= 0) {
+        result -= value2;
+    }
+    return result + value2;
+}
+
