@@ -248,12 +248,35 @@ void swfCONTEXT::vfn_2() {
  */
 swfFILE::~swfFILE() {
     // Set vtable pointer (lis r11,-32249; addi r11,r11,19820)
+    // Calculation: (-32249 << 16) + 19820 = 0x82074D8C
+    
+    // Destroy all child resources
+    if (m_resourceCount > 0) {
+        for (int i = 0; i < m_resourceCount; i++) {
+            void* resource = m_pResourceArray[i];
+            if (resource) {
+                // Call virtual destructor (slot 0) with flags=1
+                void** vtable = *((void***)resource);
+                typedef void (*DestructorFn)(void*, int);
+                ((DestructorFn)vtable[0])(resource, 1);
+            }
+        }
+    }
+    
+    // Free the resource array itself
+    if (m_pResourceArray) {
+        rage_free(m_pResourceArray);
+    }
+}
+
+
 /**
  * swfCMD::~swfCMD() @ 0x82407E90 | size: 0x48
  * 
  * Base destructor for SWF command objects. Sets vtable and conditionally
  * frees the object if the flags parameter has bit 0 set.
  */
+
 swfCMD::~swfCMD() {
     // Vtable is set by derived destructors
 }
@@ -383,15 +406,6 @@ void swfCMD_PlaceObject2ClipEvent_ScalarDestructor(swfCMD_PlaceObject2ClipEvent*
     }
 }
 
-/**
- * swfCMD_DoAction::ScalarDtor() @ 0x82408538 | size: 0x18
- * 
- * Scalar destructor for DoAction command. This is vtable slot 1.
- * Simply calls the destructor with the appropriate flags.
- */
-void swfCMD_DoAction::ScalarDtor(int flags) {
-    swfCMD_DoAction_ScalarDestructor(this, flags);
-}
 
 /**
  * swfCMD_DoInitAction::vfn_2() @ 0x821EFC00 | size: 0x10
@@ -407,34 +421,6 @@ void swfCMD_DoInitAction::vfn_2() {
 }
 
 
-
-    // Destroy all child resources
-    if (m_resourceCount > 0) {
-        for (int i = 0; i < m_resourceCount; i++) {
-            void* resource = m_pResourceArray[i];
-            if (resource) {
-                // Call virtual destructor (slot 0) with flags=1
-                void** vtable = *((void***)resource);
-                typedef void (*DestructorFn)(void*, int);
-                ((DestructorFn)vtable[0])(resource, 1);
-            }
-        }
-    }
-    
-    // Free the resource array if it exists
-    if (m_pResourceArray) {
-        // Check if array is in singleton pool
-        uint8_t found = atSingleton_Find(m_pResourceArray);
-        if (found == 0) {
-            // Not found in singleton pool, need to free it
-            // TODO: Get allocator and free the array
-        }
-    }
-    
-    // Clean up additional file resources
-    atHashMap_Clear((char*)this + 52);
-    swfFile_DestroyResources(this);
-}
 
 void swfFILE::vfn_10() {
     // TODO: Implement vfn_10 @ 0x823F9DC8
@@ -518,23 +504,6 @@ void swfACTIONFUNC::vfn_12() {
     }
 }
 
-/**
- * swfACTIONFUNC::vfn_13() @ 0x823FF4D0 | size: 0x14
- * 
- * Virtual function slot 13 - forwards to inner object's vfn_13.
- */
-void swfACTIONFUNC::vfn_13() {
-    // Load inner object at offset +7332
-    void* innerObj = *((void**)((char*)this + 7332));
-    
-    if (innerObj) {
-        // Call its virtual method at slot 13
-        void** vtable = *((void***)innerObj);
-        typedef void (*VirtualFn)(void*);
-        ((VirtualFn)vtable[13])(innerObj);
-    }
-}
-
 
 void swfINSTANCE::vfn_10() { /* TODO */ }
 void swfINSTANCE::vfn_11() { /* TODO */ }
@@ -574,3 +543,113 @@ void swfSCRIPTARRAY::vfn_11() { /* TODO */ }
 
 swfOBJECT::~swfOBJECT() { /* TODO */ }
 swfSPRITE::~swfSPRITE() { /* TODO */ }
+
+// ===========================================================================
+// swfCONTEXT Additional Methods
+// ===========================================================================
+
+/**
+ * swfCONTEXT_B1F0_w @ 0x823FB1F0 | size: 0x64
+ * 
+ * Checks if a specific condition is met by comparing byte values.
+ * Returns true if the XOR of two bytes exceeds 127, false otherwise.
+ * This appears to be a validation or state check function.
+ */
+bool swfCONTEXT_B1F0_w() {
+    // External declarations
+    extern void* util_B188(void* obj, int param);  // @ 0x823FB188 - returns pointer
+    extern void* g_swfGlobalObject;  // @ 0x82604848 (SDA offset 18504)
+    
+    // Call utility function with parameter 13
+    uint8_t* result = (uint8_t*)util_B188(g_swfGlobalObject, 13);
+    
+    // Load bytes at offsets +0 and +3
+    uint8_t byte0 = result[0];
+    uint8_t byte3 = result[3];
+    
+    // XOR the bytes and check if result > 127
+    uint8_t xorResult = byte0 ^ byte3;
+    return (xorResult > 127);
+}
+
+
+/**
+ * swfCONTEXT_CA50_2hr @ 0x823FCA50 | size: 0x118
+ * 
+ * Recursive context processing function. Checks context state flags,
+ * calls virtual methods, and manages a context stack. Recursively
+ * processes child contexts in a linked list.
+ */
+void swfCONTEXT_CA50_2hr(swfCONTEXT* ctx) {
+    // External declarations
+    extern void* g_currentSwfContext;  // @ 0x8260281C (SDA offset 10268)
+    extern uint8_t g_contextStack[128];  // @ 0x82604C68 (SDA offset 19560)
+    
+    // Check flag at offset +173
+    uint8_t flag173 = *((uint8_t*)((char*)ctx + 173));
+    if (flag173 == 0) {
+        return;
+    }
+    
+    // Check nested object at offset +176
+    void* nestedObj = *((void**)((char*)ctx + 176));
+    bool shouldCallVirtual = true;
+    
+    if (nestedObj != nullptr) {
+        uint8_t nestedFlag = *((uint8_t*)((char*)nestedObj + 170));
+        if (nestedFlag != 0) {
+            shouldCallVirtual = false;
+        }
+    }
+    
+    // Call virtual method slot 6 on object at offset +4
+    uint8_t callResult = 0;
+    if (shouldCallVirtual) {
+        void* obj = *((void**)((char*)ctx + 4));
+        void** vtable = *((void***)obj);
+        typedef uint8_t (*VirtualFn)(void*);
+        callResult = ((VirtualFn)vtable[6])(obj);
+    }
+    
+    // If virtual call returned non-zero, push context onto stack
+    if (callResult != 0) {
+        // Access global context stack
+        int* stackCount = (int*)((char*)g_contextStack + 128 - 1052);
+        
+        if (*stackCount < 32) {
+            // Check if this context is the current global context
+            if (g_currentSwfContext == ctx) {
+                // Store previous stack top
+                int* prevTop = (int*)((char*)g_contextStack + 128 - 4);
+                *prevTop = *stackCount;
+            }
+            
+            // Push context onto stack
+            int index = *stackCount;
+            void** stackArray = (void**)g_contextStack;
+            stackArray[index] = ctx;
+            (*stackCount)++;
+        }
+    } else {
+        // If this is the current global context, call virtual method slot 3
+        if (g_currentSwfContext == ctx) {
+            void* obj = *((void**)((char*)ctx + 4));
+            void** vtable = *((void***)obj);
+            typedef void (*VirtualFn3)(void*, void*, int, int);
+            ((VirtualFn3)vtable[3])(obj, ctx, 2, 1);
+            
+            // Clear global context
+            g_currentSwfContext = nullptr;
+        }
+    }
+    
+    // Recursively process child contexts (linked list at offset +180/+184)
+    void* childCtx = *((void**)((char*)ctx + 180));
+    while (childCtx != nullptr) {
+        swfCONTEXT_CA50_2hr((swfCONTEXT*)childCtx);
+        childCtx = *((void**)((char*)childCtx + 184));
+    }
+}
+
+
+} // namespace rage
