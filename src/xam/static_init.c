@@ -100,3 +100,135 @@ void xam_static_init_1770(void) {
     // Increment the node count
     singleton->count++;
 }
+
+// Static nodes for batch of 10 initialization functions
+static xam_init_node g_xam_node_F628 = {0};  // @ 0x825D0FF0
+static xam_init_node g_xam_node_F6A0 = {0};  // @ 0x825D1008
+static xam_init_node g_xam_node_F718 = {0};  // @ 0x825D1020
+static xam_init_node g_xam_node_F790 = {0};  // @ 0x825D1038
+static xam_init_node g_xam_node_F808 = {0};  // @ 0x825D1050
+static xam_init_node g_xam_node_F880 = {0};  // @ 0x825D1068
+static xam_init_node g_xam_node_F8F8 = {0};  // @ 0x825D1080
+static xam_init_node g_xam_node_F970 = {0};  // @ 0x825D1098
+static xam_init_node g_xam_node_F9E8 = {0};  // @ 0x825D10B0
+static xam_init_node g_xam_node_0FF0 = {0};  // @ 0x825D1518
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F628 @ 0x8257F628 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F628(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F628.next = old_head;
+    singleton->head = &g_xam_node_F628;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F6A0 @ 0x8257F6A0 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F6A0(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F6A0.next = old_head;
+    singleton->head = &g_xam_node_F6A0;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F718 @ 0x8257F718 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F718(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F718.next = old_head;
+    singleton->head = &g_xam_node_F718;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F790 @ 0x8257F790 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F790(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F790.next = old_head;
+    singleton->head = &g_xam_node_F790;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F808 @ 0x8257F808 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F808(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F808.next = old_head;
+    singleton->head = &g_xam_node_F808;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F880 @ 0x8257F880 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F880(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F880.next = old_head;
+    singleton->head = &g_xam_node_F880;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F8F8 @ 0x8257F8F8 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F8F8(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F8F8.next = old_head;
+    singleton->head = &g_xam_node_F8F8;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F970 @ 0x8257F970 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F970(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F970.next = old_head;
+    singleton->head = &g_xam_node_F970;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_F9E8 @ 0x8257F9E8 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_F9E8(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_F9E8.next = old_head;
+    singleton->head = &g_xam_node_F9E8;
+    singleton->count++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xam_static_init_0FF0 @ 0x82580FF0 | size: 0x40
+// Inserts static node into global initialization linked list
+// ─────────────────────────────────────────────────────────────────────────────
+void xam_static_init_0FF0(void) {
+    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_node* old_head = singleton->head;
+    g_xam_node_0FF0.next = old_head;
+    singleton->head = &g_xam_node_0FF0;
+    singleton->count++;
+}
