@@ -1614,3 +1614,317 @@ bool phBoundGeometry::CallVTableSlot37() {
 }
 
 } // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Physics Utility Functions — Batch Implementation
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_2DF0 @ 0x820C2DF0 | size: 0x18
+//
+// Initializes a rage::fiAsciiTokenizer object by setting its vtable pointer
+// and clearing the internal state field at offset +160.
+//
+// This is likely a constructor or reset function for the tokenizer class.
+// ─────────────────────────────────────────────────────────────────────────────
+void ph_2DF0(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    
+    // Set vtable pointer for rage::fiAsciiTokenizer
+    *(void**)(obj + 0) = (void*)0x8202777C;
+    
+    // Clear internal state field
+    *(uint32_t*)(obj + 160) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_3AB0 @ 0x820C3AB0 | size: 0x10
+//
+// Zeros out a 16-byte SIMD vector at the given address.
+// Uses AltiVec vxor instruction to efficiently clear the vector.
+// ─────────────────────────────────────────────────────────────────────────────
+void ph_3AB0(void* vectorPtr) {
+    uint32_t* vec = (uint32_t*)vectorPtr;
+    vec[0] = 0;
+    vec[1] = 0;
+    vec[2] = 0;
+    vec[3] = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_3AC0 @ 0x820C3AC0 | size: 0x18
+//
+// Computes the dot product of a 3D vector with itself (magnitude squared).
+// Uses AltiVec vmsum3fp128 instruction for SIMD dot product calculation.
+//
+// Returns: float - The squared magnitude of the vector
+// ─────────────────────────────────────────────────────────────────────────────
+float ph_3AC0(const float* vector) {
+    // Compute dot product: v.x*v.x + v.y*v.y + v.z*v.z
+    float result = vector[0] * vector[0] + 
+                   vector[1] * vector[1] + 
+                   vector[2] * vector[2];
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_3870_h @ 0x820C3870 | size: 0x38
+//
+// Advances a pointer within a segmented array structure. This function:
+// 1. Checks if the input pointer is valid (non-null)
+// 2. Calculates which segment the pointer is in
+// 3. Advances the pointer by the segment stride
+//
+// Used for iterating through physics data structures with non-contiguous memory.
+//
+// Parameters:
+//   arrayBase - Base pointer to the segmented array structure
+//   ptrToAdvance - Pointer to advance (modified in-place)
+// ─────────────────────────────────────────────────────────────────────────────
+void ph_3870_h(void* arrayBase, void** ptrToAdvance) {
+    uint8_t* base = (uint8_t*)arrayBase;
+    uint32_t currentPtr = *(uint32_t*)ptrToAdvance;
+    
+    // Early exit if pointer is null
+    if (currentPtr == 0) {
+        return;
+    }
+    
+    // Load array metadata
+    uint32_t arrayStart = *(uint32_t*)(base + 4);
+    uint32_t elementStride = *(uint32_t*)(base + 76);
+    
+    // Calculate element index
+    uint32_t offset = currentPtr - arrayStart;
+    uint32_t elementIndex = offset / elementStride;
+    
+    // Calculate segment table index (index + 2)
+    uint32_t segmentIndex = (elementIndex + 2) * 4;
+    
+    // Load segment base offset
+    uint32_t segmentOffset = *(uint32_t*)(base + segmentIndex);
+    
+    // Advance pointer by segment offset
+    uint32_t newPtr = segmentOffset + currentPtr;
+    *(uint32_t*)ptrToAdvance = newPtr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_0908 @ 0x820F0908 | size: 0x64
+//
+// Normalizes a file path string by:
+// 1. Converting uppercase letters (A-Z) to lowercase (a-z)
+// 2. Converting backslashes (\) to forward slashes (/)
+// 3. Null-terminating the output
+//
+// This is used for cross-platform path handling in the physics resource loader.
+//
+// Parameters:
+//   dest - Destination buffer for normalized path
+//   src - Source path string
+//   maxLen - Maximum length to copy (including null terminator)
+// ─────────────────────────────────────────────────────────────────────────────
+void ph_0908(char* dest, const char* src, int maxLen) {
+    int remaining = maxLen - 1;
+    char* out = dest;
+    
+    while (remaining > 0) {
+        char ch = *src++;
+        
+        // Stop at null terminator
+        if (ch == '\0') {
+            break;
+        }
+        
+        // Convert uppercase to lowercase (A-Z -> a-z)
+        if (ch >= 'A' && ch <= 'Z') {
+            ch = ch + 32;
+        }
+        // Convert backslash to forward slash
+        else if (ch == '\\') {
+            ch = '/';
+        }
+        
+        *out++ = ch;
+        remaining--;
+    }
+    
+    // Null-terminate
+    *out = '\0';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_9598 @ 0x820F9598 | size: 0xC
+//
+// Aligns a value up to the next 4-byte boundary.
+// Used for memory alignment in physics data structures.
+//
+// Parameters:
+//   value - Value to align
+//
+// Returns: uint32_t - Value aligned to 4-byte boundary
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t ph_9598(uint32_t value) {
+    // Add 3 and mask off lower 2 bits to round up to next multiple of 4
+    return (value + 3) & 0xFFFFFFFC;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_95A8_h @ 0x820F95A8 | size: 0x8
+//
+// Simple getter that returns a pointer field at offset +148.
+// Likely retrieves a physics simulation context or state object.
+//
+// Returns: void* - Pointer to physics object at offset +148
+// ─────────────────────────────────────────────────────────────────────────────
+void* ph_95A8_h(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    return *(void**)(obj + 148);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_FD58 @ 0x8221FD58 | size: 0x18
+//
+// Returns a state code based on a flag at offset +22.
+// Returns 3 if the flag is zero, 4 if the flag is non-zero.
+//
+// This appears to be a state query function for physics objects.
+//
+// Returns: int - State code (3 or 4)
+// ─────────────────────────────────────────────────────────────────────────────
+int ph_FD58(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    uint16_t flag = *(uint16_t*)(obj + 22);
+    
+    if (flag == 0) {
+        return 3;
+    }
+    return 4;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_FD70 @ 0x8221FD70 | size: 0x8
+//
+// Sets a byte flag at offset +15.
+// Simple setter for a physics object state flag.
+//
+// Parameters:
+//   value - Byte value to store
+// ─────────────────────────────────────────────────────────────────────────────
+void ph_FD70(void* thisPtr, uint8_t value) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    *(uint8_t*)(obj + 15) = value;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ph_F6A8 @ 0x8227F6A8 | size: 0x168
+//
+// Complex physics archetype loading function. This function:
+// 1. Creates a temporary context for loading
+// 2. Normalizes the asset path
+// 3. Attempts to load the archetype from the resource system
+// 4. If not found, creates a new archetype instance
+// 5. Registers the archetype with the physics world
+// 6. Associates it with a creature instance
+//
+// This is a high-level orchestration function for physics object initialization.
+//
+// Parameters:
+//   contextPtr - Physics context pointer
+//   creatureInst - Creature instance to associate with
+//   assetPath - Path to the physics archetype asset
+// ─────────────────────────────────────────────────────────────────────────────
+void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
+    // External function declarations
+    extern void* xe_F4C0(void*);
+    extern void rage_D220(void*, const char*);
+    extern void strncpy(char*, const char*, int);
+    extern void* ph_6FC8(void*, const char*);
+    extern void _snprintf(char*, int, const char*, const char*, int);
+    extern void* phArchetype_Load(const char*, void*);
+    extern void* xe_EC88(int);
+    extern void ph_9EC0_1(void*);
+    extern void ph_E088(void*, void*, void*, float, int);
+    extern void ph_9E50(void*, void*);
+    extern void ph_CEE0(void*, int);
+    extern void* ph_E010(void*, void*, const char*);
+    extern void pongCreatureInst_9030_g(void*, void*);
+    extern void util_D150(void*, void*, void*);
+    
+    char normalizedPath[256];
+    
+    // Create temporary loading context
+    void* loadContext = xe_F4C0(contextPtr);
+    *(uint32_t*)((uint8_t*)loadContext + 96) = 0;
+    
+    // Initialize path normalization
+    rage_D220(loadContext, assetPath);
+    
+    // Get resource manager and material info
+    uint32_t resourceMgr = *(uint32_t*)((uint8_t*)loadContext + 96);
+    void* materialInfo = (void*)*(uint32_t*)((uint8_t*)resourceMgr + 212);
+    void* physicsWorld = (void*)0x826065EC;  // Global physics world pointer
+    
+    // Normalize the asset path
+    normalizedPath[255] = '\0';
+    strncpy(normalizedPath, assetPath, 255);
+    
+    // Try to find existing archetype in resource system
+    int attemptCount = 1;
+    const char* formatStr = (const char*)0x82059F04;  // Format string for path variants
+    
+    while (true) {
+        void* existingArchetype = ph_6FC8(*(void**)((uint8_t*)physicsWorld + 8), normalizedPath);
+        
+        if (existingArchetype != nullptr) {
+            void* archetypeData = *(void**)((uint8_t*)existingArchetype + 4);
+            if (archetypeData != nullptr) {
+                break;  // Found existing archetype
+            }
+        }
+        
+        // Try alternate path format
+        _snprintf(normalizedPath, 255, formatStr, assetPath, attemptCount);
+        attemptCount++;
+    }
+    
+    // Load or create the archetype
+    void* archetype = phArchetype_Load(normalizedPath, materialInfo);
+    
+    if (archetype == nullptr) {
+        // Create new archetype instance
+        void* memory = xe_EC88(80);
+        if (memory != nullptr) {
+            archetype = ph_9EC0_1(memory);
+        } else {
+            archetype = nullptr;
+        }
+        
+        // Register with physics world
+        if (archetype != nullptr) {
+            float defaultScale = 1.0f;  // From lbl_820C4890
+            ph_E088(physicsWorld, archetype, materialInfo, defaultScale, 1);
+        }
+    }
+    
+    // Associate archetype with material
+    ph_9E50(archetype, materialInfo);
+    ph_CEE0(materialInfo, 1);
+    
+    // Register with physics world and creature
+    void* physicsInst = ph_E010(physicsWorld, archetype, normalizedPath);
+    pongCreatureInst_9030_g(creatureInst, physicsInst);
+    
+    // Finalize registration
+    util_D150(loadContext, creatureInst, (void*)((uint8_t*)creatureInst + 16));
+    
+    // Call vtable method on context
+    void* contextObj = *(void**)((uint8_t*)contextPtr + 20);
+    void* vtable = *(void**)((uint8_t*)contextObj + 4);
+    typedef void (*VTableFunc)(void*, void*);
+    VTableFunc func = (VTableFunc)((void**)vtable)[6];
+    func(contextObj, *(void**)((uint8_t*)loadContext + 20));
+    
+    // Set final state
+    *(uint32_t*)((uint8_t*)loadContext + 16) = 4;
+}
