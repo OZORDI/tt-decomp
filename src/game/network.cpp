@@ -879,3 +879,447 @@ uint8_t SinglesNetworkClient_WriteBooleanFlag(void* client, bool flag)
     
     return result;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::LinkNode @ 0x82416F20 | size: 0x60
+//
+// Links a node into a doubly-linked list structure. Updates the vtable pointer
+// chain and increments the reference count.
+//
+// Parameters:
+//   source - Source node containing the list head
+//   node - Node to link into the list
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_LinkNode(void* source, void* node)
+{
+    uint32_t* sourceData = (uint32_t*)source;
+    uint32_t* nodeData = (uint32_t*)node;
+    
+    // Initialize the node structure at offset +28
+    uint32_t* nodeStruct = (uint32_t*)((char*)node + 28);
+    SinglesNetworkClient_0268_g(nodeStruct, nullptr);
+    
+    // Get the list head from source vtable
+    uint32_t* listHead = (uint32_t*)sourceData[0];
+    
+    if (node != nullptr) {
+        // Get the next pointer from list head
+        uint32_t* nextNode = (uint32_t*)listHead[3];
+        
+        // Link node into the list
+        nodeData[0] = (uint32_t)nextNode;
+        listHead[3] = (uint32_t)node;
+        
+        // Increment reference count (stored as uint16_t at offset +6)
+        uint16_t* refCount = (uint16_t*)((char*)listHead + 6);
+        (*refCount)++;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitializeWithParent @ 0x82260128 | size: 0x60
+//
+// Initializes a network client structure by copying the parent pointer and
+// zeroing all fields, then calling the initialization helper.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance to initialize
+//   parent - Parent structure containing initialization data
+//
+// Returns:
+//   Pointer to initialized client
+// ─────────────────────────────────────────────────────────────────────────────
+void* SinglesNetworkClient_InitializeWithParent(void* client, void* parent)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    uint32_t* parentData = (uint32_t*)parent;
+    
+    // Copy parent pointer from offset +36
+    clientData[9] = parentData[9];
+    
+    // Zero out all core fields
+    clientData[0] = 0;   // vtable
+    clientData[1] = 0;   // flags
+    clientData[2] = 0;   // field +8
+    clientData[3] = 0;   // field +12
+    clientData[4] = 0;   // field +16
+    clientData[5] = 0;   // field +20
+    clientData[6] = 0;   // field +24
+    clientData[7] = 0;   // field +28
+    clientData[8] = 0;   // field +32
+    
+    // Call initialization helper
+    SinglesNetworkClient_0188_g(client, nullptr);
+    
+    return client;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetOrCreateSession @ 0x82105CA0 | size: 0x94
+//
+// Gets an existing session or creates a new one based on game state.
+// Checks if the game loop has an active session, and if not, creates one
+// with appropriate parameters based on network configuration.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   Pointer to session object (stored at offset +48)
+// ─────────────────────────────────────────────────────────────────────────────
+void* SinglesNetworkClient_GetOrCreateSession(void* client)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Access global game loop object
+    extern uint32_t g_loop_obj_ptr;
+    uint32_t* loopObj = (uint32_t*)g_loop_obj_ptr;
+    uint32_t* loopData = (uint32_t*)loopObj[0];
+    
+    // Check if loop has an active session at offset +36
+    uint32_t activeSession = loopData[9];
+    
+    if (activeSession == 0) {
+        // No active session - check if we already have one
+        uint32_t existingSession = clientData[12];
+        
+        if (existingSession == 0) {
+            // Create new session
+            SinglesNetworkClient_1378_g(nullptr, nullptr);
+            clientData[12] = 0;  // Store result at offset +48
+            return (void*)clientData[12];
+        }
+    }
+    
+    // Create session with parameters
+    SinglesNetworkClient_1410_g(nullptr, nullptr);
+    uint32_t newSession = 0;  // Result from function call
+    clientData[12] = newSession;
+    
+    // Determine session type based on network configuration
+    int sessionType = 1;
+    
+    // Access network configuration global
+    extern uint32_t g_network_config_ptr;
+    uint32_t* netConfig = (uint32_t*)g_network_config_ptr;
+    
+    // Check flag at offset +333
+    uint8_t* configFlags = (uint8_t*)netConfig;
+    if (configFlags[333] == 0) {
+        sessionType = 2;
+    }
+    
+    // Call vtable function at slot 22 (offset +88)
+    uint32_t* sessionVtable = (uint32_t*)newSession;
+    uint32_t* vtable = (uint32_t*)sessionVtable[0];
+    typedef void (*VtableFunc)(uint32_t, void*, int);
+    VtableFunc func = (VtableFunc)vtable[22];
+    func(newSession, client, sessionType);
+    
+    return (void*)clientData[12];
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CleanupGlobalArrays @ 0x8221EFB8 | size: 0x80
+//
+// Cleans up two global arrays used by the network client system.
+// First array: 4 elements of 36 bytes each at 0x82619AF0
+// Second array: 4 function pointers at 0x825F2E18
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_CleanupGlobalArrays()
+{
+    // First array: 4 elements of 36 bytes each
+    extern uint8_t g_network_array1[144];  // 0x82619AF0
+    uint8_t* arrayPtr = g_network_array1;
+    
+    for (int i = 0; i < 4; i++) {
+        SinglesNetworkClient_FA50((void*)arrayPtr, nullptr);
+        arrayPtr += 36;
+    }
+    
+    // Second array: 4 function pointers
+    extern uint32_t g_network_callbacks[4];  // 0x825F2E18
+    uint32_t* callbackPtr = g_network_callbacks;
+    
+    for (int i = 0; i < 4; i++) {
+        uint32_t funcPtr = *callbackPtr;
+        if (funcPtr != 0) {
+            typedef void (*CallbackFunc)();
+            CallbackFunc callback = (CallbackFunc)funcPtr;
+            callback();
+        }
+        callbackPtr++;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetPlayerID @ 0x8225E408 | size: 0x78
+//
+// Returns the player ID based on flags stored at offset +2.
+// Extracts a 5-bit value and maps it to player indices.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   errorFlag - If true, logs an error for invalid player IDs
+//
+// Returns:
+//   Player ID: 0 for player 1, 1 for player 2, -1 for invalid
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient_GetPlayerID(void* client, bool errorFlag)
+{
+    uint8_t* clientData = (uint8_t*)client;
+    
+    // Read flags from offset +2 and extract lower 5 bits
+    uint8_t flags = clientData[2];
+    uint8_t playerType = flags & 0x1F;
+    
+    // Map player type to player ID
+    if (playerType == 1) {
+        return 0;  // Player 1
+    }
+    
+    if (playerType == 2) {
+        return 1;  // Player 2
+    }
+    
+    // Invalid player type
+    if (errorFlag) {
+        // Log error message
+        extern void nop_8240E6D0(void*, void*);
+        const char* errorMsg = "Invalid player type";
+        nop_8240E6D0((void*)errorMsg, nullptr);
+    }
+    
+    return -1;  // Invalid player ID
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadSignedValue @ 0x82260E18 | size: 0x94
+//
+// Reads a signed value from the message buffer and optionally negates it.
+// Performs two reads: first checks if value exists, second reads the actual value.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   outValue - Pointer to store the read value
+//   bitCount - Number of bits to read (minus 1)
+//
+// Returns:
+//   true if value was read successfully, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_ReadSignedValue(void* client, uint32_t* outValue, int bitCount)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    uint32_t tempValue = 0;
+    bool hasValue = false;
+    
+    // First read: check if value exists (1 bit)
+    SinglesNetworkClient_8DF8_g(client, nullptr);
+    uint32_t checkResult = 0;  // Result from read
+    
+    if (checkResult != 0) {
+        hasValue = true;
+    }
+    
+    // Check if read was successful
+    uint8_t readSuccess = 0;  // Result from first read
+    if (readSuccess == 0) {
+        return false;
+    }
+    
+    // Second read: get the actual value
+    SinglesNetworkClient_8DF8_g(client, nullptr);
+    uint32_t actualValue = 0;  // Result from second read
+    
+    // Check if second read was successful
+    uint8_t secondReadSuccess = 0;
+    if (secondReadSuccess == 0) {
+        return false;
+    }
+    
+    // If value exists, negate it
+    if (hasValue) {
+        uint32_t originalValue = outValue[0];
+        outValue[0] = (uint32_t)(-(int32_t)originalValue);
+    }
+    
+    return true;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ProcessActiveDevices @ 0x822EAC20 | size: 0x64
+//
+// Iterates through active devices and processes each one that has its active
+// flag set. Accesses a global device array and calls cleanup on active devices.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_ProcessActiveDevices(void* client)
+{
+    uint32_t* clientData = (uint32_t*)client;
+    
+    // Get device count from offset +1024
+    int deviceCount = (int)clientData[256];
+    
+    if (deviceCount <= 0) {
+        return;
+    }
+    
+    // Access global device array at 0x82619AF0
+    extern uint8_t g_network_array1[144];
+    
+    // Pointer to device IDs at offset +1028
+    uint32_t* deviceIds = &clientData[257];
+    
+    // Pointer to device flags (offset +28 from array base)
+    uint8_t* deviceFlags = g_network_array1 + 28;
+    
+    for (int i = 0; i < deviceCount; i++) {
+        // Check if device is active
+        if (deviceFlags[0] != 0) {
+            // Get device ID and call cleanup
+            uint32_t deviceId = deviceIds[0];
+            SinglesNetworkClient_F090((void*)deviceId, nullptr);
+        }
+        
+        // Move to next device
+        deviceIds++;
+        deviceFlags += 36;  // Each device entry is 36 bytes
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CheckAndSetNetworkFlag @ 0x822EB2A8 | size: 0x78
+//
+// Checks if network system is initialized and sets a global flag if not already set.
+// Returns true if flag was successfully set, false if already set or system not ready.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   true if flag was set, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_CheckAndSetNetworkFlag(void* client)
+{
+    // Access global game loop object
+    extern uint32_t g_loop_obj_ptr;
+    uint32_t* loopObj = (uint32_t*)g_loop_obj_ptr;
+    uint32_t* loopData = (uint32_t*)loopObj[0];
+    
+    // Check if network system is initialized at offset +556
+    uint32_t networkSystem = loopData[139];
+    
+    if (networkSystem == 0) {
+        return false;
+    }
+    
+    // Access global flag at 0x826065EB
+    extern uint8_t g_network_active_flag;
+    
+    // Check if flag is already set
+    if (g_network_active_flag != 0) {
+        return false;
+    }
+    
+    // Get network interface at offset +52
+    uint32_t* networkInterface = (uint32_t*)((char*)networkSystem + 52);
+    
+    // Call network initialization function
+    pg_C3B8_g((void*)networkInterface, nullptr);
+    
+    // Set the flag
+    g_network_active_flag = 1;
+    
+    return true;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ClearNetworkFlag @ 0x822EB320 | size: 0x60
+//
+// Clears the network active flag if the network system is initialized.
+// Calls a network shutdown function before clearing the flag.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_ClearNetworkFlag(void* client)
+{
+    // Access global game loop object
+    extern uint32_t g_loop_obj_ptr;
+    uint32_t* loopObj = (uint32_t*)g_loop_obj_ptr;
+    uint32_t* loopData = (uint32_t*)loopObj[0];
+    
+    // Check if network system is initialized at offset +556
+    uint32_t networkSystem = loopData[139];
+    
+    if (networkSystem == 0) {
+        return;
+    }
+    
+    // Access global flag at 0x826065EB
+    extern uint8_t g_network_active_flag;
+    
+    // Check if flag is set
+    if (g_network_active_flag == 0) {
+        return;
+    }
+    
+    // Get network interface at offset +52
+    uint32_t* networkInterface = (uint32_t*)((char*)networkSystem + 52);
+    
+    // Call network shutdown function
+    pg_6DC0_g((void*)networkInterface, nullptr);
+    
+    // Clear the flag
+    g_network_active_flag = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetupNetworkContext @ 0x822FAC68 | size: 0x60
+//
+// Sets up a network context by checking and setting the network flag, then
+// initializing a context structure with the provided value.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   contextValue - Value to store in the context structure
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SetupNetworkContext(void* client, uint32_t contextValue)
+{
+    // Check and set network flag
+    bool flagSet = SinglesNetworkClient_B2A8_g(client, nullptr);
+    
+    // Get or create network context
+    SinglesNetworkClient_B1E8_g(client, nullptr);
+    
+    // Find context structure
+    const char* contextName = "NetworkContext";
+    void* context = SinglesNetworkClient_9318_g(nullptr, (void*)contextName);
+    
+    if (context != nullptr) {
+        uint32_t* contextData = (uint32_t*)context;
+        
+        // Store context value at offset +0
+        contextData[0] = contextValue;
+        
+        // Store type identifier at offset +4
+        contextData[1] = 3;
+    }
+    
+    // If flag was set, clear it
+    if (flagSet) {
+        SinglesNetworkClient_B320_g(client, nullptr);
+    }
+}
