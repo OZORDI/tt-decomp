@@ -376,3 +376,345 @@ int pongBallInstance::vfn_30(int param1, int param2, int param3) {
     
     return 0;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance additional implementations
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * pongBallInstance::FindObjectByID() @ 0x822C1C60 | size: 0x50
+ *
+ * Searches internal array for object matching given ID.
+ * Returns pointer to matching object, or nullptr if not found.
+ */
+void* pongBallInstance::FindObjectByID(uint16_t searchID) {
+    uint16_t arrayCount = *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 44);
+    
+    if (arrayCount <= 0) {
+        return nullptr;
+    }
+    
+    void** arrayBase = *reinterpret_cast<void***>(reinterpret_cast<uint8_t*>(this) + 40);
+    
+    for (int i = 0; i < arrayCount; ++i) {
+        void* entry = arrayBase[i];
+        void* subObject = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(entry) + 4);
+        uint16_t objectID = *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(subObject) + 8);
+        
+        if (objectID == searchID) {
+            return arrayBase[i];
+        }
+    }
+    
+    return nullptr;
+}
+
+/**
+ * pongBallInstance::UpdatePhysicsState() @ 0x8227FDB0 | size: 0x184
+ *
+ * Updates ball physics state based on player interaction and game mode.
+ * Handles position interpolation, velocity calculations, and slow-motion effects.
+ */
+void pongBallInstance::UpdatePhysicsState() {
+    extern void* g_game_state_ptr;  // @ 0x8271A2F8
+    extern float g_floatZero;       // Common zero constant
+    extern float g_physicsScale;    // Physics time scale
+    
+    auto* gameState = reinterpret_cast<uint8_t*>(g_game_state_ptr);
+    uint16_t ballIndex = *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 8);
+    
+    // Initialize position vector to zero
+    float positionBuffer[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    
+    // Get player state and check if player is active
+    auto* playerData = *reinterpret_cast<uint8_t**>(gameState + 4);
+    auto* playerState = *reinterpret_cast<uint8_t**>(playerData + 28);
+    uint8_t playerFlags = playerState[ballIndex];
+    
+    bool isPlayerActive = (playerFlags & 0x7) != 0;
+    
+    if (isPlayerActive) {
+        // Get player object via vtable call
+        void** vtable = *reinterpret_cast<void***>(playerData);
+        void* (*getPlayer)(void*) = reinterpret_cast<void* (*)(void*)>(vtable[4]);
+        void* player = getPlayer(playerData);
+        
+        if (player != nullptr) {
+            // Copy player position (16 bytes at offset +224)
+            memcpy(positionBuffer, reinterpret_cast<uint8_t*>(player) + 224, 16);
+        }
+    } else {
+        // Use ball's own position via vtable call
+        void** vtable = *reinterpret_cast<void***>(this);
+        void* (*getPosition)(pongBallInstance*) = reinterpret_cast<void* (*)(pongBallInstance*)>(vtable[2]);
+        void* ballPos = getPosition(this);
+        memcpy(positionBuffer, ballPos, 16);
+    }
+    
+    // Get ball physics data via vtable call
+    void** vtable = *reinterpret_cast<void***>(this);
+    void* (*getPhysics)(pongBallInstance*) = reinterpret_cast<void* (*)(pongBallInstance*)>(vtable[2]);
+    void* physicsData = getPhysics(this);
+    
+    // Calculate height difference
+    float ballHeight = *reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(physicsData) + 56);
+    float targetHeight = positionBuffer[2];  // Z component
+    float heightDelta = ballHeight + targetHeight;
+    
+    // Check if height difference is significant (threshold check)
+    constexpr float kHeightThreshold = 0.001f;
+    if (fabs(heightDelta) > kHeightThreshold) {
+        // Recalculate physics data
+        void* physicsData2 = getPhysics(this);
+        float currentHeight = *reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(physicsData2) + 56);
+        float scaleFactor = currentHeight / heightDelta;
+        
+        // Check slow-motion state
+        extern void* g_slowmo_manager_ptr;  // @ 0x825C6540
+        auto* slowmoMgr = reinterpret_cast<uint8_t*>(g_slowmo_manager_ptr);
+        bool isSlowMotion = slowmoMgr[576] != 0;
+        
+        if (!isSlowMotion) {
+            // Apply physics scale in normal mode
+            float absScale = fabs(scaleFactor);
+            float adjustedScale = absScale * g_physicsScale;
+            
+            // Check if player controller exists
+            extern void* g_player_controller_ptr;  // @ 0x825C6564
+            auto* controller = reinterpret_cast<uint8_t*>(g_player_controller_ptr);
+            void* activePlayer = *reinterpret_cast<void**>(controller + 68);
+            
+            if (activePlayer != nullptr) {
+                // Apply scaled velocity adjustment
+                float velocityScale = 1.0f;
+                float scaledVelocity[4];
+                
+                // Scale the position buffer
+                for (int i = 0; i < 3; ++i) {
+                    scaledVelocity[i] = positionBuffer[i] * velocityScale;
+                }
+                scaledVelocity[3] = 0.0f;
+                
+                // Apply to ball physics at offset +64
+                extern void game_36E8(void* ball, const float* velocity);
+                game_36E8(reinterpret_cast<uint8_t*>(this) + 64, scaledVelocity);
+            }
+        }
+    }
+}
+
+/**
+ * pongBallInstance::ActivateBall() @ 0x822801B8 | size: 0x1A0
+ *
+ * Activates the ball for gameplay.
+ * Initializes ball state, position, velocity, and triggers activation events.
+ */
+void pongBallInstance::ActivateBall(void* activationContext) {
+    extern void* g_game_state_ptr;  // @ 0x8271A2F8
+    extern void nop_8240E6D0();
+    extern void pongBallInstance_4980_g(void*, int, int, int, int);
+    extern void game_AA88(void*);
+    extern void game_D500(void*, void*, void*);
+    extern void game_DA60();
+    extern void game_3860(void*, int, const char*);
+    extern void pg_E6E0(int, int, int, int);
+    
+    // Check if ball is already active
+    bool isActive = *reinterpret_cast<uint8_t*>(reinterpret_cast<uint8_t*>(this) + 85) != 0;
+    
+    if (!isActive) {
+        // Debug message: "pongBallInstance::ActivateBall() - ball already active"
+        constexpr uintptr_t kDebugString = 0x8203EFF8u;
+        nop_8240E6D0();  // Debug output function
+    }
+    
+    auto* gameState = reinterpret_cast<uint8_t*>(g_game_state_ptr);
+    auto* coreState = *reinterpret_cast<uint8_t**>(gameState + 20);
+    int32_t frameCount = *reinterpret_cast<int32_t*>(coreState + 9640);
+    
+    if (frameCount <= 0) {
+        return;
+    }
+    
+    // Get ball index and check player state
+    uint16_t ballIndex = *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 8);
+    
+    extern void* g_player_manager_ptr;  // @ 0x8271A2D0
+    auto* playerMgr = reinterpret_cast<uint8_t*>(g_player_manager_ptr);
+    auto* playerState = *reinterpret_cast<uint8_t**>(playerMgr + 28);
+    uint8_t stateFlags = playerState[ballIndex];
+    
+    bool needsInit = (stateFlags & 0x7) == 0;
+    
+    if (needsInit) {
+        // Initialize ball state
+        pongBallInstance_4980_g(g_player_manager_ptr, 0, 0, 0, 0);
+    }
+    
+    // Get player object
+    void* player = nullptr;
+    auto* playerData = *reinterpret_cast<uint8_t**>(playerMgr + 4);
+    auto* stateData = *reinterpret_cast<uint8_t**>(playerData + 28);
+    uint8_t flags = stateData[ballIndex];
+    
+    bool hasPlayer = (flags & 0x7) != 0;
+    
+    if (hasPlayer) {
+        void** vtable = *reinterpret_cast<void***>(playerData);
+        void* (*getPlayer)(void*) = reinterpret_cast<void* (*)(void*)>(vtable[4]);
+        player = getPlayer(playerData);
+    }
+    
+    // Prepare ball for activation
+    game_AA88(player);
+    
+    // Get ball position via vtable
+    void** vtable = *reinterpret_cast<void***>(this);
+    void* (*getPosition)(pongBallInstance*) = reinterpret_cast<void* (*)(pongBallInstance*)>(vtable[2]);
+    void* ballPos = getPosition(this);
+    
+    // Copy ball position to stack buffer
+    float posBuffer[4];
+    memcpy(posBuffer, reinterpret_cast<uint8_t*>(this) + 64, 16);
+    memcpy(ballPos, posBuffer, 16);
+    
+    // Calculate velocity vector
+    constexpr float kVelocityScale = 0.5f;  // From offset in .rdata
+    float velocityBuffer[4];
+    
+    if (player != nullptr) {
+        float* playerPos = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(player) + 48);
+        
+        // Calculate direction vector: (ballPos - playerPos) * scale
+        for (int i = 0; i < 3; ++i) {
+            velocityBuffer[i] = (posBuffer[i] - playerPos[i]) * kVelocityScale;
+        }
+        velocityBuffer[3] = 0.0f;
+        
+        // Apply velocity via vtable call
+        void** playerVtable = *reinterpret_cast<void***>(player);
+        void (*setVelocity)(void*, const float*) = 
+            reinterpret_cast<void (*)(void*, const float*)>(playerVtable[40]);
+        setVelocity(player, velocityBuffer);
+    }
+    
+    // Handle activation context
+    if (activationContext != nullptr) {
+        game_D500(activationContext, player, this);
+        game_DA60();
+    }
+    
+    // Trigger activation event
+    constexpr const char* kActivationEvent = "ball_activated";
+    game_3860(gameState, 1, kActivationEvent);
+    
+    // Send deactivation event (event ID 37, type 64)
+    pg_E6E0(37, 64, 0, 0);
+}
+
+/**
+ * pongBallInstance::InitializeFromData() @ 0x8227F810 | size: 0x60
+ *
+ * Initializes ball instance from serialized data.
+ * Sets up ball state and configuration from data structure.
+ */
+void* pongBallInstance::InitializeFromData(void* initData) {
+    extern void* xe_F4C0();
+    extern void util_D150(void*, void*);
+    
+    // Allocate ball instance
+    void* ballInstance = xe_F4C0();
+    
+    // Initialize from data (copy 16-byte header)
+    util_D150(initData, reinterpret_cast<uint8_t*>(initData) + 16);
+    
+    // Get configuration object
+    void* configObj = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(this) + 20);
+    void* configData = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(configObj) + 4);
+    
+    // Get ball data from init structure
+    void* ballData = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(ballInstance) + 20);
+    
+    // Call configuration setup via vtable
+    void** vtable = *reinterpret_cast<void***>(configData);
+    void (*configure)(void*, void*) = reinterpret_cast<void (*)(void*, void*)>(vtable[6]);
+    configure(configData, ballData);
+    
+    // Set ball state flags
+    *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(ballInstance) + 16) = 4;
+    *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(ballInstance) + 96) = 0;
+    
+    return ballInstance;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallHitData vtable implementations
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * pongBallHitData::Initialize() @ 0x821D6900 | size: 0x30
+ *
+ * Initializes hit data structure with default flags.
+ * Sets up debug mode flags if enabled.
+ */
+void pongBallHitData::Initialize() {
+    extern uint8_t g_debugMode;  // @ 0x825C64AD
+    extern void xmlNodeStruct_vfn_2(void*);
+    
+    // Clear flags at offset +198
+    *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 198) = 0;
+    
+    uint16_t flags = 0;
+    
+    // Check if debug mode is enabled
+    if (g_debugMode != 0) {
+        flags = 4096;  // 0x1000 - debug flag
+    }
+    
+    // Set base flags
+    *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 198) = flags;
+    
+    // Add additional flags: 0x6000 (24576)
+    flags |= 24576;
+    *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 198) = flags;
+    
+    // Call parent initialization
+    xmlNodeStruct_vfn_2(this);
+}
+
+/**
+ * pongBallHitData::ValidateAttribute() @ 0x821D65C0 | size: 0x48
+ *
+ * Validates XML attribute hash against known attribute types.
+ * Returns true if attribute is recognized, false otherwise.
+ */
+bool pongBallHitData::ValidateAttribute(uint32_t attributeHash) {
+    extern uint32_t g_attrHash_HitZone;      // @ 0x825C761C
+    extern uint32_t g_attrHash_SwingType1;   // @ 0x825C8038
+    extern uint32_t g_attrHash_SwingType2;   // @ 0x825C803C
+    
+    // Check against known attribute hashes
+    if (attributeHash == g_attrHash_HitZone) {
+        return true;
+    }
+    
+    if (attributeHash == g_attrHash_SwingType2) {
+        return true;
+    }
+    
+    if (attributeHash == g_attrHash_SwingType1) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * pongBallHitData::GetEventName() @ 0x821D65B0 | size: 0xC
+ *
+ * Returns the event name string for slow-motion entry.
+ * Used for HUD event triggering.
+ */
+const char* pongBallHitData::GetEventName() {
+    return "HUD:SLOMO_ENTER_GENERIC";  // @ 0x8203E464
+}
