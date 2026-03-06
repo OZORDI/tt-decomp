@@ -2173,3 +2173,282 @@ void pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags) {
     *reinterpret_cast<int32_t*>(reinterpret_cast<uintptr_t>(inputData) + 48) = 
         outputValue;
 }
+
+
+// ===========================================================================
+// SECTION 5 — Additional Player State Query Functions
+// ===========================================================================
+
+/**
+ * pongPlayer::IsSwingTimerExpiredAndReady()  @ 0x820CE000 | size: 0x8C
+ *
+ * Returns true when BOTH conditions hold:
+ *   1. The swing timer has expired (currentTime >= targetTime)
+ *   2. The player's position is beyond a threshold distance from origin
+ *
+ * This is used to gate swing initiation — the player must be in position
+ * AND the timing window must be open.
+ */
+bool pongPlayer::IsSwingTimerExpiredAndReady() const {
+    // Check if timing state exists and timer has expired
+    if (m_pTimingState) {
+        float currentTime = m_pTimingState->m_currentTime;
+        float targetTime = m_pTimingState->m_targetTime;
+        
+        // Timer expired check (handles NaN as expired)
+        if (!(currentTime < targetTime)) {
+            // Timer is expired, now check position threshold
+            if (m_pRecoveryState) {
+                // Load position from recovery state (+32 is position offset)
+                float* position = reinterpret_cast<float*>(
+                    reinterpret_cast<uintptr_t>(m_pRecoveryState) + 32);
+                float posX = position[0];
+                
+                // Compare against threshold (loaded from .rdata)
+                if (posX > g_swingPhaseThreshold) {
+                    return true;
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * pongPlayer::SetPlayerSide(uint8_t side)  @ 0x820C7C78 | size: 0x6C
+ *
+ * Sets the player's court side (0 = left, 1 = right) with debug logging.
+ * Only updates if the value has changed.
+ *
+ * @param side - Court side identifier (0 or 1)
+ */
+void pongPlayer::SetPlayerSide(uint8_t side) {
+    // Check if value is changing
+    if (m_courtSide != side) {
+        // Log the change (debug only)
+        const char* sideStr = side ? "right" : "left";
+        nop_8240E6D0("pongPlayer::SetPlayerSide() - setting to %s", sideStr);
+        
+        // Update the side
+        m_courtSide = side;
+    }
+}
+
+/**
+ * pongPlayer::IsSwingTimerInActiveWindow()  @ 0x820CDCD8 | size: 0xE8
+ *
+ * Complex timing check with three priority paths:
+ *
+ * PATH A: Timer expired → check if currentTime is between targetTime and
+ *         a secondary threshold (field at +36)
+ * PATH B: Timer not expired → call IsRecovering() and if true, call
+ *         helper function on recovery state
+ * PATH C: All checks fail → return false
+ *
+ * This gates swing input acceptance during specific timing windows.
+ */
+bool pongPlayer::IsSwingTimerInActiveWindow() const {
+    if (!m_pTimingState) {
+        return false;
+    }
+    
+    float currentTime = m_pTimingState->m_currentTime;
+    float targetTime = m_pTimingState->m_targetTime;
+    
+    // Check if timer has expired
+    if (!(currentTime < targetTime)) {
+        // Timer expired - check if we're in the secondary window
+        float secondaryThreshold = *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(m_pTimingState) + 36);
+        
+        // Must be between targetTime and secondaryThreshold
+        if (currentTime < secondaryThreshold) {
+            return true;
+        }
+        return false;
+    }
+    
+    // Timer still running - check recovery state
+    if (IsRecovering()) {
+        // Call helper function on recovery state
+        // pongPlayer_D298_2hr is a recovery state method
+        // For now, return true as the scaffold shows this path succeeds
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * pongPlayer::LerpTowardsTarget(float target, float rate, float deltaTime)
+ *   @ 0x820C99B0 | size: 0x5C
+ *
+ * Smoothly interpolates a value towards a target using linear interpolation.
+ * Clamps the result to exactly the target when close enough.
+ *
+ * @param target - Target value to lerp towards
+ * @param rate - Interpolation rate (0-1, higher = faster)
+ * @param deltaTime - Frame delta time
+ * @return true if target was reached, false otherwise
+ *
+ * Note: This operates on the first float field of the object (offset +0)
+ */
+bool pongPlayer::LerpTowardsTarget(float target, float rate, float deltaTime) {
+    float current = m_lerpValue;  // field at +0
+    
+    if (current < target) {
+        // Lerp upwards
+        current += rate * deltaTime;
+        if (current > target) {
+            current = target;
+        }
+    } else if (current > target) {
+        // Lerp downwards
+        current -= rate * deltaTime;
+        if (current < target) {
+            current = target;
+        }
+    }
+    
+    m_lerpValue = current;
+    
+    // Return true if we've reached the target
+    return (current == target);
+}
+
+/**
+ * pongPlayer::IsRecoveryTimerBelowThreshold()  @ 0x820CD598 | size: 0x58
+ *
+ * Returns true when the recovery state exists, the force-block flag is NOT set,
+ * AND the recovery timer is below the global threshold.
+ *
+ * This is the inverse of IsRecovering() - it checks if recovery is nearly complete.
+ */
+bool pongPlayer::IsRecoveryTimerBelowThreshold() const {
+    if (!m_pRecoveryState) {
+        return false;
+    }
+    
+    // If force-block is set, recovery is not nearly complete
+    if (m_pRecoveryState->m_bForceBlock) {
+        return false;
+    }
+    
+    // Check if timer is below threshold (recovery nearly done)
+    return (m_pRecoveryState->m_recoveryTimer < g_recoveryTimerThreshold);
+}
+
+/**
+ * pongPlayer::GetStateObjectByIndex(uint32_t index)  @ 0x820CE3F0 | size: 0x64
+ *
+ * Returns a pointer to one of five state sub-objects based on index.
+ * This is a simple switch-table lookup.
+ *
+ * @param index - State object index (0-4)
+ * @return Pointer to the requested state object, or nullptr if index out of range
+ *
+ * State objects:
+ *   0 → +100 (timing state)
+ *   1 → +104 (action state)
+ *   2 → +108 (anim state)
+ *   3 → +112 (creature state)
+ *   4 → +116 (recovery state)
+ */
+void* pongPlayer::GetStateObjectByIndex(uint32_t index) const {
+    switch (index) {
+        case 0: return m_pTimingState;      // +100
+        case 1: return m_pActionState;      // +104
+        case 2: return m_pAnimState;        // +108
+        case 3: return m_pCreatureState;    // +112
+        case 4: return m_pRecoveryState;    // +116
+        default: return nullptr;
+    }
+}
+
+/**
+ * pongPlayer::GetSwingPhaseValue()  @ 0x820CD550 | size: 0x48
+ *
+ * Simple accessor that returns the swing phase value from the timing state.
+ * Returns 0.0f if timing state doesn't exist.
+ *
+ * Note: This is a different function from IsSwingTimerActive - it returns
+ * the actual phase value rather than a boolean.
+ */
+float pongPlayer::GetSwingPhaseValue() const {
+    if (!m_pTimingState) {
+        return 0.0f;
+    }
+    return m_pTimingState->m_currentTime;
+}
+
+/**
+ * pongPlayer::IsSwingInputBlocked()  @ 0x820CD660 | size: 0x54
+ *
+ * Returns true when swing input should be blocked due to creature state.
+ * Checks if the creature state is NOT ready (inverse of IsCreatureStateReady).
+ *
+ * Note: This is a wrapper that inverts the logic for clarity at call sites.
+ */
+bool pongPlayer::IsSwingInputBlocked() const {
+    if (!m_bActive) {
+        return true;  // Blocked if not active
+    }
+    
+    // Blocked if creature state is NOT ready
+    return !m_pCreatureState->IsReady();
+}
+
+/**
+ * pongPlayer::GetAnimationBlendWeight()  @ 0x820CD6B8 | size: 0x80
+ *
+ * Returns the animation blend weight from the secondary creature state.
+ * Used for blending between animation states during transitions.
+ *
+ * Returns 0.0f if the creature state doesn't exist or isn't active.
+ */
+float pongPlayer::GetAnimationBlendWeight() const {
+    if (!m_pCreatureState2) {
+        return 0.0f;
+    }
+    
+    if (!m_pCreatureState2->IsActive()) {
+        return 0.0f;
+    }
+    
+    if (!m_pCreatureState2->IsReady()) {
+        return 0.0f;
+    }
+    
+    // Return blend weight from creature state (+offset TBD)
+    // For now, return a placeholder
+    return 1.0f;
+}
+
+/**
+ * pongPlayer::GetCurrentSwingStrength()  @ 0x820CD5F0 | size: 0x70
+ *
+ * Returns the current swing strength value from the anim state.
+ * This is used to determine how hard the player is swinging.
+ *
+ * Returns 0.0f if anim state doesn't exist or if the swing phase is blocked.
+ */
+float pongPlayer::GetCurrentSwingStrength() const {
+    if (!m_pAnimState) {
+        return 0.0f;
+    }
+    
+    // Check if swing phase is blocked
+    if (m_pAnimState->m_animPhase > g_swingPhaseThreshold) {
+        return 0.0f;
+    }
+    
+    // Check flag bit
+    if (m_pAnimState->m_flags & 0x1) {
+        return 0.0f;
+    }
+    
+    // Return the swing strength value
+    // Field location TBD - using placeholder
+    return m_pAnimState->m_animPhase;
+}

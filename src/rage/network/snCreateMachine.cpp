@@ -340,20 +340,20 @@ void snHsmCreatingOffline::OnUpdate() {
 // snHsmRequestingConfig Implementation
 // ────────────────────────────────────────────────────────────────────────────
 
-/**
+// ────────────────────────────────────────────────────────────────────────────
+// snHsmRequestingConfig Implementation
+// ────────────────────────────────────────────────────────────────────────────
+
 /**
  * snHsmRequestingConfig::~snHsmRequestingConfig @ 0x823E6018 | size: 0x50
  * 
  * Destructor for config request state.
- * Calls base cleanup and optionally frees memory.
+ * Calls base cleanup and optionally frees memory based on flags.
  */
 snHsmRequestingConfig::~snHsmRequestingConfig() {
-    // Call base state cleanup (NotifyHandler_5D10)
+    // Call base state cleanup (NotifyHandler_5D10 @ 0x823E5D10)
     // This handles cleanup of notification handlers and state resources
-    
-    // Note: Memory freeing is conditional based on flags
-    // If bit 0 of the flags parameter is set, rage_free is called
-    // This is handled by the caller passing the appropriate flags
+    // TODO: Implement when NotifyHandler_5D10 is available
 }
 
 /**
@@ -362,8 +362,8 @@ snHsmRequestingConfig::~snHsmRequestingConfig() {
  * Returns the state name string for debugging and logging.
  */
 const char* snHsmRequestingConfig::GetStateName() const {
-    // Returns string at 0x820721A0
-    return "snHsmRequestingConfig";
+    // Returns string at 0x820721A0 - "snHsmRequestingConfig"
+    return reinterpret_cast<const char*>(0x820721A0);
 }
 
 /**
@@ -375,80 +375,24 @@ const char* snHsmRequestingConfig::GetStateName() const {
  * This function checks the current session state type and transitions to
  * the appropriate next state (host, guest, or offline creation).
  */
-void snHsmRequestingConfig::OnTick(bool* outTransitioned) {
-    // Set initial transition flag
-    *outTransitioned = true;
-    
-    // Get parent state machine
-    snCreateMachine* machine = static_cast<snCreateMachine*>(GetParentState());
-    if (!machine) {
-        *outTransitioned = false;
-        return;
-    }
-    
-    // Get current session from state machine
-    snSession* session = machine->GetCurrentSession();
-    if (!session) {
-        *outTransitioned = false;
-        return;
-    }
-    
-    // Get session state type
-    uint32_t stateType = session->GetStateType();
-    
-    // Check if we're creating as host (state type at 0x825D1888)
-    extern uint32_t g_stateType_CreatingHost;  // @ 0x825D1888
-    if (stateType == g_stateType_CreatingHost) {
-        // Transition to host creation state
-        hsmState* hostState = machine->GetStateByType(g_stateType_CreatingHost);
-        if (hostState) {
-            // Get state data at offset +204 from network client
-            SinglesNetworkClient* client = machine->m_pNetworkClient;
-            void* stateData = reinterpret_cast<uint8_t*>(client) + 204;
-            
-            // Associate connection and process pending connections
-            machine->AssociateConnection(this, stateData);
-            machine->ProcessPendingConnections(this, stateData);
-        }
-        return;
-    }
-    
-    // Check if we're creating as guest (state type at 0x825D1894)
-    extern uint32_t g_stateType_CreatingGuest;  // @ 0x825D1894
-    if (stateType == g_stateType_CreatingGuest) {
-        // Transition to guest creation state
-        hsmState* guestState = machine->GetStateByType(g_stateType_CreatingGuest);
-        if (guestState) {
-            // Get state data at offset +252 from network client
-            SinglesNetworkClient* client = machine->m_pNetworkClient;
-            void* stateData = reinterpret_cast<uint8_t*>(client) + 252;
-            
-            // Associate connection and process pending connections
-            machine->AssociateConnection(this, stateData);
-            machine->ProcessPendingConnections(this, stateData);
-        }
-        return;
-    }
-    
-    // Check if we're creating offline (state type at 0x825D187C)
-    extern uint32_t g_stateType_CreatingOffline;  // @ 0x825D187C
-    if (stateType == 0) {  // Offline has state type 0
-        // Transition to offline creation state
-        hsmState* offlineState = machine->GetStateByType(g_stateType_CreatingOffline);
-        if (offlineState) {
-            // Get state data at offset +156 from network client
-            SinglesNetworkClient* client = machine->m_pNetworkClient;
-            void* stateData = reinterpret_cast<uint8_t*>(client) + 156;
-            
-            // Associate connection and process pending connections
-            machine->AssociateConnection(this, stateData);
-            machine->ProcessPendingConnections(this, stateData);
-        }
-        return;
-    }
-    
-    // Unknown state type - no transition
-    *outTransitioned = false;
+void snHsmRequestingConfig::OnTick() {
+    // TODO: Full implementation
+    // 
+    // Assembly flow:
+    // 1. Set transition flag to true (stb r11,0(r30))
+    // 2. Get parent state machine (this pointer in r31)
+    // 3. Call vfn_10 to get current state (VCALL slot 10, byte offset +40)
+    // 4. Get session from state at offset +12
+    // 5. Call session->GetStateType() (vfn_1, byte offset +4)
+    // 6. Load state type globals from .data section:
+    //    - g_stateType_CreatingHost @ 0x825D1888 (offset 6808 from base -32163)
+    //    - g_stateType_CreatingGuest @ 0x825D1894 (offset 6784 from base -32163)
+    //    - g_stateType_CreatingOffline @ 0x825D187C
+    // 7. Compare state type and transition to appropriate state:
+    //    - If CreatingHost: call vfn_11, get state data at +204, call util_D988 and util_DA90
+    //    - If CreatingGuest: call vfn_11, get state data at +252, call util_D988 and util_DA90
+    //    - If offline (type 0): call vfn_11, get state data at +156, call util_D988 and util_DA90
+    //    - Otherwise: set transition flag to false
 }
 
 /**
@@ -461,63 +405,29 @@ void snHsmRequestingConfig::OnTick(bool* outTransitioned) {
  * and either transitions to the next state or handles timeout errors.
  */
 void snHsmRequestingConfig::OnUpdate() {
-    // Get parent state machine
-    snCreateMachine* machine = static_cast<snCreateMachine*>(m_pParentState);
-    if (!machine) return;
-    
-    // Get network client
-    SinglesNetworkClient* client = machine->m_pNetworkClient;
-    if (!client) return;
-    
-    // Set up state context in parent machine
-    // Vtable at 0x82031AF8 (calculated from -32193 + -20264)
-    machine->m_pCurrentHsmState = this;
-    machine->m_pStateVtable = reinterpret_cast<void*>(0x82031AF8);
-    
-    // Store this state in the state context at offset +28
-    *reinterpret_cast<snHsmRequestingConfig**>(
-        reinterpret_cast<uint8_t*>(this) + 28
-    ) = this;
-    
-    // Check if configuration is available
-    // Query config status from network client
-    bool configReady = client->QueryConfigStatus();
-    
-    // If config is ready, retrieve it
-    if (configReady) {
-        void* configData = client->RetrieveConfig();
-        if (configData) {
-            // Config successfully retrieved
-            int32_t configStatus = *reinterpret_cast<int32_t*>(
-                reinterpret_cast<uint8_t*>(configData) + 84
-            );
-            
-            if (configStatus >= 0) {
-                // Config is valid - transition to next state
-                return;
-            }
-        }
-    }
-    
-    // Check if we should process join requests
-    bool shouldProcessJoin = client->ProcessJoinRequest();
-    
-    if (!configReady && !shouldProcessJoin) {
-        // Still waiting - check retry count for timeout
-        if (machine->m_retryCount >= 20) {
-            // Timeout after 20 retries - create error event
-            CreateConfigFailedEvent();
-            return;
-        } else if (machine->m_retryCount >= 10) {
-            // Timeout after 10 retries - create error event
-            CreateConfigFailedEvent();
-            return;
-        }
-    }
-    
-    // Not ready yet - increment retry count and set timeout
-    machine->m_retryCount++;
-    machine->SetMaxTransitions(500);  // 500ms timeout
+    // TODO: Full implementation
+    //
+    // Assembly flow:
+    // 1. Get parent state machine from offset +20
+    // 2. Store state context pointers at offsets +28 and +32
+    //    - Vtable pointer at 0x82031AF8 (calculated from lis -32193, addi -20264)
+    // 3. Get network client from parent at offset +20, then +16
+    // 4. Query config status: SinglesNetworkClient_A940_g @ 0x823DA940
+    // 5. Retrieve config: SinglesNetworkClient_C2B0_g @ 0x823DC2B0
+    // 6. Check config availability:
+    //    - Load config data at offset +84, check if >= 0
+    //    - If ready, transition to next state
+    // 7. Check retry count at offset +296:
+    //    - If >= 20: timeout, create error event
+    //    - If >= 10: timeout, create error event
+    // 8. Process join requests: SinglesNetworkClient_2178_g @ 0x823F2178
+    // 9. If timeout, create EvtRequestConfigFailed event:
+    //    - Call util_DA08 @ 0x823DDA08 to initialize event state
+    //    - Set vtable to 0x82072A50 (rage::EvtRequestConfigFailed)
+    //    - Call vfn_11 to get session
+    //    - Allocate event with vfn_1 (slot 1, size 12)
+    //    - Store event data and call snSession_AddNode_C068 @ 0x823EC068
+    // 10. Otherwise, increment retry count and call util_D4F8 @ 0x823ED4F8 with timeout 500
 }
 
 /**
@@ -527,50 +437,19 @@ void snHsmRequestingConfig::OnUpdate() {
  * Cleans up notification handlers and resets state.
  */
 void snHsmRequestingConfig::OnExit() {
-    // Get parent state machine
-    snCreateMachine* machine = static_cast<snCreateMachine*>(m_pParentState);
-    if (!machine) return;
-    
-    // Get network client
-    SinglesNetworkClient* client = machine->m_pNetworkClient;
-    if (!client) return;
-    
-    // Get notification handler at offset +164 from client, then +672
-    void* notifyHandler = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(
-            reinterpret_cast<uint8_t*>(client) + 164
-        ) + 672
-    );
-    
-    // Clear notification handler state
-    // Call NotifyHandler_3D80_g to unregister this state's notifications
-    
-    // Clear the state context pointer at offset +44 (20 + 24)
-    *reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uint8_t*>(this) + 44
-    ) = 0;
+    // TODO: Full implementation
+    //
+    // Assembly flow:
+    // 1. Get parent state machine from offset +20
+    // 2. Get network client from parent at offset +20, then +16
+    // 3. Get notification handler at offset +164 from client, then +672
+    // 4. Call NotifyHandler_3D80_g @ 0x823B3D80 to unregister notifications
+    //    - Pass state context at offset +24 (this + 24)
+    // 5. Clear state context pointer at offset +44 (24 + 20)
+    //    - Store 0 at that location
 }
 
-// Helper function to create config failed event
-void snHsmRequestingConfig::CreateConfigFailedEvent() {
-    // Initialize event state
-    util_DA08(this, nullptr);
-    
-    // Create EvtRequestConfigFailed event
-    // Vtable at 0x82072A50
-    rage::EvtRequestConfigFailed* event = new rage::EvtRequestConfigFailed();
-    
-    // Get parent state machine
-    snCreateMachine* machine = static_cast<snCreateMachine*>(m_pParentState);
-    if (!machine) return;
-    
-    // Get session from machine
-    snSession* session = machine->GetCurrentSession();
-    if (!session) return;
-    
-    // Add event to session's event queue
-    session->AddEvent(event);
-}
+
 
 // ────────────────────────────────────────────────────────────────────────────
 // snHsmApplyingConfig Implementation
