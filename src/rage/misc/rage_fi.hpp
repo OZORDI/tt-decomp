@@ -45,45 +45,48 @@ struct fiAsciiTokenizer {
     uint32_t     field_0x0060;  // +0x0060  R:0 W:1
     uint32_t     field_0x0064;  // +0x0064  R:1 W:1
     uint8_t     _pad0x0070[8];
-    uint32_t     field_0x0070;  // +0x0070  R:4 W:0
-    uint32_t     field_0x0074;  // +0x0074  R:2 W:0
-    uint8_t     _pad0x0094[28];
-    uint32_t     field_0x0094;  // +0x0094  R:2 W:0
-    uint32_t     field_0x009c;  // +0x009c  R:2 W:0
-    uint32_t     field_0x00a0;  // +0x00a0  R:5 W:3
-    uint8_t      field_0x00a8;  // +0x00a8  R:0 W:1
-    uint8_t     _pad0x013a[142];
-    uint16_t     field_0x013a;  // +0x013a  R:0 W:2
-    uint8_t     _pad0x01cc[142];
-    uint8_t      field_0x01cc;  // +0x01cc  R:0 W:1
-
     // ── virtual methods ──
     virtual ~fiAsciiTokenizer();                  // [0] @ 0x8210caf8
     virtual void ScalarDtor(int flags); // [1] @ 0x822e5550
     virtual void vfn_2();  // [2] @ 0x822e5e78
     virtual void vfn_4();  // [4] @ 0x822e5e88
-    virtual void vfn_5();  // [5] @ 0x822e5f08
-    virtual void vfn_6();  // [6] @ 0x822e6190
-    virtual void vfn_7();  // [7] @ 0x822e6100
-    virtual void vfn_8();  // [8] @ 0x822e6070
-    virtual void vfn_9();  // [9] @ 0x822e5ff8
-    virtual void vfn_10();  // [10] @ 0x822e5f98
-    virtual void vfn_11();  // [11] @ 0x822e6260
-    virtual void vfn_12();  // [12] @ 0x822e62a0
-    virtual void vfn_13();  // [13] @ 0x822e6300
-    virtual void vfn_14();  // [14] @ 0x822e6520
-    virtual void vfn_15();  // [15] @ 0x822e64b0
-    virtual void vfn_16();  // [16] @ 0x822e6440
-    virtual void vfn_17();  // [17] @ 0x822e63d0
-    virtual void vfn_18();  // [18] @ 0x822e6360
-    virtual void vfn_19();  // [19] @ 0x822e6590
-    virtual void vfn_20();  // [20] @ 0x822e65d0
-    virtual void vfn_21();  // [21] @ 0x822e6750
-    virtual void vfn_22();  // [22] @ 0x822e6700
+    virtual float vfn_5();  // [5] @ 0x822e5f08 - parse float
+    virtual void vfn_6(float* outVec4);  // [6] @ 0x822e6190 - read 4 floats
+    virtual void vfn_7(float* outVec3);  // [7] @ 0x822e6100 - read 3 floats
+    virtual void vfn_8(float* outArray);  // [8] @ 0x822e6070 - read 4 floats
+    virtual void vfn_9(float* outArray);  // [9] @ 0x822e5ff8 - read 3 floats
+    virtual void vfn_10(float* outVec2);  // [10] @ 0x822e5f98 - read 2 floats
+    virtual void vfn_11(char* outBuffer);  // [11] @ 0x822e6260 - read token
+    virtual void vfn_12(char* outBuffer);  // [12] @ 0x822e62a0 - read token and skip
+    virtual float vfn_13();  // [13] @ 0x822e6300 - read token, parse float
+    virtual void vfn_14(float* outArray);  // [14] @ 0x822e6520 - read token, read 4 floats
+    virtual void vfn_15(float* outArray);  // [15] @ 0x822e64b0 - read token, read 3 floats
+    virtual void vfn_16(float* outArray);  // [16] @ 0x822e6440 - read token, read 4 floats
+    virtual void vfn_17(float* outArray);  // [17] @ 0x822e63d0 - read token, read 3 floats
+    virtual void vfn_18(float* outArray);  // [18] @ 0x822e6360 - read token, read 2 floats
+    virtual void vfn_19(const char* expectedToken);  // [19] @ 0x822e6590 - compare token, check int
+    virtual float vfn_20(const char* expectedToken);  // [20] @ 0x822e65d0 - compare token, parse float
+    virtual void vfn_21(const char* expectedToken, float* outArray);  // [21] @ 0x822e6750 - compare token, read 4 floats
+    virtual void vfn_22(const char* expectedToken, float* outArray);  // [22] @ 0x822e6700 - compare token, read 3 floats
     virtual void vfn_23();  // [23] @ 0x822e66b0
     virtual void vfn_24();  // [24] @ 0x822e6660
     virtual void vfn_25();  // [25] @ 0x822e6610
     virtual void vfn_26();  // [26] @ 0x822e67a0
+    virtual void vfn_27();  // [27] @ 0x822e6828
+    virtual void vfn_28();  // [28] @ 0x822e68a8
+    virtual void vfn_29();  // [29] @ 0x822e6928
+    virtual void vfn_30();  // [30] @ 0x820c2e08
+    virtual void vfn_31();  // [31] @ 0x822e6c58
+    virtual void vfn_32();  // [32] @ 0x822e6bc0
+    virtual void vfn_33();  // [33] @ 0x822e6b30
+    virtual void vfn_34();  // [34] @ 0x822e6ab8
+    virtual void vfn_35();  // [35] @ 0x822e6a40
+    virtual void vfn_36();  // [36] @ 0x822e6998
+    virtual void vfn_37();  // [37] @ 0x822e6d00
+
+    // ── helper methods ──
+    int ReadTokenAndCompare(const char* expectedToken);  // @ 0x822E58A8
+
     virtual void vfn_27();  // [27] @ 0x822e6828
     virtual void vfn_28();  // [28] @ 0x822e68a8
     virtual void vfn_29();  // [29] @ 0x822e6928
