@@ -3366,3 +3366,52 @@ const char* PlayerMovementMessage::GetTypeName() {
     // But this is actually a partial string, the full string is likely elsewhere
     return "PlayerMovementMessage";
 }
+
+
+// ===========================================================================
+// pongNetMessageHolder::CleanupMessageArray @ 0x823C2D20 | size: 0x64
+//
+// Vtable slot 2 destructor variant for pongNetMessageHolder.
+// Cleans up an allocated array of 2 network message objects.
+//
+// Process:
+//   1. Checks if holder->m_pInternalArray (+0x08) is non-null
+//   2. If allocated, resets both message objects' vtables to base PongNetMessage
+//      - Object at offset 0 (first message)
+//      - Object at offset 640 (second message, stride = 640 bytes)
+//   3. Frees the entire array via rage_free_00C0
+//   4. Nulls out the holder's pointer
+//
+// The vtable reset (0x8206C304 = PongNetMessage base vtable) ensures proper
+// cleanup before freeing, preventing virtual destructor issues.
+//
+// This is one of 41 template instantiations of the same pattern for different
+// message types. Each variant manages arrays of specific message subclasses.
+//
+// Python-verified:
+//   marker_vtable = lis(-32249) + (-15612) = 0x8206C304 (PongNetMessage vtable)
+//   Loop: r11 = r3+1280, then -640 twice → writes at offsets 640 and 0
+// ===========================================================================
+void pongNetMessageHolder_vfn_2_2D20_1(pongNetMessageHolder* holder)
+{
+    // Get the allocated message array pointer
+    void* messageArray = holder->m_pInternalArray;  // +0x08
+    
+    if (messageArray != nullptr) {
+        // Reset both message objects to base PongNetMessage vtable
+        // This ensures proper cleanup before freeing memory
+        const uint32_t BASE_VTABLE = 0x8206C304;  // PongNetMessage base vtable
+        
+        // Reset second message (offset 640)
+        *(uint32_t*)((uint8_t*)messageArray + 640) = BASE_VTABLE;
+        
+        // Reset first message (offset 0)
+        *(uint32_t*)((uint8_t*)messageArray + 0) = BASE_VTABLE;
+        
+        // Free the entire array
+        rage_free_00C0(messageArray);
+        
+        // Null out the holder's pointer
+        holder->m_pInternalArray = nullptr;
+    }
+}
