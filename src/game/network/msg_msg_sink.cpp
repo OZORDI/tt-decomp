@@ -282,3 +282,345 @@ void msgMsgSink_8DE0_sp(msgMsgSink* pThis)
     VtableSlot29Fn slot29 = (VtableSlot29Fn)vtable[29];
     slot29(pNestedObject);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetNestedValue() [vtable slot 39 @ 0x8244F490]
+// Complex bit-flag based navigation through nested data structures
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t msgMsgSink::GetNestedValue(void* dataPtr) {
+    if (dataPtr == nullptr) {
+        return 0;
+    }
+    
+    // Load control flags from data structure
+    uint8_t flags = *(uint8_t*)dataPtr;
+    
+    // Check if bit 4 is set (0x10)
+    if ((flags & 0x10) == 0) {
+        return 0;
+    }
+    
+    // Check if bit 0 is set (0x01)
+    if (flags & 0x01) {
+        // Check if bit 1 is NOT set (0x02)
+        if ((flags & 0x02) == 0) {
+            // Check if bit 2 is NOT set (0x04)
+            if ((flags & 0x04) == 0) {
+                // Navigate: dataPtr + offset at +10
+                uint16_t offset = *(uint16_t*)((uint8_t*)dataPtr + 10);
+                uint8_t* target = (uint8_t*)dataPtr + offset;
+                return *(uint16_t*)(target + 10);
+            }
+        }
+        // Direct read from offset +10
+        uint16_t offset = *(uint16_t*)((uint8_t*)dataPtr + 10);
+        uint8_t* target = (uint8_t*)dataPtr + offset;
+        return *(uint16_t*)(target + 10);
+    }
+    
+    // Bit 0 not set - check alternate path
+    // Check if bit 1 is NOT set (0x02)
+    if ((flags & 0x02) == 0) {
+        // Check if bit 2 is NOT set (0x04)
+        if ((flags & 0x04) == 0) {
+            // Navigate: dataPtr + offset at +12
+            uint16_t offset = *(uint16_t*)((uint8_t*)dataPtr + 12);
+            uint8_t* target = (uint8_t*)dataPtr + offset;
+            return *(uint16_t*)(target + 12);
+        }
+    }
+    
+    // Direct read from offset +12
+    uint16_t offset = *(uint16_t*)((uint8_t*)dataPtr + 12);
+    uint8_t* target = (uint8_t*)dataPtr + offset;
+    return *(uint16_t*)(target + 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetStateFlags() [vtable slot 38 @ 0x8244DF58]
+// Returns state flags based on nested object state
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetStateFlags() {
+    void* nestedObj = *(void**)((uint8_t*)this + 52);
+    
+    if (nestedObj == nullptr) {
+        return 32;  // Default state when no nested object
+    }
+    
+    // Load state value from nested object at offset +80
+    uint32_t state = *(uint32_t*)((uint8_t*)nestedObj + 80);
+    
+    // Check if state is in range 1-6
+    if (state >= 1 && state <= 6) {
+        // Map state to flag value
+        static const uint32_t stateFlags[] = { 1, 2, 4, 8, 16, 32 };
+        uint32_t flags = stateFlags[state - 1];
+        
+        // Check additional flag at offset +52, bit 5 (0x20)
+        uint8_t extraFlags = *(uint8_t*)((uint8_t*)nestedObj + 52);
+        if (extraFlags & 0x20) {
+            flags |= 64;  // Set bit 6
+        }
+        
+        return flags;
+    }
+    
+    // State out of range - check flag directly
+    uint8_t extraFlags = *(uint8_t*)((uint8_t*)nestedObj + 52);
+    uint32_t result = 0;
+    
+    if (extraFlags & 0x20) {
+        result |= 64;
+    }
+    
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ProcessWithLock() [vtable slot 33 @ 0x8244DEC0]
+// Thread-safe message processing with critical section
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::ProcessWithLock(uint32_t param) {
+    // Get critical section from nested object at offset +56
+    void* nestedObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)nestedObj + 144;
+    
+    // Enter critical section
+    extern void RtlEnterCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+    
+    uint32_t result = 0;
+    void* msgObj = *(void**)((uint8_t*)this + 52);
+    
+    if (msgObj != nullptr) {
+        // Call vtable slot 16 to get state flags
+        typedef uint32_t (*GetStateFn)(void*);
+        void** vtable = *(void***)this;
+        GetStateFn getState = (GetStateFn)vtable[16];
+        uint32_t stateFlags = getState(this);
+        
+        // Check if bit 5 is set (0x20)
+        if (stateFlags & 0x20) {
+            // Return error code
+            result = 0x8A650006;  // -1966669818 as unsigned
+        } else {
+            // Process message
+            extern uint32_t msgMsgSink_3C88_g(void*, uint32_t);
+            result = msgMsgSink_3C88_g(msgObj, param);
+        }
+    }
+    
+    // Leave critical section
+    extern void RtlLeaveCriticalSection(void*);
+    RtlLeaveCriticalSection(criticalSection);
+    
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::CleanupIfReady() [vtable slot 40 @ 0x8244E0C0]
+// Cleans up nested object if ready state is reached
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::CleanupIfReady() {
+    void* nestedObj = *(void**)((uint8_t*)this + 52);
+    
+    if (nestedObj != nullptr) {
+        // Call helper to check/cleanup nested object
+        extern void msgMsgSink_4550_g(void*);
+        msgMsgSink_4550_g(nestedObj);
+    }
+    
+    // Check counter at offset +324
+    int32_t counter = *(int32_t*)((uint8_t*)this + 324);
+    
+    if (counter != 0) {
+        // Call vtable slot 16 to get state
+        typedef uint32_t (*GetStateFn)(void*);
+        void** vtable = *(void***)this;
+        GetStateFn getState = (GetStateFn)vtable[16];
+        uint32_t state = getState(this);
+        
+        // If state is 32, destroy nested object at offset +12
+        if (state == 32) {
+            void* objToDestroy = (uint8_t*)this + 12;
+            
+            // Call destructor (vtable slot 0) with delete flag
+            typedef void (*DtorFn)(void*, int);
+            void** objVtable = *(void***)objToDestroy;
+            DtorFn dtor = (DtorFn)objVtable[0];
+            dtor(objToDestroy, 1);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ProcessMessage() [vtable slot 23 @ 0x8244DDF8]
+// Main message processing with state validation
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::ProcessMessage(uint32_t messageFlags) {
+    // Get critical section from nested object
+    void* nestedObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)nestedObj + 144;
+    
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+    
+    uint32_t result = 0;
+    
+    // Get state flags via vtable slot 16
+    typedef uint32_t (*GetStateFn)(void*);
+    void** vtable = *(void***)this;
+    GetStateFn getState = (GetStateFn)vtable[16];
+    uint32_t stateFlags = getState(this);
+    
+    // Check if bit 5 is NOT set (0x20)
+    if ((stateFlags & 0x20) == 0) {
+        // Check if bit 4 is set (0x10)
+        stateFlags = getState(this);
+        if (stateFlags & 0x10) {
+            // Check mode at offset +60
+            int32_t mode = *(int32_t*)((uint8_t*)this + 60);
+            
+            if (mode == 3) {
+                RtlLeaveCriticalSection(criticalSection);
+                return 0;
+            }
+            
+            // Check if bit 0 of messageFlags is NOT set
+            if ((messageFlags & 0x01) == 0) {
+                RtlLeaveCriticalSection(criticalSection);
+                return 0;
+            }
+        }
+        
+        // Process the message
+        extern void msgMsgSink_DB70_g(void*, uint32_t);
+        msgMsgSink_DB70_g(this, messageFlags);
+        
+        void* msgObj = *(void**)((uint8_t*)this + 52);
+        if (msgObj != nullptr) {
+            int32_t mode = *(int32_t*)((uint8_t*)this + 60);
+            bool shouldDelete = (mode == 3);
+            
+            extern uint32_t msgMsgSink_5098_g(void*, bool);
+            result = msgMsgSink_5098_g(msgObj, shouldDelete);
+        }
+    }
+    
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GenerateAndCleanup() [vtable slot 25 @ 0x8244DCF0]
+// Generates something and cleans up nested object
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::GenerateAndCleanup() {
+    // Get critical section
+    void* nestedObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)nestedObj + 144;
+    
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+    
+    // Generate via helper
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t result = msgMsgSink_84C0_gen(nestedObj);
+    
+    // If generation succeeded (result >= 0), destroy nested object at +12
+    if (result >= 0) {
+        void* objToDestroy = (uint8_t*)this + 12;
+        
+        typedef void (*DtorFn)(void*, int);
+        void** objVtable = *(void***)objToDestroy;
+        DtorFn dtor = (DtorFn)objVtable[0];
+        dtor(objToDestroy, 1);
+    }
+    
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::CheckAndProcess() [vtable slot 22 @ 0x8244DD50]
+// Checks state flags and processes if conditions are met
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::CheckAndProcess() {
+    // Get critical section
+    void* nestedObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)nestedObj + 144;
+    
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+    
+    // Get state flags via vtable slot 16
+    typedef uint32_t (*GetStateFn)(void*);
+    void** vtable = *(void***)this;
+    GetStateFn getState = (GetStateFn)vtable[16];
+    uint32_t stateFlags = getState(this);
+    
+    uint32_t result;
+    
+    // Check if bit 1 is NOT set (0x02)
+    if ((stateFlags & 0x02) == 0) {
+        // Check if bit 2 is NOT set (0x04)
+        stateFlags = getState(this);
+        if ((stateFlags & 0x04) == 0) {
+            // Return error code
+            result = 0x8A650006;
+        } else {
+            // Process message
+            void* msgObj = *(void**)((uint8_t*)this + 52);
+            extern uint32_t msgMsgSink_4EB8_g(void*);
+            result = msgMsgSink_4EB8_g(msgObj);
+        }
+    } else {
+        // Process message
+        void* msgObj = *(void**)((uint8_t*)this + 52);
+        extern uint32_t msgMsgSink_4EB8_g(void*);
+        result = msgMsgSink_4EB8_g(msgObj);
+    }
+    
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::SendEvent() [vtable slot 52 @ 0x8244DB58]
+// Sends an event with type 2 to nested object at offset +24
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::SendEvent() {
+    // Call jumptable function with parameters
+    // r3 = this + 24, r4 = 2, r5 = 0, r6 = 0
+    void* target = (uint8_t*)this + 24;
+    extern void jumptable_3A48(void*, uint32_t, uint32_t, uint32_t);
+    jumptable_3A48(target, 2, 0, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ClearPointers() [vtable slot 43 @ 0x8244E138]
+// Clears two object pointers
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ClearPointers() {
+    *(void**)((uint8_t*)this + 52) = nullptr;
+    *(void**)((uint8_t*)this + 40) = nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetNestedObjectValue() [vtable slot 46 @ 0x8244E148]
+// Returns value from nested object or 0 if null
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetNestedObjectValue() {
+    void* nestedObj = *(void**)((uint8_t*)this + 52);
+    
+    if (nestedObj == nullptr) {
+        return 0;
+    }
+    
+    // Call helper function on nested object
+    extern uint32_t msgMsgSink_3D70_p39(void*);
+    return msgMsgSink_3D70_p39(nestedObj);
+}
