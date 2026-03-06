@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "tt-decomp": {
+      "command": "node",
+      "args": ["tools/mcp-decomp/server.js"],
+      "cwd": "/Users/Ozordi/Downloads/tt-decomp"
+    }
+  }
+}

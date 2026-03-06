@@ -1949,3 +1949,157 @@ void ph_FC68_h(void* obj) {
     // Call phInst cleanup on the object itself
     phInst_A3A0_p33(obj);
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phArticulatedCollider — Articulated Physics Collider (Ragdoll/Chain)
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// Forward declarations for external functions
+extern void phBoundCapsule_6C28_fw(void* capsule);
+extern void phArticulatedCollider_6D30_h(void* collider);
+extern void phArticulatedCollider_5C60_sp(void* collider);
+extern void phCollider_vfn_4(phArticulatedCollider* collider);
+extern void phArticulatedCollider_5B50_wrh(void* activeJoints);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetActiveJointsPointer (vfn_46) @ 0x8224E248 | size: 0x8
+//
+// Returns pointer to the active joints data structure.
+// This is a simple accessor used by physics simulation to query joint states.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phArticulatedCollider::GetActiveJointsPointer() {
+    return m_pJointData;  // +472 (0x1D8)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DelegateToJointProcessor (vfn_22) @ 0x8224F220 | size: 0x8
+//
+// Delegates processing to the joint processor function.
+// Used during physics update to process all active joints.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DelegateToJointProcessor() {
+    phArticulatedCollider_5C60_sp(m_nActiveJoints);  // +464 (0x1D0)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DelegateToCapsuleHandler (vfn_25) @ 0x8224FD50 | size: 0x8
+//
+// Delegates to capsule collision handler.
+// Used for capsule-based collision detection on articulated bodies.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DelegateToCapsuleHandler() {
+    phBoundCapsule_6C28_fw(m_nActiveJoints);  // +464 (0x1D0)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DelegateToColliderHandler (vfn_59) @ 0x8224F218 | size: 0x8
+//
+// Delegates to articulated collider handler.
+// Used for complex collision scenarios involving multiple joints.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DelegateToColliderHandler() {
+    phArticulatedCollider_6D30_h(m_nActiveJoints);  // +464 (0x1D0)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointMass (vfn_56) @ 0x8224E250 | size: 0x10
+//
+// Returns the mass of a specific joint by index.
+// Used during physics simulation to compute forces and torques.
+//
+// @param jointIndex - Index of the joint to query
+// @return Mass value for the specified joint
+// ─────────────────────────────────────────────────────────────────────────────
+float phArticulatedCollider::GetJointMass(int jointIndex) {
+    float* massArray = (float*)m_pJointMassArray;  // +508 (0x1FC)
+    return massArray[jointIndex];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointInertia (vfn_60) @ 0x8224E260 | size: 0x10
+//
+// Returns the rotational inertia of a specific joint by index.
+// Used for angular momentum calculations in physics simulation.
+//
+// @param jointIndex - Index of the joint to query
+// @return Inertia value for the specified joint
+// ─────────────────────────────────────────────────────────────────────────────
+float phArticulatedCollider::GetJointInertia(int jointIndex) {
+    float* inertiaArray = (float*)m_pJointInertiaArray;  // +492 (0x1EC)
+    return inertiaArray[jointIndex];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointDamping (vfn_61) @ 0x8224E270 | size: 0x10
+//
+// Returns the damping coefficient of a specific joint by index.
+// Used to simulate friction and energy loss in joint movement.
+//
+// @param jointIndex - Index of the joint to query
+// @return Damping coefficient for the specified joint
+// ─────────────────────────────────────────────────────────────────────────────
+float phArticulatedCollider::GetJointDamping(int jointIndex) {
+    float* dampingArray = (float*)m_pJointDampingArray;  // +500 (0x1F4)
+    return dampingArray[jointIndex];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::Update (vfn_4) @ 0x8224E7A0 | size: 0x28
+//
+// Updates the articulated collider state.
+// Calls parent class update, then updates active joints.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::Update() {
+    // Call parent class update
+    phCollider_vfn_4(this);
+    
+    // Update active joints
+    phArticulatedCollider_5B50_wrh(m_nActiveJoints);  // +464 (0x1D0)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AddForceToJoint (vfn_33) @ 0x8224FD30 | size: 0x20
+//
+// Adds a force vector to a specific joint's accumulated forces.
+// Used during physics simulation to apply external forces (gravity, collisions).
+//
+// @param forceVector - 16-byte aligned vector containing force components
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::AddForceToJoint(const float* forceVector) {
+    // Load the joint data pointer
+    void* jointData = (void*)m_nActiveJoints;  // +464 (0x1D0)
+    
+    // Get the first joint's data (offset +40 from joint data base)
+    void* firstJoint = (void*)((char*)jointData + 40);
+    
+    // Access the accumulated force vector at offset +352
+    float* accumulatedForce = (float*)((char*)firstJoint + 352);
+    
+    // Add the input force to the accumulated force (SIMD vector addition)
+    accumulatedForce[0] += forceVector[0];
+    accumulatedForce[1] += forceVector[1];
+    accumulatedForce[2] += forceVector[2];
+    accumulatedForce[3] += forceVector[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyImpulse (vfn_36) @ 0x8224EFA0 | size: 0x24
+//
+// Applies an impulse to the articulated collider.
+// Delegates to vtable slot 34 with rearranged parameters.
+//
+// @param param1 - First parameter (moved to r4)
+// @param param2 - Second parameter (moved to r5)
+// @param param3 - Third parameter (moved to r6)
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ApplyImpulse(void* param1, void* param2, void* param3) {
+    // Get vtable and call slot 34 with parameters shuffled and two zeros appended
+    void** vtable = *(void***)this;
+    typedef void (*ImpulseFunc)(phArticulatedCollider*, void*, void*, void*, int, int);
+    ImpulseFunc func = (ImpulseFunc)vtable[34];
+    func(this, param1, param2, param3, 0, 0);
+}
+
+} // namespace rage
