@@ -440,3 +440,176 @@ void grcTextureReference::ForwardSlot25()
 }
 
 } // namespace rage
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot5  [vtable slot 5 @ 0x8215D8A0]
+// Forwards slot 5 call to the bound inner texture if present.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot5()
+{
+    grcTexture* texture = GetTexture();   // VCALL slot 11
+    
+    if (texture) {
+        // Forward to inner texture's slot 5 (byte offset +20)
+        typedef void (*Slot5Fn)(grcTexture*);
+        Slot5Fn fn = reinterpret_cast<Slot5Fn>(texture->vtable[5]);
+        fn(texture);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot6  [vtable slot 6 @ 0x8215D8E8]
+// Forwards slot 6 call to the bound inner texture, returns 0 if no texture.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot6()
+{
+    grcTexture* texture = GetTexture();   // VCALL slot 11
+    
+    if (texture) {
+        // Forward to inner texture's slot 6 (byte offset +24)
+        typedef void (*Slot6Fn)(grcTexture*);
+        Slot6Fn fn = reinterpret_cast<Slot6Fn>(texture->vtable[6]);
+        fn(texture);
+        return;
+    }
+    
+    // Return 0 if no texture (assembly shows li r3,0)
+    // Note: This is a void function but assembly sets r3=0 for ABI reasons
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot8  [vtable slot 8 @ 0x8215D720]
+// Forwards slot 8 call to the bound inner texture, returns 0 if no texture.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot8()
+{
+    grcTexture* texture = GetTexture();   // VCALL slot 11
+    
+    if (texture) {
+        // Forward to inner texture's slot 8 (byte offset +32)
+        typedef void (*Slot8Fn)(grcTexture*);
+        Slot8Fn fn = reinterpret_cast<Slot8Fn>(texture->vtable[8]);
+        fn(texture);
+        return;
+    }
+    
+    // Return 0 if no texture
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot9  [vtable slot 9 @ 0x8215D778]
+// Forwards slot 9 call to the bound inner texture, returns 0 if no texture.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot9()
+{
+    grcTexture* texture = GetTexture();   // VCALL slot 11
+    
+    if (texture) {
+        // Forward to inner texture's slot 9 (byte offset +36)
+        typedef void (*Slot9Fn)(grcTexture*);
+        Slot9Fn fn = reinterpret_cast<Slot9Fn>(texture->vtable[9]);
+        fn(texture);
+        return;
+    }
+    
+    // Return 0 if no texture
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot13  [vtable slot 13 @ 0x8215D7D0]
+// Forwards slot 13 call with two parameters to the texture from GetTexture2().
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot13(void* param1, void* param2)
+{
+    grcTexture* texture = GetTexture2();   // VCALL slot 12
+    
+    if (texture) {
+        // Forward to inner texture's slot 13 (byte offset +52)
+        typedef void (*Slot13Fn)(grcTexture*, void*, void*);
+        Slot13Fn fn = reinterpret_cast<Slot13Fn>(texture->vtable[13]);
+        fn(texture, param1, param2);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot14  [vtable slot 14 @ 0x8215D838]
+// Forwards slot 14 call with two parameters to the bound inner texture.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot14(void* param1, void* param2)
+{
+    grcTexture* texture = GetTexture();   // VCALL slot 11
+    
+    if (texture) {
+        // Forward to inner texture's slot 14 (byte offset +56)
+        typedef void (*Slot14Fn)(grcTexture*, void*, void*);
+        Slot14Fn fn = reinterpret_cast<Slot14Fn>(texture->vtable[14]);
+        fn(texture, param1, param2);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot15  [vtable slot 15 @ 0x8215D998]
+// Forwards slot 15 call to the bound inner texture, returns 0 if no texture.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot15()
+{
+    grcTexture* texture = GetTexture();   // VCALL slot 11
+    
+    if (texture) {
+        // Forward to inner texture's slot 15 (byte offset +60)
+        typedef void (*Slot15Fn)(grcTexture*);
+        Slot15Fn fn = reinterpret_cast<Slot15Fn>(texture->vtable[15]);
+        fn(texture);
+        return;
+    }
+    
+    // Return 0 if no texture
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot16  [vtable slot 16 @ 0x8215D940]
+// Forwards slot 16 call with one parameter to the texture from GetTexture2().
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot16(void* param)
+{
+    grcTexture* texture = GetTexture2();   // VCALL slot 12
+    
+    if (texture) {
+        // Forward to inner texture's slot 16 (byte offset +64)
+        typedef void (*Slot16Fn)(grcTexture*, void*);
+        Slot16Fn fn = reinterpret_cast<Slot16Fn>(texture->vtable[16]);
+        fn(texture, param);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot17  [vtable slot 17 @ 0x8215D9F0]
+// Forwards slot 17 call with float and pointer parameter to texture from GetTexture2().
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot17(float value, void* param)
+{
+    grcTexture* texture = GetTexture2();   // VCALL slot 12
+    
+    if (texture) {
+        // Forward to inner texture's slot 17 (byte offset +68)
+        typedef void (*Slot17Fn)(grcTexture*, float, void*);
+        Slot17Fn fn = reinterpret_cast<Slot17Fn>(texture->vtable[17]);
+        fn(texture, value, param);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::ForwardSlot18  [vtable slot 18 @ 0x8215DA58]
+// Forwards slot 18 call with two parameters to the bound inner texture.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::grcTextureReferenceBase::ForwardSlot18(void* param1, void* param2)
+{
+    grcTexture* texture = GetTexture();   // VCALL slot 11
+    
+    if (texture) {
+        // Forward to inner texture's slot 18 (byte offset +72)
+        typedef void (*Slot18Fn)(grcTexture*, void*, void*);
+        Slot18Fn fn = reinterpret_cast<Slot18Fn>(texture->vtable[18]);
+        fn(texture, param1, param2);
+    }
+}

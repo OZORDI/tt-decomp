@@ -9,7 +9,7 @@
 #else
 #include <stdint.h>
 #endif
-#include "../rage/rage_dat.hpp"
+#include "../rage/data/rage_dat.hpp"
 
 namespace rage {
 
