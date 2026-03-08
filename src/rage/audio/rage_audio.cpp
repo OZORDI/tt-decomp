@@ -145,5 +145,107 @@ void audVoiceSfx::PlayByEntry(
     );
 }
 
-} // namespace rage
+// External logging function (no-op in release builds)
+extern "C" void nop_8240E6D0(const char* fmt, ...);
 
+// External memory free function
+extern "C" void rage_free_00C0(void* ptr);
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::audVoice — Audio Voice Base Class
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoice::~audVoice (vfn_0) @ 0x82163358 | size: 0x74
+//
+// Destructor for audVoice base class. Unlinks this voice from a doubly-linked
+// list (likely a global voice manager list) and optionally frees the memory
+// if the destructor flag indicates scalar deletion.
+//
+// The voice maintains prev/next pointers at offsets +4 and +8 for intrusive
+// list management.
+// ─────────────────────────────────────────────────────────────────────────────
+audVoice::~audVoice() {
+    // Update vtable to base audVoice vtable (for proper cleanup)
+    // vtable = &audVoice_vtable; // Handled by compiler
+    
+    // Unlink from doubly-linked list
+    // Structure: [vtable][prev*][next*]...
+    
+    void** prevNode = reinterpret_cast<void**>(
+        *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(this) + 4)
+    );
+    void** nextNode = reinterpret_cast<void**>(
+        *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(this) + 8)
+    );
+    
+    // If we have a previous node, update its next pointer
+    if (prevNode) {
+        prevNode[2] = nextNode;  // prev->next = this->next
+    }
+    
+    // If we have a next node, update its prev pointer
+    if (nextNode) {
+        nextNode[1] = prevNode;  // next->prev = this->prev
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoice::vfn_2 @ 0x82163190 | size: 0xC
+//
+// Unimplemented stub - logs a message and returns.
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoice::vfn_2() {
+    nop_8240E6D0(reinterpret_cast<const char*>(0x82035770));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoice::vfn_4 @ 0x821631A0 | size: 0xC
+//
+// Unimplemented stub - logs a message and returns.
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoice::vfn_4() {
+    nop_8240E6D0(reinterpret_cast<const char*>(0x82035794));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoice::vfn_7 @ 0x821631B0 | size: 0xC
+//
+// Unimplemented stub - logs format string "char_%l_%s".
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoice::vfn_7() {
+    nop_8240E6D0("char_%l_%s");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoice::vfn_8 @ 0x821631C0 | size: 0xC
+//
+// Unimplemented stub - logs format string "_%s".
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoice::vfn_8() {
+    nop_8240E6D0("_%s");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoice::vfn_17 @ 0x821631D0 | size: 0xC
+//
+// Unimplemented stub - logs format string "_%l".
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoice::vfn_17() {
+    nop_8240E6D0("_%l");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoice::vfn_18 @ 0x821631E0 | size: 0x2C
+//
+// Unimplemented stub - logs a message and returns 0.
+// Likely a query function that would return voice state or handle.
+// ─────────────────────────────────────────────────────────────────────────────
+int audVoice::vfn_18() {
+    nop_8240E6D0("ankle");
+    return 0;
+}
+
+} // namespace rage

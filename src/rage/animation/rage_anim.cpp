@@ -377,3 +377,203 @@ void crAnimDofVector3::EvaluateChannels(void* animContext, float time, float* ou
 }
 
 } // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// crAnimDofFloat vtable implementations
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_2()  [vtable slot 2 @ 0x8216EA78]
+// 
+// Clones this animation DOF by allocating a new instance and copying its state.
+// Returns nullptr if allocation fails.
+// ─────────────────────────────────────────────────────────────────────────────
+void* crAnimDofFloat::vfn_2() {
+    // Allocate memory for new instance (12 bytes with 16-byte alignment)
+    void* newInstance = rage::Allocate(12, 16);
+    
+    if (newInstance) {
+        // Set vtable pointer to crAnimDofFloat vtable
+        *reinterpret_cast<void**>(newInstance) = reinterpret_cast<void*>(0x82036884);
+        
+        // Copy metadata flags from offset +4 to +7
+        uint8_t* src = reinterpret_cast<uint8_t*>(this);
+        uint8_t* dst = reinterpret_cast<uint8_t*>(newInstance);
+        dst[4] = src[4];
+        dst[5] = src[5];
+        *reinterpret_cast<uint16_t*>(dst + 6) = *reinterpret_cast<uint16_t*>(src + 6);
+        
+        // Copy the float value at offset +8
+        *reinterpret_cast<float*>(dst + 8) = m_value;
+    }
+    
+    return newInstance;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_3()  [vtable slot 3 @ 0x8216EB20]
+// 
+// Returns the size of the crAnimDofFloat structure (12 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+int crAnimDofFloat::vfn_3() {
+    return 12;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_4()  [vtable slot 4 @ 0x8216EB28]
+// 
+// Evaluates animation channel and stores the result in the output float.
+// Only processes single-channel mode (when channel config is 0).
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_4(void* animContext, float time, float* outValue) {
+    // Check channel configuration at offset +1
+    uint8_t* contextPtr = reinterpret_cast<uint8_t*>(animContext);
+    uint8_t channelConfig = contextPtr[1] & 0xF0;
+    
+    // Only process if single-channel mode (config == 0)
+    if (channelConfig == 0) {
+        // Get the channel pointer from offset +4
+        void** channels = reinterpret_cast<void**>(contextPtr + 4);
+        void* channel = channels[0];
+        
+        if (channel) {
+            // Call virtual method slot 5 on the channel to evaluate
+            void** vtable = *reinterpret_cast<void***>(channel);
+            typedef void (*EvalFunc)(void*, float, float*);
+            EvalFunc evalFn = reinterpret_cast<EvalFunc>(vtable[5]);
+            evalFn(channel, time, outValue);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_5()  [vtable slot 5 @ 0x8216EB58]
+// 
+// Blends the current float value towards a target value from animation context.
+// The blend factor is clamped to [0.0, 1.0] range.
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_5(void* animContext, float blendFactor, float* outValue) {
+    // Evaluate target value from animation context
+    float targetValue = 0.0f;
+    
+    // Check channel configuration
+    uint8_t* contextPtr = reinterpret_cast<uint8_t*>(animContext);
+    uint8_t channelConfig = contextPtr[1] & 0xF0;
+    
+    if (channelConfig == 0) {
+        // Get channel and evaluate
+        void** channels = reinterpret_cast<void**>(contextPtr + 4);
+        void* channel = channels[0];
+        
+        if (channel) {
+            void** vtable = *reinterpret_cast<void***>(channel);
+            typedef void (*EvalFunc)(void*, float, float*);
+            EvalFunc evalFn = reinterpret_cast<EvalFunc>(vtable[5]);
+            evalFn(channel, 0.0f, &targetValue);
+        }
+    }
+    
+    // Clamp blend factor to [0.0, 1.0]
+    float clampedBlend = std::clamp(blendFactor, 0.0f, 1.0f);
+    
+    // Linear interpolation: current + (target - current) * blend
+    float currentValue = m_value;
+    float delta = targetValue - currentValue;
+    m_value = currentValue + delta * clampedBlend;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_6()  [vtable slot 6 @ 0x8216EBF0]
+// 
+// Copies the float value from another animation DOF object.
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_6(void* sourceAnimDof) {
+    // Get the value from source via virtual call to slot 16
+    void** vtable = *reinterpret_cast<void***>(sourceAnimDof);
+    typedef float (*GetValueFunc)(void*);
+    GetValueFunc getValueFn = reinterpret_cast<GetValueFunc>(vtable[16]);
+    float sourceValue = getValueFn(sourceAnimDof);
+    
+    // Copy to our value
+    m_value = sourceValue;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_8()  [vtable slot 8 @ 0x8216ECA8]
+// 
+// Adds a scaled value from another animation DOF to the current value.
+// Performs: current += source * scaleFactor
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_8(void* sourceAnimDof, float scaleFactor) {
+    // Get source value via virtual call to slot 16
+    void** vtable = *reinterpret_cast<void***>(sourceAnimDof);
+    typedef float (*GetValueFunc)(void*);
+    GetValueFunc getValueFn = reinterpret_cast<GetValueFunc>(vtable[16]);
+    float sourceValue = getValueFn(sourceAnimDof);
+    
+    // Add scaled source value: current += source * scale
+    m_value += sourceValue * scaleFactor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_9()  [vtable slot 9 @ 0x8216ED00]
+// 
+// Replaces the current value with source value if source magnitude exceeds threshold.
+// Compares squared values to avoid expensive square root operation.
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_9(void* sourceAnimDof, float threshold) {
+    // Get source value via virtual call to slot 16
+    void** vtable = *reinterpret_cast<void***>(sourceAnimDof);
+    typedef float (*GetValueFunc)(void*);
+    GetValueFunc getValueFn = reinterpret_cast<GetValueFunc>(vtable[16]);
+    float sourceValue = getValueFn(sourceAnimDof);
+    
+    // Compare squared values (avoids sqrt)
+    float sourceSquared = sourceValue * sourceValue;
+    float thresholdSquared = threshold * threshold;
+    
+    if (sourceSquared > thresholdSquared) {
+        // Replace with source value
+        m_value = sourceValue;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_10()  [vtable slot 10 @ 0x8216ED80]
+// 
+// Scales the float value by a uniform scalar.
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_10(float scaleFactor) {
+    m_value *= scaleFactor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_12()  [vtable slot 12 @ 0x8216ED90]
+// 
+// Transforms the value through another animation DOF's coordinate space.
+// Gets the transform value and applies it via virtual call to slot 19.
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_12(void* transformAnimDof) {
+    // Get transform value via virtual call to slot 16
+    void** vtable = *reinterpret_cast<void***>(transformAnimDof);
+    typedef float (*GetValueFunc)(void*);
+    GetValueFunc getValueFn = reinterpret_cast<GetValueFunc>(vtable[16]);
+    float transformValue = getValueFn(transformAnimDof);
+    
+    // Apply transform via virtual call to slot 19
+    typedef void (*TransformFunc)(void*, float);
+    TransformFunc transformFn = reinterpret_cast<TransformFunc>(vtable[19]);
+    transformFn(transformAnimDof, m_value);
+    
+    // Store transformed result
+    m_value = transformValue;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// crAnimDofFloat::vfn_13()  [vtable slot 13 @ 0x8216EE00]
+// 
+// Resets the float value to zero (0.0f).
+// ─────────────────────────────────────────────────────────────────────────────
+void crAnimDofFloat::vfn_13() {
+    m_value = 0.0f;
+}
