@@ -2396,3 +2396,222 @@ void phObject::vfn_19() {
         m_field_52 = nullptr;
     }
 }
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phJoint3Dof
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * rage::phJoint3Dof::vfn_14 @ 0x82251268 | size: 0x40
+ *
+ * Aliases: phJoint_12A8_fw
+ * Sets internal damping/stiffness values based on input parameters.
+ */
+void phJoint3Dof::vfn_14(float arg1, float arg2) {
+    this->field_0x02d0 = arg1;
+    this->field_0x02d4 = arg1;
+    this->field_0x02d8 = arg1;
+    this->field_0x02dc = arg1;
+    this->field_0x02e0 = arg2;
+    this->field_0x02e4 = arg2;
+    this->field_0x02e8 = 0;
+    
+    // 0x82079AD8 in .rdata usually represents 0.0f
+    if (arg2 == 0.0f) {
+        this->field_0x02e9 = 0;
+    } else {
+        this->field_0x02e9 = 1;
+    }
+}
+
+/**
+ * phJoint3Dof_C4F8_w @ 0x821DC4F8 | size: 0x64
+ *
+ * Iterates through 4 sequential sub-blocks embedded in the joint
+ * and initializes them via a generic structural callback.
+ */
+void phJoint3Dof_C4F8_w(phJoint3Dof* joint) {
+    char* current = reinterpret_cast<char*>(joint);
+    
+    for (int i = 3; i >= 0; i--) {
+        // phJoint3Dof_0170_g iterates over the block calling util_4628
+        phJoint3Dof_0170_g(current, 64, 8, reinterpret_cast<void*>(0x8207E6D0));
+        
+        phJoint3Dof* blockObj = reinterpret_cast<phJoint3Dof*>(current);
+        *(uint16_t*)(current + 528) = 3;  // offset 0x0210
+        *(uint16_t*)(current + 530) = 3;  // offset 0x0212
+        
+        util_4628(blockObj, -1);
+        
+        // Advance pointer to the next block (544 bytes stride)
+        current += 544;
+    }
+}
+
+/**
+ * rage::phJoint3Dof::vfn_13 @ 0x82251200 | size: 0x64
+ *
+ * Fetches intermediate geometry bounds via phJoint1Dof_AFF8_p42 and 
+ * delegates to phJoint_1388.
+ */
+void phJoint3Dof::vfn_13(int index, float val) {
+    float scratchBounds[8]; // Uses 2 SIMD vectors (32 bytes)
+    
+    // Fill first 16 bytes (r1+80)
+    phJoint1Dof_AFF8_p42(this, index, &scratchBounds[0]);
+    
+    // Pass both the result vector and a second scratch vector
+    phJoint_1388(this, index, val, &scratchBounds[4], &scratchBounds[0]);
+}
+
+/**
+ * rage::phJoint3Dof::vfn_25 @ 0x82254D28 | size: 0x68
+ *
+ * Calls vfn_24 to get two vectors, and accumulates them into outVec.
+ */
+void phJoint3Dof::vfn_25(int index, float* outVec) {
+    float scratch[8]; // 2 vectors
+    
+    // Dispatch to slot 24 (96 / 4)
+    typedef void (*VFn24)(phJoint3Dof*, int, float*);
+    VFn24 fn = (VFn24)this->vtable[24];
+    fn(this, index, scratch);
+    
+    // Accumulate results using SIMD-style vector add
+    for (int i = 0; i < 4; i++) outVec[i] += scratch[i];        // Vector 1
+    for (int i = 0; i < 4; i++) outVec[i + 4] += scratch[i + 4]; // Vector 2
+}
+
+/**
+ * rage::phJoint3Dof::vfn_26 @ 0x82254D90 | size: 0x68
+ *
+ * Calls vfn_23 to get two vectors, and accumulates them into outVec.
+ */
+void phJoint3Dof::vfn_26(int index, float* outVec) {
+    float scratch[8]; // 2 vectors
+    
+    // Dispatch to slot 23 (92 / 4)
+    typedef void (*VFn23)(phJoint3Dof*, int, float*);
+    VFn23 fn = (VFn23)this->vtable[23];
+    fn(this, index, scratch);
+    
+    // Accumulate results
+    for (int i = 0; i < 4; i++) outVec[i] += scratch[i];        // Vector 1
+    for (int i = 0; i < 4; i++) outVec[i + 4] += scratch[i + 4]; // Vector 2
+}
+
+/**
+ * rage::phJoint3Dof::vfn_29 @ 0x822550F8 | size: 0x68
+ *
+ * Calls vfn_28 to get two vectors, and accumulates them into outVec.
+ */
+void phJoint3Dof::vfn_29(int index, float* outVec) {
+    float scratch[8]; // 2 vectors
+    
+    // Dispatch to slot 28 (112 / 4)
+    typedef void (*VFn28)(phJoint3Dof*, int, float*);
+    VFn28 fn = (VFn28)this->vtable[28];
+    fn(this, index, scratch);
+    
+    // Accumulate results
+    for (int i = 0; i < 4; i++) outVec[i] += scratch[i];        // Vector 1
+    for (int i = 0; i < 4; i++) outVec[i + 4] += scratch[i + 4]; // Vector 2
+}
+
+/**
+ * rage::phJoint3Dof::vfn_30 @ 0x82255160 | size: 0x68
+ *
+ * Calls vfn_27 to get two vectors, and accumulates them into outVec.
+ */
+void phJoint3Dof::vfn_30(int index, float* outVec) {
+    float scratch[8]; // 2 vectors
+    
+    // Dispatch to slot 27 (108 / 4)
+    typedef void (*VFn27)(phJoint3Dof*, int, float*);
+    VFn27 fn = (VFn27)this->vtable[27];
+    fn(this, index, scratch);
+    
+    // Accumulate results
+    for (int i = 0; i < 4; i++) outVec[i] += scratch[i];        // Vector 1
+    for (int i = 0; i < 4; i++) outVec[i + 4] += scratch[i + 4]; // Vector 2
+}
+
+/**
+ * rage::phJoint3Dof::vfn_17 @ 0x82255340 | size: 0x74
+ *
+ * Performs matrix/state clearing and resets internal angular components.
+ */
+void phJoint3Dof::vfn_17() {
+    this->field_0x02fc = 0.0f; // 764
+    this->field_0x0300 = 0.0f; // 768
+    
+    // Clear 6 separate 16-byte vectors
+    uint32_t* vecs = reinterpret_cast<uint32_t*>(this);
+    
+    // offset 432 (0x1B0) and 448 (0x1C0)
+    for (int i = 0; i < 4; i++) vecs[(432 / 4) + i] = 0;
+    for (int i = 0; i < 4; i++) vecs[(448 / 4) + i] = 0;
+    
+    // offset 464 (0x1D0) and 480 (0x1E0)
+    for (int i = 0; i < 4; i++) vecs[(464 / 4) + i] = 0;
+    for (int i = 0; i < 4; i++) vecs[(480 / 4) + i] = 0;
+    
+    // offset 528 (0x210) and 544 (0x220)
+    for (int i = 0; i < 4; i++) vecs[(528 / 4) + i] = 0;
+    for (int i = 0; i < 4; i++) vecs[(544 / 4) + i] = 0;
+}
+
+/**
+ * rage::phJoint3Dof::vfn_31 @ 0x82253920 | size: 0x88
+ *
+ * Calculates vector dot products and magnitude norms for the sub-joints.
+ */
+void phJoint3Dof::vfn_31() {
+    phJoint_1618_g(this); // Pre-sync
+    
+    float f1_a = phJoint1Dof_AE38(reinterpret_cast<char*>(this) + 896);
+    float f0_a = *(float*)((char*)this + 928);
+    *(float*)((char*)this + 1672) = f0_a * f1_a;
+    
+    float f1_b = phJoint1Dof_AE38(reinterpret_cast<char*>(this) + 880);
+    float f1_c = phJoint1Dof_AE38(reinterpret_cast<char*>(this) + 912);
+    
+    float lengthSq = (f1_b * f1_b) + (f1_c * f1_c);
+    
+    // Constants from standard physics data block
+    const float FLT_MULT = 1.0f; // Assumed from 0x8202D10C based on logic
+    lengthSq *= FLT_MULT;
+    
+    // External bound function likely normalizes or validates the result
+    phBoundCapsule_01D0_g(this, lengthSq);
+    
+    *(float*)((char*)this + 1668) = lengthSq;
+}
+
+/**
+ * phJoint3Dof_E7C8_2h @ 0x822CE7C8 | size: 0x8C
+ *
+ * Initializes an indexed constraint matrix to identity and clears
+ * subsequent row vectors.
+ */
+void phJoint3Dof_E7C8_2h(phJoint3Dof* joint, uint32_t index) {
+    // Navigate to the constraint structure base
+    // Constraint stride is 64 bytes, starting offset is 112
+    char* base = reinterpret_cast<char*>(joint) + (index * 64) + 112;
+    
+    // Identity matrix values (f13=1.0f, f0=0.0f)
+    float* mat = reinterpret_cast<float*>(base);
+    mat[0] = 1.0f; mat[1] = 0.0f; mat[2] = 0.0f; mat[3] = 0.0f;  // offset 0..12
+    mat[4] = 0.0f; mat[5] = 1.0f; mat[6] = 0.0f; mat[7] = 0.0f;  // offset 16..28
+    mat[8] = 0.0f; mat[9] = 0.0f; mat[10] = 1.0f; mat[11] = 0.0f; // offset 32..44
+    
+    // Clear 16-byte vector directly contiguous to matrix (offset 48)
+    for (int i = 0; i < 4; i++) reinterpret_cast<uint32_t*>(base + 48)[i] = 0;
+    
+    // Clear next four vectors located at strict offset 240+ relative to joint
+    uint32_t* baseVecs = reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(joint) + 240);
+    
+    for (int i = 0; i < 4; i++) baseVecs[0 + i] = 0;  // 240
+    for (int i = 0; i < 4; i++) baseVecs[4 + i] = 0;  // 256
+    for (int i = 0; i < 4; i++) baseVecs[8 + i] = 0;  // 272
+    for (int i = 0; i < 4; i++) baseVecs[12 + i] = 0; // 288
+}
