@@ -154,7 +154,7 @@ extern "C" {
     int32_t pg_C4E8_g(int32_t val, int32_t min, int32_t max);
 }
 
-// Global pointer for gdShotSet related arrays
+// Global pointer for the skeleton dictionary / creature data used for bone lookups
 extern uint32_t lbl_8271A314;
 
 // -----------------------------------------------------------------------------
@@ -167,55 +167,55 @@ const char* gdShotSet::PostLoadChildren() {
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_23()  [vtable slot 23 @ 0x821DD1D8]
-// Returns the number of items in the primary data array.
+// Returns the number of attachment data items.
 // -----------------------------------------------------------------------------
 uint32_t gdShotSet::vfn_23() {
-    return m_dataCount1;
+    return m_attachmentCount;
 }
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_24()  [vtable slot 24 @ 0x821DD1E0]
-// Retrieves an item from the related global array using an index from m_pDataArray2.
+// Retrieves a resolved bone value from the global skeleton using an index.
 // -----------------------------------------------------------------------------
 uint32_t gdShotSet::vfn_24(uint32_t index) {
-    uint32_t valIndex = m_pDataArray2[index];
-    if (valIndex == 0xFFFFFFFF) {
+    uint32_t boneIndex = m_pBoneIndices[index];
+    if (boneIndex == 0xFFFFFFFF) {
         return 0;
     }
     
-    uint32_t* globalData = (uint32_t*)lbl_8271A314;
-    uint32_t* globalArray = (uint32_t*)globalData[9]; // +36
-    return globalArray[valIndex];
+    uint32_t* pSkeletonDict = (uint32_t*)lbl_8271A314;
+    uint32_t* pBoneArray = (uint32_t*)pSkeletonDict[9]; // +36
+    return pBoneArray[boneIndex];
 }
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_25()  [vtable slot 25 @ 0x821DD218]
-// Retrieves the raw index value from m_pDataArray2.
+// Retrieves the raw resolved bone index from the indices array.
 // -----------------------------------------------------------------------------
 uint32_t gdShotSet::vfn_25(uint32_t index) {
-    return m_pDataArray2[index];
+    return m_pBoneIndices[index];
 }
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_26()  [vtable slot 26 @ 0x821DD228]
-// Retrieves a related pointer, falling back to m_pDataArray1 if the index is invalid (-1).
+// Retrieves a related bone pointer, falling back to the attachment's bone name if invalid.
 // -----------------------------------------------------------------------------
 void* gdShotSet::vfn_26(uint32_t index) {
-    uint32_t valIndex = m_pDataArray2[index];
-    if (valIndex == 0xFFFFFFFF) {
-        uint32_t* obj = (uint32_t*)m_pDataArray1[index];
-        return (void*)obj[4]; // +16
+    uint32_t boneIndex = m_pBoneIndices[index];
+    if (boneIndex == 0xFFFFFFFF) {
+        uint32_t* pAttachment = (uint32_t*)m_pAttachments[index];
+        return (void*)pAttachment[4]; // +16 (bone name)
     }
     
-    uint32_t* globalData = (uint32_t*)lbl_8271A314;
-    uint32_t** globalArray = (uint32_t**)globalData[9]; // +36
-    uint32_t* obj = globalArray[valIndex];
-    return (void*)obj[4]; // +16
+    uint32_t* pSkeletonDict = (uint32_t*)lbl_8271A314;
+    uint32_t** pBonePtrArray = (uint32_t**)pSkeletonDict[9]; // +36
+    uint32_t* pBoneObj = pBonePtrArray[boneIndex];
+    return (void*)pBoneObj[4]; // +16
 }
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_27()  [vtable slot 27 @ 0x821DD268]
-// Retrieves the index value for the current active item.
+// Retrieves the bone index value for the current active item.
 // -----------------------------------------------------------------------------
 uint32_t gdShotSet::vfn_27() {
     return vfn_25(m_currentIdx);
@@ -223,7 +223,7 @@ uint32_t gdShotSet::vfn_27() {
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_28()  [vtable slot 28 @ 0x821DD280]
-// Retrieves the related pointer for the current active item.
+// Retrieves the related bone pointer for the current active item.
 // -----------------------------------------------------------------------------
 void* gdShotSet::vfn_28() {
     return vfn_26(m_currentIdx);
@@ -239,40 +239,42 @@ void gdShotSet::vfn_29(uint32_t idx) {
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_30()  [vtable slot 30 @ 0x821DD320]
-// Processes and instantiates attachment data for the elements in the set.
+// Resolves attachment bone names to indices within the global skeleton dictionary.
 // -----------------------------------------------------------------------------
 void gdShotSet::vfn_30() {
-    xe_8E30(&m_pDataArray2, m_dataCount1);
+    xe_8E30(&m_pBoneIndices, m_attachmentCount);
     
-    if (m_dataCount1 == 0) {
+    if (m_attachmentCount == 0) {
         return;
     }
     
-    void* pGlobal = (void*)lbl_8271A314;
+    void* pSkeletonDict = (void*)lbl_8271A314;
     const char* errorFormat = "gdCrAttachmentData::PostLoadCreature() - bone '%s' does not exist";
     
-    for (uint32_t i = 0; i < m_dataCount1; i++) {
-        uint32_t* pItem1 = (uint32_t*)m_pDataArray1[i];
-        void* result = game_DAF0(pGlobal, pItem1[4]); // +16
+    for (uint32_t i = 0; i < m_attachmentCount; i++) {
+        uint32_t* pAttachment = (uint32_t*)m_pAttachments[i];
         
-        uint16_t count2 = m_dataCount2;
-        m_dataCount2 = count2 + 1;
-        m_pDataArray2[count2] = (uint32_t)result;
+        // Lookup bone index by name in the global skeleton dictionary
+        void* resolvedIndex = game_DAF0(pSkeletonDict, pAttachment[4]); // +16
         
-        if (m_pDataArray2[i] == 0xFFFFFFFF) {
-            uint32_t* pItem2 = (uint32_t*)m_pDataArray1[i];
-            nop_8240E6D0(errorFormat, pItem2[4]); // +16
+        uint16_t currentCount = m_boneIndexCount;
+        m_boneIndexCount = currentCount + 1;
+        m_pBoneIndices[currentCount] = (uint32_t)resolvedIndex;
+        
+        if (m_pBoneIndices[i] == 0xFFFFFFFF) {
+            uint32_t* pAttachmentFailed = (uint32_t*)m_pAttachments[i];
+            nop_8240E6D0(errorFormat, pAttachmentFailed[4]); // +16
         }
     }
 }
 
 // -----------------------------------------------------------------------------
 // gdShotSet::vfn_31()  [vtable slot 31 @ 0x821DD3C8]
-// Updates the state using pg_C4E8_g if active.
+// Updates the index sequentially, wrapping around the bone index bounds.
 // -----------------------------------------------------------------------------
 bool gdShotSet::vfn_31() {
     if (m_bIsActive) {
-        m_currentIdx = (uint32_t)pg_C4E8_g(m_currentIdx + 1, 0, m_dataCount2 - 1);
+        m_currentIdx = (uint32_t)pg_C4E8_g(m_currentIdx + 1, 0, m_boneIndexCount - 1);
     }
     return m_bIsActive;
 }

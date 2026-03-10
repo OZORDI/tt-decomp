@@ -603,11 +603,11 @@ struct gdShotSet {
     uint8_t     _pad1[16];        // +0x04 -> +0x13
     bool        m_bIsActive;      // +0x14
     uint8_t     _pad2[3];         // +0x15 -> +0x17
-    void**      m_pDataArray1;    // +0x18
-    uint16_t    m_dataCount1;     // +0x1C
+    void**      m_pAttachments;   // +0x18 (Array of gdCrAttachmentData pointers)
+    uint16_t    m_attachmentCount;// +0x1C
     uint16_t    _pad3;            // +0x1E
-    uint32_t*   m_pDataArray2;    // +0x20
-    uint16_t    m_dataCount2;     // +0x24
+    uint32_t*   m_pBoneIndices;   // +0x20 (Array of resolved bone indices)
+    uint16_t    m_boneIndexCount; // +0x24
     uint16_t    _pad4;            // +0x26
     uint32_t    m_currentIdx;     // +0x28
 
