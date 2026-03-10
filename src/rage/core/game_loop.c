@@ -379,19 +379,19 @@ void pgStreamer_Init(void)
 // in-place.  Called in a loop by fiPath_Build until all ../ are gone.
 //
 // Algorithm:
-//   1. Find the first '.' character at or after pPath (using ph_21B0 with
+//   1. Find the first '.' character at or after pPath (using rage_strchr with
 //      delim=46 i.e. '.').
 //   2. Verify it is preceded by '/' or '\' and followed by "./" or ".\".
 //   3. Walk backward from the found '..' to find the parent-directory boundary.
 //   4. Collapse the "<parent>/../" sequence: memmove to remove it.
 //   Returns: 1 if a collapse was performed, 0 if not.
 // ---------------------------------------------------------------------------
-extern void* ph_21B0(const char* s, int delim);  /* strchr-like @ 0x824321B0 */
+extern void* rage_strchr(const char* s, int delim);  /* strchr-like @ 0x824321B0 */
 
 static int fiPath_RemoveParentDir(char* pPath)
 {
     // Find first '.' in the path
-    char* pDot = (char*)ph_21B0(pPath, 46 /* '.' */);
+    char* pDot = (char*)rage_strchr(pPath, 46 /* '.' */);
     if (pDot == NULL || (uintptr_t)pDot <= (uintptr_t)pPath) {
         return 0;
     }
@@ -478,7 +478,7 @@ static void fiPath_Build(void* pFactory, char* pOutBuf, int outLen,
             bAbsRelPath = 1;
         } else {
             // Check for drive letter (contains ':')
-            if ((char*)ph_21B0(pRelPath, 58 /* ':' */) != NULL) {
+            if ((char*)rage_strchr(pRelPath, 58 /* ':' */) != NULL) {
                 bAbsRelPath = 1;
             }
         }

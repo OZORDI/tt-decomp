@@ -299,7 +299,7 @@ void* phWorld_Construct(void) {
     return NULL;
 }
 
-void ph_21B0(void) {
+void rage_strchr(void) {
     // Physics function
 }
 

@@ -11,7 +11,7 @@
 #include <stddef.h>
 
 /**
- * ph_21B0 @ 0x824321B0 | size: 0x3C
+ * rage_strchr @ 0x824321B0 | size: 0x3C
  *
  * Scan a string for a specific character, returning a pointer to its first
  * occurrence.  Functionally equivalent to strchr(3) with two variants:
@@ -22,10 +22,10 @@
  * This variant is used during argument/config parsing in rage_app_init_6418
  * to locate '/' or '-' prefix characters in command-line tokens.
  *
- * The function is an alias of util_21F0 in the binary (the linker merged the
+ * The function is an alias of strchr in the binary (the linker merged the
  * two identical bodies into a single address).
  */
-const char* ph_21B0(const char* str, int ch)
+const char* rage_strchr(const char* str, int ch)
 {
     unsigned char c = (unsigned char)*str;
 
@@ -254,7 +254,7 @@ void rage::phBoundRibbon::CopyFrom(const rage::phBoundRibbon* source) {
 }
 
 /**
- * ph_1B58_h @ 0x82451B58 | size: 0x3C
+ * phNamedNode_Init @ 0x82451B58 | size: 0x3C
  *
  * Constructor for a small physics object with intrusive linked list support.
  * Initializes the object with a vtable, sets up circular list pointers
@@ -267,7 +267,7 @@ void rage::phBoundRibbon::CopyFrom(const rage::phBoundRibbon* source) {
  *
  * @param name - Pointer to 20-byte name/identifier buffer to copy
  */
-void ph_1B58_h(void* thisPtr, const char* name) {
+void phNamedNode_Init(void* thisPtr, const char* name) {
     uint8_t* obj = (uint8_t*)thisPtr;
     
     // Set vtable pointer at offset 0
