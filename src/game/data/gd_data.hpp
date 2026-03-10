@@ -600,21 +600,31 @@ struct gdShotName {
 // ── gdShotSet  [vtable @ 0x8203F5B4] ──────────────────────────
 struct gdShotSet {
     void**      vtable;           // +0x00
+    uint8_t     _pad1[16];        // +0x04 -> +0x13
+    bool        m_bIsActive;      // +0x14
+    uint8_t     _pad2[3];         // +0x15 -> +0x17
+    void**      m_pDataArray1;    // +0x18
+    uint16_t    m_dataCount1;     // +0x1C
+    uint16_t    _pad3;            // +0x1E
+    uint32_t*   m_pDataArray2;    // +0x20
+    uint16_t    m_dataCount2;     // +0x24
+    uint16_t    _pad4;            // +0x26
+    uint32_t    m_currentIdx;     // +0x28
 
     // ── virtual methods ──
     virtual ~gdShotSet();                  // [0] @ 0x821dce80
     virtual void vfn_3();  // [3] @ 0x821dd0a0
     virtual void PostLoadProperties();  // [20] @ 0x821dcf40
-    virtual void PostLoadChildren();  // [22] @ 0x821dcf88
-    virtual void vfn_23();  // [23] @ 0x821dd1d8
-    virtual void vfn_24();  // [24] @ 0x821dd1e0
-    virtual void vfn_25();  // [25] @ 0x821dd218
-    virtual void vfn_26();  // [26] @ 0x821dd228
-    virtual void vfn_27();  // [27] @ 0x821dd268
-    virtual void vfn_28();  // [28] @ 0x821dd280
-    virtual void vfn_29();  // [29] @ 0x821dd318
+    virtual const char* PostLoadChildren();  // [22] @ 0x821dcf88
+    virtual uint32_t vfn_23();  // [23] @ 0x821dd1d8
+    virtual uint32_t vfn_24(uint32_t index);  // [24] @ 0x821dd1e0
+    virtual uint32_t vfn_25(uint32_t index);  // [25] @ 0x821dd218
+    virtual void* vfn_26(uint32_t index);  // [26] @ 0x821dd228
+    virtual uint32_t vfn_27();  // [27] @ 0x821dd268
+    virtual void* vfn_28();  // [28] @ 0x821dd280
+    virtual void vfn_29(uint32_t idx);  // [29] @ 0x821dd318
     virtual void vfn_30();  // [30] @ 0x821dd320
-    virtual void vfn_31();  // [31] @ 0x821dd3c8
+    virtual bool vfn_31();  // [31] @ 0x821dd3c8
 };
 
 // ── gdStatsGame  [vtable @ 0x8204382C] ──────────────────────────

@@ -146,3 +146,133 @@ void plrPropMgr::vfn_25() {
         obj[291] = 1;
     }
 }
+
+extern "C" {
+    void xe_8E30(void* ptr, uint32_t count);
+    void* game_DAF0(void* globalObj, uint32_t arg1);
+    void nop_8240E6D0(const char* fmt, uint32_t arg);
+    int32_t pg_C4E8_g(int32_t val, int32_t min, int32_t max);
+}
+
+// Global pointer for gdShotSet related arrays
+extern uint32_t lbl_8271A314;
+
+// -----------------------------------------------------------------------------
+// gdShotSet::PostLoadChildren()  [vtable slot 22 @ 0x821DCF88]
+// Returns the identifier string for attachment data.
+// -----------------------------------------------------------------------------
+const char* gdShotSet::PostLoadChildren() {
+    return "AttachmentData";
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_23()  [vtable slot 23 @ 0x821DD1D8]
+// Returns the number of items in the primary data array.
+// -----------------------------------------------------------------------------
+uint32_t gdShotSet::vfn_23() {
+    return m_dataCount1;
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_24()  [vtable slot 24 @ 0x821DD1E0]
+// Retrieves an item from the related global array using an index from m_pDataArray2.
+// -----------------------------------------------------------------------------
+uint32_t gdShotSet::vfn_24(uint32_t index) {
+    uint32_t valIndex = m_pDataArray2[index];
+    if (valIndex == 0xFFFFFFFF) {
+        return 0;
+    }
+    
+    uint32_t* globalData = (uint32_t*)lbl_8271A314;
+    uint32_t* globalArray = (uint32_t*)globalData[9]; // +36
+    return globalArray[valIndex];
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_25()  [vtable slot 25 @ 0x821DD218]
+// Retrieves the raw index value from m_pDataArray2.
+// -----------------------------------------------------------------------------
+uint32_t gdShotSet::vfn_25(uint32_t index) {
+    return m_pDataArray2[index];
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_26()  [vtable slot 26 @ 0x821DD228]
+// Retrieves a related pointer, falling back to m_pDataArray1 if the index is invalid (-1).
+// -----------------------------------------------------------------------------
+void* gdShotSet::vfn_26(uint32_t index) {
+    uint32_t valIndex = m_pDataArray2[index];
+    if (valIndex == 0xFFFFFFFF) {
+        uint32_t* obj = (uint32_t*)m_pDataArray1[index];
+        return (void*)obj[4]; // +16
+    }
+    
+    uint32_t* globalData = (uint32_t*)lbl_8271A314;
+    uint32_t** globalArray = (uint32_t**)globalData[9]; // +36
+    uint32_t* obj = globalArray[valIndex];
+    return (void*)obj[4]; // +16
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_27()  [vtable slot 27 @ 0x821DD268]
+// Retrieves the index value for the current active item.
+// -----------------------------------------------------------------------------
+uint32_t gdShotSet::vfn_27() {
+    return vfn_25(m_currentIdx);
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_28()  [vtable slot 28 @ 0x821DD280]
+// Retrieves the related pointer for the current active item.
+// -----------------------------------------------------------------------------
+void* gdShotSet::vfn_28() {
+    return vfn_26(m_currentIdx);
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_29()  [vtable slot 29 @ 0x821DD318]
+// Sets the current active item index.
+// -----------------------------------------------------------------------------
+void gdShotSet::vfn_29(uint32_t idx) {
+    m_currentIdx = idx;
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_30()  [vtable slot 30 @ 0x821DD320]
+// Processes and instantiates attachment data for the elements in the set.
+// -----------------------------------------------------------------------------
+void gdShotSet::vfn_30() {
+    xe_8E30(&m_pDataArray2, m_dataCount1);
+    
+    if (m_dataCount1 == 0) {
+        return;
+    }
+    
+    void* pGlobal = (void*)lbl_8271A314;
+    const char* errorFormat = "gdCrAttachmentData::PostLoadCreature() - bone '%s' does not exist";
+    
+    for (uint32_t i = 0; i < m_dataCount1; i++) {
+        uint32_t* pItem1 = (uint32_t*)m_pDataArray1[i];
+        void* result = game_DAF0(pGlobal, pItem1[4]); // +16
+        
+        uint16_t count2 = m_dataCount2;
+        m_dataCount2 = count2 + 1;
+        m_pDataArray2[count2] = (uint32_t)result;
+        
+        if (m_pDataArray2[i] == 0xFFFFFFFF) {
+            uint32_t* pItem2 = (uint32_t*)m_pDataArray1[i];
+            nop_8240E6D0(errorFormat, pItem2[4]); // +16
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// gdShotSet::vfn_31()  [vtable slot 31 @ 0x821DD3C8]
+// Updates the state using pg_C4E8_g if active.
+// -----------------------------------------------------------------------------
+bool gdShotSet::vfn_31() {
+    if (m_bIsActive) {
+        m_currentIdx = (uint32_t)pg_C4E8_g(m_currentIdx + 1, 0, m_dataCount2 - 1);
+    }
+    return m_bIsActive;
+}
