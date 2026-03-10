@@ -1755,3 +1755,60 @@ struct phSpringAninmatedAttachment {
 };
 
 } // namespace rage
+
+// ── phObject ─────────────────────────────────────────────────────────────────
+// Generic physics object participating in physics updates.
+struct phObject {
+    void** vtable;            // +0x00
+    uint8_t _pad0x04[0x44];   // +0x04
+    void* m_field_48;         // +0x30 (48)
+    phObject* m_field_52;     // +0x34 (52)
+    uint8_t _pad0x38[0x38];   // +0x38 (56)
+    uint32_t m_field_112;     // +0x70 (112)
+    uint32_t m_field_116;     // +0x74 (116)
+    uint32_t m_field_120;     // +0x78 (120)
+    uint8_t _pad0x7C[0x08];   // +0x7C (124)
+    phObject* m_field_132;    // +0x84 (132)
+    uint8_t _pad0x88[0x16C];  // +0x88 (136)
+    uint32_t m_field_500;     // +0x1F4 (500)
+    uint32_t m_field_504;     // +0x1F8 (504)
+    void* m_field_508;        // +0x1FC (508)
+    uint64_t m_field_512;     // +0x200 (512)
+    uint32_t m_field_520;     // +0x208 (520)
+    uint32_t m_field_524;     // +0x20C (524)
+    uint32_t m_field_528;     // +0x210 (528)
+
+    virtual ~phObject();                               // [0]
+    virtual void* vfn_1(void*);                        // [1]
+    virtual void vfn_2();                              // [2]
+    virtual void vfn_3();                              // [3]
+    virtual void vfn_4();                              // [4]
+    virtual void* vfn_5();                             // [5]
+    virtual void* vfn_6();                             // [6]
+    virtual void* vfn_7();                             // [7]
+    virtual void* vfn_8();                             // [8]
+    virtual void* vfn_9();                             // [9]
+    virtual void* vfn_10();                            // [10]
+    virtual void vfn_11(void*, void*, void*);          // [11]
+    virtual void* vfn_12();                            // [12]
+    virtual void vfn_13(void*);                        // [13]
+    virtual int32_t vfn_14(int32_t);                   // [14]
+    virtual int32_t vfn_15();                          // [15]
+    virtual void* vfn_16();                            // [16]
+    virtual void* vfn_17(void*);                       // [17]
+    virtual void* vfn_18();                            // [18]
+    virtual void vfn_19();                             // [19]
+    virtual void vfn_20();                             // [20]
+    virtual void* vfn_21();                            // [21]
+    virtual void* vfn_22();                            // [22]
+    virtual void* vfn_23();                            // [23]
+    virtual void* vfn_24();                            // [24]
+    virtual void* vfn_25();                            // [25]
+    virtual void* vfn_26();                            // [26]
+    virtual void* vfn_27();                            // [27]
+    virtual void* vfn_28();                            // [28]
+    virtual void* vfn_29();                            // [29]
+    virtual void* vfn_30();                            // [30]
+    virtual void* vfn_31();                            // [31]
+    virtual void vfn_32();                             // [32]
+};

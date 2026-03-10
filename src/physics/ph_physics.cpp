@@ -2251,3 +2251,148 @@ int ph_0CC0(void* stateObj) {
     uint32_t finalBound = *(uint32_t*)(obj + 8);
     return (int)(finalBound - currentBound);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_0()  [vtable slot 0 @ 0x82485250]
+// Destructor
+// ─────────────────────────────────────────────────────────────────────────────
+phObject::~phObject() {
+    this->vtable = (void**)0x82008918;
+    this->vfn_15();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_32()  [vtable slot 32 @ 0x82484758]
+// Initializes object state and memory references
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject::vfn_32() {
+    m_field_500 = 0;
+    m_field_508 = nullptr;
+    m_field_504 = 1;
+    m_field_512 = 0;
+    m_field_520 = 0;
+    m_field_524 = 0;
+    m_field_528 = 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_11()  [vtable slot 11 @ 0x824847A8]
+// Processing locale and fields
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject::vfn_11(void* a2, void* a3, void* a4) {
+    void* result = (void*)this->vfn_15();
+    if ((int32_t)result >= 0) {
+        void* ptr = (void*)0x208C801D;
+        m_field_508 = ptr;
+        if (ptr != nullptr) {
+            uint32_t valA2 = *(uint32_t*)&a2;
+            m_field_112 = *(uint32_t*)(valA2 + 8);
+            m_field_116 = *(uint32_t*)(valA2 + 12);
+            m_field_120 = *(uint32_t*)(valA2 + 16);
+            if (*(uint32_t*)(valA2 + 0) != 0) {
+                result = this->vfn_17(nullptr);
+            }
+            if ((int32_t)result >= 0) {
+                if (*(uint32_t*)(valA2 + 4) != 0) {
+                    result = this->vfn_18();
+                }
+                if ((int32_t)result >= 0) {
+                    return;
+                }
+            }
+        } else {
+            result = (void*)0x8007000E;
+            return;
+        }
+    }
+    this->vfn_15();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_12()  [vtable slot 12 @ 0x824857B8]
+// Forwarder
+// ─────────────────────────────────────────────────────────────────────────────
+void* phObject::vfn_12() {
+    uint8_t buffer[24];
+    *(uint64_t*)(buffer + 0) = 0;
+    *(uint64_t*)(buffer + 8) = 0;
+    *(uint32_t*)(buffer + 16) = 0;
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_13()  [vtable slot 13 @ 0x82485768]
+// Forwarder
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject::vfn_13(void* a2) {
+    uint8_t buffer[24];
+    *(uint64_t*)(buffer + 0) = 0;
+    *(uint64_t*)(buffer + 8) = 0;
+    *(uint32_t*)(buffer + 16) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_14()  [vtable slot 14 @ 0x82485720]
+// Forwarder
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject::vfn_14(int32_t) {
+    uint8_t buffer[24];
+    *(uint64_t*)(buffer + 0) = 0;
+    *(uint64_t*)(buffer + 8) = 0;
+    *(uint32_t*)(buffer + 16) = 0;
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_15()  [vtable slot 15 @ 0x82484890]
+// Cleanup and state clear
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject::vfn_15() {
+    if (m_field_508 != nullptr) {
+        m_field_508 = nullptr;
+    }
+    
+    this->vfn_19();
+    this->vfn_20();
+    this->vfn_32();
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_16()  [vtable slot 16 @ 0x82485978]
+// Sub-object update
+// ─────────────────────────────────────────────────────────────────────────────
+void* phObject::vfn_16() {
+    if (m_field_52 != nullptr) {
+        if (m_field_52->vfn_14(1) < 0) {
+            return nullptr;
+        }
+        this->vfn_17(m_field_52);
+    }
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_18()  [vtable slot 18 @ 0x82484918]
+// Updates sub-object from parameters
+// ─────────────────────────────────────────────────────────────────────────────
+void* phObject::vfn_18() {
+    this->vfn_20();
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::vfn_19()  [vtable slot 19 @ 0x82484988]
+// Disposes or releases sub-objects
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject::vfn_19() {
+    m_field_132 = this;
+    if (m_field_500 != 0) {
+        m_field_500 = 0;
+    }
+    
+    if (m_field_52 != nullptr) {
+        m_field_52->vfn_2();
+        m_field_52 = nullptr;
+    }
+}
