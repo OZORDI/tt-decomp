@@ -352,11 +352,11 @@ struct SwipePattern {
 extern SwipePattern g_swipePatterns[17];  // @ 0x825D09A0
 
 // External function references
-extern void util_FFF8(void* obj, int param);  // @ 0x8225FFF8
-extern void util_F840(void* v1, void* v2, void* v3, void* v4);  // @ 0x8223F840
-extern void hudFlashBase_0420_g(void* hudObj, void* corner1, void* corner2, 
+extern void sysCallback::Invoke(void* obj, int param);  // @ 0x8225FFF8
+extern void util::PackColorRGBA(uint32_t* outColor, const float* inVector);  // @ 0x8223F840
+extern void hudFlashBase::DrawFlashOverlay(void* hudObj, void* corner1, void* corner2, 
                                  float alpha, int reverseFlag);  // @ 0x82140420
-extern void pongScrnTransFadeIn_vfn_5(void* obj);  // @ 0x82378460
+extern void pongScrnTransFadeIn::EndTransition(void* obj);  // @ 0x82378460
 
 // Global pointers (accessed via SDA and absolute addresses)
 extern void* g_hudFlashBase;           // @ 0x82606454 (SDA, r2+25556)
@@ -377,7 +377,7 @@ extern uint64_t g_randomState;         // @ 0x825DA268 (via r11-23864)
 //   +0x04: m_duration (float)
 //   +0x08: m_elapsedTime (float)
 //   +0x0C: m_finished (bool)
-//   +0x10: field at +16 (passed to util_FFF8)
+//   +0x10: field at +16 (passed to sysCallback::Invoke)
 //   +0x1C: field_0x1C (checked for non-zero)
 //   +0x34: m_patternIndex (uint32_t, 0-16)
 //   +0x38: m_randomize (uint8_t)
@@ -385,7 +385,7 @@ extern uint64_t g_randomState;         // @ 0x825DA268 (via r11-23864)
 void pongScrnTransSwipe::vfn_2() {
     // If field at +28 is non-zero, call utility function
     if (*(uint32_t*)((uint8_t*)this + 28) != 0) {
-        util_FFF8((void*)((uint8_t*)this + 16), 0);
+        sysCallback::Invoke((void*)((uint8_t*)this + 16), 0);
     }
 
     // Reset elapsed time and finished flag
@@ -502,7 +502,8 @@ void pongScrnTransSwipe::Render() {
     }
 
     // Call utility function to prepare rendering (purpose unclear from scaffold)
-    util_F840(corner1, corner2, nullptr, nullptr);
+    uint32_t renderData;
+    util::PackColorRGBA(&renderData, corner1); // Assuming the first corner is packed
 
     // Calculate alpha value from timing parameter
     // Alpha = timingParam * constant * progress
@@ -510,7 +511,7 @@ void pongScrnTransSwipe::Render() {
     float alpha = pattern->timingParam * alphaScale * effectiveProgress;
 
     // Render the swipe quad via HUD flash system
-    hudFlashBase_0420_g(g_hudFlashBase, corner1, corner2, alpha, pattern->reverseFlag);
+    hudFlashBase::DrawFlashOverlay(g_hudFlashBase, corner1, corner2, alpha, pattern->reverseFlag);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -530,7 +531,7 @@ void pongScrnTransSwipe::OnComplete() {
     }
 
     // Delegate to base class (pongScrnTransFadeIn) completion handler
-    pongScrnTransFadeIn_vfn_5(this);
+    pongScrnTransFadeIn::EndTransition(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -664,11 +665,11 @@ struct SwipePattern {
 extern SwipePattern g_swipePatterns[17];  // @ 0x825D09A0
 
 // External function references
-extern void util_FFF8(void* obj, int param);  // @ 0x8225FFF8
-extern void* util_F840(void* v1, void* v2, void* v3, void* v4);  // @ 0x8223F840
-extern void hudFlashBase_0420_g(void* hudObj, void* corner1, void* corner2, 
+extern void sysCallback::Invoke(void* obj, int param);  // @ 0x8225FFF8
+extern void util::PackColorRGBA(uint32_t* outColor, const float* inVector);  // @ 0x8223F840
+extern void hudFlashBase::DrawFlashOverlay(void* hudObj, void* corner1, void* corner2, 
                                  float alpha, int reverseFlag);  // @ 0x82140420
-extern void pongScrnTransFadeIn_vfn_5(void* obj);  // @ 0x82378460
+extern void pongScrnTransFadeIn::EndTransition(void* obj);  // @ 0x82378460
 
 // ─────────────────────────────────────────────────────────────────────────────
 // pongScrnTransSwipe::vfn_2()  [vtable slot 2 @ 0x82378AB0]
@@ -688,7 +689,7 @@ extern void pongScrnTransFadeIn_vfn_5(void* obj);  // @ 0x82378460
 void pongScrnTransSwipe::vfn_2() {
     // If field at +28 is non-zero, call utility function
     if (field_0x1C != 0) {
-        util_FFF8((void*)((uint8_t*)this + 16), 0);
+        sysCallback::Invoke((void*)((uint8_t*)this + 16), 0);
     }
 
     // Reset elapsed time and finished flag
@@ -828,13 +829,14 @@ void pongScrnTransSwipe::Render() {
     }
     
     // Call utility function to prepare render data
-    void* renderData = util_F840(interpCorner1, interpCorner2, corner1, corner2);
+    uint32_t renderData;
+    util::PackColorRGBA(&renderData, interpCorner1);
     
     // Calculate alpha based on timing parameter
     float alpha = pattern.timingParam * 0.00390625f * progress;  // 1/256
     
     // Render the HUD flash effect
-    hudFlashBase_0420_g(g_hudFlashBase, interpCorner1, interpCorner2, 
+    hudFlashBase::DrawFlashOverlay(g_hudFlashBase, interpCorner1, interpCorner2, 
                         alpha, pattern.reverseFlag);
 }
 
@@ -855,8 +857,8 @@ void pongScrnTransSwipe::OnComplete() {
     // Check pause flag and update render objects
     if (pattern.pauseFlag) {
         // Enable rendering on both objects
-        *(uint8_t*)((uint8_t*)g_renderObj1 + 80) = 1;
-        *(uint8_t*)((uint8_t*)g_renderObj2 + 492) = 1;
+        *(uint8_t*)((uint8_t*)g_someRenderObj1 + 80) = 1;
+        *(uint8_t*)((uint8_t*)g_someRenderObj2 + 492) = 1;
     }
     
     // Call parent class completion handler
@@ -974,7 +976,7 @@ void pongScrnTransSwipe::Render() {
     
     // Render the swipe quad using HUD flash system
     extern void* g_hudFlashBase;  // @ 0x82606454 (SDA, r2+25556)
-    hudFlashBase_0420_g(g_hudFlashBase, corner1, corner2, baseAlpha, pattern.reverseFlag);
+    hudFlashBase::DrawFlashOverlay(g_hudFlashBase, corner1, corner2, baseAlpha, pattern.reverseFlag);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1002,7 +1004,7 @@ void pongScrnTransSwipe::OnComplete() {
     }
     
     // Delegate to base fade-in completion handler
-    pongScrnTransFadeIn_vfn_5(this);
+    pongScrnTransFadeIn::EndTransition(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1060,7 +1062,7 @@ void pongScrnTransSwipe::Reset() {
 //   +0x34: m_alpha (float) - fade alpha (starts at 1.0)
 //
 // Logic:
-//   1. If field at +28 is non-zero, call util_FFF8 to initialize something at +16
+//   1. If field at +28 is non-zero, call sysCallback::Invoke to initialize something at +16
 //   2. Load default duration from constant table
 //   3. Initialize elapsed time to 0.0
 //   4. Set finished flag to false
@@ -1076,8 +1078,8 @@ void pongScrnTransFreezeAndCrossFade::vfn_2() {
     uint32_t* fieldAt28 = (uint32_t*)((char*)this + 28);
     if (*fieldAt28 != 0) {
         void* fieldAt16 = (void*)((char*)this + 16);
-        extern void util_FFF8(void* target, int param);
-        util_FFF8(fieldAt16, 0);
+        extern void sysCallback::Invoke(void* target, int param);
+        sysCallback::Invoke(fieldAt16, 0);
     }
 
     // Initialize transition state
@@ -1128,16 +1130,16 @@ void pongScrnTransFreezeAndCrossFade::vfn_4() {
 // ─────────────────────────────────────────────────────────────────────────────
 // pongScrnTransFreezeAndCrossFade::vfn_5()  [vtable slot 5 @ 0x82378A78]
 //
-// Tail-call to pongScrnTransFadeIn::vfn_5. This is a simple forwarding function
+// Tail-call to pongScrnTransFadeIn::EndTransition. This is a simple forwarding function
 // that delegates to another transition class's implementation, likely for code
 // reuse or polymorphic behavior.
 //
-// Implementation: Direct branch to 0x82378460 (pongScrnTransFadeIn_vfn_5)
+// Implementation: Direct branch to 0x82378460 (pongScrnTransFadeIn::EndTransition)
 // ─────────────────────────────────────────────────────────────────────────────
 void pongScrnTransFreezeAndCrossFade::vfn_5() {
     // Forward to pongScrnTransFadeIn implementation
-    extern void pongScrnTransFadeIn_vfn_5(void* thisPtr);
-    pongScrnTransFadeIn_vfn_5(this);
+    extern void pongScrnTransFadeIn::EndTransition(void* thisPtr);
+    pongScrnTransFadeIn::EndTransition(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

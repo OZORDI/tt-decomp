@@ -16,7 +16,7 @@
 // Forward declarations
 extern "C" void rage_free(void* ptr);
 extern "C" void rage::ReleaseSingleton(void* obj);
-extern "C" void util_FFF8(void* obj, int flags);
+extern "C" void sysCallback::Invoke(void* obj, int flags);
 
 // External globals
 extern void* g_pNetworkTimer;           // @ 0x8201A328
@@ -266,7 +266,7 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
             
             if (shouldRemove) {
                 // Release packet
-                util_FFF8(packet, 0);
+                sysCallback::Invoke(packet, 0);
                 
                 // Remove from array
                 extern void AckHandling_3828(AckHandling* self, void* packet);
@@ -378,7 +378,7 @@ void AckHandling_AB18_w(AckHandling* self) {
     }
     
     // Clean up packet array at offset +72
-    util_FFF8((char*)self + 72, 0);
+    sysCallback::Invoke((char*)self + 72, 0);
     
     // Clear all packets in the array at offset +96
     uint32_t* packetArray = (uint32_t*)((char*)self + 96);
