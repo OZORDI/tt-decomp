@@ -310,10 +310,53 @@ bool pongFrontendContext::IsPlayerCharacterReady(pongFrontendContext* pContext,
  * Checks if frontend can transition to next state.
  */
 bool pongFrontendContext::CanTransition() {
-    // TODO: Implement transition validation
-    // Check player selection status
-    // Check character loading status
-    // Check UI state
+    // Register this context with the event queue system
+    uint32_t* pSelf = (uint32_t*)this;
+    void* pSecondaryVtable = (this != nullptr) ? (void*)((char*)this + 20) : nullptr;
+
+    // Push onto event queue
+    uint32_t queueIdx = g_eventQueueIndex;
+    g_eventQueueParams[queueIdx] = 128;                   // Active flag
+    g_eventQueueData[queueIdx] = pSecondaryVtable;        // Secondary vtable pointer
+    g_eventQueueTypes[queueIdx] = 22;                     // Frontend context type ID
+    g_eventQueueIndex = queueIdx + 1;
+
+    // Look up the frontend state by name
+    extern void* g_gameDataMgr;  // @ 0x8271A314
+    int32_t stateIdx = FindStateIndexByName(*(void**)((char*)&g_gameDataMgr + 0), "FrontEnd");
+    *(uint32_t*)((char*)this + 344) = (uint32_t)stateIdx;
+
+    // Initialize player slots (vtable slot 4 on each)
+    void* player1 = *(void**)((char*)this + 48);
+    if (player1) {
+        typedef void (*InitFunc)(void*, int);
+        void** vtable = *(void***)player1;
+        ((InitFunc)vtable[4])(player1, 0);
+    }
+
+    void* player2 = *(void**)((char*)this + 56);
+    if (player2) {
+        typedef void (*InitFunc)(void*, int);
+        void** vtable = *(void***)player2;
+        ((InitFunc)vtable[4])(player2, 0);
+    }
+
+    // Link player2's parent to player1's context
+    void* p2 = *(void**)((char*)this + 56);
+    void* p1ctx = *(void**)((char*)this + 52);
+    if (p2) {
+        *(void**)((char*)p2 + 24) = p1ctx;
+    }
+
+    // Store player2 in global renderer state
+    void* p2Final = *(void**)((char*)this + 56);
+    extern void* g_rendererFrontendCtx;  // @ 0x8260662C
+    *(void**)&g_rendererFrontendCtx = p2Final;
+
+    // Initialize selected character indices to -1 (no selection)
+    *(int32_t*)((char*)this + 380) = -1;
+    *(int32_t*)((char*)this + 384) = -1;
+
     return true;
 }
 
@@ -393,11 +436,14 @@ void pongFrontendContext::OnEnter() {
  * 
  * Per-frame update for frontend.
  */
+/**
+ * pongFrontendContext::Update @ 0x8230DA70 | size: 0xC
+ *
+ * Sets the frame counter/timer to 30. This simple per-frame
+ * update resets the idle timeout for the frontend menu.
+ */
 void pongFrontendContext::Update() {
-    // TODO: Implement per-frame logic
-    // Update UI
-    // Poll input
-    // Update character loading
+    *(uint32_t*)((char*)this + 60) = 30;
 }
 
 /**
@@ -405,11 +451,70 @@ void pongFrontendContext::Update() {
  * 
  * Called when player selects a character.
  */
+/**
+ * pongFrontendContext::OnPlayerSelected @ 0x8230EAE8 | size: 0x118
+ *
+ * Called when a player selects a character. Checks if the game is in
+ * online/multiplayer mode (via HSM manager flag). If not online, iterates
+ * through player slots checking if the character is loaded and ready.
+ * For each ready player whose selection flag is set, triggers character
+ * activation via vtable slot 6 on the player's character data.
+ */
 void pongFrontendContext::OnPlayerSelected(int playerIndex) {
-    // TODO: Implement player selection
-    // Trigger character load
-    // Update UI state
-    // Notify other systems
+    // Check if game is in online mode
+    extern void* g_hsmMgrPtr;  // @ 0x825EAB30
+    void* hsmMgr = *(void**)((char*)g_hsmMgrPtr + 0xAB30);
+    bool isOnline = (*(uint8_t*)((char*)hsmMgr + 495) != 0);
+
+    if (!isOnline) {
+        // Check secondary online flag
+        extern void* g_networkState;  // @ 0x8271A374
+        void* netState = *(void**)&g_networkState;
+        if (*(uint8_t*)((char*)netState + 24) == 0) {
+            return;  // Not ready
+        }
+    }
+
+    // Iterate through 2 player slots
+    uint32_t* pGameObj = *(uint32_t**)&g_game_obj_ptr;
+
+    for (int slot = 0; slot < 2; slot++) {
+        // Get player's character data index from game object
+        uint32_t charDataIdx = pGameObj[(GameObjectOffsets::PLAYER_DATA_BASE / 4) + slot];
+
+        // Look up character entry in player table
+        uint32_t entryOffset = (charDataIdx + 29) * 4;
+        void* charEntry = (void*)pGameObj[entryOffset / 4];
+
+        if (!charEntry) continue;
+
+        // Verify character matches and is loaded
+        // Check character ID at +48 of computed entry
+        uint32_t stride = charDataIdx * 3;
+        uint32_t tableOffset = stride * 16;
+        uint32_t* entryData = (uint32_t*)((char*)pGameObj + tableOffset);
+
+        void* charData = (void*)entryData[64 / 4];
+        if (charData != charEntry) continue;
+
+        int32_t loadState = (int32_t)entryData[48 / 4];
+        if (loadState < 0) continue;
+
+        uint8_t activeFlag = *(uint8_t*)((char*)entryData + 56);
+        if (activeFlag == 0) continue;
+
+        // Check player selection flag
+        if (*(uint8_t*)((char*)this + 84 + slot) == 0) continue;
+
+        // Trigger character activation (vtable slot 6)
+        uint32_t charDataIdx2 = pGameObj[(GameObjectOffsets::PLAYER_DATA_BASE / 4) + slot];
+        uint32_t entryOffset2 = (charDataIdx2 + 29) * 4;
+        void* activateTarget = (void*)pGameObj[entryOffset2 / 4];
+
+        typedef void (*ActivateFunc)(void*, int, int);
+        void** vtable = *(void***)activateTarget;
+        ((ActivateFunc)vtable[6])(activateTarget, 1, 1);
+    }
 }
 
 /**
@@ -485,8 +590,52 @@ void pongFrontendContext::OnExit() {
  * 
  * Helper function for frontend state management.
  */
-void pongFrontendContext::DA80_Helper() {
-    // TODO: Implement helper logic
+/**
+ * pongFrontendContext::DA80_Helper @ 0x8230DA80 | size: 0xB0
+ *
+ * Checks if any player character is ready in the game data manager.
+ * If the game object pointer is null, logs an error and falls through
+ * to the character count check. Otherwise, looks up the player's
+ * resolved state index and checks it against the character count.
+ *
+ * @return true if a character is available (index < characterCount)
+ */
+bool pongFrontendContext::DA80_Helper() {
+    uint32_t* pGameObj = *(uint32_t**)&g_game_obj_ptr;
+
+    // Check if a player character is ready (calls pongFrontendContext_8280_g)
+    extern "C" bool CheckPlayerCharReady(void* gameObj, void* ctx, int flag);
+    bool isReady = CheckPlayerCharReady(pGameObj, this, 1);
+
+    if (!isReady) {
+        return false;
+    }
+
+    if (pGameObj == nullptr) {
+        // Log error — game object not available
+        DebugLog("pongFrontendContext::DA80_Helper() - game object is null", 0);
+        DebugLog("pongFrontendContext::DA80_Helper() - game object is null", 0);
+
+        // Fall through to character count check
+        extern void* g_gameDataMgr;  // @ 0x8271A2E4
+        void* dataMgr = *(void**)&g_gameDataMgr;
+        int32_t charCount = *(int32_t*)((char*)dataMgr + 28);
+        return (0 < charCount);
+    }
+
+    // Get resolved index from player state
+    extern "C" int32_t GetPlayerStateIndex(void* ctx);
+    int32_t stateIdx = GetPlayerStateIndex(this);
+
+    if (stateIdx < 0) {
+        return false;
+    }
+
+    // Check against character count
+    extern void* g_gameDataMgr;
+    void* dataMgr = *(void**)&g_gameDataMgr;
+    int32_t charCount = *(int32_t*)((char*)dataMgr + 28);
+    return (stateIdx < charCount);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
