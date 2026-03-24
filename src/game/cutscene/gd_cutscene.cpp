@@ -26,6 +26,11 @@ extern uint32_t g_gdCSCharAnimData_typeId;     // @ 0x825C2B8C
 extern uint32_t g_gdCSNameData_typeId;         // @ 0x825C2B18
 extern uint32_t g_gdCSActionWaitData_typeId;   // @ 0x825C2B54
 extern uint32_t g_gdCSActionData_typeId;       // @ 0x825C2B1C (base action type)
+extern uint32_t g_gdCSCamAnimShotName_typeId;  // @ 0x825C2B78
+extern uint32_t g_gdCutSceneData_typeId;       // @ 0x825C2B20
+extern uint32_t g_gdCSActionCamAnimData_typeId;      // @ 0x825C2B58
+extern uint32_t g_gdCSActionCharAnimData_typeId;     // @ 0x825C2B5C
+extern uint32_t g_gdCSActionCharVisibleData_typeId;  // @ 0x825C2B60
 extern uint32_t g_gdCSCharCamShotName_typeId;  // @ 0x825C2B84
 extern uint32_t g_gdCutSceneNames_typeId;      // @ 0x825C2B14
 extern uint32_t g_xmlNodeStruct_typeId;        // @ 0x825C803C (shared base)
@@ -510,12 +515,17 @@ void gdCSCharAnimNames::vfn_3() {
     // TODO: Implement
 }
 
-void gdCSCamAnimShotName::IsType() {
-    // TODO: Implement property validation
+/**
+ * gdCSCamAnimShotName::IsType @ 0x8240DBC0 | size: 0x48
+ */
+bool gdCSCamAnimShotName::IsType(uint32_t typeId) {
+    if (typeId == g_gdCSCamAnimShotName_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
 void gdCSCamAnimShotName::RegisterFields() {
-    // TODO: Implement
+    // No fields to register for this name reference class
 }
 
 const char* gdCSCamAnimShotName::GetTypeName() {
@@ -567,12 +577,22 @@ const char* gdCSNameData::GetTypeName() {
     return "CSNameData";
 }
 
-void gdCutSceneData::IsType() {
-    // TODO: Implement property validation
+/**
+ * gdCutSceneData::IsType @ 0x8240E8F0 | size: 0x58
+ */
+bool gdCutSceneData::IsType(uint32_t typeId) {
+    if (typeId == g_gdCutSceneData_typeId) return true;
+    if (typeId == g_gdCSActionData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
+/**
+ * gdCutSceneData::RegisterFields @ 0x8240E9A8 | size: 0x64
+ */
 void gdCutSceneData::RegisterFields() {
-    // TODO: Implement
+    RegisterSerializedField(this, "CutsceneName", (char*)this + 20, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Priority",     (char*)this + 24, g_floatFieldType, 0);
 }
 
 const char* gdCutSceneData::GetTypeName() {
@@ -613,28 +633,64 @@ void gdCSActionWaitData::RegisterFields() {
     RegisterSerializedField(this, "Duration",  (char*)this + 20, g_floatFieldType, 0);
 }
 
-void gdCSActionCamAnimData::IsType() {
-    // TODO: Implement property validation
+/**
+ * gdCSActionCamAnimData::IsType @ 0x8240F1B8 | size: 0x58
+ */
+bool gdCSActionCamAnimData::IsType(uint32_t typeId) {
+    if (typeId == g_gdCSActionCamAnimData_typeId) return true;
+    if (typeId == g_gdCSActionData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
+/**
+ * gdCSActionCamAnimData::RegisterFields @ 0x8240F210 | size: 0x8C
+ */
 void gdCSActionCamAnimData::RegisterFields() {
-    // TODO: Implement
+    RegisterSerializedField(this, "ActionIndex", (char*)this + 16, g_boolFieldType, 0);
+    RegisterSerializedField(this, "FileName",    (char*)this + 20, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Loop",        (char*)this + 24, g_boolFieldType, 0);
 }
 
-void gdCSActionCharAnimData::IsType() {
-    // TODO: Implement property validation
+/**
+ * gdCSActionCharAnimData::IsType @ 0x8240F310 | size: 0x58
+ */
+bool gdCSActionCharAnimData::IsType(uint32_t typeId) {
+    if (typeId == g_gdCSActionCharAnimData_typeId) return true;
+    if (typeId == g_gdCSActionData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
+/**
+ * gdCSActionCharAnimData::RegisterFields @ 0x8240F368 | size: 0xE4
+ */
 void gdCSActionCharAnimData::RegisterFields() {
-    // TODO: Implement
+    RegisterSerializedField(this, "ActionIndex",  (char*)this + 16, g_boolFieldType, 0);
+    RegisterSerializedField(this, "CharacterId",  (char*)this + 20, g_floatFieldType, 0);
+    RegisterSerializedField(this, "FileName",     (char*)this + 24, g_stringFieldType, 0);
+    RegisterSerializedField(this, "BlendIn",      (char*)this + 28, g_boolFieldType, 0);
+    RegisterSerializedField(this, "BlendOut",     (char*)this + 29, g_boolFieldType, 0);
+    RegisterSerializedField(this, "FullBody",     (char*)this + 30, g_boolFieldType, 0);
 }
 
-void gdCSActionCharVisibleData::IsType() {
-    // TODO: Implement property validation
+/**
+ * gdCSActionCharVisibleData::IsType @ 0x8240F4D8 | size: 0x58
+ */
+bool gdCSActionCharVisibleData::IsType(uint32_t typeId) {
+    if (typeId == g_gdCSActionCharVisibleData_typeId) return true;
+    if (typeId == g_gdCSActionData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
+/**
+ * gdCSActionCharVisibleData::RegisterFields @ 0x8240F530 | size: 0x8C
+ */
 void gdCSActionCharVisibleData::RegisterFields() {
-    // TODO: Implement
+    RegisterSerializedField(this, "ActionIndex",  (char*)this + 16, g_boolFieldType, 0);
+    RegisterSerializedField(this, "CharacterId",  (char*)this + 20, g_floatFieldType, 0);
+    RegisterSerializedField(this, "Visible",      (char*)this + 24, g_boolFieldType, 0);
 }
 
 void gdCSActionPlayAudioData::IsType() {
