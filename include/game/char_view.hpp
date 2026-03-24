@@ -86,16 +86,16 @@ public:
     virtual void OnEvent(int32_t eventType) override;
     
     /**
-     * Update @ 0x823059A8 | size: 0xB4
-     * Frame update - called every frame
+     * OnExitEvent @ 0x823059A8 | size: 0xB4
+     * Handles exit-phase events (event 6 triggers fade-out, events 8/12 ignored)
      */
-    virtual void Update(float deltaTime) override;
-    
+    virtual void OnExitEvent(int32_t eventType);
+
     /**
-     * GetStateId @ 0x82305A60 | size: 0xC
-     * Returns state identifier
+     * GetStateName @ 0x82305A60 | size: 0xC
+     * Returns the state name string (e.g. "point_off_serves")
      */
-    virtual int32_t GetStateId() const;
+    virtual const char* GetStateName() const;
     
     /**
      * OnEnter @ 0x82305800 | size: 0xE0
@@ -335,33 +335,33 @@ public:
     
     /**
      * ~pongCharViewState @ 0x8230C490 | size: 0x68
-     * Destructor
+     * Destructor - calls parent OnExit for cleanup
      */
     virtual ~pongCharViewState();
-    
+
     /**
-     * Update @ 0x8230C5F8 | size: 0xB8
-     * Frame update override
+     * OnEnterEvent @ 0x8230C5F8 | size: 0xB8
+     * Handles enter-phase events (event 6 sets up char view display)
      */
-    virtual void Update(float deltaTime) override;
-    
+    virtual void OnEnterEvent(int32_t eventType);
+
     /**
-     * Render @ 0x8230C6B0 | size: 0xD8
-     * Render character view UI
+     * OnExitEvent @ 0x8230C6B0 | size: 0xD8
+     * Handles exit-phase events (event 6 cleans up char view display)
      */
-    virtual void Render();
-    
+    virtual void OnExitEvent(int32_t eventType);
+
     /**
-     * OnEnterState @ 0x8230A4E8 | size: 0xC
-     * State entry callback
+     * GetStateName @ 0x8230A4E8 | size: 0xC
+     * Returns the state name string for this char view state
      */
-    virtual void OnEnterState();
-    
+    virtual const char* GetStateName() const;
+
     /**
-     * OnExitState @ 0x8230C4F8 | size: 0x100
-     * State exit callback
+     * OnEnter @ 0x8230C4F8 | size: 0x100
+     * Allocates and initializes pongCharViewContext (100 bytes)
      */
-    virtual void OnExitState();
+    virtual void OnEnter();
 
 protected:
     // Inherits all fields from pongAttractState
