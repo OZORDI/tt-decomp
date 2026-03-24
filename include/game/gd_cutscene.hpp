@@ -34,8 +34,8 @@ struct gdCSCharCamShotName {
     
     // Virtual methods
     virtual ~gdCSCharCamShotName() = default;
-    virtual void vfn_20();  // @ 0x8240C420
-    virtual void vfn_21();  // PostLoadProperties-related
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240C420
+    virtual void RegisterFields();  // PostLoadProperties-related
     virtual const char* GetTypeName();  // @ 0x8240C468 - Returns type string
 };
 
@@ -86,8 +86,8 @@ struct gdCSCharAnimData {
     
     // Virtual methods
     virtual ~gdCSCharAnimData() = default;
-    virtual void vfn_20();  // @ 0x8240C990
-    virtual void vfn_21();  // @ 0x8240CBD0 - Register XML properties
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240C990
+    virtual void RegisterFields();  // @ 0x8240CBD0 - Register XML properties
     virtual const char* GetTypeName();  // @ 0x8240C9D8
     virtual void vfn_3();  // @ 0x8240CDE8
     
@@ -118,8 +118,8 @@ struct gdCSCharAnimNames {
     
     // Virtual methods
     virtual ~gdCSCharAnimNames() = default;
-    virtual void vfn_20();  // @ 0x8240D130
-    virtual void vfn_21();
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240D130
+    virtual void RegisterFields();
     virtual const char* GetTypeName();  // @ 0x8240D178
     virtual void vfn_3();  // @ 0x8240D340
     
@@ -137,8 +137,8 @@ struct gdCSCamAnimShotName {
     
     // Virtual methods
     virtual ~gdCSCamAnimShotName() = default;
-    virtual void vfn_20();  // @ 0x8240DBC0
-    virtual void vfn_21();  // @ 0x8240DD18
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240DBC0
+    virtual void RegisterFields();  // @ 0x8240DD18
     virtual const char* GetTypeName();  // @ 0x8240DC08
     
     // Methods
@@ -155,8 +155,8 @@ struct gdCutSceneNames {
     
     // Virtual methods
     virtual ~gdCutSceneNames() = default;
-    virtual void vfn_20();  // @ 0x8240E5F8
-    virtual void vfn_21();
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240E5F8
+    virtual void RegisterFields();
     virtual const char* GetTypeName();  // @ 0x8240E640
 };
 
@@ -170,8 +170,8 @@ struct gdCSNameData {
     
     // Virtual methods
     virtual ~gdCSNameData() = default;
-    virtual void vfn_20();
-    virtual void vfn_21();
+    virtual bool IsType(uint32_t typeId);
+    virtual void RegisterFields();
     virtual const char* GetTypeName();
 };
 
@@ -198,8 +198,8 @@ struct gdCutSceneData {
     
     // Virtual methods
     virtual ~gdCutSceneData() = default;
-    virtual void vfn_20();  // @ 0x8240E8F0
-    virtual void vfn_21();  // @ 0x8240E9A8
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240E8F0
+    virtual void RegisterFields();  // @ 0x8240E9A8
     virtual const char* GetTypeName();  // @ 0x82347030
     
     // Methods
@@ -221,8 +221,8 @@ struct gdCSActionLoopData {
     
     // Virtual methods
     virtual ~gdCSActionLoopData() = default;
-    virtual void vfn_20();  // @ 0x8240EB28 - Property validation
-    virtual void vfn_21();  // @ 0x8240EB80
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240EB28 - Property validation
+    virtual void RegisterFields();  // @ 0x8240EB80
     virtual const char* GetTypeName();  // @ 0x82347208 - Returns "Loop"
 };
 
@@ -257,8 +257,8 @@ struct gdCSActionIfData {
     
     // Virtual methods
     virtual ~gdCSActionIfData();  // @ 0x8240EC40 - Frees action lists
-    virtual void vfn_20();  // @ 0x8240EBE8
-    virtual void vfn_21();  // @ 0x8240ECB0
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240EBE8
+    virtual void RegisterFields();  // @ 0x8240ECB0
     virtual const char* GetTypeName();  // @ 0x823472A8 - Returns "If"
     
     // Methods
@@ -284,8 +284,8 @@ struct gdCSActionWaitData {
     
     // Virtual methods
     virtual ~gdCSActionWaitData() = default;
-    virtual void vfn_20();  // @ 0x8240F0F8
-    virtual void vfn_21();  // @ 0x8240F150 - Register XML properties
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240F0F8
+    virtual void RegisterFields();  // @ 0x8240F150 - Register XML properties
     virtual const char* GetTypeName();  // @ 0x823473F8 - Returns "Wait"
 };
 
@@ -304,8 +304,8 @@ struct gdCSActionCamAnimData {
     
     // Virtual methods
     virtual ~gdCSActionCamAnimData() = default;
-    virtual void vfn_20();  // @ 0x8240F1B8
-    virtual void vfn_21();  // @ 0x8240F210
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240F1B8
+    virtual void RegisterFields();  // @ 0x8240F210
     virtual const char* GetTypeName();  // @ 0x82347498 - Returns "CamAnim"
     
     // Methods
@@ -328,8 +328,8 @@ struct gdCSActionCharAnimData {
     
     // Virtual methods
     virtual ~gdCSActionCharAnimData() = default;
-    virtual void vfn_20();  // @ 0x8240F310
-    virtual void vfn_21();  // @ 0x8240F368
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240F310
+    virtual void RegisterFields();  // @ 0x8240F368
     virtual const char* GetTypeName();  // @ 0x82347538 - Returns "CharAnim"
     
     // Methods
@@ -351,8 +351,8 @@ struct gdCSActionCharVisibleData {
     
     // Virtual methods
     virtual ~gdCSActionCharVisibleData() = default;
-    virtual void vfn_20();  // @ 0x8240F4D8
-    virtual void vfn_21();  // @ 0x8240F530
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240F4D8
+    virtual void RegisterFields();  // @ 0x8240F530
     virtual const char* GetTypeName();  // @ 0x823475E8 - Returns "CharVisible"
     
     // Methods
@@ -384,8 +384,8 @@ struct gdCSActionPlayAudioData {
     
     // Virtual methods
     virtual ~gdCSActionPlayAudioData() = default;
-    virtual void vfn_20();  // @ 0x8240F608
-    virtual void vfn_21();  // @ 0x8240F660
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240F608
+    virtual void RegisterFields();  // @ 0x8240F660
     virtual const char* GetTypeName();  // @ 0x82347688 - Returns "PlayAudio"
     
     // Methods
@@ -402,8 +402,8 @@ struct gdCSActionLvlAmbAnimData {
     
     // Virtual methods
     virtual ~gdCSActionLvlAmbAnimData() = default;
-    virtual void vfn_20();  // @ 0x8240F948
-    virtual void vfn_21();  // @ 0x8240FA08
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240F948
+    virtual void RegisterFields();  // @ 0x8240FA08
     virtual const char* GetTypeName();  // @ 0x823477C8 - Returns "LvlAmbAnim"
     
     // Methods
@@ -420,8 +420,8 @@ struct gdCSActionCharAmbAnimData {
     
     // Virtual methods
     virtual ~gdCSActionCharAmbAnimData() = default;
-    virtual void vfn_20();  // @ 0x8240FB50
-    virtual void vfn_21();  // @ 0x8240FC10
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240FB50
+    virtual void RegisterFields();  // @ 0x8240FC10
     virtual const char* GetTypeName();  // @ 0x82347868 - Returns "CharAmbAnim"
     
     // Methods
@@ -438,7 +438,7 @@ struct gdCSActionShowAllAmbientsData {
     
     // Virtual methods
     virtual ~gdCSActionShowAllAmbientsData() = default;
-    virtual void vfn_20();  // @ 0x8240FD90
-    virtual void vfn_21();  // @ 0x8240FDE8
+    virtual bool IsType(uint32_t typeId);  // @ 0x8240FD90
+    virtual void RegisterFields();  // @ 0x8240FDE8
     virtual const char* GetTypeName();  // @ 0x82347910 - Returns "ShowAllAmbients"
 };

@@ -124,7 +124,7 @@ void gdCutSceneData::PostLoadProperties() {
  * Checks if property name matches known loop property types.
  * Returns 1 if property is valid, 0 if unknown.
  */
-void gdCSActionLoopData::vfn_20() {
+void gdCSActionLoopData::IsType() {
     // This function compares a property name (in r4) against known property types
     // The function loads property name pointers and compares against them
     // If any match, return 1 (property is valid)
@@ -452,7 +452,7 @@ bool gdCSCharCamShotName::vfn_20(uint32_t typeId) {
     return (typeId == g_xmlNodeStruct_typeId2);
 }
 
-void gdCSCharCamShotName::vfn_21() {
+void gdCSCharCamShotName::RegisterFields() {
     // TODO: Implement
 }
 
@@ -474,7 +474,7 @@ bool gdCSCharAnimData::vfn_20(uint32_t typeId) {
  *
  * Registers 9 XML serialization fields for character animation data.
  */
-void gdCSCharAnimData::vfn_21() {
+void gdCSCharAnimData::RegisterFields() {
     RegisterSerializedField(this, "FileName",      (char*)this + 16, g_stringFieldType, 0);
     RegisterSerializedField(this, "Enabled",       (char*)this + 20, g_boolFieldType, 0);
     RegisterSerializedField(this, "TimeOffset",    (char*)this + 32, g_floatFieldType2, 0);
@@ -494,11 +494,11 @@ void gdCSCharAnimData::vfn_3() {
     // TODO: Implement
 }
 
-void gdCSCharAnimNames::vfn_20() {
+void gdCSCharAnimNames::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSCharAnimNames::vfn_21() {
+void gdCSCharAnimNames::RegisterFields() {
     // TODO: Implement
 }
 
@@ -510,11 +510,11 @@ void gdCSCharAnimNames::vfn_3() {
     // TODO: Implement
 }
 
-void gdCSCamAnimShotName::vfn_20() {
+void gdCSCamAnimShotName::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSCamAnimShotName::vfn_21() {
+void gdCSCamAnimShotName::RegisterFields() {
     // TODO: Implement
 }
 
@@ -536,7 +536,7 @@ bool gdCutSceneNames::vfn_20(uint32_t typeId) {
     return (typeId == g_xmlNodeStruct_typeId2);
 }
 
-void gdCutSceneNames::vfn_21() {
+void gdCutSceneNames::RegisterFields() {
     // Slot 21 — no fields to register for this container class
 }
 
@@ -558,7 +558,7 @@ bool gdCSNameData::vfn_20(uint32_t typeId) {
  *
  * Registers FileName (+16) and SceneName (+20) for XML serialization.
  */
-void gdCSNameData::vfn_21() {
+void gdCSNameData::RegisterFields() {
     RegisterSerializedField(this, "FileName",  (char*)this + 16, g_stringFieldType, 0);
     RegisterSerializedField(this, "SceneName", (char*)this + 20, g_stringFieldType, 0);
 }
@@ -567,11 +567,11 @@ const char* gdCSNameData::GetTypeName() {
     return "CSNameData";
 }
 
-void gdCutSceneData::vfn_20() {
+void gdCutSceneData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCutSceneData::vfn_21() {
+void gdCutSceneData::RegisterFields() {
     // TODO: Implement
 }
 
@@ -579,15 +579,15 @@ const char* gdCutSceneData::GetTypeName() {
     return "CutSceneData";
 }
 
-void gdCSActionLoopData::vfn_21() {
+void gdCSActionLoopData::RegisterFields() {
     // TODO: Implement
 }
 
-void gdCSActionIfData::vfn_20() {
+void gdCSActionIfData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionIfData::vfn_21() {
+void gdCSActionIfData::RegisterFields() {
     // TODO: Implement
 }
 
@@ -608,48 +608,48 @@ bool gdCSActionWaitData::vfn_20(uint32_t typeId) {
  *
  * Registers WaitType (+16) and Duration (+20) for XML serialization.
  */
-void gdCSActionWaitData::vfn_21() {
+void gdCSActionWaitData::RegisterFields() {
     RegisterSerializedField(this, "WaitType",  (char*)this + 16, g_boolFieldType, 0);
     RegisterSerializedField(this, "Duration",  (char*)this + 20, g_floatFieldType, 0);
 }
 
-void gdCSActionCamAnimData::vfn_20() {
+void gdCSActionCamAnimData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionCamAnimData::vfn_21() {
+void gdCSActionCamAnimData::RegisterFields() {
     // TODO: Implement
 }
 
-void gdCSActionCharAnimData::vfn_20() {
+void gdCSActionCharAnimData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionCharAnimData::vfn_21() {
+void gdCSActionCharAnimData::RegisterFields() {
     // TODO: Implement
 }
 
-void gdCSActionCharVisibleData::vfn_20() {
+void gdCSActionCharVisibleData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionCharVisibleData::vfn_21() {
+void gdCSActionCharVisibleData::RegisterFields() {
     // TODO: Implement
 }
 
-void gdCSActionPlayAudioData::vfn_20() {
+void gdCSActionPlayAudioData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionPlayAudioData::vfn_21() {
+void gdCSActionPlayAudioData::RegisterFields() {
     // TODO: Implement
 }
 
-void gdCSActionLvlAmbAnimData::vfn_20() {
+void gdCSActionLvlAmbAnimData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionLvlAmbAnimData::vfn_21() {
+void gdCSActionLvlAmbAnimData::RegisterFields() {
     // TODO: Implement
 }
 
@@ -662,11 +662,11 @@ void gdCSActionLvlAmbAnimData::PostLoadProperties() {
     // TODO: Implement validation
 }
 
-void gdCSActionCharAmbAnimData::vfn_20() {
+void gdCSActionCharAmbAnimData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionCharAmbAnimData::vfn_21() {
+void gdCSActionCharAmbAnimData::RegisterFields() {
     // TODO: Implement
 }
 
@@ -679,11 +679,11 @@ void gdCSActionCharAmbAnimData::PostLoadProperties() {
     // TODO: Implement validation
 }
 
-void gdCSActionShowAllAmbientsData::vfn_20() {
+void gdCSActionShowAllAmbientsData::IsType() {
     // TODO: Implement property validation
 }
 
-void gdCSActionShowAllAmbientsData::vfn_21() {
+void gdCSActionShowAllAmbientsData::RegisterFields() {
     // TODO: Implement
 }
 

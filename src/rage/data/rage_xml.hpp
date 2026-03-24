@@ -44,14 +44,16 @@ struct xmlNodeStruct {
     // ── virtual methods ──
     virtual ~xmlNodeStruct();                  // [0] @ 0x822145d0
     virtual void ScalarDtor(int flags); // [1] @ 0x821a88d0
-    virtual void vfn_2();  // [2] @ 0x821a8988
+    virtual void Initialize();  // [2] @ 0x821a8988
     virtual void vfn_4();  // [4] @ 0x821a88e0
     virtual void vfn_11();  // [11] @ 0x821a9020
     virtual void vfn_12();  // [12] @ 0x821a9038
     virtual void vfn_14();  // [14] @ 0x821a9f60
     virtual void vfn_15();  // [15] @ 0x821a9148
     virtual void vfn_19();  // [19] @ 0x821aa2b0
-    virtual void vfn_20();  // [20] @ 0x821a8898
+    virtual bool IsType(uint32_t typeId);  // [20] @ 0x821a8898
+    virtual void RegisterFields();  // [21] — overridden by derived gd* classes
+    virtual const char* GetTypeName() const;  // [22] — overridden by derived gd* classes
 };
 
 } // namespace rage
@@ -226,5 +228,5 @@ struct xmlRoot {
     // ── virtual methods ──
     virtual void vfn_12();  // [12] @ 0x82227ac0
     virtual void vfn_13();  // [13] @ 0x82227ab0
-    virtual void vfn_20();  // [20] @ 0x82227b50
+    virtual bool IsType(uint32_t typeId);  // [20] @ 0x82227b50
 };
