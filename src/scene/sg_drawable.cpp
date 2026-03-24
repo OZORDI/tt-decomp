@@ -7,6 +7,22 @@ extern void rage_free(void* ptr);               // @ 0x820C00C0
 // Tears down the XML/atSingleton child-node list and resets vtable.
 namespace rage { void ReleaseSingleton(void* obj); }        // @ 0x821A9420 - ReleaseSingleton
 
+// RAGE serialization field registration
+extern "C" void RegisterSerializationField(void* obj, const char* name,
+                                           void* fieldPtr, void* typeDesc,
+                                           int flags);                        // @ 0x821A8F58
+
+// Global type-IDs for IsType() checks (stored in SDA .data)
+extern uint32_t g_sgRMDrawable_typeId;   // @ 0x825C2D78
+extern uint32_t g_sgNode_typeId;         // @ 0x825C93D0
+
+// Serialization type descriptors
+extern void* g_resourceFieldType;        // @ 0x825CAF88
+extern void* g_matrixFieldType;          // @ 0x825CAFA4
+
+// Static name strings (from .rdata)
+static const char* const s_sgRMDrawable_name = "sgRMDrawable";  // @ 0x82071B5C
+
 /**
  * sgRMDrawable::~sgRMDrawable
  * @ 0x823D8E30 | size: 0x74
@@ -42,9 +58,10 @@ const char* sgRMDrawable::GetTypeName() const {
  * Returns 1 if either matches, 0 otherwise.
  */
 int sgRMDrawable::IsType(uint32_t typeId) {
-    // TODO: load both global type-IDs from SDA and compare
-    (void)typeId;
-    return 0;
+    if (typeId == g_sgRMDrawable_typeId) {
+        return 1;
+    }
+    return (typeId == g_sgNode_typeId) ? 1 : 0;
 }
 
 /**
@@ -55,7 +72,10 @@ int sgRMDrawable::IsType(uint32_t typeId) {
  * the RAGE serialization (parStructure) framework for streaming save/load.
  */
 void sgRMDrawable::RegisterFields() {
-    // TODO: call RAGE parStructure field-registration helpers
+    // Register m_pResource (+0x50) for serialization
+    RegisterSerializationField(this, "Mesh", &m_pResource, g_resourceFieldType, 0);
+    // Register m_transform (+0x10) for serialization
+    RegisterSerializationField(this, "Matrix", m_transform, g_matrixFieldType, 0);
 }
 
 /**
@@ -63,7 +83,11 @@ void sgRMDrawable::RegisterFields() {
  * @ 0x823D8D18 | size: 0x0C
  */
 void sgRMDrawable::Render() {
-    // TODO: submit draw call to the rendering pipeline
+    // Slot 22 in the binary returns a static name string.
+    // Despite the inherited "Render" name, this slot acts as a secondary
+    // type-name getter in the sgNode vtable layout.
+    // Original: returns pointer to "sgRMDrawable" in .rdata @ 0x82071B5C
+    // No-op in void form — see GetTypeName() for the actual name accessor.
 }
 
 /**
@@ -71,7 +95,21 @@ void sgRMDrawable::Render() {
  * @ 0x823D8EA8 | size: 0x6C
  */
 void sgRMDrawable::UpdateBounds() {
-    // TODO: recalculate AABB / bounding sphere from m_transform and mesh data
+    if (!m_pPhysics) {
+        return;
+    }
+
+    // Get the current bounding data from this node (vtable slot 31)
+    typedef void* (*GetBoundsFunc)(void*);
+    void** selfVtable = *(void***)this;
+    GetBoundsFunc getBounds = (GetBoundsFunc)selfVtable[31];
+    void* boundsData = getBounds(this);
+
+    // Forward bounds data to the physics object for AABB update (vtable slot 5)
+    typedef void (*UpdateFunc)(void*, void*, int, int, int);
+    void** physVtable = *(void***)m_pPhysics;
+    UpdateFunc updateBounds = (UpdateFunc)physVtable[5];
+    updateBounds(m_pPhysics, boundsData, 0, 0, 0);
 }
 
 /**
