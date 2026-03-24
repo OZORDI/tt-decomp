@@ -21,6 +21,23 @@ extern "C" {
     void RegisterSerializedField(void* obj, const char* propName, void* target, void* defaultVal, uint32_t flags);
 }
 
+// Type IDs for IsType checks (from SDA .data section)
+extern uint32_t g_gdCSCharAnimData_typeId;     // @ 0x825C2B8C
+extern uint32_t g_gdCSNameData_typeId;         // @ 0x825C2B18
+extern uint32_t g_gdCSActionWaitData_typeId;   // @ 0x825C2B54
+extern uint32_t g_gdCSActionData_typeId;       // @ 0x825C2B1C (base action type)
+extern uint32_t g_gdCSCharCamShotName_typeId;  // @ 0x825C2B84
+extern uint32_t g_gdCutSceneNames_typeId;      // @ 0x825C2B14
+extern uint32_t g_xmlNodeStruct_typeId;        // @ 0x825C803C (shared base)
+extern uint32_t g_xmlNodeStruct_typeId2;       // @ 0x825C8038 (shared base)
+
+// Serialization type descriptors
+extern void* g_stringFieldType;    // @ 0x825CAF88
+extern void* g_boolFieldType;     // @ 0x825CAF80
+extern void* g_floatFieldType;    // @ 0x825CAF94
+extern void* g_floatFieldType2;   // @ 0x825CAF9C
+extern void* g_enumFieldType;     // @ 0x825CAF90
+
 // ============================================================================
 // gdCSCharAnimData Implementation
 // ============================================================================
@@ -426,8 +443,13 @@ void gdCSCharAnimNames::FindRandAnimData(uint32_t randomSeed, uint32_t selection
 // Stub Implementations for Remaining Virtual Methods
 // ============================================================================
 
-void gdCSCharCamShotName::vfn_20() {
-    // TODO: Implement property validation
+/**
+ * gdCSCharCamShotName::IsType @ 0x8240C420 | size: 0x48
+ */
+bool gdCSCharCamShotName::vfn_20(uint32_t typeId) {
+    if (typeId == g_gdCSCharCamShotName_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
 void gdCSCharCamShotName::vfn_21() {
@@ -438,13 +460,30 @@ const char* gdCSCharCamShotName::GetTypeName() {
     return "CharCamShotName";
 }
 
-void gdCSCharAnimData::vfn_20() {
-    // TODO: Implement property validation
+/**
+ * gdCSCharAnimData::IsType @ 0x8240C990 | size: 0x48
+ */
+bool gdCSCharAnimData::vfn_20(uint32_t typeId) {
+    if (typeId == g_gdCSCharAnimData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
+/**
+ * gdCSCharAnimData::RegisterFields @ 0x8240CBD0 | size: 0x130
+ *
+ * Registers 9 XML serialization fields for character animation data.
+ */
 void gdCSCharAnimData::vfn_21() {
-    // TODO: Register XML properties
-    // Properties: FileName, Enabled, TimeOffset, Duration, Weight, EmoteRangeMin, EmoteRangeMax, IsEmote
+    RegisterSerializedField(this, "FileName",      (char*)this + 16, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Enabled",       (char*)this + 20, g_boolFieldType, 0);
+    RegisterSerializedField(this, "TimeOffset",    (char*)this + 32, g_floatFieldType2, 0);
+    RegisterSerializedField(this, "Duration",      (char*)this + 48, g_floatFieldType2, 0);
+    RegisterSerializedField(this, "Weight",        (char*)this + 64, g_floatFieldType, 0);
+    RegisterSerializedField(this, "EmoteRangeMin", (char*)this + 68, g_enumFieldType, 0);
+    RegisterSerializedField(this, "EmoteRangeMax", (char*)this + 72, g_floatFieldType, 0);
+    RegisterSerializedField(this, "IsEmote",       (char*)this + 76, g_floatFieldType, 0);
+    RegisterSerializedField(this, "AnimType",      (char*)this + 80, g_boolFieldType, 0);
 }
 
 const char* gdCSCharAnimData::GetTypeName() {
@@ -488,24 +527,40 @@ void gdCSCamAnimShotName::PostLoadProperties() {
     // TODO: Implement validation
 }
 
-void gdCutSceneNames::vfn_20() {
-    // TODO: Implement property validation
+/**
+ * gdCutSceneNames::IsType @ 0x8240E5F8 | size: 0x48
+ */
+bool gdCutSceneNames::vfn_20(uint32_t typeId) {
+    if (typeId == g_gdCutSceneNames_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
 void gdCutSceneNames::vfn_21() {
-    // TODO: Implement
+    // Slot 21 — no fields to register for this container class
 }
 
 const char* gdCutSceneNames::GetTypeName() {
     return "CutSceneNames";
 }
 
-void gdCSNameData::vfn_20() {
-    // TODO: Implement property validation
+/**
+ * gdCSNameData::IsType @ 0x8240E6D8 | size: 0x48
+ */
+bool gdCSNameData::vfn_20(uint32_t typeId) {
+    if (typeId == g_gdCSNameData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
+/**
+ * gdCSNameData::RegisterFields @ 0x8240E7B8 | size: 0x6C
+ *
+ * Registers FileName (+16) and SceneName (+20) for XML serialization.
+ */
 void gdCSNameData::vfn_21() {
-    // TODO: Implement
+    RegisterSerializedField(this, "FileName",  (char*)this + 16, g_stringFieldType, 0);
+    RegisterSerializedField(this, "SceneName", (char*)this + 20, g_stringFieldType, 0);
 }
 
 const char* gdCSNameData::GetTypeName() {
@@ -536,12 +591,26 @@ void gdCSActionIfData::vfn_21() {
     // TODO: Implement
 }
 
-void gdCSActionWaitData::vfn_20() {
-    // TODO: Implement property validation
+/**
+ * gdCSActionWaitData::IsType @ 0x8240F0F8 | size: 0x58
+ *
+ * Checks 4 type IDs — own type + action base type + 2 xmlNodeStruct bases.
+ */
+bool gdCSActionWaitData::vfn_20(uint32_t typeId) {
+    if (typeId == g_gdCSActionWaitData_typeId) return true;
+    if (typeId == g_gdCSActionData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
 }
 
+/**
+ * gdCSActionWaitData::RegisterFields @ 0x8240F150 | size: 0x64
+ *
+ * Registers WaitType (+16) and Duration (+20) for XML serialization.
+ */
 void gdCSActionWaitData::vfn_21() {
-    // TODO: Register XML properties: WaitType, Duration
+    RegisterSerializedField(this, "WaitType",  (char*)this + 16, g_boolFieldType, 0);
+    RegisterSerializedField(this, "Duration",  (char*)this + 20, g_floatFieldType, 0);
 }
 
 void gdCSActionCamAnimData::vfn_20() {
