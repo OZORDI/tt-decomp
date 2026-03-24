@@ -191,8 +191,15 @@ gdVibEvent::~gdVibEvent() {
  * Check if this event matches the given event type.
  */
 bool gdVibEvent::MatchesType(uint32_t eventType) {
-    // TODO: Implement event type matching
-    return false;
+    extern uint32_t g_gdVibEvent_typeId;       // @ 0x825C5DF4
+    extern uint32_t g_gdEventBase_typeId;      // @ 0x825C5800
+    extern uint32_t g_xmlNodeStruct_typeId;    // @ 0x825C803C
+    extern uint32_t g_xmlNodeStruct_typeId2;   // @ 0x825C8038
+
+    if (eventType == g_gdVibEvent_typeId) return true;
+    if (eventType == g_gdEventBase_typeId) return true;
+    if (eventType == g_xmlNodeStruct_typeId) return true;
+    return (eventType == g_xmlNodeStruct_typeId2);
 }
 
 /**
@@ -201,8 +208,17 @@ bool gdVibEvent::MatchesType(uint32_t eventType) {
  * 
  * Process the vibration event.
  */
+/**
+ * gdVibEvent::RegisterFields @ 0x8220FAA8 | size: 0x6C
+ *
+ * Registers EffectName (+16) and VibPattern (+24) for XML serialization.
+ */
 void gdVibEvent::Process() {
-    // TODO: Implement event processing
+    extern void* g_stringFieldType;  // @ 0x825CAF88
+    extern "C" void RegisterSerializedField(void*, const char*, void*, void*, int);
+
+    RegisterSerializedField(this, "EffectName",  (char*)this + 16, g_stringFieldType, 0);
+    RegisterSerializedField(this, "VibPattern",  (char*)this + 24, g_stringFieldType, 0);
 }
 
 /**
@@ -281,6 +297,64 @@ void gdVibEvent::TriggerVibration(void* playerContext) {
  * 
  * Set up properties after loading from file.
  */
+/**
+ * gdVibEvent::PostLoadProperties @ 0x8220FB18 | size: 0x104
+ *
+ * Called after XML properties are loaded. Resolves the effect name string
+ * (+16) to a numeric effect ID (+20) using a name lookup function.
+ * Then searches the vibration manager's effect array for a matching entry
+ * by name, storing the resolved pointer at +28.
+ *
+ * Debug string: "gdVibEvent::PostLoadProperties - Could not find effect '%s'"
+ */
 void gdVibEvent::PostLoadProperties() {
-    // TODO: Implement post-load property setup
+    extern "C" void xmlNodeStruct_vfn_2(void*);
+    extern "C" uint16_t LookupEffectId(const char* name);  // @ 0x8225EA68
+    extern "C" void nop_8240E6D0(const char* msg, ...);
+    extern void* g_vibrationMgr;  // @ 0x8271A3A8
+
+    // Call base class Initialize
+    xmlNodeStruct_vfn_2(this);
+
+    // Resolve effect name to ID
+    const char* effectName = *(const char**)((char*)this + 16);
+    uint16_t effectId = LookupEffectId(effectName);
+    *(uint16_t*)((char*)this + 20) = effectId;
+
+    if (effectId == 0) {
+        nop_8240E6D0("gdVibEvent::PostLoadProperties - Could not find effect '%s'", effectName);
+    }
+
+    // Search vibration manager's array for matching effect by name
+    const char* vibPatternName = *(const char**)((char*)this + 24);
+    void* vibMgr = *(void**)&g_vibrationMgr;
+    int16_t arrayCount = *(int16_t*)((char*)vibMgr + 24);
+    void** arrayBase = *(void***)((char*)vibMgr + 20);
+
+    int32_t foundIndex = -1;
+    for (int32_t i = 0; i < arrayCount; i++) {
+        // Get entry name at entry[0] -> +24
+        void* entry = arrayBase[i];
+        const char* entryName = *(const char**)((char*)entry + 24);
+
+        // String compare (inline strcmp)
+        const char* s1 = vibPatternName;
+        const char* s2 = entryName;
+        while (*s1 && (*s1 == *s2)) { s1++; s2++; }
+        if (*s1 == *s2) {
+            foundIndex = i;
+            break;
+        }
+    }
+
+    // Store resolved entry pointer
+    void* resolvedEntry = nullptr;
+    if (foundIndex >= 0 && foundIndex < arrayCount) {
+        resolvedEntry = arrayBase[foundIndex];
+    }
+    *(void**)((char*)this + 28) = resolvedEntry;
+
+    if (resolvedEntry == nullptr) {
+        nop_8240E6D0("gdVibEvent::PostLoadProperties - Could not find vibration pattern '%s'", vibPatternName);
+    }
 }

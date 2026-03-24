@@ -205,9 +205,73 @@ void gdTier::PostLoadProperties() {
  * Processes child nodes after loading.
  * Initializes tier members and validates structure.
  */
+/**
+ * gdTier::PostLoadChildren @ 0x821F0F10 | size: 0x120
+ *
+ * Walks the linked list of child XML nodes at +12. For each child,
+ * calls IsType to check if it's a gdTierMember. Counts matching
+ * children, allocates an array at +20, then walks the list again
+ * to populate the array with pointers to matching children.
+ * Non-matching children are logged via their GetTypeName.
+ */
 void gdTier::PostLoadChildren() {
-    // TODO: Implement tier member initialization
-    // Original processes child XML nodes and builds member array
+    extern uint32_t g_gdTierMember_typeId;  // @ 0x825C5F70
+    extern "C" void* xe_EC88(uint32_t size);
+    extern "C" void nop_8240E6D0(const char* msg, ...);
+
+    // Pass 1: count matching children
+    uint32_t matchCount = 0;
+    void* pChild = *(void**)((char*)this + 12);  // m_pFirstChild
+
+    while (pChild) {
+        // Call IsType (vtable slot 20) on child
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)pChild;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+
+        if (isType(pChild, g_gdTierMember_typeId)) {
+            matchCount++;
+        } else {
+            // Log unexpected child type
+            typedef const char* (*GetNameFunc)(void*);
+            GetNameFunc getName = (GetNameFunc)vtable[19];
+            nop_8240E6D0("gdTier::PostLoadChildren() - unexpected child type '%s'", getName(pChild));
+        }
+
+        pChild = *(void**)((char*)pChild + 8);  // m_pNextSibling
+    }
+
+    // Allocate array if not already allocated
+    uint16_t* pArrayMeta = (uint16_t*)((char*)this + 20);
+    if (pArrayMeta[3] == 0) {  // +26: allocated capacity
+        pArrayMeta[3] = (uint16_t)matchCount;
+        if (matchCount > 0) {
+            *(void**)((char*)this + 20) = xe_EC88(matchCount * 4);
+        } else {
+            *(void**)((char*)this + 20) = nullptr;
+        }
+    }
+
+    // Store count at +24
+    pArrayMeta[2] = (uint16_t)matchCount;
+
+    // Pass 2: populate array
+    pChild = *(void**)((char*)this + 12);
+    uint32_t writeOffset = 0;
+
+    while (pChild) {
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)pChild;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+
+        if (isType(pChild, g_gdTierMember_typeId)) {
+            void** array = *(void***)((char*)this + 20);
+            array[writeOffset / 4] = pChild;
+            writeOffset += 4;
+        }
+
+        pChild = *(void**)((char*)pChild + 8);
+    }
 }
 
 /**
@@ -247,9 +311,69 @@ void gdTierMember::PostLoadProperties() {
  * Processes child tier nodes after loading.
  * Builds the ladder structure from XML data.
  */
+/**
+ * gdLadder::PostLoadChildren @ 0x821F1FE8 | size: 0x148
+ *
+ * Allocates a fixed array of 4 tier slots at +16, zeroes them, then
+ * walks child nodes. For each child matching gdTier type, stores it
+ * at the index specified by the child's tier level field (+16).
+ * Logs errors for duplicate or non-matching entries.
+ */
 void gdLadder::PostLoadChildren() {
-    // TODO: Implement ladder tier initialization
-    // Original processes child XML nodes and builds tier array
+    extern uint32_t g_gdTier_typeId;  // @ 0x825C5F80 (offset 24448 from SDA)
+    extern "C" void* xe_EC88(uint32_t size);
+    extern "C" void nop_8240E6D0(const char* msg, ...);
+
+    // Allocate array of 4 tier slots if not done
+    uint16_t* pArrayMeta = (uint16_t*)((char*)this + 16);
+    if (pArrayMeta[3] == 0) {
+        pArrayMeta[3] = 4;
+        *(void**)((char*)this + 16) = xe_EC88(16);  // 4 * 4 bytes
+    }
+    pArrayMeta[2] = 4;
+
+    // Zero all 4 slots
+    void** array = *(void***)((char*)this + 16);
+    for (int i = 0; i < 4; i++) {
+        array[i] = nullptr;
+    }
+
+    // Walk children and assign to tier slots
+    void* pChild = *(void**)((char*)this + 12);
+
+    while (pChild) {
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)pChild;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+
+        if (isType(pChild, g_gdTier_typeId)) {
+            // Get tier index from child's field at +16
+            uint32_t tierIdx = *(uint32_t*)((char*)pChild + 16);
+            void** tierArray = *(void***)((char*)this + 16);
+
+            if (tierArray[tierIdx] != nullptr) {
+                // Duplicate tier entry
+                nop_8240E6D0("gdLadder::PostLoadChildren() - duplicate tier at index %d");
+            } else {
+                tierArray[tierIdx] = pChild;
+            }
+        } else {
+            typedef const char* (*GetNameFunc)(void*);
+            GetNameFunc getName = (GetNameFunc)vtable[19];
+            nop_8240E6D0("gdLadder::PostLoadChildren() - unexpected child type '%s'", getName(pChild));
+        }
+
+        pChild = *(void**)((char*)pChild + 8);
+    }
+
+    // Validate all slots are filled
+    uint16_t count = *(uint16_t*)((char*)this + 20);
+    for (int i = 0; i < count; i++) {
+        void** tierArray = *(void***)((char*)this + 16);
+        if (tierArray[i] == nullptr) {
+            nop_8240E6D0("gdLadder::PostLoadChildren() - missing tier at index %d", i);
+        }
+    }
 }
 
 /**
@@ -258,9 +382,92 @@ void gdLadder::PostLoadChildren() {
  * 
  * Processes rivalry relationship data after loading.
  */
+/**
+ * gdRivalry::PostLoadChildren @ 0x821F09D0 | size: 0x1B8
+ *
+ * Allocates an array sized to the character count from the game data manager.
+ * Walks child nodes, checking each against gdRivalryData type. For matching
+ * children, resolves the character name (+16) to an index and stores the
+ * child pointer at that index in the array. Validates no duplicate entries
+ * and all expected slots are filled.
+ */
 void gdRivalry::PostLoadChildren() {
-    // TODO: Implement rivalry initialization
-    // Original processes rivalry matchup data
+    extern uint32_t g_gdRivalryData_typeId;  // @ 0x825C5F68
+    extern void* g_gameDataMgr;              // @ 0x8271A2E4
+    extern "C" void* xe_EC88(uint32_t size);
+    extern "C" int32_t FindCharacterByName(void* mgr, const char* name);
+    extern "C" void nop_8240E6D0(const char* msg, ...);
+
+    // Get character count from game data manager
+    void* dataMgr = *(void**)&g_gameDataMgr;
+    uint32_t charCount = *(uint32_t*)((char*)dataMgr + 28);
+
+    // Allocate array if not done
+    uint16_t* pArrayMeta = (uint16_t*)((char*)this + 16);
+    if (pArrayMeta[3] == 0) {
+        pArrayMeta[3] = (uint16_t)charCount;
+        if (charCount > 0) {
+            *(void**)((char*)this + 16) = xe_EC88(charCount * 4);
+        } else {
+            *(void**)((char*)this + 16) = nullptr;
+        }
+    }
+
+    // Set count and zero all entries
+    pArrayMeta[2] = (uint16_t)charCount;
+    if (charCount > 0) {
+        void** array = *(void***)((char*)this + 16);
+        for (uint32_t i = 0; i < charCount; i++) {
+            array[i] = nullptr;
+        }
+    }
+
+    // Walk children and assign by character index
+    void* pChild = *(void**)((char*)this + 12);
+
+    while (pChild) {
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)pChild;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+
+        if (isType(pChild, g_gdRivalryData_typeId)) {
+            // Resolve character name to index
+            const char* charName = *(const char**)((char*)pChild + 16);
+            int32_t charIdx = FindCharacterByName(dataMgr, charName);
+
+            if (charIdx < 0) {
+                nop_8240E6D0("gdRivalry::PostLoadChildren() - unknown character");
+            } else {
+                void** array = *(void***)((char*)this + 16);
+                if (array[charIdx] != nullptr) {
+                    const char* name = *(const char**)((char*)pChild + 16);
+                    nop_8240E6D0("gdRivalry::PostLoadChildren() - duplicate entry for '%s'", name);
+                } else {
+                    array[charIdx] = pChild;
+                }
+            }
+        } else {
+            typedef const char* (*GetNameFunc)(void*);
+            GetNameFunc getName = (GetNameFunc)vtable[19];
+            nop_8240E6D0("gdRivalry::PostLoadChildren() - unexpected child '%s'", getName(pChild));
+        }
+
+        pChild = *(void**)((char*)pChild + 8);
+    }
+
+    // Validate all slots are filled
+    uint16_t count = *(uint16_t*)((char*)this + 20);
+    for (int i = 0; i < count; i++) {
+        void** array = *(void***)((char*)this + 16);
+        if (array[i] == nullptr) {
+            // Get character name from game data for error message
+            void* charArray = *(void**)((char*)dataMgr + 24);
+            void* charEntry = ((void**)charArray)[i];
+            const char* charName = *(const char**)((char*)charEntry + 44);
+            const char* entryName = *(const char**)((char*)charEntry + 16);
+            nop_8240E6D0("gdRivalry::PostLoadChildren() - missing rivalry data for '%s'", entryName);
+        }
+    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
