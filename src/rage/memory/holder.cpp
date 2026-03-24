@@ -62,24 +62,31 @@ void* Holder::GetSingleton() {
  * 5. Copy 16 bytes from this+0x10 to new+0x10 using AltiVec
  */
 void* Holder::AllocateAndInitialize() {
-    // TODO: Implement proper TLS-based allocator access
-    // For now, return nullptr as this requires full allocator system
-    
-    // Original calls xe_main_thread_init_0038 to ensure TLS is initialized
-    // Then gets allocator from TLS at r13+0, offset +4
-    
-    // Allocate 32 bytes with 16-byte alignment
-    // void* newObj = allocator->Allocate(32, 16);
-    
-    // Set vtable pointer to 0x82032E34 (one of the 6 Holder vtables)
-    // *reinterpret_cast<uint32_t*>(newObj) = 0x82032E34;
-    
-    // Copy 16 bytes from this+0x10 to newObj+0x10 using AltiVec
-    // const uint8_t* src = reinterpret_cast<const uint8_t*>(this) + 0x10;
-    // uint8_t* dst = reinterpret_cast<uint8_t*>(newObj) + 0x10;
-    // memcpy(dst, src, 16);
-    
-    return nullptr;  // Placeholder until allocator is implemented
+    extern "C" void xe_main_thread_init_0038();
+    extern void** g_tls_base;  // @ 0x82600000 (r13 SDA base)
+    extern void* g_vtable_holder;  // @ 0x82032E34
+
+    xe_main_thread_init_0038();
+
+    // Get allocator from TLS (r13+0 → allocator table, entry at +4)
+    void** pTLS = *(void***)g_tls_base;
+    void* pAllocator = pTLS[1];
+
+    // Allocate 32 bytes, 16-byte aligned via allocator vtable slot 1
+    typedef void* (*AllocFunc)(void*, uint32_t, uint32_t);
+    void** allocVtable = *(void***)pAllocator;
+    AllocFunc alloc = (AllocFunc)allocVtable[1];
+    void* newObj = alloc(pAllocator, 32, 16);
+
+    if (newObj) {
+        // Set vtable pointer
+        *(void**)newObj = &g_vtable_holder;
+
+        // Copy 16-byte default vector from this+0x10 to new+0x10 (AltiVec copy)
+        memcpy((char*)newObj + 0x10, (char*)this + 0x10, 16);
+    }
+
+    return newObj;
 }
 
 /**
@@ -174,60 +181,61 @@ Holder::Holder() {
  *   source - Pointer to object with vtable slot 5 method that returns float
  */
 void Holder::SetParam1(void* source) {
-    // Original calls vtable slot 5 on an object loaded from source+4
-    // For now, we just set to 0.0 as placeholder
-    // TODO: Implement proper vtable call when source object type is known
-    m_tuningParam1 = 0.0f;
+    // Load object from source+4, call its vtable slot 5 to get float value
+    void* obj = *(void**)((char*)source + 4);
+    typedef float (*GetFloatFunc)(void*);
+    void** vtable = *(void***)obj;
+    m_tuningParam1 = ((GetFloatFunc)vtable[5])(obj);
 }
 
 /**
- * Holder::SetParam2
- * @ 0x821234C8 | size: 0x40
- * 
- * Calls vtable slot 5 on the source object and stores the float result at +0x08.
+ * Holder::SetParam2 @ 0x821234C8 | size: 0x40
  */
 void Holder::SetParam2(void* source) {
-    m_tuningParam2 = 0.0f;  // Placeholder
+    void* obj = *(void**)((char*)source + 4);
+    typedef float (*GetFloatFunc)(void*);
+    void** vtable = *(void***)obj;
+    m_tuningParam2 = ((GetFloatFunc)vtable[5])(obj);
 }
 
 /**
- * Holder::SetParam3
- * @ 0x82123508 | size: 0x40
- * 
- * Calls vtable slot 5 on the source object and stores the float result at +0x0C.
+ * Holder::SetParam3 @ 0x82123508 | size: 0x40
  */
 void Holder::SetParam3(void* source) {
-    m_tuningParam3 = 0.0f;  // Placeholder
+    void* obj = *(void**)((char*)source + 4);
+    typedef float (*GetFloatFunc)(void*);
+    void** vtable = *(void***)obj;
+    m_tuningParam3 = ((GetFloatFunc)vtable[5])(obj);
 }
 
 /**
- * Holder::SetParam8
- * @ 0x82123548 | size: 0x40
- * 
- * Calls vtable slot 5 on the source object and stores the float result at +0x90 (144).
+ * Holder::SetParam8 @ 0x82123548 | size: 0x40
  */
 void Holder::SetParam8(void* source) {
-    m_tuningParam8 = 0.0f;  // Placeholder
+    void* obj = *(void**)((char*)source + 4);
+    typedef float (*GetFloatFunc)(void*);
+    void** vtable = *(void***)obj;
+    m_tuningParam8 = ((GetFloatFunc)vtable[5])(obj);
 }
 
 /**
- * Holder::SetParam9
- * @ 0x82123588 | size: 0x40
- * 
- * Calls vtable slot 5 on the source object and stores the float result at +0x94 (148).
+ * Holder::SetParam9 @ 0x82123588 | size: 0x40
  */
 void Holder::SetParam9(void* source) {
-    m_tuningParam9 = 0.0f;  // Placeholder
+    void* obj = *(void**)((char*)source + 4);
+    typedef float (*GetFloatFunc)(void*);
+    void** vtable = *(void***)obj;
+    m_tuningParam9 = ((GetFloatFunc)vtable[5])(obj);
 }
 
 /**
- * Holder::SetParam10
- * @ 0x821235C8 | size: 0x40
- * 
- * Calls vtable slot 5 on the source object and stores the float result at +0x98 (152).
+ * Holder::SetParam10 @ 0x821235C8 | size: 0x40
  */
 void Holder::SetParam10(void* source) {
-    m_tuningParam10 = 0.0f;  // Placeholder
+    void* obj = *(void**)((char*)source + 4);
+    typedef float (*GetFloatFunc)(void*);
+    void** vtable = *(void***)obj;
+    m_tuningParam10 = ((GetFloatFunc)vtable[5])(obj);
 }
 
 /**
@@ -260,8 +268,9 @@ void Holder::SetInitializedFlag() {
  *   bctr                 // Branch to function
  */
 void Holder::CallVtableSlot55() {
-    // This is an indirect call through the vtable
-    // In C++, this would be a virtual method call
-    // For now, this is a placeholder showing the pattern
-    // TODO: Implement when vtable structure is fully understood
+    // Tail call to virtual method at vtable slot 55 (byte offset +220)
+    typedef void (*VFunc)(void*);
+    void** vtable = *(void***)this;
+    VFunc fn = (VFunc)vtable[55];
+    fn(this);
 }
