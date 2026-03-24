@@ -125,8 +125,20 @@ void swfSCRIPTOBJECT::vfn_6() {
  * 
  * Virtual function slot 8 - minimal implementation.
  */
-void swfSCRIPTOBJECT::vfn_8() {
-    // TODO: Implement based on assembly analysis
+/**
+ * swfSCRIPTOBJECT::GetPropertyCount @ 0x823F8B48 | size: 0x24
+ *
+ * Counts properties by walking the linked list at +4.
+ * Each node has a next pointer at +12. Returns the count.
+ */
+int swfSCRIPTOBJECT::vfn_8() {
+    int count = 0;
+    void* node = *(void**)((char*)this + 4);
+    while (node) {
+        count++;
+        node = *(void**)((char*)node + 12);
+    }
+    return count;
 }
 
 /**
@@ -152,8 +164,20 @@ void swfSCRIPTOBJECT::vfn_10() {
  * 
  * Virtual function slot 11.
  */
-void swfSCRIPTOBJECT::vfn_11() {
-    // TODO: Implement based on assembly analysis
+/**
+ * swfSCRIPTOBJECT::SetMember @ 0x823FC8A8 | size: 0x5C
+ *
+ * Sets a named member on this script object. Looks up the name in a
+ * global string buffer, then inserts a (name, value) pair into the
+ * property table at +4.
+ */
+void swfSCRIPTOBJECT::vfn_11(const char* name, void* value) {
+    extern void* g_swfStringBuffer;  // @ 0x82606850
+    extern "C" const char* swfLookupString(void* buffer, const char* name, int maxLen);
+    extern "C" void swfSymtab_Insert(void* symtab, const char* key, void* value);
+
+    const char* internedName = swfLookupString(&g_swfStringBuffer, name, 1024);
+    swfSymtab_Insert((char*)this + 4, internedName, value);
 }
 
 /**
@@ -161,8 +185,25 @@ void swfSCRIPTOBJECT::vfn_11() {
  * 
  * Virtual function slot 12.
  */
-void swfSCRIPTOBJECT::vfn_12() {
-    // TODO: Implement based on assembly analysis
+/**
+ * swfSCRIPTOBJECT::DeleteMember @ 0x823FC848 | size: 0x60
+ *
+ * Deletes a named member. First calls vfn_10 (SetMember with undefined
+ * value) to notify observers, then removes the key from the property
+ * table at +4.
+ */
+void swfSCRIPTOBJECT::vfn_12(const char* name) {
+    extern "C" void swfSymtab_Delete(void* symtab, const char* key);
+
+    // Build an "undefined" value on the stack and call vfn_10 to set it
+    struct { uint32_t value; uint32_t type; } undefinedVal = { 0, 1 };
+    typedef void (*SetMemberFunc)(void*, const char*, void*);
+    void** vtable = *(void***)this;
+    SetMemberFunc setMember = (SetMemberFunc)vtable[10];
+    setMember(this, name, &undefinedVal);
+
+    // Remove from symbol table
+    swfSymtab_Delete((char*)this + 4, name);
 }
 
 /**
@@ -170,8 +211,66 @@ void swfSCRIPTOBJECT::vfn_12() {
  * 
  * Virtual function slot 13.
  */
-void swfSCRIPTOBJECT::vfn_13() {
-    // TODO: Implement based on assembly analysis
+/**
+ * swfSCRIPTOBJECT::CallMethod @ 0x823FEA28 | size: 0x120
+ *
+ * Calls a method on this script object by name. Looks up the named
+ * property via vfn_10, then depending on the result type:
+ *   type 6: function pointer — calls it with (this, args, argCount, outResult)
+ *   type 5: object reference — calls vfn_14 on the object with args
+ *   other/not found: logs error and sets result to undefined (type 3)
+ */
+void swfSCRIPTOBJECT::vfn_13(const char* methodName, void* args, int argCount, void* outResult) {
+    extern "C" void nop_8240E6D0(const char* msg, ...);
+
+    // Look up the method property via vfn_10 (GetMember)
+    struct { uint32_t value; uint32_t type; } lookupResult = { 0, 7 };  // type 7 = lookup request
+    struct { uint32_t nameRef; uint32_t flags; } nameData = { (uint32_t)(uintptr_t)methodName, 1 };
+
+    typedef bool (*GetMemberFunc)(void*, void*, void*);
+    void** vtable = *(void***)this;
+    GetMemberFunc getMember = (GetMemberFunc)vtable[10];
+    bool found = getMember(this, &nameData, &lookupResult);
+
+    if (!found) {
+        // Method not found — log error and return undefined
+        nop_8240E6D0("swfSCRIPTOBJECT::CallMethod - method '%s' not found", methodName);
+        *(uint32_t*)outResult = 0;
+        *(uint32_t*)((char*)outResult + 4) = 3;  // type 3 = undefined
+        return;
+    }
+
+    // Dispatch based on result type
+    if (lookupResult.type == 6) {
+        // Direct function pointer call
+        typedef void (*ScriptFunc)(void*, void*, int, void*);
+        ScriptFunc fn = (ScriptFunc)(uintptr_t)lookupResult.value;
+        fn(this, args, argCount, outResult);
+    } else if (lookupResult.type == 5) {
+        // Object with callable interface — call vfn_14
+        void* callableObj = (void*)(uintptr_t)lookupResult.value;
+
+        // Check if call stack depth increased
+        extern uint32_t g_swfCallDepth;  // @ 0x826064EC
+        uint32_t prevDepth = g_swfCallDepth;
+
+        typedef void (*ObjCallFunc)(void*, void*, int, void*, int);
+        void** objVtable = *(void***)callableObj;
+        ObjCallFunc objCall = (ObjCallFunc)objVtable[14];
+        objCall(callableObj, args, argCount, this, 0);
+
+        if (g_swfCallDepth > prevDepth) {
+            // Call produced a result — copy from stack
+            extern "C" void swfCopyResult(void* dst);
+            swfCopyResult(outResult);
+            *(uint32_t*)outResult = *(uint32_t*)((char*)outResult + 0);
+            *(uint32_t*)((char*)outResult + 4) = *(uint32_t*)((char*)outResult + 4);
+        }
+    } else {
+        // Not callable
+        *(uint32_t*)outResult = 0;
+        *(uint32_t*)((char*)outResult + 4) = 5;  // type 5 = default
+    }
 }
 
 void swfSCRIPTOBJECT_ScalarDestructor(swfSCRIPTOBJECT* obj, int flags) {
@@ -422,8 +521,46 @@ void swfCMD_DoInitAction::vfn_2() {
 
 
 
-void swfFILE::vfn_10() {
-    // TODO: Implement vfn_10 @ 0x823F9DC8
+/**
+ * swfFILE::FindExport @ 0x823F9DC8 | size: 0xBC
+ *
+ * Searches the file's export table (+20, count at +46) for a named
+ * export matching the given name. Entries at type==5 have a string
+ * name at entry+192. Comparison is case-insensitive (_stricmp).
+ * If found, calls a helper to compute the export's frame-relative
+ * position. If not found, logs error and returns 0.0f.
+ */
+float swfFILE::vfn_10(const char* exportName, void* context) {
+    extern "C" int _stricmp(const char*, const char*);
+    extern "C" void nop_8240E6D0(const char* msg, ...);
+    extern "C" float swfComputeExportPosition(void* ctx, void* entry, float* outA, float* outB);
+
+    // Search export table
+    uint16_t exportCount = *(uint16_t*)((char*)this + 46);
+    void** exportArray = *(void***)((char*)this + 20);
+
+    for (int i = 0; i < exportCount; i++) {
+        void* entry = exportArray[i];
+        if (!entry) continue;
+
+        // Check if entry is an export type (type byte at +4 == 5)
+        uint8_t entryType = *(uint8_t*)((char*)entry + 4);
+        if (entryType != 5) continue;
+
+        // Compare name at entry+192 (case-insensitive)
+        const char* entryName = (const char*)((char*)entry + 192);
+        if (_stricmp(entryName, exportName) == 0) {
+            // Found — compute position
+            float outA, outB;
+            float result = swfComputeExportPosition(context, entry, &outA, &outB);
+            // Original: result * globalScale * inputScale
+            return result;
+        }
+    }
+
+    // Not found
+    nop_8240E6D0("swfFILE::FindExport - export '%s' not found", exportName);
+    return 0.0f;
 }
 
 
@@ -527,8 +664,31 @@ void swfACTIONFUNC::vfn_10() { /* TODO */ }
 // swfSCRIPTARRAY — ActionScript array object
 // ===========================================================================
 
+/**
+ * swfSCRIPTARRAY::~swfSCRIPTARRAY @ 0x823FF218 | size: 0x80
+ *
+ * Destructor — sets vtable to swfSCRIPTARRAY, frees the element array
+ * at +16 if capacity (+22) > 0, then calls swfSCRIPTOBJECT base
+ * destructor. If the delete flag is set, adds this object back to
+ * the SWF object pool's free list.
+ */
 swfSCRIPTARRAY::~swfSCRIPTARRAY() {
-    // TODO: Implement destructor @ 0x823FF218
+    extern void* g_vtable_swfSCRIPTARRAY;  // @ 0x8207534C
+    extern "C" void rage_free(void* ptr);
+    extern "C" void swfSCRIPTOBJECT_Destructor(void* obj);  // @ 0x823F8AE0
+
+    // Set vtable to own class
+    *(void**)this = &g_vtable_swfSCRIPTARRAY;
+
+    // Free element array if allocated
+    uint16_t capacity = *(uint16_t*)((char*)this + 22);
+    if (capacity > 0) {
+        void* elements = *(void**)((char*)this + 16);
+        rage_free(elements);
+    }
+
+    // Call base class destructor
+    swfSCRIPTOBJECT_Destructor(this);
 }
 
 
