@@ -36,6 +36,27 @@ struct rageAllocator {
 extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
 extern uint32_t* g_sda_base;            // @ SDA:0x82600000 - Small Data Area base
 
+// Serialization / XML support
+extern "C" void xmlNodeStruct_vfn_2(void* obj);                              // @ 0x821A8988
+extern "C" void nop_8240E6D0(const char* msg, ...);                          // @ 0x8240E6D0
+extern "C" void RegisterSerializationField(void* obj, const char* name,
+                                           void* fieldPtr, void* typeDesc,
+                                           int flags);                        // @ 0x821A8F58
+extern "C" int32_t FindCharacterByName(void* gameDataMgr, const char* name); // @ 0x821D2458
+
+// Game data manager singleton
+extern void* g_gameDataMgr;             // @ 0x8271A2E4
+
+// Type IDs for IsType checks
+extern uint32_t g_gdRivalryData_typeId;  // @ 0x825C5F68
+extern uint32_t g_gdRivalry_typeId;      // @ 0x825C5F6C
+extern uint32_t g_gdTierMember_typeId;   // @ 0x825C5F70
+extern uint32_t g_xmlNodeStruct_typeId;  // @ 0x825C803C (shared base type)
+extern uint32_t g_xmlNodeStruct_typeId2; // @ 0x825C8038 (shared base type)
+
+// Serialization type descriptor for string fields
+extern void* g_stringFieldType;          // @ 0x825CAF88
+
 /**
  * game_B2E0 @ 0x8218B2E0 | size: 0x90
  * 
@@ -203,16 +224,20 @@ void gdTier::PostLoadChildren() {
 void gdTierMember::PostLoadProperties() {
     // Call base class post-load
     xmlNodeStruct_vfn_2(this);
-    
-    // Check if character name is specified
+
+    // Validate character name is specified and non-empty
     if (m_characterName == nullptr || m_characterName[0] == '\0') {
         nop_8240E6D0("gdTierMember::PostLoadProperties() - 'CharacterName' not specified");
         return;
     }
-    
-    // TODO: Resolve character data pointer from name
-    // Original looks up character in character database
-    // If not found, prints error with character name
+
+    // Look up character index in the game data manager
+    int32_t charIndex = FindCharacterByName(g_gameDataMgr, m_characterName);
+    m_pCharData = (gdCharData*)(intptr_t)charIndex;
+
+    if (charIndex < 0) {
+        nop_8240E6D0("gdTierMember::PostLoadProperties() - unknown character '%s'");
+    }
 }
 
 /**
@@ -236,6 +261,136 @@ void gdLadder::PostLoadChildren() {
 void gdRivalry::PostLoadChildren() {
     // TODO: Implement rivalry initialization
     // Original processes rivalry matchup data
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// gdRivalryData vtable methods
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * gdRivalryData::IsType @ 0x821F0650 | size: 0x48
+ *
+ * Checks if the given type ID matches gdRivalryData or its base classes.
+ */
+bool gdRivalryData::IsType(uint32_t typeId) {
+    if (typeId == g_gdRivalryData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
+}
+
+/**
+ * gdRivalryData::GetTypeName @ 0x821F0698 | size: 0xC
+ *
+ * Returns the class name string "gdRivalryData".
+ */
+const char* gdRivalryData::GetTypeName() const {
+    return "gdRivalryData";
+}
+
+/**
+ * gdRivalryData::RegisterFields @ 0x821F0738 | size: 0x6C
+ *
+ * Registers CharacterName (+16) and RivalName (+20) for XML serialization.
+ */
+void gdRivalryData::RegisterFields() {
+    RegisterSerializationField(this, "CharacterName",
+                               (char*)this + 16, g_stringFieldType, 0);
+    RegisterSerializationField(this, "RivalName",
+                               (char*)this + 20, g_stringFieldType, 0);
+}
+
+/**
+ * gdRivalryData::PostLoadProperties @ 0x821F07A8 | size: 0xE0
+ *
+ * Validates that both CharacterName and RivalName are specified and non-empty.
+ * Resolves the rival character index from the game data manager.
+ *
+ * Debug strings:
+ *   "gdRivalryData::PostLoadProperties() - 'CharacterName' not specified"
+ *   "gdRivalryData::PostLoadProperties() - 'RivalName' not specified"
+ *   "gdRivalryData::PostLoadProperties() - unknown rival character '%s'"
+ */
+void gdRivalryData::PostLoadProperties() {
+    xmlNodeStruct_vfn_2(this);
+
+    // Validate CharacterName at +16
+    const char* charName = *(const char**)((char*)this + 16);
+    if (charName == nullptr || charName[0] == '\0') {
+        nop_8240E6D0("gdRivalryData::PostLoadProperties() - 'CharacterName' not specified");
+    }
+
+    // Validate RivalName at +20
+    const char* rivalName = *(const char**)((char*)this + 20);
+    if (rivalName == nullptr || rivalName[0] == '\0') {
+        nop_8240E6D0("gdRivalryData::PostLoadProperties() - 'RivalName' not specified");
+    }
+
+    // Resolve rival character index from name
+    int32_t rivalIndex = FindCharacterByName(g_gameDataMgr, rivalName);
+    *(int32_t*)((char*)this + 24) = rivalIndex;
+
+    if (rivalIndex < 0) {
+        nop_8240E6D0("gdRivalryData::PostLoadProperties() - unknown rival character '%s'");
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// gdRivalry vtable methods
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * gdRivalry::IsType @ 0x821F0888 | size: 0x48
+ *
+ * Checks if the given type ID matches gdRivalry or its base classes.
+ */
+bool gdRivalry::IsType(uint32_t typeId) {
+    if (typeId == g_gdRivalry_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
+}
+
+/**
+ * gdRivalry::GetTypeName @ 0x821F08D0 | size: 0xC
+ *
+ * Returns the class name string "gdRivalry".
+ */
+const char* gdRivalry::GetTypeName() const {
+    return "gdRivalry";
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// gdTierMember vtable methods
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * gdTierMember::IsType @ 0x821F0B88 | size: 0x48
+ *
+ * Checks if the given type ID matches gdTierMember or its base classes.
+ */
+bool gdTierMember::IsType(uint32_t typeId) {
+    if (typeId == g_gdTierMember_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
+}
+
+/**
+ * gdTierMember::GetTypeName @ 0x821F0BD0 | size: 0xC
+ *
+ * Returns the class name string "gdTierMember".
+ */
+const char* gdTierMember::GetTypeName() const {
+    return "gdTierMember";
+}
+
+/**
+ * gdTierMember::RegisterFields @ 0x821F0C68 | size: 0x1C
+ *
+ * Registers CharacterName (+16) for XML serialization.
+ * Tail-calls directly to the serialization helper.
+ */
+void gdTierMember::RegisterFields() {
+    RegisterSerializationField(this, "CharacterName",
+                               &m_characterName, g_stringFieldType, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
