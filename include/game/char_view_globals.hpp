@@ -133,3 +133,63 @@ extern void* g_vtable_pong_char_view_context_2;
 // pongCharViewContext tertiary vtable
 // @ 0x8205F7B4
 extern void* g_vtable_pong_char_view_context_3;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Character View State Globals
+// ────────────────────────────────────────────────────────────────────────────
+
+// Pointer to active character view data object (passed to ResetCharViewData)
+// @ 0x8271A2F0
+extern void* g_charViewData_ptr;
+
+// Selection counters for character view — cleared on state transitions
+// @ 0x82606490
+extern uint32_t g_charViewSelectCounter;
+// @ 0x82606494
+extern uint32_t g_charViewSelectFlag;
+
+// Currently selected character index — set to -1 (invalid) on reset
+// @ 0x825C76B8
+extern int32_t g_selectedCharacterIndex;
+
+// Character view data type ID (distinct from g_character_type_id)
+// @ 0x825C2BC4
+extern uint32_t g_charViewTypeId;
+
+// Scene render object pointers — released during char view exit
+// @ 0x82606430
+extern void* g_sceneRenderObj;
+// @ 0x8260641C
+extern void* g_sceneRenderObj2;
+
+// Game loop object pointer — byte at offset 577 is the char view enable flag
+// @ 0x825EAB30
+extern void* g_loop_obj_ptr;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Error / Debug Strings
+// ────────────────────────────────────────────────────────────────────────────
+
+// Error string for attract state exit event handler
+// @ 0x8205E064
+extern const char* g_error_attract_exit;
+
+// Error string for char view enter event handler
+// @ 0x8205F0F8
+extern const char* g_error_charview_enter;
+
+// Error string for char view exit event handler
+// @ 0x8205F134
+extern const char* g_error_charview_exit;
+
+// ────────────────────────────────────────────────────────────────────────────
+// State Name Strings
+// ────────────────────────────────────────────────────────────────────────────
+
+// State name returned by pongAttractState::GetStateName
+// @ 0x8205E094 — "point_off_serves"
+extern const char* g_stateName_attract;
+
+// State name returned by pongCharViewState::GetStateName
+// @ 0x8205EF5C
+extern const char* g_stateName_charView;

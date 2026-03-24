@@ -95,3 +95,42 @@ void* g_vtable_pong_char_view_state = (void*)0x8205F174;
 void* g_vtable_pong_char_view_context = (void*)0x8205F1BC;
 void* g_vtable_pong_char_view_context_2 = (void*)0x8205F1D4;
 void* g_vtable_pong_char_view_context_3 = (void*)0x8205F7B4;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Character View State Globals
+// ────────────────────────────────────────────────────────────────────────────
+
+// Pointer to active character view data
+void* g_charViewData_ptr = nullptr;  // @ 0x8271A2F0
+
+// Selection counters
+uint32_t g_charViewSelectCounter = 0;  // @ 0x82606490
+uint32_t g_charViewSelectFlag = 0;     // @ 0x82606494
+
+// Selected character index (-1 = none)
+int32_t g_selectedCharacterIndex = -1;  // @ 0x825C76B8
+
+// Character view data type ID
+uint32_t g_charViewTypeId = 0;  // @ 0x825C2BC4
+
+// Scene render object pointers
+void* g_sceneRenderObj = nullptr;   // @ 0x82606430
+void* g_sceneRenderObj2 = nullptr;  // @ 0x8260641C
+
+// Game loop object pointer
+void* g_loop_obj_ptr = nullptr;  // @ 0x825EAB30
+
+// ────────────────────────────────────────────────────────────────────────────
+// Error / Debug Strings
+// ────────────────────────────────────────────────────────────────────────────
+
+const char* g_error_attract_exit = "pongAttractState::OnExitEvent — unhandled event";    // @ 0x8205E064
+const char* g_error_charview_enter = "pongCharViewState::OnEnterEvent — unhandled event"; // @ 0x8205F0F8
+const char* g_error_charview_exit = "pongCharViewState::OnExitEvent — unhandled event";   // @ 0x8205F134
+
+// ────────────────────────────────────────────────────────────────────────────
+// State Name Strings
+// ────────────────────────────────────────────────────────────────────────────
+
+const char* g_stateName_attract = "point_off_serves";  // @ 0x8205E094
+const char* g_stateName_charView = "char_view_select"; // @ 0x8205EF5C

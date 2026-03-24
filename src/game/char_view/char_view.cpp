@@ -25,7 +25,32 @@ extern "C" {
     void PostPageGroupMessage(int code, int param1, int param2, int param3);
     void PostStateTransitionRequest(void* manager, int32_t eventType);
     void FadePageGroup(void* context, float param, int p2, int p3, int p4, int p5);
+    void* GetStateContextName(void* manager);               // @ 0x822228B8
+    void SetupCharViewDisplay(void* screenObj);              // @ 0x8230A6B0
+    void ReleaseSceneObject(void* sceneObj);                 // @ 0x8218A2E8
+    void ResetBoundObject(void* bound, int param);           // @ 0x821665B8
+    void ResetViewBound(void* screenObj, int param);         // @ 0x8230C2C8
+    void FadePageGroupOut(void* context, float fade, int flags, int p2, int p3);  // @ 0x823061E8
+    void xmlNodeStruct_BaseInitialize(void* obj);            // @ 0x821A8988
 }
+
+// Forward declaration
+void ResetCharViewData(void* charViewData);  // @ 0x8240A570
+
+// ── Additional globals for char view state ──────────────────────────────────
+extern void*    g_charViewData_ptr;         // @ 0x8271A2F0 — pointer to active char view data
+extern uint32_t g_charViewSelectCounter;    // @ 0x82606490
+extern uint32_t g_charViewSelectFlag;       // @ 0x82606494
+extern int32_t  g_selectedCharacterIndex;   // @ 0x825C76B8 — set to -1 on reset
+extern uint32_t g_charViewTypeId;           // @ 0x825C2BC4
+extern void*    g_sceneRenderObj;           // @ 0x82606430
+extern void*    g_sceneRenderObj2;          // @ 0x8260641C
+extern void*    g_loop_obj_ptr;             // @ 0x825EAB30
+extern const char* g_error_attract_exit;    // @ 0x8205E064
+extern const char* g_error_charview_enter;  // @ 0x8205F0F8
+extern const char* g_error_charview_exit;   // @ 0x8205F134
+extern const char* g_stateName_attract;     // @ 0x8205E094 — "point_off_serves"
+extern const char* g_stateName_charView;    // @ 0x8205EF5C
 
 // ────────────────────────────────────────────────────────────────────────────
 // pongAttractState Implementation
@@ -110,23 +135,39 @@ void pongAttractState::OnEvent(int32_t eventType) {
 }
 
 /**
- * pongAttractState::Update @ 0x823059A8 | size: 0xB4
- * 
- * Frame update - called every frame.
+ * pongAttractState::OnExitEvent @ 0x823059A8 | size: 0xB4
+ *
+ * Handles exit-phase events for the attract state.
+ * Event 6: Sets UI state to "exiting" (state 3), triggers fade-out.
+ * Events 8, 12: No-op (silently ignored).
+ * Other: Forwards to state manager and logs unhandled event.
  */
-void pongAttractState::Update(float deltaTime) {
-    // TODO: Implement update logic
-    // This is a base implementation that derived classes may override
+void pongAttractState::OnExitEvent(int32_t eventType) {
+    PostPageGroupMessage(2056, 64, 0, 0);
+
+    if (eventType == 6) {
+        // Transition UI state to "exiting"
+        uint32_t* pUiState = (uint32_t*)g_global_ui_state;
+        pUiState[13] = 3;
+
+        // Fade out the UI context
+        FadePageGroupOut(g_ui_context, 0.0f, -1, 0, 0);
+    } else if (eventType == 8 || eventType == 12) {
+        return;
+    } else {
+        // Forward unhandled event to state manager
+        void* stateName = GetStateContextName(m_pManager);
+        nop_8240E6D0(g_error_attract_exit, stateName, (void*)(intptr_t)eventType);
+    }
 }
 
 /**
- * pongAttractState::GetStateId @ 0x82305A60 | size: 0xC
- * 
- * Returns state identifier.
+ * pongAttractState::GetStateName @ 0x82305A60 | size: 0xC
+ *
+ * Returns the name of this attract state: "point_off_serves".
  */
-int32_t pongAttractState::GetStateId() const {
-    // TODO: Return proper state ID
-    return 0;
+const char* pongAttractState::GetStateName() const {
+    return g_stateName_attract;
 }
 
 /**
@@ -242,11 +283,23 @@ charViewData::~charViewData() {
 
 /**
  * charViewData::Initialize @ 0x8240B598 | size: 0x24
- * 
- * Initialize or reset view data.
+ *
+ * Computes clamped min/max range from two source float fields (+0xB8, +0xBC)
+ * and stores min at +0xC4, max at +0xC0. Then calls base class Initialize.
  */
 void charViewData::Initialize() {
-    // TODO: Implement initialization logic
+    // Access float fields at offsets +0xB8 and +0xBC (within padding region)
+    float* pFields = reinterpret_cast<float*>(reinterpret_cast<char*>(this) + 0xB8);
+    float valueA = pFields[0];  // +0xB8
+    float valueB = pFields[1];  // +0xBC
+
+    // Compute min and max
+    float* pResults = reinterpret_cast<float*>(reinterpret_cast<char*>(this) + 0xC0);
+    pResults[0] = (valueA >= valueB) ? valueA : valueB;  // +0xC0 = max
+    pResults[1] = (valueA >= valueB) ? valueB : valueA;  // +0xC4 = min
+
+    // Call base class Initialize
+    xmlNodeStruct_BaseInitialize(this);
 }
 
 /**
@@ -365,12 +418,18 @@ void charViewData::LoadViewData() {
 
 /**
  * charViewData::ValidateData @ 0x8240B310 | size: 0x48
- * 
- * Type checking or validation function.
+ *
+ * Checks whether the given type ID matches any of the three known
+ * charViewData type identifiers. Returns true if it's a supported type.
  */
 bool charViewData::ValidateData(uint32_t param) {
-    // TODO: Implement validation logic
-    return false;
+    if (param == g_charViewTypeId) {
+        return true;
+    }
+    if (param == g_character_type_id_2) {
+        return true;
+    }
+    return (param == g_character_type_id_3);
 }
 
 /**
@@ -442,54 +501,162 @@ charViewCS::~charViewCS() {
 
 /**
  * pongCharViewState::~pongCharViewState @ 0x8230C490 | size: 0x68
- * 
- * Destructor - calls base class destructor chain.
+ *
+ * Destructor — cleans up the screen object via the parent OnExit,
+ * then resets vtable to the ultimate base class (rage::datBase).
  */
 pongCharViewState::~pongCharViewState() {
-    // Update vtable to base class
-    m_vtable = (void**)g_vtable_pong_attract_state;
-    
-    // Call base class OnExit
-    OnExit();
-    
-    // Update to final vtable
-    m_vtable = (void**)g_vtable_pong_char_view_state;
+    // Call parent OnExit to release UI screen object
+    pongAttractState::OnExit();
 }
 
 /**
- * pongCharViewState::Update @ 0x8230C5F8 | size: 0xB8
- * 
- * Frame update override.
+ * pongCharViewState::OnEnterEvent @ 0x8230C5F8 | size: 0xB8
+ *
+ * Handles enter-phase events for the character view state.
+ * Event 6: Sets up the character view display — registers screen object
+ *          in the UI state array, initializes the network display,
+ *          resets char view data, and posts message 2065.
+ * Event 12: No-op.
+ * Other: Forwards to state manager and logs unhandled event.
  */
-void pongCharViewState::Update(float deltaTime) {
-    // TODO: Implement character view update logic
+void pongCharViewState::OnEnterEvent(int32_t eventType) {
+    if (eventType == 6) {
+        // Register screen object in global UI state
+        uint32_t* pUiState = (uint32_t*)g_global_ui_state;
+        pUiState[13] = 2;
+        pUiState[14] = (uint32_t)(uintptr_t)m_pScreenObject;
+
+        // Initialize character view display
+        SetupCharViewDisplay(m_pScreenObject);
+
+        // Reset the global char view data
+        ResetCharViewData(g_charViewData_ptr);
+
+        // Enable the char view loop flag
+        ((uint8_t*)g_loop_obj_ptr)[577] = 1;
+
+        // Post enter message
+        PostPageGroupMessage(2065, 64, 0, 0);
+    } else if (eventType == 12) {
+        return;
+    } else {
+        // Forward unhandled event to state manager
+        void* stateName = GetStateContextName(m_pManager);
+        nop_8240E6D0(g_error_charview_enter, stateName, (void*)(intptr_t)eventType);
+    }
 }
 
 /**
- * pongCharViewState::Render @ 0x8230C6B0 | size: 0xD8
- * 
- * Render character view UI.
+ * pongCharViewState::OnExitEvent @ 0x8230C6B0 | size: 0xD8
+ *
+ * Handles exit-phase events for the character view state.
+ * Event 6: Cleans up the character view display — releases scene objects,
+ *          resets physics bounds, resets char view data, clears the loop
+ *          flag, and posts message 2066.
+ * Event 12: No-op.
+ * Other: Forwards to state manager and logs unhandled event.
  */
-void pongCharViewState::Render() {
-    // TODO: Implement character view rendering
+void pongCharViewState::OnExitEvent(int32_t eventType) {
+    if (eventType == 6) {
+        // Set UI state to "exiting char view"
+        uint32_t* pUiState = (uint32_t*)g_global_ui_state;
+        pUiState[13] = 3;
+
+        void* screenObj = m_pScreenObject;
+
+        // Release scene render objects
+        ReleaseSceneObject(g_sceneRenderObj);
+        ResetBoundObject(g_sceneRenderObj2, 0);
+        ResetViewBound(screenObj, 0);
+
+        // Reset the global char view data
+        ResetCharViewData(g_charViewData_ptr);
+
+        // Disable the char view loop flag
+        ((uint8_t*)g_loop_obj_ptr)[577] = 0;
+
+        // Post exit message
+        PostPageGroupMessage(2066, 64, 0, 0);
+    } else if (eventType == 12) {
+        return;
+    } else {
+        // Forward unhandled event to state manager
+        void* stateName = GetStateContextName(m_pManager);
+        nop_8240E6D0(g_error_charview_exit, stateName, (void*)(intptr_t)eventType);
+    }
 }
 
 /**
- * pongCharViewState::OnEnterState @ 0x8230A4E8 | size: 0xC
- * 
- * State entry callback.
+ * pongCharViewState::GetStateName @ 0x8230A4E8 | size: 0xC
+ *
+ * Returns the name string for this character view state.
  */
-void pongCharViewState::OnEnterState() {
-    // TODO: Implement state entry logic
+const char* pongCharViewState::GetStateName() const {
+    return g_stateName_charView;
 }
 
 /**
- * pongCharViewState::OnExitState @ 0x8230C4F8 | size: 0x100
- * 
- * State exit callback.
+ * pongCharViewState::OnEnter @ 0x8230C4F8 | size: 0x100
+ *
+ * Allocates and initializes a 100-byte pongCharViewContext object with
+ * multiple-inheritance vtables (primary + secondary). Sets up all fields
+ * to initial values, then calls the context's initialization method.
  */
-void pongCharViewState::OnExitState() {
-    // TODO: Implement state exit logic
+void pongCharViewState::OnEnter() {
+    xe_main_thread_init_0038();
+
+    // Get allocator from TLS
+    void** pTLS = g_tls_base;
+    void* pAllocator = pTLS[1];
+
+    // Allocate 100-byte pongCharViewContext
+    typedef void* (*AllocFunc)(void*, uint32_t, uint32_t);
+    void** allocVtable = *(void***)pAllocator;
+    AllocFunc alloc = (AllocFunc)allocVtable[1];
+    void* pContext = alloc(pAllocator, 100, 16);
+
+    if (pContext) {
+        // Zero-initialize the entire context
+        memset(pContext, 0, 100);
+
+        // Set up primary vtable for pongCharViewContext
+        *(void**)pContext = &g_vtable_pong_char_view_context;
+
+        // Initialize fields to defaults
+        // +4, +8, +12, +16: already zeroed
+        // +20: secondary vtable (overwritten below)
+        *(void**)((char*)pContext + 20) = &g_vtable_pong_char_view_context_2;
+        // +44: nullptr (managed object)
+        // +56, +60, +64: set to -1 (invalid indices)
+        *(int32_t*)((char*)pContext + 56) = -1;
+        *(int32_t*)((char*)pContext + 60) = -1;
+        *(int32_t*)((char*)pContext + 64) = -1;
+        // +76, +77, +78: flags (already zeroed)
+
+        // Initialize embedded rage::xmlTree at +80
+        char* pEmbedded = (char*)pContext + 80;
+        *(void**)pEmbedded = &g_vtable_char_view_cs;  // xmlTree vtable
+        *(uint32_t*)(pEmbedded + 4) = 0;
+        *(uint32_t*)(pEmbedded + 8) = 0;
+        *(uint16_t*)(pEmbedded + 12) = 0;
+        *(uint16_t*)(pEmbedded + 14) = 0;
+
+        // +96: zero (already zeroed)
+        // +28, +32, +36, +40: zero (already zeroed)
+
+        m_pScreenObject = pContext;
+    } else {
+        m_pScreenObject = nullptr;
+    }
+
+    // Call initialization on the context (vtable slot 23)
+    if (m_pScreenObject) {
+        typedef void (*InitFunc)(void*);
+        void** vtable = *(void***)m_pScreenObject;
+        InitFunc init = (InitFunc)vtable[23];
+        init(m_pScreenObject);
+    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
