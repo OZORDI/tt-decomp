@@ -338,42 +338,134 @@ gdStatsOfflineGeneral::~gdStatsOfflineGeneral() {
  * Destructor for offline human vs CPU statistics.
  * Similar structure to gdStatsOfflineGeneral but with different stat count.
  */
+/**
+ * gdStatsOfflineHumanCPU::~gdStatsOfflineHumanCPU @ 0x8221CFC0 | size: 0x148
+ *
+ * Resets 8 stat field pairs at offsets +4/+8 through +52/+56, plus a
+ * trailing loop of 3 pairs at +68/+72 through +84/+88. Each pair has
+ * a value field and a type field (1=int, 2=float). Type 1 resets to 0,
+ * type 2 resets to 0.0f.
+ */
 gdStatsOfflineHumanCPU::~gdStatsOfflineHumanCPU() {
-    // TODO: Implement similar reset logic
-    // Structure analysis needed to determine exact stat count
+    // Reset 8 stat pairs at fixed offsets (stride 8, value at N, type at N+4)
+    struct StatPair { uint32_t value; int32_t type; };
+    StatPair* stats = (StatPair*)((char*)this + 4);
+
+    for (int i = 0; i < 8; i++) {
+        if (stats[i].type == 1) {
+            stats[i].value = 0;
+        } else if (stats[i].type == 2) {
+            *(float*)&stats[i].value = 0.0f;
+        }
+    }
+
+    // Reset 3 trailing stat pairs starting at +68
+    StatPair* trailing = (StatPair*)((char*)this + 68);
+    for (int i = 0; i < 3; i++) {
+        if (trailing[i].type == 1) {
+            trailing[i].value = 0;
+        } else if (trailing[i].type == 2) {
+            *(float*)&trailing[i].value = 0.0f;
+        }
+    }
 }
 
 /**
- * gdStatsOfflineSession::~gdStatsOfflineSession
- * @ 0x8221D2D0 | size: 0x90
- * 
- * Destructor for offline session statistics.
- * Tracks stats for a single play session.
+ * gdStatsOfflineSession::~gdStatsOfflineSession @ 0x8221D2D0 | size: 0x90
+ *
+ * Resets 4 stat field pairs at offsets +4/+8 through +28/+32.
  */
 gdStatsOfflineSession::~gdStatsOfflineSession() {
-    // TODO: Implement session stat reset
+    struct StatPair { uint32_t value; int32_t type; };
+    StatPair* stats = (StatPair*)((char*)this + 4);
+
+    for (int i = 0; i < 4; i++) {
+        if (stats[i].type == 1) {
+            stats[i].value = 0;
+        } else if (stats[i].type == 2) {
+            *(float*)&stats[i].value = 0.0f;
+        }
+    }
 }
 
 /**
- * gdStatsOnlineGeneral::~gdStatsOnlineGeneral
- * @ 0x8221D178 | size: 0xF0
- * 
- * Destructor for online general statistics.
- * Tracks online multiplayer stats.
+ * gdStatsOnlineGeneral::~gdStatsOnlineGeneral @ 0x8221D178 | size: 0xF0
+ *
+ * Resets 7 stat field pairs at offsets +4/+8 through +52/+56.
  */
 gdStatsOnlineGeneral::~gdStatsOnlineGeneral() {
-    // TODO: Implement online stat reset
+    struct StatPair { uint32_t value; int32_t type; };
+    StatPair* stats = (StatPair*)((char*)this + 4);
+
+    for (int i = 0; i < 7; i++) {
+        if (stats[i].type == 1) {
+            stats[i].value = 0;
+        } else if (stats[i].type == 2) {
+            *(float*)&stats[i].value = 0.0f;
+        }
+    }
 }
 
 /**
- * gdUnlockGroupData::~gdUnlockGroupData
- * @ 0x82213748 | size: 0x78
- * 
- * Destructor for unlock group data.
- * Manages unlock conditions and achievement tracking.
+ * gdUnlockGroupData::~gdUnlockGroupData @ 0x82213748 | size: 0x78
+ *
+ * Destructor — clears the embedded array at +40, frees the allocated
+ * condition array at +32 (if capacity > 0), frees the name string at +24,
+ * then calls the base atSingleton destructor.
  */
 gdUnlockGroupData::~gdUnlockGroupData() {
-    // TODO: Implement unlock data cleanup
+    extern "C" void rage_ClearArray(void* array);    // @ 0x8234C0E0
+    extern "C" void rage_free(void* ptr);             // @ 0x820C00C0
+    extern "C" void rage_ReleaseSingleton(void* obj); // @ 0x821A9420
+
+    // Clear embedded array at +40
+    rage_ClearArray((char*)this + 40);
+
+    // Free condition array if allocated
+    uint16_t capacity = *(uint16_t*)((char*)this + 38);
+    if (capacity > 0) {
+        void* condArray = *(void**)((char*)this + 32);
+        rage_free(condArray);
+    }
+
+    // Free name string at +24
+    void* nameStr = *(void**)((char*)this + 24);
+    rage_free(nameStr);
+
+    // Call base destructor
+    rage_ReleaseSingleton(this);
+}
+
+/**
+ * gdUnlockGroupData::IsType @ 0x8221C6D0 | size: 0x48
+ */
+bool gdUnlockGroupData::IsType(uint32_t typeId) {
+    extern uint32_t g_gdUnlockGroupData_typeId;  // @ 0x825C5A60
+    extern uint32_t g_xmlNodeStruct_typeId;       // @ 0x825C803C
+    extern uint32_t g_xmlNodeStruct_typeId2;      // @ 0x825C8038
+
+    if (typeId == g_gdUnlockGroupData_typeId) return true;
+    if (typeId == g_xmlNodeStruct_typeId) return true;
+    return (typeId == g_xmlNodeStruct_typeId2);
+}
+
+/**
+ * gdUnlockGroupData::RegisterFields @ 0x8221C718 | size: 0xA4
+ *
+ * Registers 4 XML fields: GroupName (+16), Description (+20),
+ * UnlockData (+24), and UnlockEnabled (+28).
+ */
+void gdUnlockGroupData::RegisterFields() {
+    extern "C" void RegisterSerializedField(void*, const char*, void*, void*, int);
+    extern void* g_hashFieldType;    // @ 0x825CB688
+    extern void* g_enumFieldType;    // @ 0x825CAF90
+    extern void* g_stringFieldType;  // @ 0x825CAF88
+    extern void* g_boolFieldType;    // @ 0x825CAF80
+
+    RegisterSerializedField(this, "GroupName",     (char*)this + 16, g_hashFieldType, 0);
+    RegisterSerializedField(this, "Description",   (char*)this + 20, g_enumFieldType, 0);
+    RegisterSerializedField(this, "UnlockData",    (char*)this + 24, g_stringFieldType, 0);
+    RegisterSerializedField(this, "UnlockEnabled", (char*)this + 28, g_boolFieldType, 0);
 }
 
 /**
