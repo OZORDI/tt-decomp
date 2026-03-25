@@ -1124,3 +1124,186 @@ extern "C" void FloatAverager_vfn_0_3EE8_1(FloatAverager* thisPtr, int flags) {
         rage_free(thisPtr);
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient — Small Functions (22 non-thunk functions, ≤48B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Xbox network/input APIs
+extern "C" int NetDll_recvfrom(int handle, void* socket, void* buf, int len, int flags, void* from, int* fromlen);
+extern "C" int NetDll_sendto(int handle, void* socket, const void* buf, int len, int flags, const void* to, int tolen);
+extern "C" int XamInputGetState(int userIndex, int flags, void* state);
+extern "C" int XamInputSetState(int userIndex, void* vibration);
+extern "C" int XamShowGamerCardUIForXUID(int userIndex, uint64_t xuid);
+
+// ── Xbox API Wrappers ────────────────────────────────────────────────────
+
+/**
+ * Network recv wrapper @ 0x822F1BF8 | size: 0x20
+ * Prepends the XNet startup handle (=1) before calling NetDll_recvfrom.
+ */
+int SinglesNetworkClient::NetRecvFrom(void* socket, void* buf, int len, int flags, void* from, int* fromlen) {
+    return NetDll_recvfrom(1, socket, buf, len, flags, from, fromlen);
+}
+
+/**
+ * Network send wrapper @ 0x822F1C30 | size: 0x20
+ * Prepends the XNet startup handle (=1) before calling NetDll_sendto.
+ */
+int SinglesNetworkClient::NetSendTo(void* socket, const void* buf, int len, int flags, const void* to, int tolen) {
+    return NetDll_sendto(1, socket, buf, len, flags, to, tolen);
+}
+
+/**
+ * XamInputGetState wrapper @ 0x822F7080 | size: 0xC
+ * Rearranges args for XamInputGetState call.
+ */
+int SinglesNetworkClient::GetInputState(int userIndex, void* state) {
+    return XamInputGetState(userIndex, 0, state);
+}
+
+/**
+ * XamInputSetState wrapper @ 0x822F7090 | size: 0x18
+ * Calls XamInputSetState with zeroed extra args.
+ */
+int SinglesNetworkClient::SetInputState(int userIndex, void* vibration) {
+    return XamInputSetState(userIndex, vibration);
+}
+
+/**
+ * XamShowGamerCardUI wrapper @ 0x822F70C0 | size: 0x8
+ * Shows gamer card for a given XUID with no extra flags.
+ */
+int SinglesNetworkClient::ShowGamerCard(int userIndex, uint64_t xuid) {
+    return XamShowGamerCardUIForXUID(userIndex, xuid);
+}
+
+// ── Field Accessors ──────────────────────────────────────────────────────
+
+/**
+ * SinglesNetworkClient::ClearNetState @ 0x822F4E48 | size: 0x10
+ * Zeroes the active flag (byte at +0) and state field (uint32 at +64).
+ */
+void SinglesNetworkClient::ClearNetState() {  // 4E48_p44
+    *(uint8_t*)((char*)this + 0) = 0;
+    *(uint32_t*)((char*)this + 64) = 0;
+}
+
+/**
+ * SinglesNetworkClient::InitSyncState @ 0x822F9E50 | size: 0x14
+ * Initializes sync fields: field_0=0, field_4=-1 (invalid handle).
+ */
+void SinglesNetworkClient::InitSyncState() {  // 9E50_p39
+    *(uint32_t*)((char*)this + 0) = 0;
+    *(int32_t*)((char*)this + 4) = -1;
+}
+
+/**
+ * SinglesNetworkClient::GetSessionField @ 0x822F6690 | size: 0x10
+ * Reads this->field_0x34->field_0xC and stores to output.
+ */
+void SinglesNetworkClient::GetSessionField(uint32_t* outVal) {  // 6690_p39
+    void* session = *(void**)((char*)this + 0x34);
+    *outVal = *(uint32_t*)((char*)session + 0xC);
+}
+
+/**
+ * SinglesNetworkClient::MarkTimestamp @ 0x822F3328 | size: 0x1C
+ * Sets the "dirty" byte at +0x175D to 1 and copies a global
+ * timestamp value into field +0x1760.
+ */
+void SinglesNetworkClient::MarkTimestamp() {  // 3328_p33
+    extern uint32_t g_networkTimestamp;  // global timestamp
+    *(uint8_t*)((char*)this + 0x175D) = 1;
+    *(uint32_t*)((char*)this + 0x1760) = g_networkTimestamp;
+}
+
+// ── Bool Queries ─────────────────────────────────────────────────────────
+
+/**
+ * SinglesNetworkClient::IsSessionReady @ 0x822F67C0 | size: 0x1C
+ * Returns true if field_0x18 >= 0 (valid session handle).
+ */
+bool SinglesNetworkClient::IsSessionReady() {  // 67C0_w
+    return *(int32_t*)((char*)this + 0x18) >= 0;
+}
+
+/**
+ * SinglesNetworkClient::IsStateComplete @ 0x822F72B8 | size: 0x1C
+ * Returns true if field_0xC0 == 3 (state machine completed).
+ */
+bool SinglesNetworkClient::IsStateComplete() {  // 72B8_g
+    return *(int32_t*)((char*)this + 0xC0) == 3;
+}
+
+// ── Const-arg Tail-calls ─────────────────────────────────────────────────
+
+extern "C" void SinglesNetworkClient_SetMode(void* obj, int mode);  // @ 0x822F23A0
+extern "C" void PostPageGroupMessage(int code, int param1, int param2, int param3);
+
+/**
+ * SinglesNetworkClient::SetMode3 @ 0x822F66B8 | size: 0xC
+ * Sets network mode to 3 on the session sub-object at this+36.
+ */
+void SinglesNetworkClient::SetMode3() {  // 66B8_p33
+    SinglesNetworkClient_SetMode((char*)this + 36, 3);
+}
+
+/**
+ * SinglesNetworkClient::SetMode9 @ 0x822F66C8 | size: 0xC
+ * Sets network mode to 9.
+ */
+void SinglesNetworkClient::SetMode9() {  // 66C8_p33
+    SinglesNetworkClient_SetMode((char*)this + 36, 9);
+}
+
+/**
+ * SinglesNetworkClient::PostMessage_6518 @ 0x822F6518 | size: 0x14
+ * Posts page group message 14395 with param 64.
+ */
+void SinglesNetworkClient::PostNetMessage_14395() {  // 6518_p39
+    PostPageGroupMessage(14395, 64, 0, 0);
+}
+
+/**
+ * SinglesNetworkClient::PostMessage_66D8 @ 0x822F66D8 | size: 0x14
+ * Posts page group message 14406 with param 64.
+ */
+void SinglesNetworkClient::PostNetMessage_14406() {  // 66D8_p33
+    PostPageGroupMessage(14406, 64, 0, 0);
+}
+
+// ── MMIO Register Writes (Xbox hardware) ─────────────────────────────────
+
+/**
+ * SinglesNetworkClient::WriteHWReg @ 0x822F4050 | size: 0x14
+ * Computes hardware register address from r3, writes r4 with eieio barrier.
+ */
+void SinglesNetworkClient::WriteHWReg(uint32_t regOffset, uint32_t value) {  // 4050_p39
+    volatile uint32_t* reg = (volatile uint32_t*)(uintptr_t)(0x7FC80000 + regOffset);
+    *reg = value;
+    // eieio — enforce in-order I/O (PowerPC memory barrier)
+}
+
+/**
+ * SinglesNetworkClient::InitHWRegs @ 0x822F69E8 | size: 0x20
+ * Writes two hardware register values (7 and 2048) with eieio barriers.
+ */
+void SinglesNetworkClient::InitHWRegs() {  // 69E8_p39
+    volatile uint32_t* reg1 = (volatile uint32_t*)(uintptr_t)0x7FC80100;
+    volatile uint32_t* reg2 = (volatile uint32_t*)(uintptr_t)0x7FC80104;
+    *reg1 = 7;
+    // eieio
+    *reg2 = 2048;
+    // eieio
+}
+
+/**
+ * SinglesNetworkClient::VtableDispatch @ 0x822F9B10 | size: 0x10
+ * Loads vtable, calls slot 6. Generic vtable forwarding thunk.
+ */
+void SinglesNetworkClient::DispatchSlot6() {  // 9B10_2hr
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[6])(this);
+}
