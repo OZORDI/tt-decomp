@@ -7,6 +7,7 @@
 
 #include "pong_drill.hpp"
 #include "globals.h"
+#include "game/pong_strings.hpp"
 #include <stdio.h>
 #include <math.h>
 
@@ -86,7 +87,7 @@ void pongTrainingDrill::IncreaseNumSuccesses(int increment) {
     // Clamp to maximum
     if (m_numSuccesses > maxSuccesses) {
         // Error: winning more than total possible
-        nop_8240E6D0("pongTrainingDrill::IncreaseNumSuccesses() - winning more than total possible, something is");
+        nop_8240E6D0(g_str_pongDrill_tooManySuccesses);
         m_numSuccesses = maxSuccesses;
     }
     

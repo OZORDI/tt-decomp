@@ -6,6 +6,7 @@
  */
 
 #include "rage_audio.hpp"
+#include "game/pong_strings.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -216,7 +217,7 @@ void audVoice::vfn_4() {
 // Unimplemented stub - logs format string "char_%l_%s".
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::vfn_7() {
-    nop_8240E6D0("char_%l_%s");
+    nop_8240E6D0(g_str_audVoiceSfx_formatChar);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -225,7 +226,7 @@ void audVoice::vfn_7() {
 // Unimplemented stub - logs format string "_%s".
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::vfn_8() {
-    nop_8240E6D0("_%s");
+    nop_8240E6D0(g_str_audVoiceSfx_formatSuffix);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -234,7 +235,7 @@ void audVoice::vfn_8() {
 // Unimplemented stub - logs format string "_%l".
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::vfn_17() {
-    nop_8240E6D0("_%l");
+    nop_8240E6D0(g_str_audVoiceSfx_formatLevel);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,7 +245,7 @@ void audVoice::vfn_17() {
 // Likely a query function that would return voice state or handle.
 // ─────────────────────────────────────────────────────────────────────────────
 int audVoice::vfn_18() {
-    nop_8240E6D0("ankle");
+    nop_8240E6D0(g_str_audVoiceSfx_ankle);
     return 0;
 }
 

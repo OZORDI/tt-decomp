@@ -9,6 +9,7 @@
 
 #include "pong_creature.hpp"
 #include "globals.h"
+#include "game/pong_strings.hpp"
 #include <cstring>
 
 // External dependencies
@@ -155,7 +156,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
         if (!isIdentity) {
             float* remoteMatrix = (float*)((char*)mover + 192);
             
-            nop_8240E6D0("pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]",
+            nop_8240E6D0(g_str_pongMover_calcInitMatrix,
                         remoteMatrix[0], remoteMatrix[1], remoteMatrix[2]);
             
             // Copy 4x4 matrix (64 bytes)
