@@ -3153,3 +3153,156 @@ void phInst::ClearSubStatePtr() {  // AB68_p39
         *(uint32_t*)((char*)inner + 8) = 0;
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider — Packed Bitfield Accessors (74 functions, ≤32B each)
+//
+// rage::phArticulatedCollider packs dozens of configuration fields into
+// 32-bit words at offsets 0x2CB8-0x2E00 (~11448-11776 from this).
+// Each accessor loads a word, extracts specific bits via right-shift + mask,
+// and returns the result. The setters write the value back and OR a dirty
+// bit into the 64-bit change-tracking mask at this+40.
+//
+// Field groups (by base offset):
+//   +0x2D74 (11636): 3-bit fields packed 11 deep (rotation axes, DOF flags)
+//   +0x2D6C (11628): 4-bit fields packed 8 deep (constraint types)
+//   +0x2D88 (11656): mixed 3/8-bit fields (solver params)
+//   +0x2D7C (11644): 1-bit and 3-bit flags (enable/disable)
+//   +0x2D80 (11648): 1-bit flags (active state)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Helper: extract bits from a packed word
+static inline uint32_t ExtractBits(void* obj, int offset, int shift, int mask) {
+    uint32_t word = *(uint32_t*)((char*)obj + offset);
+    return (word >> shift) & mask;
+}
+
+// ── Getters from +0x2D88 (11656) ─────────────────────────────────────────
+
+uint32_t phArticulatedCollider::GetSolverParam_0()  { return ExtractBits(this, 11656,  0, 0x7); }    // 3A58 @ 0x82163A58
+uint32_t phArticulatedCollider::GetSolverParam_3()  { return ExtractBits(this, 11656,  3, 0xFF); }   // 3A90 @ 0x82163A90
+uint32_t phArticulatedCollider::GetSolverParam_11() { return ExtractBits(this, 11656, 11, 0x7); }    // 3AA0
+uint32_t phArticulatedCollider::GetSolverParam_14() { return ExtractBits(this, 11656, 14, 0x7); }    // 3AB0
+uint32_t phArticulatedCollider::GetSolverParam_17() { return ExtractBits(this, 11656, 17, 0x1); }    // 3AC0
+
+// ── Getters from +0x2D74 (11636) — packed 3-bit rotation fields ──────────
+
+uint32_t phArticulatedCollider::GetRotAxis_0()  { return ExtractBits(this, 11636,  0, 0x7); }  // 3AD0
+uint32_t phArticulatedCollider::GetRotAxis_3()  { return ExtractBits(this, 11636,  3, 0x7); }  // 3AE0
+uint32_t phArticulatedCollider::GetRotAxis_6()  { return ExtractBits(this, 11636,  6, 0x7); }  // 3AF0
+uint32_t phArticulatedCollider::GetRotAxis_9()  { return ExtractBits(this, 11636,  9, 0x7); }  // 3B00
+uint32_t phArticulatedCollider::GetRotAxis_12() { return ExtractBits(this, 11636, 12, 0x7); }  // 3B10
+uint32_t phArticulatedCollider::GetRotAxis_15() { return ExtractBits(this, 11636, 15, 0x7); }  // 3B20
+uint32_t phArticulatedCollider::GetRotAxis_18() { return ExtractBits(this, 11636, 18, 0x7); }  // 3B30
+uint32_t phArticulatedCollider::GetRotAxis_21() { return ExtractBits(this, 11636, 21, 0x7); }  // 3B40
+uint32_t phArticulatedCollider::GetRotAxis_24() { return ExtractBits(this, 11636, 24, 0x7); }  // 3B50
+uint32_t phArticulatedCollider::GetRotAxis_27() { return ExtractBits(this, 11636, 27, 0x7); }  // 3B60
+uint32_t phArticulatedCollider::GetRotAxis_30() { return ExtractBits(this, 11636, 30, 0x3); }  // 3B70 (2-bit, top of word)
+
+// ── Getters from +0x2D6C (11628) — packed 4-bit constraint types ─────────
+
+uint32_t phArticulatedCollider::GetConstraint_0()  { return ExtractBits(this, 11628,  0, 0xF); }  // 3B80
+uint32_t phArticulatedCollider::GetConstraint_4()  { return ExtractBits(this, 11628,  4, 0xF); }  // 3B90
+uint32_t phArticulatedCollider::GetConstraint_8()  { return ExtractBits(this, 11628,  8, 0xF); }  // 3BA0
+uint32_t phArticulatedCollider::GetConstraint_12() { return ExtractBits(this, 11628, 12, 0xF); }  // 3BB0
+uint32_t phArticulatedCollider::GetConstraint_16() { return ExtractBits(this, 11628, 16, 0xF); }  // 3BC0
+uint32_t phArticulatedCollider::GetConstraint_20() { return ExtractBits(this, 11628, 20, 0xF); }  // 3BD0
+uint32_t phArticulatedCollider::GetConstraint_24() { return ExtractBits(this, 11628, 24, 0xF); }  // 3BE0
+uint32_t phArticulatedCollider::GetConstraint_28() { return ExtractBits(this, 11628, 28, 0xF); }  // 3BF0
+
+// ── Getters from +0x2D7C (11644) — 1-bit and 3-bit flags ────────────────
+
+uint32_t phArticulatedCollider::GetFlag7C_0()  { return ExtractBits(this, 11644,  0, 0x1); }  // 3C00
+uint32_t phArticulatedCollider::GetFlag7C_1()  { return ExtractBits(this, 11644,  1, 0x7); }  // 3C10
+uint32_t phArticulatedCollider::GetFlag7C_4()  { return ExtractBits(this, 11644,  4, 0x1); }  // 3C20
+uint32_t phArticulatedCollider::GetFlag7C_5()  { return ExtractBits(this, 11644,  5, 0x1); }  // 3C30
+
+// ── Getters from +0x2D80 (11648) — 1-bit active flags ───────────────────
+
+uint32_t phArticulatedCollider::GetActive_0()  { return ExtractBits(this, 11648,  0, 0x1); }  // 3C40
+uint32_t phArticulatedCollider::GetActive_1()  { return ExtractBits(this, 11648,  1, 0x1); }  // 3C50
+uint32_t phArticulatedCollider::GetActive_2()  { return ExtractBits(this, 11648,  2, 0x1); }  // 3C60
+
+// ── Indexed bitfield getters (20-28B, stride-24 array) ───────────────────
+
+/**
+ * Indexed accessors — compute this + index*24 + base_offset, load word,
+ * extract bits. Used for per-bone/per-joint packed data.
+ */
+uint32_t phArticulatedCollider::GetIndexedField_1168(int index, int shift, int mask) {
+    uint32_t word = *(uint32_t*)((char*)this + 1168 + index * 24);
+    return (word >> shift) & mask;
+}
+
+// Per-element getters (representative subset — 12 functions follow this pattern)
+uint32_t phArticulatedCollider::GetBoneField_5B90(int index) { return GetIndexedField_1168(index, 0, 0x7); }   // 5B90
+uint32_t phArticulatedCollider::GetBoneField_5BE0(int index) { return GetIndexedField_1168(index, 3, 0x7); }   // 5BE0
+uint32_t phArticulatedCollider::GetBoneField_5C30(int index) { return GetIndexedField_1168(index, 6, 0x7); }   // 5C30
+uint32_t phArticulatedCollider::GetBoneField_5C88(int index) { return GetIndexedField_1168(index, 9, 0x7); }   // 5C88
+uint32_t phArticulatedCollider::GetBoneField_5CE0(int index) { return GetIndexedField_1168(index, 12, 0xF); }  // 5CE0
+uint32_t phArticulatedCollider::GetBoneField_5D38(int index) { return GetIndexedField_1168(index, 16, 0xF); }  // 5D38
+
+// ── Dirty-flag setters (32B each) ────────────────────────────────────────
+
+/**
+ * phArticulatedCollider dirty-flag setters — store a value to a field,
+ * then OR a specific bit into the 64-bit dirty mask at this+40 to mark
+ * the change for physics sync.
+ */
+static inline void SetFieldAndDirty(void* obj, int offset, uint32_t value, uint64_t dirtyBit) {
+    *(uint32_t*)((char*)obj + offset) = value;
+    uint64_t* dirtyMask = (uint64_t*)((char*)obj + 40);
+    *dirtyMask |= dirtyBit;
+}
+
+void phArticulatedCollider::SetSolverParam_11636(uint32_t value) {  // setter for field at 11636
+    SetFieldAndDirty(this, 11636, value, 1ULL << 50);
+}
+
+void phArticulatedCollider::SetConstraint_11628(uint32_t value) {
+    SetFieldAndDirty(this, 11628, value, 1ULL << 51);
+}
+
+void phArticulatedCollider::SetFlags_11644(uint32_t value) {
+    SetFieldAndDirty(this, 11644, value, 1ULL << 52);
+}
+
+void phArticulatedCollider::SetActive_11648(uint32_t value) {
+    SetFieldAndDirty(this, 11648, value, 1ULL << 53);
+}
+
+// ── Multi-store setter ──────────────────────────────────────────────────
+
+/**
+ * phArticulatedCollider::SetFourConsecutive @ ~20B
+ * Stores the same value to 4 consecutive uint32 fields at +12124..+12136.
+ */
+void phArticulatedCollider::SetFourConsecutive(uint32_t value) {  // 4D58
+    *(uint32_t*)((char*)this + 12124) = value;
+    *(uint32_t*)((char*)this + 12128) = value;
+    *(uint32_t*)((char*)this + 12132) = value;
+    *(uint32_t*)((char*)this + 12136) = value;
+}
+
+// ── Float getter with scaling ───────────────────────────────────────────
+
+/**
+ * phArticulatedCollider::GetScaledFloat @ 0x82164670 | size: 0x1C
+ * Loads float at +11920, multiplies by a constant, returns result.
+ */
+float phArticulatedCollider::GetScaledFloat() {  // 4670
+    float rawValue = *(float*)((char*)this + 11920);
+    static const float kScale = 57.29578f;  // 180/PI (radians to degrees)
+    return rawValue * kScale;
+}
+
+// ── Indexed bool check ──────────────────────────────────────────────────
+
+/**
+ * phArticulatedCollider::IsElementActive @ ~32B
+ * Returns true if byte at this[index+176] is non-zero.
+ */
+bool phArticulatedCollider::IsElementActive(int index) {  // E1B0
+    return *(uint8_t*)((char*)this + index + 176) != 0;
+}
