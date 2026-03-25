@@ -816,9 +816,9 @@ extern "C" void util_9410(void* pOperator, void* pOwner, uint32_t duplicateOwner
 // CRT snprintf overload (C++ mangled — called from ph_physics.cpp)
 // ============================================================================
 
-// The codebase declares: void _snprintf(char*, int, const char*, const char*, int)
+// The codebase declares: void ph_snprintf(char*, int, const char*, const char*, int)
 // inside C++ functions, producing a mangled symbol.  Provide the definition here.
-void _snprintf(char* buf, int size, const char* fmt, const char* str, int val) {
+void ph_snprintf(char* buf, int size, const char* fmt, const char* str, int val) {
     if (buf && size > 0) {
         std::snprintf(buf, (size_t)size, fmt, str, val);
     }
