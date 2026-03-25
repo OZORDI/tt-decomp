@@ -485,3 +485,60 @@ uint32_t g_xmlNodeStruct_typeId2 = 0;    // @ 0x825C8038
 // ===========================================================================
 const float g_zeroConstant = 0.0f;       // @ 0x8202D110
 const float g_zeroFloat    = 0.0f;       // @ 0x82079AD8
+
+// ── Additional float constants ──────────────────────────────────────────────
+float g_floatZero = 0.0f;
+float g_floatOne = 1.0f;
+float g_floatNegOne = -1.0f;
+float g_floatEpsilon = 0.0001f;
+float g_floatConstant1 = 0.0f;
+float g_floatConstant2 = 0.0f;
+float g_floatConstant3 = 0.0f;
+float g_floatConstant4 = 0.0f;
+float g_zeroFloat = 0.0f;
+float g_zeroConstant = 0.0f;
+float g_alphaMultiplier = 1.0f;
+float g_animBlendWeight = 1.0f;
+float g_defaultDuration = 1.0f;
+float g_lookAtRefAngle = 0.0f;
+float g_lookAtMultiplier = 1.0f;
+float g_recoveryScale = 1.0f;
+float g_contactZoneMinA = 0.0f;
+float g_contactZoneMaxA = 0.0f;
+float g_contactZoneMinB = 0.0f;
+float g_contactZoneMaxB = 0.0f;
+float g_kAdjustmentThreshold = 0.0f;
+float g_kInputScale = 1.0f;
+float g_kInputThresholdHigh = 0.0f;
+float g_kMaxAdjustment = 0.0f;
+float g_kQuantScale1 = 0.0f;
+float g_kQuantScale2 = 0.0f;
+float g_kSpecialThreshold = 0.0f;
+float g_kZeroThreshold = 0.0f;
+float g_msgSinkInitFloat = 0.0f;
+const float g_default_float_zero = 0.0f;
+const float g_default_float_value = 0.0f;
+const float g_default_float_value_2 = 0.0f;
+
+// ── String constants ────────────────────────────────────────────────────────
+const char* g_szDefaultError = "";
+const char* g_szInvalidError = "";
+const char* g_szMessageType = "";
+const char* g_szNetworkDebugMsg = "";
+const char* g_szRageRTTI = "";
+const char* g_szTopSpin = "";
+const char* g_szCreateMachineRTTI = "";
+const char* g_szDataRequestTypeName = "";
+const char* g_szDataSendTypeName = "";
+const char* g_szTournamentCompleteTypeName = "";
+
+// ── Template/vtable globals ─────────────────────────────────────────────────
+void* g_msgSinkTemplate = nullptr;
+
+// ── dcamPolarCam vtable stubs ───────────────────────────────────────────────
+extern "C" {
+void dcamPolarCam_vfn_6() {}
+void dcamPolarCam_vfn_7() {}
+void dcamPolarCam_vfn_8() {}
+void dcamPolarCam_vfn_9() {}
+}

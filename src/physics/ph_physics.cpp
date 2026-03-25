@@ -1863,7 +1863,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     extern void rage_D220(void*, const char*);
     extern void strncpy(char*, const char*, int);
     extern void* ph_6FC8(void*, const char*);
-    extern void _snprintf(char*, int, const char*, const char*, int);
+    extern void ph_snprintf(char*, int, const char*, const char*, int);
     extern void* phArchetype_Load(const char*, void*);
     extern void* xe_EC88(int);
     extern void* ph_9EC0_1(void*);
@@ -1907,7 +1907,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
         }
         
         // Try alternate path format
-        _snprintf(normalizedPath, 255, formatStr, assetPath, attemptCount);
+        ph_snprintf(normalizedPath, 255, formatStr, assetPath, attemptCount);
         attemptCount++;
     }
     
