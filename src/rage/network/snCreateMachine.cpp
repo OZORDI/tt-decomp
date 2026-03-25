@@ -62,8 +62,9 @@ snCreateMachine::~snCreateMachine() {
  * Returns the state machine name string.
  */
 const char* snCreateMachine::GetStateName() const {
-    // Returns address 0x82072160 - "snCreateMachine" string
-    return reinterpret_cast<const char*>(0x82072160);
+    // @ 0x82074160 — "CreateMachine"
+    extern const char g_str_snCreateMachine[];
+    return g_str_snCreateMachine;
 }
 
 /**
@@ -209,8 +210,9 @@ snHsmCreatingHost::~snHsmCreatingHost() {
  * Returns state name string.
  */
 const char* snHsmCreatingHost::GetStateName() const {
-    // TODO: Return actual state name string
-    return "snHsmCreatingHost";
+    // @ 0x82074170 — "CreatingHost"
+    extern const char g_str_snHsmCreatingHost[];
+    return g_str_snHsmCreatingHost;
 }
 
 /**
@@ -269,7 +271,9 @@ void snHsmCreatingHost::OnExit() {
  * Returns state name string.
  */
 const char* snHsmCreatingGuest::GetStateName() const {
-    return "snHsmCreatingGuest";
+    // @ 0x82074180 — "CreatingGuest"
+    extern const char g_str_snHsmCreatingGuest[];
+    return g_str_snHsmCreatingGuest;
 }
 
 /**
@@ -322,7 +326,9 @@ void snHsmCreatingGuest::OnTick() {
  * Returns state name string.
  */
 const char* snHsmCreatingOffline::GetStateName() const {
-    return "snHsmCreatingOffline";
+    // @ 0x82074190 — "CreatingOffline"
+    extern const char g_str_snHsmCreatingOffline[];
+    return g_str_snHsmCreatingOffline;
 }
 
 /**
@@ -362,8 +368,9 @@ snHsmRequestingConfig::~snHsmRequestingConfig() {
  * Returns the state name string for debugging and logging.
  */
 const char* snHsmRequestingConfig::GetStateName() const {
-    // Returns string at 0x820721A0 - "snHsmRequestingConfig"
-    return reinterpret_cast<const char*>(0x820721A0);
+    // @ 0x820741A0 (corrected) — "RequestingConfig"
+    extern const char g_str_snHsmRequestingConfig[];
+    return g_str_snHsmRequestingConfig;
 }
 
 /**
@@ -461,7 +468,9 @@ void snHsmRequestingConfig::OnExit() {
  * Returns state name string.
  */
 const char* snHsmApplyingConfig::GetStateName() const {
-    return "snHsmApplyingConfig";
+    // @ 0x820741E4 — "ApplyingConfig"
+    extern const char g_str_snHsmApplyingConfig[];
+    return g_str_snHsmApplyingConfig;
 }
 
 /**
@@ -493,7 +502,9 @@ void snHsmApplyingConfig::OnTick() {
  * Returns state name string.
  */
 const char* snHsmStartingSession::GetStateName() const {
-    return "snHsmStartingSession";
+    // @ 0x820741F4 — "StartingSession"
+    extern const char g_str_snHsmStartingSession[];
+    return g_str_snHsmStartingSession;
 }
 
 /**
@@ -525,7 +536,9 @@ void snHsmStartingSession::OnTick() {
  * Returns state name string.
  */
 const char* snHsmDestroyingSession::GetStateName() const {
-    return "snHsmDestroyingSession";
+    // @ 0x82074204 — "DestroyingSession"
+    extern const char g_str_snHsmDestroyingSession[];
+    return g_str_snHsmDestroyingSession;
 }
 
 /**

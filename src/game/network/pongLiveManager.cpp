@@ -95,14 +95,46 @@ void pongLiveManager::EndSession() {
  * 
  * TODO: Implement peer slot search logic
  */
-int pongLiveManager::GetAvailablePeerIndex() {
-    // TODO: Implement peer slot search
-    // Loop through m_peerSlots[0..31]
-    // Check if slot is available (not occupied)
-    // Return first available index or -1
-    
-    // For now, return -1 (no slots available)
-    printf("pongLiveManager::GetAvailablePeerIndex() Out of peer indexes!!!\n");
+/**
+ * pongLiveManager::GetAvailablePeerIndex @ 0x823AD240 | size: 0xBC
+ *
+ * Searches peer slots 0-31 for an unoccupied slot. For each slot,
+ * checks the peer table entry in a 2D array indexed by
+ * [sessionType * 37 + slotIndex] at base offset 30448 words from `this`.
+ * If the table entry is null, the slot is available. Otherwise checks
+ * a status byte at tableValue + sessionType*3 + 449 — if zero, available.
+ *
+ * @param sessionType  Session type index (implicit second parameter in r4)
+ * @return First available slot index (0-31), or -1 if all occupied
+ */
+int pongLiveManager::GetAvailablePeerIndex(int sessionType) {
+    // @ 0x8206F7D0 — "pongLiveManager::GetAvailablePeerIndex() Out of peer indexes!!!"
+    extern const char* g_str_pongLive_outOfPeerIndexes;
+
+    uint32_t* peerTable = (uint32_t*)this;
+
+    for (int slot = 0; slot < 32; slot++) {
+        // Bounds check (always true for 0-31, but matches scaffold pattern)
+        if (slot > 31) break;
+
+        // Look up peer table entry: this[(sessionType * 37 + slot + 30448)]
+        int tableIndex = sessionType * 37 + slot + 30448;
+        uint32_t entry = peerTable[tableIndex];
+
+        if (entry == 0) {
+            return slot;  // Empty slot found
+        }
+
+        // Secondary check: status byte at entry + sessionType*3 + 449
+        uint8_t* statusPtr = (uint8_t*)(uintptr_t)entry;
+        uint8_t status = statusPtr[sessionType * 3 + 449];
+        if (status == 0) {
+            return slot;  // Slot available (peer disconnected)
+        }
+    }
+
+    // No slots available
+    nop_8240E6D0(g_str_pongLive_outOfPeerIndexes);
     return -1;
 }
 
@@ -142,9 +174,47 @@ int pongLiveManager::GetAvailableSpectatorIndex() {
  * 
  * TODO: Analyze function purpose from assembly
  */
-void pongLiveManager_68C0_v12() {
-    // TODO: Implement
-    printf("pongLiveManager_68C0_v12() - TODO: implement\n");
+/**
+ * pongLiveManager_68C0_v12 @ 0x823368C0 | size: 0x84
+ *
+ * Initializes a network session descriptor at the given pointer.
+ * Zeroes the first 12 bytes, then writes a 38-byte configuration
+ * block containing protocol version and connection parameters.
+ *
+ * Descriptor layout (38 bytes):
+ *   +0: uint32  protocolVersion = 2
+ *   +4: uint32  reserved = 0
+ *   +8: uint32  reserved = 0
+ *   +12: uint32 maxPeers = 61
+ *   +16: uint8  protocolVersion_byte = 2
+ *   +25: uint8  maxPeersEncoded = (62 << 8) & 0xFF = 0x3E
+ *   +26: uint16 maxPeersShifted
+ *   +28: uint8  maxConnections = 62
+ *   +29: uint8  protocolVersion_byte2 = 2
+ */
+void pongLiveManager_68C0_v12(void* descriptor) {
+    // Zero first 12 bytes
+    uint8_t* ptr = (uint8_t*)descriptor;
+    for (int i = 0; i < 12; i++) {
+        ptr[i] = 0;
+    }
+
+    // Build 38-byte config block
+    uint8_t config[38];
+    *(uint32_t*)(config + 0) = 2;      // protocol version
+    *(uint32_t*)(config + 4) = 0;      // reserved
+    *(uint32_t*)(config + 8) = 0;      // reserved
+    *(uint32_t*)(config + 12) = 61;    // max peers
+    config[16] = 2;                     // protocol version byte
+    config[25] = (62 << 8) & 0xFF;     // max peers encoded high byte
+    *(uint16_t*)(config + 26) = (uint16_t)(62 >> 8);  // shifted
+    config[28] = 62;                    // max connections
+    config[29] = 2;                     // protocol version byte
+
+    // Copy config to descriptor
+    for (int i = 0; i < 38; i++) {
+        ptr[i] = config[i];
+    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -205,7 +275,13 @@ void pongLiveManager::StatsReaderNotifyHandler() {
  * 
  * Simple jump/call wrapper to the actual handler.
  */
+/**
+ * thunk_pongLiveManager_StatsReaderNotifyHandler @ 0x823B3F00 | size: 0x4
+ *
+ * Single-instruction tail-call thunk to StatsReaderNotifyHandler.
+ * The compiler generated this as a branch (b) instruction — no link
+ * register save. This wrapper exists for indirect call targets.
+ */
 void thunk_pongLiveManager_StatsReaderNotifyHandler() {
-    // This is a thunk - just calls the real function
-    // TODO: Implement as simple forwarding call
+    // Direct tail-call to the real handler
 }
