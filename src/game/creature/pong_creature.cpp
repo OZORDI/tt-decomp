@@ -1159,3 +1159,174 @@ void pcrSwingData_ctor_B888(void* thisPtr, void* segmentData) {
     // Set derived class vtable (pcrJunkSwingData)
     *(void**)(obj + 0) = (void*)0x8202EAF4;  // g_pcrJunkSwingDataVtable
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst — Small vtable methods and utility functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * pongCreatureInst::GetType @ 0x8210CC40 | size: 0x8  [vtable slot 1]
+ *
+ * Returns the creature instance type identifier. Value 3 indicates
+ * a pongCreatureInst (as opposed to other phInst subtypes).
+ */
+int pongCreatureInst::GetType() {  // vfn_1
+    return 3;
+}
+
+/**
+ * pongCreatureInst::GetEmbeddedObject @ 0x820C8ED8 | size: 0x8  [vtable slot 2]
+ *
+ * Returns a pointer to the embedded sub-object at offset +224 (0xE0).
+ * This is the creature's collision/physics shape data.
+ */
+void* pongCreatureInst::GetEmbeddedObject() {  // vfn_2
+    return (char*)this + 224;
+}
+
+/**
+ * pongCreatureInst::GetDefaultIndex @ 0x824FF7C8 | size: 0x8  [vtable slot 19]
+ *
+ * Returns -1, indicating no default creature index. Used as a sentinel
+ * value when no specific creature slot is assigned.
+ */
+int pongCreatureInst::GetDefaultIndex() {  // vfn_19
+    return -1;
+}
+
+/**
+ * pongCreatureInst::ClearBoundingVector @ 0x822C90F8 | size: 0x10  [vtable slot 4]
+ *
+ * Zeroes a 16-byte aligned vector passed by pointer. Used to clear
+ * bounding volume data (AABB min/max or collision sphere).
+ */
+void pongCreatureInst::ClearBoundingVector(void* outVector) {  // vfn_4
+    // Original uses vxor + stvx (AltiVec zero + aligned store)
+    memset(outVector, 0, 16);
+}
+
+/**
+ * pongCreatureInst::ForwardToUpdateBounds @ 0x822C90A0 | size: 0x10  [vtable slot 10]
+ *
+ * Tail-calls vtable slot 15 on self. Forwards the update-bounds
+ * request to the more specific implementation.
+ */
+void pongCreatureInst::ForwardToUpdateBounds() {  // vfn_10
+    typedef void (*UpdateFunc)(void*);
+    void** vt = *(void***)this;
+    UpdateFunc update = (UpdateFunc)vt[15];
+    update(this);
+}
+
+/**
+ * pongCreatureInst::UpdateBoundsWithDefaults @ 0x822C90B0 | size: 0x1C  [vtable slot 9]
+ *
+ * Calls vtable slot 10 with default parameters (outMin=this+64, outMax=0, flags=0).
+ * Sets up the default bounding volume query.
+ */
+void pongCreatureInst::UpdateBoundsWithDefaults() {  // vfn_9
+    typedef void (*BoundsFunc)(void*, void*, void*, int);
+    void** vt = *(void***)this;
+    BoundsFunc boundsFunc = (BoundsFunc)vt[10];
+    boundsFunc(this, (char*)this + 64, nullptr, 0);
+}
+
+/**
+ * pongCreatureInst::ComputeBoundsPartial @ 0x822C90E0 | size: 0x14  [vtable slot 14]
+ *
+ * Calls vtable slot 10 with flags=0, passing through the caller's
+ * min/max pointers.
+ */
+void pongCreatureInst::ComputeBoundsPartial(void* outMin, void* outMax) {  // vfn_14
+    typedef void (*BoundsFunc)(void*, void*, void*, int);
+    void** vt = *(void***)this;
+    BoundsFunc boundsFunc = (BoundsFunc)vt[10];
+    boundsFunc(this, outMin, outMax, 0);
+}
+
+/**
+ * pongCreatureInst::GetEntityByIndex @ 0x822C9318 | size: 0x18  [vtable slot 38]
+ *
+ * Looks up a sub-entity by index. Follows: this->field_4 -> field_12 -> field_120,
+ * then adds (index << 6) to get the entity pointer. Each entity is 64 bytes.
+ */
+void* pongCreatureInst::GetEntityByIndex(int index) {  // vfn_38
+    void* inner = *(void**)((char*)this + 4);
+    void* pool = *(void**)((char*)inner + 12);
+    char* base = *(char**)((char*)pool + 120);
+    return base + (index << 6);
+}
+
+/**
+ * pongCreatureInst::GetBoneTransform @ 0x8211DDB8 | size: 0x3C  [vtable slot 22]
+ *
+ * Returns a pointer to a bone's transform matrix. Looks up the bone
+ * array through the creature's skeleton data.
+ */
+void* pongCreatureInst::GetBoneTransform(int boneIndex) {  // vfn_22
+    void* skeletonData = *(void**)((char*)this + 80);
+    if (!skeletonData) return nullptr;
+
+    void* boneArray = *(void**)((char*)skeletonData + 12);
+    char* boneBase = *(char**)((char*)boneArray + 120);
+    return boneBase + (boneIndex << 6);
+}
+
+/**
+ * pongCreatureInst::GetCreatureInfo @ 0x820C8F80 | size: 0x24  [vtable slot 30]
+ *
+ * Returns creature info by reading through the creature data chain:
+ * this->field_4 -> field_84 (the creature info/stats pointer).
+ */
+void* pongCreatureInst::GetCreatureInfo() {  // vfn_30
+    void* creatureData = *(void**)((char*)this + 4);
+    if (!creatureData) return nullptr;
+    return *(void**)((char*)creatureData + 84);
+}
+
+/**
+ * pongCreatureInst::GetPhysicsState @ 0x822C9200 | size: 0x38  [vtable slot 31]
+ *
+ * Returns a pointer to the creature's physics state data by walking
+ * the data chain: this->field_4 -> field_12 -> field_84.
+ * Returns nullptr if any link is null.
+ */
+void* pongCreatureInst::GetPhysicsState() {  // vfn_31
+    void* inner = *(void**)((char*)this + 4);
+    if (!inner) return nullptr;
+    void* physics = *(void**)((char*)inner + 12);
+    if (!physics) return nullptr;
+    return *(void**)((char*)physics + 84);
+}
+
+/**
+ * pongCreatureInst::GetCollisionFlags @ 0x822C92D8 | size: 0x40  [vtable slot 37]
+ *
+ * Returns collision flag data from the creature's physics subsystem.
+ * Walks: this->field_4 -> field_12 -> field_84, then reads the
+ * collision flags at +16 of the resulting object.
+ */
+uint32_t pongCreatureInst::GetCollisionFlags() {  // vfn_37
+    void* inner = *(void**)((char*)this + 4);
+    if (!inner) return 0;
+    void* physics = *(void**)((char*)inner + 12);
+    if (!physics) return 0;
+    void* collisionData = *(void**)((char*)physics + 84);
+    if (!collisionData) return 0;
+    return *(uint32_t*)((char*)collisionData + 16);
+}
+
+/**
+ * pongCreatureInst::GetSubObjectTransform @ 0x820C8E98 | size: 0x40  [vtable slot 3]
+ *
+ * Returns a 4x4 matrix pointer for the creature's sub-object at the
+ * specified index. Walks: this->field_80 -> field_12 -> buffer[index*64].
+ */
+void* pongCreatureInst::GetSubObjectTransform(int index) {  // vfn_3
+    void* subObjMgr = *(void**)((char*)this + 80);
+    if (!subObjMgr) return nullptr;
+    void* pool = *(void**)((char*)subObjMgr + 12);
+    char* base = *(char**)((char*)pool + 120);
+    return base + (index << 6);
+}
