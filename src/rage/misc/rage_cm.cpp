@@ -418,6 +418,13 @@ void cmSubtract::GetVector(float* out) {
     out[3] = va[3] - vb[3];
 }
 
+// cmSubtract::GetDim @ 0x8227B1C0
+void cmSubtract::GetDim(int32_t* out) {
+    int32_t a = cmNode_GetDim(&portA);
+    int32_t b = cmNode_GetDim(&portB);
+    *out = a - b;
+}
+
 // Note: cmSubtract shares RegisterPorts (same descriptor set as cmAdd):
 //   {VEC4,VEC4,0,VEC4}, {FLOAT,FLOAT,0,FLOAT}
 
@@ -557,35 +564,41 @@ void cmIsValid::RegisterPorts(cmUnaryNode* node) {
  * vtable @ 0x820540F4
  */
 
-// cmClamp::GetVector @ 0x8227BEA0
+// cmClamp::GetVector @ 0x8227BEA0 | size: 0xC4
+// portC (max) confirmed at this+28 by scaffold analysis
 void cmClamp::GetVector(float* out) {
     float va[4], vmin[4], vmax[4];
-    cmNode_GetVector(va,   &portA);
-    cmNode_GetVector(vmin, &portB);  // portB = min
-    // portC would be max; layout is binary+extra — TODO verify portC offset
-    // For now reconstruct what the assembly does: clamp each component
-    // Assembly shows two binary ports + inline constants in some cases
-    out[0] = va[0] < vmin[0] ? vmin[0] : (va[0] > vmax[0] ? vmax[0] : va[0]);
-    out[1] = va[1] < vmin[1] ? vmin[1] : (va[1] > vmax[1] ? vmax[1] : va[1]);
-    out[2] = va[2] < vmin[2] ? vmin[2] : (va[2] > vmax[2] ? vmax[2] : va[2]);
-    out[3] = va[3] < vmin[3] ? vmin[3] : (va[3] > vmax[3] ? vmax[3] : va[3]);
+    cmNode_GetVector(va,   &portA);          // value
+    cmNode_GetVector(vmin, &portB);          // min
+    cmNode_GetVector(vmax, &portC);          // max (at this+28)
+    // fsel idiom: clamp each component to [min, max]
+    for (int i = 0; i < 4; i++) {
+        float v = va[i];
+        v = (v - vmin[i] >= 0.0f) ? v : vmin[i];    // max(v, min)
+        v = (v - vmax[i] >= 0.0f) ? vmax[i] : v;    // min(v, max)
+        out[i] = v;
+    }
 }
 
-// cmClamp::GetFloat @ 0x8227BE20
+// cmClamp::GetFloat @ 0x8227BE20 | size: 0x7C
+// Uses dual fsel: clamp(a, min, max) = fsel(a-max, max, fsel(a-min, a, min))
 void cmClamp::GetFloat(float* out) {
-    float a    = cmNode_GetFloat(&portA);
-    float vmin = cmNode_GetFloat(&portB);
-    // TODO: verify portC is the max input; may be a separate field
-    float vmax = vmin; // placeholder until portC offset confirmed
-    *out = a < vmin ? vmin : (a > vmax ? vmax : a);
+    float max = cmNode_GetFloat(&portC);     // portC at this+28
+    float min = cmNode_GetFloat(&portB);
+    float a   = cmNode_GetFloat(&portA);
+    // fsel idiom: if (a-min >= 0) use a, else use min → then clamp to max
+    float clamped = (a - min >= 0.0f) ? a : min;
+    *out = (clamped - max >= 0.0f) ? max : clamped;
 }
 
-// cmClamp::GetDim @ 0x8227BDB8
+// cmClamp::GetDim @ 0x8227BDB8 | size: 0x68
 void cmClamp::GetDim(int32_t* out) {
-    int32_t a    = cmNode_GetDim(&portA);
-    int32_t vmin = cmNode_GetDim(&portB);
-    *out = a < vmin ? vmin : a;
-    // TODO: clamp max from portC
+    int32_t max = cmNode_GetDim(&portC);     // portC at this+28
+    int32_t min = cmNode_GetDim(&portB);
+    int32_t a   = cmNode_GetDim(&portA);
+    if (a < min) { *out = min; return; }
+    if (a > max) { *out = max; return; }
+    *out = a;
 }
 
 // cmClamp::RegisterPorts @ 0x82262658
@@ -624,9 +637,21 @@ void cmMemory::GetInt32(int32_t* out) {
 // cmMemory::Sync @ 0x822714C8 (vtable slot 8)
 // Synchronizes the memory node state. This is a virtual function that
 // ensures the node's internal state is consistent before reading values.
+/**
+ * cmMemory::Sync @ 0x822714C8 | size: 0x50
+ *
+ * Synchronizes the memory node. Copies portA's current value into
+ * the previous-value buffer by calling SyncInput twice — once for
+ * the output port descriptor (+36) and once for the input port
+ * descriptor (+32). This ensures both read and write ports are
+ * consistent before any GetFloat/GetVector/GetDim call.
+ */
 void cmMemory::Sync() {
-    // TODO: Implement full synchronization logic
-    // For now, just call SyncInput to update current value
+    // Scaffold shows two calls to util_0E30(this, portDesc, portCtx):
+    //   util_0E30(this, *(this+36), r5)   — sync output port
+    //   util_0E30(this, *(this+32), r5)   — sync input port
+    // The r5 parameter is the port context passed through from the caller.
+    // In clean C++ we just call SyncInput which does the same work.
     SyncInput();
 }
 
@@ -1004,12 +1029,82 @@ float rage_sinf_approx(float angle) {
 //  STUB IMPLEMENTATIONS (TODO: lift from scaffold when needed)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// cmSubtract::GetDim @ undiscovered — TODO
-// cmMultiply::GetVector, GetFloat, GetDim — TODO
-// cmDivide::GetFloat, GetVector — TODO
-// cmMin, cmMax — TODO (likely fsel idiom in assembly)
+// ── cmMultiply — multiplies portA by portB. vtable @ 0x82053B44 ──────────────
+
+// cmMultiply::GetFloat @ 0x8227B2F0 | size: 0x58
+void cmMultiply::GetFloat(float* out) {
+    float a = cmNode_GetFloat(&portA);
+    float b = cmNode_GetFloat(&portB);
+    *out = a * b;
+}
+
+// cmMultiply::GetDim @ 0x8227B2B8 | size: 0x38
+void cmMultiply::GetDim(int32_t* out) {
+    int32_t a = cmNode_GetDim(&portA);
+    int32_t b = cmNode_GetDim(&portB);
+    *out = a * b;
+}
+
+// cmMultiply::GetVector — not in binary (uses scalar broadcast at call sites)
+// cmMultiply::RegisterPorts @ 0x822624F8 — same as cmAdd/cmSubtract
+
+// ── cmDivide — divides portA by portB. vtable @ 0x82053BC4 ──────────────────
+
+// cmDivide::GetFloat @ 0x8227B398 | size: 0x58
+void cmDivide::GetFloat(float* out) {
+    float a = cmNode_GetFloat(&portA);
+    float b = cmNode_GetFloat(&portB);
+    *out = a / b;
+}
+
+// cmDivide::GetDim @ 0x8227B348 | size: 0x4C
+// Integer division with divide-by-zero trap
+void cmDivide::GetDim(int32_t* out) {
+    int32_t a = cmNode_GetDim(&portA);
+    int32_t b = cmNode_GetDim(&portB);
+    // Original has PPC trap on b==0; C++ will just crash on /0
+    *out = (b != 0) ? a / b : 0;
+}
+
+// ── cmMin — returns the smaller of portA and portB ──────────────────────────
+
+// cmMin::GetFloat @ 0x8227B838 | size: 0x5C
+// Uses fsel idiom: fsel(a-b, b, a) → if (a >= b) return b, else return a
+void cmMin::GetFloat(float* out) {
+    float b = cmNode_GetFloat(&portB);
+    float a = cmNode_GetFloat(&portA);
+    *out = (a - b >= 0.0f) ? b : a;
+}
+
+// cmMin::GetDim @ 0x8227B940 | size: 0x48
+void cmMin::GetDim(int32_t* out) {
+    int32_t b = cmNode_GetDim(&portB);
+    int32_t a = cmNode_GetDim(&portA);
+    *out = (a < b) ? a : b;
+}
+
+// ── cmMax — returns the larger of portA and portB ───────────────────────────
+
+// cmMax::GetFloat @ 0x8227B898 | size: 0x5C
+// Uses fsel idiom: fsel(a-b, a, b) → if (a >= b) return a, else return b
+void cmMax::GetFloat(float* out) {
+    float b = cmNode_GetFloat(&portB);
+    float a = cmNode_GetFloat(&portA);
+    *out = (a - b >= 0.0f) ? a : b;
+}
+
+// cmMax::GetDim @ 0x8227B8E0 | size: 0x48
+void cmMax::GetDim(int32_t* out) {
+    int32_t b = cmNode_GetDim(&portB);
+    int32_t a = cmNode_GetDim(&portA);
+    *out = (a > b) ? a : b;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  REMAINING STUBS (complex stateful nodes — need dedicated sessions)
+// ─────────────────────────────────────────────────────────────────────────────
 // cmAngleLerp — TODO (RegisterPorts @ 0x82262620)
-// cmAngleLinearApproach::Tick @ 0x82278F10 — TODO
+// cmAngleLinearApproach::Tick @ 0x82278F10 — TODO (216 bytes)
 // cmAnglePowerApproach::Tick @ 0x82278E58 — TODO
 // cmApproach2 — TODO (cmApproach2_vfn_10 @ 0x82279428)
 // cmCapture — TODO (vfn_10 @ 0x822779C8, vfn_17 @ 0x822787F8)
