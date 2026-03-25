@@ -492,10 +492,13 @@ const float g_zeroFloat    = 0.0f;       // @ 0x82079AD8
 
 // ── Template/vtable globals ─────────────────────────────────────────────────
 
-// ── dcamPolarCam vtable stubs ───────────────────────────────────────────────
-extern "C" {
-extern "C" void dcamPolarCam_vfn_6() {}
-extern "C" void dcamPolarCam_vfn_7() {}
-extern "C" void dcamPolarCam_vfn_8() {}
-extern "C" void dcamPolarCam_vfn_9() {}
+// ── dcamPolarCam vtable stubs (use __asm__ to match asm-label references) ────
+void dcamPolarCam_vfn_6_impl() __asm__("dcamPolarCam_vfn_6");
+void dcamPolarCam_vfn_6_impl() {}
+void dcamPolarCam_vfn_7_impl() __asm__("dcamPolarCam_vfn_7");
+void dcamPolarCam_vfn_7_impl() {}
+void dcamPolarCam_vfn_8_impl() __asm__("dcamPolarCam_vfn_8");
+void dcamPolarCam_vfn_8_impl() {}
+void dcamPolarCam_vfn_9_impl() __asm__("dcamPolarCam_vfn_9");
+void dcamPolarCam_vfn_9_impl() {}
 }
