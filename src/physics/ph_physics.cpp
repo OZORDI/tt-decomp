@@ -2615,3 +2615,271 @@ void phJoint3Dof_E7C8_2h(phJoint3Dof* joint, uint32_t index) {
     for (int i = 0; i < 4; i++) baseVecs[8 + i] = 0;  // 272
     for (int i = 0; i < 4; i++) baseVecs[12 + i] = 0; // 288
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Physics Math Utilities (from phBoundCapsule compilation unit)
+// These are free functions / global utilities, not phBoundCapsule methods.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Inline math wrapper ────────────────────────────────────────────────────
+
+/**
+ * ph_Sqrt @ 0x824301D0 | size: 0x8
+ * Inline float square root. Single fsqrt instruction wrapper.
+ */
+float ph_Sqrt(float x) {  // phBoundCapsule_01D0_g
+    return sqrtf(x);
+}
+
+// ── Trig Math Dispatch (7 functions, 68B each) ────────────────────────────
+
+/**
+ * Math dispatch functions @ 0x8240D888-DA38 | 68B each
+ *
+ * Each normalizes the input via A688_g, applies a specific math function,
+ * and stores the result into out->value (+0) with type=4 (float) at out->type (+4).
+ * These form the ActionScript Math object's method table.
+ */
+
+extern "C" float ph_Normalize(float x);    // @ 0x823FA688 — normalize/abs
+extern "C" float ph_Atan2(float y, float x);
+
+struct MathResult { float value; uint32_t type; };
+
+void math_Sqrt(float input, MathResult* out) {  // D888_g @ 0x8240D888
+    out->type = 4;
+    float norm = ph_Normalize(input);
+    out->value = sqrtf(norm);
+}
+
+void math_Acos(float input, MathResult* out) {  // D8D0_g @ 0x8240D8D0
+    out->type = 4;
+    float norm = ph_Normalize(input);
+    out->value = acosf(norm);
+}
+
+void math_Asin(float input, MathResult* out) {  // D918_g @ 0x8240D918
+    out->type = 4;
+    float norm = ph_Normalize(input);
+    out->value = asinf(norm);
+}
+
+void math_Atan2(float y, float x, MathResult* out) {  // D960_g @ 0x8240D960
+    out->type = 4;
+    float normY = ph_Normalize(y);
+    out->value = ph_Atan2(normY, x);
+}
+
+void math_Sin(float input, MathResult* out) {  // D9A8_g @ 0x8240D9A8
+    out->type = 4;
+    float norm = ph_Normalize(input);
+    out->value = sinf(norm);
+}
+
+void math_Cos(float input, MathResult* out) {  // D9F0_g @ 0x8240D9F0
+    out->type = 4;
+    float norm = ph_Normalize(input);
+    out->value = cosf(norm);
+}
+
+void math_Exp(float input, MathResult* out) {  // DA38_g @ 0x8240DA38
+    out->type = 4;
+    float norm = ph_Normalize(input);
+    out->value = expf(norm);
+}
+
+// ── Struct initializers (2 functions, 20B each) ───────────────────────────
+
+/**
+ * MathResult initializers @ 0x8240DAD8/DAF0 | 20B each
+ * Initialize typed result structs: {0, type=3} and {0, type=2}.
+ */
+void mathResult_InitUndefined(MathResult* out) {  // DAD8_p33 @ 0x8240DAD8
+    out->value = 0.0f;
+    out->type = 3;
+}
+
+void mathResult_InitNull(MathResult* out) {  // DAF0_p33 @ 0x8240DAF0
+    out->value = 0.0f;
+    out->type = 2;
+}
+
+// ── Global callback setters (6 functions, 16B each) ──────────────────────
+
+/**
+ * Physics callback registration @ 0x8216FB70-FBC0 | 16B each
+ *
+ * Six setters that store a function pointer to consecutive globals
+ * at 0x825EA900-0x825EA914. Used for registering physics event
+ * callbacks (collision, trigger, overlap, etc.). Each returns 0.
+ */
+extern void* g_phCallback0;  // @ 0x825EA900
+extern void* g_phCallback1;  // @ 0x825EA904
+extern void* g_phCallback2;  // @ 0x825EA908
+extern void* g_phCallback3;  // @ 0x825EA90C
+extern void* g_phCallback4;  // @ 0x825EA910
+extern void* g_phCallback5;  // @ 0x825EA914
+
+int ph_SetCallback0(void* fn) { g_phCallback0 = fn; return 0; }  // FB70 @ 0x8216FB70
+int ph_SetCallback1(void* fn) { g_phCallback1 = fn; return 0; }  // FB80 @ 0x8216FB80
+int ph_SetCallback2(void* fn) { g_phCallback2 = fn; return 0; }  // FB90 @ 0x8216FB90
+int ph_SetCallback3(void* fn) { g_phCallback3 = fn; return 0; }  // FBA0 @ 0x8216FBA0
+int ph_SetCallback4(void* fn) { g_phCallback4 = fn; return 0; }  // FBB0 @ 0x8216FBB0
+int ph_SetCallback5(void* fn) { g_phCallback5 = fn; return 0; }  // FBC0 @ 0x8216FBC0
+
+// ── Array math operations ────────────────────────────────────────────────
+
+/**
+ * ph_ArrayScale @ 0x82576A08 | size: 0x28
+ * Scales each element: out[i] = in[i] * scale
+ */
+void ph_ArrayScale(const float* input, int count, float scale, float* output) {  // 6A08_2h
+    for (int i = 0; i < count; i++) {
+        output[i] = input[i] * scale;
+    }
+}
+
+/**
+ * ph_DotProduct @ 0x825769A0 | size: 0x30
+ * Accumulates dot product: sum += a[i] * b[i]
+ */
+float ph_DotProduct(const float* a, const float* b, int count) {  // 69A0_2h
+    float sum = 0.0f;
+    for (int i = 0; i < count; i++) {
+        sum += a[i] * b[i];
+    }
+    return sum;
+}
+
+/**
+ * ph_SumSquares @ 0x825769D0 | size: 0x34
+ * Computes element-wise: out[i] = a[i]^2 + b[i]^2
+ */
+void ph_SumSquares(const float* a, const float* b, int count, float* output) {  // 69D0_w
+    for (int i = 0; i < count; i++) {
+        output[i] = a[i] * a[i] + b[i] * b[i];
+    }
+}
+
+/**
+ * ph_GeometricScale @ 0x82577FA8 | size: 0x38
+ * Applies geometric (exponential) scaling: out[i] = in[i] * (accum *= factor)
+ */
+void ph_GeometricScale(const float* input, int count, float factor, float* output) {  // 7FA8_2h
+    float accum = factor;
+    for (int i = 0; i < count; i++) {
+        output[i] = input[i] * accum;
+        accum *= factor;
+    }
+}
+
+// ── Quantized data pack/unpack (4 functions) ──────────────────────────────
+
+/**
+ * ph_LoadU16Indexed @ 0x8216FCB0 | size: 0x10
+ * Loads a uint16 from an indexed array, sign-extends to int32, returns.
+ */
+int32_t ph_LoadU16Indexed(const uint16_t* array, int index) {  // FCB0_p39
+    return (int16_t)array[index];
+}
+
+/**
+ * ph_StoreU16Indexed @ 0x8216FD60 | size: 0xC
+ * Stores a uint16 value at an indexed array position.
+ */
+void ph_StoreU16Indexed(uint16_t* array, int index, uint16_t value) {  // FD60_p39
+    array[index] = value;
+}
+
+/**
+ * ph_LoadPacked24 @ 0x8216FCC0 | size: 0x14
+ * Loads a 24-bit packed value from a byte array at index*3.
+ * Reassembles from 3 bytes: (b0 << 16) | (b1 << 8) | b2
+ */
+uint32_t ph_LoadPacked24(const uint8_t* data, int index) {  // FCC0_p39
+    int off = index * 3;
+    return ((uint32_t)data[off] << 16) | ((uint32_t)data[off + 1] << 8) | data[off + 2];
+}
+
+/**
+ * ph_StorePacked24 @ 0x8216FD70 | size: 0x24
+ * Stores a 24-bit value as 3 bytes at index*3.
+ */
+void ph_StorePacked24(uint8_t* data, int index, uint32_t value) {  // FD70_p33
+    int off = index * 3;
+    data[off]     = (uint8_t)(value >> 16);
+    data[off + 1] = (uint8_t)(value >> 8);
+    data[off + 2] = (uint8_t)(value);
+}
+
+// ── Delegation helpers ───────────────────────────────────────────────────
+
+/**
+ * ph_TokenizerRead / ph_TokenizerWrite @ 0x82160E88/0E90 | 8B each
+ * Delegates to fiAsciiTokenizer with read (0) or write (1) flag.
+ */
+extern "C" void fiAsciiTokenizer_Process(void* tokenizer, int mode);
+
+void ph_TokenizerRead(void* tokenizer) {  // 0E88_g @ 0x82160E88
+    fiAsciiTokenizer_Process(tokenizer, 0);
+}
+
+void ph_TokenizerWrite(void* tokenizer) {  // 0E90_g @ 0x82160E90
+    fiAsciiTokenizer_Process(tokenizer, 1);
+}
+
+/**
+ * ph_ConditionalForward @ 0x82169C78 | size: 0x14
+ * If field+24 is non-null, tail-calls with that pointer.
+ */
+void ph_ConditionalForward(void* obj) {  // 9C78_2hr @ 0x82169C78
+    extern "C" void ph_ForwardTarget(void* target);
+    void* target = *(void**)((char*)obj + 24);
+    if (target) ph_ForwardTarget(target);
+}
+
+/**
+ * ph_MultiplyAndDelegate @ 0x8216BAF0 | size: 0x14
+ * Multiplies two int args, sets address constant, tail-calls rage allocator.
+ */
+void* ph_AllocateScaled(uint32_t count, uint32_t stride) {  // BAF0_2h @ 0x8216BAF0
+    extern "C" void* rage_Allocate(uint32_t size);
+    return rage_Allocate(count * stride);
+}
+
+/**
+ * ph_VtableInit @ 0x825764C8 | size: 0x18
+ * Writes vtable pointer + size constant into a struct. Initializer.
+ */
+void ph_VtableInit(void* obj, void* vtable, uint32_t size) {  // 64C8_2hr
+    *(void**)obj = vtable;
+    *(uint32_t*)((char*)obj + 4) = size;
+}
+
+// ── Float math utilities ─────────────────────────────────────────────────
+
+/**
+ * ph_Log2Float @ 0x82576EF0 | size: 0x60
+ * Computes log2 of a float using IEEE 754 mantissa extraction.
+ * Extracts exponent, normalizes mantissa, applies polynomial approx.
+ */
+float ph_Log2Float(float x) {  // 6EF0 @ 0x82576EF0
+    if (x <= 0.0f) return -1000.0f;  // sentinel for invalid input
+
+    // IEEE 754: float = (1 + mantissa) * 2^exponent
+    uint32_t bits = *(uint32_t*)&x;
+    int32_t exponent = (int32_t)((bits >> 23) & 0xFF) - 127;
+    float mantissa = (float)(bits & 0x7FFFFF) / (float)0x800000;
+
+    // Linear approximation: log2(x) ≈ exponent + mantissa
+    return (float)exponent + mantissa;
+}
+
+/**
+ * ph_MemcpyWrapper @ 0x8216BB38 | size: 0x30
+ * Saves this pointer, calls memcpy, restores this, returns.
+ */
+void ph_MemcpyWrapper(void* dst, const void* src, uint32_t size) {  // BB38
+    memcpy(dst, src, size);
+}
