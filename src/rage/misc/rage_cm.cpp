@@ -1431,6 +1431,83 @@ void cmAngleLinearApproach::Tick() {
     *(float*)reporter = cmAngle_Normalize(current);
 }
 
+// ── cmApproach2Ctor — factory nodes that create cmApproach2 instances ─────────
+// 8 vtable variants representing 4 portModes × 2 angular states.
+// Each allocates a 56-byte cmApproach2 object from the TLS allocator,
+// zeros all fields, sets the cmApproach2 vtable, output dim type = VEC4 (3),
+// initial progress = 0.0f, and configures portMode (+48) and isAngular (+52).
+//
+// Variant table (verified from all 8 scaffolds):
+//   vfn_0  @ 0x8226C658: portMode=0, angular=false
+//   C710   @ 0x8226C710: portMode=1, angular=false
+//   C7C8   @ 0x8226C7C8: portMode=2, angular=false
+//   C880   @ 0x8226C880: portMode=3, angular=false
+//   C938   @ 0x8226C938: portMode=0, angular=true
+//   C9F0   @ 0x8226C9F0: portMode=1, angular=true
+//   CAA8   @ 0x8226CAA8: portMode=2, angular=true
+//   CB68   @ 0x8226CB68: portMode=3, angular=true
+
+// Shared helper — creates a cmApproach2 with the given configuration.
+static void* cmApproach2Ctor_Create(uint32_t portMode, bool isAngular) {
+    extern "C" void xe_main_thread_init_0038();
+    extern void** g_tls_base;
+    extern void* g_vtable_cmApproach2;  // scaffold: lis -32251; addi 27228
+
+    xe_main_thread_init_0038();
+    void* allocator = g_tls_base[1];
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    void** allocVt = *(void***)allocator;
+    void* obj = ((AllocFn)allocVt[1])(allocator, 56, 16);
+
+    if (!obj) return nullptr;
+
+    // Zero all fields (+4 through +52)
+    for (int i = 4; i < 56; i += 4)
+        *(uint32_t*)((char*)obj + i) = 0;
+
+    // Set vtable
+    *(void**)obj = &g_vtable_cmApproach2;
+
+    // Set output dimension type = VEC4 (3)
+    *(uint32_t*)((char*)obj + 36) = 3;
+
+    // Set initial progress = 0.0f (verified: constant at corrected 0x8202F110 = 0.0f)
+    *(float*)((char*)obj + 44) = 0.0f;
+
+    // Set variant-specific fields
+    *(uint32_t*)((char*)obj + 48) = portMode;
+    *(uint8_t*)((char*)obj + 52) = isAngular ? 1 : 0;
+
+    // Reporter buffer starts null — allocated later by cmApproach2::Allocate
+    *(void**)((char*)obj + 40) = nullptr;
+
+    return obj;
+}
+
+// cmApproach2Ctor variant 0 @ 0x8226C658 | size: 0xB4
+void* cmApproach2Ctor_Create_0() { return cmApproach2Ctor_Create(0, false); }
+
+// cmApproach2Ctor variant 1 @ 0x8226C710 | size: 0xB8
+void* cmApproach2Ctor_Create_1() { return cmApproach2Ctor_Create(1, false); }
+
+// cmApproach2Ctor variant 2 @ 0x8226C7C8 | size: 0xB8
+void* cmApproach2Ctor_Create_2() { return cmApproach2Ctor_Create(2, false); }
+
+// cmApproach2Ctor variant 3 @ 0x8226C880 | size: 0xB4
+void* cmApproach2Ctor_Create_3() { return cmApproach2Ctor_Create(3, false); }
+
+// cmApproach2Ctor variant 4 @ 0x8226C938 | size: 0xB8
+void* cmApproach2Ctor_Create_Angular0() { return cmApproach2Ctor_Create(0, true); }
+
+// cmApproach2Ctor variant 5 @ 0x8226C9F0 | size: 0xB8
+void* cmApproach2Ctor_Create_Angular1() { return cmApproach2Ctor_Create(1, true); }
+
+// cmApproach2Ctor variant 6 @ 0x8226CAA8 | size: 0xBC
+void* cmApproach2Ctor_Create_Angular2() { return cmApproach2Ctor_Create(2, true); }
+
+// cmApproach2Ctor variant 7 @ 0x8226CB68 | size: 0xB8
+void* cmApproach2Ctor_Create_Angular3() { return cmApproach2Ctor_Create(3, true); }
+
 // ── cmCapture — captures and holds a snapshot of portA. vtable @ 0x820569AC ──
 // Stateful node: stores a copy of the current input value in a 32-byte
 // reporter buffer at +24. Calling Reset (vfn_6) re-captures, then the
