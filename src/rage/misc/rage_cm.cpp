@@ -1417,10 +1417,10 @@ void cmDifferentiate::SyncPorts(void* portCtx) {
 // For vec4 (type 4): output = (currentVec - prevVec) * (1/scaledDt) per component
 // On first tick, outputs zero instead of a spike.
 void cmDifferentiate::Tick() {
-    extern float g_cmFrameScale;   // @ 0x825C4958
-    // Frame time constant from .rdata (g_cmConstants+8)
-    const float frameTime = 1.0f / 30.0f;  // ~0.0333f, from constant table
-    float scaledDt = frameTime * g_cmFrameScale;
+    extern float g_cmFrameScale;   // @ 0x825C4958 (runtime delta time)
+    // Constant at rdata table+8 is 1.0f — verified from binary @ 0x825CAEC0
+    // scaledDt = 1.0f * g_cmFrameScale = g_cmFrameScale
+    float scaledDt = g_cmFrameScale;
 
     uint32_t dataType = *(uint32_t*)((char*)this + 4);
     bool isFirstTick = *(uint8_t*)((char*)this + 36) != 0;
