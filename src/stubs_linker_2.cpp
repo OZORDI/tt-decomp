@@ -29,18 +29,6 @@ void hsmContext_5BC8_fw(void* obj) {
 }
 
 // ============================================================================
-// hsmState member functions
-// ============================================================================
-
-void hsmState::GetFullStatePath(char* buf, unsigned int bufSize) const {
-    (void)buf; (void)bufSize;
-    if (buf && bufSize > 0) buf[0] = '\0';
-}
-
-void hsmState::Reset() {
-}
-
-// ============================================================================
 // HUD Flash free functions
 // ============================================================================
 
