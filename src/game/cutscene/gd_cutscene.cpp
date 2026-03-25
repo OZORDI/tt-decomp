@@ -13,7 +13,7 @@
 
 // External dependencies
 extern "C" {
-    void xmlNodeStruct_vfn_2(void* node);
+    void xmlNodeStruct_Initialize(void* node);
     uint16_t atSingleton_F6B8_p39(const char* name);
     void rage::ReleaseSingleton(void* obj);
     void nop_8240E6D0(const char* msg, ...);
@@ -68,7 +68,7 @@ extern void* g_enumFieldType;     // @ 0x825CAF90
  */
 void gdCSCharAnimData::PostLoadProperties() {
     // Call base class PostLoadProperties
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     // Validate FileName exists
     if (!m_pFileName || m_pFileName[0] == '\0') {
@@ -112,7 +112,7 @@ void gdCSCharAnimData::PostLoadProperties() {
  */
 void gdCutSceneData::PostLoadProperties() {
     // Call base class PostLoadProperties
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     if (!m_pCutsceneName) {
         return;
@@ -132,7 +132,7 @@ void gdCutSceneData::PostLoadProperties() {
 // ============================================================================
 
 /**
- * gdCSActionLoopData::vfn_20 @ 0x8240EB28 | size: 0x58
+ * gdCSActionLoopData::IsType @ 0x8240EB28 | size: 0x58
  * 
  * Validates loop action properties.
  * Checks if property name matches known loop property types.
@@ -202,7 +202,7 @@ gdCSActionIfData::~gdCSActionIfData() {
  */
 void gdCSActionIfData::PostLoadProperties() {
     // Call base class PostLoadProperties
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     if (!m_pConditionType) {
         m_conditionEnum = 7;  // Invalid/unknown
@@ -295,7 +295,7 @@ const char* gdCSActionWaitData::GetTypeName() {
  * Validates camera animation name is not empty.
  */
 void gdCSActionCamAnimData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     if (!m_pCameraName || m_pCameraName[0] == '\0') {
         nop_8240E6D0(g_str_gdCSActionCamAnimData_missingFileName);
@@ -316,7 +316,7 @@ const char* gdCSActionCamAnimData::GetTypeName() {
  * Validates character ID and animation name.
  */
 void gdCSActionCharAnimData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     // Validate character ID is set
     if (m_characterId == -1) {
@@ -343,7 +343,7 @@ const char* gdCSActionCharAnimData::GetTypeName() {
  * Validates character ID is set.
  */
 void gdCSActionCharVisibleData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     if (m_characterId == -1) {
         nop_8240E6D0(g_str_gdCSActionCharVisibleData_missingPlayerId);
@@ -371,7 +371,7 @@ const char* gdCSActionCharVisibleData::GetTypeName() {
  * - "NONE" -> m_audioId = 7
  */
 void gdCSActionPlayAudioData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     // Validate audio type is not empty
     if (!m_pAudioType || m_pAudioType[0] == '\0') {
@@ -460,7 +460,7 @@ void gdCSCharAnimNames::FindRandAnimData(uint32_t randomSeed, uint32_t selection
 /**
  * gdCSCharCamShotName::IsType @ 0x8240C420 | size: 0x48
  */
-bool gdCSCharCamShotName::vfn_20(uint32_t typeId) {
+bool gdCSCharCamShotName::IsType(uint32_t typeId) {
     if (typeId == g_gdCSCharCamShotName_typeId) return true;
     if (typeId == g_xmlNodeStruct_typeId) return true;
     return (typeId == g_xmlNodeStruct_typeId2);
@@ -477,7 +477,7 @@ const char* gdCSCharCamShotName::GetTypeName() {
 /**
  * gdCSCharAnimData::IsType @ 0x8240C990 | size: 0x48
  */
-bool gdCSCharAnimData::vfn_20(uint32_t typeId) {
+bool gdCSCharAnimData::IsType(uint32_t typeId) {
     if (typeId == g_gdCSCharAnimData_typeId) return true;
     if (typeId == g_xmlNodeStruct_typeId) return true;
     return (typeId == g_xmlNodeStruct_typeId2);
@@ -682,7 +682,7 @@ const char* gdCSCamAnimShotName::GetTypeName() {
  *   4. Looks up shot name in the active camera set to store shot index at +32
  */
 void gdCSCamAnimShotName::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 
     // Validate weight >= 0
     int32_t weight = *(int32_t*)((char*)this + 16);
@@ -724,7 +724,7 @@ void gdCSCamAnimShotName::PostLoadProperties() {
 /**
  * gdCutSceneNames::IsType @ 0x8240E5F8 | size: 0x48
  */
-bool gdCutSceneNames::vfn_20(uint32_t typeId) {
+bool gdCutSceneNames::IsType(uint32_t typeId) {
     if (typeId == g_gdCutSceneNames_typeId) return true;
     if (typeId == g_xmlNodeStruct_typeId) return true;
     return (typeId == g_xmlNodeStruct_typeId2);
@@ -741,7 +741,7 @@ const char* gdCutSceneNames::GetTypeName() {
 /**
  * gdCSNameData::IsType @ 0x8240E6D8 | size: 0x48
  */
-bool gdCSNameData::vfn_20(uint32_t typeId) {
+bool gdCSNameData::IsType(uint32_t typeId) {
     if (typeId == g_gdCSNameData_typeId) return true;
     if (typeId == g_xmlNodeStruct_typeId) return true;
     return (typeId == g_xmlNodeStruct_typeId2);
@@ -818,7 +818,7 @@ void gdCSActionIfData::RegisterFields() {
  *
  * Checks 4 type IDs — own type + action base type + 2 xmlNodeStruct bases.
  */
-bool gdCSActionWaitData::vfn_20(uint32_t typeId) {
+bool gdCSActionWaitData::IsType(uint32_t typeId) {
     if (typeId == g_gdCSActionWaitData_typeId) return true;
     if (typeId == g_gdCSActionData_typeId) return true;
     if (typeId == g_xmlNodeStruct_typeId) return true;
@@ -946,7 +946,7 @@ const char* gdCSActionLvlAmbAnimData::GetTypeName() {
  *   2. FileName (+24) must be a non-empty string
  */
 void gdCSActionLvlAmbAnimData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 
     // Validate AnimName is non-empty
     const char* ambName = *(const char**)((char*)this + 20);
@@ -995,7 +995,7 @@ const char* gdCSActionCharAmbAnimData::GetTypeName() {
  *   3. FileName (+28) must be a non-empty string
  */
 void gdCSActionCharAmbAnimData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 
     // Validate CharacterId is set (not -1)
     int32_t characterId = *(int32_t*)((char*)this + 20);

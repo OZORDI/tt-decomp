@@ -33,7 +33,7 @@ plrPropMgr::~plrPropMgr() {
     this->vtable = (void**)0x820717C4;
     
     // Clean up assets
-    this->vfn_24();
+    this->ReleaseAssets();
     
     // Update vtable to atSingleton
     this->vtable = (void**)0x821A9420;
@@ -86,10 +86,10 @@ void* plrPropMgr::PostLoadChildren() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// plrPropMgr::vfn_23()  [vtable slot 23 @ 0x823D47A0]
+// plrPropMgr::InitAssets()  [vtable slot 23 @ 0x823D47A0]
 // Initializes property assets and stores global manager reference
 // ─────────────────────────────────────────────────────────────────────────────
-void plrPropMgr::vfn_23() {
+void plrPropMgr::InitAssets() {
     // Initialize first asset from m_prop1
     m_assets[0] = game_8FB0(m_prop1, 0);
     
@@ -103,10 +103,10 @@ void plrPropMgr::vfn_23() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// plrPropMgr::vfn_24()  [vtable slot 24 @ 0x823D47F8]
+// plrPropMgr::ReleaseAssets()  [vtable slot 24 @ 0x823D47F8]
 // Cleans up all asset resources
 // ─────────────────────────────────────────────────────────────────────────────
-void plrPropMgr::vfn_24() {
+void plrPropMgr::ReleaseAssets() {
     // Clean up all 3 assets
     for (int i = 0; i < 3; i++) {
         void* asset = m_assets[i];
@@ -126,10 +126,10 @@ void plrPropMgr::vfn_24() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// plrPropMgr::vfn_25()  [vtable slot 25 @ 0x823D4860]
+// plrPropMgr::SetObjectFlags()  [vtable slot 25 @ 0x823D4860]
 // Sets flags on related objects at specific offsets
 // ─────────────────────────────────────────────────────────────────────────────
-void plrPropMgr::vfn_25() {
+void plrPropMgr::SetObjectFlags() {
     // Set flags on first related object
     if (m_relatedObj1) {
         uint8_t* obj = (uint8_t*)m_relatedObj1;
@@ -166,18 +166,18 @@ const char* gdShotSet::PostLoadChildren() {
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_23()  [vtable slot 23 @ 0x821DD1D8]
+// gdShotSet::GetAttachmentCount()  [vtable slot 23 @ 0x821DD1D8]
 // Returns the number of attachment data items.
 // -----------------------------------------------------------------------------
-uint32_t gdShotSet::vfn_23() {
+uint32_t gdShotSet::GetAttachmentCount() {
     return m_attachmentCount;
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_24()  [vtable slot 24 @ 0x821DD1E0]
+// gdShotSet::GetResolvedBoneValue()  [vtable slot 24 @ 0x821DD1E0]
 // Retrieves a resolved bone value from the global skeleton using an index.
 // -----------------------------------------------------------------------------
-uint32_t gdShotSet::vfn_24(uint32_t index) {
+uint32_t gdShotSet::GetResolvedBoneValue(uint32_t index) {
     uint32_t boneIndex = m_pBoneIndices[index];
     if (boneIndex == 0xFFFFFFFF) {
         return 0;
@@ -189,18 +189,18 @@ uint32_t gdShotSet::vfn_24(uint32_t index) {
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_25()  [vtable slot 25 @ 0x821DD218]
+// gdShotSet::GetBoneIndex()  [vtable slot 25 @ 0x821DD218]
 // Retrieves the raw resolved bone index from the indices array.
 // -----------------------------------------------------------------------------
-uint32_t gdShotSet::vfn_25(uint32_t index) {
+uint32_t gdShotSet::GetBoneIndex(uint32_t index) {
     return m_pBoneIndices[index];
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_26()  [vtable slot 26 @ 0x821DD228]
+// gdShotSet::GetBoneName()  [vtable slot 26 @ 0x821DD228]
 // Retrieves a related bone pointer, falling back to the attachment's bone name if invalid.
 // -----------------------------------------------------------------------------
-void* gdShotSet::vfn_26(uint32_t index) {
+void* gdShotSet::GetBoneName(uint32_t index) {
     uint32_t boneIndex = m_pBoneIndices[index];
     if (boneIndex == 0xFFFFFFFF) {
         uint32_t* pAttachment = (uint32_t*)m_pAttachments[index];
@@ -214,34 +214,34 @@ void* gdShotSet::vfn_26(uint32_t index) {
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_27()  [vtable slot 27 @ 0x821DD268]
+// gdShotSet::GetCurrentBoneIndex()  [vtable slot 27 @ 0x821DD268]
 // Retrieves the bone index value for the current active item.
 // -----------------------------------------------------------------------------
-uint32_t gdShotSet::vfn_27() {
-    return vfn_25(m_currentIdx);
+uint32_t gdShotSet::GetCurrentBoneIndex() {
+    return GetBoneIndex(m_currentIdx);
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_28()  [vtable slot 28 @ 0x821DD280]
+// gdShotSet::GetCurrentBoneName()  [vtable slot 28 @ 0x821DD280]
 // Retrieves the related bone pointer for the current active item.
 // -----------------------------------------------------------------------------
-void* gdShotSet::vfn_28() {
-    return vfn_26(m_currentIdx);
+void* gdShotSet::GetCurrentBoneName() {
+    return GetBoneName(m_currentIdx);
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_29()  [vtable slot 29 @ 0x821DD318]
+// gdShotSet::SetCurrentIndex()  [vtable slot 29 @ 0x821DD318]
 // Sets the current active item index.
 // -----------------------------------------------------------------------------
-void gdShotSet::vfn_29(uint32_t idx) {
+void gdShotSet::SetCurrentIndex(uint32_t idx) {
     m_currentIdx = idx;
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_30()  [vtable slot 30 @ 0x821DD320]
+// gdShotSet::ResolveBoneNames()  [vtable slot 30 @ 0x821DD320]
 // Resolves attachment bone names to indices within the global skeleton dictionary.
 // -----------------------------------------------------------------------------
-void gdShotSet::vfn_30() {
+void gdShotSet::ResolveBoneNames() {
     xe_8E30(&m_pBoneIndices, m_attachmentCount);
     
     if (m_attachmentCount == 0) {
@@ -269,10 +269,10 @@ void gdShotSet::vfn_30() {
 }
 
 // -----------------------------------------------------------------------------
-// gdShotSet::vfn_31()  [vtable slot 31 @ 0x821DD3C8]
+// gdShotSet::AdvanceIndex()  [vtable slot 31 @ 0x821DD3C8]
 // Updates the index sequentially, wrapping around the bone index bounds.
 // -----------------------------------------------------------------------------
-bool gdShotSet::vfn_31() {
+bool gdShotSet::AdvanceIndex() {
     if (m_bIsActive) {
         m_currentIdx = (uint32_t)pg_C4E8_g(m_currentIdx + 1, 0, m_boneIndexCount - 1);
     }

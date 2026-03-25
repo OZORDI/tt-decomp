@@ -641,7 +641,7 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // External references
-extern void LocomotionState_vfn_5(void* state);
+extern void LocomotionState_OnEnter(void* state);
 extern void rage_free_00C0(void* ptr);
 extern void rage_FF70(void* obj);
 extern void ph_59C8(void* loader, const char* name, int flag);
@@ -734,7 +734,7 @@ bool LocomotionStateAnim::IsAnimationComplete() {
 // ─────────────────────────────────────────────────────────────────────────────
 void LocomotionStateAnim::Initialize() {
     // Call parent initialization
-    LocomotionState_vfn_5(this);
+    LocomotionState_OnEnter(this);
     
     // Load global constants
     const float zero = g_floatZero;   // 0.0f

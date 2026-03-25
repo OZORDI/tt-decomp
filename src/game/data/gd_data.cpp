@@ -38,7 +38,7 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
 extern uint32_t* g_sda_base;            // @ SDA:0x82600000 - Small Data Area base
 
 // Serialization / XML support
-extern "C" void xmlNodeStruct_vfn_2(void* obj);                              // @ 0x821A8988
+extern "C" void xmlNodeStruct_Initialize(void* obj);                              // @ 0x821A8988
 extern "C" void nop_8240E6D0(const char* msg, ...);                          // @ 0x8240E6D0
 extern "C" void RegisterSerializationField(void* obj, const char* name,
                                            void* fieldPtr, void* typeDesc,
@@ -176,7 +176,7 @@ plrPlayerMgr::~plrPlayerMgr() {
 // External function declarations
 extern "C" {
     void nop_8240E6D0(const char* message);
-    void xmlNodeStruct_vfn_2(void* node);
+    void xmlNodeStruct_Initialize(void* node);
 }
 
 /**
@@ -191,7 +191,7 @@ extern "C" {
  */
 void gdTier::PostLoadProperties() {
     // Call base class post-load
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
     
     // Check if tier name is specified
     if (m_tierName == nullptr || m_tierName[0] == '\0') {
@@ -288,7 +288,7 @@ void gdTier::PostLoadChildren() {
  */
 void gdTierMember::PostLoadProperties() {
     // Call base class post-load
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 
     // Validate character name is specified and non-empty
     if (m_characterName == nullptr || m_characterName[0] == '\0') {
@@ -519,7 +519,7 @@ void gdRivalryData::RegisterFields() {
  *   "gdRivalryData::PostLoadProperties() - unknown rival character '%s'"
  */
 void gdRivalryData::PostLoadProperties() {
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 
     // Validate CharacterName at +16
     const char* charName = *(const char**)((char*)this + 16);

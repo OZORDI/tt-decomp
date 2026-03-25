@@ -309,13 +309,13 @@ void gdVibEvent::TriggerVibration(void* playerContext) {
  * Debug string: "gdVibEvent::PostLoadProperties - Could not find effect '%s'"
  */
 void gdVibEvent::PostLoadProperties() {
-    extern "C" void xmlNodeStruct_vfn_2(void*);
+    extern "C" void xmlNodeStruct_Initialize(void*);
     extern "C" uint16_t LookupEffectId(const char* name);  // @ 0x8225EA68
     extern "C" void nop_8240E6D0(const char* msg, ...);
     extern void* g_vibrationMgr;  // @ 0x8271A3A8
 
     // Call base class Initialize
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 
     // Resolve effect name to ID
     const char* effectName = *(const char**)((char*)this + 16);

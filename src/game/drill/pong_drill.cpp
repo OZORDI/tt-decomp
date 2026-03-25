@@ -17,7 +17,7 @@ extern "C" {
     void NotifyUIEvent(int eventId, int flags, int param3, int param4);  // pg_E6E0 @ 0x8225E6E0
     void SetTrainingState(void* pStateMachine, int nState);             // atSingleton_E9F8_w @ 0x821EE9F8
     void nop_8240E6D0(const char* message);
-    void xmlNodeStruct_vfn_2(void* self);  // @ base class PostLoadProperties
+    void xmlNodeStruct_Initialize(void* self);  // @ base class PostLoadProperties
 }
 
 // External globals
@@ -365,7 +365,7 @@ void hitTipData::PostLoadProperties() {
     if (m_consecutiveThreshold < 0) {
         if (m_scoreThreshold >= 0 && m_minScore >= 0) {
             // Both score and min thresholds are valid: call base and return
-            xmlNodeStruct_vfn_2(this);
+            xmlNodeStruct_Initialize(this);
             return;
         }
         // Score fields invalid: log error and set default
@@ -374,7 +374,7 @@ void hitTipData::PostLoadProperties() {
     }
 
     // Call base class PostLoadProperties
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 }
 
 /**
