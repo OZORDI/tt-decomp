@@ -30,7 +30,7 @@ extern void rage_free_00C0(void* ptr);      // @ 0x820C00C0
 // Device management functions
 extern void rage_5BF8(void* pObj);          // @ 0x82445BF8 — Destroy render object
 extern void rage_56A8(void* pCache);        // @ 0x824456A8 — Destroy texture cache
-extern void grcDevice_1068_h(void* pDevice); // @ 0x82151068 — Cleanup internal
+extern void grcSafeRelease(void* pDevice); // @ 0x82151068 — Cleanup internal
 extern void rage_F338(void);                // @ 0x8214F338 — Shutdown graphics core
 extern void rage_6CA0(void* pTarget);       // @ 0x82366CA0 — Cleanup render target
 extern void _locale_register(void* pLocale, uint32_t flags);  // @ 0x820C02D0
@@ -225,8 +225,8 @@ void grcDevice_shutdown(void)
     }
     
     /* 5. Clean up internal device structures */
-    grcDevice_1068_h((void*)0x825EBB98);  // lbl_825EBB98
-    grcDevice_1068_h((void*)0x825EBBA0);  // lbl_825EBBA0
+    grcSafeRelease((void*)0x825EBB98);  // lbl_825EBB98
+    grcSafeRelease((void*)0x825EBBA0);  // lbl_825EBBA0
     
     /* 6. Shutdown graphics core */
     rage_F338();

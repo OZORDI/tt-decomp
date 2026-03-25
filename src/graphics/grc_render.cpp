@@ -465,7 +465,7 @@ extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grcTextureFactoryXenon_vfn_10 @ 0x8215FCB0 | size: 0xb8 (184 bytes)
+ * grcTextureFactoryXenon::FixupTextures @ 0x8215FCB0 | size: 0xb8 (184 bytes)
  *
  * Processes an array of texture pointers, adjusting their addresses based on
  * device offset calculations and dispatching to appropriate handlers based on
@@ -501,7 +501,7 @@ extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
  *        - Type 2: Call grc_DC00 (compressed texture processing)
  *        - Type 3+: Log error via nop_8240E6D0 (invalid type)
  * ═══════════════════════════════════════════════════════════════════════════ */
-void grcTextureFactoryXenon_vfn_10(
+void grcTextureFactoryXenon::FixupTextures(
     void* pThis,
     void* pDevice,
     void** ppTextures,

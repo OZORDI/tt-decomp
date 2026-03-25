@@ -54,24 +54,24 @@ void* miniheapAllocator::Allocate(uint32_t size, uint32_t alignment) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// miniheapAllocator::vfn_4() [vtable slot 4 @ 0x823F8958]
-// Returns the amount of memory currently used in the miniheap
+// miniheapAllocator::GetUsedSize [vtable slot 4 @ 0x823F8958]
+// Returns current - start (bytes allocated from the miniheap)
 // ─────────────────────────────────────────────────────────────────────────────
 uint32_t miniheapAllocator::GetUsedSize() const {
     return g_miniheap.current - g_miniheap.start;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// miniheapAllocator::vfn_5() [vtable slot 5 @ 0x823F8970]
-// Returns the amount of free memory remaining in the miniheap
+// miniheapAllocator::GetFreeSize [vtable slot 5 @ 0x823F8970]
+// Returns end - current (bytes remaining in the miniheap)
 // ─────────────────────────────────────────────────────────────────────────────
 uint32_t miniheapAllocator::GetFreeSize() const {
     return g_miniheap.end - g_miniheap.current;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// miniheapAllocator::vfn_20() [vtable slot 20 @ 0x823F8988]
-// Checks if an address is within the miniheap range
+// miniheapAllocator::IsInRange [vtable slot 20 @ 0x823F8988]
+// Returns true if address falls within [start, end)
 // ─────────────────────────────────────────────────────────────────────────────
 bool miniheapAllocator::IsInRange(uint32_t address) const {
     return (address >= g_miniheap.start) && (address < g_miniheap.end);
