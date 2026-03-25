@@ -7,6 +7,8 @@
 
 #include "pong_ball.hpp"
 #include "rage/memory.h"
+#include <cstring>   // memcpy, memset
+#include <cmath>     // fabs
 
 // External function declarations
 extern void audControl_Destructor(void* obj);  // @ 0x82161568

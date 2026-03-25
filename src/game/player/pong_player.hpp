@@ -272,6 +272,73 @@ struct pongPlayer {
                               pongPlayer* state) const;   // @ 0x820CD7B0
     void ProcessInputVector(float x, float y, float z,
                             uint8_t flags);               // @ 0x821A0050
+    void UpdateSwingTimingAdjustment();                   // @ 0x8219xxxx
+    void UpdatePositionFromSwingTarget();                 // @ 0x8219E6D8
+    void InitializeCollisionGrid(int r4, uint8_t metadataByte);  // @ 0x820Cxxxx
+    bool IsSwingTimerExpiredAndReady() const;             // @ 0x820CE000
+    void SetPlayerSide(uint8_t side);                    // @ 0x820C7C78
+    bool IsSwingTimerInActiveWindow() const;              // @ 0x820CDCD8
+    bool LerpTowardsTarget(float target, float rate, float deltaTime);  // @ 0x820Cxxxx
+    bool IsRecoveryTimerBelowThreshold() const;          // @ 0x820CD598
+    void* GetStateObjectByIndex(uint32_t index) const;   // @ 0x820CE3F0
+    float GetSwingPhaseValue() const;                    // @ 0x820CD550
+    bool IsSwingInputBlocked() const;                    // @ 0x820CD660
+    float GetAnimationBlendWeight() const;               // @ 0x820CD6B8
+    float GetCurrentSwingStrength() const;               // @ 0x820CD5F0
+    void DtorAdjustor();                                 // @ 0x821AA46C
+    void StateThunk_9188();
+    void StateThunk_9198();
+    void StateThunk_91A8();
+    void StateThunk_91B8();
+    void StateThunk_91C8();
+    void StateThunk_91D8();
+    void StateThunk_91E8();
+    void MarkDirty_Position();
+    void MarkDirty_Rotation();
+    void MarkDirty_Scale();
+    void MarkDirty_Velocity();
+    void MarkDirty_Animation();
+    void MarkDirty_State();
+    void MarkDirty_Extra();
+    void SyncByteField(void* syncDesc);
+    void SyncWordField(void* syncDesc);
+    void SyncFloatField(void* syncDesc);
+    void Update();
+    void SaveDrawData();
+    void UpdateReplay();
+    void UpdateTimerWithNetSync();
+    void DestroyAllEntries();
+    bool IsPlayerSlotActive();
+    void SetTransitionState(bool enable);
+    void ResetTransformData();
+    void ResetScoringState();
+    void ResetShotData();
+    void ResetSwingParams();
+    void ResetShotTimingData(float value);
+    int GetRangeDistance();
+    bool IsPositionInBounds();
+    float GetEffectiveSpeed();
+    float GetNormalizedFrameRate();
+    bool IsBallSplashActive();
+    bool IsCreatureAnimReady();
+    bool HasAnimationDelta();
+    int FindRegisteredObject(void* target);
+    void ApplyPositionOffset();
+    void ApplyPositionAndVelocityOffset();
+    void InterpolatePosition2D();
+    void ResetMoverState();
+    void ApplyPlayerNetState();
+    void InitializeNewShot();
+    bool CompareTypeNames(void* other);
+    int CompareTypeInfo(void* other);
+    void ResetShotTimerDefaults();
+    void ComputeBasePosition();
+    void ComputeFullPosition(int flags);
+    bool HasInputDirectionChanged();
+    int GetAnimFrameDistance();
+    bool IsInContactZone();
+    float GetNormalizedRecoveryRate();
+    void* SyncNetworkState();
 };
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────

@@ -912,8 +912,6 @@ int CCalMoviePlayer::DispatchSlot37() {  // ED18_p33
  * CCalMoviePlayer::Rewind / Seek — unimplemented in the final binary.
  * Both log a debug message and return STATUS_NOT_IMPLEMENTED.
  */
-extern "C" void nop_8240E6D0(const char* msg, ...);
-
 int CCalMoviePlayer::Rewind() {  // E758
     nop_8240E6D0("CCalMoviePlayer::Rewind() - not implemented");
     return -1;  // STATUS_NOT_IMPLEMENTED

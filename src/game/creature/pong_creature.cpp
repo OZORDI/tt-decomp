@@ -22,6 +22,38 @@ extern void pongPlayer_9CD0_g(void* player, int index, void* outMatrix1, void* o
 // Forward declarations
 bool IsMatrixIdentity(const float* matrix);  // @ 0x820C3C70 - Matrix identity check
 
+// LocomotionStateAnim helper functions
+extern void LocomotionStateAnim_88E0_g(void* containerData, void* containerParams, float time, int p1, int p2);
+extern void LocomotionStateAnim_C8F8_g(void* animationList);
+
+// Ref-counting helpers
+extern "C" void rage_AddRef(void* obj);
+extern "C" void rage_Release(void* obj);
+
+// Creature lifecycle helpers
+extern "C" void pongCreature_BaseDtor(void* obj);  // @ 0x820C53E8
+extern "C" void pongCreature_Fixup(void* obj, void* relocator);
+extern "C" void pongCreatureInst_Cleanup(void* obj);  // @ 0x822C8FD0
+extern "C" void pongCreatureInst_SetMatrixImpl(void* obj, const void* matrix);
+extern "C" float pongCreatureInst_ComputeHeading(void* obj);
+extern "C" void pongCreatureInst_ApplyHeading(void* obj, float heading);
+extern "C" void pongCreatureInst_NotifyHeadingChanged(void* obj);
+extern "C" void LocomotionStateAnim_SetSpeed(void* obj, float speed);
+extern "C" void LocomotionStateAnim_ApplySpeed(void* obj);
+extern "C" void LocomotionStateAnim_InitCapsuleImpl(void* obj, float radius, const void* center);
+extern "C" void LocomotionStateAnim_SetMatrixImpl(void* obj, const void* matrix);
+extern "C" void* LocomotionState_FindFirstActive(void* list);
+extern "C" void* LocomotionStateAnim_FindAnim(void* obj);
+extern "C" void LocomotionStateAnim_ComputeOffset(void* obj, void* outVec);
+extern "C" void LocomotionStateAnim_ProcessNode(void* obj, void* node);
+extern "C" void LocomotionStateAnim_AccumNode(void* obj, void* node);
+extern "C" void LocomotionStateAnim_GrowArray(void* obj);
+extern "C" void LocomotionStateMf_ScaleWeights(void* obj);
+extern "C" void LocomotionStateMf_BlendPoses(void* obj);
+extern "C" void LocomotionStateMf_UpdateTransforms(void* obj);
+extern "C" void LocomotionStateMf_ApplyConstraints(void* obj);
+extern "C" void LocomotionStateMf_Finish(void* obj);
+
 // Global data @ 0x825CB800 and 0x82619BE0
 extern const float g_identityMatrixRef[16];      // @ 0x825CB800 - Reference identity matrix (64 bytes)
 extern const uint32_t g_vectorComparisonMask[4]; // @ 0x82619BE0 - SIMD comparison mask (16 bytes)
@@ -658,7 +690,7 @@ extern const float g_floatOne;       // @ 0x8202D108
 // LocomotionStateAnim::~LocomotionStateAnim()  [vtable slot 0 @ 0x820DFF20]
 // Destructor - cleans up animation state resources
 // ─────────────────────────────────────────────────────────────────────────────
-void LocomotionStateAnim::~LocomotionStateAnim() {
+LocomotionStateAnim::~LocomotionStateAnim() {
     // Call parent destructor
     rage_FF70(this);
     
@@ -1772,9 +1804,6 @@ void pongCreatureInst::ArrayRemove(void* element) {  // 9420_h
  * to the new object and releases the old one.
  */
 void pongCreatureInst::SetRefPtr(void* newObj) {  // 9030_g
-    extern "C" void rage_AddRef(void* obj);
-    extern "C" void rage_Release(void* obj);
-
     void* oldObj = *(void**)((char*)this + 4);
     if (newObj) rage_AddRef(newObj);
     *(void**)((char*)this + 4) = newObj;
@@ -1788,9 +1817,6 @@ void pongCreatureInst::SetRefPtr(void* newObj) {  // 9030_g
  * releases old value at the specified index.
  */
 void pongCreatureInst::SetArraySlot(int index, void* newObj) {  // E7B8_h
-    extern "C" void rage_AddRef(void* obj);
-    extern "C" void rage_Release(void* obj);
-
     void** array = *(void***)((char*)this + 0);
     void* oldObj = array[index];
 
@@ -1808,8 +1834,6 @@ void pongCreatureInst::SetArraySlot(int index, void* newObj) {  // E7B8_h
  * then conditionally frees memory if bit 0 of the flags parameter is set.
  */
 void pongCreature::ScalarDeletingDtor(int flags) {  // vfn_0_5398_1
-    extern "C" void pongCreature_BaseDtor(void* obj);  // @ 0x820C53E8
-    extern "C" void rage_free(void* ptr);
 
     pongCreature_BaseDtor(this);
     if (flags & 1) {
@@ -1826,7 +1850,6 @@ void pongCreature::ScalarDeletingDtor(int flags) {  // vfn_0_5398_1
  */
 void pongCreatureInst::Detach() {  // D470_p33
     extern void* g_creatureManager;  // @ 0x826063B8 (SDA)
-    extern "C" void pongCreatureInst_Cleanup(void* obj);  // @ 0x822C8FD0
 
     // Set vtable to base phInst class
     *(void**)this = (void*)0x82022D2C;  // phInst vtable
@@ -1850,7 +1873,6 @@ void pongCreatureInst::Detach() {  // D470_p33
  * then calls the fixup function.
  */
 void pongCreature::Relocate(void* relocator) {  // 8858_p46
-    extern "C" void pongCreature_Fixup(void* obj, void* relocator);
 
     // Set vtable
     *(void**)this = (void*)0x82028144;  // pongCreature vtable
@@ -1875,7 +1897,6 @@ void pongCreature::Relocate(void* relocator) {  // 8858_p46
  * stack-local buffer, then calls the internal SetMatrix helper.
  */
 void pongCreatureInst::SetMatrix(const void* srcMatrix) {  // 5040
-    extern "C" void pongCreatureInst_SetMatrixImpl(void* obj, const void* matrix);
     // Original copies 4 lvx128/stvx128 pairs to align the matrix on stack
     pongCreatureInst_SetMatrixImpl(this, srcMatrix);
 }
@@ -1888,9 +1909,6 @@ void pongCreatureInst::SetMatrix(const void* srcMatrix) {  // 5040
  * if the heading changed significantly.
  */
 void pongCreatureInst::UpdateHeading() {  // E828_v12
-    extern "C" float pongCreatureInst_ComputeHeading(void* obj);
-    extern "C" void pongCreatureInst_ApplyHeading(void* obj, float heading);
-    extern "C" void pongCreatureInst_NotifyHeadingChanged(void* obj);
 
     float heading = pongCreatureInst_ComputeHeading(this);
     float prevHeading = *(float*)((char*)this + 8);
@@ -1932,8 +1950,6 @@ void LocomotionStateAnim::ResetAccumulators() {  // B9F0_w
  * then calls the internal anim speed setter.
  */
 void LocomotionStateAnim::SetAnimSpeed(float speed, float scale) {  // 2858
-    extern "C" void LocomotionStateAnim_SetSpeed(void* obj, float speed);
-    extern "C" void LocomotionStateAnim_ApplySpeed(void* obj);
 
     float scaledSpeed = speed * scale;
     LocomotionStateAnim_SetSpeed(this, scaledSpeed);
@@ -1947,7 +1963,6 @@ void LocomotionStateAnim::SetAnimSpeed(float speed, float scale) {  // 2858
  * and calls the capsule initialization helper.
  */
 void LocomotionStateAnim::InitBoundCapsule() {  // 3D48_g
-    extern "C" void LocomotionStateAnim_InitCapsuleImpl(void* obj, float radius, const void* center);
 
     float zeroVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     float radius = 0.0f;  // loaded from constant table
@@ -1962,8 +1977,6 @@ void LocomotionStateAnim::InitBoundCapsule() {  // 3D48_g
  */
 void LocomotionStateAnim::SetGlobalInstance(void* newInstance) {  // 34E8_p46
     extern void* g_locomotionAnimInstance;  // @ 0x8271A378
-    extern "C" void rage_AddRef(void* obj);
-    extern "C" void rage_Release(void* obj);
 
     void* oldInstance = g_locomotionAnimInstance;
     if (newInstance) rage_AddRef(newInstance);
@@ -1977,7 +1990,6 @@ void LocomotionStateAnim::SetGlobalInstance(void* newInstance) {  // 34E8_p46
  * Copies a 4×4 matrix (64 bytes) and forwards to the internal setter.
  */
 void LocomotionStateAnim::SetMatrix(const void* srcMatrix) {  // 7B30_g
-    extern "C" void LocomotionStateAnim_SetMatrixImpl(void* obj, const void* matrix);
     LocomotionStateAnim_SetMatrixImpl(this, srcMatrix);
 }
 
@@ -1988,7 +2000,6 @@ void LocomotionStateAnim::SetMatrix(const void* srcMatrix) {  // 7B30_g
  * node using FindFirstActive and stores the result.
  */
 void LocomotionState::AdvanceNode() {  // EFA0_h
-    extern "C" void* LocomotionState_FindFirstActive(void* list);
 
     void* listHead = *(void**)((char*)this + 4);
     if (listHead) {
@@ -2024,7 +2035,6 @@ void* LocomotionState::FindFirstActive(void* listHead) {  // EF38_p46
  * animation was found and the event dispatched.
  */
 bool LocomotionStateAnim::DispatchAnimEvent(void* eventArg) {  // EEC8
-    extern "C" void* LocomotionStateAnim_FindAnim(void* obj);
 
     void* anim = LocomotionStateAnim_FindAnim(this);
     if (!anim) return false;
@@ -2041,7 +2051,6 @@ bool LocomotionStateAnim::DispatchAnimEvent(void* eventArg) {  // EEC8
  * position vector, and copies the result to the output pointer.
  */
 void LocomotionStateAnim::GetAnimPosition(void* outPosition) {  // B800_g
-    extern "C" void* LocomotionStateAnim_FindAnim(void* obj);
 
     void* anim = LocomotionStateAnim_FindAnim(this);
     if (!anim) {
@@ -2061,7 +2070,6 @@ void LocomotionStateAnim::GetAnimPosition(void* outPosition) {  // B800_g
  * the result to the accumulator.
  */
 void LocomotionStateAnim::AccumulateOffset(void* accumulator) {  // BDB0_g
-    extern "C" void LocomotionStateAnim_ComputeOffset(void* obj, void* outVec);
 
     float offset[4];
     LocomotionStateAnim_ComputeOffset(this, offset);
@@ -2081,8 +2089,6 @@ void LocomotionStateAnim::AccumulateOffset(void* accumulator) {  // BDB0_g
  * node to accumulate contributions (7E68 + 3AD8).
  */
 void LocomotionStateAnim::AccumulateList() {  // D480_w
-    extern "C" void LocomotionStateAnim_ProcessNode(void* obj, void* node);
-    extern "C" void LocomotionStateAnim_AccumNode(void* obj, void* node);
 
     void* node = *(void**)((char*)this + 4);
     while (node) {
@@ -2156,7 +2162,6 @@ void LocomotionStateAnim::AdvanceRingBuffer() {  // 04C0_fw
  * is full, grows it before insertion.
  */
 void LocomotionStateAnim::PushBack(uint32_t key, const void* vecData) {  // 4190_g
-    extern "C" void LocomotionStateAnim_GrowArray(void* obj);
 
     uint32_t count = *(uint32_t*)((char*)this + 8);
     uint32_t capacity = *(uint32_t*)((char*)this + 12);
@@ -2183,11 +2188,6 @@ void LocomotionStateAnim::PushBack(uint32_t key, const void* vecData) {  // 4190
  * weights, blend poses, update transforms, apply constraints, finish.
  */
 void LocomotionStateMf::UpdateBlend() {  // C128_w
-    extern "C" void LocomotionStateMf_ScaleWeights(void* obj);
-    extern "C" void LocomotionStateMf_BlendPoses(void* obj);
-    extern "C" void LocomotionStateMf_UpdateTransforms(void* obj);
-    extern "C" void LocomotionStateMf_ApplyConstraints(void* obj);
-    extern "C" void LocomotionStateMf_Finish(void* obj);
 
     LocomotionStateMf_ScaleWeights(this);
     LocomotionStateMf_BlendPoses(this);

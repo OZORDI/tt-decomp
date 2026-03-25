@@ -490,6 +490,8 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+
+    void ScalarDestructor(int flags);
 };
 
 /**

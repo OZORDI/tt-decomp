@@ -506,6 +506,18 @@ struct msgMsgSink {
     void InitializeExtended();  // @ 0x8245C078
     void ProcessMessageWithIndex(uint32_t param1, uint16_t msgIndex, uint32_t param2);  // @ 0x8244E978
     void DispatchVirtualMethod();  // @ 0x824542D0 [related to vtable slot 12]
+
+    // ── non-virtual methods (lifted in msg_msg_sink.cpp) ──
+    uint16_t GetNestedValue(void* dataPtr);
+    uint32_t GetStateFlags();
+    uint32_t ProcessWithLock(uint32_t param);
+    void CleanupIfReady();
+    uint32_t ProcessMessage(uint32_t messageFlags);
+    int32_t GenerateAndCleanup();
+    uint32_t CheckAndProcess();
+    void SendEvent();
+    void ClearPointers();
+    uint32_t GetNestedObjectValue();
 };
 
 // ── pongBinkMovie  [vtable @ 0x82060B94] ──────────────────────────
@@ -1044,3 +1056,76 @@ void game_AAF8(void* roll, int a, int b);  // @ 0x8222AAF8
 
 // Page group input processing
 bool pg_4A58_fw(void* pPageGroup, float* pInputValue);  // @ 0x821F4A58
+
+// ── CCalMoviePlayer ──────────────────────────────────────────────────
+// Movie/video playback system using Xbox 360 kernel synchronization.
+// Contains 8 KEVENT objects at offsets +84 through +196 (stride 16).
+class CCalMoviePlayer {
+public:
+    // Event wait functions (WaitForSingleObject wrappers)
+    void WaitForEvent0();  void WaitForEvent1();
+    void WaitForEvent2();  void WaitForEvent3();
+    void WaitForEvent4();  void WaitForEvent5();
+    void WaitForEvent6();  void WaitForEvent7();
+
+    // Event signal functions (KeSetEvent wrappers)
+    void SignalEvent0();  void SignalEvent1();
+    void SignalEvent2();  void SignalEvent3();
+    void SignalEvent4();  void SignalEvent5();
+    void SignalEvent6();  void SignalEvent7();
+
+    // Event reset functions
+    void ResetEvent4();  void ResetEvent5();
+    void ResetEvent6();  void ResetEvent7();
+
+    // Field getters
+    int GetField212();  int GetField216();
+    int GetField220();  int GetField224();  int GetField228();
+
+    // Vtable dispatch thunks
+    int DispatchSlot32();  int DispatchSlot34();
+    int DispatchSlot35();  int DispatchSlot36();  int DispatchSlot37();
+
+    // Ring buffer / frame management
+    int GetRemainingFrames();
+    void* GetFrontElement();
+    void* GetBackElement();
+    void* GetFrameBufferElement();
+    void* GetElementByIndex(int index);
+    int ComputeFrameSize();
+    void ClearFiberFlag();
+
+    // Stub methods
+    int Rewind();
+    int Seek();
+
+    // State field mutators
+    void SetField212(int value);
+    void SetField216(int value);
+
+    // Additional methods from pong_frontend.cpp
+    uint32_t GetStateA();  uint32_t GetStateB();
+    uint32_t GetStateC();  uint32_t GetStateD();  uint32_t GetStateE();
+    void SetStateA(int32_t value);
+    void SetStateB(int32_t value);
+    void* GetFrameBuffer();
+    int GetRemainingBuffers();
+    void* GetCurrentReadBuffer();
+    void* GetCurrentWriteBuffer();
+    void* GetBufferByIndex(uint32_t index);
+    void AdvanceReadIndex();
+    void AdvanceWriteIndex();
+    void CtorDerived();
+    void CtorIntermediate();
+    void DtorDerived();
+    void DispatchVSlot14();
+    void DispatchVSlot32();
+    void DispatchVSlot19NoArgs();
+    void DispatchVSlot19WithArgs(void* args);
+    int CallVSlot34ReturnZero();
+    int CallVSlot35ReturnZero();
+    int CallVSlot36ReturnZero();
+    int CallVSlot37ReturnZero();
+    void ClearFiberContext();
+    void ReplaceFiberContext();
+};

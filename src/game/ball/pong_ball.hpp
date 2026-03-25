@@ -92,6 +92,10 @@ struct pongBallHitData {
     virtual void LoadProperties();     // [21] @ 0x821d6608
     virtual void GetNodeTypeName();    // [22] @ 0x821d65b0
 
+    void Initialize();
+    bool ValidateAttribute(uint32_t attributeHash);
+    const char* GetEventName();
+
     // ── nested helper nodes ──
     struct xmlNodeStructHitZone {
         void** vtable;  // +0x00
@@ -161,8 +165,17 @@ struct pongBallInstance {
     virtual void vfn_24();       // [24] @ 0x8227fa48
     virtual void vfn_30();       // [30] @ 0x8227fa28
 
-    // ── non-virtual methods (from debug strings) ──
-    void ActivateBall();
+    // ── non-virtual methods ──
+    void* GetMatrix();                     // [3] @ 0x82280028
+    void SetMatrix(const void* sourceData);  // [3] @ 0x82280030
+    void GetPosition(void* outPosition);   // [4] @ 0x8227FF38
+    void GetVelocity(void* outVelocity);   // [5] @ 0x8227FFB0
+    void ProcessCollision(void* gameState);  // @ 0x8227FA48
+    int ValidateCollisionParams(int param1, int param2, int param3);  // @ 0x8227FA28
+    void* FindObjectByID(uint16_t searchID);  // @ 0x822C1C60
+    void UpdatePhysicsState();             // @ 0x8227FDB0
+    void ActivateBall(void* activationContext);  // @ 0x822801B8
+    void* InitializeFromData(void* initData);  // @ 0x8227F810
 };
 
 // ── pongPaddle  [vtable @ 0x82071678] ───────────────────────────────
