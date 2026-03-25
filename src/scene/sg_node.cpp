@@ -30,9 +30,8 @@ sgNode::~sgNode() {
  * Returns 1 if the type matches, 0 otherwise.
  */
 int sgNode::IsType(uint32_t typeId) {
-    // TODO: load global sgNode typeId from SDA and compare
-    (void)typeId;
-    return 0;
+    extern uint32_t g_sgNode_typeId;  // @ 0x825C93D0
+    return (typeId == g_sgNode_typeId) ? 1 : 0;
 }
 
 /**
