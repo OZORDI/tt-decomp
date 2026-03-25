@@ -46,9 +46,8 @@
  *   m_bComplete       (+0x1A8)  — byte at +424: sequence is done
  */
 
-// Forward declarations — pong_creature.hpp is in src/ not include/
-struct pongCreatureInst;
-struct LocomotionStateAnim;
+// Full class definitions needed — methods are defined in this file
+#include "../game/creature/pong_creature.hpp"
 #include <cstdint>
 
 // ─────────────────────────────────────────────────────────────────────────────

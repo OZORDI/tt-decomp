@@ -83,6 +83,7 @@ extern void  FadePageGroup(void* mgr, int type, int mode, float fadeTime, float 
 extern bool  CheckButtonPressed(void* record);                    // input button state check @ 0x8225FFF8
 extern uint8_t SinglesNetworkClient_B2A8_g(void* pg);   // page group button poll
 extern uint8_t Dialog_IsComplete(void* pg);             // @ 0x820C2470 — dialog completion check
+extern void    atSingleton_E998_g(void* ctx, void* base);  // @ 0x8225E998 — singleton query helper
 extern void*   PageGroup_LookupText(uint32_t table, const char* key); // @ 0x820C9318 — text lookup
 extern void    SinglesNetworkClient_B320_g(void* pg);   // page group notify
 extern void    SinglesNetworkClient_B1E8_g(void* pg);   // page group input clear
@@ -1627,128 +1628,6 @@ void dialogData::Validate() {
  */
 
 // No methods to implement - class is unused
-
-// ─────────────────────────────────────────────────────────────────────────────
-// pongDialogContext  [vtable @ 0x8205F31C / secondary @ 0x8205F384]
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * pongDialogContext::~pongDialogContext  @ 0x8230C7A0  |  size: 0x68
- *
- * Destructor for dialog context. Resets both vtable pointers (primary and
- * secondary MI base at +0x14), clears the page group pointer, then
- * conditionally frees the object if the delete-self flag is set.
- */
-pongDialogContext::~pongDialogContext() {
-    // Reset secondary vtable (MI base at +0x14)
-    _secondary_vtable = (void*)0x82027B34;  // hsmContext secondary vtable
-    
-    // Clear page group pointer
-    m_pPageGroup = nullptr;
-    
-    // Reset primary vtable
-    // vtable managed by C++ runtime
-    
-    // Conditional free handled by caller via delete-self flag
-}
-
-/**
- * pongDialogContext::Register  @ 0x8230C808  |  size: 0xA0
- *
- * Slot 23. Allocates and initializes the dialog page group (1508 bytes),
- * registers it with the UI system, and stores it globally.
- *
- * Process:
- *   1. Initialize main thread context
- *   2. Allocate page group memory (1508 bytes, 16-byte aligned)
- *   3. Construct page group via game_1620 (dialog constructor)
- *   4. Store in m_pPageGroup (+24)
- *   5. Register with UI system (category 204, name from global)
- *   6. Store globally for other systems to access
- */
-void pongDialogContext::Register() {
-    nop_8240E6D0("pongDialogContext::Register");  /* UNVERIFIED — string not found in binary */
-    
-    // Initialize main thread context
-    xe_main_thread_init_0038();
-    
-    // Get main allocator from SDA[0]
-    extern uint32_t* g_sdaBase;  // r13 base
-    void* allocTable = *(void**)g_sdaBase;
-    void* allocator = *((void**)allocTable + 1);  // slot 1 = allocator
-    
-    // Allocate page group memory (1508 bytes, 16-byte aligned)
-    void* pageGroupMem = VCALL_ALLOC(allocator, 1508, 16);
-    
-    if (pageGroupMem != nullptr) {
-        // Construct dialog page group
-        m_pPageGroup = game_1620(pageGroupMem);
-    } else {
-        m_pPageGroup = nullptr;
-    }
-    
-    // Register with UI system (category 204)
-    extern void* g_uiNameTable;  // @ 0x82606514 (SDA +25876)
-    const char* dialogName = (const char*)((uint8_t*)g_uiNameTable + 50);
-    rage_RegisterUIContext(m_pPageGroup, 204, dialogName);
-    
-    // Store globally for other systems
-    extern void** g_dialogPageGroupPtr;  // @ 0x82606628 (SDA +26152)
-    *g_dialogPageGroupPtr = m_pPageGroup;
-    
-    nop_8240E6D0("pongDialogContext::Register complete");  /* UNVERIFIED — string not found in binary */
-}
-
-/**
- * pongDialogContext::Update  @ 0x8230C8A8  |  size: 0x6C
- *
- * Slot 16. Checks if the dialog is complete and ready to transition.
- * If the page group exists and reports completion, triggers an HSM
- * state transition to the next state stored in m_nextStateIdx.
- */
-void pongDialogContext::Update() {
-    if (m_pPageGroup == nullptr) {
-        return;
-    }
-    
-    // Check if page group is ready (slot 2 - IsReady)
-    bool isReady = ((bool(*)(void*))((void**)m_pPageGroup)[0][2])(m_pPageGroup);
-    
-    // Check if dialog is complete
-    bool isComplete = Dialog_IsComplete(m_pPageGroup);
-    
-    if (!isComplete) {
-        return;
-    }
-    
-    // Transition to next state
-    extern void* g_hsmManager;  // @ 0x8271A81C (SDA -21712)
-    hsmContext_SetNextState_2800(g_hsmManager, m_nextStateIdx);
-}
-
-/**
- * pongDialogContext::OnExit  @ 0x8230C918  |  size: 0x90
- *
- * Slot 18. Called when exiting the dialog state. Closes the dialog
- * page group unless the skip-close flag is set, then clears the flag.
- */
-void pongDialogContext::OnExit() {
-    if (m_pPageGroup == nullptr) {
-        m_bSkipClose = 0;
-        return;
-    }
-    
-    // Check skip-close flag
-    if (m_bSkipClose != 0) {
-        m_bSkipClose = 0;
-        return;
-    }
-    
-    // Close dialog page group (slot 6 - Close)
-    ((void(*)(void*))((void**)m_pPageGroup)[0][6])(m_pPageGroup);
-    
-    m_bSkipClose = 0;
-}
 
 /**
  * pongDialogContext_rtti_F384_0  @ 0x8230CF88  |  size: 0x8
