@@ -962,7 +962,7 @@ void pongLegalsState::Init() {
     m_pContext = ctx;
 
     // Debug log
-    nop_8240E6D0("pongLegalsState::Init - context");   // @ 0x8205F864
+    nop_8240E6D0("Loading legals screen...");   // @ 0x82061864 (corrected +0x2000)
 
     // Allocate page-group sub-object (240 bytes, 16-byte aligned)
     xe_main_thread_init_0038();
@@ -983,7 +983,7 @@ void pongLegalsState::Init() {
     // Register with the state manager
     PageGroup_Register(pageGroup);
 
-    nop_8240E6D0("pongLegalsState::Init - done");   // @ 0x8205F880
+    nop_8240E6D0("Legals screen loaded.");   // @ 0x82061880 (corrected +0x2000)
 }
 
 /**
@@ -1114,7 +1114,7 @@ static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
  *   7. Stores the page group in g_dialogPageGroup global.
  */
 void pongDialogContext::Register() {
-    nop_8240E6D0("pongDialogContext::Register enter");   // @ 0x8205F240
+    nop_8240E6D0("Loading dialog box...");   // @ 0x82061240 (corrected +0x2000)
 
     xe_main_thread_init_0038();
 
@@ -1139,7 +1139,7 @@ void pongDialogContext::Register() {
     extern void* g_dialogPageGroup;   // @ 0x82606628  [.data, 4 bytes]
     g_dialogPageGroup = m_pPageGroup;
 
-    nop_8240E6D0("pongDialogContext::Register done");   // @ 0x8205F258
+    nop_8240E6D0("Dialog box loaded.");   // @ 0x82061258 (corrected +0x2000)
 }
 
 /**

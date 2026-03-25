@@ -357,7 +357,7 @@ hitTipData::~hitTipData() {
 void hitTipData::PostLoadProperties() {
     // Validate ShotType: must be in range [0, 5]
     if (m_shotType < 0 || m_shotType >= 6) {
-        nop_8240E6D0("hitTipData::PostLoadProperties() - invalid ShotType");  // @ 0x82043090
+        nop_8240E6D0("Invalid hit tip found: %d");  // @ 0x82045090 (corrected +0x2000)
     }
 
     // Check score/consecutive field consistency
@@ -368,7 +368,7 @@ void hitTipData::PostLoadProperties() {
             return;
         }
         // Score fields invalid: log error and set default
-        nop_8240E6D0("hitTipData::PostLoadProperties() - invalid score/consecutive thresholds");  // @ 0x820430AC
+        nop_8240E6D0("Invalid hit tip, setting InARow to default");  // @ 0x820450AC (corrected +0x2000)
         m_consecutiveThreshold = 2;  // Default to 2
     }
 
