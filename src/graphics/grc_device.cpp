@@ -8,8 +8,8 @@
  *   - grcDevice_shutdownAlt @ 0x821540D0 — Alternate shutdown path
  */
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <cstdint>
+#include <cstddef>
 
 /* ── External Dependencies ────────────────────────────────────────────────── */
 
@@ -36,6 +36,9 @@ extern void rage_6CA0(void* pTarget);       // @ 0x82366CA0 — Cleanup render t
 extern void _locale_register(void* pLocale, uint32_t flags);  // @ 0x820C02D0
 extern void thunk_DbgBreakPoint(void);      // @ 0x82566B70
 extern void rage_7400(void* pDevice, int32_t arg);  // @ 0x82357400
+
+// Forward declarations
+void grcDevice_shutdownAlt(void);
 
 /* ── Structure Definitions ────────────────────────────────────────────────── */
 
@@ -96,7 +99,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     
     if (pLoop->m_bSkipRender == 0) {
         // Not in skip-render mode — check if camera action is active
-        if (g_pCamActionSys != NULL) {
+        if (g_pCamActionSys != nullptr) {
             uint8_t* pCamSys = (uint8_t*)g_pCamActionSys;
             uint8_t camActive = pCamSys[24];
             bGateFired = (camActive != 0);
@@ -125,7 +128,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     pLoop = (gameLoop*)g_loop_obj_ptr;  // Reload after potential mutations
     pgStreamObj* pStreamObj = (pgStreamObj*)pLoop->m_pStreamObj;
     
-    bool streamActive = (pStreamObj != NULL && pStreamObj->m_bActive != 0);
+    bool streamActive = (pStreamObj != nullptr && pStreamObj->m_bActive != 0);
     
     if (!streamActive) {
         // No active profiling stream — begin GPU pass now
@@ -140,14 +143,14 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     
     /* ── Profiling Bracket: Cancel Before Render Target ─────────────────── */
     pStreamObj = (pgStreamObj*)pLoop->m_pStreamObj;
-    if (pStreamObj != NULL && pStreamObj->m_bActive != 0) {
+    if (pStreamObj != nullptr && pStreamObj->m_bActive != 0) {
         GetPageGroupState(pStreamObj->m_pStream, -1);
         pLoop = (gameLoop*)g_loop_obj_ptr;
     }
     
     /* ── Render Target Channel Setup ─────────────────────────────────────── */
     void* pRenderTarget = pDevice->m_pRenderTarget;
-    if (pRenderTarget != NULL) {
+    if (pRenderTarget != nullptr) {
         void** vtable = *(void***)pRenderTarget;
         
         // Set color channel clear flag (vtable slot 11)
@@ -166,7 +169,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     
     /* ── Profiling Bracket: Open After Render Target ────────────────────── */
     pStreamObj = (pgStreamObj*)pLoop->m_pStreamObj;
-    if (pStreamObj != NULL && pStreamObj->m_bActive != 0) {
+    if (pStreamObj != nullptr && pStreamObj->m_bActive != 0) {
         RenderPageGroup(pStreamObj->m_pStream, 1);
     }
 }
@@ -205,23 +208,23 @@ void grcDevice_shutdown(void)
     }
     
     /* 2. Destroy render objects array */
-    if (pRenderObjects[0] != NULL) {
+    if (pRenderObjects[0] != nullptr) {
         rage_5BF8(pRenderObjects[0]);
-        pRenderObjects[0] = NULL;
+        pRenderObjects[0] = nullptr;
     }
     
-    if (pRenderObjects[1] != NULL) {
+    if (pRenderObjects[1] != nullptr) {
         rage_free(pRenderObjects[1]);
-        pRenderObjects[1] = NULL;
+        pRenderObjects[1] = nullptr;
     }
     
     /* 3. Call alternate shutdown path */
     grcDevice_shutdownAlt();
     
     /* 4. Destroy texture cache */
-    if (*ppTextureCache != NULL) {
+    if (*ppTextureCache != nullptr) {
         rage_56A8(*ppTextureCache);
-        *ppTextureCache = NULL;
+        *ppTextureCache = nullptr;
     }
     
     /* 5. Clean up internal device structures */
@@ -237,7 +240,7 @@ void grcDevice_shutdown(void)
         
         // Process first object in pair
         RenderObject** ppObj1 = (RenderObject**)baseOffset;
-        if (*ppObj1 != NULL) {
+        if (*ppObj1 != nullptr) {
             RenderObject* pObj = *ppObj1;
             pObj->m_refCount--;
             
@@ -249,12 +252,12 @@ void grcDevice_shutdown(void)
                 thunk_DbgBreakPoint();  // Unexpected refcount
             }
             
-            *ppObj1 = NULL;
+            *ppObj1 = nullptr;
         }
         
         // Process second object in pair
         RenderObject** ppObj2 = (RenderObject**)(baseOffset + 8);
-        if (*ppObj2 != NULL) {
+        if (*ppObj2 != nullptr) {
             RenderObject* pObj = *ppObj2;
             pObj->m_refCount--;
             
@@ -265,12 +268,12 @@ void grcDevice_shutdown(void)
                 thunk_DbgBreakPoint();
             }
             
-            *ppObj2 = NULL;
+            *ppObj2 = nullptr;
         }
     }
     
     /* 8. Release render target with reference counting */
-    if (*ppDevice != NULL) {
+    if (*ppDevice != nullptr) {
         uint32_t* pTargetData = (uint32_t*)*ppDevice;
         uint32_t refCount = pTargetData[3];  // +12
         
@@ -281,7 +284,7 @@ void grcDevice_shutdown(void)
             void* pLocale = *(void**)((uint8_t*)*ppDevice - 4);
             _locale_register(pLocale, 0x24800000);  // lis r4, 9344
             
-            *ppDevice = NULL;
+            *ppDevice = nullptr;
         } else {
             pTargetData[3] = refCount - 1;
             
@@ -289,7 +292,7 @@ void grcDevice_shutdown(void)
                 thunk_DbgBreakPoint();
             }
             
-            *ppDevice = NULL;
+            *ppDevice = nullptr;
         }
     }
 }
@@ -313,10 +316,10 @@ void grcDevice_shutdownAlt(void)
     
     void* pDevice = *ppDevice;
     
-    if (pDevice != NULL) {
+    if (pDevice != nullptr) {
         // Check if this device is also the HUD overlay
         if (g_pHudOverlay == pDevice) {
-            g_pHudOverlay = NULL;
+            g_pHudOverlay = nullptr;
         }
         
         // Free the device memory
@@ -324,7 +327,7 @@ void grcDevice_shutdownAlt(void)
     }
     
     // Clear device pointer
-    *ppDevice = NULL;
+    *ppDevice = nullptr;
 }
 
 
