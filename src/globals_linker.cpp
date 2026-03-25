@@ -501,4 +501,3 @@ void dcamPolarCam_vfn_8_impl() __asm__("dcamPolarCam_vfn_8");
 void dcamPolarCam_vfn_8_impl() {}
 void dcamPolarCam_vfn_9_impl() __asm__("dcamPolarCam_vfn_9");
 void dcamPolarCam_vfn_9_impl() {}
-}
