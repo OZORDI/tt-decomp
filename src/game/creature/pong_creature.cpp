@@ -1330,3 +1330,222 @@ void* pongCreatureInst::GetSubObjectTransform(int index) {  // vfn_3
     char* base = *(char**)((char*)pool + 120);
     return base + (index << 6);
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst — Batch 2: thunks, flag checks, delegation helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * pongCreatureInst::HasVisibilityFlag @ 0x820C5378 | size: 0x20
+ *
+ * Tests bit 2 of the flags byte at +431 (0x1AF). Returns true if the
+ * creature has the visibility/render flag set.
+ */
+bool pongCreatureInst::HasVisibilityFlag() {  // 5378
+    uint8_t flags = *(uint8_t*)((char*)this + 431);
+    return (flags & 0x4) != 0;
+}
+
+/**
+ * pongCreatureInst::IsNetworkActive @ 0x8211C9C8 | size: 0x20
+ *
+ * Returns true if the global network state pointer at 0x8271A36C is
+ * non-null, indicating an active network session.
+ */
+bool pongCreatureInst::IsNetworkActive() {  // C9C8_w
+    extern void* g_networkStatePtr;  // @ 0x8271A36C
+    return g_networkStatePtr != nullptr;
+}
+
+/**
+ * pongCreatureInst::IsIndexValid @ 0x8211CF90 | size: 0x20
+ *
+ * Compares field_12 (current index) against field_16 (max index).
+ * Returns true if current >= max (i.e., index has reached capacity).
+ */
+bool pongCreatureInst::IsIndexValid() {  // CF90_h
+    int32_t currentIdx = *(int32_t*)((char*)this + 12);
+    int32_t maxIdx = *(int32_t*)((char*)this + 16);
+    return currentIdx >= maxIdx;
+}
+
+/**
+ * pongCreatureInst::GetCurrentWeight @ 0x8211D010 | size: 0x38
+ *
+ * Returns the current animation weight for the active blend entry.
+ * If field_0 (pointer array) is non-null, uses indexed lookup:
+ *   array[index] -> field at +124
+ * Otherwise falls back to linear array at field_4:
+ *   field_4 + (index * 176) + 96
+ */
+float pongCreatureInst::GetCurrentWeight() {  // D010_h
+    void* ptrArray = *(void**)((char*)this + 0);
+    int32_t index = *(int32_t*)((char*)this + 12);
+
+    if (ptrArray) {
+        // Indexed pointer array lookup
+        void** entries = (void**)ptrArray;
+        void* entry = entries[index];
+        return *(float*)((char*)entry + 124);
+    } else {
+        // Linear array fallback (stride = 176 bytes per entry)
+        char* base = *(char**)((char*)this + 4);
+        return *(float*)(base + index * 176 + 96);
+    }
+}
+
+/**
+ * pongCreatureInst::DelegateSlot9_Offset32 @ 0x82118FC0 | size: 0x1C
+ *
+ * Extracts the target object from arg->field_4, then tail-calls its
+ * vtable slot 9 with this+32 as the data argument.
+ */
+void pongCreatureInst::DelegateSlot9_Offset32(void* arg) {  // 8FC0_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef void (*SlotFunc)(void*, void*);
+    void** vt = *(void***)target;
+    SlotFunc fn = (SlotFunc)vt[9];
+    fn(target, (char*)this + 32);
+}
+
+/**
+ * pongCreatureInst::DelegateSlot9_Offset48 @ 0x82118FE0 | size: 0x1C
+ *
+ * Same pattern as DelegateSlot9_Offset32, with this+48.
+ */
+void pongCreatureInst::DelegateSlot9_Offset48(void* arg) {  // 8FE0_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef void (*SlotFunc)(void*, void*);
+    void** vt = *(void***)target;
+    SlotFunc fn = (SlotFunc)vt[9];
+    fn(target, (char*)this + 48);
+}
+
+/**
+ * pongCreatureInst::DelegateSlot9_Offset64 @ 0x82119000 | size: 0x1C
+ *
+ * Same pattern as DelegateSlot9_Offset32, with this+64.
+ */
+void pongCreatureInst::DelegateSlot9_Offset64(void* arg) {  // 9000_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef void (*SlotFunc)(void*, void*);
+    void** vt = *(void***)target;
+    SlotFunc fn = (SlotFunc)vt[9];
+    fn(target, (char*)this + 64);
+}
+
+/**
+ * pongCreatureInst::DelegateSlot9_Offset80 @ 0x82119020 | size: 0x1C
+ *
+ * Same pattern, with this+80.
+ */
+void pongCreatureInst::DelegateSlot9_Offset80(void* arg) {  // 9020_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef void (*SlotFunc)(void*, void*);
+    void** vt = *(void***)target;
+    SlotFunc fn = (SlotFunc)vt[9];
+    fn(target, (char*)this + 80);
+}
+
+/**
+ * pongCreatureInst::DelegateSlot9_Offset112 @ 0x82119040 | size: 0x1C
+ *
+ * Same pattern, with this+112.
+ */
+void pongCreatureInst::DelegateSlot9_Offset112(void* arg) {  // 9040_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef void (*SlotFunc)(void*, void*);
+    void** vt = *(void***)target;
+    SlotFunc fn = (SlotFunc)vt[9];
+    fn(target, (char*)this + 112);
+}
+
+/**
+ * pongCreatureInst::DelegateSlot9_Offset128 @ 0x82119060 | size: 0x1C
+ *
+ * Same pattern, with this+128.
+ */
+void pongCreatureInst::DelegateSlot9_Offset128(void* arg) {  // 9060_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef void (*SlotFunc)(void*, void*);
+    void** vt = *(void***)target;
+    SlotFunc fn = (SlotFunc)vt[9];
+    fn(target, (char*)this + 128);
+}
+
+/**
+ * pongCreatureInst::DelegateSlot9_Offset144 @ 0x82119080 | size: 0x1C
+ *
+ * Same pattern, with this+144.
+ */
+void pongCreatureInst::DelegateSlot9_Offset144(void* arg) {  // 9080_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef void (*SlotFunc)(void*, void*);
+    void** vt = *(void***)target;
+    SlotFunc fn = (SlotFunc)vt[9];
+    fn(target, (char*)this + 144);
+}
+
+/**
+ * pongCreatureInst::StoreVCallResultAtField429 @ 0x82118E70 | size: 0x40
+ *
+ * Extracts object from arg->field_4, calls its vtable slot 4,
+ * and stores the byte result at this+429. Used for syncing
+ * animation state flags from a network message.
+ */
+void pongCreatureInst::StoreVCallResultAtField429(void* arg) {  // 8E70_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef uint8_t (*GetFunc)(void*);
+    void** vt = *(void***)target;
+    GetFunc fn = (GetFunc)vt[4];
+    uint8_t result = fn(target);
+    *(uint8_t*)((char*)this + 429) = result;
+}
+
+/**
+ * pongCreatureInst::StoreVCallResultAtField446 @ 0x82119180 | size: 0x40
+ *
+ * Same pattern as StoreVCallResultAtField429, stores at this+446.
+ */
+void pongCreatureInst::StoreVCallResultAtField446(void* arg) {  // 9180_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef uint8_t (*GetFunc)(void*);
+    void** vt = *(void***)target;
+    GetFunc fn = (GetFunc)vt[4];
+    uint8_t result = fn(target);
+    *(uint8_t*)((char*)this + 446) = result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LocomotionStateAnim — Small helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * LocomotionStateAnim::ForwardToVfn7 @ 0x8224BB98 | size: 0x10
+ *
+ * Tail-calls vtable slot 7 on self. Forwards a notification/update
+ * to the state's concrete implementation.
+ */
+void LocomotionStateAnim::ForwardToVfn7() {  // BB98
+    typedef void (*Func)(void*);
+    void** vt = *(void***)this;
+    Func fn = (Func)vt[7];
+    fn(this);
+}
+
+/**
+ * LocomotionStateAnim::CountActiveAnimLayers @ 0x820DBA60 | size: 0x3C
+ *
+ * Counts the number of active animation layers (at offsets +16, +20, +24).
+ * Each non-null pointer counts as one active layer. Returns count + 1
+ * (base layer is always counted) if field_24 is non-null, otherwise
+ * returns just the count of the first two layers.
+ */
+int LocomotionStateAnim::CountActiveAnimLayers() {  // BA60_g
+    int count = 0;
+    if (*(void**)((char*)this + 16) != nullptr) count++;
+    if (*(void**)((char*)this + 20) != nullptr) count++;
+    if (*(void**)((char*)this + 24) != nullptr) return count + 1;
+    return count;
+}
