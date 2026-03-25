@@ -141,13 +141,6 @@ void fragDrawable::ProcessGeometry(void* geometryContainer, void* param1, void* 
 }
 
 } // namespace rage
-/**
- * rage/rage_grm.cpp — RAGE geometry/fragment drawable system
- * Rockstar Presents Table Tennis (Xbox 360, 2006)
- */
-
-#include "rage/rage_grm.hpp"
-#include <stdint.h>
 
 namespace rage {
 

@@ -19,6 +19,7 @@ struct InputState;
 // Memory management
 Allocator* GetAllocator();
 void* Allocate(size_t size);
+void* Allocate(size_t size, size_t alignment);
 void Free(void* ptr);
 
 // Application state

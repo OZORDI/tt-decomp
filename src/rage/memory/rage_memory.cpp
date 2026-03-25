@@ -183,6 +183,22 @@ void Release(grcTexture* texture) {
 
 } // namespace rage
 
+/* ── External dependencies for atSingleton functions ──────────────────────── */
+
+/* Jump table handler @ 0x821C5C20 */
+extern void jumptable_5C20(void* obj);
+
+/* HSM context handlers */
+extern void hsmContext_5BC8_fw(void* obj);
+extern void hsmContext_5B40_w(void* obj);
+
+/* Network client initialization @ 0x821C4FB0 */
+extern void SinglesNetworkClient_4FB0_g(void* obj);
+
+/* Dynamic array resize functions */
+extern void atSingleton_22B0(void* array, uint32_t newCapacity);
+extern void atSingleton_2038(void* array, uint32_t newCapacity);
+
 // ═══════════════════════════════════════════════════════════════════════════
 // atSingleton Template Functions
 // ═══════════════════════════════════════════════════════════════════════════

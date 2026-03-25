@@ -5,7 +5,8 @@
  * RAGE animation DOF (Degree of Freedom) classes for blending and interpolation.
  */
 
-#include "rage/animation/rage_anim.hpp"
+#include "rage_anim.hpp"
+#include "rage/rage.h"
 #include <algorithm>
 
 namespace rage {
@@ -37,6 +38,8 @@ void crAnimDofFloat::Blend(void* targetObj, float blendFactor) {
 }
 
 } // namespace rage
+
+namespace rage {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // crAnimDofVector3::GetValue()  [vtable slot 2 @ 0x820C46F0]
@@ -378,6 +381,8 @@ void crAnimDofVector3::EvaluateChannels(void* animContext, float time, float* ou
 
 } // namespace rage
 
+namespace rage {
+
 // ═════════════════════════════════════════════════════════════════════════════
 // crAnimDofFloat vtable implementations
 // ═════════════════════════════════════════════════════════════════════════════
@@ -577,3 +582,5 @@ void crAnimDofFloat::TransformBy(void* transformAnimDof) {
 void crAnimDofFloat::Normalize() {
     m_value = 0.0f;
 }
+
+} // namespace rage

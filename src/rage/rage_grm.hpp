@@ -300,6 +300,12 @@ struct spdApical {
     virtual void vfn_3(float value);  // [3] @ 0x82122738  unk_14 = value
     virtual void vfn_4(float value);  // [4] @ 0x82122740  unk_18 = value
     virtual void vfn_5(float value);  // [5] @ 0x82122748  unk_1C = value
+
+    // ── non-virtual methods ──
+    void SetLodNear(float value);     // unk_10 = value
+    void SetLodFar(float value);      // unk_14 = value
+    void SetLodFadeStart(float value); // unk_18 = value
+    void SetLodFadeEnd(float value);  // unk_1C = value
 };
 
 // ── rage::spdShaft  [vtable @ 0x82032F68] ──────────────────────────

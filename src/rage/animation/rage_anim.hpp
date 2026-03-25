@@ -231,17 +231,17 @@ struct crAnimDofFloat {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8224c7f8
-    virtual void vfn_2();  // [2] @ 0x8216ea78
-    virtual void vfn_3();  // [3] @ 0x8216eb20
-    virtual void vfn_4();  // [4] @ 0x8216eb28
-    virtual void vfn_5();  // [5] @ 0x8216eb58
-    virtual void vfn_6();  // [6] @ 0x8216ebf0
+    virtual void* GetValue();           // [2] @ 0x8216ea78
+    virtual int GetChannelCount();      // [3] @ 0x8216eb20
+    virtual void Evaluate(void* animContext, float time, float* outValue); // [4] @ 0x8216eb28
+    virtual void Blend(void* animContext, float blendFactor, float* outValue); // [5] @ 0x8216eb58
+    virtual void CopyFrom(void* sourceAnimDof);        // [6] @ 0x8216ebf0
     virtual void Blend(void* targetObj, float blendFactor);  // [7] @ 0x8216ec30
-    virtual void vfn_8();  // [8] @ 0x8216eca8
-    virtual void vfn_9();  // [9] @ 0x8216ed00
-    virtual void vfn_10();  // [10] @ 0x8216ed80
-    virtual void vfn_12();  // [12] @ 0x8216ed90
-    virtual void vfn_13();  // [13] @ 0x8216ee00
+    virtual void ScaleFrom(void* sourceAnimDof, float scaleFactor); // [8] @ 0x8216eca8
+    virtual void ThresholdFrom(void* sourceAnimDof, float threshold); // [9] @ 0x8216ed00
+    virtual void ScaleInPlace(float scaleFactor);      // [10] @ 0x8216ed80
+    virtual void TransformBy(void* transformAnimDof);  // [12] @ 0x8216ed90
+    virtual void Normalize();          // [13] @ 0x8216ee00
     virtual void vfn_16();  // [16] @ 0x8216ee10
     virtual void vfn_19();  // [19] @ 0x8216ee18
 };
@@ -372,20 +372,23 @@ struct crAnimDofVector3 {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8224c7e0
-    virtual void vfn_2();  // [2] @ 0x820c46f0
-    virtual void vfn_3();  // [3] @ 0x820c4be8
-    virtual void vfn_4();  // [4] @ 0x820c47a0
-    virtual void vfn_5();  // [5] @ 0x820c47b0
-    virtual void vfn_6();  // [6] @ 0x820c4850
-    virtual void vfn_7();  // [7] @ 0x820c4898
-    virtual void vfn_8();  // [8] @ 0x820c4948
-    virtual void vfn_9();  // [9] @ 0x820c49d0
-    virtual void vfn_10();  // [10] @ 0x820c4a38
-    virtual void vfn_11();  // [11] @ 0x820c4a60
-    virtual void vfn_12();  // [12] @ 0x820c4a78
-    virtual void vfn_13();  // [13] @ 0x820c4af8
-    virtual void vfn_14();  // [14] @ 0x823d8cd0
-    virtual void vfn_17();  // [17] @ 0x820c4b10
+    virtual void* GetValue();           // [2] @ 0x820c46f0
+    virtual int GetChannelCount();      // [3] @ 0x820c4be8
+    virtual void Evaluate(void* animContext, float time, float* outVector); // [4] @ 0x820c47a0
+    virtual void Blend(void* animContext, float blendFactor, float* outVector); // [5] @ 0x820c47b0
+    virtual void CopyFrom(void* sourceAnimDof);        // [6] @ 0x820c4850
+    virtual void BlendFrom(void* sourceAnimDof, float blendFactor); // [7] @ 0x820c4898
+    virtual void ScaleFrom(void* sourceAnimDof, float scaleFactor); // [8] @ 0x820c4948
+    virtual void ThresholdFrom(void* sourceAnimDof, float threshold); // [9] @ 0x820c49d0
+    virtual void ScaleInPlace(float scaleFactor);      // [10] @ 0x820c4a38
+    virtual void Reset();              // [11] @ 0x820c4a60
+    virtual void TransformBy(void* transformAnimDof);  // [12] @ 0x820c4a78
+    virtual void Normalize();          // [13] @ 0x820c4af8
+    virtual void vfn_14();             // [14] @ 0x823d8cd0
+    virtual void SetValue(const float* sourceVec);     // [17] @ 0x820c4b10
+
+    // ── non-virtual helper methods ──
+    void EvaluateChannels(void* animContext, float time, float* outVector);
 };
 
 // ── rage::crAnimFrame  [vtable @ 0x8204FCBC] ──────────────────────────
