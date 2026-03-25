@@ -16,104 +16,104 @@ extern void MmFreePhysicalMemory(uint32_t flags, void* address);
 uint32_t g_grcDevicePtr = 0;  // @ 0x8260637C (SDA +25468)
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_DC30_gen()  @ 0x824ADC30 | size: 0xC
+// rage_Alloc()  @ 0x824ADC30 | size: 0xC
 // 
 // Allocates memory with specific flags via rage allocator.
 // This is a thin wrapper around rage_01B8 with hardcoded flags.
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_DC30_gen(uint32_t size) {
+void* rage_Alloc(uint32_t size) {
     // Flags: 0x248C8001 = allocation flags for singleton objects
     // Likely includes: aligned allocation, zero-init, tracked allocation
     return rage_01B8(size, 0x248C8001);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_DC40_gen()  @ 0x824ADC40 | size: 0xC
+// rage_AllocRegistered()  @ 0x824ADC40 | size: 0xC
 // 
-// Identical to atSingleton_DC30_gen - allocates with same flags.
+// Identical to rage_Alloc - allocates with same flags.
 // Separate symbol likely for different call sites or inlining control.
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_DC40_gen(uint32_t size) {
+void* rage_AllocRegistered(uint32_t size) {
     return rage_01B8(size, 0x248C8001);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_3BD8_2h()  @ 0x824B3BD8 | size: 0xC
+// datBase_ClearVtable()  @ 0x824B3BD8 | size: 0xC
 // 
 // Clears the vtable pointer (sets to null).
 // Called during object destruction to invalidate the object.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_3BD8_2h(atSingleton* obj) {
+void datBase_ClearVtable(atSingleton* obj) {
     obj->vtable = nullptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_6508_2h()  @ 0x824B6508 | size: 0xC
+// datBase_SetByteAtIndex()  @ 0x824B6508 | size: 0xC
 // 
 // Stores a byte value at offset (base + index + 11).
 // Used for setting flags or state bytes in indexed arrays.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_6508_2h(uint8_t* base, uint32_t index, uint8_t value) {
+void datBase_SetByteAtIndex(uint8_t* base, uint32_t index, uint8_t value) {
     base[index + 11] = value;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_6B58_p39()  @ 0x824B6B58 | size: 0xC
+// rage_FreePhysicalMemory()  @ 0x824B6B58 | size: 0xC
 // 
 // Frees physical memory via Xbox 360 kernel call.
 // Wrapper around MmFreePhysicalMemory with flags=0.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_6B58_p39(void* address) {
+void rage_FreePhysicalMemory(void* address) {
     MmFreePhysicalMemory(0, address);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_6438()  @ 0x824B6438 | size: 0xC
+// CCalChannel_ForwardCall()  @ 0x824B6438 | size: 0xC
 // 
 // Forwards a call to CCalChannel_60A8_p46 with data from offset +608.
 // Likely part of audio or animation channel management.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_6438(atSingleton* obj, uint32_t param) {
+void CCalChannel_ForwardCall(atSingleton* obj, uint32_t param) {
     void* channelData = *(void**)((uint8_t*)obj + 608);
     CCalChannel_60A8_p46(channelData, param);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_6EF0_p46()  @ 0x824B6EF0 | size: 0xC
+// grcDevice_Callback()  @ 0x824B6EF0 | size: 0xC
 // 
 // Calls grc_DCA8 with the global graphics device pointer.
 // Part of the graphics rendering system initialization/cleanup.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_6EF0_p46() {
+void grcDevice_Callback() {
     void* grcDevice = (void*)g_grcDevicePtr;
     grc_DCA8(grcDevice);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_22D0_g()  @ 0x824B22D0 | size: 0x10
+// datBase_SetVtable()  @ 0x824B22D0 | size: 0x10
 // 
 // Sets the vtable pointer to a specific vtable address.
 // Used during object construction or vtable switching.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_22D0_g(atSingleton* obj) {
+void datBase_SetVtable(atSingleton* obj) {
     // Vtable address: 0x82003DC8
     obj->vtable = (void*)0x82003DC8;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_4148_g()  @ 0x824B4148 | size: 0x10
+// datBase_GetFloatSum()  @ 0x824B4148 | size: 0x10
 // 
 // Returns the sum of two float fields at offsets +120 and +92.
 // Likely calculates a total time, distance, or accumulated value.
 // ─────────────────────────────────────────────────────────────────────────────
-float atSingleton_4148_g(atSingleton* obj) {
+float datBase_GetFloatSum(atSingleton* obj) {
     float value1 = *(float*)((uint8_t*)obj + 120);
     float value2 = *(float*)((uint8_t*)obj + 92);
     return value1 + value2;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_74B8()  @ 0x820E74B8 | size: 0x68
+// datBase_DestroyArray8()  @ 0x820E74B8 | size: 0x68
 // 
 // Destroys an array of singleton objects and frees the array memory.
 // 
@@ -126,7 +126,7 @@ float atSingleton_4148_g(atSingleton* obj) {
 //      - Loop backwards through array, calling destructor on each element
 //      - Free the array memory via rage_free
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_74B8(atSingleton* obj) {
+void datBase_DestroyArray8(atSingleton* obj) {
     // Check if object has references
     if (obj->refCount == 0) {
         return;
@@ -149,7 +149,7 @@ void atSingleton_74B8(atSingleton* obj) {
     // Destroy each element in reverse order
     for (int32_t i = arrayCount - 1; i >= 0; i--) {
         uint8_t* element = arrayEnd - 8;
-        atSingleton_dtor_7628(element);
+        datBase_Dtor(element);
         arrayEnd = element;
     }
     
@@ -159,55 +159,55 @@ void atSingleton_74B8(atSingleton* obj) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_A828_2hr()  @ 0x8245A828 | size: 0x10
+// datBase_SetVtable_054B8()  @ 0x8245A828 | size: 0x10
 // 
 // Sets vtable pointer to 0x820054B8.
 // Constructor or vtable initialization function.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_A828_2hr(atSingleton* obj) {
+void datBase_SetVtable_054B8(atSingleton* obj) {
     obj->vtable = (void*)0x820054B8;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_DB50_2h()  @ 0x8245DB50 | size: 0x10
+// datBase_InitChain_05624()  @ 0x8245DB50 | size: 0x10
 // 
-// Sets vtable pointer to 0x82005624, then calls atSingleton_FA08_g.
+// Sets vtable pointer to 0x82005624, then calls datBase_InitChain_057A4.
 // Chained initialization pattern.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_DB50_2h(atSingleton* obj) {
+void datBase_InitChain_05624(atSingleton* obj) {
     obj->vtable = (void*)0x82005624;
-    atSingleton_FA08_g(obj);
+    datBase_InitChain_057A4(obj);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_FA08_g()  @ 0x8245FA08 | size: 0x10
+// datBase_InitChain_057A4()  @ 0x8245FA08 | size: 0x10
 // 
-// Sets vtable pointer to 0x820057A4, then calls atSingleton_22D0_g.
+// Sets vtable pointer to 0x820057A4, then calls datBase_SetVtable.
 // Multi-stage initialization chain.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_FA08_g(atSingleton* obj) {
+void datBase_InitChain_057A4(atSingleton* obj) {
     obj->vtable = (void*)0x820057A4;
-    atSingleton_22D0_g(obj);
+    datBase_SetVtable(obj);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_6F98_g()  @ 0x824B6F98 | size: 0x10
+// KeTimeStampBundle_GetField16()  @ 0x824B6F98 | size: 0x10
 // 
 // Returns a value from a global structure.
 // Loads pointer from global at 0x8200084C, then returns field at offset +16.
 // ─────────────────────────────────────────────────────────────────────────────
-uint32_t atSingleton_6F98_g() {
+uint32_t KeTimeStampBundle_GetField16() {
     uint32_t* globalPtr = *(uint32_t**)0x8200084C;
     return globalPtr[4];  // offset +16 = index 4
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_6108()  @ 0x824B6108 | size: 0x14
+// rage_CallIndirect()  @ 0x824B6108 | size: 0x14
 // 
 // Indirect function call through function pointer at offset +4.
 // Loads first parameter from offset +0, then calls function pointer at +4.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_6108(void* obj) {
+void rage_CallIndirect(void* obj) {
     typedef void (*FuncPtr)(void*);
     void* param = *(void**)obj;
     FuncPtr func = *(FuncPtr*)((uint8_t*)obj + 4);
@@ -215,12 +215,12 @@ void atSingleton_6108(void* obj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_9980_2h()  @ 0x824F9980 | size: 0x10
+// math_Abs()  @ 0x824F9980 | size: 0x10
 // 
 // Returns absolute value of signed integer.
 // If value is negative, returns its negation; otherwise returns early.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t atSingleton_9980_2h(int32_t value) {
+int32_t math_Abs(int32_t value) {
     if (value >= 0) {
         return value;
     }
@@ -228,48 +228,48 @@ int32_t atSingleton_9980_2h(int32_t value) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_6F38_p33()  @ 0x821C6F38 | size: 0x14
+// SinglesNetworkClient_ResetAndInit()  @ 0x821C6F38 | size: 0x14
 // 
 // Stores 0 at offset 75756 (0x127EC), then calls SinglesNetworkClient_4FB0_g.
 // Network client initialization helper.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_6F38_p33(uint8_t* obj) {
+void SinglesNetworkClient_ResetAndInit(uint8_t* obj) {
     *(uint32_t*)(obj + 75756) = 0;
     extern void SinglesNetworkClient_4FB0_g(uint8_t* obj);
     SinglesNetworkClient_4FB0_g(obj);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_DB58_sp()  @ 0x8257DB58 | size: 0x10
+// rage_StoreTimebase()  @ 0x8257DB58 | size: 0x10
 // 
 // Stores current timebase value to global at 0x82619BB0.
 // Performance counter / timing utility.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_DB58_sp() {
+void rage_StoreTimebase() {
     extern uint64_t PPC_QUERY_TIMEBASE();
     uint64_t timebase = PPC_QUERY_TIMEBASE();
     *(uint64_t*)0x82619BB0 = timebase;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_AA30_2hr()  @ 0x824FAA30 | size: 0x10
+// nt_InitThread()  @ 0x824FAA30 | size: 0x10
 // 
 // Calls nt_8948 with parameters (obj, 0, 32768).
 // Network or threading utility with specific flags.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_AA30_2hr(void* obj) {
+void nt_InitThread(void* obj) {
     extern void nt_8948(void* obj, uint32_t param1, uint32_t param2);
     nt_8948(obj, 0, 32768);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_7D58_2h()  @ 0x824F7D58 | size: 0x14
+// math_ModPositive()  @ 0x824F7D58 | size: 0x14
 // 
 // Modulo operation: returns (value1 % value2).
 // Repeatedly subtracts value2 from value1 until result is negative,
 // then adds value2 back once to get the remainder.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t atSingleton_7D58_2h(int32_t value1, int32_t value2) {
+int32_t math_ModPositive(int32_t value1, int32_t value2) {
     int32_t result = value1;
     while (result >= 0) {
         result -= value2;
@@ -279,7 +279,7 @@ int32_t atSingleton_7D58_2h(int32_t value1, int32_t value2) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_8620()  @ 0x820C8620 | size: 0x78
+// datBase_DestroyArray80()  @ 0x820C8620 | size: 0x78
 // 
 // Destroys an array of singleton objects with 80-byte elements.
 // 
@@ -290,7 +290,7 @@ int32_t atSingleton_7D58_2h(int32_t value1, int32_t value2) {
 //   4. Loop through array backwards, calling destructor (vtable slot 0) on each
 //   5. Free the array memory
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_8620(atSingleton* obj) {
+void datBase_DestroyArray80(atSingleton* obj) {
     // Get array base (16 bytes before this pointer)
     uint8_t* arrayBase = (uint8_t*)obj - 16;
     
@@ -328,7 +328,7 @@ void atSingleton_8620(atSingleton* obj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_33A8_h()  @ 0x820C33A8 | size: 0x140
+// pgDictionary_Destroy()  @ 0x820C33A8 | size: 0x140
 // 
 // Complex destructor with reference counting and resource cleanup.
 // 
@@ -340,7 +340,7 @@ void atSingleton_8620(atSingleton* obj) {
 //   5. Frees array at +12 if reference count reaches zero
 //   6. Restores vtable to 0x820276C4
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_33A8_h(atSingleton* obj) {
+void pgDictionary_Destroy(atSingleton* obj) {
     // Set initial vtable
     obj->vtable = (void*)0x82027824;
     
@@ -385,8 +385,8 @@ void atSingleton_33A8_h(atSingleton* obj) {
         void** objectArray = *(void***)((uint8_t*)obj + 20);
         if (objectArray != nullptr) {
             // Check if array is tracked by singleton system
-            extern uint8_t atSingleton_Find_90D0(void* ptr);
-            if (atSingleton_Find_90D0(objectArray) == 0) {
+            extern uint8_t datBase_IsTracked(void* ptr);
+            if (datBase_IsTracked(objectArray) == 0) {
                 // Not tracked - free it via allocator
                 extern void* g_allocator_ptr;  // SDA global at r13+0
                 void** allocator = *(void***)((uint8_t*)&g_allocator_ptr + 4);
@@ -402,8 +402,8 @@ void atSingleton_33A8_h(atSingleton* obj) {
     if (count2 != 0) {
         void** array2 = *(void***)((uint8_t*)obj + 12);
         if (array2 != nullptr) {
-            extern uint8_t atSingleton_Find_90D0(void* ptr);
-            if (atSingleton_Find_90D0(array2) == 0) {
+            extern uint8_t datBase_IsTracked(void* ptr);
+            if (datBase_IsTracked(array2) == 0) {
                 extern void* g_allocator_ptr;
                 void** allocator = *(void***)((uint8_t*)&g_allocator_ptr + 4);
                 typedef void (*FreeFunc)(void*, void*);
@@ -418,7 +418,7 @@ void atSingleton_33A8_h(atSingleton* obj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_F950_fw()  @ 0x820CF950 | size: 0xEC
+// datBase_HashTableLookup()  @ 0x820CF950 | size: 0xEC
 // 
 // Hash table lookup by string key.
 // 
@@ -434,15 +434,15 @@ void atSingleton_33A8_h(atSingleton* obj) {
 //   +4: value (returned if key matches)
 //   +8: next entry pointer (for collision chaining)
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_F950_fw(atSingleton* hashTable, void* keyObj) {
+void* datBase_HashTableLookup(atSingleton* hashTable, void* keyObj) {
     uint16_t bucketCount = *(uint16_t*)((uint8_t*)hashTable + 4);
     if (bucketCount == 0) {
         return nullptr;
     }
     
     // Calculate hash of key string
-    extern uint32_t atSingleton_5338_g(void* keyObj);
-    uint32_t hash = atSingleton_5338_g(keyObj);
+    extern uint32_t datBase_HashString(void* keyObj);
+    uint32_t hash = datBase_HashString(keyObj);
     
     // Find bucket index: hash % bucketCount
     uint32_t bucketIndex = hash % bucketCount;
@@ -495,7 +495,7 @@ void* atSingleton_F950_fw(atSingleton* hashTable, void* keyObj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_B960_h()  @ 0x820CB960 | size: 0xE0
+// datBase_DestroyWithAnimFrames()  @ 0x820CB960 | size: 0xE0
 // 
 // Constructor for object with four embedded sub-objects.
 // 
@@ -508,7 +508,7 @@ void* atSingleton_F950_fw(atSingleton* hashTable, void* keyObj) {
 // After initialization, calls cleanup function on each embedded object,
 // then sets final vtables.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_B960_h(atSingleton* obj) {
+void datBase_DestroyWithAnimFrames(atSingleton* obj) {
     // Set initial vtables
     obj->vtable = (void*)0x82033E54;
     *(void**)((uint8_t*)obj + 4) = (void*)0x82033E60;
@@ -517,8 +517,8 @@ void atSingleton_B960_h(atSingleton* obj) {
     void* embeddedObj80 = (void*)((uint8_t*)obj + 80);
     *(void**)embeddedObj80 = (void*)0x8204FCBC;
     
-    extern void atSingleton_AC28_g(void* obj);
-    atSingleton_AC28_g(embeddedObj80);
+    extern void crAnimFrame_Clear(void* obj);
+    crAnimFrame_Clear(embeddedObj80);
     
     // Check if embedded object has allocated memory and free it
     uint16_t count80 = *(uint16_t*)((uint8_t*)embeddedObj80 + 14);
@@ -530,7 +530,7 @@ void atSingleton_B960_h(atSingleton* obj) {
     // Initialize embedded object at +64
     void* embeddedObj64 = (void*)((uint8_t*)obj + 64);
     *(void**)embeddedObj64 = (void*)0x8204FCBC;
-    atSingleton_AC28_g(embeddedObj64);
+    crAnimFrame_Clear(embeddedObj64);
     
     uint16_t count64 = *(uint16_t*)((uint8_t*)embeddedObj64 + 14);
     if (count64 != 0) {
@@ -541,7 +541,7 @@ void atSingleton_B960_h(atSingleton* obj) {
     // Initialize embedded object at +48
     void* embeddedObj48 = (void*)((uint8_t*)obj + 48);
     *(void**)embeddedObj48 = (void*)0x8204FCBC;
-    atSingleton_AC28_g(embeddedObj48);
+    crAnimFrame_Clear(embeddedObj48);
     
     uint16_t count48 = *(uint16_t*)((uint8_t*)embeddedObj48 + 14);
     if (count48 != 0) {
@@ -552,7 +552,7 @@ void atSingleton_B960_h(atSingleton* obj) {
     // Initialize embedded object at +32
     void* embeddedObj32 = (void*)((uint8_t*)obj + 32);
     *(void**)embeddedObj32 = (void*)0x8204FCBC;
-    atSingleton_AC28_g(embeddedObj32);
+    crAnimFrame_Clear(embeddedObj32);
     
     uint16_t count32 = *(uint16_t*)((uint8_t*)embeddedObj32 + 14);
     if (count32 != 0) {
@@ -805,8 +805,8 @@ int atSingleton::OnTransition(int transitionType) {
     
     if (!inState3 && !inState4WithType0) {
         // Default: transition to state 5 (Complete)
-        extern void atSingleton_AA58_g(void*, int);
-        atSingleton_AA58_g(this, 5);
+        extern void datBase_SetState(void*, int);
+        datBase_SetState(this, 5);
         return result;
     }
     
@@ -821,8 +821,8 @@ int atSingleton::OnTransition(int transitionType) {
         *(int*)((char*)this + 16) = 1;
         
         // Call state transition helper
-        extern void atSingleton_AA58_g(void*, int);
-        atSingleton_AA58_g(this, 4);
+        extern void datBase_SetState(void*, int);
+        datBase_SetState(this, 4);
         
         // Get object at offset +36 and call its vtable slot 5
         void* childObj = *(void**)((char*)this + 36);
@@ -836,8 +836,8 @@ int atSingleton::OnTransition(int transitionType) {
     
     if (transitionType == 1) {
         // Type 1: Transition to state 4 without initialization
-        extern void atSingleton_AA58_g(void*, int);
-        atSingleton_AA58_g(this, 4);
+        extern void datBase_SetState(void*, int);
+        datBase_SetState(this, 4);
         
         // Get object at offset +36 and call its vtable slot 12
         void* childObj = *(void**)((char*)this + 36);
@@ -853,14 +853,14 @@ int atSingleton::OnTransition(int transitionType) {
     }
     
     // Fallthrough: transition to state 5
-    extern void atSingleton_AA58_g(void*, int);
-    atSingleton_AA58_g(this, 5);
+    extern void datBase_SetState(void*, int);
+    datBase_SetState(this, 5);
     
     return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_9C18_2hr()  @ 0x820D9C18 | size: 0x54
+// game_CheckStateFlags()  @ 0x820D9C18 | size: 0x54
 // 
 // Checks game state flags to determine if a specific condition is met.
 // 
@@ -871,7 +871,7 @@ int atSingleton::OnTransition(int transitionType) {
 // 
 // This appears to check if the game is in a specific state (e.g., paused but not loading).
 // ─────────────────────────────────────────────────────────────────────────────
-uint8_t atSingleton_9C18_2hr() {
+uint8_t game_CheckStateFlags() {
     // Navigate through global structure chain to get flags
     // Global at 0x82120000 - 23816 = 0x821BA0F8
     extern uint32_t* g_gameStatePtr;  // At 0x821BA0F8
@@ -895,7 +895,7 @@ uint8_t atSingleton_9C18_2hr() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_57F0()  @ 0x821257F0 | size: 0x84
+// fragDrawable_CopyData48()  @ 0x821257F0 | size: 0x84
 // 
 // Copies 48 bytes of data using VMX128 vector instructions, then initializes
 // additional fields.
@@ -904,10 +904,10 @@ uint8_t atSingleton_9C18_2hr() {
 //   +0..+31: First 32 bytes (copied via vector)
 //   +16..+47: Next 32 bytes (copied via vector)
 //   +32..+47: Additional 16 bytes (copied as scalars)
-//   +48: Result from atSingleton_29E0_g
+//   +48: Result from rage_ConvertParam
 //   +52..+60: Zeroed fields
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_57F0(atSingleton* dest, void* param1, void* sourceData) {
+void fragDrawable_CopyData48(atSingleton* dest, void* param1, void* sourceData) {
     // Copy first 32 bytes using vector load/store
     uint8_t* src = (uint8_t*)sourceData;
     uint8_t* dst = (uint8_t*)dest;
@@ -930,8 +930,8 @@ void atSingleton_57F0(atSingleton* dest, void* param1, void* sourceData) {
     
     // Get value from param1 and call function
     uint32_t* param1Ptr = (uint32_t*)param1;
-    extern uint32_t atSingleton_29E0_g(uint32_t value);
-    uint32_t result = atSingleton_29E0_g(*param1Ptr);
+    extern uint32_t rage_ConvertParam(uint32_t value);
+    uint32_t result = rage_ConvertParam(*param1Ptr);
     
     // Store result and zero remaining fields
     *(uint32_t*)(dst + 48) = result;
@@ -941,7 +941,7 @@ void atSingleton_57F0(atSingleton* dest, void* param1, void* sourceData) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_5F48_2h()  @ 0x82125F48 | size: 0x74
+// datBase_FindListTail()  @ 0x82125F48 | size: 0x74
 // 
 // Traverses a linked list to find the last node.
 // 
@@ -954,7 +954,7 @@ void atSingleton_57F0(atSingleton* dest, void* param1, void* sourceData) {
 // 
 // This appears to be finding the tail of a doubly-linked list.
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_5F48_2h(void* obj) {
+void* datBase_FindListTail(void* obj) {
     uint8_t* objBytes = (uint8_t*)obj;
     
     // Try to get node from offset +60
@@ -983,11 +983,11 @@ void* atSingleton_5F48_2h(void* obj) {
     }
     
     // Recursively search from node52
-    return atSingleton_5F48_2h(node52);
+    return datBase_FindListTail(node52);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_8D30_p42()  @ 0x82118D30 | size: 0x88
+// ph_LookupStringAndStoreResult()  @ 0x82118D30 | size: 0x88
 // 
 // Generates a string representation and stores a result byte.
 // 
@@ -998,7 +998,7 @@ void* atSingleton_5F48_2h(void* obj) {
 //   4. Look up string in global table
 //   5. Store result byte at offset +444 in destination object
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_8D30_p42(atSingleton* dest, void* param) {
+void ph_LookupStringAndStoreResult(atSingleton* dest, void* param) {
     // Create and zero-initialize 64-byte buffer
     char buffer[64];
     buffer[0] = 0;
@@ -1029,7 +1029,7 @@ void atSingleton_8D30_p42(atSingleton* dest, void* param) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_BF40_2h()  @ 0x8212BF40 | size: 0x74
+// datBase_SyncProperty()  @ 0x8212BF40 | size: 0x74
 // 
 // Conditional vtable dispatch based on flag.
 // 
@@ -1038,7 +1038,7 @@ void atSingleton_8D30_p42(atSingleton* dest, void* param) {
 // Otherwise:
 //   - Calls vtable slot 3 (offset +12) and stores result in output
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_BF40_2h(void* obj, uint16_t* output) {
+void datBase_SyncProperty(void* obj, uint16_t* output) {
     uint8_t* objBytes = (uint8_t*)obj;
     uint8_t flag = objBytes[4];
     void* targetObj = *(void**)objBytes;
@@ -1059,7 +1059,7 @@ void atSingleton_BF40_2h(void* obj, uint16_t* output) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_8958_g()  @ 0x820C8958 | size: 0x168
+// crAnimation_LoadByName()  @ 0x820C8958 | size: 0x168
 // 
 // Loads an animation by name with fallback logic.
 // 
@@ -1073,7 +1073,7 @@ void atSingleton_BF40_2h(void* obj, uint16_t* output) {
 // 
 // This is a resource loading function with multiple fallback paths.
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_8958_g(atSingleton* loader, const char* animName, uint8_t createIfMissing) {
+void* crAnimation_LoadByName(atSingleton* loader, const char* animName, uint8_t createIfMissing) {
     // Try to load from physics system
     void* physicsSystem = *(void**)((uint8_t*)loader + 4);
     extern void* ph_6FC8(void* system);
@@ -1106,8 +1106,8 @@ void* atSingleton_8958_g(atSingleton* loader, const char* animName, uint8_t crea
     
     // Try loading with first extension
     void* baseObj = *(void**)loader;
-    extern void atSingleton_2E60_g(void* cache, void* obj);
-    atSingleton_2E60_g(animCache, baseObj);
+    extern void crAnimCache_SetSource(void* cache, void* obj);
+    crAnimCache_SetSource(animCache, baseObj);
     
     extern uint8_t rage_3118(void* cache, const char* name, const char* ext);
     uint8_t found = rage_3118(animCache, filename, "");
@@ -1123,7 +1123,7 @@ void* atSingleton_8958_g(atSingleton* loader, const char* animName, uint8_t crea
     
     if (animation == nullptr) {
         // Try alternate extension
-        atSingleton_2E60_g(animCache, baseObj);
+        crAnimCache_SetSource(animCache, baseObj);
         found = rage_3118(animCache, filename, "");
         
         if (found) {
@@ -1141,19 +1141,19 @@ void* atSingleton_8958_g(atSingleton* loader, const char* animName, uint8_t crea
     }
     
     // Register animation with manager
-    extern void atSingleton_6B60_g(void* system, const char* name, void* anim);
-    atSingleton_6B60_g(physicsSystem, animName, animation);
+    extern void ph_RegisterAnimation(void* system, const char* name, void* anim);
+    ph_RegisterAnimation(physicsSystem, animName, animation);
     
     return animation;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_C940_sp()  @ 0x8257C940 | size: 0x14
+// rage_StoreTimebase2()  @ 0x8257C940 | size: 0x14
 // 
 // Stores current PowerPC timebase counter to a global variable.
 // Used for performance profiling and timing measurements.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_C940_sp() {
+void rage_StoreTimebase2() {
     extern uint64_t PPC_QUERY_TIMEBASE();
     extern uint64_t g_timebase_storage;  // @ 0x825DAEF0
     
@@ -1161,12 +1161,12 @@ void atSingleton_C940_sp() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_FE80_p39()  @ 0x8225FE80 | size: 0x18
+// rage_LookupByIndex()  @ 0x8225FE80 | size: 0x18
 // 
 // Array lookup function - retrieves pointer from indexed array.
 // Formula: array[(index * 8) - 8]
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_FE80_p39(uint32_t index) {
+void* rage_LookupByIndex(uint32_t index) {
     extern uint32_t g_singleton_array[];  // @ 0x825C4960
     
     // Calculate array offset: (index * 8) - 8
@@ -1175,12 +1175,12 @@ void* atSingleton_FE80_p39(uint32_t index) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_4300_g()  @ 0x82454300 | size: 0x18
+// datBase_CallVtableSlot22()  @ 0x82454300 | size: 0x18
 // 
 // Virtual function call through vtable slot 22.
 // Loads object from offset +48, then calls its vtable method at slot 22.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_4300_g(atSingleton* obj) {
+void datBase_CallVtableSlot22(atSingleton* obj) {
     atSingleton* target = (atSingleton*)((uint8_t*)obj + 48);
     
     // Call vtable slot 22 (offset 88 = 22 * 4)
@@ -1191,12 +1191,12 @@ void atSingleton_4300_g(atSingleton* obj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_F148_p39()  @ 0x8225F148 | size: 0x1C
+// snSession_LookupById_4097()  @ 0x8225F148 | size: 0x1C
 // 
 // Lookup table access - maps 16-bit ID to pointer.
 // Table base: 0x825C5320, index = (id & 0xFFFF) - 4097
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_F148_p39(uint32_t id) {
+void* snSession_LookupById_4097(uint32_t id) {
     extern uint32_t g_lookup_table_F148[];  // @ 0x825C5320
     
     uint16_t index = (id & 0xFFFF) - 4097;
@@ -1204,12 +1204,12 @@ void* atSingleton_F148_p39(uint32_t id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_EE58_p39()  @ 0x8225EE58 | size: 0x1C
+// snSession_LookupById_12289()  @ 0x8225EE58 | size: 0x1C
 // 
 // Lookup table access - maps 16-bit ID to pointer.
 // Table base: 0x825C57A0, index = (id & 0xFFFF) - 12289
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_EE58_p39(uint32_t id) {
+void* snSession_LookupById_12289(uint32_t id) {
     extern uint32_t g_lookup_table_EE58[];  // @ 0x825C57A0
     
     uint16_t index = (id & 0xFFFF) - 12289;
@@ -1217,12 +1217,12 @@ void* atSingleton_EE58_p39(uint32_t id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_EFD0_p39()  @ 0x8225EFD0 | size: 0x1C
+// snSession_LookupById_2049()  @ 0x8225EFD0 | size: 0x1C
 // 
 // Lookup table access - maps 16-bit ID to pointer.
 // Table base: 0x825C5438, index = (id & 0xFFFF) - 2049
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_EFD0_p39(uint32_t id) {
+void* snSession_LookupById_2049(uint32_t id) {
     extern uint32_t g_lookup_table_EFD0[];  // @ 0x825C5438
     
     uint16_t index = (id & 0xFFFF) - 2049;
@@ -1230,12 +1230,12 @@ void* atSingleton_EFD0_p39(uint32_t id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_F2C0_p39()  @ 0x8225F2C0 | size: 0x1C
+// snSession_LookupById_18433()  @ 0x8225F2C0 | size: 0x1C
 // 
 // Lookup table access - maps 16-bit ID to pointer.
 // Table base: 0x825C5218, index = (id & 0xFFFF) - 18433
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_F2C0_p39(uint32_t id) {
+void* snSession_LookupById_18433(uint32_t id) {
     extern uint32_t g_lookup_table_F2C0[];  // @ 0x825C5218
     
     uint16_t index = (id & 0xFFFF) - 18433;
@@ -1243,12 +1243,12 @@ void* atSingleton_F2C0_p39(uint32_t id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_F438_p39()  @ 0x8225F438 | size: 0x1C
+// snSession_LookupById_20481()  @ 0x8225F438 | size: 0x1C
 // 
 // Lookup table access - maps 16-bit ID to pointer.
 // Table base: 0x825C51B0, index = (id & 0xFFFF) - 20481
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_F438_p39(uint32_t id) {
+void* snSession_LookupById_20481(uint32_t id) {
     extern uint32_t g_lookup_table_F438[];  // @ 0x825C51B0
     
     uint16_t index = (id & 0xFFFF) - 20481;
@@ -1256,12 +1256,12 @@ void* atSingleton_F438_p39(uint32_t id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_F5B0_p39()  @ 0x8225F5B0 | size: 0x1C
+// snSession_LookupById_10241()  @ 0x8225F5B0 | size: 0x1C
 // 
 // Lookup table access - maps 16-bit ID to pointer.
 // Table base: 0x825C5140, index = (id & 0xFFFF) - 10241
 // ─────────────────────────────────────────────────────────────────────────────
-void* atSingleton_F5B0_p39(uint32_t id) {
+void* snSession_LookupById_10241(uint32_t id) {
     extern uint32_t g_lookup_table_F5B0[];  // @ 0x825C5140
     
     uint16_t index = (id & 0xFFFF) - 10241;
@@ -1269,18 +1269,18 @@ void* atSingleton_F5B0_p39(uint32_t id) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_F918_2hr()  @ 0x8255F918 | size: 0x18
+// datBase_InitFields14552()  @ 0x8255F918 | size: 0x18
 // 
 // Initializes three consecutive fields and calls another initialization function.
 // Sets fields at offsets +14552, +14556, +14560 to specific values.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_F918_2hr(atSingleton* obj) {
-    extern void atSingleton_E800_sp(atSingleton* obj);
+void datBase_InitFields14552(atSingleton* obj) {
+    extern void datBase_InitDefaults(atSingleton* obj);
     
     uint32_t* fields = (uint32_t*)((uint8_t*)obj + 14552);
     fields[0] = 1;  // +14552
     fields[1] = 0;  // +14556
     fields[2] = 1;  // +14560
     
-    atSingleton_E800_sp(obj);
+    datBase_InitDefaults(obj);
 }

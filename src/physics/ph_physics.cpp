@@ -3670,3 +3670,1075 @@ int32_t phBoundCapsule_SetCallback5(uint32_t callback) {
     g_phCallback5 = callback;  // @ 0x825EA914
     return 0;
 }
+
+// =============================================================================
+// phDemoWorld vtable thunks (vt3DB0) — this-adjustor + tail-call patterns
+// Vtable @ 0x82003DB0 (phDemoWorld)
+// =============================================================================
+
+// ph_vt3DB0_7_9140 @ 0x82449140 | size: 0x8
+// Adjusts this by -4, tail-calls ph_A330 (slot 7 thunk)
+void ph_vt3DB0_7_Thunk(void* thisPtr) {
+    extern void ph_A330(void* obj);
+    ph_A330((char*)thisPtr - 4);
+}
+
+// ph_vt3DB0_8_9148 @ 0x82449148 | size: 0x8
+// Adjusts this by -4, tail-calls ph_vt3DB0_12_8DB8 (slot 8 thunk)
+void ph_vt3DB0_8_Thunk(void* thisPtr) {
+    extern void ph_vt3DB0_12_8DB8(void* obj);
+    ph_vt3DB0_12_8DB8((char*)thisPtr - 4);
+}
+
+// ph_vt3DB0_9_9150 @ 0x82449150 | size: 0x8
+// Adjusts this by -4, tail-calls ph_vt3DB0_13_8E10 (slot 9 thunk)
+void ph_vt3DB0_9_Thunk(void* thisPtr) {
+    extern void ph_vt3DB0_13_8E10(void* obj);
+    ph_vt3DB0_13_8E10((char*)thisPtr - 4);
+}
+
+// ph_vt3DB0_53_B380 @ 0x8244B380 | size: 0x8
+// Returns field at offset +132 (getter)
+uint32_t ph_vt3DB0_53_GetField132(void* thisPtr) {
+    return *(uint32_t*)((char*)thisPtr + 132);
+}
+
+// ph_vt3DB0_30_AA30 @ 0x8244AA30 | size: 0x28
+// Adjustor thunk: shifts this/arg, dispatches via vtable slot 1
+void ph_vt3DB0_30_Dispatch(void* thisPtr, void* target) {
+    void* adjusted = ((char*)thisPtr - 12);
+    if (adjusted == nullptr) adjusted = nullptr;  // null-check for (this-12)==0
+    void** vtable = *(void***)target;
+    typedef void (*VFn)(void*, void*);
+    ((VFn)vtable[1])(target, adjusted);
+}
+
+// ph_vt3DB0_46_B5C0 @ 0x8244B5C0 | size: 0x30
+// Calls vtable slot 1 on self, then reads byte at +0 from result
+uint8_t ph_vt3DB0_46_GetBoundType(void* thisPtr) {
+    typedef void* (*VFn1)(void*);
+    void** vtable = *(void***)thisPtr;
+    void* bound = ((VFn1)vtable[1])(thisPtr);
+    return *(uint8_t*)bound;
+}
+
+// ph_vt3DB0_47_B5F0 @ 0x8244B5F0 | size: 0x34
+// Calls vtable slot 1, extracts bits 5-7 from byte at +5
+uint8_t ph_vt3DB0_47_GetBoundFlags3(void* thisPtr) {
+    typedef void* (*VFn1)(void*);
+    void** vtable = *(void***)thisPtr;
+    void* bound = ((VFn1)vtable[1])(thisPtr);
+    return (*(uint8_t*)((char*)bound + 5) >> 3) & 0x7;
+}
+
+// ph_vt3DB0_48_B628 @ 0x8244B628 | size: 0x30
+// Calls vtable slot 1, returns uint16 at +6
+uint16_t ph_vt3DB0_48_GetBoundMaterial(void* thisPtr) {
+    typedef void* (*VFn1)(void*);
+    void** vtable = *(void***)thisPtr;
+    void* bound = ((VFn1)vtable[1])(thisPtr);
+    return *(uint16_t*)((char*)bound + 6);
+}
+
+// ph_vt3DB0_49_B658 @ 0x8244B658 | size: 0x30
+// Calls vtable slot 1, returns byte at +8
+uint8_t ph_vt3DB0_49_GetBoundIndex(void* thisPtr) {
+    typedef void* (*VFn1)(void*);
+    void** vtable = *(void***)thisPtr;
+    void* bound = ((VFn1)vtable[1])(thisPtr);
+    return *(uint8_t*)((char*)bound + 8);
+}
+
+// ph_vt3DB0_45_B7A0 @ 0x8244B7A0 | size: 0x3C
+// Calls vtable slot 11, adds offset from r4
+void* ph_vt3DB0_45_GetOffsetPtr(void* thisPtr, uint32_t offset) {
+    typedef void* (*VFn11)(void*);
+    void** vtable = *(void***)thisPtr;
+    void* base = ((VFn11)vtable[11])(thisPtr);
+    return (char*)base + offset;
+}
+
+// =============================================================================
+// phInst vtable thunks (vt57D8) — phInst embedded at +12
+// Vtable @ 0x820057D8 (phInst)
+// =============================================================================
+
+// ph_vt57D8_0_FF70 @ 0x8245FF70 | size: 0x8
+// Adjusts this by -12 (back to container), tail-calls constructor at 0x82460718
+void ph_vt57D8_0_Thunk(void* thisPtr) {
+    extern void ph_vt57D8_20_0718(void* obj);
+    ph_vt57D8_20_0718((char*)thisPtr - 12);
+}
+
+// ph_vt57D8_7_FF78 @ 0x8245FF78 | size: 0x10
+// Reads byte at +152, stores to output ptr, returns 0
+int ph_vt57D8_7_GetByte152(void* thisPtr, uint8_t* out) {
+    *out = *((uint8_t*)thisPtr + 152);
+    return 0;
+}
+
+// ph_vt57D8_13_00C0 @ 0x824600C0 | size: 0x10
+// Gets float at +92, stores to output ptr, returns 0
+int ph_vt57D8_13_GetFloat92(void* thisPtr, float* out) {
+    *out = *(float*)((char*)thisPtr + 92);
+    return 0;
+}
+
+// ph_vt57D8_14_00D0 @ 0x824600D0 | size: 0x10
+// Sets float at +92 from f1 parameter, returns 0
+int ph_vt57D8_14_SetFloat92(void* thisPtr, float value) {
+    *(float*)((char*)thisPtr + 92) = value;
+    return 0;
+}
+
+// ph_vt57D8_15_00E0 @ 0x824600E0 | size: 0x10
+// Gets float at +96, stores to output ptr, returns 0
+int ph_vt57D8_15_GetFloat96(void* thisPtr, float* out) {
+    *out = *(float*)((char*)thisPtr + 96);
+    return 0;
+}
+
+// ph_vt57D8_16_00F0 @ 0x824600F0 | size: 0x10
+// Sets float at +96 from f1 parameter, returns 0
+int ph_vt57D8_16_SetFloat96(void* thisPtr, float value) {
+    *(float*)((char*)thisPtr + 96) = value;
+    return 0;
+}
+
+// ph_vt57D8_45_1338 @ 0x82461338 | size: 0x14
+// Dispatches through vtable slot 7 with arg from r4+8
+void ph_vt57D8_45_DispatchSlot7(void* thisPtr, void* param) {
+    uint32_t arg = *(uint32_t*)((char*)param + 8);
+    void** vtable = *(void***)thisPtr;
+    typedef void (*VFn)(void*, uint32_t);
+    ((VFn)vtable[7])(thisPtr, arg);
+}
+
+// ph_vt57D8_30_13B8 @ 0x824613B8 | size: 0x8
+// Adjusts this by -4, tail-calls aud_1498
+void ph_vt57D8_30_Thunk(void* thisPtr) {
+    extern void aud_1498(void* obj);
+    aud_1498((char*)thisPtr - 4);
+}
+
+// ph_vt57D8_37_13C0 @ 0x824613C0 | size: 0x14
+// Increments uint32 at (this+4)+4 (reference counter at +8)
+uint32_t ph_vt57D8_37_IncrementRefCount(void* thisPtr) {
+    uint32_t* counter = (uint32_t*)((char*)thisPtr + 8);
+    uint32_t newVal = *counter + 1;
+    *counter = newVal;
+    return newVal;
+}
+
+// ph_vt57D8_39_1420 @ 0x82461420 | size: 0x1C
+// Initializes a 5-byte status struct: type=2, id=0, flag=0
+int ph_vt57D8_39_InitStatus(void* thisPtr, void* status) {
+    *(uint8_t*)((char*)status + 0) = 2;
+    *(uint16_t*)((char*)status + 2) = 0;
+    *(uint8_t*)((char*)status + 4) = 0;
+    return 0;
+}
+
+// ph_vt57D8_27_8958 @ 0x82468958 | size: 0x24
+// Initializes a status struct with type=4, a global uint16 value, and flag=0
+int ph_vt57D8_27_InitStatusWithGlobal(void* thisPtr, void* status) {
+    extern uint16_t g_phDefaultStatusId;  // @ 0x82465A58
+    *(uint8_t*)((char*)status + 0) = 4;
+    *(uint16_t*)((char*)status + 2) = g_phDefaultStatusId;
+    *(uint8_t*)((char*)status + 4) = 0;
+    return 0;
+}
+
+// ph_vt57D8_36_8A20 @ 0x82468A20 | size: 0xC
+// Stores (this - 4) to output pointer (adjustor for getting container ptr)
+void ph_vt57D8_36_GetContainerPtr(void* thisPtr, void** out) {
+    *out = (char*)thisPtr - 4;
+}
+
+// ph_vt57D8_46_8A30 @ 0x82468A30 | size: 0x8
+// Stores this pointer to output (identity getter)
+void ph_vt57D8_46_GetSelfPtr(void* thisPtr, void** out) {
+    *out = thisPtr;
+}
+
+// ph_vt57D8_35_8CD0 @ 0x82468CD0 | size: 0x8
+// Adjusts this by -4, tail-calls ph_vt57D8_2_6378
+void ph_vt57D8_35_Thunk(void* thisPtr) {
+    extern void ph_vt57D8_2_6378(void* obj);
+    ph_vt57D8_2_6378((char*)thisPtr - 4);
+}
+
+// =============================================================================
+// phInst2 vtable thunks (vt58FC) — phInst variant at +4
+// Vtable @ 0x820058FC (phInst2)
+// =============================================================================
+
+// ph_vt58FC_0_4E38 @ 0x82464E38 | size: 0x8
+// Adjusts this by -4, tail-calls phInst_5910_p39
+void ph_vt58FC_0_Thunk(void* thisPtr) {
+    extern void phInst_5910_p39(void* obj);
+    phInst_5910_p39((char*)thisPtr - 4);
+}
+
+// ph_vt58FC_14_4E60 @ 0x82464E60 | size: 0x10
+// Gets byte at +26, stores to output ptr, returns 0
+int ph_vt58FC_14_GetByte26(void* thisPtr, uint8_t* out) {
+    *out = *((uint8_t*)thisPtr + 26);
+    return 0;
+}
+
+// ph_vt58FC_15_4E70 @ 0x82464E70 | size: 0x10
+// Sets byte at +26, returns 0
+int ph_vt58FC_15_SetByte26(void* thisPtr, uint8_t value) {
+    *((uint8_t*)thisPtr + 26) = value;
+    return 0;
+}
+
+// =============================================================================
+// phInstGfx vtable thunks (vt5A40/vt5A60) — graphics physics instances
+// Vtable @ 0x82005A40 / 0x82005A60
+// =============================================================================
+
+// ph_vt5A40_0_6108 @ 0x82466108 | size: 0x10
+// Destructor stub: sets vtable to lbl_82005A40
+void ph_vt5A40_0_SetVtable(void* thisPtr) {
+    *(void**)thisPtr = (void*)0x82005A40;  // lbl_82005A40 vtable
+}
+
+// ph_vt5A60_40_68C0 @ 0x824668C0 | size: 0x8
+// Adjusts this by -4, tail-calls aud_6A20_wrap_6A20
+void ph_vt5A60_40_Thunk(void* thisPtr) {
+    extern void aud_6A20_wrap_6A20(void* obj);
+    aud_6A20_wrap_6A20((char*)thisPtr - 4);
+}
+
+// ph_vt5A60_20_68C8 @ 0x824668C8 | size: 0x8
+// Adjusts this by -16, tail-calls aud_6A20_wrap_6A20
+void ph_vt5A60_20_Thunk(void* thisPtr) {
+    extern void aud_6A20_wrap_6A20(void* obj);
+    aud_6A20_wrap_6A20((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_22_68D0 @ 0x824668D0 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_57_6858
+void ph_vt5A60_22_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_57_6858(void* obj);
+    ph_vt5A60_57_6858((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_23_7230 @ 0x82467230 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_58_6EE8
+void ph_vt5A60_23_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_58_6EE8(void* obj);
+    ph_vt5A60_58_6EE8((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_32_7238 @ 0x82467238 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
+void ph_vt5A60_32_Thunk(void* thisPtr) {
+    extern void ph_vt5A8C_63_6A50(void* obj);
+    ph_vt5A8C_63_6A50((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_34_7240 @ 0x82467240 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A7C_63_6A98
+void ph_vt5A60_34_Thunk(void* thisPtr) {
+    extern void ph_vt5A7C_63_6A98(void* obj);
+    ph_vt5A7C_63_6A98((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_36_7248 @ 0x82467248 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
+void ph_vt5A60_36_Thunk(void* thisPtr) {
+    extern void ph_vt5A84_63_6B90(void* obj);
+    ph_vt5A84_63_6B90((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_28_7C18 @ 0x82467C18 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_60_7870
+void ph_vt5A60_28_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_60_7870(void* obj);
+    ph_vt5A60_60_7870((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_29_7C20 @ 0x82467C20 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_61_7A38
+void ph_vt5A60_29_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_61_7A38(void* obj);
+    ph_vt5A60_61_7A38((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_59_89A0 @ 0x824689A0 | size: 0x10
+// Gets byte at +168, stores to output ptr, returns 0
+int ph_vt5A60_59_GetByte168(void* thisPtr, uint8_t* out) {
+    *out = *((uint8_t*)thisPtr + 168);
+    return 0;
+}
+
+// ph_vt5A60_53_8A38 @ 0x82468A38 | size: 0x8
+// Adjusts this by +4, tail-calls ph_vt57D8_28_FD08
+void ph_vt5A60_53_Thunk(void* thisPtr) {
+    extern void ph_vt57D8_28_FD08(void* obj);
+    ph_vt57D8_28_FD08((char*)thisPtr + 4);
+}
+
+// ph_vt5A60_54_8A40 @ 0x82468A40 | size: 0x8
+// Adjusts this by +4, tail-calls ph_vt57D8_29_FDD0
+void ph_vt5A60_54_Thunk(void* thisPtr) {
+    extern void ph_vt57D8_29_FDD0(void* obj);
+    ph_vt57D8_29_FDD0((char*)thisPtr + 4);
+}
+
+// ph_vt5A60_47_8CD8 @ 0x82468CD8 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_60_7870
+void ph_vt5A60_47_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_60_7870(void* obj);
+    ph_vt5A60_60_7870((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_48_8CE0 @ 0x82468CE0 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_61_7A38
+void ph_vt5A60_48_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_61_7A38(void* obj);
+    ph_vt5A60_61_7A38((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_49_8CE8 @ 0x82468CE8 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_62_8F80
+void ph_vt5A60_49_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_62_8F80(void* obj);
+    ph_vt5A60_62_8F80((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_24_8D00 @ 0x82468D00 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
+void ph_vt5A60_24_Thunk(void* thisPtr) {
+    extern void ph_vt5A8C_63_6A50(void* obj);
+    ph_vt5A8C_63_6A50((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_25_8D08 @ 0x82468D08 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A7C_63_6A98
+void ph_vt5A60_25_Thunk(void* thisPtr) {
+    extern void ph_vt5A7C_63_6A98(void* obj);
+    ph_vt5A7C_63_6A98((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_26_8D10 @ 0x82468D10 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
+void ph_vt5A60_26_Thunk(void* thisPtr) {
+    extern void ph_vt5A84_63_6B90(void* obj);
+    ph_vt5A84_63_6B90((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_27_8D18 @ 0x82468D18 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_58_6EE8
+void ph_vt5A60_27_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_58_6EE8(void* obj);
+    ph_vt5A60_58_6EE8((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_31_8D20 @ 0x82468D20 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_57_6858
+void ph_vt5A60_31_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_57_6858(void* obj);
+    ph_vt5A60_57_6858((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_33_8D30 @ 0x82468D30 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
+void ph_vt5A60_33_Thunk(void* thisPtr) {
+    extern void ph_vt5A8C_63_6A50(void* obj);
+    ph_vt5A8C_63_6A50((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_35_8D40 @ 0x82468D40 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
+void ph_vt5A60_35_Thunk(void* thisPtr) {
+    extern void ph_vt5A84_63_6B90(void* obj);
+    ph_vt5A84_63_6B90((char*)thisPtr - 16);
+}
+
+// ph_vt5A60_30_9098 @ 0x82469098 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A60_62_8F80
+void ph_vt5A60_30_Thunk(void* thisPtr) {
+    extern void ph_vt5A60_62_8F80(void* obj);
+    ph_vt5A60_62_8F80((char*)thisPtr - 16);
+}
+
+// =============================================================================
+// phInstGfxExt vtable thunks (vt5A78/5A74/5A80) — field getters
+// =============================================================================
+
+// ph_vt5A78_63_89B0 @ 0x824689B0 | size: 0x10
+// Gets float at +108, stores to output ptr, returns 0
+int ph_vt5A78_63_GetFloat108(void* thisPtr, float* out) {
+    *out = *(float*)((char*)thisPtr + 108);
+    return 0;
+}
+
+// ph_vt5A80_63_89C0 @ 0x824689C0 | size: 0x10
+// Gets float at +112, stores to output ptr, returns 0
+int ph_vt5A80_63_GetFloat112(void* thisPtr, float* out) {
+    *out = *(float*)((char*)thisPtr + 112);
+    return 0;
+}
+
+// ph_vt5A74_63_8A10 @ 0x82468A10 | size: 0x10
+// Gets uint32 at +164, stores to output ptr, returns 0
+int ph_vt5A74_63_GetField164(void* thisPtr, uint32_t* out) {
+    *out = *(uint32_t*)((char*)thisPtr + 164);
+    return 0;
+}
+
+// =============================================================================
+// phInstComposite vtable thunks (vt5B98) — composite physics instances
+// Vtable @ 0x82005B98
+// =============================================================================
+
+// ph_vt5B98_20_8948 @ 0x82468948 | size: 0x8
+// Adjusts this by -4, tail-calls atSingleton_8A48_p42
+void ph_vt5B98_20_Thunk(void* thisPtr) {
+    extern void atSingleton_8A48_p42(void* obj);
+    atSingleton_8A48_p42((char*)thisPtr - 4);
+}
+
+// ph_vt5B98_0_8950 @ 0x82468950 | size: 0x8
+// Adjusts this by -16, tail-calls atSingleton_8A48_p42
+void ph_vt5B98_0_Thunk(void* thisPtr) {
+    extern void atSingleton_8A48_p42(void* obj);
+    atSingleton_8A48_p42((char*)thisPtr - 16);
+}
+
+// ph_vt5B98_37_8990 @ 0x82468990 | size: 0x8
+// Adjusts this by +16, tail-calls ph_vt57D8_2_6378
+void ph_vt5B98_37_Thunk(void* thisPtr) {
+    extern void ph_vt57D8_2_6378(void* obj);
+    ph_vt57D8_2_6378((char*)thisPtr + 16);
+}
+
+// ph_vt5B98_38_8998 @ 0x82468998 | size: 0x8
+// Adjusts this by +16, tail-calls ph_vt57D8_3_61E0
+void ph_vt5B98_38_Thunk(void* thisPtr) {
+    extern void ph_vt57D8_3_61E0(void* obj);
+    ph_vt57D8_3_61E0((char*)thisPtr + 16);
+}
+
+// ph_vt5B98_12_8D28 @ 0x82468D28 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
+void ph_vt5B98_12_Thunk(void* thisPtr) {
+    extern void ph_vt5A8C_63_6A50(void* obj);
+    ph_vt5A8C_63_6A50((char*)thisPtr - 16);
+}
+
+// ph_vt5B98_14_8D38 @ 0x82468D38 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A7C_63_6A98
+void ph_vt5B98_14_Thunk(void* thisPtr) {
+    extern void ph_vt5A7C_63_6A98(void* obj);
+    ph_vt5A7C_63_6A98((char*)thisPtr - 16);
+}
+
+// ph_vt5B98_16_8D48 @ 0x82468D48 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
+void ph_vt5B98_16_Thunk(void* thisPtr) {
+    extern void ph_vt5A84_63_6B90(void* obj);
+    ph_vt5A84_63_6B90((char*)thisPtr - 16);
+}
+
+// ph_vt5B98_8_9088 @ 0x82469088 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5B98_40_8D50
+void ph_vt5B98_8_Thunk(void* thisPtr) {
+    extern void ph_vt5B98_40_8D50(void* obj);
+    ph_vt5B98_40_8D50((char*)thisPtr - 16);
+}
+
+// ph_vt5B98_9_9090 @ 0x82469090 | size: 0x8
+// Adjusts this by -16, tail-calls ph_vt5B98_41_8E50
+void ph_vt5B98_9_Thunk(void* thisPtr) {
+    extern void ph_vt5B98_41_8E50(void* obj);
+    ph_vt5B98_41_8E50((char*)thisPtr - 16);
+}
+
+// ph_vt5B98_43_89D0 @ 0x824689D0 | size: 0x1C
+// Computes (uint16 at +104) * (uint32 at +116), stores to output, returns 0
+int ph_vt5B98_43_GetTotalSize(void* thisPtr, uint32_t* out) {
+    uint16_t stride = *(uint16_t*)((char*)thisPtr + 104);
+    uint32_t count = *(uint32_t*)((char*)thisPtr + 116);
+    *out = (uint32_t)stride * count;
+    return 0;
+}
+
+// ph_vt5B98_44_89F0 @ 0x824689F0 | size: 0x20
+// Reads value from *out, divides by stride at +104, stores quotient to +116
+int ph_vt5B98_44_SetCountFromSize(void* thisPtr, uint32_t* inout) {
+    uint32_t totalSize = *inout;
+    uint16_t stride = *(uint16_t*)((char*)thisPtr + 104);
+    *(uint32_t*)((char*)thisPtr + 116) = totalSize / stride;
+    return 0;
+}
+
+// =============================================================================
+// phInstSkel vtable thunks (vt5CD8/vt5D38/vt6E40) — skeleton physics
+// Vtable @ 0x82005CD8 / 0x82005D38 / 0x82006E40
+// =============================================================================
+
+// ph_vt5CD8_11_C8A8 @ 0x8246C8A8 | size: 0x10
+// Gets uint32 at +48, stores to output ptr, returns 0
+int ph_vt5CD8_11_GetField48(void* thisPtr, uint32_t* out) {
+    *out = *(uint32_t*)((char*)thisPtr + 48);
+    return 0;
+}
+
+// ph_vt5CD8_13_C8B8 @ 0x8246C8B8 | size: 0x10
+// Gets byte at +12, stores to output ptr, returns 0
+int ph_vt5CD8_13_GetByte12(void* thisPtr, uint8_t* out) {
+    *out = *((uint8_t*)thisPtr + 12);
+    return 0;
+}
+
+// ph_vt5CD8_16_C8C8 @ 0x8246C8C8 | size: 0x1C
+// Copies 8 bytes from offset +52 to output ptr, returns 0
+int ph_vt5CD8_16_GetField52_64(void* thisPtr, void* out) {
+    *(uint32_t*)out = *(uint32_t*)((char*)thisPtr + 52);
+    *(uint32_t*)((char*)out + 4) = *(uint32_t*)((char*)thisPtr + 56);
+    return 0;
+}
+
+// ph_vt5CD8_14_C8E8 @ 0x8246C8E8 | size: 0xC
+// Returns constant 0x80004005 (E_NOTIMPL-like error code)
+uint32_t ph_vt5CD8_14_ReturnNotImpl() {
+    return 0x80004005;
+}
+
+// ph_vt5CD8_0_CE30 @ 0x8246CE30 | size: 0x30
+// Calls ke_C750 cleanup, returns this (destructor pattern)
+void* ph_vt5CD8_0_Destructor(void* thisPtr) {
+    extern void ke_C750(void* obj);
+    ke_C750(thisPtr);
+    return thisPtr;
+}
+
+// ph_vt5D38_12_D560 @ 0x8246D560 | size: 0x10
+// Gets byte at +61, stores to output ptr, returns 0
+int ph_vt5D38_12_GetByte61(void* thisPtr, uint8_t* out) {
+    *out = *((uint8_t*)thisPtr + 61);
+    return 0;
+}
+
+// ph_vt5D38_0_D6F0 @ 0x8246D6F0 | size: 0x30
+// Calls ke_D440 cleanup, returns this (destructor pattern)
+void* ph_vt5D38_0_Destructor(void* thisPtr) {
+    extern void ke_D440(void* obj);
+    ke_D440(thisPtr);
+    return thisPtr;
+}
+
+// ph_vt6E40_0_E368 @ 0x8247E368 | size: 0x30
+// Calls ph_E1E8 cleanup, returns this (destructor pattern)
+void* ph_vt6E40_0_Destructor(void* thisPtr) {
+    extern void ph_E1E8(void* obj);
+    ph_E1E8(thisPtr);
+    return thisPtr;
+}
+
+// ph_vt5C84_5_AAD0 @ 0x8246AAD0 | size: 0x30
+// Calls ke_A428, returns this (init + return-self pattern)
+void* ph_vt5C84_5_InitAndReturn(void* thisPtr) {
+    extern void ke_A428(void* obj);
+    ke_A428(thisPtr);
+    return thisPtr;
+}
+
+// ph_vt5A40_5_BC58 @ 0x8246BC58 | size: 0x18
+// Returns (this + 8) or nullptr if this is null
+void ph_vt5A40_5_GetEmbeddedPtr(void* thisPtr, void** out) {
+    *out = thisPtr ? (char*)thisPtr + 8 : nullptr;
+}
+
+// =============================================================================
+// Physics utility free functions
+// =============================================================================
+
+// ph_FDD0 @ 0x8221FDD0 | size: 0x20
+// Sets 3 uint16 fields + zero, then tail-calls ph_FE48
+void ph_SetBoundIndices3(void* thisPtr, uint16_t idx0, uint16_t idx1,
+                         uint16_t idx2, void* param) {
+    extern void ph_FE48(void* obj, void* p);
+    *(uint16_t*)((char*)thisPtr + 16) = idx0;
+    *(uint16_t*)((char*)thisPtr + 18) = idx1;
+    *(uint16_t*)((char*)thisPtr + 20) = idx2;
+    *(uint16_t*)((char*)thisPtr + 22) = 0;
+    ph_FE48(thisPtr, param);
+}
+
+// ph_FDF0 @ 0x8221FDF0 | size: 0x1C
+// Sets 4 uint16 fields, then tail-calls ph_FE48
+void ph_SetBoundIndices4(void* thisPtr, uint16_t idx0, uint16_t idx1,
+                         uint16_t idx2, uint16_t idx3, void* param) {
+    extern void ph_FE48(void* obj, void* p);
+    *(uint16_t*)((char*)thisPtr + 16) = idx0;
+    *(uint16_t*)((char*)thisPtr + 18) = idx1;
+    *(uint16_t*)((char*)thisPtr + 20) = idx2;
+    *(uint16_t*)((char*)thisPtr + 22) = idx3;
+    ph_FE48(thisPtr, param);
+}
+
+// ph_FE10 @ 0x8221FE10 | size: 0x34
+// Copies a 32-byte structure from source to dest (vector + trailing fields)
+void ph_CopyBoundData(void* dest, const void* src) {
+    // Copy 16-byte aligned vector (first 16 bytes)
+    *(uint32_t*)((char*)dest + 0)  = *(const uint32_t*)((const char*)src + 0);
+    *(uint32_t*)((char*)dest + 4)  = *(const uint32_t*)((const char*)src + 4);
+    *(uint32_t*)((char*)dest + 8)  = *(const uint32_t*)((const char*)src + 8);
+    *(float*)((char*)dest + 12)    = *(const float*)((const char*)src + 12);
+    // Restore byte at +15 from source
+    *((uint8_t*)dest + 15) = *((const uint8_t*)src + 15);
+    // Copy trailing 16 bytes (two 64-bit words)
+    *(uint64_t*)((char*)dest + 16) = *(const uint64_t*)((const char*)src + 16);
+    *(uint64_t*)((char*)dest + 24) = *(const uint64_t*)((const char*)src + 24);
+}
+
+// ph_C1A0 @ 0x8228C1A0 | size: 0x24
+// Tests if bitmask AND global collision flags is non-zero
+extern uint32_t g_phCollisionFlags;  // @ 0x825C48E8
+uint8_t ph_TestCollisionFlag(uint32_t mask) {
+    return (g_phCollisionFlags & mask) != 0 ? 1 : 0;
+}
+
+// ph_C1C8 @ 0x8228C1C8 | size: 0x24
+// Tests if bit 9 (0x200) of global collision flags is set
+uint8_t ph_TestCollisionBit9() {
+    return (g_phCollisionFlags & 0x200) != 0 ? 1 : 0;
+}
+
+// ph_D1B8 @ 0x8228D1B8 | size: 0x18
+// Copies a 16-byte vector to offset +80 and sets dirty flag at +6
+void ph_SetBoundVector(void* thisPtr, const void* vec) {
+    // Copy 16-byte SIMD vector to offset +80
+    uint32_t* dst = (uint32_t*)((char*)thisPtr + 80);
+    const uint32_t* src = (const uint32_t*)vec;
+    dst[0] = src[0];
+    dst[1] = src[1];
+    dst[2] = src[2];
+    dst[3] = src[3];
+    // Set dirty flag
+    *((uint8_t*)thisPtr + 6) = 1;
+}
+
+// ph_0F30 @ 0x82290F30 | size: 0x2C
+// Sets or clears bits in global collision flags based on enable parameter
+void ph_SetCollisionBits(uint32_t bits, uint8_t enable) {
+    if (enable) {
+        g_phCollisionFlags |= bits;
+    } else {
+        g_phCollisionFlags &= ~bits;
+    }
+}
+
+// ph_20D0 @ 0x822920D0 | size: 0x40
+// Wrapper that forwards args to fiAsciiTokenizer_2110_gen and returns byte result
+uint8_t ph_TokenizerReadBool(void* a, void* b, void* c) {
+    extern uint8_t fiAsciiTokenizer_2110_gen(void*, void*, void*);
+    return fiAsciiTokenizer_2110_gen(a, b, c);
+}
+
+// ph_5278 @ 0x822E5278 | size: 0x34
+// Initializes a physics configuration struct with default values
+void ph_InitPhysicsConfig(void* cfg, uint32_t typeId, uint32_t flagMask) {
+    *(uint32_t*)((char*)cfg + 4)   = typeId;      // type identifier
+    *(uint32_t*)((char*)cfg + 8)   = 1;           // version = 1
+    *(uint32_t*)((char*)cfg + 12)  = flagMask;    // flag mask
+    *(uint32_t*)((char*)cfg + 16)  = 32;          // buffer size = 32
+    *(uint32_t*)((char*)cfg + 20)  = 2;           // mode = 2
+    *(uint32_t*)((char*)cfg + 24)  = 0;           // reserved = 0
+    *(uint8_t*)((char*)cfg + 28)   = 0;           // initialized = false
+    *(uint32_t*)((char*)cfg + 156) = 0;           // state = 0
+}
+
+// ph_FFB8_h @ 0x822AFFB8 | size: 0x1C
+// Returns one of two pointers from high offsets based on boolean flag
+void* ph_GetBoundPointer(void* thisPtr, uint8_t useFirst) {
+    if (useFirst) {
+        return *(void**)((char*)thisPtr + 17056);
+    }
+    return *(void**)((char*)thisPtr + 17060);
+}
+
+// ph_ctor_0460 @ 0x82430460 | size: 0x24
+// Destructor: sets vtable, conditionally calls cleanup on child
+void ph_ctor_0460_Destructor(void* thisPtr) {
+    extern void fiAsciiTokenizer_3310_g(void* obj);
+    // Set vtable
+    *(void**)thisPtr = (void*)0x820014C8;  // lbl_820014C8 vtable
+    uint32_t childFlag = *(uint32_t*)((char*)thisPtr + 8);
+    if (childFlag != 0) {
+        void* child = *(void**)((char*)thisPtr + 4);
+        fiAsciiTokenizer_3310_g(child);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider — Additional Packed Bitfield Accessors (50 functions)
+//
+// This batch covers the remaining small (<=64B) getter/setter pairs for
+// packed bitfields in the phArticulatedCollider configuration words.
+//
+// Patterns found:
+//   A) Simple getters (0xc):  load word, extract bits → ExtractBits()
+//   B) Insert-field setters (0x28-0x30): read-modify-write bitfield, dirty bit
+//   C) Store-and-dirty (0x20-0x28): store value/float, set dirty bit
+//   D) Indexed getters (0x14): stride-24 array lookup + extract
+//   E) Bool-from-negation (0x18-0x1c): extract, compare to zero
+//
+// Dirty bits live in two 64-bit masks:
+//   this+40 (dirtyMask40) — for fields at offsets 11628-11656
+//   this+48 (dirtyMask48) — for fields at offsets 11712-11840
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Helper: insert value into bitfield, store back, set dirty bit at this+40
+static inline void InsertBitsAndDirty40(void* obj, int offset, uint32_t value,
+                                         int shift, uint32_t mask, uint64_t dirtyBit) {
+    uint32_t word = *(uint32_t*)((char*)obj + offset);
+    word = (word & ~(mask << shift)) | ((value & mask) << shift);
+    *(uint32_t*)((char*)obj + offset) = word;
+    *(uint64_t*)((char*)obj + 40) |= dirtyBit;
+}
+
+// Helper: insert value into bitfield, store back, set dirty bit at this+48
+static inline void InsertBitsAndDirty48(void* obj, int offset, uint32_t value,
+                                         int shift, uint32_t mask, uint64_t dirtyBit) {
+    uint32_t word = *(uint32_t*)((char*)obj + offset);
+    word = (word & ~(mask << shift)) | ((value & mask) << shift);
+    *(uint32_t*)((char*)obj + offset) = word;
+    *(uint64_t*)((char*)obj + 48) |= dirtyBit;
+}
+
+// Helper: store float to field, set dirty bit at this+48
+static inline void StoreFloatAndDirty48(void* obj, int offset, float value, uint64_t dirtyBit) {
+    *(float*)((char*)obj + offset) = value;
+    *(uint64_t*)((char*)obj + 48) |= dirtyBit;
+}
+
+// Helper: store u32 to field, set dirty bit at this+40
+static inline void StoreU32AndDirty40(void* obj, int offset, uint32_t value, uint64_t dirtyBit) {
+    *(uint32_t*)((char*)obj + offset) = value;
+    *(uint64_t*)((char*)obj + 40) |= dirtyBit;
+}
+
+// Helper: store u32 to field, set dirty bit at this+48
+static inline void StoreU32AndDirty48(void* obj, int offset, uint32_t value, uint64_t dirtyBit) {
+    *(uint32_t*)((char*)obj + offset) = value;
+    *(uint64_t*)((char*)obj + 48) |= dirtyBit;
+}
+
+// Helper: store u8 to field, set dirty bit at this+40
+static inline void StoreU8AndDirty40(void* obj, int offset, uint8_t value, uint64_t dirtyBit) {
+    *(uint8_t*)((char*)obj + offset) = value;
+    *(uint64_t*)((char*)obj + 40) |= dirtyBit;
+}
+
+// ── 1. Simple bitfield getter: +11660 bit 0 (0x1) ──────────── 4DC8 (0xc)
+uint32_t phArticulatedCollider::GetSolverFlag_18()  { return ExtractBits(this, 11660,  0, 0x1); }
+
+// ── 2. Simple getter: +11704 bits 0-1 (0x3) ────────────────── 5138 (0xc)
+uint32_t phArticulatedCollider::GetLimitType_0()    { return ExtractBits(this, 11704,  0, 0x3); }
+
+// ── 3. Simple getter: +11776 bit 0 (0x1) ───────────────────── 5170 (0xc)
+uint32_t phArticulatedCollider::GetDofFlag_0()      { return ExtractBits(this, 11776,  0, 0x1); }
+
+// ── 4. Simple getter: +11656 bit 21 (0x1) ──────────────────── 51A8 (0xc)
+// rlwinm r3,r11,11,31,31 → (word >> 21) & 1
+uint32_t phArticulatedCollider::GetSolverParam_21() { return ExtractBits(this, 11656, 21, 0x1); }
+
+// ── 5. Simple getter: +11644 bit 4 (0x1) ───────────────────── 5208 (0xc)
+// rlwinm r3,r11,28,31,31 → (word >> 4) & 1
+uint32_t phArticulatedCollider::GetFlag7C_4b()      { return ExtractBits(this, 11644,  4, 0x1); }
+
+// ── 6. Simple getter: +11648 bit 3 (0x1) ───────────────────── 5340 (0xc)
+// rlwinm r3,r11,29,31,31 → (word >> 3) & 1
+uint32_t phArticulatedCollider::GetActive_3()       { return ExtractBits(this, 11648,  3, 0x1); }
+
+// ── 7. Simple getter: +11648 bit 2 (0x1) ───────────────────── 5378 (0xc)
+// rlwinm r3,r11,30,31,31 → (word >> 2) & 1 (same field as GetActive_2 but separate symbol)
+uint32_t phArticulatedCollider::GetActive_2b()      { return ExtractBits(this, 11648,  2, 0x1); }
+
+// ── 8. Simple getter: +11648 bit 5 (0x1) ───────────────────── 53B0 (0xc)
+// rlwinm r3,r11,27,31,31 → (word >> 5) & 1
+uint32_t phArticulatedCollider::GetActive_5()       { return ExtractBits(this, 11648,  5, 0x1); }
+
+// ── 9. Simple getter: +11452 bits 23-29 (0x7F) ─────────────── 5408 (0xc)
+// rlwinm r3,r11,9,25,31 → (word >> 23) & 0x7F
+uint32_t phArticulatedCollider::GetCBCField_23()    { return ExtractBits(this, 11452, 23, 0x7F); }
+
+// ── 10. Byte-indexed getter: this[index+12098] bit 1 ────────── 5598 (0x10)
+// lbz + rlwinm r3,r11,31,31,31 → (byte >> 1) & 1
+uint32_t phArticulatedCollider::GetIndexedByteFlag_1(int index) {
+    uint8_t byte = *(uint8_t*)((char*)this + index + 12098);
+    return (byte >> 1) & 0x1;
+}
+
+// ── 11. Byte-indexed getter: this[index+12098] bit 0 ────────── 5728 (0x10)
+// lbz + clrlwi r3,r11,31 → byte & 1
+uint32_t phArticulatedCollider::GetIndexedByteFlag_0(int index) {
+    uint8_t byte = *(uint8_t*)((char*)this + index + 12098);
+    return byte & 0x1;
+}
+
+// ── 12. Byte-indexed getter: this[index+12098] bit 2 ────────── 5818 (0x10)
+// lbz + rlwinm r3,r11,30,31,31 → (byte >> 2) & 1
+uint32_t phArticulatedCollider::GetIndexedByteFlag_2(int index) {
+    uint8_t byte = *(uint8_t*)((char*)this + index + 12098);
+    return (byte >> 2) & 0x1;
+}
+
+// ── 13. Indexed field setter: +11452 insert 7-bit at bit 23 ── 53F8 (0x10)
+// rlwimi r11,r4,23,2,8 → mask 0x3F800000 = 0x7F << 23
+void phArticulatedCollider::SetCBCField_23(uint32_t value) {
+    uint32_t word = *(uint32_t*)((char*)this + 11452);
+    word = (word & ~(0x7FU << 23)) | ((value & 0x7F) << 23);
+    *(uint32_t*)((char*)this + 11452) = word;
+}
+
+// ── 14. Read byte from +11644 ───────────────────────────────── 5240 (0x14)
+// lbz + rlwimi (identity copy) + clrlwi → just returns byte at +11644
+uint32_t phArticulatedCollider::GetFlag7C_Byte() {
+    return *(uint8_t*)((char*)this + 11644);
+}
+
+// ── 15. Indexed getter: stride-24 array at +1164, bits 23-24 ── 5778 (0x14)
+// mulli r11,r4,24; add; lwz 1164; rlwinm r3,r11,9,30,31 → (word >> 23) & 0x3
+uint32_t phArticulatedCollider::GetBoneField_5778(int index) {
+    uint32_t word = *(uint32_t*)((char*)this + 1164 + index * 24);
+    return (word >> 23) & 0x3;
+}
+
+// ── 16. Indexed getter: stride-24 at +1172, bit 2 ──────────── 5D90 (0x14)
+// lwz 1172; rlwinm r3,r11,30,31,31 → (word >> 2) & 1
+uint32_t phArticulatedCollider::GetBoneField_5D90(int index) {
+    uint32_t word = *(uint32_t*)((char*)this + 1172 + index * 24);
+    return (word >> 2) & 0x1;
+}
+
+// ── 17. Indexed negation check: stride-24 at +1156 ─────────── 5DF0 (0x18)
+// lwz 1156; not; rlwinm 21,31,31 → (~word >> 11) & 1
+uint32_t phArticulatedCollider::GetBoneFieldNeg_5DF0(int index) {
+    uint32_t word = *(uint32_t*)((char*)this + 1156 + index * 24);
+    return (~word >> 11) & 0x1;
+}
+
+// ── 18. Indexed bool: stride-24 at +1172, nonzero low 2 bits ── 5B38 (0x1c)
+// lwz 1172; clrlwi 30 → bits 0-1; subfic+subfe → (val != 0) ? -1 : 0
+// The subfic/subfe idiom computes -(val != 0), i.e. 0xFFFFFFFF if nonzero
+bool phArticulatedCollider::IsBoneFieldNonZero(int index) {
+    uint32_t word = *(uint32_t*)((char*)this + 1172 + index * 24);
+    return (word & 0x3) != 0;
+}
+
+// ── 19. Store float + dirty40 at +11712 ─────────────────────── 50B8 (0x20)
+// stfs f0,11712(r3); ld/oris/std at this+40; oris r10,r10,4 → 1<<18
+void phArticulatedCollider::SetLimitFloat_11712(float value) {
+    *(float*)((char*)this + 11712) = value;
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 18);
+}
+
+// ── 20. Store float + dirty40 at +11708 ─────────────────────── 50E8 (0x20)
+// stfs f0,11708(r3); ld/oris/std at this+40; oris r10,r10,8 → 1<<19
+void phArticulatedCollider::SetLimitFloat_11708(float value) {
+    *(float*)((char*)this + 11708) = value;
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 19);
+}
+
+// ── 21. Insert 2 bits at +11704 bit 0 + dirty40 ────────────── 5118 (0x20)
+// rlwimi r10,r4,0,30,31 → mask 0x3; oris r10,r10,16 → 0x100000 = 1<<20
+void phArticulatedCollider::SetLimitType_0(uint32_t value) {
+    InsertBitsAndDirty40(this, 11704, value, 0, 0x3, 1ULL << 20);
+}
+
+// ── 22. Store u32 + dirty40 at +11544 ───────────────────────── 51B8 (0x20)
+// stw r4,11544(r3); rldicr r12,r12,60 → 1ULL<<60
+void phArticulatedCollider::SetField_11544(uint32_t value) {
+    StoreU32AndDirty40(this, 11544, value, 1ULL << 60);
+}
+
+// ── 23. Store byte + dirty40 at +11650 ──────────────────────── 53C0 (0x20)
+// stb r4,11650(r3); rldicr r12,r12,34 → 1ULL<<34
+void phArticulatedCollider::SetActiveByte_11650(uint8_t value) {
+    StoreU8AndDirty40(this, 11650, value, 1ULL << 34);
+}
+
+// ── 24. Store u16 + dirty48 at +11840 ───────────────────────── 4770 (0x24)
+// clrlwi r10,r4,16; stw r10,11840(r3); rldicr r12,r12,45 → 1ULL<<45
+void phArticulatedCollider::SetDofU16_11840(uint32_t value) {
+    StoreU32AndDirty48(this, 11840, value & 0xFFFF, 1ULL << 45);
+}
+
+// ── 25. Insert 1 bit at +11636 bit 2 + dirty40 ─────────────── 4170 (0x28)
+// rlwimi r10,r4,2,29,29 → (value & 1) << 2; rldicr 37 → 1ULL<<37
+void phArticulatedCollider::SetRotAxis_2(uint32_t value) {
+    InsertBitsAndDirty40(this, 11636, value, 2, 0x1, 1ULL << 37);
+}
+
+// ── 26. Insert 3 bits at +11636 bits 8-10 + dirty40 ────────── 4288 (0x28)
+// rlwimi r10,r4,8,21,23 → (value & 7) << 8; rldicr 37 → 1ULL<<37
+void phArticulatedCollider::SetRotAxis_8(uint32_t value) {
+    InsertBitsAndDirty40(this, 11636, value, 8, 0x7, 1ULL << 37);
+}
+
+// ── 27. Insert 3 bits at +11636 bits 14-16 + dirty40 ───────── 4350 (0x28)
+// rlwimi r10,r4,14,15,17 → (value & 7) << 14; rldicr 37
+void phArticulatedCollider::SetRotAxis_14(uint32_t value) {
+    InsertBitsAndDirty40(this, 11636, value, 14, 0x7, 1ULL << 37);
+}
+
+// ── 28. Insert 3 bits at +11636 bits 20-22 + dirty40 ───────── 4388 (0x28)
+// rlwimi r10,r4,20,9,11 → (value & 7) << 20; rldicr 37
+void phArticulatedCollider::SetRotAxis_20(uint32_t value) {
+    InsertBitsAndDirty40(this, 11636, value, 20, 0x7, 1ULL << 37);
+}
+
+// ── 29. Insert 3 bits at +11636 bits 26-28 + dirty40 ───────── 4450 (0x28)
+// rlwimi r10,r4,26,3,5 → (value & 7) << 26; rldicr 37
+void phArticulatedCollider::SetRotAxis_26(uint32_t value) {
+    InsertBitsAndDirty40(this, 11636, value, 26, 0x7, 1ULL << 37);
+}
+
+// ── 30. Insert 1 bit at +11656 bit 15 + dirty40 ────────────── 4738 (0x28)
+// rlwimi r10,r4,15,16,16 → (value & 1) << 15; rldicr 32 → 1ULL<<32
+void phArticulatedCollider::SetSolverParam_15(uint32_t value) {
+    InsertBitsAndDirty40(this, 11656, value, 15, 0x1, 1ULL << 32);
+}
+
+// ── 31. Insert 4 bits at +11628 bits 28-31 + dirty40 ───────── 4B18 (0x28)
+// rlwimi r10,r4,28,0,3 → (value & 0xF) << 28; rldicr 39 → 1ULL<<39
+void phArticulatedCollider::SetConstraint_28b(uint32_t value) {
+    InsertBitsAndDirty40(this, 11628, value, 28, 0xF, 1ULL << 39);
+}
+
+// ── 32. Insert 4 bits at +11632 bits 28-31 + dirty40 ───────── 4C90 (0x28)
+// rlwimi r10,r4,28,0,3 → (value & 0xF) << 28; rldicr 39
+void phArticulatedCollider::SetJointParam_28(uint32_t value) {
+    InsertBitsAndDirty40(this, 11632, value, 28, 0xF, 1ULL << 39);
+}
+
+// ── 33. Insert 1 bit at +11776 bit 0 + dirty48 ─────────────── 5148 (0x28)
+// rlwimi r10,r4,0,31,31 → (value & 1); rldicr 61 → 1ULL<<61
+void phArticulatedCollider::SetDofFlag_0(uint32_t value) {
+    InsertBitsAndDirty48(this, 11776, value, 0, 0x1, 1ULL << 61);
+}
+
+// ── 34. Insert 1 bit at +11656 bit 21 + dirty40 ────────────── 5180 (0x28)
+// rlwimi r10,r4,21,10,10 → (value & 1) << 21; rldicr 32
+void phArticulatedCollider::SetSolverParam_21(uint32_t value) {
+    InsertBitsAndDirty40(this, 11656, value, 21, 0x1, 1ULL << 32);
+}
+
+// ── 35. Insert 1 bit at +11644 bit 4 + dirty40 ─────────────── 51E0 (0x28)
+// rlwimi r10,r4,4,27,27 → (value & 1) << 4; rldicr 35 → 1ULL<<35
+void phArticulatedCollider::SetFlag7C_4b(uint32_t value) {
+    InsertBitsAndDirty40(this, 11644, value, 4, 0x1, 1ULL << 35);
+}
+
+// ── 36. Insert 8 bits at +11644 bits 24-31 + dirty40 ───────── 5218 (0x28)
+// rlwimi r10,r4,24,0,7 → (value & 0xFF) << 24; rldicr 35
+void phArticulatedCollider::SetFlag7C_24(uint32_t value) {
+    InsertBitsAndDirty40(this, 11644, value, 24, 0xFF, 1ULL << 35);
+}
+
+// ── 37. Store float + dirty48 at +11788 ─────────────────────── 5258 (0x28)
+// stfs f0,11788(r3); rldicr r12,r12,58 → 1ULL<<58
+void phArticulatedCollider::SetRangeFloat_11788(float value) {
+    StoreFloatAndDirty48(this, 11788, value, 1ULL << 58);
+}
+
+// ── 38. Store float + dirty48 at +11780 ─────────────────────── 5288 (0x28)
+// stfs f0,11780(r3); rldicr r12,r12,60 → 1ULL<<60
+void phArticulatedCollider::SetRangeFloat_11780(float value) {
+    StoreFloatAndDirty48(this, 11780, value, 1ULL << 60);
+}
+
+// ── 39. Store float + dirty48 at +11792 ─────────────────────── 52B8 (0x28)
+// stfs f0,11792(r3); rldicr r12,r12,57 → 1ULL<<57
+void phArticulatedCollider::SetRangeFloat_11792(float value) {
+    StoreFloatAndDirty48(this, 11792, value, 1ULL << 57);
+}
+
+// ── 40. Store float + dirty48 at +11784 ─────────────────────── 52E8 (0x28)
+// stfs f0,11784(r3); rldicr r12,r12,59 → 1ULL<<59
+void phArticulatedCollider::SetRangeFloat_11784(float value) {
+    StoreFloatAndDirty48(this, 11784, value, 1ULL << 59);
+}
+
+// ── 41. Insert 1 bit at +11648 bit 3 + dirty40 ─────────────── 5318 (0x28)
+// rlwimi r10,r4,3,28,28 → (value & 1) << 3; rldicr 34 → 1ULL<<34
+void phArticulatedCollider::SetActive_3(uint32_t value) {
+    InsertBitsAndDirty40(this, 11648, value, 3, 0x1, 1ULL << 34);
+}
+
+// ── 42. Insert 1 bit at +11648 bit 2 + dirty40 ─────────────── 5350 (0x28)
+// rlwimi r10,r4,2,29,29 → (value & 1) << 2; rldicr 34
+void phArticulatedCollider::SetActive_2b(uint32_t value) {
+    InsertBitsAndDirty40(this, 11648, value, 2, 0x1, 1ULL << 34);
+}
+
+// ── 43. Insert 1 bit at +11648 bit 5 + dirty40 ─────────────── 5388 (0x28)
+// rlwimi r10,r4,5,26,26 → (value & 1) << 5; rldicr 34
+void phArticulatedCollider::SetActive_5(uint32_t value) {
+    InsertBitsAndDirty40(this, 11648, value, 5, 0x1, 1ULL << 34);
+}
+
+// ── 44. Insert 6-bit low + dirty40 at +11652 ───────────────── 4578 (0x2c)
+// rlwinm r10,r10,0,0,25 → clear low 6 bits; or r10,r10,r4; rldicr 33 → 1ULL<<33
+void phArticulatedCollider::SetMiscField_11652(uint32_t value) {
+    uint32_t word = *(uint32_t*)((char*)this + 11652);
+    word = (word & 0xFFFFFFC0) | (value & 0x3F);
+    *(uint32_t*)((char*)this + 11652) = word;
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 33);
+}
+
+// ── 45. Insert 4 bits at +11628 bit 0 + dirty40 ────────────── 49C8 (0x2c)
+// rlwinm r10,r10,0,0,27 → clear low 4 bits; or r10,r10,r4; rldicr 39
+void phArticulatedCollider::SetConstraint_0b(uint32_t value) {
+    uint32_t word = *(uint32_t*)((char*)this + 11628);
+    word = (word & 0xFFFFFFF0) | (value & 0xF);
+    *(uint32_t*)((char*)this + 11628) = word;
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 39);
+}
+
+// ── 46. Insert 4 bits at +11632 bit 0 + dirty40 ────────────── 4B40 (0x2c)
+// rlwinm r10,r10,0,0,27 → clear low 4 bits; or; rldicr 39
+void phArticulatedCollider::SetJointParam_0(uint32_t value) {
+    uint32_t word = *(uint32_t*)((char*)this + 11632);
+    word = (word & 0xFFFFFFF0) | (value & 0xF);
+    *(uint32_t*)((char*)this + 11632) = word;
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 39);
+}
+
+// ── 47. vfn_57 @ 0x822508E0 | size: 0x30 ───────────────────────────────────
+// Computes interpolated joint limit: result = arr492[idx]*k1 + arr500[idx]*k2
+// where k1 and k2 are float constants from .rodata.
+float phArticulatedCollider::GetInterpolatedLimit(int index) {  // vfn_57
+    float* arr500 = *(float**)((char*)this + 500);
+    float* arr492 = *(float**)((char*)this + 492);
+    static const float kBlendA = 0.01745329f;  // PI/180 (degrees to radians)
+    static const float kBlendB = 57.29578f;    // 180/PI (radians to degrees)
+    float valA = arr500[index];
+    float valB = arr492[index];
+    return valB * kBlendA + valA * kBlendB;
+}
+
+// ── 48. Insert 4 bits at +11628 bits 4-7 + dirty40 ─────────── 49F8 (0x30)
+// clear bits 4-7, insert value<<4; rldicr 39
+void phArticulatedCollider::SetConstraint_4b(uint32_t value) {
+    InsertBitsAndDirty40(this, 11628, value, 4, 0xF, 1ULL << 39);
+}
+
+// ── 49. Insert 4 bits at +11628 bits 8-11 + dirty40 ────────── 4A28 (0x30)
+void phArticulatedCollider::SetConstraint_8b(uint32_t value) {
+    InsertBitsAndDirty40(this, 11628, value, 8, 0xF, 1ULL << 39);
+}
+
+// ── 50. Insert 4 bits at +11628 bits 12-15 + dirty40 ───────── 4A58 (0x30)
+void phArticulatedCollider::SetConstraint_12b(uint32_t value) {
+    InsertBitsAndDirty40(this, 11628, value, 12, 0xF, 1ULL << 39);
+}
