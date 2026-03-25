@@ -570,24 +570,24 @@ void atSingleton_B960_h(atSingleton* obj) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton::vfn_15()  [vtable slot 15 @ 0x82229638]
+// atSingleton::GetDebugName()  [vtable slot 15 @ 0x82229638]
 // 
 // Returns a pointer to a constant string in .rdata.
 // This appears to be a debug or error message getter.
 // ─────────────────────────────────────────────────────────────────────────────
-const char* atSingleton::vfn_15() {
+const char* atSingleton::GetDebugName() {
     // String at 0x8204E918: "t number of points specified"
     // Likely part of a longer error message like "Incorrect number of points specified"
     return (const char*)0x8204E918;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton::vfn_16()  [vtable slot 16 @ 0x822BDC38]
+// atSingleton::UpdatePage()  [vtable slot 16 @ 0x822BDC38]
 // 
 // Checks game loop state and conditionally calls a page-related function.
 // Returns early if certain flags are set, otherwise calls pg_FDF0_fw.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton::vfn_16() {
+void atSingleton::UpdatePage() {
     // Check flag at offset +495
     uint8_t localFlag = *((uint8_t*)this + 495);
     
@@ -615,13 +615,13 @@ void atSingleton::vfn_16() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton::vfn_17()  [vtable slot 17 @ 0x8244A578]
+// atSingleton::SetEnabled()  [vtable slot 17 @ 0x8244A578]
 // 
 // Manages a flag state and conditionally triggers virtual method calls on a
 // child object. Handles bit manipulation for state flags and coordinates
 // between parent and child object states.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton::vfn_17(int enableFlag) {
+void atSingleton::SetEnabled(int enableFlag) {
     // Load current flag byte at offset +24
     uint8_t currentFlags = *((uint8_t*)this + 24);
     
@@ -691,12 +691,12 @@ void atSingleton::vfn_17(int enableFlag) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton::vfn_18()  [vtable slot 18 @ 0x822F9D88]
+// atSingleton::OnPauseCheck()  [vtable slot 18 @ 0x822F9D88]
 // 
 // Checks global loop state and conditionally clears a local flag or triggers
 // a virtual method call on a child object.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton::vfn_18() {
+void atSingleton::OnPauseCheck() {
     // Load global loop object pointer and check if paused
     extern uint8_t* g_loop_obj_ptr;  // @ 0x825EAB30
     uint8_t* loopObj = *(uint8_t**)((uintptr_t)&g_loop_obj_ptr - 21712);
@@ -730,12 +730,12 @@ void atSingleton::vfn_18() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton::vfn_19()  [vtable slot 19 @ 0x822C1B10]
+// atSingleton::Shutdown()  [vtable slot 19 @ 0x822C1B10]
 // 
 // Tail-call dispatcher - loads vtable slot 20 and jumps to it.
 // This is a common pattern for forwarding calls through the vtable hierarchy.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton::vfn_19() {
+void atSingleton::Shutdown() {
     // Load vtable and call slot 20
     typedef void (*VTableFunc20)(void*);
     void** vtable = *(void***)this;
@@ -744,12 +744,12 @@ void atSingleton::vfn_19() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton::vfn_20()  [vtable slot 20 @ 0x822FB3B8]
+// atSingleton::DestroyTarget()  [vtable slot 20 @ 0x822FB3B8]
 // 
 // Indirect dispatcher - loads an object from offset +20, adjusts pointer by +4,
 // then calls that object's vtable slot 0 with parameter 0.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton::vfn_20() {
+void atSingleton::DestroyTarget() {
     // Load object pointer from offset +20
     void* targetObj = *(void**)((char*)this + 20);
     
@@ -764,7 +764,7 @@ void atSingleton::vfn_20() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton::vfn_21()  [vtable slot 21 @ 0x8245C108]
+// atSingleton::OnTransition()  [vtable slot 21 @ 0x8245C108]
 // 
 // State machine handler for singleton lifecycle transitions.
 // Manages transitions between states 3, 4, and 5 based on current state
@@ -778,7 +778,7 @@ void atSingleton::vfn_20() {
 // @param transitionType Type of transition requested (0 or 1)
 // @return Always returns 0
 // ─────────────────────────────────────────────────────────────────────────────
-int atSingleton::vfn_21(int transitionType) {
+int atSingleton::OnTransition(int transitionType) {
     int result = 0;
     
     // Load current state from offset +32
