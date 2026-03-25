@@ -804,3 +804,233 @@ bool pg_6770_fw(void* context, void* pageGroup) {
     // Return true if event was handled, false otherwise
     return (handled != 0);
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Bink Video Player (52 small functions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Xbox kernel event functions
+extern "C" int KeWaitForSingleObject(void* event, int waitReason, int waitMode, int alertable, void* timeout);
+extern "C" int KeSetEvent(void* event, int increment, int wait);
+extern "C" int KeResetEvent(void* event);
+
+// ── Pattern A: WaitForEvent[0..7] (8 functions, 24B each) ─────────────────
+
+/**
+ * CCalMoviePlayer::WaitForEvent[N] — 8 functions @ 24B each
+ *
+ * Each waits on one of the 8 KEVENT objects in the player's event
+ * array at offsets +84 through +196 (stride 16 bytes per KEVENT).
+ * Called to synchronize video decode/render threads.
+ */
+void CCalMoviePlayer::WaitForEvent0() { KeWaitForSingleObject((char*)this + 84,  3, 1, 0, nullptr); }   // _40
+void CCalMoviePlayer::WaitForEvent1() { KeWaitForSingleObject((char*)this + 100, 3, 1, 0, nullptr); }   // _41
+void CCalMoviePlayer::WaitForEvent2() { KeWaitForSingleObject((char*)this + 116, 3, 1, 0, nullptr); }   // _42
+void CCalMoviePlayer::WaitForEvent3() { KeWaitForSingleObject((char*)this + 132, 3, 1, 0, nullptr); }   // _43
+void CCalMoviePlayer::WaitForEvent4() { KeWaitForSingleObject((char*)this + 148, 3, 1, 0, nullptr); }   // _44
+void CCalMoviePlayer::WaitForEvent5() { KeWaitForSingleObject((char*)this + 164, 3, 1, 0, nullptr); }   // _45
+void CCalMoviePlayer::WaitForEvent6() { KeWaitForSingleObject((char*)this + 180, 3, 1, 0, nullptr); }   // _46
+void CCalMoviePlayer::WaitForEvent7() { KeWaitForSingleObject((char*)this + 196, 3, 1, 0, nullptr); }   // _47
+
+// ── Pattern B: SignalEvent[0..7] (8 functions, 16B each) ──────────────────
+
+/**
+ * CCalMoviePlayer::SignalEvent[N] — 8 functions @ 16B each
+ * Signals one of the 8 KEVENTs to wake a waiting thread.
+ */
+void CCalMoviePlayer::SignalEvent0() { KeSetEvent((char*)this + 84,  1, 0); }   // _48
+void CCalMoviePlayer::SignalEvent1() { KeSetEvent((char*)this + 100, 1, 0); }   // _49
+void CCalMoviePlayer::SignalEvent2() { KeSetEvent((char*)this + 116, 1, 0); }   // _50
+void CCalMoviePlayer::SignalEvent3() { KeSetEvent((char*)this + 132, 1, 0); }   // _51
+void CCalMoviePlayer::SignalEvent4() { KeSetEvent((char*)this + 148, 1, 0); }   // _52
+void CCalMoviePlayer::SignalEvent5() { KeSetEvent((char*)this + 164, 1, 0); }   // _53
+void CCalMoviePlayer::SignalEvent6() { KeSetEvent((char*)this + 180, 1, 0); }   // _54
+void CCalMoviePlayer::SignalEvent7() { KeSetEvent((char*)this + 196, 1, 0); }   // _55
+
+// ── Pattern C: ResetEvent[4..7] (8 functions, 8B each) ────────────────────
+
+/**
+ * CCalMoviePlayer::ResetEvent[N] — resets KEVENT to non-signaled state.
+ */
+void CCalMoviePlayer::ResetEvent4() { KeResetEvent((char*)this + 148); }   // _56
+void CCalMoviePlayer::ResetEvent5() { KeResetEvent((char*)this + 164); }   // _57
+void CCalMoviePlayer::ResetEvent6() { KeResetEvent((char*)this + 180); }   // _58
+void CCalMoviePlayer::ResetEvent7() { KeResetEvent((char*)this + 196); }   // _59
+
+// ── Pattern D: Field getters (5 functions, 8B each) ──────────────────────
+
+/**
+ * CCalMoviePlayer field getters — return int32 fields at +212..+228.
+ * These expose video properties: width, height, frame count, etc.
+ */
+int CCalMoviePlayer::GetField212() { return *(int*)((char*)this + 212); }   // _60
+int CCalMoviePlayer::GetField216() { return *(int*)((char*)this + 216); }   // _61
+int CCalMoviePlayer::GetField220() { return *(int*)((char*)this + 220); }   // _62
+int CCalMoviePlayer::GetField224() { return *(int*)((char*)this + 224); }   // _63_a
+int CCalMoviePlayer::GetField228() { return *(int*)((char*)this + 228); }   // _63_b
+
+// ── Pattern E: Vtable dispatch thunks (5 functions, 16-48B each) ─────────
+
+/**
+ * CCalMoviePlayer vtable dispatch thunks — call specific vtable slots
+ * on self and return 0. Used by the COM-like IMediaControl interface.
+ */
+int CCalMoviePlayer::DispatchSlot32() {  // EC68_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[32])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot34() {  // EC88_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[34])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot35() {  // ECB8_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[35])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot36() {  // ECE8_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[36])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot37() {  // ED18_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[37])(this);
+    return 0;
+}
+
+// ── Pattern F: Unimplemented stubs (2 functions, 56B each) ───────────────
+
+/**
+ * CCalMoviePlayer::Rewind / Seek — unimplemented in the final binary.
+ * Both log a debug message and return STATUS_NOT_IMPLEMENTED.
+ */
+extern "C" void nop_8240E6D0(const char* msg, ...);
+
+int CCalMoviePlayer::Rewind() {  // E758
+    nop_8240E6D0("CCalMoviePlayer::Rewind() - not implemented");
+    return -1;  // STATUS_NOT_IMPLEMENTED
+}
+
+int CCalMoviePlayer::Seek() {  // Seek stub
+    nop_8240E6D0("CCalMoviePlayer::Seek() - not implemented");
+    return -1;
+}
+
+// ── Pattern G: Field setters with change notification (2 functions) ──────
+
+/**
+ * CCalMoviePlayer::SetField212 / SetField216 — stores value, if changed
+ * and a callback is registered at +64 (with userdata at +80), calls it.
+ */
+void CCalMoviePlayer::SetField212(int value) {  // sub_63_1
+    int oldVal = *(int*)((char*)this + 212);
+    *(int*)((char*)this + 212) = value;
+    if (value != oldVal) {
+        typedef void (*CallbackFn)(void*, int);
+        CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+        if (callback) {
+            void* userData = *(void**)((char*)this + 80);
+            callback(userData, value);
+        }
+    }
+}
+
+void CCalMoviePlayer::SetField216(int value) {  // sub_63_2
+    int oldVal = *(int*)((char*)this + 216);
+    *(int*)((char*)this + 216) = value;
+    if (value != oldVal) {
+        typedef void (*CallbackFn)(void*, int);
+        CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+        if (callback) {
+            void* userData = *(void**)((char*)this + 80);
+            callback(userData, value);
+        }
+    }
+}
+
+// ── Pattern H: Misc unique functions ─────────────────────────────────────
+
+/**
+ * CCalMoviePlayer::ClearFiberFlag @ ~16B
+ * Clears the fiber state flag at this+10376 with an eieio barrier.
+ */
+void CCalMoviePlayer::ClearFiberFlag() {  // EB70
+    *(uint32_t*)((char*)this + 10376) = 0;
+    // Original has eieio (enforce in-order I/O) — memory barrier
+}
+
+/**
+ * CCalMoviePlayer::GetRemainingFrames @ ~16B
+ * Returns field_52 - field_68 (total frames minus processed frames).
+ */
+int CCalMoviePlayer::GetRemainingFrames() {  // DBD0
+    return *(int*)((char*)this + 52) - *(int*)((char*)this + 68);
+}
+
+/**
+ * CCalMoviePlayer::GetFrameBufferElement @ ~76B
+ * Returns pointer to element at front index in ring buffer.
+ * Element = base_48 + (frontIndex * 60).
+ */
+void* CCalMoviePlayer::GetFrontElement() {  // DBE0
+    char* base = *(char**)((char*)this + 48);
+    int frontIdx = *(int*)((char*)this + 56);
+    char* element = base + frontIdx * 60;
+
+    // Activate element via vtable slot 1
+    typedef void (*ActivateFn)(void*);
+    void** vt = *(void***)element;
+    if (vt) ((ActivateFn)vt[1])(element);
+
+    return element;
+}
+
+/**
+ * CCalMoviePlayer::GetBackElement @ ~76B
+ * Same as GetFrontElement but uses the back index at +60.
+ */
+void* CCalMoviePlayer::GetBackElement() {  // DC30
+    char* base = *(char**)((char*)this + 48);
+    int backIdx = *(int*)((char*)this + 60);
+    char* element = base + backIdx * 60;
+
+    typedef void (*ActivateFn)(void*);
+    void** vt = *(void***)element;
+    if (vt) ((ActivateFn)vt[1])(element);
+
+    return element;
+}
+
+/**
+ * CCalMoviePlayer::GetElementByIndex @ ~72B
+ * Returns element at arbitrary index in ring buffer.
+ */
+void* CCalMoviePlayer::GetElementByIndex(int index) {  // DC80_h
+    char* base = *(char**)((char*)this + 48);
+    char* element = base + index * 60;
+
+    typedef void (*ActivateFn)(void*);
+    void** vt = *(void***)element;
+    if (vt) ((ActivateFn)vt[1])(element);
+
+    return element;
+}
+
+/**
+ * CCalMoviePlayer::ComputeFrameSize @ ~40B
+ * Returns (field_128 * field_124 * 3) >> 1 — frame buffer size in bytes
+ * for YUV 4:2:0 format (width × height × 1.5).
+ */
+int CCalMoviePlayer::ComputeFrameSize() {  // 3F00_h
+    int width = *(int*)((char*)this + 128);
+    int height = *(int*)((char*)this + 124);
+    return (width * height * 3) >> 1;
+}
