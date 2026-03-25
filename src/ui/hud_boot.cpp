@@ -1,7 +1,21 @@
 #include "hud.hpp"
 
-#include "game/pong_network_io.hpp"
 #include "rage/game_loop_types.h"
+
+// Forward declarations for network I/O functions used by hudBoot::OnEnter.
+// Full declarations live in include/game/pong_network_io.hpp.
+
+// PollButtonState @ 0x822EB2A8
+extern uint8_t PollButtonState(void* pageGroup);
+
+// GetNetworkClient @ 0x822EB1E8
+extern void* GetNetworkClient(void* context);
+
+// CopyNetworkString @ 0x82228990
+extern void CopyNetworkString(const char* src, char* dest, int maxSize);
+
+// InitiateConnection @ 0x822EB320
+extern void InitiateConnection(void* context);
 
 // FindSettingByKey @ 0x823F9318
 extern void* FindSettingByKey(void* client, const char* key);
