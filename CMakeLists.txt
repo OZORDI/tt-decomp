@@ -48,7 +48,8 @@ set(SOURCES
     src/globals_extended.c
     src/globals_linker.cpp
     src/stubs_remaining.c
-    
+    src/stubs_linker.cpp
+
     # XAM (Xbox Application Model)
     src/xam/static_init.c
     src/xam/voice.c
