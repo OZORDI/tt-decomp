@@ -606,9 +606,12 @@ bool parStreamInXml::ReadString(const char* name, char* buffer, size_t bufferSiz
     return false;  // TODO: implement
 }
 
+/**
+ * parStreamInXml::ReadBool @ 0x82419568 | size: 0x08
+ * Returns the boolean state flag at offset +1095 (m_bLastReadWasBool).
+ */
 bool parStreamInXml::ReadBool(const char* name, bool* value) {
-    // @ 0x82419568
-    return false;  // TODO: implement
+    return *(uint8_t*)((char*)this + 1095) != 0;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -670,36 +673,59 @@ bool parStreamOutXml::CreateFile(const char* filename) {
     return true;
 }
 
+/**
+ * parStreamOutXml::FlushToFile @ 0x82432A70 | size: 0x0C
+ * Flushes the XML output buffer to the file handle.
+ */
 bool parStreamOutXml::FlushToFile() {
-    // @ 0x82432A70
-    return false;  // TODO: implement
+    extern "C" void fiAsciiTokenizer_FlushBuffer(void* file, int flags);
+    fiAsciiTokenizer_FlushBuffer(*(void**)((char*)this + 4), 0);
+    return true;
 }
 
 void parStreamOutXml::SetIndentation(int spaces) {
     m_indentSpaces = spaces;
 }
 
+/**
+ * parStreamOutXml::BeginObject @ 0x8241BB38 | size: 0x08
+ * Opens an XML element tag. Tail-calls the tokenizer with isArray=false.
+ */
 bool parStreamOutXml::BeginObject(const char* name) {
-    // @ 0x8241BB38
-    return false;  // TODO: implement
+    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
+    return fiAsciiTokenizer_BeginElement(this, name, 0);
 }
 
 void parStreamOutXml::EndObject() {
     // @ 0x8241BB40
 }
 
+/**
+ * parStreamOutXml::BeginArray @ 0x8241BBE8 | size: 0x38
+ * Opens an XML array element. Calls tokenizer with isArray=true,
+ * then resets m_arrayElementIndex (+28) to 0.
+ */
 bool parStreamOutXml::BeginArray(const char* name, uint32_t* count) {
-    // @ 0x8241BBE8
-    return false;  // TODO: implement
+    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
+    fiAsciiTokenizer_BeginElement(this, name, 1);
+    *(uint32_t*)((char*)this + 28) = 0;  // m_arrayElementIndex = 0
+    return true;
 }
 
 void parStreamOutXml::EndArray() {
     // @ 0x8241BC20
 }
 
+/**
+ * parStreamOutXml::WriteInt @ 0x8241B810 | size: 0x2C
+ * Writes an integer value as XML text. Gets the file handle at +4,
+ * loads a "%d" format string, and calls the XML formatter.
+ */
 bool parStreamOutXml::WriteInt(const char* name, int32_t value) {
-    // @ 0x8241B840
-    return false;  // TODO: implement
+    extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
+    void* file = *(void**)((char*)this + 4);
+    parStreamOutXml_WriteFormatted(file, "%d", value);
+    return true;
 }
 
 bool parStreamOutXml::WriteFloat(const char* name, float value) {
