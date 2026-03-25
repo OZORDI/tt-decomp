@@ -3404,3 +3404,269 @@ void phInst::ReadMMIOAndStore() {  // AC00_2hr
     extern uint32_t g_mmioStoredValue;  // @ 0x825E7890
     g_mmioStoredValue = swapped;
 }
+
+
+// =============================================================================
+// rage::phBoundCapsule -- Small Functions (<=64B) Batch Lift
+// =============================================================================
+
+// --- External declarations for this batch ---
+extern void  fiAsciiTokenizer_0BA8_g(void* tokenizer, int mode);
+extern void  _locale_register(void* ptr, void* allocator);
+extern void  rage_Alloc(int size, void* allocator);  // rage_01B8
+extern void  ph_1B78(void* thisPtr, float f2, float f3, void* r6);
+extern void  msgMsgSink_8DA0_sp(void* obj);
+extern void  phBoundCapsule_9DA0_2h(void* a, void* b, int count);
+extern void  phBoundCapsule_9B58_w(void* a, void* b, int count);
+extern void  phBoundCapsule_9C78_2hr_9C78_1(void* a, void* b, int count);
+extern void  phBoundCapsule_F5F8_p39(void* data);
+extern void* g_display_obj_ptr;  // @ 0x826066E4
+
+// --- Globals for callback table (FB70-FBC0 series) ---
+extern uint32_t g_phCallback0;  // @ 0x825EA900
+extern uint32_t g_phCallback1;  // @ 0x825EA904
+extern uint32_t g_phCallback2;  // @ 0x825EA908
+extern uint32_t g_phCallback3;  // @ 0x825EA90C
+extern uint32_t g_phCallback4;  // @ 0x825EA910
+extern uint32_t g_phCallback5;  // @ 0x825EA914
+
+// ---------------------------------------------------------------------------
+// 1. phBoundCapsule::SetMaterialIndex (vfn_13) @ 0x822A2E00 | size: 0x8
+//    Stores a 32-bit value at offset +192 (material index on the bound).
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::SetMaterialIndex(uint32_t index) {
+    *(uint32_t*)((char*)this + 192) = index;
+}
+
+// ---------------------------------------------------------------------------
+// 2. phBoundCapsule::GetMaterialIndex (vfn_12) @ 0x8256FBD0 | size: 0x8
+//    Returns the 32-bit material index stored at offset +192.
+// ---------------------------------------------------------------------------
+uint32_t rage::phBoundCapsule::GetMaterialIndex() const {
+    return *(uint32_t*)((char*)this + 192);
+}
+
+// ---------------------------------------------------------------------------
+// 3. phBoundCapsule::GetVolume (vfn_8) @ 0x822A2DB0 | size: 0x2C
+//    Computes capsule volume: V = (4/3) * PI * halfHeight * (halfHeight + radius)^2
+//    offset +112 = m_halfHeight, +128 = m_radius
+//    Uses two float constants from .rdata for PI-related factors.
+// ---------------------------------------------------------------------------
+float rage::phBoundCapsule::GetVolume() const {
+    float halfHeight = *(float*)((char*)this + 112);
+    float radius     = *(float*)((char*)this + 128);
+    extern const float g_capsuleVolK1;  // @ .rdata (fmadds multiplier)
+    extern const float g_capsuleVolK2;  // @ .rdata (final scale, ~4.189 = 4/3*PI)
+    float t = halfHeight * g_capsuleVolK1 + radius;  // fmadds f0*f13+f12
+    float t2 = t * halfHeight;
+    float t3 = t2 * halfHeight;
+    return t3 * g_capsuleVolK2;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phBoundCapsule::UpdateBound (vfn_11) @ 0x822A2DE0 | size: 0x20
+//    Passes the material index (+192) to a global display object's vfn_5.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::UpdateBound() {
+    uint32_t matIdx = *(uint32_t*)((char*)this + 192);
+    void* displayObj = g_display_obj_ptr;
+    // Call vfn_5 on the global display object with our material index
+    void** vtable = *(void***)displayObj;
+    typedef void (*DispatchFn)(void*, uint32_t);
+    DispatchFn fn = (DispatchFn)vtable[5];
+    fn(displayObj, matIdx);
+}
+
+// ---------------------------------------------------------------------------
+// 5. phBoundCapsule::GetSupportPoint (vfn_9) @ 0x822A3258 | size: 0x10
+//    Loads halfHeight (+112) and radius (+128) from the capsule, then
+//    tail-calls ph_1B78 to compute a support point.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::GetSupportPoint(void* direction, void* outPoint) {
+    float radius     = *(float*)((char*)this + 128);
+    float halfHeight = *(float*)((char*)this + 112);
+    ph_1B78(this, halfHeight, radius, outPoint);
+}
+
+// ---------------------------------------------------------------------------
+// 6. phBoundCapsule_0E88_g @ 0x82430E88 | size: 0x8
+//    Calls fiAsciiTokenizer_0BA8_g with mode=0 (read mode).
+// ---------------------------------------------------------------------------
+void phBoundCapsule_0E88_g(void* tokenizer) {
+    fiAsciiTokenizer_0BA8_g(tokenizer, 0);
+}
+
+// ---------------------------------------------------------------------------
+// 7. phBoundCapsule_0E90_g @ 0x82430E90 | size: 0x8
+//    Calls fiAsciiTokenizer_0BA8_g with mode=1 (write mode).
+// ---------------------------------------------------------------------------
+void phBoundCapsule_0E90_g(void* tokenizer) {
+    fiAsciiTokenizer_0BA8_g(tokenizer, 1);
+}
+
+// ---------------------------------------------------------------------------
+// 8. phBoundCapsule_DAD8_p33 @ 0x823FDAD8 | size: 0x14
+//    Initializes a result pair: sets type=3 (capsule) and value=0.
+//    r6 = output struct pointer.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_DAD8_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, uint32_t* outResult) {
+    outResult[1] = 3;   // type = capsule
+    outResult[0] = 0;   // value = 0
+}
+
+// ---------------------------------------------------------------------------
+// 9. phBoundCapsule_DAF0_p33 @ 0x823FDAF0 | size: 0x14
+//    Initializes a result pair: sets type=2 (sphere) and byte[0]=0.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_DAF0_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* outResult) {
+    *(uint32_t*)((char*)outResult + 4) = 2;  // type = sphere
+    *(uint8_t*)outResult = 0;                 // flag = 0
+}
+
+// ---------------------------------------------------------------------------
+// 10. phBoundCapsule_9C78_2hr @ 0x82459C78 | size: 0x14
+//     If field +24 is non-null, tail-calls msgMsgSink_8DA0_sp on it.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_9C78_2hr(void* obj) {
+    void* sink = *(void**)((char*)obj + 24);
+    if (sink == nullptr) return;
+    msgMsgSink_8DA0_sp(sink);
+}
+
+// ---------------------------------------------------------------------------
+// 11. phBoundCapsule_FCB0_p39 @ 0x824AFCB0 | size: 0x10
+//     Reads a signed 16-bit element from an array.
+//     index = r6, base = r3. Element at base[index*2], sign-extended.
+// ---------------------------------------------------------------------------
+int32_t phBoundCapsule_FCB0_p39(int16_t* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
+    return (int32_t)base[index];
+}
+
+// ---------------------------------------------------------------------------
+// 12. phBoundCapsule_FCC0_p39 @ 0x824AFCC0 | size: 0x14
+//     Reads a 24-bit packed element from a 3-byte-stride array, sign-extended
+//     then arithmetic-shifted right by 8 to produce a signed result.
+//     Stride = index * 3. Loads dword at base + stride, shifts >> 8.
+// ---------------------------------------------------------------------------
+int32_t phBoundCapsule_FCC0_p39(void* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
+    uint32_t stride = index * 3;
+    uint32_t raw = *(uint32_t*)((char*)base + stride);
+    return (int32_t)raw >> 8;
+}
+
+// ---------------------------------------------------------------------------
+// 13. phBoundCapsule_FD60_p39 @ 0x824AFD60 | size: 0xC
+//     Stores a 16-bit value into an array at index.
+//     base = r4, index = r6, value = r3.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_FD60_p39(uint16_t value, int16_t* base, void* /*r5*/, uint32_t index) {
+    base[index] = (int16_t)value;
+}
+
+// ---------------------------------------------------------------------------
+// 14. phBoundCapsule_FD70_p33 @ 0x824AFD70 | size: 0x24
+//     Stores a 24-bit packed value into a 3-byte-stride array.
+//     The value in r3 is decomposed: byte2 = r3 & 0xFF, byte1 = (r3>>8) & 0xFF,
+//     byte0 = (r3>>16) & 0xFF, stored at base + index*3.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_FD70_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+    uint32_t stride = index * 3;
+    uint8_t* dst = base + stride;
+    int32_t mid = value >> 8;
+    int32_t hi  = mid >> 8;
+    dst[2] = (uint8_t)value;
+    dst[1] = (uint8_t)mid;
+    dst[0] = (uint8_t)hi;
+}
+
+// ---------------------------------------------------------------------------
+// 15. phBoundCapsule_FCD8_p39 @ 0x824AFCD8 | size: 0x28
+//     Reads a 24-bit packed value from a 3-byte-stride array, reassembles
+//     into a sign-extended 24-bit integer, then arithmetic-shifts right by 4.
+// ---------------------------------------------------------------------------
+int32_t phBoundCapsule_FCD8_p39(void* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
+    uint32_t stride = index * 3;
+    uint8_t* src = (uint8_t*)base + stride;
+    uint8_t lo  = src[2];
+    uint16_t hi = *(uint16_t*)src;
+    int8_t loSigned = (int8_t)lo;
+    int32_t combined = ((int32_t)loSigned << 16) | hi;
+    return combined >> 4;
+}
+
+// ---------------------------------------------------------------------------
+// 16. phBoundCapsule_FD98_p33 @ 0x824AFD98 | size: 0x28
+//     Stores a value left-shifted by 4 into a 3-byte-stride packed array.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_FD98_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+    uint32_t shifted = (uint32_t)value << 4;
+    // Decompose 32-bit shifted value into 3 bytes (big-endian order)
+    uint8_t* tmp = (uint8_t*)&shifted;
+    uint32_t stride = index * 3;
+    uint8_t* dst = base + stride;
+    // Store high 16 bits then low byte (big-endian PPC layout)
+    *(uint16_t*)dst = *(uint16_t*)tmp;
+    dst[2] = tmp[2];
+}
+
+// ---------------------------------------------------------------------------
+// 17. phBoundCapsule_BAF0_2h @ 0x8256BAF0 | size: 0x14
+//     Multiplies r3 * r4, then tail-calls rage_Alloc with that size
+//     and allocator pointer 0x6489_0018.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_BAF0_2h(int32_t elemSize, int32_t count) {
+    int32_t totalSize = elemSize * count;
+    extern void* g_phAllocator;  // @ 0x64890018 (constructed from lis+ori)
+    rage_Alloc(totalSize, g_phAllocator);
+}
+
+// ---------------------------------------------------------------------------
+// 18. phBoundCapsule_BBB8_2h @ 0x8256BBB8 | size: 0xC
+//     Tail-calls _locale_register with a fixed allocator pointer.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_BBB8_2h(void* ptr) {
+    extern void* g_phAllocator;  // @ 0x64890018
+    _locale_register(ptr, g_phAllocator);
+}
+
+// ---------------------------------------------------------------------------
+// 19-24. SetCallback0..5 (FB70-FBC0 series) @ 0x8256FB70..0x8256FBC0
+//        Each stores r3 into a consecutive global slot, returns 0.
+//        These register physics callback function pointers.
+// ---------------------------------------------------------------------------
+
+// 19. phBoundCapsule_FB70_2h @ 0x8256FB70 | size: 0x10
+int32_t phBoundCapsule_SetCallback0(uint32_t callback) {
+    g_phCallback0 = callback;  // @ 0x825EA900
+    return 0;
+}
+
+// 20. phBoundCapsule_FB80_2h @ 0x8256FB80 | size: 0x10
+int32_t phBoundCapsule_SetCallback1(uint32_t callback) {
+    g_phCallback1 = callback;  // @ 0x825EA904
+    return 0;
+}
+
+// 21. phBoundCapsule_FB90_2h @ 0x8256FB90 | size: 0x10
+int32_t phBoundCapsule_SetCallback2(uint32_t callback) {
+    g_phCallback2 = callback;  // @ 0x825EA908
+    return 0;
+}
+
+// 22. phBoundCapsule_FBA0_2h @ 0x8256FBA0 | size: 0x10
+int32_t phBoundCapsule_SetCallback3(uint32_t callback) {
+    g_phCallback3 = callback;  // @ 0x825EA90C
+    return 0;
+}
+
+// 23. phBoundCapsule_FBB0_2h @ 0x8256FBB0 | size: 0x10
+int32_t phBoundCapsule_SetCallback4(uint32_t callback) {
+    g_phCallback4 = callback;  // @ 0x825EA910
+    return 0;
+}
+
+// 24. phBoundCapsule_FBC0_2h @ 0x8256FBC0 | size: 0x10
+int32_t phBoundCapsule_SetCallback5(uint32_t callback) {
+    g_phCallback5 = callback;  // @ 0x825EA914
+    return 0;
+}
