@@ -45,14 +45,75 @@ pongLiveManager::~pongLiveManager() {
  * 
  * TODO: Full implementation requires understanding session initialization flow
  */
+/**
+ * pongLiveManager::StartSession @ 0x8239FEB0 | size: 0x10C
+ *
+ * Starts an Xbox Live multiplayer session. First checks if the
+ * coordinator is in exhibition mode — if so, sets stat type to 4
+ * (exhibition) at +76. Otherwise sets stat type to 4 at +68 and
+ * checks the session's online flag at +3744. If online (bit 7 set),
+ * logs the start message, initializes a session config struct,
+ * copies it to the session, calls the network setup function,
+ * and sets two tracking flags to 1 at offsets 122052/122056.
+ *
+ * Debug: "pongLiveManager::StartSession called.." @ 0x8206F980
+ */
 void pongLiveManager::StartSession() {
-    // TODO: Implement session initialization
-    // - Initialize peer slots array (m_peerSlots)
-    // - Initialize spectator slots array (m_spectatorSlots)
-    // - Set up session state
-    // - Register with Xbox Live matchmaking
-    
-    printf("pongLiveManager::StartSession() - TODO: implement\n");
+    // @ 0x8206F980 — "pongLiveManager::StartSession called.."
+    extern const char* g_str_pongLive_startSession;
+    extern void* g_pNetworkManager;  // @ SDA
+    extern "C" bool IsExhibitionMode(void* mgr);
+    extern "C" void InitSessionConfig(void* configBuf);
+    extern "C" void CopySessionConfig(void* dst, void* src);
+    extern "C" void SetupNetworkSession(void* session);
+
+    void* networkMgr = g_pNetworkManager;
+
+    if (IsExhibitionMode(networkMgr)) {
+        *(int32_t*)((char*)this + 76) = 4;  // m_exhibitionStatType
+        return;
+    }
+
+    *(int32_t*)((char*)this + 68) = 4;  // m_statType
+
+    // Get primary session
+    int sessionCount = *(int32_t*)((char*)networkMgr + 60);
+    void* session = nullptr;
+    if (sessionCount > 0) {
+        session = *(void**)((char*)networkMgr + 56);
+    }
+
+    // Check online flag (byte +3744, bit 7)
+    uint8_t onlineFlags = *(uint8_t*)((char*)session + 3744);
+    if ((onlineFlags & 0x80) == 0) {
+        return;  // Not online
+    }
+
+    nop_8240E6D0(g_str_pongLive_startSession);
+
+    // Get session for config setup
+    if (sessionCount > 0) {
+        session = *(void**)((char*)networkMgr + 56);
+    } else {
+        session = nullptr;
+    }
+
+    // Initialize and copy session config
+    uint8_t configBuf[144];
+    InitSessionConfig(configBuf);
+    *(int32_t*)(configBuf + 12) = 116;  // config size
+    CopySessionConfig((char*)session + 212, configBuf);
+
+    // Set up network session
+    void* primarySession = nullptr;
+    if (*(int32_t*)((char*)networkMgr + 60) > 0) {
+        primarySession = *(void**)((char*)networkMgr + 56);
+    }
+    SetupNetworkSession(primarySession);
+
+    // Set tracking flags
+    *(int32_t*)((char*)networkMgr + 122052) = 1;
+    *(int32_t*)((char*)networkMgr + 122056) = 1;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -68,15 +129,74 @@ void pongLiveManager::StartSession() {
  * 
  * TODO: Full implementation requires understanding session teardown flow
  */
+/**
+ * pongLiveManager::EndSession @ 0x823ADD68 | size: 0x178
+ *
+ * Ends the current Xbox Live session. Logs the call, checks if the
+ * local user is signed in to Live (via xam_9608). If offline, logs
+ * the offline error and returns early. Otherwise tears down the
+ * primary session, then checks the secondary session's online flag
+ * (byte +3744, bit 7). If online and the session has an active
+ * arbitration handle (+1992 != 0), verifies the peer count (+9672 > 0)
+ * before calling the final network teardown.
+ *
+ * Debug: "pongLiveManager::EndSession() called.." @ 0x8206F9A8
+ * Debug: "...user is offline, can't end or write stats" @ 0x8206F9D0
+ */
 void pongLiveManager::EndSession() {
-    // TODO: Implement session teardown
-    // - Check if user is online
-    // - Write final statistics
-    // - Disconnect all peers
-    // - Clean up spectator connections
-    // - Unregister from Xbox Live
-    
-    printf("pongLiveManager::EndSession() called..\n");
+    // @ 0x8206F9A8 / 0x8206F9D0
+    extern const char* g_str_pongLive_endSessionCalled;
+    extern const char* g_str_pongLive_endSessionOffline;
+    extern void* g_pUserSigninState;  // @ SDA
+    extern "C" bool IsUserSignedInToLive(void* signinState);
+    extern "C" void TeardownPrimarySession(void* session);
+    extern "C" void SetupNetworkSession(void* session);
+
+    nop_8240E6D0(g_str_pongLive_endSessionCalled);
+
+    // Check sign-in state: g_pUserSigninState->field_4 indexes into
+    // this object's per-user data (stride 2784 bytes)
+    void* signinState = g_pUserSigninState;
+    uint32_t userIndex = *(uint32_t*)((char*)signinState + 4);
+    void* userData = nullptr;
+    if (userIndex <= 3) {
+        userData = (char*)this + (userIndex * 2784) + 131072 - 29280;
+    }
+
+    if (!IsUserSignedInToLive(userData)) {
+        nop_8240E6D0(g_str_pongLive_endSessionOffline);
+        return;
+    }
+
+    // Tear down primary session
+    int sessionCount = *(int32_t*)((char*)this + 60);
+    void* primarySession = (sessionCount > 0) ? *(void**)((char*)this + 56) : nullptr;
+    TeardownPrimarySession(primarySession);
+
+    // Check secondary session's online status
+    void* secondarySession = nullptr;
+    if (sessionCount > 1) {
+        secondarySession = (char*)*(void**)((char*)this + 56) + 9680;
+    }
+    if (!secondarySession) return;
+
+    uint8_t onlineFlags = *(uint8_t*)((char*)secondarySession + 3744);
+    if ((onlineFlags & 0x80) == 0) return;  // Not online
+
+    // Check arbitration handle
+    uint32_t arbHandle = *(uint32_t*)((char*)secondarySession + 1992);
+    if (arbHandle == 0) {
+        // No arbitration — check peer count before teardown
+        int32_t peerCount = *(int32_t*)((char*)secondarySession + 9672);
+        if (peerCount <= 0) return;  // No peers to disconnect
+    }
+
+    // Final network teardown on secondary session
+    void* teardownSession = nullptr;
+    if (sessionCount > 1) {
+        teardownSession = (char*)*(void**)((char*)this + 56) + 9680;
+    }
+    SetupNetworkSession(teardownSession);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -154,83 +274,123 @@ int pongLiveManager::GetAvailablePeerIndex(int sessionType) {
  * 
  * TODO: Implement spectator slot search logic
  */
-int pongLiveManager::GetAvailableSpectatorIndex() {
-    // TODO: Implement spectator slot search
-    // Check session state at +0x38 and +0x3C
-    // Loop through m_spectatorSlots[0..31]
-    // Check if slot is available
-    // Return first available index or -1
-    
-    printf("pongLiveManager::GetAvailableSpectatorIndex() Out of peer indexes!!!\n");
+/**
+ * pongLiveManager::GetAvailableSpectatorIndex @ 0x823AD300 | size: 0x130
+ *
+ * Finds an available spectator slot. First checks if the network
+ * coordinator has an open spectator position via SinglesNetworkClient_A250.
+ * If so, sets the coordinator mode to 7 (spectator). Otherwise falls back
+ * to scanning the spectator table (base offset 30485) for an empty slot.
+ * Each slot entry points to a peer object; byte +452 is the active flag.
+ *
+ * @param coordinator  Network coordinator pointer (implicit r4)
+ * @return Slot index (0-31) or -1 if full
+ */
+int pongLiveManager::GetAvailableSpectatorIndex(void* coordinator) {
+    // @ 0x8206F810 — "pongLiveManager::GetAvailableSpectatorIndex() Out of peer indexes!!!"
+    extern const char* g_str_pongLive_outOfSpectatorIndexes;
+    extern "C" void* SinglesNetworkClient_A250(void* session, void* coord);
+    extern "C" void SetCoordinatorMode(void* coord, int mode);
+
+    // Check if session has spectator capacity
+    int sessionCount = *(int32_t*)((char*)this + 60);  // m_sessionCount
+    void* sessionArray = nullptr;
+    if (sessionCount > 0) {
+        sessionArray = *(void**)((char*)this + 56);  // m_pSessionArray
+    }
+
+    // Try direct spectator assignment via coordinator
+    void* spectatorSlot = SinglesNetworkClient_A250(
+        (char*)sessionArray + 3756,
+        (char*)coordinator + 96
+    );
+    if (spectatorSlot) {
+        SetCoordinatorMode(coordinator, 7);  // Mode 7 = spectator
+        return (int)(intptr_t)spectatorSlot;
+    }
+
+    // Fallback: scan spectator table for empty slot
+    void* session1 = nullptr;
+    if (sessionCount > 1) {
+        session1 = (char*)*(void**)((char*)this + 56) + 9680;
+    }
+    if (!session1) return -1;
+
+    int startSlot = *(int32_t*)((char*)session1 + 408);  // m_nextSpectatorSlot
+    if (startSlot >= 32) {
+        nop_8240E6D0(g_str_pongLive_outOfSpectatorIndexes);
+        return -1;
+    }
+
+    uint32_t* slotTable = (uint32_t*)this;
+    for (int slot = startSlot; slot < 32; slot++) {
+        if (slot > 31) break;  // bounds guard
+
+        uint32_t entry = slotTable[slot + 30485];
+        if (entry == 0) {
+            return slot;  // Empty slot
+        }
+
+        // Check if peer is inactive (byte +452)
+        uint8_t active = *(uint8_t*)((uintptr_t)entry + 452);
+        if (active == 0) {
+            return slot;
+        }
+    }
+
+    nop_8240E6D0(g_str_pongLive_outOfSpectatorIndexes);
     return -1;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// pongLiveManager_68C0_v12 @ 0x823368C0 | size: 0x84
+// pongLiveManager::InitSessionDescriptor @ 0x823368C0 | size: 0x84
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Unknown function (possibly vtable slot 12)
- * 
- * TODO: Analyze function purpose from assembly
- */
-/**
- * pongLiveManager_68C0_v12 @ 0x823368C0 | size: 0x84
+ * pongLiveManager::InitSessionDescriptor @ 0x823368C0 | size: 0x84
  *
- * Initializes a network session descriptor at the given pointer.
- * Zeroes the first 12 bytes, then writes a 38-byte configuration
- * block containing protocol version and connection parameters.
- *
- * Descriptor layout (38 bytes):
- *   +0: uint32  protocolVersion = 2
- *   +4: uint32  reserved = 0
- *   +8: uint32  reserved = 0
- *   +12: uint32 maxPeers = 61
- *   +16: uint8  protocolVersion_byte = 2
- *   +25: uint8  maxPeersEncoded = (62 << 8) & 0xFF = 0x3E
- *   +26: uint16 maxPeersShifted
- *   +28: uint8  maxConnections = 62
- *   +29: uint8  protocolVersion_byte2 = 2
+ * Initializes a network session descriptor. Zeroes the first 12 bytes,
+ * then writes a 38-byte configuration block with protocol version (2),
+ * max peer count (61), and max connection count (62).
  */
-void pongLiveManager_68C0_v12(void* descriptor) {
-    // Zero first 12 bytes
+void pongLiveManager::InitSessionDescriptor(void* descriptor) {
     uint8_t* ptr = (uint8_t*)descriptor;
+
+    // Zero header
     for (int i = 0; i < 12; i++) {
         ptr[i] = 0;
     }
 
-    // Build 38-byte config block
-    uint8_t config[38];
-    *(uint32_t*)(config + 0) = 2;      // protocol version
-    *(uint32_t*)(config + 4) = 0;      // reserved
-    *(uint32_t*)(config + 8) = 0;      // reserved
-    *(uint32_t*)(config + 12) = 61;    // max peers
-    config[16] = 2;                     // protocol version byte
-    config[25] = (62 << 8) & 0xFF;     // max peers encoded high byte
-    *(uint16_t*)(config + 26) = (uint16_t)(62 >> 8);  // shifted
-    config[28] = 62;                    // max connections
-    config[29] = 2;                     // protocol version byte
+    // Build session config on stack and copy
+    uint8_t sessionConfig[38] = {};
+    *(uint32_t*)(sessionConfig + 0) = 2;    // protocol version
+    *(uint32_t*)(sessionConfig + 4) = 0;    // reserved
+    *(uint32_t*)(sessionConfig + 8) = 0;    // reserved
+    *(uint32_t*)(sessionConfig + 12) = 61;  // max peers
+    sessionConfig[16] = 2;                   // protocol version byte
+    sessionConfig[28] = 62;                  // max connections
+    sessionConfig[29] = 2;                   // protocol version copy
 
-    // Copy config to descriptor
     for (int i = 0; i < 38; i++) {
-        ptr[i] = config[i];
+        ptr[i] = sessionConfig[i];
     }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// pongLiveManager::F228 @ 0x823AF228 | size: 0x354
+// pongLiveManager::WriteSessionStats @ 0x823AF228 | size: 0x354
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Unknown function F228
- * 
- * Large function (852 bytes) - likely handles complex session logic
- * 
- * TODO: Analyze function purpose from assembly
+ * pongLiveManager::WriteSessionStats @ 0x823AF228 | size: 0x354
+ *
+ * Large function (852 bytes) — writes accumulated session statistics
+ * to Xbox Live leaderboards. Handles exhibition and tournament stat
+ * categories including weekly/yearly wins and losses.
+ *
+ * TODO: Full implementation requires understanding of XSessionWriteStats API
  */
-void pongLiveManager::F228() {
-    // TODO: Implement
-    printf("pongLiveManager::F228() - TODO: implement\n");
+void pongLiveManager::WriteSessionStats() {
+    // TODO: Implement — 852 bytes of Xbox Live stats writing logic
 }
 
 // ────────────────────────────────────────────────────────────────────────────
