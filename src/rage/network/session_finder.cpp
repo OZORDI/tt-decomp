@@ -149,37 +149,37 @@ snSessionFinder::slfRoot::~slfRoot() {
 }
 
 /**
- * slfRoot::vfn_2
+ * slfRoot::GetStateName
  * @ 0x823EE2B8 | size: 0xC
  *
  * State entry handler.
  */
-void snSessionFinder::slfRoot::vfn_2() {
+void snSessionFinder::slfRoot::GetStateName() {
     // State entry logic
 }
 
 /**
- * slfRoot::vfn_5
+ * slfRoot::RegisterChildStates
  * @ 0x823EEA40 | size: 0x3C
  *
  * State update handler.
  */
-void snSessionFinder::slfRoot::vfn_5() {
+void snSessionFinder::slfRoot::RegisterChildStates() {
     // State update logic
 }
 
 /**
- * slfRoot::vfn_6
+ * slfRoot::UnregisterChildStates
  * @ 0x823EEA80 | size: 0x7C
  *
  * State event handler.
  */
-void snSessionFinder::slfRoot::vfn_6() {
+void snSessionFinder::slfRoot::UnregisterChildStates() {
     // State event handling logic
 }
 
 /**
- * slfRoot::vfn_12
+ * slfRoot::OnEvent
  * @ 0x823EE2C8 | size: 0x188
  *
  * Main state processing - handles event type checking and state transitions.
@@ -191,7 +191,7 @@ void snSessionFinder::slfRoot::vfn_6() {
  *
  * If no match, sets output byte to 0.
  */
-void snSessionFinder::slfRoot::vfn_12() {
+void snSessionFinder::slfRoot::OnEvent() {
     // Complex state transition logic based on event types
     // See assembly for full implementation details
 }
@@ -209,37 +209,37 @@ snSessionFinder::slfRoot::slfSearching::~slfSearching() {
 }
 
 /**
- * slfSearching::vfn_2
+ * slfSearching::GetStateName
  * @ 0x823EE450 | size: 0xC
  *
  * State entry handler.
  */
-void snSessionFinder::slfRoot::slfSearching::vfn_2() {
+void snSessionFinder::slfRoot::slfSearching::GetStateName() {
     // State entry logic
 }
 
 /**
- * slfSearching::vfn_5
+ * slfSearching::RegisterChildStates
  * @ 0x823EE910 | size: 0x3C
  *
  * State update handler.
  */
-void snSessionFinder::slfRoot::slfSearching::vfn_5() {
+void snSessionFinder::slfRoot::slfSearching::RegisterChildStates() {
     // State update logic
 }
 
 /**
- * slfSearching::vfn_6
+ * slfSearching::UnregisterChildStates
  * @ 0x823EE950 | size: 0x7C
  *
  * State event handler.
  */
-void snSessionFinder::slfRoot::slfSearching::vfn_6() {
+void snSessionFinder::slfRoot::slfSearching::UnregisterChildStates() {
     // State event handling
 }
 
 /**
- * slfSearching::vfn_14
+ * slfSearching::OnEnter
  * @ 0x823EE460 | size: 0x44
  *
  * Initialize search - sets up flags in network state structure.
@@ -249,7 +249,7 @@ void snSessionFinder::slfRoot::slfSearching::vfn_6() {
  * - Clears bit 5 (flag &= 0xDF)
  * - Clears field at offset +0x910 (2320)
  */
-void snSessionFinder::slfRoot::slfSearching::vfn_14() {
+void snSessionFinder::slfRoot::slfSearching::OnEnter() {
     if (!m_pNetworkState) return;
     
     // Calculate offset 0x10D20 (68896)
@@ -270,12 +270,12 @@ void snSessionFinder::slfRoot::slfSearching::vfn_14() {
 }
 
 /**
- * slfSearching::vfn_15
+ * slfSearching::OnExit
  * @ 0x823EE4A8 | size: 0x1C
  *
  * Cleanup search state.
  */
-void snSessionFinder::slfRoot::slfSearching::vfn_15() {
+void snSessionFinder::slfRoot::slfSearching::OnExit() {
     // Search cleanup logic
 }
 
@@ -292,17 +292,17 @@ snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::~slfFindingSyslink() 
 }
 
 /**
- * slfFindingSyslink::vfn_2
+ * slfFindingSyslink::GetStateName
  * @ 0x823EE4C8 | size: 0xC
  *
  * State entry handler.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::vfn_2() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::GetStateName() {
     // State entry logic
 }
 
 /**
- * slfFindingSyslink::vfn_14
+ * slfFindingSyslink::OnEnter
  * @ 0x823EE4D8 | size: 0xB8
  *
  * System link search logic - initializes system link discovery.
@@ -318,7 +318,7 @@ void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::vfn_2() {
  * - snJoinMachine_03D0_g to initialize join machine
  * - SinglesNetworkClient_08C8_g if network object is valid
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::vfn_14() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::OnEnter() {
     // Complex system link initialization
     // See assembly for full implementation details
 }
@@ -336,96 +336,96 @@ snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::~slf
 }
 
 /**
- * slfBroadcasting::vfn_2
+ * slfBroadcasting::GetStateName
  * @ 0x823EE590 | size: 0xC
  *
  * State entry handler.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::vfn_2() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::GetStateName() {
     // State entry logic
 }
 
 /**
- * slfBroadcasting::vfn_12
+ * slfBroadcasting::OnEvent
  * @ 0x823EE658 | size: 0xE8
  *
  * Broadcast processing - main broadcast loop logic.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::vfn_12() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::OnEvent() {
     // Broadcast processing logic
 }
 
 /**
- * slfBroadcasting::vfn_14
+ * slfBroadcasting::OnEnter
  * @ 0x823EE5A0 | size: 0x6C
  *
  * Start broadcasting - initiates broadcast requests.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::vfn_14() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::OnEnter() {
     // Broadcast initiation logic
 }
 
 /**
- * slfBroadcasting::vfn_15
+ * slfBroadcasting::OnExit
  * @ 0x823EE610 | size: 0x44
  *
  * Stop broadcasting - cleanup broadcast state.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::vfn_15() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting::OnExit() {
     // Broadcast cleanup logic
 }
 
 // ── slfFindingOnline Implementation ──
 
 /**
- * slfFindingOnline::vfn_2
+ * slfFindingOnline::GetStateName
  * @ 0x823EE748 | size: 0xC
  *
  * State entry handler.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingOnline::vfn_2() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingOnline::GetStateName() {
     // State entry logic
 }
 
 /**
- * slfFindingOnline::vfn_14
+ * slfFindingOnline::OnEnter
  * @ 0x823EE758 | size: 0x174
  *
  * Online search logic - implements Xbox Live matchmaking search.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingOnline::vfn_14() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingOnline::OnEnter() {
     // Online matchmaking search implementation
 }
 
 /**
- * slfFindingOnline::vfn_15
+ * slfFindingOnline::OnExit
  * @ 0x823EE8D0 | size: 0x40
  *
  * Cleanup online search state.
  */
-void snSessionFinder::slfRoot::slfSearching::slfFindingOnline::vfn_15() {
+void snSessionFinder::slfRoot::slfSearching::slfFindingOnline::OnExit() {
     // Online search cleanup logic
 }
 
 // ── slfFinal Implementation ──
 
 /**
- * slfFinal::vfn_2
+ * slfFinal::GetStateName
  * @ 0x823EE9D0 | size: 0xC
  *
  * Final state entry handler.
  */
-void snSessionFinder::slfRoot::slfFinal::vfn_2() {
+void snSessionFinder::slfRoot::slfFinal::GetStateName() {
     // Final state entry logic
 }
 
 /**
- * slfFinal::vfn_14
+ * slfFinal::OnEnter
  * @ 0x823EE9E0 | size: 0x60
  *
  * Final state processing - handles search completion.
  */
-void snSessionFinder::slfRoot::slfFinal::vfn_14() {
+void snSessionFinder::slfRoot::slfFinal::OnEnter() {
     // Final state processing logic
 }
 
