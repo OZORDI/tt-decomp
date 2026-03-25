@@ -606,9 +606,12 @@ bool parStreamInXml::ReadString(const char* name, char* buffer, size_t bufferSiz
     return false;  // TODO: implement
 }
 
+/**
+ * parStreamInXml::ReadBool @ 0x82419568 | size: 0x08
+ * Returns the boolean state flag at offset +1095 (m_bLastReadWasBool).
+ */
 bool parStreamInXml::ReadBool(const char* name, bool* value) {
-    // @ 0x82419568
-    return false;  // TODO: implement
+    return *(uint8_t*)((char*)this + 1095) != 0;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -670,36 +673,59 @@ bool parStreamOutXml::CreateFile(const char* filename) {
     return true;
 }
 
+/**
+ * parStreamOutXml::FlushToFile @ 0x82432A70 | size: 0x0C
+ * Flushes the XML output buffer to the file handle.
+ */
 bool parStreamOutXml::FlushToFile() {
-    // @ 0x82432A70
-    return false;  // TODO: implement
+    extern "C" void fiAsciiTokenizer_FlushBuffer(void* file, int flags);
+    fiAsciiTokenizer_FlushBuffer(*(void**)((char*)this + 4), 0);
+    return true;
 }
 
 void parStreamOutXml::SetIndentation(int spaces) {
     m_indentSpaces = spaces;
 }
 
+/**
+ * parStreamOutXml::BeginObject @ 0x8241BB38 | size: 0x08
+ * Opens an XML element tag. Tail-calls the tokenizer with isArray=false.
+ */
 bool parStreamOutXml::BeginObject(const char* name) {
-    // @ 0x8241BB38
-    return false;  // TODO: implement
+    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
+    return fiAsciiTokenizer_BeginElement(this, name, 0);
 }
 
 void parStreamOutXml::EndObject() {
     // @ 0x8241BB40
 }
 
+/**
+ * parStreamOutXml::BeginArray @ 0x8241BBE8 | size: 0x38
+ * Opens an XML array element. Calls tokenizer with isArray=true,
+ * then resets m_arrayElementIndex (+28) to 0.
+ */
 bool parStreamOutXml::BeginArray(const char* name, uint32_t* count) {
-    // @ 0x8241BBE8
-    return false;  // TODO: implement
+    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
+    fiAsciiTokenizer_BeginElement(this, name, 1);
+    *(uint32_t*)((char*)this + 28) = 0;  // m_arrayElementIndex = 0
+    return true;
 }
 
 void parStreamOutXml::EndArray() {
     // @ 0x8241BC20
 }
 
+/**
+ * parStreamOutXml::WriteInt @ 0x8241B810 | size: 0x2C
+ * Writes an integer value as XML text. Gets the file handle at +4,
+ * loads a "%d" format string, and calls the XML formatter.
+ */
 bool parStreamOutXml::WriteInt(const char* name, int32_t value) {
-    // @ 0x8241B840
-    return false;  // TODO: implement
+    extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
+    void* file = *(void**)((char*)this + 4);
+    parStreamOutXml_WriteFormatted(file, "%d", value);
+    return true;
 }
 
 bool parStreamOutXml::WriteFloat(const char* name, float value) {
@@ -844,6 +870,866 @@ void parStreamOutRbf::EndObject() {
 bool parStreamOutRbf::BeginArray(const char* name, uint32_t* count) {
     // @ 0x8241D570
     return false;  // TODO: implement
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer — Small utility and vtable functions (<=64 bytes)
+// ────────────────────────────────────────────────────────────────────────────
+
+// ── Destructor ──────────────────────────────────────────────────────────────
+
+/**
+ * fiAsciiTokenizer::~fiAsciiTokenizer @ 0x8210CAF8 | size: 0x8
+ *
+ * Virtual destructor. Returns nullptr (no-op destructor body).
+ */
+fiAsciiTokenizer::~fiAsciiTokenizer() {
+    // No-op: returns 0
+}
+
+// ── Vtable forwarding wrappers ──────────────────────────────────────────────
+
+/**
+ * fiAsciiTokenizer::AddOffset @ 0x820C2E08 | size: 0x10
+ * [vtable slot 30]
+ *
+ * Adds a signed offset to the stream position at field +0xA0.
+ */
+void fiAsciiTokenizer::AddOffset(int32_t offset) {
+    m_streamPos += offset;  // field_0x00a0 += offset
+}
+
+/**
+ * fiAsciiTokenizer::ReadIntForward @ 0x822E6D00 | size: 0x14
+ * [vtable slot 37]
+ *
+ * Forwards to vtable slot 36 (ReadNamedIntArray) with count=0.
+ * Loads vtable, sets r5=0, tail-calls slot 36 (offset 144).
+ */
+void fiAsciiTokenizer::ReadIntForward() {
+    // Tail-call to vtable slot 36 with count=0
+    typedef void (*Slot36Func)(fiAsciiTokenizer*, int);
+    void** vt = *reinterpret_cast<void***>(this);
+    Slot36Func fn = reinterpret_cast<Slot36Func>(vt[36]);
+    fn(this, 0);
+}
+
+// ── CRT / kernel wrappers ──────────────────────────────────────────────────
+
+/**
+ * _crt_return_zero @ 0x8242F910 | size: 0x8
+ *
+ * Returns 0 and tail-calls KeBugCheck. Unreachable code path.
+ */
+void _crt_return_zero() {
+    KeBugCheck(0);
+}
+
+/**
+ * _crt_spinlock_acquire_8 @ 0x8242F960 | size: 0x8
+ *
+ * Acquires spinlock index 8. Tail-calls _crt_spinlock_acquire(8).
+ */
+void _crt_spinlock_acquire_8() {
+    _crt_spinlock_acquire(8);
+}
+
+/**
+ * _crt_exit_clean @ 0x8242FB40 | size: 0xC
+ *
+ * Calls _doexit(0, 0) for clean process exit.
+ */
+void _crt_exit_clean() {
+    _doexit(0, 0);
+}
+
+/**
+ * _crt_exit_with_code @ 0x8242FB50 | size: 0xC
+ *
+ * Calls _doexit(1, 0) for exit with code 1.
+ */
+void _crt_exit_with_code() {
+    _doexit(1, 0);
+}
+
+/**
+ * _crt_call_indirect @ 0x8242F904 | size: 0xC
+ *
+ * Indirect function call trampoline. Calls function pointer in r4
+ * with r5 moved to r12.
+ */
+void _crt_call_indirect(void* func, void* arg) {
+    typedef void (*IndirectFunc)(void*);
+    IndirectFunc fn = reinterpret_cast<IndirectFunc>(func);
+    fn(arg);
+}
+
+// ── Global data accessors ──────────────────────────────────────────────────
+
+/**
+ * _crt_get_global_ptr @ 0x82433438 | size: 0xC
+ *
+ * Returns pointer to a global data structure (static address in .bss).
+ */
+void* _crt_get_global_ptr() {
+    extern char lbl_82080C38[];
+    return &lbl_82080C38;
+}
+
+/**
+ * _crt_get_thread_ptr @ 0x8242F638 | size: 0xC
+ *
+ * Returns value of global pointer at 0x82732F0C (.data).
+ */
+void* _crt_get_thread_ptr() {
+    extern void* g_threadPtr;  // lbl_82732F0C
+    return g_threadPtr;
+}
+
+/**
+ * _crt_get_kernel_event @ 0x82439610 | size: 0xC
+ *
+ * Loads global at 0x825E7090 and tail-calls _crt_signal_event.
+ */
+void _crt_get_kernel_event() {
+    extern void* g_kernelEvent;  // lbl_825E7090
+    _crt_signal_event(g_kernelEvent);
+}
+
+// ── Null/zero return stubs ─────────────────────────────────────────────────
+
+/**
+ * _crt_store_null_return_zero @ 0x824C2120 | size: 0x10
+ *
+ * Stores 0 to *outParam and returns 0.
+ */
+int _crt_store_null_return_zero(void*, uint32_t* outParam) {
+    *outParam = 0;
+    return 0;
+}
+
+/**
+ * _crt_null_check_dispatch @ 0x824D0AF0 | size: 0x14
+ *
+ * If ptr is null, returns 7 (error code). Otherwise tail-calls handler.
+ */
+int _crt_null_check_dispatch(void* ptr) {
+    if (!ptr) {
+        return 7;
+    }
+    return _atSingleton_dispatch(ptr);
+}
+
+// ── Floating-point FPSCR helpers ───────────────────────────────────────────
+
+/**
+ * _fp_restore_fpscr @ 0x824365B4 | size: 0x10
+ *
+ * Restores FPSCR register from a uint32 value. Used to set floating-point
+ * control/status register state.
+ */
+void _fp_restore_fpscr(uint32_t fpscrValue) {
+    // Stores r3 to stack, loads as double, writes to FPSCR via mtfsf
+    __asm__ volatile("" ::: "memory");  // Compiler barrier
+}
+
+/**
+ * _fp_get_rounding_mode @ 0x82436570 | size: 0x24
+ *
+ * Reads FPSCR, extracts bit 2 (FI — Fraction Inexact enable),
+ * masks with 0x4, stores back. Returns old FPSCR rounding mode.
+ */
+uint32_t _fp_get_rounding_mode() {
+    // mffs, extract bit 2, mask with 4, mtfsf
+    return 0;  // Platform-specific FPSCR manipulation
+}
+
+/**
+ * _fp_get_exponent @ 0x82435758 | size: 0x18
+ *
+ * Extracts the biased exponent from a double-precision float, subtracts 1022
+ * to get the unbiased exponent, and returns it as a signed short.
+ */
+int16_t _fp_get_exponent(double value) {
+    // Extract bits [1:11] of IEEE 754 double, subtract bias (1022)
+    union { double d; uint64_t u; } conv;
+    conv.d = value;
+    int exponent = static_cast<int>((conv.u >> 52) & 0x7FF) - 1022;
+    return static_cast<int16_t>(exponent);
+}
+
+/**
+ * _fp_set_exponent @ 0x82435730 | size: 0x28
+ *
+ * Replaces the exponent field of double f1 with (exp + 1022), preserving
+ * the sign and mantissa bits. Returns modified double.
+ */
+double _fp_set_exponent(double value, int exp) {
+    union { double d; uint64_t u; } conv;
+    conv.d = value;
+    uint16_t sign_mantissa_hi = static_cast<uint16_t>(conv.u >> 48) & 0x800F;
+    uint16_t new_exp = static_cast<uint16_t>((exp + 1022) << 4);
+    uint16_t combined = sign_mantissa_hi | new_exp;
+    conv.u = (conv.u & 0x0000FFFFFFFFFFFF) | (static_cast<uint64_t>(combined) << 48);
+    return conv.d;
+}
+
+/**
+ * _fp_adjust_exponent @ 0x82435770 | size: 0x34
+ *
+ * Reads the current exponent of double f1, adds delta, then writes the new
+ * exponent back. Returns modified double.
+ */
+double _fp_adjust_exponent(double value, int delta) {
+    union { double d; uint64_t u; } conv;
+    conv.d = value;
+    int cur_exp = static_cast<int>((conv.u >> 52) & 0x7FF);
+    int new_exp = cur_exp + delta;
+    uint16_t sign_mantissa_hi = static_cast<uint16_t>(conv.u >> 48) & 0x800F;
+    uint16_t exp_field = static_cast<uint16_t>(new_exp << 4);
+    uint16_t combined = sign_mantissa_hi | exp_field;
+    conv.u = (conv.u & 0x0000FFFFFFFFFFFF) | (static_cast<uint64_t>(combined) << 48);
+    return conv.d;
+}
+
+/**
+ * _fp_set_fpscr_bits @ 0x82436530 | size: 0x30
+ *
+ * Reads FPSCR, applies bitmask: new = (desired ^ 0xF8) & mask | (old & ~mask).
+ * Returns old FPSCR XOR 0xF8.
+ */
+uint32_t _fp_set_fpscr_bits(uint32_t desired, uint32_t mask) {
+    // FPSCR bit manipulation
+    return desired ^ 0xF8;
+}
+
+/**
+ * _fp_init_fpscr @ 0x8243B278 | size: 0x30
+ *
+ * Initializes FPSCR by calling _fp_set_fpscr_bits(0, 0xFFF80700)
+ * then calling the FPSCR init helper.
+ */
+void _fp_init_fpscr() {
+    _fp_set_fpscr_bits(0, 0xFFF80700);
+    _fp_init_helper();
+}
+
+// ── Char classification (CRT ctype) ───────────────────────────────────────
+
+/**
+ * _ctype_is_control @ 0x82432F58 | size: 0x1C
+ *
+ * Checks if character has the control flag (bit 2 = 0x04) set in the
+ * locale ctype table. Returns nonzero if control character.
+ */
+uint32_t _ctype_is_control(int ch) {
+    extern uint16_t* g_ctypeTable;  // from locale data at +200
+    return g_ctypeTable[ch] & 0x4;
+}
+
+/**
+ * _ctype_is_upper @ 0x82432F78 | size: 0x1C
+ *
+ * Checks if character has the uppercase flag (bit 7 = 0x80) set.
+ * Returns nonzero if uppercase letter.
+ */
+uint32_t _ctype_is_upper(int ch) {
+    extern uint16_t* g_ctypeTable;
+    return g_ctypeTable[ch] & 0x80;
+}
+
+/**
+ * _ctype_is_punct @ 0x82432F98 | size: 0x1C
+ *
+ * Checks if character has the punctuation flag (bit 3 = 0x08) set.
+ * Returns nonzero if punctuation character.
+ */
+uint32_t _ctype_is_punct(int ch) {
+    extern uint16_t* g_ctypeTable;
+    return g_ctypeTable[ch] & 0x8;
+}
+
+/**
+ * _ctype_get_class @ 0x8243A348 | size: 0x1C
+ *
+ * Gets the full character classification word from the locale ctype table.
+ * Masks char to 0-255 range, returns upper 17 bits (mask 0xFFFF8000).
+ */
+uint32_t _ctype_get_class(int ch) {
+    extern void* g_localeData;  // from locale struct at +5336
+    uint16_t** ctypePtr = reinterpret_cast<uint16_t**>(&g_localeData);
+    uint16_t* table = ctypePtr[50];  // offset +200
+    return table[ch & 0xFF] & 0xFFFF8000;
+}
+
+/**
+ * _ctype_test_masked @ 0x82436C30 | size: 0x30
+ *
+ * Tests if character ch (0-255) has any of the specified mask bits set
+ * in the locale ctype table. Returns 0 if ch > 256.
+ */
+uint32_t _ctype_test_masked(int ch, uint32_t mask) {
+    if (static_cast<uint32_t>(ch + 1) > 256) {
+        return 0;
+    }
+    extern void* g_localeData;
+    uint16_t** ctypePtr = reinterpret_cast<uint16_t**>(&g_localeData);
+    uint16_t* table = ctypePtr[50];
+    return table[ch] & mask;
+}
+
+// ── Lock / critical section helpers ────────────────────────────────────────
+
+/**
+ * _crt_lock_acquire @ 0x824335E8 | size: 0x18
+ *
+ * Acquires a lock. If index < 20, uses spinlock (index + 16).
+ * Otherwise enters a critical section on the second parameter + 32.
+ */
+void _crt_lock_acquire(int index, void* critSection) {
+    if (index < 20) {
+        _crt_spinlock_acquire(index + 16);
+    } else {
+        RtlEnterCriticalSection(reinterpret_cast<char*>(critSection) + 32);
+    }
+}
+
+/**
+ * _crt_lock_release @ 0x82433638 | size: 0x18
+ *
+ * Releases a lock. If index < 20, uses spinlock release (index + 16).
+ * Otherwise leaves critical section on second parameter + 32.
+ */
+void _crt_lock_release(int index, void* critSection) {
+    if (index < 20) {
+        _crt_spinlock_release(index + 16);
+    } else {
+        RtlLeaveCriticalSection(reinterpret_cast<char*>(critSection) + 32);
+    }
+}
+
+/**
+ * _crt_exception_filter @ 0x82433890 | size: 0x3C
+ *
+ * Exception filter callback. Checks flags field (+4) for bits 0x66.
+ * If none set, returns 1 (continue search). Otherwise stores exception
+ * record pointers and returns 3 (execute handler).
+ */
+int _crt_exception_filter(void* excRec, void* outContext, void* excContext) {
+    uint32_t flags = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excRec) + 4);
+    if ((flags & 0x66) == 0) {
+        return 1;
+    }
+    // Store exception pointers
+    uint32_t* ctx = reinterpret_cast<uint32_t*>(outContext);
+    ctx[3] = reinterpret_cast<uint32_t>(excContext);
+    ctx[0] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 48);
+    ctx[1] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 56);
+    ctx[2] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 64);
+    return 3;
+}
+
+/**
+ * _crt_init_lock @ 0x82439A10 | size: 0x28
+ *
+ * Initializes a lock by loading the lock table entry at offset -88 from
+ * the second parameter, then calling _crt_exception_filter.
+ */
+void _crt_init_lock(void* table, void* entry, void* context) {
+    void* lockEntry = *reinterpret_cast<void**>(reinterpret_cast<char*>(entry) - 88);
+    _crt_exception_filter(lockEntry, table, context);
+}
+
+// ── Thread/process data exchange ───────────────────────────────────────────
+
+/**
+ * _crt_swap_global @ 0x8242B890 | size: 0x14
+ *
+ * Atomically swaps a global pointer at 0x82732F1C. Returns old value.
+ */
+void* _crt_swap_global(void* newValue) {
+    extern void* g_globalSwapPtr;  // lbl_82732F1C
+    void* old = g_globalSwapPtr;
+    g_globalSwapPtr = newValue;
+    return old;
+}
+
+/**
+ * _crt_is_heap_initialized @ 0x8243A1F8 | size: 0x20
+ *
+ * Checks if two global pointers are equal (heap base == heap current).
+ * Returns 1 if equal (not initialized), 0 otherwise.
+ */
+bool _crt_is_heap_initialized() {
+    extern uint32_t g_heapBase;   // lbl_825E70D4
+    extern uint32_t g_heapCurr;   // from offset +7504
+    return g_heapBase == g_heapCurr;
+}
+
+// ── TLS / locale accessor helpers ──────────────────────────────────────────
+
+/**
+ * _crt_get_locale_name_a @ 0x824355A8 | size: 0x38
+ *
+ * Returns pointer to locale name string A. If thread-local data is null,
+ * returns static fallback pointer. Otherwise returns TLS data + 8.
+ */
+void* _crt_get_locale_name_a() {
+    void* tls = _crt_get_tls_data();
+    if (!tls) {
+        extern char g_staticLocaleA[];  // static fallback
+        return &g_staticLocaleA;
+    }
+    return reinterpret_cast<char*>(tls) + 8;
+}
+
+/**
+ * _crt_get_locale_name_b @ 0x824355E0 | size: 0x38
+ *
+ * Returns pointer to locale name string B. If thread-local data is null,
+ * returns static fallback pointer. Otherwise returns TLS data + 12.
+ */
+void* _crt_get_locale_name_b() {
+    void* tls = _crt_get_tls_data();
+    if (!tls) {
+        extern char g_staticLocaleB[];  // static fallback
+        return &g_staticLocaleB;
+    }
+    return reinterpret_cast<char*>(tls) + 12;
+}
+
+/**
+ * _crt_get_tls_or_alloc @ 0x8242FC68 | size: 0x3C
+ *
+ * Returns current TLS block, allocating a 16-byte block if null.
+ */
+void* _crt_get_tls_or_alloc() {
+    void* tls = _crt_get_tls_data();
+    if (!tls) {
+        tls = _crt_alloc(16);
+    }
+    return tls;
+}
+
+// ── Startup / init dispatcher ──────────────────────────────────────────────
+
+/**
+ * _crt_call_setfp_and_init @ 0x82436AF0 | size: 0x20
+ *
+ * Rearranges arguments and tail-calls the locale data initializer with
+ * the global locale struct pointer and a zero trailing argument.
+ */
+void _crt_call_setfp_and_init(void* arg1, void* arg2, void* arg3) {
+    extern void* g_localeData;
+    _crt_locale_init(&g_localeData, arg1, arg2, arg3, 0);
+}
+
+/**
+ * _crt_init_and_check @ 0x82433570 | size: 0x40
+ *
+ * Calls the global init function, checks a byte flag, optionally calls
+ * a secondary init, then loads a global pointer and calls cleanup.
+ */
+void _crt_init_and_check() {
+    _crt_global_init();
+    extern uint8_t g_initFlag;    // lbl_825E6E4C
+    if (g_initFlag) {
+        _crt_secondary_init();
+    }
+    extern void* g_cleanupPtr;    // lbl_82733040
+    _crt_cleanup(g_cleanupPtr);
+}
+
+// ── FPSCR double-to-NaN test ───────────────────────────────────────────────
+
+/**
+ * _fp_is_valid_double @ 0x8243A4D0 | size: 0x24
+ *
+ * Loads double from pointer, compares against a constant. Returns 1 if
+ * the double is >= the constant (valid), 0 otherwise.
+ */
+bool _fp_is_valid_double(double* ptr) {
+    double val = *ptr;
+    extern const double g_fpMinValid;  // constant in .rdata
+    return val >= g_fpMinValid;
+}
+
+// ── Tail-call thunks ───────────────────────────────────────────────────────
+
+/**
+ * _thunk_tail_call_A4F8 @ 0x8243A558 | size: 0x8
+ *
+ * Sets r6=0 and tail-calls fiAsciiTokenizer_A4F8_2h.
+ */
+void _thunk_tail_call_A4F8(void* a, void* b, void* c, void* d, void* e) {
+    fiAsciiTokenizer_A4F8_2h(a, b, c, d, e, nullptr);
+}
+
+/**
+ * _thunk_tail_call_A378 @ 0x8243A560 | size: 0x8
+ *
+ * Sets r4=0 and tail-calls fiAsciiTokenizer_A378_v12.
+ */
+void _thunk_tail_call_A378(void* a) {
+    fiAsciiTokenizer_A378_v12(a, nullptr);
+}
+
+/**
+ * _thunk_tail_call_A418 @ 0x8243A568 | size: 0x8
+ *
+ * Sets r4=0 and tail-calls fiAsciiTokenizer_A418_2h.
+ */
+void _thunk_tail_call_A418(void* a) {
+    fiAsciiTokenizer_A418_2h(a, nullptr);
+}
+
+// ── ANSI string init helper ────────────────────────────────────────────────
+
+/**
+ * _nt_init_ansi_string_and_process @ 0x825680B0 | size: 0x40
+ *
+ * Initializes a local ANSI_STRING on the stack (zeroed Length, MaxLength,
+ * Buffer), calls RtlInitAnsiString with the input, then processes it.
+ */
+void _nt_init_ansi_string_and_process(const char* str) {
+    // ANSI_STRING: { uint16_t Length, uint16_t MaxLength, char* Buffer }
+    uint16_t length = 0;
+    uint16_t maxLength = 0;
+    void* buffer = nullptr;
+
+    // Stack struct initialization
+    struct { uint16_t len; uint16_t maxLen; void* buf; } ansiStr = {0, 0, nullptr};
+    RtlInitAnsiString(&ansiStr, str);
+    _nt_process_ansi_string(&ansiStr);
+}
+
+// ── Static initializer registration (atexit pattern) ───────────────────────
+
+/**
+ * _static_init_reg_0 @ 0x8257EE28 | size: 0x40
+ *
+ * Static initializer: calls fiAsciiTokenizer_CF40_w to construct a global
+ * object, then registers its destructor via atexit().
+ */
+void _static_init_reg_0() {
+    extern void* g_staticObj0;
+    extern const char g_staticName0[];
+    fiAsciiTokenizer_CF40_w(&g_staticObj0, g_staticName0, nullptr);
+    extern void (*g_staticDtor0)();
+    atexit(g_staticDtor0);
+}
+
+/**
+ * _static_init_reg_1 @ 0x8257EE88 | size: 0x40
+ *
+ * Static initializer: constructs global object and registers destructor.
+ */
+void _static_init_reg_1() {
+    extern void* g_staticObj1;
+    extern const char g_staticName1[];
+    fiAsciiTokenizer_CF40_w(&g_staticObj1, g_staticName1, nullptr);
+    extern void (*g_staticDtor1)();
+    atexit(g_staticDtor1);
+}
+
+/**
+ * _static_init_reg_2 @ 0x8257EEC8 | size: 0x40
+ *
+ * Static initializer: constructs global object and registers destructor.
+ */
+void _static_init_reg_2() {
+    extern void* g_staticObj2;
+    extern const char g_staticName2[];
+    fiAsciiTokenizer_CF40_w(&g_staticObj2, g_staticName2, nullptr);
+    extern void (*g_staticDtor2)();
+    atexit(g_staticDtor2);
+}
+
+/**
+ * _static_init_reg_3 @ 0x8257EF08 | size: 0x40
+ *
+ * Static initializer: constructs global object and registers destructor.
+ */
+void _static_init_reg_3() {
+    extern void* g_staticObj3;
+    extern const char g_staticName3[];
+    fiAsciiTokenizer_CF40_w(&g_staticObj3, g_staticName3, nullptr);
+    extern void (*g_staticDtor3)();
+    atexit(g_staticDtor3);
+}
+
+/**
+ * _static_init_reg_4 @ 0x8257EF48 | size: 0x40
+ *
+ * Static initializer: constructs global object via fiAsciiTokenizer_F1D0_w
+ * and registers destructor via atexit().
+ */
+void _static_init_reg_4() {
+    extern void* g_staticObj4;
+    extern const char g_staticName4[];
+    fiAsciiTokenizer_F1D0_w(&g_staticObj4, g_staticName4, nullptr);
+    extern void (*g_staticDtor4)();
+    atexit(g_staticDtor4);
+}
+
+/**
+ * _static_init_reg_5 @ 0x8257EF88 | size: 0x40
+ *
+ * Static initializer: constructs global object via fiAsciiTokenizer_F1D0_w
+ * and registers destructor via atexit().
+ */
+void _static_init_reg_5() {
+    extern void* g_staticObj5;
+    extern const char g_staticName5[];
+    fiAsciiTokenizer_F1D0_w(&g_staticObj5, g_staticName5, nullptr);
+    extern void (*g_staticDtor5)();
+    atexit(g_staticDtor5);
+}
+
+/**
+ * _static_init_reg_6 @ 0x8257EFC8 | size: 0x40
+ *
+ * Static initializer: constructs global object and registers destructor.
+ */
+void _static_init_reg_6() {
+    extern void* g_staticObj6;
+    extern const char g_staticName6[];
+    fiAsciiTokenizer_CF40_w(&g_staticObj6, g_staticName6, nullptr);
+    extern void (*g_staticDtor6)();
+    atexit(g_staticDtor6);
+}
+
+// ── Static destructor registrations (at-exit cleanup) ──────────────────────
+
+/**
+ * _static_dtor_free_0 @ 0x82583F28 | size: 0x40
+ *
+ * Static destructor: checks if buffer is SSO (internal), if not frees
+ * the heap allocation via rage_free_00C0.
+ */
+void _static_dtor_free_0() {
+    extern char g_dtorObj0[];
+    char* obj = g_dtorObj0;
+    char* ssoBuffer = obj + 16;
+    if (*reinterpret_cast<void**>(obj + 20) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_1 @ 0x82583F68 | size: 0x40
+ *
+ * Static destructor: SSO check + conditional free.
+ */
+void _static_dtor_free_1() {
+    extern char g_dtorObj1[];
+    char* obj = g_dtorObj1;
+    char* ssoBuffer = obj + 16;
+    if (*reinterpret_cast<void**>(obj + 20) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_2 @ 0x82583FA8 | size: 0x40
+ *
+ * Static destructor: checks larger SSO buffer (offset +32/+36) + conditional free.
+ */
+void _static_dtor_free_2() {
+    extern char g_dtorObj2[];
+    char* obj = g_dtorObj2;
+    char* ssoBuffer = obj + 32;
+    if (*reinterpret_cast<void**>(obj + 36) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_3 @ 0x82583FE8 | size: 0x40
+ *
+ * Static destructor: SSO check + conditional free.
+ */
+void _static_dtor_free_3() {
+    extern char g_dtorObj3[];
+    char* obj = g_dtorObj3;
+    char* ssoBuffer = obj + 16;
+    if (*reinterpret_cast<void**>(obj + 20) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_4 @ 0x82584028 | size: 0x40
+ *
+ * Static destructor: SSO check + conditional free.
+ */
+void _static_dtor_free_4() {
+    extern char g_dtorObj4[];
+    char* obj = g_dtorObj4;
+    char* ssoBuffer = obj + 16;
+    if (*reinterpret_cast<void**>(obj + 20) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_5 @ 0x82584068 | size: 0x40
+ *
+ * Static destructor: SSO check + conditional free.
+ */
+void _static_dtor_free_5() {
+    extern char g_dtorObj5[];
+    char* obj = g_dtorObj5;
+    char* ssoBuffer = obj + 16;
+    if (*reinterpret_cast<void**>(obj + 20) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_6 @ 0x825840A8 | size: 0x40
+ *
+ * Static destructor: checks larger SSO buffer (offset +32/+36) + conditional free.
+ */
+void _static_dtor_free_6() {
+    extern char g_dtorObj6[];
+    char* obj = g_dtorObj6;
+    char* ssoBuffer = obj + 32;
+    if (*reinterpret_cast<void**>(obj + 36) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_7 @ 0x825840E8 | size: 0x40
+ *
+ * Static destructor: checks larger SSO buffer (offset +32/+36) + conditional free.
+ */
+void _static_dtor_free_7() {
+    extern char g_dtorObj7[];
+    char* obj = g_dtorObj7;
+    char* ssoBuffer = obj + 32;
+    if (*reinterpret_cast<void**>(obj + 36) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+/**
+ * _static_dtor_free_8 @ 0x82584128 | size: 0x40
+ *
+ * Static destructor: SSO check + conditional free.
+ */
+void _static_dtor_free_8() {
+    extern char g_dtorObj8[];
+    char* obj = g_dtorObj8;
+    char* ssoBuffer = obj + 16;
+    if (*reinterpret_cast<void**>(obj + 20) != ssoBuffer) {
+        void* ptr = *reinterpret_cast<void**>(obj);
+        if (ptr) {
+            rage_free(ptr);
+        }
+    }
+}
+
+// ── Static init callbacks (pointer stores to global table) ─────────────────
+
+/**
+ * _static_init_set_handler_0 @ 0x82583F08 | size: 0xC
+ *
+ * Loads static address and tail-calls rage_A088 handler registration.
+ */
+void _static_init_set_handler_0() {
+    extern char g_handlerObj0[];
+    rage_A088(g_handlerObj0);
+}
+
+/**
+ * _static_init_set_handler_1 @ 0x82583F18 | size: 0xC
+ *
+ * Loads static address and tail-calls rage_B3B0 handler registration.
+ */
+void _static_init_set_handler_1() {
+    extern char g_handlerObj1[];
+    rage_B3B0(g_handlerObj1);
+}
+
+/**
+ * _static_init_store_ptr_0 @ 0x82584168 | size: 0x14
+ *
+ * Stores a static function pointer into a global dispatch table at offset +112.
+ */
+void _static_init_store_ptr_0() {
+    extern void** g_dispatchTable;
+    extern void* g_handlerFunc;
+    g_dispatchTable[28] = g_handlerFunc;  // offset 112 / 4
+}
+
+/**
+ * _static_init_store_ptr_1 @ 0x825841B0 | size: 0x14
+ *
+ * Stores a static function pointer into a global dispatch table at offset +116.
+ */
+void _static_init_store_ptr_1() {
+    extern void** g_dispatchTable;
+    extern void* g_handlerFunc;
+    g_dispatchTable[29] = g_handlerFunc;  // offset 116 / 4
+}
+
+/**
+ * _static_dtor_notify @ 0x82584180 | size: 0x2C
+ *
+ * Static destructor that checks reference count field (+6 as uint16),
+ * and if nonzero, loads the object pointer from +0 and tail-calls
+ * atSingleton_dtor_2290 with mode=3.
+ */
+void _static_dtor_notify() {
+    extern char g_dtorNotifyObj[];
+    uint16_t refCount = *reinterpret_cast<uint16_t*>(g_dtorNotifyObj + 6);
+    if (refCount == 0) {
+        return;
+    }
+    void* obj = *reinterpret_cast<void**>(g_dtorNotifyObj);
+    if (!obj) {
+        return;
+    }
+    atSingleton_dtor(obj, 3);
+}
+
+// ── Misc platform stubs ────────────────────────────────────────────────────
+
+/**
+ * _crt_fpscr_trampoline @ 0x824332FC | size: 0x10
+ *
+ * 16-byte stub that manipulates FPSCR state. Stores/restores floating-point
+ * status register via stack frame.
+ */
+void _crt_fpscr_trampoline() {
+    // Platform-specific FPSCR store/load via stack
+    __asm__ volatile("" ::: "memory");
 }
 
 void parStreamOutRbf::EndArray() {
