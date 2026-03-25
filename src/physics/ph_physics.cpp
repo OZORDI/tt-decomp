@@ -2253,19 +2253,19 @@ int ph_0CC0(void* stateObj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_0()  [vtable slot 0 @ 0x82485250]
+// phObject::~phObject()  [vtable slot 0 @ 0x82485250]
 // Destructor
 // ─────────────────────────────────────────────────────────────────────────────
 phObject::~phObject() {
     this->vtable = (void**)0x82008918;
-    this->vfn_15();
+    this->Release();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_32()  [vtable slot 32 @ 0x82484758]
+// phObject::ResetState()  [vtable slot 32 @ 0x82484758]
 // Initializes object state and memory references
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject::vfn_32() {
+void phObject::ResetState() {
     m_field_500 = 0;
     m_field_508 = nullptr;
     m_field_504 = 1;
@@ -2276,11 +2276,11 @@ void phObject::vfn_32() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_11()  [vtable slot 11 @ 0x824847A8]
+// phObject::Initialize()  [vtable slot 11 @ 0x824847A8]
 // Processing locale and fields
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject::vfn_11(void* a2, void* a3, void* a4) {
-    void* result = (void*)this->vfn_15();
+void phObject::Initialize(void* a2, void* a3, void* a4) {
+    void* result = (void*)this->Release();
     if ((int32_t)result >= 0) {
         void* ptr = (void*)0x208C801D;
         m_field_508 = ptr;
@@ -2290,11 +2290,11 @@ void phObject::vfn_11(void* a2, void* a3, void* a4) {
             m_field_116 = *(uint32_t*)(valA2 + 12);
             m_field_120 = *(uint32_t*)(valA2 + 16);
             if (*(uint32_t*)(valA2 + 0) != 0) {
-                result = this->vfn_17(nullptr);
+                result = this->CreateViews(nullptr);
             }
             if ((int32_t)result >= 0) {
                 if (*(uint32_t*)(valA2 + 4) != 0) {
-                    result = this->vfn_18();
+                    result = this->CreateOutputViews();
                 }
                 if ((int32_t)result >= 0) {
                     return;
@@ -2305,14 +2305,14 @@ void phObject::vfn_11(void* a2, void* a3, void* a4) {
             return;
         }
     }
-    this->vfn_15();
+    this->Release();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_12()  [vtable slot 12 @ 0x824857B8]
+// phObject::GetDescription()  [vtable slot 12 @ 0x824857B8]
 // Forwarder
 // ─────────────────────────────────────────────────────────────────────────────
-void* phObject::vfn_12() {
+void* phObject::GetDescription() {
     uint8_t buffer[24];
     *(uint64_t*)(buffer + 0) = 0;
     *(uint64_t*)(buffer + 8) = 0;
@@ -2321,10 +2321,10 @@ void* phObject::vfn_12() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_13()  [vtable slot 13 @ 0x82485768]
+// phObject::SetDescription()  [vtable slot 13 @ 0x82485768]
 // Forwarder
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject::vfn_13(void* a2) {
+void phObject::SetDescription(void* a2) {
     uint8_t buffer[24];
     *(uint64_t*)(buffer + 0) = 0;
     *(uint64_t*)(buffer + 8) = 0;
@@ -2332,10 +2332,10 @@ void phObject::vfn_13(void* a2) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_14()  [vtable slot 14 @ 0x82485720]
+// phObject::QueryInterface()  [vtable slot 14 @ 0x82485720]
 // Forwarder
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject::vfn_14(int32_t) {
+int32_t phObject::QueryInterface(int32_t) {
     uint8_t buffer[24];
     *(uint64_t*)(buffer + 0) = 0;
     *(uint64_t*)(buffer + 8) = 0;
@@ -2344,55 +2344,55 @@ int32_t phObject::vfn_14(int32_t) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_15()  [vtable slot 15 @ 0x82484890]
+// phObject::Release()  [vtable slot 15 @ 0x82484890]
 // Cleanup and state clear
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject::vfn_15() {
+int32_t phObject::Release() {
     if (m_field_508 != nullptr) {
         m_field_508 = nullptr;
     }
     
-    this->vfn_19();
-    this->vfn_20();
-    this->vfn_32();
+    this->ReleaseViews();
+    this->ReleaseResources();
+    this->ResetState();
     return 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_16()  [vtable slot 16 @ 0x82485978]
+// phObject::CreateResource()  [vtable slot 16 @ 0x82485978]
 // Sub-object update
 // ─────────────────────────────────────────────────────────────────────────────
-void* phObject::vfn_16() {
+void* phObject::CreateResource() {
     if (m_field_52 != nullptr) {
-        if (m_field_52->vfn_14(1) < 0) {
+        if (m_field_52->QueryInterface(1) < 0) {
             return nullptr;
         }
-        this->vfn_17(m_field_52);
+        this->CreateViews(m_field_52);
     }
     return nullptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_18()  [vtable slot 18 @ 0x82484918]
+// phObject::CreateOutputViews()  [vtable slot 18 @ 0x82484918]
 // Updates sub-object from parameters
 // ─────────────────────────────────────────────────────────────────────────────
-void* phObject::vfn_18() {
-    this->vfn_20();
+void* phObject::CreateOutputViews() {
+    this->ReleaseResources();
     return nullptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject::vfn_19()  [vtable slot 19 @ 0x82484988]
+// phObject::ReleaseViews()  [vtable slot 19 @ 0x82484988]
 // Disposes or releases sub-objects
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject::vfn_19() {
+void phObject::ReleaseViews() {
     m_field_132 = this;
     if (m_field_500 != 0) {
         m_field_500 = 0;
     }
     
     if (m_field_52 != nullptr) {
-        m_field_52->vfn_2();
+        m_field_52->Release();
         m_field_52 = nullptr;
     }
 }
@@ -2401,12 +2401,12 @@ void phObject::vfn_19() {
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * rage::phJoint3Dof::vfn_14 @ 0x82251268 | size: 0x40
+ * rage::phJoint3Dof::SetDampingAndStiffness @ 0x82251268 | size: 0x40
  *
  * Aliases: phJoint_12A8_fw
  * Sets internal damping/stiffness values based on input parameters.
  */
-void phJoint3Dof::vfn_14(float arg1, float arg2) {
+void phJoint3Dof::SetDampingAndStiffness(float arg1, float arg2) {
     this->field_0x02d0 = arg1;
     this->field_0x02d4 = arg1;
     this->field_0x02d8 = arg1;
@@ -2448,12 +2448,12 @@ void phJoint3Dof_C4F8_w(phJoint3Dof* joint) {
 }
 
 /**
- * rage::phJoint3Dof::vfn_13 @ 0x82251200 | size: 0x64
+ * rage::phJoint3Dof::SetLimitAtIndex @ 0x82251200 | size: 0x64
  *
  * Fetches intermediate geometry bounds via phJoint1Dof_AFF8_p42 and 
  * delegates to phJoint_1388.
  */
-void phJoint3Dof::vfn_13(int index, float val) {
+void phJoint3Dof::SetLimitAtIndex(int index, float val) {
     float scratchBounds[8]; // Uses 2 SIMD vectors (32 bytes)
     
     // Fill first 16 bytes (r1+80)
@@ -2464,11 +2464,11 @@ void phJoint3Dof::vfn_13(int index, float val) {
 }
 
 /**
- * rage::phJoint3Dof::vfn_25 @ 0x82254D28 | size: 0x68
+ * rage::phJoint3Dof::AccumulateForces @ 0x82254D28 | size: 0x68
  *
  * Calls vfn_24 to get two vectors, and accumulates them into outVec.
  */
-void phJoint3Dof::vfn_25(int index, float* outVec) {
+void phJoint3Dof::AccumulateForces(int index, float* outVec) {
     float scratch[8]; // 2 vectors
     
     // Dispatch to slot 24 (96 / 4)
@@ -2482,11 +2482,11 @@ void phJoint3Dof::vfn_25(int index, float* outVec) {
 }
 
 /**
- * rage::phJoint3Dof::vfn_26 @ 0x82254D90 | size: 0x68
+ * rage::phJoint3Dof::AccumulateTorques @ 0x82254D90 | size: 0x68
  *
  * Calls vfn_23 to get two vectors, and accumulates them into outVec.
  */
-void phJoint3Dof::vfn_26(int index, float* outVec) {
+void phJoint3Dof::AccumulateTorques(int index, float* outVec) {
     float scratch[8]; // 2 vectors
     
     // Dispatch to slot 23 (92 / 4)
@@ -2500,11 +2500,11 @@ void phJoint3Dof::vfn_26(int index, float* outVec) {
 }
 
 /**
- * rage::phJoint3Dof::vfn_29 @ 0x822550F8 | size: 0x68
+ * rage::phJoint3Dof::GetLowerLimit @ 0x822550F8 | size: 0x68
  *
  * Calls vfn_28 to get two vectors, and accumulates them into outVec.
  */
-void phJoint3Dof::vfn_29(int index, float* outVec) {
+void phJoint3Dof::GetLowerLimit(int index, float* outVec) {
     float scratch[8]; // 2 vectors
     
     // Dispatch to slot 28 (112 / 4)
@@ -2518,11 +2518,11 @@ void phJoint3Dof::vfn_29(int index, float* outVec) {
 }
 
 /**
- * rage::phJoint3Dof::vfn_30 @ 0x82255160 | size: 0x68
+ * rage::phJoint3Dof::GetUpperLimit @ 0x82255160 | size: 0x68
  *
  * Calls vfn_27 to get two vectors, and accumulates them into outVec.
  */
-void phJoint3Dof::vfn_30(int index, float* outVec) {
+void phJoint3Dof::GetUpperLimit(int index, float* outVec) {
     float scratch[8]; // 2 vectors
     
     // Dispatch to slot 27 (108 / 4)
@@ -2536,11 +2536,11 @@ void phJoint3Dof::vfn_30(int index, float* outVec) {
 }
 
 /**
- * rage::phJoint3Dof::vfn_17 @ 0x82255340 | size: 0x74
+ * rage::phJoint3Dof::ComputeJacobian @ 0x82255340 | size: 0x74
  *
  * Performs matrix/state clearing and resets internal angular components.
  */
-void phJoint3Dof::vfn_17() {
+void phJoint3Dof::ComputeJacobian() {
     this->field_0x02fc = 0.0f; // 764
     this->field_0x0300 = 0.0f; // 768
     
@@ -2561,11 +2561,11 @@ void phJoint3Dof::vfn_17() {
 }
 
 /**
- * rage::phJoint3Dof::vfn_31 @ 0x82253920 | size: 0x88
+ * rage::phJoint3Dof::SetLimits @ 0x82253920 | size: 0x88
  *
  * Calculates vector dot products and magnitude norms for the sub-joints.
  */
-void phJoint3Dof::vfn_31() {
+void phJoint3Dof::SetLimits() {
     phJoint_1618_g(this); // Pre-sync
     
     float f1_a = phJoint1Dof_AE38(reinterpret_cast<char*>(this) + 896);
