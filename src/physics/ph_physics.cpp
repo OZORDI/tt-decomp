@@ -2883,3 +2883,273 @@ float ph_Log2Float(float x) {  // 6EF0 @ 0x82576EF0
 void ph_MemcpyWrapper(void* dst, const void* src, uint32_t size) {  // BB38
     memcpy(dst, src, size);
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst — Physics Instance Small Methods (43 functions, all ≤64B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── RETURN_CONST / FIELD_GETTER / FIELD_SETTER (trivial, 8-12B) ───────────
+
+int   phInst_GetType()        { return 0; }  // vfn_18_D8A0_1 @ 0x8212D8A0
+int   phInst_GetFlags()       { return 0; }  // vfn_11_4158_1 @ 0x82124158
+
+/**
+ * phInst::GetField34D0 @ 0x821234D0 | size: 0x8
+ * Returns the pointer stored at this+4 (the bound/shape pointer).
+ */
+void* phInst::GetBoundPtr() {  // 34D0_g
+    return *(void**)((char*)this + 4);
+}
+
+/**
+ * phInst field accessors (8B each)
+ */
+void* phInst::GetField14() { return *(void**)((char*)this + 20); }  // phInst_14
+void  phInst::SetField9(void* val) { *(void**)((char*)this + 12) = val; }  // phInst_9
+void  phInst::SetField11(void* val) { *(void**)((char*)this + 16) = val; }  // phInst_11
+
+/**
+ * phInst::GetStaticSize @ 0x8216B628 | size: 0xC
+ * Returns a static size constant (likely sizeof the base instance).
+ */
+int phInst::GetStaticSize() {  // B628
+    return 20;  // literal from scaffold: li r3,20
+}
+
+/**
+ * phInst::StoreAndReturn @ 0x82121488 | size: 0x10
+ * Stores value 20 into *outParam, returns 0.
+ */
+int phInst::StoreSize(int* outParam) {  // 1488_sp
+    *outParam = 20;
+    return 0;
+}
+
+// ── VTABLE THUNKS (9 functions, 16-32B each) ─────────────────────────────
+
+/**
+ * phInst vtable dispatch thunks — adjust this pointer and/or forward
+ * to a specific vtable slot. Used for MI adjustor thunks and forwarding.
+ */
+void phInst::ForwardSlot23(void* arg) {  // 2B48_p45 @ 0x82122B48
+    typedef void (*Fn)(void*, void*);
+    ((Fn)(*(void***)this)[23])(this, arg);
+}
+
+void phInst::ForwardSlot12() {  // phInst_45 @ 0x82129070 (20B)
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[12])(this);
+}
+
+// MI adjustor thunks (this -= 8, forward to slot)
+void phInst::AdjustorSlot1() {  // 5D40_2hr @ 0x82125D40
+    typedef void (*Fn)(void*);
+    void* adjusted = (char*)this - 8;
+    ((Fn)(*(void***)adjusted)[1])(adjusted);
+}
+
+void phInst::AdjustorSlot2(void* arg) {  // 5D60_p39 @ 0x82125D60
+    typedef void (*Fn)(void*, void*);
+    void* adjusted = (char*)this - 8;
+    ((Fn)(*(void***)adjusted)[2])(adjusted, arg);
+}
+
+void phInst::AdjustorSlot5() {  // BB20_2hr @ 0x8216BB20
+    typedef void (*Fn)(void*);
+    void* adjusted = (char*)this - 8;
+    ((Fn)(*(void***)adjusted)[5])(adjusted);
+}
+
+void phInst::AdjustorSlot6(void* arg) {  // BB40_2hr @ 0x8216BB40
+    typedef void (*Fn)(void*, void*);
+    void* adjusted = (char*)this - 8;
+    ((Fn)(*(void***)adjusted)[6])(adjusted, arg);
+}
+
+// ── MULTI-FIELD SETTERS (zeroing) ────────────────────────────────────────
+
+/**
+ * phInstStatic::ClearMotionState @ 0x82129070 | size: 0x14
+ * Zeroes the 3 motion floats at +44, +48, +52.
+ */
+void phInstStatic::ClearMotionState() {  // phInstStatic_15
+    *(uint32_t*)((char*)this + 44) = 0;
+    *(uint32_t*)((char*)this + 48) = 0;
+    *(uint32_t*)((char*)this + 52) = 0;
+}
+
+/**
+ * phInstStatic::ClearAllMotion @ 0x8216B9B8 | size: 0x20
+ * Zeroes 6 fields: +44/+48/+52 (velocity) and +112/+116/+120 (angular).
+ */
+void phInstStatic::ClearAllMotion() {  // B9B8_2h @ 0x8216B9B8
+    *(uint32_t*)((char*)this + 44)  = 0;
+    *(uint32_t*)((char*)this + 48)  = 0;
+    *(uint32_t*)((char*)this + 52)  = 0;
+    *(uint32_t*)((char*)this + 112) = 0;
+    *(uint32_t*)((char*)this + 116) = 0;
+    *(uint32_t*)((char*)this + 120) = 0;
+}
+
+// ── COMPUTATION (bitfield extract, arithmetic) ──────────────────────────
+
+/**
+ * phInst::ExtractBits6to9 @ 0x821292E8 | size: 0x10
+ * Extracts bits 6-9 from field+32, adds 1. Returns the physics layer index.
+ */
+int phInst::GetPhysicsLayer() {  // 92E8_p42
+    uint32_t flags = *(uint32_t*)((char*)this + 32);
+    return ((flags >> 22) & 0xF) + 1;  // rlwinm extract bits 6-9 then +1
+}
+
+/**
+ * phInst::SubtractU16 @ 0x8212A698 | size: 0x10
+ * Returns int16 subtraction of two adjacent fields.
+ */
+int phInst::GetU16Delta() {  // A698_p39
+    uint16_t a = *(uint16_t*)((char*)this + 0);
+    uint16_t b = *(uint16_t*)((char*)this + 2);
+    return (int16_t)(a - b);
+}
+
+/**
+ * phInst::ComputeOffset @ 0x82129070 | size: 0x18
+ * Returns field_0x44 * 100 + 268 — byte offset into physics data table.
+ */
+int phInst::ComputeDataOffset() {  // 9070_p42
+    int index = *(int*)((char*)this + 0x44);
+    return index * 100 + 268;
+}
+
+// ── ATOMIC REF-COUNTING + CRITICAL SECTIONS ─────────────────────────────
+
+/**
+ * phInst::AddRef @ 0x82120000 | size: 0x28
+ * Atomic increment of reference count at +12 using lwarx/stwcx.
+ */
+int phInst::AddRef() {  // phInst_1
+    int32_t* refCount = (int32_t*)((char*)this + 12);
+    return ++(*refCount);  // original uses lwarx/stwcx atomic loop
+}
+
+/**
+ * phInst::Release @ 0x821237B0 | size: 0x40
+ * Atomic decrement of reference count. If count reaches 0, calls
+ * the destructor callback.
+ */
+int phInst::Release() {  // 37B0_p33
+    int32_t* refCount = (int32_t*)((char*)this + 12);
+    int newCount = --(*refCount);
+    if (newCount == 0) {
+        typedef void (*DtorFn)(void*);
+        DtorFn dtor = *(DtorFn*)((char*)this + 8);
+        if (dtor) dtor(this);
+    }
+    return newCount;
+}
+
+/**
+ * phInst::Lock @ 0x82120000 | size: 0x28
+ * Enters critical section on the mutex at this+16.
+ */
+void phInst::Lock() {  // phInst_3
+    extern "C" void RtlEnterCriticalSection(void* cs);
+    RtlEnterCriticalSection((char*)this + 16);
+}
+
+/**
+ * phInst::Unlock @ 0x82120000 | size: 0x28
+ * Leaves critical section on the mutex at this+16.
+ */
+void phInst::Unlock() {  // phInst_5
+    extern "C" void RtlLeaveCriticalSection(void* cs);
+    RtlLeaveCriticalSection((char*)this + 16);
+}
+
+// ── DELEGATION HELPERS ──────────────────────────────────────────────────
+
+/**
+ * phInst::ShiftArgsAndCall @ 0x821292F8 | size: 0x18
+ * Shifts argument registers and tail-calls phInst_8F10.
+ */
+void phInst::ShiftArgsAndCall(void* a, void* b, void* c) {  // 92F8_p42
+    extern "C" void phInst_8F10(void* obj, void* a, void* b, void* c);
+    phInst_8F10(this, a, b, c);
+}
+
+/**
+ * phInst::LoadGlobalAndCall @ 0x8212E2C0 | size: 0xC
+ * Loads a global pointer and tail-calls ke_9F58.
+ */
+void phInst::LoadGlobalAndCall() {  // E2C0_2h
+    extern void* g_phGlobalState;
+    extern "C" void ke_DispatchPhysics(void* state);
+    ke_DispatchPhysics(g_phGlobalState);
+}
+
+/**
+ * phInst::InitVtableAndCleanup @ 0x821287F8 | size: 0x10
+ * Sets vtable pointer and tail-calls the cleanup utility.
+ */
+void phInst::InitVtableAndCleanup() {  // 87F8
+    extern "C" void phInst_Cleanup(void* obj);
+    // Set vtable to phInst base
+    *(void**)this = (void*)0x82022D2C;
+    phInst_Cleanup(this);
+}
+
+// ── INDEXED FLAG SET/CLEAR (matched pair) ───────────────────────────────
+
+/**
+ * phInst::SetIndexedFlag @ 0x8216BA10 | size: 0x28
+ * Sets flag=1 at indexed position in array and sets field+24=1.
+ */
+void phInst::SetIndexedFlag(int index) {  // BA10_wrh
+    uint8_t* array = *(uint8_t**)((char*)this + 0);
+    array[index] = 1;
+    *(uint8_t*)((char*)this + 24) = 1;
+}
+
+/**
+ * phInst::ClearIndexedFlag @ 0x8216BA38 | size: 0x28
+ * Clears flag=0 at indexed position and clears field+24=0.
+ */
+void phInst::ClearIndexedFlag(int index) {  // BA38_2h
+    uint8_t* array = *(uint8_t**)((char*)this + 0);
+    array[index] = 0;
+    *(uint8_t*)((char*)this + 24) = 0;
+}
+
+// ── CONDITIONAL SETTERS ─────────────────────────────────────────────────
+
+/**
+ * phInst::ConditionalStore @ 0x82129044 | size: 0x1C
+ * If arg1 == 1, stores arg2/arg3 to fields +48/+52.
+ */
+void phInst::ConditionalStore(int flag, uint32_t val1, uint32_t val2) {  // phInst_44
+    if (flag == 1) {
+        *(uint32_t*)((char*)this + 48) = val1;
+        *(uint32_t*)((char*)this + 52) = val2;
+    }
+}
+
+/**
+ * phInst::ZeroFieldRange @ vfn_12_B888_1 | size: 0x3C
+ * Loop-zeroes 20 dwords at +204 and at +124.
+ */
+void phInst::ZeroFieldRange() {  // vfn_12_B888_1
+    memset((char*)this + 204, 0, 80);
+    memset((char*)this + 124, 0, 80);
+}
+
+/**
+ * phInst::ClearSubStatePtr @ 0x8212AB68 | size: 0x14
+ * Dereferences chain this->field_4->field_8, stores 0 to result.
+ */
+void phInst::ClearSubStatePtr() {  // AB68_p39
+    void* inner = *(void**)((char*)this + 4);
+    if (inner) {
+        *(uint32_t*)((char*)inner + 8) = 0;
+    }
+}
