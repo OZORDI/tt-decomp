@@ -117,7 +117,7 @@ namespace rage {
 namespace snLeaveMachine {
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * snHsmAcceptingLeaveRequest::vfn_14 @ 0x823E1530 | size: 0x70 (112 bytes)
+ * snHsmAcceptingLeaveRequest::OnEnter @ 0x823E1530 | size: 0x70 (112 bytes)
  *
  * Vtable slot 14 - Handles leave request acceptance state logic.
  *
@@ -138,7 +138,7 @@ namespace snLeaveMachine {
  *      b. Initialize event with vtable
  *      c. Call state transition handler with event
  * ═══════════════════════════════════════════════════════════════════════════ */
-void snHsmAcceptingLeaveRequest::vfn_14()
+void snHsmAcceptingLeaveRequest::OnEnter()
 {
     /* Load network client pointer from state machine */
     void* pNetworkClient = *(void**)((uint8_t*)this + 20);

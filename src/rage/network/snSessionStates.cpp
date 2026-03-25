@@ -22,7 +22,7 @@ extern void util_DA90(void* context, void* session, void* connectionList);  // @
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * snSession_snRoot_snChangingPresence::vfn_13 @ 0x823E3040 | size: 0x50
+ * snSession_snRoot_snChangingPresence::GetStateName @ 0x823E3040 | size: 0x50
  *
  * Manages network connections during a session presence change.
  * 

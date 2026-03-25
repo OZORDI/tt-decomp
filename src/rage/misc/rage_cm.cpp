@@ -2274,7 +2274,7 @@ extern void cmMetafileTuningSet_vfn_8(void* pThis, uint32_t param1, uint32_t par
 namespace rage {
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * cmNamedValueSet::vfn_8 @ 0x82275C20 | size: 0x48 (72 bytes)
+ * cmNamedValueSet::SetValueByName @ 0x82275C20 | size: 0x48 (72 bytes)
  *
  * Vtable slot 8 - Processes camera named value set with operator and tuning.
  *
@@ -2293,7 +2293,7 @@ namespace rage {
  * by reference to the operator function, then the original values are passed
  * directly to the parent class method.
  * ═══════════════════════════════════════════════════════════════════════════ */
-void cmNamedValueSet::vfn_8(uint32_t param1, uint32_t param2)
+void cmNamedValueSet::SetValueByName(uint32_t param1, uint32_t param2)
 {
     /* Create temporary copies of parameters on stack */
     uint32_t tempParam1 = param1;
