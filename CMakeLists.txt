@@ -49,6 +49,8 @@ set(SOURCES
     src/globals_linker.cpp
     src/stubs_remaining.c
     src/stubs_linker.cpp
+    src/stubs_linker_0.cpp
+    src/stubs_linker_3.cpp
 
     # XAM (Xbox Application Model)
     src/xam/static_init.c

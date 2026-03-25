@@ -16,8 +16,8 @@ namespace {
         uint32_t end;      // +0x08 @ 0x82402810 - heap end address
     };
     
-    // Global miniheap instance
-    extern MiniheapState g_miniheap;
+    // Global miniheap instance — defined here (was extern-only before)
+    MiniheapState g_miniheap = {};
 }
 
 namespace rage {
