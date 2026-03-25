@@ -21,13 +21,13 @@ struct fiStreamBufVTable {
         std::int32_t streamCapacity
     );
 
-    int (*m_pFlushBufferedWindow)(
+    int (*m_pFlushBuffer)(
         fiStreamBuf* pStreamBuffer,
         std::uint32_t openFlags,
         std::uint8_t* pBufferBase
     );
 
-    int (*m_pCommitWriteWindow)(
+    int (*m_pCommitRange)(
         fiStreamBuf* pStreamBuffer,
         std::uint32_t openFlags,
         std::uint8_t* pRangeStart,
@@ -42,33 +42,31 @@ struct fiStreamBufVTable {
 
 struct fiStreamBuf {
     fiStreamBufVTable* m_pVTable;
-    std::uint32_t m_openFlags;
-    std::uint8_t* m_pDataWindow;
-    std::int32_t m_absoluteWriteOffset;
-    std::int32_t m_windowReadOffset;
-    std::int32_t m_windowEndOffset;
+    std::uint32_t m_flags;
+    std::uint8_t* m_pBuffer;
+    std::int32_t m_writePosition;
+    std::int32_t m_readPosition;
+    std::int32_t m_bufferedEndPosition;
     std::int32_t m_windowCapacity;
 };
 
-struct fiAsciiTokenizerRuntimeState {
+struct fiAsciiTokenizerState {
     void* m_pVTable;
     std::uint32_t m_objectFlags;
     std::int32_t m_lineNumber;
-    fiStreamBuf* m_pStreamBuffer;
+    fiStreamBuf* m_pInputStream;
     std::int32_t m_currentChar;
-    std::int32_t m_newlineEmitMode;
-    std::int32_t m_pushbackDepth;
-    char m_aPushbackChars[128];
+    std::int32_t m_parseMode;
+    std::int32_t m_pushbackCount;
+    char m_aPushbackBuffer[128];
     const char* m_pAdditionalTokenDelimiters;
-    std::int32_t m_indentDepth;
+    std::int32_t m_parseScratchState;
 };
 
 int ResetStreamBuffer(fiStreamBuf* pStreamBuffer, std::int32_t resetWritePosition);
-void ResetAsciiTokenizerRuntimeState(fiAsciiTokenizerRuntimeState* pTokenizerState);
+void InitializeAsciiTokenizerState(fiAsciiTokenizerState* pTokenizerState);
 
 } // namespace rage
 
 extern "C" int fiStreamBuf_Reset(rage::fiStreamBuf* pBuf, int resetParam);
-extern "C" void fiAsciiTokenizer_ResetState(
-    rage::fiAsciiTokenizerRuntimeState* pTokenizerState
-) __asm__("rage_52B0_1");
+extern "C" void rage_52B0_1(rage::fiAsciiTokenizerState* pTokenizerState);
