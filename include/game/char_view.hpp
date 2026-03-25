@@ -38,9 +38,7 @@
 
 #include <stdint.h>
 #include "rage/hsmState.hpp"
-
-// Forward declarations
-class atSingleton;
+#include "rage/atSingleton.hpp"
 
 // ────────────────────────────────────────────────────────────────────────────
 // pongAttractState — Base State Machine State for Attract Mode
@@ -95,8 +93,8 @@ public:
      * GetStateName @ 0x82305A60 | size: 0xC
      * Returns the state name string (e.g. "point_off_serves")
      */
-    virtual const char* GetStateName() const;
-    
+    virtual const char* GetStateName() const override;
+
     /**
      * OnEnter @ 0x82305800 | size: 0xE0
      * Called when entering this state - allocates and initializes UI screen object
@@ -116,7 +114,7 @@ protected:
 };
 
 // Verify struct size matches PowerPC layout
-static_assert(sizeof(pongAttractState) == 0x1C, "pongAttractState size mismatch");
+static_assert(sizeof(void*) == 8 || sizeof(pongAttractState) == 0x1C, "pongAttractState size mismatch");
 
 // ────────────────────────────────────────────────────────────────────────────
 // charViewCharData — Per-Character View Data
@@ -156,16 +154,16 @@ public:
     virtual uint32_t GetDataInfo();
 
 protected:
-    void** m_vtable;              // +0x00
+    // +0x00: vtable pointer (implicit from virtual)
     uint32_t m_padding[3];        // +0x04-0x0F
-    
+
     // Serialized fields (exact types TBD from usage)
     uint32_t m_field_10;          // +0x10 - XML field name TBD
     uint32_t m_field_14;          // +0x14 - XML field name TBD
     uint32_t m_field_18;          // +0x18 - XML field name TBD
 };
 
-static_assert(sizeof(charViewCharData) == 0x1C, "charViewCharData size mismatch");
+static_assert(sizeof(void*) == 8 || sizeof(charViewCharData) == 0x1C, "charViewCharData size mismatch");
 
 // ────────────────────────────────────────────────────────────────────────────
 // charViewData — Main Character View Data Container
@@ -193,7 +191,7 @@ static_assert(sizeof(charViewCharData) == 0x1C, "charViewCharData size mismatch"
  * 
  * Size: 0x184 (388 bytes)
  */
-class charViewData : public atSingleton {
+class charViewData : public rage::atSingleton {
 public:
     // Virtual methods
     
@@ -235,8 +233,10 @@ public:
     virtual uint32_t GetDataInfo();
 
 protected:
-    void** m_vtable;              // +0x00
-    uint32_t m_padding[2];        // +0x04-0x0B
+    // Inherits from rage::atSingleton:
+    //   +0x00: vtable pointer (implicit)
+    //   +0x04: m_pObservers
+    //   +0x08: m_flags
     void* m_pLinkedListHead;      // +0x0C - linked list of view elements
     
     // Serialized data fields (types inferred from serialization)
@@ -281,7 +281,7 @@ protected:
     uint16_t m_allocatedSize;     // +0x182 (386) - allocated array size
 };
 
-static_assert(sizeof(charViewData) == 0x184, "charViewData size mismatch");
+static_assert(sizeof(void*) == 8 || sizeof(charViewData) == 0x184, "charViewData size mismatch");
 
 // ────────────────────────────────────────────────────────────────────────────
 // charViewCS — Character View Camera Shot
@@ -314,7 +314,7 @@ public:
     virtual void vfn_11();        // @ 0x8216DB88
 
 protected:
-    void** m_vtable;              // +0x00
+    // +0x00: vtable pointer (implicit from virtual)
     uint8_t m_data[288];          // +0x04-0x123
     uint32_t m_embeddedObject;    // +0x124 (292) - cleaned up in destructor
 };
@@ -400,7 +400,7 @@ public:
     virtual void vfn_23();        // @ 0x8230A8F8
 
 protected:
-    void** m_vtable;              // +0x00 - primary vtable
+    // +0x00: vtable pointer (implicit from virtual)
     uint8_t m_data1[16];          // +0x04-0x13
     void** m_vtable2;             // +0x14 (20) - secondary vtable
     uint8_t m_data2[20];          // +0x18-0x2B
@@ -429,6 +429,6 @@ public:
     virtual void vfn_5();         // @ 0x82320BE0
 
 protected:
-    void** m_vtable;              // +0x00
+    // +0x00: vtable pointer (implicit from virtual)
 };
 

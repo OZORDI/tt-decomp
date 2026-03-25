@@ -44,7 +44,7 @@ extern uint8_t io_Input_poll(void* pInput);
 extern void    pg_EDE0_gen(void* pPageObj, char flag);
 
 /* Assert / debug log — no-op in release @ 0x8240E6D0 */
-extern void    nop_8240E6D0(const char* msg);
+extern void    nop_8240E6D0(const char* msg, ...);
 
 /* GetPageGroupState — pgStreamer start/cancel profiling stamp @ 0x8242C3B8 */
 extern void    GetPageGroupState(void* pPgObj, int32_t mode);

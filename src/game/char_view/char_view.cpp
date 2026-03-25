@@ -15,7 +15,6 @@ extern "C" {
     void rage_free(void* ptr);
     void* xe_EC88(uint32_t size);
     void xe_main_thread_init_0038();
-    void rage::ReleaseSingleton(void* obj);
     void audControl_Destructor(void* obj);  // @ 0x82161568
     void atArray_Destructor(void* obj);
     void atArray_Clear(void* obj);
@@ -113,7 +112,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         // Event 6: Create UI state
         // Set up global UI state array
         g_global_ui_state[13] = 2;  // State type
-        g_global_ui_state[14] = (uint32_t)m_pScreenObject;  // Screen object pointer
+        g_global_ui_state[14] = (uint32_t)(uintptr_t)m_pScreenObject;  // Screen object pointer
         
         // Initialize UI context
         FadePageGroup(g_ui_context, 0.0f, 1, 0, 0, 0);
@@ -404,7 +403,7 @@ void charViewData::LoadViewData() {
             // Character doesn't match type - log error
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName1 = (GetNameFunc)vtable[19];
-            GetNameFunc getName2 = (GetNameFunc)m_vtable[19];
+            GetNameFunc getName2 = (GetNameFunc)(*(void***)this)[19];
             
             const char* name1 = getName1(pNode);
             const char* name2 = getName2(this);
@@ -489,7 +488,7 @@ charViewCS::~charViewCS() {
     audControl_Destructor(&m_embeddedObject);
     
     // Update vtable pointer
-    m_vtable = (void**)g_vtable_char_view_cs;
+    *(void**)this = (void*)g_vtable_char_view_cs;
     
     // Call base cleanup
     atArray_Destructor(this);
@@ -671,11 +670,11 @@ void pongCharViewState::OnEnter() {
  */
 pongCharViewContext::~pongCharViewContext() {
     // Update primary vtable
-    m_vtable = (void**)g_vtable_pong_char_view_context;
-    
+    *(void**)this = (void*)g_vtable_pong_char_view_context;
+
     // Update secondary vtable at +20
     m_vtable2 = (void**)g_vtable_pong_char_view_context_2;
-    
+
     // Delete managed object at +44 if it exists
     if (m_pManagedObject != nullptr) {
         // Call virtual destructor on managed object
@@ -683,16 +682,16 @@ pongCharViewContext::~pongCharViewContext() {
         typedef void (*DestructorFunc)(void*, bool);
         DestructorFunc dtor = (DestructorFunc)pObjVtable[0];
         dtor(m_pManagedObject, true);
-        
+
         m_pManagedObject = nullptr;
     }
-    
+
     // Clean up embedded object at +80
     atArray_Clear(&m_embeddedObject);
-    
+
     // Update vtables to final state
     m_vtable2 = (void**)g_vtable_pong_char_view_context_3;
-    m_vtable = (void**)g_vtable_pong_char_view_state;
+    *(void**)this = (void*)g_vtable_pong_char_view_state;
 }
 
 
