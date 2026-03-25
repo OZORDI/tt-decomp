@@ -41,6 +41,18 @@ extern const float g_cm_zeroFloat;
 // @ 0x825C5938 (.data, 16 bytes)
 extern float g_cm_negateVec[4];
 
+// Alias for g_cm_frameTime used by Approach/Differentiate/Angle nodes.
+// Same address @ 0x825C4958 — declared separately to match scaffold naming.
+#define g_cmFrameScale g_cm_frameTime
+
+// cmApproach2 vtable pointer — stored in newly created cmApproach2 objects.
+// @ 0x82055EFC (.rdata vtable, RTTI: rage::cmApproach2)
+extern void* g_vtable_cmApproach2;
+
+// TLS base pointer (r13 on PPC). Points to thread-local allocator table.
+// @ 0x82600000 (SDA base)
+extern void** g_tls_base;
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  DIMENSION / PORT TYPE CODES
 // ─────────────────────────────────────────────────────────────────────────────

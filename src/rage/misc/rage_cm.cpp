@@ -84,17 +84,9 @@
 namespace rage {
 
 // ── GLOBAL DATA REFERENCES ───────────────────────────────────────────────────
-
-// Current frame delta-time (seconds). Updated each game tick.
-extern float g_cm_frameTime;    // @ 0x825C4958
-
-// Constant 0.0f for unconnected port default return.
-extern const float g_cm_zeroFloat;  // @ 0x8202D110
-
-// {-1.f, -1.f, -1.f, -1.f} used by cmNegate's vector evaluation.
-extern float g_cm_negateVec[4]; // @ 0x825C5938
-// ── Missing forward declarations ──────────────────────────────────────────────
-extern float g_cm_frameRate;       // @ 0x829DAEC8 — per-frame rate constant (Differential)
+// All CM globals declared in rage_cm_types.hpp:
+//   g_cm_frameTime, g_cm_zeroFloat, g_cm_negateVec, g_cm_frameRate,
+//   g_cmFrameScale (alias), g_vtable_cmApproach2, g_tls_base
 void*  rage_alloc_aligned(size_t size, size_t align); // RAGE heap aligned alloc
 void   rage_free(void* ptr);                          // RAGE heap free
 static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
@@ -1210,7 +1202,7 @@ void cmApproach2::SyncPorts(void* portCtx) {
 // cmApproach2::Tick @ 0x82279428 | size: 0x80
 // Accumulates dt/speed into m_progress (+44), clamped to [0,1].
 void cmApproach2::Tick() {
-    extern float g_cmFrameScale;  // @ 0x825C4958
+    // g_cmFrameScale declared in rage_cm_types.hpp (alias for g_cm_frameTime)
 
     // scaledDt = 1.0f * g_cmFrameScale (constant 1.0 verified at table+8)
     float scaledDt = g_cmFrameScale;
@@ -1238,7 +1230,7 @@ void cmApproach2::Allocate() {
     extern "C" void cmReporter_Init(void* reporter);
 
     xe_main_thread_init_0038();
-    extern void** g_tls_base;
+    // g_tls_base declared in rage_cm_types.hpp
     void* allocator = g_tls_base[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
     void** allocVt = *(void***)allocator;
@@ -1362,7 +1354,7 @@ void cmAngleLerp::GetFloat(float* out) {
 // speed from portC (+28). Computes normalized angular diff, applies
 // power-based approach (speed^dt decay), normalizes result.
 void cmAnglePowerApproach::Tick() {
-    extern float g_cmFrameScale;
+    // g_cmFrameScale declared in rage_cm_types.hpp
     extern "C" float cmAngle_Normalize(float value);
     extern "C" void cmPowerApproach_Step(float* outProgress, float diff, float speed, float dt);
 
@@ -1395,7 +1387,7 @@ void cmAnglePowerApproach::Tick() {
 // Moves current angle toward target by at most speed*dt per frame.
 // Snaps to target if within one step. All angles normalized to [-π,π].
 void cmAngleLinearApproach::Tick() {
-    extern float g_cmFrameScale;
+    // g_cmFrameScale declared in rage_cm_types.hpp
     extern "C" float cmAngle_Normalize(float value);
 
     float scaledDt = g_cmFrameScale;
@@ -1450,8 +1442,8 @@ void cmAngleLinearApproach::Tick() {
 // Shared helper — creates a cmApproach2 with the given configuration.
 static void* cmApproach2Ctor_Create(uint32_t portMode, bool isAngular) {
     extern "C" void xe_main_thread_init_0038();
-    extern void** g_tls_base;
-    extern void* g_vtable_cmApproach2;  // scaffold: lis -32251; addi 27228
+    // g_tls_base declared in rage_cm_types.hpp
+    // g_vtable_cmApproach2 declared in rage_cm_types.hpp @ 0x82055EFC
 
     xe_main_thread_init_0038();
     void* allocator = g_tls_base[1];
@@ -1614,7 +1606,7 @@ void cmCapture::Allocate() {
 
     // Allocate new 32-byte reporter buffer (16-byte aligned)
     xe_main_thread_init_0038();
-    extern void** g_tls_base;
+    // g_tls_base declared in rage_cm_types.hpp
     void* allocator = g_tls_base[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
     void** allocVt = *(void***)allocator;
@@ -1751,7 +1743,7 @@ void cmChanged::Allocate() {
 
     // Allocate reporter buffer for previous value at +32
     xe_main_thread_init_0038();
-    extern void** g_tls_base;
+    // g_tls_base declared in rage_cm_types.hpp
     void* allocator = g_tls_base[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
     void** allocVt = *(void***)allocator;
@@ -1817,7 +1809,7 @@ void cmDifferentiate::SyncPorts(void* portCtx) {
 // For vec4 (type 4): output = (currentVec - prevVec) * (1/scaledDt) per component
 // On first tick, outputs zero instead of a spike.
 void cmDifferentiate::Tick() {
-    extern float g_cmFrameScale;   // @ 0x825C4958 (runtime delta time)
+    // g_cmFrameScale declared in rage_cm_types.hpp (alias for g_cm_frameTime)
     // Constant at rdata table+8 is 1.0f — verified from binary @ 0x825CAEC0
     // scaledDt = 1.0f * g_cmFrameScale = g_cmFrameScale
     float scaledDt = g_cmFrameScale;
