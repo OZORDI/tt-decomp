@@ -49,6 +49,11 @@ set(SOURCES
     src/globals_linker.cpp
     src/stubs_remaining.c
     src/stubs_linker.cpp
+    src/stubs_linker_1.cpp
+    src/stubs_linker_2.cpp
+    src/stubs_linker_3b.cpp
+    src/stubs_linker_4.cpp
+    src/stubs_linker_5.cpp
     src/stubs_linker_0.cpp
     src/stubs_linker_3.cpp
 
