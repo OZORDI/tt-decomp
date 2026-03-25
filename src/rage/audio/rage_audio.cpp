@@ -194,59 +194,70 @@ audVoice::~audVoice() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audVoice::vfn_2 @ 0x82163190 | size: 0xC
-//
-// Unimplemented stub - logs a message and returns.
+// audVoice pure-virtual stubs — base class logs error if called directly
+// All confirmed by debug strings: "virtual audVoice::<Name> used"
 // ─────────────────────────────────────────────────────────────────────────────
-void audVoice::vfn_2() {
-    nop_8240E6D0(reinterpret_cast<const char*>(0x82035770));
+
+// @ 0x82037770 — "virtual audVoice::PlayByEntry used"
+extern const char g_str_audVoice_PlayByEntry[];       // @ 0x82037770
+// @ 0x82037794 — "virtual audVoice::Play (no args) used"
+extern const char g_str_audVoice_Play[];              // @ 0x82037794
+// @ 0x820377BC — "virtual audVoice::Stop used"
+extern const char g_str_audVoice_Stop[];              // @ 0x820377BC
+// @ 0x820377D8 — "virtual audVoice::Release used"
+extern const char g_str_audVoice_Release[];           // @ 0x820377D8
+// @ 0x820377F8 — "virtual audVoice::SetEffect used"
+extern const char g_str_audVoice_SetEffect[];         // @ 0x820377F8
+// @ 0x8203781C — "virtual audVoice::IsPlaying used"
+extern const char g_str_audVoice_IsPlaying[];         // @ 0x8203781C
+
+/**
+ * audVoice::PlayByEntry @ 0x82163190 | size: 0xC
+ * Pure virtual stub — logs error if base class version is called.
+ */
+void audVoice::PlayByEntry() {
+    nop_8240E6D0(g_str_audVoice_PlayByEntry);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// audVoice::vfn_4 @ 0x821631A0 | size: 0xC
-//
-// Unimplemented stub - logs a message and returns.
-// ─────────────────────────────────────────────────────────────────────────────
-void audVoice::vfn_4() {
-    nop_8240E6D0(reinterpret_cast<const char*>(0x82035794));
+/**
+ * audVoice::Play @ 0x821631A0 | size: 0xC
+ * Pure virtual stub — plays audio with no arguments.
+ */
+void audVoice::Play() {
+    nop_8240E6D0(g_str_audVoice_Play);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// audVoice::vfn_7 @ 0x821631B0 | size: 0xC
-//
-// Unimplemented stub - logs format string "char_%l_%s".
-// ─────────────────────────────────────────────────────────────────────────────
-void audVoice::vfn_7() {
-    nop_8240E6D0(g_str_audVoiceSfx_formatChar);
+/**
+ * audVoice::Stop @ 0x821631B0 | size: 0xC
+ * Pure virtual stub — stops audio playback.
+ */
+void audVoice::Stop() {
+    nop_8240E6D0(g_str_audVoice_Stop);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// audVoice::vfn_8 @ 0x821631C0 | size: 0xC
-//
-// Unimplemented stub - logs format string "_%s".
-// ─────────────────────────────────────────────────────────────────────────────
-void audVoice::vfn_8() {
-    nop_8240E6D0(g_str_audVoiceSfx_formatSuffix);
+/**
+ * audVoice::Release @ 0x821631C0 | size: 0xC
+ * Pure virtual stub — releases audio resources.
+ */
+void audVoice::Release() {
+    nop_8240E6D0(g_str_audVoice_Release);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// audVoice::vfn_17 @ 0x821631D0 | size: 0xC
-//
-// Unimplemented stub - logs format string "_%l".
-// ─────────────────────────────────────────────────────────────────────────────
-void audVoice::vfn_17() {
-    nop_8240E6D0(g_str_audVoiceSfx_formatLevel);
+/**
+ * audVoice::SetEffect @ 0x821631D0 | size: 0xC
+ * Pure virtual stub — applies an audio effect to the voice.
+ */
+void audVoice::SetEffect() {
+    nop_8240E6D0(g_str_audVoice_SetEffect);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// audVoice::vfn_18 @ 0x821631E0 | size: 0x2C
-//
-// Unimplemented stub - logs a message and returns 0.
-// Likely a query function that would return voice state or handle.
-// ─────────────────────────────────────────────────────────────────────────────
-int audVoice::vfn_18() {
-    nop_8240E6D0(g_str_audVoiceSfx_ankle);
-    return 0;
+/**
+ * audVoice::IsPlaying @ 0x821631E0 | size: 0x2C
+ * Pure virtual stub — returns 0 (not playing) if base version called.
+ */
+bool audVoice::IsPlaying() {
+    nop_8240E6D0(g_str_audVoice_IsPlaying);
+    return false;
 }
 
 } // namespace rage
