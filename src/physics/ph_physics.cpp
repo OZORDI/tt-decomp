@@ -2615,3 +2615,503 @@ void phJoint3Dof_E7C8_2h(phJoint3Dof* joint, uint32_t index) {
     for (int i = 0; i < 4; i++) baseVecs[8 + i] = 0;  // 272
     for (int i = 0; i < 4; i++) baseVecs[12 + i] = 0; // 288
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phInst — Physics Instance Small Methods (all ≤64B)
+//
+// These are the trivial accessors, vtable thunks, adjustor thunks, and
+// small utilities that comprise the phInst interface surface.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── RETURN-ZERO STUBS (8B each) ─────────────────────────────────────────
+
+// phInst::GetType @ 0x8248D8A0 | size: 0x8
+int phInst::GetType() { return 0; }  // vfn_18_D8A0_1
+
+// phInst::GetFlags @ 0x82494158 | size: 0x8
+int phInst::GetFlags() { return 0; }  // vfn_11_4158_1
+
+// ── FIELD GETTERS (8B each) ─────────────────────────────────────────────
+
+// phInst::GetBound @ 0x824834D0 | size: 0x8
+void* phInst::GetBound() { return *(void**)((char*)this + 56); }  // 34D0_g
+
+// phInst::GetField14 @ 0x82491790 | size: 0x8
+void* phInst::GetField14() { return *(void**)((char*)this + 52); }  // phInst_14
+
+// phInst::GetUserData (vfn_19) @ 0x8248B8D0 | size: 0x8
+uint32_t phInst::GetUserData() { return *(uint32_t*)((char*)this + 284); }  // vfn_19
+
+// phInst::GetCollisionMask (vfn_44) @ 0x8248D810 | size: 0x8
+uint32_t phInst::GetCollisionMask() { return *(uint32_t*)((char*)this + 444); }  // vfn_44
+
+// phInst::GetCollisionGroup (vfn_45) @ 0x8248D820 | size: 0x8
+uint32_t phInst::GetCollisionGroup() { return *(uint32_t*)((char*)this + 448); }  // vfn_45
+
+// phInst::GetTransformPtr (vfn_71) @ 0x82488480 | size: 0x8
+uint64_t phInst::GetTransformPtr() { return *(uint64_t*)((char*)this + 64); }  // vfn_71
+
+// ── FIELD SETTERS (8B each) ─────────────────────────────────────────────
+
+// phInst::SetField9 @ 0x82488820 | size: 0x8
+void phInst::SetField9(uint32_t val) { *(uint32_t*)((char*)this + 44) = val; }  // phInst_9
+
+// phInst::SetField11 @ 0x82488830 | size: 0x8
+void phInst::SetField11(uint32_t val) { *(uint32_t*)((char*)this + 52) = val; }  // phInst_11
+
+// phInst::SetUserData (vfn_16) @ 0x8248B8C8 | size: 0x8
+void phInst::SetUserData(uint32_t val) { *(uint32_t*)((char*)this + 284) = val; }  // vfn_16
+
+// phInst::SetCollisionMask (vfn_38) @ 0x8248D808 | size: 0x8
+void phInst::SetCollisionMask(uint32_t val) { *(uint32_t*)((char*)this + 444) = val; }  // vfn_38
+
+// phInst::SetCollisionGroup (vfn_39) @ 0x8248D818 | size: 0x8
+void phInst::SetCollisionGroup(uint32_t val) { *(uint32_t*)((char*)this + 448) = val; }  // vfn_39
+
+// ── STATIC SIZE / CONSTANT RETURNS (12-20B) ─────────────────────────────
+
+// phInst::GetStaticSize @ 0x8256B628 | size: 0xC
+int phInst::GetStaticSize() {  // B628
+    return (int)(uintptr_t)0x8256B610;  // returns address of phInst_B610_p42
+}
+
+// phInst::StoreSize @ 0x82461488 | size: 0x10
+int phInst::StoreSize(uint32_t* outParam) {  // 1488_sp
+    *outParam = 20;
+    return 0;
+}
+
+// phInst::StoreConstBA24 @ 0x824631A0 | size: 0x14
+int phInst::StoreConstBA24(uint32_t* outParam) {  // 31A0_p39
+    *outParam = 0x4BA24;
+    return 0;
+}
+
+// phInst::GetReturnCode (vfn_48) @ 0x8247E2D0 | size: 0xC
+uint32_t phInst::GetReturnCode() { return 0x80004001; }  // vfn_48
+
+// ── GLOBAL LOAD AND DISPATCH (12B) ──────────────────────────────────────
+
+extern void* g_phGlobalState;  // @ 0x825E788C
+extern void ke_9F58(void* state);
+
+// phInst::LoadGlobalAndDispatch @ 0x8247E2C0 | size: 0xC
+void phInst::LoadGlobalAndDispatch() {  // E2C0_2h
+    ke_9F58(g_phGlobalState);
+}
+
+// ── BITFIELD EXTRACT / ARITHMETIC (16-24B) ──────────────────────────────
+
+// phInst::GetPhysicsLayer @ 0x823592E8 | size: 0x10
+int phInst::GetPhysicsLayer() {  // 92E8_p42
+    uint32_t flags = *(uint32_t*)((char*)this + 32);
+    return ((flags >> 6) & 0xF) + 1;
+}
+
+// phInst::GetU16Delta @ 0x8256A698 | size: 0x10
+int phInst::GetU16Delta(void* other) {  // A698_p39
+    uint16_t a = *(uint16_t*)((char*)this + 0);
+    uint16_t b = *(uint16_t*)((char*)other + 0);
+    return (int)(a - b);
+}
+
+// phInst::ComputeDataOffset @ 0x82469070 | size: 0x18
+int phInst::ComputeDataOffset(uint32_t* outParam) {  // 9070_p42
+    uint8_t index = *(uint8_t*)((char*)this + 68);
+    *outParam = (uint32_t)(index * 100 + 268);
+    return 0;
+}
+
+// ── VTABLE FORWARD THUNKS (16-20B) ──────────────────────────────────────
+//
+// Load vtable from this, then tail-call a specific slot.
+
+// phInst::ForwardSlot23 @ 0x82482B48 | size: 0x10
+void phInst::ForwardSlot23(void* arg) {  // 2B48_p45
+    typedef void (*Fn)(void*, void*);
+    ((Fn)(*(void***)this)[23])(this, arg);
+}
+
+// phInst::ForwardSlot12 @ 0x82482A28 | size: 0x14
+void phInst::ForwardSlot12() {  // phInst_45
+    typedef void (*Fn)(void*, void*);
+    void** vtable = *(void***)this;
+    ((Fn)vtable[12])(this, this);  // passes this as both r3 and r6
+}
+
+// phInst::ForwardSlot12Alt @ 0x82359310 | size: 0x14
+void phInst::ForwardPageAligned() {  // 9310_p42
+    uint32_t field36 = *(uint32_t*)((char*)this + 36);
+    uint32_t field20 = *(uint32_t*)((char*)this + 20);
+    extern void grc_2CC8(void* aligned36, void* aligned20);
+    grc_2CC8((void*)(field36 & 0xFFFFF000), (void*)(field20 & 0xFFFFF000));
+}
+
+// ── VTABLE DISPATCH WITH DATA POINTER (24B each) ────────────────────────
+//
+// Load vtable, pass data-region pointer + size, tail-call slot 13.
+// Each targets a different embedded sub-array (stride 80 bytes).
+
+// phInst::DispatchSlot13_124 (vfn_14) @ 0x8248D828 | size: 0x18
+void phInst::DispatchSlot13_124() {  // vfn_14_D828_1
+    typedef void (*Fn)(void*, void*, int);
+    void** vtable = *(void***)this;
+    ((Fn)vtable[13])(this, (char*)this + 124, 40);
+}
+
+// phInst::DispatchSlot13_204 (vfn_15) @ 0x8248D888 | size: 0x18
+void phInst::DispatchSlot13_204() {  // vfn_15
+    typedef void (*Fn)(void*, void*, int);
+    void** vtable = *(void***)this;
+    ((Fn)vtable[13])(this, (char*)this + 204, 40);
+}
+
+// phInst::DispatchSlot13_284 (vfn_34) @ 0x8248D868 | size: 0x18
+void phInst::DispatchSlot13_284() {  // vfn_34
+    typedef void (*Fn)(void*, void*, int);
+    void** vtable = *(void***)this;
+    ((Fn)vtable[13])(this, (char*)this + 284, 40);
+}
+
+// phInst::DispatchSlot13_364 (vfn_35) @ 0x8248D848 | size: 0x18
+void phInst::DispatchSlot13_364() {  // vfn_35
+    typedef void (*Fn)(void*, void*, int);
+    void** vtable = *(void***)this;
+    ((Fn)vtable[13])(this, (char*)this + 364, 40);
+}
+
+// ── MI ADJUSTOR THUNKS (32B each) ───────────────────────────────────────
+//
+// Adjust this pointer by -8, then dispatch through vtable.
+// Used for multiple-inheritance adjustor thunks.
+
+// phInst::AdjustorSlot1 @ 0x82465D40 | size: 0x20
+void phInst::AdjustorSlot1() {  // 5D40_2hr
+    void* adjusted = (char*)this - 8;
+    if (!this) adjusted = nullptr;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)adjusted)[1])(adjusted);
+}
+
+// phInst::AdjustorSlot2 @ 0x82465D60 | size: 0x20
+void phInst::AdjustorSlot2(void* arg) {  // 5D60_p39
+    void* adjusted = (char*)this - 8;
+    if (!this) adjusted = nullptr;
+    typedef void (*Fn)(void*, void*);
+    ((Fn)(*(void***)adjusted)[2])(adjusted, arg);
+}
+
+// phInst::AdjustorSlot5 @ 0x8246BB20 | size: 0x20
+void phInst::AdjustorSlot5() {  // BB20_2hr
+    void* adjusted = (char*)this - 8;
+    if (!this) adjusted = nullptr;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)adjusted)[5])(adjusted);
+}
+
+// phInst::AdjustorSlot6 @ 0x8246BB40 | size: 0x20
+void phInst::AdjustorSlot6(void* arg) {  // BB40_2hr
+    void* adjusted = (char*)this - 8;
+    if (!this) adjusted = nullptr;
+    typedef void (*Fn)(void*, void*);
+    ((Fn)(*(void***)adjusted)[6])(adjusted, arg);
+}
+
+// ── ARRAY-INDEX VTABLE DISPATCH (vfn_59-69, 32B each) ───────────────────
+//
+// Index into array of 60-byte entries at this+48 using index at this+64.
+// Dereference entry vtable, tail-call slot N.
+
+// phInst::IndexedDispatch13 (vfn_59) @ 0x8248DA68 | size: 0x20
+void phInst::IndexedDispatch13() {  // vfn_59
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[13])(entry);
+}
+
+// phInst::IndexedDispatch14 (vfn_60) @ 0x8248DA88 | size: 0x20
+void phInst::IndexedDispatch14() {  // vfn_60
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[14])(entry);
+}
+
+// phInst::IndexedDispatch15 (vfn_61) @ 0x8248DAA8 | size: 0x20
+void phInst::IndexedDispatch15() {  // vfn_61
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[15])(entry);
+}
+
+// phInst::IndexedDispatch16 (vfn_62) @ 0x8248DAC8 | size: 0x20
+void phInst::IndexedDispatch16() {  // vfn_62
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[16])(entry);
+}
+
+// phInst::IndexedDispatch17 (vfn_63) @ 0x8248DAE8 | size: 0x20
+void phInst::IndexedDispatch17() {  // vfn_63
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[17])(entry);
+}
+
+// phInst::IndexedDispatch18 (vfn_64 alt) @ 0x8248DB08 | size: 0x20
+void phInst::IndexedDispatch18() {  // vfn_64_DB08_1
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[18])(entry);
+}
+
+// phInst::IndexedDispatch19 (vfn_65 alt) @ 0x8248DB28 | size: 0x20
+void phInst::IndexedDispatch19() {  // vfn_65_DB28_1
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[19])(entry);
+}
+
+// phInst::IndexedDispatch20 (vfn_66) @ 0x8248DB48 | size: 0x20
+void phInst::IndexedDispatch20() {  // vfn_66
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[20])(entry);
+}
+
+// phInst::IndexedDispatch21 (vfn_67) @ 0x8248DB68 | size: 0x20
+void phInst::IndexedDispatch21() {  // vfn_67
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[21])(entry);
+}
+
+// phInst::IndexedDispatch22 (vfn_68) @ 0x8248DB88 | size: 0x20
+void phInst::IndexedDispatch22() {  // vfn_68
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[22])(entry);
+}
+
+// phInst::IndexedDispatch23 (vfn_69) @ 0x8248DBA8 | size: 0x20
+void phInst::IndexedDispatch23() {  // vfn_69
+    int index = *(int*)((char*)this + 64);
+    char* entry = (char*)*(void**)((char*)this + 48) + index * 60;
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)entry)[23])(entry);
+}
+
+// ── ATOMIC REF-COUNTING (40-48B) ────────────────────────────────────────
+
+// phInst::AddRef @ 0x824885D8 | size: 0x28
+int phInst::AddRef() {  // phInst_1
+    int32_t* refCount = (int32_t*)((char*)this + 12);
+    return ++(*refCount);  // lwarx/stwcx atomic loop in original
+}
+
+// phInst::Release @ 0x824837B0 | size: 0x40
+int phInst::Release() {  // 37B0_p33
+    void* inner = *(void**)((char*)this + 4);
+    int32_t* refCount = (int32_t*)((char*)inner + 1472);
+    int newCount = --(*refCount);  // lwarx/stwcx atomic loop
+    if (newCount != 0) return newCount;
+    typedef void (*Callback)(void*);
+    Callback cb = *(Callback*)((char*)inner + 48);
+    if (cb) {
+        void* arg = *(void**)((char*)inner + 52);
+        cb(arg);
+    }
+    return 0;
+}
+
+// ── CRITICAL SECTION (40B each) ─────────────────────────────────────────
+
+extern "C" void RtlEnterCriticalSection(void* cs);
+extern "C" void RtlLeaveCriticalSection(void* cs);
+
+// phInst::Lock @ 0x82488678 | size: 0x28
+void phInst::Lock() {  // phInst_3
+    RtlEnterCriticalSection((char*)this + 16);
+}
+
+// phInst::Unlock @ 0x824886E8 | size: 0x28
+void phInst::Unlock() {  // phInst_5
+    RtlLeaveCriticalSection((char*)this + 16);
+}
+
+// ── DELEGATION HELPERS (16-24B) ─────────────────────────────────────────
+
+// phInst::ShiftArgsAndCall @ 0x823592F8 | size: 0x18
+void phInst::ShiftArgsAndCall(void* a, void* b, void* c) {  // 92F8_p42
+    extern void phInst_8F10_p42(void* obj, int zero, void* a, void* b, void* c);
+    phInst_8F10_p42(this, 0, a, b, c);
+}
+
+// phInst::InitVtableAndCleanup @ 0x824887F8 | size: 0x10
+void phInst::InitVtableAndCleanup() {  // 87F8
+    extern void util_85C8(void* obj);
+    *(void**)this = (void*)0x82008DF0;  // phInst base vtable
+    util_85C8(this);
+}
+
+// ── INDEXED FLAG SET/CLEAR (40B each) ───────────────────────────────────
+//
+// Index into array via this->field_8[(this->field_12 + 4) * 4].
+// Sets/clears flag and marks dirty at this+24.
+
+// phInst::SetIndexedFlag @ 0x8256BA10 | size: 0x28
+void phInst::SetIndexedFlag() {  // BA10_wrh
+    uint32_t index = *(uint32_t*)((char*)this + 12);
+    uint8_t* array = *(uint8_t**)((char*)this + 8);
+    array[(index + 4) * 4] = 1;
+    *(uint32_t*)((char*)this + 24) = 1;
+}
+
+// phInst::ClearIndexedFlag @ 0x8256BA38 | size: 0x28
+void phInst::ClearIndexedFlag() {  // BA38_2h
+    uint32_t index = *(uint32_t*)((char*)this + 12);
+    uint8_t* array = *(uint8_t**)((char*)this + 8);
+    *(uint32_t*)((char*)this + 24) = 0;
+    array[(index + 4) * 4] = 0;
+}
+
+// ── CONDITIONAL STORE (28B) ─────────────────────────────────────────────
+
+// phInst::ConditionalStore @ 0x82483620 | size: 0x1C
+int phInst::ConditionalStore(int flag, uint32_t val1, uint32_t val2) {  // phInst_44
+    if (flag == 1) {
+        *(uint32_t*)((char*)this + 48) = val1;
+        *(uint32_t*)((char*)this + 52) = val2;
+    }
+    return 0;
+}
+
+// ── CONDITIONAL FORWARD (20B) ───────────────────────────────────────────
+
+extern void msgMsgSink_B538_w(void* obj, void* arg, uint8_t flag);
+
+// phInst::ConditionalForward @ 0x8256B610 | size: 0x14
+void phInst::ConditionalForward(void* arg, uint8_t flag) {  // B610_p42
+    if (flag == 0) {
+        msgMsgSink_B538_w(this, arg, 0);
+    } else {
+        msgMsgSink_B538_w(this, arg, flag);
+    }
+}
+
+// ── CHAIN DEREFERENCE (20B) ─────────────────────────────────────────────
+
+// phInst::ClearSubStatePtr @ 0x8256AB68 | size: 0x14
+void phInst::ClearSubStatePtr() {  // AB68_p39
+    void* inner = *(void**)((char*)this + 4);
+    void* target = *(void**)((char*)inner + 0);
+    *(uint32_t*)target = 0;
+}
+
+// ── ZERO FIELD RANGES (60B) ─────────────────────────────────────────────
+
+// phInst::ZeroFieldRanges (vfn_12 alt) @ 0x8248B888 | size: 0x3C
+void phInst::ZeroFieldRanges() {  // vfn_12_B888_1
+    // Zeroes 20 dwords at +204, then 20 dwords at +124, then field+284
+    memset((char*)this + 204, 0, 80);
+    memset((char*)this + 124, 0, 80);
+    *(uint32_t*)((char*)this + 284) = 0;
+}
+
+// ── VTABLE INIT + TAIL-CALL (24B) ──────────────────────────────────────
+
+// phInst::InitAndCleanup @ 0x82466158 | size: 0x18
+void phInst::InitAndCleanup() {  // 6158_p39
+    extern void ph_FC68_h(void* obj);
+    *(void**)this = (void*)0x82005A60;  // phInst vtable
+    ph_FC68_h((char*)this + 4);
+}
+
+// ── MMIO BYTE-SWAP READ TO GLOBAL (24B) ─────────────────────────────────
+
+extern uint32_t g_phTimerValue;  // @ 0x825E7890
+
+// phInst::ReadTimerToGlobal @ 0x8246AC00 | size: 0x18
+void phInst::ReadTimerToGlobal() {  // AC00_2hr
+    volatile uint32_t* timerReg = (volatile uint32_t*)0x7FEA1800;
+    g_phTimerValue = __builtin_bswap32(*timerReg);
+}
+
+// ── VTABLE CONSTRUCTORS (40-56B) ────────────────────────────────────────
+
+// phInst::InitDualVtable @ 0x82465910 | size: 0x28
+void phInst::InitDualVtable() {  // 5910_p39
+    *(void**)((char*)this + 0) = (void*)0x82005918;
+    *(void**)((char*)this + 4) = (void*)0x82003DB0;
+}
+
+// phInst::InitFromParam @ 0x82461508 | size: 0x38
+void phInst::InitFromParam(void* param) {  // 1508_2hr
+    *(uint32_t*)((char*)this + 8) = 1;
+    uint32_t paramField4 = *(uint32_t*)((char*)param + 4);
+    *(uint32_t*)((char*)this + 12) = paramField4;
+    *(void**)((char*)this + 0) = (void*)0x8200586C;
+    *(void**)((char*)this + 4) = (void*)0x82005850;
+}
+
+// ── ALLOCATE-AND-STORE HELPER (60B) ─────────────────────────────────────
+
+extern void* phInst_BFB8_2hr(void* obj);
+
+// phInst::AllocateAndStore @ 0x8246C1A0 | size: 0x3C
+int phInst::AllocateAndStore(uint32_t* outPtr) {  // C1A0_2hr
+    void* result = phInst_BFB8_2hr(this);
+    *outPtr = (uint32_t)((uintptr_t)result + 24);
+    return 0;
+}
+
+// ── STACK-FRAME + CALL HELPERS (48-64B) ─────────────────────────────────
+
+extern void game_3860(void* obj, void* zeroedBuf);
+
+// phInst::CallWithZeroedBuffer @ 0x82483D78 | size: 0x34
+void phInst::CallWithZeroedBuffer() {  // phInst_42
+    uint64_t buf[2] = {0, 0};  // 16 bytes zeroed on stack
+    game_3860(this, buf);
+}
+
+// phInst::GetErrorCode @ 0x824887B0 | size: 0x30
+uint32_t phInst::GetErrorCode() {  // phInst_8
+    extern int32_t thunk_fn_8242C368();
+    int32_t result = thunk_fn_8242C368();
+    if (result > 0) {
+        return (result & 0xFFFF) | 0x80070000;
+    }
+    return (uint32_t)result;
+}
+
+// phInst::CallVfn12ThenInit (vfn_9) @ 0x8248D7C8 | size: 0x40
+void phInst::CallVfn12ThenInit() {  // vfn_9
+    extern void statePreInit_vfn_6(void* obj);
+    typedef void (*Fn)(void*);
+    void** vtable = *(void***)this;
+    ((Fn)vtable[12])(this);
+    statePreInit_vfn_6(this);
+}
+
+// phInst::AtomicDecrementAndCallback (vfn_23) @ 0x82483FD8 | size: 0x3C
+void phInst::AtomicDecrementAndCallback() {  // vfn_23
+    int32_t* refCount = (int32_t*)((char*)this + 368);
+    --(*refCount);  // lwarx/stwcx atomic loop
+    typedef void (*Callback)(void*);
+    Callback cb = *(Callback*)((char*)this + 272);
+    if (cb) {
+        void* arg = *(void**)((char*)this + 284);
+        cb(arg);
+    }
+}
