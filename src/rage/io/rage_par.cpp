@@ -40,6 +40,11 @@ void cmOperatorCtor_D8C0_w(void* pOperator, const void* pValueData, std::uint32_
 void atSingleton_DA18_p46(void* pNode, void* pRootNode);
 void atSingleton_D210_p46(void* pStructType, void* pStructInstance, void* pOperator);
 std::uint8_t jumptable_E058_h(void* pMemberArray);
+void rage_F6F0();
+void cmOperatorCtor_DAE0_w(void* pOperator, std::uint32_t valueData, int flags);
+void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags);
+float parStreamInXml_A5D0(void* pOperator);
+bool jumptable_A578_h(void* pOperator);
 }
 
 namespace {
@@ -1338,8 +1343,6 @@ std::uint32_t parMemberStruct::CompareAndApply(const cmOperator* pValueOperator,
     return *pMemberSlot;
 }
 
-} // namespace rage
-
 // ═════════════════════════════════════════════════════════════════════════════
 // rage::parMemberSimple Implementation
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1348,7 +1351,7 @@ std::uint32_t parMemberStruct::CompareAndApply(const cmOperator* pValueOperator,
  * parMemberSimple::~parMemberSimple() @ 0x8234CA38 | size: 0x50
  * Destructor with optional self-free (vtable slot 0)
  */
-void* rage::parMemberSimple::Destroy(uint32_t freeSelf) {
+void* parMemberSimple::Destroy(uint32_t freeSelf) {
     rage_F6F0();
     
     if (freeSelf & 0x1) {
@@ -1362,7 +1365,7 @@ void* rage::parMemberSimple::Destroy(uint32_t freeSelf) {
  * parMemberSimple::GetType @ 0x8234F690 | size: 0xC
  * Get type identifier from member descriptor (vtable slot 1)
  */
-uint32_t rage::parMemberSimple::GetType() const {
+uint32_t parMemberSimple::GetType() const {
     return m_pMemberDesc->m_typeId;
 }
 
@@ -1370,7 +1373,7 @@ uint32_t rage::parMemberSimple::GetType() const {
  * parMemberSimple::GetSize @ 0x8234F6A0 | size: 0xC
  * Get default value from member descriptor (vtable slot 2)
  */
-uint32_t rage::parMemberSimple::GetSize() const {
+uint32_t parMemberSimple::GetSize() const {
     return m_pMemberDesc->m_defaultValue;
 }
 
@@ -1378,7 +1381,7 @@ uint32_t rage::parMemberSimple::GetSize() const {
  * parMemberSimple::SetType @ 0x8234F6B0 | size: 0xC
  * Set default value in member descriptor (vtable slot 3)
  */
-void rage::parMemberSimple::SetType(uint32_t value) {
+void parMemberSimple::SetType(uint32_t value) {
     m_pMemberDesc->m_defaultValue = value;
 }
 
@@ -1386,7 +1389,7 @@ void rage::parMemberSimple::SetType(uint32_t value) {
  * parMemberSimple::GetAlignment @ 0x8234F6C0 | size: 0xC
  * Get data type from member descriptor (vtable slot 4)
  */
-uint16_t rage::parMemberSimple::GetAlignment() const {
+uint16_t parMemberSimple::GetAlignment() const {
     return m_pMemberDesc->m_dataType;
 }
 
@@ -1394,7 +1397,7 @@ uint16_t rage::parMemberSimple::GetAlignment() const {
  * parMemberSimple::GetFlags @ 0x8234F6D0 | size: 0xC
  * Get data format flags from member descriptor (vtable slot 5)
  */
-uint8_t rage::parMemberSimple::GetFlags() const {
+uint8_t parMemberSimple::GetFlags() const {
     return m_pMemberDesc->m_formatFlags;
 }
 
@@ -1402,7 +1405,7 @@ uint8_t rage::parMemberSimple::GetFlags() const {
  * parMemberSimple::GetCategory @ 0x8234F6E0 | size: 0xC
  * Get additional flags from member descriptor (vtable slot 10)
  */
-uint8_t rage::parMemberSimple::GetCategory() const {
+uint8_t parMemberSimple::GetCategory() const {
     return m_pMemberDesc->m_additionalFlags;
 }
 
@@ -1410,7 +1413,7 @@ uint8_t rage::parMemberSimple::GetCategory() const {
  * parMemberSimple::ResetToDefault @ 0x8234F778 | size: 0x2CC
  * Write value to member storage with type conversion (vtable slot 8)
  */
-void rage::parMemberSimple::ResetToDefault(uint32_t memberOffset) {
+void parMemberSimple::ResetToDefault(uint32_t memberOffset) {
     uint8_t dataType = GetFlags();
     
     if (dataType > 13) {
@@ -1504,7 +1507,7 @@ void rage::parMemberSimple::ResetToDefault(uint32_t memberOffset) {
  * parMemberSimple::CreateOperator @ 0x8234FA48 | size: 0x3FC
  * Export member value to cmOperator representation (vtable slot 6)
  */
-rage::cmOperator* rage::parMemberSimple::CreateOperator(uint32_t memberOffset) {
+cmOperator* parMemberSimple::CreateOperator(uint32_t memberOffset) {
     uint8_t dataType = GetFlags();
     
     if (dataType > 13) {
@@ -1581,7 +1584,7 @@ rage::cmOperator* rage::parMemberSimple::CreateOperator(uint32_t memberOffset) {
  * parMemberSimple::ApplyOperator @ 0x8234FE48 | size: 0x390
  * Import cmOperator value into member storage (vtable slot 7)
  */
-void rage::parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t memberOffset) {
+void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t memberOffset) {
     uint8_t dataType = GetFlags();
     
     if (dataType > 13) {
@@ -1669,3 +1672,5 @@ void rage::parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint
             break;
     }
 }
+
+} // namespace rage
