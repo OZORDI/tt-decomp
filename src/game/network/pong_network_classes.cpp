@@ -551,10 +551,10 @@ void* plrPropMgr_PostLoadChildren(plrPropMgr* self) {
 }
 
 /**
- * plrPropMgr::vfn_21 @ 0x823D4730 | size: 0x6C
- * plrPropMgr::vfn_23 @ 0x823D47A0 | size: 0x58
- * plrPropMgr::vfn_24 @ 0x823D47F8 | size: 0x64
- * plrPropMgr::vfn_25 @ 0x823D4860 | size: 0x40
+ * plrPropMgr::RegisterFields @ 0x823D4730 | size: 0x6C
+ * plrPropMgr::InitAssets @ 0x823D47A0 | size: 0x58
+ * plrPropMgr::ReleaseAssets @ 0x823D47F8 | size: 0x64
+ * plrPropMgr::SetObjectFlags @ 0x823D4860 | size: 0x40
  * 
  * Additional virtual methods - stubs for now.
  */
@@ -654,7 +654,7 @@ void NetDataQuery_ctor_A458(NetDataQuery* self) {
 }
 
 /**
- * NetDataQuery::vfn_4 @ 0x823D1AD0 | size: 0x4
+ * NetDataQuery::Reset @ 0x823D1AD0 | size: 0x4
  * 
  * Empty virtual method (likely pure virtual in base).
  */
@@ -733,8 +733,8 @@ void NetDataQuery_Process(NetDataQuery* self) {
 }
 
 /**
- * NetDataQuery::vfn_10 @ 0x823D17C8 | size: 0x84
- * NetDataQuery::vfn_13 @ 0x823D1850 | size: 0x5C
+ * NetDataQuery::OnComplete @ 0x823D17C8 | size: 0x84
+ * NetDataQuery::GetName @ 0x823D1850 | size: 0x5C
  * 
  * Additional virtual methods - stubs for now.
  */
@@ -957,8 +957,8 @@ void NetStateSync_Process(NetStateSync* self) {
 }
 
 /**
- * NetStateSync::vfn_10 @ 0x823D1D70 | size: 0x60
- * NetStateSync::vfn_13 @ 0x823D1DD0 | size: 0x64
+ * NetStateSync::OnComplete @ 0x823D1D70 | size: 0x60
+ * NetStateSync::GetName @ 0x823D1DD0 | size: 0x64
  * 
  * Additional virtual methods - stubs for now.
  */

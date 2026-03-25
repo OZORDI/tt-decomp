@@ -381,7 +381,7 @@ void swfCONTEXT::ScalarDestructor(int flags) {
     }
 }
 
-void swfCONTEXT::vfn_2() {
+void swfCONTEXT::Execute() {
     // External function declaration
     extern void hudFlashBase_9CA8_h(void* flashObj, void* param1, void* param2);  // @ 0x823F9CA8
     extern void* g_currentSwfContext;  // @ 0x8260281C (SDA offset 10268)
@@ -575,12 +575,12 @@ void swfCMD_PlaceObject2ClipEvent_ScalarDestructor(swfCMD_PlaceObject2ClipEvent*
 
 
 /**
- * swfCMD_DoInitAction::vfn_2() @ 0x821EFC00 | size: 0x10
+ * swfCMD_DoInitAction::Cleanup() @ 0x821EFC00 | size: 0x10
  * 
  * Virtual function slot 2 - tail calls to scalar destructor (slot 1).
  * This is a common RAGE pattern for cleanup functions.
  */
-void swfCMD_DoInitAction::vfn_2() {
+void swfCMD_DoInitAction::Cleanup() {
     // Load vtable and call slot 1 (scalar destructor)
     void** vtable = *((void***)this);
     typedef void (*ScalarDtorFn)(void*, int);
@@ -920,12 +920,12 @@ int swfINSTANCE::VisitMembers() {
 }
 
 /**
- * swfACTIONFUNC::vfn_11() @ 0x823FF4A0 | size: 0x14
+ * swfACTIONFUNC::SetMember() @ 0x823FF4A0 | size: 0x14
  * 
  * Virtual function slot 11 - forwards to inner object's vfn_11.
  * The inner object is stored at offset +7332.
  */
-void swfACTIONFUNC::vfn_11() {
+void swfACTIONFUNC::SetMember() {
     // Load inner object at offset +7332
     void* innerObj = *((void**)((char*)this + 7332));
     
@@ -938,11 +938,11 @@ void swfACTIONFUNC::vfn_11() {
 }
 
 /**
- * swfACTIONFUNC::vfn_12() @ 0x823FF4B8 | size: 0x14
+ * swfACTIONFUNC::DeleteMember() @ 0x823FF4B8 | size: 0x14
  * 
  * Virtual function slot 12 - forwards to inner object's vfn_12.
  */
-void swfACTIONFUNC::vfn_12() {
+void swfACTIONFUNC::DeleteMember() {
     // Load inner object at offset +7332
     void* innerObj = *((void**)((char*)this + 7332));
     
@@ -991,9 +991,9 @@ void swfINSTANCE::Invoke(const char* methodName, void* args, int argCount, void*
 
 // Implementations moved above - see lines 469-519
 
-void swfACTIONFUNC::vfn_8() { /* TODO */ }
-void swfACTIONFUNC::vfn_9() { /* TODO */ }
-void swfACTIONFUNC::vfn_10() { /* TODO */ }
+void swfACTIONFUNC::GetMemberCount() { /* TODO */ }
+void swfACTIONFUNC::VisitMembers() { /* TODO */ }
+void swfACTIONFUNC::GetMember() { /* TODO */ }
 
 
 // ===========================================================================

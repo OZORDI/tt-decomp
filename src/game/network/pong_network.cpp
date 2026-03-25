@@ -668,7 +668,7 @@ pongNetMessageHolder::~pongNetMessageHolder()
 // ===========================================================================
 
 /**
- * RequestDataMessage::vfn_5 — Return message object to pool
+ * RequestDataMessage::ReturnToPool — Return message object to pool
  * @ 0x823BF058 | size: 0x54
  *
  * Returns this message object to the free list in the pool allocator.
@@ -690,7 +690,7 @@ pongNetMessageHolder::~pongNetMessageHolder()
  *   +0x0C: nextFreeIndex (uint16_t)
  *   +0x0E: prevFreeIndex (uint16_t)
  */
-void RequestDataMessage::vfn_5() {
+void RequestDataMessage::ReturnToPool() {
     // Load pool manager structure
     uint8_t* poolMgr = *reinterpret_cast<uint8_t**>(0x825D164C);
     
@@ -720,23 +720,23 @@ void RequestDataMessage::vfn_5() {
 }
 
 /**
- * RequestDataMessage::vfn_6 — Get pool singleton
+ * RequestDataMessage::GetPoolSingleton — Get pool singleton
  * @ 0x823BF120 | size: 0x10
  *
  * Returns pointer to the global pool manager singleton for RequestDataMessage.
  */
-void* RequestDataMessage::vfn_6() {
+void* RequestDataMessage::GetPoolSingleton() {
     return *reinterpret_cast<void**>(0x825D1638);
 }
 
 /**
- * RequestDataMessage::vfn_7 — Get type name string
+ * RequestDataMessage::GetTypeName — Get type name string
  * @ 0x823BF130 | size: 0x4
  *
  * Returns debug/RTTI type name string for this message class.
  * Used for logging and debugging network message traffic.
  */
-const char* RequestDataMessage::vfn_7() {
+const char* RequestDataMessage::GetTypeName() {
     return reinterpret_cast<const char*>(0x8206EE0C);
 }
 
@@ -2153,7 +2153,7 @@ void pongNetMessageHolder_4D18_w() {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongNetMessageHolder::vfn_1 @ 0x823BFBA8 | size: 0x54 [vtable slot 1]
+// pongNetMessageHolder::ScalarDestructor @ 0x823BFBA8 | size: 0x54 [vtable slot 1]
 //
 // Lazy initialization for message pool at offset +8.
 // Allocates 12016 bytes and constructs the message object if not already initialized.

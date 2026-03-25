@@ -367,7 +367,7 @@ extern void* g_someRenderObj2;         // @ 0x825FEAB0 (via r11-21712)
 extern uint64_t g_randomState;         // @ 0x825DA268 (via r11-23864)
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransSwipe::vfn_2()  [vtable slot 2 @ 0x82378AB0]
+// pongScrnTransSwipe::Begin()  [vtable slot 2 @ 0x82378AB0]
 //
 // Initialize/reset the swipe transition. Sets up the pattern index, duration,
 // and initial state. If m_randomize is true, picks a random pattern from the
@@ -382,7 +382,7 @@ extern uint64_t g_randomState;         // @ 0x825DA268 (via r11-23864)
 //   +0x34: m_patternIndex (uint32_t, 0-16)
 //   +0x38: m_randomize (uint8_t)
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransSwipe::vfn_2() {
+void pongScrnTransSwipe::Begin() {
     // If field at +28 is non-zero, call utility function
     if (*(uint32_t*)((uint8_t*)this + 28) != 0) {
         sysCallback::Invoke((void*)((uint8_t*)this + 16), 0);
@@ -672,7 +672,7 @@ extern void hudFlashBase::DrawFlashOverlay(void* hudObj, void* corner1, void* co
 extern void pongScrnTransFadeIn::EndTransition(void* obj);  // @ 0x82378460
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransSwipe::vfn_2()  [vtable slot 2 @ 0x82378AB0]
+// pongScrnTransSwipe::Begin()  [vtable slot 2 @ 0x82378AB0]
 //
 // Initialize/reset the swipe transition. Sets up the pattern index, duration,
 // and initial state. If m_randomize is true, picks a random pattern from the
@@ -686,7 +686,7 @@ extern void pongScrnTransFadeIn::EndTransition(void* obj);  // @ 0x82378460
 //   +0x34: m_patternIndex (uint32_t, 0-16)
 //   +0x38: m_randomize (uint8_t)
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransSwipe::vfn_2() {
+void pongScrnTransSwipe::Begin() {
     // If field at +28 is non-zero, call utility function
     if (field_0x1C != 0) {
         sysCallback::Invoke((void*)((uint8_t*)this + 16), 0);
@@ -890,7 +890,7 @@ void pongScrnTransSwipe::Reset() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransSwipe::vfn_3()  [vtable slot 3 @ 0x82378BD0]
+// pongScrnTransSwipe::Update()  [vtable slot 3 @ 0x82378BD0]
 //
 // Updates the swipe transition by advancing elapsed time and calculating progress.
 // When elapsed time reaches or exceeds duration, marks the transition as finished.
@@ -1041,7 +1041,7 @@ void pongScrnTransSwipe::Reset() {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransFreezeAndCrossFade::vfn_2()  [vtable slot 2 @ 0x82378938]
+// pongScrnTransFreezeAndCrossFade::Begin()  [vtable slot 2 @ 0x82378938]
 //
 // Initializes the freeze-and-cross-fade transition effect. This function sets up
 // the initial state for a screen transition that freezes the current frame and
@@ -1068,7 +1068,7 @@ void pongScrnTransSwipe::Reset() {
 //   4. Set finished flag to false
 //   5. Set initial alpha to 1.0 (fully opaque)
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransFreezeAndCrossFade::vfn_2() {
+void pongScrnTransFreezeAndCrossFade::Begin() {
     // External constants
     extern const float g_floatOne;        // @ 0x8202D108 = 1.0f
     extern const float g_floatZero;       // @ 0x8202D110 = 0.0f
@@ -1090,7 +1090,7 @@ void pongScrnTransFreezeAndCrossFade::vfn_2() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransFreezeAndCrossFade::vfn_4()  [vtable slot 4 @ 0x82378A18]
+// pongScrnTransFreezeAndCrossFade::Render()  [vtable slot 4 @ 0x82378A18]
 //
 // Renders the freeze-and-cross-fade effect by drawing a full-screen quad with
 // the calculated alpha value. Converts the float alpha (0.0-1.0) to an 8-bit
@@ -1110,7 +1110,7 @@ void pongScrnTransFreezeAndCrossFade::vfn_2() {
 //   4. Construct RGBA color: (alpha << 24) | 0x00FFFFFF (white with variable alpha)
 //   5. Call util_03C0 to render the full-screen quad with this color
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransFreezeAndCrossFade::vfn_4() {
+void pongScrnTransFreezeAndCrossFade::Render() {
     // External constants and globals
     extern const float g_alphaMultiplier; // @ 0x82079BE0 = 255.0f
     extern void* g_renderContext;         // @ 0x826063D4 (SDA)
@@ -1128,7 +1128,7 @@ void pongScrnTransFreezeAndCrossFade::vfn_4() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransFreezeAndCrossFade::vfn_5()  [vtable slot 5 @ 0x82378A78]
+// pongScrnTransFreezeAndCrossFade::End()  [vtable slot 5 @ 0x82378A78]
 //
 // Tail-call to pongScrnTransFadeIn::EndTransition. This is a simple forwarding function
 // that delegates to another transition class's implementation, likely for code
@@ -1136,14 +1136,14 @@ void pongScrnTransFreezeAndCrossFade::vfn_4() {
 //
 // Implementation: Direct branch to 0x82378460 (pongScrnTransFadeIn::EndTransition)
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransFreezeAndCrossFade::vfn_5() {
+void pongScrnTransFreezeAndCrossFade::End() {
     // Forward to pongScrnTransFadeIn implementation
     extern void pongScrnTransFadeIn::EndTransition(void* thisPtr);
     pongScrnTransFadeIn::EndTransition(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransFreezeAndCrossFade::vfn_6()  [vtable slot 6 @ 0x82378A80]
+// pongScrnTransFreezeAndCrossFade::Reset()  [vtable slot 6 @ 0x82378A80]
 //
 // Resets the transition state to initial values. This function is likely called
 // when restarting or reinitializing the transition effect.
@@ -1167,7 +1167,7 @@ void pongScrnTransFreezeAndCrossFade::vfn_5() {
 //   4. Load one constant from table at +0
 //   5. Set duration, elapsed time, and alpha fields
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransFreezeAndCrossFade::vfn_6() {
+void pongScrnTransFreezeAndCrossFade::Reset() {
     // External constants
     extern const float g_floatOne;        // @ 0x8202D108 = 1.0f
     extern const float g_floatZero;       // @ 0x8202D110 = 0.0f
