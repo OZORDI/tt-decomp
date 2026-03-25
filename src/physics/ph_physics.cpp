@@ -150,7 +150,9 @@ extern void* g_fragDrawableVtable; // @ 0x82033094
  *   +240   16-byte vector (zeroed)
  *   +256   State fields (all zeroed)
  */
-void rage::fragDrawable::Constructor() {
+// TODO: fragDrawable needs proper namespace/class declaration
+void fragDrawable_Constructor(void* thisPtr) {
+    void* self = thisPtr; (void)self;
     // Call base class initialization
     util_B8A0(this);
     

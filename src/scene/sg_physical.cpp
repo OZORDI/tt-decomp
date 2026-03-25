@@ -87,8 +87,8 @@ void sgPhysicalObject::Transform() {
 
     if (isVisible) {
         // Store render state
-        m_renderDistance = renderData.renderDistance;
-        m_renderFlags = renderData.isVisible;
+        *(float*)((char*)this + 0x80) = renderData.renderDistance;
+        *(uint32_t*)((char*)this + 0x84) = renderData.isVisible;
 
         // Get AABB from bound (vtable slot 10)
         typedef void* (*GetAABBFunc)(void*);
@@ -96,13 +96,15 @@ void sgPhysicalObject::Transform() {
         void* aabbData = getAABB(pBound);
 
         // Submit to draw bucket
-        pongDrawBucket_AddEntry(g_drawBucket, &m_pRenderData, aabbData);
-    } else if (!m_isHidden) {
+        void* renderDataPtr = (char*)this + 0x88;
+        pongDrawBucket_AddEntry(g_drawBucket, renderDataPtr, aabbData);
+    } else if (!*(uint8_t*)((char*)this + 0x8C)) {
         // Object not visible and not flagged as hidden — cleanup
         typedef void (*CleanupFunc)(void*);
-        void** renderVtable = *(void***)&m_pRenderData;
+        void* renderDataPtr = (char*)this + 0x88;
+        void** renderVtable = *(void***)renderDataPtr;
         CleanupFunc cleanup = (CleanupFunc)renderVtable[1];
-        cleanup(&m_pRenderData);
+        cleanup(renderDataPtr);
     }
 }
 

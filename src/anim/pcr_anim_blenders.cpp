@@ -46,8 +46,10 @@
  *   m_bComplete       (+0x1A8)  — byte at +424: sequence is done
  */
 
-#include "../game/pong_creature.hpp"
-#include "../physics/ph_physics.hpp"
+// Forward declarations — pong_creature.hpp is in src/ not include/
+struct pongCreatureInst;
+struct LocomotionStateAnim;
+#include <cstdint>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Externals
