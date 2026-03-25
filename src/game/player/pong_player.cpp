@@ -3010,8 +3010,8 @@ int pongPlayer::CompareTypeInfo(void* other) {
  * constants to fields at +5600, +5604, +5608.
  */
 void pongPlayer::ResetShotTimerDefaults() {
-    extern void pongPlayer_76E8_g(void* shotTimer);
-    pongPlayer_76E8_g((char*)this + 5404);
+    extern void ResetShotTimingState(void* shotTimer);  // @ 0x821A76E8
+    ResetShotTimingState((char*)this + 5404);
 
     // Reset timing defaults (values from .rdata constants)
     *(float*)((char*)this + 5600) = 0.0f;   // shot start time
