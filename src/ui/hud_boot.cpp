@@ -63,7 +63,7 @@ static void SetStringBootSetting(void* networkClient, const char* key, char* val
 // @ 0x823069D8
 extern void hudBoot_BaseDtor(hudBoot* self);
 
-// xam_6C88_g @ 0x82566C88
+// xam_CreateEvent @ 0x82566C88
 extern uint32_t XAM_CreateHandle(uint32_t type, uint32_t initialCount,
                                  uint32_t maxCount, uint32_t flags);
 

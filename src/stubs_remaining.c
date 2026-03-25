@@ -138,7 +138,7 @@ void atHashMap_Clear(void* map) {
     (void)map;
 }
 
-void atSingleton_2598_w(void* singleton) {
+void rage_GameLoopThreadEntry(void* singleton) {
     (void)singleton;
 }
 
@@ -154,11 +154,11 @@ void atSingleton_Remove(void* singleton) {
 // Audio System Functions
 // ============================================================================
 
-void audSystem_configure_2930(void* config) {
+void audSystem_Configure(void* config) {
     (void)config;
 }
 
-void audSystem_shutdown_29C0(void) {
+void audSystem_Shutdown(void) {
     // Audio shutdown
 }
 
@@ -259,7 +259,7 @@ void* grcDisplay_Create(void) {
 // HSM (Hierarchical State Machine) Functions
 // ============================================================================
 
-void hsmContext_SetNextState_2800(void* context, int state) {
+void hsmContext_SetNextState(void* context, int state) {
     (void)context;
     (void)state;
 }
@@ -276,7 +276,7 @@ void io_Input_poll(void) {
 // Network System Functions
 // ============================================================================
 
-void netSystem_shutdown_B510(void) {
+void netSystem_Shutdown(void) {
     // Network shutdown
 }
 
@@ -286,14 +286,14 @@ void netSystem_shutdown_B510(void) {
 
 void nop_8240E6D0(const char* fmt, ...) {
     (void)fmt;
-    // Debug log - no-op
+    // Debug log - no-op (alias of rage_DebugLog @ 0x8240E6D0)
 }
 
 // ============================================================================
 // Physics Functions
 // ============================================================================
 
-void phMaterialMgrImpl_AE20_p46(void* mgr) {
+void phMaterialMgrImpl_UpdateActive(void* mgr) {
     (void)mgr;
 }
 
@@ -309,12 +309,12 @@ void rage_strchr(void) {
 // Game Functions
 // ============================================================================
 
-void pongPostEffects_ctor_F160(void* effects) {
+void pongPostEffects_Create(void* effects) {
     (void)effects;
 }
 
-void nt_0420(void) {
-    // Network function
+void contentManager_LoadUserContent(void) {
+    // XAM content enumeration / user-config loading
 }
 
 void pg_EDE0_gen(void) {
@@ -334,8 +334,8 @@ void* rage_BlockAlloc(size_t size) {
     return NULL;
 }
 
-void rage_CEF0(void) {
-    // RAGE function
+void hsmContext_InitTimers(void) {
+    // Initialise hsmContext timers and float state
 }
 
 void rage_DebugLog(const char* fmt, ...) {
@@ -393,7 +393,7 @@ void rage_free_00C0(void* ptr) {
     rage_free(ptr);
 }
 
-void rage_game_obj_init_CB60(void* obj) {
+void hsmContext_Init(void* obj) {
     (void)obj;
 }
 
@@ -454,16 +454,16 @@ void util_CE30(void) {
 // XAM Functions
 // ============================================================================
 
-void xam_6C88_g(void) {
-    // XAM function
+void xam_CreateEvent(void) {
+    // Creates a kernel event object via NtCreateEvent
 }
 
 // ============================================================================
 // XE (Xbox Executable) Functions
 // ============================================================================
 
-void xe_5BB0(void) {
-    // XE function
+void grmShaderPreset_AllocArray(void) {
+    // Allocates grmShaderPreset array for a given count
 }
 
 void* xe_EC88(uint32_t size) {
@@ -553,16 +553,16 @@ void SetTrainingState(int state) {
 // Network Client Functions
 // ============================================================================
 
-void SinglesNetworkClient_EFB8_g(void) {
-    // Network client function
+void SinglesNetworkClient_TickAll(void) {
+    // Per-frame tick of all network session slots and callback entries
 }
 
 // ============================================================================
 // Game Logic Functions
 // ============================================================================
 
-void gmLogic_vfn_3(void) {
-    // Game logic virtual function
+void gmLogic_StepFrame(void) {
+    // Iterates child nodes calling vtable[3] (StepFrame) on each
 }
 
 // ============================================================================

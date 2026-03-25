@@ -3,11 +3,11 @@
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  *
  * Covers:
- *   rage_subsystem_init_2430  — Allocates Xbox thread semaphores and registers
- *                               the main game thread with the RAGE scheduler.
- *   audSystem_init_1ED0       — Walks a null-terminated list of audio-device
- *                               path strings, builds full file-system paths, and
- *                               opens each device via fiDevice_GetDevice.
+ *   rage_subsystem_init  — Allocates Xbox thread semaphores and registers
+ *                          the main game thread with the RAGE scheduler.
+ *   audSystem_init       — Walks a null-terminated list of audio-device
+ *                          path strings, builds full file-system paths, and
+ *                          opens each device via fiDevice_GetDevice.
  */
 
 #include "rage/rage_system.hpp"
@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <string.h>
 extern void*    g_game_obj_ptr;
-extern void     xe_main_thread_init_0038(void);
+extern void     sysMemAllocator_InitThreadHeap(void);  /* @ 0x820C0038 */
 
 #include <stdio.h>   /* _snprintf */
 
@@ -24,10 +24,10 @@ extern void     xe_main_thread_init_0038(void);
 // ---------------------------------------------------------------------------
 
 // Xbox thread / synchronisation primitives (XAM layer)
-// xam_6C88_g — Creates a synchronisation object (semaphore/event).
+// xam_CreateEvent — Creates a kernel event object via NtCreateEvent.
 //   r3=type?, r4=initialCount, r5=maxCount, r6=flags → returns handle
-extern uint32_t xam_6C88_g(uint32_t type, uint32_t initCount,
-                            uint32_t maxCount, uint32_t flags); // @ 0x82566C88
+extern uint32_t xam_CreateEvent(uint32_t type, uint32_t initCount,
+                                uint32_t maxCount, uint32_t flags); // @ 0x82566C88
 
 // RAGE kernel thread registration.
 // r3=func, r4=param, r5=stack_size, r6=base_priority_delta,
@@ -41,9 +41,8 @@ extern uint32_t rage_RegisterThread(void* func, void* param,
                                           uint32_t processorAffinity); // @ 0x82187FD0
 
 
-// "Assert / log" function called when the subsystem init guard fails
-// (lock count is zero — double-init or premature call).
-extern void nop_8240E6D0(const char* msg);  // @ 0x8240E6D0
+// Debug log — no-op (blr) in release builds; fires on guard failures.
+extern void rage_DebugLog(const char* msg, ...);  // @ 0x8240E6D0
 
 // File-device layer
 extern struct fiDevice* fiDevice_GetDevice(const char* path,
@@ -60,11 +59,12 @@ extern uint32_t g_semIO;       /* @ 0x82606600 */
 // g_mainThreadHandle — kernel handle for the RAGE main-loop scheduler thread
 extern uint32_t g_mainThreadHandle;  /* @ 0x825D0078 */
 
-// atSingleton_2598_w — RAGE main-loop scheduler thread entry function
-// Registered by rage_subsystem_init as the primary game-loop thread.
-extern void atSingleton_2598_w(void* gameObjPtr);  /* @ 0x822E2598 */
+// rage_GameLoopThreadEntry — RAGE main-loop scheduler thread entry function.
+// Loops calling vtable[2] (DoFrame) then vtable[1] (WaitVSync) on the
+// root game object, driving the main update/render cadence.
+extern void rage_GameLoopThreadEntry(void* gameObjPtr);  /* @ 0x822E2598 */
 
-// Subsystem init debug strings (.rdata, release no-ops via nop_8240E6D0)
+// Subsystem init debug strings (.rdata, release no-ops via rage_DebugLog)
 extern const char k_subsysInitErrFmt[];   /* @ 0x8205A30C */
 extern const char k_rageThreadNameFmt[];  /* @ 0x8205A340 — debug thread name */
 
@@ -73,19 +73,19 @@ extern const char k_rageThreadNameFmt[];  /* @ 0x8205A340 — debug thread name 
 // rage_subsystem_init  @ 0x822E2430 | size: 0xDC
 //
 // Initialises the three RAGE scheduler semaphores and registers the RAGE
-// main-loop scheduler thread (atSingleton_2598_w @ 0x822E2598).
+// main-loop scheduler thread (rage_GameLoopThreadEntry @ 0x822E2598).
 //
 // Step 1: Guard — aborts (with debug log) if g_game_obj_ptr is null.
 //         The root game object must be created before subsystems can init.
 //
-// Step 2: Allocate three XAM kernel semaphores via xam_6C88_g:
+// Step 2: Allocate three XAM kernel semaphores via xam_CreateEvent:
 //           g_semRender (0x826065F8): type=0, init=1, max=0, flags=0
 //           g_semUpdate (0x826065FC): type=0, init=1, max=0, flags=0
 //           g_semIO     (0x82606600): type=0, init=1, max=1, flags=0
 //         NOTE: max=0 for render/update (binary semaphores), max=1 for IO.
 //
 // Step 3: Register the RAGE main-loop scheduler thread:
-//           func   = atSingleton_2598_w (game-loop scheduler)
+//           func   = rage_GameLoopThreadEntry (game-loop scheduler)
 //           param  = g_game_obj_ptr     (startup arg: root game object)
 //           stack  = 0x18000 (98304 bytes)
 //           basePriorityDelta = 8  → KeSetBasePriorityThread(h, 8-8=0)
@@ -103,22 +103,22 @@ extern const char k_rageThreadNameFmt[];  /* @ 0x8205A340 — debug thread name 
 void rage_subsystem_init(void) {
     // Guard: root game object must exist.
     if (g_game_obj_ptr == NULL) {
-        nop_8240E6D0(k_subsysInitErrFmt);
+        rage_DebugLog(k_subsysInitErrFmt);
         return;
     }
 
     // Allocate render semaphore: binary (max=0), starts signalled (init=1).
-    g_semRender = xam_6C88_g(0, 1, 0, 0);
+    g_semRender = xam_CreateEvent(0, 1, 0, 0);
 
     // Allocate update semaphore: binary (max=0), starts signalled (init=1).
-    g_semUpdate = xam_6C88_g(0, 1, 0, 0);
+    g_semUpdate = xam_CreateEvent(0, 1, 0, 0);
 
     // Allocate IO semaphore: counting (max=1), starts signalled (init=1).
-    g_semIO = xam_6C88_g(0, 1, 1, 0);
+    g_semIO = xam_CreateEvent(0, 1, 1, 0);
 
     // Register the RAGE main-loop scheduler thread.
     g_mainThreadHandle = rage_RegisterThread(
-        (void*)atSingleton_2598_w, /* r3: thread entry function             */
+        (void*)rage_GameLoopThreadEntry, /* r3: thread entry function             */
         (void*)g_game_obj_ptr,     /* r4: startup param = root game object  */
         98304u,                    /* r5: stack size = 0x18000              */
         8u,                        /* r6: base priority delta (8-8=0)       */
@@ -256,7 +256,7 @@ void audSystem_init(void)
 //
 // Steps:
 //  1. Stamp pool capacity (256) into g_pgStreamerPool.capacity.
-//  2. Ensure the main-thread heap context is live (xe_main_thread_init_0038).
+//  2. Ensure the main-thread heap context is live (sysMemAllocator_InitThreadHeap).
 //  3. Allocate the backing pool via the RAGE sysMemAllocator vtable slot 1:
 //       Alloc(size=0xA000, align=16)  →  256 × 160 bytes = 40 960 bytes.
 //  4. Build a singly-linked free list across all 256 nodes:
@@ -309,7 +309,7 @@ void pgStreamer_Init(void)
     g_pgStreamerPool.capacity = 256;
 
     // Ensure the main-thread allocator heap is ready.
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitThreadHeap();
 
     // Allocate backing pool: 256 nodes × 160 bytes = 0xA000 bytes, 16-byte aligned.
     // VCALL: allocObj = *(g_sda_base[0] + 4);  call allocObj->vtable[1](size, align)

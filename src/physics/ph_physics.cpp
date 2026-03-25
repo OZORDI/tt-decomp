@@ -19,7 +19,7 @@
  *   ch != 0  →  Returns pointer to first byte equal to ch, or NULL if not found.
  *   ch == 0  →  Returns pointer to the NUL terminator (scan-to-end shortcut).
  *
- * This variant is used during argument/config parsing in rage_app_init_6418
+ * This variant is used during argument/config parsing in rage_AppInit
  * to locate '/' or '-' prefix characters in command-line tokens.
  *
  * The function is an alias of strchr in the binary (the linker merged the

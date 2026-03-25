@@ -96,23 +96,27 @@ extern const char k_fpsFmtStr[];
 /* Standard aspect scale constant (rdata). */
 extern const float k_standardAspectScale;
 
-/* Network client per-frame tick @ 0x8221EFB8 */
-extern void SinglesNetworkClient_EFB8_g(void);
+/* Network client per-frame tick — iterates all session slots and
+ * callback-table entries. @ 0x8221EFB8 */
+extern void SinglesNetworkClient_TickAll(void);
 
 /* Physics world addref wrapper @ 0x8222AB48 */
 extern void rage_AcquireReference(void* pObj);  /* rage::AcquireReference @ 0x8222AB48 */
 
-/* Physics material manager per-frame update @ 0x8222AE20 */
-extern void phMaterialMgrImpl_AE20_p46(void* pObj);
+/* Physics material manager per-frame update — iterates active entries
+ * and calls vtable[7] (Update) on each. @ 0x8222AE20 */
+extern void phMaterialMgrImpl_UpdateActive(void* pObj);
 
-/* HSM set-next-state @ 0x82222800 */
-extern void hsmContext_SetNextState_2800(void* pHsm, int32_t stateIdx);
+/* HSM set-next-state — validates transition via vtable[5], stores pending
+ * state index at +16. @ 0x82222800 */
+extern void hsmContext_SetNextState(void* pHsm, int32_t stateIdx);
 
 /* Xbox 360 video-mode query @ 0x82585F0C */
 extern void XGetVideoMode(void* pMode);
 
-/* gmLogic step-frame dispatch @ 0x82222A78 */
-extern void gmLogic_vfn_3(void* pLogic);
+/* gmLogic step-frame dispatch — iterates child nodes, calls vtable[3]
+ * (StepFrame) on each, then resets frame index. @ 0x82222A78 */
+extern void gmLogic_StepFrame(void* pLogic);
 
 /* ── XVIDEO_MODE layout (Xbox 360 SDK) ────────────────────────────────────── */
 typedef struct XVideoMode {
@@ -135,21 +139,21 @@ typedef struct XVideoMode {
  *
  * Thunk — tail-calls gmLogic::StepFrame (vtable slot 3 of the global gmLogic
  * singleton).  The function is only 4 bytes: a single unconditional branch to
- * gmLogic_vfn_3 @ 0x82222A78.
+ * gmLogic_StepFrame @ 0x82222A78.
  *
- * gmLogic_vfn_3 iterates child nodes registered in the gmLogic singleton,
+ * gmLogic_StepFrame iterates child nodes registered in the gmLogic singleton,
  * invokes vtable slot 3 on each, then resets m_nLastFrameIndex to -1 and
  * clears the child array.
  * ═══════════════════════════════════════════════════════════════════════════ */
-/* gmLogic global singleton pointer — gmLogic_vfn_3 uses this directly. */
+/* gmLogic global singleton pointer — gmLogic_StepFrame uses this directly. */
 extern void* g_pGmLogic;
 
 void gameLoop_StepFrame(gameLoop* pLoop)
 {
     (void)pLoop;
-    /* The assembly is just "b gmLogic_vfn_3" — the pLoop argument is unused;
-     * gmLogic_vfn_3 reads from g_pGmLogic internally. */
-    gmLogic_vfn_3(g_pGmLogic);
+    /* The assembly is just "b gmLogic_StepFrame" — the pLoop argument is unused;
+     * gmLogic_StepFrame reads from g_pGmLogic internally. */
+    gmLogic_StepFrame(g_pGmLogic);
 }
 
 
@@ -159,7 +163,7 @@ void gameLoop_StepFrame(gameLoop* pLoop)
  * Per-frame logic update:
  *   1. Update m_bUpdateEnabled from m_nPendingUpdates (>0 → 1, else 0).
  *   2. Dispatch Update (slot 2) to the embedded hsmContext.
- *   3. Tick the network client (SinglesNetworkClient_EFB8_g).
+ *   3. Tick the network client (SinglesNetworkClient_TickAll).
  *   4. Dispatch post-update virtual (slot 16 on gameLoop).
  * ═══════════════════════════════════════════════════════════════════════════ */
 void gameLoop_Update(gameLoop* pLoop)
@@ -171,7 +175,7 @@ void gameLoop_Update(gameLoop* pLoop)
     ((SmUpdateFn)pLoop->m_stateMachine.vtable[2])(&pLoop->m_stateMachine);
 
     /* Per-frame network tick (Xbox Live messages, lobby). */
-    SinglesNetworkClient_EFB8_g();
+    SinglesNetworkClient_TickAll();
 
     /* Game-specific post-update (slot 16 on gameLoop). */
     typedef void (*PostUpdateFn)(gameLoop*);
@@ -190,7 +194,7 @@ void gameLoop_Update(gameLoop* pLoop)
  *   5. For each physics object [0..m_nObjects] (world +44/+48 ptr/count):
  *        • slot 1 (IsActive) — if true, call slot 7 (Tick) on that object.
  *   6. Tick standalone ball object (world +60) if non-null.
- *   7. phMaterialMgrImpl_AE20_p46(world) — material manager post-tick.
+ *   7. phMaterialMgrImpl_UpdateActive(world) — material manager post-tick.
  *   8. Get current HSM state (m_stateMachine.m_pStates[m_nCurState]) and
  *      call its slot 4 (state Tick).
  *   9. Dispatch slot 12 (post-tick) on gameLoop.
@@ -233,7 +237,7 @@ void gameLoop_Tick(gameLoop* pLoop)
     }
 
     /* Physics material manager post-tick. */
-    phMaterialMgrImpl_AE20_p46(pWorld);
+    phMaterialMgrImpl_UpdateActive(pWorld);
 
     /* Current HSM state's Tick (slot 4). */
     uint8_t* pSmBytes = (uint8_t*)&pLoop->m_stateMachine;
@@ -250,7 +254,7 @@ void gameLoop_Tick(gameLoop* pLoop)
     if (pLoop->m_bSkipRender && g_bRestartPending) {
         g_bRestartPending = 0;
         pLoop->m_bSkipRender = 1;
-        hsmContext_SetNextState_2800(&pLoop->m_stateMachine, 1);
+        hsmContext_SetNextState(&pLoop->m_stateMachine, 1);
     }
 }
 
@@ -513,7 +517,7 @@ void gameLoop_Present(gameLoop* pLoop)
  *
  * Constructor — initialises a gameLoop object to default state.
  *   1. Set parent vtable (lbl_8204E9AC), zero base fields.
- *   2. Initialise hsmContext at +24 via rage_game_obj_init_CB60,
+ *   2. Initialise hsmContext at +24 via hsmContext_Init,
  *      set its vtable to lbl_8204E984.
  *   3. Load default FPS from rdata (lbl_8202D108) → m_fTargetFPS, m_fDefaultFPS.
  *   4. Load initial scene-time from rdata (lbl_8202D110) → m_fLastSceneTime,
@@ -529,8 +533,9 @@ extern void* gameLoop_vtable_parent;   /* lbl_8204E9AC */
 extern void* gameLoop_vtable_derived;  /* lbl_82059154 */
 extern void* hsmContext_vtable_init;   /* lbl_8204E984 */
 
-/* Embedded state-machine initialiser @ 0x8215CB60 */
-extern void rage_game_obj_init_CB60(hsmContext* pHsm);
+/* Embedded state-machine initialiser — sets vtable, timestamps,
+ * flags, and default float fields. @ 0x8215CB60 */
+extern void hsmContext_Init(hsmContext* pHsm);
 
 /* Float constants in .rdata */
 extern const float k_defaultFPS;       /* lbl_8202D108 */
@@ -549,7 +554,7 @@ void gameLoop_init_C2D0(gameLoop* pLoop)
     pLoop->_unk010 = -1;
 
     /* Initialise embedded hsmContext, then set its vtable. */
-    rage_game_obj_init_CB60(&pLoop->m_stateMachine);
+    hsmContext_Init(&pLoop->m_stateMachine);
     pLoop->m_stateMachine.vtable = &hsmContext_vtable_init;
 
     /* Store initial refresh rate float. */
@@ -614,7 +619,7 @@ void gameLoop_init_C2D0(gameLoop* pLoop)
  *        else → rage_free.
  *   3. Null SDA audio globals (+25444, +25436), load +25448,
  *      null +25440, free loaded +25448 ptr, null +25448.
- *   5. audSystem_shutdown_29C0 — full audio system teardown.
+ *   5. audSystem_Shutdown — full audio system teardown.
  *   6. Destroy physics world at lbl_8271A358 via VCALL slot 0.
  *   7. Shutdown hsmContext at +24 via VCALL slot 6.
  *   8. Conditional grcDevice shutdown (FA58 or alt 40D0).
@@ -631,8 +636,9 @@ extern void* g_audio_unknown_25436; /* SDA+25436 @ 0x8260635C */
 extern void* g_audio_unknown_25440; /* SDA+25440 @ 0x82606360 */
 extern void* g_audio_config_ptr;    /* SDA+25448 @ 0x82606368 */
 
-/* Audio system shutdown @ 0x822229C0 */
-extern void audSystem_shutdown_29C0(gameLoop* pLoop);
+/* Audio system shutdown — destroys active device, iterates channel array
+ * calling vtable[2] (Close), then calls vtable[9] (Reset). @ 0x822229C0 */
+extern void audSystem_Shutdown(gameLoop* pLoop);
 
 /* GRC device shutdown variants. */
 extern void grcDevice_shutdown(void);
@@ -644,8 +650,9 @@ extern uint8_t g_grcDeviceState[8];  /* lbl_825CA8B8 */
 /* Net system singleton pointer @ 0x8271A374 */
 extern void* g_pNetSystem;
 
-/* Net system shutdown @ 0x8234B510 */
-extern void netSystem_shutdown_B510(void* pNetSys);
+/* Net system shutdown — tears down sessions, destroys iterator entries,
+ * clears arrays, and releases net subsystem refs. @ 0x8234B510 */
+extern void netSystem_Shutdown(void* pNetSys);
 
 /* Thread pool linked list head @ 0x825EBCBC */
 extern void* g_threadpool_head;
@@ -695,7 +702,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
     g_audio_config_ptr = NULL;  /* SDA+25448 */
 
     /* 5. Full audio system shutdown. */
-    audSystem_shutdown_29C0(pLoop);
+    audSystem_Shutdown(pLoop);
 
     /* 6. Destroy physics world if present (VCALL slot 0 with arg 1). */
     if (g_pPhysicsWorld != NULL) {
@@ -726,7 +733,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
     {
         void* pNet = g_pNetSystem;
         if (pNet != NULL) {
-            netSystem_shutdown_B510(pNet);
+            netSystem_Shutdown(pNet);
             rage_free(pNet);
         }
     }
@@ -762,7 +769,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
  *  10. Create display device via rage_obj_factory → grcDisplay (84 bytes).
  *  11. Display-mode matching loop → m_nDisplayModeIdx (+512).
  *  12. Allocate physics world container (64 bytes) → g_pPhysicsWorld (0x8271A358).
- *  13. Call audSystem_configure_2930 with config.
+ *  13. Call audSystem_Configure with config.
  *  14. Store config+20 to m_nUnknown504 (+504) on success.
  *
  * Config struct layout (passed in r4):
@@ -772,7 +779,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
  *   +0x10  float     fTargetFPS     — validated and stored at +500
  *   +0x14  uint32_t  nUnknown20     — stored at +504 on success
  *   +0x1C  uint32_t  pConfigPath    — optional config file path
- *   +0x20  uint32_t  nUnknown32     — passed to xe_5BB0
+ *   +0x20  uint32_t  nUnknown32     — passed to grmShaderPreset_AllocArray
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /* TLS fiber setup (CRT) @ 0x82566B78 */
@@ -787,9 +794,9 @@ extern const float k_fpsUpperBound;     /* lbl_82079BE0 */
 
 /* Subsystem init helpers. */
 extern void rage_SetRenderMode(int32_t nFPS, int32_t flag);  /* @ 0x8214F9A8 */
-extern void xe_main_thread_init_0038(void);
+extern void sysMemAllocator_InitThreadHeap(void);
 extern void rage_GetExecutableName(const char* pKey, uint32_t* pOut);
-extern void rage_CEF0(hsmContext* pHsm);
+extern void hsmContext_InitTimers(hsmContext* pHsm);  /* @ 0x8215CEF0 */
 
 /* Net system / singleton init @ 0x8234B618 */
 extern void rage_InitializeNetSystem(void);  /* rage::InitializeNetSystem @ 0x8221EFxx */
@@ -799,8 +806,9 @@ extern void rage_InitializeNetSystem(void);  /* rage::InitializeNetSystem @ 0x82
  * Slot 1 = allocate(size, alignment). */
 extern void* g_pAllocator;  /* SDA+0 @ 0x82600000 — points to allocator table */
 
-/* pongPostEffects constructor @ 0x8213F160 */
-extern void* pongPostEffects_ctor_F160(void* pMem);
+/* pongPostEffects constructor — initialises post-processing effect chain
+ * (bloom, color grading, etc.) in pre-allocated memory. @ 0x8213F160 */
+extern void* pongPostEffects_Create(void* pMem);
 
 /* Post-effects singleton @ 0x826063D4 */
 extern void* g_pPostEffects;
@@ -813,8 +821,8 @@ extern void* fiStreamBuf_OpenAll(void* pFactory, void* pVtable,
                                           void* pParam, int bFlag1, int bFlag2);
 extern void fiStreamBuf_Close(void* pObj);
 
-/* Warning-log no-op @ 0x8240E6D0 */
-extern void nop_8240E6D0(const char* pFmt, ...);
+/* Debug log — no-op (blr) in release builds. @ 0x8240E6D0 */
+extern void rage_DebugLog(const char* pFmt, ...);
 
 /* Display device creation @ 0x82243E20 */
 extern void grcDisplay_Create(void* pDisplay);
@@ -852,7 +860,7 @@ extern void InitializeRenderConfig(void);           /* grcDevice_InitializeRende
 extern void SetupRenderFiber(void* pObj);           /* grcDevice_SetupRenderFiber @ 0x8235AD98 */
 extern void CleanupRenderTargets(void* pObj);       /* grcDevice_CleanupRenderTargets @ 0x823666F0 */
 extern int  ConfigureRenderTargets(void* pObj, void* pCfg); /* grcDevice_ConfigureRenderTargets @ 0x82366530 */
-extern void xe_5BB0(uint32_t val);
+extern void grmShaderPreset_AllocArray(uint32_t count);  /* @ 0x820F5BB0 */
 
 /* Init-complete flag @ 0x825EE296 */
 extern uint8_t g_bInitComplete;
@@ -870,8 +878,9 @@ extern void* k_factoryVtable;     /* lbl_8204E8CC */
 /* Physics world container vtable @ 0x8204EADC */
 extern void* physicsWorld_vtable;
 
-/* Callback setup for config file. */
-extern void nt_0420(void* pPath, const char* pStr);
+/* Content enumeration / user-config loading via XamContentCreateEnumerator.
+ * Reads user content matching the given name. @ 0x82410420 */
+extern void contentManager_LoadUserContent(void* pPath, const char* pStr);
 
 /* Callback function pointer @ 0x82228C68 */
 extern void rage_RenderDebugOverlay(void);  /* @ 0x82228C68 */
@@ -879,8 +888,9 @@ extern void rage_RenderDebugOverlay(void);  /* @ 0x82228C68 */
 /* Callback store location @ 0x825C2AD8 */
 extern void* g_configCallback;
 
-/* Audio system configure @ 0x82222930 */
-extern void audSystem_configure_2930(gameLoop* pLoop, void* pConfig);
+/* Audio system configure — resets state index, calls vtable[8] (Reset),
+ * iterates channels calling vtable[1] (Configure), then vtable[3]. @ 0x82222930 */
+extern void audSystem_Configure(gameLoop* pLoop, void* pConfig);
 
 /* Non-widescreen init config @ 0x825EB900. */
 extern uint8_t g_nonWsConfig[];
@@ -904,7 +914,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     float fTargetFPS = *(float*)(pCfg + 16);
     if (fTargetFPS < k_fpsLowerBound || fTargetFPS > k_fpsUpperBound) {
         /* FPS out of valid range — log and use default. */
-        nop_8240E6D0("Invalid FPS %f", (double)fTargetFPS);
+        rage_DebugLog("Invalid FPS %f", (double)fTargetFPS);
         fTargetFPS = k_defaultFPS;
     }
     pLoop->m_fTargetFPS = fTargetFPS;
@@ -916,7 +926,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     }
 
     /* 5. Allocate net system singleton (24 bytes). */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitThreadHeap();
     {
         /* Allocator chain: SDA+0 → table → entry at +4 → VCALL slot 1. */
         typedef void* (*AllocFn)(void*, int32_t, int32_t);
@@ -962,7 +972,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         pLoop->m_fRefreshRate = (float)nTruncated;
 
         /* Dispatch hsmContext init completion. */
-        rage_CEF0(pSm);
+        hsmContext_InitTimers(pSm);
         typedef void (*SmInitFn)(hsmContext*);
         ((SmInitFn)pSm->vtable[1])(pSm);
 
@@ -985,10 +995,10 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
 
     /* Store config+32 value and clear init state flag. */
     g_initStateFlag = 0;
-    xe_5BB0(*(uint32_t*)(pCfg + 32));
+    grmShaderPreset_AllocArray(*(uint32_t*)(pCfg + 32));
 
     /* 9. Allocate pongPostEffects (512 bytes, align 16). */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitThreadHeap();
     {
         typedef void* (*AllocFn)(void*, int32_t, int32_t);
         void* allocObj = *(void**)((uint8_t*)g_pAllocator + 4);
@@ -996,7 +1006,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         void* pFxMem = ((AllocFn)vt[1])(allocObj, 512, 16);
 
         if (pFxMem != NULL) {
-            g_pPostEffects = pongPostEffects_ctor_F160(pFxMem);
+            g_pPostEffects = pongPostEffects_Create(pFxMem);
         } else {
             g_pPostEffects = NULL;
         }
@@ -1020,7 +1030,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         if (pCreated != NULL) {
             fiStreamBuf_Close(pCreated);
         } else {
-            nop_8240E6D0("Failed to create display device");
+            rage_DebugLog("Failed to create display device");
         }
     }
 
@@ -1061,7 +1071,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     g_bInitComplete = 1;
 
     /* 12. Allocate display device object (84 bytes, align 16). */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitThreadHeap();
     {
         typedef void* (*AllocFn)(void*, int32_t, int32_t);
         void* allocObj = *(void**)((uint8_t*)g_pAllocator + 4);
@@ -1099,12 +1109,12 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         if (pConfigPath != NULL) {
             pLoop->m_nConfigParam540 = *(uint32_t*)(pCfg + 28);
             g_configCallback = (void*)rage_RenderDebugOverlay;
-            nt_0420(pConfigPath, "GameConfig");
+            contentManager_LoadUserContent(pConfigPath, "GameConfig");
         }
     }
 
     /* 14. Allocate physics world container (64 bytes, align 16). */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitThreadHeap();
     {
         typedef void* (*AllocFn)(void*, int32_t, int32_t);
         void* allocObj = *(void**)((uint8_t*)g_pAllocator + 4);
@@ -1149,7 +1159,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         }
 
         /* Allocate backing buffer for physics world container. */
-        xe_main_thread_init_0038();
+        sysMemAllocator_InitThreadHeap();
         {
             typedef void* (*AllocFn)(void*, int32_t, int32_t);
             void* allocObj2 = *(void**)((uint8_t*)g_pAllocator + 4);
@@ -1165,7 +1175,7 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     }
 
     /* 15. Configure audio system. */
-    audSystem_configure_2930(pLoop, pConfig);
+    audSystem_Configure(pLoop, pConfig);
 
     /* 16. Store config+20 to m_nUnknown504 on vtable slot 6 success. */
     {
