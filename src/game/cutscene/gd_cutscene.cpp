@@ -6,6 +6,7 @@
  */
 
 #include "game/gd_cutscene.hpp"
+#include "game/gd_cutscene_strings.hpp"
 #include "rage/memory.h"
 #include <cstring>
 #include <cstdio>
@@ -71,19 +72,19 @@ void gdCSCharAnimData::PostLoadProperties() {
     
     // Validate FileName exists
     if (!m_pFileName || m_pFileName[0] == '\0') {
-        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - missing property 'FileName'");
+        nop_8240E6D0(g_str_gdCSCharAnimData_missingFileName);
         return;
     }
     
     // Validate duration is non-negative
     const float MIN_DURATION = 0.0f;
     if (m_duration < MIN_DURATION) {
-        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - 'TimeOffset' cannot be negative");
+        nop_8240E6D0(g_str_gdCSCharAnimData_negTimeOffset);
     }
     
     // Validate weight is non-negative
     if (m_weight < 0) {
-        nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - cannot have negative weight");
+        nop_8240E6D0(g_str_gdCSCharAnimData_negWeight);
     }
     
     // Validate emote range
@@ -96,7 +97,7 @@ void gdCSCharAnimData::PostLoadProperties() {
         }
     }
     
-    nop_8240E6D0("gdCSCharAnimData::PostLoadProperties() - invalid emote range");
+    nop_8240E6D0(g_str_gdCSCharAnimData_invalidEmote);
 }
 
 // ============================================================================
@@ -297,7 +298,7 @@ void gdCSActionCamAnimData::PostLoadProperties() {
     xmlNodeStruct_vfn_2(this);
     
     if (!m_pCameraName || m_pCameraName[0] == '\0') {
-        nop_8240E6D0("gdCSActionCamAnimData::PostLoadProperties() - missing camera name");
+        nop_8240E6D0("gdCSActionCamAnimData::PostLoadProperties() - missing property 'FileName'");
     }
 }
 
@@ -319,12 +320,12 @@ void gdCSActionCharAnimData::PostLoadProperties() {
     
     // Validate character ID is set
     if (m_characterId == -1) {
-        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing character ID");
+        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing property 'PlayerID'");
     }
     
     // Validate animation name is not empty
     if (!m_pAnimName || m_pAnimName[0] == '\0') {
-        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing animation name");
+        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing property 'FileName'");
     }
 }
 
@@ -345,7 +346,7 @@ void gdCSActionCharVisibleData::PostLoadProperties() {
     xmlNodeStruct_vfn_2(this);
     
     if (m_characterId == -1) {
-        nop_8240E6D0("gdCSActionCharVisibleData::PostLoadProperties() - missing character ID");
+        nop_8240E6D0("gdCSActionCharVisibleData::PostLoadProperties() - missing property 'PlayerID'");
     }
 }
 
@@ -374,12 +375,12 @@ void gdCSActionPlayAudioData::PostLoadProperties() {
     
     // Validate audio type is not empty
     if (!m_pAudioType || m_pAudioType[0] == '\0') {
-        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing audio type");
+        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEventType'");
     }
     
     // Validate audio name is not empty
     if (!m_pAudioName || m_pAudioName[0] == '\0') {
-        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing audio name");
+        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEvent'");
     }
     
     // Parse audio type
@@ -431,7 +432,7 @@ const char* gdCSActionPlayAudioData::GetTypeName() {
 void gdCSCharAnimNames::FindRandAnimData(uint32_t randomSeed, uint32_t selectionMode, uint32_t nameFilter) {
     // Validate we have animation data
     if (m_animCount == 0) {
-        nop_8240E6D0("gdCSCharAnimNames::FindRandAnimData() - no animation data at all");
+        nop_8240E6D0(g_str_gdCSCharAnimNames_noAnimData);
         return;
     }
     
@@ -530,7 +531,7 @@ void gdCSCharAnimData::BuildFilteredArrays() {
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getChildName = (GetNameFunc)(*(void***)node)[19];
             GetNameFunc getParentName = (GetNameFunc)(*(void***)this)[19];
-            nop_8240E6D0("BoneName", getParentName(this), getChildName(node));
+            nop_8240E6D0(g_str_gdCSCharAnimData_boneName, getParentName(this), getChildName(node));
         }
         node = *(void**)((char*)node + 8);  // next pointer
     }
@@ -686,19 +687,19 @@ void gdCSCamAnimShotName::PostLoadProperties() {
     // Validate weight >= 0
     int32_t weight = *(int32_t*)((char*)this + 16);
     if (weight < 0) {
-        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - cannot have negative weight");
+        nop_8240E6D0(g_str_gdCSCamAnimShotName_negWeight);
     }
 
     // Validate ShotName is non-empty
     const char* shotName = *(const char**)((char*)this + 24);
     if (!shotName || strlen(shotName) == 0) {
-        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - missing property 'ShotName'");
+        nop_8240E6D0(g_str_gdCSCamAnimShotName_missingShotName);
     }
 
     // Validate TimeOffset >= 0.0f
     float timeOffset = *(float*)((char*)this + 28);
     if (timeOffset < 0.0f) {
-        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - 'TimeOffset' cannot be negative");
+        nop_8240E6D0(g_str_gdCSCamAnimShotName_negTimeOffset);
     }
 
     // Look up shot name in camera animation set → store index at +32
@@ -715,7 +716,7 @@ void gdCSCamAnimShotName::PostLoadProperties() {
     *(int32_t*)((char*)this + 32) = shotIndex;
 
     if (shotIndex == -1) {
-        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'",
+        nop_8240E6D0(g_str_gdCSCamAnimShotName_shotNotFound,
                       shotName, "unknown");
     }
 }
@@ -950,13 +951,13 @@ void gdCSActionLvlAmbAnimData::PostLoadProperties() {
     // Validate AnimName is non-empty
     const char* ambName = *(const char**)((char*)this + 20);
     if (!ambName || strlen(ambName) == 0) {
-        nop_8240E6D0("LvlAmbAnimData::PostLoadProperties() - missing property 'AmbName'");
+        nop_8240E6D0(g_str_gdCSActionLvlAmbAnimData_missingAmbName);
     }
 
     // Validate FileName is non-empty
     const char* animName = *(const char**)((char*)this + 24);
     if (!animName || strlen(animName) == 0) {
-        nop_8240E6D0("LvlAmbAnimData::PostLoadProperties() - missing property 'AnimName'");
+        nop_8240E6D0(g_str_gdCSActionLvlAmbAnimData_missingAnimName);
     }
 }
 
@@ -999,19 +1000,19 @@ void gdCSActionCharAmbAnimData::PostLoadProperties() {
     // Validate CharacterId is set (not -1)
     int32_t characterId = *(int32_t*)((char*)this + 20);
     if (characterId == -1) {
-        nop_8240E6D0("CharAmbAnimData::PostLoadProperties() - missing property 'PlayerID'");
+        nop_8240E6D0(g_str_gdCSActionCharAmbAnimData_missingPlayerId);
     }
 
     // Validate AmbName is non-empty
     const char* ambName = *(const char**)((char*)this + 24);
     if (!ambName || strlen(ambName) == 0) {
-        nop_8240E6D0("CharAmbAnimData::PostLoadProperties() - missing property 'AmbName'");
+        nop_8240E6D0(g_str_gdCSActionCharAmbAnimData_missingAmbName);
     }
 
     // Validate AnimName is non-empty
     const char* animName = *(const char**)((char*)this + 28);
     if (!animName || strlen(animName) == 0) {
-        nop_8240E6D0("CharAmbAnimData::PostLoadProperties() - missing property 'AnimName'");
+        nop_8240E6D0(g_str_gdCSActionCharAmbAnimData_missingAnimName);
     }
 }
 

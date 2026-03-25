@@ -6,6 +6,7 @@
  */
 
 #include "gd_data.hpp"
+#include "game/gd_data_strings.hpp"
 #include <cstddef>
 #include <cstdint>
 
@@ -194,7 +195,7 @@ void gdTier::PostLoadProperties() {
     
     // Check if tier name is specified
     if (m_tierName == nullptr || m_tierName[0] == '\0') {
-        nop_8240E6D0("gdTier::PostLoadProperties() - 'TierName' not specified");
+        nop_8240E6D0(g_str_gdTier_noTierName);
     }
 }
 
@@ -291,7 +292,7 @@ void gdTierMember::PostLoadProperties() {
 
     // Validate character name is specified and non-empty
     if (m_characterName == nullptr || m_characterName[0] == '\0') {
-        nop_8240E6D0("gdTierMember::PostLoadProperties() - 'CharacterName' not specified");
+        nop_8240E6D0(g_str_gdTierMember_noCharName);
         return;
     }
 
@@ -300,7 +301,7 @@ void gdTierMember::PostLoadProperties() {
     m_pCharData = (gdCharData*)(intptr_t)charIndex;
 
     if (charIndex < 0) {
-        nop_8240E6D0("gdTierMember::PostLoadProperties() - unknown character '%s'");
+        nop_8240E6D0(g_str_gdTierMember_unknownChar);
     }
 }
 
@@ -523,13 +524,13 @@ void gdRivalryData::PostLoadProperties() {
     // Validate CharacterName at +16
     const char* charName = *(const char**)((char*)this + 16);
     if (charName == nullptr || charName[0] == '\0') {
-        nop_8240E6D0("gdRivalryData::PostLoadProperties() - 'CharacterName' not specified");
+        nop_8240E6D0(g_str_gdRivalryData_noCharName);
     }
 
     // Validate RivalName at +20
     const char* rivalName = *(const char**)((char*)this + 20);
     if (rivalName == nullptr || rivalName[0] == '\0') {
-        nop_8240E6D0("gdRivalryData::PostLoadProperties() - 'RivalName' not specified");
+        nop_8240E6D0(g_str_gdRivalryData_noRivalName);
     }
 
     // Resolve rival character index from name
@@ -537,7 +538,7 @@ void gdRivalryData::PostLoadProperties() {
     *(int32_t*)((char*)this + 24) = rivalIndex;
 
     if (rivalIndex < 0) {
-        nop_8240E6D0("gdRivalryData::PostLoadProperties() - unknown rival character '%s'");
+        nop_8240E6D0(g_str_gdRivalryData_unknownRival);
     }
 }
 
