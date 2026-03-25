@@ -173,11 +173,7 @@ plrPlayerMgr::~plrPlayerMgr() {
 #include <string.h>
 #include <stdio.h>
 
-// External function declarations
-extern "C" {
-    void nop_8240E6D0(const char* message);
-    void xmlNodeStruct_Initialize(void* node);
-}
+// (extern declarations already provided above)
 
 /**
  * gdTier::PostLoadProperties
@@ -215,10 +211,10 @@ void gdTier::PostLoadProperties() {
  * to populate the array with pointers to matching children.
  * Non-matching children are logged via their GetTypeName.
  */
+extern "C" void* xe_EC88(uint32_t size);
+
 void gdTier::PostLoadChildren() {
     extern uint32_t g_gdTierMember_typeId;  // @ 0x825C5F70
-    extern "C" void* xe_EC88(uint32_t size);
-    extern "C" void nop_8240E6D0(const char* msg, ...);
 
     // Pass 1: count matching children
     uint32_t matchCount = 0;
@@ -322,8 +318,6 @@ void gdTierMember::PostLoadProperties() {
  */
 void gdLadder::PostLoadChildren() {
     extern uint32_t g_gdTier_typeId;  // @ 0x825C5F80 (offset 24448 from SDA)
-    extern "C" void* xe_EC88(uint32_t size);
-    extern "C" void nop_8240E6D0(const char* msg, ...);
 
     // Allocate array of 4 tier slots if not done
     uint16_t* pArrayMeta = (uint16_t*)((char*)this + 16);
@@ -395,9 +389,6 @@ void gdLadder::PostLoadChildren() {
 void gdRivalry::PostLoadChildren() {
     extern uint32_t g_gdRivalryData_typeId;  // @ 0x825C5F68
     extern void* g_gameDataMgr;              // @ 0x8271A2E4
-    extern "C" void* xe_EC88(uint32_t size);
-    extern "C" int32_t FindCharacterByName(void* mgr, const char* name);
-    extern "C" void nop_8240E6D0(const char* msg, ...);
 
     // Get character count from game data manager
     void* dataMgr = *(void**)&g_gameDataMgr;

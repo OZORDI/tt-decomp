@@ -7,11 +7,14 @@
 #include "game/pong_strings.hpp"
 
 // External dependencies
-#include "../game/pong_network_io.hpp"
+#include "game/pong_network_io.hpp"
 
 extern "C" void rage_free(void* ptr);
 extern "C" bool ValidateControllerVibration(void* controller);
-extern "C" void rage::ReleaseSingleton(void* obj);
+extern "C" void xmlNodeStruct_Initialize(void*);
+extern "C" uint16_t LookupEffectId(const char* name);
+extern "C" void nop_8240E6D0(const char* msg, ...);
+extern "C" void RegisterSerializedField(void*, const char*, void*, void*, int);
 
 // Global arrays
 void* g_controllerArray = nullptr;
@@ -216,7 +219,6 @@ bool gdVibEvent::MatchesType(uint32_t eventType) {
  */
 void gdVibEvent::Process() {
     extern void* g_stringFieldType;  // @ 0x825CAF88
-    extern "C" void RegisterSerializedField(void*, const char*, void*, void*, int);
 
     RegisterSerializedField(this, "EffectName",  (char*)this + 16, g_stringFieldType, 0);
     RegisterSerializedField(this, "VibPattern",  (char*)this + 24, g_stringFieldType, 0);
@@ -289,7 +291,7 @@ void gdVibEvent::TriggerVibration(void* playerContext) {
     void* controller = reinterpret_cast<void*>(controllerPtrs[controllerIndex]);
     
     // Trigger vibration
-    ApplyControllerVibration(controllers, controller, reinterpret_cast<void*>(m_vibrationPattern));
+    ApplyControllerVibration(reinterpret_cast<void**>(controllers), controllerIndex, reinterpret_cast<void*>(m_vibrationPattern));
 }
 
 /**
@@ -309,9 +311,6 @@ void gdVibEvent::TriggerVibration(void* playerContext) {
  * Debug string: "gdVibEvent::PostLoadProperties - Could not find effect '%s'"
  */
 void gdVibEvent::PostLoadProperties() {
-    extern "C" void xmlNodeStruct_Initialize(void*);
-    extern "C" uint16_t LookupEffectId(const char* name);  // @ 0x8225EA68
-    extern "C" void nop_8240E6D0(const char* msg, ...);
     extern void* g_vibrationMgr;  // @ 0x8271A3A8
 
     // Call base class Initialize

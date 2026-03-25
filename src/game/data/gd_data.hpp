@@ -1511,7 +1511,21 @@ struct xmlNodeStruct {
     virtual void Validate() {}
     virtual void PostLoadChildren() {}
 };
-class gdCharData;
+struct gdCharData;
+
+/**
+ * gdRivalryData
+ * @ RTTI: 0x82032544
+ *
+ * Holds a single rivalry relationship (character to rival).
+ */
+class gdRivalryData : public xmlNodeStruct {
+public:
+    virtual bool IsType(uint32_t typeId);                // vfn_20 @ 0x821F0650
+    virtual const char* GetTypeName() const;             // vfn_22 @ 0x821F0698
+    virtual void RegisterFields();                       // vfn_21 @ 0x821F0738
+    virtual void PostLoadProperties();                   // @ 0x821F07A8
+};
 
 /**
  * gdRivalry
@@ -1523,6 +1537,8 @@ class gdCharData;
 class gdRivalry : public xmlNodeStruct {
 public:
     virtual ~gdRivalry() {}                              // vfn_0
+    virtual bool IsType(uint32_t typeId);                // vfn_20 @ 0x821F0888
+    virtual const char* GetTypeName() const;             // vfn_22 @ 0x821F08D0
     virtual void PostLoadProperties() {}                 // vfn_20
     virtual void PostLoadChildren();                     // vfn_22
 
@@ -1540,9 +1556,10 @@ private:
  */
 class gdTierMember : public xmlNodeStruct {
 public:
+    virtual bool IsType(uint32_t typeId);                // vfn_20 @ 0x821F0B88
+    virtual const char* GetTypeName() const;             // vfn_22 @ 0x821F0BD0
+    virtual void RegisterFields();                       // vfn_21 @ 0x821F0C68
     virtual void PostLoadProperties();                   // vfn_20 @ 0x821F0C88
-    virtual void Validate() {}                           // vfn_21
-    virtual void PostLoadChildren() {}                   // vfn_22
 
 private:
     const char* m_characterName;         // +0x10 - Character name string

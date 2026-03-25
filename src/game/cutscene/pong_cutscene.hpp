@@ -22,8 +22,6 @@ struct gdCSActionCamAnimData {
     virtual void Validate();  // [21] @ 0x8240f210
     virtual void PostLoadChildren();  // [22] @ 0x82347498
 
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSActionCharAmbAnimData  [vtable @ 0x82077E54] ──────────────────────────
@@ -35,9 +33,6 @@ struct gdCSActionCharAmbAnimData {
     virtual void PostLoadProperties();  // [20] @ 0x8240fb50
     virtual void Validate();  // [21] @ 0x8240fc10
     virtual void PostLoadChildren();  // [22] @ 0x82347868
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSActionCharAnimData  [vtable @ 0x82077CB4] ──────────────────────────
@@ -49,9 +44,6 @@ struct gdCSActionCharAnimData {
     virtual void PostLoadProperties();  // [20] @ 0x8240f310
     virtual void Validate();  // [21] @ 0x8240f368
     virtual void PostLoadChildren();  // [22] @ 0x82347538
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSActionCharVisibleData  [vtable @ 0x82077D1C] ──────────────────────────
@@ -63,9 +55,6 @@ struct gdCSActionCharVisibleData {
     virtual void PostLoadProperties();  // [20] @ 0x8240f4d8
     virtual void Validate();  // [21] @ 0x8240f530
     virtual void PostLoadChildren();  // [22] @ 0x823475e8
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSActionDoInOrderData  [vtable @ 0x82065504] ──────────────────────────
@@ -130,9 +119,6 @@ struct gdCSActionLvlAmbAnimData {
     virtual void PostLoadProperties();  // [20] @ 0x8240f948
     virtual void Validate();  // [21] @ 0x8240fa08
     virtual void PostLoadChildren();  // [22] @ 0x823477c8
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSActionLvlAnimData  [vtable @ 0x82065434] ──────────────────────────
@@ -144,9 +130,6 @@ struct gdCSActionLvlAnimData {
     virtual void PostLoadProperties();  // [20] @ 0x8240f818
     virtual void Validate();  // [21] @ 0x8240f870
     virtual void PostLoadChildren();  // [22] @ 0x82347730
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSActionPlayAudioData  [vtable @ 0x82077D84] ──────────────────────────
@@ -158,9 +141,6 @@ struct gdCSActionPlayAudioData {
     virtual void PostLoadProperties();  // [20] @ 0x8240f608
     virtual void Validate();  // [21] @ 0x8240f660
     virtual void PostLoadChildren();  // [22] @ 0x82347688
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSActionShowAllAmbientsData  [vtable @ 0x82077EBC] ──────────────────────────
@@ -202,9 +182,6 @@ struct gdCSCamAnimShotName {
     // ── virtual methods ──
     virtual void PostLoadProperties();  // [20] @ 0x8240dbc0
     virtual void PostLoadChildren();  // [22] @ 0x8240dc08
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSCamAnimShotNameSeq  [vtable @ 0x820651B4] ──────────────────────────
@@ -218,9 +195,6 @@ struct gdCSCamAnimShotNameSeq {
     virtual void PostLoadProperties();  // [20] @ 0x8240deb8
     virtual void Validate();  // [21] @ 0x8240dd18
     virtual void PostLoadChildren();  // [22] @ 0x8240df10
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSCharAnimData  [vtable @ 0x82076D4C] ──────────────────────────
@@ -234,9 +208,6 @@ struct gdCSCharAnimData {
     virtual void PostLoadProperties();  // [20] @ 0x8240c990
     virtual void Validate();  // [21] @ 0x8240cbd0
     virtual void PostLoadChildren();  // [22] @ 0x8240c9d8
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSCharAnimNames  [vtable @ 0x82076DB4] ──────────────────────────
@@ -263,9 +234,6 @@ struct gdCSCharCamShotName {
     virtual ~gdCSCharCamShotName();                  // [0] @ 0x8240fba8
     virtual void PostLoadProperties();  // [20] @ 0x8240c420
     virtual void PostLoadChildren();  // [22] @ 0x8240c468
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSCharCamShotNameSeq  [vtable @ 0x82065284] ──────────────────────────
@@ -279,9 +247,6 @@ struct gdCSCharCamShotNameSeq {
     virtual void PostLoadProperties();  // [20] @ 0x8240c6f0
     virtual void Validate();  // [21] @ 0x8240c510
     virtual void PostLoadChildren();  // [22] @ 0x8240c748
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCSNameData  [vtable @ 0x82077A44] ──────────────────────────
@@ -293,9 +258,6 @@ struct gdCSNameData {
     virtual void PostLoadProperties();  // [20] @ 0x8240e6d8
     virtual void Validate();  // [21] @ 0x8240e7b8
     virtual void PostLoadChildren();  // [22] @ 0x8240e720
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCutSceneData  [vtable @ 0x82077AAC] ──────────────────────────
@@ -307,9 +269,6 @@ struct gdCutSceneData {
     virtual void PostLoadProperties();  // [20] @ 0x8240e8f0
     virtual void Validate();  // [21] @ 0x8240e9a8
     virtual void PostLoadChildren();  // [22] @ 0x82347030
-
-    // ── non-virtual methods (from debug strings) ──
-    void PostLoadProperties();
 };
 
 // ── gdCutSceneNames  [vtable @ 0x820779DC] ──────────────────────────
@@ -348,9 +307,6 @@ struct pongCSActionCamAnim {
     virtual void Play();  // [5] @ 0x8234a1c0
     virtual void Pause();  // [7] @ 0x8234a2f8
     virtual void Resume();  // [8] @ 0x8234a420
-
-    // ── non-virtual methods (from debug strings) ──
-    void Play();
 };
 
 // ── pongCSActionCharAmbAnim  [vtable @ 0x820659BC] ──────────────────────────
