@@ -2944,3 +2944,240 @@ bool pongPlayer::CompareTypeNames(void* other) {  // F0B8_p46 @ 0x8219F0B8
     }
     return *nameA == *nameB;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer — Small Functions Batch (13 functions, ≤96B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * pongPlayer::Update @ 0x8218CF08 | size: 0x28
+ *
+ * Per-frame update entry point. Checks if the player is active (+44);
+ * if not, logs a debug message and returns. Otherwise dispatches to
+ * the full update implementation via vtable slot 4.
+ */
+void pongPlayer::Update() {
+    if (!*(uint8_t*)((char*)this + 44)) {
+        nop_8240E6D0("pongPlayer::Update() - player is not active");
+        return;
+    }
+    typedef void (*UpdateImpl)(void*);
+    ((UpdateImpl)(*(void***)this)[4])(this);
+}
+
+/**
+ * pongPlayer::SaveDrawData @ 0x8218E860 | size: 0x30
+ *
+ * Saves draw state for the renderer. Checks the draw-enabled byte
+ * at +36; if false, logs and returns. Otherwise loads the draw
+ * data object at +444, offsets to +16, and calls its vtable slot 1.
+ */
+void pongPlayer::SaveDrawData() {
+    if (!*(uint8_t*)((char*)this + 36)) {
+        nop_8240E6D0("pongPlayer::SaveDrawData() - draw not enabled");
+        return;
+    }
+    void* drawData = *(void**)((char*)this + 444);
+    void* drawObj = (char*)drawData + 16;
+    typedef void (*DrawFunc)(void*);
+    ((DrawFunc)(*(void***)drawObj)[1])(drawObj);
+}
+
+/**
+ * pongPlayer::CompareTypeInfo @ 0x820CF0B8 | size: 0x38
+ *
+ * RTTI type comparison. Reads type_info pointers from both objects'
+ * vtable slot 0 (MSVC-style RTTI), then does a byte-by-byte strcmp
+ * on the type name strings. Returns 0 if types match.
+ */
+int pongPlayer::CompareTypeInfo(void* other) {
+    const char* nameA = *(const char**)(*(void***)this);
+    const char* nameB = *(const char**)(*(void***)other);
+    // Byte-by-byte string comparison (inline strcmp)
+    while (*nameA && *nameA == *nameB) {
+        nameA++;
+        nameB++;
+    }
+    return (int)(unsigned char)*nameA - (int)(unsigned char)*nameB;
+}
+
+/**
+ * pongPlayer::ResetShotTimerDefaults @ 0x821A7038 | size: 0x54
+ *
+ * Resets the shot timing system. Calls a cleanup function on the
+ * shot timer sub-object at +5404, then writes three default float
+ * constants to fields at +5600, +5604, +5608.
+ */
+void pongPlayer::ResetShotTimerDefaults() {
+    extern void pongPlayer_76E8_g(void* shotTimer);
+    pongPlayer_76E8_g((char*)this + 5404);
+
+    // Reset timing defaults (values from .rdata constants)
+    *(float*)((char*)this + 5600) = 0.0f;   // shot start time
+    *(float*)((char*)this + 5604) = 0.0f;   // shot duration
+    *(float*)((char*)this + 5608) = 1.0f;   // shot speed multiplier
+}
+
+/**
+ * pongPlayer::ComputeBasePosition @ 0x821D6308 | size: 0x54
+ *
+ * Computes the player's base position by adding a displacement vector
+ * (from pongPlayer_6470_g) to the rest position at +224, storing the
+ * result at +32.
+ */
+void pongPlayer::ComputeBasePosition() {
+    extern void pongPlayer_6470_g(float* out, void* player, int flags);
+    float displacement[4];
+    pongPlayer_6470_g(displacement, this, 0);
+
+    float* restPos = (float*)((char*)this + 224);
+    float* outPos = (float*)((char*)this + 32);
+    outPos[0] = displacement[0] + restPos[0];
+    outPos[1] = displacement[1] + restPos[1];
+    outPos[2] = displacement[2] + restPos[2];
+    outPos[3] = displacement[3] + restPos[3];
+}
+
+/**
+ * pongPlayer::ComputeFullPosition @ 0x821D62A8 | size: 0x60
+ *
+ * Like ComputeBasePosition but adds THREE vectors: displacement + 
+ * rest position at +224 + offset vector at +240. Stores at +32.
+ * The extra flag parameter selects a different displacement mode.
+ */
+void pongPlayer::ComputeFullPosition(int flags) {
+    extern void pongPlayer_6470_g(float* out, void* player, int flags);
+    float displacement[4];
+    pongPlayer_6470_g(displacement, this, flags);
+
+    float* restPos = (float*)((char*)this + 224);
+    float* offsetVec = (float*)((char*)this + 240);
+    float* outPos = (float*)((char*)this + 32);
+    outPos[0] = displacement[0] + restPos[0] + offsetVec[0];
+    outPos[1] = displacement[1] + restPos[1] + offsetVec[1];
+    outPos[2] = displacement[2] + restPos[2] + offsetVec[2];
+    outPos[3] = displacement[3] + restPos[3] + offsetVec[3];
+}
+
+/**
+ * pongPlayer::HasInputDirectionChanged @ 0x821E04B0 | size: 0x54
+ *
+ * Checks if the player's input direction has changed sign. Gets the
+ * current input index, looks up a 4-byte entry in the input table at
+ * +796, XORs byte[0] with byte[3]; returns true if the XOR has the
+ * sign bit set (direction reversal).
+ */
+bool pongPlayer::HasInputDirectionChanged() {
+    extern int pongPlayer_0270_g(void* player);
+    int inputIdx = pongPlayer_0270_g(this);
+    uint8_t* entry = (uint8_t*)((char*)this + 796) + inputIdx * 4;
+    uint8_t xorResult = entry[0] ^ entry[3];
+    return xorResult > 127;  // sign bit set = direction changed
+}
+
+/**
+ * pongPlayer::GetAnimFrameDistance @ 0x821A7A48 | size: 0x58
+ *
+ * Returns the circular distance between two animation frame indices
+ * stored as int16 fields at +4 and +6. If either is -1 (invalid),
+ * returns 0. Wraps negative differences by adding 20 (frame count).
+ */
+int pongPlayer::GetAnimFrameDistance() {
+    int16_t frameA = *(int16_t*)((char*)this + 4);
+    int16_t frameB = *(int16_t*)((char*)this + 6);
+
+    if (frameA == -1 || frameB == -1) return 0;
+
+    int distance = (int)frameA - (int)frameB + 1;
+    if (distance < 0) distance += 20;  // wrap around frame count
+    return distance;
+}
+
+/**
+ * pongPlayer::IsInContactZone @ 0x82285170 | size: 0x5C
+ *
+ * Tests whether the player is within the valid contact zone.
+ * Checks float at +36 against a range, then float at +32 against
+ * another range. Returns true only if both are within bounds.
+ */
+bool pongPlayer::IsInContactZone() {
+    float valA = *(float*)((char*)this + 36);
+    float valB = *(float*)((char*)this + 32);
+
+    // Range check A
+    extern const float g_contactZoneMinA;  // .rdata constant
+    extern const float g_contactZoneMaxA;
+    if (valA < g_contactZoneMinA || valA > g_contactZoneMaxA) return false;
+
+    // Range check B
+    extern const float g_contactZoneMinB;
+    extern const float g_contactZoneMaxB;
+    return (valB >= g_contactZoneMinB && valB <= g_contactZoneMaxB);
+}
+
+/**
+ * pongPlayer::IsBallSplashActive @ 0x821A0C58 | size: 0x50
+ *
+ * Checks if the ball splash VFX is active for this player. Indexes
+ * into a global 416-byte-stride table using a slot index, offsets
+ * to +48, and calls the splash check function.
+ */
+bool pongPlayer::IsBallSplashActive() {
+    extern void* g_fxTable;        // global FX table
+    extern int g_fxSlotIndex;      // current FX slot
+    extern int fxBallSplash2D_5998_g(void* entry);
+
+    char* tableBase = (char*)g_fxTable;
+    void* entry = tableBase + g_fxSlotIndex * 416 + 48;
+    return fxBallSplash2D_5998_g(entry) == 1;
+}
+
+/**
+ * pongPlayer::GetNormalizedRecoveryRate @ 0x820DD238 | size: 0x60
+ *
+ * Returns the player's normalized recovery rate. If the recovery
+ * sub-object at +36 is null, returns a default constant. Otherwise
+ * reads the timer value and computes (intField * scale) / timer.
+ */
+float pongPlayer::GetNormalizedRecoveryRate() {
+    void* recoveryObj = *(void**)((char*)this + 36);
+    if (!recoveryObj) {
+        return 0.0f;  // default when no recovery object
+    }
+
+    void* innerObj = *(void**)((char*)recoveryObj + 36);
+    float timer = *(float*)((char*)innerObj + 12);
+
+    extern const float g_recoveryThreshold;
+    if (timer <= g_recoveryThreshold) {
+        return 0.0f;
+    }
+
+    int rawValue = *(int32_t*)((char*)innerObj + 8);
+    extern const float g_recoveryScale;
+    return ((float)rawValue * g_recoveryScale) / timer;
+}
+
+/**
+ * pongPlayer::SyncNetworkState @ 0x82391510 | size: 0x5C
+ *
+ * Synchronizes player state with the network subsystem. Loads the
+ * network sub-object from +12, calls its vtable slot 2 (which stores
+ * a float result at +12), then calls the network sync function with
+ * a 50-frame window.
+ */
+void* pongPlayer::SyncNetworkState() {
+    extern void SinglesNetworkClient_BE30_g(void* netObj, int frames);
+
+    void* subObj = *(void**)((char*)this + 12);
+
+    // Call vtable slot 2 on sub-object (stores sync float at +12)
+    typedef void (*SyncFunc)(void*);
+    ((SyncFunc)(*(void***)subObj)[2])(subObj);
+
+    // Sync network state with 50-frame window
+    void* netObj = (char*)subObj + 16;
+    SinglesNetworkClient_BE30_g(netObj, 50);
+    return netObj;
+}
