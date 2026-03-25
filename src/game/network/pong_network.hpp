@@ -83,6 +83,8 @@ struct DataRequestFailedMessage {
 // ── DataRequestMessage  [vtable @ 0x8206F7E0] ──────────────────────────
 struct DataRequestMessage {
     void**      vtable;           // +0x00
+    float       m_timingRef;      // +0x04
+    int16_t     m_dataId;         // +0x08
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823babe0
@@ -90,11 +92,22 @@ struct DataRequestMessage {
     virtual void vfn_5();  // [5] @ 0x823baaf8
     virtual void vfn_6();  // [6] @ 0x823babc0
     virtual void vfn_7();  // [7] @ 0x823babd0
+
+    // ── non-virtual methods (lifted) ──
+    void Deserialise(void* client);
+    void Serialise(void* client);
+    uint16_t GetIndexInPool() const;
+    void* GetSingleton();
+    const char* GetTypeName();
 };
 
 // ── DataSendMessage  [vtable @ 0x8206F808] ──────────────────────────
 struct DataSendMessage {
     void**      vtable;           // +0x00
+    float       m_timingRef;      // +0x04
+    int16_t     m_dataType;       // +0x08
+    int16_t     m_dataSize;       // +0x0A
+    uint8_t     m_dataPayload[1]; // +0x0C  variable-length payload
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823bed20
@@ -102,6 +115,13 @@ struct DataSendMessage {
     virtual void vfn_5();  // [5] @ 0x823bac40
     virtual void vfn_6();  // [6] @ 0x823bad20
     virtual void vfn_7();  // [7] @ 0x823bad30
+
+    // ── non-virtual methods (lifted) ──
+    void Deserialise(void* client);
+    void Serialise(void* client);
+    uint16_t GetIndexInPool() const;
+    void* GetSingleton();
+    const char* GetTypeName();
 };
 
 // ── DenySpectatorMessage  [vtable @ 0x8206FC94] ──────────────────────────
@@ -728,6 +748,15 @@ struct PlayerCacheMessage {
 // ── PlayerMovementMessage  [vtable @ 0x8206F66C] ──────────────────────────
 struct PlayerMovementMessage {
     void**      vtable;           // +0x00
+    uint8_t     playerIndex;      // +0x04
+    uint8_t     _pad05[3];
+    float       velocityX;        // +0x08
+    float       velocityY;        // +0x0C
+    float       velocityZ;        // +0x10
+    float       accelerationX;    // +0x14
+    float       unused2;          // +0x18
+    float       accelerationZ;    // +0x1C
+    bool        isMoving;         // +0x20
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b8110
@@ -736,6 +765,14 @@ struct PlayerMovementMessage {
     virtual void vfn_5();  // [5] @ 0x823b7ef8
     virtual void vfn_6();  // [6] @ 0x823b8000
     virtual void vfn_7();  // [7] @ 0x823b8010
+
+    // ── non-virtual methods (lifted) ──
+    void Deserialise(void* networkClient);
+    void Serialise(void* networkClient);
+    void Process(void* matchContext);
+    void ReturnToPool();
+    void* GetPoolSingleton();
+    const char* GetTypeName();
 };
 
 // ── PlayerStopMessage  [vtable @ 0x8206F694] ──────────────────────────
@@ -826,6 +863,7 @@ struct PongNetGameModeCoordinator {
 
     // ── non-virtual methods (from debug strings) ──
     void Reset();
+    int CheckNetworkStatus();
 };
 
 // ── PongNetGameModeManager  [2 vtables — template/MI] ──────────────────────────
@@ -944,6 +982,11 @@ struct RequestDataMessage {
     virtual void vfn_5();           // [5] @ 0x823bf058 - Return to pool
     virtual void* vfn_6();          // [6] @ 0x823bf120 - Get pool singleton
     virtual const char* vfn_7();    // [7] @ 0x823bf130 - Get type name
+
+    // ── non-virtual methods (lifted in pong_network.cpp) ──
+    void ReturnToPool();
+    void* GetPoolSingleton();
+    const char* GetTypeName();
 };
 
 // ── RoundRobinDataMessage  [vtable @ 0x8206FFDC] ──────────────────────────
@@ -1593,7 +1636,36 @@ struct SinglesNetworkClient {
     
     // ── non-virtual methods (implemented) ──
     void ProcessNetworkTimingUpdate(uint32_t timestamp);  // @ 0x823E01F8
-    uint32_t ReadStringFromStream(const char* stringBuffer);  // @ 0x82260688
+    // ReadStringFromStream declared below with correct signature
+    void UpdateNetworkTimer();
+    void CheckAllPlayersReady();
+    void WriteNetworkMessageHeader(void* messageData, void* client);
+    void* PopMessageFromQueue();
+    int ProcessSessions();
+    void ProcessPendingMessages();
+    bool IsStateActive();
+    void ProcessMessageQueue();
+    void SetGPURegister7();
+    void SendToSocket(const void* buffer, int length, int flags, const void* destAddr, int addrlen, int extraParam);
+    void ReceiveFromSocket(void* buffer, int length, int flags, void* srcAddr, int* addrlen, int extraParam);
+    int CompareFlags(const SinglesNetworkClient* other) const;
+    void MemCopyAligned(void* dest, const void* src, int size);
+    void InitializeTimingState();
+    float GetTimingValue();
+    void ForwardToAtSingleton(void* param1, void* param2);
+    void CleanupAndCallVirtual();
+    int CallVirtualOnSubobject();
+    void CheckNetworkInitialized();
+    uint32_t ReadStringFromStream(const char* stringBuffer);
+    int ReadStringFromStream(char* buffer, int maxSize);
+    bool Read64BitValue(uint64_t* outValue);
+    bool ValidateAndReadData(void* outData);
+    const char* GetErrorString();
+    void InitializeNetworkState();
+    void WriteValueWithMask(uint32_t value);
+    uint32_t Read14BitValue();
+    uint32_t ReadTimestamp();
+    uint16_t ReadSequenceNumber();
 };
 
 // ── SkipReplayMessage  [vtable @ 0x8206F8F8] ──────────────────────────
@@ -1739,6 +1811,12 @@ struct TournamentCompleteMessage {
     virtual void vfn_5();  // [5] @ 0x823bc7b0
     virtual void vfn_6();  // [6] @ 0x823bc878
     virtual void vfn_7();  // [7] @ 0x823bc888
+
+    // ── non-virtual methods (lifted in pong_network.cpp) ──
+    void Process();
+    uint16_t GetIndexInPool() const;
+    void* GetSingleton();
+    const char* GetTypeName();
 };
 
 // ── TwoMinuteWarningMessage  [vtable @ 0x8206FF64] ──────────────────────────
@@ -1986,6 +2064,10 @@ struct pongNetMessageHolder {
     void InitializeTimedGameUpdateArray();  // @ 0x823C6E30
     void CleanupNestedArrays();  // @ 0x82135C70
     void RemoveElementByPointer(void* targetPtr);  // @ 0x82134350
+    void InitializeInternalArray();
+    void RemoveFromThreadPoolList();
+    void InitializeMessageArray();
+    void LazyInitMessagePool();
 };
 
 // ── pongNetMessageHolderBase  [vtable @ 0x8206FA88] ──────────────────────────

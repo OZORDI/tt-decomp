@@ -38,7 +38,7 @@
 
 #include "pong_network.hpp"
 #include "pong_network_io.hpp"
-#include "pong_player.hpp"
+#include "../player/pong_player.hpp"
 #include <cstdlib>
 #include <cstring>
 
@@ -74,10 +74,46 @@ extern pongNetMessageHolder* pongNetMessageHolder_FAE0_isl();
 extern void pongNetMessageHolder_5038_w();
 extern void rage_27C0(void* instance);
 extern "C" void rage_free(void* ptr);
+extern void NetDataQuery_ctor_A458(void* self);
+extern uint8_t SinglesNetworkClient_B2A8_g(void* client);
+extern void* SinglesNetworkClient_9318_g(void* clientState, const char* msgType);
+extern void SinglesNetworkClient_B320_g(void* client);
+extern bool CheckButtonPressed(void* slotField);
+extern void WriteInt8Bits(void* client, int16_t value, int bits);
+extern void SinglesNetworkClient_67C8_g(void* client, int16_t index, void* data);
+extern void SinglesNetworkClient_0F80_g(void* self);
+extern uint8_t SinglesNetworkClient_1178_g(void* self);
+extern void game_D3B0_h(void* self);
+extern void util_DA08(void* evt);
+extern void snHsmAcceptingJoinRequest_9A70(void* self, void* evt);
+extern void SinglesNetworkClient_6918_g(void* client, bool flag);
+extern void SinglesNetworkClient_68A8_g(void* client, int16_t value, int bits);
+extern void PlayerMovementMessage_54B0_h(void* player, float* velocity, float* acceleration, bool isMoving);
+extern void util_7970(void* client, void* out, int bits);
+extern void util_0AF0(void* client, void* out, int16_t size);
+// NetDll_sendto and NetDll_recvfrom declared in extern "C" block below
+extern void pongNetMessageHolder_6778_wrh(void* memory);
+extern void pongNetMessageHolder_68D0_wrh(void* memory);
+extern void BallHitMessage_ctor_69C8(void* memory);
+extern void pongNetMessageHolder_6B48_wrh(void* memory);
+extern int SinglesNetworkClient_8CC0_w(void* self);
+extern void SinglesNetworkClient_0268_g(void* self);
+extern void SinglesNetworkClient_0448_g(void* self, uint32_t value, int bits);
+extern void SinglesNetworkClient_8AE0_g(void* self);
+extern void snSession_AddNode_C068(void* sessionNodeList, void* node);
+extern "C" void* xe_EC88(uint32_t size);
+extern void pongNetMessageHolder_7700_wrh(void* memory);
+
+// rage event structs used in network code
+namespace rage {
+    struct EvtAcceptJoinRequestSucceeded {
+        void** vtable;
+    };
+}
 
 namespace {
 struct PongNetMessageHolderStaticNode {
-    void** m_vtable;
+    uint32_t m_vtable;
     uint32_t m_field4;
     uint32_t m_field8;
 };
@@ -523,12 +559,12 @@ void pongNetMessageHolder_4BF8_w() {
 // ===========================================================================
 void pongNetMessageHolder_2228_2h() {
     pongNetMessageHolder* holder = pongNetMessageHolder_FAE0_isl();
-    const uint32_t previousHead = holder->field_0x0008;
+    const uint32_t previousHead = (uint32_t)(uintptr_t)holder->m_pInternalArray;
 
     auto* node = reinterpret_cast<PongNetMessageHolderStaticNode*>(0x825D1960u);
     node->m_field8 = previousHead;
 
-    holder->field_0x0008 = 0x825D1960u;
+    holder->m_pInternalArray = (void*)(uintptr_t)0x825D1960u;
     holder->field_0x000c = previousHead + 1;
 }
 
@@ -763,7 +799,8 @@ const char* RequestDataMessage::GetTypeName() {
 void SinglesNetworkClient::CheckAllPlayersReady()
 {
     // Early exit if already marked as ready
-    if (m_bAllPlayersReady) {
+    bool& bAllPlayersReady = *(bool*)((uint8_t*)this + 24);
+    if (bAllPlayersReady) {
         return;
     }
 
@@ -794,7 +831,7 @@ void SinglesNetworkClient::CheckAllPlayersReady()
 
 setup_network:
     // Get network client pointer from this+20
-    void* networkClient = m_pNetworkClient;
+    void* networkClient = *(void**)((uint8_t*)this + 20);
 
     // Query network status
     uint8_t networkStatus = SinglesNetworkClient_B2A8_g(networkClient);
@@ -831,7 +868,7 @@ setup_network:
     }
 
     // Mark all players as ready
-    m_bAllPlayersReady = true;
+    bAllPlayersReady = true;
 }
 
 
@@ -885,7 +922,7 @@ void SinglesNetworkClient::WriteNetworkMessageHeader(void* messageData, void* cl
 extern "C" {
     // Original name: SinglesNetworkClient_0598_g
     void SinglesNetworkClient_0598_g(void* messageData, void* client) {
-        SinglesNetworkClient::WriteNetworkMessageHeader(messageData, client);
+        ((SinglesNetworkClient*)client)->WriteNetworkMessageHeader(messageData, client);
     }
 }
 
@@ -1144,10 +1181,10 @@ void SinglesNetworkClient::ProcessPendingMessages()
     }
     
     // Process messages in a loop
-    extern bool SinglesNetworkClient_5EA0_g(ProcessingFlags* flags, uint32_t* queue);
+    extern bool SinglesNetworkClient_5EA0_g(void* flags, uint32_t* queue);
     extern void SinglesNetworkClient_70A0_g(void* msgPtr, uint8_t* sourcePtr);
-    extern void SinglesNetworkClient_5A40_g(ProcessingFlags* flags);
-    extern void SinglesNetworkClient_5998_g(ProcessingFlags* flags);
+    extern void SinglesNetworkClient_5A40_g(void* flags);
+    extern void SinglesNetworkClient_5998_g(void* flags);
     
     while (true) {
         // Check if there are more messages to process
@@ -1380,8 +1417,6 @@ uint32_t SinglesNetworkClient::ReadStringFromStream(const char* stringBuffer) {
     }
     
     // Clear/reset 8 bits in the stream
-    // SinglesNetworkClient_0448_g is ReadBitsFromStream
-    extern uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bitWidth);
     SinglesNetworkClient_0448_g(this, 0, 8);
     
     // Return string length + 1
@@ -1444,7 +1479,7 @@ void pongNetMessageHolder::RemoveFromThreadPoolList()
         uint32_t* prev = current;
         uint32_t* node = (uint32_t*)*current;
         
-        while (node != nullptr && (uint32_t)node != sentinelAddr) {
+        while (node != nullptr && (uint32_t)(uintptr_t)node != sentinelAddr) {
             // Move to next node (offset +20 is the next pointer)
             prev = (uint32_t*)((char*)node + 20);
             node = (uint32_t*)*prev;
@@ -1456,7 +1491,7 @@ void pongNetMessageHolder::RemoveFromThreadPoolList()
             uint32_t* next = (uint32_t*)*((uint32_t*)((char*)node + 20));
             
             // Update the previous node's next pointer to skip this node
-            *prev = (uint32_t)next;
+            *prev = (uint32_t)(uintptr_t)next;
         }
     }
     
@@ -1527,7 +1562,7 @@ void pongNetMessageHolder::InitializeMessageArray()
         *(float*)(entryPtr + 104) = 0.0f;
         *(float*)(entryPtr + 112) = 0.0f;
         *(float*)(entryPtr + 116) = 0.0f;
-        *(float*>(entryPtr + 120) = 0.0f;
+        *(float*)(entryPtr + 120) = 0.0f;
         *(float*)(entryPtr + 128) = 0.0f;
         
         // Set flags and counters
@@ -1810,8 +1845,8 @@ void TournamentCompleteMessage::Process()
     // Post page group message with tournament ID
     // Event code 14386, mask 128, active flag 1
     int32_t eventData[2] = { 4, 0 };
-    eventData[0] = (int32_t)m_tournamentId;  // Sign-extend byte to int
-    PostPageGroupMessage(14386, 128, 1, 0, (int)eventData);
+    eventData[0] = (int32_t)*(uint8_t*)((char*)this + 4);  // Tournament ID from +0x04
+    PostPageGroupMessage(14386, 128, 1, 0, (int)(intptr_t)eventData);
 }
 
 
@@ -2089,7 +2124,6 @@ void pongNetMessageHolder::RemoveElementByPointer(void* targetPtr)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // External references
-extern "C" void* xe_EC88(uint32_t size);  // Memory allocator @ 0x820DEC88
 extern void pongNetMessageHolder_vfn_2_1770_1(pongNetMessageHolder* holder);
 extern void pongNetMessageHolder_vfn_2_18D0_1(pongNetMessageHolder* holder);
 extern void pongNetMessageHolder_68D0_wrh(void* msg);  // AcceptMessage constructor
@@ -2161,7 +2195,7 @@ void pongNetMessageHolder_4D18_w() {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder::LazyInitMessagePool() {
     // Check if message pool is already initialized
-    if (m_pMessagePool != nullptr) {
+    if (m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2171,9 +2205,9 @@ void pongNetMessageHolder::LazyInitMessagePool() {
     if (memory != nullptr) {
         // Construct the message object
         pongNetMessageHolder_6778_wrh(memory);
-        m_pMessagePool = memory;
+        m_pInternalArray = memory;
     } else {
-        m_pMessagePool = nullptr;
+        m_pInternalArray = nullptr;
     }
 }
 
@@ -2185,7 +2219,7 @@ void pongNetMessageHolder::LazyInitMessagePool() {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_1_FC68_1(pongNetMessageHolder* holder) {
     // Check if message is already initialized
-    if (holder->m_pMessagePool != nullptr) {
+    if (holder->m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2195,9 +2229,9 @@ void pongNetMessageHolder_vfn_1_FC68_1(pongNetMessageHolder* holder) {
     if (memory != nullptr) {
         // Construct AcceptMessage
         pongNetMessageHolder_68D0_wrh(memory);
-        holder->m_pMessagePool = memory;
+        holder->m_pInternalArray = memory;
     } else {
-        holder->m_pMessagePool = nullptr;
+        holder->m_pInternalArray = nullptr;
     }
 }
 
@@ -2209,7 +2243,7 @@ void pongNetMessageHolder_vfn_1_FC68_1(pongNetMessageHolder* holder) {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_1_FCC0_1(pongNetMessageHolder* holder) {
     // Check if message is already initialized
-    if (holder->m_pMessagePool != nullptr) {
+    if (holder->m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2219,9 +2253,9 @@ void pongNetMessageHolder_vfn_1_FCC0_1(pongNetMessageHolder* holder) {
     if (memory != nullptr) {
         // Construct BallHitMessage
         BallHitMessage_ctor_69C8(memory);
-        holder->m_pMessagePool = memory;
+        holder->m_pInternalArray = memory;
     } else {
-        holder->m_pMessagePool = nullptr;
+        holder->m_pInternalArray = nullptr;
     }
 }
 
@@ -2233,7 +2267,7 @@ void pongNetMessageHolder_vfn_1_FCC0_1(pongNetMessageHolder* holder) {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_1_FD18_1(pongNetMessageHolder* holder) {
     // Check if message is already initialized
-    if (holder->m_pMessagePool != nullptr) {
+    if (holder->m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2243,9 +2277,9 @@ void pongNetMessageHolder_vfn_1_FD18_1(pongNetMessageHolder* holder) {
     if (memory != nullptr) {
         // Construct message
         pongNetMessageHolder_6B48_wrh(memory);
-        holder->m_pMessagePool = memory;
+        holder->m_pInternalArray = memory;
     } else {
-        holder->m_pMessagePool = nullptr;
+        holder->m_pInternalArray = nullptr;
     }
 }
 
@@ -2257,7 +2291,7 @@ void pongNetMessageHolder_vfn_1_FD18_1(pongNetMessageHolder* holder) {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_1_FEE0_1(pongNetMessageHolder* holder) {
     // Check if message is already initialized
-    if (holder->m_pMessagePool != nullptr) {
+    if (holder->m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2267,9 +2301,9 @@ void pongNetMessageHolder_vfn_1_FEE0_1(pongNetMessageHolder* holder) {
     if (memory != nullptr) {
         // Construct message
         pongNetMessageHolder_6C98_wrh(memory);
-        holder->m_pMessagePool = memory;
+        holder->m_pInternalArray = memory;
     } else {
-        holder->m_pMessagePool = nullptr;
+        holder->m_pInternalArray = nullptr;
     }
 }
 
@@ -2281,7 +2315,7 @@ void pongNetMessageHolder_vfn_1_FEE0_1(pongNetMessageHolder* holder) {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_1_FFA0_1(pongNetMessageHolder* holder) {
     // Check if message is already initialized
-    if (holder->m_pMessagePool != nullptr) {
+    if (holder->m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2291,9 +2325,9 @@ void pongNetMessageHolder_vfn_1_FFA0_1(pongNetMessageHolder* holder) {
     if (memory != nullptr) {
         // Construct message
         pongNetMessageHolder_6D68_wrh(memory);
-        holder->m_pMessagePool = memory;
+        holder->m_pInternalArray = memory;
     } else {
-        holder->m_pMessagePool = nullptr;
+        holder->m_pInternalArray = nullptr;
     }
 }
 
@@ -2305,7 +2339,7 @@ void pongNetMessageHolder_vfn_1_FFA0_1(pongNetMessageHolder* holder) {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_1_0810_1(pongNetMessageHolder* holder) {
     // Check if message is already initialized
-    if (holder->m_pMessagePool != nullptr) {
+    if (holder->m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2315,9 +2349,9 @@ void pongNetMessageHolder_vfn_1_0810_1(pongNetMessageHolder* holder) {
     if (memory != nullptr) {
         // Construct message
         pongNetMessageHolder_6E30_wrh(memory);
-        holder->m_pMessagePool = memory;
+        holder->m_pInternalArray = memory;
     } else {
-        holder->m_pMessagePool = nullptr;
+        holder->m_pInternalArray = nullptr;
     }
 }
 
@@ -2329,7 +2363,7 @@ void pongNetMessageHolder_vfn_1_0810_1(pongNetMessageHolder* holder) {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_1_0990_1(pongNetMessageHolder* holder) {
     // Check if message is already initialized
-    if (holder->m_pMessagePool != nullptr) {
+    if (holder->m_pInternalArray != nullptr) {
         return;
     }
     
@@ -2339,9 +2373,9 @@ void pongNetMessageHolder_vfn_1_0990_1(pongNetMessageHolder* holder) {
     if (memory != nullptr) {
         // Construct message
         pongNetMessageHolder_6FF8_wrh(memory);
-        holder->m_pMessagePool = memory;
+        holder->m_pInternalArray = memory;
     } else {
-        holder->m_pMessagePool = nullptr;
+        holder->m_pInternalArray = nullptr;
     }
 }
 
@@ -2372,11 +2406,7 @@ extern uint8_t* g_pDataRequestMsgPoolBase;  // @ 0x825D129C
 extern void* g_pDataRequestMsgSingleton;    // @ 0x825D1290
 extern const char g_szDataRequestTypeName[];  // @ 0x8206EA74
 
-// Network I/O helpers (already declared in pong_network.cpp)
-extern void SinglesNetworkClient_8DF8_g(void* client, void* buf, int size);
-extern void SinglesNetworkClient_68A8_g(void* client, int16_t value, int bitWidth);
-extern void WriteFloatToNetworkStream(void* client, float value);
-extern uint8_t util_7970(void* client, void* dst, int bitWidth);
+// Network I/O helpers already declared above
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2668,13 +2698,13 @@ void SinglesNetworkClient::SetGPURegister7()
     gpuBase[12820 / 4] = 7;
     
     // EIEIO barrier - enforce in-order execution of I/O operations
-    __asm__ volatile("eieio");
+    __asm__ volatile("dmb sy"); // eieio equivalent on ARM64
     
     // Write value 2048 to control register 2
     gpuBase[13320 / 4] = 2048;
     
     // EIEIO barrier
-    __asm__ volatile("eieio");
+    __asm__ volatile("dmb sy"); // eieio equivalent on ARM64
 }
 
 
@@ -3436,7 +3466,7 @@ void pongNetMessageHolder_vfn_2_2D20_1(pongNetMessageHolder* holder)
 // ───────────────────────────────────────────────────────────────────────────
 int SinglesNetworkClient::ReadStringFromStream(char* buffer, int maxSize) {
     // Save current bit position
-    int savedBitPos = m_bitPosition;
+    int savedBitPos = *(int*)((char*)this + 0x10)  /* m_bitPosition */;
     
     // Try to read the string data
     extern int util_0AF0(void* ctx, void* base);  // Network read helper
@@ -3447,14 +3477,14 @@ int SinglesNetworkClient::ReadStringFromStream(char* buffer, int maxSize) {
         buffer[bytesRead + maxSize - 1] = '\0';
         
         // Update bit position (8 bits per character)
-        m_bitPosition = savedBitPos + 8;
+        *(int*)((char*)this + 0x10)  /* m_bitPosition */ = savedBitPos + 8;
         
         // Count the actual string length
         int length = 1;
         char* ptr = buffer;
         while (*ptr != '\0') {
             ptr++;
-            m_bitPosition += 8;
+            *(int*)((char*)this + 0x10)  /* m_bitPosition */ += 8;
             length++;
         }
         
@@ -3484,13 +3514,13 @@ bool SinglesNetworkClient::Read64BitValue(uint64_t* outValue) {
     uint32_t lowBits = 0;
     
     // Read high 32 bits (32-bit field size)
-    bool readHigh = SinglesNetworkClient_8DF8_g(this, &highBits, 32);
-    
-    if (readHigh) {
+    SinglesNetworkClient_8DF8_g(this, &highBits, 32);
+
+    {
         // Read low 32 bits
-        bool readLow = SinglesNetworkClient_8DF8_g(this, &lowBits, 32);
-        
-        if (readLow) {
+        SinglesNetworkClient_8DF8_g(this, &lowBits, 32);
+
+        {
             // Combine into 64-bit value: (high << 32) | low
             *outValue = ((uint64_t)highBits << 32) | lowBits;
             return true;
@@ -3522,7 +3552,7 @@ bool SinglesNetworkClient::ValidateAndReadData(void* outData) {
     if (available > 0) {
         // Read 64-bit value at offset +16 from the output pointer
         uint64_t* dataPtr = (uint64_t*)((char*)outData + 16);
-        bool success = Read64BitValue(dataPtr, 64);
+        bool success = Read64BitValue(dataPtr);
         
         return success;
     }
@@ -3579,14 +3609,14 @@ void SinglesNetworkClient::InitializeNetworkState() {
     *(const void**)((char*)this + 36) = g_cmRefreshableCtorVtable;
     
     // Clear all state fields
-    m_vtable = nullptr;
-    m_flags = 0;
+    *(void**)((char*)this + 0) = nullptr;  // vtable
+    *(uint32_t*)((char*)this + 4) = 0;    // flags
     *(uint32_t*)((char*)this + 8) = 0;
     *(uint32_t*)((char*)this + 12) = 0;
     *(uint32_t*)((char*)this + 16) = 0;
     *(uint32_t*)((char*)this + 20) = 0;
     *(uint32_t*)((char*)this + 24) = 0;
-    m_bitPosition = 0;
+    *(int*)((char*)this + 0x10)  /* m_bitPosition */ = 0;
     *(uint32_t*)((char*)this + 32) = 0;
     
     // Initialize network buffers
@@ -3611,18 +3641,18 @@ void SinglesNetworkClient::WriteValueWithMask(uint32_t value) {
     SinglesNetworkClient_8AE0_g(this);
     
     // Save current bit positions
-    int savedBitPos = m_bitPosition;
+    int savedBitPos = *(int*)((char*)this + 0x10)  /* m_bitPosition */;
     int savedWritePos = *(int*)((char*)this + 32);
     
     // Temporarily set bit position to 16
-    m_bitPosition = 16;
+    *(int*)((char*)this + 0x10)  /* m_bitPosition */ = 16;
     
     // Read current value from stream
     uint32_t currentValue = 0;
     SinglesNetworkClient_8DF8_g(this, &currentValue, 16);
     
     // Restore bit position
-    m_bitPosition = savedBitPos;
+    *(int*)((char*)this + 0x10)  /* m_bitPosition */ = savedBitPos;
     
     // Apply 14-bit mask to input value and merge with current value
     uint32_t maskedValue = (value & 0x3FFF) | (currentValue & 0xFFFFC000);
@@ -3657,17 +3687,17 @@ uint32_t SinglesNetworkClient::Read14BitValue() {
     }
     
     // Save current bit position
-    int savedBitPos = m_bitPosition;
+    int savedBitPos = *(int*)((char*)this + 0x10)  /* m_bitPosition */;
     
     // Temporarily set bit position to 16
-    m_bitPosition = 16;
+    *(int*)((char*)this + 0x10)  /* m_bitPosition */ = 16;
     
     // Read 16-bit value
     uint32_t value = 0;
     SinglesNetworkClient_8DF8_g(this, &value, 16);
     
     // Restore bit position
-    m_bitPosition = savedBitPos;
+    *(int*)((char*)this + 0x10)  /* m_bitPosition */ = savedBitPos;
     
     // Extract lower 14 bits
     return value & 0x3FFF;
@@ -3691,16 +3721,16 @@ uint32_t SinglesNetworkClient::ReadTimestamp() {
     
     if (bitsNeeded >= 48) {
         // Save current bit position
-        int savedBitPos = m_bitPosition;
+        int savedBitPos = *(int*)((char*)this + 0x10)  /* m_bitPosition */;
         
         // Temporarily set bit position to 32
-        m_bitPosition = 32;
+        *(int*)((char*)this + 0x10)  /* m_bitPosition */ = 32;
         
         // Read 16-bit timestamp
         SinglesNetworkClient_8DF8_g(this, &timestamp, 16);
         
         // Restore bit position
-        m_bitPosition = savedBitPos;
+        *(int*)((char*)this + 0x10)  /* m_bitPosition */ = savedBitPos;
     }
     
     return timestamp;
@@ -3724,16 +3754,16 @@ uint16_t SinglesNetworkClient::ReadSequenceNumber() {
     
     if (bitsNeeded >= 48) {
         // Save current bit position
-        int savedBitPos = m_bitPosition;
+        int savedBitPos = *(int*)((char*)this + 0x10)  /* m_bitPosition */;
         
         // Set bit position to 0 (read from start)
-        m_bitPosition = 0;
+        *(int*)((char*)this + 0x10)  /* m_bitPosition */ = 0;
         
         // Read 16-bit value
         SinglesNetworkClient_8DF8_g(this, &seqNum, 16);
         
         // Restore bit position
-        m_bitPosition = savedBitPos;
+        *(int*)((char*)this + 0x10)  /* m_bitPosition */ = savedBitPos;
     }
     
     // Extract lower 16 bits
@@ -3820,7 +3850,7 @@ void pongNetMessageHolder_2028_2hr(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
     
     // Call initialization function
-    pongNetMessageHolder_FAE0_isl(thisPtr);
+    pongNetMessageHolder_FAE0_isl();
     
     // Get global list head pointer
     void** globalListHead = (void**)0x825D1900;

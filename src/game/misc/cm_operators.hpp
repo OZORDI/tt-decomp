@@ -113,6 +113,15 @@ struct cmLookup {
     virtual void vfn_5();  // [5] @ 0x8226d880
     virtual void vfn_16();  // [16] @ 0x8226d840
     virtual void vfn_18();  // [18] @ 0x82270d10
+
+    // ── non-virtual methods (lifted in cm_operators.cpp) ──
+    void RegisterPorts();
+    void GetDim(int* outResult);
+    void GetFloat(float* outResult);
+    void GetBool(bool* outResult);
+    void GetVector(void* outVector);
+    void GetDimValue(int* outResult);
+    void CopyState(void* dest);
 };
 
 // ── cmMaxReporter  [vtable @ 0x820565D4] ──────────────────────────

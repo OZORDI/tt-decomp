@@ -13,10 +13,41 @@
 #include <stdint.h>
 #include <cstring>
 
+// Minimal definition for SinglesNetworkClient methods defined in this file.
+// Full definition is in pong_network.hpp but we can't include it due to
+// struct redefinition conflicts (FloatAverager, AckHandling, etc.)
+struct SinglesNetworkClient {
+    void** vtable;
+    uint8_t _pad[0x2000];  // large enough for all offset accesses
+
+    // Methods implemented in this file
+    int NetRecvFrom(void* socket, void* buf, int len, int flags, void* from, int* fromlen);
+    int NetSendTo(void* socket, const void* buf, int len, int flags, const void* to, int tolen);
+    int GetInputState(int userIndex, void* state);
+    int SetInputState(int userIndex, void* vibration);
+    int ShowGamerCard(int userIndex, uint64_t xuid);
+    void ClearNetState();
+    void InitSyncState();
+    void GetSessionField(uint32_t* outVal);
+    void MarkTimestamp();
+    bool IsSessionReady();
+    bool IsStateComplete();
+    void SetMode3();
+    void SetMode9();
+    void PostNetMessage_14395();
+    void PostNetMessage_14406();
+    void WriteHWReg(uint32_t regOffset, uint32_t value);
+    void InitHWRegs();
+    void DispatchSlot6();
+};
+
 // Forward declarations
 extern "C" void rage_free(void* ptr);
-extern "C" void rage::ReleaseSingleton(void* obj);
-extern "C" void sysCallback::Invoke(void* obj, int flags);
+extern "C" void rage_ReleaseSingleton(void* obj);
+extern "C" void sysCallback_Invoke(void* obj, int flags);
+
+// Forward declarations
+extern void fsmMachine_Destructor_27A8(void* stateObj);
 
 // External globals
 extern void* g_pNetworkTimer;           // @ 0x8201A328
@@ -56,12 +87,14 @@ extern uint32_t g_playerPropType2;      // @ 0x820693D0
  */
 struct FloatAverager {
     void** vtable;  // +0x00
-    
+
     // Fields to be discovered:
     // float m_sum;           // Running sum of values
     // uint32_t m_count;      // Number of samples
     // uint32_t m_windowSize; // Maximum samples to average
     // float m_currentAvg;    // Cached average value
+
+    ~FloatAverager();
 };
 
 /**
@@ -266,7 +299,7 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
             
             if (shouldRemove) {
                 // Release packet
-                sysCallback::Invoke(packet, 0);
+                sysCallback_Invoke(packet, 0);
                 
                 // Remove from array
                 extern void AckHandling_3828(AckHandling* self, void* packet);
@@ -378,7 +411,7 @@ void AckHandling_AB18_w(AckHandling* self) {
     }
     
     // Clean up packet array at offset +72
-    sysCallback::Invoke((char*)self + 72, 0);
+    sysCallback_Invoke((char*)self + 72, 0);
     
     // Clear all packets in the array at offset +96
     uint32_t* packetArray = (uint32_t*)((char*)self + 96);
@@ -505,7 +538,7 @@ void plrPropMgr_Destroy(plrPropMgr* self, int flags) {
     
     // Call atSingleton destructor (base class)
     self->vtable = (void**)0x82033C8C;  // atSingleton vtable
-    rage::ReleaseSingleton(self);
+    rage_ReleaseSingleton(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -567,11 +600,10 @@ void plrPropMgr_OnDeactivate(plrPropMgr* self) {}
 // External function stubs
 ////////////////////////////////////////////////////////////////////////////////
 
-extern "C" {
-    // Stub for pongLookAtDriver destructor (base class of pongPaddle)
-    void pongLookAtDriver_PostLoadProperties(void* obj) {
-        // Stub - would call base class destructor
-    }
+// Stub for pongLookAtDriver destructor (base class of pongPaddle)
+void pongLookAtDriver_PostLoadProperties(void* obj) {
+    (void)obj;
+    // Stub - would call base class destructor
 }
 
 
@@ -684,7 +716,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     void** allocator = (void**)((char*)&g_allocator_ptr);
     
     // Allocate state array (16 bytes for 4 pointers)
-    void** vtable = *allocator;
+    void** vtable = (void**)*allocator;
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
     AllocFn alloc = (AllocFn)vtable[1];
     *(void***)((char*)self + 8) = (void**)alloc(*allocator, 16, 16);
@@ -696,7 +728,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     void* state0 = alloc(*allocator, 12, 16);
     if (state0) {
         *(uint32_t*)((char*)state0 + 4) = 0;
-        *(uint32_t*)((char*)state0 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state0 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state0 = (void*)0x820711B4;
     }
     stateArray[0] = state0;
@@ -706,7 +738,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     void* state1 = alloc(*allocator, 12, 16);
     if (state1) {
         *(uint32_t*)((char*)state1 + 4) = 0;
-        *(uint32_t*)((char*)state1 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state1 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state1 = (void*)0x820711FC;
     }
     stateArray[1] = state1;
@@ -716,7 +748,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     void* state2 = alloc(*allocator, 12, 16);
     if (state2) {
         *(uint32_t*)((char*)state2 + 4) = 0;
-        *(uint32_t*)((char*)state2 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state2 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state2 = (void*)0x82071244;
     }
     stateArray[2] = state2;
@@ -726,7 +758,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     void* state3 = alloc(*allocator, 12, 16);
     if (state3) {
         *(uint32_t*)((char*)state3 + 4) = 0;
-        *(uint32_t*)((char*)state3 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state3 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state3 = (void*)0x8207128C;
     }
     stateArray[3] = state3;
@@ -873,7 +905,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void** allocator = (void**)((char*)&g_allocator_ptr);
     
     // Allocate state array (28 bytes for 7 pointers)
-    void** vtable = *allocator;
+    void** vtable = (void**)*allocator;
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
     AllocFn alloc = (AllocFn)vtable[1];
     self->m_pStateArray = (void**)alloc(*allocator, 28, 16);
@@ -884,7 +916,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state0 = alloc(*allocator, 12, 16);
     if (state0) {
         *(uint32_t*)((char*)state0 + 4) = 0;  // Clear field at +4
-        *(uint32_t*)((char*)state0 + 8) = (uint32_t)self;  // Back pointer
+        *(uint32_t*)((char*)state0 + 8) = (uint32_t)(uintptr_t)self;  // Back pointer
         *(void**)state0 = (void*)0x82071404;  // vtable
     }
     self->m_pStateArray[0] = state0;
@@ -894,7 +926,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state1 = alloc(*allocator, 12, 16);
     if (state1) {
         *(uint32_t*)((char*)state1 + 4) = 0;
-        *(uint32_t*)((char*)state1 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state1 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state1 = (void*)0x8207144C;
     }
     self->m_pStateArray[1] = state1;
@@ -904,7 +936,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state2 = alloc(*allocator, 12, 16);
     if (state2) {
         *(uint32_t*)((char*)state2 + 4) = 0;
-        *(uint32_t*)((char*)state2 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state2 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state2 = (void*)0x82071494;
     }
     self->m_pStateArray[2] = state2;
@@ -914,7 +946,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state3 = alloc(*allocator, 12, 16);
     if (state3) {
         *(uint32_t*)((char*)state3 + 4) = 0;
-        *(uint32_t*)((char*)state3 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state3 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state3 = (void*)0x820714DC;
     }
     self->m_pStateArray[3] = state3;
@@ -924,7 +956,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state4 = alloc(*allocator, 12, 16);
     if (state4) {
         *(uint32_t*)((char*)state4 + 4) = 0;
-        *(uint32_t*)((char*)state4 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state4 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state4 = (void*)0x82071524;
     }
     self->m_pStateArray[4] = state4;
@@ -934,7 +966,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state5 = alloc(*allocator, 12, 16);
     if (state5) {
         *(uint32_t*)((char*)state5 + 4) = 0;
-        *(uint32_t*)((char*)state5 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state5 + 8) = (uint32_t)(uintptr_t)self;
         *(void**)state5 = (void*)0x8207156C;
     }
     self->m_pStateArray[5] = state5;
@@ -944,7 +976,7 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state6 = alloc(*allocator, 16, 16);
     if (state6) {
         *(uint32_t*)((char*)state6 + 4) = 0;
-        *(uint32_t*)((char*)state6 + 8) = (uint32_t)self;
+        *(uint32_t*)((char*)state6 + 8) = (uint32_t)(uintptr_t)self;
         
         // Load default timeout value from global @ lis(-32253) + -12016
         // Python: (lis(-32253) << 16) + -12016 = 0x82033110
@@ -969,42 +1001,41 @@ void NetStateSync_GetName(NetStateSync* self) {}
 // External function stubs
 ////////////////////////////////////////////////////////////////////////////////
 
-extern "C" {
-    // fsmMachine destructor (originally auto-named as gameLoop_DestroyAudio_27A8)
-    void fsmMachine_Destructor_27A8(void* obj) {
-        // Implemented in src/rage/fsmMachine.c
-        // This is the base class destructor for finite state machines
-    }
-    
-    // Stub for rage initialization
-    void grcDevice_FinalizeRenderSetup_1(void* obj) {
-        // Stub - would initialize rage component
-    }
-    
-    // Stub for network client initialization
-    void SinglesNetworkClient_2BE8_g(void* obj) {
-        // Stub - would initialize network client
-    }
-    
-    // Stub for network client helper
-    void SinglesNetworkClient_51C8_g(void* obj) {
-        // Stub - would initialize network client component
-    }
-    
-    // Stub for utility initialization
-    void util_AA38(void* obj) {
-        // Stub - would perform utility initialization
-    }
-    
-    // Stub for thread initialization
-    void* xe_main_thread_init_0038() {
-        // Stub - would initialize thread context
-        return nullptr;
-    }
-    
-    // Global allocator pointer @ 0x82600004
-    void* g_allocator_ptr = nullptr;
+// fsmMachine destructor — already forward-declared above
+// (implementation in src/rage/fsmMachine.c; stub here for link-time)
+
+// Stub for rage initialization
+void grcDevice_FinalizeRenderSetup_1(void* obj) {
+    (void)obj;
+    // Stub - would initialize rage component
 }
+
+// Stub for network client initialization
+void SinglesNetworkClient_2BE8_g(void* obj) {
+    (void)obj;
+    // Stub - would initialize network client
+}
+
+// Stub for network client helper
+void SinglesNetworkClient_51C8_g_stub(void* obj) {
+    (void)obj;
+    // Stub - would initialize network client component
+}
+
+// Stub for utility initialization
+void util_AA38_stub(void* obj) {
+    (void)obj;
+    // Stub - would perform utility initialization
+}
+
+// Stub for thread initialization
+void* xe_main_thread_init_0038_stub() {
+    // Stub - would initialize thread context
+    return nullptr;
+}
+
+// Global allocator pointer @ 0x82600004
+void* g_allocator_ptr = nullptr;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // FloatAverager — Utility class for averaging float values over time
@@ -1047,7 +1078,7 @@ extern "C" {
 //   2. Extract bit 0 of flags (r4 & 0x1)
 //   3. If bit 0 is set, call rage_free(this) to deallocate
 // ─────────────────────────────────────────────────────────────────────────────
-void FloatAverager::~FloatAverager() {
+FloatAverager::~FloatAverager() {
     // Vtable address for variant 1
     extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910
 
@@ -1061,9 +1092,8 @@ void FloatAverager::~FloatAverager() {
 // FloatAverager scalar destructor variant 1  [@ 0x821A7AA0]
 // Wrapper that calls destructor and optionally frees memory
 // ─────────────────────────────────────────────────────────────────────────────
+extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910 (for scalar dtor)
 extern "C" void FloatAverager_vfn_0(FloatAverager* thisPtr, int flags) {
-    extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910
-    extern void rage_free(void* ptr);
 
     // Restore vtable
     *(void**)thisPtr = &g_FloatAverager_vtable_1;

@@ -87,11 +87,11 @@ struct CShelvingFilterEffect {
     // ── IXAPO virtual methods ──
     virtual ~CShelvingFilterEffect();                // [0] @ 0x821b26a8
     virtual void ScalarDtor(int flags);              // [1] @ 0x821ae618
-    virtual void GetRegistrationProperties();        // [2] @ 0x821ae198
-    virtual void IsInputFormatSupported();            // [3] @ 0x821ae1b8
+    virtual void GetRegistrationProperties(void* outProps); // [2] @ 0x821ae198
+    virtual int IsInputFormatSupported(uint8_t paramIndex, void* outValue); // [3] @ 0x821ae1b8
     virtual void LockForProcess();                    // [4] @ 0x821ae2c8
-    virtual void UnlockForProcess();                  // [5] @ 0x821ae4e0
-    virtual void Process();                           // [6] @ 0x821ade28
+    virtual int UnlockForProcess(void* outParam);     // [5] @ 0x821ae4e0
+    virtual void Process(void* pInputBuffer);         // [6] @ 0x821ade28
     virtual void CalcInputFrames();                   // [7] @ 0x821addc8
 };
 

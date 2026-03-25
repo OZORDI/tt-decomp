@@ -30,6 +30,11 @@
 #include <stdint.h>
 #include <string.h>
 
+// External kernel/XAPO functions
+extern "C" void ke_EnterCriticalSection(uint32_t lockId);
+extern "C" void ke_LeaveCriticalSection(uint32_t lockId);
+extern "C" void xapo_UnpackBuffer(void* desc, void* outInfo);
+
 // ============================================================================
 // CShelvingFilterEffect — Low/High Shelf EQ Filter
 // @ vtable 0x8203B288
@@ -79,9 +84,6 @@ void CShelvingFilterEffect::GetRegistrationProperties(void* outProps) {
  *   6: m_mode (+176)
  */
 int CShelvingFilterEffect::IsInputFormatSupported(uint8_t paramIndex, void* outValue) {
-    extern "C" void ke_EnterCriticalSection(uint32_t lockId);
-    extern "C" void ke_LeaveCriticalSection(uint32_t lockId);
-
     // Default output to 0.0f
     struct ParamValue { float value; uint32_t pad; };
     ParamValue result = { 0.0f, 0 };
@@ -172,7 +174,6 @@ int CShelvingFilterEffect::UnlockForProcess(void* outParam) {
  */
 void CShelvingFilterEffect::Process(void* pInputBuffer) {
     // Unpack XAPO buffer descriptor
-    extern "C" void xapo_UnpackBuffer(void* desc, void* outInfo);
     struct BufferInfo { uint8_t pad; uint8_t channelCount; uint8_t pad2[6]; float* pSamples; };
     BufferInfo info;
     xapo_UnpackBuffer(pInputBuffer, &info);

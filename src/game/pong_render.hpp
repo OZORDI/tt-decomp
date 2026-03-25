@@ -170,8 +170,13 @@ struct pongScrnTransFreezeAndCrossFade {
     float    m_alpha;          // +0x34  fade alpha (1.0 - progress)
 
     // ── virtual methods ──
-    virtual void vfn_2();      // [2] @ 0x82378938
+    virtual void Begin();      // [2] @ 0x82378938
     virtual void Update(float deltaTime);  // [3] @ 0x823789a8
+    virtual void Render();     // [4] @ 0x82378a18
+    virtual void End();        // [5] @ 0x82378a78
+    virtual void Reset();      // [6] @ 0x82378a80
+};
+
 // ── pongScrnTransSwipe  [vtable @ 0x8206A1E4] ──────────────────────────
 // Screen transition effect that swipes across the screen with configurable patterns.
 // Uses a lookup table of 17 swipe patterns with timing, direction, and visual effects.
@@ -190,13 +195,11 @@ struct pongScrnTransSwipe {
     uint8_t  m_randomize;      // +0x38  if true, pick random pattern
 
     // ── virtual methods ──
-    virtual void vfn_2();      // [2] @ 0x82378ab0 - Initialize/reset transition
+    virtual void Begin();      // [2] @ 0x82378ab0 - Initialize/reset transition
     virtual void Update(float deltaTime);  // [3] @ 0x82378bd0 - Update elapsed time and progress
     virtual void Render();     // [4] @ 0x82378c20 - Render the swipe effect
     virtual void OnComplete(); // [5] @ 0x82378d98 - Called when transition finishes
     virtual void Reset();      // [6] @ 0x82378de0 - Reset to initial state
-};
-
 };
 
 // ── pongScrnTransFreezeAndFadeOut  [vtable @ 0x8206A178] ──────────────────────────
