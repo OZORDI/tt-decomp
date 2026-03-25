@@ -304,7 +304,8 @@ void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, v
 
     if (!found) {
         // Method not found
-        nop_8240E6D0("Unsupported script method: %s", methodName);
+        extern const char* g_str_swf_unsupportedMethod;  // @ 0x82077054
+        nop_8240E6D0(g_str_swf_unsupportedMethod, methodName);
         ((swfValue*)outResult)->data = 0;
         ((swfValue*)outResult)->type = 3;  // type 3 = undefined
         return;

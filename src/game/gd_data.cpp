@@ -4,6 +4,8 @@
  *
  * Player manager and game data structures.
  */
+// Binary string constants
+#include "game/pong_strings.hpp"
 
 #include "gd_data.hpp"
 #include "globals.h"
@@ -33,7 +35,7 @@ void UnloadTemplate(const char* templateName) {
     
     // Error if template not found
     if (templateIndex == -1) {
-        nop_8240E6D0("Need to preload template '%s'!");
+        nop_8240E6D0(g_str_needToPreloadTemplate);
         return;
     }
  *      - If primary object exists: call game_8EE8, then ReleaseObjectWithFlags with flag 0xE001
@@ -91,7 +93,7 @@ void game_8EE8(void* templateKey) {
     
     // Error if template not found
     if (templateIndex == -1) {
-        nop_8240E6D0("Need to preload template '%s'!");
+        nop_8240E6D0(g_str_needToPreloadTemplate);
         return;
     }
     
@@ -142,7 +144,7 @@ void game_8EE8(void* templateKey) {
     
     // Error if template not found
     if (templateIndex == -1) {
-        nop_8240E6D0("Need to preload template '%s'!");
+        nop_8240E6D0(g_str_needToPreloadTemplate);
         return;
     }
     
@@ -852,7 +854,7 @@ void game_8EE8(void* templateKey) {
     
     // Error if template not found
     if (index == -1) {
-        nop_8240E6D0("Need to preload template '%s'!");
+        nop_8240E6D0(g_str_needToPreloadTemplate);
         return;
     }
     
