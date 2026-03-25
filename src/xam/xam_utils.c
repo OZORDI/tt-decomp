@@ -392,3 +392,107 @@ bool xam_9758_g(void* obj, const char* str) {
     
     return false;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Xbox Live Session State Helpers
+// Small boolean accessors for network session state machines.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * IsMatchInProgress @ 0x8236F440 | size: 0x1C
+ *
+ * Returns true if the session's match state field (+168) equals 1,
+ * indicating a match is actively in progress.
+ * Called by 7 network coordinator functions.
+ */
+bool IsMatchInProgress(void* session) {  // xam_F440_g
+    return *(int32_t*)((char*)session + 168) == 1;
+}
+
+/**
+ * HasSessionHandle @ 0x8236F480 | size: 0x1C
+ *
+ * Returns true if the session has a non-null Xbox Live session
+ * handle at offset +1760. Used to check if a session was created.
+ */
+bool HasSessionHandle(void* session) {  // xam_F480
+    return *(void**)((char*)session + 1760) != NULL;
+}
+
+/**
+ * IsSessionConnected @ 0x8236F4A0 | size: 0x1C
+ *
+ * Returns true if the session's connection state (+40) equals 3,
+ * indicating the session is fully connected and ready for gameplay.
+ */
+bool IsSessionConnected(void* session) {  // xam_F4A0_g
+    return *(int32_t*)((char*)session + 40) == 3;
+}
+
+/**
+ * IsSessionConnecting @ 0x8236F4C0 | size: 0x1C
+ *
+ * Returns true if the session's connection state (+40) equals 2,
+ * indicating the session is in the process of connecting.
+ */
+bool IsSessionConnecting(void* session) {  // xam_F4C0_g
+    return *(int32_t*)((char*)session + 40) == 2;
+}
+
+/**
+ * IsQueryComplete @ 0x8239A8B8 | size: 0x1C
+ *
+ * Returns true if a network data query's state (+28) equals 1,
+ * indicating the query has completed. Used by NetDataQuery callers
+ * and PongNetRoundRobinCoordinator.
+ */
+bool IsQueryComplete(void* query) {  // xam_A8B8_g
+    return *(int32_t*)((char*)query + 28) == 1;
+}
+
+/**
+ * IsAsyncOperationComplete @ 0x82426000 | size: 0x1C
+ *
+ * Returns true if an async Xbox operation's state (+36) equals 1.
+ * Generic completion check used across multiple XAM subsystems.
+ */
+bool IsAsyncOperationComplete(void* asyncOp) {  // xam_5FF8_w
+    return *(int32_t*)((char*)asyncOp + 36) == 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// XAM API Wrappers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * XamEnumerateSync @ 0x82587948 | size: 0x18
+ *
+ * Synchronous wrapper around XamEnumerate. Passes 0 as the first
+ * parameter (no async callback handle), shifting all other args
+ * up by one position.
+ */
+extern uint32_t XamEnumerate(uint32_t callbackHandle, void* buffer,
+                             uint32_t bufferSize, uint32_t* itemCount,
+                             void* overlapped);
+
+uint32_t XamEnumerateSync(void* buffer, uint32_t bufferSize,
+                          uint32_t* itemCount, void* overlapped) {  // xam_7948_g
+    return XamEnumerate(0, buffer, bufferSize, itemCount, overlapped);
+}
+
+/**
+ * DispatchSessionAction @ 0x8256AFA0 | size: 0x14
+ *
+ * Routes a session object to one of two handlers based on its
+ * state field (+36). State 1 → active handler, otherwise → default.
+ */
+extern void SessionAction_Active(void* session);   // xam_ADB0_g
+extern void SessionAction_Default(void* session);  // phInst_AC20_p39
+
+void DispatchSessionAction(void* session) {  // xam_AFA0_sp
+    if (*(int32_t*)((char*)session + 36) == 1) {
+        SessionAction_Active(session);
+    } else {
+        SessionAction_Default(session);
+    }
+}
