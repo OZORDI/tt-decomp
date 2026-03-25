@@ -1549,3 +1549,702 @@ int LocomotionStateAnim::CountActiveAnimLayers() {  // BA60_g
     if (*(void**)((char*)this + 24) != nullptr) return count + 1;
     return count;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst / LocomotionState — Batch 3 (39 remaining small functions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── VTABLE THUNKS ──────────────────────────────────────────────────────────
+
+/**
+ * pongCreatureInst vtable thunks @ 0x8211CC48-CC78 | 16B each
+ *
+ * Four adjacent vtable forwarding thunks. Each loads the vtable from
+ * this, then tail-calls a specific slot. Used by the creature instance
+ * to forward calls to its inner physics/collision object.
+ */
+void pongCreatureInst::ForwardVfn11() {  // CC48_p42 @ 0x8211CC48
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[11])(this);
+}
+
+void pongCreatureInst::ForwardVfn12() {  // CC58_p42 @ 0x8211CC58
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[12])(this);
+}
+
+void pongCreatureInst::ForwardVfn13() {  // CC68_p42 @ 0x8211CC68
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[13])(this);
+}
+
+void pongCreatureInst::ForwardVfn14() {  // CC78_p33 @ 0x8211CC78
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[14])(this);
+}
+
+// ── FIELD SETTERS (vcall result → store) ───────────────────────────────────
+
+/**
+ * pongCreatureInst::UpdateFlag445 @ 0x82118EB0 | size: 0x50
+ *
+ * Calls vtable slot 4 on the object at arg->field_4 to get a bool,
+ * stores it at this+445. Used for syncing creature visibility flags.
+ */
+void pongCreatureInst::UpdateFlag445(void* arg) {  // 8EB0_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef uint8_t (*GetFn)(void*);
+    uint8_t val = ((GetFn)(*(void***)target)[4])(target);
+    *(uint8_t*)((char*)this + 445) = val;
+}
+
+/**
+ * pongCreatureInst::UpdateFlag447 @ 0x82118F70 | size: 0x50
+ *
+ * Same pattern as UpdateFlag445, stores at this+447.
+ */
+void pongCreatureInst::UpdateFlag447(void* arg) {  // 8F70_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef uint8_t (*GetFn)(void*);
+    uint8_t val = ((GetFn)(*(void***)target)[4])(target);
+    *(uint8_t*)((char*)this + 447) = val;
+}
+
+/**
+ * pongCreatureInst::UpdateFlagBit3 @ 0x82118F00 | size: 0x70
+ *
+ * Calls vtable slot 4 on arg->field_4 to get a bool. If true,
+ * sets bit 3 (0x08) of the flags byte at this+431. If false, clears it.
+ */
+void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
+    void* target = *(void**)((char*)arg + 4);
+    typedef uint8_t (*GetFn)(void*);
+    uint8_t val = ((GetFn)(*(void***)target)[4])(target);
+
+    uint8_t* flags = (uint8_t*)((char*)this + 431);
+    if (val) {
+        *flags |= 0x08;   // set bit 3
+    } else {
+        *flags &= ~0x08;  // clear bit 3
+    }
+}
+
+// ── COMPUTATION: Lookups & Searches ────────────────────────────────────────
+
+/**
+ * pongCreature::LookupHashValue @ 0x820C79F0 | size: 0x34
+ *
+ * Looks up a value in the creature's hash table at this+160.
+ * Key from *keyPtr is shifted left 3 (×8 byte entries). The hash table
+ * stores values at entry+4. Writes result to *outPtr, or 0 if not found.
+ */
+void pongCreature::LookupHashValue(void* outPtr, void* keyPtr) {  // 79F0_p45
+    uint32_t key = *(uint32_t*)keyPtr;
+    void* hashTable = *(void**)((char*)this + 160);
+    char* entries = *(char**)((char*)hashTable + 8);
+    char* entry = entries + (key << 3);
+
+    if (entry) {
+        *(uint32_t*)outPtr = *(uint32_t*)(entry + 4);
+    } else {
+        *(uint32_t*)outPtr = 0;
+    }
+}
+
+/**
+ * pongCreature::FindIndexByKey @ 0x820C7990 | size: 0x60
+ *
+ * Linear scan of an array looking for a matching key. Returns the
+ * index into *outPtr, or -1 if not found. Array entries have stride 8
+ * with key at entry+0.
+ */
+void pongCreature::FindIndexByKey(void* outPtr, void* keyPtr) {  // 7990_p45
+    uint32_t searchKey = *(uint32_t*)keyPtr;
+    void* arrayBase = *(void**)((char*)this + 160);
+    char* entries = *(char**)((char*)arrayBase + 8);
+    uint32_t count = *(uint32_t*)((char*)arrayBase + 12);
+
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t entryKey = *(uint32_t*)(entries + i * 8);
+        if (entryKey == searchKey) {
+            *(int32_t*)outPtr = (int32_t)i;
+            return;
+        }
+    }
+    *(int32_t*)outPtr = -1;
+}
+
+/**
+ * pongCreatureInst::LookupContainer @ 0x8211CFB0 | size: 0x60
+ *
+ * Dual-path lookup: if field_0 (pointer array) is non-null, uses
+ * indexed access: array[index]->field_4. Otherwise uses linear
+ * stride: field_4 + (index * 176) + 4. Returns the uint32_t value.
+ */
+uint32_t pongCreatureInst::LookupContainer() {  // CFB0_h
+    void* ptrArray = *(void**)((char*)this + 0);
+    int32_t index = *(int32_t*)((char*)this + 12);
+
+    if (ptrArray) {
+        void** entries = (void**)ptrArray;
+        void* entry = entries[index];
+        return *(uint32_t*)((char*)entry + 4);
+    } else {
+        char* base = *(char**)((char*)this + 4);
+        return *(uint32_t*)(base + index * 176 + 4);
+    }
+}
+
+/**
+ * pongCreatureInst::HasMultipleActiveSlots @ 0x82127BD8 | size: 0x6C
+ *
+ * Iterates the bitfield at this+464 (32 bits), counting set bits.
+ * Returns true if more than 1 bit is set — indicating multiple
+ * active animation or physics slots.
+ */
+bool pongCreatureInst::HasMultipleActiveSlots() {  // 7BD8_h
+    uint32_t bitfield = *(uint32_t*)((char*)this + 464);
+    int count = 0;
+    while (bitfield) {
+        count += (bitfield & 1);
+        bitfield >>= 1;
+        if (count > 1) return true;
+    }
+    return false;
+}
+
+// ── COMPUTATION: List/Array Operations ─────────────────────────────────────
+
+/**
+ * pongCreatureInst::ListInsertTail @ 0x821267E8 | size: 0x6C
+ *
+ * Inserts a node at the tail of a doubly-linked list. Updates prev/next
+ * pointers and increments the element count at this+8.
+ */
+void pongCreatureInst::ListInsertTail(void* node) {  // 67E8_h
+    char* listHead = (char*)this;
+    void* tail = *(void**)(listHead + 4);  // current tail
+
+    // Link new node
+    *(void**)((char*)node + 0) = tail;       // node->prev = tail
+    *(void**)((char*)node + 4) = nullptr;    // node->next = null
+
+    if (tail) {
+        *(void**)((char*)tail + 4) = node;   // tail->next = node
+    } else {
+        *(void**)(listHead + 0) = node;      // head = node (empty list)
+    }
+    *(void**)(listHead + 4) = node;          // tail = node
+
+    // Increment count
+    int32_t* count = (int32_t*)(listHead + 8);
+    (*count)++;
+}
+
+/**
+ * pongCreatureInst::ArrayRemove @ 0x822C9420 | size: 0x74
+ *
+ * Finds and removes an element from a pointer array by value.
+ * Uses shift-left compaction to fill the gap. Decrements count at +8.
+ */
+void pongCreatureInst::ArrayRemove(void* element) {  // 9420_h
+    void** array = *(void***)((char*)this + 0);
+    int32_t count = *(int32_t*)((char*)this + 8);
+
+    for (int i = 0; i < count; i++) {
+        if (array[i] == element) {
+            // Shift remaining elements left
+            for (int j = i; j < count - 1; j++) {
+                array[j] = array[j + 1];
+            }
+            array[count - 1] = nullptr;
+            *(int32_t*)((char*)this + 8) = count - 1;
+            return;
+        }
+    }
+}
+
+/**
+ * pongCreatureInst::SetRefPtr @ 0x822C9030 | size: 0x70
+ *
+ * Atomically swaps a ref-counted pointer at this+4. Adds a reference
+ * to the new object and releases the old one.
+ */
+void pongCreatureInst::SetRefPtr(void* newObj) {  // 9030_g
+    extern "C" void rage_AddRef(void* obj);
+    extern "C" void rage_Release(void* obj);
+
+    void* oldObj = *(void**)((char*)this + 4);
+    if (newObj) rage_AddRef(newObj);
+    *(void**)((char*)this + 4) = newObj;
+    if (oldObj) rage_Release(oldObj);
+}
+
+/**
+ * pongCreatureInst::SetArraySlot @ 0x8228E7B8 | size: 0x64
+ *
+ * Sets a ref-counted pointer in an array slot. Adds ref to new value,
+ * releases old value at the specified index.
+ */
+void pongCreatureInst::SetArraySlot(int index, void* newObj) {  // E7B8_h
+    extern "C" void rage_AddRef(void* obj);
+    extern "C" void rage_Release(void* obj);
+
+    void** array = *(void***)((char*)this + 0);
+    void* oldObj = array[index];
+
+    if (newObj) rage_AddRef(newObj);
+    array[index] = newObj;
+    if (oldObj) rage_Release(oldObj);
+}
+
+// ── COMPUTATION: Detach/Destroy ────────────────────────────────────────────
+
+/**
+ * pongCreature::ScalarDeletingDtor @ 0x820C5398 | size: 0x50
+ *
+ * Standard MSVC scalar deleting destructor. Calls the base destructor,
+ * then conditionally frees memory if bit 0 of the flags parameter is set.
+ */
+void pongCreature::ScalarDeletingDtor(int flags) {  // vfn_0_5398_1
+    extern "C" void pongCreature_BaseDtor(void* obj);  // @ 0x820C53E8
+    extern "C" void rage_free(void* ptr);
+
+    pongCreature_BaseDtor(this);
+    if (flags & 1) {
+        rage_free(this);
+    }
+}
+
+/**
+ * pongCreatureInst::Detach @ 0x8211D470 | size: 0x58
+ *
+ * Detaches this creature instance from its parent. Sets the vtable to
+ * the base class, calls the parent's remove method (vtable slot 3) to
+ * unlink from the parent list, then calls the cleanup helper.
+ */
+void pongCreatureInst::Detach() {  // D470_p33
+    extern void* g_creatureManager;  // @ 0x826063B8 (SDA)
+    extern "C" void pongCreatureInst_Cleanup(void* obj);  // @ 0x822C8FD0
+
+    // Set vtable to base phInst class
+    *(void**)this = (void*)0x82022D2C;  // phInst vtable
+
+    // Remove from parent's child list
+    void* parent = *(void**)((char*)g_creatureManager + 876);
+    void* childToRemove = *(void**)((char*)this + 192);
+    typedef void (*RemoveFn)(void*, void*);
+    RemoveFn removeChild = (RemoveFn)(*(void***)parent)[3];
+    removeChild(parent, childToRemove);
+
+    // Run cleanup
+    pongCreatureInst_Cleanup(this);
+}
+
+/**
+ * pongCreature::Relocate @ 0x820C8858 | size: 0x7C
+ *
+ * Relocates creature data pointers after a memory move. Sets vtable,
+ * rebases the pointer at +4 using a stride table from the relocator,
+ * then calls the fixup function.
+ */
+void pongCreature::Relocate(void* relocator) {  // 8858_p46
+    extern "C" void pongCreature_Fixup(void* obj, void* relocator);
+
+    // Set vtable
+    *(void**)this = (void*)0x82028144;  // pongCreature vtable
+
+    // Rebase field_4 pointer
+    void* basePtr = *(void**)((char*)this + 4);
+    if (basePtr && relocator) {
+        uint32_t* strideTable = *(uint32_t**)((char*)relocator + 4);
+        uint32_t offset = strideTable[1];
+        *(void**)((char*)this + 4) = (char*)basePtr + offset;
+    }
+
+    pongCreature_Fixup(this, relocator);
+}
+
+// ── COMPUTATION: Matrix/Vector Operations ──────────────────────────────────
+
+/**
+ * pongCreatureInst::SetMatrix @ 0x820D5040 | size: 0x60
+ *
+ * Copies a 4×4 matrix (64 bytes, 4 vec128s) from the source to a
+ * stack-local buffer, then calls the internal SetMatrix helper.
+ */
+void pongCreatureInst::SetMatrix(const void* srcMatrix) {  // 5040
+    extern "C" void pongCreatureInst_SetMatrixImpl(void* obj, const void* matrix);
+    // Original copies 4 lvx128/stvx128 pairs to align the matrix on stack
+    pongCreatureInst_SetMatrixImpl(this, srcMatrix);
+}
+
+/**
+ * pongCreatureInst::UpdateHeading @ 0x8228E828 | size: 0x60
+ *
+ * Updates creature heading: calls two helpers to compute the heading
+ * angle, stores it at this+8, then conditionally calls a third helper
+ * if the heading changed significantly.
+ */
+void pongCreatureInst::UpdateHeading() {  // E828_v12
+    extern "C" float pongCreatureInst_ComputeHeading(void* obj);
+    extern "C" void pongCreatureInst_ApplyHeading(void* obj, float heading);
+    extern "C" void pongCreatureInst_NotifyHeadingChanged(void* obj);
+
+    float heading = pongCreatureInst_ComputeHeading(this);
+    float prevHeading = *(float*)((char*)this + 8);
+    *(float*)((char*)this + 8) = heading;
+
+    if (heading != prevHeading) {
+        pongCreatureInst_NotifyHeadingChanged(this);
+    }
+}
+
+// ── LocomotionStateAnim ────────────────────────────────────────────────────
+
+/**
+ * LocomotionStateAnim::ResetAccumulators @ 0x820DB9F0 | size: 0x70
+ *
+ * Zeros 3 float weight values at +28, +32, +36 and 4 vec128
+ * accumulators at +48, +64, +80, +96. Uses AltiVec vxor to clear
+ * 16-byte aligned vectors.
+ */
+void LocomotionStateAnim::ResetAccumulators() {  // B9F0_w
+    // Zero weight floats (loop 3 iterations: +28, +32, +36)
+    *(float*)((char*)this + 28) = 0.0f;
+    *(float*)((char*)this + 32) = 0.0f;
+    *(float*)((char*)this + 36) = 0.0f;
+
+    // Zero interleaved counters at +16, +20, +24
+    *(uint32_t*)((char*)this + 16) = 0;
+    *(uint32_t*)((char*)this + 20) = 0;
+    *(uint32_t*)((char*)this + 24) = 0;
+
+    // Zero 4 vec128 accumulators at +48, +64, +80, +96
+    memset((char*)this + 48, 0, 64);
+}
+
+/**
+ * LocomotionStateAnim::SetAnimSpeed @ 0x820C2858 | size: 0x54
+ *
+ * Sets animation playback speed by multiplying speed × scale factor,
+ * then calls the internal anim speed setter.
+ */
+void LocomotionStateAnim::SetAnimSpeed(float speed, float scale) {  // 2858
+    extern "C" void LocomotionStateAnim_SetSpeed(void* obj, float speed);
+    extern "C" void LocomotionStateAnim_ApplySpeed(void* obj);
+
+    float scaledSpeed = speed * scale;
+    LocomotionStateAnim_SetSpeed(this, scaledSpeed);
+    LocomotionStateAnim_ApplySpeed(this);
+}
+
+/**
+ * LocomotionStateAnim::InitBoundCapsule @ 0x820C3D48 | size: 0x58
+ *
+ * Initializes a bounding capsule from float constants. Zeroes a vec128
+ * and calls the capsule initialization helper.
+ */
+void LocomotionStateAnim::InitBoundCapsule() {  // 3D48_g
+    extern "C" void LocomotionStateAnim_InitCapsuleImpl(void* obj, float radius, const void* center);
+
+    float zeroVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    float radius = 0.0f;  // loaded from constant table
+    LocomotionStateAnim_InitCapsuleImpl(this, radius, zeroVec);
+}
+
+/**
+ * LocomotionStateAnim::SetGlobalInstance @ 0x820C34E8 | size: 0x58
+ *
+ * Swaps the global LocomotionStateAnim pointer at 0x8271A378.
+ * Adds a reference to the new instance and releases the old one.
+ */
+void LocomotionStateAnim::SetGlobalInstance(void* newInstance) {  // 34E8_p46
+    extern void* g_locomotionAnimInstance;  // @ 0x8271A378
+    extern "C" void rage_AddRef(void* obj);
+    extern "C" void rage_Release(void* obj);
+
+    void* oldInstance = g_locomotionAnimInstance;
+    if (newInstance) rage_AddRef(newInstance);
+    g_locomotionAnimInstance = newInstance;
+    if (oldInstance) rage_Release(oldInstance);
+}
+
+/**
+ * LocomotionStateAnim::SetMatrix @ 0x820D7B30 | size: 0x60
+ *
+ * Copies a 4×4 matrix (64 bytes) and forwards to the internal setter.
+ */
+void LocomotionStateAnim::SetMatrix(const void* srcMatrix) {  // 7B30_g
+    extern "C" void LocomotionStateAnim_SetMatrixImpl(void* obj, const void* matrix);
+    LocomotionStateAnim_SetMatrixImpl(this, srcMatrix);
+}
+
+/**
+ * LocomotionState::AdvanceNode @ 0x820DEFA0 | size: 0x54
+ *
+ * If the linked list at this+4 is non-empty, advances to the next
+ * node using FindFirstActive and stores the result.
+ */
+void LocomotionState::AdvanceNode() {  // EFA0_h
+    extern "C" void* LocomotionState_FindFirstActive(void* list);
+
+    void* listHead = *(void**)((char*)this + 4);
+    if (listHead) {
+        void* next = LocomotionState_FindFirstActive(listHead);
+        *(void**)((char*)this + 4) = next;
+    }
+}
+
+/**
+ * LocomotionState::FindFirstActive @ 0x820DEF38 | size: 0x68
+ *
+ * Walks a linked list, skipping sentinel nodes (field+0 == 0).
+ * Returns the first node whose field+8 is non-null.
+ */
+void* LocomotionState::FindFirstActive(void* listHead) {  // EF38_p46
+    char* node = (char*)listHead;
+    while (node) {
+        void* sentinel = *(void**)(node + 0);
+        if (sentinel != nullptr) {
+            void* data = *(void**)(node + 8);
+            if (data) return node;
+        }
+        node = *(char**)(node + 4);  // next pointer
+    }
+    return nullptr;
+}
+
+/**
+ * LocomotionStateAnim::DispatchAnimEvent @ 0x820DEEC8 | size: 0x6C
+ *
+ * Finds an animation via the BEF8 lookup function, then calls its
+ * vtable slot 18 with the provided argument. Returns true if the
+ * animation was found and the event dispatched.
+ */
+bool LocomotionStateAnim::DispatchAnimEvent(void* eventArg) {  // EEC8
+    extern "C" void* LocomotionStateAnim_FindAnim(void* obj);
+
+    void* anim = LocomotionStateAnim_FindAnim(this);
+    if (!anim) return false;
+
+    typedef bool (*EventFn)(void*, void*);
+    EventFn dispatch = (EventFn)(*(void***)anim)[18];
+    return dispatch(anim, eventArg);
+}
+
+/**
+ * LocomotionStateAnim::GetAnimPosition @ 0x820CB800 | size: 0x74
+ *
+ * Finds an animation via BEF8, calls its vtable slot 14 to get a
+ * position vector, and copies the result to the output pointer.
+ */
+void LocomotionStateAnim::GetAnimPosition(void* outPosition) {  // B800_g
+    extern "C" void* LocomotionStateAnim_FindAnim(void* obj);
+
+    void* anim = LocomotionStateAnim_FindAnim(this);
+    if (!anim) {
+        memset(outPosition, 0, 16);
+        return;
+    }
+
+    typedef void (*GetPosFn)(void*, void*);
+    GetPosFn getPos = (GetPosFn)(*(void***)anim)[14];
+    getPos(anim, outPosition);
+}
+
+/**
+ * LocomotionStateAnim::AccumulateOffset @ 0x8223BDB0 | size: 0x6C
+ *
+ * Cross-product helper: calls BBB0 to get a vec128, then adds
+ * the result to the accumulator.
+ */
+void LocomotionStateAnim::AccumulateOffset(void* accumulator) {  // BDB0_g
+    extern "C" void LocomotionStateAnim_ComputeOffset(void* obj, void* outVec);
+
+    float offset[4];
+    LocomotionStateAnim_ComputeOffset(this, offset);
+
+    // Add to accumulator (vec128 addition)
+    float* acc = (float*)accumulator;
+    acc[0] += offset[0];
+    acc[1] += offset[1];
+    acc[2] += offset[2];
+    acc[3] += offset[3];
+}
+
+/**
+ * LocomotionStateAnim::AccumulateList @ 0x8214D480 | size: 0x6C
+ *
+ * Walks a linked list of animation nodes, calling two helpers per
+ * node to accumulate contributions (7E68 + 3AD8).
+ */
+void LocomotionStateAnim::AccumulateList() {  // D480_w
+    extern "C" void LocomotionStateAnim_ProcessNode(void* obj, void* node);
+    extern "C" void LocomotionStateAnim_AccumNode(void* obj, void* node);
+
+    void* node = *(void**)((char*)this + 4);
+    while (node) {
+        LocomotionStateAnim_ProcessNode(this, node);
+        LocomotionStateAnim_AccumNode(this, node);
+        node = *(void**)((char*)node + 4);  // next
+    }
+}
+
+/**
+ * LocomotionStateAnim::RebasePointers @ 0x823851A8 | size: 0x6C
+ *
+ * Rebases two pointers (+0 and +12) using a stride table provided
+ * by the relocator at r4. Each pointer is offset by the corresponding
+ * stride entry.
+ */
+void LocomotionStateAnim::RebasePointers(void* relocator) {  // 51A8_p46
+    uint32_t* strideTable = *(uint32_t**)((char*)relocator + 4);
+
+    void* ptr0 = *(void**)((char*)this + 0);
+    if (ptr0) {
+        *(void**)((char*)this + 0) = (char*)ptr0 + strideTable[0];
+    }
+
+    void* ptr12 = *(void**)((char*)this + 12);
+    if (ptr12) {
+        *(void**)((char*)this + 12) = (char*)ptr12 + strideTable[1];
+    }
+}
+
+/**
+ * LocomotionStateAnim::IsAngleCloser @ 0x823DA190 | size: 0x64
+ *
+ * Compares two angular distances. Returns true if the absolute value
+ * of angle2 is closer to the target than angle3.
+ */
+bool LocomotionStateAnim::IsAngleCloser(float target, float angle2, float angle3) {  // A190_w
+    float diff2 = angle2 - target;
+    float diff3 = angle3 - target;
+    float abs2 = (diff2 >= 0.0f) ? diff2 : -diff2;
+    float abs3 = (diff3 >= 0.0f) ? diff3 : -diff3;
+    return abs2 < abs3;
+}
+
+/**
+ * LocomotionStateAnim::AdvanceRingBuffer @ 0x823804C0 | size: 0x80
+ *
+ * Advances a ring buffer index (mod 4), decrements the remaining
+ * count, and updates internal state pointers. Used for animation
+ * sample buffering.
+ */
+void LocomotionStateAnim::AdvanceRingBuffer() {  // 04C0_fw
+    int32_t index = *(int32_t*)((char*)this + 8);
+    int32_t remaining = *(int32_t*)((char*)this + 12);
+
+    index = (index + 1) & 3;  // mod 4
+    remaining--;
+
+    *(int32_t*)((char*)this + 8) = index;
+    *(int32_t*)((char*)this + 12) = remaining;
+
+    // Update current pointer based on new index
+    void** buffers = *(void***)((char*)this + 0);
+    *(void**)((char*)this + 16) = buffers[index];
+}
+
+/**
+ * LocomotionStateAnim::PushBack @ 0x82234190 | size: 0x80
+ *
+ * Pushes an element (key + vec128) onto a growable array. If the array
+ * is full, grows it before insertion.
+ */
+void LocomotionStateAnim::PushBack(uint32_t key, const void* vecData) {  // 4190_g
+    extern "C" void LocomotionStateAnim_GrowArray(void* obj);
+
+    uint32_t count = *(uint32_t*)((char*)this + 8);
+    uint32_t capacity = *(uint32_t*)((char*)this + 12);
+
+    if (count >= capacity) {
+        LocomotionStateAnim_GrowArray(this);
+    }
+
+    // Insert at end: entry = base + count * 20 (key=4 + vec=16)
+    char* base = *(char**)((char*)this + 0);
+    char* entry = base + count * 20;
+    *(uint32_t*)entry = key;
+    memcpy(entry + 4, vecData, 16);
+
+    *(uint32_t*)((char*)this + 8) = count + 1;
+}
+
+// ── LocomotionStateMf ──────────────────────────────────────────────────────
+
+/**
+ * LocomotionStateMf::UpdateBlend @ 0x8222C128 | size: 0x60
+ *
+ * Chains 5 internal helper calls to update a blend state: scale
+ * weights, blend poses, update transforms, apply constraints, finish.
+ */
+void LocomotionStateMf::UpdateBlend() {  // C128_w
+    extern "C" void LocomotionStateMf_ScaleWeights(void* obj);
+    extern "C" void LocomotionStateMf_BlendPoses(void* obj);
+    extern "C" void LocomotionStateMf_UpdateTransforms(void* obj);
+    extern "C" void LocomotionStateMf_ApplyConstraints(void* obj);
+    extern "C" void LocomotionStateMf_Finish(void* obj);
+
+    LocomotionStateMf_ScaleWeights(this);
+    LocomotionStateMf_BlendPoses(this);
+    LocomotionStateMf_UpdateTransforms(this);
+    LocomotionStateMf_ApplyConstraints(this);
+    LocomotionStateMf_Finish(this);
+}
+
+/**
+ * LocomotionStateMf::EraseRange @ 0x822331A8 | size: 0x64
+ *
+ * Erases elements in range [start, end) from a contiguous array via
+ * memmove. Updates the end pointer at this+8.
+ */
+void LocomotionStateMf::EraseRange(void* rangeStart, void* rangeEnd) {  // 31A8
+    char* endPtr = *(char**)((char*)this + 8);
+    size_t tailSize = endPtr - (char*)rangeEnd;
+
+    if (tailSize > 0) {
+        memmove(rangeStart, rangeEnd, tailSize);
+    }
+
+    // Update end pointer
+    size_t erased = (char*)rangeEnd - (char*)rangeStart;
+    *(char**)((char*)this + 8) = endPtr - erased;
+}
+
+/**
+ * LocomotionStateMf::ComputeWeightedSum @ 0x820E3148 | size: 0x68
+ *
+ * Computes a weighted sum: dot product of weight array with data
+ * array, scaled by a factor from this+40.
+ */
+float LocomotionStateMf::ComputeWeightedSum(const float* weights, const float* data, int count) {  // 3148_h
+    float scale = *(float*)((char*)this + 40);
+    float sum = 0.0f;
+
+    for (int i = 0; i < count; i++) {
+        sum += weights[i] * data[i];
+    }
+
+    return sum * scale;
+}
+
+/**
+ * LocomotionStateMf::SerializeTriple @ 0x82237480 | size: 0x78
+ *
+ * Calls vtable slot 2 on the serializer three times with consecutive
+ * field offsets from the data pointer. Used for serializing a 3-component
+ * vector (e.g., position XYZ).
+ */
+void LocomotionStateMf::SerializeTriple(void* serializer, void* data) {  // 7480_w
+    typedef void (*SerializeFn)(void*, void*);
+    void** vt = *(void***)serializer;
+    SerializeFn serialize = (SerializeFn)vt[2];
+
+    serialize(serializer, (char*)data + 0);
+    serialize(serializer, (char*)data + 4);
+    serialize(serializer, (char*)data + 8);
+}
