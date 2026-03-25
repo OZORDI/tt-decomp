@@ -1255,9 +1255,181 @@ void cmApproach2::Allocate() {
     *(uint8_t*)((char*)newBuf + 16) = outputType;
 }
 
-// cmAngleLerp — TODO (RegisterPorts @ 0x82262620)
-// cmAngleLinearApproach::Tick @ 0x82278F10 — TODO (216 bytes)
-// cmAnglePowerApproach::Tick @ 0x82278E58 — TODO
+// ── cmAngle — computes angle between two vectors. vtable @ 0x820551CC ────────
+
+// cmAngle::GetFloat @ 0x8227A0E0 | size: 0x5C
+// Reads portA and portB as vec4, computes atan2(portB, portA).
+void cmAngle::GetFloat(float* out) {
+    float vecA[4], vecB[4];
+    cmNode_GetVector(vecA, (cmNodePort*)((char*)this + 20));  // portB
+    cmNode_GetVector(vecB, (cmNodePort*)((char*)this + 12));  // portA
+    // phBoundCapsule_ABE0_g computes atan2 between two vectors
+    extern "C" float cmVec4_Atan2(float* vecA, float* vecB);
+    *out = cmVec4_Atan2(vecB, vecA);
+}
+
+// ── cmAngleDiff — signed angular difference (a - b), wrapped to [-π, π] ─────
+// vtable @ 0x820541A4
+
+// cmAngleDiff::GetFloat @ 0x8227BFF8 | size: 0xAC
+// Computes diff = portA - portB, applies fmod(diff, 2π), normalizes to [-π, π].
+// Constants verified from binary (all +0x2000 corrected):
+//   PI    =  3.14159f @ 0x8207BB30
+//   -PI   = -3.14159f @ 0x8207BB2C
+//   2*PI  =  6.28318f @ 0x8202E02C (float), 6.28318... @ 0x8207BD30 (double)
+void cmAngleDiff::GetFloat(float* out) {
+    const float PI     =  3.14159265f;
+    const float TWO_PI =  6.28318530f;
+
+    float a = cmNode_GetFloat((cmNodePort*)((char*)this + 12));
+    float b = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
+
+    // Compute angular difference, fmod by 2*PI
+    float diff = a - b;
+    diff = fmodf(diff, TWO_PI);
+
+    // Normalize to [-PI, PI]
+    if (diff > PI) {
+        diff -= TWO_PI;
+    } else if (diff < -PI) {
+        diff += TWO_PI;
+    }
+    *out = diff;
+}
+
+// ── cmAngleLerp — angular interpolation with epsilon thresholds ──────────────
+// vtable @ 0x82054044. Three inputs: portA = t, portB = from, portC = to.
+
+// cmAngleLerp::RegisterPorts @ 0x82262620 | size: 0x38
+// Registers: {float, float, float, float} (3-port node)
+void cmAngleLerp::RegisterPorts(void* node) {
+    extern "C" bool cmNode_TryConnect3(void* node, void* desc);
+    struct cmPortDesc { uint8_t a, b, c, d; };
+    cmPortDesc desc = {2, 2, 2, 2};  // all float
+    cmNode_TryConnect3(node, &desc);
+}
+
+// cmAngleLerp::GetFloat @ 0x8227BC50 | size: 0xDC
+// Interpolates between portB (from) and portC (to) by portA (t).
+// If t ≈ 0: return portB directly (no lerp needed).
+// If t ≈ 1: return portC directly.
+// Otherwise: compute angular diff, multiply by t, add to portB, normalize.
+// Thresholds verified from binary:
+//   EPSILON_POS = 0.0001f, EPSILON_NEG = -0.0001f
+//   ONE_MINUS_E = 0.9999f, ONE_PLUS_E = 1.0001f
+void cmAngleLerp::GetFloat(float* out) {
+    extern "C" float cmAngle_Normalize(float value);
+
+    const float EPSILON_POS = 0.0001f;
+    const float EPSILON_NEG = -0.0001f;
+    const float ONE_MINUS_E = 0.9999f;
+    const float ONE_PLUS_E  = 1.0001f;
+
+    float t = cmNode_GetFloat((cmNodePort*)((char*)this + 12));  // portA = t
+
+    if (t < EPSILON_POS) {
+        if (t > EPSILON_NEG) {
+            // t ≈ 0 → return portB (from angle)
+            *out = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
+            return;
+        }
+    }
+
+    if (t > ONE_MINUS_E) {
+        if (t < ONE_PLUS_E) {
+            // t ≈ 1 → compute lerp between portC and portB (degenerate case)
+            float to   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
+            float from = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
+            float diff = cmAngle_Normalize(to - from);
+            *out = cmAngle_Normalize(diff * t + from);
+            return;
+        }
+    }
+
+    // General case: angular lerp
+    float to   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
+    float from = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
+    float diff = cmAngle_Normalize(to - from);
+    *out = cmAngle_Normalize(diff * t + from);
+}
+
+// ── cmAnglePowerApproach — exponential-decay angle approach ──────────────────
+// vtable @ 0x82054A94. Inherits cmApproachOperator layout.
+// Only operates on float type (reporter type byte == 2).
+
+// cmAnglePowerApproach::Tick @ 0x82278E58 | size: 0xB4
+// Reads current angle from reporter at +40, target from portB (+20),
+// speed from portC (+28). Computes normalized angular diff, applies
+// power-based approach (speed^dt decay), normalizes result.
+void cmAnglePowerApproach::Tick() {
+    extern float g_cmFrameScale;
+    extern "C" float cmAngle_Normalize(float value);
+    extern "C" void cmPowerApproach_Step(float* outProgress, float diff, float speed, float dt);
+
+    float scaledDt = g_cmFrameScale;  // 1.0f * g_cmFrameScale
+
+    void* reporter = *(void**)((char*)this + 40);
+    uint8_t reporterType = *(uint8_t*)((char*)reporter + 16);
+    if (reporterType != 2) return;  // only float
+
+    float current = *(float*)reporter;
+    float target  = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
+    float speed   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
+
+    // Compute normalized angular difference: target - current, wrapped to [-π,π]
+    float diff = cmAngle_Normalize(target - current);
+
+    // Apply power approach: decays diff toward zero by speed^dt
+    float progress = 0.0f;
+    cmPowerApproach_Step(&progress, diff, speed, scaledDt);
+
+    // Result = current + approached_offset, normalized
+    float result = cmAngle_Normalize(progress + current);
+    *(float*)reporter = result;
+}
+
+// ── cmAngleLinearApproach — constant-speed angle approach ────────────────────
+// vtable @ 0x82054A3C. Same layout as cmAnglePowerApproach.
+
+// cmAngleLinearApproach::Tick @ 0x82278F10 | size: 0xD8
+// Moves current angle toward target by at most speed*dt per frame.
+// Snaps to target if within one step. All angles normalized to [-π,π].
+void cmAngleLinearApproach::Tick() {
+    extern float g_cmFrameScale;
+    extern "C" float cmAngle_Normalize(float value);
+
+    float scaledDt = g_cmFrameScale;
+
+    void* reporter = *(void**)((char*)this + 40);
+    uint8_t reporterType = *(uint8_t*)((char*)reporter + 16);
+    if (reporterType != 2) return;  // only float
+
+    float current = *(float*)reporter;
+    float target  = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
+    float speed   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
+
+    // Compute normalized angular diff: current → target
+    float diff = cmAngle_Normalize(current - target);
+    float maxStep = speed * scaledDt;
+
+    if (diff < 0.0f) {
+        // Need to rotate counter-clockwise
+        if (-diff < maxStep) {
+            current = target;  // snap
+        } else {
+            current += maxStep;
+        }
+    } else if (diff > 0.0f) {
+        // Need to rotate clockwise
+        if (diff < maxStep) {
+            current = target;  // snap
+        } else {
+            current -= maxStep;
+        }
+    }
+
+    *(float*)reporter = cmAngle_Normalize(current);
+}
 
 // ── cmCapture — captures and holds a snapshot of portA. vtable @ 0x820569AC ──
 // Stateful node: stores a copy of the current input value in a 32-byte
