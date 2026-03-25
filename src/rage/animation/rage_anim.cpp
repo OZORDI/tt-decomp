@@ -39,12 +39,12 @@ void crAnimDofFloat::Blend(void* targetObj, float blendFactor) {
 } // namespace rage
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_2()  [vtable slot 2 @ 0x820C46F0]
+// crAnimDofVector3::GetValue()  [vtable slot 2 @ 0x820C46F0]
 // 
 // Allocates and initializes a new crAnimDofVector3 instance by cloning this object.
 // Returns nullptr if allocation fails.
 // ─────────────────────────────────────────────────────────────────────────────
-void* crAnimDofVector3::vfn_2() {
+void* crAnimDofVector3::GetValue() {
     // Allocate memory for new instance (32 bytes with 16-byte alignment)
     void* newInstance = rage::Allocate(32, 16);
     
@@ -71,31 +71,31 @@ void* crAnimDofVector3::vfn_2() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_3()  [vtable slot 3 @ 0x820C4BE8]
+// crAnimDofVector3::GetChannelCount()  [vtable slot 3 @ 0x820C4BE8]
 // 
 // Returns the size of the crAnimDofVector3 structure (32 bytes).
 // ─────────────────────────────────────────────────────────────────────────────
-int crAnimDofVector3::vfn_3() {
+int crAnimDofVector3::GetChannelCount() {
     return 32;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_4()  [vtable slot 4 @ 0x820C47A0]
+// crAnimDofVector3::Evaluate()  [vtable slot 4 @ 0x820C47A0]
 // 
 // Evaluates animation channels and stores the result in the output vector.
 // Delegates to helper function for channel evaluation.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_4(void* animContext, float time, float* outVector) {
+void crAnimDofVector3::Evaluate(void* animContext, float time, float* outVector) {
     EvaluateChannels(animContext, time, outVector);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_5()  [vtable slot 5 @ 0x820C47B0]
+// crAnimDofVector3::Blend()  [vtable slot 5 @ 0x820C47B0]
 // 
 // Blends the current vector towards a target vector using linear interpolation.
 // The blend factor is clamped to [0.0, 1.0] range.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_5(void* animContext, float blendFactor, float* outVector) {
+void crAnimDofVector3::Blend(void* animContext, float blendFactor, float* outVector) {
     // Early exit if blend factor is too small
     if (blendFactor <= 0.0f) {
         return;
@@ -123,11 +123,11 @@ void crAnimDofVector3::vfn_5(void* animContext, float blendFactor, float* outVec
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_6()  [vtable slot 6 @ 0x820C4850]
+// crAnimDofVector3::CopyFrom()  [vtable slot 6 @ 0x820C4850]
 // 
 // Copies the vector value from another animation DOF object.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_6(void* sourceAnimDof) {
+void crAnimDofVector3::CopyFrom(void* sourceAnimDof) {
     // Get the vector from source via virtual call to slot 14
     void** vtable = *reinterpret_cast<void***>(sourceAnimDof);
     typedef float* (*GetVectorFunc)(void*);
@@ -142,12 +142,12 @@ void crAnimDofVector3::vfn_6(void* sourceAnimDof) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_7()  [vtable slot 7 @ 0x820C4898]
+// crAnimDofVector3::BlendFrom()  [vtable slot 7 @ 0x820C4898]
 // 
 // Blends towards another animation DOF's vector value with interpolation.
-// Similar to vfn_5 but takes another DOF object as source instead of evaluating channels.
+// Similar to Blend but takes another DOF object as source instead of evaluating channels.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_7(void* sourceAnimDof, float blendFactor) {
+void crAnimDofVector3::BlendFrom(void* sourceAnimDof, float blendFactor) {
     // Early exit if blend factor is too small
     if (blendFactor <= 0.0f) {
         return;
@@ -177,12 +177,12 @@ void crAnimDofVector3::vfn_7(void* sourceAnimDof, float blendFactor) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_8()  [vtable slot 8 @ 0x820C4948]
+// crAnimDofVector3::ScaleFrom()  [vtable slot 8 @ 0x820C4948]
 // 
 // Adds a scaled vector from another animation DOF to the current vector.
 // Only performs the operation if the scale factor squared exceeds a threshold.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_8(void* sourceAnimDof, float scaleFactor) {
+void crAnimDofVector3::ScaleFrom(void* sourceAnimDof, float scaleFactor) {
     // Only proceed if scale factor is significant (squared > epsilon)
     float scaleSquared = scaleFactor * scaleFactor;
     const float epsilon = 1e-6f; // Small threshold to avoid unnecessary operations
@@ -205,12 +205,12 @@ void crAnimDofVector3::vfn_8(void* sourceAnimDof, float scaleFactor) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_9()  [vtable slot 9 @ 0x820C49D0]
+// crAnimDofVector3::ThresholdFrom()  [vtable slot 9 @ 0x820C49D0]
 // 
 // Normalizes the vector if its magnitude exceeds a threshold.
 // Replaces the vector with a normalized version from another DOF if needed.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_9(void* sourceAnimDof, float threshold) {
+void crAnimDofVector3::ThresholdFrom(void* sourceAnimDof, float threshold) {
     // Get current vector
     float* currentVec = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(this) + 16);
     
@@ -237,11 +237,11 @@ void crAnimDofVector3::vfn_9(void* sourceAnimDof, float threshold) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_10()  [vtable slot 10 @ 0x820C4A38]
+// crAnimDofVector3::ScaleInPlace()  [vtable slot 10 @ 0x820C4A38]
 // 
 // Scales the vector by a uniform scalar value.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_10(float scaleFactor) {
+void crAnimDofVector3::ScaleInPlace(float scaleFactor) {
     // Get current vector
     float* currentVec = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(this) + 16);
     
@@ -252,12 +252,12 @@ void crAnimDofVector3::vfn_10(float scaleFactor) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_11()  [vtable slot 11 @ 0x820C4A60]
+// crAnimDofVector3::Reset()  [vtable slot 11 @ 0x820C4A60]
 // 
 // Scales only the X component of the vector by a constant factor.
 // The constant appears to be a conversion or normalization factor.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_11() {
+void crAnimDofVector3::Reset() {
     // Get current vector
     float* currentVec = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(this) + 16);
     
@@ -268,12 +268,12 @@ void crAnimDofVector3::vfn_11() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_12()  [vtable slot 12 @ 0x820C4A78]
+// crAnimDofVector3::TransformBy()  [vtable slot 12 @ 0x820C4A78]
 // 
 // Transforms the vector through another animation DOF's coordinate space.
 // Gets the transform vector and applies it via virtual call to slot 17.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_12(void* transformAnimDof) {
+void crAnimDofVector3::TransformBy(void* transformAnimDof) {
     // Get transform vector via virtual call to slot 14
     void** vtable = *reinterpret_cast<void***>(transformAnimDof);
     typedef float* (*GetVectorFunc)(void*);
@@ -295,11 +295,11 @@ void crAnimDofVector3::vfn_12(void* transformAnimDof) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_13()  [vtable slot 13 @ 0x820C4AF8]
+// crAnimDofVector3::Normalize()  [vtable slot 13 @ 0x820C4AF8]
 // 
 // Resets the vector to zero (0, 0, 0).
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_13() {
+void crAnimDofVector3::Normalize() {
     // Get current vector
     float* currentVec = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(this) + 16);
     
@@ -310,11 +310,11 @@ void crAnimDofVector3::vfn_13() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofVector3::vfn_17()  [vtable slot 17 @ 0x820C4B10]
+// crAnimDofVector3::SetValue()  [vtable slot 17 @ 0x820C4B10]
 // 
 // Copies a vector from an external source into this DOF's vector storage.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofVector3::vfn_17(const float* sourceVec) {
+void crAnimDofVector3::SetValue(const float* sourceVec) {
     // Get current vector
     float* currentVec = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(this) + 16);
     
@@ -383,12 +383,12 @@ void crAnimDofVector3::EvaluateChannels(void* animContext, float time, float* ou
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_2()  [vtable slot 2 @ 0x8216EA78]
+// crAnimDofFloat::GetValue()  [vtable slot 2 @ 0x8216EA78]
 // 
 // Clones this animation DOF by allocating a new instance and copying its state.
 // Returns nullptr if allocation fails.
 // ─────────────────────────────────────────────────────────────────────────────
-void* crAnimDofFloat::vfn_2() {
+void* crAnimDofFloat::GetValue() {
     // Allocate memory for new instance (12 bytes with 16-byte alignment)
     void* newInstance = rage::Allocate(12, 16);
     
@@ -411,21 +411,21 @@ void* crAnimDofFloat::vfn_2() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_3()  [vtable slot 3 @ 0x8216EB20]
+// crAnimDofFloat::GetChannelCount()  [vtable slot 3 @ 0x8216EB20]
 // 
 // Returns the size of the crAnimDofFloat structure (12 bytes).
 // ─────────────────────────────────────────────────────────────────────────────
-int crAnimDofFloat::vfn_3() {
+int crAnimDofFloat::GetChannelCount() {
     return 12;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_4()  [vtable slot 4 @ 0x8216EB28]
+// crAnimDofFloat::Evaluate()  [vtable slot 4 @ 0x8216EB28]
 // 
 // Evaluates animation channel and stores the result in the output float.
 // Only processes single-channel mode (when channel config is 0).
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_4(void* animContext, float time, float* outValue) {
+void crAnimDofFloat::Evaluate(void* animContext, float time, float* outValue) {
     // Check channel configuration at offset +1
     uint8_t* contextPtr = reinterpret_cast<uint8_t*>(animContext);
     uint8_t channelConfig = contextPtr[1] & 0xF0;
@@ -447,12 +447,12 @@ void crAnimDofFloat::vfn_4(void* animContext, float time, float* outValue) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_5()  [vtable slot 5 @ 0x8216EB58]
+// crAnimDofFloat::Blend()  [vtable slot 5 @ 0x8216EB58]
 // 
 // Blends the current float value towards a target value from animation context.
 // The blend factor is clamped to [0.0, 1.0] range.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_5(void* animContext, float blendFactor, float* outValue) {
+void crAnimDofFloat::Blend(void* animContext, float blendFactor, float* outValue) {
     // Evaluate target value from animation context
     float targetValue = 0.0f;
     
@@ -483,11 +483,11 @@ void crAnimDofFloat::vfn_5(void* animContext, float blendFactor, float* outValue
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_6()  [vtable slot 6 @ 0x8216EBF0]
+// crAnimDofFloat::CopyFrom()  [vtable slot 6 @ 0x8216EBF0]
 // 
 // Copies the float value from another animation DOF object.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_6(void* sourceAnimDof) {
+void crAnimDofFloat::CopyFrom(void* sourceAnimDof) {
     // Get the value from source via virtual call to slot 16
     void** vtable = *reinterpret_cast<void***>(sourceAnimDof);
     typedef float (*GetValueFunc)(void*);
@@ -499,12 +499,12 @@ void crAnimDofFloat::vfn_6(void* sourceAnimDof) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_8()  [vtable slot 8 @ 0x8216ECA8]
+// crAnimDofFloat::ScaleFrom()  [vtable slot 8 @ 0x8216ECA8]
 // 
 // Adds a scaled value from another animation DOF to the current value.
 // Performs: current += source * scaleFactor
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_8(void* sourceAnimDof, float scaleFactor) {
+void crAnimDofFloat::ScaleFrom(void* sourceAnimDof, float scaleFactor) {
     // Get source value via virtual call to slot 16
     void** vtable = *reinterpret_cast<void***>(sourceAnimDof);
     typedef float (*GetValueFunc)(void*);
@@ -516,12 +516,12 @@ void crAnimDofFloat::vfn_8(void* sourceAnimDof, float scaleFactor) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_9()  [vtable slot 9 @ 0x8216ED00]
+// crAnimDofFloat::ThresholdFrom()  [vtable slot 9 @ 0x8216ED00]
 // 
 // Replaces the current value with source value if source magnitude exceeds threshold.
 // Compares squared values to avoid expensive square root operation.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_9(void* sourceAnimDof, float threshold) {
+void crAnimDofFloat::ThresholdFrom(void* sourceAnimDof, float threshold) {
     // Get source value via virtual call to slot 16
     void** vtable = *reinterpret_cast<void***>(sourceAnimDof);
     typedef float (*GetValueFunc)(void*);
@@ -539,21 +539,21 @@ void crAnimDofFloat::vfn_9(void* sourceAnimDof, float threshold) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_10()  [vtable slot 10 @ 0x8216ED80]
+// crAnimDofFloat::ScaleInPlace()  [vtable slot 10 @ 0x8216ED80]
 // 
 // Scales the float value by a uniform scalar.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_10(float scaleFactor) {
+void crAnimDofFloat::ScaleInPlace(float scaleFactor) {
     m_value *= scaleFactor;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_12()  [vtable slot 12 @ 0x8216ED90]
+// crAnimDofFloat::TransformBy()  [vtable slot 12 @ 0x8216ED90]
 // 
 // Transforms the value through another animation DOF's coordinate space.
 // Gets the transform value and applies it via virtual call to slot 19.
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_12(void* transformAnimDof) {
+void crAnimDofFloat::TransformBy(void* transformAnimDof) {
     // Get transform value via virtual call to slot 16
     void** vtable = *reinterpret_cast<void***>(transformAnimDof);
     typedef float (*GetValueFunc)(void*);
@@ -570,10 +570,10 @@ void crAnimDofFloat::vfn_12(void* transformAnimDof) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// crAnimDofFloat::vfn_13()  [vtable slot 13 @ 0x8216EE00]
+// crAnimDofFloat::Normalize()  [vtable slot 13 @ 0x8216EE00]
 // 
 // Resets the float value to zero (0.0f).
 // ─────────────────────────────────────────────────────────────────────────────
-void crAnimDofFloat::vfn_13() {
+void crAnimDofFloat::Normalize() {
     m_value = 0.0f;
 }
