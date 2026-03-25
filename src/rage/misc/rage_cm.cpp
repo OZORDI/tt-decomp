@@ -80,13 +80,34 @@
 #include <cstring>
 #include <cstdint>
 
+// ── External C functions used by cm nodes ───────────────────────────────────
+extern "C" {
+    float cmApproach2_ComputeFactor(void* node);
+    float cmAngle_Normalize(float value);
+    float cmVec4_Atan2(float* vecA, float* vecB);
+    void  cmPort_CopyToBuffer(void* reporter, void* port);
+    void  cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
+    void  cmPowerApproach_Step(float* outProgress, float diff, float speed, float dt);
+    void  cmReporter_Init(void* reporter);
+    void  cmNormalizedTimer_Allocate(void* node);
+    void  xe_main_thread_init_0038();
+    bool  cmNode_TryConnect3(void* node, void* desc);
+    bool  cmNode_TryConnectSingle(void* node, void* desc);
+    uint8_t  cmNode_GetBoolValue(void* port);
+    uint32_t cmNode_GetDimValue(void* port);
+}
+
 // ── Forward declarations for cross-node calls ─────────────────────────────────
 namespace rage {
 
 // ── GLOBAL DATA REFERENCES ───────────────────────────────────────────────────
-// All CM globals declared in rage_cm_types.hpp:
-//   g_cm_frameTime, g_cm_zeroFloat, g_cm_negateVec, g_cm_frameRate,
-//   g_cmFrameScale (alias), g_vtable_cmApproach2, g_tls_base
+extern float g_cm_frameTime;        // @ 0x825C4958 — frame delta-time (seconds)
+extern float g_cm_frameRate;        // frame rate constant (60.0f)
+extern const float g_cm_zeroFloat;  // @ 0x8202D110 — 0.0f constant
+extern float g_cm_negateVec[4];     // @ 0x825C5938 — {-1,-1,-1,-1}
+extern void** g_tls_base;          // TLS base pointer (array of void*)
+extern void* g_vtable_cmApproach2; // @ 0x82055EFC — cmApproach2 vtable
+#define g_cmFrameScale g_cm_frameTime
 void*  rage_alloc_aligned(size_t size, size_t align); // RAGE heap aligned alloc
 void   rage_free(void* ptr);                          // RAGE heap free
 static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
@@ -1125,7 +1146,6 @@ void cmApproach2::GetVector(float* out) {
     float* current = (float*)(*(void**)((char*)this + 40));
 
     // Compute approach: update progress, get factor via cmApproach2_94A8
-    extern "C" float cmApproach2_ComputeFactor(void* node);
     float factor = cmApproach2_ComputeFactor(this);
 
     // Lerp: out = current + (target - current) * factor
@@ -1146,7 +1166,6 @@ void cmApproach2::GetFloat(float* out) {
     void** vt = *(void***)this;
     ((SyncFn)vt[8])(this);
 
-    extern "C" float cmApproach2_ComputeFactor(void* node);
     float factor = cmApproach2_ComputeFactor(this);
 
     float* currentBuf = (float*)(*(void**)((char*)this + 40));
@@ -1174,15 +1193,13 @@ void cmApproach2::GetFloat(float* out) {
 
     if (isAngular) {
         // Normalize result to [-π, π] range
-        extern "C" float cmAngle_Normalize(float value, float zero);
-        *out = cmAngle_Normalize(result, 0.0f);
+        *out = cmAngle_Normalize(result);
     }
 }
 
 // cmApproach2::Reset @ 0x822793C8 | size: 0x50
 // Zeroes progress, copies portA into reporter buffer, toggles flag bit 3.
 void cmApproach2::Reset() {
-    extern "C" void cmPort_CopyToBuffer(void* reporter, cmNodePort* port);
 
     *(float*)((char*)this + 44) = 0.0f;  // m_progress = 0
 
@@ -1195,7 +1212,6 @@ void cmApproach2::Reset() {
 
 // cmApproach2::SyncPorts @ 0x82279418 | size: 0x0C
 void cmApproach2::SyncPorts(void* portCtx) {
-    extern "C" void cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
     cmPort_SyncValue(this, *(void**)((char*)this + 40), portCtx);
 }
 
@@ -1225,9 +1241,6 @@ void cmApproach2::Tick() {
 
 // cmApproach2::Allocate @ 0x82279348 | size: 0x7C
 void cmApproach2::Allocate() {
-    extern "C" void rage_free(void* ptr);
-    extern "C" void xe_main_thread_init_0038();
-    extern "C" void cmReporter_Init(void* reporter);
 
     xe_main_thread_init_0038();
     // g_tls_base declared in rage_cm_types.hpp
@@ -1256,7 +1269,6 @@ void cmAngle::GetFloat(float* out) {
     cmNode_GetVector(vecA, (cmNodePort*)((char*)this + 20));  // portB
     cmNode_GetVector(vecB, (cmNodePort*)((char*)this + 12));  // portA
     // phBoundCapsule_ABE0_g computes atan2 between two vectors
-    extern "C" float cmVec4_Atan2(float* vecA, float* vecB);
     *out = cmVec4_Atan2(vecB, vecA);
 }
 
@@ -1295,7 +1307,6 @@ void cmAngleDiff::GetFloat(float* out) {
 // cmAngleLerp::RegisterPorts @ 0x82262620 | size: 0x38
 // Registers: {float, float, float, float} (3-port node)
 void cmAngleLerp::RegisterPorts(void* node) {
-    extern "C" bool cmNode_TryConnect3(void* node, void* desc);
     struct cmPortDesc { uint8_t a, b, c, d; };
     cmPortDesc desc = {2, 2, 2, 2};  // all float
     cmNode_TryConnect3(node, &desc);
@@ -1310,7 +1321,6 @@ void cmAngleLerp::RegisterPorts(void* node) {
 //   EPSILON_POS = 0.0001f, EPSILON_NEG = -0.0001f
 //   ONE_MINUS_E = 0.9999f, ONE_PLUS_E = 1.0001f
 void cmAngleLerp::GetFloat(float* out) {
-    extern "C" float cmAngle_Normalize(float value);
 
     const float EPSILON_POS = 0.0001f;
     const float EPSILON_NEG = -0.0001f;
@@ -1355,8 +1365,6 @@ void cmAngleLerp::GetFloat(float* out) {
 // power-based approach (speed^dt decay), normalizes result.
 void cmAnglePowerApproach::Tick() {
     // g_cmFrameScale declared in rage_cm_types.hpp
-    extern "C" float cmAngle_Normalize(float value);
-    extern "C" void cmPowerApproach_Step(float* outProgress, float diff, float speed, float dt);
 
     float scaledDt = g_cmFrameScale;  // 1.0f * g_cmFrameScale
 
@@ -1388,7 +1396,6 @@ void cmAnglePowerApproach::Tick() {
 // Snaps to target if within one step. All angles normalized to [-π,π].
 void cmAngleLinearApproach::Tick() {
     // g_cmFrameScale declared in rage_cm_types.hpp
-    extern "C" float cmAngle_Normalize(float value);
 
     float scaledDt = g_cmFrameScale;
 
@@ -1441,7 +1448,6 @@ void cmAngleLinearApproach::Tick() {
 
 // Shared helper — creates a cmApproach2 with the given configuration.
 static void* cmApproach2Ctor_Create(uint32_t portMode, bool isAngular) {
-    extern "C" void xe_main_thread_init_0038();
     // g_tls_base declared in rage_cm_types.hpp
     // g_vtable_cmApproach2 declared in rage_cm_types.hpp @ 0x82055EFC
 
@@ -1552,7 +1558,6 @@ void cmCapture::GetFloat(float* out) {
 // cmCapture::SyncPorts @ 0x822788C8 | size: 0x0C
 // Syncs the reporter port at +24 using the port context
 void cmCapture::SyncPorts(void* portCtx) {
-    extern "C" void cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
     void* portDesc = *(void**)((char*)this + 24);
     cmPort_SyncValue(this, portDesc, portCtx);
 }
@@ -1561,7 +1566,6 @@ void cmCapture::SyncPorts(void* portCtx) {
 // Re-captures the current portA value into the reporter buffer.
 // Reads portA (+12) into the buffer at +24, then toggles bit 3 of flags at +8.
 void cmCapture::Reset() {
-    extern "C" void cmPort_CopyToBuffer(void* reporter, cmNodePort* port);
     void* reporter = *(void**)((char*)this + 24);
     cmPort_CopyToBuffer(reporter, (cmNodePort*)((char*)this + 12));
     uint32_t flags = *(uint32_t*)((char*)this + 8);
@@ -1571,7 +1575,6 @@ void cmCapture::Reset() {
 // cmCapture::RegisterPorts @ 0x822779C8 | size: 0x100
 // Tries portA types in order: vec4 → float → int32 → vec2 → dim
 void cmCapture::RegisterPorts(void* node) {
-    extern "C" bool cmNode_TryConnectSingle(void* node, void* desc);
     struct cmPortDesc { uint8_t a, b, c, d; };
 
     cmPortDesc desc;
@@ -1596,9 +1599,6 @@ void cmCapture::RegisterPorts(void* node) {
 // Frees old reporter buffer, allocates a new 32-byte one from the
 // TLS allocator, initializes it, and stores at +24.
 void cmCapture::Allocate() {
-    extern "C" void rage_free(void* ptr);
-    extern "C" void xe_main_thread_init_0038();
-    extern "C" void cmReporter_Init(void* reporter);
 
     // Free old buffer
     void* oldBuf = *(void**)((char*)this + 24);
@@ -1633,7 +1633,6 @@ void cmCapture::Allocate() {
 // Initializes all three reporter buffers and sets firstTick flag (+36) to 1.
 // Toggles bit 3 of flags at +8.
 void cmChanged::Reset() {
-    extern "C" void cmReporter_Init(void* reporter);
     void* prevBuf = *(void**)((char*)this + 32);
     cmReporter_Init(prevBuf);
     *(uint8_t*)((char*)this + 36) = 1;  // m_bFirstTick
@@ -1685,7 +1684,6 @@ void cmChanged::Tick() {
         *(int32_t*)prevBuf = current;
     } else if (dataType == 3) {
         // Boolean comparison
-        extern "C" uint8_t cmNode_GetBoolValue(cmNodePort* port);
         uint8_t current = cmNode_GetBoolValue(portA);
         bool changed;
         if (isFirstTick) {
@@ -1698,7 +1696,6 @@ void cmChanged::Tick() {
         *(uint8_t*)prevBuf = current;
     } else if (dataType == 5) {
         // Dim/enum comparison (treated as uint32)
-        extern "C" uint32_t cmNode_GetDimValue(cmNodePort* port);
         uint32_t current = cmNode_GetDimValue(portA);
         bool changed;
         if (isFirstTick) {
@@ -1720,7 +1717,6 @@ void cmChanged::Tick() {
 // cmChanged::RegisterPorts @ 0x822778B8 | size: 0x90
 // Tries: {float, 0, 0, bool} → {dim, 0, 0, bool} → {bool, 0, 0, bool}
 void cmChanged::RegisterPorts(void* node) {
-    extern "C" bool cmNode_TryConnectSingle(void* node, void* desc);
     struct cmPortDesc { uint8_t a, b, c, d; };
 
     cmPortDesc desc;
@@ -1736,10 +1732,6 @@ void cmChanged::RegisterPorts(void* node) {
 // Allocates 32-byte reporter buffer for +32 (previous value), then
 // determines data type from port and calls base allocator.
 void cmChanged::Allocate() {
-    extern "C" void rage_free(void* ptr);
-    extern "C" void xe_main_thread_init_0038();
-    extern "C" void cmReporter_Init(void* reporter);
-    extern "C" void cmNormalizedTimer_Allocate(void* node);
 
     // Allocate reporter buffer for previous value at +32
     xe_main_thread_init_0038();
@@ -1782,7 +1774,6 @@ void cmChanged::Allocate() {
 // cmDifferentiate::Reset @ 0x82278220 | size: 0x50
 // Initializes reporter buffers and sets firstTick flag.
 void cmDifferentiate::Reset() {
-    extern "C" void cmReporter_Init(void* reporter);
     void* outBuf = *(void**)((char*)this + 24);
     cmReporter_Init(outBuf);
     void* buf28 = *(void**)((char*)this + 28);
@@ -1797,7 +1788,6 @@ void cmDifferentiate::Reset() {
 // cmDifferentiate::SyncPorts @ 0x82278270 | size: 0x60
 // Syncs all three reporter port descriptors (+32, +24, +28)
 void cmDifferentiate::SyncPorts(void* portCtx) {
-    extern "C" void cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
     cmPort_SyncValue(this, *(void**)((char*)this + 32), portCtx);
     cmPort_SyncValue(this, *(void**)((char*)this + 24), portCtx);
     cmPort_SyncValue(this, *(void**)((char*)this + 28), portCtx);
@@ -1886,6 +1876,8 @@ uint8_t cmNode_GetBool(const rage::cmNodePort* port) {
         return 0;
     }
 }
+
+namespace rage {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  CONTROL REFERENCE NODE
@@ -2261,6 +2253,8 @@ void cmSwitch_6case_GetDim(cmSwitch* node, int32_t* out) {
 }
 
 
+
+} // namespace rage
 
 /* ── External dependencies for cmNamedValueSet ────────────────────────────── */
 

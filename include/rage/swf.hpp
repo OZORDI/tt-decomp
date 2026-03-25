@@ -63,18 +63,19 @@ class swfSCRIPTOBJECT : public swfBASE {
 public:
     swfSCRIPTOBJECT();  // @ 0x823F8AE0 | size: 0x64
     virtual ~swfSCRIPTOBJECT();  // @ 0x823F8B70 | size: 0x70
-    
-    virtual void vfn_6();  // @ 0x823FED10 | size: 0x8
-    virtual void vfn_8();  // @ 0x823F8B48 | size: 0x24
-    virtual void vfn_9();  // @ 0x823FC1A0 | size: 0x8
-    virtual void vfn_10();  // @ 0x823FBFC0 | size: 0x1DC
-    virtual void vfn_11();  // @ 0x823FC8A8 | size: 0x5C
-    virtual void vfn_12();  // @ 0x823FC848 | size: 0x60
-    virtual void vfn_13();  // @ 0x823FEA28 | size: 0x120
-    
+
+    virtual void EnumerateMembers();  // @ 0x823FED10 | size: 0x8
+    virtual int GetMemberCount();  // @ 0x823F8B48 | size: 0x24
+    virtual int VisitMembers();  // @ 0x823FC1A0 | size: 0x8
+    virtual bool GetMember(const char* name, void* result);  // @ 0x823FBFC0 | size: 0x1DC
+    virtual void SetMember(const char* name, void* value);  // @ 0x823FC8A8 | size: 0x5C
+    virtual void DeleteMember(const char* name);  // @ 0x823FC848 | size: 0x60
+    virtual void Invoke(const char* methodName, void* args, int argCount, void* outResult);  // @ 0x823FEA28 | size: 0x120
+
 protected:
-    void* m_pNext;      // +0x04 - linked list next pointer
-    void* m_pPrev;      // +0x08 - linked list prev pointer
+    void* m_pNext;          // +0x04 - linked list next pointer
+    void* m_pPrev;          // +0x08 - linked list prev pointer
+    void* m_pMemberTable;   // +0x0C - SYMTAB member table pointer
 };
 
 /**
@@ -87,7 +88,7 @@ class swfCONTEXT : public swfBASE {
 public:
     virtual ~swfCONTEXT();  // @ 0x823F8FF0 | size: 0x50
     virtual void ScalarDestructor(int flags);  // @ 0x823F90C8 | size: 0x16C
-    virtual void vfn_2();  // @ 0x823F9238 | size: 0x44
+    virtual void Execute();  // @ 0x823F9238 | size: 0x44
 };
 
 /**
@@ -99,8 +100,8 @@ public:
 class swfFILE : public swfBASE {
 public:
     virtual ~swfFILE();  // @ 0x823F8BE0 | size: 0xDC
-    virtual void vfn_10();  // @ 0x823F9DC8 | size: 0xD4
-    
+    virtual float FindExportFrame(float frameRate, const char* labelName, void* context);  // @ 0x823F9DC8 | size: 0xD4
+
 protected:
     void** m_pResourceArray;  // +0x14 (20) - array of child resources
     uint16_t m_resourceCount;  // +0x2E (46) - number of resources
@@ -115,19 +116,19 @@ protected:
 class swfINSTANCE : public swfSCRIPTOBJECT {
 public:
     virtual ~swfINSTANCE();  // @ 0x823FB600 | size: 0x70
-    virtual void vfn_1();  // @ 0x823FB7A8 | size: 0xF8
-    virtual void vfn_2();  // @ 0x823FB8A0 | size: 0x7C
-    virtual void vfn_3();  // @ 0x823FB920 | size: 0x50
-    virtual void vfn_4();  // @ 0x823FB760 | size: 0x44
-    virtual void vfn_5();  // @ 0x823FB150 | size: 0xC
-    virtual void vfn_6();  // @ 0x823FED18 | size: 0xD0
+    virtual void GotoFrame(uint16_t targetFrame, uint8_t skipActions);  // @ 0x823FB7A8 | size: 0xF8
+    virtual void NextFrame(void* context);  // @ 0x823FB8A0 | size: 0x7C
+    virtual void PrevFrame();  // @ 0x823FB920 | size: 0x50
+    virtual void MarkDirty();  // @ 0x823FB760 | size: 0x44
+    virtual void SetVisible();  // @ 0x823FB150 | size: 0xC
+    void EnumerateMembers() override;  // @ 0x823FED18 | size: 0xD0
     virtual void vfn_7();  // @ 0x823FC908 | size: 0x144
-    virtual void vfn_8();  // @ 0x823FB160 | size: 0x28
-    virtual void vfn_9();  // @ 0x823FBF98 | size: 0x28
-    virtual void vfn_10();  // @ 0x823FB970 | size: 0x624
-    virtual void vfn_11();  // @ 0x823FC1A8 | size: 0x5F0
-    virtual void vfn_12();  // @ 0x823FABC0 | size: 0xE8
-    virtual void vfn_13();  // @ 0x823FE500 | size: 0x3D0
+    int GetMemberCount() override;  // @ 0x823FB160 | size: 0x28
+    int VisitMembers() override;  // @ 0x823FBF98 | size: 0x28
+    bool GetMember(const char* name, void* result) override;  // @ 0x823FB970 | size: 0x624
+    void SetMember(const char* name, void* value) override;  // @ 0x823FC1A8 | size: 0x5F0
+    void DeleteMember(const char* name) override;  // @ 0x823FABC0 | size: 0xE8
+    void Invoke(const char* methodName, void* args, int argCount, void* outResult) override;  // @ 0x823FE500 | size: 0x3D0
 };
 
 /**
@@ -138,11 +139,11 @@ public:
  */
 class swfACTIONFUNC : public swfSCRIPTOBJECT {
 public:
-    virtual void vfn_8();  // @ 0x823FF2A8 | size: 0x44
-    virtual void vfn_9();  // @ 0x823FF3C0 | size: 0xDC
-    virtual void vfn_10();  // @ 0x823FF2F0 | size: 0xCC
-    virtual void vfn_11();  // @ 0x823FF4A0 | size: 0x14
-    virtual void vfn_12();  // @ 0x823FF4B8 | size: 0x14
+    int GetMemberCount() override;  // @ 0x823FF2A8 | size: 0x44
+    int VisitMembers() override;  // @ 0x823FF3C0 | size: 0xDC
+    bool GetMember(const char* name, void* result) override;  // @ 0x823FF2F0 | size: 0xCC
+    void SetMember(const char* name, void* value) override;  // @ 0x823FF4A0 | size: 0x14
+    void DeleteMember(const char* name) override;  // @ 0x823FF4B8 | size: 0x14
 };
 
 /**
@@ -154,8 +155,8 @@ public:
 class swfSCRIPTARRAY : public swfSCRIPTOBJECT {
 public:
     virtual ~swfSCRIPTARRAY();  // @ 0x823FF218 | size: 0x8C
-    virtual void vfn_10();  // @ 0x823FEB48 | size: 0xF0
-    virtual void vfn_11();  // @ 0x823FEC38 | size: 0x70
+    bool GetMember(const char* name, void* result) override;  // @ 0x823FEB48 | size: 0xF0
+    void SetMember(const char* name, void* value) override;  // @ 0x823FEC38 | size: 0x70
 };
 
 /**
@@ -277,7 +278,7 @@ public:
 class swfCMD_DoInitAction : public swfCMD {
 public:
     virtual ~swfCMD_DoInitAction();
-    virtual void vfn_2();  // @ 0x821EFC00 | size: 0x10
+    virtual void Cleanup();  // @ 0x821EFC00 | size: 0x10
 };
 
 /**

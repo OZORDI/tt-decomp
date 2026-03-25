@@ -9,7 +9,8 @@
 
 #include "rage/swf.hpp"
 #include "rage/memory.h"
-#include <new>  // For placement new
+#include <new>      // For placement new
+#include <cstring>  // For strcmp
 
 // External functions
 extern "C" {
@@ -19,6 +20,15 @@ extern "C" {
     void atHashMap_Clear(void* ptr);            // @ 0x8234C0E0 — iterates linked-list hash buckets, frees all nodes
     void swfFile_DestroyResources(void* ptr);   // @ 0x824035B0 — releases child resource array entries
     void swfInstance_Cleanup(void* ptr);        // @ 0x823FB670 — unlinks instance from display list
+    void swfSymtab_Enumerate(void* symtab);     // @ 0x823FED10 — enumerate symtab members
+    const char* swfInternString(const char* name, void* buffer, int maxLen);  // string interning
+    void* swfSymtab_Lookup(void* symtab, const char* key);   // symtab key lookup
+    void nop_8240E6D0(const char* msg, ...);    // debug log stub (no-op)
+    void swfSymtab_Insert(void* symtab, const char* key, void* value);  // symtab insert
+    void swfSymtab_Delete(void* symtab, const char* key);   // symtab key delete
+    void swfPopResult(void* dst);               // pop result from call stack
+    int _stricmp(const char*, const char*);     // case-insensitive string compare
+    float swfComputeFramePosition(void* ctx, void* entry, float* outMin, float* outMax);
 }
 
 // Global SWF object pools (SDA - Small Data Area)
@@ -117,7 +127,6 @@ swfSCRIPTOBJECT::~swfSCRIPTOBJECT() {
  * Delegates to the SYMTAB member table at +4 for property enumeration.
  */
 void swfSCRIPTOBJECT::EnumerateMembers() {
-    extern "C" void swfSymtab_Enumerate(void* symtab);
     swfSymtab_Enumerate((char*)this + 4);
 }
 
@@ -142,8 +151,9 @@ int swfSCRIPTOBJECT::GetMemberCount() {
  *
  * No-op stub — intended for garbage collection or debug traversal.
  */
-void swfSCRIPTOBJECT::VisitMembers() {
+int swfSCRIPTOBJECT::VisitMembers() {
     // No-op
+    return 0;
 }
 
 /**
@@ -163,10 +173,6 @@ bool swfSCRIPTOBJECT::GetMember(const char* name, void* result) {
     extern void* g_swfStringBuffer;       // @ 0x82604850
     extern void* g_swfGlobalObject;       // @ 0x82602818
     extern void* g_swfGlobalScope;        // @ 0x8260282C
-    extern "C" const char* swfInternString(const char* name, void* buffer, int maxLen);
-    extern "C" void* swfSymtab_Lookup(void* symtab, const char* key);
-    extern "C" void nop_8240E6D0(const char* msg, ...);
-
     // Intern the property name
     const char* interned = swfInternString(name, &g_swfStringBuffer, 1024);
 
@@ -243,8 +249,6 @@ bool swfSCRIPTOBJECT::GetMember(const char* name, void* result) {
  */
 void swfSCRIPTOBJECT::SetMember(const char* name, void* value) {
     extern void* g_swfStringBuffer;  // @ 0x82604850
-    extern "C" const char* swfInternString(const char* name, void* buffer, int maxLen);
-    extern "C" void swfSymtab_Insert(void* symtab, const char* key, void* value);
 
     const char* internedName = swfInternString(name, &g_swfStringBuffer, 1024);
     swfSymtab_Insert((char*)this + 4, internedName, value);
@@ -258,8 +262,6 @@ void swfSCRIPTOBJECT::SetMember(const char* name, void* value) {
  * then removes the key from the SYMTAB.
  */
 void swfSCRIPTOBJECT::DeleteMember(const char* name) {
-    extern "C" void swfSymtab_Delete(void* symtab, const char* key);
-
     // Build a stack pair: {name_ptr, type=1 (undefined)}
     struct { uint32_t nameRef; uint32_t type; } undefinedPair;
     undefinedPair.nameRef = (uint32_t)(uintptr_t)name;
@@ -288,7 +290,6 @@ void swfSCRIPTOBJECT::DeleteMember(const char* name) {
  * a return value was pushed), and copies the result from the stack.
  */
 void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, void* outResult) {
-    extern "C" void nop_8240E6D0(const char* msg, ...);
 
     // Set up GetMember call: lookupKey = {methodName, type=7 (string)}
     // lookupResult = {0, 0} (will be filled in)
@@ -334,7 +335,6 @@ void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, v
 
         // If call stack depth increased, a return value was pushed
         if ((int32_t)g_swfCallDepth > (int32_t)prevDepth) {
-            extern "C" void swfPopResult(void* dst);
             swfPopResult(outResult);
         }
     }
@@ -607,9 +607,6 @@ void swfCMD_DoInitAction::Cleanup() {
  * @return            Frame position scaled by frameRate, or 0.0f if not found
  */
 float swfFILE::FindExportFrame(float frameRate, const char* labelName, void* context) {
-    extern "C" int _stricmp(const char*, const char*);
-    extern "C" void nop_8240E6D0(const char* msg, ...);
-    extern "C" float swfComputeFramePosition(void* ctx, void* entry, float* outMin, float* outMax);
 
     uint16_t exportCount = *(uint16_t*)((char*)this + 46);
     void** exportArray = *(void***)((char*)this + 20);
@@ -925,10 +922,10 @@ int swfINSTANCE::VisitMembers() {
  * Virtual function slot 11 - forwards to inner object's vfn_11.
  * The inner object is stored at offset +7332.
  */
-void swfACTIONFUNC::SetMember() {
+void swfACTIONFUNC::SetMember(const char* /*name*/, void* /*value*/) {
     // Load inner object at offset +7332
     void* innerObj = *((void**)((char*)this + 7332));
-    
+
     if (innerObj) {
         // Call its virtual method at slot 11
         void** vtable = *((void***)innerObj);
@@ -939,13 +936,13 @@ void swfACTIONFUNC::SetMember() {
 
 /**
  * swfACTIONFUNC::DeleteMember() @ 0x823FF4B8 | size: 0x14
- * 
+ *
  * Virtual function slot 12 - forwards to inner object's vfn_12.
  */
-void swfACTIONFUNC::DeleteMember() {
+void swfACTIONFUNC::DeleteMember(const char* /*name*/) {
     // Load inner object at offset +7332
     void* innerObj = *((void**)((char*)this + 7332));
-    
+
     if (innerObj) {
         // Call its virtual method at slot 12
         void** vtable = *((void***)innerObj);
@@ -958,10 +955,10 @@ void swfACTIONFUNC::DeleteMember() {
 // swfINSTANCE overrides for Flash display object properties:
 // vfn_10 = GetMember (770 lines — dispatches "this", "_parent", "_root", textColor,
 //          _name, _width, _height, _xscale, _yscale, _alpha, _rotation, _x, _y, etc.)
-void swfINSTANCE::GetMember(const char* name, void* result) {
+bool swfINSTANCE::GetMember(const char* name, void* result) {
     // TODO: implement 770-line property dispatcher @ 0x823FB970
     // Falls through to swfSCRIPTOBJECT::GetMember for non-display properties
-    swfSCRIPTOBJECT::GetMember(name, result);
+    return swfSCRIPTOBJECT::GetMember(name, result);
 }
 
 // vfn_11 = SetMember (736 lines — handles _x, _y, _xscale, _yscale, _alpha,
@@ -991,9 +988,9 @@ void swfINSTANCE::Invoke(const char* methodName, void* args, int argCount, void*
 
 // Implementations moved above - see lines 469-519
 
-void swfACTIONFUNC::GetMemberCount() { /* TODO */ }
-void swfACTIONFUNC::VisitMembers() { /* TODO */ }
-void swfACTIONFUNC::GetMember() { /* TODO */ }
+int swfACTIONFUNC::GetMemberCount() { /* TODO */ return 0; }
+int swfACTIONFUNC::VisitMembers() { /* TODO */ return 0; }
+bool swfACTIONFUNC::GetMember(const char* /*name*/, void* /*result*/) { /* TODO */ return false; }
 
 
 // ===========================================================================
@@ -1021,8 +1018,8 @@ swfSCRIPTARRAY::~swfSCRIPTARRAY() {
 
 
 // swfSCRIPTARRAY overrides GetMember/SetMember for array-style access
-void swfSCRIPTARRAY::GetMember() { /* TODO: array-indexed GetMember */ }
-void swfSCRIPTARRAY::SetMember() { /* TODO: array-indexed SetMember */ }
+bool swfSCRIPTARRAY::GetMember(const char* name, void* result) { /* TODO: array-indexed GetMember */ return swfSCRIPTOBJECT::GetMember(name, result); }
+void swfSCRIPTARRAY::SetMember(const char* name, void* value) { /* TODO: array-indexed SetMember */ swfSCRIPTOBJECT::SetMember(name, value); }
 
 
 // ===========================================================================
