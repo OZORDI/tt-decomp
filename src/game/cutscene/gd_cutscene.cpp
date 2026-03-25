@@ -503,8 +503,72 @@ const char* gdCSCharAnimData::GetTypeName() {
     return "CharAnimData";
 }
 
-void gdCSCharAnimData::vfn_3() {
-    // TODO: Implement
+/**
+ * gdCSCharAnimData::BuildFilteredArrays @ 0x8240CDE8 | size: 0x148
+ *
+ * Post-load processing: walks the child linked list (+12) and builds
+ * two parallel arrays:
+ *   - m_matchingEntries (+84): array of pointers to children matching the type filter
+ *   - m_matchingFlags (+92): parallel byte array (initialized to 0)
+ *
+ * Children that don't match the type filter get logged as mismatches.
+ */
+void gdCSCharAnimData::BuildFilteredArrays() {
+    // First pass: count matching children
+    int matchCount = 0;
+    void* node = *(void**)((char*)this + 12);  // m_pChildList
+    while (node) {
+        // Check if child's type matches via vtable slot 20 (IsType)
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)node;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+
+        if (isType(node, g_gdCSCharAnimData_typeId)) {
+            matchCount++;
+        } else {
+            // Log type mismatch
+            typedef const char* (*GetNameFunc)(void*);
+            GetNameFunc getChildName = (GetNameFunc)(*(void***)node)[19];
+            GetNameFunc getParentName = (GetNameFunc)(*(void***)this)[19];
+            nop_8240E6D0("BoneName", getParentName(this), getChildName(node));
+        }
+        node = *(void**)((char*)node + 8);  // next pointer
+    }
+
+    // Allocate pointer array for matching entries
+    struct atArray { void* data; uint16_t count; uint16_t capacity; };
+    atArray* matchArr = (atArray*)((char*)this + 84);
+    extern "C" void xe_8E30(void* arr, uint32_t capacity);
+    xe_8E30(matchArr, matchCount);
+
+    // Allocate byte flag array
+    atArray* flagArr = (atArray*)((char*)this + 92);
+    void* flagData = (matchCount > 0) ? xe_EC88(matchCount) : nullptr;
+    *(void**)flagArr = flagData;
+    *(uint16_t*)((char*)flagArr + 6) = (uint16_t)matchCount;
+
+    // Second pass: populate arrays with matching children
+    node = *(void**)((char*)this + 12);
+    while (node) {
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)node;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+
+        if (isType(node, g_gdCSCharAnimData_typeId)) {
+            // Add to pointer array
+            uint16_t idx = *(uint16_t*)((char*)matchArr + 4);
+            void** arrData = *(void***)matchArr;
+            arrData[idx] = node;
+            *(uint16_t*)((char*)matchArr + 4) = idx + 1;
+
+            // Initialize flag to 0
+            uint16_t flagIdx = *(uint16_t*)((char*)flagArr + 4);
+            uint8_t* flagData = *(uint8_t**)flagArr;
+            flagData[flagIdx] = 0;
+            *(uint16_t*)((char*)flagArr + 4) = flagIdx + 1;
+        }
+        node = *(void**)((char*)node + 8);
+    }
 }
 
 bool gdCSCharAnimNames::IsType(uint32_t typeId) {
@@ -521,8 +585,73 @@ const char* gdCSCharAnimNames::GetTypeName() {
     return "CharAnimNames";
 }
 
-void gdCSCharAnimNames::vfn_3() {
-    // TODO: Implement
+/**
+ * gdCSCharAnimNames::BuildFilteredArrays @ 0x8240D340 | size: 0x168
+ *
+ * Post-load processing: walks child linked list and builds three
+ * parallel arrays for children matching the type filter:
+ *   - m_matchingEntries (+16): pointer array
+ *   - m_matchingFlags1 (+24): byte array (initialized to 1)
+ *   - m_matchingFlags2 (+32): byte array (initialized to 0)
+ */
+void gdCSCharAnimNames::BuildFilteredArrays() {
+    // First pass: count matching children
+    int matchCount = 0;
+    void* node = *(void**)((char*)this + 12);  // m_pChildList
+    while (node) {
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)node;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+        if (isType(node, g_gdCSCharAnimNames_typeId)) {
+            matchCount++;
+        }
+        node = *(void**)((char*)node + 8);
+    }
+
+    // Allocate pointer array
+    struct atArray { void* data; uint16_t count; uint16_t capacity; };
+    atArray* ptrArr = (atArray*)((char*)this + 16);
+    void* ptrData = (matchCount > 0) ? xe_EC88(matchCount * 4) : nullptr;
+    *(void**)ptrArr = ptrData;
+    *(uint16_t*)((char*)ptrArr + 6) = (uint16_t)matchCount;
+
+    // Allocate flag array 1 (bytes)
+    atArray* flagArr1 = (atArray*)((char*)this + 24);
+    void* flagData1 = (matchCount > 0) ? xe_EC88(matchCount) : nullptr;
+    *(void**)flagArr1 = flagData1;
+    *(uint16_t*)((char*)flagArr1 + 6) = (uint16_t)matchCount;
+
+    // Allocate flag array 2 (bytes)
+    atArray* flagArr2 = (atArray*)((char*)this + 32);
+    void* flagData2 = (matchCount > 0) ? xe_EC88(matchCount) : nullptr;
+    *(void**)flagArr2 = flagData2;
+    *(uint16_t*)((char*)flagArr2 + 6) = (uint16_t)matchCount;
+
+    // Second pass: populate arrays
+    node = *(void**)((char*)this + 12);
+    while (node) {
+        typedef bool (*IsTypeFunc)(void*, uint32_t);
+        void** vtable = *(void***)node;
+        IsTypeFunc isType = (IsTypeFunc)vtable[20];
+
+        if (isType(node, g_gdCSCharAnimNames_typeId)) {
+            // Add pointer
+            uint16_t idx = *(uint16_t*)((char*)ptrArr + 4);
+            ((void**)(*(void**)ptrArr))[idx] = node;
+            *(uint16_t*)((char*)ptrArr + 4) = idx + 1;
+
+            // Set flag1 = 1
+            uint16_t fIdx1 = *(uint16_t*)((char*)flagArr1 + 4);
+            ((uint8_t*)(*(void**)flagArr1))[fIdx1] = 1;
+            *(uint16_t*)((char*)flagArr1 + 4) = fIdx1 + 1;
+
+            // Set flag2 = 0
+            uint16_t fIdx2 = *(uint16_t*)((char*)flagArr2 + 4);
+            ((uint8_t*)(*(void**)flagArr2))[fIdx2] = 0;
+            *(uint16_t*)((char*)flagArr2 + 4) = fIdx2 + 1;
+        }
+        node = *(void**)((char*)node + 8);
+    }
 }
 
 /**
@@ -542,9 +671,53 @@ const char* gdCSCamAnimShotName::GetTypeName() {
     return "CamAnimShotName";
 }
 
+/**
+ * gdCSCamAnimShotName::PostLoadProperties @ 0x8240DDC0 | size: 0xF4
+ *
+ * Validates after XML load:
+ *   1. Weight (+16) must be >= 0
+ *   2. ShotName (+24) must be a non-empty string
+ *   3. TimeOffset (+28) must be >= 0.0f
+ *   4. Looks up shot name in the active camera set to store shot index at +32
+ */
 void gdCSCamAnimShotName::PostLoadProperties() {
     xmlNodeStruct_vfn_2(this);
-    // TODO: Implement validation
+
+    // Validate weight >= 0
+    int32_t weight = *(int32_t*)((char*)this + 16);
+    if (weight < 0) {
+        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - cannot have negative weight");
+    }
+
+    // Validate ShotName is non-empty
+    const char* shotName = *(const char**)((char*)this + 24);
+    if (!shotName || strlen(shotName) == 0) {
+        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - missing property 'ShotName'");
+    }
+
+    // Validate TimeOffset >= 0.0f
+    float timeOffset = *(float*)((char*)this + 28);
+    if (timeOffset < 0.0f) {
+        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - 'TimeOffset' cannot be negative");
+    }
+
+    // Look up shot name in camera animation set → store index at +32
+    extern void* g_cameraAnimSetManager;  // @ 0x8271A384
+    extern "C" int32_t FindShotNameInSet(void* setArray, const char* name);
+
+    void* setManager = *(void**)&g_cameraAnimSetManager;
+    void* shotArray = *(void**)((char*)setManager + 44);
+    extern uint32_t g_activeCameraSetIndex;  // @ 0x825C46C4
+    uint32_t setIdx = g_activeCameraSetIndex;
+    void* activeSet = ((void**)shotArray)[setIdx];
+
+    int32_t shotIndex = FindShotNameInSet(activeSet, shotName);
+    *(int32_t*)((char*)this + 32) = shotIndex;
+
+    if (shotIndex == -1) {
+        nop_8240E6D0("CamAnimShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'",
+                      shotName, "unknown");
+    }
 }
 
 /**
@@ -764,9 +937,27 @@ const char* gdCSActionLvlAmbAnimData::GetTypeName() {
     return "LvlAmbAnim";
 }
 
+/**
+ * gdCSActionLvlAmbAnimData::PostLoadProperties @ 0x8240FAA0 | size: 0xAC
+ *
+ * Validates after XML load:
+ *   1. AnimName (+20) must be a non-empty string
+ *   2. FileName (+24) must be a non-empty string
+ */
 void gdCSActionLvlAmbAnimData::PostLoadProperties() {
     xmlNodeStruct_vfn_2(this);
-    // TODO: Implement validation
+
+    // Validate AnimName is non-empty
+    const char* ambName = *(const char**)((char*)this + 20);
+    if (!ambName || strlen(ambName) == 0) {
+        nop_8240E6D0("LvlAmbAnimData::PostLoadProperties() - missing property 'AmbName'");
+    }
+
+    // Validate FileName is non-empty
+    const char* animName = *(const char**)((char*)this + 24);
+    if (!animName || strlen(animName) == 0) {
+        nop_8240E6D0("LvlAmbAnimData::PostLoadProperties() - missing property 'AnimName'");
+    }
 }
 
 /**
@@ -794,9 +985,34 @@ const char* gdCSActionCharAmbAnimData::GetTypeName() {
     return "CharAmbAnim";
 }
 
+/**
+ * gdCSActionCharAmbAnimData::PostLoadProperties @ 0x8240FCC8 | size: 0xC4
+ *
+ * Validates after XML load:
+ *   1. CharacterId (+20) must not be -1 (unset)
+ *   2. AnimName (+24) must be a non-empty string
+ *   3. FileName (+28) must be a non-empty string
+ */
 void gdCSActionCharAmbAnimData::PostLoadProperties() {
     xmlNodeStruct_vfn_2(this);
-    // TODO: Implement validation
+
+    // Validate CharacterId is set (not -1)
+    int32_t characterId = *(int32_t*)((char*)this + 20);
+    if (characterId == -1) {
+        nop_8240E6D0("CharAmbAnimData::PostLoadProperties() - missing property 'PlayerID'");
+    }
+
+    // Validate AmbName is non-empty
+    const char* ambName = *(const char**)((char*)this + 24);
+    if (!ambName || strlen(ambName) == 0) {
+        nop_8240E6D0("CharAmbAnimData::PostLoadProperties() - missing property 'AmbName'");
+    }
+
+    // Validate AnimName is non-empty
+    const char* animName = *(const char**)((char*)this + 28);
+    if (!animName || strlen(animName) == 0) {
+        nop_8240E6D0("CharAmbAnimData::PostLoadProperties() - missing property 'AnimName'");
+    }
 }
 
 /**
