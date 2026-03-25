@@ -49,8 +49,16 @@ set(SOURCES
     src/stubs_remaining.c
     
     # XAM (Xbox Application Model)
+    src/xam/audio.c
+    src/xam/input.c
+    src/xam/kernel.c
+    src/xam/network.c
     src/xam/static_init.c
+    src/xam/video.c
     src/xam/voice.c
+    src/xam/xam_stubs.c
+    src/xam/xam_utils.c
+    src/xam/xe_buffers.c
     src/xam/xe_graphics.c
     
     # RAGE engine
