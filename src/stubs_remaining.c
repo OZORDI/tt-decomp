@@ -174,28 +174,30 @@ void datRef_Release(void* ref) {
 // File I/O Functions
 // ============================================================================
 
-void fiAsciiTokenizer_3650_g(void* tokenizer) {
-    (void)tokenizer;
+void* _realloc_crt(size_t newSz, size_t minSz) {
+    (void)newSz;
+    (void)minSz;
+    return NULL;
 }
 
-void fiAsciiTokenizer_3FB8_g(void* tokenizer) {
-    (void)tokenizer;
+void* _calloc_crt(int count, int size) {
+    (void)count;
+    (void)size;
+    return NULL;
 }
 
-void fiAsciiTokenizer_FinalizeTokenizer(void* tokenizer) {
-    (void)tokenizer;
+void _crt_fiber_destroy(void) {
 }
 
 void fiAsciiTokenizer_InitializeTokenizer(void* tokenizer) {
     (void)tokenizer;
 }
 
-void fiAsciiTokenizer_ReadNextLine(void* tokenizer) {
-    (void)tokenizer;
+void _tls_dtor_cleanup(void) {
 }
 
-void fiAsciiTokenizer_SkipWhitespace(void* tokenizer) {
-    (void)tokenizer;
+void _crt_tls_callback(int initFlag) {
+    (void)initFlag;
 }
 
 void* fiDeviceMemory_AllocateDeviceMemory(size_t size) {
