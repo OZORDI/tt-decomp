@@ -74,10 +74,10 @@ int rage_scene_load(void);
  */
 
 /* Default render path - called from main loop @ 0x822C08D8 */
-int rage_render_default(void);
+void rage_render_default(void);
 
 /* Scene render guard - called from main loop @ 0x822C0B18 */
-int rage_render_scene(void);
+void rage_render_scene(void*);
 
 /* Initialize test render system (temporary for early development) */
 int rage_init_test_render(void);

@@ -7,7 +7,7 @@
  *
  *   grcDevice_beginScene  @ 0x82305E78 (392 bytes)
  *     — Gates scene start on multiple render-state conditions, then
- *       calls CreatePageGroup to begin the GPU pass and dispatches BeginScene
+ *       calls grcDevice_beginGPUPass to begin the GPU pass and dispatches BeginScene
  *       + channel-flag calls to the attached grcRenderTargetXenon.
  *
  *   grcDevice_clear_9290  @ 0x82379290 (400 bytes)
@@ -35,13 +35,13 @@
 /* ── External dependencies ────────────────────────────────────────────────── */
 
 /* pg subsystem — begin GPU pass for this device @ 0x82305D50 */
-extern void CreatePageGroup(void* pDevice);
+extern void grcDevice_beginGPUPass(void* pDevice);
 
 /* pgStreamer — cancel profiling bracket (mode=-1) @ 0x8242C3B8 */
-extern void GetPageGroupState(void* pStream, int32_t mode);
+extern void pgStreamer_cancelBracket(void* pStream, int32_t mode);
 
 /* pgStreamer — open profiling bracket (mode=1) @ 0x82566DC0 */
-extern void RenderPageGroup(void* pStream, int32_t mode);
+extern void pgStreamer_openBracket(void* pStream, int32_t mode);
 
 /* gameLoop singleton pointer (gameLoop struct defined in render_loop.c) */
 extern void* g_loop_obj_ptr;   /* @ 0x825EAB30 */
@@ -120,7 +120,7 @@ typedef struct {
 /* ═══════════════════════════════════════════════════════════════════════════
  * grcDevice_beginScene @ 0x82305E78 | size: 0x188 (392 bytes)
  *
- * Gates GPU scene start on a chain of conditions, then calls CreatePageGroup to
+ * Gates GPU scene start on a chain of conditions, then calls grcDevice_beginGPUPass to
  * begin the actual GPU pass and dispatches channel-flag calls to the render
  * target vtable.
  *
@@ -134,16 +134,16 @@ typedef struct {
  *
  * After all gates pass:
  *   1. If gameLoop->m_pStreamObj == NULL or m_pStreamObj[4] == 0:
- *        call CreatePageGroup(this) to begin the GPU pass.
+ *        call grcDevice_beginGPUPass(this) to begin the GPU pass.
  *   2. If !m_bDeviceReady: return.
  *   3. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
- *        cancel the profiling bracket (GetPageGroupState(m_pStreamObj[56], -1)).
+ *        cancel the profiling bracket (pgStreamer_cancelBracket(m_pStreamObj[56], -1)).
  *   4. If m_pRenderTarget != NULL:
  *        vtable[11](pRT, m_bColorChannel)
  *        vtable[12](pRT, m_bDepthChannel)
  *        vtable[8](pRT)
  *   5. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
- *        open profiling bracket (RenderPageGroup(m_pStreamObj[56], 1)).
+ *        open profiling bracket (pgStreamer_openBracket(m_pStreamObj[56], 1)).
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
 {
@@ -197,9 +197,9 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     }
 
     if (pStreamObj == NULL || streamActive == 0) {
-        /* No active stream — call CreatePageGroup to begin the GPU pass now. */
-        CreatePageGroup(pDevice);
-        /* Re-read gameLoop; CreatePageGroup may update global state. */
+        /* No active stream — call grcDevice_beginGPUPass to begin the GPU pass now. */
+        grcDevice_beginGPUPass(pDevice);
+        /* Re-read gameLoop; grcDevice_beginGPUPass may update global state. */
         pLoop = (uint8_t*)g_loop_obj_ptr;
     }
 
@@ -213,7 +213,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     if (pStreamObj != NULL && ((uint8_t*)pStreamObj)[4] != 0) {
         /* An active profiling bracket is open — cancel it before proceeding. */
         void* pStream = *(void**)((uint8_t*)pStreamObj + 56);
-        GetPageGroupState(pStream, -1);
+        pgStreamer_cancelBracket(pStream, -1);
         /* Re-read gameLoop after the call. */
         pLoop = (uint8_t*)g_loop_obj_ptr;
     }
@@ -240,7 +240,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     pStreamObj = *(void**)((uint8_t*)pLoop + 556);
     if (pStreamObj != NULL && ((uint8_t*)pStreamObj)[4] != 0) {
         void* pStream = *(void**)((uint8_t*)pStreamObj + 56);
-        RenderPageGroup(pStream, 1);
+        pgStreamer_openBracket(pStream, 1);
     }
 }
 
@@ -310,20 +310,20 @@ void grcDevice_clear(grcDeviceClear* pDevice)
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grc_CB48 @ 0x8235CB48 | size: 0x23c (572 bytes)
+ * grcCommandBuffer_initShaderConstants @ 0x8235CB48 | size: 0x23c (572 bytes)
  *
  * Builds GPU command packets for shader constant initialization and GPU state
  * setup. This function constructs three command packets in the GPU command
  * buffer and sets various GPU state flags.
  *
  * The function:
- *   1. Ensures buffer space is available (calls grc_3E20 if needed)
+ *   1. Ensures buffer space is available (calls grcCommandBuffer_flushDirtyState if needed)
  *   2. Builds first packet: shader constant upload (108 bytes of data)
  *   3. Builds second packet: another shader constant (36 bytes + 12 bytes)
- *   4. Calls grc_DBF8 to finalize packet construction
+ *   4. Calls grcCommandBuffer_finalizePacket to finalize packet construction
  *   5. Builds third packet: GPU register writes for state setup
  *   6. Manipulates 64-bit GPU state flags at device+16
- *   7. Calls game_37B0 to submit the commands
+ *   7. Calls grcCommandBuffer_submitViewport to submit the commands
  *
  * Command packet format:
  *   +0: Command word (PM4 packet type and size)
@@ -337,19 +337,19 @@ void grcDevice_clear(grcDeviceClear* pDevice)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /* External function declarations */
-extern void grc_3E20(void* pDevice);
-extern void* rage_A980(void* pDevice);
-extern void grc_DBF8(void* pDevice);
-extern void game_37B0(void* pDevice);
+extern void grcCommandBuffer_flushDirtyState(void* pDevice);
+extern void* grcCommandBuffer_expand(void* pDevice);
+extern void grcCommandBuffer_finalizePacket(void* pDevice);
+extern void grcCommandBuffer_submitViewport(void* pDevice);
 
 /* Shader constant data table @ 0x8202C328 (.rdata, 440 bytes) */
 extern const uint8_t g_shaderConstantData[440];
 
-void grc_CB48(void* pDevice) {
+void grcCommandBuffer_initShaderConstants(void* pDevice) {
     uint8_t* device = (uint8_t*)pDevice;
     
-    /* Ensure buffer has space - calls grc_3E20 to expand if needed */
-    grc_3E20(pDevice);
+    /* Ensure buffer has space - calls grcCommandBuffer_flushDirtyState to expand if needed */
+    grcCommandBuffer_flushDirtyState(pDevice);
     
     /* Load current write pointer and buffer end */
     uint32_t writePtr = *(uint32_t*)(device + 0);
@@ -357,7 +357,7 @@ void grc_CB48(void* pDevice) {
     
     /* Check if we need to expand buffer */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)rage_A980(pDevice);
+        writePtr = (uint32_t)grcCommandBuffer_expand(pDevice);
     }
     
     /* ── Build first packet: shader constant upload (108 bytes data) ────── */
@@ -375,7 +375,7 @@ void grc_CB48(void* pDevice) {
     
     /* Check buffer space again */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)rage_A980(pDevice);
+        writePtr = (uint32_t)grcCommandBuffer_expand(pDevice);
     }
     
     /* ── Build second packet: another shader constant (36 bytes + extras) ── */
@@ -400,12 +400,12 @@ void grc_CB48(void* pDevice) {
     
     /* Check buffer space */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)rage_A980(pDevice);
+        writePtr = (uint32_t)grcCommandBuffer_expand(pDevice);
     }
     
     /* ── Finalize packet construction ────────────────────────────────────── */
     
-    writePtr = (uint32_t)grc_DBF8(pDevice);
+    writePtr = (uint32_t)grcCommandBuffer_finalizePacket(pDevice);
     
     /* ── Build third packet: GPU register writes ─────────────────────────── */
     
@@ -447,7 +447,7 @@ void grc_CB48(void* pDevice) {
     
     /* ── Submit commands ──────────────────────────────────────────────────── */
     
-    game_37B0(pDevice);
+    grcCommandBuffer_submitViewport(pDevice);
 }
 
 
@@ -457,8 +457,8 @@ void grc_CB48(void* pDevice) {
 extern void nop_8240E6D0(const char* fmt, ...);
 
 /* Texture processing functions */
-extern void grc_FD68(void* pTexture, void* pDevice);  /* @ 0x8215FD68 */
-extern void grc_DC00(void* pTexture, void* pDevice);  /* @ 0x8215DC00 */
+extern void grcTextureXenon_initRaw(void* pTexture, void* pDevice);  /* @ 0x8215FD68 */
+extern void grcTextureXenon_initCompressed(void* pTexture, void* pDevice);  /* @ 0x8215DC00 */
 
 /* Debug format string for invalid texture types @ 0x82035300 */
 extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
@@ -496,9 +496,9 @@ extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
  *        b. Look up offset value in device table at index (offsetIndex + 2)
  *        c. Adjust texture data pointer: dataPtr += offsetTable[offsetIndex + 2]
  *     2. Process texture based on type:
- *        - Type 0: Call grc_FD68 (raw texture processing)
+ *        - Type 0: Call grcTextureXenon_initRaw (raw texture processing)
  *        - Type 1: Skip (already processed)
- *        - Type 2: Call grc_DC00 (compressed texture processing)
+ *        - Type 2: Call grcTextureXenon_initCompressed (compressed texture processing)
  *        - Type 3+: Log error via nop_8240E6D0 (invalid type)
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcTextureFactoryXenon_vfn_10(
@@ -555,16 +555,16 @@ void grcTextureFactoryXenon_vfn_10(
         uint8_t textureType = textureBytes[4];
         
         if (textureType == 0) {
-            /* Type 0: Raw texture - call grc_FD68 */
-            grc_FD68(pTexture[0], pDevice);
+            /* Type 0: Raw texture - call grcTextureXenon_initRaw */
+            grcTextureXenon_initRaw(pTexture[0], pDevice);
         }
         else if (textureType == 1) {
             /* Type 1: Already processed - skip */
             continue;
         }
         else if (textureType == 2) {
-            /* Type 2: Compressed texture - call grc_DC00 */
-            grc_DC00(pTexture[0], pDevice);
+            /* Type 2: Compressed texture - call grcTextureXenon_initCompressed */
+            grcTextureXenon_initCompressed(pTexture[0], pDevice);
         }
         else {
             /* Type 3+: Invalid texture type - log error */
