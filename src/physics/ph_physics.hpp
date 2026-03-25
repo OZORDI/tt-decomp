@@ -377,6 +377,67 @@ struct phArticulatedCollider {
     virtual void vfn_61();                            // [61] @ 0x8224E270
     virtual void vfn_62();                            // [62] @ 0x8224E280
     virtual void vfn_63();                            // [63] @ 0x8224E2D8
+
+    // Non-virtual methods
+    void* GetActiveJointsPointer();
+    void DelegateToJointProcessor();
+    void DelegateToCapsuleHandler();
+    void DelegateToColliderHandler();
+    float GetJointMass(int jointIndex);
+    float GetJointInertia(int jointIndex);
+    float GetJointDamping(int jointIndex);
+    void Update();
+    void AddForceToJoint(const float* forceVector);
+    void ApplyImpulse(void* param1, void* param2, void* param3);
+    // Bitfield accessors
+    uint32_t GetSolverParam_0(); uint32_t GetSolverParam_3(); uint32_t GetSolverParam_11();
+    uint32_t GetSolverParam_14(); uint32_t GetSolverParam_17(); uint32_t GetSolverParam_21();
+    uint32_t GetRotAxis_0(); uint32_t GetRotAxis_3(); uint32_t GetRotAxis_6();
+    uint32_t GetRotAxis_9(); uint32_t GetRotAxis_12(); uint32_t GetRotAxis_15();
+    uint32_t GetRotAxis_18(); uint32_t GetRotAxis_21(); uint32_t GetRotAxis_24();
+    uint32_t GetRotAxis_27(); uint32_t GetRotAxis_30();
+    uint32_t GetConstraint_0(); uint32_t GetConstraint_4(); uint32_t GetConstraint_8();
+    uint32_t GetConstraint_12(); uint32_t GetConstraint_16(); uint32_t GetConstraint_20();
+    uint32_t GetConstraint_24(); uint32_t GetConstraint_28();
+    uint32_t GetFlag7C_0(); uint32_t GetFlag7C_1(); uint32_t GetFlag7C_4();
+    uint32_t GetFlag7C_4b(); uint32_t GetFlag7C_5(); uint32_t GetFlag7C_Byte();
+    uint32_t GetActive_0(); uint32_t GetActive_1(); uint32_t GetActive_2();
+    uint32_t GetActive_2b(); uint32_t GetActive_3(); uint32_t GetActive_5();
+    uint32_t GetDofFlag_0(); uint32_t GetLimitType_0(); uint32_t GetSolverFlag_18();
+    uint32_t GetCBCField_23();
+    uint32_t GetIndexedByteFlag_0(int index); uint32_t GetIndexedByteFlag_1(int index);
+    uint32_t GetIndexedByteFlag_2(int index);
+    uint32_t GetIndexedField_1168(int index, int shift, int mask);
+    uint32_t GetBoneField_5778(int index); uint32_t GetBoneField_5B90(int index);
+    uint32_t GetBoneField_5BE0(int index); uint32_t GetBoneField_5C30(int index);
+    uint32_t GetBoneField_5C88(int index); uint32_t GetBoneField_5CE0(int index);
+    uint32_t GetBoneField_5D38(int index); uint32_t GetBoneField_5D90(int index);
+    uint32_t GetBoneFieldNeg_5DF0(int index);
+    bool IsBoneFieldNonZero(int index); bool IsElementActive(int index);
+    float GetInterpolatedLimit(int index); float GetScaledFloat();
+    // Setters
+    void SetActive_2b(uint32_t value); void SetActive_3(uint32_t value);
+    void SetActive_5(uint32_t value); void SetActive_11648(uint32_t value);
+    void SetActiveByte_11650(uint8_t value);
+    void SetConstraint_0b(uint32_t value); void SetConstraint_4b(uint32_t value);
+    void SetConstraint_8b(uint32_t value); void SetConstraint_12b(uint32_t value);
+    void SetConstraint_28b(uint32_t value); void SetConstraint_11628(uint32_t value);
+    void SetCBCField_23(uint32_t value);
+    void SetDofFlag_0(uint32_t value); void SetDofU16_11840(uint32_t value);
+    void SetFlag7C_4b(uint32_t value); void SetFlag7C_24(uint32_t value);
+    void SetFlags_11644(uint32_t value);
+    void SetFourConsecutive(uint32_t value);
+    void SetJointParam_0(uint32_t value); void SetJointParam_28(uint32_t value);
+    void SetLimitFloat_11708(float value); void SetLimitFloat_11712(float value);
+    void SetLimitType_0(uint32_t value);
+    void SetMiscField_11652(uint32_t value); void SetField_11544(uint32_t value);
+    void SetRangeFloat_11780(float value); void SetRangeFloat_11784(float value);
+    void SetRangeFloat_11788(float value); void SetRangeFloat_11792(float value);
+    void SetRotAxis_2(uint32_t value); void SetRotAxis_8(uint32_t value);
+    void SetRotAxis_14(uint32_t value); void SetRotAxis_20(uint32_t value);
+    void SetRotAxis_26(uint32_t value);
+    void SetSolverParam_11636(uint32_t value); void SetSolverParam_15(uint32_t value);
+    void SetSolverParam_21(uint32_t value);
 };
 
 // ── rage::phBound  [vtable @ 0x82057EF4] ─────────────────────────────────────
@@ -712,6 +773,21 @@ struct phBoundCapsule {
 
     // Non-virtual methods
     int32_t ComputeFixedPointDotProduct();  // @ 0x824C35C8
+    float GetRadius() const;                          // @ 0x820CB598
+    void ScaleRadius(float scale);                    // @ 0x820CB6A0
+    void ComputeBounds(float scale, float* outMin, float* outMax);  // @ 0x820D04F0
+    float ComputeExtent(float param1, float param2) const;          // @ 0x820D0550
+    void InitializeAxisAlignedX(float halfLength, float* outMatrix);  // @ 0x820C3F10
+    void InitializeAxisAlignedY(float halfLength, float* outMatrix);  // @ 0x820C3F98
+    void InitializeAxisAlignedZ(float halfLength, float* outMatrix);  // @ 0x820C4020
+    void TransformByDirection(float halfLength, const float* direction, float* outMatrix);  // @ 0x820C40A8
+    void InitializeFromDirection(float halfLength, const float* direction, float* outMatrix);  // @ 0x820C3DA0
+    void ApplyTransform(const float* transform, const float* inPoints);  // @ 0x82147EF8
+    void SetMaterialIndex(uint32_t index);                       // @ 0x822A2E00 (vfn_13)
+    uint32_t GetMaterialIndex() const;                           // @ 0x8256FBD0 (vfn_12)
+    float GetVolume() const;                                     // @ 0x822A2DB0 (vfn_8)
+    void UpdateBound();                                          // @ 0x822A2DE0 (vfn_11)
+    void GetSupportPoint(void* direction, void* outPoint);       // @ 0x822A3258 (vfn_9)
 };
 
 // ── rage::phBoundComposite  [vtable @ 0x82057FD4] ────────────────────────────
@@ -865,6 +941,18 @@ struct phBoundGeometry {
 
     // debug string: "phBoundGeometry::Load_v110(%s) -- 'centroid:' not supported"
     void Load_v110();
+
+    // Non-virtual methods
+    void* GetDisplayObject();                                // @ 0x82228C58
+    uint8_t GetMaterialCount() const;                        // @ 0x82290F60 (vfn_10)
+    void* GetMaterialAtIndex(int index) const;               // @ 0x82290F68 (vfn_12)
+    void SetAllMaterials(void* material);                    // @ 0x82293D50 (vfn_13)
+    void RenderDebugGeometry();                              // @ 0x82293BE8 (vfn_14)
+    void SelectMaterialForRendering();                       // @ 0x82293CF8 (vfn_15)
+    void CheckBoundsAndUpdate(const float* point);           // @ 0x82293D88 (vfn_6)
+    void UpdateBounds(const float* offset);                  // @ 0x82293E10 (vfn_7)
+    void Destructor(int shouldFree);                         // @ 0x82291008 (vfn_0)
+    bool CallVTableSlot37();                                 // @ 0x82291260 (vfn_40)
 };
 
 // ── rage::phBoundOTGrid  [vtable @ 0x82058854] ───────────────────────────────
@@ -1359,6 +1447,98 @@ struct phInst {
     virtual void vfn_78();                        // [78] @ 0x82487AA8
     virtual void vfn_79();                        // [79] @ 0x82487CE0
     virtual void vfn_80();                        // [80] @ 0x82487E60
+
+    // Non-virtual methods (lifted from ph_physics.cpp)
+    void* GetBoundPtr();
+    void* GetField14();
+    void SetField9(void* val);
+    void SetField11(void* val);
+    int GetStaticSize();
+    int StoreSize(int* outParam);
+    int StoreSize(uint32_t* outParam);
+    void ForwardSlot23(void* arg);
+    void ForwardSlot12();
+    void AdjustorSlot1();
+    void AdjustorSlot2(void* arg);
+    void AdjustorSlot5();
+    void AdjustorSlot6(void* arg);
+    int GetPhysicsLayer();
+    int GetU16Delta();
+    int GetU16Delta(void* other);
+    int ComputeDataOffset();
+    int ComputeDataOffset(uint32_t* outParam);
+    int AddRef();
+    int Release();
+    void Lock();
+    void Unlock();
+    void ShiftArgsAndCall(void* a, void* b, void* c);
+    void LoadGlobalAndCall();
+    void InitVtableAndCleanup();
+    void SetIndexedFlag(int index);
+    void SetIndexedFlag();
+    void ClearIndexedFlag(int index);
+    void ClearIndexedFlag();
+    void ConditionalStore(int flag, uint32_t val1, uint32_t val2);
+    int ConditionalStore(int flag, uint32_t val1, uint32_t val2, int);  // overload
+    void ZeroFieldRange();
+    void ZeroFieldRanges();
+    void ClearSubStatePtr();
+    void* GetBound();
+    int GetFlags();
+    int GetType();
+    void SetPhysicsLayer(void* arg);
+    void ConditionalBroadcast(void* msg, bool includeData);
+    void ConditionalForward(void* arg, uint8_t flag);
+    void DispatchSlot13_124();
+    void DispatchSlot13_204();
+    void DispatchSlot13_284();
+    void DispatchSlot13_364();
+    void DispatchTransformA(void* arg1, void* arg2);
+    void ForwardPageAligned();
+    void IndexedDispatch13();
+    void IndexedDispatch14();
+    void IndexedDispatch15();
+    void IndexedDispatch16();
+    void IndexedDispatch17();
+    void IndexedDispatch18();
+    void IndexedDispatch19();
+    void IndexedDispatch20();
+    void IndexedDispatch21();
+    void IndexedDispatch22();
+    void IndexedDispatch23();
+    void InitAndCleanup();
+    void InitDualVtable();
+    void InitTripleVtable();
+    void InitFromParam(void* param);
+    void InitWithParam(void* param);
+    void LoadGlobalAndDispatch();
+    void ReadMMIOAndStore();
+    void ReadTimerToGlobal();
+    uint32_t GetCollisionGroup();
+    void SetCollisionGroup(uint32_t val);
+    uint32_t GetCollisionMask();
+    void SetCollisionMask(uint32_t val);
+    uint32_t GetUserData();
+    void SetUserData(uint32_t val);
+    uint32_t GetErrorCode();
+    uint32_t GetReturnCode();
+    void CallWithZeroedBuffer();
+    void CallVfn12ThenInit();
+    void AtomicDecrementAndCallback();
+    int GetSubObjectPtr(void** outPtr);
+    int StoreConstBA24(uint32_t* outParam);
+    int StoreSizeConstant(uint32_t* outParam);
+    int AllocateAndStore(uint32_t* outPtr);
+    void SetField9(uint32_t val);
+    void SetField11(uint32_t val);
+};
+
+// ── rage::phInstStatic ───────────────────────────────────────────────────────
+struct phInstStatic {
+    void**      vtable;           // +0x00
+
+    void ClearMotionState();
+    void ClearAllMotion();
 };
 
 // ── rage::phInstBehavior  [vtable @ 0x82065080] ──────────────────────────────
@@ -1583,6 +1763,16 @@ struct phJoint3Dof {
     virtual void vfn_29();                        // [29] @ 0x822550F8
     virtual void vfn_30();                        // [30] @ 0x82255160
     virtual void vfn_31();                        // [31] @ 0x82253920
+
+    // Non-virtual methods
+    void SetDampingAndStiffness(float arg1, float arg2);  // @ 0x82251268 (vfn_14)
+    void SetLimitAtIndex(int index, float val);           // @ 0x82251200 (vfn_13)
+    void AccumulateForces(int index, float* outVec);      // @ 0x82254D28 (vfn_25)
+    void AccumulateTorques(int index, float* outVec);     // @ 0x82254D90 (vfn_26)
+    void GetLowerLimit(int index, float* outVec);         // @ 0x822550F8 (vfn_30)
+    void GetUpperLimit(int index, float* outVec);         // @ 0x82255160 (vfn_31)
+    void ComputeJacobian();                               // @ 0x82255340 (vfn_17)
+    void SetLimits();                                     // @ 0x82253920 (vfn_31)
 };
 
 // ── rage::phLevelBase  [vtable @ 0x82059F24] ─────────────────────────────────
@@ -1789,16 +1979,16 @@ struct phObject {
     virtual void* vfn_8();                             // [8]
     virtual void* vfn_9();                             // [9]
     virtual void* vfn_10();                            // [10]
-    virtual void vfn_11(void*, void*, void*);          // [11]
-    virtual void* vfn_12();                            // [12]
-    virtual void vfn_13(void*);                        // [13]
-    virtual int32_t vfn_14(int32_t);                   // [14]
-    virtual int32_t vfn_15();                          // [15]
-    virtual void* vfn_16();                            // [16]
-    virtual void* vfn_17(void*);                       // [17]
-    virtual void* vfn_18();                            // [18]
-    virtual void vfn_19();                             // [19]
-    virtual void vfn_20();                             // [20]
+    virtual void Initialize(void*, void*, void*);      // [11]
+    virtual void* GetDescription();                    // [12]
+    virtual void SetDescription(void*);                // [13]
+    virtual int32_t QueryInterface(int32_t);            // [14]
+    virtual int32_t Release();                          // [15]
+    virtual void* CreateResource();                     // [16]
+    virtual void* CreateViews(void*);                   // [17]
+    virtual void* CreateOutputViews();                  // [18]
+    virtual void ReleaseViews();                        // [19]
+    virtual void ReleaseResources();                    // [20]
     virtual void* vfn_21();                            // [21]
     virtual void* vfn_22();                            // [22]
     virtual void* vfn_23();                            // [23]
@@ -1810,5 +2000,5 @@ struct phObject {
     virtual void* vfn_29();                            // [29]
     virtual void* vfn_30();                            // [30]
     virtual void* vfn_31();                            // [31]
-    virtual void vfn_32();                             // [32]
+    virtual void ResetState();                          // [32]
 };
