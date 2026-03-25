@@ -42,9 +42,17 @@
  * Returns IXAPO registration properties describing this effect.
  * This is a stub implementation.
  */
-void CShelvingFilterEffect::GetRegistrationProperties() {
-    // TODO: Implement - needs proper XAPO_REGISTRATION_PROPERTIES structure
-    // This is a stub for now
+/**
+ * CShelvingFilterEffect::GetRegistrationProperties @ 0x821AE198 | size: 0x1C
+ *
+ * Fills an XAPO_REGISTRATION_PROPERTIES output struct with default values.
+ * Zeroes the struct and sets the "valid" flag byte to 1.
+ * Signature: void GetRegistrationProperties(this, XAPO_REGISTRATION_PROPERTIES* outProps)
+ */
+void CShelvingFilterEffect::GetRegistrationProperties(void* outProps) {
+    *(uint16_t*)((char*)outProps + 2) = 0;
+    *(uint8_t*)((char*)outProps + 0) = 1;   // valid flag
+    *(uint8_t*)((char*)outProps + 4) = 0;
 }
 
 /**
@@ -66,9 +74,15 @@ void CShelvingFilterEffect::IsInputFormatSupported() {
  * Releases processing resources after audio processing is complete.
  * This is a stub implementation.
  */
-void CShelvingFilterEffect::UnlockForProcess() {
-    // TODO: Implement - releases processing resources
-    // This is a stub for now
+/**
+ * CShelvingFilterEffect::UnlockForProcess @ 0x821AE4E0 | size: 0x10
+ *
+ * Copies the effect's parameter data (field at +4) to the output pointer.
+ * Returns 0 (S_OK).
+ */
+int CShelvingFilterEffect::UnlockForProcess(void* outParam) {
+    *(uint32_t*)outParam = *(uint32_t*)((char*)this + 4);
+    return 0;
 }
 
 /**
