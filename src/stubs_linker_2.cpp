@@ -208,3 +208,80 @@ uint32_t msgMsgSink_4EB8_g(void* obj) {
     (void)obj;
     return 0;
 }
+
+// ── Missing C-linkage globals (macOS prefixes _ for C symbols) ──────────────
+extern "C" {
+    float g_alphaMultiplier_c = 1.0f;
+    float g_animBlendWeight_c = 1.0f;
+    // ... these are actually the same globals but with different linkage
+    // The real fix: mark them extern "C" in globals_linker.cpp
+}
+
+// ── Missing free functions ──────────────────────────────────────────────────
+extern "C" {
+    void PostStateTransitionRequest(void* mgr, int event) { (void)mgr; (void)event; }
+    void RtlEnterCriticalSection(void* cs) { (void)cs; }
+    void RtlLeaveCriticalSection(void* cs) { (void)cs; }
+    void atArray_Clear(void* arr) { (void)arr; }
+    void audControl_Destructor(void* obj) { (void)obj; }
+    void fsmMachine_Destructor_27A8(void* obj) { (void)obj; }
+    void hsmContext_SetNextState_2800(void* ctx, int state) { (void)ctx; (void)state; }
+    void rage_free(void* ptr) { free(ptr); }
+    void xmlNodeStruct_Initialize(void* obj) { (void)obj; }
+    void phInst_A3A0_p33(void* obj) { (void)obj; }
+    void pongAttractState_Shutdown(void* obj) { (void)obj; }
+    void sysCallback_Invoke(void* cb, int code) { (void)cb; (void)code; }
+    void* pg_9C00_g(void* p) { (void)p; return nullptr; }
+    void pg_E6E0(int a, int b, int c, int d) { (void)a;(void)b;(void)c;(void)d; }
+    float phBoundCapsule_01D0_g(float v) { return v; }
+    float phBoundCapsule_01D8_g(float v) { return v; }
+    float phBoundCapsule_02B0_g(float v) { return v; }
+    float phBoundCapsule_0FE0_g(float a, float b) { (void)b; return a; }
+    void* ph_9EC0_1(void* m) { return m; }
+    void* ph_E010(void* w, void* a, const char* p) { (void)w;(void)a;(void)p; return nullptr; }
+    void ph_9E50(void* a, void* b) { (void)a;(void)b; }
+    void ph_CEE0(void* a, int b) { (void)a;(void)b; }
+    void ph_E088(void* a, void* b, void* c, float d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+    void* ph_6FC8(void* a, const char* b) { (void)a;(void)b; return nullptr; }
+    void* phArchetype_Load(const char* p, void* m) { (void)p;(void)m; return nullptr; }
+    void ph_59C8(void* a, const char* b, int c) { (void)a;(void)b;(void)c; }
+    void ph_EF40(void* a, void* b) { (void)a;(void)b; }
+    void ph_ForwardTarget(void* a) { (void)a; }
+    void phBoundCapsule_5138_g(void* a, void* b, void* c) { (void)a;(void)b;(void)c; }
+    void phBoundCapsule_A080_g(void* a) { (void)a; }
+    void phMaterialMgrImpl_C208_g(void* a, const void* b) { (void)a;(void)b; }
+    // dcamPolarCam asm-label stubs
+    void datParserRecord_vfn_0_impl() __asm__("datParserRecord_vfn_0"); void datParserRecord_vfn_0_impl() {}
+    void datParser_rtti_74A0_0_impl() __asm__("datParser_rtti_74A0_0"); void datParser_rtti_74A0_0_impl() {}
+    void datSerialize_vfn_0_impl() __asm__("datSerialize_vfn_0"); void datSerialize_vfn_0_impl() {}
+    void dcamPolarCam_vfn_0_impl() __asm__("dcamPolarCam_vfn_0"); void dcamPolarCam_vfn_0_impl() {}
+    void dcamPolarCam_vfn_1_impl() __asm__("dcamPolarCam_vfn_1"); void dcamPolarCam_vfn_1_impl() {}
+    void dcamPolarCam_vfn_3_impl() __asm__("dcamPolarCam_vfn_3"); void dcamPolarCam_vfn_3_impl() {}
+    void dcamPolarCam_vfn_4_impl() __asm__("dcamPolarCam_vfn_4"); void dcamPolarCam_vfn_4_impl() {}
+    void dcamPolarCam_vfn_5_impl() __asm__("dcamPolarCam_vfn_5"); void dcamPolarCam_vfn_5_impl() {}
+    void dcamPolarCam_vfn_10_impl() __asm__("dcamPolarCam_vfn_10"); void dcamPolarCam_vfn_10_impl() {}
+}
+
+// ── rage:: namespace stubs ──────────────────────────────────────────────────
+namespace rage {
+    void ReleaseSingleton(void* obj) { (void)obj; }
+    void* g_display_obj_ptr = nullptr;
+    void* g_phCallback0 = nullptr;
+    void* g_phCallback1 = nullptr;
+    void* g_phCallback2 = nullptr;
+    void* g_phCallback3 = nullptr;
+    void* g_phCallback4 = nullptr;
+    void* g_phCallback5 = nullptr;
+    const char* g_str_swf_unsupportedMethod = "";
+    void* g_swfScriptObjectPool = nullptr;
+    void* g_tls_base = nullptr;
+    void msgMsgSink_8DA0_sp(void* obj) { (void)obj; }
+}
+
+// ── Remaining game stubs ────────────────────────────────────────────────────
+void pongPlayer_42E0_g(void* p, void* a, void* b, float c) { (void)p;(void)a;(void)b;(void)c; }
+void pongPlayer_73E8_g(void* p, float v) { (void)p;(void)v; }
+void pongPlayer_9CD0_g(void* p, int i, void* a, void* b) { (void)p;(void)i;(void)a;(void)b; }
+void pongPlayer_AB48_g(void* a, void* b) { (void)a;(void)b; }
+void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+void rage_RegisterUIContext(void* a, unsigned int b, const char* c) { (void)a;(void)b;(void)c; }
