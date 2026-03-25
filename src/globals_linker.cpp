@@ -1,4 +1,3 @@
-extern "C" {
 /**
  * globals_linker.cpp — Linker symbol definitions for 207 undefined globals
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
@@ -502,4 +501,3 @@ void dcamPolarCam_vfn_8_impl() __asm__("dcamPolarCam_vfn_8");
 void dcamPolarCam_vfn_8_impl() {}
 void dcamPolarCam_vfn_9_impl() __asm__("dcamPolarCam_vfn_9");
 void dcamPolarCam_vfn_9_impl() {}
-} // extern "C"
