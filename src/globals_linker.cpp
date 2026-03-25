@@ -494,8 +494,8 @@ const float g_zeroFloat    = 0.0f;       // @ 0x82079AD8
 
 // ── dcamPolarCam vtable stubs ───────────────────────────────────────────────
 extern "C" {
-void dcamPolarCam_vfn_6() {}
-void dcamPolarCam_vfn_7() {}
-void dcamPolarCam_vfn_8() {}
-void dcamPolarCam_vfn_9() {}
+extern "C" void dcamPolarCam_vfn_6() {}
+extern "C" void dcamPolarCam_vfn_7() {}
+extern "C" void dcamPolarCam_vfn_8() {}
+extern "C" void dcamPolarCam_vfn_9() {}
 }
