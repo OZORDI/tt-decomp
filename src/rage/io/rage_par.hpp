@@ -63,22 +63,22 @@ struct parMemberString {
     void* m_pMemberDesc;     // +0x04
 
     /**
-     * parMemberString::vfn_6 @ 0x8234F408 | size: 0x138
+     * parMemberString::CreateOperator @ 0x8234F408 | size: 0x138
      * Build a cmOperator from the current string value at memberOffset.
      */
-    cmOperator* vfn_6(std::uint32_t memberOffset);
+    cmOperator* CreateOperator(std::uint32_t memberOffset);
 
     /**
-     * parMemberString::vfn_7 @ 0x8234F540 | size: 0x150
+     * parMemberString::ApplyOperator @ 0x8234F540 | size: 0x150
      * Apply the incoming cmOperator string payload into member storage.
      */
-    void vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+    void ApplyOperator(const cmOperator* pValueOperator, std::uint32_t memberOffset);
 
     /**
-     * parMemberString::vfn_8 @ 0x8234F360 | size: 0xA4
+     * parMemberString::ResetToDefault @ 0x8234F360 | size: 0xA4
      * Reset member storage to an empty string/null pointer default.
      */
-    void vfn_8(std::uint32_t memberOffset);
+    void ResetToDefault(std::uint32_t memberOffset);
 };
 
 /**
@@ -93,10 +93,10 @@ struct parMemberArray {
     void* m_pElementSerializer;   // +0x08
 
     /**
-     * parMemberArray::vfn_0 @ 0x8234E088 | size: 0x50
+     * parMemberArray::Destroy @ 0x8234E088 | size: 0x50
      * Scalar destructor with optional self-free.
      */
-    void* vfn_0(std::uint32_t freeSelf);
+    void* Destroy(std::uint32_t freeSelf);
 
     /**
      * parMemberArray::E0D8_h @ 0x8234E0D8 | size: 0x60
@@ -115,16 +115,16 @@ struct parMemberArray {
     );
 
     /**
-     * parMemberArray::vfn_6 @ 0x8234E370 | size: 0x394
+     * parMemberArray::CreateOperator @ 0x8234E370 | size: 0x394
      * Exports the array member into a cmOperator payload/list representation.
      */
-    cmOperator* vfn_6(std::uint32_t memberOffset);
+    cmOperator* CreateOperator(std::uint32_t memberOffset);
 
     /**
-     * parMemberArray::vfn_7 @ 0x8234E708 | size: 0x37C
+     * parMemberArray::ApplyOperator @ 0x8234E708 | size: 0x37C
      * Imports cmOperator array data/list nodes back into member storage.
      */
-    void vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+    void ApplyOperator(const cmOperator* pValueOperator, std::uint32_t memberOffset);
 };
 
 /**
@@ -163,31 +163,29 @@ struct parMemberStruct {
     std::uint32_t EB10(std::uint32_t memberOffset);
 
     /**
-     * parMemberStruct::vfn_6 @ 0x8234EBD0 | size: 0x340
+     * parMemberStruct::CreateOperator @ 0x8234EBD0 | size: 0x340
      * Export this struct member into a cmOperator representation.
      */
-    cmOperator* vfn_6(std::uint32_t memberOffset);
+    cmOperator* CreateOperator(std::uint32_t memberOffset);
 
     /**
-     * parMemberStruct::vfn_7 @ 0x8234EF10 | size: 0x1DC
+     * parMemberStruct::ApplyOperator @ 0x8234EF10 | size: 0x1DC
      * Import a cmOperator representation back into this struct member.
      */
-    void vfn_7(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+    void ApplyOperator(const cmOperator* pValueOperator, std::uint32_t memberOffset);
 
     /**
-     * parMemberStruct::vfn_8 @ 0x8234F0F0 | size: 0x94
+     * parMemberStruct::ResetToDefault @ 0x8234F0F0 | size: 0x94
      * Reset struct member storage to its default state.
      */
-    void vfn_8(std::uint32_t memberOffset);
+    void ResetToDefault(std::uint32_t memberOffset);
 
     /**
-     * parMemberStruct::vfn_9 @ 0x8234F188 | size: 0x1D4
+     * parMemberStruct::CompareAndApply @ 0x8234F188 | size: 0x1D4
      * Acquire/create the target struct instance for this member slot.
      */
-    std::uint32_t vfn_9(const cmOperator* pValueOperator, std::uint32_t memberOffset);
+    std::uint32_t CompareAndApply(const cmOperator* pValueOperator, std::uint32_t memberOffset);
 };
-
-} // namespace rage
 
 /**
  * MemberDescriptor — internal descriptor structure
@@ -215,64 +213,64 @@ struct parMemberSimple {
     MemberDescriptor* m_pMemberDesc; // +0x04
 
     /**
-     * parMemberSimple::~parMemberSimple() @ 0x8234CA38 | size: 0x50
+     * parMemberSimple::Destroy @ 0x8234CA38 | size: 0x50
      * Destructor with optional self-free (vtable slot 0)
      */
-    void* vfn_0(uint32_t freeSelf);
+    void* Destroy(uint32_t freeSelf);
 
     /**
-     * parMemberSimple::vfn_1 @ 0x8234F690 | size: 0xC
+     * parMemberSimple::GetType @ 0x8234F690 | size: 0xC
      * Get type identifier from member descriptor (vtable slot 1)
      */
-    uint32_t vfn_1() const;
+    uint32_t GetType() const;
 
     /**
-     * parMemberSimple::vfn_2 @ 0x8234F6A0 | size: 0xC
+     * parMemberSimple::GetSize @ 0x8234F6A0 | size: 0xC
      * Get default value from member descriptor (vtable slot 2)
      */
-    uint32_t vfn_2() const;
+    uint32_t GetSize() const;
 
     /**
-     * parMemberSimple::vfn_3 @ 0x8234F6B0 | size: 0xC
+     * parMemberSimple::SetType @ 0x8234F6B0 | size: 0xC
      * Set default value in member descriptor (vtable slot 3)
      */
-    void vfn_3(uint32_t value);
+    void SetType(uint32_t value);
 
     /**
-     * parMemberSimple::vfn_4 @ 0x8234F6C0 | size: 0xC
+     * parMemberSimple::GetAlignment @ 0x8234F6C0 | size: 0xC
      * Get data type from member descriptor (vtable slot 4)
      */
-    uint16_t vfn_4() const;
+    uint16_t GetAlignment() const;
 
     /**
-     * parMemberSimple::vfn_5 @ 0x8234F6D0 | size: 0xC
+     * parMemberSimple::GetFlags @ 0x8234F6D0 | size: 0xC
      * Get data format flags from member descriptor (vtable slot 5)
      */
-    uint8_t vfn_5() const;
+    uint8_t GetFlags() const;
 
     /**
-     * parMemberSimple::vfn_6 @ 0x8234FA48 | size: 0x3FC
+     * parMemberSimple::CreateOperator @ 0x8234FA48 | size: 0x3FC
      * Export member value to cmOperator representation (vtable slot 6)
      */
-    cmOperator* vfn_6(uint32_t memberOffset);
+    cmOperator* CreateOperator(uint32_t memberOffset);
 
     /**
-     * parMemberSimple::vfn_7 @ 0x8234FE48 | size: 0x390
+     * parMemberSimple::ApplyOperator @ 0x8234FE48 | size: 0x390
      * Import cmOperator value into member storage (vtable slot 7)
      */
-    void vfn_7(const cmOperator* pValueOperator, uint32_t memberOffset);
+    void ApplyOperator(const cmOperator* pValueOperator, uint32_t memberOffset);
 
     /**
-     * parMemberSimple::vfn_8 @ 0x8234F778 | size: 0x2CC
+     * parMemberSimple::ResetToDefault @ 0x8234F778 | size: 0x2CC
      * Write value to member storage with type conversion (vtable slot 8)
      */
-    void vfn_8(uint32_t memberOffset);
+    void ResetToDefault(uint32_t memberOffset);
 
     /**
-     * parMemberSimple::vfn_10 @ 0x8234F6E0 | size: 0xC
+     * parMemberSimple::GetCategory @ 0x8234F6E0 | size: 0xC
      * Get additional flags from member descriptor (vtable slot 10)
      */
-    uint8_t vfn_10() const;
+    uint8_t GetCategory() const;
 };
 
 } // namespace rage
