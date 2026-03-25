@@ -496,3 +496,155 @@ void DispatchSessionAction(void* session) {  // xam_AFA0_sp
         SessionAction_Default(session);
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRT Static Initializer Registration
+// MSVC generates these for global C++ object constructors. Each function
+// prepends a 20-byte StaticInitNode to a singly-linked list headed at
+// g_staticInitListHead (0x825EBCF4). The nodes are in .data at 0x825C9Dxx.
+// ─────────────────────────────────────────────────────────────────────────────
+
+typedef struct StaticInitNode {
+    uint8_t data[12];       // +0x00: init function pointer + flags
+    struct StaticInitNode* next;  // +0x0C: next node in list
+    uint8_t padding[4];     // +0x10
+} StaticInitNode;
+
+extern StaticInitNode* g_staticInitListHead;  // @ 0x825EBCF4
+
+static void RegisterStaticInit(StaticInitNode* node) {
+    node->next = g_staticInitListHead;
+    g_staticInitListHead = node;
+}
+
+// Each of these registers a different static initializer descriptor.
+// They're called once during CRT startup before main().
+
+extern StaticInitNode g_staticInit_0;  // @ 0x825C9DD4
+extern StaticInitNode g_staticInit_1;  // @ 0x825C9DE8
+extern StaticInitNode g_staticInit_2;  // @ 0x825C9DFC
+extern StaticInitNode g_staticInit_3;  // @ 0x825C9E10
+extern StaticInitNode g_staticInit_4;  // @ 0x825C9E24
+extern StaticInitNode g_staticInit_5;  // @ 0x825C9E38
+extern StaticInitNode g_staticInit_6;  // @ 0x825C9E4C
+extern StaticInitNode g_staticInit_7;  // @ 0x825C9E60
+extern StaticInitNode g_staticInit_8;  // @ 0x825C9E74
+
+/** RegisterStaticInit_0 @ 0x8256B940 | size: 0x1C */
+void RegisterStaticInit_0(void) { RegisterStaticInit(&g_staticInit_0); }  // xam_B940_sp
+
+/** RegisterStaticInit_1 @ 0x8256B960 | size: 0x1C */
+void RegisterStaticInit_1(void) { RegisterStaticInit(&g_staticInit_1); }  // xam_B960_sp
+
+/** RegisterStaticInit_2 @ 0x8256B980 | size: 0x1C */
+void RegisterStaticInit_2(void) { RegisterStaticInit(&g_staticInit_2); }  // xam_B980_sp
+
+/** RegisterStaticInit_3 @ 0x8256B9A0 | size: 0x1C */
+void RegisterStaticInit_3(void) { RegisterStaticInit(&g_staticInit_3); }  // xam_B9A0_sp
+
+/** RegisterStaticInit_4 @ 0x8256B9C0 | size: 0x1C */
+void RegisterStaticInit_4(void) { RegisterStaticInit(&g_staticInit_4); }  // xam_B9C0_sp
+
+/** RegisterStaticInit_5 @ 0x8256B9E0 | size: 0x1C */
+void RegisterStaticInit_5(void) { RegisterStaticInit(&g_staticInit_5); }  // xam_B9E0_sp
+
+/** RegisterStaticInit_6 @ 0x8256BA00 | size: 0x1C */
+void RegisterStaticInit_6(void) { RegisterStaticInit(&g_staticInit_6); }  // xam_BA00_sp
+
+/** RegisterStaticInit_7 @ 0x8256BA20 | size: 0x1C */
+void RegisterStaticInit_7(void) { RegisterStaticInit(&g_staticInit_7); }  // xam_BA20_sp
+
+/** RegisterStaticInit_8 @ 0x8256BA40 | size: 0x1C */
+void RegisterStaticInit_8(void) { RegisterStaticInit(&g_staticInit_8); }  // xam_BA40_sp
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Misc XAM Utility Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GetLinkedListCount @ 0x8256C5E8 | size: 0x18
+ *
+ * Counts nodes in a singly-linked list. The list head is at this->field_0,
+ * and each node's next pointer is at +4. Returns the count.
+ */
+int GetLinkedListCount(void* listObj) {  // xam_C5E8_gen
+    int count = 0;
+    void* node = *(void**)listObj;
+    while (node) {
+        node = *(void**)((char*)node + 4);
+        count++;
+    }
+    return count;
+}
+
+/**
+ * GetPropertyByteFromSubObj @ 0x8256F948 | size: 0x14
+ *
+ * Reads a uint16 from *(this->subObj+16)+92, truncates to byte,
+ * and writes it to *outValue. Returns 0 (S_OK).
+ */
+int GetPropertyByteFromSubObj(void* obj, uint8_t* outValue) {  // xam_F948_2hr
+    void* subObj = *(void**)((char*)obj + 16);
+    uint16_t val = *(uint16_t*)((char*)subObj + 92);
+    *outValue = (uint8_t)val;
+    return 0;
+}
+
+/**
+ * GetMaxBufferSize @ 0x8256D760 | size: 0x18
+ *
+ * Writes the constant 6172 to *outSize if the output pointer is
+ * non-null. Returns 0 (S_OK). This is the max network buffer size.
+ */
+int GetMaxBufferSize(void* obj, uint32_t* outSize) {  // xam_D760_sp
+    if (outSize) {
+        *outSize = 6172;
+    }
+    return 0;
+}
+
+/**
+ * GetSessionFlags @ 0x8256D818 | size: 0x18
+ *
+ * Copies this->flags (+8) to *outFlags if the output pointer is
+ * non-null. Returns 0 (S_OK).
+ */
+int GetSessionFlags(void* obj, uint32_t* outFlags) {  // xam_D818_sp
+    if (outFlags) {
+        *outFlags = *(uint32_t*)((char*)obj + 8);
+    }
+    return 0;
+}
+
+/**
+ * ShowDirtyDiscAndReset @ 0x825870E0 | size: 0x1C
+ *
+ * Shows the Xbox "dirty disc" error dialog, then calls the system
+ * reset function with (0, 0) to return to dashboard.
+ */
+extern void XamShowDirtyDiscErrorUI(void);
+extern void SystemReset(int param1, int param2);  // xam_9010_h
+
+void ShowDirtyDiscAndReset(void) {  // xam_70E0
+    XamShowDirtyDiscErrorUI();
+    SystemReset(0, 0);
+}
+
+/**
+ * InitNetworkDescriptor @ 0x8256AB18 | size: 0x1C
+ *
+ * Initializes a 5-field network descriptor struct:
+ *   +0:  callback pointer (arg1)
+ *   +4:  context pointer (arg2)
+ *   +8:  flags (arg3)
+ *   +12: reserved (zeroed)
+ *   +16: user data (arg4)
+ */
+void InitNetworkDescriptor(void* desc, void* callback, void* context,
+                           uint32_t flags, void* userData) {  // xam_AB18_2hr
+    *(void**)((char*)desc + 0) = callback;
+    *(void**)((char*)desc + 4) = context;
+    *(uint32_t*)((char*)desc + 8) = flags;
+    *(uint32_t*)((char*)desc + 12) = 0;
+    *(void**)((char*)desc + 16) = userData;
+}
