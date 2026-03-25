@@ -9,7 +9,7 @@
 namespace rage {
 
 // Forward declaration of memory management function
-extern "C" void rage_free_00C0(void* ptr);
+extern "C" void rage_free(void* ptr);
 
 // ────────────────────────────────────────────────────────────────────────────
 // datBase — Base class destructor
@@ -24,7 +24,7 @@ extern "C" void rage_free_00C0(void* ptr);
 datBase::~datBase() {
     // Free owned data if present
     if (m_pData != nullptr) {
-        rage_free_00C0(m_pData);
+        rage_free(m_pData);
         m_pData = nullptr;
     }
     // Vtable is set to datBase vtable by compiler
@@ -45,7 +45,7 @@ datBase::~datBase() {
  */
 parFileIO::~parFileIO() {
     // Base class destructor is called automatically
-    // If this was called with delete flag set, rage_free_00C0 is called
+    // If this was called with delete flag set, rage_free is called
     // on 'this' by the compiler-generated deleting destructor
 }
 

@@ -11,7 +11,7 @@
 // External function declarations
 extern "C" {
     void atSingleton_9420(void* obj);
-    void rage_free_00C0(void* ptr);
+    void rage_free(void* ptr);
     void game_8F58(void* obj, const char* name, void* dest, void* defaultVal, int flags);
     void* game_8FB0(void* obj, int flags);
     void game_8EE8(void* obj);
@@ -43,7 +43,7 @@ plrPropMgr::~plrPropMgr() {
     
     // Note: The original checks a flag (r30 & 1) to decide whether to free
     // For now, we always call free (the flag comes from the calling convention)
-    rage_free_00C0(this);
+    rage_free(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

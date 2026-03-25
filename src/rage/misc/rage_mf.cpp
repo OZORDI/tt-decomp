@@ -7,7 +7,7 @@
 #include "rage_mf.hpp"
 
 // Forward declarations
-extern "C" void rage_free_00C0(void* ptr);  // @ 0x820C00C0
+extern "C" void rage_free(void* ptr);  // @ 0x820C00C0
 
 namespace rage {
 

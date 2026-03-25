@@ -72,7 +72,7 @@ hsmContext::hsmContext() {
 
 // Forward declarations
 extern "C" void util_5B50(void* obj);           // @ 0x823E5B50 - Base class destructor
-extern "C" void rage_free_00C0(void* ptr);      // @ 0x820C00C0 - Free memory
+extern "C" void rage_free(void* ptr);      // @ 0x820C00C0 - Free memory
 
 /**
  * snMigrateMachine_vfn_0 @ 0x823E5F28 | size: 0x50
@@ -90,7 +90,7 @@ extern "C" void snMigrateMachine_vfn_0(void* obj, int flags) {
     
     // If delete flag is set, free the object's memory
     if (flags & 0x1) {
-        rage_free_00C0(obj);
+        rage_free(obj);
     }
 }
 

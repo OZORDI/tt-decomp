@@ -25,7 +25,7 @@ extern void GetPageGroupState(void* pStream, int32_t mode);  // @ 0x8242C3B8 —
 extern void RenderPageGroup(void* pStream, int32_t mode);  // @ 0x82566DC0 — Open profiling
 
 // Memory management
-extern void rage_free_00C0(void* ptr);      // @ 0x820C00C0
+extern void rage_free(void* ptr);      // @ 0x820C00C0
 
 // Device management functions
 extern void rage_5BF8(void* pObj);          // @ 0x82445BF8 — Destroy render object
@@ -211,7 +211,7 @@ void grcDevice_shutdown(void)
     }
     
     if (pRenderObjects[1] != NULL) {
-        rage_free_00C0(pRenderObjects[1]);
+        rage_free(pRenderObjects[1]);
         pRenderObjects[1] = NULL;
     }
     
@@ -320,7 +320,7 @@ void grcDevice_shutdownAlt(void)
         }
         
         // Free the device memory
-        rage_free_00C0(pDevice);
+        rage_free(pDevice);
     }
     
     // Clear device pointer

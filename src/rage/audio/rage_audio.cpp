@@ -150,7 +150,7 @@ void audVoiceSfx::PlayByEntry(
 extern "C" void nop_8240E6D0(const char* fmt, ...);
 
 // External memory free function
-extern "C" void rage_free_00C0(void* ptr);
+extern "C" void rage_free(void* ptr);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // rage::audVoice — Audio Voice Base Class

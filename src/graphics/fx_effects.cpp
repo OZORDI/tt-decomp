@@ -59,7 +59,7 @@ fxCrowdGfx::~fxCrowdGfx(int flags) {
     // Check if we should free the object memory (bit 0 of flags)
     if (flags & 0x1) {
         // Free the object using RAGE memory allocator
-        extern void rage_free_00C0(void*);
-        rage_free_00C0(this);
+        extern void rage_free(void*);
+        rage_free(this);
     }
 }

@@ -642,7 +642,7 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
 
 // External references
 extern void LocomotionState_OnEnter(void* state);
-extern void rage_free_00C0(void* ptr);
+extern void rage_free(void* ptr);
 extern void rage_FF70(void* obj);
 extern void ph_59C8(void* loader, const char* name, int flag);
 extern int util_5A70(void* loader, void* outBuffer, int maxLen, int param1, int param2);

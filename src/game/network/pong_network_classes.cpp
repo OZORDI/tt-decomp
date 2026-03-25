@@ -1024,7 +1024,7 @@ extern "C" {
 // Each destructor follows the standard scalar destructor pattern:
 //   1. Store the vtable pointer
 //   2. Check the low bit of the flags parameter (r4 & 0x1)
-//   3. If set, call rage_free_00C0 to deallocate memory
+//   3. If set, call rage_free to deallocate memory
 //
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -1045,7 +1045,7 @@ extern "C" {
 // Logic:
 //   1. Store vtable pointer at +0x00
 //   2. Extract bit 0 of flags (r4 & 0x1)
-//   3. If bit 0 is set, call rage_free_00C0(this) to deallocate
+//   3. If bit 0 is set, call rage_free(this) to deallocate
 // ─────────────────────────────────────────────────────────────────────────────
 void FloatAverager::~FloatAverager() {
     // Vtable address for variant 1
@@ -1063,14 +1063,14 @@ void FloatAverager::~FloatAverager() {
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" void FloatAverager_vfn_0(FloatAverager* thisPtr, int flags) {
     extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910
-    extern void rage_free_00C0(void* ptr);
+    extern void rage_free(void* ptr);
 
     // Restore vtable
     *(void**)thisPtr = &g_FloatAverager_vtable_1;
 
     // If deallocate flag is set (bit 0), free the memory
     if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
+        rage_free(thisPtr);
     }
 }
 
@@ -1080,14 +1080,14 @@ extern "C" void FloatAverager_vfn_0(FloatAverager* thisPtr, int flags) {
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" void FloatAverager_vfn_0_7AE8_1(FloatAverager* thisPtr, int flags) {
     extern void* g_FloatAverager_vtable_2;  // @ 0x8203A91C
-    extern void rage_free_00C0(void* ptr);
+    extern void rage_free(void* ptr);
 
     // Restore vtable
     *(void**)thisPtr = &g_FloatAverager_vtable_2;
 
     // If deallocate flag is set (bit 0), free the memory
     if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
+        rage_free(thisPtr);
     }
 }
 
@@ -1097,14 +1097,14 @@ extern "C" void FloatAverager_vfn_0_7AE8_1(FloatAverager* thisPtr, int flags) {
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" void FloatAverager_vfn_0_D538_1(FloatAverager* thisPtr, int flags) {
     extern void* g_FloatAverager_vtable_3;  // @ 0x82070D78
-    extern void rage_free_00C0(void* ptr);
+    extern void rage_free(void* ptr);
 
     // Restore vtable
     *(void**)thisPtr = &g_FloatAverager_vtable_3;
 
     // If deallocate flag is set (bit 0), free the memory
     if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
+        rage_free(thisPtr);
     }
 }
 
@@ -1114,13 +1114,13 @@ extern "C" void FloatAverager_vfn_0_D538_1(FloatAverager* thisPtr, int flags) {
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" void FloatAverager_vfn_0_3EE8_1(FloatAverager* thisPtr, int flags) {
     extern void* g_FloatAverager_vtable_4;  // @ 0x8207166C
-    extern void rage_free_00C0(void* ptr);
+    extern void rage_free(void* ptr);
 
     // Restore vtable
     *(void**)thisPtr = &g_FloatAverager_vtable_4;
 
     // If deallocate flag is set (bit 0), free the memory
     if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
+        rage_free(thisPtr);
     }
 }

@@ -10,7 +10,7 @@
 #include <cstdio>
 
 // Forward declarations
-extern "C" void rage_free_00C0(void* ptr);
+extern "C" void rage_free(void* ptr);
 extern "C" void ref_WriteStats_AF98(void* manager);
 extern "C" void nop_8240E6D0(const char* errorMsg);
 extern "C" void SinglesNetworkClient_A250_g(void* client, int param);
@@ -30,7 +30,7 @@ pongLiveManager::~pongLiveManager() {
     // Write statistics before cleanup
     ref_WriteStats_AF98(this);
     
-    // If delete flag is set, rage_free_00C0 is called on 'this'
+    // If delete flag is set, rage_free is called on 'this'
     // by the compiler-generated deleting destructor
 }
 

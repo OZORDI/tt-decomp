@@ -1591,7 +1591,7 @@ void phBoundGeometry::Destructor(int shouldFree) {
     
     // Free memory if requested
     if (shouldFree & 0x1) {
-        rage_free_00C0(this);
+        rage_free(this);
     }
 }
 

@@ -24,7 +24,7 @@ void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags);
 void fiAsciiTokenizer_CFA8_w(void* pStringValue, const char* pBegin, const char* pEnd);
 void rage_EC58(void* pStringValue, const char* pText);
 void* xe_EC88(std::uint32_t size);
-void rage_free_00C0(void* ptr);
+void rage_free(void* ptr);
 void nop_8240E6D0(const char* fmt, ...);
 void* phMaterialMgrImpl_C208_g(void* pHashBucketSet, const char* pLookupName);
 void* rage_97A8(const void* pOperator, const char* pNodeName);
@@ -327,7 +327,7 @@ void AttachOperatorOwner(cmOperatorArrayPayload32* pOperator, Address32 ownerAdd
     }
 
     if ((pOperator->m_flags & 0x1u) != 0u && pOperator->m_pOwner != 0u) {
-        rage_free_00C0(ResolveAddress<void>(pOperator->m_pOwner));
+        rage_free(ResolveAddress<void>(pOperator->m_pOwner));
     }
 
     pOperator->m_pOwner = ownerAddress;
@@ -685,7 +685,7 @@ void* parMemberArray::Destroy(std::uint32_t freeSelf) {
     E0D8_h();
 
     if ((freeSelf & 0x1u) != 0u) {
-        rage_free_00C0(this);
+        rage_free(this);
     }
 
     return this;
@@ -1352,7 +1352,7 @@ void* rage::parMemberSimple::Destroy(uint32_t freeSelf) {
     rage_F6F0();
     
     if (freeSelf & 0x1) {
-        rage_free_00C0(this);
+        rage_free(this);
     }
     
     return this;

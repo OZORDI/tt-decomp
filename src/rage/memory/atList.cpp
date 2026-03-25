@@ -534,7 +534,7 @@ void atSafeDLListSimple_rtti_9220_0(atSafeDLListSimple* list, uint32_t shouldDel
     
     // If delete flag is set, free the memory
     if (shouldDelete & 0x1) {
-        rage_free_00C0(list);
+        rage_free(list);
     }
 }
 

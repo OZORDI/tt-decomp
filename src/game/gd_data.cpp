@@ -277,7 +277,7 @@ plrPlayerMgr::~plrPlayerMgr() {
     atSingleton_9420(this);
     
     // Note: Conditional free handled by caller
-    // If (flags & 1), caller will invoke rage_free_00C0(this)
+    // If (flags & 1), caller will invoke rage_free(this)
 }
 
 
@@ -634,14 +634,14 @@ void InitializePageGroup(void* pageGroup) {
 void gdStatsOfflineSession::ScalarDtor(int flags) {
     this->~gdStatsOfflineSession();
     if (flags & 1) {
-        rage_free_00C0(this);
+        rage_free(this);
     }
 }
 
 void gdStatsOnlineGeneral::ScalarDtor(int flags) {
     this->~gdStatsOnlineGeneral();
     if (flags & 1) {
-        rage_free_00C0(this);
+        rage_free(this);
     }
 }
 
@@ -696,7 +696,7 @@ void gdStatsOnlineGeneral::ScalarDtor(int flags) {
 // External dependencies
 extern void* atSingleton_91E0_gen(uint32_t size);      // @ 0x821A91E0 - Get singleton
 extern void* atSingleton_29E0_g(const void* key);      // @ 0x820C29E0 - Hash field key
-extern void rage_free_00C0(void* ptr);                 // @ 0x820C00C0 - Free memory
+extern void rage_free(void* ptr);                 // @ 0x820C00C0 - Free memory
 
 // Global serialization registry (SDA offset 0)
 extern uint32_t g_serializationRegistry;  // @ 0x82600000
@@ -740,7 +740,7 @@ void RegisterSerializedField(void* obj,
     
     // Free any existing field metadata at this slot
     void* existingMetadata = ((void**)fieldRegistry)[0];
-    rage_free_00C0(existingMetadata);
+    rage_free(existingMetadata);
     
     // Hash the field key to generate unique identifier
     void* fieldHash = atSingleton_29E0_g(fieldKey);

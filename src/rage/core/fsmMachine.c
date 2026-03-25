@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 /* Heap free @ 0x820C00C0 */
-extern void rage_free_00C0(void* ptr);
+extern void rage_free(void* ptr);
 
 /* fsmMachine base vtable @ 0x8204DD14 */
 extern void* fsmMachine_vtable;  /* lbl_8204DD14 */
@@ -38,7 +38,7 @@ void fsmMachine_Destructor_27A8(fsmMachine* pMachine)
     
     /* Free state data if allocated */
     if (pMachine->m_pStateData != NULL) {
-        rage_free_00C0(pMachine->m_pStateData);
+        rage_free(pMachine->m_pStateData);
         pMachine->m_pStateData = NULL;
     }
     

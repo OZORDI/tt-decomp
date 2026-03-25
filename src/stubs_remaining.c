@@ -386,7 +386,7 @@ void rage_ThreadPool_Cleanup(void) {
     // Thread pool cleanup
 }
 
-void rage_free_00C0(void* ptr) {
+void rage_free(void* ptr) {
     extern void rage_free(void* ptr);
     rage_free(ptr);
 }

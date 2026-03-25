@@ -57,7 +57,7 @@ src/rage/app_init.c:
 	.text       start:0x8242b8a8 end:0x8242b958
 	.text       start:0x82566ac8 end:0x82566b4c
 
-src/crt/heap.c:
+src/rage/memory/rage_heap.c:
 	.text       start:0x821861a0 end:0x8218629c
 	.text       start:0x82186e40 end:0x82187178
 	.text       start:0x821871c0 end:0x821874d4

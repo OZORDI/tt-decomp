@@ -124,7 +124,7 @@ float atSingleton_4148_g(atSingleton* obj) {
 //      - Get array count from vtable[-1]
 //      - Calculate array size: count * 8 bytes per element
 //      - Loop backwards through array, calling destructor on each element
-//      - Free the array memory via rage_free_00C0
+//      - Free the array memory via rage_free
 // ─────────────────────────────────────────────────────────────────────────────
 void atSingleton_74B8(atSingleton* obj) {
     // Check if object has references
@@ -154,7 +154,7 @@ void atSingleton_74B8(atSingleton* obj) {
     }
     
     // Free the array memory
-    rage_free_00C0(arrayMetadata);
+    rage_free(arrayMetadata);
 }
 
 
@@ -299,7 +299,7 @@ void atSingleton_8620(atSingleton* obj) {
     
     // Check if array is valid
     if (elementCount == 0) {
-        rage_free_00C0(arrayBase);
+        rage_free(arrayBase);
         return;
     }
     
@@ -324,7 +324,7 @@ void atSingleton_8620(atSingleton* obj) {
     }
     
     // Free the array memory
-    rage_free_00C0(arrayBase);
+    rage_free(arrayBase);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -524,7 +524,7 @@ void atSingleton_B960_h(atSingleton* obj) {
     uint16_t count80 = *(uint16_t*)((uint8_t*)embeddedObj80 + 14);
     if (count80 != 0) {
         void* memory80 = *(void**)((uint8_t*)embeddedObj80 + 8);
-        rage_free_00C0(memory80);
+        rage_free(memory80);
     }
     
     // Initialize embedded object at +64
@@ -535,7 +535,7 @@ void atSingleton_B960_h(atSingleton* obj) {
     uint16_t count64 = *(uint16_t*)((uint8_t*)embeddedObj64 + 14);
     if (count64 != 0) {
         void* memory64 = *(void**)((uint8_t*)embeddedObj64 + 8);
-        rage_free_00C0(memory64);
+        rage_free(memory64);
     }
     
     // Initialize embedded object at +48
@@ -546,7 +546,7 @@ void atSingleton_B960_h(atSingleton* obj) {
     uint16_t count48 = *(uint16_t*)((uint8_t*)embeddedObj48 + 14);
     if (count48 != 0) {
         void* memory48 = *(void**)((uint8_t*)embeddedObj48 + 8);
-        rage_free_00C0(memory48);
+        rage_free(memory48);
     }
     
     // Initialize embedded object at +32
@@ -557,7 +557,7 @@ void atSingleton_B960_h(atSingleton* obj) {
     uint16_t count32 = *(uint16_t*)((uint8_t*)embeddedObj32 + 14);
     if (count32 != 0) {
         void* memory32 = *(void**)((uint8_t*)embeddedObj32 + 8);
-        rage_free_00C0(memory32);
+        rage_free(memory32);
     }
     
     // Set final vtables
