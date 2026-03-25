@@ -326,3 +326,90 @@ void grcDevice_shutdownAlt(void)
     // Clear device pointer
     *ppDevice = NULL;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderer::Init @ 0x82100B78 | size: 0x13C (316 bytes)
+//
+// Initializes the grcRenderer object. Sets the vtable pointer, zeroes all
+// render state fields, and initializes 5 embedded render-pass descriptors
+// with their respective vtable pointers and default values.
+//
+// Layout:
+//   +0:   vtable (0x8203008C)
+//   +4:   render state block (108 bytes, zeroed)
+//     +4..+36:  8 state dwords (zeroed)
+//     +24:      invalidation handle (-1)
+//     +100..104: 3 bool flags (zeroed)
+//     +108:     secondary handle (-1)
+//     +109:     enable flag (zeroed)
+//   +112: render config block
+//     +112: config flag (zeroed)
+//     +116: config float A (0.0f)
+//     +120: config float B (0.0f)
+//   +128: 5 embedded render-pass descriptors (32 bytes each)
+//     Each pass: vtable, float(0.0), zeroes, zero count, zero handle
+//     Pass 0 vtable: 0x82030CB8
+//     Pass 1-4 vtable: 0x8203F258
+//   +288: final state byte (zeroed)
+//   +292-300: 3 trailing dwords (0, 0, -1)
+// ─────────────────────────────────────────────────────────────────────────────
+void grcRenderer_Init(void* renderer) {
+    char* r = (char*)renderer;
+
+    // Set main vtable
+    *(void**)r = (void*)0x8203008C;
+
+    // Zero render state block (+4 to +36)
+    for (int i = 0; i < 8; i++) {
+        *(uint32_t*)(r + 4 + i * 4) = 0;
+    }
+    *(int32_t*)(r + 4 + 16) = -1;  // invalidation handle at +20 from base (+4+16)
+
+    // Zero byte flags at +100..+102 from state base (+4+96..+4+98)
+    *(uint8_t*)(r + 4 + 96) = 0;
+    *(uint8_t*)(r + 4 + 97) = 0;
+    *(uint8_t*)(r + 4 + 98) = 0;
+    *(int32_t*)(r + 4 + 100) = -1;  // secondary handle
+    *(uint8_t*)(r + 4 + 104) = 0;   // enable flag
+
+    // Zero second state array (+36 to +68, 8 dwords)
+    for (int i = 0; i < 8; i++) {
+        *(uint32_t*)(r + 4 + 32 + i * 4) = 0;
+    }
+
+    // Zero third state array (+68 to +100, 8 dwords)
+    for (int i = 0; i < 8; i++) {
+        *(uint32_t*)(r + 4 + 64 + i * 4) = 0;
+    }
+
+    // Render config block at +112
+    *(uint8_t*)(r + 112) = 0;           // config flag
+    *(uint32_t*)(r + 116) = 0;          // padding
+    *(float*)(r + 120) = 0.0f;          // config float A
+    *(float*)(r + 124) = 0.0f;          // config float B
+
+    // Render pass 0 at +128 (vtable = 0x82030CB8)
+    *(void**)(r + 128) = (void*)0x82030CB8;  // pass vtable
+    *(float*)(r + 132) = 0.0f;               // blend weight
+    *(uint32_t*)(r + 136) = 0;               // state
+    *(uint32_t*)(r + 144) = 0;               // count
+    *(uint16_t*)(r + 152) = 0;               // flags
+
+    // Render passes 1-4 at +156, +188, +220, +252 (vtable = 0x8203F258)
+    for (int pass = 0; pass < 4; pass++) {
+        int base = 156 + pass * 32;
+        *(void**)(r + base) = (void*)0x8203F258;
+        *(float*)(r + base + 4) = 0.0f;
+        *(uint32_t*)(r + base + 8) = 0;
+        *(uint32_t*)(r + base + 16) = 0;
+        *(uint16_t*)(r + base + 24) = 0;
+        *(uint8_t*)(r + base + 28) = 0;
+    }
+
+    // Trailing state
+    *(uint8_t*)(r + 288) = 0;
+    *(uint32_t*)(r + 292) = 0;
+    *(uint32_t*)(r + 296) = 0;
+    *(int32_t*)(r + 300) = -1;
+}

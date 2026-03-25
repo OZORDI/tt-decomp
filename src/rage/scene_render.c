@@ -383,3 +383,77 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
     /* 8. Finalise / flush the render stream. */
     UpdatePageGroup(pThis->m_pStream);
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage_scene_cleanup @ 0x822C07E0 | size: 0xF8 (248 bytes)
+//
+// Post-frame scene cleanup. Flushes streaming buffers, resets profiling
+// brackets, copies a 16-byte matrix from a global, manages the fiber
+// context for the Bink video thread, and clears the "scene active" flag.
+//
+// Called at the end of each frame after rendering completes.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage_scene_cleanup(void* sceneState) {
+    extern void pg_6C40_g(void* streamer);           // @ 0x82566C40 — flush streaming buffer
+    extern void pg_C3B8_g(void* obj, int param);     // @ 0x8242C3B8 — reset profiling bracket
+    extern void* _crt_tls_fiber_setup();             // @ 0x82566B78 — get/create fiber context
+    extern void game_7868(void* obj, int param);     // @ 0x82227868 — frame sync
+    extern void nop_8240E6D0(const char* msg, ...);
+
+    // Check if scene is active (byte at +4)
+    uint8_t isActive = *(uint8_t*)((char*)sceneState + 4);
+    if (!isActive) {
+        // Scene not active — log warning and return
+        nop_8240E6D0("rage_scene_cleanup: scene not active");  // @ 0x820594F8
+        return;
+    }
+
+    // Flush primary streaming buffer (field +32)
+    void* primaryStreamer = *(void**)((char*)sceneState + 32);
+    pg_6C40_g(primaryStreamer);
+
+    // Flush global streaming buffer @ 0x82606600
+    extern void* g_globalStreamer;  // @ 0x82606600
+    pg_6C40_g(g_globalStreamer);
+
+    // Conditionally flush secondary streamer (field +20) if flag +7 is clear
+    uint8_t secondaryFlag = *(uint8_t*)((char*)sceneState + 7);
+    if (!secondaryFlag) {
+        void* secondaryStreamer = *(void**)((char*)sceneState + 20);
+        pg_6C40_g(secondaryStreamer);
+    }
+
+    // Reset profiling brackets
+    void* profBracket1 = *(void**)((char*)sceneState + 40);
+    pg_C3B8_g(profBracket1, -1);
+
+    void* profBracket2 = *(void**)((char*)sceneState + 24);
+    pg_C3B8_g(profBracket2, 0);
+
+    // Copy 16-byte identity/reset matrix from global @ 0x8261A0C0 to +60
+    extern uint32_t g_sceneResetMatrix[4];  // @ 0x8261A0C0
+    uint32_t* destMatrix = (uint32_t*)((char*)sceneState + 60);
+    destMatrix[0] = g_sceneResetMatrix[0];
+    destMatrix[1] = g_sceneResetMatrix[1];
+    destMatrix[2] = g_sceneResetMatrix[2];
+    destMatrix[3] = g_sceneResetMatrix[3];
+
+    // Manage Bink video fiber context
+    extern void* g_binkVideoPlayer;  // @ 0x825EB988
+    void* binkPlayer = g_binkVideoPlayer;
+    void* existingFiber = *(void**)((char*)binkPlayer + 10376);
+    if (existingFiber) {
+        _crt_tls_fiber_setup();  // Release existing
+    }
+    void* newFiber = _crt_tls_fiber_setup();
+    *(void**)((char*)binkPlayer + 10376) = newFiber;
+
+    // Frame sync notification
+    extern void* g_frameSyncObj;  // @ 0x825F64F4 (SDA)
+    game_7868(g_frameSyncObj, 1);
+
+    // Clear scene state flags
+    *(uint8_t*)((char*)sceneState + 4) = 0;  // scene no longer active
+    *(uint8_t*)((char*)sceneState + 7) = 0;  // secondary flag cleared
+}
