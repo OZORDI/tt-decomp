@@ -1107,9 +1107,365 @@ void cmMax::GetDim(int32_t* out) {
 // cmAngleLinearApproach::Tick @ 0x82278F10 — TODO (216 bytes)
 // cmAnglePowerApproach::Tick @ 0x82278E58 — TODO
 // cmApproach2 — TODO (cmApproach2_vfn_10 @ 0x82279428)
-// cmCapture — TODO (vfn_10 @ 0x822779C8, vfn_17 @ 0x822787F8)
-// cmChanged  — TODO (vfn_10 @ 0x82277EF0, vfn_17 @ 0x82278168)
-// cmDifferentiate — TODO (vfn_10 @ 0x822782D0)
+
+// ── cmCapture — captures and holds a snapshot of portA. vtable @ 0x820569AC ──
+// Stateful node: stores a copy of the current input value in a 32-byte
+// reporter buffer at +24. Calling Reset (vfn_6) re-captures, then the
+// Get* methods return the held value. The RegisterPorts (vfn_16) tries
+// portA types: vec4, float, int32, vec2, dim.
+
+// cmCapture::GetDim @ 0x822789C8 | size: 0x50
+// Calls Sync (vfn_8) then reads int32 from reporter buffer
+void cmCapture::GetDim(int32_t* out) {
+    // Call this->Sync() via vtable slot 8
+    typedef void (*SyncFn)(void*);
+    void** vt = *(void***)this;
+    ((SyncFn)vt[8])(this);
+    // Read captured value from reporter buffer at +24
+    void* buf = *(void**)((char*)this + 24);
+    *out = *(int32_t*)buf;
+}
+
+// cmCapture::GetVector @ 0x82278928 | size: 0x50
+// Calls Sync then copies 16-byte vec4 from reporter buffer
+void cmCapture::GetVector(float* out) {
+    typedef void (*SyncFn)(void*);
+    void** vt = *(void***)this;
+    ((SyncFn)vt[8])(this);
+    void* buf = *(void**)((char*)this + 24);
+    float* src = (float*)buf;
+    out[0] = src[0]; out[1] = src[1]; out[2] = src[2]; out[3] = src[3];
+}
+
+// cmCapture::GetBool @ 0x82278978 | size: 0x50
+// Calls Sync then reads byte from reporter buffer
+void cmCapture::GetBool(uint8_t* out) {
+    typedef void (*SyncFn)(void*);
+    void** vt = *(void***)this;
+    ((SyncFn)vt[8])(this);
+    void* buf = *(void**)((char*)this + 24);
+    *out = *(uint8_t*)buf;
+}
+
+// cmCapture::GetFloat @ 0x822788D8 | size: 0x50
+// Calls Sync then reads float from reporter buffer
+void cmCapture::GetFloat(float* out) {
+    typedef void (*SyncFn)(void*);
+    void** vt = *(void***)this;
+    ((SyncFn)vt[8])(this);
+    void* buf = *(void**)((char*)this + 24);
+    *out = *(float*)buf;
+}
+
+// cmCapture::SyncPorts @ 0x822788C8 | size: 0x0C
+// Syncs the reporter port at +24 using the port context
+void cmCapture::SyncPorts(void* portCtx) {
+    extern "C" void cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
+    void* portDesc = *(void**)((char*)this + 24);
+    cmPort_SyncValue(this, portDesc, portCtx);
+}
+
+// cmCapture::Reset @ 0x82278880 | size: 0x44
+// Re-captures the current portA value into the reporter buffer.
+// Reads portA (+12) into the buffer at +24, then toggles bit 3 of flags at +8.
+void cmCapture::Reset() {
+    extern "C" void cmPort_CopyToBuffer(void* reporter, cmNodePort* port);
+    void* reporter = *(void**)((char*)this + 24);
+    cmPort_CopyToBuffer(reporter, (cmNodePort*)((char*)this + 12));
+    uint32_t flags = *(uint32_t*)((char*)this + 8);
+    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;  // toggle bit 3
+}
+
+// cmCapture::RegisterPorts @ 0x822779C8 | size: 0x100
+// Tries portA types in order: vec4 → float → int32 → vec2 → dim
+void cmCapture::RegisterPorts(void* node) {
+    extern "C" bool cmNode_TryConnectSingle(void* node, void* desc);
+    struct cmPortDesc { uint8_t a, b, c, d; };
+
+    cmPortDesc desc;
+    // Try vec4 → vec4
+    desc = {3, 0, 0, 3};
+    if (cmNode_TryConnectSingle(node, &desc)) return;
+    // Try float → float
+    desc = {1, 0, 0, 1};
+    if (cmNode_TryConnectSingle(node, &desc)) return;
+    // Try int32 → int32
+    desc = {2, 0, 0, 2};
+    if (cmNode_TryConnectSingle(node, &desc)) return;
+    // Try vec2 → vec2
+    desc = {4, 0, 0, 4};
+    if (cmNode_TryConnectSingle(node, &desc)) return;
+    // Try dim → dim
+    desc = {5, 0, 0, 5};
+    cmNode_TryConnectSingle(node, &desc);
+}
+
+// cmCapture::Allocate @ 0x822787F8 | size: 0x84
+// Frees old reporter buffer, allocates a new 32-byte one from the
+// TLS allocator, initializes it, and stores at +24.
+void cmCapture::Allocate() {
+    extern "C" void rage_free(void* ptr);
+    extern "C" void xe_main_thread_init_0038();
+    extern "C" void cmReporter_Init(void* reporter);
+
+    // Free old buffer
+    void* oldBuf = *(void**)((char*)this + 24);
+    rage_free(oldBuf);
+
+    // Allocate new 32-byte reporter buffer (16-byte aligned)
+    xe_main_thread_init_0038();
+    extern void** g_tls_base;
+    void* allocator = g_tls_base[1];
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    void** allocVt = *(void***)allocator;
+    void* newBuf = ((AllocFn)allocVt[1])(allocator, 32, 16);
+
+    if (newBuf) {
+        *(uint8_t*)((char*)newBuf + 16) = 0;
+        *(uint8_t*)((char*)newBuf + 17) = 0;
+        cmReporter_Init(newBuf);
+    }
+
+    *(void**)((char*)this + 24) = newBuf;
+    // Copy output type to reporter
+    uint8_t outputType = *(uint8_t*)((char*)this + 4);
+    *(uint8_t*)((char*)newBuf + 16) = outputType;
+}
+
+// ── cmChanged — detects when portA changes value. vtable @ 0x820567F4 ───────
+// Compares portA's current value against a stored previous value at +32.
+// Writes 1 to the output reporter at +24 if changed, 0 if not.
+// Uses three reporter buffers: +24 (output bool), +28 (unused?), +32 (previous).
+
+// cmChanged::Reset @ 0x82278018 | size: 0x50
+// Initializes all three reporter buffers and sets firstTick flag (+36) to 1.
+// Toggles bit 3 of flags at +8.
+void cmChanged::Reset() {
+    extern "C" void cmReporter_Init(void* reporter);
+    void* prevBuf = *(void**)((char*)this + 32);
+    cmReporter_Init(prevBuf);
+    *(uint8_t*)((char*)this + 36) = 1;  // m_bFirstTick
+    void* outBuf = *(void**)((char*)this + 24);
+    cmReporter_Init(outBuf);
+    void* buf28 = *(void**)((char*)this + 28);
+    cmReporter_Init(buf28);
+    uint32_t flags = *(uint32_t*)((char*)this + 8);
+    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;
+}
+
+// cmChanged::Tick @ 0x82277EF0 | size: 0x128
+// Per-frame: reads current portA value, compares with previous at +32.
+// If first tick or values differ, writes 1 to output; else writes 0.
+// Dispatches by port output type: 1=int32, 2=indirect, 3=bool, 5=dim.
+void cmChanged::Tick() {
+    cmNodePort* portA = (cmNodePort*)((char*)this + 12);
+    uint32_t outputType = portA->m_type;
+
+    // Resolve the actual data type from port or upstream node
+    uint32_t dataType;
+    if (outputType == 1) {
+        void* upstream = *(void**)portA;
+        dataType = *(uint8_t*)((char*)upstream + 16);
+    } else if (outputType == 2) {
+        void* upstream = *(void**)portA;
+        dataType = *(uint32_t*)((char*)upstream + 4);
+    } else {
+        // Unsupported type — clear first tick and return
+        *(uint8_t*)((char*)this + 36) = 0;
+        return;
+    }
+
+    bool isFirstTick = *(uint8_t*)((char*)this + 36) != 0;
+    void* prevBuf = *(void**)((char*)this + 32);
+    void* outBuf = *(void**)((char*)this + 24);
+
+    if (dataType == 1) {
+        // Integer comparison
+        int32_t current = cmNode_GetDim(portA);
+        bool changed;
+        if (isFirstTick) {
+            changed = false;
+        } else {
+            int32_t prev = *(int32_t*)prevBuf;
+            changed = (current != prev);
+        }
+        *(uint8_t*)outBuf = changed ? 1 : 0;
+        *(int32_t*)prevBuf = current;
+    } else if (dataType == 3) {
+        // Boolean comparison
+        extern "C" uint8_t cmNode_GetBoolValue(cmNodePort* port);
+        uint8_t current = cmNode_GetBoolValue(portA);
+        bool changed;
+        if (isFirstTick) {
+            changed = false;
+        } else {
+            uint8_t prev = *(uint8_t*)prevBuf;
+            changed = ((current & 0xFF) != (prev & 0xFF));
+        }
+        *(uint8_t*)outBuf = changed ? 1 : 0;
+        *(uint8_t*)prevBuf = current;
+    } else if (dataType == 5) {
+        // Dim/enum comparison (treated as uint32)
+        extern "C" uint32_t cmNode_GetDimValue(cmNodePort* port);
+        uint32_t current = cmNode_GetDimValue(portA);
+        bool changed;
+        if (isFirstTick) {
+            changed = false;
+        } else {
+            uint32_t prev = *(uint32_t*)prevBuf;
+            changed = (current != prev);
+        }
+        *(uint8_t*)outBuf = changed ? 1 : 0;
+        *(uint32_t*)prevBuf = current;
+    } else {
+        *(uint8_t*)((char*)this + 36) = 0;
+        return;
+    }
+
+    *(uint8_t*)((char*)this + 36) = 0;  // clear firstTick
+}
+
+// cmChanged::RegisterPorts @ 0x822778B8 | size: 0x90
+// Tries: {float, 0, 0, bool} → {dim, 0, 0, bool} → {bool, 0, 0, bool}
+void cmChanged::RegisterPorts(void* node) {
+    extern "C" bool cmNode_TryConnectSingle(void* node, void* desc);
+    struct cmPortDesc { uint8_t a, b, c, d; };
+
+    cmPortDesc desc;
+    desc = {1, 0, 0, 3};  // float → bool
+    if (cmNode_TryConnectSingle(node, &desc)) return;
+    desc = {5, 0, 0, 3};  // dim → bool
+    if (cmNode_TryConnectSingle(node, &desc)) return;
+    desc = {3, 0, 0, 3};  // bool → bool
+    cmNode_TryConnectSingle(node, &desc);
+}
+
+// cmChanged::Allocate @ 0x82278168 | size: 0xB8
+// Allocates 32-byte reporter buffer for +32 (previous value), then
+// determines data type from port and calls base allocator.
+void cmChanged::Allocate() {
+    extern "C" void rage_free(void* ptr);
+    extern "C" void xe_main_thread_init_0038();
+    extern "C" void cmReporter_Init(void* reporter);
+    extern "C" void cmNormalizedTimer_Allocate(void* node);
+
+    // Allocate reporter buffer for previous value at +32
+    xe_main_thread_init_0038();
+    extern void** g_tls_base;
+    void* allocator = g_tls_base[1];
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    void** allocVt = *(void***)allocator;
+    void* newBuf = ((AllocFn)allocVt[1])(allocator, 32, 16);
+
+    if (newBuf) {
+        *(uint8_t*)((char*)newBuf + 16) = 0;
+        *(uint8_t*)((char*)newBuf + 17) = 0;
+        cmReporter_Init(newBuf);
+    }
+
+    *(void**)((char*)this + 32) = newBuf;
+
+    // Determine input port data type and store to reporter
+    uint32_t portType = *(uint32_t*)((char*)this + 16);
+    uint8_t dataType;
+    if (portType == 1) {
+        void* upstream = *(void**)((char*)this + 12);
+        dataType = *(uint8_t*)((char*)upstream + 16);
+    } else if (portType == 2) {
+        void* upstream = *(void**)((char*)this + 12);
+        dataType = (uint8_t)(*(uint32_t*)((char*)upstream + 4));
+    } else {
+        dataType = 0;
+    }
+    if (newBuf) *(uint8_t*)((char*)newBuf + 16) = dataType;
+
+    // Call base allocator for remaining buffers
+    cmNormalizedTimer_Allocate(this);
+}
+
+// ── cmDifferentiate — computes (current - previous) / dt. vtable @ 0x820568FC
+// Calculates the rate of change of portA per frame. Stores previous
+// value at +32 and output at +24. Supports float and vec4 types.
+
+// cmDifferentiate::Reset @ 0x82278220 | size: 0x50
+// Initializes reporter buffers and sets firstTick flag.
+void cmDifferentiate::Reset() {
+    extern "C" void cmReporter_Init(void* reporter);
+    void* outBuf = *(void**)((char*)this + 24);
+    cmReporter_Init(outBuf);
+    void* buf28 = *(void**)((char*)this + 28);
+    cmReporter_Init(buf28);
+    uint32_t flags = *(uint32_t*)((char*)this + 8);
+    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;
+    void* prevBuf = *(void**)((char*)this + 32);
+    cmReporter_Init(prevBuf);
+    *(uint8_t*)((char*)this + 36) = 1;  // m_bFirstTick
+}
+
+// cmDifferentiate::SyncPorts @ 0x82278270 | size: 0x60
+// Syncs all three reporter port descriptors (+32, +24, +28)
+void cmDifferentiate::SyncPorts(void* portCtx) {
+    extern "C" void cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
+    cmPort_SyncValue(this, *(void**)((char*)this + 32), portCtx);
+    cmPort_SyncValue(this, *(void**)((char*)this + 24), portCtx);
+    cmPort_SyncValue(this, *(void**)((char*)this + 28), portCtx);
+}
+
+// cmDifferentiate::Tick @ 0x822782D0 | size: 0x14C
+// Computes derivative: output = (current - previous) / (frameScale * dt)
+// For float (type 2): output = (currentFloat - prevFloat) / scaledDt
+// For vec4 (type 4): output = (currentVec - prevVec) * (1/scaledDt) per component
+// On first tick, outputs zero instead of a spike.
+void cmDifferentiate::Tick() {
+    extern float g_cmFrameScale;   // @ 0x825C4958
+    // Frame time constant from .rdata (g_cmConstants+8)
+    const float frameTime = 1.0f / 30.0f;  // ~0.0333f, from constant table
+    float scaledDt = frameTime * g_cmFrameScale;
+
+    uint32_t dataType = *(uint32_t*)((char*)this + 4);
+    bool isFirstTick = *(uint8_t*)((char*)this + 36) != 0;
+    void* outBuf = *(void**)((char*)this + 24);
+    void* prevBuf = *(void**)((char*)this + 32);
+
+    if (dataType == 2) {
+        // Float differentiation
+        float current = cmNode_GetFloat((cmNodePort*)((char*)this + 12));
+        if (isFirstTick) {
+            // First tick: output zero, store initial value
+            *(float*)outBuf = 0.0f;
+        } else {
+            float prev = *(float*)prevBuf;
+            float derivative = (current - prev) / scaledDt;
+            *(float*)outBuf = derivative;
+        }
+        *(float*)prevBuf = current;
+    } else if (dataType == 4) {
+        // Vec4 differentiation
+        float currentVec[4];
+        cmNode_GetVector(currentVec, (cmNodePort*)((char*)this + 12));
+        float* prevVec = (float*)prevBuf;
+
+        if (isFirstTick) {
+            // First tick: zero output, copy initial to prev and output
+            float* prev24 = (float*)outBuf;
+            prev24[0] = 0.0f; prev24[1] = 0.0f;
+            prev24[2] = 0.0f; prev24[3] = 0.0f;
+        } else {
+            float invDt = 1.0f / scaledDt;
+            float* dst = (float*)outBuf;
+            dst[0] = (currentVec[0] - prevVec[0]) * invDt;
+            dst[1] = (currentVec[1] - prevVec[1]) * invDt;
+            dst[2] = (currentVec[2] - prevVec[2]) * invDt;
+            dst[3] = (currentVec[3] - prevVec[3]) * invDt;
+        }
+        // Store current as previous
+        float* prev = (float*)prevBuf;
+        prev[0] = currentVec[0]; prev[1] = currentVec[1];
+        prev[2] = currentVec[2]; prev[3] = currentVec[3];
+    }
+
+    *(uint8_t*)((char*)this + 36) = 0;  // clear firstTick
+}
 
 } // namespace rage
 
