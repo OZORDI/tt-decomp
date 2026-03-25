@@ -13,12 +13,12 @@
 #include <stdint.h>
 
 // Forward declarations
-extern "C" void PostStateTransitionRequest(void* obj);
-extern "C" void nop_8240E6D0(const char* debugStr, void* obj, uint32_t stateIdx);
+extern "C" void* PostStateTransitionRequest(void* obj);
+extern "C" void nop_8240E6D0(const char* debugStr, ...);
 extern "C" void FadePageGroup(void* grcDevice, float fadeValue, uint32_t p3, uint32_t p4, uint32_t p5);
 extern "C" void grcDevice_beginScene(void* grcDevice);
 extern "C" void DismissPageGroup(void* grcDevice);
-extern "C" void ShowPageGroup(void* grcDevice);
+extern "C" uint8_t ShowPageGroup(void* grcDevice);
 extern "C" void xe_main_thread_init_0038();
 extern "C" void game_AC88(void* obj);
 extern "C" void hsmContext_SetNextState_2800(void* hsmContext, uint32_t nextStateIdx);
