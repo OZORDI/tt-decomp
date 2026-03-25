@@ -226,7 +226,7 @@ extern "C" {
     void audControl_Destructor(void* obj) { (void)obj; }
     void fsmMachine_Destructor_27A8(void* obj) { (void)obj; }
     void hsmContext_SetNextState_2800(void* ctx, int state) { (void)ctx; (void)state; }
-    void rage_free(void* ptr) { free(ptr); }
+    void rage_free(void* ptr) { (void)ptr; }
     void xmlNodeStruct_Initialize(void* obj) { (void)obj; }
     void phInst_A3A0_p33(void* obj) { (void)obj; }
     void pongAttractState_Shutdown(void* obj) { (void)obj; }
