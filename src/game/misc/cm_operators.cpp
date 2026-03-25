@@ -22,7 +22,7 @@ extern uint32_t* g_sda_base;  // @ 0x82600000 (r13)
 
 
 /**
- * cmWorldRefreshableCtor::vfn_0_8438_1 @ 0x82268438 | size: 0xa0
+ * cmWorldRefreshableCtor::Destructor @ 0x82268438 | size: 0xa0
  *
  * Constructor variant that allocates and initializes a rage::cmIntegrate object.
  * This is one of 18 template instantiations of cmWorldRefreshableCtor for different
@@ -37,7 +37,7 @@ extern uint32_t* g_sda_base;  // @ 0x82600000 (r13)
  *
  * @return Pointer to the newly constructed rage::cmIntegrate object, or nullptr on failure
  */
-void* cmWorldRefreshableCtor_vfn_0_8438_1()
+void* cmWorldRefreshableCtor_Destructor()
 {
     // Initialize main thread context if not already done
     xe_main_thread_init_0038();
@@ -90,14 +90,14 @@ extern "C" void util_92D8(void* dest, void* src);  // Copies vector data
 extern "C" void cmCond_1038_g(void* condObj, void* dest);  // Evaluates condition into dest
 
 /**
- * cmLookup::vfn_16 @ 0x8226D840 | size: 0x40
+ * cmLookup::RegisterPorts @ 0x8226D840 | size: 0x40
  * 
  * Retrieves cached result based on mode.
  * Mode 1: Returns byte from offset +16 of object at +28
  * Mode 2: Returns int from offset +4 of object at +28
  * Other: Clears cached result to 0
  */
-void cmLookup::vfn_16() {
+void cmLookup::RegisterPorts() {
     int mode = *(int*)((char*)this + 32);
     
     if (mode == 1) {
@@ -114,13 +114,13 @@ void cmLookup::vfn_16() {
 }
 
 /**
- * cmLookup::vfn_5 @ 0x8226D880 | size: 0x9c
+ * cmLookup::GetDim @ 0x8226D880 | size: 0x9c
  * 
  * Evaluates lookup table and returns matching int result (2-entry variant).
  * Compares key value against two threshold entries and returns the first match,
  * or default value if no match.
  */
-void cmLookup::vfn_5(int* outResult) {
+void cmLookup::GetDim(int* outResult) {
     // Evaluate the key value
     float keyValue = util_9350((char*)this + 12);
     
@@ -145,11 +145,11 @@ void cmLookup::vfn_5(int* outResult) {
 }
 
 /**
- * cmLookup::vfn_4 @ 0x8226D920 | size: 0x9c
+ * cmLookup::GetFloat @ 0x8226D920 | size: 0x9c
  * 
  * Evaluates lookup table and returns matching float result (2-entry variant).
  */
-void cmLookup::vfn_4(float* outResult) {
+void cmLookup::GetFloat(float* outResult) {
     float keyValue = util_9350((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
@@ -169,11 +169,11 @@ void cmLookup::vfn_4(float* outResult) {
 }
 
 /**
- * cmLookup::vfn_3 @ 0x8226DA78 | size: 0x9c
+ * cmLookup::GetBool @ 0x8226DA78 | size: 0x9c
  * 
  * Evaluates lookup table and returns matching bool result (2-entry variant).
  */
-void cmLookup::vfn_3(bool* outResult) {
+void cmLookup::GetBool(bool* outResult) {
     float keyValue = util_9350((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
@@ -193,12 +193,12 @@ void cmLookup::vfn_3(bool* outResult) {
 }
 
 /**
- * cmLookup::vfn_2 @ 0x8226D9C0 | size: 0xb4
+ * cmLookup::GetVector @ 0x8226D9C0 | size: 0xb4
  * 
  * Evaluates lookup table and returns matching vector result (2-entry variant).
  * Uses VMX128 vector operations for 16-byte data.
  */
-void cmLookup::vfn_2(void* outVector) {
+void cmLookup::GetVector(void* outVector) {
     float keyValue = util_9350((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
@@ -218,12 +218,12 @@ void cmLookup::vfn_2(void* outVector) {
 }
 
 /**
- * cmLookup::vfn_1 @ 0x8226DB18 | size: 0x9c
+ * cmLookup::GetDimValue @ 0x8226DB18 | size: 0x9c
  * 
  * Scalar destructor - evaluates lookup table and returns matching int result (2-entry variant).
- * Similar to vfn_5 but uses util_4BD8 instead of cmSwitch_4B60.
+ * Similar to GetDim but uses util_4BD8 instead of cmSwitch_4B60.
  */
-void cmLookup::vfn_1(int* outResult) {
+void cmLookup::GetDimValue(int* outResult) {
     float keyValue = util_9350((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
@@ -243,12 +243,12 @@ void cmLookup::vfn_1(int* outResult) {
 }
 
 /**
- * cmLookup::vfn_18 @ 0x82270D10 | size: 0x3c
+ * cmLookup::CopyState @ 0x82270D10 | size: 0x3c
  * 
  * Evaluates all 8 condition entries sequentially.
  * Used for batch evaluation of multiple conditions.
  */
-void cmLookup::vfn_18(void* dest) {
+void cmLookup::CopyState(void* dest) {
     void* entry = (char*)this + 12;
     
     for (int i = 0; i < 8; i++) {
@@ -262,11 +262,11 @@ void cmLookup::vfn_18(void* dest) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * cmLookup_vfn_5_DBB8_1 @ 0x8226DBB8 | size: 0x9c
+ * cmLookup_GetDim_DBB8_1 @ 0x8226DBB8 | size: 0x9c
  * 
  * 3-entry variant: Returns matching int result from 3-entry lookup table.
  */
-void cmLookup_vfn_5_DBB8_1(void* self, int* outResult) {
+void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
     float keyValue = util_9350((char*)self + 12);
     
     for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
@@ -287,11 +287,11 @@ void cmLookup_vfn_5_DBB8_1(void* self, int* outResult) {
 }
 
 /**
- * cmLookup_vfn_4_DC58_1 @ 0x8226DC58 | size: 0x9c
+ * cmLookup_GetFloat_DC58_1 @ 0x8226DC58 | size: 0x9c
  * 
  * 3-entry variant: Returns matching float result from 3-entry lookup table.
  */
-void cmLookup_vfn_4_DC58_1(void* self, float* outResult) {
+void cmLookup_GetFloat_DC58_1(void* self, float* outResult) {
     float keyValue = util_9350((char*)self + 12);
     
     for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
@@ -311,11 +311,11 @@ void cmLookup_vfn_4_DC58_1(void* self, float* outResult) {
 }
 
 /**
- * cmLookup_vfn_3_DDB0_1 @ 0x8226DDB0 | size: 0x9c
+ * cmLookup_GetBool_DDB0_1 @ 0x8226DDB0 | size: 0x9c
  * 
  * 3-entry variant: Returns matching bool result from 3-entry lookup table.
  */
-void cmLookup_vfn_3_DDB0_1(void* self, bool* outResult) {
+void cmLookup_GetBool_DDB0_1(void* self, bool* outResult) {
     float keyValue = util_9350((char*)self + 12);
     
     for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {

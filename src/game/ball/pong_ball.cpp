@@ -230,22 +230,20 @@ pongBallInstance::~pongBallInstance() {
 }
 
 /**
- * pongBallInstance::vfn_2() @ 0x82280028 | size: 0x8
+ * pongBallInstance::GetMatrix @ 0x82280028 | size: 0x8
  *
- * Returns pointer to embedded data structure at offset +96.
- * Likely returns a pointer to transform or physics data.
+ * Returns pointer to the 4x4 transform matrix at offset +96.
  */
-void* pongBallInstance::vfn_2() {
+void* pongBallInstance::GetMatrix() {
     return reinterpret_cast<uint8_t*>(this) + 96;
 }
 
 /**
- * pongBallInstance::vfn_3() @ 0x82280030 | size: 0x40
+ * pongBallInstance::SetMatrix @ 0x82280030 | size: 0x40
  *
- * Copies 64 bytes (4 x 16-byte vectors) from source to offset +96.
- * Likely copies transform matrix or physics state.
+ * Copies a 4x4 transform matrix (64 bytes) from source into +96.
  */
-void pongBallInstance::vfn_3(const void* sourceData) {
+void pongBallInstance::SetMatrix(const void* sourceData) {
     uint8_t* dest = reinterpret_cast<uint8_t*>(this) + 96;
     const uint8_t* src = reinterpret_cast<const uint8_t*>(sourceData);
     
@@ -256,12 +254,11 @@ void pongBallInstance::vfn_3(const void* sourceData) {
 }
 
 /**
- * pongBallInstance::vfn_4() @ 0x8227FF38 | size: 0x78
+ * pongBallInstance::GetPosition @ 0x8227FF38 | size: 0x78
  *
- * Gets ball position vector from game state.
- * Returns position from circular buffer based on frame counter.
+ * Gets ball position vector from game state circular buffer.
  */
-void pongBallInstance::vfn_4(void* outPosition) {
+void pongBallInstance::GetPosition(void* outPosition) {
     extern void* g_game_state_ptr;  // @ 0x8271A2F8
     
     auto* gameState = reinterpret_cast<uint8_t*>(g_game_state_ptr);
@@ -291,12 +288,11 @@ void pongBallInstance::vfn_4(void* outPosition) {
 }
 
 /**
- * pongBallInstance::vfn_5() @ 0x8227FFB0 | size: 0x78
+ * pongBallInstance::GetVelocity @ 0x8227FFB0 | size: 0x78
  *
- * Gets ball velocity vector from game state.
- * Returns velocity from circular buffer based on frame counter.
+ * Gets ball velocity vector from game state circular buffer.
  */
-void pongBallInstance::vfn_5(void* outVelocity) {
+void pongBallInstance::GetVelocity(void* outVelocity) {
     extern void* g_game_state_ptr;  // @ 0x8271A2F8
     
     auto* gameState = reinterpret_cast<uint8_t*>(g_game_state_ptr);
@@ -336,15 +332,14 @@ void pongBallInstance::OnEnter() {
 }
 
 /**
- * pongBallInstance::vfn_24() @ 0x8227FA48 | size: 0x364
+ * pongBallInstance::ProcessCollision @ 0x8227FA48 | size: 0x364
  *
  * Complex ball collision/interaction handler.
  * Handles ball-player collisions, activation, and event triggering.
- * 
- * This is a large function that processes ball physics interactions.
+ *
  * TODO: Full implementation requires understanding game state structure.
  */
-void pongBallInstance::vfn_24(void* gameState) {
+void pongBallInstance::ProcessCollision(void* gameState) {
     // Stub implementation - function is very complex
     // Full implementation requires detailed analysis of:
     // - Ball collision detection
@@ -356,12 +351,12 @@ void pongBallInstance::vfn_24(void* gameState) {
 }
 
 /**
- * pongBallInstance::vfn_30() @ 0x8227FA28 | size: 0x20
+ * pongBallInstance::ValidateCollisionParams @ 0x8227FA28 | size: 0x20
  *
- * Validates parameters for ball operation.
+ * Validates parameters for ball collision operation.
  * Returns 0 if any required parameter is missing.
  */
-int pongBallInstance::vfn_30(int param1, int param2, int param3) {
+int pongBallInstance::ValidateCollisionParams(int param1, int param2, int param3) {
     // Check if param1 is zero
     if (param1 == 0) {
         // If param2 is non-zero, return 0
@@ -659,7 +654,7 @@ void* pongBallInstance::InitializeFromData(void* initData) {
  */
 void pongBallHitData::Initialize() {
     extern uint8_t g_debugMode;  // @ 0x825C64AD
-    extern void xmlNodeStruct_vfn_2(void*);
+    extern void xmlNodeStruct_Initialize(void*);
     
     // Clear flags at offset +198
     *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 198) = 0;
@@ -679,7 +674,7 @@ void pongBallHitData::Initialize() {
     *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(this) + 198) = flags;
     
     // Call parent initialization
-    xmlNodeStruct_vfn_2(this);
+    xmlNodeStruct_Initialize(this);
 }
 
 /**
