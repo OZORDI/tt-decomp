@@ -624,3 +624,504 @@ uint32_t msgMsgSink::GetNestedObjectValue() {
     extern uint32_t msgMsgSink_3D70_p39(void*);
     return msgMsgSink_3D70_p39(nestedObj);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Small msgMsgSink functions (<=64 bytes)
+ * 34 stubs: vtable thunks, field accessors, forwarding wrappers
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Forward declarations for tail-call targets
+extern void msgMsgSink_6220_w(void*);
+extern void rage_C1A8(void*);
+extern void atSingleton_5CD0_fw(void*, uint32_t);
+extern void* RtlEnterCriticalSection_D6F0_fw(void*);
+extern void msgMsgSink_D168_sp(void*);
+extern void msgMsgSink_D1D8_sp(void*);
+extern void msgMsgSink_6138_2hr(void*);
+extern void grc_2CC8(void*, uint32_t, uint32_t);
+extern void atSingleton_8E88_p42(void*, void*, uint32_t, uint32_t, uint32_t);
+extern void ph_EF40(void*, void*);
+extern void game_9CF8_h(void*, uint32_t);
+extern void game_9D10_h(void*, uint32_t);
+extern void game_9D28_h(void*, uint32_t);
+
+// Vtable constants (from .rdata)
+static void* const kVtable_4A94 = (void*)0x82004A94;  // lbl_82004A94
+static void* const kVtable_4FF0 = (void*)0x82004FF0;  // lbl_82004FF0
+static void* const kVtable_4FE8 = (void*)0x82004FE8;  // lbl_82004FE8
+static void* const kVtable_4FE4 = (void*)0x82004FE4;  // lbl_82004FE4
+static void* const kVtable_5030 = (void*)0x82005030;  // lbl_82005030
+static void* const kVtable_502C = (void*)0x8200502C;  // lbl_8200502C
+static void* const kVtable_3DC8 = (void*)0x82003DC8;  // lbl_82003DC8
+
+// Global data
+extern uint32_t g_msgSinkBitfield;  // @ 0x825B0C30 (.data)
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 1: Tail-call thunks with base-pointer adjustment (addi + branch)
+ * Pattern: adjust 'this' pointer, then tail-call another function.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_vfn_23_6130_1 @ 0x82456130 | size: 0x8
+// Adjusts this by -8 and tail-calls msgMsgSink_6220_w
+void msgMsgSink_vfn_23_6130_1(void* self) {
+    msgMsgSink_6220_w((uint8_t*)self - 8);
+}
+
+// msgMsgSink_vfn_42_EFE8_1 @ 0x8244EFE8 | size: 0x8
+// Adjusts this by +60 and tail-calls rage_C1A8
+void msgMsgSink_vfn_42_EFE8_1(void* self) {
+    rage_C1A8((uint8_t*)self + 60);
+}
+
+// msgMsgSink_3258_wrh @ 0x82353258 | size: 0xC
+// Loads field at +12, passes it with zero to grc_2CC8
+void msgMsgSink_3258_wrh(void* self) {
+    uint32_t val = *(uint32_t*)((uint8_t*)self + 12);
+    grc_2CC8((void*)(uintptr_t)val, 0, 0);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 2: Simple field getters (return value from this+offset)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_1D20_g @ 0x82451D20 | size: 0xC
+// Returns bits 1-3 of field_0x0004: (flags >> 1) & 7
+uint32_t msgMsgSink_1D20_g(void* self) {
+    uint32_t flags = *(uint32_t*)((uint8_t*)self + 4);
+    return (flags >> 1) & 0x7;
+}
+
+// msgMsgSink_vfn_20_59E0_1 @ 0x824559E0 | size: 0xC
+// Returns pointer to offset +12 within the object at +28
+void* msgMsgSink_vfn_20_59E0_1(void* self) {
+    void* obj = *(void**)((uint8_t*)self + 28);
+    return (uint8_t*)obj + 12;
+}
+
+// msgMsgSink_vfn_21_5988_1 @ 0x82455988 | size: 0xC
+// Returns uint16 at offset +12 within the object at +28
+uint16_t msgMsgSink_vfn_21_5988_1(void* self) {
+    void* obj = *(void**)((uint8_t*)self + 28);
+    return *(uint16_t*)((uint8_t*)obj + 12);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 3: Vtable setters (write a vtable pointer to this+0)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_3A38_g @ 0x82453A38 | size: 0x10
+// Sets vtable at +0 to kVtable_4A94 (0x82004A94)
+void msgMsgSink_3A38_g(void* self) {
+    *(void**)self = kVtable_4A94;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 4: Store-and-forward stubs (set field, then tail-call)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_6080_p33 @ 0x82456080 | size: 0x10
+// Sets field at +252 to 1, then tail-calls atSingleton_5CD0_fw with param=14
+void msgMsgSink_6080_p33(void* self) {
+    *(uint32_t*)((uint8_t*)self + 252) = 1;
+    atSingleton_5CD0_fw(self, 14);
+}
+
+// msgMsgSink_DA10_p46 @ 0x8256DA10 | size: 0x10
+// Loads pointer at +0, then zeroes field at +1092 of that pointer
+void msgMsgSink_DA10_p46(void* self) {
+    void* ptr = *(void**)self;
+    *(uint32_t*)((uint8_t*)ptr + 1092) = 0;
+}
+
+// msgMsgSink_vfn_43 @ 0x8244E138 | size: 0x10
+// Stores r4 at offset +264 of self
+// (already lifted — skipped in unlifted list; included for reference only)
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 5: Null-guard + tail-call through field_0x007C (+124)
+ * Pattern: load ptr from +124, if null return, else tail-call target
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_8B78_g @ 0x82448B78 | size: 0x14
+// Null-guard +124, tail-calls msgMsgSink_D168_sp
+void msgMsgSink_8B78_g(void* self) {
+    void* obj = *(void**)((uint8_t*)self + 124);
+    if (obj == nullptr) return;
+    msgMsgSink_D168_sp(obj);
+}
+
+// msgMsgSink_8B90_g @ 0x82448B90 | size: 0x14
+// Null-guard +124, tail-calls msgMsgSink_D1D8_sp
+void msgMsgSink_8B90_g(void* self) {
+    void* obj = *(void**)((uint8_t*)self + 124);
+    if (obj == nullptr) return;
+    msgMsgSink_D1D8_sp(obj);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 6: Null-guard + tail-call through field_0x007C, returns 0 on null
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_8A60_sp @ 0x82448A60 | size: 0x18
+// Null-guard +124, tail-calls RtlEnterCriticalSection_D6F0_fw; returns 0 if null
+void* msgMsgSink_8A60_sp(void* self) {
+    void* obj = *(void**)((uint8_t*)self + 124);
+    if (obj != nullptr) {
+        return RtlEnterCriticalSection_D6F0_fw(obj);
+    }
+    return nullptr;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 7: Virtual dispatch thunks through field_0x0024 (+36)
+ * Pattern: load nested obj from +36, null-guard, call vtable[N]
+ * These forward calls to the nested object's vtable.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_8DA0_sp @ 0x82458DA0 | size: 0x20
+// Forwards to nested->vtable[17] (offset 68 in vtable)
+void msgMsgSink_8DA0_sp(void* self) {
+    void* nested = *(void**)((uint8_t*)self + 36);
+    if (nested == nullptr) return;
+    typedef void (*Fn)(void*);
+    void** vt = *(void***)nested;
+    ((Fn)vt[17])(nested);
+}
+
+// msgMsgSink_8E00_sp @ 0x82458E00 | size: 0x20
+// Forwards to nested->vtable[30] (offset 120 in vtable)
+void msgMsgSink_8E00_sp(void* self) {
+    void* nested = *(void**)((uint8_t*)self + 36);
+    if (nested == nullptr) return;
+    typedef void (*Fn)(void*);
+    void** vt = *(void***)nested;
+    ((Fn)vt[30])(nested);
+}
+
+// msgMsgSink_8E20_sp @ 0x82458E20 | size: 0x20
+// Forwards to nested->vtable[19] (offset 76 in vtable)
+void msgMsgSink_8E20_sp(void* self) {
+    void* nested = *(void**)((uint8_t*)self + 36);
+    if (nested == nullptr) return;
+    typedef void (*Fn)(void*);
+    void** vt = *(void***)nested;
+    ((Fn)vt[19])(nested);
+}
+
+// msgMsgSink_8E40_sp @ 0x82458E40 | size: 0x20
+// Forwards to nested->vtable[20] (offset 80 in vtable)
+void msgMsgSink_8E40_sp(void* self) {
+    void* nested = *(void**)((uint8_t*)self + 36);
+    if (nested == nullptr) return;
+    typedef void (*Fn)(void*);
+    void** vt = *(void***)nested;
+    ((Fn)vt[20])(nested);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 8: Virtual dispatch thunks through +36, return 0 if null
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_8E60_sp @ 0x82458E60 | size: 0x24
+// Forwards to nested->vtable[11] (offset 44), returns 0 if nested is null
+uint32_t msgMsgSink_8E60_sp(void* self) {
+    void* nested = *(void**)((uint8_t*)self + 36);
+    if (nested != nullptr) {
+        typedef uint32_t (*Fn)(void*);
+        void** vt = *(void***)nested;
+        return ((Fn)vt[11])(nested);
+    }
+    return 0;
+}
+
+// msgMsgSink_8E88_sp @ 0x82458E88 | size: 0x24
+// Forwards to nested->vtable[21] (offset 84), returns 0 if nested is null
+uint32_t msgMsgSink_8E88_sp(void* self) {
+    void* nested = *(void**)((uint8_t*)self + 36);
+    if (nested != nullptr) {
+        typedef uint32_t (*Fn)(void*);
+        void** vt = *(void***)nested;
+        return ((Fn)vt[21])(nested);
+    }
+    return 0;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 9: Adjusted-this virtual dispatch
+ * Pattern: adjust this, load vtable, call through slot
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_vfn_39_EF08_1 @ 0x8244EF08 | size: 0x18
+// Adjusts this by -24, calls vtable[1] with r4=1 on adjusted object
+void msgMsgSink_vfn_39_EF08_1(void* self) {
+    void* adjusted = (uint8_t*)self - 24;
+    typedef void (*Fn)(void*, uint32_t);
+    void** vt = *(void***)adjusted;
+    ((Fn)vt[1])(adjusted, 1);
+}
+
+// msgMsgSink_vfn_60 @ 0x824564C0 | size: 0x18
+// (already lifted — included in existing vtable entries)
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 10: Float-compare-and-set with dirty flag
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_vfn_38_6690_1 @ 0x82456690 | size: 0x1C
+// Compares float at +16 with f1 param; if different, stores new value and
+// sets dirty flag at +20
+void msgMsgSink_vfn_38_6690_1(void* self, float newVal) {
+    float* pFloat = (float*)((uint8_t*)self + 16);
+    if (*pFloat == newVal) return;
+    *pFloat = newVal;
+    *(uint32_t*)((uint8_t*)self + 20) = 1;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 11: Memory-clear (byte loop)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_1B98_g @ 0x82451B98 | size: 0x20
+// Zeroes 40 bytes starting at self (byte-by-byte clear)
+void msgMsgSink_1B98_g(void* self) {
+    uint8_t* p = (uint8_t*)self;
+    for (int i = 0; i < 40; i++) {
+        p[i] = 0;
+    }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 12: Bitfield read-modify-write on global
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_32A0_h @ 0x824332A0 | size: 0x20
+// Atomic-style masked merge: old = g_msgSinkBitfield;
+//   g_msgSinkBitfield = (old & ~mask) | (value & mask); returns old
+uint32_t msgMsgSink_32A0_h(uint32_t value, uint32_t mask) {
+    uint32_t old = g_msgSinkBitfield;
+    uint32_t merged = (old & ~mask) | (value & mask);
+    g_msgSinkBitfield = merged;
+    return old;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 13: Field copy / struct write
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_EF60_wrh @ 0x8235EF60 | size: 0x24
+// Copies 4 fields from this (at various offsets) into output struct
+void msgMsgSink_EF60_wrh(void* self, void* unused, uint32_t* out) {
+    out[0] = *(uint32_t*)((uint8_t*)self + 13736);
+    out[1] = *(uint32_t*)((uint8_t*)self + 13740);
+    out[2] = *(uint32_t*)((uint8_t*)self + 13784);
+    out[3] = *(uint32_t*)((uint8_t*)self + 13744);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 14: Flag-based return value
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_1BE0_g @ 0x82451BE0 | size: 0x28
+// Returns: 0 if bit0 of flags is 0, 1 if bit0 is 1, 2 otherwise (never hit)
+uint32_t msgMsgSink_1BE0_g(void* self) {
+    uint32_t flags = *(uint32_t*)((uint8_t*)self + 4);
+    uint32_t bit0 = flags & 0x1;
+    if (bit0 == 1) return 1;
+    if (bit0 == 0) return 0;
+    return 2;
+}
+
+// msgMsgSink_1C08_g @ 0x82451C08 | size: 0x38
+// Compares bit0 of flags against constant 2; returns 1 if field < threshold
+uint32_t msgMsgSink_1C08_g(void* self) {
+    uint32_t flags = *(uint32_t*)((uint8_t*)self + 4);
+    uint32_t bit0 = flags & 0x1;
+    uint32_t cmp;
+    if (bit0 >= 1) {
+        if (bit0 == 1) {
+            cmp = 1;
+        } else {
+            // bit0 > 1 (impossible for & 0x1, but matches scaffold)
+            return (2 >= 1) ? 0 : 1;
+        }
+    } else {
+        cmp = 0;
+    }
+    return (cmp >= 1) ? 0 : 1;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 15: Multi-vtable init + tail-call
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_7DA8_p33 @ 0x82457DA8 | size: 0x28
+// Sets 3 vtable pointers at +0, +4, +8, then tail-calls msgMsgSink_6138_2hr
+void msgMsgSink_7DA8_p33(void* self) {
+    *(void**)((uint8_t*)self + 0) = kVtable_4FF0;
+    *(void**)((uint8_t*)self + 4) = kVtable_4FE8;
+    *(void**)((uint8_t*)self + 8) = kVtable_4FE4;
+    msgMsgSink_6138_2hr(self);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 16: Multi-field write + message setup
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_B008_w @ 0x8244B008 | size: 0x28
+// Stores several parameters into message fields; converts int bits to float
+void msgMsgSink_B008_w(void* self, uint32_t p1, uint32_t p2, uint16_t p3,
+                       void* p4, uint32_t p5) {
+    *(uint32_t*)((uint8_t*)self + 12) = p1;
+    *(uint32_t*)((uint8_t*)self + 16) = (uint32_t)(uintptr_t)p4;
+    *(uint32_t*)((uint8_t*)self + 240) = p5;
+    *(uint16_t*)((uint8_t*)self + 244) = p3;
+    *(uint32_t*)((uint8_t*)self + 248) = p2;
+    // Load float from p4+1 (unaligned) and store at +20
+    uint32_t rawBits = *(uint32_t*)((uint8_t*)p4 + 1);
+    float fval;
+    memcpy(&fval, &rawBits, sizeof(float));
+    *(float*)((uint8_t*)self + 20) = fval;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 17: Decrement-and-forward (counter management)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_03B8_g @ 0x824503B8 | size: 0x2C
+// Decrements indexed counter at +248, then tail-calls atSingleton_8E88_p42
+void msgMsgSink_03B8_g(void* self, uint32_t index) {
+    uint32_t* counterArray = *(uint32_t**)((uint8_t*)self + 248);
+    uint32_t offset = (index & 0x3FFF) << 2;  // rlwinm r11,r5,2,14,29
+    uint32_t* pCounter = (uint32_t*)((uint8_t*)counterArray + offset);
+    (*pCounter)--;
+    void* handler = *(void**)((uint8_t*)self + 24);
+    uint32_t newCount = *pCounter;
+    atSingleton_8E88_p42(handler, self, index, newCount, 0);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 18: Linked-list search + remove
+ * Pattern: walk linked list from head, find node by key, remove via ph_EF40
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_vfn_79 @ 0x824513D0 | size: 0x3C
+// Walks list at +224, finds node where [+0] == key, removes via ph_EF40(+20)
+void msgMsgSink_vfn_79(void* self, void* key) {
+    uint32_t* node = *(uint32_t**)((uint8_t*)self + 224);
+    if (node == nullptr) return;
+    while (node != nullptr) {
+        void* nodeKey = *(void**)node;
+        if (nodeKey == key) {
+            if (node == nullptr) return;
+            ph_EF40((uint8_t*)self + 20, node);
+            return;
+        }
+        node = *(uint32_t**)((uint8_t*)node + 4);
+    }
+}
+
+// msgMsgSink_vfn_125 @ 0x824505D0 | size: 0x3C
+// Walks list at +228, finds node where [+0] == key, removes via ph_EF40(+24)
+void msgMsgSink_vfn_125(void* self, void* key) {
+    uint32_t* node = *(uint32_t**)((uint8_t*)self + 228);
+    if (node == nullptr) return;
+    while (node != nullptr) {
+        void* nodeKey = *(void**)node;
+        if (nodeKey == key) {
+            if (node == nullptr) return;
+            ph_EF40((uint8_t*)self + 24, node);
+            return;
+        }
+        node = *(uint32_t**)((uint8_t*)node + 4);
+    }
+}
+
+// msgMsgSink_vfn_43_EFA8_1 @ 0x8244EFA8 | size: 0x3C
+// Walks list at +264, finds node where [+0] == key, removes via ph_EF40(+60)
+void msgMsgSink_vfn_43_EFA8_1(void* self, void* key) {
+    uint32_t* node = *(uint32_t**)((uint8_t*)self + 264);
+    if (node == nullptr) return;
+    while (node != nullptr) {
+        void* nodeKey = *(void**)node;
+        if (nodeKey == key) {
+            if (node == nullptr) return;
+            ph_EF40((uint8_t*)self + 60, node);
+            return;
+        }
+        node = *(uint32_t**)((uint8_t*)node + 4);
+    }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 19: Multi-vtable init with extra field + tail-call
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_7FB8_p33 @ 0x82457FB8 | size: 0x34
+// Sets 3 vtable pointers at +0/+4/+8 and extra vtable at +292,
+// then tail-calls msgMsgSink_6138_2hr
+void msgMsgSink_7FB8_p33(void* self) {
+    *(void**)((uint8_t*)self + 0)   = kVtable_5030;
+    *(void**)((uint8_t*)self + 4)   = kVtable_4FE8;
+    *(void**)((uint8_t*)self + 8)   = kVtable_502C;
+    *(void**)((uint8_t*)self + 292) = kVtable_3DC8;
+    msgMsgSink_6138_2hr(self);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 20: Linked-list search by uint16 key
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_E758_p33 @ 0x8244E758 | size: 0x34
+// Walks linked list from +316, sentinel at +312.
+// Returns node where uint16 at node+244 matches param; else nullptr.
+void* msgMsgSink_E758_p33(void* self, uint32_t param) {
+    void* sentinel = (uint8_t*)self + 312;
+    void* node = *(void**)((uint8_t*)self + 316);
+    uint16_t key = (uint16_t)(param & 0xFFFF);
+    while (node != sentinel) {
+        uint16_t nodeKey = *(uint16_t*)((uint8_t*)node + 244);
+        if (nodeKey == key) return node;
+        node = *(void**)((uint8_t*)node + 4);
+    }
+    return nullptr;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * GROUP 21: Linked-list iteration with callback
+ * Pattern: walk list from +40, sentinel at +36, call handler per node
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+// msgMsgSink_3E68_g @ 0x82453E68 | size: 0x40
+// Iterates list from +40, sentinel +36, calls game_9CF8_h on each node
+void msgMsgSink_3E68_g(void* self, uint32_t param) {
+    void* sentinel = (uint8_t*)self + 36;
+    void* node = *(void**)((uint8_t*)self + 40);
+    while (node != sentinel) {
+        game_9CF8_h(node, param);
+        node = *(void**)((uint8_t*)node + 4);
+    }
+}
+
+// msgMsgSink_3EA8_g @ 0x82453EA8 | size: 0x40
+// Iterates list from +40, sentinel +36, calls game_9D10_h on each node
+void msgMsgSink_3EA8_g(void* self, uint32_t param) {
+    void* sentinel = (uint8_t*)self + 36;
+    void* node = *(void**)((uint8_t*)self + 40);
+    while (node != sentinel) {
+        game_9D10_h(node, param);
+        node = *(void**)((uint8_t*)node + 4);
+    }
+}
+
+// msgMsgSink_3EE8_g @ 0x82453EE8 | size: 0x40
+// Iterates list from +40, sentinel +36, calls game_9D28_h on each node
+void msgMsgSink_3EE8_g(void* self, uint32_t param) {
+    void* sentinel = (uint8_t*)self + 36;
+    void* node = *(void**)((uint8_t*)self + 40);
+    while (node != sentinel) {
+        game_9D28_h(node, param);
+        node = *(void**)((uint8_t*)node + 4);
+    }
+}
