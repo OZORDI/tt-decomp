@@ -64,7 +64,7 @@ extern uint32_t g_mainThreadHandle;  /* @ 0x825D0078 */
 // root game object, driving the main update/render cadence.
 extern void rage_GameLoopThreadEntry(void* gameObjPtr);  /* @ 0x822E2598 */
 
-// Subsystem init debug strings (.rdata, release no-ops via nop_8240E6D0)
+// Subsystem init debug strings (.rdata, release no-ops via rage_DebugLog)
 extern const char k_subsysInitErrFmt[];   /* @ 0x8205A30C */
 extern const char k_rageThreadNameFmt[];  /* @ 0x8205A340 — debug thread name */
 

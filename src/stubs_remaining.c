@@ -138,7 +138,7 @@ void atHashMap_Clear(void* map) {
     (void)map;
 }
 
-void atSingleton_2598_w(void* singleton) {
+void rage_GameLoopThreadEntry(void* singleton) {
     (void)singleton;
 }
 
@@ -154,11 +154,11 @@ void atSingleton_Remove(void* singleton) {
 // Audio System Functions
 // ============================================================================
 
-void audSystem_configure_2930(void* config) {
+void audSystem_Configure(void* config) {
     (void)config;
 }
 
-void audSystem_shutdown_29C0(void) {
+void audSystem_Shutdown(void) {
     // Audio shutdown
 }
 
@@ -257,7 +257,7 @@ void* grcDisplay_Create(void) {
 // HSM (Hierarchical State Machine) Functions
 // ============================================================================
 
-void hsmContext_SetNextState_2800(void* context, int state) {
+void hsmContext_SetNextState(void* context, int state) {
     (void)context;
     (void)state;
 }
@@ -274,7 +274,7 @@ void io_Input_poll(void) {
 // Network System Functions
 // ============================================================================
 
-void netSystem_shutdown_B510(void) {
+void netSystem_Shutdown(void) {
     // Network shutdown
 }
 
@@ -282,16 +282,13 @@ void netSystem_shutdown_B510(void) {
 // Debug/Logging Functions
 // ============================================================================
 
-void nop_8240E6D0(const char* fmt, ...) {
-    (void)fmt;
-    // Debug log - no-op
-}
+// rage_DebugLog (was nop_8240E6D0) — merged with existing rage_DebugLog stub below.
 
 // ============================================================================
 // Physics Functions
 // ============================================================================
 
-void phMaterialMgrImpl_AE20_p46(void* mgr) {
+void phMaterialMgrImpl_UpdateActive(void* mgr) {
     (void)mgr;
 }
 
@@ -307,12 +304,12 @@ void rage_strchr(void) {
 // Game Functions
 // ============================================================================
 
-void pongPostEffects_ctor_F160(void* effects) {
+void pongPostEffects_Create(void* effects) {
     (void)effects;
 }
 
-void nt_0420(void) {
-    // Network function
+void contentManager_LoadUserContent(void) {
+    // XAM content enumeration / user-config loading
 }
 
 void pg_EDE0_gen(void) {
@@ -332,8 +329,8 @@ void* rage_BlockAlloc(size_t size) {
     return NULL;
 }
 
-void rage_CEF0(void) {
-    // RAGE function
+void hsmContext_InitTimers(void) {
+    // Initialise hsmContext timers and float state
 }
 
 void rage_DebugLog(const char* fmt, ...) {
@@ -391,7 +388,7 @@ void rage_free(void* ptr) {
     rage_free(ptr);
 }
 
-void rage_game_obj_init_CB60(void* obj) {
+void hsmContext_Init(void* obj) {
     (void)obj;
 }
 
