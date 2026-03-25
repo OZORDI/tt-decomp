@@ -508,3 +508,198 @@ void pongCameraMgr::CopyParametersToBuffer(uint32_t param1, uint32_t param2,
     dest[4] = param5;
     dest[5] = param6;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr — Camera Mode Queries and Small Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Camera system globals
+extern uint32_t g_cameraMode;     // @ 0x825C5EB8 — current camera mode enum
+extern uint32_t g_cameraFlags;    // @ 0x826064D0 — camera state flags (SDA)
+
+// ── Pattern A: Camera index tail-call thunks (8B each) ─────────────────────
+
+extern "C" void pongCameraMgr_SetCameraByIndex(void* mgr, int index);  // @ 0x821F7CD8
+
+/**
+ * pongCameraMgr camera-by-index thunks @ 0x821F7DF8-7E20 | 8B each
+ *
+ * Six trivial thunks that set r7 = N and tail-call the camera setter.
+ * Each selects a different camera preset by index (1-6).
+ */
+void pongCameraMgr::SelectCamera1() { pongCameraMgr_SetCameraByIndex(this, 1); }  // 7DF8 @ 0x821F7DF8
+void pongCameraMgr::SelectCamera2() { pongCameraMgr_SetCameraByIndex(this, 2); }  // 7E00 @ 0x821F7E00
+void pongCameraMgr::SelectCamera3() { pongCameraMgr_SetCameraByIndex(this, 3); }  // 7E08 @ 0x821F7E08
+void pongCameraMgr::SelectCamera4() { pongCameraMgr_SetCameraByIndex(this, 4); }  // 7E10 @ 0x821F7E10
+void pongCameraMgr::SelectCamera5() { pongCameraMgr_SetCameraByIndex(this, 5); }  // 7E18 @ 0x821F7E18
+void pongCameraMgr::SelectCamera6() { pongCameraMgr_SetCameraByIndex(this, 6); }  // 7E20 @ 0x821F7E20
+
+// ── Pattern B: RTTI destructor adjustor thunk (8B) ─────────────────────────
+
+/**
+ * pongCameraMgr secondary vtable dtor adjustor @ 0x82166DB8 | size: 0x8
+ *
+ * Adjusts `this` pointer by -16 before forwarding to the primary destructor.
+ * Standard MI thunk for the secondary vtable.
+ */
+void pongCameraMgr::DtorAdjustor() {  // rtti_5EA8_0 @ 0x82166DB8
+    typedef void (*DtorFn)(void*);
+    DtorFn dtor = (DtorFn)(*(void***)((char*)this - 16))[0];
+    dtor((char*)this - 16);
+}
+
+// ── Pattern E: Global byte == 0 checks (24B each) ─────────────────────────
+
+/**
+ * pongCameraMgr global state flag checks @ 0x821F98D8-9908 | 24B each
+ *
+ * Each reads a global byte and returns true if it equals zero.
+ * Used for checking camera subsystem enable/disable flags.
+ */
+bool pongCameraMgr::IsFlag98D8Clear() {  // 98D8_p33 @ 0x821F98D8
+    extern uint8_t g_cameraFlag_7532;  // SDA offset, resolved at link
+    return g_cameraFlag_7532 == 0;
+}
+
+bool pongCameraMgr::IsFlag98F0Clear() {  // 98F0_p33 @ 0x821F98F0
+    extern uint8_t g_cameraFlag_8898;
+    return g_cameraFlag_8898 == 0;
+}
+
+bool pongCameraMgr::IsFlag9908Clear() {  // 9908_p33 @ 0x821F9908
+    extern uint8_t g_cameraFlag_8897;
+    return g_cameraFlag_8897 == 0;
+}
+
+// ── Pattern F: IsCameraMode(N) — 21 functions (32B each) ──────────────────
+
+/**
+ * pongCameraMgr::IsCameraMode(N) @ 0x821F7E40-80C0 | 32B each
+ *
+ * Each reads g_cameraMode and compares to a constant. Returns true if
+ * the camera is currently in that specific mode. The camera mode enum
+ * maps to gameplay situations:
+ *   1=default, 2=serve, 3=rally, 4=replay, 5=celebration, ...
+ */
+static bool IsCameraModeEqual(int modeValue) {
+    return (int)g_cameraMode == modeValue;
+}
+
+bool pongCameraMgr::IsCameraMode1()  { return IsCameraModeEqual(1);  }  // 7E40 @ 0x821F7E40
+bool pongCameraMgr::IsCameraMode2()  { return IsCameraModeEqual(2);  }  // 7E60 @ 0x821F7E60
+bool pongCameraMgr::IsCameraMode3()  { return IsCameraModeEqual(3);  }  // 7E80 @ 0x821F7E80
+bool pongCameraMgr::IsCameraMode4()  { return IsCameraModeEqual(4);  }  // 7EA0 @ 0x821F7EA0
+bool pongCameraMgr::IsCameraMode5()  { return IsCameraModeEqual(5);  }  // 7EC0 @ 0x821F7EC0
+bool pongCameraMgr::IsCameraMode6()  { return IsCameraModeEqual(6);  }  // 7EE0 @ 0x821F7EE0
+bool pongCameraMgr::IsCameraMode7()  { return IsCameraModeEqual(7);  }  // 7F00 @ 0x821F7F00
+bool pongCameraMgr::IsCameraMode8()  { return IsCameraModeEqual(8);  }  // 7F20 @ 0x821F7F20
+bool pongCameraMgr::IsCameraMode9()  { return IsCameraModeEqual(9);  }  // 7F40 @ 0x821F7F40
+bool pongCameraMgr::IsCameraMode10() { return IsCameraModeEqual(10); }  // 7F60 @ 0x821F7F60
+bool pongCameraMgr::IsCameraMode11() { return IsCameraModeEqual(11); }  // 7F80 @ 0x821F7F80
+bool pongCameraMgr::IsCameraMode12() { return IsCameraModeEqual(12); }  // 7FA0 @ 0x821F7FA0
+bool pongCameraMgr::IsCameraMode13() { return IsCameraModeEqual(13); }  // 7FC0 @ 0x821F7FC0
+bool pongCameraMgr::IsCameraMode14() { return IsCameraModeEqual(14); }  // 7FE0 @ 0x821F7FE0
+bool pongCameraMgr::IsCameraMode15() { return IsCameraModeEqual(15); }  // 8000 @ 0x821F8000
+bool pongCameraMgr::IsCameraMode16() { return IsCameraModeEqual(16); }  // 8020 @ 0x821F8020
+bool pongCameraMgr::IsCameraMode17() { return IsCameraModeEqual(17); }  // 8040 @ 0x821F8040
+bool pongCameraMgr::IsCameraMode18() { return IsCameraModeEqual(18); }  // 8060 @ 0x821F8060
+bool pongCameraMgr::IsCameraMode19() { return IsCameraModeEqual(19); }  // 8080 @ 0x821F8080
+bool pongCameraMgr::IsCameraMode20() { return IsCameraModeEqual(20); }  // 80A0 @ 0x821F80A0
+bool pongCameraMgr::IsCameraMode21() { return IsCameraModeEqual(21); }  // 80C0 @ 0x821F80C0
+
+// ── Pattern G: Camera flag bit tests (52B each) ───────────────────────────
+
+/**
+ * pongCameraMgr flag bit tests @ 0x821F6BE8-6CC8 | 52B each
+ *
+ * Each tests a specific bit of g_cameraFlags and returns true/false.
+ * The flags control camera behaviors like shake, zoom, track, etc.
+ */
+bool pongCameraMgr::HasFlag_Bit4()  { return (g_cameraFlags & 0x10)    != 0; }  // 6BE8 @ 0x821F6BE8
+bool pongCameraMgr::HasFlag_Bit8()  { return (g_cameraFlags & 0x100)   != 0; }  // 6C20 @ 0x821F6C20
+bool pongCameraMgr::HasFlag_Bit16() { return (g_cameraFlags & 0x10000) != 0; }  // 6C58 @ 0x821F6C58
+bool pongCameraMgr::HasFlag_Bit1()  { return (g_cameraFlags & 0x2)     != 0; }  // 6C90 @ 0x821F6C90
+bool pongCameraMgr::HasFlag_Bit2()  { return (g_cameraFlags & 0x4)     != 0; }  // 6CC8 @ 0x821F6CC8
+
+// ── Pattern H: Call helper with arg N (56B each, 25 functions) ────────────
+
+// Three camera query helpers that take an index parameter
+extern "C" bool pongCameraMgr_QueryA(void* mgr, int index);  // @ 0x821F3500
+extern "C" bool pongCameraMgr_QueryB(void* mgr, int index);  // @ 0x821F35A0
+extern "C" bool pongCameraMgr_QueryC(void* mgr, int index);  // @ 0x821F3650
+
+/**
+ * pongCameraMgr parameterized camera queries @ various | 56B each
+ *
+ * Each calls one of three query helpers (A/B/C) with a specific camera
+ * slot index. Used for checking camera properties per-slot.
+ */
+
+// QueryA(N) calls:
+bool pongCameraMgr::QueryA_2()  { return pongCameraMgr_QueryA(this, 2);  }  // 3910 @ 0x821F3910
+bool pongCameraMgr::QueryA_5()  { return pongCameraMgr_QueryA(this, 5);  }  // 3B88 @ 0x821F3B88
+bool pongCameraMgr::QueryA_3()  { return pongCameraMgr_QueryA(this, 3);  }  // 45E0 @ 0x821F45E0
+bool pongCameraMgr::QueryA_16() { return pongCameraMgr_QueryA(this, 16); }  // 4960 @ 0x821F4960
+bool pongCameraMgr::QueryA_19() { return pongCameraMgr_QueryA(this, 19); }  // 4C40 @ 0x821F4C40
+bool pongCameraMgr::QueryA_21() { return pongCameraMgr_QueryA(this, 21); }  // 50E0 @ 0x821F50E0
+bool pongCameraMgr::QueryA_20() { return pongCameraMgr_QueryA(this, 20); }  // 6B40 @ 0x821F6B40
+
+// QueryB(N) calls:
+bool pongCameraMgr::QueryB_2()  { return pongCameraMgr_QueryB(this, 2);  }  // 3948 @ 0x821F3948
+bool pongCameraMgr::QueryB_5()  { return pongCameraMgr_QueryB(this, 5);  }  // 3BC0 @ 0x821F3BC0
+bool pongCameraMgr::QueryB_3()  { return pongCameraMgr_QueryB(this, 3);  }  // 4618 @ 0x821F4618
+bool pongCameraMgr::QueryB_16() { return pongCameraMgr_QueryB(this, 16); }  // 4998 @ 0x821F4998
+bool pongCameraMgr::QueryB_15() { return pongCameraMgr_QueryB(this, 15); }  // 5070 @ 0x821F5070
+bool pongCameraMgr::QueryB_21() { return pongCameraMgr_QueryB(this, 21); }  // 5118 @ 0x821F5118
+bool pongCameraMgr::QueryB_20() { return pongCameraMgr_QueryB(this, 20); }  // 6B78 @ 0x821F6B78
+bool pongCameraMgr::QueryB_13() { return pongCameraMgr_QueryB(this, 13); }  // 74E0 @ 0x821F74E0
+
+// QueryC(N) calls:
+bool pongCameraMgr::QueryC_2()  { return pongCameraMgr_QueryC(this, 2);  }  // 3980 @ 0x821F3980
+bool pongCameraMgr::QueryC_5()  { return pongCameraMgr_QueryC(this, 5);  }  // 3BF8 @ 0x821F3BF8
+bool pongCameraMgr::QueryC_3()  { return pongCameraMgr_QueryC(this, 3);  }  // 4650 @ 0x821F4650
+bool pongCameraMgr::QueryC_16() { return pongCameraMgr_QueryC(this, 16); }  // 49D0 @ 0x821F49D0
+bool pongCameraMgr::QueryC_15() { return pongCameraMgr_QueryC(this, 15); }  // 50A8 @ 0x821F50A8
+bool pongCameraMgr::QueryC_21() { return pongCameraMgr_QueryC(this, 21); }  // 5150 @ 0x821F5150
+bool pongCameraMgr::QueryC_20() { return pongCameraMgr_QueryC(this, 20); }  // 6BB0 @ 0x821F6BB0
+bool pongCameraMgr::QueryC_13() { return pongCameraMgr_QueryC(this, 13); }  // 7518 @ 0x821F7518
+
+// ── Pattern I: Conditional byte load (60B each) ───────────────────────────
+
+/**
+ * pongCameraMgr conditional flag reads @ 0x821F3700-3740 | 60B each
+ *
+ * Reads a selector byte; depending on its value, returns one of two
+ * other flag bytes. Used for player-dependent camera flags.
+ */
+extern uint8_t g_cameraSelector;  // @ SDA+25804
+extern uint8_t g_cameraFlagA;     // @ SDA+25805
+extern uint8_t g_cameraFlagB;     // @ SDA+25806
+
+bool pongCameraMgr::GetConditionalFlagA() {  // 3700 @ 0x821F3700
+    return g_cameraSelector != 0 ? g_cameraFlagB : g_cameraFlagA;
+}
+
+bool pongCameraMgr::GetConditionalFlagB() {  // 3740 @ 0x821F3740
+    return g_cameraSelector != 0 ? g_cameraFlagA : g_cameraFlagB;
+}
+
+// ── Pattern J: Float comparison, return bool (64B each, 5 functions) ──────
+
+/**
+ * pongCameraMgr float threshold checks @ 0x821F7550-7688 | 64B each
+ *
+ * Each loads a float from an indexed camera data array, subtracts a
+ * base float, and compares against a threshold constant. Returns true
+ * if the difference exceeds the threshold.
+ */
+extern "C" bool pongCameraMgr_FloatThresholdA(void* mgr, float threshold);
+extern "C" bool pongCameraMgr_FloatThresholdB(void* mgr);
+
+bool pongCameraMgr::CheckThreshold7550(float threshold) { return pongCameraMgr_FloatThresholdA(this, threshold); }  // 7550 @ 0x821F7550
+bool pongCameraMgr::CheckThreshold7588() { return pongCameraMgr_FloatThresholdB(this); }  // 7588 @ 0x821F7588
+bool pongCameraMgr::CheckThreshold75C8() { return pongCameraMgr_FloatThresholdB(this); }  // 75C8 @ 0x821F75C8
+bool pongCameraMgr::CheckThreshold7608() { return pongCameraMgr_FloatThresholdB(this); }  // 7608 @ 0x821F7608
+bool pongCameraMgr::CheckThreshold7648() { return pongCameraMgr_FloatThresholdB(this); }  // 7648 @ 0x821F7648
+bool pongCameraMgr::CheckThreshold7688() { return pongCameraMgr_FloatThresholdB(this); }  // 7688 @ 0x821F7688
