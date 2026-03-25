@@ -3,6 +3,7 @@
  * Rockstar Presents Table Tennis (Xbox 360)
  *
  * This file lifts the CRT bootstrap routines executed from xstart:
+ *   - __mainCRTStartup (the XEX entry point / CRT startup driver)
  *   - _heap_init_check
  *   - _initterm_e
  *   - _initterm
@@ -10,6 +11,7 @@
  *   - _cinit_setup
  *
  * Address notes:
+ *   __mainCRTStartup @ 0x8242BD20
  *   _heap_init_check @ 0x8242C2C0
  *   _initterm_e      @ 0x8242C118
  *   _initterm        @ 0x8242C0A0
@@ -313,4 +315,205 @@ void _doexit_entry(void)
 {
     extern void _doexit(int exitCode, int callExit, int quick);
     _doexit(0, 0, 0);
+}
+
+/* =====================================================================
+ * __mainCRTStartup — XEX CRT entry point
+ * ===================================================================== */
+
+/* Maximum number of command-line arguments the parser can handle.
+ * The on-stack argv array occupies offsets 112..192 of the 496-byte
+ * frame, giving room for (192-112)/4 = 20 pointer slots. */
+#define CRT_MAX_ARGS 20
+
+/* Maximum characters in the tokenized argument string buffer.
+ * Offsets 192..496 of the frame = 304 bytes. */
+#define CRT_ARG_BUF_SIZE 304
+
+/**
+ * On-stack state used by the __mainCRTStartup command-line parser.
+ * Mirrors the frame layout at [r31+80..r31+496].
+ */
+typedef struct CrtCmdLineState {
+    char     m_currentChar;        /* +80  current byte from cmdline  */
+    uint8_t  m_pad81[3];
+    char**   m_pArgvWrite;         /* +84  next slot in argv array    */
+    char*    m_pCmdRead;           /* +88  read cursor in cmdline     */
+    char*    m_pArgWrite;          /* +92  write cursor in arg buffer */
+    int      m_argc;               /* +96  argument count             */
+    int      m_inQuote;            /* +100 inside double-quoted span  */
+    uint8_t  m_pad104[8];
+    char*    m_argv[CRT_MAX_ARGS]; /* +112 argv pointer array         */
+    char     m_argBuf[CRT_ARG_BUF_SIZE]; /* +192 tokenized arg strings */
+} CrtCmdLineState;
+
+/* External functions used only by __mainCRTStartup */
+int  _check_xdk_version(void);                           /* @ 0x8242BB70 */
+void __crt_main_entry(int argc, char** argv, int envp);  /* @ 0x820C0128 */
+void DbgPrint(const char* fmt, ...);                      /* @ 0x82585DCC */
+void XamLoaderTerminateTitle(void);                       /* @ 0x82585D0C */
+
+/* Globals written by __mainCRTStartup */
+extern int32_t g_atexit_guard_0;      /* @ 0x82733048 */
+extern int32_t g_atexit_guard_1;      /* @ 0x8273304C */
+extern void*   g_xex_exec_info;       /* @ 0x825E6E64 */
+
+/* DbgPrint format string @ 0x820013D0 (.rdata, 48 bytes) */
+static const char* const kExitFmtStr =
+    "exit() returned to __mainCRTStartup (code %d)\n";
+
+/**
+ * __mainCRTStartup @ 0x8242BD20 | size: 0x1C8
+ *
+ * The CRT entry point — the very first function that runs when the XEX
+ * loads. This is the outermost frame of the entire game process.
+ *
+ * Execution sequence:
+ *   1. Invalidate atexit guards (set to -1)
+ *   2. Initialize the CRT heap
+ *   3. Run static initializers (_initterm_e, _cinit_setup, _initterm, _initterm_e2)
+ *   4. Validate XDK version / locale setup
+ *   5. Parse XEX command line into argc/argv
+ *   6. Call __crt_main_entry(argc, argv, 0)  =>  rage_main  =>  game loop
+ *   7. On return: run atexit handlers, print exit code, terminate
+ *
+ * The function has an SEH try/catch wrapper in the original binary
+ * (except_data_8242BD20 / except_record_8242BD20).
+ */
+void __mainCRTStartup(void)
+{
+    int exitCode;
+
+    /* 1. Invalidate atexit guards so the atexit table is clean. */
+    g_atexit_guard_0 = -1;
+    g_atexit_guard_1 = -1;
+
+    /* 2. Initialize the CRT heap; fatal-halts on failure. */
+    _heap_init_check();
+
+    /* 3. Run CRT static initializer phases in order. */
+    _initterm_e(1);       /* Phase 1: registered CRT init callbacks     */
+    _cinit_setup();       /* TLS / fiber context setup                   */
+    _initterm();          /* Phase 2: early static initializer table     */
+    _initterm_e2(1);      /* Phase 3: staged startup tables              */
+
+    /* 4. Validate XDK version and set up locale.
+     *    Nonzero return = version mismatch => fatal terminate. */
+    if (_check_xdk_version() != 0) {
+        _doexit_entry();
+        XamLoaderTerminateTitle();
+        return;
+    }
+
+    /* 5. Parse the XEX command line into argc/argv.
+     *    If g_xex_exec_info is NULL (no exec info block), or the
+     *    command line string is NULL, pass argc=0, argv=NULL. */
+    if (g_xex_exec_info != NULL) {
+        CrtCmdLineState state;
+        char* cmdline;
+        char  ch;
+        char* argOut;
+
+        state.m_pArgvWrite = state.m_argv;
+        state.m_argc = 0;
+        state.m_inQuote = 0;
+
+        cmdline = (char*)_get_xex_cmdline();
+        state.m_pCmdRead = cmdline;
+
+        if (cmdline != NULL) {
+            argOut = state.m_argBuf;
+            state.m_pArgWrite = argOut;
+
+            /* Skip leading whitespace. */
+            ch = *cmdline;
+            state.m_currentChar = ch;
+            while (ch != '\0') {
+                if (ch != ' ' && ch != '\t') {
+                    break;
+                }
+                cmdline++;
+                state.m_pCmdRead = cmdline;
+                ch = *cmdline;
+                state.m_currentChar = ch;
+            }
+
+            /* Tokenize: split by whitespace, handle double-quote toggling. */
+            while (state.m_currentChar != '\0') {
+                /* Start a new argument. */
+                state.m_argc++;
+                state.m_inQuote = 0;
+                *state.m_pArgvWrite = state.m_pArgWrite;
+                state.m_pArgvWrite++;
+
+                /* Copy characters for this argument. */
+                while (state.m_currentChar != '\0') {
+                    ch = state.m_currentChar;
+
+                    if (ch == '"') {
+                        /* Toggle in-quote flag. */
+                        state.m_inQuote = (state.m_inQuote == 0) ? 1 : 0;
+                    } else {
+                        /* Outside quotes: space/tab ends the argument. */
+                        if (state.m_inQuote == 0) {
+                            if (ch == ' ' || ch == '\t') {
+                                break;
+                            }
+                        }
+                        /* Copy character to output buffer. */
+                        *state.m_pArgWrite = ch;
+                        state.m_pArgWrite++;
+                    }
+
+                    /* Advance read cursor. */
+                    cmdline++;
+                    state.m_pCmdRead = cmdline;
+                    ch = *cmdline;
+                    state.m_currentChar = ch;
+                }
+
+                /* Null-terminate this argument string. */
+                *state.m_pArgWrite = '\0';
+                state.m_pArgWrite++;
+
+                if (state.m_argc > CRT_MAX_ARGS) {
+                    break;
+                }
+
+                /* Skip whitespace between arguments. */
+                while (state.m_currentChar != '\0') {
+                    ch = state.m_currentChar;
+                    if (ch != ' ' && ch != '\t') {
+                        break;
+                    }
+                    cmdline++;
+                    state.m_pCmdRead = cmdline;
+                    ch = *cmdline;
+                    state.m_currentChar = ch;
+                }
+            }
+
+            /* Null-terminate the argv array. */
+            *state.m_pArgvWrite = NULL;
+
+            /* 6. Enter the game via __crt_main_entry. */
+            __crt_main_entry(state.m_argc, state.m_argv, 0);
+            exitCode = state.m_argc;
+        } else {
+            /* No command line string available. */
+            __crt_main_entry(0, NULL, 0);
+            exitCode = 0;
+        }
+    } else {
+        /* No exec info block — pass empty argc/argv. */
+        __crt_main_entry(0, NULL, 0);
+        exitCode = 0;
+    }
+
+    /* 7. Process atexit handlers. */
+    _doexit_entry();
+
+    /* Print exit code for debugging, then terminate. */
+    DbgPrint(kExitFmtStr, exitCode);
+    XamLoaderTerminateTitle();
 }
