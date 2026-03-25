@@ -42,3 +42,16 @@ extern const char* g_str_gdLadderMatch_unknownRowdiness;  // @ 0x82044C38
 // gdDifficultyLadder
 // ────────────────────────────────────────────────────────────────────────────
 extern const char* g_str_gdDifficultyLadder_invalidLevel; // @ 0x82044C98
+
+// ────────────────────────────────────────────────────────────────────────────
+// PostLoadChildren strings (verified from binary — many differ from source!)
+// ────────────────────────────────────────────────────────────────────────────
+extern const char* g_str_gdTier_unknownNodeType;              // @ 0x82044844
+extern const char* g_str_gdLadder_duplicateLevel;             // @ 0x82044D30
+extern const char* g_str_gdLadder_unknownNodeType;            // @ 0x82044D70
+extern const char* g_str_gdLadder_missingLadder;              // @ 0x82044DA8
+extern const char* g_str_gdRivalry_unknownChar;               // @ 0x82044670
+extern const char* g_str_gdRivalry_duplicateChar;             // @ 0x820446A8
+extern const char* g_str_gdRivalry_unknownNodeType;           // @ 0x820446F0
+extern const char* g_str_gdRivalry_missingRival;              // @ 0x82044728
+extern const char* g_str_gdDifficultyLadder_unknownNodeType;  // @ 0x82044CE0

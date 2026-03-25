@@ -33,3 +33,14 @@ const char* g_str_gdLadderMatch_unknownRowdiness  = "gdLadderMatch::PostLoadProp
 
 // gdDifficultyLadder
 const char* g_str_gdDifficultyLadder_invalidLevel = "gdDifficultyLadder::PostLoadProperties() - invalid level value '%d'";
+
+// PostLoadChildren strings (verified from binary — several differ from what was in source)
+const char* g_str_gdTier_unknownNodeType              = "gdTier::PostLoadChildren() - unknown node type '%s'";
+const char* g_str_gdLadder_duplicateLevel             = "gdLadder::PostLoadChildren() - duplicate entries for level '%d'";
+const char* g_str_gdLadder_unknownNodeType            = "gdLadder::PostLoadChildren() - unknown node type '%s'";
+const char* g_str_gdLadder_missingLadder              = "gdLadder::PostLoadChildren() - level '%d' does not have a ladder";
+const char* g_str_gdRivalry_unknownChar               = "gdRivalry::PostLoadChildren() - unknown character '%s'";
+const char* g_str_gdRivalry_duplicateChar             = "gdRivalry::PostLoadChildren() - duplicate entries for character '%s'";
+const char* g_str_gdRivalry_unknownNodeType           = "gdRivalry::PostLoadChildren() - unknown node type '%s'";
+const char* g_str_gdRivalry_missingRival              = "gdRivalry::PostLoadChildren() - '%s' does not have a rival";
+const char* g_str_gdDifficultyLadder_unknownNodeType  = "gdDifficultyLadder::PostLoadChildren() - unknown node type '%s'";

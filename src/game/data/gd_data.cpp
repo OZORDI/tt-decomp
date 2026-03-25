@@ -236,7 +236,7 @@ void gdTier::PostLoadChildren() {
             // Log unexpected child type
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName = (GetNameFunc)vtable[19];
-            nop_8240E6D0("gdTier::PostLoadChildren() - unexpected child type '%s'", getName(pChild));
+            nop_8240E6D0(g_str_gdTier_unknownNodeType, getName(pChild));
         }
 
         pChild = *(void**)((char*)pChild + 8);  // m_pNextSibling
@@ -354,14 +354,14 @@ void gdLadder::PostLoadChildren() {
 
             if (tierArray[tierIdx] != nullptr) {
                 // Duplicate tier entry
-                nop_8240E6D0("gdLadder::PostLoadChildren() - duplicate tier at index %d");
+                nop_8240E6D0(g_str_gdLadder_duplicateLevel);
             } else {
                 tierArray[tierIdx] = pChild;
             }
         } else {
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName = (GetNameFunc)vtable[19];
-            nop_8240E6D0("gdLadder::PostLoadChildren() - unexpected child type '%s'", getName(pChild));
+            nop_8240E6D0(g_str_gdLadder_unknownNodeType, getName(pChild));
         }
 
         pChild = *(void**)((char*)pChild + 8);
@@ -372,7 +372,7 @@ void gdLadder::PostLoadChildren() {
     for (int i = 0; i < count; i++) {
         void** tierArray = *(void***)((char*)this + 16);
         if (tierArray[i] == nullptr) {
-            nop_8240E6D0("gdLadder::PostLoadChildren() - missing tier at index %d", i);
+            nop_8240E6D0(g_str_gdLadder_missingLadder, i);
         }
     }
 }
@@ -437,12 +437,12 @@ void gdRivalry::PostLoadChildren() {
             int32_t charIdx = FindCharacterByName(dataMgr, charName);
 
             if (charIdx < 0) {
-                nop_8240E6D0("gdRivalry::PostLoadChildren() - unknown character");
+                nop_8240E6D0(g_str_gdRivalry_unknownChar);
             } else {
                 void** array = *(void***)((char*)this + 16);
                 if (array[charIdx] != nullptr) {
                     const char* name = *(const char**)((char*)pChild + 16);
-                    nop_8240E6D0("gdRivalry::PostLoadChildren() - duplicate entry for '%s'", name);
+                    nop_8240E6D0(g_str_gdRivalry_duplicateChar, name);
                 } else {
                     array[charIdx] = pChild;
                 }
@@ -450,7 +450,7 @@ void gdRivalry::PostLoadChildren() {
         } else {
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName = (GetNameFunc)vtable[19];
-            nop_8240E6D0("gdRivalry::PostLoadChildren() - unexpected child '%s'", getName(pChild));
+            nop_8240E6D0(g_str_gdRivalry_unknownNodeType, getName(pChild));
         }
 
         pChild = *(void**)((char*)pChild + 8);
@@ -466,7 +466,7 @@ void gdRivalry::PostLoadChildren() {
             void* charEntry = ((void**)charArray)[i];
             const char* charName = *(const char**)((char*)charEntry + 44);
             const char* entryName = *(const char**)((char*)charEntry + 16);
-            nop_8240E6D0("gdRivalry::PostLoadChildren() - missing rivalry data for '%s'", entryName);
+            nop_8240E6D0(g_str_gdRivalry_missingRival, entryName);
         }
     }
 }
