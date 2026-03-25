@@ -18,10 +18,10 @@ extern "C" double jumptable_2B80(const char* str);
 namespace rage {
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_2()  [vtable slot 2 @ 0x822E5E78]
-// Forwards to vfn_4 (tail call optimization in original code)
+// fiAsciiTokenizer::ReadInt()  [vtable slot 2 @ 0x822E5E78]
+// Forwards to SkipToInt (tail call optimization in original code)
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_2() {
+void fiAsciiTokenizer::ReadInt() {
     // Load vtable and call slot 4 directly
     void** vtable = reinterpret_cast<void**>(this);
     typedef void (*VtableFunc)(fiAsciiTokenizer*);
@@ -30,14 +30,14 @@ void fiAsciiTokenizer::vfn_2() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_4()  [vtable slot 4 @ 0x822E5E88]
+// fiAsciiTokenizer::SkipToInt()  [vtable slot 4 (SkipToInt) @ 0x822E5E88]
 // Checks if next token is a valid integer (starts with '-' or digit '0'-'9')
 // Copies token to internal buffer if valid
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_4() {
+void fiAsciiTokenizer::SkipToInt() {
     char tokenBuffer[32];
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
@@ -63,14 +63,14 @@ void fiAsciiTokenizer::vfn_4() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_5()  [vtable slot 5 @ 0x822E5F08]
+// fiAsciiTokenizer::ReadFloat()  [vtable slot 5 (ReadFloat) @ 0x822E5F08]
 // Reads next token and parses it as a float
 // Returns parsed float value, or 0.0f if token doesn't start with valid float char
 // ─────────────────────────────────────────────────────────────────────────────
-float fiAsciiTokenizer::vfn_5() {
+float fiAsciiTokenizer::ReadFloat() {
     char tokenBuffer[32];
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
@@ -102,11 +102,11 @@ float fiAsciiTokenizer::vfn_5() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_6()  [vtable slot 6 @ 0x822E6190]
+// fiAsciiTokenizer::ReadVec4()  [vtable slot 6 (ReadVec4) @ 0x822E6190]
 // Reads 4 consecutive float tokens into output array (vec4/quaternion)
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_6(float* outVec4) {
-    // Call vfn_5 four times through vtable
+void fiAsciiTokenizer::ReadVec4(float* outVec4) {
+    // Call ReadFloat four times through vtable
     void** vtable = reinterpret_cast<void**>(this);
     typedef float (*ParseFloatFunc)(fiAsciiTokenizer*);
     ParseFloatFunc parseFloat = reinterpret_cast<ParseFloatFunc>(vtable[5]);
@@ -118,11 +118,11 @@ void fiAsciiTokenizer::vfn_6(float* outVec4) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_7()  [vtable slot 7 @ 0x822E6100]
+// fiAsciiTokenizer::ReadVec3()  [vtable slot 7 (ReadVec3) @ 0x822E6100]
 // Reads 3 consecutive float tokens into output array (vec3/position)
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_7(float* outVec3) {
-    // Call vfn_5 three times through vtable
+void fiAsciiTokenizer::ReadVec3(float* outVec3) {
+    // Call ReadFloat three times through vtable
     void** vtable = reinterpret_cast<void**>(this);
     typedef float (*ParseFloatFunc)(fiAsciiTokenizer*);
     ParseFloatFunc parseFloat = reinterpret_cast<ParseFloatFunc>(vtable[5]);
@@ -133,11 +133,11 @@ void fiAsciiTokenizer::vfn_7(float* outVec3) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_8()  [vtable slot 8 @ 0x822E6070]
+// fiAsciiTokenizer::ReadFloat4()  [vtable slot 8 (ReadFloat4) @ 0x822E6070]
 // Reads 4 consecutive float tokens into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_8(float* outArray) {
-    // Call vfn_5 four times through vtable
+void fiAsciiTokenizer::ReadFloat4(float* outArray) {
+    // Call ReadFloat four times through vtable
     void** vtable = reinterpret_cast<void**>(this);
     typedef float (*ParseFloatFunc)(fiAsciiTokenizer*);
     ParseFloatFunc parseFloat = reinterpret_cast<ParseFloatFunc>(vtable[5]);
@@ -149,11 +149,11 @@ void fiAsciiTokenizer::vfn_8(float* outArray) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_9()  [vtable slot 9 @ 0x822E5FF8]
+// fiAsciiTokenizer::ReadFloat3()  [vtable slot 9 (ReadFloat3) @ 0x822E5FF8]
 // Reads 3 consecutive float tokens into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_9(float* outArray) {
-    // Call vfn_5 three times through vtable
+void fiAsciiTokenizer::ReadFloat3(float* outArray) {
+    // Call ReadFloat three times through vtable
     void** vtable = reinterpret_cast<void**>(this);
     typedef float (*ParseFloatFunc)(fiAsciiTokenizer*);
     ParseFloatFunc parseFloat = reinterpret_cast<ParseFloatFunc>(vtable[5]);
@@ -164,11 +164,11 @@ void fiAsciiTokenizer::vfn_9(float* outArray) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_10()  [vtable slot 10 @ 0x822E5F98]
+// fiAsciiTokenizer::ReadVec2()  [vtable slot 10 (ReadVec2) @ 0x822E5F98]
 // Reads 2 consecutive float tokens into output array (vec2/UV coordinate)
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_10(float* outVec2) {
-    // Call vfn_5 twice through vtable
+void fiAsciiTokenizer::ReadVec2(float* outVec2) {
+    // Call ReadFloat twice through vtable
     void** vtable = reinterpret_cast<void**>(this);
     typedef float (*ParseFloatFunc)(fiAsciiTokenizer*);
     ParseFloatFunc parseFloat = reinterpret_cast<ParseFloatFunc>(vtable[5]);
@@ -178,15 +178,15 @@ void fiAsciiTokenizer::vfn_10(float* outVec2) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_11()  [vtable slot 11 @ 0x822E6260]
+// fiAsciiTokenizer::ReadString()  [vtable slot 11 @ 0x822E6260]
 // Reads next token into provided buffer (max 64 bytes)
 // Initializes buffer with null terminator before reading
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_11(char* outBuffer) {
+void fiAsciiTokenizer::ReadString(char* outBuffer) {
     // Initialize buffer
     outBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read token
+    // Call vtable slot 1 (ReadToken) to read token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
@@ -194,21 +194,21 @@ void fiAsciiTokenizer::vfn_11(char* outBuffer) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_12()  [vtable slot 12 @ 0x822E62A0]
+// fiAsciiTokenizer::ReadStringAndAdvance()  [vtable slot 12 @ 0x822E62A0]
 // Reads next token into buffer and advances to next token
 // Combines token read with skip operation
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_12(char* outBuffer) {
+void fiAsciiTokenizer::ReadStringAndAdvance(char* outBuffer) {
     // Initialize buffer
     outBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read token
+    // Call vtable slot 1 (ReadToken) to read token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
     readToken(this, outBuffer, 64);
     
-    // Call vtable slot 4 to skip/advance
+    // Call vtable slot 4 (SkipToInt) to skip/advance
     typedef void (*SkipTokenFunc)(fiAsciiTokenizer*);
     SkipTokenFunc skipToken = reinterpret_cast<SkipTokenFunc>(vtable[4]);
     skipToken(this);
@@ -217,120 +217,120 @@ void fiAsciiTokenizer::vfn_12(char* outBuffer) {
 } // namespace rage
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_13()  [vtable slot 13 @ 0x822E6300]
+// fiAsciiTokenizer::ReadNamedFloat()  [vtable slot 13 @ 0x822E6300]
 // Reads next token into buffer, then parses and returns a float value
 // ─────────────────────────────────────────────────────────────────────────────
-float fiAsciiTokenizer::vfn_13() {
+float fiAsciiTokenizer::ReadNamedFloat() {
     char tokenBuffer[64];
     tokenBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
     readToken(this, tokenBuffer, 64);
     
-    // Call vtable slot 5 to parse float
+    // Call vtable slot 5 (ReadFloat) to parse float
     typedef float (*ParseFloatFunc)(fiAsciiTokenizer*);
     ParseFloatFunc parseFloat = reinterpret_cast<ParseFloatFunc>(vtable[5]);
     return parseFloat(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_14()  [vtable slot 14 @ 0x822E6520]
+// fiAsciiTokenizer::ReadNamedVec4()  [vtable slot 14 @ 0x822E6520]
 // Reads next token into buffer, then reads 4 consecutive floats into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_14(float* outArray) {
+void fiAsciiTokenizer::ReadNamedVec4(float* outArray) {
     char tokenBuffer[64];
     tokenBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
     readToken(this, tokenBuffer, 64);
     
-    // Call vtable slot 6 to read 4 floats
+    // Call vtable slot 6 (ReadVec4) to read 4 floats
     typedef void (*Read4FloatsFunc)(fiAsciiTokenizer*, float*);
     Read4FloatsFunc read4Floats = reinterpret_cast<Read4FloatsFunc>(vtable[6]);
     read4Floats(this, outArray);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_15()  [vtable slot 15 @ 0x822E64B0]
+// fiAsciiTokenizer::ReadNamedVec3()  [vtable slot 15 @ 0x822E64B0]
 // Reads next token into buffer, then reads 3 consecutive floats into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_15(float* outArray) {
+void fiAsciiTokenizer::ReadNamedVec3(float* outArray) {
     char tokenBuffer[64];
     tokenBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
     readToken(this, tokenBuffer, 64);
     
-    // Call vtable slot 7 to read 3 floats
+    // Call vtable slot 7 (ReadVec3) to read 3 floats
     typedef void (*Read3FloatsFunc)(fiAsciiTokenizer*, float*);
     Read3FloatsFunc read3Floats = reinterpret_cast<Read3FloatsFunc>(vtable[7]);
     read3Floats(this, outArray);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_16()  [vtable slot 16 @ 0x822E6440]
+// fiAsciiTokenizer::ReadNamedFloat4()  [vtable slot 16 @ 0x822E6440]
 // Reads next token into buffer, then reads 4 consecutive floats into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_16(float* outArray) {
+void fiAsciiTokenizer::ReadNamedFloat4(float* outArray) {
     char tokenBuffer[64];
     tokenBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
     readToken(this, tokenBuffer, 64);
     
-    // Call vtable slot 8 to read 4 floats
+    // Call vtable slot 8 (ReadFloat4) to read 4 floats
     typedef void (*Read4FloatsFunc)(fiAsciiTokenizer*, float*);
     Read4FloatsFunc read4Floats = reinterpret_cast<Read4FloatsFunc>(vtable[8]);
     read4Floats(this, outArray);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_17()  [vtable slot 17 @ 0x822E63D0]
+// fiAsciiTokenizer::ReadNamedFloat3()  [vtable slot 17 @ 0x822E63D0]
 // Reads next token into buffer, then reads 3 consecutive floats into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_17(float* outArray) {
+void fiAsciiTokenizer::ReadNamedFloat3(float* outArray) {
     char tokenBuffer[64];
     tokenBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
     readToken(this, tokenBuffer, 64);
     
-    // Call vtable slot 9 to read 3 floats
+    // Call vtable slot 9 (ReadFloat3) to read 3 floats
     typedef void (*Read3FloatsFunc)(fiAsciiTokenizer*, float*);
     Read3FloatsFunc read3Floats = reinterpret_cast<Read3FloatsFunc>(vtable[9]);
     read3Floats(this, outArray);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_18()  [vtable slot 18 @ 0x822E6360]
+// fiAsciiTokenizer::ReadNamedVec2()  [vtable slot 18 @ 0x822E6360]
 // Reads next token into buffer, then reads 2 consecutive floats into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_18(float* outArray) {
+void fiAsciiTokenizer::ReadNamedVec2(float* outArray) {
     char tokenBuffer[64];
     tokenBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
     readToken(this, tokenBuffer, 64);
     
-    // Call vtable slot 10 to read 2 floats
+    // Call vtable slot 10 (ReadVec2) to read 2 floats
     typedef void (*Read2FloatsFunc)(fiAsciiTokenizer*, float*);
     Read2FloatsFunc read2Floats = reinterpret_cast<Read2FloatsFunc>(vtable[10]);
     read2Floats(this, outArray);
@@ -348,7 +348,7 @@ int fiAsciiTokenizer::ReadTokenAndCompare(const char* expectedToken) {
     char tokenBuffer[64];
     tokenBuffer[0] = '\0';
     
-    // Call vtable slot 1 to read next token
+    // Call vtable slot 1 (ReadToken) to read next token
     void** vtable = reinterpret_cast<void**>(this);
     typedef bool (*ReadTokenFunc)(fiAsciiTokenizer*, char*, int);
     ReadTokenFunc readToken = reinterpret_cast<ReadTokenFunc>(vtable[1]);
@@ -363,13 +363,13 @@ int fiAsciiTokenizer::ReadTokenAndCompare(const char* expectedToken) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_19()  [vtable slot 19 @ 0x822E6590]
+// fiAsciiTokenizer::ExpectTokenThenInt()  [vtable slot 19 @ 0x822E6590]
 // Reads token with case-insensitive compare, then checks if next token is valid int
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_19(const char* expectedToken) {
+void fiAsciiTokenizer::ExpectTokenThenInt(const char* expectedToken) {
     ReadTokenAndCompare(expectedToken);
     
-    // Call vtable slot 4 to check if next token is int
+    // Call vtable slot 4 (SkipToInt) to check if next token is int
     void** vtable = reinterpret_cast<void**>(this);
     typedef void (*CheckIntFunc)(fiAsciiTokenizer*);
     CheckIntFunc checkInt = reinterpret_cast<CheckIntFunc>(vtable[4]);
@@ -377,13 +377,13 @@ void fiAsciiTokenizer::vfn_19(const char* expectedToken) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_20()  [vtable slot 20 @ 0x822E65D0]
+// fiAsciiTokenizer::ExpectTokenThenFloat()  [vtable slot 20 @ 0x822E65D0]
 // Reads token with case-insensitive compare, then parses next token as float
 // ─────────────────────────────────────────────────────────────────────────────
-float fiAsciiTokenizer::vfn_20(const char* expectedToken) {
+float fiAsciiTokenizer::ExpectTokenThenFloat(const char* expectedToken) {
     ReadTokenAndCompare(expectedToken);
     
-    // Call vtable slot 5 to parse float
+    // Call vtable slot 5 (ReadFloat) to parse float
     void** vtable = reinterpret_cast<void**>(this);
     typedef float (*ParseFloatFunc)(fiAsciiTokenizer*);
     ParseFloatFunc parseFloat = reinterpret_cast<ParseFloatFunc>(vtable[5]);
@@ -391,13 +391,13 @@ float fiAsciiTokenizer::vfn_20(const char* expectedToken) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_21()  [vtable slot 21 @ 0x822E6750]
+// fiAsciiTokenizer::ExpectTokenThenVec4()  [vtable slot 21 @ 0x822E6750]
 // Reads token with case-insensitive compare, then reads 4 floats into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_21(const char* expectedToken, float* outArray) {
+void fiAsciiTokenizer::ExpectTokenThenVec4(const char* expectedToken, float* outArray) {
     ReadTokenAndCompare(expectedToken);
     
-    // Call vtable slot 6 to read 4 floats
+    // Call vtable slot 6 (ReadVec4) to read 4 floats
     void** vtable = reinterpret_cast<void**>(this);
     typedef void (*Read4FloatsFunc)(fiAsciiTokenizer*, float*);
     Read4FloatsFunc read4Floats = reinterpret_cast<Read4FloatsFunc>(vtable[6]);
@@ -405,13 +405,13 @@ void fiAsciiTokenizer::vfn_21(const char* expectedToken, float* outArray) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer::vfn_22()  [vtable slot 22 @ 0x822E6700]
+// fiAsciiTokenizer::ExpectTokenThenVec3()  [vtable slot 22 @ 0x822E6700]
 // Reads token with case-insensitive compare, then reads 3 floats into output array
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::vfn_22(const char* expectedToken, float* outArray) {
+void fiAsciiTokenizer::ExpectTokenThenVec3(const char* expectedToken, float* outArray) {
     ReadTokenAndCompare(expectedToken);
     
-    // Call vtable slot 7 to read 3 floats
+    // Call vtable slot 7 (ReadVec3) to read 3 floats
     void** vtable = reinterpret_cast<void**>(this);
     typedef void (*Read3FloatsFunc)(fiAsciiTokenizer*, float*);
     Read3FloatsFunc read3Floats = reinterpret_cast<Read3FloatsFunc>(vtable[7]);
