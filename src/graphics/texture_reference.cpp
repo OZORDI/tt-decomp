@@ -42,11 +42,11 @@ extern uint8_t g_bTextureEndianDirty;
 // Additional declarations for incomplete types used in this TU.
 struct grcTexture {
     void** vtable;
-    virtual void vfn_7(void* param);
-    virtual void vfn_20();
+    virtual void ApplyState(void* param);
+    virtual void Invalidate();
     // slot 25 — forwarded by grcTextureReferenceBase::ForwardSlot25
     // Called via raw vtable offset: slot 25 = byte offset +100
-    void vfn_25_raw() { (*(void(**)(grcTexture*))((char*)this + 100))(this); }
+    void Flush() { (*(void(**)(grcTexture*))((char*)this + 100))(this); }
 };
 struct grcTextureFactory {
     void** vtable;
@@ -115,13 +115,13 @@ void grcTextureReferenceBase::ForwardSlot7(void* param)
     if (pTex)
     {
         // Forward to the inner texture's slot 7
-        pTex->vfn_7(param);            // VCALL slot 7, byte offset +28
+        pTex->ApplyState(param);            // VCALL slot 7, byte offset +28
     }
     else
     {
         // Fallback: use the factory singleton's default texture
         grcTexture* pDefault = g_pTextureFactory->GetDefaultTexture();  // VCALL slot 7
-        pDefault->vfn_7(param);
+        pDefault->ApplyState(param);
     }
 }
 
@@ -139,13 +139,13 @@ void grcTextureReferenceBase::ForwardSlot20()
 
     if (pTex)
     {
-        pTex->vfn_20();                // VCALL slot 20, byte offset +80
+        pTex->Invalidate();                // VCALL slot 20, byte offset +80
     }
     else
     {
         // Factory fallback
         grcTexture* pDefault = g_pTextureFactory->GetDefaultTexture();
-        pDefault->vfn_20();            // VCALL slot 20
+        pDefault->Invalidate();            // VCALL slot 20
     }
 }
 
@@ -412,8 +412,8 @@ void grcTextureReference::destructor(bool deleteThis)
 // grcTextureReference::GetTexture  —  slot 11
 // @ 0x8215DAC0 | size: 0x28
 //
-// Returns the "resolved" inner texture object by calling m_pTexture->vfn_12().
-// vfn_12 on the underlying grcTexture likely returns the platform resource
+// Returns the "resolved" inner texture object by calling m_pTexture->GetPlatformTexture().
+// GetPlatformTexture on the underlying grcTexture returns the platform resource
 // handle (e.g. IDirect3DTexture9 equivalent for Xenon).
 // Returns nullptr if m_pTexture is not set.
 // ---------------------------------------------------------------------------
@@ -429,7 +429,7 @@ grcTexture* grcTextureReference::GetTexture()
 // grcTextureReference  —  slot 25 forwarding
 // @ 0x8215DB48 | size: 0x24
 //
-// Simple one-way delegation to m_pTexture->vfn_25().
+// Simple one-way delegation to m_pTexture->Flush().
 // No factory fallback; returns early if no inner texture.
 // ---------------------------------------------------------------------------
 void grcTextureReference::ForwardSlot25()

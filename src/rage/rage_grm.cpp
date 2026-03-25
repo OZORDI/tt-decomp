@@ -11,19 +11,19 @@ namespace rage {
 
 // ── rage::spdApical ───────────────────────────────────────────────────────────
 
-void spdApical::vfn_2(float value) {
+void spdApical::SetLodNear(float value) {
     unk_10 = value;
 }
 
-void spdApical::vfn_3(float value) {
+void spdApical::SetLodFar(float value) {
     unk_14 = value;
 }
 
-void spdApical::vfn_4(float value) {
+void spdApical::SetLodFadeStart(float value) {
     unk_18 = value;
 }
 
-void spdApical::vfn_5(float value) {
+void spdApical::SetLodFadeEnd(float value) {
     unk_1C = value;
 }
 
