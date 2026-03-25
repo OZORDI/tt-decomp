@@ -1103,10 +1103,161 @@ void cmMax::GetDim(int32_t* out) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  REMAINING STUBS (complex stateful nodes — need dedicated sessions)
 // ─────────────────────────────────────────────────────────────────────────────
+// ── cmApproach2 — smoothly approaches target over time. vtable @ 0x82055EFC ─
+// Stateful approach node: interpolates from current value toward portA
+// (target) by a fraction determined by portB (speed). The approach
+// fraction m_progress (+44) accumulates dt/speed per frame, clamped to [0,1].
+// When m_bIsAngular (+52) is set, float lerp wraps around ±π.
+
+// cmApproach2::GetVector @ 0x82279568 | size: 0xA0
+// Syncs, reads target vec4 from portB (+20), computes approach factor,
+// then lerps: output = previous + (target - previous) * factor
+void cmApproach2::GetVector(float* out) {
+    // Sync via vtable slot 8
+    typedef void (*SyncFn)(void*);
+    void** vt = *(void***)this;
+    ((SyncFn)vt[8])(this);
+
+    // Check if approach is flagged for direct output
+    if (*(uint8_t*)((char*)this + 52)) {
+        // Direct: read target from portB
+        cmNode_GetVector(out, (cmNodePort*)((char*)this + 20));
+        return;
+    }
+
+    // Get target vector
+    float target[4];
+    cmNode_GetVector(target, (cmNodePort*)((char*)this + 20));
+
+    // Load current value from reporter at +40
+    float* current = (float*)(*(void**)((char*)this + 40));
+
+    // Compute approach: update progress, get factor via cmApproach2_94A8
+    extern "C" float cmApproach2_ComputeFactor(void* node);
+    float factor = cmApproach2_ComputeFactor(this);
+
+    // Lerp: out = current + (target - current) * factor
+    out[0] = current[0] + (target[0] - current[0]) * factor;
+    out[1] = current[1] + (target[1] - current[1]) * factor;
+    out[2] = current[2] + (target[2] - current[2]) * factor;
+    out[3] = current[3] + (target[3] - current[3]) * factor;
+}
+
+// cmApproach2::GetFloat @ 0x82279608 | size: 0xE8
+// Syncs, reads target float from portB (+20), computes approach factor.
+// If m_bIsAngular (+52), wraps the difference around ±π before lerping.
+void cmApproach2::GetFloat(float* out) {
+    const float PI  = 3.14159265f;
+    const float TWO_PI = 6.28318530f;
+
+    typedef void (*SyncFn)(void*);
+    void** vt = *(void***)this;
+    ((SyncFn)vt[8])(this);
+
+    extern "C" float cmApproach2_ComputeFactor(void* node);
+    float factor = cmApproach2_ComputeFactor(this);
+
+    float* currentBuf = (float*)(*(void**)((char*)this + 40));
+    float current = *currentBuf;
+
+    float target = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
+
+    bool isAngular = *(uint8_t*)((char*)this + 52) != 0;
+    if (isAngular) {
+        // Wrap difference around ±π
+        if (current < -PI) {
+            if (target > current + PI) {
+                target -= TWO_PI;
+            }
+        } else if (current > PI) {
+            if (target < current - PI) {
+                target += TWO_PI;
+            }
+        }
+    }
+
+    // Lerp: result = current + (target - current) * factor
+    float result = current + (target - current) * factor;
+    *out = result;
+
+    if (isAngular) {
+        // Normalize result to [-π, π] range
+        extern "C" float cmAngle_Normalize(float value, float zero);
+        *out = cmAngle_Normalize(result, 0.0f);
+    }
+}
+
+// cmApproach2::Reset @ 0x822793C8 | size: 0x50
+// Zeroes progress, copies portA into reporter buffer, toggles flag bit 3.
+void cmApproach2::Reset() {
+    extern "C" void cmPort_CopyToBuffer(void* reporter, cmNodePort* port);
+
+    *(float*)((char*)this + 44) = 0.0f;  // m_progress = 0
+
+    void* reporter = *(void**)((char*)this + 40);
+    cmPort_CopyToBuffer(reporter, (cmNodePort*)((char*)this + 12));
+
+    uint32_t flags = *(uint32_t*)((char*)this + 8);
+    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;
+}
+
+// cmApproach2::SyncPorts @ 0x82279418 | size: 0x0C
+void cmApproach2::SyncPorts(void* portCtx) {
+    extern "C" void cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
+    cmPort_SyncValue(this, *(void**)((char*)this + 40), portCtx);
+}
+
+// cmApproach2::Tick @ 0x82279428 | size: 0x80
+// Accumulates dt/speed into m_progress (+44), clamped to [0,1].
+void cmApproach2::Tick() {
+    extern float g_cmFrameScale;  // @ 0x825C4958
+
+    // scaledDt = 1.0f * g_cmFrameScale (constant 1.0 verified at table+8)
+    float scaledDt = g_cmFrameScale;
+
+    // Read speed from portC (+28)
+    float speed = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
+
+    // Compute approach increment: dt / speed
+    float increment = scaledDt / speed;
+
+    // Accumulate into progress
+    float progress = *(float*)((char*)this + 44) + increment;
+
+    // Clamp to [0, 1] using fsel idiom
+    if (progress < 0.0f) progress = 0.0f;
+    if (progress > 1.0f) progress = 1.0f;
+
+    *(float*)((char*)this + 44) = progress;
+}
+
+// cmApproach2::Allocate @ 0x82279348 | size: 0x7C
+void cmApproach2::Allocate() {
+    extern "C" void rage_free(void* ptr);
+    extern "C" void xe_main_thread_init_0038();
+    extern "C" void cmReporter_Init(void* reporter);
+
+    xe_main_thread_init_0038();
+    extern void** g_tls_base;
+    void* allocator = g_tls_base[1];
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    void** allocVt = *(void***)allocator;
+    void* newBuf = ((AllocFn)allocVt[1])(allocator, 32, 16);
+
+    if (newBuf) {
+        *(uint8_t*)((char*)newBuf + 16) = 0;
+        *(uint8_t*)((char*)newBuf + 17) = 0;
+        cmReporter_Init(newBuf);
+    }
+
+    *(void**)((char*)this + 40) = newBuf;
+    uint8_t outputType = *(uint8_t*)((char*)this + 4);
+    *(uint8_t*)((char*)newBuf + 16) = outputType;
+}
+
 // cmAngleLerp — TODO (RegisterPorts @ 0x82262620)
 // cmAngleLinearApproach::Tick @ 0x82278F10 — TODO (216 bytes)
 // cmAnglePowerApproach::Tick @ 0x82278E58 — TODO
-// cmApproach2 — TODO (cmApproach2_vfn_10 @ 0x82279428)
 
 // ── cmCapture — captures and holds a snapshot of portA. vtable @ 0x820569AC ──
 // Stateful node: stores a copy of the current input value in a 32-byte
