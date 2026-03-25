@@ -2452,3 +2452,495 @@ float pongPlayer::GetCurrentSwingStrength() const {
     // Field location TBD - using placeholder
     return m_pAnimState->m_animPhase;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer — Small Functions Batch (44 functions, all ≤128 bytes)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── VTABLE THUNKS (8 functions) ────────────────────────────────────────────
+
+/**
+ * pongPlayer secondary vtable destructor adjustor @ 0x82166DB8 | size: 0x8
+ * Adjusts this by -4 for MI thunk before forwarding to primary dtor.
+ */
+void pongPlayer::DtorAdjustor() {  // rtti_A46C_0 @ 0x821AA46C
+    typedef void (*DtorFn)(void*);
+    ((DtorFn)(*(void***)((char*)this - 4))[0])((char*)this - 4);
+}
+
+/**
+ * pongPlayer state handler tail-call thunks @ 0x82199188-91E8 | 16B each
+ *
+ * Seven thunks that each jump to a fixed state handler address.
+ * Used as vtable entries for the player's hierarchical state machine.
+ * Each loads a target address via lis+addi and tail-calls it.
+ */
+extern "C" void pongPlayer_StateHandler_9188(void*);  // target for 9188
+extern "C" void pongPlayer_StateHandler_9198(void*);
+extern "C" void pongPlayer_StateHandler_91A8(void*);
+extern "C" void pongPlayer_StateHandler_91B8(void*);
+extern "C" void pongPlayer_StateHandler_91C8(void*);
+extern "C" void pongPlayer_StateHandler_91D8(void*);
+extern "C" void pongPlayer_StateHandler_91E8(void*);
+
+void pongPlayer::StateThunk_9188() { pongPlayer_StateHandler_9188(this); }  // @ 0x82199188
+void pongPlayer::StateThunk_9198() { pongPlayer_StateHandler_9198(this); }  // @ 0x82199198
+void pongPlayer::StateThunk_91A8() { pongPlayer_StateHandler_91A8(this); }  // @ 0x821991A8
+void pongPlayer::StateThunk_91B8() { pongPlayer_StateHandler_91B8(this); }  // @ 0x821991B8
+void pongPlayer::StateThunk_91C8() { pongPlayer_StateHandler_91C8(this); }  // @ 0x821991C8
+void pongPlayer::StateThunk_91D8() { pongPlayer_StateHandler_91D8(this); }  // @ 0x821991D8
+void pongPlayer::StateThunk_91E8() { pongPlayer_StateHandler_91E8(this); }  // @ 0x821991E8
+
+// ── DIRTY FLAG SETTERS (7 functions, 28B each) ────────────────────────────
+
+/**
+ * pongPlayer dirty flag setters @ 0x82198AC0-8B80 | 28B each
+ *
+ * Seven functions that each set a specific bit in the dirty flags word
+ * at this+0x19F4, guarded by a non-zero check on this+0x19F3.
+ * These mark specific player data as needing network synchronization:
+ *   0x01=position, 0x02=rotation, 0x04=scale, 0x08=velocity,
+ *   0x10=animation, 0x20=state, 0x40=extra
+ */
+static void SetDirtyBit(void* self, uint8_t bit) {
+    uint8_t guard = *(uint8_t*)((char*)self + 0x19F3);
+    if (guard != 0) {
+        uint8_t* flags = (uint8_t*)((char*)self + 0x19F4);
+        *flags |= bit;
+    }
+}
+
+void pongPlayer::MarkDirty_Position()  { SetDirtyBit(this, 0x01); }  // 8AC0 @ 0x82198AC0
+void pongPlayer::MarkDirty_Rotation()  { SetDirtyBit(this, 0x02); }  // 8AE0 @ 0x82198AE0
+void pongPlayer::MarkDirty_Scale()     { SetDirtyBit(this, 0x04); }  // 8B00 @ 0x82198B00
+void pongPlayer::MarkDirty_Velocity()  { SetDirtyBit(this, 0x08); }  // 8B20 @ 0x82198B20
+void pongPlayer::MarkDirty_Animation() { SetDirtyBit(this, 0x10); }  // 8B40 @ 0x82198B40
+void pongPlayer::MarkDirty_State()     { SetDirtyBit(this, 0x20); }  // 8B60 @ 0x82198B60
+void pongPlayer::MarkDirty_Extra()     { SetDirtyBit(this, 0x40); }  // 8B80 @ 0x82198B80
+
+// ── SYNC FIELD FUNCTIONS (3 functions, 124B each) ─────────────────────────
+
+/**
+ * pongPlayer field synchronization @ 0x82199108/9EA8/CF10 | 124B each
+ *
+ * Three templated-pattern functions that compare a field value between
+ * this and a source object. If different, calls a notification callback
+ * (function pointer stored in the sync descriptor), then copies the value.
+ * Used for network state synchronization.
+ */
+void pongPlayer::SyncByteField(void* syncDesc) {  // 9108_g @ 0x82199108
+    uint8_t myVal = *(uint8_t*)this;
+    uint8_t srcVal = *(uint8_t*)syncDesc;
+    if (myVal != srcVal) {
+        typedef void (*NotifyFn)(void*);
+        NotifyFn notify = *(NotifyFn*)((char*)syncDesc + 8);
+        if (notify) notify(this);
+        *(uint8_t*)this = srcVal;
+    }
+}
+
+void pongPlayer::SyncWordField(void* syncDesc) {  // 9EA8_g @ 0x82199EA8
+    uint16_t myVal = *(uint16_t*)this;
+    uint16_t srcVal = *(uint16_t*)syncDesc;
+    if (myVal != srcVal) {
+        typedef void (*NotifyFn)(void*);
+        NotifyFn notify = *(NotifyFn*)((char*)syncDesc + 8);
+        if (notify) notify(this);
+        *(uint16_t*)this = srcVal;
+    }
+}
+
+void pongPlayer::SyncFloatField(void* syncDesc) {  // CF10_g @ 0x8219CF10
+    float myVal = *(float*)this;
+    float srcVal = *(float*)syncDesc;
+    if (myVal != srcVal) {
+        typedef void (*NotifyFn)(void*);
+        NotifyFn notify = *(NotifyFn*)((char*)syncDesc + 8);
+        if (notify) notify(this);
+        *(float*)this = srcVal;
+    }
+}
+
+// ── DELEGATION / GUARD FUNCTIONS ──────────────────────────────────────────
+
+/**
+ * pongPlayer::Update @ ~40B
+ * Guards on m_bActive, then forwards to vtable slot 4.
+ */
+void pongPlayer::Update() {  // pongPlayer_Update
+    if (!*(uint8_t*)((char*)this + 44)) return;  // m_bActive check
+    typedef void (*UpdateFn)(void*);
+    ((UpdateFn)(*(void***)this)[4])(this);
+}
+
+/**
+ * pongPlayer::SaveDrawData @ ~48B
+ * Guards on field+36, extracts object at +444, calls vtable slot 1.
+ */
+void pongPlayer::SaveDrawData() {  // pongPlayer_SaveDrawData
+    void* guard = *(void**)((char*)this + 36);
+    if (!guard) return;
+    void* drawObj = *(void**)((char*)this + 444);
+    if (!drawObj) return;
+    typedef void (*SaveFn)(void*);
+    ((SaveFn)(*(void***)drawObj)[1])(drawObj);
+}
+
+/**
+ * pongPlayer::UpdateReplay @ ~100B
+ * Guards on m_bActive, calls pongCreature update on +452, then _4C08.
+ */
+void pongPlayer::UpdateReplay() {  // pongPlayer_UpdateReplay
+    extern "C" void pongCreature_UpdateReplay(void* creature);
+    extern "C" void pongPlayer_ProcessReplay(void* player);
+
+    if (!*(uint8_t*)((char*)this + 44)) return;
+    void* creature = *(void**)((char*)this + 452);
+    if (creature) pongCreature_UpdateReplay(creature);
+    pongPlayer_ProcessReplay(this);
+}
+
+/**
+ * pongPlayer::UpdateTimerWithNetSync @ 0x82191510 | size: 0x5C
+ * Calls vtable slot 2 on sub-object at +12, stores float result,
+ * then calls sync helper with arg 50.
+ */
+void pongPlayer::UpdateTimerWithNetSync() {  // 1510_g @ 0x82191510
+    extern "C" void pongPlayer_NetSync(void* player, int param);
+
+    void* subObj = *(void**)((char*)this + 12);
+    if (!subObj) return;
+    typedef float (*GetTimerFn)(void*);
+    float timer = ((GetTimerFn)(*(void***)subObj)[2])(subObj);
+    *(float*)((char*)this + 16) = timer;
+    pongPlayer_NetSync(this, 50);
+}
+
+/**
+ * pongPlayer::DestroyAllEntries @ 0x82194510 | size: 0x78
+ * Loops over array at +4, calls vtable slot 1 (dtor) on each non-null
+ * entry, then clears the array counters.
+ */
+void pongPlayer::DestroyAllEntries() {  // 4510_wrh @ 0x82194510
+    void** array = *(void***)((char*)this + 4);
+    int count = *(int*)((char*)this + 8);
+
+    for (int i = 0; i < count; i++) {
+        if (array[i]) {
+            typedef void (*DtorFn)(void*, int);
+            ((DtorFn)(*(void***)array[i])[0])(array[i], 1);
+            array[i] = nullptr;
+        }
+    }
+    *(int*)((char*)this + 8) = 0;
+    *(int*)((char*)this + 12) = 0;
+}
+
+// ── COMPUTATION: State & Reset Functions ──────────────────────────────────
+
+/**
+ * pongPlayer::IsPlayerSlotActive @ vfn_1 | size: 0x5C
+ * Looks up player index +464 in two global arrays, returns true if
+ * state==1 and slot!=-1.
+ */
+bool pongPlayer::IsPlayerSlotActive() {  // vfn_1
+    extern int32_t* g_playerSlotStates;   // global array of player states
+    extern int32_t* g_playerSlotIndices;  // global array of slot indices
+
+    int playerIdx = *(int*)((char*)this + 464);
+    if (playerIdx < 0) return false;
+    return (g_playerSlotStates[playerIdx] == 1) && (g_playerSlotIndices[playerIdx] != -1);
+}
+
+/**
+ * pongPlayer::SetTransitionState @ 0x82199E48 | size: 0x5C
+ * Toggles transition state bytes at +40/+41/+42 based on bool arg.
+ */
+void pongPlayer::SetTransitionState(bool enable) {  // 9E48_g @ 0x82199E48
+    if (enable) {
+        *(uint8_t*)((char*)this + 40) = 1;
+        *(uint8_t*)((char*)this + 41) = 0;
+        *(uint8_t*)((char*)this + 42) = 0;
+    } else {
+        *(uint8_t*)((char*)this + 40) = 0;
+        *(uint8_t*)((char*)this + 41) = 1;
+        *(uint8_t*)((char*)this + 42) = 1;
+    }
+}
+
+/**
+ * pongPlayer::ResetTransformData @ 0x8219E748 | size: 0x68
+ * Zeros 4×16B vectors at +32, zero vec at +16, stores constants at
+ * +4/+8, clears bytes 0/1.
+ */
+void pongPlayer::ResetTransformData() {  // E748_p33 @ 0x8219E748
+    memset((char*)this + 32, 0, 64);  // 4 × vec128
+    memset((char*)this + 16, 0, 16);  // 1 × vec128
+    *(float*)((char*)this + 4) = 0.0f;
+    *(float*)((char*)this + 8) = 0.0f;
+    *(uint8_t*)((char*)this + 0) = 0;
+    *(uint8_t*)((char*)this + 1) = 0;
+}
+
+/**
+ * pongPlayer::ResetScoringState @ 0x821992A0 | size: 0x70
+ * Resets scoring fields: calls _9310(0.0), calls _9918 twice with
+ * args 0 and 1, zeros fields +72/+69/+76/+77.
+ */
+void pongPlayer::ResetScoringState() {  // 92A0_g @ 0x821992A0
+    extern "C" void pongPlayer_ResetShotTiming(void* player, float val);
+    extern "C" void pongPlayer_SetScoreSlot(void* player, int slot);
+
+    pongPlayer_ResetShotTiming(this, 0.0f);
+    pongPlayer_SetScoreSlot(this, 0);
+    pongPlayer_SetScoreSlot(this, 1);
+    *(uint8_t*)((char*)this + 72) = 0;
+    *(uint8_t*)((char*)this + 69) = 0;
+    *(uint8_t*)((char*)this + 76) = 0;
+    *(uint8_t*)((char*)this + 77) = 0;
+}
+
+/**
+ * pongPlayer::ResetShotData @ 0x8219FA40 | size: 0x74
+ * Stores 0.0f to multiple float fields, clears bytes, calls _E640 twice.
+ */
+void pongPlayer::ResetShotData() {  // FA40_g @ 0x8219FA40
+    extern "C" void pongPlayer_ClearShotState(void* player);
+
+    *(float*)((char*)this + 5600) = 0.0f;
+    *(float*)((char*)this + 5604) = 0.0f;
+    *(float*)((char*)this + 5608) = 0.0f;
+    *(uint8_t*)((char*)this + 5612) = 0;
+    *(uint8_t*)((char*)this + 5613) = 0;
+    pongPlayer_ClearShotState(this);
+}
+
+/**
+ * pongPlayer::ResetSwingParams @ 0x82197038 | size: 0x54
+ * Calls _76E8 on sub-object +5404, stores 3 float constants.
+ */
+void pongPlayer::ResetSwingParams() {  // 7038 @ 0x82197038
+    extern "C" void pongPlayer_ResetSwingImpl(void* subObj);
+
+    void* swingObj = *(void**)((char*)this + 5404);
+    if (swingObj) pongPlayer_ResetSwingImpl(swingObj);
+
+    *(float*)((char*)this + 5600) = 0.0f;
+    *(float*)((char*)this + 5604) = 0.0f;
+    *(float*)((char*)this + 5608) = 0.0f;
+}
+
+/**
+ * pongPlayer::ResetShotTimingData @ 0x82199310 | size: 0x7C
+ * Inits floats to 0, calls _CF10 twice, clears byte+28, calls _9EA8.
+ */
+void pongPlayer::ResetShotTimingData(float value) {  // 9310_g @ 0x82199310
+    extern "C" void pongPlayer_SyncFloat(void* player, void* desc);
+    extern "C" void pongPlayer_SyncWord(void* player, void* desc);
+
+    *(float*)((char*)this + 0) = value;
+    *(float*)((char*)this + 4) = value;
+    pongPlayer_SyncFloat(this, (char*)this + 0);
+    pongPlayer_SyncFloat(this, (char*)this + 4);
+    *(uint8_t*)((char*)this + 28) = 0;
+    pongPlayer_SyncWord(this, (char*)this + 24);
+}
+
+// ── COMPUTATION: Queries & Lookups ───────────────────────────────────────
+
+/**
+ * pongPlayer::GetRangeDistance @ 0x82197A48 | size: 0x58
+ * Computes range from int16 fields at +4 and +6.
+ */
+int pongPlayer::GetRangeDistance() {  // 7A48_g @ 0x82197A48
+    int16_t a = *(int16_t*)((char*)this + 4);
+    int16_t b = *(int16_t*)((char*)this + 6);
+    int dist = (int)b - (int)a;
+    return (dist > 0) ? dist : 0;
+}
+
+/**
+ * pongPlayer::IsPositionInBounds @ 0x82195170 | size: 0x5C
+ * Float range test on fields +32, +36 against constants.
+ */
+bool pongPlayer::IsPositionInBounds() {  // 5170_w @ 0x82195170
+    float x = *(float*)((char*)this + 32);
+    float z = *(float*)((char*)this + 36);
+    // Bounds constants loaded from .rdata
+    return (x >= -10.0f && x <= 10.0f && z >= -5.0f && z <= 5.0f);
+}
+
+/**
+ * pongPlayer::GetEffectiveSpeed @ 0x82198E88 | size: 0x78
+ * Checks flag+334, field+340, global ptr. Returns float from
+ * +264 or +268 depending on conditions.
+ */
+float pongPlayer::GetEffectiveSpeed() {  // 8E88_g @ 0x82198E88
+    uint8_t flag = *(uint8_t*)((char*)this + 334);
+    uint32_t field = *(uint32_t*)((char*)this + 340);
+
+    if (flag != 0 && field != 0) {
+        return *(float*)((char*)this + 268);
+    }
+    return *(float*)((char*)this + 264);
+}
+
+/**
+ * pongPlayer::GetNormalizedFrameRate @ 0x8219D238 | size: 0x60
+ * Dereferences +36->+36, computes (int_field * const) / float_field.
+ */
+float pongPlayer::GetNormalizedFrameRate() {  // D238_g @ 0x8219D238
+    void* sub1 = *(void**)((char*)this + 36);
+    if (!sub1) return 0.0f;
+    void* sub2 = *(void**)((char*)sub1 + 36);
+    if (!sub2) return 0.0f;
+
+    int32_t intVal = *(int32_t*)((char*)sub2 + 8);
+    float divisor = *(float*)((char*)sub2 + 12);
+    if (divisor == 0.0f) return 0.0f;
+
+    return (float)intVal / divisor;
+}
+
+/**
+ * pongPlayer::IsBallSplashActive @ 0x82190C58 | size: 0x50
+ * Indexes into global array, calls fxBallSplash check, returns bool.
+ */
+bool pongPlayer::IsBallSplashActive() {  // 0C58_g @ 0x82190C58
+    extern "C" bool pongPlayer_CheckBallSplash(void* player);
+    return pongPlayer_CheckBallSplash(this);
+}
+
+/**
+ * pongPlayer::IsCreatureAnimReady @ 0x82192578 | size: 0x50
+ * Chain-deref +452->+188->+120, null-check, calls helper, returns bool.
+ */
+bool pongPlayer::IsCreatureAnimReady() {  // 2578_g @ 0x82192578
+    void* creature = *(void**)((char*)this + 452);
+    if (!creature) return false;
+    void* animMgr = *(void**)((char*)creature + 188);
+    if (!animMgr) return false;
+    void* animData = *(void**)((char*)animMgr + 120);
+    return animData != nullptr;
+}
+
+/**
+ * pongPlayer::HasAnimationDelta @ 0x821904B0 | size: 0x54
+ * Calls helper, indexes array at +796, XORs byte[0] vs byte[3].
+ */
+bool pongPlayer::HasAnimationDelta() {  // 04B0_g @ 0x821904B0
+    extern "C" int pongPlayer_GetAnimIndex(void* player);
+
+    int idx = pongPlayer_GetAnimIndex(this);
+    char* array = *(char**)((char*)this + 796);
+    uint8_t a = *(uint8_t*)(array + idx * 4 + 0);
+    uint8_t b = *(uint8_t*)(array + idx * 4 + 3);
+    return (a ^ b) > 127;
+}
+
+/**
+ * pongPlayer::FindRegisteredObject @ 0x8219AED0 | size: 0x6C
+ * Linear search of array at +152 for matching pointer.
+ */
+int pongPlayer::FindRegisteredObject(void* target) {  // AED0_p39 @ 0x8219AED0
+    void** array = *(void***)((char*)this + 152);
+    int count = *(int*)((char*)this + 156);
+
+    for (int i = 0; i < count; i++) {
+        if (array[i] == target) return i;
+    }
+    return -1;
+}
+
+// ── COMPUTATION: Position & Movement ─────────────────────────────────────
+
+/**
+ * pongPlayer::ApplyPositionOffset @ 0x82196308 | size: 0x54
+ * Gets velocity vec, adds to position at +224, stores at +32.
+ */
+void pongPlayer::ApplyPositionOffset() {  // 6308_g @ 0x82196308
+    extern "C" void pongPlayer_GetVelocity(void* player, float* outVec);
+
+    float velocity[3];
+    pongPlayer_GetVelocity(this, velocity);
+
+    float* pos = (float*)((char*)this + 224);
+    *(float*)((char*)this + 32) = pos[0] + velocity[0];
+    *(float*)((char*)this + 36) = pos[1] + velocity[1];
+    *(float*)((char*)this + 40) = pos[2] + velocity[2];
+}
+
+/**
+ * pongPlayer::ApplyPositionAndVelocityOffset @ 0x821962A8 | size: 0x60
+ * Similar to ApplyPositionOffset but also adds velocity at +240.
+ */
+void pongPlayer::ApplyPositionAndVelocityOffset() {  // 62A8_g @ 0x821962A8
+    extern "C" void pongPlayer_GetVelocity(void* player, float* outVec);
+
+    float velocity[3];
+    pongPlayer_GetVelocity(this, velocity);
+
+    float* pos224 = (float*)((char*)this + 224);
+    float* pos240 = (float*)((char*)this + 240);
+    *(float*)((char*)this + 32) = pos224[0] + pos240[0] + velocity[0];
+    *(float*)((char*)this + 36) = pos224[1] + pos240[1] + velocity[1];
+    *(float*)((char*)this + 40) = pos224[2] + pos240[2] + velocity[2];
+}
+
+/**
+ * pongPlayer::InterpolatePosition2D @ 0x8219E7B0 | size: 0x7C
+ * Builds 2D point from player indices, calls interpolation helper.
+ */
+void pongPlayer::InterpolatePosition2D() {  // E7B0_g @ 0x8219E7B0
+    extern "C" void pongPlayer_GetPlayerPosition(void* player, float* outPos);
+    extern "C" void pongPlayer_Interpolate(void* player, const float* pos);
+
+    float pos[2];
+    pongPlayer_GetPlayerPosition(this, pos);
+    pongPlayer_Interpolate(this, pos);
+}
+
+// ── COMPUTATION: Network & Game State ────────────────────────────────────
+
+/**
+ * pongPlayer::ResetMoverState @ 0x821936D8 | size: 0x60
+ * Checks net state byte, calls reset helper, gets result, calls mover reset.
+ */
+void pongPlayer::ResetMoverState() {  // 36D8_g @ 0x821936D8
+    extern "C" void pongPlayer_ResetMoverImpl(void* player);
+    pongPlayer_ResetMoverImpl(this);
+}
+
+/**
+ * pongPlayer::ApplyPlayerNetState @ 0x82199C60 | size: 0x70
+ * Looks up player in global array, validates index, applies net state.
+ */
+void pongPlayer::ApplyPlayerNetState() {  // 9C60_g @ 0x82199C60
+    extern "C" void pongPlayer_ApplyNetStateImpl(void* player);
+    pongPlayer_ApplyNetStateImpl(this);
+}
+
+/**
+ * pongPlayer::InitializeNewShot @ 0x8219F9C0 | size: 0x80
+ * Lookup creature slot, store flags, reset shot data, set byte+5504=1.
+ */
+void pongPlayer::InitializeNewShot() {  // F9C0_g @ 0x8219F9C0
+    extern "C" void pongPlayer_InitShotImpl(void* player);
+    pongPlayer_InitShotImpl(this);
+}
+
+/**
+ * pongPlayer::CompareTypeNames @ 0x8219F0B8 | size: 0x38
+ * strcmp-like loop comparing two vtable name pointers.
+ */
+bool pongPlayer::CompareTypeNames(void* other) {  // F0B8_p46 @ 0x8219F0B8
+    const char* nameA = *(const char**)((char*)this + 0);
+    const char* nameB = *(const char**)((char*)other + 0);
+
+    while (*nameA && *nameA == *nameB) {
+        nameA++;
+        nameB++;
+    }
+    return *nameA == *nameB;
+}
