@@ -112,28 +112,24 @@ swfSCRIPTOBJECT::~swfSCRIPTOBJECT() {
 }
 
 /**
- * swfSCRIPTOBJECT::vfn_6() @ 0x823FED10 | size: 0x8
- * 
- * Virtual function slot 6 - returns immediately (no-op).
+ * swfSCRIPTOBJECT::EnumerateMembers @ 0x823FED10 | size: 0x8
+ *
+ * Delegates to the SYMTAB member table at +4 for property enumeration.
  */
-void swfSCRIPTOBJECT::vfn_6() {
-    // No-op - just returns
+void swfSCRIPTOBJECT::EnumerateMembers() {
+    extern "C" void swfSymtab_Enumerate(void* symtab);
+    swfSymtab_Enumerate((char*)this + 4);
 }
 
 /**
- * swfSCRIPTOBJECT::vfn_8() @ 0x823F8B48 | size: 0x24
- * 
- * Virtual function slot 8 - minimal implementation.
- */
-/**
- * swfSCRIPTOBJECT::GetPropertyCount @ 0x823F8B48 | size: 0x24
+ * swfSCRIPTOBJECT::GetMemberCount @ 0x823F8B48 | size: 0x24
  *
- * Counts properties by walking the linked list at +4.
- * Each node has a next pointer at +12. Returns the count.
+ * Returns the number of properties on this script object by walking
+ * the SYMTAB linked list at +4. Each node's next pointer is at +12.
  */
-int swfSCRIPTOBJECT::vfn_8() {
+int swfSCRIPTOBJECT::GetMemberCount() {
     int count = 0;
-    void* node = *(void**)((char*)this + 4);
+    void* node = m_pMemberTable;
     while (node) {
         count++;
         node = *(void**)((char*)node + 12);
@@ -142,135 +138,206 @@ int swfSCRIPTOBJECT::vfn_8() {
 }
 
 /**
- * swfSCRIPTOBJECT::vfn_9() @ 0x823FC1A0 | size: 0x8
- * 
- * Virtual function slot 9 - returns immediately (no-op).
+ * swfSCRIPTOBJECT::VisitMembers @ 0x823FC1A0 | size: 0x8
+ *
+ * No-op stub — intended for garbage collection or debug traversal.
  */
-void swfSCRIPTOBJECT::vfn_9() {
-    // No-op - just returns
+void swfSCRIPTOBJECT::VisitMembers() {
+    // No-op
 }
 
 /**
- * swfSCRIPTOBJECT::vfn_10() @ 0x823FBFC0 | size: 0x1DC
- * 
- * Virtual function slot 10 - complex implementation.
+ * swfSCRIPTOBJECT::GetMember @ 0x823FBFC0 | size: 0x1DC
+ *
+ * ActionScript GetMember — resolves a named property on this object.
+ * Special-cases "this" (returns self as type 5/object) and "prototype"
+ * (returns prototype chain entry at +12, allocating from pool if needed).
+ * Falls back to SYMTAB lookup on the local member table, then the global
+ * object table, then the global scope chain.
+ *
+ * @param name   Interned property name to look up
+ * @param result Output: {value, type} pair written on success
+ * @return       true if found, false otherwise
  */
-void swfSCRIPTOBJECT::vfn_10() {
-    // TODO: Implement based on assembly analysis
+bool swfSCRIPTOBJECT::GetMember(const char* name, void* result) {
+    extern void* g_swfStringBuffer;       // @ 0x82604850
+    extern void* g_swfGlobalObject;       // @ 0x82602818
+    extern void* g_swfGlobalScope;        // @ 0x8260282C
+    extern "C" const char* swfInternString(const char* name, void* buffer, int maxLen);
+    extern "C" void* swfSymtab_Lookup(void* symtab, const char* key);
+    extern "C" void nop_8240E6D0(const char* msg, ...);
+
+    // Intern the property name
+    const char* interned = swfInternString(name, &g_swfStringBuffer, 1024);
+
+    // Special case: "this" — return self as object
+    if (strcmp(interned, "this") == 0) {
+        *(void**)result = this;
+        *((uint32_t*)result + 1) = 5;  // type 5 = object
+        return true;
+    }
+
+    // Special case: "prototype" — return prototype chain object
+    if (strcmp(interned, "prototype") == 0) {
+        void* proto = *(void**)((char*)this + 12);  // m_pPrototype
+        if (!proto) {
+            // Allocate a new prototype object from the pool
+            extern void* g_swfScriptObjectPool;
+            void** pool = (void**)g_swfScriptObjectPool;
+            void* freeObj = *(void**)((char*)pool + 12);
+            uint16_t count = *(uint16_t*)((char*)pool + 6);
+            void* next = *(void**)freeObj;
+
+            *(uint16_t*)((char*)pool + 6) = count + 1;
+            *(void**)((char*)pool + 12) = next;
+
+            if (freeObj) {
+                // Initialize the new object
+                extern void* g_vtable_swfSCRIPTOBJECT;  // @ 0x82074D14
+                *(void**)freeObj = &g_vtable_swfSCRIPTOBJECT;
+                *((uint32_t*)((char*)freeObj + 8)) = 0;
+                *((uint32_t*)((char*)freeObj + 4)) = 0;
+                *((uint32_t*)((char*)freeObj + 12)) = 0;
+            }
+            *(void**)((char*)this + 12) = freeObj;
+        }
+        // Return prototype
+        *((uint32_t*)result + 1) = 5;  // type 5 = object
+        *(void**)result = *(void**)((char*)this + 12);
+        return true;
+    }
+
+    // General case: search local SYMTAB
+    void* entry = swfSymtab_Lookup((char*)this + 4, interned);
+    if (entry) {
+        *(uint32_t*)result = *(uint32_t*)entry;
+        *((uint32_t*)result + 1) = *((uint32_t*)entry + 1);
+        return true;
+    }
+
+    // Fallback: search global object table
+    entry = swfSymtab_Lookup(g_swfGlobalObject, interned);
+    if (entry) {
+        *(uint32_t*)result = *(uint32_t*)entry;
+        *((uint32_t*)result + 1) = *((uint32_t*)entry + 1);
+        return true;
+    }
+
+    // Fallback: search global scope chain
+    void* scopeSymtab = (char*)g_swfGlobalScope + 4;
+    entry = swfSymtab_Lookup(scopeSymtab, interned);
+    if (entry) {
+        *(uint32_t*)result = *(uint32_t*)entry;
+        *((uint32_t*)result + 1) = *((uint32_t*)entry + 1);
+        return true;
+    }
+
+    return false;
 }
 
-/**
- * swfSCRIPTOBJECT::vfn_11() @ 0x823FC8A8 | size: 0x5C
- * 
- * Virtual function slot 11.
- */
 /**
  * swfSCRIPTOBJECT::SetMember @ 0x823FC8A8 | size: 0x5C
  *
- * Sets a named member on this script object. Looks up the name in a
- * global string buffer, then inserts a (name, value) pair into the
- * property table at +4.
+ * Sets a named property on this script object. Interns the name string,
+ * then inserts the (name, value) pair into the SYMTAB member table at +4.
  */
-void swfSCRIPTOBJECT::vfn_11(const char* name, void* value) {
-    extern void* g_swfStringBuffer;  // @ 0x82606850
-    extern "C" const char* swfLookupString(void* buffer, const char* name, int maxLen);
+void swfSCRIPTOBJECT::SetMember(const char* name, void* value) {
+    extern void* g_swfStringBuffer;  // @ 0x82604850
+    extern "C" const char* swfInternString(const char* name, void* buffer, int maxLen);
     extern "C" void swfSymtab_Insert(void* symtab, const char* key, void* value);
 
-    const char* internedName = swfLookupString(&g_swfStringBuffer, name, 1024);
+    const char* internedName = swfInternString(name, &g_swfStringBuffer, 1024);
     swfSymtab_Insert((char*)this + 4, internedName, value);
 }
 
 /**
- * swfSCRIPTOBJECT::vfn_12() @ 0x823FC848 | size: 0x60
- * 
- * Virtual function slot 12.
- */
-/**
  * swfSCRIPTOBJECT::DeleteMember @ 0x823FC848 | size: 0x60
  *
- * Deletes a named member. First calls vfn_10 (SetMember with undefined
- * value) to notify observers, then removes the key from the property
- * table at +4.
+ * Deletes a named property. Builds an {name, 1} "undefined" pair on
+ * the stack, calls GetMember (vtable slot 10) to notify watchers,
+ * then removes the key from the SYMTAB.
  */
-void swfSCRIPTOBJECT::vfn_12(const char* name) {
+void swfSCRIPTOBJECT::DeleteMember(const char* name) {
     extern "C" void swfSymtab_Delete(void* symtab, const char* key);
 
-    // Build an "undefined" value on the stack and call vfn_10 to set it
-    struct { uint32_t value; uint32_t type; } undefinedVal = { 0, 1 };
-    typedef void (*SetMemberFunc)(void*, const char*, void*);
+    // Build a stack pair: {name_ptr, type=1 (undefined)}
+    struct { uint32_t nameRef; uint32_t type; } undefinedPair;
+    undefinedPair.nameRef = (uint32_t)(uintptr_t)name;
+    undefinedPair.type = 1;
+
+    // Notify via GetMember (vtable slot 10)
+    typedef bool (*GetMemberFunc)(void*, void*, void*);
     void** vtable = *(void***)this;
-    SetMemberFunc setMember = (SetMemberFunc)vtable[10];
-    setMember(this, name, &undefinedVal);
+    GetMemberFunc getMember = (GetMemberFunc)vtable[10];
+    getMember(this, &undefinedPair, &undefinedPair);
 
     // Remove from symbol table
     swfSymtab_Delete((char*)this + 4, name);
 }
 
 /**
- * swfSCRIPTOBJECT::vfn_13() @ 0x823FEA28 | size: 0x120
- * 
- * Virtual function slot 13.
- */
-/**
- * swfSCRIPTOBJECT::CallMethod @ 0x823FEA28 | size: 0x120
+ * swfSCRIPTOBJECT::Invoke @ 0x823FEA28 | size: 0x120
  *
- * Calls a method on this script object by name. Looks up the named
- * property via vfn_10, then depending on the result type:
- *   type 6: function pointer — calls it with (this, args, argCount, outResult)
- *   type 5: object reference — calls vfn_14 on the object with args
- *   other/not found: logs error and sets result to undefined (type 3)
+ * ActionScript method invocation. Looks up the named method via
+ * GetMember (vtable slot 10), then dispatches based on result type:
+ *   type 6: native C function — direct call with (this, args, nArgs, outResult)
+ *   type 5: script object — calls Execute (vtable slot 14) on it
+ *   not found: logs "Unsupported script method: %s", sets result to {0, type=3}
+ *
+ * For type-5 calls, checks if the call stack depth increased (indicating
+ * a return value was pushed), and copies the result from the stack.
  */
-void swfSCRIPTOBJECT::vfn_13(const char* methodName, void* args, int argCount, void* outResult) {
+void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, void* outResult) {
     extern "C" void nop_8240E6D0(const char* msg, ...);
 
-    // Look up the method property via vfn_10 (GetMember)
-    struct { uint32_t value; uint32_t type; } lookupResult = { 0, 7 };  // type 7 = lookup request
-    struct { uint32_t nameRef; uint32_t flags; } nameData = { (uint32_t)(uintptr_t)methodName, 1 };
+    // Set up GetMember call: lookupKey = {methodName, type=7 (string)}
+    // lookupResult = {0, 0} (will be filled in)
+    struct swfValue { uint32_t data; uint32_t type; };
+    swfValue lookupKey = { (uint32_t)(uintptr_t)methodName, 7 };
+    swfValue lookupResult = { 0, 0 };
 
-    typedef bool (*GetMemberFunc)(void*, void*, void*);
+    // Call GetMember (vtable slot 10)
+    typedef bool (*GetMemberFunc)(void*, swfValue*, swfValue*);
     void** vtable = *(void***)this;
     GetMemberFunc getMember = (GetMemberFunc)vtable[10];
-    bool found = getMember(this, &nameData, &lookupResult);
+    bool found = getMember(this, &lookupKey, &lookupResult);
 
     if (!found) {
-        // Method not found — log error and return undefined
-        nop_8240E6D0("swfSCRIPTOBJECT::CallMethod - method '%s' not found", methodName);
-        *(uint32_t*)outResult = 0;
-        *(uint32_t*)((char*)outResult + 4) = 3;  // type 3 = undefined
+        // Method not found
+        nop_8240E6D0("Unsupported script method: %s", methodName);
+        ((swfValue*)outResult)->data = 0;
+        ((swfValue*)outResult)->type = 3;  // type 3 = undefined
         return;
     }
 
-    // Dispatch based on result type
+    // Initialize result to {0, type=5}
+    ((swfValue*)outResult)->data = 0;
+    ((swfValue*)outResult)->type = 5;
+
     if (lookupResult.type == 6) {
-        // Direct function pointer call
-        typedef void (*ScriptFunc)(void*, void*, int, void*);
-        ScriptFunc fn = (ScriptFunc)(uintptr_t)lookupResult.value;
+        // Type 6: native function pointer — call directly
+        typedef void (*NativeFunc)(void*, void*, int, void*);
+        NativeFunc fn = (NativeFunc)(uintptr_t)lookupResult.data;
         fn(this, args, argCount, outResult);
     } else if (lookupResult.type == 5) {
-        // Object with callable interface — call vfn_14
-        void* callableObj = (void*)(uintptr_t)lookupResult.value;
+        // Type 5: script object — call its Execute method (vtable slot 14)
+        void* callableObj = (void*)(uintptr_t)lookupResult.data;
 
-        // Check if call stack depth increased
         extern uint32_t g_swfCallDepth;  // @ 0x826064EC
         uint32_t prevDepth = g_swfCallDepth;
 
-        typedef void (*ObjCallFunc)(void*, void*, int, void*, int);
+        typedef void (*ExecuteFunc)(void*, void*, int, void*, int);
         void** objVtable = *(void***)callableObj;
-        ObjCallFunc objCall = (ObjCallFunc)objVtable[14];
-        objCall(callableObj, args, argCount, this, 0);
+        ExecuteFunc execute = (ExecuteFunc)objVtable[14];
+        execute(callableObj, args, argCount, this, 0);
 
-        if (g_swfCallDepth > prevDepth) {
-            // Call produced a result — copy from stack
-            extern "C" void swfCopyResult(void* dst);
-            swfCopyResult(outResult);
-            *(uint32_t*)outResult = *(uint32_t*)((char*)outResult + 0);
-            *(uint32_t*)((char*)outResult + 4) = *(uint32_t*)((char*)outResult + 4);
+        // If call stack depth increased, a return value was pushed
+        if ((int32_t)g_swfCallDepth > (int32_t)prevDepth) {
+            extern "C" void swfPopResult(void* dst);
+            swfPopResult(outResult);
         }
-    } else {
-        // Not callable
-        *(uint32_t*)outResult = 0;
-        *(uint32_t*)((char*)outResult + 4) = 5;  // type 5 = default
     }
+    // Other types: return the default {0, 5}
 }
 
 void swfSCRIPTOBJECT_ScalarDestructor(swfSCRIPTOBJECT* obj, int flags) {
@@ -522,20 +589,27 @@ void swfCMD_DoInitAction::vfn_2() {
 
 
 /**
- * swfFILE::FindExport @ 0x823F9DC8 | size: 0xBC
+ * swfFILE::FindExportFrame @ 0x823F9DC8 | size: 0xBC
  *
- * Searches the file's export table (+20, count at +46) for a named
- * export matching the given name. Entries at type==5 have a string
- * name at entry+192. Comparison is case-insensitive (_stricmp).
- * If found, calls a helper to compute the export's frame-relative
- * position. If not found, logs error and returns 0.0f.
+ * Searches the file's export/label table for a named frame label.
+ * The export array is at +20, count at +46. Each entry with type
+ * byte == 5 (at entry+4) has a name string at entry+192.
+ * Comparison is case-insensitive via _stricmp.
+ *
+ * If found, computes the frame-relative position by calling a helper
+ * that returns a normalized float, then scales by a global factor
+ * and the input frameRate. If not found, logs an error and returns 0.0f.
+ *
+ * @param frameRate   Input time scale (passed in f1)
+ * @param labelName   Frame label to search for
+ * @param context     Timeline context for position computation
+ * @return            Frame position scaled by frameRate, or 0.0f if not found
  */
-float swfFILE::vfn_10(const char* exportName, void* context) {
+float swfFILE::FindExportFrame(float frameRate, const char* labelName, void* context) {
     extern "C" int _stricmp(const char*, const char*);
     extern "C" void nop_8240E6D0(const char* msg, ...);
-    extern "C" float swfComputeExportPosition(void* ctx, void* entry, float* outA, float* outB);
+    extern "C" float swfComputeFramePosition(void* ctx, void* entry, float* outMin, float* outMax);
 
-    // Search export table
     uint16_t exportCount = *(uint16_t*)((char*)this + 46);
     void** exportArray = *(void***)((char*)this + 20);
 
@@ -543,23 +617,24 @@ float swfFILE::vfn_10(const char* exportName, void* context) {
         void* entry = exportArray[i];
         if (!entry) continue;
 
-        // Check if entry is an export type (type byte at +4 == 5)
         uint8_t entryType = *(uint8_t*)((char*)entry + 4);
         if (entryType != 5) continue;
 
-        // Compare name at entry+192 (case-insensitive)
         const char* entryName = (const char*)((char*)entry + 192);
-        if (_stricmp(entryName, exportName) == 0) {
-            // Found — compute position
-            float outA, outB;
-            float result = swfComputeExportPosition(context, entry, &outA, &outB);
-            // Original: result * globalScale * inputScale
-            return result;
+        if (_stricmp(entryName, labelName) == 0) {
+            // Found — compute frame position and scale
+            float outMin, outMax;
+            float basePosition = swfComputeFramePosition(context, entry, &outMin, &outMax);
+            // Scale: basePosition * globalFrameScale * inputFrameRate
+            extern float g_swfFrameScale;  // @ 0x82079B90
+            return basePosition * g_swfFrameScale * frameRate;
         }
     }
 
-    // Not found
-    nop_8240E6D0("swfFILE::FindExport - export '%s' not found", exportName);
+    // Not found — log and return zero
+    // Error string @ 0x82076C80: "Couldn't find font with which..."
+    // (reused for "not found" in this context)
+    nop_8240E6D0("Couldn't find frame label '%s'", labelName);
     return 0.0f;
 }
 
@@ -673,28 +748,20 @@ void swfACTIONFUNC::vfn_10() { /* TODO */ }
  * the SWF object pool's free list.
  */
 swfSCRIPTARRAY::~swfSCRIPTARRAY() {
-    extern void* g_vtable_swfSCRIPTARRAY;  // @ 0x8207534C
-    extern "C" void rage_free(void* ptr);
-    extern "C" void swfSCRIPTOBJECT_Destructor(void* obj);  // @ 0x823F8AE0
-
-    // Set vtable to own class
-    *(void**)this = &g_vtable_swfSCRIPTARRAY;
-
-    // Free element array if allocated
+    // Free element array (at +16) if capacity (uint16 at +22) > 0
     uint16_t capacity = *(uint16_t*)((char*)this + 22);
     if (capacity > 0) {
         void* elements = *(void**)((char*)this + 16);
         rage_free(elements);
     }
-
-    // Call base class destructor
-    swfSCRIPTOBJECT_Destructor(this);
+    // swfSCRIPTOBJECT base destructor runs automatically via C++ chain
 }
 
 
 
-void swfSCRIPTARRAY::vfn_10() { /* TODO */ }
-void swfSCRIPTARRAY::vfn_11() { /* TODO */ }
+// swfSCRIPTARRAY overrides GetMember/SetMember for array-style access
+void swfSCRIPTARRAY::GetMember() { /* TODO: array-indexed GetMember */ }
+void swfSCRIPTARRAY::SetMember() { /* TODO: array-indexed SetMember */ }
 
 
 // ===========================================================================
