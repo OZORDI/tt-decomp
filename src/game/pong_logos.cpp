@@ -94,7 +94,7 @@ extern "C" const char* pongLogosState_GetName(pongLogosState* self) {
  * 
  * Returns 1 (likely CONTEXT_TYPE_LOGOS or similar enum value).
  */
-extern "C" uint32_t pongLogosContext_ProcessInput(pongLogosContext* self) {
+extern "C" uint32_t pongLogosContext_GetType(pongLogosContext* self) {
     return 1;
 }
 
@@ -107,7 +107,7 @@ extern "C" uint32_t pongLogosContext_ProcessInput(pongLogosContext* self) {
  * 
  * This is slot 16 in the hsmContext vtable.
  */
-extern "C" void pongLogosContext_OnUpdate(pongLogosContext* self) {
+extern "C" void pongLogosContext_Update(pongLogosContext* self) {
     // Check if graphics device has finished displaying logos
     void* grcDevice = g_grcDevice_ptr;
     uint8_t isComplete = ShowPageGroup(grcDevice);
@@ -130,7 +130,7 @@ extern "C" void pongLogosContext_OnUpdate(pongLogosContext* self) {
  * 
  * This is slot 18 in the hsmContext vtable.
  */
-extern "C" void pongLogosContext_OnShutdown(pongLogosContext* self) {
+extern "C" void pongLogosContext_Render(pongLogosContext* self) {
     void* grcDevice = g_grcDevice_ptr;
     DismissPageGroup(grcDevice);
 }
@@ -239,7 +239,7 @@ extern "C" void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateId
  * 
  * This is slot 14 in the hsmState vtable.
  */
-extern "C" void pongLogosState_ProcessInput(pongLogosState* self) {
+extern "C" void pongLogosState_Init(pongLogosState* self) {
     // Get allocator from SDA (Small Data Area)
     xe_main_thread_init_0038();  // Ensure TLS is initialized
     
