@@ -46,6 +46,7 @@ set(SOURCES
     src/crt/string.c
     src/globals.c
     src/globals_extended.c
+    src/globals_linker.cpp
     src/stubs_remaining.c
     
     # XAM (Xbox Application Model)
