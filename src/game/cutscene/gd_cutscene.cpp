@@ -122,7 +122,7 @@ void gdCutSceneData::PostLoadProperties() {
     m_cutsceneId = atSingleton_F6B8_p39(m_pCutsceneName);
     
     if (m_cutsceneId == 0) {
-        nop_8240E6D0("gdCutSceneData::PostLoadProperties() - unknown cutscene name '%s'", 
+        nop_8240E6D0(g_str_gdCutSceneData_unknownSkip,
                      m_pCutsceneName);
     }
 }
@@ -206,7 +206,7 @@ void gdCSActionIfData::PostLoadProperties() {
     
     if (!m_pConditionType) {
         m_conditionEnum = 7;  // Invalid/unknown
-        nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - no condition type");
+        nop_8240E6D0(g_str_gdCSActionIfData_unknownCondition);
         return;
     }
     
@@ -232,7 +232,7 @@ void gdCSActionIfData::PostLoadProperties() {
     m_conditionEnum = conditionIndex;
     
     if (conditionIndex == 7) {
-        nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - unknown condition type");
+        nop_8240E6D0(g_str_gdCSActionIfData_unknownCondition);
         return;
     }
     
@@ -244,30 +244,30 @@ void gdCSActionIfData::PostLoadProperties() {
         case 3:  // OPPONENT_SCORE_EQUAL
             // These require m_conditionParam to be set (not -1)
             if (m_conditionParam == 0xFFFFFFFF) {
-                nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - score condition missing parameter");
+                nop_8240E6D0(g_str_gdCSActionIfData_needsPlayerId);
             }
             break;
             
         case 4:  // OPPONENT_SCORE_GREATER
             // Requires parameter and must be <= 100
             if (m_conditionParam == 0xFFFFFFFF) {
-                nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - score condition missing parameter");
+                nop_8240E6D0(g_str_gdCSActionIfData_needsPercent);
             } else if (m_conditionParam > 100) {
-                nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - score parameter > %d", 100);
+                nop_8240E6D0(g_str_gdCSActionIfData_percentExceeds, 100);
             }
             break;
             
         case 5:  // OPPONENT_SCORE_LESS
             // Requires then actions to be set
             if (!m_pThenActions) {
-                nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - missing then actions");
+                nop_8240E6D0(g_str_gdCSActionIfData_needsGameType);
             }
             break;
             
         case 6:  // RANDOM_PERCENT
             // Requires else actions to be set
             if (!m_pElseActions) {
-                nop_8240E6D0("gdCSActionIfData::PostLoadProperties() - missing else actions");
+                nop_8240E6D0(g_str_gdCSActionIfData_needsArenaType);
             }
             break;
     }
@@ -298,7 +298,7 @@ void gdCSActionCamAnimData::PostLoadProperties() {
     xmlNodeStruct_vfn_2(this);
     
     if (!m_pCameraName || m_pCameraName[0] == '\0') {
-        nop_8240E6D0("gdCSActionCamAnimData::PostLoadProperties() - missing property 'FileName'");
+        nop_8240E6D0(g_str_gdCSActionCamAnimData_missingFileName);
     }
 }
 
@@ -320,12 +320,12 @@ void gdCSActionCharAnimData::PostLoadProperties() {
     
     // Validate character ID is set
     if (m_characterId == -1) {
-        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing property 'PlayerID'");
+        nop_8240E6D0(g_str_gdCSActionCharAnimData_missingPlayerId);
     }
     
     // Validate animation name is not empty
     if (!m_pAnimName || m_pAnimName[0] == '\0') {
-        nop_8240E6D0("gdCSActionCharAnimData::PostLoadProperties() - missing property 'FileName'");
+        nop_8240E6D0(g_str_gdCSActionCharAnimData_missingFileName);
     }
 }
 
@@ -346,7 +346,7 @@ void gdCSActionCharVisibleData::PostLoadProperties() {
     xmlNodeStruct_vfn_2(this);
     
     if (m_characterId == -1) {
-        nop_8240E6D0("gdCSActionCharVisibleData::PostLoadProperties() - missing property 'PlayerID'");
+        nop_8240E6D0(g_str_gdCSActionCharVisibleData_missingPlayerId);
     }
 }
 
@@ -375,12 +375,12 @@ void gdCSActionPlayAudioData::PostLoadProperties() {
     
     // Validate audio type is not empty
     if (!m_pAudioType || m_pAudioType[0] == '\0') {
-        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEventType'");
+        nop_8240E6D0(g_str_gdCSActionPlayAudioData_missingAudioType);
     }
     
     // Validate audio name is not empty
     if (!m_pAudioName || m_pAudioName[0] == '\0') {
-        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEvent'");
+        nop_8240E6D0(g_str_gdCSActionPlayAudioData_missingAudioEvent);
     }
     
     // Parse audio type
@@ -389,7 +389,7 @@ void gdCSActionPlayAudioData::PostLoadProperties() {
     } else if (_stricmp(m_pAudioType, "SOUND") == 0) {
         m_audioTypeEnum = 1;
     } else {
-        nop_8240E6D0("gdCSActionPlayAudioData::PostLoadProperties() - unknown audio type '%s'", 
+        nop_8240E6D0(g_str_gdCSActionPlayAudioData_unknownAudioType,
                      m_pAudioType);
     }
     
