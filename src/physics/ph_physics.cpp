@@ -3306,3 +3306,101 @@ float phArticulatedCollider::GetScaledFloat() {  // 4670
 bool phArticulatedCollider::IsElementActive(int index) {  // E1B0
     return *(uint8_t*)((char*)this + index + 176) != 0;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst — Remaining Small Functions (8 functions, 20-60B each)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * phInst::StoreSizeConstant @ 0x824631A0 | size: 0x14
+ * Stores the constant 0x4BA24 (309796) to *outParam and returns 0.
+ * This is the serialized size of the phInst data block.
+ */
+int phInst::StoreSizeConstant(uint32_t* outParam) {  // 31A0_p39
+    *outParam = 0x4BA24;
+    return 0;
+}
+
+/**
+ * phInst::ForwardToVtableSlot13_At124 @ 0x8248D828 | size: 0x18  [vtable slot 14]
+ * Dispatches to vtable slot 13 with (this, r4, r5, 40, this+124).
+ * Forwards a matrix operation to the embedded transform at offset +124.
+ */
+void phInst::DispatchTransformA(void* arg1, void* arg2) {  // vfn_14_D828_1
+    typedef void (*Fn)(void*, void*, void*, int, void*);
+    void** vt = *(void***)this;
+    ((Fn)vt[13])(this, arg1, arg2, 40, (char*)this + 124);
+}
+
+/**
+ * phInst::InitVtables_5910 @ 0x82465910 | size: 0x28
+ * Constructor helper — sets three vtable pointers on the object.
+ * Primary vtable at +0 = 0x82005918, secondary at +4 = 0x82003DB0.
+ */
+void phInst::InitTripleVtable() {  // 5910_p39
+    *(void**)((char*)this + 0) = (void*)0x82005918;
+    // +4 first written as 0x820058FC, then overwritten with 0x82003DB0
+    *(void**)((char*)this + 4) = (void*)0x82003DB0;
+}
+
+/**
+ * phInst::InitWithParam @ 0x82461508 | size: 0x38
+ * Constructor that takes a parameter object. Sets vtable pointers,
+ * stores 1 at +8, copies param->field_4 to this+12, then sets
+ * final vtable pair.
+ */
+void phInst::InitWithParam(void* param) {  // 1508_2hr
+    *(uint32_t*)((char*)this + 8) = 1;
+    *(uint32_t*)((char*)this + 12) = *(uint32_t*)((char*)param + 4);
+    *(void**)((char*)this + 0) = (void*)0x8200586C;
+    *(void**)((char*)this + 4) = (void*)0x82005850;
+}
+
+/**
+ * phInst::GetSubObjectPtr @ 0x8246C1A0 | size: 0x3C
+ * Calls phInst_BFB8_2hr to find a sub-object, adds 24 to the result,
+ * stores it to *outPtr, and returns 0.
+ */
+int phInst::GetSubObjectPtr(void** outPtr) {  // C1A0_2hr
+    extern "C" void* phInst_BFB8_2hr(void* obj);
+    void* result = phInst_BFB8_2hr(this);
+    *outPtr = (char*)result + 24;
+    return 0;
+}
+
+/**
+ * phInst::SetPhysicsLayer @ 0x82359310 | size: 0x14
+ * Masks the page-aligned portion of field+36 and field+20,
+ * tail-calls the graphics resource setup function.
+ */
+void phInst::SetPhysicsLayer(void* arg) {  // 9310_p42
+    extern "C" void grc_SetupResource(void* a, void* b);
+    uint32_t val36 = *(uint32_t*)((char*)this + 36) & 0xFFFFF000;
+    uint32_t val20 = *(uint32_t*)((char*)this + 20) & 0xFFFFF000;
+    grc_SetupResource((void*)(uintptr_t)val36, (void*)(uintptr_t)val20);
+}
+
+/**
+ * phInst::ConditionalForward @ 0x8256B610 | size: 0x14
+ * Conditionally zeroes r5 based on a flag, then tail-calls
+ * the message sink broadcast function.
+ */
+void phInst::ConditionalBroadcast(void* msg, bool includeData) {  // B610_p42
+    extern "C" void msgMsgSink_Broadcast(void* sink, void* msg, void* data);
+    msgMsgSink_Broadcast(this, msg, includeData ? msg : nullptr);
+}
+
+/**
+ * phInst::ReadMMIOAndStore @ 0x8246AC00 | size: 0x18
+ * Reads a 32-bit value from MMIO address 0x7FEA1800, byte-swaps it,
+ * and stores to a global at 0x825E7890.
+ */
+void phInst::ReadMMIOAndStore() {  // AC00_2hr
+    volatile uint32_t* mmioReg = (volatile uint32_t*)(uintptr_t)0x7FEA1800;
+    uint32_t rawValue = *mmioReg;
+    // Byte-swap (big-endian MMIO → little-endian)
+    uint32_t swapped = __builtin_bswap32(rawValue);
+    extern uint32_t g_mmioStoredValue;  // @ 0x825E7890
+    g_mmioStoredValue = swapped;
+}
