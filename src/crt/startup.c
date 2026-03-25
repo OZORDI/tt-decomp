@@ -81,10 +81,10 @@ void RtlEnterCriticalSection(void* criticalSection);       /* @ 0x82585E0C */
 void RtlLeaveCriticalSection(void* criticalSection);       /* @ 0x82585DFC */
 int __cinit_impl(void);                                    /* @ 0x82433D00 */
 void* _crt_tls_fiber_setup(void);                          /* @ 0x82566B78 */
-void* fiAsciiTokenizer_3FB8_g(int type, int code);         /* @ 0x82433FB8 */
-void fiAsciiTokenizer_ReadNextLine(void);                       /* @ 0x82433D88 */
-void fiAsciiTokenizer_SkipWhitespace(int initFlag);               /* @ 0x82434090 */
-void fiAsciiTokenizer_FinalizeTokenizer(void);                       /* @ 0x8242FCA8 */
+void* _calloc_crt(int count, int size);                    /* @ 0x82433FB8 */
+void _tls_dtor_cleanup(void);                              /* @ 0x82433D88 */
+void _crt_tls_callback(int initFlag);                      /* @ 0x82434090 */
+void _crt_fiber_destroy(void);                             /* @ 0x8242FCA8 */
 int _KeTlsAlloc_thunk(void* destructorThunk);              /* @ 0x8242FB70 */
 void* ke_KeTlsGetValue_621C(uint32_t tlsIndex);            /* @ 0x8258621C */
 int ke_KeTlsSetValue_622C(uint32_t tlsIndex, void* value); /* @ 0x8258622C */
@@ -230,15 +230,15 @@ void _doexit_error(void)
         g_cinit_retval = -1;
     }
 
-    fiAsciiTokenizer_ReadNextLine();
+    _tls_dtor_cleanup();
 }
 
 /**
  * _cinit_setup @ 0x8242FDC8 | size: 0x108
  *
  * Sets up TLS dispatch callbacks, runs __cinit_impl, allocates one TLS slot
- * with destructor thunk fiAsciiTokenizer_FinalizeTokenizer, creates the fiber context,
- * and registers fiAsciiTokenizer_SkipWhitespace in the CRT init callback list.
+ * with destructor thunk _crt_fiber_destroy, creates the fiber context,
+ * and registers _crt_tls_callback in the CRT init callback list.
  */
 int _cinit_setup(void)
 {
@@ -252,13 +252,13 @@ int _cinit_setup(void)
         return 0;
     }
 
-    g_cinit_retval = g_tls_dispatch.m_tlsAlloc((void*)(uintptr_t)fiAsciiTokenizer_FinalizeTokenizer);
+    g_cinit_retval = g_tls_dispatch.m_tlsAlloc((void*)(uintptr_t)_crt_fiber_destroy);
     if (g_cinit_retval == -1) {
         _doexit_error();
         return 0;
     }
 
-    CrtFiberContext* fiberContext = (CrtFiberContext*)fiAsciiTokenizer_3FB8_g(1, 204);
+    CrtFiberContext* fiberContext = (CrtFiberContext*)_calloc_crt(1, 204);
     if (fiberContext == NULL) {
         _doexit_error();
         return 0;
@@ -274,7 +274,7 @@ int _cinit_setup(void)
     fiberContext->m_tlsFiberValue = (uint32_t)(uintptr_t)_crt_tls_fiber_setup();
     fiberContext->m_tlsFiberIndex = -1;
 
-    g_cinit_list_node.m_callback = fiAsciiTokenizer_SkipWhitespace;
+    g_cinit_list_node.m_callback = _crt_tls_callback;
     _crt_critsec_init(&g_cinit_list_node.m_links, 1);
     return 1;
 }

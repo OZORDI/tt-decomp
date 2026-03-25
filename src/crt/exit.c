@@ -34,8 +34,8 @@ void  _crt_spinlock_acquire(int id);
 void  _crt_spinlock_release(int id);
 void  _run_table(void** start, void** end);
 void  KeBugCheck(int code);
-void* fiAsciiTokenizer_3B28_g(void);          /* grow atexit table */
-void* fiAsciiTokenizer_3650_g(size_t newSz, size_t minSz); /* realloc helper */
+void* _expand_crt(void);                      /* grow atexit table */
+void* _realloc_crt(size_t newSz, size_t minSz); /* realloc helper */
 
 
 /**
@@ -70,10 +70,10 @@ void* _onexit(void (*fn)(void))
         size_t grow = (used <= 2048) ? (size_t)used : 2048;
         size_t newSz = grow + used;
 
-        void* newTable = fiAsciiTokenizer_3650_g(newSz * sizeof(void*), (used + 16) * sizeof(void*));
+        void* newTable = _realloc_crt(newSz * sizeof(void*), (used + 16) * sizeof(void*));
         if (!newTable) {
             /* Growth failed — try minimal 16-entry growth */
-            newTable = fiAsciiTokenizer_3650_g((used + 16) * sizeof(void*), 0);
+            newTable = _realloc_crt((used + 16) * sizeof(void*), 0);
             if (!newTable) {
                 /* Total failure — cannot register */
                 _crt_spinlock_release(8);

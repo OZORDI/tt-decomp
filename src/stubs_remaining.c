@@ -174,15 +174,15 @@ void datRef_Release(void* ref) {
 // File I/O Functions
 // ============================================================================
 
-void fiAsciiTokenizer_3650_g(void* tokenizer) {
+void _realloc_crt(void* tokenizer) {
     (void)tokenizer;
 }
 
-void fiAsciiTokenizer_3FB8_g(void* tokenizer) {
+void _calloc_crt(void* tokenizer) {
     (void)tokenizer;
 }
 
-void fiAsciiTokenizer_FinalizeTokenizer(void* tokenizer) {
+void _crt_fiber_destroy(void* tokenizer) {
     (void)tokenizer;
 }
 
@@ -190,11 +190,11 @@ void fiAsciiTokenizer_InitializeTokenizer(void* tokenizer) {
     (void)tokenizer;
 }
 
-void fiAsciiTokenizer_ReadNextLine(void* tokenizer) {
+void _tls_dtor_cleanup(void* tokenizer) {
     (void)tokenizer;
 }
 
-void fiAsciiTokenizer_SkipWhitespace(void* tokenizer) {
+void _crt_tls_callback(void* tokenizer) {
     (void)tokenizer;
 }
 
