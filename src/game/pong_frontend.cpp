@@ -1044,3 +1044,558 @@ void pg_CBAC_sp() {
     // Display game mode string
     sub_821BD8E0(displayCtx);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Small Function Implementations (≤64B)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// CCalMoviePlayer is the movie/video playback system for the game.
+// It uses Xbox 360 kernel synchronization primitives (KEVENT objects)
+// for thread-safe signaling between the decode thread and game thread.
+//
+// The class contains an array of 8 KEVENT objects starting at offset +84,
+// each 16 bytes apart (stride 16). These events synchronize:
+//   - Frame decode completion
+//   - Buffer availability
+//   - Playback state transitions
+//
+// Field layout (partial):
+//   +0x00   : vtable pointer
+//   +0x30   : buffer base pointer (offset 48)
+//   +0x34   : total buffer count (offset 52)
+//   +0x38   : read index (offset 56)
+//   +0x3C   : write index (offset 60)
+//   +0x40   : change callback function pointer (offset 64)
+//   +0x44   : semaphore / ref count (offset 68)
+//   +0x50   : callback context pointer (offset 80)
+//   +0x54   : event object 0 (offset 84)  — KEVENT
+//   +0x64   : event object 1 (offset 100)
+//   +0x74   : event object 2 (offset 116)
+//   +0x84   : event object 3 (offset 132)
+//   +0x94   : event object 4 (offset 148)
+//   +0xA4   : event object 5 (offset 164)
+//   +0xB4   : event object 6 (offset 180)
+//   +0xC4   : event object 7 (offset 196)
+//   +0xD4   : state field A (offset 212)
+//   +0xD8   : state field B (offset 216)
+//   +0xDC   : state field C (offset 220)
+//   +0xE0   : state field D (offset 224)
+//   +0xE4   : state field E (offset 228)
+//   +0x7C   : width * height (offset 124/128 for 3F00_h)
+//   +0x2888 : fiber/thread context pointer (offset 10376 for EB30/EB70)
+
+// Forward declarations for Xbox 360 kernel synchronization primitives
+extern "C" {
+    // Xbox kernel event functions
+    long KeWaitForSingleObject(void* object, int waitReason, int waitMode, int alertable, void* timeout);
+    long KeSetEvent(void* event, long increment, int wait);
+    long KeResetEvent(void* event);
+
+    // Debug output
+    void DbgPrint(const char* format, ...);
+
+    // TLS fiber setup — returns current fiber/thread context
+    void* _crt_tls_fiber_setup();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 1: Field Getters (8B each — load word + return)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Returns state field at offset +212 (width or state A).
+/// CCalMoviePlayer::GetStateA @ 0x8248EEE8 | size: 0x08
+uint32_t CCalMoviePlayer::GetStateA() {
+    return *(uint32_t*)((char*)this + 212);
+}
+
+/// Returns state field at offset +216 (height or state B).
+/// CCalMoviePlayer::GetStateB @ 0x8248EEF0 | size: 0x08
+uint32_t CCalMoviePlayer::GetStateB() {
+    return *(uint32_t*)((char*)this + 216);
+}
+
+/// Returns state field at offset +220 (frame rate or state C).
+/// CCalMoviePlayer::GetStateC @ 0x8248EEF8 | size: 0x08
+uint32_t CCalMoviePlayer::GetStateC() {
+    return *(uint32_t*)((char*)this + 220);
+}
+
+/// Returns state field at offset +224.
+/// CCalMoviePlayer::GetStateD @ 0x8248EF00 | size: 0x08
+uint32_t CCalMoviePlayer::GetStateD() {
+    return *(uint32_t*)((char*)this + 224);
+}
+
+/// Returns state field at offset +228.
+/// CCalMoviePlayer::GetStateE @ 0x8248EF08 | size: 0x08
+uint32_t CCalMoviePlayer::GetStateE() {
+    return *(uint32_t*)((char*)this + 228);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 2: KeWaitForSingleObject wrappers (24B each)
+// Wait on KEVENT objects with WaitReason=3, WaitMode=1, Alertable=0, Timeout=NULL
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Waits on event object 0 (offset +84).
+/// CCalMoviePlayer::WaitForEvent0 @ 0x8248ED88 | size: 0x18
+void CCalMoviePlayer::WaitForEvent0() {
+    KeWaitForSingleObject((char*)this + 84, 3, 1, 0, nullptr);
+}
+
+/// Waits on event object 1 (offset +100).
+/// CCalMoviePlayer::WaitForEvent1 @ 0x8248EDA0 | size: 0x18
+void CCalMoviePlayer::WaitForEvent1() {
+    KeWaitForSingleObject((char*)this + 100, 3, 1, 0, nullptr);
+}
+
+/// Waits on event object 2 (offset +116).
+/// CCalMoviePlayer::WaitForEvent2 @ 0x8248EDB8 | size: 0x18
+void CCalMoviePlayer::WaitForEvent2() {
+    KeWaitForSingleObject((char*)this + 116, 3, 1, 0, nullptr);
+}
+
+/// Waits on event object 3 (offset +132).
+/// CCalMoviePlayer::WaitForEvent3 @ 0x8248EDD0 | size: 0x18
+void CCalMoviePlayer::WaitForEvent3() {
+    KeWaitForSingleObject((char*)this + 132, 3, 1, 0, nullptr);
+}
+
+/// Waits on event object 4 (offset +148).
+/// CCalMoviePlayer::WaitForEvent4 @ 0x8248EDE8 | size: 0x18
+void CCalMoviePlayer::WaitForEvent4() {
+    KeWaitForSingleObject((char*)this + 148, 3, 1, 0, nullptr);
+}
+
+/// Waits on event object 5 (offset +164).
+/// CCalMoviePlayer::WaitForEvent5 @ 0x8248EE00 | size: 0x18
+void CCalMoviePlayer::WaitForEvent5() {
+    KeWaitForSingleObject((char*)this + 164, 3, 1, 0, nullptr);
+}
+
+/// Waits on event object 6 (offset +180).
+/// CCalMoviePlayer::WaitForEvent6 @ 0x8248EE18 | size: 0x18
+void CCalMoviePlayer::WaitForEvent6() {
+    KeWaitForSingleObject((char*)this + 180, 3, 1, 0, nullptr);
+}
+
+/// Waits on event object 7 (offset +196).
+/// CCalMoviePlayer::WaitForEvent7 @ 0x8248EE30 | size: 0x18
+void CCalMoviePlayer::WaitForEvent7() {
+    KeWaitForSingleObject((char*)this + 196, 3, 1, 0, nullptr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 3: KeSetEvent wrappers (16B each)
+// Signal KEVENT objects with Increment=1, Wait=0
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Signals event object 0 (offset +84).
+/// CCalMoviePlayer::SignalEvent0 @ 0x8248EE48 | size: 0x10
+void CCalMoviePlayer::SignalEvent0() {
+    KeSetEvent((char*)this + 84, 1, 0);
+}
+
+/// Signals event object 1 (offset +100).
+/// CCalMoviePlayer::SignalEvent1 @ 0x8248EE58 | size: 0x10
+void CCalMoviePlayer::SignalEvent1() {
+    KeSetEvent((char*)this + 100, 1, 0);
+}
+
+/// Signals event object 2 (offset +116).
+/// CCalMoviePlayer::SignalEvent2 @ 0x8248EE68 | size: 0x10
+void CCalMoviePlayer::SignalEvent2() {
+    KeSetEvent((char*)this + 116, 1, 0);
+}
+
+/// Signals event object 3 (offset +132).
+/// CCalMoviePlayer::SignalEvent3 @ 0x8248EE78 | size: 0x10
+void CCalMoviePlayer::SignalEvent3() {
+    KeSetEvent((char*)this + 132, 1, 0);
+}
+
+/// Signals event object 4 (offset +148).
+/// CCalMoviePlayer::SignalEvent4 @ 0x8248EE88 | size: 0x10
+void CCalMoviePlayer::SignalEvent4() {
+    KeSetEvent((char*)this + 148, 1, 0);
+}
+
+/// Signals event object 5 (offset +164).
+/// CCalMoviePlayer::SignalEvent5 @ 0x8248EE98 | size: 0x10
+void CCalMoviePlayer::SignalEvent5() {
+    KeSetEvent((char*)this + 164, 1, 0);
+}
+
+/// Signals event object 6 (offset +180).
+/// CCalMoviePlayer::SignalEvent6 @ 0x8248EEA8 | size: 0x10
+void CCalMoviePlayer::SignalEvent6() {
+    KeSetEvent((char*)this + 180, 1, 0);
+}
+
+/// Signals event object 7 (offset +196).
+/// CCalMoviePlayer::SignalEvent7 @ 0x8248EEB8 | size: 0x10
+void CCalMoviePlayer::SignalEvent7() {
+    KeSetEvent((char*)this + 196, 1, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 4: KeResetEvent wrappers (8B each)
+// Reset KEVENT objects at offsets +148, +164, +180, +196
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Resets event object at offset +148.
+/// CCalMoviePlayer::ResetEvent4 @ 0x8248EEC8 | size: 0x08
+void CCalMoviePlayer::ResetEvent4() {
+    KeResetEvent((char*)this + 148);
+}
+
+/// Resets event object at offset +164.
+/// CCalMoviePlayer::ResetEvent5 @ 0x8248EED0 | size: 0x08
+void CCalMoviePlayer::ResetEvent5() {
+    KeResetEvent((char*)this + 164);
+}
+
+/// Resets event object at offset +180.
+/// CCalMoviePlayer::ResetEvent6 @ 0x8248EED8 | size: 0x08
+void CCalMoviePlayer::ResetEvent6() {
+    KeResetEvent((char*)this + 180);
+}
+
+/// Resets event object at offset +196.
+/// CCalMoviePlayer::ResetEvent7 @ 0x8248EEE0 | size: 0x08
+void CCalMoviePlayer::ResetEvent7() {
+    KeResetEvent((char*)this + 196);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 5: Field Subtraction Getter (16B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Returns remaining buffer count: total (offset +52) minus consumed (offset +68).
+/// CCalMoviePlayer::GetRemainingBuffers @ 0x8248DBD0 | size: 0x10
+int32_t CCalMoviePlayer::GetRemainingBuffers() {
+    int32_t total = *(int32_t*)((char*)this + 52);
+    int32_t consumed = *(int32_t*)((char*)this + 68);
+    return total - consumed;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 6: Setters with Change Callback (44B each)
+// Store new value, and if changed, invoke callback via function pointer
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Sets state field A (offset +212); invokes change callback if value changed.
+/// CCalMoviePlayer::SetStateA @ 0x8248EF10 | size: 0x2C
+void CCalMoviePlayer::SetStateA(int32_t value) {
+    int32_t old = *(int32_t*)((char*)this + 212);
+    *(int32_t*)((char*)this + 212) = value;
+    if (old == value) return;
+
+    // Change callback function pointer at offset +64
+    typedef void (*CallbackFn)(void* context);
+    CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+    if (!callback) return;
+
+    // Callback context at offset +80
+    void* context = *(void**)((char*)this + 80);
+    callback(context);
+}
+
+/// Sets state field B (offset +216); invokes change callback if value changed.
+/// CCalMoviePlayer::SetStateB @ 0x8248EF40 | size: 0x2C
+void CCalMoviePlayer::SetStateB(int32_t value) {
+    int32_t old = *(int32_t*)((char*)this + 216);
+    *(int32_t*)((char*)this + 216) = value;
+    if (old == value) return;
+
+    typedef void (*CallbackFn)(void* context);
+    CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+    if (!callback) return;
+
+    void* context = *(void**)((char*)this + 80);
+    callback(context);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 7: Virtual Dispatch Thunks (16-28B)
+// Thin wrappers that load vtable and tail-call a virtual function
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Dispatches to vtable slot 14 (offset +56) with this passed as r6.
+/// CCalMoviePlayer::DispatchVSlot14 @ 0x8248E2D0 | size: 0x14
+void CCalMoviePlayer::DispatchVSlot14() {
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)this;
+    ((VFunc)vtable[14])(this);
+}
+
+/// Dispatches to vtable slot 19 (offset +76), unpacking args from r4.
+/// r4 -> { +0: ?, +4: second arg, +8: third arg }
+/// CCalMoviePlayer::DispatchVSlot19WithArgs @ 0x8248E418 | size: 0x1C
+void CCalMoviePlayer::DispatchVSlot19WithArgs(void* args) {
+    typedef void (*VFunc)(void* self, uint32_t param, void* extra, void* context);
+    void** vtable = *(void***)this;
+    uint32_t param = *(uint32_t*)((char*)args + 4);
+    void* extra = (char*)args + 8;
+    ((VFunc)vtable[19])(this, param, extra, args);
+}
+
+/// Dispatches to vtable slot 19 (offset +76) with param=0.
+/// CCalMoviePlayer::DispatchVSlot19NoArgs @ 0x8248E438 | size: 0x14
+void CCalMoviePlayer::DispatchVSlot19NoArgs() {
+    typedef void (*VFunc)(void* self, uint32_t param, uint32_t extra, uint32_t context);
+    void** vtable = *(void***)this;
+    ((VFunc)vtable[19])(this, 0, 0, 0);
+}
+
+/// Dispatches to vtable slot 32 (offset +128).
+/// CCalMoviePlayer::DispatchVSlot32 @ 0x8248EC68 | size: 0x10
+void CCalMoviePlayer::DispatchVSlot32() {
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)this;
+    ((VFunc)vtable[32])(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 8: Virtual Call + Return Zero (48B each)
+// Call a virtual function then return 0 (STATUS_SUCCESS pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Calls vtable slot 34 and returns 0.
+/// CCalMoviePlayer::CallVSlot34ReturnZero @ 0x8248EC88 | size: 0x30
+int32_t CCalMoviePlayer::CallVSlot34ReturnZero() {
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)this;
+    ((VFunc)vtable[34])(this);
+    return 0;
+}
+
+/// Calls vtable slot 35 and returns 0.
+/// CCalMoviePlayer::CallVSlot35ReturnZero @ 0x8248ECB8 | size: 0x30
+int32_t CCalMoviePlayer::CallVSlot35ReturnZero() {
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)this;
+    ((VFunc)vtable[35])(this);
+    return 0;
+}
+
+/// Calls vtable slot 36 and returns 0.
+/// CCalMoviePlayer::CallVSlot36ReturnZero @ 0x8248ECE8 | size: 0x30
+int32_t CCalMoviePlayer::CallVSlot36ReturnZero() {
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)this;
+    ((VFunc)vtable[36])(this);
+    return 0;
+}
+
+/// Calls vtable slot 37 and returns 0.
+/// CCalMoviePlayer::CallVSlot37ReturnZero @ 0x8248ED18 | size: 0x30
+int32_t CCalMoviePlayer::CallVSlot37ReturnZero() {
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)this;
+    ((VFunc)vtable[37])(this);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 9: Debug Print Stubs (56B each)
+// Print a debug message and return STATUS_NOT_IMPLEMENTED (0x80004001)
+// These are unimplemented media control functions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Debug format string @ 0x82008ACC
+// Debug param strings @ 0x82009280 (Rewind), 0x82009298 (Seek)
+
+/// Rewind stub — prints debug message, returns STATUS_NOT_IMPLEMENTED.
+/// CCalMoviePlayer::Rewind @ 0x8248E758 | size: 0x38
+uint32_t CCalMoviePlayer::Rewind() {
+    DbgPrint((const char*)0x82008ACC, (const char*)0x82009280);
+    return 0x80004001;  // STATUS_NOT_IMPLEMENTED
+}
+
+/// Seek stub — prints debug message, returns STATUS_NOT_IMPLEMENTED.
+/// CCalMoviePlayer::Seek @ 0x8248E790 | size: 0x38
+uint32_t CCalMoviePlayer::Seek() {
+    DbgPrint((const char*)0x82008ACC, (const char*)0x82009298);
+    return 0x80004001;  // STATUS_NOT_IMPLEMENTED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 10: Frame Size Calculation + Virtual Dispatch (40B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Computes frame byte size from width*height, then dispatches to vtable slot 20.
+/// Frame size = (width * height * 3) / 2  (YUV 4:2:0 format: 12 bits per pixel).
+/// The multiply-by-3-shift-right-1 is done via (n + n*2) >> 1.
+/// CCalMoviePlayer::GetFrameBuffer @ 0x82483F00 | size: 0x28
+void* CCalMoviePlayer::GetFrameBuffer() {
+    uint32_t width = *(uint32_t*)((char*)this + 124);
+    uint32_t height = *(uint32_t*)((char*)this + 128);
+    uint32_t pixels = width * height;
+    uint32_t frameSize = (pixels * 3) >> 1;  // YUV 4:2:0: 1.5 bytes per pixel
+
+    // Dispatch to vtable slot 20 (offset +80) with computed frame size
+    typedef void* (*VFunc)(void* self, uint32_t size);
+    void** vtable = *(void***)this;
+    return ((VFunc)vtable[20])(this, frameSize);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 11: Fiber Context Management (64B + 16B)
+// Manage the fiber/thread context pointer at offset +10376 (0x2888)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Replaces the fiber context. Releases old context if present, acquires new one.
+/// CCalMoviePlayer::ReplaceFiberContext @ 0x8235EB30 | size: 0x40
+void CCalMoviePlayer::ReplaceFiberContext() {
+    void* existing = *(void**)((char*)this + 10376);
+    if (existing) {
+        _crt_tls_fiber_setup();  // Release/cleanup existing context
+    }
+    void* newCtx = _crt_tls_fiber_setup();
+    *(void**)((char*)this + 10376) = newCtx;
+}
+
+/// Clears the fiber context pointer (with memory barrier).
+/// CCalMoviePlayer::ClearFiberContext @ 0x8235EB70 | size: 0x10
+void CCalMoviePlayer::ClearFiberContext() {
+    // eieio — enforce in-order execution of I/O (memory barrier)
+    *(void**)((char*)this + 10376) = nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 12: Constructor / Destructor Helpers (60-64B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helper functions used by constructors/destructors
+extern "C" {
+    void util_8580(void* obj);           // @ 0x82488580 - base class constructor helper
+    void util_85C8(void* obj);           // @ 0x824885C8 - base class destructor helper
+    void CCalMoviePlayer_38(void* obj);  // @ 0x8248E0E8 - event initialization
+    void CCalMoviePlayer_13(void* obj);  // @ 0x8248FA48 - event cleanup
+}
+
+/// CCalMoviePlayer intermediate constructor — initializes base, sets vtable, inits events.
+/// Vtable @ 0x820092C0 (CCalMoviePlayer main vtable).
+/// CCalMoviePlayer::CtorIntermediate @ 0x8248ED48 | size: 0x40
+void CCalMoviePlayer::CtorIntermediate() {
+    util_8580(this);
+    *(void**)this = (void*)0x820092C0;  // Set CCalMoviePlayer vtable
+    CCalMoviePlayer_38(this);
+}
+
+/// CCalMoviePlayer derived constructor — calls intermediate ctor, sets derived vtable.
+/// Vtable @ 0x82008B80 (derived class vtable).
+/// CCalMoviePlayer::CtorDerived @ 0x82487200 | size: 0x3C
+void CCalMoviePlayer::CtorDerived() {
+    CtorIntermediate();
+    *(void**)this = (void*)0x82008B80;  // Set derived vtable
+}
+
+/// CCalMoviePlayer derived destructor — sets intermediate vtable, cleans up events, destroys base.
+/// CCalMoviePlayer::DtorDerived @ 0x824915C8 | size: 0x40
+void CCalMoviePlayer::DtorDerived() {
+    *(void**)this = (void*)0x820092C0;  // Restore intermediate vtable
+    CCalMoviePlayer_13(this);
+    util_85C8(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 13: Buffer Management with Virtual Call (60B)
+// Calculate buffer element pointer and call virtual init on it
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Returns the current read buffer element after calling vtable slot 1 (init/reset).
+/// Element pointer = base[+48] + readIndex[+56] * 60.
+/// CCalMoviePlayer::GetCurrentReadBuffer @ 0x8248DBE0 | size: 0x14 (symbol size; actual scaffold 76B)
+void* CCalMoviePlayer::GetCurrentReadBuffer() {
+    uint32_t readIdx = *(uint32_t*)((char*)this + 56);
+    char* base = *(char**)((char*)this + 48);
+    char* element = base + readIdx * 60;
+
+    // Call vtable slot 1 on the element (init/reset)
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)element;
+    ((VFunc)vtable[1])(element);
+
+    return element;
+}
+
+/// Returns the current write buffer element after calling vtable slot 1 (init/reset).
+/// Element pointer = base[+48] + writeIndex[+60] * 60.
+/// CCalMoviePlayer::GetCurrentWriteBuffer @ 0x8248DC30 | size: 0x14 (symbol size; actual scaffold 76B)
+void* CCalMoviePlayer::GetCurrentWriteBuffer() {
+    uint32_t writeIdx = *(uint32_t*)((char*)this + 60);
+    char* base = *(char**)((char*)this + 48);
+    char* element = base + writeIdx * 60;
+
+    // Call vtable slot 1 on the element
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)element;
+    ((VFunc)vtable[1])(element);
+
+    return element;
+}
+
+/// Returns a buffer element by index after calling vtable slot 1 (init/reset).
+/// Element pointer = base[+48] + index * 60.
+/// CCalMoviePlayer::GetBufferByIndex @ 0x8248DC80 | size: 0x14 (symbol size; actual scaffold 72B)
+void* CCalMoviePlayer::GetBufferByIndex(uint32_t index) {
+    char* base = *(char**)((char*)this + 48);
+    char* element = base + index * 60;
+
+    // Call vtable slot 1 on the element
+    typedef void (*VFunc)(void* self);
+    void** vtable = *(void***)element;
+    ((VFunc)vtable[1])(element);
+
+    return element;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group 14: Ring Buffer Advance with Atomic Semaphore (104B each)
+// Advance read/write index; if wrapping, atomically adjust semaphore
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Advances read index; atomically decrements semaphore (offset +68) on wrap.
+/// CCalMoviePlayer::AdvanceReadIndex @ 0x8248DCC8 | size: 0x68
+void CCalMoviePlayer::AdvanceReadIndex() {
+    volatile uint32_t* pReadIdx = (volatile uint32_t*)((char*)this + 56);
+    volatile uint32_t* pTotal = (volatile uint32_t*)((char*)this + 52);
+    volatile int32_t* pSemaphore = (volatile int32_t*)((char*)this + 68);
+
+    uint32_t idx = *pReadIdx + 1;
+    *pReadIdx = idx;
+
+    if (idx >= *pTotal) {
+        *pReadIdx = 0;
+    }
+
+    // Atomically decrement semaphore
+    int32_t old_val;
+    do {
+        old_val = *pSemaphore;
+    } while (!__sync_bool_compare_and_swap(pSemaphore, old_val, old_val - 1));
+}
+
+/// Advances write index; atomically increments semaphore (offset +68) on wrap.
+/// CCalMoviePlayer::AdvanceWriteIndex @ 0x8248DD30 | size: 0x68
+void CCalMoviePlayer::AdvanceWriteIndex() {
+    volatile uint32_t* pWriteIdx = (volatile uint32_t*)((char*)this + 60);
+    volatile uint32_t* pTotal = (volatile uint32_t*)((char*)this + 52);
+    volatile int32_t* pSemaphore = (volatile int32_t*)((char*)this + 68);
+
+    uint32_t idx = *pWriteIdx + 1;
+    *pWriteIdx = idx;
+
+    if (idx >= *pTotal) {
+        *pWriteIdx = 0;
+    }
+
+    // Atomically increment semaphore
+    int32_t old_val;
+    do {
+        old_val = *pSemaphore;
+    } while (!__sync_bool_compare_and_swap(pSemaphore, old_val, old_val + 1));
+}
+
