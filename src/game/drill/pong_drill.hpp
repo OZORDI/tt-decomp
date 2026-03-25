@@ -349,13 +349,14 @@ class pongTrainingDrill {
 public:
     // Virtual functions
     virtual ~pongTrainingDrill() {}                          // vfn_0
-    virtual void ScalarDestructor(int flags) {}              // vfn_1
+    virtual void SetConfig(pongTrainingDrillConfig* pConfig) {} // vfn_1 (Overridden by subclasses)
     virtual void CallInit() {}                               // vfn_2 - thunk to vfn_3
     virtual void Init();                                     // vfn_3 @ 0x8210CDB8
     virtual void Update() {}                                 // vfn_4
     virtual void OnStart();                                   // vfn_5  @ 0x8210CFF0
     virtual void OnEnd() {}                                  // vfn_6
     virtual void OnReset() {}                                // vfn_7
+    virtual void ProcessEvent(void* pEvent) {}               // vfn_8 (Overridden by subclasses)
     virtual void Process() {}                                // vfn_9
     virtual void Render() {}                                 // vfn_10
     virtual void OnSuccess() {}                              // vfn_11
@@ -365,6 +366,11 @@ public:
     virtual void IsComplete() {}                             // vfn_15
     virtual void GetProgress() {}                            // vfn_16
     virtual int  GetDrillTypeIndex() { return 0; }           // vfn_17 — drill type ID (overridden per subclass)
+    virtual const char* GetConfigName() { return ""; }       // vfn_18
+    virtual void vfn_19() {}
+    virtual void vfn_20() {}
+    virtual bool HasActiveTarget() { return false; }         // vfn_21
+    virtual void vfn_22() {}
     virtual void CanAdvance() {}                             // vfn_23
     virtual void GetDifficulty() {}                          // vfn_24
     virtual void SetDifficulty() {}                          // vfn_25
@@ -480,7 +486,7 @@ public:
  */
 class pongDrillSoftShot : public pongTrainingDrill {
 public:
-    virtual void ScalarDestructor(int flags) override;  // vfn_1 @ 0x8210EDA0
+    virtual void SetConfig(pongTrainingDrillConfig* pConfig) override;  // vfn_1 @ 0x8210EDA0
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
@@ -507,6 +513,10 @@ public:
  */
 class pongDrillSpin : public pongTrainingDrill {
 public:
+    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CCE0
+    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CCE8
+    virtual bool HasActiveTarget() override;         // vfn_21 @ 0x8210CD10
+
     virtual void Init() override {}      // vfn_3 @ 0x821101E0
     virtual void Process() override {}   // vfn_8 @ 0x82110218
 };
@@ -519,6 +529,9 @@ public:
  */
 class pongDrillFocusShot : public pongTrainingDrill {
 public:
+    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CCF8
+    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD00
+    
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
@@ -545,9 +558,20 @@ public:
  */
 class pongDrillSmash : public pongTrainingDrill {
 public:
+    virtual void SetConfig(pongTrainingDrillConfig* pConfig) override;  // vfn_1 @ 0x82111798
+    virtual void ProcessEvent(void* pEvent) override;                   // vfn_8 @ 0x82111800
+    virtual int GetDrillTypeIndex() override;                           // vfn_17 @ 0x8210CD68
+    virtual const char* GetConfigName() override;                       // vfn_18 @ 0x8210CD70
+
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+
+    void ChooseRobotTarget(); // 0x82111A98
+
+private:
+    pongTrainingDrillConfig* m_pDrillConfig;  // +0x24 (overrides base class config field, or additional)
+    uint32_t                 m_unkTargetField; // +0x28 (40)
 };
 
 // Compile-time size verification

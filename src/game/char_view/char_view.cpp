@@ -695,3 +695,47 @@ pongCharViewContext::~pongCharViewContext() {
     m_vtable = (void**)g_vtable_pong_char_view_state;
 }
 
+
+// ────────────────────────────────────────────────────────────────────────────
+// ResetCharViewData — Global state reset for character view system
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ResetCharViewData @ 0x8240A570 | size: 0x8C
+ *
+ * Resets all fields on the global character view data structure to zero/default.
+ * Called during both enter and exit phases of the character view state to ensure
+ * clean state. Also clears related global counters and sets the selected
+ * character index to -1 (invalid).
+ *
+ * The data structure has float fields at offsets +12, +16, +28, +32, +36, +40,
+ * +44, +48 and integer/pointer fields at +4, +8, +20, +24.
+ */
+void ResetCharViewData(void* charViewData) {
+    if (!charViewData) return;
+
+    char* pData = (char*)charViewData;
+
+    // Reset all integer/pointer fields to zero
+    *(uint32_t*)(pData + 4)  = 0;
+    *(uint32_t*)(pData + 8)  = 0;
+    *(uint32_t*)(pData + 20) = 0;
+    *(uint32_t*)(pData + 24) = 0;
+
+    // Reset all float fields to 0.0f
+    *(float*)(pData + 12) = 0.0f;
+    *(float*)(pData + 16) = 0.0f;
+    *(float*)(pData + 28) = 0.0f;
+    *(float*)(pData + 32) = 0.0f;
+    *(float*)(pData + 36) = 0.0f;
+    *(float*)(pData + 40) = 0.0f;
+    *(float*)(pData + 44) = 0.0f;
+    *(float*)(pData + 48) = 0.0f;
+
+    // Clear global selection counters
+    g_charViewSelectCounter = 0;
+    g_charViewSelectFlag = 0;
+
+    // Reset selected character index to invalid
+    g_selectedCharacterIndex = -1;
+}
