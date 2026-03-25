@@ -23,14 +23,16 @@ struct Holder {
     virtual void vfn_2();  // [2] @ 0x82121c08
 };
 
-namespace rage::atAny {
+namespace rage {
+namespace atAny {
 
 // ── rage::atAny::PlaceHolder  [vtable @ 0x82032E20] ──────────────────────────
 struct PlaceHolder {
     void**      vtable;           // +0x00
 };
 
-} // namespace rage::atAny
+} // namespace atAny
+} // namespace rage
 
 namespace rage {
 
@@ -73,14 +75,13 @@ struct netConnectionManager {
 
 } // namespace rage
 
-namespace rage::netConnectionManager {
-
 // ── rage::netConnectionManager::MessageHandler  [vtable @ 0x8206E640] ──────────────────────────
-struct MessageHandler {
+// Nested inside the netConnectionManager class as an inner struct
+namespace rage {
+struct netConnectionManager_MessageHandler {
     void**      vtable;           // +0x00
 };
-
-} // namespace rage::netConnectionManager
+} // namespace rage
 
 namespace rage {
 
