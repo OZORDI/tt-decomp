@@ -99,7 +99,7 @@ void pongMover::Reset(void* creatureData) {
     if (m_pCreature && subEntry != 0) {
         pongCreature_7CE8_g(m_pCreature, initMatrix, 0, 1, 0, 0);
     } else {
-        nop_8240E6D0("pongMover::Reset() - no creature to reset");
+        nop_8240E6D0("pongMover::Reset() - no creature to reset");  /* UNVERIFIED — string not found in binary */
     }
     
     // Extract position from matrix column 3 (translation vector)
@@ -912,7 +912,7 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
     
     if (loadedAnim == nullptr) {
         // Failed to load animation
-        nop_8240E6D0("LocomotionStateAnim::Load - failed to load anim file '%s'", fileNameBuffer);
+        nop_8240E6D0("LocomotionStateAnim::Load - failed to load anim file '%s'", fileNameBuffer);  /* UNVERIFIED — string not found in binary */
         return false;
     }
     

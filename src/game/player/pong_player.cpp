@@ -476,7 +476,7 @@ void pongPlayer::CancelSwing()
             g_swingCountFlag            = 0;           // stw r10,25408(r9) @ lis(-32160)
             m_pTimingState->m_vel5      = kZero;       // +88
             m_pTimingState->m_bComplete = 0;           // byte +141
-            nop_8240E6D0("pongPlayer::CancelSwing() timing reset", (uintptr_t)m_pCreature);
+            nop_8240E6D0("pongPlayer::CancelSwing() timing reset", (uintptr_t)m_pCreature);  /* UNVERIFIED — string not found in binary */
         }
     }
 
@@ -484,7 +484,7 @@ void pongPlayer::CancelSwing()
     if (IsRecovering())
     {
         game_CD20(m_pRecoveryState);     // flush recovery state @ 0x820DCD20
-        nop_8240E6D0("pongPlayer::CancelSwing() recovery flush", (uintptr_t)m_pCreature);
+        nop_8240E6D0("pongPlayer::CancelSwing() recovery flush", (uintptr_t)m_pCreature);  /* UNVERIFIED — string not found in binary */
     }
 
     // ── PATH C: reset anim phase-blocked state ───────────────────────────
@@ -493,7 +493,7 @@ void pongPlayer::CancelSwing()
         pongAnimState* anim = m_pAnimState;
         crAnimBlenderState_Init((uint8_t*)anim + 16);   // reset phase-blocked sub-system @ 0x8224C810
         anim->m_swingPhase = kZero;        // clear swing phase progress (+412)
-        nop_8240E6D0("pongPlayer::CancelSwing() anim reset", (uintptr_t)m_pCreature);
+        nop_8240E6D0("pongPlayer::CancelSwing() anim reset", (uintptr_t)m_pCreature);  /* UNVERIFIED — string not found in binary */
     }
 }
 
@@ -1031,7 +1031,7 @@ void pongPlayer::ProcessSwingDecision(int r4, int r5,
 
     if (result == 4 || result == 3) {
         // Queued events — log the swing queue and reset active flag.
-        nop_8240E6D0("pongPlayer::ProcessSwingDecision() queued", m_swingInputSlot);
+        nop_8240E6D0("pongPlayer::ProcessSwingDecision() queued", m_swingInputSlot);  /* UNVERIFIED — string not found in binary */
         SetSwingActiveState(true);
         return;
     }
@@ -1214,10 +1214,10 @@ void pongPlayer::SetSwingActiveState(bool active)
 
     if (active) {
         nop_8240E6D0("pongPlayer::SetSwingActiveState() swing entered",
-                     m_swingInputSlot);
+                     m_swingInputSlot);  /* UNVERIFIED — string not found in binary */
     } else {
         nop_8240E6D0("pongPlayer::SetSwingActiveState() swing exited",
-                     m_swingInputSlot);
+                     m_swingInputSlot);  /* UNVERIFIED — string not found in binary */
     }
 
     m_bSwingActive = (uint8_t)active;
@@ -2228,7 +2228,7 @@ void pongPlayer::SetPlayerSide(uint8_t side) {
     if (m_courtSide != side) {
         // Log the change (debug only)
         const char* sideStr = side ? "right" : "left";
-        nop_8240E6D0("pongPlayer::SetPlayerSide() - setting to %s", sideStr);
+        nop_8240E6D0("pongPlayer::SetPlayerSide() - setting to %s", sideStr);  /* UNVERIFIED — string not found in binary */
         
         // Update the side
         m_courtSide = side;

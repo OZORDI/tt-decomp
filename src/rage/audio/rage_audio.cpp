@@ -117,7 +117,7 @@ void audVoiceSfx::PlayByEntry(
 {
     const audSfxEntryView bankEntry(entry);
     if (bankEntry.IsNull() || bankEntry.GetBankSlot() == kInvalidBankSlot) {
-        nop_8240E6D0("audVoiceSfx::PlayByEntry - invalid entry (%p)", entry);
+        nop_8240E6D0("audVoiceSfx::PlayByEntry - invalid entry (%p)", entry);  /* UNVERIFIED — string not found in binary */
         return;
     }
 

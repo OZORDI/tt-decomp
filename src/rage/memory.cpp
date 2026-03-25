@@ -1135,7 +1135,7 @@ void* atSingleton_8958_g(atSingleton* loader, const char* animName, uint8_t crea
         if (animation == nullptr) {
             // Log error
             extern void nop_8240E6D0(const char* format, ...);
-            nop_8240E6D0("Failed to load animation: %s from %s or %s", animName, animName, animName);
+            nop_8240E6D0("Failed to load animation: %s from %s or %s", animName, animName, animName);  /* UNVERIFIED — string not found in binary */
             return nullptr;
         }
     }

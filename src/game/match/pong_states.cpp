@@ -1002,7 +1002,7 @@ void pongLegalsState::OnEnter(int prevStateIdx) {
     if (prevStateIdx != 3) {
         // Generic previous state: post a transition request
         void* transReq = PostStateTransitionRequest(m_pHSMContext, prevStateIdx);
-        nop_8240E6D0("pongLegalsState::OnEnter generic", transReq, prevStateIdx);
+        nop_8240E6D0("pongLegalsState::OnEnter generic", transReq, prevStateIdx);  /* UNVERIFIED — string not found in binary */
         return;
     }
 
@@ -1055,7 +1055,7 @@ void pongLegalsState::OnExit(int nextStateIdx) {
     if (nextStateIdx != 6) {
         // Generic next state
         void* transReq = PostStateTransitionRequest(m_pHSMContext, nextStateIdx);
-        nop_8240E6D0("pongLegalsState::OnExit generic", transReq, nextStateIdx);
+        nop_8240E6D0("pongLegalsState::OnExit generic", transReq, nextStateIdx);  /* UNVERIFIED — string not found in binary */
         return;
     }
 
@@ -1381,7 +1381,7 @@ void pongDialogState::OnEnter(int prevStateIdx) {
 
     // Generic previous state: post transition
     void* transReq = PostStateTransitionRequest(m_pHSMContext, prevStateIdx);
-    nop_8240E6D0("pongDialogState::OnEnter generic", transReq, prevStateIdx);
+    nop_8240E6D0("pongDialogState::OnEnter generic", transReq, prevStateIdx);  /* UNVERIFIED — string not found in binary */
 }
 
 /**
@@ -1415,7 +1415,7 @@ void pongDialogState::OnExit(int nextStateIdx) {
 
     // Generic next state: post transition
     void* transReq = PostStateTransitionRequest(m_pHSMContext, nextStateIdx);
-    nop_8240E6D0("pongDialogState::OnExit generic", transReq, nextStateIdx);
+    nop_8240E6D0("pongDialogState::OnExit generic", transReq, nextStateIdx);  /* UNVERIFIED — string not found in binary */
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1667,7 +1667,7 @@ pongDialogContext::~pongDialogContext() {
  *   6. Store globally for other systems to access
  */
 void pongDialogContext::Register() {
-    nop_8240E6D0("pongDialogContext::Register");
+    nop_8240E6D0("pongDialogContext::Register");  /* UNVERIFIED — string not found in binary */
     
     // Initialize main thread context
     xe_main_thread_init_0038();
@@ -1696,7 +1696,7 @@ void pongDialogContext::Register() {
     extern void** g_dialogPageGroupPtr;  // @ 0x82606628 (SDA +26152)
     *g_dialogPageGroupPtr = m_pPageGroup;
     
-    nop_8240E6D0("pongDialogContext::Register complete");
+    nop_8240E6D0("pongDialogContext::Register complete");  /* UNVERIFIED — string not found in binary */
 }
 
 /**

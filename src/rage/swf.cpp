@@ -635,7 +635,7 @@ float swfFILE::FindExportFrame(float frameRate, const char* labelName, void* con
     // Not found — log and return zero
     // Error string @ 0x82076C80: "Couldn't find font with which..."
     // (reused for "not found" in this context)
-    nop_8240E6D0("Couldn't find frame label '%s'", labelName);
+    nop_8240E6D0("Couldn't find frame label '%s'", labelName);  /* UNVERIFIED — string not found in binary */
     return 0.0f;
 }
 

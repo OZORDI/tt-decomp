@@ -323,7 +323,7 @@ void gdVibEvent::PostLoadProperties() {
     *(uint16_t*)((char*)this + 20) = effectId;
 
     if (effectId == 0) {
-        nop_8240E6D0("gdVibEvent::PostLoadProperties - Could not find effect '%s'", effectName);
+        nop_8240E6D0("gdVibEvent::PostLoadProperties - Could not find effect '%s'", effectName);  /* UNVERIFIED — string not found in binary */
     }
 
     // Search vibration manager's array for matching effect by name
@@ -356,6 +356,6 @@ void gdVibEvent::PostLoadProperties() {
     *(void**)((char*)this + 28) = resolvedEntry;
 
     if (resolvedEntry == nullptr) {
-        nop_8240E6D0("gdVibEvent::PostLoadProperties - Could not find vibration pattern '%s'", vibPatternName);
+        nop_8240E6D0("gdVibEvent::PostLoadProperties - Could not find vibration pattern '%s'", vibPatternName);  /* UNVERIFIED — string not found in binary */
     }
 }

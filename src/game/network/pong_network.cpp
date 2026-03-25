@@ -209,7 +209,7 @@ void ServeStartedMessage::Process(void* matchObj)
     // Step 2: debug assert — action state must be initialised.
     int32_t actionState = *(int32_t*)((uint8_t*)player + 468);
     if (actionState == 0) {
-        nop_8240E6D0("ServeStartedMessage::Process(): player action state is null");
+        nop_8240E6D0("ServeStartedMessage::Process(): player action state is null");  /* UNVERIFIED — string not found in binary */
     }
 
     // Step 3: copy target position into the player's lerp table entry.

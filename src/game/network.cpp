@@ -574,7 +574,7 @@ int SinglesNetworkClient_ValidatePlayerStates(void* client)
     
     // Both states are invalid - log error
     // External error string at 0x82037948
-    // nop_8240E6D0("error message");
+    // nop_8240E6D0("error message");  /* UNVERIFIED — string not found in binary */
     
     return 0;
 }
