@@ -40,3 +40,9 @@ extern const char* g_str_audVoiceSfx_formatChar;              // @ 0x820357AC �
 extern const char* g_str_audVoiceSfx_formatSuffix;            // @ 0x820357B3 — "_%s"
 extern const char* g_str_audVoiceSfx_formatLevel;             // @ 0x820357B0 — "_%l"
 extern const char* g_str_audVoiceSfx_ankle;                   // @ 0x8203581C — "ankle"
+
+// ────────────────────────────────────────────────────────────────────────────
+// pongStates (credits / ready-fail)
+// ────────────────────────────────────────────────────────────────────────────
+extern const char* g_str_pongStates_cfail;                    // @ 0x8205ED64
+extern const char* g_str_pongStates_yreadyfail;               // @ 0x8205ED80

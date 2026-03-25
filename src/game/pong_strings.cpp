@@ -16,3 +16,5 @@ const char* g_str_audVoiceSfx_formatChar      = "char_%l_%s";
 const char* g_str_audVoiceSfx_formatSuffix    = "_%s";
 const char* g_str_audVoiceSfx_formatLevel     = "_%l";
 const char* g_str_audVoiceSfx_ankle           = "ankle";
+const char* g_str_pongStates_cfail            = "cfail";
+const char* g_str_pongStates_yreadyfail       = "yreadyfail";

@@ -4,6 +4,7 @@
  */
 
 #include "game/gd_vib_event.hpp"
+#include "game/pong_strings.hpp"
 
 // External dependencies
 #include "../game/pong_network_io.hpp"

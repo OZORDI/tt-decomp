@@ -28,6 +28,7 @@
  */
 
 #include "pong_states.hpp"
+#include "game/pong_strings.hpp"
 struct pongPageGroup {
     void** vtable;
     void Open() { if (vtable) ((void(*)(void*))vtable[2])(this); }
@@ -469,7 +470,7 @@ void pongCreditsContext::OnExitCredits() {
  */
 void pongCreditsContext::RegisterWithCreditsRoll() {
     // Entry debug bookend: "cfail" @ 0x8205ED64
-    // nop_8240E6D0("cfail");   // stripped in release
+    // nop_8240E6D0(g_str_pongStates_cfail);   // stripped in release
 
     // Assert main thread is ready
     xe_main_thread_init_0038();
@@ -500,7 +501,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
     rage_RegisterUIContext(this, /*category=*/202, nameStr);
 
     // Exit debug bookend: "yreadyfail" @ 0x8205ED80
-    // nop_8240E6D0("yreadyfail");   // stripped in release
+    // nop_8240E6D0(g_str_pongStates_yreadyfail);   // stripped in release
 }
 
 
