@@ -7,7 +7,7 @@
 #include <cstdint>
 
 // External references
-extern void SinglesNetworkClient_A950_g(void* client, int param, float value);
+extern void SetHudParameter(void* client, int param, float value);
 extern uint8_t* g_pGlobalGameState;  // @ 0x82606430 (SDA r13+25648)
 
 // Float constants
@@ -61,21 +61,21 @@ void hudTrainingHUD::OnEvent(void* eventData)
         }
         
         // Call network client with param=1, value=1.0f
-        SinglesNetworkClient_A950_g(networkClient, 1, g_floatOne);
+        SetHudParameter(networkClient, 1, g_floatOne);
         return;
     }
     
     // Handle event code 2147 (0x863)
     if (eventCode == 2147) {
         // Call network client with param=0, value=1.0f
-        SinglesNetworkClient_A950_g(networkClient, 0, g_floatOne);
+        SetHudParameter(networkClient, 0, g_floatOne);
         return;
     }
     
     // Handle event code 2080 (0x820)
     if (eventCode == 2080) {
         // Call network client with param=0, value=0.0f
-        SinglesNetworkClient_A950_g(networkClient, 0, g_floatZero);
+        SetHudParameter(networkClient, 0, g_floatZero);
         return;
     }
     

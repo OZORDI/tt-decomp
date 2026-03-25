@@ -3,8 +3,8 @@
 #include "game/pong_network_io.hpp"
 #include "rage/game_loop_types.h"
 
-// SinglesNetworkClient_9318_g @ 0x823F9318
-extern void* SinglesNetworkClient_9318_g(void* client, const char* key);
+// FindSettingByKey @ 0x823F9318
+extern void* FindSettingByKey(void* client, const char* key);
 
 namespace {
 
@@ -38,7 +38,7 @@ static const char* const k_bootNameKey = reinterpret_cast<const char*>(0x8205E32
 
 static void SetNumericBootSetting(void* networkClient, const char* key, uint32_t value) {
     BootNumericSetting* setting =
-        reinterpret_cast<BootNumericSetting*>(SinglesNetworkClient_9318_g(networkClient, key));
+        reinterpret_cast<BootNumericSetting*>(FindSettingByKey(networkClient, key));
     if (setting == nullptr) {
         return;
     }
@@ -49,7 +49,7 @@ static void SetNumericBootSetting(void* networkClient, const char* key, uint32_t
 
 static void SetStringBootSetting(void* networkClient, const char* key, char* value) {
     BootStringSetting* setting =
-        reinterpret_cast<BootStringSetting*>(SinglesNetworkClient_9318_g(networkClient, key));
+        reinterpret_cast<BootStringSetting*>(FindSettingByKey(networkClient, key));
     if (setting == nullptr) {
         return;
     }

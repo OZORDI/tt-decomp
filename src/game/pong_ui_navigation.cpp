@@ -125,10 +125,10 @@ void pg_0E50(void* destPageGroup, const void* srcPageGroup) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pg_1048_g @ 0x82101048 | size: 0x94
+// PageGroup_CanAcceptInput @ 0x82101048 | size: 0x94
 // Checks if page group should accept input based on state and cursor position
 // ─────────────────────────────────────────────────────────────────────────────
-bool pg_1048_g(const void* pageGroup) {
+bool PageGroup_CanAcceptInput(const void* pageGroup) {
     const uint8_t* pgBytes = (const uint8_t*)pageGroup;
     const uint32_t* pg = (const uint32_t*)pageGroup;
     
@@ -183,10 +183,10 @@ bool pg_1048_g(const void* pageGroup) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pg_10E0_g @ 0x821010E0 | size: 0x60
+// PageGroup_IsAtBottomEdge @ 0x821010E0 | size: 0x60
 // Checks if vertical navigation is at bottom edge
 // ─────────────────────────────────────────────────────────────────────────────
-bool pg_10E0_g(const void* pageGroup) {
+bool PageGroup_IsAtBottomEdge(const void* pageGroup) {
     const uint8_t* pgBytes = (const uint8_t*)pageGroup;
     const uint32_t* pg = (const uint32_t*)pageGroup;
     
@@ -208,7 +208,7 @@ bool pg_10E0_g(const void* pageGroup) {
     
     // Check if input polling is active
     if (input[3] != 0) {  // +12 bytes / 4 = index 3
-        return pg_15F0_g(pageGroup);
+        return PageGroup_IsInputVisible(pageGroup);
     }
     
     // Check vertical bounds
@@ -228,10 +228,10 @@ bool pg_10E0_g(const void* pageGroup) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pg_1140_g @ 0x82101140 | size: 0x58
+// PageGroup_IsAtRightEdge @ 0x82101140 | size: 0x58
 // Checks if in horizontal scroll mode
 // ─────────────────────────────────────────────────────────────────────────────
-bool pg_1140_g(const void* pageGroup) {
+bool PageGroup_IsAtRightEdge(const void* pageGroup) {
     const uint32_t* pg = (const uint32_t*)pageGroup;
     
     int selectionStart = (int)pg[1];  // +0x04
@@ -267,10 +267,10 @@ bool pg_1140_g(const void* pageGroup) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pg_1198_g @ 0x82101198 | size: 0x68
+// PageGroup_IsAtTopEdge @ 0x82101198 | size: 0x68
 // Checks if selection is at edge of grid
 // ─────────────────────────────────────────────────────────────────────────────
-bool pg_1198_g(const void* pageGroup) {
+bool PageGroup_IsAtTopEdge(const void* pageGroup) {
     const uint32_t* pg = (const uint32_t*)pageGroup;
     
     // Get input system
@@ -305,10 +305,10 @@ bool pg_1198_g(const void* pageGroup) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pg_1200_g @ 0x82101200 | size: 0xA0
+// PageGroup_IsAtLeftEdge @ 0x82101200 | size: 0xA0
 // Checks if can navigate down in grid
 // ─────────────────────────────────────────────────────────────────────────────
-bool pg_1200_g(const void* pageGroup) {
+bool PageGroup_IsAtLeftEdge(const void* pageGroup) {
     const uint32_t* pg = (const uint32_t*)pageGroup;
     
     // Get input system
@@ -323,7 +323,7 @@ bool pg_1200_g(const void* pageGroup) {
     }
     
     // Check if at edge
-    if (!pg_1198_g(pageGroup)) {
+    if (!PageGroup_IsAtTopEdge(pageGroup)) {
         return false;
     }
     
@@ -352,15 +352,15 @@ bool pg_1200_g(const void* pageGroup) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pg_15F0_g @ 0x821015F0 | size: 0x78
+// PageGroup_IsInputVisible @ 0x821015F0 | size: 0x78
 // Checks if should show navigation hint
 // ─────────────────────────────────────────────────────────────────────────────
-bool pg_15F0_g(const void* pageGroup) {
+bool PageGroup_IsInputVisible(const void* pageGroup) {
     const uint8_t* pgBytes = (const uint8_t*)pageGroup;
     const uint32_t* pg = (const uint32_t*)pageGroup;
     
     // Check if should accept input
-    if (pg_1048_g(pageGroup)) {
+    if (PageGroup_CanAcceptInput(pageGroup)) {
         // Check hint flag
         if (pgBytes[102] == 0) {  // +0x66
             int rowEnd = (int)pg[8];    // +0x20 (32 bytes / 4 = index 8)
