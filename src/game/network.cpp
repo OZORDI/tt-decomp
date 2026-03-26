@@ -2420,3 +2420,499 @@ bool SinglesNetworkClient_LookupSessionPropertyValue(void* sessionState, const c
 
     return false;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitMessageHandler @ 0x822EDA08 | size: 0x58
+//
+// Constructor for rage::snConnectionManager::MessageHandler.
+// Sets the vtable pointer, zeroes control fields, and initializes two
+// linked-list node sub-objects at offsets +12 and +16.
+//
+// Parameters:
+//   handler - Pointer to MessageHandler instance to initialize
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_InitMessageHandler(void* handler)
+{
+    // Vtable for rage::snConnectionManager::MessageHandler @ 0x8205C750
+    extern uint32_t lbl_8205C750;
+
+    uint32_t* h = (uint32_t*)handler;
+
+    // Set vtable pointer
+    h[0] = (uint32_t)&lbl_8205C750;
+
+    // Zero flags and state fields
+    h[1] = 0;  // +4
+    h[2] = 0;  // +8
+
+    // Initialize linked-list nodes at +12 and +16
+    uint8_t* nodeA = (uint8_t*)handler + 12;
+    uint8_t* nodeB = (uint8_t*)handler + 16;
+
+    ke_1B00(nodeA);
+    ke_1B00(nodeB);
+
+    // Zero node pointers after init
+    *(uint32_t*)nodeB = 0;
+    *(uint32_t*)nodeA = 0;
+
+    // Zero session reference at +20
+    h[5] = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ActivateSessionContext @ 0x822EBF20 | size: 0x64
+//
+// Sets the active session flag, acquires the network lock, looks up a
+// context property by name, writes initial values (enabled=1, type=3),
+// and releases the lock if it was acquired.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_ActivateSessionContext(void* client)
+{
+    uint8_t* c = (uint8_t*)client;
+
+    // Set active flag at offset +84
+    c[84] = 1;
+
+    // Acquire network lock
+    bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
+
+    // Get session pointer at offset +92
+    void* session = *(void**)(c + 92);
+
+    // Look up context property by name
+    extern const char lbl_8205AEF0[];
+    void* context = SinglesNetworkClient_9318_g(session, lbl_8205AEF0);
+
+    if (context != nullptr) {
+        uint32_t* contextData = (uint32_t*)context;
+        contextData[0] = 1;  // enabled
+        contextData[1] = 3;  // type identifier
+    }
+
+    // Release lock if it was acquired
+    if (lockAcquired) {
+        SinglesNetworkClient_ClearNetworkFlag(client);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetSessionProperties @ 0x822EBC10 | size: 0x88
+//
+// Sets two session context properties via virtual dispatch (vtable slot 10).
+// The first property is set with type=7 and enabled=1, using a data name
+// string. The second property is set with type=3 and the provided callback.
+//
+// Parameters:
+//   client   - Unused (context object loaded from args)
+//   args     - Pointer to argument struct; args[0] = session object
+//   dataPtr  - Data pointer for the second property
+//   callback - Callback pointer for the second property
+//   vtable   - Vtable pointer for virtual dispatch
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SetSessionProperties(void* client, void* args, uint32_t dataPtr,
+                                                uint32_t callback, void* vtable)
+{
+    // Load session from args[0]
+    uint32_t* argArray = (uint32_t*)args;
+    void* session = (void*)argArray[0];
+
+    // String at 0x8205AED8
+    extern const char lbl_8205AED8[];
+
+    // Build first property: {value=0, type=7, name=lbl_8205AED8, enabled=1}
+    struct {
+        uint32_t value;
+        uint32_t type;
+        const char* name;
+        uint32_t enabled;
+    } prop1 = {0, 7, lbl_8205AED8, 1};
+
+    // Call vtable slot 10 to set the property
+    typedef void (*SetPropertyFn)(void*, void*, void*);
+    uint32_t* vt = *(uint32_t**)session;
+    SetPropertyFn setProperty = (SetPropertyFn)vt[10];
+    setProperty(session, (void*)&prop1, (void*)&lbl_8205AED8);
+
+    // Build second property: {value=dataPtr, type=3}
+    struct {
+        uint32_t value;
+        uint32_t type;
+    } prop2 = {dataPtr, 3};
+
+    // Call vtable slot 10 again with callback
+    setProperty(session, (void*)&prop2, (void*)(uintptr_t)callback);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::RelocateAndInitEntries @ 0x820E7350 | size: 0x8C
+//
+// Relocates a vtable pointer using a relocation table, then iterates
+// over an array of 16-byte entries and initializes each one via ke_1B00.
+// Used during deserialization to fix up pointers after loading.
+//
+// Parameters:
+//   obj      - Object with vtable at +0 and entry count at +4
+//   relocTbl - Relocation table for pointer fixup
+//
+// Returns:
+//   Pointer to the object (for chaining)
+// ─────────────────────────────────────────────────────────────────────────────
+void* SinglesNetworkClient_RelocateAndInitEntries(void* obj, void* relocTbl)
+{
+    uint32_t* o = (uint32_t*)obj;
+    uint32_t* tbl = (uint32_t*)relocTbl;
+
+    // Relocate vtable pointer if non-null
+    uint32_t vtablePtr = o[0];
+    if (vtablePtr != 0) {
+        // Compute index into relocation table
+        uint32_t baseAddr = tbl[1];
+        uint32_t entrySize = tbl[19];  // offset +76
+        uint32_t index = (vtablePtr - baseAddr) / entrySize;
+
+        // Apply relocation delta from table entry at (index+2)*4
+        uint32_t delta = tbl[index + 2];
+        o[0] = vtablePtr + delta;
+    }
+
+    // Initialize each 16-byte entry
+    uint16_t entryCount = *(uint16_t*)((uint8_t*)obj + 4);
+    for (int i = 0; i < entryCount; i++) {
+        uint8_t* entry = (uint8_t*)o[0] + (i * 16);
+        if (entry != nullptr) {
+            ke_1B00(entry);
+        }
+    }
+
+    return obj;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CheckStreamAlignment @ 0x82238A50 | size: 0x8C
+//
+// Checks whether the bit stream has enough data for a 48-bit aligned read.
+// If so, reads 16 bits from a temporary position and tests bit 14
+// to determine the alignment status.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient bit stream instance
+//
+// Returns:
+//   true if bit 14 is set in the alignment marker, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_CheckStreamAlignment(void* client)
+{
+    uint32_t* c = (uint32_t*)client;
+    uint32_t tempBuf = 0;
+
+    // Get current bit position at offset +16
+    uint32_t bitPos = c[4];
+
+    // Align to 8-byte boundary: (bitPos + 7) & ~7
+    uint32_t aligned = (bitPos + 7) & ~7u;
+
+    // Need at least 48 bits of aligned data
+    if (aligned < 48) {
+        return false;
+    }
+
+    // Save and temporarily override read position at offset +28
+    uint32_t savedPos = c[7];
+    c[7] = 16;
+
+    // Read 16 bits into temp buffer
+    SinglesNetworkClient_8DF8_g(client, &tempBuf, 16);
+
+    // Restore original position
+    c[7] = savedPos;
+
+    // Test bit 14 (0x4000)
+    return (tempBuf & 0x4000) != 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::TryDestroyInactiveSession @ 0x822EE268 | size: 0x84
+//
+// Checks multiple conditions before destroying an inactive session object.
+// Guards: event must be zero, match state must be 7, active flag must be set,
+// game manager must exist, and the session must be valid with a destructor.
+// Called via indirect dispatch (likely a timer/polling callback).
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   event  - Event data pointer (must be null/zero to proceed)
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_TryDestroyInactiveSession(void* client, void* event)
+{
+    uint8_t* cb = (uint8_t*)client;
+
+    // Event value must be zero
+    uint32_t eventVal = *(uint32_t*)event;
+    if (eventVal != 0) return;
+
+    // Match state at offset +3484 must be 7 (completed)
+    int matchState = *(int32_t*)(cb + 3484);
+    if (matchState != 7) return;
+
+    // Active flag at offset +208 must be set
+    uint8_t activeFlag = cb[208];
+    if (activeFlag == 0) return;
+
+    // Check if game manager exists
+    extern uint32_t lbl_825D07CC;
+    uint32_t* managerRef = (uint32_t*)((uint8_t*)&lbl_825D07CC + 4);
+    if (*managerRef == 0) return;
+
+    // Check global session manager
+    extern uint32_t lbl_8271A81C;
+    void* sessionMgr = *(void**)&lbl_8271A81C;
+    if (sessionMgr == nullptr) return;
+
+    // Check active flag at offset +112 of session manager
+    uint8_t* smgr = (uint8_t*)sessionMgr;
+    if (smgr[112] == 0) return;
+
+    // Get session object at offset +100
+    void* session = *(void**)(smgr + 100);
+    if (session == nullptr) return;
+
+    // Call virtual destructor (vtable slot 0)
+    typedef void (*DestructorFn)(void*, int);
+    uint32_t* vt = *(uint32_t**)session;
+    DestructorFn destroy = (DestructorFn)vt[0];
+    destroy(session, 0);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetFloatContextProperty @ 0x822F1408 | size: 0x9C
+//
+// Acquires the network lock, increments a global recursion counter,
+// begins a network operation, looks up a named context property, stores
+// a float value (converted to int) with type=3, then releases the lock
+// and decrements the counter.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Float value to store in the context property
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SetFloatContextProperty(void* client, float value)
+{
+    // Acquire network lock
+    bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
+
+    // Increment global recursion counter
+    extern uint32_t lbl_8271A834;
+    uint32_t savedCounter = lbl_8271A834 + 1;
+    lbl_8271A834 = savedCounter;
+
+    // Begin network operation
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Look up context property by name
+    extern const char lbl_8205B474[];
+    void* context = SinglesNetworkClient_9318_g(nullptr, lbl_8205B474);
+
+    if (context != nullptr) {
+        uint32_t* contextData = (uint32_t*)context;
+        // Convert float to integer and store
+        contextData[0] = (int32_t)value;
+        contextData[1] = 3;  // type identifier
+    }
+
+    // Release lock and decrement counter
+    if (lockAcquired) {
+        SinglesNetworkClient_ClearNetworkFlag(client);
+        lbl_8271A834--;
+        return;
+    }
+
+    // Decrement counter (lock wasn't held)
+    lbl_8271A834 = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetIntContextProperty @ 0x822F2D68 | size: 0x8C
+//
+// Acquires the network lock, increments a global recursion counter,
+// begins a network operation, looks up a named context property, stores
+// an integer value with type=3, then releases the lock and decrements
+// the counter.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Integer value to store in the context property
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SetIntContextProperty(void* client, uint32_t value)
+{
+    // Acquire network lock
+    bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
+
+    // Increment global recursion counter
+    extern uint32_t lbl_8271A834;
+    uint32_t savedCounter = lbl_8271A834 + 1;
+    lbl_8271A834 = savedCounter;
+
+    // Begin network operation
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Look up context property by name
+    extern const char lbl_8205BECC[];
+    void* context = SinglesNetworkClient_9318_g(nullptr, lbl_8205BECC);
+
+    if (context != nullptr) {
+        uint32_t* contextData = (uint32_t*)context;
+        contextData[0] = value;
+        contextData[1] = 3;  // type identifier
+    }
+
+    // Release lock and decrement counter
+    if (lockAcquired) {
+        SinglesNetworkClient_ClearNetworkFlag(client);
+        lbl_8271A834--;
+        return;
+    }
+
+    // Decrement counter (lock wasn't held)
+    lbl_8271A834 = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::HandleSessionStateTransition @ 0x82105D38 | size: 0xB8
+//
+// Handles state transitions for the match session. For states 5 and 6,
+// resets score data and transitions to a new session phase. State 5 sets
+// an invalid marker (-1) on the session score. State 6 conditionally
+// resets based on a timing check against a threshold value.
+// States 2 and 3 are terminal (no-op return).
+//
+// Parameters:
+//   session - Pointer to match session state structure
+// ─────────────────────────────────────────────────────────────────────────────
+extern void util_6CB0(void* player);
+extern void SinglesNetworkClient_5D90_g(void* sessionData, int newState);
+
+void SinglesNetworkClient_HandleSessionStateTransition(void* session)
+{
+    uint8_t* sb = (uint8_t*)session;
+
+    // Get current state from offset +12
+    int32_t state = *(int32_t*)(sb + 12);
+
+    // States 2 and 3 are terminal
+    if (state == 2 || state == 3) {
+        return;
+    }
+
+    uint8_t* sessionData = *(uint8_t**)(sb + 48);
+
+    if (state == 5) {
+        // Set invalid score marker at +4108
+        *(int16_t*)(sessionData + 4108) = -1;
+    } else if (state == 6) {
+        // Look up player from player array
+        void* player = nullptr;
+        if (state != -1) {
+            uint32_t* playerArray = *(uint32_t**)(sb + 8);
+            player = (void*)playerArray[state];
+        }
+
+        // Get timing value from player
+        util_6CB0(player);
+
+        // Check against threshold from global tuning data
+        extern uint32_t lbl_8271A328;
+        void* tuning = *(void**)&lbl_8271A328;
+        float* tuningData = (float*)((uint8_t*)tuning + 4);
+        float threshold = *(float*)((uint8_t*)tuningData + 308);
+
+        // Set invalid score marker
+        *(int16_t*)(sessionData + 4108) = -1;
+    } else {
+        return;
+    }
+
+    // Reset score counters at +3600 and +3602
+    *(uint16_t*)(sessionData + 3600) = 0;
+    *(uint16_t*)(sessionData + 3602) = 0;
+
+    // Transition to new session phase (state=2)
+    void* activeSessionData = *(void**)(sb + 48);
+    SinglesNetworkClient_5D90_g(activeSessionData, 2);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidateFrontendEntry @ 0x821882F0 | size: 0xBC
+//
+// Validates a frontend context table entry by checking two fields match
+// expected values. Computes a table index from the player slot and round,
+// then verifies that the stored values at computed offsets match the
+// provided expected player ID and expected round ID.
+//
+// Parameters:
+//   table          - Pointer to the frontend context table
+//   playerSlot     - Player slot index
+//   expectedPlayer - Expected player ID value at the computed entry
+//   expectedRound  - Expected round value to check
+//   round          - Round index for entry lookup
+//
+// Returns:
+//   true if both fields match, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern bool pongFrontendContext_8280_g(void* table, int playerSlot, int round);
+
+bool SinglesNetworkClient_ValidateFrontendEntry(void* table, int playerSlot,
+                                                 int expectedPlayer, int expectedRound,
+                                                 int round)
+{
+    uint32_t* t = (uint32_t*)table;
+
+    // First validate via frontend context helper
+    bool valid = pongFrontendContext_8280_g(table, playerSlot, round);
+
+    if (!valid) {
+        return false;
+    }
+
+    // Compute table index: entry = table[(playerSlot + 33) * 4]
+    uint32_t entryIndex = t[playerSlot + 33];
+
+    // Compute slot within entry: slot = entryIndex * 2 + round + 1
+    uint32_t slot = entryIndex * 2 + round + 1;
+
+    // Compute final record offset: record = slot * 3, byte offset = record * 8
+    uint32_t record = slot + slot * 2;  // slot * 3
+    uint32_t byteOffset = record * 8;
+
+    // Check first field (player ID) at the computed offset
+    if ((int32_t)t[byteOffset / 4] != expectedPlayer) {
+        return false;
+    }
+
+    // Recompute for second field check at +28 bytes into the record
+    uint32_t entryIndex2 = t[playerSlot + 33];
+    uint32_t slot2 = entryIndex2 * 2 + round;
+    uint32_t record2 = slot2 + slot2 * 2;  // slot2 * 3
+    uint32_t byteOffset2 = record2 * 8;
+
+    // Check second field (round ID) at byteOffset2 + 28
+    uint8_t* base = (uint8_t*)table;
+    if (*(int32_t*)(base + byteOffset2 + 28) != expectedRound) {
+        return false;
+    }
+
+    return true;
+}
