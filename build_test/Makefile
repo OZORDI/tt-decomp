@@ -60,7 +60,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = /Users/Ozordi/Downloads/tt-decomp
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/Ozordi/Downloads/tt-decomp/build_fresh
+CMAKE_BINARY_DIR = /Users/Ozordi/Downloads/tt-decomp/build_test
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,9 +132,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles /Users/Ozordi/Downloads/tt-decomp/build_fresh//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/build_test/CMakeFiles /Users/Ozordi/Downloads/tt-decomp/build_test//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/build_fresh/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/build_test/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -1206,6 +1206,30 @@ src/rage/memory/rage_memory.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/rage_memory.cpp.s
 .PHONY : src/rage/memory/rage_memory.cpp.s
 
+src/rage/memory/sysMemSimpleAllocator.o: src/rage/memory/sysMemSimpleAllocator.cpp.o
+.PHONY : src/rage/memory/sysMemSimpleAllocator.o
+
+# target to build an object file
+src/rage/memory/sysMemSimpleAllocator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.o
+.PHONY : src/rage/memory/sysMemSimpleAllocator.cpp.o
+
+src/rage/memory/sysMemSimpleAllocator.i: src/rage/memory/sysMemSimpleAllocator.cpp.i
+.PHONY : src/rage/memory/sysMemSimpleAllocator.i
+
+# target to preprocess a source file
+src/rage/memory/sysMemSimpleAllocator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.i
+.PHONY : src/rage/memory/sysMemSimpleAllocator.cpp.i
+
+src/rage/memory/sysMemSimpleAllocator.s: src/rage/memory/sysMemSimpleAllocator.cpp.s
+.PHONY : src/rage/memory/sysMemSimpleAllocator.s
+
+# target to generate assembly for a file
+src/rage/memory/sysMemSimpleAllocator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.s
+.PHONY : src/rage/memory/sysMemSimpleAllocator.cpp.s
+
 src/rage/misc/rage_cm.o: src/rage/misc/rage_cm.cpp.o
 .PHONY : src/rage/misc/rage_cm.o
 
@@ -1972,6 +1996,9 @@ help:
 	@echo "... src/rage/memory/rage_memory.o"
 	@echo "... src/rage/memory/rage_memory.i"
 	@echo "... src/rage/memory/rage_memory.s"
+	@echo "... src/rage/memory/sysMemSimpleAllocator.o"
+	@echo "... src/rage/memory/sysMemSimpleAllocator.i"
+	@echo "... src/rage/memory/sysMemSimpleAllocator.s"
 	@echo "... src/rage/misc/rage_cm.o"
 	@echo "... src/rage/misc/rage_cm.i"
 	@echo "... src/rage/misc/rage_cm.s"

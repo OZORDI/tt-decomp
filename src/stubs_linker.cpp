@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <cstdlib>
+using std::atexit;
 
 // ============================================================================
 // Physics / Scene

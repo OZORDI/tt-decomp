@@ -73,6 +73,7 @@ set(SOURCES
     src/rage/rage_grm.cpp
     src/rage/data/rage_dat.cpp
     src/rage/memory/rage_memory.cpp
+    src/rage/memory/sysMemSimpleAllocator.cpp
     src/rage/io/rage_par.cpp
     src/rage/io/rage_stream_manager.cpp
     src/rage/render_loop.c

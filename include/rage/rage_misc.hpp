@@ -23,16 +23,14 @@ struct Holder {
     virtual void vfn_2();  // [2] @ 0x82121c08
 };
 
-namespace rage {
-namespace atAny {
+namespace rage::atAny {
 
 // ── rage::atAny::PlaceHolder  [vtable @ 0x82032E20] ──────────────────────────
 struct PlaceHolder {
     void**      vtable;           // +0x00
 };
 
-} // namespace atAny
-} // namespace rage
+} // namespace rage::atAny
 
 namespace rage {
 
@@ -95,7 +93,7 @@ struct sysMemAllocator {
 
 // ── rage::sysMemSimpleAllocator  [vtable @ 0x82038C4C] ──────────────────────────
 // Confirmed methods: Allocate, Free, GetLargestAvailBlock, Lock, Unlock, IsLocked
-// Memory allocator with 16 size-class free-list buckets stored inline at +0x0C..+0x48.
+// Memory allocator with 16 size-class free-list buckets stored inline at +0x58..+0x94.
 // Each memory node: +0x00 selfCheck, +0x04 blockSize, +0x0C flagsMeta, +0x10 prev, +0x14 next.
 struct sysMemSimpleAllocator {
     void**      vtable;           // +0x00
@@ -125,7 +123,7 @@ struct sysMemSimpleAllocator {
     virtual void* GetBucketHead(uint32_t sizeClass);   // [4] @ 0x82187840  returns bucket[sizeClass] or overflowHead
     virtual uint32_t GetLargestAvailBlock();            // [5] @ 0x82187838  returns largestAvailBlock
     virtual void Init();                               // [6] @ 0x82186df0  initializes allocator state
-    virtual void SetBreakAllocIndex(uint32_t index);    // [7] @ 0x82186d98  sets maxAllocCount (trap when reached)
+    virtual void SetBreakAllocIndex(uint32_t index);   // [7] @ 0x82186d98  sets maxAllocCount (trap when reached)
     virtual void Lock();                               // [8] @ 0x82187860  sets isLocked = 1
     virtual void Unlock();                             // [9] @ 0x82187870  sets isLocked = 0
     virtual void SetLockState(bool lock);              // [10] @ 0x82187880  dispatches to Lock/Unlock

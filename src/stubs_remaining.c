@@ -119,8 +119,12 @@ void _xe_strcpyn_10(char* dest, const char* src, size_t n) {
 // ============================================================================
 
 int main(int argc, char** argv) {
-    extern int rage_main_6970(int argc, char** argv);
-    return rage_main_6970(argc, argv);
+    // Original boot chain: kernel → __mainCRTStartup → __crt_main_entry → rage_Main
+    // __crt_main_entry calls xe_main_thread_init_0038() to set up the allocator
+    // before passing control to rage_Main.
+    extern void __crt_main_entry(void* pStartupParms, void* pBase);
+    __crt_main_entry((void*)(intptr_t)argc, (void*)argv);
+    return 0;
 }
 
 // ============================================================================
@@ -205,6 +209,13 @@ void* fiStream_Open(const char* path, int mode) {
     (void)path;
     (void)mode;
     return NULL;
+}
+
+// parStreamOutXml_3E40 @ 0x822E3E40 — formatted write to open fiStream
+void parStreamOutXml_3E40(void* stream, const char* format, ...) {
+    (void)stream;
+    (void)format;
+    // TODO: implement via vsnprintf + fiStream write
 }
 
 // ============================================================================

@@ -346,14 +346,20 @@ void* g_pAllocator = NULL;
 // [0] = unused (in original binary, this was another pointer)
 // [1] = main thread context (set by xe_main_thread_init_0038)
 // [2] = secondary context (set by xe_main_thread_init_0038)
-static void* g_allocatorContextSlots[8] = {0};
+void* g_allocatorContextSlots[8] = {0};
 void* g_pAllocatorBase = g_allocatorContextSlots;
 
 // Main thread XeTlsBlock storage — 196 bytes (0xC4) in original binary at 0x8271B114
-static char g_mainThreadXtfStorage[256] = {0};
+char g_mainThreadXtfStorage[256] = {0};
 
 void* g_mainAllocTable = NULL;
-void* g_sda_base = NULL;
+
+// g_sda_base — simulates SDA register r13. In the original binary,
+// r13 points to 0x82600000 and *(r13+0) is the allocator context pointer.
+// g_sda_base[0] must == g_pAllocatorBase == g_allocatorContextSlots.
+// We initialize it with the address of g_allocatorContextSlots at index [0].
+void* g_sda_base_storage[64] = { (void*)g_allocatorContextSlots };
+void** g_sda_base = (void**)g_sda_base_storage;
 
 // ============================================================================
 // Command Line Globals
@@ -421,3 +427,4 @@ uint32_t g_drillCleanupParam = 0;
 uint32_t g_shotType1_825C5F50 = 0;  // @ 0x825C5F50 (.data, 4 bytes)
 uint32_t g_shotType2_825C803C = 0;  // @ 0x825C803C (.data, 4 bytes)
 uint32_t g_shotType3_825C8038 = 0;  // @ 0x825C8038 (.data, 4 bytes)
+uint32_t g_allocInitFlag = 0;

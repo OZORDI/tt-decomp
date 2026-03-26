@@ -85,6 +85,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/RockstarTableTennis.dir/src/rage/io/rage_stream_manager.cpp.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/memory/rage_memory.cpp.o"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/memory/rage_memory.cpp.o.d"
+  "CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.o"
+  "CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/misc/rage_cm.cpp.o"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/misc/rage_cm.cpp.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/rage/misc/rage_globals.cpp.o"
