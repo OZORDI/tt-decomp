@@ -1440,3 +1440,123 @@ int32_t msgMsgSink::QueryConnectionState(uint32_t* outConnected) {
     RtlLeaveCriticalSection(criticalSection);
     return 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * msgMsgSink vtable methods & thunks (batch 4: 8-88 bytes)
+ * 10 functions: field getters, this-adjustment thunks, event dispatchers
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Forward declarations for tail-call targets
+extern void msgMsgSink_03E8_w(void*);
+extern void msgMsgSink_0480_w(void*);
+extern void msgMsgSink_07D8_w(void*);
+extern void msgMsgSink_11B0_w(void*);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetSessionPointer() [vtable slot 54 @ 0x8244EF38 | 8 bytes]
+// Returns the session pointer stored at offset +324 (0x144).
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink::GetSessionPointer() {
+    return *(void**)((uint8_t*)this + 324);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardProcessMessage() [vtable slot 55 @ 0x8244F8A8 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_03E8_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardProcessMessage() {
+    msgMsgSink_03E8_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardToRageHandler() [vtable slot 78 @ 0x824514E8 | 8 bytes]
+// Adjusts this by +20 to the embedded rage sub-object, tail-calls rage_C1A8.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardToRageHandler() {
+    rage_C1A8((uint8_t*)this + 20);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardDispatchMessage() [vtable slot 89 @ 0x8244F8B0 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_0480_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardDispatchMessage() {
+    msgMsgSink_0480_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetNameLength() [vtable slot 115 @ 0x8244F7B8 | 12 bytes]
+// Loads the value at offset +48 (0x30) and returns it plus 9, computing a
+// string length or offset past a fixed-size header.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetNameLength() {
+    uint32_t baseValue = *(uint32_t*)((uint8_t*)this + 48);
+    return baseValue + 9;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::SendPulseToConnection() [vtable slot 119 @ 0x8244F768 | 12 bytes]
+// Loads the network connection from offset +56 (0x38), then forwards to
+// msgMsgSink_8A60_sp (SendPulse) with that connection as the argument.
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink::SendPulseToConnection() {
+    void* connection = *(void**)((uint8_t*)this + 56);
+    return msgMsgSink_8A60_sp(connection);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardCleanupMessage() [vtable slot 147 @ 0x824505C8 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_07D8_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardCleanupMessage() {
+    msgMsgSink_07D8_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardFinalizeMessage() [vtable slot 148 @ 0x824508A8 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_11B0_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardFinalizeMessage() {
+    msgMsgSink_11B0_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::DispatchEventWithSessionInfo() [vtable slot 120 @ 0x824564A0 | 28 bytes]
+// Loads session data from offset +48 (0x30), extracts the reliability mode
+// (lower 2 bits of byte at +14) and the channel ID (uint16 at +10), then
+// dispatches the event via jumptable_3A48 with type=2 on sub-object at +24.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::DispatchEventWithSessionInfo() {
+    void* sessionObj = *(void**)((uint8_t*)this + 48);
+    uint8_t flags = *(uint8_t*)((uint8_t*)sessionObj + 14);
+    uint32_t reliabilityMode = flags & 0x3;
+    uint16_t channelId = *(uint16_t*)((uint8_t*)sessionObj + 10);
+
+    void* target = (uint8_t*)this + 24;
+    extern void jumptable_3A48(void*, uint32_t, uint32_t, uint32_t);
+    jumptable_3A48(target, 2, channelId, reliabilityMode);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::SetActiveAndReleaseObject() @ 0x8244A670 | 88 bytes
+// Sets the active flag (bit 4) at offset +24, then if the object pointer
+// at +40 is non-null, calls vtable[7] (Release) on it and clears the pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::SetActiveAndReleaseObject() {
+    // Set bit 4 (0x10) of the flag byte at offset +24
+    uint8_t flags = *(uint8_t*)((uint8_t*)this + 24);
+    flags |= 0x10;
+    *(uint8_t*)((uint8_t*)this + 24) = flags;
+
+    // Check if object pointer at +40 is valid
+    void* obj = *(void**)((uint8_t*)this + 40);
+    if (obj != nullptr) {
+        // Call vtable slot 7 (Release) on the object
+        typedef void (*ReleaseFn)(void*);
+        void** vt = *(void***)obj;
+        ((ReleaseFn)vt[7])(obj);
+
+        // Clear the object pointer
+        *(void**)((uint8_t*)this + 40) = nullptr;
+    }
+}
