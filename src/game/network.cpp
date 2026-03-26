@@ -2073,3 +2073,350 @@ void SinglesNetworkClient_SendDrillChargingMessage(void* client, uint32_t value)
         SinglesNetworkClient_B320_g(client);
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CopyPositionVector @ 0x8239DA50 | size: 0x40
+//
+// Copies a 16-byte aligned position vector from the result of
+// SinglesNetworkClient_D7A8_p46 into the caller's storage. Uses
+// VMX128 vector load/store for aligned 128-bit copy.
+//
+// Parameters:
+//   this - Destination pointer for the 16-byte vector (aligned)
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* SinglesNetworkClient_D7A8_p46(void* stackBuf);
+
+void SinglesNetworkClient_CopyPositionVector(void* self)
+{
+    // Compute source position into a stack-local buffer
+    uint8_t alignedBuf[16] __attribute__((aligned(16)));
+    void* srcPtr = SinglesNetworkClient_D7A8_p46(alignedBuf);
+
+    // Copy 16 bytes (vector register width) from source to self
+    memcpy(self, srcPtr, 16);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidatePlayerTransition @ 0x82399998 | size: 0x44
+//
+// Validates whether a player state transition is permitted by checking
+// the target state against the current state at offset +992. If states
+// differ, calls SinglesNetworkClient_7038_g on the state buffer at
+// offset +996 to search for the target state. Returns true if the
+// transition is valid (state matches or found in buffer).
+//
+// Parameters:
+//   this        - Pointer to SinglesNetworkClient instance
+//   targetState - State index to validate against
+//
+// Returns:
+//   true if transition is valid, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern int SinglesNetworkClient_7038_g(void* stateBuffer);
+
+bool SinglesNetworkClient_ValidatePlayerTransition(void* self, int targetState)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Check if target matches current state at offset +992
+    int currentState = (int)data[992 / 4];
+    if (targetState == currentState) {
+        return true;
+    }
+
+    // Search state buffer at offset +996 for target state
+    int result = SinglesNetworkClient_7038_g((void*)&data[996 / 4]);
+    if (result < 0) {
+        return false;
+    }
+
+    return true;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::IsSessionConnected @ 0x824172D8 | size: 0x4C
+//
+// Checks whether the network session is in a connected state by
+// examining the connection status field at offset +192. Returns true
+// if the status is 1 (connecting) or 2 (connected).
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   true if session status is 1 or 2, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_IsSessionConnected(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    int status = (int)data[192 / 4];
+
+    if (status == 2) {
+        return true;
+    }
+    if (status == 1) {
+        return true;
+    }
+
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadStreamField16 @ 0x8236A3A0 | size: 0x50
+//
+// Reads a 16-bit field from the network stream at read cursor position 16.
+// Temporarily sets the read cursor (offset +28) to 16, reads via
+// SinglesNetworkClient_8DF8_g, then restores the original cursor.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient (network stream)
+//
+// Returns:
+//   The 32-bit value read from the stream at position 16
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t SinglesNetworkClient_ReadStreamField16(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Save current read cursor (offset +28)
+    uint32_t savedCursor = data[28 / 4];
+
+    // Set cursor to position 16
+    data[28 / 4] = 16;
+
+    // Read 16-bit value into stack buffer
+    uint32_t result = 0;
+    SinglesNetworkClient_8DF8_g(self, &result, 16);
+
+    // Restore original cursor
+    data[28 / 4] = savedCursor;
+
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::IsSessionInReplayState @ 0x82303348 | size: 0x54
+//
+// Checks whether the current network session is in the "replay" state
+// (state == 4). Looks up the session property via the session state
+// pointer at offset +5556 (0x15B4) using the "play" message type key.
+// If found, calls SinglesNetworkClient_A5C8_g to get the current state
+// value.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   true if the session state equals 4 (replay), false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* SinglesNetworkClient_9280_g(void* sessionState, const char* key);
+extern int SinglesNetworkClient_A5C8_g(void* property);
+
+bool SinglesNetworkClient_IsSessionInReplayState(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Get session state pointer from offset +5556 (0x15B4)
+    void* sessionState = (void*)data[5556 / 4];
+
+    // Look up property with "play" key
+    extern const char g_szReplayPropertyKey[];  // @ 0x8205DC90
+    void* property = SinglesNetworkClient_9280_g(sessionState, g_szReplayPropertyKey);
+
+    int stateValue;
+    if (property != nullptr) {
+        stateValue = SinglesNetworkClient_A5C8_g(property);
+    } else {
+        stateValue = 0;
+    }
+
+    return (stateValue == 4);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadMatchRoundIndex @ 0x823B4868 | size: 0x54
+//
+// Reads a 3-bit signed value from the match data stream at cursor
+// position 28. Operates on the sub-buffer at offset +2652 within the
+// network client, temporarily setting the read cursor and reading
+// 3 bits via SinglesNetworkClient_0E18_g.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   3-bit signed value (match round index)
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t SinglesNetworkClient_ReadMatchRoundIndex(void* self)
+{
+    uint8_t* base = (uint8_t*)self;
+    uint32_t* subStream = (uint32_t*)(base + 2652);
+
+    // Save current read cursor (offset +28 within sub-stream)
+    uint32_t savedCursor = subStream[28 / 4];
+
+    // Set cursor to position 28
+    subStream[28 / 4] = 28;
+
+    // Read 3-bit signed value
+    uint32_t result = 0;
+    SinglesNetworkClient_0E18_g((void*)subStream, &result, 3);
+
+    // Restore cursor
+    subStream[28 / 4] = savedCursor;
+
+    return (int32_t)result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadMatchSetCount @ 0x823B4F20 | size: 0x54
+//
+// Reads a 6-bit signed value from the match data stream at cursor
+// position 48. Operates on the sub-buffer at offset +2652, temporarily
+// setting the read cursor and reading 6 bits via
+// SinglesNetworkClient_0E18_g.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   6-bit signed value (match set count)
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t SinglesNetworkClient_ReadMatchSetCount(void* self)
+{
+    uint8_t* base = (uint8_t*)self;
+    uint32_t* subStream = (uint32_t*)(base + 2652);
+
+    // Save current read cursor (offset +28 within sub-stream)
+    uint32_t savedCursor = subStream[28 / 4];
+
+    // Set cursor to position 48
+    subStream[28 / 4] = 48;
+
+    // Read 6-bit signed value
+    uint32_t result = 0;
+    SinglesNetworkClient_0E18_g((void*)subStream, &result, 6);
+
+    // Restore cursor
+    subStream[28 / 4] = savedCursor;
+
+    return (int32_t)result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::VsnNotifyHandlerCtor @ 0x822F9760 | size: 0x58
+//
+// Constructor for a rage::VsnSession notify handler. Sets the vtable for
+// rage::VsnNotifyBase (at 0x8205C7A4), zeros state fields, initializes
+// two linked-list nodes via ke_1B00, clears node pointers and the
+// pending-notification field.
+//
+// Parameters:
+//   this - Pointer to VsnNotifyHandler instance to construct
+//
+// Returns:
+//   Initialized handler (returned in r3)
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::VsnNotifyBase vtable @ 0x8205C7A4
+extern uint32_t g_VsnNotifyHandlerVtable;
+
+void SinglesNetworkClient_VsnNotifyHandlerCtor(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Set vtable pointer
+    data[0] = (uint32_t)&g_VsnNotifyHandlerVtable;
+
+    // Zero state fields
+    data[1] = 0;  // offset +4
+    data[2] = 0;  // offset +8
+
+    // Initialize linked-list node at offset +12
+    ke_1B00((void*)&data[12 / 4]);
+
+    // Initialize linked-list node at offset +16
+    ke_1B00((void*)&data[16 / 4]);
+
+    // Clear node data
+    data[16 / 4] = 0;
+    data[12 / 4] = 0;
+
+    // Clear pending notification field
+    data[20 / 4] = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetCoordinatorRoundValue @ 0x82300E68 | size: 0x5C
+//
+// Retrieves the current round value from the network coordinator.
+// Looks up a property from the session state at offset +5556 using
+// the "t" key string. If found, calls SinglesNetworkClient_A420_g
+// to extract the value; otherwise returns 0.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   Current round value, or 0 if property not found
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* SinglesNetworkClient_A420_g(void* property);
+
+uint32_t SinglesNetworkClient_GetCoordinatorRoundValue(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Get session state from offset +5556 (0x15B4)
+    void* sessionState = (void*)data[5556 / 4];
+
+    // Look up property with "t" key
+    extern const char g_szRoundPropertyKey[];  // @ 0x8205D63C
+    void* property = SinglesNetworkClient_9280_g(sessionState, g_szRoundPropertyKey);
+
+    if (property != nullptr) {
+        return (uint32_t)(uintptr_t)SinglesNetworkClient_A420_g(property);
+    }
+
+    return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::LookupSessionPropertyValue @ 0x823F9808 | size: 0x5C
+//
+// Looks up a session property by key and stores its integer value.
+// Takes the session state and key, plus a pointer where the result
+// should be stored. If found, extracts the value via
+// SinglesNetworkClient_A5C8_g, stores it, and returns true.
+//
+// Parameters:
+//   sessionState - Session state pointer
+//   key          - Property key string
+//   outValue     - Pointer to store the result
+//
+// Returns:
+//   true if property was found and value stored, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_LookupSessionPropertyValue(void* sessionState, const char* key, uint32_t* outValue)
+{
+    // Look up property
+    void* property = SinglesNetworkClient_9280_g(sessionState, key);
+
+    if (property != nullptr) {
+        // Get property value and store it
+        int value = SinglesNetworkClient_A5C8_g(property);
+        *outValue = (uint32_t)value;
+        return true;
+    }
+
+    return false;
+}
