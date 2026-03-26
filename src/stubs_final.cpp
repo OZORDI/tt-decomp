@@ -124,4 +124,4 @@ void _c_xmlNodeStruct_Initialize(void* o) { xmlNodeStruct_Initialize(o); }
 void* pg_9C00_g(void* p, int i) { (void)p;(void)i; return nullptr; }
 void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)b;(void)c; }
-namespace rage { void phBoundCapsule_01D0_g(void* j, float f) { (void)j;(void)f; } }
+namespace rage { struct phJoint3Dof; void phBoundCapsule_01D0_g(phJoint3Dof* j, float f) { (void)j;(void)f; } }
