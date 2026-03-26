@@ -102,6 +102,11 @@ extern void SinglesNetworkClient_0448_g(void* self, uint32_t value, int bits);
 extern void SinglesNetworkClient_8AE0_g(void* self);
 extern void snSession_AddNode_C068(void* sessionNodeList, void* node);
 extern "C" void* rage_alloc(uint32_t size);
+extern void pongNetMessageHolder_6F30_wrh(void* memory);
+extern void pongNetMessageHolder_70C8_wrh(void* memory);
+extern void pongNetMessageHolder_71C0_wrh(void* memory);
+extern void pongNetMessageHolder_72A8_wrh(void* memory);
+extern void pongNetMessageHolder_7530_wrh(void* memory);
 extern void pongNetMessageHolder_7700_wrh(void* memory);
 
 // rage event structs used in network code
@@ -3868,4 +3873,268 @@ void pongNetMessageHolder_2028_2hr(void* thisPtr) {
     uint32_t refCount = *(uint32_t*)(obj + 12);
     refCount++;
     *(uint32_t*)(obj + 12) = refCount;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocatePlayerUpdateMessagePool @ 0x823C08D0 | size: 0x58
+//
+// Lazy allocation for the PlayerUpdateMessage pool (104,816 bytes).
+// Creates a pool of 200 PlayerUpdateMessage entries (stride 524).
+// Calls pongNetMessageHolder_6F30_wrh to construct the pool.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_08D0_1(pongNetMessageHolder* holder) {
+    if (holder->m_pInternalArray != nullptr) {
+        return;
+    }
+
+    // Allocate memory for PlayerUpdateMessage pool (200 * 524 + 16 header = 104816)
+    void* memory = rage_alloc(104816);
+
+    if (memory != nullptr) {
+        // Construct PlayerUpdateMessage pool
+        pongNetMessageHolder_6F30_wrh(memory);
+        holder->m_pInternalArray = memory;
+    } else {
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocatePlayerUpdateMessagePool @ 0x823C0928 | size: 0x68
+//
+// Teardown for the PlayerUpdateMessage pool (200 entries, stride 524).
+// Resets each entry's vtable to PongNetMessage base (0x8206C304), then frees.
+//
+// Python-verified:
+//   sentinel = lis(-32249) + (-15612) = 0x8206C304
+//   start = base + 131072 - 26272 = base + 104800
+//   200 iterations * 524 stride = 104800
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_0928_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 200 entries (stride 524), resetting vtables
+        uint8_t* cursor = messageArray + 104800;
+        for (int i = 199; i >= 0; --i) {
+            cursor -= 524;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        // Free the pool memory
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocatePlayerStopMessagePool @ 0x823C09E8 | size: 0x64
+//
+// Teardown for the PlayerStopMessage pool (200 entries, stride 80).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 16000, 200 * 80 = 16000
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_09E8_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 200 entries (stride 80), resetting vtables
+        uint8_t* cursor = messageArray + 16000;
+        for (int i = 199; i >= 0; --i) {
+            cursor -= 80;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateSignalReadyToServeMessagePool @ 0x823C0BC0 | size: 0x54
+//
+// Lazy allocation for the SignalReadyToServeMessage pool (176 bytes).
+// Calls pongNetMessageHolder_70C8_wrh to construct the pool.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_0BC0_1(pongNetMessageHolder* holder) {
+    if (holder->m_pInternalArray != nullptr) {
+        return;
+    }
+
+    // Allocate memory for SignalReadyToServeMessage pool
+    void* memory = rage_alloc(176);
+
+    if (memory != nullptr) {
+        // Construct SignalReadyToServeMessage pool
+        pongNetMessageHolder_70C8_wrh(memory);
+        holder->m_pInternalArray = memory;
+    } else {
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateSignalReadyToServeMessagePool @ 0x823C0B58 | size: 0x64
+//
+// Teardown for the SignalReadyToServeMessage pool (200 entries, stride 64).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 12800, 200 * 64 = 12800
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_0B58_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 200 entries (stride 64), resetting vtables
+        uint8_t* cursor = messageArray + 12800;
+        for (int i = 199; i >= 0; --i) {
+            cursor -= 64;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateServeReadyMessagePool @ 0x823C0C18 | size: 0x54
+//
+// Lazy allocation for the ServeReadyMessage pool (112 bytes).
+// Calls pongNetMessageHolder_71C0_wrh to construct the pool.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_0C18_1(pongNetMessageHolder* holder) {
+    if (holder->m_pInternalArray != nullptr) {
+        return;
+    }
+
+    // Allocate memory for ServeReadyMessage pool
+    void* memory = rage_alloc(112);
+
+    if (memory != nullptr) {
+        // Construct ServeReadyMessage pool
+        pongNetMessageHolder_71C0_wrh(memory);
+        holder->m_pInternalArray = memory;
+    } else {
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateServeReadyMessagePool @ 0x823C0C70 | size: 0x64
+//
+// Teardown for the ServeReadyMessage pool (4 entries, stride 24).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 96, 4 * 24 = 96
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_0C70_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 4 entries (stride 24), resetting vtables
+        uint8_t* cursor = messageArray + 96;
+        for (int i = 3; i >= 0; --i) {
+            cursor -= 24;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateServeStartedMessagePool @ 0x823C0DE0 | size: 0x54
+//
+// Lazy allocation for the ServeStartedMessage pool (1040 bytes).
+// Calls pongNetMessageHolder_72A8_wrh to construct the pool.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_0DE0_1(pongNetMessageHolder* holder) {
+    if (holder->m_pInternalArray != nullptr) {
+        return;
+    }
+
+    // Allocate memory for ServeStartedMessage pool
+    void* memory = rage_alloc(1040);
+
+    if (memory != nullptr) {
+        // Construct ServeStartedMessage pool
+        pongNetMessageHolder_72A8_wrh(memory);
+        holder->m_pInternalArray = memory;
+    } else {
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateServeStartedMessagePool @ 0x823C0E38 | size: 0x64
+//
+// Teardown for the ServeStartedMessage pool (4 entries, stride 256).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 1024, 4 * 256 = 1024
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_0E38_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 4 entries (stride 256), resetting vtables
+        uint8_t* cursor = messageArray + 1024;
+        for (int i = 3; i >= 0; --i) {
+            cursor -= 256;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateAcceptSpectatorMessagePool @ 0x823C1FA8 | size: 0x54
+//
+// Lazy allocation for the AcceptSpectatorMessage pool (176 bytes).
+// Calls pongNetMessageHolder_7530_wrh to construct the pool.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_1FA8_1(pongNetMessageHolder* holder) {
+    if (holder->m_pInternalArray != nullptr) {
+        return;
+    }
+
+    // Allocate memory for AcceptSpectatorMessage pool
+    void* memory = rage_alloc(176);
+
+    if (memory != nullptr) {
+        // Construct AcceptSpectatorMessage pool
+        pongNetMessageHolder_7530_wrh(memory);
+        holder->m_pInternalArray = memory;
+    } else {
+        holder->m_pInternalArray = nullptr;
+    }
 }
