@@ -1406,3 +1406,274 @@ void* cmOperatorCtor_CamActionAllSlots(void* callerArg) {
 void* cmOperatorCtor_CamAction2Float(void* callerArg) {
     return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_97F8_g, 7);
 }
+
+// ── cmOperatorCtor factory functions — batch 4 (logic & arithmetic operators) ─
+
+extern "C" const void* rage_cmEquals_vtable;         // @ 0x8205461C
+extern "C" const void* rage_cmGreaterThan_vtable;    // @ 0x82054674
+extern "C" const void* rage_cmLessThan_vtable;       // @ 0x820546CC
+extern "C" const void* rage_cmOr_vtable;             // @ 0x82054724
+extern "C" const void* rage_cmXor_vtable;            // @ 0x8205477C
+extern "C" const void* rage_cmAnd_vtable;            // @ 0x820547D4
+extern "C" const void* rage_cmNot_vtable;            // @ 0x8205482C
+extern "C" const void* rage_cmAdd_vtable;            // @ 0x82053A6C
+extern "C" const void* rage_cmSubtract_vtable;       // @ 0x82053AC4
+extern "C" const void* rage_cmMultiply_vtable;       // @ 0x82053B1C
+
+// ── rage::cmEquals factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6698_1 @ 0x82266698 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmEquals vtable.
+ */
+// cmOperatorCtor_vfn_0_6698_1 @ 0x82266698
+void* cmOperatorCtor_cmEquals() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmEquals_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmGreaterThan factory ──────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6730_1 @ 0x82266730 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmGreaterThan vtable.
+ */
+// cmOperatorCtor_vfn_0_6730_1 @ 0x82266730
+void* cmOperatorCtor_cmGreaterThan() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmGreaterThan_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmLessThan factory ─────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_67C8_1 @ 0x822667C8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmLessThan vtable.
+ */
+// cmOperatorCtor_vfn_0_67C8_1 @ 0x822667C8
+void* cmOperatorCtor_cmLessThan() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmLessThan_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmOr factory ───────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6860_1 @ 0x82266860 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmOr vtable.
+ */
+// cmOperatorCtor_vfn_0_6860_1 @ 0x82266860
+void* cmOperatorCtor_cmOr() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmOr_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmXor factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_68F8_1 @ 0x822668F8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmXor vtable.
+ */
+// cmOperatorCtor_vfn_0_68F8_1 @ 0x822668F8
+void* cmOperatorCtor_cmXor() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmXor_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnd factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6990_1 @ 0x82266990 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmAnd vtable.
+ */
+// cmOperatorCtor_vfn_0_6990_1 @ 0x82266990
+void* cmOperatorCtor_cmAnd() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnd_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmNot factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6A28_1 @ 0x82266A28 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmNot vtable. Unary operator.
+ */
+// cmOperatorCtor_vfn_0_6A28_1 @ 0x82266A28
+void* cmOperatorCtor_cmNot() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmNot_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAdd factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6AB8_1 @ 0x82266AB8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmAdd vtable.
+ */
+// cmOperatorCtor_vfn_0_6AB8_1 @ 0x82266AB8
+void* cmOperatorCtor_cmAdd() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAdd_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSubtract factory ─────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6B50_1 @ 0x82266B50 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmSubtract vtable.
+ */
+// cmOperatorCtor_vfn_0_6B50_1 @ 0x82266B50
+void* cmOperatorCtor_cmSubtract() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSubtract_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmMultiply factory ─────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6BE8_1 @ 0x82266BE8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmMultiply vtable.
+ */
+// cmOperatorCtor_vfn_0_6BE8_1 @ 0x82266BE8
+void* cmOperatorCtor_cmMultiply() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmMultiply_vtable;
+        return mem;
+    }
+    return nullptr;
+}
