@@ -1701,3 +1701,375 @@ bool SinglesNetworkClient::FireStartEvent() {
 
     return false;
 }
+
+
+// External function declarations for newly decompiled functions
+extern void SinglesNetworkClient_0738_g(void* client, uint32_t value, int bitWidth);
+extern void atSingleton_05F0_g(void* client, uint32_t value, int bitWidth);
+extern void ke_1B00(void* node);
+extern void* SinglesNetworkClient_9280_g(void* context, const char* name);
+extern void SinglesNetworkClient_A5C8_g(void* result);
+extern void* SinglesNetworkClient_9318_g(void* context, const char* name);
+extern void SinglesNetworkClient_B320_g(void* client);
+extern void SinglesNetworkClient_B2A8_g(void* client);
+extern void nop_8240E6D0(const char* msg);
+
+// Global flag: network debug assertions disabled
+extern uint8_t g_networkAssertionsDisabled;  // lbl_826065EB
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::ReadDataAndWriteAlignedSize @ 0x820D67C8 | size: 0x6C
+//
+// Reads data from the message buffer using ReadBits, then writes the
+// byte-aligned buffer size as a 16-bit value at write offset 32.
+// Used by Serialise methods of network messages.
+//
+// Parameters:
+//   client   - Pointer to message buffer
+//   value    - Data value to read
+//   bitWidth - Number of bits to read
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_ReadDataAndWriteAlignedSize(void* client, uint32_t value, int bitWidth)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client, nullptr);
+
+    // Read bits from the buffer
+    SinglesNetworkClient_0738_g(client, value, bitWidth);
+
+    // Compute byte-aligned size: (bufferBits + 7) / 8
+    uint32_t bufferBits = data[4];  // field +16: bit count
+    int32_t alignedBytes = (int32_t)(bufferBits + 7) >> 3;
+
+    // Save and restore write offset, writing aligned size at offset 32
+    uint32_t savedWriteOffset = data[8];  // field +32
+    data[8] = 32;
+
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+
+    data[8] = savedWriteOffset;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::WriteDataAndUpdateAlignedSize @ 0x820D6838 | size: 0x6C
+//
+// Writes data to the message buffer, then updates the byte-aligned
+// buffer size as a 16-bit value at write offset 32.
+// Used by Serialise methods of network messages.
+//
+// Parameters:
+//   client   - Pointer to message buffer
+//   value    - Data value to write
+//   bitWidth - Number of bits to write
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_WriteDataAndUpdateAlignedSize(void* client, uint32_t value, int bitWidth)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client, nullptr);
+
+    // Write bits to the buffer
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)value);
+
+    // Compute byte-aligned size: (bufferBits + 7) / 8
+    uint32_t bufferBits = data[4];  // field +16: bit count
+    int32_t alignedBytes = (int32_t)(bufferBits + 7) >> 3;
+
+    // Save and restore write offset, writing aligned size at offset 32
+    uint32_t savedWriteOffset = data[8];  // field +32
+    data[8] = 32;
+
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+
+    data[8] = savedWriteOffset;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::WriteExtDataAndUpdateAlignedSize @ 0x820D68A8 | size: 0x6C
+//
+// Writes extended data to the message buffer using atSingleton write,
+// then updates the byte-aligned buffer size at write offset 32.
+// Used by Serialise methods for extended-format fields (timestamps, etc).
+//
+// Parameters:
+//   client   - Pointer to message buffer
+//   value    - Data value to write
+//   bitWidth - Number of bits to write
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_WriteExtDataAndUpdateAlignedSize(void* client, uint32_t value, int bitWidth)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client, nullptr);
+
+    // Write extended data to the buffer
+    atSingleton_05F0_g(client, value, bitWidth);
+
+    // Compute byte-aligned size: (bufferBits + 7) / 8
+    uint32_t bufferBits = data[4];  // field +16: bit count
+    int32_t alignedBytes = (int32_t)(bufferBits + 7) >> 3;
+
+    // Save and restore write offset, writing aligned size at offset 32
+    uint32_t savedWriteOffset = data[8];  // field +32
+    data[8] = 32;
+
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+
+    data[8] = savedWriteOffset;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::GetSessionContext @ 0x822EB1E8 | size: 0x5C
+//
+// Returns the session context pointer stored at offset +92.
+// Includes a debug assertion that validates the global network state
+// before returning, unless assertions are disabled.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   Session context pointer from field +92
+// -----------------------------------------------------------------------
+void* SinglesNetworkClient_GetSessionContext(void* client)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Check if global network state pointer is valid
+    extern uint32_t* g_networkState;  // lis/lwz pattern at 0x8205AB50
+    if (g_networkState != nullptr) {
+        uint32_t* stateObj = (uint32_t*)g_networkState[139];  // offset +556
+        if (stateObj != nullptr && !g_networkAssertionsDisabled) {
+            // Fire debug assertion (nop in release)
+            nop_8240E6D0("SinglesNetworkClient::GetSessionContext");
+        }
+    }
+
+    // Return session context at offset +92
+    return (void*)(uintptr_t)data[23];  // +92 = 23 * 4
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::MessageHandlerCtor @ 0x822EDA08 | size: 0x58
+//
+// Constructor for a message handler node. Initializes the vtable pointer,
+// zeros all fields, and sets up two linked list nodes at offsets +12 and +16.
+//
+// Parameters:
+//   handler - Pointer to the MessageHandler to construct
+//
+// Returns:
+//   Pointer to the constructed handler (in r3)
+// -----------------------------------------------------------------------
+void* SinglesNetworkClient_MessageHandlerCtor(void* handler)
+{
+    uint32_t* data = (uint32_t*)handler;
+
+    // Set vtable pointer
+    extern uint32_t lbl_8205C690[];  // MessageHandler vtable
+    data[0] = (uint32_t)(uintptr_t)lbl_8205C690;
+
+    // Zero out fields
+    data[1] = 0;  // flags (+4)
+    data[2] = 0;  // field +8
+
+    // Initialize linked list node at offset +12
+    ke_1B00((void*)((uint8_t*)handler + 12));
+
+    // Initialize linked list node at offset +16
+    uint8_t* node2 = (uint8_t*)handler + 16;
+    ke_1B00(node2);
+
+    // Clear both list node pointers and user data
+    *(uint32_t*)node2 = 0;            // +16
+    *(uint32_t*)((uint8_t*)handler + 12) = 0;  // +12
+    data[5] = 0;                      // +20
+
+    return handler;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::FindAndInvokeNetCallback @ 0x822F54E8 | size: 0x4C
+//
+// Looks up a network callback by name string. If found, invokes it.
+// If not found, restores r3 from the stack frame.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// -----------------------------------------------------------------------
+void* SinglesNetworkClient_FindAndInvokeNetCallback(void* client)
+{
+    // Get the session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Look up the callback by name
+    void* result = SinglesNetworkClient_9280_g(context, (const char*)0x8205C440);  // string key
+
+    if (result != nullptr) {
+        // Found callback - invoke it
+        SinglesNetworkClient_A5C8_g(result);
+        return result;
+    }
+
+    // Not found - return the original context
+    return context;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillScoreMessage @ 0x822FA7B8 | size: 0x60
+//
+// Sends a drill score value as a network message. Creates a message
+// with the given score value and type=3. Called from training drill
+// completion handlers (pongTrainingDrill vtable slots).
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   score  - Score value to send
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillScoreMessage(void* client, uint32_t score)
+{
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;  // transaction result in low byte
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C83C);
+
+    if (msg != nullptr) {
+        // Store score value and message type (3)
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = score;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillSuccessMessage @ 0x822FA818 | size: 0x60
+//
+// Sends a drill success count as a network message. Creates a message
+// with the given value and type=3. Called when training drill success
+// count is incremented.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Success count value to send
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillSuccessMessage(void* client, uint32_t value)
+{
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C848);
+
+    if (msg != nullptr) {
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = value;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillMovementMessage @ 0x822FA8F0 | size: 0x60
+//
+// Sends a drill movement value as a network message. Reads the value
+// from the client's field at offset +184, creates a message with
+// type=3. Called from movement drill handlers and HUD updates.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillMovementMessage(void* client)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Read movement value from field +184
+    uint32_t movementValue = data[46];  // +184 = 46 * 4
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C86C);
+
+    if (msg != nullptr) {
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = movementValue;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillChargingMessage @ 0x822FAC08 | size: 0x60
+//
+// Sends a drill charging value as a network message. Creates a message
+// with the given value and type=3. Called from charging drill state
+// handlers.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Charging value to send
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillChargingMessage(void* client, uint32_t value)
+{
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C898);
+
+    if (msg != nullptr) {
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = value;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
