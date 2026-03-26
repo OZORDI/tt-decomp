@@ -209,9 +209,28 @@ struct pongCameraMgr {
     bool ValidateAndAdjustTransition(void* gameState, int mode);  // @ 0x821F3780
     
     // Parameter management
-    void CopyParametersToBuffer(uint32_t param1, uint32_t param2, 
+    void CopyParametersToBuffer(uint32_t param1, uint32_t param2,
                                 uint32_t param3, uint32_t param4,
                                 uint32_t param5, uint32_t param6);  // @ 0x821F99D0
+
+    // Camera change wrappers (tail-call to pg_7CD8_2h with mode N)
+    bool TryCameraChange_Mode1(void* gameState);  // @ 0x821F7DF8
+    bool TryCameraChange_Mode2(void* gameState);  // @ 0x821F7E00
+    bool TryCameraChange_Mode3(void* gameState);  // @ 0x821F7E08
+    bool TryCameraChange_Mode4(void* gameState);  // @ 0x821F7E10
+    bool TryCameraChange_Mode5(void* gameState);  // @ 0x821F7E18
+    bool TryCameraChange_Mode6(void* gameState);  // @ 0x821F7E20
+
+    // Camera state checks (compare g_cameraState against N)
+    bool IsCameraStateFour() const;      // @ 0x821F7EA0
+    bool IsCameraStateFive() const;      // @ 0x821F7EC0
+    bool IsCameraStateSix() const;       // @ 0x821F7EE0
+    bool IsCameraStateSeven() const;     // @ 0x821F7F00
+    bool IsCameraStateEight() const;     // @ 0x821F7F20
+    bool IsCameraStateTen() const;       // @ 0x821F7F60
+    bool IsCameraStateEleven() const;    // @ 0x821F7F80
+    bool IsCameraStateTwelve() const;    // @ 0x821F7FA0
+    bool IsCameraStateThirteen() const;  // @ 0x821F7FC0
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────
