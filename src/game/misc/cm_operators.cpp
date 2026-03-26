@@ -1677,3 +1677,153 @@ void* cmOperatorCtor_cmMultiply() {
     }
     return nullptr;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmOperatorCtor camera action factories — batch 4
+//
+// 10 additional cmAction camera sampler factories. Same mechanical pattern
+// as batch 3: allocate 144 bytes, build function descriptor tables on the
+// stack, tail-call cmActionCtor_11D0_fw. Each uses a unique combination of
+// action sampler function and dirty-flag bitmask.
+//
+// Dirty flag semantics (same as batch 3):
+//   0x0003 = rotation (pitch + yaw)
+//   0x0004 = FOV
+//   0x0007 = base camera params (position XYZ)
+//   0x0038 = look-at target (XYZ)
+//   0x03C0 = orientation (vec4 + angle)
+//   0x3C00 = secondary orientation (vec4 + angle)
+//   0x3FFF = all 14 scalar slots
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Action sampler functions (camera parameter readers — batch 4)
+extern "C" void cmSampleCamActions_98A8_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9918_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_99D0_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9A88_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9B30_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9BD8_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9D80_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_A060_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_A238_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_A488_g(void* actionCtx, void* actionNode);
+
+/**
+ * cmOperatorCtor_D5F0_w @ 0x8217D5F0 | size: 0x120
+ *
+ * Creates a cmAction that samples camera rotation (pitch + yaw).
+ * Uses cmSampleCamActions_98A8_g as the action sampler.
+ * Dirty flags 0x3 = slots 0, 1.
+ */
+// cmOperatorCtor_D5F0_w @ 0x8217D5F0
+void* cmOperatorCtor_CamActionRotation_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_98A8_g, 3);
+}
+
+/**
+ * cmOperatorCtor_D710_w @ 0x8217D710 | size: 0x120
+ *
+ * Creates a cmAction that samples camera base position parameters (XYZ).
+ * Uses cmSampleCamActions_9918_g as the action sampler.
+ * Dirty flags 0x7 = slots 0, 1, 2.
+ */
+// cmOperatorCtor_D710_w @ 0x8217D710
+void* cmOperatorCtor_CamActionBaseXYZ_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9918_g, 7);
+}
+
+/**
+ * cmOperatorCtor_D830_w @ 0x8217D830 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera field of view.
+ * Uses cmSampleCamActions_99D0_g as the action sampler.
+ * Dirty flags 0x4 = slot 2.
+ */
+// cmOperatorCtor_D830_w @ 0x8217D830
+void* cmOperatorCtor_CamActionFOV_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_99D0_g, 4);
+}
+
+/**
+ * cmOperatorCtor_D950_w @ 0x8217D950 | size: 0x120
+ *
+ * Creates a cmAction that samples camera base position parameters (XYZ).
+ * Uses cmSampleCamActions_9A88_g as the action sampler.
+ * Dirty flags 0x7 = slots 0, 1, 2.
+ */
+// cmOperatorCtor_D950_w @ 0x8217D950
+void* cmOperatorCtor_CamActionBaseXYZ_C(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9A88_g, 7);
+}
+
+/**
+ * cmOperatorCtor_DA70_w @ 0x8217DA70 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera look-at target position.
+ * Uses cmSampleCamActions_9B30_g as the action sampler.
+ * Dirty flags 0x38 = slots 3, 4, 5.
+ */
+// cmOperatorCtor_DA70_w @ 0x8217DA70
+void* cmOperatorCtor_CamActionLookAtTarget_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9B30_g, 56);
+}
+
+/**
+ * cmOperatorCtor_DB90_w @ 0x8217DB90 | size: 0x120
+ *
+ * Creates a cmAction that samples camera orientation (vec4 + angle).
+ * Uses cmSampleCamActions_9BD8_g as the action sampler.
+ * Dirty flags 0x3C0 = slots 6, 7, 8, 9.
+ */
+// cmOperatorCtor_DB90_w @ 0x8217DB90
+void* cmOperatorCtor_CamActionOrientation_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9BD8_g, 960);
+}
+
+/**
+ * cmOperatorCtor_DCB0_w @ 0x8217DCB0 | size: 0x120
+ *
+ * Creates a cmAction that samples secondary camera orientation.
+ * Uses cmSampleCamActions_9D80_g as the action sampler.
+ * Dirty flags 0x3C00 = slots 10, 11, 12, 13.
+ */
+// cmOperatorCtor_DCB0_w @ 0x8217DCB0
+void* cmOperatorCtor_CamActionSecondaryOrientation_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9D80_g, 15360);
+}
+
+/**
+ * cmOperatorCtor_DDD0_w @ 0x8217DDD0 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera look-at target position.
+ * Uses cmSampleCamActions_A060_g as the action sampler.
+ * Dirty flags 0x38 = slots 3, 4, 5.
+ */
+// cmOperatorCtor_DDD0_w @ 0x8217DDD0
+void* cmOperatorCtor_CamActionLookAtTarget_C(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_A060_g, 56);
+}
+
+/**
+ * cmOperatorCtor_DEF0_w @ 0x8217DEF0 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera look-at target position.
+ * Uses cmSampleCamActions_A238_g as the action sampler.
+ * Dirty flags 0x38 = slots 3, 4, 5.
+ */
+// cmOperatorCtor_DEF0_w @ 0x8217DEF0
+void* cmOperatorCtor_CamActionLookAtTarget_D(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_A238_g, 56);
+}
+
+/**
+ * cmOperatorCtor_E010_w @ 0x8217E010 | size: 0x120
+ *
+ * Creates a cmAction that samples all 14 scalar camera output slots.
+ * Uses cmSampleCamActions_A488_g as the action sampler.
+ * Dirty flags 0x3FFF = all slots 0-13.
+ */
+// cmOperatorCtor_E010_w @ 0x8217E010
+void* cmOperatorCtor_CamActionAllSlots_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_A488_g, 16383);
+}
