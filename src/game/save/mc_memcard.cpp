@@ -286,10 +286,7 @@ void mcMemcardControl::RequestOp()
     m_saveOperation.m_hasPendingRequest = true;
 }
 
-fsmMachine::~fsmMachine()
-{
-    DestroyFsmMachineStorage(this);
-}
+// REMOVED: fsmMachine::~fsmMachine (defined in pong_misc.cpp)
 
 mcSegmentContainer::~mcSegmentContainer()
 {

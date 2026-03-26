@@ -26,8 +26,8 @@ void* g_displayObject = NULL;
 void* g_cachedAssetPath = NULL;
 
 /* grcDevice instances — the two device pointers used by the rendering pipeline */
-void* g_pGrcDevice_beginScene = (void*)0x8271A81C;  /* full device for beginScene */
-void* g_pGrcDevice_clear      = (void*)0x8271A320;  /* compact clear-queue device */
+// REMOVED: g_pGrcDevice_beginScene (in globals_extended.c)  /* full device for beginScene */
+// REMOVED: g_pGrcDevice_clear (in globals_extended.c)  /* compact clear-queue device */
 
 /* rage::cmSampleCamActions global pointer (gate in beginScene) */
 void* g_pCamActionSys = NULL;           /* @ 0x8271A344, set at runtime */

@@ -235,8 +235,8 @@ void util_PackColorRGBA(uint32_t* a, const float* b) { (void)a; (void)b; }
 void* xam_singleton_init_8D60(void* a) { (void)a; return nullptr; }
 
 // xe_EC88 has two overloads (int / unsigned int)
-void* xe_EC88(int size) { (void)size; return nullptr; }
-void* xe_EC88(unsigned int size) { (void)size; return nullptr; }
+// REMOVED: xe_EC88 (defined in heap.c)
+// REMOVED: xe_EC88 overload
 
 // xe_F4C0 has two overloads (void / void*)
 void xe_F4C0() {}

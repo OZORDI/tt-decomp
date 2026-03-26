@@ -106,10 +106,7 @@ void _crt_tls_fiber_setup(void) {
     // TLS fiber setup
 }
 
-void __run_table(void* start, void* end) {
-    (void)start;
-    (void)end;
-}
+// REMOVED: __run_table (defined in exit.c)
 
 void _xe_strcpyn_10(char* dest, const char* src, size_t n) {
     (void)dest;
@@ -454,10 +451,7 @@ void xe_5BB0(void) {
     // XE function
 }
 
-void* xe_EC88(uint32_t size) {
-    (void)size;
-    return NULL;
-}
+// REMOVED: xe_EC88 (defined in heap.c)
 
 void xe_main_thread_init(void) {
     // Main thread init
