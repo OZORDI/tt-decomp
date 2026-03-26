@@ -333,3 +333,199 @@ void cmLookup_GetBool_DDB0_1(void* self, bool* outResult) {
     
     *outResult = cmCond_21B0((char*)self + 68);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmOperatorCtor factory functions
+//
+// These are virtual method overrides on the 113 cmOperatorCtor vtable
+// instantiations. Each allocates memory via the TLS allocator (slot 1)
+// and tail-calls the class-specific init/constructor function.
+// Pattern: xe_main_thread_init_0038() → get allocator → Allocate(size, 16)
+//          → if non-null, call init → return constructed object or nullptr
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Init functions called by each factory
+extern "C" void* atSingleton_9560_2hr(void* mem);   // → pongInlineCinematics ctor
+extern "C" void* phJoint3Dof_8BE8_fw(void* mem);    // → plrPlayerMgr ctor
+extern "C" void* ph_ctor_01D0(void* mem);            // → gdCrData ctor
+extern "C" void* atSingleton_2560_2hr(void* mem);    // → gdCharPlayerBias ctor
+extern "C" void* phJoint3Dof_AA28_w(void* mem);      // → gdLevelData ctor
+extern "C" void* ph_ctor_FEC8(void* mem);            // → gdNetData ctor
+extern "C" void* atSingleton_E050_2hr(void* mem);    // → gdPlyrLimits ctor
+extern "C" void* ph_ctor_FB70(void* mem);            // → lvlLevelMgr ctor
+extern "C" void* ph_09B8(void* mem);                 // → gmBallNode ctor
+extern "C" void* atSingleton_B358_p46(void* mem);    // → pongCharViewContext ctor
+
+typedef void* (*AllocFn)(void* self, uint32_t size, uint32_t alignment);
+
+/**
+ * Helper: allocate from TLS heap with 16-byte alignment.
+ * Used by all cmOperatorCtor factory functions below.
+ */
+static void* cmOperatorCtor_Allocate(uint32_t size) {
+    xe_main_thread_init_0038();
+    uint32_t* sdaCtx = (uint32_t*)(uintptr_t)g_sda_base[0];
+    void** allocator = (void**)(uintptr_t)sdaCtx[1];
+    AllocFn alloc = (AllocFn)allocator[1];
+    return alloc(allocator, size, 16);
+}
+
+// ── pongInlineCinematics factory ─────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_94C0_w @ 0x821694C0 | size: 0x64
+ *
+ * Allocates 12512 bytes and constructs a pongInlineCinematics object.
+ */
+// cmOperatorCtor_94C0_w @ 0x821694C0
+void* cmOperatorCtor_pongInlineCinematics() {
+    void* mem = cmOperatorCtor_Allocate(12512);
+    if (mem != nullptr) {
+        return atSingleton_9560_2hr(mem);
+    }
+    return nullptr;
+}
+
+// ── plrPlayerMgr factory ─────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_8B80_w @ 0x82188B80 | size: 0x64
+ *
+ * Allocates 300 bytes and constructs a plrPlayerMgr object.
+ */
+// cmOperatorCtor_8B80_w @ 0x82188B80
+void* cmOperatorCtor_plrPlayerMgr() {
+    void* mem = cmOperatorCtor_Allocate(300);
+    if (mem != nullptr) {
+        return phJoint3Dof_8BE8_fw(mem);
+    }
+    return nullptr;
+}
+
+// ── gdCrData factory ─────────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_0AF0_w @ 0x821D0AF0 | size: 0x64
+ *
+ * Allocates 368 bytes and constructs a gdCrData object.
+ */
+// cmOperatorCtor_0AF0_w @ 0x821D0AF0
+void* cmOperatorCtor_gdCrData() {
+    void* mem = cmOperatorCtor_Allocate(368);
+    if (mem != nullptr) {
+        return ph_ctor_01D0(mem);
+    }
+    return nullptr;
+}
+
+// ── gdCharPlayerBias factory ─────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_2878_w @ 0x821D2878 | size: 0x64
+ *
+ * Allocates 160 bytes and constructs a gdCharPlayerBias object.
+ */
+// cmOperatorCtor_2878_w @ 0x821D2878
+void* cmOperatorCtor_gdCharPlayerBias() {
+    void* mem = cmOperatorCtor_Allocate(160);
+    if (mem != nullptr) {
+        return atSingleton_2560_2hr(mem);
+    }
+    return nullptr;
+}
+
+// ── gdLevelData factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_AE88_w @ 0x821DAE88 | size: 0x64
+ *
+ * Allocates 5936 bytes and constructs a gdLevelData object.
+ */
+// cmOperatorCtor_AE88_w @ 0x821DAE88
+void* cmOperatorCtor_gdLevelData() {
+    void* mem = cmOperatorCtor_Allocate(5936);
+    if (mem != nullptr) {
+        return phJoint3Dof_AA28_w(mem);
+    }
+    return nullptr;
+}
+
+// ── gdNetData factory ────────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_0030_w @ 0x821F0030 | size: 0x64
+ *
+ * Allocates 144 bytes and constructs a gdNetData object.
+ */
+// cmOperatorCtor_0030_w @ 0x821F0030
+void* cmOperatorCtor_gdNetData() {
+    void* mem = cmOperatorCtor_Allocate(144);
+    if (mem != nullptr) {
+        return ph_ctor_FEC8(mem);
+    }
+    return nullptr;
+}
+
+// ── gdPlyrLimits factory ─────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_E338_w @ 0x8220E338 | size: 0x64
+ *
+ * Allocates 148 bytes and constructs a gdPlyrLimits object.
+ */
+// cmOperatorCtor_E338_w @ 0x8220E338
+void* cmOperatorCtor_gdPlyrLimits() {
+    void* mem = cmOperatorCtor_Allocate(148);
+    if (mem != nullptr) {
+        return atSingleton_E050_2hr(mem);
+    }
+    return nullptr;
+}
+
+// ── lvlLevelMgr factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_FDC0_w @ 0x8223FDC0 | size: 0x64
+ *
+ * Allocates 100 bytes and constructs a lvlLevelMgr object.
+ */
+// cmOperatorCtor_FDC0_w @ 0x8223FDC0
+void* cmOperatorCtor_lvlLevelMgr() {
+    void* mem = cmOperatorCtor_Allocate(100);
+    if (mem != nullptr) {
+        return ph_ctor_FB70(mem);
+    }
+    return nullptr;
+}
+
+// ── gmBallNode factory ───────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_0950_w @ 0x82280950 | size: 0x64
+ *
+ * Allocates 336 bytes and constructs a gmBallNode object.
+ */
+// cmOperatorCtor_0950_w @ 0x82280950
+void* cmOperatorCtor_gmBallNode() {
+    void* mem = cmOperatorCtor_Allocate(336);
+    if (mem != nullptr) {
+        return ph_09B8(mem);
+    }
+    return nullptr;
+}
+
+// ── pongCharViewContext factory ──────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_A598_w @ 0x8230A598 | size: 0x64
+ *
+ * Allocates 388 bytes and constructs a pongCharViewContext object.
+ */
+// cmOperatorCtor_A598_w @ 0x8230A598
+void* cmOperatorCtor_pongCharViewContext() {
+    void* mem = cmOperatorCtor_Allocate(388);
+    if (mem != nullptr) {
+        return atSingleton_B358_p46(mem);
+    }
+    return nullptr;
+}
