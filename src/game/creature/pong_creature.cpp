@@ -2248,3 +2248,611 @@ void LocomotionStateMf::SerializeTriple(void* serializer, void* data) {  // 7480
     serialize(serializer, (char*)data + 4);
     serialize(serializer, (char*)data + 8);
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// LocomotionStateAnim — Quaternion / Matrix / Animation Utilities
+////////////////////////////////////////////////////////////////////////////////
+
+// External helpers used by newly-lifted functions
+extern void phBoundCapsule_4360_g(void* capsule, void* outResult);
+extern void phBoundCapsule_7B08_g(void* matrix, float* outVec);
+extern float LocomotionStateAnim_A1F8_g(float value, float rangeMin, float rangeMax);
+extern void LocomotionStateAnim_8278_g(void* matrix, float* vec);
+extern void LocomotionStateAnim_B218_g(void* dst, void* srcMatrix);
+extern void LocomotionStateAnim_6E90_w(void* self, float weight);
+extern bool LocomotionStateAnim_04F0_g(void* animData, uint16_t animID_high, uint16_t* outIndex);
+extern void util_BBB0(void* dst, float* src, float* work);
+extern void util_B9A8(void* dst, void* quat, void* axis);
+extern void LocomotionStateAnim_C128_g(void* anim, void* animData, float weight);
+extern void LocomotionStateAnim_C288_g(void* anim, void* animData, float weight);
+extern void LocomotionStateAnim_BEF8_g(void* self, uint16_t animID_high, uint8_t animID_low);
+extern void LocomotionStateAnim_C358_g(void* animList, int p1, int p2, int p3, float* outVec);
+
+/**
+ * QuaternionToMatrix3x3 @ 0x8223AD30 | size: 0xAC
+ *
+ * Converts a unit quaternion (x, y, z, w) stored at src into a
+ * 3x3 rotation matrix written row-major to dst (11 floats).
+ * The quaternion components are first doubled (scaled by 2.0), then
+ * the standard quat-to-matrix formula is applied.
+ *
+ * @param dst  Output 3x3 matrix (at least 44 bytes)
+ * @param src  Input quaternion as 4 floats (x, y, z, w)
+ */
+// LocomotionStateAnim_AD30_g @ 0x8223AD30
+void LocomotionStateAnim_AD30_g(float* dst, const float* src) {
+    float qx = src[0];
+    float qy = src[1];
+    float qz = src[2];
+    float qw = src[3];
+
+    // Scale by 2.0 (constant at lbl_82029B7C)
+    float s = 2.0f;
+    float x2 = qx * s;
+    float y2 = qy * s;
+    float z2 = qz * s;
+    float w2 = qw * s;
+
+    float zx = z2 * x2;
+    float yx = y2 * x2;
+    float wz = w2 * z2;
+    float zy = z2 * y2;
+    float wy = w2 * y2;
+    float wx = w2 * x2;
+    float yy = y2 * y2;
+    float zz = z2 * z2;
+    float xx = x2 * x2;
+
+    // Off-diagonal elements
+    dst[1]  = yx + wz;
+    dst[4]  = yx - wz;
+    dst[2]  = zx - wy;
+    dst[8]  = zx + wy;
+    dst[6]  = wx + zy;
+    dst[9]  = zy - wx;
+
+    // Diagonal elements: 0.5 - (sum of two squared terms)
+    float half = 0.5f;
+    dst[0]  = half - (yy + zz);
+    dst[5]  = half - (xx + zz);
+    dst[10] = half - (xx + yy);
+}
+
+/**
+ * ComputeCapsuleAngle @ 0x822347E8 | size: 0x84
+ *
+ * Computes a signed angle from a capsule query result. If the
+ * result is negative, wraps it by adding 2*PI. Stores the result at self+0.
+ * Also copies 16 bytes from capsule+48 to self+16.
+ */
+// LocomotionStateAnim_47E8_g @ 0x822347E8
+void LocomotionStateAnim_47E8_g(void* self, void* capsule) {
+    float result[6];
+
+    // Store 0.0f at self+0 as default
+    *(float*)((char*)self + 0) = 0.0f;
+
+    // Copy 16 bytes from capsule+48 to self+16 (lvx/stvx)
+    memcpy((char*)self + 16, (char*)capsule + 48, 16);
+
+    // Call capsule angle computation
+    phBoundCapsule_4360_g(capsule, result);
+
+    // Read the angle from result[1]
+    float angle = result[1];
+
+    // If negative, wrap by adding 2*PI
+    if (angle < 0.0f) {
+        extern const float g_twoPi;  // @ 0x8202C02C
+        angle += g_twoPi;
+    }
+
+    // Store final angle
+    *(float*)((char*)self + 0) = angle;
+}
+
+/**
+ * HasAnimIDs5And6 @ 0x822E09A0 | size: 0x8C
+ *
+ * Checks whether the animation container has both animation IDs 5
+ * and 6 present. Returns true only if both lookups succeed.
+ */
+// LocomotionStateAnim_09A0_g @ 0x822E09A0
+bool LocomotionStateAnim_09A0_g(void* self) {
+    // Check for anim ID 5
+    void* anim5 = ((LocomotionStateAnim*)self)->FindAnimationByID(5, 0);
+    bool has5 = (anim5 != nullptr);
+
+    // Check for anim ID 6
+    void* anim6 = ((LocomotionStateAnim*)self)->FindAnimationByID(6, 0);
+    bool has6 = (anim6 != nullptr);
+
+    return has5 && has6;
+}
+
+/**
+ * ClampAndTransformVector @ 0x82138110 | size: 0x8C
+ *
+ * Builds a rotation matrix from a quaternion, extracts a position
+ * vector, clamps each XYZ component between min/max bounds, writes
+ * the result back into the matrix, and applies it to the destination.
+ */
+// LocomotionStateAnim_8110_g @ 0x82138110
+void LocomotionStateAnim_8110_g(void* quat, float* minVec, float* maxVec) {
+    float matrix[12];
+    float vec[4];
+
+    // Build rotation matrix from quaternion
+    LocomotionStateAnim_AD30_g(matrix, (const float*)quat);
+
+    // Extract position vector from matrix
+    phBoundCapsule_7B08_g(matrix, vec);
+
+    // Clamp each component: LocomotionStateAnim_A1F8_g(value, min, max)
+    vec[0] = LocomotionStateAnim_A1F8_g(vec[0], minVec[0], maxVec[0]);
+    vec[1] = LocomotionStateAnim_A1F8_g(vec[1], minVec[1], maxVec[1]);
+    vec[2] = LocomotionStateAnim_A1F8_g(vec[2], minVec[2], maxVec[2]);
+
+    // Write clamped vector back into matrix
+    LocomotionStateAnim_8278_g(matrix, vec);
+
+    // Apply matrix to destination
+    LocomotionStateAnim_B218_g(quat, matrix);
+}
+
+/**
+ * SetupAnimNode @ 0x820E10D8 | size: 0x9C
+ *
+ * Sets up an animation node: configures container data with timing
+ * parameters, queries a position vector from the container, builds
+ * a rotation matrix, and copies a row into dst+48.
+ */
+// LocomotionStateAnim_10D8 @ 0x820E10D8
+void LocomotionStateAnim_10D8(void* self, void* dst, void* unused, void* container, float time) {
+    // Default container to self+320 if null
+    if (container == nullptr) {
+        container = *(void**)((char*)self + 320);
+    }
+
+    // If time < 0.0, use fallback from self+184
+    if (time < 0.0f) {
+        time = *(float*)((char*)self + 184);
+    }
+
+    // Get animation list from self+28
+    void* animList = *(void**)((char*)self + 28);
+
+    // Configure container with timing: LocomotionStateAnim_88E0_g(container, animList, time, 1, 0)
+    LocomotionStateAnim_88E0_g(container, animList, time, 1, 0);
+
+    // Query position from container
+    float posVec[4];
+    LocomotionStateAnim_C358_g(animList, 0, 1, 0, posVec);
+
+    // Build rotation matrix from posVec into dst
+    LocomotionStateAnim_AD30_g((float*)dst, posVec);
+
+    // Copy 16 bytes from matrix output (row 0) into dst+48 (via lvx/stvx)
+    memcpy((char*)dst + 48, dst, 16);
+}
+
+/**
+ * RebasePointers3 @ 0x82385340 | size: 0xA0
+ *
+ * Rebases three pointers at self+4, self+8, self+12 using a stride
+ * table from the relocator. Each non-null pointer is adjusted by
+ * computing its index into the table and adding the corresponding offset.
+ */
+// LocomotionStateAnim_5340_p46 @ 0x82385340
+void LocomotionStateAnim_5340_p46(void* self, void* relocator) {
+    uint32_t baseAddr = *(uint32_t*)((char*)relocator + 4);
+    uint32_t stride   = *(uint32_t*)((char*)relocator + 76);
+
+    // Rebase pointer at self+4
+    uint32_t ptr4 = *(uint32_t*)((char*)self + 4);
+    if (ptr4 != 0) {
+        uint32_t idx = (ptr4 - baseAddr) / stride;
+        uint32_t offset = ((uint32_t*)relocator)[idx + 2];
+        *(uint32_t*)((char*)self + 4) = offset + ptr4;
+    }
+
+    // Rebase pointer at self+8
+    uint32_t ptr8 = *(uint32_t*)((char*)self + 8);
+    if (ptr8 != 0) {
+        uint32_t idx = (ptr8 - baseAddr) / stride;
+        uint32_t offset = ((uint32_t*)relocator)[idx + 2];
+        *(uint32_t*)((char*)self + 8) = offset + ptr8;
+    }
+
+    // Rebase pointer at self+12
+    uint32_t ptr12 = *(uint32_t*)((char*)self + 12);
+    if (ptr12 != 0) {
+        uint32_t idx = (ptr12 - baseAddr) / stride;
+        uint32_t offset = ((uint32_t*)relocator)[idx + 2];
+        *(uint32_t*)((char*)self + 12) = offset + ptr12;
+    }
+}
+
+/**
+ * GetAnimWeight @ 0x822481A8 | size: 0xA4
+ *
+ * Looks up an animation entry by type (0 or 1) and retrieves its
+ * blend weight from the weight array. Returns true if weight > 0.0.
+ */
+// LocomotionStateAnim_81A8 @ 0x822481A8
+bool LocomotionStateAnim_81A8(void* self, uint8_t type, uint16_t animID, void** animPair, float* outWeight) {
+    // Only types 0 and 1 are valid
+    if (type != 0 && type != 1) {
+        return false;
+    }
+
+    // Look up animation index via 04F0_g
+    uint16_t index;
+    bool found = LocomotionStateAnim_04F0_g(animPair[0], animID, &index);
+
+    if (!found) {
+        return false;
+    }
+
+    // Read weight from weight array: animPair[1] + 16 is the array base
+    float* weightArrayBase = (float*)((char*)animPair[1] + 16);
+    uint32_t arrayOffset = (uint32_t)index << 2;  // rotlwi r8,r9,2
+    float weight = *(float*)((char*)weightArrayBase + arrayOffset);
+
+    *outWeight = weight;
+
+    return weight > 0.0f;
+}
+
+/**
+ * FetchTransformPair @ 0x8224C4A8 | size: 0xA4
+ *
+ * Fetches transform data from two animation entries identified by
+ * animID1 and animID2. Finds both via FindAnimationByID, retrieves
+ * their world-space transforms via vtable slots, builds rotation
+ * matrix, and writes to outNode.
+ */
+// LocomotionStateAnim_C4A8_g @ 0x8224C4A8
+bool LocomotionStateAnim_C4A8_g(void* self, uint16_t animID1, uint16_t animID2, void* outNode) {
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
+
+    // Find first animation
+    void* anim1 = lsa->FindAnimationByID(animID1, 0);
+    // Find second animation
+    void* anim2 = lsa->FindAnimationByID(animID2, 0);
+
+    if (anim1 == nullptr || anim2 == nullptr) {
+        return false;
+    }
+
+    // Get world-space transform from anim1 via vtable slot 14
+    void** vt1 = *(void***)anim1;
+    typedef void* (*GetTransformFn)(void*);
+    GetTransformFn getTransform14 = (GetTransformFn)vt1[14];
+    void* transform1 = getTransform14(anim1);
+
+    // Copy 16 bytes from transform1 into outNode+48
+    memcpy((char*)outNode + 48, transform1, 16);
+
+    // Get world-space transform from anim2 via vtable slot 15
+    void** vt2 = *(void***)anim2;
+    GetTransformFn getTransform15 = (GetTransformFn)vt2[15];
+    void* transform2 = getTransform15(anim2);
+
+    // Build rotation matrix from transform2 into outNode
+    LocomotionStateAnim_AD30_g((float*)outNode, (const float*)transform2);
+
+    return true;
+}
+
+/**
+ * ApplyAnimCallbacks @ 0x82386380 | size: 0xA8
+ *
+ * Iterates over an animation list and calls a callback function for
+ * each entry. The callback is either LocomotionStateAnim_C128_g or
+ * LocomotionStateAnim_C288_g, depending on whether the animation
+ * data has the "mirrored" flag set (bit 0 of field +20 at sub-data +4).
+ * After processing, calls LocomotionStateAnim_C8F8_g on self+36.
+ */
+// LocomotionStateAnim_6380_g @ 0x82386380
+void LocomotionStateAnim_6380_g(void* self, void* animList) {
+    typedef void (*AnimCallback)(void* anim, void* animData, float weight);
+
+    void* animData = *(void**)((char*)self + 36);
+
+    // Select callback based on mirrored flag
+    AnimCallback callback = LocomotionStateAnim_C128_g;
+
+    void* subData = *(void**)((char*)animData + 4);
+    uint32_t flags = *(uint32_t*)((char*)subData + 20);
+    if (flags & 0x1) {
+        callback = LocomotionStateAnim_C288_g;
+    }
+
+    // Iterate over animation entries
+    int16_t count = *(int16_t*)((char*)animList + 12);
+    if (count > 0) {
+        void** animArray = *(void***)((char*)animList + 8);
+        for (int i = 0; i < count; i++) {
+            callback(animArray[i], animData, 0.0f);
+        }
+    }
+
+    // Finalize
+    LocomotionStateAnim_C8F8_g(*(void**)((char*)self + 36));
+}
+
+/**
+ * BinarySearchAnimKey @ 0x8224A390 | size: 0xA8
+ *
+ * Binary search through a sorted animation key array to find an
+ * entry matching a 24-bit key. The key is constructed from
+ * (animID_high << 16) | animID_low. On match, writes the found
+ * index to *outIndex and returns the entry pointer. On miss,
+ * writes the insertion point to *outIndex and returns nullptr.
+ */
+// LocomotionStateAnim_A390_v12 @ 0x8224A390
+void* LocomotionStateAnim_A390_v12(void* self, uint8_t animID_high, uint16_t animID_low, int32_t* outIndex) {
+    uint16_t count = *(uint16_t*)((char*)self + 40);
+
+    int high = (int)count - 1;
+    int low = 0;
+
+    if (high < 0) {
+        *outIndex = low;
+        return nullptr;
+    }
+
+    // Construct 24-bit search key: (high << 16) | low
+    uint32_t searchKey = ((uint32_t)animID_high << 16) | animID_low;
+
+    void** keyArray = *(void***)((char*)self + 36);
+
+    while (low <= high) {
+        int mid = (low + high) / 2;
+        *outIndex = mid;
+
+        void* entry = keyArray[mid];
+
+        // Extract 24-bit key from entry: (byte_at_0 << 16) | uint16_at_2
+        uint8_t entryHigh = *(uint8_t*)((char*)entry + 0);
+        uint16_t entryLow = *(uint16_t*)((char*)entry + 2);
+        uint32_t entryKey = ((uint32_t)entryHigh << 16) | entryLow;
+
+        if (entryKey == searchKey) {
+            return entry;
+        }
+
+        if (entryKey > searchKey) {
+            high = mid - 1;
+        } else {
+            low = mid + 1;
+        }
+    }
+
+    *outIndex = low;
+    return nullptr;
+}
+
+/**
+ * SumWeightsAndNormalize @ 0x820DBB48 | size: 0xAC
+ *
+ * Sums blend weights from an array (starting at self+28, count+1
+ * entries of 4 bytes each), then returns the ratio of the last
+ * entry's weight to the total sum. Returns 0.0 if sum == 0.0.
+ * The loop is unrolled 4x in the original PPC code.
+ */
+// LocomotionStateAnim_BB48_g @ 0x820DBB48
+float LocomotionStateAnim_BB48_g(void* self, int count) {
+    float total = 0.0f;
+
+    float* weights = (float*)((char*)self + 28);
+    for (int i = 0; i <= count; i++) {
+        total += weights[i];
+    }
+
+    if (total == 0.0f) {
+        return 0.0f;
+    }
+
+    float lastWeight = weights[count];
+    return lastWeight / total;
+}
+
+/**
+ * InvertAndCombineQuaternions @ 0x8223BE20 | size: 0xB0
+ *
+ * Inverts quaternion src (negates xyz, keeps w), multiplies with
+ * dst quaternion using util_BBB0, applies reference subtraction
+ * and position addition via SIMD, and normalizes via util_B9A8.
+ */
+// LocomotionStateAnim_BE20_g @ 0x8223BE20
+void LocomotionStateAnim_BE20_g(void* dst, void* src) {
+    float* srcQ = (float*)src;
+    float* dstQ = (float*)dst;
+
+    // Invert src quaternion: negate xyz, keep w
+    dstQ[0] = -srcQ[0];
+    dstQ[1] = -srcQ[1];
+    dstQ[2] = -srcQ[2];
+    dstQ[3] =  srcQ[3];
+
+    // Multiply inverted src quaternion with src position
+    float* srcPos = (float*)((char*)src + 16);
+    util_BBB0(dst, srcPos, (float*)((char*)dst + 16));
+
+    // result_pos = reference_zero - combined_pos (vsubfp with zero vector)
+    extern const float g_zeroVec4[4];  // reference zero vector
+    float* dstPos = (float*)((char*)dst + 16);
+    dstPos[0] = g_zeroVec4[0] - dstPos[0];
+    dstPos[1] = g_zeroVec4[1] - dstPos[1];
+    dstPos[2] = g_zeroVec4[2] - dstPos[2];
+    dstPos[3] = g_zeroVec4[3] - dstPos[3];
+
+    // Add dst position back (vaddfp with src position)
+    float* origSrcPos = (float*)((char*)src + 16);
+    dstPos[0] += origSrcPos[0];
+    dstPos[1] += origSrcPos[1];
+    dstPos[2] += origSrcPos[2];
+    dstPos[3] += origSrcPos[3];
+
+    // Normalize the result
+    util_B9A8(dst, dst, src);
+}
+
+/**
+ * GetTransformFromAnimPair @ 0x822E0A30 | size: 0xB4
+ *
+ * Checks if both animation IDs 5 and 6 exist. If so, fetches the
+ * transform pair (IDs 5 and 6) and copies 4 rows of 16 bytes into
+ * the destination. Otherwise, fetches transform pair (IDs 0 and 1).
+ */
+// LocomotionStateAnim_0A30_g @ 0x822E0A30
+void* LocomotionStateAnim_0A30_g(void* dst, void* animSrc) {
+    bool hasBoth = LocomotionStateAnim_09A0_g(animSrc);
+
+    if (hasBoth) {
+        // Fetch transform pair for IDs 5 and 6
+        float outNode[16];
+        LocomotionStateAnim_C4A8_g(animSrc, 5, 6, outNode);
+
+        // Copy 4 x 16 bytes into dst (lvx/stvx pattern)
+        memcpy((char*)dst + 0,  &outNode[0],  16);
+        memcpy((char*)dst + 16, &outNode[4],  16);
+        memcpy((char*)dst + 32, &outNode[8],  16);
+        memcpy((char*)dst + 48, &outNode[12], 16);
+    } else {
+        // Fetch transform pair for IDs 0 and 1
+        LocomotionStateAnim_C4A8_g(animSrc, 0, 1, dst);
+    }
+
+    return dst;
+}
+
+/**
+ * ComputeBlendWeight @ 0x820E6DD8 | size: 0xB4
+ *
+ * Computes a blend weight for animation transitions. Calls the
+ * vtable slot 11 handler to get the current frame position, looks
+ * up the animation's start/end range from the container data at
+ * self+304 (indexed by self+28), and interpolates.
+ */
+// LocomotionStateAnim_6DD8_w @ 0x820E6DD8
+float LocomotionStateAnim_6DD8_w(void* self, float maxWeight, float frameTime) {
+    // Set up frame state
+    LocomotionStateAnim_6E90_w(self, frameTime);
+
+    // Call vtable slot 11 to get current position
+    void** vt = *(void***)self;
+    typedef float (*GetPosFn)(void*);
+    GetPosFn getPos = (GetPosFn)vt[11];
+    float pos = getPos(self);
+
+    // Get animation entry index and container data
+    uint32_t animIdx = *(uint32_t*)((char*)self + 28);
+    char* containerData = *(char**)((char*)self + 304);
+    char* entry = containerData + animIdx * 68;
+
+    float rangeStart = *(float*)(entry + 56);
+    float rangeEnd   = *(float*)(entry + 60);
+
+    if (pos < rangeStart) {
+        return 0.0f;
+    } else if (pos < rangeEnd) {
+        float t = (pos - rangeStart) / (rangeEnd - rangeStart);
+        extern const float g_blendCurveScale;   // @ 0x82029B20
+        extern float g_blendCurveOffset;         // @ 0x825C8078 (.data)
+        float blendVal = t * g_blendCurveScale + g_blendCurveOffset;
+        float diff = blendVal - maxWeight;
+        return (diff >= 0.0f) ? maxWeight : blendVal;
+    } else {
+        return maxWeight;
+    }
+}
+
+/**
+ * GetAnimWeightByMode @ 0x82248250 | size: 0xB4
+ *
+ * Similar to GetAnimWeight but with an additional mode parameter.
+ * For modes 0 and 1, looks up the anim by index and reads weight
+ * from the weight array. For mode >= 2, reads the weight directly
+ * from a second array at animPair[3] (offset +12).
+ */
+// LocomotionStateAnim_8250_fw @ 0x82248250
+bool LocomotionStateAnim_8250_fw(void* self, uint8_t mode, uint16_t animID, void** animPair, float* outWeight) {
+    if (mode == 0 || mode == 1) {
+        // Look up animation index via 04F0_g
+        uint16_t index;
+        bool found = LocomotionStateAnim_04F0_g(animPair[0], animID, &index);
+
+        if (!found) {
+            return false;
+        }
+
+        // Read weight from animPair base, offset by index
+        uint32_t arrayOffset = (uint32_t)index << 2;
+        float weight = *(float*)((char*)animPair[1] + arrayOffset);
+
+        // Scaffold falls through without storing — returns false
+        (void)weight;
+        return false;
+    } else if ((int32_t)mode >= 2) {
+        // Direct weight lookup from animPair[3] (offset +12)
+        float* weightArray = (float*)animPair[3];
+        float weight = weightArray[mode];
+
+        *outWeight = weight;
+        return weight > 0.0f;
+    }
+
+    return false;
+}
+
+/**
+ * LookupAndPlayAnim @ 0x82248828 | size: 0xB4
+ *
+ * Looks up an animation by computing a fractional index from the
+ * animation count and a time parameter, runs a binary search to
+ * find the matching key, and either starts the animation via
+ * vtable slot 4 (on hit) or calls vtable slot 13 (on miss).
+ */
+// LocomotionStateAnim_8828_g @ 0x82248828
+bool LocomotionStateAnim_8828_g(void* self, float time) {
+    uint16_t rawCount = *(uint16_t*)((char*)self + 10);
+    float duration = *(float*)((char*)self + 12);
+
+    // Compute scaled time: ((count-1) / duration) * time
+    float countMinusOne = (float)((int)rawCount - 1);
+    float scaledTime = (countMinusOne / duration) * time;
+
+    // Read the key bytes from self for the search
+    uint8_t animID_high = *(uint8_t*)((char*)self + 5);
+    uint16_t animID_low = *(uint16_t*)((char*)self + 6);
+
+    // Binary search for the key
+    int32_t foundIndex;
+    void* result = LocomotionStateAnim_A390_v12(self, animID_high, animID_low, &foundIndex);
+
+    if (result != nullptr) {
+        // Found: call vtable slot 4 on result
+        void** vt = *(void***)result;
+        typedef void (*PlayFn)(void*, void*, void*);
+        PlayFn play = (PlayFn)vt[4];
+
+        void** keyArray = *(void***)((char*)self + 36);
+        void* animEntry = keyArray[foundIndex];
+        play(result, animEntry, self);
+
+        return true;
+    } else {
+        // Not found: call vtable slot 13
+        void** vt = *(void***)result;
+        typedef void (*FallbackFn)(void*);
+        FallbackFn fallback = (FallbackFn)vt[13];
+        fallback(result);
+
+        return false;
+    }
+}
