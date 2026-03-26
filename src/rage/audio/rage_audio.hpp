@@ -133,14 +133,8 @@ struct audVoice {
     virtual void vfn_7();  // [7] @ 0x821631b0
     virtual void vfn_8();  // [8] @ 0x821631c0
     virtual void vfn_17();  // [17] @ 0x821631d0
-    virtual void vfn_18();  // [18] @ 0x821631e0
+    virtual int  vfn_18();  // [18] @ 0x821631e0
 };
-
-// ── rage::audVoiceSfx  [vtable @ 0x82035AFC] ──────────────────────────
-// Confirmed methods: Play, SetEffectVolume, SetReverbVolume
-// Field hints: m_sfxRef:ptr
-struct audVoiceSfx {
-    void**      vtable;           // +0x00
 
 // ── rage::audVoiceSfx  [vtable @ 0x82035AFC] ──────────────────────────
 // Confirmed methods: Play, PlayByEntry, SetEffectVolume, SetReverbVolume
@@ -171,8 +165,8 @@ struct audVoiceSfx {
     void Play();
     void PlayByEntry(void* entry, float volume, float pitch, float pan, float priority,
                      uint32_t param5, uint32_t param6, uint8_t param7);  // @ 0x82163498
-    void SetReverbVolume();
-    void SetEffectVolume();
+    void SetReverbVolume(void* bankEntry, float volume);
+    void SetEffectVolume(void* bankEntry, float volume);
 };
 
 
@@ -227,10 +221,12 @@ struct audVoiceStream {
 
     // ── non-virtual methods (from debug strings) ──
     void Play();
-    void Prime();
-    void PlayByEntry();
-    void SetReverbVolume();
-    void SetEffectVolume();
+    void Prime(void* bankEntry);
+    void PlayByEntry(void* bankEntry, float volume, float pitch, float pan,
+                     float playVariance, uint32_t userParamA, uint32_t userParamB,
+                     uint8_t userParamC);
+    void SetReverbVolume(void* bankEntry, float volume);
+    void SetEffectVolume(void* bankEntry, float volume);
 };
 
 } // namespace rage
