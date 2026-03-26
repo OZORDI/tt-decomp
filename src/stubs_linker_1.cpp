@@ -20,51 +20,56 @@ struct vec3;
 
 // ============================================================================
 // Global variables (43 symbols)
+// C linkage required: .c files reference these with C-mangled names (_g_xxx)
 // ============================================================================
 
-extern const float    g_alphaMultiplier             = 0.0f;  // @ 0x82079BE0
-extern const float    g_animBlendWeight             = 0.0f;  // @ 0x8202D110
-extern const float    g_contactZoneMaxA             = 0.0f;
-extern const float    g_contactZoneMaxB             = 0.0f;
-extern const float    g_contactZoneMinA             = 0.0f;
-extern const float    g_contactZoneMinB             = 0.0f;
-extern const float    g_defaultDuration             = 0.0f;  // @ 0x825C755C
-extern const float    g_default_float_value         = 0.0f;  // @ 0x825CAF88
-extern const float    g_default_float_value_2       = 0.0f;  // @ 0x825CAF90
-extern const float    g_default_float_zero          = 0.0f;  // @ 0x825CAF94
-extern const float    g_floatConstant1              = 0.0f;  // @ 0x82079AD4
-extern const float    g_floatConstant2              = 0.0f;  // @ 0x8202D110
-extern const float    g_floatConstant3              = 0.0f;  // @ 0x8202D110
-extern const float    g_floatConstant4              = 0.0f;  // @ 0x825C7600
-extern const float    g_floatEpsilon                = 0.0f;  // @ 0x8202D110
-extern const float    g_floatNegOne                 = 0.0f;  // @ 0x8202D110
-extern const float    g_floatOne                    = 0.0f;  // @ 0x8202D110
-extern const float    g_floatZero                   = 0.0f;  // @ 0x8202D110
-extern const float    g_kAdjustmentThreshold        = 0.0f;  // @ 0x8202D110
-extern const float    g_kInputScale                 = 0.0f;  // @ 0x825C5938
-extern const float    g_kInputThresholdHigh         = 0.0f;  // @ 0x8202D110
-extern const float    g_kMaxAdjustment              = 0.0f;  // @ 0x82079CD8
-extern const float    g_kQuantScale1                = 0.0f;  // @ 0x82079FFC
-extern const float    g_kQuantScale2                = 0.0f;  // @ 0x82079FF8
-extern const float    g_kSpecialThreshold           = 0.0f;  // @ 0x825C8A50
-extern const float    g_kZeroThreshold              = 0.0f;  // @ 0x8202D108
-extern const float    g_lookAtMultiplier            = 0.0f;  // @ 0x8202D184
-extern const float    g_lookAtRefAngle              = 0.0f;  // @ 0x8202D10C
-extern const float    g_msgSinkInitFloat            = 0.0f;  // @ 0x825C5938
-extern const uint32_t g_msgSinkTemplate[4]          = {0};   // @ 0x8241A0C0
-extern const float    g_recoveryScale               = 0.0f;
-extern const char     g_szCreateMachineRTTI[]       = "";    // @ 0x825DEEB0
-extern const char     g_szDataRequestTypeName[]     = "";    // @ 0x8206EA74
-extern const char     g_szDataSendTypeName[]        = "";    // @ 0x8206EA88
-extern const char     g_szDefaultError[]            = "";    // @ 0x82027423
-extern const char     g_szInvalidError[]            = "";    // @ 0x8204EF04
-extern const char     g_szMessageType[]             = "";    // @ 0x8205DFB0
-extern const char     g_szNetworkDebugMsg[]         = "";    // @ 0x8205AE98
-extern const char     g_szRageRTTI[]               = "";    // @ 0x825DEECC
-extern const char     g_szTopSpin[]                 = "";    // @ 0x8206CB54
-extern const char     g_szTournamentCompleteTypeName[] = ""; // @ 0x8206EC40
-extern const float    g_zeroConstant                = 0.0f;  // @ 0x8202D110
-extern const float    g_zeroFloat                   = 0.0f;  // @ 0x82079AD8
+extern "C" {
+
+const float    g_alphaMultiplier             = 0.0f;  // @ 0x82079BE0
+const float    g_animBlendWeight             = 0.0f;  // @ 0x8202D110
+const float    g_contactZoneMaxA             = 0.0f;
+const float    g_contactZoneMaxB             = 0.0f;
+const float    g_contactZoneMinA             = 0.0f;
+const float    g_contactZoneMinB             = 0.0f;
+const float    g_defaultDuration             = 0.0f;  // @ 0x825C755C
+const float    g_default_float_value         = 0.0f;  // @ 0x825CAF88
+const float    g_default_float_value_2       = 0.0f;  // @ 0x825CAF90
+const float    g_default_float_zero          = 0.0f;  // @ 0x825CAF94
+const float    g_floatConstant1              = 0.0f;  // @ 0x82079AD4
+const float    g_floatConstant2              = 0.0f;  // @ 0x8202D110
+const float    g_floatConstant3              = 0.0f;  // @ 0x8202D110
+const float    g_floatConstant4              = 0.0f;  // @ 0x825C7600
+const float    g_floatEpsilon                = 0.0f;  // @ 0x8202D110
+const float    g_floatNegOne                 = 0.0f;  // @ 0x8202D110
+const float    g_floatOne                    = 0.0f;  // @ 0x8202D110
+const float    g_floatZero                   = 0.0f;  // @ 0x8202D110
+const float    g_kAdjustmentThreshold        = 0.0f;  // @ 0x8202D110
+const float    g_kInputScale                 = 0.0f;  // @ 0x825C5938
+const float    g_kInputThresholdHigh         = 0.0f;  // @ 0x8202D110
+const float    g_kMaxAdjustment              = 0.0f;  // @ 0x82079CD8
+const float    g_kQuantScale1                = 0.0f;  // @ 0x82079FFC
+const float    g_kQuantScale2                = 0.0f;  // @ 0x82079FF8
+const float    g_kSpecialThreshold           = 0.0f;  // @ 0x825C8A50
+const float    g_kZeroThreshold              = 0.0f;  // @ 0x8202D108
+const float    g_lookAtMultiplier            = 0.0f;  // @ 0x8202D184
+const float    g_lookAtRefAngle              = 0.0f;  // @ 0x8202D10C
+const float    g_msgSinkInitFloat            = 0.0f;  // @ 0x825C5938
+const uint32_t g_msgSinkTemplate[4]          = {0};   // @ 0x8241A0C0
+const float    g_recoveryScale               = 0.0f;
+const char     g_szCreateMachineRTTI[]       = "";    // @ 0x825DEEB0
+const char     g_szDataRequestTypeName[]     = "";    // @ 0x8206EA74
+const char     g_szDataSendTypeName[]        = "";    // @ 0x8206EA88
+const char     g_szDefaultError[]            = "";    // @ 0x82027423
+const char     g_szInvalidError[]            = "";    // @ 0x8204EF04
+const char     g_szMessageType[]             = "";    // @ 0x8205DFB0
+const char     g_szNetworkDebugMsg[]         = "";    // @ 0x8205AE98
+const char     g_szRageRTTI[]               = "";    // @ 0x825DEECC
+const char     g_szTopSpin[]                 = "";    // @ 0x8206CB54
+const char     g_szTournamentCompleteTypeName[] = ""; // @ 0x8206EC40
+const float    g_zeroConstant                = 0.0f;  // @ 0x8202D110
+const float    g_zeroFloat                   = 0.0f;  // @ 0x82079AD8
+
+} // extern "C"
 
 // ============================================================================
 // WriteInt8Bits - network bit packing
