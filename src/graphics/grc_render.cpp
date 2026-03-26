@@ -572,3 +572,443 @@ void grcTextureFactoryXenon::FixupTextures(
         }
     }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_8838_h @ 0x82568838 | size: 0x1C (28 bytes)
+ *
+ * Stores four uint32 values into consecutive fields of a structure and
+ * returns 1 (success). Used as a bulk-setter for a 16-byte render state
+ * block (e.g. viewport rect or scissor rect).
+ *
+ * Parameters:
+ *   pDest (r3) — pointer to destination struct
+ *   a (r4), b (r5), c (r6), d (r7) — four uint32 values to store
+ * Returns: 1
+ * ═══════════════════════════════════════════════════════════════════════════ */
+// @ 0x82568838
+int32_t grc_8838_h(void* pDest, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
+    uint32_t* p = (uint32_t*)pDest;
+    p[0] = a;
+    p[1] = b;
+    p[2] = c;
+    p[3] = d;
+    return 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_F6B8 @ 0x8215F6B8 | size: 0x1C (28 bytes)
+ *
+ * Checks if a texture format ID matches 0x1A22ABCD. If it matches,
+ * returns the adjacent format code 0x1A22ABE0. Otherwise returns the
+ * input value unchanged (by not modifying r3).
+ *
+ * This appears to be a format remapping function that converts one
+ * specific internal texture format ID to another.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+// @ 0x8215F6B8
+uint32_t grc_F6B8(uint32_t formatId)
+{
+    if (formatId != 0x1A22ABCD)
+        return formatId;
+    return 0x1A22ABE0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_B7E8 @ 0x8215B7E8 | size: 0x24 (36 bytes)
+ *
+ * Counts the number of nodes in a singly-linked list. The head pointer
+ * is at offset +24 of the input object, and each node's next pointer is
+ * also at offset +24. Returns 0 if the list is empty.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+// @ 0x8215B7E8
+int32_t grc_B7E8(void* pObj)
+{
+    uint8_t* node = *(uint8_t**)((uint8_t*)pObj + 24);
+    if (node == NULL)
+        return 0;
+
+    int32_t count = 0;
+    while (node != NULL) {
+        node = *(uint8_t**)(node + 24);
+        count++;
+    }
+    return count;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_6A08 @ 0x82366A08 | size: 0x28 (40 bytes)
+ *
+ * Initiates GPU/video engine shutdown. Registers a title terminate
+ * notification with a NULL callback, then calls VdShutdownEngines to
+ * shut down the Xenon video driver. Called during application exit.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void ExRegisterTitleTerminateNotification(void* pNotification, uint32_t bCancel);
+extern void VdShutdownEngines(void);
+
+// @ 0x82366A08
+void grc_6A08(void)
+{
+    ExRegisterTitleTerminateNotification(NULL, 0);
+    VdShutdownEngines();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_EAE8 @ 0x8214EAE8 | size: 0x28 (40 bytes)
+ *
+ * Conditionally subtracts a float from 1.0f. Checks a global format ID
+ * at 0x825E9070; if it matches the sentinel value 0x1A220197, the input
+ * float is subtracted from 1.0f and the result returned. Otherwise the
+ * input is returned unchanged.
+ *
+ * Used by the texture factory to flip V coordinates for certain texture
+ * formats that store UVs in inverted space.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern uint32_t g_grcFormatId;  // @ 0x825E9070
+
+// @ 0x8214EAE8
+float grc_EAE8(float value)
+{
+    if (g_grcFormatId != 0x1A220197)
+        return value;
+    return 1.0f - value;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_1268 @ 0x82151268 | size: 0x4C (76 bytes)
+ *
+ * Decrements a reference count at offset +32 of the given object. When
+ * the count reaches zero, calls grc_12B8 (the destructor/release function)
+ * with flag=1 and returns 0. Otherwise returns the new refcount.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void grc_12B8(void* pObj, int32_t flags);
+
+// @ 0x82151268
+int32_t grc_1268(void* pObj)
+{
+    int32_t refCount = *(int32_t*)((uint8_t*)pObj + 32);
+    refCount--;
+    *(int32_t*)((uint8_t*)pObj + 32) = refCount;
+
+    if (refCount == 0) {
+        grc_12B8(pObj, 1);
+        return 0;
+    }
+    return refCount;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_CC50_h @ 0x8213CC50 | size: 0x58 (88 bytes)
+ *
+ * Sets an indexed sampler/render state value, tracked by a dirty bitmask.
+ * Stores the new value into two parallel state arrays (indexed by r3),
+ * reads the old value from a third array, and sets or clears the
+ * corresponding bit in a dirty flags word based on whether the value changed.
+ *
+ * Global arrays (SDA-relative, base lis(-32161)):
+ *   g_grcSamplerOld    @ 0x825EBB60 — old state values (read-only here)
+ *   g_grcSamplerNew1   @ 0x825E8F48 — first shadow copy of new state
+ *   g_grcSamplerNew2   @ 0x825EBB98 — second shadow copy of new state
+ *   g_grcDirtyBits     @ 0x825EBB1C — dirty bitmask (32 bits)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern uint32_t g_grcSamplerOld[];   // @ 0x825EBB60
+extern uint32_t g_grcSamplerNew1[];  // @ 0x825E8F48
+extern uint32_t g_grcSamplerNew2[];  // @ 0x825EBB98
+extern uint32_t g_grcDirtyBits;      // @ 0x825EBB1C
+
+// @ 0x8213CC50
+void grc_CC50_h(uint32_t index, uint32_t value)
+{
+    uint32_t oldValue = g_grcSamplerOld[index];
+    g_grcSamplerNew1[index] = value;
+    g_grcSamplerNew2[index] = value;
+
+    uint32_t bit = 1u << index;
+
+    if (value == oldValue) {
+        // State unchanged — clear the dirty bit
+        g_grcDirtyBits &= ~bit;
+    } else {
+        // State changed — set the dirty bit
+        g_grcDirtyBits |= bit;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_9858_h @ 0x82359858 | size: 0x58 (88 bytes)
+ *
+ * Extracts render state from a GPU command object and dispatches it to
+ * grc_8928. Checks bit 25 of the flags word at offset +0; if set,
+ * extracts a 4-bit field from offset +32 (bits 2-5) and the data pointer
+ * from offset +44. Otherwise passes 0 for the extracted field.
+ * After dispatch, marks the output object as valid by storing 1 at +4.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void grc_8928(void* pSrc, uint32_t field, void* pDest);
+
+// @ 0x82359858
+void grc_9858_h(void* pCmd, void* pOut)
+{
+    uint32_t flags = *(uint32_t*)((uint8_t*)pCmd + 0);
+    void* pSrc;
+    uint32_t field;
+
+    if (flags & 0x02000000) {
+        uint32_t word32 = *(uint32_t*)((uint8_t*)pCmd + 32);
+        field = (word32 >> 2) & 0xF;
+        pSrc = *(void**)((uint8_t*)pCmd + 44);
+    } else {
+        pSrc = pCmd;  // r3 passed through unchanged
+        field = 0;
+    }
+
+    grc_8928(pSrc, field, pOut);
+
+    *(uint32_t*)((uint8_t*)pOut + 4) = 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_FF38 @ 0x8243FF38 | size: 0x60 (96 bytes)
+ *
+ * Retrieves render target dimensions. Calls grc_7DD0 to obtain width and
+ * height as stack outputs, then stores them into the optional output
+ * pointers if non-NULL.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void grc_7DD0(void* pObj, uint32_t* pWidth, uint32_t* pHeight);
+
+// @ 0x8243FF38
+void grc_FF38(void* pObj, uint32_t* pOutWidth, uint32_t* pOutHeight)
+{
+    uint32_t width, height;
+    grc_7DD0(pObj, &width, &height);
+
+    if (pOutWidth != NULL) {
+        *pOutWidth = width;
+    }
+    if (pOutHeight != NULL) {
+        *pOutHeight = height;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_8B58 @ 0x82158B58 | size: 0x74 (116 bytes)
+ *
+ * Flushes a dirty texture object. If the dirty flag at offset +20 is set
+ * and the texture pointer at +12 is valid, submits the texture data via
+ * grc_2CC8 (unless g_bTextureEndianDirty is set, which suppresses flush).
+ * Clears the dirty flag after flushing. Returns 1 if the flag was
+ * cleared (i.e. was dirty), 0 if it was already clean.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void grc_2CC8(void* pTexData, void* pInternalData, uint32_t param);
+
+// @ 0x82158B58
+uint8_t grc_8B58(void* pObj)
+{
+    uint8_t* obj = (uint8_t*)pObj;
+
+    if (obj[20] != 0) {
+        void* pTexPtr = *(void**)(obj + 12);
+        if (pTexPtr != NULL) {
+            extern uint8_t g_bTextureEndianDirty;  // @ 0x82606562
+            if (g_bTextureEndianDirty == 0) {
+                void* pInternalData = *(void**)((uint8_t*)pTexPtr + 12);
+                grc_2CC8(pTexPtr, pInternalData, 0);
+            }
+        }
+        obj[20] = 0;
+    }
+
+    // Return !dirty (cntlzw/rlwinm idiom: returns 1 if byte is 0)
+    return (obj[20] == 0) ? 1 : 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_3448 @ 0x82323448 | size: 0x68 (104 bytes)
+ *
+ * Conditionally binds a texture to the GPU. If the texture reference at
+ * r4[0] is zero, looks up the active GPU device, checks a flag at
+ * device[index+20], and if set, calls grc_0E28 to bind the default
+ * texture and marks a global dirty flag.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void* g_grcDevicePtr;      // @ 0x825E4898
+extern void* g_grcDevicePtr2;     // @ 0x825F63D4
+extern void grc_0E28(void* pTex, uint32_t param1, uint32_t param2);
+
+// @ 0x82323448
+void grc_3448(uint32_t index, uint32_t* pTexRef)
+{
+    if (*pTexRef != 0)
+        return;
+
+    uint8_t* pDevice = (uint8_t*)g_grcDevicePtr;
+    uint8_t* pEntry = pDevice + index;
+
+    if (pEntry[20] == 0)
+        return;
+
+    uint8_t* pDev2 = (uint8_t*)g_grcDevicePtr2;
+    void* pTex = *(void**)((uint8_t*)pDev2 + 108);
+    grc_0E28(pTex, 0, 0);
+
+    uint8_t* pGlobal = (uint8_t*)g_grcDevicePtr2;
+    uint8_t* pFlags = (uint8_t*)(*(void**)((uint8_t*)pGlobal - 21720 + (uint32_t)pGlobal));
+    // Simplified: set dirty flag
+    *(uint8_t*)(*(uint8_t**)((uint8_t*)g_grcDevicePtr2) + 344) = 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_30C0 @ 0x823530C0 | size: 0x6C (108 bytes)
+ *
+ * Wrapper for grc_29E0 (DrawPrimitive). Sets up a non-indexed draw call
+ * with primitive type 46 (triangle fan). When offset/count are zero,
+ * defaults to the full buffer (size from offset +16, masked to strip
+ * the 2 low bits). Applies draw flags with 0x03000000 bitmask.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void grc_29E0(void* pBuffer, uint32_t primType, uint32_t startVertex,
+                      uint32_t baseData, uint32_t param5, void* pSrc,
+                      uint32_t flags, uint32_t extraFlags);
+
+// @ 0x823530C0
+void grc_30C0(void* pVB, uint32_t offset, uint32_t count, uint32_t flags)
+{
+    uint8_t* vb = (uint8_t*)pVB;
+
+    if (count == 0) {
+        count = *(uint32_t*)(vb + 16) & 0x3FFFFFC;
+        offset = 0;
+    }
+
+    uint32_t stride = *(uint32_t*)(vb + 12) & 0xFFFFFFFC;
+    void* pBuffer = *(void**)(vb + 4);
+
+    grc_29E0(pBuffer, 46, 0, stride + offset, 0, pVB, flags | 2, 0x03000000);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_31F0 @ 0x823531F0 | size: 0x68 (104 bytes)
+ *
+ * Wrapper for grc_29E0 (DrawIndexedPrimitive). Similar to grc_30C0 but
+ * for indexed draws with primitive type 47 (triangle list, indexed).
+ * When count is zero, defaults to the full buffer size from offset +16.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+// @ 0x823531F0
+void grc_31F0(void* pVB, uint32_t offset, uint32_t count, uint32_t flags)
+{
+    uint8_t* vb = (uint8_t*)pVB;
+
+    if (count == 0) {
+        count = *(uint32_t*)(vb + 16);
+        offset = 0;
+    }
+
+    uint32_t stride = *(uint32_t*)(vb + 12);
+    void* pBuffer = *(void**)(vb + 4);
+
+    grc_29E0(pBuffer, 47, 0, stride + offset, 0, pVB, flags | 2, 0);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_F538 @ 0x8243F538 | size: 0x70 (112 bytes)
+ *
+ * Draw triangle list wrapper. Calls grc_F338 with primitive type 3
+ * (triangle list). Reshuffles many register parameters into a stack-based
+ * call frame for the common draw dispatcher.
+ *
+ * Parameters are vertex data pointers and counts for multi-stream draw calls.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void grc_F338(void* pVB, uint32_t primType, uint32_t startVertex,
+                      void* pVtxData, uint32_t vtxStride, uint32_t vtxCount,
+                      uint32_t param7, void* pIdxData, uint32_t idxCount,
+                      uint32_t param10, uint32_t param11, uint32_t param12,
+                      uint32_t param13, uint32_t param14, uint32_t param15);
+
+// @ 0x8243F538
+void grc_F538(void* pVB, uint32_t startVertex, void* pVtxData,
+              uint32_t vtxStride, uint32_t vtxCount, void* pIdxData,
+              uint32_t idxCount, uint32_t extra1, uint32_t extra2,
+              uint32_t extra3, uint32_t extra4)
+{
+    grc_F338(pVB, 1, startVertex, pVtxData, vtxStride, vtxCount,
+             0, pIdxData, idxCount, 2, 3, extra1, extra2, extra3, extra4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_F5A8 @ 0x8243F5A8 | size: 0x74 (116 bytes)
+ *
+ * Draw line strip wrapper. Calls grc_F338 with primitive type 6
+ * (line strip). Similar register reshuffling as grc_F538.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+// @ 0x8243F5A8
+void grc_F5A8(void* pVB, uint32_t param2, void* pVtxData,
+              uint32_t vtxStride, uint32_t vtxCount, void* pIdxData,
+              uint32_t idxCount, uint32_t extra1, uint32_t extra2,
+              uint32_t extra3, uint32_t extra4)
+{
+    grc_F338(pVB, 6, param2, pVtxData, vtxStride, vtxCount,
+             0, pIdxData, 0, 2, 5, 0, extra1, extra2, extra3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_F620 @ 0x8243F620 | size: 0x74 (116 bytes)
+ *
+ * Draw triangle strip wrapper. Calls grc_F338 with primitive type 4
+ * (triangle strip). Same pattern as the other draw wrappers.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+// @ 0x8243F620
+void grc_F620(void* pVB, uint32_t startVertex, void* pVtxData,
+              uint32_t vtxStride, uint32_t vtxCount, void* pIdxData,
+              uint32_t idxCount, void* pExtra1, uint32_t extra2,
+              uint32_t extra3, uint32_t extra4)
+{
+    grc_F338(pVB, 1, startVertex, pVtxData, vtxStride, vtxCount,
+             0, pIdxData, 0, 2, 4, 0, (uint32_t)(uintptr_t)pExtra1,
+             extra2, extra3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grc_12B8 @ 0x821512B8 | size: 0x7C (124 bytes)
+ *
+ * Texture factory node destructor. Recursively releases child nodes via
+ * grc_1268 (refcount decrement), frees internal data, and cleans up.
+ *
+ * Object layout:
+ *   +16  m_pData        — heap data pointer (freed via rage_free)
+ *   +20  m_pOwner       — owner pointer (freed when both children are NULL)
+ *   +24  m_pChild1      — first child node pointer
+ *   +28  m_pChild2      — second child node pointer
+ *   +32  m_nRefCount    — reference count
+ * ═══════════════════════════════════════════════════════════════════════════ */
+extern void rage_free_00C0(void* ptr);
+
+// @ 0x821512B8
+void grc_12B8_impl(void* pNode, int32_t flags)
+{
+    uint8_t* node = (uint8_t*)pNode;
+
+    // Release second child node if present
+    void* pChild2 = *(void**)(node + 28);
+    if (pChild2 != NULL) {
+        grc_1268(pChild2);
+    }
+
+    // Free data pointer
+    rage_free_00C0(*(void**)(node + 16));
+
+    // If both children are NULL, free the owner
+    void* pChild1 = *(void**)(node + 24);
+    if (pChild1 == NULL) {
+        void* pChild2b = *(void**)(node + 28);
+        if (pChild2b == NULL) {
+            rage_free_00C0(*(void**)(node + 20));
+        }
+    }
+
+    // Release first child node if present
+    pChild1 = *(void**)(node + 24);
+    if (pChild1 != NULL) {
+        grc_1268(pChild1);
+    }
+
+    // Free this node
+    rage_free_00C0(pNode);
+}

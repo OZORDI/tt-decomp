@@ -613,3 +613,125 @@ void rage::grcTextureReferenceBase::ForwardSlot18(void* param1, void* param2)
         fn(texture, param1, param2);
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::vfn_21  [vtable slot 21 @ 0x8215D458]
+// size: 0x60 (96 bytes)
+//
+// Recursive texture reference traversal with 3 parameters. Obtains the
+// inner texture via GetTexture() (slot 11); if non-NULL, calls vfn_21 on
+// that inner texture (forwarding all three parameters). If no inner
+// texture is bound, returns NULL.
+// ─────────────────────────────────────────────────────────────────────────────
+// @ 0x8215D458
+grcTexture* rage::grcTextureReferenceBase::vfn_21(void* a, void* b, void* c)
+{
+    grcTexture* pTex = GetTexture();   // VCALL slot 11
+
+    if (pTex != NULL) {
+        // Forward to the inner texture's slot 21
+        typedef grcTexture* (*Slot21Fn)(grcTexture*, void*, void*, void*);
+        Slot21Fn fn = reinterpret_cast<Slot21Fn>(pTex->vtable[21]);
+        return fn(pTex, a, b, c);
+    }
+
+    return NULL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase::vfn_22  [vtable slot 22 @ 0x8215D4B8]
+// size: 0x54 (84 bytes)
+//
+// Recursive texture reference traversal with 1 parameter. Obtains the
+// inner texture via GetTexture() (slot 11); if non-NULL, calls vfn_22 on
+// that inner texture (forwarding the parameter).
+// ─────────────────────────────────────────────────────────────────────────────
+// @ 0x8215D4B8
+void rage::grcTextureReferenceBase::vfn_22(void* a)
+{
+    grcTexture* pTex = GetTexture();   // VCALL slot 11
+
+    if (pTex != NULL) {
+        // Forward to the inner texture's slot 22
+        typedef void (*Slot22Fn)(grcTexture*, void*);
+        Slot22Fn fn = reinterpret_cast<Slot22Fn>(pTex->vtable[22]);
+        fn(pTex, a);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureFactoryString_FF68  [constructor @ 0x8215FF68]
+// size: 0x60 (96 bytes)
+//
+// Constructs a grcTextureFactoryString instance. Sets up the vtable pointer
+// to rage::grcTextureFactoryString @ 0x82035504, zeroes all fields, and
+// calls atSingleton_29E0_g with the string parameter to obtain a name
+// handle which is stored at offset +12.
+//
+// Object layout:
+//   +0x00  vtable            — set to 0x82035504
+//   +0x04  m_field04 (u8)    — 0
+//   +0x05  m_field05 (u8)    — 0
+//   +0x06  m_field06 (u16)   — 1
+//   +0x08  m_field08 (u32)   — 0
+//   +0x0C  m_pNameHandle     — result of atSingleton_29E0_g(pString)
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* atSingleton_29E0_g(const char* pString);
+
+// @ 0x8215FF68
+void grcTextureFactoryString_FF68(rage::grcTextureFactoryString* pObj, const char* pString)
+{
+    uint8_t* obj = (uint8_t*)pObj;
+
+    // Set vtable (compiler-managed in practice)
+    *(uint32_t*)(obj + 0) = 0x82035504;
+
+    // Zero fields
+    obj[4] = 0;
+    obj[5] = 0;
+    *(uint16_t*)(obj + 6) = 1;
+    *(uint32_t*)(obj + 8) = 0;
+
+    // Obtain name handle from singleton
+    void* nameHandle = atSingleton_29E0_g(pString);
+    *(void**)(obj + 12) = nameHandle;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureFactoryXenon_EFE8  [@ 0x8214EFE8]
+// size: 0xA0 (160 bytes)
+//
+// Applies texture transform state from a grcTextureFactoryXenon device.
+// Copies 6 float values (24 bytes) from device+12808 into a local buffer,
+// then conditionally flips the Y/V coordinates (subtracts from 1.0f) when
+// g_grcFormatId matches the sentinel 0x1A220197. Finally dispatches the
+// transform data to grc_5ED0 for GPU submission.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* g_grcTextureDevice;   // @ 0x825EBA18
+extern uint32_t g_grcFormatId;     // already declared above / @ 0x825E9070
+extern void rage_6290(void* pDevice, void* pSrc, void* pParam);
+extern void grc_5ED0(void* pDevice, float* pTransformData);
+
+// @ 0x8214EFE8
+void grcTextureFactoryXenon_EFE8(void* pDevice, void* pSrc, void* pParam)
+{
+    uint8_t* dev = (uint8_t*)g_grcTextureDevice;
+
+    rage_6290(g_grcTextureDevice, pSrc, pParam);
+
+    // Copy 6 floats (24 bytes) from device+12808 into local buffer
+    float transformData[6];
+    float* pSrcFloats = (float*)(dev + 12808);
+    for (int i = 0; i < 6; i++) {
+        transformData[i] = pSrcFloats[i];
+    }
+
+    // Conditional V-flip for specific format
+    if (g_grcFormatId == 0x1A220197) {
+        transformData[4] = 1.0f - transformData[4];   // flip V offset
+        transformData[5] = 1.0f - transformData[5];   // flip V scale
+    }
+
+    grc_5ED0(g_grcTextureDevice, transformData);
+}
