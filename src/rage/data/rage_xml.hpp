@@ -54,26 +54,20 @@ struct xmlNodeStruct {
     virtual void vfn_20();  // [20] @ 0x821a8898
 };
 
-} // namespace rage
-
-namespace rage::xmlNodeStruct {
-
 // ── rage::xmlNodeStruct::Type  [vtable @ 0x82027D6C] ──────────────────────────
-struct Type {
+// Note: Declared as xmlNodeStructType to avoid namespace/struct name collision.
+struct xmlNodeStructType {
     void**      vtable;           // +0x00
 };
 
-} // namespace rage::xmlNodeStruct
-
-namespace rage {
 
 // ── rage::xmlNodeStructBool  [vtable @ 0x8203AA10] ──────────────────────────
 struct xmlNodeStructBool {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x821a8a38
-    virtual void vfn_2();  // [2] @ 0x821a8a80
+    virtual bool ParseValue(unsigned char* dest, const char* src);  // [1] @ 0x821a8a38
+    virtual void FormatValue(char* dest, const unsigned char* src); // [2] @ 0x821a8a80
 };
 
 // ── rage::xmlNodeStructChar  [vtable @ 0x8203AA24] ──────────────────────────
@@ -81,8 +75,8 @@ struct xmlNodeStructChar {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x821a8a98
-    virtual void vfn_2();  // [2] @ 0x821a8aa8
+    virtual bool ParseValue(unsigned char* dest, const char* src);  // [1] @ 0x821a8a98
+    virtual void FormatValue(char* dest, const unsigned char* src); // [2] @ 0x821a8aa8
 };
 
 // ── rage::xmlNodeStructFloat  [vtable @ 0x8203AA74] ──────────────────────────
@@ -99,8 +93,8 @@ struct xmlNodeStructInt {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x821a8ba0
-    virtual void vfn_2();  // [2] @ 0x821a8be0
+    virtual bool ParseValue(int* dest, const char* src);   // [1] @ 0x821a8ba0
+    virtual void FormatValue(char* dest, const int* src);  // [2] @ 0x821a8be0
 };
 
 // ── rage::xmlNodeStructMatrix34  [vtable @ 0x8203AAC4] ──────────────────────────
@@ -117,8 +111,8 @@ struct xmlNodeStructShort {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x821a8b48
-    virtual void vfn_2();  // [2] @ 0x821a8b88
+    virtual bool ParseValue(short* dest, const char* src);   // [1] @ 0x821a8b48
+    virtual void FormatValue(char* dest, const short* src);  // [2] @ 0x821a8b88
 };
 
 // ── rage::xmlNodeStructString  [vtable @ 0x8203AA38] ──────────────────────────
@@ -126,8 +120,8 @@ struct xmlNodeStructString {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x821a8ac0
-    virtual void vfn_2();  // [2] @ 0x821a8b10
+    virtual bool ParseValue(const char** dest, const char* src);      // [1] @ 0x821a8ac0
+    virtual void FormatValue(char* dest, const char* const* src);     // [2] @ 0x821a8b10
 };
 
 // ── rage::xmlNodeStructVector2  [vtable @ 0x8203AA88] ──────────────────────────
