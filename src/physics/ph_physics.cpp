@@ -1865,7 +1865,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     extern void* ph_6FC8(void*, const char*);
     extern void ph_snprintf(char*, int, const char*, const char*, int);
     extern void* phArchetype_Load(const char*, void*);
-    extern void* xe_EC88(int);
+    extern void* xe_EC88(uint32_t);
     extern void* ph_9EC0_1(void*);
     extern void ph_E088(void*, void*, void*, float, int);
     extern void ph_9E50(void*, void*);

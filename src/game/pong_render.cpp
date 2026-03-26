@@ -32,7 +32,7 @@ static void* s_bucketData[32] = {};
 // External XML parsing helpers (called via rage tokeniser vtable)
 extern int   xml_ReadInt(const char* key);
 extern void  xml_ReadString(const char* key, char* buf, int maxLen);
-extern void* xe_EC88(int size);  // RAGE aligned alloc
+extern "C" void* xe_EC88(uint32_t size);  // RAGE aligned alloc
 
 // Assertion macro
 #ifndef ASSERT_MSG
