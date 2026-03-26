@@ -1827,3 +1827,274 @@ void* cmOperatorCtor_CamActionLookAtTarget_D(void* callerArg) {
 void* cmOperatorCtor_CamActionAllSlots_B(void* callerArg) {
     return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_A488_g, 16383);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmOperatorCtor factory functions — batch 5 (math & trig operators)
+//
+// 10 additional CM node factories for math/trig operators.
+// Binary operators (cmDivide, cmModulo, cmMax, cmMin, cmArcTangent):
+//   allocate 32 bytes, zero-init, set numInputs=2, install vtable.
+// Unary operators (cmNegate, cmSine, cmCosine, cmArcCosine, cmTangent):
+//   allocate 24 bytes, zero-init, set numInputs=1, install vtable.
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern "C" const void* rage_cmDivide_vtable;       // @ 0x82053B74
+extern "C" const void* rage_cmModulo_vtable;       // @ 0x82053BCC
+extern "C" const void* rage_cmMax_vtable;          // @ 0x82053F3C
+extern "C" const void* rage_cmMin_vtable;          // @ 0x82053F94
+extern "C" const void* rage_cmNegate_vtable;       // @ 0x82053C24
+extern "C" const void* rage_cmSine_vtable;         // @ 0x82053C7C
+extern "C" const void* rage_cmCosine_vtable;       // @ 0x82053CD4
+extern "C" const void* rage_cmArcCosine_vtable;    // @ 0x82053D2C
+extern "C" const void* rage_cmTangent_vtable;      // @ 0x82053D84
+extern "C" const void* rage_cmArcTangent_vtable;   // @ 0x82053DDC
+
+// ── rage::cmDivide factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6C80_1 @ 0x82266C80 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmDivide vtable. Binary arithmetic operator.
+ */
+// cmOperatorCtor_vfn_0_6C80_1 @ 0x82266C80
+void* cmOperatorCtor_cmDivide() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmDivide_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmModulo factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6D18_1 @ 0x82266D18 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmModulo vtable. Binary arithmetic operator.
+ */
+// cmOperatorCtor_vfn_0_6D18_1 @ 0x82266D18
+void* cmOperatorCtor_cmModulo() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmModulo_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmMax factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6DB0_1 @ 0x82266DB0 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmMax vtable. Binary comparison operator.
+ */
+// cmOperatorCtor_vfn_0_6DB0_1 @ 0x82266DB0
+void* cmOperatorCtor_cmMax() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmMax_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmMin factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6E48_1 @ 0x82266E48 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmMin vtable. Binary comparison operator.
+ */
+// cmOperatorCtor_vfn_0_6E48_1 @ 0x82266E48
+void* cmOperatorCtor_cmMin() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmMin_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmNegate factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6EE0_1 @ 0x82266EE0 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmNegate vtable. Unary arithmetic operator.
+ */
+// cmOperatorCtor_vfn_0_6EE0_1 @ 0x82266EE0
+void* cmOperatorCtor_cmNegate() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmNegate_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSine factory ─────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6F70_1 @ 0x82266F70 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmSine vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_6F70_1 @ 0x82266F70
+void* cmOperatorCtor_cmSine() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSine_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmCosine factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7090_1 @ 0x82267090 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmCosine vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_7090_1 @ 0x82267090
+void* cmOperatorCtor_cmCosine() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmCosine_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmArcCosine factory ────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7000_1 @ 0x82267000 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmArcCosine vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_7000_1 @ 0x82267000
+void* cmOperatorCtor_cmArcCosine() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmArcCosine_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmTangent factory ──────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7120_1 @ 0x82267120 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmTangent vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_7120_1 @ 0x82267120
+void* cmOperatorCtor_cmTangent() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmTangent_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmArcTangent factory ───────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_71B0_1 @ 0x822671B0 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmArcTangent vtable. Binary trigonometric operator (atan2).
+ */
+// cmOperatorCtor_vfn_0_71B0_1 @ 0x822671B0
+void* cmOperatorCtor_cmArcTangent() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmArcTangent_vtable;
+        return mem;
+    }
+    return nullptr;
+}
