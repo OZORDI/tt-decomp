@@ -1756,4 +1756,329 @@ bool parStreamOutRbf::WriteBool(const char* name, bool value) {
     return false;  // TODO: implement
 }
 
+
+// ────────────────────────────────────────────────────────────────────────────
+// atArray utility functions — template-instantiated helpers for RAGE dynamic
+// arrays used throughout the serialization and tokenizer systems.
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * AllocateU32Array @ 0x820E76D8 | size: 0x64
+ *
+ * Allocates memory for an array of uint32_t elements. Validates that the
+ * requested count does not exceed 0x3FFFFFFF (the max that can be multiplied
+ * by 4 without overflow). Returns nullptr for zero-count requests.
+ */
+void* AllocateU32Array(uint32_t count) {
+    constexpr uint32_t MAX_U32_COUNT = 0x3FFFFFFF;
+
+    if (count > MAX_U32_COUNT) {
+        rage_assert("Array allocation overflow");
+        rage_abort(1);
+    }
+
+    if (count != 0) {
+        return rage_alloc(count * 4);
+    }
+
+    return nullptr;
+}
+
+/**
+ * AllocateU16Array @ 0x822DF168 | size: 0x64
+ *
+ * Allocates memory for an array of uint16_t elements. Validates that the
+ * requested count does not exceed 0x7FFFFFFF (the max that can be multiplied
+ * by 2 without overflow). Returns nullptr for zero-count requests.
+ */
+void* AllocateU16Array(uint32_t count) {
+    constexpr uint32_t MAX_U16_COUNT = 0x7FFFFFFF;
+
+    if (count > MAX_U16_COUNT) {
+        rage_assert("Array allocation overflow");
+        rage_abort(1);
+    }
+
+    if (count != 0) {
+        return rage_alloc(count * 2);
+    }
+
+    return nullptr;
+}
+
+/**
+ * AllocateVec128Array @ 0x82238598 | size: 0x64
+ *
+ * Allocates memory for an array of 16-byte aligned elements (e.g. Vector128).
+ * Validates that the requested count does not exceed 0x0FFFFFFF (the max
+ * that can be multiplied by 16 without overflow). Returns nullptr for
+ * zero-count requests.
+ */
+void* AllocateVec128Array(uint32_t count) {
+    constexpr uint32_t MAX_VEC128_COUNT = 0x0FFFFFFF;
+
+    if (count > MAX_VEC128_COUNT) {
+        rage_assert("Array allocation overflow");
+        rage_abort(1);
+    }
+
+    if (count != 0) {
+        return rage_alloc(count * 16);
+    }
+
+    return nullptr;
+}
+
+/**
+ * AllocateBytes @ 0x8222D588 | size: 0x60
+ *
+ * Allocates a raw byte buffer of the specified size. The only validation is
+ * that size cannot exceed 0xFFFFFFFF (which is always true for uint32_t),
+ * so this effectively just guards against zero-size allocations.
+ * Returns nullptr for zero-size requests.
+ */
+void* AllocateBytes(uint32_t size) {
+    constexpr uint32_t MAX_BYTE_COUNT = 0xFFFFFFFF;
+
+    if (size > MAX_BYTE_COUNT) {
+        rage_assert("Array allocation overflow");
+        rage_abort(1);
+    }
+
+    if (size != 0) {
+        return rage_alloc(size);
+    }
+
+    return nullptr;
+}
+
+/**
+ * InitU32ArrayFromData @ 0x8222CC50 | size: 0xA8
+ *
+ * Initializes a triple-pointer array structure (begin/writePos/end) with
+ * the given count of uint32_t elements, copying initial values from a source
+ * array. The structure has layout: +0 = begin, +4 = writePos, +8 = end.
+ */
+void InitU32ArrayFromData(uint32_t* arrayStruct, uint32_t count, const uint32_t* srcData) {
+    arrayStruct[0] = 0;
+    arrayStruct[1] = 0;
+    arrayStruct[2] = 0;
+
+    uint32_t* buffer = static_cast<uint32_t*>(AllocateU32Array(count));
+
+    arrayStruct[0] = reinterpret_cast<uintptr_t>(buffer);
+    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer);
+    uint32_t* endPtr = buffer + count;
+    arrayStruct[2] = reinterpret_cast<uintptr_t>(endPtr);
+
+    // Copy source data into the allocated buffer
+    for (uint32_t i = 0; i < count; i++) {
+        buffer[i] = srcData[i];
+    }
+
+    // Update write position to current end of written data
+    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer + count);
+}
+
+/**
+ * ReserveStringBuffer @ 0x8222CEB8 | size: 0x88
+ *
+ * Reserves buffer space for a string/byte container. If the requested capacity
+ * is 16 or fewer bytes, uses a small inline buffer at offset +16 within the
+ * struct. Otherwise allocates from the heap. The struct has layout:
+ * +0 = begin, +16 = inline buffer, +20 = end pointer.
+ */
+void ReserveStringBuffer(uint8_t* containerStruct, uint32_t capacity) {
+    if (capacity <= 16) {
+        // Use the inline small-string buffer at offset +16
+        uint8_t* inlineBuffer = containerStruct + 16;
+        *reinterpret_cast<uintptr_t*>(inlineBuffer) = reinterpret_cast<uintptr_t>(containerStruct);
+        *reinterpret_cast<uintptr_t*>(containerStruct + 20) = reinterpret_cast<uintptr_t>(inlineBuffer);
+        return;
+    }
+
+    if (capacity == 0) {
+        rage_assert("Invalid buffer capacity");
+        rage_abort_fatal();
+        return;
+    }
+
+    if (capacity > 0xFFFFFFFF) {
+        rage_assert("Invalid buffer capacity");
+        rage_abort_fatal();
+        return;
+    }
+
+    // Heap allocation for larger buffers
+    uint8_t* heapBuffer = static_cast<uint8_t*>(AllocateBytes(capacity));
+    *reinterpret_cast<uintptr_t*>(containerStruct) = reinterpret_cast<uintptr_t>(heapBuffer);
+    *reinterpret_cast<uintptr_t*>(containerStruct + 16) = reinterpret_cast<uintptr_t>(heapBuffer);
+    *reinterpret_cast<uintptr_t*>(containerStruct + 20) = reinterpret_cast<uintptr_t>(heapBuffer + capacity);
+}
+
+/**
+ * CopyAligned64 @ 0x8222DDD0 | size: 0x64
+ *
+ * Copies 64-byte aligned blocks from source to destination using VMX/AltiVec
+ * 128-bit vector loads and stores. Operates in 64-byte chunks (4 x 16-byte
+ * vectors per iteration). Skips the copy if source equals end pointer.
+ */
+void CopyAligned64(void* src, const void* srcEnd, void* dest) {
+    uint8_t* srcPtr = static_cast<uint8_t*>(src);
+    const uint8_t* endPtr = static_cast<const uint8_t*>(srcEnd);
+    uint8_t* destPtr = static_cast<uint8_t*>(dest);
+
+    if (srcPtr == endPtr) {
+        return;
+    }
+
+    // Copy 64-byte blocks using 128-bit vector operations
+    do {
+        if (destPtr != nullptr) {
+            memcpy(destPtr, srcPtr, 16);
+            memcpy(destPtr + 16, srcPtr + 16, 16);
+            memcpy(destPtr + 32, srcPtr + 32, 16);
+            memcpy(destPtr + 48, srcPtr + 48, 16);
+        }
+        srcPtr += 64;
+        destPtr += 64;
+    } while (srcPtr != endPtr);
+}
+
+/**
+ * InitFloatArray @ 0x8222EA28 | size: 0x84
+ *
+ * Initializes a float array structure, allocating space for the given count
+ * and copying a single source float value into all elements. The struct uses
+ * layout: +0 = begin, +4 = writePos, +8 = sub-array header.
+ */
+void InitFloatArray(uint32_t* arrayStruct, uint32_t count, const float* srcValue) {
+    uint32_t* subArray = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(arrayStruct) + 8);
+
+    arrayStruct[0] = 0;
+    arrayStruct[1] = 0;
+    subArray[0] = 0;
+
+    float* buffer = static_cast<float*>(AllocateU32Array(count));
+
+    arrayStruct[0] = reinterpret_cast<uintptr_t>(buffer);
+    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer);
+    float* endPtr = buffer + count;
+    subArray[0] = reinterpret_cast<uintptr_t>(endPtr);
+
+    // Fill all elements with the source float value
+    float fillValue = *srcValue;
+    for (uint32_t i = 0; i < count; i++) {
+        buffer[i] = fillValue;
+    }
+
+    // Update write position
+    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer + count);
+}
+
+/**
+ * CopyConstructU32Array @ 0x8222EAB0 | size: 0xA4
+ *
+ * Copy-constructs a uint32_t array from a source array. Computes the element
+ * count from the source's begin/writePos pointers (writePos - begin) / 4,
+ * allocates a new buffer, and copies the data via memcpy.
+ */
+void CopyConstructU32Array(uint32_t* destStruct, const uint32_t* srcStruct) {
+    uint32_t* subDest = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(destStruct) + 8);
+
+    uintptr_t srcBegin = srcStruct[0];
+    uintptr_t srcWritePos = srcStruct[1];
+
+    destStruct[0] = 0;
+    destStruct[1] = 0;
+    subDest[0] = 0;
+
+    // Calculate element count from source pointers
+    uint32_t byteCount = static_cast<uint32_t>(srcWritePos - srcBegin);
+    uint32_t elementCount = byteCount >> 2;
+
+    float* buffer = static_cast<float*>(AllocateU32Array(elementCount));
+
+    destStruct[0] = reinterpret_cast<uintptr_t>(buffer);
+    destStruct[1] = reinterpret_cast<uintptr_t>(buffer);
+    uintptr_t endAddr = reinterpret_cast<uintptr_t>(buffer) + elementCount * 4;
+    subDest[0] = static_cast<uint32_t>(endAddr);
+
+    // Reload source pointers (may have changed)
+    uintptr_t srcEnd = srcStruct[1];
+    uintptr_t srcStart = srcStruct[0];
+
+    if (srcEnd == srcStart) {
+        // Empty source — just set writePos to begin
+        destStruct[1] = reinterpret_cast<uintptr_t>(buffer);
+        return;
+    }
+
+    // Copy source data into new buffer
+    size_t copySize = srcEnd - srcStart;
+    memcpy(buffer, reinterpret_cast<const void*>(srcStart), copySize);
+
+    // Update write position: dest_begin + (srcEnd - srcStart offset adjusted)
+    uintptr_t destBegin = reinterpret_cast<uintptr_t>(buffer);
+    destStruct[1] = static_cast<uint32_t>(destBegin - srcStart + srcEnd);
+}
+
+/**
+ * CompareArrayElements @ 0x82238F28 | size: 0x80
+ *
+ * Compares two indirect array element references. Each reference is a pointer
+ * to a struct containing: +0 = key (int32_t, -1 means string), +4 = value ptr.
+ * For string keys (-1), performs byte-by-byte string comparison.
+ * For integer keys, returns comparison result (-1, 0, or 1-like value).
+ */
+int CompareArrayElements(const void* refA, const void* refB) {
+    const int32_t* entryA = *reinterpret_cast<const int32_t* const*>(refA);
+    const int32_t* entryB = *reinterpret_cast<const int32_t* const*>(refB);
+
+    int32_t keyA = entryA[0];
+
+    if (keyA == -1) {
+        // String comparison mode
+        int32_t keyB = entryB[0];
+        if (keyB != -1) {
+            return -1;
+        }
+
+        // Both are string entries — compare the string values byte-by-byte
+        const char* strA = reinterpret_cast<const char*>(entryA[1]);
+        const char* strB = reinterpret_cast<const char*>(entryB[1]);
+
+        while (true) {
+            char charA = *strA;
+            char charB = *strB;
+            int diff = charA - charB;
+
+            if (charA == '\0') {
+                return diff;
+            }
+            if (diff != 0) {
+                return diff;
+            }
+
+            strA++;
+            strB++;
+        }
+    }
+
+    // Integer comparison mode
+    int32_t keyB = entryB[0];
+    if (keyB == -1) {
+        return 1;
+    }
+
+    // Compare unsigned integer keys
+    if (static_cast<uint32_t>(keyA) <= static_cast<uint32_t>(keyB)) {
+        // subfc/subfe idiom: returns 0 if equal, -1 if less
+        return (static_cast<uint32_t>(keyA) < static_cast<uint32_t>(keyB)) ? -1 : 0;
+    }
+
+    return 1;
+}
+
+
 } // namespace rage
