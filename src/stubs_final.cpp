@@ -126,7 +126,3 @@ void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(voi
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)b;(void)c; }
 namespace rage { struct phJoint3Dof; void phBoundCapsule_01D0_g(phJoint3Dof* j, float f) { (void)j;(void)f; } }
 
-// xe_EC88 C++ overloads (C version in heap.c takes uint32_t)
-extern "C" void* xe_EC88(uint32_t size);
-void* xe_EC88(int size) { return xe_EC88((uint32_t)size); }
-void* xe_EC88(unsigned int size) { return xe_EC88((uint32_t)size); }
