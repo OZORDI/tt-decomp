@@ -4214,3 +4214,438 @@ void pongPlayer::ComputeCourtBoundsForSide(void* courtData, int sideOffset,
         outNear[2] = outFar[2] - *(float*)(base + 132);
     }
 }
+
+
+// ===========================================================================
+// SECTION 9 — Batch: 10 pongPlayer functions (92–232B)
+// ===========================================================================
+
+// ── Additional externs for this batch ─────────────────────────────────────
+extern void pongPlayer_D298_2hr(void* creatureState);     // @ 0x820DD298
+extern void pongBallInstance_4980_g(void* ballMgr, uint16_t ballIndex,
+                                    int p3, int p4, int p5, int p6); // @ 0x822C4980
+extern void nop_8240E6D0(const char* debugStr);            // debug log (no-op in retail)
+
+// Global pointers used by CD48
+extern void* g_pMatchState;       // @ 0x8271A318 (.data, 4B)
+extern void* g_pMatchConfig;      // @ 0x8271A32C (.data, 4B)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::ApproachFloat  @ 0x820C99B0 | size: 0x5C (92 bytes)
+//
+// Moves *valuePtr toward targetValue by step (speed * dt) per frame.
+// Clamps to targetValue when overshooting. Returns true when value == target.
+// Used by look-at drivers, audio, rendering, and player subsystems.
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongPlayer::ApproachFloat(float* valuePtr, float targetValue,
+                               float speed, float dt) {
+    float currentValue = *valuePtr;
+
+    if (currentValue < targetValue) {
+        // Approach from below
+        currentValue += speed * dt;
+        *valuePtr = currentValue;
+        if (currentValue > targetValue) {
+            *valuePtr = targetValue;
+        }
+    } else if (currentValue > targetValue) {
+        // Approach from above
+        currentValue -= speed * dt;
+        *valuePtr = currentValue;
+        if (currentValue < targetValue) {
+            *valuePtr = targetValue;
+        }
+    }
+
+    return (*valuePtr == targetValue);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::SetHandedness  @ 0x820C7C78 | size: 0x6C (108 bytes)
+//
+// Sets the player's handedness byte (m_handedness at this+197).
+// If the value actually changes, logs a debug string identifying the new
+// hand ("right" vs "left") along with the creature name, then stores.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongPlayer::SetHandedness(uint8_t hand) {
+    if (hand == m_handedness) {
+        return;
+    }
+
+    const char* handStr = (hand != 0)
+        ? "right"   // @ 0x82027A30
+        : "left";   // @ 0x82027A50
+
+    nop_8240E6D0(handStr);  // debug log — no-op in retail
+    m_handedness = hand;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::GetSubObjectByIndex  @ 0x820CE3F0 | size: 0x64 (100 bytes)
+//
+// Returns one of five sub-object pointers stored at this+100..this+116,
+// indexed by the slot parameter (0–4). Returns nullptr for out-of-range.
+// Called by SinglesNetworkClient and SwingStartedMessage to look up
+// per-player sub-objects by network slot.
+// ─────────────────────────────────────────────────────────────────────────────
+void* pongPlayer::GetSubObjectByIndex(int slotIndex) const {
+    switch (slotIndex) {
+        case 0: return m_pSubObjects[0];  // this+100
+        case 1: return m_pSubObjects[1];  // this+104
+        case 2: return m_pSubObjects[2];  // this+108
+        case 3: return m_pSubObjects[3];  // this+112
+        case 4: return m_pSubObjects[4];  // this+116
+        default: return nullptr;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::IsSwingTimingWindowOpen  @ 0x820CE000 | size: 0x8C (140 bytes)
+//
+// Returns true only when:
+//   1. The timing state exists and its timer has NOT expired
+//      (i.e. IsSwingTimerActive is false — cntlzw inverts it)
+//   2. The timing sub-object at this+120 exists
+//   3. The float at (this+120)+32+128 (i.e. +160) is > the epsilon constant
+//
+// This gates the "live swing aiming" window — the player can still adjust
+// the shot direction while this returns true.
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongPlayer::IsSwingTimingWindowOpen() const {
+    // Check timing state: timer must NOT have expired
+    if (m_pTimingState) {
+        bool timerActive = (m_pTimingState->m_currentTime >= m_pTimingState->m_targetTime);
+        // cntlzw + rlwinm(27,31,31) inverts the boolean:
+        // timerActive == true means time >= target, i.e. timer expired
+        // We need !timerActive to proceed (timer still running)
+        if (timerActive) {
+            return false;
+        }
+    } else {
+        return false;
+    }
+
+    // Check secondary sub-object at this+120
+    void* subObj = m_pSwingAimState;
+    if (!subObj) {
+        return false;
+    }
+
+    // Read float at subObj+32+128 = subObj+160
+    float aimValue = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(subObj) + 160);
+
+    return (aimValue > g_swingPhaseThreshold);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::UpdateInputDirection  @ 0x820CB088 | size: 0xA4 (164 bytes)
+//
+// Captures the current input direction (f1=inputX, f2=inputY) into the
+// player's input state sub-object. If the "locked" flag (byte at +133) is
+// set, does nothing. Otherwise:
+//   - Saves current values (+32, +36) to previous (+40, +44) when non-zero
+//   - If bit 0 of flags byte at +64 is set, overwrites current with new input
+//   - If either input axis has non-zero magnitude, follows the swing data
+//     chain to clear the swing trigger flag (byte 341 at the swing sub-object)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongPlayer::UpdateInputDirection(float inputX, float inputY) {
+    if (m_bInputLocked) {
+        return;
+    }
+
+    // Save current to previous when current is non-zero
+    if (m_inputDirX != g_swingPhaseThreshold) {  // epsilon constant at 0x8202D110
+        m_prevInputDirX = m_inputDirX;
+    }
+    if (m_inputDirY != g_swingPhaseThreshold) {
+        m_prevInputDirY = m_inputDirY;
+    }
+
+    // If directional override flag (bit 0 at +64) is set, store new values
+    if (m_inputFlags & 0x1) {
+        m_inputDirX = inputX;
+        m_inputDirY = inputY;
+    }
+
+    // If either input axis has significant magnitude, clear swing trigger
+    if (fabsf(inputX) > g_swingPhaseThreshold ||
+        fabsf(inputY) > g_swingPhaseThreshold) {
+        // Follow chain: this+112 -> +188 -> +148 -> byte at +341
+        void* actionState = m_pActionState;
+        if (actionState) {
+            void* swingMgr = *reinterpret_cast<void**>(
+                reinterpret_cast<uintptr_t>(actionState) + 188);
+            if (swingMgr) {
+                void* swingData = *reinterpret_cast<void**>(
+                    reinterpret_cast<uintptr_t>(swingMgr) + 148);
+                if (swingData) {
+                    uint8_t triggered = *reinterpret_cast<uint8_t*>(
+                        reinterpret_cast<uintptr_t>(swingData) + 341);
+                    if (triggered) {
+                        *reinterpret_cast<uint8_t*>(
+                            reinterpret_cast<uintptr_t>(swingData) + 341) = 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::IsLocomotionStateActive  @ 0x82192578 | size: 0x50 (80 bytes)
+//
+// Checks whether the player's locomotion sub-state is currently active.
+// Follows the chain: this+452 -> +188 -> +120, then calls pongPlayer_6AA0_g
+// on the sub-object at offset +32 within that result.
+// Used by swing initiation, ball hit detection, and shader parameter updates.
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongPlayer::IsLocomotionStateActive() const {
+    void* creatureData = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(m_pCreature) + 188);
+    void* locoState = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(creatureData) + 120);
+
+    if (!locoState) {
+        return false;
+    }
+
+    void* locoSubState = reinterpret_cast<void*>(
+        reinterpret_cast<uintptr_t>(locoState) + 32);
+    return pongPlayer_6AA0_g(locoSubState);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::ResetBallInstance  @ 0x821925C8 | size: 0x9C (156 bytes)
+//
+// Resets the ball instance associated with this player. Checks whether the
+// player's ball slot has an active status (bottom 3 bits of status byte != 0).
+// If active, calls the ball manager's virtual Reset (vtable slot 4) first.
+// Then unconditionally calls pongBallInstance_4980_g to fully reset the
+// ball instance for this player's slot.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongPlayer::ResetBallInstance() {
+    extern void* g_pBallManager;  // @ 0x825F5BD0 (.data)
+
+    void* ballMgr = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(g_pBallManager));
+    void* ballData = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(ballMgr) + 4);
+
+    // Get this player's ball slot index
+    void* playerState = m_pPlayerState;
+    uint16_t ballIndex = *reinterpret_cast<uint16_t*>(
+        reinterpret_cast<uintptr_t>(playerState) + 8);
+
+    // Check status byte for this ball slot
+    void* statusTable = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(ballData) + 28);
+    uint8_t status = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(statusTable) + ballIndex);
+    bool isActive = (status & 0x7) != 0;
+
+    if (isActive) {
+        // Call ball data's virtual Reset (vtable slot 4)
+        void** vtable = *reinterpret_cast<void***>(ballData);
+        using ResetFn = void(*)(void*);
+        ResetFn resetFn = reinterpret_cast<ResetFn>(
+            *reinterpret_cast<void**>(reinterpret_cast<uintptr_t>(vtable) + 16));
+        resetFn(ballData);
+
+        // Re-fetch ball manager in case Reset changed state
+        ballMgr = *reinterpret_cast<void**>(
+            reinterpret_cast<uintptr_t>(g_pBallManager));
+    }
+
+    // Full reset of ball instance for this player's slot
+    void* state = m_pPlayerState;
+    uint16_t idx = *reinterpret_cast<uint16_t*>(
+        reinterpret_cast<uintptr_t>(state) + 8);
+    pongBallInstance_4980_g(ballMgr, idx, 0, 0, 0, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::IsReadyForNewSwing  @ 0x820CDDC0 | size: 0xD4 (212 bytes)
+//
+// Compound readiness gate called from pongPlayer_vfn_2 (the main update).
+// Returns true only when ALL of the following are satisfied:
+//   1. IsSwingPhaseBlocked() returns false
+//   2. The timing state shows the timer has NOT expired (same check as DCD8)
+//   3. IsCreatureStateReady() returns false
+//   4. IsCreatureState2Active() returns false
+//   5. IsRecovering() returns false
+//
+// This is the master "can we start a new swing?" gate.
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongPlayer::IsReadyForNewSwing() const {
+    // Gate 1: swing phase must not be blocked
+    if (IsSwingPhaseBlocked()) {
+        return false;
+    }
+
+    // Gate 2: timing state timer must not have expired
+    if (m_pTimingState) {
+        bool timerExpired = (m_pTimingState->m_currentTime >= m_pTimingState->m_targetTime);
+        if (!timerExpired) {
+            // Timer still running — not ready
+            return false;
+        }
+    }
+
+    // Gate 3: creature state must not be ready
+    if (IsCreatureStateReady()) {
+        return false;
+    }
+
+    // Gate 4: secondary creature state must not be active
+    if (IsCreatureState2Active()) {
+        return false;
+    }
+
+    // Gate 5: must not be in recovery
+    if (IsRecovering()) {
+        return false;
+    }
+
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::IsInAnticipationPhase  @ 0x820CDCD8 | size: 0xE8 (232 bytes)
+//
+// Checks whether the player is in the "anticipation" phase of a swing:
+//
+// PATH A — Timer has expired (currentTime >= targetTime):
+//   Checks if the timer just expired (equal) — returns false.
+//   Otherwise checks if the mid-point time (field +36) exceeds currentTime,
+//   which indicates the player is past the apex but in anticipation of contact.
+//
+// PATH B — Timer still running:
+//   Falls through to IsRecovering(); if recovering, delegates to
+//   pongPlayer_D298_2hr on the creature state at this+128.
+//
+// Returns false in all other cases.
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongPlayer::IsInAnticipationPhase() const {
+    pongTimingState* timing = m_pTimingState;
+
+    if (timing) {
+        float currentTime = timing->m_currentTime;
+        float targetTime = timing->m_targetTime;
+
+        // Check if timer has expired (currentTime >= targetTime)
+        bool timerExpired = (currentTime >= targetTime);
+
+        if (timerExpired) {
+            // Timer expired — check if exactly at target (edge case)
+            if (currentTime >= targetTime) {
+                // Re-check: if still >= target, check mid-point
+                // If midTime (field +36) > currentTime, we're in anticipation
+                float midTime = timing->m_midTime;
+                if (midTime > currentTime) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    } else {
+        // No timing state at all
+        return false;
+    }
+
+    // PATH B: timer still running — check recovery path
+    if (IsRecovering()) {
+        void* creatureState = m_pCreatureStateForSwing;
+        pongPlayer_D298_2hr(creatureState);
+        // D298 returns a bool in r3
+        // TODO: capture return value properly
+        return false;
+    }
+
+    return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPlayer::UpdateServeSpeed  @ 0x8218CD48 | size: 0xB8 (184 bytes)
+//
+// Updates the serve speed stored in the creature data (m_pCreature+208) based
+// on the current match state. Three paths:
+//
+//   1. If the match replay cursor is out of bounds, or the match config's
+//      "use serve data" flag is clear → store a default constant.
+//   2. If the player's side matches the geometry record's handedness →
+//      store the "same side" serve speed from the court data.
+//   3. Otherwise → store the "cross side" serve speed.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongPlayer::UpdateServeSpeed() {
+    // Get match state and check replay cursor bounds
+    void* matchState = *reinterpret_cast<void**>(&g_pMatchState);
+    int replayCursor = *reinterpret_cast<int*>(
+        reinterpret_cast<uintptr_t>(matchState) + 28);
+
+    bool cursorValid = false;
+    if (replayCursor >= 0) {
+        int maxCursor = *reinterpret_cast<int*>(
+            reinterpret_cast<uintptr_t>(matchState) + 8) - 1;
+        cursorValid = (replayCursor < maxCursor);
+    }
+
+    if (!cursorValid) {
+        // Out of bounds — use default serve speed
+        void* creature = m_pCreature;
+        *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(creature) + 208) = g_recoveryTimerThreshold;
+        return;
+    }
+
+    // Check match config "use serve data" flag
+    void* matchConfig = *reinterpret_cast<void**>(&g_pMatchConfig);
+    uint8_t useServeData = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(matchConfig) + 6);
+
+    if (useServeData == 0) {
+        // Serve data disabled — use default
+        void* creature = m_pCreature;
+        *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(creature) + 208) = g_recoveryTimerThreshold;
+        return;
+    }
+
+    // Look up court data entry for next replay frame
+    int nextFrame = replayCursor + 1;
+    void* frameTable = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(matchState) + 12);
+    void* frameEntry = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(frameTable) + nextFrame * 4);
+
+    // Get geometry record and check side matching
+    uint8_t playerSide = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(matchConfig) + 5);
+    void* inputData = *reinterpret_cast<void**>(&g_input_obj_ptr);
+    uint8_t geomSide = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(inputData) + 64);
+
+    int playerFlip = m_playerFlip;  // this+464
+    int sideXor = geomSide ^ playerSide;
+
+    // Get court data record
+    void* courtRecord = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(frameEntry) + 8);
+    void* serveData = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(courtRecord) + 40);
+
+    void* creature = m_pCreature;
+    if (sideXor == playerFlip) {
+        // Same side — use near serve speed
+        float serveSpeed = *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(serveData) + 24);
+        *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(creature) + 208) = serveSpeed;
+    } else {
+        // Cross side — use far serve speed
+        float serveSpeed = *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(serveData) + 28);
+        *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(creature) + 208) = serveSpeed;
+    }
+}
