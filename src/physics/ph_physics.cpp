@@ -3911,3 +3911,298 @@ int32_t rage::phInst::ComputeAllocationSize(uint32_t* outSize) const {
     *outSize = static_cast<uint32_t>(componentCount) * 100 + 268;
     return 0;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Vtable & Utility Functions (10 functions, 8-196B)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External function declarations
+extern void ph_1B78(void* outResult, float halfExtent, float radius, void* capsule);
+extern void util_DA50(void* dst, const void* src);  // base class copy helper
+extern void phBoundCapsule_AED0_g(void* thisPtr, void* mat34, const float* normal, void* outResult);
+extern float phBoundCapsule_0E90_g(float value);  // acosf thunk
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::SetType (vfn_13) @ 0x822A2E00 | size: 0x8
+//
+// Sets the capsule's bound type identifier at offset +192.
+// Virtual slot 13 — simple setter for the type field.
+//
+// @param type — bound type identifier (e.g., 0 = sphere, 1 = capsule, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::SetType(uint32_t type) {
+    *(uint32_t*)((char*)this + 192) = type;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::GetType (vfn_12) @ 0x8256FBD0 | size: 0x8
+//
+// Returns the capsule's bound type identifier from offset +192.
+// Virtual slot 12 — simple getter for the type field.
+//
+// @return bound type identifier
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t rage::phBoundCapsule::GetType() const {
+    return *(const uint32_t*)((const char*)this + 192);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::Deallocate (vfn_11) @ 0x822A2DE0 | size: 0x20
+//
+// Deallocates the capsule through the global display/allocator object.
+// Reads the type field (offset +192), retrieves the global allocator
+// singleton via g_display_obj_ptr, and calls its vtable slot 5 (free).
+//
+// Virtual slot 11 — destructor/deallocation dispatch.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::Deallocate() {
+    uint32_t type = *(uint32_t*)((char*)this + 192);
+    void* allocator = g_display_obj_ptr;
+    // Call allocator vtable slot 5 (deallocate)
+    void** vtbl = *(void***)allocator;
+    typedef void (*DeallocFunc)(void*, uint32_t);
+    DeallocFunc dealloc = (DeallocFunc)vtbl[5];
+    dealloc(allocator, type);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeVolume (vfn_8) @ 0x822A2DB0 | size: 0x2C
+//
+// Computes the volume of the capsule bound using the sphere volume formula.
+// Uses radius (offset +112) and half-extent (offset +128) to compute:
+//   volume = (radius + half_extent * TWO_THIRDS) * radius^2 * FOUR_THIRDS_PI
+//
+// This combines the cylinder and hemisphere volumes of a capsule:
+//   V = pi * r^2 * (4r/3 + h)  where h = 2 * halfExtent
+//
+// Virtual slot 8.
+//
+// @return capsule volume as float
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::ComputeVolume() const {
+    float radius = *(const float*)((const char*)this + 112);
+    float halfExtent = *(const float*)((const char*)this + 128);
+
+    static const float TWO_THIRDS = *(const float*)0x82079BD0;
+    static const float FOUR_THIRDS_PI = *(const float*)0x82079B30;
+
+    // volume = (radius + halfExtent * TWO_THIRDS) * radius * radius * FOUR_THIRDS_PI
+    float inner = radius * TWO_THIRDS + halfExtent;
+    float radiusSq = inner * radius;
+    float radiusCubed = radiusSq * radius;
+    return radiusCubed * FOUR_THIRDS_PI;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeShrunkBounds (vfn_9) @ 0x822A3258 | size: 0x10
+//
+// Computes the capsule's shrunk (margin-reduced) bounding volume by
+// delegating to the ph_1B78 helper with the capsule's half-extent and radius.
+//
+// Virtual slot 9.
+//
+// @param outResult — pointer to output structure receiving shrunk bounds
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ComputeShrunkBounds(void* outResult) {
+    float halfExtent = *(const float*)((const char*)this + 128);  // +0x80
+    float radius = *(const float*)((const char*)this + 112);      // +0x70
+    ph_1B78(outResult, halfExtent, radius, this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeSupportDistance (vfn_33) @ 0x822A3268 | size: 0x50
+//
+// Computes the support distance along a given direction for GJK/EPA collision.
+// The support distance is: radius + halfExtent * |dir.y| * TWO_THIRDS
+// Optionally adds the dot product of the capsule center with the direction.
+//
+// Virtual slot 33 — used by the GJK narrowphase for support mapping.
+//
+// @param direction — pointer to 4-float direction vector
+// @param includeCenter — if nonzero, add center·direction to result
+//
+// @return support distance along direction
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::ComputeSupportDistance(const float* direction, uint8_t includeCenter) const {
+    float absDirY = fabsf(direction[1]);
+    float halfExtent = *(const float*)((const char*)this + 128);  // +0x80
+    float radius = *(const float*)((const char*)this + 112);      // +0x70
+
+    static const float TWO_THIRDS = *(const float*)0x8202D10C;
+
+    float result = halfExtent * absDirY * TWO_THIRDS + radius;
+
+    if (includeCenter == 0) {
+        // Add dot product of center (offset +48) with direction
+        const float* center = (const float*)((const char*)this + 48);
+        float dot = center[0] * direction[0]
+                  + center[1] * direction[1]
+                  + center[2] * direction[2]
+                  + center[3] * direction[3];
+        result += dot;
+    }
+
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::CopyFrom (vfn_34) @ 0x822A2F28 | size: 0xBC
+//
+// Deep-copies all capsule-specific fields from the source bound to this one.
+// First calls the base class copy (util_DA50), then copies:
+//   - 5 SIMD vectors at offsets 112-176 (orientation matrix, extents)
+//   - The type field at offset 192
+//   - 12 bytes of flags/metadata at offset 196-207
+// Finally sets the dirty flag at offset 96 to 1.
+//
+// Virtual slot 34.
+//
+// @param source — source phBoundCapsule to copy from
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::CopyFrom(const rage::phBoundCapsule* source) {
+    // Copy base class fields
+    util_DA50(this, source);
+
+    // Copy 5 SIMD vectors (offsets 112, 128, 144, 160, 176)
+    memcpy((char*)this + 112, (const char*)source + 112, 16);   // +112: radius/extents vec
+    memcpy((char*)this + 128, (const char*)source + 128, 16);   // +128: half-extent vec
+    memcpy((char*)this + 144, (const char*)source + 144, 16);   // +144: orientation row 0
+    memcpy((char*)this + 160, (const char*)source + 160, 16);   // +160: orientation row 1
+    memcpy((char*)this + 176, (const char*)source + 176, 16);   // +176: orientation row 2
+
+    // Copy type field
+    *(uint32_t*)((char*)this + 192) = *(const uint32_t*)((const char*)source + 192);
+
+    // Copy 12 bytes of flags/metadata at offset 196
+    uint8_t* dst = (uint8_t*)this + 196;
+    const uint8_t* src = (const uint8_t*)source + 196;
+    for (int i = 0; i < 12; i++) {
+        dst[i] = src[i];
+    }
+
+    // Mark as dirty
+    *(uint16_t*)((char*)this + 96) = 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::RotateOrientation @ 0x820D05A0 | size: 0xB4
+//
+// Rotates the capsule's 2x4 orientation matrix (rows at offsets +16 and +32)
+// by a given angle. Uses sin/cos components from phBoundCapsule_04F0_g to
+// perform a 2D rotation on the two row vectors:
+//
+//   newRow0 = row1 * cos - row0 * sin  (with sign flip)
+//   newRow1 = row0 * sin + row1 * cos
+//
+// This rotates the capsule's local orientation around its primary axis.
+//
+// @param angle — rotation angle parameter
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::RotateOrientation(float angle) {
+    float cosAngle, sinAngle;
+    phBoundCapsule_04F0_g(&cosAngle, &sinAngle, angle, angle);
+
+    float* row0 = (float*)((char*)this + 16);   // orientation row 0
+    float* row1 = (float*)((char*)this + 32);   // orientation row 1
+
+    // Save original row1
+    float r1[4];
+    r1[0] = row1[0]; r1[1] = row1[1]; r1[2] = row1[2]; r1[3] = row1[3];
+
+    // newRow1 = row1 * cos + row0 * sinAngle  (vnmsubfp: -(a*b - c) = c - a*b)
+    // newRow0 = row0 * cos + row1 * sinAngle (with appropriate signs from vmaddfp/vnmsubfp)
+
+    // row1 = row0 * sinAngle + row1 * cosAngle
+    row1[0] = row0[0] * sinAngle + r1[0] * cosAngle;
+    row1[1] = row0[1] * sinAngle + r1[1] * cosAngle;
+    row1[2] = row0[2] * sinAngle + r1[2] * cosAngle;
+    row1[3] = row0[3] * sinAngle + r1[3] * cosAngle;
+
+    // row0 = -(r1_orig * sinAngle - row0 * cosAngle) = row0 * cosAngle - r1_orig * sinAngle
+    row0[0] = row0[0] * cosAngle - r1[0] * sinAngle;
+    row0[1] = row0[1] * cosAngle - r1[1] * sinAngle;
+    row0[2] = row0[2] * cosAngle - r1[2] * sinAngle;
+    row0[3] = row0[3] * cosAngle - r1[3] * sinAngle;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeClampedDotProduct @ 0x82137BF8 | size: 0xAC
+//
+// Computes a 4-component dot product between two vectors, then clamps and
+// transforms the result. If the dot product is NaN or out of range:
+//   - NaN -> returns 0.0
+//   - <= 0 -> returns 0.0
+//   - >= 1 -> returns 0.0
+//   - Otherwise -> returns abs(dot) scaled by a constant (pi/2 factor)
+//
+// Used for computing angular relationships between capsule orientations.
+//
+// @param a — pointer to first 4-float vector
+// @param b — pointer to second 4-float vector
+//
+// @return clamped and transformed dot product
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::ComputeClampedDotProduct(const float* a, const float* b) {
+    float dot = a[2] * b[2]
+              + a[3] * b[3]
+              + a[1] * b[1]
+              + a[0] * b[0];
+
+    static const float ZERO = *(const float*)0x8202D110;      // 0.0f
+    static const float NEG_ONE = *(const float*)0x8202D108;   // -1.0f (8 bytes before zero)
+    static const float PI_SCALE = *(const float*)0x8202D184;  // pi/2 scale constant
+
+    // Check for NaN or out-of-range (fcmpu sets bso for NaN)
+    // If dot > 0 and dot < -1.0 (impossible for valid input) -> edge case
+    if (dot <= ZERO) {
+        return ZERO;
+    }
+
+    if (dot < NEG_ONE) {
+        // dot is in valid range — apply acos-based transformation
+        float absDot = fabsf(dot);
+        float acosDot = phBoundCapsule_0E90_g(absDot);
+        return (float)acosDot * PI_SCALE;
+    }
+
+    return ZERO;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::EnsurePositiveNormal @ 0x82137CA8 | size: 0xC4
+//
+// Ensures the contact normal points in the correct direction for collision
+// response. Computes the dot product of a surface direction with the contact
+// normal. If the dot product is negative (normal faces wrong way), the normal
+// is negated before passing to the collision response function.
+//
+// @param thisPtr — collision context
+// @param mat34   — transform matrix
+// @param surfaceDir — surface direction vector (4 floats)
+// @param normal — contact normal (4 floats, may be negated)
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::EnsurePositiveNormal(void* thisPtr, void* mat34,
+    const float* surfaceDir, float* normal)
+{
+    // Compute 4-component dot product: surfaceDir . normal
+    float dot = surfaceDir[2] * normal[2]
+              + surfaceDir[3] * normal[3]
+              + surfaceDir[1] * normal[1]
+              + surfaceDir[0] * normal[0];
+
+    static const float ZERO = *(const float*)0x8202D110;
+
+    if (dot < ZERO) {
+        // Normal faces wrong direction — negate it
+        float negNormal[4];
+        negNormal[0] = -normal[0];
+        negNormal[1] = -normal[1];
+        negNormal[2] = -normal[2];
+        negNormal[3] = -normal[3];
+
+        phBoundCapsule_AED0_g(thisPtr, mat34, negNormal, nullptr);
+    } else {
+        // Normal is fine — pass through directly
+        phBoundCapsule_AED0_g(thisPtr, mat34, normal, nullptr);
+    }
+}
