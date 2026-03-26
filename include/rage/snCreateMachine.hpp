@@ -43,9 +43,9 @@ public:
     virtual void OnUpdate();                                       // [14] @ 0x823DDA70
     
     // ── Session Management ──
-    virtual void InitializeSession();                              // [5] @ 0x823DEBC0
-    virtual void UpdateSessionState();                             // [6] @ 0x823DEC38
-    virtual void HandleStateTransition();                          // [15] @ 0x823F27E8
+    virtual void InitializeChildStates();                          // [5] @ 0x823DEBC0
+    virtual void ShutdownChildStates();                            // [6] @ 0x823DEC38
+    virtual void UnregisterNotifyHandler();                        // [15] @ 0x823F27E8
     
     // ── State Access ──
     virtual hsmState* GetCurrentState();                           // [10] (unnamed)
