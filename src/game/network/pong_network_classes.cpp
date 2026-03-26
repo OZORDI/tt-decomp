@@ -1388,3 +1388,245 @@ void pongNetMessageHolder_DestroyMovementPool(void* self) {
     rage_free(buffer);
     *(void**)(obj + 8) = nullptr;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateNextMatchMessagePool @ 0x823C2910 | size: 0x50
+//
+// Deallocates a single NextMatchMessage object (24 bytes).
+// Resets the vtable to PongNetMessage base, then frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DeallocateNextMatchMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    *(uint32_t*)buffer = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateNextMatchSpectatorMessagePool @ 0x823C2AB0 | size: 0x50
+//
+// Deallocates a single NextMatchSpectatorMessage object (16 bytes).
+// Resets the vtable to PongNetMessage base, then frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DeallocateNextMatchSpectatorMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    *(uint32_t*)buffer = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateScoreMessagePool @ 0x823C3248 | size: 0x54
+//
+// Lazy allocation for the ScoreMessage pool (240 bytes).
+// Calls ScoreMessage_ctor_7910 to construct the pool of 5 entries (stride 44).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_AllocateScoreMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    extern void ScoreMessage_ctor_7910(void* memory);
+
+    void* memory = xe_EC88(240);
+    if (memory != nullptr) {
+        ScoreMessage_ctor_7910(memory);
+    } else {
+        memory = nullptr;
+    }
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateScoreMessagePool @ 0x823C32A0 | size: 0x64
+//
+// Teardown for the ScoreMessage pool (5 entries, stride 44).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DeallocateScoreMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* cursor = (uint8_t*)buffer + 220;
+    for (int i = 4; i >= 0; --i) {
+        cursor -= 44;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateForfeitMatchMessagePool @ 0x823C3558 | size: 0x54
+//
+// Lazy allocation for the ForfeitMatchMessage pool (112 bytes).
+// Calls pongNetMessageHolder_7B68_wrh to construct pool of 5 entries (stride 20).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_AllocateForfeitMatchMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    extern void pongNetMessageHolder_7B68_wrh(void* memory);
+
+    void* memory = xe_EC88(112);
+    if (memory != nullptr) {
+        pongNetMessageHolder_7B68_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateForfeitMatchMessagePool @ 0x823C35B0 | size: 0x64
+//
+// Teardown for the ForfeitMatchMessage pool (5 entries, stride 20).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DeallocateForfeitMatchMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* cursor = (uint8_t*)buffer + 100;
+    for (int i = 4; i >= 0; --i) {
+        cursor -= 20;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateTerminateRallyMessagePool @ 0x823C3618 | size: 0x54
+//
+// Lazy allocation for the TerminateRallyMessage pool (128 bytes).
+// Calls pongNetMessageHolder_7C48_wrh to construct pool of 10 entries (stride 12).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_AllocateTerminateRallyMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    extern void pongNetMessageHolder_7C48_wrh(void* memory);
+
+    void* memory = xe_EC88(128);
+    if (memory != nullptr) {
+        pongNetMessageHolder_7C48_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateTerminateRallyMessagePool @ 0x823C3670 | size: 0x64
+//
+// Teardown for the TerminateRallyMessage pool (10 entries, stride 12).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DeallocateTerminateRallyMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* cursor = (uint8_t*)buffer + 120;
+    for (int i = 9; i >= 0; --i) {
+        cursor -= 12;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateInternalMessageRelayPool @ 0x823C36D8 | size: 0x54
+//
+// Lazy allocation for the InternalMessageRelay pool (5248 bytes).
+// Calls InternalMessageRelay_ctor_7D28 to construct pool of 10 entries (stride 524).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_AllocateInternalMessageRelayPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    extern void InternalMessageRelay_ctor_7D28(void* memory);
+
+    void* memory = xe_EC88(5248);
+    if (memory != nullptr) {
+        InternalMessageRelay_ctor_7D28(memory);
+    } else {
+        memory = nullptr;
+    }
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateInternalMessageRelayPool @ 0x823C3730 | size: 0x64
+//
+// Teardown for the InternalMessageRelay pool (10 entries, stride 524).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DeallocateInternalMessageRelayPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* cursor = (uint8_t*)buffer + 5240;
+    for (int i = 9; i >= 0; --i) {
+        cursor -= 524;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
