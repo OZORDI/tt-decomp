@@ -6,7 +6,7 @@
  * These stubs allow the project to link while the real implementations are
  * being lifted from the original binary.
  *
- * Note: hsmContext_SetNextState_2800 is already stubbed in stubs_linker.cpp.
+ * Note: hsmContext_SetNextState is already stubbed in stubs_linker.cpp.
  */
 
 #include <cstddef>
@@ -224,8 +224,8 @@ extern "C" {
 // REMOVED (conflict):     void RtlLeaveCriticalSection(void* cs) { (void)cs; }
 // REMOVED (conflict):     void atArray_Clear(void* arr) { (void)arr; }
 // REMOVED (conflict):     void audControl_Destructor(void* obj) { (void)obj; }
-// REMOVED (conflict):     void fsmMachine_Destructor_27A8(void* obj) { (void)obj; }
-// REMOVED (conflict):     void hsmContext_SetNextState_2800(void* ctx, int state) { (void)ctx; (void)state; }
+// REMOVED (conflict):     void fsmMachine_Destroy(void* obj) { (void)obj; }
+// REMOVED (conflict):     void hsmContext_SetNextState(void* ctx, int state) { (void)ctx; (void)state; }
 // REMOVED (conflict):     void rage_free(void* ptr) { (void)ptr; }
 // REMOVED (conflict):     void xmlNodeStruct_Initialize(void* obj) { (void)obj; }
 // REMOVED (conflict):     void phInst_A3A0_p33(void* obj) { (void)obj; }

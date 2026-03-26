@@ -681,3 +681,139 @@ bool pongCameraMgr::CheckThreshold75C8() { return pongCameraMgr_FloatThresholdB(
 bool pongCameraMgr::CheckThreshold7608() { return pongCameraMgr_FloatThresholdB(this); }  // 7608 @ 0x821F7608
 bool pongCameraMgr::CheckThreshold7648() { return pongCameraMgr_FloatThresholdB(this); }  // 7648 @ 0x821F7648
 bool pongCameraMgr::CheckThreshold7688() { return pongCameraMgr_FloatThresholdB(this); }  // 7688 @ 0x821F7688
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryCameraChange_Mode1()  @ 0x821F7DF8
+// Tail-call wrapper: delegates to pg_7CD8_2h with mode 1
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryCameraChange_Mode1(void* gameState) {
+    extern bool pg_7CD8_2h(pongCameraMgr* mgr, void* gameState, int mode);
+    return pg_7CD8_2h(this, gameState, 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryCameraChange_Mode2()  @ 0x821F7E00
+// Tail-call wrapper: delegates to pg_7CD8_2h with mode 2
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryCameraChange_Mode2(void* gameState) {
+    extern bool pg_7CD8_2h(pongCameraMgr* mgr, void* gameState, int mode);
+    return pg_7CD8_2h(this, gameState, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryCameraChange_Mode3()  @ 0x821F7E08
+// Tail-call wrapper: delegates to pg_7CD8_2h with mode 3
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryCameraChange_Mode3(void* gameState) {
+    extern bool pg_7CD8_2h(pongCameraMgr* mgr, void* gameState, int mode);
+    return pg_7CD8_2h(this, gameState, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryCameraChange_Mode4()  @ 0x821F7E10
+// Tail-call wrapper: delegates to pg_7CD8_2h with mode 4
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryCameraChange_Mode4(void* gameState) {
+    extern bool pg_7CD8_2h(pongCameraMgr* mgr, void* gameState, int mode);
+    return pg_7CD8_2h(this, gameState, 4);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryCameraChange_Mode5()  @ 0x821F7E18
+// Tail-call wrapper: delegates to pg_7CD8_2h with mode 5
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryCameraChange_Mode5(void* gameState) {
+    extern bool pg_7CD8_2h(pongCameraMgr* mgr, void* gameState, int mode);
+    return pg_7CD8_2h(this, gameState, 5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryCameraChange_Mode6()  @ 0x821F7E20
+// Tail-call wrapper: delegates to pg_7CD8_2h with mode 6
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryCameraChange_Mode6(void* gameState) {
+    extern bool pg_7CD8_2h(pongCameraMgr* mgr, void* gameState, int mode);
+    return pg_7CD8_2h(this, gameState, 6);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateFour()  @ 0x821F7EA0
+// Checks if global camera state equals 4
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateFour() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 4);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateFive()  @ 0x821F7EC0
+// Checks if global camera state equals 5
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateFive() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateSix()  @ 0x821F7EE0
+// Checks if global camera state equals 6
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateSix() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 6);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateSeven()  @ 0x821F7F00
+// Checks if global camera state equals 7
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateSeven() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 7);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateEight()  @ 0x821F7F20
+// Checks if global camera state equals 8
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateEight() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 8);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateTen()  @ 0x821F7F60
+// Checks if global camera state equals 10
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateTen() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 10);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateEleven()  @ 0x821F7F80
+// Checks if global camera state equals 11
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateEleven() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 11);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateTwelve()  @ 0x821F7FA0
+// Checks if global camera state equals 12
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateTwelve() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::IsCameraStateThirteen()  @ 0x821F7FC0
+// Checks if global camera state equals 13
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::IsCameraStateThirteen() const {
+    extern int32_t g_cameraState;  // @ 0x825C5EB8
+    return (g_cameraState == 13);
+}

@@ -32,7 +32,7 @@ static void* s_bucketData[32] = {};
 // External XML parsing helpers (called via rage tokeniser vtable)
 extern int   xml_ReadInt(const char* key);
 extern void  xml_ReadString(const char* key, char* buf, int maxLen);
-extern "C" void* xe_EC88(uint32_t size);  // RAGE aligned alloc
+extern "C" void* rage_alloc(uint32_t size);  // RAGE aligned alloc
 
 // Assertion macro
 #ifndef ASSERT_MSG
@@ -96,7 +96,7 @@ pongDrawBucketManager::~pongDrawBucketManager()
 //   strncpy(this->m_configExt,      <rdata_ptr>, 32)   <- this+0x30
 //   this->m_numBuckets    = numBuckets   (sth @ this+0x0C)
 //   this->m_defaultBucket = numBuckets   (sth @ this+0x0E, initial sentinel)
-//   this->m_pBuckets      = xe_EC88(numBuckets * 4)   (stw @ this+0x08)
+//   this->m_pBuckets      = rage_alloc(numBuckets * 4)   (stw @ this+0x08)
 //   g_numDrawBuckets      = numBuckets   (stw @ 0x82606358)
 // ─────────────────────────────────────────────────────────────────────────────
 void pongDrawBucketManager::Load()
@@ -139,9 +139,9 @@ void pongDrawBucketManager::Load()
     m_defaultBucket   = (uint16_t)numBuckets;  // @ this+0x0E
 
     // Allocate bucket pointer array: numBuckets × 4 bytes
-    // xe_EC88 is the RAGE aligned allocator (equivalent to rage::MemAlloc)
+    // rage_alloc is the RAGE aligned allocator (equivalent to rage::MemAlloc)
     // Guard: assert numBuckets <= 0x3FFFFFFF (prevents size overflow in shift)
-    m_pBuckets = (pongDrawBucket**)xe_EC88(numBuckets * sizeof(pongDrawBucket*));
+    m_pBuckets = (pongDrawBucket**)rage_alloc(numBuckets * sizeof(pongDrawBucket*));
 
     // ── DefaultBucket ──────────────────────────────────────────────────────
     int defaultBucket = xml_ReadInt("DefaultBucket:");

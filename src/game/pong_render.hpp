@@ -41,7 +41,7 @@ struct pongDrawBucket {
 //
 //   +0x00  void**           vtable
 //   +0x04  uint32_t         m_field_04          (reserved / read-only)
-//   +0x08  pongDrawBucket** m_pBuckets          xe_EC88(numBuckets * 4)
+//   +0x08  pongDrawBucket** m_pBuckets          rage_alloc(numBuckets * 4)
 //   +0x0C  uint16_t         m_numBuckets        BucketCount: XML attr (1..32)
 //   +0x0E  uint16_t         m_defaultBucket     DefaultBucket: XML attr
 //   +0x10  char             m_configBasename[32] e.g. "settings"

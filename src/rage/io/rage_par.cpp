@@ -7,7 +7,7 @@
 #include <cstring>
 
 extern "C" {
-void xe_main_thread_init_0038(void);
+void sysMemAllocator_InitMainThread(void);
 void* atSingleton_CAD0_g(void* self);
 void SinglesNetworkClient_8990_g(const char* src, char* dest, int maxSize);
 int RtlMultiByteToUnicodeN_6FA8_w(
@@ -23,11 +23,11 @@ extern std::uint32_t* g_sda_base;
 void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags);
 void fiAsciiTokenizer_CFA8_w(void* pStringValue, const char* pBegin, const char* pEnd);
 void rage_EC58(void* pStringValue, const char* pText);
-void* xe_EC88(std::uint32_t size);
+void* rage_alloc(std::uint32_t size);
 void rage_free(void* ptr);
-void nop_8240E6D0(const char* fmt, ...);
+void rage_DebugLog(const char* fmt, ...);
 void* phMaterialMgrImpl_C208_g(void* pHashBucketSet, const char* pLookupName);
-void* rage_97A8(const void* pOperator, const char* pNodeName);
+void* parStreamInXml_FindChildByName(const void* pOperator, const char* pNodeName);
 void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicateOwner);
 void jumptable_9498(
     void* pOperator,
@@ -43,7 +43,7 @@ std::uint8_t jumptable_E058_h(void* pMemberArray);
 void rage_F6F0();
 void cmOperatorCtor_DAE0_w(void* pOperator, std::uint32_t valueData, int flags);
 void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags);
-float parStreamInXml_A5D0(void* pOperator);
+float parStreamInXml_ReadFloat(void* pOperator);
 bool jumptable_A578_h(void* pOperator);
 }
 
@@ -469,7 +469,7 @@ Address32 CreateStructFromOperator(const parMemberStructDescriptor32* pDescripto
 
 Address32 FindStructOperatorNode(const rage::cmOperator* pValueOperator, Address32 nodeNameAddress) {
     return static_cast<Address32>(reinterpret_cast<std::uintptr_t>(
-        rage_97A8(pValueOperator, ResolveAddress<const char>(nodeNameAddress))
+        parStreamInXml_FindChildByName(pValueOperator, ResolveAddress<const char>(nodeNameAddress))
     ));
 }
 
@@ -523,7 +523,7 @@ parRTStructure::parRTStructure() {
             *reinterpret_cast<std::uint32_t*>(runtimeStruct) = kParRTStructureVtable;
         }
 
-        xe_main_thread_init_0038();
+        sysMemAllocator_InitMainThread();
 
         slotHeader->m_bufferPtr = 0;
         if (allocator != nullptr) {
@@ -647,7 +647,7 @@ void parMemberString::ApplyOperator(const cmOperator* pValueOperator, std::uint3
     if ((GetMemberFlags(this) & kFlagIndirectStorage) != 0u) {
         Address32* pStorage = ResolveAddress<Address32>(memberAddress);
         *pStorage = static_cast<Address32>(
-            reinterpret_cast<std::uintptr_t>(xe_EC88(sourceLength + 1u))
+            reinterpret_cast<std::uintptr_t>(rage_alloc(sourceLength + 1u))
         );
         std::memcpy(
             ResolveAddress<void>(*pStorage),
@@ -748,7 +748,7 @@ void parMemberArray::E138(
         }
 
         case 1: {
-            nop_8240E6D0(ResolveAddress<const char>(kParArrayLegacyProbeString));
+            rage_DebugLog(ResolveAddress<const char>(kParArrayLegacyProbeString));
 
             const Address32 memberAddress = GetArrayMemberBaseAddress(this) + memberOffset;
             Address32* pLargeCount = ResolveAddress<Address32>(memberAddress + kParArrayLargeStorageOffset);
@@ -824,7 +824,7 @@ void parMemberArray::E138(
  * operator nodes.
  */
 cmOperator* parMemberArray::CreateOperator(std::uint32_t memberOffset) {
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
 
     MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
     auto* pOperatorData = (allocator != nullptr)
@@ -1133,7 +1133,7 @@ std::uint32_t parMemberStruct::EB10(std::uint32_t memberOffset) {
  * members this emits type-identification labels before serializing children.
  */
 cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
 
     MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
     auto* pOperatorData = (allocator != nullptr)
@@ -1595,42 +1595,42 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
     
     switch (dataType) {
         case 7: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
-            float value = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "value");
+            float value = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
             *reinterpret_cast<float*>(pStorage) = value;
             break;
         }
         
         case 1:
         case 2: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "value");
             break;
         }
         
         case 3:
         case 4: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "value");
             break;
         }
         
         case 5:
         case 6: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "value");
             break;
         }
         
         case 0: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "value");
             bool value = jumptable_A578_h(const_cast<cmOperator*>(pValueOperator));
             *pStorage = value ? 1 : 0;
             break;
         }
         
         case 8: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
-            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
-            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
             float* pVec = reinterpret_cast<float*>(pStorage);
             pVec[0] = x;
             pVec[1] = y;
@@ -1638,12 +1638,12 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
         }
         
         case 9: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
-            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
-            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "z");
-            float z = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "z");
+            float z = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
             float* pVec = reinterpret_cast<float*>(pStorage);
             pVec[0] = x;
             pVec[1] = y;
@@ -1652,14 +1652,14 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
         }
         
         case 10: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
-            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
-            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "z");
-            float z = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "w");
-            float w = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "z");
+            float z = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
+            parStreamInXml_FindChildByName(const_cast<cmOperator*>(pValueOperator), "w");
+            float w = parStreamInXml_ReadFloat(const_cast<cmOperator*>(pValueOperator));
             float* pVec = reinterpret_cast<float*>(pStorage);
             pVec[0] = x;
             pVec[1] = y;

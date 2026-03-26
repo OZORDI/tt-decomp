@@ -564,7 +564,7 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
         // grc_3C68(m_pRbfData, &stringLength, 1);
         
         // Allocate buffer
-        char* stringBuffer = nullptr;  // xe_EC88(stringLength + 1);
+        char* stringBuffer = nullptr;  // rage_alloc(stringLength + 1);
         
         // Read string data
         // rage_obj_bind_3828(m_pRbfData, stringBuffer, stringLength);
@@ -1505,7 +1505,7 @@ void _static_init_reg_6() {
  * _static_dtor_free_0 @ 0x82583F28 | size: 0x40
  *
  * Static destructor: checks if buffer is SSO (internal), if not frees
- * the heap allocation via rage_free_00C0.
+ * the heap allocation via rage_free.
  */
 void _static_dtor_free_0() {
     extern char g_dtorObj0[];

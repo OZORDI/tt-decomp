@@ -13,14 +13,14 @@
 // External function declarations
 extern "C" {
     void rage_free(void* ptr);
-    void* xe_EC88(uint32_t size);
-    void xe_main_thread_init_0038();
+    void* rage_alloc(uint32_t size);
+    void sysMemAllocator_InitMainThread();
     void audControl_Destructor(void* obj);  // @ 0x82161568
     void atArray_Destructor(void* obj);
     void atArray_Clear(void* obj);
     void xmlNodeStruct_SerializeField(void* obj, const char* name, void* target, void* defaultVal, uint32_t flags);
     int32_t util_2458_FindCharacterIndex(void* gameData, const char* name);
-    void nop_8240E6D0(const char* message, void* a, void* b);
+    void rage_DebugLog(const char* message, void* a, void* b);
     void PostPageGroupMessage(int code, int param1, int param2, int param3);
     void PostStateTransitionRequest(void* manager, int32_t eventType);
     void FadePageGroup(void* context, float param, int p2, int p3, int p4, int p5);
@@ -129,7 +129,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         PostStateTransitionRequest(m_pManager, eventType);
         
         // Log unhandled event error
-        nop_8240E6D0(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);
+        rage_DebugLog(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);
     }
 }
 
@@ -156,7 +156,7 @@ void pongAttractState::OnExitEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        nop_8240E6D0(g_error_attract_exit, stateName, (void*)(intptr_t)eventType);
+        rage_DebugLog(g_error_attract_exit, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -176,7 +176,7 @@ const char* pongAttractState::GetStateName() const {
  * Creates a pongAttractContext object (32 bytes) with dual vtables for multiple inheritance.
  */
 void pongAttractState::OnEnter() {
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     // Get allocator from TLS (thread-local storage)
     void** pTLS = g_tls_base;
@@ -324,7 +324,7 @@ void charViewData::LoadViewData() {
         if (charCount > 0x3FFFFFFF) {
             allocSize = 0xFFFFFFFF;
         }
-        m_pAllocatedData = xe_EC88(allocSize);
+        m_pAllocatedData = rage_alloc(allocSize);
     } else {
         m_pAllocatedData = nullptr;
     }
@@ -344,7 +344,7 @@ void charViewData::LoadViewData() {
         void* pAllocator = pTLS[1];
         
         for (uint32_t i = 0; i < charCount; i++) {
-            xe_main_thread_init_0038();
+            sysMemAllocator_InitMainThread();
             
             // Allocate view element (8 bytes: 2 floats)
             typedef void* (*AllocFunc)(void*, uint32_t, uint32_t);
@@ -408,7 +408,7 @@ void charViewData::LoadViewData() {
             const char* name1 = getName1(pNode);
             const char* name2 = getName2(this);
             
-            nop_8240E6D0(g_error_type_mismatch, (void*)name2, (void*)name1);
+            rage_DebugLog(g_error_type_mismatch, (void*)name2, (void*)name1);
         }
         
         pNode = pNode->pNext;
@@ -542,7 +542,7 @@ void pongCharViewState::OnEnterEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        nop_8240E6D0(g_error_charview_enter, stateName, (void*)(intptr_t)eventType);
+        rage_DebugLog(g_error_charview_enter, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -582,7 +582,7 @@ void pongCharViewState::OnExitEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        nop_8240E6D0(g_error_charview_exit, stateName, (void*)(intptr_t)eventType);
+        rage_DebugLog(g_error_charview_exit, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -603,7 +603,7 @@ const char* pongCharViewState::GetStateName() const {
  * to initial values, then calls the context's initialization method.
  */
 void pongCharViewState::OnEnter() {
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
 
     // Get allocator from TLS
     void** pTLS = g_tls_base;

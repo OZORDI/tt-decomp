@@ -12,7 +12,7 @@
 
 // External function declarations
 extern void audControl_Destructor(void* obj);  // @ 0x82161568
-extern "C" void* xe_EC88(uint32_t size);
+extern "C" void* rage_alloc(uint32_t size);
 
 namespace rage {
     void  ReleaseSingleton(void* singleton);         // @ 0x821A9420
@@ -147,7 +147,7 @@ void gmBallRobot::HandleEvent(uint16_t eventType) {
         auto* attachmentNode = *reinterpret_cast<uint8_t**>(reinterpret_cast<uint8_t*>(m_pCharacter) + 148u);
         m_pMotionClip = FindAttachmentObject(attachmentNode, attachmentLookupName);
 
-        m_pAllocatedObject = xe_EC88(16u);
+        m_pAllocatedObject = rage_alloc(16u);
         if (m_pAllocatedObject != nullptr) {
             auto* frame = reinterpret_cast<CrAnimFrameStub*>(m_pAllocatedObject);
             frame->vtable = kCrAnimFrameVtable;
@@ -508,7 +508,7 @@ void pongBallInstance::UpdatePhysicsState() {
  */
 void pongBallInstance::ActivateBall(void* activationContext) {
     extern void* g_game_state_ptr;  // @ 0x8271A2F8
-    extern void nop_8240E6D0();
+    extern void rage_DebugLog();
     extern void pongBallInstance_4980_g(void*, int, int, int, int);
     extern void game_AA88(void*);
     extern void game_D500(void*, void*, void*);
@@ -522,7 +522,7 @@ void pongBallInstance::ActivateBall(void* activationContext) {
     if (!isActive) {
         // Debug message: "pongBallInstance::ActivateBall() - ball already active"
         constexpr uintptr_t kDebugString = 0x8203EFF8u;
-        nop_8240E6D0();  // Debug output function
+        rage_DebugLog();  // Debug output function
     }
     
     auto* gameState = reinterpret_cast<uint8_t*>(g_game_state_ptr);

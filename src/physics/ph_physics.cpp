@@ -9,7 +9,7 @@
 
 #include "ph_physics.hpp"
 
-extern "C" void* xe_EC88(uint32_t size);  // RAGE heap alloc (defined in heap.c)
+extern "C" void* rage_alloc(uint32_t size);  // RAGE heap alloc (defined in heap.c)
 #include <stddef.h>
 #include <math.h>
 #include <string.h>
@@ -1867,7 +1867,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     extern void* ph_6FC8(void*, const char*);
     extern void ph_snprintf(char*, int, const char*, const char*, int);
     extern void* phArchetype_Load(const char*, void*);
-    extern void* xe_EC88(uint32_t);
+    extern void* rage_alloc(uint32_t);
     extern void* ph_9EC0_1(void*);
     extern void ph_E088(void*, void*, void*, float, int);
     extern void ph_9E50(void*, void*);
@@ -1918,7 +1918,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     
     if (archetype == nullptr) {
         // Create new archetype instance
-        void* memory = xe_EC88(80);
+        void* memory = rage_alloc(80);
         if (memory != nullptr) {
             archetype = ph_9EC0_1(memory);
         } else {
@@ -3276,18 +3276,18 @@ uint32_t phArticulatedCollider::GetActive_2()  { return ExtractBits(this, 11648,
  * Indexed accessors — compute this + index*24 + base_offset, load word,
  * extract bits. Used for per-bone/per-joint packed data.
  */
-uint32_t phArticulatedCollider::GetIndexedField_1168(int index, int shift, int mask) {
+uint32_t phArticulatedCollider::GetIndexedField(int index, int shift, int mask) {
     uint32_t word = *(uint32_t*)((char*)this + 1168 + index * 24);
     return (word >> shift) & mask;
 }
 
 // Per-element getters (representative subset — 12 functions follow this pattern)
-uint32_t phArticulatedCollider::GetBoneField_5B90(int index) { return GetIndexedField_1168(index, 0, 0x7); }   // 5B90
-uint32_t phArticulatedCollider::GetBoneField_5BE0(int index) { return GetIndexedField_1168(index, 3, 0x7); }   // 5BE0
-uint32_t phArticulatedCollider::GetBoneField_5C30(int index) { return GetIndexedField_1168(index, 6, 0x7); }   // 5C30
-uint32_t phArticulatedCollider::GetBoneField_5C88(int index) { return GetIndexedField_1168(index, 9, 0x7); }   // 5C88
-uint32_t phArticulatedCollider::GetBoneField_5CE0(int index) { return GetIndexedField_1168(index, 12, 0xF); }  // 5CE0
-uint32_t phArticulatedCollider::GetBoneField_5D38(int index) { return GetIndexedField_1168(index, 16, 0xF); }  // 5D38
+uint32_t phArticulatedCollider::GetBoneField_5B90(int index) { return GetIndexedField(index, 0, 0x7); }   // 5B90
+uint32_t phArticulatedCollider::GetBoneField_5BE0(int index) { return GetIndexedField(index, 3, 0x7); }   // 5BE0
+uint32_t phArticulatedCollider::GetBoneField_5C30(int index) { return GetIndexedField(index, 6, 0x7); }   // 5C30
+uint32_t phArticulatedCollider::GetBoneField_5C88(int index) { return GetIndexedField(index, 9, 0x7); }   // 5C88
+uint32_t phArticulatedCollider::GetBoneField_5CE0(int index) { return GetIndexedField(index, 12, 0xF); }  // 5CE0
+uint32_t phArticulatedCollider::GetBoneField_5D38(int index) { return GetIndexedField(index, 16, 0xF); }  // 5D38
 
 // ── Dirty-flag setters (32B each) ────────────────────────────────────────
 

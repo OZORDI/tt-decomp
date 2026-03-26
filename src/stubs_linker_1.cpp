@@ -137,7 +137,7 @@ void game_3860(void* gameState, int param, const char* event) {
     (void)gameState; (void)param; (void)event;
 }
 
-void game_8EE8(void* obj) {
+void datResourceMgr_RemoveEntry(void* obj) {
     (void)obj;
 }
 

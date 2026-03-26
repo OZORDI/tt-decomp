@@ -11,7 +11,7 @@ struct SinglesNetworkClient;
 
 // External function declarations
 extern void SinglesNetworkClient_8CC0_w(void* ctx, void* base);
-extern void* xam_singleton_init_8D60(void* ctx, void* base);
+extern void* xam_GetInitSingleton(void* ctx, void* base);
 extern void SinglesNetworkClient_0268_g(void* ctx, void* base);
 extern void SinglesNetworkClient_8DF8_g(void* ctx, void* base);
 extern void SinglesNetworkClient_0448_g(void* ctx, void* base);
@@ -90,7 +90,7 @@ const char* SinglesNetworkClient_GetDeviceString(int deviceIndex)
     }
     
     // Get singleton instance
-    // void* singleton = xam_singleton_init_8D60(ctx, base);
+    // void* singleton = xam_GetInitSingleton(ctx, base);
     
     // Access device array through vtable
     // uint32_t* vtable = *(uint32_t**)singleton;
@@ -574,7 +574,7 @@ int SinglesNetworkClient_ValidatePlayerStates(void* client)
     
     // Both states are invalid - log error
     // External error string at 0x82037948
-    // nop_8240E6D0("error message");  /* UNVERIFIED — string not found in binary */
+    // rage_DebugLog("error message");  /* UNVERIFIED — string not found in binary */
     
     return 0;
 }
@@ -1090,9 +1090,9 @@ int SinglesNetworkClient_GetPlayerID(void* client, bool errorFlag)
     // Invalid player type
     if (errorFlag) {
         // Log error message
-        extern void nop_8240E6D0(void*, void*);
+        extern void rage_DebugLog(void*, void*);
         const char* errorMsg = "Invalid player type";
-        nop_8240E6D0((void*)errorMsg, nullptr);
+        rage_DebugLog((void*)errorMsg, nullptr);
     }
     
     return -1;  // Invalid player ID

@@ -35,10 +35,10 @@ void UnloadTemplate(const char* templateName) {
     
     // Error if template not found
     if (templateIndex == -1) {
-        nop_8240E6D0(g_str_needToPreloadTemplate);
+        rage_DebugLog(g_str_needToPreloadTemplate);
         return;
     }
- *      - If primary object exists: call game_8EE8, then ReleaseObjectWithFlags with flag 0xE001
+ *      - If primary object exists: call datResourceMgr_RemoveEntry, then ReleaseObjectWithFlags with flag 0xE001
     uint32_t count = g_templateRegistry.count;
     
     // If not the last element, shift remaining entries down
@@ -54,7 +54,7 @@ void UnloadTemplate(const char* templateName) {
 }
 
 // Alias for compatibility with existing code
-void game_8EE8(void* obj) {
+void datResourceMgr_RemoveEntry(void* obj) {
     UnloadTemplate((const char*)obj);
 }
 
@@ -62,7 +62,7 @@ void game_8EE8(void* obj) {
 extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
 
 /**
- * game_8EE8 @ 0x820F8EE8 | size: 0xC8
+ * datResourceMgr_RemoveEntry @ 0x820F8EE8 | size: 0xC8
  * 
  * Removes a template entry from the global template registry.
  * 
@@ -87,13 +87,13 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
  * 
  * @param templateKey Pointer to template identifier/key
  */
-void game_8EE8(void* templateKey) {
+void datResourceMgr_RemoveEntry(void* templateKey) {
     // Find template index in registry
     int16_t templateIndex = game_94F0(&g_templateRegistry, templateKey);
     
     // Error if template not found
     if (templateIndex == -1) {
-        nop_8240E6D0(g_str_needToPreloadTemplate);
+        rage_DebugLog(g_str_needToPreloadTemplate);
         return;
     }
     
@@ -113,7 +113,7 @@ void game_8EE8(void* templateKey) {
 extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
 
 /**
- * game_8EE8 @ 0x820F8EE8 | size: 0xC8
+ * datResourceMgr_RemoveEntry @ 0x820F8EE8 | size: 0xC8
  * 
  * Removes a template entry from the global template registry.
  * 
@@ -138,13 +138,13 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
  * 
  * @param templateKey Pointer to template identifier/key
  */
-void game_8EE8(void* templateKey) {
+void datResourceMgr_RemoveEntry(void* templateKey) {
     // Find template index in registry
     int16_t templateIndex = game_94F0(&g_templateRegistry, templateKey);
     
     // Error if template not found
     if (templateIndex == -1) {
-        nop_8240E6D0(g_str_needToPreloadTemplate);
+        rage_DebugLog(g_str_needToPreloadTemplate);
         return;
     }
     
@@ -194,7 +194,7 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
  *   1. Start at base + 48 (end of array)
  *   2. Loop 2 times, moving back 24 bytes each iteration
  *   3. For each sub-object:
- *      - If primary object exists: call game_8EE8, then util_6C20 with flag 0xE001
+ *      - If primary object exists: call datResourceMgr_RemoveEntry, then util_6C20 with flag 0xE001
  *      - If singleton object exists and not in registry: free via allocator vtable slot 2
  */
 void plrPlayerMgr_DestroySubObjects(void* subObjectArrayBase) {
@@ -213,7 +213,7 @@ void plrPlayerMgr_DestroySubObjects(void* subObjectArrayBase) {
         
         // Handle primary object
         if (subObj->m_pObject1) {
-            game_8EE8(subObj->m_pObject1);
+            datResourceMgr_RemoveEntry(subObj->m_pObject1);
             util_6C20(subObj->m_pObject1, 0xE001);
         }
         
@@ -519,8 +519,8 @@ void* PostStateTransitionRequest(void* hsmContext, int stateIndex) {
  */
 void InitializePageGroup(void* pageGroup) {
     // Call thread initialization check
-    extern void xe_main_thread_init_0038();
-    xe_main_thread_init_0038();
+    extern void sysMemAllocator_InitMainThread();
+    sysMemAllocator_InitMainThread();
     
     // Cast to byte pointer for offset calculations
     uint8_t* pg = (uint8_t*)pageGroup;
@@ -826,7 +826,7 @@ int32_t game_94F0(TemplateRegistry* registry, const uint32_t* searchKey) {
 }
 
 /**
- * game_8EE8 @ 0x820F8EE8 | size: 0xC8
+ * datResourceMgr_RemoveEntry @ 0x820F8EE8 | size: 0xC8
  * 
  * Removes a template entry from the global registry by index.
  * 
@@ -845,7 +845,7 @@ int32_t game_94F0(TemplateRegistry* registry, const uint32_t* searchKey) {
  * 
  * @param templateKey Pointer to 8-byte template key to remove
  */
-void game_8EE8(void* templateKey) {
+void datResourceMgr_RemoveEntry(void* templateKey) {
     TemplateRegistry* registry = &g_templateRegistry;
     uint32_t* key = (uint32_t*)templateKey;
     
@@ -854,7 +854,7 @@ void game_8EE8(void* templateKey) {
     
     // Error if template not found
     if (index == -1) {
-        nop_8240E6D0(g_str_needToPreloadTemplate);
+        rage_DebugLog(g_str_needToPreloadTemplate);
         return;
     }
     

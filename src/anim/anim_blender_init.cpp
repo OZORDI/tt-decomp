@@ -12,7 +12,7 @@
 #include <string.h>
 
 // External function pointers for vtable-like initialization
-extern void nop_8240E6D0(const void*, const void*, uint32_t);  // @ 0x8240E6D0 - no-op stub
+extern void rage_DebugLog(const void*, const void*, uint32_t);  // @ 0x8240E6D0 - no-op stub
 extern void rage::CallVirtualDestructor();                                 // @ 0x821E7BC0 - CallVirtualDestructor
 
 // Global constant data
@@ -98,12 +98,12 @@ void crAnimBlenderState_Init(crAnimBlenderState* state)
     
     // Set up function pointer pairs (vtable-like dispatch)
     // These point to singleton helpers and no-op stubs
-    state->m_fnPtr1 = (void*)nop_8240E6D0;
+    state->m_fnPtr1 = (void*)rage_DebugLog;
     state->m_fnPtr2 = (void*)rage::CallVirtualDestructor;
     state->m_fnPtr3 = nullptr;
     state->m_fnPtr4 = (void*)rage::CallVirtualDestructor;
     
-    state->m_fnPtr5 = (void*)nop_8240E6D0;
+    state->m_fnPtr5 = (void*)rage_DebugLog;
     state->m_fnPtr6 = (void*)rage::CallVirtualDestructor;
     state->m_fnPtr7 = nullptr;
     state->m_fnPtr8 = (void*)rage::CallVirtualDestructor;

@@ -14,14 +14,14 @@
 
 // Forward declarations
 extern "C" void* PostStateTransitionRequest(void* obj);
-extern "C" void nop_8240E6D0(const char* debugStr, ...);
+extern "C" void rage_DebugLog(const char* debugStr, ...);
 extern "C" void FadePageGroup(void* grcDevice, float fadeValue, uint32_t p3, uint32_t p4, uint32_t p5);
 extern "C" void grcDevice_beginScene(void* grcDevice);
 extern "C" void DismissPageGroup(void* grcDevice);
 extern "C" uint8_t ShowPageGroup(void* grcDevice);
-extern "C" void xe_main_thread_init_0038();
+extern "C" void sysMemAllocator_InitMainThread();
 extern "C" void game_AC88(void* obj);
-extern "C" void hsmContext_SetNextState_2800(void* hsmContext, uint32_t nextStateIdx);
+extern "C" void hsmContext_SetNextState(void* hsmContext, uint32_t nextStateIdx);
 
 // Global pointers
 extern void* g_grcDevice_ptr;      // @ 0x8271A81C (graphics device)
@@ -118,7 +118,7 @@ extern "C" void pongLogosContext_Update(pongLogosContext* self) {
         void* hsmContext = ownerState->m_pHSMContext;
         
         // Transition to state 4 (next boot screen or main menu)
-        hsmContext_SetNextState_2800(hsmContext, 4);
+        hsmContext_SetNextState(hsmContext, 4);
     }
 }
 
@@ -153,7 +153,7 @@ extern "C" void pongLogosState_OnEnter(pongLogosState* self, uint32_t prevStateI
         // Log the state transition
         // String at 0x8205E4B4: likely "Entering logos state from %s, prev=%d"
         const char* logFormat = (const char*)0x8205E4B4;
-        nop_8240E6D0(logFormat, contextName, prevStateIdx);
+        rage_DebugLog(logFormat, contextName, prevStateIdx);
     } else {
         // Special case: render the logos immediately
         void* logosContext = self->m_pLogosContext;
@@ -227,7 +227,7 @@ extern "C" void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateId
         
         // String at 0x8205E4E4: likely "Exiting logos state to %s, next=%d"
         const char* logFormat = (const char*)0x8205E4E4;
-        nop_8240E6D0(logFormat, contextName, nextStateIdx);
+        rage_DebugLog(logFormat, contextName, nextStateIdx);
     }
 }
 
@@ -241,7 +241,7 @@ extern "C" void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateId
  */
 extern "C" void pongLogosState_Init(pongLogosState* self) {
     // Get allocator from SDA (Small Data Area)
-    xe_main_thread_init_0038();  // Ensure TLS is initialized
+    sysMemAllocator_InitMainThread();  // Ensure TLS is initialized
     
     void** sdaBase = (void**)0x82600000;  // r13 base
     void* allocator = sdaBase[1];  // r13+4
@@ -271,10 +271,10 @@ extern "C" void pongLogosState_Init(pongLogosState* self) {
     // Log initialization
     // String at 0x8205E488: likely "pongLogosState initialized"
     const char* logMsg = (const char*)0x8205E488;
-    nop_8240E6D0(logMsg, nullptr, 0);
+    rage_DebugLog(logMsg, nullptr, 0);
     
     // Allocate UI context (96 bytes, 16-byte aligned)
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* uiContext = allocFunc(allocator, 96, 16);
     
     if (uiContext) {
@@ -297,5 +297,5 @@ extern "C" void pongLogosState_Init(pongLogosState* self) {
     // Log completion
     // String at 0x8205E4A0: likely "pongLogosState UI context created"
     const char* completeMsg = (const char*)0x8205E4A0;
-    nop_8240E6D0(completeMsg, nullptr, 0);
+    rage_DebugLog(completeMsg, nullptr, 0);
 }

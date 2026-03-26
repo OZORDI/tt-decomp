@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-extern "C" void xe_main_thread_init_0038(void);
+extern "C" void sysMemAllocator_InitMainThread(void);
 extern "C" void rage_free(void* ptr);
 extern "C" std::uint32_t* g_sda_base;
 
@@ -82,7 +82,7 @@ bool datBitBufferDefaultAllocator::CanAllocate(std::uint32_t sizeBytes) const {
 }
 
 void* datBitBufferDefaultAllocator::Allocate(std::uint32_t sizeBytes) {
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
 
     MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
     if (allocator == nullptr) {

@@ -20,7 +20,7 @@ void* rage_obj_factory_create_3040(void* singleton,
                                    std::int32_t isRootType);  // @ 0x822E3040
 void rage_obj_bind_3828(void* factoryContext, void* storage, std::uint32_t size);  // @ 0x822E3828
 void rage_obj_finalize_3B38(void* factoryContext);  // @ 0x822E3B38
-void nop_8240E6D0(const void* messageTag,
+void rage_DebugLog(const void* messageTag,
                   const void* typeInfo,
                   const void* typeOps,
                   std::uint32_t typeSize);  // @ 0x8240E6D0
@@ -217,7 +217,7 @@ void mcMemcardControl::Init()
         rage_obj_finalize_3B38(factoryContext);
     }
 
-    nop_8240E6D0(reinterpret_cast<const void*>(kMemcardTypeDebugLabel),
+    rage_DebugLog(reinterpret_cast<const void*>(kMemcardTypeDebugLabel),
                  m_typeRegistration.m_pTypeInfo,
                  m_typeRegistration.m_pTypeOps,
                  m_typeRegistration.m_typeStorageSize);

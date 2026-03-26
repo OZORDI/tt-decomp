@@ -44,7 +44,7 @@ extern uint8_t io_Input_poll(void* pInput);
 extern void    pg_EDE0_gen(void* pPageObj, char flag);
 
 /* Assert / debug log — no-op in release @ 0x8240E6D0 */
-extern void    nop_8240E6D0(const char* msg, ...);
+extern void    rage_DebugLog(const char* msg, ...);
 
 /* GetPageGroupState — pgStreamer start/cancel profiling stamp @ 0x8242C3B8 */
 extern void    GetPageGroupState(void* pPgObj, int32_t mode);
@@ -332,7 +332,7 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
 {
     /* 1. Initialization guard. */
     if (!pThis->m_bInitialized) {
-        nop_8240E6D0(k_sceneRenderErr);
+        rage_DebugLog(k_sceneRenderErr);
         return;
     }
 
@@ -366,7 +366,7 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
         float elapsed_b = (float)(tNow2 - tStart) * g_renderTicksToSecondsA;
 
         /* Log timing (no-op in release builds). */
-        nop_8240E6D0(k_sceneRenderTimingFmt);
+        rage_DebugLog(k_sceneRenderTimingFmt);
         (void)elapsed_a;
         (void)elapsed_b;
     }
@@ -399,13 +399,13 @@ void rage_scene_cleanup(void* sceneState) {
     extern void pg_C3B8_g(void* obj, int param);     // @ 0x8242C3B8 — reset profiling bracket
     extern void* _crt_tls_fiber_setup();             // @ 0x82566B78 — get/create fiber context
     extern void game_7868(void* obj, int param);     // @ 0x82227868 — frame sync
-    extern void nop_8240E6D0(const char* msg, ...);
+    extern void rage_DebugLog(const char* msg, ...);
 
     // Check if scene is active (byte at +4)
     uint8_t isActive = *(uint8_t*)((char*)sceneState + 4);
     if (!isActive) {
         // Scene not active — log warning and return
-        nop_8240E6D0("rage_scene_cleanup: scene not active");  // @ 0x820594F8
+        rage_DebugLog("rage_scene_cleanup: scene not active");  // @ 0x820594F8
         return;
     }
 

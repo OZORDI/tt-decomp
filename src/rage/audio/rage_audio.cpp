@@ -15,7 +15,7 @@
 namespace rage {
 
 // External engine entry points.
-extern "C" void nop_8240E6D0(const char* fmt, ...);
+extern "C" void rage_DebugLog(const char* fmt, ...);
 extern "C" float aud_2458(void* context);
 
 extern void audVoiceStream_B328_fw(
@@ -117,7 +117,7 @@ void audVoiceSfx::PlayByEntry(
 {
     const audSfxEntryView bankEntry(entry);
     if (bankEntry.IsNull() || bankEntry.GetBankSlot() == kInvalidBankSlot) {
-        nop_8240E6D0("audVoiceSfx::PlayByEntry - invalid entry (%p)", entry);  /* UNVERIFIED — string not found in binary */
+        rage_DebugLog("audVoiceSfx::PlayByEntry - invalid entry (%p)", entry);  /* UNVERIFIED — string not found in binary */
         return;
     }
 
@@ -147,7 +147,7 @@ void audVoiceSfx::PlayByEntry(
 }
 
 // External logging function (no-op in release builds)
-extern "C" void nop_8240E6D0(const char* fmt, ...);
+extern "C" void rage_DebugLog(const char* fmt, ...);
 
 // External memory free function
 extern "C" void rage_free(void* ptr);
@@ -156,7 +156,8 @@ extern "C" void rage_free(void* ptr);
 // rage::audVoice — Audio Voice Base Class
 // ═════════════════════════════════════════════════════════════════════════════
 
-namespace rage {
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // audVoice::~audVoice (vfn_0) @ 0x82163358 | size: 0x74
@@ -216,7 +217,7 @@ extern const char g_str_audVoice_IsPlaying[];         // @ 0x8203781C
  * Pure virtual stub — logs error if base class version is called.
  */
 void audVoice::PlayByEntry() {
-    nop_8240E6D0(g_str_audVoice_PlayByEntry);
+    rage_DebugLog(g_str_audVoice_PlayByEntry);
 }
 
 /**
@@ -224,7 +225,7 @@ void audVoice::PlayByEntry() {
  * Pure virtual stub — plays audio with no arguments.
  */
 void audVoice::Play() {
-    nop_8240E6D0(g_str_audVoice_Play);
+    rage_DebugLog(g_str_audVoice_Play);
 }
 
 /**
@@ -232,7 +233,7 @@ void audVoice::Play() {
  * Pure virtual stub — stops audio playback.
  */
 void audVoice::Stop() {
-    nop_8240E6D0(g_str_audVoice_Stop);
+    rage_DebugLog(g_str_audVoice_Stop);
 }
 
 /**
@@ -240,7 +241,7 @@ void audVoice::Stop() {
  * Pure virtual stub — releases audio resources.
  */
 void audVoice::Release() {
-    nop_8240E6D0(g_str_audVoice_Release);
+    rage_DebugLog(g_str_audVoice_Release);
 }
 
 /**
@@ -248,7 +249,7 @@ void audVoice::Release() {
  * Pure virtual stub — applies an audio effect to the voice.
  */
 void audVoice::SetEffect() {
-    nop_8240E6D0(g_str_audVoice_SetEffect);
+    rage_DebugLog(g_str_audVoice_SetEffect);
 }
 
 /**
@@ -256,8 +257,297 @@ void audVoice::SetEffect() {
  * Pure virtual stub — returns 0 (not playing) if base version called.
  */
 bool audVoice::IsPlaying() {
-    nop_8240E6D0(g_str_audVoice_IsPlaying);
+    rage_DebugLog(g_str_audVoice_IsPlaying);
     return false;
+}
+
+
+
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Batch 2 — Small audio accessor and delegation functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External forward declarations for voice stream delegation functions.
+extern void audVoiceStream_B430_fw(void* streamRef, int32_t flag);
+extern void audVoiceStream_B298_fw(void* streamRef, int32_t flag);
+
+// Binary globals for audio system state.
+extern uint32_t* lbl_82066410;        // audSystem singleton pointer
+extern uint8_t   lbl_82066418;        // audSystem mute flag
+
+// Static .rdata references for audControlGroup type identifiers.
+extern const char lbl_820356B0[];     // type name A
+extern const char lbl_820356B4[];     // type name B
+
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audControl — Base audio control accessors
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audControl::GetVolume (vfn_11) @ 0x82160768 | size: 0x8
+ * Returns the base volume value at field offset +0x20 (32).
+ */
+float audControl::GetVolume() {
+    float value;
+    std::memcpy(&value, reinterpret_cast<const char*>(this) + 32, sizeof(float));
+    return value;
+}
+
+/**
+ * audControl::GetPitch (vfn_12) @ 0x82160770 | size: 0x8
+ * Returns the base pitch value at field offset +0x2C (44).
+ */
+float audControl::GetPitch() {
+    float value;
+    std::memcpy(&value, reinterpret_cast<const char*>(this) + 44, sizeof(float));
+    return value;
+}
+
+/**
+ * audControl::IsActive (vfn_19) @ 0x82160780 | size: 0x1C
+ * Returns true if the control has an active reference (non-null pointer at +0x10).
+ */
+bool audControl::IsActive() {
+    uint32_t ref;
+    std::memcpy(&ref, reinterpret_cast<const char*>(this) + 16, sizeof(uint32_t));
+    return ref != 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audControl3d — 3D spatialized audio control accessors
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audControl3d::GetControlRef (vfn_10) @ 0x82160760 | size: 0x8
+ * Returns the control reference pointer stored at field offset +0x08 (8).
+ */
+void* audControl3d::GetControlRef() {
+    void* ref;
+    std::memcpy(&ref, reinterpret_cast<const char*>(this) + 8, sizeof(void*));
+    return ref;
+}
+
+/**
+ * audControl3d::GetPan (vfn_13) @ 0x82160778 | size: 0x8
+ * Returns the pan value at field offset +0x28 (40).
+ */
+float audControl3d::GetPan() {
+    float value;
+    std::memcpy(&value, reinterpret_cast<const char*>(this) + 40, sizeof(float));
+    return value;
+}
+
+/**
+ * audControl3d::GetScaledVolume (vfn_11) @ 0x82160EB0 | size: 0x10
+ * Returns volume scaled by the 3D attenuation factor.
+ * Multiplies the attenuation at +0x7C (124) by the base volume at +0x20 (32).
+ */
+float audControl3d::GetScaledVolume() {
+    float attenuation, baseVolume;
+    std::memcpy(&attenuation, reinterpret_cast<const char*>(this) + 124, sizeof(float));
+    std::memcpy(&baseVolume, reinterpret_cast<const char*>(this) + 32, sizeof(float));
+    return attenuation * baseVolume;
+}
+
+/**
+ * audControl3d::GetScaledPitch (vfn_12) @ 0x82160EC0 | size: 0x28
+ * Returns pitch, optionally scaled by 3D Doppler factor.
+ * If the global Doppler bypass flag (lbl_825EBCA0) is set, returns the raw
+ * base pitch at +0x2C (44). Otherwise multiplies the Doppler scale at +0x88
+ * (136) by the base pitch.
+ */
+float audControl3d::GetScaledPitch() {
+    extern uint8_t lbl_825EBCA0;  // global Doppler bypass flag
+
+    if (lbl_825EBCA0 != 0) {
+        float basePitch;
+        std::memcpy(&basePitch, reinterpret_cast<const char*>(this) + 44, sizeof(float));
+        return basePitch;
+    }
+
+    float dopplerScale, basePitch;
+    std::memcpy(&dopplerScale, reinterpret_cast<const char*>(this) + 136, sizeof(float));
+    std::memcpy(&basePitch, reinterpret_cast<const char*>(this) + 44, sizeof(float));
+    return dopplerScale * basePitch;
+}
+
+
+/**
+ * audControl3d::IsAudible (vfn_19) @ 0x821609A8 | size: 0x34
+ * Returns whether this 3D control is currently audible.
+ * Checks the audio system's active flag via global singleton, then tests
+ * the inaudible flag at +0x90 (144). Returns true only if the system is
+ * active and the control is not flagged as inaudible.
+ */
+bool audControl3d::IsAudible() {
+    uint32_t* pSystem = lbl_82066410;
+    if (pSystem == nullptr) {
+        return false;
+    }
+
+    uint8_t systemActive;
+    std::memcpy(&systemActive, reinterpret_cast<const char*>(pSystem) + 4, sizeof(uint8_t));
+    if (systemActive == 0) {
+        return false;
+    }
+
+    uint8_t inaudibleFlag;
+    std::memcpy(&inaudibleFlag, reinterpret_cast<const char*>(this) + 144, sizeof(uint8_t));
+    return (inaudibleFlag == 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audControlGroup — Audio control group accessors
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audControlGroup::GetVolume (vfn_9) @ 0x82162528 | size: 0x8
+ * Returns the group volume at field offset +0x1C (28).
+ */
+float audControlGroup::GetVolume() {
+    float value;
+    std::memcpy(&value, reinterpret_cast<const char*>(this) + 28, sizeof(float));
+    return value;
+}
+
+/**
+ * audControlGroup::GetPitch (vfn_11) @ 0x82162530 | size: 0x8
+ * Returns the group pitch at field offset +0x24 (36).
+ */
+float audControlGroup::GetPitch() {
+    float value;
+    std::memcpy(&value, reinterpret_cast<const char*>(this) + 36, sizeof(float));
+    return value;
+}
+
+/**
+ * audControlGroup::GetTypeNameA (vfn_7) @ 0x82162538 | size: 0xC
+ * Returns a pointer to a static type identifier string in .rdata.
+ */
+const char* audControlGroup::GetTypeNameA() {
+    return lbl_820356B0;
+}
+
+/**
+ * audControlGroup::GetTypeNameB (vfn_6) @ 0x82162548 | size: 0xC
+ * Returns a pointer to a second static type identifier string in .rdata.
+ */
+const char* audControlGroup::GetTypeNameB() {
+    return lbl_820356B4;
+}
+
+/**
+ * audControlGroup::GetEffectiveVolume (vfn_8) @ 0x82162888 | size: 0x3C
+ * Returns the effective volume for the group, considering mute state.
+ * If the global mute flag is clear, and the group has an active mute
+ * override (+0x30, byte 48) with a ducking flag (+0x2C, byte 44),
+ * returns the play-variance threshold (effectively 0.0) as muted volume.
+ * Otherwise returns the stored group volume at +0x14 (20).
+ */
+float audControlGroup::GetEffectiveVolume() {
+    if (lbl_82066418 != 0) {
+        float volume;
+        std::memcpy(&volume, reinterpret_cast<const char*>(this) + 20, sizeof(float));
+        return volume;
+    }
+
+    uint8_t muteOverride;
+    std::memcpy(&muteOverride, reinterpret_cast<const char*>(this) + 48, sizeof(uint8_t));
+    if (muteOverride == 0) {
+        float volume;
+        std::memcpy(&volume, reinterpret_cast<const char*>(this) + 20, sizeof(float));
+        return volume;
+    }
+
+    uint8_t duckingFlag;
+    std::memcpy(&duckingFlag, reinterpret_cast<const char*>(this) + 44, sizeof(uint8_t));
+    if (duckingFlag == 0) {
+        float volume;
+        std::memcpy(&volume, reinterpret_cast<const char*>(this) + 20, sizeof(float));
+        return volume;
+    }
+
+    // Return the muted volume level (lbl_8202D110 is 0.0 threshold)
+    return lbl_8202D110;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audVoiceSfx — SFX voice delegation functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::SetReverbSend (vfn_12) @ 0x82163918 | size: 0xC
+ * Delegates to the stream engine's reverb send function with flag=0 (disable).
+ * Passes the SFX reference pointer (m_pSfxRef at +0x0C) to the stream layer.
+ */
+void audVoiceSfx::SetReverbSend() {
+    audVoiceStream_B430_fw(m_pSfxRef, 0);
+}
+
+/**
+ * audVoiceSfx::EnableReverbSend (vfn_13) @ 0x82163928 | size: 0xC
+ * Delegates to the stream engine's reverb send function with flag=1 (enable).
+ */
+void audVoiceSfx::EnableReverbSend() {
+    audVoiceStream_B430_fw(m_pSfxRef, 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audVoiceStream — Stream voice delegation and state query functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceStream::SetReverbSend (vfn_12) @ 0x821643D0 | size: 0xC
+ * Delegates reverb send control to the stream engine with flag=0 (disable).
+ * Uses the stream reference at +0x0C (field_0x000c).
+ */
+void audVoiceStream::SetReverbSend() {
+    void* streamRef;
+    std::memcpy(&streamRef, reinterpret_cast<const char*>(this) + 12, sizeof(void*));
+    audVoiceStream_B298_fw(streamRef, 0);
+}
+
+/**
+ * audVoiceStream::EnableReverbSend (vfn_13) @ 0x821643E0 | size: 0xC
+ * Delegates reverb send control to the stream engine with flag=1 (enable).
+ */
+void audVoiceStream::EnableReverbSend() {
+    void* streamRef;
+    std::memcpy(&streamRef, reinterpret_cast<const char*>(this) + 12, sizeof(void*));
+    audVoiceStream_B298_fw(streamRef, 1);
+}
+
+/**
+ * audVoiceStream::IsStopping (vfn_19) @ 0x821645B8 | size: 0x20
+ * Returns true if the stream is in the "stopping" state (state == 14).
+ * Reads the state enum from the stream reference's field at +0x04.
+ */
+bool audVoiceStream::IsStopping() {
+    void* streamRef;
+    std::memcpy(&streamRef, reinterpret_cast<const char*>(this) + 12, sizeof(void*));
+
+    int32_t state;
+    std::memcpy(&state, reinterpret_cast<const char*>(streamRef) + 4, sizeof(int32_t));
+    return state == 14;
+}
+
+/**
+ * audVoiceStream::IsStopped (vfn_20) @ 0x821645D8 | size: 0x20
+ * Returns true if the stream is in the "stopped" state (state == 15).
+ * Reads the state enum from the stream reference's field at +0x04.
+ */
+bool audVoiceStream::IsStopped() {
+    void* streamRef;
+    std::memcpy(&streamRef, reinterpret_cast<const char*>(this) + 12, sizeof(void*));
+
+    int32_t state;
+    std::memcpy(&state, reinterpret_cast<const char*>(streamRef) + 4, sizeof(int32_t));
+    return state == 15;
 }
 
 } // namespace rage

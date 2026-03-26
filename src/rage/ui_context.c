@@ -22,11 +22,11 @@ extern void ke_8190(void* pDest, uint32_t width, uint32_t height);
 extern void game_9EA0(void* pPageGroup, void* pTexInfo);
 extern void ke_8220(void* pTexInfo);
 extern void* SinglesNetworkClient_B2A8_g(void* pContext);
-extern void* xe_EC88(uint32_t size);
+extern void* rage_alloc(uint32_t size);
 extern void* game_8D08(void* pPageGroup, uint32_t field1, uint32_t field2,
                        uint32_t field3, uint32_t field4, uint32_t field5);
 extern void SinglesNetworkClient_B320_g(void* pContext);
-extern void nop_8240E6D0(const char* fmt, ...);
+extern void rage_DebugLog(const char* fmt, ...);
 extern int _snprintf(char* buf, size_t size, const char* fmt, ...);
 
 /* External globals */
@@ -127,7 +127,7 @@ void rage_RegisterUIContext(void* pContext, uint32_t categoryId, const char* nam
         
         if (shouldCreate != 0) {
             /* Allocate 172-byte category entry */
-            pCategoryEntry = xe_EC88(172);
+            pCategoryEntry = rage_alloc(172);
             
             if (pCategoryEntry != NULL) {
                 /* Initialize category entry with config data fields */
@@ -152,7 +152,7 @@ void rage_RegisterUIContext(void* pContext, uint32_t categoryId, const char* nam
     
     /* Log registration failure if needed */
     if (pPageGroup == NULL) {
-        nop_8240E6D0("Failed to register UI context: %s", displayName);
+        rage_DebugLog("Failed to register UI context: %s", displayName);
     }
 }
 
@@ -171,7 +171,7 @@ void rage_RenderDebugOverlay(void) {
      * HUD flash system and text rendering pipeline. */
     
     /* TODO: Full implementation requires HUD flash system integration */
-    nop_8240E6D0("rage_RenderDebugOverlay called");
+    rage_DebugLog("rage_RenderDebugOverlay called");
 }
 
 /**

@@ -160,7 +160,7 @@ void grcTextureReferenceBase::ForwardSlot20()
 // When g_bTextureEndianDirty is set the function byte-swaps m_field06 (uint16)
 // and m_field08 (uint32) in place so that the binary representation is
 // endian-correct for the target format.  The assert-like checks call
-// nop_8240E6D0 (a no-op in this build — presumably stripped debug asserts).
+// rage_DebugLog (a no-op in this build — presumably stripped debug asserts).
 //
 // pCtx layout (partial):
 //   +0x00  vtable  — reset to lbl_8202F698 at entry
@@ -176,7 +176,7 @@ void grcTextureReferenceBase::Serialize(grcSerializerCtx* pCtx)
         pCtx->step = 4;
 
     // Step 4: first field
-    RAGE_ASSERT(pCtx->step == 4);   // nop_8240E6D0 in release build
+    RAGE_ASSERT(pCtx->step == 4);   // rage_DebugLog in release build
     pCtx->step++;   // → 5
 
     // Step 5: second field

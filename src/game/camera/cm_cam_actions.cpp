@@ -46,8 +46,8 @@ void cmReporterCtor_52F0_g(void* reporter);
 // rage_71E0 @ 0x822771E0 | size: 0x9C
 void rage_71E0(void* node);
 
-// rage_free_00C0 @ 0x820C00C0 | size: 0x60
-void rage_free_00C0(void* ptr);
+// rage_free @ 0x820C00C0 | size: 0x60
+void rage_free(void* ptr);
 
 // cmSimple_vfn_4 @ 0x822772A0 | size: 0xA4
 void cmSimple_vfn_4(void* node, float* out);
@@ -58,8 +58,8 @@ void cmSampleCamActions_H_SmoothLookAt_LimitedTilt_vfn_10(void* node, void* data
 // util_1D78 @ 0x82431D78 | size: 0x128
 float util_1D78(float value, float range);
 
-// nop_8240E6D0 @ 0x8240E6D0 | size: 0x4
-void nop_8240E6D0(const char* fmt, ...);
+// rage_DebugLog @ 0x8240E6D0 | size: 0x4
+void rage_DebugLog(const char* fmt, ...);
 
 } // extern "C"
 
@@ -364,7 +364,7 @@ extern "C" void cmSampleCamActions_P_VelocityFollow_vfn_0(void* self, int flags)
     *(void**)self = &lbl_82052224;
     rage_71E0(self);
     if (flags & 1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -407,9 +407,9 @@ extern "C" void cmSampleCamActions_P_VelocityFollow_vfn_2(void* self) {
         if (field92 != nullptr) {
             *(uint8_t*)((char*)self + 88) = 1;
             uint32_t subField = *(uint32_t*)((char*)field92 + 4);
-            nop_8240E6D0("%s", field4, subField);
+            rage_DebugLog("%s", field4, subField);
         } else {
-            nop_8240E6D0("%s", field4);
+            rage_DebugLog("%s", field4);
         }
     }
 }

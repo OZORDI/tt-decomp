@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-extern "C" void nop_8240E6D0(const char* fmt, ...);
+extern "C" void rage_DebugLog(const char* fmt, ...);
 
 namespace {
 constexpr const char* kAlertQueueFullMessage =
@@ -15,7 +15,7 @@ TimerAlert::TimerAlert() : m_triggerTime(0.0f), m_flags(0) {
 
 void Timer::SetAlert(const TimerAlert* pAlert) {
     if (m_numQueuedAlerts >= kMaxAlerts) {
-        nop_8240E6D0(kAlertQueueFullMessage);
+        rage_DebugLog(kAlertQueueFullMessage);
         return;
     }
 

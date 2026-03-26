@@ -12,7 +12,7 @@
 #include <stddef.h>
 
 // Forward declarations
-extern "C" void xe_main_thread_init_0038(void);
+extern "C" void sysMemAllocator_InitMainThread(void);
 
 // External vtable addresses
 extern "C" const void* rage_cmIntegrate_vtable;  // @ 0x82054934
@@ -40,7 +40,7 @@ extern uint32_t* g_sda_base;  // @ 0x82600000 (r13)
 void* cmWorldRefreshableCtor_Destructor()
 {
     // Initialize main thread context if not already done
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     // Get allocator context from SDA base
     // SDA offset 0 points to allocator context struct
@@ -82,7 +82,7 @@ void* cmWorldRefreshableCtor_Destructor()
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Forward declarations for utility functions
-extern "C" float util_9350(void* entry);  // Evaluates an entry and returns float
+extern "C" float cmOperator_EvalFloat(void* entry);  // Evaluates an entry and returns float
 extern "C" int cmSwitch_4B60(void* switchObj);  // Evaluates switch and returns int
 extern "C" int util_4BD8(void* obj);  // Evaluates object and returns int
 extern "C" bool cmCond_21B0(void* condObj);  // Evaluates condition and returns bool
@@ -122,12 +122,12 @@ void cmLookup::RegisterPorts() {
  */
 void cmLookup::GetDim(int* outResult) {
     // Evaluate the key value
-    float keyValue = util_9350((char*)this + 12);
+    float keyValue = cmOperator_EvalFloat((char*)this + 12);
     
     // Check each entry (2 entries at offsets +20 and +36)
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
         void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         // Check if key <= threshold (with NaN handling)
         bool matches = (keyValue <= threshold);
@@ -150,22 +150,22 @@ void cmLookup::GetDim(int* outResult) {
  * Evaluates lookup table and returns matching float result (2-entry variant).
  */
 void cmLookup::GetFloat(float* outResult) {
-    float keyValue = util_9350((char*)this + 12);
+    float keyValue = cmOperator_EvalFloat((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
         void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         bool matches = (keyValue <= threshold);
         
         if (matches) {
             void* resultObj = (char*)this + 12 + entryIndex * 16;
-            *outResult = util_9350(resultObj);
+            *outResult = cmOperator_EvalFloat(resultObj);
             return;
         }
     }
     
-    *outResult = util_9350((char*)this + 52);
+    *outResult = cmOperator_EvalFloat((char*)this + 52);
 }
 
 /**
@@ -174,11 +174,11 @@ void cmLookup::GetFloat(float* outResult) {
  * Evaluates lookup table and returns matching bool result (2-entry variant).
  */
 void cmLookup::GetBool(bool* outResult) {
-    float keyValue = util_9350((char*)this + 12);
+    float keyValue = cmOperator_EvalFloat((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
         void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         bool matches = (keyValue <= threshold);
         
@@ -199,11 +199,11 @@ void cmLookup::GetBool(bool* outResult) {
  * Uses VMX128 vector operations for 16-byte data.
  */
 void cmLookup::GetVector(void* outVector) {
-    float keyValue = util_9350((char*)this + 12);
+    float keyValue = cmOperator_EvalFloat((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
         void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         bool matches = (keyValue <= threshold);
         
@@ -224,11 +224,11 @@ void cmLookup::GetVector(void* outVector) {
  * Similar to GetDim but uses util_4BD8 instead of cmSwitch_4B60.
  */
 void cmLookup::GetDimValue(int* outResult) {
-    float keyValue = util_9350((char*)this + 12);
+    float keyValue = cmOperator_EvalFloat((char*)this + 12);
     
     for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
         void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         bool matches = (keyValue <= threshold);
         
@@ -267,11 +267,11 @@ void cmLookup::CopyState(void* dest) {
  * 3-entry variant: Returns matching int result from 3-entry lookup table.
  */
 void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
-    float keyValue = util_9350((char*)self + 12);
+    float keyValue = cmOperator_EvalFloat((char*)self + 12);
     
     for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
         void* entry = (char*)self + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         bool matches = (keyValue <= threshold);
         
@@ -292,22 +292,22 @@ void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
  * 3-entry variant: Returns matching float result from 3-entry lookup table.
  */
 void cmLookup_GetFloat_DC58_1(void* self, float* outResult) {
-    float keyValue = util_9350((char*)self + 12);
+    float keyValue = cmOperator_EvalFloat((char*)self + 12);
     
     for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
         void* entry = (char*)self + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         bool matches = (keyValue <= threshold);
         
         if (matches) {
             void* resultObj = (char*)self + 12 + entryIndex * 16;
-            *outResult = util_9350(resultObj);
+            *outResult = cmOperator_EvalFloat(resultObj);
             return;
         }
     }
     
-    *outResult = util_9350((char*)self + 68);
+    *outResult = cmOperator_EvalFloat((char*)self + 68);
 }
 
 /**
@@ -316,11 +316,11 @@ void cmLookup_GetFloat_DC58_1(void* self, float* outResult) {
  * 3-entry variant: Returns matching bool result from 3-entry lookup table.
  */
 void cmLookup_GetBool_DDB0_1(void* self, bool* outResult) {
-    float keyValue = util_9350((char*)self + 12);
+    float keyValue = cmOperator_EvalFloat((char*)self + 12);
     
     for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
         void* entry = (char*)self + 20 + (entryIndex - 1) * 16;
-        float threshold = util_9350(entry);
+        float threshold = cmOperator_EvalFloat(entry);
         
         bool matches = (keyValue <= threshold);
         
@@ -340,7 +340,7 @@ void cmLookup_GetBool_DDB0_1(void* self, bool* outResult) {
 // These are virtual method overrides on the 113 cmOperatorCtor vtable
 // instantiations. Each allocates memory via the TLS allocator (slot 1)
 // and tail-calls the class-specific init/constructor function.
-// Pattern: xe_main_thread_init_0038() → get allocator → Allocate(size, 16)
+// Pattern: sysMemAllocator_InitMainThread() → get allocator → Allocate(size, 16)
 //          → if non-null, call init → return constructed object or nullptr
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -363,7 +363,7 @@ typedef void* (*AllocFn)(void* self, uint32_t size, uint32_t alignment);
  * Used by all cmOperatorCtor factory functions below.
  */
 static void* cmOperatorCtor_Allocate(uint32_t size) {
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     uint32_t* sdaCtx = (uint32_t*)(uintptr_t)g_sda_base[0];
     void** allocator = (void**)(uintptr_t)sdaCtx[1];
     AllocFn alloc = (AllocFn)allocator[1];
@@ -664,12 +664,12 @@ void cmCond_vfn_4(void* self, float* out) {
 
     for (int i = 0; i < 2; i++) {
         if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = util_9350(base + 20 + i * 16);
+            *out = cmOperator_EvalFloat(base + 20 + i * 16);
             return;
         }
     }
 
-    *out = util_9350(base + 44);
+    *out = cmOperator_EvalFloat(base + 44);
 }
 
 /**
@@ -774,12 +774,12 @@ void cmCond_vfn_4_CF90_1(void* self, float* out) {
 
     for (int i = 0; i < 3; i++) {
         if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = util_9350(base + 20 + i * 16);
+            *out = cmOperator_EvalFloat(base + 20 + i * 16);
             return;
         }
     }
 
-    *out = util_9350(base + 60);
+    *out = cmOperator_EvalFloat(base + 60);
 }
 
 /**

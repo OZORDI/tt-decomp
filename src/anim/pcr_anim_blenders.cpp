@@ -69,7 +69,7 @@ extern void* phMaterialMgrImpl_C208_g(void* table, const void* key);
 
 // No-op in release; debug would fire a material-bind notification.
 // @ 0x8240E6D0
-extern void nop_8240E6D0(const void*, const void*, uint32_t);
+extern void rage_DebugLog(const void*, const void*, uint32_t);
 
 // Animation blender control functions
 extern void crAnimBlenderState_Init(void* obj);  // @ 0x8224C810  reset/clear
@@ -238,7 +238,7 @@ void* pcrFaceAnimBlender::StartPostPoint()
 
     // NOTE: the release build optimised away a material-bind notification call
     // here (0x8240E6D0 is a blr stub).  Debug builds would have fired it.
-    // nop_8240E6D0(blendTable, newHandle, cs->m_emoteIndex);
+    // rage_DebugLog(blendTable, newHandle, cs->m_emoteIndex);
 
     return activationToken;
 }
@@ -600,7 +600,7 @@ void pcrPostPointBlender::Update()
                 if (clipObj)
                 {
                     // Notify via the (stripped) face-anim blend table.
-                    // nop_8240E6D0 is a blr in release.
+                    // rage_DebugLog is a blr in release.
 
                     // Send post-point completion message to the UI.
                     uint32_t bit = (uint32_t(1) << m_emoteIndex);

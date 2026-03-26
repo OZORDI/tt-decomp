@@ -14,7 +14,7 @@ extern "C" {
     void rage_free(void* ptr);
     void game_8F58(void* obj, const char* name, void* dest, void* defaultVal, int flags);
     void* game_8FB0(void* obj, int flags);
-    void game_8EE8(void* obj);
+    void datResourceMgr_RemoveEntry(void* obj);
     void util_6C20(void* obj, uint32_t flags);
 }
 
@@ -112,7 +112,7 @@ void plrPropMgr::ReleaseAssets() {
         void* asset = m_assets[i];
         if (asset) {
             // Call asset cleanup function
-            game_8EE8(asset);
+            datResourceMgr_RemoveEntry(asset);
             
             // Free asset memory with specific flags (0xFFFFE001)
             util_6C20(asset, 0xFFFFE001);
@@ -150,7 +150,7 @@ void plrPropMgr::SetObjectFlags() {
 extern "C" {
     void xe_8E30(void* ptr, uint32_t count);
     void* game_DAF0(void* globalObj, uint32_t arg1);
-    void nop_8240E6D0(const char* fmt, uint32_t arg);
+    void rage_DebugLog(const char* fmt, uint32_t arg);
     int32_t pg_C4E8_g(int32_t val, int32_t min, int32_t max);
 }
 
@@ -263,7 +263,7 @@ void gdShotSet::ResolveBoneNames() {
         
         if (m_pBoneIndices[i] == 0xFFFFFFFF) {
             uint32_t* pAttachmentFailed = (uint32_t*)m_pAttachments[i];
-            nop_8240E6D0(errorFormat, pAttachmentFailed[4]); // +16
+            rage_DebugLog(errorFormat, pAttachmentFailed[4]); // +16
         }
     }
 }

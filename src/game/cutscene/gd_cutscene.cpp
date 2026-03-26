@@ -16,7 +16,7 @@ extern "C" {
     void xmlNodeStruct_Initialize(void* node);
     uint16_t atSingleton_F6B8_p39(const char* name);
     void rage::ReleaseSingleton(void* obj);
-    void nop_8240E6D0(const char* msg, ...);
+    void rage_DebugLog(const char* msg, ...);
     void rage_free(void* ptr);
     int _stricmp(const char* str1, const char* str2);
     void RegisterSerializedField(void* obj, const char* propName, void* target, void* defaultVal, uint32_t flags);
@@ -72,19 +72,19 @@ void gdCSCharAnimData::PostLoadProperties() {
     
     // Validate FileName exists
     if (!m_pFileName || m_pFileName[0] == '\0') {
-        nop_8240E6D0(g_str_gdCSCharAnimData_missingFileName);
+        rage_DebugLog(g_str_gdCSCharAnimData_missingFileName);
         return;
     }
     
     // Validate duration is non-negative
     const float MIN_DURATION = 0.0f;
     if (m_duration < MIN_DURATION) {
-        nop_8240E6D0(g_str_gdCSCharAnimData_negTimeOffset);
+        rage_DebugLog(g_str_gdCSCharAnimData_negTimeOffset);
     }
     
     // Validate weight is non-negative
     if (m_weight < 0) {
-        nop_8240E6D0(g_str_gdCSCharAnimData_negWeight);
+        rage_DebugLog(g_str_gdCSCharAnimData_negWeight);
     }
     
     // Validate emote range
@@ -97,7 +97,7 @@ void gdCSCharAnimData::PostLoadProperties() {
         }
     }
     
-    nop_8240E6D0(g_str_gdCSCharAnimData_invalidEmote);
+    rage_DebugLog(g_str_gdCSCharAnimData_invalidEmote);
 }
 
 // ============================================================================
@@ -122,7 +122,7 @@ void gdCutSceneData::PostLoadProperties() {
     m_cutsceneId = atSingleton_F6B8_p39(m_pCutsceneName);
     
     if (m_cutsceneId == 0) {
-        nop_8240E6D0(g_str_gdCutSceneData_unknownSkip,
+        rage_DebugLog(g_str_gdCutSceneData_unknownSkip,
                      m_pCutsceneName);
     }
 }
@@ -206,7 +206,7 @@ void gdCSActionIfData::PostLoadProperties() {
     
     if (!m_pConditionType) {
         m_conditionEnum = 7;  // Invalid/unknown
-        nop_8240E6D0(g_str_gdCSActionIfData_unknownCondition);
+        rage_DebugLog(g_str_gdCSActionIfData_unknownCondition);
         return;
     }
     
@@ -232,7 +232,7 @@ void gdCSActionIfData::PostLoadProperties() {
     m_conditionEnum = conditionIndex;
     
     if (conditionIndex == 7) {
-        nop_8240E6D0(g_str_gdCSActionIfData_unknownCondition);
+        rage_DebugLog(g_str_gdCSActionIfData_unknownCondition);
         return;
     }
     
@@ -244,30 +244,30 @@ void gdCSActionIfData::PostLoadProperties() {
         case 3:  // OPPONENT_SCORE_EQUAL
             // These require m_conditionParam to be set (not -1)
             if (m_conditionParam == 0xFFFFFFFF) {
-                nop_8240E6D0(g_str_gdCSActionIfData_needsPlayerId);
+                rage_DebugLog(g_str_gdCSActionIfData_needsPlayerId);
             }
             break;
             
         case 4:  // OPPONENT_SCORE_GREATER
             // Requires parameter and must be <= 100
             if (m_conditionParam == 0xFFFFFFFF) {
-                nop_8240E6D0(g_str_gdCSActionIfData_needsPercent);
+                rage_DebugLog(g_str_gdCSActionIfData_needsPercent);
             } else if (m_conditionParam > 100) {
-                nop_8240E6D0(g_str_gdCSActionIfData_percentExceeds, 100);
+                rage_DebugLog(g_str_gdCSActionIfData_percentExceeds, 100);
             }
             break;
             
         case 5:  // OPPONENT_SCORE_LESS
             // Requires then actions to be set
             if (!m_pThenActions) {
-                nop_8240E6D0(g_str_gdCSActionIfData_needsGameType);
+                rage_DebugLog(g_str_gdCSActionIfData_needsGameType);
             }
             break;
             
         case 6:  // RANDOM_PERCENT
             // Requires else actions to be set
             if (!m_pElseActions) {
-                nop_8240E6D0(g_str_gdCSActionIfData_needsArenaType);
+                rage_DebugLog(g_str_gdCSActionIfData_needsArenaType);
             }
             break;
     }
@@ -298,7 +298,7 @@ void gdCSActionCamAnimData::PostLoadProperties() {
     xmlNodeStruct_Initialize(this);
     
     if (!m_pCameraName || m_pCameraName[0] == '\0') {
-        nop_8240E6D0(g_str_gdCSActionCamAnimData_missingFileName);
+        rage_DebugLog(g_str_gdCSActionCamAnimData_missingFileName);
     }
 }
 
@@ -320,12 +320,12 @@ void gdCSActionCharAnimData::PostLoadProperties() {
     
     // Validate character ID is set
     if (m_characterId == -1) {
-        nop_8240E6D0(g_str_gdCSActionCharAnimData_missingPlayerId);
+        rage_DebugLog(g_str_gdCSActionCharAnimData_missingPlayerId);
     }
     
     // Validate animation name is not empty
     if (!m_pAnimName || m_pAnimName[0] == '\0') {
-        nop_8240E6D0(g_str_gdCSActionCharAnimData_missingFileName);
+        rage_DebugLog(g_str_gdCSActionCharAnimData_missingFileName);
     }
 }
 
@@ -346,7 +346,7 @@ void gdCSActionCharVisibleData::PostLoadProperties() {
     xmlNodeStruct_Initialize(this);
     
     if (m_characterId == -1) {
-        nop_8240E6D0(g_str_gdCSActionCharVisibleData_missingPlayerId);
+        rage_DebugLog(g_str_gdCSActionCharVisibleData_missingPlayerId);
     }
 }
 
@@ -375,12 +375,12 @@ void gdCSActionPlayAudioData::PostLoadProperties() {
     
     // Validate audio type is not empty
     if (!m_pAudioType || m_pAudioType[0] == '\0') {
-        nop_8240E6D0(g_str_gdCSActionPlayAudioData_missingAudioType);
+        rage_DebugLog(g_str_gdCSActionPlayAudioData_missingAudioType);
     }
     
     // Validate audio name is not empty
     if (!m_pAudioName || m_pAudioName[0] == '\0') {
-        nop_8240E6D0(g_str_gdCSActionPlayAudioData_missingAudioEvent);
+        rage_DebugLog(g_str_gdCSActionPlayAudioData_missingAudioEvent);
     }
     
     // Parse audio type
@@ -389,7 +389,7 @@ void gdCSActionPlayAudioData::PostLoadProperties() {
     } else if (_stricmp(m_pAudioType, "SOUND") == 0) {
         m_audioTypeEnum = 1;
     } else {
-        nop_8240E6D0(g_str_gdCSActionPlayAudioData_unknownAudioType,
+        rage_DebugLog(g_str_gdCSActionPlayAudioData_unknownAudioType,
                      m_pAudioType);
     }
     
@@ -432,7 +432,7 @@ const char* gdCSActionPlayAudioData::GetTypeName() {
 void gdCSCharAnimNames::FindRandAnimData(uint32_t randomSeed, uint32_t selectionMode, uint32_t nameFilter) {
     // Validate we have animation data
     if (m_animCount == 0) {
-        nop_8240E6D0(g_str_gdCSCharAnimNames_noAnimData);
+        rage_DebugLog(g_str_gdCSCharAnimNames_noAnimData);
         return;
     }
     
@@ -531,7 +531,7 @@ void gdCSCharAnimData::BuildFilteredArrays() {
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getChildName = (GetNameFunc)(*(void***)node)[19];
             GetNameFunc getParentName = (GetNameFunc)(*(void***)this)[19];
-            nop_8240E6D0(g_str_gdCSCharAnimData_boneName, getParentName(this), getChildName(node));
+            rage_DebugLog(g_str_gdCSCharAnimData_boneName, getParentName(this), getChildName(node));
         }
         node = *(void**)((char*)node + 8);  // next pointer
     }
@@ -544,7 +544,7 @@ void gdCSCharAnimData::BuildFilteredArrays() {
 
     // Allocate byte flag array
     atArray* flagArr = (atArray*)((char*)this + 92);
-    void* flagData = (matchCount > 0) ? xe_EC88(matchCount) : nullptr;
+    void* flagData = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
     *(void**)flagArr = flagData;
     *(uint16_t*)((char*)flagArr + 6) = (uint16_t)matchCount;
 
@@ -612,19 +612,19 @@ void gdCSCharAnimNames::BuildFilteredArrays() {
     // Allocate pointer array
     struct atArray { void* data; uint16_t count; uint16_t capacity; };
     atArray* ptrArr = (atArray*)((char*)this + 16);
-    void* ptrData = (matchCount > 0) ? xe_EC88(matchCount * 4) : nullptr;
+    void* ptrData = (matchCount > 0) ? rage_alloc(matchCount * 4) : nullptr;
     *(void**)ptrArr = ptrData;
     *(uint16_t*)((char*)ptrArr + 6) = (uint16_t)matchCount;
 
     // Allocate flag array 1 (bytes)
     atArray* flagArr1 = (atArray*)((char*)this + 24);
-    void* flagData1 = (matchCount > 0) ? xe_EC88(matchCount) : nullptr;
+    void* flagData1 = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
     *(void**)flagArr1 = flagData1;
     *(uint16_t*)((char*)flagArr1 + 6) = (uint16_t)matchCount;
 
     // Allocate flag array 2 (bytes)
     atArray* flagArr2 = (atArray*)((char*)this + 32);
-    void* flagData2 = (matchCount > 0) ? xe_EC88(matchCount) : nullptr;
+    void* flagData2 = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
     *(void**)flagArr2 = flagData2;
     *(uint16_t*)((char*)flagArr2 + 6) = (uint16_t)matchCount;
 
@@ -687,19 +687,19 @@ void gdCSCamAnimShotName::PostLoadProperties() {
     // Validate weight >= 0
     int32_t weight = *(int32_t*)((char*)this + 16);
     if (weight < 0) {
-        nop_8240E6D0(g_str_gdCSCamAnimShotName_negWeight);
+        rage_DebugLog(g_str_gdCSCamAnimShotName_negWeight);
     }
 
     // Validate ShotName is non-empty
     const char* shotName = *(const char**)((char*)this + 24);
     if (!shotName || strlen(shotName) == 0) {
-        nop_8240E6D0(g_str_gdCSCamAnimShotName_missingShotName);
+        rage_DebugLog(g_str_gdCSCamAnimShotName_missingShotName);
     }
 
     // Validate TimeOffset >= 0.0f
     float timeOffset = *(float*)((char*)this + 28);
     if (timeOffset < 0.0f) {
-        nop_8240E6D0(g_str_gdCSCamAnimShotName_negTimeOffset);
+        rage_DebugLog(g_str_gdCSCamAnimShotName_negTimeOffset);
     }
 
     // Look up shot name in camera animation set → store index at +32
@@ -716,7 +716,7 @@ void gdCSCamAnimShotName::PostLoadProperties() {
     *(int32_t*)((char*)this + 32) = shotIndex;
 
     if (shotIndex == -1) {
-        nop_8240E6D0(g_str_gdCSCamAnimShotName_shotNotFound,
+        rage_DebugLog(g_str_gdCSCamAnimShotName_shotNotFound,
                       shotName, "unknown");
     }
 }
@@ -951,13 +951,13 @@ void gdCSActionLvlAmbAnimData::PostLoadProperties() {
     // Validate AnimName is non-empty
     const char* ambName = *(const char**)((char*)this + 20);
     if (!ambName || strlen(ambName) == 0) {
-        nop_8240E6D0(g_str_gdCSActionLvlAmbAnimData_missingAmbName);
+        rage_DebugLog(g_str_gdCSActionLvlAmbAnimData_missingAmbName);
     }
 
     // Validate FileName is non-empty
     const char* animName = *(const char**)((char*)this + 24);
     if (!animName || strlen(animName) == 0) {
-        nop_8240E6D0(g_str_gdCSActionLvlAmbAnimData_missingAnimName);
+        rage_DebugLog(g_str_gdCSActionLvlAmbAnimData_missingAnimName);
     }
 }
 
@@ -1000,19 +1000,19 @@ void gdCSActionCharAmbAnimData::PostLoadProperties() {
     // Validate CharacterId is set (not -1)
     int32_t characterId = *(int32_t*)((char*)this + 20);
     if (characterId == -1) {
-        nop_8240E6D0(g_str_gdCSActionCharAmbAnimData_missingPlayerId);
+        rage_DebugLog(g_str_gdCSActionCharAmbAnimData_missingPlayerId);
     }
 
     // Validate AmbName is non-empty
     const char* ambName = *(const char**)((char*)this + 24);
     if (!ambName || strlen(ambName) == 0) {
-        nop_8240E6D0(g_str_gdCSActionCharAmbAnimData_missingAmbName);
+        rage_DebugLog(g_str_gdCSActionCharAmbAnimData_missingAmbName);
     }
 
     // Validate AnimName is non-empty
     const char* animName = *(const char**)((char*)this + 28);
     if (!animName || strlen(animName) == 0) {
-        nop_8240E6D0(g_str_gdCSActionCharAmbAnimData_missingAnimName);
+        rage_DebugLog(g_str_gdCSActionCharAmbAnimData_missingAnimName);
     }
 }
 

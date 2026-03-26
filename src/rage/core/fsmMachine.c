@@ -17,7 +17,7 @@ extern void* fsmMachine_vtable;  /* lbl_8204DD14 */
 extern void* rage_datBase_vtable;  /* lbl_820276C4 */
 
 /**
- * fsmMachine_Destructor_27A8 @ 0x822227A8 | size: 0x58
+ * fsmMachine_Destroy @ 0x822227A8 | size: 0x58
  * 
  * Original symbol: gameLoop_DestroyAudio_27A8 (auto-named, misleading)
  * Actual function: fsmMachine::~fsmMachine()
@@ -31,7 +31,7 @@ extern void* rage_datBase_vtable;  /* lbl_820276C4 */
  * The function is called from subclass destructors before they free
  * their own memory.
  */
-void fsmMachine_Destructor_27A8(fsmMachine* pMachine)
+void fsmMachine_Destroy(fsmMachine* pMachine)
 {
     /* Set vtable to fsmMachine (derived class cleanup phase) */
     pMachine->m_pVtable = &fsmMachine_vtable;

@@ -47,7 +47,7 @@ extern "C" void rage_ReleaseSingleton(void* obj);
 extern "C" void sysCallback_Invoke(void* obj, int flags);
 
 // Forward declarations
-extern void fsmMachine_Destructor_27A8(void* stateObj);
+extern void fsmMachine_Destroy(void* stateObj);
 
 // External globals
 extern void* g_pNetworkTimer;           // @ 0x8201A328
@@ -641,8 +641,8 @@ void NetDataQuery_Destroy(NetDataQuery* self, int flags) {
     self->vtable = (void**)0x8207116C;
     
     // Call fsmMachine base destructor
-    extern void fsmMachine_Destructor_27A8(void* obj);
-    fsmMachine_Destructor_27A8(self);
+    extern void fsmMachine_Destroy(void* obj);
+    fsmMachine_Destroy(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -673,7 +673,7 @@ void NetDataQuery_ctor_A458(NetDataQuery* self) {
     // Set its vtable @ 0x8207116C
     void** stateObj = (void**)((char*)self + 1508);
     *stateObj = (void**)0x8207116C;
-    fsmMachine_Destructor_27A8(stateObj);
+    fsmMachine_Destroy(stateObj);
     
     // Initialize state machine member at offset +1392
     // Set its vtable @ 0x82070D78 (calculated from lis(-32249) + 3448)
@@ -708,8 +708,8 @@ void NetDataQuery_Process(NetDataQuery* self) {
     *(uint32_t*)((char*)self + 4) = 4;
     
     // Get allocator from TLS
-    extern void* xe_main_thread_init_0038();
-    xe_main_thread_init_0038();
+    extern void* sysMemAllocator_InitMainThread();
+    sysMemAllocator_InitMainThread();
     
     // Get allocator pointer from SDA @ r13+0 (0x82600000)
     extern void* g_allocator_ptr;
@@ -724,7 +724,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     void** stateArray = *(void***)((char*)self + 8);
     
     // Allocate and initialize state 0 @ 0x820711B4
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state0 = alloc(*allocator, 12, 16);
     if (state0) {
         *(uint32_t*)((char*)state0 + 4) = 0;
@@ -734,7 +734,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     stateArray[0] = state0;
     
     // Allocate and initialize state 1 @ 0x820711FC
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state1 = alloc(*allocator, 12, 16);
     if (state1) {
         *(uint32_t*)((char*)state1 + 4) = 0;
@@ -744,7 +744,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     stateArray[1] = state1;
     
     // Allocate and initialize state 2: stateReceiveData @ 0x82071244
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state2 = alloc(*allocator, 12, 16);
     if (state2) {
         *(uint32_t*)((char*)state2 + 4) = 0;
@@ -754,7 +754,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     stateArray[2] = state2;
     
     // Allocate and initialize state 3: stateFinish @ 0x8207128C
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state3 = alloc(*allocator, 12, 16);
     if (state3) {
         *(uint32_t*)((char*)state3 + 4) = 0;
@@ -874,8 +874,8 @@ void NetStateSync_Destroy(NetStateSync* self, int flags) {
     self->vtable = (void**)0x820713BC;
     
     // Call fsmMachine base destructor
-    extern void fsmMachine_Destructor_27A8(void* obj);
-    fsmMachine_Destructor_27A8(self);
+    extern void fsmMachine_Destroy(void* obj);
+    fsmMachine_Destroy(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -897,8 +897,8 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_stateID = 7;
     
     // Get allocator from TLS
-    extern void* xe_main_thread_init_0038();
-    xe_main_thread_init_0038();
+    extern void* sysMemAllocator_InitMainThread();
+    sysMemAllocator_InitMainThread();
     
     // Get allocator pointer from SDA @ r13+0 (0x82600000)
     extern void* g_allocator_ptr;  // @ 0x82600004
@@ -912,7 +912,7 @@ void NetStateSync_Process(NetStateSync* self) {
     
     // Allocate and initialize each state object (12 bytes each)
     // State 0: stateInit @ 0x82071404
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state0 = alloc(*allocator, 12, 16);
     if (state0) {
         *(uint32_t*)((char*)state0 + 4) = 0;  // Clear field at +4
@@ -922,7 +922,7 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_pStateArray[0] = state0;
     
     // State 1: stateWaitForSyncState @ 0x8207144C
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state1 = alloc(*allocator, 12, 16);
     if (state1) {
         *(uint32_t*)((char*)state1 + 4) = 0;
@@ -932,7 +932,7 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_pStateArray[1] = state1;
     
     // State 2: stateEnterState @ 0x82071494
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state2 = alloc(*allocator, 12, 16);
     if (state2) {
         *(uint32_t*)((char*)state2 + 4) = 0;
@@ -942,7 +942,7 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_pStateArray[2] = state2;
     
     // State 3: stateRequestSyncronization @ 0x820714DC
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state3 = alloc(*allocator, 12, 16);
     if (state3) {
         *(uint32_t*)((char*)state3 + 4) = 0;
@@ -952,7 +952,7 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_pStateArray[3] = state3;
     
     // State 4: stateSendSyncronization @ 0x82071524
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state4 = alloc(*allocator, 12, 16);
     if (state4) {
         *(uint32_t*)((char*)state4 + 4) = 0;
@@ -962,7 +962,7 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_pStateArray[4] = state4;
     
     // State 5: stateReceiveSyncronization @ 0x8207156C
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state5 = alloc(*allocator, 12, 16);
     if (state5) {
         *(uint32_t*)((char*)state5 + 4) = 0;
@@ -972,7 +972,7 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_pStateArray[5] = state5;
     
     // State 6: stateWaitTime @ 0x820715B4 (16 bytes, has float at +12)
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* state6 = alloc(*allocator, 16, 16);
     if (state6) {
         *(uint32_t*)((char*)state6 + 4) = 0;
@@ -1029,7 +1029,7 @@ void util_AA38_stub(void* obj) {
 }
 
 // Stub for thread initialization
-void* xe_main_thread_init_0038_stub() {
+void* sysMemAllocator_InitMainThread_stub() {
     // Stub - would initialize thread context
     return nullptr;
 }

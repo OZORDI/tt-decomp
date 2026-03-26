@@ -61,7 +61,7 @@ extern void  PostPageGroupMessage(int eventCode, int arg1, int arg2, int arg3, i
 extern uint8_t* g_pNetMsgPoolBase;    // @ 0x825D11D0 (singleton pointer)
 extern const char g_szServeStartedTypeName[];  // @ 0x8206E9D0
 extern void* g_pNetMsgSingleton;              // @ 0x825D11D0 singleton object
-extern void nop_8240E6D0(const char* fmt, ...);  // debug nop / assert print
+extern void rage_DebugLog(const char* fmt, ...);  // debug nop / assert print
 extern void ServeStartedMessage_5728(void* matchObj, void* slotA, void* slotB, float timingRef);  // serve-start coordinator
 
 // pongNetMessageHolder helpers used by static init/dtor wrappers.
@@ -101,7 +101,7 @@ extern void SinglesNetworkClient_0268_g(void* self);
 extern void SinglesNetworkClient_0448_g(void* self, uint32_t value, int bits);
 extern void SinglesNetworkClient_8AE0_g(void* self);
 extern void snSession_AddNode_C068(void* sessionNodeList, void* node);
-extern "C" void* xe_EC88(uint32_t size);
+extern "C" void* rage_alloc(uint32_t size);
 extern void pongNetMessageHolder_7700_wrh(void* memory);
 
 // rage event structs used in network code
@@ -245,7 +245,7 @@ void ServeStartedMessage::Process(void* matchObj)
     // Step 2: debug assert — action state must be initialised.
     int32_t actionState = *(int32_t*)((uint8_t*)player + 468);
     if (actionState == 0) {
-        nop_8240E6D0("ServeStartedMessage::Process(): player action state is null");  /* UNVERIFIED — string not found in binary */
+        rage_DebugLog("ServeStartedMessage::Process(): player action state is null");  /* UNVERIFIED — string not found in binary */
     }
 
     // Step 3: copy target position into the player's lerp table entry.
@@ -847,7 +847,7 @@ setup_network:
         if (g_bNetworkDebugFlag == 0) {
             // Debug print (nop in release builds)
             extern const char g_szNetworkDebugMsg[];  // @ 0x8205AE98
-            nop_8240E6D0(g_szNetworkDebugMsg);
+            rage_DebugLog(g_szNetworkDebugMsg);
         }
     }
 
@@ -1438,7 +1438,7 @@ void pongNetMessageHolder::InitializeInternalArray()
     // Check if internal array is already allocated
     if (m_pInternalArray == nullptr) {
         // Allocate 1296 bytes for the internal array
-        void* newArray = xe_EC88(1296);
+        void* newArray = rage_alloc(1296);
         
         if (newArray != nullptr) {
             // Initialize the allocated array
@@ -1811,7 +1811,7 @@ void SinglesNetworkClient::ProcessMessageQueue()
 // a page group event if conditions are met.
 //
 // Logic:
-//  1. Calls nop_8240E6D0 with "top_spin" string (debug/logging)
+//  1. Calls rage_DebugLog with "top_spin" string (debug/logging)
 //  2. Checks g_loop_obj_ptr[578] (boolean flag)
 //  3. If flag is false, checks g_loop_obj_ptr[12] == 8 (state check)
 //  4. If state matches, sets g_input_obj_ptr[48] = 4
@@ -1821,7 +1821,7 @@ void TournamentCompleteMessage::Process()
 {
     // Debug logging with "top_spin" string
     extern const char g_szTopSpin[];  // @ 0x8206CB54
-    nop_8240E6D0(g_szTopSpin);
+    rage_DebugLog(g_szTopSpin);
     
     // Load global loop object pointer
     extern void* g_loop_obj_ptr;  // @ 0x825EAB30
@@ -2200,7 +2200,7 @@ void pongNetMessageHolder::LazyInitMessagePool() {
     }
     
     // Allocate memory for message pool (12016 bytes)
-    void* memory = xe_EC88(12016);
+    void* memory = rage_alloc(12016);
     
     if (memory != nullptr) {
         // Construct the message object
@@ -2224,7 +2224,7 @@ void pongNetMessageHolder_vfn_1_FC68_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for AcceptMessage (176 bytes)
-    void* memory = xe_EC88(176);
+    void* memory = rage_alloc(176);
     
     if (memory != nullptr) {
         // Construct AcceptMessage
@@ -2248,7 +2248,7 @@ void pongNetMessageHolder_vfn_1_FCC0_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for BallHitMessage (256 bytes)
-    void* memory = xe_EC88(256);
+    void* memory = rage_alloc(256);
     
     if (memory != nullptr) {
         // Construct BallHitMessage
@@ -2272,7 +2272,7 @@ void pongNetMessageHolder_vfn_1_FD18_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (8976 bytes)
-    void* memory = xe_EC88(8976);
+    void* memory = rage_alloc(8976);
     
     if (memory != nullptr) {
         // Construct message
@@ -2296,7 +2296,7 @@ void pongNetMessageHolder_vfn_1_FEE0_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (96 bytes)
-    void* memory = xe_EC88(96);
+    void* memory = rage_alloc(96);
     
     if (memory != nullptr) {
         // Construct message
@@ -2320,7 +2320,7 @@ void pongNetMessageHolder_vfn_1_FFA0_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (368 bytes)
-    void* memory = xe_EC88(368);
+    void* memory = rage_alloc(368);
     
     if (memory != nullptr) {
         // Construct message
@@ -2344,7 +2344,7 @@ void pongNetMessageHolder_vfn_1_0810_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (176 bytes)
-    void* memory = xe_EC88(176);
+    void* memory = rage_alloc(176);
     
     if (memory != nullptr) {
         // Construct message
@@ -2368,7 +2368,7 @@ void pongNetMessageHolder_vfn_1_0990_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (16016 bytes)
-    void* memory = xe_EC88(16016);
+    void* memory = rage_alloc(16016);
     
     if (memory != nullptr) {
         // Construct message
@@ -3581,8 +3581,8 @@ const char* SinglesNetworkClient::GetErrorString() {
     }
     
     // Look up error message in error table
-    extern void* xam_singleton_init_8D60(void*);
-    void* errorTable = xam_singleton_init_8D60(this);
+    extern void* xam_GetInitSingleton(void*);
+    void* errorTable = xam_GetInitSingleton(this);
     
     void** vtable = *(void***)errorTable;
     void** errorEntry = (void**)vtable[errorCode];

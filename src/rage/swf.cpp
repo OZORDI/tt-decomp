@@ -23,7 +23,7 @@ extern "C" {
     void swfSymtab_Enumerate(void* symtab);     // @ 0x823FED10 — enumerate symtab members
     const char* swfInternString(const char* name, void* buffer, int maxLen);  // string interning
     void* swfSymtab_Lookup(void* symtab, const char* key);   // symtab key lookup
-    void nop_8240E6D0(const char* msg, ...);    // debug log stub (no-op)
+    void rage_DebugLog(const char* msg, ...);    // debug log stub (no-op)
     void swfSymtab_Insert(void* symtab, const char* key, void* value);  // symtab insert
     void swfSymtab_Delete(void* symtab, const char* key);   // symtab key delete
     void swfPopResult(void* dst);               // pop result from call stack
@@ -306,7 +306,7 @@ void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, v
     if (!found) {
         // Method not found
         extern const char* g_str_swf_unsupportedMethod;  // @ 0x82077054
-        nop_8240E6D0(g_str_swf_unsupportedMethod, methodName);
+        rage_DebugLog(g_str_swf_unsupportedMethod, methodName);
         ((swfValue*)outResult)->data = 0;
         ((swfValue*)outResult)->type = 3;  // type 3 = undefined
         return;
@@ -632,7 +632,7 @@ float swfFILE::FindExportFrame(float frameRate, const char* labelName, void* con
     // Not found — log and return zero
     // Error string @ 0x82076C80: "Couldn't find font with which..."
     // (reused for "not found" in this context)
-    nop_8240E6D0("Couldn't find frame label '%s'", labelName);  /* UNVERIFIED — string not found in binary */
+    rage_DebugLog("Couldn't find frame label '%s'", labelName);  /* UNVERIFIED — string not found in binary */
     return 0.0f;
 }
 

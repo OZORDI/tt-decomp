@@ -145,9 +145,9 @@ void rage_Alloc(int size, void* allocator) { (void)size; (void)allocator; }
 
 void util_4628(phJoint3Dof* j, int p) { (void)j; (void)p; }
 void* util_B188(void* o, int p) { (void)o; (void)p; return nullptr; }
-void util_D988(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void util_DA90(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void util_F850(void* a, void* b) { (void)a; (void)b; }
+void snSession_AssociateConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+void snSession_ProcessPendingConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+void hsmState_AttachChild(void* a, void* b) { (void)a; (void)b; }
 void util_53A8(void* a) { (void)a; }
 void util_5C58(void* a) { (void)a; }
 void util_6178(void* a) { (void)a; }
@@ -160,7 +160,7 @@ void NotifyHandler_3D80_g(void* a, void* b) { (void)a; (void)b; }
 // snMigrateMachine helper stubs
 void util_5B50(void* a) { (void)a; }
 void util_6558(void* a) { (void)a; }
-void util_8F48(void* a) { (void)a; }
+void hsmState_Destroy(void* a) { (void)a; }
 void SinglesNetworkClient_2828_p45(void* a) { (void)a; }
 void SinglesNetworkClient_2A08_w(void* a) { (void)a; }
 void snSession_1BF8_g(void* a, int b, void* c) { (void)a; (void)b; (void)c; }
@@ -253,17 +253,17 @@ void util_DA08(void* a) { (void)a; }
 
 void util_PackColorRGBA(uint32_t* a, const float* b) { (void)a; (void)b; }
 
-void* xam_singleton_init_8D60(void* a) { (void)a; return nullptr; }
+void* xam_GetInitSingleton(void* a) { (void)a; return nullptr; }
 
-// xe_EC88 has two overloads (int / unsigned int)
-// REMOVED: xe_EC88 (defined in heap.c)
-// REMOVED: xe_EC88 overload
+// rage_alloc has two overloads (int / unsigned int)
+// REMOVED: rage_alloc (defined in heap.c)
+// REMOVED: rage_alloc overload
 
 // xe_F4C0 has two overloads (void / void*)
 void xe_F4C0() {}
 void xe_F4C0(void* a) { (void)a; }
 
-void xe_main_thread_init_0038() {}
+void sysMemAllocator_InitMainThread() {}
 
 void xmlNodeStruct_Init(void* a) { (void)a; }
 

@@ -407,7 +407,7 @@ struct phArticulatedCollider {
     uint32_t GetCBCField_23();
     uint32_t GetIndexedByteFlag_0(int index); uint32_t GetIndexedByteFlag_1(int index);
     uint32_t GetIndexedByteFlag_2(int index);
-    uint32_t GetIndexedField_1168(int index, int shift, int mask);
+    uint32_t GetIndexedField(int index, int shift, int mask);
     uint32_t GetBoneField_5778(int index); uint32_t GetBoneField_5B90(int index);
     uint32_t GetBoneField_5BE0(int index); uint32_t GetBoneField_5C30(int index);
     uint32_t GetBoneField_5C88(int index); uint32_t GetBoneField_5CE0(int index);

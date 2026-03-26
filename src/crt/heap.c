@@ -29,17 +29,12 @@ void rage_free(void* ptr) {
     free(ptr);
 }
 
-/**
- * rage_free_00C0 — Alias for rage_free
- */
-void rage_free_00C0(void* ptr) {
-    free(ptr);
-}
+/* rage_free_00C0 was an alias — merged with rage_free above */
 
 /**
- * xe_EC88 — Allocate zeroed memory @ 0x820CEC88
+ * rage_alloc — Allocate zeroed memory @ 0x820CEC88
  */
-void* xe_EC88(uint32_t size) {
+void* rage_alloc(uint32_t size) {
     void* ptr = malloc(size);
     if (ptr) {
         memset(ptr, 0, size);

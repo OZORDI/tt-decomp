@@ -4,7 +4,7 @@
  *
  * The game's startup sequence:
  *   __crt_main_entry  (XEX entry, called by the loader)
- *       └─ xe_main_thread_init_0038   (init main thread's XTF context)
+ *       └─ sysMemAllocator_InitMainThread   (init main thread's XTF context)
  *           └─ xe_alloc_thread_ctx_6CA8 (allocate physical thread stack/TLS)
  *       └─ rage_main_6970             (RAGE main loop)
  *
@@ -42,7 +42,7 @@ int   atexit(void (*fn)(void));
 void* xe_phys_alloc_6AC8(uint32_t sizeBytes, int32_t protectFlags, uint32_t alignment, uint32_t allocFlags);
 void  util_7AE8(struct XeTlsBlock* pXtf, void* stackBase, uint32_t stackSize);
 void  xe_thread_ctx_init_6D40(struct XeTlsBlock* pXtf);
-void  nop_8240E6D0(const char* fmt, ...);
+void  rage_DebugLog(const char* fmt, ...);
 
 /* ── Globals ───────────────────────────────────────────────────────── */
 
@@ -85,7 +85,7 @@ void xe_alloc_thread_ctx_6CA8(struct XeTlsBlock* pXtf, uint32_t stackSize, uint3
 
     void* stackBase = xe_phys_alloc_6AC8(alignedSize, -1, 0, kThreadPhysAllocFlags);
     if (stackBase == NULL) {
-        nop_8240E6D0((const char*)kThreadAllocFailFmt, (int32_t)alignedSize >> 10);
+        rage_DebugLog((const char*)kThreadAllocFailFmt, (int32_t)alignedSize >> 10);
     }
 
     /* The original always runs util_7AE8 even when allocation fails. */
@@ -95,7 +95,7 @@ void xe_alloc_thread_ctx_6CA8(struct XeTlsBlock* pXtf, uint32_t stackSize, uint3
 /**
  * xe_get_thread_ctx_36E8 @ 0x825836E8 | size: 0x0C
  *
- * atexit callback registered by xe_main_thread_init_0038. It forwards the
+ * atexit callback registered by sysMemAllocator_InitMainThread. It forwards the
  * process-global main-thread context object to xe_thread_ctx_init_6D40.
  */
 void xe_get_thread_ctx_36E8(void)
@@ -105,7 +105,7 @@ void xe_get_thread_ctx_36E8(void)
 
 
 /**
- * xe_main_thread_init_0038 @ 0x820C0038 | size: 0x88
+ * sysMemAllocator_InitMainThread @ 0x820C0038 | size: 0x88
  *
  * Initializes the main thread's XTF (Xbox Thread Frame) if it hasn't been
  * set up yet. Checks an init flag to guard against double-init. Registers
@@ -114,7 +114,7 @@ void xe_get_thread_ctx_36E8(void)
  * The SDA offset +4 holds a pointer to the active TLS block slot; this
  * function writes the main thread XTF address into slots +4 and +8.
  */
-void xe_main_thread_init_0038(void)
+void sysMemAllocator_InitMainThread(void)
 {
     uint32_t* allocCtx = (uint32_t*)(uintptr_t)g_sda_base[0];
     if (allocCtx[1] == 0u) {
@@ -149,6 +149,6 @@ void __crt_main_entry(void* pStartupParms, void* pBase)
     }
 #endif
 
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     (void)rage_main_6970(pStartupParms, pBase);
 }

@@ -11,7 +11,7 @@
 #include <string.h>
 
 /* Forward declarations */
-extern void* xe_EC88(uint32_t size);  /* Memory allocator @ 0x820DEC88 */
+extern void* rage_alloc(uint32_t size);  /* Memory allocator @ 0x820DEC88 */
 
 /**
  * Dynamic buffer structure
@@ -38,11 +38,11 @@ void xe_8E30(XeBuffer* buffer, uint16_t capacity) {
         /* Check for overflow: capacity > 0x3FFFFFFF (max safe count for 4-byte elements) */
         if (capacity > 0x3FFFFFFF) {
             /* Overflow - allocate maximum size */
-            data = xe_EC88(0xFFFFFFFF);
+            data = rage_alloc(0xFFFFFFFF);
         } else {
             /* Allocate capacity * 4 bytes */
             uint32_t size = capacity * 4;
-            data = xe_EC88(size);
+            data = rage_alloc(size);
         }
     }
     
@@ -58,7 +58,7 @@ void xe_0DA0(XeBuffer* buffer) {
     if (buffer->capacity == 0) {
         /* First-time initialization: allocate 8 bytes for 1 element */
         buffer->capacity = 1;
-        buffer->data = xe_EC88(8);
+        buffer->data = rage_alloc(8);
         buffer->count = 1;
     } else {
         /* Already initialized: just set count to 1 */
@@ -79,11 +79,11 @@ void xe_FF00(XeBuffer* buffer, uint16_t newCapacity) {
             /* Check for overflow: capacity > 0x7FFFFFFF (max safe count for 2-byte elements) */
             if (newCapacity > 0x7FFFFFFF) {
                 /* Overflow - allocate maximum size */
-                buffer->data = xe_EC88(0xFFFFFFFF);
+                buffer->data = rage_alloc(0xFFFFFFFF);
             } else {
                 /* Allocate capacity * 2 bytes */
                 uint32_t size = newCapacity * 2;
-                buffer->data = xe_EC88(size);
+                buffer->data = rage_alloc(size);
             }
         } else {
             buffer->data = NULL;
@@ -107,11 +107,11 @@ void xe_CBD8(XeBuffer* buffer, uint16_t newCapacity) {
             /* Check for overflow: capacity > 0x03FFFFFF (max safe count for 64-byte elements) */
             if (newCapacity > 0x03FFFFFF) {
                 /* Overflow - allocate maximum size */
-                buffer->data = xe_EC88(0xFFFFFFFF);
+                buffer->data = rage_alloc(0xFFFFFFFF);
             } else {
                 /* Allocate capacity * 64 bytes */
                 uint32_t size = newCapacity * 64;
-                buffer->data = xe_EC88(size);
+                buffer->data = rage_alloc(size);
             }
         } else {
             buffer->data = NULL;
@@ -143,7 +143,7 @@ void xe_C320(void* structure) {
 // xe_4408()  @ 0x82134408 | size: 0x84
 // Allocates aligned memory and initializes a structure with pointer and counter
 // ─────────────────────────────────────────────────────────────────────────────
-extern void xe_main_thread_init_0038(void);  /* @ 0x820C0038 */
+extern void sysMemAllocator_InitMainThread(void);  /* @ 0x820C0038 */
 extern uint32_t* g_sda_base;  /* SDA base pointer (r13 register) */
 
 typedef void* (*AllocatorVCall)(void* allocator, uint32_t size, uint32_t alignment);
@@ -160,7 +160,7 @@ void xe_4408(void* structure, uint32_t elementCount) {
     }
     
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -183,7 +183,7 @@ void xe_4408(void* structure, uint32_t elementCount) {
 // ─────────────────────────────────────────────────────────────────────────────
 void xe_62D0(XeBuffer* buffer) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -219,7 +219,7 @@ void xe_7E78(XeBuffer* dest, const XeBuffer* src) {
             allocSize = capacity * 16;
         }
         
-        dest->data = xe_EC88(allocSize);
+        dest->data = rage_alloc(allocSize);
     } else {
         dest->data = NULL;
     }
@@ -302,7 +302,7 @@ extern uint32_t* g_float_one_ptr;  /* @ 0x8202D110 */
 
 void* xe_B958(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -350,7 +350,7 @@ void xe_D100(XeBuffer* dest, const XeBuffer* src) {
     /* Allocate destination buffer if capacity > 0 */
     if (capacity != 0) {
         uint32_t allocSize = capacity * 4;
-        dest->data = xe_EC88(allocSize);
+        dest->data = rage_alloc(allocSize);
     } else {
         dest->data = NULL;
     }
@@ -372,7 +372,7 @@ void xe_D100(XeBuffer* dest, const XeBuffer* src) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_1E48(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -432,7 +432,7 @@ void xe_3508(XeBuffer* buffer, uint16_t capacity) {
             }
         }
         
-        data = xe_EC88(allocSize);
+        data = rage_alloc(allocSize);
         
         if (data != NULL) {
             uint32_t* header = (uint32_t*)data;
@@ -481,7 +481,7 @@ void xe_73E0(XeBuffer* buffer, uint16_t newCapacity) {
                 }
             }
             
-            void* data = xe_EC88(allocSize);
+            void* data = rage_alloc(allocSize);
             
             if (data != NULL) {
                 uint32_t* header = (uint32_t*)data;
@@ -522,7 +522,7 @@ extern uint32_t* g_large_buffer_ptr;  /* @ 0x8260637C */
 
 void* xe_D6F8(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -605,7 +605,7 @@ void xe_0780(XeBuffer* buffer, uint16_t capacity) {
             }
         }
         
-        data = xe_EC88(allocSize);
+        data = rage_alloc(allocSize);
         
         if (data != NULL) {
             uint32_t* header = (uint32_t*)data;
@@ -654,7 +654,7 @@ void xe_0780(XeBuffer* buffer, uint16_t capacity) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_3CA8(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -686,7 +686,7 @@ void* xe_3CA8(void) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_75F8(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -741,7 +741,7 @@ void xe_5A70(XeBuffer* buffer, uint16_t newCapacity) {
                 }
             }
             
-            void* data = xe_EC88(allocSize);
+            void* data = rage_alloc(allocSize);
             
             if (data != NULL) {
                 uint32_t* header = (uint32_t*)data;
@@ -781,7 +781,7 @@ extern float g_float_value_22840;  /* @ offset 22840 from base */
 
 void* xe_5BE8(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -832,7 +832,7 @@ void* xe_5BE8(void) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_5CC8(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -882,7 +882,7 @@ void* xe_5CC8(void) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_5DA0(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -931,7 +931,7 @@ void* xe_5DA0(void) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_5E78(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -979,7 +979,7 @@ void* xe_5E78(void) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_5F48(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -1028,7 +1028,7 @@ void* xe_5F48(void) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_6020(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];
@@ -1076,7 +1076,7 @@ void* xe_6020(void) {
 // ─────────────────────────────────────────────────────────────────────────────
 void* xe_60F8(void) {
     /* Ensure main thread heap is initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];

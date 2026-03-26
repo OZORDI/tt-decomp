@@ -16,9 +16,9 @@ namespace rage {
 class SinglesNetworkClient;
 
 // External utility functions
-extern void util_D988(void* context, void* session, void* connectionList);  // @ 0x823ED988
-extern void util_DA90(void* context, void* session, void* connectionList);  // @ 0x823EDA90
-extern void util_F850(void* parent, void* childState);                     // @ 0x823EF850 — AttachChildState
+extern void snSession_AssociateConnections(void* context, void* session, void* connectionList);  // @ 0x823ED988
+extern void snSession_ProcessPendingConnections(void* context, void* session, void* connectionList);  // @ 0x823EDA90
+extern void hsmState_AttachChild(void* parent, void* childState);                     // @ 0x823EF850 — AttachChildState
 
 // HSM state destructor helpers (each tears down a specific state level)
 extern void snSession_4EB0_w(void* thisPtr);   // @ 0x823E4EB0 — snRoot destructor body
@@ -45,8 +45,8 @@ extern void NotifyHandler_3D80_g(void* notifyList, void* handler); // @ 0x823B3D
  * Process:
  *   1. Call vfn_11 on this object (returns a context/state object)
  *   2. Get the network client's connection list from m_pNetworkClient
- *   3. Associate connections with the session (util_D988)
- *   4. Process pending connection state changes (util_DA90)
+ *   3. Associate connections with the session (snSession_AssociateConnections)
+ *   4. Process pending connection state changes (snSession_ProcessPendingConnections)
  *
  * The connection list is located at offset +5780 (0x1694) from the network
  * client base pointer.
@@ -63,8 +63,8 @@ void snSession_snRoot_snChangingPresence_vfn_13(void* thisPtr) {
     SinglesNetworkClient* networkClient = *(SinglesNetworkClient**)((char*)session + 20);
     void* connectionList = (char*)networkClient + 5780;
     
-    util_D988(context, session, connectionList);
-    util_DA90(context, session, connectionList);
+    snSession_AssociateConnections(context, session, connectionList);
+    snSession_ProcessPendingConnections(context, session, connectionList);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,21 +162,21 @@ void snDormant_OnEnter(void* thisPtr) {
  * snIdle::OnExit @ 0x823EE740 | size: 0x8 | vfn_5
  *
  * Exit handler for the Active::Idle state.
- * Detaches the child state at this+24 via util_F850 (AttachChildState).
+ * Detaches the child state at this+24 via hsmState_AttachChild (AttachChildState).
  */
 void snIdle_OnExit(void* thisPtr) {
-    util_F850(thisPtr, (char*)thisPtr + 24);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
 }
 
 /**
  * snStarting::OnExit @ 0x823E44E0 | size: 0x3C | vfn_5
  *
  * Exit handler for the Active::Starting state.
- * Detaches two child states at this+24 and this+1412 via util_F850.
+ * Detaches two child states at this+24 and this+1412 via hsmState_AttachChild.
  */
 void snStarting_OnExit(void* thisPtr) {
-    util_F850(thisPtr, (char*)thisPtr + 24);
-    util_F850(thisPtr, (char*)thisPtr + 1412);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 1412);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -312,14 +312,14 @@ void snWaitingForReplies_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E
  *   - this+1436 (second child)
  *   - this+1460 (third child)
  *   - this+2920 (fourth child)
- * Each is attached via util_F850 (AttachChildState) which sets up parent
+ * Each is attached via hsmState_AttachChild (AttachChildState) which sets up parent
  * pointers and calls the child's vfn_5 (OnEnter).
  */
 void snActive_OnEnter(void* thisPtr) { // @ 0x823E48C0
-    util_F850(thisPtr, (char*)thisPtr + 24);
-    util_F850(thisPtr, (char*)thisPtr + 1436);
-    util_F850(thisPtr, (char*)thisPtr + 1460);
-    util_F850(thisPtr, (char*)thisPtr + 2920);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 1436);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 1460);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 2920);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

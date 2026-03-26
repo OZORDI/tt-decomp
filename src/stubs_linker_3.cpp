@@ -48,20 +48,20 @@ struct TransitionFlags;
 // REMOVED (conflict): extern "C" void net_6BA0_fw(void* session, void* param1, void* param2) {
 
 // ============================================================================
-// nop_8240E6D0 — C++ overloads (variadic debug log no-ops)
+// rage_DebugLog — C++ overloads (variadic debug log no-ops)
 // ============================================================================
 
 // No-arg overload
-void nop_8240E6D0() {
+void rage_DebugLog() {
 }
 
 // char const* overload (C++ mangled — separate from extern "C" in stubs_linker.cpp)
-void nop_8240E6D0(const char* fmt, ...) {
+void rage_DebugLog(const char* fmt, ...) {
     (void)fmt;
 }
 
 // void const* overload
-void nop_8240E6D0(const void* ptr, ...) {
+void rage_DebugLog(const void* ptr, ...) {
     (void)ptr;
 }
 
@@ -80,7 +80,7 @@ void nop_8240E6D0(const void* ptr, ...) {
 // pg — Page Group helpers
 // ============================================================================
 
-// pg_6F68 already stubbed in stubs_linker.cpp
+// pgPageGroup_DispatchEvent already stubbed in stubs_linker.cpp
 
 // REMOVED (conflict): extern "C" void* pg_9C00_g(void* singleton) {
 

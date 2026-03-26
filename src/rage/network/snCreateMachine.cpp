@@ -396,9 +396,9 @@ void snHsmRequestingConfig::OnTick() {
     //    - g_stateType_CreatingGuest @ 0x825D1894 (offset 6784 from base -32163)
     //    - g_stateType_CreatingOffline @ 0x825D187C
     // 7. Compare state type and transition to appropriate state:
-    //    - If CreatingHost: call vfn_11, get state data at +204, call util_D988 and util_DA90
-    //    - If CreatingGuest: call vfn_11, get state data at +252, call util_D988 and util_DA90
-    //    - If offline (type 0): call vfn_11, get state data at +156, call util_D988 and util_DA90
+    //    - If CreatingHost: call vfn_11, get state data at +204, call snSession_AssociateConnections and snSession_ProcessPendingConnections
+    //    - If CreatingGuest: call vfn_11, get state data at +252, call snSession_AssociateConnections and snSession_ProcessPendingConnections
+    //    - If offline (type 0): call vfn_11, get state data at +156, call snSession_AssociateConnections and snSession_ProcessPendingConnections
     //    - Otherwise: set transition flag to false
 }
 

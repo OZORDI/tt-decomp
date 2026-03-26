@@ -55,18 +55,18 @@ void* Holder::GetSingleton() {
  * Returns: Pointer to newly allocated and initialized Holder, or nullptr on failure
  * 
  * Original assembly flow:
- * 1. Call xe_main_thread_init_0038 for TLS setup
+ * 1. Call sysMemAllocator_InitMainThread for TLS setup
  * 2. Get allocator from TLS: lwz r11, 0(r13); lwzx r3, r10, r11
  * 3. Allocate 32 bytes with 16-byte alignment via vtable slot 1
  * 4. Set vtable pointer to 0x82032E34
  * 5. Copy 16 bytes from this+0x10 to new+0x10 using AltiVec
  */
 void* Holder::AllocateAndInitialize() {
-    extern "C" void xe_main_thread_init_0038();
+    extern "C" void sysMemAllocator_InitMainThread();
     extern void** g_tls_base;  // @ 0x82600000 (r13 SDA base)
     extern void* g_vtable_holder;  // @ 0x82032E34
 
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
 
     // Get allocator from TLS (r13+0 → allocator table, entry at +4)
     void** pTLS = *(void***)g_tls_base;

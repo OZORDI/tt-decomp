@@ -55,9 +55,10 @@ struct audControl {
     virtual void ScalarDtor(int flags); // [1] @ 0x82161700
     virtual void vfn_4();  // [4] @ 0x82161ca8
     virtual void vfn_7();  // [7] @ 0x82161e28
-    virtual void vfn_11();  // [11] @ 0x82160768
-    virtual void vfn_12();  // [12] @ 0x82160770
-    virtual void vfn_19();  // [19] @ 0x82160780
+    virtual float GetVolume();  // [11] @ 0x82160768
+    virtual float GetPitch();   // [12] @ 0x82160770
+    virtual bool IsActive();    // [19] @ 0x82160780
+
 };
 
 // ── rage::audControl2dWrapper  [vtable @ 0x82074BA8] ──────────────────────────
@@ -75,14 +76,15 @@ struct audControl3d {
     virtual void vfn_3();  // [3] @ 0x821609e0
     virtual void vfn_4();  // [4] @ 0x82160ad8
     virtual void vfn_7();  // [7] @ 0x82160b28
-    virtual void vfn_10();  // [10] @ 0x82160760
-    virtual void vfn_11();  // [11] @ 0x82160eb0
-    virtual void vfn_12();  // [12] @ 0x82160ec0
-    virtual void vfn_13();  // [13] @ 0x82160778
+    virtual void* GetControlRef();     // [10] @ 0x82160760
+    virtual float GetScaledVolume();    // [11] @ 0x82160eb0
+    virtual float GetScaledPitch();     // [12] @ 0x82160ec0
+    virtual float GetPan();             // [13] @ 0x82160778
     virtual void vfn_14();  // [14] @ 0x821622b8
     virtual void vfn_15();  // [15] @ 0x82162318
     virtual void vfn_17();  // [17] @ 0x82162378
-    virtual void vfn_19();  // [19] @ 0x821609a8
+    virtual bool IsAudible();           // [19] @ 0x821609a8
+
 };
 
 // ── rage::audControl3dWrapper  [vtable @ 0x82074B98] ──────────────────────────
@@ -97,11 +99,12 @@ struct audControlGroup {
     virtual ~audControlGroup();                  // [0] @ 0x82162638
     virtual void vfn_3();  // [3] @ 0x82162ad0
     virtual void vfn_4();  // [4] @ 0x821628c8
-    virtual void vfn_6();  // [6] @ 0x82162548
-    virtual void vfn_7();  // [7] @ 0x82162538
-    virtual void vfn_8();  // [8] @ 0x82162888
-    virtual void vfn_9();  // [9] @ 0x82162528
-    virtual void vfn_11();  // [11] @ 0x82162530
+
+    virtual const char* GetTypeNameB();       // [6] @ 0x82162548
+    virtual const char* GetTypeNameA();       // [7] @ 0x82162538
+    virtual float GetEffectiveVolume();       // [8] @ 0x82162888
+    virtual float GetVolume();               // [9] @ 0x82162528
+    virtual float GetPitch();                // [11] @ 0x82162530
     virtual void vfn_12();  // [12] @ 0x821629b8
 };
 
@@ -161,9 +164,10 @@ struct audVoiceSfx {
     virtual void vfn_9();  // [9] @ 0x82163778
     virtual void vfn_10();  // [10] @ 0x821637d8
     virtual void vfn_11();  // [11] @ 0x82163868
-    virtual void vfn_12();  // [12] @ 0x82163918
-    virtual void vfn_13();  // [13] @ 0x82163928
+    virtual void SetReverbSend();     // [12] @ 0x82163918
+    virtual void EnableReverbSend();  // [13] @ 0x82163928
     virtual void vfn_14();  // [14] @ 0x82163938
+
     virtual void vfn_17();  // [17] @ 0x82163ab0
     virtual void vfn_18();  // [18] @ 0x82163b10
 
@@ -218,12 +222,13 @@ struct audVoiceStream {
     virtual void vfn_9();  // [9] @ 0x82164238
     virtual void vfn_10();  // [10] @ 0x82164298
     virtual void vfn_11();  // [11] @ 0x82164328
-    virtual void vfn_12();  // [12] @ 0x821643d0
-    virtual void vfn_13();  // [13] @ 0x821643e0
+    virtual void SetReverbSend();       // [12] @ 0x821643d0
+    virtual void EnableReverbSend();    // [13] @ 0x821643e0
     virtual void vfn_17();  // [17] @ 0x82164500
     virtual void vfn_18();  // [18] @ 0x82164560
-    virtual void vfn_19();  // [19] @ 0x821645b8
-    virtual void vfn_20();  // [20] @ 0x821645d8
+    virtual bool IsStopping();          // [19] @ 0x821645b8
+    virtual bool IsStopped();           // [20] @ 0x821645d8
+
 
     // ── non-virtual methods (from debug strings) ──
     void Play();

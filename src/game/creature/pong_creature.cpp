@@ -14,7 +14,7 @@
 
 // External dependencies
 extern void rage_Free(void* ptr);
-extern void nop_8240E6D0(const char* msg, ...);
+extern void rage_DebugLog(const char* msg, ...);
 extern void pongCreature_7CE8_g(void* creature, void* matrix, int param1, int param2, int param3, int param4);
 extern void* pg_9C00_g(void* player, int index);  // @ 0x82019C00 — returns creature info ptr
 extern void pongPlayer_9CD0_g(void* player, int index, void* outMatrix1, void* outMatrix2);
@@ -131,7 +131,7 @@ void pongMover::Reset(void* creatureData) {
     if (m_pCreature && subEntry != 0) {
         pongCreature_7CE8_g(m_pCreature, initMatrix, 0, 1, 0, 0);
     } else {
-        nop_8240E6D0("pongMover::Reset() - no creature to reset");  /* UNVERIFIED — string not found in binary */
+        rage_DebugLog("pongMover::Reset() - no creature to reset");  /* UNVERIFIED — string not found in binary */
     }
     
     // Extract position from matrix column 3 (translation vector)
@@ -188,7 +188,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
         if (!isIdentity) {
             float* remoteMatrix = (float*)((char*)mover + 192);
             
-            nop_8240E6D0(g_str_pongMover_calcInitMatrix,
+            rage_DebugLog(g_str_pongMover_calcInitMatrix,
                         remoteMatrix[0], remoteMatrix[1], remoteMatrix[2]);
             
             // Copy 4x4 matrix (64 bytes)
@@ -678,7 +678,7 @@ extern void rage_free(void* ptr);
 extern void rage_FF70(void* obj);
 extern void ph_59C8(void* loader, const char* name, int flag);
 extern int util_5A70(void* loader, void* outBuffer, int maxLen, int param1, int param2);
-extern void nop_8240E6D0(const char* fmt, ...);
+extern void rage_DebugLog(const char* fmt, ...);
 extern void phBoundCapsule_5138_g(void* capsule, void* params, void* data);
 extern void LocomotionStateAnim_8278_g(void* state, void* animData);
 
@@ -944,7 +944,7 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
     
     if (loadedAnim == nullptr) {
         // Failed to load animation
-        nop_8240E6D0("LocomotionStateAnim::Load - failed to load anim file '%s'", fileNameBuffer);  /* UNVERIFIED — string not found in binary */
+        rage_DebugLog("LocomotionStateAnim::Load - failed to load anim file '%s'", fileNameBuffer);  /* UNVERIFIED — string not found in binary */
         return false;
     }
     

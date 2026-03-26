@@ -42,7 +42,7 @@ static void xam_singleton_cleanup(void) {
 //=============================================================================
 
 /**
- * xam_singleton_init_8D60 @ 0x82238D60 | size: 0x94
+ * xam_GetInitSingleton @ 0x82238D60 | size: 0x94
  * 
  * Original assembly:
  *   - Checks global flag (lbl_8271B2A0) bit 0
@@ -52,7 +52,7 @@ static void xam_singleton_cleanup(void) {
  *     - Registers atexit handler
  *   - Returns pointer to singleton
  */
-xam_init_singleton* xam_singleton_init_8D60(void) {
+xam_init_singleton* xam_GetInitSingleton(void) {
     // Check if already initialized (bit 0 of flag)
     if ((g_xam_init_flag & 0x1) == 0) {
         // Set initialized flag
@@ -76,7 +76,7 @@ xam_init_singleton* xam_singleton_init_8D60(void) {
  * xam_static_init_1770 @ 0x82581770 | size: 0x40
  * 
  * Original assembly:
- *   1. Call xam_singleton_init_8D60 to get singleton pointer
+ *   1. Call xam_GetInitSingleton to get singleton pointer
  *   2. Load current head pointer from singleton+8
  *   3. Store it in node+8 (link to previous head)
  *   4. Store node address in singleton+8 (make node new head)
@@ -86,7 +86,7 @@ xam_init_singleton* xam_singleton_init_8D60(void) {
  */
 void xam_static_init_1770(void) {
     // Get the global singleton
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     
     // Load current head pointer
     xam_init_node* old_head = singleton->head;
@@ -118,7 +118,7 @@ static xam_init_node g_xam_node_0FF0 = {0};  // @ 0x825D1518
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F628(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F628.next = old_head;
     singleton->head = &g_xam_node_F628;
@@ -130,7 +130,7 @@ void xam_static_init_F628(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F6A0(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F6A0.next = old_head;
     singleton->head = &g_xam_node_F6A0;
@@ -142,7 +142,7 @@ void xam_static_init_F6A0(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F718(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F718.next = old_head;
     singleton->head = &g_xam_node_F718;
@@ -154,7 +154,7 @@ void xam_static_init_F718(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F790(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F790.next = old_head;
     singleton->head = &g_xam_node_F790;
@@ -166,7 +166,7 @@ void xam_static_init_F790(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F808(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F808.next = old_head;
     singleton->head = &g_xam_node_F808;
@@ -178,7 +178,7 @@ void xam_static_init_F808(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F880(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F880.next = old_head;
     singleton->head = &g_xam_node_F880;
@@ -190,7 +190,7 @@ void xam_static_init_F880(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F8F8(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F8F8.next = old_head;
     singleton->head = &g_xam_node_F8F8;
@@ -202,7 +202,7 @@ void xam_static_init_F8F8(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F970(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F970.next = old_head;
     singleton->head = &g_xam_node_F970;
@@ -214,7 +214,7 @@ void xam_static_init_F970(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_F9E8(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_F9E8.next = old_head;
     singleton->head = &g_xam_node_F9E8;
@@ -226,7 +226,7 @@ void xam_static_init_F9E8(void) {
 // Inserts static node into global initialization linked list
 // ─────────────────────────────────────────────────────────────────────────────
 void xam_static_init_0FF0(void) {
-    xam_init_singleton* singleton = xam_singleton_init_8D60();
+    xam_init_singleton* singleton = xam_GetInitSingleton();
     xam_init_node* old_head = singleton->head;
     g_xam_node_0FF0.next = old_head;
     singleton->head = &g_xam_node_0FF0;

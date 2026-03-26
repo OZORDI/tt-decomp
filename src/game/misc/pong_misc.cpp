@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" {
     void  rage_free(void* ptr);                  // @ 0x820C00C0
-    void* xe_EC88(uint32_t size);                // @ 0x820DEC88
+    void* rage_alloc(uint32_t size);                // @ 0x820DEC88
     void  util_CE30(void* slot);                 // @ 0x8234CE30 - init parStructure
 }
 
@@ -22,7 +22,7 @@ namespace rage {
 }
 
 // Logging stub (calls internal debug printf, no-op in release builds)
-extern void nop_8240E6D0(const char* fmt, ...); // @ 0x8240E6D0
+extern void rage_DebugLog(const char* fmt, ...); // @ 0x8240E6D0
 
 // Field registration helper (rage serialization system)
 // game_8F58: registers a field of 'obj' with the data system
@@ -42,7 +42,7 @@ extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, 
 // at +0x08 (m_pStates).
 //
 // The destructor pattern:
-//   1. Calls the internal state-teardown helper (fsmMachine_Destructor_27A8),
+//   1. Calls the internal state-teardown helper (fsmMachine_Destroy),
 //      which first resets the vtable to the base-class (rage::datBase) vtable
 //      and frees m_pStates if non-null.
 //   2. If the 'delete self' flag (bit 0 of the flags parameter) is set,
@@ -68,7 +68,7 @@ fsmMachine::~fsmMachine()
     //   if (m_pStates) { rage::MemFree(m_pStates); m_pStates = nullptr; }
     //   this->vtable    = &fsmMachine::vtable;       // 0x8204DD14 (restored)
     //
-    // The helper (fsmMachine_Destructor_27A8 @ 0x822227A8) handles this
+    // The helper (fsmMachine_Destroy @ 0x822227A8) handles this
     // sequence.  After it returns the caller checks bit 0 of 'flags'; if set,
     // rage::MemFree is called on `this`.
     //
@@ -575,7 +575,7 @@ const void* assetVersionsCharSpecific::GetTypeDescriptor() const
 
 extern "C" {
     // External function declarations
-    void hsmContext_SetNextState_2800(void* hsmContext, int stateIndex);
+    void hsmContext_SetNextState(void* hsmContext, int stateIndex);
 }
 
 /**
@@ -599,7 +599,7 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     // Format: "eSessionTimeSyncMessage %s"
     // This appears to be session synchronization logging
     const char* logFormat = (const char*)0x820712CC;  // "eSessionTimeSyncMessage %s"
-    nop_8240E6D0(logFormat, 0, 0, 0, 4, 0, 4);
+    rage_DebugLog(logFormat, 0, 0, 0, 4, 0, 4);
     
     // Call virtual method slot 3 on HSM context
     // This is likely an initialization or reset method
@@ -634,7 +634,7 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     struct2[3] = 4;                   // Count/size
     
     // Transition to state 2
-    hsmContext_SetNextState_2800(hsmContext, 2);
+    hsmContext_SetNextState(hsmContext, 2);
     
     // Store time value at offset +1088
     *(float*)((char*)pContext + 1088) = timeValue;
@@ -689,7 +689,7 @@ void io_9B88_w(io* self) {
 // pg_4A58_fw @ 0x821F4A58 | size: 0x7C
 //
 // Page group input handler with conditional flag check.
-// Builds a parameter array and delegates to pg_6F68 for processing.
+// Builds a parameter array and delegates to pgPageGroup_DispatchEvent for processing.
 //
 // Parameters:
 //   - pPageGroup: Page group context object
@@ -702,14 +702,14 @@ void io_9B88_w(io* self) {
 
 // External declarations
 extern uint8_t g_uiInputFlag;  // @ SDA+25804 (0x826064CC) - UI input enable flag
-extern bool pg_6F68(void* pInputValue, void* pPageGroup, int eventType, 
+extern bool pgPageGroup_DispatchEvent(void* pInputValue, void* pPageGroup, int eventType, 
                     uint32_t* params, int paramCount);
 
 /**
  * pg_4A58_fw @ 0x821F4A58 | size: 0x7C
  * 
  * Processes page group input with conditional flag checking.
- * Builds a 4-element parameter array and calls pg_6F68 for processing.
+ * Builds a 4-element parameter array and calls pgPageGroup_DispatchEvent for processing.
  */
 bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
     // Build parameter array on stack
@@ -726,7 +726,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
     
     // Call page group processor
     // Parameters: (inputValue, pageGroup, eventType=19, params, paramCount=2)
-    bool result = pg_6F68(pInputValue, pPageGroup, 19, params, 2);
+    bool result = pgPageGroup_DispatchEvent(pInputValue, pPageGroup, 19, params, 2);
     
     // Return true if processing succeeded (non-zero result)
     return result;
@@ -736,7 +736,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
  * pg_4900_fw @ 0x821F4900 | size: 0x5C
  * 
  * Page group input handler wrapper.
- * Swaps parameters and calls pg_6F68 with fixed event type and parameters.
+ * Swaps parameters and calls pgPageGroup_DispatchEvent with fixed event type and parameters.
  * 
  * Parameters:
  *   - pPageGroup: Page group context object
@@ -754,9 +754,9 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
     params[1] = 1;
     
     // Call page group processor with swapped parameters
-    // Note: pg_6F68 expects (inputValue, pageGroup, ...) but we receive (pageGroup, inputValue)
+    // Note: pgPageGroup_DispatchEvent expects (inputValue, pageGroup, ...) but we receive (pageGroup, inputValue)
     // Parameters: (inputValue, pageGroup, eventType=16, params, paramCount=1)
-    uint8_t result = pg_6F68(pInputValue, pPageGroup, 16, params, 1);
+    uint8_t result = pgPageGroup_DispatchEvent(pInputValue, pPageGroup, 16, params, 1);
     
     // Return true if processing succeeded (non-zero result)
     return (result != 0);
@@ -770,8 +770,8 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
 // processing, and page transitions.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Forward declaration for pg_6F68 (not yet lifted)
-extern "C" uint8_t pg_6F68(void* pageGroup, void* context, int eventType, 
+// Forward declaration for pgPageGroup_DispatchEvent (not yet lifted)
+extern "C" uint8_t pgPageGroup_DispatchEvent(void* pageGroup, void* context, int eventType, 
                            uint32_t* eventData, int enableFlag, int reserved);
 
 /**
@@ -799,7 +799,7 @@ bool pg_6770_fw(void* context, void* pageGroup) {
     //   - eventData contains event-specific data
     //   - 1 enables processing
     //   - 0 is reserved/unused
-    uint8_t handled = pg_6F68(pageGroup, context, 9, eventData, 1, 0);
+    uint8_t handled = pgPageGroup_DispatchEvent(pageGroup, context, 9, eventData, 1, 0);
     
     // Return true if event was handled, false otherwise
     return (handled != 0);
@@ -913,12 +913,12 @@ int CCalMoviePlayer::DispatchSlot37() {  // ED18_p33
  * Both log a debug message and return STATUS_NOT_IMPLEMENTED.
  */
 int CCalMoviePlayer::Rewind() {  // E758
-    nop_8240E6D0("CCalMoviePlayer::Rewind() - not implemented");
+    rage_DebugLog("CCalMoviePlayer::Rewind() - not implemented");
     return -1;  // STATUS_NOT_IMPLEMENTED
 }
 
 int CCalMoviePlayer::Seek() {  // Seek stub
-    nop_8240E6D0("CCalMoviePlayer::Seek() - not implemented");
+    rage_DebugLog("CCalMoviePlayer::Seek() - not implemented");
     return -1;
 }
 

@@ -97,7 +97,7 @@ extern "C" void DbgPrint(const char* fmt, ...) {
     (void)fmt;
 }
 
-extern "C" void nop_8240E6D0(const char* fmt, ...) {
+extern "C" void rage_DebugLog(const char* fmt, ...) {
     (void)fmt;
 }
 
@@ -249,7 +249,7 @@ extern "C" void SinglesNetworkClient_TickAll(void) {
 // HSM / State Machine
 // ============================================================================
 
-// REMOVED (conflict): extern "C" void hsmContext_SetNextState_2800(void* hsmContext, uint32_t nextStateIdx) {
+// REMOVED (conflict): extern "C" void hsmContext_SetNextState(void* hsmContext, uint32_t nextStateIdx) {
 
 // REMOVED (conflict): extern "C" void* PostStateTransitionRequest(void* hsmCtx, int stateIdx) {
 
@@ -486,7 +486,7 @@ extern "C" void fiAsciiTokenizer_Process(void* tokenizer, int mode) {
 // parStream
 // ============================================================================
 
-extern "C" float parStreamInXml_A5D0(void* pOperator) {
+extern "C" float parStreamInXml_ReadFloat(void* pOperator) {
     (void)pOperator;
     return 0.0f;
 }
@@ -540,7 +540,7 @@ extern "C" void pg_6C40_g(void* streamer) {
     (void)streamer;
 }
 
-// REMOVED (conflict): extern "C" void pg_6F68(void* pageGroup, void* context, int eventType, ...) {
+// REMOVED (conflict): extern "C" void pgPageGroup_DispatchEvent(void* pageGroup, void* context, int eventType, ...) {
 
 extern "C" void pg_C3B8_g(void* obj, int param) {
     (void)obj; (void)param;
@@ -687,7 +687,7 @@ extern "C" void rage_ReleaseSingleton(void* obj) {
     (void)obj;
 }
 
-extern "C" void* rage_97A8(const void* pOperator, const char* pNodeName) {
+extern "C" void* parStreamInXml_FindChildByName(const void* pOperator, const char* pNodeName) {
     (void)pOperator; (void)pNodeName;
     return nullptr;
 }
@@ -807,7 +807,7 @@ extern "C" void sysMemAllocator_InitThreadHeap(void) {
 // Utility Functions
 // ============================================================================
 
-extern "C" float util_9350(void* entry) {
+extern "C" float cmOperator_EvalFloat(void* entry) {
     (void)entry;
     return 0.0f;
 }

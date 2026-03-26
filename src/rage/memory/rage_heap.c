@@ -28,7 +28,7 @@
 
 /* Raw memory allocation (low-level, below the sysMemAllocator layer).
  * Used by sysMemAllocator_Allocate when IsAddressOwned returns false. */
-extern void* xe_EC88(uint32_t size);                /* @ 0x820DEC88 */
+extern void* rage_alloc(uint32_t size);                /* @ 0x820DEC88 */
 
 /* Global allocator context — the value at SDA[r13+0].
  * Dereferencing offset +4 from this yields the active sysMemAllocator*. */
@@ -72,13 +72,13 @@ void rage_free(void* ptr)
  * Checks vtable slot 17 (IsAddressOwned) on the active allocator:
  *   - If the allocator owns this address range: dispatch to vtable slot 1
  *     (Allocate) with the ptr hint and size.
- *   - Otherwise: call xe_EC88 to get a raw block of (ptr + size) bytes,
+ *   - Otherwise: call rage_alloc to get a raw block of (ptr + size) bytes,
  *     then align the result up to `size` boundary and store the raw pointer
  *     at user_ptr[-4] for later recovery during Free.
  *
  * @param ptr   Alignment hint / base address
  * @param size  Requested allocation size in bytes
- * @return      Aligned user pointer, or raw pointer from xe_EC88
+ * @return      Aligned user pointer, or raw pointer from rage_alloc
  * ============================================================================
  */
 void* sysMemAllocator_Allocate(void* ptr, size_t size)
@@ -94,10 +94,10 @@ void* sysMemAllocator_Allocate(void* ptr, size_t size)
         return allocator->vtable->Allocate(allocator, ptr, size);
     }
 
-    /* Not owned: raw allocation via xe_EC88 with manual alignment.
+    /* Not owned: raw allocation via rage_alloc with manual alignment.
      * Allocate (ptr + size) bytes to leave room for alignment. */
     uint32_t rawSize = (uint32_t)((uintptr_t)ptr + size);
-    void* rawPtr = xe_EC88(rawSize);
+    void* rawPtr = rage_alloc(rawSize);
 
     /* Align: userPtr = (rawPtr + size) & ~(size - 1) */
     uintptr_t aligned = ((uintptr_t)rawPtr + size) & ~(size - 1);

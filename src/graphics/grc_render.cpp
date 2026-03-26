@@ -454,7 +454,7 @@ void grc_CB48(void* pDevice) {
 /* ── External dependencies for texture factory ────────────────────────────── */
 
 /* Debug log function (no-op) @ 0x8240E6D0 */
-extern void nop_8240E6D0(const char* fmt, ...);
+extern void rage_DebugLog(const char* fmt, ...);
 
 /* Texture processing functions */
 extern void grc_FD68(void* pTexture, void* pDevice);  /* @ 0x8215FD68 */
@@ -499,7 +499,7 @@ extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
  *        - Type 0: Call grc_FD68 (raw texture processing)
  *        - Type 1: Skip (already processed)
  *        - Type 2: Call grc_DC00 (compressed texture processing)
- *        - Type 3+: Log error via nop_8240E6D0 (invalid type)
+ *        - Type 3+: Log error via rage_DebugLog (invalid type)
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcTextureFactoryXenon::FixupTextures(
     void* pThis,
@@ -568,7 +568,7 @@ void grcTextureFactoryXenon::FixupTextures(
         }
         else {
             /* Type 3+: Invalid texture type - log error */
-            nop_8240E6D0(g_invalidTextureTypeMsg);
+            rage_DebugLog(g_invalidTextureTypeMsg);
         }
     }
 }
@@ -978,7 +978,7 @@ void grc_F620(void* pVB, uint32_t startVertex, void* pVtxData,
  *   +28  m_pChild2      — second child node pointer
  *   +32  m_nRefCount    — reference count
  * ═══════════════════════════════════════════════════════════════════════════ */
-extern void rage_free_00C0(void* ptr);
+extern void rage_free(void* ptr);
 
 // @ 0x821512B8
 void grc_12B8_impl(void* pNode, int32_t flags)
@@ -992,14 +992,14 @@ void grc_12B8_impl(void* pNode, int32_t flags)
     }
 
     // Free data pointer
-    rage_free_00C0(*(void**)(node + 16));
+    rage_free(*(void**)(node + 16));
 
     // If both children are NULL, free the owner
     void* pChild1 = *(void**)(node + 24);
     if (pChild1 == NULL) {
         void* pChild2b = *(void**)(node + 28);
         if (pChild2b == NULL) {
-            rage_free_00C0(*(void**)(node + 20));
+            rage_free(*(void**)(node + 20));
         }
     }
 
@@ -1010,5 +1010,5 @@ void grc_12B8_impl(void* pNode, int32_t flags)
     }
 
     // Free this node
-    rage_free_00C0(pNode);
+    rage_free(pNode);
 }

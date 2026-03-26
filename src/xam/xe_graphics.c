@@ -11,7 +11,7 @@
 #include <stddef.h>
 
 /* Forward declarations */
-extern void xe_main_thread_init_0038(void);
+extern void sysMemAllocator_InitMainThread(void);
 
 /* Allocator interface - accessed via SDA (Small Data Area) at r13+0 */
 typedef void* (*AllocatorVCall)(void* allocator, int32_t size, int32_t alignment);
@@ -75,7 +75,7 @@ typedef struct GraphicsContext {
  */
 void xe_E420(void) {
     /* Ensure main thread TLS and allocator are initialized */
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     /* Get allocator from SDA context */
     uint32_t* sdaContext = (uint32_t*)(uintptr_t)g_sda_base[0];

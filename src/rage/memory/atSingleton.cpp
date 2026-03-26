@@ -8,7 +8,7 @@
 
 // External dependencies
 extern "C" {
-    void* xe_EC88(uint32_t size);  // Memory allocator
+    void* rage_alloc(uint32_t size);  // Memory allocator
     void rage_2980(void* ptr, uint32_t mode);  // Memory deallocator
     void memcpy(void* dest, const void* src, uint32_t size);
 }
@@ -97,7 +97,7 @@ void UnregisterSingleton(const char* name)
     
     // Allocate memory for string copy
     uint32_t allocSize = length + 1;
-    void* nameCopy = xe_EC88(allocSize);
+    void* nameCopy = rage_alloc(allocSize);
     
     if (nameCopy)
     {
@@ -142,7 +142,7 @@ void InitializeSingleton(SingletonArray* singletonArray)
         uint32_t allocSize = newCapacity * 3 * sizeof(uint32_t);
         
         // Allocate new array
-        SingletonEntry* newEntries = static_cast<SingletonEntry*>(xe_EC88(allocSize + 4));
+        SingletonEntry* newEntries = static_cast<SingletonEntry*>(rage_alloc(allocSize + 4));
         
         if (newEntries)
         {

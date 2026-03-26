@@ -344,8 +344,8 @@ void* g_pAllocator = NULL;
 //   [2] = secondary thread context (set by xe_main_thread_init)
 // Allocator context — 3 pointer slots matching original .data layout
 // [0] = unused (in original binary, this was another pointer)
-// [1] = main thread context (set by xe_main_thread_init_0038)
-// [2] = secondary context (set by xe_main_thread_init_0038)
+// [1] = main thread context (set by sysMemAllocator_InitMainThread)
+// [2] = secondary context (set by sysMemAllocator_InitMainThread)
 void* g_allocatorContextSlots[8] = {0};
 void* g_pAllocatorBase = g_allocatorContextSlots;
 

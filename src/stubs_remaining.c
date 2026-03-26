@@ -120,7 +120,7 @@ void _xe_strcpyn_10(char* dest, const char* src, size_t n) {
 
 int main(int argc, char** argv) {
     // Original boot chain: kernel → __mainCRTStartup → __crt_main_entry → rage_Main
-    // __crt_main_entry calls xe_main_thread_init_0038() to set up the allocator
+    // __crt_main_entry calls sysMemAllocator_InitMainThread() to set up the allocator
     // before passing control to rage_Main.
     extern void __crt_main_entry(void* pStartupParms, void* pBase);
     __crt_main_entry((void*)(intptr_t)argc, (void*)argv);
@@ -286,7 +286,7 @@ void netSystem_Shutdown(void) {
 // Debug/Logging Functions
 // ============================================================================
 
-// rage_DebugLog (was nop_8240E6D0) — merged with existing rage_DebugLog stub below.
+// rage_DebugLog (was rage_DebugLog) — merged with existing rage_DebugLog stub below.
 
 // ============================================================================
 // Physics Functions
@@ -457,7 +457,7 @@ void xe_5BB0(void) {
     // XE function
 }
 
-// REMOVED: xe_EC88 (defined in heap.c)
+// REMOVED: rage_alloc (defined in heap.c)
 
 void xe_main_thread_init(void) {
     // Main thread init

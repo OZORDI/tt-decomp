@@ -12,7 +12,7 @@
 // Forward declarations
 extern "C" void rage_free(void* ptr);
 extern "C" void ref_WriteStats_AF98(void* manager);
-extern "C" void nop_8240E6D0(const char* errorMsg);
+extern "C" void rage_DebugLog(const char* errorMsg);
 extern "C" void SinglesNetworkClient_A250_g(void* client, int param);
 extern "C" void PongNetGameModeCoordinator_4508_g(void* coordinator, int mode);
 
@@ -89,7 +89,7 @@ void pongLiveManager::StartSession() {
         return;  // Not online
     }
 
-    nop_8240E6D0(g_str_pongLive_startSession);
+    rage_DebugLog(g_str_pongLive_startSession);
 
     // Get session for config setup
     if (sessionCount > 0) {
@@ -152,7 +152,7 @@ void pongLiveManager::EndSession() {
     extern "C" void TeardownPrimarySession(void* session);
     extern "C" void SetupNetworkSession(void* session);
 
-    nop_8240E6D0(g_str_pongLive_endSessionCalled);
+    rage_DebugLog(g_str_pongLive_endSessionCalled);
 
     // Check sign-in state: g_pUserSigninState->field_4 indexes into
     // this object's per-user data (stride 2784 bytes)
@@ -164,7 +164,7 @@ void pongLiveManager::EndSession() {
     }
 
     if (!IsUserSignedInToLive(userData)) {
-        nop_8240E6D0(g_str_pongLive_endSessionOffline);
+        rage_DebugLog(g_str_pongLive_endSessionOffline);
         return;
     }
 
@@ -254,7 +254,7 @@ int pongLiveManager::GetAvailablePeerIndex(int sessionType) {
     }
 
     // No slots available
-    nop_8240E6D0(g_str_pongLive_outOfPeerIndexes);
+    rage_DebugLog(g_str_pongLive_outOfPeerIndexes);
     return -1;
 }
 
@@ -318,7 +318,7 @@ int pongLiveManager::GetAvailableSpectatorIndex(void* coordinator) {
 
     int startSlot = *(int32_t*)((char*)session1 + 408);  // m_nextSpectatorSlot
     if (startSlot >= 32) {
-        nop_8240E6D0(g_str_pongLive_outOfSpectatorIndexes);
+        rage_DebugLog(g_str_pongLive_outOfSpectatorIndexes);
         return -1;
     }
 
@@ -338,7 +338,7 @@ int pongLiveManager::GetAvailableSpectatorIndex(void* coordinator) {
         }
     }
 
-    nop_8240E6D0(g_str_pongLive_outOfSpectatorIndexes);
+    rage_DebugLog(g_str_pongLive_outOfSpectatorIndexes);
     return -1;
 }
 

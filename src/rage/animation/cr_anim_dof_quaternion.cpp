@@ -39,7 +39,7 @@ extern void crAnimDofQuaternion_15(void* obj);
 
 // No-op in release builds; debug notification hook.
 // @ 0x8240E6D0
-extern void nop_8240E6D0(uint32_t, uint32_t, uint32_t);
+extern void rage_DebugLog(uint32_t, uint32_t, uint32_t);
 
 // Cleanup helper: tears down animation state on a crAnimDofQuaternion object.
 // @ 0x82498188
@@ -296,7 +296,7 @@ void crAnimDofQuaternion_ResetAnimState(crAnimDofQuaternion* self)
     if (!self)
         return;
 
-    nop_8240E6D0(2, 0, 0);
+    rage_DebugLog(2, 0, 0);
     atSingleton_8188_w(self);
     atSingleton_DC40_gen(self);
 }

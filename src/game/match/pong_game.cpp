@@ -35,7 +35,7 @@
 extern "C" {
     void rage_free(void* ptr);
     void pongPlayer_ADE8_p42(void* r3, uint32_t r4, void* base);
-    void nop_8240E6D0(void* r3, const char* format, ...);
+    void rage_DebugLog(void* r3, const char* format, ...);
     void gdGameData_CalculateVariation(void* gdData, uint32_t r4, uint32_t r5, uint32_t r6, int32_t r7);
     void* pg_C2A0_g(void* r3, uint32_t r4);
     void game_7208(void* r3);
@@ -227,8 +227,8 @@ void game_CheckNetworkAndTransitionToState6(void* stateObj) {
     // If not in state 6, transition to it
     if (currentState != 6) {
         // Call hsmContext_SetNextState with state index 6
-        extern void hsmContext_SetNextState_2800(void* ctx, int32_t stateIdx);
-        hsmContext_SetNextState_2800(hsmContext, 6);
+        extern void hsmContext_SetNextState(void* ctx, int32_t stateIdx);
+        hsmContext_SetNextState(hsmContext, 6);
         
         // Load network client pointer from global
         extern void* lbl_8271A320;  // @ 0x8271A320

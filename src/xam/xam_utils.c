@@ -18,7 +18,7 @@ extern bool xam_F2D8_g(void* obj, const char* str);
 extern bool SinglesNetworkClient_F358_g(void* obj, const char* str);
 extern void xam_52F8_g(void* obj);
 extern bool xam_B1A8(void* obj, const char* str, void* outBuffer);
-extern void nop_8240E6D0(void* buffer, const char* format, const char* str);
+extern void rage_DebugLog(void* buffer, const char* format, const char* str);
 extern bool sysMemSimpleAllocator_7EA8_p44(void* allocator);
 
 //=============================================================================

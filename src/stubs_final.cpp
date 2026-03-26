@@ -20,8 +20,8 @@ void RtlEnterCriticalSection(void*) {}
 void RtlLeaveCriticalSection(void*) {}
 void atArray_Clear(void*) {}
 void audControl_Destructor(void*) {}
-void fsmMachine_Destructor_27A8(void*) {}
-void hsmContext_SetNextState_2800(void*, int) {}
+void fsmMachine_Destroy(void*) {}
+void hsmContext_SetNextState(void*, int) {}
 void msgMsgSink_5098_g(void*, bool) {}
 void msgMsgSink_6138_2hr(void*) {}
 void msgMsgSink_6220_w(void*) {}
@@ -37,7 +37,7 @@ void pcrAnimBlender_ApplyClipWeights(void*, unsigned, float, float) {}
 void pcrAnimBlender_Initialize(void*) {}
 void pcrAnimState_ComputePosition(vec3*, pongAnimState*) {}
 void pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender*) {}
-void pg_6F68(void*, void*, int, unsigned*, int) {}
+void pgPageGroup_DispatchEvent(void*, void*, int, unsigned*, int) {}
 void* pg_9C00_g(void*) { return nullptr; }
 void pg_ApplyTransition(void*, TransitionParams*, int, TransitionFlags*, int) {}
 void pg_E6E0(int, int, int, int) {}
@@ -87,10 +87,10 @@ void _c_atArray_Clear(void* a) __asm__("_atArray_Clear");
 void _c_atArray_Clear(void* a) { atArray_Clear(a); }
 void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
 void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
-void _c_hsmContext_SetNextState_2800(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
-void _c_hsmContext_SetNextState_2800(void* c, int s) { hsmContext_SetNextState_2800(c, s); }
-void _c_pg_6F68(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
-void _c_pg_6F68(void* a, void* b, int c, unsigned* d, int e) { pg_6F68(a,b,c,d,e); }
+void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
+void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
+void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
+void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pgPageGroup_DispatchEvent(a,b,c,d,e); }
 void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) __asm__("_phMaterialMgrImpl_C208_g");
 void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) { phMaterialMgrImpl_C208_g(a,b); }
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");

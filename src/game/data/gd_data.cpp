@@ -12,9 +12,9 @@
 
 // External function declarations
 extern void rage_free(void* ptr);
-extern void game_8EE8(void* obj);                    // @ 0x820F8EE8 - Object cleanup
+extern void datResourceMgr_RemoveEntry(void* obj);                    // @ 0x820F8EE8 - Object cleanup
 extern void util_6C20(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
-extern void xe_main_thread_init_0038(void);          // @ 0x820C0038 - Main thread init
+extern void sysMemAllocator_InitMainThread(void);          // @ 0x820C0038 - Main thread init
 
 namespace rage {
     void  ReleaseSingleton(void* obj);               // @ 0x821A9420
@@ -39,7 +39,7 @@ extern uint32_t* g_sda_base;            // @ SDA:0x82600000 - Small Data Area ba
 
 // Serialization / XML support
 extern "C" void xmlNodeStruct_Initialize(void* obj);                              // @ 0x821A8988
-extern "C" void nop_8240E6D0(const char* msg, ...);                          // @ 0x8240E6D0
+extern "C" void rage_DebugLog(const char* msg, ...);                          // @ 0x8240E6D0
 extern "C" void RegisterSerializationField(void* obj, const char* name,
                                            void* fieldPtr, void* typeDesc,
                                            int flags);                        // @ 0x821A8F58
@@ -73,7 +73,7 @@ extern void* g_stringFieldType;          // @ 0x825CAF88
  *   1. Start at base + 48 (end of array)
  *   2. Loop 2 times, moving back 24 bytes each iteration
  *   3. For each sub-object:
- *      - If primary object exists: call game_8EE8, then util_6C20 with flag 0xE001
+ *      - If primary object exists: call datResourceMgr_RemoveEntry, then util_6C20 with flag 0xE001
  *      - If singleton object exists and not in registry: free via allocator vtable slot 2
  */
 void game_B2E0(void* subObjectArrayBase) {
@@ -92,7 +92,7 @@ void game_B2E0(void* subObjectArrayBase) {
         
         // Handle primary object
         if (subObj->m_pObject1) {
-            game_8EE8(subObj->m_pObject1);
+            datResourceMgr_RemoveEntry(subObj->m_pObject1);
             util_6C20(subObj->m_pObject1, 0xE001);
         }
         
@@ -191,7 +191,7 @@ void gdTier::PostLoadProperties() {
     
     // Check if tier name is specified
     if (m_tierName == nullptr || m_tierName[0] == '\0') {
-        nop_8240E6D0(g_str_gdTier_noTierName);
+        rage_DebugLog(g_str_gdTier_noTierName);
     }
 }
 
@@ -211,7 +211,7 @@ void gdTier::PostLoadProperties() {
  * to populate the array with pointers to matching children.
  * Non-matching children are logged via their GetTypeName.
  */
-extern "C" void* xe_EC88(uint32_t size);
+extern "C" void* rage_alloc(uint32_t size);
 
 void gdTier::PostLoadChildren() {
     extern uint32_t g_gdTierMember_typeId;  // @ 0x825C5F70
@@ -232,7 +232,7 @@ void gdTier::PostLoadChildren() {
             // Log unexpected child type
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName = (GetNameFunc)vtable[19];
-            nop_8240E6D0(g_str_gdTier_unknownNodeType, getName(pChild));
+            rage_DebugLog(g_str_gdTier_unknownNodeType, getName(pChild));
         }
 
         pChild = *(void**)((char*)pChild + 8);  // m_pNextSibling
@@ -243,7 +243,7 @@ void gdTier::PostLoadChildren() {
     if (pArrayMeta[3] == 0) {  // +26: allocated capacity
         pArrayMeta[3] = (uint16_t)matchCount;
         if (matchCount > 0) {
-            *(void**)((char*)this + 20) = xe_EC88(matchCount * 4);
+            *(void**)((char*)this + 20) = rage_alloc(matchCount * 4);
         } else {
             *(void**)((char*)this + 20) = nullptr;
         }
@@ -288,7 +288,7 @@ void gdTierMember::PostLoadProperties() {
 
     // Validate character name is specified and non-empty
     if (m_characterName == nullptr || m_characterName[0] == '\0') {
-        nop_8240E6D0(g_str_gdTierMember_noCharName);
+        rage_DebugLog(g_str_gdTierMember_noCharName);
         return;
     }
 
@@ -297,7 +297,7 @@ void gdTierMember::PostLoadProperties() {
     m_pCharData = (gdCharData*)(intptr_t)charIndex;
 
     if (charIndex < 0) {
-        nop_8240E6D0(g_str_gdTierMember_unknownChar);
+        rage_DebugLog(g_str_gdTierMember_unknownChar);
     }
 }
 
@@ -323,7 +323,7 @@ void gdLadder::PostLoadChildren() {
     uint16_t* pArrayMeta = (uint16_t*)((char*)this + 16);
     if (pArrayMeta[3] == 0) {
         pArrayMeta[3] = 4;
-        *(void**)((char*)this + 16) = xe_EC88(16);  // 4 * 4 bytes
+        *(void**)((char*)this + 16) = rage_alloc(16);  // 4 * 4 bytes
     }
     pArrayMeta[2] = 4;
 
@@ -348,14 +348,14 @@ void gdLadder::PostLoadChildren() {
 
             if (tierArray[tierIdx] != nullptr) {
                 // Duplicate tier entry
-                nop_8240E6D0(g_str_gdLadder_duplicateLevel);
+                rage_DebugLog(g_str_gdLadder_duplicateLevel);
             } else {
                 tierArray[tierIdx] = pChild;
             }
         } else {
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName = (GetNameFunc)vtable[19];
-            nop_8240E6D0(g_str_gdLadder_unknownNodeType, getName(pChild));
+            rage_DebugLog(g_str_gdLadder_unknownNodeType, getName(pChild));
         }
 
         pChild = *(void**)((char*)pChild + 8);
@@ -366,7 +366,7 @@ void gdLadder::PostLoadChildren() {
     for (int i = 0; i < count; i++) {
         void** tierArray = *(void***)((char*)this + 16);
         if (tierArray[i] == nullptr) {
-            nop_8240E6D0(g_str_gdLadder_missingLadder, i);
+            rage_DebugLog(g_str_gdLadder_missingLadder, i);
         }
     }
 }
@@ -399,7 +399,7 @@ void gdRivalry::PostLoadChildren() {
     if (pArrayMeta[3] == 0) {
         pArrayMeta[3] = (uint16_t)charCount;
         if (charCount > 0) {
-            *(void**)((char*)this + 16) = xe_EC88(charCount * 4);
+            *(void**)((char*)this + 16) = rage_alloc(charCount * 4);
         } else {
             *(void**)((char*)this + 16) = nullptr;
         }
@@ -428,12 +428,12 @@ void gdRivalry::PostLoadChildren() {
             int32_t charIdx = FindCharacterByName(dataMgr, charName);
 
             if (charIdx < 0) {
-                nop_8240E6D0(g_str_gdRivalry_unknownChar);
+                rage_DebugLog(g_str_gdRivalry_unknownChar);
             } else {
                 void** array = *(void***)((char*)this + 16);
                 if (array[charIdx] != nullptr) {
                     const char* name = *(const char**)((char*)pChild + 16);
-                    nop_8240E6D0(g_str_gdRivalry_duplicateChar, name);
+                    rage_DebugLog(g_str_gdRivalry_duplicateChar, name);
                 } else {
                     array[charIdx] = pChild;
                 }
@@ -441,7 +441,7 @@ void gdRivalry::PostLoadChildren() {
         } else {
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName = (GetNameFunc)vtable[19];
-            nop_8240E6D0(g_str_gdRivalry_unknownNodeType, getName(pChild));
+            rage_DebugLog(g_str_gdRivalry_unknownNodeType, getName(pChild));
         }
 
         pChild = *(void**)((char*)pChild + 8);
@@ -457,7 +457,7 @@ void gdRivalry::PostLoadChildren() {
             void* charEntry = ((void**)charArray)[i];
             const char* charName = *(const char**)((char*)charEntry + 44);
             const char* entryName = *(const char**)((char*)charEntry + 16);
-            nop_8240E6D0(g_str_gdRivalry_missingRival, entryName);
+            rage_DebugLog(g_str_gdRivalry_missingRival, entryName);
         }
     }
 }
@@ -515,13 +515,13 @@ void gdRivalryData::PostLoadProperties() {
     // Validate CharacterName at +16
     const char* charName = *(const char**)((char*)this + 16);
     if (charName == nullptr || charName[0] == '\0') {
-        nop_8240E6D0(g_str_gdRivalryData_noCharName);
+        rage_DebugLog(g_str_gdRivalryData_noCharName);
     }
 
     // Validate RivalName at +20
     const char* rivalName = *(const char**)((char*)this + 20);
     if (rivalName == nullptr || rivalName[0] == '\0') {
-        nop_8240E6D0(g_str_gdRivalryData_noRivalName);
+        rage_DebugLog(g_str_gdRivalryData_noRivalName);
     }
 
     // Resolve rival character index from name
@@ -529,7 +529,7 @@ void gdRivalryData::PostLoadProperties() {
     *(int32_t*)((char*)this + 24) = rivalIndex;
 
     if (rivalIndex < 0) {
-        nop_8240E6D0(g_str_gdRivalryData_unknownRival);
+        rage_DebugLog(g_str_gdRivalryData_unknownRival);
     }
 }
 
@@ -713,7 +713,7 @@ void RegisterSerializedField(void* obj,
  */
 gdPropData* xe_13E8_1(void) {
     // Ensure main thread heap is initialized
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     
     // Get the active allocator from SDA context
     // The SDA base (r13) points to a context struct where offset +4 holds the allocator pointer

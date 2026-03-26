@@ -21,14 +21,14 @@ namespace rage {
 class SinglesNetworkClient;
 
 // External HSM utility functions
-extern void util_F850(void* parent, void* childState);                     // @ 0x823EF850 — AttachChildState
-extern void util_D988(void* context, void* session, void* connectionList); // @ 0x823ED988 — AssociateConnection
-extern void util_DA90(void* context, void* session, void* connectionList); // @ 0x823EDA90 — ProcessPendingConnections
+extern void hsmState_AttachChild(void* parent, void* childState);                     // @ 0x823EF850 — AttachChildState
+extern void snSession_AssociateConnections(void* context, void* session, void* connectionList); // @ 0x823ED988 — AssociateConnection
+extern void snSession_ProcessPendingConnections(void* context, void* session, void* connectionList); // @ 0x823EDA90 — ProcessPendingConnections
 
 // Destructor helpers
 extern void util_5B50(void* thisPtr);   // @ 0x823E5B50 — snMigrateMachine destructor body
 extern void util_6558(void* thisPtr);   // @ 0x823E6558 — snNotifyingGuests/snWaitingForMigrateMsg-level destructor
-extern void util_8F48(void* thisPtr);   // @ 0x823E8F48 — hsmState base destructor (resets vtable, zeros fields)
+extern void hsmState_Destroy(void* thisPtr);   // @ 0x823E8F48 — hsmState base destructor (resets vtable, zeros fields)
 
 // Tail-call targets for snAcquiringHost OnEnter/OnExit
 extern void SinglesNetworkClient_2828_p45(void* thisPtr);  // @ 0x823F2828 — snAcquiringHost::OnEnter body
@@ -102,7 +102,7 @@ void snAcquiringHost_OnExit(void* thisPtr) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OnEnter Handlers (vfn_5, 60B each)
-// Attach child sub-states via util_F850 (AttachChildState).
+// Attach child sub-states via hsmState_AttachChild (AttachChildState).
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -113,8 +113,8 @@ void snAcquiringHost_OnExit(void* thisPtr) {
  *   - this+1340 (snMigratingAsGuest)
  */
 void MigrateMachine_OnEnter(void* thisPtr) {
-    util_F850(thisPtr, (char*)thisPtr + 84);
-    util_F850(thisPtr, (char*)thisPtr + 1340);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 84);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 1340);
 }
 
 /**
@@ -125,8 +125,8 @@ void MigrateMachine_OnEnter(void* thisPtr) {
  *   - this+1208 (snNotifyingGuests)
  */
 void AcquiringHost_OnEnterAttach(void* thisPtr) {
-    util_F850(thisPtr, (char*)thisPtr + 1184);
-    util_F850(thisPtr, (char*)thisPtr + 1208);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 1184);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 1208);
 }
 
 /**
@@ -137,13 +137,13 @@ void AcquiringHost_OnEnterAttach(void* thisPtr) {
  *   - this+76 (snMigrating)
  */
 void MigratingAsGuest_OnEnterAttach(void* thisPtr) {
-    util_F850(thisPtr, (char*)thisPtr + 24);
-    util_F850(thisPtr, (char*)thisPtr + 76);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
+    hsmState_AttachChild(thisPtr, (char*)thisPtr + 76);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Event Handlers (vfn_13, 76B each)
-// Call vfn_11 to get context, then process connections via util_D988/DA90.
+// Call vfn_11 to get context, then process connections via snSession_AssociateConnections/DA90.
 // Identical pattern to snSession_snRoot_snChangingPresence_vfn_13.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -161,8 +161,8 @@ void snAcquiringHost_OnEvent(void* thisPtr) {
 
     void* connectionList = (char*)thisPtr + 1184;
 
-    util_D988(context, thisPtr, connectionList);
-    util_DA90(context, thisPtr, connectionList);
+    snSession_AssociateConnections(context, thisPtr, connectionList);
+    snSession_ProcessPendingConnections(context, thisPtr, connectionList);
 }
 
 /**
@@ -179,8 +179,8 @@ void snMigratingAsGuest_OnEvent(void* thisPtr) {
 
     void* connectionList = (char*)thisPtr + 24;
 
-    util_D988(context, thisPtr, connectionList);
-    util_DA90(context, thisPtr, connectionList);
+    snSession_AssociateConnections(context, thisPtr, connectionList);
+    snSession_ProcessPendingConnections(context, thisPtr, connectionList);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,12 +193,12 @@ void snMigratingAsGuest_OnEvent(void* thisPtr) {
  *
  * Destructor for the AcquiringHost state.
  * Destroys child snNotifyingGuests at this+1208 via util_6558,
- * then destroys snMigrating at this+1184 and self via util_8F48.
+ * then destroys snMigrating at this+1184 and self via hsmState_Destroy.
  */
 void snAcquiringHost_Destructor(void* thisPtr, uint32_t flags) {
     util_6558((char*)thisPtr + 1208);
-    util_8F48((char*)thisPtr + 1184);
-    util_8F48(thisPtr);
+    hsmState_Destroy((char*)thisPtr + 1184);
+    hsmState_Destroy(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
     }
@@ -208,14 +208,14 @@ void snAcquiringHost_Destructor(void* thisPtr, uint32_t flags) {
  * snMigratingAsGuest::~snMigratingAsGuest @ 0x823E64F0 | size: 0x64 | vfn_0
  *
  * Destructor for the MigratingAsGuest state.
- * Destroys child snMigrating at this+76 via util_8F48,
+ * Destroys child snMigrating at this+76 via hsmState_Destroy,
  * then destroys snWaitingForMigrateMsg at this+24 via util_6558,
- * then self via util_8F48.
+ * then self via hsmState_Destroy.
  */
 void snMigratingAsGuest_Destructor(void* thisPtr, uint32_t flags) {
-    util_8F48((char*)thisPtr + 76);
+    hsmState_Destroy((char*)thisPtr + 76);
     util_6558((char*)thisPtr + 24);
-    util_8F48(thisPtr);
+    hsmState_Destroy(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
     }
@@ -228,7 +228,7 @@ void snMigratingAsGuest_Destructor(void* thisPtr, uint32_t flags) {
  * Calls hsmState base destructor to reset vtable and zero fields.
  */
 void snAcquiringHost_Migrating_Destructor(void* thisPtr, uint32_t flags) {
-    util_8F48(thisPtr);
+    hsmState_Destroy(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
     }

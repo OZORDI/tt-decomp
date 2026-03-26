@@ -16,7 +16,7 @@ extern "C" {
     void ProcessPageGroupInput(int param1, int param2, const char* param3, int param4);
     void NotifyUIEvent(int eventId, int flags, int param3, int param4);  // pg_E6E0 @ 0x8225E6E0
     void SetTrainingState(void* pStateMachine, int nState);             // atSingleton_E9F8_w @ 0x821EE9F8
-    void nop_8240E6D0(const char* message);
+    void rage_DebugLog(const char* message);
     void xmlNodeStruct_Initialize(void* self);  // @ base class PostLoadProperties
 }
 
@@ -87,7 +87,7 @@ void pongTrainingDrill::IncreaseNumSuccesses(int increment) {
     // Clamp to maximum
     if (m_numSuccesses > maxSuccesses) {
         // Error: winning more than total possible
-        nop_8240E6D0(g_str_pongDrill_tooManySuccesses);
+        rage_DebugLog(g_str_pongDrill_tooManySuccesses);
         m_numSuccesses = maxSuccesses;
     }
     
@@ -358,7 +358,7 @@ hitTipData::~hitTipData() {
 void hitTipData::PostLoadProperties() {
     // Validate ShotType: must be in range [0, 5]
     if (m_shotType < 0 || m_shotType >= 6) {
-        nop_8240E6D0("Invalid hit tip found: %d");  // @ 0x82045090 (corrected +0x2000)
+        rage_DebugLog("Invalid hit tip found: %d");  // @ 0x82045090 (corrected +0x2000)
     }
 
     // Check score/consecutive field consistency
@@ -369,7 +369,7 @@ void hitTipData::PostLoadProperties() {
             return;
         }
         // Score fields invalid: log error and set default
-        nop_8240E6D0("Invalid hit tip, setting InARow to default");  // @ 0x820450AC (corrected +0x2000)
+        rage_DebugLog("Invalid hit tip, setting InARow to default");  // @ 0x820450AC (corrected +0x2000)
         m_consecutiveThreshold = 2;  // Default to 2
     }
 

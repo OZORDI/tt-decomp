@@ -84,7 +84,7 @@ extern "C" {
     
     // HSM initialization
     void HSM_InitializeState();                                      // @ 0x8230D278 - HSM state init
-    void xe_main_thread_init_0038();                                 // @ 0x820C0038 - thread init
+    void sysMemAllocator_InitMainThread();                                 // @ 0x820C0038 - thread init
 }
 
 // Debug string literals (preserved from binary)
@@ -884,8 +884,8 @@ void* pongFrontendState::GetContext() {
 void pongFrontendState::Init() {
     // Initialize main thread (if needed)
     // This is likely a no-op or thread-local storage setup
-    extern void xe_main_thread_init_0038();
-    xe_main_thread_init_0038();
+    extern void sysMemAllocator_InitMainThread();
+    sysMemAllocator_InitMainThread();
     
     // Get RAGE allocator from TLS (thread-local storage)
     // r13 is the TLS base register on PowerPC

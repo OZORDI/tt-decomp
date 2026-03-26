@@ -90,7 +90,7 @@ extern "C" {
     void  cmPowerApproach_Step(float* outProgress, float diff, float speed, float dt);
     void  cmReporter_Init(void* reporter);
     void  cmNormalizedTimer_Allocate(void* node);
-    void  xe_main_thread_init_0038();
+    void  sysMemAllocator_InitMainThread();
     bool  cmNode_TryConnect3(void* node, void* desc);
     bool  cmNode_TryConnectSingle(void* node, void* desc);
     uint8_t  cmNode_GetBoolValue(void* port);
@@ -170,7 +170,7 @@ struct cmPortDesc {
 
 
 
-// ── PORT EVALUATION UTILITIES (lifted from util_92D8, util_9350, etc.) ────────
+// ── PORT EVALUATION UTILITIES (lifted from util_92D8, cmOperator_EvalFloat, etc.) ────────
 
 /**
  * cmNode_GetVector @ 0x821792D8
@@ -1242,7 +1242,7 @@ void cmApproach2::Tick() {
 // cmApproach2::Allocate @ 0x82279348 | size: 0x7C
 void cmApproach2::Allocate() {
 
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     // g_tls_base declared in rage_cm_types.hpp
     void* allocator = g_tls_base[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
@@ -1451,7 +1451,7 @@ static void* cmApproach2Ctor_Create(uint32_t portMode, bool isAngular) {
     // g_tls_base declared in rage_cm_types.hpp
     // g_vtable_cmApproach2 declared in rage_cm_types.hpp @ 0x82055EFC
 
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     void* allocator = g_tls_base[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
     void** allocVt = *(void***)allocator;
@@ -1605,7 +1605,7 @@ void cmCapture::Allocate() {
     rage_free(oldBuf);
 
     // Allocate new 32-byte reporter buffer (16-byte aligned)
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     // g_tls_base declared in rage_cm_types.hpp
     void* allocator = g_tls_base[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
@@ -1734,7 +1734,7 @@ void cmChanged::RegisterPorts(void* node) {
 void cmChanged::Allocate() {
 
     // Allocate reporter buffer for previous value at +32
-    xe_main_thread_init_0038();
+    sysMemAllocator_InitMainThread();
     // g_tls_base declared in rage_cm_types.hpp
     void* allocator = g_tls_base[1];
     typedef void* (*AllocFn)(void*, uint32_t, uint32_t);

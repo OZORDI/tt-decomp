@@ -9,7 +9,7 @@
  * have been fully confirmed by assembly analysis.
  *
  * Evidence sources:
- *   util_92D8 (0x821792D8), util_9350 (0x82179350), util_4BD8 (0x82184BD8)
+ *   util_92D8 (0x821792D8), cmOperator_EvalFloat (0x82179350), util_4BD8 (0x82184BD8)
  *   util_5698 (0x82185698), util_54C8 (0x821854C8), util_5380 (0x82275380)
  *   cmAdd_vfn_2/4/5/16, cmNegate_vfn_2/4, cmMemory_vfn_*, cmIntegrate_vfn_10/16
  *   cmDifferential_vfn_2/4/16, cmApproachOperator_vfn_10 / _7D38_wrh
@@ -339,7 +339,7 @@ struct cmApproachOperator : cmApproachNode {
 
 // Port evaluation primitives
 float*    cmNode_GetVector(float* dst, const cmNodePort* port); // util_92D8
-float     cmNode_GetFloat(const cmNodePort* port);              // util_9350
+float     cmNode_GetFloat(const cmNodePort* port);              // cmOperator_EvalFloat
 int32_t   cmNode_GetInt(const cmNodePort* port);                // util_4BD8
 int32_t   cmNode_GetDim(const cmNodePort* port);                // cmSwitch_4B60
 uint8_t   cmNode_GetBool(const cmNodePort* port);               // cmCond_21B0 (TODO)
@@ -363,7 +363,7 @@ static bool cmApproachOperator_VectorApproach(
 
 // Engine heap functions (forward declarations — defined in rage allocator)
 extern void  rage_free(void* ptr);                              // @ 0x820C00C0
-extern void* rage_alloc_aligned(uint32_t size, uint32_t align);// via xe_main_thread_init_0038 + vcall[1]
+extern void* rage_alloc_aligned(uint32_t size, uint32_t align);// via sysMemAllocator_InitMainThread + vcall[1]
 
 } // namespace rage
 
