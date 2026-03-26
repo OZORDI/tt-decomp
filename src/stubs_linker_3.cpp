@@ -21,45 +21,45 @@ struct TransitionFlags;
 // msgMsgSink — Network message sink helpers
 // ============================================================================
 
-extern "C" uint32_t msgMsgSink_5098_g(void* obj, bool flag) {
+uint32_t msgMsgSink_5098_g(void* obj, bool flag) {
     (void)obj; (void)flag;
     return 0;
 }
 
-extern "C" void msgMsgSink_6138_2hr(void* obj) {
+void msgMsgSink_6138_2hr(void* obj) {
     (void)obj;
 }
 
-extern "C" void msgMsgSink_6220_w(void* obj) {
+void msgMsgSink_6220_w(void* obj) {
     (void)obj;
 }
 
-extern "C" int32_t msgMsgSink_84C0_gen(void* obj) {
+int32_t msgMsgSink_84C0_gen(void* obj) {
     (void)obj;
     return 0;
 }
 
-extern "C" void msgMsgSink_A970_2h(void* obj) {
+void msgMsgSink_A970_2h(void* obj) {
     (void)obj;
 }
 
-extern "C" void msgMsgSink_D168_sp(void* obj) {
+void msgMsgSink_D168_sp(void* obj) {
     (void)obj;
 }
 
-extern "C" void msgMsgSink_D1D8_sp(void* obj) {
+void msgMsgSink_D1D8_sp(void* obj) {
     (void)obj;
 }
 
-extern "C" void msgMsgSink_DB70_g(void* obj, uint32_t flags) {
+void msgMsgSink_DB70_g(void* obj, uint32_t flags) {
     (void)obj; (void)flags;
 }
 
-extern "C" void msgMsgSink_E860_g(void* obj, uint32_t a, uint32_t b, uint32_t c) {
+void msgMsgSink_E860_g(void* obj, uint32_t a, uint32_t b, uint32_t c) {
     (void)obj; (void)a; (void)b; (void)c;
 }
 
-extern "C" void* msgMsgSink_F518_wrh(uint32_t param) {
+void* msgMsgSink_F518_wrh(uint32_t param) {
     (void)param;
     return nullptr;
 }
@@ -68,7 +68,7 @@ extern "C" void* msgMsgSink_F518_wrh(uint32_t param) {
 // net — Network helpers
 // ============================================================================
 
-extern "C" void net_6BA0_fw(void* session, void* param1, void* param2) {
+void net_6BA0_fw(void* session, void* param1, void* param2) {
     (void)session; (void)param1; (void)param2;
 }
 
@@ -97,11 +97,11 @@ void nop_8240E6D0(const void* ptr, ...) {
 // pcrAnimBlender_ApplyClipWeights already implemented in anim_blender_init.cpp
 // pcrAnimState_ComputePosition already implemented in anim_blender_init.cpp
 
-extern "C" void pcrAnimBlender_Initialize(void* obj) {
+void pcrAnimBlender_Initialize(void* obj) {
     (void)obj;
 }
 
-extern "C" int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* self) {
+int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* self) {
     (void)self;
     return 0;
 }
@@ -110,11 +110,12 @@ extern "C" int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* s
 // pg — Page Group helpers
 // ============================================================================
 
-extern "C" void pg_6F68(void* pageGroup, void* context, int eventType, unsigned int* a4, int a5) {
+bool pg_6F68(void* pageGroup, void* context, int eventType, unsigned int* a4, int a5) {
     (void)pageGroup; (void)context; (void)eventType; (void)a4; (void)a5;
+    return false;
 }
 
-extern "C" void* pg_9C00_g(void* singleton) {
+void* pg_9C00_g(void* singleton) {
     (void)singleton;
     return nullptr;
 }
@@ -125,14 +126,14 @@ void* pg_9C00_g(void* player, int index) {
     return nullptr;
 }
 
-extern "C" uint8_t pg_ApplyTransition(void* gameState, TransitionParams* params,
+uint8_t pg_ApplyTransition(void* gameState, TransitionParams* params,
     int mode, TransitionFlags* flags, int flagCount)
 {
     (void)gameState; (void)params; (void)mode; (void)flags; (void)flagCount;
     return 0;
 }
 
-extern "C" void pg_E6E0(int code, int param1, int param2, int param3) {
+void pg_E6E0(int code, int param1, int param2, int param3) {
     (void)code; (void)param1; (void)param2; (void)param3;
 }
 
@@ -140,7 +141,7 @@ extern "C" void pg_E6E0(int code, int param1, int param2, int param3) {
 // phArchetype — Physics archetype loading
 // ============================================================================
 
-extern "C" void* phArchetype_Load(const char* path, void* materialInfo) {
+void* phArchetype_Load(const char* path, void* materialInfo) {
     (void)path; (void)materialInfo;
     return nullptr;
 }
@@ -149,31 +150,31 @@ extern "C" void* phArchetype_Load(const char* path, void* materialInfo) {
 // phBoundCapsule — Capsule bound math
 // ============================================================================
 
-extern "C" float phBoundCapsule_01D0_g(float value) {
+float phBoundCapsule_01D0_g(float value) {
     (void)value;
     return 0.0f;
 }
 
-extern "C" float phBoundCapsule_01D8_g(float value) {
+float phBoundCapsule_01D8_g(float value) {
     (void)value;
     return 0.0f;
 }
 
-extern "C" float phBoundCapsule_02B0_g(float value) {
+float phBoundCapsule_02B0_g(float value) {
     (void)value;
     return 0.0f;
 }
 
-extern "C" float phBoundCapsule_0FE0_g(float f1, float f2) {
+float phBoundCapsule_0FE0_g(float f1, float f2) {
     (void)f1; (void)f2;
     return 0.0f;
 }
 
-extern "C" void phBoundCapsule_5138_g(void* capsule, void* params, void* data) {
+void phBoundCapsule_5138_g(void* capsule, void* params, void* data) {
     (void)capsule; (void)params; (void)data;
 }
 
-extern "C" void phBoundCapsule_A080_g(void* bound) {
+void phBoundCapsule_A080_g(void* bound) {
     (void)bound;
 }
 
@@ -181,11 +182,11 @@ extern "C" void phBoundCapsule_A080_g(void* bound) {
 // phInst — Physics instance helpers
 // ============================================================================
 
-extern "C" void phInst_A3A0_p33(void* obj) {
+void phInst_A3A0_p33(void* obj) {
     (void)obj;
 }
 
-extern "C" void* phMaterialMgrImpl_C208_g(void* table, const void* key) {
+void* phMaterialMgrImpl_C208_g(void* table, const void* key) {
     (void)table; (void)key;
     return nullptr;
 }
@@ -291,42 +292,42 @@ void* phObject::vfn_31() {
 // ph_ — Physics utility functions
 // ============================================================================
 
-extern "C" void ph_59C8(void* loader, const char* name, int flag) {
+void ph_59C8(void* loader, const char* name, int flag) {
     (void)loader; (void)name; (void)flag;
 }
 
-extern "C" void* ph_6FC8(void* system, const char* path) {
+void* ph_6FC8(void* system, const char* path) {
     (void)system; (void)path;
     return nullptr;
 }
 
-extern "C" void ph_9E50(void* archetype, void* material) {
+void ph_9E50(void* archetype, void* material) {
     (void)archetype; (void)material;
 }
 
-extern "C" void* ph_9EC0_1(void* memory) {
+void* ph_9EC0_1(void* memory) {
     (void)memory;
     return nullptr;
 }
 
-extern "C" void ph_CEE0(void* material, int param) {
+void ph_CEE0(void* material, int param) {
     (void)material; (void)param;
 }
 
-extern "C" void* ph_E010(void* world, void* archetype, const char* path) {
+void* ph_E010(void* world, void* archetype, const char* path) {
     (void)world; (void)archetype; (void)path;
     return nullptr;
 }
 
-extern "C" void ph_E088(void* world, void* archetype, void* material, float scale, int flags) {
+void ph_E088(void* world, void* archetype, void* material, float scale, int flags) {
     (void)world; (void)archetype; (void)material; (void)scale; (void)flags;
 }
 
-extern "C" void ph_EF40(void* list, void* node) {
+void ph_EF40(void* list, void* node) {
     (void)list; (void)node;
 }
 
-extern "C" void ph_ForwardTarget(void* target) {
+void ph_ForwardTarget(void* target) {
     (void)target;
 }
 
@@ -392,7 +393,7 @@ void pongAttractState::Reset() {
 void pongAttractState::Shutdown() {
 }
 
-extern "C" void pongAttractState_Shutdown(void* state) {
+void pongAttractState_Shutdown(void* state) {
     (void)state;
 }
 
@@ -420,7 +421,7 @@ void pongBallInstance::vfn_4() {
 void pongBallInstance::vfn_5() {
 }
 
-extern "C" void pongBallInstance_4980_g(void* mgr, int a, int b, int c, int d) {
+void pongBallInstance_4980_g(void* mgr, int a, int b, int c, int d) {
     (void)mgr; (void)a; (void)b; (void)c; (void)d;
 }
 
@@ -428,7 +429,7 @@ extern "C" void pongBallInstance_4980_g(void* mgr, int a, int b, int c, int d) {
 // pongCameraMgr — Camera manager helpers
 // ============================================================================
 
-extern "C" bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode) {
+bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode) {
     (void)mgr; (void)gameState; (void)mode;
     return false;
 }
@@ -444,24 +445,24 @@ bool pongCameraMgr_35A0_fw(void* mgr, void* gameState, int mode) {
     return false;
 }
 
-extern "C" bool pongCameraMgr_3650_fw(pongCameraMgr* mgr, void* gameState, int mode) {
+bool pongCameraMgr_3650_fw(pongCameraMgr* mgr, void* gameState, int mode) {
     (void)mgr; (void)gameState; (void)mode;
     return false;
 }
 
-extern "C" uint8_t pongCameraMgr_6E08(void* gameState, TransitionParams* params,
+uint8_t pongCameraMgr_6E08(void* gameState, TransitionParams* params,
     int mode, void* extra, int extraCount)
 {
     (void)gameState; (void)params; (void)mode; (void)extra; (void)extraCount;
     return 0;
 }
 
-extern "C" void* pongCameraMgr_B9B0_g(void* mgr, int size) {
+void* pongCameraMgr_B9B0_g(void* mgr, int size) {
     (void)mgr; (void)size;
     return nullptr;
 }
 
-extern "C" uint8_t pongCameraMgr_ValidateTransition(void* gameState, TransitionParams* params,
+uint8_t pongCameraMgr_ValidateTransition(void* gameState, TransitionParams* params,
     int mode, TransitionFlags* flags, int flagCount)
 {
     (void)gameState; (void)params; (void)mode; (void)flags; (void)flagCount;

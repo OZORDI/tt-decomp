@@ -266,7 +266,8 @@ uint32_t XamShowDirtyDiscErrorUI(uint32_t dwUserIndex) {
 // Xbox Live User Functions
 //=============================================================================
 
-// Error code for not logged in
+// Error codes
+#define ERROR_INVALID_PARAMETER 87
 #define ERROR_NOT_LOGGED_ON 1245
 
 // Fake user data for cross-platform builds

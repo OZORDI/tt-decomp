@@ -714,7 +714,13 @@ uint32_t RtlTryEnterCriticalSection(RTL_CRITICAL_SECTION* CriticalSection) {
 #else
 #include <stdatomic.h>
 #define SPINLOCK_INIT 0
+#if defined(__x86_64__) || defined(__i386__)
 #define spinlock_lock(lock) while (atomic_exchange_explicit((_Atomic uint32_t*)(lock), 1, memory_order_acquire) != 0) { __asm__ __volatile__("pause" ::: "memory"); }
+#elif defined(__aarch64__)
+#define spinlock_lock(lock) while (atomic_exchange_explicit((_Atomic uint32_t*)(lock), 1, memory_order_acquire) != 0) { __asm__ __volatile__("yield" ::: "memory"); }
+#else
+#define spinlock_lock(lock) while (atomic_exchange_explicit((_Atomic uint32_t*)(lock), 1, memory_order_acquire) != 0) { /* spin */ }
+#endif
 #define spinlock_unlock(lock) atomic_store_explicit((_Atomic uint32_t*)(lock), 0, memory_order_release)
 #define spinlock_trylock(lock) (atomic_exchange_explicit((_Atomic uint32_t*)(lock), 1, memory_order_acquire) == 0)
 #endif
