@@ -285,3 +285,71 @@ void pongPlayer_9CD0_g(void* p, int i, void* a, void* b) { (void)p;(void)i;(void
 void pongPlayer_AB48_g(void* a, void* b) { (void)a;(void)b; }
 void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
 void rage_RegisterUIContext(void* a, unsigned int b, const char* c) { (void)a;(void)b;(void)c; }
+
+// ── Final 59 linker stubs ───────────────────────────────────────────────────
+#include <cstdlib>
+
+extern "C" {
+void PostStateTransitionRequest(void* m, int e) { (void)m;(void)e; }
+void RtlEnterCriticalSection(void* cs) { (void)cs; }
+void RtlLeaveCriticalSection(void* cs) { (void)cs; }
+void atArray_Clear(void* a) { (void)a; }
+void audControl_Destructor(void* o) { (void)o; }
+void fsmMachine_Destructor_27A8(void* o) { (void)o; }
+void hsmContext_SetNextState_2800(void* c, int s) { (void)c;(void)s; }
+void rage_free(void* p) { free(p); }
+void xmlNodeStruct_Initialize(void* o) { (void)o; }
+void phInst_A3A0_p33(void* o) { (void)o; }
+void pongAttractState_Shutdown(void* o) { (void)o; }
+void sysCallback_Invoke(void* c, int code) { (void)c;(void)code; }
+void* pg_9C00_g(void* p) { (void)p; return 0; }
+void pg_E6E0(int a, int b, int c, int d) { (void)a;(void)b;(void)c;(void)d; }
+float phBoundCapsule_01D0_g(float v) { return v; }
+float phBoundCapsule_01D8_g(float v) { return v; }
+float phBoundCapsule_02B0_g(float v) { return v; }
+float phBoundCapsule_0FE0_g(float a, float b) { (void)b; return a; }
+void phBoundCapsule_5138_g(void* a, void* b, void* c) { (void)a;(void)b;(void)c; }
+void phBoundCapsule_A080_g(void* a) { (void)a; }
+void phMaterialMgrImpl_C208_g(void* a, const void* b) { (void)a;(void)b; }
+void* ph_9EC0_1(void* m) { return m; }
+void* ph_E010(void* w, void* a, const char* p) { (void)w;(void)a;(void)p; return 0; }
+void ph_9E50(void* a, void* b) { (void)a;(void)b; }
+void ph_CEE0(void* a, int b) { (void)a;(void)b; }
+void ph_E088(void* a, void* b, void* c, float d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+void* ph_6FC8(void* a, const char* b) { (void)a;(void)b; return 0; }
+void* phArchetype_Load(const char* p, void* m) { (void)p;(void)m; return 0; }
+void ph_59C8(void* a, const char* b, int c) { (void)a;(void)b;(void)c; }
+void ph_EF40(void* a, void* b) { (void)a;(void)b; }
+void ph_ForwardTarget(void* a) { (void)a; }
+void net_6BA0_fw(void* a, void* b, void* c) { (void)a;(void)b;(void)c; }
+void pcrAnimBlender_ApplyClipWeights(void* a, unsigned b, float c, float d) { (void)a;(void)b;(void)c;(void)d; }
+void pcrAnimBlender_Initialize(void* a) { (void)a; }
+void pg_6F68(void* a, void* b, int c, unsigned* d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+void pongPlayer_42E0_g(void* p, void* a, void* b, float c) { (void)p;(void)a;(void)b;(void)c; }
+void pongPlayer_73E8_g(void* p, float v) { (void)p;(void)v; }
+void pongPlayer_AB48_g(void* a, void* b) { (void)a;(void)b; }
+void pongCameraMgr_3500_fw(void* c, void* a, int b) { (void)c;(void)a;(void)b; }
+void pongCameraMgr_3650_fw(void* c, void* a, int b) { (void)c;(void)a;(void)b; }
+void pongCameraMgr_6E08(void* a, void* b, int c, void* d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+void pongCameraMgr_B9B0_g(void* a, int b) { (void)a;(void)b; }
+void pongCameraMgr_ValidateTransition(void* a, void* b, int c, void* d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+void pcrAnimState_ComputePosition(void* a, void* b) { (void)a;(void)b; }
+void* pcrPostPointBlender_GetActiveClipIndex(void* p) { (void)p; return 0; }
+void pg_ApplyTransition(void* a, void* b, int c, void* d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+}
+
+// C++ linkage
+void msgMsgSink_5098_g(void* o, bool b) { (void)o;(void)b; }
+void msgMsgSink_6138_2hr(void* o) { (void)o; }
+void msgMsgSink_6220_w(void* o) { (void)o; }
+void msgMsgSink_84C0_gen(void* o) { (void)o; }
+void msgMsgSink_A970_2h(void* o) { (void)o; }
+void msgMsgSink_D168_sp(void* o) { (void)o; }
+void msgMsgSink_D1D8_sp(void* o) { (void)o; }
+void msgMsgSink_DB70_g(void* o, unsigned i) { (void)o;(void)i; }
+void msgMsgSink_E860_g(void* o, unsigned a, unsigned b, unsigned c) { (void)o;(void)a;(void)b;(void)c; }
+unsigned msgMsgSink_F518_wrh(unsigned v) { (void)v; return 0; }
+
+namespace rage {
+void ReleaseSingleton(void* o) { (void)o; }
+}
