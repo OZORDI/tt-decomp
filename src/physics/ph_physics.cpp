@@ -4804,3 +4804,270 @@ void phArticulatedCollider::SetConstraint_12b(uint32_t value) {
 // NOTE: Duplicate rage::phInst section removed (all methods already defined
 // in the first phInst block above within namespace rage {})
 
+
+// ═════════════════════════════════════════════════════════════════════════════
+// phObject — Small utility functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Forward declarations for phObject helpers
+extern void phObject_4F28_p46(void* thisPtr);
+extern void thunk_fn_824885C8(void* thisPtr);  // -> util_85C8
+extern void set_3348(void* thisPtr, float value);
+extern void phObject_2588_w(void* thisPtr, uint32_t param);
+extern "C" void _locale_register(void* ptr, uint32_t tag);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_29 @ 0x82485108 | size: 0x8
+//
+// Simple getter: returns the field at offset +120 (m_field_120).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phObject_29(void* thisPtr) {
+    return *(uint32_t*)((uint8_t*)thisPtr + 120);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_5100_p46 @ 0x82485100 | size: 0x8
+//
+// Forwarding stub: passes the 4th argument (r7) as 'this' to
+// phObject_4F28_p46. Used as a trampoline for indirect dispatches.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_5100_p46(void* thisPtr, uint32_t a2, uint32_t a3, void* target) {
+    phObject_4F28_p46(target);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_33 @ 0x82488A08 | size: 0x14
+//
+// Stores two parameters at offsets +488 and +492 in the phObject, then
+// returns 0 (success). Likely sets a pair of configuration values
+// (e.g. simulation bounds or constraint limits).
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_33(void* thisPtr, uint32_t valueA, uint32_t valueB) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    *(uint32_t*)(obj + 488) = valueA;
+    *(uint32_t*)(obj + 492) = valueB;
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_B878_h @ 0x8248B878 | size: 0x10
+//
+// Destructor helper: sets the vtable pointer for a specific subclass,
+// then tail-calls util_85C8 (via thunk_fn_824885C8) for base cleanup.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_B878_h(void* thisPtr) {
+    *(void**)thisPtr = (void*)0x82019168;  // lis r11,-32255; addi r11,r11,-28312
+    thunk_fn_824885C8(thisPtr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_20B0_wrh @ 0x824920B0 | size: 0x10
+//
+// Indirect call trampoline: loads a function pointer from a fixed global
+// address and calls it with the current arguments. Used for late-bound
+// dispatch in the physics write/read/hash pipeline.
+// ─────────────────────────────────────────────────────────────────────────────
+typedef void (*phObjectDispatchFunc)(void);
+void phObject_20B0_wrh() {
+    // lis r11, -32255 -> 0x81E10000; lwz r11, -26992(r11) -> 0x81E10000 + 0xFFFF9690 = global at 0x82019690 area
+    // Load function pointer from global and call it
+    volatile phObjectDispatchFunc* pFunc = (volatile phObjectDispatchFunc*)0x82019690;
+    (*pFunc)();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_1E18_h @ 0x82491E18 | size: 0x18
+//
+// Clears a flag byte at offset +1524 and a 32-bit word at offset +1528.
+// Returns 0. Used to reset an active/dirty state on a physics object.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_1E18_h(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    *(uint8_t*)(obj + 1524) = 0;
+    *(uint32_t*)(obj + 1528) = 0;
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_34 @ 0x82488A20 | size: 0x28
+//
+// Adjusts this pointer by +124 bytes (to reach an embedded sub-object),
+// calls set_3348 to store a float at sub-object+72, then returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_34(void* thisPtr, float value) {
+    uint8_t* subObj = (uint8_t*)thisPtr + 124;
+    set_3348(subObj, value);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_2340_gen @ 0x82492340 | size: 0x28
+//
+// Array element lookup: reads element at index from a 32-bit array (this),
+// stores it to the output pointer. Returns 0 on success, or an error code
+// (0x80300016) if the element is NULL.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_2340_gen(uint32_t* array, uint32_t index, uint32_t* outValue) {
+    uint32_t element = array[index];
+    *outValue = element;
+    if (element == 0) {
+        return (int32_t)0x80300016;
+    }
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_A4A0_p39 @ 0x8248A4A0 | size: 0x2C
+//
+// Null-validates three parameters (this, param1, param3), then loads the
+// first word from param1 and tail-calls phObject_2588_w.
+// Returns error 0x80070057 on null parameter.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_A4A0_p39(void* thisPtr, void* param1, uint32_t param2, void* param3) {
+    if (!thisPtr || !param1 || !param3) {
+        return (int32_t)0x80070057;
+    }
+    uint32_t value = *(uint32_t*)param1;
+    phObject_2588_w((void*)(uintptr_t)value, param2);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_1F70 @ 0x82491F70 | size: 0x34
+//
+// If the pointer is non-null, calls _locale_register with a fixed tag
+// constant (0x208C8000). Always returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_1F70(void* ptr) {
+    if (ptr != NULL) {
+        _locale_register(ptr, 0x208C8000);
+    }
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_14 @ 0x82485720 | size: 0x44
+//
+// Allocates a zeroed 20-byte stack buffer (5 x uint32), then calls the
+// object's vtable slot 11 (Initialize) with the buffer as the second arg.
+// Used to invoke Initialize with a default-zero parameter block.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_14(void* thisPtr) {
+    uint32_t buf[5];
+    buf[0] = 0;
+    buf[1] = 0;
+    buf[2] = 0;
+    buf[3] = 0;
+    buf[4] = 0;
+
+    // Call vtable slot 11: Initialize(this, buf, ...)
+    typedef void (*InitFunc)(void*, void*, void*);
+    void** vt = *(void***)thisPtr;
+    InitFunc fn = (InitFunc)vt[11];
+    fn(thisPtr, buf, NULL);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_13 @ 0x82485768 | size: 0x4C
+//
+// Same as phObject_14 but writes a caller-provided value into the first
+// word of the stack buffer before calling vtable slot 11 (Initialize).
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_13(void* thisPtr, uint32_t param) {
+    uint32_t buf[5];
+    buf[0] = 0;
+    buf[1] = 0;
+    buf[2] = 0;
+    buf[3] = 0;
+    buf[4] = 0;
+
+    buf[0] = param;
+
+    typedef void (*InitFunc)(void*, void*, void*);
+    void** vt = *(void***)thisPtr;
+    InitFunc fn = (InitFunc)vt[11];
+    fn(thisPtr, buf, NULL);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_12 @ 0x824857B8 | size: 0x50
+//
+// Same pattern as phObject_13 but writes two caller-provided values into
+// the first two words of the stack buffer before calling Initialize.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_12(void* thisPtr, uint32_t param1, uint32_t param2) {
+    uint32_t buf[5];
+    buf[0] = 0;
+    buf[1] = 0;
+    buf[2] = 0;
+    buf[3] = 0;
+    buf[4] = 0;
+
+    buf[0] = param1;
+    buf[1] = param2;
+
+    typedef void (*InitFunc)(void*, void*, void*);
+    void** vt = *(void***)thisPtr;
+    InitFunc fn = (InitFunc)vt[11];
+    fn(thisPtr, buf, NULL);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_1AD0_w @ 0x82491AD0 | size: 0x48
+//
+// Clears a 12-byte entry in a strided array. Each entry is 12 bytes
+// (3 x uint32). Index must be < 127. Returns 0x80070057 on out-of-range
+// or null this. Zeroes the 3 words at this[index * 12].
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_1AD0_w(void* thisPtr, int32_t index) {
+    if (!thisPtr) {
+        return 0;
+    }
+    if (index >= 127) {
+        return (int32_t)0x80070057;
+    }
+
+    // stride = index * 3 * 4 = index * 12
+    uint32_t* entry = (uint32_t*)((uint8_t*)thisPtr + index * 12);
+    entry[0] = 0;
+    entry[1] = 0;
+    entry[2] = 0;
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_A4D0_p39 @ 0x8248A4D0 | size: 0x44
+//
+// Null-validates this, param1, and param3. Loads two values from param1
+// at offsets +56 and +60. If the value at +56 is zero, returns early.
+// Otherwise loads param3+608 as array base, and calls phObject_1AD0_w
+// to clear the entry at the given index.
+// Returns 0x80070057 on null parameters.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_A4D0_p39(void* thisPtr, void* param1, uint32_t param2, void* param3) {
+    if (!thisPtr || !param1 || !param3) {
+        return (int32_t)0x80070057;
+    }
+
+    int32_t count = *(int32_t*)((uint8_t*)param1 + 56);
+    if (count == 0) {
+        return 0;
+    }
+
+    int32_t index = *(int32_t*)((uint8_t*)param1 + 60);
+    void* arrayBase = *(void**)((uint8_t*)param3 + 608);
+    return phObject_1AD0_w(arrayBase, index);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_1F28_gen @ 0x82491F28 | size: 0x44
+//
+// Unregisters a resource: calls _locale_register on the value stored at
+// *outPtr (param3), then clears *outPtr to NULL. Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_1F28_gen(void* thisPtr, uint32_t param2, void** outPtr) {
+    void* resource = *outPtr;
+    _locale_register(resource, 0x208C8000);
+    *outPtr = NULL;
+    return 0;
+}
