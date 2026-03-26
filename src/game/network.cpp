@@ -11,7 +11,7 @@ struct SinglesNetworkClient;
 
 // External function declarations
 extern void SinglesNetworkClient_8CC0_w(void* ctx, void* base);
-extern void* xam_singleton_init_8D60(void* ctx, void* base);
+extern void* xam_GetInitSingleton(void* ctx, void* base);
 extern void SinglesNetworkClient_0268_g(void* ctx, void* base);
 extern void SinglesNetworkClient_8DF8_g(void* ctx, void* base);
 extern void SinglesNetworkClient_0448_g(void* ctx, void* base);
@@ -90,7 +90,7 @@ const char* SinglesNetworkClient_GetDeviceString(int deviceIndex)
     }
     
     // Get singleton instance
-    // void* singleton = xam_singleton_init_8D60(ctx, base);
+    // void* singleton = xam_GetInitSingleton(ctx, base);
     
     // Access device array through vtable
     // uint32_t* vtable = *(uint32_t**)singleton;
@@ -574,7 +574,7 @@ int SinglesNetworkClient_ValidatePlayerStates(void* client)
     
     // Both states are invalid - log error
     // External error string at 0x82037948
-    // nop_8240E6D0("error message");
+    // rage_DebugLog("error message");  /* UNVERIFIED — string not found in binary */
     
     return 0;
 }
@@ -1090,9 +1090,9 @@ int SinglesNetworkClient_GetPlayerID(void* client, bool errorFlag)
     // Invalid player type
     if (errorFlag) {
         // Log error message
-        extern void nop_8240E6D0(void*, void*);
+        extern void rage_DebugLog(void*, void*);
         const char* errorMsg = "Invalid player type";
-        nop_8240E6D0((void*)errorMsg, nullptr);
+        rage_DebugLog((void*)errorMsg, nullptr);
     }
     
     return -1;  // Invalid player ID
@@ -1322,4 +1322,382 @@ void SinglesNetworkClient_SetupNetworkContext(void* client, uint32_t contextValu
     if (flagSet) {
         SinglesNetworkClient_B320_g(client, nullptr);
     }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::FindNodeSlotIndex @ 0x820CE380 | size: 0x6C
+//
+// Searches a 5-element node array (offsets +100..+116) for the node matching
+// the current active node pointer at +120. Returns the 0-based index (0-4)
+// of the matching slot, or -1 if no match is found.
+//
+// Used to determine which session node slot the active node occupies.
+// ─────────────────────────────────────────────────────────────────────────────
+int SinglesNetworkClient::FindNodeSlotIndex() {
+    uint32_t activeNode = *(uint32_t*)((uint8_t*)this + 120);
+
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 100)) {
+        return 0;
+    }
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 104)) {
+        return 1;
+    }
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 108)) {
+        return 2;
+    }
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 112)) {
+        return 3;
+    }
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 116)) {
+        return 4;
+    }
+    return -1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteAlignedBufferSize @ 0x821D9AD8 | size: 0x68
+//
+// Validates the write buffer, computes the 8-byte-aligned buffer size,
+// then writes it as a 16-bit value into the network stream at the
+// header position (offset +32 temporarily set to 32).
+//
+// Parameters:
+//   value - The 16-bit value to write into the stream body
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::WriteAlignedBufferSize(uint32_t value) {
+    SinglesNetworkClient_8AE0_g(this);
+
+    // Write value into stream with 16 bits
+    uint32_t result = SinglesNetworkClient_0688_g(this, value, 16);
+
+    // Compute aligned buffer size: (bufferSize + 7) / 8
+    uint32_t bufferSize = *(uint32_t*)((uint8_t*)this + 16);
+    uint32_t alignedSize = (int32_t)(bufferSize + 7) >> 3;
+
+    // Save and restore write offset at +32, temporarily setting to 32
+    uint32_t savedWriteOffset = *(uint32_t*)((uint8_t*)this + 32);
+    *(uint32_t*)((uint8_t*)this + 32) = 32;
+
+    SinglesNetworkClient_0448_g(this, alignedSize, 16);
+
+    *(uint32_t*)((uint8_t*)this + 32) = savedWriteOffset;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadVector3FromStream @ 0x821D9B40 | size: 0x78
+//
+// Reads three consecutive 32-bit float values from the network stream
+// and stores them into a destination Vector3 structure.
+//
+// Parameters:
+//   outVec - Pointer to a 3-float destination (x, y, z)
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::ReadVector3FromStream(float* outVec) {
+    float temp;
+
+    // Read X component
+    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    outVec[0] = temp;
+
+    // Read Y component
+    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    outVec[1] = temp;
+
+    // Read Z component
+    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    outVec[2] = temp;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ProcessActiveNodes @ 0x822EAC20 | size: 0x64
+//
+// Iterates over all active node entries (up to m_nodeCount at +1024) and
+// calls the ProcessNode handler for each node whose enabled flag is set.
+// The node pointers are stored starting at offset +1028, and the enabled
+// flags are at a stride of 36 bytes in a global data table at 0x8262001C.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::ProcessActiveNodes() {
+    int32_t nodeCount = *(int32_t*)((uint8_t*)this + 1024);
+    if (nodeCount <= 0) {
+        return;
+    }
+
+    uint32_t* nodeArray = (uint32_t*)((uint8_t*)this + 1028);
+    uint8_t* enabledFlags = (uint8_t*)0x8262001C;  // global node enabled table, stride=36
+
+    for (int32_t i = 0; i < nodeCount; i++) {
+        if (enabledFlags[i * 36] != 0) {
+            SinglesNetworkClient_F090(nodeArray[i]);
+        }
+
+        // Re-read count each iteration (may be modified by ProcessNode)
+        nodeCount = *(int32_t*)((uint8_t*)this + 1024);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ActivateAndNotify @ 0x822EBF20 | size: 0x64
+//
+// Called by HUD screens (pause, unlocks, training, loading, leaderboard)
+// during their vfn_5 activation. Sets the active flag at +84, polls the
+// network state, and posts a notification message with value {1, 3}.
+// If the poll indicated changes, flushes the notification queue.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::ActivateAndNotify() {
+    // Set active flag
+    *(uint8_t*)((uint8_t*)this + 84) = 1;
+
+    // Poll network state
+    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+
+    // Get network interface pointer from offset +92
+    void* networkInterface = *(void**)((uint8_t*)this + 92);
+
+    // Find message slot for this notification type
+    void* messageSlot = SinglesNetworkClient_9318_g(networkInterface,
+        (const char*)0x8205AEF0);  // message type string @ 0x8205AEF0
+
+    if (messageSlot != nullptr) {
+        *(uint32_t*)((uint8_t*)messageSlot + 0) = 1;  // value = 1 (active)
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
+    }
+
+    // If poll returned nonzero, flush notification queue
+    if ((pollResult & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(this);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::PostDualSlotMessage @ 0x822EBC10 | size: 0x88
+//
+// Posts two messages to an event handler via its vtable slot 10. The first
+// message carries an event descriptor {0, 7} with a type string pointer.
+// The second message carries the provided data values {dataValue, 3} with
+// a second type string pointer and an extra parameter.
+//
+// Parameters:
+//   eventHandler - Pointer to the handler (read from *r4)
+//   dataValue    - Value to store in the second message slot
+//   extraParam   - Additional parameter passed to the second vtable call
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::PostDualSlotMessage(void** eventHandlerPtr,
+    uint32_t dataValue, uint32_t extraParam) {
+    void* eventHandler = *eventHandlerPtr;
+
+    // Build first message: event descriptor {0, 7}
+    uint32_t eventDesc[2] = { 0, 7 };
+    const char* eventTypeStr = (const char*)0x8205AED8;  // event type @ 0x8205AED8
+
+    // Call vtable slot 10 with event descriptor
+    void** vtable = *(void***)eventHandler;
+    typedef void (*VtSlot10Fn)(void*, const char*, uint32_t*, uint32_t);
+    VtSlot10Fn postEvent = (VtSlot10Fn)vtable[10];
+    postEvent(eventHandler, eventTypeStr, eventDesc, 1);
+
+    // Build second message: data payload {dataValue, 3}
+    uint32_t dataPayload[2] = { dataValue, 3 };
+
+    // Call vtable slot 10 again with data payload
+    vtable = *(void***)eventHandler;
+    postEvent = (VtSlot10Fn)vtable[10];
+    postEvent(eventHandler, (const char*)&dataPayload, nullptr, extraParam);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::PostFloatMessage @ 0x822F1408 | size: 0x9C
+//
+// Posts a float value as an integer message to the network notification
+// system. Increments a global message counter, finds the message slot,
+// converts the float to int via truncation, and stores {intValue, 3}.
+// Decrements the counter on completion (with or without notification flush).
+//
+// Parameters:
+//   floatValue - Float value to convert and post
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::PostFloatMessage(float floatValue) {
+    // Poll network state
+    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+
+    // Increment global message counter
+    uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
+    uint32_t savedCounter = *pMessageCounter + 1;
+    *pMessageCounter = savedCounter;
+
+    // Prepare message
+    SinglesNetworkClient_B1E8_g(this);
+
+    // Find message slot for float message type
+    void* messageSlot = SinglesNetworkClient_9318_g(this,
+        (const char*)0x8205B474);  // message type string @ 0x8205B474
+
+    if (messageSlot != nullptr) {
+        // Convert float to int and store
+        int32_t intValue = (int32_t)floatValue;
+        *(int32_t*)((uint8_t*)messageSlot + 0) = intValue;
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
+    }
+
+    // Flush or decrement counter
+    if ((pollResult & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(this);
+        *pMessageCounter = *pMessageCounter - 1;
+        return;
+    }
+
+    *pMessageCounter = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetModeAndNotify @ 0x822F14A8 | size: 0xAC
+//
+// Updates the game mode value at offset +3488 if it differs from the
+// current value. Creates a snapshot of the current state, stores the
+// new mode, posts a boolean message indicating whether the new mode
+// is nonzero, then restores state and decrements the global message
+// counter.
+//
+// Parameters:
+//   newMode - New game mode value to set
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::SetModeAndNotify(int32_t newMode) {
+    int32_t currentMode = *(int32_t*)((uint8_t*)this + 3488);
+    if (newMode == currentMode) {
+        return;
+    }
+
+    // Create state snapshot on stack
+    uint8_t stateSnapshot[16];
+    SinglesNetworkClient_9838_g(stateSnapshot, this);
+
+    // Store new mode
+    *(int32_t*)((uint8_t*)this + 3488) = newMode;
+
+    // Determine boolean value: 1 if newMode was nonzero, 0 otherwise
+    uint32_t boolValue = (newMode != 0) ? 1 : 0;
+
+    // Prepare and post message
+    SinglesNetworkClient_B1E8_g(this);
+
+    void* messageSlot = SinglesNetworkClient_9318_g(this,
+        (const char*)0x8205B1D4);  // message type string @ 0x8205B1D4
+
+    if (messageSlot != nullptr) {
+        *(uint32_t*)((uint8_t*)messageSlot + 0) = boolValue;
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
+    }
+
+    // Check if snapshot requires notification flush
+    uint8_t snapshotFlag = stateSnapshot[4];
+    if (snapshotFlag != 0) {
+        void* snapshotClient = *(void**)&stateSnapshot[0];
+        SinglesNetworkClient_B320_g(snapshotClient);
+    }
+
+    // Decrement global message counter
+    uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
+    *pMessageCounter = *pMessageCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::PostIntMessage @ 0x822F2D68 | size: 0x8C
+//
+// Posts an integer value as a network message. Increments the global message
+// counter, finds the message slot, stores {value, 3}, and handles
+// notification flushing and counter management.
+//
+// Parameters:
+//   value - Integer value to post
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::PostIntMessage(int32_t value) {
+    // Poll network state
+    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+
+    // Increment global message counter
+    uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
+    uint32_t savedCounter = *pMessageCounter + 1;
+    *pMessageCounter = savedCounter;
+
+    // Prepare message
+    SinglesNetworkClient_B1E8_g(this);
+
+    // Find message slot
+    void* messageSlot = SinglesNetworkClient_9318_g(this,
+        (const char*)0x8205BECC);  // message type string @ 0x8205BECC
+
+    if (messageSlot != nullptr) {
+        *(int32_t*)((uint8_t*)messageSlot + 0) = value;
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
+    }
+
+    // Flush or decrement counter
+    if ((pollResult & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(this);
+        *pMessageCounter = *pMessageCounter - 1;
+        return;
+    }
+
+    *pMessageCounter = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::FireStartEvent @ 0x823E6C08 | size: 0xAC
+//
+// Creates a rage::EvtStart event and attempts to add it to the session's
+// event node list. Initializes the event with the EvtStart vtable, then
+// calls the session's event allocator (vtable slot 1). If allocation
+// succeeds, copies event data into the allocated node and adds it to
+// the session node list via snSession_AddNode_C068.
+//
+// Returns:
+//   true if the event was successfully allocated and added, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient::FireStartEvent() {
+    // Initialize a stack-local EvtStart event
+    uint8_t evtStartData[16];
+    util_DA08(evtStartData);
+
+    // Access the session at offset +212 from this
+    uint8_t* sessionBase = (uint8_t*)this + 212;
+
+    // Set EvtStart vtable pointer in event data
+    void* evtStartVtable = (void*)0x820728F0;  // vtable<rage::EvtStart>
+    *(void**)&evtStartData[0] = evtStartVtable;
+
+    // Get session event list pointer at sessionBase+4
+    void* sessionEventList = *(void**)((uint8_t*)sessionBase + 4);
+
+    // Call vtable slot 1 to allocate an event node (event type=12, flags=0)
+    void** vtable = *(void***)sessionEventList;
+    typedef void* (*AllocEventFn)(void*, int, int);
+    AllocEventFn allocEvent = (AllocEventFn)vtable[1];
+    void* eventNode = allocEvent(sessionEventList, 12, 0);
+
+    if (eventNode != nullptr) {
+        // Copy event data into the allocated node
+        // Store EvtStart vtable at node+0
+        *(void**)((uint8_t*)eventNode + 0) = evtStartVtable;
+
+        // Copy the 8-byte event payload (timestamp data from stack)
+        uint32_t payloadHi = *(uint32_t*)&evtStartData[4];
+        uint32_t payloadLo = *(uint32_t*)&evtStartData[8];
+        uint64_t payload = ((uint64_t)payloadHi << 32) | payloadLo;
+        *(uint64_t*)((uint8_t*)eventNode + 4) = payload;
+
+        // Add node to the session node list at sessionBase+8
+        snSession_AddNode_C068((uint8_t*)sessionBase + 8, eventNode);
+        return true;
+    }
+
+    return false;
 }
