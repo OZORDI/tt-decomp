@@ -3764,3 +3764,150 @@ void rage::phBoundCapsule::DispatchCameraCollision(
         cameraMatrix, fovScale, aspectRatio,
         clampedZoom, cameraDistance, flags);
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phInst — Physics Instance Accessors and Dispatchers (batch 4)
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * rage::phInst::SetCollisionGroup (vfn_16) @ 0x8248B8C8 | size: 0x8
+ *
+ * Sets the collision group identifier for this physics instance.
+ * Collision groups control which objects can collide with each other
+ * in the broadphase collision detection.
+ *
+ * @param group  Collision group ID to assign
+ */
+void rage::phInst::SetCollisionGroup(uint32_t group) {
+    this->m_collisionGroup = group;  // +284 (0x11C)
+}
+
+/**
+ * rage::phInst::GetCollisionGroup (vfn_19) @ 0x8248B8D0 | size: 0x8
+ *
+ * Returns the collision group identifier for this physics instance.
+ *
+ * @return  Current collision group ID
+ */
+uint32_t rage::phInst::GetCollisionGroup() const {
+    return this->m_collisionGroup;  // +284 (0x11C)
+}
+
+/**
+ * rage::phInst::SetContactCallback (vfn_38) @ 0x8248D808 | size: 0x8
+ *
+ * Sets the contact callback pointer used when this instance
+ * participates in a collision event. The callback is invoked
+ * by the solver after contact resolution.
+ *
+ * @param callback  Pointer to contact callback handler
+ */
+void rage::phInst::SetContactCallback(void* callback) {
+    this->m_contactCallback = callback;  // +444 (0x1BC)
+}
+
+/**
+ * rage::phInst::SetContactData (vfn_39) @ 0x8248D818 | size: 0x8
+ *
+ * Sets the user data pointer associated with contact events.
+ * This is typically a game-side object that receives physics
+ * contact notifications alongside the callback set via vfn_38.
+ *
+ * @param data  Pointer to user-defined contact data
+ */
+void rage::phInst::SetContactData(void* data) {
+    this->m_contactData = data;  // +448 (0x1C0)
+}
+
+/**
+ * rage::phInst::GetTransformRef (vfn_71) @ 0x82488480 | size: 0x8
+ *
+ * Returns the 64-bit combined transform reference stored at offset +64.
+ * On Xbox 360 (big-endian PPC64), this is a pair of 32-bit pointers
+ * packed into a single 64-bit load -- typically the current and previous
+ * frame transform matrix pointers used for interpolation.
+ *
+ * @return  64-bit packed transform pointer pair
+ */
+uint64_t rage::phInst::GetTransformRef() const {
+    return this->m_transformRef;  // +64 (0x40)
+}
+
+/**
+ * rage::phInst::GetBasisMatrixDispatch (vfn_15) @ 0x8248D888 | size: 0x18
+ *
+ * Dispatches to the serializer vtable function (slot 13) to copy
+ * the 40-byte basis matrix starting at offset +204.  This is the
+ * first of three 3x3+position matrix blocks in the phInst layout
+ * (basis / collision / previous-frame).
+ */
+void rage::phInst::GetBasisMatrixDispatch() {
+    void** vtable = *(void***)this;
+    typedef void (*SerializeFn)(void*, void*, void*, void*, uint32_t, void*);
+    SerializeFn fn = (SerializeFn)vtable[13];
+    fn(this, nullptr, nullptr, nullptr, 40, (uint8_t*)this + 204);
+}
+
+/**
+ * rage::phInst::GetCollisionMatrixDispatch (vfn_34) @ 0x8248D868 | size: 0x18
+ *
+ * Dispatches to the serializer vtable function (slot 13) to copy
+ * the 40-byte collision matrix at offset +284.  This matrix defines
+ * the collision shape orientation relative to the instance origin.
+ */
+void rage::phInst::GetCollisionMatrixDispatch() {
+    void** vtable = *(void***)this;
+    typedef void (*SerializeFn)(void*, void*, void*, void*, uint32_t, void*);
+    SerializeFn fn = (SerializeFn)vtable[13];
+    fn(this, nullptr, nullptr, nullptr, 40, (uint8_t*)this + 284);
+}
+
+/**
+ * rage::phInst::GetPreviousMatrixDispatch (vfn_35) @ 0x8248D848 | size: 0x18
+ *
+ * Dispatches to the serializer vtable function (slot 13) to copy
+ * the 40-byte previous-frame matrix at offset +364.  Used for
+ * motion interpolation and swept collision detection.
+ */
+void rage::phInst::GetPreviousMatrixDispatch() {
+    void** vtable = *(void***)this;
+    typedef void (*SerializeFn)(void*, void*, void*, void*, uint32_t, void*);
+    SerializeFn fn = (SerializeFn)vtable[13];
+    fn(this, nullptr, nullptr, nullptr, 40, (uint8_t*)this + 364);
+}
+
+/**
+ * rage::phInst::GetLevelOfDetailIndex @ 0x823592E8 | size: 0x10
+ *
+ * Extracts a 4-bit level-of-detail index from the packed flags word
+ * at offset +32 and returns it incremented by 1 (1-based LOD level).
+ *
+ * The LOD index is stored in bits 6-9 of field_0x0020:
+ *   rlwinm r11,r11,26,28,31  ->  (field >> 6) & 0xF
+ *
+ * @return  1-based LOD index (1..16)
+ */
+uint32_t rage::phInst::GetLevelOfDetailIndex() const {
+    uint32_t flags = this->m_packedFlags;  // +32 (0x20)
+    uint32_t lodIndex = (flags >> 6) & 0xF;
+    return lodIndex + 1;
+}
+
+/**
+ * rage::phInst::ComputeAllocationSize @ 0x82469070 | size: 0x18
+ *
+ * Computes the memory allocation size required for this physics instance
+ * based on the component count stored at offset +68.  Each component
+ * requires 100 bytes, plus a base overhead of 268 bytes.
+ *
+ * The result is written to the output pointer and the function returns 0
+ * (success).
+ *
+ * @param outSize  Pointer to receive the computed allocation size
+ * @return         0 (success)
+ */
+int32_t rage::phInst::ComputeAllocationSize(uint32_t* outSize) const {
+    uint8_t componentCount = this->m_componentCount;  // +68 (0x44)
+    *outSize = static_cast<uint32_t>(componentCount) * 100 + 268;
+    return 0;
+}
