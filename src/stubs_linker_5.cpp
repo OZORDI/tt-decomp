@@ -157,6 +157,19 @@ void snSession_9010_gen(void* a) { (void)a; }
 void snSession_5E20_gen(void* a) { (void)a; }
 void NotifyHandler_3D80_g(void* a, void* b) { (void)a; (void)b; }
 
+// snMigrateMachine helper stubs
+void util_5B50(void* a) { (void)a; }
+void util_6558(void* a) { (void)a; }
+void util_8F48(void* a) { (void)a; }
+void SinglesNetworkClient_2828_p45(void* a) { (void)a; }
+void SinglesNetworkClient_2A08_w(void* a) { (void)a; }
+void snSession_1BF8_g(void* a, int b, void* c) { (void)a; (void)b; (void)c; }
+void util_D170(void* a, void* b) { (void)a; (void)b; }
+uint8_t xam_E430_g(void* a, int b, int c) { (void)a; (void)b; (void)c; return 0; }
+void snMigrating_A058(void* a, void* b) { (void)a; (void)b; }
+void SinglesNetworkClient_A940_g(void* a) { (void)a; }
+void util_D4F8(void* a, int b) { (void)a; (void)b; }
+
 } // namespace rage
 
 // ============================================================================
@@ -289,3 +302,8 @@ extern const float g_kShotDirConsts[5] = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
 extern const float g_kInputAngleDeadzone = 0.0f;
 extern const double g_kInputMaxAngle = 1.0;
 extern const double g_kInputClampNeg = 0.0;
+
+// snMigrateMachine extern stubs
+extern "C" void* lbl_8207346C[5] = {};               // rage::EvtAcquireHostFailed vtable
+extern "C" void  thunk_fn_823F25E8(void) {}           // migrate notify callback thunk
+extern "C" void  thunk_fn_823F2E10(void) {}           // waiting-for-migrate-msg notify callback thunk
