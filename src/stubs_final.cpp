@@ -1,20 +1,8 @@
 // stubs_final.cpp — Final linker stubs with exact demangled signatures
 #include <cstdlib>
 #include <cstdint>
-// hsmState declared inline to avoid include path issues
-class hsmState {
-public:
-    virtual ~hsmState() = default;
-    virtual const char* GetStateName() const { return ""; }
-    virtual char* GetFullStatePath(char* buf, uint32_t bufSize) const;
-    virtual void Reset();
-protected:
-    void* m_pManager;
-    void* m_pParentState;
-    void* m_pChildState;
-    uint32_t m_field_10;
-    uint32_t m_field_14;
-};
+// hsmState methods — use weak linkage to avoid ODR conflicts
+// The actual class is defined in include/rage/hsmState.hpp
 
 // Forward declarations for typed params
 struct vec3 { float x, y, z; };
@@ -84,17 +72,8 @@ void rage_free(void* p) { free(p); }
 void sysCallback_Invoke(void*, int) {}
 void xmlNodeStruct_Initialize(void*) {}
 
-// C++ linkage methods
-char* hsmState::GetFullStatePath(char* buf, uint32_t bufSize) const {
-    if (buf && bufSize > 0) buf[0] = '\0';
-    return buf;
-}
-
-void hsmState::Reset() {}
-
-namespace rage {
-void ReleaseSingleton(atSingleton*) {}
-}
+// hsmState methods are in stubs_linker_2.cpp
+// rage::ReleaseSingleton is in stubs_linker_3.cpp
 
 // ── C-linkage wrappers for C callers ────────────────────────────────────────
 extern "C" {
