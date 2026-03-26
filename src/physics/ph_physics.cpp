@@ -8,6 +8,8 @@
  */
 
 #include "ph_physics.hpp"
+
+extern "C" void* xe_EC88(uint32_t size);  // RAGE heap alloc (defined in heap.c)
 #include <stddef.h>
 #include <math.h>
 #include <string.h>
