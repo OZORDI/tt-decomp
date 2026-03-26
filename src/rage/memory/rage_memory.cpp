@@ -609,3 +609,575 @@ void atSingleton_89F8_2hr(void* pThis, uint32_t param)
         currentNode = *(uint32_t*)(currentNode + 4);
     }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// atSingleton Batch: 10 functions (108B–284B)
+// Physics write-back, hash table probe, drawable field loading,
+// array destructor, weight accumulation, capacity-gated insertion,
+// input readiness check
+// ═══════════════════════════════════════════════════════════════════════════
+
+/* ── External dependencies ────────────────────────────────────────────────── */
+
+extern void ph_5908(void* physObj, const char* tag, int mode);
+extern void rage_3F18(void* globalTable, void* dataBlock, void* destBuffer);
+extern void ke_0E08(void* destTransform, void* srcTransform);
+extern int32_t pg_C4E8_g(int32_t value, int32_t rangeMin, int32_t rangeMax);
+extern void* atSingleton_29E0_g(const void* key);
+extern void rage_free_00C0(void* ptr);
+extern uint8_t atSingleton_Find_90D0(void* ptr);
+extern uint8_t atSingleton_7068_fw(void* hashMap, uint32_t playerIndex, void* entry);
+
+/* Global pointers */
+extern uint32_t* lbl_8271A374;          // physics write-back global table
+extern uint32_t* lbl_8271A324;          // player slot table base
+extern uint32_t* lbl_8271A364;          // session state pointer
+extern uint32_t* g_input_obj_ptr;       // @ 0x825EAB28
+extern uint32_t* g_render_obj_ptr;      // @ 0x825EAB2C
+extern uint32_t  lbl_825CA1A0[];        // network session object A
+extern uint32_t  lbl_825CA1B4[];        // network session object B
+
+/* Float constant for weight accumulation (likely 0.0f) */
+extern const float lbl_8202D110;        // @ 0x8202D110
+
+/* String constants for physics tags */
+extern const char lbl_82027660[];       // @ 0x82027660 - physics write tag A
+extern const char lbl_8202766C[];       // @ 0x8202766C - physics write tag B
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_3680_w @ 0x82123680 | size: 0x6C (108 bytes)
+// Writes physics simulation data from a data block into a bone transform.
+// Loads the data block from the singleton, copies via the global table,
+// then applies the result to a transform at offset +176.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_3680_w(void* pBoneState, void* pSingleton) {
+    uint8_t* singleton = (uint8_t*)pSingleton;
+    uint8_t* boneState = (uint8_t*)pBoneState;
+
+    // Get the physics object pointer from singleton +4
+    void* physObj = *(void**)(singleton + 4);
+
+    // Begin physics write-back (tag A)
+    ph_5908(physObj, lbl_82027660, 1);
+
+    // Reload physics object (may have changed during ph_5908)
+    void* physObjReloaded = *(void**)(singleton + 4);
+
+    // Get the data block pointer at offset +12 within the physics object
+    void* dataBlock = *(void**)((uint8_t*)physObjReloaded + 12);
+
+    // Copy data from global table through data block into dest buffer at +168
+    void* destBuffer = (void*)(boneState + 168);
+    rage_3F18(lbl_8271A374, dataBlock, destBuffer);
+
+    // Reload physics object again for end tag
+    void* physObjFinal = *(void**)(singleton + 4);
+
+    // End physics write-back (tag B)
+    ph_5908(physObjFinal, lbl_8202766C, 1);
+
+    // Apply the transform: copy from +168 source into +176 destination
+    void* srcTransform = *(void**)(boneState + 168);
+    ke_0E08((void*)(boneState + 176), srcTransform);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_36F0_w @ 0x821236F0 | size: 0x6C (108 bytes)
+// Same pattern as atSingleton_3680_w but with different bone offsets.
+// Writes physics data into transform at offsets +172 and +380.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_36F0_w(void* pBoneState, void* pSingleton) {
+    uint8_t* singleton = (uint8_t*)pSingleton;
+    uint8_t* boneState = (uint8_t*)pBoneState;
+
+    // Get the physics object pointer from singleton +4
+    void* physObj = *(void**)(singleton + 4);
+
+    // Begin physics write-back (tag A)
+    ph_5908(physObj, lbl_82027660, 1);
+
+    // Reload physics object
+    void* physObjReloaded = *(void**)(singleton + 4);
+
+    // Get the data block pointer at offset +12 within the physics object
+    void* dataBlock = *(void**)((uint8_t*)physObjReloaded + 12);
+
+    // Copy data from global table through data block into dest buffer at +172
+    void* destBuffer = (void*)(boneState + 172);
+    rage_3F18(lbl_8271A374, dataBlock, destBuffer);
+
+    // Reload physics object again for end tag
+    void* physObjFinal = *(void**)(singleton + 4);
+
+    // End physics write-back (tag B)
+    ph_5908(physObjFinal, lbl_8202766C, 1);
+
+    // Apply the transform: copy from +172 source into +380 destination
+    void* srcTransform = *(void**)(boneState + 172);
+    ke_0E08((void*)(boneState + 380), srcTransform);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_4EF0 @ 0x82124EF0 | size: 0x7C (124 bytes)
+// (aliased as fragDrawable_vfn_3)
+// Loads a named field from a data source into a fragDrawable.
+// Reads a 128-byte field name string via vtable call, compares it
+// case-insensitively against a known key. If it doesn't match, hashes
+// the field name and stores the result at offset +288, freeing the old value.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_4EF0(void* pDrawable, void* pDataSource) {
+    uint8_t* drawable = (uint8_t*)pDrawable;
+    uint8_t* dataSource = (uint8_t*)pDataSource;
+
+    // Get the inner object from data source +4
+    void* innerObj = *(void**)(dataSource + 4);
+
+    // Call vtable slot 1 to read a field name string (up to 128 bytes)
+    // into a local buffer (stack variable in original)
+    char fieldNameBuffer[128];
+    // vtable slot 1: ReadString(innerObj, buffer, maxLen)
+    void** vtable = *(void***)innerObj;
+    typedef void (*ReadStringFn)(void*, char*, int);
+    ReadStringFn readString = (ReadStringFn)vtable[1];
+    readString(innerObj, fieldNameBuffer, 128);
+
+    // Compare field name against known key (case-insensitive)
+    extern const char lbl_8202769C[];  // known field key string
+    if (_stricmp(fieldNameBuffer, lbl_8202769C) != 0) {
+        // Hash the field name to get a data object
+        void* fieldData = atSingleton_29E0_g(fieldNameBuffer);
+
+        // Free the old value at offset +288
+        void* oldValue = *(void**)(drawable + 288);
+        rage_free_00C0(oldValue);
+
+        // Store the new hashed field data
+        *(void**)(drawable + 288) = fieldData;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_dtor_3468 @ 0x820F3468 | size: 0xA0 (160 bytes)
+// Destructor for a dynamic pointer array with singleton ownership tracking.
+// Iterates backwards through the array, checking each element against
+// the singleton registry. Elements not owned by singletons are freed
+// via the system allocator. Finally frees the array storage itself.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_dtor_3468(void* pArray) {
+    uint8_t* arrayObj = (uint8_t*)pArray;
+
+    // Check element count at offset +6 (uint16)
+    uint16_t elementCount = *(uint16_t*)(arrayObj + 6);
+    if (elementCount == 0) {
+        return;
+    }
+
+    // Get the data pointer at offset +0
+    uint32_t* dataPtr = *(uint32_t**)(arrayObj);
+    if (dataPtr == nullptr) {
+        return;
+    }
+
+    // The count is stored at dataPtr[-1] (4 bytes before the data start)
+    uint32_t* countPtr = dataPtr - 1;
+    uint32_t count = *countPtr;
+    int32_t idx = count - 1;
+
+    // Calculate end pointer: dataPtr + (count * 4) bytes
+    uint8_t* elementPtr = (uint8_t*)dataPtr + (count * 4);
+
+    // Iterate backwards through the array
+    while (idx >= 0) {
+        elementPtr -= 4;
+        void* element = *(void**)elementPtr;
+
+        if (element != nullptr) {
+            // Check if element is owned by a singleton
+            uint8_t isSingleton = atSingleton_Find_90D0(element);
+            if (!isSingleton) {
+                // Not singleton-owned: free via system allocator
+                // Load allocator from SDA global at r13+0 -> offset +4 -> vtable slot 2
+                extern uint32_t lbl_82600000;
+                void* allocator = *(void**)((uint8_t*)&lbl_82600000 + 4);
+                void** allocVtable = *(void***)allocator;
+                typedef void (*FreeFn)(void*, void*);
+                FreeFn freeFn = (FreeFn)allocVtable[2];
+                freeFn(allocator, element);
+            }
+        }
+
+        idx--;
+    }
+
+    // Free the array storage (countPtr points to allocation start)
+    rage_free_00C0(countPtr);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_8128_g @ 0x82118128 | size: 0x9C (156 bytes)
+// Hash table linear probe search.
+// Starting from a given index, searches forward (with wrapping) through
+// a hash table for an entry whose active flag (byte at offset +16) is set.
+// If wrapFlag is true, clamps the start index to valid range first.
+// Returns the index of the found entry, or -1 if none found.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t atSingleton_8128_g(void* pHashTable, uint32_t startIndex, uint32_t stride, uint8_t wrapFlag) {
+    uint8_t* hashTable = (uint8_t*)pHashTable;
+
+    // Combine start index with stride to get effective start position
+    int32_t searchIdx = (int32_t)(startIndex + stride);
+
+    // If wrapFlag is set, clamp the index to valid range [0, capacity-1]
+    if (wrapFlag) {
+        uint16_t capacity = *(uint16_t*)(hashTable + 28);
+        searchIdx = pg_C4E8_g(searchIdx, 0, (int32_t)capacity - 1);
+    }
+
+    // Linear probe: search forward through the table
+    if (searchIdx >= 0) {
+        uint16_t capacity = *(uint16_t*)(hashTable + 28);
+        uint32_t entryOffset = (uint32_t)searchIdx * 4;
+        uint32_t strideBytes = stride * 4;
+
+        while (searchIdx < (int32_t)capacity) {
+            // Get the entry pointer from the table at offset +24
+            uint32_t* tableData = *(uint32_t**)(hashTable + 24);
+            void* entry = *(void**)((uint8_t*)tableData + entryOffset);
+
+            // Check if the active flag at entry +16 is set
+            uint8_t activeFlag = *(uint8_t*)((uint8_t*)entry + 16);
+            if (activeFlag != 0) {
+                return searchIdx;
+            }
+
+            // Advance by stride
+            searchIdx += (int32_t)stride;
+            entryOffset += strideBytes;
+
+            // If we wrapped below zero, stop
+            if (searchIdx < 0) {
+                break;
+            }
+        }
+    }
+
+    return -1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_8438_p39 @ 0x82118438 | size: 0xA8 (168 bytes)
+// Accumulates float weights from an array of object pointers.
+// Each object has a weight float at offset +144. The function sums all
+// weights, processing 4 elements at a time (loop unrolling) for elements
+// at index >= 4, then handles the remainder one at a time.
+// Returns the accumulated sum in f1.
+// ─────────────────────────────────────────────────────────────────────────────
+float atSingleton_8438_p39(void* pWeightArray) {
+    uint8_t* weightArray = (uint8_t*)pWeightArray;
+
+    // Read element count from offset +427 (byte field)
+    uint8_t elementCount = *(uint8_t*)(weightArray + 427);
+
+    // Start with initial weight value from constant (likely 0.0f)
+    float totalWeight = lbl_8202D110;
+
+    // Unrolled loop index: process 4 elements at a time starting from index 4
+    int32_t unrolledIdx = 0;
+    if (elementCount >= 4) {
+        // Get the pointer array at offset +180
+        uint32_t** ptrArray = *(uint32_t***)(weightArray + 180);
+
+        // Calculate number of groups of 4: (count - 4) / 4 + 1
+        uint32_t adjustedCount = (uint32_t)(elementCount - 4);
+        uint32_t numGroups = (adjustedCount >> 2) + 1;
+        unrolledIdx = (int32_t)(numGroups * 4);
+
+        // Process 4 entries per iteration
+        uint32_t** entryPtr = ptrArray + 2;  // start at index 2 (offset +8 from base)
+        for (uint32_t group = numGroups; group > 0; group--) {
+            float w0 = *(float*)((uint8_t*)entryPtr[-2] + 144);
+            float w1 = *(float*)((uint8_t*)entryPtr[-1] + 144);
+            float w2 = *(float*)((uint8_t*)entryPtr[0] + 144);
+            float w3 = *(float*)((uint8_t*)entryPtr[1] + 144);
+
+            totalWeight = w0 + totalWeight;
+            totalWeight = w1 + totalWeight;
+            totalWeight = w2 + totalWeight;
+            totalWeight = w3 + totalWeight;
+
+            entryPtr += 4;
+        }
+    }
+
+    // Handle remaining elements (index unrolledIdx to elementCount-1)
+    if (unrolledIdx < (int32_t)elementCount) {
+        uint32_t** ptrArray = *(uint32_t***)(weightArray + 180);
+        int32_t remaining = (int32_t)elementCount - unrolledIdx;
+        uint32_t** entryPtr = ptrArray + unrolledIdx;
+
+        for (int32_t i = remaining; i > 0; i--) {
+            float weight = *(float*)((uint8_t*)*entryPtr + 144);
+            totalWeight = weight + totalWeight;
+            entryPtr++;
+        }
+    }
+
+    return totalWeight;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_7D28_fw @ 0x82117D28 | size: 0xE4 (228 bytes)
+// Capacity-gated hash map insertion (variant A).
+// Checks if the entry count is below the maximum capacity. If room exists,
+// reads the player slot entry for the given index, calls vtable slot 2
+// to get a sequence number, validates it against min/max thresholds,
+// then calls the virtual GetKey method and inserts via atSingleton_7068_fw.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_7D28_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
+    uint8_t* entry = (uint8_t*)pEntry;
+
+    // Check capacity: count (+4) vs max (+8)
+    int32_t count = *(int32_t*)(entry + 4);
+    int32_t maxCapacity = *(int32_t*)(entry + 8);
+    if (count >= maxCapacity) {
+        return;
+    }
+
+    // Get the player slot table and compute slot address
+    // playerIndex * 8 gives the byte offset into the slot table
+    uint8_t* slotTable = (uint8_t*)lbl_8271A324;
+    uint8_t* slotEntry = slotTable + (playerIndex * 8);
+
+    // Get the network object at slot offset +252
+    void* netObj = *(void**)(slotEntry + 252);
+
+    // Call vtable slot 2 on netObj with arg=20 to get sequence number
+    void** netVtable = *(void***)netObj;
+    typedef void* (*GetSequenceFn)(void*, int);
+    GetSequenceFn getSequence = (GetSequenceFn)netVtable[2];
+    void* seqResult = getSequence(netObj, 20);
+
+    // Check sequence number against minimum threshold at entry +36
+    int32_t seqNum = *(int32_t*)seqResult;
+    int32_t minThreshold = *(int32_t*)(entry + 36);
+    if (seqNum < minThreshold) {
+        return;
+    }
+
+    // Re-read netObj vtable and call slot 2 again with arg=2 for key lookup
+    void** netVtable2 = *(void***)netObj;
+    typedef void* (*GetKeyFn)(void*, int);
+    GetKeyFn getKey = (GetKeyFn)netVtable2[2];
+    void* keyResult = getKey(netObj, 2);
+
+    // Check key value against maximum threshold at entry +40
+    int32_t keyVal = *(int32_t*)keyResult;
+    int32_t maxThreshold = *(int32_t*)(entry + 40);
+    if (keyVal > maxThreshold) {
+        return;
+    }
+
+    // Call the entry's virtual function (vtable slot 0) to get the insert value
+    void** entryVtable = *(void***)entry;
+    typedef void* (*GetValueFn)(void*);
+    GetValueFn getValue = (GetValueFn)entryVtable[0];
+    void* insertValue = getValue(entry);
+
+    // Insert into the hash map
+    uint8_t inserted = atSingleton_7068_fw(pHashMap, playerIndex, insertValue);
+    if (inserted) {
+        // Increment the entry count
+        int32_t currentCount = *(int32_t*)(entry + 4);
+        *(int32_t*)(entry + 4) = currentCount + 1;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_7E10_fw @ 0x82117E10 | size: 0xDC (220 bytes)
+// Capacity-gated hash map insertion (variant B).
+// Similar to atSingleton_7D28_fw but uses a different sequence threshold:
+// reads frame counts from the render object and sums them, comparing
+// against the entry's minimum threshold before proceeding.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_7E10_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
+    uint8_t* entry = (uint8_t*)pEntry;
+
+    // Check capacity: count (+4) vs max (+8)
+    int32_t count = *(int32_t*)(entry + 4);
+    int32_t maxCapacity = *(int32_t*)(entry + 8);
+    if (count >= maxCapacity) {
+        return;
+    }
+
+    // Load the render object and read frame counts at offsets +28 and +32
+    int32_t minThreshold = *(int32_t*)(entry + 36);
+    void* renderObj = *(void**)g_render_obj_ptr;
+    int32_t frameCountA = *(int32_t*)((uint8_t*)renderObj + 28);
+    int32_t frameCountB = *(int32_t*)((uint8_t*)renderObj + 32);
+    int32_t totalFrames = frameCountA + frameCountB + 1;
+
+    // Get the player slot table and compute slot address
+    uint8_t* slotTable = (uint8_t*)lbl_8271A324;
+    uint8_t* slotEntry = slotTable + (playerIndex * 8);
+    void* netObj = *(void**)(slotEntry + 252);
+
+    // Check total frames against minimum threshold
+    if (totalFrames < minThreshold) {
+        return;
+    }
+
+    // Call vtable slot 2 on netObj with arg=13 to get sequence value
+    void** netVtable = *(void***)netObj;
+    typedef void* (*GetSequenceFn)(void*, int);
+    GetSequenceFn getSequence = (GetSequenceFn)netVtable[2];
+    void* seqResult = getSequence(netObj, 13);
+
+    // Check sequence value against maximum threshold at entry +40
+    int32_t seqVal = *(int32_t*)seqResult;
+    int32_t maxThreshold = *(int32_t*)(entry + 40);
+    if (seqVal > maxThreshold) {
+        return;
+    }
+
+    // Call the entry's virtual function (vtable slot 0) to get insert value
+    void** entryVtable = *(void***)entry;
+    typedef void* (*GetValueFn)(void*);
+    GetValueFn getValue = (GetValueFn)entryVtable[0];
+    void* insertValue = getValue(entry);
+
+    // Insert into the hash map
+    uint8_t inserted = atSingleton_7068_fw(pHashMap, playerIndex, insertValue);
+    if (inserted) {
+        // Increment the entry count
+        int32_t currentCount = *(int32_t*)(entry + 4);
+        *(int32_t*)(entry + 4) = currentCount + 1;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_7EF0_fw @ 0x82117EF0 | size: 0xB8 (184 bytes)
+// Capacity-gated hash map insertion (variant C).
+// Checks capacity, then reads the player slot's network object, calls
+// vtable slot 2 with arg=21 to get a sequence number, validates against
+// min threshold, then calls the entry's virtual GetKey to insert.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_7EF0_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
+    uint8_t* entry = (uint8_t*)pEntry;
+
+    // Check capacity: count (+4) vs max (+8)
+    int32_t count = *(int32_t*)(entry + 4);
+    int32_t maxCapacity = *(int32_t*)(entry + 8);
+    if (count >= maxCapacity) {
+        return;
+    }
+
+    // Get the player slot table and compute slot address
+    uint8_t* slotTable = (uint8_t*)lbl_8271A324;
+    uint8_t* slotEntry = slotTable + (playerIndex * 8);
+
+    // Get the network object at slot offset +252
+    void* netObj = *(void**)(slotEntry + 252);
+
+    // Call vtable slot 2 on netObj with arg=21 to get sequence number
+    void** netVtable = *(void***)netObj;
+    typedef void* (*GetSequenceFn)(void*, int);
+    GetSequenceFn getSequence = (GetSequenceFn)netVtable[2];
+    void* seqResult = getSequence(netObj, 21);
+
+    // Check sequence number against minimum threshold at entry +36
+    int32_t seqNum = *(int32_t*)seqResult;
+    int32_t minThreshold = *(int32_t*)(entry + 36);
+    if (seqNum < minThreshold) {
+        return;
+    }
+
+    // Call the entry's virtual function (vtable slot 0) to get insert value
+    void** entryVtable = *(void***)entry;
+    typedef void* (*GetValueFn)(void*);
+    GetValueFn getValue = (GetValueFn)entryVtable[0];
+    void* insertValue = getValue(entry);
+
+    // Insert into the hash map
+    uint8_t inserted = atSingleton_7068_fw(pHashMap, playerIndex, insertValue);
+    if (inserted) {
+        // Increment the entry count
+        int32_t currentCount = *(int32_t*)(entry + 4);
+        *(int32_t*)(entry + 4) = currentCount + 1;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_7FA8_w @ 0x82117FA8 | size: 0x11C (284 bytes)
+// Checks whether the game is ready to accept player input.
+// Evaluates multiple conditions: network session state, session readiness
+// flag, input device connection count, keyboard/button input state,
+// and controller connection status. Returns true only when all conditions
+// indicate the game is in a valid input-accepting state.
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t atSingleton_7FA8_w() {
+    // Check network session object A: if session pointer (+4) is non-null, input blocked
+    uint32_t* sessionObjA = (uint32_t*)((uint8_t*)lbl_825CA1A0 + 4);
+    if (*sessionObjA != 0) {
+        return 0;
+    }
+
+    // Check session state: load session state pointer, check readiness flag at +60
+    void* sessionState = *(void**)lbl_8271A364;
+    uint8_t readyFlag = *(uint8_t*)((uint8_t*)sessionState + 60);
+    if (readyFlag == 0) {
+        return 0;
+    }
+
+    // Check input object: device connection count at +20 must be > 0
+    void* inputObj = *(void**)g_input_obj_ptr;
+    int32_t deviceCount = *(int32_t*)((uint8_t*)inputObj + 20);
+    if (deviceCount > 0) {
+        return 0;
+    }
+
+    // Check keyboard/button input state at +334 (byte flag)
+    uint8_t keyboardActive = *(uint8_t*)((uint8_t*)inputObj + 334);
+    if (keyboardActive != 0) {
+        // Keyboard is active, input allowed regardless of other checks
+    } else {
+        // Check alternate input flag at +340
+        int32_t altInputFlag = *(int32_t*)((uint8_t*)inputObj + 340);
+        bool hasAltInput = (altInputFlag != 0);
+        if (!hasAltInput) {
+            // No keyboard and no alt input: input not ready
+            return 0;
+        }
+    }
+
+    // Check controller connection: both slots at +56 and +60 must be connected (==1)
+    int32_t controllerSlotA = *(int32_t*)((uint8_t*)inputObj + 56);
+    int32_t controllerSlotB = *(int32_t*)((uint8_t*)inputObj + 60);
+
+    bool slotAConnected = (controllerSlotA == 1);
+    bool slotBConnected = (controllerSlotB == 1);
+
+    int32_t connectedCount = (slotAConnected ? 1 : 0) + (slotBConnected ? 1 : 0);
+
+    // Both controllers must be connected (count >= 2)
+    if (connectedCount >= 2) {
+        // Both connected: check network session object B
+        uint32_t* sessionObjB = (uint32_t*)((uint8_t*)lbl_825CA1B4 + 4);
+        if (*sessionObjB != 0) {
+            return 0;
+        }
+    }
+
+    // All checks passed: input is ready
+    return 1;
+}
