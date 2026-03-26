@@ -95,3 +95,33 @@ void hsmState::Reset() {}
 namespace rage {
 void ReleaseSingleton(atSingleton*) {}
 }
+
+// ── C-linkage wrappers for C callers ────────────────────────────────────────
+extern "C" {
+void _c_PostStateTransitionRequest(void* m, int e) __asm__("_PostStateTransitionRequest");
+void _c_PostStateTransitionRequest(void* m, int e) { PostStateTransitionRequest(m, e); }
+void _c_RtlEnterCriticalSection(void* cs) __asm__("_RtlEnterCriticalSection");
+void _c_RtlEnterCriticalSection(void* cs) { RtlEnterCriticalSection(cs); }
+void _c_RtlLeaveCriticalSection(void* cs) __asm__("_RtlLeaveCriticalSection");
+void _c_RtlLeaveCriticalSection(void* cs) { RtlLeaveCriticalSection(cs); }
+void _c_atArray_Clear(void* a) __asm__("_atArray_Clear");
+void _c_atArray_Clear(void* a) { atArray_Clear(a); }
+void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
+void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
+void _c_hsmContext_SetNextState_2800(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
+void _c_hsmContext_SetNextState_2800(void* c, int s) { hsmContext_SetNextState_2800(c, s); }
+void _c_pg_6F68(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
+void _c_pg_6F68(void* a, void* b, int c, unsigned* d, int e) { pg_6F68(a,b,c,d,e); }
+void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) __asm__("_phMaterialMgrImpl_C208_g");
+void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) { phMaterialMgrImpl_C208_g(a,b); }
+void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
+void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
+void _c_xmlNodeStruct_Initialize(void* o) __asm__("_xmlNodeStruct_Initialize");
+void _c_xmlNodeStruct_Initialize(void* o) { xmlNodeStruct_Initialize(o); }
+}
+
+// ── C++ signatures that differ from stubs_final ─────────────────────────────
+void* pg_9C00_g(void* p, int i) { (void)p;(void)i; return nullptr; }
+void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)b;(void)c; }
+namespace rage { void phBoundCapsule_01D0_g(void* j, float f) { (void)j;(void)f; } }
