@@ -1861,3 +1861,355 @@ void fxHairGroup_Destroy(uint8_t* obj) {
     // Restore vtable to rage::datBase
     *(void**)obj = (void*)0x820276C4;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdGameData_Destructor()  @ 0x821C7900 | size: 0x48
+// vtable slot 0 [destructor]
+//
+// Destructor for gdGameData singleton. Sets vtable to gdGameData's vtable,
+// then conditionally frees the object memory if deleteFlag is set.
+// ─────────────────────────────────────────────────────────────────────────────
+void gdGameData_Destructor(atSingleton* obj, int deleteFlag) {
+    // Set vtable to gdGameData vtable (0x8203CDF4)
+    obj->vtable = (void*)0x8203CDF4;
+
+    if (deleteFlag & 1) {
+        rage_free(obj);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdGameData_LoadProperties()  @ 0x821C85D0 | size: 0xC
+// vtable slot 2
+//
+// Loads game data properties by passing the global game data pointer
+// to the property loader function (game_C0D8).
+// ─────────────────────────────────────────────────────────────────────────────
+extern uint32_t g_gdGameDataPtr;  // @ 0x8271A310
+
+void gdGameData_LoadProperties(atSingleton* obj) {
+    extern void game_C0D8(void* gameData);
+    game_C0D8((void*)g_gdGameDataPtr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdGameData_ReplaceLoadedProperty()  @ 0x821E8430 | size: 0x7C
+// vtable slot 3
+//
+// Replaces a loaded property at a given slot index (0-3).
+// Each slot is 124 bytes. Destroys old property, looks up new property
+// via atSingleton_D6E8_g using a property name table, then links
+// the replacement into the property chain.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void atSingleton_D6E8_g(void* param, const char* name);
+
+void* gdGameData_ReplaceLoadedProperty(atSingleton* obj, void* registry, uint32_t slotIndex) {
+    if (slotIndex > 3) {
+        return nullptr;
+    }
+
+    // Calculate slot address: base + slotIndex * 124 + 8
+    uint8_t* slotBase = (uint8_t*)obj + slotIndex * 124 + 8;
+
+    // Destroy the existing property at this slot
+    extern void datBase_DestroyVirtual(void* obj);
+    datBase_DestroyVirtual(slotBase);
+
+    // Look up replacement property by name
+    // Property name table at 0x82041748: "tLoadProperties() - 'TotalNumTries' must be positive"
+    void* result = (void*)slotBase;
+    extern void* atSingleton_D6E8_g_ret(void* registry, const char* name);
+    void* entry = atSingleton_D6E8_g_ret(registry, (const char*)0x82041748);
+
+    // Link the replacement property into the chain
+    uint32_t* entryNext = (uint32_t*)((uint8_t*)entry + 4);
+    *entryNext = (uint32_t)(uintptr_t)slotBase;
+
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdGameData_ClearLoadedFlag()  @ 0x821F0400 | size: 0xC
+// vtable slot 4
+//
+// Clears the loaded flag byte at offset +8 in the object.
+// Called when game data needs to be reloaded or invalidated.
+// ─────────────────────────────────────────────────────────────────────────────
+void gdGameData_ClearLoadedFlag(atSingleton* obj) {
+    *((uint8_t*)obj + 8) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdGameData_GetPropertyString()  @ 0x82229638 | size: 0xC
+// vtable slot 15
+//
+// Returns a pointer to a constant string used for property identification.
+// The string at 0x8204E918 is "t number of points specified".
+// ─────────────────────────────────────────────────────────────────────────────
+const char* gdGameData_GetPropertyString() {
+    return (const char*)0x8204E918;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_CopyDataAndResolve()  @ 0x821257F0 | size: 0x84
+//
+// Copies 48 bytes of data from source into the destination object,
+// then resolves a name reference via atSingleton_29E0_g and stores
+// the result at offset +48. Clears fields at offsets +52, +56, +60.
+// Used by fragDrawable to initialize draw data from a template.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* atSingleton_29E0_g(const void* key);
+
+void datBase_CopyDataAndResolve(void* dest, void* nameSource, const void* srcData) {
+    // Copy first 48 bytes (two 16-byte vectors + four 32-bit fields)
+    memcpy(dest, srcData, 32);
+    uint32_t* dst32 = (uint32_t*)((uint8_t*)dest + 32);
+    const uint32_t* src32 = (const uint32_t*)((const uint8_t*)srcData + 32);
+    dst32[0] = src32[0];
+    dst32[1] = src32[1];
+    dst32[2] = src32[2];
+    dst32[3] = src32[3];
+
+    // Resolve name from nameSource and store at offset +48
+    const void* name = *(const void**)nameSource;
+    void* resolved = atSingleton_29E0_g(name);
+
+    uint32_t* destFields = (uint32_t*)((uint8_t*)dest + 48);
+    destFields[0] = (uint32_t)(uintptr_t)resolved;
+    destFields[1] = 0;
+    destFields[2] = 0;
+    destFields[3] = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_CheckGlobalActiveFlag()  @ 0x820D9C18 | size: 0x54
+//
+// Checks whether a global system is in an active state by reading
+// a chain of pointers from global data and testing bit flags.
+// Returns true if bit 2 is set and bit 0 is clear in the status word.
+//
+// Pointer chain: g_systemPtr -> +20 -> +9736 -> +0 = status word
+// Tests: if bit 0 is set, return false. If bit 2 is set, return true.
+// ─────────────────────────────────────────────────────────────────────────────
+extern uint32_t g_systemRootPtr;  // @ 0x8271A2F8
+
+bool datBase_CheckGlobalActiveFlag() {
+    uint32_t* root = (uint32_t*)g_systemRootPtr;
+    uint32_t* level1 = (uint32_t*)(*(uint32_t*)((uint8_t*)root + 20));
+    uint32_t* level2 = (uint32_t*)(*(uint32_t*)((uint8_t*)level1 + 9736));
+    uint32_t statusWord = *level2;
+
+    // If bit 0 is set, system is inactive
+    if (statusWord & 0x1) {
+        return false;
+    }
+
+    // If bit 2 is set, system is active
+    if (statusWord & 0x4) {
+        return true;
+    }
+
+    return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst_FormatAndStoreName()  @ 0x82118D30 | size: 0x88
+//
+// Formats a name string from a physics instance and stores it
+// at offset +444 in the object. Uses memset to clear a 64-byte
+// buffer, reads name via vtable slot 1 on the source object's
+// field at +4, then passes it through a global formatter at
+// offset +908 from global pointer at SDA+25528.
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst_FormatAndStoreName(uint8_t* obj, void* source) {
+    // Clear 64-byte name buffer on stack
+    char nameBuffer[64];
+    nameBuffer[0] = '\0';
+    memset(nameBuffer + 1, 0, 63);
+
+    // Get name from source's field at +4 via vtable slot 1
+    void* sourceField = *(void**)((uint8_t*)source + 4);
+    typedef void (*GetNameFunc)(void*, char*, uint32_t);
+    void** vtable = *(void***)sourceField;
+    GetNameFunc getName = (GetNameFunc)vtable[1];
+    getName(sourceField, nameBuffer, 64);
+
+    // Format name through global formatter
+    uint32_t* globalBase = *(uint32_t**)(0x826063B8);
+    uint8_t* formatter = (uint8_t*)globalBase + 908;
+    typedef uint8_t (*FormatFunc)(void*, const char*);
+    FormatFunc format = (FormatFunc)(*(uint32_t**)formatter)[3];
+    uint8_t result = format(formatter, nameBuffer);
+
+    // Store formatted result at offset +444
+    *(obj + 444) = result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_DestroyTreeNode()  @ 0x82131238 | size: 0x9C
+//
+// Recursively destroys a tree node with 8 children stored at
+// offsets +28 through +56 (4 bytes each). For each non-null child,
+// recursively calls itself. After children are cleaned up, checks
+// if the node is tracked by the singleton system and either frees
+// directly or unregisters through the allocator.
+// ─────────────────────────────────────────────────────────────────────────────
+extern bool atSingleton_Find_90D0(void* ptr);
+
+void datBase_DestroyTreeNode(void* node, int deleteFlag) {
+    uint8_t* nodePtr = (uint8_t*)node;
+
+    // Recursively destroy 8 child nodes at offsets +28 to +56
+    uint32_t* children = (uint32_t*)(nodePtr + 28);
+    for (int i = 0; i < 8; i++) {
+        void* child = (void*)children[i];
+        if (child != nullptr) {
+            datBase_DestroyTreeNode(child, 1);
+        }
+    }
+
+    // Check if node has allocator tracking (field at +24)
+    int32_t hasTracking = *(int32_t*)(nodePtr + 24);
+    if (hasTracking == 0) {
+        rage_free(node);
+        return;
+    }
+
+    // Check data pointer at +16
+    void* dataPtr = *(void**)(nodePtr + 16);
+    if (dataPtr == nullptr) {
+        rage_free(node);
+        return;
+    }
+
+    // Check if data is registered in singleton system
+    if (atSingleton_Find_90D0(dataPtr)) {
+        rage_free(node);
+        return;
+    }
+
+    // Unregister through allocator (SDA+0 -> +4 -> vtable slot 2)
+    extern void* g_allocator_ptr;
+    void** allocatorBase = *(void***)&g_allocator_ptr;
+    void* allocator = *(void**)((uint8_t*)allocatorBase + 4);
+    typedef void (*FreeFn)(void*, void*);
+    void** allocVtable = *(void***)allocator;
+    FreeFn freeFunc = (FreeFn)allocVtable[2];
+    freeFunc(allocator, dataPtr);
+
+    rage_free(node);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_DestroyArray192()  @ 0x8214BE18 | size: 0xCC
+//
+// Destroys an array of 192-byte elements with singleton tracking.
+// For each element, checks if it is tracked by the singleton system
+// before freeing through the allocator. Also frees secondary
+// arrays stored at offsets +4 and +8 in the container.
+// ─────────────────────────────────────────────────────────────────────────────
+void datBase_DestroyArray192(uint8_t* container) {
+    // Get array pointer from container offset +0
+    void* arrayPtr = *(void**)container;
+    if (arrayPtr != nullptr) {
+        uint8_t* arrayBase = (uint8_t*)arrayPtr - 16;
+        uint32_t elementCount = *(uint32_t*)arrayBase;
+
+        // Calculate stride: count * 3 * 64 = count * 192
+        uint32_t totalSize = elementCount * 192;
+        uint8_t* currentElement = (uint8_t*)arrayPtr + totalSize;
+
+        // Destroy each element in reverse order
+        for (int32_t i = elementCount - 1; i >= 0; i--) {
+            currentElement -= 192;
+            void* element = *(void**)currentElement;
+
+            if (element != nullptr) {
+                // Check if element is tracked by singleton system
+                if (!atSingleton_Find_90D0(element)) {
+                    // Unregister through allocator
+                    extern void* g_allocator_ptr;
+                    void** allocatorBase = *(void***)&g_allocator_ptr;
+                    void* allocator = *(void**)((uint8_t*)allocatorBase + 4);
+                    typedef void (*FreeFn)(void*, void*);
+                    void** allocVtable = *(void***)allocator;
+                    FreeFn freeFunc = (FreeFn)allocVtable[2];
+                    freeFunc(allocator, element);
+                }
+            }
+        }
+
+        // Free the array memory
+        rage_free(arrayBase);
+    }
+
+    // Free secondary buffer at +4
+    void* buffer1 = *(void**)(container + 4);
+    if (buffer1 != nullptr) {
+        rage_free(buffer1);
+        *(void**)(container + 4) = nullptr;
+    }
+
+    // Free secondary buffer at +8
+    void* buffer2 = *(void**)(container + 8);
+    if (buffer2 != nullptr) {
+        rage_free(buffer2);
+        *(void**)(container + 8) = nullptr;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_DestroyHashMap()  @ 0x82156160 | size: 0xC4
+//
+// Destroys a hash map structure with 8-byte entries. Each entry
+// contains a pointer that may be tracked by the singleton system.
+// After clearing all entries, frees the backing array through
+// net_5B40 (a memory pool free function), then clears the container.
+// ─────────────────────────────────────────────────────────────────────────────
+void datBase_DestroyHashMap(uint8_t* hashMap) {
+    int16_t entryCount = *(int16_t*)(hashMap + 4);
+
+    if (entryCount > 0) {
+        int32_t offset = 0;
+        for (int32_t i = 0; i < entryCount; i++) {
+            void* arrayBase = *(void**)hashMap;
+            uint8_t* entry = (uint8_t*)arrayBase + offset;
+
+            void* element = *(void**)entry;
+            if (element != nullptr) {
+                // Check if element is tracked
+                if (!atSingleton_Find_90D0(element)) {
+                    // Unregister through allocator
+                    extern void* g_allocator_ptr;
+                    void** allocatorBase = *(void***)&g_allocator_ptr;
+                    void* allocator = *(void**)((uint8_t*)allocatorBase + 4);
+                    typedef void (*FreeFn)(void*, void*);
+                    void** allocVtable = *(void***)allocator;
+                    FreeFn freeFunc = (FreeFn)allocVtable[2];
+                    freeFunc(allocator, element);
+                }
+            }
+
+            // Clear entry fields
+            *(uint32_t*)entry = 0;
+            *(uint16_t*)(entry + 4) = 0;
+            *(uint16_t*)(entry + 6) = 0;
+
+            offset += 8;
+        }
+    }
+
+    // Free backing array through net_5B40
+    void* arrayPtr = *(void**)hashMap;
+    if (arrayPtr != nullptr) {
+        extern void net_5B40(void* ptr, int mode);
+        net_5B40(arrayPtr, 3);
+    }
+
+    // Clear the container
+    *(uint32_t*)hashMap = 0;
+    *(uint16_t*)(hashMap + 4) = 0;
+    *(uint16_t*)(hashMap + 6) = 0;
+
+    rage_free(hashMap);
+}
