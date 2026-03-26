@@ -44,7 +44,7 @@ struct pongPageGroup {
 
 
 extern void rage_free(void* ptr);                  // @ 0x820C00C0
-extern void* xe_EC88(uint32_t size);               // @ 0x820DEC88
+extern "C" void* xe_EC88(uint32_t size);               // @ 0x820DEC88
 extern void nop_8240E6D0(const void* fmt, ...);  // @ 0x8240E6D0 — debug logger (no-op in release)
 
 // Field registration helper (rage serialization system)

@@ -12,7 +12,7 @@
 
 // External function declarations
 extern void audControl_Destructor(void* obj);  // @ 0x82161568
-extern void* xe_EC88(uint32_t size);
+extern "C" void* xe_EC88(uint32_t size);
 
 namespace rage {
     void  ReleaseSingleton(void* singleton);         // @ 0x821A9420
