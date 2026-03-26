@@ -3839,3 +3839,182 @@ void pongNetMessageHolder_2028_2hr(void* thisPtr) {
     refCount++;
     *(uint32_t*)(obj + 12) = refCount;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BATCH: Network Message Deserialise/Serialise vtable methods
+// Classes: HitMessage, HitDataMessage, SpectatorBallHitMessage,
+//          RemoteServeReadyMessage, MatchTimeSyncMessage,
+//          ForceMatchTimeSyncMessage
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HitMessage::Deserialise  [vtable slot 1 @ 0x823B5FE0 | size: 0x5C]
+// Reads base hit message fields from the network stream: timing float + hit flags byte.
+// ─────────────────────────────────────────────────────────────────────────────
+void HitMessage::Deserialise(void* client) {
+    // Read 32-bit float from stream into temporary buffer
+    float timingRef;
+    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+
+    // Store timing reference at +0x04
+    m_timingRef = timingRef;
+
+    // Read 8-bit hit flags byte into +0x08
+    ReadBitsFromStream(client, &m_hitFlags, 8);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HitDataMessage::Deserialise  [vtable slot 1 @ 0x823B5B58 | size: 0x80]
+// Reads hit data message fields: timing float, ball hit data block,
+// secondary timing float, and player index byte.
+// ─────────────────────────────────────────────────────────────────────────────
+void HitDataMessage::Deserialise(void* client) {
+    // Read timing reference float
+    float timingRef;
+    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    m_timingRef = timingRef;
+
+    // Read ball hit data block at +0x10 (192-byte structure)
+    DeserializeNetworkData(client, &m_ballHitData, 32);
+
+    // Read secondary timing float (recovery/power value)
+    float recoveryTiming;
+    SinglesNetworkClient_8DF8_g(client, &recoveryTiming, 32);
+    m_recoveryTiming = recoveryTiming;
+
+    // Read player index byte at +0xD4
+    ReadBitsFromStream(client, &m_playerIndex, 8);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SpectatorBallHitMessage::Deserialise  [vtable slot 1 @ 0x823B6B00 | size: 0x44]
+// Reads spectator ball hit: delegates to HitMessage::Deserialise for the
+// base fields, then reads the ball hit data block.
+// ─────────────────────────────────────────────────────────────────────────────
+void SpectatorBallHitMessage::Deserialise(void* client) {
+    // Read base HitMessage fields (timing float + hit flags byte)
+    HitMessage::Deserialise(client);
+
+    // Read ball hit data block at +0x10
+    DeserializeNetworkData(client, &m_ballHitData, 32);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RemoteServeReadyMessage::Deserialise  [vtable slot 1 @ 0x823B6ED8 | size: 0x48]
+// Reads remote serve ready: delegates to HitMessage::Deserialise for base
+// fields, then reads a 16-bit serve parameter.
+// ─────────────────────────────────────────────────────────────────────────────
+void RemoteServeReadyMessage::Deserialise(void* client) {
+    // Read base HitMessage fields (timing float + hit flags byte)
+    HitMessage::Deserialise(client);
+
+    // Read 16-bit serve parameter at +0x0C
+    util_7830(client, &m_serveParam, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RemoteServeReadyMessage::Serialise  [vtable slot 2 @ 0x823B6F20 | size: 0x60]
+// Writes remote serve ready fields to the outgoing network stream:
+// timing float, hit flags byte, and 16-bit serve parameter.
+// ─────────────────────────────────────────────────────────────────────────────
+void RemoteServeReadyMessage::Serialise(void* client) {
+    // Write timing reference float
+    WriteFloatToNetworkStream(client, m_timingRef);
+
+    // Write hit flags as 8-bit unsigned
+    SinglesNetworkClient_6838_g(client, m_hitFlags, 8);
+
+    // Write 16-bit serve parameter
+    SinglesNetworkClient_6838_g(client, m_serveParam, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MatchTimeSyncMessage::Deserialise  [vtable slot 1 @ 0x823B70A8 | size: 0x88]
+// Reads match time sync fields: two 64-bit timestamps, a timing float,
+// a 16-bit frame counter, then applies a scale factor to the timing value.
+// ─────────────────────────────────────────────────────────────────────────────
+void MatchTimeSyncMessage::Deserialise(void* client) {
+    // Read two 64-bit timestamp values at +0x08 and +0x10
+    SinglesNetworkClient_EA98_g(&m_localTimestamp, client);
+    SinglesNetworkClient_EA98_g(&m_remoteTimestamp, client);
+
+    // Read timing float
+    float syncTiming;
+    SinglesNetworkClient_8DF8_g(client, &syncTiming, 32);
+    m_syncDelta = syncTiming;
+
+    // Read 16-bit frame counter at +0x1C
+    util_7830(client, &m_frameCounter, 16);
+
+    // Apply scale factor from global config to sync delta
+    // Scale factor is at g_matchTimeSyncConfig + 12 (0x825CAEC4)
+    extern float* g_pMatchTimeSyncScale;  // @ 0x825CAEB8 + 12
+    m_syncDelta *= g_pMatchTimeSyncScale[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MatchTimeSyncMessage::Serialise  [vtable slot 2 @ 0x823B7130 | size: 0x88]
+// Writes match time sync fields to the outgoing network stream:
+// two 32-bit timestamps, three floats, and a 16-bit frame counter.
+// ─────────────────────────────────────────────────────────────────────────────
+void MatchTimeSyncMessage::Serialise(void* client) {
+    // Write local timestamp as 32-bit value
+    SinglesNetworkClient_68A8_g(client, m_localTimestamp, 32);
+
+    // Write local timing float
+    WriteFloatToNetworkStream(client, m_localTiming);
+
+    // Write remote timestamp as 32-bit value
+    SinglesNetworkClient_68A8_g(client, m_remoteTimestamp, 32);
+
+    // Write remote timing float
+    WriteFloatToNetworkStream(client, m_remoteTiming);
+
+    // Write sync delta float
+    WriteFloatToNetworkStream(client, m_syncDelta);
+
+    // Write 16-bit frame counter
+    SinglesNetworkClient_6838_g(client, m_frameCounter, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ForceMatchTimeSyncMessage::Deserialise  [vtable slot 1 @ 0x823B7AA0 | size: 0x4C]
+// Reads forced time sync fields: a 64-bit timestamp and a 16-bit parameter.
+// ─────────────────────────────────────────────────────────────────────────────
+void ForceMatchTimeSyncMessage::Deserialise(void* client) {
+    // Read 64-bit timestamp at +0x08
+    SinglesNetworkClient_EA98_g(&m_timestamp, client);
+
+    // Read 16-bit sync parameter at +0x10
+    util_7830(client, &m_syncParam, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ForceMatchTimeSyncMessage::Serialise  [vtable slot 2 @ 0x823B7AF0 | size: 0x60]
+// Writes forced time sync fields to the outgoing network stream:
+// a 32-bit timestamp, a float, and a 16-bit parameter.
+// ─────────────────────────────────────────────────────────────────────────────
+void ForceMatchTimeSyncMessage::Serialise(void* client) {
+    // Write timestamp as 32-bit value
+    SinglesNetworkClient_68A8_g(client, m_timestamp, 32);
+
+    // Write timing float
+    WriteFloatToNetworkStream(client, m_timing);
+
+    // Write 16-bit sync parameter
+    SinglesNetworkClient_6838_g(client, m_syncParam, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ForceMatchTimeSyncMessage::Process  [vtable slot 3 @ 0x823B7608 | size: 0x34]
+// Applies the forced time sync by updating the session's time sync state.
+// Formats the result as a debug string and logs it (via no-op in retail).
+// ─────────────────────────────────────────────────────────────────────────────
+void ForceMatchTimeSyncMessage::Process() {
+    // Format timestamp for debug: converts the sync timestamp to a string
+    char* formattedTime = SinglesNetworkClient_BF30(&m_timestamp);
+
+    // Log the formatted time string (no-op in retail build)
+    // String at 0x8206F298 references the sync debug output
+    nop_8240E6D0(formattedTime);
+}
