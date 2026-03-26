@@ -4206,3 +4206,221 @@ void rage::phBoundCapsule::EnsurePositiveNormal(void* thisPtr, void* mat34,
         phBoundCapsule_AED0_g(thisPtr, mat34, normal, nullptr);
     }
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phArticulatedCollider — Joint Dispatch & Vector Operations (batch 5)
+//
+// 10 functions covering joint vector operations, forwarding thunks,
+// and joint-indexed virtual dispatch (24-100B each).
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External helpers for articulated collider joint operations
+extern void phArticulatedCollider_8A30(void* jointData, const float* forceVec);  // @ 0x82258A30
+extern void phArticulatedCollider_8B10(void* jointData, const float* torqueVec); // @ 0x82258B10
+extern void* phArticulatedCollider_8C98_wrh(void* jointData, void* entries, void* inertia, void* param3, void* param4, void* param5); // @ 0x82258C98
+extern void phCollider_CDF0_p39(void* collider);                                // @ 0x822CCDF0
+extern void game_CE58(void* collider);                                           // @ 0x822CCE58
+extern void phCollider_vfn_42_base(void* collider);                              // @ 0x822CCD28
+extern int phArticulatedCollider_LookupJointSlot(void* collider, int creatureIndex); // @ 0x8224E668
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ForwardImpulseToBase  [vtable slot 37 @ 0x8224EFC8]
+// size: 0x18
+//
+// Forwarding thunk that dispatches to vtable[38] (AddImpulseToJoint),
+// shifting parameters left by one (r4<-r5, r5<-r6). Delegates the
+// impulse application to the overridden method with adjusted args.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ForwardImpulseToBase(void* /*unused*/, void* impulseVec, void* creatureIdx) {
+    void** vtbl = *(void***)this;
+    typedef void (*VFn38)(void*, void*, void*);
+    VFn38 fn = (VFn38)vtbl[38];
+    fn(this, impulseVec, creatureIdx);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyScaledForceY  [vtable slot 27 @ 0x8224FD58]
+// size: 0x4C
+//
+// Scales the mass scalar (offset +100) by the input float, constructs a
+// Y-axis force vector {0.0, scaledValue, 0.0}, and dispatches through
+// vtable[32] to apply it to the collider.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ApplyScaledForceY(float scale) {
+    void** vtbl = *(void***)this;
+    float massScalar = *(float*)((char*)this + 100);
+    float scaledValue = massScalar * scale;
+
+    float forceVec[4];
+    forceVec[0] = 0.0f;
+    forceVec[1] = scaledValue;
+    forceVec[2] = 0.0f;
+
+    typedef void (*VFn32)(void*, const float*);
+    VFn32 fn = (VFn32)vtbl[32];
+    fn(this, forceVec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetForceAndScaleVelocity
+// [vtable slot 40 @ 0x8224F870] | size: 0x58
+//
+// Copies the input 16-byte vector to the force accumulator (+224), scales
+// it by the mass scalar (+100) into the velocity accumulator (+256), then
+// delegates to joint force distribution.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetForceAndScaleVelocity(const float* forceVector) {
+    float massScalar = *(float*)((char*)this + 100);
+
+    // Copy to force accumulator at +224
+    float* forceAccum = (float*)((char*)this + 224);
+    memcpy(forceAccum, forceVector, 16);
+
+    // Scale into velocity accumulator at +256
+    float* velocityAccum = (float*)((char*)this + 256);
+    velocityAccum[0] = forceAccum[0] * massScalar;
+    velocityAccum[1] = forceAccum[1] * massScalar;
+    velocityAccum[2] = forceAccum[2] * massScalar;
+    velocityAccum[3] = forceAccum[3] * massScalar;
+
+    // Distribute forces to joints
+    phArticulatedCollider_8A30((void*)(uintptr_t)m_nActiveJoints,
+        (const float*)((char*)this + 224));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetVelocityAndApply
+// [vtable slot 41 @ 0x8224F8C8] | size: 0x44
+//
+// Copies the input vector to the velocity accumulator (+256), calls the
+// base collider position update, then distributes forces to joints.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetVelocityAndApply(const float* velocityVector) {
+    float* velocityAccum = (float*)((char*)this + 256);
+    memcpy(velocityAccum, velocityVector, 16);
+
+    phCollider_CDF0_p39(this);
+
+    phArticulatedCollider_8A30((void*)(uintptr_t)m_nActiveJoints,
+        (const float*)((char*)this + 224));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::UpdateTorqueFromBase
+// [vtable slot 42 @ 0x8224F910] | size: 0x38
+//
+// Calls the base phCollider::vfn_42 to update angular state, then
+// distributes torques to all joints via the torque accumulator (+240).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::UpdateTorqueFromBase() {
+    phCollider_vfn_42_base(this);
+
+    phArticulatedCollider_8B10((void*)(uintptr_t)m_nActiveJoints,
+        (const float*)((char*)this + 240));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetAngularVelocityAndApplyTorque
+// [vtable slot 43 @ 0x8224F948] | size: 0x44
+//
+// Copies the input vector to the angular velocity accumulator (+272),
+// calls the base collider angular update, then distributes torques.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetAngularVelocityAndApplyTorque(const float* angularVelocity) {
+    float* angularAccum = (float*)((char*)this + 272);
+    memcpy(angularAccum, angularVelocity, 16);
+
+    game_CE58(this);
+
+    phArticulatedCollider_8B10((void*)(uintptr_t)m_nActiveJoints,
+        (const float*)((char*)this + 240));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointWorldPosition
+// [vtable slot 20 @ 0x82250440] | size: 0x64
+//
+// Retrieves the world-space position of a joint from another collider.
+// Looks up the joint slot via LookupJointSlot, indexes into the joint
+// pointer array (offset +42 from base), and copies the 16-byte position
+// vector from joint sub-object offset +1072 (0x430).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::GetJointWorldPosition(float* outPosition,
+    phArticulatedCollider* sourceCollider, int creatureIndex) {
+    int jointSlot = phArticulatedCollider_LookupJointSlot(sourceCollider, creatureIndex);
+
+    uint32_t* jointPtrArray = (uint32_t*)(uintptr_t)sourceCollider->m_nActiveJoints;
+    uint8_t* joint = (uint8_t*)(uintptr_t)jointPtrArray[jointSlot + 10];
+
+    memcpy(outPosition, joint + 1072, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::InitializeJointCache
+// [vtable slot 47 @ 0x82250528] | size: 0x50
+//
+// Marks the joint data as dirty, passes all joint configuration arrays
+// to the cache builder, and stores the returned cache pointer at +472.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::InitializeJointCache() {
+    m_jointFlags = 1;  // +468: set dirty flag
+
+    void* jointData    = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    void* jointEntries = (void*)(uintptr_t)field_0x01dc;     // +476
+    void* jointInertia = (void*)(uintptr_t)field_0x01e4;     // +484
+    void* param3       = (void*)(uintptr_t)field_0x01ec;     // +492
+    void* param4       = (void*)(uintptr_t)field_0x01f4;     // +500
+    void* param5       = (void*)(uintptr_t)field_0x01fc;     // +508
+
+    void* cache = phArticulatedCollider_8C98_wrh(
+        jointData, jointEntries, jointInertia, param3, param4, param5);
+    field_0x01d8 = (uint32_t)(uintptr_t)cache;  // +472: store cache result
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointVFn6
+// [vtable slot 50 @ 0x82250578] | size: 0x34
+//
+// Resolves a joint by index through the entry (+476) and inertia (+484)
+// lookup tables, then tail-calls vtable[6] on the resolved joint object.
+// The entry offset + 42 indexes into the joint data pointer array (+464).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DispatchJointVFn6(int jointIndex) {
+    uint32_t* entryArray   = (uint32_t*)(uintptr_t)field_0x01dc;     // +476
+    uint32_t* inertiaArray = (uint32_t*)(uintptr_t)field_0x01e4;     // +484
+    uint32_t* jointPtrArray = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+
+    uint32_t entryOffset  = entryArray[jointIndex];
+    uint32_t inertiaValue = inertiaArray[jointIndex];
+
+    void* joint = (void*)(uintptr_t)jointPtrArray[entryOffset + 42];
+
+    void** jointVtbl = *(void***)joint;
+    typedef void (*JointVFn)(void*, uint32_t);
+    JointVFn fn = (JointVFn)jointVtbl[6];
+    fn(joint, inertiaValue);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointScalarDtor
+// [vtable slot 17 @ 0x822505B0] | size: 0x34
+//
+// Resolves a joint by index through the inertia (+484) and entry (+476)
+// lookup tables, then tail-calls vtable[1] (ScalarDtor) on the resolved
+// joint object. Passes the inertia value as the flags parameter.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DispatchJointScalarDtor(int jointIndex) {
+    uint32_t* inertiaArray = (uint32_t*)(uintptr_t)field_0x01e4;     // +484
+    uint32_t* entryArray   = (uint32_t*)(uintptr_t)field_0x01dc;     // +476
+    uint32_t* jointPtrArray = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+
+    uint32_t inertiaValue = inertiaArray[jointIndex];
+    uint32_t entryOffset  = entryArray[jointIndex];
+
+    void* joint = (void*)(uintptr_t)jointPtrArray[entryOffset + 42];
+
+    void** jointVtbl = *(void***)joint;
+    typedef void (*JointVFn)(void*, uint32_t);
+    JointVFn fn = (JointVFn)jointVtbl[1];
+    fn(joint, inertiaValue);
+}
