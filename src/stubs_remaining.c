@@ -220,8 +220,14 @@ void* fiStream_Open(const char* path, int mode) {
 // Graphics Device Functions
 // ============================================================================
 
+#if defined(TT_PLATFORM_PC)
+extern void sdl_PollAndSwap(void);
+#endif
+
 void grcDevice_Present(void) {
-    // Present frame
+#if defined(TT_PLATFORM_PC)
+    sdl_PollAndSwap();
+#endif
 }
 
 void grcDevice_SubInit(void* device) {

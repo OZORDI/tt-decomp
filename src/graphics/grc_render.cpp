@@ -32,6 +32,89 @@
 #include <stdint.h>
 #include <string.h>   /* memcpy */
 
+#if defined(TT_PLATFORM_PC)
+#include <SDL.h>
+#include <GL/glew.h>
+#include <SDL_opengl.h>
+#include <stdio.h>
+
+/* ── SDL2 / OpenGL window state (module-local) ────────────────────────────── */
+static SDL_Window*   s_pWindow    = NULL;
+static SDL_GLContext  s_glContext  = NULL;
+static int            s_bSDLInited = 0;
+
+/**
+ * sdl_InitWindowAndGL — one-shot SDL2 + OpenGL 3.3 context creation.
+ * Called on the first invocation of grcDevice_beginScene.
+ */
+static void sdl_InitWindowAndGL(void)
+{
+    if (s_bSDLInited) return;
+    s_bSDLInited = 1;
+
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    s_pWindow = SDL_CreateWindow(
+        "Rockstar Table Tennis",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        1280, 720,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+
+    if (!s_pWindow) {
+        fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    s_glContext = SDL_GL_CreateContext(s_pWindow);
+    if (!s_glContext) {
+        fprintf(stderr, "SDL_GL_CreateContext failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
+    if (err != GLEW_OK) {
+        fprintf(stderr, "glewInit failed: %s\n", glewGetErrorString(err));
+        return;
+    }
+
+    SDL_GL_SetSwapInterval(1);  /* vsync */
+    glViewport(0, 0, 1280, 720);
+    fprintf(stdout, "[grc] SDL2 window + OpenGL 3.3 context created (1280x720)\n");
+}
+
+/**
+ * sdl_PollAndSwap — pump SDL events, swap buffers.
+ * Called from grcDevice_Present (in stubs_remaining.c, which is C).
+ */
+extern "C" void sdl_PollAndSwap(void)
+{
+    if (!s_pWindow) return;
+
+    SDL_Event ev;
+    while (SDL_PollEvent(&ev)) {
+        if (ev.type == SDL_QUIT) {
+            SDL_DestroyWindow(s_pWindow);
+            s_pWindow = NULL;
+            SDL_Quit();
+            exit(0);
+        }
+    }
+
+    SDL_GL_SwapWindow(s_pWindow);
+}
+
+#endif /* TT_PLATFORM_PC */
+
 /* ── External dependencies ────────────────────────────────────────────────── */
 
 /* pg subsystem — begin GPU pass for this device @ 0x82305D50 */
@@ -147,6 +230,15 @@ typedef struct {
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
 {
+#if defined(TT_PLATFORM_PC)
+    /* First call: create SDL2 window + OpenGL context.
+     * Subsequent calls: just ensure the GL context is current. */
+    sdl_InitWindowAndGL();
+    if (s_pWindow && s_glContext) {
+        SDL_GL_MakeCurrent(s_pWindow, s_glContext);
+    }
+#endif
+
 /* ── Gate A: skip-render / camera-action check ───────────────────────── */
 
     /* Load the gameLoop singleton once; use uint8_t* for field access. */
@@ -269,6 +361,12 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcDevice_clear(grcDeviceClear* pDevice)
 {
+#if defined(TT_PLATFORM_PC)
+    /* Issue an OpenGL clear regardless of the Xbox ring-buffer state. */
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
+
     /* 1. Guard: nothing to do if no clear is pending. */
     if (!pDevice->m_bPendingWork) {
         return;

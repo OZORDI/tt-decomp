@@ -34,6 +34,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Add definitions
 add_definitions(${SDL2_DEFINITIONS})
+add_definitions(-DTT_PLATFORM_PC=1)
 
 # Source files
 set(SOURCES
@@ -117,6 +118,8 @@ set(SOURCES
     src/physics/ph_physics.cpp
     
     # Graphics
+    src/graphics/grc_device.cpp
+    src/graphics/grc_render.cpp
     src/graphics/texture_reference.cpp
     
     # Scene Graph
