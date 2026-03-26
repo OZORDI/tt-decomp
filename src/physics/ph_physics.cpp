@@ -6624,3 +6624,242 @@ void phSleep::Activate() {
 }
 
 } // namespace rage
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Physics Matrix / Collision / Joint Free Functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+extern void ph_CollideShapeAgainstWorld(uint32_t, uint32_t, int, int);
+extern void ph_TestCollisionPairDetailed(uint32_t, uint32_t, uint32_t, uint32_t,
+                                          uint8_t*, uint32_t, uint8_t*, int);
+extern void ph_ProfilerBegin(const char*, int);
+extern void ph_ResolveCollisionConstraint(uint32_t, uint32_t, void*);
+extern void ph_DebugAssertPositive(const char*, double);
+
+// ---------------------------------------------------------------------------
+// 1. phMatrix34_TransposeDotProduct @ 0x821181C8 | size: 0xB0 (176 bytes)
+//    Computes dst = A^T * B for two 3x4 matrices. Row 3 computes relative
+//    translation (A.row3 - B.row3) projected into B's local frame.
+// ---------------------------------------------------------------------------
+void phMatrix34_TransposeDotProduct(float* dst, const float* src) {
+    float a0x = dst[0],  a0y = dst[1],  a0z = dst[2];
+    float a1x = dst[4],  a1y = dst[5],  a1z = dst[6];
+    float a2x = dst[8],  a2y = dst[9],  a2z = dst[10];
+    float a3x = dst[12], a3y = dst[13], a3z = dst[14];
+    float b0x = src[0],  b0y = src[1],  b0z = src[2];
+    float b1x = src[4],  b1y = src[5],  b1z = src[6];
+    float b2x = src[8],  b2y = src[9],  b2z = src[10];
+    float b3x = src[12], b3y = src[13], b3z = src[14];
+    float dx = a3x - b3x, dy = a3y - b3y, dz = a3z - b3z;
+    dst[0]  = a0x*b0x + a0y*b0y + a0z*b0z;
+    dst[1]  = a0x*b1x + a0y*b1y + a0z*b1z;
+    dst[2]  = a0x*b2x + a0y*b2y + a0z*b2z;
+    dst[4]  = a1x*b0x + a1y*b0y + a1z*b0z;
+    dst[5]  = a1x*b1x + a1y*b1y + a1z*b1z;
+    dst[6]  = a1x*b2x + a1y*b2y + a1z*b2z;
+    dst[8]  = a2x*b0x + a2y*b0y + a2z*b0z;
+    dst[9]  = a2x*b1x + a2y*b1y + a2z*b1z;
+    dst[10] = a2x*b2x + a2y*b2y + a2z*b2z;
+    dst[12] = dx*b0x + dy*b0y + dz*b0z;
+    dst[13] = dx*b1x + dy*b1y + dz*b1z;
+    dst[14] = dx*b2x + dy*b2y + dz*b2z;
+}
+
+// ---------------------------------------------------------------------------
+// 2. phCollider_QueryShapeOverlap @ 0x82118DB8 | size: 0x44 (68 bytes)
+//    Initiates overlap query: extracts bound handle, retrieves world list,
+//    dispatches to ph_CollideShapeAgainstWorld(maxResults=255, filter=0).
+// ---------------------------------------------------------------------------
+void phCollider_QueryShapeOverlap(void* thisPtr, void* querySource) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint32_t boundsHandle = *(uint32_t*)((uint8_t*)querySource + 4);
+    uint32_t internalData = *(uint32_t*)(self + 164);
+    uint32_t worldList = *(uint32_t*)((uint8_t*)(uintptr_t)internalData + 4);
+    ph_CollideShapeAgainstWorld(boundsHandle, worldList, 255, 0);
+    *(uint32_t*)(self + 168) = boundsHandle;
+}
+
+// ---------------------------------------------------------------------------
+// 3. phCollider_TestCollisionPair @ 0x82118E00 | size: 0x6C (108 bytes)
+//    Tests collision pair between collider bound and target. Increments
+//    test counter at +428 on completion.
+// ---------------------------------------------------------------------------
+void phCollider_TestCollisionPair(void* thisPtr, void* target) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint32_t targetHandle = *(uint32_t*)((uint8_t*)target + 4);
+    uint32_t internalData = *(uint32_t*)(self + 164);
+    uint32_t worldCount = 0;
+    if (internalData != 0)
+        worldCount = *(uint32_t*)((uint8_t*)(uintptr_t)internalData + 8);
+    uint32_t contactCount = *(uint32_t*)(self + 180);
+    uint32_t contactFlags = *(uint32_t*)(self + 176);
+    uint32_t boundsA = *(uint32_t*)((uint8_t*)(uintptr_t)internalData + 4);
+    ph_TestCollisionPairDetailed(targetHandle, boundsA, worldCount,
+                                  contactFlags, self + 426, contactCount,
+                                  self + 427, 255);
+    self[428] = self[428] + 1;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phCollisionResolver_ProfiledResolve @ 0x82123608 | size: 0x74 (116 bytes)
+//    Resolves collision constraint within profiler begin/end markers.
+// ---------------------------------------------------------------------------
+void phCollisionResolver_ProfiledResolve(void* thisPtr, void* input) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint32_t pairHandle = *(uint32_t*)((uint8_t*)input + 4);
+    extern const char* g_phResolveProfileTag;
+    ph_ProfilerBegin(g_phResolveProfileTag, 1);
+    uint32_t pairData = *(uint32_t*)((uint8_t*)input + 4);
+    uint32_t pairInfo = *(uint32_t*)((uint8_t*)(uintptr_t)pairData + 12);
+    extern uint32_t g_phCollisionSolver;
+    ph_ResolveCollisionConstraint(g_phCollisionSolver, pairInfo, self + 164);
+    extern const char* g_phResolveProfileTagEnd;
+    ph_ProfilerBegin(g_phResolveProfileTagEnd, 1);
+}
+
+// ---------------------------------------------------------------------------
+// 5. phBound_ComputeClampedExtent @ 0x82123E78 | size: 0x9C (156 bytes)
+//    Computes safe collision margin from bound's vtable slot 8. Logs warning
+//    and takes abs if negative. Clamps result via fsel.
+// ---------------------------------------------------------------------------
+float phBound_ComputeClampedExtent(void* bound) {
+    extern const float g_phExtentScale;
+    extern const float g_phClampMax;
+    float scale = g_phExtentScale;
+    float result = scale;
+    uint32_t extentSrc = *(uint32_t*)((uint8_t*)bound + 256);
+    if (extentSrc != 0) {
+        void** vt = *(void***)(uintptr_t)extentSrc;
+        typedef float (*GetExtFn)(void*);
+        result = ((GetExtFn)vt[8])((void*)(uintptr_t)extentSrc);
+        if (result < scale) {
+            ph_DebugAssertPositive("phBound extent negative", (double)result);
+            if (result < 0.0f) result = -result;
+        }
+    }
+    float clamped = result * g_phClampMax;
+    return (-clamped >= 0.0f) ? 0.0f : clamped;
+}
+
+// ---------------------------------------------------------------------------
+// 6. phJoint1Dof_Constructor @ 0x82126D00 | size: 0x98 (152 bytes)
+//    Constructor for rage::phJoint1Dof. Calls base ctor, installs vtable,
+//    initializes angular limits, spring/damping, motor, tolerances.
+// ---------------------------------------------------------------------------
+extern void phJoint_Constructor(void*);
+
+void phJoint1Dof_Constructor(void* thisPtr) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    phJoint_Constructor(thisPtr);
+    extern void* g_phJoint1DofVtable;
+    *(void**)(self) = &g_phJoint1DofVtable;
+    *(uint8_t*)(self + 32) = 0;
+    extern const float g_phJoint1Dof_angleMin, g_phJoint1Dof_angleMax;
+    extern const float g_phJoint1Dof_mass, g_phJoint1Dof_stiffness;
+    extern const float g_phJoint1Dof_maxTorque;
+    extern const float g_phJoint1Dof_errTol, g_phJoint1Dof_maxCorr;
+    *(float*)(self + 720) = g_phJoint1Dof_angleMin;
+    *(float*)(self + 728) = g_phJoint1Dof_angleMin;
+    *(float*)(self + 724) = g_phJoint1Dof_angleMax;
+    *(float*)(self + 732) = g_phJoint1Dof_angleMax;
+    *(float*)(self + 16)  = g_phJoint1Dof_mass;
+    *(float*)(self + 784) = g_phJoint1Dof_stiffness;
+    *(float*)(self + 792) = g_phJoint1Dof_mass;
+    *(float*)(self + 796) = g_phJoint1Dof_mass;
+    *(float*)(self + 788) = g_phJoint1Dof_maxTorque;
+    *(float*)(self + 800) = g_phJoint1Dof_errTol;
+    *(float*)(self + 804) = g_phJoint1Dof_maxCorr;
+}
+
+// ---------------------------------------------------------------------------
+// 7. phContactManifold_Init @ 0x8221FD78 | size: 0x58 (88 bytes)
+//    Initializes contact manifold (4 slots). Early-outs if physics disabled.
+//    Clears contact IDs, sets separations to 0xFFFF sentinel, zeros floats.
+// ---------------------------------------------------------------------------
+void phContactManifold_Init(void* manifold) {
+    extern uint8_t g_phDisabled;
+    if (g_phDisabled != 0) return;
+    uint8_t* self = (uint8_t*)manifold;
+    for (int i = 0; i < 4; i++) *(uint16_t*)(self + 16 + i*2) = 0;
+    for (int i = 0; i < 4; i++) *(uint16_t*)(self + 24 + i*2) = 0xFFFF;
+    extern const float g_phZeroFloat;
+    *(float*)(self + 0)  = g_phZeroFloat;
+    *(float*)(self + 4)  = g_phZeroFloat;
+    *(float*)(self + 8)  = g_phZeroFloat;
+    *(float*)(self + 12) = g_phZeroFloat;
+}
+
+// ---------------------------------------------------------------------------
+// 8. phMatrix34_MultiplyTranspose @ 0x8211CC88 | size: 0xCC (204 bytes)
+//    Three-operand matrix multiply: dst = left * right^T. Row 3 computes
+//    delta = left.row3 - right.row3 projected into right's local frame.
+// ---------------------------------------------------------------------------
+void phMatrix34_MultiplyTranspose(float* dst, const float* left, const float* right) {
+    float l0x = left[0],  l0y = left[1],  l0z = left[2];
+    float l1x = left[4],  l1y = left[5],  l1z = left[6];
+    float l2x = left[8],  l2y = left[9],  l2z = left[10];
+    float l3x = left[12], l3y = left[13], l3z = left[14];
+    float r0x = right[0],  r0y = right[1],  r0z = right[2];
+    float r1x = right[4],  r1y = right[5],  r1z = right[6];
+    float r2x = right[8],  r2y = right[9],  r2z = right[10];
+    float r3x = right[12], r3y = right[13], r3z = right[14];
+    float dx = l3x - r3x, dy = l3y - r3y, dz = l3z - r3z;
+    dst[0]  = l0x*r0x + l0y*r0y + l0z*r0z;
+    dst[1]  = l0x*r1x + l0y*r1y + l0z*r1z;
+    dst[2]  = l0x*r2x + l0y*r2y + l0z*r2z;
+    dst[4]  = l1x*r0x + l1y*r0y + l1z*r0z;
+    dst[5]  = l1x*r1x + l1y*r1y + l1z*r1z;
+    dst[6]  = l1x*r2x + l1y*r2y + l1z*r2z;
+    dst[8]  = l2x*r0x + l2y*r0y + l2z*r0z;
+    dst[9]  = l2x*r1x + l2y*r1y + l2z*r1z;
+    dst[10] = l2x*r2x + l2y*r2y + l2z*r2z;
+    dst[12] = dx*r0x + dy*r0y + dz*r0z;
+    dst[13] = dx*r1x + dy*r1y + dz*r1z;
+    dst[14] = dx*r2x + dy*r2y + dz*r2z;
+}
+
+// ---------------------------------------------------------------------------
+// 9. phJoint_Constructor @ 0x8225ABE8 | size: 0x9C (156 bytes)
+//    Base constructor for rage::phJoint. Installs vtable, zeros constraint
+//    matrices (2x 192B), body pointers, and accumulated state (128B).
+// ---------------------------------------------------------------------------
+void phJoint_Constructor(void* thisPtr) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    extern void* g_phJointVtable;
+    extern const float g_phZeroFloat;
+    *(void**)(self) = &g_phJointVtable;
+    *(float*)(self + 16) = g_phZeroFloat;
+    *(uint32_t*)(self + 20) = 0;
+    *(uint32_t*)(self + 24) = 0;
+    *(uint32_t*)(self + 28) = 0;
+    uint8_t* p = self + 48;
+    for (int i = 0; i < 24; i++) { *(uint64_t*)p = 0; p += 8; }
+    p = self + 240;
+    for (int i = 0; i < 24; i++) { *(uint64_t*)p = 0; p += 8; }
+    for (int i = 0; i < 16; i++) *(uint64_t*)(self + 432 + i*8) = 0;
+}
+
+// ---------------------------------------------------------------------------
+// 10. phBound_RelocatePointers @ 0x822CD1B0 | size: 0x78 (120 bytes)
+//     Relocates internal pointers at +16 and +96 after resource loading.
+//     Converts file-relative offsets to absolute addresses via chunk table.
+// ---------------------------------------------------------------------------
+void phBound_RelocatePointers(void* thisPtr, void* relocDesc) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint8_t* desc = (uint8_t*)relocDesc;
+    extern void* g_phBoundRelocVtable;
+    *(void**)(self) = &g_phBoundRelocVtable;
+    uint32_t ptr16 = *(uint32_t*)(self + 16);
+    if (ptr16 != 0) {
+        uint32_t base = *(uint32_t*)(desc + 4);
+        uint32_t chunk = *(uint32_t*)(desc + 76);
+        uint32_t idx = (ptr16 - base) / chunk;
+        *(uint32_t*)(self + 16) = *(uint32_t*)(desc + 8 + idx*4) + ptr16;
+    }
+    uint32_t ptr96 = *(uint32_t*)(self + 96);
+    if (ptr96 == 0) return;
+    uint32_t base = *(uint32_t*)(desc + 4);
+    uint32_t chunk = *(uint32_t*)(desc + 76);
+    uint32_t idx = (ptr96 - base) / chunk;
+    *(uint32_t*)(self + 96) = *(uint32_t*)(desc + 8 + idx*4) + ptr96;
+}
