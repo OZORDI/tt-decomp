@@ -1284,3 +1284,580 @@ void datBase_InitFields14552(atSingleton* obj) {
     
     datBase_InitDefaults(obj);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound_WriteChannelData()  @ 0x82123680 | size: 0x6C
+//
+// Writes physics bound channel data during serialization.
+// Looks up a bound by its flags pointer, copies channel data at offset +168
+// into a destination buffer at offset +176.
+//
+// Parameters:
+//   r3 = destination object (phBound)
+//   r4 = source descriptor
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound_WriteChannelData(uint8_t* dest, uint8_t* descriptor) {
+    extern void ph_5908(void* flagsPtr, const void* key, uint32_t mode);
+    extern void rage_3F18(void* global, void* dataPtr, void* outBuf);
+    extern void ke_0E08(void* destBuf, void* srcData);
+
+    // Look up bound data from descriptor's flags field
+    void* flagsPtr = *(void**)(descriptor + 4);
+    ph_5908(flagsPtr, (void*)0x82027660, 1);
+
+    // Get the data pointer from flags->field_12
+    void* flagsPtr2 = *(void**)(descriptor + 4);
+    void* dataPtr = *(void**)((uint8_t*)flagsPtr2 + 12);
+    void* global = *(void**)0x8272A374;
+    rage_3F18(global, dataPtr, dest + 168);
+
+    // Copy channel data: unlock and write from +168 to +176
+    flagsPtr = *(void**)(descriptor + 4);
+    ph_5908(flagsPtr, (void*)0x8202766C, 1);
+
+    void* srcData = *(void**)(dest + 168);
+    ke_0E08(dest + 176, srcData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound_WriteChannelDataAlt()  @ 0x821236F0 | size: 0x6C
+//
+// Variant of phBound_WriteChannelData with different offsets.
+// Reads from offset +172 and writes to offset +380.
+// Same channel lock/unlock/copy pattern.
+//
+// Parameters:
+//   r3 = destination object
+//   r4 = source descriptor
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound_WriteChannelDataAlt(uint8_t* dest, uint8_t* descriptor) {
+    extern void ph_5908(void* flagsPtr, const void* key, uint32_t mode);
+    extern void rage_3F18(void* global, void* dataPtr, void* outBuf);
+    extern void ke_0E08(void* destBuf, void* srcData);
+
+    // Lock channel for reading
+    void* flagsPtr = *(void**)(descriptor + 4);
+    ph_5908(flagsPtr, (void*)0x82027660, 1);
+
+    // Copy data from descriptor into offset +172
+    void* flagsPtr2 = *(void**)(descriptor + 4);
+    void* dataPtr = *(void**)((uint8_t*)flagsPtr2 + 12);
+    void* global = *(void**)0x8272A374;
+    rage_3F18(global, dataPtr, dest + 172);
+
+    // Unlock channel
+    flagsPtr = *(void**)(descriptor + 4);
+    ph_5908(flagsPtr, (void*)0x8202766C, 1);
+
+    // Write channel data from +172 to +380
+    void* srcData = *(void**)(dest + 172);
+    ke_0E08(dest + 380, srcData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fragDrawable_LoadDamageShape()  @ 0x82124EF0 | size: 0x7C
+//
+// Loads a damage shape for a fragDrawable by name comparison.
+// If the shape name does NOT match "dShape%d", looks it up via hash
+// and replaces the existing shape pointer at offset +288.
+//
+// Parameters:
+//   r3 = fragDrawable object
+//   r4 = shape descriptor (vtable slot 1 called to get name)
+// ─────────────────────────────────────────────────────────────────────────────
+void fragDrawable_LoadDamageShape(uint8_t* drawable, void* shapeDesc) {
+    extern int _stricmp(const char* a, const char* b);
+    extern void* atSingleton_29E0_g(const char* name);
+    extern void rage_free_00C0(void* ptr);
+
+    // Get shape name from descriptor via vtable slot 1
+    char nameBuffer[128];
+    void* descFlags = *(void**)((uint8_t*)shapeDesc + 4);
+    // VCALL slot 1: copies name into nameBuffer
+    typedef void (*GetNameFunc)(void*, char*);
+    void** vtable = *(void***)descFlags;
+    GetNameFunc getName = (GetNameFunc)vtable[1];
+    getName(descFlags, nameBuffer);
+
+    // Compare against "dShape%d" pattern
+    if (_stricmp(nameBuffer, "dShape%d") != 0) {
+        // Not the default shape - look up by name hash
+        void* newShape = atSingleton_29E0_g(nameBuffer);
+
+        // Free the old shape at offset +288
+        void* oldShape = *(void**)(drawable + 288);
+        rage_free_00C0(oldShape);
+
+        // Store new shape
+        *(void**)(drawable + 288) = newShape;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pgArray_FindActiveEntry()  @ 0x82118128 | size: 0x9C
+//
+// Searches a pgArray-style container for the first active entry starting
+// from a given index, stepping by a given stride.
+// An entry is "active" if its byte at offset +16 is non-zero.
+//
+// Parameters:
+//   r3 = pgArray pointer (count at +28, data at +24)
+//   r4 = start index offset
+//   r5 = stride (step between probes)
+//   r6 = wrapFlag (if nonzero, clamp start index to [0, count-1])
+//
+// Returns: index of first active entry, or -1 if none found
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t pgArray_FindActiveEntry(uint8_t* array, int32_t startOffset, int32_t stride, uint8_t wrapFlag) {
+    extern int32_t pg_C4E8_g(int32_t value, int32_t min, int32_t max);
+
+    int32_t index = startOffset + stride;
+
+    // Optionally clamp index to valid range
+    if (wrapFlag != 0) {
+        uint16_t count = *(uint16_t*)(array + 28);
+        index = pg_C4E8_g(index, 0, count - 1);
+    }
+
+    // Search forward by stride for an active entry
+    while (index >= 0) {
+        uint16_t count = *(uint16_t*)(array + 28);
+        if (index >= count) {
+            break;
+        }
+
+        void** dataArray = *(void***)(array + 24);
+        void* entry = dataArray[index];
+        uint8_t activeFlag = *(uint8_t*)((uint8_t*)entry + 16);
+        if (activeFlag != 0) {
+            return index;
+        }
+
+        index += stride;
+        if (index < 0) {
+            break;
+        }
+    }
+
+    return -1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_DestroyPointerArray()  @ 0x820F3468 | size: 0xA0
+//
+// Destroys a dynamically allocated pointer array.
+// For each non-null pointer in the array, checks if it is tracked
+// by the singleton system. If not tracked, frees it via the allocator.
+// Finally frees the array itself.
+//
+// Parameters:
+//   r3 = object with refCount at +6 and vtable/array pointer at +0
+// ─────────────────────────────────────────────────────────────────────────────
+void datBase_DestroyPointerArray(atSingleton* obj) {
+    extern bool atSingleton_Find_90D0(void* ptr);
+    extern void rage_free_00C0(void* ptr);
+
+    // Only process if refCount is non-zero
+    if (obj->refCount == 0) {
+        return;
+    }
+
+    // Only process if vtable/data pointer is valid
+    void* dataPtr = obj->vtable;
+    if (dataPtr == nullptr) {
+        return;
+    }
+
+    // Array metadata is stored at dataPtr[-1] (4 bytes before)
+    uint32_t* arrayBase = (uint32_t*)dataPtr - 1;
+    uint32_t elementCount = *arrayBase;
+
+    // Walk the array in reverse, freeing untracked pointers
+    uint32_t** ptrArray = (uint32_t**)dataPtr;
+    for (int32_t i = elementCount - 1; i >= 0; i--) {
+        void* element = ptrArray[i];
+        if (element == nullptr) {
+            continue;
+        }
+
+        // Check if element is tracked by singleton system
+        if (!atSingleton_Find_90D0(element)) {
+            // Not tracked - free via allocator (SDA vtable slot 2)
+            void** sdaPtr = *(void***)0x82600000;
+            void* allocator = ((void**)sdaPtr)[1];
+            typedef void (*FreeFunc)(void*, void*);
+            void** allocVtable = *(void***)allocator;
+            FreeFunc freeFunc = (FreeFunc)allocVtable[2];
+            freeFunc(allocator, element);
+        }
+    }
+
+    // Free the array base
+    rage_free_00C0(arrayBase);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst_SumWeights()  @ 0x82118438 | size: 0xA8
+//
+// Sums float values at offset +144 from each element in a pointer array.
+// Uses loop unrolling (4 elements at a time) for performance.
+// The pointer array is at offset +180 of the object, and the
+// element count is at offset +427 (byte).
+//
+// Parameters:
+//   r3 = phInst-like object with bone/weight array
+//
+// Returns: sum of all weight floats (in f1)
+// ─────────────────────────────────────────────────────────────────────────────
+float phInst_SumWeights(uint8_t* obj) {
+    uint8_t totalCount = *(uint8_t*)(obj + 427);
+    float sum = 0.0f;
+
+    // Process 4 elements at a time (unrolled loop)
+    uint32_t unrolledCount = 0;
+    if (totalCount >= 4) {
+        void** ptrArray = *(void***)(obj + 180);
+        uint32_t batches = ((totalCount - 4) >> 2) + 1;
+        unrolledCount = batches * 4;
+        void** current = ptrArray + 2;  // start at index 2 (offset +8 bytes)
+
+        for (uint32_t b = 0; b < batches; b++) {
+            void* e0 = current[-2];
+            void* e1 = current[-1];
+            void* e2 = current[0];
+            void* e3 = current[1];
+            current += 4;
+
+            sum += *(float*)((uint8_t*)e0 + 144);
+            sum += *(float*)((uint8_t*)e1 + 144);
+            sum += *(float*)((uint8_t*)e2 + 144);
+            sum += *(float*)((uint8_t*)e3 + 144);
+        }
+    }
+
+    // Process remaining elements one at a time
+    if ((int32_t)unrolledCount < totalCount) {
+        void** ptrArray = *(void***)(obj + 180);
+        uint32_t remaining = totalCount - unrolledCount;
+        void** current = ptrArray + unrolledCount;
+
+        for (uint32_t i = 0; i < remaining; i++) {
+            void* entry = current[i];
+            sum += *(float*)((uint8_t*)entry + 144);
+        }
+    }
+
+    return sum;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// netFirewall_TryAddByMaxCount()  @ 0x82117EF0 | size: 0xB8
+//
+// Attempts to add a network entry to a firewall filter.
+// Checks if the filter has capacity (count < maxCount), then validates
+// that the entry's sequence number meets the minimum threshold.
+// If valid, calls the virtual add function and increments the count.
+//
+// Parameters:
+//   r3 = firewall manager
+//   r4 = channel index
+//   r5 = filter descriptor (count at +4, maxCount at +8, minSeq at +36)
+// ─────────────────────────────────────────────────────────────────────────────
+void netFirewall_TryAddByMaxCount(uint8_t* manager, uint32_t channelIdx, uint8_t* filter) {
+    extern bool atSingleton_7068_fw(uint8_t* manager, uint32_t channelIdx, void* entry);
+
+    // Check if filter has capacity
+    int32_t currentCount = *(int32_t*)(filter + 4);
+    int32_t maxCount = *(int32_t*)(filter + 8);
+    bool hasCapacity = (currentCount < maxCount);
+
+    if (!hasCapacity) {
+        return;
+    }
+
+    // Look up channel data from global array
+    void** globalArray = *(void***)0x8272A324;
+    void* channelData = *(void**)((uint8_t*)globalArray + channelIdx * 8 + 252);
+
+    // Get sequence number via vtable slot 2 (mode=21)
+    typedef void* (*GetSeqFunc)(void*, int32_t);
+    void** vtable = *(void***)channelData;
+    GetSeqFunc getSeq = (GetSeqFunc)vtable[2];
+    void* seqResult = getSeq(channelData, 21);
+
+    // Check minimum sequence threshold
+    int32_t seqValue = *(int32_t*)seqResult;
+    int32_t minSeq = *(int32_t*)(filter + 36);
+    if (seqValue < minSeq) {
+        return;
+    }
+
+    // Get entry data via filter's virtual function (vtable slot 0)
+    typedef void* (*GetEntryFunc)(void*);
+    void** filterVtable = *(void***)filter;
+    GetEntryFunc getEntry = (GetEntryFunc)filterVtable[0];
+    void* entry = getEntry(filter);
+
+    // Try to add the entry
+    if (atSingleton_7068_fw(manager, channelIdx, entry)) {
+        // Success - increment count
+        int32_t count = *(int32_t*)(filter + 4);
+        *(int32_t*)(filter + 4) = count + 1;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// netFirewall_TryAddByDualRange()  @ 0x82117D28 | size: 0xE4
+//
+// Attempts to add a network entry to a firewall filter with dual range check.
+// First checks capacity, then validates both minimum and maximum sequence
+// number thresholds before adding the entry.
+//
+// Parameters:
+//   r3 = firewall manager
+//   r4 = channel index
+//   r5 = filter descriptor
+// ─────────────────────────────────────────────────────────────────────────────
+void netFirewall_TryAddByDualRange(uint8_t* manager, uint32_t channelIdx, uint8_t* filter) {
+    extern bool atSingleton_7068_fw(uint8_t* manager, uint32_t channelIdx, void* entry);
+
+    // Check if filter has capacity
+    int32_t currentCount = *(int32_t*)(filter + 4);
+    int32_t maxCount = *(int32_t*)(filter + 8);
+    bool hasCapacity = (currentCount < maxCount);
+
+    if (!hasCapacity) {
+        return;
+    }
+
+    // Look up channel data from global array
+    void** globalArray = *(void***)0x8272A324;
+    void* channelData = *(void**)((uint8_t*)globalArray + channelIdx * 8 + 252);
+
+    // Get sequence number via vtable slot 2 (mode=20)
+    typedef void* (*GetSeqFunc)(void*, int32_t);
+    void** channelVtable = *(void***)channelData;
+    GetSeqFunc getSeq = (GetSeqFunc)channelVtable[2];
+    void* seqResult = getSeq(channelData, 20);
+
+    // Check minimum sequence threshold
+    int32_t seqValue = *(int32_t*)seqResult;
+    int32_t minSeq = *(int32_t*)(filter + 36);
+    if (seqValue < minSeq) {
+        return;
+    }
+
+    // Get sequence number via vtable slot 2 (mode=2) for max check
+    getSeq = (GetSeqFunc)(*(void***)channelData)[2];
+    seqResult = getSeq(channelData, 2);
+
+    // Check maximum sequence threshold
+    int32_t seqValue2 = *(int32_t*)seqResult;
+    int32_t maxSeq = *(int32_t*)(filter + 40);
+    if (seqValue2 > maxSeq) {
+        return;
+    }
+
+    // Get entry data via filter's virtual function (vtable slot 0)
+    typedef void* (*GetEntryFunc)(void*);
+    void** filterVtable = *(void***)filter;
+    GetEntryFunc getEntry = (GetEntryFunc)filterVtable[0];
+    void* entry = getEntry(filter);
+
+    // Try to add the entry
+    if (atSingleton_7068_fw(manager, channelIdx, entry)) {
+        // Success - increment count
+        int32_t count = *(int32_t*)(filter + 4);
+        *(int32_t*)(filter + 4) = count + 1;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// netFirewall_TryAddByFrameRange()  @ 0x82117E10 | size: 0xDC
+//
+// Attempts to add a network entry to a firewall filter with frame-based
+// range check. Checks capacity, then validates the current frame count
+// against the filter's minimum threshold before adding.
+//
+// Parameters:
+//   r3 = firewall manager
+//   r4 = channel index
+//   r5 = filter descriptor
+// ─────────────────────────────────────────────────────────────────────────────
+void netFirewall_TryAddByFrameRange(uint8_t* manager, uint32_t channelIdx, uint8_t* filter) {
+    extern bool atSingleton_7068_fw(uint8_t* manager, uint32_t channelIdx, void* entry);
+
+    // Check if filter has capacity
+    int32_t currentCount = *(int32_t*)(filter + 4);
+    int32_t maxCount = *(int32_t*)(filter + 8);
+    bool hasCapacity = (currentCount < maxCount);
+
+    if (!hasCapacity) {
+        return;
+    }
+
+    // Get frame counter from a global object
+    void* frameCounter = *(void**)0x825FAB2C;
+    int32_t sentFrames = *(int32_t*)((uint8_t*)frameCounter + 28);
+    int32_t recvFrames = *(int32_t*)((uint8_t*)frameCounter + 32);
+    int32_t totalFrames = sentFrames + recvFrames + 1;
+
+    // Check minimum frame threshold
+    int32_t minFrames = *(int32_t*)(filter + 36);
+    if (totalFrames < minFrames) {
+        return;
+    }
+
+    // Look up channel data and get sequence via vtable slot 2 (mode=13)
+    void** globalArray = *(void***)0x8272A324;
+    void* channelData = *(void**)((uint8_t*)globalArray + channelIdx * 8 + 252);
+    typedef void* (*GetSeqFunc)(void*, int32_t);
+    void** channelVtable = *(void***)channelData;
+    GetSeqFunc getSeq = (GetSeqFunc)channelVtable[2];
+    void* seqResult = getSeq(channelData, 13);
+
+    // Check maximum sequence threshold
+    int32_t seqValue = *(int32_t*)seqResult;
+    int32_t maxSeq = *(int32_t*)(filter + 40);
+    if (seqValue > maxSeq) {
+        return;
+    }
+
+    // Get entry data via filter's virtual function (vtable slot 0)
+    typedef void* (*GetEntryFunc)(void*);
+    void** filterVtable = *(void***)filter;
+    GetEntryFunc getEntry = (GetEntryFunc)filterVtable[0];
+    void* entry = getEntry(filter);
+
+    // Try to add the entry
+    if (atSingleton_7068_fw(manager, channelIdx, entry)) {
+        // Success - increment count
+        int32_t count = *(int32_t*)(filter + 4);
+        *(int32_t*)(filter + 4) = count + 1;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grmShaderFx_FindOrRegisterByName()  @ 0x820F0468 | size: 0x110
+//
+// Searches a global shader effect registry (128 entries at 0x825EAF88)
+// for a shader matching the given name. If found, returns its index.
+// If not found, finds an empty slot, registers the shader, and returns
+// the slot index. Returns -1 if the registry is full.
+//
+// Parameters:
+//   r3 = shader name string
+//
+// Returns: index of shader in registry, or -1 if full
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t grmShaderFx_FindOrRegisterByName(const char* name) {
+    extern int _stricmp(const char* a, const char* b);
+    extern void rage_FFE8(int32_t slotIndex, const char* name);
+    extern void nop_8240E6D0(const char* msg);
+
+    // Global shader registry: 128 entries (512 bytes / 4 bytes per pointer)
+    void** registry = (void**)0x825EAF88;
+    const uint32_t maxEntries = 128;
+
+    // First pass: search for existing shader by name
+    for (uint32_t i = 0; i < maxEntries; i++) {
+        void* entry = registry[i];
+        if (entry == nullptr) {
+            continue;
+        }
+
+        // Compare entry's name (at offset +0) with target
+        const char* entryName = *(const char**)entry;
+        if (_stricmp(entryName, name) == 0) {
+            return (int32_t)i;
+        }
+    }
+
+    // Not found - check if allocator allows new registrations
+    void** sdaPtr = *(void***)0x82600000;
+    void* allocator = ((void**)sdaPtr)[1];
+    typedef bool (*CanAllocFunc)(void*);
+    void** allocVtable = *(void***)allocator;
+    CanAllocFunc canAlloc = (CanAllocFunc)allocVtable[17];
+    if (!canAlloc(allocator)) {
+        // Cannot allocate - find first empty slot
+        uint32_t emptySlot = 0;
+        for (uint32_t i = 0; i < maxEntries; i++) {
+            if (registry[i] == nullptr) {
+                // Found empty slot - register the shader
+                rage_FFE8(emptySlot, name);
+
+                if (registry[emptySlot] != nullptr) {
+                    // Registration succeeded
+                    nop_8240E6D0((const char*)0x8203F288);
+                    return (int32_t)emptySlot;
+                }
+
+                // Registration failed
+                nop_8240E6D0((const char*)0x8203F2B4);
+                return (int32_t)emptySlot;
+            }
+            emptySlot++;
+        }
+    }
+
+    // Registry full
+    return -1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fxHairGroup_Destroy()  @ 0x820FFCA8 | size: 0x118
+//
+// Destructor for fxHairGroup. Sets vtable to fxHairGroup, iterates over
+// the object array (at +36, count at +40), calling each element's
+// destructor. Then frees the array memory if not tracked.
+// Finally resets fields and restores vtable to rage::datBase.
+//
+// Parameters:
+//   r3 = fxHairGroup object
+// ─────────────────────────────────────────────────────────────────────────────
+void fxHairGroup_Destroy(uint8_t* obj) {
+    extern bool atSingleton_Find_90D0(void* ptr);
+
+    // Set vtable to fxHairGroup
+    *(void**)obj = (void*)0x82030040;
+
+    // Destroy all elements in the array
+    uint16_t count = *(uint16_t*)(obj + 40);
+    if (count > 0) {
+        void** elements = *(void***)(obj + 36);
+
+        for (int32_t i = 0; i < count; i++) {
+            void* element = elements[i];
+            if (element != nullptr) {
+                // Call destructor via vtable slot 0, deleteFlag=1
+                typedef void (*DtorFunc)(void*, int32_t);
+                void** vtable = *(void***)element;
+                DtorFunc dtor = (DtorFunc)vtable[0];
+                dtor(element, 1);
+            }
+        }
+    }
+
+    // Free the element array if it exists and is not tracked
+    void* arrayPtr = *(void**)(obj + 36);
+    if (arrayPtr != nullptr) {
+        if (!atSingleton_Find_90D0(arrayPtr)) {
+            // Not tracked - free via allocator (SDA vtable slot 2)
+            void** sdaPtr = *(void***)0x82600000;
+            void* allocator = ((void**)sdaPtr)[1];
+            typedef void (*FreeFunc)(void*, void*);
+            void** allocVtable = *(void***)allocator;
+            FreeFunc freeFunc = (FreeFunc)allocVtable[2];
+            freeFunc(allocator, arrayPtr);
+        }
+    }
+
+    // Reset array fields
+    *(void**)(obj + 36) = nullptr;
+    *(uint16_t*)(obj + 40) = 0;
+    *(uint16_t*)(obj + 42) = 0;
+
+    // Restore vtable to rage::datBase
+    *(void**)obj = (void*)0x820276C4;
+}

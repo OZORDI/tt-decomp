@@ -343,14 +343,22 @@ struct pongTrainingDrillConfig {
     uint32_t m_nRequiredSuccesses;  // +0x14 (20) — successes required to pass drill
     float    m_fRangeMin;           // +0x18 (24) — min value for rally-end random range
     float    m_fRangeMax;           // +0x1C (28) — max value for rally-end random range
+    uint8_t  _pad20[12];            // +0x20..0x2B
+    int32_t  m_nScoreThreshold;     // +0x2C (44) — score threshold (negative = unlimited)
+    uint8_t  m_nDifficulty;         // +0x30 (48) — drill difficulty level
+    uint8_t  _pad31[3];             // +0x31..0x33
+    float    m_fTimeLimit;          // +0x34 (52) — time limit for drill
+    float    m_fMaxTime;            // +0x38 (56) — maximum allowed time
+    uint8_t  _pad3C[8];             // +0x3C..0x43
+    uint32_t m_nProgressTarget;     // +0x44 (68) — target progress value
 };
 
 class pongTrainingDrill {
 public:
     // Virtual functions
     virtual ~pongTrainingDrill() {}                          // vfn_0
-    virtual void SetConfig(pongTrainingDrillConfig* pConfig) {} // vfn_1 (Overridden by subclasses)
-    virtual void CallInit() {}                               // vfn_2 - thunk to vfn_3
+    virtual void SetConfig(pongTrainingDrillConfig* pConfig);  // vfn_1 @ 0x8210CDA0
+    virtual void CallInit();                                  // vfn_2 @ 0x8210CDA8 — thunk to Init()
     virtual void Init();                                     // vfn_3 @ 0x8210CDB8
     virtual void Update() {}                                 // vfn_4
     virtual void OnStart();                                   // vfn_5  @ 0x8210CFF0
@@ -359,21 +367,21 @@ public:
     virtual void ProcessEvent(void* pEvent) {}               // vfn_8 (Overridden by subclasses)
     virtual void Process() {}                                // vfn_9
     virtual void Render() {}                                 // vfn_10
-    virtual void OnSuccess() {}                              // vfn_11
-    virtual void OnFailure() {}                              // vfn_12
-    virtual void GetName() {}                                // vfn_13
-    virtual void GetDescription() {}                         // vfn_14
-    virtual void IsComplete() {}                             // vfn_15
-    virtual void GetProgress() {}                            // vfn_16
+    virtual void OnSuccess();                                 // vfn_11 @ 0x8210D310
+    virtual bool IsScoreValid();                              // vfn_12 @ 0x8210D320
+    virtual float GetTimeLimit();                             // vfn_13 @ 0x8210D340
+    virtual float GetMaxTime();                               // vfn_14 @ 0x8210D350
+    virtual int GetDrillCategory();                           // vfn_15 @ 0x8210CC70
+    virtual uint32_t GetProgressTarget();                     // vfn_16 @ 0x8210D360
     virtual int  GetDrillTypeIndex() { return 0; }           // vfn_17 — drill type ID (overridden per subclass)
     virtual const char* GetConfigName() { return ""; }       // vfn_18
     virtual void vfn_19() {}
     virtual void vfn_20() {}
     virtual bool HasActiveTarget() { return false; }         // vfn_21
     virtual void vfn_22() {}
-    virtual void CanAdvance() {}                             // vfn_23
-    virtual void GetDifficulty() {}                          // vfn_24
-    virtual void SetDifficulty() {}                          // vfn_25
+    virtual uint32_t GetScore();                              // vfn_23 @ 0x8210CBD8
+    virtual uint8_t GetDifficulty();                          // vfn_24 @ 0x8210D370
+    virtual void SetDifficulty();                             // vfn_25 @ 0x8210D380
     virtual void OnBallHit(int bUpdateSaveData);             // vfn_27 @ 0x8210D488
     virtual void OnBallMiss() {}                             // vfn_28
     virtual void OnRallyEnd(void* pRallyEvent);              // vfn_29 @ 0x8210D660

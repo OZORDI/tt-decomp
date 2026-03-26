@@ -1012,3 +1012,216 @@ void grc_12B8_impl(void* pNode, int32_t flags)
     // Free this node
     rage_free(pNode);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::grcDirtyDisc — disc error handling (vtable @ 0x82034A68)
+//
+// Inherits from rage::fiDirtyDisc (vtable @ 0x82034A54) which inherits
+// from rage::datBase (vtable @ 0x820276C4). The object has a secondary
+// vtable pointer at +0x08 for fiDirtyDisc, plus the primary datBase
+// vtable at +0x00.
+//
+// External dependencies:
+//   rage_FC30         @ 0x8214FC30 — grc device pre-init (clears state)
+//   rage_FC90         @ 0x8214FC90 — grc device post-init (restores state)
+//   grc_F088          @ 0x8214F088 — grc overlay render setup
+//   fiAsciiTokenizer_CE30_w @ 0x8215CE30 — file tokenizer init
+//   rage_CEF0         @ 0x8215CEF0 — grcSetup parse helper
+//   _crt_tls_fiber_setup    @ 0x82566B78 — allocate TLS fiber context
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// Global pointer used by grcDirtyDisc::vfn_2 for fiber TLS context
+// @ 0x825EB988   .data   4 bytes
+extern void* g_pDirtyDiscContext;  // @ 0x825EB988
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcDirtyDisc::~grcDirtyDisc  [vtable slot 0 @ 0x82151110]
+// Virtual destructor — resets vtable chain to fiDirtyDisc then datBase,
+// optionally frees the object.
+// ─────────────────────────────────────────────────────────────────────────────
+grcDirtyDisc::~grcDirtyDisc() {
+    // Compiler-managed vtable reset to fiDirtyDisc @ 0x82034A54 (+8)
+    // Compiler-managed vtable reset to datBase @ 0x820276C4 (+0)
+    // Actual freeing handled by scalar destructor (slot 1)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcDirtyDisc::ScalarDtor  [vtable slot 1 @ 0x821511F8]
+// Scalar deleting destructor — initializes grc device state, renders the
+// dirty disc overlay, then restores state. Called when a disc read error
+// is detected and the "dirty disc" screen needs to be displayed.
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern void rage_FC30();                               // @ 0x8214FC30
+extern void grc_F088(int mode, float alpha, int flags, uint32_t colorMask); // @ 0x8214F088
+extern void rage_FC90(int contextId, int resetMode);   // @ 0x8214FC90
+
+// Float constant for overlay alpha @ 0x8202D108
+extern const float g_fDirtyDiscAlpha;  // @ 0x8202D108
+
+void grcDirtyDisc::ScalarDtor(int flags) {
+    // Pre-init: clear grc device state for overlay rendering
+    rage_FC30();
+
+    // Render the dirty disc overlay with full opacity mask (0xFF000000)
+    // mode=1, alpha=g_fDirtyDiscAlpha, flags=1, colorMask=0xFF000000
+    grc_F088(1, g_fDirtyDiscAlpha, 1, 0xFF000000);
+
+    // Post-init: restore grc device state
+    rage_FC90(0, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcDirtyDisc::vfn_2  [vtable slot 2 @ 0x82151168]
+// Fiber TLS initialization — sets up the thread-local fiber context used
+// for async disc-error recovery. If no global context exists yet, creates
+// a grcSetup tokenizer first, then allocates a fiber context.
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern void fiAsciiTokenizer_CE30_w(void* pSetup, uint32_t configData, void* pVtable); // @ 0x8215CE30
+extern void rage_CEF0(void* pSetup, int mode);          // @ 0x8215CEF0
+extern void* _crt_tls_fiber_setup();                     // @ 0x82566B78
+
+void grcDirtyDisc::vfn_2() {
+    void* pContext = g_pDirtyDiscContext;
+
+    if (pContext == nullptr) {
+        // No global context yet — create a grcSetup tokenizer from this object's
+        // config data (+0x04) using the fiDirtyDisc vtable (+0x08) as the setup
+        void* pSetup = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(this) + 8);
+        uint32_t configData = *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + 4);
+
+        // Initialize the tokenizer with the dirty disc vtable
+        fiAsciiTokenizer_CE30_w(pSetup, configData, reinterpret_cast<void*>(0x82034A48));
+
+        // Parse the configuration
+        rage_CEF0(pSetup, 0);
+
+        // Execute the setup's scalar destructor (slot 1) to finalize
+        typedef void (*ScalarDtorFn)(void*);
+        void** vtbl = *reinterpret_cast<void***>(pSetup);
+        reinterpret_cast<ScalarDtorFn>(vtbl[1])(pSetup);
+
+        // Re-read global context after setup
+        pContext = g_pDirtyDiscContext;
+    }
+
+    // If the context already has a fiber TLS slot at +10376, clean it up first
+    uint32_t* pFiberSlot = reinterpret_cast<uint32_t*>(
+        reinterpret_cast<uint8_t*>(pContext) + 10376);
+    if (*pFiberSlot != 0) {
+        _crt_tls_fiber_setup();
+    }
+
+    // Allocate a new fiber TLS context and store it
+    void* pFiber = _crt_tls_fiber_setup();
+    *pFiberSlot = reinterpret_cast<uint32_t>(reinterpret_cast<uintptr_t>(pFiber));
+}
+
+} // namespace rage
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::grcRenderTargetXenon — render target accessor methods
+// vtable @ 0x82035344
+//
+// These are small inline-style accessors that read/write fields in the
+// grcRenderTargetXenon object layout:
+//   +0x08  m_pSurface         — GPU surface pointer (void*)
+//   +0x14  m_nWidth           — uint16_t, render target width
+//   +0x16  m_nHeight          — uint16_t, render target height
+//   +0x1C  m_bColorEnabled    — uint8_t, color channel enable flag
+//   +0x1D  m_bDepthEnabled    — uint8_t, depth channel enable flag
+//   +0x1E  m_nMSAAMode        — uint8_t, multisample mode (0, 1, or clamped to 2)
+//   +0x28  m_pResolveTarget   — void*, resolve target pointer
+//
+// Global:
+//   g_pGrcCurrentSurface @ 0x825C9010 — active GPU surface pointer
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// Active GPU surface pointer, written by vfn_20 (BeginScene)
+extern void* g_pGrcCurrentSurface;  // @ 0x825C9010
+
+// Float constant for default LOD bias @ 0x8202D110
+extern const float g_fDefaultLodBias;  // @ 0x8202D110
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderTargetXenon::vfn_8  [vtable slot 8 @ 0x8215DD58]
+// GetWidth — returns the render target width.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t grcRenderTargetXenon_GetWidth(void* pThis) {
+    return *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(pThis) + 20);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderTargetXenon::vfn_9  [vtable slot 9 @ 0x8215DD60]
+// GetHeight — returns the render target height.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t grcRenderTargetXenon_GetHeight(void* pThis) {
+    return *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(pThis) + 22);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderTargetXenon::vfn_13  [vtable slot 13 @ 0x8215DD68]
+// SetChannelFlags — sets the color and depth enable flags.
+// ─────────────────────────────────────────────────────────────────────────────
+void grcRenderTargetXenon_SetChannelFlags(void* pThis, uint8_t colorEnabled, uint8_t depthEnabled) {
+    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
+    pObj[28] = colorEnabled;   // +0x1C m_bColorEnabled
+    pObj[29] = depthEnabled;   // +0x1D m_bDepthEnabled
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderTargetXenon::vfn_14  [vtable slot 14 @ 0x8215DD78]
+// GetChannelFlags — reads the color and depth enable flags into output params.
+// ─────────────────────────────────────────────────────────────────────────────
+void grcRenderTargetXenon_GetChannelFlags(void* pThis, uint8_t* pColorOut, uint8_t* pDepthOut) {
+    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
+    *pColorOut = pObj[28];     // +0x1C m_bColorEnabled
+    *pDepthOut = pObj[29];     // +0x1D m_bDepthEnabled
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderTargetXenon::vfn_16  [vtable slot 16 @ 0x8215DD90]
+// SetMSAAMode — sets the multisample anti-aliasing mode, clamping to max 2.
+// ─────────────────────────────────────────────────────────────────────────────
+void grcRenderTargetXenon_SetMSAAMode(void* pThis, int mode) {
+    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
+    if (mode < 2) {
+        pObj[30] = static_cast<uint8_t>(mode);   // +0x1E m_nMSAAMode
+    } else {
+        pObj[30] = 2;  // Clamp to maximum of 2
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderTargetXenon::vfn_18  [vtable slot 18 @ 0x82151250]
+// GetDefaultLodBias — returns the default LOD bias and mip level via
+// output parameters. LOD bias is a float constant, mip level is always 0.
+// ─────────────────────────────────────────────────────────────────────────────
+void grcRenderTargetXenon_GetDefaultLodBias(void* pThis, float* pBiasOut, uint32_t* pMipLevelOut) {
+    *pBiasOut = g_fDefaultLodBias;   // float constant @ 0x8202D110
+    *pMipLevelOut = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcRenderTargetXenon::vfn_20  [vtable slot 20 @ 0x8215EB10]
+// BeginScene — stores the current GPU surface pointer into the global
+// g_pGrcCurrentSurface and returns the resolve target pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void* grcRenderTargetXenon_BeginScene(void* pThis) {
+    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
+
+    // Store the active GPU surface pointer globally
+    *reinterpret_cast<void**>(pObj + 8) = g_pGrcCurrentSurface;  // +0x08 m_pSurface = g_pGrcCurrentSurface
+
+    // Return the resolve target pointer at +0x28
+    return *reinterpret_cast<void**>(pObj + 40);  // +0x28 m_pResolveTarget
+}
+
+} // namespace rage

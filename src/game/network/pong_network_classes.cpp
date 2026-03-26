@@ -1654,3 +1654,854 @@ bool SinglesNetworkClient::GetOrderedFlag() {
     // Python-verified: rlwinm(v,0,17,17) mask = 0x4000
     return (headerValue & 0x4000) != 0;
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolderBase::~pongNetMessageHolderBase  [vtable slot 0 @ 0x823B5890]
+// Destructor: resets vtable, decrements global live-object count, conditionally frees.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolderBase::~pongNetMessageHolderBase @ 0x823B5890 | size: 0x58
+ *
+ * Virtual destructor for the base class of all pongNetMessageHolder objects.
+ * Sets vtable to pongNetMessageHolderBase (0x8206FA88), decrements the global
+ * live-object count at 0x826066A4, and frees memory if bit 0 of flags is set.
+ */
+void pongNetMessageHolderBase_Destroy(void* self, int flags) {
+    // Reset vtable to pongNetMessageHolderBase @ 0x8206FA88
+    *(void**)self = (void*)0x8206FA88;
+
+    // Decrement global live-object reference count @ 0x826066A4
+    uint32_t* refCount = (uint32_t*)0x826066A4;
+    *refCount = *refCount - 1;
+
+    // Free memory if bit 0 of flags is set (scalar delete)
+    if (flags & 1) {
+        rage_free(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::SetNetIndex  @ 0x82118BB0
+// Grows the dual send/recv buffers to hold the new index, using power-of-2
+// rounding for the capacity.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::SetNetIndex @ 0x82118BB0 | size: 0xA8
+ *
+ * Sets the active network index (byte at +424) and ensures the internal
+ * dual buffer pair at +208/+212 has sufficient capacity (+425).
+ * If the new index exceeds current capacity, allocates new buffers rounded
+ * up to the next power of 2 (clamped to 8 bits), copies existing data, and
+ * replaces both buffer pointers.
+ */
+void pongNetMessageHolder_SetNetIndex(void* self, uint8_t netIndex) {
+    uint8_t* obj = (uint8_t*)self;
+    uint8_t currentCapacity = *(obj + 425);
+
+    if (netIndex > currentCapacity) {
+        // Round up to next power of 2 (8-bit)
+        uint32_t newCap = netIndex;
+        newCap |= newCap >> 1;
+        newCap |= newCap >> 2;
+        newCap |= newCap >> 4;
+        newCap |= newCap >> 8;
+        newCap |= newCap >> 16;
+        newCap = (newCap + 1) & 0xFF;
+
+        // Allocate new send buffer
+        void* newSendBuf = xe_EC88(newCap);
+
+        // Allocate new recv buffer
+        void* newRecvBuf = xe_EC88(newCap);
+
+        // Copy existing send buffer contents
+        if (newSendBuf) {
+            memcpy(newSendBuf, *(void**)(obj + 208), currentCapacity);
+        }
+
+        // Copy existing recv buffer contents
+        if (newRecvBuf) {
+            memcpy(newRecvBuf, *(void**)(obj + 212), currentCapacity);
+        }
+
+        // Replace buffer pointers
+        *(void**)(obj + 208) = newSendBuf;
+        *(void**)(obj + 212) = newRecvBuf;
+
+        // Store new capacity
+        *(obj + 425) = (uint8_t)newCap;
+    }
+
+    // Always store the active index
+    *(obj + 424) = netIndex;
+}
+
+// Forward declaration for xe_EC88 (memory allocator)
+extern void* xe_EC88(uint32_t size);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::UpdateNetIndices  @ 0x821190A0
+// Queries a vtable slot 4 result from r4, then calls SetNetIndex twice.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::UpdateNetIndices @ 0x821190A0 | size: 0x58
+ *
+ * Reads a network index by calling virtual slot 4 on the object at r4+4,
+ * then calls SetNetIndex with that value followed by a second call with 0.
+ * This sets up the send/recv buffers for a new connection and then resets
+ * the active index.
+ */
+void pongNetMessageHolder_UpdateNetIndices(void* self, void* connectionInfo) {
+    // Get the connection object at connectionInfo+4
+    void* connection = *(void**)((uint8_t*)connectionInfo + 4);
+
+    // Call vtable slot 4 to get the network index (returns byte in low 8 bits)
+    typedef uint32_t (*GetIndexFn)(void*);
+    void** vtable = *(void***)connection;
+    uint8_t index = (uint8_t)((GetIndexFn)vtable[4])(connection);
+
+    // Set up buffers for this index
+    pongNetMessageHolder_SetNetIndex(self, index);
+
+    // Reset active index to 0
+    pongNetMessageHolder_SetNetIndex(self, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::ResizeBuffer16  @ 0x8212D2E8
+// Resizes a buffer with 16-byte elements: frees old, allocates count*16.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::ResizeBuffer16 @ 0x8212D2E8 | size: 0x74
+ *
+ * Manages a dynamically-sized buffer stored as {dataPtr, sizeField, count}.
+ * Element size is 16 bytes. If count changes:
+ *   - Frees existing buffer at +0 if the old count (+8) was non-zero
+ *   - Clears dataPtr (+0) and sizeField (+4)
+ *   - Allocates count * 16 bytes (capped at 0x0FFFFFFF elements)
+ *   - Stores new buffer pointer at +0 and count at +8
+ */
+void pongNetMessageHolder_ResizeBuffer16(void* self, uint32_t count) {
+    uint8_t* obj = (uint8_t*)self;
+    uint32_t oldCount = *(uint32_t*)(obj + 8);
+
+    // Free existing buffer if any
+    if (oldCount != 0) {
+        void* oldBuf = *(void**)(obj + 0);
+        rage_free(oldBuf);
+        *(void**)(obj + 0) = nullptr;
+        *(uint32_t*)(obj + 4) = 0;
+    }
+
+    if (count != 0) {
+        *(uint32_t*)(obj + 8) = count;
+
+        // Compute allocation size: count * 16
+        // Overflow guard: if count > 0x0FFFFFFF, request (uint32_t)-1
+        uint32_t allocSize = count * 16;
+        if (count > 0x0FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+
+        void* newBuf = xe_EC88(allocSize);
+        *(void**)(obj + 0) = newBuf;
+    } else {
+        *(uint32_t*)(obj + 8) = 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::ResizeBuffer4  @ 0x82133EB8
+// Resizes a buffer with 4-byte elements: frees old, allocates count*4.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::ResizeBuffer4 @ 0x82133EB8 | size: 0x74
+ *
+ * Identical pattern to ResizeBuffer16 but with 4-byte element size.
+ * Element overflow cap at 0x3FFFFFFF.
+ */
+void pongNetMessageHolder_ResizeBuffer4(void* self, uint32_t count) {
+    uint8_t* obj = (uint8_t*)self;
+    uint32_t oldCount = *(uint32_t*)(obj + 8);
+
+    // Free existing buffer if any
+    if (oldCount != 0) {
+        void* oldBuf = *(void**)(obj + 0);
+        rage_free(oldBuf);
+        *(void**)(obj + 0) = nullptr;
+        *(uint32_t*)(obj + 4) = 0;
+    }
+
+    if (count != 0) {
+        *(uint32_t*)(obj + 8) = count;
+
+        // Compute allocation size: count * 4
+        // Overflow guard: if count > 0x3FFFFFFF, request (uint32_t)-1
+        uint32_t allocSize = count * 4;
+        if (count > 0x3FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+
+        void* newBuf = xe_EC88(allocSize);
+        *(void**)(obj + 0) = newBuf;
+    } else {
+        *(uint32_t*)(obj + 8) = 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::InitOperatorArray  @ 0x821D6D08
+// Initializes a {dataPtr, count, timerValue} structure with operator ctors.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::InitOperatorArray @ 0x821D6D08 | size: 0x84
+ *
+ * Initializes a small structure used for tracking network operators:
+ *   +0x00: data pointer (set to 0 initially, then filled)
+ *   +0x04: element count (uint16, set to 0 initially)
+ *   +0x08: timer/timestamp (float, set from global default)
+ *
+ * Calls cmOperatorCtor_68E0_w with capacity=5 to allocate storage,
+ * then zero-fills all elements, and sets the timer field from a global
+ * float constant (g_defaultTimerValue @ 0x825C5938).
+ */
+void pongNetMessageHolder_InitOperatorArray(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    // Clear data pointer and count
+    *(uint32_t*)(obj + 0) = 0;
+    *(uint16_t*)(obj + 4) = 0;
+
+    // Initialize with capacity 5
+    extern void cmOperatorCtor_68E0_w(void* self, int capacity);
+    cmOperatorCtor_68E0_w(self, 5);
+
+    // Zero-fill all allocated elements
+    uint16_t elementCount = *(uint16_t*)(obj + 4);
+    if (elementCount > 0) {
+        uint32_t* dataPtr = *(uint32_t**)(obj + 0);
+        for (uint16_t i = 0; i < elementCount; i++) {
+            dataPtr[i] = 0;
+        }
+    }
+
+    // Set timer field from global default float @ 0x825C5938
+    extern float g_defaultTimerValue;  // @ 0x825C5938
+    *(float*)(obj + 8) = g_defaultTimerValue;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateArray4  @ 0x821379C8
+// Allocates an array of 4-byte elements with per-element initialization.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::AllocateArray4 @ 0x821379C8 | size: 0x94
+ *
+ * Allocates an array of `count` 4-byte elements and calls ke_1B00 on each
+ * element to initialize it. Stores the array pointer at +0 and the count
+ * as a uint16 at +6.
+ *
+ * If count is 0 or allocation fails, stores nullptr at +0.
+ * Overflow guard: if count > 0x3FFFFFFF, requests (uint32_t)-1 bytes.
+ */
+void pongNetMessageHolder_AllocateArray4(void* self, uint32_t count) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (count == 0) {
+        *(uint16_t*)(obj + 6) = 0;
+        *(void**)(obj + 0) = nullptr;
+        return;
+    }
+
+    // Compute allocation size: count * 4
+    uint32_t allocSize = count * 4;
+    if (count > 0x3FFFFFFF) {
+        allocSize = (uint32_t)-1;
+    }
+
+    void* buffer = xe_EC88(allocSize);
+
+    if (buffer == nullptr) {
+        *(uint16_t*)(obj + 6) = (uint16_t)count;
+        *(void**)(obj + 0) = nullptr;
+        return;
+    }
+
+    // Initialize each element with ke_1B00
+    extern void ke_1B00(void* element);
+    uint8_t* elementPtr = (uint8_t*)buffer;
+    for (uint32_t i = 0; i < count; i++) {
+        ke_1B00(elementPtr);
+        elementPtr += 4;
+    }
+
+    *(uint16_t*)(obj + 6) = (uint16_t)count;
+    *(void**)(obj + 0) = buffer;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::InitPlayerNetState  @ 0x821D75B0
+// Large initializer for per-player network state (positions, timers, arrays).
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::InitPlayerNetState @ 0x821D75B0 | size: 0xB8
+ *
+ * Initializes a large per-player network state structure (~10200+ bytes):
+ *   +0x00..+0x18: six floats set to 0.0 (position/velocity vectors)
+ *   +0x20: sub-structure initialized via pongNetMessageHolder_7668_2hr
+ *          (119 x 80-byte player state slots + trailing summary block)
+ *   +0x2600 (9728): bool flag = false
+ *   +0x2604 (9732): float timestamp = g_defaultTimerValue
+ *   +0x2608 (9736): operator array initialized via InitOperatorArray
+ *   +0x2620 (9760): game state block initialized via game_5E70
+ *   +0x27E0 (10208): uint32 = 0
+ *   +0x27E4 (10212): byte = 0
+ *   +0x27E8 (10216): 16 bytes copied from template data @ 0x8261A0C0
+ */
+void pongNetMessageHolder_InitPlayerNetState(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    // Load zero float constant from .rdata @ 0x8202D110
+    float zeroVal = 0.0f;
+
+    // Zero out six float fields (two 3D vectors: position + velocity)
+    *(float*)(obj + 0)  = zeroVal;
+    *(float*)(obj + 4)  = zeroVal;
+    *(float*)(obj + 8)  = zeroVal;
+    *(float*)(obj + 16) = zeroVal;
+    *(float*)(obj + 20) = zeroVal;
+    *(float*)(obj + 24) = zeroVal;
+
+    // Initialize the 119-slot player state array at +32
+    extern void pongNetMessageHolder_7668_2hr(void* stateArray);
+    pongNetMessageHolder_7668_2hr(obj + 32);
+
+    // Set timestamp and flag near offset 9728
+    extern float g_defaultTimerValue;  // @ 0x825C5938
+    *(uint8_t*)(obj + 9728) = 0;                       // m_bNetStateActive
+    *(float*)(obj + 9732)   = g_defaultTimerValue;      // m_lastUpdateTime
+
+    // Initialize operator array at +9736
+    pongNetMessageHolder_InitOperatorArray(obj + 9736);
+
+    // Initialize game state block at +9760
+    extern void game_5E70(void* gameState);
+    game_5E70(obj + 9760);
+
+    // Clear trailing state fields
+    *(uint32_t*)(obj + 10208) = 0;   // m_pendingEvents
+    *(uint8_t*)(obj + 10212) = 0;    // m_bSyncPending
+
+    // Copy 16 bytes of template data from global @ 0x8261A0C0
+    uint32_t* templateSrc = (uint32_t*)0x8261A0C0;
+    uint32_t* dst = (uint32_t*)(obj + 10216);
+    dst[0] = templateSrc[0];
+    dst[1] = templateSrc[1];
+    dst[2] = templateSrc[2];
+    dst[3] = templateSrc[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SwingStartedMessage::SwingStartedMessage  [constructor @ 0x823B99E8]
+// Constructs a SwingStartedMessage with physics sub-object and operator arrays.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * SwingStartedMessage::SwingStartedMessage @ 0x823B99E8 | size: 0xD0
+ *
+ * Constructor for the SwingStartedMessage network message.
+ * Sets vtable to SwingStartedMessage @ 0x8206F4D8, initializes:
+ *   +0x04: timing float from global @ 0x82079AD4
+ *   +0x10: physics sub-object via ph_ctor_69F8 (336 bytes)
+ *   +0x150 (336): three int16 fields set to -1 (invalid indices)
+ *   +0x160 (352): float timestamp from zero constant
+ *   +0x174 (372): int16 = -1
+ *   +0x164 (356): float = 0.0
+ *   +0x176 (374): byte = 255 (invalid player index)
+ *   +0x168 (360..368): three more floats = 0.0
+ *   +0x178 (376): operator array initialized via InitOperatorArray
+ *   +0x184 (388..389): two bytes = 255 (invalid indices)
+ *   +0x186 (390): byte = 0
+ */
+void SwingStartedMessage_Ctor(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    // Set vtable to SwingStartedMessage @ 0x8206F4D8
+    extern float g_swingTimingDefault;  // @ 0x82079AD4 (rdata float)
+    *(float*)(obj + 4) = g_swingTimingDefault;
+    *(void**)(obj + 0) = (void*)0x8206F4D8;
+
+    // Construct physics sub-object at +16
+    extern void ph_ctor_69F8(void* physics);
+    ph_ctor_69F8(obj + 16);
+
+    // Initialize invalid-index fields in the data region
+    // Three int16 fields at +336, +338, +340 (relative to +16 base: +320, +322, +324)
+    *(int16_t*)(obj + 336) = -1;
+    *(int16_t*)(obj + 338) = -1;
+    *(int16_t*)(obj + 340) = -1;
+
+    // Timing and state floats (0.0f from .rdata)
+    float zeroFloat = 0.0f;
+    *(float*)(obj + 352) = zeroFloat;
+    *(int16_t*)(obj + 372) = -1;
+    *(float*)(obj + 356) = zeroFloat;
+    *(uint8_t*)(obj + 374) = 255;  // invalid player index sentinel
+    *(float*)(obj + 360) = zeroFloat;
+    *(float*)(obj + 364) = zeroFloat;
+    *(float*)(obj + 368) = zeroFloat;
+
+    // Initialize operator array at +376
+    pongNetMessageHolder_InitOperatorArray(obj + 376);
+
+    // Set trailing invalid-index bytes
+    *(uint8_t*)(obj + 388) = 255;
+    *(uint8_t*)(obj + 389) = 255;
+    *(uint8_t*)(obj + 390) = 0;
+
+    // Zero-fill operator array elements (same pattern as InitOperatorArray tail)
+    uint16_t opCount = *(uint16_t*)(obj + 376 + 4);  // count at +380
+    if (opCount > 0) {
+        uint32_t* opData = *(uint32_t**)(obj + 376);
+        for (uint16_t i = 0; i < opCount; i++) {
+            opData[i] = 0;
+        }
+    }
+
+    // Set operator timer from global
+    extern float g_defaultTimerValue;  // @ 0x825C5938
+    *(float*)(obj + 376 + 8) = g_defaultTimerValue;  // +384
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::ResetPlayerSlotState  @ 0x821D7668
+// Bulk-zeros 119 player state slots (80 bytes each) plus trailing summary.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * pongNetMessageHolder::ResetPlayerSlotState @ 0x821D7668 | size: 0xE4
+ *
+ * Clears 119 player-state slots, each 80 bytes, starting at self+16.
+ * Each slot contains:
+ *   +0..+47:  zeroed via three 16-byte vector stores (vxor)
+ *   +48..+59: three floats set from global (likely max/sentinel values)
+ *   +60:      float set from a second global constant
+ *   -16..-12: two floats set from first global
+ *   -8..-6:   three bytes zeroed (flags)
+ *
+ * After the 119 slots, clears three uint32 counters at +9600..+9608
+ * and initializes a trailing 80-byte summary block with the same pattern.
+ */
+void pongNetMessageHolder_ResetPlayerSlotState(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    float sentinelFloat = 0.0f;   // loaded from .rdata @ 0x8202D108 (sentinel/max)
+    float defaultFloat  = 0.0f;   // loaded from .rdata @ 0x8202D110 (zero)
+
+    // Note: actual sentinel values would be loaded from binary .rdata globals.
+    // Using 0.0f as placeholder since the exact binary values are unresolvable here.
+
+    uint8_t* slotBase = obj + 16;
+
+    // Clear 119 player state slots, 80 bytes each
+    for (int i = 0; i < 119; i++) {
+        uint8_t* slot = slotBase + (i * 80);
+
+        // Zero three 16-byte blocks (48 bytes)
+        memset(slot, 0, 48);
+
+        // Set three sentinel floats at +48, +52, +56
+        *(float*)(slot + 48) = sentinelFloat;
+        *(float*)(slot + 52) = sentinelFloat;
+        *(float*)(slot + 56) = sentinelFloat;
+
+        // Set default float at +60
+        *(float*)(slot + 60) = defaultFloat;
+
+        // Set two floats before the slot header (relative -16, -12)
+        *(float*)(slot - 16) = sentinelFloat;
+        *(float*)(slot - 12) = sentinelFloat;
+
+        // Clear three flag bytes at -8, -7, -6
+        *(slot - 8) = 0;
+        *(slot - 7) = 0;
+        *(slot - 6) = 0;
+    }
+
+    // Clear three trailing counters at +9600, +9604, +9608
+    *(uint32_t*)(obj + 9600) = 0;
+    *(uint32_t*)(obj + 9604) = 0;
+    *(uint32_t*)(obj + 9608) = 0;
+
+    // Initialize trailing 80-byte summary block at +9616
+    uint8_t* summary = obj + 9616;
+
+    // Zero two 16-byte blocks (at +16, +32 relative to summary)
+    memset(summary + 16, 0, 16);
+    memset(summary + 32, 0, 16);
+    memset(summary + 48, 0, 16);
+
+    // Set four floats at +64, +68, +72
+    *(float*)(summary + 64) = sentinelFloat;
+    *(float*)(summary + 68) = sentinelFloat;
+    *(float*)(summary + 72) = sentinelFloat;
+    *(float*)(summary + 76) = defaultFloat;
+
+    // Set floats and flags in summary header
+    *(float*)(summary + 0) = sentinelFloat;
+    *(uint8_t*)(summary + 8) = 0;
+    *(float*)(summary + 4) = sentinelFloat;
+    *(uint8_t*)(summary + 9) = 0;
+    *(uint8_t*)(summary + 10) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdInputData::gdInputData  [constructor @ 0x821E0138]
+// Constructs gdInputData with vtable, flag bytes, and a pool of 58 entries.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * gdInputData::gdInputData @ 0x821E0138 | size: 0xBC
+ *
+ * Constructor for the gdInputData structure, used for gamepad/input data
+ * collection in network play. Sets vtable to gdInputData @ 0x82041468.
+ *
+ * Layout initialized:
+ *   +0x000: vtable pointer (0x82041468)
+ *   +0x004..+0x007: four flag bytes = 0
+ *   +0x008: uint32 = 0 (input state)
+ *   +0x00C: byte = 0 (input flags)
+ *   +0x010: uint32 = 0 (timestamp)
+ *   +0x014: uint32 = 0 (frame counter)
+ *   +0x018: uint32 = 0 (sequence number)
+ *   +0x31C (796): sub-array {dataPtr, count, capacity} for 58 input entries
+ *   +0x324 (804): uint32 = 0 (pending count)
+ *
+ * Each input entry is 4 bytes (232 total bytes for 58 entries).
+ * Entries are zero-filled on allocation.
+ */
+void gdInputData_Ctor(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    const uint16_t INPUT_ENTRY_COUNT = 58;
+
+    // Set vtable to gdInputData @ 0x82041468
+    *(void**)(obj + 0) = (void*)0x82041468;
+
+    // Clear flag bytes and state fields
+    *(obj + 4) = 0;
+    *(obj + 5) = 0;
+    *(obj + 6) = 0;
+    *(obj + 7) = 0;
+    *(uint32_t*)(obj + 8) = 0;
+    *(obj + 12) = 0;
+    *(uint32_t*)(obj + 16) = 0;
+    *(uint32_t*)(obj + 20) = 0;
+    *(uint32_t*)(obj + 24) = 0;
+
+    // Initialize the input entry sub-array at +796
+    uint8_t* entryArray = obj + 796;
+    *(uint32_t*)(entryArray + 0) = 0;      // data pointer (filled below)
+    *(uint16_t*)(entryArray + 4) = 0;      // current count
+    *(uint16_t*)(entryArray + 6) = 0;      // capacity
+    *(uint32_t*)(obj + 804) = 0;           // pending count
+
+    // Check if capacity needs initialization
+    uint16_t currentCapacity = *(uint16_t*)(entryArray + 6);
+    if (currentCapacity == 0) {
+        // Set desired capacity
+        *(uint16_t*)(entryArray + 6) = INPUT_ENTRY_COUNT;
+
+        // Allocate 232 bytes (58 entries * 4 bytes each)
+        void* inputBuffer = xe_EC88(232);
+
+        if (inputBuffer != nullptr) {
+            // Zero-fill all entries (58 * 4 = 232 bytes)
+            uint8_t* fillPtr = (uint8_t*)inputBuffer;
+            for (int i = 57; i >= 0; i--) {
+                fillPtr[0] = 0;
+                fillPtr[1] = 0;
+                fillPtr[2] = 0;
+                fillPtr[3] = 0;
+                fillPtr += 4;
+            }
+        }
+
+        // Store allocated buffer pointer
+        *(void**)(entryArray + 0) = inputBuffer;
+    }
+
+    // Set the active count to the entry capacity
+    *(uint16_t*)(entryArray + 4) = INPUT_ENTRY_COUNT;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder pool Create/Destroy functions
+//
+// These are vtable slot 1 (Create) and slot 2 (Destroy) implementations for
+// the pongNetMessageHolder message pool system. Each pongNetMessageHolder
+// vtable variant manages a pool of a specific network message type.
+//
+// Create (vfn_1): Lazy-initializes the pool buffer at +8. Allocates memory,
+//   calls the message constructor, and stores the pointer.
+// Destroy (vfn_2): Resets all element vtables to PongNetMessage base
+//   (0x8206C304), frees the buffer, and nulls the pointer at +8.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Forward declarations for message constructors
+extern void pongNetMessageHolder_70C8_wrh(void* self);  // constructs 176B pool message
+extern void pongNetMessageHolder_71C0_wrh(void* self);  // constructs 112B pool message
+extern void pongNetMessageHolder_72A8_wrh(void* self);  // constructs 1040B pool message
+extern void pongNetMessageHolder_6F30_wrh(void* self);  // constructs 104816B pool message
+
+// PongNetMessage base vtable used as sentinel when releasing pool elements
+static void** const g_PongNetMessageBaseVtable = (void**)0x8206C304;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreateHitMessagePool @ 0x823C08D0 | size: 0x58
+//
+// Lazy-initializes a pool of HitMessage objects (104816 bytes total).
+// Called via vtable slot 1 to ensure the pool buffer is allocated before use.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreateHitMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    // Already initialized?
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    // Allocate 104816 bytes (0x19970) for the HitMessage pool
+    void* memory = xe_EC88(104816);
+
+    if (memory != nullptr) {
+        // Construct the pool via pongNetMessageHolder_6F30_wrh
+        pongNetMessageHolder_6F30_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyHitMessagePool @ 0x823C0928 | size: 0x68
+//
+// Releases a pool of 200 HitMessage objects (524-byte stride each).
+// Resets each element's vtable to PongNetMessage base before freeing.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyHitMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    // Reset vtables for 200 elements at 524-byte stride
+    // Iterates backwards: starts at buffer + 200*524, decrements by 524
+    uint8_t* elementPtr = (uint8_t*)buffer + (200 * 524);
+    for (int i = 199; i >= 0; i--) {
+        elementPtr -= 524;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreateSwingPool @ 0x823C0BC0 | size: 0x54
+//
+// Lazy-initializes a pool for swing message objects (176 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreateSwingPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    void* memory = xe_EC88(176);
+
+    if (memory != nullptr) {
+        pongNetMessageHolder_70C8_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreateFocusPool @ 0x823C0C18 | size: 0x54
+//
+// Lazy-initializes a pool for focus message objects (112 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreateFocusPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    void* memory = xe_EC88(112);
+
+    if (memory != nullptr) {
+        pongNetMessageHolder_71C0_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyFocusPool @ 0x823C0C70 | size: 0x64
+//
+// Releases a pool of 4 focus message objects (24-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyFocusPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    // Reset vtables for 4 elements at 24-byte stride
+    uint8_t* elementPtr = (uint8_t*)buffer + (4 * 24);
+    for (int i = 3; i >= 0; i--) {
+        elementPtr -= 24;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreatePlayerStatePool @ 0x823C0DE0 | size: 0x54
+//
+// Lazy-initializes a pool for player state message objects (1040 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreatePlayerStatePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    void* memory = xe_EC88(1040);
+
+    if (memory != nullptr) {
+        pongNetMessageHolder_72A8_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyPlayerStatePool @ 0x823C0E38 | size: 0x64
+//
+// Releases a pool of 4 player state message objects (256-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyPlayerStatePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    // Reset vtables for 4 elements at 256-byte stride
+    uint8_t* elementPtr = (uint8_t*)buffer + (4 * 256);
+    for (int i = 3; i >= 0; i--) {
+        elementPtr -= 256;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyMatchStatePool @ 0x823BFF38 | size: 0x64
+//
+// Releases a pool of 4 match state message objects (20-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyMatchStatePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    // Reset vtables for 4 elements at 20-byte stride
+    uint8_t* elementPtr = (uint8_t*)buffer + (4 * 20);
+    for (int i = 3; i >= 0; i--) {
+        elementPtr -= 20;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyTimeSyncPool @ 0x823BFFF8 | size: 0x64
+//
+// Releases a pool of 10 time sync message objects (36-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyTimeSyncPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    // Reset vtables for 10 elements at 36-byte stride
+    uint8_t* elementPtr = (uint8_t*)buffer + (10 * 36);
+    for (int i = 9; i >= 0; i--) {
+        elementPtr -= 36;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyMovementPool @ 0x823C09E8 | size: 0x64
+//
+// Releases a pool of 200 movement message objects (80-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyMovementPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    // Reset vtables for 200 elements at 80-byte stride
+    uint8_t* elementPtr = (uint8_t*)buffer + (200 * 80);
+    for (int i = 199; i >= 0; i--) {
+        elementPtr -= 80;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}

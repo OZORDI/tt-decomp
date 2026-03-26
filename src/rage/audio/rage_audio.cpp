@@ -550,4 +550,294 @@ bool audVoiceStream::IsStopped() {
     return state == 15;
 }
 
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Batch 3 — audVoiceSfx command submission and state query functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External forward declaration for the audio command submission helper.
+// Writes a command header + payload into the global audio command ring buffer.
+// Parameters: r3=commandClass, r4=commandId, r5=payloadPtr, r6=payloadWordCount
+extern void audVoiceStream_AEE8_g(
+    uint8_t commandClass,
+    uint16_t commandId,
+    const uint32_t* payloadData,
+    uint8_t payloadWordCount
+);
+
+// .rdata float constants used for volume/level normalization.
+extern const float lbl_8202D108;      // volume offset constant
+extern const float lbl_8202D344;      // volume scale constant
+extern const float lbl_8202D16C;      // speaker mix scale constant
+
+// Global linked list head for free/available voice pool.
+extern uint32_t lbl_825CA920[3];      // audVoiceSfx free list sentinel node
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::Pause (vfn_5) @ 0x821635B8 | size: 0x50
+//
+// Submits a Pause command (0x4004) to the audio command ring buffer with the
+// stream handle from m_pSfxRef. Returns 1 (true) to indicate success.
+// ─────────────────────────────────────────────────────────────────────────────
+bool audVoiceSfx::Pause() {
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    audCommandHeader* header =
+        reinterpret_cast<audCommandHeader*>(&g_pAudioCommandRing[g_audioCommandWriteIndex]);
+
+    header->m_class = kAudioCommandClass;
+    header->m_channel = kAudioCommandClass;
+    header->m_commandId = 0x4004;  // Pause
+
+    g_pAudioCommandRing[g_audioCommandWriteIndex + 1] = streamHandle;
+    g_audioCommandWriteIndex += 2;
+
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::Resume (vfn_6) @ 0x82163608 | size: 0x4C
+//
+// Submits a Resume command (0x4005) to the audio command ring buffer with
+// the stream handle from m_pSfxRef.
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoiceSfx::Resume() {
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    audCommandHeader* header =
+        reinterpret_cast<audCommandHeader*>(&g_pAudioCommandRing[g_audioCommandWriteIndex]);
+
+    header->m_class = kAudioCommandClass;
+    header->m_channel = kAudioCommandClass;
+    header->m_commandId = 0x4005;  // Resume
+
+    g_pAudioCommandRing[g_audioCommandWriteIndex + 1] = streamHandle;
+    g_audioCommandWriteIndex += 2;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::Stop (vfn_7) @ 0x82163658 | size: 0x4C
+//
+// Submits a Stop/Play command (0x4003) to the audio command ring buffer
+// with the stream handle from m_pSfxRef.
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoiceSfx::Stop() {
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    audCommandHeader* header =
+        reinterpret_cast<audCommandHeader*>(&g_pAudioCommandRing[g_audioCommandWriteIndex]);
+
+    header->m_class = kAudioCommandClass;
+    header->m_channel = kAudioCommandClass;
+    header->m_commandId = kSfxPlayCommandId;  // 0x4003
+
+    g_pAudioCommandRing[g_audioCommandWriteIndex + 1] = streamHandle;
+    g_audioCommandWriteIndex += 2;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::SetVolume (vfn_9) @ 0x82163778 | size: 0x60
+//
+// Converts a floating-point volume level to an integer representation using
+// offset/scale constants and submits a SetVolume command (0x4006) via the
+// audio command ring buffer.
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoiceSfx::SetVolume(float volume) {
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    float normalized = (volume - lbl_8202D108) * lbl_8202D344;
+    int32_t intVolume = static_cast<int32_t>(normalized);
+
+    uint32_t payload[2];
+    payload[0] = streamHandle;
+    payload[1] = static_cast<uint32_t>(intVolume);
+
+    audVoiceStream_AEE8_g(kAudioCommandClass, 0x4006, payload, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::SetSpeakerMix (vfn_14) @ 0x82163938 | size: 0x64
+//
+// Converts two floating-point speaker mix parameters to integers using a
+// shared scale constant and submits a SetSpeakerMix command (0x400C) with
+// three payload words: stream handle + two scaled integer levels.
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoiceSfx::SetSpeakerMix(float leftLevel, float rightLevel) {
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    int32_t intLeft = static_cast<int32_t>(leftLevel * lbl_8202D16C);
+    int32_t intRight = static_cast<int32_t>(rightLevel * lbl_8202D16C);
+
+    uint32_t payload[3];
+    payload[0] = streamHandle;
+    payload[1] = static_cast<uint32_t>(intLeft);
+    payload[2] = static_cast<uint32_t>(intRight);
+
+    audVoiceStream_AEE8_g(kAudioCommandClass, 0x400C, payload, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::SetReverbVolume @ 0x821639A0 | size: 0x88
+//
+// Validates the bank entry's slot, then converts a float reverb volume to an
+// integer and submits a SetReverbVolume command (0x400E). If the bank slot is
+// invalid (-1), returns early (debug log stripped in release build).
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoiceSfx::SetReverbVolume(void* bankEntry, float volume) {
+    int32_t bankSlot;
+    std::memcpy(&bankSlot, reinterpret_cast<const char*>(bankEntry) + 4, sizeof(int32_t));
+
+    if (bankSlot == -1) {
+        // Debug log: "audVoiceSfx::SetReverbVolume - bank not resident for SFX entry (%p)"
+        // Stripped to no-op in release build.
+        return;
+    }
+
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    float normalized = (volume - lbl_8202D108) * lbl_8202D344;
+    int32_t intVolume = static_cast<int32_t>(normalized);
+
+    uint32_t payload[2];
+    payload[0] = streamHandle;
+    payload[1] = static_cast<uint32_t>(intVolume);
+
+    audVoiceStream_AEE8_g(kAudioCommandClass, 0x400E, payload, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::SetEffectVolume @ 0x82163A28 | size: 0x88
+//
+// Validates the bank entry's slot, then converts a float effect volume to an
+// integer and submits a SetEffectVolume command (0x4011). If the bank slot is
+// invalid (-1), returns early (debug log stripped in release build).
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoiceSfx::SetEffectVolume(void* bankEntry, float volume) {
+    int32_t bankSlot;
+    std::memcpy(&bankSlot, reinterpret_cast<const char*>(bankEntry) + 4, sizeof(int32_t));
+
+    if (bankSlot == -1) {
+        // Debug log: "audVoiceSfx::SetEffectVolume - bank not resident for SFX entry (%p)"
+        // Stripped to no-op in release build.
+        return;
+    }
+
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    float normalized = (volume - lbl_8202D108) * lbl_8202D344;
+    int32_t intVolume = static_cast<int32_t>(normalized);
+
+    uint32_t payload[2];
+    payload[0] = streamHandle;
+    payload[1] = static_cast<uint32_t>(intVolume);
+
+    audVoiceStream_AEE8_g(kAudioCommandClass, 0x4011, payload, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::SetEffect (vfn_17) @ 0x82163AB0 | size: 0x60
+//
+// Submits a SetEffect command (0x4010) with the stream handle, an effect ID,
+// and an enable/disable flag as a three-word payload.
+// ─────────────────────────────────────────────────────────────────────────────
+void audVoiceSfx::SetEffect(uint32_t effectId, uint8_t enable) {
+    uint32_t streamHandle;
+    std::memcpy(&streamHandle, m_pSfxRef, sizeof(uint32_t));
+
+    uint32_t payload[3];
+    payload[0] = streamHandle;
+    payload[1] = effectId;
+    payload[2] = (enable != 0) ? 1u : 0u;
+
+    audVoiceStream_AEE8_g(kAudioCommandClass, 0x4010, payload, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::IsPlaying (vfn_18) @ 0x82163B10 | size: 0x44
+//
+// Returns true if the underlying stream is in an active playback state.
+// Reads the stream state from the SFX reference's field at +0x04 and checks
+// against known playing states: 17, 18, 20, 21, 22.
+// ─────────────────────────────────────────────────────────────────────────────
+bool audVoiceSfx::IsPlaying() {
+    void* sfxRef;
+    std::memcpy(&sfxRef, reinterpret_cast<const char*>(this) + 12, sizeof(void*));
+
+    int32_t state;
+    std::memcpy(&state, reinterpret_cast<const char*>(sfxRef) + 4, sizeof(int32_t));
+
+    return (state == 17 || state == 18 || state == 22 ||
+            state == 20 || state == 21);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::DequeueFromList @ 0x821632F8 | size: 0x5C
+//
+// Removes the next voice node from this voice's intrusive linked list (at +0x08)
+// and transfers it to the global free voice list (lbl_825CA920). If the list is
+// empty (next points to self) or null, returns nullptr.
+// Uses the linked list structure: [vtable +0x00] [prev +0x04] [next +0x08].
+// ─────────────────────────────────────────────────────────────────────────────
+void* audVoiceSfx::DequeueFromList() {
+    // Read next pointer at +0x08 from this node
+    uint32_t nextAddr;
+    std::memcpy(&nextAddr, reinterpret_cast<const char*>(this) + 8, sizeof(uint32_t));
+
+    // If next == this, list is empty
+    if (nextAddr == reinterpret_cast<uintptr_t>(this)) {
+        return nullptr;
+    }
+
+    void* nextNode = reinterpret_cast<void*>(nextAddr);
+    if (nextNode == nullptr) {
+        return nullptr;
+    }
+
+    // Unlink nextNode from this list:
+    // this->next = nextNode->next
+    uint32_t nextNextAddr;
+    std::memcpy(&nextNextAddr, reinterpret_cast<const char*>(nextNode) + 8, sizeof(uint32_t));
+    std::memcpy(reinterpret_cast<char*>(this) + 8, &nextNextAddr, sizeof(uint32_t));
+
+    // nextNode->next->prev = this
+    void* nextNext = reinterpret_cast<void*>(nextNextAddr);
+    uint32_t thisAddr = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this));
+    std::memcpy(reinterpret_cast<char*>(nextNext) + 4, &thisAddr, sizeof(uint32_t));
+
+    // Insert nextNode into the global free list (lbl_825CA920)
+    uint32_t* freeListHead = lbl_825CA920;
+    uint32_t freeListTail;
+    std::memcpy(&freeListTail, reinterpret_cast<const char*>(freeListHead) + 4, sizeof(uint32_t));
+
+    if (freeListTail != 0) {
+        // tailNode->next = nextNode
+        void* tailNode = reinterpret_cast<void*>(freeListTail);
+        uint32_t nextNodeAddr = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(nextNode));
+        std::memcpy(reinterpret_cast<char*>(tailNode) + 8, &nextNodeAddr, sizeof(uint32_t));
+
+        // Re-read tail in case it changed
+        std::memcpy(&freeListTail, reinterpret_cast<const char*>(freeListHead) + 4, sizeof(uint32_t));
+    }
+
+    // nextNode->prev = freeListTail (may be 0)
+    std::memcpy(reinterpret_cast<char*>(nextNode) + 4, &freeListTail, sizeof(uint32_t));
+
+    // nextNode->next = freeListHead
+    uint32_t headAddr = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(freeListHead));
+    std::memcpy(reinterpret_cast<char*>(nextNode) + 8, &headAddr, sizeof(uint32_t));
+
+    // freeListHead->tail = nextNode
+    uint32_t nextNodeAddr2 = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(nextNode));
+    std::memcpy(reinterpret_cast<char*>(freeListHead) + 4, &nextNodeAddr2, sizeof(uint32_t));
+
+    return nextNode;
+}
+
 } // namespace rage

@@ -2856,3 +2856,269 @@ bool LocomotionStateAnim_8828_g(void* self, float time) {
         return false;
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::BuildTranslationMatrix @ 0x820D50A0 | size: 0x94
+// Constructs a 3x4 rotation matrix from a 4x4 basis matrix and computes
+// the translation column as -(R^T * t), where R is the 3x3 rotation part
+// and t is the translation vector from the source (offsets 48, 52, 56).
+// This effectively builds the inverse view-style matrix.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::BuildTranslationMatrix(float* outMatrix, const float* srcBasis) {
+    // Copy rotation rows from source (columns become rows in 4x3 layout)
+    // Row 0: srcBasis[0], srcBasis[16], srcBasis[32]
+    float r00 = srcBasis[0];
+    float r01 = srcBasis[4];  // src+16 = float index 4
+    float r02 = srcBasis[8];  // src+32 = float index 8
+
+    outMatrix[0]  = r00;
+    outMatrix[4]  = r01;  // out+16
+    outMatrix[8]  = r02;  // out+32
+
+    // Row 1: srcBasis[1], srcBasis[5], srcBasis[9]
+    float r10 = srcBasis[1];  // src+4
+    float r11 = srcBasis[5];  // src+20
+    float r12 = srcBasis[9];  // src+36
+
+    outMatrix[1]  = r10;  // out+4
+    outMatrix[5]  = r11;  // out+20
+    outMatrix[9]  = r12;  // out+36
+
+    // Row 2: srcBasis[2], srcBasis[6], srcBasis[10]
+    float r20 = srcBasis[2];  // src+8
+    float r21 = srcBasis[6];  // src+24
+    float r22 = srcBasis[10]; // src+40
+
+    outMatrix[2]  = r20;  // out+8
+    outMatrix[6]  = r21;  // out+24
+    outMatrix[10] = r22;  // out+40
+
+    // Translation vector from source
+    float tx = srcBasis[12]; // src+48
+    float ty = srcBasis[13]; // src+52
+    float tz = srcBasis[14]; // src+56
+
+    // Translation column = -(R^T * t)
+    // outMatrix[12] = -(r00*tx + r01*ty + r02*tz)
+    outMatrix[12] = -(r00 * tx + r01 * ty + r02 * tz);
+    // outMatrix[13] = -(r10*tx + r11*ty + r12*tz)
+    outMatrix[13] = -(r10 * tx + r11 * ty + r12 * tz);
+    // outMatrix[14] = -(r20*tx + r21*ty + r22*tz)
+    outMatrix[14] = -(r20 * tx + r21 * ty + r22 * tz);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::CopyAndBuildTranslationMatrix @ 0x820D5040 | size: 0x60
+// Copies a 4x4 matrix (64 bytes) onto the stack and then delegates to
+// BuildTranslationMatrix to compute the inverse-translation form.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::CopyAndBuildTranslationMatrix(float* outMatrix, const float* srcMatrix) {
+    // Copy the full 4x4 matrix to a local buffer (stack copy)
+    float localMatrix[16];
+    memcpy(localMatrix, srcMatrix, 64);
+
+    // Build the translation matrix from the local copy
+    BuildTranslationMatrix(outMatrix, localMatrix);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::CopyBoneMatrix @ 0x821183B0 | size: 0x88
+// Copies a 4x4 bone transform matrix into an output buffer.
+// If the creature data has the "use accumulated list" flag (bit 3 at +20),
+// it uses the accumulated bone list (field at +0) with stride 192.
+// Otherwise, it uses the direct bone array (field at +20) with stride 64,
+// and also calls AccumulateList on it.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
+    // m_pCreatureData is at this+4
+    void* creatureData = *(void**)((char*)this + 4);
+    uint32_t flags = *(uint32_t*)((char*)creatureData + 20);
+
+    // Check bit 3 (0x8) of the flags
+    bool useAccumulatedList = (flags & 0x8) != 0;
+
+    if (!useAccumulatedList) {
+        // Use the base bone pointer array at creatureData+0
+        // Stride = boneIndex * 3 * 64 = boneIndex * 192
+        void* boneArrayBase = *(void**)((char*)creatureData + 0);
+        int offset = boneIndex * 192;  // index * 3 * 64
+        float* boneMatrix = (float*)((char*)boneArrayBase + offset);
+
+        // Tail-call to AccumulateList which processes and outputs the matrix
+        LocomotionStateAnim_D480_w(boneMatrix);
+        return;
+    }
+
+    // Use the direct bone array at this+20
+    // Stride = boneIndex * 64
+    void* directBoneArray = *(void**)((char*)this + 20);
+    int directOffset = boneIndex * 64;
+    float* srcMatrix = (float*)((char*)directBoneArray + directOffset);
+
+    // Copy 4 x 16-byte vectors (64 bytes total)
+    memcpy(outMatrix, srcMatrix, 64);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::FindBonePairByName @ 0x82118C58 | size: 0xD4
+// Searches the bone list for two bones matching the given names (case-insensitive).
+// Stores the found indices into the mapping arrays at offsets +208 and +212.
+// If the bone count is zero or either bone name is not found, logs a
+// diagnostic message via the nop debug function and returns early.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName1, const char* boneName2) {
+    uint8_t boneCount = *(uint8_t*)((char*)this + 426);   // m_boneCount at +0x1AA
+
+    if (boneCount == 0) {
+        // No bones available — log and return
+        nop_8240E6D0(boneName1, boneName2);
+        return;
+    }
+
+    int foundIndex1 = -1;
+    int foundIndex2 = -1;
+
+    for (int i = 0; i < boneCount; i++) {
+        // Bone pointer array at this+176 (0xB0)
+        void** boneArray = *(void***)((char*)this + 176);
+        void* boneEntry = boneArray[i];
+
+        // Bone name string starts at boneEntry+29
+        const char* entryName = (const char*)((char*)boneEntry + 29);
+
+        if (_stricmp(entryName, boneName1) == 0) {
+            foundIndex1 = i;
+        } else if (_stricmp(entryName, boneName2) == 0) {
+            foundIndex2 = i;
+        }
+    }
+
+    if (foundIndex1 == -1 || foundIndex2 == -1) {
+        // One or both bones not found — log and return
+        nop_8240E6D0(boneName1, boneName2);
+        return;
+    }
+
+    // Store the found indices into the mapping arrays
+    uint8_t* mappingArray1 = *(uint8_t**)((char*)this + 208);  // +0xD0
+    uint8_t* mappingArray2 = *(uint8_t**)((char*)this + 212);  // +0xD4
+    mappingArray1[mappingIndex] = (uint8_t)foundIndex1;
+    mappingArray2[mappingIndex] = (uint8_t)foundIndex2;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::ReadBoneNamesAndMap @ 0x821190F8 | size: 0x88
+// Reads two bone name strings (up to 39 chars each) from the XML node's
+// data sub-object via vtable slot 1, increments the bone pair count at +424,
+// and delegates to FindBonePairByName to resolve and store the indices.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::ReadBoneNamesAndMap(void* xmlNode) {
+    // Get the data sub-object from xmlNode+4
+    void* dataObj = *(void**)((char*)xmlNode + 4);
+
+    // Read first bone name (vtable slot 1, max length 39) into boneName1 buffer
+    char boneName1[48];
+    void** dataVtable = *(void***)dataObj;
+    typedef void (*ReadStringFn)(void*, char*, int);
+    ReadStringFn readString = (ReadStringFn)dataVtable[1];
+    readString(dataObj, boneName1, 39);
+
+    // Read second bone name into boneName2 buffer
+    char boneName2[48];
+    readString(dataObj, boneName2, 39);
+
+    // Increment the bone pair count at +424 (0x1A8)
+    uint8_t pairCount = *(uint8_t*)((char*)this + 424);
+    pairCount++;
+    *(uint8_t*)((char*)this + 424) = pairCount;
+
+    // Find and map the bone pair using the previous count as the mapping index
+    FindBonePairByName((uint8_t)(pairCount - 1), boneName1, boneName2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::StoreBoneResult @ 0x82118E70 | size: 0x40
+// Reads a value from the XML node's data sub-object via vtable slot 4
+// and stores the result byte at this+429 (m_boneParam at +0x1AD).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::StoreBoneResult(void* xmlNode) {
+    void* dataObj = *(void**)((char*)xmlNode + 4);
+
+    // Call vtable slot 4 on the data sub-object (reads a value)
+    void** dataVtable = *(void***)dataObj;
+    typedef int (*ReadValueFn)(void*);
+    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
+    int result = readValue(dataObj);
+
+    *(uint8_t*)((char*)this + 429) = (uint8_t)result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::StoreBoneFlag @ 0x82118EB0 | size: 0x50
+// Reads a value from the XML node's data sub-object via vtable slot 4
+// and stores whether it is non-zero as a bool at this+445 (+0x1BD).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::StoreBoneFlag(void* xmlNode) {
+    void* dataObj = *(void**)((char*)xmlNode + 4);
+
+    void** dataVtable = *(void***)dataObj;
+    typedef int (*ReadValueFn)(void*);
+    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
+    int result = readValue(dataObj);
+
+    *(uint8_t*)((char*)this + 445) = (result != 0) ? 1 : 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::SetOrClearBoneFlag8 @ 0x82118F00 | size: 0x70
+// Reads a value from the XML node's data sub-object via vtable slot 4.
+// If non-zero, sets bit 3 (0x08) in the flags byte at this+431 (+0x1AF).
+// If zero, clears bit 3.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::SetOrClearBoneFlag8(void* xmlNode) {
+    void* dataObj = *(void**)((char*)xmlNode + 4);
+
+    void** dataVtable = *(void***)dataObj;
+    typedef int (*ReadValueFn)(void*);
+    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
+    int result = readValue(dataObj);
+
+    if (result != 0) {
+        *(uint8_t*)((char*)this + 431) |= 0x08;
+    } else {
+        *(uint8_t*)((char*)this + 431) &= ~0x08;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::StoreMirrorFlag @ 0x82118F70 | size: 0x50
+// Reads a value from the XML node's data sub-object via vtable slot 4
+// and stores whether it is non-zero as a bool at this+447 (+0x1BF).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::StoreMirrorFlag(void* xmlNode) {
+    void* dataObj = *(void**)((char*)xmlNode + 4);
+
+    void** dataVtable = *(void***)dataObj;
+    typedef int (*ReadValueFn)(void*);
+    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
+    int result = readValue(dataObj);
+
+    *(uint8_t*)((char*)this + 447) = (result != 0) ? 1 : 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreatureInst::StoreBlendFlag @ 0x82119180 | size: 0x40
+// Reads a value from the XML node's data sub-object via vtable slot 4
+// and stores the result byte at this+446 (+0x1BE).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreatureInst::StoreBlendFlag(void* xmlNode) {
+    void* dataObj = *(void**)((char*)xmlNode + 4);
+
+    void** dataVtable = *(void***)dataObj;
+    typedef int (*ReadValueFn)(void*);
+    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
+    int result = readValue(dataObj);
+
+    *(uint8_t*)((char*)this + 446) = (uint8_t)result;
+}

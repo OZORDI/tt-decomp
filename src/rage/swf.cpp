@@ -984,13 +984,171 @@ void swfINSTANCE::Invoke(const char* methodName, void* args, int argCount, void*
 // ===========================================================================
 // ===========================================================================
 // swfACTIONFUNC — ActionScript function object
+//
+// swfACTIONFUNC wraps an inner swfSCRIPTOBJECT (at +7332, m_pInnerObject)
+// and extends it with a local variable table for ActionScript closures.
+// The local table stores up to m_localCount (at +132) named bindings,
+// each as a 128-byte name string at +136 + index*128, with corresponding
+// 8-byte {value, type} pairs in m_pLocalValues (at +7328).
+//
+// Most vtable methods are simple forwarding thunks that delegate to the
+// inner object's corresponding vtable slot.
 // ===========================================================================
 
-// Implementations moved above - see lines 469-519
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::ScalarDtor  [vtable slot 1 @ 0x823FF4E8]
+// Forwards to inner object's scalar destructor (vtable slot 1).
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::ScalarDtor(int flags) {
+    void* innerObj = m_pInnerObject;  // +7332
+    typedef void (*ScalarDtorFn)(void*, int);
+    void** vtable = *(void***)innerObj;
+    ((ScalarDtorFn)vtable[1])(innerObj, flags);
+}
 
-int swfACTIONFUNC::GetMemberCount() { /* TODO */ return 0; }
-int swfACTIONFUNC::VisitMembers() { /* TODO */ return 0; }
-bool swfACTIONFUNC::GetMember(const char* /*name*/, void* /*result*/) { /* TODO */ return false; }
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::NextFrame  [vtable slot 2 @ 0x823FF500]
+// Forwards to inner object's vtable slot 2.
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::NextFrame() {
+    void* innerObj = m_pInnerObject;
+    typedef void (*Fn)(void*);
+    void** vtable = *(void***)innerObj;
+    ((Fn)vtable[2])(innerObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::PrevFrame  [vtable slot 3 @ 0x823FF518]
+// Forwards to inner object's vtable slot 3.
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::PrevFrame() {
+    void* innerObj = m_pInnerObject;
+    typedef void (*Fn)(void*);
+    void** vtable = *(void***)innerObj;
+    ((Fn)vtable[3])(innerObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::MarkDirty  [vtable slot 4 @ 0x823FF530]
+// Forwards to inner object's vtable slot 4.
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::MarkDirty() {
+    void* innerObj = m_pInnerObject;
+    typedef void (*Fn)(void*);
+    void** vtable = *(void***)innerObj;
+    ((Fn)vtable[4])(innerObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::SetVisible  [vtable slot 5 @ 0x823FF548]
+// Forwards to inner object's vtable slot 5.
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::SetVisible() {
+    void* innerObj = m_pInnerObject;
+    typedef void (*Fn)(void*);
+    void** vtable = *(void***)innerObj;
+    ((Fn)vtable[5])(innerObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::EnumerateMembers  [vtable slot 6 @ 0x823FF560]
+// Forwards to inner object's vtable slot 6.
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::EnumerateMembers() {
+    void* innerObj = m_pInnerObject;
+    typedef void (*Fn)(void*);
+    void** vtable = *(void***)innerObj;
+    ((Fn)vtable[6])(innerObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::VisitChildren  [vtable slot 7 @ 0x823FF578]
+// Forwards to inner object's vtable slot 7.
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::VisitChildren() {
+    void* innerObj = m_pInnerObject;
+    typedef void (*Fn)(void*);
+    void** vtable = *(void***)innerObj;
+    ((Fn)vtable[7])(innerObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::GetMemberCount  [vtable slot 8 @ 0x823FF2A8]
+// Returns total member count: inner object's count + local variable count.
+// ─────────────────────────────────────────────────────────────────────────────
+int swfACTIONFUNC::GetMemberCount() {
+    void* innerObj = m_pInnerObject;  // +7332
+    typedef int (*CountFn)(void*);
+    void** vtable = *(void***)innerObj;
+    int innerCount = ((CountFn)vtable[8])(innerObj);
+    return innerCount + m_localCount;  // +132
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::Invoke  [vtable slot 13 @ 0x823FF4D0]
+// Forwards to inner object's Invoke (vtable slot 13).
+// ─────────────────────────────────────────────────────────────────────────────
+void swfACTIONFUNC::Invoke(const char* methodName, void* args, int argCount, void* outResult) {
+    void* innerObj = m_pInnerObject;
+    typedef void (*InvokeFn)(void*, const char*, void*, int, void*);
+    void** vtable = *(void***)innerObj;
+    ((InvokeFn)vtable[13])(innerObj, methodName, args, argCount, outResult);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// swfACTIONFUNC::GetMember  [vtable slot 10 @ 0x823FF2F0]
+//
+// Searches local variable table first (name strings at +136, stride 128),
+// then delegates to inner object's GetMember (vtable slot 10).
+// Local entries store 8-byte {value, type} pairs in m_pLocalValues (+7328).
+// ─────────────────────────────────────────────────────────────────────────────
+bool swfACTIONFUNC::GetMember(const char* name, void* result) {
+    // Intern the name string
+    char internBuffer[1024];
+    extern const char* swfInternString(const char* name, void* buffer, int maxLen);
+    const char* interned = swfInternString(name, internBuffer, 1024);
+
+    // Search local variable table
+    int localCount = m_localCount;  // +132
+    if (localCount > 0) {
+        const char* localNames = (const char*)this + 136;  // local name table
+        for (int i = 0; i < localCount; i++) {
+            // Compare interned name against local name entry (byte-by-byte)
+            const char* entryName = localNames + i * 128;
+            const char* src = interned;
+            const char* dst = entryName;
+            int diff = 0;
+            while (*src != '\0') {
+                diff = (int)(uint8_t)*src - (int)(uint8_t)*dst;
+                if (diff != 0) break;
+                src++;
+                dst++;
+            }
+            if (diff == 0) {
+                // Found — copy 8-byte value pair from m_pLocalValues
+                uint32_t* localValues = (uint32_t*)m_pLocalValues;  // +7328
+                uint32_t* out = (uint32_t*)result;
+                out[0] = localValues[i * 2];
+                out[1] = localValues[i * 2 + 1];
+                return true;
+            }
+        }
+    }
+
+    // Not found locally — delegate to inner object
+    void* innerObj = m_pInnerObject;  // +7332
+    typedef bool (*GetMemberFn)(void*, const char*, void*);
+    void** vtable = *(void***)innerObj;
+    return ((GetMemberFn)vtable[10])(innerObj, name, result);
+}
+
+int swfACTIONFUNC::VisitMembers() {
+    // Forwards to inner object's VisitMembers (vtable slot 9)
+    void* innerObj = m_pInnerObject;
+    typedef int (*VisitFn)(void*);
+    void** vtable = *(void***)innerObj;
+    return ((VisitFn)vtable[9])(innerObj);
+}
 
 
 // ===========================================================================
