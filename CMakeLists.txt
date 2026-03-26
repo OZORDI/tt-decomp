@@ -66,6 +66,7 @@ set(SOURCES
     
     # RAGE engine
     src/rage/animation/rage_anim.cpp
+    src/rage/animation/cr_anim_dof_quaternion.cpp
     src/rage/audio/audio_control_wrappers.cpp
     src/rage/core/fsmMachine.c
     src/rage/core/game_loop.c
