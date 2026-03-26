@@ -148,6 +148,14 @@ void* util_B188(void* o, int p) { (void)o; (void)p; return nullptr; }
 void util_D988(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 void util_DA90(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 void util_F850(void* a, void* b) { (void)a; (void)b; }
+void util_53A8(void* a) { (void)a; }
+void util_5C58(void* a) { (void)a; }
+void util_6178(void* a) { (void)a; }
+void snSession_4EB0_w(void* a) { (void)a; }
+void snSession_5118_w(void* a) { (void)a; }
+void snSession_9010_gen(void* a) { (void)a; }
+void snSession_5E20_gen(void* a) { (void)a; }
+void NotifyHandler_3D80_g(void* a, void* b) { (void)a; (void)b; }
 
 } // namespace rage
 

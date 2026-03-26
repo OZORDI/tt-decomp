@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+extern "C" void rage_free(void* ptr);  // @ 0x820C00C0 — heap free (C linkage)
+
 namespace rage {
 
 // Forward declarations
@@ -17,6 +19,16 @@ class SinglesNetworkClient;
 extern void util_D988(void* context, void* session, void* connectionList);  // @ 0x823ED988
 extern void util_DA90(void* context, void* session, void* connectionList);  // @ 0x823EDA90
 extern void util_F850(void* parent, void* childState);                     // @ 0x823EF850 — AttachChildState
+
+// HSM state destructor helpers (each tears down a specific state level)
+extern void snSession_4EB0_w(void* thisPtr);   // @ 0x823E4EB0 — snRoot destructor body
+extern void snSession_5118_w(void* thisPtr);   // @ 0x823E5118 — snActive destructor body
+extern void snSession_9010_gen(void* thisPtr); // @ 0x823E9010 — hsmState base destructor (resets vtable, zeros fields)
+extern void snSession_5E20_gen(void* thisPtr); // @ 0x823E5E20 — rlNotifier destructor (cancel pending + base dtor)
+extern void util_6178(void* thisPtr);          // @ 0x823E6178 — ArbGuestRegistering-level destructor
+extern void util_5C58(void* thisPtr);          // @ 0x823E5C58 — WaitingForReplies-level destructor
+extern void util_53A8(void* thisPtr);          // @ 0x823E53A8 — Creating-level destructor (notify handlers)
+extern void NotifyHandler_3D80_g(void* notifyList, void* handler); // @ 0x823B3D80 — unregister notification
 
 // ────────────────────────────────────────────────────────────────────────────
 // snSession_snRoot_snChangingPresence State Machine
@@ -165,6 +177,175 @@ void snIdle_OnExit(void* thisPtr) {
 void snStarting_OnExit(void* thisPtr) {
     util_F850(thisPtr, (char*)thisPtr + 24);
     util_F850(thisPtr, (char*)thisPtr + 1412);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM State Destructors (vfn_0)
+// All follow the pattern: call state-level cleanup helper, then conditionally
+// free memory if the lowest bit of the flags parameter is set.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snRoot::~snRoot @ 0x823E4F70 | size: 0x50 | vfn_0
+ *
+ * Destructor for the root session state machine.
+ * Calls snSession_4EB0_w to tear down all child states (snChangingPresence,
+ * snActive, snCreating, snDormant, etc.), then conditionally frees memory.
+ */
+void snRoot_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E4F70
+    snSession_4EB0_w(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snActive::~snActive @ 0x823E5448 | size: 0x50 | vfn_0
+ *
+ * Destructor for the Active state. Tears down all Active sub-states
+ * (Idle, Starting, InProgress, Ending) via snSession_5118_w.
+ */
+void snActive_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5448
+    snSession_5118_w(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snDormant::~snDormant @ 0x823E5190 | size: 0x50 | vfn_0
+ *
+ * Destructor for the Dormant state. Calls hsmState base destructor
+ * to reset vtable and zero out fields.
+ */
+void snDormant_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5190
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snCreating::~snCreating @ 0x823E51E0 | size: 0x5C | vfn_0
+ *
+ * Destructor for the Creating state. Destroys the embedded create machine
+ * sub-state at this+24 via util_53A8, then calls hsmState base destructor.
+ */
+void snCreating_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E51E0
+    util_53A8((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snDestroying::~snDestroying @ 0x823E61F0 | size: 0x50 | vfn_0
+ *
+ * Destructor for the Destroying state. Calls snSession_5E20_gen to cancel
+ * any pending rlNotifier callbacks, then resets via hsmState base destructor.
+ */
+void snDestroying_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E61F0
+    snSession_5E20_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snActive::snIdle::~snIdle @ 0x823E5D78 | size: 0x50 | vfn_0
+ *
+ * Destructor for the Idle sub-state within Active. Destroys the embedded
+ * ArbGuestRegistering child at this+48 via util_6178, then tears down
+ * the intermediate state at this+24 and this itself via hsmState base dtor.
+ */
+void snIdle_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5D78
+    util_6178((char*)thisPtr + 48);
+    snSession_9010_gen((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snActive::snStarting::~snStarting @ 0x823E5DC8 | size: 0x58 | vfn_0
+ *
+ * Destructor for the Starting sub-state within Active. Destroys the embedded
+ * StartingSession notifier at this+1412 via snSession_5E20_gen, destroys the
+ * ArbHostRegistering child at this+48 via util_6178, then tears down
+ * the intermediate state at this+24 and this itself.
+ */
+void snStarting_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5DC8
+    snSession_5E20_gen((char*)thisPtr + 1412);
+    util_6178((char*)thisPtr + 48);
+    snSession_9010_gen((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snChangingPresence::snWaitingForReplies::~snWaitingForReplies @ 0x823E5F78 | size: 0x50 | vfn_0
+ *
+ * Destructor for the WaitingForReplies sub-state. Calls util_5C58 to
+ * clean up the embedded connection notification handler, then resets.
+ */
+void snWaitingForReplies_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5F78
+    util_5C58(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM OnEnter Handler (vfn_5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snActive::OnEnter @ 0x823E48C0 | size: 0x54 | vfn_5
+ *
+ * Entry handler for the Active state. Attaches four child sub-states
+ * at fixed offsets within the Active state structure:
+ *   - this+24  (Idle / first child)
+ *   - this+1436 (second child)
+ *   - this+1460 (third child)
+ *   - this+2920 (fourth child)
+ * Each is attached via util_F850 (AttachChildState) which sets up parent
+ * pointers and calls the child's vfn_5 (OnEnter).
+ */
+void snActive_OnEnter(void* thisPtr) { // @ 0x823E48C0
+    util_F850(thisPtr, (char*)thisPtr + 24);
+    util_F850(thisPtr, (char*)thisPtr + 1436);
+    util_F850(thisPtr, (char*)thisPtr + 1460);
+    util_F850(thisPtr, (char*)thisPtr + 2920);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM OnExit Handler (vfn_15)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snDestroying::OnExit @ 0x823E4728 | size: 0x50 | vfn_15
+ *
+ * Exit handler for the Destroying state. Decrements the join reference
+ * count at session+9672, then unregisters the notification handler at
+ * session+240 for the embedded notifier at this+24. Finally clears the
+ * pending notification pointer at this+44.
+ */
+void snDestroying_OnExit(void* thisPtr) { // @ 0x823E4728
+    void* session = *(void**)((char*)thisPtr + 16);
+    char* notifier = (char*)thisPtr + 24;
+
+    // Decrement join reference count
+    (*(int32_t*)((char*)session + 9672))--;
+
+    // Unregister notification handler
+    NotifyHandler_3D80_g((char*)session + 240, notifier);
+
+    // Clear pending notification
+    *(uint32_t*)(notifier + 20) = 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
