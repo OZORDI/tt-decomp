@@ -822,30 +822,6 @@ src/globals.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals.c.s
 .PHONY : src/globals.c.s
 
-src/globals_extended.o: src/globals_extended.c.o
-.PHONY : src/globals_extended.o
-
-# target to build an object file
-src/globals_extended.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.o
-.PHONY : src/globals_extended.c.o
-
-src/globals_extended.i: src/globals_extended.c.i
-.PHONY : src/globals_extended.i
-
-# target to preprocess a source file
-src/globals_extended.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.i
-.PHONY : src/globals_extended.c.i
-
-src/globals_extended.s: src/globals_extended.c.s
-.PHONY : src/globals_extended.s
-
-# target to generate assembly for a file
-src/globals_extended.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.s
-.PHONY : src/globals_extended.c.s
-
 src/graphics/grc_device.o: src/graphics/grc_device.cpp.o
 .PHONY : src/graphics/grc_device.o
 
@@ -2092,9 +2068,6 @@ help:
 	@echo "... src/globals.o"
 	@echo "... src/globals.i"
 	@echo "... src/globals.s"
-	@echo "... src/globals_extended.o"
-	@echo "... src/globals_extended.i"
-	@echo "... src/globals_extended.s"
 	@echo "... src/graphics/grc_device.o"
 	@echo "... src/graphics/grc_device.i"
 	@echo "... src/graphics/grc_device.s"

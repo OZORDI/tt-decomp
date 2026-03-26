@@ -53,8 +53,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/RockstarTableTennis.dir/src/game/save/mc_memcard.cpp.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/globals.c.o"
   "CMakeFiles/RockstarTableTennis.dir/src/globals.c.o.d"
-  "CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.o"
-  "CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_device.cpp.o"
   "CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_device.cpp.o.d"
   "CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_render.cpp.o"
