@@ -399,14 +399,8 @@ extern "C" float cmApproach2_ComputeFactor(void* node) {
     return 0.0f;
 }
 
-extern "C" void cmCond_1038_g(void* condObj, void* dest) {
-    (void)condObj; (void)dest;
-}
-
-extern "C" bool cmCond_21B0(void* condObj) {
-    (void)condObj;
-    return false;
-}
+// cmCond_1038_g — moved to src/game/misc/cm_operators.cpp
+// cmCond_21B0 — moved to src/game/misc/cm_operators.cpp
 
 extern "C" uint8_t cmNode_GetBoolValue(void* port) {
     (void)port;
