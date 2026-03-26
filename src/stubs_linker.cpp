@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdarg>
+#include <cstdlib>
 
 // ============================================================================
 // Physics / Scene
@@ -772,39 +773,39 @@ extern "C" void* sysMemAllocator_Allocate(void* ptr, size_t size) {
 /**
  * sysMemAllocator_InitThreadHeap @ 0x820C0038 | size: 0x88
  *
- * Initializes the main thread's allocator context. In the original binary,
- * this reads g_pAllocatorBase (SDA r13+0), checks if slot [1] is populated,
- * and if not, creates the main thread's XeTlsBlock at a static .data address
- * (0x8271B114), then stores it into slots [1] and [2].
+ * Initializes the main thread's allocator context. Reads g_pAllocatorBase
+ * (SDA r13+0), checks if slot [1] is populated, and if not, creates the
+ * main thread's XeTlsBlock at a static .data address (0x8271B114).
  *
- * For the decomp: we use g_mainThreadXtfStorage as the static thread context
- * and store its address into g_pAllocatorBase[1] and [2].
+ * xe_alloc_thread_ctx_6CA8 (decompiled in src/crt/entry.c) sets the
+ * rage::sysMemSimpleAllocator vtable, allocates a 44MB physical memory
+ * block via xe_phys_alloc_6AC8, and initializes the free-list via util_7AE8.
  */
 extern "C" void sysMemAllocator_InitThreadHeap(void) {
     extern void* g_pAllocatorBase;
     extern char g_mainThreadXtfStorage[256];
+    extern uint32_t g_allocInitFlag;  // @ 0x8271B1D8 — initialization guard
+    extern void xe_alloc_thread_ctx_6CA8(void* ctx, uint32_t heapSize, uint32_t flags);
+    extern void xe_get_thread_ctx_36E8(void);
 
     void** base = (void**)g_pAllocatorBase;
     if (!base) return;
 
-    // Check if slot [1] (offset +4 in original) is already initialized
+    // Check if slot [1] (offset +4 in original PPC layout) is already set
     if (base[1] != nullptr) return;
 
-    // The memory tracker object needs a valid vtable pointer at offset 0.
-    // rage_Main calls vtable slots 7, 13, 14, 15, 16 on this object.
-    // Create a minimal vtable with no-op functions for all 17 slots.
-    static void memTracker_noop(void* self, ...) { (void)self; }
-    static void* s_memTrackerVtable[20] = {0};
-    for (int i = 0; i < 20; i++) {
-        s_memTrackerVtable[i] = (void*)(uintptr_t)memTracker_noop;
+    void* xtfBlock = (void*)g_mainThreadXtfStorage;
+
+    if (!(g_allocInitFlag & 1)) {
+        g_allocInitFlag |= 1;
+        // Allocates 44MB (0x2C0000) physical heap, sets sysMemSimpleAllocator vtable
+        xe_alloc_thread_ctx_6CA8(xtfBlock, 0x002C0000u, 0);
+        atexit(xe_get_thread_ctx_36E8);
     }
 
-    // Set vtable pointer at offset 0 of the thread context
-    *(void**)g_mainThreadXtfStorage = s_memTrackerVtable;
-
     // Store the main thread context into slots [1] and [2]
-    base[1] = (void*)g_mainThreadXtfStorage;
-    base[2] = (void*)g_mainThreadXtfStorage;
+    base[1] = xtfBlock;
+    base[2] = xtfBlock;
 }
 
 // ============================================================================
