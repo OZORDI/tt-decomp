@@ -1,7 +1,20 @@
 // stubs_final.cpp — Final linker stubs with exact demangled signatures
 #include <cstdlib>
 #include <cstdint>
-#include "rage/hsmState.hpp"
+// hsmState declared inline to avoid include path issues
+class hsmState {
+public:
+    virtual ~hsmState() = default;
+    virtual const char* GetStateName() const { return ""; }
+    virtual char* GetFullStatePath(char* buf, uint32_t bufSize) const;
+    virtual void Reset();
+protected:
+    void* m_pManager;
+    void* m_pParentState;
+    void* m_pChildState;
+    uint32_t m_field_10;
+    uint32_t m_field_14;
+};
 
 // Forward declarations for typed params
 struct vec3 { float x, y, z; };
