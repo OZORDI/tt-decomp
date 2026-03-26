@@ -1,92 +1,113 @@
 /**
- * cv_ui.hpp — NURBS Curve class declarations
+ * cv_ui.hpp — NURBS Curve Classes
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  *
- * "cv" = Control Vertex — these classes implement NURBS (Non-Uniform Rational
- * B-Spline) curve evaluation used by the game's animation and camera systems.
+ * "cv" = Control Vertex — implements NURBS (Non-Uniform Rational B-Spline)
+ * curve evaluation used by the animation and camera systems.
  *
  * Hierarchy:
- *   cvCurve              — abstract base, owns knot vector + control points
- *   cvCurveNurbs         — NURBS specialisation of cvCurve (no new virtuals)
- *   cvCurveNurbsWM       — NURBS "With Manipulation": weighted evaluation,
- *                          tangent computation, and full B-spline solve
+ *   cvCurve          — abstract base, owns knot vector + control points
+ *   cvCurveNurbs     — NURBS specialization (no new virtuals)
+ *   cvCurveNurbsWM   — "With Manipulation": weighted evaluation,
+ *                       tangent computation, parameter accumulation
  *
- * Multiple vtables per class (4–5) indicate virtual-base or template family
- * instantiation — the standard rage engine MI pattern.
- *
- * Sources: rtti_vtable_map | vtable_layout_map
- *          | structured_pass5_final recomp (recomp.9.cpp)
+ * Multiple vtables per class (4-5) indicate virtual-base or template
+ * family instantiation — standard RAGE engine MI pattern.
  */
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // cvCurve  [5 vtables @ 0x8204ED54, 0x8204EDA4, 0x8204EE90, 0x8204EEE0, 0x82058A84]
 // ─────────────────────────────────────────────────────────────────────────────
-// Field layout inferred from cvCurveNurbsWM recomp (pass5_final recomp.9.cpp):
+//
+// Field layout (from cvCurveNurbsWM scaffold analysis):
+//   +0x05  m_bWrapAround     — uint8, if set: clamp parameter to 0.0 on overflow
 //   +0x08  m_pControlPoints  — float[n][30] control point array (120 bytes/entry)
-//   +0x10  m_nControlPoints  — uint32 number of control points
+//   +0x10  m_nControlPoints  — uint32, number of control points
 //   +0x18  m_pKnotVector     — float* knot value array
 //   +0x3C  m_pKnotSpanData   — void* auxiliary span data
 //   +0x58  (unidentified pointer)
 class cvCurve {
 public:
-    virtual ~cvCurve();           // [0] @ 0x82230460
-    virtual void ScalarDtor();    // [1] @ 0x8222ECE8  (scalar delete thunk)
+    virtual ~cvCurve();                   // [0] @ 0x82230460
+    virtual void ScalarDtor();            // [1] @ 0x8222ECE8
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // cvCurveNurbs  [4 vtables @ 0x8204ED2C, 0x8204ED7C, 0x8204EE68, 0x8204EEB8]
-// Inherits from cvCurve (inferred from naming and address adjacency).
-// No additional virtual overrides found in vtable_layout_map.
 // ─────────────────────────────────────────────────────────────────────────────
 class cvCurveNurbs : public cvCurve {
-public:
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // cvCurveNurbsWM  [4 vtables @ 0x8204ECDC, 0x8204ED04, 0x8204EE18, 0x8204EE40]
-// Inherits from cvCurveNurbs (inferred).
-// "WM" = "With Manipulation" — adds tangent evaluation and B-spline solve.
+// "With Manipulation" — weighted NURBS evaluation + tangent + parameter control
 //
 // Additional fields (appended after cvCurve layout):
-//   +0x1C  m_basisA   — float  first blended basis weight  (evaluation scratch)
-//   +0x20  m_basisB   — float  second blended basis weight
-//   +0x24  m_basisC   — float  third blended basis weight
-//   +0x28  m_basisD   — float  fourth blended basis weight
-//   +0x2C  m_tangentX — float  output tangent X component
-//   +0x30  m_tangentY — float  output tangent Y component
-//   +0x34  m_tangentZ — float  output tangent Z component
-//   +0x38  m_tangentW — float  output tangent W (homogeneous weight)
-//   +0x40  m_tFinal   — float  final clamped/normalised parameter value
+//   +0x1C  m_basisA    — float, first blended basis weight (scratch)
+//   +0x20  m_basisB    — float, second blended basis weight
+//   +0x24  m_basisC    — float, third blended basis weight
+//   +0x28  m_basisD    — float, fourth blended basis weight
+//   +0x2C  m_tangentX  — float, output tangent X
+//   +0x30  m_tangentY  — float, output tangent Y
+//   +0x34  m_tangentZ  — float, output tangent Z
+//   +0x38  m_tangentW  — float, output tangent W (homogeneous)
+//   +0x40  m_tFinal    — float, final clamped parameter value
 // ─────────────────────────────────────────────────────────────────────────────
 class cvCurveNurbsWM : public cvCurveNurbs {
 public:
-    virtual ~cvCurveNurbsWM();    // [0] @ 0x8222EC48
-    virtual void ScalarDtor();    // [1] @ 0x8222EE48  (scalar delete thunk)
+    virtual ~cvCurveNurbsWM();            // [0] @ 0x8222EC48
+    virtual void ScalarDtor();            // [1] @ 0x8222EE48
 
     /**
-     * Evaluate @ [2] 0x8222F058
-     * De Boor B-spline evaluation at parameter t.  Locates the knot span,
-     * blends the surrounding control points, and writes position into pOut.
-     * Also computes tangent if pTangentOut != nullptr.
-     * Calls helpers cvCurveNurbsWM_25F8 / _26F0 / _1E00 / _1EA0.
+     * Evaluate @ 0x8222F058 | size: 0x338  [vtable slot 2]
+     *
+     * De Boor B-spline evaluation at parameter t. Locates the knot span,
+     * blends surrounding control points, writes position into pOut.
+     * Computes tangent if pTangentOut != nullptr.
      */
-    virtual void Evaluate(void* pOut, float t, void* pTangentOut);  // [2]
+    virtual void Evaluate(void* pOut, float t, void* pTangentOut);
 
-    // TODO: vfn_3 @ 0x8222F390 — purpose unclear from pseudocode; likely
-    //       a derivative or arc-length parameterisation helper.
-    virtual void vfn_3();         // [3] @ 0x8222F390
+    /**
+     * SetupRenderState @ 0x8222F390 | size: 0x2AC  [vtable slot 3]
+     *
+     * Configures GPU render state flags (blend mode, alpha test, depth
+     * write, cull mode, etc.) based on the current render pass index.
+     * Despite living in the cvCurve vtable, this is render pipeline
+     * configuration — likely a virtual-base slot inherited from a
+     * render-state mixin class.
+     */
+    virtual void SetupRenderState();
 
-    // TODO: vfn_4 @ 0x8222F640 — possibly second derivative or fit query.
-    virtual void vfn_4();         // [4] @ 0x8222F640
+    /**
+     * UpdateRenderState @ 0x8222F640 | size: 0x260  [vtable slot 4]
+     *
+     * Secondary render state update — applies pass-specific overrides
+     * for texture stages, sampler state, and shader constants.
+     */
+    virtual void UpdateRenderState();
 
-    // TODO: vfn_5 @ 0x82236B88 — possibly Solve/Fit from scattered points.
-    virtual void vfn_5();         // [5] @ 0x82236B88
+    /**
+     * AccumulateParameter @ 0x82236B88 | size: 0x68  [vtable slot 5]
+     *
+     * Advances the curve parameter: if arcLength > epsilon, adds
+     * (delta / arcLength) to the accumulator; otherwise adds a default
+     * step. Clamps result to [0, maxParam], wrapping if m_bWrapAround.
+     *
+     * @param delta       Arc-length delta to advance
+     * @param arcLength   Total arc length for normalization
+     * @param pAccum      Pointer to float accumulator (read/write)
+     */
+    virtual void AccumulateParameter(float delta, float arcLength, float* pAccum);
 
-    // slot 6 not overridden in this class (base provides it or it is pure).
+    // Slot 6: not overridden in this class
 
-    // TODO: vfn_7 @ 0x8222F8A0 — purpose unknown; no pseudocode available.
-    virtual void vfn_7();         // [7] @ 0x8222F8A0
+    /**
+     * Rebuild @ 0x8222F8A0 | size: 0x4  [vtable slot 7]
+     *
+     * Tail-calls the knot vector rebuild function. Recomputes internal
+     * B-spline data after control point modifications.
+     */
+    virtual void Rebuild();
 };
-
