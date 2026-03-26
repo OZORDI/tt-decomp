@@ -798,6 +798,16 @@ struct phBoundCapsule {
     float GetVolume() const;                                     // @ 0x822A2DB0 (vfn_8)
     void UpdateBound();                                          // @ 0x822A2DE0 (vfn_11)
     void GetSupportPoint(void* direction, void* outPoint);       // @ 0x822A3258 (vfn_9)
+    void TranslateAndDispatch(const float* position);            // @ 0x8233AB50 (vfn_7)
+    float ComputeSupportDistance(const float* direction, uint8_t earlyOut);  // @ 0x822A3268 (vfn_33)
+    void CopyFrom(const rage::phBoundCapsule* source);           // @ 0x822A2F28 (vfn_34)
+    void ScaleAxes();                                            // @ 0x820D05A0
+    void GetJointLimitsByAxis(uint32_t jointIndex, uint32_t axis, float* outMin, float* outMax);  // @ 0x820DF420
+    void ValidateAndSetupDirection(const float* source);         // @ 0x82143F08
+    void OrientNormalAndDispatch(void* r4, const float* planeNormal, float* normal);  // @ 0x82137CA8
+    float ComputeAngleFromDot(const float* vecA, const float* vecB);  // @ 0x82137BF8
+    float ComputeSphericalArea(float height, float radius);      // @ 0x821426B8
+    void SetupCameraCollision(void* param1, void* param2);       // @ 0x82148608
 };
 
 // ── rage::phBoundComposite  [vtable @ 0x82057FD4] ────────────────────────────
