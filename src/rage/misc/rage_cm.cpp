@@ -1464,4 +1464,263 @@ void cmNamedValueSet::vfn_8(uint32_t param1, uint32_t param2)
     cmMetafileTuningSet_vfn_8(this, param1, param2);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  cmCond — CONDITIONAL BRANCH NODES
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// cmCond is a multi-branch conditional node in the CM graph. It evaluates
+// N boolean condition ports in order, and outputs the value from the first
+// branch whose condition is true. If no condition matches, it outputs the
+// default value.
+//
+// Layout (template-instantiated per branch count N):
+//   +0x00  vtable
+//   +0x04  m_outputType      (set by RegisterPorts)
+//   +0x08  m_flags
+//   +0x0C  branches[N]       (N * 16 bytes: each has condition + value cmNodePort)
+//   +0x0C + N*16  defaultPort (cmNodePort, 8 bytes)
+//
+// Each branch (16 bytes):
+//   +0  condition  (cmNodePort)  — evaluates as bool via cmNode_GetBool
+//   +8  value      (cmNodePort)  — the output for this branch
+//
+// 5 vtable instantiations exist for N=2,3,4,5,6 branches.
+// The evaluation virtuals (GetInt32/GetVector/GetBool/GetFloat/GetDim) are
+// identical in logic, differing only in N and the output read function.
+
+/**
+ * cmCondBranch — one condition→value pair in a cmCond node.
+ */
+struct cmCondBranch {
+    cmNodePort condition;   // +0x00  boolean condition port
+    cmNodePort value;       // +0x08  output value port (if condition is true)
+};
+
+/**
+ * cmCondNode<N> — cmCond with N branches plus a default port.
+ * Template is conceptual; the binary has separate vtables for each N.
+ */
+template <int N>
+struct cmCondNode {
+    void**       m_pVtable;     // +0x00
+    int32_t      m_outputType;  // +0x04
+    int32_t      m_flags;       // +0x08
+    cmCondBranch branches[N];   // +0x0C
+    cmNodePort   defaultPort;   // +0x0C + N*16
+};
+
+// ─── cmCond_21B0 @ 0x822621B0 ───────────────────────────────────────────────
+// Binary alias of cmNode_GetBool @ 0x82184C40 (already lifted above).
+// Both addresses contain identical code: read boolean from a cmNodePort.
+
+// ─── cmCond::RegisterPorts @ 0x8226CC98 ─────────────────────────────────────
+//
+// Vtable slot 16. Sets m_outputType to match the dimension of the first
+// value port (branches[0].value). Shared across all N instantiations since
+// branches[0].value is always at this+0x14.
+//
+// Reads branches[0].value.m_type at +0x18:
+//   DIRECT : m_outputType = cmDataObj::m_dim (byte at data+0x10)
+//   NODE   : m_outputType = upstream->m_outputType
+//   else   : m_outputType = 0
+
+void cmCond_RegisterPorts(cmCondNode<2>* node) {
+    cmNodePort* valuePort = &node->branches[0].value;
+    switch (valuePort->m_type) {
+    case CM_PORT_DIRECT: {
+        const uint8_t* obj = reinterpret_cast<const uint8_t*>(valuePort->m_pData);
+        node->m_outputType = obj[16];  // cmDataObj::m_dim
+        break;
+    }
+    case CM_PORT_NODE: {
+        const int32_t* upstream = reinterpret_cast<const int32_t*>(valuePort->m_pData);
+        node->m_outputType = upstream[1];  // m_outputType at +4
+        break;
+    }
+    default:
+        node->m_outputType = 0;
+        break;
+    }
+}
+
+// ─── cmCond_ConnectPort @ 0x82271038 ────────────────────────────────────────
+//
+// Recursive port connector called by RegisterPorts(walk) (vfn_18).
+// For each port: if it's a NODE port, calls a callback on the upstream node.
+// If the callback returns true, recursively calls upstream->vfn_18
+// (RegisterPorts walk) to propagate connection through the graph.
+//
+// Parameters:
+//   port — pointer to a cmNodePort in the node's port array
+//   desc — connection descriptor with callback at offset +12
+
+void cmCond_ConnectPort(cmNodePort* port, void* desc) {
+    if (port->m_type != CM_PORT_NODE)
+        return;
+
+    // Call the callback function at desc+12 with upstream node
+    void* upstream = port->m_pData;
+    using CallbackFn = uint8_t(*)(void* desc, void* upstreamNode);
+    CallbackFn callback = *reinterpret_cast<CallbackFn*>(
+        reinterpret_cast<uint8_t*>(desc) + 12);
+
+    uint8_t result = callback(desc, upstream);
+    if ((result & 0xFF) == 0)
+        return;
+
+    // Recursively walk upstream: call upstream->vfn_18(desc)
+    struct cmNode { void** vtable; };
+    auto* node = reinterpret_cast<cmNode*>(upstream);
+    using WalkFn = void(*)(void*, void*);
+    reinterpret_cast<WalkFn>(node->vtable[18])(upstream, desc);
+}
+
+// ─── cmCond evaluation helper ───────────────────────────────────────────────
+//
+// All cmCond GetXxx methods share the same pattern:
+//   for i in 0..N-1:
+//     if cmNode_GetBool(&branches[i].condition) != 0:
+//       *out = GetXxx(&branches[i].value)
+//       return
+//   *out = GetXxx(&defaultPort)  // fallback
+
+// ─── cmCond<2>::GetDim @ 0x8226CCD8 ────────────────────────────────────────
+// Vtable slot 5. Evaluates conditions and returns matching int32 dim value.
+void cmCond2_GetDim(cmCondNode<2>* self, int32_t* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetDim(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetDim(&self->defaultPort);
+}
+
+// ─── cmCond<2>::GetFloat @ 0x8226CD48 ──────────────────────────────────────
+// Vtable slot 4.
+void cmCond2_GetFloat(cmCondNode<2>* self, float* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetFloat(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetFloat(&self->defaultPort);
+}
+
+// ─── cmCond<2>::GetBool @ 0x8226CDB8 ──────────────────────────────────────
+// Vtable slot 3.
+void cmCond2_GetBool(cmCondNode<2>* self, uint8_t* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetBool(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetBool(&self->defaultPort);
+}
+
+// ─── cmCond<2>::GetVector @ 0x8226CE28 ─────────────────────────────────────
+// Vtable slot 2. Outputs 16-byte aligned vec4.
+void cmCond2_GetVector(cmCondNode<2>* self, float* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            cmNode_GetVector(out, &self->branches[i].value);
+            return;
+        }
+    }
+    cmNode_GetVector(out, &self->defaultPort);
+}
+
+// ─── cmCond<2>::GetInt32 @ 0x8226CEB0 ──────────────────────────────────────
+// Vtable slot 1.
+void cmCond2_GetInt32(cmCondNode<2>* self, int32_t* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetInt(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetInt(&self->defaultPort);
+}
+
+// ─── cmCond<2>::RegisterPortsWalk @ 0x82270C10 ─────────────────────────────
+// Vtable slot 18. Iterates all ports (2*N+1 = 5) calling cmCond_ConnectPort.
+// Ports are laid out contiguously at +0x0C with stride 8 bytes.
+void cmCond2_RegisterPortsWalk(cmCondNode<2>* self, void* desc) {
+    cmNodePort* port = &self->branches[0].condition;
+    for (int i = 0; i < 5; i++) {
+        cmCond_ConnectPort(port, desc);
+        port++;  // advance by sizeof(cmNodePort) = 8 bytes
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  cmCond<3> — 3-branch conditional (vtable @ 0x82055854)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// cmCond<3>::GetDim @ 0x8226CF20
+void cmCond3_GetDim(cmCondNode<3>* self, int32_t* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetDim(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetDim(&self->defaultPort);
+}
+
+// cmCond<3>::GetFloat @ 0x8226CF90
+void cmCond3_GetFloat(cmCondNode<3>* self, float* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetFloat(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetFloat(&self->defaultPort);
+}
+
+// cmCond<3>::GetBool @ 0x8226D000
+void cmCond3_GetBool(cmCondNode<3>* self, uint8_t* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetBool(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetBool(&self->defaultPort);
+}
+
+// cmCond<3>::GetVector @ 0x8226D070
+void cmCond3_GetVector(cmCondNode<3>* self, float* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            cmNode_GetVector(out, &self->branches[i].value);
+            return;
+        }
+    }
+    cmNode_GetVector(out, &self->defaultPort);
+}
+
+// cmCond<3>::GetInt32 @ 0x8226D0F8
+void cmCond3_GetInt32(cmCondNode<3>* self, int32_t* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetInt(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetInt(&self->defaultPort);
+}
+
+// cmCond<3>::RegisterPortsWalk @ 0x82270C50
+void cmCond3_RegisterPortsWalk(cmCondNode<3>* self, void* desc) {
+    cmNodePort* port = &self->branches[0].condition;
+    for (int i = 0; i < 7; i++) {  // 2*3+1 = 7 ports
+        cmCond_ConnectPort(port, desc);
+        port++;
+    }
+}
+
 } // namespace rage
