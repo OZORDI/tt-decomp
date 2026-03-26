@@ -105,3 +105,4 @@ void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(voi
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)b;(void)c; }
 namespace rage { struct phJoint3Dof; void phBoundCapsule_01D0_g(phJoint3Dof* j, float f) { (void)j;(void)f; } }
 
+namespace rage { class atSingleton; void ReleaseSingleton(atSingleton*) {} }
