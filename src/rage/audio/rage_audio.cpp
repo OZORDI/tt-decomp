@@ -963,4 +963,112 @@ void aud_7AB0(void* a1, void* a2, void* a3, void* a4) // @ 0x82447AB0
     fn(scene, a1, a2, a3, a4);
 }
 
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Batch 4 — audControlGroup accessors, audVoiceSfx/audVoiceStream pause and
+//           state query functions (8-32B each)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audControlGroup — Group-level audio control accessors
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audControlGroup::GetVolume (vfn_9) @ 0x82162528 | size: 0x8
+ * Returns the group volume at field offset +0x1C (28).
+ */
+float audControlGroup::GetVolume() {
+    float value;
+    std::memcpy(&value, reinterpret_cast<const char*>(this) + 28, sizeof(float));
+    return value;
+}
+
+/**
+ * audControlGroup::GetPitch (vfn_11) @ 0x82162530 | size: 0x8
+ * Returns the group pitch at field offset +0x24 (36).
+ */
+float audControlGroup::GetPitch() {
+    float value;
+    std::memcpy(&value, reinterpret_cast<const char*>(this) + 36, sizeof(float));
+    return value;
+}
+
+/**
+ * audControlGroup::GetTypeNameA (vfn_7) @ 0x82162538 | size: 0xC
+ * Returns a pointer to a static type name string (lbl_820356B0).
+ */
+const char* audControlGroup::GetTypeNameA() {
+    return lbl_820356B0;
+}
+
+/**
+ * audControlGroup::GetTypeNameB (vfn_6) @ 0x82162548 | size: 0xC
+ * Returns a pointer to a static type name string (lbl_820356B4).
+ */
+const char* audControlGroup::GetTypeNameB() {
+    return lbl_820356B4;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audVoiceSfx — SFX voice pause/unpause delegation
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::Pause (vfn_12) @ 0x82163918 | size: 0xC
+ * Pauses the SFX voice by delegating to audVoiceStream_B430_fw with flag=0.
+ */
+void audVoiceSfx::Pause() {
+    audVoiceStream_B430_fw(m_pSfxRef, 0);
+}
+
+/**
+ * audVoiceSfx::Unpause (vfn_13) @ 0x82163928 | size: 0xC
+ * Unpauses the SFX voice by delegating to audVoiceStream_B430_fw with flag=1.
+ */
+void audVoiceSfx::Unpause() {
+    audVoiceStream_B430_fw(m_pSfxRef, 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audVoiceStream — Stream voice pause/unpause delegation
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceStream::Pause (vfn_12) @ 0x821643D0 | size: 0xC
+ * Pauses the stream voice by delegating to audVoiceStream_B298_fw with flag=0.
+ */
+void audVoiceStream::Pause() {
+    audVoiceStream_B298_fw(reinterpret_cast<void*>(field_0x000c), 0);
+}
+
+/**
+ * audVoiceStream::Unpause (vfn_13) @ 0x821643E0 | size: 0xC
+ * Unpauses the stream voice by delegating to audVoiceStream_B298_fw with flag=1.
+ */
+void audVoiceStream::Unpause() {
+    audVoiceStream_B298_fw(reinterpret_cast<void*>(field_0x000c), 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::audVoiceStream — Stream state query functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceStream::IsPrimed (vfn_19) @ 0x821645B8 | size: 0x20
+ * Returns true if the stream state (at streamRef+4) equals 14 (primed).
+ */
+bool audVoiceStream::IsPrimed() {
+    uint32_t* streamData = reinterpret_cast<uint32_t*>(field_0x000c);
+    return streamData[1] == 14;
+}
+
+/**
+ * audVoiceStream::IsReady (vfn_20) @ 0x821645D8 | size: 0x20
+ * Returns true if the stream state (at streamRef+4) equals 15 (ready).
+ */
+bool audVoiceStream::IsReady() {
+    uint32_t* streamData = reinterpret_cast<uint32_t*>(field_0x000c);
+    return streamData[1] == 15;
+}
+
 } // namespace rage
