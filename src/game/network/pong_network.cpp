@@ -4018,3 +4018,314 @@ void ForceMatchTimeSyncMessage::Process() {
     // String at 0x8206F298 references the sync debug output
     nop_8240E6D0(formattedTime);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// pongNetMessageHolder — Buffer Management & Cleanup Functions (10 functions)
+// ═══════════════════════════════════════════════════════════════════════════
+
+extern void ke_1B00(void* ptr);           // Element initializer
+extern void cmOperatorCtor_68E0_w(void* ptr, int count);  // Operator constructor
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::ReallocateElementBuffer @ 0x8212D2E8 | size: 0x74
+//
+// Reallocates the holder's data buffer for elements of 16 bytes each.
+// Frees the existing buffer if present, then allocates a new one
+// sized to hold `count` elements (count * 16 bytes). If count is 0,
+// just clears the buffer pointer.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_D2E8_w(void* self, uint32_t count) {
+    uint8_t* obj = (uint8_t*)self;
+    uint32_t existingCount = *(uint32_t*)(obj + 8);
+
+    // Free existing buffer if allocated
+    if (existingCount != 0) {
+        void* oldBuffer = *(void**)(obj + 0);
+        rage_free_00C0(oldBuffer);
+        *(uint32_t*)(obj + 0) = 0;
+        *(uint32_t*)(obj + 4) = 0;
+    }
+
+    if (count != 0) {
+        *(uint32_t*)(obj + 8) = count;
+
+        // Allocate count * 16 bytes; clamp to prevent overflow
+        uint32_t allocSize = count * 16;
+        if (count > 0x0FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+
+        void* newBuffer = xe_EC88(allocSize);
+        *(void**)(obj + 0) = newBuffer;
+    } else {
+        *(uint32_t*)(obj + 8) = 0;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::ReallocatePointerBuffer @ 0x82133EB8 | size: 0x74
+//
+// Reallocates the holder's data buffer for pointer-sized (4-byte) elements.
+// Frees the existing buffer if present, then allocates a new one
+// sized to hold `count` entries (count * 4 bytes). If count is 0,
+// just clears the buffer pointer.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_3EB8_w(void* self, uint32_t count) {
+    uint8_t* obj = (uint8_t*)self;
+    uint32_t existingCount = *(uint32_t*)(obj + 8);
+
+    // Free existing buffer if allocated
+    if (existingCount != 0) {
+        void* oldBuffer = *(void**)(obj + 0);
+        rage_free_00C0(oldBuffer);
+        *(uint32_t*)(obj + 0) = 0;
+        *(uint32_t*)(obj + 4) = 0;
+    }
+
+    if (count != 0) {
+        *(uint32_t*)(obj + 8) = count;
+
+        // Allocate count * 4 bytes; clamp to prevent overflow
+        uint32_t allocSize = count * 4;
+        if (count > 0x3FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+
+        void* newBuffer = xe_EC88(allocSize);
+        *(void**)(obj + 0) = newBuffer;
+    } else {
+        *(uint32_t*)(obj + 8) = 0;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::AllocateAndInitPointerArray @ 0x821379C8 | size: 0x94
+//
+// Allocates an array of `count` pointer-sized (4-byte) entries, initializes
+// each element via ke_1B00, and stores the result in the object.
+// Sets the element count at offset +0x06 (uint16) and the array pointer
+// at offset +0x00. If allocation fails, stores null with the count.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_79C8_w(void* self, uint32_t count) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (count != 0) {
+        // Allocate count * 4 bytes; clamp to prevent overflow
+        uint32_t allocSize = count * 4;
+        if (count > 0x3FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+
+        void* newArray = xe_EC88(allocSize);
+
+        if (newArray == nullptr) {
+            *(uint16_t*)(obj + 6) = (uint16_t)count;
+            *(uint32_t*)(obj + 0) = 0;
+            return;
+        }
+
+        // Initialize each 4-byte element
+        uint8_t* ptr = (uint8_t*)newArray;
+        for (int32_t i = (int32_t)(count - 1); i >= 0; i--) {
+            ke_1B00(ptr);
+            ptr += 4;
+        }
+
+        *(uint16_t*)(obj + 6) = (uint16_t)count;
+        *(uint32_t*)(obj + 0) = (uint32_t)newArray;
+    } else {
+        *(uint16_t*)(obj + 6) = (uint16_t)count;
+        *(uint32_t*)(obj + 0) = 0;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::ResizeIndexBuffers @ 0x82118BB0 | size: 0xA8
+//
+// Grows the holder's dual index buffers (at offsets +208 and +212) to
+// accommodate a new capacity. Uses next-power-of-2 rounding on the
+// requested capacity (clamped to 8-bit). Copies old data via memcpy,
+// then frees old buffers. Updates the capacity byte at offset +425.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_8BB0_w(void* self, uint32_t newIndex) {
+    uint8_t* obj = (uint8_t*)self;
+    uint8_t index = (uint8_t)(newIndex & 0xFF);
+    uint8_t currentCapacity = *(uint8_t*)(obj + 425);
+
+    if (index > currentCapacity) {
+        // Round up to next power of 2 (8-bit)
+        uint32_t n = index;
+        n |= (n >> 1);
+        n |= (n >> 2);
+        n |= (n >> 4);
+        n |= (n >> 8);
+        n |= (n >> 16);
+        uint8_t newCapacity = (uint8_t)(n + 1);
+
+        // Allocate two new buffers
+        void* newBuffer1 = xe_EC88((uint32_t)newCapacity);
+        void* newBuffer2 = xe_EC88((uint32_t)newCapacity);
+
+        // Copy existing data from old buffers
+        uint8_t usedCount = *(uint8_t*)(obj + 424);
+        memcpy(newBuffer1, *(void**)(obj + 208), usedCount);
+        memcpy(newBuffer2, *(void**)(obj + 212), usedCount);
+
+        // Store new buffers and capacity
+        *(void**)(obj + 208) = newBuffer1;
+        *(void**)(obj + 212) = newBuffer2;
+        *(uint8_t*)(obj + 425) = newCapacity;
+    }
+
+    // Update used count
+    *(uint8_t*)(obj + 424) = index;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::UpdateCapacityFromMessage @ 0x821190A0 | size: 0x58
+//
+// Reads the desired capacity from a message object via virtual call
+// (vtable slot 4), then calls ResizeIndexBuffers twice: once with
+// the read capacity and once with 0 (to reset the used count).
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_90A0_w(void* self, void* message) {
+    // Get message object from offset +4 of the message parameter
+    void* msgObj = *(void**)((uint8_t*)message + 4);
+
+    // Virtual call slot 4 to get desired capacity (returns byte in low 8 bits)
+    typedef uint32_t (*GetCapacityFn)(void*);
+    void** vt = *(void***)msgObj;
+    uint8_t capacity = (uint8_t)((GetCapacityFn)vt[4])(msgObj);
+
+    // Resize buffers to new capacity
+    pongNetMessageHolder_8BB0_w(self, capacity);
+
+    // Reset used count to 0
+    pongNetMessageHolder_8BB0_w(self, 0);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::InitTimerArray @ 0x821D6D08 | size: 0x84
+//
+// Initializes a timer/counter array structure. Zeroes the data pointer
+// at +0x00 and element count at +0x04, then calls cmOperatorCtor_68E0_w
+// to create 5 entries. After construction, zeroes each 4-byte slot in
+// the allocated array. Finally stores a default float value (0.0f) at +0x08.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_6D08_2hr(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    // Initialize header
+    *(uint32_t*)(obj + 0) = 0;  // Data pointer
+    *(uint16_t*)(obj + 4) = 0;  // Element count
+
+    // Construct 5 entries
+    cmOperatorCtor_68E0_w(self, 5);
+
+    // Zero all allocated slots
+    uint16_t elementCount = *(uint16_t*)(obj + 4);
+    if (elementCount != 0) {
+        uint32_t* dataPtr = *(uint32_t**)(obj + 0);
+        for (uint32_t i = 0; i < elementCount; i++) {
+            dataPtr[i] = 0;
+        }
+    }
+
+    // Store default timing value (0.0f) at offset +0x08
+    *(float*)(obj + 8) = 0.0f;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CleanupShortMessageArray (vfn_2 variant)
+// @ 0x823BFFF8 | size: 0x64
+//
+// Destroys an array of 10 message objects with stride 36 bytes.
+// Resets each object's vtable to PongNetMessage base (0x8206C304),
+// then frees the array and nulls the pointer at +0x08.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_FFF8_1(pongNetMessageHolder* holder) {
+    void* messageArray = holder->m_pInternalArray;  // +0x08
+
+    if (messageArray != nullptr) {
+        const uint32_t BASE_VTABLE = 0x8206C304;  // PongNetMessage base vtable
+
+        // Reset vtables for 10 elements at stride 36, backwards
+        uint8_t* ptr = (uint8_t*)messageArray + 360;
+        for (int i = 9; i >= 0; i--) {
+            ptr -= 36;
+            *(uint32_t*)ptr = BASE_VTABLE;
+        }
+
+        rage_free_00C0(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CleanupCompactMessageArray (vfn_2 variant)
+// @ 0x823C0260 | size: 0x64
+//
+// Destroys an array of 10 message objects with stride 28 bytes.
+// Resets each object's vtable to PongNetMessage base (0x8206C304),
+// then frees the array and nulls the pointer at +0x08.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_0260_1(pongNetMessageHolder* holder) {
+    void* messageArray = holder->m_pInternalArray;  // +0x08
+
+    if (messageArray != nullptr) {
+        const uint32_t BASE_VTABLE = 0x8206C304;  // PongNetMessage base vtable
+
+        // Reset vtables for 10 elements at stride 28, backwards
+        uint8_t* ptr = (uint8_t*)messageArray + 280;
+        for (int i = 9; i >= 0; i--) {
+            ptr -= 28;
+            *(uint32_t*)ptr = BASE_VTABLE;
+        }
+
+        rage_free_00C0(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CleanupSingleLargeMessage (vfn_2 variant)
+// @ 0x823C2910 | size: 0x50
+//
+// Destroys a single message object of 24 bytes. Resets its vtable
+// to PongNetMessage base (0x8206C304), then frees and nulls the pointer.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_2910_1(pongNetMessageHolder* holder) {
+    void* messageArray = holder->m_pInternalArray;  // +0x08
+
+    if (messageArray != nullptr) {
+        const uint32_t BASE_VTABLE = 0x8206C304;  // PongNetMessage base vtable
+
+        // Reset vtable for the single 24-byte message object
+        *(uint32_t*)messageArray = BASE_VTABLE;
+
+        rage_free_00C0(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CleanupSingleSmallMessage (vfn_2 variant)
+// @ 0x823C2AB0 | size: 0x50
+//
+// Destroys a single message object of 16 bytes. Resets its vtable
+// to PongNetMessage base (0x8206C304), then frees and nulls the pointer.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_2AB0_1(pongNetMessageHolder* holder) {
+    void* messageArray = holder->m_pInternalArray;  // +0x08
+
+    if (messageArray != nullptr) {
+        const uint32_t BASE_VTABLE = 0x8206C304;  // PongNetMessage base vtable
+
+        // Reset vtable for the single 16-byte message object
+        *(uint32_t*)messageArray = BASE_VTABLE;
+
+        rage_free_00C0(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
