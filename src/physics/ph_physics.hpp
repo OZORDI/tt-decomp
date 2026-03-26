@@ -389,6 +389,16 @@ struct phArticulatedCollider {
     void Update();
     void AddForceToJoint(const float* forceVector);
     void ApplyImpulse(void* param1, void* param2, void* param3);
+    void ApplyConstraintForce(void* constraintData, void* forceData);
+    void ApplyForceAtJoint(const float* forceVector, int jointIndex);
+    bool IsJointActive(int byteOffset);
+    float GetJointStiffness(int jointIndex);
+    void ClearJointForces();
+    void SetVelocityScaled(const float* velocity);
+    void SetVelocityDirect(const float* velocity);
+    void GetAngularVelocity();
+    void SetAngularVelocity(const float* angularVelocity);
+    void InitializeJoints();
     // Bitfield accessors
     uint32_t GetSolverParam_0(); uint32_t GetSolverParam_3(); uint32_t GetSolverParam_11();
     uint32_t GetSolverParam_14(); uint32_t GetSolverParam_17(); uint32_t GetSolverParam_21();

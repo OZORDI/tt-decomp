@@ -2129,6 +2129,277 @@ void phArticulatedCollider::ApplyImpulse(void* param1, void* param2, void* param
     func(this, param1, param2, param3, 0, 0);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyConstraintForce (vfn_37) @ 0x8224EFC8 | size: 0x18
+//
+// Delegates constraint force application to vtable slot 38.
+// Rearranges parameters and dispatches via indirect call through vtable.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ApplyConstraintForce(void* constraintData, void* forceData) {
+    void** vtable = *(void***)this;
+    typedef void (*ConstraintFunc)(phArticulatedCollider*, void*, void*);
+    ConstraintFunc func = (ConstraintFunc)vtable[38];
+    func(this, constraintData, forceData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyForceAtJoint (vfn_38) @ 0x8224EFE0 | size: 0x60
+//
+// Applies a force vector to a specific joint in the articulated body.
+// Resolves the joint index via E668, then adds the force to the joint's
+// accumulated force vector at offset +384.
+//
+// @param forceVector - 16-byte aligned force vector to apply
+// @param jointIndex  - Index of the target joint
+// ─────────────────────────────────────────────────────────────────────────────
+extern int phArticulatedCollider_E668(phArticulatedCollider* collider, int jointIndex);
+
+void phArticulatedCollider::ApplyForceAtJoint(const float* forceVector, int jointIndex) {
+    // Resolve the joint index to a link index
+    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
+
+    // Compute array offset: (linkIndex + 10) * 4
+    int arrayIndex = linkIndex + 10;
+
+    // Look up the link data pointer from the active joints array
+    uint32_t* jointArray = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    void* linkData = (void*)(uintptr_t)jointArray[arrayIndex];
+
+    // Add force to the accumulated force vector at offset +384
+    float* accumulatedForce = (float*)((char*)linkData + 384);
+    accumulatedForce[0] += forceVector[0];
+    accumulatedForce[1] += forceVector[1];
+    accumulatedForce[2] += forceVector[2];
+    accumulatedForce[3] += forceVector[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::IsJointActive (E1B0_h) @ 0x8224E1B0 | size: 0x20
+//
+// Checks whether a joint at the given byte offset is active.
+// Returns true if the byte at (this + offset + 176) is non-zero.
+//
+// @param byteOffset - Byte offset from 'this' to reach the joint data
+// @return true if the joint is active, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool phArticulatedCollider::IsJointActive(int byteOffset) {
+    uint8_t* base = (uint8_t*)this;
+    uint8_t flag = base[byteOffset + 176];
+    return flag != 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointStiffness (vfn_62) @ 0x8224E280 | size: 0x58
+//
+// Retrieves the stiffness value for a specific joint by looking up through
+// multiple indirection arrays and calling vtable slot 8 on the resolved
+// joint object.
+//
+// @param jointIndex - Index of the joint to query
+// @return Stiffness value as float
+// ─────────────────────────────────────────────────────────────────────────────
+float phArticulatedCollider::GetJointStiffness(int jointIndex) {
+    // Look up link type from joint type array (+476)
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476 (0x1DC)
+    uint32_t linkType = jointTypeArray[jointIndex];
+
+    // Look up joint object from joint object array (+484)
+    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;  // +484 (0x1E4)
+    void* jointObj = (void*)(uintptr_t)jointObjArray[jointIndex];
+
+    // Compute the link data index: linkType + 42
+    int linkDataIndex = linkType + 42;
+
+    // Get the link data from active joints array
+    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    void* linkData = (void*)(uintptr_t)activeJoints[linkDataIndex];
+
+    // Call vtable slot 8 on the joint object to get stiffness
+    float result;
+    void** jointVtable = *(void***)jointObj;
+    typedef void (*GetStiffnessFunc)(void*, void*, void*, float*);
+    GetStiffnessFunc func = (GetStiffnessFunc)jointVtable[8];
+    func(jointObj, jointObjArray + jointIndex, linkData, &result);
+
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ClearJointForces (vfn_3) @ 0x8224E1D0 | size: 0x74
+//
+// Zeros out four accumulated force/torque vectors for every joint in the
+// articulated body. Each joint stores four 16-byte vectors at offsets
+// +272, +288, +304, and +320 from the joint data pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ClearJointForces() {
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    int numJoints = (int)jointData[1];  // joint count at +4
+
+    if (numJoints <= 0)
+        return;
+
+    // Iterate through the joint pointer array starting at offset +40
+    uint32_t* jointPtrArray = jointData + 10;  // +40 bytes = +10 dwords
+
+    for (int i = 0; i < numJoints; i++) {
+        uint8_t* joint = (uint8_t*)(uintptr_t)jointPtrArray[i];
+
+        // Clear four 16-byte vectors: forces and torques
+        float* forceVec0 = (float*)(joint + 272);
+        float* forceVec1 = (float*)(joint + 288);
+        float* forceVec2 = (float*)(joint + 320);
+        float* forceVec3 = (float*)(joint + 304);
+
+        forceVec0[0] = 0.0f; forceVec0[1] = 0.0f; forceVec0[2] = 0.0f; forceVec0[3] = 0.0f;
+        forceVec1[0] = 0.0f; forceVec1[1] = 0.0f; forceVec1[2] = 0.0f; forceVec1[3] = 0.0f;
+        forceVec2[0] = 0.0f; forceVec2[1] = 0.0f; forceVec2[2] = 0.0f; forceVec2[3] = 0.0f;
+        forceVec3[0] = 0.0f; forceVec3[1] = 0.0f; forceVec3[2] = 0.0f; forceVec3[3] = 0.0f;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetVelocityScaled (vfn_40) @ 0x8224F870 | size: 0x58
+//
+// Stores a velocity vector at offset +224, scales it by the restitution
+// coefficient (field +100) into offset +256, then propagates to all joints.
+//
+// @param velocity - 16-byte aligned velocity vector
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phArticulatedCollider_8A30(void* jointData, const float* velocity);
+
+void phArticulatedCollider::SetVelocityScaled(const float* velocity) {
+    uint8_t* self = (uint8_t*)this;
+
+    // Read restitution coefficient from offset +100
+    float restitution = *(float*)(self + 100);
+
+    // Store velocity at offset +224
+    float* storedVelocity = (float*)(self + 224);
+    storedVelocity[0] = velocity[0];
+    storedVelocity[1] = velocity[1];
+    storedVelocity[2] = velocity[2];
+    storedVelocity[3] = velocity[3];
+
+    // Scale velocity by restitution and store at offset +256
+    float* scaledVelocity = (float*)(self + 256);
+    scaledVelocity[0] = storedVelocity[0] * restitution;
+    scaledVelocity[1] = storedVelocity[1] * restitution;
+    scaledVelocity[2] = storedVelocity[2] * restitution;
+    scaledVelocity[3] = storedVelocity[3] * restitution;
+
+    // Propagate velocity to all joints
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_8A30(jointDataPtr, storedVelocity);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetVelocityDirect (vfn_41) @ 0x8224F8C8 | size: 0x44
+//
+// Stores a velocity vector directly at offset +256 and propagates it to
+// all joints via the parent class and articulated joint handler.
+//
+// @param velocity - 16-byte aligned velocity vector
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phCollider_CDF0_p39(phArticulatedCollider* collider);
+
+void phArticulatedCollider::SetVelocityDirect(const float* velocity) {
+    uint8_t* self = (uint8_t*)this;
+
+    // Store velocity at offset +256
+    float* storedVelocity = (float*)(self + 256);
+    storedVelocity[0] = velocity[0];
+    storedVelocity[1] = velocity[1];
+    storedVelocity[2] = velocity[2];
+    storedVelocity[3] = velocity[3];
+
+    // Call parent class velocity handler
+    phCollider_CDF0_p39(this);
+
+    // Propagate from stored velocity at +224 to all joints
+    float* baseVelocity = (float*)(self + 224);
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_8A30(jointDataPtr, baseVelocity);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetAngularVelocity (vfn_42) @ 0x8224F910 | size: 0x38
+//
+// Retrieves the angular velocity by calling the parent class implementation,
+// then propagates the angular velocity at offset +240 to all joints.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phCollider_vfn_42(phArticulatedCollider* collider);
+extern void phArticulatedCollider_8B10(void* jointData, const float* angularVelocity);
+
+void phArticulatedCollider::GetAngularVelocity() {
+    // Call parent class angular velocity getter
+    phCollider_vfn_42(this);
+
+    // Propagate angular velocity at +240 to all joints
+    float* angularVel = (float*)((uint8_t*)this + 240);
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_8B10(jointDataPtr, angularVel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetAngularVelocity (vfn_43) @ 0x8224F948 | size: 0x44
+//
+// Stores an angular velocity vector at offset +272, calls the parent class
+// handler, then propagates angular velocity at offset +240 to all joints.
+//
+// @param angularVelocity - 16-byte aligned angular velocity vector
+// ─────────────────────────────────────────────────────────────────────────────
+extern void game_CE58(phArticulatedCollider* collider);
+
+void phArticulatedCollider::SetAngularVelocity(const float* angularVelocity) {
+    uint8_t* self = (uint8_t*)this;
+
+    // Store angular velocity at offset +272
+    float* storedAngVel = (float*)(self + 272);
+    storedAngVel[0] = angularVelocity[0];
+    storedAngVel[1] = angularVelocity[1];
+    storedAngVel[2] = angularVelocity[2];
+    storedAngVel[3] = angularVelocity[3];
+
+    // Call parent class angular velocity handler
+    game_CE58(this);
+
+    // Propagate angular velocity at +240 to all joints
+    float* angVel = (float*)(self + 240);
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_8B10(jointDataPtr, angVel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::InitializeJoints (vfn_6) @ 0x8224EA28 | size: 0x48
+//
+// Initializes the articulated collider's joint system.
+// Calls four setup functions in sequence:
+// 1. BoundCapsule geometry generation
+// 2. Joint hierarchy setup
+// 3. Joint transform computation
+// 4. Joint constraint initialization
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phBoundCapsule_6968_g(void* jointData);
+extern void phArticulatedCollider_8450(void* jointData);
+extern void phArticulatedCollider_F0E0(phArticulatedCollider* collider);
+extern void phArticulatedCollider_5D58(void* jointData);
+
+void phArticulatedCollider::InitializeJoints() {
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+
+    // Step 1: Generate capsule bound geometry for collision
+    phBoundCapsule_6968_g(jointDataPtr);
+
+    // Step 2: Set up joint hierarchy / bone mapping
+    phArticulatedCollider_8450(jointDataPtr);
+
+    // Step 3: Compute joint transforms and matrices
+    phArticulatedCollider_F0E0(this);
+
+    // Step 4: Initialize joint constraints
+    phArticulatedCollider_5D58(jointDataPtr);
+}
+
 } // namespace rage
 
 // ═════════════════════════════════════════════════════════════════════════════
