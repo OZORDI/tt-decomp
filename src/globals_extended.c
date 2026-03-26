@@ -336,7 +336,15 @@ uint32_t g_rage_main_call_depth = 0;
 // ============================================================================
 
 void* g_pAllocator = NULL;
-void* g_pAllocatorBase = NULL;
+
+// g_pAllocatorBase — in the original binary this is a pre-allocated struct
+// in .data at SDA r13+0. The struct has 3+ pointer slots:
+//   [0] = allocator object pointer (set during init)
+//   [1] = main thread XeTlsBlock / memory tracker (set by xe_main_thread_init)
+//   [2] = secondary thread context (set by xe_main_thread_init)
+static void* g_allocatorContextSlots[8] = {0};
+void* g_pAllocatorBase = g_allocatorContextSlots;
+
 void* g_mainAllocTable = NULL;
 void* g_sda_base = NULL;
 
