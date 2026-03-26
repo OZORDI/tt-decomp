@@ -12,6 +12,7 @@
 #include "pong_player.hpp"
 #include "rage/memory.h"
 #include <cstring>   // memset
+#include <cmath>     // fabsf
 
 // ---------------------------------------------------------------------------
 // External functions referenced below
@@ -2451,4 +2452,472 @@ float pongPlayer::GetCurrentSwingStrength() const {
     // Return the swing strength value
     // Field location TBD - using placeholder
     return m_pAnimState->m_animPhase;
+}
+
+
+// ===========================================================================
+// SECTION 20 — Process/gameplay helper functions (92-216B)
+// ===========================================================================
+
+// ── Additional externs for Section 20 ─────────────────────────────────────
+extern void pongPlayer_EF38_g(void* self, uint8_t r9, uint8_t r10, uint32_t r6,
+                               uint32_t r3, float f3, float f2, float f1);
+extern void pongPlayer_F2A0_g(void* self, void* subObj);
+extern void pongPlayer_5C00_g(pongPlayer* p, int param);
+extern void pongMover_CalcInitMatrix(void* out, void* inst);
+extern void pongPlayer_5DF8_g(void* target, float f1, float f2);
+extern void pg_E6E0(int code, uint8_t mask, int p3, int p4);
+extern void pongPlayer_9108_g(void* target, void* syncData);
+
+extern void* g_pMatchState;       // @ 0x8271A318
+extern void* g_pMatchConfig;      // @ 0x8271A32C
+extern float g_kSpeedTable[];     // @ 0x825D7600
+
+
+/**
+ * pongPlayer::IsMatchSlotValid  @ 0x8218EDB0 | size: 0x5C (92 bytes)
+ *
+ * Checks whether the player's current match slot index is valid and has an
+ * active entry. Reads the slot index from field +464, indexes into two
+ * separate lookup tables (one for slot validation, one for entry existence),
+ * and returns true only if both checks pass (slot == 1 in the first table,
+ * and entry != -1 in the second table).
+ *
+ * Called via vtable slot 1.
+ */
+bool pongPlayer::IsMatchSlotValid() const {  // pongPlayer_vfn_1 @ 0x8218EDB0
+    uint32_t slotIndex = m_slotIndex;  // +464
+
+    // Check slot validity: table[(slotIndex + 14)] must be 1
+    uint32_t* validationTable = g_pPlayerSlotTable;
+    bool slotValid = (validationTable[slotIndex + 14] == 1);
+
+    // Check entry existence: table2[(slotIndex + 1)] must not be -1
+    uint32_t* entryTable = reinterpret_cast<uint32_t*>(g_pPlayerDataTable);
+    int32_t entry = static_cast<int32_t>(entryTable[slotIndex + 1]);
+
+    if (!slotValid) {
+        return false;
+    }
+    if (entry == -1) {
+        return false;
+    }
+    return true;
+}
+
+
+/**
+ * pongPlayer::UpdateSwingTrajectory  @ 0x82192CD0 | size: 0xB4 (180 bytes)
+ *
+ * Called from the main update virtual (vfn_2) to compute and apply the
+ * swing trajectory for the current frame:
+ *   1. Look up the geometry record via pg_9C00_g.
+ *   2. Check the shot type in a 416-byte-per-entry table: must be 3.
+ *   3. Gather the current state (slot, handedness, shot parameters).
+ *   4. Call pongPlayer_EF38_g to compute the trajectory arc.
+ *   5. Call pongPlayer_F2A0_g to submit the result to the animation system.
+ */
+void pongPlayer::UpdateSwingTrajectory() {  // pongPlayer_2CD0_g @ 0x82192CD0
+    uint32_t slotIndex = m_slotIndex;  // +464
+    void* geomBase = g_pPlayerSlotTable;
+
+    void* geomRecord = pg_9C00_g(geomBase);
+
+    // Check shot type in 416-byte-per-entry table at offset 204
+    uint8_t* tableBase = reinterpret_cast<uint8_t*>(g_pPlayerDataTable) - 23600;
+    uint32_t* shotEntry = reinterpret_cast<uint32_t*>(tableBase + 204 + slotIndex * 416);
+    bool isShotType3 = (*shotEntry == 3);
+
+    // Load geometry speed data from record (+40 -> +156)
+    void* geomData = reinterpret_cast<void*>(
+        *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(geomRecord) + 40));
+    float speedParam = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(geomData) + 156);
+
+    uint32_t playerState = m_playerFlags;  // +448
+    float swingStrengthX = m_swingStrengthX;  // +6320
+    float swingStrengthY = m_swingStrengthY;  // +6324
+    void* shotState = m_pShotState;  // +492
+
+    // Compute trajectory arc
+    pongPlayer_EF38_g(shotState, static_cast<uint8_t>(isShotType3),
+                      static_cast<uint8_t>(*(reinterpret_cast<uint8_t*>(
+                          reinterpret_cast<uintptr_t>(geomBase) + slotIndex) + 64)),
+                      playerState, m_slotIndex,
+                      speedParam, swingStrengthY, swingStrengthX);
+
+    // Submit to animation sub-object at slot (index+17) in table
+    uint32_t* animTable = g_pPlayerSlotTable;
+    uint32_t animEntry = animTable[m_slotIndex + 17];
+    void* animSubObj = reinterpret_cast<void*>(animEntry + 48);
+    pongPlayer_F2A0_g(shotState, animSubObj);
+}
+
+
+/**
+ * pongPlayer::UpdateCreatureSlotAnims  @ 0x821987B0 | size: 0x90 (144 bytes)
+ *
+ * Iterates over 4 creature sub-object slots (at this+6148, stride 4).
+ * For each valid (non-null) entry with positive anim count:
+ *   - If resetFlag is set, calls vtable slot 2 to reset the creature.
+ *   - Otherwise, copies the speed from sub-object (+15400->+24) into
+ *     blend fields (+15392, +15396).
+ * Clears field +6316 at the start.
+ *
+ * Called from pongPlayer_Process and pongPlayer_BEE0_g.
+ */
+void pongPlayer::UpdateCreatureSlotAnims(uint8_t resetFlag) {  // pongPlayer_87B0_g @ 0x821987B0
+    m_creatureSlotCounter = 0;  // +6316
+
+    for (int i = 0; i < 4; ++i) {
+        void* slotObj = m_creatureSlots[i];  // +6148, array of 4 pointers
+        if (!slotObj) {
+            continue;
+        }
+
+        int32_t animCount = *reinterpret_cast<int32_t*>(
+            reinterpret_cast<uintptr_t>(slotObj) + 20);
+        if (animCount <= 0) {
+            continue;
+        }
+
+        if (resetFlag) {
+            // Call virtual slot 2 to reset creature animation
+            typedef void (*VFn)(void*);
+            void** vtable = *reinterpret_cast<void***>(slotObj);
+            VFn resetFn = reinterpret_cast<VFn>(vtable[2]);
+            resetFn(slotObj);
+        } else {
+            // Copy speed from sub-object's target data into blend fields
+            void* targetData = *reinterpret_cast<void**>(
+                reinterpret_cast<uintptr_t>(slotObj) + 15400);
+            float targetSpeed = *reinterpret_cast<float*>(
+                reinterpret_cast<uintptr_t>(targetData) + 24);
+            float currentAnim = *reinterpret_cast<float*>(
+                reinterpret_cast<uintptr_t>(slotObj) + 46184);
+
+            *reinterpret_cast<float*>(
+                reinterpret_cast<uintptr_t>(slotObj) + 15392) = targetSpeed;
+            *reinterpret_cast<float*>(
+                reinterpret_cast<uintptr_t>(slotObj) + 15396) = currentAnim;
+        }
+    }
+}
+
+
+/**
+ * pongPlayer::InitMovementAndContact  @ 0x82195D50 | size: 0x9C (156 bytes)
+ *
+ * Called from pongPlayer_Process. Initializes movement state and checks
+ * for ball contact readiness:
+ *   1. Calls pongPlayer_5C00_g(0) to reset movement state.
+ *   2. If slot is null in validation table, or IsInputActiveAndReady
+ *      returns true, computes the initial position matrix and sets up
+ *      the contact zone parameters.
+ */
+void pongPlayer::InitMovementAndContact() {  // pongPlayer_5D50_g @ 0x82195D50
+    pongPlayer_5C00_g(this, 0);
+
+    uint32_t slotIndex = m_slotIndex;  // +464
+    uint32_t* validationTable = g_pPlayerSlotTable;
+    uint32_t slotEntry = validationTable[slotIndex + 14];
+
+    bool needsInit = (slotEntry == 0);
+
+    if (!needsInit) {
+        if (!pongPlayer_5B60_gen(this)) {
+            return;
+        }
+    }
+
+    // Compute initial position matrix from creature instance (+452 -> +168)
+    void* creatureState = m_pCreatureState;  // +452
+    void* creatureInst = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(creatureState) + 168);
+
+    float localMatrix[16];
+    pongMover_CalcInitMatrix(localMatrix, creatureInst);
+
+    // Set up contact zone with scale constants
+    extern const float g_kContactScale1;  // @ 0x825C8A50
+    extern const float g_kContactScale2;  // @ 0x82028080
+    void* shotState = m_pShotState;  // +496
+    pongPlayer_5DF8_g(shotState, g_kContactScale1, g_kContactScale2);
+}
+
+
+/**
+ * pongPlayer::ResetSwingSlotEntries  @ 0x821A6080 | size: 0x8C (140 bytes)
+ *
+ * Zeroes out all 10 swing slot entries (80-byte stride). Each entry:
+ *   - flags word at +4: cleared to 0
+ *   - byte at +76: cleared to 0
+ *   - byte at +77: set to 1 (enabled)
+ *   - counter at +84: cleared to 0
+ * Plus two trailing dword clears at +800 and +804.
+ *
+ * Called from game_5FC8 during match init.
+ */
+void pongPlayer::ResetSwingSlotEntries(void* slotsBase) {  // pongPlayer_6080_p33 @ 0x821A6080
+    uint8_t* base = reinterpret_cast<uint8_t*>(slotsBase);
+
+    for (int i = 0; i < 10; ++i) {
+        uint8_t* entry = base + i * 80;
+        *reinterpret_cast<uint32_t*>(entry + 4)  = 0;
+        *(entry + 76) = 0;
+        *(entry + 77) = 1;
+        *reinterpret_cast<uint32_t*>(entry + 84) = 0;
+    }
+
+    *reinterpret_cast<uint32_t*>(base + 800) = 0;
+    *reinterpret_cast<uint32_t*>(base + 804) = 0;
+}
+
+
+/**
+ * pongPlayer::ComputeShotSpeedForType  @ 0x821D6100 | size: 0xA8 (168 bytes)
+ *
+ * Computes shot speed based on shot type (+156) and input power (f1).
+ * Input is clamped to [0, 1], then used to lerp between base and max
+ * speed from a lookup table. Result stored at this+148.
+ *
+ * Shot types 8, 9, 10 all fall through to the same computation.
+ * Called from pongPlayer_SetupServe and pongPlayer_0780_g.
+ */
+void pongPlayer::ComputeShotSpeedForType(float inputPower) {  // pongPlayer_6100_g @ 0x821D6100
+    extern const float g_kShotSpeedClampZero;  // @ 0x82079D30
+    extern const double g_kShotSpeedClampMax;  // @ 0x82079CE8
+
+    // Clamp to [0, max] via fsel pattern
+    float clamped = inputPower - g_kShotSpeedClampZero;
+    float safeVal = (clamped >= 0.0f) ? inputPower
+                                      : static_cast<float>(g_kShotSpeedClampMax);
+    float excess = safeVal - static_cast<float>(g_kShotSpeedClampMax);
+    float finalVal = (excess >= 0.0f) ? static_cast<float>(g_kShotSpeedClampMax)
+                                      : safeVal;
+
+    float absVal = fabsf(finalVal);
+
+    // Lerp between base speed and max speed
+    float baseSpeed = g_kSpeedTable[1];  // @ 0x825D7604
+    float maxSpeed  = g_kSpeedTable[0];  // @ 0x825D7600
+
+    float range = maxSpeed - baseSpeed;
+    m_shotSpeed = range * absVal + baseSpeed;  // +148
+}
+
+
+/**
+ * pongPlayer::NotifySlotChangeAndSync  @ 0x821C9870 | size: 0xA4 (164 bytes)
+ *
+ * When a slot's dirty byte is clear, sends a page-group notification
+ * (code 4130 with slot mask | 64) and marks it dirty. Then synchronises
+ * via pongPlayer_9108_g (SyncByteField).
+ *
+ * Used for network synchronisation of player slot state changes.
+ */
+void pongPlayer::NotifySlotChangeAndSync(void* slotsBase, uint32_t slotIndex,
+                                          uint32_t columnIndex) {
+    // pongPlayer_9870_g @ 0x821C9870
+    uint8_t* base = reinterpret_cast<uint8_t*>(slotsBase);
+
+    // Look up speed value from table indexed by columnIndex
+    extern float g_kSlotSpeedLookup[];  // @ 0x825C76CC
+    float speedVal = g_kSlotSpeedLookup[columnIndex];
+
+    // Store speed at slot offset (+61 base, *4 stride)
+    uint32_t storeOffset = (slotIndex + 61) * 4;
+    *reinterpret_cast<float*>(base + storeOffset) = speedVal;
+
+    // Compute entry stride: slot*3 + column -> *3 final
+    uint32_t entryIdx = slotIndex * 3 + columnIndex;
+    uint32_t finalIdx = entryIdx * 3;
+
+    uint8_t* dirtyAddr = base + finalIdx * 4 + 172;
+    uint8_t dirtyFlag = *dirtyAddr;
+
+    if (dirtyFlag == 0) {
+        uint8_t slotMask = static_cast<uint8_t>(1 << slotIndex) | 64;
+        pg_E6E0(4130, slotMask, 1, static_cast<int>(columnIndex));
+
+        *(base + slotIndex + 288) = 1;
+    }
+
+    // Sync byte field
+    uint8_t syncBuf[4];
+    syncBuf[0] = 1;
+    pongPlayer_9108_g(dirtyAddr, syncBuf);
+}
+
+
+/**
+ * pongPlayer::UpdateServeSpeed  @ 0x8218CD48 | size: 0xB8 (184 bytes)
+ *
+ * Called from pongPlayer_Process. Determines the serve speed based on
+ * the current match rally state:
+ *   1. If rally index is out of range, uses a default speed constant.
+ *   2. Otherwise, XORs handedness flags to pick left/right speed
+ *      column (+24 or +28) from the rally speed table.
+ *   3. Stores result in creature state's speed field (+208).
+ */
+void pongPlayer::UpdateServeSpeed() {  // pongPlayer_CD48_g @ 0x8218CD48
+    void* matchState = g_pMatchState;
+    int32_t rallyIndex = *reinterpret_cast<int32_t*>(
+        reinterpret_cast<uintptr_t>(matchState) + 28);
+
+    bool indexValid = false;
+    if (rallyIndex >= 0) {
+        int32_t maxRallies = *reinterpret_cast<int32_t*>(
+            reinterpret_cast<uintptr_t>(matchState) + 8);
+        if (rallyIndex < maxRallies - 1) {
+            indexValid = true;
+        }
+    }
+
+    void* creatureState = m_pCreatureState;  // +452
+
+    if (!indexValid) {
+        extern const float g_kDefaultServeSpeed;  // @ 0x8202D108
+        *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(creatureState) + 208) = g_kDefaultServeSpeed;
+        return;
+    }
+
+    void* matchConfig = g_pMatchConfig;
+    uint8_t configHandedness = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(matchConfig) + 6);
+
+    if (configHandedness == 0) {
+        extern const float g_kDefaultServeSpeed;
+        *reinterpret_cast<float*>(
+            reinterpret_cast<uintptr_t>(creatureState) + 208) = g_kDefaultServeSpeed;
+        return;
+    }
+
+    uint8_t configSide = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(matchConfig) + 5);
+    uint32_t slotIndex = m_slotIndex;  // +464
+
+    // Look up rally entry
+    uint32_t nextRally = rallyIndex + 1;
+    uint32_t* rallyTable = reinterpret_cast<uint32_t*>(
+        *reinterpret_cast<uintptr_t*>(
+            reinterpret_cast<uintptr_t>(matchState) + 12));
+    void* rallyEntry = reinterpret_cast<void*>(rallyTable[nextRally]);
+
+    // Get speed table from rally entry (+8 -> +40)
+    void* speedData = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(
+            *reinterpret_cast<void**>(
+                reinterpret_cast<uintptr_t>(rallyEntry) + 8))
+        + 40);
+
+    uint8_t playerTableSide = *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(g_pPlayerSlotTable) + 64);
+
+    uint32_t sideXor = configSide ^ playerTableSide;
+
+    // Pick forehand (+24) or backhand (+28) speed
+    int speedOffset = (sideXor == slotIndex) ? 24 : 28;
+    float speed = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(speedData) + speedOffset);
+    *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(creatureState) + 208) = speed;
+}
+
+
+/**
+ * pongPlayer::InitializeReplaySnapshot  @ 0x820D9420 | size: 0xD4 (212 bytes)
+ *
+ * Captures the initial replay snapshot. Called from pongPlayer_83C8_g
+ * during replay recording setup:
+ *   1. Zero-initialises vec3 buffers, calls vtable slot 4 for position.
+ *   2. Copies transform vector from singleton+64 into output+16.
+ *   3. Stores base speed at output+0, clears bytes +8..+10.
+ */
+void pongPlayer::InitializeReplaySnapshot(void* outSnapshot) {
+    // pongPlayer_9420_wrh @ 0x820D9420
+    uint8_t* out = reinterpret_cast<uint8_t*>(outSnapshot);
+
+    void** singletonPtr = reinterpret_cast<void**>(g_pMatchState);
+    void* singleton = *singletonPtr;
+
+    extern const float g_kReplayZero;  // @ 0x8202D110
+    float zero = g_kReplayZero;
+
+    float posVec[4]  = { zero, zero, zero, 0.0f };
+    float zeroVec[4] = { zero, zero, zero, 0.0f };
+
+    // Call vtable slot 4 for player position
+    typedef void (*GetPosFn)(void*, float*);
+    void** vtable = *reinterpret_cast<void***>(singleton);
+    GetPosFn getPos = reinterpret_cast<GetPosFn>(vtable[4]);
+    getPos(singleton, posVec);
+
+    // Read base speed from singleton (+48)
+    float baseSpeed = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(singleton) + 48);
+
+    *reinterpret_cast<float*>(out + 0) = baseSpeed;
+
+    // Copy transform (singleton+64 -> output+16)
+    memcpy(out + 16, reinterpret_cast<void*>(
+        reinterpret_cast<uintptr_t>(singleton) + 64), 16);
+
+    memcpy(out + 32, posVec, 16);
+    memcpy(out + 48, zeroVec, 16);
+
+    out[8]  = 0;
+    out[9]  = 0;
+    out[10] = 0;
+}
+
+
+/**
+ * pongPlayer::ClampMovementToCourtBounds  @ 0x8219D558 | size: 0xD8 (216 bytes)
+ *
+ * Clamps X and Z movement deltas to court boundaries using the player's
+ * court half-widths (+896 for X, +904 for Z). Uses fsel-style clamping.
+ *
+ * Called from pongPlayer_D8E8_g during movement processing.
+ */
+void pongPlayer::ClampMovementToCourtBounds(float* delta) {
+    // pongPlayer_D558_wrh @ 0x8219D558
+    extern const float g_kCourtZero;       // @ 0x8202D110
+    extern const double g_kCourtMaxDelta;  // @ 0x82079D78
+    extern const double g_kCourtNegMax;    // @ 0x82079B80
+    extern const float g_kCourtMinDelta;   // @ 0x82079D68
+
+    float maxDelta = static_cast<float>(g_kCourtMaxDelta);
+    float negMax   = static_cast<float>(g_kCourtNegMax);
+
+    // Clamp X component
+    if (delta[0] > g_kCourtZero) {
+        float adj = delta[0] - m_courtHalfWidthX;  // +896
+        if (adj >= 0.0f) {
+            float clamped = (adj >= 0.0f) ? adj : negMax;
+            delta[0] = (clamped - maxDelta >= 0.0f) ? maxDelta : clamped;
+        }
+    }
+    if (delta[0] < g_kCourtZero) {
+        float adj = m_courtHalfWidthX + delta[0];
+        if (adj - g_kCourtMinDelta >= 0.0f) {
+            delta[0] = (adj >= 0.0f) ? negMax : adj;
+        }
+    }
+
+    // Clamp Z component
+    if (delta[2] > g_kCourtZero) {
+        float adj = delta[2] - m_courtHalfWidthZ;  // +904
+        if (adj >= 0.0f) {
+            float clamped = (adj >= 0.0f) ? adj : negMax;
+            delta[2] = (clamped - maxDelta >= 0.0f) ? maxDelta : clamped;
+        }
+    }
+    if (delta[2] < g_kCourtZero) {
+        float adj = m_courtHalfWidthZ + delta[2];
+        if (adj - g_kCourtMinDelta >= 0.0f) {
+            delta[2] = (adj >= 0.0f) ? negMax : adj;
+        }
+    }
 }
