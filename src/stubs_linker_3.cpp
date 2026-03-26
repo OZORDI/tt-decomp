@@ -294,19 +294,7 @@ void plrPlayerMgr::vfn_32() {
 // Use pong_states.hpp since it declares the exact method names the linker needs.
 #include "game/match/pong_states.hpp"
 
-// DISABLED: void pongAttractState::GetName() {
-}
-
-// DISABLED: void pongAttractState::ProcessInput() {
-}
-
-// DISABLED: void pongAttractState::Reset() {
-}
-
-// DISABLED: void pongAttractState::Shutdown() {
-}
-
-// DISABLED: // REMOVED (conflict): extern "C" void pongAttractState_Shutdown(void* state) {
+// pongAttractState stubs removed — defined in char_view.cpp
 
 // ============================================================================
 // pongBallInstance — Ball instance virtual methods
