@@ -136,7 +136,7 @@ target_link_libraries(${PROJECT_NAME}
 
 # Allow duplicate weak symbols (RTTI from multiple TUs defining same class)
 if(APPLE)
-    target_link_options(${PROJECT_NAME} PRIVATE -Wl,-multiply_defined,suppress)
+    target_link_options(${PROJECT_NAME} PRIVATE "LINKER:-no_deduplicate")
 endif()
 
 # Platform-specific linking
