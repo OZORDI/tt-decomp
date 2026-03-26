@@ -1337,3 +1337,320 @@ void SinglesNetworkClient::DispatchSlot6() {  // 9B10_2hr
     typedef void (*Fn)(void*);
     ((Fn)(*(void***)this)[6])(this);
 }
+
+// ── Network Bitstream Accessors (SinglesNetworkClient) ───────────────────
+// These functions provide typed read/write access to individual fields within
+// the network bitstream.  The stream object has:
+//   +0x00: data pointer array (vtable-like, holds pointers to entries)
+//   +0x04: entry count (uint16)
+//   +0x0C: current read index
+//   +0x10: total size in bits
+//   +0x14: capacity / upper bound
+//   +0x18: reserved
+//   +0x1C: read cursor position
+//   +0x20: write cursor position
+//   +0x24: flags field (16-bit packed bitfield)
+//
+// The read/write helpers (8DF8, 0448) operate on the cursor at +28 (read)
+// and +32 (write) respectively.  Callers temporarily set these cursors to
+// the desired field offset before calling the helper, then restore them.
+
+// Forward declarations for helpers already lifted elsewhere
+extern int  SinglesNetworkClient_8CC0_w(void* self);
+extern void SinglesNetworkClient_8DF8_g(void* client, void* buf, int size);
+extern void SinglesNetworkClient_0448_g(void* self, uint32_t value, int bits);
+extern void SinglesNetworkClient_8AE0_g(void* self);
+extern void SinglesNetworkClient_0268_g(void* self);
+extern void* xam_singleton_init_8D60();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetEntryName @ 0x82238600 | size: 0x74
+// Looks up a registered entry by index and returns its name string.
+// Returns the name at entry[index]+4, or an empty string if null,
+// or a fallback error string if index is negative.
+// ─────────────────────────────────────────────────────────────────────────────
+const char* SinglesNetworkClient::GetEntryName(int entryIndex) {
+    static const char* const s_emptyString = "";  // @ 0x82027423
+
+    int slotIndex = SinglesNetworkClient_8CC0_w(this);
+
+    if (slotIndex >= 0) {
+        void* registry = xam_singleton_init_8D60();
+        // registry+0 = pointer to entry table
+        void** entryTable = *(void***)registry;
+        // Index into the table: entryTable[slotIndex]
+        void* entry = entryTable[slotIndex];
+        // Name string at entry+4
+        const char* name = *(const char**)((uint8_t*)entry + 4);
+        if (name == nullptr) {
+            return s_emptyString;
+        }
+        return name;
+    }
+
+    // Negative index — return fallback string fragment
+    // @ 0x8204EF04: "vice, userIndex[%d], fileSize[%d]..."
+    return (const char*)0x8204EF04;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitBitstreamState @ 0x82238678 | size: 0x74
+// Initializes the bitstream object: zeroes all cursor/state fields,
+// sets the type tag to the cmRefreshableCtor vtable pointer,
+// resets the data buffer via two calls to ResetReadCursor (0268),
+// and sets the capacity to 8128 bits.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::InitBitstreamState() {
+    // Store type tag from cmRefreshableCtor vtable @ 0x820533CC
+    uint32_t typeTag = *(uint32_t*)0x820533CC;
+    *(uint32_t*)((uint8_t*)this + 36) = typeTag;
+
+    // Zero all primary state fields
+    *(uint32_t*)((uint8_t*)this + 0) = 0;   // data pointer
+    *(uint32_t*)((uint8_t*)this + 4) = 0;   // entry count
+    *(uint32_t*)((uint8_t*)this + 8) = 0;   // field_08
+    *(uint32_t*)((uint8_t*)this + 12) = 0;  // read index
+    *(uint32_t*)((uint8_t*)this + 16) = 0;  // total size
+    *(uint32_t*)((uint8_t*)this + 24) = 0;  // reserved
+    *(uint32_t*)((uint8_t*)this + 28) = 0;  // read cursor
+    *(uint32_t*)((uint8_t*)this + 32) = 0;  // write cursor
+    *(uint32_t*)((uint8_t*)this + 20) = 0;  // capacity (set below)
+
+    // Reset the read cursor state twice (paired init pattern)
+    SinglesNetworkClient_0268_g(this);
+    SinglesNetworkClient_0268_g(this);
+
+    // Set capacity to 8128 bits (1016 bytes = maximum payload)
+    *(uint32_t*)((uint8_t*)this + 20) = 8128;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteAlignedField @ 0x822386F0 | size: 0x68
+// Writes a 14-bit value into the stream at offset 16, merging the low
+// 14 bits of the input with the existing high bits.  Uses temporary
+// cursor save/restore to avoid corrupting the main read/write position.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::WriteAlignedField(uint32_t fieldValue) {
+    // Flush any pending writes
+    SinglesNetworkClient_8AE0_g(this);
+
+    // Save current cursors
+    uint32_t savedReadCursor  = *(uint32_t*)((uint8_t*)this + 28);
+    uint32_t savedWriteCursor = *(uint32_t*)((uint8_t*)this + 32);
+
+    // Read the existing 16-bit value at bit offset 16
+    uint32_t existingValue = 0;
+    *(uint32_t*)((uint8_t*)this + 28) = 16;  // set read cursor to offset 16
+    SinglesNetworkClient_8DF8_g(this, &existingValue, 16);
+
+    // Merge: keep high 2 bits from existing, replace low 14 bits with fieldValue
+    // Python-verified: rlwimi mask(18,31) = 0x3FFF
+    uint32_t merged = (existingValue & 0xFFFFC000) | (fieldValue & 0x3FFF);
+
+    // Restore read cursor
+    *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+
+    // Write the merged value back at bit offset 16
+    *(uint32_t*)((uint8_t*)this + 32) = 16;  // set write cursor to offset 16
+    SinglesNetworkClient_0448_g(this, merged, 16);
+
+    // Restore write cursor
+    *(uint32_t*)((uint8_t*)this + 32) = savedWriteCursor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadAlignedField @ 0x82238758 | size: 0x7C
+// Reads the 14-bit aligned field value from the stream at offset 16.
+// Returns the low 14 bits of the stored value, or 16383 (0x3FFF) if the
+// stream doesn't have enough data (aligned size < 48 bits).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t SinglesNetworkClient::ReadAlignedField() {
+    uint32_t result = 0;
+    uint32_t totalBits = *(uint32_t*)((uint8_t*)this + 16);
+
+    // Align to 8-byte boundary: (totalBits + 7) & ~7
+    // Python-verified: rlwinm(v,0,0,28) mask = 0xFFFFFFF8
+    uint32_t alignedSize = (totalBits + 7) & 0xFFFFFFF8;
+
+    if (alignedSize >= 48) {
+        // Save read cursor, set to offset 16, read 16 bits
+        uint32_t savedReadCursor = *(uint32_t*)((uint8_t*)this + 28);
+        *(uint32_t*)((uint8_t*)this + 28) = 16;
+        SinglesNetworkClient_8DF8_g(this, &result, 16);
+        *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+
+        // Extract low 14 bits
+        // Python-verified: clrlwi(v,18) = v & 0x3FFF
+        return result & 0x3FFF;
+    }
+
+    // Not enough data — return maximum 14-bit value
+    return 0x3FFF;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadRawField32 @ 0x822387D8 | size: 0x70
+// Reads the raw 32-bit value from the stream at bit offset 32.
+// Returns 0 if the stream doesn't have enough data (aligned size < 48).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t SinglesNetworkClient::ReadRawField32() {
+    uint32_t result = 0;
+    uint32_t totalBits = *(uint32_t*)((uint8_t*)this + 16);
+
+    // Align to 8-byte boundary
+    uint32_t alignedSize = (totalBits + 7) & 0xFFFFFFF8;
+
+    if (alignedSize >= 48) {
+        // Save read cursor, set to offset 32, read 16 bits
+        uint32_t savedReadCursor = *(uint32_t*)((uint8_t*)this + 28);
+        *(uint32_t*)((uint8_t*)this + 28) = 32;
+        SinglesNetworkClient_8DF8_g(this, &result, 16);
+        *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+    }
+
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadFieldUint16 @ 0x82238848 | size: 0x74
+// Reads a 16-bit unsigned value from the stream at bit offset 0.
+// Returns the low 16 bits, or 0 if stream has insufficient data.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t SinglesNetworkClient::ReadFieldUint16() {
+    uint32_t result = 0;
+    uint32_t totalBits = *(uint32_t*)((uint8_t*)this + 16);
+
+    // Align to 8-byte boundary
+    uint32_t alignedSize = (totalBits + 7) & 0xFFFFFFF8;
+
+    if (alignedSize >= 48) {
+        // Save read cursor, set to offset 0, read 16 bits
+        uint32_t savedReadCursor = *(uint32_t*)((uint8_t*)this + 28);
+        *(uint32_t*)((uint8_t*)this + 28) = 0;
+        SinglesNetworkClient_8DF8_g(this, &result, 16);
+        *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+
+        // Mask to 16 bits
+        // Python-verified: clrlwi(v,16) = v & 0xFFFF
+        return (uint16_t)(result & 0xFFFF);
+    }
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetReliableFlag @ 0x822388C0 | size: 0x80
+// Sets or clears the "reliable" flag (bit 15 / 0x8000) in the 16-bit
+// header field at stream offset 16.  If enable is true, sets the bit;
+// otherwise clears it.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::SetReliableFlag(bool enable) {
+    // Flush pending writes
+    SinglesNetworkClient_8AE0_g(this);
+
+    // Read current 16-bit header at offset 16
+    uint32_t headerValue = 0;
+    uint32_t savedReadCursor = *(uint32_t*)((uint8_t*)this + 28);
+    *(uint32_t*)((uint8_t*)this + 28) = 16;
+    SinglesNetworkClient_8DF8_g(this, &headerValue, 16);
+    *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+
+    uint32_t updatedValue;
+    if (enable) {
+        // Set bit 15: ori with 0x8000
+        updatedValue = headerValue | 0x8000;
+    } else {
+        // Clear bit 15
+        // Python-verified: rlwinm(v,0,17,15) mask = 0xFFFF7FFF
+        updatedValue = headerValue & 0xFFFF7FFF;
+    }
+
+    // Write back at offset 16
+    uint32_t savedWriteCursor = *(uint32_t*)((uint8_t*)this + 32);
+    *(uint32_t*)((uint8_t*)this + 32) = 16;
+    SinglesNetworkClient_0448_g(this, updatedValue, 16);
+    *(uint32_t*)((uint8_t*)this + 32) = savedWriteCursor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetReliableFlag @ 0x82238940 | size: 0x8C
+// Reads the "reliable" flag (bit 15 / 0x8000) from the 16-bit header
+// field at stream offset 16.  Returns true if the bit is set.
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient::GetReliableFlag() {
+    uint32_t headerValue = 0;
+    uint32_t totalBits = *(uint32_t*)((uint8_t*)this + 16);
+
+    // Align to 8-byte boundary
+    uint32_t alignedSize = (totalBits + 7) & 0xFFFFFFF8;
+
+    if (alignedSize >= 48) {
+        // Read 16-bit header at offset 16
+        uint32_t savedReadCursor = *(uint32_t*)((uint8_t*)this + 28);
+        *(uint32_t*)((uint8_t*)this + 28) = 16;
+        SinglesNetworkClient_8DF8_g(this, &headerValue, 16);
+        *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+    }
+
+    // Isolate bit 15 and convert to bool
+    // Python-verified: rlwinm(v,0,16,16) mask = 0x8000
+    return (headerValue & 0x8000) != 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetOrderedFlag @ 0x822389D0 | size: 0x80
+// Sets or clears the "ordered delivery" flag (bit 14 / 0x4000) in the
+// 16-bit header field at stream offset 16.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::SetOrderedFlag(bool enable) {
+    // Flush pending writes
+    SinglesNetworkClient_8AE0_g(this);
+
+    // Read current 16-bit header at offset 16
+    uint32_t headerValue = 0;
+    uint32_t savedReadCursor = *(uint32_t*)((uint8_t*)this + 28);
+    *(uint32_t*)((uint8_t*)this + 28) = 16;
+    SinglesNetworkClient_8DF8_g(this, &headerValue, 16);
+    *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+
+    uint32_t updatedValue;
+    if (enable) {
+        // Set bit 14: ori with 0x4000
+        updatedValue = headerValue | 0x4000;
+    } else {
+        // Clear bit 14
+        // Python-verified: rlwinm(v,0,18,16) mask = 0xFFFFBFFF
+        updatedValue = headerValue & 0xFFFFBFFF;
+    }
+
+    // Write back at offset 16
+    uint32_t savedWriteCursor = *(uint32_t*)((uint8_t*)this + 32);
+    *(uint32_t*)((uint8_t*)this + 32) = 16;
+    SinglesNetworkClient_0448_g(this, updatedValue, 16);
+    *(uint32_t*)((uint8_t*)this + 32) = savedWriteCursor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetOrderedFlag @ 0x82238A50 | size: 0x8C
+// Reads the "ordered delivery" flag (bit 14 / 0x4000) from the 16-bit
+// header field at stream offset 16.  Returns true if the bit is set.
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient::GetOrderedFlag() {
+    uint32_t headerValue = 0;
+    uint32_t totalBits = *(uint32_t*)((uint8_t*)this + 16);
+
+    // Align to 8-byte boundary
+    uint32_t alignedSize = (totalBits + 7) & 0xFFFFFFF8;
+
+    if (alignedSize >= 48) {
+        // Read 16-bit header at offset 16
+        uint32_t savedReadCursor = *(uint32_t*)((uint8_t*)this + 28);
+        *(uint32_t*)((uint8_t*)this + 28) = 16;
+        SinglesNetworkClient_8DF8_g(this, &headerValue, 16);
+        *(uint32_t*)((uint8_t*)this + 28) = savedReadCursor;
+    }
+
+    // Isolate bit 14 and convert to bool
+    // Python-verified: rlwinm(v,0,17,17) mask = 0x4000
+    return (headerValue & 0x4000) != 0;
+}
