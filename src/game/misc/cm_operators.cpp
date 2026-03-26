@@ -1199,3 +1199,418 @@ void cmOperatorCtor_SingletonDispatchSlot10(void* a1, void* a2) {
     DispatchFn dispatch = (DispatchFn)vtable[10];
     dispatch(mgr, a1, a2, 1);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmOperatorCtor camera action factories — batch 3
+//
+// These 10 factory functions all create cmAction objects (144 bytes) for
+// camera parameter sampling. Each allocates memory, builds two 16-byte
+// function descriptor tables and a type/flags struct on the stack, then
+// tail-calls cmActionCtor_11D0_fw to initialize the cmAction node.
+//
+// The only variation between them is:
+//   1. The action sampler function pointer (stored in the init descriptor)
+//   2. The dirty-flag bitmask indicating which camera output slots are written
+//
+// Common function pointer tables contain:
+//   - rage_DebugLog (nop in release) for unused callbacks
+//   - phDemoWorld_F120 for port registration
+//   - atSingleton_EB38_p for teardown
+//
+// Dirty flag bitmask semantics (per cm_cam_actions.cpp):
+//   0x0007 = base camera params (position XYZ)
+//   0x0038 = look-at target (XYZ)
+//   0x03C0 = orientation (vec4 + angle)
+//   0x3C00 = secondary orientation (vec4 + angle)
+//   0x3FFF = all 14 scalar slots
+//   0xC000 = vec4 slots 14+15
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Action sampler functions (camera parameter readers)
+extern "C" void atSingleton_9728_2h(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9740_fw(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_97F8_g(void* actionCtx, void* actionNode);
+
+// Common callback functions shared by all camera action factories
+extern "C" void rage_DebugLog(const char* fmt, ...);     // @ 0x8240E6D0 — nop in release
+extern "C" void phDemoWorld_F120(void* node);             // @ 0x8217F120 — port registration
+extern "C" void atSingleton_EB38_p(void* node);           // @ 0x8225EB38 — teardown
+
+// cmAction init function
+extern "C" void* cmActionCtor_11D0_fw(void* mem, void* callerArg, int portCount,
+                                       void* typeFlags, void* initDesc,
+                                       void* funcTable1, void* funcTable2);
+
+/**
+ * Helper: builds the common function descriptor tables and calls
+ * cmActionCtor_11D0_fw to construct a cmAction camera sampler node.
+ *
+ * @param callerArg   Opaque argument forwarded from the factory caller
+ * @param actionFn    The camera action sampler function pointer
+ * @param dirtyFlags  Bitmask of camera output slots this action writes
+ * @return            Constructed cmAction object, or nullptr on allocation failure
+ */
+static void* cmOperatorCtor_CreateCamAction(void* callerArg, void* actionFn, uint32_t dirtyFlags) {
+    void* mem = cmOperatorCtor_Allocate(144);
+    if (mem == nullptr) {
+        return nullptr;
+    }
+
+    // Type/flags descriptor (passed as r6)
+    uint32_t typeDesc[1] = { dirtyFlags };
+
+    // Init descriptor: {actionFn, atSingleton_EB38_p, 0, 0}
+    void* initDesc[4] = { actionFn, (void*)atSingleton_EB38_p, nullptr, nullptr };
+
+    // Function table 1: {rage_DebugLog, phDemoWorld_F120 data, ...}
+    // These are copied from the stack-built structs at sp+96 and sp+112
+    // Table 1 (sp+144 = copy of sp+96): {rage_DebugLog, phDemoWorld_F120, 0, atSingleton_EB38_p}
+    void* funcTable1[4] = { (void*)rage_DebugLog, (void*)phDemoWorld_F120,
+                            nullptr, (void*)atSingleton_EB38_p };
+
+    // Table 2 (sp+160 = copy of sp+112): {rage_DebugLog, ?, 0, atSingleton_EB38_p}
+    void* funcTable2[4] = { (void*)rage_DebugLog, nullptr,
+                            nullptr, (void*)atSingleton_EB38_p };
+
+    return cmActionCtor_11D0_fw(mem, callerArg, 2, typeDesc, initDesc, funcTable2, funcTable1);
+}
+
+// ── Camera position XYZ + vec4 slots 14+15 factory (flags=0xC000) ────────────
+
+/**
+ * cmOperatorCtor_CAA0_w @ 0x8217CAA0 | size: 0x124
+ *
+ * Creates a cmAction that samples two vec4 values from ports 0 and 1,
+ * writing them to camera output vec4 slots 14 and 15.
+ * Uses atSingleton_9728_2h as the action sampler.
+ */
+// cmOperatorCtor_CAA0_w @ 0x8217CAA0
+void* cmOperatorCtor_CamActionVec4Pair_A(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 0xC000);
+}
+
+/**
+ * cmOperatorCtor_CBC8_w @ 0x8217CBC8 | size: 0x124
+ *
+ * Creates a cmAction that samples two vec4 values from ports 0 and 1,
+ * writing them to camera output vec4 slots 14 and 15.
+ * Uses cmSampleCamActions_9740_fw as the action sampler.
+ */
+// cmOperatorCtor_CBC8_w @ 0x8217CBC8
+void* cmOperatorCtor_CamActionVec4Pair_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9740_fw, 0xC000);
+}
+
+// ── Camera base params factory (flags=0x7 = position XYZ) ────────────────────
+
+/**
+ * cmOperatorCtor_CCF0_w @ 0x8217CCF0 | size: 0x120
+ *
+ * Creates a cmAction that samples camera base position parameters (XYZ).
+ * Dirty flags 0x7 = slots 0, 1, 2.
+ */
+// cmOperatorCtor_CCF0_w @ 0x8217CCF0
+void* cmOperatorCtor_CamActionBaseXYZ(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 7);
+}
+
+// ── Camera rotation factory (flags=0x3 = pitch+yaw) ──────────────────────────
+
+/**
+ * cmOperatorCtor_CE10_w @ 0x8217CE10 | size: 0x120
+ *
+ * Creates a cmAction that samples camera rotation (pitch and yaw).
+ * Dirty flags 0x3 = slots 0, 1.
+ */
+// cmOperatorCtor_CE10_w @ 0x8217CE10
+void* cmOperatorCtor_CamActionRotation(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 3);
+}
+
+// ── Camera FOV factory (flags=0x4 = FOV slot) ────────────────────────────────
+
+/**
+ * cmOperatorCtor_CF30_w @ 0x8217CF30 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera field of view.
+ * Dirty flags 0x4 = slot 2.
+ */
+// cmOperatorCtor_CF30_w @ 0x8217CF30
+void* cmOperatorCtor_CamActionFOV(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 4);
+}
+
+// ── Camera look-at target factory (flags=0x38 = target XYZ) ──────────────────
+
+/**
+ * cmOperatorCtor_D050_w @ 0x8217D050 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera look-at target position.
+ * Dirty flags 0x38 = slots 3, 4, 5.
+ */
+// cmOperatorCtor_D050_w @ 0x8217D050
+void* cmOperatorCtor_CamActionLookAtTarget(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 56);
+}
+
+// ── Camera orientation factory (flags=0x3C0 = orientation vec4) ──────────────
+
+/**
+ * cmOperatorCtor_D170_w @ 0x8217D170 | size: 0x120
+ *
+ * Creates a cmAction that samples camera orientation (vec4 + angle).
+ * Dirty flags 0x3C0 = slots 6, 7, 8, 9.
+ */
+// cmOperatorCtor_D170_w @ 0x8217D170
+void* cmOperatorCtor_CamActionOrientation(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 960);
+}
+
+// ── Camera secondary orientation factory (flags=0x3C00) ──────────────────────
+
+/**
+ * cmOperatorCtor_D290_w @ 0x8217D290 | size: 0x120
+ *
+ * Creates a cmAction that samples secondary camera orientation.
+ * Dirty flags 0x3C00 = slots 10, 11, 12, 13.
+ */
+// cmOperatorCtor_D290_w @ 0x8217D290
+void* cmOperatorCtor_CamActionSecondaryOrientation(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 15360);
+}
+
+// ── Camera all-slots factory (flags=0x3FFF = all 14 scalar slots) ────────────
+
+/**
+ * cmOperatorCtor_D3B0_w @ 0x8217D3B0 | size: 0x120
+ *
+ * Creates a cmAction that samples all 14 scalar camera output slots.
+ * Dirty flags 0x3FFF = all slots 0-13.
+ */
+// cmOperatorCtor_D3B0_w @ 0x8217D3B0
+void* cmOperatorCtor_CamActionAllSlots(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 16383);
+}
+
+// ── Camera 2-float sampler factory (flags=0x7, different sampler) ────────────
+
+/**
+ * cmOperatorCtor_D4D0_w @ 0x8217D4D0 | size: 0x120
+ *
+ * Creates a cmAction that samples 2 floats from ports 0 and 1, checking
+ * port status and writing to camera output slots 0 and 1.
+ * Uses cmSampleCamActions_97F8_g as the action sampler.
+ * Dirty flags 0x7 = base position slots.
+ */
+// cmOperatorCtor_D4D0_w @ 0x8217D4D0
+void* cmOperatorCtor_CamAction2Float(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_97F8_g, 7);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmCond 4-entry lookup variants (vtable @ 0x82055904)
+// These check 4 condition entries, returning the value from the first true
+// condition. If none match, the default entry at offset +76 is returned.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * cmCond_vfn_5_D168_1 @ 0x8226D168 | size: 0x70
+ *
+ * 4-entry variant: Evaluates conditions and returns matching int (dim) result.
+ * Iterates through 4 condition entries at 16-byte stride starting at +12.
+ * Returns the value from the first entry whose condition is true,
+ * or the default value at offset +76.
+ */
+void cmCond_GetDim_4Entry(void* self, int* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 4; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = cmSwitch_4B60(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    // No condition matched — return default
+    *outResult = cmSwitch_4B60(base + 76);
+}
+
+/**
+ * cmCond_vfn_4_D1D8_1 @ 0x8226D1D8 | size: 0x70
+ *
+ * 4-entry variant: Evaluates conditions and returns matching float result.
+ */
+void cmCond_GetFloat_4Entry(void* self, float* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 4; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = cmOperator_EvalFloat(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    *outResult = cmOperator_EvalFloat(base + 76);
+}
+
+/**
+ * cmCond_vfn_3_D248_1 @ 0x8226D248 | size: 0x70
+ *
+ * 4-entry variant: Evaluates conditions and returns matching bool result.
+ */
+void cmCond_GetBool_4Entry(void* self, bool* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 4; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = cmCond_21B0(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    *outResult = cmCond_21B0(base + 76);
+}
+
+/**
+ * cmCond_vfn_2_D2B8_1 @ 0x8226D2B8 | size: 0x88
+ *
+ * 4-entry variant: Evaluates conditions and returns matching vector result.
+ * Uses 16-byte aligned vector copy for the output.
+ */
+void cmCond_GetVector_4Entry(void* self, void* outVector) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 4; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            util_92D8(outVector, base + 20 + i * 16);
+            return;
+        }
+    }
+
+    util_92D8(outVector, base + 76);
+}
+
+/**
+ * cmCond_vfn_1_D340_1 @ 0x8226D340 | size: 0x70
+ *
+ * 4-entry variant: Evaluates conditions and returns matching int32 result.
+ * Uses util_4BD8 (GetInt) instead of cmSwitch_4B60 (GetDim).
+ */
+void cmCond_GetInt32_4Entry(void* self, int* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 4; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = util_4BD8(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    *outResult = util_4BD8(base + 76);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmCond 5-entry lookup variants (vtable @ 0x8205595C)
+// These check 5 condition entries, returning the value from the first true
+// condition. If none match, the default entry at offset +92 is returned.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * cmCond_vfn_5_D3B0_1 @ 0x8226D3B0 | size: 0x70
+ *
+ * 5-entry variant: Evaluates conditions and returns matching int (dim) result.
+ */
+void cmCond_GetDim_5Entry(void* self, int* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 5; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = cmSwitch_4B60(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    *outResult = cmSwitch_4B60(base + 92);
+}
+
+/**
+ * cmCond_vfn_4_D420_1 @ 0x8226D420 | size: 0x70
+ *
+ * 5-entry variant: Evaluates conditions and returns matching float result.
+ */
+void cmCond_GetFloat_5Entry(void* self, float* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 5; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = cmOperator_EvalFloat(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    *outResult = cmOperator_EvalFloat(base + 92);
+}
+
+/**
+ * cmCond_vfn_3_D490_1 @ 0x8226D490 | size: 0x70
+ *
+ * 5-entry variant: Evaluates conditions and returns matching bool result.
+ */
+void cmCond_GetBool_5Entry(void* self, bool* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 5; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = cmCond_21B0(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    *outResult = cmCond_21B0(base + 92);
+}
+
+/**
+ * cmCond_vfn_2_D500_1 @ 0x8226D500 | size: 0x88
+ *
+ * 5-entry variant: Evaluates conditions and returns matching vector result.
+ */
+void cmCond_GetVector_5Entry(void* self, void* outVector) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 5; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            util_92D8(outVector, base + 20 + i * 16);
+            return;
+        }
+    }
+
+    util_92D8(outVector, base + 92);
+}
+
+/**
+ * cmCond_vfn_1_D588_1 @ 0x8226D588 | size: 0x70
+ *
+ * 5-entry variant: Evaluates conditions and returns matching int32 result.
+ */
+void cmCond_GetInt32_5Entry(void* self, int* outResult) {
+    char* base = (char*)self;
+
+    for (int i = 0; i < 5; i++) {
+        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
+        if (conditionMet) {
+            *outResult = util_4BD8(base + 20 + i * 16);
+            return;
+        }
+    }
+
+    *outResult = util_4BD8(base + 92);
+}
