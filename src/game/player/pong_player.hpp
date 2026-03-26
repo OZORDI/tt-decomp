@@ -339,6 +339,19 @@ struct pongPlayer {
     bool IsInContactZone();
     float GetNormalizedRecoveryRate();
     void* SyncNetworkState();
+
+    // ── Batch 11: small functions (64-256 bytes) ─────────────────────────
+    bool IsBallSplashActiveForSlot();                      // @ 0x821A0C58
+    void FindRegisteredObjectByAddress(void* target);      // @ 0x8218AED0
+    void SetupNetworkPlayerEntry(int index, int offset, uint32_t param);  // @ 0x821C9C60
+    void ResetReticleEntries();                            // @ 0x82384510
+    float GetEffectiveSpeedWithSlowMo();                   // @ 0x821C8E88
+    void SetShotDirection(float* rect);                    // @ 0x821D6360
+    void AccumulateShotDirection(float* rect);             // @ 0x821D63E8
+    void GetFadeAlpha(float* outAlpha);                    // @ 0x821A7F98
+    void ResetShotState(bool enableAnim);                  // @ 0x821962C0
+    void ClampAndApplyInputAngle(float inputAngle);        // @ 0x82199C08
+    void CopyBitfieldFromSource(void* source);             // @ 0x821D6D90
 };
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────

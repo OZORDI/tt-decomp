@@ -3154,3 +3154,440 @@ void* pongPlayer::SyncNetworkState() {
     SinglesNetworkClient_BE30_g(netObj, 50);
     return netObj;
 }
+
+
+// ===========================================================================
+// SECTION 11 — Batch: 10 small pongPlayer functions (64-256 bytes)
+// ===========================================================================
+
+// ── External helpers for this batch ──────────────────────────────────────
+extern bool fxBallSplash2D_IsActive(void* splashObj);         // @ 0x821D5998
+extern void pongPlayer_NormalizeShotVector(void* shotObj);    // @ 0x821D4EA0
+extern void pongPlayer_ApplyShotToGrid(void* shotObj, void* gridSlot, void* parent, int flags);  // @ 0x821D5010
+extern void pongPlayer_ClampInputToRange(void* inputObj, float* value);  // @ 0x8219CF10
+extern void pongPlayer_LookupPlayerSlot(void* slotData);     // @ 0x821E7CC0
+extern void pongPlayer_InitNetworkEntry(void* entryBase);    // @ 0x821E05A8
+extern void pongCreature_UpdateAnimState(void* creature);     // @ 0x820C59C0
+extern void pongPlayer_UpdateDrawState(void* player);         // @ 0x82194C08
+
+
+/**
+ * pongPlayer::IsBallSplashActive  @ 0x821A0C58 | size: 0x50
+ *
+ * Checks whether the ball splash 2D effect for the current player slot
+ * is currently active.  Looks up the splash object from a global array
+ * indexed by the active player slot, then queries its active state.
+ */
+// HACK: address comment for linker: @ 0x821A0C58
+extern uint32_t g_activePlayerSlot;       // @ SDA +25976 (0x82606578)
+extern uint8_t  g_ballSplashArray[];      // @ 0x8261A3D0 — 416-byte-per-entry array, +48 base
+
+bool pongPlayer::IsBallSplashActiveForSlot() {  // pongPlayer_0C58_g @ 0x821A0C58
+    void* splashObj = (void*)(g_ballSplashArray + g_activePlayerSlot * 416 + 48);
+    return fxBallSplash2D_IsActive(splashObj);
+}
+
+
+/**
+ * pongPlayer::FindRegisteredObjectByAddress  @ 0x8218AED0 | size: 0x6C
+ *
+ * Linear search through the registered object array at +152 for
+ * a matching pointer.  If found more than once, asserts with a debug
+ * message.  If not found at all, asserts with a "not found" message.
+ *
+ * Unlike FindRegisteredObject (@ 0x8219AED0) which returns the index,
+ * this variant asserts on both "duplicate" and "not found" conditions.
+ * It only calls the debug log (nop in release builds).
+ */
+// HACK: address comment for linker: @ 0x8218AED0
+void pongPlayer::FindRegisteredObjectByAddress(void* target) {  // pongPlayer_AED0_p39 @ 0x8218AED0
+    int count = *(int*)((char*)this + 144);
+    void** array = *(void***)((char*)this + 152);
+    int foundIndex = -1;
+
+    for (int i = 0; i < count; i++) {
+        if (foundIndex != -1) {
+            // Already found once — duplicate entry detected
+            uint32_t name = *(uint32_t*)((char*)target + 4);
+            nop_8240E6D0("pongPlayer::FindRegisteredObjectByAddress() - duplicate entry %s", name);
+            return;
+        }
+        if (array[i] == target) {
+            foundIndex = i;
+        }
+    }
+
+    if (foundIndex != -1) {
+        // Found once but scaffold still asserts (likely debug-only path)
+        uint32_t name = *(uint32_t*)((char*)target + 4);
+        nop_8240E6D0("pongPlayer::FindRegisteredObjectByAddress() - duplicate entry %s", name);
+        return;
+    }
+
+    // Not found at all
+    uint32_t name = *(uint32_t*)((char*)target + 4);
+    nop_8240E6D0("pongPlayer::FindRegisteredObjectByAddress() - object not found %s", name);
+}
+
+
+/**
+ * pongPlayer::SetupNetworkPlayerEntry  @ 0x821C9C60 | size: 0x70
+ *
+ * Called from the network client to configure a player entry in the
+ * per-player data table.  Looks up the player slot, reads a byte from
+ * the source data at (index + offset + 64), and if the data table
+ * entry is valid (0..3), stores the parameter and initialises the
+ * network entry sub-object.
+ */
+// HACK: address comment for linker: @ 0x821C9C60
+extern uint32_t  g_networkPlayerSlot;           // @ 0x8271A32C
+extern uint8_t*  g_networkPlayerDataTable;      // @ 0x8271A31C — 808-byte entries
+
+void pongPlayer::SetupNetworkPlayerEntry(int index, int offset, uint32_t param) {  // pongPlayer_9C60_g @ 0x821C9C60
+    pongPlayer_LookupPlayerSlot((void*)(uintptr_t)g_networkPlayerSlot);
+
+    uint8_t sourceByte = *((uint8_t*)((uintptr_t)(index + offset) + 64));
+    int entryIndex = *(int32_t*)(g_networkPlayerDataTable + (index + 1) * 4);
+
+    if (entryIndex < 0 || entryIndex >= 4) {
+        return;
+    }
+
+    uint8_t* entry = g_networkPlayerDataTable + entryIndex * 808;
+    *(uint32_t*)(entry + 20) = param;
+    pongPlayer_InitNetworkEntry((void*)(entry + 12));
+}
+
+
+/**
+ * pongPlayer::ResetReticleEntries  @ 0x82384510 | size: 0x78
+ *
+ * Resets a reticle/targeting sub-object by zeroing its timing floats
+ * at +48 and +56, clearing active flags at +52 and +60, then iterating
+ * over all child entries and calling their Reset virtual method
+ * (vtable slot 1). Finally clears the dirty flag at +62.
+ */
+// HACK: address comment for linker: @ 0x82384510
+extern const float g_kZeroFloat;  // @ 0x8202D110
+
+void pongPlayer::ResetReticleEntries() {  // pongPlayer_4510_wrh @ 0x82384510
+    void* self = (void*)this;
+    uint16_t count = *(uint16_t*)((char*)self + 8);
+
+    *(float*)((char*)self + 56) = 0.0f;
+    *(float*)((char*)self + 48) = 0.0f;
+    *(uint8_t*)((char*)self + 60) = 0;
+    *(uint8_t*)((char*)self + 52) = 0;
+
+    void** array = *(void***)((char*)self + 4);
+    for (int i = 0; i < (int)count; i++) {
+        void* entry = array[i];
+        // Call vtable slot 1 (Reset) on each entry
+        typedef void (*ResetFn)(void*);
+        ((ResetFn)(*(void***)entry)[1])(entry);
+    }
+
+    *(uint8_t*)((char*)self + 62) = 0;
+}
+
+
+/**
+ * pongPlayer::GetEffectiveSpeed  @ 0x821C8E88 | size: 0x78
+ *
+ * Returns the player's effective movement speed.  When the player has
+ * an active override flag at +334 OR a non-null speed object at +340,
+ * returns the boosted speed from +268.  Otherwise checks a global
+ * "slow motion" pointer — if set, returns boosted speed; if clear,
+ * returns the base speed from +264.
+ */
+// HACK: address comment for linker: @ 0x821C8E88
+extern void* g_pSlowMotionState;  // @ 0x825CB3C0 (+4)
+
+float pongPlayer::GetEffectiveSpeedWithSlowMo() {  // pongPlayer_8E88_g @ 0x821C8E88
+    bool hasOverride = *(uint8_t*)((char*)this + 334) != 0;
+
+    if (!hasOverride) {
+        void* speedObj = *(void**)((char*)this + 340);
+        bool hasSpeedObj = (speedObj != nullptr);
+        if (!hasSpeedObj) {
+            // No override, no speed object — check slow motion state
+            void* slowMoPtr = *(void**)((char*)g_pSlowMotionState + 4);
+            if (slowMoPtr != nullptr) {
+                // Slow motion active — return boosted speed
+                return *(float*)((char*)this + 268);
+            }
+            // Normal speed
+            return *(float*)((char*)this + 264);
+        }
+    }
+
+    // Override or speed object present — return boosted speed
+    return *(float*)((char*)this + 268);
+}
+
+
+/**
+ * pongPlayer::SetShotDirection  @ 0x821D6360 | size: 0x84
+ *
+ * Sets the shot direction vector on the player's shot sub-object at +64.
+ * Computes the direction from a 4-float bounding rect (minX, minY, maxX, maxY):
+ *   dirX = rect.maxX - rect.maxY  (cross-court component)
+ *   dirY = rect.minX - rect.minY  (depth component)
+ * Then sets the Z component from a constant, normalises the vector,
+ * and applies it to the grid system.
+ *
+ * r3 = parent object, r4 = bounding rect (4 floats)
+ */
+// HACK: address comment for linker: @ 0x821D6360
+extern const float g_kShotDirectionConstants[];  // @ 0x8202D108 — 3 floats at offsets 0, 8, 16
+
+void pongPlayer::SetShotDirection(float* rect) {  // pongPlayer_6360_g @ 0x821D6360
+    float* shotVec = (float*)((char*)this + 64);
+
+    float dirX = rect[3] - rect[2];  // maxY - maxX
+    float dirY = rect[0] - rect[1];  // minX - minY
+
+    shotVec[0] = dirX;
+    shotVec[1] = dirY;
+    shotVec[2] = g_kShotDirectionConstants[2];  // Z from constant table
+
+    pongPlayer_NormalizeShotVector((void*)shotVec);
+
+    float* gridSlot = shotVec + 4;  // +80 from base = +16 from shotVec
+    pongPlayer_ApplyShotToGrid((void*)shotVec, gridSlot, (void*)this, 1);
+}
+
+
+/**
+ * pongPlayer::AccumulateShotDirection  @ 0x821D63E8 | size: 0x88
+ *
+ * Accumulates (adds) a direction delta to the existing shot vector
+ * at +64 from a bounding rect, then renormalises and applies to grid.
+ * Similar to SetShotDirection but adds to existing values instead of
+ * replacing them.
+ */
+// HACK: address comment for linker: @ 0x821D63E8
+void pongPlayer::AccumulateShotDirection(float* rect) {  // pongPlayer_63E8_g @ 0x821D63E8
+    float* shotVec = (float*)((char*)this + 64);
+
+    float deltaY = rect[0] - rect[1];  // minX - minY
+    float deltaX = rect[3] - rect[2];  // maxY - maxX
+
+    // Accumulate onto existing direction
+    shotVec[1] += deltaY;
+    shotVec[0] += deltaX;
+
+    pongPlayer_NormalizeShotVector((void*)shotVec);
+
+    float* gridSlot = shotVec + 4;  // +16 from shotVec
+    pongPlayer_ApplyShotToGrid((void*)shotVec, gridSlot, (void*)this, 1);
+}
+
+
+/**
+ * pongPlayer::GetFadeAlpha  @ 0x821A7F98 | size: 0x84
+ *
+ * Computes a fade alpha value for the player's visual representation.
+ * Uses one of two fade paths depending on a direction flag at +28:
+ *
+ *   Path A (flag set): If both current (+4) and max (+8) are above zero,
+ *     computes alpha = ((max - current) / max) * scale.
+ *
+ *   Path B (flag clear): If both current (+12) and max (+16) are above zero,
+ *     computes alpha = (1.0 - (max - current) / max) * scale.
+ *
+ * Returns 0.0 if the relevant values are not positive.
+ * The 'scale' constant comes from the data table at offset +16.
+ */
+// HACK: address comment for linker: @ 0x821A7F98
+void pongPlayer::GetFadeAlpha(float* outAlpha) {  // pongPlayer_7F98_g @ 0x821A7F98
+    // r3+8 is the actual base (addi r3,r3,8 in scaffold was pre-offset)
+    float* data = (float*)((char*)this + 8);
+    uint8_t directionFlag = *(uint8_t*)((char*)data + 28);
+
+    extern const float g_kShotDirConsts[];  // same constant table at 0x8202D108
+
+    float zeroConst = g_kShotDirConsts[2];  // offset +8 in table
+    float oneConst  = g_kShotDirConsts[0];  // offset +0 in table
+    float scaleConst = g_kShotDirConsts[4]; // offset +16 in table
+
+    if (directionFlag) {
+        float current = *(float*)((char*)data + 4);
+        if (current <= zeroConst) {
+            return;  // f1 stays as zeroConst
+        }
+        float maximum = *(float*)((char*)data + 8);
+        if (maximum <= zeroConst) {
+            return;
+        }
+        float ratio = (maximum - current) / maximum;
+        *outAlpha = ratio * scaleConst;
+        return;
+    }
+
+    // Path B: reverse fade
+    float current2 = *(float*)((char*)data + 12);
+    if (current2 <= zeroConst) {
+        return;
+    }
+    float maximum2 = *(float*)((char*)data + 16);
+    if (maximum2 <= zeroConst) {
+        return;
+    }
+
+    float ratio2 = (maximum2 - current2) / maximum2;
+    float invRatio = oneConst - ratio2;
+    *outAlpha = invRatio * scaleConst;
+}
+
+
+/**
+ * pongPlayer::ResetShotState  @ 0x821962C0 | size: 0x88
+ *
+ * Called from Process() to reset shot-related state when a new rally begins.
+ * If a "shot pending" flag at +6537 is set, it clears it, zeroes out the
+ * shot timing floats at +6512/+6516/+6572, and enables the shot readiness
+ * flag on the creature's animation controller.
+ *
+ * Then, regardless of the pending flag, if the creature pointer (+452) is
+ * valid, it sets or clears the animation controller's active flag at +134
+ * based on the input parameter.
+ */
+// HACK: address comment for linker: @ 0x821962C0
+void pongPlayer::ResetShotState(bool enableAnim) {  // pongPlayer_62C0_g @ 0x821962C0
+    uint8_t shotPending = *(uint8_t*)((char*)this + 6537);
+
+    if (shotPending) {
+        void* creature = *(void**)((char*)this + 452);
+
+        *(uint8_t*)((char*)this + 6537) = 0;
+        *(float*)((char*)this + 6512) = 0.0f;
+        *(float*)((char*)this + 6516) = 0.0f;
+        *(float*)((char*)this + 6572) = 0.0f;
+
+        // Enable readiness flag on creature's animation controller
+        void* animCtrl = *(void**)((char*)creature + 168);
+        uint8_t* animFlags = (uint8_t*)((char*)animCtrl + 16 + 48);
+        *animFlags |= 1;
+
+        *(uint8_t*)((char*)this + 6637) = 0;
+    }
+
+    void* creature = *(void**)((char*)this + 452);
+    if (!creature) {
+        return;
+    }
+
+    if (enableAnim) {
+        void* animCtrl = *(void**)((char*)creature + 168);
+        // Zero out the velocity vector at +208 (16-byte aligned)
+        float* velVec = (float*)((char*)animCtrl + 208);
+        velVec[0] = 0.0f;
+        velVec[1] = 0.0f;
+        velVec[2] = 0.0f;
+        velVec[3] = 0.0f;
+        *(uint8_t*)((char*)animCtrl + 134) = 1;
+    } else {
+        void* animCtrl = *(void**)((char*)creature + 168);
+        *(uint8_t*)((char*)animCtrl + 134) = 0;
+    }
+}
+
+
+/**
+ * pongPlayer::ClampAndApplyInputAngle  @ 0x82199C08 | size: 0x88
+ *
+ * Takes an absolute input angle (f1), applies a dead-zone clamp,
+ * caps it to a maximum value, and if a direction flag at +36 is clear,
+ * subtracts from the base value and clamps to [0, max], then passes
+ * the result to the input application function.
+ *
+ * The clamp logic uses fsel (PPC floating-point select):
+ *   if (|angle| - deadzone) >= 0: keep |angle|, else use 0
+ *   if (clamped - max) >= 0: use max, else keep clamped
+ */
+// HACK: address comment for linker: @ 0x82199C08
+extern const double g_kInputDeadzone;   // @ 0x82079D00 (double, 8 bytes)
+extern const double g_kInputClampZero;  // @ 0x82079B00 (double)
+
+void pongPlayer::ClampAndApplyInputAngle(float inputAngle) {  // pongPlayer_9C08_g @ 0x82199C08
+    float* inputData = (float*)((char*)this + 8);
+
+    float absAngle = fabsf(inputAngle);
+
+    extern const float g_kInputAngleDeadzone;  // @ 0x82079C04
+    extern const double g_kInputMaxAngle;      // @ 0x82079D00
+    float maxAngle = (float)g_kInputMaxAngle;
+
+    // Dead-zone clamp: if absAngle < deadzone, treat as zero
+    float afterDeadzone = (absAngle - g_kInputAngleDeadzone >= 0.0f) ? absAngle : 0.0f;
+
+    // Cap to maximum
+    float clamped = (afterDeadzone - maxAngle >= 0.0f) ? maxAngle : afterDeadzone;
+
+    uint8_t dirFlag = *(uint8_t*)((char*)inputData + 28);
+    if (dirFlag == 0) {
+        // Forward direction: subtract clamped from base, clamp to [0, max]
+        float base = *(float*)((char*)inputData + 0);
+        float adjusted = base - clamped;
+
+        extern const double g_kInputClampNeg;  // @ 0x82079B00
+        float floorVal = (float)g_kInputClampNeg;
+
+        // Clamp to >= 0
+        float floored = (adjusted >= 0.0f) ? adjusted : floorVal;
+
+        // Clamp to <= max
+        float final = (floored - maxAngle >= 0.0f) ? maxAngle : floored;
+
+        float result[1] = { final };
+        pongPlayer_ClampInputToRange((void*)inputData, result);
+    }
+}
+
+
+/**
+ * pongPlayer::CopyBitfieldFromSource  @ 0x821D6D90 | size: 0x88
+ *
+ * Copies a bitfield array from a source object into this object's
+ * bitfield storage.  For each bit position (0..count-1), reads the
+ * corresponding bit from the source's bitfield (at src+0 pointer)
+ * and conditionally sets/clears it in this object's bitfield (at
+ * this+0 pointer).  Also copies the float at src+8 to this+8.
+ *
+ * Uses the standard bit-manipulation pattern:
+ *   word_index = bit_pos >> 5
+ *   bit_mask   = 1 << (bit_pos & 31)
+ *   new_word   = (old_word ^ (-flag ^ old_word)) & mask ^ old_word
+ *   which is equivalent to: set or clear the bit based on flag
+ */
+// HACK: address comment for linker: @ 0x821D6D90
+void pongPlayer::CopyBitfieldFromSource(void* source) {  // pongPlayer_6D90_p46 @ 0x821D6D90
+    uint16_t bitCount = *(uint16_t*)((char*)this + 6);
+
+    if (bitCount <= 0) {
+        // No bits to copy, just copy the float
+        *(float*)((char*)this + 8) = *(float*)((char*)source + 8);
+        return;
+    }
+
+    for (int i = 0; i < (int)bitCount; i++) {
+        int wordIndex = i >> 5;
+        uint32_t bitMask = 1u << (i & 31);
+
+        // Read source bit
+        uint32_t* srcWords = *(uint32_t**)((char*)source + 0);
+        bool srcBit = (srcWords[wordIndex] & bitMask) != 0;
+
+        // Set/clear in destination
+        uint32_t* dstWords = *(uint32_t**)((char*)this + 0);
+        if (srcBit) {
+            dstWords[wordIndex] |= bitMask;
+        } else {
+            dstWords[wordIndex] &= ~bitMask;
+        }
+    }
+
+    // Copy the float value
+    *(float*)((char*)this + 8) = *(float*)((char*)source + 8);
+}

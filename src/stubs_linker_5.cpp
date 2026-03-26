@@ -262,3 +262,30 @@ void xml_ReadString(const char* a, char* b, int c) {
     (void)a;
     if (b && c > 0) b[0] = '\0';
 }
+
+// ============================================================================
+// pongPlayer batch 11 — external stubs
+// ============================================================================
+
+bool fxBallSplash2D_IsActive(void* a) { (void)a; return false; }
+void pongPlayer_NormalizeShotVector(void* a) { (void)a; }
+void pongPlayer_ApplyShotToGrid(void* a, void* b, void* c, int d) {
+    (void)a; (void)b; (void)c; (void)d;
+}
+void pongPlayer_ClampInputToRange(void* a, float* b) { (void)a; (void)b; }
+void pongPlayer_LookupPlayerSlot(void* a) { (void)a; }
+void pongPlayer_InitNetworkEntry(void* a) { (void)a; }
+void pongCreature_UpdateAnimState(void* a) { (void)a; }
+void pongPlayer_UpdateDrawState(void* a) { (void)a; }
+
+uint32_t g_activePlayerSlot = 0;
+uint8_t  g_ballSplashArray[4096] = {};
+uint32_t g_networkPlayerSlot = 0;
+uint8_t* g_networkPlayerDataTable = nullptr;
+void*    g_pSlowMotionState = nullptr;
+
+extern const float g_kShotDirectionConstants[5] = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+extern const float g_kShotDirConsts[5] = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+extern const float g_kInputAngleDeadzone = 0.0f;
+extern const double g_kInputMaxAngle = 1.0;
+extern const double g_kInputClampNeg = 0.0;
