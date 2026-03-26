@@ -718,6 +718,327 @@ void snStarting_OnUpdate(void* thisPtr) { // @ 0x823E4078
     util_DA90(context, thisPtr, selectedChild);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM State Destructors — Batch 3
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External destructor helpers
+extern void util_5B50(void* thisPtr);  // @ 0x823E5B50 — snMigrating-level destructor body
+
+/**
+ * snMigrating::~snMigrating @ 0x823E5998 | size: 0x5C | vfn_0
+ *
+ * Destructor for the Migrating state. Destroys the embedded migrate machine
+ * child at this+24 via util_5B50, then calls hsmState base destructor.
+ * Conditionally frees memory if flags bit 0 is set.
+ */
+void snMigrating_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5998
+    util_5B50((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snChangingPresence::~snChangingPresence @ 0x823E5BF0 | size: 0x64 | vfn_0
+ *
+ * Destructor for the ChangingPresence state. Destroys the embedded
+ * WaitingForReplies child at this+72 via util_5C58, then destroys the
+ * Changing notifier at this+24 via snSession_5E20_gen, then calls hsmState
+ * base destructor. Conditionally frees memory.
+ */
+void snChangingPresence_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5BF0
+    util_5C58((char*)thisPtr + 72);
+    snSession_5E20_gen((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snArbGuestRegistering::~snArbGuestRegistering @ 0x823E6068 | size: 0x5C | vfn_0
+ *
+ * Destructor for the ArbGuestRegistering sub-state within Active::Idle.
+ * Destroys the embedded child at this+24 via util_6178, then calls hsmState
+ * base destructor. Conditionally frees memory.
+ */
+void snArbGuestRegistering_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E6068
+    util_6178((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession Notification Callback Handlers — Batch 3
+//
+// These handle async operation results. Each checks the result code (r5),
+// and on success creates an EvtCreateSucceeded event with session data,
+// or on failure creates an EvtCreateFailed event. Both are dispatched
+// via snSession_9478_fw or util_93D0.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External event dispatch helpers
+extern void snSession_DispatchEventWithData(void* thisPtr, void* eventData);  // @ 0x823E9478
+extern void snSession_DispatchSimpleEvent(void* thisPtr, void* eventData);    // @ 0x823E93D0
+extern void snSession_DispatchStartEvent(void* thisPtr, void* eventData);     // @ 0x823E95D8
+
+/**
+ * snSession_DD70_w @ 0x823DDD70 | size: 0x84
+ *
+ * Notification callback for create-guest operations (result codes 2/3).
+ * On result=2 (success): constructs EvtCreateSucceeded event with session
+ * data from session+276/280, dispatches via snSession_DispatchEventWithData.
+ * On result=3 (failure): constructs EvtCreateFailed event, dispatches via
+ * snSession_DispatchSimpleEvent.
+ */
+void snSession_DD70_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DDD70
+    if (resultCode == 2) {
+        // Success — build EvtCreateSucceeded with session data
+        void* session = *(void**)((char*)thisPtr + 20);
+        uint32_t sessionId = *(uint32_t*)((char*)session + 276);
+
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(uint32_t*)(eventData + 12) = sessionId;
+        // Copy 8 bytes of session handle from session+280
+        uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
+        *(uint64_t*)(eventData + 16) = sessionHandle;
+        // Set vtable to EvtCreateSucceeded
+        *(void**)eventData = (void*)0x82072AA0;
+
+        snSession_DispatchEventWithData(thisPtr, eventData);
+        return;
+    }
+
+    if (resultCode == 3) {
+        // Failure — build EvtCreateFailed
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, eventData);
+    }
+}
+
+/**
+ * snSession_E1A0_w @ 0x823DE1A0 | size: 0x84
+ *
+ * Notification callback for config-request operations (result codes 8/9).
+ * Same pattern as DD70_w: on result=8 (success), creates EvtCreateSucceeded;
+ * on result=9 (failure), creates EvtCreateFailed.
+ */
+void snSession_E1A0_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DE1A0
+    if (resultCode == 8) {
+        void* session = *(void**)((char*)thisPtr + 20);
+        uint32_t sessionId = *(uint32_t*)((char*)session + 276);
+
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(uint32_t*)(eventData + 12) = sessionId;
+        uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
+        *(uint64_t*)(eventData + 16) = sessionHandle;
+        *(void**)eventData = (void*)0x82072AA0;  // EvtCreateSucceeded vtable
+
+        snSession_DispatchEventWithData(thisPtr, eventData);
+        return;
+    }
+
+    if (resultCode == 9) {
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, eventData);
+    }
+}
+
+/**
+ * snSession_E990 @ 0x823DE990 | size: 0x84
+ *
+ * Notification callback for start-session operations (result codes 10/11).
+ * On result=10 (success), creates EvtCreateSucceeded with session data.
+ * On result=11 (failure), creates EvtStartSessionFailed event and
+ * dispatches via snSession_DispatchStartEvent.
+ */
+void snSession_E990(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DE990
+    if (resultCode == 10) {
+        void* session = *(void**)((char*)thisPtr + 20);
+        uint32_t sessionId = *(uint32_t*)((char*)session + 276);
+
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(uint32_t*)(eventData + 12) = sessionId;
+        uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
+        *(uint64_t*)(eventData + 16) = sessionHandle;
+        *(void**)eventData = (void*)0x82072AA0;  // EvtCreateSucceeded vtable
+
+        snSession_DispatchEventWithData(thisPtr, eventData);
+        return;
+    }
+
+    if (resultCode == 11) {
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(void**)eventData = (void*)0x82072A8C;  // EvtStartSessionFailed vtable
+        snSession_DispatchStartEvent(thisPtr, eventData);
+    }
+}
+
+/**
+ * snSession_EB48_w @ 0x823DEB48 | size: 0x74
+ *
+ * Notification callback for simple event pairs (result codes 14/15).
+ * Both success (14) and failure (15) create an EvtCreateFailed event
+ * and dispatch via snSession_DispatchSimpleEvent. Returns early if
+ * neither code matches.
+ */
+void snSession_EB48_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DEB48
+    if (resultCode == 14) {
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, eventData);
+        return;
+    }
+
+    if (resultCode == 15) {
+        uint8_t eventData[24];
+        util_DA08(eventData);
+        *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, eventData);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession Event Queue and Utility Functions — Batch 3
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snSession::EnqueueDestroyEvent @ 0x823E6D68 | size: 0xAC
+ *
+ * Creates and enqueues an EvtDestroy event into the session's event queue.
+ * Gets the event queue from context+56 (via vfn_11 on the session offset+212),
+ * allocates a 24-byte event node via the queue's allocator (vfn_1 at +4),
+ * copies the EvtDestroy data into it, and inserts it into the queue via
+ * snSession_AddNode_C068.
+ *
+ * Returns true if the event was successfully enqueued, false if allocation failed.
+ */
+bool snSession_EnqueueDestroyEvent(void* thisPtr) { // @ 0x823E6D68
+    char* sessionOffset = (char*)thisPtr + 212;
+
+    // Initialize event data on stack with EvtDestroy vtable
+    uint8_t eventData[24];
+    util_DA08(eventData);
+    *(void**)eventData = (void*)0x82072968;  // EvtDestroy vtable
+
+    // Get event queue via vfn_11 (session+212 has its own vtable)
+    void** vtable = *(void***)sessionOffset;
+
+    // Allocate event node: call allocator (vfn_1) with size=12, flags=0
+    void* allocator = *(void**)((char*)sessionOffset + 4);
+    void** allocVtable = *(void***)allocator;
+    void* (*allocFn)(void*, int32_t, int32_t) = (void* (*)(void*, int32_t, int32_t))allocVtable[1];
+    void* eventNode = allocFn(allocator, 12, 0);
+
+    if (eventNode == nullptr) {
+        return false;
+    }
+
+    // Set event node vtable to hsmEvent base
+    *(void**)eventNode = (void*)0x82072864;
+
+    // Copy event data fields into the node
+    // Set EvtDestroy vtable on node
+    *(void**)eventNode = (void*)0x82072968;
+
+    // Copy fields from stack event data to allocated node
+    uint32_t field1 = *(uint32_t*)(eventData + 4);
+    uint32_t field2 = *(uint32_t*)(eventData + 8);
+    *(uint32_t*)((char*)eventNode + 4) = field1;
+    *(uint32_t*)((char*)eventNode + 8) = field2;
+
+    // Insert into event queue
+    void* eventQueue = (char*)sessionOffset + 8;  // queue at offset+8 from session+212
+    snSession_AddNode_C068(eventQueue, eventNode);
+
+    return true;
+}
+
+/**
+ * snSession::AddEventNode @ 0x823EC068 | size: 0x70
+ *
+ * Inserts a node into a doubly-linked list used as the session event queue.
+ * The list structure has: +0 = head, +4 = tail, +8 = count.
+ * Each node has: +4 = prev, +8 = next.
+ *
+ * If the list is empty, the node becomes both head and tail with null links.
+ * If non-empty, the node is inserted after the current tail.
+ * In both cases, the list count is incremented.
+ */
+void snSession_AddEventNode(void* list, void* node) { // @ 0x823EC068
+    void* head = *(void**)list;
+
+    if (head != nullptr) {
+        // List is non-empty — insert after tail
+        void* tail = *(void**)((char*)list + 4);
+
+        // New node's next = tail's current next (should be null for tail)
+        void* tailNext = *(void**)((char*)tail + 8);
+        *(void**)((char*)node + 8) = tailNext;
+
+        if (tailNext != nullptr) {
+            // tailNext.prev = node
+            *(void**)((char*)tailNext + 4) = node;
+        } else {
+            // node becomes the new tail
+            *(void**)((char*)list + 4) = node;
+        }
+
+        // Link node after old tail
+        *(void**)((char*)tail + 8) = node;
+        *(void**)((char*)node + 4) = tail;
+    } else {
+        // List is empty — node becomes head and tail
+        *(void**)list = node;
+        *(void**)((char*)list + 4) = node;
+        *(void**)((char*)node + 4) = nullptr;  // prev = null
+        *(void**)((char*)node + 8) = nullptr;  // next = null  (offset stored at node+4+4)
+    }
+
+    // Increment count
+    int32_t count = *(int32_t*)((char*)list + 8);
+    *(int32_t*)((char*)list + 8) = count + 1;
+}
+
+/**
+ * snSession::ResetHsmState @ 0x823E8EE0 | size: 0x64
+ *
+ * Resets an hsmState object to its base state. Sets the vtable to the
+ * hsmState base vtable, calls the virtual destructor-like function at
+ * vtable slot 6, then sets the vtable to hsmStateBase and zeros out all
+ * fields (offsets 4, 8, 12, 16, 20).
+ */
+void snSession_ResetHsmState(void* thisPtr) { // @ 0x823E8EE0
+    // Set vtable to hsmState
+    *(void**)thisPtr = (void*)0x82073CAC;
+
+    // Call vtable slot 6 (cleanup function) via indirect call
+    void** vtable = *(void***)thisPtr;
+    void (*cleanupFn)(void*) = (void (*)(void*))vtable[6];
+    cleanupFn(thisPtr);
+
+    // Reset to hsmStateBase vtable and zero all fields
+    *(void**)thisPtr = (void*)0x82073F1C;
+    *(uint32_t*)((char*)thisPtr + 16) = 0;
+    *(uint32_t*)((char*)thisPtr + 20) = 0;
+    *(uint32_t*)((char*)thisPtr + 4) = 0;
+    *(uint32_t*)((char*)thisPtr + 8) = 0;
+    *(uint32_t*)((char*)thisPtr + 12) = 0;
+}
+
 } // namespace snSession_States
 
 } // namespace rage

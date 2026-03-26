@@ -46,7 +46,6 @@ set(SOURCES
     src/crt/startup.c
     src/crt/string.c
     src/globals.c
-    src/globals_extended.c
     src/stubs_remaining.c
     src/stubs_linker_1.cpp
     src/stubs_linker_2.cpp
