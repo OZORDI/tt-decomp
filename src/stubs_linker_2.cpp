@@ -11,6 +11,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 
 // Include struct definitions for member function stubs
 #include "game/misc/pong_misc.hpp"
@@ -32,12 +34,73 @@ void hsmContext_5BC8_fw(void* obj) {
 // hsmState member functions
 // ============================================================================
 
-void hsmState::GetFullStatePath(char* buf, unsigned int bufSize) const {
-    (void)buf; (void)bufSize;
-    if (buf && bufSize > 0) buf[0] = '\0';
+/**
+ * hsmState::GetFullStatePath @ 0x823ED290 | size: 0xF8
+ *
+ * Builds full hierarchical state path by walking the parent chain.
+ * Layout used:
+ *   +0x00 vtable, +0x08 parent (hsmState*),
+ *   vtable slot 2 = GetStateName, vtable slot 3 = GetFullStatePath
+ */
+void hsmState::GetFullStatePath(char* buffer, unsigned int bufferSize) const {
+    // +0x08 = parent state pointer
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    hsmState* parent = *reinterpret_cast<hsmState* const*>(self + 0x08);
+
+    if (parent) {
+        // Recurse: call parent's GetFullStatePath (vtable slot 3)
+        parent->GetFullStatePath(buffer, bufferSize);
+
+        // Inline strlen to find current length
+        unsigned int currentLen = 0;
+        {
+            const char* p = buffer;
+            while (*p++) {}
+            currentLen = static_cast<unsigned int>(p - buffer - 1);
+        }
+        if (currentLen >= bufferSize) return;
+
+        // vtable slot 2 = GetStateName — call via vtable
+        typedef const char* (*GetNameFn)(const void*);
+        GetNameFn getName = reinterpret_cast<GetNameFn>(vtable[2]);
+        const char* name = getName(this);
+
+        snprintf(buffer + currentLen, bufferSize - currentLen, "/%s", name);
+        return;
+    }
+
+    // No parent — copy our state name directly
+    typedef const char* (*GetNameFn)(const void*);
+    GetNameFn getName = reinterpret_cast<GetNameFn>(vtable[2]);
+    const char* name = getName(this);
+
+    unsigned int remaining = bufferSize - 1;
+    char* dest = buffer;
+    while (remaining > 0 && *name) {
+        *dest++ = *name++;
+        --remaining;
+    }
+    *dest = '\0';
 }
 
+/**
+ * hsmState::Reset @ 0x823E8D58 | size: 0x50
+ *
+ * Calls OnExit (vtable slot 6) then zeroes fields at +4, +8, +12, +16, +20.
+ */
 void hsmState::Reset() {
+    // vtable slot 6 = OnExit cleanup hook
+    typedef void (*OnExitFn)(void*);
+    OnExitFn onExit = reinterpret_cast<OnExitFn>(vtable[6]);
+    onExit(this);
+
+    // Zero fields +0x04 through +0x14
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    *reinterpret_cast<uint32_t*>(self + 0x10) = 0;
+    *reinterpret_cast<uint32_t*>(self + 0x14) = 0;
+    *reinterpret_cast<uint32_t*>(self + 0x04) = 0;
+    *reinterpret_cast<uint32_t*>(self + 0x08) = 0;
+    *reinterpret_cast<uint32_t*>(self + 0x0C) = 0;
 }
 
 // ============================================================================
