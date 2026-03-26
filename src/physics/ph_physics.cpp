@@ -3115,3 +3115,396 @@ void phInst::AtomicDecrementAndCallback() {  // vfn_23
         cb(arg);
     }
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Batch: 10 functions (64-200B)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::GetSupportDistance (vfn_33) @ 0x822A3268 | size: 0x50
+//
+// Computes the support distance of the capsule along a given direction.
+// Returns the capsule's radius plus an optional capsule-axis dot product
+// contribution. When the quickReturn flag is set, skips the dot product
+// and returns just the radial extent.
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::GetSupportDistance(const float* direction, uint8_t quickReturn) {
+    float absDirectionY = fabsf(direction[1]);
+    float capsuleExtent = *(float*)((uint8_t*)this + 128);   // m_halfLength
+    float radius = *(float*)((uint8_t*)this + 112);          // m_radius
+    const float TWO = 2.0f;  // @ 0x8202D10C
+
+    // Support distance = radius + halfLength * |dir.y| * 2
+    float extentContribution = capsuleExtent * absDirectionY;
+    float result = extentContribution * TWO + radius;
+
+    if (quickReturn) {
+        return result;
+    }
+
+    // Full support: add dot product of capsule axis with direction
+    float* capsuleAxis = (float*)((uint8_t*)this + 48);  // m_axisDirection
+    float dotProduct = capsuleAxis[0] * direction[0]
+                     + capsuleAxis[1] * direction[1]
+                     + capsuleAxis[2] * direction[2];
+
+    return dotProduct + result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::CopyGeometry (vfn_34) @ 0x822A2F28 | size: 0xBC
+//
+// Deep-copies capsule geometry from a source phBoundCapsule into this one.
+// Copies the base bound data via util_DA50, then copies 5 SIMD vectors
+// (offsets 112-176), a 32-bit field at offset 192, and 12 bytes of
+// additional data starting at offset 196. Sets the dirty flag at offset 96.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::CopyGeometry(const rage::phBoundCapsule* source) {
+    extern void util_DA50(void*, const void*);
+    util_DA50(this, source);
+
+    uint8_t* dst = (uint8_t*)this;
+    const uint8_t* src = (const uint8_t*)source;
+
+    // Copy 5 SIMD vectors: offsets 112, 128, 144, 160, 176
+    memcpy(dst + 112, src + 112, 16);   // m_radiusVector
+    memcpy(dst + 128, src + 128, 16);   // m_halfLengthVector
+    memcpy(dst + 144, src + 144, 16);   // m_extentVector
+    memcpy(dst + 160, src + 160, 16);   // m_boundsMin
+    memcpy(dst + 176, src + 176, 16);   // m_boundsMax
+
+    // Copy scalar field at offset 192
+    *(uint32_t*)(dst + 192) = *(const uint32_t*)(src + 192);
+
+    // Copy 12 bytes of additional capsule parameters at offset 196
+    for (int i = 0; i < 12; i++) {
+        dst[196 + i] = src[196 + i];
+    }
+
+    // Mark geometry as dirty
+    *(uint16_t*)(dst + 96) = 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::TransformAndDispatch (vfn_7) @ 0x8233AB50 | size: 0x48
+//
+// Translates the capsule center by a given offset vector, then dispatches
+// to the base class vtable slot 6 method (phBound::ApplyTransform).
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::TransformAndDispatch(const float* offset) {
+    float* center = (float*)((uint8_t*)this + 48);
+    float translatedCenter[4];
+    translatedCenter[0] = center[0] + offset[0];
+    translatedCenter[1] = center[1] + offset[1];
+    translatedCenter[2] = center[2] + offset[2];
+    translatedCenter[3] = center[3] + offset[3];
+
+    // Dispatch to base class vtable slot 6 with translated center
+    void** vtable = *(void***)this;
+    typedef void (*BaseTransformFunc)(void*, const float*);
+    BaseTransformFunc baseTransform = (BaseTransformFunc)vtable[6];
+    baseTransform(this, translatedCenter);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ScaleVectors @ 0x820D05A0 | size: 0xB4
+//
+// Scales two 4-component vectors at offsets +0 (m_endpointA) and +32
+// (m_endpointB) using computed normalized scale factors. Applies a
+// rotation-like SIMD transform: vnmsubfp + vmaddfp pattern.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ScaleVectors() {
+    float scaleA, scaleB;
+    phBoundCapsule_04F0_g(&scaleA, &scaleB);
+
+    float* vecLow  = (float*)((uint8_t*)this + 0);   // m_endpointA
+    float* vecHigh = (float*)((uint8_t*)this + 32);   // m_endpointB
+
+    float origHigh[4] = { vecHigh[0], vecHigh[1], vecHigh[2], vecHigh[3] };
+    float origLow[4]  = { vecLow[0],  vecLow[1],  vecLow[2],  vecLow[3] };
+
+    // vmulfp128: vecHigh *= scaleA
+    vecHigh[0] = origHigh[0] * scaleA;
+    vecHigh[1] = origHigh[1] * scaleA;
+    vecHigh[2] = origHigh[2] * scaleA;
+    vecHigh[3] = origHigh[3] * scaleA;
+
+    // vnmsubfp: vecHigh = -(vecLow_orig * scaleB - vecHigh_scaled)
+    vecHigh[0] = -(origLow[0] * scaleB - vecHigh[0]);
+    vecHigh[1] = -(origLow[1] * scaleB - vecHigh[1]);
+    vecHigh[2] = -(origLow[2] * scaleB - vecHigh[2]);
+    vecHigh[3] = -(origLow[3] * scaleB - vecHigh[3]);
+
+    // vmaddfp: vecLow = origHigh * scaleB + origLow * scaleA
+    vecLow[0] = origHigh[0] * scaleB + origLow[0] * scaleA;
+    vecLow[1] = origHigh[1] * scaleB + origLow[1] * scaleA;
+    vecLow[2] = origHigh[2] * scaleB + origLow[2] * scaleA;
+    vecLow[3] = origHigh[3] * scaleB + origLow[3] * scaleA;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ScaleEndpoints @ 0x82111EA0 | size: 0xB0
+//
+// Scales capsule endpoint vectors at offsets +0 and +32 using a different
+// combination pattern than ScaleVectors. Applies vnmsubfp then vmaddfp
+// to produce a rotated pair of endpoints.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ScaleEndpoints() {
+    float scaleA, scaleB;
+    phBoundCapsule_04F0_g(&scaleA, &scaleB);
+
+    float* vecLow  = (float*)((uint8_t*)this + 0);   // m_endpointA
+    float* vecHigh = (float*)((uint8_t*)this + 32);   // m_endpointB
+
+    float origHigh[4] = { vecHigh[0], vecHigh[1], vecHigh[2], vecHigh[3] };
+    float origLow[4]  = { vecLow[0],  vecLow[1],  vecLow[2],  vecLow[3] };
+
+    // vmulfp128: vecHigh *= scaleA
+    vecHigh[0] = origHigh[0] * scaleA;
+    vecHigh[1] = origHigh[1] * scaleA;
+    vecHigh[2] = origHigh[2] * scaleA;
+    vecHigh[3] = origHigh[3] * scaleA;
+
+    // vmulfp128: vecLow *= scaleB
+    vecLow[0] = origLow[0] * scaleB;
+    vecLow[1] = origLow[1] * scaleB;
+    vecLow[2] = origLow[2] * scaleB;
+    vecLow[3] = origLow[3] * scaleB;
+
+    // vnmsubfp: tempLow = -(origHigh * scaleB - vecLow)
+    float tempLow[4];
+    tempLow[0] = -(origHigh[0] * scaleB - vecLow[0]);
+    tempLow[1] = -(origHigh[1] * scaleB - vecLow[1]);
+    tempLow[2] = -(origHigh[2] * scaleB - vecLow[2]);
+    tempLow[3] = -(origHigh[3] * scaleB - vecLow[3]);
+
+    // vmaddfp: vecHigh = origLow * scaleB + vecHigh
+    vecHigh[0] = origLow[0] * scaleB + vecHigh[0];
+    vecHigh[1] = origLow[1] * scaleB + vecHigh[1];
+    vecHigh[2] = origLow[2] * scaleB + vecHigh[2];
+    vecHigh[3] = origLow[3] * scaleB + vecHigh[3];
+
+    vecLow[0] = tempLow[0];
+    vecLow[1] = tempLow[1];
+    vecLow[2] = tempLow[2];
+    vecLow[3] = tempLow[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeGaussianAttenuation @ 0x821426B8 | size: 0x84
+//
+// Computes a Gaussian-style attenuation factor for capsule collision response.
+// Returns (1/sqrt(spread^2*PI)) * exp(-dist^2 / (spread^2 * (1/(2*PI))))
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::ComputeGaussianAttenuation(float distance, float spread) {
+    float spreadSquared = spread * spread;
+    const float PI = 3.14159265f;  // @ 0x8202C02C
+
+    float bellArea = spreadSquared * PI;
+    extern float phBoundCapsule_01D0_g(float);
+    float normalizedSpread = phBoundCapsule_01D0_g(bellArea);  // sqrt
+
+    float distSquared = distance * distance;
+    const float ONE_OVER_TWO_PI = 0.15915494f;  // @ 0x8202D184
+    float scaledSpreadSq = spreadSquared * ONE_OVER_TWO_PI;
+    float exponent = distSquared / scaledSpreadSq;
+
+    extern float aud_2478(float);
+    float decayFactor = aud_2478(-exponent);  // exp(-x)
+
+    const float ONE = 1.0f;  // @ 0x8202D108
+    float inverseSpread = ONE / normalizedSpread;
+    return inverseSpread * decayFactor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::GetExtentAlongAxis @ 0x820DF420 | size: 0xC4
+//
+// Retrieves min/max extent values from a collision shape element array
+// (stride 104 bytes) based on axis component. Falls through switch cases
+// to accumulate multiple axis pairs. Retries with element 11 if min < 0.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::GetExtentAlongAxis(
+    uint32_t elementIndex, uint32_t axis, float* outMin, float* outMax)
+{
+    const float ZERO = 0.0f;  // @ 0x8202D110
+    float* elementArray = *(float**)((uint8_t*)this + 8);  // m_pElements
+
+retry:
+    if (axis <= 3) {
+        float* element = (float*)((uint8_t*)elementArray + elementIndex * 104);
+
+        switch (axis) {
+        case 0:
+            *outMax = element[0];
+            *outMin = element[0];
+            break;
+
+        case 2:
+            *outMin = element[1];  // offset 4
+            *outMax = element[2];  // offset 8
+            /* fallthrough */
+
+        case 1:
+            *outMin = element[3];  // offset 12
+            *outMax = element[4];  // offset 16
+            /* fallthrough */
+
+        case 3:
+            *outMin = element[5];  // offset 20
+            *outMax = element[6];  // offset 24
+            break;
+        }
+    }
+
+    if (*outMin < ZERO) {
+        elementIndex = 11;
+        goto retry;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::ComputeNormalDotProduct @ 0x82137BF8 | size: 0xAC
+//
+// Computes dot product of two 4-component normal vectors. Returns a scaled
+// collision coefficient based on the angle between them:
+//   NaN -> 0, within threshold -> 0, otherwise acos(|dot|) * scale.
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::ComputeNormalDotProduct(const float* normalA, const float* normalB) {
+    float dot = normalA[2] * normalB[2]
+              + normalA[3] * normalB[3]
+              + normalA[1] * normalB[1]
+              + normalA[0] * normalB[0];
+
+    const float THRESHOLD = *(float*)0x825F9960;  // small positive epsilon
+    const float ONE = 1.0f;       // @ 0x8202D108
+    const float NEG_ONE = -1.0f;  // @ 0x8202D100
+
+    // NaN check (unordered comparison)
+    if (dot != dot) {
+        return 0.0f;
+    }
+
+    if (dot > THRESHOLD) {
+        // Positive dot above threshold — check against +1.0
+        if (dot >= ONE) {
+            return 0.0f;
+        }
+        // Compute acos-based response
+        float absDot = fabsf(dot);
+        extern float phBoundCapsule_0E90_g(float);
+        float acosResult = phBoundCapsule_0E90_g(absDot);
+        const float SCALE = *(float*)0x8202D17C;
+        return acosResult * SCALE;
+    }
+
+    if (dot < NEG_ONE) {
+        // Large negative dot — also compute acos-based response
+        float absDot = fabsf(dot);
+        extern float phBoundCapsule_0E90_g(float);
+        float acosResult = phBoundCapsule_0E90_g(absDot);
+        const float SCALE = *(float*)0x8202D17C;
+        return acosResult * SCALE;
+    }
+
+    // Within [-1, threshold] — perpendicular/near-zero
+    return 0.0f;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::TestNormalOrientation @ 0x82137CA8 | size: 0xC4
+//
+// Tests collision normal orientation against a reference direction. If the
+// dot product is negative (facing away), negates the reference before
+// dispatching to the collision response handler phBoundCapsule_AED0_g.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::TestNormalOrientation(
+    void* collisionA, void* collisionB,
+    const float* normal, float* reference)
+{
+    float dot = normal[2] * reference[2]
+              + normal[3] * reference[3]
+              + normal[1] * reference[1]
+              + normal[0] * reference[0];
+
+    const float ZERO = 0.0f;  // @ 0x8202D110
+
+    if (dot < ZERO) {
+        // Negate reference direction
+        reference[0] = -reference[0];
+        reference[1] = -reference[1];
+        reference[2] = -reference[2];
+        reference[3] = -reference[3];
+    }
+
+    extern void phBoundCapsule_AED0_g(void*, void*, void*, void*, const float*, float*);
+    phBoundCapsule_AED0_g(collisionA, collisionB, nullptr, nullptr, normal, reference);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::SetupCapsuleWithOffset @ 0x82143F08 | size: 0x84
+//
+// Checks if the direction vector at capsuleData+16 is non-zero. If so,
+// computes position + extent and calls phBoundCapsule_3F90_g to finalize.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::SetupCapsuleWithOffset(float* capsuleData) {
+    float* direction = capsuleData + 4;  // +16 bytes
+
+    // Check if direction is a zero vector (SIMD abs + compare)
+    bool isZeroDirection = (fabsf(direction[0]) == 0.0f &&
+                            fabsf(direction[1]) == 0.0f &&
+                            fabsf(direction[2]) == 0.0f &&
+                            fabsf(direction[3]) == 0.0f);
+
+    if (!isZeroDirection) {
+        float* position = capsuleData;
+        float* extent   = capsuleData + 8;  // +32 bytes
+        float combinedCenter[4];
+        combinedCenter[0] = position[0] + extent[0];
+        combinedCenter[1] = position[1] + extent[1];
+        combinedCenter[2] = position[2] + extent[2];
+        combinedCenter[3] = position[3] + extent[3];
+
+        extern void phBoundCapsule_3F90_g(void*, float*, float*);
+        phBoundCapsule_3F90_g(this, combinedCenter, direction);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::phBoundCapsule::DispatchCameraCollision @ 0x82148608 | size: 0x9C
+//
+// Prepares camera-relative collision parameters and dispatches to the
+// full capsule collision test (phBoundCapsule_81D8_g). Reads the active
+// camera index from a global, computes the camera transform offset at
+// stride 912 bytes, and passes camera frustum data.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::DispatchCameraCollision(
+    void* collisionQuery, void* resultBuffer, uint32_t flags)
+{
+    extern uint32_t* g_pCameraMgrArray;  // @ 0x8260641C
+    extern uint32_t g_activeCameraIndex; // @ 0x825C4898
+
+    uint32_t* cameraMgrArray = *(uint32_t**)g_pCameraMgrArray;
+    uint32_t cameraIndex = g_activeCameraIndex;
+
+    // Each camera entry is 912 bytes
+    uint8_t* cameraEntry = (uint8_t*)cameraMgrArray + cameraIndex * 912;
+
+    extern float pongCameraMgr_3E98_g(uint8_t* camera);
+    float cameraDistance = pongCameraMgr_3E98_g(cameraEntry);
+
+    float fovScale = *(float*)(cameraEntry + 824);
+    float* cameraMatrix = (float*)(cameraEntry + 64);
+    float zoomFactor = *(float*)(cameraEntry + 832);
+    float aspectRatio = *(float*)(cameraEntry + 836);
+
+    // fsel idiom: clamp zoom factor
+    const float THRESHOLD = *(float*)0x8202CFE8;
+    float clampedZoom = (THRESHOLD - zoomFactor) >= 0.0f ? zoomFactor : 0.0f;
+
+    extern void phBoundCapsule_81D8_g(void*, void*, void*, float*, float, float, float, float, uint32_t);
+    phBoundCapsule_81D8_g(
+        this, collisionQuery, resultBuffer,
+        cameraMatrix, fovScale, aspectRatio,
+        clampedZoom, cameraDistance, flags);
+}
