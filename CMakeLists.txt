@@ -134,6 +134,11 @@ target_link_libraries(${PROJECT_NAME}
     pthread  # For POSIX threads on Linux/macOS
 )
 
+# Allow duplicate weak symbols (RTTI from multiple TUs defining same class)
+if(APPLE)
+    target_link_options(${PROJECT_NAME} PRIVATE -Wl,-multiply_defined,suppress)
+endif()
+
 # Platform-specific linking
 if(WIN32)
     # Windows-specific libraries
