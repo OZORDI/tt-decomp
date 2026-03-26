@@ -19,6 +19,8 @@
 
 #include <stdint.h>
 
+extern "C" void rage_free(void* ptr);  // @ 0x820C00C0 — heap free (C linkage)
+
 namespace rage {
 
 // Forward declarations
@@ -56,6 +58,24 @@ extern void snSession_AssociateConnection(void* ctx, void* state, void* connecti
 extern void snSession_ProcessPendingConnections(void* ctx, void* state, void* connectionList); // @ 0x823EDA90
 extern void snSession_AddNode(void* nodeList, void* node);                 // @ 0x823EC068 — adds a node to the session's linked list
 extern void snConnectionRef_InitBroadcast(void* session, void* p1, void* p2, void* p3, int p4); // @ 0x82430978
+
+// HSM child state attachment
+extern void snHsmState_AttachChild(void* parent, void* childState);        // @ 0x823EF850
+
+// Destructor helpers
+extern void snJoinMachine_DestroyBody(void* thisPtr);                      // @ 0x823E56C0 — root join machine destructor body
+extern void snHsmState_Destroy(void* thisPtr);                             // @ 0x823E8E10 — hsmState base destructor (resets vtable, zeros)
+extern void snHsmNotifier_Destroy(void* thisPtr);                          // @ 0x823E6300 — notifier-level destructor (cancel pending + base dtor)
+
+// Notification management
+extern void snNotifyHandler_Unregister(void* notifyList, void* handler);   // @ 0x823B3D80 — unregister notification handler
+
+// SendingGamerData helpers
+extern void snSendingGamerData_ProcessUpdate(void* thisPtr);               // @ 0x823E01F8 — gamer data exchange handler
+
+// Join notify utility
+extern void snJoinMachine_SetCapacity_03D0(void* list, int32_t value);     // @ 0x822603D0 — also used for join notify init
+extern void snJoinMachine_CopyNotifyData(void* list, uint32_t a, uint32_t b, uint32_t c); // @ 0x822608C8
 
 // ────────────────────────────────────────────────────────────────────────────
 // Global state type identifiers (runtime event type IDs loaded from .data)
@@ -720,6 +740,288 @@ void snHsmAcceptingJoinRequest_OnEvent(void* thisPtr, void* event, bool* handled
 
     // Unhandled event
     *handled = false;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// snJoinMachine HSM State Name Strings (verified from binary .rdata)
+// ────────────────────────────────────────────────────────────────────────────
+
+static const char* const s_JoinMachine          = "JoinMachine";          // @ 0x82074368
+static const char* const s_LocalJoinPending     = "LocalJoinPending";     // @ 0x82074374
+static const char* const s_RequestingJoin       = "RequestingJoin";       // @ 0x82074388
+static const char* const s_WaitingForReply      = "WaitingForReply";      // @ 0x82074398
+static const char* const s_JoinPending          = "JoinPending";          // @ 0x820743A8
+static const char* const s_UndoingJoinRequest   = "UndoingJoinRequest";   // @ 0x820743B4
+static const char* const s_RemoteJoinPending    = "RemoteJoinPending";    // @ 0x820743C8
+static const char* const s_AcceptingJoinRequest = "AcceptingJoinRequest"; // @ 0x820743DC
+static const char* const s_SendingGamerData     = "SendingGamerData";     // @ 0x820743F4
+
+// ────────────────────────────────────────────────────────────────────────────
+// GetStateName functions (vfn_2, 12B each)
+// Each returns a const char* from .rdata for its HSM state display name.
+// ────────────────────────────────────────────────────────────────────────────
+
+const char* snJoinMachine_GetStateName()              { return s_JoinMachine; }          // @ 0x823DF050
+const char* snHsmLocalJoinPending_GetStateName()      { return s_LocalJoinPending; }     // @ 0x823DF628
+const char* snHsmRequestingJoin_GetStateName()        { return s_RequestingJoin; }       // @ 0x823DF800
+const char* snHsmWaitingForReply_GetStateName()       { return s_WaitingForReply; }      // @ 0x823DF860
+const char* snHsmJoinPending_GetStateName()           { return s_JoinPending; }          // @ 0x823DFAE0
+const char* snHsmUndoingJoinRequest_GetStateName()    { return s_UndoingJoinRequest; }   // @ 0x823DFD20
+const char* snHsmRemoteJoinPending_GetStateName()     { return s_RemoteJoinPending; }    // @ 0x823DFE60
+const char* snHsmAcceptingJoinRequest_GetStateName()  { return s_AcceptingJoinRequest; } // @ 0x823E0038
+const char* snSendingGamerData_GetStateName()         { return s_SendingGamerData; }     // @ 0x823E01B8
+
+// ────────────────────────────────────────────────────────────────────────────
+// Destructors (vfn_0)
+// Pattern: call state-level cleanup helper, conditionally free if flags & 1.
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snJoinMachine::~snJoinMachine @ 0x823E5E88 | size: 0x50 | vfn_0
+ *
+ * Root destructor. Calls snJoinMachine_DestroyBody to tear down all child
+ * states and notification handlers, then conditionally frees memory.
+ */
+void snJoinMachine_Destructor(void* thisPtr, uint32_t flags) {
+    snJoinMachine_DestroyBody(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snHsmLocalJoinPending::~snHsmLocalJoinPending @ 0x823E6240 | size: 0x50 | vfn_0
+ *
+ * Destructor for the LocalJoinPending state. Calls hsmState base destructor
+ * to reset vtable and zero out fields.
+ */
+void snHsmLocalJoinPending_Destructor(void* thisPtr, uint32_t flags) {
+    snHsmState_Destroy(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snHsmRequestingJoin::~snHsmRequestingJoin @ 0x823E6290 | size: 0x6C | vfn_0
+ *
+ * Destructor for the RequestingJoin state. Tears down three embedded child
+ * states at offsets +96 (UndoingJoinRequest), +72 (JoinPending), and
+ * +24 (WaitingForReply notifier), then destroys this state itself.
+ */
+void snHsmRequestingJoin_Destructor(void* thisPtr, uint32_t flags) {
+    snHsmState_Destroy((char*)thisPtr + 96);
+    snHsmState_Destroy((char*)thisPtr + 72);
+    snHsmNotifier_Destroy((char*)thisPtr + 24);
+    snHsmState_Destroy(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snHsmWaitingForReply::~snHsmWaitingForReply @ 0x823E6610 | size: 0x50 | vfn_0
+ *
+ * Destructor for the WaitingForReply sub-state. Calls notifier-level
+ * destructor to cancel pending notifications and clean up.
+ */
+void snHsmWaitingForReply_Destructor(void* thisPtr, uint32_t flags) {
+    snHsmNotifier_Destroy(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// OnEnter Handlers (vfn_5)
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snJoinMachine::OnEnter_AttachChildren @ 0x823E0358 | size: 0x60 | vfn_5
+ *
+ * Attaches five child sub-states at fixed offsets within the JoinMachine:
+ *   +48  (LocalJoinPending)
+ *   +72  (RemoteJoinPending)
+ *   +192 (AcceptingJoinRequest)
+ *   +216 (RequestingJoin)
+ *   +240 (SendingGamerData)
+ */
+void snJoinMachine_AttachChildren(void* thisPtr) {
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 48);
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 72);
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 192);
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 216);
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 240);
+}
+
+/**
+ * snHsmRequestingJoin::OnEnter_AttachChildren @ 0x823DFD78 | size: 0x48 | vfn_5
+ *
+ * Attaches three child sub-states:
+ *   +24 (WaitingForReply notifier)
+ *   +72 (JoinPending)
+ *   +96 (UndoingJoinRequest)
+ */
+void snHsmRequestingJoin_AttachChildren(void* thisPtr) {
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 72);
+    snHsmState_AttachChild(thisPtr, (char*)thisPtr + 96);
+}
+
+/**
+ * snHsmUndoingJoinRequest::OnEnter @ 0x823DFD30 | size: 0x48 | vfn_14
+ *
+ * Initializes a stack HSM state, sets the transition target vtable to
+ * EvtRequestJoinFailed (@ 0x82072D80), then transitions to the
+ * WaitingForReply failure state.
+ */
+void snHsmUndoingJoinRequest_OnEnter(void* thisPtr) {
+    char stackState[32];
+    snHsmState_Init(stackState);
+    *(void**)stackState = &g_vtable_EvtRequestJoinFailed;
+    snHsmWaitingForReply_TransitionFailed(thisPtr, stackState);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// OnExit Handlers
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snHsmRequestingJoin::OnExit @ 0x823DFDC0 | size: 0xA0 | vfn_6
+ *
+ * Exit handler for RequestingJoin. Cancels pending notifications on three
+ * embedded rlNotifier objects at offsets +24, +72, and +96.
+ * For each: if the pending callback (+8) is non-null, clears it and invokes
+ * the linked object's Cancel function (vtable slot 4, byte offset +16).
+ */
+void snHsmRequestingJoin_OnExit(void* thisPtr) {
+    // Cancel notifier at this+24
+    char* notifier1 = (char*)thisPtr + 24;
+    if (*(void**)(notifier1 + 8) != nullptr) {
+        void* linked1 = *(void**)notifier1;
+        *(void**)(notifier1 + 8) = nullptr;
+        void (*cancelFn1)(void*) = *(void (**)(void*))((char*)linked1 + 16);
+        cancelFn1(notifier1);
+    }
+
+    // Cancel notifier at this+72
+    char* notifier2 = (char*)thisPtr + 72;
+    if (*(void**)(notifier2 + 8) != nullptr) {
+        void* linked2 = *(void**)notifier2;
+        *(void**)(notifier2 + 8) = nullptr;
+        void (*cancelFn2)(void*) = *(void (**)(void*))((char*)linked2 + 16);
+        cancelFn2(notifier2);
+    }
+
+    // Cancel notifier at this+96
+    char* notifier3 = (char*)thisPtr + 96;
+    if (*(void**)(notifier3 + 8) != nullptr) {
+        void* linked3 = *(void**)notifier3;
+        *(void**)(notifier3 + 8) = nullptr;
+        void (*cancelFn3)(void*) = *(void (**)(void*))((char*)linked3 + 16);
+        cancelFn3(notifier3);
+    }
+}
+
+/**
+ * snHsmWaitingForReply::OnExit @ 0x823E3588 | size: 0x44 | vfn_15
+ *
+ * Exit handler for WaitingForReply. Unregisters the notification handler
+ * from the connection data's notification list at +672, then clears the
+ * pending notification pointer at notifier+20.
+ */
+void snHsmWaitingForReply_OnExit(void* thisPtr) {
+    void* session = *(void**)((char*)thisPtr + 16);
+    char* notifier = (char*)thisPtr + 24;
+
+    void* connData = *(void**)((char*)session + 164);
+    snNotifyHandler_Unregister((char*)connData + 672, notifier);
+
+    *(uint32_t*)(notifier + 20) = 0;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// OnUpdate Handler
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snHsmRequestingJoin::OnUpdate @ 0x823DF810 | size: 0x50 | vfn_13
+ *
+ * Retrieves the session context via vfn_11, then associates and processes
+ * pending connections using the join machine's connection list at
+ * m_pNetworkClient+96.
+ */
+void snHsmRequestingJoin_OnUpdate(void* thisPtr) {
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
+    void* context = vfn_11(thisPtr);
+
+    void* joinMachine = *(void**)((char*)thisPtr + 20);
+    void* connectionList = (char*)joinMachine + 96;
+
+    snSession_AssociateConnection(context, thisPtr, connectionList);
+    snSession_ProcessPendingConnections(context, thisPtr, connectionList);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// snSendingGamerData — Simple State Functions
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snSendingGamerData::OnEnter @ 0x823E01E0 | size: 0x14 | vfn_14
+ *
+ * Clears three tracking fields at +40, +44, +48 on state entry.
+ */
+void snSendingGamerData_OnEnter(void* thisPtr) {
+    *(uint32_t*)((char*)thisPtr + 40) = 0;
+    *(uint32_t*)((char*)thisPtr + 44) = 0;
+    *(uint32_t*)((char*)thisPtr + 48) = 0;
+}
+
+/**
+ * snSendingGamerData::GetParentState @ 0x823E01D0 | size: 0x10 | vfn_8
+ *
+ * Stores `this` at this+24 and returns the address of this+24, linking
+ * the SendingGamerData state back to its parent in the HSM hierarchy.
+ */
+void* snSendingGamerData_GetParentState(void* thisPtr) {
+    *(void**)((char*)thisPtr + 24) = thisPtr;
+    return (char*)thisPtr + 24;
+}
+
+/**
+ * snSendingGamerData::OnUpdate @ 0x823E01C8 | size: 0x4 | vfn_9
+ *
+ * Tail-calls into snSendingGamerData_ProcessUpdate which handles the
+ * actual gamer data exchange protocol.
+ */
+void snSendingGamerData_OnUpdate(void* thisPtr) {
+    snSendingGamerData_ProcessUpdate(thisPtr);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Utility Functions
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snJoinMachine::InitJoinNotify @ 0x823EFDF0 | size: 0x64
+ *
+ * Initializes a join notification entry. Stores the callback pointer at
+ * this+4, initializes the join count list at this+8 via SetCapacity(0),
+ * and if a source notification is provided, copies its data fields.
+ */
+void snJoinMachine_InitJoinNotify(void* thisPtr, void* callback, void* source) {
+    char* self = (char*)thisPtr;
+
+    *(void**)(self + 4) = callback;
+    snJoinMachine_SetCapacity(self + 8, 0);
+
+    if (source != nullptr) {
+        uint32_t field16 = *(uint32_t*)((char*)source + 16);
+        uint32_t field24 = *(uint32_t*)((char*)source + 24);
+        uint32_t field4  = *(uint32_t*)((char*)source + 4);
+        snJoinMachine_CopyNotifyData(self + 8, field4, field16, field24);
+    }
 }
 
 } // namespace rage
