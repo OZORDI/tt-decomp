@@ -6326,3 +6326,140 @@ void phBoundOctree_Constructor(void* thisPtr) {
     *(uint32_t*)(obj + 184) = 0;
     *(uint32_t*)(obj + 188) = 0;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phInst — Virtual Accessor / Transform Methods (10 functions, 8-24B)
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// Getter/setter pairs for collision and contact properties, plus transform
+// matrix copy thunks. All are base-class implementations on rage::phInst's
+// vtable at 0x8205991C.
+//
+// Field layout referenced:
+//   +64  (0x40)  uint64  m_pArchetypeData   — archetype/template pointer
+//   +204 (0xCC)  40B     m_currentTransform  — current-frame world matrix
+//   +284 (0x11C) uint32  m_collisionFlags    — collision group/layer mask
+//   +284 (0x11C) 40B     m_lastTransform     — previous-frame world matrix
+//   +444 (0x1BC) uint32  m_contactFilter     — contact filtering mask
+//   +448 (0x1C0) uint32  m_contactCallback   — contact response handler ptr
+
+namespace rage {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::SetCollisionFlags (vfn_16) @ 0x8248B8C8 | size: 0x8
+//
+// Stores the collision group/layer flags at offset +284.
+// Paired getter: GetCollisionFlags (vfn_19).
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::SetCollisionFlags(uint32_t flags) {  // vfn_16
+    *(uint32_t*)((char*)this + 284) = flags;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetCollisionFlags (vfn_19) @ 0x8248B8D0 | size: 0x8
+//
+// Returns the collision group/layer flags from offset +284.
+// Paired setter: SetCollisionFlags (vfn_16).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetCollisionFlags() {  // vfn_19
+    return *(uint32_t*)((char*)this + 284);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::SetContactFilter (vfn_38) @ 0x8248D808 | size: 0x8
+//
+// Sets the contact filtering mask at offset +444.
+// Used to control which collision pairs generate contact callbacks.
+// Paired getter: GetContactFilter (vfn_44).
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::SetContactFilter(uint32_t filter) {  // vfn_38
+    *(uint32_t*)((char*)this + 444) = filter;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetContactFilter (vfn_44) @ 0x8248D810 | size: 0x8
+//
+// Returns the contact filtering mask from offset +444.
+// Paired setter: SetContactFilter (vfn_38).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetContactFilter() {  // vfn_44
+    return *(uint32_t*)((char*)this + 444);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::SetContactCallback (vfn_39) @ 0x8248D818 | size: 0x8
+//
+// Sets the contact response callback pointer at offset +448.
+// This controls which handler is invoked when contacts are resolved.
+// Paired getter: GetContactCallback (vfn_45).
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::SetContactCallback(uint32_t callback) {  // vfn_39
+    *(uint32_t*)((char*)this + 448) = callback;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetContactCallback (vfn_45) @ 0x8248D820 | size: 0x8
+//
+// Returns the contact response callback pointer from offset +448.
+// Paired setter: SetContactCallback (vfn_39).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetContactCallback() {  // vfn_45
+    return *(uint32_t*)((char*)this + 448);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetArchetypeData (vfn_71) @ 0x82488480 | size: 0x8
+//
+// Returns the 64-bit archetype/template data pointer from offset +64.
+// The archetype contains shared immutable data (collision bounds, mass
+// properties, etc.) referenced by all instances of the same physics object.
+// ─────────────────────────────────────────────────────────────────────────────
+uint64_t phInst::GetArchetypeData() {  // vfn_71
+    return *(uint64_t*)((char*)this + 64);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetSupportedFlags (vfn_48) @ 0x8247E2D0 | size: 0xC
+//
+// Returns a constant bitmask (0x80004001) indicating which physics features
+// this instance type supports. Bit 31 = active, bit 14 = collidable,
+// bit 0 = transform-capable.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetSupportedFlags() {  // vfn_48
+    return 0x80004001;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::CopyCurrentTransform (vfn_15) @ 0x8248D888 | size: 0x18
+//
+// Copies the current-frame world transform (40 bytes at offset +204) into
+// a caller-supplied buffer via the virtual CopyMatrix helper (vfn_13).
+//
+// Tail-calls: this->vfn_13(this, r4, r5, 40, this+204)
+//   where vfn_13 is a bounded memcpy: memset(dst, 0, size); memcpy(dst, src, min(len, size-1))
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::CopyCurrentTransform(void* src, uint32_t srcLen) {  // vfn_15
+    // Dispatch to vfn_13 with: dest = this+204, size = 40
+    typedef void (*CopyMatrixFn)(void*, void*, uint32_t, uint32_t, void*);
+    void** vtable = *(void***)this;
+    CopyMatrixFn copyMatrix = (CopyMatrixFn)vtable[13];
+    copyMatrix(this, src, srcLen, 40, (char*)this + 204);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::CopyLastTransform (vfn_34) @ 0x8248D868 | size: 0x18
+//
+// Copies the previous-frame world transform (40 bytes at offset +284) into
+// a caller-supplied buffer via the virtual CopyMatrix helper (vfn_13).
+//
+// Tail-calls: this->vfn_13(this, r4, r5, 40, this+284)
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::CopyLastTransform(void* src, uint32_t srcLen) {  // vfn_34
+    // Dispatch to vfn_13 with: dest = this+284, size = 40
+    typedef void (*CopyMatrixFn)(void*, void*, uint32_t, uint32_t, void*);
+    void** vtable = *(void***)this;
+    CopyMatrixFn copyMatrix = (CopyMatrixFn)vtable[13];
+    copyMatrix(this, src, srcLen, 40, (char*)this + 284);
+}
+
+} // namespace rage
