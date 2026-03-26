@@ -1024,4 +1024,110 @@ void snJoinMachine_InitJoinNotify(void* thisPtr, void* callback, void* source) {
     }
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// snJoinMachine::OnExit @ 0x823E03B8 | size: 0xE8 | vfn_6
+//
+// Exit handler for the root JoinMachine state. Cancels pending
+// notifications on five embedded rlNotifier objects at offsets
+// +48, +72, +192, +216, and +240. For each: if the pending callback
+// (+8) is non-null, clears it and invokes the linked Cancel function
+// (vtable slot 4, byte offset +16).
+// ────────────────────────────────────────────────────────────────────────────
+void snJoinMachine_OnExit(void* thisPtr) { // vfn_6
+    char* self = (char*)thisPtr;
+
+    // Cancel notifier at this+48 (LocalJoinPending)
+    char* n1 = self + 48;
+    if (*(void**)(n1 + 8) != nullptr) {
+        void* linked = *(void**)n1;
+        *(void**)(n1 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n1);
+    }
+
+    // Cancel notifier at this+72 (RemoteJoinPending)
+    char* n2 = self + 72;
+    if (*(void**)(n2 + 8) != nullptr) {
+        void* linked = *(void**)n2;
+        *(void**)(n2 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n2);
+    }
+
+    // Cancel notifier at this+192 (AcceptingJoinRequest)
+    char* n3 = self + 192;
+    if (*(void**)(n3 + 8) != nullptr) {
+        void* linked = *(void**)n3;
+        *(void**)(n3 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n3);
+    }
+
+    // Cancel notifier at this+216 (RequestingJoin)
+    char* n4 = self + 216;
+    if (*(void**)(n4 + 8) != nullptr) {
+        void* linked = *(void**)n4;
+        *(void**)(n4 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n4);
+    }
+
+    // Cancel notifier at this+240 (SendingGamerData)
+    char* n5 = self + 240;
+    if (*(void**)(n5 + 8) != nullptr) {
+        void* linked = *(void**)n5;
+        *(void**)(n5 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n5);
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// snJoinMachine::FireEvent @ 0x823E97D0 | size: 0xA4
+//
+// Fires an event through the session's event node list. Calls vfn_11 to
+// get the HSM context, retrieves the session node list from context+56,
+// allocates a 12-byte event node, copies the event vtable and 8 bytes
+// of payload, then adds the node to the session's linked list.
+//
+// @param thisPtr The snJoinMachine instance
+// @param event   The event data to fire (vtable + 8 bytes payload at +4)
+// ────────────────────────────────────────────────────────────────────────────
+void snJoinMachine_FireEvent(void* thisPtr, void* event) {
+    // Call vfn_11 to get the HSM context
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
+    void* hsmCtx = vfn_11(thisPtr);
+
+    // Get session node list from context+56
+    void* nodeList = *(void**)((char*)hsmCtx + 56);
+
+    // Allocate a 12-byte event node (type 0) via session's allocator at +4
+    void* allocator = *(void**)((char*)nodeList + 4);
+    void** allocVtable = *(void***)allocator;
+    void* (*allocFn)(void*, int, int) = (void* (*)(void*, int, int))allocVtable[1];
+    void* newNode = allocFn(allocator, 12, 0);
+
+    if (newNode != nullptr) {
+        char* evtSrc = (char*)event;
+
+        // Set vtable to hsmEvent, then copy source event data
+        *(void**)newNode = &g_vtable_hsmEvent;
+
+        // Copy 8 bytes of address from event+4 into node+4
+        uint32_t addr0 = *(uint32_t*)(evtSrc + 4);
+        uint32_t addr1 = *(uint32_t*)(evtSrc + 8);
+
+        // Overwrite vtable with event-specific vtable from source
+        void* evtVtable = *(void**)evtSrc;
+        *(void**)newNode = evtVtable;
+
+        *(uint32_t*)((char*)newNode + 4) = addr0;
+        *(uint32_t*)((char*)newNode + 8) = addr1;
+
+        // Add node to session list
+        snSession_AddNode((char*)nodeList + 8, newNode);
+    }
+}
+
 } // namespace rage
