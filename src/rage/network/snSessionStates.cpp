@@ -1039,6 +1039,245 @@ void snSession_ResetHsmState(void* thisPtr) { // @ 0x823E8EE0
     *(uint32_t*)((char*)thisPtr + 12) = 0;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession Event Dispatch Forwarders — Batch 4 (8 functions, 164B each)
+//
+// All follow the same pattern:
+//   1. Get HSM context via vfn_11, read event queue at context+56
+//   2. Allocate a 12-byte event node from the queue's allocator (vfn_1)
+//   3. If allocation succeeds, set up hsmEvent base vtable, copy 8 bytes
+//      of event data from the caller's event struct (at +4), then set the
+//      specific event subclass vtable, and enqueue via snSession_AddEventNode
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Event vtable pointers (RTTI-verified)
+extern void* g_vtbl_hsmEvent;                     // @ 0x82072864 — rage::hsmEvent base
+extern void* g_vtbl_EvtApplyConfigFailed;          // @ 0x82072A64 — rage::EvtApplyConfigFailed
+extern void* g_vtbl_EvtStartSessionFailed;         // @ 0x82072A8C — rage::EvtStartSessionFailed
+extern void* g_vtbl_EvtSessionJoinFailed;          // @ 0x82072DD0 — rage::EvtSessionJoinFailed
+extern void* g_vtbl_EvtJoinSucceeded;              // @ 0x82072CF4 — rage::EvtJoinSucceeded
+extern void* g_vtbl_EvtLeaveSucceeded;             // @ 0x820730BC — rage::EvtLeaveSucceeded
+extern void* g_vtbl_EvtMigrateSucceeded;           // @ 0x820728C8 — rage::EvtMigrateSucceeded
+extern void* g_vtbl_EvtMigrateFailed;              // @ 0x820728DC — rage::EvtMigrateFailed
+extern void* g_vtbl_EvtChangePresenceSucceeded;    // @ 0x820728A0 — rage::EvtChangePresenceSucceeded
+
+/**
+ * Helper: enqueues a typed HSM event into the session's event queue.
+ * All 8 dispatch forwarders below share this exact logic, differing
+ * only in the final event vtable written to the allocated node.
+ */
+static void snSession_EnqueueTypedEvent(void* thisPtr, void* eventData, void* eventVtbl) {
+    // Get HSM context via vfn_11
+    void** vtable = *(void***)thisPtr;
+    void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
+    void* context = getContext(thisPtr);
+
+    // Get event queue at context+56
+    void* eventQueue = *(void**)((char*)context + 56);
+
+    // Allocate 12-byte event node via queue allocator (vfn_1 at +4)
+    void** queueVtbl = *(void***)((char*)eventQueue + 4);
+    void* (*allocNode)(void*, uint32_t, uint32_t) =
+        (void* (*)(void*, uint32_t, uint32_t))queueVtbl[1];
+    void* node = allocNode((char*)eventQueue + 4, 12, 0);
+
+    if (node == nullptr) return;
+
+    // Set hsmEvent base vtable
+    *(void**)node = &g_vtbl_hsmEvent;
+
+    // Copy 8 bytes of event payload from eventData+4
+    char* src = (char*)eventData + 4;
+    char* dst = (char*)node + 4;
+    *(uint32_t*)dst = *(uint32_t*)src;
+    *(uint32_t*)(dst + 4) = *(uint32_t*)(src + 4);
+
+    // Set specific event subclass vtable
+    *(void**)node = eventVtbl;
+
+    // Enqueue into event queue
+    snSession_AddEventNode((char*)eventQueue + 8, node);
+}
+
+/**
+ * snSession::EnqueueEvtApplyConfigFailed @ 0x823E9530 | size: 0xA4
+ * Enqueues an EvtApplyConfigFailed event into the session event queue.
+ */
+void snSession_EnqueueEvtApplyConfigFailed(void* thisPtr, void* eventData) { // @ 0x823E9530
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtApplyConfigFailed);
+}
+
+/**
+ * snSession::EnqueueEvtStartSessionFailed @ 0x823E95D8 | size: 0xA4
+ * Enqueues an EvtStartSessionFailed event into the session event queue.
+ */
+void snSession_EnqueueEvtStartSessionFailed(void* thisPtr, void* eventData) { // @ 0x823E95D8
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtStartSessionFailed);
+}
+
+/**
+ * snSession::EnqueueEvtSessionJoinFailed @ 0x823E9680 | size: 0xA4
+ * Enqueues an EvtSessionJoinFailed event into the session event queue.
+ */
+void snSession_EnqueueEvtSessionJoinFailed(void* thisPtr, void* eventData) { // @ 0x823E9680
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtSessionJoinFailed);
+}
+
+/**
+ * snSession::EnqueueEvtJoinSucceeded @ 0x823E9728 | size: 0xA4
+ * Enqueues an EvtJoinSucceeded event into the session event queue.
+ */
+void snSession_EnqueueEvtJoinSucceeded(void* thisPtr, void* eventData) { // @ 0x823E9728
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtJoinSucceeded);
+}
+
+/**
+ * snSession::EnqueueEvtLeaveSucceeded @ 0x823E9B18 | size: 0xA4
+ * Enqueues an EvtLeaveSucceeded event into the session event queue.
+ */
+void snSession_EnqueueEvtLeaveSucceeded(void* thisPtr, void* eventData) { // @ 0x823E9B18
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtLeaveSucceeded);
+}
+
+/**
+ * snSession::EnqueueEvtMigrateSucceeded @ 0x823E9F08 | size: 0xA4
+ * Enqueues an EvtMigrateSucceeded event into the session event queue.
+ */
+void snSession_EnqueueEvtMigrateSucceeded(void* thisPtr, void* eventData) { // @ 0x823E9F08
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtMigrateSucceeded);
+}
+
+/**
+ * snSession::EnqueueEvtMigrateFailed @ 0x823E9FB0 | size: 0xA4
+ * Enqueues an EvtMigrateFailed event into the session event queue.
+ */
+void snSession_EnqueueEvtMigrateFailed(void* thisPtr, void* eventData) { // @ 0x823E9FB0
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtMigrateFailed);
+}
+
+/**
+ * snSession::EnqueueEvtChangePresenceSucceeded @ 0x823EAAC8 | size: 0xA4
+ * Enqueues an EvtChangePresenceSucceeded event into the session event queue.
+ */
+void snSession_EnqueueEvtChangePresenceSucceeded(void* thisPtr, void* eventData) { // @ 0x823EAAC8
+    snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtChangePresenceSucceeded);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession Connection List Management — Batch 4 (2 functions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snSession::InsertConnectionNode @ 0x823EDD10 | size: 0xA4
+ *
+ * Inserts a connection node into the session's connection list at offset +92.
+ * Guards: returns if node is null or if the node's flags byte (at +12)
+ * has bit 7 set (already queued). On insertion, clears bit 7 of the flags
+ * byte and increments the list count at list+8.
+ *
+ * The list structure at this+92:
+ *   +0: head pointer
+ *   +4: tail pointer
+ *   +8: count
+ *
+ * Each node (at r4):
+ *   +4: prev pointer (in node-relative terms, node+4 = prev)
+ *   +8: next pointer
+ *   +12: flags byte (bit 7 = "dequeued" marker)
+ */
+void snSession_InsertConnectionNode(void* thisPtr, void* node) { // @ 0x823EDD10
+    if (node == nullptr) return;
+
+    // Check if bit 7 of flags is clear (meaning node is dequeued)
+    uint8_t flags = *(uint8_t*)((char*)node + 12);
+    if ((flags & 0x80) == 0) return;
+
+    char* list = (char*)thisPtr + 92;
+    void* head = *(void**)list;
+
+    if (head != nullptr) {
+        // List is non-empty — insert before the current tail's next
+        void* tail = *(void**)(list + 4);
+        void* tailNext = *(void**)((char*)tail + 8);
+
+        // Link new node after tail
+        *(void**)((char*)node + 8) = tailNext;
+        if (tailNext != nullptr) {
+            *(void**)((char*)tailNext + 4) = node;
+        } else {
+            *(void**)(list + 4) = node;
+        }
+        *(void**)((char*)tail + 8) = node;
+        *(void**)((char*)node + 4) = tail;
+    } else {
+        // List is empty — node becomes both head and tail
+        *(void**)list = node;
+        *(void**)(list + 4) = node;
+        *(void**)((char*)node + 4) = nullptr;  // node+8 = prev
+        *(void**)((char*)node + 8) = nullptr;  // node+8 actually... node+4 = next field offset
+    }
+
+    // Increment count
+    uint32_t count = *(uint32_t*)(list + 8);
+    *(uint32_t*)(list + 8) = count + 1;
+
+    // Clear bit 7 of flags (mark as queued)
+    flags = *(uint8_t*)((char*)node + 12);
+    *(uint8_t*)((char*)node + 12) = flags & 0x7F;
+}
+
+/**
+ * snSession::RemoveConnectionNode @ 0x823EDDB8 | size: 0xA8
+ *
+ * Removes a connection node from the session's connection list at offset +92.
+ * Guards: returns if node is null or if the node's flags byte (at +12)
+ * has bit 7 clear (not queued / already removed). On removal, sets bit 7
+ * of the flags byte and decrements the list count at list+8.
+ */
+void snSession_RemoveConnectionNode(void* thisPtr, void* node) { // @ 0x823EDDB8
+    if (node == nullptr) return;
+
+    // Check if bit 7 of flags is set (meaning node is queued)
+    uint8_t flags = *(uint8_t*)((char*)node + 12);
+    if ((flags & 0x80) != 0) return;
+
+    char* nodeLinks = (char*)node + 4;  // prev/next links start at node+4
+    char* list = (char*)thisPtr + 92;
+
+    void* prev = *(void**)nodeLinks;       // node+4 = prev
+    void* next = *(void**)(nodeLinks + 4); // node+8 = next
+
+    if (prev == nullptr) {
+        // Node is the head — update head to next
+        *(void**)list = next;  // list+0 = head
+        if (next != nullptr) {
+            *(void**)((char*)next + 4) = nullptr;
+        } else {
+            *(void**)(list + 4) = nullptr;  // list+4 = tail
+        }
+    } else {
+        // Node has a predecessor — unlink
+        *(void**)((char*)prev + 8) = next;  // prev->next = node->next
+        if (next != nullptr) {
+            *(void**)((char*)next + 4) = prev;  // next->prev = node->prev
+        } else {
+            *(void**)(list + 4) = prev;  // update tail
+        }
+    }
+
+    // Clear links
+    *(void**)nodeLinks = nullptr;
+    *(void**)(nodeLinks + 4) = nullptr;
+
+    // Decrement count
+    uint32_t count = *(uint32_t*)(list + 8);
+    *(uint32_t*)(list + 8) = count - 1;
+
+    // Set bit 7 of flags (mark as dequeued)
+    flags = *(uint8_t*)((char*)node + 12);
+    *(uint8_t*)((char*)node + 12) = flags | 0x80;
+}
+
 } // namespace snSession_States
 
 } // namespace rage
