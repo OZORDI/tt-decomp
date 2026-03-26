@@ -670,3 +670,208 @@ void grcTextureFactoryXenon_vfn_10(
         }
     }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grcTextureReferenceBase vtable accessors
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * grcTextureReferenceBase_vfn_4 @ 0x8215D6A8 | size: 0x8 (8 bytes)
+ * vtable slot 4 — GetHandle(): returns m_pInternalData (+0x0C).
+ */
+void* grcTextureReferenceBase_vfn_4(void* pThis)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    return *(void**)(self + 12);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grcRenderTargetXenon vtable accessors — dimension / filter / LOD queries
+ *
+ * Field layout (from scaffolds):
+ *   +0x14 (20)  uint16_t  m_nWidth
+ *   +0x16 (22)  uint16_t  m_nHeight
+ *   +0x1C (28)  uint8_t   m_filterMode0
+ *   +0x1D (29)  uint8_t   m_filterMode1
+ *   +0x1E (30)  uint8_t   m_addressMode   (clamped to max 2)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * grcRenderTargetXenon_vfn_8 @ 0x8215DD58 | size: 0x8 (8 bytes)
+ * vtable slot 8 — GetWidth(): returns uint16 at +20.
+ */
+uint16_t grcRenderTargetXenon_vfn_8(void* pThis)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    return *(uint16_t*)(self + 20);
+}
+
+/*
+ * grcRenderTargetXenon_vfn_9 @ 0x8215DD60 | size: 0x8 (8 bytes)
+ * vtable slot 9 — GetHeight(): returns uint16 at +22.
+ */
+uint16_t grcRenderTargetXenon_vfn_9(void* pThis)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    return *(uint16_t*)(self + 22);
+}
+
+/*
+ * grcRenderTargetXenon_vfn_13 @ 0x8215DD68 | size: 0xC (12 bytes)
+ * vtable slot 13 — SetFilterMode(a, b): stores two uint8 at +28, +29.
+ */
+void grcRenderTargetXenon_vfn_13(void* pThis, uint8_t a, uint8_t b)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    self[28] = a;
+    self[29] = b;
+}
+
+/*
+ * grcRenderTargetXenon_vfn_14 @ 0x8215DD78 | size: 0x14 (20 bytes)
+ * vtable slot 14 — GetFilterMode(pA, pB): reads two uint8 from +28, +29.
+ */
+void grcRenderTargetXenon_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    *pA = self[28];
+    *pB = self[29];
+}
+
+/*
+ * grcRenderTargetXenon_vfn_15 @ 0x8215DDB0 | size: 0x8 (8 bytes)
+ * vtable slot 15 — GetAddressMode(): returns uint8 at +30.
+ */
+uint8_t grcRenderTargetXenon_vfn_15(void* pThis)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    return self[30];
+}
+
+/*
+ * grcRenderTargetXenon_vfn_16 @ 0x8215DD90 | size: 0x1C (28 bytes)
+ * vtable slot 16 — SetAddressMode(mode): stores mode at +30, clamped to max 2.
+ */
+void grcRenderTargetXenon_vfn_16(void* pThis, uint8_t mode)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    if (mode >= 2) {
+        mode = 2;
+    }
+    self[30] = mode;
+}
+
+/*
+ * grcRenderTargetXenon_vfn_18 @ 0x82151250 | size: 0x18 (24 bytes)
+ * vtable slot 18 — GetLODParams(pLodDist, pLodLevel):
+ *   Writes a default float constant (from .rdata @ 0x8202D110) to *pLodDist,
+ *   and 0 to *pLodLevel.
+ *   Render targets have no LOD support, so this returns defaults.
+ */
+extern const float g_grcRenderTargetDefaultLOD;  /* @ 0x8202D110 (.rdata, 4 bytes) */
+
+void grcRenderTargetXenon_vfn_18(void* pThis, float* pLodDist, uint32_t* pLodLevel)
+{
+    (void)pThis;
+    *pLodDist = g_grcRenderTargetDefaultLOD;
+    *pLodLevel = 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grcTextureXenon vtable accessors — filter / LOD / mip queries
+ *
+ * Field layout (from scaffolds):
+ *   +0x18 (24)  uint8_t   m_filterMode0
+ *   +0x19 (25)  uint8_t   m_filterMode1
+ *   +0x1B (27)  uint8_t   m_mipLevels
+ *   +0x1C (28)  float     m_lodDistance
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * grcTextureXenon_vfn_13 @ 0x8215DDB8 | size: 0xC (12 bytes)
+ * vtable slot 13 — SetFilterMode(a, b): stores two uint8 at +24, +25.
+ */
+void grcTextureXenon_vfn_13(void* pThis, uint8_t a, uint8_t b)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    self[24] = a;
+    self[25] = b;
+}
+
+/*
+ * grcTextureXenon_vfn_14 @ 0x8215DDC8 | size: 0x14 (20 bytes)
+ * vtable slot 14 — GetFilterMode(pA, pB): reads two uint8 from +24, +25.
+ */
+void grcTextureXenon_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    *pA = self[24];
+    *pB = self[25];
+}
+
+/*
+ * grcTextureXenon_vfn_15 @ 0x8215DDE8 | size: 0x8 (8 bytes)
+ * vtable slot 15 — GetMipLevels(): returns uint8 at +27.
+ */
+uint8_t grcTextureXenon_vfn_15(void* pThis)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    return self[27];
+}
+
+/*
+ * grcTextureXenon_vfn_16 @ 0x8215DDE0 | size: 0x8 (8 bytes)
+ * vtable slot 16 — SetMipLevels(n): stores uint8 at +27.
+ */
+void grcTextureXenon_vfn_16(void* pThis, uint8_t n)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    self[27] = n;
+}
+
+/*
+ * grcTextureXenon_vfn_18 @ 0x8215DDF0 | size: 0xC (12 bytes)
+ * vtable slot 18 — GetLODDistance(pOut): copies float from +28 to *pOut.
+ */
+void grcTextureXenon_vfn_18(void* pThis, float* pOut)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    *pOut = *(float*)(self + 28);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grcTextureString vtable accessor
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * grcTextureString_vfn_14 @ 0x8215FE70 | size: 0x10 (16 bytes)
+ * vtable slot 14 — GetFilterMode(pA, pB): string textures have no filter,
+ *   so both outputs are zeroed.
+ */
+void grcTextureString_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
+{
+    (void)pThis;
+    *pB = 0;
+    *pA = 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grcTextureFactoryString vtable accessor
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * grcTextureFactoryString_vfn_3 @ 0x82160038 | size: 0xC (12 bytes)
+ * vtable slot 3 — GetSingleton(): returns the global texture factory string
+ *   instance pointer stored at lbl_82606400.
+ */
+extern void* g_pGrcTextureFactoryString;  /* @ 0x82606400 (.data, 4 bytes) */
+
+void* grcTextureFactoryString_vfn_3(void)
+{
+    return g_pGrcTextureFactoryString;
+}
