@@ -106,3 +106,9 @@ void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)
 namespace rage { struct phJoint3Dof; void phBoundCapsule_01D0_g(phJoint3Dof* j, float f) { (void)j;(void)f; } }
 
 namespace rage { class atSingleton; void ReleaseSingleton(atSingleton*) {} }
+
+// pongAttractState base methods needed by child vtables
+#include "game/char_view.hpp"
+void pongAttractState::ProcessInput() {}
+void pongAttractState::Reset() {}
+
