@@ -283,3 +283,15 @@ uint32_t msgMsgSink_4EB8_g(void* obj) {
     (void)obj;
     return 0;
 }
+
+// ============================================================================
+// System callback and XML stubs (from chunk 3 linker symbols)
+// ============================================================================
+
+void sysCallback_Invoke(void* obj, int flags) {
+    (void)obj; (void)flags;
+}
+
+void xmlNodeStruct_Initialize(void* obj) {
+    (void)obj;
+}
