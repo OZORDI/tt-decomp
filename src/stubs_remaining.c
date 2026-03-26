@@ -382,12 +382,7 @@ void hsmContext_Init(void* obj) {
     (void)obj;
 }
 
-int rage_main_6970(int argc, char** argv) {
-    (void)argc;
-    (void)argv;
-    printf("rage_main_6970 - stub\n");
-    return 0;
-}
+// REMOVED: rage_main_6970 stub — using real impl in main.c
 
 void* rage_malloc(size_t size) {
     (void)size;
