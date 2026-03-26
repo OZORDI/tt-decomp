@@ -55,6 +55,7 @@ set(SOURCES
     src/stubs_linker_4.cpp
     src/stubs_linker_5.cpp
     src/stubs_final.cpp
+    include/rage/hsmState.cpp
     src/stubs_linker_0.cpp
     src/stubs_linker_3.cpp
 

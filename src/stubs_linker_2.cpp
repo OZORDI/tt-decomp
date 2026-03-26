@@ -287,10 +287,3 @@ void pongPlayer_9CD0_g(void* p, int i, void* a, void* b) { (void)p;(void)i;(void
 // REMOVED (conflict): void rage_RegisterUIContext(void* a, unsigned int b, const char* c) { (void)a;(void)b;(void)c; }
 
 
-// hsmState methods (class defined in include/rage/hsmState.hpp)
-#include "rage/hsmState.hpp"
-char* hsmState::GetFullStatePath(char* buf, uint32_t bufSize) const {
-    if (buf && bufSize > 0) buf[0] = '\0';
-    return buf;
-}
-void hsmState::Reset() {}
