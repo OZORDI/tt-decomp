@@ -1107,4 +1107,16 @@ public:
     int  QueryAudioInterfaceViaProvider(void* outResult); // @ 0x8248E8C8
     void StopPlaybackSimple(uint32_t mode, void* param); // @ 0x8248EBF0
     void StopPlaybackFull(uint32_t mode);              // @ 0x8248EB40
+
+    // Batch 3 — flag management, state control, destructors (64-132B)
+    void SetStatusFlagsA(uint32_t flagMask);           // @ 0x8248EF70 - OR flags into +220
+    void SetStatusFlagsB(uint32_t flagMask);           // @ 0x8248EFD8 - OR flags into +224
+    void SetStatusFlagsC(uint32_t flagMask);           // @ 0x8248F040 - OR flags into +228
+    void ClearStatusFlagsA(uint32_t flagMask);         // @ 0x8248F0A8 - clear flags in +220
+    void ClearStatusFlagsB(uint32_t flagMask);         // @ 0x8248F110 - clear flags in +224
+    void ClearStatusFlagsC(uint32_t flagMask);         // @ 0x8248F178 - clear flags in +228
+    void FlushAndNotify();                             // @ 0x8248F1E0 - atomic dec + finalize
+    int  SetVideoCallback(void* pCallback);            // @ 0x8248FCF0 - set video callback at +48
+    int  ValidateOutputFormat();                       // @ 0x8248E450 - check width/height==3
+    void ScalarDeletingDtorBase(int flags);            // @ 0x82491608 - base vtable dtor
 };

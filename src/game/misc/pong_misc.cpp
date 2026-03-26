@@ -1439,10 +1439,274 @@ void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
     ((FinalizeFn)provVt2[21])(provider2);
 
     // Release page reference if pending
-    int32_t pendingFlag = *(int32_t*)((char*)this + 240);
-    if (pendingFlag != 0) {
-        void* pageRef = *(void**)((char*)this + 268);
-        pg_6F48(pageRef);
+    int32_t pendingFlag2 = *(int32_t*)((char*)this + 240);
+    if (pendingFlag2 != 0) {
+        void* pageRef2 = *(void**)((char*)this + 268);
+        pg_6F48(pageRef2);
         *(int32_t*)((char*)this + 240) = 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Batch 3: Flag Management, State Control, Destructors
+// 10 functions (64-132B each)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helpers
+extern void rage_EAC0(void* ptr);   // @ 0x8235EAC0 - AddRef on video callback
+extern void rage_EAD8(void* ptr);   // @ 0x8235EAD8 - Release video callback
+
+/**
+ * CCalMoviePlayer::SetStatusFlagsA @ 0x8248EF70 | size: 0x64
+ *
+ * Atomically ORs the given bitmask into the status flags at offset +220.
+ * Acquires the lock (vtable slot 3) before modifying, then notifies
+ * (vtable slot 5) after the write.
+ */
+void CCalMoviePlayer::SetStatusFlagsA(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 220);
+    *(uint32_t*)(self + 220) = current | flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::SetStatusFlagsB @ 0x8248EFD8 | size: 0x64
+ *
+ * Atomically ORs the given bitmask into the status flags at offset +224.
+ */
+void CCalMoviePlayer::SetStatusFlagsB(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 224);
+    *(uint32_t*)(self + 224) = current | flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::SetStatusFlagsC @ 0x8248F040 | size: 0x64
+ *
+ * Atomically ORs the given bitmask into the status flags at offset +228.
+ */
+void CCalMoviePlayer::SetStatusFlagsC(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 228);
+    *(uint32_t*)(self + 228) = current | flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::ClearStatusFlagsA @ 0x8248F0A8 | size: 0x64
+ *
+ * Atomically clears (AND-NOT) the given bitmask from offset +220.
+ */
+void CCalMoviePlayer::ClearStatusFlagsA(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 220);
+    *(uint32_t*)(self + 220) = current & ~flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::ClearStatusFlagsB @ 0x8248F110 | size: 0x64
+ *
+ * Atomically clears (AND-NOT) the given bitmask from offset +224.
+ */
+void CCalMoviePlayer::ClearStatusFlagsB(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 224);
+    *(uint32_t*)(self + 224) = current & ~flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::ClearStatusFlagsC @ 0x8248F178 | size: 0x64
+ *
+ * Atomically clears (AND-NOT) the given bitmask from offset +228.
+ */
+void CCalMoviePlayer::ClearStatusFlagsC(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 228);
+    *(uint32_t*)(self + 228) = current & ~flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::FlushAndNotify @ 0x8248F1E0 | size: 0x84
+ *
+ * Atomically decrements the semaphore at offset +248 (using compare-and-swap),
+ * then calls vtable slot 23 on the audio source to flush pending data.
+ * Finally dispatches vtable slots 49 and 51 on this object to notify
+ * downstream consumers that a frame has been consumed.
+ */
+void CCalMoviePlayer::FlushAndNotify() {
+    char* self = (char*)this;
+
+    // Atomically decrement the semaphore at +248
+    volatile int32_t* pSemaphore = (volatile int32_t*)(self + 248);
+    int32_t oldVal;
+    do {
+        oldVal = *pSemaphore;
+    } while (!__sync_bool_compare_and_swap(pSemaphore, oldVal, oldVal - 1));
+
+    // Flush the audio source via vtable slot 23
+    void* pAudio = *(void**)(self + 44);
+    {
+        typedef void (*FlushFn)(void*);
+        void** audioVtable = *(void***)pAudio;
+        ((FlushFn)audioVtable[23])(pAudio);
+    }
+
+    // Notify via vtable slot 49 (signal frame consumed)
+    {
+        typedef void (*NotifyFn)(void*);
+        void** vtable = *(void***)this;
+        ((NotifyFn)vtable[49])(this);
+    }
+
+    // Notify via vtable slot 51 (signal completion)
+    {
+        typedef void (*CompleteFn)(void*);
+        void** vtable = *(void***)this;
+        ((CompleteFn)vtable[51])(this);
+    }
+}
+
+/**
+ * CCalMoviePlayer::SetVideoCallback @ 0x8248FCF0 | size: 0x64
+ *
+ * Replaces the video callback object at offset +48. If a new callback is
+ * provided, calls rage_EAC0 (AddRef) on it. If an existing callback is
+ * stored, calls rage_EAD8 (Release) before replacing. Returns 0.
+ *
+ * This mirrors SetAudioInterface but for the video path, using direct
+ * helper calls rather than vtable dispatch for ref-counting.
+ */
+int CCalMoviePlayer::SetVideoCallback(void* pCallback) {
+    // AddRef on the new callback if non-null
+    if (pCallback != nullptr) {
+        rage_EAC0(pCallback);
+    }
+
+    // Release the old callback if present
+    char* self = (char*)this;
+    void* pOldCallback = *(void**)(self + 48);
+    if (pOldCallback != nullptr) {
+        rage_EAD8(pOldCallback);
+        *(void**)(self + 48) = nullptr;
+    }
+
+    // Store the new callback
+    *(void**)(self + 48) = pCallback;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::ValidateOutputFormat @ 0x8248E450 | size: 0xD0
+ *
+ * Validates the current output format by checking if both width (vtable
+ * slot 60) and height (vtable slot 61) equal 3 (a special "ready" sentinel).
+ * If both match, calls vtable slots 68 and 69 with argument 1 to activate
+ * the output and returns 0 (success). Otherwise returns E_FAIL (0x80004005).
+ *
+ * Acquires lock (slot 3) before checking and releases (slot 5) after.
+ */
+int CCalMoviePlayer::ValidateOutputFormat() {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    typedef int (*GetDimFn)(void*);
+    typedef void (*ActivateFn)(void*, int);
+    void** vtable = *(void***)this;
+
+    // Lock
+    ((LockFn)vtable[3])(this);
+
+    int result;
+
+    // Check width via vtable slot 60
+    int width = ((GetDimFn)vtable[60])(this);
+    if (width == 3) {
+        // Check height via vtable slot 61
+        int height = ((GetDimFn)vtable[61])(this);
+        if (height == 3) {
+            // Both dimensions are the "ready" sentinel — activate outputs
+            ((ActivateFn)vtable[68])(this, 1);
+            ((ActivateFn)vtable[69])(this, 1);
+            result = 0;
+        } else {
+            result = (int)0x80004005;  // E_FAIL
+        }
+    } else {
+        result = (int)0x80004005;  // E_FAIL
+    }
+
+    // Unlock
+    ((UnlockFn)vtable[5])(this);
+
+    return result;
+}
+
+/**
+ * CCalMoviePlayer::ScalarDeletingDtorBase @ 0x82491608 | size: 0x6C
+ *
+ * Scalar deleting destructor for the base CCalMoviePlayer class.
+ * Stamps the base vtable (0x820092C0), runs the event cleanup helper
+ * (CCalMoviePlayer_13), destroys the base object (util_85C8), and
+ * optionally frees memory if bit 0 of flags is set.
+ */
+void CCalMoviePlayer::ScalarDeletingDtorBase(int flags) {
+    // Stamp base CCalMoviePlayer vtable
+    *(void**)this = (void*)0x820092C0;
+
+    // Clean up events
+    CCalMoviePlayer_13(this);
+
+    // Destroy base object
+    util_85C8(this);
+
+    // Free if ownership flag set
+    if (flags & 1) {
+        rage_Free(this);
     }
 }
