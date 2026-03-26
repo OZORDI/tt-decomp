@@ -3456,6 +3456,129 @@ void phInst::ReadMMIOAndStore() {  // AC00_2hr
 
 
 // =============================================================================
+// rage::phInst -- Virtual Function Implementations (8-112B)
+// =============================================================================
+
+// External declarations for this batch
+extern void statePreInit_vfn_6(void* obj);  // @ 0x82494130
+extern void pg_6C80_g(int ms);              // Sleep/yield helper @ 0x82566C80
+
+// ---------------------------------------------------------------------------
+// 1. phInst::SetUserData (vfn_16) @ 0x8248B8C8 | size: 0x8
+//    Stores a 32-bit user data value at offset +284.
+//    stw r4,284(r3); blr
+// ---------------------------------------------------------------------------
+void phInst::SetUserData(uint32_t val) {  // vfn_16
+    *(uint32_t*)((char*)this + 284) = val;
+}
+
+// ---------------------------------------------------------------------------
+// 2. phInst::GetUserData (vfn_19) @ 0x8248B8D0 | size: 0x8
+//    Returns the 32-bit user data value from offset +284.
+//    lwz r3,284(r3); blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetUserData() {  // vfn_19
+    return *(uint32_t*)((char*)this + 284);
+}
+
+// ---------------------------------------------------------------------------
+// 3. phInst::SetCollisionGroup (vfn_38) @ 0x8248D808 | size: 0x8
+//    Stores the collision group identifier at offset +444.
+//    stw r4,444(r3); blr
+// ---------------------------------------------------------------------------
+void phInst::SetCollisionGroup(uint32_t val) {  // vfn_38
+    *(uint32_t*)((char*)this + 444) = val;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phInst::GetCollisionGroup (vfn_44) @ 0x8248D810 | size: 0x8
+//    Returns the collision group identifier from offset +444.
+//    lwz r3,444(r3); blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetCollisionGroup() {  // vfn_44
+    return *(uint32_t*)((char*)this + 444);
+}
+
+// ---------------------------------------------------------------------------
+// 5. phInst::SetCollisionMask (vfn_39) @ 0x8248D818 | size: 0x8
+//    Stores the collision filter mask at offset +448.
+//    stw r4,448(r3); blr
+// ---------------------------------------------------------------------------
+void phInst::SetCollisionMask(uint32_t val) {  // vfn_39
+    *(uint32_t*)((char*)this + 448) = val;
+}
+
+// ---------------------------------------------------------------------------
+// 6. phInst::GetCollisionMask (vfn_45) @ 0x8248D820 | size: 0x8
+//    Returns the collision filter mask from offset +448.
+//    lwz r3,448(r3); blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetCollisionMask() {  // vfn_45
+    return *(uint32_t*)((char*)this + 448);
+}
+
+// ---------------------------------------------------------------------------
+// 7. phInst::GetErrorCode (vfn_48) @ 0x8247E2D0 | size: 0xC
+//    Returns a constant error/status code 0x80004001 (generic failure).
+//    lis r3,-32768; ori r3,r3,16385; blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetErrorCode() {  // vfn_48
+    return 0x80004001;
+}
+
+// ---------------------------------------------------------------------------
+// 8. phInst::ZeroFieldRanges (vfn_32) @ 0x8248D758 | size: 0x70
+//    Zeros four 80-byte motion state regions at offsets +124, +284, +364,
+//    and +204, then clears the collision group (+444) and mask (+448).
+//    Each region is 20 dwords (80 bytes), zeroed via bdnz loop.
+// ---------------------------------------------------------------------------
+void phInst::ZeroFieldRanges() {  // vfn_32
+    memset((char*)this + 124, 0, 80);
+    memset((char*)this + 284, 0, 80);
+    memset((char*)this + 364, 0, 80);
+    memset((char*)this + 204, 0, 80);
+    *(uint32_t*)((char*)this + 444) = 0;
+    *(uint32_t*)((char*)this + 448) = 0;
+}
+
+// ---------------------------------------------------------------------------
+// 9. phInst::CallVfn12ThenInit (vfn_9) @ 0x8248D7C8 | size: 0x40
+//    Calls this->vfn_12() (vtable slot 12) then calls statePreInit_vfn_6
+//    on this object to perform pre-initialization reset.
+// ---------------------------------------------------------------------------
+void phInst::CallVfn12ThenInit() {  // vfn_9
+    this->vfn_12();
+    statePreInit_vfn_6(this);
+}
+
+// ---------------------------------------------------------------------------
+// 10. phInst::AtomicDecrementAndCallback (vfn_23) @ 0x82483FD8 | size: 0x3C
+//     Atomically decrements the reference count at offset +368 using
+//     lwarx/stwcx. If the callback pointer at +272 is non-null, tail-calls
+//     through it with the user data from +284 as the argument.
+// ---------------------------------------------------------------------------
+void phInst::AtomicDecrementAndCallback() {  // vfn_23
+    volatile uint32_t* refCount = (volatile uint32_t*)((char*)this + 368);
+
+    // Atomic decrement (lwarx/stwcx loop)
+    uint32_t old_val, new_val;
+    do {
+        old_val = *refCount;
+        new_val = old_val - 1;
+    } while (!__sync_bool_compare_and_swap(refCount, old_val, new_val));
+
+    // If callback function pointer is set, tail-call it
+    void* callbackFn = *(void**)((char*)this + 272);
+    if (callbackFn == nullptr)
+        return;
+
+    uint32_t userData = *(uint32_t*)((char*)this + 284);
+    typedef void (*CallbackFn)(uint32_t);
+    ((CallbackFn)callbackFn)(userData);
+}
+
+
+// =============================================================================
 // rage::phBoundCapsule -- Small Functions (<=64B) Batch Lift
 // =============================================================================
 
