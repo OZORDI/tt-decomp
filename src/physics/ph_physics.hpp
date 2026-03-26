@@ -384,18 +384,18 @@ struct phArticulatedCollider {
 struct phBound {
     void**      vtable;           // +0x00
 
-    virtual void ScalarDtor(int flags);   // [1] @ 0x8228CE18
-    virtual void vfn_2();                 // [2] @ 0x8228CE20
-    virtual void vfn_3();                 // [3] @ 0x8228D0E8
-    virtual void vfn_6();                 // [6] @ 0x8228D178
-    virtual void vfn_9();                 // [9] @ 0x8228CE38
-    virtual void vfn_14();                // [14] @ 0x8228D2F0
-    virtual void vfn_25();                // [25] @ 0x8228D450
-    virtual void vfn_27();                // [27] @ 0x8228D978
-    virtual void vfn_33();                // [33] @ 0x8228D9F8
-    virtual void vfn_34();                // [34] @ 0x8228DA18
-    virtual void vfn_35();                // [35] @ 0x8228DB08
-    virtual void vfn_37();                // [37] @ 0x8228D438
+    virtual void SetType(uint8_t type);          // [1] @ 0x8228CE18
+    virtual uint8_t GetType();                    // [2] @ 0x8228CE20
+    virtual void vfn_3();                         // [3] @ 0x8228D0E8
+    virtual void vfn_6();                         // [6] @ 0x8228D178
+    virtual void vfn_9();                         // [9] @ 0x8228CE38
+    virtual void vfn_14();                        // [14] @ 0x8228D2F0
+    virtual void vfn_25();                        // [25] @ 0x8228D450
+    virtual void vfn_27();                        // [27] @ 0x8228D978
+    virtual float GetMargin(void*, bool useOuter); // [33] @ 0x8228D9F8
+    virtual void vfn_34();                        // [34] @ 0x8228DA18
+    virtual void vfn_35();                        // [35] @ 0x8228DB08
+    virtual void vfn_37();                        // [37] @ 0x8228D438
 
     // debug string: "phBound::Load_v110 - not defined for this bound type (%d)"
     void Load_v110();
@@ -743,27 +743,27 @@ struct phBoundComposite {
     virtual void vfn_3();                   // [3] @ 0x8228E1E0
     virtual void vfn_8();                   // [8] @ 0x8228EE00
     virtual void vfn_9();                   // [9] @ 0x8228EE78
-    virtual void vfn_10();                  // [10] @ 0x82290808
-    virtual void vfn_11();                  // [11] @ 0x822906F0
-    virtual void vfn_12();                  // [12] @ 0x82290788
-    virtual void vfn_13();                  // [13] @ 0x82290830
-    virtual void vfn_14();                  // [14] @ 0x82290898
-    virtual void vfn_15();                  // [15] @ 0x82290988
-    virtual void vfn_16();                  // [16] @ 0x82290918
-    virtual void vfn_17();                  // [17] @ 0x8228F668
-    virtual void vfn_18();                  // [18] @ 0x8228F910
-    virtual void vfn_19();                  // [19] @ 0x8228FB60
-    virtual void vfn_20();                  // [20] @ 0x8228FDE0
-    virtual void vfn_21();                  // [21] @ 0x822901C0
-    virtual void vfn_22();                  // [22] @ 0x82290428
-    virtual void vfn_27();                  // [27] @ 0x822909F0
-    virtual void vfn_28();                  // [28] @ 0x8228DDA0
-    virtual void vfn_34();                  // [34] @ 0x8228F6C0
-    virtual void vfn_35();                  // [35] @ 0x8228F870
-    virtual void vfn_36();                  // [36] @ 0x8228E2B0
-    virtual void vfn_37();                  // [37] @ 0x8228E820
-    virtual void vfn_38();                  // [38] @ 0x82290708
-    virtual void vfn_39();                  // [39] @ 0x822907A0
+    virtual void* GetFirstChildCentroid();   // [10] @ 0x82290808
+    virtual void UpdateChildBounds();          // [11] @ 0x822906F0
+    virtual void RebuildChildBounds();         // [12] @ 0x82290788
+    virtual void vfn_13();                     // [13] @ 0x82290830
+    virtual void vfn_14();                     // [14] @ 0x82290898
+    virtual void vfn_15();                     // [15] @ 0x82290988
+    virtual void vfn_16();                     // [16] @ 0x82290918
+    virtual void vfn_17();                     // [17] @ 0x8228F668
+    virtual void vfn_18();                     // [18] @ 0x8228F910
+    virtual void vfn_19();                     // [19] @ 0x8228FB60
+    virtual void vfn_20();                     // [20] @ 0x8228FDE0
+    virtual void vfn_21();                     // [21] @ 0x822901C0
+    virtual void vfn_22();                     // [22] @ 0x82290428
+    virtual void vfn_27();                     // [27] @ 0x822909F0
+    virtual void CalculateExtents();           // [28] @ 0x8228DDA0
+    virtual void vfn_34();                     // [34] @ 0x8228F6C0
+    virtual void vfn_35();                     // [35] @ 0x8228F870
+    virtual void vfn_36();                     // [36] @ 0x8228E2B0
+    virtual void SetDefaultFlags();            // [37] @ 0x8228E820
+    virtual void vfn_38();                     // [38] @ 0x82290708
+    virtual void vfn_39();                     // [39] @ 0x822907A0
 };
 
 // ── rage::phBoundGeomCullable  [vtable @ 0x82058E7C] ─────────────────────────
@@ -1428,7 +1428,7 @@ struct phJoint1Dof {
     virtual void vfn_12();                        // [12] @ 0x82259DF8
     virtual void vfn_13();                        // [13] @ 0x82259428
     virtual void vfn_14();                        // [14] @ 0x822597E0
-    virtual void vfn_15();                        // [15] @ 0x82126CF8
+    virtual void* GetMotorData();                  // [15] @ 0x82126CF8
     virtual void vfn_16();                        // [16] @ 0x82255318
     virtual void vfn_17();                        // [17] @ 0x8225AB78
     virtual void vfn_18();                        // [18] @ 0x82259E58
@@ -1741,7 +1741,7 @@ struct phSleep {
     void**      vtable;           // +0x00
 
     virtual ~phSleep();                           // [0] @ 0x822C1A50
-    virtual void ScalarDtor(int flags);           // [1] @ 0x822DD238
+    virtual void Activate();                       // [1] @ 0x822DD238
     virtual void vfn_2();                         // [2] @ 0x822DD248
 };
 

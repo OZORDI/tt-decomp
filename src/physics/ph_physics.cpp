@@ -6462,4 +6462,165 @@ void phInst::CopyLastTransform(void* src, uint32_t srcLen) {  // vfn_34
     copyMatrix(this, src, srcLen, 40, (char*)this + 284);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phBound virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::SetType (vfn_1 / slot 1) @ 0x8228CE18 | size: 0x8
+//
+// Sets the bound's collision shape type identifier.
+// Offset 0x07 holds the type byte (e.g. sphere=0, capsule=1, box=2, etc.).
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound::SetType(uint8_t type) {
+    // stb r4,7(r3)
+    *reinterpret_cast<uint8_t*>(reinterpret_cast<uint8_t*>(this) + 7) = type;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::GetType (vfn_2 / slot 2) @ 0x8228CE20 | size: 0x8
+//
+// Returns the bound's collision shape type identifier.
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t phBound::GetType() {
+    // lbz r3,7(r3)
+    return *reinterpret_cast<uint8_t*>(reinterpret_cast<uint8_t*>(this) + 7);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::GetMargin (vfn_33 / slot 33) @ 0x8228D9F8 | size: 0x1c (28 bytes)
+//
+// Returns either the outer margin (offset +8) or inner margin (offset +12)
+// depending on the useOuter flag. Used for collision detection padding.
+//
+// Parameters:
+//   r4 — unused
+//   r5 — useOuter flag: if nonzero returns margin at +8, else at +12
+// ─────────────────────────────────────────────────────────────────────────────
+float phBound::GetMargin(void* /*unused*/, bool useOuter) {
+    uint8_t* base = reinterpret_cast<uint8_t*>(this);
+    if (useOuter) {
+        return *reinterpret_cast<float*>(base + 8);
+    }
+    return *reinterpret_cast<float*>(base + 12);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phBoundComposite virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::CalculateExtents (vfn_28 / slot 28) @ 0x8228DDA0 | size: 0x10
+//
+// Thunk to ComputeExtents (vtable slot 27). Loads the vtable and
+// tail-calls slot 27, which computes the AABB extents for this bound.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::CalculateExtents() {
+    // lwz r11,0(r3); lwz r10,108(r11); mtctr r10; bctr
+    void** vtbl = *reinterpret_cast<void***>(this);
+    typedef void (*Fn)(void*);
+    Fn fn = reinterpret_cast<Fn>(vtbl[27]);
+    fn(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::SetDefaultFlags (vfn_37 / slot 37) @ 0x8228E820 | size: 0x8
+//
+// Initializes composite bound flags to defaults by calling the internal
+// flag-update helper with flags = 0.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::SetDefaultFlags() {
+    // li r4,0; b pongCreatureInst_E828_v12
+    extern "C" void pongCreatureInst_E828_v12(void*, uint32_t);
+    pongCreatureInst_E828_v12(this, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::UpdateChildBounds (vfn_11 / slot 11) @ 0x822906F0 | size: 0x14
+//
+// Updates all child bounds in the composite. Dispatches to vtable slot 38
+// with a null filter parameter, causing all children to be updated.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::UpdateChildBounds() {
+    // lwz r11,0(r3); li r5,0; lwz r10,152(r11); mtctr r10; bctr
+    void** vtbl = *reinterpret_cast<void***>(this);
+    typedef void (*Fn)(void*, void*, void*);
+    Fn fn = reinterpret_cast<Fn>(vtbl[38]);
+    fn(this, nullptr, nullptr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::RebuildChildBounds (vfn_12 / slot 12) @ 0x82290788 | size: 0x14
+//
+// Rebuilds all child bounds in the composite. Dispatches to vtable slot 39
+// with a null filter parameter, causing a full rebuild.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::RebuildChildBounds() {
+    // lwz r11,0(r3); li r5,0; lwz r10,156(r11); mtctr r10; bctr
+    void** vtbl = *reinterpret_cast<void***>(this);
+    typedef void (*Fn)(void*, void*, void*);
+    Fn fn = reinterpret_cast<Fn>(vtbl[39]);
+    fn(this, nullptr, nullptr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::GetFirstChildCentroid (vfn_10 / slot 10) @ 0x82290808 | size: 0x28
+//
+// Returns the centroid of the first child bound in this composite.
+// Loads the child array from offset +0x70, dereferences the first element,
+// and tail-calls its virtual GetCentroid (vtable slot 10). Returns 0 if
+// the child array is empty.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phBoundComposite::GetFirstChildCentroid() {
+    // lwz r11,112(r3) — load child bounds array pointer
+    uint32_t* childArray = *reinterpret_cast<uint32_t**>(
+        reinterpret_cast<uint8_t*>(this) + 112);
+
+    // lwz r3,0(r11) — load first child bound
+    void* firstChild = reinterpret_cast<void*>(
+        static_cast<uintptr_t>(childArray[0]));
+
+    if (firstChild != nullptr) {
+        // Call firstChild->vtable[10]
+        void** childVtbl = *reinterpret_cast<void***>(firstChild);
+        typedef void* (*GetCentroidFn)(void*);
+        GetCentroidFn getCentroid = reinterpret_cast<GetCentroidFn>(childVtbl[10]);
+        return getCentroid(firstChild);
+    }
+
+    return nullptr;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phJoint1Dof virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phJoint1Dof::GetMotorData (vfn_15 / slot 15) @ 0x82126CF8 | size: 0x8
+//
+// Returns a pointer to the joint's motor/drive parameters block,
+// stored at offset +0x230 (560 bytes) from the start of the object.
+// The motor data controls the joint's target angle and drive strength.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phJoint1Dof::GetMotorData() {
+    // addi r3,r3,560
+    return reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(this) + 560);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phSleep virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSleep::Activate (vfn_1 / slot 1) @ 0x822DD238 | size: 0xc (12 bytes)
+//
+// Marks the sleep controller as active by setting the awake flag
+// at offset +4 to 1. This causes the physics simulation to keep
+// the associated body awake for collision processing.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSleep::Activate() {
+    // li r11,1; stw r11,4(r3)
+    *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 4) = 1;
+}
+
 } // namespace rage
