@@ -139,7 +139,10 @@ typedef struct MemTracker { void** vtable; } MemTracker;
 static MemTracker* get_mem_tracker(void)
 {
     extern void* g_pAllocatorBase;     /* @ SDA r13+0 */
-    return (MemTracker*)(((void**)g_pAllocatorBase)[1]);   /* field +4 */
+    if (!g_pAllocatorBase) return NULL;
+    void** base = (void**)g_pAllocatorBase;
+    if (!base[1]) return NULL;
+    return (MemTracker*)(base[1]);
 }
 
 static void mem_SetProcessName(MemTracker* t, const char* name)
@@ -461,16 +464,16 @@ int rage_Main(int argc, const char** argv)
     /* ── 4. Memory tracker: set process name + startup ─────────────── */
     MemTracker* tracker = get_mem_tracker();
 
-    if (g_gate_setProcessName.m_pName) {
+    if (tracker && g_gate_setProcessName.m_pName) {
         const char* exeToken = NULL;
         rage_GetExeName(&g_gate_setProcessName, &exeToken);
         if (exeToken)
             mem_SetProcessName(tracker, exeToken);
     }
-    mem_Startup(tracker);
+    if (tracker) mem_Startup(tracker);
 
     /* ── 5. Memory CSV logging ───────────────────────────────────────── */
-    if (g_gate_startLogging.m_pName) {
+    if (tracker && g_gate_startLogging.m_pName) {
         const char* csvPath = (g_gate_startLogging.m_pName[0] != '\0')
                               ? g_gate_startLogging.m_pName
                               : k_logmem_csv;
@@ -482,7 +485,7 @@ int rage_Main(int argc, const char** argv)
     int exitCode = rage_RunMain();
 
     /* ── 7. Stop CSV logging ────────────────────────────────────────── */
-    if (g_gate_startLogging.m_pName)
+    if (tracker && g_gate_startLogging.m_pName)
         mem_StopLogging(tracker);
 
     /* ── 8. Dump post-run leak report ────────────────────────────────── */
@@ -493,7 +496,7 @@ int rage_Main(int argc, const char** argv)
                        ? g_gate_dumpLeaks.m_pName
                        : k_leaks_path;
         }
-        mem_DumpLeaks(tracker, k_memtrack_key, leakPath);
+        if (tracker) mem_DumpLeaks(tracker, k_memtrack_key, leakPath);
     }
 
     /* ── 9. Network teardown (last caller only) ─────────────────────── */
