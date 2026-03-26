@@ -715,3 +715,303 @@ bool pongBallHitData::ValidateAttribute(uint32_t attributeHash) {
 const char* pongBallHitData::GetEventName() {
     return "HUD:SLOMO_ENTER_GENERIC";  // @ 0x8203E464
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallAudio::~pongBallAudio()  [vtable slot 0 @ 0x8228ABE0]
+// Destructor — destroys base audControl3d, then conditionally frees memory.
+// ─────────────────────────────────────────────────────────────────────────────
+pongBallAudio::~pongBallAudio() {
+    extern void audControl3d_Destructor(pongBallAudio* obj);  // @ 0x8228AC30
+    extern void rage_free(void* ptr);                         // @ 0x820C00C0
+
+    // Call base class (audControl3d) destructor
+    audControl3d_Destructor(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallHit destructor thunk  [rtti_73A8_0 @ 0x822824A8]
+// Destructor for pongBallHit — releases singleton data, sets vtable, frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongBallHit_Destructor(pongBallHit* self, int flags) {
+    extern void atSingleton_Release(void* obj);  // @ 0x821A9420
+    extern void rage_free(void* ptr);            // @ 0x820C00C0
+
+    constexpr uintptr_t kPongBallHitVtable = 0x820573A8u;
+
+    // Release singleton resources at offset +48
+    atSingleton_Release(reinterpret_cast<uint8_t*>(self) + 48);
+
+    // Set vtable pointer
+    self->vtable = reinterpret_cast<void**>(kPongBallHitVtable);
+
+    // Free memory if flag bit 0 is set
+    if (flags & 1) {
+        rage_free(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance secondary vtable destructor thunk  [rtti_7094_0 @ 0x82280890]
+// Adjusts 'this' by -80 to reach primary base, then calls primary destructor.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongBallInstance_SecondaryDtorThunk(pongBallInstance* secondaryBase) {
+    pongBallInstance* primary = reinterpret_cast<pongBallInstance*>(
+        reinterpret_cast<uint8_t*>(secondaryBase) - 80);
+    primary->~pongBallInstance();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance::SnapshotMatrixToGlobalSlot0()  [@ 0x822CD5F0]
+// Copies ball transform matrix into global ball state array (slot 0 / player 1).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongBallInstance::SnapshotMatrixToGlobalSlot0(pongBallInstance* ball) {
+    // Global ball state structure at 0x825CBCF0
+    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0 (17152 bytes)
+
+    // Get ball's transform matrix via vtable slot 2 (GetMatrix)
+    void* matrixPtr = ball->GetMatrix();
+
+    // Read ball's flags to get physics sub-object reference
+    uint32_t flagsObj = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(ball) + 4);
+    uint32_t physicsRef = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(flagsObj) + 12);
+
+    // Store metadata into global state (slot 0)
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 17064) = 0;               // clear status
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 17072) = reinterpret_cast<uintptr_t>(ball); // ball ptr
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 16912) = reinterpret_cast<uintptr_t>(
+        reinterpret_cast<uint8_t*>(ball) + 16);                               // ball data ptr
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 17056) = physicsRef;       // physics reference
+
+    // Copy 4x4 transform matrix (4 x 16-byte rows = 64 bytes)
+    const uint8_t* src = reinterpret_cast<const uint8_t*>(matrixPtr);
+    memcpy(g_ballStateData + 16928, src,      16);  // row 0
+    memcpy(g_ballStateData + 16944, src + 16, 16);  // row 1
+    memcpy(g_ballStateData + 16960, src + 32, 16);  // row 2
+    memcpy(g_ballStateData + 16976, src + 48, 16);  // row 3
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance::SnapshotMatrixToGlobalSlot1()  [@ 0x822CD690]
+// Copies ball transform matrix into global ball state array (slot 1 / player 2).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongBallInstance::SnapshotMatrixToGlobalSlot1(pongBallInstance* ball) {
+    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0
+
+    void* matrixPtr = ball->GetMatrix();
+
+    uint32_t flagsObj = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(ball) + 4);
+    uint32_t physicsRef = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(flagsObj) + 12);
+
+    // Store metadata into global state (slot 1 — offsets shifted by +4/+64 from slot 0)
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 17068) = 0;
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 17076) = reinterpret_cast<uintptr_t>(ball);
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 16916) = reinterpret_cast<uintptr_t>(
+        reinterpret_cast<uint8_t*>(ball) + 16);
+    *reinterpret_cast<uint32_t*>(g_ballStateData + 17060) = physicsRef;
+
+    const uint8_t* src = reinterpret_cast<const uint8_t*>(matrixPtr);
+    memcpy(g_ballStateData + 16992, src,      16);  // row 0
+    memcpy(g_ballStateData + 17008, src + 16, 16);  // row 1
+    memcpy(g_ballStateData + 17024, src + 32, 16);  // row 2
+    memcpy(g_ballStateData + 17040, src + 48, 16);  // row 3
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance::HandlePlayerHitEvent()  [@ 0x822C3B80]
+// Processes a player hit event on the ball — checks player state, resolves
+// the ball object, and either dispatches a hit or returns the player object.
+// ─────────────────────────────────────────────────────────────────────────────
+void* pongBallInstance::HandlePlayerHitEvent(void* eventData, void* hitContext) {
+    extern void pongBallInstance_DispatchHit(
+        pongBallInstance*, uint16_t, void*, void*, void*, void*, void*);  // @ 0x822C4980
+
+    // Get flags/player-state lookup table
+    uint32_t flagsObj = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 4);
+    uint16_t playerIndex = *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(hitContext) + 8);
+    uint8_t* playerStateTable = reinterpret_cast<uint8_t*>(
+        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(flagsObj) + 28));
+    uint8_t stateFlags = playerStateTable[playerIndex];
+
+    // Check if player state is exactly 1 (active single player)
+    bool isActivePlayer = (stateFlags & 0x7) == 1;
+
+    if (isActivePlayer) {
+        // Try to find the ball object by ID
+        void* ballObj = FindObjectByID(playerIndex);
+        if (ballObj != nullptr) {
+            // Check if ball is valid via vtable slot 7
+            void** objVtable = *reinterpret_cast<void***>(ballObj);
+            bool (*isValid)(void*) = reinterpret_cast<bool (*)(void*)>(objVtable[7]);
+            if (!isValid(ballObj)) {
+                return nullptr;
+            }
+        }
+
+        // Dispatch the hit event
+        pongBallInstance_DispatchHit(this, playerIndex, nullptr, eventData, nullptr, nullptr, nullptr);
+        return nullptr;
+    }
+
+    // Player state is not active — check if state is zero (no player)
+    uint8_t rawState = playerStateTable[playerIndex];
+    bool noPlayer = (rawState & 0x7) == 0;
+
+    if (noPlayer) {
+        // Get player object via flags vtable slot 4
+        uint32_t flagsObj2 = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 4);
+        void** fVtable = *reinterpret_cast<void***>(reinterpret_cast<void*>(flagsObj2));
+        void* (*getPlayer)(void*) = reinterpret_cast<void* (*)(void*)>(fVtable[4]);
+        return getPlayer(reinterpret_cast<void*>(flagsObj2));
+    }
+
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance::HandleRemotePlayerHit()  [@ 0x822D5400]
+// Similar to HandlePlayerHitEvent but for remote/networked player hits.
+// Loads ball instance from a global pointer instead of using 'this'.
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongBallInstance::HandleRemotePlayerHit(void* hitContext) {
+    extern uint32_t g_playerManagerPtr;  // @ 0x826065E4 (SDA global)
+    extern uint32_t g_ballInstancePtr;   // @ 0x825F5BD0
+
+    extern void pongBallInstance_DispatchHit(
+        pongBallInstance*, uint16_t, void*, void*, void*, void*, void*);  // @ 0x822C4980
+
+    // Look up player state from global player manager
+    uint32_t playerMgr = *reinterpret_cast<uint32_t*>(&g_playerManagerPtr);
+    uint16_t playerIndex = *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(hitContext) + 8);
+    uint8_t* playerStateTable = reinterpret_cast<uint8_t*>(
+        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(playerMgr) + 28));
+    uint8_t stateFlags = playerStateTable[playerIndex];
+
+    bool isActivePlayer = (stateFlags & 0x7) == 1;
+
+    if (!isActivePlayer) {
+        // No active player — return true (handled)
+        return true;
+    }
+
+    // Load ball instance from global
+    auto* ballInstance = reinterpret_cast<pongBallInstance*>(
+        *reinterpret_cast<uint32_t*>(&g_ballInstancePtr));
+
+    // Try to find ball object by player index
+    void* ballObj = ballInstance->FindObjectByID(playerIndex);
+    if (ballObj != nullptr) {
+        // Check validity via vtable slot 7
+        void** objVtable = *reinterpret_cast<void***>(ballObj);
+        bool (*isValid)(void*) = reinterpret_cast<bool (*)(void*)>(objVtable[7]);
+        if (!isValid(ballObj)) {
+            return false;
+        }
+        // Reload ball instance (may have changed)
+        ballInstance = reinterpret_cast<pongBallInstance*>(
+            *reinterpret_cast<uint32_t*>(&g_ballInstancePtr));
+    }
+
+    // Dispatch hit with caller context
+    pongBallInstance_DispatchHit(ballInstance, playerIndex, nullptr, nullptr, nullptr, this, nullptr);
+
+    return (ballInstance != nullptr);  // returns dispatch result
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmBallNode::IsEventHandled()  [vtable slot 20 @ 0x822808E8]
+// Checks if a given event hash matches any of the 4 known ball event types.
+// ─────────────────────────────────────────────────────────────────────────────
+bool gmBallNode::IsEventHandled(uint32_t eventHash) {
+    extern uint32_t g_eventHash_BallHit;       // @ 0x825C4954
+    extern uint32_t g_eventHash_BallBounce;    // @ 0x825C2D74
+    extern uint32_t g_eventHash_BallSpin;      // @ 0x825C2D78
+    extern uint32_t g_eventHash_BallCollision; // @ 0x825C93D0
+
+    if (eventHash == g_eventHash_BallHit) {
+        return true;
+    }
+    if (eventHash == g_eventHash_BallBounce) {
+        return true;
+    }
+    if (eventHash == g_eventHash_BallSpin) {
+        return true;
+    }
+    if (eventHash == g_eventHash_BallCollision) {
+        return true;
+    }
+
+    return false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmBallNode::GetTypeName()  [vtable slot 19 @ 0x82280940]
+// Returns the RTTI type name string for this node class.
+// ─────────────────────────────────────────────────────────────────────────────
+const char* gmBallNode::GetTypeName() {
+    // Points to the RTTI type info name at 0x820570A0 (in .rdata)
+    return reinterpret_cast<const char*>(0x820570A0u);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmBallNode::Reset()  [vtable slot 24 @ 0x82281368]
+// Resets the ball node — frees allocated resources, destroys child objects,
+// and clears global ball state pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmBallNode::Reset() {
+    extern void rage_free(void* ptr);       // @ 0x820C00C0
+    extern uint32_t g_gameBallStatePtr;     // @ 0x8271A2F4
+    extern uint32_t g_activeBallNodePtr;    // @ 0x82606570
+
+    // Clear the global game ball state pointer
+    g_gameBallStatePtr = 0;
+
+    // Free allocated buffers at offsets +172, +176, +180
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    rage_free(reinterpret_cast<void*>(*reinterpret_cast<uint32_t*>(self + 172)));
+    rage_free(reinterpret_cast<void*>(*reinterpret_cast<uint32_t*>(self + 176)));
+    rage_free(reinterpret_cast<void*>(*reinterpret_cast<uint32_t*>(self + 180)));
+
+    // Destroy physics object at offset +184 (has secondary base at +16)
+    void* physicsObj = reinterpret_cast<void*>(*reinterpret_cast<uint32_t*>(self + 184));
+    if (physicsObj != nullptr) {
+        void* secondaryBase = reinterpret_cast<uint8_t*>(physicsObj) + 16;
+        void** objVtable = *reinterpret_cast<void***>(secondaryBase);
+        void (*destructor)(void*, int) = reinterpret_cast<void (*)(void*, int)>(objVtable[0]);
+        destructor(secondaryBase, 1);
+    }
+
+    // Destroy audio object at offset +188
+    void* audioObj = reinterpret_cast<void*>(*reinterpret_cast<uint32_t*>(self + 188));
+    if (audioObj != nullptr) {
+        void** audioVtable = *reinterpret_cast<void***>(audioObj);
+        void (*audioDtor)(void*, int) = reinterpret_cast<void (*)(void*, int)>(audioVtable[0]);
+        audioDtor(audioObj, 1);
+    }
+
+    // Clear the active ball node pointer
+    g_activeBallNodePtr = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmBallNode secondary vtable destructor thunk  [rtti_7298_0 @ 0x82282498]
+// Adjusts 'this' by -128 to reach primary base, then calls primary destructor.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmBallNode_SecondaryDtorThunk(gmBallNode* secondaryBase) {
+    gmBallNode* primary = reinterpret_cast<gmBallNode*>(
+        reinterpret_cast<uint8_t*>(secondaryBase) - 128);
+    primary->~gmBallNode();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmBallNode tertiary vtable destructor thunk  [rtti_7288_0 @ 0x82281CF8]
+// Loads child object at this+28, then calls its destructor through vtable.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmBallNode_TertiaryDtorThunk(gmBallNode* self) {
+    // Load the secondary base object pointer at offset +28
+    void* childObj = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(self) + 28);
+
+    // Call the child's destructor through its vtable slot 0
+    void** childVtable = *reinterpret_cast<void***>(childObj);
+    void (*destructor)(void*) = reinterpret_cast<void (*)(void*)>(childVtable[0]);
+    destructor(childObj);
+}
