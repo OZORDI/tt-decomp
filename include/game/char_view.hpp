@@ -61,7 +61,9 @@
 class pongAttractState : public hsmState {
 public:
     // Virtual methods
-    
+    virtual void ProcessInput();
+    virtual void Reset();
+
     /**
      * GetContext @ 0x823057E8 | size: 0x18
      * Returns the UI context object, forwarding to screen object's vtable slot 4
