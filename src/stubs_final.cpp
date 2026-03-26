@@ -112,3 +112,7 @@ namespace rage { class atSingleton; void ReleaseSingleton(atSingleton*) {} }
 void pongAttractState::ProcessInput() {}
 void pongAttractState::Reset() {}
 
+
+void pongAttractState::GetName() {}
+void pongAttractState::Shutdown() {}
+

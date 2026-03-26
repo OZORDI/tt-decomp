@@ -63,6 +63,8 @@ public:
     // Virtual methods
     virtual void ProcessInput();
     virtual void Reset();
+    virtual void GetName();
+    virtual void Shutdown();
 
     /**
      * GetContext @ 0x823057E8 | size: 0x18
