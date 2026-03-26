@@ -5817,3 +5817,389 @@ void rage::phBoundCapsule::DispatchCapsuleFromCamera(void* param1, void* param2)
     // Dispatch the full capsule collision test
     phBoundCapsule_81D8_g(this, param1, param2, camPosX, clampedY, camPosZ, cameraAngle, capsuleExtent);
 }
+
+
+// =========================================================================
+// Matrix Transpose-Multiply Utilities
+// =========================================================================
+
+/**
+ * phMatrix34TransposeMultiply @ 0x821181C8 | size: 0xB0 (176 bytes)
+ *
+ * Computes result = transpose(A) * B for two 4x3 matrices (stored as 4 rows
+ * of 16-byte SIMD vectors), producing a 4x4 output matrix of dot products.
+ *
+ * The function also computes a difference vector (A.row3 - B.row3) and dots
+ * it with each column of B to fill the fourth output row. This is the
+ * classic "transform point into local space" pattern used throughout the
+ * physics engine for converting world-space matrices into body-local frames.
+ *
+ * @param outMatrix  Pointer to 4x16-byte output matrix (4 rows of vec4)
+ * @param matrixB    Pointer to 4x16-byte input matrix B (4 rows of vec4)
+ */
+void phMatrix34TransposeMultiply(float* outMatrix, const float* matrixB) {
+    // Load all 4 rows of matrix A (outMatrix is reused as input A)
+    const float* rowA0 = outMatrix;        // +0
+    const float* rowA1 = outMatrix + 4;    // +16
+    const float* rowA2 = outMatrix + 8;    // +32
+    const float* rowA3 = outMatrix + 12;   // +48
+
+    // Load all 4 rows of matrix B
+    const float* rowB0 = matrixB;          // +0
+    const float* rowB1 = matrixB + 4;      // +16
+    const float* rowB2 = matrixB + 8;      // +32
+    const float* rowB3 = matrixB + 12;     // +48
+
+    // Compute difference vector: delta = A.row3 - B.row3
+    float delta[4];
+    delta[0] = rowA3[0] - rowB3[0];
+    delta[1] = rowA3[1] - rowB3[1];
+    delta[2] = rowA3[2] - rowB3[2];
+    delta[3] = rowA3[3] - rowB3[3];
+
+    // Row 0: dot3(A.row0, B.row_j)
+    float dot00 = rowA0[0]*rowB0[0] + rowA0[1]*rowB0[1] + rowA0[2]*rowB0[2];
+    float dot01 = rowA0[0]*rowB1[0] + rowA0[1]*rowB1[1] + rowA0[2]*rowB1[2];
+    float dot02 = rowA0[0]*rowB2[0] + rowA0[1]*rowB2[1] + rowA0[2]*rowB2[2];
+
+    // Row 1: dot3(A.row1, B.row_j)
+    float dot10 = rowA1[0]*rowB0[0] + rowA1[1]*rowB0[1] + rowA1[2]*rowB0[2];
+    float dot11 = rowA1[0]*rowB2[0] + rowA1[1]*rowB2[1] + rowA1[2]*rowB2[2];
+    float dot12 = rowA1[0]*rowB1[0] + rowA1[1]*rowB1[1] + rowA1[2]*rowB1[2];
+
+    // Row 2: dot3(A.row2, B.row_j)
+    float dot20 = rowA2[0]*rowB0[0] + rowA2[1]*rowB0[1] + rowA2[2]*rowB0[2];
+    float dot21 = rowA2[0]*rowB2[0] + rowA2[1]*rowB2[1] + rowA2[2]*rowB2[2];
+    float dot22 = rowA2[0]*rowB1[0] + rowA2[1]*rowB1[1] + rowA2[2]*rowB1[2];
+
+    // Row 3: dot3(delta, B.row_j)
+    float dot30 = delta[0]*rowB0[0] + delta[1]*rowB0[1] + delta[2]*rowB0[2];
+    float dot31 = delta[0]*rowB1[0] + delta[1]*rowB1[1] + delta[2]*rowB1[2];
+    float dot32 = delta[0]*rowB2[0] + delta[1]*rowB2[1] + delta[2]*rowB2[2];
+
+    // Pack results into output matrix rows (vmrghw interleave pattern)
+    outMatrix[0]  = dot00;  outMatrix[1]  = dot01;  outMatrix[2]  = dot02;  outMatrix[3]  = 0.0f;
+    outMatrix[4]  = dot10;  outMatrix[5]  = dot12;  outMatrix[6]  = dot11;  outMatrix[7]  = 0.0f;
+    outMatrix[8]  = dot20;  outMatrix[9]  = dot22;  outMatrix[10] = dot21;  outMatrix[11] = 0.0f;
+    outMatrix[12] = dot30;  outMatrix[13] = dot31;  outMatrix[14] = dot32;  outMatrix[15] = 0.0f;
+}
+
+/**
+ * phMatrix33TransposeMultiply @ 0x82296D20 | size: 0x94 (148 bytes)
+ *
+ * Computes result = transpose(A) * B for two 3x3 matrices (each stored as
+ * 3 rows of 16-byte SIMD vectors). The output is written as 3 rows of
+ * dot products packed via the vmrghw interleave pattern.
+ *
+ * This is the 3x3 variant of the 4x3 transpose-multiply, used for
+ * rotating inertia tensors and normal-space transforms.
+ *
+ * @param outMatrix  Pointer to 3x16-byte output (3 rows of vec4)
+ * @param matrixA    Pointer to 3x16-byte input matrix A (3 rows)
+ * @param matrixB    Pointer to 3x16-byte input matrix B (3 rows)
+ */
+void phMatrix33TransposeMultiply(float* outMatrix, const float* matrixA, const float* matrixB) {
+    const float* rowA0 = matrixA;
+    const float* rowA1 = matrixA + 4;
+    const float* rowA2 = matrixA + 8;
+
+    const float* rowB0 = matrixB;
+    const float* rowB1 = matrixB + 4;
+    const float* rowB2 = matrixB + 8;
+
+    // Compute 3x3 dot product matrix: result[i][j] = dot3(A.row[i], B.row[j])
+    float dot00 = rowA0[0]*rowB0[0] + rowA0[1]*rowB0[1] + rowA0[2]*rowB0[2];
+    float dot01 = rowA0[0]*rowB1[0] + rowA0[1]*rowB1[1] + rowA0[2]*rowB1[2];
+    float dot02 = rowA0[0]*rowB2[0] + rowA0[1]*rowB2[1] + rowA0[2]*rowB2[2];
+
+    float dot10 = rowA1[0]*rowB0[0] + rowA1[1]*rowB0[1] + rowA1[2]*rowB0[2];
+    float dot11 = rowA1[0]*rowB2[0] + rowA1[1]*rowB2[1] + rowA1[2]*rowB2[2];
+    float dot12 = rowA1[0]*rowB1[0] + rowA1[1]*rowB1[1] + rowA1[2]*rowB1[2];
+
+    float dot20 = rowA2[0]*rowB0[0] + rowA2[1]*rowB0[1] + rowA2[2]*rowB0[2];
+    float dot21 = rowA2[0]*rowB1[0] + rowA2[1]*rowB1[1] + rowA2[2]*rowB1[2];
+    float dot22 = rowA2[0]*rowB2[0] + rowA2[1]*rowB2[1] + rowA2[2]*rowB2[2];
+
+    // Store packed output (preserving existing w components from outMatrix)
+    outMatrix[0]  = dot00;  outMatrix[1]  = dot01;  outMatrix[2]  = dot02;
+    outMatrix[4]  = dot10;  outMatrix[5]  = dot12;  outMatrix[6]  = dot11;
+    outMatrix[8]  = dot20;  outMatrix[9]  = dot21;  outMatrix[10] = dot22;
+}
+
+/**
+ * phCollisionPairArrayInit @ 0x8221FD78 | size: 0x58 (88 bytes)
+ *
+ * Initializes a collision contact pair structure. Clears 4 weight values
+ * (uint16 at +16..+22) to zero and sets 4 index values (uint16 at +24..+30)
+ * to 0xFFFF (invalid). Then zeros four floats at offsets +0..+12.
+ *
+ * The early-out checks a global flag (physics paused / disabled); if set,
+ * the function returns immediately without initialization.
+ *
+ * @param contactPair  Pointer to 32-byte collision contact pair structure
+ */
+void phCollisionPairArrayInit(void* contactPair) {
+    // Check global physics-disabled flag
+    extern uint8_t g_physicsDisabled;  // @ 0x826064E0
+    if (g_physicsDisabled != 0)
+        return;
+
+    uint8_t* pair = (uint8_t*)contactPair;
+
+    // Clear 4 weight values (uint16) at +16..+22
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(pair + 16 + i * 2) = 0;
+    }
+
+    // Set 4 index slots (uint16) at +24..+30 to invalid (0xFFFF)
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(pair + 24 + i * 2) = 0xFFFF;
+    }
+
+    // Zero 4 floats at +0..+12
+    float* floats = (float*)pair;
+    floats[0] = 0.0f;
+    floats[1] = 0.0f;
+    floats[2] = 0.0f;
+    floats[3] = 0.0f;
+}
+
+// =========================================================================
+// rage::phBound Hierarchy Constructors
+// =========================================================================
+
+// Forward declarations for init helpers
+extern void ke_1B00(void* listNode);           // Intrusive list node init
+extern void phBoundSphere_vfn_37(void* bound); // Sphere-specific init
+extern void ph_9BC0(void* listHead);           // Collision list init
+
+// Global identity-like AABB template vector
+extern const uint8_t lbl_826067C0[16];
+
+/**
+ * rage::phBound::phBound @ 0x8228CE50 | size: 0x90 (144 bytes)
+ *
+ * Base constructor for all physics bound volumes. Initializes the vtable,
+ * bound type (0xFF = unset), radius fields, flags, and copies a template
+ * vector into the AABB min/max slots. Also initializes 7 material index
+ * slots to zero.
+ */
+void phBound_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    *(uint32_t*)(obj + 0) = 0x82057EF4;  // vtable -> rage::phBound
+    *(uint8_t*)(obj + 4) = 0xFF;          // bound type = uninitialized
+    *(float*)(obj + 8)  = 0.0f;           // bounding radius
+    *(float*)(obj + 12) = 0.0f;           // margin
+    *(uint8_t*)(obj + 5) = 0;
+    *(uint8_t*)(obj + 6) = 0;
+    *(uint8_t*)(obj + 7) = 0;
+
+    // Copy AABB template into 4 vector slots
+    memcpy(obj + 16, lbl_826067C0, 16);
+    memcpy(obj + 32, lbl_826067C0, 16);
+    memcpy(obj + 48, lbl_826067C0, 16);
+    memcpy(obj + 80, lbl_826067C0, 16);
+
+    // Material count = 1, clear 7 material index slots
+    *(uint16_t*)(obj + 96) = 1;
+    for (int i = 0; i < 7; i++) {
+        *(uint16_t*)(obj + 98 + i * 2) = 0;
+    }
+}
+
+/**
+ * rage::phBoundGeometry::phBoundGeometry @ 0x82290F78 | size: 0x8C (140 bytes)
+ *
+ * Constructor for phBoundGeometry, the triangle-mesh collision bound.
+ * Calls phBound base ctor, then sets the geometry vtable and initializes
+ * vertex/index pointers, polygon count, edge data, and material mapping.
+ */
+void phBoundGeometry_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82058494;  // vtable -> rage::phBoundGeometry
+    *(uint8_t*)(obj + 4) = 3;             // bound type = geometry
+    *(uint32_t*)(obj + 132) = 0xFFFFFFFF; // material index = -1
+    *(uint32_t*)(obj + 140) = 0xFFFFFFFF; // edge data index = -1
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint8_t*)(obj + 128)  = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 148) = 0;
+    *(uint32_t*)(obj + 112) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 160) = 0;
+    *(uint32_t*)(obj + 164) = 0;
+    *(uint8_t*)(obj + 168)  = 0;
+
+    for (int i = 0; i < 7; i++) {
+        *(uint8_t*)(obj + 169 + i) = 0;
+    }
+}
+
+/**
+ * rage::phBoundRibbon::phBoundRibbon @ 0x8229D8D0 | size: 0xA0 (160 bytes)
+ *
+ * Constructor for phBoundRibbon, a ribbon/spline-based collision bound used
+ * for net cords and similar thin geometry.
+ */
+void phBoundRibbon_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x820589BC;  // vtable -> rage::phBoundRibbon
+    *(uint8_t*)(obj + 4) = 7;             // bound type = ribbon
+    *(float*)(obj + 8)  = -1.0f;
+    *(float*)(obj + 12) = -1.0f;
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint32_t*)(obj + 112) = 0;
+
+    // Zero surface normal vector at +48
+    *(uint32_t*)(obj + 48) = 0;
+    *(uint32_t*)(obj + 52) = 0;
+    *(uint32_t*)(obj + 56) = 0;
+    *(uint32_t*)(obj + 60) = 0;
+
+    *(uint32_t*)(obj + 136) = 0xFFFFFFFF;
+    *(float*)(obj + 128) = -1.0f;
+    *(uint32_t*)(obj + 164) = 0;
+    *(uint32_t*)(obj + 168) = 0;
+    *(uint32_t*)(obj + 172) = 0;
+    *(uint32_t*)(obj + 176) = 0;
+    *(uint32_t*)(obj + 180) = 0;
+    *(uint32_t*)(obj + 184) = 0;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 148) = 0;
+    *(uint32_t*)(obj + 152) = 0;
+    *(uint32_t*)(obj + 156) = 0;
+    *(uint32_t*)(obj + 160) = 0;
+}
+
+/**
+ * rage::phBoundOTGrid::phBoundOTGrid @ 0x8229B4E0 | size: 0x70 (112 bytes)
+ *
+ * Constructor for phBoundOTGrid, the octree-grid collision bound used for
+ * large static world geometry.
+ */
+void phBoundOTGrid_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82058854;  // vtable -> rage::phBoundOTGrid
+    *(uint8_t*)(obj + 4) = 6;             // bound type = OTGrid
+    *(float*)(obj + 112) = 0.0f;
+    *(float*)(obj + 116) = 0.0f;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint32_t*)(obj + 128) = 0;
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+    *(uint32_t*)(obj + 148) = 0xFFFFFFFF;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 152) = 0;
+    *(uint32_t*)(obj + 156) = 0;
+}
+
+/**
+ * rage::phBoundComposite::phBoundComposite @ 0x8228DE80 | size: 0x7C (124 bytes)
+ *
+ * Constructor for phBoundComposite, a container bound that holds multiple
+ * child phBound objects.
+ */
+void phBoundComposite_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82057FD4;  // vtable -> rage::phBoundComposite
+
+    // Initialize two intrusive list nodes
+    ke_1B00((void*)(obj + 120));
+    ke_1B00((void*)(obj + 124));
+
+    *(uint8_t*)(obj + 4) = 9;  // bound type = composite
+    *(uint32_t*)(obj + 112) = 0;
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+
+    // Zero AABB vector at +48
+    *(uint32_t*)(obj + 48) = 0;
+    *(uint32_t*)(obj + 52) = 0;
+    *(uint32_t*)(obj + 56) = 0;
+    *(uint32_t*)(obj + 60) = 0;
+
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+}
+
+/**
+ * rage::phBoundSphere::phBoundSphere @ 0x822954C8 | size: 0x7C (124 bytes)
+ *
+ * Constructor for phBoundSphere, the simplest collision volume.
+ * Initializes radius to -1.0 (unset), zeros center vector, and
+ * calls sphere-specific material init.
+ */
+void phBoundSphere_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82058584;  // vtable -> rage::phBoundSphere
+    *(uint8_t*)(obj + 4) = 0;             // bound type = sphere
+    *(float*)(obj + 8) = -1.0f;           // radius = unset
+
+    // Zero center vector at +48
+    *(uint32_t*)(obj + 48) = 0;
+    *(uint32_t*)(obj + 52) = 0;
+    *(uint32_t*)(obj + 56) = 0;
+    *(uint32_t*)(obj + 60) = 0;
+
+    // Splat radius into AABB extent vector
+    float radius = -1.0f;
+    *(float*)(obj + 112) = radius;
+    *(float*)(obj + 116) = radius;
+    *(float*)(obj + 120) = radius;
+    *(float*)(obj + 124) = radius;
+
+    *(uint32_t*)(obj + 128) = 0;
+
+    phBoundSphere_vfn_37(thisPtr);
+
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+}
+
+/**
+ * rage::phBoundOctree::phBoundOctree @ 0x822971A8 | size: 0x74 (116 bytes)
+ *
+ * Constructor for phBoundOctree, a spatial partitioning bound for efficient
+ * broadphase collision queries. Extends phBoundGeometry with octree data.
+ */
+void phBoundOctree_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBoundGeometry_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x8205872C;  // vtable -> rage::phBoundOctree
+    *(uint8_t*)(obj + 128) = 1;           // has octree = true
+    *(uint8_t*)(obj + 4) = 4;             // bound type = octree
+
+    ph_9BC0((void*)(obj + 176));
+
+    *(uint32_t*)(obj + 176) = 0;
+    *(uint32_t*)(obj + 180) = 0;
+    *(uint32_t*)(obj + 184) = 0;
+    *(uint32_t*)(obj + 188) = 0;
+}
