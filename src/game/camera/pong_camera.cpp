@@ -817,3 +817,241 @@ bool pongCameraMgr::IsCameraStateThirteen() const {
     extern int32_t g_cameraState;  // @ 0x825C5EB8
     return (g_cameraState == 13);
 }
+
+
+// ── Pattern K: Dual-query AND functions (108B each, 3 functions) ────────────
+
+/**
+ * pongCameraMgr dual-query camera checks @ 0x821F4688-4768 | 108B each
+ *
+ * Each creates a temporary copy of the camera state (first 8 bytes),
+ * validates it with two different query helpers at modes 3 and 16.
+ * Returns true only when BOTH queries succeed. The copy prevents
+ * mutation of the original camera state during validation.
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckDualQueryAA()  @ 0x821F4688 | size: 0x6C
+// Validates via QueryA(mode=3) AND QueryA(mode=16) on a state copy
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckDualQueryAA(void* gameState) {
+    // Copy first 8 bytes of this into a local buffer for non-destructive query
+    uint64_t stateCopy;
+    stateCopy = *(uint64_t*)this;
+
+    bool firstCheck = pongCameraMgr_QueryA(&stateCopy, 3);
+
+    // Reload state copy (query may have modified the buffer)
+    stateCopy = *(uint64_t*)this;
+    bool secondCheck = pongCameraMgr_QueryA(&stateCopy, 16);
+
+    if (!firstCheck) {
+        return false;
+    }
+    return secondCheck;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckDualQueryCB()  @ 0x821F46F8 | size: 0x6C
+// Validates via QueryC(mode=3) AND QueryB(mode=16) on a state copy
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckDualQueryCB(void* gameState) {
+    uint64_t stateCopy;
+    stateCopy = *(uint64_t*)this;
+
+    bool firstCheck = pongCameraMgr_QueryC(&stateCopy, 3);
+
+    stateCopy = *(uint64_t*)this;
+    bool secondCheck = pongCameraMgr_QueryB(&stateCopy, 16);
+
+    if (!firstCheck) {
+        return false;
+    }
+    return secondCheck;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckDualQueryBC()  @ 0x821F4768 | size: 0x6C
+// Validates via QueryB(mode=3) AND QueryC(mode=16) on a state copy
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckDualQueryBC(void* gameState) {
+    uint64_t stateCopy;
+    stateCopy = *(uint64_t*)this;
+
+    bool firstCheck = pongCameraMgr_QueryB(&stateCopy, 3);
+
+    stateCopy = *(uint64_t*)this;
+    bool secondCheck = pongCameraMgr_QueryC(&stateCopy, 16);
+
+    if (!firstCheck) {
+        return false;
+    }
+    return secondCheck;
+}
+
+// ── Pattern L: Triple-query function (120B) ─────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckMultiModeQueryA()  @ 0x821F47D8 | size: 0x78
+// Queries QueryA with modes 16, 3, and 19; returns true if (16 OR 3) AND 19
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckMultiModeQueryA(void* gameState) {
+    bool checkMode16 = pongCameraMgr_QueryA(this, 16);
+    bool checkMode3  = pongCameraMgr_QueryA(this, 3);
+    bool checkMode19 = pongCameraMgr_QueryA(this, 19);
+
+    // Return true if (mode16 OR mode3) succeeded, AND mode19 also succeeded
+    if (checkMode16 || checkMode3) {
+        return checkMode19;
+    }
+    return false;
+}
+
+// ── Pattern M: Query-with-offset functions (140B each, 3 functions) ─────────
+
+extern float g_cameraOffsetDelta;  // @ 0x8202D108 (.rdata float constant)
+
+/**
+ * pongCameraMgr offset-adjusted camera queries @ 0x821F6990-6AB0 | 140B each
+ *
+ * Each creates a state copy, queries with mode 20. If that succeeds,
+ * adds a float offset constant to the copied value and queries again
+ * with mode 3. Used for checking camera positions at an adjusted offset
+ * without modifying the original camera state.
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckOffsetQueryA()  @ 0x821F6990 | size: 0x8C
+// Queries mode 20 via QueryA, then retries offset-adjusted copy via QueryA mode 3
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckOffsetQueryA(void* gameState) {
+    uint64_t stateCopy = *(uint64_t*)this;
+
+    bool initialCheck = pongCameraMgr_QueryA(&stateCopy, 20);
+    if (!initialCheck) {
+        return false;
+    }
+
+    // Add offset delta to the float value in the copy
+    float currentValue = *(float*)this;
+    float adjustedValue = currentValue + g_cameraOffsetDelta;
+    *(float*)&stateCopy = adjustedValue;
+
+    return pongCameraMgr_QueryA(&stateCopy, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckOffsetQueryB()  @ 0x821F6A20 | size: 0x8C
+// Queries mode 20 via QueryB, then retries offset-adjusted copy via QueryA mode 3
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckOffsetQueryB(void* gameState) {
+    uint64_t stateCopy = *(uint64_t*)this;
+
+    bool initialCheck = pongCameraMgr_QueryB(&stateCopy, 20);
+    if (!initialCheck) {
+        return false;
+    }
+
+    float currentValue = *(float*)this;
+    float adjustedValue = currentValue + g_cameraOffsetDelta;
+    *(float*)&stateCopy = adjustedValue;
+
+    return pongCameraMgr_QueryA(&stateCopy, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckOffsetQueryC()  @ 0x821F6AB0 | size: 0x8C
+// Queries mode 20 via QueryC, then retries offset-adjusted copy via QueryA mode 3
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckOffsetQueryC(void* gameState) {
+    uint64_t stateCopy = *(uint64_t*)this;
+
+    bool initialCheck = pongCameraMgr_QueryC(&stateCopy, 20);
+    if (!initialCheck) {
+        return false;
+    }
+
+    float currentValue = *(float*)this;
+    float adjustedValue = currentValue + g_cameraOffsetDelta;
+    *(float*)&stateCopy = adjustedValue;
+
+    return pongCameraMgr_QueryA(&stateCopy, 3);
+}
+
+// ── Pattern N: Elapsed time threshold checks (108B each, 3 functions) ───────
+
+extern uint32_t g_cameraTransitionState;  // @ 0x826064C0 (.data, 4B)
+extern float    g_cameraTransitionTime;   // @ 0x826064BC (.data, 4B)
+extern uint32_t g_cameraDataPtr;          // @ 0x8271A2EC (.data, 4B - pointer to game data)
+
+// Float thresholds in .rdata used by each variant:
+extern float g_cameraElapsedThreshold1;   // @ 0x825F8080 (.rdata)
+extern float g_cameraElapsedThreshold2;   // @ 0x825F9E78 (.rdata)
+extern float g_cameraElapsedThreshold3;   // @ 0x825FD10C (.rdata)
+
+static const uint32_t CAMERA_DATA_ELAPSED_OFFSET = 0x68CE4;
+
+/**
+ * pongCameraMgr elapsed time checks @ 0x821F76C8-77A8 | 108B each
+ *
+ * Checks if the camera transition state is not "active" (state 2).
+ * If not active, sets state to 1, reads the elapsed game time from a
+ * global data structure, subtracts the stored transition time, and
+ * compares against a per-function threshold. Returns true if enough
+ * time has elapsed.
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::HasElapsedThreshold1()  @ 0x821F76C8 | size: 0x6C
+// Checks elapsed time against threshold 1
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::HasElapsedThreshold1() {
+    if (g_cameraTransitionState == 2) {
+        return false;
+    }
+
+    g_cameraTransitionState = 1;
+
+    // Read elapsed time from game data at fixed offset
+    float* dataBase = reinterpret_cast<float*>(g_cameraDataPtr);
+    float elapsedTime = *(float*)((char*)dataBase + CAMERA_DATA_ELAPSED_OFFSET);
+    float timeDelta = elapsedTime - g_cameraTransitionTime;
+
+    return (timeDelta >= g_cameraElapsedThreshold1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::HasElapsedThreshold2()  @ 0x821F7738 | size: 0x6C
+// Checks elapsed time against threshold 2
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::HasElapsedThreshold2() {
+    if (g_cameraTransitionState == 2) {
+        return false;
+    }
+
+    g_cameraTransitionState = 1;
+
+    float* dataBase = reinterpret_cast<float*>(g_cameraDataPtr);
+    float elapsedTime = *(float*)((char*)dataBase + CAMERA_DATA_ELAPSED_OFFSET);
+    float timeDelta = elapsedTime - g_cameraTransitionTime;
+
+    return (timeDelta >= g_cameraElapsedThreshold2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::HasElapsedThreshold3()  @ 0x821F77A8 | size: 0x6C
+// Checks elapsed time against threshold 3
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::HasElapsedThreshold3() {
+    if (g_cameraTransitionState == 2) {
+        return false;
+    }
+
+    g_cameraTransitionState = 1;
+
+    float* dataBase = reinterpret_cast<float*>(g_cameraDataPtr);
+    float elapsedTime = *(float*)((char*)dataBase + CAMERA_DATA_ELAPSED_OFFSET);
+    float timeDelta = elapsedTime - g_cameraTransitionTime;
+
+    return (timeDelta >= g_cameraElapsedThreshold3);
+}
