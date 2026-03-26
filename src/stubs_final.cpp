@@ -26,7 +26,7 @@ struct pongCameraMgr;
 struct pongPlayer;
 namespace rage { class atSingleton; }
 
-extern "C" {
+// These are called with C++ linkage (no extern "C" at call sites)
 void PostStateTransitionRequest(void*, int) {}
 void RtlEnterCriticalSection(void*) {}
 void RtlLeaveCriticalSection(void*) {}
@@ -83,7 +83,6 @@ void pongPlayer_AB48_g(vec3*, void*) {}
 void rage_free(void* p) { free(p); }
 void sysCallback_Invoke(void*, int) {}
 void xmlNodeStruct_Initialize(void*) {}
-} // extern "C"
 
 // C++ linkage methods
 char* hsmState::GetFullStatePath(char* buf, uint32_t bufSize) const {
