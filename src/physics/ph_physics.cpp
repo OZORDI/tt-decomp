@@ -5087,7 +5087,8 @@ extern void phArticulatedCollider_8B10(void* jointArray, float* torqueVec); // S
 extern void phArticulatedCollider_5A40_wrh(void* jointArray);  // Reset joint force accumulators
 extern void phArticulatedCollider_F0E0(void* collider);        // Update articulated internal state
 extern void phCollider_CDF0_p39(void* collider);               // Update collider position from velocity
-extern void game_CE58(void* collider);                         // Update collider angular state
+extern void phCollider_vfn_1(void* collider);                  // phCollider::Reset
+extern void phCollider_vfn_42(void* collider);                 // phCollider::SyncAfterBaseUpdate
 extern int32_t phArticulatedCollider_E668_GetJointIndex(void* thisPtr, int jointParam);  // Joint index lookup
 
 
@@ -5195,7 +5196,7 @@ void phArticulatedCollider::PostIntegrate() {
 // ─────────────────────────────────────────────────────────────────────────────
 void phArticulatedCollider::Reset() {
     // Call base class reset
-    phCollider::Reset();
+    phCollider_vfn_1((void*)this);
 
     uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
 
@@ -5332,7 +5333,7 @@ void phArticulatedCollider::SetVelocityAndSync(const float* velocityVec) {
 // ─────────────────────────────────────────────────────────────────────────────
 void phArticulatedCollider::SyncAfterBaseUpdate() {
     // Call base class vfn_42
-    phCollider::SyncAfterBaseUpdate();
+    phCollider_vfn_42((void*)this);
 
     // Sync joint torques from the collider's angular state
     uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
