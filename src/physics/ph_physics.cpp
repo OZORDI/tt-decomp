@@ -3116,6 +3116,262 @@ void phInst::AtomicDecrementAndCallback() {  // vfn_23
     }
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider — Packed Config Word Setters (10 functions, 64-160B)
+//
+// These setters modify bitfields in the packed config word at +11448 (0x2CB8),
+// then optionally recompute an expanded encoding cached at +11640/11672/11676/11680.
+// The control word at +11452 (0x2CBC) has two enable bits:
+//   bit 31 (0x80000000): master enable — if clear, skip cache update entirely
+//   bit 30 (0x40000000): encoding bypass — if set, use raw word as cache value;
+//                        if clear, compute ExpandConfigWord() from lower 16 bits
+//
+// After updating the cache, dirty bits are OR'd into the 64-bit change-tracking
+// mask at this+40 to signal the physics sync system.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Helper: expand lower 16 bits of a config word into a 32-bit encoded form
+// used for physics cache entries at +11640, +11672, +11676, +11680.
+static inline uint32_t ExpandConfigWord(uint32_t word) {
+    uint32_t lo16 = word & 0xFFFF;
+    uint32_t shifted = (lo16 << 4) & 0xFFFFFFF0;
+    uint32_t extracted = lo16 & 0x1010;       // keep bits 4 and 12
+    uint32_t combined = extracted | shifted;
+    uint32_t rotated = ((combined << 12) | (combined >> 20)) & 0xFFFF0000;
+    rotated &= 0xFFEFFFFF;                   // clear bit 20
+    rotated &= 0xEFFFFFFF;                   // clear bit 28
+    return rotated | lo16;                    // merge back lower 16 bits
+}
+
+// Helper: update the 4 config cache fields and set dirty bits in mask at this+40
+static inline void UpdateConfigCacheAndDirty(void* obj, uint32_t cacheValue) {
+    *(uint32_t*)((char*)obj + 11640) = cacheValue;
+    *(uint32_t*)((char*)obj + 11672) = cacheValue;
+    *(uint32_t*)((char*)obj + 11676) = cacheValue;
+    *(uint32_t*)((char*)obj + 11680) = cacheValue;
+    uint64_t* dirtyMask = (uint64_t*)((char*)obj + 40);
+    *dirtyMask |= (1ULL << 36) | (1ULL << 28) | (1ULL << 27) | (1ULL << 26);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetConfigBits0 @ 0x82353C20 | size: 0x88
+// Sets bits [0:4] (5-bit field) of packed config word at +11448.
+// If master-enabled, recomputes and caches the expanded encoding.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetConfigBits0(uint32_t value) {
+    uint32_t flags = *(uint32_t*)((char*)this + 11452);
+    uint32_t word = *(uint32_t*)((char*)this + 11448);
+    word = (word & ~0x1F) | (value & 0x1F);
+    *(uint32_t*)((char*)this + 11448) = word;
+
+    if (!(flags & 0x80000000)) return;  // master enable off
+
+    uint32_t cacheValue;
+    if (flags & 0x40000000) {
+        cacheValue = word;  // bypass: use raw word
+    } else {
+        cacheValue = ExpandConfigWord(word);
+    }
+    UpdateConfigCacheAndDirty(this, cacheValue);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetConfigBits8 @ 0x82353CB8 | size: 0x88
+// Sets bits [8:12] (5-bit field) of packed config word at +11448.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetConfigBits8(uint32_t value) {
+    uint32_t flags = *(uint32_t*)((char*)this + 11452);
+    uint32_t word = *(uint32_t*)((char*)this + 11448);
+    word = (word & ~(0x1F << 8)) | ((value & 0x1F) << 8);
+    *(uint32_t*)((char*)this + 11448) = word;
+
+    if (!(flags & 0x80000000)) return;
+
+    uint32_t cacheValue;
+    if (flags & 0x40000000) {
+        cacheValue = word;
+    } else {
+        cacheValue = ExpandConfigWord(word);
+    }
+    UpdateConfigCacheAndDirty(this, cacheValue);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetConfigBits21 @ 0x82353D50 | size: 0x68
+// Sets bits [21:23] (3-bit field) of packed config word at +11448.
+// Only updates cache if both enable bits (31 and 30) are set.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetConfigBits21(uint32_t value) {
+    uint32_t flags = *(uint32_t*)((char*)this + 11452);
+    uint32_t word = *(uint32_t*)((char*)this + 11448);
+    word = (word & ~(0x7 << 21)) | ((value & 0x7) << 21);
+    *(uint32_t*)((char*)this + 11448) = word;
+
+    if (!(flags & 0x80000000)) return;
+    if (!(flags & 0x40000000)) return;
+
+    UpdateConfigCacheAndDirty(this, word);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetConfigBits16 @ 0x82353DC8 | size: 0x68
+// Sets bits [16:20] (5-bit field) of packed config word at +11448.
+// Only updates cache if both enable bits are set.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetConfigBits16(uint32_t value) {
+    uint32_t flags = *(uint32_t*)((char*)this + 11452);
+    uint32_t word = *(uint32_t*)((char*)this + 11448);
+    word = (word & ~(0x1F << 16)) | ((value & 0x1F) << 16);
+    *(uint32_t*)((char*)this + 11448) = word;
+
+    if (!(flags & 0x80000000)) return;
+    if (!(flags & 0x40000000)) return;
+
+    UpdateConfigCacheAndDirty(this, word);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetConfigBits24 @ 0x82353E40 | size: 0x68
+// Sets bits [24:28] (5-bit field) of packed config word at +11448.
+// Only updates cache if both enable bits are set.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetConfigBits24(uint32_t value) {
+    uint32_t flags = *(uint32_t*)((char*)this + 11452);
+    uint32_t word = *(uint32_t*)((char*)this + 11448);
+    word = (word & ~(0x1F << 24)) | ((value & 0x1F) << 24);
+    *(uint32_t*)((char*)this + 11448) = word;
+
+    if (!(flags & 0x80000000)) return;
+    if (!(flags & 0x40000000)) return;
+
+    UpdateConfigCacheAndDirty(this, word);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetEncodingBypass @ 0x82353EB8 | size: 0x90
+// Sets bit 30 (encoding bypass flag) in the control word at +11452.
+// When bypass is disabled (value=0), the expanded encoding is recomputed.
+// When bypass is enabled, the raw config word is used directly.
+// Additionally, if bit 31 of the NEW control word is 0, uses a fixed
+// sentinel value (0x10001) instead of the config word.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetEncodingBypass(uint32_t value) {
+    uint32_t flags = *(uint32_t*)((char*)this + 11452);
+    flags = (flags & ~(1U << 30)) | ((value & 1U) << 30);
+    uint32_t bit31 = (flags >> 31) & 1;
+    *(uint32_t*)((char*)this + 11452) = flags;
+
+    uint32_t word = *(uint32_t*)((char*)this + 11448);
+    uint32_t cacheValue;
+
+    if (value == 0) {
+        // Bypass disabled — compute expanded encoding from lower 16 bits
+        cacheValue = ExpandConfigWord(word);
+    } else {
+        cacheValue = word;  // Bypass enabled — use raw word
+    }
+
+    if (bit31 == 0) {
+        // Master enable off — use sentinel value
+        cacheValue = 0x10001;
+    }
+
+    UpdateConfigCacheAndDirty(this, cacheValue);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetNormalizedBytesAsFloats @ 0x82353F58 | size: 0x40
+// Converts an integer to a normalized float (value * kByteToFloat) and stores
+// it at +11588. Sets dirty bit 49 in the mask at this+40.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetNormalizedBytesAsFloats(uint32_t value) {
+    static const float kByteToFloat = *(const float*)0x82079AF4;  // normalization scale
+    float normalized = (float)value * kByteToFloat;
+    *(float*)((char*)this + 11588) = normalized;
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 49);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetPackedColorAsFloats @ 0x82354000 | size: 0xA0
+// Unpacks a uint32 into 4 bytes, converts each to a normalized float
+// (byte * kByteToFloat), and stores them to +11552..+11564.
+// Sets dirty bits 55-58 in the mask at this+40.
+// Used for color or per-channel physics parameters packed as RGBA bytes.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetPackedColorAsFloats(uint32_t packedValue) {
+    static const float kByteToFloat = *(const float*)0x82079AF4;  // normalization scale
+
+    uint8_t byte0 = (packedValue >> 24) & 0xFF;
+    uint8_t byte1 = (packedValue >> 16) & 0xFF;
+    uint8_t byte2 = (packedValue >>  8) & 0xFF;
+    uint8_t byte3 = (packedValue >>  0) & 0xFF;
+
+    *(float*)((char*)this + 11556) = (float)byte2 * kByteToFloat;
+    *(float*)((char*)this + 11552) = (float)byte1 * kByteToFloat;
+    *(float*)((char*)this + 11560) = (float)byte3 * kByteToFloat;
+    *(float*)((char*)this + 11564) = (float)byte0 * kByteToFloat;
+
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 55) | (1ULL << 56) | (1ULL << 57) | (1ULL << 58);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetFloatsAsPackedColor @ 0x823540A0 | size: 0x80
+// Reads 4 normalized floats from +11552..+11564, converts each back to a
+// byte by scaling and rounding (value * kFloatToByte + 0.5), then packs
+// the 4 bytes into a uint32 return value. Inverse of SetPackedColorAsFloats.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phArticulatedCollider::GetFloatsAsPackedColor() {
+    static const float kFloatToByte = *(const float*)0x820799E0;  // inverse normalization
+    static const float kHalf = *(const float*)0x8202D10C;         // 0.5f for rounding
+
+    float f0 = *(float*)((char*)this + 11552);
+    float f1 = *(float*)((char*)this + 11564);
+    float f2 = *(float*)((char*)this + 11556);
+    float f3 = *(float*)((char*)this + 11560);
+
+    uint8_t b0 = (uint8_t)(int)(f0 * kFloatToByte + kHalf);
+    uint8_t b1 = (uint8_t)(int)(f2 * kFloatToByte + kHalf);
+    uint8_t b2 = (uint8_t)(int)(f1 * kFloatToByte + kHalf);
+    uint8_t b3 = (uint8_t)(int)(f3 * kFloatToByte + kHalf);
+
+    // Pack 4 bytes into uint32 MSB-first (rlwimi r_,r_,8,0,23 chain)
+    return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetJointLimitSymmetric @ 0x823545D0 | size: 0xA0
+// Sets a symmetric joint rotation limit. The float parameter (in game units)
+// is multiplied by a degrees-to-radians scale factor, then stored to both
+// the minimum (+11920) and maximum (+11928) limit fields.
+// Also updates "has non-zero limits" flags in bits 11 and 12 of the solver
+// params word at +11656, based on whether any limit in the pair is non-zero.
+// Sets dirty bits in both mask at +40 (bit 32) and mask at +48 (bits 25,23).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetJointLimitSymmetric(float limitDegrees) {
+    static const float kDegreesToRadians = *(const float*)0x825C75A0;  // mutable .data scale
+    static const float kZero = *(const float*)0x825BD110;              // 0.0f reference
+
+    float scaledLimit = limitDegrees * kDegreesToRadians;
+    *(float*)((char*)this + 11920) = scaledLimit;
+    *(float*)((char*)this + 11928) = scaledLimit;
+
+    // Determine if this axis pair has any non-zero limits
+    bool hasNonZeroMin = (scaledLimit != kZero) || (*(float*)((char*)this + 11924) != kZero);
+    bool hasNonZeroMax = (scaledLimit != kZero) || (*(float*)((char*)this + 11932) != kZero);
+
+    // Update solver flags at +11656: bit 11 = hasNonZeroMin, bit 12 = hasNonZeroMax
+    uint32_t solverWord = *(uint32_t*)((char*)this + 11656);
+    solverWord = (solverWord & ~(1U << 11)) | ((uint32_t)hasNonZeroMin << 11);
+    solverWord = (solverWord & ~(1U << 12)) | ((uint32_t)hasNonZeroMax << 12);
+    *(uint32_t*)((char*)this + 11656) = solverWord;
+
+    // Set dirty bits: mask at +48 for limit fields, mask at +40 for solver params
+    *(uint64_t*)((char*)this + 48) |= (1ULL << 25) | (1ULL << 23);
+    *(uint64_t*)((char*)this + 40) |= (1ULL << 32);
+}
+
+
 // ═════════════════════════════════════════════════════════════════════════════
 // rage::phBoundCapsule — Batch: 10 functions (64-200B)
 // ═════════════════════════════════════════════════════════════════════════════
