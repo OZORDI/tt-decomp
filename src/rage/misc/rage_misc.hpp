@@ -73,14 +73,13 @@ struct netConnectionManager {
 
 } // namespace rage
 
-namespace rage::netConnectionManager {
-
 // ── rage::netConnectionManager::MessageHandler  [vtable @ 0x8206E640] ──────────────────────────
-struct MessageHandler {
+// Nested inside the netConnectionManager class as an inner struct
+namespace rage {
+struct netConnectionManager_MessageHandler {
     void**      vtable;           // +0x00
 };
-
-} // namespace rage::netConnectionManager
+} // namespace rage
 
 namespace rage {
 
@@ -93,50 +92,51 @@ struct sysMemAllocator {
 };
 
 // ── rage::sysMemSimpleAllocator  [vtable @ 0x82038C4C] ──────────────────────────
-// Confirmed methods: Allocate, Free
+// Confirmed methods: Allocate, Free, GetLargestAvailBlock, Lock, Unlock, IsLocked
+// Memory allocator with 16 size-class free-list buckets stored inline at +0x58..+0x94.
+// Each memory node: +0x00 selfCheck, +0x04 blockSize, +0x0C flagsMeta, +0x10 prev, +0x14 next.
 struct sysMemSimpleAllocator {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:8 W:1
+    uint32_t     heapBase;       // +0x0004  base address of managed heap region
     uint8_t     _pad0x001c[20];
-    uint32_t     field_0x001c;  // +0x001c  R:1 W:0
+    uint32_t     field_0x001c;   // +0x001c  R:1 W:0  (internal bookkeeping)
     uint8_t     _pad0x0044[36];
-    uint16_t     field_0x0044;  // +0x0044  R:1 W:0
-    uint32_t     field_0x004c;  // +0x004c  R:7 W:0
-    uint32_t     field_0x0054;  // +0x0054  R:6 W:5
+    uint16_t     field_0x0044;   // +0x0044  R:1 W:0
+    uint32_t     heapSize;       // +0x004c  total size of heap region (heapBase + heapSize = end)
+    uint32_t     overflowHead;   // +0x0054  overflow free-list head (blocks > 15 size classes)
     uint8_t     _pad0x0098[64];
-    uint32_t     field_0x0098;  // +0x0098  R:7 W:5
-    uint32_t     field_0x009c;  // +0x009c  R:3 W:2
-    uint32_t     field_0x00a0;  // +0x00a0  R:1 W:1
+    uint32_t     largestAvailBlock; // +0x0098  largest available block size (returned by vfn_5)
+    uint32_t     allocCount;     // +0x009c  running allocation counter (traps at maxAllocCount)
+    uint32_t     maxAllocCount;  // +0x00a0  maximum allocation count before trap
     uint8_t     _pad0x00b4[16];
-    uint32_t     field_0x00b4;  // +0x00b4  R:3 W:2
-    uint8_t      field_0x00b9;  // +0x00b9  R:3 W:2
-    uint8_t      field_0x00ba;  // +0x00ba  R:1 W:1
-    uint32_t     field_0x00bc;  // +0x00bc  R:1 W:2
+    uint32_t     snapshotIndex;  // +0x00b4  index into snapshot history array at +(snapshotIndex+41)*4
+    uint8_t      isLocked;       // +0x00b9  lock flag (vfn_8=Lock sets 1, vfn_9=Unlock sets 0)
+    uint8_t      isLogging;      // +0x00ba  logging active flag (vfn_15/16 manage)
+    uint32_t     logStream;      // +0x00bc  log file stream handle (opened by vfn_15, closed by vfn_16)
 
     // ── virtual methods ──
     virtual ~sysMemSimpleAllocator();                  // [0] @ 0x82186c58
-    virtual void ScalarDtor(int flags); // [1] @ 0x82186da0
-    virtual void vfn_2();  // [2] @ 0x82187178
-    virtual void vfn_4();  // [4] @ 0x82187840
-    virtual void vfn_5();  // [5] @ 0x82187838
-    virtual void vfn_6();  // [6] @ 0x82186df0
-    virtual void vfn_7();  // [7] @ 0x82186d98
-    virtual void vfn_8();  // [8] @ 0x82187860
-    virtual void vfn_9();  // [9] @ 0x82187870
-    virtual void vfn_10();  // [10] @ 0x82187880
-    virtual void vfn_11();  // [11] @ 0x821878b0
-    virtual void vfn_13();  // [13] @ 0x821878b8
-    virtual void vfn_14();  // [14] @ 0x821879b8
-    virtual void vfn_15();  // [15] @ 0x821878e0
-    virtual void vfn_16();  // [16] @ 0x82187958
-    virtual void vfn_19();  // [19] @ 0x82187588
-    virtual void vfn_20();  // [20] @ 0x82187558
+    virtual void ScalarDtor(int flags);                // [1] @ 0x82186da0
+    virtual void Free(void* ptr);                      // [2] @ 0x82187178
+    virtual void* GetBucketHead(uint32_t sizeClass);   // [4] @ 0x82187840  returns bucket[sizeClass] or overflowHead
+    virtual uint32_t GetLargestAvailBlock();            // [5] @ 0x82187838  returns largestAvailBlock
+    virtual void Init();                               // [6] @ 0x82186df0  initializes allocator state
+    virtual void SetBreakAllocIndex(uint32_t index);   // [7] @ 0x82186d98  sets maxAllocCount (trap when reached)
+    virtual void Lock();                               // [8] @ 0x82187860  sets isLocked = 1
+    virtual void Unlock();                             // [9] @ 0x82187870  sets isLocked = 0
+    virtual void SetLockState(bool lock);              // [10] @ 0x82187880  dispatches to Lock/Unlock
+    virtual bool IsLocked();                           // [11] @ 0x821878b0  returns isLocked
+    virtual void TakeSnapshot();                       // [13] @ 0x821878b8  records allocCount at snapshotIndex
+    virtual void DumpLeaks(const char* name, const char* logPath); // [14] @ 0x821879b8  reports allocations since snapshot
+    virtual void BeginLogging(const char* path, bool countRef); // [15] @ 0x821878e0  opens log file stream
+    virtual void EndLogging();                         // [16] @ 0x82187958  closes log file stream
+    virtual void vfn_19();                             // [19] @ 0x82187588
+    virtual bool IsAddressOwned(void* addr);           // [20] @ 0x82187558  checks addr in [heapBase, heapBase+heapSize)
 
-    // ── non-virtual methods (from debug strings) ──
-    void Allocate();
-    void Free();
+    // ── non-virtual methods ──
+    void* Allocate(uint32_t size);  // @ 0x82186E40  allocates from free-list buckets
 };
 
 // ── rage::sysThreadPoolBase  [vtable @ 0x82069FA4] ──────────────────────────

@@ -216,6 +216,13 @@ void* fiStream_Open(const char* path, int mode) {
     return NULL;
 }
 
+// parStreamOutXml_3E40 @ 0x822E3E40 — formatted write to open fiStream
+void parStreamOutXml_3E40(void* stream, const char* format, ...) {
+    (void)stream;
+    (void)format;
+    // TODO: implement via vsnprintf + fiStream write
+}
+
 // ============================================================================
 // Graphics Device Functions
 // ============================================================================
