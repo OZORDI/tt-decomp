@@ -94,7 +94,7 @@ void phArticulatedCollider_6D30_h(void* a) { (void)a; }
 
 // ---------- phBoundCapsule helpers ----------
 
-void phBoundCapsule_01D0_g(phJoint3Dof* j, float v) { (void)j; (void)v; }
+// REMOVED (conflict): void phBoundCapsule_01D0_g(phJoint3Dof* j, float v) { (void)j; (void)v; }
 void phBoundCapsule_6C28_fw(void* a) { (void)a; }
 
 // ---------- phCollider / phInst / phJoint ----------

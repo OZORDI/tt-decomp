@@ -219,37 +219,37 @@ extern "C" {
 
 // ── Missing free functions ──────────────────────────────────────────────────
 extern "C" {
-    void PostStateTransitionRequest(void* mgr, int event) { (void)mgr; (void)event; }
-    void RtlEnterCriticalSection(void* cs) { (void)cs; }
-    void RtlLeaveCriticalSection(void* cs) { (void)cs; }
-    void atArray_Clear(void* arr) { (void)arr; }
-    void audControl_Destructor(void* obj) { (void)obj; }
-    void fsmMachine_Destructor_27A8(void* obj) { (void)obj; }
-    void hsmContext_SetNextState_2800(void* ctx, int state) { (void)ctx; (void)state; }
-    void rage_free(void* ptr) { (void)ptr; }
-    void xmlNodeStruct_Initialize(void* obj) { (void)obj; }
-    void phInst_A3A0_p33(void* obj) { (void)obj; }
-    void pongAttractState_Shutdown(void* obj) { (void)obj; }
-    void sysCallback_Invoke(void* cb, int code) { (void)cb; (void)code; }
-    void* pg_9C00_g(void* p) { (void)p; return nullptr; }
-    void pg_E6E0(int a, int b, int c, int d) { (void)a;(void)b;(void)c;(void)d; }
-    float phBoundCapsule_01D0_g(float v) { return v; }
-    float phBoundCapsule_01D8_g(float v) { return v; }
-    float phBoundCapsule_02B0_g(float v) { return v; }
-    float phBoundCapsule_0FE0_g(float a, float b) { (void)b; return a; }
-    void* ph_9EC0_1(void* m) { return m; }
-    void* ph_E010(void* w, void* a, const char* p) { (void)w;(void)a;(void)p; return nullptr; }
-    void ph_9E50(void* a, void* b) { (void)a;(void)b; }
-    void ph_CEE0(void* a, int b) { (void)a;(void)b; }
-    void ph_E088(void* a, void* b, void* c, float d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
-    void* ph_6FC8(void* a, const char* b) { (void)a;(void)b; return nullptr; }
-    void* phArchetype_Load(const char* p, void* m) { (void)p;(void)m; return nullptr; }
-    void ph_59C8(void* a, const char* b, int c) { (void)a;(void)b;(void)c; }
-    void ph_EF40(void* a, void* b) { (void)a;(void)b; }
-    void ph_ForwardTarget(void* a) { (void)a; }
-    void phBoundCapsule_5138_g(void* a, void* b, void* c) { (void)a;(void)b;(void)c; }
-    void phBoundCapsule_A080_g(void* a) { (void)a; }
-    void phMaterialMgrImpl_C208_g(void* a, const void* b) { (void)a;(void)b; }
+// REMOVED (conflict):     void PostStateTransitionRequest(void* mgr, int event) { (void)mgr; (void)event; }
+// REMOVED (conflict):     void RtlEnterCriticalSection(void* cs) { (void)cs; }
+// REMOVED (conflict):     void RtlLeaveCriticalSection(void* cs) { (void)cs; }
+// REMOVED (conflict):     void atArray_Clear(void* arr) { (void)arr; }
+// REMOVED (conflict):     void audControl_Destructor(void* obj) { (void)obj; }
+// REMOVED (conflict):     void fsmMachine_Destructor_27A8(void* obj) { (void)obj; }
+// REMOVED (conflict):     void hsmContext_SetNextState_2800(void* ctx, int state) { (void)ctx; (void)state; }
+// REMOVED (conflict):     void rage_free(void* ptr) { (void)ptr; }
+// REMOVED (conflict):     void xmlNodeStruct_Initialize(void* obj) { (void)obj; }
+// REMOVED (conflict):     void phInst_A3A0_p33(void* obj) { (void)obj; }
+// REMOVED (conflict):     void pongAttractState_Shutdown(void* obj) { (void)obj; }
+// REMOVED (conflict):     void sysCallback_Invoke(void* cb, int code) { (void)cb; (void)code; }
+// REMOVED (conflict):     void* pg_9C00_g(void* p) { (void)p; return nullptr; }
+// REMOVED (conflict):     void pg_E6E0(int a, int b, int c, int d) { (void)a;(void)b;(void)c;(void)d; }
+// REMOVED (conflict):     float phBoundCapsule_01D0_g(float v) { return v; }
+// REMOVED (conflict):     float phBoundCapsule_01D8_g(float v) { return v; }
+// REMOVED (conflict):     float phBoundCapsule_02B0_g(float v) { return v; }
+// REMOVED (conflict):     float phBoundCapsule_0FE0_g(float a, float b) { (void)b; return a; }
+// REMOVED (conflict):     void* ph_9EC0_1(void* m) { return m; }
+// REMOVED (conflict):     void* ph_E010(void* w, void* a, const char* p) { (void)w;(void)a;(void)p; return nullptr; }
+// REMOVED (conflict):     void ph_9E50(void* a, void* b) { (void)a;(void)b; }
+// REMOVED (conflict):     void ph_CEE0(void* a, int b) { (void)a;(void)b; }
+// REMOVED (conflict):     void ph_E088(void* a, void* b, void* c, float d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+// REMOVED (conflict):     void* ph_6FC8(void* a, const char* b) { (void)a;(void)b; return nullptr; }
+// REMOVED (conflict):     void* phArchetype_Load(const char* p, void* m) { (void)p;(void)m; return nullptr; }
+// REMOVED (conflict):     void ph_59C8(void* a, const char* b, int c) { (void)a;(void)b;(void)c; }
+// REMOVED (conflict):     void ph_EF40(void* a, void* b) { (void)a;(void)b; }
+// REMOVED (conflict):     void ph_ForwardTarget(void* a) { (void)a; }
+// REMOVED (conflict):     void phBoundCapsule_5138_g(void* a, void* b, void* c) { (void)a;(void)b;(void)c; }
+// REMOVED (conflict):     void phBoundCapsule_A080_g(void* a) { (void)a; }
+// REMOVED (conflict):     void phMaterialMgrImpl_C208_g(void* a, const void* b) { (void)a;(void)b; }
     // dcamPolarCam asm-label stubs
     void datParserRecord_vfn_0_impl() __asm__("datParserRecord_vfn_0"); void datParserRecord_vfn_0_impl() {}
     void datParser_rtti_74A0_0_impl() __asm__("datParser_rtti_74A0_0"); void datParser_rtti_74A0_0_impl() {}
@@ -264,7 +264,7 @@ extern "C" {
 
 // ── rage:: namespace stubs ──────────────────────────────────────────────────
 namespace rage {
-    void ReleaseSingleton(void* obj) { (void)obj; }
+// REMOVED (conflict):     void ReleaseSingleton(void* obj) { (void)obj; }
     void* g_display_obj_ptr = nullptr;
     void* g_phCallback0 = nullptr;
     void* g_phCallback1 = nullptr;
@@ -279,10 +279,10 @@ namespace rage {
 }
 
 // ── Remaining game stubs ────────────────────────────────────────────────────
-void pongPlayer_42E0_g(void* p, void* a, void* b, float c) { (void)p;(void)a;(void)b;(void)c; }
-void pongPlayer_73E8_g(void* p, float v) { (void)p;(void)v; }
+// REMOVED (conflict): void pongPlayer_42E0_g(void* p, void* a, void* b, float c) { (void)p;(void)a;(void)b;(void)c; }
+// REMOVED (conflict): void pongPlayer_73E8_g(void* p, float v) { (void)p;(void)v; }
 void pongPlayer_9CD0_g(void* p, int i, void* a, void* b) { (void)p;(void)i;(void)a;(void)b; }
-void pongPlayer_AB48_g(void* a, void* b) { (void)a;(void)b; }
-void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
-void rage_RegisterUIContext(void* a, unsigned int b, const char* c) { (void)a;(void)b;(void)c; }
+// REMOVED (conflict): void pongPlayer_AB48_g(void* a, void* b) { (void)a;(void)b; }
+// REMOVED (conflict): void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+// REMOVED (conflict): void rage_RegisterUIContext(void* a, unsigned int b, const char* c) { (void)a;(void)b;(void)c; }
 

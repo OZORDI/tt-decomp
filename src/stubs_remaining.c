@@ -39,13 +39,9 @@ int ObReferenceObjectByHandle(void* handle, void* type, void** obj) {
     return 0;
 }
 
-void RtlEnterCriticalSection(void* cs) {
-    (void)cs;
-}
+// REMOVED (conflict): void RtlEnterCriticalSection(void* cs) {
 
-void RtlLeaveCriticalSection(void* cs) {
-    (void)cs;
-}
+// REMOVED (conflict): void RtlLeaveCriticalSection(void* cs) {
 
 void* _KeTlsAlloc_thunk(void) {
     return NULL;
@@ -383,10 +379,7 @@ void rage_ThreadPool_Cleanup(void) {
     // Thread pool cleanup
 }
 
-void rage_free(void* ptr) {
-    extern void rage_free(void* ptr);
-    rage_free(ptr);
-}
+// REMOVED (conflict): void rage_free(void* ptr) {
 
 void hsmContext_Init(void* obj) {
     (void)obj;

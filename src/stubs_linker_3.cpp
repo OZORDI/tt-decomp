@@ -21,56 +21,31 @@ struct TransitionFlags;
 // msgMsgSink — Network message sink helpers
 // ============================================================================
 
-extern "C" uint32_t msgMsgSink_5098_g(void* obj, bool flag) {
-    (void)obj; (void)flag;
-    return 0;
-}
+// REMOVED (conflict): extern "C" uint32_t msgMsgSink_5098_g(void* obj, bool flag) {
 
-extern "C" void msgMsgSink_6138_2hr(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void msgMsgSink_6138_2hr(void* obj) {
 
-extern "C" void msgMsgSink_6220_w(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void msgMsgSink_6220_w(void* obj) {
 
-extern "C" int32_t msgMsgSink_84C0_gen(void* obj) {
-    (void)obj;
-    return 0;
-}
+// REMOVED (conflict): extern "C" int32_t msgMsgSink_84C0_gen(void* obj) {
 
-extern "C" void msgMsgSink_A970_2h(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void msgMsgSink_A970_2h(void* obj) {
 
-extern "C" void msgMsgSink_D168_sp(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void msgMsgSink_D168_sp(void* obj) {
 
-extern "C" void msgMsgSink_D1D8_sp(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void msgMsgSink_D1D8_sp(void* obj) {
 
-extern "C" void msgMsgSink_DB70_g(void* obj, uint32_t flags) {
-    (void)obj; (void)flags;
-}
+// REMOVED (conflict): extern "C" void msgMsgSink_DB70_g(void* obj, uint32_t flags) {
 
-extern "C" void msgMsgSink_E860_g(void* obj, uint32_t a, uint32_t b, uint32_t c) {
-    (void)obj; (void)a; (void)b; (void)c;
-}
+// REMOVED (conflict): extern "C" void msgMsgSink_E860_g(void* obj, uint32_t a, uint32_t b, uint32_t c) {
 
-extern "C" void* msgMsgSink_F518_wrh(uint32_t param) {
-    (void)param;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* msgMsgSink_F518_wrh(uint32_t param) {
 
 // ============================================================================
 // net — Network helpers
 // ============================================================================
 
-extern "C" void net_6BA0_fw(void* session, void* param1, void* param2) {
-    (void)session; (void)param1; (void)param2;
-}
+// REMOVED (conflict): extern "C" void net_6BA0_fw(void* session, void* param1, void* param2) {
 
 // ============================================================================
 // nop_8240E6D0 — C++ overloads (variadic debug log no-ops)
@@ -97,14 +72,9 @@ void nop_8240E6D0(const void* ptr, ...) {
 // pcrAnimBlender_ApplyClipWeights already implemented in anim_blender_init.cpp
 // pcrAnimState_ComputePosition already implemented in anim_blender_init.cpp
 
-extern "C" void pcrAnimBlender_Initialize(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void pcrAnimBlender_Initialize(void* obj) {
 
-extern "C" int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* self) {
-    (void)self;
-    return 0;
-}
+// REMOVED (conflict): extern "C" int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* self) {
 
 // ============================================================================
 // pg — Page Group helpers
@@ -112,16 +82,10 @@ extern "C" int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* s
 
 // pg_6F68 already stubbed in stubs_linker.cpp
 
-extern "C" void* pg_9C00_g(void* singleton) {
-    (void)singleton;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* pg_9C00_g(void* singleton) {
 
 // Overloaded pg_9C00_g(void*, int) — C++ mangled
-void* pg_9C00_g(void* player, int index) {
-    (void)player; (void)index;
-    return nullptr;
-}
+// REMOVED (conflict): void* pg_9C00_g(void* player, int index) {
 
 extern "C" uint8_t pg_ApplyTransition(void* gameState, TransitionParams* params,
     int mode, TransitionFlags* flags, int flagCount)
@@ -130,58 +94,35 @@ extern "C" uint8_t pg_ApplyTransition(void* gameState, TransitionParams* params,
     return 0;
 }
 
-extern "C" void pg_E6E0(int code, int param1, int param2, int param3) {
-    (void)code; (void)param1; (void)param2; (void)param3;
-}
+// REMOVED (conflict): extern "C" void pg_E6E0(int code, int param1, int param2, int param3) {
 
 // ============================================================================
 // phArchetype — Physics archetype loading
 // ============================================================================
 
-extern "C" void* phArchetype_Load(const char* path, void* materialInfo) {
-    (void)path; (void)materialInfo;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* phArchetype_Load(const char* path, void* materialInfo) {
 
 // ============================================================================
 // phBoundCapsule — Capsule bound math
 // ============================================================================
 
-extern "C" float phBoundCapsule_01D0_g(float value) {
-    (void)value;
-    return 0.0f;
-}
+// REMOVED (conflict): extern "C" float phBoundCapsule_01D0_g(float value) {
 
-extern "C" float phBoundCapsule_01D8_g(float value) {
-    (void)value;
-    return 0.0f;
-}
+// REMOVED (conflict): extern "C" float phBoundCapsule_01D8_g(float value) {
 
-extern "C" float phBoundCapsule_02B0_g(float value) {
-    (void)value;
-    return 0.0f;
-}
+// REMOVED (conflict): extern "C" float phBoundCapsule_02B0_g(float value) {
 
-extern "C" float phBoundCapsule_0FE0_g(float f1, float f2) {
-    (void)f1; (void)f2;
-    return 0.0f;
-}
+// REMOVED (conflict): extern "C" float phBoundCapsule_0FE0_g(float f1, float f2) {
 
-extern "C" void phBoundCapsule_5138_g(void* capsule, void* params, void* data) {
-    (void)capsule; (void)params; (void)data;
-}
+// REMOVED (conflict): extern "C" void phBoundCapsule_5138_g(void* capsule, void* params, void* data) {
 
-extern "C" void phBoundCapsule_A080_g(void* bound) {
-    (void)bound;
-}
+// REMOVED (conflict): extern "C" void phBoundCapsule_A080_g(void* bound) {
 
 // ============================================================================
 // phInst — Physics instance helpers
 // ============================================================================
 
-extern "C" void phInst_A3A0_p33(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void phInst_A3A0_p33(void* obj) {
 
 // phMaterialMgrImpl_C208_g already stubbed in stubs_linker.cpp
 
@@ -285,44 +226,23 @@ void* phObject::vfn_31() {
 // ph_ — Physics utility functions
 // ============================================================================
 
-extern "C" void ph_59C8(void* loader, const char* name, int flag) {
-    (void)loader; (void)name; (void)flag;
-}
+// REMOVED (conflict): extern "C" void ph_59C8(void* loader, const char* name, int flag) {
 
-extern "C" void* ph_6FC8(void* system, const char* path) {
-    (void)system; (void)path;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* ph_6FC8(void* system, const char* path) {
 
-extern "C" void ph_9E50(void* archetype, void* material) {
-    (void)archetype; (void)material;
-}
+// REMOVED (conflict): extern "C" void ph_9E50(void* archetype, void* material) {
 
-extern "C" void* ph_9EC0_1(void* memory) {
-    (void)memory;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* ph_9EC0_1(void* memory) {
 
-extern "C" void ph_CEE0(void* material, int param) {
-    (void)material; (void)param;
-}
+// REMOVED (conflict): extern "C" void ph_CEE0(void* material, int param) {
 
-extern "C" void* ph_E010(void* world, void* archetype, const char* path) {
-    (void)world; (void)archetype; (void)path;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* ph_E010(void* world, void* archetype, const char* path) {
 
-extern "C" void ph_E088(void* world, void* archetype, void* material, float scale, int flags) {
-    (void)world; (void)archetype; (void)material; (void)scale; (void)flags;
-}
+// REMOVED (conflict): extern "C" void ph_E088(void* world, void* archetype, void* material, float scale, int flags) {
 
-extern "C" void ph_EF40(void* list, void* node) {
-    (void)list; (void)node;
-}
+// REMOVED (conflict): extern "C" void ph_EF40(void* list, void* node) {
 
-extern "C" void ph_ForwardTarget(void* target) {
-    (void)target;
-}
+// REMOVED (conflict): extern "C" void ph_ForwardTarget(void* target) {
 
 // ============================================================================
 // plrPlayerMgr — Player manager virtual methods
@@ -386,9 +306,7 @@ void pongAttractState::Reset() {
 void pongAttractState::Shutdown() {
 }
 
-extern "C" void pongAttractState_Shutdown(void* state) {
-    (void)state;
-}
+// REMOVED (conflict): extern "C" void pongAttractState_Shutdown(void* state) {
 
 // ============================================================================
 // pongBallInstance — Ball instance virtual methods
@@ -414,18 +332,13 @@ void pongBallInstance::vfn_4() {
 void pongBallInstance::vfn_5() {
 }
 
-extern "C" void pongBallInstance_4980_g(void* mgr, int a, int b, int c, int d) {
-    (void)mgr; (void)a; (void)b; (void)c; (void)d;
-}
+// REMOVED (conflict): extern "C" void pongBallInstance_4980_g(void* mgr, int a, int b, int c, int d) {
 
 // ============================================================================
 // pongCameraMgr — Camera manager helpers
 // ============================================================================
 
-extern "C" bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode) {
-    (void)mgr; (void)gameState; (void)mode;
-    return false;
-}
+// REMOVED (conflict): extern "C" bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode) {
 
 // Two overloads: typed (pongCameraMgr*, void*, int) and untyped (void*, void*, int)
 bool pongCameraMgr_35A0_fw(pongCameraMgr* mgr, void* gameState, int mode) {
@@ -438,10 +351,7 @@ bool pongCameraMgr_35A0_fw(void* mgr, void* gameState, int mode) {
     return false;
 }
 
-extern "C" bool pongCameraMgr_3650_fw(pongCameraMgr* mgr, void* gameState, int mode) {
-    (void)mgr; (void)gameState; (void)mode;
-    return false;
-}
+// REMOVED (conflict): extern "C" bool pongCameraMgr_3650_fw(pongCameraMgr* mgr, void* gameState, int mode) {
 
 extern "C" uint8_t pongCameraMgr_6E08(void* gameState, TransitionParams* params,
     int mode, void* extra, int extraCount)
@@ -450,10 +360,7 @@ extern "C" uint8_t pongCameraMgr_6E08(void* gameState, TransitionParams* params,
     return 0;
 }
 
-extern "C" void* pongCameraMgr_B9B0_g(void* mgr, int size) {
-    (void)mgr; (void)size;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* pongCameraMgr_B9B0_g(void* mgr, int size) {
 
 extern "C" uint8_t pongCameraMgr_ValidateTransition(void* gameState, TransitionParams* params,
     int mode, TransitionFlags* flags, int flagCount)

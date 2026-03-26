@@ -59,10 +59,7 @@ extern "C" void phInst_Cleanup(void* obj) {
     (void)obj;
 }
 
-extern "C" void* phMaterialMgrImpl_C208_g(void* table, const void* key) {
-    (void)table; (void)key;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* phMaterialMgrImpl_C208_g(void* table, const void* key) {
 
 extern "C" float ph_Atan2(float y, float x) {
     (void)y; (void)x;
@@ -250,14 +247,9 @@ extern "C" void SinglesNetworkClient_TickAll(void) {
 // HSM / State Machine
 // ============================================================================
 
-extern "C" void hsmContext_SetNextState_2800(void* hsmContext, uint32_t nextStateIdx) {
-    (void)hsmContext; (void)nextStateIdx;
-}
+// REMOVED (conflict): extern "C" void hsmContext_SetNextState_2800(void* hsmContext, uint32_t nextStateIdx) {
 
-extern "C" void* PostStateTransitionRequest(void* hsmCtx, int stateIdx) {
-    (void)hsmCtx; (void)stateIdx;
-    return nullptr;
-}
+// REMOVED (conflict): extern "C" void* PostStateTransitionRequest(void* hsmCtx, int stateIdx) {
 
 // ============================================================================
 // Locomotion State / Animation
@@ -345,9 +337,7 @@ extern "C" void xmlNodeStruct_BaseInitialize(void* obj) {
     (void)obj;
 }
 
-extern "C" void xmlNodeStruct_Initialize(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void xmlNodeStruct_Initialize(void* obj) {
 
 extern "C" void xmlNodeStruct_SerializeField(void* obj, const char* name,
     void* target, void* defaultVal, uint32_t flags)
@@ -359,9 +349,7 @@ extern "C" void xmlNodeStruct_SerializeField(void* obj, const char* name,
 // atArray / atSingleton
 // ============================================================================
 
-extern "C" void atArray_Clear(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void atArray_Clear(void* obj) {
 
 extern "C" void* atArray_Destructor(void* pArray) {
     (void)pArray;
@@ -389,9 +377,7 @@ extern "C" void atSingleton_DA18_p46(void* pNode, void* pRootNode) {
 // Audio
 // ============================================================================
 
-extern "C" void audControl_Destructor(void* obj) {
-    (void)obj;
-}
+// REMOVED (conflict): extern "C" void audControl_Destructor(void* obj) {
 
 extern "C" void xapo_UnpackBuffer(void* desc, void* outInfo) {
     (void)desc; (void)outInfo;
@@ -558,9 +544,7 @@ extern "C" void pg_6C40_g(void* streamer) {
     (void)streamer;
 }
 
-extern "C" void pg_6F68(void* pageGroup, void* context, int eventType, ...) {
-    (void)pageGroup; (void)context; (void)eventType;
-}
+// REMOVED (conflict): extern "C" void pg_6F68(void* pageGroup, void* context, int eventType, ...) {
 
 extern "C" void pg_C3B8_g(void* obj, int param) {
     (void)obj; (void)param;
@@ -778,9 +762,7 @@ extern "C" void* swfSymtab_Lookup(void* symtab, const char* key) {
 // System / Memory
 // ============================================================================
 
-extern "C" void sysCallback_Invoke(void* obj, int flags) {
-    (void)obj; (void)flags;
-}
+// REMOVED (conflict): extern "C" void sysCallback_Invoke(void* obj, int flags) {
 
 extern "C" void* sysMemAllocator_Allocate(void* ptr, size_t size) {
     (void)ptr; (void)size;
