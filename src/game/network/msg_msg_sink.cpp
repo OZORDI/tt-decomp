@@ -1560,3 +1560,252 @@ void msgMsgSink::SetActiveAndReleaseObject() {
         *(void**)((uint8_t*)this + 40) = nullptr;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * msgMsgSink vtable methods — batch 5 (message dispatch & event sink)
+ *
+ * 10 functions, all <=200 bytes.  Vtable slots from the msgMsgSink class
+ * covering disconnect/reconnect handling, refcount management,
+ * thread-safe session operations, and event dispatch helpers.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// External helpers used by batch 5
+extern void msgMsgSink_DC40_g(void*, uint32_t);
+extern void game_0388_h(void*, uint16_t);
+extern void game_8CF8_h(void*, uint16_t);
+extern void msgMsgSink_8D10_g(void*, uint16_t);
+extern void jumptable_3A48(void*, uint32_t, uint16_t, uint32_t);
+extern uint32_t msgMsgSink_3D70_p39(void*);
+extern void atSingleton_B0E8_sp(void*, uint32_t, uint32_t);
+extern uint32_t RtlEnterCriticalSection_A158_h(void*, void*, uint32_t, uint32_t, uint32_t);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::OnDisconnect() [vfn_49 @ 0x8244E628 | 84B]
+//
+// Handles a disconnect event.  If a pending message flag (+308) is set,
+// clears it and cancels the pending message via msgMsgSink_03B8_g.
+// Then dispatches a state-change notification with code 3 (disconnected).
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::OnDisconnect() {
+    uint32_t pendingFlag = *(uint32_t*)((uint8_t*)this + 308);
+
+    if (pendingFlag != 0) {
+        uint16_t gamerIndex = *(uint16_t*)((uint8_t*)this + 292);
+        void* sessionObj = *(void**)((uint8_t*)this + 284);
+
+        *(uint32_t*)((uint8_t*)this + 308) = 0;
+
+        extern void msgMsgSink_03B8_g(void*, uint16_t);
+        msgMsgSink_03B8_g(sessionObj, gamerIndex);
+    }
+
+    msgMsgSink_DC40_g(this, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::OnReconnect() [vfn_50 @ 0x8244E680 | 80B]
+//
+// Handles a reconnect event.  If the gamer index (+292) is valid
+// (not 0xFFFF), sets the pending flag, looks up the gamer, and
+// dispatches a state-change notification with code 2 (reconnected).
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::OnReconnect() {
+    uint16_t gamerIndex = *(uint16_t*)((uint8_t*)this + 292);
+
+    if (gamerIndex != 0xFFFF) {
+        void* sessionObj = *(void**)((uint8_t*)this + 284);
+
+        *(uint32_t*)((uint8_t*)this + 308) = 1;
+
+        game_0388_h(sessionObj, gamerIndex);
+
+        msgMsgSink_DC40_g(this, 2);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ResetEventDispatch() [vfn_52 @ 0x8244DB58 | 20B]
+//
+// Dispatches a reset event through the internal event table.
+// Adjusts 'this' to the embedded event-sink sub-object at +24, then
+// tail-calls jumptable_3A48 with type=2 and zero payload.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ResetEventDispatch() {
+    void* eventSink = (uint8_t*)this + 24;
+    jumptable_3A48(eventSink, 2, 0, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetConnectionCount() [vfn_46 @ 0x8244E148 | 24B]
+//
+// Returns the active connection count from the delegate object at +52.
+// If the delegate pointer is null, returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetConnectionCount() {
+    void* delegate = *(void**)((uint8_t*)this + 52);
+
+    if (delegate == nullptr) {
+        return 0;
+    }
+
+    return msgMsgSink_3D70_p39(delegate);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardMessageToSession() [vfn_68 @ 0x82456F28 | 20B]
+//
+// Forwards a message to the session layer.  Loads the session ID from
+// +288 and the session object from +284, then tail-calls
+// atSingleton_B0E8_sp to deliver the message.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardMessageToSession(uint32_t param) {
+    uint32_t sessionId = *(uint32_t*)((uint8_t*)this + 288);
+    void* sessionObj = *(void**)((uint8_t*)this + 284);
+    atSingleton_B0E8_sp(sessionObj, sessionId, param);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Release() [vfn_118 @ 0x8246BC00 | 84B]
+//
+// Decrements the reference count at +4.  When it reaches zero, invokes
+// the cleanup handler via vtable slot 3 (vfn_3) and returns 0.
+// Otherwise returns the new refcount.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::Release() {
+    uint32_t refCount = *(uint32_t*)((uint8_t*)this + 4);
+    refCount--;
+    *(uint32_t*)((uint8_t*)this + 4) = refCount;
+
+    if (refCount == 0) {
+        // Call virtual method at slot 3 (cleanup/destroy)
+        typedef void (*VfnSlot3)(void*);
+        void** vt = *(void***)this;
+        VfnSlot3 cleanup = (VfnSlot3)vt[3];
+        cleanup(this);
+        return 0;
+    }
+
+    return refCount;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::NotifyStateChange() [vfn_120 @ 0x824564A0 | 28B]
+//
+// Extracts notification parameters from the nested state object at +48,
+// then dispatches the event through jumptable_3A48 with type=2.
+// Reads the payload ID from +10 and the flags (low 2 bits) from +14
+// of the state object.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::NotifyStateChange() {
+    void* stateObj = *(void**)((uint8_t*)this + 48);
+    void* eventSink = (uint8_t*)this + 24;
+
+    uint16_t payloadId = *(uint16_t*)((uint8_t*)stateObj + 10);
+    uint8_t rawFlags = *(uint8_t*)((uint8_t*)stateObj + 14);
+    uint32_t flags = rawFlags & 0x3;
+
+    jumptable_3A48(eventSink, 2, payloadId, flags);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::CreateSessionLocked() [vfn_129 @ 0x8244FE80 | 104B]
+//
+// Thread-safe session creation.  Enters the critical section on the
+// network manager (+24, offset +144), delegates to the session creation
+// helper (RtlEnterCriticalSection_A158_h), then leaves the critical section.
+// The 'flags' parameter's low bit controls a boolean option.
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink::CreateSessionLocked(uint32_t sessionParam, uint32_t flags) {
+    void* networkMgr = *(void**)((uint8_t*)this + 24);
+    void* critSection = (uint8_t*)networkMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+
+    RtlEnterCriticalSection(critSection);
+
+    uint32_t boolFlag = (flags & 0x1) ? 1 : 0;
+
+    uint32_t result = RtlEnterCriticalSection_A158_h(
+        *(void**)((uint8_t*)this + 24),  // network manager
+        this,                             // this sink
+        sessionParam,                     // session param
+        boolFlag,                         // bool option
+        0                                 // reserved
+    );
+
+    RtlLeaveCriticalSection(critSection);
+
+    return (void*)(uintptr_t)result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::QueryConnectionStatus() [vfn_131 @ 0x8244FEE8 | 80B]
+//
+// Thread-safe query of connection status.  Enters the critical section
+// on the network manager, checks whether the connection pointer at +240
+// is non-null (connected = 1, disconnected = 0), writes the result to
+// the output parameter, then leaves the critical section.  Always returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::QueryConnectionStatus(uint32_t* outStatus) {
+    void* networkMgr = *(void**)((uint8_t*)this + 24);
+    void* critSection = (uint8_t*)networkMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+
+    RtlEnterCriticalSection(critSection);
+
+    uint32_t connPtr = *(uint32_t*)((uint8_t*)this + 240);
+    // connPtr != 0  =>  connected (1),  connPtr == 0  =>  disconnected (0)
+    uint32_t isConnected = (connPtr != 0) ? 1 : 0;
+    *outStatus = isConnected;
+
+    RtlLeaveCriticalSection(critSection);
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::FindGamerByIndex() [vfn_30 @ 0x8244E6D0 | 136B]
+//
+// Thread-safe gamer lookup by index.  Enters the critical section on the
+// delegate object (+56, offset +144), looks up the gamer via game_8CF8_h,
+// validates the result is not 0xFFFF, then checks the gamer's active flag
+// (bit 0 set AND bit 2 set means valid).  Returns the gamer handle on
+// success or -1 (0xFFFF) on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t msgMsgSink::FindGamerByIndex(uint16_t index) {
+    void* delegateObj = *(void**)((uint8_t*)this + 56);
+    void* critSection = (uint8_t*)delegateObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+
+    RtlEnterCriticalSection(critSection);
+
+    void* delegate = *(void**)((uint8_t*)this + 56);
+    uint16_t gamerHandle = (uint16_t)(uintptr_t)game_8CF8_h(delegate, index);
+
+    if ((gamerHandle & 0xFFFF) != 0xFFFF) {
+        void* gamerObj = (void*)(uintptr_t)msgMsgSink_8D10_g(delegate, gamerHandle);
+
+        if (gamerObj != nullptr) {
+            uint8_t statusByte = *(uint8_t*)gamerObj;
+
+            // Check bit 0 (active) is set
+            if (statusByte & 0x1) {
+                // Check bit 2 (confirmed) is set - if so, return immediately
+                if (statusByte & 0x4) {
+                    RtlLeaveCriticalSection(critSection);
+                    return gamerHandle;
+                }
+            }
+        }
+
+        gamerHandle = (uint16_t)0xFFFF;
+    }
+
+    RtlLeaveCriticalSection(critSection);
+    return gamerHandle;
+}
