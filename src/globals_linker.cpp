@@ -37,7 +37,7 @@ uint32_t* g_aiTypeId_3 = nullptr;      // @ 0x825C8038
 // ===========================================================================
 // Animation
 // ===========================================================================
-const float g_animBlendWeight = 0.0f;   // @ 0x8202D110
+extern const float g_animBlendWeight = 0.0f;   // @ 0x8202D110
 
 // ===========================================================================
 // Ball / swing attribute hashes
@@ -45,7 +45,7 @@ const float g_animBlendWeight = 0.0f;   // @ 0x8202D110
 uint32_t g_attrHash_HitZone    = 0;     // @ 0x825C761C
 uint32_t g_attrHash_SwingType1 = 0;     // @ 0x825C8038
 uint32_t g_attrHash_SwingType2 = 0;     // @ 0x825C803C
-const float g_alphaMultiplier  = 0.0f;  // @ 0x82079BE0
+extern const float g_alphaMultiplier  = 0.0f;  // @ 0x82079BE0
 
 // ===========================================================================
 // CRT atexit guards
@@ -94,15 +94,15 @@ uint32_t g_character_type_id_3    = 0;        // @ 0x825C8038
 // ===========================================================================
 // Network: cmRefreshable vtable
 // ===========================================================================
-const void* g_cmRefreshableCtorVtable = nullptr; // @ 0x820533CC
+extern const void* g_cmRefreshableCtorVtable = nullptr; // @ 0x820533CC
 
 // ===========================================================================
 // Player contact zone constants
 // ===========================================================================
-const float g_contactZoneMinA = 0.0f;
-const float g_contactZoneMaxA = 0.0f;
-const float g_contactZoneMinB = 0.0f;
-const float g_contactZoneMaxB = 0.0f;
+extern const float g_contactZoneMinA = 0.0f;
+extern const float g_contactZoneMaxA = 0.0f;
+extern const float g_contactZoneMinB = 0.0f;
+extern const float g_contactZoneMaxB = 0.0f;
 
 // ===========================================================================
 // Creature manager
@@ -122,11 +122,11 @@ uint8_t g_debugMode = 0;               // @ 0x825C64AD
 // ===========================================================================
 // Default constants
 // ===========================================================================
-const float g_defaultDuration            = 0.0f;  // @ 0x825C755C
+extern const float g_defaultDuration            = 0.0f;  // @ 0x825C755C
 float       g_defaultVibrationIntensity  = 0.0f;  // @ 0x8202D110
-const float g_default_float_zero         = 0.0f;  // @ 0x825CAF94
-const float g_default_float_value        = 0.0f;  // @ 0x825CAF88
-const float g_default_float_value_2      = 0.0f;  // @ 0x825CAF90
+extern const float g_default_float_zero         = 0.0f;  // @ 0x825CAF94
+extern const float g_default_float_value        = 0.0f;  // @ 0x825CAF88
+extern const float g_default_float_value_2      = 0.0f;  // @ 0x825CAF90
 
 // ===========================================================================
 // Draw bucket
@@ -136,11 +136,11 @@ void* g_drawBucket = nullptr;           // @ 0x826064F4
 // ===========================================================================
 // Error / debug strings (char_view_globals.cpp — not in build)
 // ===========================================================================
-const char* g_error_attract_exit      = "";
-const char* g_error_charview_enter    = "";
-const char* g_error_charview_exit     = "";
-const char* g_error_type_mismatch     = "";
-const char* g_error_unhandled_event   = "";
+extern const char* g_error_attract_exit      = "";
+extern const char* g_error_charview_enter    = "";
+extern const char* g_error_charview_exit     = "";
+extern const char* g_error_type_mismatch     = "";
+extern const char* g_error_unhandled_event   = "";
 
 // ===========================================================================
 // Event type table
@@ -150,14 +150,14 @@ void* g_eventTypeTable = nullptr;       // @ 0x82017888
 // ===========================================================================
 // Float constants (network / physics)
 // ===========================================================================
-const float g_floatConstant1 = 0.0f;    // @ 0x82079AD4
-const float g_floatConstant2 = 0.0f;    // @ 0x8202D110
-const float g_floatConstant3 = 0.0f;    // @ 0x8202D110
-const float g_floatConstant4 = 0.0f;    // @ 0x825C7600
-const float g_floatEpsilon   = 0.0f;    // @ 0x8202D110
-const float g_floatNegOne    = 0.0f;    // @ 0x8202D110
-const float g_floatOne       = 0.0f;    // @ 0x8202D110
-const float g_floatZero      = 0.0f;    // @ 0x8202D110
+extern const float g_floatConstant1 = 0.0f;    // @ 0x82079AD4
+extern const float g_floatConstant2 = 0.0f;    // @ 0x8202D110
+extern const float g_floatConstant3 = 0.0f;    // @ 0x8202D110
+extern const float g_floatConstant4 = 0.0f;    // @ 0x825C7600
+extern const float g_floatEpsilon   = 0.0f;    // @ 0x8202D110
+extern const float g_floatNegOne    = 0.0f;    // @ 0x8202D110
+extern const float g_floatOne       = 0.0f;    // @ 0x8202D110
+extern const float g_floatZero      = 0.0f;    // @ 0x8202D110
 
 // ===========================================================================
 // FloatAverager vtables (network classes)
@@ -214,15 +214,15 @@ float g_hudRenderParam = 0.0f;          // @ 0x82140110
 // Player adjustment / input / timing constants
 // ===========================================================================
 float       g_kAdjustmentScale     = 0.0f;  // @ 0x82079BAC
-const float g_kAdjustmentThreshold = 0.0f;  // @ 0x8202D110
-const float g_kInputScale          = 0.0f;  // @ 0x825C5938
-const float g_kInputThresholdHigh  = 0.0f;  // @ 0x8202D110
-const float g_kMaxAdjustment       = 0.0f;  // @ 0x82079CD8
-const float g_kQuantScale1         = 0.0f;  // @ 0x82079FFC
-const float g_kQuantScale2         = 0.0f;  // @ 0x82079FF8
-const float g_kSpecialThreshold    = 0.0f;  // @ 0x825C8A50
+extern const float g_kAdjustmentThreshold = 0.0f;  // @ 0x8202D110
+extern const float g_kInputScale          = 0.0f;  // @ 0x825C5938
+extern const float g_kInputThresholdHigh  = 0.0f;  // @ 0x8202D110
+extern const float g_kMaxAdjustment       = 0.0f;  // @ 0x82079CD8
+extern const float g_kQuantScale1         = 0.0f;  // @ 0x82079FFC
+extern const float g_kQuantScale2         = 0.0f;  // @ 0x82079FF8
+extern const float g_kSpecialThreshold    = 0.0f;  // @ 0x825C8A50
 float       g_kTimingConstant      = 0.0f;  // @ 0x825C4930
-const float g_kZeroThreshold       = 0.0f;  // @ 0x8202D108
+extern const float g_kZeroThreshold       = 0.0f;  // @ 0x8202D108
 
 // ===========================================================================
 // Local user pointer
@@ -233,8 +233,8 @@ void* g_localUserPtr = nullptr;
 // Locomotion / creature animation
 // ===========================================================================
 void*       g_locomotionAnimInstance = nullptr;  // @ 0x8271A378
-const float g_lookAtMultiplier       = 0.0f;     // @ 0x8202D184
-const float g_lookAtRefAngle         = 0.0f;     // @ 0x8202D10C
+extern const float g_lookAtMultiplier       = 0.0f;     // @ 0x8202D184
+extern const float g_lookAtRefAngle         = 0.0f;     // @ 0x8202D10C
 
 // ===========================================================================
 // Match result / player select tables
@@ -250,8 +250,8 @@ void* g_matrixFieldType   = nullptr;    // @ 0x825CAFA4
 // Message sink
 // ===========================================================================
 uint32_t      g_msgSinkBitfield      = 0;        // @ 0x825B0C30
-const float   g_msgSinkInitFloat     = 0.0f;     // @ 0x825C5938
-const uint32_t g_msgSinkTemplate[4]  = {0};      // @ 0x8241A0C0
+extern const float   g_msgSinkInitFloat     = 0.0f;     // @ 0x825C5938
+extern const uint32_t g_msgSinkTemplate[4]  = {0};      // @ 0x8241A0C0
 
 // ===========================================================================
 // Network globals
@@ -334,7 +334,7 @@ uint64_t g_randomState = 0;             // @ 0x825DA268
 // ===========================================================================
 // Recovery constants
 // ===========================================================================
-const float g_recoveryScale     = 0.0f;
+extern const float g_recoveryScale     = 0.0f;
 float       g_recoveryThreshold = 0.0f;
 
 // ===========================================================================
@@ -387,32 +387,32 @@ void* g_someRenderObj2 = nullptr;       // @ 0x825FEAB0
 // ===========================================================================
 // State name strings (char_view_globals.cpp — not in build)
 // ===========================================================================
-const char* g_stateName_attract  = "";  // @ 0x8205E094
-const char* g_stateName_charView = "";  // @ 0x8205EF5C
+extern const char* g_stateName_attract  = "";  // @ 0x8205E094
+extern const char* g_stateName_charView = "";  // @ 0x8205EF5C
 
 // ===========================================================================
 // Game data error strings (gd_data_strings.cpp — not in build)
 // ===========================================================================
-const char* g_str_gdLadder_duplicateLevel       = "";  // @ 0x82044D30
-const char* g_str_gdLadder_missingLadder        = "";  // @ 0x82044DA8
-const char* g_str_gdLadder_unknownNodeType      = "";  // @ 0x82044D70
-const char* g_str_gdRivalryData_noCharName      = "";  // @ 0x82044598
-const char* g_str_gdRivalryData_noRivalName     = "";  // @ 0x820445E0
-const char* g_str_gdRivalryData_unknownRival    = "";  // @ 0x82044620
-const char* g_str_gdRivalry_duplicateChar       = "";  // @ 0x820446A8
-const char* g_str_gdRivalry_missingRival        = "";  // @ 0x82044728
-const char* g_str_gdRivalry_unknownChar         = "";  // @ 0x82044670
-const char* g_str_gdRivalry_unknownNodeType     = "";  // @ 0x820446F0
-const char* g_str_gdTierMember_noCharName       = "";  // @ 0x82044778
-const char* g_str_gdTierMember_unknownChar      = "";  // @ 0x820447BC
-const char* g_str_gdTier_noTierName             = "";  // @ 0x8204480C
-const char* g_str_gdTier_unknownNodeType        = "";  // @ 0x82044844
+extern const char* g_str_gdLadder_duplicateLevel       = "";  // @ 0x82044D30
+extern const char* g_str_gdLadder_missingLadder        = "";  // @ 0x82044DA8
+extern const char* g_str_gdLadder_unknownNodeType      = "";  // @ 0x82044D70
+extern const char* g_str_gdRivalryData_noCharName      = "";  // @ 0x82044598
+extern const char* g_str_gdRivalryData_noRivalName     = "";  // @ 0x820445E0
+extern const char* g_str_gdRivalryData_unknownRival    = "";  // @ 0x82044620
+extern const char* g_str_gdRivalry_duplicateChar       = "";  // @ 0x820446A8
+extern const char* g_str_gdRivalry_missingRival        = "";  // @ 0x82044728
+extern const char* g_str_gdRivalry_unknownChar         = "";  // @ 0x82044670
+extern const char* g_str_gdRivalry_unknownNodeType     = "";  // @ 0x820446F0
+extern const char* g_str_gdTierMember_noCharName       = "";  // @ 0x82044778
+extern const char* g_str_gdTierMember_unknownChar      = "";  // @ 0x820447BC
+extern const char* g_str_gdTier_noTierName             = "";  // @ 0x8204480C
+extern const char* g_str_gdTier_unknownNodeType        = "";  // @ 0x82044844
 
 // ===========================================================================
 // Pong strings (pong_strings.cpp — not in build)
 // ===========================================================================
-const char* g_str_pongDrill_tooManySuccesses = "";  // @ 0x82033970
-const char* g_str_pongMover_calcInitMatrix   = "";  // @ 0x8202A088
+extern const char* g_str_pongDrill_tooManySuccesses = "";  // @ 0x82033970
+extern const char* g_str_pongMover_calcInitMatrix   = "";  // @ 0x8202A088
 
 // ===========================================================================
 // Swipe patterns array
@@ -422,16 +422,16 @@ SwipePattern g_swipePatterns[17] = {};   // @ 0x825D09A0
 // ===========================================================================
 // Network RTTI / type name strings (char arrays)
 // ===========================================================================
-const char g_szCreateMachineRTTI[]          = "";  // @ 0x825DEEB0
-const char g_szDataRequestTypeName[]        = "";  // @ 0x8206EA74
-const char g_szDataSendTypeName[]           = "";  // @ 0x8206EA88
-const char g_szDefaultError[]               = "";  // @ 0x82027423
-const char g_szInvalidError[]               = "";  // @ 0x8204EF04
-const char g_szMessageType[]                = "";  // @ 0x8205DFB0
-const char g_szNetworkDebugMsg[]            = "";  // @ 0x8205AE98
-const char g_szRageRTTI[]                   = "";  // @ 0x825DEECC
-const char g_szTopSpin[]                    = "";  // @ 0x8206CB54
-const char g_szTournamentCompleteTypeName[] = "";  // @ 0x8206EC40
+extern const char g_szCreateMachineRTTI[]          = "";  // @ 0x825DEEB0
+extern const char g_szDataRequestTypeName[]        = "";  // @ 0x8206EA74
+extern const char g_szDataSendTypeName[]           = "";  // @ 0x8206EA88
+extern const char g_szDefaultError[]               = "";  // @ 0x82027423
+extern const char g_szInvalidError[]               = "";  // @ 0x8204EF04
+extern const char g_szMessageType[]                = "";  // @ 0x8205DFB0
+extern const char g_szNetworkDebugMsg[]            = "";  // @ 0x8205AE98
+extern const char g_szRageRTTI[]                   = "";  // @ 0x825DEECC
+extern const char g_szTopSpin[]                    = "";  // @ 0x8206CB54
+extern const char g_szTournamentCompleteTypeName[] = "";  // @ 0x8206EC40
 
 // ===========================================================================
 // Thread-local storage base (char_view_globals.cpp — not in build)
@@ -483,8 +483,8 @@ uint32_t g_xmlNodeStruct_typeId2 = 0;    // @ 0x825C8038
 // ===========================================================================
 // Zero / constant floats
 // ===========================================================================
-const float g_zeroConstant = 0.0f;       // @ 0x8202D110
-const float g_zeroFloat    = 0.0f;       // @ 0x82079AD8
+extern const float g_zeroConstant = 0.0f;       // @ 0x8202D110
+extern const float g_zeroFloat    = 0.0f;       // @ 0x82079AD8
 
 // ── Additional float constants ──────────────────────────────────────────────
 
