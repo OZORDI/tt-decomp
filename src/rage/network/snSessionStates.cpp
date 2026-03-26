@@ -195,6 +195,529 @@ void* snSession_FindListTail(void* listHead) {
     return node;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM State Destructors — Batch 2
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External destructor helpers for Joining and Leaving states
+extern void NotifyHandler_56C0_g(void* thisPtr);  // @ 0x823E56C0 — Joining rlNotifier dtor body
+extern void util_5900(void* thisPtr);              // @ 0x823E5900 — Leaving-level destructor body
+
+/**
+ * snJoining::~snJoining @ 0x823E5498 | size: 0x5C | vfn_0
+ *
+ * Destructor for the Joining state. Tears down the embedded rlNotifier
+ * at this+24 via NotifyHandler_56C0_g, then calls hsmState base destructor.
+ */
+void snJoining_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5498
+    NotifyHandler_56C0_g((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+/**
+ * snLeaving::~snLeaving @ 0x823E5788 | size: 0x5C | vfn_0
+ *
+ * Destructor for the Leaving state. Tears down the embedded leave machine
+ * state at this+24 via util_5900, then calls hsmState base destructor.
+ */
+void snLeaving_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5788
+    util_5900((char*)thisPtr + 24);
+    snSession_9010_gen(thisPtr);
+    if (flags & 1) {
+        rage_free(thisPtr);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM OnEnter Handlers — Batch 2
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helpers for OnEnter handlers
+extern void snLinkedList_InsertNode(void* listHead, void* node);            // @ 0x823DD170
+extern bool snLeaveMachine_TryLeave(void* thisPtr);                         // @ 0x823E8558
+extern void snSession_TransitionDestroying(void* thisPtr, void* evtState);  // @ 0x823EAA20
+extern void snSession_TransitionChanging(void* thisPtr, void* evtState);    // @ 0x823EAB70
+extern void snSession_TransitionStarting(void* thisPtr, void* evtState);    // @ 0x823EAC18
+extern void snSession_TransitionEnding(void* thisPtr, void* evtState);      // @ 0x823EACC0
+extern void snHsmContext_SetMaxTransitions(void* thisPtr, int32_t limit);    // @ 0x823ED4F8
+extern void SinglesNetworkClient_RegisterNotify(void* networkClient);       // @ 0x823DA940
+extern bool xamSession_StartSession(void* sessionNotify);                    // @ 0x8236E6C0
+extern bool xamSession_EndSession(void* sessionNotify);                      // @ 0x8236E920
+
+// Thunk function pointers used as notification callbacks
+extern void thunk_fn_snSession_2D48();   // @ 0x823EB108 — Destroying notification callback
+extern void thunk_fn_snSession_88F8();   // @ 0x823EB118 — WaitingForReplies notification callback
+extern void thunk_fn_snSession_4110();   // @ 0x823EB120 — StartingSession notification callback
+extern void thunk_fn_snSession_45B0();   // @ 0x823EB128 — Ending notification callback
+
+/**
+ * snRoot::OnEnter @ 0x823E49E0 | size: 0x84 | vfn_5
+ *
+ * Entry handler for the root session state. Attaches eight child sub-states
+ * at fixed offsets within the root state structure via util_F850.
+ *   - this+24    (Dormant)
+ *   - this+48    (Joining)
+ *   - this+376   (Leaving)
+ *   - this+424   (Creating)
+ *   - this+3392  (ChangingPresence)
+ *   - this+4048  (Active)
+ *   - this+4292  (Destroying)
+ *   - this+5756  (Migrating)
+ */
+void snRoot_OnEnter(void* thisPtr) { // @ 0x823E49E0
+    util_F850(thisPtr, (char*)thisPtr + 24);
+    util_F850(thisPtr, (char*)thisPtr + 48);
+    util_F850(thisPtr, (char*)thisPtr + 376);
+    util_F850(thisPtr, (char*)thisPtr + 424);
+    util_F850(thisPtr, (char*)thisPtr + 3392);
+    util_F850(thisPtr, (char*)thisPtr + 4048);
+    util_F850(thisPtr, (char*)thisPtr + 4292);
+    util_F850(thisPtr, (char*)thisPtr + 5756);
+}
+
+/**
+ * snJoining::OnEnter @ 0x823E3F50 | size: 0x5C | vfn_5
+ *
+ * Entry handler for the Joining state. Initializes the embedded child
+ * state at this+24 by copying the session pointer from this+16 into
+ * the child's fields, then calls the child's OnEnter (vfn_5) and sets
+ * the child's parent pointer to this.
+ */
+void snJoining_OnEnterState(void* thisPtr) { // @ 0x823E3F50
+    char* child = (char*)thisPtr + 24;
+    void* session = *(void**)((char*)thisPtr + 16);
+
+    // Initialize child state fields
+    *(void**)(child + 20) = child;     // self-reference
+    *(void**)(child + 4) = session;    // session pointer
+    *(void**)(child + 16) = session;   // session pointer (parent context)
+
+    // Call child's OnEnter via vtable slot 5
+    void** vtable = *(void***)child;
+    void (*childOnEnter)(void*) = (void (*)(void*))vtable[5];
+    childOnEnter(child);
+
+    // Set child's parent to this state
+    *(void**)(child + 8) = thisPtr;
+}
+
+/**
+ * snDestroying::OnEnter @ 0x823E2E30 | size: 0x8C | vfn_14
+ *
+ * Entry handler for the Destroying state. Increments join reference count,
+ * sets up notification callback for destroy completion, registers with
+ * the session's linked list, then initiates leave machine. If leave
+ * fails immediately, creates an event to transition to Destroying.
+ */
+void snDestroying_OnEnter(void* thisPtr) { // @ 0x823E2E30
+    char* notifier = (char*)thisPtr + 24;
+    void* session = *(void**)((char*)thisPtr + 16);
+
+    // Increment join reference count
+    (*(int32_t*)((char*)session + 9672))++;
+
+    // Set up notification callback (thunk -> snSession_2D48)
+    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_2D48;
+    *(void**)(notifier + 4) = thisPtr;
+
+    // Register notifier in session's linked list at session+232
+    snLinkedList_InsertNode((char*)session + 232, notifier);
+
+    // Attempt to leave the session
+    bool leaveResult = snLeaveMachine_TryLeave(thisPtr);
+    if (!leaveResult) {
+        // Leave failed immediately — create event and transition
+        char evtState[24];
+        util_DA08(evtState);
+        *(void**)evtState = (void*)&thunk_fn_snSession_2D48; // vtable
+        snSession_TransitionDestroying(thisPtr, evtState);
+    }
+}
+
+/**
+ * snWaitingForReplies::OnEnter @ 0x823E3530 | size: 0x58 | vfn_14
+ *
+ * Entry handler for the WaitingForReplies sub-state. Clears the reply
+ * counter at this+48, sets the max transition count to 10000, sets up
+ * the notification callback, and registers with the network client's
+ * notification list.
+ */
+void snWaitingForReplies_OnEnter(void* thisPtr) { // @ 0x823E3530
+    char* notifier = (char*)thisPtr + 24;
+
+    // Clear reply counter
+    *(uint32_t*)((char*)thisPtr + 48) = 0;
+
+    // Set max transition count
+    snHsmContext_SetMaxTransitions(thisPtr, 10000);
+
+    // Set up notification callback (thunk -> SinglesNetworkClient_88F8)
+    *(void**)(notifier + 4) = thisPtr;
+    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_88F8;
+
+    // Register with network client's notification list
+    void* session = *(void**)((char*)thisPtr + 16);
+    void* networkClient = *(void**)((char*)session + 164);
+    SinglesNetworkClient_RegisterNotify(networkClient);
+}
+
+/**
+ * snStartingSession::OnEnter @ 0x823E41F8 | size: 0x80 | vfn_14
+ *
+ * Entry handler for the StartingSession sub-state within Active::Starting.
+ * Sets up notification callback, registers with session's linked list,
+ * then calls xamSession_StartSession. If start returns immediately,
+ * creates an event to transition.
+ */
+void snStartingSession_OnEnter(void* thisPtr) { // @ 0x823E41F8
+    char* notifier = (char*)thisPtr + 24;
+    void* session = *(void**)((char*)thisPtr + 16);
+
+    // Set up notification callback (thunk -> snSession_4110)
+    *(void**)(notifier + 4) = thisPtr;
+    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_4110;
+
+    // Register notifier in session's linked list at session+232
+    snLinkedList_InsertNode((char*)session + 232, notifier);
+
+    // Attempt to start session via XAM
+    bool result = xamSession_StartSession((char*)session + 232);
+    if (!result) {
+        // Start completed immediately — create event and transition
+        char evtState[24];
+        util_DA08(evtState);
+        *(void**)evtState = (void*)&thunk_fn_snSession_4110; // vtable
+        snSession_TransitionStarting(thisPtr, evtState);
+    }
+}
+
+/**
+ * snEnding::OnEnter @ 0x823E4698 | size: 0x90 | vfn_14
+ *
+ * Entry handler for the Ending sub-state within Active. Increments
+ * join reference count, sets up notification callback, registers with
+ * session's linked list, then calls xamSession_EndSession. If end
+ * returns immediately, creates an event to transition.
+ */
+void snEnding_OnEnter(void* thisPtr) { // @ 0x823E4698
+    char* notifier = (char*)thisPtr + 24;
+    void* session = *(void**)((char*)thisPtr + 16);
+
+    // Increment join reference count
+    (*(int32_t*)((char*)session + 9672))++;
+
+    // Set up notification callback (thunk -> snSession_45B0)
+    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_45B0;
+    *(void**)(notifier + 4) = thisPtr;
+
+    // Register notifier in session's linked list at session+232
+    snLinkedList_InsertNode((char*)session + 232, notifier);
+
+    // Attempt to end session via XAM
+    bool result = xamSession_EndSession((char*)session + 232);
+    if (!result) {
+        // End completed immediately — create event and transition
+        char evtState[24];
+        util_DA08(evtState);
+        *(void**)evtState = (void*)&thunk_fn_snSession_45B0; // vtable
+        snSession_TransitionEnding(thisPtr, evtState);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM OnExit Handlers — Batch 2
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snActive::OnExit_Full @ 0x823E4918 | size: 0xC4 | vfn_6
+ *
+ * Exit handler for the Active state. Detaches four child sub-states at
+ * this+24, this+1436, this+1460, and this+2920. Each child's pending
+ * notification (at child+8) is checked; if non-null, cleared and
+ * cancelled via its vtable slot 4 (Cancel).
+ */
+void snActive_OnExit_Full(void* thisPtr) { // @ 0x823E4918
+    // Detach child at this+24
+    char* child1 = (char*)thisPtr + 24;
+    if (*(void**)(child1 + 8) != nullptr) {
+        void** vtable1 = *(void***)child1;
+        *(void**)(child1 + 8) = nullptr;
+        void (*cancel1)(void*) = (void (*)(void*))vtable1[4];
+        cancel1(child1);
+    }
+
+    // Detach child at this+1436
+    char* child2 = (char*)thisPtr + 1436;
+    if (*(void**)(child2 + 8) != nullptr) {
+        void** vtable2 = *(void***)child2;
+        *(void**)(child2 + 8) = nullptr;
+        void (*cancel2)(void*) = (void (*)(void*))vtable2[4];
+        cancel2(child2);
+    }
+
+    // Detach child at this+1460
+    char* child3 = (char*)thisPtr + 1460;
+    if (*(void**)(child3 + 8) != nullptr) {
+        void** vtable3 = *(void***)child3;
+        *(void**)(child3 + 8) = nullptr;
+        void (*cancel3)(void*) = (void (*)(void*))vtable3[4];
+        cancel3(child3);
+    }
+
+    // Detach child at this+2920
+    char* child4 = (char*)thisPtr + 2920;
+    if (*(void**)(child4 + 8) != nullptr) {
+        void** vtable4 = *(void***)child4;
+        *(void**)(child4 + 8) = nullptr;
+        void (*cancel4)(void*) = (void (*)(void*))vtable4[4];
+        cancel4(child4);
+    }
+}
+
+/**
+ * snStarting::OnExit_Full @ 0x823E4520 | size: 0x7C | vfn_6
+ *
+ * Exit handler for the Starting sub-state within Active. Cancels pending
+ * notifications on two embedded notifiers at this+24 and this+1412.
+ * If the notifier's pending pointer (+8) is non-null, clears it and
+ * calls the notifier's Cancel function (vtable slot 4).
+ */
+void snStarting_OnExit_Full(void* thisPtr) { // @ 0x823E4520
+    // Cancel notifier at this+24
+    char* notifier1 = (char*)thisPtr + 24;
+    if (*(void**)(notifier1 + 8) != nullptr) {
+        void** vtable1 = *(void***)notifier1;
+        *(void**)(notifier1 + 8) = nullptr;
+        void (*cancel1)(void*) = (void (*)(void*))vtable1[4];
+        cancel1(notifier1);
+    }
+
+    // Cancel notifier at this+1412
+    char* notifier2 = (char*)thisPtr + 1412;
+    if (*(void**)(notifier2 + 8) != nullptr) {
+        void** vtable2 = *(void***)notifier2;
+        *(void**)(notifier2 + 8) = nullptr;
+        void (*cancel2)(void*) = (void (*)(void*))vtable2[4];
+        cancel2(notifier2);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snSession HSM OnTick / Event Handlers — Batch 2
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Event type ID globals (RTTI descriptors loaded at runtime)
+extern uint32_t g_evtType_SessionClosed;         // @ 0x825D1978 — used by snRoot
+extern uint32_t g_evtType_SessionDeregistered;    // @ 0x825D1984 — used by snRoot
+extern uint32_t g_evtType_PresenceChanged;        // @ 0x825D18AC — used by snChanging
+extern uint32_t g_evtType_SessionStarted;         // @ 0x825D1924 — used by snInProgress
+extern uint32_t g_evtType_SessionEnded;           // @ 0x825D1930 — used by snEnding (1st)
+extern uint32_t g_evtType_SessionEndedAlt;        // @ 0x825D193C — used by snEnding (2nd)
+
+// External session helpers
+extern void snSession_HandleClose(void* thisPtr);                            // @ 0x823E8BB0
+extern void SinglesNetworkClient_ProcessChange(void* thisPtr);               // @ 0x823E87F8
+extern void snSession_NotifyStateChange(void* session, int32_t type, int32_t param); // @ 0x82371BF8
+
+/**
+ * snRoot::OnTick @ 0x823E2590 | size: 0xBC | vfn_12
+ *
+ * Tick handler for the root state. Checks the event queue for
+ * SessionClosed or SessionDeregistered events. If either matches,
+ * calls snSession_HandleClose to process session shutdown.
+ * Otherwise sets the consumed flag to false.
+ */
+void snRoot_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E2590
+    *consumed = 1;
+
+    // Get event via vfn_10 (GetCurrentEvent)
+    void** vtable = *(void***)thisPtr;
+    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* evtObj = getEvent(thisPtr);
+
+    // Get event type via vfn_1
+    void* evtData = *(void**)((char*)evtObj + 12);
+    void** evtVtable = *(void***)evtData;
+    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t evtType = getType(evtData);
+
+    // Check for SessionClosed event
+    if (evtType == *(int32_t*)&g_evtType_SessionClosed) {
+        snSession_HandleClose(thisPtr);
+        return;
+    }
+
+    // Check for SessionDeregistered event (second check)
+    vtable = *(void***)thisPtr;
+    getEvent = (void* (*)(void*))vtable[10];
+    evtObj = getEvent(thisPtr);
+    evtData = *(void**)((char*)evtObj + 12);
+    evtVtable = *(void***)evtData;
+    getType = (int32_t (*)(void*))evtVtable[1];
+    evtType = getType(evtData);
+
+    if (evtType == *(int32_t*)&g_evtType_SessionDeregistered) {
+        snSession_HandleClose(thisPtr);
+        return;
+    }
+
+    // Event not consumed
+    *consumed = 0;
+}
+
+/**
+ * snChanging::OnTick @ 0x823E3470 | size: 0xAC | vfn_12
+ *
+ * Tick handler for the Changing sub-state within ChangingPresence.
+ * Checks the event queue for PresenceChanged event. If matched,
+ * calls vfn_11 to get context, then associates connections and
+ * processes pending connection changes. Also calls
+ * SinglesNetworkClient_ProcessChange to update presence.
+ */
+void snChanging_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E3470
+    *consumed = 1;
+
+    // Get event type
+    void** vtable = *(void***)thisPtr;
+    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* evtObj = getEvent(thisPtr);
+    void* evtData = *(void**)((char*)evtObj + 12);
+    void** evtVtable = *(void***)evtData;
+    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t evtType = getType(evtData);
+
+    if (evtType != *(int32_t*)&g_evtType_PresenceChanged) {
+        *consumed = 0;
+        return;
+    }
+
+    // Get context via vfn_11
+    vtable = *(void***)thisPtr;
+    void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
+    void* context = getContext(thisPtr);
+
+    // Get network client's connection list at offset +5828
+    SinglesNetworkClient* networkClient = *(SinglesNetworkClient**)((char*)thisPtr + 20);
+    void* connectionList = (char*)networkClient + 5828;
+
+    // Associate connections
+    util_D988(context, thisPtr, connectionList);
+
+    // Process presence change on network client
+    SinglesNetworkClient_ProcessChange(thisPtr);
+
+    // Process pending connections
+    util_DA90(context, thisPtr, connectionList);
+}
+
+/**
+ * snWaitingForReplies::OnTick @ 0x823E35D0 | size: 0x94 | vfn_12
+ *
+ * Tick handler for the WaitingForReplies sub-state. Gets the event via
+ * vfn_10, checks its type via vfn_1. If the result is zero (no more
+ * pending replies), creates a transition event. Otherwise clears the
+ * consumed flag.
+ */
+void snWaitingForReplies_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E35D0
+    *consumed = 1;
+
+    // Get event type
+    void** vtable = *(void***)thisPtr;
+    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* evtObj = getEvent(thisPtr);
+    void* evtData = *(void**)((char*)evtObj + 12);
+    void** evtVtable = *(void***)evtData;
+    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t result = getType(evtData);
+
+    if (result == 0) {
+        // All replies received — create transition event
+        char evtState[24];
+        util_DA08(evtState);
+        *(void**)evtState = (void*)&thunk_fn_snSession_88F8; // vtable
+        snSession_TransitionChanging(thisPtr, evtState);
+    } else {
+        *consumed = 0;
+    }
+}
+
+/**
+ * snInProgress::OnTick @ 0x823E3FC0 | size: 0xA4 | vfn_12
+ *
+ * Tick handler for the InProgress sub-state within Active. Checks the
+ * event queue for SessionStarted event. If matched, calls vfn_11 to
+ * get context, then associates connections at network client offset
+ * +3344 and processes pending connections.
+ */
+void snInProgress_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E3FC0
+    *consumed = 1;
+
+    // Get event type
+    void** vtable = *(void***)thisPtr;
+    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* evtObj = getEvent(thisPtr);
+    void* evtData = *(void**)((char*)evtObj + 12);
+    void** evtVtable = *(void***)evtData;
+    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t evtType = getType(evtData);
+
+    if (evtType != *(int32_t*)&g_evtType_SessionStarted) {
+        *consumed = 0;
+        return;
+    }
+
+    // Get context via vfn_11
+    vtable = *(void***)thisPtr;
+    void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
+    void* context = getContext(thisPtr);
+
+    // Get network client's connection list at offset +3344
+    SinglesNetworkClient* networkClient = *(SinglesNetworkClient**)((char*)thisPtr + 20);
+    void* connectionList = (char*)networkClient + 3344;
+
+    // Associate and process connections
+    util_D988(context, thisPtr, connectionList);
+    util_DA90(context, thisPtr, connectionList);
+}
+
+/**
+ * snStarting::OnUpdate @ 0x823E4078 | size: 0x88 | vfn_13
+ *
+ * Update handler for the Starting sub-state. Checks session flags at
+ * session+3744 bits 3 and 7. If bit 3 is set and bit 7 is clear,
+ * selects the child at this+24 (ArbHostRegistering). Otherwise selects
+ * the child at this+1412 (StartingSession). Then calls vfn_11 to get
+ * context, associates connections and processes pending connections.
+ */
+void snStarting_OnUpdate(void* thisPtr) { // @ 0x823E4078
+    void* session = *(void**)((char*)thisPtr + 16);
+    uint8_t flags = *(uint8_t*)((char*)session + 3744);
+
+    void* context;
+    char* selectedChild;
+
+    if ((flags & 0x08) != 0 && (flags & 0x80) == 0) {
+        // Bit 3 set, bit 7 clear — use ArbHostRegistering child
+        void** vtable = *(void***)thisPtr;
+        void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
+        context = getContext(thisPtr);
+        selectedChild = (char*)thisPtr + 24;
+    } else {
+        // Use StartingSession child
+        void** vtable = *(void***)thisPtr;
+        void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
+        context = getContext(thisPtr);
+        selectedChild = (char*)thisPtr + 1412;
+    }
+
+    // Associate and process connections using selected child
+    util_D988(context, thisPtr, selectedChild);
+    util_DA90(context, thisPtr, selectedChild);
+}
+
 } // namespace snSession_States
 
 } // namespace rage
