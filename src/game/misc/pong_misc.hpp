@@ -1044,3 +1044,67 @@ void game_AAF8(void* roll, int a, int b);  // @ 0x8222AAF8
 
 // Page group input processing
 bool pg_4A58_fw(void* pPageGroup, float* pInputValue);  // @ 0x821F4A58
+
+// ── CCalMoviePlayer ──────────────────────────────────────────────────
+// Movie/video playback system using Xbox 360 kernel synchronization.
+// Contains 8 KEVENT objects at offsets +84 through +196 (stride 16).
+class CCalMoviePlayer {
+public:
+    // Event wait functions (WaitForSingleObject wrappers)
+    void WaitForEvent0();  void WaitForEvent1();
+    void WaitForEvent2();  void WaitForEvent3();
+    void WaitForEvent4();  void WaitForEvent5();
+    void WaitForEvent6();  void WaitForEvent7();
+
+    // Event signal functions (KeSetEvent wrappers)
+    void SignalEvent0();  void SignalEvent1();
+    void SignalEvent2();  void SignalEvent3();
+    void SignalEvent4();  void SignalEvent5();
+    void SignalEvent6();  void SignalEvent7();
+
+    // Event reset functions
+    void ResetEvent4();  void ResetEvent5();
+    void ResetEvent6();  void ResetEvent7();
+
+    // Field getters
+    int GetField212();  int GetField216();
+    int GetField220();  int GetField224();  int GetField228();
+
+    // Vtable dispatch thunks
+    int DispatchSlot32();  int DispatchSlot34();
+    int DispatchSlot35();  int DispatchSlot36();  int DispatchSlot37();
+
+    // Ring buffer / frame management
+    int GetRemainingFrames();
+    void* GetFrontElement();
+    void* GetBackElement();
+    void* GetElementByIndex(int index);
+    int ComputeFrameSize();
+    void ClearFiberFlag();
+
+    // Stub methods
+    int Rewind();
+    int Seek();
+
+    // State field mutators
+    void SetField212(int value);
+    void SetField216(int value);
+
+    // Batch 2 — intermediate-level functions (72-176B)
+    void DtorIntermediate();                           // @ 0x824915C8
+    void SaveAndReplaceFiberContext();                 // @ 0x8235EB30
+    int  QueryPhysicsInstance(void* outResult);        // @ 0x82483AD8
+    void DeletingDestructor(int flags);                // @ 0x82487240
+    void AdvanceReadIndexAtomic();                     // @ 0x8248DCC8
+    void AdvanceWriteIndexAtomic();                    // @ 0x8248DD30
+    void DispatchVSlot9ZeroArgs();                     // @ 0x8248E1E0
+    void DispatchVSlot9OneArg(uint32_t arg0);          // @ 0x8248E228
+    void DispatchVSlot9TwoArgs(uint32_t a0, uint32_t a1); // @ 0x8248E278
+    int  SetBufferPairByChannel(uint32_t channel, uint32_t bufA, uint32_t bufB); // @ 0x8248E2E8
+    int  SetAudioInterface(void* audioIface);          // @ 0x8248E398
+    void QueryVideoProperties(void* outWidth, void* outHeight, void* outUnused); // @ 0x8248E7C8
+    int  GetAudioInterfaceRef(void* outAudioIface);    // @ 0x8248E868
+    int  QueryAudioInterfaceViaProvider(void* outResult); // @ 0x8248E8C8
+    void StopPlaybackSimple(uint32_t mode, void* param); // @ 0x8248EBF0
+    void StopPlaybackFull(uint32_t mode);              // @ 0x8248EB40
+};

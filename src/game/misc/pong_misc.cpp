@@ -804,3 +804,645 @@ bool pg_6770_fw(void* context, void* pageGroup) {
     // Return true if event was handled, false otherwise
     return (handled != 0);
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Bink Video Player (52 small functions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Xbox kernel event functions
+extern "C" int KeWaitForSingleObject(void* event, int waitReason, int waitMode, int alertable, void* timeout);
+extern "C" int KeSetEvent(void* event, int increment, int wait);
+extern "C" int KeResetEvent(void* event);
+
+// ── Pattern A: WaitForEvent[0..7] (8 functions, 24B each) ─────────────────
+
+/**
+ * CCalMoviePlayer::WaitForEvent[N] — 8 functions @ 24B each
+ *
+ * Each waits on one of the 8 KEVENT objects in the player's event
+ * array at offsets +84 through +196 (stride 16 bytes per KEVENT).
+ * Called to synchronize video decode/render threads.
+ */
+void CCalMoviePlayer::WaitForEvent0() { KeWaitForSingleObject((char*)this + 84,  3, 1, 0, nullptr); }   // _40
+void CCalMoviePlayer::WaitForEvent1() { KeWaitForSingleObject((char*)this + 100, 3, 1, 0, nullptr); }   // _41
+void CCalMoviePlayer::WaitForEvent2() { KeWaitForSingleObject((char*)this + 116, 3, 1, 0, nullptr); }   // _42
+void CCalMoviePlayer::WaitForEvent3() { KeWaitForSingleObject((char*)this + 132, 3, 1, 0, nullptr); }   // _43
+void CCalMoviePlayer::WaitForEvent4() { KeWaitForSingleObject((char*)this + 148, 3, 1, 0, nullptr); }   // _44
+void CCalMoviePlayer::WaitForEvent5() { KeWaitForSingleObject((char*)this + 164, 3, 1, 0, nullptr); }   // _45
+void CCalMoviePlayer::WaitForEvent6() { KeWaitForSingleObject((char*)this + 180, 3, 1, 0, nullptr); }   // _46
+void CCalMoviePlayer::WaitForEvent7() { KeWaitForSingleObject((char*)this + 196, 3, 1, 0, nullptr); }   // _47
+
+// ── Pattern B: SignalEvent[0..7] (8 functions, 16B each) ──────────────────
+
+/**
+ * CCalMoviePlayer::SignalEvent[N] — 8 functions @ 16B each
+ * Signals one of the 8 KEVENTs to wake a waiting thread.
+ */
+void CCalMoviePlayer::SignalEvent0() { KeSetEvent((char*)this + 84,  1, 0); }   // _48
+void CCalMoviePlayer::SignalEvent1() { KeSetEvent((char*)this + 100, 1, 0); }   // _49
+void CCalMoviePlayer::SignalEvent2() { KeSetEvent((char*)this + 116, 1, 0); }   // _50
+void CCalMoviePlayer::SignalEvent3() { KeSetEvent((char*)this + 132, 1, 0); }   // _51
+void CCalMoviePlayer::SignalEvent4() { KeSetEvent((char*)this + 148, 1, 0); }   // _52
+void CCalMoviePlayer::SignalEvent5() { KeSetEvent((char*)this + 164, 1, 0); }   // _53
+void CCalMoviePlayer::SignalEvent6() { KeSetEvent((char*)this + 180, 1, 0); }   // _54
+void CCalMoviePlayer::SignalEvent7() { KeSetEvent((char*)this + 196, 1, 0); }   // _55
+
+// ── Pattern C: ResetEvent[4..7] (8 functions, 8B each) ────────────────────
+
+/**
+ * CCalMoviePlayer::ResetEvent[N] — resets KEVENT to non-signaled state.
+ */
+void CCalMoviePlayer::ResetEvent4() { KeResetEvent((char*)this + 148); }   // _56
+void CCalMoviePlayer::ResetEvent5() { KeResetEvent((char*)this + 164); }   // _57
+void CCalMoviePlayer::ResetEvent6() { KeResetEvent((char*)this + 180); }   // _58
+void CCalMoviePlayer::ResetEvent7() { KeResetEvent((char*)this + 196); }   // _59
+
+// ── Pattern D: Field getters (5 functions, 8B each) ──────────────────────
+
+/**
+ * CCalMoviePlayer field getters — return int32 fields at +212..+228.
+ * These expose video properties: width, height, frame count, etc.
+ */
+int CCalMoviePlayer::GetField212() { return *(int*)((char*)this + 212); }   // _60
+int CCalMoviePlayer::GetField216() { return *(int*)((char*)this + 216); }   // _61
+int CCalMoviePlayer::GetField220() { return *(int*)((char*)this + 220); }   // _62
+int CCalMoviePlayer::GetField224() { return *(int*)((char*)this + 224); }   // _63_a
+int CCalMoviePlayer::GetField228() { return *(int*)((char*)this + 228); }   // _63_b
+
+// ── Pattern E: Vtable dispatch thunks (5 functions, 16-48B each) ─────────
+
+/**
+ * CCalMoviePlayer vtable dispatch thunks — call specific vtable slots
+ * on self and return 0. Used by the COM-like IMediaControl interface.
+ */
+int CCalMoviePlayer::DispatchSlot32() {  // EC68_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[32])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot34() {  // EC88_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[34])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot35() {  // ECB8_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[35])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot36() {  // ECE8_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[36])(this);
+    return 0;
+}
+
+int CCalMoviePlayer::DispatchSlot37() {  // ED18_p33
+    typedef void (*Fn)(void*);
+    ((Fn)(*(void***)this)[37])(this);
+    return 0;
+}
+
+// ── Pattern F: Unimplemented stubs (2 functions, 56B each) ───────────────
+
+/**
+ * CCalMoviePlayer::Rewind / Seek — unimplemented in the final binary.
+ * Both log a debug message and return STATUS_NOT_IMPLEMENTED.
+ */
+int CCalMoviePlayer::Rewind() {  // E758
+    nop_8240E6D0("CCalMoviePlayer::Rewind() - not implemented");
+    return -1;  // STATUS_NOT_IMPLEMENTED
+}
+
+int CCalMoviePlayer::Seek() {  // Seek stub
+    nop_8240E6D0("CCalMoviePlayer::Seek() - not implemented");
+    return -1;
+}
+
+// ── Pattern G: Field setters with change notification (2 functions) ──────
+
+/**
+ * CCalMoviePlayer::SetField212 / SetField216 — stores value, if changed
+ * and a callback is registered at +64 (with userdata at +80), calls it.
+ */
+void CCalMoviePlayer::SetField212(int value) {  // sub_63_1
+    int oldVal = *(int*)((char*)this + 212);
+    *(int*)((char*)this + 212) = value;
+    if (value != oldVal) {
+        typedef void (*CallbackFn)(void*, int);
+        CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+        if (callback) {
+            void* userData = *(void**)((char*)this + 80);
+            callback(userData, value);
+        }
+    }
+}
+
+void CCalMoviePlayer::SetField216(int value) {  // sub_63_2
+    int oldVal = *(int*)((char*)this + 216);
+    *(int*)((char*)this + 216) = value;
+    if (value != oldVal) {
+        typedef void (*CallbackFn)(void*, int);
+        CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+        if (callback) {
+            void* userData = *(void**)((char*)this + 80);
+            callback(userData, value);
+        }
+    }
+}
+
+// ── Pattern H: Misc unique functions ─────────────────────────────────────
+
+/**
+ * CCalMoviePlayer::ClearFiberFlag @ ~16B
+ * Clears the fiber state flag at this+10376 with an eieio barrier.
+ */
+void CCalMoviePlayer::ClearFiberFlag() {  // EB70
+    *(uint32_t*)((char*)this + 10376) = 0;
+    // Original has eieio (enforce in-order I/O) — memory barrier
+}
+
+/**
+ * CCalMoviePlayer::GetRemainingFrames @ ~16B
+ * Returns field_52 - field_68 (total frames minus processed frames).
+ */
+int CCalMoviePlayer::GetRemainingFrames() {  // DBD0
+    return *(int*)((char*)this + 52) - *(int*)((char*)this + 68);
+}
+
+/**
+ * CCalMoviePlayer::GetFrameBufferElement @ ~76B
+ * Returns pointer to element at front index in ring buffer.
+ * Element = base_48 + (frontIndex * 60).
+ */
+void* CCalMoviePlayer::GetFrontElement() {  // DBE0
+    char* base = *(char**)((char*)this + 48);
+    int frontIdx = *(int*)((char*)this + 56);
+    char* element = base + frontIdx * 60;
+
+    // Activate element via vtable slot 1
+    typedef void (*ActivateFn)(void*);
+    void** vt = *(void***)element;
+    if (vt) ((ActivateFn)vt[1])(element);
+
+    return element;
+}
+
+/**
+ * CCalMoviePlayer::GetBackElement @ ~76B
+ * Same as GetFrontElement but uses the back index at +60.
+ */
+void* CCalMoviePlayer::GetBackElement() {  // DC30
+    char* base = *(char**)((char*)this + 48);
+    int backIdx = *(int*)((char*)this + 60);
+    char* element = base + backIdx * 60;
+
+    typedef void (*ActivateFn)(void*);
+    void** vt = *(void***)element;
+    if (vt) ((ActivateFn)vt[1])(element);
+
+    return element;
+}
+
+/**
+ * CCalMoviePlayer::GetElementByIndex @ ~72B
+ * Returns element at arbitrary index in ring buffer.
+ */
+void* CCalMoviePlayer::GetElementByIndex(int index) {  // DC80_h
+    char* base = *(char**)((char*)this + 48);
+    char* element = base + index * 60;
+
+    typedef void (*ActivateFn)(void*);
+    void** vt = *(void***)element;
+    if (vt) ((ActivateFn)vt[1])(element);
+
+    return element;
+}
+
+/**
+ * CCalMoviePlayer::ComputeFrameSize @ ~40B
+ * Returns (field_128 * field_124 * 3) >> 1 — frame buffer size in bytes
+ * for YUV 4:2:0 format (width × height × 1.5).
+ */
+int CCalMoviePlayer::ComputeFrameSize() {  // 3F00_h
+    int width = *(int*)((char*)this + 128);
+    int height = *(int*)((char*)this + 124);
+    return (width * height * 3) >> 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Batch 2: Intermediate Functions (72–176B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helpers used by batch 2 functions
+extern "C" void CCalMoviePlayer_13(void* obj);  // @ 0x8248FA48 - event cleanup
+extern "C" void util_85C8(void* obj);            // @ 0x824885C8 - base destructor
+extern "C" void util_0850(void* obj);            // @ 0x82460850 - physics instance release
+extern "C" void* _crt_tls_fiber_setup();         // @ 0x82566B78 - fiber context setup
+extern "C" void _locale_register(void* ptr);     // @ 0x820C02D0 - memory dealloc
+extern "C" void pg_6C80_g(int frames);           // @ 0x82566C80 - wait N frames
+extern "C" void pg_6F48(void* ptr);              // @ 0x82566F48 - release page ref
+
+/**
+ * CCalMoviePlayer::DtorIntermediate @ 0x824915C8 | size: 0x40
+ *
+ * Intermediate destructor — resets vtable to base CCalMoviePlayer vtable
+ * (0x820092C0), runs event cleanup, then destroys the base object.
+ * Called by derived class destructors before their own cleanup.
+ */
+void CCalMoviePlayer::DtorIntermediate() {
+    *(void**)this = (void*)0x820092C0;  // Restore CCalMoviePlayer vtable
+    CCalMoviePlayer_13(this);            // Clean up event objects
+    util_85C8(this);                     // Destroy base class
+}
+
+/**
+ * CCalMoviePlayer::SaveAndReplaceFiberContext @ 0x8235EB30 | size: 0x40
+ *
+ * If a fiber context is already stored at +10376, releases it first.
+ * Then creates a new fiber context via _crt_tls_fiber_setup and stores
+ * it at +10376. Used to switch video decode onto a dedicated fiber.
+ */
+void CCalMoviePlayer::SaveAndReplaceFiberContext() {
+    uint32_t existingCtx = *(uint32_t*)((char*)this + 10376);
+    if (existingCtx != 0) {
+        _crt_tls_fiber_setup();  // Release existing context
+    }
+    void* newCtx = _crt_tls_fiber_setup();
+    *(void**)((char*)this + 10376) = newCtx;
+}
+
+/**
+ * CCalMoviePlayer::QueryPhysicsInstance @ 0x82483AD8 | size: 0x48
+ *
+ * Queries the physics instance at field +56 via util_0850 (release/query),
+ * then writes the current value of field +56 into *outResult.
+ * Returns 0.
+ */
+int CCalMoviePlayer::QueryPhysicsInstance(void* outResult) {
+    void* physInst = *(void**)((char*)this + 56);
+    util_0850(physInst);
+    void* result = *(void**)((char*)this + 56);
+    *(void**)outResult = result;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::DeletingDestructor @ 0x82487240 | size: 0x64
+ *
+ * Virtual deleting destructor for the derived CCalMoviePlayer variant.
+ * Sets vtable to derived vtable, calls DtorIntermediate (15C8_w),
+ * then conditionally frees `this` if flags bit 0 is set.
+ *
+ * Vtable set: 0x82008A00 (derived CCalMoviePlayer vtable)
+ */
+void CCalMoviePlayer::DeletingDestructor(int flags) {
+    *(void**)this = (void*)0x82008A00;  // Set derived vtable
+    DtorIntermediate();                  // Run intermediate destructor chain
+    if (flags & 1) {
+        _locale_register(this);          // Free object memory
+    }
+}
+
+/**
+ * CCalMoviePlayer::AdvanceReadIndexAtomic @ 0x8248DCC8 | size: 0x68
+ *
+ * Increments the read index at +56. If it reaches the buffer count at +52,
+ * wraps to 0. Then atomically decrements the available-buffer counter at +68
+ * using lwarx/stwcx. (PPC atomic CAS loop). This is the consumer side of
+ * the lock-free ring buffer — signals one buffer consumed.
+ */
+void CCalMoviePlayer::AdvanceReadIndexAtomic() {
+    int32_t readIdx = *(int32_t*)((char*)this + 56);
+    readIdx++;
+    *(int32_t*)((char*)this + 56) = readIdx;
+
+    int32_t bufCount = *(int32_t*)((char*)this + 52);
+    if ((uint32_t)readIdx >= (uint32_t)bufCount) {
+        *(int32_t*)((char*)this + 56) = 0;
+    }
+
+    // Atomic decrement of available-buffer count at +68
+    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 68);
+    int32_t oldVal, newVal;
+    do {
+        oldVal = *pAvail;
+        newVal = oldVal - 1;
+    } while (!__sync_bool_compare_and_swap(pAvail, oldVal, newVal));
+}
+
+/**
+ * CCalMoviePlayer::AdvanceWriteIndexAtomic @ 0x8248DD30 | size: 0x68
+ *
+ * Increments the write index at +60. If it reaches the buffer count at +52,
+ * wraps to 0. Then atomically increments the available-buffer counter at +68.
+ * This is the producer side of the lock-free ring buffer — signals one buffer
+ * filled and ready for consumption.
+ */
+void CCalMoviePlayer::AdvanceWriteIndexAtomic() {
+    int32_t writeIdx = *(int32_t*)((char*)this + 60);
+    writeIdx++;
+    *(int32_t*)((char*)this + 60) = writeIdx;
+
+    int32_t bufCount = *(int32_t*)((char*)this + 52);
+    if ((uint32_t)writeIdx >= (uint32_t)bufCount) {
+        *(int32_t*)((char*)this + 60) = 0;
+    }
+
+    // Atomic increment of available-buffer count at +68
+    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 68);
+    int32_t oldVal, newVal;
+    do {
+        oldVal = *pAvail;
+        newVal = oldVal + 1;
+    } while (!__sync_bool_compare_and_swap(pAvail, oldVal, newVal));
+}
+
+/**
+ * CCalMoviePlayer::DispatchVSlot9ZeroArgs @ 0x8248E1E0 | size: 0x48
+ *
+ * Prepares a 28-byte zero-filled parameter block on the stack and dispatches
+ * vtable slot 9 (byte offset +36) with it as the second argument.
+ * Slot 9 is the "process command" entry point — zero args = no-op/status query.
+ */
+void CCalMoviePlayer::DispatchVSlot9ZeroArgs() {
+    uint8_t params[28] = {0};
+    typedef void (*VSlot9Fn)(void*, void*);
+    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
+    fn(this, params);
+}
+
+/**
+ * CCalMoviePlayer::DispatchVSlot9OneArg @ 0x8248E228 | size: 0x50
+ *
+ * Same as DispatchVSlot9ZeroArgs but writes arg0 into the first 4 bytes
+ * of the parameter block before dispatching.
+ */
+void CCalMoviePlayer::DispatchVSlot9OneArg(uint32_t arg0) {
+    uint8_t params[28] = {0};
+    *(uint32_t*)&params[0] = arg0;
+    typedef void (*VSlot9Fn)(void*, void*);
+    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
+    fn(this, params);
+}
+
+/**
+ * CCalMoviePlayer::DispatchVSlot9TwoArgs @ 0x8248E278 | size: 0x54
+ *
+ * Same as DispatchVSlot9OneArg but writes a second argument at offset +4
+ * in the parameter block before dispatching vtable slot 9.
+ */
+void CCalMoviePlayer::DispatchVSlot9TwoArgs(uint32_t a0, uint32_t a1) {
+    uint8_t params[28] = {0};
+    *(uint32_t*)&params[0] = a0;
+    *(uint32_t*)&params[4] = a1;
+    typedef void (*VSlot9Fn)(void*, void*);
+    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
+    fn(this, params);
+}
+
+/**
+ * CCalMoviePlayer::SetBufferPairByChannel @ 0x8248E2E8 | size: 0xAC
+ *
+ * Sets a pair of buffer pointers (bufA at +52/56/60/64, bufB at +68/72/76/80)
+ * based on channel index. Calls vtable slot 3 first (lock/prepare), then
+ * vtable slot 5 (unlock/commit) after writing. Channel mapping (1-indexed):
+ *   channel 1 → offsets +60, +76   (channel A left)
+ *   channel 2 → offsets +64, +80   (channel A right)
+ *   channel 3 → offsets +52, +68   (channel B / default)
+ *   channel 4 → offsets +56, +72   (channel B alternate)
+ * Returns 0.
+ */
+int CCalMoviePlayer::SetBufferPairByChannel(uint32_t channel, uint32_t bufA, uint32_t bufB) {
+    // Lock via vtable slot 3
+    typedef void (*LockFn)(void*);
+    ((LockFn)(*(void***)this)[3])(this);
+
+    switch (channel - 1) {
+    case 3:  // channel 4
+        *(uint32_t*)((char*)this + 56) = bufA;
+        *(uint32_t*)((char*)this + 72) = bufB;
+        break;
+    case 0:  // channel 1
+        *(uint32_t*)((char*)this + 60) = bufA;
+        *(uint32_t*)((char*)this + 76) = bufB;
+        break;
+    case 1:  // channel 2
+        *(uint32_t*)((char*)this + 64) = bufA;
+        *(uint32_t*)((char*)this + 80) = bufB;
+        break;
+    default: // channel 3 or out of range
+        *(uint32_t*)((char*)this + 52) = bufA;
+        *(uint32_t*)((char*)this + 68) = bufB;
+        break;
+    }
+
+    // Unlock via vtable slot 5
+    typedef void (*UnlockFn)(void*);
+    ((UnlockFn)(*(void***)this)[5])(this);
+
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::SetAudioInterface @ 0x8248E398 | size: 0x7C
+ *
+ * Replaces the audio interface stored at +44. If the new interface is non-null,
+ * activates it via vtable slot 1. If an existing interface was stored, releases
+ * it via vtable slot 2 and clears the pointer before storing the new one.
+ * Returns 0.
+ */
+int CCalMoviePlayer::SetAudioInterface(void* audioIface) {
+    // Activate new interface if non-null
+    if (audioIface != nullptr) {
+        typedef void (*ActivateFn)(void*);
+        void** vt = *(void***)audioIface;
+        ((ActivateFn)vt[1])(audioIface);
+    }
+
+    // Release existing interface if present
+    void* existing = *(void**)((char*)this + 44);
+    if (existing != nullptr) {
+        typedef void (*ReleaseFn)(void*);
+        void** vt = *(void***)existing;
+        ((ReleaseFn)vt[2])(existing);
+        *(void**)((char*)this + 44) = nullptr;
+    }
+
+    // Store new interface
+    *(void**)((char*)this + 44) = audioIface;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::QueryVideoProperties @ 0x8248E7C8 | size: 0x9C
+ *
+ * Queries video dimensions and optionally an extra property.
+ * Calls vtable slot 3 (lock), then:
+ *   - If outWidth non-null, calls vtable slot 60 to get width, stores result.
+ *   - If outHeight non-null, calls vtable slot 61 to get height, stores result.
+ * Calls vtable slot 5 (unlock).
+ * If outUnused non-null, stores 0 into it.
+ * Returns 0.
+ */
+void CCalMoviePlayer::QueryVideoProperties(void* outWidth, void* outHeight, void* outUnused) {
+    // Lock
+    typedef void (*LockFn)(void*);
+    ((LockFn)(*(void***)this)[3])(this);
+
+    // Query width via vtable slot 60
+    if (outWidth != nullptr) {
+        typedef uint32_t (*GetWidthFn)(void*);
+        uint32_t w = ((GetWidthFn)(*(void***)this)[60])(this);
+        *(uint32_t*)outWidth = w;
+    }
+
+    // Query height via vtable slot 61
+    if (outHeight != nullptr) {
+        typedef uint32_t (*GetHeightFn)(void*);
+        uint32_t h = ((GetHeightFn)(*(void***)this)[61])(this);
+        *(uint32_t*)outHeight = h;
+    }
+
+    // Unlock
+    typedef void (*UnlockFn)(void*);
+    ((UnlockFn)(*(void***)this)[5])(this);
+
+    // Clear optional output
+    if (outUnused != nullptr) {
+        *(uint32_t*)outUnused = 0;
+    }
+}
+
+/**
+ * CCalMoviePlayer::GetAudioInterfaceRef @ 0x8248E868 | size: 0x60
+ *
+ * Returns the audio interface pointer at +44 via outAudioIface. If the
+ * interface is non-null, activates it first via vtable slot 1.
+ * Returns 0.
+ */
+int CCalMoviePlayer::GetAudioInterfaceRef(void* outAudioIface) {
+    void* audioIface = *(void**)((char*)this + 44);
+    if (audioIface != nullptr) {
+        typedef void (*ActivateFn)(void*);
+        void** vt = *(void***)audioIface;
+        ((ActivateFn)vt[1])(audioIface);
+    }
+    void* result = *(void**)((char*)this + 44);
+    *(void**)outAudioIface = result;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::QueryAudioInterfaceViaProvider @ 0x8248E8C8 | size: 0x9C
+ *
+ * Queries the audio provider at +44 via its vtable slot 16 (create/get
+ * audio interface). If the provider returns a non-null interface, calls
+ * CCalMoviePlayer_3AD8_h on it to extract the physics instance, releases
+ * the temporary interface via vtable slot 2, and returns the result.
+ * If the provider returns null, stores 0 into *outResult.
+ * Returns 0.
+ */
+int CCalMoviePlayer::QueryAudioInterfaceViaProvider(void* outResult) {
+    void* provider = *(void**)((char*)this + 44);
+    uint32_t tempIface = 0;
+
+    // Call provider vtable slot 16 to get temporary interface
+    typedef void (*QueryFn)(void*, void*, uint32_t, uint32_t);
+    void** provVt = *(void***)provider;
+    ((QueryFn)provVt[16])(provider, &tempIface, 0, 0);
+
+    if (tempIface != 0) {
+        // Extract physics instance from temporary interface
+        int ret = QueryPhysicsInstance(outResult);
+
+        // Release temporary interface via vtable slot 2
+        void** tempVt = *(void***)(uintptr_t)tempIface;
+        if (tempVt != nullptr) {
+            typedef void (*ReleaseFn)(void*);
+            ((ReleaseFn)tempVt[2])((void*)(uintptr_t)tempIface);
+        }
+        return ret;
+    }
+
+    // No interface available
+    *(uint32_t*)outResult = 0;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::StopPlaybackSimple @ 0x8248EBF0 | size: 0x74
+ *
+ * Simplified stop: if param is non-null, calls the audio provider's
+ * vtable slot 19 (stop) with mode and param. Then calls vtable slot 21
+ * (finalize). If field +240 is non-zero, calls pg_6F48 on field +268
+ * to release a page reference, and clears field +240.
+ */
+void CCalMoviePlayer::StopPlaybackSimple(uint32_t mode, void* param) {
+    if (param != nullptr) {
+        void* provider = *(void**)((char*)this + 44);
+        typedef void (*StopFn)(void*, uint32_t, void*);
+        void** provVt = *(void***)provider;
+        ((StopFn)provVt[19])(provider, mode, param);
+    }
+
+    // Finalize via provider vtable slot 21
+    void* provider = *(void**)((char*)this + 44);
+    typedef void (*FinalizeFn)(void*);
+    void** provVt = *(void***)provider;
+    ((FinalizeFn)provVt[21])(provider);
+
+    // Release page reference if pending
+    int32_t pendingFlag = *(int32_t*)((char*)this + 240);
+    if (pendingFlag != 0) {
+        void* pageRef = *(void**)((char*)this + 268);
+        pg_6F48(pageRef);
+        *(int32_t*)((char*)this + 240) = 0;
+    }
+}
+
+/**
+ * CCalMoviePlayer::StopPlaybackFull @ 0x8248EB40 | size: 0xB0
+ *
+ * Full stop with buffering delay: calls vtable slot 62 (IsPlaying check).
+ * If not playing (bit 0 == 0), calls audio provider vtable slot 19 with
+ * mode. If the reported buffer count > 5, waits (bufCount - 5) frames
+ * via pg_6C80_g to allow buffers to drain. Then calls vtable slot 21
+ * (finalize) and clears any pending page reference at +240.
+ */
+void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
+    // Check if still playing via vtable slot 62
+    typedef uint32_t (*IsPlayingFn)(void*);
+    uint32_t playing = ((IsPlayingFn)(*(void***)this)[62])(this);
+
+    if ((playing & 1) == 0) {
+        // Call stop on audio provider
+        void* provider = *(void**)((char*)this + 44);
+        typedef void (*StopFn)(void*, uint32_t, void*);
+        uint32_t bufCount = 0;
+        void** provVt = *(void***)provider;
+        ((StopFn)provVt[19])(provider, mode, &bufCount);
+
+        // If buffer count > 5, wait for buffers to drain
+        if ((int32_t)bufCount > 5) {
+            pg_6C80_g((int32_t)bufCount - 5);
+        }
+    }
+
+    // Finalize via provider vtable slot 21
+    void* provider2 = *(void**)((char*)this + 44);
+    typedef void (*FinalizeFn)(void*);
+    void** provVt2 = *(void***)provider2;
+    ((FinalizeFn)provVt2[21])(provider2);
+
+    // Release page reference if pending
+    int32_t pendingFlag = *(int32_t*)((char*)this + 240);
+    if (pendingFlag != 0) {
+        void* pageRef = *(void**)((char*)this + 268);
+        pg_6F48(pageRef);
+        *(int32_t*)((char*)this + 240) = 0;
+    }
+}
