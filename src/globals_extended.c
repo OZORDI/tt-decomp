@@ -342,8 +342,15 @@ void* g_pAllocator = NULL;
 //   [0] = allocator object pointer (set during init)
 //   [1] = main thread XeTlsBlock / memory tracker (set by xe_main_thread_init)
 //   [2] = secondary thread context (set by xe_main_thread_init)
+// Allocator context — 3 pointer slots matching original .data layout
+// [0] = unused (in original binary, this was another pointer)
+// [1] = main thread context (set by xe_main_thread_init_0038)
+// [2] = secondary context (set by xe_main_thread_init_0038)
 static void* g_allocatorContextSlots[8] = {0};
 void* g_pAllocatorBase = g_allocatorContextSlots;
+
+// Main thread XeTlsBlock storage — 196 bytes (0xC4) in original binary at 0x8271B114
+static char g_mainThreadXtfStorage[256] = {0};
 
 void* g_mainAllocTable = NULL;
 void* g_sda_base = NULL;

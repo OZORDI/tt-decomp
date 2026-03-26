@@ -769,7 +769,42 @@ extern "C" void* sysMemAllocator_Allocate(void* ptr, size_t size) {
     return nullptr;
 }
 
+/**
+ * sysMemAllocator_InitThreadHeap @ 0x820C0038 | size: 0x88
+ *
+ * Initializes the main thread's allocator context. In the original binary,
+ * this reads g_pAllocatorBase (SDA r13+0), checks if slot [1] is populated,
+ * and if not, creates the main thread's XeTlsBlock at a static .data address
+ * (0x8271B114), then stores it into slots [1] and [2].
+ *
+ * For the decomp: we use g_mainThreadXtfStorage as the static thread context
+ * and store its address into g_pAllocatorBase[1] and [2].
+ */
 extern "C" void sysMemAllocator_InitThreadHeap(void) {
+    extern void* g_pAllocatorBase;
+    extern char g_mainThreadXtfStorage[256];
+
+    void** base = (void**)g_pAllocatorBase;
+    if (!base) return;
+
+    // Check if slot [1] (offset +4 in original) is already initialized
+    if (base[1] != nullptr) return;
+
+    // The memory tracker object needs a valid vtable pointer at offset 0.
+    // rage_Main calls vtable slots 7, 13, 14, 15, 16 on this object.
+    // Create a minimal vtable with no-op functions for all 17 slots.
+    static void memTracker_noop(void* self, ...) { (void)self; }
+    static void* s_memTrackerVtable[20] = {0};
+    for (int i = 0; i < 20; i++) {
+        s_memTrackerVtable[i] = (void*)(uintptr_t)memTracker_noop;
+    }
+
+    // Set vtable pointer at offset 0 of the thread context
+    *(void**)g_mainThreadXtfStorage = s_memTrackerVtable;
+
+    // Store the main thread context into slots [1] and [2]
+    base[1] = (void*)g_mainThreadXtfStorage;
+    base[2] = (void*)g_mainThreadXtfStorage;
 }
 
 // ============================================================================
