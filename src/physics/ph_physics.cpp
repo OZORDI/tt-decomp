@@ -5342,3 +5342,234 @@ int32_t phObject_1F28_gen(void* thisPtr, uint32_t param2, void** outPtr) {
     *outPtr = NULL;
     return 0;
 }
+
+// =============================================================================
+// rage::phBoundCapsule -- Capsule Collision Bound Functions (72-196B)
+// =============================================================================
+//
+// 10 additional phBoundCapsule methods covering vtable overrides and
+// capsule geometry operations: axis translation, support distance,
+// deep copy, axis scaling, joint limits, direction validation,
+// normal orientation, angle computation, spherical area, and camera setup.
+
+extern void util_DA50(void* dst, const void* src);
+extern void phBoundCapsule_AED0_g(void* r3, void* r4, void* r5, void* normal);
+extern float pongCameraMgr_GetFov(void* cameraMgr);
+extern void phBoundCapsule_81D8_g(void* r3, void* r4, void* r5, float f1, float f2, float f3, float f4, void* r7, void* r10);
+extern float phBoundCapsule_0E90_g(float value);
+extern float aud_2478(float value);
+
+extern uint32_t g_phCameraMgrPtr;
+extern uint32_t g_phActiveCameraIndex;
+
+// ---------------------------------------------------------------------------
+// 1. phBoundCapsule::TranslateAndDispatch (vfn_7) @ 0x8233AB50 | size: 0x48
+//    Adds capsule center offset (+48) to input position, dispatches to vfn_6.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::TranslateAndDispatch(const float* position) {
+    float* center = (float*)((char*)this + 48);
+    float translated[4];
+    translated[0] = center[0] + position[0];
+    translated[1] = center[1] + position[1];
+    translated[2] = center[2] + position[2];
+    translated[3] = center[3] + position[3];
+    void** vt = *(void***)this;
+    typedef void (*SetCenterFn)(void*, const float*);
+    SetCenterFn fn = (SetCenterFn)vt[6];
+    fn(this, translated);
+}
+
+// ---------------------------------------------------------------------------
+// 2. phBoundCapsule::ComputeSupportDistance (vfn_33) @ 0x822A3268 | size: 0x50
+//    Computes signed support distance along a direction using capsule params.
+// ---------------------------------------------------------------------------
+float rage::phBoundCapsule::ComputeSupportDistance(const float* direction, uint8_t earlyOut) {
+    float dirY = direction[1];
+    if (dirY < 0.0f) dirY = -dirY;
+    float radius     = *(float*)((char*)this + 128);
+    float halfHeight = *(float*)((char*)this + 112);
+    extern const float g_phTwo;
+    float result = radius * dirY * g_phTwo + halfHeight;
+    if (earlyOut != 0) return result;
+    float* axis = (float*)((char*)this + 48);
+    float dot = axis[0] * direction[0] + axis[1] * direction[1] + axis[2] * direction[2];
+    return dot + result;
+}
+
+// ---------------------------------------------------------------------------
+// 3. phBoundCapsule::CopyFrom (vfn_34) @ 0x822A2F28 | size: 0xBC
+//    Deep-copies all capsule bound data from a source phBoundCapsule.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::CopyFrom(const rage::phBoundCapsule* source) {
+    util_DA50(this, source);
+    const char* src = (const char*)source;
+    char* dst = (char*)this;
+    memcpy(dst + 112, src + 112, 16);
+    memcpy(dst + 128, src + 128, 16);
+    memcpy(dst + 144, src + 144, 16);
+    memcpy(dst + 160, src + 160, 16);
+    memcpy(dst + 176, src + 176, 16);
+    *(uint32_t*)(dst + 192) = *(const uint32_t*)(src + 192);
+    for (int i = 0; i < 12; i++) {
+        dst[196 + i] = src[196 + i];
+    }
+    *(uint16_t*)(dst + 96) = 1;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phBoundCapsule::ScaleAxes @ 0x820D05A0 | size: 0xB4
+//    Rotates capsule local axes by sin/cos scale factors.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::ScaleAxes() {
+    float scaleA, scaleB;
+    phBoundCapsule_04F0_g(&scaleA, &scaleB);
+    float* axis0 = (float*)((char*)this + 16);
+    float* axis1 = (float*)((char*)this + 32);
+    float origAxis1[4] = { axis1[0], axis1[1], axis1[2], axis1[3] };
+    float origAxis0[4] = { axis0[0], axis0[1], axis0[2], axis0[3] };
+    axis1[0] = origAxis1[0] * scaleA - origAxis0[0] * scaleB;
+    axis1[1] = origAxis1[1] * scaleA - origAxis0[1] * scaleB;
+    axis1[2] = origAxis1[2] * scaleA - origAxis0[2] * scaleB;
+    axis1[3] = origAxis1[3] * scaleA - origAxis0[3] * scaleB;
+    axis0[0] = origAxis0[0] * scaleA + origAxis1[0] * scaleB;
+    axis0[1] = origAxis0[1] * scaleA + origAxis1[1] * scaleB;
+    axis0[2] = origAxis0[2] * scaleA + origAxis1[2] * scaleB;
+    axis0[3] = origAxis0[3] * scaleA + origAxis1[3] * scaleB;
+}
+
+// ---------------------------------------------------------------------------
+// 5. phBoundCapsule::GetJointLimitsByAxis @ 0x820DF420 | size: 0xC4
+//    Retrieves min/max joint limits for a given axis from a 104-byte strided
+//    joint data array. Falls through cases; retries with axis=11 if negative.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::GetJointLimitsByAxis(uint32_t jointIndex, uint32_t axis,
+                                                float* outMin, float* outMax) {
+    extern const float g_floatZero;
+retry:
+    void* dataArray = *(void**)((char*)this + 8);
+    char* entry = (char*)dataArray + jointIndex * 104;
+    switch (axis) {
+        case 0:
+            *outMax = *(float*)(entry + 0);
+            *outMin = *(float*)(entry + 0);
+            // fall through
+        case 2:
+            *outMin = *(float*)(entry + 4);
+            *outMax = *(float*)(entry + 8);
+            // fall through
+        case 1:
+            *outMin = *(float*)(entry + 12);
+            *outMax = *(float*)(entry + 16);
+            // fall through
+        case 3:
+            *outMin = *(float*)(entry + 20);
+            *outMax = *(float*)(entry + 24);
+            break;
+        default:
+            break;
+    }
+    if (*outMin < g_floatZero) {
+        axis = 11;
+        goto retry;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 6. phBoundCapsule::ValidateAndSetupDirection @ 0x82143F08 | size: 0x84
+//    Checks if direction at source+16 is non-zero; if so, computes center
+//    from source[0]+source[32] and initializes capsule via _3F90_g.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::ValidateAndSetupDirection(const float* source) {
+    const float* dir = (const float*)((const char*)source + 16);
+    float absX = dir[0] < 0.0f ? -dir[0] : dir[0];
+    float absY = dir[1] < 0.0f ? -dir[1] : dir[1];
+    float absZ = dir[2] < 0.0f ? -dir[2] : dir[2];
+    float absW = dir[3] < 0.0f ? -dir[3] : dir[3];
+    if (absX == 0.0f && absY == 0.0f && absZ == 0.0f && absW == 0.0f) return;
+    const float* pos = source;
+    const float* offset = (const float*)((const char*)source + 32);
+    float center[4];
+    center[0] = pos[0] + offset[0];
+    center[1] = pos[1] + offset[1];
+    center[2] = pos[2] + offset[2];
+    center[3] = pos[3] + offset[3];
+    extern void phBoundCapsule_3F90_g(void* thisPtr, const float* center, const float* direction);
+    phBoundCapsule_3F90_g(this, center, dir);
+}
+
+// ---------------------------------------------------------------------------
+// 7. phBoundCapsule::OrientNormalAndDispatch @ 0x82137CA8 | size: 0xC4
+//    Negates collision normal if it faces away from reference plane, then
+//    dispatches to phBoundCapsule_AED0_g for collision resolution.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::OrientNormalAndDispatch(void* r4, const float* planeNormal,
+                                                    float* normal) {
+    float dot = planeNormal[2] * normal[2] + planeNormal[3] * normal[3] +
+                planeNormal[1] * normal[1] + planeNormal[0] * normal[0];
+    extern const float g_floatZero;
+    if (dot < g_floatZero) {
+        float negated[4];
+        negated[0] = -normal[0];
+        negated[1] = -normal[1];
+        negated[2] = -normal[2];
+        negated[3] = -normal[3];
+        phBoundCapsule_AED0_g(this, r4, (void*)planeNormal, negated);
+        return;
+    }
+    phBoundCapsule_AED0_g(this, r4, (void*)planeNormal, normal);
+}
+
+// ---------------------------------------------------------------------------
+// 8. phBoundCapsule::ComputeAngleFromDot @ 0x82137BF8 | size: 0xAC
+//    Computes angle from 4D dot product using acos with NaN/range checks.
+// ---------------------------------------------------------------------------
+float rage::phBoundCapsule::ComputeAngleFromDot(const float* vecA, const float* vecB) {
+    extern const float g_phThresholdHi;
+    extern const float g_phThresholdLo;
+    extern const float g_phAcosScale;
+    extern const float g_phZeroF;
+    float dot = vecA[2] * vecB[2] + vecA[3] * vecB[3] +
+                vecA[1] * vecB[1] + vecA[0] * vecB[0];
+    if (dot > g_phThresholdHi) return g_phZeroF;
+    if (dot >= g_phThresholdLo) return g_phZeroF;
+    float absDot = dot < 0.0f ? -dot : dot;
+    float angle = phBoundCapsule_0E90_g(absDot);
+    return angle * g_phAcosScale;
+}
+
+// ---------------------------------------------------------------------------
+// 9. phBoundCapsule::ComputeSphericalArea @ 0x821426B8 | size: 0x84
+//    Computes surface area metric: (scale / sqrt(r^2 * k1)) * exp(-h^2 / (r^2 * k2))
+// ---------------------------------------------------------------------------
+float rage::phBoundCapsule::ComputeSphericalArea(float height, float radius) {
+    extern const float g_phAreaK1;
+    extern const float g_phAreaK2;
+    extern const float g_phAreaScale;
+    float radiusSq = radius * radius;
+    float area = phBoundCapsule_01D0_g(radiusSq * g_phAreaK1);
+    float heightSq = height * height;
+    float ratio = heightSq / (radiusSq * g_phAreaK2);
+    float expVal = aud_2478(-ratio);
+    return (g_phAreaScale / area) * expVal;
+}
+
+// ---------------------------------------------------------------------------
+// 10. phBoundCapsule::SetupCameraCollision @ 0x82148608 | size: 0x9C
+//     Retrieves active camera from global manager, computes FOV scale,
+//     dispatches to phBoundCapsule_81D8_g with camera parameters.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::SetupCameraCollision(void* param1, void* param2) {
+    uint32_t cameraArrayBase = g_phCameraMgrPtr;
+    uint32_t cameraIndex = g_phActiveCameraIndex;
+    char* camera = (char*)(uintptr_t)(cameraArrayBase + cameraIndex * 912);
+    float fov = pongCameraMgr_GetFov(camera);
+    float fovParam = *(float*)(camera + 832);
+    extern const float g_phCamScale;
+    float diff = g_phCamScale - fovParam;
+    float scale = (diff >= 0.0f) ? fovParam : 0.0f;
+    float nearPlane = *(float*)(camera + 824);
+    float farPlane = *(float*)(camera + 836);
+    float* cameraTransform = (float*)(camera + 64);
+    phBoundCapsule_81D8_g(this, param1, param2, scale, nearPlane, farPlane, fov,
+                          cameraTransform, param2);
+}
