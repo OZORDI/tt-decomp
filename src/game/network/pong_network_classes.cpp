@@ -1124,3 +1124,267 @@ extern "C" void FloatAverager_vfn_0_3EE8_1(FloatAverager* thisPtr, int flags) {
         rage_free_00C0(thisPtr);
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder pool Create/Destroy functions
+//
+// These are vtable slot 1 (Create) and slot 2 (Destroy) implementations for
+// the pongNetMessageHolder message pool system. Each pongNetMessageHolder
+// vtable variant manages a pool of a specific network message type.
+//
+// Create (vfn_1): Lazy-initializes the pool buffer at +8. Allocates memory,
+//   calls the message constructor, and stores the pointer.
+// Destroy (vfn_2): Resets all element vtables to PongNetMessage base
+//   (0x8206C304), frees the buffer, and nulls the pointer at +8.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Forward declarations for memory allocation and message constructors
+extern void* xe_EC88(uint32_t size);
+extern void pongNetMessageHolder_70C8_wrh(void* self);
+extern void pongNetMessageHolder_71C0_wrh(void* self);
+extern void pongNetMessageHolder_72A8_wrh(void* self);
+extern void pongNetMessageHolder_6F30_wrh(void* self);
+
+// PongNetMessage base vtable used as sentinel when releasing pool elements
+static void** const g_PongNetMessageBaseVtable = (void**)0x8206C304;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreateHitMessagePool @ 0x823C08D0 | size: 0x58
+//
+// Lazy-initializes a pool of HitMessage objects (104816 bytes total).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreateHitMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    void* memory = xe_EC88(104816);
+
+    if (memory != nullptr) {
+        pongNetMessageHolder_6F30_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyHitMessagePool @ 0x823C0928 | size: 0x68
+//
+// Releases a pool of 200 HitMessage objects (524-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyHitMessagePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* elementPtr = (uint8_t*)buffer + (200 * 524);
+    for (int i = 199; i >= 0; i--) {
+        elementPtr -= 524;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreateSwingPool @ 0x823C0BC0 | size: 0x54
+//
+// Lazy-initializes a pool for swing message objects (176 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreateSwingPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    void* memory = xe_EC88(176);
+
+    if (memory != nullptr) {
+        pongNetMessageHolder_70C8_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreateFocusPool @ 0x823C0C18 | size: 0x54
+//
+// Lazy-initializes a pool for focus message objects (112 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreateFocusPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    void* memory = xe_EC88(112);
+
+    if (memory != nullptr) {
+        pongNetMessageHolder_71C0_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyFocusPool @ 0x823C0C70 | size: 0x64
+//
+// Releases a pool of 4 focus message objects (24-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyFocusPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* elementPtr = (uint8_t*)buffer + (4 * 24);
+    for (int i = 3; i >= 0; i--) {
+        elementPtr -= 24;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::CreatePlayerStatePool @ 0x823C0DE0 | size: 0x54
+//
+// Lazy-initializes a pool for player state message objects (1040 bytes).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_CreatePlayerStatePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    if (*(void**)(obj + 8) != nullptr) {
+        return;
+    }
+
+    void* memory = xe_EC88(1040);
+
+    if (memory != nullptr) {
+        pongNetMessageHolder_72A8_wrh(memory);
+    } else {
+        memory = nullptr;
+    }
+
+    *(void**)(obj + 8) = memory;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyPlayerStatePool @ 0x823C0E38 | size: 0x64
+//
+// Releases a pool of 4 player state message objects (256-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyPlayerStatePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* elementPtr = (uint8_t*)buffer + (4 * 256);
+    for (int i = 3; i >= 0; i--) {
+        elementPtr -= 256;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyMatchStatePool @ 0x823BFF38 | size: 0x64
+//
+// Releases a pool of 4 match state message objects (20-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyMatchStatePool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* elementPtr = (uint8_t*)buffer + (4 * 20);
+    for (int i = 3; i >= 0; i--) {
+        elementPtr -= 20;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyTimeSyncPool @ 0x823BFFF8 | size: 0x64
+//
+// Releases a pool of 10 time sync message objects (36-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyTimeSyncPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* elementPtr = (uint8_t*)buffer + (10 * 36);
+    for (int i = 9; i >= 0; i--) {
+        elementPtr -= 36;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DestroyMovementPool @ 0x823C09E8 | size: 0x64
+//
+// Releases a pool of 200 movement message objects (80-byte stride each).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DestroyMovementPool(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+
+    if (buffer == nullptr) {
+        return;
+    }
+
+    uint8_t* elementPtr = (uint8_t*)buffer + (200 * 80);
+    for (int i = 199; i >= 0; i--) {
+        elementPtr -= 80;
+        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+    }
+
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
