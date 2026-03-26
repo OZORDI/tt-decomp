@@ -98,6 +98,7 @@ set(SOURCES
     src/game/audio/pong_audio.cpp
     src/game/audio/pong_audio_effects.cpp
     src/game/ball/pong_ball.cpp
+    src/game/camera/cm_cam_actions.cpp
     src/game/camera/pong_camera.cpp
     src/game/creature/pong_creature.cpp
     src/game/drill/pong_drill.cpp
