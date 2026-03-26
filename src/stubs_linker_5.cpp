@@ -197,7 +197,7 @@ void sub_821A8F58(void* a, const char* b, void* c, void* d, int e) {
 namespace {
     struct FakeTypeInfo { void* vtable; const char* name; };
 }
-extern "C" const FakeTypeInfo _ZTI8hsmState = { nullptr, "hsmState" };
+// DISABLED: extern "C" const FakeTypeInfo _ZTI8hsmState = { nullptr, "hsmState" };
 
 void util_03C0(void* a, uint32_t* b) { (void)a; (void)b; }
 

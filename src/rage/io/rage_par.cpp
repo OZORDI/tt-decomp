@@ -18,7 +18,7 @@ int RtlMultiByteToUnicodeN_6FA8_w(
     char16_t* dest,
     int destChars
 );
-std::uint32_t* g_sda_base;
+extern std::uint32_t* g_sda_base;
 
 void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags);
 void fiAsciiTokenizer_CFA8_w(void* pStringValue, const char* pBegin, const char* pEnd);
