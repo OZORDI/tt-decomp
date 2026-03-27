@@ -2916,3 +2916,414 @@ bool SinglesNetworkClient_ValidateFrontendEntry(void* table, int playerSlot,
 
     return true;
 }
+
+
+// ── External function declarations for session management ──────────────────
+extern void ke_1B00(void* listNode);
+extern uint8_t SinglesNetworkClient_B2A8_g(void* client);
+extern void* SinglesNetworkClient_B1E8_g(void* client);
+extern void* SinglesNetworkClient_9318_g(void* clientState, const char* msgType);
+extern void SinglesNetworkClient_B320_g(void* client);
+extern uint32_t SinglesNetworkClient_87D8_g(void* client);
+extern void SinglesNetworkClient_F090(void* session);
+extern void SinglesNetworkClient_7038_g(void* sessionList, int sessionId);
+extern void pg_E630_g(void* pageGroup, int eventCode);
+extern void pg_E7D0_g(void* pageGroup, uint32_t connectionCount, int param1, int param2);
+extern void SinglesNetworkClient_3E00_g(void* sessionData);
+extern void SinglesNetworkClient_F508_g(void* sessionList, void* node);
+
+// ── Globals ────────────────────────────────────────────────────────────────
+extern uint32_t g_sessionRegistrationCount;  // @ global counter for session registrations
+extern void* g_pSessionManager;              // @ 0x8271A358 session manager singleton
+extern void* g_pConnectionManager;           // @ 0x8271A39C connection manager
+extern void* g_pPageGroupManager;            // @ 0x8271A49C page group manager
+extern uint8_t* g_pSessionSlotTable;         // @ 0x8261AB40 session slot table
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitSessionNode @ 0x822F9760 | size: 0x58
+//
+// Initializes a network session node structure. Sets the vtable pointer,
+// zeroes all core fields, and detaches the two internal linked-list nodes.
+//
+// Parameters:
+//   self - Pointer to session node structure to initialize
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_InitSessionNode(void* self)
+{
+    uint32_t* node = (uint32_t*)self;
+
+    // Set vtable pointer (cmRefreshableCtor vtable @ 0x820533CC)
+    extern uint32_t lbl_820533CC;
+    node[0] = (uint32_t)&lbl_820533CC;
+
+    // Zero core state fields
+    node[1] = 0;  // flags
+    node[2] = 0;  // field +8
+
+    // Detach both internal linked-list nodes at offsets +12 and +16
+    ke_1B00((void*)(node + 3));  // list node at +12
+    ke_1B00((void*)(node + 4));  // list node at +16
+
+    // Clear the list node pointers and status field
+    node[4] = 0;  // +16
+    node[3] = 0;  // +12
+    node[5] = 0;  // +20
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::RegisterSessionEntry @ 0x822F9838 | size: 0x50
+//
+// Registers a session entry by storing its identifier and incrementing a
+// global session registration counter.
+//
+// Parameters:
+//   self  - Pointer to session registration structure
+//   entry - Session entry identifier to register
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_RegisterSessionEntry(void* self, uint32_t entry)
+{
+    uint32_t* regData = (uint32_t*)self;
+
+    // Store entry identifier at offset +0
+    regData[0] = entry;
+
+    // Validate the entry through the polling subsystem
+    uint8_t result = SinglesNetworkClient_B2A8_g((void*)entry);
+
+    // Store validation result as byte at offset +4
+    *(uint8_t*)((uint8_t*)self + 4) = (uint8_t)result;
+
+    // Increment global session registration counter
+    g_sessionRegistrationCount++;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendTrainingDrillResult @ 0x822FA7B8 | size: 0x60
+//
+// Sends a training drill result message through the network client.
+// Called by pongTrainingDrill vtable methods (vfn_4, vfn_9) and various
+// drill types (serve meter, return, soft shot, spin, focus shot, smash).
+//
+// Parameters:
+//   self  - Pointer to training context
+//   value - Drill result value to send
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendTrainingDrillResult(void* self, uint32_t value)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Look up the "TrainingDrillResult" message type string (@ 0x8205C83C)
+    extern const char lbl_8205C83C[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C83C);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = value;  // store drill result value
+        slot[1] = 3;      // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendDrillMovementState @ 0x822FA8F0 | size: 0x60
+//
+// Sends the current drill movement state over the network. Reads the
+// movement value from the context at offset +184 and posts it as a
+// network message with priority 3.
+//
+// Called by hudTrainingHUD_vfn_5, pongDrillMovement_vfn_4/vfn_5.
+//
+// Parameters:
+//   self - Pointer to drill movement context
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendDrillMovementState(void* self)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Read movement value from context at offset +184
+    uint32_t movementValue = *(uint32_t*)((uint8_t*)self + 184);
+
+    // Look up the "DrillMovementState" message type string (@ 0x8205C86C)
+    extern const char lbl_8205C86C[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C86C);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = movementValue;  // store movement state value
+        slot[1] = 3;              // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendDrillChargingState @ 0x822FAC08 | size: 0x60
+//
+// Sends a drill charging state message through the network client.
+// Called by pongDrillCharging_vfn_4 and pongDrillCharging_vfn_26.
+//
+// Parameters:
+//   self  - Pointer to drill charging context
+//   value - Charging state value to send
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendDrillChargingState(void* self, uint32_t value)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Look up the "DrillChargingState" message type string (@ 0x8205C898)
+    extern const char lbl_8205C898[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C898);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = value;  // store charging state value
+        slot[1] = 3;      // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendTrainingHUDUpdate @ 0x822FAC68 | size: 0x60
+//
+// Sends a training HUD update message through the network client.
+// Called by hudTrainingHUD_vfn_5.
+//
+// Parameters:
+//   self  - Pointer to training HUD context
+//   value - HUD update value to send
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendTrainingHUDUpdate(void* self, uint32_t value)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Look up the "TrainingHUDUpdate" message type string (@ 0x8205C8A8)
+    extern const char lbl_8205C8A8[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C8A8);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = value;  // store HUD update value
+        slot[1] = 3;      // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidateMessageBounds @ 0x82418CE8 | size: 0x64
+//
+// Validates that a message's data payload fits within the remaining buffer
+// space. Reads a 16-bit data length from offset +2 of the header (byte-
+// swapped for endianness), obtains the current read position from the
+// message buffer, and checks whether position + dataLength <= totalSize.
+//
+// Parameters:
+//   header  - Pointer to message header (uint16 length at +2)
+//   message - Pointer to network message buffer object
+//
+// Returns:
+//   true if message data fits within buffer bounds, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_ValidateMessageBounds(void* header, void* message)
+{
+    uint8_t* hdr = (uint8_t*)header;
+
+    // Read total buffer size from header at offset +4
+    uint32_t totalSize = *(uint32_t*)((uint8_t*)header + 4);
+
+    // Read 16-bit data length from offset +2 and byte-swap (big-endian to host)
+    uint16_t rawLen = *(uint16_t*)(hdr + 2);
+    uint16_t dataLength = (uint16_t)((rawLen >> 8) | (rawLen << 8));
+
+    // Get current read position from the message buffer
+    uint32_t readPos = SinglesNetworkClient_87D8_g(message);
+
+    // Compute the data start offset (header is 8 bytes)
+    uint32_t dataStart = 8;  // hdr + 8
+
+    // Check: does readPos + totalSize encompass dataStart + dataLength?
+    if (totalSize >= dataStart) {
+        if ((readPos + totalSize) <= (dataLength + dataStart)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ProcessActiveSessionUpdates @ 0x822EAC20 | size: 0x64
+//
+// Iterates through all active connection slots and processes pending session
+// updates for each connected slot. Checks the session slot table to
+// determine which slots are active before processing.
+//
+// Parameters:
+//   self - Pointer to the session manager context
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_ProcessActiveSessionUpdates(void* self)
+{
+    uint32_t* mgr = (uint32_t*)self;
+
+    // Get the number of active connection slots from offset +1024
+    int32_t slotCount = (int32_t)mgr[256];  // offset 1024 / 4
+
+    if (slotCount <= 0) {
+        return;
+    }
+
+    // Iterate through connection slot array starting at offset +1028
+    uint32_t* slotArray = &mgr[257];  // offset 1028 / 4
+
+    // Session slot table entry stride is 36 bytes, active flag at offset +28
+    uint8_t* slotEntry = g_pSessionSlotTable + 28;
+
+    for (int32_t i = 0; i < slotCount; i++) {
+        // Check if this slot is active (non-zero byte in slot table)
+        uint8_t isActive = *slotEntry;
+
+        if (isActive != 0) {
+            // Process the session update for this slot's connection
+            uint32_t sessionHandle = slotArray[i];
+            SinglesNetworkClient_F090((void*)sessionHandle);
+        }
+
+        // Advance to next slot table entry (stride = 36 bytes)
+        slotEntry += 36;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::FindSessionByName @ 0x8236A0F8 | size: 0x80
+//
+// Searches the session entry list for an entry matching the given name
+// string. Performs a byte-by-byte string comparison against each entry's
+// name field (stored at offset +80 within each 24-byte-stride entry).
+//
+// Parameters:
+//   self - Pointer to session list context (entry count at +176, entries at +80)
+//   name - Null-terminated session name string to search for
+//
+// Returns:
+//   true if a matching session entry was found, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_FindSessionByName(void* self, const char* name)
+{
+    uint8_t* ctx = (uint8_t*)self;
+
+    // Get number of entries from offset +176
+    int32_t entryCount = *(int32_t*)(ctx + 176);
+
+    if (entryCount <= 0) {
+        return false;
+    }
+
+    // Entry names start at offset +80, each entry is 24 bytes apart
+    const char* entryName = (const char*)(ctx + 80);
+
+    for (int32_t i = 0; i < entryCount; i++) {
+        // Byte-by-byte string comparison (strcmp equivalent)
+        const char* a = name;
+        const char* b = entryName;
+
+        while (*a != '\0') {
+            if (*a != *b) {
+                break;
+            }
+            a++;
+            b++;
+        }
+
+        // Check if strings matched completely
+        if ((*a - *b) == 0) {
+            return true;
+        }
+
+        // Advance to next entry (24-byte stride)
+        entryName += 24;
+    }
+
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::RoutePageGroupEvent @ 0x82329D08 | size: 0x60
+//
+// Routes a page group event based on the current connection mode. If the
+// connection mode indicates a high-priority connection (mode > 1) or the
+// connection count exceeds 3, routes directly via pg_E630_g with a forced
+// event code of 1. Otherwise routes through pg_E7D0_g with the full
+// connection parameters.
+//
+// Parameters:
+//   self        - Pointer to network context (connection mode at +196)
+//   connCount   - Connection count parameter
+//   eventParam  - Event parameter to pass through
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_RoutePageGroupEvent(void* self, uint32_t connCount, int eventParam)
+{
+    uint8_t* ctx = (uint8_t*)self;
+
+    // Read connection mode from offset +196
+    int32_t connectionMode = *(int32_t*)(ctx + 196);
+
+    // Load the connection manager singleton and get its connection count
+    uint32_t* connMgr = *(uint32_t**)&g_pConnectionManager;
+    uint32_t activeConns = connMgr[1];  // connection count at offset +4
+
+    // Determine if we should use the high-priority route
+    bool highPriority = false;
+    if (connectionMode > 1) {
+        highPriority = true;
+    } else if (activeConns > 3) {
+        highPriority = true;
+    }
+
+    if (highPriority) {
+        // Route directly with forced event code 1
+        pg_E630_g(g_pPageGroupManager, 1);
+    } else {
+        // Route with full connection parameters
+        pg_E7D0_g(g_pPageGroupManager, activeConns, connCount, eventParam);
+    }
+}
