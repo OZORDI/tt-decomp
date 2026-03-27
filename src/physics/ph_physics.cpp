@@ -5571,6 +5571,317 @@ int32_t phObject_1F28_gen(void* thisPtr, uint32_t param2, void** outPtr) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// phObject — Stream / Resource binding helpers (96-172B)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Forward declarations for phObject stream helpers
+extern void phObject_28C8_wrh(void* stream, uint32_t a2, uint32_t a3,
+                               uint32_t a4, uint32_t a5, void* outPtr);
+extern void rage_A518(void* outCtx, void* thisPtr, void* bufferPtr);
+extern void phObject_8BC0_w(void* thisPtr);
+extern void phObject_3E10_w(void* ptr);
+extern "C" void* rage_01B8(uint32_t size, uint32_t tag);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::SetupOutputStream @ 0x824889A8 | size: 0x60
+//
+// Adjusts this pointer to the embedded sub-object at +124, stores a pointer
+// to offset +200 in *outPtr, then calls vtable slot 13 on the sub-object.
+// Returns 0 on success, 0x8000000A on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_SetupOutputStream(void* thisPtr, void* outPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    uint8_t* subObj = obj + 124;
+    uint8_t* outputBase = obj + 200;
+
+    // Store output base pointer
+    *(void**)outPtr = (void*)outputBase;
+
+    // Call vtable slot 13 on the sub-object at +124
+    void** vt = *(void***)subObj;
+    typedef int32_t (*VtSlot13Fn)(void*);
+    VtSlot13Fn fn = (VtSlot13Fn)vt[13];
+    int32_t result = fn(subObj);
+
+    if (result != 0) {
+        return 0;
+    }
+
+    return (int32_t)0x8000000A;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::AllocateWorkBuffer @ 0x82491980 | size: 0x70
+//
+// Allocates a 2040-byte zeroed work buffer via the RAGE allocator,
+// stores the pointer at *outPtr. Returns 0 on success, error on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_AllocateWorkBuffer(void** outPtr) {
+    void* buffer = rage_01B8(2040, 0x208C8000);
+    if (buffer == NULL) {
+        return (int32_t)0x8007000E;
+    }
+    memset(buffer, 0, 2040);
+    *outPtr = buffer;
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::CreateStreamContext @ 0x8248AD78 | size: 0x80
+//
+// Allocates a work buffer, then initializes it as a stream context via
+// rage_A518. On failure, frees the buffer via phObject_1F70.
+// Returns the context pointer on success, or NULL on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phObject_CreateStreamContext(void* thisPtr) {
+    void* buffer = NULL;
+    void* context = NULL;
+
+    int32_t result = phObject_AllocateWorkBuffer(&buffer);
+    if (result < 0) {
+        phObject_1F70(buffer);
+        return NULL;
+    }
+
+    rage_A518(&context, thisPtr, buffer);
+    if (result < 0) {
+        phObject_1F70(buffer);
+        return NULL;
+    }
+
+    return (void*)(uintptr_t)context;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::DestroyStreamContext @ 0x82489A48 | size: 0x9C
+//
+// Dereferences *contextPtr, clears stream flags, releases resources,
+// frees the buffer. Sets *contextPtr to NULL.
+// Returns 0 on success, 4 if null.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_DestroyStreamContext(void** contextPtr) {
+    if (contextPtr == NULL) {
+        return 4;
+    }
+
+    void* context = *contextPtr;
+    if (context == NULL) {
+        return 4;
+    }
+
+    uint8_t* ctx = (uint8_t*)context;
+    uint32_t savedField = *(uint32_t*)(ctx + 548);
+    void* streamObj = *(void**)(ctx + 608);
+
+    phObject_1E18_h(streamObj);
+    phObject_8BC0_w(context);
+
+    if (savedField != 0) {
+        phObject_3E10_w((void*)(uintptr_t)savedField);
+        void* statePtr = (void*)(uintptr_t)savedField;
+        phObject_1F28_gen(streamObj, 8, &statePtr);
+    }
+
+    *contextPtr = NULL;
+    phObject_1F70(streamObj);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::FlushOutputStream @ 0x82489450 | size: 0x70
+//
+// Flushes the output stream at offset +536. Calls phObject_28C8_wrh to
+// perform the write. Clears the stream pointer if it becomes empty.
+// Returns error 0x801000A8 if no stream is active.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_FlushOutputStream(void* thisPtr, uint32_t a2, uint32_t a3,
+                                    uint32_t a4, uint32_t a5, void* outPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    void* stream = *(void**)(obj + 536);
+
+    if (stream == NULL) {
+        return (int32_t)0x801000A8;
+    }
+
+    uint32_t outVal = *(uint32_t*)(obj + 524);
+    phObject_28C8_wrh(stream, a2, a3, a5, outVal, outPtr);
+
+    uint32_t outputWord = *(uint32_t*)outPtr;
+    if (outputWord == 0) {
+        *(void**)(obj + 536) = NULL;
+    }
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::ReleaseStreamSlot @ 0x824922C0 | size: 0x80
+//
+// Releases a numbered stream slot. If a callback is registered at +520,
+// invokes it. Then unregisters the resource and clears the slot.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_ReleaseStreamSlot(void* thisPtr, uint32_t slotIndex) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    void* callback = *(void**)(obj + 520);
+    if (callback != NULL) {
+        uint32_t callbackParam = *(uint32_t*)(obj + 524);
+        uint32_t slotValue = *(uint32_t*)(obj + (slotIndex * 4));
+
+        typedef void (*CallbackFn)(uint32_t, uint32_t, uint32_t);
+        CallbackFn fn = (CallbackFn)callback;
+        fn(slotValue, slotIndex, callbackParam);
+    }
+
+    uint32_t* slotPtr = (uint32_t*)(obj + slotIndex * 4);
+    void* resource = *(void**)(obj + 508);
+    void** slotAsPtr = (void**)slotPtr;
+    int32_t result = phObject_1F28_gen(resource, 2, slotAsPtr);
+
+    if (result >= 0) {
+        *slotPtr = 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::GetResourceInfo @ 0x824899B0 | size: 0x94
+//
+// Populates a 24-byte output structure with resource metadata from the
+// phObject's internal descriptor at +4.
+// Returns 0 on success, 4 on invalid parameters.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_GetResourceInfo(void* thisPtr, void* outInfo) {
+    if (thisPtr == NULL || outInfo == NULL) {
+        return 4;
+    }
+
+    uint8_t* obj = (uint8_t*)thisPtr;
+    uint32_t resourceCount = *(uint32_t*)(obj + 528);
+    if (resourceCount == 0) {
+        return 4;
+    }
+
+    uint32_t* out = (uint32_t*)outInfo;
+    for (int i = 0; i < 6; i++) {
+        out[i] = 0;
+    }
+
+    void* desc = *(void**)(obj + 4);
+    uint8_t* descBytes = (uint8_t*)desc;
+
+    out[3] = *(uint32_t*)(descBytes + 28);
+    out[0] = *(uint32_t*)(descBytes + 16);
+    out[1] = *(uint32_t*)(descBytes + 20);
+    out[2] = *(uint32_t*)(descBytes + 24);
+    *(uint8_t*)((uint8_t*)outInfo + 16) = *(uint8_t*)(descBytes + 68);
+    out[5] = *(uint32_t*)(descBytes + 8);
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::GetFormatDescription @ 0x8248A090 | size: 0xA8
+//
+// Zeroes a 36-byte output structure, then populates based on resource type.
+// Type 1 = 1D resource, type 2 = 2D resource.
+// Returns 0 on success, 0x801000B8 on unsupported type.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_GetFormatDescription(void* thisPtr, uint32_t param, void* outDesc) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    uint32_t* out = (uint32_t*)outDesc;
+
+    for (int i = 0; i < 9; i++) {
+        out[i] = 0;
+    }
+
+    uint32_t type = *(uint32_t*)(obj + 4);
+    out[6] = (uint32_t)(uintptr_t)thisPtr;
+    out[7] = param;
+    out[8] = 1;
+    out[0] = type;
+
+    if (type == 1) {
+        uint8_t* resInfo = *(uint8_t**)(obj + 8);
+        out[2] = *(uint32_t*)(resInfo + 4);
+        *(uint8_t*)((uint8_t*)outDesc + 12) = *(uint8_t*)(resInfo + 14);
+        out[1] = 3;
+        return 0;
+    }
+
+    if (type == 2) {
+        uint8_t* resInfo = *(uint8_t**)(obj + 8);
+        out[2] = 0;
+        out[3] = *(uint32_t*)(resInfo + 8);
+        out[4] = *(uint32_t*)(resInfo + 12);
+        out[1] = 7;
+        return 0;
+    }
+
+    return (int32_t)0x801000B8;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::BindResource @ 0x82485118 | size: 0xAC
+//
+// Binds a new resource. AddRefs via vtable slot 1, releases old views via
+// vtable slot 19, stores at +52, creates stream context at +500.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void rage_4CD0(void* thisPtr);
+
+int32_t phObject_BindResource(void* thisPtr, void* resource) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    void** resVt = *(void***)resource;
+    typedef void (*AddRefFn)(void*);
+    AddRefFn addRef = (AddRefFn)resVt[1];
+    addRef(resource);
+
+    void** selfVt = *(void***)thisPtr;
+    typedef void (*ReleaseViewsFn)(void*);
+    ReleaseViewsFn releaseViews = (ReleaseViewsFn)selfVt[19];
+    releaseViews(thisPtr);
+
+    *(void**)(obj + 52) = resource;
+
+    void* streamCtx = phObject_CreateStreamContext(thisPtr);
+    *(void**)(obj + 500) = streamCtx;
+
+    if (streamCtx != NULL) {
+        rage_4CD0(thisPtr);
+        return 0;
+    }
+
+    return (int32_t)0x8000FFFF;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::UnbindResource @ 0x82484988 | size: 0x94
+//
+// Unbinds the current resource. Destroys stream context at +500, releases
+// resource at +52 via vtable slot 2. Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_UnbindResource(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    void* streamCtx = *(void**)(obj + 500);
+    if (streamCtx != NULL) {
+        phObject_DestroyStreamContext((void**)(obj + 500));
+        *(void**)(obj + 500) = NULL;
+    }
+
+    void* resource = *(void**)(obj + 52);
+    if (resource != NULL) {
+        void** resVt = *(void***)resource;
+        typedef void (*ReleaseFn)(void*);
+        ReleaseFn release = (ReleaseFn)resVt[2];
+        release(resource);
+        *(void**)(obj + 52) = NULL;
+    }
+
+    return 0;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // rage::phArticulatedCollider — Joint/Constraint Operations (Batch 4)
 // ═════════════════════════════════════════════════════════════════════════════
 
