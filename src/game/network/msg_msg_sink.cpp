@@ -1809,3 +1809,147 @@ uint16_t msgMsgSink::FindGamerByIndex(uint16_t index) {
     RtlLeaveCriticalSection(critSection);
     return gamerHandle;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * msgMsgSink vtable dispatch methods (8-80 bytes)
+ * 10 functions: forwarding thunks, field accessors, thread-safe queries
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Forward declarations for tail-call targets
+extern void msgMsgSink_03E8_w(void*);
+extern void msgMsgSink_0480_w(void*);
+extern void msgMsgSink_07D8_w(void*);
+extern void msgMsgSink_11B0_w(void*);
+
+/**
+ * msgMsgSink::DispatchDefaultHandler() [vtable slot 59 @ 0x821EFD10]
+ * size: 0x10 (16 bytes)
+ *
+ * Loads the vtable from this object and tail-calls vtable[0] (the
+ * destructor / default handler slot) on self. This is a simple
+ * virtual dispatch thunk that re-enters through the base vtable.
+ */
+void msgMsgSink::DispatchDefaultHandler() {
+    void** vt = *(void***)this;
+    typedef void (*Fn)(void*);
+    ((Fn)vt[0])(this);
+}
+
+/**
+ * msgMsgSink::GetSessionData() [vtable slot 54 @ 0x8244EF38]
+ * size: 0x8 (8 bytes)
+ *
+ * Returns the session data pointer stored at offset +324 (0x144).
+ */
+void* msgMsgSink::GetSessionData() {
+    return *(void**)((uint8_t*)this + 324);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseWrite() [vtable slot 55 @ 0x8244F8A8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_03E8_w for write processing.
+ */
+void msgMsgSink::ForwardToBaseWrite() {
+    msgMsgSink_03E8_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseUpdate() [vtable slot 89 @ 0x8244F8B0]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_0480_w for update processing.
+ */
+void msgMsgSink::ForwardToBaseUpdate() {
+    msgMsgSink_0480_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseNotify() [vtable slot 147 @ 0x824505C8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_07D8_w for notification handling.
+ */
+void msgMsgSink::ForwardToBaseNotify() {
+    msgMsgSink_07D8_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseProcess() [vtable slot 148 @ 0x824508A8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_11B0_w for message processing.
+ */
+void msgMsgSink::ForwardToBaseProcess() {
+    msgMsgSink_11B0_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToEmbeddedObject() [vtable slot 78 @ 0x824514E8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by +20 to reach an embedded sub-object,
+ * then tail-calls rage_C1A8 for processing.
+ */
+void msgMsgSink::ForwardToEmbeddedObject() {
+    rage_C1A8((uint8_t*)this + 20);
+}
+
+/**
+ * msgMsgSink::GetSessionLock() [vtable slot 119 @ 0x8244F768]
+ * size: 0xC (12 bytes)
+ *
+ * Loads the session manager from offset +56, then delegates to
+ * msgMsgSink_8A60_sp to acquire a session lock. Returns the lock
+ * handle or nullptr if the session manager has no lock object.
+ */
+void* msgMsgSink::GetSessionLock() {
+    void* sessionMgr = *(void**)((uint8_t*)this + 56);
+    return msgMsgSink_8A60_sp(sessionMgr);
+}
+
+/**
+ * msgMsgSink::GetMessageBufferPtr() [vtable slot 115 @ 0x8244F7B8]
+ * size: 0xC (12 bytes)
+ *
+ * Returns a pointer into the message buffer. Loads the buffer base
+ * address from offset +48, then adds 9 to skip the message header,
+ * returning a pointer to the message payload.
+ */
+void* msgMsgSink::GetMessageBufferPtr() {
+    uint32_t bufferBase = *(uint32_t*)((uint8_t*)this + 48);
+    return (void*)(bufferBase + 9);
+}
+
+/**
+ * msgMsgSink::QueryConnectionStatus() [vtable slot 131 @ 0x8244FEE8]
+ * size: 0x50 (80 bytes)
+ *
+ * Thread-safe query of the connection status. Enters the critical
+ * section from the session manager at offset +24, checks whether the
+ * connection object at offset +240 is non-null, and stores the boolean
+ * result (1 = connected, 0 = not connected) into the output parameter.
+ * Always returns 0 (success).
+ */
+uint32_t msgMsgSink::QueryConnectionStatus(uint32_t* outStatus) {
+    // Get critical section from session manager
+    void* sessionMgr = *(void**)((uint8_t*)this + 24);
+    void* criticalSection = (uint8_t*)sessionMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    // Check if connection object at +240 is non-null
+    // Double cntlzw+rlwinm chain is equivalent to: result = (field != 0) ? 1 : 0
+    uint32_t connectionObj = *(uint32_t*)((uint8_t*)this + 240);
+    *outStatus = (connectionObj != 0) ? 1 : 0;
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
