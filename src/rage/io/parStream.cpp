@@ -1756,4 +1756,153 @@ bool parStreamOutRbf::WriteBool(const char* name, bool value) {
     return false;  // TODO: implement
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer — ASCII file I/O tokenizer virtual methods
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * fiAsciiTokenizer::ReadIntToken @ 0x822E5E78 | size: 0x10
+ * vtable slot 2
+ *
+ * Trampoline that tail-calls ReadInt (vtable slot 4).
+ * Provides a simplified interface for reading an integer token.
+ */
+int32_t fiAsciiTokenizer::ReadIntToken() {
+    return ReadInt();
+}
+
+/**
+ * fiAsciiTokenizer::AdvancePosition @ 0x820C2E08 | size: 0x10
+ * vtable slot 30
+ *
+ * Advances the stream read position by the given byte offset.
+ */
+void fiAsciiTokenizer::AdvancePosition(int32_t offset) {
+    m_position += offset;
+}
+
+/**
+ * fiAsciiTokenizer::SkipToken @ 0x822E6260 | size: 0x3C
+ * vtable slot 11
+ *
+ * Reads and discards the next token from the stream.
+ * Allocates a 64-byte local buffer, clears it, and calls ReadToken.
+ */
+void fiAsciiTokenizer::SkipToken() {
+    char buffer[64];
+    buffer[0] = '\0';
+    ReadToken(buffer, 64);
+}
+
+/**
+ * fiAsciiTokenizer::SkipAndReadInt @ 0x822E62A0 | size: 0x5C
+ * vtable slot 12
+ *
+ * Skips a label/name token, then reads and returns the following integer value.
+ * Used for parsing "key value" pairs where the key is discarded.
+ */
+int32_t fiAsciiTokenizer::SkipAndReadInt() {
+    char buffer[64];
+    buffer[0] = '\0';
+    ReadToken(buffer, 64);
+    return ReadInt();
+}
+
+/**
+ * fiAsciiTokenizer::SkipAndReadFloat @ 0x822E6300 | size: 0x5C
+ * vtable slot 13
+ *
+ * Skips a label/name token, then reads and returns the following float value.
+ * Used for parsing "key value" pairs where the key is discarded.
+ */
+float fiAsciiTokenizer::SkipAndReadFloat() {
+    char buffer[64];
+    buffer[0] = '\0';
+    ReadToken(buffer, 64);
+    return ReadFloat();
+}
+
+/**
+ * fiAsciiTokenizer::ReadFloat2 @ 0x822E5F98 | size: 0x60
+ * vtable slot 10
+ *
+ * Reads two consecutive float tokens and stores them in the output array.
+ */
+void fiAsciiTokenizer::ReadFloat2(float* out) {
+    out[0] = ReadFloat();
+    out[1] = ReadFloat();
+}
+
+/**
+ * fiAsciiTokenizer::ExpectAndReadInt @ 0x822E6590 | size: 0x40
+ * vtable slot 19
+ *
+ * Reads the next token and compares it (case-insensitive) against the expected
+ * name, then reads and returns the following integer value.
+ */
+int32_t fiAsciiTokenizer::ExpectAndReadInt(const char* name) {
+    ExpectToken(name);
+    return ReadInt();
+}
+
+/**
+ * fiAsciiTokenizer::ExpectAndReadFloat @ 0x822E65D0 | size: 0x40
+ * vtable slot 20
+ *
+ * Reads the next token and compares it (case-insensitive) against the expected
+ * name, then reads and returns the following float value.
+ */
+float fiAsciiTokenizer::ExpectAndReadFloat(const char* name) {
+    ExpectToken(name);
+    return ReadFloat();
+}
+
+/**
+ * fiAsciiTokenizer::ExpectAndReadFloat2 @ 0x822E6610 | size: 0x50
+ * vtable slot 25
+ *
+ * Expects a named token, then reads two consecutive float values into the
+ * output array.
+ */
+void fiAsciiTokenizer::ExpectAndReadFloat2(const char* name, float* out) {
+    ExpectToken(name);
+    ReadFloat2(out);
+}
+
+/**
+ * fiAsciiTokenizer::ExpectAndReadFloat3 @ 0x822E6660 | size: 0x50
+ * vtable slot 24
+ *
+ * Expects a named token, then reads three consecutive float values into the
+ * output array via ReadFloat3 (vtable slot 9).
+ */
+void fiAsciiTokenizer::ExpectAndReadFloat3(const char* name, float* out) {
+    ExpectToken(name);
+    ReadFloat3(out);
+}
+
+/**
+ * fiAsciiTokenizer::ExpectAndReadFloat4 @ 0x822E66B0 | size: 0x50
+ * vtable slot 23
+ *
+ * Expects a named token, then reads four consecutive float values into the
+ * output array via ReadFloat4 (vtable slot 8).
+ */
+void fiAsciiTokenizer::ExpectAndReadFloat4(const char* name, float* out) {
+    ExpectToken(name);
+    ReadFloat4(out);
+}
+
+/**
+ * fiAsciiTokenizer::ExpectAndReadVector3 @ 0x822E6700 | size: 0x50
+ * vtable slot 22
+ *
+ * Expects a named token, then reads a 3-component vector via ReadVector3
+ * (vtable slot 7).
+ */
+void fiAsciiTokenizer::ExpectAndReadVector3(const char* name, float* out) {
+    ExpectToken(name);
+    ReadVector3(out);
+}
+
 } // namespace rage
