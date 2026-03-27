@@ -2213,3 +2213,225 @@ void datBase_DestroyHashMap(uint8_t* hashMap) {
 
     rage_free(hashMap);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::Destructor()  @ 0x821C7900 | size: 0x48
+//
+// Virtual destructor (vtable slot 0) for atSingleton base class.
+// Sets the vtable pointer, then conditionally frees the object memory
+// based on the delete flag (r4 & 1).
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_Destructor(atSingleton* obj, uint32_t deleteFlag) {
+    // Set vtable to atSingleton base vtable
+    obj->vtable = (void*)0x820274B4;
+
+    // If deleteFlag bit 0 is set, free the object memory
+    if (deleteFlag & 1) {
+        rage_free(obj);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::CountLinkedResources()  @ 0x821C85D0 | size: 0xC
+//
+// Virtual method (vtable slot 2). Loads a global data pointer and
+// passes it to game_C0D8 for linked resource enumeration.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_CountLinkedResources(atSingleton* obj) {
+    extern uint32_t g_resourceRegistryPtr;  // @ 0x8271A310
+    void* registry = (void*)g_resourceRegistryPtr;
+    extern void game_C0D8(void* registry);
+    game_C0D8(registry);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::ClearDirtyFlag()  @ 0x821F0400 | size: 0xC
+//
+// Virtual method (vtable slot 4). Clears the byte at offset +8,
+// resetting a dirty/modified state flag to false.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_ClearDirtyFlag(atSingleton* obj) {
+    *(uint8_t*)((uint8_t*)obj + 8) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::GetTypeInfo()  @ 0x82229638 | size: 0xC
+//
+// Virtual method (vtable slot 15). Returns a pointer to the RTTI/type
+// information structure for this atSingleton specialization.
+// ─────────────────────────────────────────────────────────────────────────────
+void* atSingleton_GetTypeInfo() {
+    return (void*)0x82029718;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::GetDictionaryEntryCount()  @ 0x821E7170 | size: 0xC
+//
+// Virtual method override. Reads a container pointer at offset +316,
+// then returns the uint16 count at offset +20 of that container.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t atSingleton_GetDictionaryEntryCount(atSingleton* obj) {
+    uint8_t* container = *(uint8_t**)((uint8_t*)obj + 316);
+    return *(uint16_t*)(container + 20);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::DestructorThunk()  @ 0x821CAD48 | size: 0x8
+//
+// Destructor thunk that adjusts the this pointer by -4 bytes and
+// tail-calls atSingleton_vfn_0_AA28_1 (a base-class destructor).
+// Used for multiple-inheritance this-pointer adjustment.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_DestructorThunk(atSingleton* obj) {
+    extern void atSingleton_vfn_0_AA28_1(atSingleton* obj);
+    atSingleton_vfn_0_AA28_1((atSingleton*)((uint8_t*)obj - 4));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::ReplaceSlotEntry()  @ 0x821E8430 | size: 0x7C
+//
+// Virtual method (vtable slot 3). Replaces an entry in one of 4 indexed
+// slots (0-3). Each slot is 124 bytes. The method:
+//   1. Validates slot index <= 3
+//   2. Calls the destructor on the existing slot contents
+//   3. Registers the new entry via atSingleton_D6E8_g
+//   4. Links the new entry's back-pointer to the slot
+//   Always returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t atSingleton_ReplaceSlotEntry(atSingleton* obj, void* nameBuffer, uint32_t slotIndex) {
+    if (slotIndex > 3) {
+        return 0;
+    }
+
+    // Calculate slot address: base + slotIndex * 124 + 8
+    uint8_t* slotBase = (uint8_t*)obj + slotIndex * 124 + 8;
+
+    // Destroy existing slot contents via vtable slot 0
+    typedef void (*DtorFunc)(void*);
+    void** vtable = *(void***)slotBase;
+    DtorFunc dtor = (DtorFunc)vtable[0];
+    dtor(slotBase);
+
+    // Register the new entry with the singleton name registry
+    extern void* atSingleton_D6E8_g(void* nameBuffer, uint8_t* slotBase, void* param);
+    void* entry = atSingleton_D6E8_g(nameBuffer, slotBase, (void*)0x82021748);
+
+    // Link back-pointer: entry->field4 = slotBase
+    *(uint8_t**)(*(uint8_t**)((uint8_t*)entry + 4)) = slotBase;
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::IsSimulationActive()  @ 0x820D9C18 | size: 0x54
+//
+// Checks the physics simulation state by traversing a global chain:
+//   globalPtr -> +20 -> +9736 -> +0 (state flags)
+// Returns true (1) if bit 2 of the state flags is set and bit 0 is clear,
+// indicating an active simulation. Returns false (0) otherwise.
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t atSingleton_IsSimulationActive() {
+    extern uint32_t g_simManagerPtr;  // @ 0x8271A2F8
+    uint32_t* simManager = (uint32_t*)g_simManagerPtr;
+    uint32_t* level1 = (uint32_t*)simManager[5];       // +20
+    uint32_t* level2 = (uint32_t*)level1[2434];        // +9736
+    uint32_t stateFlags = level2[0];
+
+    // If bit 0 is set, simulation is not active
+    if (stateFlags & 1) {
+        return 0;
+    }
+
+    // Check if bit 2 is set (simulation running)
+    if (stateFlags & 4) {
+        return 1;
+    }
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::InitShapeFromSource()  @ 0x821257F0 | size: 0x84
+//
+// Initializes an object by copying 48 bytes of shape/transform data from
+// a source buffer (two 16-byte vectors + 4 uint32 fields), then hashes
+// a name key via atSingleton_29E0_g and stores it at +48, clearing the
+// remaining 3 fields (+52, +56, +60) to zero.
+//
+// Layout at dest:
+//   +0x00  vec4 (16 bytes)
+//   +0x10  vec4 (16 bytes)
+//   +0x20  uint32 field[4] (16 bytes)
+//   +0x30  nameHash (from atSingleton_29E0_g)
+//   +0x34  0
+//   +0x38  0
+//   +0x3C  0
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_InitShapeFromSource(uint8_t* dest, const void* nameKey, const uint8_t* src) {
+    // Copy first 16-byte vector
+    *(uint32_t*)(dest + 0)  = *(uint32_t*)(src + 0);
+    *(uint32_t*)(dest + 4)  = *(uint32_t*)(src + 4);
+    *(uint32_t*)(dest + 8)  = *(uint32_t*)(src + 8);
+    *(uint32_t*)(dest + 12) = *(uint32_t*)(src + 12);
+
+    // Copy second 16-byte vector
+    *(uint32_t*)(dest + 16) = *(uint32_t*)(src + 16);
+    *(uint32_t*)(dest + 20) = *(uint32_t*)(src + 20);
+    *(uint32_t*)(dest + 24) = *(uint32_t*)(src + 24);
+    *(uint32_t*)(dest + 28) = *(uint32_t*)(src + 28);
+
+    // Copy 4 scalar fields
+    *(uint32_t*)(dest + 32) = *(uint32_t*)(src + 32);
+    *(uint32_t*)(dest + 36) = *(uint32_t*)(src + 36);
+    *(uint32_t*)(dest + 40) = *(uint32_t*)(src + 40);
+    *(uint32_t*)(dest + 44) = *(uint32_t*)(src + 44);
+
+    // Hash the name key and store result
+    extern void* atSingleton_29E0_g(const void* key);
+    void* nameHash = atSingleton_29E0_g(*(void**)nameKey);
+    *(void**)(dest + 48) = nameHash;
+
+    // Clear remaining fields
+    *(uint32_t*)(dest + 52) = 0;
+    *(uint32_t*)(dest + 56) = 0;
+    *(uint32_t*)(dest + 60) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton::LookupAndStorePropertyByte()  @ 0x82118D30 | size: 0x88
+//
+// Looks up a property value by name from a session/context object,
+// then stores the result as a byte at offset +444 of the target object.
+//
+// Steps:
+//   1. Zero-initialize a 64-byte name buffer on the stack
+//   2. Call vcall slot 1 on the context's field +4 to format the name
+//   3. Call a global property lookup function with the formatted name
+//   4. Store the returned byte at offset +444 (0x1BC) of the target
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_LookupAndStorePropertyByte(uint8_t* obj, void* context) {
+    // Initialize 64-byte name buffer
+    char nameBuffer[64];
+    nameBuffer[0] = 0;
+    memset(nameBuffer + 1, 0, 63);
+
+    // Get the context's string provider at +4 and call vcall slot 1
+    // to format the property name into the buffer
+    void* stringProvider = *(void**)((uint8_t*)context + 4);
+    typedef void (*FormatFunc)(void*, char*, uint32_t);
+    void** providerVtable = *(void***)stringProvider;
+    FormatFunc formatName = (FormatFunc)providerVtable[1];
+    formatName(stringProvider, nameBuffer, 64);
+
+    // Look up the property value using a global registry
+    // The registry is at SDA offset +25528, property table at +908
+    extern uint32_t g_propertyRegistryPtr;  // SDA-relative
+    uint8_t* registry = (uint8_t*)g_propertyRegistryPtr;
+    uint8_t* propertyTable = registry + 908;
+    typedef uint8_t (*LookupFunc)(uint8_t*, char*);
+    LookupFunc lookup = (LookupFunc)(*(void**)((uint8_t*)propertyTable + 12));
+    uint8_t result = lookup(propertyTable, nameBuffer);
+
+    // Store the result byte at offset +444
+    *(uint8_t*)(obj + 444) = result;
+}
