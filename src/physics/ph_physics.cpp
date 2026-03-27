@@ -7549,3 +7549,342 @@ void phBound_RelocatePointers(void* thisPtr, void* relocDesc) {
     uint32_t idx = (ptr96 - base) / chunk;
     *(uint32_t*)(self + 96) = *(uint32_t*)(desc + 8 + idx*4) + ptr96;
 }
+
+// =========================================================================
+// rage::phBoundCapsule -- Capsule Collision Bound Functions (68-232B)
+// =========================================================================
+//
+// 10 additional phBoundCapsule functions covering containment tests,
+// 2D rotation helpers, initialization, Euler decomposition, and
+// coordinate transformation utilities.
+// =========================================================================
+
+extern float phBoundCapsule_A688_g(void* capsuleData);
+extern int32_t phBoundCapsule_7D90_g(void* capsuleData);
+extern void phBoundCapsule_8EA0_g(void* camera, float fovHoriz, float fovVert);
+extern void phBoundCapsule_3598_g(void* camera);
+extern void phBoundCapsule_9220_g(float* inMatrix, float* row0, float* row1, float* row2, float* row3);
+
+// ---------------------------------------------------------------------------
+// 1. phBoundCapsule::TestPointContainment @ 0x822A4288 | size: 0xAC
+//    Tests whether a 3D point lies inside the capsule bound.
+//    Checks Y against halfHeight+radius, then XZ distance against radius.
+//    For points in the hemispherical caps, checks full 3D distance.
+//    Returns 1 if contained, 0 otherwise.
+// ---------------------------------------------------------------------------
+int32_t rage::phBoundCapsule::TestPointContainment(const float* point) {
+    extern const float g_phTwo;
+    float radius     = *(float*)((char*)this + 128);
+    float halfHeight = *(float*)((char*)this + 112);
+    float capsuleHalfExtent = radius * g_phTwo + halfHeight;
+
+    float py = point[1];
+    if (py > capsuleHalfExtent)
+        return 0;
+    if (py < -capsuleHalfExtent)
+        return 0;
+
+    // Check XZ planar distance against radius squared
+    float px = point[0];
+    float pz = point[2];
+    float radiusSq = halfHeight * halfHeight;
+    float distXZSq = px * px + pz * pz;
+    if (distXZSq > radiusSq)
+        return 0;
+
+    // Point is in the cylindrical body
+    if (py <= radius) {
+        // In upper hemisphere cap
+        if (py > radius) {
+            float dy = py - radius;
+            float capDistSq = pz * pz + dy * dy + px * px;
+            if (capDistSq > radiusSq)
+                return 0;
+        }
+        return 1;
+    }
+
+    // In lower hemisphere cap
+    float negRadius = -radius;
+    if (py < negRadius) {
+        float dy = py + radius;
+        float capDistSq = pz * pz + dy * dy + px * px;
+        if (capDistSq > radiusSq)
+            return 0;
+    }
+    return 1;
+}
+
+// ---------------------------------------------------------------------------
+// 2. phBoundCapsule::InitializeCapsule @ 0x822A2EA0 | size: 0x84
+//    Sets half-height and radius vectors, computes total extent,
+//    zeros center offset, then calls vfn_37 to update derived data.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::InitializeCapsule(float halfHeight, float radius) {
+    extern const float g_phTwo;
+
+    // Splat halfHeight into vector at +112
+    float* halfHeightVec = (float*)((char*)this + 112);
+    halfHeightVec[0] = halfHeight;
+    halfHeightVec[1] = halfHeight;
+    halfHeightVec[2] = halfHeight;
+    halfHeightVec[3] = halfHeight;
+
+    // Splat radius into vector at +128
+    float* radiusVec = (float*)((char*)this + 128);
+    radiusVec[0] = radius;
+    radiusVec[1] = radius;
+    radiusVec[2] = radius;
+    radiusVec[3] = radius;
+
+    // Compute total capsule extent: halfHeight + radius * 2
+    float extent = *(float*)((char*)this + 128) * g_phTwo + *(float*)((char*)this + 112);
+    *(float*)((char*)this + 8) = extent;
+
+    // Zero the center offset vector at +48
+    float* center = (float*)((char*)this + 48);
+    center[0] = 0.0f;
+    center[1] = 0.0f;
+    center[2] = 0.0f;
+    center[3] = 0.0f;
+
+    // Update derived bound data via vtable slot 37
+    void** vt = *(void***)this;
+    typedef void (*RecalcFn)(void*);
+    RecalcFn recalc = (RecalcFn)vt[37];
+    recalc(this);
+}
+
+// ---------------------------------------------------------------------------
+// 3. phBoundCapsule::RotateAxisXZ @ 0x8223AB00 | size: 0x6C
+//    Rotates a 2D vector (fields +4, +8) by angle using sin/cos helpers.
+//    new[+8] = old[+8]*cos + old[+4]*sin
+//    new[+4] = old[+4]*cos - old[+8]*sin
+// ---------------------------------------------------------------------------
+void phBoundCapsule_RotateAxisXZ(float* vec, float angle) {
+    float sinVal = (float)phBoundCapsule_01D8_g(angle);
+    float cosVal = (float)phBoundCapsule_02B0_g(angle);
+
+    float oldX = vec[1];  // +4
+    float oldZ = vec[2];  // +8
+
+    float newZ = oldZ * sinVal + oldX * cosVal;
+    vec[2] = newZ;
+
+    float newX = oldX * cosVal - oldZ * sinVal;
+    vec[1] = newX;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phBoundCapsule::RotateAxisYZ @ 0x8223AB70 | size: 0x6C
+//    Rotates a 2D vector (fields +0, +8) by angle using sin/cos helpers.
+//    new[+8] = old[+8]*cos - old[+0]*sin
+//    new[+0] = old[+0]*cos + old[+8]*sin
+// ---------------------------------------------------------------------------
+void phBoundCapsule_RotateAxisYZ(float* vec, float angle) {
+    float sinVal = (float)phBoundCapsule_01D8_g(angle);
+    float cosVal = (float)phBoundCapsule_02B0_g(angle);
+
+    float oldY = vec[0];  // +0
+    float oldZ = vec[2];  // +8
+
+    float newY = oldY * sinVal;
+    float newZ = oldZ * sinVal;
+
+    vec[2] = (float)(oldZ * cosVal - newY);
+    vec[0] = (float)(oldY * cosVal + newZ);
+}
+
+// ---------------------------------------------------------------------------
+// 5. phBoundCapsule::ClassifyValueBySign @ 0x8216BB88 | size: 0x5C
+//    Classifies a float value's sign against zero and a negative threshold.
+//    Returns  1 if value > 0 and a global flag is set,
+//    Returns -1 if value < threshold and flag is set (or as default),
+//    Returns  1 if value > 0 and flag not set but value < threshold.
+// ---------------------------------------------------------------------------
+int32_t phBoundCapsule_ClassifyValueBySign(float* input) {
+    extern uint32_t g_phGlobalStatePtr;
+    extern const float g_floatZero;       // 0.0f @ 0x8202D110
+    extern const float g_phNegThreshold;  // negative threshold @ 0x82079D18
+
+    float value = input[0];
+    uint32_t stateObj = *(uint32_t*)(uintptr_t)g_phGlobalStatePtr;
+    uint8_t flag = *(uint8_t*)(uintptr_t)(stateObj + 192);
+
+    if (value > g_floatZero) {
+        if (flag != 0) {
+            return 1;
+        }
+    }
+    if (value < g_phNegThreshold) {
+        if (flag != 0) {
+            return -1;
+        }
+        return 1;
+    }
+    return -1;
+}
+
+// ---------------------------------------------------------------------------
+// 6. phBoundCapsule::ComputeJointAngleSin @ 0x823FD888 | size: 0x44
+//    Sets the joint type to 4 (capsule constraint), computes angle from
+//    joint data via phBoundCapsule_A688_g, stores sin of result.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_ComputeJointAngleSin(void* /*r3*/, void* /*r4*/,
+                                          void* jointData, float* output) {
+    output[1] = 4;  // joint type = 4
+    float angle = phBoundCapsule_A688_g(jointData);
+    float sinVal = (float)phBoundCapsule_01D8_g(angle);
+    output[0] = sinVal;
+}
+
+// ---------------------------------------------------------------------------
+// 7. phBoundCapsule::LookupRandomTableValues @ 0x8216CF48 | size: 0x70
+//    Queries a random value generator twice and looks up corresponding
+//    entries from two separate float tables, storing results at +4 and +8.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_LookupRandomTableValues(void* capsule) {
+    extern uint32_t g_phRandomSeedPtr;    // global RNG state
+    extern float g_phTableA[];            // sine/cosine lookup table
+    extern float g_phTableB[];            // second lookup table
+
+    uint32_t rngState = *(uint32_t*)(uintptr_t)g_phRandomSeedPtr;
+
+    int32_t index1 = phBoundCapsule_7D90_g((void*)(uintptr_t)rngState);
+    float val1 = g_phTableA[index1];
+    *(float*)((char*)capsule + 4) = val1;
+
+    rngState = *(uint32_t*)(uintptr_t)g_phRandomSeedPtr;
+    int32_t index2 = phBoundCapsule_7D90_g((void*)(uintptr_t)rngState);
+    float val2 = g_phTableB[index2];
+    *(float*)((char*)capsule + 8) = val2;
+}
+
+// ---------------------------------------------------------------------------
+// 8. phBoundCapsule::UpdateCameraFromBound @ 0x8216DB10 | size: 0x74
+//    If the capsule has an associated camera (field +152), copies near/far
+//    plane and FOV parameters from the bound to the camera, sets a dirty
+//    flag, and dispatches camera update.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_UpdateCameraFromBound(void* bound) {
+    extern uint32_t g_phActiveCameraPtr;
+
+    void* camera = *(void**)((char*)bound + 152);
+    if (camera == nullptr)
+        return;
+
+    float fovVert  = *(float*)((char*)bound + 172);
+    float fovHoriz = *(float*)((char*)bound + 168);
+
+    uint32_t cameraBase = *(uint32_t*)(uintptr_t)g_phActiveCameraPtr;
+    phBoundCapsule_8EA0_g((void*)(uintptr_t)cameraBase, fovHoriz, fovVert);
+
+    float nearPlane = *(float*)((char*)bound + 164);
+    *(float*)((char*)camera + 824) = nearPlane;
+
+    // Store FOV and plane parameters into camera structure
+    *(float*)((char*)camera + 828) = fovVert;
+    *(float*)((char*)camera + 832) = fovHoriz;
+    *(float*)((char*)camera + 836) = fovVert;
+    *(uint8_t*)((char*)camera + 864) = 1;  // dirty flag
+
+    phBoundCapsule_3598_g(camera);
+}
+
+// ---------------------------------------------------------------------------
+// 9. phBoundCapsule::TransformPointToLocal @ 0x820D59A8 | size: 0xCC
+//    Transforms a world-space point into the capsule's local coordinate
+//    frame by subtracting the translation row and dotting with each axis.
+//    Then computes atan2(localX, localY) and the capsule distance metric
+//    sqrt(sin^2 * k + cos^2) where k is a capsule shape constant.
+// ---------------------------------------------------------------------------
+float phBoundCapsule_TransformPointToLocal(void* capsule, const float* worldPoint, float param) {
+    // Get the 4x4 matrix from the capsule's instance data
+    void* instData96 = *(void**)((char*)capsule + 96);
+    void* instData80 = *(void**)((char*)capsule + 80);
+    uint16_t matrixIndex = *(uint16_t*)((char*)instData96 + 20);
+    char* matrixBase = (char*)(uintptr_t)(*(uint32_t*)((char*)instData80 + 20));
+    char* matrix = matrixBase + matrixIndex * 64;
+
+    // Load matrix rows
+    float* row0 = (float*)(matrix + 0);
+    float* row1 = (float*)(matrix + 16);
+    float* row2 = (float*)(matrix + 32);
+    float* row3 = (float*)(matrix + 48);
+
+    // Subtract translation (row3) from world point
+    float dx = worldPoint[0] - row3[0];
+    float dy = worldPoint[1] - row3[1];
+    float dz = worldPoint[2] - row3[2];
+
+    // Dot with row0 (local X)
+    float localX = row0[0] * dx + row0[1] * dy + row0[2] * dz;
+    // Dot with row1 (local Y)
+    float localY = row1[0] * dx + row1[1] * dy + row1[2] * dz;
+
+    // Compute atan2(localX, localY)
+    float atanAngle = (float)phBoundCapsule_0FE0_g(localY, localX);
+    float sinAngle = (float)phBoundCapsule_01D8_g(atanAngle);
+    float cosAngle = (float)phBoundCapsule_02B0_g(atanAngle);
+
+    // Compute capsule distance metric
+    extern const float g_phCapsuleShapeK;  // shape constant @ 0x825C8080
+    float sinSq = sinAngle * sinAngle;
+    float cosSq = cosAngle * cosAngle;
+    float capsuleDistance = (float)ph_Sqrt(cosSq + sinSq * g_phCapsuleShapeK);
+
+    return capsuleDistance;
+}
+
+// ---------------------------------------------------------------------------
+// 10. phBoundCapsule::DecomposeMatrixToEuler @ 0x820D0658 | size: 0xE8
+//     Decomposes a 4x4 rotation matrix into Euler angles (stored as a
+//     3-component vector). Extracts pitch from the matrix, computes yaw
+//     and roll via atan2 on the remaining matrix rows.
+//     Output: [0]=roll, [1]=yaw, [2]=pitch (in capsule convention)
+// ---------------------------------------------------------------------------
+void phBoundCapsule_DecomposeMatrixToEuler(const float* matrix, float* outEuler) {
+    extern const float g_floatZero;
+
+    // Copy the 4x4 matrix to local storage for decomposition
+    float localMatrix[16];
+    memcpy(localMatrix + 0,  matrix + 0,  16);  // row 0
+    memcpy(localMatrix + 4,  matrix + 4,  16);  // row 1
+    memcpy(localMatrix + 8,  matrix + 8,  16);  // row 2
+    memcpy(localMatrix + 12, matrix + 12, 16);  // row 3
+
+    // Decompose: extract axis angles from the 3x3 rotation sub-matrix
+    phBoundCapsule_9220_g(localMatrix, localMatrix, localMatrix + 4,
+                          localMatrix + 8, localMatrix + 12);
+
+    // Compute pitch angle from rows 1 and 2 (atan2)
+    float pitchY = localMatrix[6];   // row1[2] = element (1,2)
+    float pitchX = localMatrix[5];   // row1[1] = element (1,1)
+
+    float pitch;
+    if (pitchY == g_floatZero && pitchX == g_floatZero) {
+        pitch = g_floatZero;
+    } else {
+        pitch = (float)phBoundCapsule_0FE0_g(pitchX, pitchY);
+    }
+
+    // Compute yaw from rows 2 and 3
+    float yawY = localMatrix[10];   // row2[2]
+    float yawX = localMatrix[8];    // row2[0]
+
+    float yaw;
+    if (yawY == g_floatZero && yawX == g_floatZero) {
+        yaw = g_floatZero;
+    } else {
+        yaw = (float)phBoundCapsule_0FE0_g(yawX, yawY);
+    }
+
+    // Compute roll from the Z-axis component
+    float rollInput = -localMatrix[9];  // -row2[1]
+    float roll = (float)phBoundCapsule_0E88_g(rollInput);
+
+    // Store Euler angles
+    outEuler[1] = (float)yaw;
+    outEuler[2] = (float)pitch;
+    outEuler[0] = (float)roll;
+}
