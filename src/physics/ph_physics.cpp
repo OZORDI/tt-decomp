@@ -2129,6 +2129,381 @@ void phArticulatedCollider::ApplyImpulse(void* param1, void* param2, void* param
     func(this, param1, param2, param3, 0, 0);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ScalarDestructor (vfn_1) @ 0x8224E6D8 | size: 0x48
+//
+// Scalar deleting destructor override. Calls the base phCollider destructor,
+// then resets joint-related state (joint count and active flag), and cleans
+// up the joint array and constraint data.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phCollider_vfn_1(phArticulatedCollider* collider);
+extern void phArticulatedCollider_57F0_fw(void* jointData);
+extern void phArticulatedCollider_5D58(void* jointData);
+
+void phArticulatedCollider::ScalarDestructor() {
+    // Call base class scalar destructor
+    phCollider_vfn_1(this);
+
+    // Reset joint-related state
+    m_nJointCount = 0;           // +472 (0x1D8)
+    m_bJointsActive = 0;         // +468 (0x1D4)
+
+    // Clean up joint array data
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_57F0_fw(jointData);
+
+    // Reset constraint data
+    jointData = (void*)(uintptr_t)m_nActiveJoints;
+    phArticulatedCollider_5D58(jointData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ResetForces (vfn_2) @ 0x8224E720 | size: 0x80
+//
+// Zeros out four 16-byte SIMD force/torque accumulator vectors at offsets
+// +256, +272, +224, +240, then calls the base Update (vfn_4) to apply
+// the cleared state, and reinitializes the joint weight/response data.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phArticulatedCollider_5A40_wrh(void* jointData);
+
+void phArticulatedCollider::ResetForces() {
+    // Zero out linear force accumulator at +256
+    memset((char*)this + 256, 0, 16);
+
+    // Zero out angular force accumulator at +272
+    memset((char*)this + 272, 0, 16);
+
+    // Zero out linear velocity accumulator at +224
+    memset((char*)this + 224, 0, 16);
+
+    // Zero out angular velocity accumulator at +240
+    memset((char*)this + 240, 0, 16);
+
+    // Apply the cleared state via base class update
+    this->Update();
+
+    // Reinitialize joint weight/response data
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_5A40_wrh(jointData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ResetActiveJoints (vfn_9) @ 0x8224EBC8 | size: 0x8C
+//
+// Iterates over all joints (count-1, skipping root) and calls their
+// individual reset method (vtable slot 18) if the joint has a valid
+// parent reference (field +20 != 0).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ResetActiveJoints() {
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    int32_t jointCount = *(int32_t*)((char*)jointData + 4);
+
+    int32_t numChildJoints = jointCount - 1;
+    if (numChildJoints <= 0)
+        return;
+
+    // Joint pointers start at offset +168 in the joint data array
+    uint32_t* jointPtrs = (uint32_t*)((char*)jointData + 168);
+
+    for (int32_t i = 0; i < numChildJoints; i++) {
+        void* joint = (void*)(uintptr_t)jointPtrs[i];
+
+        // Check if joint has a valid parent (field +20)
+        uint32_t parentRef = *(uint32_t*)((char*)joint + 20);
+        bool hasParent = (parentRef != 0);
+
+        if (hasParent) {
+            // Call joint reset via vtable slot 18
+            void** vtable = *(void***)joint;
+            typedef void (*ResetFunc)(void*);
+            ResetFunc resetFn = (ResetFunc)vtable[18];
+            resetFn(joint);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyScaledGravity (vfn_27) @ 0x8224FD58 | size: 0x4C
+//
+// Applies a gravity-like force scaled by the collider's mass (field +100).
+// Constructs a force vector {0, mass*scale, 0} and dispatches to the parent
+// class ApplyForce (vtable slot 32).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ApplyScaledGravity(float scale) {
+    // Load mass from field +100
+    float mass = *(float*)((char*)this + 100);
+
+    // Construct gravity force vector: {0, mass * scale, 0}
+    float forceY = mass * scale;
+
+    float forceVec[4];
+    forceVec[0] = 0.0f;
+    forceVec[1] = forceY;
+    forceVec[2] = 0.0f;
+    forceVec[3] = 0.0f;
+
+    // Dispatch to parent vtable slot 32 (ApplyForce)
+    void** vtable = *(void***)this;
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc applyForce = (ApplyForceFunc)vtable[32];
+    applyForce(this, forceVec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateScaledForceX (vfn_28) @ 0x8224FDA8 | size: 0x94
+//
+// Extracts the X-axis column from the root joint's 4x4 transform matrix
+// (at offset +144 in the root joint), scales it by the root joint's
+// mass (field +128) * scale, and dispatches via vtable slot 33 (AddForce).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::AccumulateScaledForceX(float scale) {
+    void** vtable = *(void***)this;
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;   // +464 (0x1D0)
+
+    // Get root joint pointer (first entry at offset +40)
+    void* rootJoint = (void*)(uintptr_t)(*(uint32_t*)((char*)jointData + 40));
+
+    // Load 4x4 matrix at root joint +144 (rows of 16 bytes each)
+    float* matRow0 = (float*)((char*)rootJoint + 144);
+    float* matRow1 = (float*)((char*)rootJoint + 160);
+    float* matRow2 = (float*)((char*)rootJoint + 176);
+    float* matRow3 = (float*)((char*)rootJoint + 192);
+
+    // Extract X column: {row0[0], row1[0], row2[0], row3[0]}
+    float colX[4];
+    colX[0] = matRow0[0];
+    colX[1] = matRow1[0];
+    colX[2] = matRow2[0];
+    colX[3] = matRow3[0];
+
+    // Scale by root joint mass (field +128) * input scale
+    float mass = *(float*)((char*)rootJoint + 128);
+    float scaledMass = mass * scale;
+    colX[0] *= scaledMass;
+    colX[1] *= scaledMass;
+    colX[2] *= scaledMass;
+    colX[3] *= scaledMass;
+
+    // Dispatch to vtable slot 33 (AddForce)
+    typedef void (*AddForceFunc)(void*, float*, float*);
+    AddForceFunc addForce = (AddForceFunc)vtable[33];
+    addForce(this, colX, colX);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateScaledForceY (vfn_29) @ 0x8224FE40 | size: 0x94
+//
+// Same as AccumulateScaledForceX but extracts the Y-axis column from the
+// root joint's transform matrix and scales by mass at field +136.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::AccumulateScaledForceY(float scale) {
+    void** vtable = *(void***)this;
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;
+
+    void* rootJoint = (void*)(uintptr_t)(*(uint32_t*)((char*)jointData + 40));
+
+    // Load matrix rows
+    float* matRow0 = (float*)((char*)rootJoint + 144);
+    float* matRow1 = (float*)((char*)rootJoint + 160);
+    float* matRow2 = (float*)((char*)rootJoint + 176);
+    float* matRow3 = (float*)((char*)rootJoint + 192);
+
+    // Extract Y column: {row0[1], row1[1], row2[1], row3[1]}
+    float colY[4];
+    colY[0] = matRow0[1];
+    colY[1] = matRow1[1];
+    colY[2] = matRow2[1];
+    colY[3] = matRow3[1];
+
+    // Scale by mass at field +136
+    float mass = *(float*)((char*)rootJoint + 136);
+    float scaledMass = mass * scale;
+    colY[0] *= scaledMass;
+    colY[1] *= scaledMass;
+    colY[2] *= scaledMass;
+    colY[3] *= scaledMass;
+
+    typedef void (*AddForceFunc)(void*, float*, float*);
+    AddForceFunc addForce = (AddForceFunc)vtable[33];
+    addForce(this, colY, colY);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateScaledForceZ (vfn_30) @ 0x8224FED8 | size: 0x94
+//
+// Same as AccumulateScaledForceX but extracts the Z-axis column from the
+// root joint's transform matrix and scales by mass at field +132.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::AccumulateScaledForceZ(float scale) {
+    void** vtable = *(void***)this;
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;
+
+    void* rootJoint = (void*)(uintptr_t)(*(uint32_t*)((char*)jointData + 40));
+
+    // Load matrix rows
+    float* matRow0 = (float*)((char*)rootJoint + 144);
+    float* matRow1 = (float*)((char*)rootJoint + 160);
+    float* matRow2 = (float*)((char*)rootJoint + 176);
+    float* matRow3 = (float*)((char*)rootJoint + 192);
+
+    // Extract Z column from the matrix
+    float colZ[4];
+    colZ[0] = matRow0[0];
+    colZ[1] = matRow1[0];
+    colZ[2] = matRow2[0];
+    colZ[3] = matRow3[0];
+
+    // Scale by mass at field +132
+    float mass = *(float*)((char*)rootJoint + 132);
+    float scaledMass = mass * scale;
+    colZ[0] *= scaledMass;
+    colZ[1] *= scaledMass;
+    colZ[2] *= scaledMass;
+    colZ[3] *= scaledMass;
+
+    typedef void (*AddForceFunc)(void*, float*, float*);
+    AddForceFunc addForce = (AddForceFunc)vtable[33];
+    addForce(this, colZ, colZ);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SaveAndClearJointForces (vfn_63) @ 0x8224E2D8 | size: 0xBC
+//
+// For each joint in the articulated chain:
+// 1. Calls phArticulatedCollider_5FE0 to prepare the joint force state
+// 2. Copies the accumulated force vector (+304) to the applied force
+//    buffer (+1040) as a backup
+// 3. Zeros out four 16-byte vectors at offsets +304, +320, +272, +288
+//    (force/torque accumulators) to prepare for the next simulation step
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phArticulatedCollider_5FE0(void* jointData);
+
+void phArticulatedCollider::SaveAndClearJointForces() {
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+
+    // Prepare joint force state
+    phArticulatedCollider_5FE0(jointData);
+
+    int32_t jointCount = *(int32_t*)((char*)jointData + 4);
+    if (jointCount <= 0)
+        return;
+
+    // Joint pointers start at offset +40 in the joint data array
+    uint32_t* jointPtrs = (uint32_t*)((char*)jointData + 40);
+
+    for (int32_t i = 0; i < jointCount; i++) {
+        void* joint = (void*)(uintptr_t)jointPtrs[i];
+
+        // Copy force accumulator (+304) to applied force buffer (+1040)
+        memcpy((char*)joint + 1040, (char*)joint + 304, 16);
+
+        // Copy second vector (+320 to +1056)
+        memcpy((char*)joint + 1056, (char*)joint + 320, 16);
+
+        // Zero out force accumulator at +320
+        memset((char*)joint + 320, 0, 16);
+
+        // Zero out force accumulator at +304
+        memset((char*)joint + 304, 0, 16);
+
+        // Zero out torque accumulator at +272
+        memset((char*)joint + 272, 0, 16);
+
+        // Zero out torque accumulator at +288
+        memset((char*)joint + 288, 0, 16);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::NormalizeVector (E398_p33) @ 0x8224E398 | size: 0x94
+//
+// Normalizes a 3-component vector in-place. Computes the magnitude via
+// dot product (vmsum3fp128), then divides each component by the magnitude.
+// If the squared magnitude is zero or negative, sets the output to a
+// default zero vector.
+//
+// @param src   - Source 3-float vector {x, y, z}
+// @param dst   - Destination vector (receives normalized result)
+// ─────────────────────────────────────────────────────────────────────────────
+extern const float g_floatEpsilon;  // @ 0x82079C58 (.rdata)
+
+void phArticulatedCollider::NormalizeVector(const float* src, float* dst) {
+    // Copy source to destination
+    dst[0] = src[0];
+    dst[1] = src[1];
+    dst[2] = src[2];
+
+    // Compute squared magnitude (dot product with self)
+    float sqMag = dst[0] * dst[0] + dst[1] * dst[1] + dst[2] * dst[2];
+
+    if (sqMag > g_floatEpsilon) {
+        // Compute reciprocal magnitude
+        float mag = sqrtf(sqMag);
+        float invMag = 1.0f / mag;
+
+        // Scale each component
+        dst[0] *= invMag;
+        dst[1] *= invMag;
+        dst[2] *= invMag;
+        dst[3] *= invMag;
+    } else {
+        // Zero-length vector: set to default zero vector
+        static const float zeroVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        memcpy(dst, zeroVec, 16);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetTimestep (F040_g) @ 0x8224F040 | size: 0xA0
+//
+// Configures the simulation timestep for the articulated collider.
+// Computes reciprocal timestep and derived damping/spring constants,
+// then reconfigures capsule geometry, joint hierarchy, transforms,
+// and constraint data for the new timestep.
+//
+// @param timestep - The physics simulation timestep in seconds
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phArticulatedCollider_60F8(void* jointData, float recipTimestep,
+                                       float dampingFactor, float springFactor);
+extern void phBoundCapsule_6968_g(void* jointData);
+extern void phArticulatedCollider_6B40_wrh(void* jointData);
+extern void phArticulatedCollider_8450(void* jointData);
+extern void phArticulatedCollider_F0E0(phArticulatedCollider* collider);
+
+void phArticulatedCollider::SetTimestep(float timestep) {
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+
+    // Prepare joint force state
+    phArticulatedCollider_5FE0(jointData);
+
+    // Compute reciprocal timestep
+    float recipTimestep = 1.0f / timestep;
+
+    // Derive damping and spring constants from reciprocal timestep
+    extern const float g_dampingScale;   // @ 0x8207A008 (.rdata)
+    extern const float g_springScale;    // @ 0x8207A0F4 (.rdata)
+    float dampingFactor = recipTimestep * g_dampingScale;
+    float springFactor  = recipTimestep * g_springScale;
+
+    // Reconfigure joint solver with new timing constants
+    phArticulatedCollider_60F8(jointData, timestep, dampingFactor, springFactor);
+
+    // Reconfigure capsule geometry for new timestep
+    phBoundCapsule_6968_g(jointData);
+
+    // Rebuild joint weight/response data
+    phArticulatedCollider_6B40_wrh(jointData);
+
+    // Recompute joint hierarchy transforms
+    phArticulatedCollider_8450(jointData);
+
+    // Recompute joint transform matrices
+    phArticulatedCollider_F0E0(this);
+
+    // Reinitialize joint constraints
+    phArticulatedCollider_5D58(jointData);
+}
+
 } // namespace rage
 
 // ═════════════════════════════════════════════════════════════════════════════
