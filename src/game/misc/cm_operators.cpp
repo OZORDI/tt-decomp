@@ -2371,3 +2371,298 @@ void* cmOperatorCtor_cmLerp() {
     }
     return nullptr;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::cmAngleLerp / cmRange / cmClamp / cmAngleDiff / cmAbsAngleDiff /
+// cmClampRange / cmSlowIn / cmSlowOut / cmSlowInOut factories
+// and gdDrillSoftShotData factory
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern "C" const void* rage_cmAngleLerp_vtable;     // @ 0x82054044
+extern "C" const void* rage_cmRange_vtable;          // @ 0x8205409C
+extern "C" const void* rage_cmClamp_vtable;          // @ 0x820540F4
+extern "C" const void* rage_cmAngleDiff_vtable;      // @ 0x820541A4
+extern "C" const void* rage_cmAbsAngleDiff_vtable;   // @ 0x8205414C
+extern "C" const void* rage_cmClampRange_vtable;     // @ 0x820541FC
+extern "C" const void* rage_cmSlowIn_vtable;         // @ 0x82054254
+extern "C" const void* rage_cmSlowOut_vtable;        // @ 0x820542AC
+extern "C" const void* rage_cmSlowInOut_vtable;      // @ 0x82054304
+extern "C" const void* gdDrillSoftShotData_vtable;   // @ 0x820411FC
+
+// Init function for gdDrillSoftShotData
+extern "C" void* util_E330(void* mem);               // base initializer for drill data
+
+// Float constants
+extern "C" const float lbl_825C4930;   // @ 0x825C4930  (gdDrillSoftShotData +104)
+extern "C" const float lbl_8202CFE8;   // @ 0x8202CFE8  (gdDrillSoftShotData +108)
+extern "C" const float lbl_8202D0F0;   // @ 0x8202D0F0  (gdDrillSoftShotData +112)
+
+// ── rage::cmAngleLerp factory ────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7498_1 @ 0x82267498 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets numInputs=3,
+ * and installs rage::cmAngleLerp vtable.
+ */
+// cmOperatorCtor_vfn_0_7498_1 @ 0x82267498
+void* cmOperatorCtor_cmAngleLerp() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAngleLerp_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmRange factory ────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7538_1 @ 0x82267538 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets numInputs=3,
+ * and installs rage::cmRange vtable.
+ */
+// cmOperatorCtor_vfn_0_7538_1 @ 0x82267538
+void* cmOperatorCtor_cmRange() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmRange_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmClamp factory ────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_75D8_1 @ 0x822675D8 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets numInputs=3,
+ * and installs rage::cmClamp vtable.
+ */
+// cmOperatorCtor_vfn_0_75D8_1 @ 0x822675D8
+void* cmOperatorCtor_cmClamp() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmClamp_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAngleDiff factory ────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7678_1 @ 0x82267678 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmAngleDiff vtable.
+ */
+// cmOperatorCtor_vfn_0_7678_1 @ 0x82267678
+void* cmOperatorCtor_cmAngleDiff() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAngleDiff_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAbsAngleDiff factory ─────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7710_1 @ 0x82267710 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmAbsAngleDiff vtable.
+ */
+// cmOperatorCtor_vfn_0_7710_1 @ 0x82267710
+void* cmOperatorCtor_cmAbsAngleDiff() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAbsAngleDiff_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmClampRange factory ───────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_77A8_1 @ 0x822677A8 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets numInputs=3,
+ * and installs rage::cmClampRange vtable.
+ */
+// cmOperatorCtor_vfn_0_77A8_1 @ 0x822677A8
+void* cmOperatorCtor_cmClampRange() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmClampRange_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSlowIn factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7848_1 @ 0x82267848 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmSlowIn vtable.
+ */
+// cmOperatorCtor_vfn_0_7848_1 @ 0x82267848
+void* cmOperatorCtor_cmSlowIn() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSlowIn_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSlowOut factory ──────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_78D8_1 @ 0x822678D8 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmSlowOut vtable.
+ */
+// cmOperatorCtor_vfn_0_78D8_1 @ 0x822678D8
+void* cmOperatorCtor_cmSlowOut() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSlowOut_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSlowInOut factory ────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7968_1 @ 0x82267968 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmSlowInOut vtable.
+ */
+// cmOperatorCtor_vfn_0_7968_1 @ 0x82267968
+void* cmOperatorCtor_cmSlowInOut() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSlowInOut_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── gdDrillSoftShotData factory ──────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_F088_w @ 0x821DF088 | size: 0xa4
+ *
+ * Allocates 116 bytes, calls base initializer util_E330, then sets
+ * vtable to gdDrillSoftShotData and configures drill soft-shot parameters:
+ *   +96  = 5  (numEntries)
+ *   +100 = 3  (numThresholds)
+ *   +104 = float from 0x825C4930 (power)
+ *   +108 = float from 0x8202CFE8 (speed)
+ *   +112 = float from 0x8202D0F0 (spin)
+ */
+// cmOperatorCtor_F088_w @ 0x821DF088
+void* cmOperatorCtor_gdDrillSoftShotData() {
+    void* mem = cmOperatorCtor_Allocate(116);
+    if (mem != nullptr) {
+        util_E330(mem);
+
+        uint32_t* fields = (uint32_t*)mem;
+        float* ffields = (float*)mem;
+
+        ffields[26] = lbl_825C4930;   // +104  power
+        fields[24]  = 5;              // +96   numEntries
+        fields[0]   = (uint32_t)(uintptr_t)&gdDrillSoftShotData_vtable;
+        fields[25]  = 3;              // +100  numThresholds
+        ffields[27] = lbl_8202CFE8;   // +108  speed
+        ffields[28] = lbl_8202D0F0;   // +112  spin
+
+        return mem;
+    }
+    return nullptr;
+}
