@@ -131,19 +131,13 @@ struct audVoice {
 
     // ── virtual methods ──
     virtual ~audVoice();                  // [0] @ 0x82163358
-    virtual void vfn_2();  // [2] @ 0x82163190
-    virtual void vfn_4();  // [4] @ 0x821631a0
-    virtual void vfn_7();  // [7] @ 0x821631b0
-    virtual void vfn_8();  // [8] @ 0x821631c0
-    virtual void vfn_17();  // [17] @ 0x821631d0
-    virtual void vfn_18();  // [18] @ 0x821631e0
+    virtual void PlayByEntry();  // [2] @ 0x82163190
+    virtual void Play();  // [4] @ 0x821631a0
+    virtual void Stop();  // [7] @ 0x821631b0
+    virtual void Release();  // [8] @ 0x821631c0
+    virtual void SetEffect();  // [17] @ 0x821631d0
+    virtual bool IsPlaying();  // [18] @ 0x821631e0
 };
-
-// ── rage::audVoiceSfx  [vtable @ 0x82035AFC] ──────────────────────────
-// Confirmed methods: Play, SetEffectVolume, SetReverbVolume
-// Field hints: m_sfxRef:ptr
-struct audVoiceSfx {
-    void**      vtable;           // +0x00
 
 // ── rage::audVoiceSfx  [vtable @ 0x82035AFC] ──────────────────────────
 // Confirmed methods: Play, PlayByEntry, SetEffectVolume, SetReverbVolume
@@ -157,26 +151,27 @@ struct audVoiceSfx {
     void*        m_pSfxRef;      // +0x000c  R:16 W:0 - sound effect reference (heavily read)
 
     // ── virtual methods ──
-    virtual void vfn_5();  // [5] @ 0x821635b8
-    virtual void vfn_6();  // [6] @ 0x82163608
-    virtual void vfn_7();  // [7] @ 0x82163658
+    virtual bool Pause();  // [5] @ 0x821635b8
+    virtual void Resume();  // [6] @ 0x82163608
+    virtual void Stop();  // [7] @ 0x82163658
     virtual void vfn_8();  // [8] @ 0x821636a8
-    virtual void vfn_9();  // [9] @ 0x82163778
+    virtual void SetVolume(float volume);  // [9] @ 0x82163778
     virtual void vfn_10();  // [10] @ 0x821637d8
     virtual void vfn_11();  // [11] @ 0x82163868
     virtual void SetReverbSend();     // [12] @ 0x82163918
     virtual void EnableReverbSend();  // [13] @ 0x82163928
-    virtual void vfn_14();  // [14] @ 0x82163938
+    virtual void SetSpeakerMix(float leftLevel, float rightLevel);  // [14] @ 0x82163938
 
-    virtual void vfn_17();  // [17] @ 0x82163ab0
-    virtual void vfn_18();  // [18] @ 0x82163b10
+    virtual void SetEffect(uint32_t effectId, uint8_t enable);  // [17] @ 0x82163ab0
+    virtual bool IsPlaying();  // [18] @ 0x82163b10
 
     // ── non-virtual methods (from debug strings) ──
     void Play();
-    void PlayByEntry(void* entry, float volume, float pitch, float pan, float priority,
-                     uint32_t param5, uint32_t param6, uint8_t param7);  // @ 0x82163498
-    void SetReverbVolume();
-    void SetEffectVolume();
+    void PlayByEntry(void* entry, float volume, float pitch, float pan, float playVariance,
+                     uint32_t userParamA, uint32_t userParamB, uint8_t userParamC);  // @ 0x82163498
+    void SetReverbVolume(void* bankEntry, float volume);
+    void SetEffectVolume(void* bankEntry, float volume);
+    void* DequeueFromList();
 };
 
 

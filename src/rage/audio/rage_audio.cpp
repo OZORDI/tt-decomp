@@ -6,7 +6,6 @@
  */
 
 #include "rage_audio.hpp"
-#include "game/pong_strings.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -145,9 +144,6 @@ void audVoiceSfx::PlayByEntry(
         userParamC
     );
 }
-
-// External logging function (no-op in release builds)
-extern "C" void rage_DebugLog(const char* fmt, ...);
 
 // External memory free function
 extern "C" void rage_free(void* ptr);
