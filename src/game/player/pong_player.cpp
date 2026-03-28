@@ -4268,7 +4268,8 @@ bool pongPlayer::ApproachFloat(float* valuePtr, float targetValue,
 // hand ("right" vs "left") along with the creature name, then stores.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongPlayer::SetHandedness(uint8_t hand) {
-    if (hand == m_handedness) {
+    uint8_t* handPtr = reinterpret_cast<uint8_t*>(this) + 197;  // m_handedness at +0xC5
+    if (hand == *handPtr) {
         return;
     }
 
@@ -4277,7 +4278,7 @@ void pongPlayer::SetHandedness(uint8_t hand) {
         : "left";   // @ 0x82027A50
 
     nop_8240E6D0(handStr);  // debug log — no-op in retail
-    m_handedness = hand;
+    *handPtr = hand;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -4289,12 +4290,13 @@ void pongPlayer::SetHandedness(uint8_t hand) {
 // per-player sub-objects by network slot.
 // ─────────────────────────────────────────────────────────────────────────────
 void* pongPlayer::GetSubObjectByIndex(int slotIndex) const {
+    void** subObjects = (void**)((uint8_t*)this + 100);  // m_pSubObjects at this+100
     switch (slotIndex) {
-        case 0: return m_pSubObjects[0];  // this+100
-        case 1: return m_pSubObjects[1];  // this+104
-        case 2: return m_pSubObjects[2];  // this+108
-        case 3: return m_pSubObjects[3];  // this+112
-        case 4: return m_pSubObjects[4];  // this+116
+        case 0: return subObjects[0];  // this+100
+        case 1: return subObjects[1];  // this+104
+        case 2: return subObjects[2];  // this+108
+        case 3: return subObjects[3];  // this+112
+        case 4: return subObjects[4];  // this+116
         default: return nullptr;
     }
 }
@@ -4326,7 +4328,7 @@ bool pongPlayer::IsSwingTimingWindowOpen() const {
     }
 
     // Check secondary sub-object at this+120
-    void* subObj = m_pSwingAimState;
+    void* subObj = *(void**)((uint8_t*)this + 120);  // m_pSwingAimState
     if (!subObj) {
         return false;
     }
@@ -4350,22 +4352,30 @@ bool pongPlayer::IsSwingTimingWindowOpen() const {
 //     chain to clear the swing trigger flag (byte 341 at the swing sub-object)
 // ─────────────────────────────────────────────────────────────────────────────
 void pongPlayer::UpdateInputDirection(float inputX, float inputY) {
-    if (m_bInputLocked) {
+    uint8_t* base = (uint8_t*)this;
+    uint8_t inputLocked = *(base + 133);  // m_bInputLocked at +133
+    if (inputLocked) {
         return;
     }
 
+    float* pInputDirX = (float*)(base + 32);     // m_inputDirX at +32
+    float* pInputDirY = (float*)(base + 36);     // m_inputDirY at +36
+    float* pPrevInputDirX = (float*)(base + 40); // m_prevInputDirX at +40
+    float* pPrevInputDirY = (float*)(base + 44); // m_prevInputDirY at +44
+    uint8_t* pInputFlags = base + 64;             // m_inputFlags at +64
+
     // Save current to previous when current is non-zero
-    if (m_inputDirX != g_swingPhaseThreshold) {  // epsilon constant at 0x8202D110
-        m_prevInputDirX = m_inputDirX;
+    if (*pInputDirX != g_swingPhaseThreshold) {  // epsilon constant at 0x8202D110
+        *pPrevInputDirX = *pInputDirX;
     }
-    if (m_inputDirY != g_swingPhaseThreshold) {
-        m_prevInputDirY = m_inputDirY;
+    if (*pInputDirY != g_swingPhaseThreshold) {
+        *pPrevInputDirY = *pInputDirY;
     }
 
     // If directional override flag (bit 0 at +64) is set, store new values
-    if (m_inputFlags & 0x1) {
-        m_inputDirX = inputX;
-        m_inputDirY = inputY;
+    if (*pInputFlags & 0x1) {
+        *pInputDirX = inputX;
+        *pInputDirY = inputY;
     }
 
     // If either input axis has significant magnitude, clear swing trigger
@@ -4541,7 +4551,7 @@ bool pongPlayer::IsInAnticipationPhase() const {
             if (currentTime >= targetTime) {
                 // Re-check: if still >= target, check mid-point
                 // If midTime (field +36) > currentTime, we're in anticipation
-                float midTime = timing->m_midTime;
+                float midTime = *(float*)((uint8_t*)timing + 36);  // m_midTime at +36
                 if (midTime > currentTime) {
                     return true;
                 }
@@ -4555,7 +4565,7 @@ bool pongPlayer::IsInAnticipationPhase() const {
 
     // PATH B: timer still running — check recovery path
     if (IsRecovering()) {
-        void* creatureState = m_pCreatureStateForSwing;
+        void* creatureState = *(void**)((uint8_t*)this + 128);  // m_pCreatureStateForSwing at +128
         pongPlayer_D298_2hr(creatureState);
         // D298 returns a bool in r3
         // TODO: capture return value properly
@@ -4621,11 +4631,12 @@ void pongPlayer::UpdateServeSpeed() {
     // Get geometry record and check side matching
     uint8_t playerSide = *reinterpret_cast<uint8_t*>(
         reinterpret_cast<uintptr_t>(matchConfig) + 5);
+    extern void* g_input_obj_ptr;  // @ global input object pointer
     void* inputData = *reinterpret_cast<void**>(&g_input_obj_ptr);
     uint8_t geomSide = *reinterpret_cast<uint8_t*>(
         reinterpret_cast<uintptr_t>(inputData) + 64);
 
-    int playerFlip = m_playerFlip;  // this+464
+    int playerFlip = m_inputSlotIdx;  // this+464 (m_inputSlotIdx)
     int sideXor = geomSide ^ playerSide;
 
     // Get court data record

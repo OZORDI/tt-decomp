@@ -1039,6 +1039,16 @@ struct pongCreatureInst {
     void Detach();              // @ 0x8211D470
     void SetMatrix(const void* srcMatrix);  // @ 0x820D5040
     void UpdateHeading();       // @ 0x8228E828
+    void BuildTranslationMatrix(float* outMatrix, const float* srcBasis);  // @ 0x820D50A0
+    void CopyAndBuildTranslationMatrix(float* outMatrix, const float* srcMatrix);  // @ 0x820D5040
+    void CopyBoneMatrix(int boneIndex, float* outMatrix);  // @ 0x821183B0
+    void FindBonePairByName(int mappingIndex, const char* boneName1, const char* boneName2);  // @ 0x82118C58
+    void ReadBoneNamesAndMap(void* xmlNode);  // @ 0x821190F8
+    void StoreBoneResult(void* xmlNode);  // @ 0x82118E70
+    void StoreBoneFlag(void* xmlNode);  // @ 0x82118EB0
+    void SetOrClearBoneFlag8(void* xmlNode);  // @ 0x82118F00
+    void StoreMirrorFlag(void* xmlNode);  // @ 0x82118F70
+    void StoreBlendFlag(void* xmlNode);  // @ 0x82119180
 };
 
 // ── pongCreatureType  [vtable @ 0x8202776C] ──────────────────────────

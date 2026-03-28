@@ -39,6 +39,18 @@ struct SinglesNetworkClient {
     void WriteHWReg(uint32_t regOffset, uint32_t value);
     void InitHWRegs();
     void DispatchSlot6();
+
+    // Bitstream / network field methods
+    const char* GetEntryName(int entryIndex);
+    void InitBitstreamState();
+    void WriteAlignedField(uint32_t fieldValue);
+    uint32_t ReadAlignedField();
+    uint32_t ReadRawField32();
+    uint16_t ReadFieldUint16();
+    void SetReliableFlag(bool enable);
+    bool GetReliableFlag();
+    void SetOrderedFlag(bool enable);
+    bool GetOrderedFlag();
 };
 
 // Forward declarations
@@ -1682,6 +1694,9 @@ void pongNetMessageHolderBase_Destroy(void* self, int flags) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Forward declaration for xe_EC88 (memory allocator)
+extern void* xe_EC88(uint32_t size);
+
 // pongNetMessageHolder::SetNetIndex  @ 0x82118BB0
 // Grows the dual send/recv buffers to hold the new index, using power-of-2
 // rounding for the capacity.

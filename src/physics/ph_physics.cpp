@@ -5489,7 +5489,7 @@ void phObject_0(void* thisPtr, uint32_t registerFlag) {
     phInst_87F8((void*)(obj + 56));
 
     // Base setup
-    util_85C8(thisPtr);
+    thunk_fn_824885C8(thisPtr);
 
     // Optionally register with allocator
     if (registerFlag & 0x1) {

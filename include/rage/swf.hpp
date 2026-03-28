@@ -139,11 +139,27 @@ public:
  */
 class swfACTIONFUNC : public swfSCRIPTOBJECT {
 public:
+    virtual ~swfACTIONFUNC();  // @ 0x82403460
+    virtual void ScalarDtor(int flags);  // @ 0x823FF4E8
+    virtual void NextFrame();  // @ 0x823FF500
+    virtual void PrevFrame();  // @ 0x823FF518
+    virtual void MarkDirty();  // @ 0x823FF530
+    virtual void SetVisible();  // @ 0x823FF548
+    void EnumerateMembers() override;  // @ 0x823FF560
+    virtual void VisitChildren();  // @ 0x823FF578
     int GetMemberCount() override;  // @ 0x823FF2A8 | size: 0x44
     int VisitMembers() override;  // @ 0x823FF3C0 | size: 0xDC
     bool GetMember(const char* name, void* result) override;  // @ 0x823FF2F0 | size: 0xCC
     void SetMember(const char* name, void* value) override;  // @ 0x823FF4A0 | size: 0x14
     void DeleteMember(const char* name) override;  // @ 0x823FF4B8 | size: 0x14
+    void Invoke(const char* methodName, void* args, int argCount, void* outResult) override;  // @ 0x823FF4D0
+
+    // ── member fields ──
+    uint8_t     _padAction04[120];   // padding after swfSCRIPTOBJECT fields
+    int         m_localCount;        // +132 (0x84)
+    uint8_t     _padLocalTable[7192]; // local name table (+136 .. +7327)
+    void*       m_pLocalValues;      // +7328 (0x1CA0)
+    void*       m_pInnerObject;      // +7332 (0x1CA4)
 };
 
 /**

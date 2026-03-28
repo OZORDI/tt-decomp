@@ -1666,6 +1666,18 @@ struct SinglesNetworkClient {
     uint32_t Read14BitValue();
     uint32_t ReadTimestamp();
     uint16_t ReadSequenceNumber();
+
+    // Bitstream / network field methods
+    const char* GetEntryName(int entryIndex);
+    void InitBitstreamState();
+    void WriteAlignedField(uint32_t fieldValue);
+    uint32_t ReadAlignedField();
+    uint32_t ReadRawField32();
+    uint16_t ReadFieldUint16();
+    void SetReliableFlag(bool enable);
+    bool GetReliableFlag();
+    void SetOrderedFlag(bool enable);
+    bool GetOrderedFlag();
 };
 
 // ── SkipReplayMessage  [vtable @ 0x8206F8F8] ──────────────────────────

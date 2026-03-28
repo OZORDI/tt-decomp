@@ -15,6 +15,8 @@
 // External dependencies
 extern void rage_Free(void* ptr);
 extern void rage_DebugLog(const char* msg, ...);
+extern void nop_8240E6D0(const char* msg, ...);  // @ 0x8240E6D0 — debug logger (no-op in retail)
+extern "C" int _stricmp(const char* s1, const char* s2);
 extern void pongCreature_7CE8_g(void* creature, void* matrix, int param1, int param2, int param3, int param4);
 extern void* pg_9C00_g(void* player, int index);  // @ 0x82019C00 — returns creature info ptr
 extern void pongPlayer_9CD0_g(void* player, int index, void* outMatrix1, void* outMatrix2);
@@ -2946,7 +2948,7 @@ void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
         float* boneMatrix = (float*)((char*)boneArrayBase + offset);
 
         // Tail-call to AccumulateList which processes and outputs the matrix
-        LocomotionStateAnim_D480_w(boneMatrix);
+        ((LocomotionStateAnim*)boneMatrix)->AccumulateList();
         return;
     }
 

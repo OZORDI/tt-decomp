@@ -17,22 +17,27 @@ namespace rage {
 // ── rage::swfACTIONFUNC  [vtable @ 0x82075314] ──────────────────────────
 struct swfACTIONFUNC {
     void**      vtable;           // +0x00
+    uint8_t     _pad04[128];      // +0x04 .. +0x83
+    int         m_localCount;     // +0x84 (offset 132)
+    uint8_t     _pad88[7192];     // +0x88 .. +0x1C9F (local name table etc.)
+    void*       m_pLocalValues;   // +0x1CA0 (offset 7328)
+    void*       m_pInnerObject;   // +0x1CA4 (offset 7332)
 
     // ── virtual methods ──
     virtual ~swfACTIONFUNC();                  // [0] @ 0x82403460
     virtual void ScalarDtor(int flags); // [1] @ 0x823ff4e8
-    virtual void vfn_2();  // [2] @ 0x823ff500
-    virtual void vfn_3();  // [3] @ 0x823ff518
-    virtual void vfn_4();  // [4] @ 0x823ff530
-    virtual void vfn_5();  // [5] @ 0x823ff548
-    virtual void vfn_6();  // [6] @ 0x823ff560
-    virtual void vfn_7();  // [7] @ 0x823ff578
-    virtual void vfn_8();  // [8] @ 0x823ff2a8
-    virtual void vfn_9();  // [9] @ 0x823ff3c0
-    virtual void vfn_10();  // [10] @ 0x823ff2f0
+    virtual void NextFrame();  // [2] @ 0x823ff500
+    virtual void PrevFrame();  // [3] @ 0x823ff518
+    virtual void MarkDirty();  // [4] @ 0x823ff530
+    virtual void SetVisible();  // [5] @ 0x823ff548
+    virtual void EnumerateMembers();  // [6] @ 0x823ff560
+    virtual void VisitChildren();  // [7] @ 0x823ff578
+    virtual int GetMemberCount();  // [8] @ 0x823ff2a8
+    virtual int VisitMembers();  // [9] @ 0x823ff3c0
+    virtual bool GetMember(const char* name, void* result);  // [10] @ 0x823ff2f0
     virtual void vfn_11();  // [11] @ 0x823ff4a0
     virtual void vfn_12();  // [12] @ 0x823ff4b8
-    virtual void vfn_13();  // [13] @ 0x823ff4d0
+    virtual void Invoke(const char* methodName, void* args, int argCount, void* outResult);  // [13] @ 0x823ff4d0
     virtual void vfn_14();  // [14] @ 0x823ff590
 };
 
@@ -125,8 +130,8 @@ struct swfCONTEXT {
 
     // ── virtual methods ──
     virtual ~swfCONTEXT();                  // [0] @ 0x823f8ff0
-    virtual void ScalarDtor(int flags); // [1] @ 0x823f90c8
-    virtual void vfn_2();  // [2] @ 0x823f9238
+    virtual void ScalarDestructor(int flags); // [1] @ 0x823f90c8
+    virtual void Execute();  // [2] @ 0x823f9238
 };
 
 // ── rage::swfEDITTEXT  [vtable @ 0x820754E8] ──────────────────────────
@@ -147,7 +152,7 @@ struct swfFILE {
     // ── virtual methods ──
     virtual ~swfFILE();                  // [0] @ 0x823f8be0
     virtual void vfn_2();  // [2] @ 0x82403628
-    virtual void vfn_10();  // [10] @ 0x823f9dc8
+    virtual float FindExportFrame(float frameRate, const char* labelName, void* context);  // [10] @ 0x823f9dc8
 };
 
 // ── rage::swfFONT  [vtable @ 0x82075488] ──────────────────────────
@@ -164,19 +169,19 @@ struct swfINSTANCE {
 
     // ── virtual methods ──
     virtual ~swfINSTANCE();                  // [0] @ 0x823fb600
-    virtual void ScalarDtor(int flags); // [1] @ 0x823fb7a8
-    virtual void vfn_2();  // [2] @ 0x823fb8a0
-    virtual void vfn_3();  // [3] @ 0x823fb920
-    virtual void vfn_4();  // [4] @ 0x823fb760
-    virtual void vfn_5();  // [5] @ 0x823fb150
-    virtual void vfn_6();  // [6] @ 0x823fed18
+    virtual void GotoFrame(uint16_t targetFrame, uint8_t skipActions); // [1] @ 0x823fb7a8
+    virtual void NextFrame(void* context);  // [2] @ 0x823fb8a0
+    virtual void PrevFrame();  // [3] @ 0x823fb920
+    virtual void MarkDirty();  // [4] @ 0x823fb760
+    virtual void SetVisible();  // [5] @ 0x823fb150
+    virtual void EnumerateMembers();  // [6] @ 0x823fed18
     virtual void vfn_7();  // [7] @ 0x823fc908
-    virtual void vfn_8();  // [8] @ 0x823fb160
-    virtual void vfn_9();  // [9] @ 0x823fbf98
-    virtual void vfn_10();  // [10] @ 0x823fb970
-    virtual void vfn_11();  // [11] @ 0x823fc1a8
-    virtual void vfn_12();  // [12] @ 0x823fc798
-    virtual void vfn_13();  // [13] @ 0x823fe500
+    virtual int GetMemberCount();  // [8] @ 0x823fb160
+    virtual int VisitMembers();  // [9] @ 0x823fbf98
+    virtual bool GetMember(const char* name, void* result);  // [10] @ 0x823fb970
+    virtual void SetMember(const char* name, void* value);  // [11] @ 0x823fc1a8
+    virtual void DeleteMember(const char* name);  // [12] @ 0x823fc798
+    virtual void Invoke(const char* methodName, void* args, int argCount, void* outResult);  // [13] @ 0x823fe500
 };
 
 // ── rage::swfOBJECT  [vtable @ 0x820753A0] ──────────────────────────
@@ -193,23 +198,26 @@ struct swfSCRIPTARRAY {
 
     // ── virtual methods ──
     virtual ~swfSCRIPTARRAY();                  // [0] @ 0x823ff218
-    virtual void vfn_10();  // [10] @ 0x823feb48
-    virtual void vfn_11();  // [11] @ 0x823fec38
+    virtual bool GetMember(const char* name, void* result);  // [10] @ 0x823feb48
+    virtual void SetMember(const char* name, void* value);  // [11] @ 0x823fec38
 };
 
 // ── rage::swfSCRIPTOBJECT  [vtable @ 0x82074D14] ──────────────────────────
 struct swfSCRIPTOBJECT {
     void**      vtable;           // +0x00
 
+    // ── constructor ──
+    swfSCRIPTOBJECT();
+
     // ── virtual methods ──
     virtual ~swfSCRIPTOBJECT();                  // [0] @ 0x823f8b70
-    virtual void vfn_6();  // [6] @ 0x823fed10
-    virtual void vfn_8();  // [8] @ 0x823f8b48
-    virtual void vfn_9();  // [9] @ 0x823fc1a0
-    virtual void vfn_10();  // [10] @ 0x823fbfc0
-    virtual void vfn_11();  // [11] @ 0x823fc8a8
-    virtual void vfn_12();  // [12] @ 0x823fc848
-    virtual void vfn_13();  // [13] @ 0x823fea28
+    virtual void EnumerateMembers();  // [6] @ 0x823fed10
+    virtual int GetMemberCount();  // [8] @ 0x823f8b48
+    virtual int VisitMembers();  // [9] @ 0x823fc1a0
+    virtual bool GetMember(const char* name, void* result);  // [10] @ 0x823fbfc0
+    virtual void SetMember(const char* name, void* value);  // [11] @ 0x823fc8a8
+    virtual void DeleteMember(const char* name);  // [12] @ 0x823fc848
+    virtual void Invoke(const char* methodName, void* args, int argCount, void* outResult);  // [13] @ 0x823fea28
 };
 
 // ── rage::swfSHAPE  [vtable @ 0x82075518] ──────────────────────────

@@ -352,6 +352,38 @@ struct pongPlayer {
     void ResetShotState(bool enableAnim);                  // @ 0x821962C0
     void ClampAndApplyInputAngle(float inputAngle);        // @ 0x82199C08
     void CopyBitfieldFromSource(void* source);             // @ 0x821D6D90
+
+    // ── Batch 12: input, swing, and shot management ──────────────────────
+    bool IsSwingInputPending();
+    void CheckInputAndInitServe();
+    bool IsInputActiveAndReady();
+    void ResetSwingGridData();
+    void InitializeSwingGrid(uint8_t side, uint8_t param);
+    void UpdateInputTargetFromSwing(void* moverObj, float dirX, float dirZ);
+    void SetPlayerSideAndSync(uint8_t side);
+    void SetupSwingSpeedAndTarget(float targetX, float targetZ);
+    bool IsShotTypeActive(int shotType);
+    void BuildShotTypeFlags(uint32_t* out, uint8_t isServe,
+                            uint8_t isLob, uint8_t isSpin,
+                            uint8_t isPower, uint8_t isSpecial,
+                            uint8_t isDropShot);
+    void ResetShotTimingState(void* timingState);
+    void UpdateCollisionMatrix();
+    void DeterminePlayerFacing(float threshold, float* outFacing);
+    void DestroyAndResetPlayerSlot(int slotGroup, int subIndex);
+    void ComputeCourtBoundsForSide(void* courtData, int sideOffset,
+                                    float* outMin, float* outMax);
+    bool ApproachFloat(float* valuePtr, float targetValue,
+                        float approachRate, float deltaTime);
+    void SetHandedness(uint8_t hand);
+    void* GetSubObjectByIndex(int slotIndex) const;
+    bool IsSwingTimingWindowOpen() const;
+    void UpdateInputDirection(float inputX, float inputY);
+    bool IsLocomotionStateActive() const;
+    void ResetBallInstance();
+    bool IsReadyForNewSwing() const;
+    bool IsInAnticipationPhase() const;
+    void UpdateServeSpeed();
 };
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────

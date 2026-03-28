@@ -35,8 +35,8 @@ struct gmBallNode {
 
     // ── virtual methods ──
     virtual ~gmBallNode(); // [0] @ 0x82280b18
-    virtual void vfn_19(); // [19] @ 0x82280940
-    virtual void vfn_20(); // [20] @ 0x822808e8
+    virtual const char* GetTypeName(); // [19] @ 0x82280940
+    virtual bool IsEventHandled(uint32_t eventHash); // [20] @ 0x822808e8
     virtual void vfn_21(); // [21] @ 0x82280b98
     virtual void vfn_23(); // [23] @ 0x82280d48
     virtual void Reset();  // [24] @ 0x82281368
@@ -176,6 +176,10 @@ struct pongBallInstance {
     void UpdatePhysicsState();             // @ 0x8227FDB0
     void ActivateBall(void* activationContext);  // @ 0x822801B8
     void* InitializeFromData(void* initData);  // @ 0x8227F810
+    void SnapshotMatrixToGlobalSlot0(pongBallInstance* ball);  // @ 0x822CD5F0
+    void SnapshotMatrixToGlobalSlot1(pongBallInstance* ball);  // @ 0x822CD690
+    void* HandlePlayerHitEvent(void* eventData, void* hitContext);  // @ 0x822C3B80
+    bool HandleRemotePlayerHit(void* hitContext);  // @ 0x822D5400
 };
 
 // ── pongPaddle  [vtable @ 0x82071678] ───────────────────────────────

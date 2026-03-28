@@ -212,6 +212,52 @@ struct pongCameraMgr {
     void SelectCamera5();  // @ 0x821F7E18
     void SelectCamera6();  // @ 0x821F7E20
 
+    // TryCameraChange mode wrappers @ 0x821F7DF8-7E20
+    bool TryCameraChange_Mode1(void* gameState);
+    bool TryCameraChange_Mode2(void* gameState);
+    bool TryCameraChange_Mode3(void* gameState);
+    bool TryCameraChange_Mode4(void* gameState);
+    bool TryCameraChange_Mode5(void* gameState);
+    bool TryCameraChange_Mode6(void* gameState);
+
+    // Camera state queries (by name)
+    bool IsCameraStateFour() const;
+    bool IsCameraStateFive() const;
+    bool IsCameraStateSix() const;
+    bool IsCameraStateSeven() const;
+    bool IsCameraStateEight() const;
+    bool IsCameraStateTen() const;
+    bool IsCameraStateEleven() const;
+    bool IsCameraStateTwelve() const;
+    bool IsCameraStateThirteen() const;
+
+    // Dual/multi query checks
+    bool CheckDualQueryAA(void* gameState);
+    bool CheckDualQueryCB(void* gameState);
+    bool CheckDualQueryBC(void* gameState);
+    bool CheckMultiModeQueryA(void* gameState);
+
+    // Offset query checks
+    bool CheckOffsetQueryA(void* gameState);
+    bool CheckOffsetQueryB(void* gameState);
+    bool CheckOffsetQueryC(void* gameState);
+
+    // Threshold checks
+    bool HasElapsedThreshold1();
+    bool HasElapsedThreshold2();
+    bool HasElapsedThreshold3();
+
+    // State management
+    void ResetCameraState();
+    bool ValidateTransitionMode7(void* gameState);
+    bool ValidateTransitionMode11(void* gameState);
+    bool ValidateTransitionMode12(void* gameState);
+    void CopyShotParameters();
+    void ApplyCameraConfig();
+    bool FindActiveCameraNode(void* shotNode);
+    void InitializeCameraShot(void* shotNode, void* cameraTarget, bool applyDetailedConfig);
+    void TraverseCameraTree(void* cameraTarget, uint32_t shotIndex);
+
     // Overloaded PostLoadProperties @ 0x821657F8
     bool PostLoadProperties(uint32_t value);
 
