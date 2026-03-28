@@ -6713,3 +6713,188 @@ void phInst::DispatchSlot13_284() {
     void* fieldPtr = (char*)this + 284;
     ((Fn)vt[13])(this, nullptr, nullptr, 40, fieldPtr);
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phInst — Instance query, delegation, and thread-safe accessor methods
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Global critical section for phInst thread-safe accessors
+// lbl_825B2320 [.data sz:0x20] @ 0x825B2320 — the lock is at offset +4
+extern "C" uint8_t g_phInstLockStorage[0x20]; // @ 0x825B2320
+#define g_phInstCritSection (&g_phInstLockStorage[4])
+
+extern "C" void RtlEnterCriticalSection(void* cs);
+extern "C" void RtlLeaveCriticalSection(void* cs);
+
+// Forward declarations for delegated helpers
+extern "C" void phInst_8F10_p42(void* thisPtr, uint32_t mode,
+                                 void* p1, void* p2, void* p3);
+extern "C" void* phInst_C2C0_h(void* thisPtr, void* p1, void* p2, void* p3);
+extern "C" void* phInst_C348_h(void* thisPtr);
+extern "C" void grc_2CC8(void* p1, void* p2);
+
+/**
+ * rage::phInst::GetLevelCount @ 0x823592E8 | size: 0x10
+ *
+ * Extracts the level count from the packed flags word at offset +32.
+ * The level count is stored in bits [6:9] (4-bit field), and this
+ * function returns that value plus one (1-based count).
+ *
+ * Assembly: lwz r11,32(r3); rlwinm r11,r11,26,28,31; addi r3,r11,1
+ */
+uint32_t phInst::GetLevelCount() {
+    uint32_t flags = *(uint32_t*)((char*)this + 32);
+    uint32_t rawLevel = (flags >> 6) & 0xF;
+    return rawLevel + 1;
+}
+
+/**
+ * rage::phInst::RefreshDefaultMode @ 0x823592F8 | size: 0x18
+ *
+ * Delegates to the main refresh routine (phInst_8F10_p42) with mode set
+ * to 0 (default refresh). Shifts all remaining parameters down by one
+ * slot to prepend the mode argument.
+ *
+ * Assembly: shuffles r4-r7 → r5-r8, sets r4=0, branches to phInst_8F10
+ */
+void phInst::RefreshDefaultMode(void* p1, void* p2, void* p3) {
+    phInst_8F10_p42(this, 0, p1, p2, p3);
+}
+
+/**
+ * rage::phInst::CompareBoundPages @ 0x82359310 | size: 0x14
+ *
+ * Extracts the page-aligned base addresses from the bound pointers at
+ * offsets +36 and +20, masking off the lower 12 bits (4KB page alignment),
+ * then delegates to grc_2CC8 for comparison/registration.
+ *
+ * Assembly: lwz fields, rlwinm mask 0xFFFFF000, tail-call grc_2CC8
+ */
+void phInst::CompareBoundPages() {
+    uint32_t bound1 = *(uint32_t*)((char*)this + 36);
+    uint32_t bound2 = *(uint32_t*)((char*)this + 20);
+    void* page1 = (void*)(bound1 & 0xFFFFF000);
+    void* page2 = (void*)(bound2 & 0xFFFFF000);
+    grc_2CC8(page2, page1);
+}
+
+/**
+ * rage::phInst::GetSerializedSize @ 0x824631A0 | size: 0x14
+ *
+ * Returns the serialized byte size of this phInst variant. Stores the
+ * constant 0x4BA24 (309796) into the output parameter and returns 0
+ * to indicate success.
+ *
+ * Assembly: lis r11,4; ori r10,r11,47652; stw r10,0(r4); li r3,0
+ */
+int phInst::GetSerializedSize(uint32_t* outSize) {
+    *outSize = 0x4BA24;
+    return 0;
+}
+
+/**
+ * rage::phInst::GetFixedSize @ 0x82461488 | size: 0x10
+ *
+ * Returns a fixed size constant of 20 bytes via the output parameter.
+ * Returns 0 to indicate success. Used during serialization or memory
+ * allocation queries for small fixed-size phInst data blocks.
+ *
+ * Assembly: li r11,20; stw r11,0(r4); li r3,0
+ */
+int phInst::GetFixedSize(uint32_t* outSize) {
+    *outSize = 20;
+    return 0;
+}
+
+/**
+ * rage::phInst::GetBoundVirtual9_Locked @ 0x824609F0 | size: 0x54
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * calls vtable slot 9 on this instance, then releases the lock.
+ * Returns the result of the virtual call.
+ *
+ * Pattern: EnterCS → VCALL(this, slot 9) → LeaveCS → return result
+ */
+void* phInst::GetBoundVirtual9_Locked(void* param) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    // VCALL slot 9 (byte offset +36 in vtable)
+    typedef void* (*VFn)(void*, void*);
+    void** vt = *(void***)this;
+    void* result = ((VFn)vt[9])(this, param);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::HashLookup_Locked @ 0x82460AF8 | size: 0x58
+ *
+ * Thread-safe wrapper around phInst_C2C0_h (a hash-based resource lookup).
+ * Acquires the global phInst critical section, calls the lookup helper
+ * with all four parameters, then releases the lock.
+ *
+ * Pattern: EnterCS → phInst_C2C0_h(this, p1, p2, p3) → LeaveCS → return
+ */
+void* phInst::HashLookup_Locked(void* p1, void* p2, void* p3) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    void* result = phInst_C2C0_h(this, p1, p2, p3);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::ResourceLookup_Locked @ 0x82460BB0 | size: 0x58
+ *
+ * Thread-safe wrapper around phInst_C348_h (a resource lookup/query).
+ * Acquires the global phInst critical section, calls the lookup helper,
+ * then releases the lock and returns the result.
+ *
+ * Pattern: EnterCS → phInst_C348_h(this) → LeaveCS → return result
+ */
+void* phInst::ResourceLookup_Locked() {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    void* result = phInst_C348_h(this);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::CallVirtual15_Locked @ 0x82460C58 | size: 0x58
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * calls vtable slot 15 on this instance with param and a zero flag,
+ * then releases the lock. Returns the virtual call result.
+ *
+ * Pattern: EnterCS → VCALL(this, slot 15, param, 0) → LeaveCS → return
+ */
+void* phInst::CallVirtual15_Locked(void* param) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    // VCALL slot 15 (byte offset +60 in vtable)
+    typedef void* (*VFn)(void*, void*, int);
+    void** vt = *(void***)this;
+    void* result = ((VFn)vt[15])(this, param, 0);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::SetBoundScale_Locked @ 0x82460E98 | size: 0x74
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * loads the bound pointer from offset +76 (0x4C), calls vtable slot 22
+ * on that bound with a float scale parameter, then releases the lock.
+ * Returns the result of the virtual call.
+ *
+ * Pattern: EnterCS → bound=this[76] → VCALL(bound, slot 22, f1) → LeaveCS
+ */
+void* phInst::SetBoundScale_Locked(float scale) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    // Load bound pointer at offset +76
+    void* bound = *(void**)((char*)this + 76);
+    // VCALL slot 22 (byte offset +88 in vtable)
+    typedef void* (*VFn)(void*, float);
+    void** vt = *(void***)bound;
+    void* result = ((VFn)vt[22])(bound, scale);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}

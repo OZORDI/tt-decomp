@@ -448,6 +448,17 @@ struct phArticulatedCollider {
     void SetRotAxis_26(uint32_t value);
     void SetSolverParam_11636(uint32_t value); void SetSolverParam_15(uint32_t value);
     void SetSolverParam_21(uint32_t value);
+    // Dispatch / delegation methods
+    void DelegateToBoundCapsule();
+    void DispatchJointVfn1(int jointIndex);
+    void DispatchJointVfn5(int jointIndex);
+    void DispatchJointVfn6(int jointIndex);
+    void DispatchJointVfn7(int jointIndex);
+    void DispatchJointVfn12(int jointIndex, void* param);
+    void BuildJointMap();
+    void CopyBodyPosition(void* outVec, phArticulatedCollider* other, int jointIndex);
+    void ApplyBodyForceAtJoint(const float* forceVec, int jointIndex);
+    void ApplyBodyImpulseAtJoint(int jointIndex);
 };
 
 // ── rage::phBound  [vtable @ 0x82057EF4] ─────────────────────────────────────
@@ -1552,6 +1563,20 @@ struct phInst {
     void SetField9(uint32_t val);
     void SetField11(uint32_t val);
     void* GetArchetype();
+
+    // Instance query and delegation methods
+    uint32_t GetLevelCount();
+    void RefreshDefaultMode(void* p1, void* p2, void* p3);
+    void CompareBoundPages();
+    int GetSerializedSize(uint32_t* outSize);
+    int GetFixedSize(uint32_t* outSize);
+
+    // Thread-safe locked accessors
+    void* GetBoundVirtual9_Locked(void* param);
+    void* HashLookup_Locked(void* p1, void* p2, void* p3);
+    void* ResourceLookup_Locked();
+    void* CallVirtual15_Locked(void* param);
+    void* SetBoundScale_Locked(float scale);
 };
 
 // ── rage::phInstStatic ───────────────────────────────────────────────────────
