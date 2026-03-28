@@ -1731,7 +1731,7 @@ void phBoundGeometry::UpdateBounds(const float* offset) {
     bool hasOffset = !(masked[0] == 0 && masked[1] == 0 &&
                        masked[2] == 0 && masked[3] == 0);
 
-    field_0x0005 = hasOffset ? 1 : 0;  // +5
+    m_bHasOffset = hasOffset ? 1 : 0;  // +5
     
     // Call vtable slot 37 to finalize the update
     void** vtable = *(void***)this;
@@ -2778,8 +2778,8 @@ phObject::~phObject() {
 // Initializes object state and memory references
 // ─────────────────────────────────────────────────────────────────────────────
 void phObject::ResetState() {
-    m_field_500 = 0;
-    m_field_508 = nullptr;
+    m_nViewCount = 0;
+    m_pResource = nullptr;
     m_field_504 = 1;
     m_field_512 = 0;
     m_field_520 = 0;
@@ -2795,7 +2795,7 @@ void phObject::Initialize(void* a2, void* a3, void* a4) {
     int32_t result = this->Release();
     if (result >= 0) {
         void* ptr = (void*)0x208C801D;
-        m_field_508 = ptr;
+        m_pResource = ptr;
         if (ptr != nullptr) {
             uint32_t valA2 = *(uint32_t*)&a2;
             m_field_112 = *(uint32_t*)(uintptr_t)(valA2 + 8);
@@ -2859,8 +2859,8 @@ int32_t phObject::QueryInterface(int32_t) {
 // Cleanup and state clear
 // ─────────────────────────────────────────────────────────────────────────────
 int32_t phObject::Release() {
-    if (m_field_508 != nullptr) {
-        m_field_508 = nullptr;
+    if (m_pResource != nullptr) {
+        m_pResource = nullptr;
     }
     
     this->ReleaseViews();
@@ -2874,11 +2874,11 @@ int32_t phObject::Release() {
 // Sub-object update
 // ─────────────────────────────────────────────────────────────────────────────
 void* phObject::CreateResource() {
-    if (m_field_52 != nullptr) {
-        if (m_field_52->QueryInterface(1) < 0) {
+    if (m_pChild != nullptr) {
+        if (m_pChild->QueryInterface(1) < 0) {
             return nullptr;
         }
-        this->CreateViews(m_field_52);
+        this->CreateViews(m_pChild);
     }
     return nullptr;
 }
@@ -2897,14 +2897,14 @@ void* phObject::CreateOutputViews() {
 // Disposes or releases sub-objects
 // ─────────────────────────────────────────────────────────────────────────────
 void phObject::ReleaseViews() {
-    m_field_132 = this;
-    if (m_field_500 != 0) {
-        m_field_500 = 0;
+    m_pParent = this;
+    if (m_nViewCount != 0) {
+        m_nViewCount = 0;
     }
     
-    if (m_field_52 != nullptr) {
-        m_field_52->Release();
-        m_field_52 = nullptr;
+    if (m_pChild != nullptr) {
+        m_pChild->Release();
+        m_pChild = nullptr;
     }
 }
 // ═════════════════════════════════════════════════════════════════════════════
@@ -9630,50 +9630,39 @@ int32_t phBoundCapsule_BB88_g(float* value) {
 int32_t phBoundCapsule_BAF0_g(float* value) {
     float val = value[0];
 
-    // Load base scale from global @ -23804 offset
-    uint32_t* basePtr = (uint32_t*)PPC_LOAD_U32((uint32_t)0x82072000 + -23804);
-    float baseScale = *(float*)((uint8_t*)basePtr + 16);
+    // Load base scale from table config global -> +16
+    uint32_t configObj = *(uint32_t*)((uint8_t*)(uintptr_t)g_phTableBasePtr + -23804);
+    float baseScale = *(float*)((uint8_t*)(uintptr_t)configObj + 16);
 
-    // Load global state -> offset 48 -> mirror flag at +192
-    uint32_t* statePtr = (uint32_t*)PPC_LOAD_U32((uint32_t)0x82080000 + 25628);
-    uint32_t* innerPtr = (uint32_t*)PPC_LOAD_U32((uint32_t)(uintptr_t)statePtr + 48);
+    // Load global state chain -> mirror flag at +192
+    uint32_t stateObj = *(uint32_t*)((uint8_t*)(uintptr_t)g_phGameStateBase + 25628);
+    uint32_t innerObj = *(uint32_t*)((uint8_t*)(uintptr_t)stateObj + 48);
+    uint8_t mirrorFlag = *(uint8_t*)((uint8_t*)(uintptr_t)innerObj + 192);
 
-    float scaleFactor = g_phScaleThreshold;  // @ 0x825C9A40
-    uint8_t mirrorFlag = *(uint8_t*)((uint8_t*)innerPtr + 192);
+    float threshold = baseScale * g_phScaleThreshold;
 
-    float threshold = baseScale * scaleFactor;
-
-    // Check positive threshold
-    if (val > threshold) {
-        if (mirrorFlag != 0) {
-            return 1;
-        }
+    // Check positive threshold with mirror
+    if (val > threshold && mirrorFlag != 0) {
+        return 1;
     }
 
     float negThreshold = -threshold;
 
-    // Check negative threshold
-    if (val < negThreshold) {
-        if (mirrorFlag != 0) {
-            // Falls through to complex logic below
-        } else {
-            goto checkNegMirror;
-        }
+    // Check negative threshold with mirror
+    if (val < negThreshold && mirrorFlag != 0) {
+        return 1;
     }
 
-    // Second pass: negative check with mirror inversion
-    if (val < negThreshold) {
-        if (mirrorFlag != 0) {
-            return -1;
-        }
+    // Second pass: negative with direction
+    if (val < negThreshold && mirrorFlag != 0) {
+        return -1;
     }
 
-    // Positive check with mirror inversion
-    if (val > threshold) {
-        if (mirrorFlag != 0) {
-            return 0;
-        }
-checkNegMirror:
+    if (val > threshold && mirrorFlag != 0) {
+        return 0;
+    }
+
+    if (val < negThreshold || val > threshold) {
         return -1;
     }
 
@@ -9751,45 +9740,35 @@ retry:
 }
 
 /**
- * phBoundCapsule_F548_wrh @ 0x820DF548 | size: 0x80 (128 bytes)
+ * phBoundCapsule_5D88_g @ 0x82175D88 | size: 0xB0 (176 bytes)
  *
- * Reads a set of 4 float values from an animation key entry, writing
- * them to 4 separate output pointers. Handles negative weight by
- * falling back to key index 11.
+ * Applies a 2D rotation to a pair of 16-byte vectors stored at offsets
+ * +0 and +16 of the input structure. Computes sin/cos via
+ * phBoundCapsule_04F0_g, then rotates both vectors in place.
  *
- * @param thisPtr - Animation curve object (field +8 = key array pointer)
- * @param keyIndex - Key index into the array (stride = 104 bytes)
- * @param outTime - Output for time value (offset +36 in entry)
- * @param outWeight - Output for weight value (offset +48 in entry)
- * @param outTangent - Output for tangent value (offset +44 in entry)
- * @param outValue - Output for curve value (offset +40 in entry)
+ * @param data - Pointer to structure with two 16-byte vectors at +0 and +16
  */
-void phBoundCapsule_F548_wrh(void* thisPtr, int32_t keyIndex,
-                              float* outTime, float* outWeight,
-                              float* outTangent, float* outValue) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-    uint8_t* keys = *(uint8_t**)(obj + 8);
-    uint8_t* entry = keys + keyIndex * 104;
-    float curveValue = *(float*)(entry + 40);
-    float zero = 0.0f;
+extern void phBoundCapsule_04F0_g(float* outSin, float* outCos);
 
-    // If curve value at +40 is negative, retry with index 11
-    while (curveValue < zero) {
-        if (keyIndex == 11) break;
-        float lastEntry = *(float*)(keys + 11 * 104 + 40);
-        keyIndex = 11;
-        curveValue = lastEntry;
-        if (lastEntry >= zero) break;
-    }
+void phBoundCapsule_5D88_g(float* data) {
+    float sinVal, cosVal;
+    phBoundCapsule_04F0_g(&sinVal, &cosVal);
 
-    // Read the final entry
-    keys = *(uint8_t**)(obj + 8);
-    entry = keys + keyIndex * 104;
+    // Save original vectors
+    float v1x = data[4], v1y = data[5], v1z = data[6], v1w = data[7];  // +16
+    float v0x = data[0], v0y = data[1], v0z = data[2], v0w = data[3];  // +0
 
-    *outTime    = *(float*)(entry + 36);
-    *outWeight  = *(float*)(entry + 48);
-    *outTangent = *(float*)(entry + 44);
-    *outValue   = *(float*)(entry + 40);
+    // Rotate: new_vec1 = old_vec1 * sinVal - old_vec0 * cosVal (vnmsubfp)
+    data[4] = v1x * sinVal - v0x * cosVal;
+    data[5] = v1y * sinVal - v0y * cosVal;
+    data[6] = v1z * sinVal - v0z * cosVal;
+    data[7] = v1w * sinVal - v0w * cosVal;
+
+    // Rotate: new_vec0 = old_vec1 * sinVal + old_vec0 * cosVal (vmaddfp)
+    data[0] = v1x * sinVal + v0x * cosVal;
+    data[1] = v1y * sinVal + v0y * cosVal;
+    data[2] = v1z * sinVal + v0z * cosVal;
+    data[3] = v1w * sinVal + v0w * cosVal;
 }
 
 /**
@@ -9873,14 +9852,11 @@ void phBoundCapsule_3F08_g(void* thisPtr, float* data) {
  */
 void phBoundCapsule_8608_g(void* thisPtr, void* target, void* paramR5) {
     // Load global state -> camera array pointer
-    uint32_t* statePtr = (uint32_t*)PPC_LOAD_U32((uint32_t)0x82080000 + 25628);
-    uint32_t* cameraArray = (uint32_t*)PPC_LOAD_U32((uint32_t)(uintptr_t)statePtr + 24);
-
-    // Load active camera index
-    uint32_t camIdx = *(uint32_t*)0x825C4898;  // g_phActiveCameraIdx
+    uint32_t stateObj = *(uint32_t*)((uint8_t*)(uintptr_t)g_phGameStateBase + 25628);
+    uint8_t* cameraArray = *(uint8_t**)((uint8_t*)(uintptr_t)stateObj + 24);
 
     // Compute camera entry pointer (stride = 912 bytes)
-    uint8_t* camEntry = (uint8_t*)cameraArray + camIdx * 912;
+    uint8_t* camEntry = cameraArray + g_phActiveCameraIdx * 912;
 
     // Get FOV from camera
     float fov = pongCameraMgr_3E98_g(camEntry);
@@ -9893,9 +9869,8 @@ void phBoundCapsule_8608_g(void* thisPtr, void* target, void* paramR5) {
     // Compute matrix pointer at camera offset +64
     void* camMatrix = (void*)(camEntry + 64);
 
-    // Select FOV based on elevation sign
-    float maxFov = 1.0f;  // @ lbl_8202D0E8
-    float adjustedFov = (maxFov - elevation >= 0.0f) ? elevation : 0.0;
+    // Select FOV based on elevation sign (fsel)
+    float adjustedFov = (1.0f - elevation >= 0.0f) ? elevation : 0.0f;
 
     // Dispatch to full capsule draw
     phBoundCapsule_81D8_g(thisPtr, target, camMatrix, aspect, adjustedFov,
@@ -9915,25 +9890,18 @@ void phBoundCapsule_CF48_fw(void* thisPtr) {
     uint8_t* out = (uint8_t*)thisPtr;
 
     // Load RNG state pointer from global
-    void* rngState = *(void**)((uint8_t*)0x82072000 + -23764);
+    void* rngState = *(void**)((uint8_t*)(uintptr_t)g_phTableBasePtr + -23764);
 
-    // Generate first random index
-    int32_t idx1 = (int32_t)phBoundCapsule_7D90_g(rngState);
-
-    // Look up value in first table (at offset -22564 from base)
-    // Table address computed as: base + idx1*4
-    float* table1 = (float*)((uint8_t*)0x82072000 + -22564);
-    float val1 = table1[idx1];
-    *(float*)(out + 4) = val1;
+    // Generate first random index and look up in table 1
+    int32_t idx1 = phBoundCapsule_7D90_g(rngState);
+    float* table1 = (float*)((uint8_t*)(uintptr_t)g_phTableBasePtr + -22564);
+    *(float*)(out + 4) = table1[idx1];
 
     // Reload RNG state and generate second random index
-    rngState = *(void**)((uint8_t*)0x82072000 + -23764);
-    int32_t idx2 = (int32_t)phBoundCapsule_7D90_g(rngState);
-
-    // Look up value in second table (at offset -32332 from different base)
-    float* table2 = (float*)((uint8_t*)0x82060000 + -32332);
-    float val2 = table2[idx2];
-    *(float*)(out + 8) = val2;
+    rngState = *(void**)((uint8_t*)(uintptr_t)g_phTableBasePtr + -23764);
+    int32_t idx2 = phBoundCapsule_7D90_g(rngState);
+    float* table2 = (float*)((uint8_t*)(uintptr_t)g_phGameStateBase + -32332);
+    *(float*)(out + 8) = table2[idx2];
 }
 
 /**
@@ -9957,8 +9925,9 @@ void phBoundCapsule_DB10_g(void* thisPtr) {
     float pitch = *(float*)(obj + 172);
     float yaw = *(float*)(obj + 168);
 
-    // Load heading computation input from global
-    void* headingInput = *(void**)((uint8_t*)0x82070000 + -21712);
+    // Load heading computation input from global @ 0x8202AB30
+    extern void* g_phHeadingInputPtr;
+    void* headingInput = g_phHeadingInputPtr;
 
     // Compute heading angle from yaw and pitch
     float heading = phBoundCapsule_8EA0_g(headingInput, yaw, pitch);
