@@ -49,18 +49,20 @@ struct LocomotionState {
     // ── virtual methods ──
     virtual ~LocomotionState();                  // [0] @ 0x820df648
     virtual void ScalarDtor(int flags); // [1] @ 0x8212b088
-    virtual void vfn_2();  // [2] @ 0x820df908
-    virtual void vfn_3();  // [3] @ 0x820df918
-    virtual void vfn_4();  // [4] @ 0x820dfbb8
-    virtual void vfn_5();  // [5] @ 0x820dfeb8
-    virtual void vfn_6();  // [6] @ 0x820dfd60
-    virtual void vfn_7();  // [7] @ 0x820dfc50
-    virtual void vfn_8();  // [8] @ 0x820dfde0
-    virtual void vfn_9();  // [9] @ 0x820dfe48
-    virtual void vfn_12();  // [12] @ 0x820df138
+    virtual void ClearClip();  // [2] @ 0x820df908 — zeroes clip pointer at +0x3C
+    virtual void LoadFromXml(void* xmlReader);  // [3] @ 0x820df918 — parses XML tags, loads animation clips
+    virtual void UpdateTimer(float dt);  // [4] @ 0x820dfbb8 — decrements timer, destroys clip when expired
+    virtual void DestroyClip();  // [5] @ 0x820dfeb8 — destroys active clip, resets timing
+    virtual void SetActiveClip(void* clip, float duration, float blendTime);  // [6] @ 0x820dfd60 — stores clip, sets duration
+    virtual bool HasActiveClip();  // [7] @ 0x820dfc50 — returns clip->vfn_7 or false
+    virtual void SetupClipAnimation(void* outputState);  // [8] @ 0x820dfde0 — validates clip, sets up animation
+    virtual bool GetClipTransform(void* outMatrix);  // [9] @ 0x820dfe48 — gets clip transform or writes identity
+    virtual float GetNormalizedProgress();  // [12] @ 0x820df138 — computes normalized animation progress
     
     // ── non-virtual methods ──
     void ValidateAnimationTiming(uint32_t& animSetIndex, uint32_t& animIndex, float& outTiming);  // @ 0x820DF220
+    void AdvanceNode();  // @ 0x820DEFA0
+    static void* FindFirstActive(void* listHead);  // @ 0x820DEF38
 };
 
 // ── LocomotionStateAnim  [vtable @ 0x8202E1A4] ──────────────────────────
@@ -173,22 +175,41 @@ struct LocomotionStateAnim {
     // ── virtual methods ──
     virtual ~LocomotionStateAnim();                  // [0] @ 0x820dff20
     virtual void ScalarDtor(int flags); // [1] @ 0x820e0048
-    virtual void vfn_2();  // [2] @ 0x820e0178
-    virtual void vfn_5();  // [5] @ 0x820e0ee8
-    virtual void vfn_6();  // [6] @ 0x820e0c10
-    virtual void vfn_7();  // [7] @ 0x820e0a10
-    virtual void vfn_9();  // [9] @ 0x820e0df8
-    virtual void vfn_10();  // [10] @ 0x820e0fb0
-    virtual void OnEnter();  // [11] @ 0x820e0fd0
-    virtual void vfn_15();  // [15] @ 0x820df208
+    virtual void Reset();  // [2] @ 0x820e0178
+    virtual void Initialize();  // [5] @ 0x820e0ee8
+    virtual void UpdateAnimation(float dt, void* outputState, float blendWeight);  // [6] @ 0x820e0c10 — sets up timing, random blend, copies matrix
+    virtual bool EvaluateAnimation(void* outputState);  // [7] @ 0x820e0a10 — plays clip, updates bones, dispatches events
+    virtual bool GetAnimTransform(void* outMatrix);  // [9] @ 0x820e0df8 — gets transform from clip or blend
+    virtual float GetAnimationProgress();  // [10] @ 0x820e0fb0
+    virtual float GetAnimationDuration();  // [11] @ 0x820e0fd0
+    virtual bool IsAnimationComplete();  // [15] @ 0x820df208
 
     // ── non-virtual methods (from debug strings) ──
-    void Load();
+    bool Load(void* parentState, void* fileLoader);
     void Update();
-    
+
     // ── implemented methods ──
     void* FindAnimationByID(uint16_t animID_high, uint8_t animID_low);  // @ 0x8224BEF8
     bool SetupAnimationPair(uint16_t animID1, uint16_t animID2, void* param);  // @ 0x8224C418
+    void CopyAnimationData();       // @ 0x8214C8F8
+    void ProcessAnimationList(void* animationList);  // @ 0x82380540
+    float CalculateBlendFactor(void* timingData);  // @ 0x820C1910
+    void UpdateAnimationState(void* outputState);  // @ 0x82380268
+    void ForwardToVfn7();  // @ 0x8224BB98
+    int CountActiveAnimLayers();  // @ 0x820DBA60
+    void SetGlobalInstance(void* newInstance);  // @ 0x820C34E8
+    void SetMatrix(const void* srcMatrix);  // @ 0x820D7B30
+    bool DispatchAnimEvent(void* eventArg);  // @ 0x820DEEC8
+    void GetAnimPosition(void* outPosition);  // @ 0x820CB800
+    void AccumulateOffset(void* accumulator);  // @ 0x8223BDB0
+    void AccumulateList();  // @ 0x8214D480
+    void RebasePointers(void* relocator);  // @ 0x823851A8
+    bool IsAngleCloser(float target, float angle2, float angle3);  // @ 0x823DA190
+    void AdvanceRingBuffer();  // @ 0x823804C0
+    void PushBack(uint32_t key, const void* vecData);  // @ 0x82234190
+    void ResetAccumulators();  // @ 0x820DB9F0
+    void SetAnimSpeed(float speed, float scale);  // @ 0x820C2858
+    void InitBoundCapsule();  // @ 0x820C3D48
 };
 
 // ── LocomotionStateMf  [vtable @ 0x8202E1F4] ──────────────────────────
@@ -213,6 +234,10 @@ struct LocomotionStateMf {
 
     // ── non-virtual methods (from debug strings) ──
     void Load();
+    void UpdateBlend();  // @ 0x8222C128
+    void EraseRange(void* rangeStart, void* rangeEnd);  // @ 0x822331A8
+    float ComputeWeightedSum(const float* weights, const float* data, int count);  // @ 0x820E3148
+    void SerializeTriple(void* serializer, void* data);  // @ 0x82237480
 };
 
 namespace pcrActivationCategory {
@@ -231,15 +256,11 @@ struct xmlNodeStructCategory {
 };
 
 } // namespace pcrActivationCategory
-    // ── non-virtual methods (from debug strings) ──
-    void Load();
-    void Update();
-    
-    // ── implemented methods ──
-    void* FindAnimationByID(uint16_t animID_high, uint8_t animID_low);  // @ 0x8224BEF8
-    bool SetupAnimationPair(uint16_t animID1, uint16_t animID2, void* param);  // @ 0x8224C418
-    void CopyAnimationData();  // @ 0x8214C8F8
 
+// ── pcrAnimEvent  [vtable @ 0x8202EB6C] ──────────────────────────
+struct pcrAnimEvent {
+    void**       vtable;        // +0x00
+    uint32_t     m_field_04;    // +0x04
     uint32_t     m_field_08;    // +0x08
     uint32_t     m_field_0C;    // +0x0C
     uint32_t     m_field_10;    // +0x10
@@ -270,44 +291,44 @@ struct pcrAnimEventFootAud {
 
     // ── virtual methods ──
     virtual ~pcrAnimEventFootAud();                  // [0] @ 0x820ebd48
-    virtual void vfn_20();  // [20] @ 0x820ebbd8
-    virtual void vfn_21();  // [21] @ 0x820ebc30
-    virtual void vfn_23();  // [23] @ 0x820ebc80
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820ebbd8
+    virtual void LoadProperties();               // [21] @ 0x820ebc30
+    virtual void ProcessEvent();                  // [23] @ 0x820ebc80
 };
 
 // ── pcrAnimEventFootContact  [vtable @ 0x8202EC4C] ──────────────────────────
 struct pcrAnimEventFootContact : pcrAnimEvent {
     virtual const char* GetTypeName() const;  // [22] @ 0x820DEAD8  returns "FootContact"
-    virtual void vfn_24();                    // [24] @ 0x820EBDA8
+    virtual int GetSoundId() const;             // [24] @ 0x820EBDA8
 };
 
 // ── pcrAnimEventFootScuff  [vtable @ 0x8202ECBC] ──────────────────────────
 struct pcrAnimEventFootScuff : pcrAnimEvent {
     virtual const char* GetTypeName() const;  // [22] @ 0x820DEAE8  returns "FootScuff"
-    virtual void vfn_24();                    // [24] @ 0x820EBDB0
+    virtual int GetSoundId() const;           // [24] @ 0x820EBDB0
 };
 
 // ── pcrAnimEventFootStep  [vtable @ 0x8202ED2C] ──────────────────────────
 struct pcrAnimEventFootStep : pcrAnimEvent {
     virtual const char* GetTypeName() const;  // [22] @ 0x820DEAF8  returns "FootStep"
-    virtual void vfn_24();                    // [24] @ 0x820EBDB8
+    virtual int GetSoundId() const;           // [24] @ 0x820EBDB8
 };
 
 // ── pcrAnimEventFootStomp  [vtable @ 0x8202ED9C] ──────────────────────────
 struct pcrAnimEventFootStomp : pcrAnimEvent {
     virtual const char* GetTypeName() const;  // [22] @ 0x820DEB08  returns "FootStomp"
-    virtual void vfn_24();                    // [24] @ 0x820EBDC0
+    virtual int GetSoundId() const;           // [24] @ 0x820EBDC0
 };
 
 // ── pcrAnimEventMsg  [vtable @ 0x8202EE3C] ──────────────────────────
 struct pcrAnimEventMsg : pcrAnimEvent {
     virtual ~pcrAnimEventMsg();                        // [0]  @ 0x820EBDC8
-    virtual void vfn_2();                              // [2]  @ 0x820EBED8
+    virtual void PostLoad();                            // [2]  @ 0x820EBED8
     virtual bool MatchesType(uint32_t type) const;     // [20] @ 0x820EBE30
     virtual void Process();                            // [21] @ 0x820EBE88
     virtual const char* GetTypeName() const;           // [22] @ 0x820DEB18  returns "Msg"
-    virtual void vfn_23();                             // [23] @ 0x820EBF30
-    virtual void vfn_24();                             // [24] @ 0x820EBF50
+    virtual void ProcessEvent();                       // [23] @ 0x820EBF30
+    virtual void SendMessage();                        // [24] @ 0x820EBF50
 };
 
 // ── pcrAnimEventMsg_s  [vtable @ 0x8202EEAC] ──────────────────────────
@@ -318,7 +339,7 @@ struct pcrAnimEventMsg_s : pcrAnimEventMsg {
     virtual bool MatchesType(uint32_t type) const;       // [20] @ 0x820EBFF0
     virtual void Process();                              // [21] @ 0x820EC010
     virtual const char* GetTypeName() const;             // [22] @ 0x820DEB28  returns "Msg_s"
-    virtual void vfn_24();                               // [24] @ 0x820EC088
+    virtual void SendMessage();                          // [24] @ 0x820EC088
 };
 
 // ── pcrAnimObserved  [vtable @ 0x82028354] ──────────────────────────
@@ -327,10 +348,10 @@ struct pcrAnimObserved {
 
     // ── virtual methods ──
     virtual ~pcrAnimObserved();                  // [0] @ 0x820ceca8
-    virtual void vfn_3();  // [3] @ 0x820cede8
-    virtual void vfn_20();  // [20] @ 0x820ced38
-    virtual void vfn_21();  // [21] @ 0x820ced80
-    virtual void vfn_22();  // [22] @ 0x820ced28
+    virtual void ResolveChildren();                      // [3] @ 0x820cede8
+    virtual bool IsTypeOf(uint32_t type) const;          // [20] @ 0x820ced38
+    virtual void LoadProperties();                       // [21] @ 0x820ced80
+    virtual const char* GetTypeName() const;             // [22] @ 0x820ced28
 };
 
 // ── pcrAnimObserver  [vtable @ 0x820283B8] ──────────────────────────
@@ -491,10 +512,10 @@ struct pcrServeData {
 
     // ── virtual methods ──
     virtual ~pcrServeData();                  // [0] @ 0x820dd900
-    virtual void vfn_2();  // [2] @ 0x821e9370
-    virtual void vfn_20();  // [20] @ 0x820dda00
-    virtual void vfn_21();  // [21] @ 0x820dda68
-    virtual void vfn_22();  // [22] @ 0x820dd9f0
+    virtual void Serialize(void* serializer);  // [2] @ 0x821e9370 — forwards to xmlNodeStruct serialize
+    virtual bool MatchesType(uint32_t type) const;  // [20] @ 0x820dda00 — compares against static type tag
+    virtual void RegisterAttributes(void* xmlWriter);  // [21] @ 0x820dda68 — registers XML attributes for serialization
+    virtual const char* GetTypeName();  // [22] @ 0x820dd9f0 — returns static type name string
 };
 
 namespace pcrServeDataInner {
@@ -793,6 +814,10 @@ struct pongCreature {
     void Activate();
     void Draw();
     void StartEmote();
+    void LookupHashValue(void* outPtr, void* keyPtr);  // @ 0x820C79F0
+    void FindIndexByKey(void* outPtr, void* keyPtr);    // @ 0x820Cxxxx
+    void ScalarDeletingDtor(int flags);  // @ 0x820C5398
+    void Relocate(void* relocator);      // @ 0x820C8858
 };
 
 // ── pongCreatureInst  [vtable @ 0x82027DAC] ──────────────────────────
@@ -955,34 +980,75 @@ struct pongCreatureInst {
 
     // ── virtual methods ──
     virtual ~pongCreatureInst();                  // [0] @ 0x820c8ee0
-    virtual void ScalarDtor(int flags); // [1] @ 0x8210cc40
-    virtual void vfn_2();  // [2] @ 0x820c8ed8
-    virtual void vfn_3();  // [3] @ 0x820c8e98
-    virtual void vfn_4();  // [4] @ 0x822c90f8
-    virtual void vfn_6();  // [6] @ 0x822c9108
-    virtual void vfn_9();  // [9] @ 0x822c90b0
-    virtual void vfn_10();  // [10] @ 0x822c90a0
+    virtual int GetType();              // [1] @ 0x8210cc40
+    virtual void* GetEmbeddedObject();  // [2] @ 0x820c8ed8
+    virtual void* GetSubObjectTransform(int index);  // [3] @ 0x820c8e98
+    virtual void ClearBoundingVector(void* outVector);  // [4] @ 0x822c90f8
+    virtual void TransformBoundingVector(void* inOutVector, void* transform);  // [6] @ 0x822c9108 — cross-product transform on bounding vector
+    virtual void UpdateBoundsWithDefaults();  // [9] @ 0x822c90b0
+    virtual void ForwardToUpdateBounds();  // [10] @ 0x822c90a0
     virtual void OnEnter();  // [11] @ 0x821210a8
-    virtual void vfn_14();  // [14] @ 0x822c90e0
-    virtual void vfn_19();  // [19] @ 0x824ff7c8
-    virtual void vfn_22();  // [22] @ 0x8211ddb8
-    virtual void vfn_26();  // [26] @ 0x8211ddf8
-    virtual void vfn_28();  // [28] @ 0x8211f2a0
-    virtual void vfn_30();  // [30] @ 0x820c8f80
-    virtual void vfn_31();  // [31] @ 0x822c9200
-    virtual void vfn_34();  // [34] @ 0x8211d760
-    virtual void vfn_35();  // [35] @ 0x82120880
-    virtual void vfn_36();  // [36] @ 0x82120408
-    virtual void vfn_37();  // [37] @ 0x822c92d8
-    virtual void vfn_38();  // [38] @ 0x822c9318
-    virtual void vfn_41();  // [41] @ 0x8211d0e0
-    virtual void vfn_42();  // [42] @ 0x8211ecc0
-    virtual void vfn_43();  // [43] @ 0x8211efc0
-    virtual void vfn_46();  // [46] @ 0x82121530
-    virtual void vfn_47();  // [47] @ 0x8211fac8
-    virtual void vfn_48();  // [48] @ 0x82121138
-    virtual void vfn_53();  // [53] @ 0x821214e0
-    virtual void vfn_56();  // [56] @ 0x8211e3f0
+    virtual void ComputeBoundsPartial(void* outMin, void* outMax);  // [14] @ 0x822c90e0
+    virtual int GetDefaultIndex();  // [19] @ 0x824ff7c8
+    virtual void* GetBoneTransform(int boneIndex);  // [22] @ 0x8211ddb8
+    virtual void SelectBestBone(void* boneData);  // [26] @ 0x8211ddf8 — iterates bones, selects by weight
+    virtual void UpdateBoneTransforms();  // [28] @ 0x8211f2a0 — transposes matrix, transforms bones
+    virtual void* GetCreatureInfo();  // [30] @ 0x820c8f80
+    virtual void* GetPhysicsState();  // [31] @ 0x822c9200
+    virtual bool ComputeCollisionRadius(void* rayOrigin, void* outRadius, void* outByte, float* outFraction);  // [34] @ 0x8211d760 — physics bound check, normalizes, divides radius
+    virtual void UpdateCollisionFlags(void* flagData);  // [35] @ 0x82120880 — sets dirty bit, checks collision type
+    virtual bool ResolveCollision(void* player, void* rayData, void* hitList, void* hitCount, void* outHit, void* colGroup, void* mask);  // [36] @ 0x82120408 — resolves collision, updates flags
+    virtual uint32_t GetCollisionFlags();  // [37] @ 0x822c92d8
+    virtual void* GetEntityByIndex(int index);  // [38] @ 0x822c9318
+    virtual bool AttachToScene(bool updatePhysics);  // [41] @ 0x8211d0e0 — sets flag |=1, links into scene list
+    virtual void DetachFromScene();  // [42] @ 0x8211ecc0 — removes from physics, updates color/transform
+    virtual void* CreatePhysicsBound();  // [43] @ 0x8211efc0 — allocates physics bound from creature data
+    virtual void UpdateWorldTransform();  // [46] @ 0x82121530 — transposes self matrix, transforms position
+    virtual void SyncBoneMatrices();  // [47] @ 0x8211fac8 — iterates bones, copies and transforms matrices
+    virtual void InitializeTransform();  // [48] @ 0x82121138 — reads scale, sets dirty flag, calls UpdateBoneTransforms
+    virtual void* GetPhysicsAllocator();  // [53] @ 0x821214e0 — returns creature_data->+484 allocator ptr
+    virtual void ApplyBoneDamage(void* damageInfo);  // [56] @ 0x8211e3f0 — computes bone damage/weight distribution
+
+    // ── non-virtual methods ──
+    bool HasVisibilityFlag();   // @ 0x820C5378
+    bool IsNetworkActive();     // @ 0x8211C9C8
+    bool IsIndexValid();        // @ 0x8211CF90
+    float GetCurrentWeight();   // @ 0x8211D010
+    void DelegateSlot9_Offset32(void* arg);   // @ 0x82118FC0
+    void DelegateSlot9_Offset48(void* arg);   // @ 0x82118FE0
+    void DelegateSlot9_Offset64(void* arg);   // @ 0x82119000
+    void DelegateSlot9_Offset80(void* arg);   // @ 0x82119020
+    void DelegateSlot9_Offset112(void* arg);  // @ 0x82119040
+    void DelegateSlot9_Offset128(void* arg);  // @ 0x82119060
+    void DelegateSlot9_Offset144(void* arg);  // @ 0x82119080
+    void StoreVCallResultAtField429(void* arg);  // @ 0x82118E70
+    void StoreVCallResultAtField446(void* arg);  // @ 0x82119180
+    void ForwardVfn11();        // @ 0x8211CC48
+    void ForwardVfn12();        // @ 0x8211CC58
+    void ForwardVfn13();        // @ 0x8211CC68
+    void ForwardVfn14();        // @ 0x8211CC78
+    void UpdateFlag445(void* arg);   // @ 0x82118EB0
+    void UpdateFlag447(void* arg);   // @ 0x82118F70
+    void UpdateFlagBit3(void* arg);  // @ 0x82118F00
+    uint32_t LookupContainer();      // @ 0x8211CFB0
+    bool HasMultipleActiveSlots();   // @ 0x82127BD8
+    void ListInsertTail(void* node); // @ 0x821267E8
+    void ArrayRemove(void* element); // @ 0x822C9420
+    void SetRefPtr(void* newObj);    // @ 0x822C9030
+    void SetArraySlot(int index, void* newObj);  // @ 0x8228E7B8
+    void Detach();              // @ 0x8211D470
+    void SetMatrix(const void* srcMatrix);  // @ 0x820D5040
+    void UpdateHeading();       // @ 0x8228E828
+    void BuildTranslationMatrix(float* outMatrix, const float* srcBasis);  // @ 0x820D50A0
+    void CopyAndBuildTranslationMatrix(float* outMatrix, const float* srcMatrix);  // @ 0x820D5040
+    void CopyBoneMatrix(int boneIndex, float* outMatrix);  // @ 0x821183B0
+    void FindBonePairByName(int mappingIndex, const char* boneName1, const char* boneName2);  // @ 0x82118C58
+    void ReadBoneNamesAndMap(void* xmlNode);  // @ 0x821190F8
+    void StoreBoneResult(void* xmlNode);  // @ 0x82118E70
+    void StoreBoneFlag(void* xmlNode);  // @ 0x82118EB0
+    void SetOrClearBoneFlag8(void* xmlNode);  // @ 0x82118F00
+    void StoreMirrorFlag(void* xmlNode);  // @ 0x82118F70
+    void StoreBlendFlag(void* xmlNode);  // @ 0x82119180
 };
 
 // ── pongCreatureType  [vtable @ 0x8202776C] ──────────────────────────
