@@ -9568,21 +9568,18 @@ void CPeakMeterEffect_Create(void* config, void* allocator, void** outResult) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // Forward declarations for this batch
-extern float ph_Sqrtf(float value);  // sqrtf wrapper
-extern float aud_2478(float angle);  // exp-like computation
-extern float ph_Atan2f(float x, float z);  // atan2(x, z)
-extern void phBoundCapsule_8EA0_g(void* obj, float yaw, float pitch);
-extern void phBoundCapsule_3598_g(void* camera);
-extern void pongCameraMgr_3E98_g(void* camera);
-extern void phBoundCapsule_81D8_g(void* thisPtr, void* target, void* camMatrix,
+extern float phBoundCapsule_8EA0_g(void* obj, float yaw, float pitch);
+extern void  phBoundCapsule_3598_g(void* camera);
+extern float pongCameraMgr_3E98_g(void* camera);
+extern void  phBoundCapsule_81D8_g(void* thisPtr, void* target, void* camMatrix,
     float fov, float aspect, float elevation, void* r10);
-extern void phBoundCapsule_7D90_g(void* randomState);
+extern int32_t phBoundCapsule_7D90_g(void* randomState);
 
-extern uint32_t* g_phGlobalStatePtr;    // @ 0x82060000 area, deref -> +25628
-extern uint32_t* g_phCameraArray;       // camera array base
-extern uint32_t g_phActiveCameraIdx;    // @ 0x825C4898 area
-extern float g_phNegOneF;              // -1.0f @ 0x82079D18
-extern float g_phScaleThreshold;       // @ 0x825C9A40
+extern uint32_t g_phGameStateBase;      // lis r11,-32160 -> base for global state loads
+extern float g_phNegThreshold2;         // -1.0f @ 0x82079D18
+extern float g_phScaleThreshold;        // @ 0x825C9A40
+extern void* g_phTableBasePtr;          // @ 0x82072000 area, camera config base
+extern uint32_t g_phActiveCameraIdx;    // @ 0x825C4898
 
 /**
  * phBoundCapsule_BB88_g @ 0x8216BB88 | size: 0x5C (92 bytes)
@@ -9599,26 +9596,21 @@ extern float g_phScaleThreshold;       // @ 0x825C9A40
 int32_t phBoundCapsule_BB88_g(float* value) {
     float val = value[0];
 
-    // Load global state -> offset 48 -> byte at +192 (mirror flag)
-    uint32_t* statePtr = (uint32_t*)PPC_LOAD_U32((uint32_t)(uintptr_t)g_phGlobalStatePtr + 25628);
-    uint32_t* innerPtr = (uint32_t*)PPC_LOAD_U32((uint32_t)(uintptr_t)statePtr + 48);
-    uint8_t mirrorFlag = *(uint8_t*)((uint8_t*)innerPtr + 192);
+    // Load global state chain: base -> +25628 -> +48 -> byte at +192 (mirror flag)
+    uint32_t stateObj = *(uint32_t*)((uint8_t*)(uintptr_t)g_phGameStateBase + 25628);
+    uint32_t innerObj = *(uint32_t*)((uint8_t*)(uintptr_t)stateObj + 48);
+    uint8_t mirrorFlag = *(uint8_t*)((uint8_t*)(uintptr_t)innerObj + 192);
 
-    float posThreshold = g_phZeroF;  // 0.0f @ 0x8202D110
-
-    if (val > posThreshold) {
+    if (val > 0.0f) {
         if (mirrorFlag != 0) {
             return 1;
         }
     }
 
-    float negThreshold = g_phNegOneF;  // -1.0f @ 0x82079D18
-
-    if (val < negThreshold) {
+    if (val < g_phNegThreshold2) {
         if (mirrorFlag != 0) {
             return -1;
         }
-        // Fall through to return 1
         return 1;
     }
 
@@ -9891,8 +9883,7 @@ void phBoundCapsule_8608_g(void* thisPtr, void* target, void* paramR5) {
     uint8_t* camEntry = (uint8_t*)cameraArray + camIdx * 912;
 
     // Get FOV from camera
-    pongCameraMgr_3E98_g(camEntry);
-    float fov = *(float*)&ctx_f1;  // result in f1
+    float fov = pongCameraMgr_3E98_g(camEntry);
 
     // Read camera parameters
     float aspect = *(float*)(camEntry + 824);
@@ -9970,8 +9961,7 @@ void phBoundCapsule_DB10_g(void* thisPtr) {
     void* headingInput = *(void**)((uint8_t*)0x82070000 + -21712);
 
     // Compute heading angle from yaw and pitch
-    phBoundCapsule_8EA0_g(headingInput, yaw, pitch);
-    float heading = *(float*)&ctx_f1;  // result in f1
+    float heading = phBoundCapsule_8EA0_g(headingInput, yaw, pitch);
 
     // Store parameters into camera transform
     float elevation = *(float*)(obj + 164);
