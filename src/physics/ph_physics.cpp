@@ -8530,6 +8530,242 @@ void phMatrixTransposeMultiply3x4(float* matA, const float* matB) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// rage::phArticulatedCollider — Joint Query / Force Dispatch Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+extern int phArticulatedCollider_E668(phArticulatedCollider* collider, int boneIndex);
+extern void phArticulatedCollider_77F0_w(void* jointData, int linkIndex, const float* delta);
+extern void phArticulatedCollider_7918_w(void* jointData, int linkIndex);
+extern void phJoint_7A30_fw(void* jointData, int linkIndex, const float* delta, int param);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::CopyJointTransformMatrix (vfn_13) @ 0x822500E8 | size: 0x88
+//
+// Copies the 4x4 transform matrix (64 bytes at offset +720) from the joint
+// body identified by boneIndex into the caller-supplied output buffer.
+// Uses GetJointLinkIndex (E668) to resolve the bone to a body pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::CopyJointTransformMatrix(float* outMatrix, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
+
+    // Copy 4 row vectors (64 bytes) from body + 720
+    float* srcMatrix = (float*)(bodyPtr + 720);
+    float* dst0 = outMatrix;
+    float* dst1 = outMatrix + 4;
+    float* dst2 = outMatrix + 8;
+    float* dst3 = outMatrix + 12;
+
+    dst0[0] = srcMatrix[0];  dst0[1] = srcMatrix[1];  dst0[2] = srcMatrix[2];  dst0[3] = srcMatrix[3];
+    dst1[0] = srcMatrix[4];  dst1[1] = srcMatrix[5];  dst1[2] = srcMatrix[6];  dst1[3] = srcMatrix[7];
+    dst2[0] = srcMatrix[8];  dst2[1] = srcMatrix[9];  dst2[2] = srcMatrix[10]; dst2[3] = srcMatrix[11];
+    dst3[0] = srcMatrix[12]; dst3[1] = srcMatrix[13]; dst3[2] = srcMatrix[14]; dst3[3] = srcMatrix[15];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::CopyJointVelocityMatrix (vfn_14) @ 0x82250170 | size: 0x88
+//
+// Same as CopyJointTransformMatrix but copies from offset +784 in the joint
+// body, which stores the velocity/angular velocity matrix.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::CopyJointVelocityMatrix(float* outMatrix, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
+
+    float* srcMatrix = (float*)(bodyPtr + 784);
+    float* dst0 = outMatrix;
+    float* dst1 = outMatrix + 4;
+    float* dst2 = outMatrix + 8;
+    float* dst3 = outMatrix + 12;
+
+    dst0[0] = srcMatrix[0];  dst0[1] = srcMatrix[1];  dst0[2] = srcMatrix[2];  dst0[3] = srcMatrix[3];
+    dst1[0] = srcMatrix[4];  dst1[1] = srcMatrix[5];  dst1[2] = srcMatrix[6];  dst1[3] = srcMatrix[7];
+    dst2[0] = srcMatrix[8];  dst2[1] = srcMatrix[9];  dst2[2] = srcMatrix[10]; dst2[3] = srcMatrix[11];
+    dst3[0] = srcMatrix[12]; dst3[1] = srcMatrix[13]; dst3[2] = srcMatrix[14]; dst3[3] = srcMatrix[15];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyDeltaPositionToJoint (vfn_15) @ 0x822501F8 | size: 0x90
+//
+// Computes a delta vector by subtracting the collider's current position
+// (offset +208) from a target position, then dispatches the delta to the
+// joint solver. If an alternate target (r6) is provided, uses that instead.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ApplyDeltaPositionToJoint(int param, const float* targetPos, const float* altTarget, int solverParam) {
+    const float* target = (altTarget != nullptr) ? altTarget : targetPos;
+    int resolveParam = (altTarget != nullptr) ? solverParam : solverParam;
+
+    float* currentPos = (float*)((char*)this + 208);
+    float delta[4];
+    delta[0] = target[0] - currentPos[0];
+    delta[1] = target[1] - currentPos[1];
+    delta[2] = target[2] - currentPos[2];
+    delta[3] = target[3] - currentPos[3];
+
+    int linkIndex = phArticulatedCollider_E668(this, resolveParam);
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phJoint_7A30_fw(jointData, linkIndex, delta, param);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointBackupForce (vfn_20) @ 0x82250440 | size: 0x64
+//
+// Retrieves the backup force vector (at body offset +1072) for the joint
+// identified by boneIndex from a secondary collider.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::GetJointBackupForce(float* outVec, phArticulatedCollider* srcCollider, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(srcCollider, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)srcCollider->m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
+
+    float* srcVec = (float*)(bodyPtr + 1072);
+    outVec[0] = srcVec[0];
+    outVec[1] = srcVec[1];
+    outVec[2] = srcVec[2];
+    outVec[3] = srcVec[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateScaledJointForces (vfn_39) @ 0x822504A8 | size: 0x80
+//
+// Iterates over all joint bodies and accumulates scaled force contributions.
+// For each body, scales the force at +336 by the given factor, adds the
+// gravity vector at +368, and accumulates into the output vector.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::AccumulateScaledJointForces(float* outVec, float scale) {
+    outVec[0] = 0.0f; outVec[1] = 0.0f; outVec[2] = 0.0f; outVec[3] = 0.0f;
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int bodyCount = (int)jointData[1];  // +4
+
+    if (bodyCount <= 0) return;
+
+    for (int i = 0; i < bodyCount; i++) {
+        uint32_t bodyPtr = jointData[10 + i];  // +40 array
+
+        float* forceVec = (float*)(bodyPtr + 336);
+
+        outVec[0] += forceVec[0] * scale;
+        outVec[1] += forceVec[1] * scale;
+        outVec[2] += forceVec[2] * scale;
+        outVec[3] += forceVec[3] * scale;
+
+        float* gravityVec = (float*)(bodyPtr + 368);
+        outVec[0] += gravityVec[0];
+        outVec[1] += gravityVec[1];
+        outVec[2] += gravityVec[2];
+        outVec[3] += gravityVec[3];
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointOrientationVector (vfn_49) @ 0x82250710 | size: 0x60
+//
+// Retrieves an orientation vector from a joint body. Loads the stride word
+// from body[0], computes offset = stride*32 + 16, and copies that vector.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::GetJointOrientationVector(float* outVec, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
+
+    uint32_t strideWord = *(uint32_t*)(bodyPtr);
+    uint32_t byteOffset = strideWord * 32;
+
+    float* srcVec = (float*)(bodyPtr + byteOffset + 16);
+    outVec[0] = srcVec[0];
+    outVec[1] = srcVec[1];
+    outVec[2] = srcVec[2];
+    outVec[3] = srcVec[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyDeltaToJointForce (vfn_52) @ 0x82250818 | size: 0x54
+//
+// Computes the delta between a target position and the collider's position
+// (offset +208), then dispatches via phArticulatedCollider_77F0_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ApplyDeltaToJointForce(const float* targetPos, int boneIndex) {
+    float* currentPos = (float*)((char*)this + 208);
+    float delta[4];
+    delta[0] = targetPos[0] - currentPos[0];
+    delta[1] = targetPos[1] - currentPos[1];
+    delta[2] = targetPos[2] - currentPos[2];
+    delta[3] = targetPos[3] - currentPos[3];
+
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_77F0_w(jointData, linkIndex, delta);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ResetJointConstraintState (vfn_53) @ 0x82250870 | size: 0x38
+//
+// Resets the constraint state for a specific joint identified by bone index.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ResetJointConstraintState(int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_7918_w(jointData, linkIndex);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointSlot12 (vfn_55) @ 0x822508A8 | size: 0x38
+//
+// Resolves a joint index to a body pointer via bone-to-body mapping arrays
+// at +476 and +484, then dispatches to that body's vtable slot 12.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DispatchJointSlot12(int jointIndex, float* outVec) {
+    uint32_t* parentIndexArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    uint32_t parentIndex = parentIndexArray[jointIndex];
+    uint32_t jointType = jointTypeArray[jointIndex];
+
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (parentIndex + 42) * 4);
+
+    void** bodyVTable = *(void***)(uintptr_t)bodyPtr;
+    typedef void (*Slot12Func)(void*, int, float*);
+    Slot12Func fn = (Slot12Func)bodyVTable[12];
+    fn((void*)(uintptr_t)bodyPtr, (int)jointType, outVec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointSlot7 (vfn_58) @ 0x82250910 | size: 0x34
+//
+// Same as DispatchJointSlot12 but dispatches to vtable slot 7 (byte offset 28).
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DispatchJointSlot7(int jointIndex) {
+    uint32_t* parentIndexArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    uint32_t parentIndex = parentIndexArray[jointIndex];
+    uint32_t jointType = jointTypeArray[jointIndex];
+
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (parentIndex + 42) * 4);
+
+    void** bodyVTable = *(void***)(uintptr_t)bodyPtr;
+    typedef void (*Slot7Func)(void*, int);
+    Slot7Func fn = (Slot7Func)bodyVTable[7];
+    fn((void*)(uintptr_t)bodyPtr, (int)jointType);
+}
+
+} // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
 // rage::phBoundCapsule — Virtual and Utility Functions (10 functions)
 // ═════════════════════════════════════════════════════════════════════════════
 
