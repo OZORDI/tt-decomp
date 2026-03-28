@@ -914,6 +914,211 @@ void fiAsciiTokenizer::ReadIntForward() {
     fn(this, 0);
 }
 
+// ── ExpectToken + read vector wrappers ──────────────────────────────────────
+
+/**
+ * fiAsciiTokenizer::ExpectTokenThenFloat4 @ 0x822E66B0 | size: 0x50
+ * [vtable slot 23]
+ *
+ * Reads and compares a token, then reads 4 floats via vtable slot 8 (ReadFloat4).
+ */
+void fiAsciiTokenizer::ExpectTokenThenFloat4(const char* expectedToken, float* outArray) {
+    ReadTokenAndCompare(expectedToken);
+
+    // Call vtable slot 8 (ReadFloat4)
+    void** vt = *reinterpret_cast<void***>(this);
+    typedef void (*ReadFloat4Func)(fiAsciiTokenizer*, float*);
+    ReadFloat4Func readFloat4 = reinterpret_cast<ReadFloat4Func>(vt[8]);
+    readFloat4(this, outArray);
+}
+
+/**
+ * fiAsciiTokenizer::ExpectTokenThenFloat3 @ 0x822E6660 | size: 0x50
+ * [vtable slot 24]
+ *
+ * Reads and compares a token, then reads 3 floats via vtable slot 9 (ReadFloat3).
+ */
+void fiAsciiTokenizer::ExpectTokenThenFloat3(const char* expectedToken, float* outArray) {
+    ReadTokenAndCompare(expectedToken);
+
+    // Call vtable slot 9 (ReadFloat3)
+    void** vt = *reinterpret_cast<void***>(this);
+    typedef void (*ReadFloat3Func)(fiAsciiTokenizer*, float*);
+    ReadFloat3Func readFloat3 = reinterpret_cast<ReadFloat3Func>(vt[9]);
+    readFloat3(this, outArray);
+}
+
+/**
+ * fiAsciiTokenizer::ExpectTokenThenVec2 @ 0x822E6610 | size: 0x50
+ * [vtable slot 25]
+ *
+ * Reads and compares a token, then reads 2 floats via vtable slot 10 (ReadVec2).
+ */
+void fiAsciiTokenizer::ExpectTokenThenVec2(const char* expectedToken, float* outArray) {
+    ReadTokenAndCompare(expectedToken);
+
+    // Call vtable slot 10 (ReadVec2)
+    void** vt = *reinterpret_cast<void***>(this);
+    typedef void (*ReadVec2Func)(fiAsciiTokenizer*, float*);
+    ReadVec2Func readVec2 = reinterpret_cast<ReadVec2Func>(vt[10]);
+    readVec2(this, outArray);
+}
+
+// ── Write/output formatting functions ───────────────────────────────────────
+
+// External function: writes a single character to the output stream
+extern "C" void fiAsciiTokenizer_51F0(void* fileHandle, int charCode);
+
+/**
+ * fiAsciiTokenizer::WriteBeginBlock @ 0x822E67A0 | size: 0x84
+ * [vtable slot 26]
+ *
+ * Writes opening block: emits m_streamPos tab characters for indentation,
+ * then '{', CR, LF. Increments m_streamPos (indent level).
+ */
+void fiAsciiTokenizer::WriteBeginBlock() {
+    int32_t indent = m_streamPos;
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    while (indent != 0) {
+        fiAsciiTokenizer_51F0(file, '\t');
+        indent--;
+    }
+    fiAsciiTokenizer_51F0(file, '{');
+    fiAsciiTokenizer_51F0(file, '\r');
+    fiAsciiTokenizer_51F0(file, '\n');
+    m_streamPos++;
+}
+
+/**
+ * fiAsciiTokenizer::WriteEndBlock @ 0x822E6828 | size: 0x80
+ * [vtable slot 27]
+ *
+ * Decrements m_streamPos (indent level), writes indent tabs,
+ * then '}', CR, LF.
+ */
+void fiAsciiTokenizer::WriteEndBlock() {
+    m_streamPos--;
+    int32_t indent = m_streamPos;
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    while (indent != 0) {
+        fiAsciiTokenizer_51F0(file, '\t');
+        indent--;
+    }
+    fiAsciiTokenizer_51F0(file, '}');
+    fiAsciiTokenizer_51F0(file, '\r');
+    fiAsciiTokenizer_51F0(file, '\n');
+}
+
+/**
+ * fiAsciiTokenizer::WriteIndent @ 0x822E68A8 | size: 0x80
+ * [vtable slot 28]
+ *
+ * If state (field_0x0014) != 1, writes m_streamPos tab characters
+ * for indentation and sets state to 1.
+ */
+void fiAsciiTokenizer::WriteIndent() {
+    if (field_0x0014 == 1) {
+        field_0x0014 = 1;
+        return;
+    }
+
+    int32_t indent = m_streamPos;
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    if (indent != 0) {
+        while (indent != 0) {
+            fiAsciiTokenizer_51F0(file, '\t');
+            indent--;
+        }
+        field_0x0014 = 1;
+        return;
+    }
+
+    field_0x0014 = 1;
+}
+
+/**
+ * fiAsciiTokenizer::WriteNewline @ 0x822E6928 | size: 0x70
+ * [vtable slot 29]
+ *
+ * If state (field_0x0014) != 2, writes CR and LF characters,
+ * then sets state to 2.
+ */
+void fiAsciiTokenizer::WriteNewline() {
+    if (field_0x0014 == 2) {
+        field_0x0014 = 2;
+        return;
+    }
+
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    fiAsciiTokenizer_51F0(file, '\r');
+    fiAsciiTokenizer_51F0(file, '\n');
+    field_0x0014 = 2;
+}
+
+// ── Memory allocation helpers ───────────────────────────────────────────────
+
+// External functions used by allocation helpers
+extern "C" void fiAsciiTokenizer_1F08_g(const char* errorMsg);
+extern "C" void fiAsciiTokenizer_FB40_g(int exitCode);
+extern "C" void* xe_EC88(uint32_t size);
+
+/**
+ * AllocateUint32Array @ 0x820E76D8 | size: 0x64
+ *
+ * Allocates an array of uint32_t elements. Validates count against
+ * max 0x3FFFFFFF. Returns nullptr if count is 0. Each element is 4 bytes.
+ */
+extern "C" void* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
+    if (count > 0x3FFFFFFFu) {
+        fiAsciiTokenizer_1F08_g("allocation overflow");
+        fiAsciiTokenizer_FB40_g(1);
+    }
+
+    if (count != 0) {
+        return xe_EC88(count * 4);
+    }
+
+    return nullptr;
+}
+
+/**
+ * AllocateBytes @ 0x8222D588 | size: 0x60
+ *
+ * Allocates a byte array. Validates count against max 0xFFFFFFFF.
+ * Returns nullptr if count is 0. Each element is 1 byte.
+ */
+extern "C" void* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
+    if (count > 0xFFFFFFFFu) {
+        fiAsciiTokenizer_1F08_g("allocation overflow");
+        fiAsciiTokenizer_FB40_g(1);
+    }
+
+    if (count != 0) {
+        return xe_EC88(count);
+    }
+
+    return nullptr;
+}
+
+/**
+ * AllocateUint16Array @ 0x822DF168 | size: 0x64
+ *
+ * Allocates an array of uint16_t elements. Validates count against
+ * max 0x7FFFFFFF. Returns nullptr if count is 0. Each element is 2 bytes.
+ */
+extern "C" void* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
+    if (count > 0x7FFFFFFFu) {
+        fiAsciiTokenizer_1F08_g("allocation overflow");
+        fiAsciiTokenizer_FB40_g(1);
+    }
+
+    if (count != 0) {
+        return xe_EC88(count * 2);
+    }
+
+    return nullptr;
+}
+
 // ── CRT / kernel wrappers ──────────────────────────────────────────────────
 
 /**
