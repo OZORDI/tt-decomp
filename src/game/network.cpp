@@ -3327,3 +3327,238 @@ void SinglesNetworkClient_RoutePageGroupEvent(void* self, uint32_t connCount, in
         pg_E7D0_g(g_pPageGroupManager, activeConns, connCount, eventParam);
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetStateId (vfn_4) @ 0x82392310 | size: 0x8
+//
+// Returns the network state identifier constant (151) for SinglesNetworkClient.
+// This identifies the client type in the network state machine.
+//
+// Returns:
+//   State ID constant (151)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" int SinglesNetworkClient_GetStateId()
+{
+    return 151;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::EnablePaused (vfn_12) @ 0x8239AF80 | size: 0x18
+//
+// Sets the paused flag to true (1) on the match instance accessed through
+// the global singles network client pointer at lbl_8271A318.
+// Writes to byte offset +88 of the match object at slot 3 (+12) of the global.
+// ─────────────────────────────────────────────────────────────────────────────
+extern uint32_t* lbl_8271A318;
+
+extern "C" void SinglesNetworkClient_EnablePaused()
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+    *(uint8_t*)((uint8_t*)matchObj + 88) = 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::DisablePaused (vfn_13) @ 0x8239AF98 | size: 0x18
+//
+// Clears the paused flag to false (0) on the match instance accessed through
+// the global singles network client pointer at lbl_8271A318.
+// Writes to byte offset +88 of the match object at slot 3 (+12) of the global.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_DisablePaused()
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+    *(uint8_t*)((uint8_t*)matchObj + 88) = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetElapsedTime (vfn_14) @ 0x8239AFB0 | size: 0x30
+//
+// Computes the elapsed time by reading an integer tick count from offset +4
+// and a float base time from offset +8 of the match object, converting the
+// tick count to float, and adding them together.
+//
+// Returns:
+//   Elapsed time as float (basetime + ticks)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" float SinglesNetworkClient_GetElapsedTime()
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+
+    int32_t ticks = (int32_t)matchObj[1];            // offset +4
+    float baseTime = *(float*)&matchObj[2];           // offset +8
+
+    return baseTime + (float)ticks;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::DelegateToBaseUpdate (vfn_15) @ 0x8239AFE0 | size: 0x1C
+//
+// Retrieves the match object from the global pointer and dispatches to its
+// vtable slot 2 (the base update virtual function). This is a thin forwarding
+// wrapper that delegates to the underlying match object's update method.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance (this, unused)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_DelegateToBaseUpdate(void* self)
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+
+    // Tail-call vtable slot 2
+    uint32_t* vtable = *(uint32_t**)matchObj;
+    typedef void (*VFn2)(void*);
+    VFn2 updateFn = (VFn2)(uintptr_t)vtable[2];
+    updateFn(matchObj);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::StartMatchTiming (vfn_9) @ 0x823941D0 | size: 0x28
+//
+// Initializes match timing on the client object (this = r3).
+// Reads the current match time from the global timer object (slot 1 at
+// offset +332), then sets:
+//   - byte at +0x100E (4110) = 1 (timing active flag)
+//   - float at +0x1010 (4112) = current match time
+//   - byte at +0x100F (4111) = 0 (timing phase reset)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_StartMatchTiming(void* self)
+{
+    uint8_t* data = (uint8_t*)self;
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* timerObj = (uint32_t*)(uintptr_t)global[1];
+
+    float matchTime = *(float*)((uint8_t*)timerObj + 332);
+
+    data[4110] = 1;
+    *(float*)(data + 4112) = matchTime;
+    data[4111] = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ForwardMessageIfConnected (vfn_17) @ 0x8239B000 | size: 0x30
+//
+// Checks the connection state at offset +28 of this object. If the state
+// is 2 or 3 (connected/active), forwards the message by calling
+// atSingleton_1570_h with the global pointer and rearranged parameters.
+//
+// Parameters:
+//   self  - Pointer to SinglesNetworkClient (this)
+//   param - Message parameter (r4)
+//   data  - Message data (r5)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void atSingleton_1570_h(void* global, int zero, void* param, void* data);
+
+extern "C" void SinglesNetworkClient_ForwardMessageIfConnected(void* self, void* param, void* data)
+{
+    uint32_t* selfData = (uint32_t*)self;
+    int32_t state = (int32_t)selfData[7]; // offset +28
+
+    if (state != 2 && state != 3) {
+        return;
+    }
+
+    void* global = (void*)(uintptr_t)lbl_8271A318;
+    atSingleton_1570_h(global, 0, param, data);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::~SinglesNetworkClient (vfn_0) @ 0x82391F98 | size: 0x50
+//
+// Destructor for SinglesNetworkClient. Calls the base class destructor
+// (ph_ctor_1FE8), then conditionally frees memory if the scalar deleting
+// destructor flag (bit 0 of param) is set.
+//
+// Parameters:
+//   self  - Pointer to SinglesNetworkClient instance (this)
+//   param - Destructor flags (bit 0 = free memory after destruct)
+//
+// Returns:
+//   Pointer to the destroyed object
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void ph_ctor_1FE8(void* self);
+extern "C" void rage_free_00C0(void* ptr);
+
+extern "C" void* SinglesNetworkClient_Destructor(void* self, uint32_t param)
+{
+    ph_ctor_1FE8(self);
+
+    if ((param & 1) != 0) {
+        rage_free_00C0(self);
+    }
+
+    return self;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::TransformAndDispatchEvent (vfn_16) @ 0x8239B030 | size: 0x50
+//
+// Copies an 8-byte event structure from the source pointer (r5) into a
+// local buffer, transforms it via util_EA38, then dispatches the transformed
+// event through the object's own vtable slot 17.
+//
+// Parameters:
+//   self   - Pointer to SinglesNetworkClient instance (this)
+//   param  - Event parameter (r4, forwarded to vtable call)
+//   source - Pointer to 8-byte source event data (r5)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void util_EA38(void* dest);
+
+extern "C" void SinglesNetworkClient_TransformAndDispatchEvent(void* self, void* param, void* source)
+{
+    // Copy 8-byte event struct to local buffer
+    uint32_t localBuf[2];
+    uint32_t* src = (uint32_t*)source;
+    localBuf[0] = src[0];
+    *(float*)&localBuf[1] = *(float*)&src[1];
+
+    // Transform the event
+    util_EA38((void*)localBuf);
+
+    // Dispatch via vtable slot 17 (vfn_17)
+    // self->vfn_17(self, param, &localBuf)
+    uint32_t* vtable = *(uint32_t**)self;
+    typedef void (*VFn17)(void*, void*, void*);
+    VFn17 fn = (VFn17)(uintptr_t)vtable[17];
+    fn(self, param, (void*)localBuf);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ResetMatchState (vfn_18) @ 0x8239B080 | size: 0x4C
+//
+// Resets match state by first calling the scalar deleting destructor
+// (vtable slot 1) on the match object from the global pointer, then
+// reinitializing the sub-object at offset +784 via SinglesNetworkClient_2F28_g.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance (this)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_2F28_g(void* subObj);
+
+extern "C" void SinglesNetworkClient_ResetMatchState(void* self)
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+
+    // Call match object's vtable slot 1 (scalar deleting destructor)
+    uint32_t* vtable = *(uint32_t**)matchObj;
+    typedef void (*VFn1)(void*);
+    VFn1 dtor = (VFn1)(uintptr_t)vtable[1];
+    dtor(matchObj);
+
+    // Reinitialize sub-object at offset +784
+    SinglesNetworkClient_2F28_g((void*)((uint8_t*)self + 784));
+}
