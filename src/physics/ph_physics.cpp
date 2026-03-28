@@ -8763,6 +8763,334 @@ void phArticulatedCollider::DispatchJointSlot7(int jointIndex) {
     fn((void*)(uintptr_t)bodyPtr, (int)jointType);
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phArticulatedCollider — Dispatch, Force, and Matrix Functions (10 fns)
+// ═════════════════════════════════════════════════════════════════════════════
+
+extern void phBoundCapsule_ACB0_p45(void* capsule);
+extern void util_B680(void* thisPtr);
+extern void phArticulatedCollider_8A30(void* jointData, const float* velocity);
+extern void game_CE58(void* collider);
+extern void phArticulatedCollider_8B10(void* jointData, const float* angularVelocity);
+extern uint32_t g_identityVec[];  // @ 0x82606740 — 16-byte identity/zero vector
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DelegateToBoundCapsule (vfn_24) @ 0x822CC700 | size: 0x8
+//
+// Adjusts 'this' by +352 to reach the embedded phBoundCapsule sub-object,
+// then tail-calls phBoundCapsule_ACB0_p45.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DelegateToBoundCapsule() {
+    phBoundCapsule_ACB0_p45((char*)this + 352);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointSlot5 (vfn_51) @ 0x822505E8 | size: 0x34
+//
+// Resolves the joint object for the given index through the type/object/active
+// arrays, computes linkDataIndex = jointType + 42, then tail-calls vtable
+// slot 5 on the resolved joint object.
+//
+// @param jointIndex - Index of the joint to dispatch on
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::DispatchJointSlot5(int jointIndex) {
+    uint32_t* jointTypeArray  = (uint32_t*)(uintptr_t)field_0x01dc;   // +476
+    uint32_t* activeJointsArr = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+    uint32_t* jointObjArray   = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+    void* jointObj  = (void*)(uintptr_t)jointObjArray[jointIndex];
+    void* linkData  = (void*)(uintptr_t)activeJointsArr[linkDataIndex];
+
+    void** jvt = *(void***)jointObj;
+    typedef void (*JointFunc)(void*, void*);
+    ((JointFunc)jvt[5])(jointObj, linkData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointStiffness (vfn_62) @ 0x8224E280 | size: 0x58
+//
+// Resolves joint object and link data via type/object/active arrays,
+// then calls vtable slot 8 on the joint object to retrieve the stiffness
+// value into a stack-local float, which is returned.
+//
+// @param jointIndex - Index of the joint to query
+// @return Stiffness value for the specified joint
+// ─────────────────────────────────────────────────────────────────────────────
+float phArticulatedCollider::GetJointStiffness(int jointIndex) {
+    uint32_t* jointTypeArray  = (uint32_t*)(uintptr_t)field_0x01dc;   // +476
+    uint32_t* activeJointsArr = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+    uint32_t* jointObjArray   = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+    void* jointObj  = (void*)(uintptr_t)jointObjArray[jointIndex];
+    void* linkData  = (void*)(uintptr_t)activeJointsArr[linkDataIndex];
+
+    float result;
+    void** jvt = *(void***)jointObj;
+    typedef void (*GetStiffnessFunc)(void*, void*, void*, float*);
+    ((GetStiffnessFunc)jvt[8])(jointObj, (void*)(uintptr_t)jointObjArray[jointIndex], linkData, &result);
+
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateForceAtJoint (vfn_38) @ 0x8224EFE0 | size: 0x60
+//
+// Resolves a bone index to a body pointer via E668, then adds a 16-byte
+// force vector (SIMD add) to the body's accumulated force at offset +384.
+//
+// @param forceVec   - 16-byte aligned force vector to accumulate
+// @param boneIndex  - Bone index to resolve to a body
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::AccumulateForceAtJoint(const float* forceVec, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int bodyIndex = linkIndex + 10;
+    uint8_t* bodyPtr = (uint8_t*)(uintptr_t)jointData[bodyIndex];
+
+    // Add force vector to accumulated force at body + 384
+    float* accForce = (float*)(bodyPtr + 384);
+    accForce[0] += forceVec[0];
+    accForce[1] += forceVec[1];
+    accForce[2] += forceVec[2];
+    accForce[3] += forceVec[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetVelocityScaled (vfn_40) @ 0x8224F870 | size: 0x58
+//
+// Stores the input velocity vector at offset +224, scales it by the
+// restitution coefficient at +100, stores the result at +256, then
+// propagates velocity to all joints via phArticulatedCollider_8A30.
+//
+// @param velocity - 16-byte aligned velocity vector
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetVelocityScaled(const float* velocity) {
+    uint8_t* self = (uint8_t*)this;
+
+    // Read restitution coefficient from +100
+    float restitution = *(float*)(self + 100);
+
+    // Store velocity at +224
+    float* storedVel = (float*)(self + 224);
+    storedVel[0] = velocity[0];
+    storedVel[1] = velocity[1];
+    storedVel[2] = velocity[2];
+    storedVel[3] = velocity[3];
+
+    // Scale velocity by restitution and store at +256
+    float* scaledVel = (float*)(self + 256);
+    scaledVel[0] = storedVel[0] * restitution;
+    scaledVel[1] = storedVel[1] * restitution;
+    scaledVel[2] = storedVel[2] * restitution;
+    scaledVel[3] = storedVel[3] * restitution;
+
+    // Propagate to all joints
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_8A30(jointDataPtr, storedVel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetAngularVelocity (vfn_43) @ 0x8224F948 | size: 0x44
+//
+// Stores angular velocity at offset +272, calls the base class handler
+// (game_CE58), then propagates angular velocity from +240 to all joints
+// via phArticulatedCollider_8B10.
+//
+// @param angularVelocity - 16-byte aligned angular velocity vector
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SetAngularVelocity(const float* angularVelocity) {
+    uint8_t* self = (uint8_t*)this;
+
+    // Store angular velocity at +272
+    float* storedAngVel = (float*)(self + 272);
+    storedAngVel[0] = angularVelocity[0];
+    storedAngVel[1] = angularVelocity[1];
+    storedAngVel[2] = angularVelocity[2];
+    storedAngVel[3] = angularVelocity[3];
+
+    // Call base class handler
+    game_CE58(this);
+
+    // Propagate angular velocity at +240 to all joints
+    float* angVel = (float*)(self + 240);
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_8B10(jointDataPtr, angVel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::UpdatePostIntegrate (vfn_11) @ 0x822CB360 | size: 0x54
+//
+// Calls vtable slot 10 (self-dispatch), then util_B680 for post-integration
+// cleanup, then dispatches vtable slot 28 on the skeleton object at +16.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::UpdatePostIntegrate() {
+    // Self-dispatch vtable slot 10
+    void** vt = *(void***)this;
+    typedef void (*Slot10Func)(phArticulatedCollider*);
+    ((Slot10Func)vt[10])(this);
+
+    // Post-integration cleanup
+    util_B680(this);
+
+    // Dispatch vtable slot 28 on skeleton at +16
+    void* skeleton = (void*)(uintptr_t)*(uint32_t*)((char*)this + 16);
+    void** skelVt = *(void***)skeleton;
+    typedef void (*Slot28Func)(void*);
+    ((Slot28Func)skelVt[28])(skeleton);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::CopyJointRotationMatrix (vfn_54) @ 0x82250770 | size: 0xA4
+//
+// Resolves a bone index to a body pointer via E668, then copies the 3x3
+// rotation submatrix (rows at +16/+48/+80, columns 0-2) from the body into
+// the output buffer as a 4x4 matrix with zeroed last row.
+//
+// @param outMatrix  - 60-byte output buffer for 3x3 + zero row
+// @param boneIndex  - Bone index to resolve
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::CopyJointRotationMatrix(float* outMatrix, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int bodyIndex = linkIndex + 10;
+    uint8_t* bodyPtr = (uint8_t*)(uintptr_t)jointData[bodyIndex];
+
+    // Copy 3x3 rotation from body: rows at +16, +48, +80 (float triplets)
+    float* row0 = (float*)(bodyPtr + 16);
+    float* row1 = (float*)(bodyPtr + 48);
+    float* row2 = (float*)(bodyPtr + 80);
+
+    // Row 0
+    outMatrix[0]  = row0[0];   // +16
+    outMatrix[1]  = row0[2];   // +48 (body col 1 at +48 of row0? No, +48 is row1)
+    // Actually: scaffold reads +16,+48,+80,+84,+20,+52,+24,+56,+88
+    // Re-reading scaffold: f5=+16, f13=+48, f12=+80, f11=+84, f10=+52, f9=+20, f8=+88, f7=+56, f6=+24
+    // Stores: +0=f5, +4=f13, +8=f12, +24=f11, +20=f10, +16=f9, +40=f8, +36=f7, +32=f6
+    // +48,+52,+56 = 0.0f
+
+    outMatrix[0]  = *(float*)(bodyPtr + 16);   // row0 col0
+    outMatrix[1]  = *(float*)(bodyPtr + 48);   // row1 col0
+    outMatrix[2]  = *(float*)(bodyPtr + 80);   // row2 col0
+    // padding
+    outMatrix[4]  = *(float*)(bodyPtr + 20);   // row0 col1
+    outMatrix[5]  = *(float*)(bodyPtr + 52);   // row1 col1
+    outMatrix[6]  = *(float*)(bodyPtr + 84);   // row2 col1
+    // padding
+    outMatrix[8]  = *(float*)(bodyPtr + 24);   // row0 col2
+    outMatrix[9]  = *(float*)(bodyPtr + 56);   // row1 col2
+    outMatrix[10] = *(float*)(bodyPtr + 88);   // row2 col2
+    // padding
+
+    // Zero last row
+    outMatrix[12] = 0.0f;
+    outMatrix[13] = 0.0f;
+    outMatrix[14] = 0.0f;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ComputeJointCrossProduct (vfn_19) @ 0x82250370 | size: 0xCC
+//
+// Looks up a body position via E668 in another collider, loads its orientation
+// matrix from +1072 and the row at +1088, computes a cross product between
+// that row and a delta vector (input - otherCollider.position@+208), and
+// adds the cross product to the row at +1088.
+//
+// @param outVec       - 16-byte output vector (receives cross+row result)
+// @param targetPos    - 16-byte input position vector
+// @param otherCollider - The other phArticulatedCollider to look up
+// @param boneIndex    - Bone index in otherCollider
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ComputeJointCrossProduct(
+    float* outVec, const float* targetPos,
+    phArticulatedCollider* otherCollider, int boneIndex)
+{
+    int linkIndex = phArticulatedCollider_E668(otherCollider, boneIndex);
+
+    // Get body pointer from other collider's joint array
+    uint32_t* otherJointData = (uint32_t*)(uintptr_t)otherCollider->m_nActiveJoints;
+    int bodyIndex = linkIndex + 10;
+    uint8_t* bodyPtr = (uint8_t*)(uintptr_t)otherJointData[bodyIndex];
+
+    // Load position vector from body +1072
+    float* bodyPos1072 = (float*)(bodyPtr + 1072);
+
+    // Compute delta = targetPos - otherCollider.position(+208)
+    float* otherPos = (float*)((char*)otherCollider + 208);
+    float dx = targetPos[0] - otherPos[0];
+    float dy = targetPos[1] - otherPos[1];
+    float dz = targetPos[2] - otherPos[2];
+
+    // Load row from body +1088
+    float* bodyRow1088 = (float*)(bodyPtr + 1088);
+
+    // Cross product: delta x bodyPos1072 row
+    float cx = dy * bodyPos1072[2] - dz * bodyPos1072[1];
+    float cy = dz * bodyPos1072[0] - dx * bodyPos1072[2];
+    float cz = dx * bodyPos1072[1] - dy * bodyPos1072[0];
+
+    // Add cross product to bodyRow1088 values and store in outVec
+    outVec[0] = cx + bodyRow1088[0];
+    outVec[2] = cy + bodyRow1088[2];
+    outVec[1] = cz + bodyRow1088[1];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateTorqueAtRootJoint (vfn_32) @ 0x8224FB90 | size: 0xCC
+//
+// Calls vtable slot 16 on the skeleton at +16 with a global identity vector,
+// then computes a cross product between the input force vector and the root
+// body's column vectors (at +336/+352), accumulating the torque into the
+// root body's torque vector at +352 and force vector at +336.
+//
+// @param forceVec - 16-byte force vector to accumulate
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::AccumulateTorqueAtRootJoint(const float* forceVec) {
+    // Call vtable slot 16 on skeleton at +16 with identity vector
+    void* skeleton = (void*)(uintptr_t)*(uint32_t*)((char*)this + 16);
+    void** skelVt = *(void***)skeleton;
+    typedef void (*Slot16Func)(void*, void*, void*, int);
+    ((Slot16Func)skelVt[16])(skeleton, (void*)g_identityVec, nullptr, 0);
+
+    // Get root body from active joints array, slot [10] (first body)
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint8_t* rootBody = (uint8_t*)(uintptr_t)jointData[10];  // +40
+
+    // Load torque vector at body +352
+    float* torque = (float*)(rootBody + 352);
+    // Load position from global identity vector
+    float identX = ((float*)g_identityVec)[0];
+    float identY = ((float*)g_identityVec)[1];
+    float identZ = ((float*)g_identityVec)[2];
+
+    // Load force vector components
+    float fX = forceVec[0];
+    float fY = forceVec[1];
+    float fZ = forceVec[2];
+
+    // Cross product: identity x force
+    float cx = identY * fZ - identZ * fY;
+    float cy = identZ * fX - identX * fZ;
+    float cz = identX * fY - identY * fX;
+
+    // Accumulate into torque vector at body +352
+    torque[0] += cx;
+    torque[1] += cy;
+    torque[2] += cz;
+
+    // Accumulate force vector into body +336
+    float* bodyForce = (float*)(rootBody + 336);
+    bodyForce[0] += forceVec[0];
+    bodyForce[1] += forceVec[1];
+    bodyForce[2] += forceVec[2];
+    bodyForce[3] += forceVec[3];
+}
+
 } // namespace rage
 
 // ═════════════════════════════════════════════════════════════════════════════
