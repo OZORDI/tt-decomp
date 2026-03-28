@@ -26,6 +26,19 @@ extern "C" void* SinglesNetworkClient_9280_g(void* client, const char* key);
 extern "C" void* SinglesNetworkClient_A5C8_g(void* context);
 extern "C" void SinglesNetworkClient_B320_g(void* client);
 extern "C" void SinglesNetworkClient_0188_g(void* client, void* param);
+extern "C" uint32_t SinglesNetworkClient_0688_g(void* client, uint32_t value, int bits);
+extern "C" uint32_t SinglesNetworkClient_A868_g(const char* str);
+extern "C" void nop_8240E6D0(const char* msg);
+extern "C" void SinglesNetworkClient_3EE8_g(void* table, void* self);
+extern "C" void SinglesNetworkClient_09F0_g(void* client, void* buf, int size);
+extern uint16_t SinglesNetworkClient_8758_g(void* buffer);
+
+// External data symbols
+extern uint32_t lbl_825D15F0;
+extern uint32_t* lbl_8271A33C;
+extern const char lbl_8205C3AC[];
+extern const char lbl_8205AEF0[];
+extern const char lbl_820397A8[];
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1723,4 +1736,416 @@ extern "C" void SinglesNetworkClient_A8F0_g(void* client)
     if ((wasSet & 0xFF) != 0) {
         SinglesNetworkClient_B320_g(client);
     }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::IsSessionStateCompleted @ 0x824172B8 | size: 0x1C
+//
+// Checks if the session state field at offset +192 equals 3 (completed).
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   true if session state == 3, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint8_t SinglesNetworkClient_72B8_g(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+    uint32_t sessionState = data[48]; // offset +192
+
+    return (sessionState == 3) ? 1 : 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::IsSessionStateActive @ 0x824172D8 | size: 0x4C
+//
+// Checks if the session state field at offset +192 is either 1 or 2
+// (active states).
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   true if session state is 1 or 2, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint8_t SinglesNetworkClient_72D8_g(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+    uint32_t sessionState = data[48]; // offset +192
+
+    if (sessionState == 2) {
+        return 1;
+    }
+    if (sessionState == 1) {
+        return 1;
+    }
+    return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CheckAnyPlayerSlotActive @ 0x821045D0 | size: 0x60
+//
+// Iterates up to 5 player slots (stride 15044 bytes, starting at offset +536)
+// checking if any slot has a non-zero pointer. Also checks field at
+// offset +75756 (0x127EC) for a non-zero session flag.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   1 if any slot is active or session flag is set, 0 otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint8_t SinglesNetworkClient_45D0_g(void* self)
+{
+    uint8_t* base = (uint8_t*)self;
+
+    // Check session flag at offset 0x127EC (75756)
+    uint32_t sessionFlag = *(uint32_t*)(base + 75756);
+    if (sessionFlag != 0) {
+        return 1;
+    }
+
+    // Iterate 5 player slots starting at offset +536, stride 15044
+    uint8_t* slotPtr = base + 536;
+    for (int i = 0; i <= 4; i++) {
+        uint32_t slotValue = *(uint32_t*)slotPtr;
+        if (slotValue != 0) {
+            return 1;
+        }
+        slotPtr += 15044;
+    }
+
+    return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadUInt16FromStream @ 0x8236A3A0 | size: 0x50
+//
+// Reads a 16-bit value from the network stream by temporarily setting the
+// read offset to 16, reading via SinglesNetworkClient_8DF8_g, then
+// restoring the original offset.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   The 32-bit value read from the stream (contains 16-bit data)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint32_t SinglesNetworkClient_A3A0_g(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Save current read offset (field +28)
+    uint32_t savedReadOffset = data[7];
+
+    // Set read offset to 16 bits
+    data[7] = 16;
+
+    // Read from stream
+    uint32_t result;
+    SinglesNetworkClient_8DF8_g(self, &result);
+
+    // Restore original read offset
+    data[7] = savedReadOffset;
+
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteStringWithBufferSize @ 0x821D9AD8 | size: 0x68
+//
+// Writes string data to the network stream, followed by the buffer size.
+// Calls SinglesNetworkClient_8AE0_g to begin the write, writes the string
+// via SinglesNetworkClient_0688_g, then writes the buffer byte count
+// via SinglesNetworkClient_0448_g with a temporarily overridden write offset.
+//
+// Parameters:
+//   self     - Pointer to SinglesNetworkClient instance
+//   strData  - String data value to write (16-bit)
+//
+// Returns:
+//   Result from SinglesNetworkClient_0688_g
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint32_t SinglesNetworkClient_9AD8_g(void* self, uint32_t strData)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Begin write operation
+    SinglesNetworkClient_8AE0_g(self);
+
+    // Write string data (16 bits)
+    uint32_t result = SinglesNetworkClient_0688_g(self, strData, 16);
+
+    // Read buffer size from field +16
+    uint32_t bufferSize = data[4];
+
+    // Begin second write operation
+    SinglesNetworkClient_8AE0_g(self);
+
+    // Compute byte count: (bufferSize + 7) >> 3
+    int32_t byteCount = ((int32_t)bufferSize + 7) >> 3;
+
+    // Save current write offset (field +32), replace with 32
+    uint32_t savedWriteOffset = data[8];
+    data[8] = 32;
+
+    // Write byte count (16 bits)
+    SinglesNetworkClient_0448_g(self, (uint32_t)byteCount, 16);
+
+    // Restore original write offset
+    data[8] = savedWriteOffset;
+
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetPlayerEntryByIndex @ 0x82414E08 | size: 0x50
+//
+// Retrieves a player entry from the player array by index. Validates
+// that the index is in range and the entry at offset +232 is non-zero.
+//
+// Parameters:
+//   self  - Pointer to SinglesNetworkClient instance
+//   index - Player index to look up
+//
+// Returns:
+//   Pointer to player entry if valid, or nullptr
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* SinglesNetworkClient_4E08_g(void* self, int index)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    if (index < 0) {
+        return nullptr;
+    }
+
+    // Check index against count at offset +496
+    uint16_t count = *(uint16_t*)((uint8_t*)self + 496);
+    if (index >= (int)count) {
+        return nullptr;
+    }
+
+    // Get array base pointer at offset +492
+    uint8_t* arrayBase = (uint8_t*)(uintptr_t)data[123]; // offset +492
+
+    // Compute entry: base + index * 248
+    uint8_t* entry = arrayBase + (index * 248);
+    if (entry == nullptr) {
+        return nullptr;
+    }
+
+    // Check validity flag at entry offset +232
+    uint32_t validFlag = *(uint32_t*)(entry + 232);
+    if (validFlag == 0) {
+        return nullptr;
+    }
+
+    return entry;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::FindHashTableEntry @ 0x823FB3B8 | size: 0x64
+//
+// Looks up a key in a hash table. Computes the hash of the key string,
+// then walks the bucket chain comparing each entry's hash at offset +16.
+// Returns a pointer to the entry's data at offset +4 on match.
+//
+// Parameters:
+//   self - Pointer to hash table object (head pointer at offset +0)
+//   key  - Null-terminated string key to look up
+//
+// Returns:
+//   Pointer to entry data (entry + 4) if found, or nullptr
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* SinglesNetworkClient_B3B8_g(void* self, const char* key)
+{
+    uint32_t* tableData = (uint32_t*)self;
+
+    // Get head of bucket chain
+    uint32_t* node = (uint32_t*)(uintptr_t)tableData[0];
+
+    // Compute hash for the key
+    uint32_t keyHash = SinglesNetworkClient_A868_g(key);
+
+    // Walk the chain
+    while (node != nullptr) {
+        // Compare hash at entry offset +16
+        uint32_t entryHash = node[4]; // offset +16
+        if (entryHash == keyHash) {
+            // Return pointer to entry data at offset +4
+            return (void*)((uint8_t*)node + 4);
+        }
+        // Follow next pointer at offset +12
+        node = (uint32_t*)(uintptr_t)node[3];
+    }
+
+    return nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidateMaxBufferIndex @ 0x822F53F0 | size: 0x64
+//
+// Validates the max buffer index against a global sentinel value. If they
+// match, sets a network flag bit (bit 5) at offset +4648 and returns 2.
+// Otherwise returns 0.
+//
+// Parameters:
+//   self      - Pointer to SinglesNetworkClient instance
+//   unused_r4 - Unused parameter
+//   unused_r5 - Unused parameter
+//   msgBuffer - Message buffer to read max buffer index from
+//
+// Returns:
+//   2 if max buffer index matches sentinel, 0 otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" int SinglesNetworkClient_53F0_fw(void* self, void* unused_r4, void* unused_r5, void* msgBuffer)
+{
+    uint8_t* selfBytes = (uint8_t*)self;
+
+    // Get max buffer index from the message buffer
+    uint16_t maxIndex = SinglesNetworkClient_8758_g(msgBuffer);
+
+    // Compare against global sentinel
+    uint32_t sentinel = lbl_825D15F0;
+    if (maxIndex == sentinel) {
+        // Set bit 5 in network flags at offset +4648
+        uint8_t flags = selfBytes[4648];
+        flags |= 0x20;
+        selfBytes[4648] = flags;
+        return 2;
+    }
+
+    return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetSessionPropertyIfModeOne @ 0x822F4C98 | size: 0x70
+//
+// If the global network mode (accessed via lbl_8271A33C->offset +12) equals 1,
+// looks up a session property by key and sets its value to 1 with type 3.
+// Otherwise sets field +184 to -1.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_4C98_g(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Load global pointer and check mode at offset +12
+    uint32_t* globalPtr = (uint32_t*)(uintptr_t)lbl_8271A33C;
+    int32_t mode = (int32_t)globalPtr[3]; // offset +12
+
+    if (mode == 1) {
+        // Begin property lookup
+        SinglesNetworkClient_B1E8_g(self);
+
+        // Look up property by key string
+        uint32_t* property = (uint32_t*)SinglesNetworkClient_9318_g(self, (const char*)&lbl_8205C3AC);
+
+        if (property == nullptr) {
+            return;
+        }
+
+        // Set property value = 1, type = 3
+        property[0] = 1;
+        property[1] = 3;
+        return;
+    }
+
+    // Not mode 1: set field +184 to -1
+    data[46] = 0xFFFFFFFF; // offset +184
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::EnableNetworkFlagAndSetProperty @ 0x822EBF20 | size: 0x64
+//
+// Sets the enabled flag at offset +84 to true, then looks up a session
+// property by key and sets its value to 1 with type 3. Commits the
+// property change if the prior lock state was set.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_BF20_g(void* self)
+{
+    uint8_t* selfBytes = (uint8_t*)self;
+    uint32_t* selfData = (uint32_t*)self;
+
+    // Set enabled flag at offset +84
+    selfBytes[84] = 1;
+
+    // Acquire lock / begin property access
+    uint8_t wasLocked = SinglesNetworkClient_B2A8_g(self);
+
+    // Get property map pointer from offset +92
+    void* propertyMap = (void*)(uintptr_t)selfData[23]; // offset +92
+
+    // Look up property by key string
+    uint32_t* property = (uint32_t*)SinglesNetworkClient_9318_g(propertyMap, (const char*)&lbl_8205AEF0);
+
+    if (property != nullptr) {
+        // Set property value = 1, type = 3
+        property[0] = 1;
+        property[1] = 3;
+    }
+
+    // Commit changes if lock was previously held
+    if ((wasLocked & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetFirstUnreadyPlayer @ 0x8218A3E8 | size: 0x50
+//
+// Checks if both players (at offsets +116 and +120) have their ready flag
+// set at offset +472. Returns the first player pointer that is not ready.
+// If both are ready, logs a debug message and returns nullptr.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   Pointer to the first unready player, or nullptr if both ready
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* SinglesNetworkClient_A3E8_g(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Get player 1 pointer from offset +116
+    void* player1 = (void*)(uintptr_t)data[29]; // offset +116
+
+    // Check player 1 ready flag at offset +472
+    int32_t player1Ready = *(int32_t*)((uint8_t*)player1 + 472);
+
+    if (player1Ready == 0) {
+        return player1;
+    }
+
+    // Get player 2 pointer from offset +120
+    void* player2 = (void*)(uintptr_t)data[30]; // offset +120
+
+    // Check player 2 ready flag at offset +472
+    int32_t player2Ready = *(int32_t*)((uint8_t*)player2 + 472);
+
+    if (player2Ready == 0) {
+        return player2;
+    }
+
+    // Both ready: log debug message and return nullptr
+    nop_8240E6D0(lbl_820397A8);
+    return nullptr;
 }
