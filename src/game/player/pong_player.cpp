@@ -108,6 +108,42 @@ extern void pongPlayer_ComputeStepDelta(void* obj, int maxSteps, float* outDelta
 extern bool pongPlayer_CheckServeInput(pongPlayer* p);                            // @ 0x82195B60
 extern void pongPlayer_InitActionState(void* actionState, int released);            // @ 0x821A1460
 
+// ---------------------------------------------------------------------------
+// Resolved global data addresses (from binary analysis)
+// ---------------------------------------------------------------------------
+
+// .rdata float constants (adjacent 4-byte floats in 0x8202D1xx)
+extern const float g_kFloatConst_D108;       // @ 0x8202D108
+extern const float g_kFloatConst_D10C;       // @ 0x8202D10C
+extern const float g_kFloatConst_D110;       // @ 0x8202D110
+
+// .rdata vector constants (0x8207Dxxx)
+extern const float g_kVecConst_7D110[4];     // @ 0x8207D110  (16B)
+extern const float g_kVecConst_7D168[3];     // @ 0x8207D168  (12B)
+
+// .rdata scalar constants (0x82079xxx)
+extern const double g_kDoubleConst_79D00;    // @ 0x82079D00  (8B)
+extern const double g_kDoubleConst_79B00;    // @ 0x82079B00  (8B)
+extern const float  g_kFloatConst_79C04;     // @ 0x82079C04
+extern const float  g_kFloatConst_79CD8;     // @ 0x82079CD8
+extern const float  g_kFloatConst_79BAC;     // @ 0x82079BAC
+extern const float  g_kFloatConst_79FFC;     // @ 0x82079FFC
+extern const float  g_kFloatConst_79FF8;     // @ 0x82079FF8
+extern const float  g_kFloatConst_79FF4;     // @ 0x82079FF4
+
+// .data globals — game state pointers
+extern void*    g_pGlobalClock;              // @ 0x8271A304
+extern void*    g_pCourtState;               // @ 0x8271A314
+extern void*    g_pMatchState;               // @ 0x8271A318
+extern void*    g_pPlayerRecords;            // @ 0x8271A31C
+extern void*    g_pPlayerRecords2;           // @ 0x8271A324
+extern void*    g_pMatchConfig;              // @ 0x8271A32C
+
+// .data globals — game objects
+extern void**   g_pInputArrayTable;          // @ 0x825EAB28
+extern uint8_t  g_mirrorBuffer[32];          // @ 0x82606720
+extern uint8_t  g_ballSplashArray[];         // @ 0x8261A3D0  (416-byte-per-entry)
+
 // Swing/target helpers
 extern void pongPlayer_ComputeTargetPosition(vec3* outVec, void* targetStruct);
 extern float fiAsciiTokenizer_ParseFloat(float input);
@@ -1756,7 +1792,7 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
     
     // Compute address: base array + (index * 416) + 48
     // Base address is 0x8261A3D0 + 48 = 0x8261A400
-    uintptr_t baseAddr = 0x8261A400;
+    uintptr_t baseAddr = (uintptr_t)(g_ballSplashArray + 48);  // was 0x8261A400 (g_ballSplashArray @ 0x8261A3D0 + 48)
     void* targetStruct = reinterpret_cast<void*>(baseAddr + (index * 416));
     
     // Call helper to compute target vector
@@ -1766,30 +1802,25 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
     float animPhase = this->m_swingPhaseInput;  // this+68
     
     // Load global clock object and extract timing value
-    extern uint32_t g_pClockObj;  // @ 0x8271A304
-    void* clockObj = *reinterpret_cast<void**>(g_pClockObj);
+    void* clockObj = *reinterpret_cast<void**>((uintptr_t)g_pGlobalClock);
     float clockValue = *reinterpret_cast<float*>(
         reinterpret_cast<uintptr_t>(clockObj) + 24);
     
     // Load constants
     // g_kFrameToSecScale already declared at file scope (non-const)
     extern const float g_kTimingConstant;   // @ 0x825C4930
-    extern const float g_kAdjustmentScale;  // @ 0x82079BAC (inside larger struct)
-    
     // Step 3: Compute timing values
     float scaledPhase = animPhase * g_kFrameToSecScale;
     float timingFactor = clockValue * g_kTimingConstant;
-    
-    // Step 4: Call math function (misnamed as fiAsciiTokenizer_ParseFloat)
-    // This is likely atan2 or a similar trigonometric function
-    float mathResult = fiAsciiTokenizer_ParseFloat(scaledPhase * g_kAdjustmentScale);
+
+    // Step 4: Call math function
+    float mathResult = fiAsciiTokenizer_ParseFloat(scaledPhase * g_kFloatConst_79BAC);  // was g_kAdjustmentScale @ 0x82079BAC
     
     // Step 5: Compute adjustment magnitude
     float adjustment = mathResult * timingFactor;
     
     // Step 6: Check if adjustment is significant
-    extern const float g_kAdjustmentThreshold;  // @ 0x8202D110
-    if (fabsf(adjustment) > g_kAdjustmentThreshold) {
+    if (fabsf(adjustment) > g_kFloatConst_D110) {  // was g_kAdjustmentThreshold @ 0x8202D110
         // Load current value at +72
         float currentValue = this->m_swingDirectionAdj;
         
@@ -1800,17 +1831,16 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
         
         // Determine final adjustment based on sign
         float finalAdjustment;
-        if (currentValue * targetVec.x >= g_kAdjustmentThreshold) {
+        if (currentValue * targetVec.x >= g_kFloatConst_D110) {
             finalAdjustment = currentValue + zAdjustment;
         } else {
             finalAdjustment = zAdjustment - currentValue;
         }
         
         // Load max threshold and compute clamped value
-        extern const float g_kMaxAdjustment;  // @ 0x82079CD8
-        void* clockObj2 = *reinterpret_cast<void**>(g_pClockObj);
+        void* clockObj2 = *reinterpret_cast<void**>((uintptr_t)g_pGlobalClock);
         float maxThreshold = *reinterpret_cast<float*>(
-            reinterpret_cast<uintptr_t>(clockObj2) + 16) * g_kMaxAdjustment;
+            reinterpret_cast<uintptr_t>(clockObj2) + 16) * g_kFloatConst_79CD8;  // was g_kMaxAdjustment @ 0x82079CD8
         
         if (finalAdjustment < maxThreshold) {
             float delta = maxThreshold - finalAdjustment;
@@ -1903,7 +1933,7 @@ void pongPlayer::UpdatePositionFromSwingTarget() {
 void pongPlayer::InitializeCollisionGrid(int r4, uint8_t metadataByte)
 {
     // Load constants from .rdata
-    const float* constants = (const float*)0x8202D10C;
+    const float* constants = &g_kFloatConst_D10C;  // was (const float*)0x8202D10C
     const float scale = constants[0];      // Base scale factor
     const float zero = constants[1];       // Zero constant
     const float halfScale = 0.5f;          // Normalization factor
@@ -1915,7 +1945,7 @@ void pongPlayer::InitializeCollisionGrid(int r4, uint8_t metadataByte)
     // Grid storage base pointers
     uint8_t* gridBase = (uint8_t*)this + 864;      // +0x360
     uint8_t* cellPtr = (uint8_t*)this + 984;       // +0x3D8 (first cell)
-    uint8_t* mirrorBase = (uint8_t*)0x82606720;    // Global mirror buffer
+    uint8_t* mirrorBase = g_mirrorBuffer;  // was (uint8_t*)0x82606720
     
     // Outer loop: 4 rows (i = 0 to 3)
     for (int i = 0; i < 4; i++) {
@@ -2080,8 +2110,7 @@ void pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags) {
            &finalVec, sizeof(vec3));
     
     // Load array pointer and compute index
-    extern void** g_pInputArrayTable;  // @ 0x825EAB28
-    int32_t arrayIndex = inputSlot + 17;
+    int32_t arrayIndex = inputSlot + 17;  // g_pInputArrayTable declared at file scope @ 0x825EAB28
     void* arrayEntry = g_pInputArrayTable[arrayIndex];
     
     // Load threshold value from entry+56
@@ -2091,29 +2120,19 @@ void pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags) {
     // Compute scaled threshold check
     float scaledThreshold = threshold * deltaX;
     
-    // Load comparison constants
-    extern const float g_kInputThresholdLow;   // @ 0x8202D108
-    extern const float g_kInputThresholdHigh;  // @ 0x8202D110
-    extern const float g_kZeroThreshold;       // @ 0x8202D108
-    
     // Initialize output value
     int32_t outputValue = 0;
-    
+
     // Check if input magnitude is significant
-    if (fabs(deltaX) >= g_kZeroThreshold) {
+    if (fabs(deltaX) >= g_kFloatConst_D108) {  // was g_kZeroThreshold @ 0x8202D108
         // Quantize the input to integer range
         // This complex section converts float input to clamped integer
         
         // Determine sign and apply scaling
         float absInput = fabs(deltaX);
         
-        // Load quantization constants
-        extern const float g_kQuantScale1;  // @ 0x82079FFC
-        extern const float g_kQuantScale2;  // @ 0x82079FF8
-        extern const float g_kQuantMult;    // @ 0x82079FF4
-        
-        float quantScale = (deltaY <= g_kInputThresholdHigh) ? 
-                          g_kQuantScale1 : g_kQuantScale2;
+        float quantScale = (deltaY <= g_kFloatConst_D110) ?  // was g_kInputThresholdHigh @ 0x8202D110
+                          g_kFloatConst_79FFC : g_kFloatConst_79FF8;  // was g_kQuantScale1/2 @ 0x82079FFC/FF8
         
         // Apply quantization
         int32_t quantX = static_cast<int32_t>(deltaY);
@@ -2470,8 +2489,7 @@ extern void pongPlayer_SetupShotTarget(void* target, float f1, float f2);
 extern void pg_E6E0(int code, uint8_t mask, int p3, int p4);
 extern void pongPlayer_9108_g(void* target, void* syncData);
 
-extern void* g_pMatchState;       // @ 0x8271A318
-extern void* g_pMatchConfig;      // @ 0x8271A32C
+// g_pMatchState @ 0x8271A318 and g_pMatchConfig @ 0x8271A32C declared at file scope
 extern float g_kSpeedTable[];     // @ 0x825D7600
 
 
@@ -2778,9 +2796,8 @@ void pongPlayer::UpdateServeSpeed() {  // pongPlayer_CD48_g @ 0x8218CD48
     void* creatureState = m_pCreatureState;  // +452
 
     if (!indexValid) {
-        extern const float g_kDefaultServeSpeed;  // @ 0x8202D108
         *reinterpret_cast<float*>(
-            reinterpret_cast<uintptr_t>(creatureState) + 208) = g_kDefaultServeSpeed;
+            reinterpret_cast<uintptr_t>(creatureState) + 208) = g_kFloatConst_D108;  // was g_kDefaultServeSpeed
         return;
     }
 
@@ -2843,8 +2860,7 @@ void pongPlayer::InitializeReplaySnapshot(void* outSnapshot) {
     void** singletonPtr = reinterpret_cast<void**>(g_pMatchState);
     void* singleton = *singletonPtr;
 
-    extern const float g_kReplayZero;  // @ 0x8202D110
-    float zero = g_kReplayZero;
+    float zero = g_kFloatConst_D110;  // was g_kReplayZero @ 0x8202D110
 
     float posVec[4]  = { zero, zero, zero, 0.0f };
     float zeroVec[4] = { zero, zero, zero, 0.0f };
@@ -2884,7 +2900,7 @@ void pongPlayer::InitializeReplaySnapshot(void* outSnapshot) {
  */
 void pongPlayer::ClampMovementToCourtBounds(float* delta) {
     // pongPlayer_D558_wrh @ 0x8219D558
-    extern const float g_kCourtZero;       // @ 0x8202D110
+    // Constants: g_kFloatConst_D110=g_kFloatConst_D110 @ 0x8202D110
     extern const double g_kCourtMaxDelta;  // @ 0x82079D78
     extern const double g_kCourtNegMax;    // @ 0x82079B80
     extern const float g_kCourtMinDelta;   // @ 0x82079D68
@@ -2893,14 +2909,14 @@ void pongPlayer::ClampMovementToCourtBounds(float* delta) {
     float negMax   = static_cast<float>(g_kCourtNegMax);
 
     // Clamp X component
-    if (delta[0] > g_kCourtZero) {
+    if (delta[0] > g_kFloatConst_D110) {
         float adj = delta[0] - m_courtHalfWidthX;  // +896
         if (adj >= 0.0f) {
             float clamped = (adj >= 0.0f) ? adj : negMax;
             delta[0] = (clamped - maxDelta >= 0.0f) ? maxDelta : clamped;
         }
     }
-    if (delta[0] < g_kCourtZero) {
+    if (delta[0] < g_kFloatConst_D110) {
         float adj = m_courtHalfWidthX + delta[0];
         if (adj - g_kCourtMinDelta >= 0.0f) {
             delta[0] = (adj >= 0.0f) ? negMax : adj;
@@ -2908,14 +2924,14 @@ void pongPlayer::ClampMovementToCourtBounds(float* delta) {
     }
 
     // Clamp Z component
-    if (delta[2] > g_kCourtZero) {
+    if (delta[2] > g_kFloatConst_D110) {
         float adj = delta[2] - m_courtHalfWidthZ;  // +904
         if (adj >= 0.0f) {
             float clamped = (adj >= 0.0f) ? adj : negMax;
             delta[2] = (clamped - maxDelta >= 0.0f) ? maxDelta : clamped;
         }
     }
-    if (delta[2] < g_kCourtZero) {
+    if (delta[2] < g_kFloatConst_D110) {
         float adj = m_courtHalfWidthZ + delta[2];
         if (adj - g_kCourtMinDelta >= 0.0f) {
             delta[2] = (adj >= 0.0f) ? negMax : adj;
@@ -3523,7 +3539,7 @@ extern void pongPlayer_5F70_g(void* charSlotEntry);  // copy shot data to char t
 extern void ref_fi_FCD8(void* self);                  // finalise serve FSM
 
 void pongPlayer::FinalizeServeSetup() {  // pongPlayer_F9C0_g @ 0x8219F9C0
-    extern uint8_t g_characterTable[];  // @ 0x8261A3D0
+    // g_ballSplashArray declared at file scope @ 0x8261A3D0
     uint8_t* base = reinterpret_cast<uint8_t*>(this);
 
     // Read parent object pointer (this+44) and get character slot index
@@ -3534,7 +3550,7 @@ void pongPlayer::FinalizeServeSetup() {  // pongPlayer_F9C0_g @ 0x8219F9C0
     // If character slot is valid, copy shot data to the character table
     if (charSlot != -1) {
         void* charEntry = reinterpret_cast<void*>(
-            reinterpret_cast<uintptr_t>(g_characterTable) + 48 + charSlot * 416);
+            reinterpret_cast<uintptr_t>(g_ballSplashArray) + 48 + charSlot * 416);
         pongPlayer_5F70_g(charEntry);
     }
 
@@ -3544,7 +3560,7 @@ void pongPlayer::FinalizeServeSetup() {  // pongPlayer_F9C0_g @ 0x8219F9C0
         reinterpret_cast<uintptr_t>(parent2) + 464);
     uint8_t shotType = base[5504];
     *reinterpret_cast<uint8_t*>(
-        reinterpret_cast<uintptr_t>(g_characterTable) + 264 + charSlot2 * 416) = shotType;
+        reinterpret_cast<uintptr_t>(g_ballSplashArray) + 264 + charSlot2 * 416) = shotType;
 
     // Clear serve pending flag on parent
     void* parent3 = *reinterpret_cast<void**>(base + 44);
