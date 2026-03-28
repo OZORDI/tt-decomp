@@ -4610,3 +4610,294 @@ void pongNetMessageHolder_vfn_2_2E58_1(pongNetMessageHolder* holder) {
         holder->m_pInternalArray = nullptr;
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolderBase::~pongNetMessageHolderBase @ 0x823B5890 | size: 0x58
+//
+// Virtual destructor (vtable slot 0) for pongNetMessageHolderBase.
+// Resets the vtable pointer to the base class vtable (0x8206FA88),
+// decrements the global live-instance count at 0x826066A4,
+// and optionally frees the object memory if the scalar-delete flag (bit 0
+// of the flags parameter) is set.
+//
+// Python-verified:
+//   vtable = lis(-32249) + (-1400) = 0x8206FA88 (pongNetMessageHolderBase)
+//   g_liveCount = lis(-32160) + 26276 = 0x826066A4
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolderBase_vfn_0(pongNetMessageHolderBase* self, int flags) {
+    const uint32_t BASE_VTABLE = 0x8206FA88;  // pongNetMessageHolderBase vtable
+
+    // Reset vtable to base class
+    *reinterpret_cast<uint32_t*>(self) = BASE_VTABLE;
+
+    // Decrement global live-instance counter
+    uint32_t* liveCount = reinterpret_cast<uint32_t*>(0x826066A4u);
+    *liveCount -= 1;
+
+    // Scalar-delete: free memory if bit 0 of flags is set
+    if (flags & 1) {
+        rage_free(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateDisconnectNotificationPool @ 0x823C30A8 | size: 0x64
+//
+// Teardown for a message pool (5 entries, stride 16).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 80, 5 * 16 = 80
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_30A8_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 5 entries (stride 16), resetting vtables
+        uint8_t* cursor = messageArray + 80;
+        for (int i = 4; i >= 0; --i) {
+            cursor -= 16;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateGamerUpdateMessagePool @ 0x823C32A0 | size: 0x64
+//
+// Teardown for a message pool (5 entries, stride 44).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 220, 5 * 44 = 220
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_32A0_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 5 entries (stride 44), resetting vtables
+        uint8_t* cursor = messageArray + 220;
+        for (int i = 4; i >= 0; --i) {
+            cursor -= 44;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateCancelLobbyCountdownPool @ 0x823C3400 | size: 0x64
+//
+// Teardown for a message pool (4 entries, stride 12).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 48, 4 * 12 = 48
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_3400_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 4 entries (stride 12), resetting vtables
+        uint8_t* cursor = messageArray + 48;
+        for (int i = 3; i >= 0; --i) {
+            cursor -= 12;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateExitPostGameMessagePool @ 0x823C35B0 | size: 0x64
+//
+// Teardown for a message pool (5 entries, stride 20).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 100, 5 * 20 = 100
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_35B0_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 5 entries (stride 20), resetting vtables
+        uint8_t* cursor = messageArray + 100;
+        for (int i = 4; i >= 0; --i) {
+            cursor -= 20;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateInternalMessageRelayPool @ 0x823C3670 | size: 0x64
+//
+// Teardown for a message pool (10 entries, stride 12).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 120, 10 * 12 = 120
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_3670_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 10 entries (stride 12), resetting vtables
+        uint8_t* cursor = messageArray + 120;
+        for (int i = 9; i >= 0; --i) {
+            cursor -= 12;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocatePlayerUpdateLargeMessagePool @ 0x823C3730 | size: 0x64
+//
+// Teardown for a message pool (10 entries, stride 524).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 5240, 10 * 524 = 5240
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_3730_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 10 entries (stride 524), resetting vtables
+        uint8_t* cursor = messageArray + 5240;
+        for (int i = 9; i >= 0; --i) {
+            cursor -= 524;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateDataSendMessagePool @ 0x823C3AE8 | size: 0x64
+//
+// Teardown for a message pool (31 entries, stride 40).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 1240, 31 * 40 = 1240
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_3AE8_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 31 entries (stride 40), resetting vtables
+        uint8_t* cursor = messageArray + 1240;
+        for (int i = 30; i >= 0; --i) {
+            cursor -= 40;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateDataRequestMessagePool @ 0x823C3C60 | size: 0x64
+//
+// Teardown for a message pool (31 entries, stride 552).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 17112, 31 * 552 = 17112
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_3C60_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 31 entries (stride 552), resetting vtables
+        uint8_t* cursor = messageArray + 17112;
+        for (int i = 30; i >= 0; --i) {
+            cursor -= 552;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::DeallocateDropSpectatorConnectionPool @ 0x823C3FD0 | size: 0x64
+//
+// Teardown for a message pool (2 entries, stride 124).
+// Resets each entry's vtable to PongNetMessage base, then frees.
+//
+// Python-verified:
+//   start = base + 248, 2 * 124 = 248
+//   sentinel = 0x8206C304 (PongNetMessage vtable)
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_3FD0_1(pongNetMessageHolder* holder) {
+    uint8_t* messageArray = static_cast<uint8_t*>(holder->m_pInternalArray);
+
+    if (messageArray != nullptr) {
+        const uint32_t PONG_NET_MESSAGE_VTABLE = 0x8206C304;
+
+        // Walk backwards through 2 entries (stride 124), resetting vtables
+        uint8_t* cursor = messageArray + 248;
+        for (int i = 1; i >= 0; --i) {
+            cursor -= 124;
+            *reinterpret_cast<uint32_t*>(cursor) = PONG_NET_MESSAGE_VTABLE;
+        }
+
+        rage_free(messageArray);
+        holder->m_pInternalArray = nullptr;
+    }
+}
