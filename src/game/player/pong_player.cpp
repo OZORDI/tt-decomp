@@ -2921,3 +2921,368 @@ void pongPlayer::ClampMovementToCourtBounds(float* delta) {
         }
     }
 }
+
+
+// ===========================================================================
+// SECTION 26 — SaveDrawData  @ 0x8218E860 | size: 0x30 (48 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::SaveDrawData()
+ *
+ * Delegates draw-data serialisation to the render sub-object.
+ * If the player is not active (byte +36 == 0), calls the debug no-op
+ * and returns early.  Otherwise loads the render object pointer at +444,
+ * advances by 16, and calls vtable slot 1 (SaveDrawData) on it.
+ */
+void pongPlayer::SaveDrawData() {  // pongPlayer_SaveDrawData @ 0x8218E860
+    if (!m_bVisible) {  // byte +36
+        nop_8240E6D0();  // debug logging no-op
+        return;
+    }
+    void* renderObj = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(this) + 444);
+    void* renderSub = reinterpret_cast<void*>(
+        reinterpret_cast<uintptr_t>(renderObj) + 16);
+    // vtable slot 1 call on renderSub
+    void** vtable = *reinterpret_cast<void***>(renderSub);
+    typedef void (*SaveDrawDataFn)(void*);
+    SaveDrawDataFn fn = reinterpret_cast<SaveDrawDataFn>(vtable[1]);
+    fn(renderSub);
+}
+
+
+// ===========================================================================
+// SECTION 27 — CompareTypeNames  @ 0x820CF0B8 | size: 0x38 (56 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::CompareTypeNames(void* a, void* b)
+ *
+ * Byte-by-byte string comparison of two RTTI type name strings.
+ * Each parameter is a pointer to an object; the function dereferences
+ * the first word (vtable/type ptr), then dereferences again to get
+ * the actual string pointer, and compares the strings character by
+ * character.  Returns the difference of the first mismatched byte
+ * pair, or 0 if identical up to the null terminator.
+ *
+ * Equivalent to: strcmp(**(char***)a, **(char***)b)
+ */
+int pongPlayer::CompareTypeNames(void* a, void* b) {  // pongPlayer_F0B8_p46 @ 0x820CF0B8
+    const char* strA = *reinterpret_cast<const char**>(
+        *reinterpret_cast<uintptr_t*>(a));
+    const char* strB = *reinterpret_cast<const char**>(
+        *reinterpret_cast<uintptr_t*>(b));
+
+    while (true) {
+        int diff = static_cast<int>(static_cast<uint8_t>(*strA)) -
+                   static_cast<int>(static_cast<uint8_t>(*strB));
+        if (*strA == '\0') {
+            return diff;
+        }
+        ++strA;
+        ++strB;
+        if (diff != 0) {
+            return diff;
+        }
+    }
+}
+
+
+// ===========================================================================
+// SECTION 28 — IsLocomotionReady  @ 0x82192578 | size: 0x50 (80 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::IsLocomotionReady()
+ *
+ * Checks whether the player's locomotion sub-system is in a ready state.
+ * Traverses: this+452 -> +188 -> +120 to get a locomotion object.
+ * If null, returns false.  Otherwise calls pongPlayer_6AA0_g on that
+ * object+32 and returns true if it succeeds, false otherwise.
+ */
+bool pongPlayer::IsLocomotionReady() const {  // pongPlayer_2578_g @ 0x82192578
+    void* sub1 = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(this) + 452);
+    void* sub2 = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(sub1) + 188);
+    void* locoObj = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(sub2) + 120);
+    if (!locoObj) {
+        return false;
+    }
+    void* locoState = reinterpret_cast<void*>(
+        reinterpret_cast<uintptr_t>(locoObj) + 32);
+    return pongPlayer_6AA0_g(locoState);
+}
+
+
+// ===========================================================================
+// SECTION 29 — ResetServePosition  @ 0x821936D8 | size: 0x60 (96 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::ResetServePosition()
+ *
+ * Resets the player to the serve position by:
+ *  1. Checking a handedness flag via the geometry singleton (byte at
+ *     field+464+global_offset+64), converting to a "flip" boolean.
+ *  2. Calling pongPlayer_3628_g(this, flipFlag) to set serve-side.
+ *  3. Calling game_C690(this) to compute the reset position.
+ *  4. Calling pongMover_Reset on the mover sub-object at (this+452)->+168
+ *     with the position result.
+ */
+extern void pongPlayer_3628_g(pongPlayer* p, uint8_t flip);
+extern void* game_C690(pongPlayer* player);
+extern void pongMover_Reset(void* mover, void* position);
+extern uint32_t g_kGeomOffset;  // global loaded via lis+lwz
+
+void pongPlayer::ResetServePosition() {  // pongPlayer_36D8_g @ 0x821936D8
+    uint32_t fieldOffset = *reinterpret_cast<uint32_t*>(
+        reinterpret_cast<uintptr_t>(this) + 464);
+    uint32_t geomAddr = fieldOffset + g_kGeomOffset;
+    uint8_t handFlag = *reinterpret_cast<uint8_t*>(geomAddr + 64);
+    // cntlzw + rlwinm: convert 0 -> 1, nonzero -> 0
+    uint8_t flip = (handFlag == 0) ? 1 : 0;
+
+    pongPlayer_3628_g(this, flip);
+
+    void* posResult = game_C690(this);
+
+    void* sub = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(this) + 452);
+    void* mover = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(sub) + 168);
+    pongMover_Reset(mover, posResult);
+}
+
+
+// ===========================================================================
+// SECTION 30 — GetFrameIndexDelta  @ 0x821A7A48 | size: 0x58 (88 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::GetFrameIndexDelta(void* frameData)
+ *
+ * Computes a frame index delta from two 16-bit fields at frameData+4 and +6.
+ * If both are -1 (0xFFFF), returns 0 (no frames).
+ * Otherwise computes (field4 - field6 + 1), wrapping by +20 if field4 < field6.
+ */
+int pongPlayer::GetFrameIndexDelta(void* frameData) {  // pongPlayer_7A48_g @ 0x821A7A48
+    int16_t field4 = *reinterpret_cast<int16_t*>(
+        reinterpret_cast<uintptr_t>(frameData) + 4);
+    uint16_t field6 = *reinterpret_cast<uint16_t*>(
+        reinterpret_cast<uintptr_t>(frameData) + 6);
+
+    if (field4 == -1 && field6 == 0xFFFF) {
+        return 0;
+    }
+
+    int16_t end = static_cast<int16_t>(field6);
+    int diff = static_cast<int>(field4) - static_cast<int>(end);
+    if (field4 >= end) {
+        return diff + 1;
+    }
+    return diff + 21;
+}
+
+
+// ===========================================================================
+// SECTION 31 — ComputePositionWithOffsets  @ 0x821D62A8 | size: 0x60 (96 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::ComputePositionWithOffsets(void* inputData)
+ *
+ * Computes a combined position vector by calling pongPlayer_6470_g to get
+ * a base target vector, then adding the offset vectors at this+224 (vec4)
+ * and this+240 (vec4), storing the result at this+32.
+ *
+ * result = 6470_g(self, inputData) + vec4@(self+224) + vec4@(self+240)
+ */
+void pongPlayer::ComputePositionWithOffsets(void* inputData) {  // pongPlayer_62A8_g @ 0x821D62A8
+    float tempVec[4];
+    pongPlayer_6470_g(reinterpret_cast<vec3*>(tempVec), inputData);
+
+    float* offset1 = reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(this) + 224);
+    float* offset2 = reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(this) + 240);
+    float* dest = reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(this) + 32);
+
+    // vaddfp: result = temp + offset1 + offset2
+    dest[0] = tempVec[0] + offset1[0] + offset2[0];
+    dest[1] = tempVec[1] + offset1[1] + offset2[1];
+    dest[2] = tempVec[2] + offset1[2] + offset2[2];
+    dest[3] = tempVec[3] + offset1[3] + offset2[3];
+}
+
+
+// ===========================================================================
+// SECTION 32 — ComputePositionWithOffset  @ 0x821D6308 | size: 0x54 (84 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::ComputePositionWithOffset()
+ *
+ * Similar to ComputePositionWithOffsets but only adds one offset vector
+ * (at this+224).  Calls pongPlayer_6470_g with r5=0 (no input data),
+ * then adds vec4@(this+224), storing the result at this+32.
+ *
+ * result = 6470_g(self, NULL) + vec4@(self+224)
+ */
+void pongPlayer::ComputePositionWithOffset() {  // pongPlayer_6308_g @ 0x821D6308
+    float tempVec[4];
+    pongPlayer_6470_g(reinterpret_cast<vec3*>(tempVec), nullptr);
+
+    float* offset = reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(this) + 224);
+    float* dest = reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(this) + 32);
+
+    // vaddfp: result = temp + offset
+    dest[0] = tempVec[0] + offset[0];
+    dest[1] = tempVec[1] + offset[1];
+    dest[2] = tempVec[2] + offset[2];
+    dest[3] = tempVec[3] + offset[3];
+}
+
+
+// ===========================================================================
+// SECTION 33 — CheckHandednessDifference  @ 0x821E04B0 | size: 0x54 (84 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::CheckHandednessDifference()
+ *
+ * Calls pongPlayer_0270_g to get an index, uses it to look up a 4-byte
+ * entry in the table at this+796.  XORs byte[0] with byte[3] of that entry;
+ * if the XOR result > 127, returns true (significant difference), else false.
+ */
+extern int pongPlayer_0270_g(pongPlayer* p);
+
+bool pongPlayer::CheckHandednessDifference() {  // pongPlayer_04B0_g @ 0x821E04B0
+    int index = pongPlayer_0270_g(this);
+
+    uint8_t* tableBase = *reinterpret_cast<uint8_t**>(
+        reinterpret_cast<uintptr_t>(this) + 796);
+    uint8_t* entry = tableBase + (index * 4);
+
+    uint8_t byte3 = entry[3];
+    uint8_t byte0 = entry[0];
+    uint8_t diff = byte3 ^ byte0;
+
+    return diff > 127;
+}
+
+
+// ===========================================================================
+// SECTION 34 — GetStateObjectByIndex  @ 0x820CE3F0 | size: 0x64 (100 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::GetStateObjectByIndex(uint32_t index)
+ *
+ * Returns a pointer to one of five state sub-objects stored at offsets
+ * +100, +104, +108, +112, +116 of this player.  Index must be 0-4;
+ * returns null for out-of-range values.
+ */
+void* pongPlayer::GetStateObjectByIndex(uint32_t index) const {  // pongPlayer_E3F0_p45 @ 0x820CE3F0
+    switch (index) {
+        case 0: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 100);
+        case 1: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 104);
+        case 2: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 108);
+        case 3: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 112);
+        case 4: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 116);
+        default: return nullptr;
+    }
+}
+
+
+// ===========================================================================
+// SECTION 35 — SyncByteField  @ 0x82199108 | size: 0x7C (124 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::SyncByteField(void* target, void* source)
+ *
+ * Compares byte[0] of target with byte[0] of source.  If different:
+ *   - If field +8 (callback pointer) is non-null, invokes the callback
+ *     with field +4 as the argument (marks the field dirty for network sync).
+ *   - Copies the new byte value from source to target.
+ */
+void pongPlayer::SyncByteField(void* target, void* source) {  // pongPlayer_9108_g @ 0x82199108
+    uint8_t oldVal = *reinterpret_cast<uint8_t*>(target);
+    uint8_t newVal = *reinterpret_cast<uint8_t*>(source);
+
+    if (oldVal != newVal) {
+        void* callback = *reinterpret_cast<void**>(
+            reinterpret_cast<uintptr_t>(target) + 8);
+        if (callback) {
+            void* arg = *reinterpret_cast<void**>(
+                reinterpret_cast<uintptr_t>(target) + 4);
+            typedef void (*CallbackFn)(void*);
+            reinterpret_cast<CallbackFn>(callback)(arg);
+        }
+        *reinterpret_cast<uint8_t*>(target) = newVal;
+    }
+}
+
+
+// ===========================================================================
+// SECTION 36 — SyncFloatField  @ 0x8219CF10 | size: 0x7C (124 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::SyncFloatField(void* target, void* source)
+ *
+ * Compares float[0] of target with float[0] of source.  If different:
+ *   - If field +8 (callback pointer) is non-null, invokes the callback
+ *     with field +4 as the argument (marks the field dirty for network sync).
+ *   - Copies the new float value from source to target.
+ */
+void pongPlayer::SyncFloatField(void* target, void* source) {  // pongPlayer_CF10_g @ 0x8219CF10
+    float oldVal = *reinterpret_cast<float*>(target);
+    float newVal = *reinterpret_cast<float*>(source);
+
+    if (oldVal != newVal) {
+        void* callback = *reinterpret_cast<void**>(
+            reinterpret_cast<uintptr_t>(target) + 8);
+        if (callback) {
+            void* arg = *reinterpret_cast<void**>(
+                reinterpret_cast<uintptr_t>(target) + 4);
+            typedef void (*CallbackFn)(void*);
+            reinterpret_cast<CallbackFn>(callback)(arg);
+        }
+        *reinterpret_cast<float*>(target) = newVal;
+    }
+}
+
+
+// ===========================================================================
+// SECTION 37 — UpdateDirtyFlags  @ 0x82199E48 | size: 0x5C (92 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::UpdateDirtyFlags(void* obj, uint8_t forceReset)
+ *
+ * Manages three byte flags at obj+40, obj+41, and obj+42 that control
+ * dirty-state tracking for network synchronisation.
+ *
+ * If forceReset is non-zero: clears +40 and +42, sets +41 to 1.
+ * If forceReset is zero:
+ *   - If +40 is already set, or +41 is already set: already dirty, return.
+ *   - If both +40 and +41 are clear: sets +41 to 1 (mark as needing sync).
+ */
+void pongPlayer::UpdateDirtyFlags(void* obj, uint8_t forceReset) {  // pongPlayer_9E48_g @ 0x82199E48
+    uint8_t* flag40 = reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(obj) + 40);
+    uint8_t* flag41 = reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(obj) + 41);
+    uint8_t* flag42 = reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(obj) + 42);
+
+    if (forceReset) {
+        *flag40 = 0;
+        *flag42 = 0;
+        *flag41 = 1;
+        return;
+    }
+
+    if (*flag40 != 0 || *flag41 != 0) {
+        // Already dirty
+        return;
+    }
+
+    // Neither flag set -- mark as needing sync
+    *flag41 = 1;
+}
