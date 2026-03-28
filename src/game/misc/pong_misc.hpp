@@ -506,18 +506,6 @@ struct msgMsgSink {
     void InitializeExtended();  // @ 0x8245C078
     void ProcessMessageWithIndex(uint32_t param1, uint16_t msgIndex, uint32_t param2);  // @ 0x8244E978
     void DispatchVirtualMethod();  // @ 0x824542D0 [related to vtable slot 12]
-
-    // ── non-virtual methods (lifted in msg_msg_sink.cpp) ──
-    uint16_t GetNestedValue(void* dataPtr);
-    uint32_t GetStateFlags();
-    uint32_t ProcessWithLock(uint32_t param);
-    void CleanupIfReady();
-    uint32_t ProcessMessage(uint32_t messageFlags);
-    int32_t GenerateAndCleanup();
-    uint32_t CheckAndProcess();
-    void SendEvent();
-    void ClearPointers();
-    uint32_t GetNestedObjectValue();
 };
 
 // ── pongBinkMovie  [vtable @ 0x82060B94] ──────────────────────────
@@ -1090,7 +1078,6 @@ public:
     int GetRemainingFrames();
     void* GetFrontElement();
     void* GetBackElement();
-    void* GetFrameBufferElement();
     void* GetElementByIndex(int index);
     int ComputeFrameSize();
     void ClearFiberFlag();
@@ -1103,29 +1090,33 @@ public:
     void SetField212(int value);
     void SetField216(int value);
 
-    // Additional methods from pong_frontend.cpp
-    uint32_t GetStateA();  uint32_t GetStateB();
-    uint32_t GetStateC();  uint32_t GetStateD();  uint32_t GetStateE();
-    void SetStateA(int32_t value);
-    void SetStateB(int32_t value);
-    void* GetFrameBuffer();
-    int GetRemainingBuffers();
-    void* GetCurrentReadBuffer();
-    void* GetCurrentWriteBuffer();
-    void* GetBufferByIndex(uint32_t index);
-    void AdvanceReadIndex();
-    void AdvanceWriteIndex();
-    void CtorDerived();
-    void CtorIntermediate();
-    void DtorDerived();
-    void DispatchVSlot14();
-    void DispatchVSlot32();
-    void DispatchVSlot19NoArgs();
-    void DispatchVSlot19WithArgs(void* args);
-    int CallVSlot34ReturnZero();
-    int CallVSlot35ReturnZero();
-    int CallVSlot36ReturnZero();
-    int CallVSlot37ReturnZero();
-    void ClearFiberContext();
-    void ReplaceFiberContext();
+    // Batch 2 — intermediate-level functions (72-176B)
+    void DtorIntermediate();                           // @ 0x824915C8
+    void SaveAndReplaceFiberContext();                 // @ 0x8235EB30
+    int  QueryPhysicsInstance(void* outResult);        // @ 0x82483AD8
+    void DeletingDestructor(int flags);                // @ 0x82487240
+    void AdvanceReadIndexAtomic();                     // @ 0x8248DCC8
+    void AdvanceWriteIndexAtomic();                    // @ 0x8248DD30
+    void DispatchVSlot9ZeroArgs();                     // @ 0x8248E1E0
+    void DispatchVSlot9OneArg(uint32_t arg0);          // @ 0x8248E228
+    void DispatchVSlot9TwoArgs(uint32_t a0, uint32_t a1); // @ 0x8248E278
+    int  SetBufferPairByChannel(uint32_t channel, uint32_t bufA, uint32_t bufB); // @ 0x8248E2E8
+    int  SetAudioInterface(void* audioIface);          // @ 0x8248E398
+    void QueryVideoProperties(void* outWidth, void* outHeight, void* outUnused); // @ 0x8248E7C8
+    int  GetAudioInterfaceRef(void* outAudioIface);    // @ 0x8248E868
+    int  QueryAudioInterfaceViaProvider(void* outResult); // @ 0x8248E8C8
+    void StopPlaybackSimple(uint32_t mode, void* param); // @ 0x8248EBF0
+    void StopPlaybackFull(uint32_t mode);              // @ 0x8248EB40
+
+    // Batch 3 — flag management, state control, destructors (64-132B)
+    void SetStatusFlagsA(uint32_t flagMask);           // @ 0x8248EF70 - OR flags into +220
+    void SetStatusFlagsB(uint32_t flagMask);           // @ 0x8248EFD8 - OR flags into +224
+    void SetStatusFlagsC(uint32_t flagMask);           // @ 0x8248F040 - OR flags into +228
+    void ClearStatusFlagsA(uint32_t flagMask);         // @ 0x8248F0A8 - clear flags in +220
+    void ClearStatusFlagsB(uint32_t flagMask);         // @ 0x8248F110 - clear flags in +224
+    void ClearStatusFlagsC(uint32_t flagMask);         // @ 0x8248F178 - clear flags in +228
+    void FlushAndNotify();                             // @ 0x8248F1E0 - atomic dec + finalize
+    int  SetVideoCallback(void* pCallback);            // @ 0x8248FCF0 - set video callback at +48
+    int  ValidateOutputFormat();                       // @ 0x8248E450 - check width/height==3
+    void ScalarDeletingDtorBase(int flags);            // @ 0x82491608 - base vtable dtor
 };

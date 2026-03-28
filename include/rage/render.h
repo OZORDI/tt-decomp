@@ -16,11 +16,12 @@ void rage_render_default(void);
 /**
  * rage_render_scene
  * @ 0x822C0B18 | size: 0x130
- * 
- * Render scene with game objects.
- * Called when an active scene is present.
+ *
+ * Scene render controller.  Wraps rage_render_default with profiling
+ * and post-render stream flush.
+ * pThis: rageSceneRenderCtx* — scene render context object.
  */
-void rage_render_scene(void);
+void rage_render_scene(void* pThis);
 
 #ifdef __cplusplus
 }

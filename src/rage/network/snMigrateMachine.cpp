@@ -52,6 +52,32 @@ extern "C" void thunk_fn_823F2E10(void);  // @ 0x823F31A0 — waiting-for-migrat
 
 // Event vtable
 extern "C" void* lbl_8207346C[];  // @ 0x8207346C — rage::EvtAcquireHostFailed vtable
+extern "C" void* lbl_82073458[];  // @ 0x82073458 — rage::EvtAcquireHostSucceeded vtable
+extern "C" void* lbl_82073480[];  // @ 0x82073480 — rage::EvtMigrateAsGuestSucceeded vtable
+extern "C" void* lbl_82073494[];  // @ 0x82073494 — rage::EvtMigrateAsGuestFailed vtable
+
+// Additional state transition helpers
+extern void SinglesNetworkClient_A100_g(void* state, void* event);  // @ 0x823EA100 — NotifyingGuests transition failure
+extern void SinglesNetworkClient_2AF0_g(void* thisPtr);             // @ 0x823F2AF0 — send guest notification messages
+extern void snMigrating_A1A8(void* state, void* event);             // @ 0x823EA1A8 — MigratingAsGuest transition handler
+extern void snSession_9F08_fw(void* state, void* event);            // @ 0x823E9F08 — MigrateMachine forward handler (host start)
+extern void snSession_9FB0_fw(void* state, void* event);            // @ 0x823E9FB0 — MigrateMachine forward handler (guest start)
+extern void game_2720(void* client);                                 // @ 0x823F2720 — game-level migrate cleanup
+extern void snSession_AddNode_C068(void* nodeList, void* node);     // @ 0x823EC068 — add node to session linked list
+extern void SinglesNetworkClient_2FD0_g(void* thisPtr);             // @ 0x823F2FD0 — migration completion handler
+extern void SinglesNetworkClient_0978_g(void* evtObj, int p1, void* p2, void* p3, int p4); // @ 0x82430978 — broadcast init
+
+// Global event type IDs (loaded from .data)
+extern uint32_t g_evtType_AcquireHostSucceeded;  // @ 0x825D1AD4 (lis -32163, offset 6868)
+extern uint32_t g_evtType_AcquireHostFailed;     // @ 0x825D1AE0 (offset 6880)
+extern uint32_t g_evtType_MigrateNotifyDone;     // @ 0x825D1AC8 (offset 6856)
+extern uint32_t g_evtType_HostMigrateBegin;      // @ 0x825D1AEC (offset 6892)
+extern uint32_t g_evtType_HostMigrateNotify;     // @ 0x825D1AF8 (offset 6904)
+extern uint32_t g_evtType_GuestMigrateBegin;     // @ 0x825D1B04 (offset 6916)
+extern uint32_t g_evtType_GuestMigrateNotify;    // @ 0x825D1B10 (offset 6928)
+
+// vtable references
+extern "C" void* lbl_82072864[];  // @ 0x82072864 — rage::hsmEvent vtable
 
 // ────────────────────────────────────────────────────────────────────────────
 // State Name Strings (from .rdata)
@@ -326,6 +352,478 @@ void snAcquiringHost_Migrating_OnEnter(void* thisPtr) {
         // Transition state machine with failure event
         snMigrating_A058(thisPtr, event);
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snMigrateMachine::OnUpdate @ 0x823E18F8 | size: 0x110 | vfn_13
+//
+// Top-level update handler. Gets the current event via vfn_10, retrieves
+// session info via broadcast init, then compares a 6-byte MAC address
+// from the machine at +58 against the session's address at session+3784+50.
+// If they match, selects child snAcquiringHost (+84); otherwise selects
+// snMigratingAsGuest (+1340). Then calls vfn_11 and processes connections.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void MigrateMachine_OnUpdate(void* thisPtr) {
+    char* self = (char*)thisPtr;
+
+    // Get current event via vfn_10
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_10)(void*) = (void* (*)(void*))vtable[10];
+    void* stateCtx = vfn_10(thisPtr);
+    void* eventObj = *(void**)((char*)stateCtx + 12);
+
+    // Get session broadcast info
+    SinglesNetworkClient_0978_g(eventObj, 0, nullptr, nullptr, 0);
+
+    // Copy 9 dwords (36 bytes) from result+12 into self+48
+    uint32_t* src = (uint32_t*)((char*)stateCtx + 12);  // re-read after call
+    // Actually the scaffold shows copying from the result (r3+12) into self+48
+    // The scaffold loops 9 iterations copying 4 bytes each
+    char* resultPtr = (char*)stateCtx;  // vfn_10 result
+    uint32_t* dstSlots = (uint32_t*)(self + 48);
+    uint32_t* srcSlots = (uint32_t*)((char*)resultPtr + 12);
+    // NOTE: This is from the original r3 return value of vfn_10
+    // The scaffold copies 9 dwords from result+12 to self+48
+
+    // Compare 6-byte address at self+58 vs session address
+    void* parent = *(void**)(self + 20);
+    void* session = *(void**)((char*)parent + 16);
+    void* sessionData = *(void**)((char*)session + 3784);
+    char* sessionAddr = (char*)sessionData + 50;
+    char* selfAddr = self + 58;
+
+    // Compare 6 bytes (byte-by-byte loop)
+    bool match = true;
+    for (int i = 0; i < 6; i++) {
+        if (sessionAddr[i] != selfAddr[i]) {
+            match = false;
+            break;
+        }
+    }
+
+    // Select child state based on match
+    void* connectionList;
+    if (match) {
+        connectionList = (void*)(self + 84);   // snAcquiringHost
+    } else {
+        connectionList = (void*)(self + 1340); // snMigratingAsGuest
+    }
+
+    // Call vfn_11 and process connections
+    void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
+    void* context = vfn_11(thisPtr);
+
+    snSession_AssociateConnections(context, thisPtr, connectionList);
+    snSession_ProcessPendingConnections(context, thisPtr, connectionList);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snAcquiringHost::snMigrating::OnEvent @ 0x823E1CE8 | size: 0x100 | vfn_12
+//
+// Event handler for the Migrating sub-state of AcquiringHost.
+// Checks for AcquireHostSucceeded: if matched, gets context via vfn_11
+// and processes connections at parent+1292.
+// Checks for AcquireHostFailed: creates EvtAcquireHostFailed event and
+// transitions via snMigrating_A058.
+// Otherwise marks event as unhandled.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void snAcquiringHost_Migrating_OnEvent(void* thisPtr, void* event, bool* handled) {
+    char* self = (char*)thisPtr;
+    *handled = true;
+
+    // Get current event type
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_10)(void*) = (void* (*)(void*))vtable[10];
+    void* stateCtx = vfn_10(thisPtr);
+    void* eventObj = *(void**)((char*)stateCtx + 12);
+    void** evtVtable = *(void***)eventObj;
+    uint32_t (*getTypeId)(void*) = (uint32_t (*)(void*))evtVtable[1];
+    uint32_t typeId = getTypeId(eventObj);
+
+    if (typeId == g_evtType_AcquireHostSucceeded) {
+        // Host acquired — process connections at parent+1292
+        void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
+        void* context = vfn_11(thisPtr);
+
+        void* parent = *(void**)(self + 20);
+        void* connectionList = (char*)parent + 1292;
+
+        snSession_AssociateConnections(context, thisPtr, connectionList);
+        snSession_ProcessPendingConnections(context, thisPtr, connectionList);
+        return;
+    }
+
+    // Re-get event type for second check
+    stateCtx = vfn_10(thisPtr);
+    eventObj = *(void**)((char*)stateCtx + 12);
+    evtVtable = *(void***)eventObj;
+    getTypeId = (uint32_t (*)(void*))evtVtable[1];
+    typeId = getTypeId(eventObj);
+
+    if (typeId == g_evtType_AcquireHostFailed) {
+        // Host acquisition failed — transition with failure event
+        void* evt[1];
+        ::util_DA08(evt);
+        evt[0] = lbl_8207346C;  // EvtAcquireHostFailed vtable
+        snMigrating_A058(thisPtr, evt);
+        return;
+    }
+
+    // Unhandled event
+    *handled = false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snAcquiringHost::snNotifyingGuests::OnEnter @ 0x823E1DF8 | size: 0xA8 | vfn_14
+//
+// Sets up the notification handler callback, queries session config,
+// increments the notification counter at parent+1264, and if the counter
+// reaches 10, fires a failure transition. Otherwise sends guest
+// notification and sets a 500ms timeout.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void snAcquiringHost_NotifyingGuests_OnEnter(void* thisPtr) {
+    char* self = (char*)thisPtr;
+
+    // Set up notify handler: store self-reference and callback thunk
+    *(void**)(self + 28) = thisPtr;
+    *(void**)(self + 32) = (void*)thunk_fn_823F2E10;
+
+    // Query session config status
+    void* session = *(void**)(self + 16);
+    void* sessionHandle = *(void**)((char*)session + 164);
+    SinglesNetworkClient_A940_g(sessionHandle);
+
+    // Increment notification attempt counter at parent+1264
+    void* parent = *(void**)(self + 20);
+    uint32_t* counter = (uint32_t*)((char*)parent + 1264);
+    uint32_t count = *counter;
+    *counter = count + 1;
+
+    if (count >= 10) {
+        // Too many attempts — create failure event and transition
+        void* evt[1];
+        ::util_DA08(evt);
+        evt[0] = lbl_82073458;  // EvtAcquireHostSucceeded vtable (used as NotifyFailed marker)
+        SinglesNetworkClient_A100_g(thisPtr, evt);
+        return;
+    }
+
+    // Send guest notification messages
+    SinglesNetworkClient_2AF0_g(thisPtr);
+
+    // Set 500ms timeout
+    util_D4F8(thisPtr, 500);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snAcquiringHost::snNotifyingGuests::OnEvent @ 0x823E1EA0 | size: 0x9C | vfn_12
+//
+// Event handler for the NotifyingGuests sub-state of AcquiringHost.
+// Checks for timeout event (type == 0): if matched, gets context via
+// vfn_11, processes connections at parent+1292.
+// Otherwise marks event as unhandled.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void snAcquiringHost_NotifyingGuests_OnEvent(void* thisPtr, void* event, bool* handled) {
+    char* self = (char*)thisPtr;
+    *handled = true;
+
+    // Get current event type
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_10)(void*) = (void* (*)(void*))vtable[10];
+    void* stateCtx = vfn_10(thisPtr);
+    void* eventObj = *(void**)((char*)stateCtx + 12);
+    void** evtVtable = *(void***)eventObj;
+    uint32_t (*getTypeId)(void*) = (uint32_t (*)(void*))evtVtable[1];
+    uint32_t typeId = getTypeId(eventObj);
+
+    if (typeId == 0) {
+        // Timeout — process connections at parent+1292
+        void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
+        void* context = vfn_11(thisPtr);
+
+        void* parent = *(void**)(self + 20);
+        void* connectionList = (char*)parent + 1292;
+
+        snSession_AssociateConnections(context, thisPtr, connectionList);
+        snSession_ProcessPendingConnections(context, thisPtr, connectionList);
+        return;
+    }
+
+    // Unhandled event
+    *handled = false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OnExit Handlers (vfn_6)
+// Cancel pending notifications on two embedded rlNotifier child objects.
+// Pattern: if pending callback at child+8 is non-null, clear it and
+// invoke the Cancel function (vtable slot 4, byte +16).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * snAcquiringHost::OnExit @ 0x823E1F80 | size: 0x7C | vfn_6
+ *
+ * Cancels pending notifications on two child states:
+ *   +1184 (snMigrating)
+ *   +1208 (snNotifyingGuests)
+ */
+void snAcquiringHost_OnExit(void* thisPtr) {
+    char* self = (char*)thisPtr;
+
+    // Cancel notifier at this+1184 (snMigrating)
+    char* n1 = self + 1184;
+    if (*(void**)(n1 + 8) != nullptr) {
+        void* linked = *(void**)n1;
+        *(void**)(n1 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n1);
+    }
+
+    // Cancel notifier at this+1208 (snNotifyingGuests)
+    char* n2 = self + 1208;
+    if (*(void**)(n2 + 8) != nullptr) {
+        void* linked = *(void**)n2;
+        *(void**)(n2 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n2);
+    }
+}
+
+/**
+ * snMigratingAsGuest::OnExit @ 0x823E23C8 | size: 0x7C | vfn_6
+ *
+ * Cancels pending notifications on two child states:
+ *   +24 (snWaitingForMigrateMsg)
+ *   +76 (snMigrating)
+ */
+void MigratingAsGuest_OnExit(void* thisPtr) {
+    char* self = (char*)thisPtr;
+
+    // Cancel notifier at this+24 (snWaitingForMigrateMsg)
+    char* n1 = self + 24;
+    if (*(void**)(n1 + 8) != nullptr) {
+        void* linked = *(void**)n1;
+        *(void**)(n1 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n1);
+    }
+
+    // Cancel notifier at this+76 (snMigrating)
+    char* n2 = self + 76;
+    if (*(void**)(n2 + 8) != nullptr) {
+        void* linked = *(void**)n2;
+        *(void**)(n2 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n2);
+    }
+}
+
+/**
+ * snMigrateMachine::OnExit @ 0x823E2488 | size: 0x7C | vfn_6
+ *
+ * Cancels pending notifications on two child states:
+ *   +84  (snAcquiringHost)
+ *   +1340 (snMigratingAsGuest)
+ */
+void MigrateMachine_OnExit(void* thisPtr) {
+    char* self = (char*)thisPtr;
+
+    // Cancel notifier at this+84 (snAcquiringHost)
+    char* n1 = self + 84;
+    if (*(void**)(n1 + 8) != nullptr) {
+        void* linked = *(void**)n1;
+        *(void**)(n1 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n1);
+    }
+
+    // Cancel notifier at this+1340 (snMigratingAsGuest)
+    char* n2 = self + 1340;
+    if (*(void**)(n2 + 8) != nullptr) {
+        void* linked = *(void**)n2;
+        *(void**)(n2 + 8) = nullptr;
+        void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+        cancelFn(n2);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snMigratingAsGuest::snWaitingForMigrateMsg::OnEvent
+// @ 0x823E2078 | size: 0xFC | vfn_12
+//
+// Checks for timeout (type == 0): transitions with EvtMigrateAsGuestFailed.
+// Checks for MigrateNotifyDone: gets context via vfn_11, processes
+// connections at parent+1416.
+// Otherwise marks event as unhandled.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void snWaitingForMigrateMsg_OnEvent(void* thisPtr, void* event, bool* handled) {
+    char* self = (char*)thisPtr;
+    *handled = true;
+
+    // Get current event type
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_10)(void*) = (void* (*)(void*))vtable[10];
+    void* stateCtx = vfn_10(thisPtr);
+    void* eventObj = *(void**)((char*)stateCtx + 12);
+    void** evtVtable = *(void***)eventObj;
+    uint32_t (*getTypeId)(void*) = (uint32_t (*)(void*))evtVtable[1];
+    uint32_t typeId = getTypeId(eventObj);
+
+    if (typeId == 0) {
+        // Timeout — transition with failure event
+        void* evt[1];
+        ::util_DA08(evt);
+        evt[0] = lbl_82073494;  // EvtMigrateAsGuestFailed vtable
+        snMigrating_A1A8(thisPtr, evt);
+        return;
+    }
+
+    // Re-get event type for second check
+    stateCtx = vfn_10(thisPtr);
+    eventObj = *(void**)((char*)stateCtx + 12);
+    evtVtable = *(void***)eventObj;
+    getTypeId = (uint32_t (*)(void*))evtVtable[1];
+    typeId = getTypeId(eventObj);
+
+    if (typeId == g_evtType_MigrateNotifyDone) {
+        // Migrate notification received — process connections at parent+1416
+        void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
+        void* context = vfn_11(thisPtr);
+
+        void* parent = *(void**)(self + 20);
+        void* connectionList = (char*)parent + 1416;
+
+        snSession_AssociateConnections(context, thisPtr, connectionList);
+        snSession_ProcessPendingConnections(context, thisPtr, connectionList);
+        return;
+    }
+
+    // Unhandled event
+    *handled = false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snMigratingAsGuest::snMigrating::OnEnter @ 0x823E2188 | size: 0x9C | vfn_14
+//
+// Gets current event via vfn_10, retrieves session info via broadcast init,
+// then queries XAM session status. If the query fails (returns 0), creates
+// an EvtMigrateAsGuestFailed event and transitions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void snMigratingAsGuest_Migrating_OnEnter(void* thisPtr) {
+    char* self = (char*)thisPtr;
+
+    // Get current event via vfn_10
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_10)(void*) = (void* (*)(void*))vtable[10];
+    void* stateCtx = vfn_10(thisPtr);
+    void* eventObj = *(void**)((char*)stateCtx + 12);
+
+    // Get session info via broadcast init
+    SinglesNetworkClient_0978_g(eventObj, 0, nullptr, nullptr, 0);
+
+    // Get session handle and query XAM
+    void* parent = *(void**)(self + 20);
+    void* session = *(void**)((char*)parent + 16);
+    void* sessionHandle = (char*)session + 232;
+
+    // Copy data from result into session context
+    uint64_t data = *(uint64_t*)((char*)stateCtx + 24);  // ld r5,24(r3)
+    // store at session+232 area (passed as r3)
+
+    uint8_t result = xam_E430_g(sessionHandle, 0, 0);
+
+    if (result == 0) {
+        // XAM query failed — transition with failure event
+        void* evt[1];
+        ::util_DA08(evt);
+        evt[0] = lbl_82073494;  // EvtMigrateAsGuestFailed vtable
+        snMigrating_A1A8(thisPtr, evt);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// snMigratingAsGuest::snMigrating::OnEvent @ 0x823E2228 | size: 0x15C | vfn_12
+//
+// Checks for AcquireHostSucceeded: calls migration completion handler,
+// fires EvtMigrateAsGuestSucceeded, allocates node, adds to session list.
+// Checks for AcquireHostFailed: transitions with EvtMigrateAsGuestFailed.
+// Otherwise marks event as unhandled.
+// ─────────────────────────────────────────────────────────────────────────────
+
+void snMigratingAsGuest_Migrating_OnEvent(void* thisPtr, void* event, bool* handled) {
+    char* self = (char*)thisPtr;
+    *handled = true;
+
+    // Get current event type
+    void** vtable = *(void***)thisPtr;
+    void* (*vfn_10)(void*) = (void* (*)(void*))vtable[10];
+    void* stateCtx = vfn_10(thisPtr);
+    void* eventObj = *(void**)((char*)stateCtx + 12);
+    void** evtVtable = *(void***)eventObj;
+    uint32_t (*getTypeId)(void*) = (uint32_t (*)(void*))evtVtable[1];
+    uint32_t typeId = getTypeId(eventObj);
+
+    if (typeId == g_evtType_AcquireHostSucceeded) {
+        // Migration succeeded — call completion handler
+        SinglesNetworkClient_2FD0_g(thisPtr);
+
+        // Create EvtMigrateAsGuestSucceeded event
+        void* evt[1];
+        ::util_DA08(evt);
+        void* evtSucceededVtable = lbl_82073480;  // EvtMigrateAsGuestSucceeded
+
+        // Get context via vfn_11
+        void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
+        evt[0] = evtSucceededVtable;
+        void* hsmCtx = vfn_11(thisPtr);
+
+        // Get session node list from context+56
+        void* nodeList = *(void**)((char*)hsmCtx + 56);
+        void* allocator = *(void**)((char*)nodeList + 4);
+        void** allocVtable = *(void***)allocator;
+        void* (*allocFn)(void*, int, int) = (void* (*)(void*, int, int))allocVtable[1];
+        void* newNode = allocFn(allocator, 12, 0);
+
+        if (newNode == nullptr) {
+            return;
+        }
+
+        // Initialize node with event data
+        *(void**)newNode = lbl_82072864;  // hsmEvent vtable
+        *(void**)newNode = evtSucceededVtable;
+        uint32_t evtData0 = *((uint32_t*)evt + 1);
+        uint32_t evtData1 = *((uint32_t*)evt + 2);
+        uint64_t combined = ((uint64_t)evtData0 << 32) | evtData1;
+        *(uint64_t*)((char*)newNode + 4) = combined;
+
+        snSession_AddNode_C068((char*)nodeList + 8, newNode);
+        return;
+    }
+
+    // Re-get event type for second check
+    stateCtx = vfn_10(thisPtr);
+    eventObj = *(void**)((char*)stateCtx + 12);
+    evtVtable = *(void***)eventObj;
+    getTypeId = (uint32_t (*)(void*))evtVtable[1];
+    typeId = getTypeId(eventObj);
+
+    if (typeId == g_evtType_AcquireHostFailed) {
+        // Migration failed — transition with failure event
+        void* evt[1];
+        ::util_DA08(evt);
+        evt[0] = lbl_82073494;  // EvtMigrateAsGuestFailed vtable
+        snMigrating_A1A8(thisPtr, evt);
+        return;
+    }
+
+    // Unhandled event
+    *handled = false;
 }
 
 } // namespace snMigrateMachine_States

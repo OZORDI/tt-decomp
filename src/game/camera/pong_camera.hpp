@@ -168,6 +168,15 @@ struct pongCameraMgr {
     // ── virtual methods ──
     virtual ~pongCameraMgr();                  // [0] @ 0x821658e0
     virtual void PostLoadProperties();  // [20] @ 0x821657f8
+    virtual void PostLoadChildren();  // [22] @ 0x82165830
+    virtual void vfn_23();  // [23] @ 0x82165960
+    virtual void vfn_24();  // [24] @ 0x82165f30
+    virtual void vfn_25();  // [25] @ 0x82166068
+    virtual void vfn_27();  // [27] @ 0x82166118
+
+    // ── virtual methods ──
+    virtual ~pongCameraMgr();                  // [0] @ 0x821658e0
+    virtual bool PostLoadProperties(uint32_t value);  // [20] @ 0x821657f8
     virtual const char* PostLoadChildren();  // [22] @ 0x82165830
     virtual void vfn_23();  // [23] @ 0x82165960
     virtual void vfn_24();  // [24] @ 0x82165f30
@@ -204,120 +213,24 @@ struct pongCameraMgr {
                                 uint32_t param3, uint32_t param4,
                                 uint32_t param5, uint32_t param6);  // @ 0x821F99D0
 
-    // Camera-by-index thunks @ 0x821F7DF8-7E20
-    void SelectCamera1();  // @ 0x821F7DF8
-    void SelectCamera2();  // @ 0x821F7E00
-    void SelectCamera3();  // @ 0x821F7E08
-    void SelectCamera4();  // @ 0x821F7E10
-    void SelectCamera5();  // @ 0x821F7E18
-    void SelectCamera6();  // @ 0x821F7E20
+    // Camera change wrappers (tail-call to pg_7CD8_2h with mode N)
+    bool TryCameraChange_Mode1(void* gameState);  // @ 0x821F7DF8
+    bool TryCameraChange_Mode2(void* gameState);  // @ 0x821F7E00
+    bool TryCameraChange_Mode3(void* gameState);  // @ 0x821F7E08
+    bool TryCameraChange_Mode4(void* gameState);  // @ 0x821F7E10
+    bool TryCameraChange_Mode5(void* gameState);  // @ 0x821F7E18
+    bool TryCameraChange_Mode6(void* gameState);  // @ 0x821F7E20
 
-    // TryCameraChange mode wrappers @ 0x821F7DF8-7E20
-    bool TryCameraChange_Mode1(void* gameState);
-    bool TryCameraChange_Mode2(void* gameState);
-    bool TryCameraChange_Mode3(void* gameState);
-    bool TryCameraChange_Mode4(void* gameState);
-    bool TryCameraChange_Mode5(void* gameState);
-    bool TryCameraChange_Mode6(void* gameState);
-
-    // Camera state queries (by name)
-    bool IsCameraStateFour() const;
-    bool IsCameraStateFive() const;
-    bool IsCameraStateSix() const;
-    bool IsCameraStateSeven() const;
-    bool IsCameraStateEight() const;
-    bool IsCameraStateTen() const;
-    bool IsCameraStateEleven() const;
-    bool IsCameraStateTwelve() const;
-    bool IsCameraStateThirteen() const;
-
-    // Dual/multi query checks
-    bool CheckDualQueryAA(void* gameState);
-    bool CheckDualQueryCB(void* gameState);
-    bool CheckDualQueryBC(void* gameState);
-    bool CheckMultiModeQueryA(void* gameState);
-
-    // Offset query checks
-    bool CheckOffsetQueryA(void* gameState);
-    bool CheckOffsetQueryB(void* gameState);
-    bool CheckOffsetQueryC(void* gameState);
-
-    // Threshold checks
-    bool HasElapsedThreshold1();
-    bool HasElapsedThreshold2();
-    bool HasElapsedThreshold3();
-
-    // State management
-    void ResetCameraState();
-    bool ValidateTransitionMode7(void* gameState);
-    bool ValidateTransitionMode11(void* gameState);
-    bool ValidateTransitionMode12(void* gameState);
-    void CopyShotParameters();
-    void ApplyCameraConfig();
-    bool FindActiveCameraNode(void* shotNode);
-    void InitializeCameraShot(void* shotNode, void* cameraTarget, bool applyDetailedConfig);
-    void TraverseCameraTree(void* cameraTarget, uint32_t shotIndex);
-
-    // Overloaded PostLoadProperties @ 0x821657F8
-    bool PostLoadProperties(uint32_t value);
-
-    // MI dtor adjustor
-    void DtorAdjustor();  // @ 0x82166DB8
-
-    // Global state flag checks
-    bool IsFlag98D8Clear();  // @ 0x821F98D8
-    bool IsFlag98F0Clear();  // @ 0x821F98F0
-    bool IsFlag9908Clear();  // @ 0x821F9908
-
-    // Camera mode query thunks
-    bool IsCameraMode1();   // @ 0x821F7E40
-    bool IsCameraMode2();   // @ 0x821F7E60
-    bool IsCameraMode3();   // @ 0x821F7E80
-    bool IsCameraMode4();   // @ 0x821F7EA0
-    bool IsCameraMode5();   // @ 0x821F7EC0
-    bool IsCameraMode6();   // @ 0x821F7EE0
-    bool IsCameraMode7();   // @ 0x821F7F00
-    bool IsCameraMode8();   // @ 0x821F7F20
-    bool IsCameraMode9();   // @ 0x821F7F40
-    bool IsCameraMode10();  // @ 0x821F7F60
-    bool IsCameraMode11();  // @ 0x821F7F80
-    bool IsCameraMode12();  // @ 0x821F7FA0
-    bool IsCameraMode13();  // @ 0x821F7FC0
-    bool IsCameraMode14();  // @ 0x821F7FE0
-    bool IsCameraMode15();  // @ 0x821F8000
-    bool IsCameraMode16();  // @ 0x821F8020
-    bool IsCameraMode17();  // @ 0x821F8040
-    bool IsCameraMode18();  // @ 0x821F8060
-    bool IsCameraMode19();  // @ 0x821F8080
-    bool IsCameraMode20();  // @ 0x821F80A0
-    bool IsCameraMode21();  // @ 0x821F80C0
-
-    // Flag bit checks
-    bool HasFlag_Bit4();   // @ 0x821F6BE8
-    bool HasFlag_Bit8();   // @ 0x821F6C20
-    bool HasFlag_Bit16();  // @ 0x821F6C58
-    bool HasFlag_Bit1();   // @ 0x821F6C90
-    bool HasFlag_Bit2();   // @ 0x821F6CC8
-
-    // Query thunks (A/B/C variants)
-    bool QueryA_2();   bool QueryA_5();   bool QueryA_3();
-    bool QueryA_16();  bool QueryA_19();  bool QueryA_21();  bool QueryA_20();
-    bool QueryB_2();   bool QueryB_5();   bool QueryB_3();
-    bool QueryB_16();  bool QueryB_15();  bool QueryB_21();  bool QueryB_20();  bool QueryB_13();
-    bool QueryC_2();   bool QueryC_5();   bool QueryC_3();
-    bool QueryC_16();  bool QueryC_15();  bool QueryC_21();  bool QueryC_20();  bool QueryC_13();
-
-    // Conditional flag reads
-    bool GetConditionalFlagA();  // @ 0x821F3700
-    bool GetConditionalFlagB();  // @ 0x821F3740
-
-    // Float threshold checks
-    bool CheckThreshold7550(float threshold);  // @ 0x821F7550
-    bool CheckThreshold7588();  // @ 0x821F7588
-    bool CheckThreshold75C8();  // @ 0x821F75C8
-    bool CheckThreshold7608();  // @ 0x821F7608
-    bool CheckThreshold7648();  // @ 0x821F7648
-    bool CheckThreshold7688();  // @ 0x821F7688
+    // Camera state checks (compare g_cameraState against N)
+    bool IsCameraStateFour() const;      // @ 0x821F7EA0
+    bool IsCameraStateFive() const;      // @ 0x821F7EC0
+    bool IsCameraStateSix() const;       // @ 0x821F7EE0
+    bool IsCameraStateSeven() const;     // @ 0x821F7F00
+    bool IsCameraStateEight() const;     // @ 0x821F7F20
+    bool IsCameraStateTen() const;       // @ 0x821F7F60
+    bool IsCameraStateEleven() const;    // @ 0x821F7F80
+    bool IsCameraStateTwelve() const;    // @ 0x821F7FA0
+    bool IsCameraStateThirteen() const;  // @ 0x821F7FC0
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────
@@ -326,7 +239,6 @@ struct pongCameraState {
 
     // ── virtual methods ──
     virtual ~pongCameraState();                  // [0] @ 0x82167770
-};
 
 
 // ── pongCineCamMgr  [vtable @ 0x82036070] ──────────────────────────

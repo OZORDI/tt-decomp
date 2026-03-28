@@ -53,12 +53,11 @@ struct audControl {
     // ── virtual methods ──
     virtual ~audControl();                  // [0] @ 0x82161518
     virtual void ScalarDtor(int flags); // [1] @ 0x82161700
-    virtual void vfn_4();  // [4] @ 0x82161ca8
-    virtual void vfn_7();  // [7] @ 0x82161e28
-    virtual float GetVolume();  // [11] @ 0x82160768
-    virtual float GetPitch();   // [12] @ 0x82160770
-    virtual bool IsActive();    // [19] @ 0x82160780
-
+    virtual void Stop();       // [4] @ 0x82161ca8 — clears wrapped voice and resets state
+    virtual void Update(uint32_t flags);  // [7] @ 0x82161e28 — processes volume/position/pan updates
+    virtual float GetVolume();  // [11] @ 0x82160768 — returns volume at +32
+    virtual float GetPan();     // [12] @ 0x82160770 — returns pan at +44
+    virtual bool IsActive();    // [19] @ 0x82160780 — returns true if state at +16 is nonzero
 };
 
 // ── rage::audControl2dWrapper  [vtable @ 0x82074BA8] ──────────────────────────
@@ -72,19 +71,18 @@ struct audControl3d {
     // ── virtual methods ──
     virtual ~audControl3d();                  // [0] @ 0x82160848
     virtual void ScalarDtor(int flags); // [1] @ 0x821608a8
-    virtual void vfn_2();  // [2] @ 0x821618b8
-    virtual void vfn_3();  // [3] @ 0x821609e0
-    virtual void vfn_4();  // [4] @ 0x82160ad8
-    virtual void vfn_7();  // [7] @ 0x82160b28
-    virtual void* GetControlRef();     // [10] @ 0x82160760
-    virtual float GetScaledVolume();    // [11] @ 0x82160eb0
-    virtual float GetScaledPitch();     // [12] @ 0x82160ec0
-    virtual float GetPan();             // [13] @ 0x82160778
-    virtual void vfn_14();  // [14] @ 0x821622b8
-    virtual void vfn_15();  // [15] @ 0x82162318
-    virtual void vfn_17();  // [17] @ 0x82162378
-    virtual bool IsAudible();           // [19] @ 0x821609a8
-
+    virtual void SetPosition();        // [2] @ 0x821618b8
+    virtual void SetOrientation();     // [3] @ 0x821609e0
+    virtual void Stop();               // [4] @ 0x82160ad8
+    virtual void Update(uint32_t flags); // [7] @ 0x82160b28
+    virtual float GetVolume();         // [10] @ 0x82160760
+    virtual void SetVolume(float vol); // [11] @ 0x82160eb0
+    virtual void SetPitch(float pitch); // [12] @ 0x82160ec0
+    virtual float GetPan();            // [13] @ 0x82160778
+    virtual void SetPan(float pan);    // [14] @ 0x821622b8
+    virtual void SetRolloff(float rolloff); // [15] @ 0x82162318
+    virtual void SetMaxDistance(float dist); // [17] @ 0x82162378
+    virtual bool IsActive();           // [19] @ 0x821609a8
 };
 
 // ── rage::audControl3dWrapper  [vtable @ 0x82074B98] ──────────────────────────
@@ -97,15 +95,14 @@ struct audControlGroup {
 
     // ── virtual methods ──
     virtual ~audControlGroup();                  // [0] @ 0x82162638
-    virtual void vfn_3();  // [3] @ 0x82162ad0
-    virtual void vfn_4();  // [4] @ 0x821628c8
-
-    virtual const char* GetTypeNameB();       // [6] @ 0x82162548
-    virtual const char* GetTypeNameA();       // [7] @ 0x82162538
-    virtual float GetEffectiveVolume();       // [8] @ 0x82162888
-    virtual float GetVolume();               // [9] @ 0x82162528
-    virtual float GetPitch();                // [11] @ 0x82162530
-    virtual void vfn_12();  // [12] @ 0x821629b8
+    virtual void UpdateAllControls(void* data);  // [3] @ 0x82162ad0 — iterates linked list, updates each control
+    virtual void ProcessAllControls();  // [4] @ 0x821628c8 — processes volume/pitch/pan on all controls
+    virtual const char* GetTypeNameB(); // [6] @ 0x82162548
+    virtual const char* GetTypeNameA(); // [7] @ 0x82162538
+    virtual float GetEffectiveVolume(); // [8] @ 0x82162888 — returns volume at +20 with mute/fade checks
+    virtual float GetVolume();          // [9] @ 0x82162528 — returns volume at +28
+    virtual float GetPitch();           // [11] @ 0x82162530 — returns pitch at +36
+    virtual void LoadParameters(void* data); // [12] @ 0x821629b8 — loads group parameters from data source
 };
 
 // ── rage::audControlMgr  [vtable @ 0x82035570] ──────────────────────────
@@ -115,10 +112,10 @@ struct audControlMgr {
     // ── virtual methods ──
     virtual ~audControlMgr();                  // [0] @ 0x821600a8
     virtual void ScalarDtor(int flags); // [1] @ 0x82160280
-    virtual void vfn_2();  // [2] @ 0x82160518
-    virtual void vfn_3();  // [3] @ 0x82160578
-    virtual void vfn_4();  // [4] @ 0x821605c8
-    virtual void vfn_5();  // [5] @ 0x82160618
+    virtual void Initialize();    // [2] @ 0x82160518 — init audio banks
+    virtual void EnableAll();     // [3] @ 0x82160578 — iterates controls, enables each
+    virtual void DisableAll();    // [4] @ 0x821605c8 — iterates controls, disables each
+    virtual void StopExcept(void* excludeId); // [5] @ 0x82160618 — stops all except matching ID
 };
 
 // ── rage::audControlWrapper  [vtable @ 0x82074B88] ──────────────────────────
@@ -131,12 +128,12 @@ struct audVoice {
 
     // ── virtual methods ──
     virtual ~audVoice();                  // [0] @ 0x82163358
-    virtual void PlayByEntry();  // [2] @ 0x82163190
-    virtual void Play();  // [4] @ 0x821631a0
-    virtual void Stop();  // [7] @ 0x821631b0
-    virtual void Release();  // [8] @ 0x821631c0
-    virtual void SetEffect();  // [17] @ 0x821631d0
-    virtual bool IsPlaying();  // [18] @ 0x821631e0
+    virtual void Stop();         // [2] @ 0x82163190 — stub, logs warning
+    virtual void StopImmediate(); // [4] @ 0x821631a0 — stub, logs warning
+    virtual void Play();         // [7] @ 0x821631b0 — stub, logs warning
+    virtual void StopAndRelease(); // [8] @ 0x821631c0 — stub, logs warning
+    virtual void SetLooping(uint32_t handle, bool loop); // [17] @ 0x821631d0 — stub, logs warning
+    virtual bool IsPlaying();    // [18] @ 0x821631e0 — stub, returns false
 };
 
 // ── rage::audVoiceSfx  [vtable @ 0x82035AFC] ──────────────────────────
@@ -151,27 +148,24 @@ struct audVoiceSfx {
     void*        m_pSfxRef;      // +0x000c  R:16 W:0 - sound effect reference (heavily read)
 
     // ── virtual methods ──
-    virtual bool Pause();  // [5] @ 0x821635b8
-    virtual void Resume();  // [6] @ 0x82163608
-    virtual void Stop();  // [7] @ 0x82163658
-    virtual void vfn_8();  // [8] @ 0x821636a8
-    virtual void SetVolume(float volume);  // [9] @ 0x82163778
-    virtual void vfn_10();  // [10] @ 0x821637d8
-    virtual void vfn_11();  // [11] @ 0x82163868
-    virtual void SetReverbSend();     // [12] @ 0x82163918
-    virtual void EnableReverbSend();  // [13] @ 0x82163928
-    virtual void SetSpeakerMix(float leftLevel, float rightLevel);  // [14] @ 0x82163938
-
-    virtual void SetEffect(uint32_t effectId, uint8_t enable);  // [17] @ 0x82163ab0
-    virtual bool IsPlaying();  // [18] @ 0x82163b10
+    virtual void Stop();              // [5] @ 0x821635b8 — cmdId 16388
+    virtual void StopImmediate();     // [6] @ 0x82163608 — cmdId 16389
+    virtual void Play();              // [7] @ 0x82163658 — cmdId 16387
+    virtual void StopAndRelease();    // [8] @ 0x821636a8 — stops if playing, releases to free list
+    virtual void SetVolume(float vol); // [9] @ 0x82163778 — cmdId 16390
+    virtual void SetPitch(float pitch); // [10] @ 0x821637d8 — cmdId 16394
+    virtual void SetPan(float pan);   // [11] @ 0x82163868 — cmdId 16391
+    virtual void Pause();             // [12] @ 0x82163918
+    virtual void Unpause();           // [13] @ 0x82163928
+    virtual void SetStereoVolume(float left, float right); // [14] @ 0x82163938 — cmdId 16396
+    virtual void SetLooping(uint32_t handle, bool loop);   // [17] @ 0x82163ab0 — cmdId 16400
+    virtual bool IsPlaying();         // [18] @ 0x82163b10 — checks state 17/18/20/21/22
 
     // ── non-virtual methods (from debug strings) ──
-    void Play();
-    void PlayByEntry(void* entry, float volume, float pitch, float pan, float playVariance,
-                     uint32_t userParamA, uint32_t userParamB, uint8_t userParamC);  // @ 0x82163498
+    void PlayByEntry(void* entry, float volume, float pitch, float pan, float priority,
+                     uint32_t param5, uint32_t param6, uint8_t param7);  // @ 0x82163498
     void SetReverbVolume(void* bankEntry, float volume);
     void SetEffectVolume(void* bankEntry, float volume);
-    void* DequeueFromList();
 };
 
 
@@ -183,9 +177,9 @@ struct audVoiceStream {
 
     // ── field access clusters ──
     uint8_t      field_0x0001;  // +0x0001  R:0 W:2
-    uint32_t     field_0x0004;  // +0x0004  R:6 W:3
-    uint32_t     field_0x0008;  // +0x0008  R:6 W:2
-    uint32_t     field_0x000c;  // +0x000c  R:20 W:2
+    uint32_t     m_flags;       // +0x0004  R:6 W:3
+    uint32_t     m_state;       // +0x0008  R:6 W:2
+    uint32_t     m_pStreamRef;  // +0x000c  R:20 W:2 — stream reference pointer (heavily read)
     uint32_t     field_0x0010;  // +0x0010  R:1 W:2
     uint32_t     field_0x0014;  // +0x0014  R:8 W:1
     uint8_t     _pad0x0028[16];
@@ -209,28 +203,28 @@ struct audVoiceStream {
 
     // ── virtual methods ──
     virtual ~audVoiceStream();                  // [0] @ 0x82163b58
-    virtual void vfn_3();  // [3] @ 0x82163fa0
-    virtual void vfn_5();  // [5] @ 0x82164020
-    virtual void vfn_6();  // [6] @ 0x82164080
-    virtual void vfn_7();  // [7] @ 0x821640d0
-    virtual void vfn_8();  // [8] @ 0x82164120
-    virtual void vfn_9();  // [9] @ 0x82164238
-    virtual void vfn_10();  // [10] @ 0x82164298
-    virtual void vfn_11();  // [11] @ 0x82164328
-    virtual void SetReverbSend();       // [12] @ 0x821643d0
-    virtual void EnableReverbSend();    // [13] @ 0x821643e0
-    virtual void vfn_17();  // [17] @ 0x82164500
-    virtual void vfn_18();  // [18] @ 0x82164560
-    virtual bool IsStopping();          // [19] @ 0x821645b8
-    virtual bool IsStopped();           // [20] @ 0x821645d8
-
+    virtual void Allocate();           // [3] @ 0x82163fa0 — allocates stream ref
+    virtual void Stop();               // [5] @ 0x82164020 — cmdId 8196
+    virtual void StopImmediate();      // [6] @ 0x82164080 — cmdId 8197
+    virtual void Play();               // [7] @ 0x821640d0 — cmdId 8195
+    virtual void StopAndRelease();     // [8] @ 0x82164120 — stops if playing, releases to free list
+    virtual void SetVolume(float vol); // [9] @ 0x82164238 — cmdId 8198
+    virtual void SetPitch(float pitch); // [10] @ 0x82164298 — cmdId 8202
+    virtual void SetPan(float pan);    // [11] @ 0x82164328 — cmdId 8199
+    virtual void Pause();              // [12] @ 0x821643d0
+    virtual void Unpause();            // [13] @ 0x821643e0
+    virtual void SetLooping(uint32_t handle, bool loop); // [17] @ 0x82164500 — cmdId 8208
+    virtual bool IsPlaying();          // [18] @ 0x82164560 — checks state 17/18/20/21/22
+    virtual bool IsPrimed();           // [19] @ 0x821645b8 — state == 14
+    virtual bool IsReady();            // [20] @ 0x821645d8 — state == 15
 
     // ── non-virtual methods (from debug strings) ──
-    void Play();
-    void Prime();
-    void PlayByEntry();
-    void SetReverbVolume();
-    void SetEffectVolume();
+    void Prime(void* bankEntry);
+    void PlayByEntry(void* bankEntry, float volume, float pitch, float pan,
+                     float playVariance, uint32_t userParamA, uint32_t userParamB,
+                     uint8_t userParamC);
+    void SetReverbVolume(void* bankEntry, float volume);
+    void SetEffectVolume(void* bankEntry, float volume);
 };
 
 } // namespace rage

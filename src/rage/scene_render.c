@@ -40,17 +40,19 @@ extern void    grcDevice_clear(void* pDevice);
 /* Input system — poll controller state @ 0x821C9D68 */
 extern uint8_t io_Input_poll(void* pInput);
 
-/* Page manager — per-frame notification @ 0x823CEDE0 */
-extern void    pg_EDE0_gen(void* pPageObj, char flag);
+/* Page manager — per-frame completion handler @ 0x823CEDE0 */
+extern void    pgRenderThread_completeFrame(void* pPageObj, char flag);
 
 /* Assert / debug log — no-op in release @ 0x8240E6D0 */
 extern void    rage_DebugLog(const char* msg, ...);
 
-/* GetPageGroupState — pgStreamer start/cancel profiling stamp @ 0x8242C3B8 */
-extern void    GetPageGroupState(void* pPgObj, int32_t mode);
+/* pgStreamer — cancel/start profiling bracket @ 0x8242C3B8
+ * mode=0: start, mode=-1: cancel */
+extern void    pgStreamer_cancelBracket(void* pPgObj, int32_t mode);
 
-/* UpdatePageGroup — pgStreamer finalize stream @ 0x82566C40 */
-extern void    UpdatePageGroup(void* pStream);
+/* pgStreamer — signal render event @ 0x82566C40
+ * Calls NtSetEvent to wake the streaming thread. */
+extern void    pgStreamer_signalEvent(void* pStream);
 
 /* gameLoop struct defined in render_loop.c / rage_system.hpp */
 #include "rage/game_loop_types.h"
@@ -147,7 +149,7 @@ extern void*    g_pStencilMgrObj;            /* @ 0x82606570 */
 
 /*
  * g_pSecondaryDevice — secondary device pointer guarding the input-poll
- * and pg_EDE0_gen path.  NULL means skip that path entirely.
+ * and pgRenderThread_completeFrame path.  NULL means skip that path entirely.
  * @ 0x8271A328.
  */
 extern void*    g_pSecondaryDevice;          /* @ 0x8271A328 */
@@ -210,7 +212,7 @@ extern const float g_renderTicksToSecondsB; /* @ 0x82030000 */
  * 8. If g_pSecondaryDevice != NULL:
  *    a. Poll input; if no input ready, increment counter and return early.
  *    b. Read device flag; if zero, increment counter and return early.
- *    c. Notify page manager: pg_EDE0_gen(subObj + 96, flag).
+ *    c. Notify page manager: pgRenderThread_completeFrame(subObj + 96, flag).
  *
  * 9. Increment g_frameRenderCounter.
  * ═══════════════════════════════════════════════════════════════════════════ */
@@ -297,7 +299,7 @@ void rage_render_default(void)
         }
 
         /* 8c. Notify the page manager for this completed frame. */
-        pg_EDE0_gen(pSubObj + 96, (char)subFlag);
+        pgRenderThread_completeFrame(pSubObj + 96, (char)subFlag);
     }
 
     /* 9. Increment the frame-render counter. */
@@ -315,7 +317,7 @@ void rage_render_default(void)
  *   +0x00  vtable*
  *   +0x04  uint8_t  m_bInitialized   — must be 1; abort if 0
  *   +0x07  uint8_t  m_bSkipRender    — when 1, skip this frame entirely
- *   +0x14  void*    m_pStream        — stream handle for UpdatePageGroup
+ *   +0x14  void*    m_pStream        — stream handle for pgStreamer_signalEvent
  *   +0x18  void*    m_pPgObj         — pgStreamer object for profiling
  * ═══════════════════════════════════════════════════════════════════════════ */
 typedef struct {
@@ -324,7 +326,7 @@ typedef struct {
     uint8_t  _pad0[2];
     uint8_t  m_bSkipRender;   /* +0x07 — skip this frame when set */
     uint8_t  _pad1[12];
-    void*    m_pStream;       /* +0x14 — stream handle for UpdatePageGroup */
+    void*    m_pStream;       /* +0x14 — stream handle for pgStreamer_signalEvent */
     void*    m_pPgObj;        /* +0x18 — pgStreamer profiling object */
 } rageSceneRenderCtx;
 
@@ -345,14 +347,14 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
     uint64_t tStart = __mftb();
 
     /* 4. pgStreamer profiling bracket.
-     *    The assembly calls GetPageGroupState twice: once with mode=0 (start) and,
+     *    The assembly calls pgStreamer_cancelBracket twice: once with mode=0 (start) and,
      *    if the result indicates failure (cntlzw idiom returns 0), again
      *    with mode=-1 (cancel).  g_bProfilingActive is the shared gate. */
     if (!g_bProfilingActive) {
-        GetPageGroupState(pThis->m_pPgObj, 0);  /* attempt to start profiling */
+        pgStreamer_cancelBracket(pThis->m_pPgObj, 0);  /* attempt to start profiling */
         if (!g_bProfilingActive) {
             /* Profiling start failed or gate cleared — cancel the bracket. */
-            GetPageGroupState(pThis->m_pPgObj, -1);
+            pgStreamer_cancelBracket(pThis->m_pPgObj, -1);
         }
     }
 
@@ -381,7 +383,7 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
     }
 
     /* 8. Finalise / flush the render stream. */
-    UpdatePageGroup(pThis->m_pStream);
+    pgStreamer_signalEvent(pThis->m_pStream);
 }
 
 

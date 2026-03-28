@@ -16,8 +16,8 @@ extern "C" {
     void ProcessPageGroupInput(int param1, int param2, const char* param3, int param4);
     void NotifyUIEvent(int eventId, int flags, int param3, int param4);  // pg_E6E0 @ 0x8225E6E0
     void SetTrainingState(void* pStateMachine, int nState);             // atSingleton_E9F8_w @ 0x821EE9F8
-    void rage_DebugLog(const char* message);
-    void xmlNodeStruct_Initialize(void* self);  // @ base class PostLoadProperties
+    void nop_8240E6D0(const char* message);
+    void xmlNodeStruct_vfn_2(void* self);  // @ base class PostLoadProperties
 }
 
 // External globals
@@ -87,7 +87,7 @@ void pongTrainingDrill::IncreaseNumSuccesses(int increment) {
     // Clamp to maximum
     if (m_numSuccesses > maxSuccesses) {
         // Error: winning more than total possible
-        rage_DebugLog(g_str_pongDrill_tooManySuccesses);
+        nop_8240E6D0(g_str_pongDrill_tooManySuccesses);
         m_numSuccesses = maxSuccesses;
     }
     
@@ -358,23 +358,23 @@ hitTipData::~hitTipData() {
 void hitTipData::PostLoadProperties() {
     // Validate ShotType: must be in range [0, 5]
     if (m_shotType < 0 || m_shotType >= 6) {
-        rage_DebugLog("Invalid hit tip found: %d");  // @ 0x82045090 (corrected +0x2000)
+        nop_8240E6D0("hitTipData::PostLoadProperties() - invalid ShotType");  // @ 0x82043090
     }
 
     // Check score/consecutive field consistency
     if (m_consecutiveThreshold < 0) {
         if (m_scoreThreshold >= 0 && m_minScore >= 0) {
             // Both score and min thresholds are valid: call base and return
-            xmlNodeStruct_Initialize(this);
+            xmlNodeStruct_vfn_2(this);
             return;
         }
         // Score fields invalid: log error and set default
-        rage_DebugLog("Invalid hit tip, setting InARow to default");  // @ 0x820450AC (corrected +0x2000)
+        nop_8240E6D0("hitTipData::PostLoadProperties() - invalid score/consecutive thresholds");  // @ 0x820430AC
         m_consecutiveThreshold = 2;  // Default to 2
     }
 
     // Call base class PostLoadProperties
-    xmlNodeStruct_Initialize(this);
+    xmlNodeStruct_vfn_2(this);
 }
 
 /**

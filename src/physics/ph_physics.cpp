@@ -10,38 +10,152 @@
 #include "ph_physics.hpp"
 
 extern "C" void* rage_alloc(uint32_t size);  // RAGE heap alloc (defined in heap.c)
+
 #include <stddef.h>
 #include <math.h>
 #include <string.h>
 
-/* --- Vtable pointers (resolved from .rdata) --- */
-extern void* g_vtable_phInstWrapper;         // @ 0x82005828 (40B, ph_vt57D8_20 wrapper vtable)
-extern void* g_vtable_phInst;               // @ 0x820057D8 (80B, phInst embedded vtable)
-extern void* g_vtable_phDemoWorld;           // @ 0x82003DB0 (20B, phDemoWorld vtable)
-extern void* g_vtable_phNamedNode;           // @ 0x8200460C (phNamedNode vtable)
-extern void* g_vtable_fiAsciiTokenizer;      // @ 0x8202777C (168B, rage::fiAsciiTokenizer RTTI)
-extern void* g_vtable_phInstCleanup;         // @ 0x82022D2C (inside lbl_82022D00, phInst cleanup vtable)
-extern void* g_vtable_phInstTriple;          // @ 0x82005918 (60B, phInst triple-init primary vtable)
-extern void* g_vtable_phInstParam;           // @ 0x8200586C (44B, phInst param-init primary vtable)
-extern void* g_vtable_phInstParamSecondary;  // @ 0x82005850 (28B, phInst param-init secondary vtable)
-extern void* g_vtable_phInstDerived;         // @ 0x82005A40 (24B, phInst derived class vtable)
-extern void* g_vtable_phCtor0460;            // @ 0x820014C8 (phCtor vtable)
-extern void* g_vtable_phObjectBase;          // @ 0x82019168 (phObject base vtable)
-extern void* g_vtable_phObject;              // @ 0x82008918 (140B, phObject destructor vtable)
+/* ======================================================================
+   Forward declarations -- moved from function bodies to file scope
+   ====================================================================== */
 
-/* --- Global data pointers --- */
-extern void* g_phDemoWorldSingleton;    // @ 0x823E7888 (phDemoWorld singleton instance)
-extern void* g_phWorldPtr;             // @ 0x826065EC (12B, physics world pointer, SDA)
-extern const uint8_t g_phCapsuleTemplate[];  // @ 0x825CB800 (64B, capsule template data)
-extern int32_t g_phPhysicsOffset;       // @ 0x82607A48 (physics data offset global)
-extern const char g_phFormatStr[];      // @ 0x82059F04 (6B, format string)
-extern void* g_phDispatchFunc;          // @ 0x82019690 (phObject dispatch function ptr)
-extern void* g_phJointConstraintData;   // @ 0x8207E6D0 (24B, joint constraint data)
+/* --- Float / double constants --- */
+extern const float g_capsuleVolK1;  // @ .rdata (fmadds multiplier)
+extern const float g_capsuleVolK2;  // @ .rdata (final scale, ~4.189 = 4/3*PI)
+extern const float g_dampingScale;   // @ 0x8207A008 (.rdata)
+extern const float g_floatEpsilon;  // @ 0x82079C58 (.rdata)
+extern const float g_phCapsuleShapeK;  // shape constant @ 0x825C8080
+extern const float g_phClampMax;
+extern const float g_phExtentScale;
+extern const float g_phJoint1Dof_angleMin, g_phJoint1Dof_angleMax;
+extern const float g_phJoint1Dof_errTol, g_phJoint1Dof_maxCorr;
+extern const float g_phJoint1Dof_mass, g_phJoint1Dof_stiffness;
+extern const float g_phJoint1Dof_maxTorque;
+extern const float g_phNegThreshold;  // negative threshold @ 0x82079D18
+extern const float g_phSphereInertiaCoeff; // @ 0x82029B60
+extern const float g_phSphereVolumeCoeff;  // @ 0x82079C30 — (4/3)*pi
+extern const float g_phTwo;
+extern const float g_phZeroFloat;
+extern const float g_springScale;    // @ 0x8207A0F4 (.rdata)
 
-/* --- Float constants used as raw addresses --- */
-extern const float g_phMinThreshold;    // @ 0x8202D010
-extern const float g_phMaxThreshold;    // @ 0x8202D008
-extern const float g_phScaleFactor;     // @ 0x8202CFF0
+/* --- Physics globals --- */
+extern const char* g_phResolveProfileTag;
+extern const char* g_phResolveProfileTagEnd;
+extern const uint8_t g_phXYZMask[16];     // @ 0x82629E60 — xyz mask (clear w)
+extern const void* g_phJoint3DofTemplate;  // @ 0x82069E70
+extern float g_phTableA[];            // sine/cosine lookup table
+extern float g_phTableB[];            // second lookup table
+extern uint16_t g_phDefaultStatusId;  // @ 0x82465A58
+extern uint32_t g_phActiveCameraPtr;
+extern uint32_t g_phCollisionFlags;  // @ 0x825C48E8
+extern uint32_t g_phCollisionSolver;
+extern uint32_t g_phGlobalStatePtr;
+extern uint32_t g_phRandomSeedPtr;    // global RNG state
+extern uint8_t g_phDisabled;
+extern uint8_t g_physicsDisabled;  // @ 0x826064E0
+extern void* g_phAllocator;  // @ 0x64890018 (constructed from lis+ori)
+extern void* g_phBoundGeometryVtable;  // @ 0x82058494
+extern void* g_phBoundRelocVtable;
+extern void* g_phCollisionMgr_vtable;
+extern void* g_phGlobalState;
+extern void* g_phJoint1DofVtable;
+extern void* g_phJointChainVtable;  // @ 0x82050078
+extern void* g_phJointVtable;
+extern void* g_phMaterialAllocator;        // @ SDA 0x826066E4
+
+/* --- Display / MMIO globals --- */
+extern uint32_t g_mmioStoredValue;  // @ 0x825E7890
+
+/* --- Other globals --- */
+extern uint32_t g_identityVec[];  // @ 0x82606740 — 16-byte identity/zero vector
+
+/* --- Physics functions --- */
+extern float phJoint1Dof_AE38(void*);
+extern int phArticulatedCollider_E668(phArticulatedCollider* collider, int boneIndex);
+extern void  phBoundCapsule_9B58_w(void* a, void* b, int count);
+extern void  phBoundCapsule_9DA0_2h(void* a, void* b, int count);
+extern void  phBoundCapsule_F5F8_p39(void* data);
+extern void  phBoundCapsule_ForwardToSink_9C78_1(void* a, void* b, int count);
+extern void  ph_1B78(void* thisPtr, float f2, float f3, void* r6);
+extern void phArticulatedCollider_5B50_wrh(void* activeJoints);
+extern void phArticulatedCollider_5C60_sp(void* collider);
+extern void phArticulatedCollider_60F8(void* jointData, float recipTimestep,
+extern void phArticulatedCollider_6B40_wrh(void* jointData);
+extern void phArticulatedCollider_6D30_h(void* collider);
+extern void phArticulatedCollider_77F0_w(void* jointData, int linkIndex, const float* delta);
+extern void phArticulatedCollider_7918_w(void* jointData, int linkIndex);
+extern void ph_Sqrtf_joint(phJoint3Dof*, float);
+extern void ph_ApplyAngularVelocity(void* capsule);
+extern void phBoundCapsule_ACB0_p45(void* capsule);
+extern void phCollider_vfn_4(phArticulatedCollider* collider);
+extern void phInst_5910_p39(void* obj);
+extern void phJoint1Dof_AFF8_p42(phJoint3Dof*, int, float*);
+extern void phJoint_1388(phJoint3Dof*, int, float, float*, float*);
+extern void phJoint_1618_g(phJoint3Dof*);
+extern void phJoint_7A30_fw(void* jointData, int linkIndex, const float* delta, int param);
+extern void ph_9E50(void*, void*);
+extern void ph_A330(void* obj);
+extern void ph_CEE0(void*, int);
+extern void ph_E088(void*, void*, void*, float, int);
+extern void ph_E1E8(void* obj);
+extern void ph_FE48(void* obj, void* p);
+extern void ph_snprintf(char*, int, const char*, const char*, int);
+extern void ph_vt3DB0_12_8DB8(void* obj);
+extern void ph_vt3DB0_13_8E10(void* obj);
+extern void ph_vt57D8_20_0718(void* obj);
+extern void ph_vt57D8_28_FD08(void* obj);
+extern void ph_vt57D8_29_FDD0(void* obj);
+extern void ph_vt57D8_2_6378(void* obj);
+extern void ph_vt57D8_3_61E0(void* obj);
+extern void ph_vt5A60_57_6858(void* obj);
+extern void ph_vt5A60_58_6EE8(void* obj);
+extern void ph_vt5A60_60_7870(void* obj);
+extern void ph_vt5A60_61_7A38(void* obj);
+extern void ph_vt5A60_62_8F80(void* obj);
+extern void ph_vt5A7C_63_6A98(void* obj);
+extern void ph_vt5A84_63_6B90(void* obj);
+extern void ph_vt5A8C_63_6A50(void* obj);
+extern void ph_vt5B98_40_8D50(void* obj);
+extern void ph_vt5B98_41_8E50(void* obj);
+extern void* phArchetype_Load(const char*, void*);
+extern void* ph_6FC8(void*, const char*);
+extern void* ph_9EC0_1(void*);
+extern void* ph_E010(void*, void*, const char*);
+
+/* --- RAGE / kernel functions --- */
+extern void  rage_Alloc(int size, void* allocator);  // rage_01B8
+extern void ke_A428(void* obj);
+extern void ke_C750(void* obj);
+extern void ke_D440(void* obj);
+extern void rage_1058(void*);
+extern void rage_D220(void*, const char*);
+extern void rage_free(void*);
+extern void* xe_F4C0(void*);
+
+/* --- Game functions --- */
+extern "C" void pongCreatureInst_E828_v12(void*, uint32_t);
+extern void game_CE58(void* collider);
+extern void pongCreatureInst_9030_g(void*, void*);
+
+/* --- Audio functions --- */
+extern void aud_1498(void* obj);
+extern void aud_6A20_wrap_6A20(void* obj);
+
+/* --- Utility / tokenizer / singleton functions --- */
+extern uint8_t fiAsciiTokenizer_2110_gen(void*, void*, void*);
+extern void  fiAsciiTokenizer_0BA8_g(void* tokenizer, int mode);
+extern void  msgMsgSink_8DA0_sp(void* obj);
+extern void atSingleton_8A48_p42(void* obj);
+extern void fiAsciiTokenizer_3310_g(void* obj);
+extern void strncpy(char*, const char*, int);
+extern void phJoint3Dof_ResetAllJoints(phJoint3Dof*, int);
+extern void util_B680(void* thisPtr);
+extern void rage_CopyMatrixAndBind(void*, void*, void*);
+
+/* --- Other functions --- */
+extern void pg_6C80_g(int ms);              // Sleep/yield helper @ 0x82566C80
+extern void statePreInit_vfn_6(void* obj);  // @ 0x82494130
+
 
 /**
  * rage_strchr @ 0x824321B0 | size: 0x3C
@@ -131,10 +245,10 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
     
     // Set up vtable pointers
     // Main vtable at offset 0
-    *(void**)(obj + 0) = &g_vtable_phInstWrapper;  // lbl_82005828
+    *(void**)(obj + 0) = (void*)0x82005828;
     
     // Embedded phInst vtable at offset 12
-    *(void**)(obj + 12) = &g_vtable_phInst;  // lbl_820057D8
+    *(void**)(obj + 12) = (void*)0x820057D8;
     
     // Initialize the embedded phInst object at offset +0x0C
     // phInst_6158_p39 is the phInst initialization function
@@ -143,13 +257,13 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
     // phInst_6158_p39(phInstPtr);
     
     // Update main vtable after phInst initialization
-    *(void**)(obj + 0) = &g_vtable_phDemoWorld;  // lbl_82003DB0
+    *(void**)(obj + 0) = (void*)0x82003DB0;
     
     // If bit 0 of registerWithWorld is set, register with phDemoWorld
     if (registerWithWorld & 0x1) {
         // phDemoWorld_67D0_g is a global registration function
         // Parameters: phDemoWorld singleton address, this object, flags
-        void* phDemoWorldSingleton = &g_phDemoWorldSingleton;  // lbl_823E7888
+        void* phDemoWorldSingleton = (void*)0x823E7888;
         uint32_t flags = 0x61820000;
         
         // Call phDemoWorld registration
@@ -159,7 +273,7 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
 
 
 // External references
-extern void util_B8A0(void* obj);  // Base initialization
+extern void rmcDrawable_Init(void* obj);  // Base initialization
 extern const float g_floatZero;    // @ 0x8202D110
 extern const float g_floatOne;     // @ 0x8202D110 - 8
 extern void* g_fragDrawableVtable; // @ 0x82033094
@@ -171,7 +285,7 @@ extern void* g_fragDrawableVtable; // @ 0x82033094
  * for fragmented/destructible geometry in the RAGE engine.
  *
  * The constructor:
- * 1. Calls base class initialization (util_B8A0)
+ * 1. Calls base class initialization (rmcDrawable_Init)
  * 2. Sets up the vtable pointer
  * 3. Zeros out all state fields (256-302)
  * 4. Initializes a 3x3 identity matrix at offset +192
@@ -187,7 +301,7 @@ extern void* g_fragDrawableVtable; // @ 0x82033094
 void fragDrawable_Constructor(void* thisPtr) {
     void* self = thisPtr; (void)self;
     // Call base class initialization
-    util_B8A0(thisPtr);
+    rmcDrawable_Init(thisPtr);
 
     // Set vtable pointer
     *(void**)thisPtr = g_fragDrawableVtable;  // @ 0x82033094
@@ -306,7 +420,7 @@ void phNamedNode_Init(void* thisPtr, const char* name) {
     uint8_t* obj = (uint8_t*)thisPtr;
     
     // Set vtable pointer at offset 0
-    *(void**)(obj + 0) = &g_vtable_phNamedNode;  // lbl_8200460C
+    *(void**)(obj + 0) = (void*)0x8200460C;
     
     // Initialize circular doubly-linked list pointers
     // Both prev and next point to self initially
@@ -330,7 +444,6 @@ void phNamedNode_Init(void* thisPtr, const char* name) {
 namespace rage {
 
 // External globals
-extern void* g_display_obj_ptr;  // @ 0x826066E4
 
 // ─────────────────────────────────────────────────────────────────────────────
 // phBoundOTGrid::SetupCollisionGrid @ 0x82508098 | size: 0x1A0
@@ -661,10 +774,10 @@ int rage::phBoundOTGrid::WorldPositionToGridIndex(const float* position) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // External function declarations (helper functions)
-extern float phBoundCapsule_01D0_g(float value);  // sqrt wrapper
-extern float phBoundCapsule_01D8_g(float value);  // trigonometric function
-extern float phBoundCapsule_0FE0_g(float f1, float f2);  // capsule calculation
-extern float phBoundCapsule_02B0_g(float value);  // normalization function
+extern float ph_Sqrtf(float value);  // sqrt wrapper
+extern float ph_Sinf(float value);  // trigonometric function
+extern float ph_Atan2f(float f1, float f2);  // capsule calculation
+extern float ph_Cosf(float value);  // normalization function
 extern float atSingleton_1308_g(float value, double param);  // singleton math helper
 
 // External constants
@@ -673,29 +786,29 @@ extern const float g_floatOne;       // @ 0x8202D108
 extern const float g_capsuleRadius;  // @ 0x82079B30
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_0550_g @ 0x820D0550 | size: 0x50
+// ph_Atan2fSafe @ 0x820D0550 | size: 0x50
 //
 // Conditional capsule calculation wrapper. If both f2 and f1 are zero,
 // returns zero. Otherwise calls the main capsule calculation function.
 // ─────────────────────────────────────────────────────────────────────────────
-float phBoundCapsule_0550_g(float f1, float f2) {
+float ph_Atan2fSafe(float f1, float f2) {
     if (f2 == g_floatZero) {
         if (f1 != g_floatZero) {
-            return phBoundCapsule_0FE0_g(f1, f2);
+            return ph_Atan2f(f1, f2);
         }
         return g_floatZero;
     }
-    return phBoundCapsule_0FE0_g(f1, f2);
+    return ph_Atan2f(f1, f2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_B6A0_g @ 0x820CB6A0 | size: 0x50
+// ph_ClampAndSin @ 0x820CB6A0 | size: 0x50
 //
 // Applies a clamped trigonometric transformation to an input value.
 // If the value is outside the valid range [minThreshold, maxThreshold],
 // it's clamped. Otherwise, it's scaled and passed through a trig function.
 // ─────────────────────────────────────────────────────────────────────────────
-float phBoundCapsule_B6A0_g(float inputValue) {
+float ph_ClampAndSin(float inputValue) {
     // Load threshold constants from global data
     const float minThreshold = *(float*)0x8202D010;  // offset +288 from base
     const float maxThreshold = *(float*)0x8202D008;  // offset +280 from base
@@ -711,16 +824,16 @@ float phBoundCapsule_B6A0_g(float inputValue) {
     
     // Apply scaling and trigonometric transformation
     float scaledValue = inputValue * scaleFactor;
-    return phBoundCapsule_01D8_g(scaledValue);
+    return ph_Sinf(scaledValue);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_B598_g @ 0x820CB598 | size: 0x58
+// ph_GetCapsuleRadius @ 0x820CB598 | size: 0x58
 //
 // Returns a capsule property based on flags at offset +64.
 // Checks bit 1 (0x02) and bit 4 (0x10) to determine which value to return.
 // ─────────────────────────────────────────────────────────────────────────────
-float phBoundCapsule_B598_g(void* capsule) {
+float ph_GetCapsuleRadius(void* capsule) {
     uint8_t* obj = (uint8_t*)capsule;
     uint8_t flags = obj[64];
     
@@ -739,31 +852,31 @@ float phBoundCapsule_B598_g(void* capsule) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_04F0_g @ 0x820D04F0 | size: 0x60
+// ph_SinCos @ 0x820D04F0 | size: 0x60
 //
 // Computes two related capsule properties and stores them in output pointers.
 // Normalizes the first input, then applies a trigonometric transformation
 // to the second input.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_04F0_g(float* outNormalized, float* outTransformed, float input1, float input2) {
-    float normalized = phBoundCapsule_02B0_g(input1);
+void ph_SinCos(float* outNormalized, float* outTransformed, float input1, float input2) {
+    float normalized = ph_Cosf(input1);
     *outNormalized = normalized;
     
-    float transformed = phBoundCapsule_01D8_g(input2);
+    float transformed = ph_Sinf(input2);
     *outTransformed = transformed;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_3F10_g @ 0x820C3F10 | size: 0x84
+// ph_BuildRotationMatrixX @ 0x820C3F10 | size: 0x84
 //
 // Initializes a capsule structure with computed geometry values.
 // Sets up a vertical capsule aligned along the Y axis.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_3F10_g(void* capsule, float height, float radius) {
+void ph_BuildRotationMatrixX(void* capsule, float height, float radius) {
     uint8_t* obj = (uint8_t*)capsule;
     
-    float normalizedHeight = phBoundCapsule_02B0_g(height);
-    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    float normalizedHeight = ph_Cosf(height);
+    float transformedRadius = ph_Sinf(radius);
     
     const float negOne = *(float*)0x8202D108;  // -1.0f
     const float zero = *(float*)0x8202D110;    // 0.0f
@@ -781,16 +894,16 @@ void phBoundCapsule_3F10_g(void* capsule, float height, float radius) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_3F98_g @ 0x820C3F98 | size: 0x84
+// ph_BuildRotationMatrixY @ 0x820C3F98 | size: 0x84
 //
 // Initializes a capsule structure with computed geometry values.
 // Sets up a horizontal capsule aligned along the X axis.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_3F98_g(void* capsule, float length, float radius) {
+void ph_BuildRotationMatrixY(void* capsule, float length, float radius) {
     uint8_t* obj = (uint8_t*)capsule;
     
-    float normalizedLength = phBoundCapsule_02B0_g(length);
-    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    float normalizedLength = ph_Cosf(length);
+    float transformedRadius = ph_Sinf(radius);
     
     const float one = *(float*)0x8202D100;   // 1.0f (offset +8 from base)
     const float zero = *(float*)0x8202D0F8;  // 0.0f (offset +0 from base)
@@ -808,16 +921,16 @@ void phBoundCapsule_3F98_g(void* capsule, float length, float radius) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_4020_g @ 0x820C4020 | size: 0x84
+// ph_BuildRotationMatrixZ @ 0x820C4020 | size: 0x84
 //
 // Initializes a capsule structure with computed geometry values.
 // Sets up a capsule aligned along the Z axis.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_4020_g(void* capsule, float depth, float radius) {
+void ph_BuildRotationMatrixZ(void* capsule, float depth, float radius) {
     uint8_t* obj = (uint8_t*)capsule;
     
-    float normalizedDepth = phBoundCapsule_02B0_g(depth);
-    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    float normalizedDepth = ph_Cosf(depth);
+    float transformedRadius = ph_Sinf(radius);
     
     const float one = *(float*)0x8202D100;   // 1.0f (offset +8 from base)
     const float zero = *(float*)0x8202D0F8;  // 0.0f (offset +0 from base)
@@ -835,13 +948,13 @@ void phBoundCapsule_4020_g(void* capsule, float depth, float radius) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_9CF8_g @ 0x820C9CF8 | size: 0xA0
+// ph_MoveTowardTarget2D @ 0x820C9CF8 | size: 0xA0
 //
 // Adjusts capsule position based on a 2D offset vector and interpolation factors.
 // Computes the distance from the offset, normalizes it, and applies scaled
 // movement along the offset direction.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_9CF8_g(void* capsule, float* offsetVec, float scaleFactor, float lerpFactor) {
+void ph_MoveTowardTarget2D(void* capsule, float* offsetVec, float scaleFactor, float lerpFactor) {
     uint8_t* obj = (uint8_t*)capsule;
     
     // Load current capsule position
@@ -860,7 +973,7 @@ void phBoundCapsule_9CF8_g(void* capsule, float* offsetVec, float scaleFactor, f
     float distSq = deltaX * deltaX + deltaY * deltaY;
     
     // Compute square root (distance)
-    float distance = phBoundCapsule_01D0_g(distSq);
+    float distance = ph_Sqrtf(distSq);
     
     // Normalize and apply singleton transformation
     const double normalizationFactor = *(double*)0x82079B30;
@@ -880,18 +993,18 @@ void phBoundCapsule_9CF8_g(void* capsule, float* offsetVec, float scaleFactor, f
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_InitFromTemplate @ 0x820D9730 | size: 0xB0
+// phBoundCapsule_9730_fw @ 0x820D9730 | size: 0xB0
 //
 // Initializes a capsule from a template and applies transformations from
 // a source object. Copies 64 bytes of template data, then conditionally
 // applies a radius transformation based on flags.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
+void phBoundCapsule_9730_fw(void* capsule, void* sourceObj) {
     uint8_t* dest = (uint8_t*)capsule;
     uint8_t* src = (uint8_t*)sourceObj;
     
     // Load template data address
-    const uint8_t* templateData = g_phCapsuleTemplate;  // lbl_825CB800
+    const uint8_t* templateData = (const uint8_t*)0x825CB800;  // lbl_825CB800
     
     // Copy 64 bytes of template data (4 x 16-byte SIMD vectors)
     for (int i = 0; i < 64; i += 16) {
@@ -903,7 +1016,7 @@ void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
     
     // Get physics data pointer from source object
     void* physicsData = *(void**)(src + 400);
-    const int32_t physicsOffset = g_phPhysicsOffset;  // lbl_82607A48
+    const int32_t physicsOffset = *(int32_t*)0x82607A48;  // Global offset
     uint8_t* physicsObj = (uint8_t*)physicsData + physicsOffset;
     
     // Check flags at offset +64
@@ -912,7 +1025,7 @@ void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
     if (flags == 0) {
         // Apply radius transformation
         const float defaultRadius = *(float*)0x82079B30;  // g_capsuleRadius
-        phBoundCapsule_3F98_g(capsule, defaultRadius, 0.0f);
+        ph_BuildRotationMatrixY(capsule, defaultRadius, 0.0f);
     }
     
     // Copy transformation matrix from source object (offset +384, 16 bytes)
@@ -923,13 +1036,13 @@ void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_GetValidCapsuleGeometry @ 0x820DF548 | size: 0x80
+// phBoundCapsule_F548_wrh @ 0x820DF548 | size: 0x80
 //
 // Extracts capsule geometry data from an array of capsule structures.
 // Searches for the first valid capsule (non-zero radius) and copies its
 // geometry parameters to output pointers.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_GetValidCapsuleGeometry(void* container, int* outIndex, float* outX, float* outY, float* outZ, float* outRadius) {
+void phBoundCapsule_F548_wrh(void* container, int* outIndex, float* outX, float* outY, float* outZ, float* outRadius) {
     uint8_t* obj = (uint8_t*)container;
     
     // Get capsule array pointer
@@ -1030,7 +1143,7 @@ void rage::phBoundCapsule::ScaleRadius(float scale) {
     float scaledValue = scale * scaleFactor;
     
     // Call helper function to apply the scaled value
-    phBoundCapsule_01D8_g(scaledValue);
+    ph_Sinf(scaledValue);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1046,11 +1159,11 @@ void rage::phBoundCapsule::ScaleRadius(float scale) {
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::ComputeBounds(float scale, float* outMin, float* outMax) {
     // Compute minimum bound
-    float minBound = phBoundCapsule_02B0_g(scale);
+    float minBound = ph_Cosf(scale);
     *outMin = minBound;
     
     // Compute maximum bound using the scale
-    float maxBound = phBoundCapsule_01D8_g(scale);
+    float maxBound = ph_Sinf(scale);
     *outMax = maxBound;
 }
 
@@ -1077,11 +1190,11 @@ float rage::phBoundCapsule::ComputeExtent(float param1, float param2) const {
         }
         
         // Otherwise compute extent with param1 (param2 is zero)
-        return phBoundCapsule_0FE0_g(param1, param2);
+        return ph_Atan2f(param1, param2);
     }
 
     // General case: compute extent with both parameters
-    return phBoundCapsule_0FE0_g(param1, param2);
+    return ph_Atan2f(param1, param2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1096,8 +1209,8 @@ float rage::phBoundCapsule::ComputeExtent(float param1, float param2) const {
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::InitializeAxisAlignedX(float halfLength, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     const float* constants = (const float*)0x8202D110;
     const float zero = constants[0];   // +0 = 0.0f
@@ -1132,8 +1245,8 @@ void rage::phBoundCapsule::InitializeAxisAlignedX(float halfLength, float* outMa
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::InitializeAxisAlignedY(float halfLength, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     const float* constants = (const float*)0x8202D108;
     const float one = constants[0];   // +0 = 1.0f
@@ -1173,8 +1286,8 @@ void rage::phBoundCapsule::InitializeAxisAlignedY(float halfLength, float* outMa
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::InitializeAxisAlignedZ(float halfLength, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     const float* constants = (const float*)0x8202D108;
     const float one = constants[0];   // +0 = 1.0f
@@ -1210,8 +1323,8 @@ void rage::phBoundCapsule::InitializeAxisAlignedZ(float halfLength, float* outMa
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::TransformByDirection(float halfLength, const float* direction, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     // Load direction components
     float dirX = direction[0];
@@ -1413,7 +1526,6 @@ void rage::phBoundCapsule::ApplyTransform(const float* transform, const float* i
 namespace rage {
 
 // External globals
-extern void* g_display_obj_ptr;  // @ 0x826066E4
 
 // ─────────────────────────────────────────────────────────────────────────────
 // phBoundGeometry::GetDisplayObject @ 0x82228C58 | size: 0xC
@@ -1636,8 +1748,6 @@ void phBoundGeometry::UpdateBounds(const float* offset) {
 //
 // @param shouldFree - If bit 0 is set, free the object's memory
 // ─────────────────────────────────────────────────────────────────────────────
-extern void rage_1058(void*);
-extern void rage_free(void*);
 
 void phBoundGeometry::Destructor(int shouldFree) {
     // Call base class destructor
@@ -1685,7 +1795,7 @@ void ph_2DF0(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
     
     // Set vtable pointer for rage::fiAsciiTokenizer
-    *(void**)(obj + 0) = &g_vtable_fiAsciiTokenizer;  // lbl_8202777C
+    *(void**)(obj + 0) = (void*)0x8202777C;
     
     // Clear internal state field
     *(uint32_t*)(obj + 160) = 0;
@@ -1890,20 +2000,7 @@ void ph_FD70(void* thisPtr, uint8_t value) {
 // ─────────────────────────────────────────────────────────────────────────────
 void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     // External function declarations
-    extern void* xe_F4C0(void*);
-    extern void rage_D220(void*, const char*);
-    extern void strncpy(char*, const char*, int);
-    extern void* ph_6FC8(void*, const char*);
-    extern void ph_snprintf(char*, int, const char*, const char*, int);
-    extern void* phArchetype_Load(const char*, void*);
     extern void* rage_alloc(uint32_t);
-    extern void* ph_9EC0_1(void*);
-    extern void ph_E088(void*, void*, void*, float, int);
-    extern void ph_9E50(void*, void*);
-    extern void ph_CEE0(void*, int);
-    extern void* ph_E010(void*, void*, const char*);
-    extern void pongCreatureInst_9030_g(void*, void*);
-    extern void util_D150(void*, void*, void*);
     
     char normalizedPath[256];
     
@@ -1917,7 +2014,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     // Get resource manager and material info
     uint32_t resourceMgr = *(uint32_t*)((uint8_t*)loadContext + 96);
     void* materialInfo = (void*)*(uint32_t*)((uint8_t*)resourceMgr + 212);
-    void* physicsWorld = &g_phWorldPtr;  // lbl_826065EC
+    void* physicsWorld = (void*)0x826065EC;  // Global physics world pointer
     
     // Normalize the asset path
     normalizedPath[255] = '\0';
@@ -1925,7 +2022,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     
     // Try to find existing archetype in resource system
     int attemptCount = 1;
-    const char* formatStr = g_phFormatStr;  // lbl_82059F04
+    const char* formatStr = (const char*)0x82059F04;  // Format string for path variants
     
     while (true) {
         void* existingArchetype = ph_6FC8(*(void**)((uint8_t*)physicsWorld + 8), normalizedPath);
@@ -1970,7 +2067,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     pongCreatureInst_9030_g(creatureInst, physicsInst);
     
     // Finalize registration
-    util_D150(loadContext, creatureInst, (void*)((uint8_t*)creatureInst + 16));
+    rage_CopyMatrixAndBind(loadContext, creatureInst, (void*)((uint8_t*)creatureInst + 16));
     
     // Call vtable method on context
     void* contextObj = *(void**)((uint8_t*)contextPtr + 20);
@@ -2013,11 +2110,6 @@ void ph_FC68_h(void* obj) {
 namespace rage {
 
 // Forward declarations for external functions
-extern void phBoundCapsule_6C28_fw(void* capsule);
-extern void phArticulatedCollider_6D30_h(void* collider);
-extern void phArticulatedCollider_5C60_sp(void* collider);
-extern void phCollider_vfn_4(phArticulatedCollider* collider);
-extern void phArticulatedCollider_5B50_wrh(void* activeJoints);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // phArticulatedCollider::GetActiveJointsPointer (vfn_46) @ 0x8224E248 | size: 0x8
@@ -2025,8 +2117,8 @@ extern void phArticulatedCollider_5B50_wrh(void* activeJoints);
 // Returns pointer to the active joints data structure.
 // This is a simple accessor used by physics simulation to query joint states.
 // ─────────────────────────────────────────────────────────────────────────────
-void* phArticulatedCollider::GetActiveJointsPointer() {
-    return (void*)(uintptr_t)field_0x01d8;  // +472 (0x1D8)
+void* rage::phArticulatedCollider::GetActiveJointsPointer() {
+    return (void*)(uintptr_t)m_nJointCount;  // +472 (0x1D8)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2035,7 +2127,7 @@ void* phArticulatedCollider::GetActiveJointsPointer() {
 // Delegates processing to the joint processor function.
 // Used during physics update to process all active joints.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::DelegateToJointProcessor() {
+void rage::phArticulatedCollider::DelegateToJointProcessor() {
     phArticulatedCollider_5C60_sp((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
 }
 
@@ -2045,8 +2137,8 @@ void phArticulatedCollider::DelegateToJointProcessor() {
 // Delegates to capsule collision handler.
 // Used for capsule-based collision detection on articulated bodies.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::DelegateToCapsuleHandler() {
-    phBoundCapsule_6C28_fw((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
+void rage::phArticulatedCollider::DelegateToCapsuleHandler() {
+    ph_ApplyAngularVelocity((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2055,7 +2147,7 @@ void phArticulatedCollider::DelegateToCapsuleHandler() {
 // Delegates to articulated collider handler.
 // Used for complex collision scenarios involving multiple joints.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::DelegateToColliderHandler() {
+void rage::phArticulatedCollider::DelegateToColliderHandler() {
     phArticulatedCollider_6D30_h((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
 }
 
@@ -2068,7 +2160,7 @@ void phArticulatedCollider::DelegateToColliderHandler() {
 // @param jointIndex - Index of the joint to query
 // @return Mass value for the specified joint
 // ─────────────────────────────────────────────────────────────────────────────
-float phArticulatedCollider::GetJointMass(int jointIndex) {
+float rage::phArticulatedCollider::GetJointMass(int jointIndex) {
     float* massArray = (float*)(uintptr_t)field_0x01fc;  // +508 (0x1FC)
     return massArray[jointIndex];
 }
@@ -2082,7 +2174,7 @@ float phArticulatedCollider::GetJointMass(int jointIndex) {
 // @param jointIndex - Index of the joint to query
 // @return Inertia value for the specified joint
 // ─────────────────────────────────────────────────────────────────────────────
-float phArticulatedCollider::GetJointInertia(int jointIndex) {
+float rage::phArticulatedCollider::GetJointInertia(int jointIndex) {
     float* inertiaArray = (float*)(uintptr_t)field_0x01ec;  // +492 (0x1EC)
     return inertiaArray[jointIndex];
 }
@@ -2096,7 +2188,7 @@ float phArticulatedCollider::GetJointInertia(int jointIndex) {
 // @param jointIndex - Index of the joint to query
 // @return Damping coefficient for the specified joint
 // ─────────────────────────────────────────────────────────────────────────────
-float phArticulatedCollider::GetJointDamping(int jointIndex) {
+float rage::phArticulatedCollider::GetJointDamping(int jointIndex) {
     float* dampingArray = (float*)(uintptr_t)field_0x01f4;  // +500 (0x1F4)
     return dampingArray[jointIndex];
 }
@@ -2107,7 +2199,7 @@ float phArticulatedCollider::GetJointDamping(int jointIndex) {
 // Updates the articulated collider state.
 // Calls parent class update, then updates active joints.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::Update() {
+void rage::phArticulatedCollider::Update() {
     // Call parent class update
     phCollider_vfn_4(this);
     
@@ -2123,7 +2215,7 @@ void phArticulatedCollider::Update() {
 //
 // @param forceVector - 16-byte aligned vector containing force components
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::AddForceToJoint(const float* forceVector) {
+void rage::phArticulatedCollider::AddForceToJoint(const float* forceVector) {
     // Load the joint data pointer
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
     
@@ -2150,7 +2242,7 @@ void phArticulatedCollider::AddForceToJoint(const float* forceVector) {
 // @param param2 - Second parameter (moved to r5)
 // @param param3 - Third parameter (moved to r6)
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::ApplyImpulse(void* param1, void* param2, void* param3) {
+void rage::phArticulatedCollider::ApplyImpulse(void* param1, void* param2, void* param3) {
     // Get vtable and call slot 34 with parameters shuffled and two zeros appended
     void** vtable = *(void***)this;
     typedef void (*ImpulseFunc)(phArticulatedCollider*, void*, void*, void*, int, int);
@@ -2159,274 +2251,367 @@ void phArticulatedCollider::ApplyImpulse(void* param1, void* param2, void* param
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::ApplyConstraintForce (vfn_37) @ 0x8224EFC8 | size: 0x18
+// phArticulatedCollider::ScalarDestructor (vfn_1) @ 0x8224E6D8 | size: 0x48
 //
-// Delegates constraint force application to vtable slot 38.
-// Rearranges parameters and dispatches via indirect call through vtable.
+// Scalar deleting destructor override. Calls the base phCollider destructor,
+// then resets joint-related state (joint count and active flag), and cleans
+// up the joint array and constraint data.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::ApplyConstraintForce(void* constraintData, void* forceData) {
-    void** vtable = *(void***)this;
-    typedef void (*ConstraintFunc)(phArticulatedCollider*, void*, void*);
-    ConstraintFunc func = (ConstraintFunc)vtable[38];
-    func(this, constraintData, forceData);
+
+void rage::phArticulatedCollider::ScalarDestructor() {
+    // Call base class scalar destructor
+    phCollider_vfn_1((void*)this);
+
+    // Reset joint-related state
+    m_nJointCount = 0;           // +472 (0x1D8)
+    m_bJointsActive = 0;         // +468 (0x1D4)
+
+    // Clean up joint array data
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_57F0_fw(jointData);
+
+    // Reset constraint data
+    jointData = (void*)(uintptr_t)m_nActiveJoints;
+    phArticulatedCollider_5D58(jointData);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::ApplyForceAtJoint (vfn_38) @ 0x8224EFE0 | size: 0x60
+// phArticulatedCollider::ResetForces (vfn_2) @ 0x8224E720 | size: 0x80
 //
-// Applies a force vector to a specific joint in the articulated body.
-// Resolves the joint index via E668, then adds the force to the joint's
-// accumulated force vector at offset +384.
-//
-// @param forceVector - 16-byte aligned force vector to apply
-// @param jointIndex  - Index of the target joint
+// Zeros out four 16-byte SIMD force/torque accumulator vectors at offsets
+// +256, +272, +224, +240, then calls the base Update (vfn_4) to apply
+// the cleared state, and reinitializes the joint weight/response data.
 // ─────────────────────────────────────────────────────────────────────────────
-extern int phArticulatedCollider_E668(phArticulatedCollider* collider, int jointIndex);
 
-void phArticulatedCollider::ApplyForceAtJoint(const float* forceVector, int jointIndex) {
-    // Resolve the joint index to a link index
-    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
+void rage::phArticulatedCollider::ResetForces() {
+    // Zero out linear force accumulator at +256
+    memset((char*)this + 256, 0, 16);
 
-    // Compute array offset: (linkIndex + 10) * 4
-    int arrayIndex = linkIndex + 10;
+    // Zero out angular force accumulator at +272
+    memset((char*)this + 272, 0, 16);
 
-    // Look up the link data pointer from the active joints array
-    uint32_t* jointArray = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    void* linkData = (void*)(uintptr_t)jointArray[arrayIndex];
+    // Zero out linear velocity accumulator at +224
+    memset((char*)this + 224, 0, 16);
 
-    // Add force to the accumulated force vector at offset +384
-    float* accumulatedForce = (float*)((char*)linkData + 384);
-    accumulatedForce[0] += forceVector[0];
-    accumulatedForce[1] += forceVector[1];
-    accumulatedForce[2] += forceVector[2];
-    accumulatedForce[3] += forceVector[3];
+    // Zero out angular velocity accumulator at +240
+    memset((char*)this + 240, 0, 16);
+
+    // Apply the cleared state via base class update
+    this->Update();
+
+    // Reinitialize joint weight/response data
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_5A40_wrh(jointData);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::IsJointActive (E1B0_h) @ 0x8224E1B0 | size: 0x20
+// phArticulatedCollider::ResetActiveJoints (vfn_9) @ 0x8224EBC8 | size: 0x8C
 //
-// Checks whether a joint at the given byte offset is active.
-// Returns true if the byte at (this + offset + 176) is non-zero.
-//
-// @param byteOffset - Byte offset from 'this' to reach the joint data
-// @return true if the joint is active, false otherwise
+// Iterates over all joints (count-1, skipping root) and calls their
+// individual reset method (vtable slot 18) if the joint has a valid
+// parent reference (field +20 != 0).
 // ─────────────────────────────────────────────────────────────────────────────
-bool phArticulatedCollider::IsJointActive(int byteOffset) {
-    uint8_t* base = (uint8_t*)this;
-    uint8_t flag = base[byteOffset + 176];
-    return flag != 0;
-}
+void rage::phArticulatedCollider::ResetActiveJoints() {
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    int32_t jointCount = *(int32_t*)((char*)jointData + 4);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::GetJointStiffness (vfn_62) @ 0x8224E280 | size: 0x58
-//
-// Retrieves the stiffness value for a specific joint by looking up through
-// multiple indirection arrays and calling vtable slot 8 on the resolved
-// joint object.
-//
-// @param jointIndex - Index of the joint to query
-// @return Stiffness value as float
-// ─────────────────────────────────────────────────────────────────────────────
-float phArticulatedCollider::GetJointStiffness(int jointIndex) {
-    // Look up link type from joint type array (+476)
-    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476 (0x1DC)
-    uint32_t linkType = jointTypeArray[jointIndex];
-
-    // Look up joint object from joint object array (+484)
-    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;  // +484 (0x1E4)
-    void* jointObj = (void*)(uintptr_t)jointObjArray[jointIndex];
-
-    // Compute the link data index: linkType + 42
-    int linkDataIndex = linkType + 42;
-
-    // Get the link data from active joints array
-    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    void* linkData = (void*)(uintptr_t)activeJoints[linkDataIndex];
-
-    // Call vtable slot 8 on the joint object to get stiffness
-    float result;
-    void** jointVtable = *(void***)jointObj;
-    typedef void (*GetStiffnessFunc)(void*, void*, void*, float*);
-    GetStiffnessFunc func = (GetStiffnessFunc)jointVtable[8];
-    func(jointObj, jointObjArray + jointIndex, linkData, &result);
-
-    return result;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::ClearJointForces (vfn_3) @ 0x8224E1D0 | size: 0x74
-//
-// Zeros out four accumulated force/torque vectors for every joint in the
-// articulated body. Each joint stores four 16-byte vectors at offsets
-// +272, +288, +304, and +320 from the joint data pointer.
-// ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::ClearJointForces() {
-    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    int numJoints = (int)jointData[1];  // joint count at +4
-
-    if (numJoints <= 0)
+    int32_t numChildJoints = jointCount - 1;
+    if (numChildJoints <= 0)
         return;
 
-    // Iterate through the joint pointer array starting at offset +40
-    uint32_t* jointPtrArray = jointData + 10;  // +40 bytes = +10 dwords
+    // Joint pointers start at offset +168 in the joint data array
+    uint32_t* jointPtrs = (uint32_t*)((char*)jointData + 168);
 
-    for (int i = 0; i < numJoints; i++) {
-        uint8_t* joint = (uint8_t*)(uintptr_t)jointPtrArray[i];
+    for (int32_t i = 0; i < numChildJoints; i++) {
+        void* joint = (void*)(uintptr_t)jointPtrs[i];
 
-        // Clear four 16-byte vectors: forces and torques
-        float* forceVec0 = (float*)(joint + 272);
-        float* forceVec1 = (float*)(joint + 288);
-        float* forceVec2 = (float*)(joint + 320);
-        float* forceVec3 = (float*)(joint + 304);
+        // Check if joint has a valid parent (field +20)
+        uint32_t parentRef = *(uint32_t*)((char*)joint + 20);
+        bool hasParent = (parentRef != 0);
 
-        forceVec0[0] = 0.0f; forceVec0[1] = 0.0f; forceVec0[2] = 0.0f; forceVec0[3] = 0.0f;
-        forceVec1[0] = 0.0f; forceVec1[1] = 0.0f; forceVec1[2] = 0.0f; forceVec1[3] = 0.0f;
-        forceVec2[0] = 0.0f; forceVec2[1] = 0.0f; forceVec2[2] = 0.0f; forceVec2[3] = 0.0f;
-        forceVec3[0] = 0.0f; forceVec3[1] = 0.0f; forceVec3[2] = 0.0f; forceVec3[3] = 0.0f;
+        if (hasParent) {
+            // Call joint reset via vtable slot 18
+            void** vtable = *(void***)joint;
+            typedef void (*ResetFunc)(void*);
+            ResetFunc resetFn = (ResetFunc)vtable[18];
+            resetFn(joint);
+        }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::SetVelocityScaled (vfn_40) @ 0x8224F870 | size: 0x58
+// phArticulatedCollider::ApplyScaledGravity (vfn_27) @ 0x8224FD58 | size: 0x4C
 //
-// Stores a velocity vector at offset +224, scales it by the restitution
-// coefficient (field +100) into offset +256, then propagates to all joints.
-//
-// @param velocity - 16-byte aligned velocity vector
+// Applies a gravity-like force scaled by the collider's mass (field +100).
+// Constructs a force vector {0, mass*scale, 0} and dispatches to the parent
+// class ApplyForce (vtable slot 32).
 // ─────────────────────────────────────────────────────────────────────────────
-extern void phArticulatedCollider_8A30(void* jointData, const float* velocity);
+void rage::phArticulatedCollider::ApplyScaledGravity(float scale) {
+    // Load mass from field +100
+    float mass = *(float*)((char*)this + 100);
 
-void phArticulatedCollider::SetVelocityScaled(const float* velocity) {
-    uint8_t* self = (uint8_t*)this;
+    // Construct gravity force vector: {0, mass * scale, 0}
+    float forceY = mass * scale;
 
-    // Read restitution coefficient from offset +100
-    float restitution = *(float*)(self + 100);
+    float forceVec[4];
+    forceVec[0] = 0.0f;
+    forceVec[1] = forceY;
+    forceVec[2] = 0.0f;
+    forceVec[3] = 0.0f;
 
-    // Store velocity at offset +224
-    float* storedVelocity = (float*)(self + 224);
-    storedVelocity[0] = velocity[0];
-    storedVelocity[1] = velocity[1];
-    storedVelocity[2] = velocity[2];
-    storedVelocity[3] = velocity[3];
-
-    // Scale velocity by restitution and store at offset +256
-    float* scaledVelocity = (float*)(self + 256);
-    scaledVelocity[0] = storedVelocity[0] * restitution;
-    scaledVelocity[1] = storedVelocity[1] * restitution;
-    scaledVelocity[2] = storedVelocity[2] * restitution;
-    scaledVelocity[3] = storedVelocity[3] * restitution;
-
-    // Propagate velocity to all joints
-    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_8A30(jointDataPtr, storedVelocity);
+    // Dispatch to parent vtable slot 32 (ApplyForce)
+    void** vtable = *(void***)this;
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc applyForce = (ApplyForceFunc)vtable[32];
+    applyForce(this, forceVec);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::SetVelocityDirect (vfn_41) @ 0x8224F8C8 | size: 0x44
+// phArticulatedCollider::AccumulateScaledForceX (vfn_28) @ 0x8224FDA8 | size: 0x94
 //
-// Stores a velocity vector directly at offset +256 and propagates it to
-// all joints via the parent class and articulated joint handler.
-//
-// @param velocity - 16-byte aligned velocity vector
+// Extracts the X-axis column from the root joint's 4x4 transform matrix
+// (at offset +144 in the root joint), scales it by the root joint's
+// mass (field +128) * scale, and dispatches via vtable slot 33 (AddForce).
 // ─────────────────────────────────────────────────────────────────────────────
-extern void phCollider_CDF0_p39(phArticulatedCollider* collider);
+void rage::phArticulatedCollider::AccumulateScaledForceX(float scale) {
+    void** vtable = *(void***)this;
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;   // +464 (0x1D0)
 
-void phArticulatedCollider::SetVelocityDirect(const float* velocity) {
-    uint8_t* self = (uint8_t*)this;
+    // Get root joint pointer (first entry at offset +40)
+    void* rootJoint = (void*)(uintptr_t)(*(uint32_t*)((char*)jointData + 40));
 
-    // Store velocity at offset +256
-    float* storedVelocity = (float*)(self + 256);
-    storedVelocity[0] = velocity[0];
-    storedVelocity[1] = velocity[1];
-    storedVelocity[2] = velocity[2];
-    storedVelocity[3] = velocity[3];
+    // Load 4x4 matrix at root joint +144 (rows of 16 bytes each)
+    float* matRow0 = (float*)((char*)rootJoint + 144);
+    float* matRow1 = (float*)((char*)rootJoint + 160);
+    float* matRow2 = (float*)((char*)rootJoint + 176);
+    float* matRow3 = (float*)((char*)rootJoint + 192);
 
-    // Call parent class velocity handler
-    phCollider_CDF0_p39(this);
+    // Extract X column: {row0[0], row1[0], row2[0], row3[0]}
+    float colX[4];
+    colX[0] = matRow0[0];
+    colX[1] = matRow1[0];
+    colX[2] = matRow2[0];
+    colX[3] = matRow3[0];
 
-    // Propagate from stored velocity at +224 to all joints
-    float* baseVelocity = (float*)(self + 224);
-    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_8A30(jointDataPtr, baseVelocity);
+    // Scale by root joint mass (field +128) * input scale
+    float mass = *(float*)((char*)rootJoint + 128);
+    float scaledMass = mass * scale;
+    colX[0] *= scaledMass;
+    colX[1] *= scaledMass;
+    colX[2] *= scaledMass;
+    colX[3] *= scaledMass;
+
+    // Dispatch to vtable slot 33 (AddForce)
+    typedef void (*AddForceFunc)(void*, float*, float*);
+    AddForceFunc addForce = (AddForceFunc)vtable[33];
+    addForce(this, colX, colX);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::GetAngularVelocity (vfn_42) @ 0x8224F910 | size: 0x38
+// phArticulatedCollider::AccumulateScaledForceY (vfn_29) @ 0x8224FE40 | size: 0x94
 //
-// Retrieves the angular velocity by calling the parent class implementation,
-// then propagates the angular velocity at offset +240 to all joints.
+// Same as AccumulateScaledForceX but extracts the Y-axis column from the
+// root joint's transform matrix and scales by mass at field +136.
 // ─────────────────────────────────────────────────────────────────────────────
-extern void phCollider_vfn_42(phArticulatedCollider* collider);
-extern void phArticulatedCollider_8B10(void* jointData, const float* angularVelocity);
+void rage::phArticulatedCollider::AccumulateScaledForceY(float scale) {
+    void** vtable = *(void***)this;
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;
 
-void phArticulatedCollider::GetAngularVelocity() {
-    // Call parent class angular velocity getter
-    phCollider_vfn_42(this);
+    void* rootJoint = (void*)(uintptr_t)(*(uint32_t*)((char*)jointData + 40));
 
-    // Propagate angular velocity at +240 to all joints
-    float* angularVel = (float*)((uint8_t*)this + 240);
-    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_8B10(jointDataPtr, angularVel);
+    // Load matrix rows
+    float* matRow0 = (float*)((char*)rootJoint + 144);
+    float* matRow1 = (float*)((char*)rootJoint + 160);
+    float* matRow2 = (float*)((char*)rootJoint + 176);
+    float* matRow3 = (float*)((char*)rootJoint + 192);
+
+    // Extract Y column: {row0[1], row1[1], row2[1], row3[1]}
+    float colY[4];
+    colY[0] = matRow0[1];
+    colY[1] = matRow1[1];
+    colY[2] = matRow2[1];
+    colY[3] = matRow3[1];
+
+    // Scale by mass at field +136
+    float mass = *(float*)((char*)rootJoint + 136);
+    float scaledMass = mass * scale;
+    colY[0] *= scaledMass;
+    colY[1] *= scaledMass;
+    colY[2] *= scaledMass;
+    colY[3] *= scaledMass;
+
+    typedef void (*AddForceFunc)(void*, float*, float*);
+    AddForceFunc addForce = (AddForceFunc)vtable[33];
+    addForce(this, colY, colY);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::SetAngularVelocity (vfn_43) @ 0x8224F948 | size: 0x44
+// phArticulatedCollider::AccumulateScaledForceZ (vfn_30) @ 0x8224FED8 | size: 0x94
 //
-// Stores an angular velocity vector at offset +272, calls the parent class
-// handler, then propagates angular velocity at offset +240 to all joints.
-//
-// @param angularVelocity - 16-byte aligned angular velocity vector
+// Same as AccumulateScaledForceX but extracts the Z-axis column from the
+// root joint's transform matrix and scales by mass at field +132.
 // ─────────────────────────────────────────────────────────────────────────────
-extern void game_CE58(phArticulatedCollider* collider);
+void rage::phArticulatedCollider::AccumulateScaledForceZ(float scale) {
+    void** vtable = *(void***)this;
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;
 
-void phArticulatedCollider::SetAngularVelocity(const float* angularVelocity) {
-    uint8_t* self = (uint8_t*)this;
+    void* rootJoint = (void*)(uintptr_t)(*(uint32_t*)((char*)jointData + 40));
 
-    // Store angular velocity at offset +272
-    float* storedAngVel = (float*)(self + 272);
-    storedAngVel[0] = angularVelocity[0];
-    storedAngVel[1] = angularVelocity[1];
-    storedAngVel[2] = angularVelocity[2];
-    storedAngVel[3] = angularVelocity[3];
+    // Load matrix rows
+    float* matRow0 = (float*)((char*)rootJoint + 144);
+    float* matRow1 = (float*)((char*)rootJoint + 160);
+    float* matRow2 = (float*)((char*)rootJoint + 176);
+    float* matRow3 = (float*)((char*)rootJoint + 192);
 
-    // Call parent class angular velocity handler
-    game_CE58(this);
+    // Extract Z column from the matrix
+    float colZ[4];
+    colZ[0] = matRow0[0];
+    colZ[1] = matRow1[0];
+    colZ[2] = matRow2[0];
+    colZ[3] = matRow3[0];
 
-    // Propagate angular velocity at +240 to all joints
-    float* angVel = (float*)(self + 240);
-    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_8B10(jointDataPtr, angVel);
+    // Scale by mass at field +132
+    float mass = *(float*)((char*)rootJoint + 132);
+    float scaledMass = mass * scale;
+    colZ[0] *= scaledMass;
+    colZ[1] *= scaledMass;
+    colZ[2] *= scaledMass;
+    colZ[3] *= scaledMass;
+
+    typedef void (*AddForceFunc)(void*, float*, float*);
+    AddForceFunc addForce = (AddForceFunc)vtable[33];
+    addForce(this, colZ, colZ);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::InitializeJoints (vfn_6) @ 0x8224EA28 | size: 0x48
+// phArticulatedCollider::SaveAndClearJointForces (vfn_63) @ 0x8224E2D8 | size: 0xBC
 //
-// Initializes the articulated collider's joint system.
-// Calls four setup functions in sequence:
-// 1. BoundCapsule geometry generation
-// 2. Joint hierarchy setup
-// 3. Joint transform computation
-// 4. Joint constraint initialization
+// For each joint in the articulated chain:
+// 1. Calls phArticulatedCollider_5FE0 to prepare the joint force state
+// 2. Copies the accumulated force vector (+304) to the applied force
+//    buffer (+1040) as a backup
+// 3. Zeros out four 16-byte vectors at offsets +304, +320, +272, +288
+//    (force/torque accumulators) to prepare for the next simulation step
 // ─────────────────────────────────────────────────────────────────────────────
-extern void phBoundCapsule_6968_g(void* jointData);
+
+void rage::phArticulatedCollider::SaveAndClearJointForces() {
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+
+    // Prepare joint force state
+    phArticulatedCollider_5FE0(jointData);
+
+    int32_t jointCount = *(int32_t*)((char*)jointData + 4);
+    if (jointCount <= 0)
+        return;
+
+    // Joint pointers start at offset +40 in the joint data array
+    uint32_t* jointPtrs = (uint32_t*)((char*)jointData + 40);
+
+    for (int32_t i = 0; i < jointCount; i++) {
+        void* joint = (void*)(uintptr_t)jointPtrs[i];
+
+        // Copy force accumulator (+304) to applied force buffer (+1040)
+        memcpy((char*)joint + 1040, (char*)joint + 304, 16);
+
+        // Copy second vector (+320 to +1056)
+        memcpy((char*)joint + 1056, (char*)joint + 320, 16);
+
+        // Zero out force accumulator at +320
+        memset((char*)joint + 320, 0, 16);
+
+        // Zero out force accumulator at +304
+        memset((char*)joint + 304, 0, 16);
+
+        // Zero out torque accumulator at +272
+        memset((char*)joint + 272, 0, 16);
+
+        // Zero out torque accumulator at +288
+        memset((char*)joint + 288, 0, 16);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::NormalizeVector (E398_p33) @ 0x8224E398 | size: 0x94
+//
+// Normalizes a 3-component vector in-place. Computes the magnitude via
+// dot product (vmsum3fp128), then divides each component by the magnitude.
+// If the squared magnitude is zero or negative, sets the output to a
+// default zero vector.
+//
+// @param src   - Source 3-float vector {x, y, z}
+// @param dst   - Destination vector (receives normalized result)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void rage::phArticulatedCollider::NormalizeVector(const float* src, float* dst) {
+    // Copy source to destination
+    dst[0] = src[0];
+    dst[1] = src[1];
+    dst[2] = src[2];
+
+    // Compute squared magnitude (dot product with self)
+    float sqMag = dst[0] * dst[0] + dst[1] * dst[1] + dst[2] * dst[2];
+
+    if (sqMag > g_floatEpsilon) {
+        // Compute reciprocal magnitude
+        float mag = sqrtf(sqMag);
+        float invMag = 1.0f / mag;
+
+        // Scale each component
+        dst[0] *= invMag;
+        dst[1] *= invMag;
+        dst[2] *= invMag;
+        dst[3] *= invMag;
+    } else {
+        // Zero-length vector: set to default zero vector
+        static const float zeroVec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        memcpy(dst, zeroVec, 16);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetTimestep (F040_g) @ 0x8224F040 | size: 0xA0
+//
+// Configures the simulation timestep for the articulated collider.
+// Computes reciprocal timestep and derived damping/spring constants,
+// then reconfigures capsule geometry, joint hierarchy, transforms,
+// and constraint data for the new timestep.
+//
+// @param timestep - The physics simulation timestep in seconds
+// ─────────────────────────────────────────────────────────────────────────────
+                                       float dampingFactor, float springFactor);
+extern void ph_IntegrateJointPositions(void* jointData);
 extern void phArticulatedCollider_8450(void* jointData);
-extern void phArticulatedCollider_F0E0(phArticulatedCollider* collider);
-extern void phArticulatedCollider_5D58(void* jointData);
 
-void phArticulatedCollider::InitializeJoints() {
-    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+void rage::phArticulatedCollider::SetTimestep(float timestep) {
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
 
-    // Step 1: Generate capsule bound geometry for collision
-    phBoundCapsule_6968_g(jointDataPtr);
+    // Prepare joint force state
+    phArticulatedCollider_5FE0(jointData);
 
-    // Step 2: Set up joint hierarchy / bone mapping
-    phArticulatedCollider_8450(jointDataPtr);
+    // Compute reciprocal timestep
+    float recipTimestep = 1.0f / timestep;
 
-    // Step 3: Compute joint transforms and matrices
-    phArticulatedCollider_F0E0(this);
+    // Derive damping and spring constants from reciprocal timestep
+    float dampingFactor = recipTimestep * g_dampingScale;
+    float springFactor  = recipTimestep * g_springScale;
 
-    // Step 4: Initialize joint constraints
-    phArticulatedCollider_5D58(jointDataPtr);
+    // Reconfigure joint solver with new timing constants
+    phArticulatedCollider_60F8(jointData, timestep, dampingFactor, springFactor);
+
+    // Reconfigure capsule geometry for new timestep
+    ph_IntegrateJointPositions(jointData);
+
+    // Rebuild joint weight/response data
+    phArticulatedCollider_6B40_wrh(jointData);
+
+    // Recompute joint hierarchy transforms
+    phArticulatedCollider_8450(jointData);
+
+    // Recompute joint transform matrices
+    phArticulatedCollider_F0E0((void*)this);
+
+    // Reinitialize joint constraints
+    phArticulatedCollider_5D58(jointData);
 }
 
 } // namespace rage
@@ -2584,7 +2769,7 @@ int ph_0CC0(void* stateObj) {
 // Destructor
 // ─────────────────────────────────────────────────────────────────────────────
 phObject::~phObject() {
-    this->vtable = (void**)&g_vtable_phObject;  // lbl_82008918
+    this->vtable = (void**)0x82008918;
     this->Release();
 }
 
@@ -2730,12 +2915,6 @@ namespace rage {
 
 // Forward declarations for external functions
 extern void phJoint3Dof_0170_g(void*, int, int, void*);
-extern void util_4628(phJoint3Dof*, int);
-extern void phJoint1Dof_AFF8_p42(phJoint3Dof*, int, float*);
-extern void phJoint_1388(phJoint3Dof*, int, float, float*, float*);
-extern void phJoint_1618_g(phJoint3Dof*);
-extern float phJoint1Dof_AE38(void*);
-extern void phBoundCapsule_01D0_g(phJoint3Dof*, float);
 
 /**
  * rage::phJoint3Dof::SetDampingAndStiffness @ 0x82251268 | size: 0x40
@@ -2770,14 +2949,14 @@ void phJoint3Dof_C4F8_w(phJoint3Dof* joint) {
     char* current = reinterpret_cast<char*>(joint);
     
     for (int i = 3; i >= 0; i--) {
-        // phJoint3Dof_0170_g iterates over the block calling util_4628
+        // phJoint3Dof_0170_g iterates over the block calling phJoint3Dof_ResetAllJoints
         phJoint3Dof_0170_g(current, 64, 8, reinterpret_cast<void*>(0x8207E6D0));
         
         phJoint3Dof* blockObj = reinterpret_cast<phJoint3Dof*>(current);
         *(uint16_t*)(current + 528) = 3;  // offset 0x0210
         *(uint16_t*)(current + 530) = 3;  // offset 0x0212
         
-        util_4628(blockObj, -1);
+        phJoint3Dof_ResetAllJoints(blockObj, -1);
         
         // Advance pointer to the next block (544 bytes stride)
         current += 544;
@@ -2919,18 +3098,18 @@ void phJoint3Dof::SetLimits() {
     lengthSq *= FLT_MULT;
     
     // External bound function likely normalizes or validates the result
-    phBoundCapsule_01D0_g(this, lengthSq);
+    ph_Sqrtf_joint(this, lengthSq);
     
     *(float*)((char*)this + 1668) = lengthSq;
 }
 
 /**
- * phJoint3Dof_InitConstraintMatrix @ 0x822CE7C8 | size: 0x8C
+ * phJoint3Dof_E7C8_2h @ 0x822CE7C8 | size: 0x8C
  *
  * Initializes an indexed constraint matrix to identity and clears
  * subsequent row vectors.
  */
-void phJoint3Dof_InitConstraintMatrix(phJoint3Dof* joint, uint32_t index) {
+void phJoint3Dof_E7C8_2h(phJoint3Dof* joint, uint32_t index) {
     // Navigate to the constraint structure base
     // Constraint stride is 64 bytes, starting offset is 112
     char* base = reinterpret_cast<char*>(joint) + (index * 64) + 112;
@@ -2966,7 +3145,7 @@ void phJoint3Dof_InitConstraintMatrix(phJoint3Dof* joint, uint32_t index) {
  * ph_Sqrt @ 0x824301D0 | size: 0x8
  * Inline float square root. Single fsqrt instruction wrapper.
  */
-float ph_Sqrt(float x) {  // phBoundCapsule_01D0_g
+float ph_Sqrt(float x) {  // ph_Sqrtf
     return sqrtf(x);
 }
 
@@ -3429,7 +3608,6 @@ void phInst::ShiftArgsAndCall(void* a, void* b, void* c) {  // 92F8_p42
  * phInst::LoadGlobalAndCall @ 0x8212E2C0 | size: 0xC
  * Loads a global pointer and tail-calls ke_9F58.
  */
-extern void* g_phGlobalState;
 
 void phInst::LoadGlobalAndCall() {  // E2C0_2h
     ke_DispatchPhysics(g_phGlobalState);
@@ -3441,7 +3619,7 @@ void phInst::LoadGlobalAndCall() {  // E2C0_2h
  */
 void phInst::InitVtableAndCleanup() {  // 87F8
     // Set vtable to phInst base
-    *(void**)this = &g_vtable_phInstCleanup;  // lbl_82022D2C
+    *(void**)this = (void*)0x82022D2C;
     phInst_Cleanup(this);
 }
 
@@ -3526,49 +3704,49 @@ static inline uint32_t ExtractBits(void* obj, int offset, int shift, int mask) {
 
 // ── Getters from +0x2D88 (11656) ─────────────────────────────────────────
 
-uint32_t phArticulatedCollider::GetSolverParam_0()  { return ExtractBits(this, 11656,  0, 0x7); }    // 3A58 @ 0x82163A58
-uint32_t phArticulatedCollider::GetSolverParam_3()  { return ExtractBits(this, 11656,  3, 0xFF); }   // 3A90 @ 0x82163A90
-uint32_t phArticulatedCollider::GetSolverParam_11() { return ExtractBits(this, 11656, 11, 0x7); }    // 3AA0
-uint32_t phArticulatedCollider::GetSolverParam_14() { return ExtractBits(this, 11656, 14, 0x7); }    // 3AB0
-uint32_t phArticulatedCollider::GetSolverParam_17() { return ExtractBits(this, 11656, 17, 0x1); }    // 3AC0
+uint32_t rage::phArticulatedCollider::GetSolverParam_0()  { return ExtractBits(this, 11656,  0, 0x7); }    // 3A58 @ 0x82163A58
+uint32_t rage::phArticulatedCollider::GetSolverParam_3()  { return ExtractBits(this, 11656,  3, 0xFF); }   // 3A90 @ 0x82163A90
+uint32_t rage::phArticulatedCollider::GetSolverParam_11() { return ExtractBits(this, 11656, 11, 0x7); }    // 3AA0
+uint32_t rage::phArticulatedCollider::GetSolverParam_14() { return ExtractBits(this, 11656, 14, 0x7); }    // 3AB0
+uint32_t rage::phArticulatedCollider::GetSolverParam_17() { return ExtractBits(this, 11656, 17, 0x1); }    // 3AC0
 
 // ── Getters from +0x2D74 (11636) — packed 3-bit rotation fields ──────────
 
-uint32_t phArticulatedCollider::GetRotAxis_0()  { return ExtractBits(this, 11636,  0, 0x7); }  // 3AD0
-uint32_t phArticulatedCollider::GetRotAxis_3()  { return ExtractBits(this, 11636,  3, 0x7); }  // 3AE0
-uint32_t phArticulatedCollider::GetRotAxis_6()  { return ExtractBits(this, 11636,  6, 0x7); }  // 3AF0
-uint32_t phArticulatedCollider::GetRotAxis_9()  { return ExtractBits(this, 11636,  9, 0x7); }  // 3B00
-uint32_t phArticulatedCollider::GetRotAxis_12() { return ExtractBits(this, 11636, 12, 0x7); }  // 3B10
-uint32_t phArticulatedCollider::GetRotAxis_15() { return ExtractBits(this, 11636, 15, 0x7); }  // 3B20
-uint32_t phArticulatedCollider::GetRotAxis_18() { return ExtractBits(this, 11636, 18, 0x7); }  // 3B30
-uint32_t phArticulatedCollider::GetRotAxis_21() { return ExtractBits(this, 11636, 21, 0x7); }  // 3B40
-uint32_t phArticulatedCollider::GetRotAxis_24() { return ExtractBits(this, 11636, 24, 0x7); }  // 3B50
-uint32_t phArticulatedCollider::GetRotAxis_27() { return ExtractBits(this, 11636, 27, 0x7); }  // 3B60
-uint32_t phArticulatedCollider::GetRotAxis_30() { return ExtractBits(this, 11636, 30, 0x3); }  // 3B70 (2-bit, top of word)
+uint32_t rage::phArticulatedCollider::GetRotAxis_0()  { return ExtractBits(this, 11636,  0, 0x7); }  // 3AD0
+uint32_t rage::phArticulatedCollider::GetRotAxis_3()  { return ExtractBits(this, 11636,  3, 0x7); }  // 3AE0
+uint32_t rage::phArticulatedCollider::GetRotAxis_6()  { return ExtractBits(this, 11636,  6, 0x7); }  // 3AF0
+uint32_t rage::phArticulatedCollider::GetRotAxis_9()  { return ExtractBits(this, 11636,  9, 0x7); }  // 3B00
+uint32_t rage::phArticulatedCollider::GetRotAxis_12() { return ExtractBits(this, 11636, 12, 0x7); }  // 3B10
+uint32_t rage::phArticulatedCollider::GetRotAxis_15() { return ExtractBits(this, 11636, 15, 0x7); }  // 3B20
+uint32_t rage::phArticulatedCollider::GetRotAxis_18() { return ExtractBits(this, 11636, 18, 0x7); }  // 3B30
+uint32_t rage::phArticulatedCollider::GetRotAxis_21() { return ExtractBits(this, 11636, 21, 0x7); }  // 3B40
+uint32_t rage::phArticulatedCollider::GetRotAxis_24() { return ExtractBits(this, 11636, 24, 0x7); }  // 3B50
+uint32_t rage::phArticulatedCollider::GetRotAxis_27() { return ExtractBits(this, 11636, 27, 0x7); }  // 3B60
+uint32_t rage::phArticulatedCollider::GetRotAxis_30() { return ExtractBits(this, 11636, 30, 0x3); }  // 3B70 (2-bit, top of word)
 
 // ── Getters from +0x2D6C (11628) — packed 4-bit constraint types ─────────
 
-uint32_t phArticulatedCollider::GetConstraint_0()  { return ExtractBits(this, 11628,  0, 0xF); }  // 3B80
-uint32_t phArticulatedCollider::GetConstraint_4()  { return ExtractBits(this, 11628,  4, 0xF); }  // 3B90
-uint32_t phArticulatedCollider::GetConstraint_8()  { return ExtractBits(this, 11628,  8, 0xF); }  // 3BA0
-uint32_t phArticulatedCollider::GetConstraint_12() { return ExtractBits(this, 11628, 12, 0xF); }  // 3BB0
-uint32_t phArticulatedCollider::GetConstraint_16() { return ExtractBits(this, 11628, 16, 0xF); }  // 3BC0
-uint32_t phArticulatedCollider::GetConstraint_20() { return ExtractBits(this, 11628, 20, 0xF); }  // 3BD0
-uint32_t phArticulatedCollider::GetConstraint_24() { return ExtractBits(this, 11628, 24, 0xF); }  // 3BE0
-uint32_t phArticulatedCollider::GetConstraint_28() { return ExtractBits(this, 11628, 28, 0xF); }  // 3BF0
+uint32_t rage::phArticulatedCollider::GetConstraint_0()  { return ExtractBits(this, 11628,  0, 0xF); }  // 3B80
+uint32_t rage::phArticulatedCollider::GetConstraint_4()  { return ExtractBits(this, 11628,  4, 0xF); }  // 3B90
+uint32_t rage::phArticulatedCollider::GetConstraint_8()  { return ExtractBits(this, 11628,  8, 0xF); }  // 3BA0
+uint32_t rage::phArticulatedCollider::GetConstraint_12() { return ExtractBits(this, 11628, 12, 0xF); }  // 3BB0
+uint32_t rage::phArticulatedCollider::GetConstraint_16() { return ExtractBits(this, 11628, 16, 0xF); }  // 3BC0
+uint32_t rage::phArticulatedCollider::GetConstraint_20() { return ExtractBits(this, 11628, 20, 0xF); }  // 3BD0
+uint32_t rage::phArticulatedCollider::GetConstraint_24() { return ExtractBits(this, 11628, 24, 0xF); }  // 3BE0
+uint32_t rage::phArticulatedCollider::GetConstraint_28() { return ExtractBits(this, 11628, 28, 0xF); }  // 3BF0
 
 // ── Getters from +0x2D7C (11644) — 1-bit and 3-bit flags ────────────────
 
-uint32_t phArticulatedCollider::GetFlag7C_0()  { return ExtractBits(this, 11644,  0, 0x1); }  // 3C00
-uint32_t phArticulatedCollider::GetFlag7C_1()  { return ExtractBits(this, 11644,  1, 0x7); }  // 3C10
-uint32_t phArticulatedCollider::GetFlag7C_4()  { return ExtractBits(this, 11644,  4, 0x1); }  // 3C20
-uint32_t phArticulatedCollider::GetFlag7C_5()  { return ExtractBits(this, 11644,  5, 0x1); }  // 3C30
+uint32_t rage::phArticulatedCollider::GetFlag7C_0()  { return ExtractBits(this, 11644,  0, 0x1); }  // 3C00
+uint32_t rage::phArticulatedCollider::GetFlag7C_1()  { return ExtractBits(this, 11644,  1, 0x7); }  // 3C10
+uint32_t rage::phArticulatedCollider::GetFlag7C_4()  { return ExtractBits(this, 11644,  4, 0x1); }  // 3C20
+uint32_t rage::phArticulatedCollider::GetFlag7C_5()  { return ExtractBits(this, 11644,  5, 0x1); }  // 3C30
 
 // ── Getters from +0x2D80 (11648) — 1-bit active flags ───────────────────
 
-uint32_t phArticulatedCollider::GetActive_0()  { return ExtractBits(this, 11648,  0, 0x1); }  // 3C40
-uint32_t phArticulatedCollider::GetActive_1()  { return ExtractBits(this, 11648,  1, 0x1); }  // 3C50
-uint32_t phArticulatedCollider::GetActive_2()  { return ExtractBits(this, 11648,  2, 0x1); }  // 3C60
+uint32_t rage::phArticulatedCollider::GetActive_0()  { return ExtractBits(this, 11648,  0, 0x1); }  // 3C40
+uint32_t rage::phArticulatedCollider::GetActive_1()  { return ExtractBits(this, 11648,  1, 0x1); }  // 3C50
+uint32_t rage::phArticulatedCollider::GetActive_2()  { return ExtractBits(this, 11648,  2, 0x1); }  // 3C60
 
 // ── Indexed bitfield getters (20-28B, stride-24 array) ───────────────────
 
@@ -3576,18 +3754,18 @@ uint32_t phArticulatedCollider::GetActive_2()  { return ExtractBits(this, 11648,
  * Indexed accessors — compute this + index*24 + base_offset, load word,
  * extract bits. Used for per-bone/per-joint packed data.
  */
-uint32_t phArticulatedCollider::GetIndexedField(int index, int shift, int mask) {
+uint32_t rage::phArticulatedCollider::GetIndexedField(int index, int shift, int mask) {
     uint32_t word = *(uint32_t*)((char*)this + 1168 + index * 24);
     return (word >> shift) & mask;
 }
 
 // Per-element getters (representative subset — 12 functions follow this pattern)
-uint32_t phArticulatedCollider::GetBoneField_5B90(int index) { return GetIndexedField(index, 0, 0x7); }   // 5B90
-uint32_t phArticulatedCollider::GetBoneField_5BE0(int index) { return GetIndexedField(index, 3, 0x7); }   // 5BE0
-uint32_t phArticulatedCollider::GetBoneField_5C30(int index) { return GetIndexedField(index, 6, 0x7); }   // 5C30
-uint32_t phArticulatedCollider::GetBoneField_5C88(int index) { return GetIndexedField(index, 9, 0x7); }   // 5C88
-uint32_t phArticulatedCollider::GetBoneField_5CE0(int index) { return GetIndexedField(index, 12, 0xF); }  // 5CE0
-uint32_t phArticulatedCollider::GetBoneField_5D38(int index) { return GetIndexedField(index, 16, 0xF); }  // 5D38
+uint32_t rage::phArticulatedCollider::GetBoneField_5B90(int index) { return GetIndexedField(index, 0, 0x7); }   // 5B90
+uint32_t rage::phArticulatedCollider::GetBoneField_5BE0(int index) { return GetIndexedField(index, 3, 0x7); }   // 5BE0
+uint32_t rage::phArticulatedCollider::GetBoneField_5C30(int index) { return GetIndexedField(index, 6, 0x7); }   // 5C30
+uint32_t rage::phArticulatedCollider::GetBoneField_5C88(int index) { return GetIndexedField(index, 9, 0x7); }   // 5C88
+uint32_t rage::phArticulatedCollider::GetBoneField_5CE0(int index) { return GetIndexedField(index, 12, 0xF); }  // 5CE0
+uint32_t rage::phArticulatedCollider::GetBoneField_5D38(int index) { return GetIndexedField(index, 16, 0xF); }  // 5D38
 
 // ── Dirty-flag setters (32B each) ────────────────────────────────────────
 
@@ -3602,19 +3780,19 @@ static inline void SetFieldAndDirty(void* obj, int offset, uint32_t value, uint6
     *dirtyMask |= dirtyBit;
 }
 
-void phArticulatedCollider::SetSolverParam_11636(uint32_t value) {  // setter for field at 11636
+void rage::phArticulatedCollider::SetSolverParam_11636(uint32_t value) {  // setter for field at 11636
     SetFieldAndDirty(this, 11636, value, 1ULL << 50);
 }
 
-void phArticulatedCollider::SetConstraint_11628(uint32_t value) {
+void rage::phArticulatedCollider::SetConstraint_11628(uint32_t value) {
     SetFieldAndDirty(this, 11628, value, 1ULL << 51);
 }
 
-void phArticulatedCollider::SetFlags_11644(uint32_t value) {
+void rage::phArticulatedCollider::SetFlags_11644(uint32_t value) {
     SetFieldAndDirty(this, 11644, value, 1ULL << 52);
 }
 
-void phArticulatedCollider::SetActive_11648(uint32_t value) {
+void rage::phArticulatedCollider::SetActive_11648(uint32_t value) {
     SetFieldAndDirty(this, 11648, value, 1ULL << 53);
 }
 
@@ -3624,7 +3802,7 @@ void phArticulatedCollider::SetActive_11648(uint32_t value) {
  * phArticulatedCollider::SetFourConsecutive @ ~20B
  * Stores the same value to 4 consecutive uint32 fields at +12124..+12136.
  */
-void phArticulatedCollider::SetFourConsecutive(uint32_t value) {  // 4D58
+void rage::phArticulatedCollider::SetFourConsecutive(uint32_t value) {  // 4D58
     *(uint32_t*)((char*)this + 12124) = value;
     *(uint32_t*)((char*)this + 12128) = value;
     *(uint32_t*)((char*)this + 12132) = value;
@@ -3637,7 +3815,7 @@ void phArticulatedCollider::SetFourConsecutive(uint32_t value) {  // 4D58
  * phArticulatedCollider::GetScaledFloat @ 0x82164670 | size: 0x1C
  * Loads float at +11920, multiplies by a constant, returns result.
  */
-float phArticulatedCollider::GetScaledFloat() {  // 4670
+float rage::phArticulatedCollider::GetScaledFloat() {  // 4670
     float rawValue = *(float*)((char*)this + 11920);
     static const float kScale = 57.29578f;  // 180/PI (radians to degrees)
     return rawValue * kScale;
@@ -3649,7 +3827,7 @@ float phArticulatedCollider::GetScaledFloat() {  // 4670
  * phArticulatedCollider::IsElementActive @ ~32B
  * Returns true if byte at this[index+176] is non-zero.
  */
-bool phArticulatedCollider::IsElementActive(int index) {  // E1B0
+bool rage::phArticulatedCollider::IsElementActive(int index) {  // E1B0
     return *(uint8_t*)((char*)this + index + 176) != 0;
 }
 
@@ -3685,9 +3863,9 @@ void phInst::DispatchTransformA(void* arg1, void* arg2) {  // vfn_14_D828_1
  * Primary vtable at +0 = 0x82005918, secondary at +4 = 0x82003DB0.
  */
 void phInst::InitTripleVtable() {  // 5910_p39
-    *(void**)((char*)this + 0) = &g_vtable_phInstTriple;  // lbl_82005918
+    *(void**)((char*)this + 0) = (void*)0x82005918;
     // +4 first written as 0x820058FC, then overwritten with 0x82003DB0
-    *(void**)((char*)this + 4) = &g_vtable_phDemoWorld;  // lbl_82003DB0
+    *(void**)((char*)this + 4) = (void*)0x82003DB0;
 }
 
 /**
@@ -3699,8 +3877,8 @@ void phInst::InitTripleVtable() {  // 5910_p39
 void phInst::InitWithParam(void* param) {  // 1508_2hr
     *(uint32_t*)((char*)this + 8) = 1;
     *(uint32_t*)((char*)this + 12) = *(uint32_t*)((char*)param + 4);
-    *(void**)((char*)this + 0) = &g_vtable_phInstParam;  // lbl_8200586C
-    *(void**)((char*)this + 4) = &g_vtable_phInstParamSecondary;  // lbl_82005850
+    *(void**)((char*)this + 0) = (void*)0x8200586C;
+    *(void**)((char*)this + 4) = (void*)0x82005850;
 }
 
 /**
@@ -3750,8 +3928,128 @@ void phInst::ReadMMIOAndStore() {  // AC00_2hr
     uint32_t rawValue = *mmioReg;
     // Byte-swap (big-endian MMIO → little-endian)
     uint32_t swapped = __builtin_bswap32(rawValue);
-    extern uint32_t g_mmioStoredValue;  // @ 0x825E7890
     g_mmioStoredValue = swapped;
+}
+
+
+// =============================================================================
+// rage::phInst -- Virtual Function Implementations (8-112B)
+// =============================================================================
+
+// External declarations for this batch
+
+// ---------------------------------------------------------------------------
+// 1. phInst::SetUserData (vfn_16) @ 0x8248B8C8 | size: 0x8
+//    Stores a 32-bit user data value at offset +284.
+//    stw r4,284(r3); blr
+// ---------------------------------------------------------------------------
+void phInst::SetUserData(uint32_t val) {  // vfn_16
+    *(uint32_t*)((char*)this + 284) = val;
+}
+
+// ---------------------------------------------------------------------------
+// 2. phInst::GetUserData (vfn_19) @ 0x8248B8D0 | size: 0x8
+//    Returns the 32-bit user data value from offset +284.
+//    lwz r3,284(r3); blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetUserData() {  // vfn_19
+    return *(uint32_t*)((char*)this + 284);
+}
+
+// ---------------------------------------------------------------------------
+// 3. phInst::SetCollisionGroup (vfn_38) @ 0x8248D808 | size: 0x8
+//    Stores the collision group identifier at offset +444.
+//    stw r4,444(r3); blr
+// ---------------------------------------------------------------------------
+void phInst::SetCollisionGroup(uint32_t val) {  // vfn_38
+    *(uint32_t*)((char*)this + 444) = val;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phInst::GetCollisionGroup (vfn_44) @ 0x8248D810 | size: 0x8
+//    Returns the collision group identifier from offset +444.
+//    lwz r3,444(r3); blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetCollisionGroup() {  // vfn_44
+    return *(uint32_t*)((char*)this + 444);
+}
+
+// ---------------------------------------------------------------------------
+// 5. phInst::SetCollisionMask (vfn_39) @ 0x8248D818 | size: 0x8
+//    Stores the collision filter mask at offset +448.
+//    stw r4,448(r3); blr
+// ---------------------------------------------------------------------------
+void phInst::SetCollisionMask(uint32_t val) {  // vfn_39
+    *(uint32_t*)((char*)this + 448) = val;
+}
+
+// ---------------------------------------------------------------------------
+// 6. phInst::GetCollisionMask (vfn_45) @ 0x8248D820 | size: 0x8
+//    Returns the collision filter mask from offset +448.
+//    lwz r3,448(r3); blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetCollisionMask() {  // vfn_45
+    return *(uint32_t*)((char*)this + 448);
+}
+
+// ---------------------------------------------------------------------------
+// 7. phInst::GetErrorCode (vfn_48) @ 0x8247E2D0 | size: 0xC
+//    Returns a constant error/status code 0x80004001 (generic failure).
+//    lis r3,-32768; ori r3,r3,16385; blr
+// ---------------------------------------------------------------------------
+uint32_t phInst::GetErrorCode() {  // vfn_48
+    return 0x80004001;
+}
+
+// ---------------------------------------------------------------------------
+// 8. phInst::ZeroFieldRanges (vfn_32) @ 0x8248D758 | size: 0x70
+//    Zeros four 80-byte motion state regions at offsets +124, +284, +364,
+//    and +204, then clears the collision group (+444) and mask (+448).
+//    Each region is 20 dwords (80 bytes), zeroed via bdnz loop.
+// ---------------------------------------------------------------------------
+void phInst::ZeroFieldRanges() {  // vfn_32
+    memset((char*)this + 124, 0, 80);
+    memset((char*)this + 284, 0, 80);
+    memset((char*)this + 364, 0, 80);
+    memset((char*)this + 204, 0, 80);
+    *(uint32_t*)((char*)this + 444) = 0;
+    *(uint32_t*)((char*)this + 448) = 0;
+}
+
+// ---------------------------------------------------------------------------
+// 9. phInst::CallVfn12ThenInit (vfn_9) @ 0x8248D7C8 | size: 0x40
+//    Calls this->vfn_12() (vtable slot 12) then calls statePreInit_vfn_6
+//    on this object to perform pre-initialization reset.
+// ---------------------------------------------------------------------------
+void phInst::CallVfn12ThenInit() {  // vfn_9
+    this->vfn_12();
+    statePreInit_vfn_6(this);
+}
+
+// ---------------------------------------------------------------------------
+// 10. phInst::AtomicDecrementAndCallback (vfn_23) @ 0x82483FD8 | size: 0x3C
+//     Atomically decrements the reference count at offset +368 using
+//     lwarx/stwcx. If the callback pointer at +272 is non-null, tail-calls
+//     through it with the user data from +284 as the argument.
+// ---------------------------------------------------------------------------
+void phInst::AtomicDecrementAndCallback() {  // vfn_23
+    volatile uint32_t* refCount = (volatile uint32_t*)((char*)this + 368);
+
+    // Atomic decrement (lwarx/stwcx loop)
+    uint32_t old_val, new_val;
+    do {
+        old_val = *refCount;
+        new_val = old_val - 1;
+    } while (!__sync_bool_compare_and_swap(refCount, old_val, new_val));
+
+    // If callback function pointer is set, tail-call it
+    void* callbackFn = *(void**)((char*)this + 272);
+    if (callbackFn == nullptr)
+        return;
+
+    uint32_t userData = *(uint32_t*)((char*)this + 284);
+    typedef void (*CallbackFn)(uint32_t);
+    ((CallbackFn)callbackFn)(userData);
 }
 
 
@@ -3760,16 +4058,7 @@ void phInst::ReadMMIOAndStore() {  // AC00_2hr
 // =============================================================================
 
 // --- External declarations for this batch ---
-extern void  fiAsciiTokenizer_0BA8_g(void* tokenizer, int mode);
 extern void  _locale_register(void* ptr, void* allocator);
-extern void  rage_Alloc(int size, void* allocator);  // rage_01B8
-extern void  ph_1B78(void* thisPtr, float f2, float f3, void* r6);
-extern void  msgMsgSink_8DA0_sp(void* obj);
-extern void  phBoundCapsule_9DA0_2h(void* a, void* b, int count);
-extern void  phBoundCapsule_9B58_w(void* a, void* b, int count);
-extern void  phBoundCapsule_9C78_2hr_9C78_1(void* a, void* b, int count);
-extern void  phBoundCapsule_F5F8_p39(void* data);
-extern void* g_display_obj_ptr;  // @ 0x826066E4
 
 // --- Globals for callback table (FB70-FBC0 series) ---
 extern uint32_t g_phCallback0;  // @ 0x825EA900
@@ -3804,8 +4093,6 @@ uint32_t rage::phBoundCapsule::GetMaterialIndex() const {
 float rage::phBoundCapsule::GetVolume() const {
     float halfHeight = *(float*)((char*)this + 112);
     float radius     = *(float*)((char*)this + 128);
-    extern const float g_capsuleVolK1;  // @ .rdata (fmadds multiplier)
-    extern const float g_capsuleVolK2;  // @ .rdata (final scale, ~4.189 = 4/3*PI)
     float t = halfHeight * g_capsuleVolK1 + radius;  // fmadds f0*f13+f12
     float t2 = t * halfHeight;
     float t3 = t2 * halfHeight;
@@ -3838,87 +4125,87 @@ void rage::phBoundCapsule::GetSupportPoint(void* direction, void* outPoint) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. phBoundCapsule_0E88_g @ 0x82430E88 | size: 0x8
+// 6. ph_TokenizerReadInt @ 0x82430E88 | size: 0x8
 //    Calls fiAsciiTokenizer_0BA8_g with mode=0 (read mode).
 // ---------------------------------------------------------------------------
-void phBoundCapsule_0E88_g(void* tokenizer) {
+void ph_TokenizerReadInt(void* tokenizer) {
     fiAsciiTokenizer_0BA8_g(tokenizer, 0);
 }
 
 // ---------------------------------------------------------------------------
-// 7. phBoundCapsule_0E90_g @ 0x82430E90 | size: 0x8
+// 7. ph_TokenizerReadFloat @ 0x82430E90 | size: 0x8
 //    Calls fiAsciiTokenizer_0BA8_g with mode=1 (write mode).
 // ---------------------------------------------------------------------------
-void phBoundCapsule_0E90_g(void* tokenizer) {
+void ph_TokenizerReadFloat(void* tokenizer) {
     fiAsciiTokenizer_0BA8_g(tokenizer, 1);
 }
 
 // ---------------------------------------------------------------------------
-// 8. phBoundCapsule_SetResultTypeCapsule @ 0x823FDAD8 | size: 0x14
+// 8. phBoundCapsule_DAD8_p33 @ 0x823FDAD8 | size: 0x14
 //    Initializes a result pair: sets type=3 (capsule) and value=0.
 //    r6 = output struct pointer.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_SetResultTypeCapsule(void* /*r3*/, void* /*r4*/, void* /*r5*/, uint32_t* outResult) {
+void phBoundCapsule_DAD8_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, uint32_t* outResult) {
     outResult[1] = 3;   // type = capsule
     outResult[0] = 0;   // value = 0
 }
 
 // ---------------------------------------------------------------------------
-// 9. phBoundCapsule_SetResultTypeSphere @ 0x823FDAF0 | size: 0x14
+// 9. phBoundCapsule_DAF0_p33 @ 0x823FDAF0 | size: 0x14
 //    Initializes a result pair: sets type=2 (sphere) and byte[0]=0.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_SetResultTypeSphere(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* outResult) {
+void phBoundCapsule_DAF0_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* outResult) {
     *(uint32_t*)((char*)outResult + 4) = 2;  // type = sphere
     *(uint8_t*)outResult = 0;                 // flag = 0
 }
 
 // ---------------------------------------------------------------------------
-// 10. phBoundCapsule_ForwardToNestedSink @ 0x82459C78 | size: 0x14
+// 10. phBoundCapsule_ForwardToSink @ 0x82459C78 | size: 0x14
 //     If field +24 is non-null, tail-calls msgMsgSink_8DA0_sp on it.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_ForwardToNestedSink(void* obj) {
+void phBoundCapsule_ForwardToSink(void* obj) {
     void* sink = *(void**)((char*)obj + 24);
     if (sink == nullptr) return;
     msgMsgSink_8DA0_sp(sink);
 }
 
 // ---------------------------------------------------------------------------
-// 11. phBoundCapsule_FCB0_p39 @ 0x824AFCB0 | size: 0x10
+// 11. phBoundCapsule_ReadInt16Array @ 0x824AFCB0 | size: 0x10
 //     Reads a signed 16-bit element from an array.
 //     index = r6, base = r3. Element at base[index*2], sign-extended.
 // ---------------------------------------------------------------------------
-int32_t phBoundCapsule_FCB0_p39(int16_t* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
+int32_t phBoundCapsule_ReadInt16Array(int16_t* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
     return (int32_t)base[index];
 }
 
 // ---------------------------------------------------------------------------
-// 12. phBoundCapsule_FCC0_p39 @ 0x824AFCC0 | size: 0x14
+// 12. phBoundCapsule_ReadPacked24 @ 0x824AFCC0 | size: 0x14
 //     Reads a 24-bit packed element from a 3-byte-stride array, sign-extended
 //     then arithmetic-shifted right by 8 to produce a signed result.
 //     Stride = index * 3. Loads dword at base + stride, shifts >> 8.
 // ---------------------------------------------------------------------------
-int32_t phBoundCapsule_FCC0_p39(void* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
+int32_t phBoundCapsule_ReadPacked24(void* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
     uint32_t stride = index * 3;
     uint32_t raw = *(uint32_t*)((char*)base + stride);
     return (int32_t)raw >> 8;
 }
 
 // ---------------------------------------------------------------------------
-// 13. phBoundCapsule_StoreElement16 @ 0x824AFD60 | size: 0xC
+// 13. phBoundCapsule_WriteInt16Array @ 0x824AFD60 | size: 0xC
 //     Stores a 16-bit value into an array at index.
 //     base = r4, index = r6, value = r3.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_StoreElement16(uint16_t value, int16_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_WriteInt16Array(uint16_t value, int16_t* base, void* /*r5*/, uint32_t index) {
     base[index] = (int16_t)value;
 }
 
 // ---------------------------------------------------------------------------
-// 14. phBoundCapsule_StorePackedElement24 @ 0x824AFD70 | size: 0x24
+// 14. phBoundCapsule_FD70_p33 @ 0x824AFD70 | size: 0x24
 //     Stores a 24-bit packed value into a 3-byte-stride array.
 //     The value in r3 is decomposed: byte2 = r3 & 0xFF, byte1 = (r3>>8) & 0xFF,
 //     byte0 = (r3>>16) & 0xFF, stored at base + index*3.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_StorePackedElement24(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_FD70_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
     uint32_t stride = index * 3;
     uint8_t* dst = base + stride;
     int32_t mid = value >> 8;
@@ -3929,11 +4216,11 @@ void phBoundCapsule_StorePackedElement24(int32_t value, uint8_t* base, void* /*r
 }
 
 // ---------------------------------------------------------------------------
-// 15. phBoundCapsule_FCD8_p39 @ 0x824AFCD8 | size: 0x28
+// 15. phBoundCapsule_ReadPacked24Shifted @ 0x824AFCD8 | size: 0x28
 //     Reads a 24-bit packed value from a 3-byte-stride array, reassembles
 //     into a sign-extended 24-bit integer, then arithmetic-shifts right by 4.
 // ---------------------------------------------------------------------------
-int32_t phBoundCapsule_FCD8_p39(void* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
+int32_t phBoundCapsule_ReadPacked24Shifted(void* base, void* /*r4*/, void* /*r5*/, uint32_t index) {
     uint32_t stride = index * 3;
     uint8_t* src = (uint8_t*)base + stride;
     uint8_t lo  = src[2];
@@ -3944,10 +4231,10 @@ int32_t phBoundCapsule_FCD8_p39(void* base, void* /*r4*/, void* /*r5*/, uint32_t
 }
 
 // ---------------------------------------------------------------------------
-// 16. phBoundCapsule_StoreShiftedElement24 @ 0x824AFD98 | size: 0x28
+// 16. phBoundCapsule_FD98_p33 @ 0x824AFD98 | size: 0x28
 //     Stores a value left-shifted by 4 into a 3-byte-stride packed array.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_StoreShiftedElement24(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_FD98_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
     uint32_t shifted = (uint32_t)value << 4;
     // Decompose 32-bit shifted value into 3 bytes (big-endian order)
     uint8_t* tmp = (uint8_t*)&shifted;
@@ -3959,22 +4246,20 @@ void phBoundCapsule_StoreShiftedElement24(int32_t value, uint8_t* base, void* /*
 }
 
 // ---------------------------------------------------------------------------
-// 17. phBoundCapsule_AllocArray @ 0x8256BAF0 | size: 0x14
+// 17. phBoundCapsule_BAF0_2h @ 0x8256BAF0 | size: 0x14
 //     Multiplies r3 * r4, then tail-calls rage_Alloc with that size
 //     and allocator pointer 0x6489_0018.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_AllocArray(int32_t elemSize, int32_t count) {
+void phBoundCapsule_BAF0_2h(int32_t elemSize, int32_t count) {
     int32_t totalSize = elemSize * count;
-    extern void* g_phAllocator;  // @ 0x64890018 (constructed from lis+ori)
     rage_Alloc(totalSize, g_phAllocator);
 }
 
 // ---------------------------------------------------------------------------
-// 18. phBoundCapsule_FreeMemory @ 0x8256BBB8 | size: 0xC
+// 18. phBoundCapsule_BBB8_2h @ 0x8256BBB8 | size: 0xC
 //     Tail-calls _locale_register with a fixed allocator pointer.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_FreeMemory(void* ptr) {
-    extern void* g_phAllocator;  // @ 0x64890018
+void phBoundCapsule_BBB8_2h(void* ptr) {
     _locale_register(ptr, g_phAllocator);
 }
 
@@ -4028,21 +4313,18 @@ int32_t phBoundCapsule_SetCallback5(uint32_t callback) {
 // ph_vt3DB0_7_9140 @ 0x82449140 | size: 0x8
 // Adjusts this by -4, tail-calls ph_A330 (slot 7 thunk)
 void ph_vt3DB0_7_Thunk(void* thisPtr) {
-    extern void ph_A330(void* obj);
     ph_A330((char*)thisPtr - 4);
 }
 
 // ph_vt3DB0_8_9148 @ 0x82449148 | size: 0x8
 // Adjusts this by -4, tail-calls ph_vt3DB0_12_8DB8 (slot 8 thunk)
 void ph_vt3DB0_8_Thunk(void* thisPtr) {
-    extern void ph_vt3DB0_12_8DB8(void* obj);
     ph_vt3DB0_12_8DB8((char*)thisPtr - 4);
 }
 
 // ph_vt3DB0_9_9150 @ 0x82449150 | size: 0x8
 // Adjusts this by -4, tail-calls ph_vt3DB0_13_8E10 (slot 9 thunk)
 void ph_vt3DB0_9_Thunk(void* thisPtr) {
-    extern void ph_vt3DB0_13_8E10(void* obj);
     ph_vt3DB0_13_8E10((char*)thisPtr - 4);
 }
 
@@ -4115,7 +4397,6 @@ void* ph_vt3DB0_45_GetOffsetPtr(void* thisPtr, uint32_t offset) {
 // ph_vt57D8_0_FF70 @ 0x8245FF70 | size: 0x8
 // Adjusts this by -12 (back to container), tail-calls constructor at 0x82460718
 void ph_vt57D8_0_Thunk(void* thisPtr) {
-    extern void ph_vt57D8_20_0718(void* obj);
     ph_vt57D8_20_0718((char*)thisPtr - 12);
 }
 
@@ -4166,7 +4447,6 @@ void ph_vt57D8_45_DispatchSlot7(void* thisPtr, void* param) {
 // ph_vt57D8_30_13B8 @ 0x824613B8 | size: 0x8
 // Adjusts this by -4, tail-calls aud_1498
 void ph_vt57D8_30_Thunk(void* thisPtr) {
-    extern void aud_1498(void* obj);
     aud_1498((char*)thisPtr - 4);
 }
 
@@ -4191,7 +4471,6 @@ int ph_vt57D8_39_InitStatus(void* thisPtr, void* status) {
 // ph_vt57D8_27_8958 @ 0x82468958 | size: 0x24
 // Initializes a status struct with type=4, a global uint16 value, and flag=0
 int ph_vt57D8_27_InitStatusWithGlobal(void* thisPtr, void* status) {
-    extern uint16_t g_phDefaultStatusId;  // @ 0x82465A58
     *(uint8_t*)((char*)status + 0) = 4;
     *(uint16_t*)((char*)status + 2) = g_phDefaultStatusId;
     *(uint8_t*)((char*)status + 4) = 0;
@@ -4213,7 +4492,6 @@ void ph_vt57D8_46_GetSelfPtr(void* thisPtr, void** out) {
 // ph_vt57D8_35_8CD0 @ 0x82468CD0 | size: 0x8
 // Adjusts this by -4, tail-calls ph_vt57D8_2_6378
 void ph_vt57D8_35_Thunk(void* thisPtr) {
-    extern void ph_vt57D8_2_6378(void* obj);
     ph_vt57D8_2_6378((char*)thisPtr - 4);
 }
 
@@ -4225,7 +4503,6 @@ void ph_vt57D8_35_Thunk(void* thisPtr) {
 // ph_vt58FC_0_4E38 @ 0x82464E38 | size: 0x8
 // Adjusts this by -4, tail-calls phInst_5910_p39
 void ph_vt58FC_0_Thunk(void* thisPtr) {
-    extern void phInst_5910_p39(void* obj);
     phInst_5910_p39((char*)thisPtr - 4);
 }
 
@@ -4251,69 +4528,60 @@ int ph_vt58FC_15_SetByte26(void* thisPtr, uint8_t value) {
 // ph_vt5A40_0_6108 @ 0x82466108 | size: 0x10
 // Destructor stub: sets vtable to lbl_82005A40
 void ph_vt5A40_0_SetVtable(void* thisPtr) {
-    *(void**)thisPtr = &g_vtable_phInstDerived;  // lbl_82005A40 vtable
+    *(void**)thisPtr = (void*)0x82005A40;  // lbl_82005A40 vtable
 }
 
 // ph_vt5A60_40_68C0 @ 0x824668C0 | size: 0x8
 // Adjusts this by -4, tail-calls aud_6A20_wrap_6A20
 void ph_vt5A60_40_Thunk(void* thisPtr) {
-    extern void aud_6A20_wrap_6A20(void* obj);
     aud_6A20_wrap_6A20((char*)thisPtr - 4);
 }
 
 // ph_vt5A60_20_68C8 @ 0x824668C8 | size: 0x8
 // Adjusts this by -16, tail-calls aud_6A20_wrap_6A20
 void ph_vt5A60_20_Thunk(void* thisPtr) {
-    extern void aud_6A20_wrap_6A20(void* obj);
     aud_6A20_wrap_6A20((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_22_68D0 @ 0x824668D0 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_57_6858
 void ph_vt5A60_22_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_57_6858(void* obj);
     ph_vt5A60_57_6858((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_23_7230 @ 0x82467230 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_58_6EE8
 void ph_vt5A60_23_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_58_6EE8(void* obj);
     ph_vt5A60_58_6EE8((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_32_7238 @ 0x82467238 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
 void ph_vt5A60_32_Thunk(void* thisPtr) {
-    extern void ph_vt5A8C_63_6A50(void* obj);
     ph_vt5A8C_63_6A50((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_34_7240 @ 0x82467240 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A7C_63_6A98
 void ph_vt5A60_34_Thunk(void* thisPtr) {
-    extern void ph_vt5A7C_63_6A98(void* obj);
     ph_vt5A7C_63_6A98((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_36_7248 @ 0x82467248 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
 void ph_vt5A60_36_Thunk(void* thisPtr) {
-    extern void ph_vt5A84_63_6B90(void* obj);
     ph_vt5A84_63_6B90((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_28_7C18 @ 0x82467C18 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_60_7870
 void ph_vt5A60_28_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_60_7870(void* obj);
     ph_vt5A60_60_7870((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_29_7C20 @ 0x82467C20 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_61_7A38
 void ph_vt5A60_29_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_61_7A38(void* obj);
     ph_vt5A60_61_7A38((char*)thisPtr - 16);
 }
 
@@ -4327,91 +4595,78 @@ int ph_vt5A60_59_GetByte168(void* thisPtr, uint8_t* out) {
 // ph_vt5A60_53_8A38 @ 0x82468A38 | size: 0x8
 // Adjusts this by +4, tail-calls ph_vt57D8_28_FD08
 void ph_vt5A60_53_Thunk(void* thisPtr) {
-    extern void ph_vt57D8_28_FD08(void* obj);
     ph_vt57D8_28_FD08((char*)thisPtr + 4);
 }
 
 // ph_vt5A60_54_8A40 @ 0x82468A40 | size: 0x8
 // Adjusts this by +4, tail-calls ph_vt57D8_29_FDD0
 void ph_vt5A60_54_Thunk(void* thisPtr) {
-    extern void ph_vt57D8_29_FDD0(void* obj);
     ph_vt57D8_29_FDD0((char*)thisPtr + 4);
 }
 
 // ph_vt5A60_47_8CD8 @ 0x82468CD8 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_60_7870
 void ph_vt5A60_47_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_60_7870(void* obj);
     ph_vt5A60_60_7870((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_48_8CE0 @ 0x82468CE0 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_61_7A38
 void ph_vt5A60_48_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_61_7A38(void* obj);
     ph_vt5A60_61_7A38((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_49_8CE8 @ 0x82468CE8 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_62_8F80
 void ph_vt5A60_49_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_62_8F80(void* obj);
     ph_vt5A60_62_8F80((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_24_8D00 @ 0x82468D00 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
 void ph_vt5A60_24_Thunk(void* thisPtr) {
-    extern void ph_vt5A8C_63_6A50(void* obj);
     ph_vt5A8C_63_6A50((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_25_8D08 @ 0x82468D08 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A7C_63_6A98
 void ph_vt5A60_25_Thunk(void* thisPtr) {
-    extern void ph_vt5A7C_63_6A98(void* obj);
     ph_vt5A7C_63_6A98((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_26_8D10 @ 0x82468D10 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
 void ph_vt5A60_26_Thunk(void* thisPtr) {
-    extern void ph_vt5A84_63_6B90(void* obj);
     ph_vt5A84_63_6B90((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_27_8D18 @ 0x82468D18 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_58_6EE8
 void ph_vt5A60_27_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_58_6EE8(void* obj);
     ph_vt5A60_58_6EE8((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_31_8D20 @ 0x82468D20 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_57_6858
 void ph_vt5A60_31_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_57_6858(void* obj);
     ph_vt5A60_57_6858((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_33_8D30 @ 0x82468D30 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
 void ph_vt5A60_33_Thunk(void* thisPtr) {
-    extern void ph_vt5A8C_63_6A50(void* obj);
     ph_vt5A8C_63_6A50((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_35_8D40 @ 0x82468D40 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
 void ph_vt5A60_35_Thunk(void* thisPtr) {
-    extern void ph_vt5A84_63_6B90(void* obj);
     ph_vt5A84_63_6B90((char*)thisPtr - 16);
 }
 
 // ph_vt5A60_30_9098 @ 0x82469098 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A60_62_8F80
 void ph_vt5A60_30_Thunk(void* thisPtr) {
-    extern void ph_vt5A60_62_8F80(void* obj);
     ph_vt5A60_62_8F80((char*)thisPtr - 16);
 }
 
@@ -4448,63 +4703,54 @@ int ph_vt5A74_63_GetField164(void* thisPtr, uint32_t* out) {
 // ph_vt5B98_20_8948 @ 0x82468948 | size: 0x8
 // Adjusts this by -4, tail-calls atSingleton_8A48_p42
 void ph_vt5B98_20_Thunk(void* thisPtr) {
-    extern void atSingleton_8A48_p42(void* obj);
     atSingleton_8A48_p42((char*)thisPtr - 4);
 }
 
 // ph_vt5B98_0_8950 @ 0x82468950 | size: 0x8
 // Adjusts this by -16, tail-calls atSingleton_8A48_p42
 void ph_vt5B98_0_Thunk(void* thisPtr) {
-    extern void atSingleton_8A48_p42(void* obj);
     atSingleton_8A48_p42((char*)thisPtr - 16);
 }
 
 // ph_vt5B98_37_8990 @ 0x82468990 | size: 0x8
 // Adjusts this by +16, tail-calls ph_vt57D8_2_6378
 void ph_vt5B98_37_Thunk(void* thisPtr) {
-    extern void ph_vt57D8_2_6378(void* obj);
     ph_vt57D8_2_6378((char*)thisPtr + 16);
 }
 
 // ph_vt5B98_38_8998 @ 0x82468998 | size: 0x8
 // Adjusts this by +16, tail-calls ph_vt57D8_3_61E0
 void ph_vt5B98_38_Thunk(void* thisPtr) {
-    extern void ph_vt57D8_3_61E0(void* obj);
     ph_vt57D8_3_61E0((char*)thisPtr + 16);
 }
 
 // ph_vt5B98_12_8D28 @ 0x82468D28 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A8C_63_6A50
 void ph_vt5B98_12_Thunk(void* thisPtr) {
-    extern void ph_vt5A8C_63_6A50(void* obj);
     ph_vt5A8C_63_6A50((char*)thisPtr - 16);
 }
 
 // ph_vt5B98_14_8D38 @ 0x82468D38 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A7C_63_6A98
 void ph_vt5B98_14_Thunk(void* thisPtr) {
-    extern void ph_vt5A7C_63_6A98(void* obj);
     ph_vt5A7C_63_6A98((char*)thisPtr - 16);
 }
 
 // ph_vt5B98_16_8D48 @ 0x82468D48 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5A84_63_6B90
 void ph_vt5B98_16_Thunk(void* thisPtr) {
-    extern void ph_vt5A84_63_6B90(void* obj);
     ph_vt5A84_63_6B90((char*)thisPtr - 16);
 }
 
 // ph_vt5B98_8_9088 @ 0x82469088 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5B98_40_8D50
 void ph_vt5B98_8_Thunk(void* thisPtr) {
-    extern void ph_vt5B98_40_8D50(void* obj);
     ph_vt5B98_40_8D50((char*)thisPtr - 16);
 }
 
 // ph_vt5B98_9_9090 @ 0x82469090 | size: 0x8
 // Adjusts this by -16, tail-calls ph_vt5B98_41_8E50
 void ph_vt5B98_9_Thunk(void* thisPtr) {
-    extern void ph_vt5B98_41_8E50(void* obj);
     ph_vt5B98_41_8E50((char*)thisPtr - 16);
 }
 
@@ -4562,7 +4808,6 @@ uint32_t ph_vt5CD8_14_ReturnNotImpl() {
 // ph_vt5CD8_0_CE30 @ 0x8246CE30 | size: 0x30
 // Calls ke_C750 cleanup, returns this (destructor pattern)
 void* ph_vt5CD8_0_Destructor(void* thisPtr) {
-    extern void ke_C750(void* obj);
     ke_C750(thisPtr);
     return thisPtr;
 }
@@ -4577,7 +4822,6 @@ int ph_vt5D38_12_GetByte61(void* thisPtr, uint8_t* out) {
 // ph_vt5D38_0_D6F0 @ 0x8246D6F0 | size: 0x30
 // Calls ke_D440 cleanup, returns this (destructor pattern)
 void* ph_vt5D38_0_Destructor(void* thisPtr) {
-    extern void ke_D440(void* obj);
     ke_D440(thisPtr);
     return thisPtr;
 }
@@ -4585,7 +4829,6 @@ void* ph_vt5D38_0_Destructor(void* thisPtr) {
 // ph_vt6E40_0_E368 @ 0x8247E368 | size: 0x30
 // Calls ph_E1E8 cleanup, returns this (destructor pattern)
 void* ph_vt6E40_0_Destructor(void* thisPtr) {
-    extern void ph_E1E8(void* obj);
     ph_E1E8(thisPtr);
     return thisPtr;
 }
@@ -4593,7 +4836,6 @@ void* ph_vt6E40_0_Destructor(void* thisPtr) {
 // ph_vt5C84_5_AAD0 @ 0x8246AAD0 | size: 0x30
 // Calls ke_A428, returns this (init + return-self pattern)
 void* ph_vt5C84_5_InitAndReturn(void* thisPtr) {
-    extern void ke_A428(void* obj);
     ke_A428(thisPtr);
     return thisPtr;
 }
@@ -4612,7 +4854,6 @@ void ph_vt5A40_5_GetEmbeddedPtr(void* thisPtr, void** out) {
 // Sets 3 uint16 fields + zero, then tail-calls ph_FE48
 void ph_SetBoundIndices3(void* thisPtr, uint16_t idx0, uint16_t idx1,
                          uint16_t idx2, void* param) {
-    extern void ph_FE48(void* obj, void* p);
     *(uint16_t*)((char*)thisPtr + 16) = idx0;
     *(uint16_t*)((char*)thisPtr + 18) = idx1;
     *(uint16_t*)((char*)thisPtr + 20) = idx2;
@@ -4624,7 +4865,6 @@ void ph_SetBoundIndices3(void* thisPtr, uint16_t idx0, uint16_t idx1,
 // Sets 4 uint16 fields, then tail-calls ph_FE48
 void ph_SetBoundIndices4(void* thisPtr, uint16_t idx0, uint16_t idx1,
                          uint16_t idx2, uint16_t idx3, void* param) {
-    extern void ph_FE48(void* obj, void* p);
     *(uint16_t*)((char*)thisPtr + 16) = idx0;
     *(uint16_t*)((char*)thisPtr + 18) = idx1;
     *(uint16_t*)((char*)thisPtr + 20) = idx2;
@@ -4649,7 +4889,6 @@ void ph_CopyBoundData(void* dest, const void* src) {
 
 // ph_C1A0 @ 0x8228C1A0 | size: 0x24
 // Tests if bitmask AND global collision flags is non-zero
-extern uint32_t g_phCollisionFlags;  // @ 0x825C48E8
 uint8_t ph_TestCollisionFlag(uint32_t mask) {
     return (g_phCollisionFlags & mask) != 0 ? 1 : 0;
 }
@@ -4687,7 +4926,6 @@ void ph_SetCollisionBits(uint32_t bits, uint8_t enable) {
 // ph_20D0 @ 0x822920D0 | size: 0x40
 // Wrapper that forwards args to fiAsciiTokenizer_2110_gen and returns byte result
 uint8_t ph_TokenizerReadBool(void* a, void* b, void* c) {
-    extern uint8_t fiAsciiTokenizer_2110_gen(void*, void*, void*);
     return fiAsciiTokenizer_2110_gen(a, b, c);
 }
 
@@ -4716,9 +4954,8 @@ void* ph_GetBoundPointer(void* thisPtr, uint8_t useFirst) {
 // ph_ctor_0460 @ 0x82430460 | size: 0x24
 // Destructor: sets vtable, conditionally calls cleanup on child
 void ph_ctor_0460_Destructor(void* thisPtr) {
-    extern void fiAsciiTokenizer_3310_g(void* obj);
     // Set vtable
-    *(void**)thisPtr = &g_vtable_phCtor0460;  // lbl_820014C8 vtable
+    *(void**)thisPtr = (void*)0x820014C8;  // lbl_820014C8 vtable
     uint32_t childFlag = *(uint32_t*)((char*)thisPtr + 8);
     if (childFlag != 0) {
         void* child = *(void**)((char*)thisPtr + 4);
@@ -4788,62 +5025,62 @@ static inline void StoreU8AndDirty40(void* obj, int offset, uint8_t value, uint6
 }
 
 // ── 1. Simple bitfield getter: +11660 bit 0 (0x1) ──────────── 4DC8 (0xc)
-uint32_t phArticulatedCollider::GetSolverFlag_18()  { return ExtractBits(this, 11660,  0, 0x1); }
+uint32_t rage::phArticulatedCollider::GetSolverFlag_18()  { return ExtractBits(this, 11660,  0, 0x1); }
 
 // ── 2. Simple getter: +11704 bits 0-1 (0x3) ────────────────── 5138 (0xc)
-uint32_t phArticulatedCollider::GetLimitType_0()    { return ExtractBits(this, 11704,  0, 0x3); }
+uint32_t rage::phArticulatedCollider::GetLimitType_0()    { return ExtractBits(this, 11704,  0, 0x3); }
 
 // ── 3. Simple getter: +11776 bit 0 (0x1) ───────────────────── 5170 (0xc)
-uint32_t phArticulatedCollider::GetDofFlag_0()      { return ExtractBits(this, 11776,  0, 0x1); }
+uint32_t rage::phArticulatedCollider::GetDofFlag_0()      { return ExtractBits(this, 11776,  0, 0x1); }
 
 // ── 4. Simple getter: +11656 bit 21 (0x1) ──────────────────── 51A8 (0xc)
 // rlwinm r3,r11,11,31,31 → (word >> 21) & 1
-uint32_t phArticulatedCollider::GetSolverParam_21() { return ExtractBits(this, 11656, 21, 0x1); }
+uint32_t rage::phArticulatedCollider::GetSolverParam_21() { return ExtractBits(this, 11656, 21, 0x1); }
 
 // ── 5. Simple getter: +11644 bit 4 (0x1) ───────────────────── 5208 (0xc)
 // rlwinm r3,r11,28,31,31 → (word >> 4) & 1
-uint32_t phArticulatedCollider::GetFlag7C_4b()      { return ExtractBits(this, 11644,  4, 0x1); }
+uint32_t rage::phArticulatedCollider::GetFlag7C_4b()      { return ExtractBits(this, 11644,  4, 0x1); }
 
 // ── 6. Simple getter: +11648 bit 3 (0x1) ───────────────────── 5340 (0xc)
 // rlwinm r3,r11,29,31,31 → (word >> 3) & 1
-uint32_t phArticulatedCollider::GetActive_3()       { return ExtractBits(this, 11648,  3, 0x1); }
+uint32_t rage::phArticulatedCollider::GetActive_3()       { return ExtractBits(this, 11648,  3, 0x1); }
 
 // ── 7. Simple getter: +11648 bit 2 (0x1) ───────────────────── 5378 (0xc)
 // rlwinm r3,r11,30,31,31 → (word >> 2) & 1 (same field as GetActive_2 but separate symbol)
-uint32_t phArticulatedCollider::GetActive_2b()      { return ExtractBits(this, 11648,  2, 0x1); }
+uint32_t rage::phArticulatedCollider::GetActive_2b()      { return ExtractBits(this, 11648,  2, 0x1); }
 
 // ── 8. Simple getter: +11648 bit 5 (0x1) ───────────────────── 53B0 (0xc)
 // rlwinm r3,r11,27,31,31 → (word >> 5) & 1
-uint32_t phArticulatedCollider::GetActive_5()       { return ExtractBits(this, 11648,  5, 0x1); }
+uint32_t rage::phArticulatedCollider::GetActive_5()       { return ExtractBits(this, 11648,  5, 0x1); }
 
 // ── 9. Simple getter: +11452 bits 23-29 (0x7F) ─────────────── 5408 (0xc)
 // rlwinm r3,r11,9,25,31 → (word >> 23) & 0x7F
-uint32_t phArticulatedCollider::GetCBCField_23()    { return ExtractBits(this, 11452, 23, 0x7F); }
+uint32_t rage::phArticulatedCollider::GetCBCField_23()    { return ExtractBits(this, 11452, 23, 0x7F); }
 
 // ── 10. Byte-indexed getter: this[index+12098] bit 1 ────────── 5598 (0x10)
 // lbz + rlwinm r3,r11,31,31,31 → (byte >> 1) & 1
-uint32_t phArticulatedCollider::GetIndexedByteFlag_1(int index) {
+uint32_t rage::phArticulatedCollider::GetIndexedByteFlag_1(int index) {
     uint8_t byte = *(uint8_t*)((char*)this + index + 12098);
     return (byte >> 1) & 0x1;
 }
 
 // ── 11. Byte-indexed getter: this[index+12098] bit 0 ────────── 5728 (0x10)
 // lbz + clrlwi r3,r11,31 → byte & 1
-uint32_t phArticulatedCollider::GetIndexedByteFlag_0(int index) {
+uint32_t rage::phArticulatedCollider::GetIndexedByteFlag_0(int index) {
     uint8_t byte = *(uint8_t*)((char*)this + index + 12098);
     return byte & 0x1;
 }
 
 // ── 12. Byte-indexed getter: this[index+12098] bit 2 ────────── 5818 (0x10)
 // lbz + rlwinm r3,r11,30,31,31 → (byte >> 2) & 1
-uint32_t phArticulatedCollider::GetIndexedByteFlag_2(int index) {
+uint32_t rage::phArticulatedCollider::GetIndexedByteFlag_2(int index) {
     uint8_t byte = *(uint8_t*)((char*)this + index + 12098);
     return (byte >> 2) & 0x1;
 }
 
 // ── 13. Indexed field setter: +11452 insert 7-bit at bit 23 ── 53F8 (0x10)
 // rlwimi r11,r4,23,2,8 → mask 0x3F800000 = 0x7F << 23
-void phArticulatedCollider::SetCBCField_23(uint32_t value) {
+void rage::phArticulatedCollider::SetCBCField_23(uint32_t value) {
     uint32_t word = *(uint32_t*)((char*)this + 11452);
     word = (word & ~(0x7FU << 23)) | ((value & 0x7F) << 23);
     *(uint32_t*)((char*)this + 11452) = word;
@@ -4851,27 +5088,27 @@ void phArticulatedCollider::SetCBCField_23(uint32_t value) {
 
 // ── 14. Read byte from +11644 ───────────────────────────────── 5240 (0x14)
 // lbz + rlwimi (identity copy) + clrlwi → just returns byte at +11644
-uint32_t phArticulatedCollider::GetFlag7C_Byte() {
+uint32_t rage::phArticulatedCollider::GetFlag7C_Byte() {
     return *(uint8_t*)((char*)this + 11644);
 }
 
 // ── 15. Indexed getter: stride-24 array at +1164, bits 23-24 ── 5778 (0x14)
 // mulli r11,r4,24; add; lwz 1164; rlwinm r3,r11,9,30,31 → (word >> 23) & 0x3
-uint32_t phArticulatedCollider::GetBoneField_5778(int index) {
+uint32_t rage::phArticulatedCollider::GetBoneField_5778(int index) {
     uint32_t word = *(uint32_t*)((char*)this + 1164 + index * 24);
     return (word >> 23) & 0x3;
 }
 
 // ── 16. Indexed getter: stride-24 at +1172, bit 2 ──────────── 5D90 (0x14)
 // lwz 1172; rlwinm r3,r11,30,31,31 → (word >> 2) & 1
-uint32_t phArticulatedCollider::GetBoneField_5D90(int index) {
+uint32_t rage::phArticulatedCollider::GetBoneField_5D90(int index) {
     uint32_t word = *(uint32_t*)((char*)this + 1172 + index * 24);
     return (word >> 2) & 0x1;
 }
 
 // ── 17. Indexed negation check: stride-24 at +1156 ─────────── 5DF0 (0x18)
 // lwz 1156; not; rlwinm 21,31,31 → (~word >> 11) & 1
-uint32_t phArticulatedCollider::GetBoneFieldNeg_5DF0(int index) {
+uint32_t rage::phArticulatedCollider::GetBoneFieldNeg_5DF0(int index) {
     uint32_t word = *(uint32_t*)((char*)this + 1156 + index * 24);
     return (~word >> 11) & 0x1;
 }
@@ -4879,166 +5116,166 @@ uint32_t phArticulatedCollider::GetBoneFieldNeg_5DF0(int index) {
 // ── 18. Indexed bool: stride-24 at +1172, nonzero low 2 bits ── 5B38 (0x1c)
 // lwz 1172; clrlwi 30 → bits 0-1; subfic+subfe → (val != 0) ? -1 : 0
 // The subfic/subfe idiom computes -(val != 0), i.e. 0xFFFFFFFF if nonzero
-bool phArticulatedCollider::IsBoneFieldNonZero(int index) {
+bool rage::phArticulatedCollider::IsBoneFieldNonZero(int index) {
     uint32_t word = *(uint32_t*)((char*)this + 1172 + index * 24);
     return (word & 0x3) != 0;
 }
 
 // ── 19. Store float + dirty40 at +11712 ─────────────────────── 50B8 (0x20)
 // stfs f0,11712(r3); ld/oris/std at this+40; oris r10,r10,4 → 1<<18
-void phArticulatedCollider::SetLimitFloat_11712(float value) {
+void rage::phArticulatedCollider::SetLimitFloat_11712(float value) {
     *(float*)((char*)this + 11712) = value;
     *(uint64_t*)((char*)this + 40) |= (1ULL << 18);
 }
 
 // ── 20. Store float + dirty40 at +11708 ─────────────────────── 50E8 (0x20)
 // stfs f0,11708(r3); ld/oris/std at this+40; oris r10,r10,8 → 1<<19
-void phArticulatedCollider::SetLimitFloat_11708(float value) {
+void rage::phArticulatedCollider::SetLimitFloat_11708(float value) {
     *(float*)((char*)this + 11708) = value;
     *(uint64_t*)((char*)this + 40) |= (1ULL << 19);
 }
 
 // ── 21. Insert 2 bits at +11704 bit 0 + dirty40 ────────────── 5118 (0x20)
 // rlwimi r10,r4,0,30,31 → mask 0x3; oris r10,r10,16 → 0x100000 = 1<<20
-void phArticulatedCollider::SetLimitType_0(uint32_t value) {
+void rage::phArticulatedCollider::SetLimitType_0(uint32_t value) {
     InsertBitsAndDirty40(this, 11704, value, 0, 0x3, 1ULL << 20);
 }
 
 // ── 22. Store u32 + dirty40 at +11544 ───────────────────────── 51B8 (0x20)
 // stw r4,11544(r3); rldicr r12,r12,60 → 1ULL<<60
-void phArticulatedCollider::SetField_11544(uint32_t value) {
+void rage::phArticulatedCollider::SetField_11544(uint32_t value) {
     StoreU32AndDirty40(this, 11544, value, 1ULL << 60);
 }
 
 // ── 23. Store byte + dirty40 at +11650 ──────────────────────── 53C0 (0x20)
 // stb r4,11650(r3); rldicr r12,r12,34 → 1ULL<<34
-void phArticulatedCollider::SetActiveByte_11650(uint8_t value) {
+void rage::phArticulatedCollider::SetActiveByte_11650(uint8_t value) {
     StoreU8AndDirty40(this, 11650, value, 1ULL << 34);
 }
 
 // ── 24. Store u16 + dirty48 at +11840 ───────────────────────── 4770 (0x24)
 // clrlwi r10,r4,16; stw r10,11840(r3); rldicr r12,r12,45 → 1ULL<<45
-void phArticulatedCollider::SetDofU16_11840(uint32_t value) {
+void rage::phArticulatedCollider::SetDofU16_11840(uint32_t value) {
     StoreU32AndDirty48(this, 11840, value & 0xFFFF, 1ULL << 45);
 }
 
 // ── 25. Insert 1 bit at +11636 bit 2 + dirty40 ─────────────── 4170 (0x28)
 // rlwimi r10,r4,2,29,29 → (value & 1) << 2; rldicr 37 → 1ULL<<37
-void phArticulatedCollider::SetRotAxis_2(uint32_t value) {
+void rage::phArticulatedCollider::SetRotAxis_2(uint32_t value) {
     InsertBitsAndDirty40(this, 11636, value, 2, 0x1, 1ULL << 37);
 }
 
 // ── 26. Insert 3 bits at +11636 bits 8-10 + dirty40 ────────── 4288 (0x28)
 // rlwimi r10,r4,8,21,23 → (value & 7) << 8; rldicr 37 → 1ULL<<37
-void phArticulatedCollider::SetRotAxis_8(uint32_t value) {
+void rage::phArticulatedCollider::SetRotAxis_8(uint32_t value) {
     InsertBitsAndDirty40(this, 11636, value, 8, 0x7, 1ULL << 37);
 }
 
 // ── 27. Insert 3 bits at +11636 bits 14-16 + dirty40 ───────── 4350 (0x28)
 // rlwimi r10,r4,14,15,17 → (value & 7) << 14; rldicr 37
-void phArticulatedCollider::SetRotAxis_14(uint32_t value) {
+void rage::phArticulatedCollider::SetRotAxis_14(uint32_t value) {
     InsertBitsAndDirty40(this, 11636, value, 14, 0x7, 1ULL << 37);
 }
 
 // ── 28. Insert 3 bits at +11636 bits 20-22 + dirty40 ───────── 4388 (0x28)
 // rlwimi r10,r4,20,9,11 → (value & 7) << 20; rldicr 37
-void phArticulatedCollider::SetRotAxis_20(uint32_t value) {
+void rage::phArticulatedCollider::SetRotAxis_20(uint32_t value) {
     InsertBitsAndDirty40(this, 11636, value, 20, 0x7, 1ULL << 37);
 }
 
 // ── 29. Insert 3 bits at +11636 bits 26-28 + dirty40 ───────── 4450 (0x28)
 // rlwimi r10,r4,26,3,5 → (value & 7) << 26; rldicr 37
-void phArticulatedCollider::SetRotAxis_26(uint32_t value) {
+void rage::phArticulatedCollider::SetRotAxis_26(uint32_t value) {
     InsertBitsAndDirty40(this, 11636, value, 26, 0x7, 1ULL << 37);
 }
 
 // ── 30. Insert 1 bit at +11656 bit 15 + dirty40 ────────────── 4738 (0x28)
 // rlwimi r10,r4,15,16,16 → (value & 1) << 15; rldicr 32 → 1ULL<<32
-void phArticulatedCollider::SetSolverParam_15(uint32_t value) {
+void rage::phArticulatedCollider::SetSolverParam_15(uint32_t value) {
     InsertBitsAndDirty40(this, 11656, value, 15, 0x1, 1ULL << 32);
 }
 
 // ── 31. Insert 4 bits at +11628 bits 28-31 + dirty40 ───────── 4B18 (0x28)
 // rlwimi r10,r4,28,0,3 → (value & 0xF) << 28; rldicr 39 → 1ULL<<39
-void phArticulatedCollider::SetConstraint_28b(uint32_t value) {
+void rage::phArticulatedCollider::SetConstraint_28b(uint32_t value) {
     InsertBitsAndDirty40(this, 11628, value, 28, 0xF, 1ULL << 39);
 }
 
 // ── 32. Insert 4 bits at +11632 bits 28-31 + dirty40 ───────── 4C90 (0x28)
 // rlwimi r10,r4,28,0,3 → (value & 0xF) << 28; rldicr 39
-void phArticulatedCollider::SetJointParam_28(uint32_t value) {
+void rage::phArticulatedCollider::SetJointParam_28(uint32_t value) {
     InsertBitsAndDirty40(this, 11632, value, 28, 0xF, 1ULL << 39);
 }
 
 // ── 33. Insert 1 bit at +11776 bit 0 + dirty48 ─────────────── 5148 (0x28)
 // rlwimi r10,r4,0,31,31 → (value & 1); rldicr 61 → 1ULL<<61
-void phArticulatedCollider::SetDofFlag_0(uint32_t value) {
+void rage::phArticulatedCollider::SetDofFlag_0(uint32_t value) {
     InsertBitsAndDirty48(this, 11776, value, 0, 0x1, 1ULL << 61);
 }
 
 // ── 34. Insert 1 bit at +11656 bit 21 + dirty40 ────────────── 5180 (0x28)
 // rlwimi r10,r4,21,10,10 → (value & 1) << 21; rldicr 32
-void phArticulatedCollider::SetSolverParam_21(uint32_t value) {
+void rage::phArticulatedCollider::SetSolverParam_21(uint32_t value) {
     InsertBitsAndDirty40(this, 11656, value, 21, 0x1, 1ULL << 32);
 }
 
 // ── 35. Insert 1 bit at +11644 bit 4 + dirty40 ─────────────── 51E0 (0x28)
 // rlwimi r10,r4,4,27,27 → (value & 1) << 4; rldicr 35 → 1ULL<<35
-void phArticulatedCollider::SetFlag7C_4b(uint32_t value) {
+void rage::phArticulatedCollider::SetFlag7C_4b(uint32_t value) {
     InsertBitsAndDirty40(this, 11644, value, 4, 0x1, 1ULL << 35);
 }
 
 // ── 36. Insert 8 bits at +11644 bits 24-31 + dirty40 ───────── 5218 (0x28)
 // rlwimi r10,r4,24,0,7 → (value & 0xFF) << 24; rldicr 35
-void phArticulatedCollider::SetFlag7C_24(uint32_t value) {
+void rage::phArticulatedCollider::SetFlag7C_24(uint32_t value) {
     InsertBitsAndDirty40(this, 11644, value, 24, 0xFF, 1ULL << 35);
 }
 
 // ── 37. Store float + dirty48 at +11788 ─────────────────────── 5258 (0x28)
 // stfs f0,11788(r3); rldicr r12,r12,58 → 1ULL<<58
-void phArticulatedCollider::SetRangeFloat_11788(float value) {
+void rage::phArticulatedCollider::SetRangeFloat_11788(float value) {
     StoreFloatAndDirty48(this, 11788, value, 1ULL << 58);
 }
 
 // ── 38. Store float + dirty48 at +11780 ─────────────────────── 5288 (0x28)
 // stfs f0,11780(r3); rldicr r12,r12,60 → 1ULL<<60
-void phArticulatedCollider::SetRangeFloat_11780(float value) {
+void rage::phArticulatedCollider::SetRangeFloat_11780(float value) {
     StoreFloatAndDirty48(this, 11780, value, 1ULL << 60);
 }
 
 // ── 39. Store float + dirty48 at +11792 ─────────────────────── 52B8 (0x28)
 // stfs f0,11792(r3); rldicr r12,r12,57 → 1ULL<<57
-void phArticulatedCollider::SetRangeFloat_11792(float value) {
+void rage::phArticulatedCollider::SetRangeFloat_11792(float value) {
     StoreFloatAndDirty48(this, 11792, value, 1ULL << 57);
 }
 
 // ── 40. Store float + dirty48 at +11784 ─────────────────────── 52E8 (0x28)
 // stfs f0,11784(r3); rldicr r12,r12,59 → 1ULL<<59
-void phArticulatedCollider::SetRangeFloat_11784(float value) {
+void rage::phArticulatedCollider::SetRangeFloat_11784(float value) {
     StoreFloatAndDirty48(this, 11784, value, 1ULL << 59);
 }
 
 // ── 41. Insert 1 bit at +11648 bit 3 + dirty40 ─────────────── 5318 (0x28)
 // rlwimi r10,r4,3,28,28 → (value & 1) << 3; rldicr 34 → 1ULL<<34
-void phArticulatedCollider::SetActive_3(uint32_t value) {
+void rage::phArticulatedCollider::SetActive_3(uint32_t value) {
     InsertBitsAndDirty40(this, 11648, value, 3, 0x1, 1ULL << 34);
 }
 
 // ── 42. Insert 1 bit at +11648 bit 2 + dirty40 ─────────────── 5350 (0x28)
 // rlwimi r10,r4,2,29,29 → (value & 1) << 2; rldicr 34
-void phArticulatedCollider::SetActive_2b(uint32_t value) {
+void rage::phArticulatedCollider::SetActive_2b(uint32_t value) {
     InsertBitsAndDirty40(this, 11648, value, 2, 0x1, 1ULL << 34);
 }
 
 // ── 43. Insert 1 bit at +11648 bit 5 + dirty40 ─────────────── 5388 (0x28)
 // rlwimi r10,r4,5,26,26 → (value & 1) << 5; rldicr 34
-void phArticulatedCollider::SetActive_5(uint32_t value) {
+void rage::phArticulatedCollider::SetActive_5(uint32_t value) {
     InsertBitsAndDirty40(this, 11648, value, 5, 0x1, 1ULL << 34);
 }
 
 // ── 44. Insert 6-bit low + dirty40 at +11652 ───────────────── 4578 (0x2c)
 // rlwinm r10,r10,0,0,25 → clear low 6 bits; or r10,r10,r4; rldicr 33 → 1ULL<<33
-void phArticulatedCollider::SetMiscField_11652(uint32_t value) {
+void rage::phArticulatedCollider::SetMiscField_11652(uint32_t value) {
     uint32_t word = *(uint32_t*)((char*)this + 11652);
     word = (word & 0xFFFFFFC0) | (value & 0x3F);
     *(uint32_t*)((char*)this + 11652) = word;
@@ -5047,7 +5284,7 @@ void phArticulatedCollider::SetMiscField_11652(uint32_t value) {
 
 // ── 45. Insert 4 bits at +11628 bit 0 + dirty40 ────────────── 49C8 (0x2c)
 // rlwinm r10,r10,0,0,27 → clear low 4 bits; or r10,r10,r4; rldicr 39
-void phArticulatedCollider::SetConstraint_0b(uint32_t value) {
+void rage::phArticulatedCollider::SetConstraint_0b(uint32_t value) {
     uint32_t word = *(uint32_t*)((char*)this + 11628);
     word = (word & 0xFFFFFFF0) | (value & 0xF);
     *(uint32_t*)((char*)this + 11628) = word;
@@ -5056,7 +5293,7 @@ void phArticulatedCollider::SetConstraint_0b(uint32_t value) {
 
 // ── 46. Insert 4 bits at +11632 bit 0 + dirty40 ────────────── 4B40 (0x2c)
 // rlwinm r10,r10,0,0,27 → clear low 4 bits; or; rldicr 39
-void phArticulatedCollider::SetJointParam_0(uint32_t value) {
+void rage::phArticulatedCollider::SetJointParam_0(uint32_t value) {
     uint32_t word = *(uint32_t*)((char*)this + 11632);
     word = (word & 0xFFFFFFF0) | (value & 0xF);
     *(uint32_t*)((char*)this + 11632) = word;
@@ -5066,7 +5303,7 @@ void phArticulatedCollider::SetJointParam_0(uint32_t value) {
 // ── 47. vfn_57 @ 0x822508E0 | size: 0x30 ───────────────────────────────────
 // Computes interpolated joint limit: result = arr492[idx]*k1 + arr500[idx]*k2
 // where k1 and k2 are float constants from .rodata.
-float phArticulatedCollider::GetInterpolatedLimit(int index) {  // vfn_57
+float rage::phArticulatedCollider::GetInterpolatedLimit(int index) {  // vfn_57
     float* arr500 = *(float**)((char*)this + 500);
     float* arr492 = *(float**)((char*)this + 492);
     static const float kBlendA = 0.01745329f;  // PI/180 (degrees to radians)
@@ -5078,17 +5315,17 @@ float phArticulatedCollider::GetInterpolatedLimit(int index) {  // vfn_57
 
 // ── 48. Insert 4 bits at +11628 bits 4-7 + dirty40 ─────────── 49F8 (0x30)
 // clear bits 4-7, insert value<<4; rldicr 39
-void phArticulatedCollider::SetConstraint_4b(uint32_t value) {
+void rage::phArticulatedCollider::SetConstraint_4b(uint32_t value) {
     InsertBitsAndDirty40(this, 11628, value, 4, 0xF, 1ULL << 39);
 }
 
 // ── 49. Insert 4 bits at +11628 bits 8-11 + dirty40 ────────── 4A28 (0x30)
-void phArticulatedCollider::SetConstraint_8b(uint32_t value) {
+void rage::phArticulatedCollider::SetConstraint_8b(uint32_t value) {
     InsertBitsAndDirty40(this, 11628, value, 8, 0xF, 1ULL << 39);
 }
 
 // ── 50. Insert 4 bits at +11628 bits 12-15 + dirty40 ───────── 4A58 (0x30)
-void phArticulatedCollider::SetConstraint_12b(uint32_t value) {
+void rage::phArticulatedCollider::SetConstraint_12b(uint32_t value) {
     InsertBitsAndDirty40(this, 11628, value, 12, 0xF, 1ULL << 39);
 }
 
@@ -5117,21 +5354,21 @@ extern void phObject_2588_w(void* thisPtr, uint32_t param);
 extern "C" void _locale_register(void* ptr, uint32_t tag);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_29 @ 0x82485108 | size: 0x8
+// phObject_GetField120 @ 0x82485108 | size: 0x8
 //
 // Simple getter: returns the field at offset +120 (m_field_120).
 // ─────────────────────────────────────────────────────────────────────────────
-uint32_t phObject_29(void* thisPtr) {
+uint32_t phObject_GetField120(void* thisPtr) {
     return *(uint32_t*)((uint8_t*)thisPtr + 120);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_ForwardDispatch @ 0x82485100 | size: 0x8
+// phObject_5100_p46 @ 0x82485100 | size: 0x8
 //
 // Forwarding stub: passes the 4th argument (r7) as 'this' to
 // phObject_4F28_p46. Used as a trampoline for indirect dispatches.
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject_ForwardDispatch(void* thisPtr, uint32_t a2, uint32_t a3, void* target) {
+void phObject_5100_p46(void* thisPtr, uint32_t a2, uint32_t a3, void* target) {
     phObject_4F28_p46(target);
 }
 
@@ -5156,19 +5393,19 @@ int32_t phObject_33(void* thisPtr, uint32_t valueA, uint32_t valueB) {
 // then tail-calls util_85C8 (via thunk_fn_824885C8) for base cleanup.
 // ─────────────────────────────────────────────────────────────────────────────
 void phObject_B878_h(void* thisPtr) {
-    *(void**)thisPtr = &g_vtable_phObjectBase;  // lbl_82019168
+    *(void**)thisPtr = (void*)0x82019168;  // lis r11,-32255; addi r11,r11,-28312
     thunk_fn_824885C8(thisPtr);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_IndirectCallTrampoline @ 0x824920B0 | size: 0x10
+// phObject_20B0_wrh @ 0x824920B0 | size: 0x10
 //
 // Indirect call trampoline: loads a function pointer from a fixed global
 // address and calls it with the current arguments. Used for late-bound
 // dispatch in the physics write/read/hash pipeline.
 // ─────────────────────────────────────────────────────────────────────────────
 typedef void (*phObjectDispatchFunc)(void);
-void phObject_IndirectCallTrampoline() {
+void phObject_20B0_wrh() {
     // lis r11, -32255 -> 0x81E10000; lwz r11, -26992(r11) -> 0x81E10000 + 0xFFFF9690 = global at 0x82019690 area
     // Load function pointer from global and call it
     volatile phObjectDispatchFunc* pFunc = (volatile phObjectDispatchFunc*)0x82019690;
@@ -5217,13 +5454,13 @@ int32_t phObject_2340_gen(uint32_t* array, uint32_t index, uint32_t* outValue) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_A4A0_p39 @ 0x8248A4A0 | size: 0x2C
+// phObject_ValidateAndForward @ 0x8248A4A0 | size: 0x2C
 //
 // Null-validates three parameters (this, param1, param3), then loads the
 // first word from param1 and tail-calls phObject_2588_w.
 // Returns error 0x80070057 on null parameter.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_A4A0_p39(void* thisPtr, void* param1, uint32_t param2, void* param3) {
+int32_t phObject_ValidateAndForward(void* thisPtr, void* param1, uint32_t param2, void* param3) {
     if (!thisPtr || !param1 || !param3) {
         return (int32_t)0x80070057;
     }
@@ -5336,7 +5573,7 @@ int32_t phObject_1AD0_w(void* thisPtr, int32_t index) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_A4D0_p39 @ 0x8248A4D0 | size: 0x44
+// phObject_ValidateAndClearEntry @ 0x8248A4D0 | size: 0x44
 //
 // Null-validates this, param1, and param3. Loads two values from param1
 // at offsets +56 and +60. If the value at +56 is zero, returns early.
@@ -5344,7 +5581,7 @@ int32_t phObject_1AD0_w(void* thisPtr, int32_t index) {
 // to clear the entry at the given index.
 // Returns 0x80070057 on null parameters.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_A4D0_p39(void* thisPtr, void* param1, uint32_t param2, void* param3) {
+int32_t phObject_ValidateAndClearEntry(void* thisPtr, void* param1, uint32_t param2, void* param3) {
     if (!thisPtr || !param1 || !param3) {
         return (int32_t)0x80070057;
     }
@@ -5372,209 +5609,38 @@ int32_t phObject_1F28_gen(void* thisPtr, uint32_t param2, void** outPtr) {
     return 0;
 }
 
-// Forward declarations for additional phObject helpers
-extern void phInstStatic_88F8_fw(void* thisPtr);
-extern void phObject_9A48_h(void* thisPtr);
-extern void ph_ctor_32E8(void* thisPtr);
-extern void phInst_87F8(void* thisPtr);
-extern "C" void* rage_01B8_alloc(uint32_t size, uint32_t tag);
-extern void rage_4CD0(void* thisPtr);
-extern int32_t phObject_28C8_wrh(void* thisPtr, void* r4, void* r5, void* r6, void* r7, void* outPtr);
-extern int32_t rage_A518(void* outPtr, void* thisPtr, void* resource);
+// ═════════════════════════════════════════════════════════════════════════════
+// phObject — Stream / Resource binding helpers (96-172B)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Forward declarations for phObject stream helpers
+extern void phObject_28C8_wrh(void* stream, uint32_t a2, uint32_t a3,
+                               uint32_t a4, uint32_t a5, void* outPtr);
+extern void rage_A518(void* outCtx, void* thisPtr, void* bufferPtr);
+extern void phObject_8BC0_w(void* thisPtr);
+extern void phObject_3E10_w(void* ptr);
+extern "C" void* rage_01B8(uint32_t size, uint32_t tag);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_32 @ 0x82484758 | size: 0x50
+// phObject::SetupOutputStream @ 0x824889A8 | size: 0x60
 //
-// Resets physics simulation state on a phObject. Calls phInstStatic_88F8_fw
-// for static instance cleanup, then zeroes out simulation fields at
-// offsets +500..+524 and sets the enabled flags at +504 and +528 to 1.
+// Adjusts this pointer to the embedded sub-object at +124, stores a pointer
+// to offset +200 in *outPtr, then calls vtable slot 13 on the sub-object.
+// Returns 0 on success, 0x8000000A on failure.
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject_32(void* thisPtr) {
+int32_t phObject_SetupOutputStream(void* thisPtr, void* outPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
+    uint8_t* subObj = obj + 124;
+    uint8_t* outputBase = obj + 200;
 
-    phInstStatic_88F8_fw(thisPtr);
+    // Store output base pointer
+    *(void**)outPtr = (void*)outputBase;
 
-    *(uint32_t*)(obj + 500) = 0;
-    *(uint32_t*)(obj + 504) = 1;
-    *(uint32_t*)(obj + 508) = 0;
-    *(uint32_t*)(obj + 512) = 0;
-    *(uint32_t*)(obj + 516) = 0;
-    *(uint32_t*)(obj + 520) = 0;
-    *(uint32_t*)(obj + 524) = 0;
-    *(uint32_t*)(obj + 528) = 1;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phObject_15 @ 0x82484890 | size: 0x88
-//
-// Shutdown/cleanup for a phObject. If the resource handle at +508 is
-// non-null, releases it via _locale_register and clears the field. Then
-// calls three vtable cleanup methods: slot 19 (OnPreShutdown), slot 20
-// (OnShutdown), and slot 32 (OnPostShutdown). Returns 0.
-// ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_15(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    uint32_t resource = *(uint32_t*)(obj + 508);
-    if (resource != 0) {
-        _locale_register((void*)(uintptr_t)resource, 0x208C801D);
-        *(uint32_t*)(obj + 508) = 0;
-    }
-
-    // Call vtable slot 19: OnPreShutdown
-    void** vt = *(void***)thisPtr;
-    typedef void (*VtFunc)(void*);
-    ((VtFunc)vt[19])(thisPtr);
-
-    // Call vtable slot 20: OnShutdown
-    vt = *(void***)thisPtr;
-    ((VtFunc)vt[20])(thisPtr);
-
-    // Call vtable slot 32: OnPostShutdown
-    vt = *(void***)thisPtr;
-    ((VtFunc)vt[32])(thisPtr);
-
-    return 0;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phObject_18 @ 0x82484918 | size: 0x64
-//
-// Attaches a physics bound (phBound) to this phObject. Calls the bound's
-// vtable slot 1 (AddRef), then calls this object's vtable slot 20
-// (OnShutdown) to reset state, stores the bound pointer at offset +48,
-// and returns 0.
-// ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_18(void* thisPtr, void* bound) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    // Call bound->AddRef() via vtable slot 1
-    void** boundVt = *(void***)bound;
-    typedef void (*AddRefFunc)(void*);
-    ((AddRefFunc)boundVt[1])(bound);
-
-    // Call this->OnShutdown() via vtable slot 20
-    void** vt = *(void***)thisPtr;
-    typedef void (*VtFunc)(void*);
-    ((VtFunc)vt[20])(thisPtr);
-
-    // Store the bound pointer
-    *(void**)(obj + 48) = bound;
-
-    return 0;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phObject_19 @ 0x82484988 | size: 0x94
-//
-// Detaches and cleans up physics state. If the collision data at +500 is
-// non-null, calls phObject_9A48_h to release it and clears the field.
-// Then if the bound at +52 is non-null, calls its vtable slot 2 (Release)
-// and clears the pointer. Returns 0.
-// ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_19(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    // Release collision data at +500
-    uint32_t collisionData = *(uint32_t*)(obj + 500);
-    if (collisionData != 0) {
-        phObject_9A48_h((void*)(obj + 500));
-        *(uint32_t*)(obj + 500) = 0;
-    }
-
-    // Release bound at +52
-    uint32_t bound = *(uint32_t*)(obj + 52);
-    if (bound != 0) {
-        void** boundVt = *(void***)(uintptr_t)bound;
-        typedef void (*ReleaseFunc)(void*);
-        ((ReleaseFunc)boundVt[2])((void*)(uintptr_t)bound);
-        *(uint32_t*)(obj + 52) = 0;
-    }
-
-    return 0;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phObject_0 @ 0x82485250 | size: 0x84
-//
-// Constructor for phObject. Sets the vtable, calls phObject_15 (shutdown
-// to initialize base state), initializes three embedded sub-objects at
-// +200, +124, and +56 via their respective constructors, calls util_85C8
-// for base setup, and optionally registers via _locale_register if the
-// register flag (bit 0) is set.
-// ─────────────────────────────────────────────────────────────────────────────
-void phObject_0(void* thisPtr, uint32_t registerFlag) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    // Set vtable
-    *(void**)(obj + 0) = &g_vtable_phObject;  // lbl_82008918
-
-    // Call shutdown to initialize base state
-    phObject_15(thisPtr);
-
-    // Initialize embedded sub-objects
-    phObject_B878_h((void*)(obj + 200));
-    ph_ctor_32E8((void*)(obj + 124));
-    phInst_87F8((void*)(obj + 56));
-
-    // Base setup
-    thunk_fn_824885C8(thisPtr);
-
-    // Optionally register with allocator
-    if (registerFlag & 0x1) {
-        _locale_register(thisPtr, 0x208C801D);
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phObject_16 @ 0x82485978 | size: 0x70
-//
-// Conditionally detaches the current bound. Loads the bound pointer from
-// +52; if non-null, calls its vtable slot 14 with param=1 (TryDetach).
-// If TryDetach succeeds (returns >= 0), calls this object's vtable slot 17
-// (OnBoundDetached) passing the old bound pointer.
-// ─────────────────────────────────────────────────────────────────────────────
-void phObject_16(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    void* bound = *(void**)(obj + 52);
-    if (bound == NULL) {
-        return;
-    }
-
-    // Call bound->TryDetach(1) via vtable slot 14
-    void** boundVt = *(void***)bound;
-    typedef int32_t (*TryDetachFunc)(void*, int);
-    int32_t result = ((TryDetachFunc)boundVt[14])(bound, 1);
-
-    if (result < 0) {
-        return;
-    }
-
-    // Call this->OnBoundDetached(bound) via vtable slot 17
-    void** vt = *(void***)thisPtr;
-    typedef void (*OnDetachFunc)(void*, void*);
-    ((OnDetachFunc)vt[17])(thisPtr, *(void**)(obj + 52));
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phObject_27 @ 0x824889A8 | size: 0x60
-//
-// Retrieves a pointer to the embedded sub-object at offset +200, stores
-// it in *outPtr, then calls vtable slot 13 (Validate) on the sub-object
-// at +124. Returns 0 on success, or error 0x8000000A on validation failure.
-// ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_27(void* thisPtr, void** outPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    void* subObj124 = (void*)(obj + 124);
-    void* subObj200 = (void*)(obj + 200);
-    *outPtr = subObj200;
-
-    // Call subObj124->Validate() via vtable slot 13
-    void** subVt = *(void***)subObj124;
-    typedef int32_t (*ValidateFunc)(void*);
-    int32_t result = ((ValidateFunc)subVt[13])(subObj124);
+    // Call vtable slot 13 on the sub-object at +124
+    void** vt = *(void***)subObj;
+    typedef int32_t (*VtSlot13Fn)(void*);
+    VtSlot13Fn fn = (VtSlot13Fn)vt[13];
+    int32_t result = fn(subObj);
 
     if (result != 0) {
         return 0;
@@ -5584,2281 +5650,3994 @@ int32_t phObject_27(void* thisPtr, void** outPtr) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_9450_2h @ 0x82489450 | size: 0x70
+// phObject::AllocateWorkBuffer @ 0x82491980 | size: 0x70
 //
-// Attempts to process collision data from the resource at +536. If the
-// resource is null, returns error 0x803000A8. Otherwise calls
-// phObject_28C8_wrh to process it. If processing fails (< 0) returns
-// early. If the output is still null after processing, clears the handle.
+// Allocates a 2040-byte zeroed work buffer via the RAGE allocator,
+// stores the pointer at *outPtr. Returns 0 on success, error on failure.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_9450_2h(void* thisPtr, void* r4, void* r5, void* outPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    void* resource = *(void**)(obj + 536);
-    if (resource == NULL) {
-        return (int32_t)0x803000A8;
-    }
-
-    int32_t result = phObject_28C8_wrh(resource, r4, r5, NULL, NULL, outPtr);
-    if (result < 0) {
-        return result;
-    }
-
-    uint32_t outValue = *(uint32_t*)outPtr;
-    if (outValue != 0) {
-        return result;
-    }
-
-    *(void**)(obj + 536) = NULL;
-    return result;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phObject_1980_h @ 0x82491980 | size: 0x70
-//
-// Allocates a 2040-byte zeroed buffer using rage_01B8_alloc with physics
-// allocator tag 0x208C8000. On success, zeroes the buffer with memset,
-// stores it into *outPtr and returns 0. On failure returns 0x8007000E.
-// ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_1980_h(void** outPtr) {
-    void* buffer = rage_01B8_alloc(2040, 0x208C8000);
-
+int32_t phObject_AllocateWorkBuffer(void** outPtr) {
+    void* buffer = rage_01B8(2040, 0x208C8000);
     if (buffer == NULL) {
         return (int32_t)0x8007000E;
     }
-
     memset(buffer, 0, 2040);
     *outPtr = buffer;
     return 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_AD78_h @ 0x8248AD78 | size: 0x80
+// phObject::CreateStreamContext @ 0x8248AD78 | size: 0x80
 //
-// Allocates and initializes a collision result object. First calls
-// phObject_1980_h to allocate a buffer. If allocation succeeds, calls
-// rage_A518 to populate the result. On any failure, releases the buffer
-// via phObject_1F70 and returns 0 (NULL). On success returns the result.
+// Allocates a work buffer, then initializes it as a stream context via
+// rage_A518. On failure, frees the buffer via phObject_1F70.
+// Returns the context pointer on success, or NULL on failure.
 // ─────────────────────────────────────────────────────────────────────────────
-uint32_t phObject_AD78_h(void* thisPtr) {
+void* phObject_CreateStreamContext(void* thisPtr) {
     void* buffer = NULL;
-    uint32_t result = 0;
+    void* context = NULL;
 
-    int32_t allocStatus = phObject_1980_h(&buffer);
-    if (allocStatus < 0) {
+    int32_t result = phObject_AllocateWorkBuffer(&buffer);
+    if (result < 0) {
         phObject_1F70(buffer);
-        return 0;
+        return NULL;
     }
 
-    int32_t initStatus = rage_A518((void*)&result, thisPtr, buffer);
-    if (initStatus < 0) {
+    rage_A518(&context, thisPtr, buffer);
+    if (result < 0) {
         phObject_1F70(buffer);
-        return 0;
+        return NULL;
     }
 
-    return result;
+    return (void*)(uintptr_t)context;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_17 @ 0x82485118 | size: 0xAC
+// phObject::DestroyStreamContext @ 0x82489A48 | size: 0x9C
 //
-// Binds a physics bound to this phObject and initializes collision data.
-// Calls the bound's vtable slot 1 (AddRef), then this object's vtable
-// slot 19 (OnPreShutdown). Stores the bound at +52, calls phObject_AD78_h
-// to allocate collision result storage at +500. If allocation fails,
-// returns error 0x8000FFFF. On success, calls rage_4CD0 to finalize.
+// Dereferences *contextPtr, clears stream flags, releases resources,
+// frees the buffer. Sets *contextPtr to NULL.
+// Returns 0 on success, 4 if null.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_17(void* thisPtr, void* bound) {
+int32_t phObject_DestroyStreamContext(void** contextPtr) {
+    if (contextPtr == NULL) {
+        return 4;
+    }
+
+    void* context = *contextPtr;
+    if (context == NULL) {
+        return 4;
+    }
+
+    uint8_t* ctx = (uint8_t*)context;
+    uint32_t savedField = *(uint32_t*)(ctx + 548);
+    void* streamObj = *(void**)(ctx + 608);
+
+    phObject_1E18_h(streamObj);
+    phObject_8BC0_w(context);
+
+    if (savedField != 0) {
+        phObject_3E10_w((void*)(uintptr_t)savedField);
+        void* statePtr = (void*)(uintptr_t)savedField;
+        phObject_1F28_gen(streamObj, 8, &statePtr);
+    }
+
+    *contextPtr = NULL;
+    phObject_1F70(streamObj);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::FlushOutputStream @ 0x82489450 | size: 0x70
+//
+// Flushes the output stream at offset +536. Calls phObject_28C8_wrh to
+// perform the write. Clears the stream pointer if it becomes empty.
+// Returns error 0x801000A8 if no stream is active.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_FlushOutputStream(void* thisPtr, uint32_t a2, uint32_t a3,
+                                    uint32_t a4, uint32_t a5, void* outPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    void* stream = *(void**)(obj + 536);
+
+    if (stream == NULL) {
+        return (int32_t)0x801000A8;
+    }
+
+    uint32_t outVal = *(uint32_t*)(obj + 524);
+    phObject_28C8_wrh(stream, a2, a3, a5, outVal, outPtr);
+
+    uint32_t outputWord = *(uint32_t*)outPtr;
+    if (outputWord == 0) {
+        *(void**)(obj + 536) = NULL;
+    }
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::ReleaseStreamSlot @ 0x824922C0 | size: 0x80
+//
+// Releases a numbered stream slot. If a callback is registered at +520,
+// invokes it. Then unregisters the resource and clears the slot.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_ReleaseStreamSlot(void* thisPtr, uint32_t slotIndex) {
     uint8_t* obj = (uint8_t*)thisPtr;
 
-    // Call bound->AddRef() via vtable slot 1
-    void** boundVt = *(void***)bound;
-    typedef void (*AddRefFunc)(void*);
-    ((AddRefFunc)boundVt[1])(bound);
+    void* callback = *(void**)(obj + 520);
+    if (callback != NULL) {
+        uint32_t callbackParam = *(uint32_t*)(obj + 524);
+        uint32_t slotValue = *(uint32_t*)(obj + (slotIndex * 4));
 
-    // Call this->OnPreShutdown() via vtable slot 19
-    void** vt = *(void***)thisPtr;
-    typedef void (*VtFunc)(void*);
-    ((VtFunc)vt[19])(thisPtr);
-
-    // Store the bound
-    *(void**)(obj + 52) = bound;
-
-    // Allocate collision result storage
-    uint32_t collisionData = phObject_AD78_h(thisPtr);
-    *(uint32_t*)(obj + 500) = collisionData;
-
-    int32_t result;
-    if (collisionData != 0) {
-        result = 0;
-    } else {
-        result = (int32_t)0x8000FFFF;
+        typedef void (*CallbackFn)(uint32_t, uint32_t, uint32_t);
+        CallbackFn fn = (CallbackFn)callback;
+        fn(slotValue, slotIndex, callbackParam);
     }
 
-    // If successful, finalize
+    uint32_t* slotPtr = (uint32_t*)(obj + slotIndex * 4);
+    void* resource = *(void**)(obj + 508);
+    void** slotAsPtr = (void**)slotPtr;
+    int32_t result = phObject_1F28_gen(resource, 2, slotAsPtr);
+
     if (result >= 0) {
-        rage_4CD0(thisPtr);
+        *slotPtr = 0;
     }
-
-    return result;
 }
 
-// =============================================================================
-// rage::phBoundCapsule -- Capsule Collision Bound Functions (72-196B)
-// =============================================================================
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::GetResourceInfo @ 0x824899B0 | size: 0x94
 //
-// 10 additional phBoundCapsule methods covering vtable overrides and
-// capsule geometry operations: axis translation, support distance,
-// deep copy, axis scaling, joint limits, direction validation,
-// normal orientation, angle computation, spherical area, and camera setup.
-
-extern void util_DA50(void* dst, const void* src);
-extern void phBoundCapsule_AED0_g(void* r3, void* r4, void* r5, void* normal);
-extern float pongCameraMgr_GetFov(void* cameraMgr);
-extern void phBoundCapsule_81D8_g(void* r3, void* r4, void* r5, float f1, float f2, float f3, float f4, void* r7, void* r10);
-extern float phBoundCapsule_0E90_g(float value);
-extern float aud_2478(float value);
-
-extern uint32_t g_phCameraMgrPtr;
-extern uint32_t g_phActiveCameraIndex;
-
-// ---------------------------------------------------------------------------
-// 1. phBoundCapsule::TranslateAndDispatch (vfn_7) @ 0x8233AB50 | size: 0x48
-//    Adds capsule center offset (+48) to input position, dispatches to vfn_6.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::TranslateAndDispatch(const float* position) {
-    float* center = (float*)((char*)this + 48);
-    float translated[4];
-    translated[0] = center[0] + position[0];
-    translated[1] = center[1] + position[1];
-    translated[2] = center[2] + position[2];
-    translated[3] = center[3] + position[3];
-    void** vt = *(void***)this;
-    typedef void (*SetCenterFn)(void*, const float*);
-    SetCenterFn fn = (SetCenterFn)vt[6];
-    fn(this, translated);
-}
-
-// ---------------------------------------------------------------------------
-// 2. phBoundCapsule::ComputeSupportDistance (vfn_33) @ 0x822A3268 | size: 0x50
-//    Computes signed support distance along a direction using capsule params.
-// ---------------------------------------------------------------------------
-float rage::phBoundCapsule::ComputeSupportDistance(const float* direction, uint8_t earlyOut) {
-    float dirY = direction[1];
-    if (dirY < 0.0f) dirY = -dirY;
-    float radius     = *(float*)((char*)this + 128);
-    float halfHeight = *(float*)((char*)this + 112);
-    extern const float g_phTwo;
-    float result = radius * dirY * g_phTwo + halfHeight;
-    if (earlyOut != 0) return result;
-    float* axis = (float*)((char*)this + 48);
-    float dot = axis[0] * direction[0] + axis[1] * direction[1] + axis[2] * direction[2];
-    return dot + result;
-}
-
-// ---------------------------------------------------------------------------
-// 3. phBoundCapsule::CopyFrom (vfn_34) @ 0x822A2F28 | size: 0xBC
-//    Deep-copies all capsule bound data from a source phBoundCapsule.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::CopyFrom(const rage::phBoundCapsule* source) {
-    util_DA50(this, source);
-    const char* src = (const char*)source;
-    char* dst = (char*)this;
-    memcpy(dst + 112, src + 112, 16);
-    memcpy(dst + 128, src + 128, 16);
-    memcpy(dst + 144, src + 144, 16);
-    memcpy(dst + 160, src + 160, 16);
-    memcpy(dst + 176, src + 176, 16);
-    *(uint32_t*)(dst + 192) = *(const uint32_t*)(src + 192);
-    for (int i = 0; i < 12; i++) {
-        dst[196 + i] = src[196 + i];
+// Populates a 24-byte output structure with resource metadata from the
+// phObject's internal descriptor at +4.
+// Returns 0 on success, 4 on invalid parameters.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_GetResourceInfo(void* thisPtr, void* outInfo) {
+    if (thisPtr == NULL || outInfo == NULL) {
+        return 4;
     }
-    *(uint16_t*)(dst + 96) = 1;
-}
 
-// ---------------------------------------------------------------------------
-// 4. phBoundCapsule::ScaleAxes @ 0x820D05A0 | size: 0xB4
-//    Rotates capsule local axes by sin/cos scale factors.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::ScaleAxes() {
-    float scaleA, scaleB;
-    phBoundCapsule_04F0_g(&scaleA, &scaleB);
-    float* axis0 = (float*)((char*)this + 16);
-    float* axis1 = (float*)((char*)this + 32);
-    float origAxis1[4] = { axis1[0], axis1[1], axis1[2], axis1[3] };
-    float origAxis0[4] = { axis0[0], axis0[1], axis0[2], axis0[3] };
-    axis1[0] = origAxis1[0] * scaleA - origAxis0[0] * scaleB;
-    axis1[1] = origAxis1[1] * scaleA - origAxis0[1] * scaleB;
-    axis1[2] = origAxis1[2] * scaleA - origAxis0[2] * scaleB;
-    axis1[3] = origAxis1[3] * scaleA - origAxis0[3] * scaleB;
-    axis0[0] = origAxis0[0] * scaleA + origAxis1[0] * scaleB;
-    axis0[1] = origAxis0[1] * scaleA + origAxis1[1] * scaleB;
-    axis0[2] = origAxis0[2] * scaleA + origAxis1[2] * scaleB;
-    axis0[3] = origAxis0[3] * scaleA + origAxis1[3] * scaleB;
-}
-
-// ---------------------------------------------------------------------------
-// 5. phBoundCapsule::GetJointLimitsByAxis @ 0x820DF420 | size: 0xC4
-//    Retrieves min/max joint limits for a given axis from a 104-byte strided
-//    joint data array. Falls through cases; retries with axis=11 if negative.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::GetJointLimitsByAxis(uint32_t jointIndex, uint32_t axis,
-                                                float* outMin, float* outMax) {
-    extern const float g_floatZero;
-retry:
-    void* dataArray = *(void**)((char*)this + 8);
-    char* entry = (char*)dataArray + jointIndex * 104;
-    switch (axis) {
-        case 0:
-            *outMax = *(float*)(entry + 0);
-            *outMin = *(float*)(entry + 0);
-            // fall through
-        case 2:
-            *outMin = *(float*)(entry + 4);
-            *outMax = *(float*)(entry + 8);
-            // fall through
-        case 1:
-            *outMin = *(float*)(entry + 12);
-            *outMax = *(float*)(entry + 16);
-            // fall through
-        case 3:
-            *outMin = *(float*)(entry + 20);
-            *outMax = *(float*)(entry + 24);
-            break;
-        default:
-            break;
+    uint8_t* obj = (uint8_t*)thisPtr;
+    uint32_t resourceCount = *(uint32_t*)(obj + 528);
+    if (resourceCount == 0) {
+        return 4;
     }
-    if (*outMin < g_floatZero) {
-        axis = 11;
-        goto retry;
+
+    uint32_t* out = (uint32_t*)outInfo;
+    for (int i = 0; i < 6; i++) {
+        out[i] = 0;
     }
+
+    void* desc = *(void**)(obj + 4);
+    uint8_t* descBytes = (uint8_t*)desc;
+
+    out[3] = *(uint32_t*)(descBytes + 28);
+    out[0] = *(uint32_t*)(descBytes + 16);
+    out[1] = *(uint32_t*)(descBytes + 20);
+    out[2] = *(uint32_t*)(descBytes + 24);
+    *(uint8_t*)((uint8_t*)outInfo + 16) = *(uint8_t*)(descBytes + 68);
+    out[5] = *(uint32_t*)(descBytes + 8);
+
+    return 0;
 }
 
-// ---------------------------------------------------------------------------
-// 6. phBoundCapsule::ValidateAndSetupDirection @ 0x82143F08 | size: 0x84
-//    Checks if direction at source+16 is non-zero; if so, computes center
-//    from source[0]+source[32] and initializes capsule via _3F90_g.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::ValidateAndSetupDirection(const float* source) {
-    const float* dir = (const float*)((const char*)source + 16);
-    float absX = dir[0] < 0.0f ? -dir[0] : dir[0];
-    float absY = dir[1] < 0.0f ? -dir[1] : dir[1];
-    float absZ = dir[2] < 0.0f ? -dir[2] : dir[2];
-    float absW = dir[3] < 0.0f ? -dir[3] : dir[3];
-    if (absX == 0.0f && absY == 0.0f && absZ == 0.0f && absW == 0.0f) return;
-    const float* pos = source;
-    const float* offset = (const float*)((const char*)source + 32);
-    float center[4];
-    center[0] = pos[0] + offset[0];
-    center[1] = pos[1] + offset[1];
-    center[2] = pos[2] + offset[2];
-    center[3] = pos[3] + offset[3];
-    extern void phBoundCapsule_3F90_g(void* thisPtr, const float* center, const float* direction);
-    phBoundCapsule_3F90_g(this, center, dir);
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::GetFormatDescription @ 0x8248A090 | size: 0xA8
+//
+// Zeroes a 36-byte output structure, then populates based on resource type.
+// Type 1 = 1D resource, type 2 = 2D resource.
+// Returns 0 on success, 0x801000B8 on unsupported type.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_GetFormatDescription(void* thisPtr, uint32_t param, void* outDesc) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    uint32_t* out = (uint32_t*)outDesc;
 
-// ---------------------------------------------------------------------------
-// 7. phBoundCapsule::OrientNormalAndDispatch @ 0x82137CA8 | size: 0xC4
-//    Negates collision normal if it faces away from reference plane, then
-//    dispatches to phBoundCapsule_AED0_g for collision resolution.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::OrientNormalAndDispatch(void* r4, const float* planeNormal,
-                                                    float* normal) {
-    float dot = planeNormal[2] * normal[2] + planeNormal[3] * normal[3] +
-                planeNormal[1] * normal[1] + planeNormal[0] * normal[0];
-    extern const float g_floatZero;
-    if (dot < g_floatZero) {
-        float negated[4];
-        negated[0] = -normal[0];
-        negated[1] = -normal[1];
-        negated[2] = -normal[2];
-        negated[3] = -normal[3];
-        phBoundCapsule_AED0_g(this, r4, (void*)planeNormal, negated);
-        return;
+    for (int i = 0; i < 9; i++) {
+        out[i] = 0;
     }
-    phBoundCapsule_AED0_g(this, r4, (void*)planeNormal, normal);
+
+    uint32_t type = *(uint32_t*)(obj + 4);
+    out[6] = (uint32_t)(uintptr_t)thisPtr;
+    out[7] = param;
+    out[8] = 1;
+    out[0] = type;
+
+    if (type == 1) {
+        uint8_t* resInfo = *(uint8_t**)(obj + 8);
+        out[2] = *(uint32_t*)(resInfo + 4);
+        *(uint8_t*)((uint8_t*)outDesc + 12) = *(uint8_t*)(resInfo + 14);
+        out[1] = 3;
+        return 0;
+    }
+
+    if (type == 2) {
+        uint8_t* resInfo = *(uint8_t**)(obj + 8);
+        out[2] = 0;
+        out[3] = *(uint32_t*)(resInfo + 8);
+        out[4] = *(uint32_t*)(resInfo + 12);
+        out[1] = 7;
+        return 0;
+    }
+
+    return (int32_t)0x801000B8;
 }
 
-// ---------------------------------------------------------------------------
-// 8. phBoundCapsule::ComputeAngleFromDot @ 0x82137BF8 | size: 0xAC
-//    Computes angle from 4D dot product using acos with NaN/range checks.
-// ---------------------------------------------------------------------------
-float rage::phBoundCapsule::ComputeAngleFromDot(const float* vecA, const float* vecB) {
-    extern const float g_phThresholdHi;
-    extern const float g_phThresholdLo;
-    extern const float g_phAcosScale;
-    extern const float g_phZeroF;
-    float dot = vecA[2] * vecB[2] + vecA[3] * vecB[3] +
-                vecA[1] * vecB[1] + vecA[0] * vecB[0];
-    if (dot > g_phThresholdHi) return g_phZeroF;
-    if (dot >= g_phThresholdLo) return g_phZeroF;
-    float absDot = dot < 0.0f ? -dot : dot;
-    float angle = phBoundCapsule_0E90_g(absDot);
-    return angle * g_phAcosScale;
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::BindResource @ 0x82485118 | size: 0xAC
+//
+// Binds a new resource. AddRefs via vtable slot 1, releases old views via
+// vtable slot 19, stores at +52, creates stream context at +500.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void rage_4CD0(void* thisPtr);
+
+int32_t phObject_BindResource(void* thisPtr, void* resource) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    void** resVt = *(void***)resource;
+    typedef void (*AddRefFn)(void*);
+    AddRefFn addRef = (AddRefFn)resVt[1];
+    addRef(resource);
+
+    void** selfVt = *(void***)thisPtr;
+    typedef void (*ReleaseViewsFn)(void*);
+    ReleaseViewsFn releaseViews = (ReleaseViewsFn)selfVt[19];
+    releaseViews(thisPtr);
+
+    *(void**)(obj + 52) = resource;
+
+    void* streamCtx = phObject_CreateStreamContext(thisPtr);
+    *(void**)(obj + 500) = streamCtx;
+
+    if (streamCtx != NULL) {
+        rage_4CD0(thisPtr);
+        return 0;
+    }
+
+    return (int32_t)0x8000FFFF;
 }
 
-// ---------------------------------------------------------------------------
-// 9. phBoundCapsule::ComputeSphericalArea @ 0x821426B8 | size: 0x84
-//    Computes surface area metric: (scale / sqrt(r^2 * k1)) * exp(-h^2 / (r^2 * k2))
-// ---------------------------------------------------------------------------
-float rage::phBoundCapsule::ComputeSphericalArea(float height, float radius) {
-    extern const float g_phAreaK1;
-    extern const float g_phAreaK2;
-    extern const float g_phAreaScale;
-    float radiusSq = radius * radius;
-    float area = phBoundCapsule_01D0_g(radiusSq * g_phAreaK1);
-    float heightSq = height * height;
-    float ratio = heightSq / (radiusSq * g_phAreaK2);
-    float expVal = aud_2478(-ratio);
-    return (g_phAreaScale / area) * expVal;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject::UnbindResource @ 0x82484988 | size: 0x94
+//
+// Unbinds the current resource. Destroys stream context at +500, releases
+// resource at +52 via vtable slot 2. Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_UnbindResource(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
 
-// ---------------------------------------------------------------------------
-// 10. phBoundCapsule::SetupCameraCollision @ 0x82148608 | size: 0x9C
-//     Retrieves active camera from global manager, computes FOV scale,
-//     dispatches to phBoundCapsule_81D8_g with camera parameters.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::SetupCameraCollision(void* param1, void* param2) {
-    uint32_t cameraArrayBase = g_phCameraMgrPtr;
-    uint32_t cameraIndex = g_phActiveCameraIndex;
-    char* camera = (char*)(uintptr_t)(cameraArrayBase + cameraIndex * 912);
-    float fov = pongCameraMgr_GetFov(camera);
-    float fovParam = *(float*)(camera + 832);
-    extern const float g_phCamScale;
-    float diff = g_phCamScale - fovParam;
-    float scale = (diff >= 0.0f) ? fovParam : 0.0f;
-    float nearPlane = *(float*)(camera + 824);
-    float farPlane = *(float*)(camera + 836);
-    float* cameraTransform = (float*)(camera + 64);
-    phBoundCapsule_81D8_g(this, param1, param2, scale, nearPlane, farPlane, fov,
-                          cameraTransform, param2);
+    void* streamCtx = *(void**)(obj + 500);
+    if (streamCtx != NULL) {
+        phObject_DestroyStreamContext((void**)(obj + 500));
+        *(void**)(obj + 500) = NULL;
+    }
+
+    void* resource = *(void**)(obj + 52);
+    if (resource != NULL) {
+        void** resVt = *(void***)resource;
+        typedef void (*ReleaseFn)(void*);
+        ReleaseFn release = (ReleaseFn)resVt[2];
+        release(resource);
+        *(void**)(obj + 52) = NULL;
+    }
+
+    return 0;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// rage::phBoundCapsule — Capsule Rotation, Normalization & Lookup Functions
+// rage::phArticulatedCollider — Joint/Constraint Operations (Batch 4)
 // ═════════════════════════════════════════════════════════════════════════════
 
-// External helpers (already declared elsewhere in this TU)
-extern float phBoundCapsule_01D8_g(float angle);  // sin(angle)
-extern float phBoundCapsule_02B0_g(float angle);  // cos(angle)
-extern float phBoundCapsule_0FE0_g(float a, float b); // atan2(a, b)
-extern void  phBoundCapsule_0E90_g(float x);      // acos helper
-extern void  atSingleton_1308_g(double base, float exp); // pow(base, exp)
+// External subroutines used by the articulated collider
+extern void ph_IntegrateJointPositions(void* jointArray);           // Update capsule bounds from joints
+extern void phArticulatedCollider_8450(void* jointArray);      // Post-integrate joint transforms
+extern void phArticulatedCollider_5D58(void* jointArray);      // Reset joint integration state
+extern void phArticulatedCollider_57F0_fw(void* jointArray);   // Reset joint chain state
+extern void phArticulatedCollider_8A30(void* jointArray, float* forceVec);  // Sync joint velocities
+extern void phArticulatedCollider_8B10(void* jointArray, float* torqueVec); // Sync joint torques
 
-// ---------------------------------------------------------------------------
-// 1. phBoundCapsule::RotateYZ @ 0x8223AB00 | size: 0x6C (108B)
-//    Rotates the Y/Z components (+4, +8) of a vector by an angle.
-//    new_z = z * cos - y * sin;  new_y = y * cos + z * sin
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::RotateYZ(float* vec, float angle) {
-    float sinA = phBoundCapsule_01D8_g(angle);
-    float cosA = (float)phBoundCapsule_02B0_g(angle);
-    float y = vec[1];   // +4
-    float z = vec[2];   // +8
-    vec[2] = z * cosA + y * sinA;     // fmadds
-    vec[1] = y * cosA - z * sinA;     // fmsubs -> negated order
-}
+extern void phArticulatedCollider_5A40_wrh(void* jointArray);  // Reset joint force accumulators
+extern void phArticulatedCollider_F0E0(void* collider);        // Update articulated internal state
+extern void phCollider_CDF0_p39(void* collider);               // Update collider position from velocity
+extern void phCollider_vfn_1(void* collider);                  // phCollider::Reset
+extern void phCollider_vfn_42(void* collider);                 // phCollider::SyncAfterBaseUpdate
+extern int32_t phArticulatedCollider_E668_GetJointIndex(void* thisPtr, int jointParam);  // Joint index lookup
 
-// ---------------------------------------------------------------------------
-// 2. phBoundCapsule::RotateXZ @ 0x8223AB70 | size: 0x6C (108B)
-//    Rotates the X/Z components (+0, +8) of a vector by an angle.
-//    new_z = z * cos - x * sin;  new_x = x * cos + z * sin
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::RotateXZ(float* vec, float angle) {
-    float sinA = phBoundCapsule_01D8_g(angle);
-    float cosA = (float)phBoundCapsule_02B0_g(angle);
-    float x = vec[0];   // +0
-    float z = vec[2];   // +8
-    vec[2] = z * cosA - x * sinA;     // fmsubs
-    vec[0] = x * cosA + z * sinA;     // fmadds
-}
 
-// ---------------------------------------------------------------------------
-// 3. phBoundCapsule::NormalizeAngle @ 0x822238A8 | size: 0x6C (108B)
-//    Computes atan2(z, x) from vec[0] and vec[2], then normalizes the
-//    resulting angle into the range [0, TWO_PI) by adding/subtracting TWO_PI.
-// ---------------------------------------------------------------------------
-float rage::phBoundCapsule::NormalizeAngle(const float* vec) {
-    extern const float g_phTwoPi;   // @ 0x8202C02C
-    extern const float g_floatZero; // @ 0x8202D110
-    float angle = (float)phBoundCapsule_0FE0_g(vec[2], vec[0]);
-    while (angle < g_floatZero) {
-        angle += g_phTwoPi;
-    }
-    while (angle >= g_phTwoPi) {
-        angle -= g_phTwoPi;
-    }
-    return angle;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ClearJointForces (vfn_3) @ 0x8224E1D0 | size: 0x74
+//
+// Zeros out the force and torque accumulation vectors for every joint in
+// the articulated chain. Each joint has four 16-byte vectors cleared:
+//   +272  linear force accumulator
+//   +288  angular torque accumulator
+//   +304  external force accumulator
+//   +320  external torque accumulator
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::ClearJointForces() {
+    uint32_t* jointArray = m_pJointArray;   // +464 (0x1D0)
+    int32_t numJoints = *(int32_t*)((uint8_t*)jointArray + 4);
 
-// ---------------------------------------------------------------------------
-// 4. phBoundCapsule::ClampAddVector @ 0x8223ACB0 | size: 0x7C (124B)
-//    Adds delta vector to position, clamping if the dot product indicates
-//    the delta is within bounds. If delta magnitude > dot, scales delta
-//    to preserve direction while limiting displacement.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::ClampAddVector(float* position, const float* delta) {
-    extern const float g_floatOne;  // @ 0x8202D108
-    float dot = position[0] * delta[0] + position[1] * delta[1] + position[2] * delta[2];
-    if (dot <= g_floatOne) {
-        // Small displacement: just add
-        position[0] += delta[0];
-        position[1] += delta[1];
-        position[2] += delta[2];
-        position[3] += delta[3];
+    if (numJoints <= 0)
         return;
+
+    uint32_t** jointPtrs = (uint32_t**)((uint8_t*)jointArray + 40);
+
+    for (int32_t i = 0; i < numJoints; i++) {
+        uint8_t* joint = (uint8_t*)jointPtrs[i];
+
+        // Zero 4 consecutive 16-byte vectors at +272, +288, +304, +320
+        memset(joint + 272, 0, 16);
+        memset(joint + 288, 0, 16);
+        memset(joint + 304, 0, 16);
+        memset(joint + 320, 0, 16);
     }
-    float deltaSq = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
-    if (deltaSq <= dot) return;
-    float ratio = dot / deltaSq;
-    float blend = g_floatOne - ratio;
-    position[0] = delta[0] * blend + position[0];
-    position[1] = delta[1] * blend + position[1];
-    position[2] = delta[2] * blend + position[2];
-    position[3] = delta[3] * blend + position[3];
 }
 
-// ---------------------------------------------------------------------------
-// 5. phBoundCapsule::ComputeSinCosMatrix @ 0x823FA2A0 | size: 0x7C (124B)
-//    Computes sin/cos of a scaled angle, stores symmetric rotation entries
-//    into a 6-float output structure: [cos, sin, -sin, cos, 0, 0].
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::ComputeSinCosMatrix(float* outMatrix, float angle) {
-    extern const float g_phAngleScale;  // scaling factor for angle conversion
-    extern const float g_floatZero;
-    float scaled = angle * g_phAngleScale;
-    float cosVal = (float)phBoundCapsule_02B0_g(scaled);
-    float sinVal = (float)phBoundCapsule_01D8_g(scaled);
-    outMatrix[0] = cosVal;   // +0
-    outMatrix[3] = cosVal;   // +12
-    outMatrix[5] = g_floatZero;  // +20
-    outMatrix[4] = g_floatZero;  // +16
-    outMatrix[1] = sinVal;  // +4
-    outMatrix[2] = -sinVal; // +8
-}
-
-// ---------------------------------------------------------------------------
-// 6. phBoundCapsule::CollectMatchingEntities @ 0x8237A1F8 | size: 0x94 (148B)
-//    Iterates through a linked list of entities from a spatial partition,
-//    testing each against a global filter via vtable call (slot 20).
-//    Matching entities are stored in a 848-byte strided result array.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::CollectMatchingEntities(uint32_t partitionIndex) {
-    extern uint32_t g_phEntityFilter;  // @ global
-    uint32_t count = 0;
-    *(uint32_t*)((char*)this + 108) = 0;
-    uint32_t* partitionTable = *(uint32_t**)((char*)this + 96);
-    uint32_t* entry = (uint32_t*)partitionTable[partitionIndex];
-    uint32_t* listHead = (uint32_t*)(*(uint32_t*)((char*)entry + 4));
-    if (listHead == NULL) return;
-    uint32_t* node = (uint32_t*)(*(uint32_t*)((char*)listHead + 12));
-    if (node == NULL) {
-        *(uint32_t*)((char*)this + 108) = count;
-        return;
-    }
-    while (node != NULL) {
-        // Call vtable slot 20 on node with global filter param
-        void** vtable = *(void***)node;
-        typedef uint8_t (*FilterFn)(void*, uint32_t);
-        FilterFn filterFunc = (FilterFn)vtable[20];
-        uint8_t result = filterFunc(node, g_phEntityFilter);
-        if (result != 0) {
-            uint32_t* resultArray = *(uint32_t**)((char*)this + 104);
-            char* slot = (char*)resultArray + count * 848;
-            *(uint32_t*)(slot + 824) = (uint32_t)(uintptr_t)node;
-            count++;
-        }
-        node = (uint32_t*)(*(uint32_t*)((char*)node + 8));
-    }
-    *(uint32_t*)((char*)this + 108) = count;
-}
-
-// ---------------------------------------------------------------------------
-// 7. phBoundCapsule::FixedPointToFloat @ 0x824C3A98 | size: 0x9C (156B)
-//    Converts a fixed-point integer exponent to a floating-point value using
-//    a lookup table. Negative exponents divide by power-of-2, positive
-//    exponents multiply by power-of-2, using table entries as mantissa.
-// ---------------------------------------------------------------------------
-float rage::phBoundCapsule::FixedPointToFloat(int32_t exponent) {
-    extern const float g_phFixedNegTable[];  // negative exponent LUT
-    extern const float g_phFixedPosTable[];  // positive exponent LUT
-    if (exponent <= 0) {
-        if (exponent < -72) exponent = -71;
-        int shift = (-exponent) >> 2;
-        int tableIdx = -exponent;
-        float tableVal = g_phFixedNegTable[tableIdx];
-        int divisor = 1 << shift;
-        return tableVal / (float)divisor;
-    }
-    if (exponent >= 62) exponent = 62;
-    int shift = exponent >> 2;
-    float tableVal = g_phFixedPosTable[exponent - 1];
-    int multiplier = 1 << shift;
-    return (float)multiplier * tableVal;
-}
-
-// ---------------------------------------------------------------------------
-// 8. phBoundCapsule::ConvertValueByMode @ 0x82453A98 | size: 0xAC (172B)
-//    Converts a raw value based on a mode flag (field +12):
-//      mode 0: direct copy from field +20
-//      mode 2: sin(value * PI_SCALE) 
-//      mode 1: pow(value, EXP_SCALE) * LINEAR_SCALE
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::ConvertValueByMode(void* obj) {
-    char* self = (char*)obj;
-    int32_t mode = *(int32_t*)(self + 12);
-    float rawValue = *(float*)(self + 20);
-    if (mode != 1 && mode != 2) {
-        // mode 0: direct assignment
-        *(float*)(self + 4) = rawValue;
-        return;
-    }
-    if (mode == 2) {
-        // mode 2: compute sin of scaled angle
-        extern const double g_phPiScale;  // PI conversion factor
-        float result = (float)phBoundCapsule_01D8_g((float)(rawValue * g_phPiScale));
-        *(float*)(self + 4) = result;
-        return;
-    }
-    // mode 1: power function with linear scale
-    extern const double g_phExpBase;     // exponent base
-    extern const float g_phLinearScale;  // linear scale factor
-    float powered = (float)atSingleton_1308_g(g_phExpBase, rawValue);
-    *(float*)(self + 4) = powered * g_phLinearScale;
-}
-
-// ---------------------------------------------------------------------------
-// 9. phBoundCapsule::QuantizedLookupAdvance @ 0x824C3B38 | size: 0xAC (172B)
-//    Advances through a quantized lookup table, finding the correct bucket
-//    for a shifted value and computing the interpolated result from the
-//    bucket's quantization level relative to a maximum.
-// ---------------------------------------------------------------------------
-int32_t rage::phBoundCapsule::QuantizedLookupAdvance(
-    int32_t shiftedVal, int32_t* indexPtr, int32_t maxVal,
-    const int32_t* bucketTable, int32_t shiftAmount, int32_t unused1) {
-    int32_t index = *indexPtr;
-    int32_t nextIdx = index + 1;
-    int32_t bucket = bucketTable[nextIdx];
-    int32_t shifted = (shiftedVal << shiftAmount) >> 6;  // arithmetic shift
-    while (shifted >= bucket) {
-        index = *indexPtr + 1;
-        *indexPtr = index;
-        nextIdx = index + 1;
-        bucket = bucketTable[nextIdx];
-    }
-    index = *indexPtr;
-    if (index >= unused1) return 0;  // past end
-    int32_t nextBucket = bucketTable[index + 1];
-    int32_t result;
-    if (shiftAmount > 6) {
-        int32_t hiShift = shiftAmount - 7;
-        int32_t correction = 1 << hiShift;
-        result = (nextBucket + correction) >> (shiftAmount - 6);
-    } else {
-        result = nextBucket << (6 - shiftAmount);
-    }
-    if (result > maxVal) return maxVal;
-    return result;
-}
-
-// ---------------------------------------------------------------------------
-// 10. phBoundCapsule::UnpackAndStoreVertex @ 0x8215A928 | size: 0xB4 (180B)
-//     Unpacks a packed vertex from a compressed mesh buffer. Decodes position
-//     index, color flag, and normal bits from a 32-bit packed word, updates
-//     the vertex bitmap, and writes the converted position into the output
-//     buffer at the resolved offset.
-// ---------------------------------------------------------------------------
-void rage::phBoundCapsule::UnpackAndStoreVertex(uint32_t packedVertex, uint8_t colorFlag) {
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchConstraintSolver (vfn_37) @ 0x8224EFC8
+// size: 0x18
+//
+// Vtable trampoline: loads the base collider vtable and dispatches to slot 38
+// (ApplyConstraints). Shifts params so r4<-r5, r5<-r6 before the tail call.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::DispatchConstraintSolver(void* param1, void* param2) {
+    // Load vtable from base object, call slot 38 (offset 152)
+    // This is a direct tail-call trampoline to the parent ApplyConstraints
     void** vtable = *(void***)this;
-    uint32_t positionIndex = (packedVertex >> 1) & 0x1FFFF;
-    uint32_t parity = packedVertex & 0x1;
-    uint32_t normalBits = positionIndex & 0x7;
-    uint32_t vertexOffset = (packedVertex << 17) & 0x1FFF8;
-    uint32_t byteIndex = positionIndex >> 3;
-    uint32_t mask = parity - 1;  // 0 or 0xFFFFFFFF
-    uint32_t vertexCount = *(uint32_t*)((char*)this + 16);
-    *(uint32_t*)((char*)this + 16) = vertexCount - 1;
+    typedef void (*ApplyConstraintsFn)(phArticulatedCollider*, void*, void*);
+    ApplyConstraintsFn fn = (ApplyConstraintsFn)vtable[38];
+    fn(this, param1, param2);
+}
 
-    uint32_t posBase = *(uint32_t*)((char*)vtable + 268);
-    uint32_t colBase = *(uint32_t*)((char*)vtable + 300);
-    uint32_t normBase = *(uint32_t*)((char*)vtable + 264);
-    uint32_t idxBase = *(uint32_t*)((char*)vtable + 256);
-    uint32_t normBase2 = *(uint32_t*)((char*)vtable + 296);
+// Adds a force vector to a specific joint's force accumulator. The joint
+// index is computed from GetJointIndex (E668), the result + 10 is used
+// as a dword index into the joint array, then the force vector is added
+// to the joint's force accumulator at offset +384.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::AccumulateJointForce(int jointParam, const float* forceVec) {
+    // Look up the joint index via E668 helper
+    int32_t jointIndex = phArticulatedCollider_E668_GetJointIndex((void*)this, jointParam);
 
-    extern const uint8_t g_phNormalLUT[];  // normal lookup table
-    uint32_t posWord = *(uint32_t*)(posBase);
-    uint32_t colWord = *(uint32_t*)(colBase);
-    uint8_t normalEntry = g_phNormalLUT[normalBits];
+    // Load joint pointer from jointArray[(jointIndex + 10)]
+    uint32_t* jointArray = m_pJointArray;   // +464 (0x1D0)
+    uint8_t* jointPtr = (uint8_t*)(((uint32_t*)jointArray)[jointIndex + 10]);
 
-    uint32_t normIndex = normBase & mask;
-    uint32_t posCleared = posWord & ~mask;
-    uint32_t normCleared = normBase2 & mask;
-    uint32_t finalPos = posCleared + normIndex;
-    uint32_t idxCleared = idxBase & ~mask;
-    uint32_t colCleared = colWord & ~mask;
-    uint32_t idxFinal = idxCleared + (vtable[0] != 0 ? mask & (uint32_t)(uintptr_t)vtable[0] : 0);
-    uint32_t colFinal = colCleared + normCleared;
-
-    // OR the normal entry into the bitmap
-    uint8_t existing = *(uint8_t*)(byteIndex + idxFinal);
-    *(uint8_t*)(byteIndex + idxFinal) = existing | normalEntry;
-
-    // Write converted color float at the resolved vertex position
-    uint32_t meshWord = *(uint32_t*)(finalPos + vertexOffset + 4);
-    uint32_t floatOffset = ((meshWord << 4) & 0xFFFF0) + colFinal;
-    float converted = (float)colorFlag;
-    *(float*)(floatOffset) = converted;
+    // Add force vector to the joint's force accumulator at +384
+    float* accumulator = (float*)(jointPtr + 384);
+    accumulator[0] += forceVec[0];
+    accumulator[1] += forceVec[1];
+    accumulator[2] += forceVec[2];
+    accumulator[3] += forceVec[3];
 }
 
 
-// ═════════════════════════════════════════════════════════════════════════════
-// rage::phArticulatedCollider — Additional Articulated Collider Functions
-// ═════════════════════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::PostIntegrate (vfn_6) @ 0x8224EA28 | size: 0x48
+//
+// Called after physics integration to update the articulated collider state.
+// Dispatches to four subroutines in sequence:
+//   1. Update capsule bounds from joint positions
+//   2. Post-integrate joint transforms
+//   3. Update articulated collider internal state (F0E0)
+//   4. Reset joint integration state
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::PostIntegrate() {
+    uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
 
-namespace rage {
+    // Step 1: Update capsule bounds from current joint positions
+    ph_IntegrateJointPositions(jointArray);
 
-// External function declarations for new phArticulatedCollider functions
-extern void phCollider_vfn_1(phArticulatedCollider* collider);
-extern void phArticulatedCollider_57F0_fw(void* jointData);
-extern void phArticulatedCollider_5A40_wrh(void* jointData);
-extern void phArticulatedCollider_5FE0(void* jointData);
-extern void SinglesNetworkClient_0978_g(void* skeleton, void* assertMsg, void* assertFile);
-extern int pongCreatureInst_F5C8(void* boneMap, int boneIndex);
+    // Step 2: Post-integrate joint transforms
+    phArticulatedCollider_8450(jointArray);
+
+    // Step 3: Update internal articulated state
+    phArticulatedCollider_F0E0((void*)this);
+
+    // Step 4: Reset joint integration accumulators
+    jointArray = m_pJointArray;  // reload after potential modification
+    phArticulatedCollider_5D58(jointArray);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // phArticulatedCollider::Reset (vfn_1) @ 0x8224E6D8 | size: 0x48
 //
-// Resets the articulated collider to its initial state. Calls the parent
-// phCollider::Reset, clears the joint state pointer and active flag, then
-// reinitializes joint data structures.
+// Resets the articulated collider to its initial state. Calls the base
+// phCollider::Reset, zeros out status fields, then resets the joint chain
+// and integration state.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::Reset() {
-    // Call parent class reset
-    phCollider_vfn_1(this);
+void rage::phArticulatedCollider::Reset() {
+    // Call base class reset
+    phCollider_vfn_1((void*)this);
 
-    // Clear the joint state pointer and active flag
-    field_0x01d8 = 0;         // +472: joint state pointer
-    *(uint8_t*)((char*)this + 468) = 0;  // +468: active flag byte
+    uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
 
-    // Reinitialize joint frame data
-    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_57F0_fw(jointData);
+    // Clear status fields
+    m_pJointStatePtr = 0;       // +472 (0x1D8) — joint state pointer
+    m_bJointDirtyFlag = 0;      // +468 (0x1D4) — dirty flag (byte)
 
-    // Reset joint internal state
-    jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_5D58(jointData);
+    // Reset joint chain state
+    phArticulatedCollider_57F0_fw(jointArray);
+
+    // Reset joint integration accumulators
+    jointArray = m_pJointArray;  // reload
+    phArticulatedCollider_5D58(jointArray);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::ZeroForcesAndUpdate (vfn_2) @ 0x8224E720 | size: 0x80
+// phArticulatedCollider::ClearForces (vfn_2) @ 0x8224E720 | size: 0x80
 //
-// Zeros out all accumulated force/torque vectors, calls the virtual Update
-// method, then resets the joint working state. The four 16-byte vectors at
-// offsets +224, +240, +256, +272 represent accumulated linear/angular
-// forces and impulses that are cleared each frame before re-accumulation.
+// Clears all force/velocity accumulation vectors and dispatches to the
+// Update virtual method to recompute joint state. Zeros four 16-byte
+// vectors at offsets +224, +240, +256, +272, then calls vfn_4 (Update)
+// and resets joint force accumulators.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::ZeroForcesAndUpdate() {
-    // Zero out 4 SIMD vectors: accumulated forces/impulses
-    // +224: linear force accumulator
-    float* vec0 = (float*)((char*)this + 224);
-    vec0[0] = 0.0f; vec0[1] = 0.0f; vec0[2] = 0.0f; vec0[3] = 0.0f;
+void rage::phArticulatedCollider::ClearForces() {
+    // Zero the linear velocity vector (+256)
+    memset((uint8_t*)this + 256, 0, 16);
 
-    // +240: angular force accumulator
-    float* vec1 = (float*)((char*)this + 240);
-    vec1[0] = 0.0f; vec1[1] = 0.0f; vec1[2] = 0.0f; vec1[3] = 0.0f;
+    // Zero the angular velocity vector (+272)
+    memset((uint8_t*)this + 272, 0, 16);
 
-    // +256: linear impulse accumulator
-    float* vec2 = (float*)((char*)this + 256);
-    vec2[0] = 0.0f; vec2[1] = 0.0f; vec2[2] = 0.0f; vec2[3] = 0.0f;
+    // Zero the accumulated force vector (+224)
+    memset((uint8_t*)this + 224, 0, 16);
 
-    // +272: angular impulse accumulator
-    float* vec3 = (float*)((char*)this + 272);
-    vec3[0] = 0.0f; vec3[1] = 0.0f; vec3[2] = 0.0f; vec3[3] = 0.0f;
+    // Zero the accumulated torque vector (+240)
+    memset((uint8_t*)this + 240, 0, 16);
 
-    // Call virtual Update (vfn_4) via vtable
-    void** vt = *(void***)this;
-    typedef void (*UpdateFunc)(phArticulatedCollider*);
-    UpdateFunc update = (UpdateFunc)vt[4];
-    update(this);
+    // Call Update (vfn_4) to recompute joint state from cleared forces
+    this->Update();
 
-    // Reset joint working state
-    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_5A40_wrh(jointData);
+    // Reset per-joint force accumulators
+    uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
+    phArticulatedCollider_5A40_wrh(jointArray);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::UpdateChildBodies (vfn_9) @ 0x8224EBC8 | size: 0x8C
+// phArticulatedCollider::UpdateChildJoints (vfn_9) @ 0x8224EBC8 | size: 0x8C
 //
-// Iterates over all child bodies in the articulated chain (excluding the root)
-// and calls their virtual UpdateBody method (vtable slot 18) on each body
-// that has a non-null physics data pointer (offset +20).
-//
-// The joint data at +464 contains an array of body pointers starting at
-// offset +168, with the count at offset +4.
+// Iterates through child joints (indices 1..N-1) and calls their PreStep
+// virtual method (vtable slot 18) on each joint that has a valid constraint
+// pointer (field_0x14 != 0).
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::UpdateChildBodies() {
-    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    int bodyCount = (int)jointData[1];  // +4: body count
+void rage::phArticulatedCollider::UpdateChildJoints() {
+    uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
+    int32_t numJoints = *(int32_t*)((uint8_t*)jointArray + 4);
+    int32_t count = numJoints - 1;
 
-    for (int i = bodyCount - 1; i > 0; i--) {
-        // Body pointer array starts at jointData + 168 bytes = +42 words
-        uint32_t bodyPtr = jointData[42 + (bodyCount - 1 - i)];
+    if (count <= 0)
+        return;
 
-        // Check if body has physics data (offset +20)
-        uint32_t physicsData = *(uint32_t*)(bodyPtr + 20);
-        bool hasPhysics = (physicsData != 0);
+    // Joint pointers start at offset +168 in the joint array
+    uint32_t** jointPtrs = (uint32_t**)((uint8_t*)jointArray + 168);
 
-        if (hasPhysics) {
-            // Call vtable slot 18 (UpdateBody) on the body
-            void** bodyVTable = *(void***)(uintptr_t)bodyPtr;
-            typedef void (*UpdateBodyFunc)(void*);
-            UpdateBodyFunc updateBody = (UpdateBodyFunc)bodyVTable[18];
-            updateBody((void*)(uintptr_t)bodyPtr);
+    for (int32_t i = 0; i < count; i++) {
+        void* joint = (void*)jointPtrs[i];
+
+        // Check if joint has a valid constraint (field +20 != 0)
+        uint32_t constraint = *(uint32_t*)((uint8_t*)joint + 20);
+        bool hasConstraint = (constraint != 0);
+
+        if (hasConstraint) {
+            // Call vtable slot 18 (PreStep) on the joint
+            void** jointVtable = *(void***)joint;
+            typedef void (*PreStepFn)(void*);
+            PreStepFn preStep = (PreStepFn)jointVtable[18];
+            preStep(joint);
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::ApplyScaledLinearVelocity (vfn_27) @ 0x8224FD58 | size: 0x4C
+// phArticulatedCollider::ApplyScaledForce (vfn_27) @ 0x8224FD58 | size: 0x4C
 //
-// Applies a scaled linear velocity to the root body. Loads the mass from
-// offset +100, multiplies by the velocity scale factor (f1 param), builds
-// a vector {0, scaled_mass, 0}, and dispatches to the parent class
-// implementation via vtable slot 33 (byte offset 132).
+// Builds a force vector where Y = mass * scaleFactor (f1 parameter),
+// X and Z = 0, then dispatches to vtable slot 32 to apply it.
+// Used for gravity-like forces scaled by the collider's mass.
 //
-// @param velocityScale - Scale factor for velocity application
+// @param scaleFactor - Scale multiplier applied to the collider's mass
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::ApplyScaledLinearVelocity(float velocityScale) {
-    // Load vtable for indirect call
-    void** vt = *(void***)this;
+void rage::phArticulatedCollider::ApplyScaledForce(float scaleFactor) {
+    float mass = *(float*)((uint8_t*)this + 100);  // +100 (0x64)
 
-    // Load mass from +100
-    float mass = *(float*)((char*)this + 100);
+    // Build force vector: {0, mass * scaleFactor, 0, 0}
+    float forceVec[4];
+    forceVec[0] = 0.0f;
+    forceVec[1] = mass * scaleFactor;
+    forceVec[2] = 0.0f;
 
-    // Scale mass by velocity factor
-    float scaledMass = mass * velocityScale;
-
-    // Build vector: {0, scaledMass, 0}
-    float vec[4];
-    vec[0] = 0.0f;
-    vec[1] = scaledMass;
-    vec[2] = 0.0f;
-
-    // Dispatch to parent AddScaledForce (vtable slot 33, byte offset 132)
-    typedef void (*AddScaledForceFunc)(phArticulatedCollider*, const float*);
-    AddScaledForceFunc addForce = (AddScaledForceFunc)vt[33];
-    addForce(this, vec);
+    // Dispatch to vtable slot 32 to apply the force
+    void** vtable = *(void***)this;
+    typedef void (*ApplyForceFn)(phArticulatedCollider*, const float*);
+    ApplyForceFn applyForce = (ApplyForceFn)vtable[32];
+    applyForce(this, forceVec);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::GetScaledInertiaAxisX (vfn_28) @ 0x8224FDA8 | size: 0x94
+// phArticulatedCollider::SetVelocityAndSync (vfn_41) @ 0x8224F8C8
+// size: 0x44
 //
-// Extracts the X components from the root body's 4x4 inertia tensor rows
-// (stored at joint[0]+144 as four 16-byte row vectors), assembles them into
-// a single column vector, scales by the inverse mass (joint[0]+128 * f1),
-// and dispatches via vtable slot 33.
+// Stores the given velocity vector to the linear velocity field (+256),
+// calls the base collider position update, then syncs joint velocities
+// from the updated collider state.
 //
-// @param scale - Scale factor for the inertia axis
+// @param velocityVec - Pointer to a 16-byte velocity vector
+void rage::phArticulatedCollider::SetVelocityAndSync(const float* velocityVec) {
+    // Store velocity vector at offset +256
+    memcpy((uint8_t*)this + 256, velocityVec, 16);
+
+    // Update collider position from new velocity (base class)
+    phCollider_CDF0_p39((void*)this);
+
+    // Sync joint velocities from the updated state
+    uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
+    float* forceVec = (float*)((uint8_t*)this + 224);  // +224
+    phArticulatedCollider_8A30(jointArray, forceVec);
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::GetScaledInertiaAxisX(float scale) {
+// phArticulatedCollider::SyncAfterBaseUpdate (vfn_42) @ 0x8224F910
+// size: 0x38
+//
+// Calls the base phCollider::vfn_42, then syncs joint torques from the
+// collider's torque vector at +240.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::SyncAfterBaseUpdate() {
+    // Call base class vfn_42
+    phCollider_vfn_42((void*)this);
+
+    // Sync joint torques from the collider's angular state
+    uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
+    float* torqueVec = (float*)((uint8_t*)this + 240);  // +240
+    phArticulatedCollider_8B10(jointArray, torqueVec);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Capsule Collision Shape Operations (Batch)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External declarations for capsule operations
+extern float ph_Atan2f(float x, float y);       // atan2
+extern float ph_Sqrtf(float val);               // sqrtf wrapper
+extern void  phBoundCapsule_8EA0_g(void* obj, float y, float z);  // angle computation
+extern void  phBoundCapsule_3598_g(void* obj);               // capsule update
+extern void  phBoundCapsule_81D8_g(void* thisPtr, void* p1, void* p2, float f1, float f2, float f3, float f4, void* p3);
+extern void  pongCameraMgr_3E98_g(void* obj);                // camera get angle
+extern void  nop_8240E6D0(const char* name, int param);      // debug log (no-op in release)
+extern int   phBoundCapsule_7D90_g(void* obj);               // resolve player index
+extern int   game_1700(void* obj);                           // get player from object
+
+// Global pointers used by capsule operations
+extern uint32_t* g_phBoundCapsule_GlobalState;  // @ various global singletons
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. rage::phBoundCapsule::CheckValueSign @ 0x8216BB88 | size: 0x5C (92B)
+//
+// Checks the sign of the first float field (field_0x00) against constant
+// thresholds. Returns 1 if value is positive and a global flag is set,
+// -1 if value is negative and the flag is set, otherwise -1.
+//
+// Used in collision direction classification for capsule intersection tests.
+// ─────────────────────────────────────────────────────────────────────────────
+int rage::phBoundCapsule::CheckValueSign() const {
+    float value = *(const float*)((const char*)this + 0x00);
+
+    // Load global state singleton
+    uint32_t* globalPtr = *(uint32_t**)((char*)0x82060000 + 25628);  // g_phSimulator
+    uint8_t flags = *(uint8_t*)((char*)globalPtr[12] + 192);  // +48 -> +192
+
+    // Positive threshold constant (lbl_8202D110 = 0.0f)
+    const float positiveThreshold = g_floatZero;
+
+    if (value > positiveThreshold) {
+        if (flags != 0) {
+            return 1;
+        }
+    }
+
+    // Negative threshold constant (lbl_82079D18)
+    const float negativeThreshold = *(const float*)0x82079D18;
+
+    if (value < negativeThreshold) {
+        if (flags != 0) {
+            return -1;
+        }
+        return 1;
+    }
+
+    return -1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. rage::phBoundCapsule::CheckScaledValueSign @ 0x8216BAF0 | size: 0x98 (152B)
+//
+// Similar to CheckValueSign but uses a dynamic threshold computed by
+// multiplying a base extent from a linked object with a global scale factor.
+// Returns 1 if value exceeds the scaled threshold with flag set,
+// 0 if value is within range but exceeds in the opposite direction,
+// -1 otherwise.
+//
+// Used for scaled collision detection where the threshold adapts to the
+// capsule's current size.
+// ─────────────────────────────────────────────────────────────────────────────
+int rage::phBoundCapsule::CheckScaledValueSign() const {
+    float value = *(const float*)((const char*)this + 0x00);
+
+    // Load linked object extent at +16
+    uint32_t* linkedObj = *(uint32_t**)((char*)0x82120000 + (-23804));
+    float baseExtent = *(float*)((char*)linkedObj + 16);
+
+    // Load global state singleton
+    uint32_t* globalPtr = *(uint32_t**)((char*)0x82060000 + 25628);
+    void* stateObj = (void*)(uintptr_t)globalPtr[12];  // +48
+    uint8_t flags = *(uint8_t*)((char*)stateObj + 192);
+
+    // Scale factor from global data
+    float scaleFactor = *(const float*)0x825C9A40;
+    float threshold = baseExtent * scaleFactor;
+
+    // Check positive threshold
+    if (value > threshold) {
+        if (flags != 0) {
+            return 1;
+        }
+    }
+
+    // Check negative threshold
+    float negThreshold = -threshold;
+    if (value < negThreshold) {
+        if (flags != 0) {
+            goto returnNeg;
+        }
+        return 1;
+    }
+
+    // Second pass: re-check for classification
+    if (value < negThreshold) {
+        if (flags != 0) {
+            return -1;
+        }
+    }
+
+    if (value > threshold) {
+        if (flags != 0) {
+            return 0;
+        }
+    returnNeg:
+        return -1;
+    }
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. rage::phBoundCapsule::SetupCapsuleFromState @ 0x8216DB10 | size: 0x74 (116B)
+//
+// Initializes a capsule's collision parameters from the object's state fields.
+// Reads position data from fields at +164, +168, +172 and stores them into
+// the linked physics object at offsets 824-836. Also sets an active flag
+// at offset 864.
+//
+// Parameters:
+//   this - Capsule state object with position data
+//
+// Called when transitioning a capsule into an active collision state.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::SetupCapsuleFromState() {
+    uint32_t* physObj = (uint32_t*)(uintptr_t)(*(uint32_t*)((char*)this + 152));
+    if (physObj == nullptr) {
+        return;
+    }
+
+    float posY = *(float*)((char*)this + 172);
+    float posX = *(float*)((char*)this + 168);
+
+    // Get global computation object
+    void* computeObj = (void*)(uintptr_t)(*(uint32_t*)((char*)0x82030000 + (-21712)));
+
+    // Compute angle from X/Z components
+    phBoundCapsule_8EA0_g(computeObj, posX, posY);
+
+    // Store position data into physics object
+    float field164 = *(float*)((char*)this + 164);
+    *(float*)((char*)physObj + 824) = field164;
+    // f1 is the result from phBoundCapsule_8EA0_g (returned in f1)
+    // Store computed results
+    *(float*)((char*)physObj + 832) = posX;
+    *(float*)((char*)physObj + 836) = posY;
+
+    // Set active flag
+    *(uint8_t*)((char*)physObj + 864) = 1;
+
+    // Update the capsule
+    phBoundCapsule_3598_g((void*)physObj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. rage::phBoundCapsule::SumFloatArray @ 0x82172C08 | size: 0x90 (144B)
+//
+// Computes the sum of (count+1) consecutive float values starting at
+// offset +48 in the object. Uses an unrolled loop (4 elements per iteration)
+// for performance, with a scalar cleanup loop for remaining elements.
+//
+// Parameters:
+//   count - Number of elements to sum (0-based, actual count is count+1)
+//
+// Returns: Sum of the float array elements (in f1)
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::SumFloatArray(int count) const {
+    float sum = g_floatZero;
+    int remaining = 0;
+
+    int total = count + 1;
+
+    // Unrolled loop: process 4 floats per iteration
+    if (total >= 4) {
+        int chunks = total / 4;
+        remaining = chunks * 4;
+        const float* ptr = (const float*)((const char*)this + 48);  // +0x30 = 48, field starts at offset 52 - 4
+
+        for (int i = 0; i < chunks; i++) {
+            sum += ptr[0];
+            sum += ptr[1];
+            sum += ptr[2];
+            sum += ptr[3];
+            ptr += 4;
+        }
+    }
+
+    // Scalar cleanup loop for remaining elements
+    if (remaining <= count) {
+        int idx = remaining + 12;  // offset: (remaining+12)*4 from base
+        const float* ptr = (const float*)((const char*)this + idx * 4);
+        int left = count - remaining + 1;
+
+        for (int i = 0; i < left; i++) {
+            sum += ptr[i];
+        }
+    }
+
+    return sum;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. rage::phBoundCapsule::RotateVectors @ 0x820D05A0 | size: 0xB4 (180B)
+//
+// Applies a 2D rotation to the two 4-component vectors stored at offsets
+// +16 and +32 in the object. Uses ComputeBounds to get sin/cos values,
+// then performs:
+//   vec_at_32 = vec_at_32 * cos - vec_at_16 * sin  (new vec_at_32)
+//   vec_at_16 = vec_at_16 * cos + vec_at_32_orig * sin  (new vec_at_16)
+//
+// This is a standard 2D rotation matrix applied componentwise to two
+// 4-element vectors representing the capsule's local axes.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::RotateVectors() {
+    float sinVal, cosVal;
+    this->ComputeBounds(0.0f, &sinVal, &cosVal);
+
+    // Load vectors
+    float* vec16 = (float*)((char*)this + 16);   // +0x10
+    float* vec32 = (float*)((char*)this + 32);   // +0x20
+
+    // Splat sin and cos across all 4 components
+    // new_vec32 = vec32 * cos - vec16 * sin  (vnmsubfp: -(a*b - c) = c - a*b)
+    // new_vec16 = vec16 * cos + vec32_orig * sin  (vmaddfp: a*b + c)
+
+    float orig_vec32[4], orig_vec16[4];
+    for (int i = 0; i < 4; i++) {
+        orig_vec32[i] = vec32[i];
+        orig_vec16[i] = vec16[i];
+    }
+
+    for (int i = 0; i < 4; i++) {
+        vec32[i] = orig_vec32[i] * sinVal - orig_vec16[i] * cosVal;
+    }
+    for (int i = 0; i < 4; i++) {
+        vec16[i] = orig_vec16[i] * sinVal + orig_vec32[i] * cosVal;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. rage::phBoundCapsule::RotateVectorsAlt @ 0x82175D88 | size: 0xB0 (176B)
+//
+// Identical to RotateVectors but operates on vectors at offsets +0 and +16
+// instead of +16 and +32. This is the alternate pair of capsule axis vectors.
+//
+// Applies the same 2D rotation:
+//   vec_at_16 = vec_at_16 * cos - vec_at_0 * sin
+//   vec_at_0  = vec_at_0 * cos  + vec_at_16_orig * sin
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::RotateVectorsAlt() {
+    float sinVal, cosVal;
+    this->ComputeBounds(0.0f, &sinVal, &cosVal);
+
+    // Load vectors
+    float* vec0  = (float*)((char*)this + 0);    // +0x00
+    float* vec16 = (float*)((char*)this + 16);   // +0x10
+
+    float orig_vec16[4], orig_vec0[4];
+    for (int i = 0; i < 4; i++) {
+        orig_vec16[i] = vec16[i];
+        orig_vec0[i] = vec0[i];
+    }
+
+    // new_vec16 = vec16 * cos - vec0 * sin
+    for (int i = 0; i < 4; i++) {
+        vec16[i] = orig_vec16[i] * sinVal - orig_vec0[i] * cosVal;
+    }
+    // new_vec0 = vec0 * cos + vec16_orig * sin
+    for (int i = 0; i < 4; i++) {
+        vec0[i] = orig_vec0[i] * sinVal + orig_vec16[i] * cosVal;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. rage::phBoundCapsule::NormalizeVector2D @ 0x82199048 | size: 0xB8 (184B)
+//
+// Normalizes a 2D vector (x, y stored at +0 and +4 of this object).
+// Computes magnitude = sqrt(x*x + y*y). If magnitude is within a small
+// epsilon of zero, stores (0, 0) into the output and returns 0.
+// Otherwise normalizes the vector with a scale factor and stores the
+// result, returning 1.
+//
+// Parameters:
+//   outVec - Pointer to output 2D vector (two floats)
+//
+// Returns: 1 if vector was normalized, 0 if too small (near-zero)
+// ─────────────────────────────────────────────────────────────────────────────
+int rage::phBoundCapsule::NormalizeVector2D(float* outVec) const {
+    float y = *(const float*)((const char*)this + 4);
+    float x = *(const float*)((const char*)this + 0);
+
+    // Compute magnitude: sqrt(x*x + y*y)
+    float magSq = x * x + y * y;
+    float mag = (float)ph_Sqrtf(magSq);  // sqrtf
+
+    // Small epsilon check (constant at lbl_8202D110 + 20 bytes = offset 0x8202D124)
+    const float epsilon = *(const float*)0x8202D124;
+
+    if (mag <= epsilon) {
+        // Vector is too small, output zero
+        outVec[0] = g_floatZero;
+        outVec[1] = g_floatZero;
+        return 0;
+    }
+
+    // Normalize: store original components into output first
+    outVec[0] = x;
+    outVec[1] = y;
+
+    // Compute scale factor for normalization
+    float excess = mag - epsilon;
+    float scaleFactor = *(const float*)0x825C9100 + 0;  // global scale constant
+    float normScale = excess * scaleFactor;
+    float invMag = normScale / mag;
+
+    // Apply normalization scale
+    outVec[0] = x * invMag;
+    outVec[1] = y * invMag;
+
+    return 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. rage::phBoundCapsule::LookupTableValues @ 0x8216CF48 | size: 0x70 (112B)
+//
+// Resolves a player index through phBoundCapsule_7D90_g and uses it to
+// look up two float values from global constant tables. Stores the results
+// into the output structure at offsets +4 and +8.
+//
+// Parameters:
+//   outValues - Pointer to output structure receiving two float lookups
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::LookupTableValues(void* outValues) {
+    // Global object pointer
+    void* globalObj = *(void**)((char*)0x82120000 + (-23764));
+
+    // First lookup: get player index
+    int index1 = phBoundCapsule_7D90_g(globalObj);
+
+    // Look up float from first table and store at +4
+    const float* table1 = (const float*)((char*)0x82120000 + (-22564));
+    *(float*)((char*)outValues + 4) = table1[index1];
+
+    // Second lookup with same global
+    globalObj = *(void**)((char*)0x82120000 + (-23764));
+    int index2 = phBoundCapsule_7D90_g(globalObj);
+
+    // Look up float from second table and store at +8
+    const float* table2 = (const float*)((char*)0x82060000 + (-32332));
+    *(float*)((char*)outValues + 8) = table2[index2];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. rage::phBoundCapsule::SetActiveState @ 0x821665B8 | size: 0xC0 (192B)
+//
+// Sets the active capsule state index, updates linked physics object
+// references, and triggers capsule parameter setup. Manages the state
+// transition by:
+// 1. Looking up the physics object at the computed array index
+// 2. Updating the linked list pointers between state and physics objects
+// 3. Setting a state flag (4) if the object changed
+// 4. Calling SetupCapsuleFromState to initialize collision parameters
+// 5. Updating global debug state
+//
+// Parameters:
+//   stateIndex - Index of the new active state
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phBoundCapsule_DB10_g(void* obj);
+void rage::phBoundCapsule::SetActiveState(int stateIndex) {
+    // Store the state index at +28
+    *(int*)((char*)this + 28) = stateIndex;
+
+    // Look up physics object from array: this[(stateIndex+8)*4]
+    uint32_t arrayIndex = (stateIndex + 8);
+    uint32_t* physObj = (uint32_t*)(uintptr_t)(*(uint32_t*)((char*)this + arrayIndex * 4));
+
+    // Get the linked state object at +40
+    uint32_t* stateObj = (uint32_t*)(uintptr_t)(*(uint32_t*)((char*)this + 40));
+
+    // Get current linked physics ptr at stateObj+52
+    uint32_t currentLinked = *(uint32_t*)((char*)stateObj + 52);
+
+    // If the new object differs from current, check and update
+    if ((uintptr_t)physObj != currentLinked) {
+        uint32_t prevObj = *(uint32_t*)((char*)stateObj + 44);
+        if (prevObj != currentLinked) {
+            // Set state flag to 4 (transition)
+            *(uint16_t*)((char*)stateObj + 16) = 4;
+        }
+    }
+
+    // Update linked object pointer at stateObj+44
+    *(uint32_t*)((char*)stateObj + 44) = (uint32_t)(uintptr_t)physObj;
+
+    // Clear pending flag at stateObj+48
+    *(uint32_t*)((char*)stateObj + 48) = 0;
+
+    // Set back-pointers on the physics object
+    *(uint32_t*)((char*)physObj + 148) = (uint32_t)(uintptr_t)stateObj;
+    uint32_t parentRef = *(uint32_t*)((char*)stateObj + 40);
+    *(uint32_t*)((char*)physObj + 152) = parentRef;
+
+    // Setup capsule collision parameters from state
+    // Re-resolve the physics object for the current state
+    int currentIndex = *(int*)((char*)this + 28);
+    uint32_t idx2 = (currentIndex + 8);
+    void* activePhysObj = (void*)(uintptr_t)(*(uint32_t*)((char*)this + idx2 * 4));
+
+    // Call SetupCapsuleFromState (phBoundCapsule_DB10_g)
+    phBoundCapsule_DB10_g(activePhysObj);
+
+    // Update global debug pointer
+    uint32_t* stateObj2 = (uint32_t*)(uintptr_t)(*(uint32_t*)((char*)this + 40));
+    uint32_t* linkedPhys = (uint32_t*)(uintptr_t)(*(uint32_t*)((char*)stateObj2 + 44));
+    void** globalDebugPtr = *(void***)((char*)0x82120000 + (-23764));
+    *globalDebugPtr = (void*)((char*)linkedPhys + 16);
+
+    // Log the state change
+    int logIndex = *(int*)((char*)this + 28);
+    const int* nameTable = (const int*)((char*)0x82060000 + (-30152));
+    int logParam = nameTable[logIndex];
+    const char* logName = (const char*)0x82085E0C;  // debug string
+    nop_8240E6D0(logName, logParam);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. rage::phBoundCapsule::DispatchCapsuleFromCamera @ 0x82148608 | size: 0x9C (156B)
+//
+// Sets up and dispatches a capsule collision test relative to the current
+// camera view. Loads the active camera's parameters (position, orientation)
+// and computes the capsule bounds based on the camera's field of view.
+//
+// Parameters:
+//   param1 - First collision parameter (passed through)
+//   param2 - Second collision parameter (passed through)
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::DispatchCapsuleFromCamera(void* param1, void* param2) {
+    // Load global state singleton
+    uint32_t* globalPtr = *(uint32_t**)((char*)0x82060000 + 25628);
+    uint32_t* cameraArray = (uint32_t*)(uintptr_t)globalPtr[6];  // +24
+
+    // Get active camera index from global data
+    int cameraIndex = *(int*)((char*)0x82040000 + 18584);
+
+    // Compute camera entry pointer: cameraArray + cameraIndex * 912
+    void* cameraEntry = (void*)((char*)cameraArray + cameraIndex * 912);
+
+    // Get camera angle
+    pongCameraMgr_3E98_g(cameraEntry);
+    float cameraAngle = *(float*)&cameraEntry;  // result returned in f1
+
+    // Load camera parameters
+    void* camBase = (void*)((char*)cameraArray + cameraIndex * 912);
+    float camPosX = *(float*)((char*)camBase + 824);
+    float camPosY = *(float*)((char*)camBase + 832);
+
+    // Compute clamped value: clamp camPosY to [0, constant]
+    const float clampMax = *(const float*)0x8202CDF8;
+    float diff = clampMax - camPosY;
+    const double zeroDbl = *(const double*)((char*)0x82080000 + (-24648));
+    float clampedY = (diff >= 0.0f) ? camPosY : (float)zeroDbl;
+
+    float camPosZ = *(float*)((char*)cameraArray + cameraIndex * 912 + 836);
+
+    // Get capsule extent at camera offset +64
+    void* capsuleExtent = (void*)((char*)cameraArray + cameraIndex * 912 + 64);
+
+    // Dispatch the full capsule collision test
+    phBoundCapsule_81D8_g(this, param1, param2, camPosX, clampedY, camPosZ, cameraAngle, capsuleExtent);
+}
+
+
+// =========================================================================
+// Matrix Transpose-Multiply Utilities
+// =========================================================================
+
+/**
+ * phMatrix34TransposeMultiply @ 0x821181C8 | size: 0xB0 (176 bytes)
+ *
+ * Computes result = transpose(A) * B for two 4x3 matrices (stored as 4 rows
+ * of 16-byte SIMD vectors), producing a 4x4 output matrix of dot products.
+ *
+ * The function also computes a difference vector (A.row3 - B.row3) and dots
+ * it with each column of B to fill the fourth output row. This is the
+ * classic "transform point into local space" pattern used throughout the
+ * physics engine for converting world-space matrices into body-local frames.
+ *
+ * @param outMatrix  Pointer to 4x16-byte output matrix (4 rows of vec4)
+ * @param matrixB    Pointer to 4x16-byte input matrix B (4 rows of vec4)
+ */
+void phMatrix34TransposeMultiply(float* outMatrix, const float* matrixB) {
+    // Load all 4 rows of matrix A (outMatrix is reused as input A)
+    const float* rowA0 = outMatrix;        // +0
+    const float* rowA1 = outMatrix + 4;    // +16
+    const float* rowA2 = outMatrix + 8;    // +32
+    const float* rowA3 = outMatrix + 12;   // +48
+
+    // Load all 4 rows of matrix B
+    const float* rowB0 = matrixB;          // +0
+    const float* rowB1 = matrixB + 4;      // +16
+    const float* rowB2 = matrixB + 8;      // +32
+    const float* rowB3 = matrixB + 12;     // +48
+
+    // Compute difference vector: delta = A.row3 - B.row3
+    float delta[4];
+    delta[0] = rowA3[0] - rowB3[0];
+    delta[1] = rowA3[1] - rowB3[1];
+    delta[2] = rowA3[2] - rowB3[2];
+    delta[3] = rowA3[3] - rowB3[3];
+
+    // Row 0: dot3(A.row0, B.row_j)
+    float dot00 = rowA0[0]*rowB0[0] + rowA0[1]*rowB0[1] + rowA0[2]*rowB0[2];
+    float dot01 = rowA0[0]*rowB1[0] + rowA0[1]*rowB1[1] + rowA0[2]*rowB1[2];
+    float dot02 = rowA0[0]*rowB2[0] + rowA0[1]*rowB2[1] + rowA0[2]*rowB2[2];
+
+    // Row 1: dot3(A.row1, B.row_j)
+    float dot10 = rowA1[0]*rowB0[0] + rowA1[1]*rowB0[1] + rowA1[2]*rowB0[2];
+    float dot11 = rowA1[0]*rowB2[0] + rowA1[1]*rowB2[1] + rowA1[2]*rowB2[2];
+    float dot12 = rowA1[0]*rowB1[0] + rowA1[1]*rowB1[1] + rowA1[2]*rowB1[2];
+
+    // Row 2: dot3(A.row2, B.row_j)
+    float dot20 = rowA2[0]*rowB0[0] + rowA2[1]*rowB0[1] + rowA2[2]*rowB0[2];
+    float dot21 = rowA2[0]*rowB2[0] + rowA2[1]*rowB2[1] + rowA2[2]*rowB2[2];
+    float dot22 = rowA2[0]*rowB1[0] + rowA2[1]*rowB1[1] + rowA2[2]*rowB1[2];
+
+    // Row 3: dot3(delta, B.row_j)
+    float dot30 = delta[0]*rowB0[0] + delta[1]*rowB0[1] + delta[2]*rowB0[2];
+    float dot31 = delta[0]*rowB1[0] + delta[1]*rowB1[1] + delta[2]*rowB1[2];
+    float dot32 = delta[0]*rowB2[0] + delta[1]*rowB2[1] + delta[2]*rowB2[2];
+
+    // Pack results into output matrix rows (vmrghw interleave pattern)
+    outMatrix[0]  = dot00;  outMatrix[1]  = dot01;  outMatrix[2]  = dot02;  outMatrix[3]  = 0.0f;
+    outMatrix[4]  = dot10;  outMatrix[5]  = dot12;  outMatrix[6]  = dot11;  outMatrix[7]  = 0.0f;
+    outMatrix[8]  = dot20;  outMatrix[9]  = dot22;  outMatrix[10] = dot21;  outMatrix[11] = 0.0f;
+    outMatrix[12] = dot30;  outMatrix[13] = dot31;  outMatrix[14] = dot32;  outMatrix[15] = 0.0f;
+}
+
+/**
+ * phMatrix33TransposeMultiply @ 0x82296D20 | size: 0x94 (148 bytes)
+ *
+ * Computes result = transpose(A) * B for two 3x3 matrices (each stored as
+ * 3 rows of 16-byte SIMD vectors). The output is written as 3 rows of
+ * dot products packed via the vmrghw interleave pattern.
+ *
+ * This is the 3x3 variant of the 4x3 transpose-multiply, used for
+ * rotating inertia tensors and normal-space transforms.
+ *
+ * @param outMatrix  Pointer to 3x16-byte output (3 rows of vec4)
+ * @param matrixA    Pointer to 3x16-byte input matrix A (3 rows)
+ * @param matrixB    Pointer to 3x16-byte input matrix B (3 rows)
+ */
+void phMatrix33TransposeMultiply(float* outMatrix, const float* matrixA, const float* matrixB) {
+    const float* rowA0 = matrixA;
+    const float* rowA1 = matrixA + 4;
+    const float* rowA2 = matrixA + 8;
+
+    const float* rowB0 = matrixB;
+    const float* rowB1 = matrixB + 4;
+    const float* rowB2 = matrixB + 8;
+
+    // Compute 3x3 dot product matrix: result[i][j] = dot3(A.row[i], B.row[j])
+    float dot00 = rowA0[0]*rowB0[0] + rowA0[1]*rowB0[1] + rowA0[2]*rowB0[2];
+    float dot01 = rowA0[0]*rowB1[0] + rowA0[1]*rowB1[1] + rowA0[2]*rowB1[2];
+    float dot02 = rowA0[0]*rowB2[0] + rowA0[1]*rowB2[1] + rowA0[2]*rowB2[2];
+
+    float dot10 = rowA1[0]*rowB0[0] + rowA1[1]*rowB0[1] + rowA1[2]*rowB0[2];
+    float dot11 = rowA1[0]*rowB2[0] + rowA1[1]*rowB2[1] + rowA1[2]*rowB2[2];
+    float dot12 = rowA1[0]*rowB1[0] + rowA1[1]*rowB1[1] + rowA1[2]*rowB1[2];
+
+    float dot20 = rowA2[0]*rowB0[0] + rowA2[1]*rowB0[1] + rowA2[2]*rowB0[2];
+    float dot21 = rowA2[0]*rowB1[0] + rowA2[1]*rowB1[1] + rowA2[2]*rowB1[2];
+    float dot22 = rowA2[0]*rowB2[0] + rowA2[1]*rowB2[1] + rowA2[2]*rowB2[2];
+
+    // Store packed output (preserving existing w components from outMatrix)
+    outMatrix[0]  = dot00;  outMatrix[1]  = dot01;  outMatrix[2]  = dot02;
+    outMatrix[4]  = dot10;  outMatrix[5]  = dot12;  outMatrix[6]  = dot11;
+    outMatrix[8]  = dot20;  outMatrix[9]  = dot21;  outMatrix[10] = dot22;
+}
+
+/**
+ * phCollisionPairArrayInit @ 0x8221FD78 | size: 0x58 (88 bytes)
+ *
+ * Initializes a collision contact pair structure. Clears 4 weight values
+ * (uint16 at +16..+22) to zero and sets 4 index values (uint16 at +24..+30)
+ * to 0xFFFF (invalid). Then zeros four floats at offsets +0..+12.
+ *
+ * The early-out checks a global flag (physics paused / disabled); if set,
+ * the function returns immediately without initialization.
+ *
+ * @param contactPair  Pointer to 32-byte collision contact pair structure
+ */
+void phCollisionPairArrayInit(void* contactPair) {
+    // Check global physics-disabled flag
+    if (g_physicsDisabled != 0)
+        return;
+
+    uint8_t* pair = (uint8_t*)contactPair;
+
+    // Clear 4 weight values (uint16) at +16..+22
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(pair + 16 + i * 2) = 0;
+    }
+
+    // Set 4 index slots (uint16) at +24..+30 to invalid (0xFFFF)
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(pair + 24 + i * 2) = 0xFFFF;
+    }
+
+    // Zero 4 floats at +0..+12
+    float* floats = (float*)pair;
+    floats[0] = 0.0f;
+    floats[1] = 0.0f;
+    floats[2] = 0.0f;
+    floats[3] = 0.0f;
+}
+
+// =========================================================================
+// rage::phBound Hierarchy Constructors
+// =========================================================================
+
+// Forward declarations for init helpers
+extern void ke_1B00(void* listNode);           // Intrusive list node init
+extern void phBoundSphere_vfn_37(void* bound); // Sphere-specific init
+extern void ph_9BC0(void* listHead);           // Collision list init
+
+// Global identity-like AABB template vector
+extern const uint8_t lbl_826067C0[16];
+
+/**
+ * rage::phBound::phBound @ 0x8228CE50 | size: 0x90 (144 bytes)
+ *
+ * Base constructor for all physics bound volumes. Initializes the vtable,
+ * bound type (0xFF = unset), radius fields, flags, and copies a template
+ * vector into the AABB min/max slots. Also initializes 7 material index
+ * slots to zero.
+ */
+void phBound_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    *(uint32_t*)(obj + 0) = 0x82057EF4;  // vtable -> rage::phBound
+    *(uint8_t*)(obj + 4) = 0xFF;          // bound type = uninitialized
+    *(float*)(obj + 8)  = 0.0f;           // bounding radius
+    *(float*)(obj + 12) = 0.0f;           // margin
+    *(uint8_t*)(obj + 5) = 0;
+    *(uint8_t*)(obj + 6) = 0;
+    *(uint8_t*)(obj + 7) = 0;
+
+    // Copy AABB template into 4 vector slots
+    memcpy(obj + 16, lbl_826067C0, 16);
+    memcpy(obj + 32, lbl_826067C0, 16);
+    memcpy(obj + 48, lbl_826067C0, 16);
+    memcpy(obj + 80, lbl_826067C0, 16);
+
+    // Material count = 1, clear 7 material index slots
+    *(uint16_t*)(obj + 96) = 1;
+    for (int i = 0; i < 7; i++) {
+        *(uint16_t*)(obj + 98 + i * 2) = 0;
+    }
+}
+
+/**
+ * rage::phBoundGeometry::phBoundGeometry @ 0x82290F78 | size: 0x8C (140 bytes)
+ *
+ * Constructor for phBoundGeometry, the triangle-mesh collision bound.
+ * Calls phBound base ctor, then sets the geometry vtable and initializes
+ * vertex/index pointers, polygon count, edge data, and material mapping.
+ */
+void phBoundGeometry_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82058494;  // vtable -> rage::phBoundGeometry
+    *(uint8_t*)(obj + 4) = 3;             // bound type = geometry
+    *(uint32_t*)(obj + 132) = 0xFFFFFFFF; // material index = -1
+    *(uint32_t*)(obj + 140) = 0xFFFFFFFF; // edge data index = -1
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint8_t*)(obj + 128)  = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 148) = 0;
+    *(uint32_t*)(obj + 112) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 160) = 0;
+    *(uint32_t*)(obj + 164) = 0;
+    *(uint8_t*)(obj + 168)  = 0;
+
+    for (int i = 0; i < 7; i++) {
+        *(uint8_t*)(obj + 169 + i) = 0;
+    }
+}
+
+/**
+ * rage::phBoundRibbon::phBoundRibbon @ 0x8229D8D0 | size: 0xA0 (160 bytes)
+ *
+ * Constructor for phBoundRibbon, a ribbon/spline-based collision bound used
+ * for net cords and similar thin geometry.
+ */
+void phBoundRibbon_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x820589BC;  // vtable -> rage::phBoundRibbon
+    *(uint8_t*)(obj + 4) = 7;             // bound type = ribbon
+    *(float*)(obj + 8)  = -1.0f;
+    *(float*)(obj + 12) = -1.0f;
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint32_t*)(obj + 112) = 0;
+
+    // Zero surface normal vector at +48
+    *(uint32_t*)(obj + 48) = 0;
+    *(uint32_t*)(obj + 52) = 0;
+    *(uint32_t*)(obj + 56) = 0;
+    *(uint32_t*)(obj + 60) = 0;
+
+    *(uint32_t*)(obj + 136) = 0xFFFFFFFF;
+    *(float*)(obj + 128) = -1.0f;
+    *(uint32_t*)(obj + 164) = 0;
+    *(uint32_t*)(obj + 168) = 0;
+    *(uint32_t*)(obj + 172) = 0;
+    *(uint32_t*)(obj + 176) = 0;
+    *(uint32_t*)(obj + 180) = 0;
+    *(uint32_t*)(obj + 184) = 0;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 148) = 0;
+    *(uint32_t*)(obj + 152) = 0;
+    *(uint32_t*)(obj + 156) = 0;
+    *(uint32_t*)(obj + 160) = 0;
+}
+
+/**
+ * rage::phBoundOTGrid::phBoundOTGrid @ 0x8229B4E0 | size: 0x70 (112 bytes)
+ *
+ * Constructor for phBoundOTGrid, the octree-grid collision bound used for
+ * large static world geometry.
+ */
+void phBoundOTGrid_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82058854;  // vtable -> rage::phBoundOTGrid
+    *(uint8_t*)(obj + 4) = 6;             // bound type = OTGrid
+    *(float*)(obj + 112) = 0.0f;
+    *(float*)(obj + 116) = 0.0f;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint32_t*)(obj + 128) = 0;
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+    *(uint32_t*)(obj + 148) = 0xFFFFFFFF;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 152) = 0;
+    *(uint32_t*)(obj + 156) = 0;
+}
+
+/**
+ * rage::phBoundComposite::phBoundComposite @ 0x8228DE80 | size: 0x7C (124 bytes)
+ *
+ * Constructor for phBoundComposite, a container bound that holds multiple
+ * child phBound objects.
+ */
+void phBoundComposite_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82057FD4;  // vtable -> rage::phBoundComposite
+
+    // Initialize two intrusive list nodes
+    ke_1B00((void*)(obj + 120));
+    ke_1B00((void*)(obj + 124));
+
+    *(uint8_t*)(obj + 4) = 9;  // bound type = composite
+    *(uint32_t*)(obj + 112) = 0;
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+
+    // Zero AABB vector at +48
+    *(uint32_t*)(obj + 48) = 0;
+    *(uint32_t*)(obj + 52) = 0;
+    *(uint32_t*)(obj + 56) = 0;
+    *(uint32_t*)(obj + 60) = 0;
+
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+}
+
+/**
+ * rage::phBoundSphere::phBoundSphere @ 0x822954C8 | size: 0x7C (124 bytes)
+ *
+ * Constructor for phBoundSphere, the simplest collision volume.
+ * Initializes radius to -1.0 (unset), zeros center vector, and
+ * calls sphere-specific material init.
+ */
+void phBoundSphere_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x82058584;  // vtable -> rage::phBoundSphere
+    *(uint8_t*)(obj + 4) = 0;             // bound type = sphere
+    *(float*)(obj + 8) = -1.0f;           // radius = unset
+
+    // Zero center vector at +48
+    *(uint32_t*)(obj + 48) = 0;
+    *(uint32_t*)(obj + 52) = 0;
+    *(uint32_t*)(obj + 56) = 0;
+    *(uint32_t*)(obj + 60) = 0;
+
+    // Splat radius into AABB extent vector
+    float radius = -1.0f;
+    *(float*)(obj + 112) = radius;
+    *(float*)(obj + 116) = radius;
+    *(float*)(obj + 120) = radius;
+    *(float*)(obj + 124) = radius;
+
+    *(uint32_t*)(obj + 128) = 0;
+
+    phBoundSphere_vfn_37(thisPtr);
+
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+}
+
+/**
+ * rage::phBoundOctree::phBoundOctree @ 0x822971A8 | size: 0x74 (116 bytes)
+ *
+ * Constructor for phBoundOctree, a spatial partitioning bound for efficient
+ * broadphase collision queries. Extends phBoundGeometry with octree data.
+ */
+void phBoundOctree_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBoundGeometry_Constructor(thisPtr);
+
+    *(uint32_t*)(obj + 0) = 0x8205872C;  // vtable -> rage::phBoundOctree
+    *(uint8_t*)(obj + 128) = 1;           // has octree = true
+    *(uint8_t*)(obj + 4) = 4;             // bound type = octree
+
+    ph_9BC0((void*)(obj + 176));
+
+    *(uint32_t*)(obj + 176) = 0;
+    *(uint32_t*)(obj + 180) = 0;
+    *(uint32_t*)(obj + 184) = 0;
+    *(uint32_t*)(obj + 188) = 0;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phInst — Virtual Accessor / Transform Methods (10 functions, 8-24B)
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// Getter/setter pairs for collision and contact properties, plus transform
+// matrix copy thunks. All are base-class implementations on rage::phInst's
+// vtable at 0x8205991C.
+//
+// Field layout referenced:
+//   +64  (0x40)  uint64  m_pArchetypeData   — archetype/template pointer
+//   +204 (0xCC)  40B     m_currentTransform  — current-frame world matrix
+//   +284 (0x11C) uint32  m_collisionFlags    — collision group/layer mask
+//   +284 (0x11C) 40B     m_lastTransform     — previous-frame world matrix
+//   +444 (0x1BC) uint32  m_contactFilter     — contact filtering mask
+//   +448 (0x1C0) uint32  m_contactCallback   — contact response handler ptr
+
+namespace rage {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::SetCollisionFlags (vfn_16) @ 0x8248B8C8 | size: 0x8
+//
+// Stores the collision group/layer flags at offset +284.
+// Paired getter: GetCollisionFlags (vfn_19).
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::SetCollisionFlags(uint32_t flags) {  // vfn_16
+    *(uint32_t*)((char*)this + 284) = flags;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetCollisionFlags (vfn_19) @ 0x8248B8D0 | size: 0x8
+//
+// Returns the collision group/layer flags from offset +284.
+// Paired setter: SetCollisionFlags (vfn_16).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetCollisionFlags() {  // vfn_19
+    return *(uint32_t*)((char*)this + 284);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::SetContactFilter (vfn_38) @ 0x8248D808 | size: 0x8
+//
+// Sets the contact filtering mask at offset +444.
+// Used to control which collision pairs generate contact callbacks.
+// Paired getter: GetContactFilter (vfn_44).
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::SetContactFilter(uint32_t filter) {  // vfn_38
+    *(uint32_t*)((char*)this + 444) = filter;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetContactFilter (vfn_44) @ 0x8248D810 | size: 0x8
+//
+// Returns the contact filtering mask from offset +444.
+// Paired setter: SetContactFilter (vfn_38).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetContactFilter() {  // vfn_44
+    return *(uint32_t*)((char*)this + 444);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::SetContactCallback (vfn_39) @ 0x8248D818 | size: 0x8
+//
+// Sets the contact response callback pointer at offset +448.
+// This controls which handler is invoked when contacts are resolved.
+// Paired getter: GetContactCallback (vfn_45).
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::SetContactCallback(uint32_t callback) {  // vfn_39
+    *(uint32_t*)((char*)this + 448) = callback;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetContactCallback (vfn_45) @ 0x8248D820 | size: 0x8
+//
+// Returns the contact response callback pointer from offset +448.
+// Paired setter: SetContactCallback (vfn_39).
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetContactCallback() {  // vfn_45
+    return *(uint32_t*)((char*)this + 448);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetArchetypeData (vfn_71) @ 0x82488480 | size: 0x8
+//
+// Returns the 64-bit archetype/template data pointer from offset +64.
+// The archetype contains shared immutable data (collision bounds, mass
+// properties, etc.) referenced by all instances of the same physics object.
+// ─────────────────────────────────────────────────────────────────────────────
+uint64_t phInst::GetArchetypeData() {  // vfn_71
+    return *(uint64_t*)((char*)this + 64);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::GetSupportedFlags (vfn_48) @ 0x8247E2D0 | size: 0xC
+//
+// Returns a constant bitmask (0x80004001) indicating which physics features
+// this instance type supports. Bit 31 = active, bit 14 = collidable,
+// bit 0 = transform-capable.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phInst::GetSupportedFlags() {  // vfn_48
+    return 0x80004001;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::CopyCurrentTransform (vfn_15) @ 0x8248D888 | size: 0x18
+//
+// Copies the current-frame world transform (40 bytes at offset +204) into
+// a caller-supplied buffer via the virtual CopyMatrix helper (vfn_13).
+//
+// Tail-calls: this->vfn_13(this, r4, r5, 40, this+204)
+//   where vfn_13 is a bounded memcpy: memset(dst, 0, size); memcpy(dst, src, min(len, size-1))
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::CopyCurrentTransform(void* src, uint32_t srcLen) {  // vfn_15
+    // Dispatch to vfn_13 with: dest = this+204, size = 40
+    typedef void (*CopyMatrixFn)(void*, void*, uint32_t, uint32_t, void*);
+    void** vtable = *(void***)this;
+    CopyMatrixFn copyMatrix = (CopyMatrixFn)vtable[13];
+    copyMatrix(this, src, srcLen, 40, (char*)this + 204);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst::CopyLastTransform (vfn_34) @ 0x8248D868 | size: 0x18
+//
+// Copies the previous-frame world transform (40 bytes at offset +284) into
+// a caller-supplied buffer via the virtual CopyMatrix helper (vfn_13).
+//
+// Tail-calls: this->vfn_13(this, r4, r5, 40, this+284)
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst::CopyLastTransform(void* src, uint32_t srcLen) {  // vfn_34
+    // Dispatch to vfn_13 with: dest = this+284, size = 40
+    typedef void (*CopyMatrixFn)(void*, void*, uint32_t, uint32_t, void*);
+    void** vtable = *(void***)this;
+    CopyMatrixFn copyMatrix = (CopyMatrixFn)vtable[13];
+    copyMatrix(this, src, srcLen, 40, (char*)this + 284);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phBound virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::SetType (vfn_1 / slot 1) @ 0x8228CE18 | size: 0x8
+//
+// Sets the bound's collision shape type identifier.
+// Offset 0x07 holds the type byte (e.g. sphere=0, capsule=1, box=2, etc.).
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound::SetType(uint8_t type) {
+    // stb r4,7(r3)
+    *reinterpret_cast<uint8_t*>(reinterpret_cast<uint8_t*>(this) + 7) = type;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::GetType (vfn_2 / slot 2) @ 0x8228CE20 | size: 0x8
+//
+// Returns the bound's collision shape type identifier.
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t phBound::GetType() {
+    // lbz r3,7(r3)
+    return *reinterpret_cast<uint8_t*>(reinterpret_cast<uint8_t*>(this) + 7);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::GetMargin (vfn_33 / slot 33) @ 0x8228D9F8 | size: 0x1c (28 bytes)
+//
+// Returns either the outer margin (offset +8) or inner margin (offset +12)
+// depending on the useOuter flag. Used for collision detection padding.
+//
+// Parameters:
+//   r4 — unused
+//   r5 — useOuter flag: if nonzero returns margin at +8, else at +12
+// ─────────────────────────────────────────────────────────────────────────────
+float phBound::GetMargin(void* /*unused*/, bool useOuter) {
+    uint8_t* base = reinterpret_cast<uint8_t*>(this);
+    if (useOuter) {
+        return *reinterpret_cast<float*>(base + 8);
+    }
+    return *reinterpret_cast<float*>(base + 12);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phBoundComposite virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::CalculateExtents (vfn_28 / slot 28) @ 0x8228DDA0 | size: 0x10
+//
+// Thunk to ComputeExtents (vtable slot 27). Loads the vtable and
+// tail-calls slot 27, which computes the AABB extents for this bound.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::CalculateExtents() {
+    // lwz r11,0(r3); lwz r10,108(r11); mtctr r10; bctr
+    void** vtbl = *reinterpret_cast<void***>(this);
+    typedef void (*Fn)(void*);
+    Fn fn = reinterpret_cast<Fn>(vtbl[27]);
+    fn(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::SetDefaultFlags (vfn_37 / slot 37) @ 0x8228E820 | size: 0x8
+//
+// Initializes composite bound flags to defaults by calling the internal
+// flag-update helper with flags = 0.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::SetDefaultFlags() {
+    // li r4,0; b pongCreatureInst_E828_v12
+    pongCreatureInst_E828_v12(this, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::UpdateChildBounds (vfn_11 / slot 11) @ 0x822906F0 | size: 0x14
+//
+// Updates all child bounds in the composite. Dispatches to vtable slot 38
+// with a null filter parameter, causing all children to be updated.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::UpdateChildBounds() {
+    // lwz r11,0(r3); li r5,0; lwz r10,152(r11); mtctr r10; bctr
+    void** vtbl = *reinterpret_cast<void***>(this);
+    typedef void (*Fn)(void*, void*, void*);
+    Fn fn = reinterpret_cast<Fn>(vtbl[38]);
+    fn(this, nullptr, nullptr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::RebuildChildBounds (vfn_12 / slot 12) @ 0x82290788 | size: 0x14
+//
+// Rebuilds all child bounds in the composite. Dispatches to vtable slot 39
+// with a null filter parameter, causing a full rebuild.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundComposite::RebuildChildBounds() {
+    // lwz r11,0(r3); li r5,0; lwz r10,156(r11); mtctr r10; bctr
+    void** vtbl = *reinterpret_cast<void***>(this);
+    typedef void (*Fn)(void*, void*, void*);
+    Fn fn = reinterpret_cast<Fn>(vtbl[39]);
+    fn(this, nullptr, nullptr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundComposite::GetFirstChildCentroid (vfn_10 / slot 10) @ 0x82290808 | size: 0x28
+//
+// Returns the centroid of the first child bound in this composite.
+// Loads the child array from offset +0x70, dereferences the first element,
+// and tail-calls its virtual GetCentroid (vtable slot 10). Returns 0 if
+// the child array is empty.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phBoundComposite::GetFirstChildCentroid() {
+    // lwz r11,112(r3) — load child bounds array pointer
+    uint32_t* childArray = *reinterpret_cast<uint32_t**>(
+        reinterpret_cast<uint8_t*>(this) + 112);
+
+    // lwz r3,0(r11) — load first child bound
+    void* firstChild = reinterpret_cast<void*>(
+        static_cast<uintptr_t>(childArray[0]));
+
+    if (firstChild != nullptr) {
+        // Call firstChild->vtable[10]
+        void** childVtbl = *reinterpret_cast<void***>(firstChild);
+        typedef void* (*GetCentroidFn)(void*);
+        GetCentroidFn getCentroid = reinterpret_cast<GetCentroidFn>(childVtbl[10]);
+        return getCentroid(firstChild);
+    }
+
+    return nullptr;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phJoint1Dof virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phJoint1Dof::GetMotorData (vfn_15 / slot 15) @ 0x82126CF8 | size: 0x8
+//
+// Returns a pointer to the joint's motor/drive parameters block,
+// stored at offset +0x230 (560 bytes) from the start of the object.
+// The motor data controls the joint's target angle and drive strength.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phJoint1Dof::GetMotorData() {
+    // addi r3,r3,560
+    return reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(this) + 560);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phSleep virtual method implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSleep::Activate (vfn_1 / slot 1) @ 0x822DD238 | size: 0xc (12 bytes)
+//
+// Marks the sleep controller as active by setting the awake flag
+// at offset +4 to 1. This causes the physics simulation to keep
+// the associated body awake for collision processing.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSleep::Activate() {
+    // li r11,1; stw r11,4(r3)
+    *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 4) = 1;
+}
+
+} // namespace rage
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Physics Matrix / Collision / Joint Free Functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+extern void ph_CollideShapeAgainstWorld(uint32_t, uint32_t, int, int);
+extern void ph_TestCollisionPairDetailed(uint32_t, uint32_t, uint32_t, uint32_t,
+                                          uint8_t*, uint32_t, uint8_t*, int);
+extern void ph_ProfilerBegin(const char*, int);
+extern void ph_ResolveCollisionConstraint(uint32_t, uint32_t, void*);
+extern void ph_DebugAssertPositive(const char*, double);
+
+// ---------------------------------------------------------------------------
+// 1. phMatrix34_TransposeDotProduct @ 0x821181C8 | size: 0xB0 (176 bytes)
+//    Computes dst = A^T * B for two 3x4 matrices. Row 3 computes relative
+//    translation (A.row3 - B.row3) projected into B's local frame.
+// ---------------------------------------------------------------------------
+void phMatrix34_TransposeDotProduct(float* dst, const float* src) {
+    float a0x = dst[0],  a0y = dst[1],  a0z = dst[2];
+    float a1x = dst[4],  a1y = dst[5],  a1z = dst[6];
+    float a2x = dst[8],  a2y = dst[9],  a2z = dst[10];
+    float a3x = dst[12], a3y = dst[13], a3z = dst[14];
+    float b0x = src[0],  b0y = src[1],  b0z = src[2];
+    float b1x = src[4],  b1y = src[5],  b1z = src[6];
+    float b2x = src[8],  b2y = src[9],  b2z = src[10];
+    float b3x = src[12], b3y = src[13], b3z = src[14];
+    float dx = a3x - b3x, dy = a3y - b3y, dz = a3z - b3z;
+    dst[0]  = a0x*b0x + a0y*b0y + a0z*b0z;
+    dst[1]  = a0x*b1x + a0y*b1y + a0z*b1z;
+    dst[2]  = a0x*b2x + a0y*b2y + a0z*b2z;
+    dst[4]  = a1x*b0x + a1y*b0y + a1z*b0z;
+    dst[5]  = a1x*b1x + a1y*b1y + a1z*b1z;
+    dst[6]  = a1x*b2x + a1y*b2y + a1z*b2z;
+    dst[8]  = a2x*b0x + a2y*b0y + a2z*b0z;
+    dst[9]  = a2x*b1x + a2y*b1y + a2z*b1z;
+    dst[10] = a2x*b2x + a2y*b2y + a2z*b2z;
+    dst[12] = dx*b0x + dy*b0y + dz*b0z;
+    dst[13] = dx*b1x + dy*b1y + dz*b1z;
+    dst[14] = dx*b2x + dy*b2y + dz*b2z;
+}
+
+// ---------------------------------------------------------------------------
+// 2. phCollider_QueryShapeOverlap @ 0x82118DB8 | size: 0x44 (68 bytes)
+//    Initiates overlap query: extracts bound handle, retrieves world list,
+//    dispatches to ph_CollideShapeAgainstWorld(maxResults=255, filter=0).
+// ---------------------------------------------------------------------------
+void phCollider_QueryShapeOverlap(void* thisPtr, void* querySource) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint32_t boundsHandle = *(uint32_t*)((uint8_t*)querySource + 4);
+    uint32_t internalData = *(uint32_t*)(self + 164);
+    uint32_t worldList = *(uint32_t*)((uint8_t*)(uintptr_t)internalData + 4);
+    ph_CollideShapeAgainstWorld(boundsHandle, worldList, 255, 0);
+    *(uint32_t*)(self + 168) = boundsHandle;
+}
+
+// ---------------------------------------------------------------------------
+// 3. phCollider_TestCollisionPair @ 0x82118E00 | size: 0x6C (108 bytes)
+//    Tests collision pair between collider bound and target. Increments
+//    test counter at +428 on completion.
+// ---------------------------------------------------------------------------
+void phCollider_TestCollisionPair(void* thisPtr, void* target) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint32_t targetHandle = *(uint32_t*)((uint8_t*)target + 4);
+    uint32_t internalData = *(uint32_t*)(self + 164);
+    uint32_t worldCount = 0;
+    if (internalData != 0)
+        worldCount = *(uint32_t*)((uint8_t*)(uintptr_t)internalData + 8);
+    uint32_t contactCount = *(uint32_t*)(self + 180);
+    uint32_t contactFlags = *(uint32_t*)(self + 176);
+    uint32_t boundsA = *(uint32_t*)((uint8_t*)(uintptr_t)internalData + 4);
+    ph_TestCollisionPairDetailed(targetHandle, boundsA, worldCount,
+                                  contactFlags, self + 426, contactCount,
+                                  self + 427, 255);
+    self[428] = self[428] + 1;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phCollisionResolver_ProfiledResolve @ 0x82123608 | size: 0x74 (116 bytes)
+//    Resolves collision constraint within profiler begin/end markers.
+// ---------------------------------------------------------------------------
+void phCollisionResolver_ProfiledResolve(void* thisPtr, void* input) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint32_t pairHandle = *(uint32_t*)((uint8_t*)input + 4);
+    ph_ProfilerBegin(g_phResolveProfileTag, 1);
+    uint32_t pairData = *(uint32_t*)((uint8_t*)input + 4);
+    uint32_t pairInfo = *(uint32_t*)((uint8_t*)(uintptr_t)pairData + 12);
+    ph_ResolveCollisionConstraint(g_phCollisionSolver, pairInfo, self + 164);
+    ph_ProfilerBegin(g_phResolveProfileTagEnd, 1);
+}
+
+// ---------------------------------------------------------------------------
+// 5. phBound_ComputeClampedExtent @ 0x82123E78 | size: 0x9C (156 bytes)
+//    Computes safe collision margin from bound's vtable slot 8. Logs warning
+//    and takes abs if negative. Clamps result via fsel.
+// ---------------------------------------------------------------------------
+float phBound_ComputeClampedExtent(void* bound) {
+    float scale = g_phExtentScale;
+    float result = scale;
+    uint32_t extentSrc = *(uint32_t*)((uint8_t*)bound + 256);
+    if (extentSrc != 0) {
+        void** vt = *(void***)(uintptr_t)extentSrc;
+        typedef float (*GetExtFn)(void*);
+        result = ((GetExtFn)vt[8])((void*)(uintptr_t)extentSrc);
+        if (result < scale) {
+            ph_DebugAssertPositive("phBound extent negative", (double)result);
+            if (result < 0.0f) result = -result;
+        }
+    }
+    float clamped = result * g_phClampMax;
+    return (-clamped >= 0.0f) ? 0.0f : clamped;
+}
+
+// ---------------------------------------------------------------------------
+// 6. phJoint1Dof_Constructor @ 0x82126D00 | size: 0x98 (152 bytes)
+//    Constructor for rage::phJoint1Dof. Calls base ctor, installs vtable,
+//    initializes angular limits, spring/damping, motor, tolerances.
+// ---------------------------------------------------------------------------
+extern void phJoint_Constructor(void*);
+
+void phJoint1Dof_Constructor(void* thisPtr) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    phJoint_Constructor(thisPtr);
+    *(void**)(self) = &g_phJoint1DofVtable;
+    *(uint8_t*)(self + 32) = 0;
+    *(float*)(self + 720) = g_phJoint1Dof_angleMin;
+    *(float*)(self + 728) = g_phJoint1Dof_angleMin;
+    *(float*)(self + 724) = g_phJoint1Dof_angleMax;
+    *(float*)(self + 732) = g_phJoint1Dof_angleMax;
+    *(float*)(self + 16)  = g_phJoint1Dof_mass;
+    *(float*)(self + 784) = g_phJoint1Dof_stiffness;
+    *(float*)(self + 792) = g_phJoint1Dof_mass;
+    *(float*)(self + 796) = g_phJoint1Dof_mass;
+    *(float*)(self + 788) = g_phJoint1Dof_maxTorque;
+    *(float*)(self + 800) = g_phJoint1Dof_errTol;
+    *(float*)(self + 804) = g_phJoint1Dof_maxCorr;
+}
+
+// ---------------------------------------------------------------------------
+// 7. phContactManifold_Init @ 0x8221FD78 | size: 0x58 (88 bytes)
+//    Initializes contact manifold (4 slots). Early-outs if physics disabled.
+//    Clears contact IDs, sets separations to 0xFFFF sentinel, zeros floats.
+// ---------------------------------------------------------------------------
+void phContactManifold_Init(void* manifold) {
+    if (g_phDisabled != 0) return;
+    uint8_t* self = (uint8_t*)manifold;
+    for (int i = 0; i < 4; i++) *(uint16_t*)(self + 16 + i*2) = 0;
+    for (int i = 0; i < 4; i++) *(uint16_t*)(self + 24 + i*2) = 0xFFFF;
+    *(float*)(self + 0)  = g_phZeroFloat;
+    *(float*)(self + 4)  = g_phZeroFloat;
+    *(float*)(self + 8)  = g_phZeroFloat;
+    *(float*)(self + 12) = g_phZeroFloat;
+}
+
+// ---------------------------------------------------------------------------
+// 8. phMatrix34_MultiplyTranspose @ 0x8211CC88 | size: 0xCC (204 bytes)
+//    Three-operand matrix multiply: dst = left * right^T. Row 3 computes
+//    delta = left.row3 - right.row3 projected into right's local frame.
+// ---------------------------------------------------------------------------
+void phMatrix34_MultiplyTranspose(float* dst, const float* left, const float* right) {
+    float l0x = left[0],  l0y = left[1],  l0z = left[2];
+    float l1x = left[4],  l1y = left[5],  l1z = left[6];
+    float l2x = left[8],  l2y = left[9],  l2z = left[10];
+    float l3x = left[12], l3y = left[13], l3z = left[14];
+    float r0x = right[0],  r0y = right[1],  r0z = right[2];
+    float r1x = right[4],  r1y = right[5],  r1z = right[6];
+    float r2x = right[8],  r2y = right[9],  r2z = right[10];
+    float r3x = right[12], r3y = right[13], r3z = right[14];
+    float dx = l3x - r3x, dy = l3y - r3y, dz = l3z - r3z;
+    dst[0]  = l0x*r0x + l0y*r0y + l0z*r0z;
+    dst[1]  = l0x*r1x + l0y*r1y + l0z*r1z;
+    dst[2]  = l0x*r2x + l0y*r2y + l0z*r2z;
+    dst[4]  = l1x*r0x + l1y*r0y + l1z*r0z;
+    dst[5]  = l1x*r1x + l1y*r1y + l1z*r1z;
+    dst[6]  = l1x*r2x + l1y*r2y + l1z*r2z;
+    dst[8]  = l2x*r0x + l2y*r0y + l2z*r0z;
+    dst[9]  = l2x*r1x + l2y*r1y + l2z*r1z;
+    dst[10] = l2x*r2x + l2y*r2y + l2z*r2z;
+    dst[12] = dx*r0x + dy*r0y + dz*r0z;
+    dst[13] = dx*r1x + dy*r1y + dz*r1z;
+    dst[14] = dx*r2x + dy*r2y + dz*r2z;
+}
+
+// ---------------------------------------------------------------------------
+// 9. phJoint_Constructor @ 0x8225ABE8 | size: 0x9C (156 bytes)
+//    Base constructor for rage::phJoint. Installs vtable, zeros constraint
+//    matrices (2x 192B), body pointers, and accumulated state (128B).
+// ---------------------------------------------------------------------------
+void phJoint_Constructor(void* thisPtr) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    *(void**)(self) = &g_phJointVtable;
+    *(float*)(self + 16) = g_phZeroFloat;
+    *(uint32_t*)(self + 20) = 0;
+    *(uint32_t*)(self + 24) = 0;
+    *(uint32_t*)(self + 28) = 0;
+    uint8_t* p = self + 48;
+    for (int i = 0; i < 24; i++) { *(uint64_t*)p = 0; p += 8; }
+    p = self + 240;
+    for (int i = 0; i < 24; i++) { *(uint64_t*)p = 0; p += 8; }
+    for (int i = 0; i < 16; i++) *(uint64_t*)(self + 432 + i*8) = 0;
+}
+
+// ---------------------------------------------------------------------------
+// 10. phBound_RelocatePointers @ 0x822CD1B0 | size: 0x78 (120 bytes)
+//     Relocates internal pointers at +16 and +96 after resource loading.
+//     Converts file-relative offsets to absolute addresses via chunk table.
+// ---------------------------------------------------------------------------
+void phBound_RelocatePointers(void* thisPtr, void* relocDesc) {
+    uint8_t* self = (uint8_t*)thisPtr;
+    uint8_t* desc = (uint8_t*)relocDesc;
+    *(void**)(self) = &g_phBoundRelocVtable;
+    uint32_t ptr16 = *(uint32_t*)(self + 16);
+    if (ptr16 != 0) {
+        uint32_t base = *(uint32_t*)(desc + 4);
+        uint32_t chunk = *(uint32_t*)(desc + 76);
+        uint32_t idx = (ptr16 - base) / chunk;
+        *(uint32_t*)(self + 16) = *(uint32_t*)(desc + 8 + idx*4) + ptr16;
+    }
+    uint32_t ptr96 = *(uint32_t*)(self + 96);
+    if (ptr96 == 0) return;
+    uint32_t base = *(uint32_t*)(desc + 4);
+    uint32_t chunk = *(uint32_t*)(desc + 76);
+    uint32_t idx = (ptr96 - base) / chunk;
+    *(uint32_t*)(self + 96) = *(uint32_t*)(desc + 8 + idx*4) + ptr96;
+}
+
+// =========================================================================
+// rage::phBoundCapsule -- Capsule Collision Bound Functions (68-232B)
+// =========================================================================
+//
+// 10 additional phBoundCapsule functions covering containment tests,
+// 2D rotation helpers, initialization, Euler decomposition, and
+// coordinate transformation utilities.
+// =========================================================================
+
+extern float phBoundCapsule_A688_g(void* capsuleData);
+extern int32_t phBoundCapsule_7D90_g(void* capsuleData);
+extern void phBoundCapsule_8EA0_g(void* camera, float fovHoriz, float fovVert);
+extern void phBoundCapsule_3598_g(void* camera);
+extern void phBoundCapsule_9220_g(float* inMatrix, float* row0, float* row1, float* row2, float* row3);
+
+// ---------------------------------------------------------------------------
+// 1. phBoundCapsule::TestPointContainment @ 0x822A4288 | size: 0xAC
+//    Tests whether a 3D point lies inside the capsule bound.
+//    Checks Y against halfHeight+radius, then XZ distance against radius.
+//    For points in the hemispherical caps, checks full 3D distance.
+//    Returns 1 if contained, 0 otherwise.
+// ---------------------------------------------------------------------------
+int32_t rage::phBoundCapsule::TestPointContainment(const float* point) {
+    float radius     = *(float*)((char*)this + 128);
+    float halfHeight = *(float*)((char*)this + 112);
+    float capsuleHalfExtent = radius * g_phTwo + halfHeight;
+
+    float py = point[1];
+    if (py > capsuleHalfExtent)
+        return 0;
+    if (py < -capsuleHalfExtent)
+        return 0;
+
+    // Check XZ planar distance against radius squared
+    float px = point[0];
+    float pz = point[2];
+    float radiusSq = halfHeight * halfHeight;
+    float distXZSq = px * px + pz * pz;
+    if (distXZSq > radiusSq)
+        return 0;
+
+    // Point is in the cylindrical body
+    if (py <= radius) {
+        // In upper hemisphere cap
+        if (py > radius) {
+            float dy = py - radius;
+            float capDistSq = pz * pz + dy * dy + px * px;
+            if (capDistSq > radiusSq)
+                return 0;
+        }
+        return 1;
+    }
+
+    // In lower hemisphere cap
+    float negRadius = -radius;
+    if (py < negRadius) {
+        float dy = py + radius;
+        float capDistSq = pz * pz + dy * dy + px * px;
+        if (capDistSq > radiusSq)
+            return 0;
+    }
+    return 1;
+}
+
+// ---------------------------------------------------------------------------
+// 2. phBoundCapsule::InitializeCapsule @ 0x822A2EA0 | size: 0x84
+//    Sets half-height and radius vectors, computes total extent,
+//    zeros center offset, then calls vfn_37 to update derived data.
+// ---------------------------------------------------------------------------
+extern float ph_TokenizerReadInt(float value);
+void rage::phBoundCapsule::InitializeCapsule(float halfHeight, float radius) {
+
+    // Splat halfHeight into vector at +112
+    float* halfHeightVec = (float*)((char*)this + 112);
+    halfHeightVec[0] = halfHeight;
+    halfHeightVec[1] = halfHeight;
+    halfHeightVec[2] = halfHeight;
+    halfHeightVec[3] = halfHeight;
+
+    // Splat radius into vector at +128
+    float* radiusVec = (float*)((char*)this + 128);
+    radiusVec[0] = radius;
+    radiusVec[1] = radius;
+    radiusVec[2] = radius;
+    radiusVec[3] = radius;
+
+    // Compute total capsule extent: halfHeight + radius * 2
+    float extent = *(float*)((char*)this + 128) * g_phTwo + *(float*)((char*)this + 112);
+    *(float*)((char*)this + 8) = extent;
+
+    // Zero the center offset vector at +48
+    float* center = (float*)((char*)this + 48);
+    center[0] = 0.0f;
+    center[1] = 0.0f;
+    center[2] = 0.0f;
+    center[3] = 0.0f;
+
+    // Update derived bound data via vtable slot 37
     void** vt = *(void***)this;
+    typedef void (*RecalcFn)(void*);
+    RecalcFn recalc = (RecalcFn)vt[37];
+    recalc(this);
+}
+
+// ---------------------------------------------------------------------------
+// 3. phBoundCapsule::RotateAxisXZ @ 0x8223AB00 | size: 0x6C
+//    Rotates a 2D vector (fields +4, +8) by angle using sin/cos helpers.
+//    new[+8] = old[+8]*cos + old[+4]*sin
+//    new[+4] = old[+4]*cos - old[+8]*sin
+// ---------------------------------------------------------------------------
+void phBoundCapsule_RotateAxisXZ(float* vec, float angle) {
+    float sinVal = (float)ph_Sinf(angle);
+    float cosVal = (float)ph_Cosf(angle);
+
+    float oldX = vec[1];  // +4
+    float oldZ = vec[2];  // +8
+
+    float newZ = oldZ * sinVal + oldX * cosVal;
+    vec[2] = newZ;
+
+    float newX = oldX * cosVal - oldZ * sinVal;
+    vec[1] = newX;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phBoundCapsule::RotateAxisYZ @ 0x8223AB70 | size: 0x6C
+//    Rotates a 2D vector (fields +0, +8) by angle using sin/cos helpers.
+//    new[+8] = old[+8]*cos - old[+0]*sin
+//    new[+0] = old[+0]*cos + old[+8]*sin
+// ---------------------------------------------------------------------------
+void phBoundCapsule_RotateAxisYZ(float* vec, float angle) {
+    float sinVal = (float)ph_Sinf(angle);
+    float cosVal = (float)ph_Cosf(angle);
+
+    float oldY = vec[0];  // +0
+    float oldZ = vec[2];  // +8
+
+    float newY = oldY * sinVal;
+    float newZ = oldZ * sinVal;
+
+    vec[2] = (float)(oldZ * cosVal - newY);
+    vec[0] = (float)(oldY * cosVal + newZ);
+}
+
+// ---------------------------------------------------------------------------
+// 5. phBoundCapsule::ClassifyValueBySign @ 0x8216BB88 | size: 0x5C
+//    Classifies a float value's sign against zero and a negative threshold.
+//    Returns  1 if value > 0 and a global flag is set,
+//    Returns -1 if value < threshold and flag is set (or as default),
+//    Returns  1 if value > 0 and flag not set but value < threshold.
+// ---------------------------------------------------------------------------
+int32_t phBoundCapsule_ClassifyValueBySign(float* input) {
+
+    float value = input[0];
+    uint32_t stateObj = *(uint32_t*)(uintptr_t)g_phGlobalStatePtr;
+    uint8_t flag = *(uint8_t*)(uintptr_t)(stateObj + 192);
+
+    if (value > g_floatZero) {
+        if (flag != 0) {
+            return 1;
+        }
+    }
+    if (value < g_phNegThreshold) {
+        if (flag != 0) {
+            return -1;
+        }
+        return 1;
+    }
+    return -1;
+}
+
+// ---------------------------------------------------------------------------
+// 6. phBoundCapsule::ComputeJointAngleSin @ 0x823FD888 | size: 0x44
+//    Sets the joint type to 4 (capsule constraint), computes angle from
+//    joint data via phBoundCapsule_A688_g, stores sin of result.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_ComputeJointAngleSin(void* /*r3*/, void* /*r4*/,
+                                          void* jointData, float* output) {
+    output[1] = 4;  // joint type = 4
+    float angle = phBoundCapsule_A688_g(jointData);
+    float sinVal = (float)ph_Sinf(angle);
+    output[0] = sinVal;
+}
+
+// ---------------------------------------------------------------------------
+// 7. phBoundCapsule::LookupRandomTableValues @ 0x8216CF48 | size: 0x70
+//    Queries a random value generator twice and looks up corresponding
+//    entries from two separate float tables, storing results at +4 and +8.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_LookupRandomTableValues(void* capsule) {
+
+    uint32_t rngState = *(uint32_t*)(uintptr_t)g_phRandomSeedPtr;
+
+    int32_t index1 = phBoundCapsule_7D90_g((void*)(uintptr_t)rngState);
+    float val1 = g_phTableA[index1];
+    *(float*)((char*)capsule + 4) = val1;
+
+    rngState = *(uint32_t*)(uintptr_t)g_phRandomSeedPtr;
+    int32_t index2 = phBoundCapsule_7D90_g((void*)(uintptr_t)rngState);
+    float val2 = g_phTableB[index2];
+    *(float*)((char*)capsule + 8) = val2;
+}
+
+// ---------------------------------------------------------------------------
+// 8. phBoundCapsule::UpdateCameraFromBound @ 0x8216DB10 | size: 0x74
+//    If the capsule has an associated camera (field +152), copies near/far
+//    plane and FOV parameters from the bound to the camera, sets a dirty
+//    flag, and dispatches camera update.
+// ---------------------------------------------------------------------------
+void phBoundCapsule_UpdateCameraFromBound(void* bound) {
+
+    void* camera = *(void**)((char*)bound + 152);
+    if (camera == nullptr)
+        return;
+
+    float fovVert  = *(float*)((char*)bound + 172);
+    float fovHoriz = *(float*)((char*)bound + 168);
+
+    uint32_t cameraBase = *(uint32_t*)(uintptr_t)g_phActiveCameraPtr;
+    phBoundCapsule_8EA0_g((void*)(uintptr_t)cameraBase, fovHoriz, fovVert);
+
+    float nearPlane = *(float*)((char*)bound + 164);
+    *(float*)((char*)camera + 824) = nearPlane;
+
+    // Store FOV and plane parameters into camera structure
+    *(float*)((char*)camera + 828) = fovVert;
+    *(float*)((char*)camera + 832) = fovHoriz;
+    *(float*)((char*)camera + 836) = fovVert;
+    *(uint8_t*)((char*)camera + 864) = 1;  // dirty flag
+
+    phBoundCapsule_3598_g(camera);
+}
+
+// ---------------------------------------------------------------------------
+// 9. phBoundCapsule::TransformPointToLocal @ 0x820D59A8 | size: 0xCC
+//    Transforms a world-space point into the capsule's local coordinate
+//    frame by subtracting the translation row and dotting with each axis.
+//    Then computes atan2(localX, localY) and the capsule distance metric
+//    sqrt(sin^2 * k + cos^2) where k is a capsule shape constant.
+// ---------------------------------------------------------------------------
+float phBoundCapsule_TransformPointToLocal(void* capsule, const float* worldPoint, float param) {
+    // Get the 4x4 matrix from the capsule's instance data
+    void* instData96 = *(void**)((char*)capsule + 96);
+    void* instData80 = *(void**)((char*)capsule + 80);
+    uint16_t matrixIndex = *(uint16_t*)((char*)instData96 + 20);
+    char* matrixBase = (char*)(uintptr_t)(*(uint32_t*)((char*)instData80 + 20));
+    char* matrix = matrixBase + matrixIndex * 64;
+
+    // Load matrix rows
+    float* row0 = (float*)(matrix + 0);
+    float* row1 = (float*)(matrix + 16);
+    float* row2 = (float*)(matrix + 32);
+    float* row3 = (float*)(matrix + 48);
+
+    // Subtract translation (row3) from world point
+    float dx = worldPoint[0] - row3[0];
+    float dy = worldPoint[1] - row3[1];
+    float dz = worldPoint[2] - row3[2];
+
+    // Dot with row0 (local X)
+    float localX = row0[0] * dx + row0[1] * dy + row0[2] * dz;
+    // Dot with row1 (local Y)
+    float localY = row1[0] * dx + row1[1] * dy + row1[2] * dz;
+
+    // Compute atan2(localX, localY)
+    float atanAngle = (float)ph_Atan2f(localY, localX);
+    float sinAngle = (float)ph_Sinf(atanAngle);
+    float cosAngle = (float)ph_Cosf(atanAngle);
+
+    // Compute capsule distance metric
+    float sinSq = sinAngle * sinAngle;
+    float cosSq = cosAngle * cosAngle;
+    float capsuleDistance = (float)ph_Sqrt(cosSq + sinSq * g_phCapsuleShapeK);
+
+    return capsuleDistance;
+}
+
+// ---------------------------------------------------------------------------
+// 10. phBoundCapsule::DecomposeMatrixToEuler @ 0x820D0658 | size: 0xE8
+//     Decomposes a 4x4 rotation matrix into Euler angles (stored as a
+//     3-component vector). Extracts pitch from the matrix, computes yaw
+//     and roll via atan2 on the remaining matrix rows.
+//     Output: [0]=roll, [1]=yaw, [2]=pitch (in capsule convention)
+// ---------------------------------------------------------------------------
+void phBoundCapsule_DecomposeMatrixToEuler(const float* matrix, float* outEuler) {
+
+    // Copy the 4x4 matrix to local storage for decomposition
+    float localMatrix[16];
+    memcpy(localMatrix + 0,  matrix + 0,  16);  // row 0
+    memcpy(localMatrix + 4,  matrix + 4,  16);  // row 1
+    memcpy(localMatrix + 8,  matrix + 8,  16);  // row 2
+    memcpy(localMatrix + 12, matrix + 12, 16);  // row 3
+
+    // Decompose: extract axis angles from the 3x3 rotation sub-matrix
+    phBoundCapsule_9220_g(localMatrix, localMatrix, localMatrix + 4,
+                          localMatrix + 8, localMatrix + 12);
+
+    // Compute pitch angle from rows 1 and 2 (atan2)
+    float pitchY = localMatrix[6];   // row1[2] = element (1,2)
+    float pitchX = localMatrix[5];   // row1[1] = element (1,1)
+
+    float pitch;
+    if (pitchY == g_floatZero && pitchX == g_floatZero) {
+        pitch = g_floatZero;
+    } else {
+        pitch = (float)ph_Atan2f(pitchX, pitchY);
+    }
+
+    // Compute yaw from rows 2 and 3
+    float yawY = localMatrix[10];   // row2[2]
+    float yawX = localMatrix[8];    // row2[0]
+
+    float yaw;
+    if (yawY == g_floatZero && yawX == g_floatZero) {
+        yaw = g_floatZero;
+    } else {
+        yaw = (float)ph_Atan2f(yawX, yawY);
+    }
+
+    // Compute roll from the Z-axis component
+    float rollInput = -localMatrix[9];  // -row2[1]
+    float roll = (float)ph_TokenizerReadInt(rollInput);
+
+    // Store Euler angles
+    outEuler[1] = (float)yaw;
+    outEuler[2] = (float)pitch;
+    outEuler[0] = (float)roll;
+}
+
+// =========================================================================
+// rage::phArticulatedCollider -- Additional Virtual Methods
+// =========================================================================
+
+// External functions used by phArticulatedCollider methods
+extern void phCollider_vfn_1(void* collider);
+extern void phArticulatedCollider_57F0_fw(void* jointData);
+extern void phArticulatedCollider_5D58(void* jointData);
+extern void phArticulatedCollider_5A40_wrh(void* jointData);
+extern void phArticulatedCollider_5FE0(void* jointData);
+extern void* phArticulatedCollider_8C98_wrh(void* jointData, uint32_t boneMap,
+    uint32_t constraintMap, uint32_t jointParamA, uint32_t jointParamB, uint32_t jointParamC);
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::Shutdown (vfn_1) @ 0x8224E6D8 | size: 0x48
+//
+// Overrides phCollider::Shutdown (scalar destructor slot). Calls the base
+// class shutdown, then zeros the joint processing state (m_pJointProcessor
+// at +472 and m_bJointsActive flag at +468), and performs two-phase joint
+// data cleanup via phArticulatedCollider_57F0_fw and _5D58.
+// ---------------------------------------------------------------------------
+void rage::phArticulatedCollider::Shutdown() {
+    phCollider_vfn_1((void*)this);
+
+    m_pJointProcessor = nullptr;  // +472
+    m_bJointsActive = 0;          // +468 (byte)
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_57F0_fw(jointData);
+
+    jointData = (void*)(uintptr_t)m_nActiveJoints;  // reload +464
+    phArticulatedCollider_5D58(jointData);
+}
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ApplyScaledMatrixRowX (vfn_28) @ 0x8224FDA8 | size: 0x94
+//
+// Extracts the X-axis row from the 4x4 transform matrix at offset +144
+// within the root joint data (joint[0] at +40 in the joint data block).
+// Uses vmrghw to interleave high words from matrix rows 0..3 to form
+// the X-components, then scales the result by the float at matrix +128
+// multiplied by the input scale, and calls vtable slot 33 (ApplyForce).
+// ---------------------------------------------------------------------------
+void rage::phArticulatedCollider::ApplyScaledMatrixRowX(float scale) {
+    void** vtbl = *(void***)this;
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    // Get root joint's transform matrix base at +144
+    uint32_t* rootJoint = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)jointDataBase + 40);
+    float* matrixBase = (float*)((char*)rootJoint + 144);
+
+    // Extract X-axis row using high-word interleave of matrix columns
+    // Rows at +0, +16, +32, +48 of the 4x4 matrix
+    float axisVec[4];
+    axisVec[0] = matrixBase[0];   // row0.x
+    axisVec[1] = matrixBase[4];   // row1.x
+    axisVec[2] = matrixBase[8];   // row2.x
+    axisVec[3] = matrixBase[12];  // row3.x
+
+    // Scale by mass float at matrix +128 (offset -16 from matrix = rootJoint+128)
+    float massScale = *(float*)((char*)rootJoint + 128);
+    float combinedScale = massScale * scale;
+
+    axisVec[0] *= combinedScale;
+    axisVec[1] *= combinedScale;
+    axisVec[2] *= combinedScale;
+    axisVec[3] *= combinedScale;
+
+    // Call vtable slot 33 (ApplyForce)
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc fn = (ApplyForceFunc)vtbl[33];
+    fn(this, axisVec);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ApplyScaledMatrixRowY (vfn_29) @ 0x8224FE40 | size: 0x94
+//
+// Same pattern as ApplyScaledMatrixRowX but extracts the Y-axis row using
+// vmrglw (low-word interleave). Scales by the float at rootJoint +136
+// multiplied by the input scale, and calls vtable slot 33.
+// ---------------------------------------------------------------------------
+void rage::phArticulatedCollider::ApplyScaledMatrixRowY(float scale) {
+    void** vtbl = *(void***)this;
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    uint32_t* rootJoint = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)jointDataBase + 40);
+    float* matrixBase = (float*)((char*)rootJoint + 144);
+
+    // Extract Y-axis row using low-word interleave of matrix columns
+    float axisVec[4];
+    axisVec[0] = matrixBase[1];   // row0.y
+    axisVec[1] = matrixBase[5];   // row1.y
+    axisVec[2] = matrixBase[9];   // row2.y
+    axisVec[3] = matrixBase[13];  // row3.y
+
+    // Scale by float at rootJoint +136
+    float massScale = *(float*)((char*)rootJoint + 136);
+    float combinedScale = massScale * scale;
+
+    axisVec[0] *= combinedScale;
+    axisVec[1] *= combinedScale;
+    axisVec[2] *= combinedScale;
+    axisVec[3] *= combinedScale;
+
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc fn = (ApplyForceFunc)vtbl[33];
+    fn(this, axisVec);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ApplyScaledMatrixRowZ (vfn_30) @ 0x8224FED8 | size: 0x94
+//
+// Same pattern as the X/Y variants but extracts the Z-axis row. Uses a
+// combination of vmrghw and vmrglw to pick out the third component from
+// each matrix row. Scales by the float at rootJoint +132 multiplied by
+// the input scale, and calls vtable slot 33.
+// ---------------------------------------------------------------------------
+void rage::phArticulatedCollider::ApplyScaledMatrixRowZ(float scale) {
+    void** vtbl = *(void***)this;
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    uint32_t* rootJoint = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)jointDataBase + 40);
+    float* matrixBase = (float*)((char*)rootJoint + 144);
+
+    // Extract Z-axis row from matrix columns
+    float axisVec[4];
+    axisVec[0] = matrixBase[2];   // row0.z
+    axisVec[1] = matrixBase[6];   // row1.z
+    axisVec[2] = matrixBase[10];  // row2.z
+    axisVec[3] = matrixBase[14];  // row3.z
+
+    // Scale by float at rootJoint +132
+    float massScale = *(float*)((char*)rootJoint + 132);
+    float combinedScale = massScale * scale;
+
+    axisVec[0] *= combinedScale;
+    axisVec[1] *= combinedScale;
+    axisVec[2] *= combinedScale;
+    axisVec[3] *= combinedScale;
+
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc fn = (ApplyForceFunc)vtbl[33];
+    fn(this, axisVec);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::SetupJointConstraints (vfn_47) @ 0x82250528 | size: 0x50
+//
+// Initializes the joint constraint system. Sets the m_bJointsActive flag
+// at +468 to 1, loads five parameter pointers from offsets +476, +484,
+// +492, +500, +508 (bone map, constraint map, joint parameters), and
+// dispatches to phArticulatedCollider_8C98_wrh for constraint setup.
+// Stores the returned constraint handle at +472.
+// ---------------------------------------------------------------------------
+void rage::phArticulatedCollider::SetupJointConstraints() {
+    m_bJointsActive = 1;  // +468 (byte flag)
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;    // +464
+    uint32_t boneMap = *(uint32_t*)((char*)this + 476);      // +0x1DC
+    uint32_t constraintMap = *(uint32_t*)((char*)this + 484);// +0x1E4
+    uint32_t jointParamA = *(uint32_t*)((char*)this + 492);  // +0x1EC
+    uint32_t jointParamB = *(uint32_t*)((char*)this + 500);  // +0x1F4
+    uint32_t jointParamC = *(uint32_t*)((char*)this + 508);  // +0x1FC
+
+    uint32_t result = (uint32_t)(uintptr_t)phArticulatedCollider_8C98_wrh(
+        jointData, boneMap, constraintMap, jointParamA, jointParamB, jointParamC);
+
+    m_pJointProcessor = (void*)(uintptr_t)result;  // +472
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointUpdate (vfn_17) @ 0x822505B0 | size: 0x34
+//
+// Looks up a joint by index through two indirection tables (bone map at +484,
+// link map at +476), resolves the joint object from the joint data array at
+// +464, and tail-calls vtable slot 1 on the resolved joint object.
+//
+// Index resolution: boneMap[index] -> linkIndex, linkMap[index] -> nodeIndex,
+//   then jointData[(nodeIndex + 42) * 4] -> joint object -> vtable[1](joint, boneMapEntry)
+// ---------------------------------------------------------------------------
+void rage::phArticulatedCollider::DispatchJointUpdate(int index) {
+    uint32_t* boneMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);       // +0x1E4
+    uint32_t* linkMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);       // +0x1DC
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;                 // +464
+
+    uint32_t boneEntry = linkMap[index];
+    uint32_t nodeIndex = boneEntry + 42;
+    uint32_t constraintEntry = boneMap[index];
+
+    void* jointObj = (void*)(uintptr_t)jointDataBase[nodeIndex];
+
+    // Tail-call vtable slot 1 on the joint object
+    void** vtbl = *(void***)jointObj;
+    typedef void (*JointUpdateFunc)(void*, uint32_t);
+    JointUpdateFunc fn = (JointUpdateFunc)vtbl[1];
+    fn(jointObj, constraintEntry);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointSolve (vfn_50) @ 0x82250578 | size: 0x34
+//
+// Same indirection as DispatchJointUpdate but tail-calls vtable slot 6
+// (Solve) on the resolved joint object instead of slot 1.
+// ---------------------------------------------------------------------------
+extern void* ph_3760(void* param1, void* param2, void* param3, int maxDepth, int flag1, int flag2);
+void rage::phArticulatedCollider::DispatchJointSolve(int index) {
+    uint32_t* linkMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);       // +0x1DC
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;                 // +464
+    uint32_t* boneMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);       // +0x1E4
+
+    uint32_t nodeIndex = linkMap[index] + 42;
+    uint32_t constraintEntry = boneMap[index];
+
+    void* jointObj = (void*)(uintptr_t)jointDataBase[nodeIndex];
+
+    // Tail-call vtable slot 6 on the joint object
+    void** vtbl = *(void***)jointObj;
+    typedef void (*JointSolveFunc)(void*, uint32_t);
+    JointSolveFunc fn = (JointSolveFunc)vtbl[6];
+    fn(jointObj, constraintEntry);
+}
+
+// =========================================================================
+// rage::phBound — Base Collision Bound Constructors & Utilities
+// =========================================================================
+
+// External references for phBound subsystem
+extern void ke_1B00(void* listHead);                     // Intrusive list head init
+extern void ph_9BC0(void* thisPtr);                      // Collision manager base init
+extern void ph_1310(void* thisPtr);                      // phBoundGeometry base init
+extern void phBoundSphere_vfn_37(void* thisPtr);         // phBoundSphere finalize init
+
+extern uint8_t g_phBoundInitialized;                     // @ 0x82606060
+extern float g_identityVector[4];                        // @ 0x82606740
+
+// Vtable pointers for phBound hierarchy
+extern void* g_phBound_vtable;                           // @ 0x82057EF4 — rage::phBound
+extern void* g_phBoundGeometry_vtable;                   // @ 0x82058494 — rage::phBoundGeometry
+extern void* g_phBoundOTGrid_vtable;                     // @ 0x82058854 — rage::phBoundOTGrid
+extern void* g_phBoundComposite_vtable;                  // @ 0x82057FD4 — rage::phBoundComposite
+extern void* g_phBoundSphere_vtable;                     // @ 0x82058584 — rage::phBoundSphere
+extern void* g_phBoundRibbon_vtable;                     // @ 0x820589BC — rage::phBoundRibbon
+extern float g_phDefaultSphereRadius;                    // @ 0x8202D108
+/**
+ * phCollisionManager_Constructor @ 0x82298F50 | size: 0x58 (88 bytes)
+ *
+ * Constructor for a collision manager wrapping phBoundGeometry. Calls
+ * ph_1310 for base init, sets manager vtable, initializes collision
+ * subsystem at +176, and links subsystem back to this manager.
+ */
+void phCollisionManager_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    ph_1310(thisPtr);
+
+    *(void**)(obj + 0) = &g_phCollisionMgr_vtable;
+
+    void* subsystem = obj + 176;
+    ph_9BC0(subsystem);
+
+    uint32_t* subsysVtPtr = *(uint32_t**)(obj + 176);
+    *(uint32_t*)((uint8_t*)subsysVtPtr + 4) = (uint32_t)(uintptr_t)thisPtr;
+}
+
+/**
+ * phStateArrayReset @ 0x8221FD78 | size: 0x58 (88 bytes)
+ *
+ * Resets a physics state array to defaults. Early-exits if the global
+ * initialized flag is set. Zeroes four 16-bit values at +16, sets
+ * four 16-bit sentinels at +24, and zeroes four floats at +0.
+ */
+void phStateArrayReset(void* stateArray) {
+    if (g_phBoundInitialized != 0) {
+        return;
+    }
+
+    uint8_t* arr = (uint8_t*)stateArray;
+
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(arr + 16 + i * 2) = 0;
+    }
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(arr + 24 + i * 2) = 0xFFFF;
+    }
+
+    *(float*)(arr + 0) = g_floatZero;
+    *(float*)(arr + 4) = g_floatZero;
+    *(float*)(arr + 8) = g_floatZero;
+    *(float*)(arr + 12) = g_floatZero;
+}
+
+/**
+ * phCollisionTreeLookup @ 0x82118DB8 | size: 0x44 (68 bytes)
+ *
+ * Performs a collision tree node lookup. Reads collision data at +164,
+ * extracts tree data at +4, calls ph_3760 with maxDepth=255 and
+ * no filter, and stores the result at +168.
+ */
+void phCollisionTreeLookup(void* thisPtr, void* queryNode) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    uint32_t queryTreeData = *(uint32_t*)((uint8_t*)queryNode + 4);
+    void* collisionData = *(void**)(obj + 164);
+    uint32_t treeDataArray = *(uint32_t*)((uint8_t*)collisionData + 4);
+
+    uint32_t result = (uint32_t)(uintptr_t)ph_3760(
+        (void*)(uintptr_t)queryTreeData,
+        (void*)(uintptr_t)treeDataArray,
+        NULL, 255, 0, 0);
+
+    *(uint32_t*)(obj + 168) = result;
+}
+
+/**
+ * phMatrixTransposeMultiply3x4 @ 0x821181C8 | size: 0xB0 (176 bytes)
+ *
+ * Computes transpose-multiply of two 4x3 matrices in-place. Given
+ * matrices A and B, computes C = A^T * B where the transpose is over
+ * the 3x3 rotation part, and the translation row uses (A.row3 - B.row3).
+ * Result overwrites matrix A.
+ */
+void phMatrixTransposeMultiply3x4(float* matA, const float* matB) {
+    float a0[4], a1[4], a2[4], a3[4];
+    float b0[4], b1[4], b2[4], b3[4];
+
+    memcpy(a0, matA + 0, 16);
+    memcpy(a1, matA + 4, 16);
+    memcpy(a2, matA + 8, 16);
+    memcpy(a3, matA + 12, 16);
+
+    memcpy(b0, matB + 0, 16);
+    memcpy(b1, matB + 4, 16);
+    memcpy(b2, matB + 8, 16);
+    memcpy(b3, matB + 12, 16);
+
+    float delta[4];
+    delta[0] = a3[0] - b3[0];
+    delta[1] = a3[1] - b3[1];
+    delta[2] = a3[2] - b3[2];
+    delta[3] = a3[3] - b3[3];
+
+    float dot_a0_b0 = a0[0]*b0[0] + a0[1]*b0[1] + a0[2]*b0[2];
+    float dot_a0_b1 = a0[0]*b1[0] + a0[1]*b1[1] + a0[2]*b1[2];
+    float dot_a0_b2 = a0[0]*b2[0] + a0[1]*b2[1] + a0[2]*b2[2];
+
+    float dot_a1_b0 = a1[0]*b0[0] + a1[1]*b0[1] + a1[2]*b0[2];
+    float dot_a1_b1 = a1[0]*b1[0] + a1[1]*b1[1] + a1[2]*b1[2];
+    float dot_a1_b2 = a1[0]*b2[0] + a1[1]*b2[1] + a1[2]*b2[2];
+
+    float dot_a2_b0 = a2[0]*b0[0] + a2[1]*b0[1] + a2[2]*b0[2];
+    float dot_a2_b1 = a2[0]*b1[0] + a2[1]*b1[1] + a2[2]*b1[2];
+    float dot_a2_b2 = a2[0]*b2[0] + a2[1]*b2[1] + a2[2]*b2[2];
+
+    float dot_delta_b0 = delta[0]*b0[0] + delta[1]*b0[1] + delta[2]*b0[2];
+    float dot_delta_b1 = delta[0]*b1[0] + delta[1]*b1[1] + delta[2]*b1[2];
+    float dot_delta_b2 = delta[0]*b2[0] + delta[1]*b2[1] + delta[2]*b2[2];
+
+    matA[0] = dot_a0_b0;  matA[1] = dot_a0_b1;  matA[2] = dot_a0_b2;  matA[3] = 0.0f;
+    matA[4] = dot_a1_b0;  matA[5] = dot_a1_b1;  matA[6] = dot_a1_b2;  matA[7] = 0.0f;
+    matA[8] = dot_a2_b0;  matA[9] = dot_a2_b1;  matA[10] = dot_a2_b2; matA[11] = 0.0f;
+    matA[12] = dot_delta_b0; matA[13] = dot_delta_b1; matA[14] = dot_delta_b2; matA[15] = 0.0f;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phArticulatedCollider — Joint Query / Force Dispatch Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::CopyJointTransformMatrix (vfn_13) @ 0x822500E8 | size: 0x88
+//
+// Copies the 4x4 transform matrix (64 bytes at offset +720) from the joint
+// body identified by boneIndex into the caller-supplied output buffer.
+// Uses GetJointLinkIndex (E668) to resolve the bone to a body pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::CopyJointTransformMatrix(float* outMatrix, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
     uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
 
-    // Get root body pointer from joint data array at +40
-    uint32_t rootBody = jointData[10];  // +40
+    // Copy 4 row vectors (64 bytes) from body + 720
+    float* srcMatrix = (float*)(bodyPtr + 720);
+    float* dst0 = outMatrix;
+    float* dst1 = outMatrix + 4;
+    float* dst2 = outMatrix + 8;
+    float* dst3 = outMatrix + 12;
 
-    // Matrix starts at rootBody + 144, laid out as 4 row vectors of 16 bytes
-    float* row0 = (float*)(rootBody + 144);
-    float* row1 = (float*)(rootBody + 160);
-    float* row2 = (float*)(rootBody + 176);
-    float* row3 = (float*)(rootBody + 192);
-
-    // Extract X component (element [0]) from each row to form column vector
-    // vmrghw extracts high words - this transposes to get column X
-    float columnX[4];
-    columnX[0] = row0[0];
-    columnX[1] = row1[0];
-    columnX[2] = row2[0];
-    columnX[3] = row3[0];
-
-    // Load inverse mass from rootBody + 128, scale by parameter
-    float inverseMass = *(float*)(rootBody + 128);
-    float scaleFactor = inverseMass * scale;
-
-    // Scale the column vector
-    float scaledVec[4];
-    scaledVec[0] = columnX[0] * scaleFactor;
-    scaledVec[1] = columnX[1] * scaleFactor;
-    scaledVec[2] = columnX[2] * scaleFactor;
-    scaledVec[3] = columnX[3] * scaleFactor;
-
-    // Dispatch to parent via vtable slot 33 (byte offset 132)
-    typedef void (*ApplyForceFunc)(phArticulatedCollider*, const float*);
-    ApplyForceFunc applyForce = (ApplyForceFunc)vt[33];
-    applyForce(this, scaledVec);
+    dst0[0] = srcMatrix[0];  dst0[1] = srcMatrix[1];  dst0[2] = srcMatrix[2];  dst0[3] = srcMatrix[3];
+    dst1[0] = srcMatrix[4];  dst1[1] = srcMatrix[5];  dst1[2] = srcMatrix[6];  dst1[3] = srcMatrix[7];
+    dst2[0] = srcMatrix[8];  dst2[1] = srcMatrix[9];  dst2[2] = srcMatrix[10]; dst2[3] = srcMatrix[11];
+    dst3[0] = srcMatrix[12]; dst3[1] = srcMatrix[13]; dst3[2] = srcMatrix[14]; dst3[3] = srcMatrix[15];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::GetScaledInertiaAxisY (vfn_29) @ 0x8224FE40 | size: 0x94
+// phArticulatedCollider::CopyJointVelocityMatrix (vfn_14) @ 0x82250170 | size: 0x88
 //
-// Same as GetScaledInertiaAxisX but extracts the Y components (element [1])
-// from each row of the 4x4 matrix, assembles them into a column vector,
-// and scales by rootBody+136 (Y-axis inverse inertia).
-//
-// @param scale - Scale factor for the inertia axis
+// Same as CopyJointTransformMatrix but copies from offset +784 in the joint
+// body, which stores the velocity/angular velocity matrix.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::GetScaledInertiaAxisY(float scale) {
-    void** vt = *(void***)this;
+void rage::phArticulatedCollider::CopyJointVelocityMatrix(float* outMatrix, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
     uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
 
-    // Get root body pointer from joint data array at +40
-    uint32_t rootBody = jointData[10];  // +40
+    float* srcMatrix = (float*)(bodyPtr + 784);
+    float* dst0 = outMatrix;
+    float* dst1 = outMatrix + 4;
+    float* dst2 = outMatrix + 8;
+    float* dst3 = outMatrix + 12;
 
-    // Matrix at rootBody + 144
-    float* row0 = (float*)(rootBody + 144);
-    float* row1 = (float*)(rootBody + 160);
-    float* row2 = (float*)(rootBody + 176);
-    float* row3 = (float*)(rootBody + 192);
-
-    // Extract Y component (element [1]) from each row - vmrglw transposes to column Y
-    float columnY[4];
-    columnY[0] = row0[1];
-    columnY[1] = row1[1];
-    columnY[2] = row2[1];
-    columnY[3] = row3[1];
-
-    // Load Y-axis inverse inertia from rootBody + 136, scale by parameter
-    float inverseInertiaY = *(float*)(rootBody + 136);
-    float scaleFactor = inverseInertiaY * scale;
-
-    // Scale the column vector
-    float scaledVec[4];
-    scaledVec[0] = columnY[0] * scaleFactor;
-    scaledVec[1] = columnY[1] * scaleFactor;
-    scaledVec[2] = columnY[2] * scaleFactor;
-    scaledVec[3] = columnY[3] * scaleFactor;
-
-    // Dispatch to parent via vtable slot 33 (byte offset 132)
-    typedef void (*ApplyForceFunc)(phArticulatedCollider*, const float*);
-    ApplyForceFunc applyForce = (ApplyForceFunc)vt[33];
-    applyForce(this, scaledVec);
+    dst0[0] = srcMatrix[0];  dst0[1] = srcMatrix[1];  dst0[2] = srcMatrix[2];  dst0[3] = srcMatrix[3];
+    dst1[0] = srcMatrix[4];  dst1[1] = srcMatrix[5];  dst1[2] = srcMatrix[6];  dst1[3] = srcMatrix[7];
+    dst2[0] = srcMatrix[8];  dst2[1] = srcMatrix[9];  dst2[2] = srcMatrix[10]; dst2[3] = srcMatrix[11];
+    dst3[0] = srcMatrix[12]; dst3[1] = srcMatrix[13]; dst3[2] = srcMatrix[14]; dst3[3] = srcMatrix[15];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::GetScaledInertiaAxisZ (vfn_30) @ 0x8224FED8 | size: 0x94
+// phArticulatedCollider::ApplyDeltaPositionToJoint (vfn_15) @ 0x822501F8 | size: 0x90
 //
-// Same as GetScaledInertiaAxisX/Y but extracts Z components. Uses vmrghw
-// then vmrglw to get column Z from the matrix rows, scales by
-// rootBody+132 (Z-axis inverse inertia).
-//
-// @param scale - Scale factor for the inertia axis
+// Computes a delta vector by subtracting the collider's current position
+// (offset +208) from a target position, then dispatches the delta to the
+// joint solver. If an alternate target (r6) is provided, uses that instead.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::GetScaledInertiaAxisZ(float scale) {
-    void** vt = *(void***)this;
+void rage::phArticulatedCollider::ApplyDeltaPositionToJoint(int param, const float* targetPos, const float* altTarget, int solverParam) {
+    const float* target = (altTarget != nullptr) ? altTarget : targetPos;
+    int resolveParam = (altTarget != nullptr) ? solverParam : solverParam;
+
+    float* currentPos = (float*)((char*)this + 208);
+    float delta[4];
+    delta[0] = target[0] - currentPos[0];
+    delta[1] = target[1] - currentPos[1];
+    delta[2] = target[2] - currentPos[2];
+    delta[3] = target[3] - currentPos[3];
+
+    int linkIndex = phArticulatedCollider_E668(this, resolveParam);
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phJoint_7A30_fw(jointData, linkIndex, delta, param);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointBackupForce (vfn_20) @ 0x82250440 | size: 0x64
+//
+// Retrieves the backup force vector (at body offset +1072) for the joint
+// identified by boneIndex from a secondary collider.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::GetJointBackupForce(float* outVec, phArticulatedCollider* srcCollider, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(srcCollider, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)srcCollider->m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
+
+    float* srcVec = (float*)(bodyPtr + 1072);
+    outVec[0] = srcVec[0];
+    outVec[1] = srcVec[1];
+    outVec[2] = srcVec[2];
+    outVec[3] = srcVec[3];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateScaledJointForces (vfn_39) @ 0x822504A8 | size: 0x80
+//
+// Iterates over all joint bodies and accumulates scaled force contributions.
+// For each body, scales the force at +336 by the given factor, adds the
+// gravity vector at +368, and accumulates into the output vector.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::AccumulateScaledJointForces(float* outVec, float scale) {
+    outVec[0] = 0.0f; outVec[1] = 0.0f; outVec[2] = 0.0f; outVec[3] = 0.0f;
+
     uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int bodyCount = (int)jointData[1];  // +4
 
-    // Get root body pointer from joint data array at +40
-    uint32_t rootBody = jointData[10];  // +40
-
-    // Matrix at rootBody + 144
-    float* row0 = (float*)(rootBody + 144);
-    float* row1 = (float*)(rootBody + 160);
-    float* row2 = (float*)(rootBody + 176);
-    float* row3 = (float*)(rootBody + 192);
-
-    // Extract Z component (element [2]) from each row
-    // vmrghw + vmrglw combination extracts the third element column
-    float columnZ[4];
-    columnZ[0] = row0[2];
-    columnZ[1] = row1[2];
-    columnZ[2] = row2[2];
-    columnZ[3] = row3[2];
-
-    // Load Z-axis inverse inertia from rootBody + 132, scale by parameter
-    float inverseInertiaZ = *(float*)(rootBody + 132);
-    float scaleFactor = inverseInertiaZ * scale;
-
-    // Scale the column vector
-    float scaledVec[4];
-    scaledVec[0] = columnZ[0] * scaleFactor;
-    scaledVec[1] = columnZ[1] * scaleFactor;
-    scaledVec[2] = columnZ[2] * scaleFactor;
-    scaledVec[3] = columnZ[3] * scaleFactor;
-
-    // Dispatch to parent via vtable slot 33 (byte offset 132)
-    typedef void (*ApplyForceFunc)(phArticulatedCollider*, const float*);
-    ApplyForceFunc applyForce = (ApplyForceFunc)vt[33];
-    applyForce(this, scaledVec);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::SaveAndClearBodyForces (vfn_63) @ 0x8224E2D8 | size: 0xBC
-//
-// Iterates over all bodies in the articulated chain. For each body, saves
-// the current force vectors (at +304 and +320) into backup slots (at +1040
-// and +1056), then zeros out both the force vectors and the velocity vectors
-// at +272 and +288.
-//
-// This is called at the start of a simulation substep to preserve forces for
-// constraint solving while clearing accumulators for the new substep.
-// ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider::SaveAndClearBodyForces() {
-    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_5FE0(jointData);
-
-    uint32_t* jd = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
-    int bodyCount = (int)jd[1];  // +4: body count
+    if (bodyCount <= 0) return;
 
     for (int i = 0; i < bodyCount; i++) {
-        // Body pointer from array at +40
-        uint32_t bodyPtr = jd[10 + i];  // +40 offset, 4 bytes each
+        uint32_t bodyPtr = jointData[10 + i];  // +40 array
 
-        // Save force vector at +304 to backup at +1040
-        float* forceVec = (float*)(bodyPtr + 304);
-        float* backupForce = (float*)(bodyPtr + 1040);
-        backupForce[0] = forceVec[0];
-        backupForce[1] = forceVec[1];
-        backupForce[2] = forceVec[2];
-        backupForce[3] = forceVec[3];
+        float* forceVec = (float*)(bodyPtr + 336);
 
-        // Save torque vector at +320 to backup at +1056
-        float* torqueVec = (float*)(bodyPtr + 320);
-        float* backupTorque = (float*)(bodyPtr + 1056);
-        backupTorque[0] = torqueVec[0];
-        backupTorque[1] = torqueVec[1];
-        backupTorque[2] = torqueVec[2];
-        backupTorque[3] = torqueVec[3];
+        outVec[0] += forceVec[0] * scale;
+        outVec[1] += forceVec[1] * scale;
+        outVec[2] += forceVec[2] * scale;
+        outVec[3] += forceVec[3] * scale;
 
-        // Zero the force vector at +320 (reusing pointer as +304+16)
-        torqueVec[0] = 0.0f; torqueVec[1] = 0.0f;
-        torqueVec[2] = 0.0f; torqueVec[3] = 0.0f;
-
-        // Zero the force vector at +304
-        forceVec[0] = 0.0f; forceVec[1] = 0.0f;
-        forceVec[2] = 0.0f; forceVec[3] = 0.0f;
-
-        // Zero velocity vector at +272
-        float* velVec = (float*)(bodyPtr + 272);
-        velVec[0] = 0.0f; velVec[1] = 0.0f;
-        velVec[2] = 0.0f; velVec[3] = 0.0f;
-
-        // Zero angular velocity vector at +288
-        float* angVelVec = (float*)(bodyPtr + 288);
-        angVelVec[0] = 0.0f; angVelVec[1] = 0.0f;
-        angVelVec[2] = 0.0f; angVelVec[3] = 0.0f;
+        float* gravityVec = (float*)(bodyPtr + 368);
+        outVec[0] += gravityVec[0];
+        outVec[1] += gravityVec[1];
+        outVec[2] += gravityVec[2];
+        outVec[3] += gravityVec[3];
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::NormalizeDirectionVector (E398_p33) @ 0x8224E398 | size: 0x94
+// phArticulatedCollider::GetJointOrientationVector (vfn_49) @ 0x82250710 | size: 0x60
 //
-// Copies a 3-component float vector from source to dest, then normalizes it.
-// If the squared magnitude is above a small epsilon, divides each component
-// by the magnitude (1/sqrt(dot)). If at or below epsilon, stores a default
-// unit vector from a global constant.
-//
-// @param source - Input 3-component float vector
-// @param dest   - Output normalized 3-component float vector (16-byte aligned)
+// Retrieves an orientation vector from a joint body. Loads the stride word
+// from body[0], computes offset = stride*32 + 16, and copies that vector.
 // ─────────────────────────────────────────────────────────────────────────────
-void phArticulatedCollider_NormalizeDirectionVector(const float* source, float* dest) {
-    // Copy source XYZ to dest
-    dest[0] = source[0];
-    dest[1] = source[1];
-    dest[2] = source[2];
+void rage::phArticulatedCollider::GetJointOrientationVector(float* outVec, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
 
-    // Compute squared magnitude (dot product of vector with itself, 3 components)
-    float sqMag = dest[0] * dest[0] + dest[1] * dest[1] + dest[2] * dest[2];
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (linkIndex + 10) * 4);
 
-    // Compare against epsilon (small positive float from .rdata)
-    extern const float g_phNormalizeEpsilon;  // @ 0x82079C58
+    uint32_t strideWord = *(uint32_t*)(bodyPtr);
+    uint32_t byteOffset = strideWord * 32;
 
-    if (sqMag > g_phNormalizeEpsilon) {
-        // Compute 1/sqrt(sqMag) for normalization
-        float mag = sqrtf(sqMag);
-        float invMag = 1.0f / mag;
-
-        // Scale all components by inverse magnitude
-        dest[0] *= invMag;
-        dest[1] *= invMag;
-        dest[2] *= invMag;
-        dest[3] *= invMag;
-    } else {
-        // Magnitude too small; store default unit vector from global
-        extern const float g_phDefaultUnitVector[4];  // @ 0x82083B80
-        dest[0] = g_phDefaultUnitVector[0];
-        dest[1] = g_phDefaultUnitVector[1];
-        dest[2] = g_phDefaultUnitVector[2];
-        dest[3] = g_phDefaultUnitVector[3];
-    }
+    float* srcVec = (float*)(bodyPtr + byteOffset + 16);
+    outVec[0] = srcVec[0];
+    outVec[1] = srcVec[1];
+    outVec[2] = srcVec[2];
+    outVec[3] = srcVec[3];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phArticulatedCollider::GetJointLinkIndex (E668) @ 0x8224E668 | size: 0x70
+// phArticulatedCollider::ApplyDeltaToJointForce (vfn_52) @ 0x82250818 | size: 0x54
 //
-// Resolves a bone index to its corresponding joint link index in the
-// articulated collider. Uses the skeleton's bone map to translate the
-// external bone index into an internal joint array offset.
-//
-// @param boneIndex - External bone index to look up
-// @return Joint link pointer at the resolved offset in this collider
+// Computes the delta between a target position and the collider's position
+// (offset +208), then dispatches via phArticulatedCollider_77F0_w.
 // ─────────────────────────────────────────────────────────────────────────────
-uint32_t phArticulatedCollider::GetJointLinkIndex(int boneIndex) {
-    // Get skeleton pointer from +16
-    uint32_t* skeletonPtr = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 16);
+void rage::phArticulatedCollider::ApplyDeltaToJointForce(const float* targetPos, int boneIndex) {
+    float* currentPos = (float*)((char*)this + 208);
+    float delta[4];
+    delta[0] = targetPos[0] - currentPos[0];
+    delta[1] = targetPos[1] - currentPos[1];
+    delta[2] = targetPos[2] - currentPos[2];
+    delta[3] = targetPos[3] - currentPos[3];
 
-    // Get bone data from skeleton: skeleton[1] -> +4, then +12 for bone map
-    uint32_t* boneData = (uint32_t*)(uintptr_t)skeletonPtr[1];
-    void* boneMap = (void*)(uintptr_t)boneData[3];  // +12
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
 
-    // Assert file and message strings for debug validation
-    extern const char g_phAssertMsg[];   // debug assert string
-    extern const char g_phAssertFile[];  // debug assert file
-
-    // Validate bone map via debug assertion
-    SinglesNetworkClient_0978_g(boneMap, (void*)g_phAssertMsg, (void*)g_phAssertFile);
-
-    // Look up internal joint index from bone map
-    int jointIndex = pongCreatureInst_F5C8(boneMap, boneIndex);
-
-    // Compute offset: (jointIndex + 129) * 4 and load from this
-    uint32_t offset = (uint32_t)(jointIndex + 129) * 4;
-    return *(uint32_t*)((char*)this + offset);
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_77F0_w(jointData, linkIndex, delta);
 }
 
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::DispatchJointVfn1 (vfn_17) @ 0x822505B0 | size: 0x34
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ResetJointConstraintState (vfn_53) @ 0x82250870 | size: 0x38
 //
-// Looks up the joint object for a given joint index using the type array
-// (+476) and object array (+484), resolves the body pointer from the
-// active joints array, then dispatches to vtable slot 1 on that body.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::DispatchJointVfn1(int jointIndex) {
-    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
-    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
-    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+// Resets the constraint state for a specific joint identified by bone index.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::ResetJointConstraintState(int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
 
-    uint32_t jointObj = jointObjArray[jointIndex];
-    uint32_t linkType = jointTypeArray[jointIndex];
-
-    int linkDataIndex = linkType + 42;
-    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
-
-    void** vtable = *(void***)body;
-    typedef void (*UpdateFunc)(void*, uint32_t);
-    UpdateFunc func = (UpdateFunc)vtable[1];
-    func(body, jointObj);
-}
-
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::DispatchJointVfn6 (vfn_50) @ 0x82250578 | size: 0x34
-//
-// Looks up the joint object for a given joint index, resolves the body
-// pointer, then dispatches to vtable slot 6 on that body.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::DispatchJointVfn6(int jointIndex) {
-    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
-    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
-    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
-
-    uint32_t linkType = jointTypeArray[jointIndex];
-    int linkDataIndex = linkType + 42;
-    uint32_t jointObj = jointObjArray[jointIndex];
-
-    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
-
-    void** vtable = *(void***)body;
-    typedef void (*ResetFunc)(void*, uint32_t, uint32_t);
-    ResetFunc func = (ResetFunc)vtable[6];
-    func(body, linkType, jointObj);
-}
-
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::DispatchJointVfn5 (vfn_51) @ 0x822505E8 | size: 0x34
-//
-// Looks up the joint object for a given joint index, resolves the body
-// pointer, then dispatches to vtable slot 5 on that body.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::DispatchJointVfn5(int jointIndex) {
-    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
-    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
-    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
-
-    uint32_t linkType = jointTypeArray[jointIndex];
-    int linkDataIndex = linkType + 42;
-    uint32_t jointObj = jointObjArray[jointIndex];
-
-    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
-
-    void** vtable = *(void***)body;
-    typedef void (*SolveFunc)(void*, uint32_t, uint32_t);
-    SolveFunc func = (SolveFunc)vtable[5];
-    func(body, linkType, jointObj);
-}
-
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::DispatchJointVfn12 (vfn_55) @ 0x822508A8 | size: 0x38
-//
-// Looks up the joint object for a given joint index, resolves the body
-// pointer, then dispatches to vtable slot 12 with an additional parameter.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::DispatchJointVfn12(int jointIndex, void* param) {
-    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
-    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
-    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
-
-    uint32_t linkType = jointTypeArray[jointIndex];
-    uint32_t jointObj = jointObjArray[jointIndex];
-    int linkDataIndex = linkType + 42;
-
-    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
-
-    void** vtable = *(void***)body;
-    typedef void (*ApplyFunc)(void*, uint32_t, uint32_t, void*);
-    ApplyFunc func = (ApplyFunc)vtable[12];
-    func(body, linkType, jointObj, param);
-}
-
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::DispatchJointVfn7 (vfn_58) @ 0x82250910 | size: 0x34
-//
-// Looks up the joint object for a given joint index, resolves the body
-// pointer, then dispatches to vtable slot 7 on that body.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::DispatchJointVfn7(int jointIndex) {
-    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
-    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
-    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
-
-    uint32_t linkType = jointTypeArray[jointIndex];
-    int linkDataIndex = linkType + 42;
-    uint32_t jointObj = jointObjArray[jointIndex];
-
-    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
-
-    void** vtable = *(void***)body;
-    typedef void (*ComputeFunc)(void*, uint32_t);
-    ComputeFunc func = (ComputeFunc)vtable[7];
-    func(body, jointObj);
-}
-
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::ResetJointForces (vfn_53) @ 0x82250870 | size: 0x38
-//
-// Resets force accumulators for a specific joint. Resolves the joint index
-// via GetJointLinkIndex (E668), then delegates to 7918_w.
-// ---------------------------------------------------------------------------
-extern void phArticulatedCollider_7918_w(void* jointData, int linkIndex);
-
-void phArticulatedCollider::ResetJointForces(int jointIndex) {
-    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
     phArticulatedCollider_7918_w(jointData, linkIndex);
 }
 
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::GetBodyTransformVector (vfn_20) @ 0x82250440 | size: 0x64
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointSlot12 (vfn_55) @ 0x822508A8 | size: 0x38
 //
-// Retrieves a body's cached transform vector from a source articulated
-// collider. Copies the 16-byte vector at body offset +1072 into this.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::GetBodyTransformVector(phArticulatedCollider* source, int jointIndex) {
-    int linkIndex = phArticulatedCollider_E668(source, jointIndex);
+// Resolves a joint index to a body pointer via bone-to-body mapping arrays
+// at +476 and +484, then dispatches to that body's vtable slot 12.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::DispatchJointSlot12(int jointIndex, float* outVec) {
+    uint32_t* parentIndexArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
 
-    uint32_t* srcJointData = (uint32_t*)(uintptr_t)source->m_nActiveJoints;
-    int arrayIndex = linkIndex + 10;
-    uint8_t* body = (uint8_t*)(uintptr_t)srcJointData[arrayIndex];
+    uint32_t parentIndex = parentIndexArray[jointIndex];
+    uint32_t jointType = jointTypeArray[jointIndex];
 
-    float* srcVec = (float*)(body + 1072);
-    float* destVec = (float*)this;
-    destVec[0] = srcVec[0];
-    destVec[1] = srcVec[1];
-    destVec[2] = srcVec[2];
-    destVec[3] = srcVec[3];
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (parentIndex + 42) * 4);
+
+    void** bodyVTable = *(void***)(uintptr_t)bodyPtr;
+    typedef void (*Slot12Func)(void*, int, float*);
+    Slot12Func fn = (Slot12Func)bodyVTable[12];
+    fn((void*)(uintptr_t)bodyPtr, (int)jointType, outVec);
 }
 
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::GetJointPivotPosition (vfn_49) @ 0x82250710 | size: 0x60
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointSlot7 (vfn_58) @ 0x82250910 | size: 0x34
 //
-// Retrieves the pivot position for a specific joint. Reads the body's
-// hinge count, computes stride = count * 32, copies vector at
-// body + stride + 16 into output.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::GetJointPivotPosition(int jointIndex, float* outPos) {
-    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
-
+// Same as DispatchJointSlot12 but dispatches to vtable slot 7 (byte offset 28).
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::DispatchJointSlot7(int jointIndex) {
+    uint32_t* parentIndexArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);
     uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
-    int arrayIndex = linkIndex + 10;
-    uint8_t* body = (uint8_t*)(uintptr_t)jointData[arrayIndex];
 
-    uint32_t hingeCount = *(uint32_t*)body;
-    uint32_t stride = hingeCount * 32;
+    uint32_t parentIndex = parentIndexArray[jointIndex];
+    uint32_t jointType = jointTypeArray[jointIndex];
 
-    float* srcVec = (float*)(body + stride + 16);
-    outPos[0] = srcVec[0];
-    outPos[1] = srcVec[1];
-    outPos[2] = srcVec[2];
-    outPos[3] = srcVec[3];
+    uint32_t bodyPtr = *(uint32_t*)((char*)jointData + (parentIndex + 42) * 4);
+
+    void** bodyVTable = *(void***)(uintptr_t)bodyPtr;
+    typedef void (*Slot7Func)(void*, int);
+    Slot7Func fn = (Slot7Func)bodyVTable[7];
+    fn((void*)(uintptr_t)bodyPtr, (int)jointType);
 }
 
-// ---------------------------------------------------------------------------
-// phArticulatedCollider::GetJointMatrix (vfn_13) @ 0x822500E8 | size: 0x88
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phArticulatedCollider — Dispatch, Force, and Matrix Functions (10 fns)
+// ═════════════════════════════════════════════════════════════════════════════
+
+extern void phArticulatedCollider_8A30(void* jointData, const float* velocity);
+extern void phArticulatedCollider_8B10(void* jointData, const float* angularVelocity);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DelegateToBoundCapsule (vfn_24) @ 0x822CC700 | size: 0x8
 //
-// Retrieves the 4x4 orientation matrix for a specific joint. Copies four
-// 16-byte rows from body offset +720 into the output matrix buffer.
-// ---------------------------------------------------------------------------
-void phArticulatedCollider::GetJointMatrix(float* outMatrix, int jointIndex) {
-    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
+// Adjusts 'this' by +352 to reach the embedded phBoundCapsule sub-object,
+// then tail-calls phBoundCapsule_ACB0_p45.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::DelegateToBoundCapsule() {
+    phBoundCapsule_ACB0_p45((char*)this + 352);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::DispatchJointSlot5 (vfn_51) @ 0x822505E8 | size: 0x34
+//
+// Resolves the joint object for the given index through the type/object/active
+// arrays, computes linkDataIndex = jointType + 42, then tail-calls vtable
+// slot 5 on the resolved joint object.
+//
+// @param jointIndex - Index of the joint to dispatch on
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::DispatchJointSlot5(int jointIndex) {
+    uint32_t* jointTypeArray  = (uint32_t*)(uintptr_t)field_0x01dc;   // +476
+    uint32_t* activeJointsArr = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+    uint32_t* jointObjArray   = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+    void* jointObj  = (void*)(uintptr_t)jointObjArray[jointIndex];
+    void* linkData  = (void*)(uintptr_t)activeJointsArr[linkDataIndex];
+
+    void** jvt = *(void***)jointObj;
+    typedef void (*JointFunc)(void*, void*);
+    ((JointFunc)jvt[5])(jointObj, linkData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointStiffness (vfn_62) @ 0x8224E280 | size: 0x58
+//
+// Resolves joint object and link data via type/object/active arrays,
+// then calls vtable slot 8 on the joint object to retrieve the stiffness
+// value into a stack-local float, which is returned.
+//
+// @param jointIndex - Index of the joint to query
+// @return Stiffness value for the specified joint
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phArticulatedCollider::GetJointStiffness(int jointIndex) {
+    uint32_t* jointTypeArray  = (uint32_t*)(uintptr_t)field_0x01dc;   // +476
+    uint32_t* activeJointsArr = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+    uint32_t* jointObjArray   = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+    void* jointObj  = (void*)(uintptr_t)jointObjArray[jointIndex];
+    void* linkData  = (void*)(uintptr_t)activeJointsArr[linkDataIndex];
+
+    float result;
+    void** jvt = *(void***)jointObj;
+    typedef void (*GetStiffnessFunc)(void*, void*, void*, float*);
+    ((GetStiffnessFunc)jvt[8])(jointObj, (void*)(uintptr_t)jointObjArray[jointIndex], linkData, &result);
+
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateForceAtJoint (vfn_38) @ 0x8224EFE0 | size: 0x60
+//
+// Resolves a bone index to a body pointer via E668, then adds a 16-byte
+// force vector (SIMD add) to the body's accumulated force at offset +384.
+//
+// @param forceVec   - 16-byte aligned force vector to accumulate
+// @param boneIndex  - Bone index to resolve to a body
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::AccumulateForceAtJoint(const float* forceVec, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
 
     uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
-    int arrayIndex = linkIndex + 10;
-    uint8_t* body = (uint8_t*)(uintptr_t)jointData[arrayIndex];
+    int bodyIndex = linkIndex + 10;
+    uint8_t* bodyPtr = (uint8_t*)(uintptr_t)jointData[bodyIndex];
 
-    float* srcRow0 = (float*)(body + 720);
-    float* srcRow1 = (float*)(body + 736);
-    float* srcRow2 = (float*)(body + 752);
-    float* srcRow3 = (float*)(body + 768);
+    // Add force vector to accumulated force at body + 384
+    float* accForce = (float*)(bodyPtr + 384);
+    accForce[0] += forceVec[0];
+    accForce[1] += forceVec[1];
+    accForce[2] += forceVec[2];
+    accForce[3] += forceVec[3];
+}
 
-    float* dstRow0 = outMatrix;
-    float* dstRow1 = outMatrix + 4;
-    float* dstRow2 = outMatrix + 8;
-    float* dstRow3 = outMatrix + 12;
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetVelocityScaled (vfn_40) @ 0x8224F870 | size: 0x58
+//
+// Stores the input velocity vector at offset +224, scales it by the
+// restitution coefficient at +100, stores the result at +256, then
+// propagates velocity to all joints via phArticulatedCollider_8A30.
+//
+// @param velocity - 16-byte aligned velocity vector
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::SetVelocityScaled(const float* velocity) {
+    uint8_t* self = (uint8_t*)this;
 
-    dstRow0[0] = srcRow0[0]; dstRow0[1] = srcRow0[1];
-    dstRow0[2] = srcRow0[2]; dstRow0[3] = srcRow0[3];
+    // Read restitution coefficient from +100
+    float restitution = *(float*)(self + 100);
 
-    dstRow1[0] = srcRow1[0]; dstRow1[1] = srcRow1[1];
-    dstRow1[2] = srcRow1[2]; dstRow1[3] = srcRow1[3];
+    // Store velocity at +224
+    float* storedVel = (float*)(self + 224);
+    storedVel[0] = velocity[0];
+    storedVel[1] = velocity[1];
+    storedVel[2] = velocity[2];
+    storedVel[3] = velocity[3];
 
-    dstRow2[0] = srcRow2[0]; dstRow2[1] = srcRow2[1];
-    dstRow2[2] = srcRow2[2]; dstRow2[3] = srcRow2[3];
+    // Scale velocity by restitution and store at +256
+    float* scaledVel = (float*)(self + 256);
+    scaledVel[0] = storedVel[0] * restitution;
+    scaledVel[1] = storedVel[1] * restitution;
+    scaledVel[2] = storedVel[2] * restitution;
+    scaledVel[3] = storedVel[3] * restitution;
 
-    dstRow3[0] = srcRow3[0]; dstRow3[1] = srcRow3[1];
-    dstRow3[2] = srcRow3[2]; dstRow3[3] = srcRow3[3];
+    // Propagate to all joints
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_8A30(jointDataPtr, storedVel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SetAngularVelocity (vfn_43) @ 0x8224F948 | size: 0x44
+//
+// Stores angular velocity at offset +272, calls the base class handler
+// (game_CE58), then propagates angular velocity from +240 to all joints
+// via phArticulatedCollider_8B10.
+//
+// @param angularVelocity - 16-byte aligned angular velocity vector
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::SetAngularVelocity(const float* angularVelocity) {
+    uint8_t* self = (uint8_t*)this;
+
+    // Store angular velocity at +272
+    float* storedAngVel = (float*)(self + 272);
+    storedAngVel[0] = angularVelocity[0];
+    storedAngVel[1] = angularVelocity[1];
+    storedAngVel[2] = angularVelocity[2];
+    storedAngVel[3] = angularVelocity[3];
+
+    // Call base class handler
+    game_CE58(this);
+
+    // Propagate angular velocity at +240 to all joints
+    float* angVel = (float*)(self + 240);
+    void* jointDataPtr = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_8B10(jointDataPtr, angVel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::UpdatePostIntegrate (vfn_11) @ 0x822CB360 | size: 0x54
+//
+// Calls vtable slot 10 (self-dispatch), then util_B680 for post-integration
+// cleanup, then dispatches vtable slot 28 on the skeleton object at +16.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::UpdatePostIntegrate() {
+    // Self-dispatch vtable slot 10
+    void** vt = *(void***)this;
+    typedef void (*Slot10Func)(phArticulatedCollider*);
+    ((Slot10Func)vt[10])(this);
+
+    // Post-integration cleanup
+    util_B680(this);
+
+    // Dispatch vtable slot 28 on skeleton at +16
+    void* skeleton = (void*)(uintptr_t)*(uint32_t*)((char*)this + 16);
+    void** skelVt = *(void***)skeleton;
+    typedef void (*Slot28Func)(void*);
+    ((Slot28Func)skelVt[28])(skeleton);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::CopyJointRotationMatrix (vfn_54) @ 0x82250770 | size: 0xA4
+//
+// Resolves a bone index to a body pointer via E668, then copies the 3x3
+// rotation submatrix (rows at +16/+48/+80, columns 0-2) from the body into
+// the output buffer as a 4x4 matrix with zeroed last row.
+//
+// @param outMatrix  - 60-byte output buffer for 3x3 + zero row
+// @param boneIndex  - Bone index to resolve
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::CopyJointRotationMatrix(float* outMatrix, int boneIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, boneIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int bodyIndex = linkIndex + 10;
+    uint8_t* bodyPtr = (uint8_t*)(uintptr_t)jointData[bodyIndex];
+
+    // Copy 3x3 rotation from body: rows at +16, +48, +80 (float triplets)
+    float* row0 = (float*)(bodyPtr + 16);
+    float* row1 = (float*)(bodyPtr + 48);
+    float* row2 = (float*)(bodyPtr + 80);
+
+    // Row 0
+    outMatrix[0]  = row0[0];   // +16
+    outMatrix[1]  = row0[2];   // +48 (body col 1 at +48 of row0? No, +48 is row1)
+    // Actually: scaffold reads +16,+48,+80,+84,+20,+52,+24,+56,+88
+    // Re-reading scaffold: f5=+16, f13=+48, f12=+80, f11=+84, f10=+52, f9=+20, f8=+88, f7=+56, f6=+24
+    // Stores: +0=f5, +4=f13, +8=f12, +24=f11, +20=f10, +16=f9, +40=f8, +36=f7, +32=f6
+    // +48,+52,+56 = 0.0f
+
+    outMatrix[0]  = *(float*)(bodyPtr + 16);   // row0 col0
+    outMatrix[1]  = *(float*)(bodyPtr + 48);   // row1 col0
+    outMatrix[2]  = *(float*)(bodyPtr + 80);   // row2 col0
+    // padding
+    outMatrix[4]  = *(float*)(bodyPtr + 20);   // row0 col1
+    outMatrix[5]  = *(float*)(bodyPtr + 52);   // row1 col1
+    outMatrix[6]  = *(float*)(bodyPtr + 84);   // row2 col1
+    // padding
+    outMatrix[8]  = *(float*)(bodyPtr + 24);   // row0 col2
+    outMatrix[9]  = *(float*)(bodyPtr + 56);   // row1 col2
+    outMatrix[10] = *(float*)(bodyPtr + 88);   // row2 col2
+    // padding
+
+    // Zero last row
+    outMatrix[12] = 0.0f;
+    outMatrix[13] = 0.0f;
+    outMatrix[14] = 0.0f;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ComputeJointCrossProduct (vfn_19) @ 0x82250370 | size: 0xCC
+//
+// Looks up a body position via E668 in another collider, loads its orientation
+// matrix from +1072 and the row at +1088, computes a cross product between
+// that row and a delta vector (input - otherCollider.position@+208), and
+// adds the cross product to the row at +1088.
+//
+// @param outVec       - 16-byte output vector (receives cross+row result)
+// @param targetPos    - 16-byte input position vector
+// @param otherCollider - The other phArticulatedCollider to look up
+// @param boneIndex    - Bone index in otherCollider
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::ComputeJointCrossProduct(
+    float* outVec, const float* targetPos,
+    phArticulatedCollider* otherCollider, int boneIndex)
+{
+    int linkIndex = phArticulatedCollider_E668(otherCollider, boneIndex);
+
+    // Get body pointer from other collider's joint array
+    uint32_t* otherJointData = (uint32_t*)(uintptr_t)otherCollider->m_nActiveJoints;
+    int bodyIndex = linkIndex + 10;
+    uint8_t* bodyPtr = (uint8_t*)(uintptr_t)otherJointData[bodyIndex];
+
+    // Load position vector from body +1072
+    float* bodyPos1072 = (float*)(bodyPtr + 1072);
+
+    // Compute delta = targetPos - otherCollider.position(+208)
+    float* otherPos = (float*)((char*)otherCollider + 208);
+    float dx = targetPos[0] - otherPos[0];
+    float dy = targetPos[1] - otherPos[1];
+    float dz = targetPos[2] - otherPos[2];
+
+    // Load row from body +1088
+    float* bodyRow1088 = (float*)(bodyPtr + 1088);
+
+    // Cross product: delta x bodyPos1072 row
+    float cx = dy * bodyPos1072[2] - dz * bodyPos1072[1];
+    float cy = dz * bodyPos1072[0] - dx * bodyPos1072[2];
+    float cz = dx * bodyPos1072[1] - dy * bodyPos1072[0];
+
+    // Add cross product to bodyRow1088 values and store in outVec
+    outVec[0] = cx + bodyRow1088[0];
+    outVec[2] = cy + bodyRow1088[2];
+    outVec[1] = cz + bodyRow1088[1];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::AccumulateTorqueAtRootJoint (vfn_32) @ 0x8224FB90 | size: 0xCC
+//
+// Calls vtable slot 16 on the skeleton at +16 with a global identity vector,
+// then computes a cross product between the input force vector and the root
+// body's column vectors (at +336/+352), accumulating the torque into the
+// root body's torque vector at +352 and force vector at +336.
+//
+// @param forceVec - 16-byte force vector to accumulate
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phArticulatedCollider::AccumulateTorqueAtRootJoint(const float* forceVec) {
+    // Call vtable slot 16 on skeleton at +16 with identity vector
+    void* skeleton = (void*)(uintptr_t)*(uint32_t*)((char*)this + 16);
+    void** skelVt = *(void***)skeleton;
+    typedef void (*Slot16Func)(void*, void*, void*, int);
+    ((Slot16Func)skelVt[16])(skeleton, (void*)g_identityVec, nullptr, 0);
+
+    // Get root body from active joints array, slot [10] (first body)
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    uint8_t* rootBody = (uint8_t*)(uintptr_t)jointData[10];  // +40
+
+    // Load torque vector at body +352
+    float* torque = (float*)(rootBody + 352);
+    // Load position from global identity vector
+    float identX = ((float*)g_identityVec)[0];
+    float identY = ((float*)g_identityVec)[1];
+    float identZ = ((float*)g_identityVec)[2];
+
+    // Load force vector components
+    float fX = forceVec[0];
+    float fY = forceVec[1];
+    float fZ = forceVec[2];
+
+    // Cross product: identity x force
+    float cx = identY * fZ - identZ * fY;
+    float cy = identZ * fX - identX * fZ;
+    float cz = identX * fY - identY * fX;
+
+    // Accumulate into torque vector at body +352
+    torque[0] += cx;
+    torque[1] += cy;
+    torque[2] += cz;
+
+    // Accumulate force vector into body +336
+    float* bodyForce = (float*)(rootBody + 336);
+    bodyForce[0] += forceVec[0];
+    bodyForce[1] += forceVec[1];
+    bodyForce[2] += forceVec[2];
+    bodyForce[3] += forceVec[3];
 }
 
 } // namespace rage
 
 // ═════════════════════════════════════════════════════════════════════════════
-// rage::phInst — Virtual Accessor / Dispatch Functions (8-24B)
+// rage::phBoundCapsule — Virtual and Utility Functions (10 functions)
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * phInst::SetCollisionGroup (vfn_16) @ 0x8248B8C8 | size: 0x8
- *
- * Stores the collision group identifier at offset +284 (0x011C).
- * The collision group controls which physics groups this instance
- * belongs to for broadphase collision filtering.
- */
-void phInst::SetCollisionGroup(uint32_t val) {
-    *(uint32_t*)((char*)this + 284) = val;
+// External declarations
+extern void ph_1B78_3(void* outVec, float halfLength, float radius);
+extern void util_DA50(void* dst, const void* src);  // phBound::CopyFrom base
+extern void* g_display_obj_ptr;
+extern void phBoundCapsule_3F90_g(void* thisPtr, const float* midpoint, const float* axisA, const float* axisB);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetPolygonCount (vfn_12) @ 0x8256FBD0 | size: 0x08
+//
+// Returns the polygon count stored at offset +192 (0xC0).
+// For a capsule bound, this represents the tessellation polygon count
+// used when rendering/approximating the capsule shape.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t rage::phBoundCapsule::GetPolygonCount() const {
+    return *(uint32_t*)((char*)this + 192);
 }
 
-/**
- * phInst::GetCollisionGroup (vfn_19) @ 0x8248B8D0 | size: 0x8
- *
- * Returns the collision group identifier stored at offset +284 (0x011C).
- */
-uint32_t phInst::GetCollisionGroup() {
-    return *(uint32_t*)((char*)this + 284);
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::SetPolygonCount (vfn_13) @ 0x822A2E00 | size: 0x08
+//
+// Sets the polygon count at offset +192 (0xC0).
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::SetPolygonCount(uint32_t count) {
+    *(uint32_t*)((char*)this + 192) = count;
 }
 
-/**
- * phInst::SetCollisionMask (vfn_38) @ 0x8248D808 | size: 0x8
- *
- * Stores the collision mask at offset +444 (0x01BC).
- * The collision mask is a bitmask controlling which collision groups
- * this instance can interact with during narrowphase tests.
- */
-void phInst::SetCollisionMask(uint32_t val) {
-    *(uint32_t*)((char*)this + 444) = val;
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetExtents (vfn_9) @ 0x822A3258 | size: 0x10
+//
+// Computes the bounding extents of the capsule and stores them in the
+// output vector. Reads the half-length (+112) and radius (+128), then
+// tail-calls ph_1B78 which builds the axis-aligned extents vector.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::GetExtents(float* outExtents, const void* params) {
+    float halfLength = *(float*)((char*)params + 112);
+    float radius = *(float*)((char*)params + 128);
+    ph_1B78_3(outExtents, halfLength, radius);
 }
 
-/**
- * phInst::GetCollisionMask (vfn_44) @ 0x8248D810 | size: 0x8
- *
- * Returns the collision mask stored at offset +444 (0x01BC).
- */
-uint32_t phInst::GetCollisionMask() {
-    return *(uint32_t*)((char*)this + 444);
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::RenderDebug (vfn_11) @ 0x822A2DE0 | size: 0x20
+//
+// Renders debug visualization for the capsule bound. Loads the polygon
+// count from offset +192 into r4, retrieves the global display object,
+// and dispatches to its vtable slot 5 (DrawBoundCapsule).
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::RenderDebug() {
+    uint32_t polyCount = *(uint32_t*)((char*)this + 192);
+    void* displayObj = g_display_obj_ptr;
+    void** vtable = *(void***)displayObj;
+    typedef void (*DrawFunc)(void*, uint32_t);
+    DrawFunc drawBound = (DrawFunc)vtable[5];
+    drawBound(displayObj, polyCount);
 }
 
-/**
- * phInst::SetUserData (vfn_39) @ 0x8248D818 | size: 0x8
- *
- * Stores a user-defined data word at offset +448 (0x01C0).
- * This field allows game code to associate arbitrary data with
- * a physics instance (e.g., entity index, type tag).
- */
-void phInst::SetUserData(uint32_t val) {
-    *(uint32_t*)((char*)this + 448) = val;
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::CalculateVolume (vfn_8) @ 0x822A2DB0 | size: 0x2C
+//
+// Computes the volume of the capsule bound:
+//   volume = (halfLength * 2.0 + radius) * halfLength^2 * (4/3)*pi
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::CalculateVolume() const {
+    float halfLength = *(float*)((char*)this + 112);
+    float radius = *(float*)((char*)this + 128);
+    static const float kTwo = 2.0f;
+    static const float kFourThirdsPi = 4.18879032f;
+    float combined = halfLength * kTwo + radius;
+    float lengthSq = combined * halfLength;
+    float lengthCubed = lengthSq * halfLength;
+    return lengthCubed * kFourThirdsPi;
 }
 
-/**
- * phInst::GetUserData (vfn_45) @ 0x8248D820 | size: 0x8
- *
- * Returns the user data word stored at offset +448 (0x01C0).
- */
-uint32_t phInst::GetUserData() {
-    return *(uint32_t*)((char*)this + 448);
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::SetCentroidOffset (vfn_7) @ 0x8233AB50 | size: 0x48
+//
+// Translates the capsule centroid by an offset vector. Loads the current
+// centroid at offset +48, adds the input offset vector component-wise,
+// then calls vtable slot 6 (SetCentroid) with the resulting position.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::SetCentroidOffset(const float* offset) {
+    float* centroid = (float*)((char*)this + 48);
+    float result[4];
+    result[0] = centroid[0] + offset[0];
+    result[1] = centroid[1] + offset[1];
+    result[2] = centroid[2] + offset[2];
+    result[3] = centroid[3] + offset[3];
+
+    void** vtable = *(void***)this;
+    typedef void (*SetCentroidFunc)(void*, const float*);
+    SetCentroidFunc setCentroid = (SetCentroidFunc)vtable[6];
+    setCentroid(this, result);
 }
 
-/**
- * phInst::GetArchetype (vfn_71) @ 0x82488480 | size: 0x8
- *
- * Returns the 64-bit archetype pointer stored at offset +64 (0x0040).
- * The archetype describes the shared physical properties (shape,
- * mass, material) for this instance.
- */
-void* phInst::GetArchetype() {
-    return *(void**)((char*)this + 64);
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetBoundingDistance (vfn_33) @ 0x822A3268 | size: 0x50
+//
+// Returns the bounding distance of the capsule along a given direction:
+//   distance = halfLength + fabs(direction.y) * radius * 2.0
+// If includeCenter is zero, adds centroid dot product with direction.
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::GetBoundingDistance(const float* direction, uint8_t includeCenter) const {
+    float absY = direction[1];
+    if (absY < 0.0f) absY = -absY;
+
+    float radius = *(float*)((char*)this + 128);
+    float halfLength = *(float*)((char*)this + 112);
+    static const float kTwo = 2.0f;
+
+    float scaledRadius = radius * absY;
+    float distance = scaledRadius * kTwo + halfLength;
+
+    if (includeCenter != 0)
+        return distance;
+
+    float* centroid = (float*)((char*)this + 48);
+    float dot = centroid[0] * direction[0]
+              + centroid[1] * direction[1]
+              + centroid[2] * direction[2];
+
+    return dot + distance;
 }
 
-/**
- * phInst::GetErrorCode (vfn_48) @ 0x8247E2D0 | size: 0xC
- *
- * Returns the constant 0x80004001 (E_NOTIMPL).
- * Base implementation for a query interface that is not supported
- * at this level of the hierarchy; subclasses override with real logic.
- */
-uint32_t phInst::GetErrorCode() {
-    return 0x80004001;
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::ValidateAndSetExtents @ 0x82143F08 | size: 0x84
+//
+// Validates that a rotation vector is non-zero before applying capsule
+// extents. If the rotation column (row 1) is all-zero, returns immediately.
+// Otherwise computes the midpoint (row0 + row2) and dispatches to
+// phBoundCapsule_3F90_g for full capsule setup.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ValidateAndSetExtents(const float* matrix) {
+    const float* rotation = matrix + 4;
+
+    uint32_t absX = *(uint32_t*)(rotation + 0) & 0x7FFFFFFF;
+    uint32_t absY = *(uint32_t*)(rotation + 1) & 0x7FFFFFFF;
+    uint32_t absZ = *(uint32_t*)(rotation + 2) & 0x7FFFFFFF;
+    uint32_t absW = *(uint32_t*)(rotation + 3) & 0x7FFFFFFF;
+
+    bool allZero = (absX == 0 && absY == 0 && absZ == 0 && absW == 0);
+    if (allZero)
+        return;
+
+    const float* row0 = matrix;
+    const float* row2 = matrix + 8;
+    float midpoint[4];
+    midpoint[0] = row0[0] + row2[0];
+    midpoint[1] = row0[1] + row2[1];
+    midpoint[2] = row0[2] + row2[2];
+    midpoint[3] = row0[3] + row2[3];
+
+    phBoundCapsule_3F90_g(this, midpoint, rotation, row2);
 }
 
-/**
- * phInst::DispatchSlot13_204 (vfn_15) @ 0x8248D888 | size: 0x18
- *
- * Tail-calls vtable slot 13 (the generic dispatch handler) passing
- * a pointer to the field block at offset +204 (0x00CC) and size 40.
- * r3=this, r4/r5 pass through from caller, r6=40, r7=this+204.
- * Dispatches processing of the local transform matrix region.
- */
-void phInst::DispatchSlot13_204() {
-    typedef void (*Fn)(void*, void*, void*, int, void*);
-    void** vt = *(void***)this;
-    void* fieldPtr = (char*)this + 204;
-    ((Fn)vt[13])(this, nullptr, nullptr, 40, fieldPtr);
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetJointLimitsForAxis @ 0x820DF420 | size: 0xC4
+//
+// Retrieves joint limit min/max values for a given axis index from the
+// joint data at offset +8. Each entry is 104 bytes. The axis selects
+// which limit pair to read. Validates min >= -1.0; retries with axis=11
+// as fallback if below threshold.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::GetJointLimitsForAxis(uint32_t jointIndex, uint32_t axis,
+                                                  float* outMin, float* outMax) {
+    static const float kNegativeOne = -1.0f;
 
-/**
- * phInst::DispatchSlot13_284 (vfn_34) @ 0x8248D868 | size: 0x18
- *
- * Tail-calls vtable slot 13 with a pointer to the field block at
- * offset +284 (0x011C) and size 40.
- * r3=this, r4/r5 pass through from caller, r6=40, r7=this+284.
- * Dispatches processing of the collision group / filter data region.
- */
-void phInst::DispatchSlot13_284() {
-    typedef void (*Fn)(void*, void*, void*, int, void*);
-    void** vt = *(void***)this;
-    void* fieldPtr = (char*)this + 284;
-    ((Fn)vt[13])(this, nullptr, nullptr, 40, fieldPtr);
-}
+retry:
+    if (axis <= 3) {
+        uint8_t* jointData = *(uint8_t**)((char*)this + 8);
+        uint8_t* entry = jointData + jointIndex * 104;
 
-
-// ═════════════════════════════════════════════════════════════════════════════
-// rage::phInst — Instance query, delegation, and thread-safe accessor methods
-// ═════════════════════════════════════════════════════════════════════════════
-
-// Global critical section for phInst thread-safe accessors
-// lbl_825B2320 [.data sz:0x20] @ 0x825B2320 — the lock is at offset +4
-extern "C" uint8_t g_phInstLockStorage[0x20]; // @ 0x825B2320
-#define g_phInstCritSection (&g_phInstLockStorage[4])
-
-extern "C" void RtlEnterCriticalSection(void* cs);
-extern "C" void RtlLeaveCriticalSection(void* cs);
-
-// Forward declarations for delegated helpers
-extern "C" void phInst_8F10_p42(void* thisPtr, uint32_t mode,
-                                 void* p1, void* p2, void* p3);
-extern "C" void* phInst_C2C0_h(void* thisPtr, void* p1, void* p2, void* p3);
-extern "C" void* phInst_C348_h(void* thisPtr);
-extern "C" void grc_2CC8(void* p1, void* p2);
-
-/**
- * rage::phInst::GetLevelCount @ 0x823592E8 | size: 0x10
- *
- * Extracts the level count from the packed flags word at offset +32.
- * The level count is stored in bits [6:9] (4-bit field), and this
- * function returns that value plus one (1-based count).
- *
- * Assembly: lwz r11,32(r3); rlwinm r11,r11,26,28,31; addi r3,r11,1
- */
-uint32_t phInst::GetLevelCount() {
-    uint32_t flags = *(uint32_t*)((char*)this + 32);
-    uint32_t rawLevel = (flags >> 6) & 0xF;
-    return rawLevel + 1;
-}
-
-/**
- * rage::phInst::RefreshDefaultMode @ 0x823592F8 | size: 0x18
- *
- * Delegates to the main refresh routine (phInst_8F10_p42) with mode set
- * to 0 (default refresh). Shifts all remaining parameters down by one
- * slot to prepend the mode argument.
- *
- * Assembly: shuffles r4-r7 → r5-r8, sets r4=0, branches to phInst_8F10
- */
-void phInst::RefreshDefaultMode(void* p1, void* p2, void* p3) {
-    phInst_8F10_p42(this, 0, p1, p2, p3);
-}
-
-/**
- * rage::phInst::CompareBoundPages @ 0x82359310 | size: 0x14
- *
- * Extracts the page-aligned base addresses from the bound pointers at
- * offsets +36 and +20, masking off the lower 12 bits (4KB page alignment),
- * then delegates to grc_2CC8 for comparison/registration.
- *
- * Assembly: lwz fields, rlwinm mask 0xFFFFF000, tail-call grc_2CC8
- */
-void phInst::CompareBoundPages() {
-    uint32_t bound1 = *(uint32_t*)((char*)this + 36);
-    uint32_t bound2 = *(uint32_t*)((char*)this + 20);
-    void* page1 = (void*)(bound1 & 0xFFFFF000);
-    void* page2 = (void*)(bound2 & 0xFFFFF000);
-    grc_2CC8(page2, page1);
-}
-
-/**
- * rage::phInst::GetSerializedSize @ 0x824631A0 | size: 0x14
- *
- * Returns the serialized byte size of this phInst variant. Stores the
- * constant 0x4BA24 (309796) into the output parameter and returns 0
- * to indicate success.
- *
- * Assembly: lis r11,4; ori r10,r11,47652; stw r10,0(r4); li r3,0
- */
-int phInst::GetSerializedSize(uint32_t* outSize) {
-    *outSize = 0x4BA24;
-    return 0;
-}
-
-/**
- * rage::phInst::GetFixedSize @ 0x82461488 | size: 0x10
- *
- * Returns a fixed size constant of 20 bytes via the output parameter.
- * Returns 0 to indicate success. Used during serialization or memory
- * allocation queries for small fixed-size phInst data blocks.
- *
- * Assembly: li r11,20; stw r11,0(r4); li r3,0
- */
-int phInst::GetFixedSize(uint32_t* outSize) {
-    *outSize = 20;
-    return 0;
-}
-
-/**
- * rage::phInst::GetBoundVirtual9_Locked @ 0x824609F0 | size: 0x54
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * calls vtable slot 9 on this instance, then releases the lock.
- * Returns the result of the virtual call.
- *
- * Pattern: EnterCS → VCALL(this, slot 9) → LeaveCS → return result
- */
-void* phInst::GetBoundVirtual9_Locked(void* param) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    // VCALL slot 9 (byte offset +36 in vtable)
-    typedef void* (*VFn)(void*, void*);
-    void** vt = *(void***)this;
-    void* result = ((VFn)vt[9])(this, param);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::HashLookup_Locked @ 0x82460AF8 | size: 0x58
- *
- * Thread-safe wrapper around phInst_C2C0_h (a hash-based resource lookup).
- * Acquires the global phInst critical section, calls the lookup helper
- * with all four parameters, then releases the lock.
- *
- * Pattern: EnterCS → phInst_C2C0_h(this, p1, p2, p3) → LeaveCS → return
- */
-void* phInst::HashLookup_Locked(void* p1, void* p2, void* p3) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    void* result = phInst_C2C0_h(this, p1, p2, p3);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::ResourceLookup_Locked @ 0x82460BB0 | size: 0x58
- *
- * Thread-safe wrapper around phInst_C348_h (a resource lookup/query).
- * Acquires the global phInst critical section, calls the lookup helper,
- * then releases the lock and returns the result.
- *
- * Pattern: EnterCS → phInst_C348_h(this) → LeaveCS → return result
- */
-void* phInst::ResourceLookup_Locked() {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    void* result = phInst_C348_h(this);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::CallVirtual15_Locked @ 0x82460C58 | size: 0x58
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * calls vtable slot 15 on this instance with param and a zero flag,
- * then releases the lock. Returns the virtual call result.
- *
- * Pattern: EnterCS → VCALL(this, slot 15, param, 0) → LeaveCS → return
- */
-void* phInst::CallVirtual15_Locked(void* param) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    // VCALL slot 15 (byte offset +60 in vtable)
-    typedef void* (*VFn)(void*, void*, int);
-    void** vt = *(void***)this;
-    void* result = ((VFn)vt[15])(this, param, 0);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::SetBoundScale_Locked @ 0x82460E98 | size: 0x74
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * loads the bound pointer from offset +76 (0x4C), calls vtable slot 22
- * on that bound with a float scale parameter, then releases the lock.
- * Returns the result of the virtual call.
- *
- * Pattern: EnterCS → bound=this[76] → VCALL(bound, slot 22, f1) → LeaveCS
- */
-void* phInst::SetBoundScale_Locked(float scale) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    // Load bound pointer at offset +76
-    void* bound = *(void**)((char*)this + 76);
-    // VCALL slot 22 (byte offset +88 in vtable)
-    typedef void* (*VFn)(void*, float);
-    void** vt = *(void***)bound;
-    void* result = ((VFn)vt[22])(bound, scale);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// rage::phInst — Thread-safe accessors and utility functions (batch 3)
-// ═════════════════════════════════════════════════════════════════════════════
-
-/**
- * rage::phInst::GetTypeIndex_Locked @ 0x824608B8 | size: 0x64
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * calls vtable slot 2 on this instance (returns a type index or class ID),
- * then releases the lock. Returns the virtual call result.
- *
- * Pattern: EnterCS -> VCALL(this, slot 2) -> LeaveCS -> return result
- */
-void* phInst::GetTypeIndex_Locked() {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    typedef void* (*VFn)(void*);
-    void** vt = *(void***)this;
-    void* result = ((VFn)vt[2])(this);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::CallVirtual12_Locked @ 0x82460AA0 | size: 0x54
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * calls vtable slot 12 on this instance with a parameter, then releases
- * the lock. Returns the virtual call result.
- *
- * Pattern: EnterCS -> VCALL(this, slot 12, param) -> LeaveCS -> return
- */
-void* phInst::CallVirtual12_Locked(void* param) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    typedef void* (*VFn)(void*, void*);
-    void** vt = *(void***)this;
-    void* result = ((VFn)vt[12])(this, param);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::GetBoundSlot12_Locked @ 0x82460CB0 | size: 0x64
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * loads the bound pointer from offset +76 (0x4C), calls vtable slot 12
- * on that bound object, then releases the lock. Returns the result.
- *
- * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 12) -> LeaveCS
- */
-void* phInst::GetBoundSlot12_Locked() {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    void* bound = *(void**)((char*)this + 76);
-    typedef void* (*VFn)(void*);
-    void** vt = *(void***)bound;
-    void* result = ((VFn)vt[12])(bound);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::GetBoundSlot13_Locked @ 0x82460D18 | size: 0x54
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * loads the bound pointer from offset +76 (0x4C), calls vtable slot 13
- * on that bound with a parameter, then releases the lock.
- *
- * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 13, param) -> LeaveCS
- */
-void* phInst::GetBoundSlot13_Locked(void* param) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    void* bound = *(void**)((char*)this + 76);
-    typedef void* (*VFn)(void*, void*);
-    void** vt = *(void***)bound;
-    void* result = ((VFn)vt[13])(bound, param);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::GetBoundSlot14_Locked @ 0x82460D70 | size: 0x54
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * loads the bound pointer from offset +76 (0x4C), calls vtable slot 14
- * on that bound with a parameter, then releases the lock.
- *
- * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 14, param) -> LeaveCS
- */
-void* phInst::GetBoundSlot14_Locked(void* param) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    void* bound = *(void**)((char*)this + 76);
-    typedef void* (*VFn)(void*, void*);
-    void** vt = *(void***)bound;
-    void* result = ((VFn)vt[14])(bound, param);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-/**
- * rage::phInst::GetBoundSlot16_Locked @ 0x82460DC8 | size: 0x54
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * loads the bound pointer from offset +76 (0x4C), calls vtable slot 16
- * on that bound with a parameter, then releases the lock.
- *
- * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 16, param) -> LeaveCS
- */
-void* phInst::GetBoundSlot16_Locked(void* param) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    void* bound = *(void**)((char*)this + 76);
-    typedef void* (*VFn)(void*, void*);
-    void** vt = *(void***)bound;
-    void* result = ((VFn)vt[16])(bound, param);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-// Global singleton pointer for phInst system manager
-// lbl_825E788C [.data sz:0x4] @ 0x825E788C
-extern "C" void* g_phInstManager;  // @ 0x825E788C
-
-/**
- * rage::phInst::GetManagerSlot2_Locked @ 0x82460FE8 | size: 0x7C
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * checks if the global phInst manager singleton (g_phInstManager) is valid,
- * and if so calls vtable slot 2 on it. Returns NULL if the manager is not
- * initialized. Releases the lock before returning.
- *
- * Pattern: EnterCS -> if(!g_phInstManager) { LeaveCS; return 0 }
- *          -> VCALL(manager, slot 2) -> LeaveCS -> return result
- */
-void* phInst::GetManagerSlot2_Locked() {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    if (g_phInstManager == NULL) {
-        RtlLeaveCriticalSection(g_phInstCritSection);
-        return NULL;
-    }
-    typedef void* (*VFn)(void*);
-    void** vt = *(void***)g_phInstManager;
-    void* result = ((VFn)vt[2])(g_phInstManager);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return result;
-}
-
-// Forward declaration for dispatch helper
-extern "C" void* ke_9A90(void* manager, void* param);
-
-/**
- * rage::phInst::DispatchToManager_Locked @ 0x82461168 | size: 0x7C
- *
- * Thread-safe accessor that acquires the global phInst critical section,
- * checks if the global phInst manager singleton is valid, and if so
- * dispatches to ke_9A90 with the manager and a parameter. Returns
- * 0x80004005 (E_FAIL) if the manager is not initialized.
- *
- * Pattern: EnterCS -> if(!g_phInstManager) { LeaveCS; return 0x80004005 }
- *          -> ke_9A90(manager, param) -> LeaveCS -> return result
- */
-uint32_t phInst::DispatchToManager_Locked(void* param) {
-    RtlEnterCriticalSection(g_phInstCritSection);
-    if (g_phInstManager == NULL) {
-        RtlLeaveCriticalSection(g_phInstCritSection);
-        return 0x80004005;  // E_FAIL - manager not initialized
-    }
-    void* result = ke_9A90(g_phInstManager, param);
-    RtlLeaveCriticalSection(g_phInstCritSection);
-    return (uint32_t)(uintptr_t)result;
-}
-
-/**
- * rage::phInst::ComputeAllocationSize @ 0x82465938 | size: 0x48
- *
- * Computes the byte size needed to allocate storage for a phInst with
- * a given element count. The element count comes from offset +8 of the
- * instance, but may be capped by a maximum stored at the pointer at
- * offset +12 (first byte). If the instance's count exceeds the maximum,
- * the maximum is used instead.
- *
- * Formula: size = (count * 3) * 4 + 28
- * This accounts for 3 uint32_t fields per element plus a 28-byte header.
- *
- * Stores the computed size into *outSize and returns 0 (success).
- */
-int phInst::ComputeAllocationSize(uint32_t* outSize) {
-    uint8_t count = *(uint8_t*)((char*)this + 8);
-    void* maxPtr = *(void**)((char*)this + 12);
-
-    if (maxPtr != NULL) {
-        uint8_t maxCount = *(uint8_t*)maxPtr;
-        if ((uint32_t)count > (uint32_t)maxCount) {
-            count = maxCount;
+        switch (axis) {
+        case 0: {
+            float val = *(float*)(entry + 0);
+            *outMax = val;
+            *outMin = val;
+            break;
+        }
+        case 2: {
+            float lo = *(float*)(entry + 4);
+            *outMin = lo;
+            float hi = *(float*)(entry + 8);
+            *outMax = hi;
+            break;
+        }
+        case 1: {
+            float lo = *(float*)(entry + 12);
+            *outMin = lo;
+            float hi = *(float*)(entry + 16);
+            *outMax = hi;
+            break;
+        }
+        case 3: {
+            float lo = *(float*)(entry + 20);
+            *outMin = lo;
+            float hi = *(float*)(entry + 24);
+            *outMax = hi;
+            break;
+        }
         }
     }
 
-    // size = (count * 3) * 4 + 28
-    uint32_t stride = (uint32_t)count * 3;
-    uint32_t size = stride * 4 + 28;
-    *outSize = size;
-    return 0;
-}
-
-/**
- * rage::phInst::GetAllocator @ 0x82465D40 | size: 0x20
- *
- * Given a pointer to an allocation block, adjusts back by 8 bytes to
- * reach the block header, loads the vtable, and tail-calls vtable
- * slot 1 (the GetAllocator method). If the input pointer is NULL,
- * passes NULL directly (which will fault - caller must ensure non-NULL).
- *
- * Assembly: cmplwi r3,0; addi r3,r3,-8; lwz vtable; call slot 1
- */
-void* phInst::GetAllocator(void* blockPtr) {
-    if (blockPtr == NULL) {
-        blockPtr = NULL;
-    } else {
-        blockPtr = (char*)blockPtr - 8;
+    float minVal = *outMin;
+    if (minVal < kNegativeOne) {
+        axis = 11;
+        goto retry;
     }
-    typedef void* (*VFn)(void*);
-    void** vt = *(void***)blockPtr;
-    return ((VFn)vt[1])(blockPtr);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::CopyFrom (vfn_34) @ 0x822A2F28 | size: 0xBC
+//
+// Deep-copies all capsule-specific fields from a source phBoundCapsule.
+// Calls base phBound::CopyFrom, then copies capsule vectors at offsets
+// 112-176, polygon count at 192, 12 parameter bytes at 196, and sets
+// the dirty flag at offset 96 to 1.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::CopyFrom(const rage::phBoundCapsule* source) {
+    util_DA50(this, source);
+
+    memcpy((char*)this + 112, (const char*)source + 112, 16);
+    memcpy((char*)this + 128, (const char*)source + 128, 16);
+    memcpy((char*)this + 144, (const char*)source + 144, 16);
+    memcpy((char*)this + 160, (const char*)source + 160, 16);
+    memcpy((char*)this + 176, (const char*)source + 176, 16);
+
+    *(uint32_t*)((char*)this + 192) = *(const uint32_t*)((const char*)source + 192);
+
+    const uint8_t* srcBytes = (const uint8_t*)source + 196;
+    uint8_t* dstBytes = (uint8_t*)this + 196;
+    for (int i = 0; i < 12; i++) {
+        dstBytes[i] = srcBytes[i];
+    }
+
+    *(uint16_t*)((char*)this + 96) = 1;
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
-// ph_ free functions — Batch 2: Physics utility and constructor routines
-// 10 functions, 88-192 bytes each
+// rage::phBoundSphere — Virtual Accessor and Computation Functions
 // ═════════════════════════════════════════════════════════════════════════════
 
-// External function declarations (Batch 2)
-extern void parStreamInXml_ReadChar(void* stream);         // parStreamInXml_3308_gen
-extern void ke_1B00(void* node);                           // intrusive list node init
-extern void SinglesNetworkClient_8108_gen(void* obj);      // datBase init
-extern void phArchetype_InitDefaults(void* thisPtr);       // phArchetype_vfn_3
-extern void* phArchetype_AllocateInstance(void* thisPtr);   // ph_9EC0_1
-extern void phBoundGeometry_Constructor(void* thisPtr, void* param);  // ph_0F78 (intermediate ctor)
-extern void phBoundGeometry_InitSearchTree(void* tree);     // ph_FA58
-extern void ph_CEE0(void* bound, int doFree);              // phBound release/free
-extern void ph_6FC8_FindBound(void* pool, const char* name); // ph_6FC8
-extern void ph_E010_CreateBound(void* pool, void* config, const char* name); // ph_E010
+namespace rage {
 
-// External globals (Batch 2)
-extern float g_phSpringDamping;           // @ 0x825C807C (.data)
-extern const float g_phZeroThreshold;     // @ lbl_8202D10C (.rdata)
-extern const float g_phOneFloat;          // @ lbl_8202D110 (.rdata)
-extern const float g_phMassThreshold;     // @ lbl_8202D10C (.rdata, -12020 from base)
+// External globals for phBoundSphere
 
 // ---------------------------------------------------------------------------
-// phBound_SpringDampenToward @ 0x822B0690 | size: 0xC0 (192 bytes)
-//
-// Moves a 3D point (r3) toward a target (r4) with spring-like damping.
-// Computes the difference vector, measures its squared length, and if above
-// a threshold, normalizes it and scales by a damped factor. The result is
-// added to the target position and stored back. If the distance is below
-// the threshold, applies a fixed scale factor and adds to target.
-//
-// Parameters:
-//   r3 = float[4]* currentPos (in/out)
-//   r4 = float[4]* targetPos
-//   f1 = damping factor
+// phBoundSphere::DispatchMaterialAlloc (vfn_11) @ 0x82295478 | size: 0x20 (32B)
+//    Loads material index from +128, fetches the global material allocator,
+//    and tail-calls its vtable slot 5 to allocate material data.
 // ---------------------------------------------------------------------------
-// ph_0690
-void phBound_SpringDampenToward(float* currentPos, const float* targetPos, float dampFactor) {
-    // Compute difference: delta = current - target
-    float dx = currentPos[0] - targetPos[0];
-    float dy = currentPos[1] - targetPos[1];
-    float dz = currentPos[2] - targetPos[2];
-
-    // Store delta as current position initially
-    currentPos[0] = dx;
-    currentPos[1] = dy;
-    currentPos[2] = dz;
-
-    // Compute squared length of delta
-    float distSq = dx * dx + dy * dy + dz * dz;
-
-    if (distSq > 0.0f) {
-        // Distance is non-negligible
-        float oneF = 1.0f;
-        if (distSq != oneF) {
-            float dist = sqrtf(distSq);
-            oneF = 1.0f / dist;
-        }
-        // Scale: factor = 1/dist * damping + 1.0
-        float scale = oneF * g_phSpringDamping + 1.0f;
-
-        // Scale delta by combined factor
-        currentPos[0] = dx * scale;
-        currentPos[1] = dy * scale;
-        currentPos[2] = dz * scale;
-
-        // Add target back: result = scaled_delta + target
-        currentPos[0] += targetPos[0];
-        currentPos[1] += targetPos[1];
-        currentPos[2] += targetPos[2];
-    } else {
-        // Distance negligible — just use fixed scale
-        float fixedScale = *(float*)0x825CD184;  // fixed fallback scale
-
-        currentPos[0] = dx * fixedScale;
-        currentPos[1] = dy * fixedScale;
-        currentPos[2] = dz * fixedScale;
-
-        currentPos[0] += targetPos[0];
-        currentPos[1] += targetPos[1];
-        currentPos[2] += targetPos[2];
-    }
+void phBoundSphere::DispatchMaterialAlloc() {
+    uint32_t materialIdx = *(uint32_t*)((char*)this + 128);
+    void* allocator = g_phMaterialAllocator;
+    void** vt = *(void***)allocator;
+    typedef void (*AllocFn)(void*, uint32_t);
+    ((AllocFn)vt[5])(allocator, materialIdx);
 }
 
 // ---------------------------------------------------------------------------
-// parStreamInXml_ReadNextChar @ 0x822E53F8 | size: 0x68 (104 bytes)
-//
-// Reads the next character from an XML parser stream. If there are buffered
-// characters remaining (field +24 > 0), returns the next one from the buffer
-// at offset +28. Otherwise, reads from the underlying stream object at +12.
-// If the character is a newline (0x0A), increments the line counter at +8.
-//
-// Parameters:
-//   r3 = parStreamInXml* this
-// Returns:
-//   r3 = int32_t next character (sign-extended byte)
+// phBoundSphere::GetMaterialIndex (vfn_12) @ 0x82295498 | size: 0x8 (8B)
+//    Returns the material index stored at offset +128.
 // ---------------------------------------------------------------------------
-// ph_53F8
-int32_t parStreamInXml_ReadNextChar(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-    int32_t ch;
-
-    int32_t buffered = *(int32_t*)(obj + 24);
-    if (buffered != 0) {
-        // Read from internal buffer
-        buffered--;
-        *(int32_t*)(obj + 24) = buffered;
-        ch = (int8_t)*(uint8_t*)(obj + 28 + buffered);
-    } else {
-        // Read from underlying stream
-        void* stream = *(void**)(obj + 12);
-        ch = (int32_t)parStreamInXml_ReadChar(stream);
-    }
-
-    // Track line numbers
-    if (ch == 10) {
-        int32_t lineNum = *(int32_t*)(obj + 8);
-        *(int32_t*)(obj + 8) = lineNum + 1;
-    }
-
-    return ch;
+uint32_t phBoundSphere::GetMaterialIndex() {
+    return *(uint32_t*)((char*)this + 128);
 }
 
 // ---------------------------------------------------------------------------
-// rage::phArchetype::phArchetype @ 0x822C98B8 | size: 0x5C (92 bytes)
-//
-// Constructor for phArchetype. Sets vtable to rage::phArchetype, initializes
-// intrusive list node at +8, datBase at +12, clears bound pointer (+4),
-// name field (+26), and list pointers, then calls InitDefaults (vfn_3).
-//
-// Parameters:
-//   r3 = phArchetype* this
-// Returns:
-//   r3 = this
+// phBoundSphere::SetMaterialIndex (vfn_13) @ 0x822954A0 | size: 0x8 (8B)
+//    Stores a material index at offset +128.
 // ---------------------------------------------------------------------------
-// ph_98B8
-void* phArchetype_Constructor(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
+void phBoundSphere::SetMaterialIndex(uint32_t index) {
+    *(uint32_t*)((char*)this + 128) = index;
+}
 
-    // Install vtable: rage::phArchetype @ 0x82059B4C
-    *(uint32_t*)(obj + 0) = 0x82059B4C;
+// ---------------------------------------------------------------------------
+// phBoundSphere::ComputeVolume (vfn_8) @ 0x822954A8 | size: 0x1C (28B)
+//    Computes sphere volume: (4/3)*pi*r^3 where r is at offset +8.
+// ---------------------------------------------------------------------------
+float phBoundSphere::ComputeVolume() {
+    float r = *(float*)((char*)this + 8);
+    float r3 = r * r * r;
+    return r3 * g_phSphereVolumeCoeff;
+}
 
-    // Initialize intrusive list node at +8
-    ke_1B00((void*)(obj + 8));
+// ---------------------------------------------------------------------------
+// phBoundSphere::ComputeInertiaTensor (vfn_9) @ 0x82295678 | size: 0x30 (48B)
+//    Computes inertia = coeff * density * r^3, splats result to output vec4.
+//    @param outTensor - 16-byte aligned output vector (all 4 components set)
+//    @param source    - Object with radius at +8
+//    @param density   - Density scalar (f1)
+// ---------------------------------------------------------------------------
+void phBoundSphere::ComputeInertiaTensor(float* outTensor, const void* source, float density) {
+    float r = *(float*)((char*)source + 8);
+    float r2 = r * r;
+    float r2d = r2 * density;
+    float inertia = r2d * g_phSphereInertiaCoeff;
+    // Splat inertia to all 4 components of output vector
+    outTensor[0] = inertia;
+    outTensor[1] = inertia;
+    outTensor[2] = inertia;
+    outTensor[3] = inertia;
+}
 
-    // Initialize datBase at +12
-    SinglesNetworkClient_8108_gen((void*)(obj + 12));
+// ---------------------------------------------------------------------------
+// phBoundSphere::GetProjectedExtent (vfn_33) @ 0x82295860 | size: 0x34 (52B)
+//    Projects the sphere center (+48 vec4) onto a direction (r4 vec4),
+//    then adds the radius (+8). Returns early if the byte flag (r5) is set.
+//    @param direction - 16-byte aligned direction vector
+//    @param flags     - If nonzero, returns radius without projection
+//    @return Projected extent = dot(center, direction) + radius
+// ---------------------------------------------------------------------------
+float phBoundSphere::GetProjectedExtent(const float* direction, uint8_t flags) {
+    float radius = *(float*)((char*)this + 8);
+    if (flags != 0) return radius;
+    // dot3(center, direction)
+    float* center = (float*)((char*)this + 48);
+    float dot = center[0] * direction[0] + center[1] * direction[1] + center[2] * direction[2];
+    return dot + radius;
+}
 
-    // Clear fields
-    *(uint32_t*)(obj + 4) = 0;     // bound pointer
-    *(uint16_t*)(obj + 26) = 0;    // name/flags
-    *(uint32_t*)(obj + 12) = 0;    // datBase data
-    *(uint32_t*)(obj + 8) = 0;     // list node
+// ---------------------------------------------------------------------------
+// phBoundSphere::RenderDebug (vfn_14) @ 0x8233A8F8 | size: 0x14 (20B)
+//    Tail-calls vtable slot 11 with parameter 0. Used to dispatch the debug
+//    rendering with default arguments.
+// ---------------------------------------------------------------------------
+void phBoundSphere::RenderDebug() {
+    void** vt = *(void***)this;
+    typedef void (*RenderFn)(void*, int);
+    ((RenderFn)vt[11])(this, 0);
+}
 
-    // Call virtual InitDefaults
-    phArchetype_InitDefaults(thisPtr);
+// ---------------------------------------------------------------------------
+// phBoundSphere::SetPositionAndUpdateFlags (vfn_6) @ 0x8233AB08 | size: 0x48 (72B)
+//    Copies position vector (r4) into center at +48, masks xyz components,
+//    checks if any are nonzero, sets the "has position" flag at +5, then
+//    tail-calls vtable slot 37 to update derived bounds.
+// ---------------------------------------------------------------------------
+void phBoundSphere::SetPositionAndUpdateFlags(const float* position) {
+    float* center = (float*)((char*)this + 48);
+    // Copy position to center
+    memcpy(center, position, 16);
+    // Mask to xyz only (clear w) and check if nonzero
+    uint32_t* cInt = (uint32_t*)center;
+    bool hasPosition = (cInt[0] | cInt[1] | cInt[2]) != 0;
+    *(uint8_t*)((char*)this + 5) = hasPosition ? 1 : 0;
+    // Tail-call vtable slot 37 to update derived data
+    void** vt = *(void***)this;
+    typedef void (*UpdateFn)(void*);
+    ((UpdateFn)vt[37])(this);
+}
+
+} // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Physics constructor / initializer free functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External declarations
+extern void ph_ctor_FFD8(void* thisPtr, void* param);
+// extern void ph_95A8_h(void* thisPtr);  // removed: conflicts with definition returning void*
+extern void ph_3870_h(void* param, void* dest);
+extern void phJoint3Dof_0170_g(void* dest, int stride, const void* srcTemplate, int count);
+
+// ---------------------------------------------------------------------------
+// phBoundGeometryIntermediate_Constructor @ 0x82291310 | size: 0x6C (108B)
+//    Intermediate constructor for phBoundGeometry. Calls the base bound
+//    constructor (ph_ctor_FFD8) passing through r4, installs the
+//    phBoundGeometry vtable, calls ph_95A8_h, then initializes the
+//    material table at +160 via ph_3870_h. Returns this pointer.
+// ---------------------------------------------------------------------------
+// ph_1310
+void* phBoundGeometryIntermediate_Constructor(void* thisPtr, void* param) {
+    // Call base constructor, passing through param
+    ph_ctor_FFD8(thisPtr, param);
+
+    // Install phBoundGeometry vtable
+    *(void**)thisPtr = &g_phBoundGeometryVtable;
+
+    // Initialize static data
+    ph_95A8_h(thisPtr);
+
+    // Initialize material table at +160
+    void* materialDest = (void*)((uint8_t*)thisPtr + 160);
+    ph_3870_h(param, materialDest);
 
     return thisPtr;
 }
 
 // ---------------------------------------------------------------------------
-// rage::phArchetype::~phArchetype @ 0x822C99C8 | size: 0x5C (92 bytes)
-//
-// Destructor for phArchetype. Reinstalls the phArchetype vtable, releases
-// the bound at +12 if non-null (via ph_CEE0), clears the bound pointer,
-// then installs the phArchetypeBase vtable (base class teardown).
-//
-// Parameters:
-//   r3 = phArchetype* this
+// phJointChain_Constructor @ 0x8225DD70 | size: 0x74 (116B)
+//    Constructor for a physics joint chain containing 16 phJoint3Dof joints.
+//    Sets the vtable, then iterates 16 times calling phJoint3Dof_0170_g to
+//    initialize each joint slot at a stride of 3016 bytes. After init,
+//    clears the total active joints counter and the enabled flag.
 // ---------------------------------------------------------------------------
-// ph_99C8
-void phArchetype_Destructor(void* thisPtr) {
+// ph_DD70
+void phJointChain_Constructor(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
 
-    // Reinstall phArchetype vtable for correct dispatch during destruction
-    *(uint32_t*)(obj + 0) = 0x82059B4C;
+    // Install joint chain vtable
+    *(void**)(obj + 0) = &g_phJointChainVtable;
 
-    // Release bound at +12 if non-null
-    void* bound = *(void**)(obj + 12);
-    if (bound != nullptr) {
-        ph_CEE0(bound, 1);
+    // Base offset for joint array: obj + 8
+    uint8_t* jointBase = obj + 8;
+
+    // Initialize 16 joints (index 15 down to 0)
+    uint8_t* jointSlot = jointBase + 132;  // first joint at +140 from obj
+
+    for (int i = 15; i >= 0; i--) {
+        phJoint3Dof_0170_g(jointSlot, 144, &g_phJoint3DofTemplate, 20);
+        // Clear per-joint active flag at +2880 from joint slot
+        *(uint32_t*)(jointSlot + 2880) = 0;
+        jointSlot += 3016;  // stride between joint slots
     }
 
-    // Clear bound pointer
-    *(uint32_t*)(obj + 12) = 0;
+    // Clear total active joints counter at jointBase + 48256
+    *(uint32_t*)(jointBase + 48256) = 0;
 
-    // Install base class vtable: rage::phArchetypeBase @ 0x82059B40
-    *(uint32_t*)(obj + 0) = 0x82059B40;
+    // Clear enabled flag
+    *(uint8_t*)(obj + 4) = 0;
 }
 
-// ---------------------------------------------------------------------------
-// rage::phArchetypeDamp::phArchetypeDamp @ 0x822CA350 | size: 0x88 (136 bytes)
-//
-// Constructor for phArchetypeDamp. Calls phArchetype::AllocateInstance
-// (ph_9EC0_1), sets type=2, installs the phArchetypeDamp vtable, then
-// zeroes 6 SIMD vectors at +80 through +176 and 6 flag bytes at +176-181,
-// plus 5 halfword fields at +182-190.
-//
-// Parameters:
-//   r3 = phArchetypeDamp* this
-// Returns:
-//   r3 = this
-// ---------------------------------------------------------------------------
-// ph_A350
-void* phArchetypeDamp_Constructor(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
+// ═════════════════════════════════════════════════════════════════════════════
+// ph_ free functions — Physics utility and constructor routines (68-200B)
+// ═════════════════════════════════════════════════════════════════════════════
 
-    // Call base class allocation/init
-    phArchetype_AllocateInstance(thisPtr);
+// External function declarations
+extern void ph_3760_4(void* thisPtr, uint32_t shapeKey, uint32_t materialId, uint32_t unused);
+extern void ph_1EF8(void* shapeKey, uint32_t materialOverride, uint32_t contactMaterialId,
+                     uint8_t* surfaceFlagA, uint32_t contactFlags, uint8_t* surfaceFlagB,
+                     uint32_t primitiveFlags, uint32_t maxMaterialId);
+extern void ph_5908(void* allocator, const char* tag, int alignment);
+extern void rage_3F18(void* pool, uint32_t handle, void* outPtr);
+extern void ph_ctor_ABE8(void* thisPtr);
+extern void nop_8240E6D0(const char* msg, uint64_t val);
 
-    // Set type = 2 (damped archetype)
-    *(uint32_t*)(obj + 4) = 2;
+// External globals
+extern uint8_t g_phDisableFlag;          // @ 0x82706460
+extern const float g_physZeroF;          // @ 0x8202D110  (0.0f)
+extern const float g_physOneF;           // @ 0x8202D114  (1.0f)
 
-    // Install vtable: rage::phArchetypeDamp @ 0x82059BEC
-    *(uint32_t*)(obj + 0) = 0x82059BEC;
-
-    // Zero 6 SIMD vectors at offsets +80, +96, +112, +128, +144, +160
-    uint8_t* vecBase = obj + 80;
-    for (int i = 0; i < 6; i++) {
-        *(uint32_t*)(vecBase + 0) = 0;
-        *(uint32_t*)(vecBase + 4) = 0;
-        *(uint32_t*)(vecBase + 8) = 0;
-        *(uint32_t*)(vecBase + 12) = 0;
-        // Clear flag byte at +176+i
-        *(uint8_t*)(obj + 176 + i) = 0;
-        vecBase += 16;
-    }
-
-    // Clear 5 halfword fields
-    *(uint16_t*)(obj + 182) = 0;
-    *(uint16_t*)(obj + 184) = 0;
-    *(uint16_t*)(obj + 186) = 0;
-    *(uint16_t*)(obj + 188) = 0;
-    *(uint16_t*)(obj + 190) = 0;
-
-    return thisPtr;
+/**
+ * ph_8DB8 — Add collision shape to contact manager
+ * @ 0x82118DB8 | size: 0x44 (68 bytes)
+ *
+ * Adds a collision shape from the source bound (r4) to this object's
+ * contact manager. Loads the shape key from source+4, retrieves the
+ * contact material from this->contactMgr (offset +164), and calls
+ * ph_3760 to register the shape with materialId=255, flags=0.
+ * Stores the returned contact handle at this+168.
+ */
+// ph_8DB8
+void phContactManager_AddShape(void* thisPtr, void* sourceBound) {
+    uint32_t shapeKey = *(uint32_t*)((char*)sourceBound + 4);
+    void* contactMgr = *(void**)((char*)thisPtr + 164);
+    uint32_t materialId = *(uint32_t*)((char*)contactMgr + 4);
+    ph_3760_4((void*)(uintptr_t)shapeKey, materialId, 255, 0);
+    uint32_t contactHandle = (uint32_t)(uintptr_t)nullptr; // r3 return from ph_3760
+    *(uint32_t*)((char*)thisPtr + 168) = contactHandle;
 }
 
-// ---------------------------------------------------------------------------
-// phBound_FindOrCreateByName @ 0x822DDC90 | size: 0x94 (148 bytes)
-//
-// Searches a physics pool for a bound matching the given name. If found with
-// a non-null data pointer (+4), formats a new suffixed name (e.g. "name_1",
-// "name_2") using snprintf and retries. If not found, calls ph_E010 to
-// create the bound from config. The name buffer is 256 chars on the stack.
-//
-// Parameters:
-//   r3 = void* pool
-//   r4 = void* config
-//   r5 = const char* baseName
-// ---------------------------------------------------------------------------
-// ph_DC90
-void phBound_FindOrCreateByName(void* pool, void* config, const char* baseName) {
-    uint8_t* poolObj = (uint8_t*)pool;
-    char nameBuf[256];
-
-    // Initialize: copy base name, null-terminate
-    nameBuf[255] = '\0';
-    strncpy(nameBuf, baseName, 255);
-
-    int suffix = 1;
-    const char* fmtStr = (const char*)0x82059F04;  // "%s_%d" format string
-
-    while (1) {
-        // Search pool for bound matching nameBuf
-        void* found = (void*)ph_6FC8_FindBound(*(void**)(poolObj + 8), nameBuf);
-
-        if (found == nullptr) {
-            // Not found — create a new bound
-            ph_E010_CreateBound(pool, config, nameBuf);
-            return;
-        }
-
-        // Check if the found entry has data
-        uint32_t data = *(uint32_t*)((uint8_t*)found + 4);
-        if (data == 0) {
-            // Found entry with no data — create a new bound
-            ph_E010_CreateBound(pool, config, nameBuf);
-            return;
-        }
-
-        // Name collision — format a suffixed name and retry
-        _snprintf(nameBuf, 255, fmtStr, baseName, suffix);
-        suffix++;
+/**
+ * ph_8E00 — Register contact surface with material properties
+ * @ 0x82118E00 | size: 0x6C (108 bytes)
+ *
+ * Registers a contact surface for collision response. Extracts the shape
+ * key from the source, loads contact material info from this->contactMgr
+ * (offset +164), and calls ph_1EF8 with surface flags from offsets 426/427
+ * and contact flags from offsets 176/180. Increments the contact count
+ * at offset +428.
+ */
+// ph_8E00
+void phContactManager_RegisterSurface(void* thisPtr, void* sourceBound) {
+    uint32_t shapeKey = *(uint32_t*)((char*)sourceBound + 4);
+    void* contactMgr = *(void**)((char*)thisPtr + 164);
+    uint32_t materialOverride = 0;
+    if (contactMgr != nullptr) {
+        materialOverride = *(uint32_t*)((char*)contactMgr + 8);
     }
+    uint32_t contactMaterialId = *(uint32_t*)((char*)contactMgr + 4);
+    uint32_t contactFlags = *(uint32_t*)((char*)thisPtr + 176);
+    uint32_t primitiveFlags = *(uint32_t*)((char*)thisPtr + 180);
+    uint8_t* surfaceFlagA = (uint8_t*)((char*)thisPtr + 426);
+    uint8_t* surfaceFlagB = (uint8_t*)((char*)thisPtr + 427);
+    ph_1EF8((void*)(uintptr_t)shapeKey, materialOverride, contactMaterialId,
+            surfaceFlagA, contactFlags, surfaceFlagB, primitiveFlags, 255);
+    uint8_t count = *(uint8_t*)((char*)thisPtr + 428);
+    count++;
+    *(uint8_t*)((char*)thisPtr + 428) = count;
 }
 
-// ---------------------------------------------------------------------------
-// phContactPair_ClearActiveFlags @ 0x822B8ED0 | size: 0x98 (152 bytes)
-//
-// Clears the "active" bit (bit 3, mask 0x08) from the contact flags byte
-// at +276 for physics instances whose mass (+52) exceeds a threshold.
-// Processes the primary instance (r3), optionally its secondary contact
-// region at +288, then the partner instance (r4) similarly. The mass
-// threshold is computed as f1 * g_phMassThreshold.
-//
-// Parameters:
-//   r3 = void* instanceA
-//   r4 = void* instanceB (may be null)
-//   r5 = uint8_t  checkSecondaryA
-//   r6 = uint8_t  checkSecondaryB
-//   f1 = float    massScale
-// ---------------------------------------------------------------------------
-// ph_8ED0
-void phContactPair_ClearActiveFlags(void* instA, void* instB,
-                                     uint8_t checkSecondaryA, uint8_t checkSecondaryB,
-                                     float massScale) {
-    uint8_t* objA = (uint8_t*)instA;
-    uint8_t* objB = (uint8_t*)instB;
+/**
+ * ph_3608 — Lock, resolve handle, and unlock physics pool
+ * @ 0x82123608 | size: 0x74 (116 bytes)
+ *
+ * Acquires a physics allocator lock via ph_5908 (tag string),
+ * resolves a pool handle to a pointer via rage_3F18, then
+ * releases the lock. Used to safely fetch a physics object
+ * from a handle while the allocator is locked.
+ *
+ * @param outPtr   Destination pointer buffer (resolved ptr stored at +164)
+ * @param handle   Pool handle wrapper (handle value at +4, sub-handle at +12)
+ */
+// ph_3608
+void phPool_ResolveHandleLocked(void* outPtr, void* handle) {
+    uint32_t allocator = *(uint32_t*)((char*)handle + 4);
+    ph_5908((void*)(uintptr_t)allocator, (const char*)0x82027660, 1);
+    uint32_t subHandle = *(uint32_t*)((char*)handle + 4);
+    uint32_t poolHandle = *(uint32_t*)((char*)subHandle + 12);
+    void* pool = *(void**)0x8251A374;
+    rage_3F18(pool, poolHandle, (void*)((char*)outPtr + 164));
+    uint32_t allocator2 = *(uint32_t*)((char*)handle + 4);
+    ph_5908((void*)(uintptr_t)allocator2, (const char*)0x8202766C, 1);
+}
 
-    // Compute mass threshold
-    float threshold = massScale * (*(float*)0x8202D10C);
+/**
+ * ph_3E78 — Compute clamped contact impulse from virtual elasticity
+ * @ 0x82123E78 | size: 0x9C (156 bytes)
+ *
+ * Computes the contact impulse magnitude for a collision response.
+ * If the source object (r4) has a contact body at offset +256,
+ * queries its elasticity via VCALL slot 8. Clamps the result to
+ * be non-negative, scales by a constant factor (from rdata), and
+ * returns the absolute value if negative (via fsel).
+ *
+ * Returns: Clamped impulse magnitude as float in f1.
+ */
+// ph_3E78
+float phContact_ComputeImpulse(void* thisPtr, void* contactPair) {
+    void* contactBody = *(void**)((char*)contactPair + 256);
+    float zero = 0.0f;
+    float elasticity = zero;
 
-    // Check instance A's mass at +52
-    float massA = *(float*)(objA + 52);
-    if (massA > threshold) {
-        // Clear bit 3 of flags at +276
-        *(uint8_t*)(objA + 276) &= 0xF7;  // ~0x08 = 0xF7
-    }
+    if (contactBody != nullptr) {
+        // VCALL slot 8: GetElasticity()
+        typedef float (*GetElasticityFn)(void*);
+        void** vt = *(void***)contactBody;
+        elasticity = ((GetElasticityFn)vt[8])(contactBody);
 
-    // Optionally check A's secondary contact region at +288
-    if (checkSecondaryA != 0) {
-        float massA2 = *(float*)(objA + 340);
-        if (massA2 > threshold) {
-            *(uint8_t*)(objA + 288 + 276) &= 0xF7;
+        if (elasticity < zero) {
+            nop_8240E6D0((const char*)0x82033420, *(uint64_t*)&elasticity);
+            elasticity = (elasticity < 0.0f) ? -elasticity : elasticity;
         }
     }
 
-    // Check instance B if non-null
-    if (objB == nullptr) return;
+    float scale = g_physOneF;  // 1.0f from rdata
+    float impulse = elasticity * scale;
+    float negImpulse = -impulse;
+    // fsel: if negImpulse >= 0 (i.e. impulse <= 0), return 0.0; else return impulse
+    return (negImpulse >= 0.0f) ? 0.0f : impulse;
+}
+/**
+ * ph_81C8 — Compute 4x4 matrix-transpose-multiply (row dot products)
+ * @ 0x821181C8 | size: 0xB0 (176 bytes)
+ *
+ * Computes out[i][j] = dot3(A_row[i], B_col[j]) for a 4x3 matrix multiply.
+ * The fourth row computes (A_row3 - B_row3) dotted against B columns.
+ * Used for physics coordinate frame transformations.
+ */
+// ph_81C8
+void phMatrix_TransposeMultiply3x4(float* dst, const float* src) {
+    const float* aRow0 = dst;
+    const float* aRow1 = dst + 4;
+    const float* aRow2 = dst + 8;
+    float aRow3[4];
+    aRow3[0] = dst[12] - src[12];
+    aRow3[1] = dst[13] - src[13];
+    aRow3[2] = dst[14] - src[14];
+    aRow3[3] = dst[15] - src[15];
 
-    float massB = *(float*)(objB + 52);
-    if (massB > threshold) {
-        *(uint8_t*)(objB + 276) &= 0xF7;
-    }
+    const float* bCol0 = src;
+    const float* bCol1 = src + 4;
+    const float* bCol2 = src + 8;
 
-    // Optionally check B's secondary contact region
-    if (checkSecondaryB == 0) return;
+    float r00 = aRow0[0]*bCol0[0] + aRow0[1]*bCol0[1] + aRow0[2]*bCol0[2];
+    float r01 = aRow0[0]*bCol1[0] + aRow0[1]*bCol1[1] + aRow0[2]*bCol1[2];
+    float r02 = aRow0[0]*bCol2[0] + aRow0[1]*bCol2[1] + aRow0[2]*bCol2[2];
+    float r10 = aRow1[0]*bCol0[0] + aRow1[1]*bCol0[1] + aRow1[2]*bCol0[2];
+    float r11 = aRow1[0]*bCol1[0] + aRow1[1]*bCol1[1] + aRow1[2]*bCol1[2];
+    float r12 = aRow1[0]*bCol2[0] + aRow1[1]*bCol2[1] + aRow1[2]*bCol2[2];
+    float r20 = aRow2[0]*bCol0[0] + aRow2[1]*bCol0[1] + aRow2[2]*bCol0[2];
+    float r21 = aRow2[0]*bCol1[0] + aRow2[1]*bCol1[1] + aRow2[2]*bCol1[2];
+    float r22 = aRow2[0]*bCol2[0] + aRow2[1]*bCol2[1] + aRow2[2]*bCol2[2];
+    float r30 = aRow3[0]*bCol0[0] + aRow3[1]*bCol0[1] + aRow3[2]*bCol0[2];
+    float r31 = aRow3[0]*bCol1[0] + aRow3[1]*bCol1[1] + aRow3[2]*bCol1[2];
+    float r32 = aRow3[0]*bCol2[0] + aRow3[1]*bCol2[1] + aRow3[2]*bCol2[2];
 
-    float massB2 = *(float*)(objB + 340);
-    if (massB2 > threshold) {
-        *(uint8_t*)(objB + 288 + 276) &= 0xF7;
-    }
+    dst[0]  = r00; dst[1]  = r01; dst[2]  = r02;
+    dst[4]  = r10; dst[5]  = r11; dst[6]  = r12;
+    dst[8]  = r20; dst[9]  = r21; dst[10] = r22;
+    dst[12] = r30; dst[13] = r31; dst[14] = r32;
 }
 
-// ---------------------------------------------------------------------------
-// phBound_CompareWithTolerance @ 0x822B48F8 | size: 0x64 (100 bytes)
-//
-// Compares two float values with a multiplicative tolerance. Returns 1 if
-// neither value is within the other's tolerance range (i.e., they are
-// significantly different), 0 otherwise. Used in collision detection to
-// determine if contact parameters have changed meaningfully.
-//
-// Parameters:
-//   r3 = float* valueA
-//   r4 = float* valueB
-// Returns:
-//   r3 = int (1 if values differ beyond tolerance, 0 otherwise)
-// ---------------------------------------------------------------------------
-// ph_48F8_h
-int phBound_CompareWithTolerance(const float* valueA, const float* valueB) {
-    float a = *valueA;
-    float b = *valueB;
-    float tolerance = *(float*)0x82028078;  // multiplicative tolerance factor
+/**
+ * ph_FD78 — Initialize physics collision pair tracking structure
+ * @ 0x8221FD78 | size: 0x58 (88 bytes)
+ *
+ * Clears overlap counters and sets max values, zeroes bounding vector.
+ * Returns immediately if global physics disable flag is set.
+ */
+// ph_FD78
+void phCollisionPair_Init(void* thisPtr) {
+    if (g_phDisableFlag != 0) {
+        return;
+    }
 
-    if (a > b) {
-        // Check if b is within tolerance of a
-        float limitA = a * tolerance;
-        if (b <= limitA) return 0;
+    uint16_t* counters = (uint16_t*)((char*)thisPtr + 16);
+    uint16_t* maxVals  = (uint16_t*)((char*)thisPtr + 24);
+    for (int i = 0; i < 4; i++) {
+        counters[i] = 0;
+        maxVals[i]  = 0xFFFF;
+    }
 
-        // Check if a is within tolerance of b
-        float limitB = b * tolerance;
-        if (a <= limitB) return 0;
+    float initVal = g_physZeroF;
+    *(float*)((char*)thisPtr + 0)  = initVal;
+    *(float*)((char*)thisPtr + 4)  = initVal;
+    *(float*)((char*)thisPtr + 8)  = initVal;
+    *(float*)((char*)thisPtr + 12) = initVal;
+}
 
-        return 1;
+/**
+ * ph_ctor_B3B0 — sgNode place/relocate constructor
+ * @ 0x8212B3B0 | size: 0xB8 (184 bytes)
+ *
+ * Placement constructor for sgNode that relocates 3 internal pointers
+ * using the relocator's base/stride/offset table. Sets xmlNode vtable
+ * first, then upgrades to sgNode vtable after relocation.
+ */
+// ph_ctor_B3B0
+void sgNode_PlaceConstructor(void* thisPtr, void* relocator) {
+    *(uint32_t*)((char*)thisPtr + 0) = 0x8203AB8C;
+
+    uint32_t ptr1 = *(uint32_t*)((char*)thisPtr + 4);
+    if (ptr1 != 0) {
+        uint32_t base = *(uint32_t*)((char*)relocator + 4);
+        uint32_t stride = *(uint32_t*)((char*)relocator + 76);
+        uint32_t index = (ptr1 - base) / stride;
+        uint32_t slot = (index + 2) * 4;
+        uint32_t offset = *(uint32_t*)((char*)relocator + slot);
+        *(uint32_t*)((char*)thisPtr + 4) = offset + ptr1;
+    }
+
+    uint32_t ptr2 = *(uint32_t*)((char*)thisPtr + 8);
+    if (ptr2 != 0) {
+        uint32_t base = *(uint32_t*)((char*)relocator + 4);
+        uint32_t stride = *(uint32_t*)((char*)relocator + 76);
+        uint32_t index = (ptr2 - base) / stride;
+        uint32_t slot = (index + 2) * 4;
+        uint32_t offset = *(uint32_t*)((char*)relocator + slot);
+        *(uint32_t*)((char*)thisPtr + 8) = offset + ptr2;
+    }
+
+    uint32_t ptr3 = *(uint32_t*)((char*)thisPtr + 12);
+    if (ptr3 != 0) {
+        uint32_t base = *(uint32_t*)((char*)relocator + 4);
+        uint32_t stride = *(uint32_t*)((char*)relocator + 76);
+        uint32_t index = (ptr3 - base) / stride;
+        uint32_t slot = (index + 2) * 4;
+        uint32_t offset = *(uint32_t*)((char*)relocator + slot);
+        *(uint32_t*)((char*)thisPtr + 12) = offset + ptr3;
+    }
+
+    *(uint32_t*)((char*)thisPtr + 0) = 0x8203338C;
+}
+
+/**
+ * ph_ctor_C650 — rage::crIKSolverIterativeLimb constructor
+ * @ 0x8213C650 | size: 0xAC (172 bytes)
+ *
+ * Initializes an iterative limb IK solver with base vtable, identity
+ * orientation data, then upgrades vtable and sets solver parameters.
+ */
+// ph_ctor_C650
+void crIKSolverIterativeLimb_Constructor(void* thisPtr) {
+    *(uint32_t*)((char*)thisPtr + 4) = 3;
+    *(uint32_t*)((char*)thisPtr + 0) = 0x82033C70;
+    *(uint8_t*)((char*)thisPtr + 8) = 0;
+    *(uint8_t*)((char*)thisPtr + 9) = 0;
+
+    const uint8_t* identityData = (const uint8_t*)0x825CB890;
+    uint32_t* dst16 = (uint32_t*)((char*)thisPtr + 16);
+    const uint32_t* src16 = (const uint32_t*)identityData;
+    dst16[0] = src16[0]; dst16[1] = src16[1];
+    dst16[2] = src16[2]; dst16[3] = src16[3];
+
+    uint32_t* dst32 = (uint32_t*)((char*)thisPtr + 32);
+    const uint32_t* src32 = (const uint32_t*)(identityData + 16);
+    dst32[0] = src32[0]; dst32[1] = src32[1];
+    dst32[2] = src32[2]; dst32[3] = src32[3];
+
+    *(uint32_t*)((char*)thisPtr + 0) = 0x82033CC4;
+
+    float stepSize    = *(float*)0x82069A90;
+    float threshold   = *(float*)0x82069A8C;
+    float tolerance   = *(float*)0x8202D124;
+    float dampFactor  = *(float*)0x82028080;
+
+    *(uint32_t*)((char*)thisPtr + 48) = 10;
+    *(float*)((char*)thisPtr + 52) = stepSize;
+    *(float*)((char*)thisPtr + 56) = threshold;
+    *(float*)((char*)thisPtr + 60) = tolerance;
+    *(float*)((char*)thisPtr + 64) = dampFactor;
+}
+
+/**
+ * ph_ctor_DCE0 — CPeakMeterEffect factory / create-and-initialize
+ * @ 0x821ADCE0 | size: 0xA8 (168 bytes)
+ *
+ * Allocates a 52-byte CPeakMeterEffect via VCALL slot 5, initializes
+ * all fields, installs vtable, then calls VCALL slot 7 for setup.
+ */
+// ph_ctor_DCE0
+void CPeakMeterEffect_Create(void* config, void* allocator, void** outResult) {
+    typedef void* (*AllocFn)(void*, uint32_t);
+    void** allocVt = *(void***)allocator;
+    void* effect = ((AllocFn)allocVt[5])(allocator, 52);
+
+    if (effect != nullptr) {
+        *(uint32_t*)((char*)effect + 0) = 0x8203B260;
+        *(uint32_t*)((char*)effect + 4) = 1;
+        *(uint32_t*)((char*)effect + 48) = 0;
+        *(uint32_t*)((char*)effect + 24) = 0;
+        *(uint32_t*)((char*)effect + 28) = 0;
+        *(uint32_t*)((char*)effect + 44) = 0;
+        *(uint32_t*)((char*)effect + 8) = 0;
+        *(uint32_t*)((char*)effect + 12) = 0;
+        *(uint32_t*)((char*)effect + 16) = 0;
+        *(uint32_t*)((char*)effect + 20) = 0;
+
+        typedef void (*InitFn)(void*, void*, void*);
+        void** effectVt = *(void***)effect;
+        ((InitFn)effectVt[7])(effect, config, allocator);
     } else {
-        // a <= b
-        float limitA = a * tolerance;
-        if (b < limitA) {
-            float limitB = b * tolerance;
-            if (a < limitB) return 1;
-        }
-        return 0;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// rage::phBoundQuadtree::phBoundQuadtree @ 0x822AD088 | size: 0x68 (104 bytes)
-//
-// Constructor for phBoundQuadtree. Calls the base phBoundGeometry intermediate
-// constructor (ph_0F78), sets hasOctree flag at +128, installs the
-// phBoundQuadtree vtable, initializes the search tree at +176 via ph_FA58,
-// sets bound type to 5 (quadtree), and clears the search tree root at +176.
-//
-// Parameters:
-//   r3 = phBoundQuadtree* this
-// Returns:
-//   r3 = this
-// ---------------------------------------------------------------------------
-// ph_D088
-void* phBoundQuadtree_Constructor(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    // Call base phBoundGeometry constructor
-    phBoundGeometry_Constructor(thisPtr, nullptr);
-
-    // Set hasOctree/quadtree flag
-    *(uint8_t*)(obj + 128) = 1;
-
-    // Install vtable: rage::phBoundQuadtree @ 0x82058C34
-    *(uint32_t*)(obj + 0) = 0x82058C34;
-
-    // Initialize search tree at +176
-    phBoundGeometry_InitSearchTree((void*)(obj + 176));
-
-    // Set bound type = 5 (quadtree)
-    *(uint8_t*)(obj + 4) = 5;
-
-    // Clear search tree root pointer
-    *(uint32_t*)(obj + 176) = 0;
-
-    return thisPtr;
-}
-
-// ---------------------------------------------------------------------------
-// rage::phBoundQuadtree::InitFromGeometry @ 0x822AD610 | size: 0x58 (88 bytes)
-//
-// Initializes a phBoundQuadtree from existing geometry data. Calls the
-// phBoundGeometry intermediate constructor (ph_1310), installs the
-// phBoundQuadtree vtable, initializes the search tree at +176, then links
-// the search tree's owner pointer (+4 from the tree's first entry) back to
-// this object.
-//
-// Parameters:
-//   r3 = phBoundQuadtree* this
-// Returns:
-//   r3 = this
-// ---------------------------------------------------------------------------
-// ph_D610
-void* phBoundQuadtree_InitFromGeometry(void* thisPtr) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    // Call intermediate phBoundGeometry constructor
-    phBoundGeometryIntermediate_Constructor(thisPtr, nullptr);
-
-    // Install vtable: rage::phBoundQuadtree @ 0x82058C34
-    *(uint32_t*)(obj + 0) = 0x82058C34;
-
-    // Initialize search tree at +176
-    phBoundGeometry_InitSearchTree((void*)(obj + 176));
-
-    // Link search tree owner pointer back to this object
-    uint32_t treeEntry = *(uint32_t*)(obj + 176);
-    *(uint32_t*)(treeEntry + 4) = (uint32_t)(uintptr_t)thisPtr;
-
-    return thisPtr;
-}
-
-// ---------------------------------------------------------------------------
-// phCollider_GetJointByIndex @ 0x82448C60 | size: 0x6C (108 bytes)
-//
-// Retrieves a joint pointer from an articulated collider by index. Loads the
-// collider from +124, calls vtable slot 11 to get the joint skeleton, reads
-// the joint count from +11 (u16), and if the index is in range, returns a
-// pointer into the joint array at +124 of the skeleton (stride 252 bytes
-// per joint). Returns null if out of range.
-//
-// Parameters:
-//   r3 = void* thisPtr (physics world or wrapper, collider at +124)
-//   r4 = uint16_t jointIndex
-// Returns:
-//   r3 = void* joint pointer, or null if out of range
-// ---------------------------------------------------------------------------
-// ph_8C60
-void* phCollider_GetJointByIndex(void* thisPtr, uint16_t jointIndex) {
-    uint8_t* obj = (uint8_t*)thisPtr;
-
-    // Get collider from +124
-    void* collider = *(void**)(obj + 124);
-
-    // Call vtable slot 11 to get skeleton/joint data
-    typedef void* (*GetSkeletonFn)(void*);
-    void** vtable = *(void***)collider;
-    void* skeleton = ((GetSkeletonFn)vtable[11])(collider);
-
-    // Read joint count from skeleton +11 (u16)
-    uint16_t jointCount = *(uint16_t*)((uint8_t*)skeleton + 11);
-
-    // Bounds check
-    uint16_t idx = jointIndex & 0xFFFF;
-    if (idx < jointCount) {
-        // Compute joint pointer: skeleton.joints[+124] + index * 252
-        uint8_t* jointArray = *(uint8_t**)((uint8_t*)skeleton + 124);
-        return (void*)(jointArray + (uint32_t)idx * 252);
+        effect = nullptr;
     }
 
-    return nullptr;
+    *outResult = effect;
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Additional Functions (26B8, 38A8)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// (BB88, BAF0 already lifted above as CheckValueSign/CheckScaledValueSign)
+
+// (F420, 5D88 already lifted above as GetJointLimitsForAxis/RotateVectorsAlt)
+
+/**
+ * phBoundCapsule_26B8 @ 0x821426B8 | size: 0x84 (132 bytes)
+ *
+ * Computes an exponential decay factor from a capsule radius and height.
+ * Uses the formula: (1/height) * exp(-height^2 / (radius^2 * 3.0))
+ *
+ * This produces a Gaussian-like falloff used for capsule soft-shadow
+ * or contact response weighting.
+ *
+ * @param height - Capsule height (f1)
+ * @param radius - Capsule radius (f3)
+ * @return Weighted decay factor
+ */
+float phBoundCapsule_26B8(float height, float radius) {
+    float radiusSq = radius * radius;
+
+    // Multiply by constant (3.0 or similar scale) from .rdata
+    float scaledRadiusSq = radiusSq * 3.0f;  // constant from lbl_8202D108+124
+
+    // Call sqrtf on scaled radius squared
+    float expResult = (float)ph_Sqrtf(scaledRadiusSq);
+
+    float heightSq = height * height;
+    float denom = radiusSq * 3.0f;  // reloaded from lbl_8202D108+124
+    float ratio = heightSq / denom;
+
+    // Compute exp(-ratio) via aud_2478
+    float expNegRatio = (float)aud_2478(-ratio);
+
+    float invHeight = 1.0f / expResult;  // 1.0f from lbl_8202D110+0
+    float result = invHeight * expNegRatio;
+
+    return result;
+}
+
+// (3F08 already lifted above as ValidateAndSetExtents)
+
+// (8608, CF48, DB10 already lifted above as DispatchCapsuleFromCamera/LookupTableValues/SetupCapsuleFromState)
+
+/**
+ * phBoundCapsule_38A8_fw @ 0x822238A8 | size: 0x6C (108 bytes)
+ *
+ * Computes an atan2-based angle from two components of an input vector,
+ * then normalizes the result to the range [0, 2*PI).
+ *
+ * @param data - Pointer to float pair (data[0] = x, data[2] = z)
+ * @return Normalized angle in radians [0, 2*PI)
+ */
+float phBoundCapsule_38A8_fw(float* data) {
+    float z = data[2];
+    float x = data[0];
+
+    // Compute atan2(x, z)
+    float angle = (float)ph_Atan2f(x, z);
+
+    float zero = 0.0f;   // @ lbl_8202D110
+    float twoPi = g_phTwoPi;  // @ lbl_8202C02C (6.283185...)
+
+    // Normalize to [0, 2*PI)
+    while (angle < zero) {
+        angle += twoPi;
+    }
+    while (angle >= twoPi) {
+        angle -= twoPi;
+    }
+
+    return angle;
+}
+
+// (2C08 already lifted above as SumFloatArray)

@@ -57,10 +57,10 @@ RM = /opt/homebrew/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/Ozordi/Downloads/tt-decomp
+CMAKE_SOURCE_DIR = /Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/Ozordi/Downloads/tt-decomp/build_test
+CMAKE_BINARY_DIR = /Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin/build_test
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,9 +132,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/build_test/CMakeFiles /Users/Ozordi/Downloads/tt-decomp/build_test//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin/build_test/CMakeFiles /Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin/build_test//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/build_test/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin/build_test/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -173,30 +173,6 @@ RockstarTableTennis: cmake_check_build_system
 RockstarTableTennis/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/build
 .PHONY : RockstarTableTennis/fast
-
-include/rage/hsmState.o: include/rage/hsmState.cpp.o
-.PHONY : include/rage/hsmState.o
-
-# target to build an object file
-include/rage/hsmState.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/include/rage/hsmState.cpp.o
-.PHONY : include/rage/hsmState.cpp.o
-
-include/rage/hsmState.i: include/rage/hsmState.cpp.i
-.PHONY : include/rage/hsmState.i
-
-# target to preprocess a source file
-include/rage/hsmState.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/include/rage/hsmState.cpp.i
-.PHONY : include/rage/hsmState.cpp.i
-
-include/rage/hsmState.s: include/rage/hsmState.cpp.s
-.PHONY : include/rage/hsmState.s
-
-# target to generate assembly for a file
-include/rage/hsmState.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/include/rage/hsmState.cpp.s
-.PHONY : include/rage/hsmState.cpp.s
 
 src/anim/pcr_anim_blenders.o: src/anim/pcr_anim_blenders.cpp.o
 .PHONY : src/anim/pcr_anim_blenders.o
@@ -846,53 +822,53 @@ src/globals.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals.c.s
 .PHONY : src/globals.c.s
 
-src/globals_extended.o: src/globals_extended.c.o
-.PHONY : src/globals_extended.o
+src/graphics/grc_device.o: src/graphics/grc_device.cpp.o
+.PHONY : src/graphics/grc_device.o
 
 # target to build an object file
-src/globals_extended.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.o
-.PHONY : src/globals_extended.c.o
+src/graphics/grc_device.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_device.cpp.o
+.PHONY : src/graphics/grc_device.cpp.o
 
-src/globals_extended.i: src/globals_extended.c.i
-.PHONY : src/globals_extended.i
+src/graphics/grc_device.i: src/graphics/grc_device.cpp.i
+.PHONY : src/graphics/grc_device.i
 
 # target to preprocess a source file
-src/globals_extended.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.i
-.PHONY : src/globals_extended.c.i
+src/graphics/grc_device.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_device.cpp.i
+.PHONY : src/graphics/grc_device.cpp.i
 
-src/globals_extended.s: src/globals_extended.c.s
-.PHONY : src/globals_extended.s
+src/graphics/grc_device.s: src/graphics/grc_device.cpp.s
+.PHONY : src/graphics/grc_device.s
 
 # target to generate assembly for a file
-src/globals_extended.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_extended.c.s
-.PHONY : src/globals_extended.c.s
+src/graphics/grc_device.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_device.cpp.s
+.PHONY : src/graphics/grc_device.cpp.s
 
-src/globals_linker.o: src/globals_linker.cpp.o
-.PHONY : src/globals_linker.o
+src/graphics/grc_render.o: src/graphics/grc_render.cpp.o
+.PHONY : src/graphics/grc_render.o
 
 # target to build an object file
-src/globals_linker.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_linker.cpp.o
-.PHONY : src/globals_linker.cpp.o
+src/graphics/grc_render.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_render.cpp.o
+.PHONY : src/graphics/grc_render.cpp.o
 
-src/globals_linker.i: src/globals_linker.cpp.i
-.PHONY : src/globals_linker.i
+src/graphics/grc_render.i: src/graphics/grc_render.cpp.i
+.PHONY : src/graphics/grc_render.i
 
 # target to preprocess a source file
-src/globals_linker.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_linker.cpp.i
-.PHONY : src/globals_linker.cpp.i
+src/graphics/grc_render.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_render.cpp.i
+.PHONY : src/graphics/grc_render.cpp.i
 
-src/globals_linker.s: src/globals_linker.cpp.s
-.PHONY : src/globals_linker.s
+src/graphics/grc_render.s: src/graphics/grc_render.cpp.s
+.PHONY : src/graphics/grc_render.s
 
 # target to generate assembly for a file
-src/globals_linker.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/globals_linker.cpp.s
-.PHONY : src/globals_linker.cpp.s
+src/graphics/grc_render.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/graphics/grc_render.cpp.s
+.PHONY : src/graphics/grc_render.cpp.s
 
 src/graphics/texture_reference.o: src/graphics/texture_reference.cpp.o
 .PHONY : src/graphics/texture_reference.o
@@ -989,6 +965,30 @@ src/rage/audio/audio_control_wrappers.s: src/rage/audio/audio_control_wrappers.c
 src/rage/audio/audio_control_wrappers.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/audio/audio_control_wrappers.cpp.s
 .PHONY : src/rage/audio/audio_control_wrappers.cpp.s
+
+src/rage/audio/rage_audio.o: src/rage/audio/rage_audio.cpp.o
+.PHONY : src/rage/audio/rage_audio.o
+
+# target to build an object file
+src/rage/audio/rage_audio.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/audio/rage_audio.cpp.o
+.PHONY : src/rage/audio/rage_audio.cpp.o
+
+src/rage/audio/rage_audio.i: src/rage/audio/rage_audio.cpp.i
+.PHONY : src/rage/audio/rage_audio.i
+
+# target to preprocess a source file
+src/rage/audio/rage_audio.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/audio/rage_audio.cpp.i
+.PHONY : src/rage/audio/rage_audio.cpp.i
+
+src/rage/audio/rage_audio.s: src/rage/audio/rage_audio.cpp.s
+.PHONY : src/rage/audio/rage_audio.s
+
+# target to generate assembly for a file
+src/rage/audio/rage_audio.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/audio/rage_audio.cpp.s
+.PHONY : src/rage/audio/rage_audio.cpp.s
 
 src/rage/core/fsmMachine.o: src/rage/core/fsmMachine.c.o
 .PHONY : src/rage/core/fsmMachine.o
@@ -1542,78 +1542,6 @@ src/scene/sg_scene_graph.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/scene/sg_scene_graph.cpp.s
 .PHONY : src/scene/sg_scene_graph.cpp.s
 
-src/stubs_final.o: src/stubs_final.cpp.o
-.PHONY : src/stubs_final.o
-
-# target to build an object file
-src/stubs_final.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_final.cpp.o
-.PHONY : src/stubs_final.cpp.o
-
-src/stubs_final.i: src/stubs_final.cpp.i
-.PHONY : src/stubs_final.i
-
-# target to preprocess a source file
-src/stubs_final.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_final.cpp.i
-.PHONY : src/stubs_final.cpp.i
-
-src/stubs_final.s: src/stubs_final.cpp.s
-.PHONY : src/stubs_final.s
-
-# target to generate assembly for a file
-src/stubs_final.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_final.cpp.s
-.PHONY : src/stubs_final.cpp.s
-
-src/stubs_linker.o: src/stubs_linker.cpp.o
-.PHONY : src/stubs_linker.o
-
-# target to build an object file
-src/stubs_linker.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_linker.cpp.o
-.PHONY : src/stubs_linker.cpp.o
-
-src/stubs_linker.i: src/stubs_linker.cpp.i
-.PHONY : src/stubs_linker.i
-
-# target to preprocess a source file
-src/stubs_linker.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_linker.cpp.i
-.PHONY : src/stubs_linker.cpp.i
-
-src/stubs_linker.s: src/stubs_linker.cpp.s
-.PHONY : src/stubs_linker.s
-
-# target to generate assembly for a file
-src/stubs_linker.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_linker.cpp.s
-.PHONY : src/stubs_linker.cpp.s
-
-src/stubs_linker_0.o: src/stubs_linker_0.cpp.o
-.PHONY : src/stubs_linker_0.o
-
-# target to build an object file
-src/stubs_linker_0.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_linker_0.cpp.o
-.PHONY : src/stubs_linker_0.cpp.o
-
-src/stubs_linker_0.i: src/stubs_linker_0.cpp.i
-.PHONY : src/stubs_linker_0.i
-
-# target to preprocess a source file
-src/stubs_linker_0.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_linker_0.cpp.i
-.PHONY : src/stubs_linker_0.cpp.i
-
-src/stubs_linker_0.s: src/stubs_linker_0.cpp.s
-.PHONY : src/stubs_linker_0.s
-
-# target to generate assembly for a file
-src/stubs_linker_0.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_linker_0.cpp.s
-.PHONY : src/stubs_linker_0.cpp.s
-
 src/stubs_linker_1.o: src/stubs_linker_1.cpp.o
 .PHONY : src/stubs_linker_1.o
 
@@ -1782,6 +1710,102 @@ src/stubs_remaining.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/stubs_remaining.c.s
 .PHONY : src/stubs_remaining.c.s
 
+src/xam/audio.o: src/xam/audio.c.o
+.PHONY : src/xam/audio.o
+
+# target to build an object file
+src/xam/audio.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/audio.c.o
+.PHONY : src/xam/audio.c.o
+
+src/xam/audio.i: src/xam/audio.c.i
+.PHONY : src/xam/audio.i
+
+# target to preprocess a source file
+src/xam/audio.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/audio.c.i
+.PHONY : src/xam/audio.c.i
+
+src/xam/audio.s: src/xam/audio.c.s
+.PHONY : src/xam/audio.s
+
+# target to generate assembly for a file
+src/xam/audio.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/audio.c.s
+.PHONY : src/xam/audio.c.s
+
+src/xam/input.o: src/xam/input.c.o
+.PHONY : src/xam/input.o
+
+# target to build an object file
+src/xam/input.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/input.c.o
+.PHONY : src/xam/input.c.o
+
+src/xam/input.i: src/xam/input.c.i
+.PHONY : src/xam/input.i
+
+# target to preprocess a source file
+src/xam/input.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/input.c.i
+.PHONY : src/xam/input.c.i
+
+src/xam/input.s: src/xam/input.c.s
+.PHONY : src/xam/input.s
+
+# target to generate assembly for a file
+src/xam/input.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/input.c.s
+.PHONY : src/xam/input.c.s
+
+src/xam/kernel.o: src/xam/kernel.c.o
+.PHONY : src/xam/kernel.o
+
+# target to build an object file
+src/xam/kernel.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/kernel.c.o
+.PHONY : src/xam/kernel.c.o
+
+src/xam/kernel.i: src/xam/kernel.c.i
+.PHONY : src/xam/kernel.i
+
+# target to preprocess a source file
+src/xam/kernel.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/kernel.c.i
+.PHONY : src/xam/kernel.c.i
+
+src/xam/kernel.s: src/xam/kernel.c.s
+.PHONY : src/xam/kernel.s
+
+# target to generate assembly for a file
+src/xam/kernel.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/kernel.c.s
+.PHONY : src/xam/kernel.c.s
+
+src/xam/network.o: src/xam/network.c.o
+.PHONY : src/xam/network.o
+
+# target to build an object file
+src/xam/network.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/network.c.o
+.PHONY : src/xam/network.c.o
+
+src/xam/network.i: src/xam/network.c.i
+.PHONY : src/xam/network.i
+
+# target to preprocess a source file
+src/xam/network.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/network.c.i
+.PHONY : src/xam/network.c.i
+
+src/xam/network.s: src/xam/network.c.s
+.PHONY : src/xam/network.s
+
+# target to generate assembly for a file
+src/xam/network.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/network.c.s
+.PHONY : src/xam/network.c.s
+
 src/xam/static_init.o: src/xam/static_init.c.o
 .PHONY : src/xam/static_init.o
 
@@ -1806,6 +1830,30 @@ src/xam/static_init.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/static_init.c.s
 .PHONY : src/xam/static_init.c.s
 
+src/xam/video.o: src/xam/video.c.o
+.PHONY : src/xam/video.o
+
+# target to build an object file
+src/xam/video.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/video.c.o
+.PHONY : src/xam/video.c.o
+
+src/xam/video.i: src/xam/video.c.i
+.PHONY : src/xam/video.i
+
+# target to preprocess a source file
+src/xam/video.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/video.c.i
+.PHONY : src/xam/video.c.i
+
+src/xam/video.s: src/xam/video.c.s
+.PHONY : src/xam/video.s
+
+# target to generate assembly for a file
+src/xam/video.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/video.c.s
+.PHONY : src/xam/video.c.s
+
 src/xam/voice.o: src/xam/voice.c.o
 .PHONY : src/xam/voice.o
 
@@ -1829,6 +1877,78 @@ src/xam/voice.s: src/xam/voice.c.s
 src/xam/voice.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/voice.c.s
 .PHONY : src/xam/voice.c.s
+
+src/xam/xam_stubs.o: src/xam/xam_stubs.c.o
+.PHONY : src/xam/xam_stubs.o
+
+# target to build an object file
+src/xam/xam_stubs.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xam_stubs.c.o
+.PHONY : src/xam/xam_stubs.c.o
+
+src/xam/xam_stubs.i: src/xam/xam_stubs.c.i
+.PHONY : src/xam/xam_stubs.i
+
+# target to preprocess a source file
+src/xam/xam_stubs.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xam_stubs.c.i
+.PHONY : src/xam/xam_stubs.c.i
+
+src/xam/xam_stubs.s: src/xam/xam_stubs.c.s
+.PHONY : src/xam/xam_stubs.s
+
+# target to generate assembly for a file
+src/xam/xam_stubs.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xam_stubs.c.s
+.PHONY : src/xam/xam_stubs.c.s
+
+src/xam/xam_utils.o: src/xam/xam_utils.c.o
+.PHONY : src/xam/xam_utils.o
+
+# target to build an object file
+src/xam/xam_utils.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xam_utils.c.o
+.PHONY : src/xam/xam_utils.c.o
+
+src/xam/xam_utils.i: src/xam/xam_utils.c.i
+.PHONY : src/xam/xam_utils.i
+
+# target to preprocess a source file
+src/xam/xam_utils.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xam_utils.c.i
+.PHONY : src/xam/xam_utils.c.i
+
+src/xam/xam_utils.s: src/xam/xam_utils.c.s
+.PHONY : src/xam/xam_utils.s
+
+# target to generate assembly for a file
+src/xam/xam_utils.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xam_utils.c.s
+.PHONY : src/xam/xam_utils.c.s
+
+src/xam/xe_buffers.o: src/xam/xe_buffers.c.o
+.PHONY : src/xam/xe_buffers.o
+
+# target to build an object file
+src/xam/xe_buffers.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xe_buffers.c.o
+.PHONY : src/xam/xe_buffers.c.o
+
+src/xam/xe_buffers.i: src/xam/xe_buffers.c.i
+.PHONY : src/xam/xe_buffers.i
+
+# target to preprocess a source file
+src/xam/xe_buffers.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xe_buffers.c.i
+.PHONY : src/xam/xe_buffers.c.i
+
+src/xam/xe_buffers.s: src/xam/xe_buffers.c.s
+.PHONY : src/xam/xe_buffers.s
+
+# target to generate assembly for a file
+src/xam/xe_buffers.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/xam/xe_buffers.c.s
+.PHONY : src/xam/xe_buffers.c.s
 
 src/xam/xe_graphics.o: src/xam/xe_graphics.c.o
 .PHONY : src/xam/xe_graphics.o
@@ -1867,9 +1987,6 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... RockstarTableTennis"
-	@echo "... include/rage/hsmState.o"
-	@echo "... include/rage/hsmState.i"
-	@echo "... include/rage/hsmState.s"
 	@echo "... src/anim/pcr_anim_blenders.o"
 	@echo "... src/anim/pcr_anim_blenders.i"
 	@echo "... src/anim/pcr_anim_blenders.s"
@@ -1951,12 +2068,12 @@ help:
 	@echo "... src/globals.o"
 	@echo "... src/globals.i"
 	@echo "... src/globals.s"
-	@echo "... src/globals_extended.o"
-	@echo "... src/globals_extended.i"
-	@echo "... src/globals_extended.s"
-	@echo "... src/globals_linker.o"
-	@echo "... src/globals_linker.i"
-	@echo "... src/globals_linker.s"
+	@echo "... src/graphics/grc_device.o"
+	@echo "... src/graphics/grc_device.i"
+	@echo "... src/graphics/grc_device.s"
+	@echo "... src/graphics/grc_render.o"
+	@echo "... src/graphics/grc_render.i"
+	@echo "... src/graphics/grc_render.s"
 	@echo "... src/graphics/texture_reference.o"
 	@echo "... src/graphics/texture_reference.i"
 	@echo "... src/graphics/texture_reference.s"
@@ -1969,6 +2086,9 @@ help:
 	@echo "... src/rage/audio/audio_control_wrappers.o"
 	@echo "... src/rage/audio/audio_control_wrappers.i"
 	@echo "... src/rage/audio/audio_control_wrappers.s"
+	@echo "... src/rage/audio/rage_audio.o"
+	@echo "... src/rage/audio/rage_audio.i"
+	@echo "... src/rage/audio/rage_audio.s"
 	@echo "... src/rage/core/fsmMachine.o"
 	@echo "... src/rage/core/fsmMachine.i"
 	@echo "... src/rage/core/fsmMachine.s"
@@ -2038,15 +2158,6 @@ help:
 	@echo "... src/scene/sg_scene_graph.o"
 	@echo "... src/scene/sg_scene_graph.i"
 	@echo "... src/scene/sg_scene_graph.s"
-	@echo "... src/stubs_final.o"
-	@echo "... src/stubs_final.i"
-	@echo "... src/stubs_final.s"
-	@echo "... src/stubs_linker.o"
-	@echo "... src/stubs_linker.i"
-	@echo "... src/stubs_linker.s"
-	@echo "... src/stubs_linker_0.o"
-	@echo "... src/stubs_linker_0.i"
-	@echo "... src/stubs_linker_0.s"
 	@echo "... src/stubs_linker_1.o"
 	@echo "... src/stubs_linker_1.i"
 	@echo "... src/stubs_linker_1.s"
@@ -2068,12 +2179,36 @@ help:
 	@echo "... src/stubs_remaining.o"
 	@echo "... src/stubs_remaining.i"
 	@echo "... src/stubs_remaining.s"
+	@echo "... src/xam/audio.o"
+	@echo "... src/xam/audio.i"
+	@echo "... src/xam/audio.s"
+	@echo "... src/xam/input.o"
+	@echo "... src/xam/input.i"
+	@echo "... src/xam/input.s"
+	@echo "... src/xam/kernel.o"
+	@echo "... src/xam/kernel.i"
+	@echo "... src/xam/kernel.s"
+	@echo "... src/xam/network.o"
+	@echo "... src/xam/network.i"
+	@echo "... src/xam/network.s"
 	@echo "... src/xam/static_init.o"
 	@echo "... src/xam/static_init.i"
 	@echo "... src/xam/static_init.s"
+	@echo "... src/xam/video.o"
+	@echo "... src/xam/video.i"
+	@echo "... src/xam/video.s"
 	@echo "... src/xam/voice.o"
 	@echo "... src/xam/voice.i"
 	@echo "... src/xam/voice.s"
+	@echo "... src/xam/xam_stubs.o"
+	@echo "... src/xam/xam_stubs.i"
+	@echo "... src/xam/xam_stubs.s"
+	@echo "... src/xam/xam_utils.o"
+	@echo "... src/xam/xam_utils.i"
+	@echo "... src/xam/xam_utils.s"
+	@echo "... src/xam/xe_buffers.o"
+	@echo "... src/xam/xe_buffers.i"
+	@echo "... src/xam/xe_buffers.s"
 	@echo "... src/xam/xe_graphics.o"
 	@echo "... src/xam/xe_graphics.i"
 	@echo "... src/xam/xe_graphics.s"

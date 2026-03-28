@@ -138,6 +138,10 @@ struct hsmState {
     virtual void Start();  // [3] @ 0x823ed290
     virtual void Stop();  // [4] @ 0x823e8d58
     virtual void OnExit();  // [12] @ 0x823ed3a0
+
+    // Non-virtual methods
+    void GetFullStatePath(char* buf, unsigned int bufSize) const;
+    void Reset();
 };
 
 // ── pongAttractContext  [2 vtables — template/MI] ──────────────────────────

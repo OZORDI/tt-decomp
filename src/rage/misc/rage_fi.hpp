@@ -68,21 +68,24 @@ struct fiAsciiTokenizer {
     virtual float vfn_20(const char* expectedToken);  // [20] @ 0x822e65d0 - compare token, parse float
     virtual void vfn_21(const char* expectedToken, float* outArray);  // [21] @ 0x822e6750 - compare token, read 4 floats
     virtual void vfn_22(const char* expectedToken, float* outArray);  // [22] @ 0x822e6700 - compare token, read 3 floats
-    virtual void vfn_23();  // [23] @ 0x822e66b0
-    virtual void vfn_24();  // [24] @ 0x822e6660
-    virtual void vfn_25();  // [25] @ 0x822e6610
-    virtual void vfn_26();  // [26] @ 0x822e67a0
-    virtual void vfn_27();  // [27] @ 0x822e6828
-    virtual void vfn_28();  // [28] @ 0x822e68a8
-    virtual void vfn_29();  // [29] @ 0x822e6928
-    virtual void vfn_30();  // [30] @ 0x820c2e08
+    virtual void ExpectTokenThenFloat4(const char* expectedToken, float* outArray);  // [23] @ 0x822e66b0
+    virtual void ExpectTokenThenFloat3(const char* expectedToken, float* outArray);  // [24] @ 0x822e6660
+    virtual void ExpectTokenThenVec2(const char* expectedToken, float* outArray);  // [25] @ 0x822e6610
+    virtual void WriteBeginBlock();  // [26] @ 0x822e67a0
+    virtual void WriteEndBlock();  // [27] @ 0x822e6828
+    virtual void WriteIndent();  // [28] @ 0x822e68a8
+    virtual void WriteNewline();  // [29] @ 0x822e6928
+    virtual void AddOffset(int32_t offset);  // [30] @ 0x820c2e08
     virtual void vfn_31();  // [31] @ 0x822e6c58
     virtual void vfn_32();  // [32] @ 0x822e6bc0
     virtual void vfn_33();  // [33] @ 0x822e6b30
     virtual void vfn_34();  // [34] @ 0x822e6ab8
     virtual void vfn_35();  // [35] @ 0x822e6a40
     virtual void vfn_36();  // [36] @ 0x822e6998
-    virtual void vfn_37();  // [37] @ 0x822e6d00
+    virtual void ReadIntForward();  // [37] @ 0x822e6d00
+
+    // ── non-virtual helper fields ──
+    uint32_t     m_streamPos;     // +0x00a0  stream position / indent level
 
     // ── helper methods ──
     int ReadTokenAndCompare(const char* expectedToken);  // @ 0x822E58A8

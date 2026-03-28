@@ -183,28 +183,12 @@ void Release(grcTexture* texture) {
 
 } // namespace rage
 
-/* ── External dependencies for atSingleton functions ──────────────────────── */
-
-/* Jump table handler @ 0x821C5C20 */
-extern void jumptable_5C20(void* obj);
-
-/* HSM context handlers */
-extern void hsmContext_5BC8_fw(void* obj);
-extern void hsmContext_5B40_w(void* obj);
-
-/* Network client initialization @ 0x821C4FB0 */
-extern void SinglesNetworkClient_4FB0_g(void* obj);
-
-/* Dynamic array resize functions */
-extern void atSingleton_22B0(void* array, uint32_t newCapacity);
-extern void atSingleton_2038(void* array, uint32_t newCapacity);
-
 // ═══════════════════════════════════════════════════════════════════════════
 // atSingleton Template Functions
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * atSingleton_MergeFlags @ 0x82169728 | size: 0x18
+ * atSingleton_9728_2h @ 0x82169728 | size: 0x18
  * 
  * Merges flags from source object into target singleton's flags field.
  * Performs bitwise OR operation to combine flag bits.
@@ -212,7 +196,7 @@ extern void atSingleton_2038(void* array, uint32_t newCapacity);
  * @param target    Pointer to target singleton wrapper
  * @param source    Pointer to source object containing flags at offset +16
  */
-void atSingleton_MergeFlags(void* target, void* source) {
+void atSingleton_9728_2h(void* target, void* source) {
     // Get pointer to singleton instance from wrapper
     uint32_t* singletonPtr = *(uint32_t**)((char*)target + 4);
     
@@ -230,14 +214,14 @@ void atSingleton_MergeFlags(void* target, void* source) {
 }
 
 /**
- * atSingleton_ClearFlagAndInitNetwork @ 0x821C6F38 | size: 0x14
+ * atSingleton_6F38_p33 @ 0x821C6F38 | size: 0x14
  * 
  * Clears a specific flag field and jumps to network client initialization.
  * Sets field at offset 0x27EC (10220) to zero.
  * 
  * @param obj    Pointer to singleton object
  */
-void atSingleton_ClearFlagAndInitNetwork(void* obj) {
+void atSingleton_6F38_p33(void* obj) {
     // Calculate offset: (1 << 16) | 10220 = 0x27EC = 10220
     const uint32_t offset = 0x27EC;
     
@@ -295,14 +279,14 @@ uint8_t atSingleton_vfn_6(void* obj, int32_t index) {
 }
 
 /**
- * atSingleton_ClearRegion128 @ 0x82255E3F0 | size: 0x18
+ * atSingleton_E3F0_p44 @ 0x82255E3F0 | size: 0x18
  * 
  * Clears a 16-byte region starting at offset 128.
  * Initializes four consecutive 32-bit fields to zero.
  * 
  * @param obj    Pointer to object
  */
-void atSingleton_ClearRegion128(void* obj) {
+void atSingleton_E3F0_p44(void* obj) {
     // Clear 16 bytes (4 x uint32_t) starting at offset 128
     *(uint32_t*)((char*)obj + 128) = 0;
     *(uint32_t*)((char*)obj + 132) = 0;
@@ -362,14 +346,14 @@ void atSingleton_6BC0_w(void* obj) {
 }
 
 /**
- * atSingleton_DispatchByGameMode @ 0x821C6108 | size: 0x38
+ * atSingleton_6108_p33 @ 0x821C6108 | size: 0x38
  * 
  * Similar to atSingleton_6BC0_w but routes to different handler for mode 3.
  * Conditional state machine dispatcher with alternate mode 3 handler.
  * 
  * @param obj    Pointer to game state object
  */
-void atSingleton_DispatchByGameMode(void* obj) {
+void atSingleton_6108_p33(void* obj) {
     // Load global game state pointer
     uint32_t* globalState = *(uint32_t**)0x825EA13C;
     
@@ -562,7 +546,7 @@ extern void atSingleton_0128_wrh(void* pNode, uint32_t param);
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * atSingleton_TraverseLinkedList @ 0x824489F8 | size: 0x4c (76 bytes)
+ * atSingleton_89F8_2hr @ 0x824489F8 | size: 0x4c (76 bytes)
  *
  * Traverses a linked list and calls a processing function on each node.
  *
@@ -586,7 +570,7 @@ extern void atSingleton_0128_wrh(void* pNode, uint32_t param);
  *      c. Load next node from current node + 4
  *   4. Return when list end is reached
  * ═══════════════════════════════════════════════════════════════════════════ */
-void atSingleton_TraverseLinkedList(void* pThis, uint32_t param)
+void atSingleton_89F8_2hr(void* pThis, uint32_t param)
 {
     uint8_t* singleton = (uint8_t*)pThis;
     
@@ -610,819 +594,476 @@ void atSingleton_TraverseLinkedList(void* pThis, uint32_t param)
     }
 }
 
+/* ── External dependencies for atSingleton batch 2 ───────────────────────── */
 
-// ═══════════════════════════════════════════════════════════════════════════
-// atSingleton Batch: 10 functions (108B–284B)
-// Physics write-back, hash table probe, drawable field loading,
-// array destructor, weight accumulation, capacity-gated insertion,
-// input readiness check
-// ═══════════════════════════════════════════════════════════════════════════
+/* Array element destructor @ 0x820E7628 */
+extern void atSingleton_dtor_7628(void* element);
 
-/* ── External dependencies ────────────────────────────────────────────────── */
-
-extern void ph_5908(void* physObj, const char* tag, int mode);
-extern void rage_3F18(void* globalTable, void* dataBlock, void* destBuffer);
-extern void ke_0E08(void* destTransform, void* srcTransform);
-extern int32_t pg_C4E8_g(int32_t value, int32_t rangeMin, int32_t rangeMax);
-extern void* atSingleton_29E0_g(const void* key);
+/* Free memory @ 0x820C00C0 */
 extern void rage_free_00C0(void* ptr);
+
+/* Find singleton ownership @ 0x820F90D0 */
 extern uint8_t atSingleton_Find_90D0(void* ptr);
-extern uint8_t atSingleton_7068_fw(void* hashMap, uint32_t playerIndex, void* entry);
 
-/* Global pointers */
-extern uint32_t* lbl_8271A374;          // physics write-back global table
-extern uint32_t* lbl_8271A324;          // player slot table base
-extern uint32_t* lbl_8271A364;          // session state pointer
-extern uint32_t* g_input_obj_ptr;       // @ 0x825EAB28
-extern uint32_t* g_render_obj_ptr;      // @ 0x825EAB2C
-extern uint32_t  lbl_825CA1A0[];        // network session object A
-extern uint32_t  lbl_825CA1B4[];        // network session object B
-
-/* Float constant for weight accumulation (likely 0.0f) */
-extern const float lbl_8202D110;        // @ 0x8202D110
-
-/* String constants for physics tags */
-extern const char lbl_82027660[];       // @ 0x82027660 - physics write tag A
-extern const char lbl_8202766C[];       // @ 0x8202766C - physics write tag B
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_3680_w @ 0x82123680 | size: 0x6C (108 bytes)
-// Writes physics simulation data from a data block into a bone transform.
-// Loads the data block from the singleton, copies via the global table,
-// then applies the result to a transform at offset +176.
-// ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_3680_w(void* pBoneState, void* pSingleton) {
-    uint8_t* singleton = (uint8_t*)pSingleton;
-    uint8_t* boneState = (uint8_t*)pBoneState;
-
-    // Get the physics object pointer from singleton +4
-    void* physObj = *(void**)(singleton + 4);
-
-    // Begin physics write-back (tag A)
-    ph_5908(physObj, lbl_82027660, 1);
-
-    // Reload physics object (may have changed during ph_5908)
-    void* physObjReloaded = *(void**)(singleton + 4);
-
-    // Get the data block pointer at offset +12 within the physics object
-    void* dataBlock = *(void**)((uint8_t*)physObjReloaded + 12);
-
-    // Copy data from global table through data block into dest buffer at +168
-    void* destBuffer = (void*)(boneState + 168);
-    rage_3F18(lbl_8271A374, dataBlock, destBuffer);
-
-    // Reload physics object again for end tag
-    void* physObjFinal = *(void**)(singleton + 4);
-
-    // End physics write-back (tag B)
-    ph_5908(physObjFinal, lbl_8202766C, 1);
-
-    // Apply the transform: copy from +168 source into +176 destination
-    void* srcTransform = *(void**)(boneState + 168);
-    ke_0E08((void*)(boneState + 176), srcTransform);
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_36F0_w @ 0x821236F0 | size: 0x6C (108 bytes)
-// Same pattern as atSingleton_3680_w but with different bone offsets.
-// Writes physics data into transform at offsets +172 and +380.
-// ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_36F0_w(void* pBoneState, void* pSingleton) {
-    uint8_t* singleton = (uint8_t*)pSingleton;
-    uint8_t* boneState = (uint8_t*)pBoneState;
-
-    // Get the physics object pointer from singleton +4
-    void* physObj = *(void**)(singleton + 4);
-
-    // Begin physics write-back (tag A)
-    ph_5908(physObj, lbl_82027660, 1);
-
-    // Reload physics object
-    void* physObjReloaded = *(void**)(singleton + 4);
-
-    // Get the data block pointer at offset +12 within the physics object
-    void* dataBlock = *(void**)((uint8_t*)physObjReloaded + 12);
-
-    // Copy data from global table through data block into dest buffer at +172
-    void* destBuffer = (void*)(boneState + 172);
-    rage_3F18(lbl_8271A374, dataBlock, destBuffer);
-
-    // Reload physics object again for end tag
-    void* physObjFinal = *(void**)(singleton + 4);
-
-    // End physics write-back (tag B)
-    ph_5908(physObjFinal, lbl_8202766C, 1);
-
-    // Apply the transform: copy from +172 source into +380 destination
-    void* srcTransform = *(void**)(boneState + 172);
-    ke_0E08((void*)(boneState + 380), srcTransform);
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_4EF0 @ 0x82124EF0 | size: 0x7C (124 bytes)
-// (aliased as fragDrawable_vfn_3)
-// Loads a named field from a data source into a fragDrawable.
-// Reads a 128-byte field name string via vtable call, compares it
-// case-insensitively against a known key. If it doesn't match, hashes
-// the field name and stores the result at offset +288, freeing the old value.
-// ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_4EF0(void* pDrawable, void* pDataSource) {
-    uint8_t* drawable = (uint8_t*)pDrawable;
-    uint8_t* dataSource = (uint8_t*)pDataSource;
-
-    // Get the inner object from data source +4
-    void* innerObj = *(void**)(dataSource + 4);
-
-    // Call vtable slot 1 to read a field name string (up to 128 bytes)
-    // into a local buffer (stack variable in original)
-    char fieldNameBuffer[128];
-    // vtable slot 1: ReadString(innerObj, buffer, maxLen)
-    void** vtable = *(void***)innerObj;
-    typedef void (*ReadStringFn)(void*, char*, int);
-    ReadStringFn readString = (ReadStringFn)vtable[1];
-    readString(innerObj, fieldNameBuffer, 128);
-
-    // Compare field name against known key (case-insensitive)
-    extern int _stricmp(const char* a, const char* b);
-    extern const char lbl_8202769C[];  // known field key string
-    if (_stricmp(fieldNameBuffer, lbl_8202769C) != 0) {
-        // Hash the field name to get a data object
-        void* fieldData = atSingleton_29E0_g(fieldNameBuffer);
-
-        // Free the old value at offset +288
-        void* oldValue = *(void**)(drawable + 288);
-        rage_free_00C0(oldValue);
-
-        // Store the new hashed field data
-        *(void**)(drawable + 288) = fieldData;
-    }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_dtor_3468 @ 0x820F3468 | size: 0xA0 (160 bytes)
-// Destructor for a dynamic pointer array with singleton ownership tracking.
-// Iterates backwards through the array, checking each element against
-// the singleton registry. Elements not owned by singletons are freed
-// via the system allocator. Finally frees the array storage itself.
-// ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_dtor_3468(void* pArray) {
-    uint8_t* arrayObj = (uint8_t*)pArray;
-
-    // Check element count at offset +6 (uint16)
-    uint16_t elementCount = *(uint16_t*)(arrayObj + 6);
-    if (elementCount == 0) {
-        return;
-    }
-
-    // Get the data pointer at offset +0
-    uint32_t* dataPtr = *(uint32_t**)(arrayObj);
-    if (dataPtr == nullptr) {
-        return;
-    }
-
-    // The count is stored at dataPtr[-1] (4 bytes before the data start)
-    uint32_t* countPtr = dataPtr - 1;
-    uint32_t count = *countPtr;
-    int32_t idx = count - 1;
-
-    // Calculate end pointer: dataPtr + (count * 4) bytes
-    uint8_t* elementPtr = (uint8_t*)dataPtr + (count * 4);
-
-    // Iterate backwards through the array
-    while (idx >= 0) {
-        elementPtr -= 4;
-        void* element = *(void**)elementPtr;
-
-        if (element != nullptr) {
-            // Check if element is owned by a singleton
-            uint8_t isSingleton = atSingleton_Find_90D0(element);
-            if (!isSingleton) {
-                // Not singleton-owned: free via system allocator
-                // Load allocator from SDA global at r13+0 -> offset +4 -> vtable slot 2
-                extern uint32_t lbl_82600000;
-                void* allocator = *(void**)((uint8_t*)&lbl_82600000 + 4);
-                void** allocVtable = *(void***)allocator;
-                typedef void (*FreeFn)(void*, void*);
-                FreeFn freeFn = (FreeFn)allocVtable[2];
-                freeFn(allocator, element);
-            }
-        }
-
-        idx--;
-    }
-
-    // Free the array storage (countPtr points to allocation start)
-    rage_free_00C0(countPtr);
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_8128_g @ 0x82118128 | size: 0x9C (156 bytes)
-// Hash table linear probe search.
-// Starting from a given index, searches forward (with wrapping) through
-// a hash table for an entry whose active flag (byte at offset +16) is set.
-// If wrapFlag is true, clamps the start index to valid range first.
-// Returns the index of the found entry, or -1 if none found.
-// ─────────────────────────────────────────────────────────────────────────────
-int32_t atSingleton_8128_g(void* pHashTable, uint32_t startIndex, uint32_t stride, uint8_t wrapFlag) {
-    uint8_t* hashTable = (uint8_t*)pHashTable;
-
-    // Combine start index with stride to get effective start position
-    int32_t searchIdx = (int32_t)(startIndex + stride);
-
-    // If wrapFlag is set, clamp the index to valid range [0, capacity-1]
-    if (wrapFlag) {
-        uint16_t capacity = *(uint16_t*)(hashTable + 28);
-        searchIdx = pg_C4E8_g(searchIdx, 0, (int32_t)capacity - 1);
-    }
-
-    // Linear probe: search forward through the table
-    if (searchIdx >= 0) {
-        uint16_t capacity = *(uint16_t*)(hashTable + 28);
-        uint32_t entryOffset = (uint32_t)searchIdx * 4;
-        uint32_t strideBytes = stride * 4;
-
-        while (searchIdx < (int32_t)capacity) {
-            // Get the entry pointer from the table at offset +24
-            uint32_t* tableData = *(uint32_t**)(hashTable + 24);
-            void* entry = *(void**)((uint8_t*)tableData + entryOffset);
-
-            // Check if the active flag at entry +16 is set
-            uint8_t activeFlag = *(uint8_t*)((uint8_t*)entry + 16);
-            if (activeFlag != 0) {
-                return searchIdx;
-            }
-
-            // Advance by stride
-            searchIdx += (int32_t)stride;
-            entryOffset += strideBytes;
-
-            // If we wrapped below zero, stop
-            if (searchIdx < 0) {
-                break;
-            }
-        }
-    }
-
-    return -1;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_AccumulateWeights @ 0x82118438 | size: 0xA8 (168 bytes)
-// Accumulates float weights from an array of object pointers.
-// Each object has a weight float at offset +144. The function sums all
-// weights, processing 4 elements at a time (loop unrolling) for elements
-// at index >= 4, then handles the remainder one at a time.
-// Returns the accumulated sum in f1.
-// ─────────────────────────────────────────────────────────────────────────────
-float atSingleton_AccumulateWeights(void* pWeightArray) {
-    uint8_t* weightArray = (uint8_t*)pWeightArray;
-
-    // Read element count from offset +427 (byte field)
-    uint8_t elementCount = *(uint8_t*)(weightArray + 427);
-
-    // Start with initial weight value from constant (likely 0.0f)
-    float totalWeight = lbl_8202D110;
-
-    // Unrolled loop index: process 4 elements at a time starting from index 4
-    int32_t unrolledIdx = 0;
-    if (elementCount >= 4) {
-        // Get the pointer array at offset +180
-        uint32_t** ptrArray = *(uint32_t***)(weightArray + 180);
-
-        // Calculate number of groups of 4: (count - 4) / 4 + 1
-        uint32_t adjustedCount = (uint32_t)(elementCount - 4);
-        uint32_t numGroups = (adjustedCount >> 2) + 1;
-        unrolledIdx = (int32_t)(numGroups * 4);
-
-        // Process 4 entries per iteration
-        uint32_t** entryPtr = ptrArray + 2;  // start at index 2 (offset +8 from base)
-        for (uint32_t group = numGroups; group > 0; group--) {
-            float w0 = *(float*)((uint8_t*)entryPtr[-2] + 144);
-            float w1 = *(float*)((uint8_t*)entryPtr[-1] + 144);
-            float w2 = *(float*)((uint8_t*)entryPtr[0] + 144);
-            float w3 = *(float*)((uint8_t*)entryPtr[1] + 144);
-
-            totalWeight = w0 + totalWeight;
-            totalWeight = w1 + totalWeight;
-            totalWeight = w2 + totalWeight;
-            totalWeight = w3 + totalWeight;
-
-            entryPtr += 4;
-        }
-    }
-
-    // Handle remaining elements (index unrolledIdx to elementCount-1)
-    if (unrolledIdx < (int32_t)elementCount) {
-        uint32_t** ptrArray = *(uint32_t***)(weightArray + 180);
-        int32_t remaining = (int32_t)elementCount - unrolledIdx;
-        uint32_t** entryPtr = ptrArray + unrolledIdx;
-
-        for (int32_t i = remaining; i > 0; i--) {
-            float weight = *(float*)((uint8_t*)*entryPtr + 144);
-            totalWeight = weight + totalWeight;
-            entryPtr++;
-        }
-    }
-
-    return totalWeight;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_HashMapInsertA @ 0x82117D28 | size: 0xE4 (228 bytes)
-// Capacity-gated hash map insertion (variant A).
-// Checks if the entry count is below the maximum capacity. If room exists,
-// reads the player slot entry for the given index, calls vtable slot 2
-// to get a sequence number, validates it against min/max thresholds,
-// then calls the virtual GetKey method and inserts via atSingleton_7068_fw.
-// ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_HashMapInsertA(void* pHashMap, uint32_t playerIndex, void* pEntry) {
-    uint8_t* entry = (uint8_t*)pEntry;
-
-    // Check capacity: count (+4) vs max (+8)
-    int32_t count = *(int32_t*)(entry + 4);
-    int32_t maxCapacity = *(int32_t*)(entry + 8);
-    if (count >= maxCapacity) {
-        return;
-    }
-
-    // Get the player slot table and compute slot address
-    // playerIndex * 8 gives the byte offset into the slot table
-    uint8_t* slotTable = (uint8_t*)lbl_8271A324;
-    uint8_t* slotEntry = slotTable + (playerIndex * 8);
-
-    // Get the network object at slot offset +252
-    void* netObj = *(void**)(slotEntry + 252);
-
-    // Call vtable slot 2 on netObj with arg=20 to get sequence number
-    void** netVtable = *(void***)netObj;
-    typedef void* (*GetSequenceFn)(void*, int);
-    GetSequenceFn getSequence = (GetSequenceFn)netVtable[2];
-    void* seqResult = getSequence(netObj, 20);
-
-    // Check sequence number against minimum threshold at entry +36
-    int32_t seqNum = *(int32_t*)seqResult;
-    int32_t minThreshold = *(int32_t*)(entry + 36);
-    if (seqNum < minThreshold) {
-        return;
-    }
-
-    // Re-read netObj vtable and call slot 2 again with arg=2 for key lookup
-    void** netVtable2 = *(void***)netObj;
-    typedef void* (*GetKeyFn)(void*, int);
-    GetKeyFn getKey = (GetKeyFn)netVtable2[2];
-    void* keyResult = getKey(netObj, 2);
-
-    // Check key value against maximum threshold at entry +40
-    int32_t keyVal = *(int32_t*)keyResult;
-    int32_t maxThreshold = *(int32_t*)(entry + 40);
-    if (keyVal > maxThreshold) {
-        return;
-    }
-
-    // Call the entry's virtual function (vtable slot 0) to get the insert value
-    void** entryVtable = *(void***)entry;
-    typedef void* (*GetValueFn)(void*);
-    GetValueFn getValue = (GetValueFn)entryVtable[0];
-    void* insertValue = getValue(entry);
-
-    // Insert into the hash map
-    uint8_t inserted = atSingleton_7068_fw(pHashMap, playerIndex, insertValue);
-    if (inserted) {
-        // Increment the entry count
-        int32_t currentCount = *(int32_t*)(entry + 4);
-        *(int32_t*)(entry + 4) = currentCount + 1;
-    }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_HashMapInsertB @ 0x82117E10 | size: 0xDC (220 bytes)
-// Capacity-gated hash map insertion (variant B).
-// Similar to atSingleton_HashMapInsertA but uses a different sequence threshold:
-// reads frame counts from the render object and sums them, comparing
-// against the entry's minimum threshold before proceeding.
-// ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_HashMapInsertB(void* pHashMap, uint32_t playerIndex, void* pEntry) {
-    uint8_t* entry = (uint8_t*)pEntry;
-
-    // Check capacity: count (+4) vs max (+8)
-    int32_t count = *(int32_t*)(entry + 4);
-    int32_t maxCapacity = *(int32_t*)(entry + 8);
-    if (count >= maxCapacity) {
-        return;
-    }
-
-    // Load the render object and read frame counts at offsets +28 and +32
-    int32_t minThreshold = *(int32_t*)(entry + 36);
-    void* renderObj = *(void**)g_render_obj_ptr;
-    int32_t frameCountA = *(int32_t*)((uint8_t*)renderObj + 28);
-    int32_t frameCountB = *(int32_t*)((uint8_t*)renderObj + 32);
-    int32_t totalFrames = frameCountA + frameCountB + 1;
-
-    // Get the player slot table and compute slot address
-    uint8_t* slotTable = (uint8_t*)lbl_8271A324;
-    uint8_t* slotEntry = slotTable + (playerIndex * 8);
-    void* netObj = *(void**)(slotEntry + 252);
-
-    // Check total frames against minimum threshold
-    if (totalFrames < minThreshold) {
-        return;
-    }
-
-    // Call vtable slot 2 on netObj with arg=13 to get sequence value
-    void** netVtable = *(void***)netObj;
-    typedef void* (*GetSequenceFn)(void*, int);
-    GetSequenceFn getSequence = (GetSequenceFn)netVtable[2];
-    void* seqResult = getSequence(netObj, 13);
-
-    // Check sequence value against maximum threshold at entry +40
-    int32_t seqVal = *(int32_t*)seqResult;
-    int32_t maxThreshold = *(int32_t*)(entry + 40);
-    if (seqVal > maxThreshold) {
-        return;
-    }
-
-    // Call the entry's virtual function (vtable slot 0) to get insert value
-    void** entryVtable = *(void***)entry;
-    typedef void* (*GetValueFn)(void*);
-    GetValueFn getValue = (GetValueFn)entryVtable[0];
-    void* insertValue = getValue(entry);
-
-    // Insert into the hash map
-    uint8_t inserted = atSingleton_7068_fw(pHashMap, playerIndex, insertValue);
-    if (inserted) {
-        // Increment the entry count
-        int32_t currentCount = *(int32_t*)(entry + 4);
-        *(int32_t*)(entry + 4) = currentCount + 1;
-    }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_HashMapInsertC @ 0x82117EF0 | size: 0xB8 (184 bytes)
-// Capacity-gated hash map insertion (variant C).
-// Checks capacity, then reads the player slot's network object, calls
-// vtable slot 2 with arg=21 to get a sequence number, validates against
-// min threshold, then calls the entry's virtual GetKey to insert.
-// ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_HashMapInsertC(void* pHashMap, uint32_t playerIndex, void* pEntry) {
-    uint8_t* entry = (uint8_t*)pEntry;
-
-    // Check capacity: count (+4) vs max (+8)
-    int32_t count = *(int32_t*)(entry + 4);
-    int32_t maxCapacity = *(int32_t*)(entry + 8);
-    if (count >= maxCapacity) {
-        return;
-    }
-
-    // Get the player slot table and compute slot address
-    uint8_t* slotTable = (uint8_t*)lbl_8271A324;
-    uint8_t* slotEntry = slotTable + (playerIndex * 8);
-
-    // Get the network object at slot offset +252
-    void* netObj = *(void**)(slotEntry + 252);
-
-    // Call vtable slot 2 on netObj with arg=21 to get sequence number
-    void** netVtable = *(void***)netObj;
-    typedef void* (*GetSequenceFn)(void*, int);
-    GetSequenceFn getSequence = (GetSequenceFn)netVtable[2];
-    void* seqResult = getSequence(netObj, 21);
-
-    // Check sequence number against minimum threshold at entry +36
-    int32_t seqNum = *(int32_t*)seqResult;
-    int32_t minThreshold = *(int32_t*)(entry + 36);
-    if (seqNum < minThreshold) {
-        return;
-    }
-
-    // Call the entry's virtual function (vtable slot 0) to get insert value
-    void** entryVtable = *(void***)entry;
-    typedef void* (*GetValueFn)(void*);
-    GetValueFn getValue = (GetValueFn)entryVtable[0];
-    void* insertValue = getValue(entry);
-
-    // Insert into the hash map
-    uint8_t inserted = atSingleton_7068_fw(pHashMap, playerIndex, insertValue);
-    if (inserted) {
-        // Increment the entry count
-        int32_t currentCount = *(int32_t*)(entry + 4);
-        *(int32_t*)(entry + 4) = currentCount + 1;
-    }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_7FA8_w @ 0x82117FA8 | size: 0x11C (284 bytes)
-// Checks whether the game is ready to accept player input.
-// Evaluates multiple conditions: network session state, session readiness
-// flag, input device connection count, keyboard/button input state,
-// and controller connection status. Returns true only when all conditions
-// indicate the game is in a valid input-accepting state.
-// ─────────────────────────────────────────────────────────────────────────────
-uint8_t atSingleton_7FA8_w() {
-    // Check network session object A: if session pointer (+4) is non-null, input blocked
-    uint32_t* sessionObjA = (uint32_t*)((uint8_t*)lbl_825CA1A0 + 4);
-    if (*sessionObjA != 0) {
-        return 0;
-    }
-
-    // Check session state: load session state pointer, check readiness flag at +60
-    void* sessionState = *(void**)lbl_8271A364;
-    uint8_t readyFlag = *(uint8_t*)((uint8_t*)sessionState + 60);
-    if (readyFlag == 0) {
-        return 0;
-    }
-
-    // Check input object: device connection count at +20 must be > 0
-    void* inputObj = *(void**)g_input_obj_ptr;
-    int32_t deviceCount = *(int32_t*)((uint8_t*)inputObj + 20);
-    if (deviceCount > 0) {
-        return 0;
-    }
-
-    // Check keyboard/button input state at +334 (byte flag)
-    uint8_t keyboardActive = *(uint8_t*)((uint8_t*)inputObj + 334);
-    if (keyboardActive != 0) {
-        // Keyboard is active, input allowed regardless of other checks
-    } else {
-        // Check alternate input flag at +340
-        int32_t altInputFlag = *(int32_t*)((uint8_t*)inputObj + 340);
-        bool hasAltInput = (altInputFlag != 0);
-        if (!hasAltInput) {
-            // No keyboard and no alt input: input not ready
-            return 0;
-        }
-    }
-
-    // Check controller connection: both slots at +56 and +60 must be connected (==1)
-    int32_t controllerSlotA = *(int32_t*)((uint8_t*)inputObj + 56);
-    int32_t controllerSlotB = *(int32_t*)((uint8_t*)inputObj + 60);
-
-    bool slotAConnected = (controllerSlotA == 1);
-    bool slotBConnected = (controllerSlotB == 1);
-
-    int32_t connectedCount = (slotAConnected ? 1 : 0) + (slotBConnected ? 1 : 0);
-
-    // Both controllers must be connected (count >= 2)
-    if (connectedCount >= 2) {
-        // Both connected: check network session object B
-        uint32_t* sessionObjB = (uint32_t*)((uint8_t*)lbl_825CA1B4 + 4);
-        if (*sessionObjB != 0) {
-            return 0;
-        }
-    }
-
-    // All checks passed: input is ready
-    return 1;
-}
+/* Heap allocator @ 0x820DEC88 */
+extern void* xe_EC88(uint32_t size);
 
 // ═══════════════════════════════════════════════════════════════════════════
-// atSingleton MI-base Adjustor Thunks (Virtual Destructor Forwarding)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/* External destructor targets */
-extern void atSingleton_vfn_0_A8F8_1(void* obj, uint32_t flags);
-extern void atSingleton_vfn_0_AA28_1(void* obj, uint32_t flags);
-extern void atSingleton_vfn_0_AC18_1(void* obj, uint32_t flags);
-extern void atSingleton_vfn_0_AC78_1(void* obj, uint32_t flags);
-extern void atSingleton_vfn_0_AAA0_1(void* obj, uint32_t flags);
-
-/* HSM context handler for mode 3 routing */
-extern void hsmContext_5ED8_w(void* obj);
-
-/**
- * atSingleton_rtti_CE54_0  @ 0x821CAD40 | size: 0x8
- *
- * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
- * the primary base, then delegates to atSingleton_vfn_0_A8F8_1 destructor.
- */
-void atSingleton_rtti_CE54_0(void* adjustedThis, uint32_t flags) {
-    void* realThis = (void*)((char*)adjustedThis - 4);
-    atSingleton_vfn_0_A8F8_1(realThis, flags);
-}
-
-/**
- * atSingleton_vfn_0_AD48_1  @ 0x821CAD48 | size: 0x8
- *
- * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
- * the primary base, then delegates to atSingleton_vfn_0_AA28_1 destructor.
- */
-void atSingleton_vfn_0_AD48_1(void* adjustedThis, uint32_t flags) {
-    void* realThis = (void*)((char*)adjustedThis - 4);
-    atSingleton_vfn_0_AA28_1(realThis, flags);
-}
-
-/**
- * atSingleton_rtti_CFA4_0  @ 0x821CAD50 | size: 0x8
- *
- * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
- * the primary base, then delegates to atSingleton_vfn_0_AC18_1 destructor.
- */
-void atSingleton_rtti_CFA4_0(void* adjustedThis, uint32_t flags) {
-    void* realThis = (void*)((char*)adjustedThis - 4);
-    atSingleton_vfn_0_AC18_1(realThis, flags);
-}
-
-/**
- * atSingleton_rtti_CFF4_0  @ 0x821CAD60 | size: 0x8
- *
- * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
- * the primary base, then delegates to atSingleton_vfn_0_AC78_1 destructor.
- */
-void atSingleton_rtti_CFF4_0(void* adjustedThis, uint32_t flags) {
-    void* realThis = (void*)((char*)adjustedThis - 4);
-    atSingleton_vfn_0_AC78_1(realThis, flags);
-}
-
-/**
- * atSingleton_rtti_D01C_0  @ 0x821CAD68 | size: 0x8
- *
- * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
- * the primary base, then delegates to atSingleton_vfn_0_AAA0_1 destructor.
- */
-void atSingleton_rtti_D01C_0(void* adjustedThis, uint32_t flags) {
-    void* realThis = (void*)((char*)adjustedThis - 4);
-    atSingleton_vfn_0_AAA0_1(realThis, flags);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// atSingleton State Machine Dispatchers
+// atSingleton Functions — Batch 2
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * atSingleton_62F0_w  @ 0x821C62F0 | size: 0x2C
+ * atSingleton_9C18_2hr @ 0x820D9C18 | size: 0x54 (84 bytes)
  *
- * Conditional state dispatcher. Checks global game mode and routes
- * to the HSM context handler for mode 1, otherwise clears the
- * completion flag at offset 0x27EC.
+ * Checks a global singleton state flag to determine if a feature is enabled.
+ * Follows a chain of pointers from a global data pointer, reads a flags word,
+ * and returns true if bit 2 (0x4) is set AND bit 0 is clear.
  *
- * @param obj    Pointer to game state object
- */
-void atSingleton_62F0_w(void* obj) {
-    // Load global game state pointer @ 0x8271A33C
-    uint32_t* globalState = *(uint32_t**)0x8271A33C;
-
-    // Load mode from global state offset +12
-    int32_t mode = *(int32_t*)((char*)globalState + 12);
-
-    if (mode == 1) {
-        hsmContext_5BC8_fw(obj);
-        return;
-    }
-
-    // Default: Clear flag at offset 0x27EC
-    *(uint32_t*)((char*)obj + 0x27EC) = 0;
-}
-
-/**
- * atSingleton_DispatchMode1Only  @ 0x821C70F8 | size: 0x2C
- *
- * Conditional state dispatcher. Checks global game mode and routes
- * to the jump table handler for mode 1, otherwise clears the
- * completion flag at offset 0x27EC.
- *
- * @param obj    Pointer to game state object
- */
-void atSingleton_DispatchMode1Only(void* obj) {
-    // Load global game state pointer @ 0x8271A33C
-    uint32_t* globalState = *(uint32_t**)0x8271A33C;
-
-    // Load mode from global state offset +12
-    int32_t mode = *(int32_t*)((char*)globalState + 12);
-
-    if (mode == 1) {
-        jumptable_5C20(obj);
-        return;
-    }
-
-    // Default: Clear flag at offset 0x27EC
-    *(uint32_t*)((char*)obj + 0x27EC) = 0;
-}
-
-/**
- * atSingleton_DispatchMode1And3  @ 0x821C72E8 | size: 0x38
- *
- * Conditional state dispatcher with two-way routing. Checks global
- * game mode: routes to jump table handler for mode 1, to HSM context
- * exit handler for mode 3, otherwise clears the completion flag.
- *
- * @param obj    Pointer to game state object
- */
-void atSingleton_DispatchMode1And3(void* obj) {
-    // Load global game state pointer @ 0x8271A33C
-    uint32_t* globalState = *(uint32_t**)0x8271A33C;
-
-    // Load mode from global state offset +12
-    int32_t mode = *(int32_t*)((char*)globalState + 12);
-
-    if (mode == 1) {
-        jumptable_5C20(obj);
-        return;
-    }
-
-    if (mode == 3) {
-        hsmContext_5ED8_w(obj);
-        return;
-    }
-
-    // Default: Clear flag at offset 0x27EC
-    *(uint32_t*)((char*)obj + 0x27EC) = 0;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// atSingleton Flag / Status Query
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * atSingleton_9C18_2hr  @ 0x820D9C18 | size: 0x54
- *
- * Checks whether a deeply-nested flag indicates availability.
- * Traverses a global pointer chain to reach a status word, then
- * checks bit 0 (active/busy) and bit 2 (ready) to determine
- * if the resource is available.
- *
- * @return  1 if available (not active AND ready-bit set), 0 otherwise
+ * @return  1 if the feature flag is enabled, 0 otherwise
  */
 uint8_t atSingleton_9C18_2hr() {
-    // Load global pointer chain: @ 0x8271A2F8 -> +20 -> +9736 -> +0
+    // Load global data pointer from 0x8271A2F8
     uint32_t* globalPtr = *(uint32_t**)0x8271A2F8;
+
+    // Follow pointer chain: +20 -> +9736 -> +0
     uint32_t* level1 = *(uint32_t**)((char*)globalPtr + 20);
     uint32_t* level2 = *(uint32_t**)((char*)level1 + 9736);
-    uint32_t statusWord = *level2;
+    uint32_t flags = *(uint32_t*)level2;
 
-    // Check bit 0: if set, resource is active/busy -> not available
-    if (statusWord & 0x1) {
+    // If bit 0 is set, return 0 (feature disabled)
+    if (flags & 0x1) {
         return 0;
     }
 
-    // Check bit 2: if set, resource is ready -> available
-    if (statusWord & 0x4) {
+    // Check if bit 2 is set
+    if (flags & 0x4) {
         return 1;
     }
 
     return 0;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// atSingleton Array Initialization
-// ═══════════════════════════════════════════════════════════════════════════
-
 /**
- * atSingleton_InitWeightArray  @ 0x821CB978 | size: 0x98
+ * atSingleton_74B8 @ 0x820E74B8 | size: 0x68 (104 bytes)
  *
- * Initializes a large array of 900 entries (48 bytes each) starting at
- * offset +0 of the object. Each entry consists of:
- *   - float at +0   (set to 0.0f)
- *   - int32 at +4   (set to -1)
- *   - uint16 at +8  (set to 0)
- *   - uint16 at +10 (set to 0)
- *   - float at +16  (set to 0.0f)
- *   - float at +20  (set to 0.0f)
- *   - float at +24  (set to 0.0f)
- *   - float at +32  (set to 0.0f)
+ * Destroys an array of 8-byte elements by calling a destructor on each
+ * element in reverse order, then frees the backing allocation.
+ * The array header stores the count at offset -4 from the data pointer.
  *
- * After the array, initializes a trailing record at offset 43200 with
- * similar structure, and clears 3 uint32 fields at offsets 43200, 43204, 43208.
- *
- * @param obj    Pointer to the object to initialize
+ * @param obj  Pointer to array descriptor with count at +6 and data at +0
  */
-void atSingleton_InitWeightArray(void* obj) {
-    uint8_t* base = (uint8_t*)obj;
-    float zero = 0.0f;
-
-    // Initialize 900 entries, 48 bytes each
-    for (int32_t i = 899; i >= 0; i--) {
-        uint8_t* entry = base + (899 - i) * 48;
-        *(float*)(entry + 0) = zero;
-        *(int32_t*)(entry + 4) = -1;
-        *(uint16_t*)(entry + 8) = 0;
-        *(uint16_t*)(entry + 10) = 0;
-        *(float*)(entry + 16) = zero;
-        *(float*)(entry + 20) = zero;
-        *(float*)(entry + 24) = zero;
-        *(float*)(entry + 32) = zero;
+void atSingleton_74B8(void* obj) {
+    uint16_t count = *(uint16_t*)((char*)obj + 6);
+    if (count == 0) {
+        return;
     }
 
-    // Clear trailing control fields
-    *(uint32_t*)(base + 43208) = 0;  // offset 0xA8C8
-    *(uint32_t*)(base + 43204) = 0;  // offset 0xA8C4
-    *(uint32_t*)(base + 43200) = 0;  // offset 0xA8C0
+    uint32_t* dataPtr = *(uint32_t**)obj;
+    if (dataPtr == nullptr) {
+        return;
+    }
 
-    // Initialize trailing record at offset 43216 (0x82XX + 65536 - 22320)
-    uint8_t* trailing = base + 43216;
-    *(float*)(trailing + 0) = zero;
-    *(int32_t*)(trailing + 4) = -1;
-    *(uint16_t*)(trailing + 8) = 0;
-    *(uint16_t*)(trailing + 10) = 0;
-    *(float*)(trailing + 16) = zero;
-    *(float*)(trailing + 20) = zero;
-    *(float*)(trailing + 24) = zero;
-    *(float*)(trailing + 32) = zero;
+    // Header is at dataPtr - 4, stores element count
+    uint32_t* header = (uint32_t*)((char*)dataPtr - 4);
+    uint32_t elementCount = *header;
+
+    // Calculate end of array: base + count * 8
+    uint8_t* arrayEnd = (uint8_t*)dataPtr + (elementCount * 8);
+
+    // Destroy elements in reverse order
+    for (int32_t i = (int32_t)elementCount - 1; i >= 0; i--) {
+        arrayEnd -= 8;
+        atSingleton_dtor_7628(arrayEnd);
+    }
+
+    // Free the allocation (header is the allocation base)
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_8620 @ 0x820C8620 | size: 0x78 (120 bytes)
+ *
+ * Destroys an array of objects with virtual destructors. Each element is
+ * 80 bytes, and destruction proceeds in reverse order. Objects are accessed
+ * via a vtable pointer at offset +0, and the virtual destructor is called
+ * with a "deleting" flag of 1.
+ *
+ * @param data  Pointer to first element (allocation header at data - 16)
+ */
+void atSingleton_8620(void* data) {
+    uint8_t* base = (uint8_t*)data;
+    uint32_t* header = (uint32_t*)(base - 16);
+    uint32_t elementCount = *header;
+
+    int32_t remaining = (int32_t)elementCount - 1;
+
+    if (remaining >= 0) {
+        // Calculate stride: count + count*4 = count*5, then *16 = count*80
+        // End pointer = data + count*80 + 64
+        uint32_t totalStride = (elementCount + elementCount * 4) * 16;
+        uint8_t* cursor = base + totalStride + 64;
+
+        for (int32_t i = remaining; i >= 0; i--) {
+            cursor -= 80;
+            void* objPtr = *(void**)cursor;
+            if (objPtr != nullptr) {
+                // Call virtual destructor (vtable slot 0) with deleting=1
+                uint32_t* vtable = *(uint32_t**)objPtr;
+                typedef void (*VDtorFn)(void*, int);
+                VDtorFn vdtor = (VDtorFn)vtable[0];
+                vdtor(objPtr, 1);
+            }
+        }
+    }
+
+    // Free allocation base
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_5F48_2h @ 0x82125F48 | size: 0x74 (116 bytes)
+ *
+ * Finds the last (rightmost) node in a binary tree by following the right
+ * child pointer chain. If the initial right child is null, walks up the
+ * parent chain to find the nearest ancestor where we came from the left.
+ *
+ * @param unused  Unused first parameter
+ * @param node    Starting tree node with parent at +52, right child at +56, left child at +60
+ * @return        Pointer to the found node, or nullptr if tree is empty
+ */
+void* atSingleton_5F48_2h(void* unused, void* node) {
+    (void)unused;
+    uint8_t* current = (uint8_t*)node;
+
+    // Check right child first (offset +60)
+    void* rightChild = *(void**)((char*)current + 60);
+    if (rightChild != nullptr) {
+        // Follow right child's left-child chain to find in-order successor
+        uint8_t* cursor = (uint8_t*)rightChild;
+        void* next = *(void**)(cursor + 56);
+        while (next != nullptr) {
+            cursor = (uint8_t*)next;
+            next = *(void**)(cursor + 56);
+        }
+        return cursor;
+    }
+
+    // No right child - walk up parent chain
+    while (true) {
+        void* parent = *(void**)((char*)current + 52);
+        if (parent == nullptr) {
+            break;
+        }
+
+        // Check if current is the right child of parent
+        void* parentRight = *(void**)((char*)parent + 56);
+        if (parentRight == current) {
+            return (void*)parent;
+        }
+
+        current = (uint8_t*)parent;
+    }
+
+    return nullptr;
+}
+
+/**
+ * atSingleton_BF40_2h @ 0x8212BF40 | size: 0x74 (116 bytes)
+ *
+ * Reads or writes an animation property value based on a direction flag.
+ * If the flag at offset +4 is non-zero (read mode), calls vtable slot 39
+ * to read a uint16 property by index. If zero (write mode), calls vtable
+ * slot 3 to get a uint16 value and stores it to the output.
+ *
+ * @param wrapper  Object with data pointer at +0 and direction flag at +4
+ * @param value    Pointer to uint16 value (read source or write destination)
+ */
+void atSingleton_BF40_2h(void* wrapper, void* value) {
+    uint8_t direction = *(uint8_t*)((char*)wrapper + 4);
+    void* obj = *(void**)wrapper;
+
+    if (direction != 0) {
+        // Read mode: call vtable slot 39 with property index from value
+        uint32_t* vtable = *(uint32_t**)obj;
+        uint16_t index = *(uint16_t*)value;
+        typedef void (*ReadFn)(void*, uint16_t);
+        ReadFn readFunc = (ReadFn)vtable[39];
+        readFunc(obj, index);
+        return;
+    }
+
+    // Write mode: call vtable slot 3 to get uint16 value
+    uint32_t* vtable = *(uint32_t**)obj;
+    typedef uint16_t (*GetFn)(void*);
+    GetFn getFunc = (GetFn)vtable[3];
+    uint16_t result = getFunc(obj);
+    *(uint16_t*)value = result;
+}
+
+/**
+ * atSingleton_8D30_p42 @ 0x82118D30 | size: 0x88 (136 bytes)
+ *
+ * Formats a player name string by querying a virtual method on the name
+ * provider object, then stores the result into a fixed-size buffer.
+ * Clears a 64-byte stack buffer, calls vtable slot 1 to retrieve the
+ * name string, then stores the result byte at offset +444.
+ *
+ * @param obj      Target object receiving the formatted name at offset +444
+ * @param wrapper  Wrapper with name provider at offset +4
+ */
+void atSingleton_8D30_p42(void* obj, void* wrapper) {
+    char nameBuffer[64];
+
+    // Zero-initialize the buffer
+    nameBuffer[0] = 0;
+    memset(nameBuffer + 1, 0, 63);
+
+    // Get name provider from wrapper and call vtable slot 1
+    void* nameProvider = *(void**)((char*)wrapper + 4);
+    uint32_t* vtable = *(uint32_t**)nameProvider;
+    typedef void (*GetNameFn)(void*, char*, int);
+    GetNameFn getName = (GetNameFn)vtable[1];
+    getName(nameProvider, nameBuffer, 64);
+
+    // Load global string table and call format function at offset +12
+    uint32_t* globalBase = *(uint32_t**)0x82600000;
+    void* stringTable = (void*)((char*)globalBase + 908);
+    typedef uint8_t (*FormatFn)(void*, char*);
+    uint32_t* stVtable = *(uint32_t**)((char*)stringTable);
+    FormatFn formatFunc = (FormatFn)stVtable[3];
+    uint8_t result = formatFunc(stringTable, nameBuffer);
+
+    // Store result
+    *(uint8_t*)((char*)obj + 444) = result;
+}
+
+/**
+ * atSingleton_DCE8_gen @ 0x8212DCE8 | size: 0xA4 (164 bytes)
+ *
+ * Destroys an array of 20-byte resource entries. For each entry with a
+ * non-zero reference count (offset +8) and a valid data pointer (offset +0),
+ * checks if the pointer is a registered singleton. If not, deallocates it
+ * through the global singleton manager's vtable slot 2.
+ * Frees the array backing allocation when done.
+ *
+ * @param data  Pointer to first element (allocation header at data - 4)
+ */
+void atSingleton_DCE8_gen(void* data) {
+    uint8_t* base = (uint8_t*)data;
+    uint32_t* header = (uint32_t*)(base - 4);
+    uint32_t elementCount = *header;
+
+    int32_t remaining = (int32_t)elementCount - 1;
+
+    if (remaining >= 0) {
+        // Calculate end: count + count*4 = count*5, then *4 = count*20
+        // Cursor starts at data + count*20 + 8
+        uint32_t totalSize = (elementCount + elementCount * 4) * 4;
+        uint8_t* cursor = base + totalSize + 8;
+
+        for (int32_t i = remaining; i >= 0; i--) {
+            cursor -= 20;
+            int32_t refCount = *(int32_t*)(cursor + 8);
+            if (refCount != 0) {
+                void* ptr = *(void**)cursor;
+                if (ptr == nullptr) {
+                    continue;
+                }
+
+                uint8_t isSingleton = atSingleton_Find_90D0(ptr);
+                if (isSingleton != 0) {
+                    continue;
+                }
+
+                // Deallocate through global singleton manager
+                uint32_t* sdaBase = *(uint32_t**)0x82600000;
+                void* manager = *(void**)((char*)sdaBase + 4);
+                uint32_t* mgrVtable = *(uint32_t**)manager;
+                typedef void (*DeallocFn)(void*, void*);
+                DeallocFn dealloc = (DeallocFn)mgrVtable[2];
+                dealloc(manager, ptr);
+            }
+        }
+    }
+
+    // Free allocation base
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_DB60 @ 0x8212DB60 | size: 0xB4 (180 bytes)
+ *
+ * Destroys an array of 20-byte compound entries. Each entry may contain
+ * a sub-array at offset +8 that is cleaned up via atSingleton_DCE8_gen,
+ * and a data pointer at offset +0 that is deallocated if not a singleton.
+ * Frees the backing allocation when done.
+ *
+ * @param data  Pointer to first element (allocation header at data - 4)
+ */
+void atSingleton_DB60(void* data) {
+    uint8_t* base = (uint8_t*)data;
+    uint32_t* header = (uint32_t*)(base - 4);
+    uint32_t elementCount = *header;
+
+    int32_t remaining = (int32_t)elementCount - 1;
+
+    // Calculate end pointer
+    uint32_t totalSize = (elementCount + elementCount * 4) * 4;
+    uint8_t* cursor = base + totalSize;
+
+    for (int32_t i = remaining; i >= 0; i--) {
+        cursor -= 20;
+
+        // Check if sub-array needs cleanup (refcount at +16)
+        int32_t subRefCount = *(int32_t*)(cursor + 16);
+        if (subRefCount != 0) {
+            void* subArray = *(void**)(cursor + 8);
+            if (subArray != nullptr) {
+                atSingleton_DCE8_gen(subArray);
+            }
+        }
+
+        // Check main data pointer
+        void* ptr = *(void**)cursor;
+        if (ptr != nullptr) {
+            uint8_t isSingleton = atSingleton_Find_90D0(ptr);
+            if (isSingleton == 0) {
+                // Deallocate through global singleton manager
+                uint32_t* sdaBase = *(uint32_t**)0x82600000;
+                void* manager = *(void**)((char*)sdaBase + 4);
+                uint32_t* mgrVtable = *(uint32_t**)manager;
+                typedef void (*DeallocFn)(void*, void*);
+                DeallocFn dealloc = (DeallocFn)mgrVtable[2];
+                dealloc(manager, ptr);
+            }
+        }
+    }
+
+    // Free allocation base
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_DC18 @ 0x8212DC18 | size: 0xCC (204 bytes)
+ *
+ * Assignment operator for a dynamic array of uint32 elements.
+ * Copies count and data from source to destination, reallocating the
+ * backing buffer if needed. If the source has elements, allocates new
+ * storage via xe_EC88 and copies element-by-element.
+ *
+ * @param dst  Destination array descriptor (data at +0, count at +4, capacity at +8)
+ * @param src  Source array descriptor
+ * @return     Pointer to destination
+ */
+void* atSingleton_DC18(void* dst, void* src) {
+    if (dst == src) {
+        return dst;
+    }
+
+    uint8_t* dstBase = (uint8_t*)dst;
+    uint8_t* srcBase = (uint8_t*)src;
+
+    // Free existing data if allocated
+    int32_t dstCapacity = *(int32_t*)(dstBase + 8);
+    if (dstCapacity != 0) {
+        void* dstData = *(void**)dstBase;
+        rage_free_00C0(dstData);
+    }
+
+    // Copy count and set capacity
+    int32_t srcCount = *(int32_t*)(srcBase + 4);
+    *(int32_t*)(dstBase + 4) = srcCount;
+    *(int32_t*)(dstBase + 8) = srcCount;
+
+    if (srcCount != 0) {
+        // Allocate new buffer: count * 4 bytes, with overflow check
+        uint32_t allocSize = (uint32_t)srcCount * 4;
+        if ((uint32_t)srcCount > 0x3FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+        void* newData = xe_EC88(allocSize);
+        *(void**)dstBase = newData;
+    } else {
+        *(void**)dstBase = nullptr;
+    }
+
+    // Copy elements
+    int32_t count = *(int32_t*)(dstBase + 4);
+    if (count > 0) {
+        for (int32_t i = 0; i < count; i++) {
+            uint32_t* srcData = *(uint32_t**)srcBase;
+            uint32_t* dstData = *(uint32_t**)dstBase;
+            dstData[i] = srcData[i];
+            count = *(int32_t*)(dstBase + 4);
+        }
+    }
+
+    return dst;
+}
+
+/**
+ * atSingleton_F5C0_h @ 0x8212F5C0 | size: 0xD8 (216 bytes)
+ *
+ * Resizes a dynamic array of uint16 elements. Allocates a new buffer,
+ * copies existing elements (up to the minimum of old and new counts),
+ * then frees the old buffer through the singleton manager if it is not
+ * a registered singleton.
+ *
+ * @param arrayDesc     Array descriptor (data at +0, count at +4, capacity at +8)
+ * @param newCapacity   New number of elements
+ */
+void atSingleton_F5C0_h(void* arrayDesc, int32_t newCapacity) {
+    uint8_t* desc = (uint8_t*)arrayDesc;
+    void* newData = nullptr;
+
+    // Allocate new buffer if capacity > 0
+    if (newCapacity > 0) {
+        uint32_t allocSize = (uint32_t)newCapacity * 2;
+        if ((uint32_t)newCapacity > 0x7FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+        newData = xe_EC88(allocSize);
+    }
+
+    // Determine copy count: min(newCapacity, oldCount)
+    int32_t oldCount = *(int32_t*)(desc + 4);
+    int32_t copyCount = newCapacity;
+    if (newCapacity >= oldCount) {
+        copyCount = oldCount;
+    }
+
+    // Copy existing elements (uint16 each)
+    if (copyCount > 0) {
+        uint16_t* oldBuf = *(uint16_t**)desc;
+        uint16_t* newBuf = (uint16_t*)newData;
+        for (int32_t i = copyCount; i > 0; i--) {
+            *newBuf++ = *oldBuf++;
+        }
+    }
+
+    // Save old data pointer before updating
+    void* oldData = *(void**)desc;
+
+    // Update descriptor
+    *(int32_t*)(desc + 8) = newCapacity;
+    *(int32_t*)(desc + 4) = copyCount;
+
+    // Free old buffer if allocated
+    if (oldData != nullptr) {
+        uint8_t isSingleton = atSingleton_Find_90D0(oldData);
+        if (isSingleton != 0) {
+            *(void**)desc = newData;
+            return;
+        }
+
+        // Deallocate through global singleton manager
+        uint32_t* sdaBase = *(uint32_t**)0x82600000;
+        void* manager = *(void**)((char*)sdaBase + 4);
+        uint32_t* mgrVtable = *(uint32_t**)manager;
+        typedef void (*DeallocFn)(void*, void*);
+        DeallocFn dealloc = (DeallocFn)mgrVtable[2];
+        dealloc(manager, oldData);
+    }
+
+    *(void**)desc = newData;
 }

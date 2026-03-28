@@ -300,7 +300,7 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
         pBlock->idx[byteIdx] &= ~mask;
 
         uint32_t clampedValue = value & 0xFFFFFF00u;    // strip low byte
-        if      (value == 0xFFFFFFFF00u) { /* colour1 */  pBlock->idx[byteIdx] |= static_cast<uint8_t>(1u << bitShift); }
+        if      (value == 0xFFFFFF00u) { /* colour1 */  pBlock->idx[byteIdx] |= static_cast<uint8_t>(1u << bitShift); }
         else if (value != 0u)            { /* colour0+1 */ pBlock->idx[byteIdx] |= static_cast<uint8_t>(2u << bitShift); }
         else                             { /* colour0 */   pBlock->idx[byteIdx] |=  static_cast<uint8_t>(3u << bitShift); }
         // (void)clampedValue;  // suppress warning
@@ -336,7 +336,7 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
         *pIdx &= ~mask;
 
         uint32_t alphaLow = value & 0xFFFFFFu;
-        if      (value == 0xFFFFFFFF00u) { *pIdx |= static_cast<uint8_t>(1u << bitShift); }
+        if      (value == 0xFFFFFF00u) { *pIdx |= static_cast<uint8_t>(1u << bitShift); }
         else if (alphaLow != 0u)         { *pIdx |= static_cast<uint8_t>(2u << bitShift); }
         else                             { *pIdx |= static_cast<uint8_t>(3u << bitShift); }
         break;

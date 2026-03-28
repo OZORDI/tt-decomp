@@ -27,8 +27,8 @@
  */
 
 #include "pong_audio.hpp"
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
 
 // External kernel/XAPO functions
 extern "C" void ke_EnterCriticalSection(uint32_t lockId);

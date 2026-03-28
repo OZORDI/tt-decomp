@@ -169,5 +169,17 @@ extern void grcDevice_shutdown(void);
 // Alternate shutdown path for HUD overlay cleanup.
 extern void grcDevice_shutdownAlt(void);
 
+// grcDevice_beginGPUPass @ 0x82305D50
+// Begin GPU rendering pass for this device (wraps pgStreamer).
+extern void grcDevice_beginGPUPass(void* pDevice);
+
+// pgStreamer_cancelBracket @ 0x8242C3B8
+// Cancel or start a profiling bracket (mode=0: start, mode=-1: cancel).
+extern void pgStreamer_cancelBracket(void* pStream, int32_t mode);
+
+// pgStreamer_openBracket @ 0x82566DC0
+// Open a profiling bracket after render target dispatch (mode=1).
+extern void pgStreamer_openBracket(void* pStream, int32_t mode);
+
 // Default viewport rectangle (16 bytes, float[4]) @ 0x8261A0C0
 extern const uint8_t g_defaultViewportRect[16];

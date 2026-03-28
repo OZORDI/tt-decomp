@@ -7,7 +7,7 @@
  *
  *   grcDevice_beginScene  @ 0x82305E78 (392 bytes)
  *     — Gates scene start on multiple render-state conditions, then
- *       calls CreatePageGroup to begin the GPU pass and dispatches BeginScene
+ *       calls grcDevice_beginGPUPass to begin the GPU pass and dispatches BeginScene
  *       + channel-flag calls to the attached grcRenderTargetXenon.
  *
  *   grcDevice_clear_9290  @ 0x82379290 (400 bytes)
@@ -32,16 +32,99 @@
 #include <stdint.h>
 #include <string.h>   /* memcpy */
 
+#if defined(TT_PLATFORM_PC)
+#include <SDL.h>
+#include <GL/glew.h>
+#include <SDL_opengl.h>
+#include <stdio.h>
+
+/* ── SDL2 / OpenGL window state (module-local) ────────────────────────────── */
+static SDL_Window*   s_pWindow    = NULL;
+static SDL_GLContext  s_glContext  = NULL;
+static int            s_bSDLInited = 0;
+
+/**
+ * sdl_InitWindowAndGL — one-shot SDL2 + OpenGL 3.3 context creation.
+ * Called on the first invocation of grcDevice_beginScene.
+ */
+static void sdl_InitWindowAndGL(void)
+{
+    if (s_bSDLInited) return;
+    s_bSDLInited = 1;
+
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    s_pWindow = SDL_CreateWindow(
+        "Rockstar Table Tennis",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        1280, 720,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+
+    if (!s_pWindow) {
+        fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    s_glContext = SDL_GL_CreateContext(s_pWindow);
+    if (!s_glContext) {
+        fprintf(stderr, "SDL_GL_CreateContext failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
+    if (err != GLEW_OK) {
+        fprintf(stderr, "glewInit failed: %s\n", glewGetErrorString(err));
+        return;
+    }
+
+    SDL_GL_SetSwapInterval(1);  /* vsync */
+    glViewport(0, 0, 1280, 720);
+    fprintf(stdout, "[grc] SDL2 window + OpenGL 3.3 context created (1280x720)\n");
+}
+
+/**
+ * sdl_PollAndSwap — pump SDL events, swap buffers.
+ * Called from grcDevice_Present (in stubs_remaining.c, which is C).
+ */
+extern "C" void sdl_PollAndSwap(void)
+{
+    if (!s_pWindow) return;
+
+    SDL_Event ev;
+    while (SDL_PollEvent(&ev)) {
+        if (ev.type == SDL_QUIT) {
+            SDL_DestroyWindow(s_pWindow);
+            s_pWindow = NULL;
+            SDL_Quit();
+            exit(0);
+        }
+    }
+
+    SDL_GL_SwapWindow(s_pWindow);
+}
+
+#endif /* TT_PLATFORM_PC */
+
 /* ── External dependencies ────────────────────────────────────────────────── */
 
 /* pg subsystem — begin GPU pass for this device @ 0x82305D50 */
-extern void CreatePageGroup(void* pDevice);
+extern void grcDevice_beginGPUPass(void* pDevice);
 
 /* pgStreamer — cancel profiling bracket (mode=-1) @ 0x8242C3B8 */
-extern void GetPageGroupState(void* pStream, int32_t mode);
+extern void pgStreamer_cancelBracket(void* pStream, int32_t mode);
 
 /* pgStreamer — open profiling bracket (mode=1) @ 0x82566DC0 */
-extern void RenderPageGroup(void* pStream, int32_t mode);
+extern void pgStreamer_openBracket(void* pStream, int32_t mode);
 
 /* gameLoop singleton pointer (gameLoop struct defined in render_loop.c) */
 extern void* g_loop_obj_ptr;   /* @ 0x825EAB30 */
@@ -120,7 +203,7 @@ typedef struct {
 /* ═══════════════════════════════════════════════════════════════════════════
  * grcDevice_beginScene @ 0x82305E78 | size: 0x188 (392 bytes)
  *
- * Gates GPU scene start on a chain of conditions, then calls CreatePageGroup to
+ * Gates GPU scene start on a chain of conditions, then calls grcDevice_beginGPUPass to
  * begin the actual GPU pass and dispatches channel-flag calls to the render
  * target vtable.
  *
@@ -134,19 +217,28 @@ typedef struct {
  *
  * After all gates pass:
  *   1. If gameLoop->m_pStreamObj == NULL or m_pStreamObj[4] == 0:
- *        call CreatePageGroup(this) to begin the GPU pass.
+ *        call grcDevice_beginGPUPass(this) to begin the GPU pass.
  *   2. If !m_bDeviceReady: return.
  *   3. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
- *        cancel the profiling bracket (GetPageGroupState(m_pStreamObj[56], -1)).
+ *        cancel the profiling bracket (pgStreamer_cancelBracket(m_pStreamObj[56], -1)).
  *   4. If m_pRenderTarget != NULL:
  *        vtable[11](pRT, m_bColorChannel)
  *        vtable[12](pRT, m_bDepthChannel)
  *        vtable[8](pRT)
  *   5. If m_pStreamObj != NULL and m_pStreamObj[4] != 0:
- *        open profiling bracket (RenderPageGroup(m_pStreamObj[56], 1)).
+ *        open profiling bracket (pgStreamer_openBracket(m_pStreamObj[56], 1)).
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
 {
+#if defined(TT_PLATFORM_PC)
+    /* First call: create SDL2 window + OpenGL context.
+     * Subsequent calls: just ensure the GL context is current. */
+    sdl_InitWindowAndGL();
+    if (s_pWindow && s_glContext) {
+        SDL_GL_MakeCurrent(s_pWindow, s_glContext);
+    }
+#endif
+
 /* ── Gate A: skip-render / camera-action check ───────────────────────── */
 
     /* Load the gameLoop singleton once; use uint8_t* for field access. */
@@ -197,9 +289,9 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     }
 
     if (pStreamObj == NULL || streamActive == 0) {
-        /* No active stream — call CreatePageGroup to begin the GPU pass now. */
-        CreatePageGroup(pDevice);
-        /* Re-read gameLoop; CreatePageGroup may update global state. */
+        /* No active stream — call grcDevice_beginGPUPass to begin the GPU pass now. */
+        grcDevice_beginGPUPass(pDevice);
+        /* Re-read gameLoop; grcDevice_beginGPUPass may update global state. */
         pLoop = (uint8_t*)g_loop_obj_ptr;
     }
 
@@ -213,7 +305,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     if (pStreamObj != NULL && ((uint8_t*)pStreamObj)[4] != 0) {
         /* An active profiling bracket is open — cancel it before proceeding. */
         void* pStream = *(void**)((uint8_t*)pStreamObj + 56);
-        GetPageGroupState(pStream, -1);
+        pgStreamer_cancelBracket(pStream, -1);
         /* Re-read gameLoop after the call. */
         pLoop = (uint8_t*)g_loop_obj_ptr;
     }
@@ -240,7 +332,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     pStreamObj = *(void**)((uint8_t*)pLoop + 556);
     if (pStreamObj != NULL && ((uint8_t*)pStreamObj)[4] != 0) {
         void* pStream = *(void**)((uint8_t*)pStreamObj + 56);
-        RenderPageGroup(pStream, 1);
+        pgStreamer_openBracket(pStream, 1);
     }
 }
 
@@ -269,6 +361,12 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcDevice_clear(grcDeviceClear* pDevice)
 {
+#if defined(TT_PLATFORM_PC)
+    /* Issue an OpenGL clear regardless of the Xbox ring-buffer state. */
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#endif
+
     /* 1. Guard: nothing to do if no clear is pending. */
     if (!pDevice->m_bPendingWork) {
         return;
@@ -310,20 +408,20 @@ void grcDevice_clear(grcDeviceClear* pDevice)
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grc_CB48 @ 0x8235CB48 | size: 0x23c (572 bytes)
+ * grcCommandBuffer_initShaderConstants @ 0x8235CB48 | size: 0x23c (572 bytes)
  *
  * Builds GPU command packets for shader constant initialization and GPU state
  * setup. This function constructs three command packets in the GPU command
  * buffer and sets various GPU state flags.
  *
  * The function:
- *   1. Ensures buffer space is available (calls grc_3E20 if needed)
+ *   1. Ensures buffer space is available (calls grcCommandBuffer_flushDirtyState if needed)
  *   2. Builds first packet: shader constant upload (108 bytes of data)
  *   3. Builds second packet: another shader constant (36 bytes + 12 bytes)
- *   4. Calls grc_DBF8 to finalize packet construction
+ *   4. Calls grcCommandBuffer_finalizePacket to finalize packet construction
  *   5. Builds third packet: GPU register writes for state setup
  *   6. Manipulates 64-bit GPU state flags at device+16
- *   7. Calls game_37B0 to submit the commands
+ *   7. Calls grcCommandBuffer_submitViewport to submit the commands
  *
  * Command packet format:
  *   +0: Command word (PM4 packet type and size)
@@ -337,31 +435,31 @@ void grcDevice_clear(grcDeviceClear* pDevice)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /* External function declarations */
-extern void grc_3E20(void* pDevice);
-extern void* rage_A980(void* pDevice);
-extern void grc_DBF8(void* pDevice);
-extern void game_37B0(void* pDevice);
+extern void grcCommandBuffer_flushDirtyState(void* pDevice);
+extern void* grcCommandBuffer_expand(void* pDevice);
+extern void* grcCommandBuffer_finalizePacket(void* pDevice);
+extern void grcCommandBuffer_submitViewport(void* pDevice);
 
 /* Shader constant data table @ 0x8202C328 (.rdata, 440 bytes) */
 extern const uint8_t g_shaderConstantData[440];
 
-void grc_CB48(void* pDevice) {
+void grcCommandBuffer_initShaderConstants(void* pDevice) {
     uint8_t* device = (uint8_t*)pDevice;
     
-    /* Ensure buffer has space - calls grc_3E20 to expand if needed */
-    grc_3E20(pDevice);
+    /* Ensure buffer has space - calls grcCommandBuffer_flushDirtyState to expand if needed */
+    grcCommandBuffer_flushDirtyState(pDevice);
     
     /* Load current write pointer and buffer end */
-    uint32_t writePtr = *(uint32_t*)(device + 0);
-    uint32_t bufferEnd = *(uint32_t*)(device + 8);
-    
+    uintptr_t writePtr = *(uintptr_t*)(device + 0);
+    uintptr_t bufferEnd = *(uintptr_t*)(device + 8);
+
     /* Check if we need to expand buffer */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)rage_A980(pDevice);
+        writePtr = (uintptr_t)grcCommandBuffer_expand(pDevice);
     }
-    
+
     /* ── Build first packet: shader constant upload (108 bytes data) ────── */
-    
+
     uint32_t* pkt1 = (uint32_t*)(writePtr + 4);
     pkt1[0] = 0xC01C2B00;  /* PM4 command: shader constant load */
     pkt1[1] = 0;           /* Parameter 1 */
@@ -371,15 +469,15 @@ void grc_CB48(void* pDevice) {
     memcpy(&pkt1[3], &g_shaderConstantData[40], 108);
     
     /* Update write pointer (12 header + 108 data = 120 bytes) */
-    writePtr = (uint32_t)&pkt1[3] + 108;
-    
+    writePtr = (uintptr_t)&pkt1[3] + 108;
+
     /* Check buffer space again */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)rage_A980(pDevice);
+        writePtr = (uintptr_t)grcCommandBuffer_expand(pDevice);
     }
-    
+
     /* ── Build second packet: another shader constant (36 bytes + extras) ── */
-    
+
     uint32_t* pkt2 = (uint32_t*)(writePtr + 4);
     pkt2[0] = 0xC00A2B00;  /* PM4 command */
     pkt2[1] = 1;           /* Parameter 1 */
@@ -395,20 +493,20 @@ void grc_CB48(void* pDevice) {
     extra[2] = 0;
     
     /* Update write pointer */
-    writePtr = (uint32_t)&extra[3];
-    *(uint32_t*)(device + 0) = writePtr;
-    
+    writePtr = (uintptr_t)&extra[3];
+    *(uintptr_t*)(device + 0) = writePtr;
+
     /* Check buffer space */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)rage_A980(pDevice);
+        writePtr = (uintptr_t)grcCommandBuffer_expand(pDevice);
     }
-    
+
     /* ── Finalize packet construction ────────────────────────────────────── */
-    
-    writePtr = (uint32_t)grc_DBF8(pDevice);
-    
+
+    writePtr = (uintptr_t)grcCommandBuffer_finalizePacket(pDevice);
+
     /* ── Build third packet: GPU register writes ─────────────────────────── */
-    
+
     uint32_t* pkt3 = (uint32_t*)(writePtr + 4);
     pkt3[0] = 8704;   /* Register 0x2200 */
     pkt3[1] = 0;
@@ -442,30 +540,30 @@ void grc_CB48(void* pDevice) {
     flags[1] |= 0x0000001000000000ULL;  /* bit 36 (rldicr 1,36,63) */
     
     /* Update write pointer */
-    writePtr = (uint32_t)&pkt3[12];
-    *(uint32_t*)(device + 0) = writePtr;
+    writePtr = (uintptr_t)&pkt3[12];
+    *(uintptr_t*)(device + 0) = writePtr;
     
     /* ── Submit commands ──────────────────────────────────────────────────── */
     
-    game_37B0(pDevice);
+    grcCommandBuffer_submitViewport(pDevice);
 }
 
 
 /* ── External dependencies for texture factory ────────────────────────────── */
 
 /* Debug log function (no-op) @ 0x8240E6D0 */
-extern void rage_DebugLog(const char* fmt, ...);
+extern void nop_8240E6D0(const char* fmt, ...);
 
 /* Texture processing functions */
-extern void grc_FD68(void* pTexture, void* pDevice);  /* @ 0x8215FD68 */
-extern void grc_DC00(void* pTexture, void* pDevice);  /* @ 0x8215DC00 */
+extern void grcTextureXenon_initRaw(void* pTexture, void* pDevice);  /* @ 0x8215FD68 */
+extern void grcTextureXenon_initCompressed(void* pTexture, void* pDevice);  /* @ 0x8215DC00 */
 
 /* Debug format string for invalid texture types @ 0x82035300 */
 extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grcTextureFactoryXenon::FixupTextures @ 0x8215FCB0 | size: 0xb8 (184 bytes)
+ * grcTextureFactoryXenon_vfn_10 @ 0x8215FCB0 | size: 0xb8 (184 bytes)
  *
  * Processes an array of texture pointers, adjusting their addresses based on
  * device offset calculations and dispatching to appropriate handlers based on
@@ -496,12 +594,12 @@ extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
  *        b. Look up offset value in device table at index (offsetIndex + 2)
  *        c. Adjust texture data pointer: dataPtr += offsetTable[offsetIndex + 2]
  *     2. Process texture based on type:
- *        - Type 0: Call grc_FD68 (raw texture processing)
+ *        - Type 0: Call grcTextureXenon_initRaw (raw texture processing)
  *        - Type 1: Skip (already processed)
- *        - Type 2: Call grc_DC00 (compressed texture processing)
- *        - Type 3+: Log error via rage_DebugLog (invalid type)
+ *        - Type 2: Call grcTextureXenon_initCompressed (compressed texture processing)
+ *        - Type 3+: Log error via nop_8240E6D0 (invalid type)
  * ═══════════════════════════════════════════════════════════════════════════ */
-void grcTextureFactoryXenon::FixupTextures(
+void grcTextureFactoryXenon_vfn_10(
     void* pThis,
     void* pDevice,
     void** ppTextures,
@@ -516,8 +614,8 @@ void grcTextureFactoryXenon::FixupTextures(
     uint8_t* device = (uint8_t*)pDevice;
     
     /* Load device offset calculation parameters */
-    uint32_t baseAddress = *(uint32_t*)(device + 4);
-    uint32_t strideSize = *(uint32_t*)(device + 76);
+    uintptr_t baseAddress = *(uintptr_t*)(device + 4);
+    uintptr_t strideSize = *(uintptr_t*)(device + 76);
     
     /* Process each texture in the array */
     for (int i = 0; i < count; i++) {
@@ -529,17 +627,17 @@ void grcTextureFactoryXenon::FixupTextures(
         
         /* ── Step 1: Adjust texture data pointer if non-null ────────────── */
         
-        uint32_t dataPtr = (uint32_t)pTexture[0];
-        
+        uintptr_t dataPtr = (uintptr_t)pTexture[0];
+
         if (dataPtr != 0) {
             /* Calculate offset index from data pointer */
-            uint32_t offsetFromBase = dataPtr - baseAddress;
-            uint32_t offsetIndex = offsetFromBase / strideSize;
-            
+            uintptr_t offsetFromBase = dataPtr - baseAddress;
+            uintptr_t offsetIndex = offsetFromBase / strideSize;
+
             /* Look up offset value in device table at (offsetIndex + 2) */
-            uint32_t tableIndex = (offsetIndex + 2) * 4;  /* *4 for pointer array indexing */
-            uint32_t offsetValue = *(uint32_t*)(device + tableIndex);
-            
+            uintptr_t tableIndex = (offsetIndex + 2) * 4;  /* *4 for pointer array indexing */
+            uintptr_t offsetValue = *(uintptr_t*)(device + tableIndex);
+
             /* Adjust the texture data pointer */
             pTexture[0] = (void*)(dataPtr + offsetValue);
         }
@@ -555,725 +653,225 @@ void grcTextureFactoryXenon::FixupTextures(
         uint8_t textureType = textureBytes[4];
         
         if (textureType == 0) {
-            /* Type 0: Raw texture - call grc_FD68 */
-            grc_FD68(pTexture[0], pDevice);
+            /* Type 0: Raw texture - call grcTextureXenon_initRaw */
+            grcTextureXenon_initRaw(pTexture[0], pDevice);
         }
         else if (textureType == 1) {
             /* Type 1: Already processed - skip */
             continue;
         }
         else if (textureType == 2) {
-            /* Type 2: Compressed texture - call grc_DC00 */
-            grc_DC00(pTexture[0], pDevice);
+            /* Type 2: Compressed texture - call grcTextureXenon_initCompressed */
+            grcTextureXenon_initCompressed(pTexture[0], pDevice);
         }
         else {
             /* Type 3+: Invalid texture type - log error */
-            rage_DebugLog(g_invalidTextureTypeMsg);
+            nop_8240E6D0(g_invalidTextureTypeMsg);
         }
     }
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grc_8838_h @ 0x82568838 | size: 0x1C (28 bytes)
- *
- * Stores four uint32 values into consecutive fields of a structure and
- * returns 1 (success). Used as a bulk-setter for a 16-byte render state
- * block (e.g. viewport rect or scissor rect).
- *
- * Parameters:
- *   pDest (r3) — pointer to destination struct
- *   a (r4), b (r5), c (r6), d (r7) — four uint32 values to store
- * Returns: 1
+ * grcTextureReferenceBase vtable accessors
  * ═══════════════════════════════════════════════════════════════════════════ */
-// @ 0x82568838
-int32_t grc_8838_h(void* pDest, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+
+/*
+ * grcTextureReferenceBase_vfn_4 @ 0x8215D6A8 | size: 0x8 (8 bytes)
+ * vtable slot 4 — GetHandle(): returns m_pInternalData (+0x0C).
+ */
+void* grcTextureReferenceBase_vfn_4(void* pThis)
 {
-    uint32_t* p = (uint32_t*)pDest;
-    p[0] = a;
-    p[1] = b;
-    p[2] = c;
-    p[3] = d;
-    return 1;
+    uint8_t* self = (uint8_t*)pThis;
+    return *(void**)(self + 12);
 }
 
+
 /* ═══════════════════════════════════════════════════════════════════════════
- * grc_F6B8 @ 0x8215F6B8 | size: 0x1C (28 bytes)
+ * grcRenderTargetXenon vtable accessors — dimension / filter / LOD queries
  *
- * Checks if a texture format ID matches 0x1A22ABCD. If it matches,
- * returns the adjacent format code 0x1A22ABE0. Otherwise returns the
- * input value unchanged (by not modifying r3).
- *
- * This appears to be a format remapping function that converts one
- * specific internal texture format ID to another.
+ * Field layout (from scaffolds):
+ *   +0x14 (20)  uint16_t  m_nWidth
+ *   +0x16 (22)  uint16_t  m_nHeight
+ *   +0x1C (28)  uint8_t   m_filterMode0
+ *   +0x1D (29)  uint8_t   m_filterMode1
+ *   +0x1E (30)  uint8_t   m_addressMode   (clamped to max 2)
  * ═══════════════════════════════════════════════════════════════════════════ */
-// @ 0x8215F6B8
-uint32_t grc_F6B8(uint32_t formatId)
+
+/*
+ * grcRenderTargetXenon_vfn_8 @ 0x8215DD58 | size: 0x8 (8 bytes)
+ * vtable slot 8 — GetWidth(): returns uint16 at +20.
+ */
+uint16_t grcRenderTargetXenon_vfn_8(void* pThis)
 {
-    if (formatId != 0x1A22ABCD)
-        return formatId;
-    return 0x1A22ABE0;
+    uint8_t* self = (uint8_t*)pThis;
+    return *(uint16_t*)(self + 20);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_B7E8 @ 0x8215B7E8 | size: 0x24 (36 bytes)
- *
- * Counts the number of nodes in a singly-linked list. The head pointer
- * is at offset +24 of the input object, and each node's next pointer is
- * also at offset +24. Returns 0 if the list is empty.
- * ═══════════════════════════════════════════════════════════════════════════ */
-// @ 0x8215B7E8
-int32_t grc_B7E8(void* pObj)
+/*
+ * grcRenderTargetXenon_vfn_9 @ 0x8215DD60 | size: 0x8 (8 bytes)
+ * vtable slot 9 — GetHeight(): returns uint16 at +22.
+ */
+uint16_t grcRenderTargetXenon_vfn_9(void* pThis)
 {
-    uint8_t* node = *(uint8_t**)((uint8_t*)pObj + 24);
-    if (node == NULL)
-        return 0;
+    uint8_t* self = (uint8_t*)pThis;
+    return *(uint16_t*)(self + 22);
+}
 
-    int32_t count = 0;
-    while (node != NULL) {
-        node = *(uint8_t**)(node + 24);
-        count++;
+/*
+ * grcRenderTargetXenon_vfn_13 @ 0x8215DD68 | size: 0xC (12 bytes)
+ * vtable slot 13 — SetFilterMode(a, b): stores two uint8 at +28, +29.
+ */
+void grcRenderTargetXenon_vfn_13(void* pThis, uint8_t a, uint8_t b)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    self[28] = a;
+    self[29] = b;
+}
+
+/*
+ * grcRenderTargetXenon_vfn_14 @ 0x8215DD78 | size: 0x14 (20 bytes)
+ * vtable slot 14 — GetFilterMode(pA, pB): reads two uint8 from +28, +29.
+ */
+void grcRenderTargetXenon_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    *pA = self[28];
+    *pB = self[29];
+}
+
+/*
+ * grcRenderTargetXenon_vfn_15 @ 0x8215DDB0 | size: 0x8 (8 bytes)
+ * vtable slot 15 — GetAddressMode(): returns uint8 at +30.
+ */
+uint8_t grcRenderTargetXenon_vfn_15(void* pThis)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    return self[30];
+}
+
+/*
+ * grcRenderTargetXenon_vfn_16 @ 0x8215DD90 | size: 0x1C (28 bytes)
+ * vtable slot 16 — SetAddressMode(mode): stores mode at +30, clamped to max 2.
+ */
+void grcRenderTargetXenon_vfn_16(void* pThis, uint8_t mode)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    if (mode >= 2) {
+        mode = 2;
     }
-    return count;
+    self[30] = mode;
 }
+
+/*
+ * grcRenderTargetXenon_vfn_18 @ 0x82151250 | size: 0x18 (24 bytes)
+ * vtable slot 18 — GetLODParams(pLodDist, pLodLevel):
+ *   Writes a default float constant (from .rdata @ 0x8202D110) to *pLodDist,
+ *   and 0 to *pLodLevel.
+ *   Render targets have no LOD support, so this returns defaults.
+ */
+extern const float g_grcRenderTargetDefaultLOD;  /* @ 0x8202D110 (.rdata, 4 bytes) */
+
+void grcRenderTargetXenon_vfn_18(void* pThis, float* pLodDist, uint32_t* pLodLevel)
+{
+    (void)pThis;
+    *pLodDist = g_grcRenderTargetDefaultLOD;
+    *pLodLevel = 0;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grc_6A08 @ 0x82366A08 | size: 0x28 (40 bytes)
+ * grcTextureXenon vtable accessors — filter / LOD / mip queries
  *
- * Initiates GPU/video engine shutdown. Registers a title terminate
- * notification with a NULL callback, then calls VdShutdownEngines to
- * shut down the Xenon video driver. Called during application exit.
+ * Field layout (from scaffolds):
+ *   +0x18 (24)  uint8_t   m_filterMode0
+ *   +0x19 (25)  uint8_t   m_filterMode1
+ *   +0x1B (27)  uint8_t   m_mipLevels
+ *   +0x1C (28)  float     m_lodDistance
  * ═══════════════════════════════════════════════════════════════════════════ */
-extern void ExRegisterTitleTerminateNotification(void* pNotification, uint32_t bCancel);
-extern void VdShutdownEngines(void);
 
-// @ 0x82366A08
-void grc_6A08(void)
+/*
+ * grcTextureXenon_vfn_13 @ 0x8215DDB8 | size: 0xC (12 bytes)
+ * vtable slot 13 — SetFilterMode(a, b): stores two uint8 at +24, +25.
+ */
+void grcTextureXenon_vfn_13(void* pThis, uint8_t a, uint8_t b)
 {
-    ExRegisterTitleTerminateNotification(NULL, 0);
-    VdShutdownEngines();
+    uint8_t* self = (uint8_t*)pThis;
+    self[24] = a;
+    self[25] = b;
 }
+
+/*
+ * grcTextureXenon_vfn_14 @ 0x8215DDC8 | size: 0x14 (20 bytes)
+ * vtable slot 14 — GetFilterMode(pA, pB): reads two uint8 from +24, +25.
+ */
+void grcTextureXenon_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    *pA = self[24];
+    *pB = self[25];
+}
+
+/*
+ * grcTextureXenon_vfn_15 @ 0x8215DDE8 | size: 0x8 (8 bytes)
+ * vtable slot 15 — GetMipLevels(): returns uint8 at +27.
+ */
+uint8_t grcTextureXenon_vfn_15(void* pThis)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    return self[27];
+}
+
+/*
+ * grcTextureXenon_vfn_16 @ 0x8215DDE0 | size: 0x8 (8 bytes)
+ * vtable slot 16 — SetMipLevels(n): stores uint8 at +27.
+ */
+void grcTextureXenon_vfn_16(void* pThis, uint8_t n)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    self[27] = n;
+}
+
+/*
+ * grcTextureXenon_vfn_18 @ 0x8215DDF0 | size: 0xC (12 bytes)
+ * vtable slot 18 — GetLODDistance(pOut): copies float from +28 to *pOut.
+ */
+void grcTextureXenon_vfn_18(void* pThis, float* pOut)
+{
+    uint8_t* self = (uint8_t*)pThis;
+    *pOut = *(float*)(self + 28);
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grc_EAE8 @ 0x8214EAE8 | size: 0x28 (40 bytes)
- *
- * Conditionally subtracts a float from 1.0f. Checks a global format ID
- * at 0x825E9070; if it matches the sentinel value 0x1A220197, the input
- * float is subtracted from 1.0f and the result returned. Otherwise the
- * input is returned unchanged.
- *
- * Used by the texture factory to flip V coordinates for certain texture
- * formats that store UVs in inverted space.
+ * grcTextureString vtable accessor
  * ═══════════════════════════════════════════════════════════════════════════ */
-extern uint32_t g_grcFormatId;  // @ 0x825E9070
 
-// @ 0x8214EAE8
-float grc_EAE8(float value)
+/*
+ * grcTextureString_vfn_14 @ 0x8215FE70 | size: 0x10 (16 bytes)
+ * vtable slot 14 — GetFilterMode(pA, pB): string textures have no filter,
+ *   so both outputs are zeroed.
+ */
+void grcTextureString_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
 {
-    if (g_grcFormatId != 0x1A220197)
-        return value;
-    return 1.0f - value;
+    (void)pThis;
+    *pB = 0;
+    *pA = 0;
 }
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grc_1268 @ 0x82151268 | size: 0x4C (76 bytes)
- *
- * Decrements a reference count at offset +32 of the given object. When
- * the count reaches zero, calls grc_12B8 (the destructor/release function)
- * with flag=1 and returns 0. Otherwise returns the new refcount.
+ * grcTextureFactoryString vtable accessor
  * ═══════════════════════════════════════════════════════════════════════════ */
-extern void grc_12B8(void* pObj, int32_t flags);
 
-// @ 0x82151268
-int32_t grc_1268(void* pObj)
+/*
+ * grcTextureFactoryString_vfn_3 @ 0x82160038 | size: 0xC (12 bytes)
+ * vtable slot 3 — GetSingleton(): returns the global texture factory string
+ *   instance pointer stored at lbl_82606400.
+ */
+extern void* g_pGrcTextureFactoryString;  /* @ 0x82606400 (.data, 4 bytes) */
+
+void* grcTextureFactoryString_vfn_3(void)
 {
-    int32_t refCount = *(int32_t*)((uint8_t*)pObj + 32);
-    refCount--;
-    *(int32_t*)((uint8_t*)pObj + 32) = refCount;
-
-    if (refCount == 0) {
-        grc_12B8(pObj, 1);
-        return 0;
-    }
-    return refCount;
+    return g_pGrcTextureFactoryString;
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_CC50_h @ 0x8213CC50 | size: 0x58 (88 bytes)
- *
- * Sets an indexed sampler/render state value, tracked by a dirty bitmask.
- * Stores the new value into two parallel state arrays (indexed by r3),
- * reads the old value from a third array, and sets or clears the
- * corresponding bit in a dirty flags word based on whether the value changed.
- *
- * Global arrays (SDA-relative, base lis(-32161)):
- *   g_grcSamplerOld    @ 0x825EBB60 — old state values (read-only here)
- *   g_grcSamplerNew1   @ 0x825E8F48 — first shadow copy of new state
- *   g_grcSamplerNew2   @ 0x825EBB98 — second shadow copy of new state
- *   g_grcDirtyBits     @ 0x825EBB1C — dirty bitmask (32 bits)
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern uint32_t g_grcSamplerOld[];   // @ 0x825EBB60
-extern uint32_t g_grcSamplerNew1[];  // @ 0x825E8F48
-extern uint32_t g_grcSamplerNew2[];  // @ 0x825EBB98
-extern uint32_t g_grcDirtyBits;      // @ 0x825EBB1C
-
-// @ 0x8213CC50
-void grc_CC50_h(uint32_t index, uint32_t value)
-{
-    uint32_t oldValue = g_grcSamplerOld[index];
-    g_grcSamplerNew1[index] = value;
-    g_grcSamplerNew2[index] = value;
-
-    uint32_t bit = 1u << index;
-
-    if (value == oldValue) {
-        // State unchanged — clear the dirty bit
-        g_grcDirtyBits &= ~bit;
-    } else {
-        // State changed — set the dirty bit
-        g_grcDirtyBits |= bit;
-    }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_9858_h @ 0x82359858 | size: 0x58 (88 bytes)
- *
- * Extracts render state from a GPU command object and dispatches it to
- * grc_8928. Checks bit 25 of the flags word at offset +0; if set,
- * extracts a 4-bit field from offset +32 (bits 2-5) and the data pointer
- * from offset +44. Otherwise passes 0 for the extracted field.
- * After dispatch, marks the output object as valid by storing 1 at +4.
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern void grc_8928(void* pSrc, uint32_t field, void* pDest);
-
-// @ 0x82359858
-void grc_9858_h(void* pCmd, void* pOut)
-{
-    uint32_t flags = *(uint32_t*)((uint8_t*)pCmd + 0);
-    void* pSrc;
-    uint32_t field;
-
-    if (flags & 0x02000000) {
-        uint32_t word32 = *(uint32_t*)((uint8_t*)pCmd + 32);
-        field = (word32 >> 2) & 0xF;
-        pSrc = *(void**)((uint8_t*)pCmd + 44);
-    } else {
-        pSrc = pCmd;  // r3 passed through unchanged
-        field = 0;
-    }
-
-    grc_8928(pSrc, field, pOut);
-
-    *(uint32_t*)((uint8_t*)pOut + 4) = 1;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_FF38 @ 0x8243FF38 | size: 0x60 (96 bytes)
- *
- * Retrieves render target dimensions. Calls grc_7DD0 to obtain width and
- * height as stack outputs, then stores them into the optional output
- * pointers if non-NULL.
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern void grc_7DD0(void* pObj, uint32_t* pWidth, uint32_t* pHeight);
-
-// @ 0x8243FF38
-void grc_FF38(void* pObj, uint32_t* pOutWidth, uint32_t* pOutHeight)
-{
-    uint32_t width, height;
-    grc_7DD0(pObj, &width, &height);
-
-    if (pOutWidth != NULL) {
-        *pOutWidth = width;
-    }
-    if (pOutHeight != NULL) {
-        *pOutHeight = height;
-    }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_8B58 @ 0x82158B58 | size: 0x74 (116 bytes)
- *
- * Flushes a dirty texture object. If the dirty flag at offset +20 is set
- * and the texture pointer at +12 is valid, submits the texture data via
- * grc_2CC8 (unless g_bTextureEndianDirty is set, which suppresses flush).
- * Clears the dirty flag after flushing. Returns 1 if the flag was
- * cleared (i.e. was dirty), 0 if it was already clean.
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern void grc_2CC8(void* pTexData, void* pInternalData, uint32_t param);
-
-// @ 0x82158B58
-uint8_t grc_8B58(void* pObj)
-{
-    uint8_t* obj = (uint8_t*)pObj;
-
-    if (obj[20] != 0) {
-        void* pTexPtr = *(void**)(obj + 12);
-        if (pTexPtr != NULL) {
-            extern uint8_t g_bTextureEndianDirty;  // @ 0x82606562
-            if (g_bTextureEndianDirty == 0) {
-                void* pInternalData = *(void**)((uint8_t*)pTexPtr + 12);
-                grc_2CC8(pTexPtr, pInternalData, 0);
-            }
-        }
-        obj[20] = 0;
-    }
-
-    // Return !dirty (cntlzw/rlwinm idiom: returns 1 if byte is 0)
-    return (obj[20] == 0) ? 1 : 0;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_3448 @ 0x82323448 | size: 0x68 (104 bytes)
- *
- * Conditionally binds a texture to the GPU. If the texture reference at
- * r4[0] is zero, looks up the active GPU device, checks a flag at
- * device[index+20], and if set, calls grc_0E28 to bind the default
- * texture and marks a global dirty flag.
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern void* g_grcDevicePtr;      // @ 0x825E4898
-extern void* g_grcDevicePtr2;     // @ 0x825F63D4
-extern void grc_0E28(void* pTex, uint32_t param1, uint32_t param2);
-
-// @ 0x82323448
-void grc_3448(uint32_t index, uint32_t* pTexRef)
-{
-    if (*pTexRef != 0)
-        return;
-
-    uint8_t* pDevice = (uint8_t*)g_grcDevicePtr;
-    uint8_t* pEntry = pDevice + index;
-
-    if (pEntry[20] == 0)
-        return;
-
-    uint8_t* pDev2 = (uint8_t*)g_grcDevicePtr2;
-    void* pTex = *(void**)((uint8_t*)pDev2 + 108);
-    grc_0E28(pTex, 0, 0);
-
-    uint8_t* pGlobal = (uint8_t*)g_grcDevicePtr2;
-    uint8_t* pFlags = (uint8_t*)(*(void**)((uint8_t*)pGlobal - 21720 + (uint32_t)pGlobal));
-    // Simplified: set dirty flag
-    *(uint8_t*)(*(uint8_t**)((uint8_t*)g_grcDevicePtr2) + 344) = 1;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_30C0 @ 0x823530C0 | size: 0x6C (108 bytes)
- *
- * Wrapper for grc_29E0 (DrawPrimitive). Sets up a non-indexed draw call
- * with primitive type 46 (triangle fan). When offset/count are zero,
- * defaults to the full buffer (size from offset +16, masked to strip
- * the 2 low bits). Applies draw flags with 0x03000000 bitmask.
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern void grc_29E0(void* pBuffer, uint32_t primType, uint32_t startVertex,
-                      uint32_t baseData, uint32_t param5, void* pSrc,
-                      uint32_t flags, uint32_t extraFlags);
-
-// @ 0x823530C0
-void grc_30C0(void* pVB, uint32_t offset, uint32_t count, uint32_t flags)
-{
-    uint8_t* vb = (uint8_t*)pVB;
-
-    if (count == 0) {
-        count = *(uint32_t*)(vb + 16) & 0x3FFFFFC;
-        offset = 0;
-    }
-
-    uint32_t stride = *(uint32_t*)(vb + 12) & 0xFFFFFFFC;
-    void* pBuffer = *(void**)(vb + 4);
-
-    grc_29E0(pBuffer, 46, 0, stride + offset, 0, pVB, flags | 2, 0x03000000);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_31F0 @ 0x823531F0 | size: 0x68 (104 bytes)
- *
- * Wrapper for grc_29E0 (DrawIndexedPrimitive). Similar to grc_30C0 but
- * for indexed draws with primitive type 47 (triangle list, indexed).
- * When count is zero, defaults to the full buffer size from offset +16.
- * ═══════════════════════════════════════════════════════════════════════════ */
-// @ 0x823531F0
-void grc_31F0(void* pVB, uint32_t offset, uint32_t count, uint32_t flags)
-{
-    uint8_t* vb = (uint8_t*)pVB;
-
-    if (count == 0) {
-        count = *(uint32_t*)(vb + 16);
-        offset = 0;
-    }
-
-    uint32_t stride = *(uint32_t*)(vb + 12);
-    void* pBuffer = *(void**)(vb + 4);
-
-    grc_29E0(pBuffer, 47, 0, stride + offset, 0, pVB, flags | 2, 0);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_F538 @ 0x8243F538 | size: 0x70 (112 bytes)
- *
- * Draw triangle list wrapper. Calls grc_F338 with primitive type 3
- * (triangle list). Reshuffles many register parameters into a stack-based
- * call frame for the common draw dispatcher.
- *
- * Parameters are vertex data pointers and counts for multi-stream draw calls.
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern void grc_F338(void* pVB, uint32_t primType, uint32_t startVertex,
-                      void* pVtxData, uint32_t vtxStride, uint32_t vtxCount,
-                      uint32_t param7, void* pIdxData, uint32_t idxCount,
-                      uint32_t param10, uint32_t param11, uint32_t param12,
-                      uint32_t param13, uint32_t param14, uint32_t param15);
-
-// @ 0x8243F538
-void grc_F538(void* pVB, uint32_t startVertex, void* pVtxData,
-              uint32_t vtxStride, uint32_t vtxCount, void* pIdxData,
-              uint32_t idxCount, uint32_t extra1, uint32_t extra2,
-              uint32_t extra3, uint32_t extra4)
-{
-    grc_F338(pVB, 1, startVertex, pVtxData, vtxStride, vtxCount,
-             0, pIdxData, idxCount, 2, 3, extra1, extra2, extra3, extra4);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_F5A8 @ 0x8243F5A8 | size: 0x74 (116 bytes)
- *
- * Draw line strip wrapper. Calls grc_F338 with primitive type 6
- * (line strip). Similar register reshuffling as grc_F538.
- * ═══════════════════════════════════════════════════════════════════════════ */
-// @ 0x8243F5A8
-void grc_F5A8(void* pVB, uint32_t param2, void* pVtxData,
-              uint32_t vtxStride, uint32_t vtxCount, void* pIdxData,
-              uint32_t idxCount, uint32_t extra1, uint32_t extra2,
-              uint32_t extra3, uint32_t extra4)
-{
-    grc_F338(pVB, 6, param2, pVtxData, vtxStride, vtxCount,
-             0, pIdxData, 0, 2, 5, 0, extra1, extra2, extra3);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_F620 @ 0x8243F620 | size: 0x74 (116 bytes)
- *
- * Draw triangle strip wrapper. Calls grc_F338 with primitive type 4
- * (triangle strip). Same pattern as the other draw wrappers.
- * ═══════════════════════════════════════════════════════════════════════════ */
-// @ 0x8243F620
-void grc_F620(void* pVB, uint32_t startVertex, void* pVtxData,
-              uint32_t vtxStride, uint32_t vtxCount, void* pIdxData,
-              uint32_t idxCount, void* pExtra1, uint32_t extra2,
-              uint32_t extra3, uint32_t extra4)
-{
-    grc_F338(pVB, 1, startVertex, pVtxData, vtxStride, vtxCount,
-             0, pIdxData, 0, 2, 4, 0, (uint32_t)(uintptr_t)pExtra1,
-             extra2, extra3);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * grc_12B8 @ 0x821512B8 | size: 0x7C (124 bytes)
- *
- * Texture factory node destructor. Recursively releases child nodes via
- * grc_1268 (refcount decrement), frees internal data, and cleans up.
- *
- * Object layout:
- *   +16  m_pData        — heap data pointer (freed via rage_free)
- *   +20  m_pOwner       — owner pointer (freed when both children are NULL)
- *   +24  m_pChild1      — first child node pointer
- *   +28  m_pChild2      — second child node pointer
- *   +32  m_nRefCount    — reference count
- * ═══════════════════════════════════════════════════════════════════════════ */
-extern void rage_free(void* ptr);
-
-// @ 0x821512B8
-void grc_12B8_impl(void* pNode, int32_t flags)
-{
-    uint8_t* node = (uint8_t*)pNode;
-
-    // Release second child node if present
-    void* pChild2 = *(void**)(node + 28);
-    if (pChild2 != NULL) {
-        grc_1268(pChild2);
-    }
-
-    // Free data pointer
-    rage_free(*(void**)(node + 16));
-
-    // If both children are NULL, free the owner
-    void* pChild1 = *(void**)(node + 24);
-    if (pChild1 == NULL) {
-        void* pChild2b = *(void**)(node + 28);
-        if (pChild2b == NULL) {
-            rage_free(*(void**)(node + 20));
-        }
-    }
-
-    // Release first child node if present
-    pChild1 = *(void**)(node + 24);
-    if (pChild1 != NULL) {
-        grc_1268(pChild1);
-    }
-
-    // Free this node
-    rage_free(pNode);
-}
-
-
-// ═══════════════════════════════════════════════════════════════════════════
-// rage::grcDirtyDisc — disc error handling (vtable @ 0x82034A68)
-//
-// Inherits from rage::fiDirtyDisc (vtable @ 0x82034A54) which inherits
-// from rage::datBase (vtable @ 0x820276C4). The object has a secondary
-// vtable pointer at +0x08 for fiDirtyDisc, plus the primary datBase
-// vtable at +0x00.
-//
-// External dependencies:
-//   rage_FC30         @ 0x8214FC30 — grc device pre-init (clears state)
-//   rage_FC90         @ 0x8214FC90 — grc device post-init (restores state)
-//   grc_F088          @ 0x8214F088 — grc overlay render setup
-//   fiAsciiTokenizer_CE30_w @ 0x8215CE30 — file tokenizer init
-//   rage_CEF0         @ 0x8215CEF0 — grcSetup parse helper
-//   _crt_tls_fiber_setup    @ 0x82566B78 — allocate TLS fiber context
-// ═══════════════════════════════════════════════════════════════════════════
-
-namespace rage {
-
-// Global pointer used by grcDirtyDisc::vfn_2 for fiber TLS context
-// @ 0x825EB988   .data   4 bytes
-extern void* g_pDirtyDiscContext;  // @ 0x825EB988
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcDirtyDisc::~grcDirtyDisc  [vtable slot 0 @ 0x82151110]
-// Virtual destructor — resets vtable chain to fiDirtyDisc then datBase,
-// optionally frees the object.
-// ─────────────────────────────────────────────────────────────────────────────
-grcDirtyDisc::~grcDirtyDisc() {
-    // Compiler-managed vtable reset to fiDirtyDisc @ 0x82034A54 (+8)
-    // Compiler-managed vtable reset to datBase @ 0x820276C4 (+0)
-    // Actual freeing handled by scalar destructor (slot 1)
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcDirtyDisc::ScalarDtor  [vtable slot 1 @ 0x821511F8]
-// Scalar deleting destructor — initializes grc device state, renders the
-// dirty disc overlay, then restores state. Called when a disc read error
-// is detected and the "dirty disc" screen needs to be displayed.
-// ─────────────────────────────────────────────────────────────────────────────
-
-extern void rage_FC30();                               // @ 0x8214FC30
-extern void grc_F088(int mode, float alpha, int flags, uint32_t colorMask); // @ 0x8214F088
-extern void rage_FC90(int contextId, int resetMode);   // @ 0x8214FC90
-
-// Float constant for overlay alpha @ 0x8202D108
-extern const float g_fDirtyDiscAlpha;  // @ 0x8202D108
-
-void grcDirtyDisc::ScalarDtor(int flags) {
-    // Pre-init: clear grc device state for overlay rendering
-    rage_FC30();
-
-    // Render the dirty disc overlay with full opacity mask (0xFF000000)
-    // mode=1, alpha=g_fDirtyDiscAlpha, flags=1, colorMask=0xFF000000
-    grc_F088(1, g_fDirtyDiscAlpha, 1, 0xFF000000);
-
-    // Post-init: restore grc device state
-    rage_FC90(0, 0);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcDirtyDisc::vfn_2  [vtable slot 2 @ 0x82151168]
-// Fiber TLS initialization — sets up the thread-local fiber context used
-// for async disc-error recovery. If no global context exists yet, creates
-// a grcSetup tokenizer first, then allocates a fiber context.
-// ─────────────────────────────────────────────────────────────────────────────
-
-extern void fiAsciiTokenizer_CE30_w(void* pSetup, uint32_t configData, void* pVtable); // @ 0x8215CE30
-extern void rage_CEF0(void* pSetup, int mode);          // @ 0x8215CEF0
-extern void* _crt_tls_fiber_setup();                     // @ 0x82566B78
-
-void grcDirtyDisc::vfn_2() {
-    void* pContext = g_pDirtyDiscContext;
-
-    if (pContext == nullptr) {
-        // No global context yet — create a grcSetup tokenizer from this object's
-        // config data (+0x04) using the fiDirtyDisc vtable (+0x08) as the setup
-        void* pSetup = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(this) + 8);
-        uint32_t configData = *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + 4);
-
-        // Initialize the tokenizer with the dirty disc vtable
-        fiAsciiTokenizer_CE30_w(pSetup, configData, reinterpret_cast<void*>(0x82034A48));
-
-        // Parse the configuration
-        rage_CEF0(pSetup, 0);
-
-        // Execute the setup's scalar destructor (slot 1) to finalize
-        typedef void (*ScalarDtorFn)(void*);
-        void** vtbl = *reinterpret_cast<void***>(pSetup);
-        reinterpret_cast<ScalarDtorFn>(vtbl[1])(pSetup);
-
-        // Re-read global context after setup
-        pContext = g_pDirtyDiscContext;
-    }
-
-    // If the context already has a fiber TLS slot at +10376, clean it up first
-    uint32_t* pFiberSlot = reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uint8_t*>(pContext) + 10376);
-    if (*pFiberSlot != 0) {
-        _crt_tls_fiber_setup();
-    }
-
-    // Allocate a new fiber TLS context and store it
-    void* pFiber = _crt_tls_fiber_setup();
-    *pFiberSlot = reinterpret_cast<uint32_t>(reinterpret_cast<uintptr_t>(pFiber));
-}
-
-} // namespace rage
-
-
-// ═══════════════════════════════════════════════════════════════════════════
-// rage::grcRenderTargetXenon — render target accessor methods
-// vtable @ 0x82035344
-//
-// These are small inline-style accessors that read/write fields in the
-// grcRenderTargetXenon object layout:
-//   +0x08  m_pSurface         — GPU surface pointer (void*)
-//   +0x14  m_nWidth           — uint16_t, render target width
-//   +0x16  m_nHeight          — uint16_t, render target height
-//   +0x1C  m_bColorEnabled    — uint8_t, color channel enable flag
-//   +0x1D  m_bDepthEnabled    — uint8_t, depth channel enable flag
-//   +0x1E  m_nMSAAMode        — uint8_t, multisample mode (0, 1, or clamped to 2)
-//   +0x28  m_pResolveTarget   — void*, resolve target pointer
-//
-// Global:
-//   g_pGrcCurrentSurface @ 0x825C9010 — active GPU surface pointer
-// ═══════════════════════════════════════════════════════════════════════════
-
-namespace rage {
-
-// Active GPU surface pointer, written by vfn_20 (BeginScene)
-extern void* g_pGrcCurrentSurface;  // @ 0x825C9010
-
-// Float constant for default LOD bias @ 0x8202D110
-extern const float g_fDefaultLodBias;  // @ 0x8202D110
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcRenderTargetXenon::vfn_8  [vtable slot 8 @ 0x8215DD58]
-// GetWidth — returns the render target width.
-// ─────────────────────────────────────────────────────────────────────────────
-uint16_t grcRenderTargetXenon_GetWidth(void* pThis) {
-    return *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(pThis) + 20);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcRenderTargetXenon::vfn_9  [vtable slot 9 @ 0x8215DD60]
-// GetHeight — returns the render target height.
-// ─────────────────────────────────────────────────────────────────────────────
-uint16_t grcRenderTargetXenon_GetHeight(void* pThis) {
-    return *reinterpret_cast<uint16_t*>(reinterpret_cast<uint8_t*>(pThis) + 22);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcRenderTargetXenon::vfn_13  [vtable slot 13 @ 0x8215DD68]
-// SetChannelFlags — sets the color and depth enable flags.
-// ─────────────────────────────────────────────────────────────────────────────
-void grcRenderTargetXenon_SetChannelFlags(void* pThis, uint8_t colorEnabled, uint8_t depthEnabled) {
-    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
-    pObj[28] = colorEnabled;   // +0x1C m_bColorEnabled
-    pObj[29] = depthEnabled;   // +0x1D m_bDepthEnabled
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcRenderTargetXenon::vfn_14  [vtable slot 14 @ 0x8215DD78]
-// GetChannelFlags — reads the color and depth enable flags into output params.
-// ─────────────────────────────────────────────────────────────────────────────
-void grcRenderTargetXenon_GetChannelFlags(void* pThis, uint8_t* pColorOut, uint8_t* pDepthOut) {
-    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
-    *pColorOut = pObj[28];     // +0x1C m_bColorEnabled
-    *pDepthOut = pObj[29];     // +0x1D m_bDepthEnabled
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcRenderTargetXenon::vfn_16  [vtable slot 16 @ 0x8215DD90]
-// SetMSAAMode — sets the multisample anti-aliasing mode, clamping to max 2.
-// ─────────────────────────────────────────────────────────────────────────────
-void grcRenderTargetXenon_SetMSAAMode(void* pThis, int mode) {
-    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
-    if (mode < 2) {
-        pObj[30] = static_cast<uint8_t>(mode);   // +0x1E m_nMSAAMode
-    } else {
-        pObj[30] = 2;  // Clamp to maximum of 2
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcRenderTargetXenon::vfn_18  [vtable slot 18 @ 0x82151250]
-// GetDefaultLodBias — returns the default LOD bias and mip level via
-// output parameters. LOD bias is a float constant, mip level is always 0.
-// ─────────────────────────────────────────────────────────────────────────────
-void grcRenderTargetXenon_GetDefaultLodBias(void* pThis, float* pBiasOut, uint32_t* pMipLevelOut) {
-    *pBiasOut = g_fDefaultLodBias;   // float constant @ 0x8202D110
-    *pMipLevelOut = 0;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// grcRenderTargetXenon::vfn_20  [vtable slot 20 @ 0x8215EB10]
-// BeginScene — stores the current GPU surface pointer into the global
-// g_pGrcCurrentSurface and returns the resolve target pointer.
-// ─────────────────────────────────────────────────────────────────────────────
-void* grcRenderTargetXenon_BeginScene(void* pThis) {
-    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
-
-    // Store the active GPU surface pointer globally
-    *reinterpret_cast<void**>(pObj + 8) = g_pGrcCurrentSurface;  // +0x08 m_pSurface = g_pGrcCurrentSurface
-
-    // Return the resolve target pointer at +0x28
-    return *reinterpret_cast<void**>(pObj + 40);  // +0x28 m_pResolveTarget
-}
-
-// ---------------------------------------------------------------------------
-// grcRenderTargetXenon::vfn_15  [vtable slot 15 @ 0x8215DDB0]
-// GetMSAAMode -- returns the multisample anti-aliasing mode.
-// ---------------------------------------------------------------------------
-uint8_t grcRenderTargetXenon_GetMSAAMode(void* pThis) {
-    return reinterpret_cast<uint8_t*>(pThis)[30];   // +0x1E m_nMSAAMode
-}
-
-// ---------------------------------------------------------------------------
-// grcTextureXenon::vfn_13  [vtable slot 13 @ 0x8215DDB8]
-// SetChannelFlags -- stores color and depth enable bytes.
-// ---------------------------------------------------------------------------
-void grcTextureXenon_SetChannelFlags(void* pThis, uint8_t colorEnabled, uint8_t depthEnabled) {
-    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
-    pObj[24] = colorEnabled;   // +0x18
-    pObj[25] = depthEnabled;   // +0x19
-}
-
-// ---------------------------------------------------------------------------
-// grcTextureXenon::vfn_14  [vtable slot 14 @ 0x8215DDC8]
-// GetChannelFlags -- reads color and depth enable bytes into output params.
-// ---------------------------------------------------------------------------
-void grcTextureXenon_GetChannelFlags(void* pThis, uint8_t* pColorOut, uint8_t* pDepthOut) {
-    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
-    *pColorOut = pObj[24];     // +0x18
-    *pDepthOut = pObj[25];     // +0x19
-}
-
-// ---------------------------------------------------------------------------
-// grcTextureXenon::vfn_15  [vtable slot 15 @ 0x8215DDE8]
-// GetLodLevel -- returns the LOD level byte.
-// ---------------------------------------------------------------------------
-uint8_t grcTextureXenon_GetLodLevel(void* pThis) {
-    return reinterpret_cast<uint8_t*>(pThis)[27];   // +0x1B
-}
-
-// ---------------------------------------------------------------------------
-// grcTextureXenon::vfn_16  [vtable slot 16 @ 0x8215DDE0]
-// SetLodLevel -- stores the LOD level byte.
-// ---------------------------------------------------------------------------
-void grcTextureXenon_SetLodLevel(void* pThis, uint8_t level) {
-    reinterpret_cast<uint8_t*>(pThis)[27] = level;  // +0x1B
-}
-
-// ---------------------------------------------------------------------------
-// grcTextureXenon::vfn_18  [vtable slot 18 @ 0x8215DDF0]
-// GetLodBias -- reads the LOD bias float and writes it to the output pointer.
-// ---------------------------------------------------------------------------
-void grcTextureXenon_GetLodBias(void* pThis, float* pBiasOut) {
-    *pBiasOut = *reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(pThis) + 28);  // +0x1C
-}
-
-} // namespace rage

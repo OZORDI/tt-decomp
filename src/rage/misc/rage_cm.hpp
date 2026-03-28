@@ -11,65 +11,13 @@
  */
 #pragma once
 #include <stdint.h>
+#include "rage_cm_types.hpp"
 
 namespace rage {
 
-struct cmDataObj;  // forward declaration
-
-// ── Port and node base types (defined in rage_cm.cpp layout analysis) ────────
-struct cmNodePort {
-    void*    m_pData;  // +0x00 — pointer to cmDataObj* or cmNode* depending on m_type
-    int32_t  m_type;   // +0x04 — CM_PORT_NONE=0, CM_PORT_DIRECT=1, CM_PORT_NODE=2
-};
-
-struct cmNodeBase {
-    void**   m_pVtable;     // +0x00
-    int32_t  m_outputType;  // +0x04
-    int32_t  m_flags;       // +0x08
-};
-
-struct cmUnaryNode : cmNodeBase {
-    cmNodePort portA;        // +0x0C
-    int32_t    m_nConnected; // +0x14
-};
-
-struct cmBinaryNode : cmNodeBase {
-    cmNodePort portA;        // +0x0C
-    cmNodePort portB;        // +0x14
-    int32_t    m_nConnected; // +0x1C
-};
-
-struct cmStatefulNode : cmBinaryNode {
-    void*   m_pCurrentValue;   // +0x20 — 16-byte aligned buffer for current output
-    void*   m_pPreviousValue;  // +0x24 — 16-byte aligned buffer for previous frame
-};
-
-struct cmSwitch : cmNodeBase {
-    cmNodePort selectorPort;     // +0x0C  determines which case to execute
-    cmNodePort casePorts[4];     // +0x14  case outputs (only [0] and [1] checked)
-    cmNodePort defaultPort;      // +0x34  fallback when no case matches
-
-    void GetVector(float* out);
-    void GetBool(uint8_t* out);
-    void GetFloat(float* out);
-    void GetDim(int32_t* out);
-};
-
-struct cmBinaryPortDesc {
-    uint8_t portA_dim;
-    uint8_t portB_dim;
-    uint8_t flags;
-    uint8_t out_dim;
-};
 
 
-
-// ── rage::cmAbs  [vtable @ 0x82053E8C] ──────────────────────────
-struct cmAbs : cmUnaryNode {
-    void GetFloat(float* out);          // [4] @ 0x8227b758
-    void GetDim(int32_t* out);          // [5] @ 0x8227b718
-    void RegisterPorts(cmUnaryNode* node);  // [16] @ 0x82262478
-};
+// ── rage::cmAbs — defined in rage_cm_types.hpp
 
 // ── rage::cmAbsAngleDiff  [vtable @ 0x8205414C] ──────────────────────────
 struct cmAbsAngleDiff {
@@ -94,13 +42,7 @@ struct cmActionFactory {
     virtual void vfn_3();  // [3] @ 0x82277728
 };
 
-// ── rage::cmAdd  [vtable @ 0x82053A6C] ──────────────────────────
-struct cmAdd : cmBinaryNode {
-    void GetVector(float* out);    // [2] @ 0x8227b158
-    void GetFloat(float* out);     // [4] @ 0x8227b100
-    void GetDim(int32_t* out);     // [5] @ 0x8227b0c8
-    void RegisterPorts(cmBinaryNode* node);  // [16] @ 0x822622a8
-};
+// ── rage::cmAdd — defined in rage_cm_types.hpp
 
 // ── rage::cmAlarmTimer  [vtable @ 0x82052DFC] ──────────────────────────
 struct cmAlarmTimer {
@@ -120,35 +62,44 @@ struct cmAnd {
 };
 
 // ── rage::cmAngle  [vtable @ 0x820551CC] ──────────────────────────
-struct cmAngle : cmBinaryNode {
+struct cmAngle {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void GetFloat(float* out);  // [4] @ 0x8227a0e0
+    virtual void vfn_4();  // [4] @ 0x8227a0e0
 };
 
 // ── rage::cmAngleDiff  [vtable @ 0x820541A4] ──────────────────────────
-struct cmAngleDiff : cmBinaryNode {
+struct cmAngleDiff {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void GetFloat(float* out);  // [4] @ 0x8227bff8
+    virtual void vfn_4();  // [4] @ 0x8227bff8
 };
 
 // ── rage::cmAngleLerp  [vtable @ 0x82054044] ──────────────────────────
-struct cmAngleLerp : cmBinaryNode {
-    cmNodePort portC;  // +0x20 — third port (t interpolant)
+struct cmAngleLerp {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void GetFloat(float* out);  // [4] @ 0x8227bc50
-    void RegisterPorts(void* node);  // [16] @ 0x82262620
+    virtual void vfn_4();  // [4] @ 0x8227bc50
+    virtual void vfn_16();  // [16] @ 0x82262620
 };
 
 // ── rage::cmAngleLinearApproach  [vtable @ 0x82054A3C] ──────────────────────────
-struct cmAngleLinearApproach : cmStatefulNode {
+struct cmAngleLinearApproach {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void Tick();  // [10] @ 0x82278f10
+    virtual void vfn_10();  // [10] @ 0x82278f10
 };
 
 // ── rage::cmAnglePowerApproach  [vtable @ 0x82054A94] ──────────────────────────
-struct cmAnglePowerApproach : cmStatefulNode {
+struct cmAnglePowerApproach {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void Tick();  // [10] @ 0x82278e58
+    virtual void vfn_10();  // [10] @ 0x82278e58
 };
 
 // ── rage::cmAnimBoneOrientation  [vtable @ 0x8203837C] ──────────────────────────
@@ -225,45 +176,24 @@ struct cmAnimDuration {
 };
 
 // ── rage::cmApproach2  [vtable @ 0x82056A5C] ──────────────────────────
-struct cmApproach2 : cmBinaryNode {
-    void*   m_pCurrentValue;   // +0x20
-    void*   m_pPreviousValue;  // +0x24
-    void*   m_pExtraData;      // +0x28
+struct cmApproach2 {
+    void**      vtable;           // +0x00
 
     // ── virtual methods ──
     virtual ~cmApproach2();                  // [0] @ 0x822792d8
-    void GetVector(float* out);  // [2] @ 0x82279568
-    void GetFloat(float* out);  // [4] @ 0x82279608
-    void SyncPorts(void* portCtx);  // [6] @ 0x822793c8
-    void Reset();  // [9] @ 0x82279418
-    void Tick();  // [10] @ 0x82279428
-    void Allocate();  // [17] @ 0x82279348
+    virtual void vfn_2();  // [2] @ 0x82279568
+    virtual void vfn_4();  // [4] @ 0x82279608
+    virtual void vfn_6();  // [6] @ 0x822793c8
+    virtual void vfn_9();  // [9] @ 0x82279418
+    virtual void vfn_10();  // [10] @ 0x82279428
+    virtual void vfn_17();  // [17] @ 0x82279348
 };
 
-// ── rage::cmApproachOperator  [vtable @ 0x82056A04] ──────────────────────────
-struct cmApproachOperator {
-    void**      vtable;           // +0x00
-    int32_t     m_outputType;     // +0x04
-    int32_t     m_flags;          // +0x08
-    cmNodePort  portA;            // +0x0C  rate port
-    cmNodePort  portB;            // +0x14  target port
-    int32_t     m_nConnected;     // +0x1C
-    void*       m_pResult;        // +0x20  current result buffer (cmDataObj*)
+// ── rage::cmApproachOperator — defined in rage_cm_types.hpp
 
-    void Tick();  // [10] @ 0x82278b90
-};
+// ── rage::cmArcCosine — defined in rage_cm_types.hpp
 
-// ── rage::cmArcCosine  [vtable @ 0x82053D2C] ──────────────────────────
-struct cmArcCosine : cmUnaryNode {
-    void GetFloat(float* out);          // [4] @ 0x8227b5f8
-    void RegisterPorts(cmUnaryNode* node);  // [16] @ ???
-};
-
-// ── rage::cmArcTangent  [vtable @ 0x82053DDC] ──────────────────────────
-struct cmArcTangent : cmUnaryNode {
-    void GetFloat(float* out);          // [4] @ 0x8227b678
-    void RegisterPorts(cmUnaryNode* node);  // [16] @ 0x82262438
-};
+// ── rage::cmArcTangent — defined in rage_cm_types.hpp
 
 // ── rage::cmBlock  [vtable @ 0x8205678C] ──────────────────────────
 struct cmBlock {
@@ -295,42 +225,32 @@ struct cmCachedOperator {
 };
 
 // ── rage::cmCapture  [vtable @ 0x820569AC] ──────────────────────────
-struct cmCapture : cmUnaryNode {
-    void* m_pCapturedValue;  // +0x18 — captured output buffer
+struct cmCapture {
+    void**      vtable;           // +0x00
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x822789c8
-    void GetVector(float* out);  // [2] @ 0x82278928
-    void GetBool(uint8_t* out);  // [3] @ 0x82278978
-    void GetFloat(float* out);  // [4] @ 0x822788d8
-    void GetDim(int32_t* out);  // ??? (may be needed)
-    void SyncPorts(void* portCtx);  // [6] @ 0x82278880
-    void Reset();  // [9] @ 0x822788c8
-    void RegisterPorts(void* node);  // [16] @ 0x822779c8
-    void Allocate();  // [17] @ 0x822787f8
+    virtual void vfn_2();  // [2] @ 0x82278928
+    virtual void vfn_3();  // [3] @ 0x82278978
+    virtual void vfn_4();  // [4] @ 0x822788d8
+    virtual void vfn_6();  // [6] @ 0x82278880
+    virtual void vfn_9();  // [9] @ 0x822788c8
+    virtual void vfn_16();  // [16] @ 0x822779c8
+    virtual void vfn_17();  // [17] @ 0x822787f8
 };
 
 // ── rage::cmChanged  [vtable @ 0x820567F4] ──────────────────────────
-struct cmChanged : cmUnaryNode {
-    void* m_pCurrentValue;   // +0x18
-    void* m_pPreviousValue;  // +0x1C
+struct cmChanged {
+    void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    void Reset();  // [6] @ 0x82278018 — actually this maps to slot for reset
-    void Tick();  // [10] @ 0x82277ef0
-    void RegisterPorts(void* node);  // [16] @ 0x822778b8
-    void Allocate();  // [17] @ 0x82278168
+    virtual void vfn_6();  // [6] @ 0x82278018
+    virtual void vfn_10();  // [10] @ 0x82277ef0
+    virtual void vfn_16();  // [16] @ 0x822778b8
+    virtual void vfn_17();  // [17] @ 0x82278168
 };
 
-// ── rage::cmClamp  [vtable @ 0x820540F4] ──────────────────────────
-struct cmClamp : cmBinaryNode {
-    cmNodePort portC;        // +0x20 — third port (max value)
-
-    void GetVector(float* out);
-    void GetFloat(float* out);
-    void GetDim(int32_t* out);
-    void RegisterPorts(cmBinaryNode* node);
-};
+// ── rage::cmClamp — defined in rage_cm_types.hpp
 
 // ── rage::cmClampRange  [vtable @ 0x820541FC] ──────────────────────────
 struct cmClampRange {
@@ -360,24 +280,16 @@ struct cmCompiledMachineBank {
 // ── rage::cmControlRef  [vtable @ 0x82056B8C] ──────────────────────────
 struct cmControlRef {
     void**      vtable;           // +0x00
-    int32_t     m_outputType;     // +0x04
-    int32_t     m_flags;          // +0x08
-    void*       m_pControlObj;    // +0x0C
-    uint32_t    m_entryIndex;     // +0x10
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8227cd68
     virtual void vfn_2();  // [2] @ 0x8227cd08
-    void GetBool(uint8_t* out);  // [3] @ 0x8227cca8
+    virtual void vfn_3();  // [3] @ 0x8227cca8
     virtual void vfn_4();  // [4] @ 0x8227cc48
     virtual void vfn_5();  // [5] @ 0x8227cbe8
 };
 
-// ── rage::cmCosine  [vtable @ 0x82053CD4] ──────────────────────────
-struct cmCosine : cmUnaryNode {
-    void GetFloat(float* out);
-    void RegisterPorts(cmUnaryNode* node);
-};
+// ── rage::cmCosine — defined in rage_cm_types.hpp
 
 // ── rage::cmCross  [vtable @ 0x82055174] ──────────────────────────
 struct cmCross {
@@ -415,19 +327,16 @@ struct cmDiffTuningSet {
     virtual void vfn_2();  // [2] @ 0x821792b0
 };
 
-// ── rage::cmDifferential  [vtable @ 0x82054884] ──────────────────────────
-struct cmDifferential : cmUnaryNode {
-    void GetFloat(float* out);
-    void GetVector(float* out);
-    void RegisterPorts(cmUnaryNode* node);
-};
+// ── rage::cmDifferential — defined in rage_cm_types.hpp
 
 // ── rage::cmDifferentiate  [vtable @ 0x820568FC] ──────────────────────────
-struct cmDifferentiate : cmStatefulNode {
+struct cmDifferentiate {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void SyncPorts(void* portCtx);  // [6] @ 0x82278220
-    void Reset();  // [9] @ 0x82278270
-    void Tick();  // [10] @ 0x822782d0
+    virtual void vfn_6();  // [6] @ 0x82278220
+    virtual void vfn_9();  // [9] @ 0x82278270
+    virtual void vfn_10();  // [10] @ 0x822782d0
 };
 
 // ── rage::cmDist  [vtable @ 0x82055384] ──────────────────────────
@@ -447,10 +356,12 @@ struct cmDist2 {
 };
 
 // ── rage::cmDivide  [vtable @ 0x82053B74] ──────────────────────────
-struct cmDivide : cmBinaryNode {
+struct cmDivide {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void GetFloat(float* out);  // [4] @ 0x8227b398
-    void GetDim(int32_t* out);  // [5] @ 0x8227b348
+    virtual void vfn_4();  // [4] @ 0x8227b398
+    virtual void vfn_5();  // [5] @ 0x8227b348
 };
 
 // ── rage::cmDot  [vtable @ 0x820550C4] ──────────────────────────
@@ -587,20 +498,9 @@ struct cmInfo {
     virtual void vfn_3();  // [3] @ 0x8227abb8
 };
 
-// ── rage::cmIntegrate  [vtable @ 0x82054934] ──────────────────────────
-struct cmIntegrate : cmStatefulNode {
-    void Tick();                              // [10] @ 0x82278420
-    void RegisterPorts(cmBinaryNode* node);
-};
+// ── rage::cmIntegrate — defined in rage_cm_types.hpp
 
-// ── rage::cmIntegrate0  [vtable @ 0x8205498C] ──────────────────────────
-struct cmIntegrate0 {
-    void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual void vfn_6();  // [6] @ 0x82271188
-    virtual void vfn_10();  // [10] @ 0x82278510
-};
+// ── rage::cmIntegrate0 — defined in rage_cm_types.hpp
 
 // ── rage::cmInverse  [vtable @ 0x82053E34] ──────────────────────────
 struct cmInverse {
@@ -689,10 +589,12 @@ struct cmMaterialProbe {
 };
 
 // ── rage::cmMax  [vtable @ 0x82053F3C] ──────────────────────────
-struct cmMax : cmBinaryNode {
+struct cmMax {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void GetFloat(float* out);  // [4] @ 0x8227b838
-    void GetDim(int32_t* out);  // [5] @ 0x8227b898
+    virtual void vfn_4();  // [4] @ 0x8227b838
+    virtual void vfn_5();  // [5] @ 0x8227b898
 };
 
 // ── rage::cmMaxPauseApproach  [vtable @ 0x82054B44] ──────────────────────────
@@ -703,20 +605,7 @@ struct cmMaxPauseApproach {
     virtual void vfn_10();  // [10] @ 0x822790d0
 };
 
-// ── rage::cmMemory  [vtable @ 0x820548DC] ──────────────────────────
-struct cmMemory : cmStatefulNode {
-    void GetInt32(int32_t* out);
-    void GetVector(float* out);
-    void GetBool(uint8_t* out);
-    void GetFloat(float* out);
-    void RegisterPorts(cmBinaryNode* node);
-    void Sync();
-    void Update();
-    void SetValue();
-    void SetInitialInput();  // [9]  @ 0x82271518
-    void SyncInput();        // [8b] @ 0x82278158
-    void Reset();            // [17] @ 0x82271390
-};
+// ── rage::cmMemory — defined in rage_cm_types.hpp
 
 // ── rage::cmMetafileTuningSet  [2 vtables — template/MI] ──────────────────────────
 struct cmMetafileTuningSet {
@@ -735,10 +624,12 @@ struct cmMetafileTuningSet {
 };
 
 // ── rage::cmMin  [vtable @ 0x82053F94] ──────────────────────────
-struct cmMin : cmBinaryNode {
+struct cmMin {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void GetFloat(float* out);  // [4] @ 0x8227b8e0
-    void GetDim(int32_t* out);  // [5] @ 0x8227b940
+    virtual void vfn_4();  // [4] @ 0x8227b8e0
+    virtual void vfn_5();  // [5] @ 0x8227b940
 };
 
 // ── rage::cmMinPauseApproach  [vtable @ 0x82054AEC] ──────────────────────────
@@ -771,10 +662,12 @@ struct cmMotorPlant {
 };
 
 // ── rage::cmMultiply  [vtable @ 0x82053B1C] ──────────────────────────
-struct cmMultiply : cmBinaryNode {
+struct cmMultiply {
+    void**      vtable;           // +0x00
+
     // ── virtual methods ──
-    void GetFloat(float* out);  // [4] @ 0x8227b2f0
-    void GetDim(int32_t* out);  // [5] @ 0x8227b2b8
+    virtual void vfn_4();  // [4] @ 0x8227b2f0
+    virtual void vfn_5();  // [5] @ 0x8227b2b8
     virtual void vfn_16();  // [16] @ 0x822624f8
 };
 
@@ -789,18 +682,12 @@ struct cmNamedValueSet {
     virtual void vfn_4();  // [4] @ 0x82275ae0
     virtual void vfn_5();  // [5] @ 0x82275b30
     virtual void vfn_6();  // [6] @ 0x82275b80
-    void SetValueByName(uint32_t param1, uint32_t param2);  // [7] @ 0x82275bd0
+    virtual void vfn_7();  // [7] @ 0x82275bd0
     virtual void vfn_8();  // [8] @ 0x82275c20
     virtual void vfn_9();  // [9] @ 0x82275c68
 };
 
-// ── rage::cmNegate  [vtable @ 0x82053C24] ──────────────────────────
-struct cmNegate : cmUnaryNode {
-    void GetVector(float* out);         // [2] @ 0x8227b518
-    void GetFloat(float* out);          // [4] @ 0x8227b4e0
-    void GetDim(int32_t* out);          // [5] @ 0x8227b4a8
-    void RegisterPorts(cmBinaryNode* node);  // [16] @ 0x82262350
-};
+// ── rage::cmNegate — defined in rage_cm_types.hpp
 
 // ── rage::cmNoise  [vtable @ 0x82054464] ──────────────────────────
 struct cmNoise {
@@ -1101,11 +988,7 @@ struct cmSimpleAction {
     virtual void vfn_6();  // [6] @ 0x82261290
 };
 
-// ── rage::cmSine  [vtable @ 0x82053C7C] ──────────────────────────
-struct cmSine : cmUnaryNode {
-    void GetFloat(float* out);
-    void RegisterPorts(cmUnaryNode* node);
-};
+// ── rage::cmSine — defined in rage_cm_types.hpp
 
 // ── rage::cmSlowIn  [vtable @ 0x82054254] ──────────────────────────
 struct cmSlowIn {
@@ -1147,12 +1030,7 @@ struct cmSqrt {
     virtual void vfn_4();  // [4] @ 0x8227c318
 };
 
-// ── rage::cmSubtract  [vtable @ 0x82053AC4] ──────────────────────────
-struct cmSubtract : cmBinaryNode {
-    void GetFloat(float* out);   // [4] @ 0x8227b1f8
-    void GetVector(float* out);  // [2] @ 0x8227b250
-    void GetDim(int32_t* out);   // [5] @ 0x8227b1c0
-};
+// ── rage::cmSubtract — defined in rage_cm_types.hpp
 
 // ── rage::cmTangent  [vtable @ 0x82053D84] ──────────────────────────
 struct cmTangent {

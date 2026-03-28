@@ -1227,7 +1227,7 @@ void cmOperatorCtor_SingletonDispatchSlot10(void* a1, void* a2) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Action sampler functions (camera parameter readers)
-extern "C" void atSingleton_MergeFlags(void* actionCtx, void* actionNode);
+extern "C" void atSingleton_9728_2h(void* actionCtx, void* actionNode);
 extern "C" void cmSampleCamActions_9740_fw(void* actionCtx, void* actionNode);
 extern "C" void cmSampleCamActions_97F8_g(void* actionCtx, void* actionNode);
 
@@ -1282,11 +1282,11 @@ static void* cmOperatorCtor_CreateCamAction(void* callerArg, void* actionFn, uin
  *
  * Creates a cmAction that samples two vec4 values from ports 0 and 1,
  * writing them to camera output vec4 slots 14 and 15.
- * Uses atSingleton_MergeFlags as the action sampler.
+ * Uses atSingleton_9728_2h as the action sampler.
  */
 // cmOperatorCtor_CAA0_w @ 0x8217CAA0
 void* cmOperatorCtor_CamActionVec4Pair_A(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 0xC000);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 0xC000);
 }
 
 /**
@@ -1311,7 +1311,7 @@ void* cmOperatorCtor_CamActionVec4Pair_B(void* callerArg) {
  */
 // cmOperatorCtor_CCF0_w @ 0x8217CCF0
 void* cmOperatorCtor_CamActionBaseXYZ(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 7);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 7);
 }
 
 // ── Camera rotation factory (flags=0x3 = pitch+yaw) ──────────────────────────
@@ -1324,7 +1324,7 @@ void* cmOperatorCtor_CamActionBaseXYZ(void* callerArg) {
  */
 // cmOperatorCtor_CE10_w @ 0x8217CE10
 void* cmOperatorCtor_CamActionRotation(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 3);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 3);
 }
 
 // ── Camera FOV factory (flags=0x4 = FOV slot) ────────────────────────────────
@@ -1337,7 +1337,7 @@ void* cmOperatorCtor_CamActionRotation(void* callerArg) {
  */
 // cmOperatorCtor_CF30_w @ 0x8217CF30
 void* cmOperatorCtor_CamActionFOV(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 4);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 4);
 }
 
 // ── Camera look-at target factory (flags=0x38 = target XYZ) ──────────────────
@@ -1350,7 +1350,7 @@ void* cmOperatorCtor_CamActionFOV(void* callerArg) {
  */
 // cmOperatorCtor_D050_w @ 0x8217D050
 void* cmOperatorCtor_CamActionLookAtTarget(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 56);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 56);
 }
 
 // ── Camera orientation factory (flags=0x3C0 = orientation vec4) ──────────────
@@ -1363,7 +1363,7 @@ void* cmOperatorCtor_CamActionLookAtTarget(void* callerArg) {
  */
 // cmOperatorCtor_D170_w @ 0x8217D170
 void* cmOperatorCtor_CamActionOrientation(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 960);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 960);
 }
 
 // ── Camera secondary orientation factory (flags=0x3C00) ──────────────────────
@@ -1376,7 +1376,7 @@ void* cmOperatorCtor_CamActionOrientation(void* callerArg) {
  */
 // cmOperatorCtor_D290_w @ 0x8217D290
 void* cmOperatorCtor_CamActionSecondaryOrientation(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 15360);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 15360);
 }
 
 // ── Camera all-slots factory (flags=0x3FFF = all 14 scalar slots) ────────────
@@ -1389,7 +1389,7 @@ void* cmOperatorCtor_CamActionSecondaryOrientation(void* callerArg) {
  */
 // cmOperatorCtor_D3B0_w @ 0x8217D3B0
 void* cmOperatorCtor_CamActionAllSlots(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_MergeFlags, 16383);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)atSingleton_9728_2h, 16383);
 }
 
 // ── Camera 2-float sampler factory (flags=0x7, different sampler) ────────────
@@ -1407,212 +1407,969 @@ void* cmOperatorCtor_CamAction2Float(void* callerArg) {
     return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_97F8_g, 7);
 }
 
+// ── cmOperatorCtor factory functions — batch 4 (logic & arithmetic operators) ─
+
+extern "C" const void* rage_cmEquals_vtable;         // @ 0x8205461C
+extern "C" const void* rage_cmGreaterThan_vtable;    // @ 0x82054674
+extern "C" const void* rage_cmLessThan_vtable;       // @ 0x820546CC
+extern "C" const void* rage_cmOr_vtable;             // @ 0x82054724
+extern "C" const void* rage_cmXor_vtable;            // @ 0x8205477C
+extern "C" const void* rage_cmAnd_vtable;            // @ 0x820547D4
+extern "C" const void* rage_cmNot_vtable;            // @ 0x8205482C
+extern "C" const void* rage_cmAdd_vtable;            // @ 0x82053A6C
+extern "C" const void* rage_cmSubtract_vtable;       // @ 0x82053AC4
+extern "C" const void* rage_cmMultiply_vtable;       // @ 0x82053B1C
+
+// ── rage::cmEquals factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6698_1 @ 0x82266698 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmEquals vtable.
+ */
+// cmOperatorCtor_vfn_0_6698_1 @ 0x82266698
+void* cmOperatorCtor_cmEquals() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmEquals_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmGreaterThan factory ──────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6730_1 @ 0x82266730 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmGreaterThan vtable.
+ */
+// cmOperatorCtor_vfn_0_6730_1 @ 0x82266730
+void* cmOperatorCtor_cmGreaterThan() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmGreaterThan_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmLessThan factory ─────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_67C8_1 @ 0x822667C8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmLessThan vtable.
+ */
+// cmOperatorCtor_vfn_0_67C8_1 @ 0x822667C8
+void* cmOperatorCtor_cmLessThan() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmLessThan_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmOr factory ───────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6860_1 @ 0x82266860 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmOr vtable.
+ */
+// cmOperatorCtor_vfn_0_6860_1 @ 0x82266860
+void* cmOperatorCtor_cmOr() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmOr_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmXor factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_68F8_1 @ 0x822668F8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmXor vtable.
+ */
+// cmOperatorCtor_vfn_0_68F8_1 @ 0x822668F8
+void* cmOperatorCtor_cmXor() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmXor_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnd factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6990_1 @ 0x82266990 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmAnd vtable.
+ */
+// cmOperatorCtor_vfn_0_6990_1 @ 0x82266990
+void* cmOperatorCtor_cmAnd() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnd_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmNot factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6A28_1 @ 0x82266A28 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmNot vtable. Unary operator.
+ */
+// cmOperatorCtor_vfn_0_6A28_1 @ 0x82266A28
+void* cmOperatorCtor_cmNot() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmNot_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAdd factory ──────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6AB8_1 @ 0x82266AB8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmAdd vtable.
+ */
+// cmOperatorCtor_vfn_0_6AB8_1 @ 0x82266AB8
+void* cmOperatorCtor_cmAdd() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAdd_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSubtract factory ─────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6B50_1 @ 0x82266B50 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmSubtract vtable.
+ */
+// cmOperatorCtor_vfn_0_6B50_1 @ 0x82266B50
+void* cmOperatorCtor_cmSubtract() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSubtract_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmMultiply factory ─────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6BE8_1 @ 0x82266BE8 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmMultiply vtable.
+ */
+// cmOperatorCtor_vfn_0_6BE8_1 @ 0x82266BE8
+void* cmOperatorCtor_cmMultiply() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmMultiply_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// cmCond 4-entry lookup variants (vtable @ 0x82055904)
-// These check 4 condition entries, returning the value from the first true
-// condition. If none match, the default entry at offset +76 is returned.
+// cmOperatorCtor camera action factories — batch 4
+//
+// 10 additional cmAction camera sampler factories. Same mechanical pattern
+// as batch 3: allocate 144 bytes, build function descriptor tables on the
+// stack, tail-call cmActionCtor_11D0_fw. Each uses a unique combination of
+// action sampler function and dirty-flag bitmask.
+//
+// Dirty flag semantics (same as batch 3):
+//   0x0003 = rotation (pitch + yaw)
+//   0x0004 = FOV
+//   0x0007 = base camera params (position XYZ)
+//   0x0038 = look-at target (XYZ)
+//   0x03C0 = orientation (vec4 + angle)
+//   0x3C00 = secondary orientation (vec4 + angle)
+//   0x3FFF = all 14 scalar slots
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Action sampler functions (camera parameter readers — batch 4)
+extern "C" void cmSampleCamActions_98A8_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9918_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_99D0_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9A88_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9B30_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9BD8_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_9D80_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_A060_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_A238_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_A488_g(void* actionCtx, void* actionNode);
+
 /**
- * cmCond_vfn_5_D168_1 @ 0x8226D168 | size: 0x70
+ * cmOperatorCtor_D5F0_w @ 0x8217D5F0 | size: 0x120
  *
- * 4-entry variant: Evaluates conditions and returns matching int (dim) result.
- * Iterates through 4 condition entries at 16-byte stride starting at +12.
- * Returns the value from the first entry whose condition is true,
- * or the default value at offset +76.
+ * Creates a cmAction that samples camera rotation (pitch + yaw).
+ * Uses cmSampleCamActions_98A8_g as the action sampler.
+ * Dirty flags 0x3 = slots 0, 1.
  */
-void cmCond_GetDim_4Entry(void* self, int* outResult) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 4; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = cmSwitch_4B60(base + 20 + i * 16);
-            return;
-        }
-    }
-
-    // No condition matched — return default
-    *outResult = cmSwitch_4B60(base + 76);
+// cmOperatorCtor_D5F0_w @ 0x8217D5F0
+void* cmOperatorCtor_CamActionRotation_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_98A8_g, 3);
 }
 
 /**
- * cmCond_vfn_4_D1D8_1 @ 0x8226D1D8 | size: 0x70
+ * cmOperatorCtor_D710_w @ 0x8217D710 | size: 0x120
  *
- * 4-entry variant: Evaluates conditions and returns matching float result.
+ * Creates a cmAction that samples camera base position parameters (XYZ).
+ * Uses cmSampleCamActions_9918_g as the action sampler.
+ * Dirty flags 0x7 = slots 0, 1, 2.
  */
-void cmCond_GetFloat_4Entry(void* self, float* outResult) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 4; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = cmOperator_EvalFloat(base + 20 + i * 16);
-            return;
-        }
-    }
-
-    *outResult = cmOperator_EvalFloat(base + 76);
+// cmOperatorCtor_D710_w @ 0x8217D710
+void* cmOperatorCtor_CamActionBaseXYZ_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9918_g, 7);
 }
 
 /**
- * cmCond_vfn_3_D248_1 @ 0x8226D248 | size: 0x70
+ * cmOperatorCtor_D830_w @ 0x8217D830 | size: 0x120
  *
- * 4-entry variant: Evaluates conditions and returns matching bool result.
+ * Creates a cmAction that samples the camera field of view.
+ * Uses cmSampleCamActions_99D0_g as the action sampler.
+ * Dirty flags 0x4 = slot 2.
  */
-void cmCond_GetBool_4Entry(void* self, bool* outResult) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 4; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = cmCond_21B0(base + 20 + i * 16);
-            return;
-        }
-    }
-
-    *outResult = cmCond_21B0(base + 76);
+// cmOperatorCtor_D830_w @ 0x8217D830
+void* cmOperatorCtor_CamActionFOV_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_99D0_g, 4);
 }
 
 /**
- * cmCond_vfn_2_D2B8_1 @ 0x8226D2B8 | size: 0x88
+ * cmOperatorCtor_D950_w @ 0x8217D950 | size: 0x120
  *
- * 4-entry variant: Evaluates conditions and returns matching vector result.
- * Uses 16-byte aligned vector copy for the output.
+ * Creates a cmAction that samples camera base position parameters (XYZ).
+ * Uses cmSampleCamActions_9A88_g as the action sampler.
+ * Dirty flags 0x7 = slots 0, 1, 2.
  */
-void cmCond_GetVector_4Entry(void* self, void* outVector) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 4; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            util_92D8(outVector, base + 20 + i * 16);
-            return;
-        }
-    }
-
-    util_92D8(outVector, base + 76);
+// cmOperatorCtor_D950_w @ 0x8217D950
+void* cmOperatorCtor_CamActionBaseXYZ_C(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9A88_g, 7);
 }
 
 /**
- * cmCond_vfn_1_D340_1 @ 0x8226D340 | size: 0x70
+ * cmOperatorCtor_DA70_w @ 0x8217DA70 | size: 0x120
  *
- * 4-entry variant: Evaluates conditions and returns matching int32 result.
- * Uses util_4BD8 (GetInt) instead of cmSwitch_4B60 (GetDim).
+ * Creates a cmAction that samples the camera look-at target position.
+ * Uses cmSampleCamActions_9B30_g as the action sampler.
+ * Dirty flags 0x38 = slots 3, 4, 5.
  */
-void cmCond_GetInt32_4Entry(void* self, int* outResult) {
-    char* base = (char*)self;
+// cmOperatorCtor_DA70_w @ 0x8217DA70
+void* cmOperatorCtor_CamActionLookAtTarget_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9B30_g, 56);
+}
 
-    for (int i = 0; i < 4; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = util_4BD8(base + 20 + i * 16);
-            return;
-        }
-    }
+/**
+ * cmOperatorCtor_DB90_w @ 0x8217DB90 | size: 0x120
+ *
+ * Creates a cmAction that samples camera orientation (vec4 + angle).
+ * Uses cmSampleCamActions_9BD8_g as the action sampler.
+ * Dirty flags 0x3C0 = slots 6, 7, 8, 9.
+ */
+// cmOperatorCtor_DB90_w @ 0x8217DB90
+void* cmOperatorCtor_CamActionOrientation_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9BD8_g, 960);
+}
 
-    *outResult = util_4BD8(base + 76);
+/**
+ * cmOperatorCtor_DCB0_w @ 0x8217DCB0 | size: 0x120
+ *
+ * Creates a cmAction that samples secondary camera orientation.
+ * Uses cmSampleCamActions_9D80_g as the action sampler.
+ * Dirty flags 0x3C00 = slots 10, 11, 12, 13.
+ */
+// cmOperatorCtor_DCB0_w @ 0x8217DCB0
+void* cmOperatorCtor_CamActionSecondaryOrientation_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9D80_g, 15360);
+}
+
+/**
+ * cmOperatorCtor_DDD0_w @ 0x8217DDD0 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera look-at target position.
+ * Uses cmSampleCamActions_A060_g as the action sampler.
+ * Dirty flags 0x38 = slots 3, 4, 5.
+ */
+// cmOperatorCtor_DDD0_w @ 0x8217DDD0
+void* cmOperatorCtor_CamActionLookAtTarget_C(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_A060_g, 56);
+}
+
+/**
+ * cmOperatorCtor_DEF0_w @ 0x8217DEF0 | size: 0x120
+ *
+ * Creates a cmAction that samples the camera look-at target position.
+ * Uses cmSampleCamActions_A238_g as the action sampler.
+ * Dirty flags 0x38 = slots 3, 4, 5.
+ */
+// cmOperatorCtor_DEF0_w @ 0x8217DEF0
+void* cmOperatorCtor_CamActionLookAtTarget_D(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_A238_g, 56);
+}
+
+/**
+ * cmOperatorCtor_E010_w @ 0x8217E010 | size: 0x120
+ *
+ * Creates a cmAction that samples all 14 scalar camera output slots.
+ * Uses cmSampleCamActions_A488_g as the action sampler.
+ * Dirty flags 0x3FFF = all slots 0-13.
+ */
+// cmOperatorCtor_E010_w @ 0x8217E010
+void* cmOperatorCtor_CamActionAllSlots_B(void* callerArg) {
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_A488_g, 16383);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// cmCond 5-entry lookup variants (vtable @ 0x8205595C)
-// These check 5 condition entries, returning the value from the first true
-// condition. If none match, the default entry at offset +92 is returned.
+// cmOperatorCtor factory functions — batch 5 (math & trig operators)
+//
+// 10 additional CM node factories for math/trig operators.
+// Binary operators (cmDivide, cmModulo, cmMax, cmMin, cmArcTangent):
+//   allocate 32 bytes, zero-init, set numInputs=2, install vtable.
+// Unary operators (cmNegate, cmSine, cmCosine, cmArcCosine, cmTangent):
+//   allocate 24 bytes, zero-init, set numInputs=1, install vtable.
 // ─────────────────────────────────────────────────────────────────────────────
 
+extern "C" const void* rage_cmDivide_vtable;       // @ 0x82053B74
+extern "C" const void* rage_cmModulo_vtable;       // @ 0x82053BCC
+extern "C" const void* rage_cmMax_vtable;          // @ 0x82053F3C
+extern "C" const void* rage_cmMin_vtable;          // @ 0x82053F94
+extern "C" const void* rage_cmNegate_vtable;       // @ 0x82053C24
+extern "C" const void* rage_cmSine_vtable;         // @ 0x82053C7C
+extern "C" const void* rage_cmCosine_vtable;       // @ 0x82053CD4
+extern "C" const void* rage_cmArcCosine_vtable;    // @ 0x82053D2C
+extern "C" const void* rage_cmTangent_vtable;      // @ 0x82053D84
+extern "C" const void* rage_cmArcTangent_vtable;   // @ 0x82053DDC
+
+// ── rage::cmDivide factory ───────────────────────────────────────────────────
+
 /**
- * cmCond_vfn_5_D3B0_1 @ 0x8226D3B0 | size: 0x70
+ * cmOperatorCtor_vfn_0_6C80_1 @ 0x82266C80 | size: 0x94
  *
- * 5-entry variant: Evaluates conditions and returns matching int (dim) result.
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmDivide vtable. Binary arithmetic operator.
  */
-void cmCond_GetDim_5Entry(void* self, int* outResult) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 5; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = cmSwitch_4B60(base + 20 + i * 16);
-            return;
-        }
+// cmOperatorCtor_vfn_0_6C80_1 @ 0x82266C80
+void* cmOperatorCtor_cmDivide() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmDivide_vtable;
+        return mem;
     }
-
-    *outResult = cmSwitch_4B60(base + 92);
+    return nullptr;
 }
 
+// ── rage::cmModulo factory ───────────────────────────────────────────────────
+
 /**
- * cmCond_vfn_4_D420_1 @ 0x8226D420 | size: 0x70
+ * cmOperatorCtor_vfn_0_6D18_1 @ 0x82266D18 | size: 0x94
  *
- * 5-entry variant: Evaluates conditions and returns matching float result.
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmModulo vtable. Binary arithmetic operator.
  */
-void cmCond_GetFloat_5Entry(void* self, float* outResult) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 5; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = cmOperator_EvalFloat(base + 20 + i * 16);
-            return;
-        }
+// cmOperatorCtor_vfn_0_6D18_1 @ 0x82266D18
+void* cmOperatorCtor_cmModulo() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmModulo_vtable;
+        return mem;
     }
-
-    *outResult = cmOperator_EvalFloat(base + 92);
+    return nullptr;
 }
 
+// ── rage::cmMax factory ──────────────────────────────────────────────────────
+
 /**
- * cmCond_vfn_3_D490_1 @ 0x8226D490 | size: 0x70
+ * cmOperatorCtor_vfn_0_6DB0_1 @ 0x82266DB0 | size: 0x94
  *
- * 5-entry variant: Evaluates conditions and returns matching bool result.
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmMax vtable. Binary comparison operator.
  */
-void cmCond_GetBool_5Entry(void* self, bool* outResult) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 5; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = cmCond_21B0(base + 20 + i * 16);
-            return;
-        }
+// cmOperatorCtor_vfn_0_6DB0_1 @ 0x82266DB0
+void* cmOperatorCtor_cmMax() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmMax_vtable;
+        return mem;
     }
-
-    *outResult = cmCond_21B0(base + 92);
+    return nullptr;
 }
 
+// ── rage::cmMin factory ──────────────────────────────────────────────────────
+
 /**
- * cmCond_vfn_2_D500_1 @ 0x8226D500 | size: 0x88
+ * cmOperatorCtor_vfn_0_6E48_1 @ 0x82266E48 | size: 0x94
  *
- * 5-entry variant: Evaluates conditions and returns matching vector result.
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmMin vtable. Binary comparison operator.
  */
-void cmCond_GetVector_5Entry(void* self, void* outVector) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 5; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            util_92D8(outVector, base + 20 + i * 16);
-            return;
-        }
+// cmOperatorCtor_vfn_0_6E48_1 @ 0x82266E48
+void* cmOperatorCtor_cmMin() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmMin_vtable;
+        return mem;
     }
-
-    util_92D8(outVector, base + 92);
+    return nullptr;
 }
 
+// ── rage::cmNegate factory ───────────────────────────────────────────────────
+
 /**
- * cmCond_vfn_1_D588_1 @ 0x8226D588 | size: 0x70
+ * cmOperatorCtor_vfn_0_6EE0_1 @ 0x82266EE0 | size: 0x8C
  *
- * 5-entry variant: Evaluates conditions and returns matching int32 result.
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmNegate vtable. Unary arithmetic operator.
  */
-void cmCond_GetInt32_5Entry(void* self, int* outResult) {
-    char* base = (char*)self;
-
-    for (int i = 0; i < 5; i++) {
-        bool conditionMet = cmCond_21B0(base + 12 + i * 16);
-        if (conditionMet) {
-            *outResult = util_4BD8(base + 20 + i * 16);
-            return;
-        }
+// cmOperatorCtor_vfn_0_6EE0_1 @ 0x82266EE0
+void* cmOperatorCtor_cmNegate() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmNegate_vtable;
+        return mem;
     }
+    return nullptr;
+}
 
-    *outResult = util_4BD8(base + 92);
+// ── rage::cmSine factory ─────────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_6F70_1 @ 0x82266F70 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmSine vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_6F70_1 @ 0x82266F70
+void* cmOperatorCtor_cmSine() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSine_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmCosine factory ───────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7090_1 @ 0x82267090 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmCosine vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_7090_1 @ 0x82267090
+void* cmOperatorCtor_cmCosine() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmCosine_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmArcCosine factory ────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7000_1 @ 0x82267000 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmArcCosine vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_7000_1 @ 0x82267000
+void* cmOperatorCtor_cmArcCosine() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmArcCosine_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmTangent factory ──────────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7120_1 @ 0x82267120 | size: 0x8C
+ *
+ * Allocates 24 bytes, zero-initializes, sets numInputs=1,
+ * and installs rage::cmTangent vtable. Unary trigonometric operator.
+ */
+// cmOperatorCtor_vfn_0_7120_1 @ 0x82267120
+void* cmOperatorCtor_cmTangent() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmTangent_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmArcTangent factory ───────────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_71B0_1 @ 0x822671B0 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets numInputs=2,
+ * and installs rage::cmArcTangent vtable. Binary trigonometric operator (atan2).
+ */
+// cmOperatorCtor_vfn_0_71B0_1 @ 0x822671B0
+void* cmOperatorCtor_cmArcTangent() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmArcTangent_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CM operator inline constructors — animation camera and math operators
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern "C" const void* rage_cmAnimCamOrientation_vtable;  // @ 0x820381C4
+extern "C" const void* rage_cmAnimCamFov_vtable;          // @ 0x8203821C
+extern "C" const void* rage_cmAnimBonePosition_vtable;    // @ 0x82038324
+extern "C" const void* rage_cmAnimBoneOrientation_vtable; // @ 0x8203837C
+extern "C" const void* rage_cmAnimDuration_vtable;        // @ 0x820382CC
+extern "C" const void* rage_cmAnimCamFStop_vtable;        // @ 0x82038274
+extern "C" const void* rage_cmAbs_vtable;                 // @ 0x82053E8C
+extern "C" const void* rage_cmSign_vtable;                // @ 0x82053EE4
+extern "C" const void* rage_cmInverse_vtable;             // @ 0x82053E34
+extern "C" const void* rage_cmLerp_vtable;                // @ 0x82053FEC
+
+// ── rage::cmAnimCamOrientation inline constructor ────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5AD0_1 @ 0x82185AD0 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets field+28 to 2 (numInputs),
+ * and sets vtable to rage::cmAnimCamOrientation.
+ */
+// cmOperatorCtor_vfn_0_5AD0_1 @ 0x82185AD0
+void* cmOperatorCtor_cmAnimCamOrientation() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimCamOrientation_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimCamFov inline constructor ────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5B68_1 @ 0x82185B68 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets field+28 to 2 (numInputs),
+ * and sets vtable to rage::cmAnimCamFov.
+ */
+// cmOperatorCtor_vfn_0_5B68_1 @ 0x82185B68
+void* cmOperatorCtor_cmAnimCamFov() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimCamFov_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimBonePosition inline constructor ──────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5C00_1 @ 0x82185C00 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets field+36 to 3 (numInputs),
+ * and sets vtable to rage::cmAnimBonePosition.
+ */
+// cmOperatorCtor_vfn_0_5C00_1 @ 0x82185C00
+void* cmOperatorCtor_cmAnimBonePosition() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimBonePosition_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimBoneOrientation inline constructor ───────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5CA0_1 @ 0x82185CA0 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets field+36 to 3 (numInputs),
+ * and sets vtable to rage::cmAnimBoneOrientation.
+ */
+// cmOperatorCtor_vfn_0_5CA0_1 @ 0x82185CA0
+void* cmOperatorCtor_cmAnimBoneOrientation() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimBoneOrientation_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimDuration inline constructor ──────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5D40_1 @ 0x82185D40 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmAnimDuration.
+ */
+// cmOperatorCtor_vfn_0_5D40_1 @ 0x82185D40
+void* cmOperatorCtor_cmAnimDuration() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimDuration_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimCamFStop inline constructor ──────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5DD0_1 @ 0x82185DD0 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets field+28 to 2 (numInputs),
+ * and sets vtable to rage::cmAnimCamFStop.
+ */
+// cmOperatorCtor_vfn_0_5DD0_1 @ 0x82185DD0
+void* cmOperatorCtor_cmAnimCamFStop() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimCamFStop_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAbs inline constructor ───────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7248_1 @ 0x82267248 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmAbs.
+ */
+// cmOperatorCtor_vfn_0_7248_1 @ 0x82267248
+void* cmOperatorCtor_cmAbs() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAbs_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSign inline constructor ──────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_72D8_1 @ 0x822672D8 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmSign.
+ */
+// cmOperatorCtor_vfn_0_72D8_1 @ 0x822672D8
+void* cmOperatorCtor_cmSign() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSign_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmInverse inline constructor ───────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7368_1 @ 0x82267368 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmInverse.
+ */
+// cmOperatorCtor_vfn_0_7368_1 @ 0x82267368
+void* cmOperatorCtor_cmInverse() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmInverse_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmLerp inline constructor ──────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_73F8_1 @ 0x822673F8 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets field+36 to 3 (numInputs),
+ * and sets vtable to rage::cmLerp.
+ */
+// cmOperatorCtor_vfn_0_73F8_1 @ 0x822673F8
+void* cmOperatorCtor_cmLerp() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmLerp_vtable;
+        return mem;
+    }
+    return nullptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

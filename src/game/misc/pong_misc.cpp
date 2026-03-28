@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" {
     void  rage_free(void* ptr);                  // @ 0x820C00C0
-    void* rage_alloc(uint32_t size);                // @ 0x820DEC88
+    void* xe_EC88(uint32_t size);                // @ 0x820DEC88
     void  util_CE30(void* slot);                 // @ 0x8234CE30 - init parStructure
 }
 
@@ -22,7 +22,7 @@ namespace rage {
 }
 
 // Logging stub (calls internal debug printf, no-op in release builds)
-extern void rage_DebugLog(const char* fmt, ...); // @ 0x8240E6D0
+extern void nop_8240E6D0(const char* fmt, ...); // @ 0x8240E6D0
 
 // Field registration helper (rage serialization system)
 // game_8F58: registers a field of 'obj' with the data system
@@ -42,7 +42,7 @@ extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, 
 // at +0x08 (m_pStates).
 //
 // The destructor pattern:
-//   1. Calls the internal state-teardown helper (fsmMachine_Destroy),
+//   1. Calls the internal state-teardown helper (fsmMachine_Destructor_27A8),
 //      which first resets the vtable to the base-class (rage::datBase) vtable
 //      and frees m_pStates if non-null.
 //   2. If the 'delete self' flag (bit 0 of the flags parameter) is set,
@@ -68,7 +68,7 @@ fsmMachine::~fsmMachine()
     //   if (m_pStates) { rage::MemFree(m_pStates); m_pStates = nullptr; }
     //   this->vtable    = &fsmMachine::vtable;       // 0x8204DD14 (restored)
     //
-    // The helper (fsmMachine_Destroy @ 0x822227A8) handles this
+    // The helper (fsmMachine_Destructor_27A8 @ 0x822227A8) handles this
     // sequence.  After it returns the caller checks bit 0 of 'flags'; if set,
     // rage::MemFree is called on `this`.
     //
@@ -575,7 +575,7 @@ const void* assetVersionsCharSpecific::GetTypeDescriptor() const
 
 extern "C" {
     // External function declarations
-    void hsmContext_SetNextState(void* hsmContext, int stateIndex);
+    void hsmContext_SetNextState_2800(void* hsmContext, int stateIndex);
 }
 
 /**
@@ -599,7 +599,7 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     // Format: "eSessionTimeSyncMessage %s"
     // This appears to be session synchronization logging
     const char* logFormat = (const char*)0x820712CC;  // "eSessionTimeSyncMessage %s"
-    rage_DebugLog(logFormat, 0, 0, 0, 4, 0, 4);
+    nop_8240E6D0(logFormat, 0, 0, 0, 4, 0, 4);
     
     // Call virtual method slot 3 on HSM context
     // This is likely an initialization or reset method
@@ -634,7 +634,7 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     struct2[3] = 4;                   // Count/size
     
     // Transition to state 2
-    hsmContext_SetNextState(hsmContext, 2);
+    hsmContext_SetNextState_2800(hsmContext, 2);
     
     // Store time value at offset +1088
     *(float*)((char*)pContext + 1088) = timeValue;
@@ -689,7 +689,7 @@ void io_9B88_w(io* self) {
 // pg_4A58_fw @ 0x821F4A58 | size: 0x7C
 //
 // Page group input handler with conditional flag check.
-// Builds a parameter array and delegates to pgPageGroup_DispatchEvent for processing.
+// Builds a parameter array and delegates to pg_6F68 for processing.
 //
 // Parameters:
 //   - pPageGroup: Page group context object
@@ -702,14 +702,14 @@ void io_9B88_w(io* self) {
 
 // External declarations
 extern uint8_t g_uiInputFlag;  // @ SDA+25804 (0x826064CC) - UI input enable flag
-extern bool pgPageGroup_DispatchEvent(void* pInputValue, void* pPageGroup, int eventType, 
+extern bool pg_6F68(void* pInputValue, void* pPageGroup, int eventType, 
                     uint32_t* params, int paramCount);
 
 /**
  * pg_4A58_fw @ 0x821F4A58 | size: 0x7C
  * 
  * Processes page group input with conditional flag checking.
- * Builds a 4-element parameter array and calls pgPageGroup_DispatchEvent for processing.
+ * Builds a 4-element parameter array and calls pg_6F68 for processing.
  */
 bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
     // Build parameter array on stack
@@ -726,7 +726,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
     
     // Call page group processor
     // Parameters: (inputValue, pageGroup, eventType=19, params, paramCount=2)
-    bool result = pgPageGroup_DispatchEvent(pInputValue, pPageGroup, 19, params, 2);
+    bool result = pg_6F68(pInputValue, pPageGroup, 19, params, 2);
     
     // Return true if processing succeeded (non-zero result)
     return result;
@@ -736,7 +736,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
  * pg_4900_fw @ 0x821F4900 | size: 0x5C
  * 
  * Page group input handler wrapper.
- * Swaps parameters and calls pgPageGroup_DispatchEvent with fixed event type and parameters.
+ * Swaps parameters and calls pg_6F68 with fixed event type and parameters.
  * 
  * Parameters:
  *   - pPageGroup: Page group context object
@@ -754,9 +754,9 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
     params[1] = 1;
     
     // Call page group processor with swapped parameters
-    // Note: pgPageGroup_DispatchEvent expects (inputValue, pageGroup, ...) but we receive (pageGroup, inputValue)
+    // Note: pg_6F68 expects (inputValue, pageGroup, ...) but we receive (pageGroup, inputValue)
     // Parameters: (inputValue, pageGroup, eventType=16, params, paramCount=1)
-    uint8_t result = pgPageGroup_DispatchEvent(pInputValue, pPageGroup, 16, params, 1);
+    uint8_t result = pg_6F68(pInputValue, pPageGroup, 16, params, 1);
     
     // Return true if processing succeeded (non-zero result)
     return (result != 0);
@@ -770,8 +770,8 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
 // processing, and page transitions.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Forward declaration for pgPageGroup_DispatchEvent (not yet lifted)
-extern "C" uint8_t pgPageGroup_DispatchEvent(void* pageGroup, void* context, int eventType, 
+// Forward declaration for pg_6F68 (not yet lifted)
+extern "C" uint8_t pg_6F68(void* pageGroup, void* context, int eventType, 
                            uint32_t* eventData, int enableFlag, int reserved);
 
 /**
@@ -799,7 +799,7 @@ bool pg_6770_fw(void* context, void* pageGroup) {
     //   - eventData contains event-specific data
     //   - 1 enables processing
     //   - 0 is reserved/unused
-    uint8_t handled = pgPageGroup_DispatchEvent(pageGroup, context, 9, eventData, 1, 0);
+    uint8_t handled = pg_6F68(pageGroup, context, 9, eventData, 1, 0);
     
     // Return true if event was handled, false otherwise
     return (handled != 0);
@@ -913,12 +913,12 @@ int CCalMoviePlayer::DispatchSlot37() {  // ED18_p33
  * Both log a debug message and return STATUS_NOT_IMPLEMENTED.
  */
 int CCalMoviePlayer::Rewind() {  // E758
-    rage_DebugLog("CCalMoviePlayer::Rewind() - not implemented");
+    nop_8240E6D0("CCalMoviePlayer::Rewind() - not implemented");
     return -1;  // STATUS_NOT_IMPLEMENTED
 }
 
 int CCalMoviePlayer::Seek() {  // Seek stub
-    rage_DebugLog("CCalMoviePlayer::Seek() - not implemented");
+    nop_8240E6D0("CCalMoviePlayer::Seek() - not implemented");
     return -1;
 }
 
@@ -1031,4 +1031,682 @@ int CCalMoviePlayer::ComputeFrameSize() {  // 3F00_h
     int width = *(int*)((char*)this + 128);
     int height = *(int*)((char*)this + 124);
     return (width * height * 3) >> 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Batch 2: Intermediate Functions (72–176B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helpers used by batch 2 functions
+extern "C" void CCalMoviePlayer_13(void* obj);  // @ 0x8248FA48 - event cleanup
+extern "C" void util_85C8(void* obj);            // @ 0x824885C8 - base destructor
+extern "C" void util_0850(void* obj);            // @ 0x82460850 - physics instance release
+extern "C" void* _crt_tls_fiber_setup();         // @ 0x82566B78 - fiber context setup
+extern "C" void _locale_register(void* ptr);     // @ 0x820C02D0 - memory dealloc
+extern "C" void pg_6C80_g(int frames);           // @ 0x82566C80 - wait N frames
+extern "C" void pg_6F48(void* ptr);              // @ 0x82566F48 - release page ref
+
+/**
+ * CCalMoviePlayer::DtorIntermediate @ 0x824915C8 | size: 0x40
+ *
+ * Intermediate destructor — resets vtable to base CCalMoviePlayer vtable
+ * (0x820092C0), runs event cleanup, then destroys the base object.
+ * Called by derived class destructors before their own cleanup.
+ */
+void CCalMoviePlayer::DtorIntermediate() {
+    *(void**)this = (void*)0x820092C0;  // Restore CCalMoviePlayer vtable
+    CCalMoviePlayer_13(this);            // Clean up event objects
+    util_85C8(this);                     // Destroy base class
+}
+
+/**
+ * CCalMoviePlayer::SaveAndReplaceFiberContext @ 0x8235EB30 | size: 0x40
+ *
+ * If a fiber context is already stored at +10376, releases it first.
+ * Then creates a new fiber context via _crt_tls_fiber_setup and stores
+ * it at +10376. Used to switch video decode onto a dedicated fiber.
+ */
+void CCalMoviePlayer::SaveAndReplaceFiberContext() {
+    uint32_t existingCtx = *(uint32_t*)((char*)this + 10376);
+    if (existingCtx != 0) {
+        _crt_tls_fiber_setup();  // Release existing context
+    }
+    void* newCtx = _crt_tls_fiber_setup();
+    *(void**)((char*)this + 10376) = newCtx;
+}
+
+/**
+ * CCalMoviePlayer::QueryPhysicsInstance @ 0x82483AD8 | size: 0x48
+ *
+ * Queries the physics instance at field +56 via util_0850 (release/query),
+ * then writes the current value of field +56 into *outResult.
+ * Returns 0.
+ */
+int CCalMoviePlayer::QueryPhysicsInstance(void* outResult) {
+    void* physInst = *(void**)((char*)this + 56);
+    util_0850(physInst);
+    void* result = *(void**)((char*)this + 56);
+    *(void**)outResult = result;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::DeletingDestructor @ 0x82487240 | size: 0x64
+ *
+ * Virtual deleting destructor for the derived CCalMoviePlayer variant.
+ * Sets vtable to derived vtable, calls DtorIntermediate (15C8_w),
+ * then conditionally frees `this` if flags bit 0 is set.
+ *
+ * Vtable set: 0x82008A00 (derived CCalMoviePlayer vtable)
+ */
+void CCalMoviePlayer::DeletingDestructor(int flags) {
+    *(void**)this = (void*)0x82008A00;  // Set derived vtable
+    DtorIntermediate();                  // Run intermediate destructor chain
+    if (flags & 1) {
+        _locale_register(this);          // Free object memory
+    }
+}
+
+/**
+ * CCalMoviePlayer::AdvanceReadIndexAtomic @ 0x8248DCC8 | size: 0x68
+ *
+ * Increments the read index at +56. If it reaches the buffer count at +52,
+ * wraps to 0. Then atomically decrements the available-buffer counter at +68
+ * using lwarx/stwcx. (PPC atomic CAS loop). This is the consumer side of
+ * the lock-free ring buffer — signals one buffer consumed.
+ */
+void CCalMoviePlayer::AdvanceReadIndexAtomic() {
+    int32_t readIdx = *(int32_t*)((char*)this + 56);
+    readIdx++;
+    *(int32_t*)((char*)this + 56) = readIdx;
+
+    int32_t bufCount = *(int32_t*)((char*)this + 52);
+    if ((uint32_t)readIdx >= (uint32_t)bufCount) {
+        *(int32_t*)((char*)this + 56) = 0;
+    }
+
+    // Atomic decrement of available-buffer count at +68
+    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 68);
+    int32_t oldVal, newVal;
+    do {
+        oldVal = *pAvail;
+        newVal = oldVal - 1;
+    } while (!__sync_bool_compare_and_swap(pAvail, oldVal, newVal));
+}
+
+/**
+ * CCalMoviePlayer::AdvanceWriteIndexAtomic @ 0x8248DD30 | size: 0x68
+ *
+ * Increments the write index at +60. If it reaches the buffer count at +52,
+ * wraps to 0. Then atomically increments the available-buffer counter at +68.
+ * This is the producer side of the lock-free ring buffer — signals one buffer
+ * filled and ready for consumption.
+ */
+void CCalMoviePlayer::AdvanceWriteIndexAtomic() {
+    int32_t writeIdx = *(int32_t*)((char*)this + 60);
+    writeIdx++;
+    *(int32_t*)((char*)this + 60) = writeIdx;
+
+    int32_t bufCount = *(int32_t*)((char*)this + 52);
+    if ((uint32_t)writeIdx >= (uint32_t)bufCount) {
+        *(int32_t*)((char*)this + 60) = 0;
+    }
+
+    // Atomic increment of available-buffer count at +68
+    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 68);
+    int32_t oldVal, newVal;
+    do {
+        oldVal = *pAvail;
+        newVal = oldVal + 1;
+    } while (!__sync_bool_compare_and_swap(pAvail, oldVal, newVal));
+}
+
+/**
+ * CCalMoviePlayer::DispatchVSlot9ZeroArgs @ 0x8248E1E0 | size: 0x48
+ *
+ * Prepares a 28-byte zero-filled parameter block on the stack and dispatches
+ * vtable slot 9 (byte offset +36) with it as the second argument.
+ * Slot 9 is the "process command" entry point — zero args = no-op/status query.
+ */
+void CCalMoviePlayer::DispatchVSlot9ZeroArgs() {
+    uint8_t params[28] = {0};
+    typedef void (*VSlot9Fn)(void*, void*);
+    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
+    fn(this, params);
+}
+
+/**
+ * CCalMoviePlayer::DispatchVSlot9OneArg @ 0x8248E228 | size: 0x50
+ *
+ * Same as DispatchVSlot9ZeroArgs but writes arg0 into the first 4 bytes
+ * of the parameter block before dispatching.
+ */
+void CCalMoviePlayer::DispatchVSlot9OneArg(uint32_t arg0) {
+    uint8_t params[28] = {0};
+    *(uint32_t*)&params[0] = arg0;
+    typedef void (*VSlot9Fn)(void*, void*);
+    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
+    fn(this, params);
+}
+
+/**
+ * CCalMoviePlayer::DispatchVSlot9TwoArgs @ 0x8248E278 | size: 0x54
+ *
+ * Same as DispatchVSlot9OneArg but writes a second argument at offset +4
+ * in the parameter block before dispatching vtable slot 9.
+ */
+void CCalMoviePlayer::DispatchVSlot9TwoArgs(uint32_t a0, uint32_t a1) {
+    uint8_t params[28] = {0};
+    *(uint32_t*)&params[0] = a0;
+    *(uint32_t*)&params[4] = a1;
+    typedef void (*VSlot9Fn)(void*, void*);
+    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
+    fn(this, params);
+}
+
+/**
+ * CCalMoviePlayer::SetBufferPairByChannel @ 0x8248E2E8 | size: 0xAC
+ *
+ * Sets a pair of buffer pointers (bufA at +52/56/60/64, bufB at +68/72/76/80)
+ * based on channel index. Calls vtable slot 3 first (lock/prepare), then
+ * vtable slot 5 (unlock/commit) after writing. Channel mapping (1-indexed):
+ *   channel 1 → offsets +60, +76   (channel A left)
+ *   channel 2 → offsets +64, +80   (channel A right)
+ *   channel 3 → offsets +52, +68   (channel B / default)
+ *   channel 4 → offsets +56, +72   (channel B alternate)
+ * Returns 0.
+ */
+int CCalMoviePlayer::SetBufferPairByChannel(uint32_t channel, uint32_t bufA, uint32_t bufB) {
+    // Lock via vtable slot 3
+    typedef void (*LockFn)(void*);
+    ((LockFn)(*(void***)this)[3])(this);
+
+    switch (channel - 1) {
+    case 3:  // channel 4
+        *(uint32_t*)((char*)this + 56) = bufA;
+        *(uint32_t*)((char*)this + 72) = bufB;
+        break;
+    case 0:  // channel 1
+        *(uint32_t*)((char*)this + 60) = bufA;
+        *(uint32_t*)((char*)this + 76) = bufB;
+        break;
+    case 1:  // channel 2
+        *(uint32_t*)((char*)this + 64) = bufA;
+        *(uint32_t*)((char*)this + 80) = bufB;
+        break;
+    default: // channel 3 or out of range
+        *(uint32_t*)((char*)this + 52) = bufA;
+        *(uint32_t*)((char*)this + 68) = bufB;
+        break;
+    }
+
+    // Unlock via vtable slot 5
+    typedef void (*UnlockFn)(void*);
+    ((UnlockFn)(*(void***)this)[5])(this);
+
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::SetAudioInterface @ 0x8248E398 | size: 0x7C
+ *
+ * Replaces the audio interface stored at +44. If the new interface is non-null,
+ * activates it via vtable slot 1. If an existing interface was stored, releases
+ * it via vtable slot 2 and clears the pointer before storing the new one.
+ * Returns 0.
+ */
+int CCalMoviePlayer::SetAudioInterface(void* audioIface) {
+    // Activate new interface if non-null
+    if (audioIface != nullptr) {
+        typedef void (*ActivateFn)(void*);
+        void** vt = *(void***)audioIface;
+        ((ActivateFn)vt[1])(audioIface);
+    }
+
+    // Release existing interface if present
+    void* existing = *(void**)((char*)this + 44);
+    if (existing != nullptr) {
+        typedef void (*ReleaseFn)(void*);
+        void** vt = *(void***)existing;
+        ((ReleaseFn)vt[2])(existing);
+        *(void**)((char*)this + 44) = nullptr;
+    }
+
+    // Store new interface
+    *(void**)((char*)this + 44) = audioIface;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::QueryVideoProperties @ 0x8248E7C8 | size: 0x9C
+ *
+ * Queries video dimensions and optionally an extra property.
+ * Calls vtable slot 3 (lock), then:
+ *   - If outWidth non-null, calls vtable slot 60 to get width, stores result.
+ *   - If outHeight non-null, calls vtable slot 61 to get height, stores result.
+ * Calls vtable slot 5 (unlock).
+ * If outUnused non-null, stores 0 into it.
+ * Returns 0.
+ */
+void CCalMoviePlayer::QueryVideoProperties(void* outWidth, void* outHeight, void* outUnused) {
+    // Lock
+    typedef void (*LockFn)(void*);
+    ((LockFn)(*(void***)this)[3])(this);
+
+    // Query width via vtable slot 60
+    if (outWidth != nullptr) {
+        typedef uint32_t (*GetWidthFn)(void*);
+        uint32_t w = ((GetWidthFn)(*(void***)this)[60])(this);
+        *(uint32_t*)outWidth = w;
+    }
+
+    // Query height via vtable slot 61
+    if (outHeight != nullptr) {
+        typedef uint32_t (*GetHeightFn)(void*);
+        uint32_t h = ((GetHeightFn)(*(void***)this)[61])(this);
+        *(uint32_t*)outHeight = h;
+    }
+
+    // Unlock
+    typedef void (*UnlockFn)(void*);
+    ((UnlockFn)(*(void***)this)[5])(this);
+
+    // Clear optional output
+    if (outUnused != nullptr) {
+        *(uint32_t*)outUnused = 0;
+    }
+}
+
+/**
+ * CCalMoviePlayer::GetAudioInterfaceRef @ 0x8248E868 | size: 0x60
+ *
+ * Returns the audio interface pointer at +44 via outAudioIface. If the
+ * interface is non-null, activates it first via vtable slot 1.
+ * Returns 0.
+ */
+int CCalMoviePlayer::GetAudioInterfaceRef(void* outAudioIface) {
+    void* audioIface = *(void**)((char*)this + 44);
+    if (audioIface != nullptr) {
+        typedef void (*ActivateFn)(void*);
+        void** vt = *(void***)audioIface;
+        ((ActivateFn)vt[1])(audioIface);
+    }
+    void* result = *(void**)((char*)this + 44);
+    *(void**)outAudioIface = result;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::QueryAudioInterfaceViaProvider @ 0x8248E8C8 | size: 0x9C
+ *
+ * Queries the audio provider at +44 via its vtable slot 16 (create/get
+ * audio interface). If the provider returns a non-null interface, calls
+ * CCalMoviePlayer_3AD8_h on it to extract the physics instance, releases
+ * the temporary interface via vtable slot 2, and returns the result.
+ * If the provider returns null, stores 0 into *outResult.
+ * Returns 0.
+ */
+int CCalMoviePlayer::QueryAudioInterfaceViaProvider(void* outResult) {
+    void* provider = *(void**)((char*)this + 44);
+    uint32_t tempIface = 0;
+
+    // Call provider vtable slot 16 to get temporary interface
+    typedef void (*QueryFn)(void*, void*, uint32_t, uint32_t);
+    void** provVt = *(void***)provider;
+    ((QueryFn)provVt[16])(provider, &tempIface, 0, 0);
+
+    if (tempIface != 0) {
+        // Extract physics instance from temporary interface
+        int ret = QueryPhysicsInstance(outResult);
+
+        // Release temporary interface via vtable slot 2
+        void** tempVt = *(void***)(uintptr_t)tempIface;
+        if (tempVt != nullptr) {
+            typedef void (*ReleaseFn)(void*);
+            ((ReleaseFn)tempVt[2])((void*)(uintptr_t)tempIface);
+        }
+        return ret;
+    }
+
+    // No interface available
+    *(uint32_t*)outResult = 0;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::StopPlaybackSimple @ 0x8248EBF0 | size: 0x74
+ *
+ * Simplified stop: if param is non-null, calls the audio provider's
+ * vtable slot 19 (stop) with mode and param. Then calls vtable slot 21
+ * (finalize). If field +240 is non-zero, calls pg_6F48 on field +268
+ * to release a page reference, and clears field +240.
+ */
+void CCalMoviePlayer::StopPlaybackSimple(uint32_t mode, void* param) {
+    if (param != nullptr) {
+        void* provider = *(void**)((char*)this + 44);
+        typedef void (*StopFn)(void*, uint32_t, void*);
+        void** provVt = *(void***)provider;
+        ((StopFn)provVt[19])(provider, mode, param);
+    }
+
+    // Finalize via provider vtable slot 21
+    void* provider = *(void**)((char*)this + 44);
+    typedef void (*FinalizeFn)(void*);
+    void** provVt = *(void***)provider;
+    ((FinalizeFn)provVt[21])(provider);
+
+    // Release page reference if pending
+    int32_t pendingFlag = *(int32_t*)((char*)this + 240);
+    if (pendingFlag != 0) {
+        void* pageRef = *(void**)((char*)this + 268);
+        pg_6F48(pageRef);
+        *(int32_t*)((char*)this + 240) = 0;
+    }
+}
+
+/**
+ * CCalMoviePlayer::StopPlaybackFull @ 0x8248EB40 | size: 0xB0
+ *
+ * Full stop with buffering delay: calls vtable slot 62 (IsPlaying check).
+ * If not playing (bit 0 == 0), calls audio provider vtable slot 19 with
+ * mode. If the reported buffer count > 5, waits (bufCount - 5) frames
+ * via pg_6C80_g to allow buffers to drain. Then calls vtable slot 21
+ * (finalize) and clears any pending page reference at +240.
+ */
+void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
+    // Check if still playing via vtable slot 62
+    typedef uint32_t (*IsPlayingFn)(void*);
+    uint32_t playing = ((IsPlayingFn)(*(void***)this)[62])(this);
+
+    if ((playing & 1) == 0) {
+        // Call stop on audio provider
+        void* provider = *(void**)((char*)this + 44);
+        typedef void (*StopFn)(void*, uint32_t, void*);
+        uint32_t bufCount = 0;
+        void** provVt = *(void***)provider;
+        ((StopFn)provVt[19])(provider, mode, &bufCount);
+
+        // If buffer count > 5, wait for buffers to drain
+        if ((int32_t)bufCount > 5) {
+            pg_6C80_g((int32_t)bufCount - 5);
+        }
+    }
+
+    // Finalize via provider vtable slot 21
+    void* provider2 = *(void**)((char*)this + 44);
+    typedef void (*FinalizeFn)(void*);
+    void** provVt2 = *(void***)provider2;
+    ((FinalizeFn)provVt2[21])(provider2);
+
+    // Release page reference if pending
+    int32_t pendingFlag2 = *(int32_t*)((char*)this + 240);
+    if (pendingFlag2 != 0) {
+        void* pageRef2 = *(void**)((char*)this + 268);
+        pg_6F48(pageRef2);
+        *(int32_t*)((char*)this + 240) = 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Batch 3: Flag Management, State Control, Destructors
+// 10 functions (64-132B each)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helpers
+extern void rage_EAC0(void* ptr);   // @ 0x8235EAC0 - AddRef on video callback
+extern void rage_EAD8(void* ptr);   // @ 0x8235EAD8 - Release video callback
+
+/**
+ * CCalMoviePlayer::SetStatusFlagsA @ 0x8248EF70 | size: 0x64
+ *
+ * Atomically ORs the given bitmask into the status flags at offset +220.
+ * Acquires the lock (vtable slot 3) before modifying, then notifies
+ * (vtable slot 5) after the write.
+ */
+void CCalMoviePlayer::SetStatusFlagsA(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 220);
+    *(uint32_t*)(self + 220) = current | flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::SetStatusFlagsB @ 0x8248EFD8 | size: 0x64
+ *
+ * Atomically ORs the given bitmask into the status flags at offset +224.
+ */
+void CCalMoviePlayer::SetStatusFlagsB(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 224);
+    *(uint32_t*)(self + 224) = current | flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::SetStatusFlagsC @ 0x8248F040 | size: 0x64
+ *
+ * Atomically ORs the given bitmask into the status flags at offset +228.
+ */
+void CCalMoviePlayer::SetStatusFlagsC(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 228);
+    *(uint32_t*)(self + 228) = current | flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::ClearStatusFlagsA @ 0x8248F0A8 | size: 0x64
+ *
+ * Atomically clears (AND-NOT) the given bitmask from offset +220.
+ */
+void CCalMoviePlayer::ClearStatusFlagsA(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 220);
+    *(uint32_t*)(self + 220) = current & ~flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::ClearStatusFlagsB @ 0x8248F110 | size: 0x64
+ *
+ * Atomically clears (AND-NOT) the given bitmask from offset +224.
+ */
+void CCalMoviePlayer::ClearStatusFlagsB(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 224);
+    *(uint32_t*)(self + 224) = current & ~flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::ClearStatusFlagsC @ 0x8248F178 | size: 0x64
+ *
+ * Atomically clears (AND-NOT) the given bitmask from offset +228.
+ */
+void CCalMoviePlayer::ClearStatusFlagsC(uint32_t flagMask) {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    void** vtable = *(void***)this;
+
+    ((LockFn)vtable[3])(this);
+
+    char* self = (char*)this;
+    uint32_t current = *(uint32_t*)(self + 228);
+    *(uint32_t*)(self + 228) = current & ~flagMask;
+
+    ((UnlockFn)vtable[5])(this);
+}
+
+/**
+ * CCalMoviePlayer::FlushAndNotify @ 0x8248F1E0 | size: 0x84
+ *
+ * Atomically decrements the semaphore at offset +248 (using compare-and-swap),
+ * then calls vtable slot 23 on the audio source to flush pending data.
+ * Finally dispatches vtable slots 49 and 51 on this object to notify
+ * downstream consumers that a frame has been consumed.
+ */
+void CCalMoviePlayer::FlushAndNotify() {
+    char* self = (char*)this;
+
+    // Atomically decrement the semaphore at +248
+    volatile int32_t* pSemaphore = (volatile int32_t*)(self + 248);
+    int32_t oldVal;
+    do {
+        oldVal = *pSemaphore;
+    } while (!__sync_bool_compare_and_swap(pSemaphore, oldVal, oldVal - 1));
+
+    // Flush the audio source via vtable slot 23
+    void* pAudio = *(void**)(self + 44);
+    {
+        typedef void (*FlushFn)(void*);
+        void** audioVtable = *(void***)pAudio;
+        ((FlushFn)audioVtable[23])(pAudio);
+    }
+
+    // Notify via vtable slot 49 (signal frame consumed)
+    {
+        typedef void (*NotifyFn)(void*);
+        void** vtable = *(void***)this;
+        ((NotifyFn)vtable[49])(this);
+    }
+
+    // Notify via vtable slot 51 (signal completion)
+    {
+        typedef void (*CompleteFn)(void*);
+        void** vtable = *(void***)this;
+        ((CompleteFn)vtable[51])(this);
+    }
+}
+
+/**
+ * CCalMoviePlayer::SetVideoCallback @ 0x8248FCF0 | size: 0x64
+ *
+ * Replaces the video callback object at offset +48. If a new callback is
+ * provided, calls rage_EAC0 (AddRef) on it. If an existing callback is
+ * stored, calls rage_EAD8 (Release) before replacing. Returns 0.
+ *
+ * This mirrors SetAudioInterface but for the video path, using direct
+ * helper calls rather than vtable dispatch for ref-counting.
+ */
+int CCalMoviePlayer::SetVideoCallback(void* pCallback) {
+    // AddRef on the new callback if non-null
+    if (pCallback != nullptr) {
+        rage_EAC0(pCallback);
+    }
+
+    // Release the old callback if present
+    char* self = (char*)this;
+    void* pOldCallback = *(void**)(self + 48);
+    if (pOldCallback != nullptr) {
+        rage_EAD8(pOldCallback);
+        *(void**)(self + 48) = nullptr;
+    }
+
+    // Store the new callback
+    *(void**)(self + 48) = pCallback;
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::ValidateOutputFormat @ 0x8248E450 | size: 0xD0
+ *
+ * Validates the current output format by checking if both width (vtable
+ * slot 60) and height (vtable slot 61) equal 3 (a special "ready" sentinel).
+ * If both match, calls vtable slots 68 and 69 with argument 1 to activate
+ * the output and returns 0 (success). Otherwise returns E_FAIL (0x80004005).
+ *
+ * Acquires lock (slot 3) before checking and releases (slot 5) after.
+ */
+int CCalMoviePlayer::ValidateOutputFormat() {
+    typedef void (*LockFn)(void*);
+    typedef void (*UnlockFn)(void*);
+    typedef int (*GetDimFn)(void*);
+    typedef void (*ActivateFn)(void*, int);
+    void** vtable = *(void***)this;
+
+    // Lock
+    ((LockFn)vtable[3])(this);
+
+    int result;
+
+    // Check width via vtable slot 60
+    int width = ((GetDimFn)vtable[60])(this);
+    if (width == 3) {
+        // Check height via vtable slot 61
+        int height = ((GetDimFn)vtable[61])(this);
+        if (height == 3) {
+            // Both dimensions are the "ready" sentinel — activate outputs
+            ((ActivateFn)vtable[68])(this, 1);
+            ((ActivateFn)vtable[69])(this, 1);
+            result = 0;
+        } else {
+            result = (int)0x80004005;  // E_FAIL
+        }
+    } else {
+        result = (int)0x80004005;  // E_FAIL
+    }
+
+    // Unlock
+    ((UnlockFn)vtable[5])(this);
+
+    return result;
+}
+
+/**
+ * CCalMoviePlayer::ScalarDeletingDtorBase @ 0x82491608 | size: 0x6C
+ *
+ * Scalar deleting destructor for the base CCalMoviePlayer class.
+ * Stamps the base vtable (0x820092C0), runs the event cleanup helper
+ * (CCalMoviePlayer_13), destroys the base object (util_85C8), and
+ * optionally frees memory if bit 0 of flags is set.
+ */
+void CCalMoviePlayer::ScalarDeletingDtorBase(int flags) {
+    // Stamp base CCalMoviePlayer vtable
+    *(void**)this = (void*)0x820092C0;
+
+    // Clean up events
+    CCalMoviePlayer_13(this);
+
+    // Destroy base object
+    util_85C8(this);
+
+    // Free if ownership flag set
+    if (flags & 1) {
+        rage_Free(this);
+    }
 }

@@ -28,10 +28,8 @@
  * This is the non-deleting destructor (vtable slot 0).
  */
 CPeakMeterEffect::~CPeakMeterEffect() {
-    // Increment reference count at +4
-    // Pattern: lwz r10, 4(r11); addi r3, r10, 1; stw r3, 4(r11)
-    int32_t* refCount = (int32_t*)((char*)this + 4);
-    (*refCount)++;
+    // Increment reference count (COM AddRef pattern in destructor)
+    m_refCount++;
 }
 
 /**
@@ -41,15 +39,13 @@ CPeakMeterEffect::~CPeakMeterEffect() {
  * When refcount reaches 0, clears effect data pointers at +28 and +32.
  */
 void CPeakMeterEffect::ScalarDtor(int flags) {
-    // Decrement reference count at +4
-    int32_t* refCount = (int32_t*)((char*)this + 4);
-    (*refCount)--;
-    
+    // Decrement reference count (COM Release pattern)
+    m_refCount--;
+
     // If refcount reaches 0, clear effect data
-    if (*refCount == 0) {
-        // Clear effect data pointers at +28 (+0x1C) and +32 (+0x20)
-        *(void**)((char*)this + 28) = nullptr;
-        *(void**)((char*)this + 32) = nullptr;
+    if (m_refCount == 0) {
+        m_pEffectData1 = nullptr;
+        m_pEffectData2 = nullptr;
     }
 }
 
@@ -66,8 +62,7 @@ void CPeakMeterEffect::ScalarDtor(int flags) {
  * Destructor - increments reference count.
  */
 CShelvingFilterEffect::~CShelvingFilterEffect() {
-    int32_t* refCount = (int32_t*)((char*)this + 4);
-    (*refCount)++;
+    m_refCount++;
 }
 
 /**
@@ -76,12 +71,11 @@ CShelvingFilterEffect::~CShelvingFilterEffect() {
  * Scalar deleting destructor - decrements reference count.
  */
 void CShelvingFilterEffect::ScalarDtor(int flags) {
-    int32_t* refCount = (int32_t*)((char*)this + 4);
-    (*refCount)--;
-    
-    if (*refCount == 0) {
-        *(void**)((char*)this + 28) = nullptr;
-        *(void**)((char*)this + 32) = nullptr;
+    m_refCount--;
+
+    if (m_refCount == 0) {
+        m_pEffectData1 = nullptr;
+        m_pEffectData2 = nullptr;
     }
 }
 
@@ -98,12 +92,11 @@ void CShelvingFilterEffect::ScalarDtor(int flags) {
  * Scalar deleting destructor - decrements reference count.
  */
 void CDelayEffect::ScalarDtor(int flags) {
-    int32_t* refCount = (int32_t*)((char*)this + 4);
-    (*refCount)--;
-    
-    if (*refCount == 0) {
-        *(void**)((char*)this + 28) = nullptr;
-        *(void**)((char*)this + 32) = nullptr;
+    m_refCount--;
+
+    if (m_refCount == 0) {
+        m_pEffectData1 = nullptr;
+        m_pEffectData2 = nullptr;
     }
 }
 

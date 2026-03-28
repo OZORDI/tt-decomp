@@ -12,39 +12,10 @@ struct SinglesNetworkClient;
 // External function declarations
 extern void SinglesNetworkClient_8CC0_w(void* ctx, void* base);
 extern void* xam_GetInitSingleton(void* ctx, void* base);
-extern void SinglesNetworkClient_0268_g(void* self);
+extern void SinglesNetworkClient_0268_g(void* ctx, void* base);
 extern void SinglesNetworkClient_8DF8_g(void* ctx, void* base);
-extern "C" uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bits);
-extern "C" void SinglesNetworkClient_8AE0_g(void* client);
-extern "C" uint32_t SinglesNetworkClient_0738_g(void* client, const char* str, uint32_t length);
-extern "C" uint32_t atSingleton_05F0_g(void* client, uint32_t value, int bits);
-extern "C" void ke_1B00(void* node);
-extern "C" uint8_t SinglesNetworkClient_B2A8_g(void* client);
-extern "C" void* SinglesNetworkClient_B1E8_g(void* client);
-extern "C" void* SinglesNetworkClient_9318_g(void* client, const char* key);
-extern "C" void* SinglesNetworkClient_9280_g(void* client, const char* key);
-extern "C" void* SinglesNetworkClient_A5C8_g(void* context);
-extern "C" void SinglesNetworkClient_B320_g(void* client);
-extern "C" void SinglesNetworkClient_0188_g(void* client, void* param);
-extern "C" uint32_t SinglesNetworkClient_0688_g(void* client, uint32_t value, int bits);
-extern "C" uint32_t SinglesNetworkClient_A868_g(const char* str);
-extern "C" void nop_8240E6D0(const char* msg);
-extern "C" void SinglesNetworkClient_3EE8_g(void* table, void* self);
-extern "C" void SinglesNetworkClient_09F0_g(void* client, void* buf, int size);
-extern uint16_t SinglesNetworkClient_8758_g(void* buffer);
-extern "C" void SinglesNetworkClient_1378_g(void* client);
-extern "C" void SinglesNetworkClient_1410_g(void* client, int index);
-extern "C" void SinglesNetworkClient_FA50(void* arrayEntry, void* param);
-extern "C" void SinglesNetworkClient_F090(void* deviceId, void* param);
-extern "C" void pg_C3B8_g(void* networkInterface, void* param);
-extern "C" void pg_6DC0_g(void* networkInterface, void* param);
-
-// External data symbols
-extern uint32_t lbl_825D15F0;
-extern uint32_t* lbl_8271A33C;
-extern const char lbl_8205C3AC[];
-extern const char lbl_8205AEF0[];
-extern const char lbl_820397A8[];
+extern void SinglesNetworkClient_0448_g(void* ctx, void* base);
+extern void SinglesNetworkClient_8AE0_g(void* ctx, void* base);
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,7 +124,7 @@ void SinglesNetworkClient_Initialize(void* client)
     // Load vtable pointer from global (cmRefreshableCtor vtable)
     // External vtable at 0x820533CC
     extern uint32_t g_cmRefreshableCtorVtable;
-    clientData[9] = (uint32_t)(uintptr_t)&g_cmRefreshableCtorVtable;  // offset +36
+    clientData[9] = (uint32_t)&g_cmRefreshableCtorVtable;  // offset +36
     
     // Zero out core fields
     clientData[0] = 0;   // vtable
@@ -590,13 +561,13 @@ int SinglesNetworkClient_ValidatePlayerStates(void* client)
     uint32_t* clientData = (uint32_t*)client;
     
     // Get player state 1 at offset +116
-    uint32_t* playerState1 = (uint32_t*)(uintptr_t)clientData[116 / 4];
+    uint32_t* playerState1 = (uint32_t*)clientData[116 / 4];
     if (playerState1 == nullptr || playerState1[472 / 4] == 0) {
         return 0;
     }
     
     // Get player state 2 at offset +120
-    uint32_t* playerState2 = (uint32_t*)(uintptr_t)clientData[120 / 4];
+    uint32_t* playerState2 = (uint32_t*)clientData[120 / 4];
     if (playerState2 == nullptr || playerState2[472 / 4] == 0) {
         return 0;
     }
@@ -809,7 +780,7 @@ void SinglesNetworkClient_AllocateNetworkEvent(void* client, void** outEventPtr)
     // Get event object from pool at calculated offset
     uint32_t poolSlotOffset = (poolIndex + 2) * 4;
     uint32_t* poolSlot = (uint32_t*)((char*)client + poolSlotOffset);
-    uint32_t* eventObject = (uint32_t*)(uintptr_t)(*poolSlot + timestamp);
+    uint32_t* eventObject = (uint32_t*)(*poolSlot + timestamp);
     
     if (eventObject == nullptr) {
         return;
@@ -927,18 +898,18 @@ void SinglesNetworkClient_LinkNode(void* source, void* node)
     
     // Initialize the node structure at offset +28
     uint32_t* nodeStruct = (uint32_t*)((char*)node + 28);
-    SinglesNetworkClient_0268_g(nodeStruct);
+    SinglesNetworkClient_0268_g(nodeStruct, nullptr);
     
     // Get the list head from source vtable
-    uint32_t* listHead = (uint32_t*)(uintptr_t)sourceData[0];
+    uint32_t* listHead = (uint32_t*)sourceData[0];
     
     if (node != nullptr) {
         // Get the next pointer from list head
-        uint32_t* nextNode = (uint32_t*)(uintptr_t)listHead[3];
+        uint32_t* nextNode = (uint32_t*)listHead[3];
         
         // Link node into the list
-        nodeData[0] = (uint32_t)(uintptr_t)nextNode;
-        listHead[3] = (uint32_t)(uintptr_t)node;
+        nodeData[0] = (uint32_t)nextNode;
+        listHead[3] = (uint32_t)node;
         
         // Increment reference count (stored as uint16_t at offset +6)
         uint16_t* refCount = (uint16_t*)((char*)listHead + 6);
@@ -1005,50 +976,50 @@ void* SinglesNetworkClient_GetOrCreateSession(void* client)
     
     // Access global game loop object
     extern uint32_t g_loop_obj_ptr;
-    uint32_t* loopObj = (uint32_t*)(uintptr_t)g_loop_obj_ptr;
-    uint32_t* loopData = (uint32_t*)(uintptr_t)loopObj[0];
-
+    uint32_t* loopObj = (uint32_t*)g_loop_obj_ptr;
+    uint32_t* loopData = (uint32_t*)loopObj[0];
+    
     // Check if loop has an active session at offset +36
     uint32_t activeSession = loopData[9];
-
+    
     if (activeSession == 0) {
         // No active session - check if we already have one
         uint32_t existingSession = clientData[12];
-
+        
         if (existingSession == 0) {
             // Create new session
-            SinglesNetworkClient_1378_g(client);
+            SinglesNetworkClient_1378_g(nullptr, nullptr);
             clientData[12] = 0;  // Store result at offset +48
-            return (void*)(uintptr_t)clientData[12];
+            return (void*)clientData[12];
         }
     }
-
+    
     // Create session with parameters
-    SinglesNetworkClient_1410_g(client, 0);
+    SinglesNetworkClient_1410_g(nullptr, nullptr);
     uint32_t newSession = 0;  // Result from function call
     clientData[12] = newSession;
-
+    
     // Determine session type based on network configuration
     int sessionType = 1;
-
+    
     // Access network configuration global
     extern uint32_t g_network_config_ptr;
-    uint32_t* netConfig = (uint32_t*)(uintptr_t)g_network_config_ptr;
-
+    uint32_t* netConfig = (uint32_t*)g_network_config_ptr;
+    
     // Check flag at offset +333
     uint8_t* configFlags = (uint8_t*)netConfig;
     if (configFlags[333] == 0) {
         sessionType = 2;
     }
-
+    
     // Call vtable function at slot 22 (offset +88)
-    uint32_t* sessionVtable = (uint32_t*)(uintptr_t)newSession;
-    uint32_t* vtable = (uint32_t*)(uintptr_t)sessionVtable[0];
+    uint32_t* sessionVtable = (uint32_t*)newSession;
+    uint32_t* vtable = (uint32_t*)sessionVtable[0];
     typedef void (*VtableFunc)(uint32_t, void*, int);
-    VtableFunc func = (VtableFunc)(uintptr_t)vtable[22];
+    VtableFunc func = (VtableFunc)vtable[22];
     func(newSession, client, sessionType);
-
-    return (void*)(uintptr_t)clientData[12];
+    
+    return (void*)clientData[12];
 }
 
 
@@ -1078,7 +1049,7 @@ void SinglesNetworkClient_CleanupGlobalArrays()
         uint32_t funcPtr = *callbackPtr;
         if (funcPtr != 0) {
             typedef void (*CallbackFunc)();
-            CallbackFunc callback = (CallbackFunc)(uintptr_t)funcPtr;
+            CallbackFunc callback = (CallbackFunc)funcPtr;
             callback();
         }
         callbackPtr++;
@@ -1216,7 +1187,7 @@ void SinglesNetworkClient_ProcessActiveDevices(void* client)
         if (deviceFlags[0] != 0) {
             // Get device ID and call cleanup
             uint32_t deviceId = deviceIds[0];
-            SinglesNetworkClient_F090((void*)(uintptr_t)deviceId, nullptr);
+            SinglesNetworkClient_F090((void*)deviceId, nullptr);
         }
         
         // Move to next device
@@ -1242,27 +1213,27 @@ bool SinglesNetworkClient_CheckAndSetNetworkFlag(void* client)
 {
     // Access global game loop object
     extern uint32_t g_loop_obj_ptr;
-    uint32_t* loopObj = (uint32_t*)(uintptr_t)g_loop_obj_ptr;
-    uint32_t* loopData = (uint32_t*)(uintptr_t)loopObj[0];
-
+    uint32_t* loopObj = (uint32_t*)g_loop_obj_ptr;
+    uint32_t* loopData = (uint32_t*)loopObj[0];
+    
     // Check if network system is initialized at offset +556
     uint32_t networkSystem = loopData[139];
-
+    
     if (networkSystem == 0) {
         return false;
     }
-
+    
     // Access global flag at 0x826065EB
     extern uint8_t g_network_active_flag;
-
+    
     // Check if flag is already set
     if (g_network_active_flag != 0) {
         return false;
     }
-
+    
     // Get network interface at offset +52
-    uint32_t* networkInterface = (uint32_t*)((char*)(uintptr_t)networkSystem + 52);
-
+    uint32_t* networkInterface = (uint32_t*)((char*)networkSystem + 52);
+    
     // Call network initialization function
     pg_C3B8_g((void*)networkInterface, nullptr);
     
@@ -1286,27 +1257,27 @@ void SinglesNetworkClient_ClearNetworkFlag(void* client)
 {
     // Access global game loop object
     extern uint32_t g_loop_obj_ptr;
-    uint32_t* loopObj = (uint32_t*)(uintptr_t)g_loop_obj_ptr;
-    uint32_t* loopData = (uint32_t*)(uintptr_t)loopObj[0];
-
+    uint32_t* loopObj = (uint32_t*)g_loop_obj_ptr;
+    uint32_t* loopData = (uint32_t*)loopObj[0];
+    
     // Check if network system is initialized at offset +556
     uint32_t networkSystem = loopData[139];
-
+    
     if (networkSystem == 0) {
         return;
     }
-
+    
     // Access global flag at 0x826065EB
     extern uint8_t g_network_active_flag;
-
+    
     // Check if flag is set
     if (g_network_active_flag == 0) {
         return;
     }
-
+    
     // Get network interface at offset +52
-    uint32_t* networkInterface = (uint32_t*)((char*)(uintptr_t)networkSystem + 52);
-
+    uint32_t* networkInterface = (uint32_t*)((char*)networkSystem + 52);
+    
     // Call network shutdown function
     pg_6DC0_g((void*)networkInterface, nullptr);
     
@@ -1328,830 +1299,2266 @@ void SinglesNetworkClient_ClearNetworkFlag(void* client)
 void SinglesNetworkClient_SetupNetworkContext(void* client, uint32_t contextValue)
 {
     // Check and set network flag
-    bool flagSet = SinglesNetworkClient_B2A8_g(client);
-
+    bool flagSet = SinglesNetworkClient_B2A8_g(client, nullptr);
+    
     // Get or create network context
-    SinglesNetworkClient_B1E8_g(client);
-
+    SinglesNetworkClient_B1E8_g(client, nullptr);
+    
     // Find context structure
     const char* contextName = "NetworkContext";
-    void* context = SinglesNetworkClient_9318_g(client, contextName);
-
+    void* context = SinglesNetworkClient_9318_g(nullptr, (void*)contextName);
+    
     if (context != nullptr) {
         uint32_t* contextData = (uint32_t*)context;
-
+        
         // Store context value at offset +0
         contextData[0] = contextValue;
-
+        
         // Store type identifier at offset +4
         contextData[1] = 3;
     }
-
+    
     // If flag was set, clear it
     if (flagSet) {
-        SinglesNetworkClient_B320_g(client);
+        SinglesNetworkClient_B320_g(client, nullptr);
     }
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::WriteStringAndBufferSize @ 0x820D67C8 | size: 0x6C
+// SinglesNetworkClient::FindNodeSlotIndex @ 0x820CE380 | size: 0x6C
 //
-// Validates the message buffer, writes a string via 0738, then writes
-// the buffer size (in bytes, rounded up to 8-bit boundary) as a 16-bit
-// value at write-offset 32.
+// Searches a 5-element node array (offsets +100..+116) for the node matching
+// the current active node pointer at +120. Returns the 0-based index (0-4)
+// of the matching slot, or -1 if no match is found.
 //
-// Parameters:
-//   client - Pointer to SinglesNetworkClient (this)
-//   value  - Value to pass to the string-write call
-//   length - Length parameter for the string-write call
-//
-// Returns:
-//   Result of the string-write call (via r3)
+// Used to determine which session node slot the active node occupies.
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint32_t SinglesNetworkClient_67C8_g(void* client, int16_t index, void* data)
-{
-    uint32_t* self = (uint32_t*)client;
+int SinglesNetworkClient::FindNodeSlotIndex() {
+    uint32_t activeNode = *(uint32_t*)((uint8_t*)this + 120);
 
-    // Validate buffer state
-    SinglesNetworkClient_8AE0_g(client);
-
-    // Write string data — returns result in r3
-    uint32_t result = SinglesNetworkClient_0738_g(client, (const char*)data, (uint32_t)index);
-
-    // Compute buffer size in bytes: (bitSize + 7) / 8
-    uint32_t bitSize = self[16 / 4];  // field +16
-    uint32_t byteSize = (int32_t)(bitSize + 7) >> 3;
-
-    // Validate again before writing buffer size
-    SinglesNetworkClient_8AE0_g(client);
-
-    // Save/restore write offset (field +32), temporarily set to 32
-    uint32_t savedWriteOffset = self[32 / 4];
-    self[32 / 4] = 32;
-
-    SinglesNetworkClient_0448_g(client, byteSize, 16);
-
-    self[32 / 4] = savedWriteOffset;
-
-    return result;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::WriteValueAndBufferSize @ 0x820D6838 | size: 0x6C
-//
-// Validates the message buffer, writes a value via 0448 (WriteBits), then
-// writes the buffer size (in bytes) as a 16-bit value at write-offset 32.
-//
-// Parameters:
-//   client - Pointer to SinglesNetworkClient (this)
-//   value  - Value to write
-//   bits   - Number of bits to write
-//
-// Returns:
-//   Result of the write call (via r3)
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint32_t SinglesNetworkClient_6838_g(void* client, uint32_t value, int bits)
-{
-    uint32_t* self = (uint32_t*)client;
-
-    // Validate buffer state
-    SinglesNetworkClient_8AE0_g(client);
-
-    // Write value
-    uint32_t result = SinglesNetworkClient_0448_g(client, value, bits);
-
-    // Compute buffer size in bytes: (bitSize + 7) / 8
-    uint32_t bitSize = self[16 / 4];
-    uint32_t byteSize = (int32_t)(bitSize + 7) >> 3;
-
-    // Validate again before writing buffer size
-    SinglesNetworkClient_8AE0_g(client);
-
-    // Save/restore write offset (field +32), temporarily set to 32
-    uint32_t savedWriteOffset = self[32 / 4];
-    self[32 / 4] = 32;
-
-    SinglesNetworkClient_0448_g(client, byteSize, 16);
-
-    self[32 / 4] = savedWriteOffset;
-
-    return result;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::WriteSingletonValueAndBufferSize @ 0x820D68A8 | size: 0x6C
-//
-// Validates the message buffer, writes a singleton value via atSingleton_05F0_g,
-// then writes the buffer size (in bytes) as a 16-bit value at write-offset 32.
-//
-// Parameters:
-//   client - Pointer to SinglesNetworkClient (this)
-//   value  - Value to write
-//   bits   - Number of bits to write
-//
-// Returns:
-//   Result of the singleton write call (via r3)
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint32_t SinglesNetworkClient_68A8_g(void* client, uint32_t value, int bits)
-{
-    uint32_t* self = (uint32_t*)client;
-
-    // Validate buffer state
-    SinglesNetworkClient_8AE0_g(client);
-
-    // Write singleton value
-    uint32_t result = atSingleton_05F0_g(client, value, bits);
-
-    // Compute buffer size in bytes: (bitSize + 7) / 8
-    uint32_t bitSize = self[16 / 4];
-    uint32_t byteSize = (int32_t)(bitSize + 7) >> 3;
-
-    // Validate again before writing buffer size
-    SinglesNetworkClient_8AE0_g(client);
-
-    // Save/restore write offset (field +32), temporarily set to 32
-    uint32_t savedWriteOffset = self[32 / 4];
-    self[32 / 4] = 32;
-
-    SinglesNetworkClient_0448_g(client, byteSize, 16);
-
-    self[32 / 4] = savedWriteOffset;
-
-    return result;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::MessageHandlerCtor @ 0x822EDA08 | size: 0x58
-//
-// Constructor for a MessageHandler object. Sets the vtable to
-// rage::snConnectionManager::MessageHandler (0x8205C750), zeros fields,
-// and initializes two linked-list nodes at offsets +12 and +16 via ke_1B00.
-//
-// Parameters:
-//   self - Pointer to MessageHandler instance to construct
-//
-// Returns:
-//   Pointer to constructed instance (this)
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void* SinglesNetworkClient_DA08(void* self)
-{
-    uint32_t* obj = (uint32_t*)self;
-
-    // Set vtable to rage::snConnectionManager::MessageHandler
-    extern uint32_t lbl_8205C750;
-    obj[0] = (uint32_t)(uintptr_t)&lbl_8205C750;
-
-    // Zero out fields
-    obj[4 / 4] = 0;   // field +4
-    obj[8 / 4] = 0;   // field +8
-
-    // Initialize linked-list node at offset +12
-    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 12));
-
-    // Initialize linked-list node at offset +16
-    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 16));
-
-    // Zero out the node head pointers
-    obj[16 / 4] = 0;
-    obj[12 / 4] = 0;
-
-    // Zero field +20
-    obj[20 / 4] = 0;
-
-    return self;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::NotifyHandlerCtor @ 0x822F9760 | size: 0x58
-//
-// Constructor for a NotifyHandler object. Sets the vtable to
-// rage::VsnNotifyBase::NotifyHandler (0x8205C7A4), zeros fields,
-// and initializes two linked-list nodes at offsets +12 and +16 via ke_1B00.
-//
-// Parameters:
-//   self - Pointer to NotifyHandler instance to construct
-//
-// Returns:
-//   Pointer to constructed instance (this)
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void* SinglesNetworkClient_9760_g(void* self)
-{
-    uint32_t* obj = (uint32_t*)self;
-
-    // Set vtable to rage::VsnNotifyBase::NotifyHandler
-    extern uint32_t lbl_8205C7A4;
-    obj[0] = (uint32_t)(uintptr_t)&lbl_8205C7A4;
-
-    // Zero out fields
-    obj[4 / 4] = 0;   // field +4
-    obj[8 / 4] = 0;   // field +8
-
-    // Initialize linked-list node at offset +12
-    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 12));
-
-    // Initialize linked-list node at offset +16
-    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 16));
-
-    // Zero out the node head pointers
-    obj[16 / 4] = 0;
-    obj[12 / 4] = 0;
-
-    // Zero field +20
-    obj[20 / 4] = 0;
-
-    return self;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::RegisterHandlerAndIncrementCount @ 0x822F9838 | size: 0x50
-//
-// Registers a handler by storing the handler pointer at offset +0 of this,
-// calls CheckAndSetNetworkFlag (B2A8), stores the boolean result as a byte
-// at offset +4, and increments a global registration counter at 0x8271A834.
-//
-// Parameters:
-//   self    - Pointer to handler registration structure
-//   handler - Handler object pointer to register
-//
-// Returns:
-//   Pointer to this (self)
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void* SinglesNetworkClient_9838_g(void* self, void* handler)
-{
-    uint32_t* obj = (uint32_t*)self;
-
-    // Store handler pointer at offset +0
-    obj[0] = (uint32_t)(uintptr_t)handler;
-
-    // Check and set network flag
-    uint8_t flagResult = SinglesNetworkClient_B2A8_g(handler);
-
-    // Store result as byte at offset +4
-    *(uint8_t*)((char*)self + 4) = flagResult;
-
-    // Increment global registration counter
-    extern uint32_t lbl_8271A834;
-    lbl_8271A834 += 1;
-
-    return self;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::QueryContextValue @ 0x822F54E8 | size: 0x4C
-//
-// Queries a context value by looking up a string key (at 0x8205C440) via
-// the context lookup function (9280). If found, calls A5C8 to process it.
-// If not found, returns the value from the stack frame (field r1+80).
-//
-// Parameters:
-//   client - Pointer to SinglesNetworkClient (this, passed implicitly via r1+80)
-//
-// Returns:
-//   Context value or stack-frame value
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void* SinglesNetworkClient_54E8_g(void* client)
-{
-    // Get network client context
-    SinglesNetworkClient_B1E8_g(client);
-
-    // Look up context by string key at 0x8205C440
-    extern char lbl_8205C440;
-    void* context = SinglesNetworkClient_9280_g(client, &lbl_8205C440);
-
-    if (context != nullptr) {
-        // Process the found context
-        return SinglesNetworkClient_A5C8_g(context);
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 100)) {
+        return 0;
     }
-
-    // Return client if context not found
-    return client;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::SetContextValueA @ 0x822FA7B8 | size: 0x60
-//
-// Guards with CheckAndSetNetworkFlag, gets network client, looks up context
-// by string key (0x8205C83C), stores the given value at [context+0] with
-// type tag 3 at [context+4], then conditionally clears the network flag.
-//
-// Parameters:
-//   client - Pointer to SinglesNetworkClient (this)
-//   value  - Value to store in the context
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void SinglesNetworkClient_A7B8_g(void* client, uint32_t value)
-{
-    // Guard: check and set network flag
-    uint8_t wasSet = SinglesNetworkClient_B2A8_g(client);
-
-    // Get network client context
-    SinglesNetworkClient_B1E8_g(client);
-
-    // Look up context by string key at 0x8205C83C
-    extern char lbl_8205C83C;
-    uint32_t* context = (uint32_t*)SinglesNetworkClient_9318_g(client, &lbl_8205C83C);
-
-    if (context != nullptr) {
-        context[0] = value;
-        context[1] = 3;  // type tag
-    }
-
-    // If network flag was set by us, clear it
-    if ((wasSet & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(client);
-    }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::SetContextValueB @ 0x822FA818 | size: 0x60
-//
-// Guards with CheckAndSetNetworkFlag, gets network client, looks up context
-// by string key (0x8205C848), stores the given value at [context+0] with
-// type tag 3 at [context+4], then conditionally clears the network flag.
-//
-// Parameters:
-//   client - Pointer to SinglesNetworkClient (this)
-//   value  - Value to store in the context
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void SinglesNetworkClient_A818_g(void* client, uint32_t value)
-{
-    // Guard: check and set network flag
-    uint8_t wasSet = SinglesNetworkClient_B2A8_g(client);
-
-    // Get network client context
-    SinglesNetworkClient_B1E8_g(client);
-
-    // Look up context by string key at 0x8205C848
-    extern char lbl_8205C848;
-    uint32_t* context = (uint32_t*)SinglesNetworkClient_9318_g(client, &lbl_8205C848);
-
-    if (context != nullptr) {
-        context[0] = value;
-        context[1] = 3;  // type tag
-    }
-
-    // If network flag was set by us, clear it
-    if ((wasSet & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(client);
-    }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::SetContextFromField184 @ 0x822FA8F0 | size: 0x60
-//
-// Guards with CheckAndSetNetworkFlag, gets network client, reads the value
-// from this->field_184, looks up context by string key (0x8205C86C), stores
-// that value at [context+0] with type tag 3 at [context+4], then
-// conditionally clears the network flag.
-//
-// Parameters:
-//   client - Pointer to SinglesNetworkClient (this)
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void SinglesNetworkClient_A8F0_g(void* client)
-{
-    uint32_t* self = (uint32_t*)client;
-
-    // Guard: check and set network flag
-    uint8_t wasSet = SinglesNetworkClient_B2A8_g(client);
-
-    // Get network client context
-    SinglesNetworkClient_B1E8_g(client);
-
-    // Read value from field +184
-    uint32_t fieldValue = self[184 / 4];
-
-    // Look up context by string key at 0x8205C86C
-    extern char lbl_8205C86C;
-    uint32_t* context = (uint32_t*)SinglesNetworkClient_9318_g(client, &lbl_8205C86C);
-
-    if (context != nullptr) {
-        context[0] = fieldValue;
-        context[1] = 3;  // type tag
-    }
-
-    // If network flag was set by us, clear it
-    if ((wasSet & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(client);
-    }
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::IsSessionStateCompleted @ 0x824172B8 | size: 0x1C
-//
-// Checks if the session state field at offset +192 equals 3 (completed).
-//
-// Parameters:
-//   self - Pointer to SinglesNetworkClient instance
-//
-// Returns:
-//   true if session state == 3, false otherwise
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint8_t SinglesNetworkClient_72B8_g(void* self)
-{
-    uint32_t* data = (uint32_t*)self;
-    uint32_t sessionState = data[48]; // offset +192
-
-    return (sessionState == 3) ? 1 : 0;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::IsSessionStateActive @ 0x824172D8 | size: 0x4C
-//
-// Checks if the session state field at offset +192 is either 1 or 2
-// (active states).
-//
-// Parameters:
-//   self - Pointer to SinglesNetworkClient instance
-//
-// Returns:
-//   true if session state is 1 or 2, false otherwise
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint8_t SinglesNetworkClient_72D8_g(void* self)
-{
-    uint32_t* data = (uint32_t*)self;
-    uint32_t sessionState = data[48]; // offset +192
-
-    if (sessionState == 2) {
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 104)) {
         return 1;
     }
-    if (sessionState == 1) {
-        return 1;
-    }
-    return 0;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::CheckAnyPlayerSlotActive @ 0x821045D0 | size: 0x60
-//
-// Iterates up to 5 player slots (stride 15044 bytes, starting at offset +536)
-// checking if any slot has a non-zero pointer. Also checks field at
-// offset +75756 (0x127EC) for a non-zero session flag.
-//
-// Parameters:
-//   self - Pointer to SinglesNetworkClient instance
-//
-// Returns:
-//   1 if any slot is active or session flag is set, 0 otherwise
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint8_t SinglesNetworkClient_45D0_g(void* self)
-{
-    uint8_t* base = (uint8_t*)self;
-
-    // Check session flag at offset 0x127EC (75756)
-    uint32_t sessionFlag = *(uint32_t*)(base + 75756);
-    if (sessionFlag != 0) {
-        return 1;
-    }
-
-    // Iterate 5 player slots starting at offset +536, stride 15044
-    uint8_t* slotPtr = base + 536;
-    for (int i = 0; i <= 4; i++) {
-        uint32_t slotValue = *(uint32_t*)slotPtr;
-        if (slotValue != 0) {
-            return 1;
-        }
-        slotPtr += 15044;
-    }
-
-    return 0;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::ReadUInt16FromStream @ 0x8236A3A0 | size: 0x50
-//
-// Reads a 16-bit value from the network stream by temporarily setting the
-// read offset to 16, reading via SinglesNetworkClient_8DF8_g, then
-// restoring the original offset.
-//
-// Parameters:
-//   self - Pointer to SinglesNetworkClient instance
-//
-// Returns:
-//   The 32-bit value read from the stream (contains 16-bit data)
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint32_t SinglesNetworkClient_A3A0_g(void* self)
-{
-    uint32_t* data = (uint32_t*)self;
-
-    // Save current read offset (field +28)
-    uint32_t savedReadOffset = data[7];
-
-    // Set read offset to 16 bits
-    data[7] = 16;
-
-    // Read from stream
-    uint32_t result;
-    SinglesNetworkClient_8DF8_g(self, &result);
-
-    // Restore original read offset
-    data[7] = savedReadOffset;
-
-    return result;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::WriteStringWithBufferSize @ 0x821D9AD8 | size: 0x68
-//
-// Writes string data to the network stream, followed by the buffer size.
-// Calls SinglesNetworkClient_8AE0_g to begin the write, writes the string
-// via SinglesNetworkClient_0688_g, then writes the buffer byte count
-// via SinglesNetworkClient_0448_g with a temporarily overridden write offset.
-//
-// Parameters:
-//   self     - Pointer to SinglesNetworkClient instance
-//   strData  - String data value to write (16-bit)
-//
-// Returns:
-//   Result from SinglesNetworkClient_0688_g
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" uint32_t SinglesNetworkClient_9AD8_g(void* self, uint32_t strData)
-{
-    uint32_t* data = (uint32_t*)self;
-
-    // Begin write operation
-    SinglesNetworkClient_8AE0_g(self);
-
-    // Write string data (16 bits)
-    uint32_t result = SinglesNetworkClient_0688_g(self, strData, 16);
-
-    // Read buffer size from field +16
-    uint32_t bufferSize = data[4];
-
-    // Begin second write operation
-    SinglesNetworkClient_8AE0_g(self);
-
-    // Compute byte count: (bufferSize + 7) >> 3
-    int32_t byteCount = ((int32_t)bufferSize + 7) >> 3;
-
-    // Save current write offset (field +32), replace with 32
-    uint32_t savedWriteOffset = data[8];
-    data[8] = 32;
-
-    // Write byte count (16 bits)
-    SinglesNetworkClient_0448_g(self, (uint32_t)byteCount, 16);
-
-    // Restore original write offset
-    data[8] = savedWriteOffset;
-
-    return result;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::GetPlayerEntryByIndex @ 0x82414E08 | size: 0x50
-//
-// Retrieves a player entry from the player array by index. Validates
-// that the index is in range and the entry at offset +232 is non-zero.
-//
-// Parameters:
-//   self  - Pointer to SinglesNetworkClient instance
-//   index - Player index to look up
-//
-// Returns:
-//   Pointer to player entry if valid, or nullptr
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void* SinglesNetworkClient_4E08_g(void* self, int index)
-{
-    uint32_t* data = (uint32_t*)self;
-
-    if (index < 0) {
-        return nullptr;
-    }
-
-    // Check index against count at offset +496
-    uint16_t count = *(uint16_t*)((uint8_t*)self + 496);
-    if (index >= (int)count) {
-        return nullptr;
-    }
-
-    // Get array base pointer at offset +492
-    uint8_t* arrayBase = (uint8_t*)(uintptr_t)data[123]; // offset +492
-
-    // Compute entry: base + index * 248
-    uint8_t* entry = arrayBase + (index * 248);
-    if (entry == nullptr) {
-        return nullptr;
-    }
-
-    // Check validity flag at entry offset +232
-    uint32_t validFlag = *(uint32_t*)(entry + 232);
-    if (validFlag == 0) {
-        return nullptr;
-    }
-
-    return entry;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::FindHashTableEntry @ 0x823FB3B8 | size: 0x64
-//
-// Looks up a key in a hash table. Computes the hash of the key string,
-// then walks the bucket chain comparing each entry's hash at offset +16.
-// Returns a pointer to the entry's data at offset +4 on match.
-//
-// Parameters:
-//   self - Pointer to hash table object (head pointer at offset +0)
-//   key  - Null-terminated string key to look up
-//
-// Returns:
-//   Pointer to entry data (entry + 4) if found, or nullptr
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void* SinglesNetworkClient_B3B8_g(void* self, const char* key)
-{
-    uint32_t* tableData = (uint32_t*)self;
-
-    // Get head of bucket chain
-    uint32_t* node = (uint32_t*)(uintptr_t)tableData[0];
-
-    // Compute hash for the key
-    uint32_t keyHash = SinglesNetworkClient_A868_g(key);
-
-    // Walk the chain
-    while (node != nullptr) {
-        // Compare hash at entry offset +16
-        uint32_t entryHash = node[4]; // offset +16
-        if (entryHash == keyHash) {
-            // Return pointer to entry data at offset +4
-            return (void*)((uint8_t*)node + 4);
-        }
-        // Follow next pointer at offset +12
-        node = (uint32_t*)(uintptr_t)node[3];
-    }
-
-    return nullptr;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::ValidateMaxBufferIndex @ 0x822F53F0 | size: 0x64
-//
-// Validates the max buffer index against a global sentinel value. If they
-// match, sets a network flag bit (bit 5) at offset +4648 and returns 2.
-// Otherwise returns 0.
-//
-// Parameters:
-//   self      - Pointer to SinglesNetworkClient instance
-//   unused_r4 - Unused parameter
-//   unused_r5 - Unused parameter
-//   msgBuffer - Message buffer to read max buffer index from
-//
-// Returns:
-//   2 if max buffer index matches sentinel, 0 otherwise
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" int SinglesNetworkClient_53F0_fw(void* self, void* unused_r4, void* unused_r5, void* msgBuffer)
-{
-    uint8_t* selfBytes = (uint8_t*)self;
-
-    // Get max buffer index from the message buffer
-    uint16_t maxIndex = SinglesNetworkClient_8758_g(msgBuffer);
-
-    // Compare against global sentinel
-    uint32_t sentinel = lbl_825D15F0;
-    if (maxIndex == sentinel) {
-        // Set bit 5 in network flags at offset +4648
-        uint8_t flags = selfBytes[4648];
-        flags |= 0x20;
-        selfBytes[4648] = flags;
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 108)) {
         return 2;
     }
-
-    return 0;
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 112)) {
+        return 3;
+    }
+    if (activeNode == *(uint32_t*)((uint8_t*)this + 116)) {
+        return 4;
+    }
+    return -1;
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::SetSessionPropertyIfModeOne @ 0x822F4C98 | size: 0x70
+// SinglesNetworkClient::WriteAlignedBufferSize @ 0x821D9AD8 | size: 0x68
 //
-// If the global network mode (accessed via lbl_8271A33C->offset +12) equals 1,
-// looks up a session property by key and sets its value to 1 with type 3.
-// Otherwise sets field +184 to -1.
+// Validates the write buffer, computes the 8-byte-aligned buffer size,
+// then writes it as a 16-bit value into the network stream at the
+// header position (offset +32 temporarily set to 32).
 //
 // Parameters:
-//   self - Pointer to SinglesNetworkClient instance
+//   value - The 16-bit value to write into the stream body
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void SinglesNetworkClient_4C98_g(void* self)
-{
-    uint32_t* data = (uint32_t*)self;
+void SinglesNetworkClient::WriteAlignedBufferSize(uint32_t value) {
+    SinglesNetworkClient_8AE0_g(this);
 
-    // Load global pointer and check mode at offset +12
-    uint32_t* globalPtr = (uint32_t*)(uintptr_t)lbl_8271A33C;
-    int32_t mode = (int32_t)globalPtr[3]; // offset +12
+    // Write value into stream with 16 bits
+    uint32_t result = SinglesNetworkClient_0688_g(this, value, 16);
 
-    if (mode == 1) {
-        // Begin property lookup
-        SinglesNetworkClient_B1E8_g(self);
+    // Compute aligned buffer size: (bufferSize + 7) / 8
+    uint32_t bufferSize = *(uint32_t*)((uint8_t*)this + 16);
+    uint32_t alignedSize = (int32_t)(bufferSize + 7) >> 3;
 
-        // Look up property by key string
-        uint32_t* property = (uint32_t*)SinglesNetworkClient_9318_g(self, (const char*)&lbl_8205C3AC);
+    // Save and restore write offset at +32, temporarily setting to 32
+    uint32_t savedWriteOffset = *(uint32_t*)((uint8_t*)this + 32);
+    *(uint32_t*)((uint8_t*)this + 32) = 32;
 
-        if (property == nullptr) {
-            return;
-        }
+    SinglesNetworkClient_0448_g(this, alignedSize, 16);
 
-        // Set property value = 1, type = 3
-        property[0] = 1;
-        property[1] = 3;
+    *(uint32_t*)((uint8_t*)this + 32) = savedWriteOffset;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadVector3FromStream @ 0x821D9B40 | size: 0x78
+//
+// Reads three consecutive 32-bit float values from the network stream
+// and stores them into a destination Vector3 structure.
+//
+// Parameters:
+//   outVec - Pointer to a 3-float destination (x, y, z)
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::ReadVector3FromStream(float* outVec) {
+    float temp;
+
+    // Read X component
+    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    outVec[0] = temp;
+
+    // Read Y component
+    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    outVec[1] = temp;
+
+    // Read Z component
+    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    outVec[2] = temp;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ProcessActiveNodes @ 0x822EAC20 | size: 0x64
+//
+// Iterates over all active node entries (up to m_nodeCount at +1024) and
+// calls the ProcessNode handler for each node whose enabled flag is set.
+// The node pointers are stored starting at offset +1028, and the enabled
+// flags are at a stride of 36 bytes in a global data table at 0x8262001C.
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::ProcessActiveNodes() {
+    int32_t nodeCount = *(int32_t*)((uint8_t*)this + 1024);
+    if (nodeCount <= 0) {
         return;
     }
 
-    // Not mode 1: set field +184 to -1
-    data[46] = 0xFFFFFFFF; // offset +184
+    uint32_t* nodeArray = (uint32_t*)((uint8_t*)this + 1028);
+    uint8_t* enabledFlags = (uint8_t*)0x8262001C;  // global node enabled table, stride=36
+
+    for (int32_t i = 0; i < nodeCount; i++) {
+        if (enabledFlags[i * 36] != 0) {
+            SinglesNetworkClient_F090(nodeArray[i]);
+        }
+
+        // Re-read count each iteration (may be modified by ProcessNode)
+        nodeCount = *(int32_t*)((uint8_t*)this + 1024);
+    }
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::EnableNetworkFlagAndSetProperty @ 0x822EBF20 | size: 0x64
+// SinglesNetworkClient::ActivateAndNotify @ 0x822EBF20 | size: 0x64
 //
-// Sets the enabled flag at offset +84 to true, then looks up a session
-// property by key and sets its value to 1 with type 3. Commits the
-// property change if the prior lock state was set.
-//
-// Parameters:
-//   self - Pointer to SinglesNetworkClient instance
+// Called by HUD screens (pause, unlocks, training, loading, leaderboard)
+// during their vfn_5 activation. Sets the active flag at +84, polls the
+// network state, and posts a notification message with value {1, 3}.
+// If the poll indicated changes, flushes the notification queue.
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void SinglesNetworkClient_BF20_g(void* self)
-{
-    uint8_t* selfBytes = (uint8_t*)self;
-    uint32_t* selfData = (uint32_t*)self;
+void SinglesNetworkClient::ActivateAndNotify() {
+    // Set active flag
+    *(uint8_t*)((uint8_t*)this + 84) = 1;
 
-    // Set enabled flag at offset +84
-    selfBytes[84] = 1;
+    // Poll network state
+    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
 
-    // Acquire lock / begin property access
-    uint8_t wasLocked = SinglesNetworkClient_B2A8_g(self);
+    // Get network interface pointer from offset +92
+    void* networkInterface = *(void**)((uint8_t*)this + 92);
 
-    // Get property map pointer from offset +92
-    void* propertyMap = (void*)(uintptr_t)selfData[23]; // offset +92
+    // Find message slot for this notification type
+    void* messageSlot = SinglesNetworkClient_9318_g(networkInterface,
+        (const char*)0x8205AEF0);  // message type string @ 0x8205AEF0
 
-    // Look up property by key string
-    uint32_t* property = (uint32_t*)SinglesNetworkClient_9318_g(propertyMap, (const char*)&lbl_8205AEF0);
-
-    if (property != nullptr) {
-        // Set property value = 1, type = 3
-        property[0] = 1;
-        property[1] = 3;
+    if (messageSlot != nullptr) {
+        *(uint32_t*)((uint8_t*)messageSlot + 0) = 1;  // value = 1 (active)
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
     }
 
-    // Commit changes if lock was previously held
-    if ((wasLocked & 0xFF) != 0) {
+    // If poll returned nonzero, flush notification queue
+    if ((pollResult & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(this);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::PostDualSlotMessage @ 0x822EBC10 | size: 0x88
+//
+// Posts two messages to an event handler via its vtable slot 10. The first
+// message carries an event descriptor {0, 7} with a type string pointer.
+// The second message carries the provided data values {dataValue, 3} with
+// a second type string pointer and an extra parameter.
+//
+// Parameters:
+//   eventHandler - Pointer to the handler (read from *r4)
+//   dataValue    - Value to store in the second message slot
+//   extraParam   - Additional parameter passed to the second vtable call
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::PostDualSlotMessage(void** eventHandlerPtr,
+    uint32_t dataValue, uint32_t extraParam) {
+    void* eventHandler = *eventHandlerPtr;
+
+    // Build first message: event descriptor {0, 7}
+    uint32_t eventDesc[2] = { 0, 7 };
+    const char* eventTypeStr = (const char*)0x8205AED8;  // event type @ 0x8205AED8
+
+    // Call vtable slot 10 with event descriptor
+    void** vtable = *(void***)eventHandler;
+    typedef void (*VtSlot10Fn)(void*, const char*, uint32_t*, uint32_t);
+    VtSlot10Fn postEvent = (VtSlot10Fn)vtable[10];
+    postEvent(eventHandler, eventTypeStr, eventDesc, 1);
+
+    // Build second message: data payload {dataValue, 3}
+    uint32_t dataPayload[2] = { dataValue, 3 };
+
+    // Call vtable slot 10 again with data payload
+    vtable = *(void***)eventHandler;
+    postEvent = (VtSlot10Fn)vtable[10];
+    postEvent(eventHandler, (const char*)&dataPayload, nullptr, extraParam);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::PostFloatMessage @ 0x822F1408 | size: 0x9C
+//
+// Posts a float value as an integer message to the network notification
+// system. Increments a global message counter, finds the message slot,
+// converts the float to int via truncation, and stores {intValue, 3}.
+// Decrements the counter on completion (with or without notification flush).
+//
+// Parameters:
+//   floatValue - Float value to convert and post
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::PostFloatMessage(float floatValue) {
+    // Poll network state
+    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+
+    // Increment global message counter
+    uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
+    uint32_t savedCounter = *pMessageCounter + 1;
+    *pMessageCounter = savedCounter;
+
+    // Prepare message
+    SinglesNetworkClient_B1E8_g(this);
+
+    // Find message slot for float message type
+    void* messageSlot = SinglesNetworkClient_9318_g(this,
+        (const char*)0x8205B474);  // message type string @ 0x8205B474
+
+    if (messageSlot != nullptr) {
+        // Convert float to int and store
+        int32_t intValue = (int32_t)floatValue;
+        *(int32_t*)((uint8_t*)messageSlot + 0) = intValue;
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
+    }
+
+    // Flush or decrement counter
+    if ((pollResult & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(this);
+        *pMessageCounter = *pMessageCounter - 1;
+        return;
+    }
+
+    *pMessageCounter = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetModeAndNotify @ 0x822F14A8 | size: 0xAC
+//
+// Updates the game mode value at offset +3488 if it differs from the
+// current value. Creates a snapshot of the current state, stores the
+// new mode, posts a boolean message indicating whether the new mode
+// is nonzero, then restores state and decrements the global message
+// counter.
+//
+// Parameters:
+//   newMode - New game mode value to set
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::SetModeAndNotify(int32_t newMode) {
+    int32_t currentMode = *(int32_t*)((uint8_t*)this + 3488);
+    if (newMode == currentMode) {
+        return;
+    }
+
+    // Create state snapshot on stack
+    uint8_t stateSnapshot[16];
+    SinglesNetworkClient_9838_g(stateSnapshot, this);
+
+    // Store new mode
+    *(int32_t*)((uint8_t*)this + 3488) = newMode;
+
+    // Determine boolean value: 1 if newMode was nonzero, 0 otherwise
+    uint32_t boolValue = (newMode != 0) ? 1 : 0;
+
+    // Prepare and post message
+    SinglesNetworkClient_B1E8_g(this);
+
+    void* messageSlot = SinglesNetworkClient_9318_g(this,
+        (const char*)0x8205B1D4);  // message type string @ 0x8205B1D4
+
+    if (messageSlot != nullptr) {
+        *(uint32_t*)((uint8_t*)messageSlot + 0) = boolValue;
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
+    }
+
+    // Check if snapshot requires notification flush
+    uint8_t snapshotFlag = stateSnapshot[4];
+    if (snapshotFlag != 0) {
+        void* snapshotClient = *(void**)&stateSnapshot[0];
+        SinglesNetworkClient_B320_g(snapshotClient);
+    }
+
+    // Decrement global message counter
+    uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
+    *pMessageCounter = *pMessageCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::PostIntMessage @ 0x822F2D68 | size: 0x8C
+//
+// Posts an integer value as a network message. Increments the global message
+// counter, finds the message slot, stores {value, 3}, and handles
+// notification flushing and counter management.
+//
+// Parameters:
+//   value - Integer value to post
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient::PostIntMessage(int32_t value) {
+    // Poll network state
+    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+
+    // Increment global message counter
+    uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
+    uint32_t savedCounter = *pMessageCounter + 1;
+    *pMessageCounter = savedCounter;
+
+    // Prepare message
+    SinglesNetworkClient_B1E8_g(this);
+
+    // Find message slot
+    void* messageSlot = SinglesNetworkClient_9318_g(this,
+        (const char*)0x8205BECC);  // message type string @ 0x8205BECC
+
+    if (messageSlot != nullptr) {
+        *(int32_t*)((uint8_t*)messageSlot + 0) = value;
+        *(uint32_t*)((uint8_t*)messageSlot + 4) = 3;  // type = 3
+    }
+
+    // Flush or decrement counter
+    if ((pollResult & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(this);
+        *pMessageCounter = *pMessageCounter - 1;
+        return;
+    }
+
+    *pMessageCounter = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::FireStartEvent @ 0x823E6C08 | size: 0xAC
+//
+// Creates a rage::EvtStart event and attempts to add it to the session's
+// event node list. Initializes the event with the EvtStart vtable, then
+// calls the session's event allocator (vtable slot 1). If allocation
+// succeeds, copies event data into the allocated node and adds it to
+// the session node list via snSession_AddNode_C068.
+//
+// Returns:
+//   true if the event was successfully allocated and added, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient::FireStartEvent() {
+    // Initialize a stack-local EvtStart event
+    uint8_t evtStartData[16];
+    util_DA08(evtStartData);
+
+    // Access the session at offset +212 from this
+    uint8_t* sessionBase = (uint8_t*)this + 212;
+
+    // Set EvtStart vtable pointer in event data
+    void* evtStartVtable = (void*)0x820728F0;  // vtable<rage::EvtStart>
+    *(void**)&evtStartData[0] = evtStartVtable;
+
+    // Get session event list pointer at sessionBase+4
+    void* sessionEventList = *(void**)((uint8_t*)sessionBase + 4);
+
+    // Call vtable slot 1 to allocate an event node (event type=12, flags=0)
+    void** vtable = *(void***)sessionEventList;
+    typedef void* (*AllocEventFn)(void*, int, int);
+    AllocEventFn allocEvent = (AllocEventFn)vtable[1];
+    void* eventNode = allocEvent(sessionEventList, 12, 0);
+
+    if (eventNode != nullptr) {
+        // Copy event data into the allocated node
+        // Store EvtStart vtable at node+0
+        *(void**)((uint8_t*)eventNode + 0) = evtStartVtable;
+
+        // Copy the 8-byte event payload (timestamp data from stack)
+        uint32_t payloadHi = *(uint32_t*)&evtStartData[4];
+        uint32_t payloadLo = *(uint32_t*)&evtStartData[8];
+        uint64_t payload = ((uint64_t)payloadHi << 32) | payloadLo;
+        *(uint64_t*)((uint8_t*)eventNode + 4) = payload;
+
+        // Add node to the session node list at sessionBase+8
+        snSession_AddNode_C068((uint8_t*)sessionBase + 8, eventNode);
+        return true;
+    }
+
+    return false;
+}
+
+
+// External function declarations for newly decompiled functions
+extern void SinglesNetworkClient_0738_g(void* client, uint32_t value, int bitWidth);
+extern void atSingleton_05F0_g(void* client, uint32_t value, int bitWidth);
+extern void ke_1B00(void* node);
+extern void* SinglesNetworkClient_9280_g(void* context, const char* name);
+extern void SinglesNetworkClient_A5C8_g(void* result);
+extern void* SinglesNetworkClient_9318_g(void* context, const char* name);
+extern void SinglesNetworkClient_B320_g(void* client);
+extern void SinglesNetworkClient_B2A8_g(void* client);
+extern void nop_8240E6D0(const char* msg);
+
+// Global flag: network debug assertions disabled
+extern uint8_t g_networkAssertionsDisabled;  // lbl_826065EB
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::ReadDataAndWriteAlignedSize @ 0x820D67C8 | size: 0x6C
+//
+// Reads data from the message buffer using ReadBits, then writes the
+// byte-aligned buffer size as a 16-bit value at write offset 32.
+// Used by Serialise methods of network messages.
+//
+// Parameters:
+//   client   - Pointer to message buffer
+//   value    - Data value to read
+//   bitWidth - Number of bits to read
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_ReadDataAndWriteAlignedSize(void* client, uint32_t value, int bitWidth)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client, nullptr);
+
+    // Read bits from the buffer
+    SinglesNetworkClient_0738_g(client, value, bitWidth);
+
+    // Compute byte-aligned size: (bufferBits + 7) / 8
+    uint32_t bufferBits = data[4];  // field +16: bit count
+    int32_t alignedBytes = (int32_t)(bufferBits + 7) >> 3;
+
+    // Save and restore write offset, writing aligned size at offset 32
+    uint32_t savedWriteOffset = data[8];  // field +32
+    data[8] = 32;
+
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+
+    data[8] = savedWriteOffset;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::WriteDataAndUpdateAlignedSize @ 0x820D6838 | size: 0x6C
+//
+// Writes data to the message buffer, then updates the byte-aligned
+// buffer size as a 16-bit value at write offset 32.
+// Used by Serialise methods of network messages.
+//
+// Parameters:
+//   client   - Pointer to message buffer
+//   value    - Data value to write
+//   bitWidth - Number of bits to write
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_WriteDataAndUpdateAlignedSize(void* client, uint32_t value, int bitWidth)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client, nullptr);
+
+    // Write bits to the buffer
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)value);
+
+    // Compute byte-aligned size: (bufferBits + 7) / 8
+    uint32_t bufferBits = data[4];  // field +16: bit count
+    int32_t alignedBytes = (int32_t)(bufferBits + 7) >> 3;
+
+    // Save and restore write offset, writing aligned size at offset 32
+    uint32_t savedWriteOffset = data[8];  // field +32
+    data[8] = 32;
+
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+
+    data[8] = savedWriteOffset;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::WriteExtDataAndUpdateAlignedSize @ 0x820D68A8 | size: 0x6C
+//
+// Writes extended data to the message buffer using atSingleton write,
+// then updates the byte-aligned buffer size at write offset 32.
+// Used by Serialise methods for extended-format fields (timestamps, etc).
+//
+// Parameters:
+//   client   - Pointer to message buffer
+//   value    - Data value to write
+//   bitWidth - Number of bits to write
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_WriteExtDataAndUpdateAlignedSize(void* client, uint32_t value, int bitWidth)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client, nullptr);
+
+    // Write extended data to the buffer
+    atSingleton_05F0_g(client, value, bitWidth);
+
+    // Compute byte-aligned size: (bufferBits + 7) / 8
+    uint32_t bufferBits = data[4];  // field +16: bit count
+    int32_t alignedBytes = (int32_t)(bufferBits + 7) >> 3;
+
+    // Save and restore write offset, writing aligned size at offset 32
+    uint32_t savedWriteOffset = data[8];  // field +32
+    data[8] = 32;
+
+    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+
+    data[8] = savedWriteOffset;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::GetSessionContext @ 0x822EB1E8 | size: 0x5C
+//
+// Returns the session context pointer stored at offset +92.
+// Includes a debug assertion that validates the global network state
+// before returning, unless assertions are disabled.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   Session context pointer from field +92
+// -----------------------------------------------------------------------
+void* SinglesNetworkClient_GetSessionContext(void* client)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Check if global network state pointer is valid
+    extern uint32_t* g_networkState;  // lis/lwz pattern at 0x8205AB50
+    if (g_networkState != nullptr) {
+        uint32_t* stateObj = (uint32_t*)g_networkState[139];  // offset +556
+        if (stateObj != nullptr && !g_networkAssertionsDisabled) {
+            // Fire debug assertion (nop in release)
+            nop_8240E6D0("SinglesNetworkClient::GetSessionContext");
+        }
+    }
+
+    // Return session context at offset +92
+    return (void*)(uintptr_t)data[23];  // +92 = 23 * 4
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::MessageHandlerCtor @ 0x822EDA08 | size: 0x58
+//
+// Constructor for a message handler node. Initializes the vtable pointer,
+// zeros all fields, and sets up two linked list nodes at offsets +12 and +16.
+//
+// Parameters:
+//   handler - Pointer to the MessageHandler to construct
+//
+// Returns:
+//   Pointer to the constructed handler (in r3)
+// -----------------------------------------------------------------------
+void* SinglesNetworkClient_MessageHandlerCtor(void* handler)
+{
+    uint32_t* data = (uint32_t*)handler;
+
+    // Set vtable pointer
+    extern uint32_t lbl_8205C690[];  // MessageHandler vtable
+    data[0] = (uint32_t)(uintptr_t)lbl_8205C690;
+
+    // Zero out fields
+    data[1] = 0;  // flags (+4)
+    data[2] = 0;  // field +8
+
+    // Initialize linked list node at offset +12
+    ke_1B00((void*)((uint8_t*)handler + 12));
+
+    // Initialize linked list node at offset +16
+    uint8_t* node2 = (uint8_t*)handler + 16;
+    ke_1B00(node2);
+
+    // Clear both list node pointers and user data
+    *(uint32_t*)node2 = 0;            // +16
+    *(uint32_t*)((uint8_t*)handler + 12) = 0;  // +12
+    data[5] = 0;                      // +20
+
+    return handler;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::FindAndInvokeNetCallback @ 0x822F54E8 | size: 0x4C
+//
+// Looks up a network callback by name string. If found, invokes it.
+// If not found, restores r3 from the stack frame.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// -----------------------------------------------------------------------
+void* SinglesNetworkClient_FindAndInvokeNetCallback(void* client)
+{
+    // Get the session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Look up the callback by name
+    void* result = SinglesNetworkClient_9280_g(context, (const char*)0x8205C440);  // string key
+
+    if (result != nullptr) {
+        // Found callback - invoke it
+        SinglesNetworkClient_A5C8_g(result);
+        return result;
+    }
+
+    // Not found - return the original context
+    return context;
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillScoreMessage @ 0x822FA7B8 | size: 0x60
+//
+// Sends a drill score value as a network message. Creates a message
+// with the given score value and type=3. Called from training drill
+// completion handlers (pongTrainingDrill vtable slots).
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   score  - Score value to send
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillScoreMessage(void* client, uint32_t score)
+{
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;  // transaction result in low byte
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C83C);
+
+    if (msg != nullptr) {
+        // Store score value and message type (3)
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = score;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillSuccessMessage @ 0x822FA818 | size: 0x60
+//
+// Sends a drill success count as a network message. Creates a message
+// with the given value and type=3. Called when training drill success
+// count is incremented.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Success count value to send
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillSuccessMessage(void* client, uint32_t value)
+{
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C848);
+
+    if (msg != nullptr) {
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = value;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillMovementMessage @ 0x822FA8F0 | size: 0x60
+//
+// Sends a drill movement value as a network message. Reads the value
+// from the client's field at offset +184, creates a message with
+// type=3. Called from movement drill handlers and HUD updates.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillMovementMessage(void* client)
+{
+    uint32_t* data = (uint32_t*)client;
+
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Read movement value from field +184
+    uint32_t movementValue = data[46];  // +184 = 46 * 4
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C86C);
+
+    if (msg != nullptr) {
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = movementValue;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// -----------------------------------------------------------------------
+// SinglesNetworkClient::SendDrillChargingMessage @ 0x822FAC08 | size: 0x60
+//
+// Sends a drill charging value as a network message. Creates a message
+// with the given value and type=3. Called from charging drill state
+// handlers.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Charging value to send
+// -----------------------------------------------------------------------
+void SinglesNetworkClient_SendDrillChargingMessage(void* client, uint32_t value)
+{
+    // Begin network transaction
+    SinglesNetworkClient_B2A8_g(client);
+    uint8_t shouldSend = (uint8_t)(uintptr_t)client;
+
+    // Get session context
+    void* context = SinglesNetworkClient_GetSessionContext(client);
+
+    // Create the message
+    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C898);
+
+    if (msg != nullptr) {
+        uint32_t* msgData = (uint32_t*)msg;
+        msgData[0] = value;
+        msgData[1] = 3;
+    }
+
+    // Send if transaction was started
+    if ((shouldSend & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CopyPositionVector @ 0x8239DA50 | size: 0x40
+//
+// Copies a 16-byte aligned position vector from the result of
+// SinglesNetworkClient_D7A8_p46 into the caller's storage. Uses
+// VMX128 vector load/store for aligned 128-bit copy.
+//
+// Parameters:
+//   this - Destination pointer for the 16-byte vector (aligned)
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* SinglesNetworkClient_D7A8_p46(void* stackBuf);
+
+void SinglesNetworkClient_CopyPositionVector(void* self)
+{
+    // Compute source position into a stack-local buffer
+    uint8_t alignedBuf[16] __attribute__((aligned(16)));
+    void* srcPtr = SinglesNetworkClient_D7A8_p46(alignedBuf);
+
+    // Copy 16 bytes (vector register width) from source to self
+    memcpy(self, srcPtr, 16);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidatePlayerTransition @ 0x82399998 | size: 0x44
+//
+// Validates whether a player state transition is permitted by checking
+// the target state against the current state at offset +992. If states
+// differ, calls SinglesNetworkClient_7038_g on the state buffer at
+// offset +996 to search for the target state. Returns true if the
+// transition is valid (state matches or found in buffer).
+//
+// Parameters:
+//   this        - Pointer to SinglesNetworkClient instance
+//   targetState - State index to validate against
+//
+// Returns:
+//   true if transition is valid, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern int SinglesNetworkClient_7038_g(void* stateBuffer);
+
+bool SinglesNetworkClient_ValidatePlayerTransition(void* self, int targetState)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Check if target matches current state at offset +992
+    int currentState = (int)data[992 / 4];
+    if (targetState == currentState) {
+        return true;
+    }
+
+    // Search state buffer at offset +996 for target state
+    int result = SinglesNetworkClient_7038_g((void*)&data[996 / 4]);
+    if (result < 0) {
+        return false;
+    }
+
+    return true;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::IsSessionConnected @ 0x824172D8 | size: 0x4C
+//
+// Checks whether the network session is in a connected state by
+// examining the connection status field at offset +192. Returns true
+// if the status is 1 (connecting) or 2 (connected).
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   true if session status is 1 or 2, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_IsSessionConnected(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    int status = (int)data[192 / 4];
+
+    if (status == 2) {
+        return true;
+    }
+    if (status == 1) {
+        return true;
+    }
+
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadStreamField16 @ 0x8236A3A0 | size: 0x50
+//
+// Reads a 16-bit field from the network stream at read cursor position 16.
+// Temporarily sets the read cursor (offset +28) to 16, reads via
+// SinglesNetworkClient_8DF8_g, then restores the original cursor.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient (network stream)
+//
+// Returns:
+//   The 32-bit value read from the stream at position 16
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t SinglesNetworkClient_ReadStreamField16(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Save current read cursor (offset +28)
+    uint32_t savedCursor = data[28 / 4];
+
+    // Set cursor to position 16
+    data[28 / 4] = 16;
+
+    // Read 16-bit value into stack buffer
+    uint32_t result = 0;
+    SinglesNetworkClient_8DF8_g(self, &result, 16);
+
+    // Restore original cursor
+    data[28 / 4] = savedCursor;
+
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::IsSessionInReplayState @ 0x82303348 | size: 0x54
+//
+// Checks whether the current network session is in the "replay" state
+// (state == 4). Looks up the session property via the session state
+// pointer at offset +5556 (0x15B4) using the "play" message type key.
+// If found, calls SinglesNetworkClient_A5C8_g to get the current state
+// value.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   true if the session state equals 4 (replay), false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* SinglesNetworkClient_9280_g(void* sessionState, const char* key);
+extern int SinglesNetworkClient_A5C8_g(void* property);
+
+bool SinglesNetworkClient_IsSessionInReplayState(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Get session state pointer from offset +5556 (0x15B4)
+    void* sessionState = (void*)data[5556 / 4];
+
+    // Look up property with "play" key
+    extern const char g_szReplayPropertyKey[];  // @ 0x8205DC90
+    void* property = SinglesNetworkClient_9280_g(sessionState, g_szReplayPropertyKey);
+
+    int stateValue;
+    if (property != nullptr) {
+        stateValue = SinglesNetworkClient_A5C8_g(property);
+    } else {
+        stateValue = 0;
+    }
+
+    return (stateValue == 4);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadMatchRoundIndex @ 0x823B4868 | size: 0x54
+//
+// Reads a 3-bit signed value from the match data stream at cursor
+// position 28. Operates on the sub-buffer at offset +2652 within the
+// network client, temporarily setting the read cursor and reading
+// 3 bits via SinglesNetworkClient_0E18_g.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   3-bit signed value (match round index)
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t SinglesNetworkClient_ReadMatchRoundIndex(void* self)
+{
+    uint8_t* base = (uint8_t*)self;
+    uint32_t* subStream = (uint32_t*)(base + 2652);
+
+    // Save current read cursor (offset +28 within sub-stream)
+    uint32_t savedCursor = subStream[28 / 4];
+
+    // Set cursor to position 28
+    subStream[28 / 4] = 28;
+
+    // Read 3-bit signed value
+    uint32_t result = 0;
+    SinglesNetworkClient_0E18_g((void*)subStream, &result, 3);
+
+    // Restore cursor
+    subStream[28 / 4] = savedCursor;
+
+    return (int32_t)result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ReadMatchSetCount @ 0x823B4F20 | size: 0x54
+//
+// Reads a 6-bit signed value from the match data stream at cursor
+// position 48. Operates on the sub-buffer at offset +2652, temporarily
+// setting the read cursor and reading 6 bits via
+// SinglesNetworkClient_0E18_g.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   6-bit signed value (match set count)
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t SinglesNetworkClient_ReadMatchSetCount(void* self)
+{
+    uint8_t* base = (uint8_t*)self;
+    uint32_t* subStream = (uint32_t*)(base + 2652);
+
+    // Save current read cursor (offset +28 within sub-stream)
+    uint32_t savedCursor = subStream[28 / 4];
+
+    // Set cursor to position 48
+    subStream[28 / 4] = 48;
+
+    // Read 6-bit signed value
+    uint32_t result = 0;
+    SinglesNetworkClient_0E18_g((void*)subStream, &result, 6);
+
+    // Restore cursor
+    subStream[28 / 4] = savedCursor;
+
+    return (int32_t)result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::VsnNotifyHandlerCtor @ 0x822F9760 | size: 0x58
+//
+// Constructor for a rage::VsnSession notify handler. Sets the vtable for
+// rage::VsnNotifyBase (at 0x8205C7A4), zeros state fields, initializes
+// two linked-list nodes via ke_1B00, clears node pointers and the
+// pending-notification field.
+//
+// Parameters:
+//   this - Pointer to VsnNotifyHandler instance to construct
+//
+// Returns:
+//   Initialized handler (returned in r3)
+// ─────────────────────────────────────────────────────────────────────────────
+// rage::VsnNotifyBase vtable @ 0x8205C7A4
+extern uint32_t g_VsnNotifyHandlerVtable;
+
+void SinglesNetworkClient_VsnNotifyHandlerCtor(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Set vtable pointer
+    data[0] = (uint32_t)&g_VsnNotifyHandlerVtable;
+
+    // Zero state fields
+    data[1] = 0;  // offset +4
+    data[2] = 0;  // offset +8
+
+    // Initialize linked-list node at offset +12
+    ke_1B00((void*)&data[12 / 4]);
+
+    // Initialize linked-list node at offset +16
+    ke_1B00((void*)&data[16 / 4]);
+
+    // Clear node data
+    data[16 / 4] = 0;
+    data[12 / 4] = 0;
+
+    // Clear pending notification field
+    data[20 / 4] = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetCoordinatorRoundValue @ 0x82300E68 | size: 0x5C
+//
+// Retrieves the current round value from the network coordinator.
+// Looks up a property from the session state at offset +5556 using
+// the "t" key string. If found, calls SinglesNetworkClient_A420_g
+// to extract the value; otherwise returns 0.
+//
+// Parameters:
+//   this - Pointer to SinglesNetworkClient instance
+//
+// Returns:
+//   Current round value, or 0 if property not found
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* SinglesNetworkClient_A420_g(void* property);
+
+uint32_t SinglesNetworkClient_GetCoordinatorRoundValue(void* self)
+{
+    uint32_t* data = (uint32_t*)self;
+
+    // Get session state from offset +5556 (0x15B4)
+    void* sessionState = (void*)data[5556 / 4];
+
+    // Look up property with "t" key
+    extern const char g_szRoundPropertyKey[];  // @ 0x8205D63C
+    void* property = SinglesNetworkClient_9280_g(sessionState, g_szRoundPropertyKey);
+
+    if (property != nullptr) {
+        return (uint32_t)(uintptr_t)SinglesNetworkClient_A420_g(property);
+    }
+
+    return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::LookupSessionPropertyValue @ 0x823F9808 | size: 0x5C
+//
+// Looks up a session property by key and stores its integer value.
+// Takes the session state and key, plus a pointer where the result
+// should be stored. If found, extracts the value via
+// SinglesNetworkClient_A5C8_g, stores it, and returns true.
+//
+// Parameters:
+//   sessionState - Session state pointer
+//   key          - Property key string
+//   outValue     - Pointer to store the result
+//
+// Returns:
+//   true if property was found and value stored, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_LookupSessionPropertyValue(void* sessionState, const char* key, uint32_t* outValue)
+{
+    // Look up property
+    void* property = SinglesNetworkClient_9280_g(sessionState, key);
+
+    if (property != nullptr) {
+        // Get property value and store it
+        int value = SinglesNetworkClient_A5C8_g(property);
+        *outValue = (uint32_t)value;
+        return true;
+    }
+
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitMessageHandler @ 0x822EDA08 | size: 0x58
+//
+// Constructor for rage::snConnectionManager::MessageHandler.
+// Sets the vtable pointer, zeroes control fields, and initializes two
+// linked-list node sub-objects at offsets +12 and +16.
+//
+// Parameters:
+//   handler - Pointer to MessageHandler instance to initialize
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_InitMessageHandler(void* handler)
+{
+    // Vtable for rage::snConnectionManager::MessageHandler @ 0x8205C750
+    extern uint32_t lbl_8205C750;
+
+    uint32_t* h = (uint32_t*)handler;
+
+    // Set vtable pointer
+    h[0] = (uint32_t)&lbl_8205C750;
+
+    // Zero flags and state fields
+    h[1] = 0;  // +4
+    h[2] = 0;  // +8
+
+    // Initialize linked-list nodes at +12 and +16
+    uint8_t* nodeA = (uint8_t*)handler + 12;
+    uint8_t* nodeB = (uint8_t*)handler + 16;
+
+    ke_1B00(nodeA);
+    ke_1B00(nodeB);
+
+    // Zero node pointers after init
+    *(uint32_t*)nodeB = 0;
+    *(uint32_t*)nodeA = 0;
+
+    // Zero session reference at +20
+    h[5] = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ActivateSessionContext @ 0x822EBF20 | size: 0x64
+//
+// Sets the active session flag, acquires the network lock, looks up a
+// context property by name, writes initial values (enabled=1, type=3),
+// and releases the lock if it was acquired.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_ActivateSessionContext(void* client)
+{
+    uint8_t* c = (uint8_t*)client;
+
+    // Set active flag at offset +84
+    c[84] = 1;
+
+    // Acquire network lock
+    bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
+
+    // Get session pointer at offset +92
+    void* session = *(void**)(c + 92);
+
+    // Look up context property by name
+    extern const char lbl_8205AEF0[];
+    void* context = SinglesNetworkClient_9318_g(session, lbl_8205AEF0);
+
+    if (context != nullptr) {
+        uint32_t* contextData = (uint32_t*)context;
+        contextData[0] = 1;  // enabled
+        contextData[1] = 3;  // type identifier
+    }
+
+    // Release lock if it was acquired
+    if (lockAcquired) {
+        SinglesNetworkClient_ClearNetworkFlag(client);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetSessionProperties @ 0x822EBC10 | size: 0x88
+//
+// Sets two session context properties via virtual dispatch (vtable slot 10).
+// The first property is set with type=7 and enabled=1, using a data name
+// string. The second property is set with type=3 and the provided callback.
+//
+// Parameters:
+//   client   - Unused (context object loaded from args)
+//   args     - Pointer to argument struct; args[0] = session object
+//   dataPtr  - Data pointer for the second property
+//   callback - Callback pointer for the second property
+//   vtable   - Vtable pointer for virtual dispatch
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SetSessionProperties(void* client, void* args, uint32_t dataPtr,
+                                                uint32_t callback, void* vtable)
+{
+    // Load session from args[0]
+    uint32_t* argArray = (uint32_t*)args;
+    void* session = (void*)argArray[0];
+
+    // String at 0x8205AED8
+    extern const char lbl_8205AED8[];
+
+    // Build first property: {value=0, type=7, name=lbl_8205AED8, enabled=1}
+    struct {
+        uint32_t value;
+        uint32_t type;
+        const char* name;
+        uint32_t enabled;
+    } prop1 = {0, 7, lbl_8205AED8, 1};
+
+    // Call vtable slot 10 to set the property
+    typedef void (*SetPropertyFn)(void*, void*, void*);
+    uint32_t* vt = *(uint32_t**)session;
+    SetPropertyFn setProperty = (SetPropertyFn)vt[10];
+    setProperty(session, (void*)&prop1, (void*)&lbl_8205AED8);
+
+    // Build second property: {value=dataPtr, type=3}
+    struct {
+        uint32_t value;
+        uint32_t type;
+    } prop2 = {dataPtr, 3};
+
+    // Call vtable slot 10 again with callback
+    setProperty(session, (void*)&prop2, (void*)(uintptr_t)callback);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::RelocateAndInitEntries @ 0x820E7350 | size: 0x8C
+//
+// Relocates a vtable pointer using a relocation table, then iterates
+// over an array of 16-byte entries and initializes each one via ke_1B00.
+// Used during deserialization to fix up pointers after loading.
+//
+// Parameters:
+//   obj      - Object with vtable at +0 and entry count at +4
+//   relocTbl - Relocation table for pointer fixup
+//
+// Returns:
+//   Pointer to the object (for chaining)
+// ─────────────────────────────────────────────────────────────────────────────
+void* SinglesNetworkClient_RelocateAndInitEntries(void* obj, void* relocTbl)
+{
+    uint32_t* o = (uint32_t*)obj;
+    uint32_t* tbl = (uint32_t*)relocTbl;
+
+    // Relocate vtable pointer if non-null
+    uint32_t vtablePtr = o[0];
+    if (vtablePtr != 0) {
+        // Compute index into relocation table
+        uint32_t baseAddr = tbl[1];
+        uint32_t entrySize = tbl[19];  // offset +76
+        uint32_t index = (vtablePtr - baseAddr) / entrySize;
+
+        // Apply relocation delta from table entry at (index+2)*4
+        uint32_t delta = tbl[index + 2];
+        o[0] = vtablePtr + delta;
+    }
+
+    // Initialize each 16-byte entry
+    uint16_t entryCount = *(uint16_t*)((uint8_t*)obj + 4);
+    for (int i = 0; i < entryCount; i++) {
+        uint8_t* entry = (uint8_t*)o[0] + (i * 16);
+        if (entry != nullptr) {
+            ke_1B00(entry);
+        }
+    }
+
+    return obj;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::CheckStreamAlignment @ 0x82238A50 | size: 0x8C
+//
+// Checks whether the bit stream has enough data for a 48-bit aligned read.
+// If so, reads 16 bits from a temporary position and tests bit 14
+// to determine the alignment status.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient bit stream instance
+//
+// Returns:
+//   true if bit 14 is set in the alignment marker, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_CheckStreamAlignment(void* client)
+{
+    uint32_t* c = (uint32_t*)client;
+    uint32_t tempBuf = 0;
+
+    // Get current bit position at offset +16
+    uint32_t bitPos = c[4];
+
+    // Align to 8-byte boundary: (bitPos + 7) & ~7
+    uint32_t aligned = (bitPos + 7) & ~7u;
+
+    // Need at least 48 bits of aligned data
+    if (aligned < 48) {
+        return false;
+    }
+
+    // Save and temporarily override read position at offset +28
+    uint32_t savedPos = c[7];
+    c[7] = 16;
+
+    // Read 16 bits into temp buffer
+    SinglesNetworkClient_8DF8_g(client, &tempBuf, 16);
+
+    // Restore original position
+    c[7] = savedPos;
+
+    // Test bit 14 (0x4000)
+    return (tempBuf & 0x4000) != 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::TryDestroyInactiveSession @ 0x822EE268 | size: 0x84
+//
+// Checks multiple conditions before destroying an inactive session object.
+// Guards: event must be zero, match state must be 7, active flag must be set,
+// game manager must exist, and the session must be valid with a destructor.
+// Called via indirect dispatch (likely a timer/polling callback).
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   event  - Event data pointer (must be null/zero to proceed)
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_TryDestroyInactiveSession(void* client, void* event)
+{
+    uint8_t* cb = (uint8_t*)client;
+
+    // Event value must be zero
+    uint32_t eventVal = *(uint32_t*)event;
+    if (eventVal != 0) return;
+
+    // Match state at offset +3484 must be 7 (completed)
+    int matchState = *(int32_t*)(cb + 3484);
+    if (matchState != 7) return;
+
+    // Active flag at offset +208 must be set
+    uint8_t activeFlag = cb[208];
+    if (activeFlag == 0) return;
+
+    // Check if game manager exists
+    extern uint32_t lbl_825D07CC;
+    uint32_t* managerRef = (uint32_t*)((uint8_t*)&lbl_825D07CC + 4);
+    if (*managerRef == 0) return;
+
+    // Check global session manager
+    extern uint32_t lbl_8271A81C;
+    void* sessionMgr = *(void**)&lbl_8271A81C;
+    if (sessionMgr == nullptr) return;
+
+    // Check active flag at offset +112 of session manager
+    uint8_t* smgr = (uint8_t*)sessionMgr;
+    if (smgr[112] == 0) return;
+
+    // Get session object at offset +100
+    void* session = *(void**)(smgr + 100);
+    if (session == nullptr) return;
+
+    // Call virtual destructor (vtable slot 0)
+    typedef void (*DestructorFn)(void*, int);
+    uint32_t* vt = *(uint32_t**)session;
+    DestructorFn destroy = (DestructorFn)vt[0];
+    destroy(session, 0);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetFloatContextProperty @ 0x822F1408 | size: 0x9C
+//
+// Acquires the network lock, increments a global recursion counter,
+// begins a network operation, looks up a named context property, stores
+// a float value (converted to int) with type=3, then releases the lock
+// and decrements the counter.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Float value to store in the context property
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SetFloatContextProperty(void* client, float value)
+{
+    // Acquire network lock
+    bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
+
+    // Increment global recursion counter
+    extern uint32_t lbl_8271A834;
+    uint32_t savedCounter = lbl_8271A834 + 1;
+    lbl_8271A834 = savedCounter;
+
+    // Begin network operation
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Look up context property by name
+    extern const char lbl_8205B474[];
+    void* context = SinglesNetworkClient_9318_g(nullptr, lbl_8205B474);
+
+    if (context != nullptr) {
+        uint32_t* contextData = (uint32_t*)context;
+        // Convert float to integer and store
+        contextData[0] = (int32_t)value;
+        contextData[1] = 3;  // type identifier
+    }
+
+    // Release lock and decrement counter
+    if (lockAcquired) {
+        SinglesNetworkClient_ClearNetworkFlag(client);
+        lbl_8271A834--;
+        return;
+    }
+
+    // Decrement counter (lock wasn't held)
+    lbl_8271A834 = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetIntContextProperty @ 0x822F2D68 | size: 0x8C
+//
+// Acquires the network lock, increments a global recursion counter,
+// begins a network operation, looks up a named context property, stores
+// an integer value with type=3, then releases the lock and decrements
+// the counter.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient instance
+//   value  - Integer value to store in the context property
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SetIntContextProperty(void* client, uint32_t value)
+{
+    // Acquire network lock
+    bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
+
+    // Increment global recursion counter
+    extern uint32_t lbl_8271A834;
+    uint32_t savedCounter = lbl_8271A834 + 1;
+    lbl_8271A834 = savedCounter;
+
+    // Begin network operation
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Look up context property by name
+    extern const char lbl_8205BECC[];
+    void* context = SinglesNetworkClient_9318_g(nullptr, lbl_8205BECC);
+
+    if (context != nullptr) {
+        uint32_t* contextData = (uint32_t*)context;
+        contextData[0] = value;
+        contextData[1] = 3;  // type identifier
+    }
+
+    // Release lock and decrement counter
+    if (lockAcquired) {
+        SinglesNetworkClient_ClearNetworkFlag(client);
+        lbl_8271A834--;
+        return;
+    }
+
+    // Decrement counter (lock wasn't held)
+    lbl_8271A834 = savedCounter - 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::HandleSessionStateTransition @ 0x82105D38 | size: 0xB8
+//
+// Handles state transitions for the match session. For states 5 and 6,
+// resets score data and transitions to a new session phase. State 5 sets
+// an invalid marker (-1) on the session score. State 6 conditionally
+// resets based on a timing check against a threshold value.
+// States 2 and 3 are terminal (no-op return).
+//
+// Parameters:
+//   session - Pointer to match session state structure
+// ─────────────────────────────────────────────────────────────────────────────
+extern void util_6CB0(void* player);
+extern void SinglesNetworkClient_5D90_g(void* sessionData, int newState);
+
+void SinglesNetworkClient_HandleSessionStateTransition(void* session)
+{
+    uint8_t* sb = (uint8_t*)session;
+
+    // Get current state from offset +12
+    int32_t state = *(int32_t*)(sb + 12);
+
+    // States 2 and 3 are terminal
+    if (state == 2 || state == 3) {
+        return;
+    }
+
+    uint8_t* sessionData = *(uint8_t**)(sb + 48);
+
+    if (state == 5) {
+        // Set invalid score marker at +4108
+        *(int16_t*)(sessionData + 4108) = -1;
+    } else if (state == 6) {
+        // Look up player from player array
+        void* player = nullptr;
+        if (state != -1) {
+            uint32_t* playerArray = *(uint32_t**)(sb + 8);
+            player = (void*)playerArray[state];
+        }
+
+        // Get timing value from player
+        util_6CB0(player);
+
+        // Check against threshold from global tuning data
+        extern uint32_t lbl_8271A328;
+        void* tuning = *(void**)&lbl_8271A328;
+        float* tuningData = (float*)((uint8_t*)tuning + 4);
+        float threshold = *(float*)((uint8_t*)tuningData + 308);
+
+        // Set invalid score marker
+        *(int16_t*)(sessionData + 4108) = -1;
+    } else {
+        return;
+    }
+
+    // Reset score counters at +3600 and +3602
+    *(uint16_t*)(sessionData + 3600) = 0;
+    *(uint16_t*)(sessionData + 3602) = 0;
+
+    // Transition to new session phase (state=2)
+    void* activeSessionData = *(void**)(sb + 48);
+    SinglesNetworkClient_5D90_g(activeSessionData, 2);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidateFrontendEntry @ 0x821882F0 | size: 0xBC
+//
+// Validates a frontend context table entry by checking two fields match
+// expected values. Computes a table index from the player slot and round,
+// then verifies that the stored values at computed offsets match the
+// provided expected player ID and expected round ID.
+//
+// Parameters:
+//   table          - Pointer to the frontend context table
+//   playerSlot     - Player slot index
+//   expectedPlayer - Expected player ID value at the computed entry
+//   expectedRound  - Expected round value to check
+//   round          - Round index for entry lookup
+//
+// Returns:
+//   true if both fields match, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+extern bool pongFrontendContext_8280_g(void* table, int playerSlot, int round);
+
+bool SinglesNetworkClient_ValidateFrontendEntry(void* table, int playerSlot,
+                                                 int expectedPlayer, int expectedRound,
+                                                 int round)
+{
+    uint32_t* t = (uint32_t*)table;
+
+    // First validate via frontend context helper
+    bool valid = pongFrontendContext_8280_g(table, playerSlot, round);
+
+    if (!valid) {
+        return false;
+    }
+
+    // Compute table index: entry = table[(playerSlot + 33) * 4]
+    uint32_t entryIndex = t[playerSlot + 33];
+
+    // Compute slot within entry: slot = entryIndex * 2 + round + 1
+    uint32_t slot = entryIndex * 2 + round + 1;
+
+    // Compute final record offset: record = slot * 3, byte offset = record * 8
+    uint32_t record = slot + slot * 2;  // slot * 3
+    uint32_t byteOffset = record * 8;
+
+    // Check first field (player ID) at the computed offset
+    if ((int32_t)t[byteOffset / 4] != expectedPlayer) {
+        return false;
+    }
+
+    // Recompute for second field check at +28 bytes into the record
+    uint32_t entryIndex2 = t[playerSlot + 33];
+    uint32_t slot2 = entryIndex2 * 2 + round;
+    uint32_t record2 = slot2 + slot2 * 2;  // slot2 * 3
+    uint32_t byteOffset2 = record2 * 8;
+
+    // Check second field (round ID) at byteOffset2 + 28
+    uint8_t* base = (uint8_t*)table;
+    if (*(int32_t*)(base + byteOffset2 + 28) != expectedRound) {
+        return false;
+    }
+
+    return true;
+}
+
+
+// ── External function declarations for session management ──────────────────
+extern void ke_1B00(void* listNode);
+extern uint8_t SinglesNetworkClient_B2A8_g(void* client);
+extern void* SinglesNetworkClient_B1E8_g(void* client);
+extern void* SinglesNetworkClient_9318_g(void* clientState, const char* msgType);
+extern void SinglesNetworkClient_B320_g(void* client);
+extern uint32_t SinglesNetworkClient_87D8_g(void* client);
+extern void SinglesNetworkClient_F090(void* session);
+extern void SinglesNetworkClient_7038_g(void* sessionList, int sessionId);
+extern void pg_E630_g(void* pageGroup, int eventCode);
+extern void pg_E7D0_g(void* pageGroup, uint32_t connectionCount, int param1, int param2);
+extern void SinglesNetworkClient_3E00_g(void* sessionData);
+extern void SinglesNetworkClient_F508_g(void* sessionList, void* node);
+
+// ── Globals ────────────────────────────────────────────────────────────────
+extern uint32_t g_sessionRegistrationCount;  // @ global counter for session registrations
+extern void* g_pSessionManager;              // @ 0x8271A358 session manager singleton
+extern void* g_pConnectionManager;           // @ 0x8271A39C connection manager
+extern void* g_pPageGroupManager;            // @ 0x8271A49C page group manager
+extern uint8_t* g_pSessionSlotTable;         // @ 0x8261AB40 session slot table
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::InitSessionNode @ 0x822F9760 | size: 0x58
+//
+// Initializes a network session node structure. Sets the vtable pointer,
+// zeroes all core fields, and detaches the two internal linked-list nodes.
+//
+// Parameters:
+//   self - Pointer to session node structure to initialize
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_InitSessionNode(void* self)
+{
+    uint32_t* node = (uint32_t*)self;
+
+    // Set vtable pointer (cmRefreshableCtor vtable @ 0x820533CC)
+    extern uint32_t lbl_820533CC;
+    node[0] = (uint32_t)&lbl_820533CC;
+
+    // Zero core state fields
+    node[1] = 0;  // flags
+    node[2] = 0;  // field +8
+
+    // Detach both internal linked-list nodes at offsets +12 and +16
+    ke_1B00((void*)(node + 3));  // list node at +12
+    ke_1B00((void*)(node + 4));  // list node at +16
+
+    // Clear the list node pointers and status field
+    node[4] = 0;  // +16
+    node[3] = 0;  // +12
+    node[5] = 0;  // +20
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::RegisterSessionEntry @ 0x822F9838 | size: 0x50
+//
+// Registers a session entry by storing its identifier and incrementing a
+// global session registration counter.
+//
+// Parameters:
+//   self  - Pointer to session registration structure
+//   entry - Session entry identifier to register
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_RegisterSessionEntry(void* self, uint32_t entry)
+{
+    uint32_t* regData = (uint32_t*)self;
+
+    // Store entry identifier at offset +0
+    regData[0] = entry;
+
+    // Validate the entry through the polling subsystem
+    uint8_t result = SinglesNetworkClient_B2A8_g((void*)entry);
+
+    // Store validation result as byte at offset +4
+    *(uint8_t*)((uint8_t*)self + 4) = (uint8_t)result;
+
+    // Increment global session registration counter
+    g_sessionRegistrationCount++;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendTrainingDrillResult @ 0x822FA7B8 | size: 0x60
+//
+// Sends a training drill result message through the network client.
+// Called by pongTrainingDrill vtable methods (vfn_4, vfn_9) and various
+// drill types (serve meter, return, soft shot, spin, focus shot, smash).
+//
+// Parameters:
+//   self  - Pointer to training context
+//   value - Drill result value to send
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendTrainingDrillResult(void* self, uint32_t value)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Look up the "TrainingDrillResult" message type string (@ 0x8205C83C)
+    extern const char lbl_8205C83C[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C83C);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = value;  // store drill result value
+        slot[1] = 3;      // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
         SinglesNetworkClient_B320_g(self);
     }
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SinglesNetworkClient::GetFirstUnreadyPlayer @ 0x8218A3E8 | size: 0x50
+// SinglesNetworkClient::SendDrillMovementState @ 0x822FA8F0 | size: 0x60
 //
-// Checks if both players (at offsets +116 and +120) have their ready flag
-// set at offset +472. Returns the first player pointer that is not ready.
-// If both are ready, logs a debug message and returns nullptr.
+// Sends the current drill movement state over the network. Reads the
+// movement value from the context at offset +184 and posts it as a
+// network message with priority 3.
+//
+// Called by hudTrainingHUD_vfn_5, pongDrillMovement_vfn_4/vfn_5.
 //
 // Parameters:
-//   self - Pointer to SinglesNetworkClient instance
+//   self - Pointer to drill movement context
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendDrillMovementState(void* self)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Read movement value from context at offset +184
+    uint32_t movementValue = *(uint32_t*)((uint8_t*)self + 184);
+
+    // Look up the "DrillMovementState" message type string (@ 0x8205C86C)
+    extern const char lbl_8205C86C[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C86C);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = movementValue;  // store movement state value
+        slot[1] = 3;              // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendDrillChargingState @ 0x822FAC08 | size: 0x60
+//
+// Sends a drill charging state message through the network client.
+// Called by pongDrillCharging_vfn_4 and pongDrillCharging_vfn_26.
+//
+// Parameters:
+//   self  - Pointer to drill charging context
+//   value - Charging state value to send
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendDrillChargingState(void* self, uint32_t value)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Look up the "DrillChargingState" message type string (@ 0x8205C898)
+    extern const char lbl_8205C898[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C898);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = value;  // store charging state value
+        slot[1] = 3;      // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SendTrainingHUDUpdate @ 0x822FAC68 | size: 0x60
+//
+// Sends a training HUD update message through the network client.
+// Called by hudTrainingHUD_vfn_5.
+//
+// Parameters:
+//   self  - Pointer to training HUD context
+//   value - HUD update value to send
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_SendTrainingHUDUpdate(void* self, uint32_t value)
+{
+    // Poll current button state
+    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+
+    // Get the network client instance
+    void* client = SinglesNetworkClient_B1E8_g(self);
+
+    // Look up the "TrainingHUDUpdate" message type string (@ 0x8205C8A8)
+    extern const char lbl_8205C8A8[];
+    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C8A8);
+
+    if (msgSlot != nullptr) {
+        uint32_t* slot = (uint32_t*)msgSlot;
+        slot[0] = value;  // store HUD update value
+        slot[1] = 3;      // priority level
+    }
+
+    // If polling was active, re-initiate the connection
+    if ((wasActive & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(self);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ValidateMessageBounds @ 0x82418CE8 | size: 0x64
+//
+// Validates that a message's data payload fits within the remaining buffer
+// space. Reads a 16-bit data length from offset +2 of the header (byte-
+// swapped for endianness), obtains the current read position from the
+// message buffer, and checks whether position + dataLength <= totalSize.
+//
+// Parameters:
+//   header  - Pointer to message header (uint16 length at +2)
+//   message - Pointer to network message buffer object
 //
 // Returns:
-//   Pointer to the first unready player, or nullptr if both ready
+//   true if message data fits within buffer bounds, false otherwise
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void* SinglesNetworkClient_A3E8_g(void* self)
+bool SinglesNetworkClient_ValidateMessageBounds(void* header, void* message)
 {
-    uint32_t* data = (uint32_t*)self;
+    uint8_t* hdr = (uint8_t*)header;
 
-    // Get player 1 pointer from offset +116
-    void* player1 = (void*)(uintptr_t)data[29]; // offset +116
+    // Read total buffer size from header at offset +4
+    uint32_t totalSize = *(uint32_t*)((uint8_t*)header + 4);
 
-    // Check player 1 ready flag at offset +472
-    int32_t player1Ready = *(int32_t*)((uint8_t*)player1 + 472);
+    // Read 16-bit data length from offset +2 and byte-swap (big-endian to host)
+    uint16_t rawLen = *(uint16_t*)(hdr + 2);
+    uint16_t dataLength = (uint16_t)((rawLen >> 8) | (rawLen << 8));
 
-    if (player1Ready == 0) {
-        return player1;
+    // Get current read position from the message buffer
+    uint32_t readPos = SinglesNetworkClient_87D8_g(message);
+
+    // Compute the data start offset (header is 8 bytes)
+    uint32_t dataStart = 8;  // hdr + 8
+
+    // Check: does readPos + totalSize encompass dataStart + dataLength?
+    if (totalSize >= dataStart) {
+        if ((readPos + totalSize) <= (dataLength + dataStart)) {
+            return true;
+        }
     }
 
-    // Get player 2 pointer from offset +120
-    void* player2 = (void*)(uintptr_t)data[30]; // offset +120
+    return false;
+}
 
-    // Check player 2 ready flag at offset +472
-    int32_t player2Ready = *(int32_t*)((uint8_t*)player2 + 472);
 
-    if (player2Ready == 0) {
-        return player2;
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ProcessActiveSessionUpdates @ 0x822EAC20 | size: 0x64
+//
+// Iterates through all active connection slots and processes pending session
+// updates for each connected slot. Checks the session slot table to
+// determine which slots are active before processing.
+//
+// Parameters:
+//   self - Pointer to the session manager context
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_ProcessActiveSessionUpdates(void* self)
+{
+    uint32_t* mgr = (uint32_t*)self;
+
+    // Get the number of active connection slots from offset +1024
+    int32_t slotCount = (int32_t)mgr[256];  // offset 1024 / 4
+
+    if (slotCount <= 0) {
+        return;
     }
 
-    // Both ready: log debug message and return nullptr
-    nop_8240E6D0(lbl_820397A8);
-    return nullptr;
+    // Iterate through connection slot array starting at offset +1028
+    uint32_t* slotArray = &mgr[257];  // offset 1028 / 4
+
+    // Session slot table entry stride is 36 bytes, active flag at offset +28
+    uint8_t* slotEntry = g_pSessionSlotTable + 28;
+
+    for (int32_t i = 0; i < slotCount; i++) {
+        // Check if this slot is active (non-zero byte in slot table)
+        uint8_t isActive = *slotEntry;
+
+        if (isActive != 0) {
+            // Process the session update for this slot's connection
+            uint32_t sessionHandle = slotArray[i];
+            SinglesNetworkClient_F090((void*)sessionHandle);
+        }
+
+        // Advance to next slot table entry (stride = 36 bytes)
+        slotEntry += 36;
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::FindSessionByName @ 0x8236A0F8 | size: 0x80
+//
+// Searches the session entry list for an entry matching the given name
+// string. Performs a byte-by-byte string comparison against each entry's
+// name field (stored at offset +80 within each 24-byte-stride entry).
+//
+// Parameters:
+//   self - Pointer to session list context (entry count at +176, entries at +80)
+//   name - Null-terminated session name string to search for
+//
+// Returns:
+//   true if a matching session entry was found, false otherwise
+// ─────────────────────────────────────────────────────────────────────────────
+bool SinglesNetworkClient_FindSessionByName(void* self, const char* name)
+{
+    uint8_t* ctx = (uint8_t*)self;
+
+    // Get number of entries from offset +176
+    int32_t entryCount = *(int32_t*)(ctx + 176);
+
+    if (entryCount <= 0) {
+        return false;
+    }
+
+    // Entry names start at offset +80, each entry is 24 bytes apart
+    const char* entryName = (const char*)(ctx + 80);
+
+    for (int32_t i = 0; i < entryCount; i++) {
+        // Byte-by-byte string comparison (strcmp equivalent)
+        const char* a = name;
+        const char* b = entryName;
+
+        while (*a != '\0') {
+            if (*a != *b) {
+                break;
+            }
+            a++;
+            b++;
+        }
+
+        // Check if strings matched completely
+        if ((*a - *b) == 0) {
+            return true;
+        }
+
+        // Advance to next entry (24-byte stride)
+        entryName += 24;
+    }
+
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::RoutePageGroupEvent @ 0x82329D08 | size: 0x60
+//
+// Routes a page group event based on the current connection mode. If the
+// connection mode indicates a high-priority connection (mode > 1) or the
+// connection count exceeds 3, routes directly via pg_E630_g with a forced
+// event code of 1. Otherwise routes through pg_E7D0_g with the full
+// connection parameters.
+//
+// Parameters:
+//   self        - Pointer to network context (connection mode at +196)
+//   connCount   - Connection count parameter
+//   eventParam  - Event parameter to pass through
+// ─────────────────────────────────────────────────────────────────────────────
+void SinglesNetworkClient_RoutePageGroupEvent(void* self, uint32_t connCount, int eventParam)
+{
+    uint8_t* ctx = (uint8_t*)self;
+
+    // Read connection mode from offset +196
+    int32_t connectionMode = *(int32_t*)(ctx + 196);
+
+    // Load the connection manager singleton and get its connection count
+    uint32_t* connMgr = *(uint32_t**)&g_pConnectionManager;
+    uint32_t activeConns = connMgr[1];  // connection count at offset +4
+
+    // Determine if we should use the high-priority route
+    bool highPriority = false;
+    if (connectionMode > 1) {
+        highPriority = true;
+    } else if (activeConns > 3) {
+        highPriority = true;
+    }
+
+    if (highPriority) {
+        // Route directly with forced event code 1
+        pg_E630_g(g_pPageGroupManager, 1);
+    } else {
+        // Route with full connection parameters
+        pg_E7D0_g(g_pPageGroupManager, activeConns, connCount, eventParam);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetStateId (vfn_4) @ 0x82392310 | size: 0x8
+//
+// Returns the network state identifier constant (151) for SinglesNetworkClient.
+// This identifies the client type in the network state machine.
+//
+// Returns:
+//   State ID constant (151)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" int SinglesNetworkClient_GetStateId()
+{
+    return 151;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::EnablePaused (vfn_12) @ 0x8239AF80 | size: 0x18
+//
+// Sets the paused flag to true (1) on the match instance accessed through
+// the global singles network client pointer at lbl_8271A318.
+// Writes to byte offset +88 of the match object at slot 3 (+12) of the global.
+// ─────────────────────────────────────────────────────────────────────────────
+extern uint32_t* lbl_8271A318;
+
+extern "C" void SinglesNetworkClient_EnablePaused()
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+    *(uint8_t*)((uint8_t*)matchObj + 88) = 1;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::DisablePaused (vfn_13) @ 0x8239AF98 | size: 0x18
+//
+// Clears the paused flag to false (0) on the match instance accessed through
+// the global singles network client pointer at lbl_8271A318.
+// Writes to byte offset +88 of the match object at slot 3 (+12) of the global.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_DisablePaused()
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+    *(uint8_t*)((uint8_t*)matchObj + 88) = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::GetElapsedTime (vfn_14) @ 0x8239AFB0 | size: 0x30
+//
+// Computes the elapsed time by reading an integer tick count from offset +4
+// and a float base time from offset +8 of the match object, converting the
+// tick count to float, and adding them together.
+//
+// Returns:
+//   Elapsed time as float (basetime + ticks)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" float SinglesNetworkClient_GetElapsedTime()
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+
+    int32_t ticks = (int32_t)matchObj[1];            // offset +4
+    float baseTime = *(float*)&matchObj[2];           // offset +8
+
+    return baseTime + (float)ticks;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::DelegateToBaseUpdate (vfn_15) @ 0x8239AFE0 | size: 0x1C
+//
+// Retrieves the match object from the global pointer and dispatches to its
+// vtable slot 2 (the base update virtual function). This is a thin forwarding
+// wrapper that delegates to the underlying match object's update method.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance (this, unused)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_DelegateToBaseUpdate(void* self)
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+
+    // Tail-call vtable slot 2
+    uint32_t* vtable = *(uint32_t**)matchObj;
+    typedef void (*VFn2)(void*);
+    VFn2 updateFn = (VFn2)(uintptr_t)vtable[2];
+    updateFn(matchObj);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::StartMatchTiming (vfn_9) @ 0x823941D0 | size: 0x28
+//
+// Initializes match timing on the client object (this = r3).
+// Reads the current match time from the global timer object (slot 1 at
+// offset +332), then sets:
+//   - byte at +0x100E (4110) = 1 (timing active flag)
+//   - float at +0x1010 (4112) = current match time
+//   - byte at +0x100F (4111) = 0 (timing phase reset)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_StartMatchTiming(void* self)
+{
+    uint8_t* data = (uint8_t*)self;
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* timerObj = (uint32_t*)(uintptr_t)global[1];
+
+    float matchTime = *(float*)((uint8_t*)timerObj + 332);
+
+    data[4110] = 1;
+    *(float*)(data + 4112) = matchTime;
+    data[4111] = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ForwardMessageIfConnected (vfn_17) @ 0x8239B000 | size: 0x30
+//
+// Checks the connection state at offset +28 of this object. If the state
+// is 2 or 3 (connected/active), forwards the message by calling
+// atSingleton_1570_h with the global pointer and rearranged parameters.
+//
+// Parameters:
+//   self  - Pointer to SinglesNetworkClient (this)
+//   param - Message parameter (r4)
+//   data  - Message data (r5)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void atSingleton_1570_h(void* global, int zero, void* param, void* data);
+
+extern "C" void SinglesNetworkClient_ForwardMessageIfConnected(void* self, void* param, void* data)
+{
+    uint32_t* selfData = (uint32_t*)self;
+    int32_t state = (int32_t)selfData[7]; // offset +28
+
+    if (state != 2 && state != 3) {
+        return;
+    }
+
+    void* global = (void*)(uintptr_t)lbl_8271A318;
+    atSingleton_1570_h(global, 0, param, data);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::~SinglesNetworkClient (vfn_0) @ 0x82391F98 | size: 0x50
+//
+// Destructor for SinglesNetworkClient. Calls the base class destructor
+// (ph_ctor_1FE8), then conditionally frees memory if the scalar deleting
+// destructor flag (bit 0 of param) is set.
+//
+// Parameters:
+//   self  - Pointer to SinglesNetworkClient instance (this)
+//   param - Destructor flags (bit 0 = free memory after destruct)
+//
+// Returns:
+//   Pointer to the destroyed object
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void ph_ctor_1FE8(void* self);
+extern "C" void rage_free_00C0(void* ptr);
+
+extern "C" void* SinglesNetworkClient_Destructor(void* self, uint32_t param)
+{
+    ph_ctor_1FE8(self);
+
+    if ((param & 1) != 0) {
+        rage_free_00C0(self);
+    }
+
+    return self;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::TransformAndDispatchEvent (vfn_16) @ 0x8239B030 | size: 0x50
+//
+// Copies an 8-byte event structure from the source pointer (r5) into a
+// local buffer, transforms it via util_EA38, then dispatches the transformed
+// event through the object's own vtable slot 17.
+//
+// Parameters:
+//   self   - Pointer to SinglesNetworkClient instance (this)
+//   param  - Event parameter (r4, forwarded to vtable call)
+//   source - Pointer to 8-byte source event data (r5)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void util_EA38(void* dest);
+
+extern "C" void SinglesNetworkClient_TransformAndDispatchEvent(void* self, void* param, void* source)
+{
+    // Copy 8-byte event struct to local buffer
+    uint32_t localBuf[2];
+    uint32_t* src = (uint32_t*)source;
+    localBuf[0] = src[0];
+    *(float*)&localBuf[1] = *(float*)&src[1];
+
+    // Transform the event
+    util_EA38((void*)localBuf);
+
+    // Dispatch via vtable slot 17 (vfn_17)
+    // self->vfn_17(self, param, &localBuf)
+    uint32_t* vtable = *(uint32_t**)self;
+    typedef void (*VFn17)(void*, void*, void*);
+    VFn17 fn = (VFn17)(uintptr_t)vtable[17];
+    fn(self, param, (void*)localBuf);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::ResetMatchState (vfn_18) @ 0x8239B080 | size: 0x4C
+//
+// Resets match state by first calling the scalar deleting destructor
+// (vtable slot 1) on the match object from the global pointer, then
+// reinitializing the sub-object at offset +784 via SinglesNetworkClient_2F28_g.
+//
+// Parameters:
+//   self - Pointer to SinglesNetworkClient instance (this)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_2F28_g(void* subObj);
+
+extern "C" void SinglesNetworkClient_ResetMatchState(void* self)
+{
+    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
+
+    // Call match object's vtable slot 1 (scalar deleting destructor)
+    uint32_t* vtable = *(uint32_t**)matchObj;
+    typedef void (*VFn1)(void*);
+    VFn1 dtor = (VFn1)(uintptr_t)vtable[1];
+    dtor(matchObj);
+
+    // Reinitialize sub-object at offset +784
+    SinglesNetworkClient_2F28_g((void*)((uint8_t*)self + 784));
 }

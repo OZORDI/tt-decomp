@@ -705,9 +705,9 @@ LocomotionStateAnim::~LocomotionStateAnim() {
 // ─────────────────────────────────────────────────────────────────────────────
 void LocomotionStateAnim::Reset() {
     // Clear animation state fields
-    this->field_0x003c = 0;   // Clear state flags
-    this->field_0x0140 = 0;  // Clear animation pointer
-    this->field_0x0144 = 0;  // Clear animation data
+    *(uint32_t*)((char*)this + 0x3C) = 0;   // m_stateFlags = 0
+    *(uint32_t*)((char*)this + 0x140) = 0;  // m_animData = null
+    *(uint32_t*)((char*)this + 0x144) = 0;  // m_animDataPtr = null
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -716,10 +716,10 @@ void LocomotionStateAnim::Reset() {
 // ─────────────────────────────────────────────────────────────────────────────
 float LocomotionStateAnim::GetAnimationProgress() {
     // Get current animation data
-    void* animData = (void*)this->field_0x0140;
+    void* animData = *(void**)((char*)this + 0x140);  // m_animData
     
     // Get animation timing values
-    float currentTime = *(float*)&this->field_0x00b8;
+    float currentTime = *(float*)((char*)this + 0xB8);  // m_currentTime
     float duration = *(float*)((char*)this + 40);
     float animEndTime = *(float*)((char*)animData + 12);
     
@@ -736,7 +736,7 @@ float LocomotionStateAnim::GetAnimationProgress() {
 // ─────────────────────────────────────────────────────────────────────────────
 float LocomotionStateAnim::GetAnimationDuration() {
     // Get current animation data
-    void* animData = (void*)this->field_0x0140;
+    void* animData = *(void**)((char*)this + 0x140);  // m_animData
     
     // Get timing values
     float duration = *(float*)((char*)this + 40);
@@ -754,7 +754,7 @@ float LocomotionStateAnim::GetAnimationDuration() {
 // ─────────────────────────────────────────────────────────────────────────────
 bool LocomotionStateAnim::IsAnimationComplete() {
     // Check completion flag at offset +328
-    uint8_t isComplete = this->field_0x0148;
+    uint8_t isComplete = *(uint8_t*)((char*)this + 0x148);  // m_isComplete
     
     // Return inverted: 0 means complete, non-zero means still playing
     // This is a cntlzw + rlwinm pattern: count leading zeros and extract bit
@@ -810,11 +810,11 @@ void LocomotionStateAnim::Initialize() {
     }
     
     // Initialize state fields
-    *(float*)&this->field_0x00b8 = zero;   // Current time
-    this->field_0x0144 = 0;   // Animation data pointer
-    this->field_0x0140 = 0;   // Animation object pointer
-    *(float*)&this->field_0x014c = zero;   // Blend weight
-    this->field_0x0148 = 1;    // Mark as not complete
+    *(float*)((char*)this + 0xB8) = zero;   // m_currentTime
+    *(uint32_t*)((char*)this + 0x144) = 0;   // m_animDataPtr = null
+    *(uint32_t*)((char*)this + 0x140) = 0;   // m_animData = null
+    *(float*)((char*)this + 0x14C) = zero;   // m_blendWeight
+    *(uint8_t*)((char*)this + 0x148) = 1;    // m_isComplete = false
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1376,7 +1376,7 @@ void* pongCreatureInst::GetSubObjectTransform(int index) {  // vfn_3
  * creature has the visibility/render flag set.
  */
 bool pongCreatureInst::HasVisibilityFlag() {  // 5378
-    uint8_t flags = this->m_bStateReady;
+    uint8_t flags = *(uint8_t*)((char*)this + 0x1AF);  // m_visibilityFlags
     return (flags & 0x4) != 0;
 }
 
@@ -1533,7 +1533,7 @@ void pongCreatureInst::StoreVCallResultAtField429(void* arg) {  // 8E70_p42
     void** vt = *(void***)target;
     GetFunc fn = (GetFunc)vt[4];
     uint8_t result = fn(target);
-    this->field_0x01ad = result;
+    *(uint8_t*)((char*)this + 0x1AD) = result;  // m_boneParam
 }
 
 /**
@@ -1547,7 +1547,7 @@ void pongCreatureInst::StoreVCallResultAtField446(void* arg) {  // 9180_p42
     void** vt = *(void***)target;
     GetFunc fn = (GetFunc)vt[4];
     uint8_t result = fn(target);
-    this->field_0x01be = result;
+    *(uint8_t*)((char*)this + 0x1BE) = result;  // m_blendFlag
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1629,7 +1629,7 @@ void pongCreatureInst::UpdateFlag445(void* arg) {  // 8EB0_p42
     void* target = *(void**)((char*)arg + 4);
     typedef uint8_t (*GetFn)(void*);
     uint8_t val = ((GetFn)(*(void***)target)[4])(target);
-    this->field_0x01bd = val;
+    *(uint8_t*)((char*)this + 0x1BD) = val;  // m_boneFlag
 }
 
 /**
@@ -1641,7 +1641,7 @@ void pongCreatureInst::UpdateFlag447(void* arg) {  // 8F70_p42
     void* target = *(void**)((char*)arg + 4);
     typedef uint8_t (*GetFn)(void*);
     uint8_t val = ((GetFn)(*(void***)target)[4])(target);
-    this->field_0x01bf = val;
+    *(uint8_t*)((char*)this + 0x1BF) = val;  // m_mirrorFlag
 }
 
 /**
@@ -1655,7 +1655,7 @@ void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
     typedef uint8_t (*GetFn)(void*);
     uint8_t val = ((GetFn)(*(void***)target)[4])(target);
 
-    uint8_t* flags = &this->m_bStateReady;
+    uint8_t* flags = (uint8_t*)((char*)this + 0x1AF);  // m_visibilityFlags
     if (val) {
         *flags |= 0x08;   // set bit 3
     } else {
@@ -1674,7 +1674,7 @@ void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
  */
 void pongCreature::LookupHashValue(void* outPtr, void* keyPtr) {  // 79F0_p45
     uint32_t key = *(uint32_t*)keyPtr;
-    void* hashTable = (void*)this->field_0x00a0;
+    void* hashTable = *(void**)((char*)this + 0xA0);  // m_hashTable
     char* entries = *(char**)((char*)hashTable + 8);
     char* entry = entries + (key << 3);
 
@@ -1694,7 +1694,7 @@ void pongCreature::LookupHashValue(void* outPtr, void* keyPtr) {  // 79F0_p45
  */
 void pongCreature::FindIndexByKey(void* outPtr, void* keyPtr) {  // 7990_p45
     uint32_t searchKey = *(uint32_t*)keyPtr;
-    void* arrayBase = (void*)this->field_0x00a0;
+    void* arrayBase = *(void**)((char*)this + 0xA0);  // m_hashTable
     char* entries = *(char**)((char*)arrayBase + 8);
     uint32_t count = *(uint32_t*)((char*)arrayBase + 12);
 
@@ -1737,7 +1737,7 @@ uint32_t pongCreatureInst::LookupContainer() {  // CFB0_h
  * active animation or physics slots.
  */
 bool pongCreatureInst::HasMultipleActiveSlots() {  // 7BD8_h
-    uint32_t bitfield = this->field_0x01d0;
+    uint32_t bitfield = *(uint32_t*)((char*)this + 0x1D0);  // m_activeSlotBits
     int count = 0;
     while (bitfield) {
         count += (bitfield & 1);
@@ -1857,7 +1857,7 @@ void pongCreatureInst::Detach() {  // D470_p33
 
     // Remove from parent's child list
     void* parent = *(void**)((char*)g_creatureManager + 876);
-    void* childToRemove = (void*)(uintptr_t)this->m_pAllocator;
+    void* childToRemove = *(void**)((char*)this + 0xC0);  // m_childLink
     typedef void (*RemoveFn)(void*, void*);
     RemoveFn removeChild = (RemoveFn)(*(void***)parent)[3];
     removeChild(parent, childToRemove);
@@ -2969,7 +2969,7 @@ void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
 // diagnostic message via the nop debug function and returns early.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName1, const char* boneName2) {
-    uint8_t boneCount = this->m_bIsActive;   // m_boneCount at +0x1AA
+    uint8_t boneCount = *(uint8_t*)((char*)this + 0x1AA);  // m_boneCount
 
     if (boneCount == 0) {
         // No bones available — log and return
@@ -2982,7 +2982,7 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
 
     for (int i = 0; i < boneCount; i++) {
         // Bone pointer array at this+176 (0xB0)
-        void** boneArray = (void**)(uintptr_t)this->m_pBoneArray;
+        void** boneArray = *(void***)((char*)this + 0xB0);  // m_boneArray
         void* boneEntry = boneArray[i];
 
         // Bone name string starts at boneEntry+29
@@ -3002,8 +3002,8 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
     }
 
     // Store the found indices into the mapping arrays
-    uint8_t* mappingArray1 = (uint8_t*)this->field_0x00d0;  // +0xD0
-    uint8_t* mappingArray2 = (uint8_t*)this->field_0x00d4;  // +0xD4
+    uint8_t* mappingArray1 = *(uint8_t**)((char*)this + 0xD0);  // m_boneMapping1
+    uint8_t* mappingArray2 = *(uint8_t**)((char*)this + 0xD4);  // m_boneMapping2
     mappingArray1[mappingIndex] = (uint8_t)foundIndex1;
     mappingArray2[mappingIndex] = (uint8_t)foundIndex2;
 }
@@ -3030,9 +3030,9 @@ void pongCreatureInst::ReadBoneNamesAndMap(void* xmlNode) {
     readString(dataObj, boneName2, 39);
 
     // Increment the bone pair count at +424 (0x1A8)
-    uint8_t pairCount = (uint8_t)this->m_statusFlags;
+    uint8_t pairCount = *(uint8_t*)((char*)this + 0x1A8);  // m_bonePairCount
     pairCount++;
-    this->m_statusFlags = pairCount;
+    *(uint8_t*)((char*)this + 0x1A8) = pairCount;  // m_bonePairCount
 
     // Find and map the bone pair using the previous count as the mapping index
     FindBonePairByName((uint8_t)(pairCount - 1), boneName1, boneName2);
@@ -3052,7 +3052,7 @@ void pongCreatureInst::StoreBoneResult(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    this->field_0x01ad = (uint8_t)result;
+    *(uint8_t*)((char*)this + 0x1AD) = (uint8_t)result;  // m_boneParam
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3068,7 +3068,7 @@ void pongCreatureInst::StoreBoneFlag(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    this->field_0x01bd = (result != 0) ? 1 : 0;
+    *(uint8_t*)((char*)this + 0x1BD) = (result != 0) ? 1 : 0;  // m_boneFlag
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3086,9 +3086,9 @@ void pongCreatureInst::SetOrClearBoneFlag8(void* xmlNode) {
     int result = readValue(dataObj);
 
     if (result != 0) {
-        this->m_bStateReady |= 0x08;
+        *(uint8_t*)((char*)this + 0x1AF) |= 0x08;  // m_visibilityFlags
     } else {
-        this->m_bStateReady &= ~0x08;
+        *(uint8_t*)((char*)this + 0x1AF) &= ~0x08;  // m_visibilityFlags
     }
 }
 
@@ -3105,7 +3105,7 @@ void pongCreatureInst::StoreMirrorFlag(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    this->field_0x01bf = (result != 0) ? 1 : 0;
+    *(uint8_t*)((char*)this + 0x1BF) = (result != 0) ? 1 : 0;  // m_mirrorFlag
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3121,5 +3121,5 @@ void pongCreatureInst::StoreBlendFlag(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    this->field_0x01be = (uint8_t)result;
+    *(uint8_t*)((char*)this + 0x1BE) = (uint8_t)result;  // m_blendFlag
 }

@@ -41,8 +41,8 @@ extern "C" void parStreamOutXml_3E40(void* stream, const char* format, ...);
 // rage_obj_finalize_3B38 @ 0x822E3B38
 extern "C" void rage_obj_finalize_3B38(void* stream);
 
-// rage_DebugLog — debug printf, compiled out (just blr)
-extern "C" void rage_DebugLog(const char* format, ...);
+// nop_8240E6D0 — debug printf, compiled out (just blr)
+extern "C" void nop_8240E6D0(const char* format, ...);
 
 /* ── Global: active logging allocator ref count ───────────────────────── */
 // lbl_825EBD20 @ 0x825EBD20  (.data, 4 bytes)
@@ -216,7 +216,7 @@ void sysMemSimpleAllocator::DumpLeaks(const char* name, const char* logPath) {
     }
 
     // Debug output: allocator name
-    rage_DebugLog("%s", name);
+    nop_8240E6D0("%s", name);
 
     // Walk all memory nodes in the heap
     uint8_t* heapStart = reinterpret_cast<uint8_t*>(static_cast<uintptr_t>(heapBase));
@@ -237,7 +237,7 @@ void sysMemSimpleAllocator::DumpLeaks(const char* name, const char* logPath) {
                 uint32_t blockSize = *reinterpret_cast<uint32_t*>(node + 4);
 
                 // Debug output: block info (nop in retail)
-                rage_DebugLog("  size:%d tag:%d seq:%d",
+                nop_8240E6D0("  size:%d tag:%d seq:%d",
                              blockSize, flagsMeta & 0xF, allocSeq);
 
                 // Write to log file if open
@@ -257,7 +257,7 @@ void sysMemSimpleAllocator::DumpLeaks(const char* name, const char* logPath) {
 
     // Report total leaks if any found
     if (leakCount > 0) {
-        rage_DebugLog("  total leaks: %d", leakCount);
+        nop_8240E6D0("  total leaks: %d", leakCount);
     }
 
     // Close log file if opened

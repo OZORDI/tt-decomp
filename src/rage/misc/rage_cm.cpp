@@ -80,97 +80,22 @@
 #include <cstring>
 #include <cstdint>
 
-// ── External C functions used by cm nodes ───────────────────────────────────
-extern "C" {
-    float cmApproach2_ComputeFactor(void* node);
-    float cmAngle_Normalize(float value);
-    float cmVec4_Atan2(float* vecA, float* vecB);
-    void  cmPort_CopyToBuffer(void* reporter, void* port);
-    void  cmPort_SyncValue(void* node, void* portDesc, void* portCtx);
-    void  cmPowerApproach_Step(float* outProgress, float diff, float speed, float dt);
-    void  cmReporter_Init(void* reporter);
-    void  cmNormalizedTimer_Allocate(void* node);
-    void  sysMemAllocator_InitMainThread();
-    bool  cmNode_TryConnect3(void* node, void* desc);
-    bool  cmNode_TryConnectSingle(void* node, void* desc);
-    uint8_t  cmNode_GetBoolValue(void* port);
-    uint32_t cmNode_GetDimValue(void* port);
-}
-
 // ── Forward declarations for cross-node calls ─────────────────────────────────
 namespace rage {
 
-// ── GLOBAL DATA REFERENCES ───────────────────────────────────────────────────
-extern float g_cm_frameTime;        // @ 0x825C4958 — frame delta-time (seconds)
-extern float g_cm_frameRate;        // frame rate constant (60.0f)
-extern const float g_cm_zeroFloat;  // @ 0x8202D110 — 0.0f constant
-extern float g_cm_negateVec[4];     // @ 0x825C5938 — {-1,-1,-1,-1}
-extern void** g_tls_base;          // TLS base pointer (array of void*)
-extern void* g_vtable_cmApproach2; // @ 0x82055EFC — cmApproach2 vtable
-#define g_cmFrameScale g_cm_frameTime
-void*  rage_alloc_aligned(size_t size, size_t align); // RAGE heap aligned alloc
-void   rage_free(void* ptr);                          // RAGE heap free
+// Globals and free functions declared in rage_cm_types.hpp.
+// Forward-declare static helper used before its definition in this file:
 static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
-uint8_t cmNode_GetBool(const cmNodePort* port);
 
 
-// ── PORT / DATA STRUCTURES ───────────────────────────────────────────────────
-
-/**
- * cmDataObj — typed data buffer stored in a port's m_pData when m_type==DIRECT.
- * The actual payload sits at offset 0 (float, vec4, bool, or int depending on dim).
- * @ various allocations (16-byte aligned)
- */
-struct cmDataObj {
-    union {
-        float    m_float;    // +0x00  when m_dim == CM_DIM_FLOAT
-        uint8_t  m_bool;     // +0x00  when m_dim == CM_DIM_BOOL
-        int32_t  m_int;      // +0x00  when m_dim == CM_DIM_INT/INT32
-        float    m_vec4[4];  // +0x00  when m_dim == CM_DIM_VEC4 (16-byte aligned)
-    };
-    // bytes 4–15: padding / additional vec4 components
-    uint8_t  m_dim;          // +0x10  dimension type code (CM_DIM_*)
-    uint8_t  m_pad[3];       // +0x11
-};
-
-
-// Port type codes
-static constexpr int CM_PORT_NONE   = 0;
-static constexpr int CM_PORT_DIRECT = 1;
-static constexpr int CM_PORT_NODE   = 2;
-
-// Dimension codes
-static constexpr int CM_DIM_INT   = 0;
-static constexpr int CM_DIM_FLOAT = 1;
-static constexpr int CM_DIM_VEC4  = 2;
-static constexpr int CM_DIM_BOOL  = 3;
-static constexpr int CM_DIM_INT32 = 4;
-
-// ── PORT DESCRIPTOR ───────────────────────────────────────────────────────────
-
-/**
- * cmPortDesc — 4-byte descriptor passed to TryConnect / TryConnectUnary.
- * Describes the required input dimensions and expected output dimension.
- *   portA_dim : required dimension for input port A (0 = any/don't check)
- *   portB_dim : required dimension for input port B (0 = unary node)
- *   portC_dim : required dimension for input port C (0 = at most binary)
- *   output_dim: output dimension written to node->m_outputType on match
- */
-struct cmPortDesc {
-    uint8_t portA_dim;
-    uint8_t portB_dim;
-    uint8_t portC_dim;
-    uint8_t output_dim;
-};
-
-// ── BASE NODE ─────────────────────────────────────────────────────────────────
+// ── Types (cmDataObj, cmPortDesc, CM_PORT_*, CM_DIM_*) from rage_cm_types.hpp ─
 
 
 
 
 
 
-// ── PORT EVALUATION UTILITIES (lifted from util_92D8, cmOperator_EvalFloat, etc.) ────────
+// ── PORT EVALUATION UTILITIES (lifted from util_92D8, util_9350, etc.) ────────
 
 /**
  * cmNode_GetVector @ 0x821792D8
@@ -431,13 +356,6 @@ void cmSubtract::GetVector(float* out) {
     out[3] = va[3] - vb[3];
 }
 
-// cmSubtract::GetDim @ 0x8227B1C0
-void cmSubtract::GetDim(int32_t* out) {
-    int32_t a = cmNode_GetDim(&portA);
-    int32_t b = cmNode_GetDim(&portB);
-    *out = a - b;
-}
-
 // Note: cmSubtract shares RegisterPorts (same descriptor set as cmAdd):
 //   {VEC4,VEC4,0,VEC4}, {FLOAT,FLOAT,0,FLOAT}
 
@@ -577,41 +495,35 @@ void cmIsValid::RegisterPorts(cmUnaryNode* node) {
  * vtable @ 0x820540F4
  */
 
-// cmClamp::GetVector @ 0x8227BEA0 | size: 0xC4
-// portC (max) confirmed at this+28 by scaffold analysis
+// cmClamp::GetVector @ 0x8227BEA0
 void cmClamp::GetVector(float* out) {
     float va[4], vmin[4], vmax[4];
-    cmNode_GetVector(va,   &portA);          // value
-    cmNode_GetVector(vmin, &portB);          // min
-    cmNode_GetVector(vmax, &portC);          // max (at this+28)
-    // fsel idiom: clamp each component to [min, max]
-    for (int i = 0; i < 4; i++) {
-        float v = va[i];
-        v = (v - vmin[i] >= 0.0f) ? v : vmin[i];    // max(v, min)
-        v = (v - vmax[i] >= 0.0f) ? vmax[i] : v;    // min(v, max)
-        out[i] = v;
-    }
+    cmNode_GetVector(va,   &portA);
+    cmNode_GetVector(vmin, &portB);  // portB = min
+    // portC would be max; layout is binary+extra — TODO verify portC offset
+    // For now reconstruct what the assembly does: clamp each component
+    // Assembly shows two binary ports + inline constants in some cases
+    out[0] = va[0] < vmin[0] ? vmin[0] : (va[0] > vmax[0] ? vmax[0] : va[0]);
+    out[1] = va[1] < vmin[1] ? vmin[1] : (va[1] > vmax[1] ? vmax[1] : va[1]);
+    out[2] = va[2] < vmin[2] ? vmin[2] : (va[2] > vmax[2] ? vmax[2] : va[2]);
+    out[3] = va[3] < vmin[3] ? vmin[3] : (va[3] > vmax[3] ? vmax[3] : va[3]);
 }
 
-// cmClamp::GetFloat @ 0x8227BE20 | size: 0x7C
-// Uses dual fsel: clamp(a, min, max) = fsel(a-max, max, fsel(a-min, a, min))
+// cmClamp::GetFloat @ 0x8227BE20
 void cmClamp::GetFloat(float* out) {
-    float max = cmNode_GetFloat(&portC);     // portC at this+28
-    float min = cmNode_GetFloat(&portB);
-    float a   = cmNode_GetFloat(&portA);
-    // fsel idiom: if (a-min >= 0) use a, else use min → then clamp to max
-    float clamped = (a - min >= 0.0f) ? a : min;
-    *out = (clamped - max >= 0.0f) ? max : clamped;
+    float a    = cmNode_GetFloat(&portA);
+    float vmin = cmNode_GetFloat(&portB);
+    // TODO: verify portC is the max input; may be a separate field
+    float vmax = vmin; // placeholder until portC offset confirmed
+    *out = a < vmin ? vmin : (a > vmax ? vmax : a);
 }
 
-// cmClamp::GetDim @ 0x8227BDB8 | size: 0x68
+// cmClamp::GetDim @ 0x8227BDB8
 void cmClamp::GetDim(int32_t* out) {
-    int32_t max = cmNode_GetDim(&portC);     // portC at this+28
-    int32_t min = cmNode_GetDim(&portB);
-    int32_t a   = cmNode_GetDim(&portA);
-    if (a < min) { *out = min; return; }
-    if (a > max) { *out = max; return; }
-    *out = a;
+    int32_t a    = cmNode_GetDim(&portA);
+    int32_t vmin = cmNode_GetDim(&portB);
+    *out = a < vmin ? vmin : a;
+    // TODO: clamp max from portC
 }
 
 // cmClamp::RegisterPorts @ 0x82262658
@@ -650,21 +562,9 @@ void cmMemory::GetInt32(int32_t* out) {
 // cmMemory::Sync @ 0x822714C8 (vtable slot 8)
 // Synchronizes the memory node state. This is a virtual function that
 // ensures the node's internal state is consistent before reading values.
-/**
- * cmMemory::Sync @ 0x822714C8 | size: 0x50
- *
- * Synchronizes the memory node. Copies portA's current value into
- * the previous-value buffer by calling SyncInput twice — once for
- * the output port descriptor (+36) and once for the input port
- * descriptor (+32). This ensures both read and write ports are
- * consistent before any GetFloat/GetVector/GetDim call.
- */
 void cmMemory::Sync() {
-    // Scaffold shows two calls to util_0E30(this, portDesc, portCtx):
-    //   util_0E30(this, *(this+36), r5)   — sync output port
-    //   util_0E30(this, *(this+32), r5)   — sync input port
-    // The r5 parameter is the port context passed through from the caller.
-    // In clean C++ we just call SyncInput which does the same work.
+    // TODO: Implement full synchronization logic
+    // For now, just call SyncInput to update current value
     SyncInput();
 }
 
@@ -1042,812 +942,17 @@ float rage_sinf_approx(float angle) {
 //  STUB IMPLEMENTATIONS (TODO: lift from scaffold when needed)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── cmMultiply — multiplies portA by portB. vtable @ 0x82053B44 ──────────────
-
-// cmMultiply::GetFloat @ 0x8227B2F0 | size: 0x58
-void cmMultiply::GetFloat(float* out) {
-    float a = cmNode_GetFloat(&portA);
-    float b = cmNode_GetFloat(&portB);
-    *out = a * b;
-}
-
-// cmMultiply::GetDim @ 0x8227B2B8 | size: 0x38
-void cmMultiply::GetDim(int32_t* out) {
-    int32_t a = cmNode_GetDim(&portA);
-    int32_t b = cmNode_GetDim(&portB);
-    *out = a * b;
-}
-
-// cmMultiply::GetVector — not in binary (uses scalar broadcast at call sites)
-// cmMultiply::RegisterPorts @ 0x822624F8 — same as cmAdd/cmSubtract
-
-// ── cmDivide — divides portA by portB. vtable @ 0x82053BC4 ──────────────────
-
-// cmDivide::GetFloat @ 0x8227B398 | size: 0x58
-void cmDivide::GetFloat(float* out) {
-    float a = cmNode_GetFloat(&portA);
-    float b = cmNode_GetFloat(&portB);
-    *out = a / b;
-}
-
-// cmDivide::GetDim @ 0x8227B348 | size: 0x4C
-// Integer division with divide-by-zero trap
-void cmDivide::GetDim(int32_t* out) {
-    int32_t a = cmNode_GetDim(&portA);
-    int32_t b = cmNode_GetDim(&portB);
-    // Original has PPC trap on b==0; C++ will just crash on /0
-    *out = (b != 0) ? a / b : 0;
-}
-
-// ── cmMin — returns the smaller of portA and portB ──────────────────────────
-
-// cmMin::GetFloat @ 0x8227B838 | size: 0x5C
-// Uses fsel idiom: fsel(a-b, b, a) → if (a >= b) return b, else return a
-void cmMin::GetFloat(float* out) {
-    float b = cmNode_GetFloat(&portB);
-    float a = cmNode_GetFloat(&portA);
-    *out = (a - b >= 0.0f) ? b : a;
-}
-
-// cmMin::GetDim @ 0x8227B940 | size: 0x48
-void cmMin::GetDim(int32_t* out) {
-    int32_t b = cmNode_GetDim(&portB);
-    int32_t a = cmNode_GetDim(&portA);
-    *out = (a < b) ? a : b;
-}
-
-// ── cmMax — returns the larger of portA and portB ───────────────────────────
-
-// cmMax::GetFloat @ 0x8227B898 | size: 0x5C
-// Uses fsel idiom: fsel(a-b, a, b) → if (a >= b) return a, else return b
-void cmMax::GetFloat(float* out) {
-    float b = cmNode_GetFloat(&portB);
-    float a = cmNode_GetFloat(&portA);
-    *out = (a - b >= 0.0f) ? a : b;
-}
-
-// cmMax::GetDim @ 0x8227B8E0 | size: 0x48
-void cmMax::GetDim(int32_t* out) {
-    int32_t b = cmNode_GetDim(&portB);
-    int32_t a = cmNode_GetDim(&portA);
-    *out = (a > b) ? a : b;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  REMAINING STUBS (complex stateful nodes — need dedicated sessions)
-// ─────────────────────────────────────────────────────────────────────────────
-// ── cmApproach2 — smoothly approaches target over time. vtable @ 0x82055EFC ─
-// Stateful approach node: interpolates from current value toward portA
-// (target) by a fraction determined by portB (speed). The approach
-// fraction m_progress (+44) accumulates dt/speed per frame, clamped to [0,1].
-// When m_bIsAngular (+52) is set, float lerp wraps around ±π.
-
-// cmApproach2::GetVector @ 0x82279568 | size: 0xA0
-// Syncs, reads target vec4 from portB (+20), computes approach factor,
-// then lerps: output = previous + (target - previous) * factor
-void cmApproach2::GetVector(float* out) {
-    // Sync via vtable slot 8
-    typedef void (*SyncFn)(void*);
-    void** vt = *(void***)this;
-    ((SyncFn)vt[8])(this);
-
-    // Check if approach is flagged for direct output
-    if (*(uint8_t*)((char*)this + 52)) {
-        // Direct: read target from portB
-        cmNode_GetVector(out, (cmNodePort*)((char*)this + 20));
-        return;
-    }
-
-    // Get target vector
-    float target[4];
-    cmNode_GetVector(target, (cmNodePort*)((char*)this + 20));
-
-    // Load current value from reporter at +40
-    float* current = (float*)(*(void**)((char*)this + 40));
-
-    // Compute approach: update progress, get factor via cmApproach2_94A8
-    float factor = cmApproach2_ComputeFactor(this);
-
-    // Lerp: out = current + (target - current) * factor
-    out[0] = current[0] + (target[0] - current[0]) * factor;
-    out[1] = current[1] + (target[1] - current[1]) * factor;
-    out[2] = current[2] + (target[2] - current[2]) * factor;
-    out[3] = current[3] + (target[3] - current[3]) * factor;
-}
-
-// cmApproach2::GetFloat @ 0x82279608 | size: 0xE8
-// Syncs, reads target float from portB (+20), computes approach factor.
-// If m_bIsAngular (+52), wraps the difference around ±π before lerping.
-void cmApproach2::GetFloat(float* out) {
-    const float PI  = 3.14159265f;
-    const float TWO_PI = 6.28318530f;
-
-    typedef void (*SyncFn)(void*);
-    void** vt = *(void***)this;
-    ((SyncFn)vt[8])(this);
-
-    float factor = cmApproach2_ComputeFactor(this);
-
-    float* currentBuf = (float*)(*(void**)((char*)this + 40));
-    float current = *currentBuf;
-
-    float target = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
-
-    bool isAngular = *(uint8_t*)((char*)this + 52) != 0;
-    if (isAngular) {
-        // Wrap difference around ±π
-        if (current < -PI) {
-            if (target > current + PI) {
-                target -= TWO_PI;
-            }
-        } else if (current > PI) {
-            if (target < current - PI) {
-                target += TWO_PI;
-            }
-        }
-    }
-
-    // Lerp: result = current + (target - current) * factor
-    float result = current + (target - current) * factor;
-    *out = result;
-
-    if (isAngular) {
-        // Normalize result to [-π, π] range
-        *out = cmAngle_Normalize(result);
-    }
-}
-
-// cmApproach2::Reset @ 0x822793C8 | size: 0x50
-// Zeroes progress, copies portA into reporter buffer, toggles flag bit 3.
-void cmApproach2::Reset() {
-
-    *(float*)((char*)this + 44) = 0.0f;  // m_progress = 0
-
-    void* reporter = *(void**)((char*)this + 40);
-    cmPort_CopyToBuffer(reporter, (cmNodePort*)((char*)this + 12));
-
-    uint32_t flags = *(uint32_t*)((char*)this + 8);
-    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;
-}
-
-// cmApproach2::SyncPorts @ 0x82279418 | size: 0x0C
-void cmApproach2::SyncPorts(void* portCtx) {
-    cmPort_SyncValue(this, *(void**)((char*)this + 40), portCtx);
-}
-
-// cmApproach2::Tick @ 0x82279428 | size: 0x80
-// Accumulates dt/speed into m_progress (+44), clamped to [0,1].
-void cmApproach2::Tick() {
-    // g_cmFrameScale declared in rage_cm_types.hpp (alias for g_cm_frameTime)
-
-    // scaledDt = 1.0f * g_cmFrameScale (constant 1.0 verified at table+8)
-    float scaledDt = g_cmFrameScale;
-
-    // Read speed from portC (+28)
-    float speed = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
-
-    // Compute approach increment: dt / speed
-    float increment = scaledDt / speed;
-
-    // Accumulate into progress
-    float progress = *(float*)((char*)this + 44) + increment;
-
-    // Clamp to [0, 1] using fsel idiom
-    if (progress < 0.0f) progress = 0.0f;
-    if (progress > 1.0f) progress = 1.0f;
-
-    *(float*)((char*)this + 44) = progress;
-}
-
-// cmApproach2::Allocate @ 0x82279348 | size: 0x7C
-void cmApproach2::Allocate() {
-
-    sysMemAllocator_InitMainThread();
-    // g_tls_base declared in rage_cm_types.hpp
-    void* allocator = g_tls_base[1];
-    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
-    void** allocVt = *(void***)allocator;
-    void* newBuf = ((AllocFn)allocVt[1])(allocator, 32, 16);
-
-    if (newBuf) {
-        *(uint8_t*)((char*)newBuf + 16) = 0;
-        *(uint8_t*)((char*)newBuf + 17) = 0;
-        cmReporter_Init(newBuf);
-    }
-
-    *(void**)((char*)this + 40) = newBuf;
-    uint8_t outputType = *(uint8_t*)((char*)this + 4);
-    *(uint8_t*)((char*)newBuf + 16) = outputType;
-}
-
-// ── cmAngle — computes angle between two vectors. vtable @ 0x820551CC ────────
-
-// cmAngle::GetFloat @ 0x8227A0E0 | size: 0x5C
-// Reads portA and portB as vec4, computes atan2(portB, portA).
-void cmAngle::GetFloat(float* out) {
-    float vecA[4], vecB[4];
-    cmNode_GetVector(vecA, (cmNodePort*)((char*)this + 20));  // portB
-    cmNode_GetVector(vecB, (cmNodePort*)((char*)this + 12));  // portA
-    // phBoundCapsule_ABE0_g computes atan2 between two vectors
-    *out = cmVec4_Atan2(vecB, vecA);
-}
-
-// ── cmAngleDiff — signed angular difference (a - b), wrapped to [-π, π] ─────
-// vtable @ 0x820541A4
-
-// cmAngleDiff::GetFloat @ 0x8227BFF8 | size: 0xAC
-// Computes diff = portA - portB, applies fmod(diff, 2π), normalizes to [-π, π].
-// Constants verified from binary (all +0x2000 corrected):
-//   PI    =  3.14159f @ 0x8207BB30
-//   -PI   = -3.14159f @ 0x8207BB2C
-//   2*PI  =  6.28318f @ 0x8202E02C (float), 6.28318... @ 0x8207BD30 (double)
-void cmAngleDiff::GetFloat(float* out) {
-    const float PI     =  3.14159265f;
-    const float TWO_PI =  6.28318530f;
-
-    float a = cmNode_GetFloat((cmNodePort*)((char*)this + 12));
-    float b = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
-
-    // Compute angular difference, fmod by 2*PI
-    float diff = a - b;
-    diff = fmodf(diff, TWO_PI);
-
-    // Normalize to [-PI, PI]
-    if (diff > PI) {
-        diff -= TWO_PI;
-    } else if (diff < -PI) {
-        diff += TWO_PI;
-    }
-    *out = diff;
-}
-
-// ── cmAngleLerp — angular interpolation with epsilon thresholds ──────────────
-// vtable @ 0x82054044. Three inputs: portA = t, portB = from, portC = to.
-
-// cmAngleLerp::RegisterPorts @ 0x82262620 | size: 0x38
-// Registers: {float, float, float, float} (3-port node)
-void cmAngleLerp::RegisterPorts(void* node) {
-    struct cmPortDesc { uint8_t a, b, c, d; };
-    cmPortDesc desc = {2, 2, 2, 2};  // all float
-    cmNode_TryConnect3(node, &desc);
-}
-
-// cmAngleLerp::GetFloat @ 0x8227BC50 | size: 0xDC
-// Interpolates between portB (from) and portC (to) by portA (t).
-// If t ≈ 0: return portB directly (no lerp needed).
-// If t ≈ 1: return portC directly.
-// Otherwise: compute angular diff, multiply by t, add to portB, normalize.
-// Thresholds verified from binary:
-//   EPSILON_POS = 0.0001f, EPSILON_NEG = -0.0001f
-//   ONE_MINUS_E = 0.9999f, ONE_PLUS_E = 1.0001f
-void cmAngleLerp::GetFloat(float* out) {
-
-    const float EPSILON_POS = 0.0001f;
-    const float EPSILON_NEG = -0.0001f;
-    const float ONE_MINUS_E = 0.9999f;
-    const float ONE_PLUS_E  = 1.0001f;
-
-    float t = cmNode_GetFloat((cmNodePort*)((char*)this + 12));  // portA = t
-
-    if (t < EPSILON_POS) {
-        if (t > EPSILON_NEG) {
-            // t ≈ 0 → return portB (from angle)
-            *out = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
-            return;
-        }
-    }
-
-    if (t > ONE_MINUS_E) {
-        if (t < ONE_PLUS_E) {
-            // t ≈ 1 → compute lerp between portC and portB (degenerate case)
-            float to   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
-            float from = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
-            float diff = cmAngle_Normalize(to - from);
-            *out = cmAngle_Normalize(diff * t + from);
-            return;
-        }
-    }
-
-    // General case: angular lerp
-    float to   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
-    float from = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
-    float diff = cmAngle_Normalize(to - from);
-    *out = cmAngle_Normalize(diff * t + from);
-}
-
-// ── cmAnglePowerApproach — exponential-decay angle approach ──────────────────
-// vtable @ 0x82054A94. Inherits cmApproachOperator layout.
-// Only operates on float type (reporter type byte == 2).
-
-// cmAnglePowerApproach::Tick @ 0x82278E58 | size: 0xB4
-// Reads current angle from reporter at +40, target from portB (+20),
-// speed from portC (+28). Computes normalized angular diff, applies
-// power-based approach (speed^dt decay), normalizes result.
-void cmAnglePowerApproach::Tick() {
-    // g_cmFrameScale declared in rage_cm_types.hpp
-
-    float scaledDt = g_cmFrameScale;  // 1.0f * g_cmFrameScale
-
-    void* reporter = *(void**)((char*)this + 40);
-    uint8_t reporterType = *(uint8_t*)((char*)reporter + 16);
-    if (reporterType != 2) return;  // only float
-
-    float current = *(float*)reporter;
-    float target  = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
-    float speed   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
-
-    // Compute normalized angular difference: target - current, wrapped to [-π,π]
-    float diff = cmAngle_Normalize(target - current);
-
-    // Apply power approach: decays diff toward zero by speed^dt
-    float progress = 0.0f;
-    cmPowerApproach_Step(&progress, diff, speed, scaledDt);
-
-    // Result = current + approached_offset, normalized
-    float result = cmAngle_Normalize(progress + current);
-    *(float*)reporter = result;
-}
-
-// ── cmAngleLinearApproach — constant-speed angle approach ────────────────────
-// vtable @ 0x82054A3C. Same layout as cmAnglePowerApproach.
-
-// cmAngleLinearApproach::Tick @ 0x82278F10 | size: 0xD8
-// Moves current angle toward target by at most speed*dt per frame.
-// Snaps to target if within one step. All angles normalized to [-π,π].
-void cmAngleLinearApproach::Tick() {
-    // g_cmFrameScale declared in rage_cm_types.hpp
-
-    float scaledDt = g_cmFrameScale;
-
-    void* reporter = *(void**)((char*)this + 40);
-    uint8_t reporterType = *(uint8_t*)((char*)reporter + 16);
-    if (reporterType != 2) return;  // only float
-
-    float current = *(float*)reporter;
-    float target  = cmNode_GetFloat((cmNodePort*)((char*)this + 20));
-    float speed   = cmNode_GetFloat((cmNodePort*)((char*)this + 28));
-
-    // Compute normalized angular diff: current → target
-    float diff = cmAngle_Normalize(current - target);
-    float maxStep = speed * scaledDt;
-
-    if (diff < 0.0f) {
-        // Need to rotate counter-clockwise
-        if (-diff < maxStep) {
-            current = target;  // snap
-        } else {
-            current += maxStep;
-        }
-    } else if (diff > 0.0f) {
-        // Need to rotate clockwise
-        if (diff < maxStep) {
-            current = target;  // snap
-        } else {
-            current -= maxStep;
-        }
-    }
-
-    *(float*)reporter = cmAngle_Normalize(current);
-}
-
-// ── cmApproach2Ctor — factory nodes that create cmApproach2 instances ─────────
-// 8 vtable variants representing 4 portModes × 2 angular states.
-// Each allocates a 56-byte cmApproach2 object from the TLS allocator,
-// zeros all fields, sets the cmApproach2 vtable, output dim type = VEC4 (3),
-// initial progress = 0.0f, and configures portMode (+48) and isAngular (+52).
-//
-// Variant table (verified from all 8 scaffolds):
-//   vfn_0  @ 0x8226C658: portMode=0, angular=false
-//   C710   @ 0x8226C710: portMode=1, angular=false
-//   C7C8   @ 0x8226C7C8: portMode=2, angular=false
-//   C880   @ 0x8226C880: portMode=3, angular=false
-//   C938   @ 0x8226C938: portMode=0, angular=true
-//   C9F0   @ 0x8226C9F0: portMode=1, angular=true
-//   CAA8   @ 0x8226CAA8: portMode=2, angular=true
-//   CB68   @ 0x8226CB68: portMode=3, angular=true
-
-// Shared helper — creates a cmApproach2 with the given configuration.
-static void* cmApproach2Ctor_Create(uint32_t portMode, bool isAngular) {
-    // g_tls_base declared in rage_cm_types.hpp
-    // g_vtable_cmApproach2 declared in rage_cm_types.hpp @ 0x82055EFC
-
-    sysMemAllocator_InitMainThread();
-    void* allocator = g_tls_base[1];
-    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
-    void** allocVt = *(void***)allocator;
-    void* obj = ((AllocFn)allocVt[1])(allocator, 56, 16);
-
-    if (!obj) return nullptr;
-
-    // Zero all fields (+4 through +52)
-    for (int i = 4; i < 56; i += 4)
-        *(uint32_t*)((char*)obj + i) = 0;
-
-    // Set vtable
-    *(void**)obj = &g_vtable_cmApproach2;
-
-    // Set output dimension type = VEC4 (3)
-    *(uint32_t*)((char*)obj + 36) = 3;
-
-    // Set initial progress = 0.0f (verified: constant at corrected 0x8202F110 = 0.0f)
-    *(float*)((char*)obj + 44) = 0.0f;
-
-    // Set variant-specific fields
-    *(uint32_t*)((char*)obj + 48) = portMode;
-    *(uint8_t*)((char*)obj + 52) = isAngular ? 1 : 0;
-
-    // Reporter buffer starts null — allocated later by cmApproach2::Allocate
-    *(void**)((char*)obj + 40) = nullptr;
-
-    return obj;
-}
-
-// cmApproach2Ctor variant 0 @ 0x8226C658 | size: 0xB4
-void* cmApproach2Ctor_Create_0() { return cmApproach2Ctor_Create(0, false); }
-
-// cmApproach2Ctor variant 1 @ 0x8226C710 | size: 0xB8
-void* cmApproach2Ctor_Create_1() { return cmApproach2Ctor_Create(1, false); }
-
-// cmApproach2Ctor variant 2 @ 0x8226C7C8 | size: 0xB8
-void* cmApproach2Ctor_Create_2() { return cmApproach2Ctor_Create(2, false); }
-
-// cmApproach2Ctor variant 3 @ 0x8226C880 | size: 0xB4
-void* cmApproach2Ctor_Create_3() { return cmApproach2Ctor_Create(3, false); }
-
-// cmApproach2Ctor variant 4 @ 0x8226C938 | size: 0xB8
-void* cmApproach2Ctor_Create_Angular0() { return cmApproach2Ctor_Create(0, true); }
-
-// cmApproach2Ctor variant 5 @ 0x8226C9F0 | size: 0xB8
-void* cmApproach2Ctor_Create_Angular1() { return cmApproach2Ctor_Create(1, true); }
-
-// cmApproach2Ctor variant 6 @ 0x8226CAA8 | size: 0xBC
-void* cmApproach2Ctor_Create_Angular2() { return cmApproach2Ctor_Create(2, true); }
-
-// cmApproach2Ctor variant 7 @ 0x8226CB68 | size: 0xB8
-void* cmApproach2Ctor_Create_Angular3() { return cmApproach2Ctor_Create(3, true); }
-
-// ── cmCapture — captures and holds a snapshot of portA. vtable @ 0x820569AC ──
-// Stateful node: stores a copy of the current input value in a 32-byte
-// reporter buffer at +24. Calling Reset (vfn_6) re-captures, then the
-// Get* methods return the held value. The RegisterPorts (vfn_16) tries
-// portA types: vec4, float, int32, vec2, dim.
-
-// cmCapture::GetDim @ 0x822789C8 | size: 0x50
-// Calls Sync (vfn_8) then reads int32 from reporter buffer
-void cmCapture::GetDim(int32_t* out) {
-    // Call this->Sync() via vtable slot 8
-    typedef void (*SyncFn)(void*);
-    void** vt = *(void***)this;
-    ((SyncFn)vt[8])(this);
-    // Read captured value from reporter buffer at +24
-    void* buf = *(void**)((char*)this + 24);
-    *out = *(int32_t*)buf;
-}
-
-// cmCapture::GetVector @ 0x82278928 | size: 0x50
-// Calls Sync then copies 16-byte vec4 from reporter buffer
-void cmCapture::GetVector(float* out) {
-    typedef void (*SyncFn)(void*);
-    void** vt = *(void***)this;
-    ((SyncFn)vt[8])(this);
-    void* buf = *(void**)((char*)this + 24);
-    float* src = (float*)buf;
-    out[0] = src[0]; out[1] = src[1]; out[2] = src[2]; out[3] = src[3];
-}
-
-// cmCapture::GetBool @ 0x82278978 | size: 0x50
-// Calls Sync then reads byte from reporter buffer
-void cmCapture::GetBool(uint8_t* out) {
-    typedef void (*SyncFn)(void*);
-    void** vt = *(void***)this;
-    ((SyncFn)vt[8])(this);
-    void* buf = *(void**)((char*)this + 24);
-    *out = *(uint8_t*)buf;
-}
-
-// cmCapture::GetFloat @ 0x822788D8 | size: 0x50
-// Calls Sync then reads float from reporter buffer
-void cmCapture::GetFloat(float* out) {
-    typedef void (*SyncFn)(void*);
-    void** vt = *(void***)this;
-    ((SyncFn)vt[8])(this);
-    void* buf = *(void**)((char*)this + 24);
-    *out = *(float*)buf;
-}
-
-// cmCapture::SyncPorts @ 0x822788C8 | size: 0x0C
-// Syncs the reporter port at +24 using the port context
-void cmCapture::SyncPorts(void* portCtx) {
-    void* portDesc = *(void**)((char*)this + 24);
-    cmPort_SyncValue(this, portDesc, portCtx);
-}
-
-// cmCapture::Reset @ 0x82278880 | size: 0x44
-// Re-captures the current portA value into the reporter buffer.
-// Reads portA (+12) into the buffer at +24, then toggles bit 3 of flags at +8.
-void cmCapture::Reset() {
-    void* reporter = *(void**)((char*)this + 24);
-    cmPort_CopyToBuffer(reporter, (cmNodePort*)((char*)this + 12));
-    uint32_t flags = *(uint32_t*)((char*)this + 8);
-    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;  // toggle bit 3
-}
-
-// cmCapture::RegisterPorts @ 0x822779C8 | size: 0x100
-// Tries portA types in order: vec4 → float → int32 → vec2 → dim
-void cmCapture::RegisterPorts(void* node) {
-    struct cmPortDesc { uint8_t a, b, c, d; };
-
-    cmPortDesc desc;
-    // Try vec4 → vec4
-    desc = {3, 0, 0, 3};
-    if (cmNode_TryConnectSingle(node, &desc)) return;
-    // Try float → float
-    desc = {1, 0, 0, 1};
-    if (cmNode_TryConnectSingle(node, &desc)) return;
-    // Try int32 → int32
-    desc = {2, 0, 0, 2};
-    if (cmNode_TryConnectSingle(node, &desc)) return;
-    // Try vec2 → vec2
-    desc = {4, 0, 0, 4};
-    if (cmNode_TryConnectSingle(node, &desc)) return;
-    // Try dim → dim
-    desc = {5, 0, 0, 5};
-    cmNode_TryConnectSingle(node, &desc);
-}
-
-// cmCapture::Allocate @ 0x822787F8 | size: 0x84
-// Frees old reporter buffer, allocates a new 32-byte one from the
-// TLS allocator, initializes it, and stores at +24.
-void cmCapture::Allocate() {
-
-    // Free old buffer
-    void* oldBuf = *(void**)((char*)this + 24);
-    rage_free(oldBuf);
-
-    // Allocate new 32-byte reporter buffer (16-byte aligned)
-    sysMemAllocator_InitMainThread();
-    // g_tls_base declared in rage_cm_types.hpp
-    void* allocator = g_tls_base[1];
-    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
-    void** allocVt = *(void***)allocator;
-    void* newBuf = ((AllocFn)allocVt[1])(allocator, 32, 16);
-
-    if (newBuf) {
-        *(uint8_t*)((char*)newBuf + 16) = 0;
-        *(uint8_t*)((char*)newBuf + 17) = 0;
-        cmReporter_Init(newBuf);
-    }
-
-    *(void**)((char*)this + 24) = newBuf;
-    // Copy output type to reporter
-    uint8_t outputType = *(uint8_t*)((char*)this + 4);
-    *(uint8_t*)((char*)newBuf + 16) = outputType;
-}
-
-// ── cmChanged — detects when portA changes value. vtable @ 0x820567F4 ───────
-// Compares portA's current value against a stored previous value at +32.
-// Writes 1 to the output reporter at +24 if changed, 0 if not.
-// Uses three reporter buffers: +24 (output bool), +28 (unused?), +32 (previous).
-
-// cmChanged::Reset @ 0x82278018 | size: 0x50
-// Initializes all three reporter buffers and sets firstTick flag (+36) to 1.
-// Toggles bit 3 of flags at +8.
-void cmChanged::Reset() {
-    void* prevBuf = *(void**)((char*)this + 32);
-    cmReporter_Init(prevBuf);
-    *(uint8_t*)((char*)this + 36) = 1;  // m_bFirstTick
-    void* outBuf = *(void**)((char*)this + 24);
-    cmReporter_Init(outBuf);
-    void* buf28 = *(void**)((char*)this + 28);
-    cmReporter_Init(buf28);
-    uint32_t flags = *(uint32_t*)((char*)this + 8);
-    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;
-}
-
-// cmChanged::Tick @ 0x82277EF0 | size: 0x128
-// Per-frame: reads current portA value, compares with previous at +32.
-// If first tick or values differ, writes 1 to output; else writes 0.
-// Dispatches by port output type: 1=int32, 2=indirect, 3=bool, 5=dim.
-void cmChanged::Tick() {
-    cmNodePort* portA = (cmNodePort*)((char*)this + 12);
-    uint32_t outputType = portA->m_type;
-
-    // Resolve the actual data type from port or upstream node
-    uint32_t dataType;
-    if (outputType == 1) {
-        void* upstream = *(void**)portA;
-        dataType = *(uint8_t*)((char*)upstream + 16);
-    } else if (outputType == 2) {
-        void* upstream = *(void**)portA;
-        dataType = *(uint32_t*)((char*)upstream + 4);
-    } else {
-        // Unsupported type — clear first tick and return
-        *(uint8_t*)((char*)this + 36) = 0;
-        return;
-    }
-
-    bool isFirstTick = *(uint8_t*)((char*)this + 36) != 0;
-    void* prevBuf = *(void**)((char*)this + 32);
-    void* outBuf = *(void**)((char*)this + 24);
-
-    if (dataType == 1) {
-        // Integer comparison
-        int32_t current = cmNode_GetDim(portA);
-        bool changed;
-        if (isFirstTick) {
-            changed = false;
-        } else {
-            int32_t prev = *(int32_t*)prevBuf;
-            changed = (current != prev);
-        }
-        *(uint8_t*)outBuf = changed ? 1 : 0;
-        *(int32_t*)prevBuf = current;
-    } else if (dataType == 3) {
-        // Boolean comparison
-        uint8_t current = cmNode_GetBoolValue(portA);
-        bool changed;
-        if (isFirstTick) {
-            changed = false;
-        } else {
-            uint8_t prev = *(uint8_t*)prevBuf;
-            changed = ((current & 0xFF) != (prev & 0xFF));
-        }
-        *(uint8_t*)outBuf = changed ? 1 : 0;
-        *(uint8_t*)prevBuf = current;
-    } else if (dataType == 5) {
-        // Dim/enum comparison (treated as uint32)
-        uint32_t current = cmNode_GetDimValue(portA);
-        bool changed;
-        if (isFirstTick) {
-            changed = false;
-        } else {
-            uint32_t prev = *(uint32_t*)prevBuf;
-            changed = (current != prev);
-        }
-        *(uint8_t*)outBuf = changed ? 1 : 0;
-        *(uint32_t*)prevBuf = current;
-    } else {
-        *(uint8_t*)((char*)this + 36) = 0;
-        return;
-    }
-
-    *(uint8_t*)((char*)this + 36) = 0;  // clear firstTick
-}
-
-// cmChanged::RegisterPorts @ 0x822778B8 | size: 0x90
-// Tries: {float, 0, 0, bool} → {dim, 0, 0, bool} → {bool, 0, 0, bool}
-void cmChanged::RegisterPorts(void* node) {
-    struct cmPortDesc { uint8_t a, b, c, d; };
-
-    cmPortDesc desc;
-    desc = {1, 0, 0, 3};  // float → bool
-    if (cmNode_TryConnectSingle(node, &desc)) return;
-    desc = {5, 0, 0, 3};  // dim → bool
-    if (cmNode_TryConnectSingle(node, &desc)) return;
-    desc = {3, 0, 0, 3};  // bool → bool
-    cmNode_TryConnectSingle(node, &desc);
-}
-
-// cmChanged::Allocate @ 0x82278168 | size: 0xB8
-// Allocates 32-byte reporter buffer for +32 (previous value), then
-// determines data type from port and calls base allocator.
-void cmChanged::Allocate() {
-
-    // Allocate reporter buffer for previous value at +32
-    sysMemAllocator_InitMainThread();
-    // g_tls_base declared in rage_cm_types.hpp
-    void* allocator = g_tls_base[1];
-    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
-    void** allocVt = *(void***)allocator;
-    void* newBuf = ((AllocFn)allocVt[1])(allocator, 32, 16);
-
-    if (newBuf) {
-        *(uint8_t*)((char*)newBuf + 16) = 0;
-        *(uint8_t*)((char*)newBuf + 17) = 0;
-        cmReporter_Init(newBuf);
-    }
-
-    *(void**)((char*)this + 32) = newBuf;
-
-    // Determine input port data type and store to reporter
-    uint32_t portType = *(uint32_t*)((char*)this + 16);
-    uint8_t dataType;
-    if (portType == 1) {
-        void* upstream = *(void**)((char*)this + 12);
-        dataType = *(uint8_t*)((char*)upstream + 16);
-    } else if (portType == 2) {
-        void* upstream = *(void**)((char*)this + 12);
-        dataType = (uint8_t)(*(uint32_t*)((char*)upstream + 4));
-    } else {
-        dataType = 0;
-    }
-    if (newBuf) *(uint8_t*)((char*)newBuf + 16) = dataType;
-
-    // Call base allocator for remaining buffers
-    cmNormalizedTimer_Allocate(this);
-}
-
-// ── cmDifferentiate — computes (current - previous) / dt. vtable @ 0x820568FC
-// Calculates the rate of change of portA per frame. Stores previous
-// value at +32 and output at +24. Supports float and vec4 types.
-
-// cmDifferentiate::Reset @ 0x82278220 | size: 0x50
-// Initializes reporter buffers and sets firstTick flag.
-void cmDifferentiate::Reset() {
-    void* outBuf = *(void**)((char*)this + 24);
-    cmReporter_Init(outBuf);
-    void* buf28 = *(void**)((char*)this + 28);
-    cmReporter_Init(buf28);
-    uint32_t flags = *(uint32_t*)((char*)this + 8);
-    *(uint32_t*)((char*)this + 8) = (flags & ~8u) ^ 8u;
-    void* prevBuf = *(void**)((char*)this + 32);
-    cmReporter_Init(prevBuf);
-    *(uint8_t*)((char*)this + 36) = 1;  // m_bFirstTick
-}
-
-// cmDifferentiate::SyncPorts @ 0x82278270 | size: 0x60
-// Syncs all three reporter port descriptors (+32, +24, +28)
-void cmDifferentiate::SyncPorts(void* portCtx) {
-    cmPort_SyncValue(this, *(void**)((char*)this + 32), portCtx);
-    cmPort_SyncValue(this, *(void**)((char*)this + 24), portCtx);
-    cmPort_SyncValue(this, *(void**)((char*)this + 28), portCtx);
-}
-
-// cmDifferentiate::Tick @ 0x822782D0 | size: 0x14C
-// Computes derivative: output = (current - previous) / (frameScale * dt)
-// For float (type 2): output = (currentFloat - prevFloat) / scaledDt
-// For vec4 (type 4): output = (currentVec - prevVec) * (1/scaledDt) per component
-// On first tick, outputs zero instead of a spike.
-void cmDifferentiate::Tick() {
-    // g_cmFrameScale declared in rage_cm_types.hpp (alias for g_cm_frameTime)
-    // Constant at rdata table+8 is 1.0f — verified from binary @ 0x825CAEC0
-    // scaledDt = 1.0f * g_cmFrameScale = g_cmFrameScale
-    float scaledDt = g_cmFrameScale;
-
-    uint32_t dataType = *(uint32_t*)((char*)this + 4);
-    bool isFirstTick = *(uint8_t*)((char*)this + 36) != 0;
-    void* outBuf = *(void**)((char*)this + 24);
-    void* prevBuf = *(void**)((char*)this + 32);
-
-    if (dataType == 2) {
-        // Float differentiation
-        float current = cmNode_GetFloat((cmNodePort*)((char*)this + 12));
-        if (isFirstTick) {
-            // First tick: output zero, store initial value
-            *(float*)outBuf = 0.0f;
-        } else {
-            float prev = *(float*)prevBuf;
-            float derivative = (current - prev) / scaledDt;
-            *(float*)outBuf = derivative;
-        }
-        *(float*)prevBuf = current;
-    } else if (dataType == 4) {
-        // Vec4 differentiation
-        float currentVec[4];
-        cmNode_GetVector(currentVec, (cmNodePort*)((char*)this + 12));
-        float* prevVec = (float*)prevBuf;
-
-        if (isFirstTick) {
-            // First tick: zero output, copy initial to prev and output
-            float* prev24 = (float*)outBuf;
-            prev24[0] = 0.0f; prev24[1] = 0.0f;
-            prev24[2] = 0.0f; prev24[3] = 0.0f;
-        } else {
-            float invDt = 1.0f / scaledDt;
-            float* dst = (float*)outBuf;
-            dst[0] = (currentVec[0] - prevVec[0]) * invDt;
-            dst[1] = (currentVec[1] - prevVec[1]) * invDt;
-            dst[2] = (currentVec[2] - prevVec[2]) * invDt;
-            dst[3] = (currentVec[3] - prevVec[3]) * invDt;
-        }
-        // Store current as previous
-        float* prev = (float*)prevBuf;
-        prev[0] = currentVec[0]; prev[1] = currentVec[1];
-        prev[2] = currentVec[2]; prev[3] = currentVec[3];
-    }
-
-    *(uint8_t*)((char*)this + 36) = 0;  // clear firstTick
-}
+// cmSubtract::GetDim @ undiscovered — TODO
+// cmMultiply::GetVector, GetFloat, GetDim — TODO
+// cmDivide::GetFloat, GetVector — TODO
+// cmMin, cmMax — TODO (likely fsel idiom in assembly)
+// cmAngleLerp — TODO (RegisterPorts @ 0x82262620)
+// cmAngleLinearApproach::Tick @ 0x82278F10 — TODO
+// cmAnglePowerApproach::Tick @ 0x82278E58 — TODO
+// cmApproach2 — TODO (cmApproach2_vfn_10 @ 0x82279428)
+// cmCapture — TODO (vfn_10 @ 0x822779C8, vfn_17 @ 0x822787F8)
+// cmChanged  — TODO (vfn_10 @ 0x82277EF0, vfn_17 @ 0x82278168)
+// cmDifferentiate — TODO (vfn_10 @ 0x822782D0)
 
 } // namespace rage
 
@@ -1876,8 +981,6 @@ uint8_t cmNode_GetBool(const rage::cmNodePort* port) {
         return 0;
     }
 }
-
-namespace rage {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  CONTROL REFERENCE NODE
@@ -2254,8 +1357,6 @@ void cmSwitch_6case_GetDim(cmSwitch* node, int32_t* out) {
 
 
 
-} // namespace rage
-
 /* ── External dependencies for cmNamedValueSet ────────────────────────────── */
 
 /* Camera operator function @ 0x82275FC8 */
@@ -2268,7 +1369,7 @@ extern void cmMetafileTuningSet_vfn_8(void* pThis, uint32_t param1, uint32_t par
 namespace rage {
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * cmNamedValueSet::SetValueByName @ 0x82275C20 | size: 0x48 (72 bytes)
+ * cmNamedValueSet::vfn_8 @ 0x82275C20 | size: 0x48 (72 bytes)
  *
  * Vtable slot 8 - Processes camera named value set with operator and tuning.
  *
@@ -2287,7 +1388,7 @@ namespace rage {
  * by reference to the operator function, then the original values are passed
  * directly to the parent class method.
  * ═══════════════════════════════════════════════════════════════════════════ */
-void cmNamedValueSet::SetValueByName(uint32_t param1, uint32_t param2)
+void cmNamedValueSet::vfn_8(uint32_t param1, uint32_t param2)
 {
     /* Create temporary copies of parameters on stack */
     uint32_t tempParam1 = param1;
@@ -2299,6 +1400,265 @@ void cmNamedValueSet::SetValueByName(uint32_t param1, uint32_t param2)
     
     /* Call parent class (cmMetafileTuningSet) vtable slot 8 */
     cmMetafileTuningSet_vfn_8(this, param1, param2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  cmCond — CONDITIONAL BRANCH NODES
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// cmCond is a multi-branch conditional node in the CM graph. It evaluates
+// N boolean condition ports in order, and outputs the value from the first
+// branch whose condition is true. If no condition matches, it outputs the
+// default value.
+//
+// Layout (template-instantiated per branch count N):
+//   +0x00  vtable
+//   +0x04  m_outputType      (set by RegisterPorts)
+//   +0x08  m_flags
+//   +0x0C  branches[N]       (N * 16 bytes: each has condition + value cmNodePort)
+//   +0x0C + N*16  defaultPort (cmNodePort, 8 bytes)
+//
+// Each branch (16 bytes):
+//   +0  condition  (cmNodePort)  — evaluates as bool via cmNode_GetBool
+//   +8  value      (cmNodePort)  — the output for this branch
+//
+// 5 vtable instantiations exist for N=2,3,4,5,6 branches.
+// The evaluation virtuals (GetInt32/GetVector/GetBool/GetFloat/GetDim) are
+// identical in logic, differing only in N and the output read function.
+
+/**
+ * cmCondBranch — one condition→value pair in a cmCond node.
+ */
+struct cmCondBranch {
+    cmNodePort condition;   // +0x00  boolean condition port
+    cmNodePort value;       // +0x08  output value port (if condition is true)
+};
+
+/**
+ * cmCondNode<N> — cmCond with N branches plus a default port.
+ * Template is conceptual; the binary has separate vtables for each N.
+ */
+template <int N>
+struct cmCondNode {
+    void**       m_pVtable;     // +0x00
+    int32_t      m_outputType;  // +0x04
+    int32_t      m_flags;       // +0x08
+    cmCondBranch branches[N];   // +0x0C
+    cmNodePort   defaultPort;   // +0x0C + N*16
+};
+
+// ─── cmCond_21B0 @ 0x822621B0 ───────────────────────────────────────────────
+// Binary alias of cmNode_GetBool @ 0x82184C40 (already lifted above).
+// Both addresses contain identical code: read boolean from a cmNodePort.
+
+// ─── cmCond::RegisterPorts @ 0x8226CC98 ─────────────────────────────────────
+//
+// Vtable slot 16. Sets m_outputType to match the dimension of the first
+// value port (branches[0].value). Shared across all N instantiations since
+// branches[0].value is always at this+0x14.
+//
+// Reads branches[0].value.m_type at +0x18:
+//   DIRECT : m_outputType = cmDataObj::m_dim (byte at data+0x10)
+//   NODE   : m_outputType = upstream->m_outputType
+//   else   : m_outputType = 0
+
+void cmCond_RegisterPorts(cmCondNode<2>* node) {
+    cmNodePort* valuePort = &node->branches[0].value;
+    switch (valuePort->m_type) {
+    case CM_PORT_DIRECT: {
+        const uint8_t* obj = reinterpret_cast<const uint8_t*>(valuePort->m_pData);
+        node->m_outputType = obj[16];  // cmDataObj::m_dim
+        break;
+    }
+    case CM_PORT_NODE: {
+        const int32_t* upstream = reinterpret_cast<const int32_t*>(valuePort->m_pData);
+        node->m_outputType = upstream[1];  // m_outputType at +4
+        break;
+    }
+    default:
+        node->m_outputType = 0;
+        break;
+    }
+}
+
+// ─── cmCond_ConnectPort @ 0x82271038 ────────────────────────────────────────
+//
+// Recursive port connector called by RegisterPorts(walk) (vfn_18).
+// For each port: if it's a NODE port, calls a callback on the upstream node.
+// If the callback returns true, recursively calls upstream->vfn_18
+// (RegisterPorts walk) to propagate connection through the graph.
+//
+// Parameters:
+//   port — pointer to a cmNodePort in the node's port array
+//   desc — connection descriptor with callback at offset +12
+
+void cmCond_ConnectPort(cmNodePort* port, void* desc) {
+    if (port->m_type != CM_PORT_NODE)
+        return;
+
+    // Call the callback function at desc+12 with upstream node
+    void* upstream = port->m_pData;
+    using CallbackFn = uint8_t(*)(void* desc, void* upstreamNode);
+    CallbackFn callback = *reinterpret_cast<CallbackFn*>(
+        reinterpret_cast<uint8_t*>(desc) + 12);
+
+    uint8_t result = callback(desc, upstream);
+    if ((result & 0xFF) == 0)
+        return;
+
+    // Recursively walk upstream: call upstream->vfn_18(desc)
+    struct cmNode { void** vtable; };
+    auto* node = reinterpret_cast<cmNode*>(upstream);
+    using WalkFn = void(*)(void*, void*);
+    reinterpret_cast<WalkFn>(node->vtable[18])(upstream, desc);
+}
+
+// ─── cmCond evaluation helper ───────────────────────────────────────────────
+//
+// All cmCond GetXxx methods share the same pattern:
+//   for i in 0..N-1:
+//     if cmNode_GetBool(&branches[i].condition) != 0:
+//       *out = GetXxx(&branches[i].value)
+//       return
+//   *out = GetXxx(&defaultPort)  // fallback
+
+// ─── cmCond<2>::GetDim @ 0x8226CCD8 ────────────────────────────────────────
+// Vtable slot 5. Evaluates conditions and returns matching int32 dim value.
+void cmCond2_GetDim(cmCondNode<2>* self, int32_t* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetDim(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetDim(&self->defaultPort);
+}
+
+// ─── cmCond<2>::GetFloat @ 0x8226CD48 ──────────────────────────────────────
+// Vtable slot 4.
+void cmCond2_GetFloat(cmCondNode<2>* self, float* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetFloat(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetFloat(&self->defaultPort);
+}
+
+// ─── cmCond<2>::GetBool @ 0x8226CDB8 ──────────────────────────────────────
+// Vtable slot 3.
+void cmCond2_GetBool(cmCondNode<2>* self, uint8_t* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetBool(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetBool(&self->defaultPort);
+}
+
+// ─── cmCond<2>::GetVector @ 0x8226CE28 ─────────────────────────────────────
+// Vtable slot 2. Outputs 16-byte aligned vec4.
+void cmCond2_GetVector(cmCondNode<2>* self, float* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            cmNode_GetVector(out, &self->branches[i].value);
+            return;
+        }
+    }
+    cmNode_GetVector(out, &self->defaultPort);
+}
+
+// ─── cmCond<2>::GetInt32 @ 0x8226CEB0 ──────────────────────────────────────
+// Vtable slot 1.
+void cmCond2_GetInt32(cmCondNode<2>* self, int32_t* out) {
+    for (int i = 0; i < 2; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetInt(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetInt(&self->defaultPort);
+}
+
+// ─── cmCond<2>::RegisterPortsWalk @ 0x82270C10 ─────────────────────────────
+// Vtable slot 18. Iterates all ports (2*N+1 = 5) calling cmCond_ConnectPort.
+// Ports are laid out contiguously at +0x0C with stride 8 bytes.
+void cmCond2_RegisterPortsWalk(cmCondNode<2>* self, void* desc) {
+    cmNodePort* port = &self->branches[0].condition;
+    for (int i = 0; i < 5; i++) {
+        cmCond_ConnectPort(port, desc);
+        port++;  // advance by sizeof(cmNodePort) = 8 bytes
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  cmCond<3> — 3-branch conditional (vtable @ 0x82055854)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// cmCond<3>::GetDim @ 0x8226CF20
+void cmCond3_GetDim(cmCondNode<3>* self, int32_t* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetDim(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetDim(&self->defaultPort);
+}
+
+// cmCond<3>::GetFloat @ 0x8226CF90
+void cmCond3_GetFloat(cmCondNode<3>* self, float* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetFloat(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetFloat(&self->defaultPort);
+}
+
+// cmCond<3>::GetBool @ 0x8226D000
+void cmCond3_GetBool(cmCondNode<3>* self, uint8_t* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetBool(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetBool(&self->defaultPort);
+}
+
+// cmCond<3>::GetVector @ 0x8226D070
+void cmCond3_GetVector(cmCondNode<3>* self, float* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            cmNode_GetVector(out, &self->branches[i].value);
+            return;
+        }
+    }
+    cmNode_GetVector(out, &self->defaultPort);
+}
+
+// cmCond<3>::GetInt32 @ 0x8226D0F8
+void cmCond3_GetInt32(cmCondNode<3>* self, int32_t* out) {
+    for (int i = 0; i < 3; i++) {
+        if (cmNode_GetBool(&self->branches[i].condition) != 0) {
+            *out = cmNode_GetInt(&self->branches[i].value);
+            return;
+        }
+    }
+    *out = cmNode_GetInt(&self->defaultPort);
+}
+
+// cmCond<3>::RegisterPortsWalk @ 0x82270C50
+void cmCond3_RegisterPortsWalk(cmCondNode<3>* self, void* desc) {
+    cmNodePort* port = &self->branches[0].condition;
+    for (int i = 0; i < 7; i++) {  // 2*3+1 = 7 ports
+        cmCond_ConnectPort(port, desc);
+        port++;
+    }
 }
 
 } // namespace rage

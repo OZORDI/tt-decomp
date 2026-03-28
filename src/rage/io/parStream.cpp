@@ -7,8 +7,35 @@
  */
 
 #include "rage/parStream.hpp"
+#include "rage/misc/rage_fi.hpp"
 #include <cstring>
 #include <cstdio>
+#include <cstdint>
+#include <cstdlib>
+
+// Forward declarations for external C functions used by parStreamOutXml
+extern "C" void fiAsciiTokenizer_FlushBuffer(void* file, int flags);
+extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
+extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
+
+// Forward declarations for CRT/kernel functions
+extern "C" {
+void KeBugCheck(uint32_t code);
+void _crt_spinlock_acquire(int index);
+void _crt_spinlock_release(int index);
+void _doexit(int code, int flags);
+int _atSingleton_dispatch(void* ptr);
+void _crt_signal_event(void* event);
+void RtlEnterCriticalSection(void* cs);
+void RtlLeaveCriticalSection(void* cs);
+void _fp_init_helper();
+void* _crt_get_tls_data();
+void* _crt_alloc(size_t size);
+void _crt_locale_init(void* locale, void* a1, void* a2, void* a3, int a4);
+void _crt_global_init();
+void _crt_secondary_init();
+void _crt_cleanup(void* ptr);
+}
 
 namespace rage {
 
@@ -553,7 +580,7 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
     // Look up field name in dictionary
     uint32_t dictionaryPtr = m_currentOffset;  // From offset +60
     if (dictionaryPtr == 0) {
-        dictionaryPtr = reinterpret_cast<uint32_t>(this) + 68;  // Default dictionary offset
+        dictionaryPtr = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this) + 68);  // Default dictionary offset
     }
     
     // Check if field ID matches dictionary entry
@@ -564,7 +591,7 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
         // grc_3C68(m_pRbfData, &stringLength, 1);
         
         // Allocate buffer
-        char* stringBuffer = nullptr;  // rage_alloc(stringLength + 1);
+        char* stringBuffer = nullptr;  // xe_EC88(stringLength + 1);
         
         // Read string data
         // rage_obj_bind_3828(m_pRbfData, stringBuffer, stringLength);
@@ -581,6 +608,15 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
 }
 
 
+
+bool parStreamInXml::BeginObject(const char* name) {
+    // @ 0x8241ABF8
+    return false;  // TODO: implement
+}
+
+void parStreamInXml::EndObject() {
+    // @ 0x8241AC40
+}
 
 bool parStreamInXml::BeginArray(const char* name, uint32_t* count) {
     // @ 0x8241AD38
@@ -678,7 +714,6 @@ bool parStreamOutXml::CreateFile(const char* filename) {
  * Flushes the XML output buffer to the file handle.
  */
 bool parStreamOutXml::FlushToFile() {
-    extern "C" void fiAsciiTokenizer_FlushBuffer(void* file, int flags);
     fiAsciiTokenizer_FlushBuffer(*(void**)((char*)this + 4), 0);
     return true;
 }
@@ -692,7 +727,6 @@ void parStreamOutXml::SetIndentation(int spaces) {
  * Opens an XML element tag. Tail-calls the tokenizer with isArray=false.
  */
 bool parStreamOutXml::BeginObject(const char* name) {
-    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
     return fiAsciiTokenizer_BeginElement(this, name, 0);
 }
 
@@ -706,7 +740,6 @@ void parStreamOutXml::EndObject() {
  * then resets m_arrayElementIndex (+28) to 0.
  */
 bool parStreamOutXml::BeginArray(const char* name, uint32_t* count) {
-    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
     fiAsciiTokenizer_BeginElement(this, name, 1);
     *(uint32_t*)((char*)this + 28) = 0;  // m_arrayElementIndex = 0
     return true;
@@ -722,7 +755,6 @@ void parStreamOutXml::EndArray() {
  * loads a "%d" format string, and calls the XML formatter.
  */
 bool parStreamOutXml::WriteInt(const char* name, int32_t value) {
-    extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
     void* file = *(void**)((char*)this + 4);
     parStreamOutXml_WriteFormatted(file, "%d", value);
     return true;
@@ -785,44 +817,6 @@ void parStreamInRbf::CloseFile() {
 
 bool parStreamInRbf::IsValid() const {
     return m_isValid;
-}
-
-bool parStreamInRbf::BeginObject(const char* name) {
-    // @ 0x8241C7E8
-    return false;  // TODO: implement
-}
-
-void parStreamInRbf::EndObject() {
-    // @ 0x8241C8C8
-}
-
-bool parStreamInRbf::BeginArray(const char* name, uint32_t* count) {
-    // @ 0x8241CA10
-    return false;  // TODO: implement
-}
-
-void parStreamInRbf::EndArray() {
-    // @ 0x8241C868
-}
-
-bool parStreamInRbf::ReadInt(const char* name, int32_t* value) {
-    // @ 0x8241C930
-    return false;  // TODO: implement
-}
-
-bool parStreamInRbf::ReadFloat(const char* name, float* value) {
-    // @ 0x8241CB38
-    return false;  // TODO: implement
-}
-
-bool parStreamInRbf::ReadString(const char* name, char* buffer, size_t bufferSize) {
-    // @ 0x8241C140
-    return false;  // TODO: implement
-}
-
-bool parStreamInRbf::ReadBool(const char* name, bool* value) {
-    // @ 0x8241C1D8
-    return false;  // TODO: implement
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -912,6 +906,228 @@ void fiAsciiTokenizer::ReadIntForward() {
     void** vt = *reinterpret_cast<void***>(this);
     Slot36Func fn = reinterpret_cast<Slot36Func>(vt[36]);
     fn(this, 0);
+}
+
+// ── ExpectToken + read vector wrappers ──────────────────────────────────────
+
+/**
+ * fiAsciiTokenizer::ExpectTokenThenFloat4 @ 0x822E66B0 | size: 0x50
+ * [vtable slot 23]
+ *
+ * Reads and compares a token, then reads 4 floats via vtable slot 8 (ReadFloat4).
+ */
+void fiAsciiTokenizer::ExpectTokenThenFloat4(const char* expectedToken, float* outArray) {
+    ReadTokenAndCompare(expectedToken);
+
+    // Call vtable slot 8 (ReadFloat4)
+    void** vt = *reinterpret_cast<void***>(this);
+    typedef void (*ReadFloat4Func)(fiAsciiTokenizer*, float*);
+    ReadFloat4Func readFloat4 = reinterpret_cast<ReadFloat4Func>(vt[8]);
+    readFloat4(this, outArray);
+}
+
+/**
+ * fiAsciiTokenizer::ExpectTokenThenFloat3 @ 0x822E6660 | size: 0x50
+ * [vtable slot 24]
+ *
+ * Reads and compares a token, then reads 3 floats via vtable slot 9 (ReadFloat3).
+ */
+void fiAsciiTokenizer::ExpectTokenThenFloat3(const char* expectedToken, float* outArray) {
+    ReadTokenAndCompare(expectedToken);
+
+    // Call vtable slot 9 (ReadFloat3)
+    void** vt = *reinterpret_cast<void***>(this);
+    typedef void (*ReadFloat3Func)(fiAsciiTokenizer*, float*);
+    ReadFloat3Func readFloat3 = reinterpret_cast<ReadFloat3Func>(vt[9]);
+    readFloat3(this, outArray);
+}
+
+/**
+ * fiAsciiTokenizer::ExpectTokenThenVec2 @ 0x822E6610 | size: 0x50
+ * [vtable slot 25]
+ *
+ * Reads and compares a token, then reads 2 floats via vtable slot 10 (ReadVec2).
+ */
+void fiAsciiTokenizer::ExpectTokenThenVec2(const char* expectedToken, float* outArray) {
+    ReadTokenAndCompare(expectedToken);
+
+    // Call vtable slot 10 (ReadVec2)
+    void** vt = *reinterpret_cast<void***>(this);
+    typedef void (*ReadVec2Func)(fiAsciiTokenizer*, float*);
+    ReadVec2Func readVec2 = reinterpret_cast<ReadVec2Func>(vt[10]);
+    readVec2(this, outArray);
+}
+
+// ── Write/output formatting functions ───────────────────────────────────────
+
+// External function: writes a single character to the output stream
+extern "C" void fiAsciiTokenizer_51F0(void* fileHandle, int charCode);
+
+/**
+ * fiAsciiTokenizer::WriteBeginBlock @ 0x822E67A0 | size: 0x84
+ * [vtable slot 26]
+ *
+ * Writes opening block: emits m_streamPos tab characters for indentation,
+ * then '{', CR, LF. Increments m_streamPos (indent level).
+ */
+void fiAsciiTokenizer::WriteBeginBlock() {
+    int32_t indent = m_streamPos;
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    while (indent != 0) {
+        fiAsciiTokenizer_51F0(file, '\t');
+        indent--;
+    }
+    fiAsciiTokenizer_51F0(file, '{');
+    fiAsciiTokenizer_51F0(file, '\r');
+    fiAsciiTokenizer_51F0(file, '\n');
+    m_streamPos++;
+}
+
+/**
+ * fiAsciiTokenizer::WriteEndBlock @ 0x822E6828 | size: 0x80
+ * [vtable slot 27]
+ *
+ * Decrements m_streamPos (indent level), writes indent tabs,
+ * then '}', CR, LF.
+ */
+void fiAsciiTokenizer::WriteEndBlock() {
+    m_streamPos--;
+    int32_t indent = m_streamPos;
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    while (indent != 0) {
+        fiAsciiTokenizer_51F0(file, '\t');
+        indent--;
+    }
+    fiAsciiTokenizer_51F0(file, '}');
+    fiAsciiTokenizer_51F0(file, '\r');
+    fiAsciiTokenizer_51F0(file, '\n');
+}
+
+/**
+ * fiAsciiTokenizer::WriteIndent @ 0x822E68A8 | size: 0x80
+ * [vtable slot 28]
+ *
+ * If state (field_0x0014) != 1, writes m_streamPos tab characters
+ * for indentation and sets state to 1.
+ */
+void fiAsciiTokenizer::WriteIndent() {
+    if (field_0x0014 == 1) {
+        field_0x0014 = 1;
+        return;
+    }
+
+    int32_t indent = m_streamPos;
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    if (indent != 0) {
+        while (indent != 0) {
+            fiAsciiTokenizer_51F0(file, '\t');
+            indent--;
+        }
+        field_0x0014 = 1;
+        return;
+    }
+
+    field_0x0014 = 1;
+}
+
+/**
+ * fiAsciiTokenizer::WriteNewline @ 0x822E6928 | size: 0x70
+ * [vtable slot 29]
+ *
+ * If state (field_0x0014) != 2, writes CR and LF characters,
+ * then sets state to 2.
+ */
+void fiAsciiTokenizer::WriteNewline() {
+    if (field_0x0014 == 2) {
+        field_0x0014 = 2;
+        return;
+    }
+
+    void* file = reinterpret_cast<void*>(field_0x000c);
+    fiAsciiTokenizer_51F0(file, '\r');
+    fiAsciiTokenizer_51F0(file, '\n');
+    field_0x0014 = 2;
+}
+
+// ── Memory allocation helpers ───────────────────────────────────────────────
+
+// External functions used by allocation helpers
+extern "C" void fiAsciiTokenizer_1F08_g(const char* errorMsg);
+extern "C" void fiAsciiTokenizer_FB40_g(int exitCode);
+extern "C" void* xe_EC88(uint32_t size);
+
+/**
+ * AllocateUint32Array @ 0x820E76D8 | size: 0x64
+ *
+ * Allocates an array of uint32_t elements. Validates count against
+ * max 0x3FFFFFFF. Returns nullptr if count is 0. Each element is 4 bytes.
+ */
+extern "C" void* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
+    if (count > 0x3FFFFFFFu) {
+        fiAsciiTokenizer_1F08_g("allocation overflow");
+        fiAsciiTokenizer_FB40_g(1);
+    }
+
+    if (count != 0) {
+        return xe_EC88(count * 4);
+    }
+
+    return nullptr;
+}
+
+/**
+ * AllocateBytes @ 0x8222D588 | size: 0x60
+ *
+ * Allocates a byte array. Validates count against max 0xFFFFFFFF.
+ * Returns nullptr if count is 0. Each element is 1 byte.
+ */
+extern "C" void* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
+    if (count > 0xFFFFFFFFu) {
+        fiAsciiTokenizer_1F08_g("allocation overflow");
+        fiAsciiTokenizer_FB40_g(1);
+    }
+
+    if (count != 0) {
+        return xe_EC88(count);
+    }
+
+    return nullptr;
+}
+
+/**
+ * AllocateUint16Array @ 0x822DF168 | size: 0x64
+ *
+ * Allocates an array of uint16_t elements. Validates count against
+ * max 0x7FFFFFFF. Returns nullptr if count is 0. Each element is 2 bytes.
+ */
+extern "C" void* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
+    if (count > 0x7FFFFFFFu) {
+        fiAsciiTokenizer_1F08_g("allocation overflow");
+        fiAsciiTokenizer_FB40_g(1);
+    }
+
+    if (count != 0) {
+        return xe_EC88(count * 2);
+    }
+
+    return nullptr;
+}
+
+} // namespace rage
+
+// Forward declarations for CRT helpers used below
+extern "C" {
+void fiAsciiTokenizer_A4F8_2h(void* a, void* b, void* c, void* d, void* e, void* f);
+void fiAsciiTokenizer_A378_v12(void* a, void* b);
+void fiAsciiTokenizer_A418_2h(void* a, void* b);
+void RtlInitAnsiString(void* ansiStr, const char* str);
+void _nt_process_ansi_string(void* ansiStr);
+void fiAsciiTokenizer_CF40_w(void* obj, const char* name, void* arg);
+void fiAsciiTokenizer_F1D0_w(void* obj, const char* name, void* arg);
+void rage_free(void* ptr);
+void rage_A088(void* obj);
+void rage_B3B0(void* obj);
+void atSingleton_dtor(void* obj, int mode);
 }
 
 // ── CRT / kernel wrappers ──────────────────────────────────────────────────
@@ -1222,7 +1438,7 @@ int _crt_exception_filter(void* excRec, void* outContext, void* excContext) {
     }
     // Store exception pointers
     uint32_t* ctx = reinterpret_cast<uint32_t*>(outContext);
-    ctx[3] = reinterpret_cast<uint32_t>(excContext);
+    ctx[3] = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(excContext));
     ctx[0] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 48);
     ctx[1] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 56);
     ctx[2] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 64);
@@ -1505,7 +1721,7 @@ void _static_init_reg_6() {
  * _static_dtor_free_0 @ 0x82583F28 | size: 0x40
  *
  * Static destructor: checks if buffer is SSO (internal), if not frees
- * the heap allocation via rage_free.
+ * the heap allocation via rage_free_00C0.
  */
 void _static_dtor_free_0() {
     extern char g_dtorObj0[];
@@ -1732,6 +1948,8 @@ void _crt_fpscr_trampoline() {
     __asm__ volatile("" ::: "memory");
 }
 
+namespace rage {
+
 void parStreamOutRbf::EndArray() {
     // @ 0x8241CF90
 }
@@ -1755,330 +1973,5 @@ bool parStreamOutRbf::WriteBool(const char* name, bool value) {
     // @ 0x8241D128
     return false;  // TODO: implement
 }
-
-
-// ────────────────────────────────────────────────────────────────────────────
-// atArray utility functions — template-instantiated helpers for RAGE dynamic
-// arrays used throughout the serialization and tokenizer systems.
-// ────────────────────────────────────────────────────────────────────────────
-
-/**
- * AllocateU32Array @ 0x820E76D8 | size: 0x64
- *
- * Allocates memory for an array of uint32_t elements. Validates that the
- * requested count does not exceed 0x3FFFFFFF (the max that can be multiplied
- * by 4 without overflow). Returns nullptr for zero-count requests.
- */
-void* AllocateU32Array(uint32_t count) {
-    constexpr uint32_t MAX_U32_COUNT = 0x3FFFFFFF;
-
-    if (count > MAX_U32_COUNT) {
-        rage_assert("Array allocation overflow");
-        rage_abort(1);
-    }
-
-    if (count != 0) {
-        return rage_alloc(count * 4);
-    }
-
-    return nullptr;
-}
-
-/**
- * AllocateU16Array @ 0x822DF168 | size: 0x64
- *
- * Allocates memory for an array of uint16_t elements. Validates that the
- * requested count does not exceed 0x7FFFFFFF (the max that can be multiplied
- * by 2 without overflow). Returns nullptr for zero-count requests.
- */
-void* AllocateU16Array(uint32_t count) {
-    constexpr uint32_t MAX_U16_COUNT = 0x7FFFFFFF;
-
-    if (count > MAX_U16_COUNT) {
-        rage_assert("Array allocation overflow");
-        rage_abort(1);
-    }
-
-    if (count != 0) {
-        return rage_alloc(count * 2);
-    }
-
-    return nullptr;
-}
-
-/**
- * AllocateVec128Array @ 0x82238598 | size: 0x64
- *
- * Allocates memory for an array of 16-byte aligned elements (e.g. Vector128).
- * Validates that the requested count does not exceed 0x0FFFFFFF (the max
- * that can be multiplied by 16 without overflow). Returns nullptr for
- * zero-count requests.
- */
-void* AllocateVec128Array(uint32_t count) {
-    constexpr uint32_t MAX_VEC128_COUNT = 0x0FFFFFFF;
-
-    if (count > MAX_VEC128_COUNT) {
-        rage_assert("Array allocation overflow");
-        rage_abort(1);
-    }
-
-    if (count != 0) {
-        return rage_alloc(count * 16);
-    }
-
-    return nullptr;
-}
-
-/**
- * AllocateBytes @ 0x8222D588 | size: 0x60
- *
- * Allocates a raw byte buffer of the specified size. The only validation is
- * that size cannot exceed 0xFFFFFFFF (which is always true for uint32_t),
- * so this effectively just guards against zero-size allocations.
- * Returns nullptr for zero-size requests.
- */
-void* AllocateBytes(uint32_t size) {
-    constexpr uint32_t MAX_BYTE_COUNT = 0xFFFFFFFF;
-
-    if (size > MAX_BYTE_COUNT) {
-        rage_assert("Array allocation overflow");
-        rage_abort(1);
-    }
-
-    if (size != 0) {
-        return rage_alloc(size);
-    }
-
-    return nullptr;
-}
-
-/**
- * InitU32ArrayFromData @ 0x8222CC50 | size: 0xA8
- *
- * Initializes a triple-pointer array structure (begin/writePos/end) with
- * the given count of uint32_t elements, copying initial values from a source
- * array. The structure has layout: +0 = begin, +4 = writePos, +8 = end.
- */
-void InitU32ArrayFromData(uint32_t* arrayStruct, uint32_t count, const uint32_t* srcData) {
-    arrayStruct[0] = 0;
-    arrayStruct[1] = 0;
-    arrayStruct[2] = 0;
-
-    uint32_t* buffer = static_cast<uint32_t*>(AllocateU32Array(count));
-
-    arrayStruct[0] = reinterpret_cast<uintptr_t>(buffer);
-    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer);
-    uint32_t* endPtr = buffer + count;
-    arrayStruct[2] = reinterpret_cast<uintptr_t>(endPtr);
-
-    // Copy source data into the allocated buffer
-    for (uint32_t i = 0; i < count; i++) {
-        buffer[i] = srcData[i];
-    }
-
-    // Update write position to current end of written data
-    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer + count);
-}
-
-/**
- * ReserveStringBuffer @ 0x8222CEB8 | size: 0x88
- *
- * Reserves buffer space for a string/byte container. If the requested capacity
- * is 16 or fewer bytes, uses a small inline buffer at offset +16 within the
- * struct. Otherwise allocates from the heap. The struct has layout:
- * +0 = begin, +16 = inline buffer, +20 = end pointer.
- */
-void ReserveStringBuffer(uint8_t* containerStruct, uint32_t capacity) {
-    if (capacity <= 16) {
-        // Use the inline small-string buffer at offset +16
-        uint8_t* inlineBuffer = containerStruct + 16;
-        *reinterpret_cast<uintptr_t*>(inlineBuffer) = reinterpret_cast<uintptr_t>(containerStruct);
-        *reinterpret_cast<uintptr_t*>(containerStruct + 20) = reinterpret_cast<uintptr_t>(inlineBuffer);
-        return;
-    }
-
-    if (capacity == 0) {
-        rage_assert("Invalid buffer capacity");
-        rage_abort_fatal();
-        return;
-    }
-
-    if (capacity > 0xFFFFFFFF) {
-        rage_assert("Invalid buffer capacity");
-        rage_abort_fatal();
-        return;
-    }
-
-    // Heap allocation for larger buffers
-    uint8_t* heapBuffer = static_cast<uint8_t*>(AllocateBytes(capacity));
-    *reinterpret_cast<uintptr_t*>(containerStruct) = reinterpret_cast<uintptr_t>(heapBuffer);
-    *reinterpret_cast<uintptr_t*>(containerStruct + 16) = reinterpret_cast<uintptr_t>(heapBuffer);
-    *reinterpret_cast<uintptr_t*>(containerStruct + 20) = reinterpret_cast<uintptr_t>(heapBuffer + capacity);
-}
-
-/**
- * CopyAligned64 @ 0x8222DDD0 | size: 0x64
- *
- * Copies 64-byte aligned blocks from source to destination using VMX/AltiVec
- * 128-bit vector loads and stores. Operates in 64-byte chunks (4 x 16-byte
- * vectors per iteration). Skips the copy if source equals end pointer.
- */
-void CopyAligned64(void* src, const void* srcEnd, void* dest) {
-    uint8_t* srcPtr = static_cast<uint8_t*>(src);
-    const uint8_t* endPtr = static_cast<const uint8_t*>(srcEnd);
-    uint8_t* destPtr = static_cast<uint8_t*>(dest);
-
-    if (srcPtr == endPtr) {
-        return;
-    }
-
-    // Copy 64-byte blocks using 128-bit vector operations
-    do {
-        if (destPtr != nullptr) {
-            memcpy(destPtr, srcPtr, 16);
-            memcpy(destPtr + 16, srcPtr + 16, 16);
-            memcpy(destPtr + 32, srcPtr + 32, 16);
-            memcpy(destPtr + 48, srcPtr + 48, 16);
-        }
-        srcPtr += 64;
-        destPtr += 64;
-    } while (srcPtr != endPtr);
-}
-
-/**
- * InitFloatArray @ 0x8222EA28 | size: 0x84
- *
- * Initializes a float array structure, allocating space for the given count
- * and copying a single source float value into all elements. The struct uses
- * layout: +0 = begin, +4 = writePos, +8 = sub-array header.
- */
-void InitFloatArray(uint32_t* arrayStruct, uint32_t count, const float* srcValue) {
-    uint32_t* subArray = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(arrayStruct) + 8);
-
-    arrayStruct[0] = 0;
-    arrayStruct[1] = 0;
-    subArray[0] = 0;
-
-    float* buffer = static_cast<float*>(AllocateU32Array(count));
-
-    arrayStruct[0] = reinterpret_cast<uintptr_t>(buffer);
-    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer);
-    float* endPtr = buffer + count;
-    subArray[0] = reinterpret_cast<uintptr_t>(endPtr);
-
-    // Fill all elements with the source float value
-    float fillValue = *srcValue;
-    for (uint32_t i = 0; i < count; i++) {
-        buffer[i] = fillValue;
-    }
-
-    // Update write position
-    arrayStruct[1] = reinterpret_cast<uintptr_t>(buffer + count);
-}
-
-/**
- * CopyConstructU32Array @ 0x8222EAB0 | size: 0xA4
- *
- * Copy-constructs a uint32_t array from a source array. Computes the element
- * count from the source's begin/writePos pointers (writePos - begin) / 4,
- * allocates a new buffer, and copies the data via memcpy.
- */
-void CopyConstructU32Array(uint32_t* destStruct, const uint32_t* srcStruct) {
-    uint32_t* subDest = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(destStruct) + 8);
-
-    uintptr_t srcBegin = srcStruct[0];
-    uintptr_t srcWritePos = srcStruct[1];
-
-    destStruct[0] = 0;
-    destStruct[1] = 0;
-    subDest[0] = 0;
-
-    // Calculate element count from source pointers
-    uint32_t byteCount = static_cast<uint32_t>(srcWritePos - srcBegin);
-    uint32_t elementCount = byteCount >> 2;
-
-    float* buffer = static_cast<float*>(AllocateU32Array(elementCount));
-
-    destStruct[0] = reinterpret_cast<uintptr_t>(buffer);
-    destStruct[1] = reinterpret_cast<uintptr_t>(buffer);
-    uintptr_t endAddr = reinterpret_cast<uintptr_t>(buffer) + elementCount * 4;
-    subDest[0] = static_cast<uint32_t>(endAddr);
-
-    // Reload source pointers (may have changed)
-    uintptr_t srcEnd = srcStruct[1];
-    uintptr_t srcStart = srcStruct[0];
-
-    if (srcEnd == srcStart) {
-        // Empty source — just set writePos to begin
-        destStruct[1] = reinterpret_cast<uintptr_t>(buffer);
-        return;
-    }
-
-    // Copy source data into new buffer
-    size_t copySize = srcEnd - srcStart;
-    memcpy(buffer, reinterpret_cast<const void*>(srcStart), copySize);
-
-    // Update write position: dest_begin + (srcEnd - srcStart offset adjusted)
-    uintptr_t destBegin = reinterpret_cast<uintptr_t>(buffer);
-    destStruct[1] = static_cast<uint32_t>(destBegin - srcStart + srcEnd);
-}
-
-/**
- * CompareArrayElements @ 0x82238F28 | size: 0x80
- *
- * Compares two indirect array element references. Each reference is a pointer
- * to a struct containing: +0 = key (int32_t, -1 means string), +4 = value ptr.
- * For string keys (-1), performs byte-by-byte string comparison.
- * For integer keys, returns comparison result (-1, 0, or 1-like value).
- */
-int CompareArrayElements(const void* refA, const void* refB) {
-    const int32_t* entryA = *reinterpret_cast<const int32_t* const*>(refA);
-    const int32_t* entryB = *reinterpret_cast<const int32_t* const*>(refB);
-
-    int32_t keyA = entryA[0];
-
-    if (keyA == -1) {
-        // String comparison mode
-        int32_t keyB = entryB[0];
-        if (keyB != -1) {
-            return -1;
-        }
-
-        // Both are string entries — compare the string values byte-by-byte
-        const char* strA = reinterpret_cast<const char*>(entryA[1]);
-        const char* strB = reinterpret_cast<const char*>(entryB[1]);
-
-        while (true) {
-            char charA = *strA;
-            char charB = *strB;
-            int diff = charA - charB;
-
-            if (charA == '\0') {
-                return diff;
-            }
-            if (diff != 0) {
-                return diff;
-            }
-
-            strA++;
-            strB++;
-        }
-    }
-
-    // Integer comparison mode
-    int32_t keyB = entryB[0];
-    if (keyB == -1) {
-        return 1;
-    }
-
-    // Compare unsigned integer keys
-    if (static_cast<uint32_t>(keyA) <= static_cast<uint32_t>(keyB)) {
-        // subfc/subfe idiom: returns 0 if equal, -1 if less
-        return (static_cast<uint32_t>(keyA) < static_cast<uint32_t>(keyB)) ? -1 : 0;
-    }
-
-    return 1;
-}
-
 
 } // namespace rage

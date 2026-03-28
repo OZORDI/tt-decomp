@@ -479,3 +479,422 @@ void rage_DestroyModelGeomData(void* obj) {
     // Free the container
     rage_free(obj);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Additional external declarations for new functions
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" {
+    void grmShaderParam_ReleaseValues(void* obj);                    // @ 0x820F6348
+    void cmOperator_CopyFrom(void* dest, void* src);                // @ 0x82126998
+    void grmShaderFx_Destroy(void* obj, int flags);                  // @ 0x820EF008 (self-recursive)
+    void msgMsgSink_Cleanup(void* obj);                              // @ 0x821A8070
+    void atSingleton_DestroyContents(void* obj);                     // @ 0x8214BE18
+    void* parMember_LookupStruct(void* obj, void* r4_param);        // @ 0x8234B968
+    void* parMember_FindField(void* obj, void* structDef);           // @ 0x8234BBC0
+    void parMember_StoreField(void* obj, void* value);               // @ 0x8234D620
+    void parMember_CleanupContext(void* ctx);                        // @ 0x8234AEA0
+    void rage_DecrefAndRelease(void* obj);                           // @ 0x820C2E18
+    void grmShaderPtrArray_DestroyEntries(void* dataPtr, int flags); // @ 0x821240F8 (forward decl)
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grmShaderParam_ReleaseByType @ 0x820F6408 | size: 0x7C
+//
+// Releases the data pointer held by a shader parameter based on its type tag.
+// Type 6: managed reference release. Type 8/9: simple heap free.
+// Any other type: just clears the type tag.
+//
+// Layout:
+//   +0:  data pointer
+//   +20: type tag (uint32_t)
+// ─────────────────────────────────────────────────────────────────────────────
+void grmShaderParam_ReleaseByType(void* param) {
+    uint32_t type = *(uint32_t*)((uint8_t*)param + 20);
+
+    if (type == 6) {
+        // Managed reference - release through ref manager
+        void* data = *(void**)param;
+        if (data != nullptr) {
+            rage_DecrefAndRelease(data);
+        }
+        *(uint32_t*)((uint8_t*)param + 20) = 0;
+        return;
+    }
+
+    if (type == 8) {
+        void* data = *(void**)param;
+        rage_free(data);
+        *(uint32_t*)((uint8_t*)param + 20) = 0;
+        return;
+    }
+
+    if (type == 9) {
+        void* data = *(void**)param;
+        rage_free(data);
+        *(uint32_t*)((uint8_t*)param + 20) = 0;
+        return;
+    }
+
+    // Unknown or no-op type - just clear
+    *(uint32_t*)((uint8_t*)param + 20) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grmShaderFx_Destroy @ 0x820EF008 | size: 0x54
+//
+// Destructor for rage::grmShaderFx. Releases shader parameters, frees the
+// parameter data buffer at +16, recursively destroys the linked sibling
+// shader at +24, then frees the object itself.
+//
+// Called by grmShaderFx_vfn_0, grmShaderPreset_Destroy, grmShaderBasicClamped.
+// ─────────────────────────────────────────────────────────────────────────────
+void grmShaderFx_Destroy(void* obj, int flags) {
+    // Release all shader parameter values
+    grmShaderParam_ReleaseValues(obj);
+
+    // Free the parameter data buffer at offset +16
+    void* paramData = *(void**)((uint8_t*)obj + 16);
+    rage_free(paramData);
+
+    // Recursively destroy linked sibling shader at offset +24
+    void* sibling = *(void**)((uint8_t*)obj + 24);
+    if (sibling != nullptr) {
+        grmShaderFx_Destroy(sibling, 1);
+    }
+
+    // Free the shader object itself
+    rage_free(obj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grmShaderPreset_Destroy @ 0x820F5710 | size: 0x84
+//
+// Destructor for rage::grmShaderPreset. Resets vtable to grmShaderPreset,
+// frees internal buffers, destroys the linked shader FX, releases the
+// sub-object at +12 via virtual destructor, then resets vtable to datBase.
+//
+// Layout:
+//   +0:  vtable pointer
+//   +4:  sub-object pointer (with virtual dtor)
+//   +8:  buffer pointer (freed directly)
+//   +12: sub-object pointer (with virtual dtor)
+//   +20: buffer pointer (freed directly)
+// ─────────────────────────────────────────────────────────────────────────────
+void grmShaderPreset_Destroy(void* obj) {
+    // Set vtable to rage::grmShaderPreset @ 0x8202F668
+    *(void**)obj = (void*)0x8202F668;
+
+    // Free buffer at offset +8
+    void* buffer1 = *(void**)((uint8_t*)obj + 8);
+    rage_free(buffer1);
+
+    // Free buffer at offset +20
+    void* buffer2 = *(void**)((uint8_t*)obj + 20);
+    rage_free(buffer2);
+
+    // Destroy linked shader FX at offset +4
+    void* shaderFx = *(void**)((uint8_t*)obj + 4);
+    if (shaderFx != nullptr) {
+        grmShaderFx_Destroy(shaderFx, 1);
+    }
+
+    // Release sub-object at offset +12 via virtual destructor (slot 0)
+    void* subObj = *(void**)((uint8_t*)obj + 12);
+    if (subObj != nullptr) {
+        void** vtable = *(void***)subObj;
+        typedef void (*DtorFn)(void*, int);
+        DtorFn dtorFn = (DtorFn)vtable[0];
+        dtorFn(subObj, 1);
+    }
+
+    // Reset vtable to rage::datBase @ 0x820276C4
+    *(void**)obj = (void*)0x820276C4;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atArray_ClearOwned16 @ 0x82122C00 | size: 0x60
+//
+// Clears a 20-byte atArray-like structure with an ownership byte at +16.
+// If the top bit of the ownership byte is set, frees the backing data
+// at +0 before clearing. Preserves the low 7 bits of the ownership byte.
+//
+// Layout:
+//   +0:  data pointer
+//   +4:  (uint16_t) count
+//   +6:  (uint16_t) capacity
+//   +12: (uint32_t) aux field
+//   +16: (uint8_t) ownership flags (bit 7 = owns data)
+// ─────────────────────────────────────────────────────────────────────────────
+void atArray_ClearOwned16(void* obj) {
+    uint8_t flags = *(uint8_t*)((uint8_t*)obj + 16);
+
+    // Check if ownership bit (any of bits 1-7) is set
+    if ((flags & 0x80) != 0) {
+        void* data = *(void**)obj;
+        rage_free(data);
+    }
+
+    // Preserve only the low 7 bits of flags
+    uint8_t preservedFlags = *(uint8_t*)((uint8_t*)obj + 16) & 0x7F;
+
+    // Clear all fields
+    *(void**)obj = nullptr;
+    *(uint16_t*)((uint8_t*)obj + 4) = 0;
+    *(uint16_t*)((uint8_t*)obj + 6) = 0;
+    *(uint32_t*)((uint8_t*)obj + 12) = 0;
+    *(uint8_t*)((uint8_t*)obj + 16) = preservedFlags;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atArray_ClearOwned20 @ 0x82125D60 | size: 0x60
+//
+// Clears a 24-byte atArray-like structure with an ownership byte at +20.
+// Same pattern as atArray_ClearOwned16 but with wider layout (includes
+// additional uint32 fields at +4, +8, and +16).
+//
+// Layout:
+//   +0:  data pointer
+//   +4:  (uint32_t) field1
+//   +8:  (uint32_t) field2
+//   +16: (uint32_t) field3
+//   +20: (uint8_t) ownership flags (bit 7 = owns data)
+// ─────────────────────────────────────────────────────────────────────────────
+void atArray_ClearOwned20(void* obj) {
+    uint8_t flags = *(uint8_t*)((uint8_t*)obj + 20);
+
+    // Check if ownership bit (any of bits 1-7) is set
+    if ((flags & 0x80) != 0) {
+        void* data = *(void**)obj;
+        rage_free(data);
+    }
+
+    // Preserve only the low 7 bits of flags
+    uint8_t preservedFlags = *(uint8_t*)((uint8_t*)obj + 20) & 0x7F;
+
+    // Clear all fields
+    *(void**)obj = nullptr;
+    *(uint32_t*)((uint8_t*)obj + 4) = 0;
+    *(uint32_t*)((uint8_t*)obj + 8) = 0;
+    *(uint32_t*)((uint8_t*)obj + 16) = 0;
+    *(uint8_t*)((uint8_t*)obj + 20) = preservedFlags;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grmShaderGroup_DestroyOwnedArrays @ 0x82124020 | size: 0x5C
+//
+// Destroys owned sub-arrays from a shader group structure. Frees the
+// secondary array at +12 if owned (flag at +18), then destroys the
+// primary array of pointers at +0 if owned (flag at +6) via
+// grmShaderPtrArray_DestroyEntries.
+//
+// Layout:
+//   +0:  primary pointer array (array of object pointers)
+//   +6:  (uint16_t) primary ownership flag
+//   +12: secondary data array
+//   +18: (uint16_t) secondary ownership flag
+// ─────────────────────────────────────────────────────────────────────────────
+void grmShaderGroup_DestroyOwnedArrays(void* obj) {
+    // Free secondary array at +12 if owned
+    uint16_t ownsSecondary = *(uint16_t*)((uint8_t*)obj + 18);
+    if (ownsSecondary != 0) {
+        void* secondaryArray = *(void**)((uint8_t*)obj + 12);
+        rage_free(secondaryArray);
+    }
+
+    // Destroy primary pointer array at +0 if owned
+    uint16_t ownsPrimary = *(uint16_t*)((uint8_t*)obj + 6);
+    if (ownsPrimary != 0) {
+        void* primaryArray = *(void**)obj;
+        if (primaryArray == nullptr) {
+            return;
+        }
+        // Destroy entries in the pointer array with cleanup flag 3
+        grmShaderPtrArray_DestroyEntries(primaryArray, 3);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grmShaderPtrArray_DestroyEntries @ 0x821240F8 | size: 0x6C
+//
+// Destroys all non-null entries in an array of object pointers. The element
+// count is stored at offset -4 from the data pointer. Each entry is a
+// pointer to an object with a virtual destructor at vtable slot 0.
+// Iterates backward through the array calling the virtual destructor
+// with flags=1, then frees the array backing memory.
+//
+// Parameters:
+//   dataPtr - Pointer to the first element of the pointer array
+// ─────────────────────────────────────────────────────────────────────────────
+void grmShaderPtrArray_DestroyEntries(void* dataPtr, int flags) {
+    // Element count is stored 4 bytes before the data pointer
+    uint32_t* countPtr = (uint32_t*)((uint8_t*)dataPtr - 4);
+    uint32_t elementCount = *countPtr;
+
+    // Calculate end of array (each element is a 4-byte pointer)
+    void** elementPtr = (void**)((uint8_t*)dataPtr + elementCount * 4);
+
+    // Destroy elements in reverse order
+    for (int32_t i = elementCount - 1; i >= 0; i--) {
+        elementPtr--;
+        void* entry = *elementPtr;
+        if (entry != nullptr) {
+            // Call virtual destructor (vtable slot 0) with flags=1
+            void** vtable = *(void***)entry;
+            typedef void (*DtorFn)(void*, int);
+            DtorFn dtorFn = (DtorFn)vtable[0];
+            dtorFn(entry, 1);
+        }
+    }
+
+    // Free the array backing memory (including count prefix)
+    rage_free(countPtr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmOperator_Assign @ 0x82126A30 | size: 0x5C
+//
+// Assignment operator for a cmOperator object. If the source and destination
+// are different, frees the destination's current data, clears it, then
+// copies from the source using cmOperator_CopyFrom. Returns a pointer
+// to the destination.
+// ─────────────────────────────────────────────────────────────────────────────
+void* cmOperator_Assign(void* dest, void* src) {
+    if (dest != src) {
+        // Free existing data in destination
+        void* data = *(void**)dest;
+        rage_free(data);
+
+        // Clear destination
+        *(void**)dest = nullptr;
+
+        // Copy from source
+        cmOperator_CopyFrom(dest, src);
+    }
+
+    return dest;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datRef_Release @ 0x82126A90 | size: 0x80
+//
+// Decrements the reference count of a ref-counted object at offset +32.
+// When the count reaches zero, calls the content destructor, frees the
+// owned sub-array at +24 if flagged, then frees the object itself.
+// Returns the new reference count (0 if freed).
+//
+// Layout:
+//   +24: sub-array data pointer
+//   +30: (uint16_t) sub-array ownership flag
+//   +32: (uint16_t) reference count
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t datRef_Release(void* obj) {
+    // Decrement reference count at +32 (with wrapping via +65536-1 then mask)
+    uint16_t refCount = *(uint16_t*)((uint8_t*)obj + 32);
+    refCount = (uint16_t)((refCount + 65536 - 1) & 0xFFFF);
+    *(uint16_t*)((uint8_t*)obj + 32) = refCount;
+
+    if (refCount == 0) {
+        // Reference count hit zero - destroy the object
+        atSingleton_DestroyContents(obj);
+
+        // Free owned sub-array at +24
+        uint16_t ownsSubArray = *(uint16_t*)((uint8_t*)obj + 30);
+        if (ownsSubArray != 0) {
+            void* subArray = *(void**)((uint8_t*)obj + 24);
+            rage_free(subArray);
+        }
+
+        // Free the object itself
+        rage_free(obj);
+        return 0;
+    }
+
+    return refCount;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_DestroySubObjects @ 0x82116420 | size: 0x6C
+//
+// Destructor helper for a msgMsgSink-derived object. Frees the owned
+// sub-array at +24 if flagged, cleans up the embedded sub-object at +8
+// via msgMsgSink_Cleanup, then resets vtables. The object has an inner
+// msgMsgSink at +4 and an outer datBase wrapper at +0.
+//
+// Layout:
+//   +0:  datBase vtable pointer
+//   +4:  msgMsgSink vtable pointer (inner sub-object)
+//   +8:  embedded sub-object (cleaned up via msgMsgSink_Cleanup)
+//   +24: sub-array data pointer
+//   +30: (uint16_t) sub-array ownership flag
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink_DestroySubObjects(void* obj) {
+    // Free owned sub-array at +24
+    uint16_t ownsSubArray = *(uint16_t*)((uint8_t*)obj + 30);
+    if (ownsSubArray != 0) {
+        void* subArray = *(void**)((uint8_t*)obj + 24);
+        rage_free(subArray);
+    }
+
+    // Clean up embedded sub-object at +8
+    void* subObj = (void*)((uint8_t*)obj + 8);
+    msgMsgSink_Cleanup(subObj);
+
+    // Compute inner vtable pointer (+4 from obj, or nullptr if obj is null)
+    void* innerPtr = (obj != nullptr) ? (void*)((uint8_t*)obj + 4) : nullptr;
+
+    // Reset inner vtable to msgMsgSink base @ 0x82027B34
+    *(void**)innerPtr = (void*)0x82027B34;
+
+    // Reset outer vtable to rage::datBase @ 0x820276C4
+    *(void**)obj = (void*)0x820276C4;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// parMember_DeserializeField @ 0x82123F18 | size: 0x8C
+//
+// Deserializes a single field from a parMember structure. Looks up the
+// struct definition via parMember_LookupStruct, finds the field within
+// the struct using parMember_FindField, reads the field value by calling
+// the member's virtual read function (vtable slot 3), stores the value
+// into the output pointer, then calls the member's virtual apply function
+// (vtable slot 1). Returns 1 on success.
+//
+// Parameters:
+//   obj    - The parMember instance
+//   r4     - Serialization context
+//   outPtr - Pointer to receive the deserialized value
+// ─────────────────────────────────────────────────────────────────────────────
+int parMember_DeserializeField(void* obj, void* r4Param, void* outPtr) {
+    // Look up the struct definition
+    void* structCtx = parMember_LookupStruct(obj, r4Param);
+
+    // Get the struct definition from the context
+    void* structDef = *(void**)structCtx;
+
+    // Find the specific field within the struct
+    void* field = parMember_FindField(obj, structDef);
+
+    // Read the field value using the field's virtual function at +28 (slot 3 at offset 12)
+    void** fieldBase = (void**)((uint8_t*)field + 28);
+    uint32_t readFnAddr = *(uint32_t*)((uint8_t*)fieldBase + 12);
+    typedef void* (*ReadFn)(void*);
+    ReadFn readFn = (ReadFn)readFnAddr;
+    void* value = readFn(field);
+
+    // Store the deserialized value into the output
+    parMember_StoreField(field, value);
+    *(void**)outPtr = value;
+
+    // Apply the value via the member's vtable slot 1
+    void** vtable = *(void***)field;
+    typedef void (*ApplyFn)(void*, void*, void*);
+    ApplyFn applyFn = (ApplyFn)vtable[1];
+    applyFn(field, structDef, value);
+
+    // Clean up the lookup context
+    parMember_CleanupContext(structCtx);
+    rage_free(structCtx);
+
+    return 1;
+}

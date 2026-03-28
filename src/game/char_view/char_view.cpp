@@ -13,14 +13,15 @@
 // External function declarations
 extern "C" {
     void rage_free(void* ptr);
-    void* rage_alloc(uint32_t size);
-    void sysMemAllocator_InitMainThread();
+    void* xe_EC88(uint32_t size);
+    void xe_main_thread_init_0038();
+    void rage::ReleaseSingleton(void* obj);
     void audControl_Destructor(void* obj);  // @ 0x82161568
     void atArray_Destructor(void* obj);
     void atArray_Clear(void* obj);
     void xmlNodeStruct_SerializeField(void* obj, const char* name, void* target, void* defaultVal, uint32_t flags);
     int32_t util_2458_FindCharacterIndex(void* gameData, const char* name);
-    void rage_DebugLog(const char* message, void* a, void* b);
+    void nop_8240E6D0(const char* message, void* a, void* b);
     void PostPageGroupMessage(int code, int param1, int param2, int param3);
     void PostStateTransitionRequest(void* manager, int32_t eventType);
     void FadePageGroup(void* context, float param, int p2, int p3, int p4, int p5);
@@ -112,7 +113,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         // Event 6: Create UI state
         // Set up global UI state array
         g_global_ui_state[13] = 2;  // State type
-        g_global_ui_state[14] = (uint32_t)(uintptr_t)m_pScreenObject;  // Screen object pointer
+        g_global_ui_state[14] = (uint32_t)m_pScreenObject;  // Screen object pointer
         
         // Initialize UI context
         FadePageGroup(g_ui_context, 0.0f, 1, 0, 0, 0);
@@ -129,7 +130,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         PostStateTransitionRequest(m_pManager, eventType);
         
         // Log unhandled event error
-        rage_DebugLog(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);
+        nop_8240E6D0(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);
     }
 }
 
@@ -156,7 +157,7 @@ void pongAttractState::OnExitEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        rage_DebugLog(g_error_attract_exit, stateName, (void*)(intptr_t)eventType);
+        nop_8240E6D0(g_error_attract_exit, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -176,7 +177,7 @@ const char* pongAttractState::GetStateName() const {
  * Creates a pongAttractContext object (32 bytes) with dual vtables for multiple inheritance.
  */
 void pongAttractState::OnEnter() {
-    sysMemAllocator_InitMainThread();
+    xe_main_thread_init_0038();
     
     // Get allocator from TLS (thread-local storage)
     void** pTLS = g_tls_base;
@@ -324,7 +325,7 @@ void charViewData::LoadViewData() {
         if (charCount > 0x3FFFFFFF) {
             allocSize = 0xFFFFFFFF;
         }
-        m_pAllocatedData = rage_alloc(allocSize);
+        m_pAllocatedData = xe_EC88(allocSize);
     } else {
         m_pAllocatedData = nullptr;
     }
@@ -344,7 +345,7 @@ void charViewData::LoadViewData() {
         void* pAllocator = pTLS[1];
         
         for (uint32_t i = 0; i < charCount; i++) {
-            sysMemAllocator_InitMainThread();
+            xe_main_thread_init_0038();
             
             // Allocate view element (8 bytes: 2 floats)
             typedef void* (*AllocFunc)(void*, uint32_t, uint32_t);
@@ -403,12 +404,12 @@ void charViewData::LoadViewData() {
             // Character doesn't match type - log error
             typedef const char* (*GetNameFunc)(void*);
             GetNameFunc getName1 = (GetNameFunc)vtable[19];
-            GetNameFunc getName2 = (GetNameFunc)(*(void***)this)[19];
+            GetNameFunc getName2 = (GetNameFunc)m_vtable[19];
             
             const char* name1 = getName1(pNode);
             const char* name2 = getName2(this);
             
-            rage_DebugLog(g_error_type_mismatch, (void*)name2, (void*)name1);
+            nop_8240E6D0(g_error_type_mismatch, (void*)name2, (void*)name1);
         }
         
         pNode = pNode->pNext;
@@ -488,7 +489,7 @@ charViewCS::~charViewCS() {
     audControl_Destructor(&m_embeddedObject);
     
     // Update vtable pointer
-    *(void**)this = (void*)g_vtable_char_view_cs;
+    m_vtable = (void**)g_vtable_char_view_cs;
     
     // Call base cleanup
     atArray_Destructor(this);
@@ -542,7 +543,7 @@ void pongCharViewState::OnEnterEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        rage_DebugLog(g_error_charview_enter, stateName, (void*)(intptr_t)eventType);
+        nop_8240E6D0(g_error_charview_enter, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -582,7 +583,7 @@ void pongCharViewState::OnExitEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        rage_DebugLog(g_error_charview_exit, stateName, (void*)(intptr_t)eventType);
+        nop_8240E6D0(g_error_charview_exit, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -603,7 +604,7 @@ const char* pongCharViewState::GetStateName() const {
  * to initial values, then calls the context's initialization method.
  */
 void pongCharViewState::OnEnter() {
-    sysMemAllocator_InitMainThread();
+    xe_main_thread_init_0038();
 
     // Get allocator from TLS
     void** pTLS = g_tls_base;
@@ -670,11 +671,11 @@ void pongCharViewState::OnEnter() {
  */
 pongCharViewContext::~pongCharViewContext() {
     // Update primary vtable
-    *(void**)this = (void*)g_vtable_pong_char_view_context;
-
+    m_vtable = (void**)g_vtable_pong_char_view_context;
+    
     // Update secondary vtable at +20
     m_vtable2 = (void**)g_vtable_pong_char_view_context_2;
-
+    
     // Delete managed object at +44 if it exists
     if (m_pManagedObject != nullptr) {
         // Call virtual destructor on managed object
@@ -682,59 +683,15 @@ pongCharViewContext::~pongCharViewContext() {
         typedef void (*DestructorFunc)(void*, bool);
         DestructorFunc dtor = (DestructorFunc)pObjVtable[0];
         dtor(m_pManagedObject, true);
-
+        
         m_pManagedObject = nullptr;
     }
-
+    
     // Clean up embedded object at +80
     atArray_Clear(&m_embeddedObject);
-
+    
     // Update vtables to final state
     m_vtable2 = (void**)g_vtable_pong_char_view_context_3;
-    *(void**)this = (void*)g_vtable_pong_char_view_state;
+    m_vtable = (void**)g_vtable_pong_char_view_state;
 }
 
-
-// ────────────────────────────────────────────────────────────────────────────
-// ResetCharViewData — Global state reset for character view system
-// ────────────────────────────────────────────────────────────────────────────
-
-/**
- * ResetCharViewData @ 0x8240A570 | size: 0x8C
- *
- * Resets all fields on the global character view data structure to zero/default.
- * Called during both enter and exit phases of the character view state to ensure
- * clean state. Also clears related global counters and sets the selected
- * character index to -1 (invalid).
- *
- * The data structure has float fields at offsets +12, +16, +28, +32, +36, +40,
- * +44, +48 and integer/pointer fields at +4, +8, +20, +24.
- */
-void ResetCharViewData(void* charViewData) {
-    if (!charViewData) return;
-
-    char* pData = (char*)charViewData;
-
-    // Reset all integer/pointer fields to zero
-    *(uint32_t*)(pData + 4)  = 0;
-    *(uint32_t*)(pData + 8)  = 0;
-    *(uint32_t*)(pData + 20) = 0;
-    *(uint32_t*)(pData + 24) = 0;
-
-    // Reset all float fields to 0.0f
-    *(float*)(pData + 12) = 0.0f;
-    *(float*)(pData + 16) = 0.0f;
-    *(float*)(pData + 28) = 0.0f;
-    *(float*)(pData + 32) = 0.0f;
-    *(float*)(pData + 36) = 0.0f;
-    *(float*)(pData + 40) = 0.0f;
-    *(float*)(pData + 44) = 0.0f;
-    *(float*)(pData + 48) = 0.0f;
-
-    // Clear global selection counters
-    g_charViewSelectCounter = 0;
-    g_charViewSelectFlag = 0;
-
-    // Reset selected character index to invalid
-    g_selectedCharacterIndex = -1;
-}

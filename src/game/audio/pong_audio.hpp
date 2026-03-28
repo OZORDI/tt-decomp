@@ -25,6 +25,7 @@
  */
 #pragma once
 #include <stdint.h>
+#include "rage/audio/rage_audio.hpp"
 
 // ── CBiquadFilterEffect  [vtable @ 0x8203B598] ─────────────────────
 // IXAPO implementation — biquad (parametric EQ) audio filter
@@ -53,6 +54,10 @@ struct CCompEffect {
 // IXAPO implementation — delay/echo audio effect
 struct CDelayEffect {
     void**      vtable;           // +0x00
+    int32_t     m_refCount;       // +0x04 — COM reference count
+    uint8_t     _pad0x08[20];     // +0x08..0x1B
+    void*       m_pEffectData1;   // +0x1C — effect data pointer 1
+    void*       m_pEffectData2;   // +0x20 — effect data pointer 2
 
     // ── IXAPO virtual methods ──
     virtual void ScalarDtor(int flags);              // [1] @ 0x821b1e30
@@ -67,6 +72,10 @@ struct CDelayEffect {
 // IXAPO implementation — peak level meter for audio monitoring
 struct CPeakMeterEffect {
     void**      vtable;           // +0x00
+    int32_t     m_refCount;       // +0x04 — COM reference count
+    uint8_t     _pad0x08[20];     // +0x08..0x1B
+    void*       m_pEffectData1;   // +0x1C — effect data pointer 1
+    void*       m_pEffectData2;   // +0x20 — effect data pointer 2
 
     // ── IXAPO virtual methods ──
     virtual ~CPeakMeterEffect();                     // [0] @ 0x821add88
@@ -83,6 +92,10 @@ struct CPeakMeterEffect {
 // IXAPO implementation — shelving EQ filter (low/high shelf)
 struct CShelvingFilterEffect {
     void**      vtable;           // +0x00
+    int32_t     m_refCount;       // +0x04 — COM reference count
+    uint8_t     _pad0x08[20];     // +0x08..0x1B
+    void*       m_pEffectData1;   // +0x1C — effect data pointer 1
+    void*       m_pEffectData2;   // +0x20 — effect data pointer 2
 
     // ── IXAPO virtual methods ──
     virtual ~CShelvingFilterEffect();                // [0] @ 0x821b26a8
@@ -113,10 +126,8 @@ struct pongAmbiencePlayer {
 // ── pongAudioManager  [vtable @ 0x8203BB6C] ────────────────────
 // Inherits from rage::audControlMgr
 // Central audio manager — coordinates all game audio controllers
-struct pongAudioManager {
-    void**      vtable;           // +0x00
-
-    // ── rage::audControlMgr virtual methods ──
+struct pongAudioManager : public rage::audControlMgr {
+    // ── rage::audControlMgr virtual overrides ──
     virtual ~pongAudioManager();                     // [0] @ 0x821b3ec8
     virtual void EnableAll();                         // [3] @ 0x821b5c78 — sets +76 flag, delegates to audControlMgr::EnableAll
     virtual void DisableAll();                        // [4] @ 0x821b5c88 — clears +76 flag, delegates to audControlMgr::DisableAll

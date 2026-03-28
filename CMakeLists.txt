@@ -34,6 +34,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Add definitions
 add_definitions(${SDL2_DEFINITIONS})
+add_definitions(-DTT_PLATFORM_PC=1)
 
 # Source files
 set(SOURCES
@@ -45,34 +46,31 @@ set(SOURCES
     src/crt/startup.c
     src/crt/string.c
     src/globals.c
-    src/globals_extended.c
-    src/globals_linker.cpp
-    src/stubs_remaining.c
-    src/stubs_linker.cpp
-    src/stubs_linker_1.cpp
-    src/stubs_linker_2.cpp
-    src/stubs_linker_3b.cpp
-    src/stubs_linker_4.cpp
-    src/stubs_linker_5.cpp
-    src/stubs_final.cpp
-    include/rage/hsmState.cpp
-    src/stubs_linker_0.cpp
-    src/stubs_linker_3.cpp
+    src/stubs.cpp
 
     # XAM (Xbox Application Model)
+    src/xam/audio.c
+    src/xam/input.c
+    src/xam/kernel.c
+    src/xam/network.c
     src/xam/static_init.c
+    src/xam/video.c
     src/xam/voice.c
+    src/xam/xam_stubs.c
+    src/xam/xam_utils.c
+    src/xam/xe_buffers.c
     src/xam/xe_graphics.c
     
     # RAGE engine
     src/rage/animation/rage_anim.cpp
-    src/rage/animation/cr_anim_dof_quaternion.cpp
     src/rage/audio/audio_control_wrappers.cpp
+    src/rage/audio/rage_audio.cpp
     src/rage/core/fsmMachine.c
     src/rage/core/game_loop.c
     src/rage/core/main.c
     src/rage/rage_grm.cpp
     src/rage/data/rage_dat.cpp
+    src/rage/data/rage_xml.cpp
     src/rage/memory/rage_memory.cpp
     src/rage/memory/sysMemSimpleAllocator.cpp
     src/rage/io/rage_par.cpp
@@ -81,14 +79,14 @@ set(SOURCES
     src/rage/scene_render.c
     src/rage/network/session_events.cpp
     src/rage/network/snSessionStates.cpp
-    src/rage/network/snMigrateMachine.cpp
     src/rage/core/subsystem_init.c
     src/rage/swf.cpp
     src/rage/core/timer.cpp
     src/rage/misc/rage_cm.cpp
     src/rage/misc/rage_globals.cpp
     src/rage/misc/rage_misc.cpp
-    
+    src/rage/rage_engine_dtors.cpp
+
     # Game logic
     src/game/char_view/char_view.cpp
     src/game/cutscene/pong_cutscene.cpp
@@ -98,7 +96,6 @@ set(SOURCES
     src/game/audio/pong_audio.cpp
     src/game/audio/pong_audio_effects.cpp
     src/game/ball/pong_ball.cpp
-    src/game/camera/cm_cam_actions.cpp
     src/game/camera/pong_camera.cpp
     src/game/creature/pong_creature.cpp
     src/game/drill/pong_drill.cpp
@@ -118,6 +115,8 @@ set(SOURCES
     src/physics/ph_physics.cpp
     
     # Graphics
+    src/graphics/grc_device.cpp
+    src/graphics/grc_render.cpp
     src/graphics/texture_reference.cpp
     
     # Scene Graph
@@ -137,11 +136,6 @@ target_link_libraries(${PROJECT_NAME}
     GLEW::GLEW
     pthread  # For POSIX threads on Linux/macOS
 )
-
-# Allow duplicate weak symbols (RTTI from multiple TUs defining same class)
-if(APPLE)
-    target_link_options(${PROJECT_NAME} PRIVATE "LINKER:-no_deduplicate")
-endif()
 
 # Platform-specific linking
 if(WIN32)

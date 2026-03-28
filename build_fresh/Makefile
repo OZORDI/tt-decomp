@@ -438,6 +438,30 @@ src/game/ball/pong_ball.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/ball/pong_ball.cpp.s
 .PHONY : src/game/ball/pong_ball.cpp.s
 
+src/game/camera/cm_cam_actions.o: src/game/camera/cm_cam_actions.cpp.o
+.PHONY : src/game/camera/cm_cam_actions.o
+
+# target to build an object file
+src/game/camera/cm_cam_actions.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/camera/cm_cam_actions.cpp.o
+.PHONY : src/game/camera/cm_cam_actions.cpp.o
+
+src/game/camera/cm_cam_actions.i: src/game/camera/cm_cam_actions.cpp.i
+.PHONY : src/game/camera/cm_cam_actions.i
+
+# target to preprocess a source file
+src/game/camera/cm_cam_actions.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/camera/cm_cam_actions.cpp.i
+.PHONY : src/game/camera/cm_cam_actions.cpp.i
+
+src/game/camera/cm_cam_actions.s: src/game/camera/cm_cam_actions.cpp.s
+.PHONY : src/game/camera/cm_cam_actions.s
+
+# target to generate assembly for a file
+src/game/camera/cm_cam_actions.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/game/camera/cm_cam_actions.cpp.s
+.PHONY : src/game/camera/cm_cam_actions.cpp.s
+
 src/game/camera/pong_camera.o: src/game/camera/pong_camera.cpp.o
 .PHONY : src/game/camera/pong_camera.o
 
@@ -942,6 +966,30 @@ src/physics/ph_physics.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/physics/ph_physics.cpp.s
 .PHONY : src/physics/ph_physics.cpp.s
 
+src/rage/animation/cr_anim_dof_quaternion.o: src/rage/animation/cr_anim_dof_quaternion.cpp.o
+.PHONY : src/rage/animation/cr_anim_dof_quaternion.o
+
+# target to build an object file
+src/rage/animation/cr_anim_dof_quaternion.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/animation/cr_anim_dof_quaternion.cpp.o
+.PHONY : src/rage/animation/cr_anim_dof_quaternion.cpp.o
+
+src/rage/animation/cr_anim_dof_quaternion.i: src/rage/animation/cr_anim_dof_quaternion.cpp.i
+.PHONY : src/rage/animation/cr_anim_dof_quaternion.i
+
+# target to preprocess a source file
+src/rage/animation/cr_anim_dof_quaternion.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/animation/cr_anim_dof_quaternion.cpp.i
+.PHONY : src/rage/animation/cr_anim_dof_quaternion.cpp.i
+
+src/rage/animation/cr_anim_dof_quaternion.s: src/rage/animation/cr_anim_dof_quaternion.cpp.s
+.PHONY : src/rage/animation/cr_anim_dof_quaternion.s
+
+# target to generate assembly for a file
+src/rage/animation/cr_anim_dof_quaternion.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/animation/cr_anim_dof_quaternion.cpp.s
+.PHONY : src/rage/animation/cr_anim_dof_quaternion.cpp.s
+
 src/rage/animation/rage_anim.o: src/rage/animation/rage_anim.cpp.o
 .PHONY : src/rage/animation/rage_anim.o
 
@@ -1206,6 +1254,30 @@ src/rage/memory/rage_memory.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/rage_memory.cpp.s
 .PHONY : src/rage/memory/rage_memory.cpp.s
 
+src/rage/memory/sysMemSimpleAllocator.o: src/rage/memory/sysMemSimpleAllocator.cpp.o
+.PHONY : src/rage/memory/sysMemSimpleAllocator.o
+
+# target to build an object file
+src/rage/memory/sysMemSimpleAllocator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.o
+.PHONY : src/rage/memory/sysMemSimpleAllocator.cpp.o
+
+src/rage/memory/sysMemSimpleAllocator.i: src/rage/memory/sysMemSimpleAllocator.cpp.i
+.PHONY : src/rage/memory/sysMemSimpleAllocator.i
+
+# target to preprocess a source file
+src/rage/memory/sysMemSimpleAllocator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.i
+.PHONY : src/rage/memory/sysMemSimpleAllocator.cpp.i
+
+src/rage/memory/sysMemSimpleAllocator.s: src/rage/memory/sysMemSimpleAllocator.cpp.s
+.PHONY : src/rage/memory/sysMemSimpleAllocator.s
+
+# target to generate assembly for a file
+src/rage/memory/sysMemSimpleAllocator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/memory/sysMemSimpleAllocator.cpp.s
+.PHONY : src/rage/memory/sysMemSimpleAllocator.cpp.s
+
 src/rage/misc/rage_cm.o: src/rage/misc/rage_cm.cpp.o
 .PHONY : src/rage/misc/rage_cm.o
 
@@ -1301,6 +1373,30 @@ src/rage/network/session_events.s: src/rage/network/session_events.cpp.s
 src/rage/network/session_events.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/network/session_events.cpp.s
 .PHONY : src/rage/network/session_events.cpp.s
+
+src/rage/network/snMigrateMachine.o: src/rage/network/snMigrateMachine.cpp.o
+.PHONY : src/rage/network/snMigrateMachine.o
+
+# target to build an object file
+src/rage/network/snMigrateMachine.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/network/snMigrateMachine.cpp.o
+.PHONY : src/rage/network/snMigrateMachine.cpp.o
+
+src/rage/network/snMigrateMachine.i: src/rage/network/snMigrateMachine.cpp.i
+.PHONY : src/rage/network/snMigrateMachine.i
+
+# target to preprocess a source file
+src/rage/network/snMigrateMachine.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/network/snMigrateMachine.cpp.i
+.PHONY : src/rage/network/snMigrateMachine.cpp.i
+
+src/rage/network/snMigrateMachine.s: src/rage/network/snMigrateMachine.cpp.s
+.PHONY : src/rage/network/snMigrateMachine.s
+
+# target to generate assembly for a file
+src/rage/network/snMigrateMachine.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RockstarTableTennis.dir/build.make CMakeFiles/RockstarTableTennis.dir/src/rage/network/snMigrateMachine.cpp.s
+.PHONY : src/rage/network/snMigrateMachine.cpp.s
 
 src/rage/network/snSessionStates.o: src/rage/network/snSessionStates.cpp.o
 .PHONY : src/rage/network/snSessionStates.o
@@ -1876,6 +1972,9 @@ help:
 	@echo "... src/game/ball/pong_ball.o"
 	@echo "... src/game/ball/pong_ball.i"
 	@echo "... src/game/ball/pong_ball.s"
+	@echo "... src/game/camera/cm_cam_actions.o"
+	@echo "... src/game/camera/cm_cam_actions.i"
+	@echo "... src/game/camera/cm_cam_actions.s"
 	@echo "... src/game/camera/pong_camera.o"
 	@echo "... src/game/camera/pong_camera.i"
 	@echo "... src/game/camera/pong_camera.s"
@@ -1939,6 +2038,9 @@ help:
 	@echo "... src/physics/ph_physics.o"
 	@echo "... src/physics/ph_physics.i"
 	@echo "... src/physics/ph_physics.s"
+	@echo "... src/rage/animation/cr_anim_dof_quaternion.o"
+	@echo "... src/rage/animation/cr_anim_dof_quaternion.i"
+	@echo "... src/rage/animation/cr_anim_dof_quaternion.s"
 	@echo "... src/rage/animation/rage_anim.o"
 	@echo "... src/rage/animation/rage_anim.i"
 	@echo "... src/rage/animation/rage_anim.s"
@@ -1972,6 +2074,9 @@ help:
 	@echo "... src/rage/memory/rage_memory.o"
 	@echo "... src/rage/memory/rage_memory.i"
 	@echo "... src/rage/memory/rage_memory.s"
+	@echo "... src/rage/memory/sysMemSimpleAllocator.o"
+	@echo "... src/rage/memory/sysMemSimpleAllocator.i"
+	@echo "... src/rage/memory/sysMemSimpleAllocator.s"
 	@echo "... src/rage/misc/rage_cm.o"
 	@echo "... src/rage/misc/rage_cm.i"
 	@echo "... src/rage/misc/rage_cm.s"
@@ -1984,6 +2089,9 @@ help:
 	@echo "... src/rage/network/session_events.o"
 	@echo "... src/rage/network/session_events.i"
 	@echo "... src/rage/network/session_events.s"
+	@echo "... src/rage/network/snMigrateMachine.o"
+	@echo "... src/rage/network/snMigrateMachine.i"
+	@echo "... src/rage/network/snMigrateMachine.s"
 	@echo "... src/rage/network/snSessionStates.o"
 	@echo "... src/rage/network/snSessionStates.i"
 	@echo "... src/rage/network/snSessionStates.s"

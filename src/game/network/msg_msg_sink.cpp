@@ -253,7 +253,7 @@ void msgMsgSink::DispatchVirtualMethod() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * msgMsgSink_ForwardToNestedVtable29 @ 0x82458DE0 | size: 0x20 (32 bytes)
+ * msgMsgSink_8DE0_sp @ 0x82458DE0 | size: 0x20 (32 bytes)
  *
  * Thunk function that forwards a call to vtable slot 29 of a nested object.
  *
@@ -266,7 +266,7 @@ void msgMsgSink::DispatchVirtualMethod() {
  * The nested object's vtable slot 29 (offset +116) is invoked with the
  * nested object as the 'this' pointer.
  * ═══════════════════════════════════════════════════════════════════════════ */
-void msgMsgSink_ForwardToNestedVtable29(msgMsgSink* pThis)
+void msgMsgSink_8DE0_sp(msgMsgSink* pThis)
 {
     /* Load nested object pointer from offset +36 */
     void* pNestedObject = *(void**)((uint8_t*)pThis + 36);
@@ -675,9 +675,9 @@ void msgMsgSink_vfn_42_EFE8_1(void* self) {
     rage_C1A8((uint8_t*)self + 60);
 }
 
-// msgMsgSink_ResetGraphicsResource @ 0x82353258 | size: 0xC
+// msgMsgSink_3258_wrh @ 0x82353258 | size: 0xC
 // Loads field at +12, passes it with zero to grc_2CC8
-void msgMsgSink_ResetGraphicsResource(void* self) {
+void msgMsgSink_3258_wrh(void* self) {
     uint32_t val = *(uint32_t*)((uint8_t*)self + 12);
     grc_2CC8((void*)(uintptr_t)val, 0, 0);
 }
@@ -721,16 +721,16 @@ void msgMsgSink_3A38_g(void* self) {
  * GROUP 4: Store-and-forward stubs (set field, then tail-call)
  * ─────────────────────────────────────────────────────────────────────────── */
 
-// msgMsgSink_SetFlagAndForward @ 0x82456080 | size: 0x10
+// msgMsgSink_6080_p33 @ 0x82456080 | size: 0x10
 // Sets field at +252 to 1, then tail-calls atSingleton_5CD0_fw with param=14
-void msgMsgSink_SetFlagAndForward(void* self) {
+void msgMsgSink_6080_p33(void* self) {
     *(uint32_t*)((uint8_t*)self + 252) = 1;
     atSingleton_5CD0_fw(self, 14);
 }
 
-// msgMsgSink_ClearVtableField @ 0x8256DA10 | size: 0x10
+// msgMsgSink_DA10_p46 @ 0x8256DA10 | size: 0x10
 // Loads pointer at +0, then zeroes field at +1092 of that pointer
-void msgMsgSink_ClearVtableField(void* self) {
+void msgMsgSink_DA10_p46(void* self) {
     void* ptr = *(void**)self;
     *(uint32_t*)((uint8_t*)ptr + 1092) = 0;
 }
@@ -956,9 +956,9 @@ uint32_t msgMsgSink_1C08_g(void* self) {
  * GROUP 15: Multi-vtable init + tail-call
  * ─────────────────────────────────────────────────────────────────────────── */
 
-// msgMsgSink_InitVtablesAndReset @ 0x82457DA8 | size: 0x28
+// msgMsgSink_7DA8_p33 @ 0x82457DA8 | size: 0x28
 // Sets 3 vtable pointers at +0, +4, +8, then tail-calls msgMsgSink_6138_2hr
-void msgMsgSink_InitVtablesAndReset(void* self) {
+void msgMsgSink_7DA8_p33(void* self) {
     *(void**)((uint8_t*)self + 0) = kVtable_4FF0;
     *(void**)((uint8_t*)self + 4) = kVtable_4FE8;
     *(void**)((uint8_t*)self + 8) = kVtable_4FE4;
@@ -1058,10 +1058,10 @@ void msgMsgSink_vfn_43_EFA8_1(void* self, void* key) {
  * GROUP 19: Multi-vtable init with extra field + tail-call
  * ─────────────────────────────────────────────────────────────────────────── */
 
-// msgMsgSink_InitExtendedVtables @ 0x82457FB8 | size: 0x34
+// msgMsgSink_7FB8_p33 @ 0x82457FB8 | size: 0x34
 // Sets 3 vtable pointers at +0/+4/+8 and extra vtable at +292,
 // then tail-calls msgMsgSink_6138_2hr
-void msgMsgSink_InitExtendedVtables(void* self) {
+void msgMsgSink_7FB8_p33(void* self) {
     *(void**)((uint8_t*)self + 0)   = kVtable_5030;
     *(void**)((uint8_t*)self + 4)   = kVtable_4FE8;
     *(void**)((uint8_t*)self + 8)   = kVtable_502C;
@@ -1123,5 +1123,1450 @@ void msgMsgSink_3EE8_g(void* self, uint32_t param) {
     while (node != sentinel) {
         game_9D28_h(node, param);
         node = *(void**)((uint8_t*)node + 4);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GenerateWithLock() [vtable slot 25 @ 0x8244DCF0]
+// Enters critical section, calls the generate handler, destroys the sub-object
+// at +12 on success, then leaves the critical section. Returns the generate result.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::GenerateWithLock() {
+    // Get critical section from session object at offset +56
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    RtlEnterCriticalSection(criticalSection);
+
+    // Call the generate handler on the session object
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t result = msgMsgSink_84C0_gen(sessionObj);
+
+    if (result >= 0) {
+        // Destroy the sub-object at offset +12 (message handler interface)
+        void* subObj = (uint8_t*)this + 12;
+        typedef void (*DtorFn)(void*, int);
+        void** subVtable = *(void***)subObj;
+        DtorFn dtor = (DtorFn)subVtable[0];
+        dtor(subObj, 1);
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetStateFlagsLocked() [vtable slot 24 @ 0x8244DFF8]
+// Thread-safe wrapper that enters critical section, calls vtable slot 16
+// (GetStateFlags) to read current state, writes the result to the output
+// parameter, then returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::GetStateFlagsLocked(uint32_t* outFlags) {
+    // Get critical section from session object at offset +56
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    RtlEnterCriticalSection(criticalSection);
+
+    // Call vtable slot 16 to get state flags
+    typedef uint32_t (*GetStateFlagsFn)(void*);
+    void** vt = *(void***)this;
+    GetStateFlagsFn getFlags = (GetStateFlagsFn)vt[16];
+    uint32_t stateFlags = getFlags(this);
+
+    *outFlags = stateFlags;
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ProcessPendingMessages() [vtable slot 39 @ 0x8244E050]
+// Checks state flags for pending messages (bits 3-4), processes them if
+// the queue has data, then flushes the message object at offset +52.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ProcessPendingMessages() {
+    // Call vtable slot 16 to get state flags
+    typedef uint32_t (*GetStateFlagsFn)(void*);
+    void** vt = *(void***)this;
+    GetStateFlagsFn getFlags = (GetStateFlagsFn)vt[16];
+    uint32_t stateFlags = getFlags(this);
+
+    // Check bits 3-4 (mask 0x18) for pending message indicators
+    if (stateFlags & 0x18) {
+        // Check if message queue at offset +24 has data
+        extern int32_t msgMsgSink_3B48_g(void*);
+        void* msgQueue = (uint8_t*)this + 24;
+        int32_t hasData = msgMsgSink_3B48_g(msgQueue);
+
+        if (hasData != 0) {
+            // Process pending messages from the message object
+            void* msgObj = *(void**)((uint8_t*)this + 52);
+            extern void msgMsgSink_3DC8_g(void*);
+            msgMsgSink_3DC8_g(msgObj);
+        }
+    }
+
+    // Flush the message object if present
+    void* msgObj = *(void**)((uint8_t*)this + 52);
+    if (msgObj != nullptr) {
+        extern void msgMsgSink_5148_g(void*);
+        msgMsgSink_5148_g(msgObj);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::CleanupSession() [vtable slot 40 @ 0x8244E0C0]
+// Cleans up the current session. If the message object at +52 exists, calls
+// the cleanup handler. If field +324 (pending flag) is set, checks state;
+// if state is idle (32), destroys the sub-object at +12.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::CleanupSession() {
+    // Clean up message object if present
+    void* msgObj = *(void**)((uint8_t*)this + 52);
+    if (msgObj != nullptr) {
+        extern void msgMsgSink_4550_g(void*);
+        msgMsgSink_4550_g(msgObj);
+    }
+
+    // Check pending cleanup flag at offset +324
+    int32_t pendingCleanup = *(int32_t*)((uint8_t*)this + 324);
+    if (pendingCleanup != 0) {
+        // Get state via vtable slot 16
+        typedef uint32_t (*GetStateFlagsFn)(void*);
+        void** vt = *(void***)this;
+        GetStateFlagsFn getFlags = (GetStateFlagsFn)vt[16];
+        uint32_t stateFlags = getFlags(this);
+
+        // State 32 = idle/default, meaning cleanup can proceed
+        if (stateFlags == 32) {
+            // Destroy the sub-object at offset +12
+            void* subObj = (uint8_t*)this + 12;
+            typedef void (*DtorFn)(void*, int);
+            void** subVtable = *(void***)subObj;
+            DtorFn dtor = (DtorFn)subVtable[0];
+            dtor(subObj, 1);
+            return;
+        }
+
+        // State not idle yet, return without destroying
+        return;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetConnectionInfo() [vtable slot 26 @ 0x8244E160]
+// Thread-safe accessor that copies connection info from the sink. Reads the
+// connection flags byte at +296, computes the data size as (flags << 3) + 8,
+// copies the data from +300 into the output buffer, and optionally writes
+// the total size.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::GetConnectionInfo(void* bufferOut, uint32_t sizeParam, uint32_t* totalSizeOut) {
+    // Get critical section from session object at offset +56
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    RtlEnterCriticalSection(criticalSection);
+
+    // Read connection flags byte at offset +296
+    uint8_t connectionFlags = *(uint8_t*)((uint8_t*)this + 296);
+
+    // Compute data size: (flags << 3) + 8
+    uint32_t dataSize = (connectionFlags << 3) + 8;
+
+    // Copy connection data if output buffer and size parameter are valid
+    if (sizeParam != 0 && bufferOut != nullptr) {
+        // Store flags byte at start of output buffer
+        *(uint8_t*)bufferOut = connectionFlags;
+
+        // Copy connection data from offset +300 into buffer at +4
+        void* srcData = (uint8_t*)this + 300;
+        void* dstData = (uint8_t*)bufferOut + 4;
+        memcpy(dstData, srcData, dataSize);
+    }
+
+    // Write total size if output pointer is valid
+    if (totalSizeOut != nullptr) {
+        *totalSizeOut = dataSize;
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::FlushAndDisconnect() [vtable slot 49 @ 0x8244E628]
+// If there is a pending disconnect request (field +308 is set), clears the
+// flag and dispatches the pending disconnect event. Then transitions the
+// state machine to state 3 (disconnecting).
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::FlushAndDisconnect() {
+    // Check if there is a pending disconnect request
+    int32_t pendingRequest = *(int32_t*)((uint8_t*)this + 308);
+    if (pendingRequest != 0) {
+        // Clear the pending request flag
+        *(int32_t*)((uint8_t*)this + 308) = 0;
+
+        // Dispatch the pending disconnect event
+        uint16_t channelId = *(uint16_t*)((uint8_t*)this + 292);
+        uint32_t connectionHandle = *(uint32_t*)((uint8_t*)this + 284);
+        extern void msgMsgSink_03B8_g(void*, uint16_t);
+        msgMsgSink_03B8_g((void*)connectionHandle, channelId);
+    }
+
+    // Transition to state 3 (disconnecting)
+    extern void msgMsgSink_DC40_g(void*, int32_t);
+    msgMsgSink_DC40_g(this, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::BeginDisconnect() [vtable slot 50 @ 0x8244E680]
+// Initiates a disconnect if the channel ID at +292 is valid (not 0xFFFF).
+// Sets the pending-request flag at +308, sends the disconnect notification,
+// and transitions the state machine to state 2 (disconnect pending).
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::BeginDisconnect() {
+    // Check if channel ID is valid
+    uint16_t channelId = *(uint16_t*)((uint8_t*)this + 292);
+    if (channelId == 0xFFFF) {
+        return;  // No active channel, nothing to disconnect
+    }
+
+    // Set pending-request flag
+    *(int32_t*)((uint8_t*)this + 308) = 1;
+
+    // Send disconnect notification
+    uint32_t connectionHandle = *(uint32_t*)((uint8_t*)this + 284);
+    extern void game_0388_h(void*, uint16_t);
+    game_0388_h((void*)connectionHandle, channelId);
+
+    // Transition to state 2 (disconnect pending)
+    extern void msgMsgSink_DC40_g(void*, int32_t);
+    msgMsgSink_DC40_g(this, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::FindValidMessageSlot() [vtable slot 30 @ 0x8244E6D0]
+// Thread-safe lookup for a valid message slot. Enters critical section, calls
+// the slot finder on the session object, validates the result, and checks
+// that the slot has bit 0 set and bit 2 clear before returning it.
+// Returns -1 if no valid slot is found.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::FindValidMessageSlot(uint32_t searchKey) {
+    // Get critical section from session object at offset +56
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    RtlEnterCriticalSection(criticalSection);
+
+    // Search for a message slot matching the key
+    extern uint32_t game_8CF8_h(void*, uint32_t);
+    uint32_t slotId = game_8CF8_h(sessionObj, searchKey);
+
+    // Validate the slot ID (lower 16 bits must not be 0xFFFF)
+    uint16_t slotIndex = (uint16_t)(slotId & 0xFFFF);
+    if (slotIndex != 0xFFFF) {
+        // Get the slot data
+        extern void* msgMsgSink_8D10_g(void*, uint32_t);
+        void* slotData = msgMsgSink_8D10_g(sessionObj, slotId);
+
+        if (slotData != nullptr) {
+            uint8_t slotFlags = *(uint8_t*)slotData;
+
+            // Check bit 0 is set (slot is active)
+            if ((slotFlags & 0x01) != 0) {
+                // Check bit 2 is NOT set (slot is not locked)
+                if ((slotFlags & 0x04) != 0) {
+                    // Slot is locked, return the ID anyway (special case)
+                    RtlLeaveCriticalSection(criticalSection);
+                    return (int32_t)slotId;
+                }
+            }
+        }
+
+        // Slot invalid or inactive, return -1
+        slotId = (uint32_t)-1;
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return (int32_t)slotId;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::RegisterMessageHandler() [vtable slot 129 @ 0x8244FE80]
+// Thread-safe registration of a message handler. Enters critical section,
+// extracts the registration mode from bit 0 of the flags parameter, then
+// calls the internal registration function with the handler and mode.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::RegisterMessageHandler(void* handler, uint32_t flags) {
+    // Get critical section from the network object at offset +24
+    void* networkObj = *(void**)((uint8_t*)this + 24);
+    void* criticalSection = (uint8_t*)networkObj + 144;
+
+    RtlEnterCriticalSection(criticalSection);
+
+    // Extract registration mode from bit 0 of flags
+    uint32_t registerMode = (flags & 0x1) ? 1 : 0;
+
+    // Call internal registration function
+    extern int32_t RtlEnterCriticalSection_A158_h(void*, void*, void*, uint32_t, int32_t);
+    void* netObj = *(void**)((uint8_t*)this + 24);
+    int32_t result = RtlEnterCriticalSection_A158_h(netObj, this, handler, registerMode, 0);
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::QueryConnectionState() [vtable slot 131 @ 0x8244FEE8]
+// Thread-safe query of the connection state. Enters critical section, reads
+// the connection pointer at +240, writes whether a connection exists (1/0)
+// to the output parameter, then returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::QueryConnectionState(uint32_t* outConnected) {
+    // Get critical section from the network object at offset +24
+    void* networkObj = *(void**)((uint8_t*)this + 24);
+    void* criticalSection = (uint8_t*)networkObj + 144;
+
+    RtlEnterCriticalSection(criticalSection);
+
+    // Check if connection pointer at +240 is non-null
+    uint32_t connectionPtr = *(uint32_t*)((uint8_t*)this + 240);
+    bool isConnected = (connectionPtr != 0);
+
+    *outConnected = isConnected ? 1 : 0;
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * msgMsgSink vtable methods & thunks (batch 4: 8-88 bytes)
+ * 10 functions: field getters, this-adjustment thunks, event dispatchers
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Forward declarations for tail-call targets
+extern void msgMsgSink_03E8_w(void*);
+extern void msgMsgSink_0480_w(void*);
+extern void msgMsgSink_07D8_w(void*);
+extern void msgMsgSink_11B0_w(void*);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetSessionPointer() [vtable slot 54 @ 0x8244EF38 | 8 bytes]
+// Returns the session pointer stored at offset +324 (0x144).
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink::GetSessionPointer() {
+    return *(void**)((uint8_t*)this + 324);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardProcessMessage() [vtable slot 55 @ 0x8244F8A8 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_03E8_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardProcessMessage() {
+    msgMsgSink_03E8_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardToRageHandler() [vtable slot 78 @ 0x824514E8 | 8 bytes]
+// Adjusts this by +20 to the embedded rage sub-object, tail-calls rage_C1A8.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardToRageHandler() {
+    rage_C1A8((uint8_t*)this + 20);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardDispatchMessage() [vtable slot 89 @ 0x8244F8B0 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_0480_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardDispatchMessage() {
+    msgMsgSink_0480_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetNameLength() [vtable slot 115 @ 0x8244F7B8 | 12 bytes]
+// Loads the value at offset +48 (0x30) and returns it plus 9, computing a
+// string length or offset past a fixed-size header.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetNameLength() {
+    uint32_t baseValue = *(uint32_t*)((uint8_t*)this + 48);
+    return baseValue + 9;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::SendPulseToConnection() [vtable slot 119 @ 0x8244F768 | 12 bytes]
+// Loads the network connection from offset +56 (0x38), then forwards to
+// msgMsgSink_8A60_sp (SendPulse) with that connection as the argument.
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink::SendPulseToConnection() {
+    void* connection = *(void**)((uint8_t*)this + 56);
+    return msgMsgSink_8A60_sp(connection);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardCleanupMessage() [vtable slot 147 @ 0x824505C8 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_07D8_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardCleanupMessage() {
+    msgMsgSink_07D8_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardFinalizeMessage() [vtable slot 148 @ 0x824508A8 | 8 bytes]
+// Adjusts this by -12 to the base sub-object, tail-calls msgMsgSink_11B0_w.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardFinalizeMessage() {
+    msgMsgSink_11B0_w((uint8_t*)this - 12);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::DispatchEventWithSessionInfo() [vtable slot 120 @ 0x824564A0 | 28 bytes]
+// Loads session data from offset +48 (0x30), extracts the reliability mode
+// (lower 2 bits of byte at +14) and the channel ID (uint16 at +10), then
+// dispatches the event via jumptable_3A48 with type=2 on sub-object at +24.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::DispatchEventWithSessionInfo() {
+    void* sessionObj = *(void**)((uint8_t*)this + 48);
+    uint8_t flags = *(uint8_t*)((uint8_t*)sessionObj + 14);
+    uint32_t reliabilityMode = flags & 0x3;
+    uint16_t channelId = *(uint16_t*)((uint8_t*)sessionObj + 10);
+
+    void* target = (uint8_t*)this + 24;
+    extern void jumptable_3A48(void*, uint32_t, uint32_t, uint32_t);
+    jumptable_3A48(target, 2, channelId, reliabilityMode);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::SetActiveAndReleaseObject() @ 0x8244A670 | 88 bytes
+// Sets the active flag (bit 4) at offset +24, then if the object pointer
+// at +40 is non-null, calls vtable[7] (Release) on it and clears the pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::SetActiveAndReleaseObject() {
+    // Set bit 4 (0x10) of the flag byte at offset +24
+    uint8_t flags = *(uint8_t*)((uint8_t*)this + 24);
+    flags |= 0x10;
+    *(uint8_t*)((uint8_t*)this + 24) = flags;
+
+    // Check if object pointer at +40 is valid
+    void* obj = *(void**)((uint8_t*)this + 40);
+    if (obj != nullptr) {
+        // Call vtable slot 7 (Release) on the object
+        typedef void (*ReleaseFn)(void*);
+        void** vt = *(void***)obj;
+        ((ReleaseFn)vt[7])(obj);
+
+        // Clear the object pointer
+        *(void**)((uint8_t*)this + 40) = nullptr;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * msgMsgSink vtable methods — batch 5 (message dispatch & event sink)
+ *
+ * 10 functions, all <=200 bytes.  Vtable slots from the msgMsgSink class
+ * covering disconnect/reconnect handling, refcount management,
+ * thread-safe session operations, and event dispatch helpers.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// External helpers used by batch 5
+extern void msgMsgSink_DC40_g(void*, uint32_t);
+extern void game_0388_h(void*, uint16_t);
+extern void game_8CF8_h(void*, uint16_t);
+extern void msgMsgSink_8D10_g(void*, uint16_t);
+extern void jumptable_3A48(void*, uint32_t, uint16_t, uint32_t);
+extern uint32_t msgMsgSink_3D70_p39(void*);
+extern void atSingleton_B0E8_sp(void*, uint32_t, uint32_t);
+extern uint32_t RtlEnterCriticalSection_A158_h(void*, void*, uint32_t, uint32_t, uint32_t);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::OnDisconnect() [vfn_49 @ 0x8244E628 | 84B]
+//
+// Handles a disconnect event.  If a pending message flag (+308) is set,
+// clears it and cancels the pending message via msgMsgSink_03B8_g.
+// Then dispatches a state-change notification with code 3 (disconnected).
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::OnDisconnect() {
+    uint32_t pendingFlag = *(uint32_t*)((uint8_t*)this + 308);
+
+    if (pendingFlag != 0) {
+        uint16_t gamerIndex = *(uint16_t*)((uint8_t*)this + 292);
+        void* sessionObj = *(void**)((uint8_t*)this + 284);
+
+        *(uint32_t*)((uint8_t*)this + 308) = 0;
+
+        extern void msgMsgSink_03B8_g(void*, uint16_t);
+        msgMsgSink_03B8_g(sessionObj, gamerIndex);
+    }
+
+    msgMsgSink_DC40_g(this, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::OnReconnect() [vfn_50 @ 0x8244E680 | 80B]
+//
+// Handles a reconnect event.  If the gamer index (+292) is valid
+// (not 0xFFFF), sets the pending flag, looks up the gamer, and
+// dispatches a state-change notification with code 2 (reconnected).
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::OnReconnect() {
+    uint16_t gamerIndex = *(uint16_t*)((uint8_t*)this + 292);
+
+    if (gamerIndex != 0xFFFF) {
+        void* sessionObj = *(void**)((uint8_t*)this + 284);
+
+        *(uint32_t*)((uint8_t*)this + 308) = 1;
+
+        game_0388_h(sessionObj, gamerIndex);
+
+        msgMsgSink_DC40_g(this, 2);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ResetEventDispatch() [vfn_52 @ 0x8244DB58 | 20B]
+//
+// Dispatches a reset event through the internal event table.
+// Adjusts 'this' to the embedded event-sink sub-object at +24, then
+// tail-calls jumptable_3A48 with type=2 and zero payload.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ResetEventDispatch() {
+    void* eventSink = (uint8_t*)this + 24;
+    jumptable_3A48(eventSink, 2, 0, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetConnectionCount() [vfn_46 @ 0x8244E148 | 24B]
+//
+// Returns the active connection count from the delegate object at +52.
+// If the delegate pointer is null, returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetConnectionCount() {
+    void* delegate = *(void**)((uint8_t*)this + 52);
+
+    if (delegate == nullptr) {
+        return 0;
+    }
+
+    return msgMsgSink_3D70_p39(delegate);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ForwardMessageToSession() [vfn_68 @ 0x82456F28 | 20B]
+//
+// Forwards a message to the session layer.  Loads the session ID from
+// +288 and the session object from +284, then tail-calls
+// atSingleton_B0E8_sp to deliver the message.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ForwardMessageToSession(uint32_t param) {
+    uint32_t sessionId = *(uint32_t*)((uint8_t*)this + 288);
+    void* sessionObj = *(void**)((uint8_t*)this + 284);
+    atSingleton_B0E8_sp(sessionObj, sessionId, param);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Release() [vfn_118 @ 0x8246BC00 | 84B]
+//
+// Decrements the reference count at +4.  When it reaches zero, invokes
+// the cleanup handler via vtable slot 3 (vfn_3) and returns 0.
+// Otherwise returns the new refcount.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::Release() {
+    uint32_t refCount = *(uint32_t*)((uint8_t*)this + 4);
+    refCount--;
+    *(uint32_t*)((uint8_t*)this + 4) = refCount;
+
+    if (refCount == 0) {
+        // Call virtual method at slot 3 (cleanup/destroy)
+        typedef void (*VfnSlot3)(void*);
+        void** vt = *(void***)this;
+        VfnSlot3 cleanup = (VfnSlot3)vt[3];
+        cleanup(this);
+        return 0;
+    }
+
+    return refCount;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::NotifyStateChange() [vfn_120 @ 0x824564A0 | 28B]
+//
+// Extracts notification parameters from the nested state object at +48,
+// then dispatches the event through jumptable_3A48 with type=2.
+// Reads the payload ID from +10 and the flags (low 2 bits) from +14
+// of the state object.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::NotifyStateChange() {
+    void* stateObj = *(void**)((uint8_t*)this + 48);
+    void* eventSink = (uint8_t*)this + 24;
+
+    uint16_t payloadId = *(uint16_t*)((uint8_t*)stateObj + 10);
+    uint8_t rawFlags = *(uint8_t*)((uint8_t*)stateObj + 14);
+    uint32_t flags = rawFlags & 0x3;
+
+    jumptable_3A48(eventSink, 2, payloadId, flags);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::CreateSessionLocked() [vfn_129 @ 0x8244FE80 | 104B]
+//
+// Thread-safe session creation.  Enters the critical section on the
+// network manager (+24, offset +144), delegates to the session creation
+// helper (RtlEnterCriticalSection_A158_h), then leaves the critical section.
+// The 'flags' parameter's low bit controls a boolean option.
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink::CreateSessionLocked(uint32_t sessionParam, uint32_t flags) {
+    void* networkMgr = *(void**)((uint8_t*)this + 24);
+    void* critSection = (uint8_t*)networkMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+
+    RtlEnterCriticalSection(critSection);
+
+    uint32_t boolFlag = (flags & 0x1) ? 1 : 0;
+
+    uint32_t result = RtlEnterCriticalSection_A158_h(
+        *(void**)((uint8_t*)this + 24),  // network manager
+        this,                             // this sink
+        sessionParam,                     // session param
+        boolFlag,                         // bool option
+        0                                 // reserved
+    );
+
+    RtlLeaveCriticalSection(critSection);
+
+    return (void*)(uintptr_t)result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::QueryConnectionStatus() [vfn_131 @ 0x8244FEE8 | 80B]
+//
+// Thread-safe query of connection status.  Enters the critical section
+// on the network manager, checks whether the connection pointer at +240
+// is non-null (connected = 1, disconnected = 0), writes the result to
+// the output parameter, then leaves the critical section.  Always returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::QueryConnectionStatus(uint32_t* outStatus) {
+    void* networkMgr = *(void**)((uint8_t*)this + 24);
+    void* critSection = (uint8_t*)networkMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+
+    RtlEnterCriticalSection(critSection);
+
+    uint32_t connPtr = *(uint32_t*)((uint8_t*)this + 240);
+    // connPtr != 0  =>  connected (1),  connPtr == 0  =>  disconnected (0)
+    uint32_t isConnected = (connPtr != 0) ? 1 : 0;
+    *outStatus = isConnected;
+
+    RtlLeaveCriticalSection(critSection);
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::FindGamerByIndex() [vfn_30 @ 0x8244E6D0 | 136B]
+//
+// Thread-safe gamer lookup by index.  Enters the critical section on the
+// delegate object (+56, offset +144), looks up the gamer via game_8CF8_h,
+// validates the result is not 0xFFFF, then checks the gamer's active flag
+// (bit 0 set AND bit 2 set means valid).  Returns the gamer handle on
+// success or -1 (0xFFFF) on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t msgMsgSink::FindGamerByIndex(uint16_t index) {
+    void* delegateObj = *(void**)((uint8_t*)this + 56);
+    void* critSection = (uint8_t*)delegateObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+
+    RtlEnterCriticalSection(critSection);
+
+    void* delegate = *(void**)((uint8_t*)this + 56);
+    uint16_t gamerHandle = (uint16_t)(uintptr_t)game_8CF8_h(delegate, index);
+
+    if ((gamerHandle & 0xFFFF) != 0xFFFF) {
+        void* gamerObj = (void*)(uintptr_t)msgMsgSink_8D10_g(delegate, gamerHandle);
+
+        if (gamerObj != nullptr) {
+            uint8_t statusByte = *(uint8_t*)gamerObj;
+
+            // Check bit 0 (active) is set
+            if (statusByte & 0x1) {
+                // Check bit 2 (confirmed) is set - if so, return immediately
+                if (statusByte & 0x4) {
+                    RtlLeaveCriticalSection(critSection);
+                    return gamerHandle;
+                }
+            }
+        }
+
+        gamerHandle = (uint16_t)0xFFFF;
+    }
+
+    RtlLeaveCriticalSection(critSection);
+    return gamerHandle;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * msgMsgSink vtable dispatch methods (8-80 bytes)
+ * 10 functions: forwarding thunks, field accessors, thread-safe queries
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Forward declarations for tail-call targets
+extern void msgMsgSink_03E8_w(void*);
+extern void msgMsgSink_0480_w(void*);
+extern void msgMsgSink_07D8_w(void*);
+extern void msgMsgSink_11B0_w(void*);
+
+/**
+ * msgMsgSink::DispatchDefaultHandler() [vtable slot 59 @ 0x821EFD10]
+ * size: 0x10 (16 bytes)
+ *
+ * Loads the vtable from this object and tail-calls vtable[0] (the
+ * destructor / default handler slot) on self. This is a simple
+ * virtual dispatch thunk that re-enters through the base vtable.
+ */
+void msgMsgSink::DispatchDefaultHandler() {
+    void** vt = *(void***)this;
+    typedef void (*Fn)(void*);
+    ((Fn)vt[0])(this);
+}
+
+/**
+ * msgMsgSink::GetSessionData() [vtable slot 54 @ 0x8244EF38]
+ * size: 0x8 (8 bytes)
+ *
+ * Returns the session data pointer stored at offset +324 (0x144).
+ */
+void* msgMsgSink::GetSessionData() {
+    return *(void**)((uint8_t*)this + 324);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseWrite() [vtable slot 55 @ 0x8244F8A8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_03E8_w for write processing.
+ */
+void msgMsgSink::ForwardToBaseWrite() {
+    msgMsgSink_03E8_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseUpdate() [vtable slot 89 @ 0x8244F8B0]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_0480_w for update processing.
+ */
+void msgMsgSink::ForwardToBaseUpdate() {
+    msgMsgSink_0480_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseNotify() [vtable slot 147 @ 0x824505C8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_07D8_w for notification handling.
+ */
+void msgMsgSink::ForwardToBaseNotify() {
+    msgMsgSink_07D8_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToBaseProcess() [vtable slot 148 @ 0x824508A8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by -12 to reach the base sub-object,
+ * then tail-calls msgMsgSink_11B0_w for message processing.
+ */
+void msgMsgSink::ForwardToBaseProcess() {
+    msgMsgSink_11B0_w((uint8_t*)this - 12);
+}
+
+/**
+ * msgMsgSink::ForwardToEmbeddedObject() [vtable slot 78 @ 0x824514E8]
+ * size: 0x8 (8 bytes)
+ *
+ * Adjusts this pointer by +20 to reach an embedded sub-object,
+ * then tail-calls rage_C1A8 for processing.
+ */
+void msgMsgSink::ForwardToEmbeddedObject() {
+    rage_C1A8((uint8_t*)this + 20);
+}
+
+/**
+ * msgMsgSink::GetSessionLock() [vtable slot 119 @ 0x8244F768]
+ * size: 0xC (12 bytes)
+ *
+ * Loads the session manager from offset +56, then delegates to
+ * msgMsgSink_8A60_sp to acquire a session lock. Returns the lock
+ * handle or nullptr if the session manager has no lock object.
+ */
+void* msgMsgSink::GetSessionLock() {
+    void* sessionMgr = *(void**)((uint8_t*)this + 56);
+    return msgMsgSink_8A60_sp(sessionMgr);
+}
+
+/**
+ * msgMsgSink::GetMessageBufferPtr() [vtable slot 115 @ 0x8244F7B8]
+ * size: 0xC (12 bytes)
+ *
+ * Returns a pointer into the message buffer. Loads the buffer base
+ * address from offset +48, then adds 9 to skip the message header,
+ * returning a pointer to the message payload.
+ */
+void* msgMsgSink::GetMessageBufferPtr() {
+    uint32_t bufferBase = *(uint32_t*)((uint8_t*)this + 48);
+    return (void*)(bufferBase + 9);
+}
+
+/**
+ * msgMsgSink::QueryConnectionStatus() [vtable slot 131 @ 0x8244FEE8]
+ * size: 0x50 (80 bytes)
+ *
+ * Thread-safe query of the connection status. Enters the critical
+ * section from the session manager at offset +24, checks whether the
+ * connection object at offset +240 is non-null, and stores the boolean
+ * result (1 = connected, 0 = not connected) into the output parameter.
+ * Always returns 0 (success).
+ */
+uint32_t msgMsgSink::QueryConnectionStatus(uint32_t* outStatus) {
+    // Get critical section from session manager
+    void* sessionMgr = *(void**)((uint8_t*)this + 24);
+    void* criticalSection = (uint8_t*)sessionMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    // Check if connection object at +240 is non-null
+    // Double cntlzw+rlwinm chain is equivalent to: result = (field != 0) ? 1 : 0
+    uint32_t connectionObj = *(uint32_t*)((uint8_t*)this + 240);
+    *outStatus = (connectionObj != 0) ? 1 : 0;
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * GROUP 23: msgMsgSink vtable dispatch thunks (8-196B)
+ * Small vtable methods: this-adjustment thunks, field accessors,
+ * and locked message buffer operations.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// External callees for group 23
+extern void msgMsgSink_5098_g(void* self, uint32_t mode);
+extern void msgMsgSink_EC28_g(void* self, uint32_t param1, uint32_t param2, uint32_t param3);
+extern void msgMsgSink_7970_w(void* self);
+extern void msgMsgSink_7DD8_w(void* self);
+extern void msgMsgSink_8638_w(void* self);
+extern void* rage_01B8(uint32_t size, uint32_t allocatorId);
+extern void _locale_register(void* obj, uint32_t allocatorId);
+
+// msgMsgSink::NotifySessionEvent() [vtable slot 14 @ 0x82455540 | 12B]
+// Adjusts this by -4 to reach the parent object, then tail-calls
+// msgMsgSink_5098_g with mode=1 to notify a session event.
+// MATCH: 0x82455540
+void msgMsgSink::NotifySessionEvent() {
+    void* parent = (uint8_t*)this - 4;
+    msgMsgSink_5098_g(parent, 1);
+}
+
+// msgMsgSink::GetPeerDataSize() [vtable slot 12 @ 0x82455630 | 12B]
+// Returns the 16-bit peer data size field from the descriptor object
+// at offset +28, reading the uint16 at descriptor+10.
+// MATCH: 0x82455630
+uint16_t msgMsgSink::GetPeerDataSize() {
+    void* descriptor = *(void**)((uint8_t*)this + 28);
+    return *(uint16_t*)((uint8_t*)descriptor + 10);
+}
+
+// msgMsgSink::GetPeerDataPtr() [vtable slot 11 @ 0x82455688 | 12B]
+// Returns a pointer to the peer data region within the descriptor
+// object at offset +28, computed as descriptor+10.
+// MATCH: 0x82455688
+void* msgMsgSink::GetPeerDataPtr() {
+    uint8_t* descriptor = *(uint8_t**)((uint8_t*)this + 28);
+    return descriptor + 10;
+}
+
+// msgMsgSink::DispatchEventDefault() [vtable slot 42 @ 0x8244ED38 | 48B]
+// Calls msgMsgSink_EC28_g with default parameters (0, 0, 1) to dispatch
+// an event with a single-shot flag, then returns 0 (success).
+// MATCH: 0x8244ED38
+uint32_t msgMsgSink::DispatchEventDefault() {
+    msgMsgSink_EC28_g(this, 0, 0, 1);
+    return 0;
+}
+
+// msgMsgSink::ReplaceMessageObject() [vtable slot 21 @ 0x8244EE90 | 120B]
+// Replaces the current message object. If the new object (param) is
+// non-null, calls vtable[1] (scalar deleting destructor) on it, passing
+// this (or null if base offset is zero). Then destroys the sub-object
+// at this-8 offset +12 via its destructor with delete flag=1.
+// MATCH: 0x8244EE90
+void msgMsgSink::ReplaceMessageObject(void* newObj) {
+    if (newObj == nullptr) {
+        return;
+    }
+
+    uint8_t* baseObj = (uint8_t*)this - 8;
+
+    // Call vtable[1] (scalar deleting destructor) on newObj
+    void* context = (baseObj != nullptr) ? (void*)this : nullptr;
+    typedef void (*ScalarDtorFn)(void*, void*);
+    void** vt = *(void***)newObj;
+    ScalarDtorFn scalarDtor = (ScalarDtorFn)vt[1];
+    scalarDtor(newObj, context);
+
+    // If base object is null, skip cleanup
+    if (baseObj == nullptr) {
+        return;
+    }
+
+    // Destroy the nested object at baseObj+12 with delete flag
+    void* nested = baseObj + 12;
+    typedef void (*DtorFn)(void*, uint32_t);
+    void** nestedVt = *(void***)nested;
+    DtorFn dtor = (DtorFn)nestedVt[0];
+    dtor(nested, 1);
+}
+
+// msgMsgSink::ForwardToMatchHandler() [vtable slot 41 @ 0x82456688 | 8B]
+// Adjusts this by -12 to reach the containing network object, then
+// tail-calls msgMsgSink_7970_w for match handling.
+// MATCH: 0x82456688
+void msgMsgSink::ForwardToMatchHandler() {
+    void* outer = (uint8_t*)this - 12;
+    msgMsgSink_7970_w(outer);
+}
+
+// msgMsgSink::ForwardToLeaderboard() [vtable slot 77 @ 0x82457DD0 | 8B]
+// Adjusts this by -8 to reach the containing object, then tail-calls
+// msgMsgSink_7DD8_w for leaderboard data processing.
+// MATCH: 0x82457DD0
+void msgMsgSink::ForwardToLeaderboard() {
+    void* outer = (uint8_t*)this - 8;
+    msgMsgSink_7DD8_w(outer);
+}
+
+// msgMsgSink::ForwardToStatsHandler() [vtable slot 95 @ 0x82457FF0 | 8B]
+// Adjusts this by -8 to reach the containing object, then tail-calls
+// msgMsgSink_8638_w for stats handling.
+// MATCH: 0x82457FF0
+void msgMsgSink::ForwardToStatsHandler() {
+    void* outer = (uint8_t*)this - 8;
+    msgMsgSink_8638_w(outer);
+}
+
+// msgMsgSink::ForwardToSessionSync() [vtable slot 116 @ 0x824584F0 | 8B]
+// Adjusts this by -12 to reach the containing object, then tail-calls
+// msgMsgSink_vfn_121 for session synchronization.
+// MATCH: 0x824584F0
+void msgMsgSink::ForwardToSessionSync() {
+    void* outer = (uint8_t*)this - 12;
+    extern void msgMsgSink_vfn_121(void*);
+    msgMsgSink_vfn_121(outer);
+}
+
+// msgMsgSink::SetMessageBuffer() [vtable slot 34 @ 0x8244E1D8 | 196B]
+// Thread-safe message buffer allocation and installation.
+// Enters critical section from session manager at +56, allocates a
+// buffer of the required size (derived from the message header byte
+// at param+0, shifted left by 3), copies data from param+4 into it,
+// registers the buffer with the locale system if a previous buffer
+// existed, stores the new buffer at +332 and header byte at +328,
+// notifies the session via msgMsgSink_3E68_g, sets the dirty flag
+// at +336, and leaves the critical section. Returns 0 on success,
+// or 0x8007000E on allocation failure.
+// MATCH: 0x8244E1D8
+uint32_t msgMsgSink::SetMessageBuffer(void* param) {
+    // Get critical section from session manager at +56
+    void* sessionMgr = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    // Compute allocation size: header byte << 3
+    uint8_t headerByte = *(uint8_t*)param;
+    uint32_t allocSize = (uint32_t)headerByte << 3;
+
+    // Allocate buffer with allocator ID 0x20840001
+    uint32_t result = 0;
+    void* buffer = rage_01B8(allocSize, 0x20840001);
+
+    if (buffer == nullptr) {
+        result = (uint32_t)0x8007000E;
+        RtlLeaveCriticalSection(criticalSection);
+        return result;
+    }
+
+    // Copy data from param+4 into the allocated buffer
+    void* srcData = *(void**)((uint8_t*)param + 4);
+    memcpy(buffer, srcData, allocSize);
+
+    // If a previous buffer existed at +332, register with locale system
+    void* prevBuffer = *(void**)((uint8_t*)this + 332);
+    if (prevBuffer != nullptr) {
+        _locale_register(prevBuffer, 0x20840001);
+    }
+
+    // Store new buffer and header byte
+    *(void**)((uint8_t*)this + 332) = buffer;
+    uint8_t tag = *(uint8_t*)param;
+    *(uint8_t*)((uint8_t*)this + 328) = tag;
+
+    // Notify session
+    void* session = *(void**)((uint8_t*)this + 52);
+    msgMsgSink_3E68_g(session, *(uint32_t*)((uint8_t*)this + 328));
+
+    // Set dirty flag
+    *(uint32_t*)((uint8_t*)this + 336) = 1;
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 10 msgMsgSink message dispatch functions (108-200B)
+ * Ref-count walkers, slot lookup, session filtering, thread-safe property
+ * accessors, and handler lifecycle management.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Forward declarations for callees
+extern void msgMsgSink_EC28_g(void* sink, uint32_t key, void* outSlot, uint32_t flags);
+extern void util_B158(void* slot, float value, uint32_t flags);
+extern void game_3F28_h(void* session, void* priorityData);
+extern int32_t _crt_tls_fiber_setup();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_D168_sp @ 0x8244D168 | 108 bytes
+// Walks a message chain starting from r4 (slot index). For each valid slot
+// (index != 0xFFFF), increments the reference count in the counter array
+// at +104, then calls vtable slot 6 to get the next slot index.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink_D168_sp(void* self, uint16_t slotIndex) {
+    uint16_t index = slotIndex;
+
+    while (index != 0xFFFF) {
+        // Increment reference count: counterArray[index]++
+        uint32_t* counterArray = *(uint32_t**)((uint8_t*)self + 104);
+        counterArray[index]++;
+
+        // Call vtable slot 6 to get next slot index
+        typedef uint16_t (*GetNextFn)(void*);
+        void** vt = *(void***)self;
+        GetNextFn getNext = (GetNextFn)vt[6];
+        index = getNext(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_D1D8_sp @ 0x8244D1D8 | 108 bytes
+// Walks a message chain starting from r4 (slot index). For each valid slot
+// (index != 0xFFFF), decrements the reference count in the counter array
+// at +104, then calls vtable slot 6 to get the next slot index.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink_D1D8_sp(void* self, uint16_t slotIndex) {
+    uint16_t index = slotIndex;
+
+    while (index != 0xFFFF) {
+        // Decrement reference count: counterArray[index]--
+        uint32_t* counterArray = *(uint32_t**)((uint8_t*)self + 104);
+        counterArray[index]--;
+
+        // Call vtable slot 6 to get next slot index
+        typedef uint16_t (*GetNextFn)(void*);
+        void** vt = *(void***)self;
+        GetNextFn getNext = (GetNextFn)vt[6];
+        index = getNext(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_8D10_g @ 0x82448D10 | 128 bytes
+// Looks up slot data by index. Loads the message handler object from +124.
+// If present, calls handler vtable slot 11 to get the entry count, validates
+// that the index is within range, then calls handler vtable slot 2 to
+// retrieve the slot data pointer. Returns nullptr on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink_8D10_g(void* self, uint32_t slotIndex) {
+    void* handler = *(void**)((uint8_t*)self + 124);
+
+    if (handler != nullptr) {
+        // Call vtable slot 11 to get the slot table descriptor
+        typedef void* (*GetDescFn)(void*);
+        void** vt = *(void***)handler;
+        GetDescFn getDesc = (GetDescFn)vt[11];
+        void* desc = getDesc(handler);
+
+        // Check index against entry count at desc+11 (uint16)
+        uint16_t entryCount = *(uint16_t*)((uint8_t*)desc + 11);
+        uint16_t idx = (uint16_t)(slotIndex & 0xFFFF);
+
+        if (idx >= entryCount) {
+            return nullptr;
+        }
+
+        // Call vtable slot 2 to get slot data by index
+        typedef void* (*GetSlotFn)(void*, uint32_t);
+        void** vt2 = *(void***)handler;
+        GetSlotFn getSlot = (GetSlotFn)vt2[2];
+        return getSlot(handler, slotIndex);
+    }
+
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_8BA8_2hr @ 0x82448BA8 | 184 bytes
+// Iterates the intrusive list anchored at +128/+132, filtering sessions by
+// up to three optional criteria: a vtable-slot-24 match (r4), a field +284
+// match (r5), and a uint16 +292 match (r6, 0xFFFF = skip). Destroys
+// matching sessions by calling their destructor at +12. Continues until
+// the list is exhausted.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink_8BA8_2hr(void* self, void* matchKey, void* matchSession,
+                         uint16_t matchSlot) {
+    void* anchor = (uint8_t*)self + 128;
+    void* node = *(void**)((uint8_t*)self + 132);
+
+    while (node != anchor) {
+        // Save next pointer before potential destruction
+        void* next = *(void**)((uint8_t*)node + 4);
+
+        // Adjust node pointer: entry is at node - 12
+        void* entry = (uint8_t*)node - 12;
+
+        // Filter 1: matchKey (vtable slot 24 comparison)
+        if (matchKey != nullptr) {
+            typedef int (*MatchFn)(void*, void*);
+            void** vt = *(void***)entry;
+            MatchFn matchFn = (MatchFn)vt[24];
+            if (matchFn(entry, matchKey) == 0) {
+                goto skipEntry;
+            }
+        }
+
+        // Filter 2: matchSession (field +284 comparison)
+        if (matchSession != nullptr) {
+            void* entrySession = *(void**)((uint8_t*)entry + 284);
+            if (entrySession != matchSession) {
+                goto skipEntry;
+            }
+        }
+
+        // Filter 3: matchSlot (uint16 at +292 comparison)
+        if ((matchSlot & 0xFFFF) != 0xFFFF) {
+            uint16_t entrySlot = *(uint16_t*)((uint8_t*)entry + 292);
+            if (entrySlot != (matchSlot & 0xFFFF)) {
+                goto skipEntry;
+            }
+        }
+
+        // All filters passed - destroy the entry
+        if (entry != nullptr) {
+            void* objToDestroy = (uint8_t*)entry + 12;
+            typedef void (*DtorFn)(void*, int);
+            void** objVt = *(void***)objToDestroy;
+            DtorFn dtor = (DtorFn)objVt[0];
+            dtor(objToDestroy, 1);
+        }
+
+    skipEntry:
+        node = next;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::UpdatePrioritiesLocked() [vtable slot 28 @ 0x8244E4C0] | 168 bytes
+// Thread-safe priority update: enters critical section, iterates over
+// entries in the priority data structure. For each entry whose index is
+// less than the local count at +296, copies the priority float from the
+// data buffer at +300. Entries beyond the count get a default zero float.
+// Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::UpdatePrioritiesLocked(void* priorityData) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    uint8_t entryCount = *(uint8_t*)priorityData;
+
+    if (entryCount != 0) {
+        float defaultPriority = 0.0f;
+        uint8_t localCount = *(uint8_t*)((uint8_t*)this + 296);
+        void* dataBuffer = *(void**)((uint8_t*)this + 300);
+
+        for (uint8_t i = 0; i < entryCount; i++) {
+            uint8_t* entry = (uint8_t*)priorityData + 4 + ((uint32_t)i << 3);
+            uint8_t entryIndex = *(uint8_t*)entry;
+
+            if (entryIndex < localCount) {
+                float* srcPriority = (float*)((uint8_t*)dataBuffer +
+                                              ((uint32_t)entryIndex << 3) + 4);
+                *(float*)(entry + 4) = *srcPriority;
+            } else {
+                *(float*)(entry + 4) = defaultPriority;
+            }
+        }
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ApplyPrioritiesLocked() [vtable slot 29 @ 0x8244E568] | 168 bytes
+// Thread-safe priority apply: enters critical section, iterates entries in
+// the priority data. For each entry whose index is in range, copies the
+// float from the entry into the local data buffer at +300. After the loop,
+// forwards the data to the session object at +52 via game_3F28_h.
+// Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::ApplyPrioritiesLocked(void* priorityData) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    uint8_t entryCount = *(uint8_t*)priorityData;
+
+    if (entryCount != 0) {
+        for (uint8_t i = 0; i < entryCount; i++) {
+            uint8_t* srcEntry = (uint8_t*)priorityData + 4 + ((uint32_t)i << 3);
+            uint8_t entryIndex = *(uint8_t*)srcEntry;
+            uint8_t localCount = *(uint8_t*)((uint8_t*)this + 296);
+
+            if (entryIndex < localCount) {
+                float srcFloat = *(float*)(srcEntry + 4);
+                void* dataBuffer = *(void**)((uint8_t*)this + 300);
+                float* dstPriority = (float*)((uint8_t*)dataBuffer +
+                                              ((uint32_t)entryIndex << 3) + 4);
+                *dstPriority = srcFloat;
+            }
+        }
+    }
+
+    // Forward to session if present
+    void* session = *(void**)((uint8_t*)this + 52);
+    if (session != nullptr) {
+        game_3F28_h(session, priorityData);
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::SetPropertyLocked() [vtable slot 31 @ 0x8244F268] | 200 bytes
+// Thread-safe property set: acquires generation lock, locates the message
+// slot via msgMsgSink_EC28_g, validates the slot is active (bit 0) and not
+// disconnecting (bit 1). If the new float value differs from the current
+// one, applies it via util_B158. Returns error 0x8A65000A if slot invalid.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::SetPropertyLocked(uint32_t key, float value) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    void* session = *(void**)((uint8_t*)this + 56);
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t genResult = msgMsgSink_84C0_gen(session);
+
+    uint32_t result = (uint32_t)genResult;
+    void* slot = nullptr;
+
+    if (genResult >= 0) {
+        msgMsgSink_EC28_g(this, key, &slot, 0);
+        result = (uint32_t)(uintptr_t)slot;
+
+        if ((int32_t)result >= 0 && slot != nullptr) {
+            void* desc = *(void**)((uint8_t*)slot + 16);
+            uint8_t flags = *(uint8_t*)desc;
+
+            if ((flags & 0x1) != 1) {
+                result = 0x8A65000A;
+            } else if (flags & 0x2) {
+                result = 0x8A65000A;
+            } else {
+                float currentVal = *(float*)((uint8_t*)slot + 20);
+                if (value != currentVal) {
+                    util_B158(slot, value, 0);
+                }
+            }
+        }
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetPropertyLocked() [vtable slot 32 @ 0x8244F330] | 200 bytes
+// Thread-safe property get: acquires generation lock, validates the key
+// (rejects keys 1 and 2), locates the message slot, validates it is active
+// (bit 0 set), reads the float at slot+20 into the output pointer.
+// Returns error 0x8A65000A if slot is invalid.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetPropertyLocked(uint32_t key, float* outValue) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    void* session = *(void**)((uint8_t*)this + 56);
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t genResult = msgMsgSink_84C0_gen(session);
+
+    uint32_t result = (uint32_t)genResult;
+
+    if (genResult >= 0) {
+        uint16_t keyLower = (uint16_t)(key & 0xFFFF);
+        if (keyLower == 1 || keyLower == 2) {
+            RtlLeaveCriticalSection(criticalSection);
+            return result;
+        }
+
+        void* slot = nullptr;
+        msgMsgSink_EC28_g(this, key, &slot, 0);
+        result = (uint32_t)(uintptr_t)slot;
+
+        if ((int32_t)result >= 0 && slot != nullptr) {
+            void* desc = *(void**)((uint8_t*)slot + 16);
+            uint8_t flags = *(uint8_t*)desc;
+
+            if (flags & 0x1) {
+                float propValue = *(float*)((uint8_t*)slot + 20);
+                *outValue = propValue;
+
+                RtlLeaveCriticalSection(criticalSection);
+                return result;
+            }
+
+            result = 0x8A65000A;
+        }
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::FlushPendingMessagesLocked() [vtable slot 130 @ 0x8244F9E8] | 188 bytes
+// Thread-safe flush: acquires generation lock, then while the session at
+// +240 is non-null, dequeues the head message from the pending list at
+// +28/+204 and calls its destructor (vtable slot 0) with +4 as param.
+// After the loop, destroys the sub-object at +12. Returns the generation
+// result.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::FlushPendingMessagesLocked() {
+    void* sessionObj = *(void**)((uint8_t*)this + 24);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    void* session = *(void**)((uint8_t*)this + 24);
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t genResult = msgMsgSink_84C0_gen(session);
+
+    if (genResult >= 0) {
+        uint32_t sessionField = *(uint32_t*)((uint8_t*)this + 240);
+        bool hasSession = (sessionField != 0);
+
+        while (hasSession) {
+            void* pendingList = (uint8_t*)this + 28;
+            void* pendingHead = *(void**)((uint8_t*)pendingList + 204);
+            void* msg;
+
+            if (pendingHead != nullptr) {
+                msg = *(void**)pendingHead;
+            } else {
+                msg = nullptr;
+            }
+
+            typedef void (*DtorFn)(void*, void*);
+            void** vt = *(void***)msg;
+            DtorFn dtor = (DtorFn)vt[0];
+            dtor(msg, (void*)((uint8_t*)this + 4));
+
+            sessionField = *(uint32_t*)((uint8_t*)this + 240);
+            hasSession = (sessionField != 0);
+        }
+
+        void* subObj = (uint8_t*)this + 12;
+        typedef void (*SubDtorFn)(void*, int);
+        void** subVt = *(void***)subObj;
+        SubDtorFn subDtor = (SubDtorFn)subVt[0];
+        subDtor(subObj, 1);
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return (uint32_t)genResult;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::DisconnectMatchingHandlers() [vtable slot 123 @ 0x82450610] | 192 bytes
+// Walks the handler linked list from +224. For each node, extracts the
+// handler object (node[0] - 8), calls vtable slot 24 to match against the
+// provided key (adjusted by -4). If the match succeeds, destroys the
+// handler's sub-object at +8. After the loop, calls vtable slot 1 on the
+// key object for final cleanup.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::DisconnectMatchingHandlers(void* key) {
+    void* adjustedKey = (key != nullptr) ? (uint8_t*)key - 4 : nullptr;
+
+    void* node = *(void**)((uint8_t*)this + 224);
+
+    while (node != nullptr) {
+        void* rawHandler = *(void**)node;
+        void* next = *(void**)((uint8_t*)node + 4);
+
+        void* handler = (rawHandler != nullptr) ? (uint8_t*)rawHandler - 8 : nullptr;
+
+        typedef int (*MatchFn)(void*, void*);
+        void** vt = *(void***)handler;
+        MatchFn matchFn = (MatchFn)vt[24];
+        int matched = matchFn(handler, adjustedKey);
+
+        if (matched != 0) {
+            void* adjustedSelf = ((uintptr_t)this > 8) ?
+                                 (uint8_t*)this - 4 : nullptr;
+
+            void* subObj = (uint8_t*)handler + 8;
+            typedef void (*DtorFn)(void*, void*);
+            void** subVt = *(void***)subObj;
+            DtorFn dtor = (DtorFn)subVt[0];
+            dtor(subObj, adjustedSelf);
+        }
+
+        node = next;
+    }
+
+    if (key != nullptr) {
+        typedef void (*CleanupFn)(void*, void*);
+        void** keyVt = *(void***)key;
+        CleanupFn cleanup = (CleanupFn)keyVt[1];
+        cleanup(key, (void*)this);
     }
 }

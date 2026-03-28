@@ -112,17 +112,7 @@ struct pongTimingSubState {
 struct pongRecoveryState;
 struct pongAnimState;
 struct pongCreatureState;
-// ── Sub-struct: pongSwingData ────────────────────────────────────────────
-struct pongSwingData {
-    uint32_t vtable_ptr;     // +0   (32-bit game ptr kept as uint32 for layout)
-    uint8_t  _pad1[337];     // +4..+340
-    uint8_t  _pad341;        // +341
-    uint8_t  m_bTriggered;   // +342  byte flag — 1 = swing triggered
-    uint8_t  _pad343;        // +343
-    float    m_swingStrength; // +344  swing power
-    uint8_t  _pad348[4];     // +348..+351
-    float    m_swingVec[3];  // +352  target vec3
-};
+struct pongSwingData;
 struct pongPlayerState;
 struct vec3 {
     float x, y, z;
@@ -204,10 +194,12 @@ struct pongPlayer {
     void*               m_pLocoState2;       // +0x030
     uint8_t             _pad2[12];
     void*               m_pAnimList;         // +0x03C
-    uint8_t             _pad3[12];
+    uint8_t             _pad3[4];            // +0x040
+    float               m_swingPhaseInput;   // +0x044 (+68) animation phase for swing timing
+    float               m_swingDirectionAdj; // +0x048 (+72) directional adjustment value
     uint8_t             m_team;              // +0x04C
     uint8_t             _pad4[3];
-    void*               m_pGameState;        // +0x050
+    float               m_swingTimingClamp;  // +0x050 (+80) swing timing adjustment [0,1]
     uint8_t             _pad5[32];
     pongTimingSubState* m_pSwingSubState;    // +0x078
     pongTimingState*    m_pTimingState;      // +0x07C
@@ -232,35 +224,37 @@ struct pongPlayer {
     uint8_t             _pad10[249];
     uint8_t             m_bSwingCommit1;     // +0x0E6 (+230) — checked in 5890_g
     uint8_t             m_bSwingCommit2;     // +0x0E7 (+231)
-    uint8_t             _pad11[212];
-    void*               m_pDrawData;         // +0x1BC (+444) draw data object (vtable slot 1 = render)
-    void*               m_pCreatureState3;   // +0x1C0 (+448) creature-state for serve/input init
+    uint8_t             _pad11[212];         // +0x0E8..+0x1BB
+    void*               m_pDrawData;         // +0x1BC (+444) draw/render data object
+    uint8_t             _pad11b[4];          // +0x1C0..+0x1C3
     pongPlayer*         m_pOpponent;         // +0x1C4 (+452) R:66 W:0 — set once at init
     uint32_t            _unk_0x1C8;          // +0x1C8
-    int32_t             m_actionStateIdx;    // +0x1CC (+460) action state (2=serve,3=rally,4=active)
+    uint32_t            _unk_0x1CC;          // +0x1CC
     int32_t             m_inputSlotIdx;      // +0x1D0 (+464) — player's button/input slot index
                                              //   MOST ACCESSED (R:112); per-frame input polling
     uint8_t             _pad12[20];
     void*               _unk_0x1E8;          // +0x1E8
     uint32_t            _unk_0x1EC;          // +0x1EC
     void*               m_pActionState;      // +0x1F0 (+496) — passed to pongPlayer_InitActionState
-    uint8_t             _pad13[0x151C - 0x1F4];
-    void*               m_pSwingTimingObj;   // +0x151C (+5404) swing timing sub-object
-    uint8_t             _pad14[0x15E0 - 0x1520];
-    float               m_shotStartTime;     // +0x15E0 (+5600) shot start timestamp
-    float               m_shotDuration;      // +0x15E4 (+5604) shot duration
-    float               m_shotSpeedMul;      // +0x15E8 (+5608) shot speed multiplier
-    uint8_t             m_bShotFlag1;        // +0x15EC (+5612) shot active flag 1
-    uint8_t             m_bShotFlag2;        // +0x15ED (+5613) shot active flag 2
-    uint8_t             _pad15[0x1970 - 0x15EE];
-    float               m_shotTimerA;        // +0x1970 (+6512) shot timing float A
-    float               m_shotTimerB;        // +0x1974 (+6516) shot timing float B
-    uint8_t             _pad16[0x1989 - 0x1978];
-    uint8_t             m_bShotPending;      // +0x1989 (+6537) shot pending flag
-    uint8_t             _pad17[0x19AC - 0x198A];
-    float               m_shotTimerC;        // +0x19AC (+6572) shot timing float C
-    uint8_t             _pad18[0x19ED - 0x19B0];
-    uint8_t             m_bShotReady;        // +0x19ED (+6637) shot readiness flag
+
+    // ── Additional reconstructed fields ─────────────────────────────────
+    // These fields are accessed by later-lifted functions. Placed here to
+    // compile; exact struct offsets TBD (past end of confirmed layout).
+    uint8_t             m_courtSide;         // court side byte
+    float               m_lerpValue;         // lerp interpolation state
+    int32_t             m_slotIndex;         // match slot index
+    uint32_t            m_playerFlags;       // player state flags
+    float               m_swingStrengthX;    // swing strength X component
+    float               m_swingStrengthY;    // swing strength Y component
+    void*               m_pShotState;        // shot state sub-object
+    uint32_t            m_creatureSlotCounter; // creature slot anim counter
+    void**              m_creatureSlots;     // creature slot array (4 pointers)
+    float               m_shotSpeed;         // computed shot speed
+    float               m_courtHalfWidthX;   // court half-width X
+    float               m_courtHalfWidthZ;   // court half-width Z
+    uint8_t             m_bVisible;          // draw visibility flag
+    uint8_t             m_bNetDirtyEnabled;  // network dirty tracking enabled
+    uint32_t            m_netDirtyFlags;     // network dirty bitfield
 
     // ── Vtable methods (confirmed slots) ───────────────────────────────
     virtual ~pongPlayer();                               // slot 0
@@ -301,118 +295,53 @@ struct pongPlayer {
                               pongPlayer* state) const;   // @ 0x820CD7B0
     void ProcessInputVector(float x, float y, float z,
                             uint8_t flags);               // @ 0x821A0050
-    void UpdateSwingTimingAdjustment();                   // @ 0x8219xxxx
-    void UpdatePositionFromSwingTarget();                 // @ 0x8219E6D8
-    void InitializeCollisionGrid(int r4, uint8_t metadataByte);  // @ 0x820Cxxxx
-    bool IsSwingTimerExpiredAndReady() const;             // @ 0x820CE000
-    void SetPlayerSide(uint8_t side);                    // @ 0x820C7C78
-    bool IsSwingTimerInActiveWindow() const;              // @ 0x820CDCD8
-    bool LerpTowardsTarget(float target, float rate, float deltaTime);  // @ 0x820Cxxxx
-    bool IsRecoveryTimerBelowThreshold() const;          // @ 0x820CD598
-    void* GetStateObjectByIndex(uint32_t index) const;   // @ 0x820CE3F0
-    float GetSwingPhaseValue() const;                    // @ 0x820CD550
-    bool IsSwingInputBlocked() const;                    // @ 0x820CD660
-    float GetAnimationBlendWeight() const;               // @ 0x820CD6B8
-    float GetCurrentSwingStrength() const;               // @ 0x820CD5F0
-    void DtorAdjustor();                                 // @ 0x821AA46C
-    void StateThunk_9188();
-    void StateThunk_9198();
-    void StateThunk_91A8();
-    void StateThunk_91B8();
-    void StateThunk_91C8();
-    void StateThunk_91D8();
-    void StateThunk_91E8();
-    void MarkDirty_Position();
-    void MarkDirty_Rotation();
-    void MarkDirty_Scale();
-    void MarkDirty_Velocity();
-    void MarkDirty_Animation();
-    void MarkDirty_State();
-    void MarkDirty_Extra();
-    void SyncByteField(void* syncDesc);
-    void SyncWordField(void* syncDesc);
-    void SyncFloatField(void* syncDesc);
-    void Update();
-    void SaveDrawData();
-    void UpdateReplay();
-    void UpdateTimerWithNetSync();
-    void DestroyAllEntries();
-    bool IsPlayerSlotActive();
-    void SetTransitionState(bool enable);
-    void ResetTransformData();
-    void ResetScoringState();
-    void ResetShotData();
-    void ResetSwingParams();
-    void ResetShotTimingData(float value);
-    int GetRangeDistance();
-    bool IsPositionInBounds();
-    float GetEffectiveSpeed();
-    float GetNormalizedFrameRate();
-    bool IsBallSplashActive();
-    bool IsCreatureAnimReady();
-    bool HasAnimationDelta();
-    int FindRegisteredObject(void* target);
-    void ApplyPositionOffset();
-    void ApplyPositionAndVelocityOffset();
-    void InterpolatePosition2D();
-    void ResetMoverState();
-    void ApplyPlayerNetState();
-    void InitializeNewShot();
-    bool CompareTypeNames(void* other);
-    int CompareTypeInfo(void* other);
-    void ResetShotTimerDefaults();
-    void ComputeBasePosition();
-    void ComputeFullPosition(int flags);
-    bool HasInputDirectionChanged();
-    int GetAnimFrameDistance();
-    bool IsInContactZone();
-    float GetNormalizedRecoveryRate();
-    void* SyncNetworkState();
 
-    // ── Batch 11: small functions (64-256 bytes) ─────────────────────────
-    bool IsBallSplashActiveForSlot();                      // @ 0x821A0C58
-    void FindRegisteredObjectByAddress(void* target);      // @ 0x8218AED0
-    void SetupNetworkPlayerEntry(int index, int offset, uint32_t param);  // @ 0x821C9C60
-    void ResetReticleEntries();                            // @ 0x82384510
-    float GetEffectiveSpeedWithSlowMo();                   // @ 0x821C8E88
-    void SetShotDirection(float* rect);                    // @ 0x821D6360
-    void AccumulateShotDirection(float* rect);             // @ 0x821D63E8
-    void GetFadeAlpha(float* outAlpha);                    // @ 0x821A7F98
-    void ResetShotState(bool enableAnim);                  // @ 0x821962C0
-    void ClampAndApplyInputAngle(float inputAngle);        // @ 0x82199C08
-    void CopyBitfieldFromSource(void* source);             // @ 0x821D6D90
-
-    // ── Batch 12: input, swing, and shot management ──────────────────────
-    bool IsSwingInputPending();
-    void CheckInputAndInitServe();
-    bool IsInputActiveAndReady();
-    void ResetSwingGridData();
-    void InitializeSwingGrid(uint8_t side, uint8_t param);
-    void UpdateInputTargetFromSwing(void* moverObj, float dirX, float dirZ);
-    void SetPlayerSideAndSync(uint8_t side);
-    void SetupSwingSpeedAndTarget(float targetX, float targetZ);
-    bool IsShotTypeActive(int shotType);
-    void BuildShotTypeFlags(uint32_t* out, uint8_t isServe,
-                            uint8_t isLob, uint8_t isSpin,
-                            uint8_t isPower, uint8_t isSpecial,
-                            uint8_t isDropShot);
-    void ResetShotTimingState(void* timingState);
-    void UpdateCollisionMatrix();
-    void DeterminePlayerFacing(float threshold, float* outFacing);
-    void DestroyAndResetPlayerSlot(int slotGroup, int subIndex);
-    void ComputeCourtBoundsForSide(void* courtData, int sideOffset,
-                                    float* outMin, float* outMax);
-    bool ApproachFloat(float* valuePtr, float targetValue,
-                        float approachRate, float deltaTime);
-    void SetHandedness(uint8_t hand);
-    void* GetSubObjectByIndex(int slotIndex) const;
-    bool IsSwingTimingWindowOpen() const;
-    void UpdateInputDirection(float inputX, float inputY);
-    bool IsLocomotionStateActive() const;
-    void ResetBallInstance();
-    bool IsReadyForNewSwing() const;
-    bool IsInAnticipationPhase() const;
+    // ── Additional methods (lifted batches) ──────────────────────────────
+    void UpdateSwingTimingAdjustment();
+    void UpdatePositionFromSwingTarget();
+    void InitializeCollisionGrid(int r4, uint8_t metadataByte);
+    bool IsSwingTimerExpiredAndReady() const;
+    void SetPlayerSide(uint8_t side);
+    bool IsSwingTimerInActiveWindow() const;
+    bool LerpTowardsTarget(float target, float rate, float deltaTime);
+    bool IsRecoveryTimerBelowThreshold() const;
+    void* GetStateObjectByIndex(uint32_t index) const;
+    float GetSwingPhaseValue() const;
+    bool IsSwingInputBlocked() const;
+    float GetAnimationBlendWeight() const;
+    float GetCurrentSwingStrength() const;
+    bool IsMatchSlotValid() const;
+    void UpdateSwingTrajectory();
+    void UpdateCreatureSlotAnims(uint8_t resetFlag);
+    void InitMovementAndContact();
+    void ResetSwingSlotEntries(void* slotsBase);
+    void ComputeShotSpeedForType(float inputPower);
+    void NotifySlotChangeAndSync(void* slotsBase, uint32_t slotIndex,
+                                 uint32_t columnIndex);
     void UpdateServeSpeed();
+    void InitializeReplaySnapshot(void* outSnapshot);
+    void ClampMovementToCourtBounds(float* delta);
+    void SaveDrawData();
+    int CompareTypeNames(void* a, void* b);
+    bool IsLocomotionReady() const;
+    void ResetServePosition();
+    int GetFrameIndexDelta(void* frameData);
+    void ComputePositionWithOffsets(void* inputData);
+    void ComputePositionWithOffset();
+    bool CheckHandednessDifference();
+    void SyncByteField(void* target, void* source);
+    void SyncFloatField(void* target, void* source);
+    void UpdateDirtyFlags(void* obj, uint8_t forceReset);
+    void MarkNetDirtyPosition();
+    void MarkNetDirtyRotation();
+    void SyncFieldWithCallback(void* target, void* source);
+    void ResetShotSyncFields(void* shotState, uint8_t clearNetFlags);
+    void ResetShotTrackingState();
+    void ClearSwingTrajectoryData(void* trajectoryBlock);
+    void ResetSwingTrackingState();
+    void FinalizeServeSetup();
+    void* LookupElementByFloatKey(void* table, float key);
+    void RegisterDebugDrawEntries();
 };
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────

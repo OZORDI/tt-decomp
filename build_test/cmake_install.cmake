@@ -1,4 +1,4 @@
-# Install script for directory: /Users/Ozordi/Downloads/tt-decomp
+# Install script for directory: /Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -12,7 +12,7 @@ if(NOT DEFINED CMAKE_INSTALL_CONFIG_NAME)
     string(REGEX REPLACE "^[^A-Za-z0-9_]+" ""
            CMAKE_INSTALL_CONFIG_NAME "${BUILD_TYPE}")
   else()
-    set(CMAKE_INSTALL_CONFIG_NAME "Debug")
+    set(CMAKE_INSTALL_CONFIG_NAME "Release")
   endif()
   message(STATUS "Install configuration: \"${CMAKE_INSTALL_CONFIG_NAME}\"")
 endif()
@@ -38,7 +38,7 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "/Users/Ozordi/Downloads/tt-decomp/build_test/bin/RockstarTableTennis")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES "/Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin/build_test/bin/RockstarTableTennis")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/RockstarTableTennis" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/RockstarTableTennis")
     execute_process(COMMAND /usr/bin/install_name_tool
@@ -54,7 +54,7 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/Users/Ozordi/Downloads/tt-decomp/build_test/install_local_manifest.txt"
+  file(WRITE "/Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin/build_test/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
 if(CMAKE_INSTALL_COMPONENT)
@@ -70,6 +70,6 @@ else()
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/Users/Ozordi/Downloads/tt-decomp/build_test/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "/Users/Ozordi/Downloads/tt-decomp/.claude/worktrees/intelligent-lewin/build_test/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
