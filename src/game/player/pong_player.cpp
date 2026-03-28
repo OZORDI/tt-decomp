@@ -254,8 +254,7 @@ void pongPlayer::UpdateAnimationState() {
     // TODO: verify exact chain — scaffold shows lwz r29,28(r31); lwz r8,4(r29); bit 0 of +20
     bool useAltAnim = false;
     if (m_pParent) {
-        uint32_t* flagsBase = *reinterpret_cast<uint32_t**>(
-            reinterpret_cast<uintptr_t>(this) + 0x1C);
+        uint32_t* flagsBase = reinterpret_cast<uint32_t*>(this->m_pParent);
         uint32_t flagWord = flagsBase[20 / 4];   // +20
         useAltAnim = (flagWord & 0x1) != 0;
     }
@@ -1751,8 +1750,7 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
     // Step 1: Compute target vector using creature state and index
     // The creature object at +44 contains an index at +464 that selects
     // from an array of 416-byte structs
-    void* creatureState = *reinterpret_cast<void**>(
-        reinterpret_cast<uintptr_t>(this) + 44);
+    void* creatureState = this->m_pLocomotionState;
     uint32_t index = *reinterpret_cast<uint32_t*>(
         reinterpret_cast<uintptr_t>(creatureState) + 464);
     
@@ -1765,8 +1763,7 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
     pongPlayer_ComputeTargetPosition(&targetVec, targetStruct);
     
     // Step 2: Load timing values
-    float animPhase = *reinterpret_cast<float*>(
-        reinterpret_cast<uintptr_t>(this) + 68);  // this+68
+    float animPhase = this->m_swingPhaseInput;  // this+68
     
     // Load global clock object and extract timing value
     extern uint32_t g_pClockObj;  // @ 0x8271A304
@@ -1794,8 +1791,7 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
     extern const float g_kAdjustmentThreshold;  // @ 0x8202D110
     if (fabsf(adjustment) > g_kAdjustmentThreshold) {
         // Load current value at +72
-        float currentValue = *reinterpret_cast<float*>(
-            reinterpret_cast<uintptr_t>(this) + 72);
+        float currentValue = this->m_swingDirectionAdj;
         
         // Compute direction adjustment based on target vector Z component
         float directionFactor = adjustment / timingFactor;
@@ -1818,14 +1814,12 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
         
         if (finalAdjustment < maxThreshold) {
             float delta = maxThreshold - finalAdjustment;
-            *reinterpret_cast<float*>(
-                reinterpret_cast<uintptr_t>(this) + 80) = delta;
+            this->m_swingTimingClamp = delta;
         }
     }
     
     // Step 7: Clamp the value at +80 between 0.0 and 1.0
-    float* adjustmentPtr = reinterpret_cast<float*>(
-        reinterpret_cast<uintptr_t>(this) + 80);
+    float* adjustmentPtr = &this->m_swingTimingClamp;
     float value = *adjustmentPtr;
     
     // Clamp to [0.0, 1.0]
@@ -2032,7 +2026,7 @@ void pongPlayer::InitializeCollisionGrid(int r4, uint8_t metadataByte)
 void pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags) {
     // Load player's input slot index from this+44 (m_pBody) -> +464
     void* body = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + 44));
+        (uint32_t)(uintptr_t)this->m_pLocomotionState);
     int32_t inputSlot = *reinterpret_cast<int32_t*>(
         reinterpret_cast<uintptr_t>(body) + 464);
 
@@ -2082,7 +2076,7 @@ void pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags) {
     finalVec.z = tempVec2.z + scaledInput.z;
     
     // Store result to this+48 (16-byte aligned)
-    memcpy(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(this) + 48),
+    memcpy(reinterpret_cast<void*>(&this->m_pLocoState2),
            &finalVec, sizeof(vec3));
     
     // Load array pointer and compute index
@@ -2946,8 +2940,7 @@ void pongPlayer::SaveDrawData() {  // pongPlayer_SaveDrawData @ 0x8218E860
         nop_8240E6D0("pongPlayer::SaveDrawData() not visible");  // debug logging no-op
         return;
     }
-    void* renderObj = *reinterpret_cast<void**>(
-        reinterpret_cast<uintptr_t>(this) + 444);
+    void* renderObj = this->m_pDrawData;
     void* renderSub = reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(renderObj) + 16);
     // vtable slot 1 call on renderSub
@@ -3006,8 +2999,7 @@ int pongPlayer::CompareTypeNames(void* a, void* b) {  // pongPlayer_F0B8_p46 @ 0
  * object+32 and returns true if it succeeds, false otherwise.
  */
 bool pongPlayer::IsLocomotionReady() const {  // pongPlayer_2578_g @ 0x82192578
-    void* sub1 = *reinterpret_cast<void**>(
-        reinterpret_cast<uintptr_t>(this) + 452);
+    void* sub1 = (void*)this->m_pOpponent;
     void* sub2 = *reinterpret_cast<void**>(
         reinterpret_cast<uintptr_t>(sub1) + 188);
     void* locoObj = *reinterpret_cast<void**>(
@@ -3041,8 +3033,7 @@ extern void pongMover_Reset(void* mover, void* position);
 extern uint32_t g_kGeomOffset;  // global loaded via lis+lwz
 
 void pongPlayer::ResetServePosition() {  // pongPlayer_36D8_g @ 0x821936D8
-    uint32_t fieldOffset = *reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uintptr_t>(this) + 464);
+    uint32_t fieldOffset = (uint32_t)this->m_inputSlotIdx;
     uint32_t geomAddr = fieldOffset + g_kGeomOffset;
     uint8_t handFlag = *reinterpret_cast<uint8_t*>(geomAddr + 64);
     // cntlzw + rlwinm: convert 0 -> 1, nonzero -> 0
@@ -3052,8 +3043,7 @@ void pongPlayer::ResetServePosition() {  // pongPlayer_36D8_g @ 0x821936D8
 
     void* posResult = game_C690(this);
 
-    void* sub = *reinterpret_cast<void**>(
-        reinterpret_cast<uintptr_t>(this) + 452);
+    void* sub = (void*)this->m_pOpponent;
     void* mover = *reinterpret_cast<void**>(
         reinterpret_cast<uintptr_t>(sub) + 168);
     pongMover_Reset(mover, posResult);
@@ -3415,9 +3405,9 @@ void pongPlayer::ResetShotTrackingState() {  // pongPlayer_92A0_g @ 0x821992A0
     pongPlayer_9918_g(reinterpret_cast<void*>(g_pButtonStateTable), 1);
 
     // Clear shot result and tracking flags
-    *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + 72) = 0;
+    *reinterpret_cast<uint32_t*>(&this->m_swingDirectionAdj) = 0;
     *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(this) + 69) = 0;
-    *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(this) + 76) = 0;
+    this->m_team = 0;
     *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(this) + 77) = 0;
 }
 

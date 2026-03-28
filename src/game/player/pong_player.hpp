@@ -194,10 +194,12 @@ struct pongPlayer {
     void*               m_pLocoState2;       // +0x030
     uint8_t             _pad2[12];
     void*               m_pAnimList;         // +0x03C
-    uint8_t             _pad3[12];
+    uint8_t             _pad3[4];            // +0x040
+    float               m_swingPhaseInput;   // +0x044 (+68) animation phase for swing timing
+    float               m_swingDirectionAdj; // +0x048 (+72) directional adjustment value
     uint8_t             m_team;              // +0x04C
     uint8_t             _pad4[3];
-    void*               m_pGameState;        // +0x050
+    float               m_swingTimingClamp;  // +0x050 (+80) swing timing adjustment [0,1]
     uint8_t             _pad5[32];
     pongTimingSubState* m_pSwingSubState;    // +0x078
     pongTimingState*    m_pTimingState;      // +0x07C
@@ -222,7 +224,9 @@ struct pongPlayer {
     uint8_t             _pad10[249];
     uint8_t             m_bSwingCommit1;     // +0x0E6 (+230) — checked in 5890_g
     uint8_t             m_bSwingCommit2;     // +0x0E7 (+231)
-    uint8_t             _pad11[468];
+    uint8_t             _pad11[212];         // +0x0E8..+0x1BB
+    void*               m_pDrawData;         // +0x1BC (+444) draw/render data object
+    uint8_t             _pad11b[4];          // +0x1C0..+0x1C3
     pongPlayer*         m_pOpponent;         // +0x1C4 (+452) R:66 W:0 — set once at init
     uint32_t            _unk_0x1C8;          // +0x1C8
     uint32_t            _unk_0x1CC;          // +0x1CC
