@@ -561,7 +561,7 @@ struct pcrSwingAbortSet {
 
     // ── virtual methods ──
     virtual ~pcrSwingAbortSet();                  // [0] @ 0x820e8f70
-    virtual void vfn_3();  // [3] @ 0x820e95b0
+    virtual void ResolveChildren();                       // [3] @ 0x820e95b0
     virtual void vfn_20();  // [20] @ 0x820e94f8
     virtual void vfn_21();  // [21] @ 0x820e9540
     virtual void vfn_22();  // [22] @ 0x820e94e8
