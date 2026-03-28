@@ -71,7 +71,7 @@
  *   +0x1D0  int32_t             m_inputSlotIdx       player's button/input slot index
  *                                                    (used in vtable slot 7, 9; also as +464)
  *   +0x1EC  ?                                        R:23 W:0
- *   +0x1F0  void*               m_pActionState       passed to pongPlayer_1460_g in Update
+ *   +0x1F0  void*               m_pActionState       passed to pongPlayer_InitActionState in Update
  *
  *   NOTE: +0x1D0 above is the MOST ACCESSED field (R:112 W:2). At first I called this
  *         m_pMatch, but Reset and Update use it as an integer input slot index.
@@ -231,7 +231,7 @@ struct pongPlayer {
     uint8_t             _pad12[20];
     void*               _unk_0x1E8;          // +0x1E8
     uint32_t            _unk_0x1EC;          // +0x1EC
-    void*               m_pActionState;      // +0x1F0 (+496) — passed to pongPlayer_1460_g
+    void*               m_pActionState;      // +0x1F0 (+496) — passed to pongPlayer_InitActionState
 
     // ── Additional reconstructed fields ─────────────────────────────────
     // These fields are accessed by later-lifted functions. Placed here to
