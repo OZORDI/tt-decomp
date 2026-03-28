@@ -10,16 +10,18 @@
  */
 
 #include "pong_player.hpp"
-#include "rage/memory.h"
 #include <cstring>   // memset
 #include <cmath>     // fabsf
+
+// rage memory — declare only what we need to avoid memset redecl conflict
+extern void rage_free(void* ptr);
 
 // ---------------------------------------------------------------------------
 // External functions referenced below
 // ---------------------------------------------------------------------------
 
 // Face animation blender — starts the post-point anim.
-#include "pong_creature.hpp"
+// (pcrCreature forward-declared in pong_player.hpp)
 
 // Update function called from D228; purpose: TODO — likely syncs state.
 extern void pongPlayer_C678_g(pongPlayer* state);  // @ 0x820CC678
@@ -84,7 +86,6 @@ extern void nop_8240E6D0(const char* fmt, ...);
 
 // Geometry / position helpers used by D7B0.
 extern void* pg_9C00_g(void* singleton);              // → returns geometry record
-extern void  pcrAnimState_ComputePosition(vec3* out, pongAnimState* animState); // → computes anim position
 
 // Global singletons
 extern void* g_geomSingleton;   // @ loaded via lis+lwz pattern in D7B0
@@ -106,7 +107,13 @@ extern void PostPageGroupMessage(void* rec, int code, int mask, int a3, int opAc
 extern void pongPlayer_0508_g(void* obj, int maxSteps, float* outDelta);   // @ 0x821E0508
 extern bool pongPlayer_5B60_gen(pongPlayer* p);                            // @ 0x82195B60
 extern void pongPlayer_1460_g(void* actionState, int released);            // @ 0x821A1460
-             // @ AltiVec constant used in D7B0 sign flip
+
+// Swing/target helpers
+extern void pongPlayer_6470_g(vec3* outVec, void* targetStruct);
+extern float fiAsciiTokenizer_2628_g(float input);
+extern void pongPlayer_E7B0_g(vec3* outVec, void* targetData);
+extern void pongPlayer_FD20_g(void* self, int r4, void* p3, void* p4, int p5, void* p6, void* p7, uint8_t metadataByte);
+extern void pongPlayer_E590_g(void* adjustedVec, void* gridBase, void* p3, void* p4, void* p5);
 
 
 // ===========================================================================
@@ -1768,7 +1775,7 @@ void pongPlayer::UpdateSwingTimingAdjustment() {
         reinterpret_cast<uintptr_t>(clockObj) + 24);
     
     // Load constants
-    extern const float g_kFrameToSecScale;  // @ 0x8202D10C
+    // g_kFrameToSecScale already declared at file scope (non-const)
     extern const float g_kTimingConstant;   // @ 0x825C4930
     extern const float g_kAdjustmentScale;  // @ 0x82079BAC (inside larger struct)
     
@@ -2936,7 +2943,7 @@ void pongPlayer::ClampMovementToCourtBounds(float* delta) {
  */
 void pongPlayer::SaveDrawData() {  // pongPlayer_SaveDrawData @ 0x8218E860
     if (!m_bVisible) {  // byte +36
-        nop_8240E6D0();  // debug logging no-op
+        nop_8240E6D0("pongPlayer::SaveDrawData() not visible");  // debug logging no-op
         return;
     }
     void* renderObj = *reinterpret_cast<void**>(
@@ -3169,27 +3176,7 @@ bool pongPlayer::CheckHandednessDifference() {  // pongPlayer_04B0_g @ 0x821E04B
 }
 
 
-// ===========================================================================
-// SECTION 34 — GetStateObjectByIndex  @ 0x820CE3F0 | size: 0x64 (100 bytes)
-// ===========================================================================
-/**
- * pongPlayer::GetStateObjectByIndex(uint32_t index)
- *
- * Returns a pointer to one of five state sub-objects stored at offsets
- * +100, +104, +108, +112, +116 of this player.  Index must be 0-4;
- * returns null for out-of-range values.
- */
-void* pongPlayer::GetStateObjectByIndex(uint32_t index) const {  // pongPlayer_E3F0_p45 @ 0x820CE3F0
-    switch (index) {
-        case 0: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 100);
-        case 1: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 104);
-        case 2: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 108);
-        case 3: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 112);
-        case 4: return *reinterpret_cast<void* const*>(reinterpret_cast<uintptr_t>(this) + 116);
-        default: return nullptr;
-    }
-}
-
+// (GetStateObjectByIndex already defined above in SECTION 20)
 
 // ===========================================================================
 // SECTION 35 — SyncByteField  @ 0x82199108 | size: 0x7C (124 bytes)

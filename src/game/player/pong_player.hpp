@@ -233,6 +233,25 @@ struct pongPlayer {
     uint32_t            _unk_0x1EC;          // +0x1EC
     void*               m_pActionState;      // +0x1F0 (+496) — passed to pongPlayer_1460_g
 
+    // ── Additional reconstructed fields ─────────────────────────────────
+    // These fields are accessed by later-lifted functions. Placed here to
+    // compile; exact struct offsets TBD (past end of confirmed layout).
+    uint8_t             m_courtSide;         // court side byte
+    float               m_lerpValue;         // lerp interpolation state
+    int32_t             m_slotIndex;         // match slot index
+    uint32_t            m_playerFlags;       // player state flags
+    float               m_swingStrengthX;    // swing strength X component
+    float               m_swingStrengthY;    // swing strength Y component
+    void*               m_pShotState;        // shot state sub-object
+    uint32_t            m_creatureSlotCounter; // creature slot anim counter
+    void**              m_creatureSlots;     // creature slot array (4 pointers)
+    float               m_shotSpeed;         // computed shot speed
+    float               m_courtHalfWidthX;   // court half-width X
+    float               m_courtHalfWidthZ;   // court half-width Z
+    uint8_t             m_bVisible;          // draw visibility flag
+    uint8_t             m_bNetDirtyEnabled;  // network dirty tracking enabled
+    uint32_t            m_netDirtyFlags;     // network dirty bitfield
+
     // ── Vtable methods (confirmed slots) ───────────────────────────────
     virtual ~pongPlayer();                               // slot 0
     virtual void ScalarDtor(int flags);                  // slot 1
@@ -272,6 +291,53 @@ struct pongPlayer {
                               pongPlayer* state) const;   // @ 0x820CD7B0
     void ProcessInputVector(float x, float y, float z,
                             uint8_t flags);               // @ 0x821A0050
+
+    // ── Additional methods (lifted batches) ──────────────────────────────
+    void UpdateSwingTimingAdjustment();
+    void UpdatePositionFromSwingTarget();
+    void InitializeCollisionGrid(int r4, uint8_t metadataByte);
+    bool IsSwingTimerExpiredAndReady() const;
+    void SetPlayerSide(uint8_t side);
+    bool IsSwingTimerInActiveWindow() const;
+    bool LerpTowardsTarget(float target, float rate, float deltaTime);
+    bool IsRecoveryTimerBelowThreshold() const;
+    void* GetStateObjectByIndex(uint32_t index) const;
+    float GetSwingPhaseValue() const;
+    bool IsSwingInputBlocked() const;
+    float GetAnimationBlendWeight() const;
+    float GetCurrentSwingStrength() const;
+    bool IsMatchSlotValid() const;
+    void UpdateSwingTrajectory();
+    void UpdateCreatureSlotAnims(uint8_t resetFlag);
+    void InitMovementAndContact();
+    void ResetSwingSlotEntries(void* slotsBase);
+    void ComputeShotSpeedForType(float inputPower);
+    void NotifySlotChangeAndSync(void* slotsBase, uint32_t slotIndex,
+                                 uint32_t columnIndex);
+    void UpdateServeSpeed();
+    void InitializeReplaySnapshot(void* outSnapshot);
+    void ClampMovementToCourtBounds(float* delta);
+    void SaveDrawData();
+    int CompareTypeNames(void* a, void* b);
+    bool IsLocomotionReady() const;
+    void ResetServePosition();
+    int GetFrameIndexDelta(void* frameData);
+    void ComputePositionWithOffsets(void* inputData);
+    void ComputePositionWithOffset();
+    bool CheckHandednessDifference();
+    void SyncByteField(void* target, void* source);
+    void SyncFloatField(void* target, void* source);
+    void UpdateDirtyFlags(void* obj, uint8_t forceReset);
+    void MarkNetDirtyPosition();
+    void MarkNetDirtyRotation();
+    void SyncFieldWithCallback(void* target, void* source);
+    void ResetShotSyncFields(void* shotState, uint8_t clearNetFlags);
+    void ResetShotTrackingState();
+    void ClearSwingTrajectoryData(void* trajectoryBlock);
+    void ResetSwingTrackingState();
+    void FinalizeServeSetup();
+    void* LookupElementByFloatKey(void* table, float key);
+    void RegisterDebugDrawEntries();
 };
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────
