@@ -45,7 +45,7 @@
 // ── External functions ─────────────────────────────────────────────────────
 // Network serialisation helpers
 extern void  SinglesNetworkClient_8DF8_g(void* client, void* buf, int size);  // write float
-extern void  SinglesNetworkClient_6838_g(void* client, uint8_t val, int size); // write byte
+extern "C" uint32_t SinglesNetworkClient_6838_g(void* client, uint32_t value, int bits); // write byte
 extern void* SinglesNetworkClient_58E8_g(uint8_t playerIdx);                  // lookup player
 
 // Network I/O helpers (implemented in pong_network_io.cpp)
@@ -80,14 +80,14 @@ extern void* SinglesNetworkClient_9318_g(void* clientState, const char* msgType)
 extern void SinglesNetworkClient_B320_g(void* client);
 extern bool CheckButtonPressed(void* slotField);
 extern void WriteInt8Bits(void* client, int16_t value, int bits);
-extern void SinglesNetworkClient_67C8_g(void* client, int16_t index, void* data);
+extern "C" uint32_t SinglesNetworkClient_67C8_g(void* client, int16_t index, void* data);
 extern void SinglesNetworkClient_0F80_g(void* self);
 extern uint8_t SinglesNetworkClient_1178_g(void* self);
 extern void game_D3B0_h(void* self);
 extern void util_DA08(void* evt);
 extern void snHsmAcceptingJoinRequest_9A70(void* self, void* evt);
 extern void SinglesNetworkClient_6918_g(void* client, bool flag);
-extern void SinglesNetworkClient_68A8_g(void* client, int16_t value, int bits);
+extern "C" uint32_t SinglesNetworkClient_68A8_g(void* client, uint32_t value, int bits);
 extern void PlayerMovementMessage_54B0_h(void* player, float* velocity, float* acceleration, bool isMoving);
 extern void util_7970(void* client, void* out, int bits);
 extern void util_0AF0(void* client, void* out, int16_t size);

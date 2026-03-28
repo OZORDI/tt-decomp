@@ -289,15 +289,8 @@ extern "C" {
         EndNetworkWrite(client);
     }
     
-    // Original name: SinglesNetworkClient_6838_g
-    void SinglesNetworkClient_6838_g(void* client, uint8_t value, int bitWidth) {
-        WriteUInt8Bits(client, value, bitWidth);
-    }
-    
-    // Original name: SinglesNetworkClient_68A8_g
-    void SinglesNetworkClient_68A8_g(void* client, int8_t value, int bitWidth) {
-        WriteInt8Bits(client, value, bitWidth);
-    }
+    // SinglesNetworkClient_6838_g — lifted in src/game/network.cpp
+    // SinglesNetworkClient_68A8_g — lifted in src/game/network.cpp
     
     // Original name: SinglesNetworkClient_2BE8_g
     void SinglesNetworkClient_2BE8_g(void* client) {
@@ -314,10 +307,7 @@ extern "C" {
         CopyNetworkString(src, dest, maxSize);
     }
     
-    // Original name: SinglesNetworkClient_A818_g
-    void SinglesNetworkClient_A818_g(void* client, int value) {
-        ComputeNetworkHash(client, value);
-    }
+    // SinglesNetworkClient_A818_g — lifted in src/game/network.cpp
     
     // Original name: SinglesNetworkClient_B2A8_g
     uint8_t SinglesNetworkClient_B2A8_g(void* pageGroup) {

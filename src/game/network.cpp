@@ -12,10 +12,20 @@ struct SinglesNetworkClient;
 // External function declarations
 extern void SinglesNetworkClient_8CC0_w(void* ctx, void* base);
 extern void* xam_GetInitSingleton(void* ctx, void* base);
-extern void SinglesNetworkClient_0268_g(void* ctx, void* base);
+extern void SinglesNetworkClient_0268_g(void* self);
 extern void SinglesNetworkClient_8DF8_g(void* ctx, void* base);
-extern void SinglesNetworkClient_0448_g(void* ctx, void* base);
-extern void SinglesNetworkClient_8AE0_g(void* ctx, void* base);
+extern "C" uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bits);
+extern "C" void SinglesNetworkClient_8AE0_g(void* client);
+extern "C" uint32_t SinglesNetworkClient_0738_g(void* client, const char* str, uint32_t length);
+extern "C" uint32_t atSingleton_05F0_g(void* client, uint32_t value, int bits);
+extern "C" void ke_1B00(void* node);
+extern "C" uint8_t SinglesNetworkClient_B2A8_g(void* client);
+extern "C" void* SinglesNetworkClient_B1E8_g(void* client);
+extern "C" void* SinglesNetworkClient_9318_g(void* client, const char* key);
+extern "C" void* SinglesNetworkClient_9280_g(void* client, const char* key);
+extern "C" void* SinglesNetworkClient_A5C8_g(void* context);
+extern "C" void SinglesNetworkClient_B320_g(void* client);
+extern "C" void SinglesNetworkClient_0188_g(void* client, void* param);
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1321,5 +1331,396 @@ void SinglesNetworkClient_SetupNetworkContext(void* client, uint32_t contextValu
     // If flag was set, clear it
     if (flagSet) {
         SinglesNetworkClient_B320_g(client, nullptr);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteStringAndBufferSize @ 0x820D67C8 | size: 0x6C
+//
+// Validates the message buffer, writes a string via 0738, then writes
+// the buffer size (in bytes, rounded up to 8-bit boundary) as a 16-bit
+// value at write-offset 32.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient (this)
+//   value  - Value to pass to the string-write call
+//   length - Length parameter for the string-write call
+//
+// Returns:
+//   Result of the string-write call (via r3)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint32_t SinglesNetworkClient_67C8_g(void* client, int16_t index, void* data)
+{
+    uint32_t* self = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client);
+
+    // Write string data — returns result in r3
+    uint32_t result = SinglesNetworkClient_0738_g(client, (const char*)data, (uint32_t)index);
+
+    // Compute buffer size in bytes: (bitSize + 7) / 8
+    uint32_t bitSize = self[16 / 4];  // field +16
+    uint32_t byteSize = (int32_t)(bitSize + 7) >> 3;
+
+    // Validate again before writing buffer size
+    SinglesNetworkClient_8AE0_g(client);
+
+    // Save/restore write offset (field +32), temporarily set to 32
+    uint32_t savedWriteOffset = self[32 / 4];
+    self[32 / 4] = 32;
+
+    SinglesNetworkClient_0448_g(client, byteSize, 16);
+
+    self[32 / 4] = savedWriteOffset;
+
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteValueAndBufferSize @ 0x820D6838 | size: 0x6C
+//
+// Validates the message buffer, writes a value via 0448 (WriteBits), then
+// writes the buffer size (in bytes) as a 16-bit value at write-offset 32.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient (this)
+//   value  - Value to write
+//   bits   - Number of bits to write
+//
+// Returns:
+//   Result of the write call (via r3)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint32_t SinglesNetworkClient_6838_g(void* client, uint32_t value, int bits)
+{
+    uint32_t* self = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client);
+
+    // Write value
+    uint32_t result = SinglesNetworkClient_0448_g(client, value, bits);
+
+    // Compute buffer size in bytes: (bitSize + 7) / 8
+    uint32_t bitSize = self[16 / 4];
+    uint32_t byteSize = (int32_t)(bitSize + 7) >> 3;
+
+    // Validate again before writing buffer size
+    SinglesNetworkClient_8AE0_g(client);
+
+    // Save/restore write offset (field +32), temporarily set to 32
+    uint32_t savedWriteOffset = self[32 / 4];
+    self[32 / 4] = 32;
+
+    SinglesNetworkClient_0448_g(client, byteSize, 16);
+
+    self[32 / 4] = savedWriteOffset;
+
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::WriteSingletonValueAndBufferSize @ 0x820D68A8 | size: 0x6C
+//
+// Validates the message buffer, writes a singleton value via atSingleton_05F0_g,
+// then writes the buffer size (in bytes) as a 16-bit value at write-offset 32.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient (this)
+//   value  - Value to write
+//   bits   - Number of bits to write
+//
+// Returns:
+//   Result of the singleton write call (via r3)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" uint32_t SinglesNetworkClient_68A8_g(void* client, uint32_t value, int bits)
+{
+    uint32_t* self = (uint32_t*)client;
+
+    // Validate buffer state
+    SinglesNetworkClient_8AE0_g(client);
+
+    // Write singleton value
+    uint32_t result = atSingleton_05F0_g(client, value, bits);
+
+    // Compute buffer size in bytes: (bitSize + 7) / 8
+    uint32_t bitSize = self[16 / 4];
+    uint32_t byteSize = (int32_t)(bitSize + 7) >> 3;
+
+    // Validate again before writing buffer size
+    SinglesNetworkClient_8AE0_g(client);
+
+    // Save/restore write offset (field +32), temporarily set to 32
+    uint32_t savedWriteOffset = self[32 / 4];
+    self[32 / 4] = 32;
+
+    SinglesNetworkClient_0448_g(client, byteSize, 16);
+
+    self[32 / 4] = savedWriteOffset;
+
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::MessageHandlerCtor @ 0x822EDA08 | size: 0x58
+//
+// Constructor for a MessageHandler object. Sets the vtable to
+// rage::snConnectionManager::MessageHandler (0x8205C750), zeros fields,
+// and initializes two linked-list nodes at offsets +12 and +16 via ke_1B00.
+//
+// Parameters:
+//   self - Pointer to MessageHandler instance to construct
+//
+// Returns:
+//   Pointer to constructed instance (this)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* SinglesNetworkClient_DA08(void* self)
+{
+    uint32_t* obj = (uint32_t*)self;
+
+    // Set vtable to rage::snConnectionManager::MessageHandler
+    extern uint32_t lbl_8205C750;
+    obj[0] = (uint32_t)(uintptr_t)&lbl_8205C750;
+
+    // Zero out fields
+    obj[4 / 4] = 0;   // field +4
+    obj[8 / 4] = 0;   // field +8
+
+    // Initialize linked-list node at offset +12
+    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 12));
+
+    // Initialize linked-list node at offset +16
+    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 16));
+
+    // Zero out the node head pointers
+    obj[16 / 4] = 0;
+    obj[12 / 4] = 0;
+
+    // Zero field +20
+    obj[20 / 4] = 0;
+
+    return self;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::NotifyHandlerCtor @ 0x822F9760 | size: 0x58
+//
+// Constructor for a NotifyHandler object. Sets the vtable to
+// rage::VsnNotifyBase::NotifyHandler (0x8205C7A4), zeros fields,
+// and initializes two linked-list nodes at offsets +12 and +16 via ke_1B00.
+//
+// Parameters:
+//   self - Pointer to NotifyHandler instance to construct
+//
+// Returns:
+//   Pointer to constructed instance (this)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* SinglesNetworkClient_9760_g(void* self)
+{
+    uint32_t* obj = (uint32_t*)self;
+
+    // Set vtable to rage::VsnNotifyBase::NotifyHandler
+    extern uint32_t lbl_8205C7A4;
+    obj[0] = (uint32_t)(uintptr_t)&lbl_8205C7A4;
+
+    // Zero out fields
+    obj[4 / 4] = 0;   // field +4
+    obj[8 / 4] = 0;   // field +8
+
+    // Initialize linked-list node at offset +12
+    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 12));
+
+    // Initialize linked-list node at offset +16
+    ke_1B00((void*)(uintptr_t)(uint32_t)((uintptr_t)self + 16));
+
+    // Zero out the node head pointers
+    obj[16 / 4] = 0;
+    obj[12 / 4] = 0;
+
+    // Zero field +20
+    obj[20 / 4] = 0;
+
+    return self;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::RegisterHandlerAndIncrementCount @ 0x822F9838 | size: 0x50
+//
+// Registers a handler by storing the handler pointer at offset +0 of this,
+// calls CheckAndSetNetworkFlag (B2A8), stores the boolean result as a byte
+// at offset +4, and increments a global registration counter at 0x8271A834.
+//
+// Parameters:
+//   self    - Pointer to handler registration structure
+//   handler - Handler object pointer to register
+//
+// Returns:
+//   Pointer to this (self)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* SinglesNetworkClient_9838_g(void* self, void* handler)
+{
+    uint32_t* obj = (uint32_t*)self;
+
+    // Store handler pointer at offset +0
+    obj[0] = (uint32_t)(uintptr_t)handler;
+
+    // Check and set network flag
+    uint8_t flagResult = SinglesNetworkClient_B2A8_g(handler);
+
+    // Store result as byte at offset +4
+    *(uint8_t*)((char*)self + 4) = flagResult;
+
+    // Increment global registration counter
+    extern uint32_t lbl_8271A834;
+    lbl_8271A834 += 1;
+
+    return self;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::QueryContextValue @ 0x822F54E8 | size: 0x4C
+//
+// Queries a context value by looking up a string key (at 0x8205C440) via
+// the context lookup function (9280). If found, calls A5C8 to process it.
+// If not found, returns the value from the stack frame (field r1+80).
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient (this, passed implicitly via r1+80)
+//
+// Returns:
+//   Context value or stack-frame value
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* SinglesNetworkClient_54E8_g(void* client)
+{
+    // Get network client context
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Look up context by string key at 0x8205C440
+    extern char lbl_8205C440;
+    void* context = SinglesNetworkClient_9280_g(client, &lbl_8205C440);
+
+    if (context != nullptr) {
+        // Process the found context
+        return SinglesNetworkClient_A5C8_g(context);
+    }
+
+    // Return client if context not found
+    return client;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetContextValueA @ 0x822FA7B8 | size: 0x60
+//
+// Guards with CheckAndSetNetworkFlag, gets network client, looks up context
+// by string key (0x8205C83C), stores the given value at [context+0] with
+// type tag 3 at [context+4], then conditionally clears the network flag.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient (this)
+//   value  - Value to store in the context
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_A7B8_g(void* client, uint32_t value)
+{
+    // Guard: check and set network flag
+    uint8_t wasSet = SinglesNetworkClient_B2A8_g(client);
+
+    // Get network client context
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Look up context by string key at 0x8205C83C
+    extern char lbl_8205C83C;
+    uint32_t* context = (uint32_t*)SinglesNetworkClient_9318_g(client, &lbl_8205C83C);
+
+    if (context != nullptr) {
+        context[0] = value;
+        context[1] = 3;  // type tag
+    }
+
+    // If network flag was set by us, clear it
+    if ((wasSet & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetContextValueB @ 0x822FA818 | size: 0x60
+//
+// Guards with CheckAndSetNetworkFlag, gets network client, looks up context
+// by string key (0x8205C848), stores the given value at [context+0] with
+// type tag 3 at [context+4], then conditionally clears the network flag.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient (this)
+//   value  - Value to store in the context
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_A818_g(void* client, uint32_t value)
+{
+    // Guard: check and set network flag
+    uint8_t wasSet = SinglesNetworkClient_B2A8_g(client);
+
+    // Get network client context
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Look up context by string key at 0x8205C848
+    extern char lbl_8205C848;
+    uint32_t* context = (uint32_t*)SinglesNetworkClient_9318_g(client, &lbl_8205C848);
+
+    if (context != nullptr) {
+        context[0] = value;
+        context[1] = 3;  // type tag
+    }
+
+    // If network flag was set by us, clear it
+    if ((wasSet & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SinglesNetworkClient::SetContextFromField184 @ 0x822FA8F0 | size: 0x60
+//
+// Guards with CheckAndSetNetworkFlag, gets network client, reads the value
+// from this->field_184, looks up context by string key (0x8205C86C), stores
+// that value at [context+0] with type tag 3 at [context+4], then
+// conditionally clears the network flag.
+//
+// Parameters:
+//   client - Pointer to SinglesNetworkClient (this)
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void SinglesNetworkClient_A8F0_g(void* client)
+{
+    uint32_t* self = (uint32_t*)client;
+
+    // Guard: check and set network flag
+    uint8_t wasSet = SinglesNetworkClient_B2A8_g(client);
+
+    // Get network client context
+    SinglesNetworkClient_B1E8_g(client);
+
+    // Read value from field +184
+    uint32_t fieldValue = self[184 / 4];
+
+    // Look up context by string key at 0x8205C86C
+    extern char lbl_8205C86C;
+    uint32_t* context = (uint32_t*)SinglesNetworkClient_9318_g(client, &lbl_8205C86C);
+
+    if (context != nullptr) {
+        context[0] = fieldValue;
+        context[1] = 3;  // type tag
+    }
+
+    // If network flag was set by us, clear it
+    if ((wasSet & 0xFF) != 0) {
+        SinglesNetworkClient_B320_g(client);
     }
 }

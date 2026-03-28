@@ -405,17 +405,9 @@ bool SinglesNetworkClient_5EA0_g(void* flags, uint32_t* queue) {
     return false;
 }
 
-void SinglesNetworkClient_67C8_g(void* client, int16_t index, void* data) {
-    (void)client; (void)index; (void)data;
-}
-
-void SinglesNetworkClient_6838_g(void* client, uint8_t val, int size) {
-    (void)client; (void)val; (void)size;
-}
-
-void SinglesNetworkClient_68A8_g(void* client, int16_t value, int bits) {
-    (void)client; (void)value; (void)bits;
-}
+// SinglesNetworkClient_67C8_g — lifted in src/game/network.cpp
+// SinglesNetworkClient_6838_g — lifted in src/game/network.cpp
+// SinglesNetworkClient_68A8_g — lifted in src/game/network.cpp
 
 void SinglesNetworkClient_6918_g(void* client, bool flag) {
     (void)client; (void)flag;
