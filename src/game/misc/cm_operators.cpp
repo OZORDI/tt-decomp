@@ -2098,3 +2098,276 @@ void* cmOperatorCtor_cmArcTangent() {
     }
     return nullptr;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CM operator inline constructors — animation camera and math operators
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern "C" const void* rage_cmAnimCamOrientation_vtable;  // @ 0x820381C4
+extern "C" const void* rage_cmAnimCamFov_vtable;          // @ 0x8203821C
+extern "C" const void* rage_cmAnimBonePosition_vtable;    // @ 0x82038324
+extern "C" const void* rage_cmAnimBoneOrientation_vtable; // @ 0x8203837C
+extern "C" const void* rage_cmAnimDuration_vtable;        // @ 0x820382CC
+extern "C" const void* rage_cmAnimCamFStop_vtable;        // @ 0x82038274
+extern "C" const void* rage_cmAbs_vtable;                 // @ 0x82053E8C
+extern "C" const void* rage_cmSign_vtable;                // @ 0x82053EE4
+extern "C" const void* rage_cmInverse_vtable;             // @ 0x82053E34
+extern "C" const void* rage_cmLerp_vtable;                // @ 0x82053FEC
+
+// ── rage::cmAnimCamOrientation inline constructor ────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5AD0_1 @ 0x82185AD0 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets field+28 to 2 (numInputs),
+ * and sets vtable to rage::cmAnimCamOrientation.
+ */
+// cmOperatorCtor_vfn_0_5AD0_1 @ 0x82185AD0
+void* cmOperatorCtor_cmAnimCamOrientation() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimCamOrientation_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimCamFov inline constructor ────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5B68_1 @ 0x82185B68 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets field+28 to 2 (numInputs),
+ * and sets vtable to rage::cmAnimCamFov.
+ */
+// cmOperatorCtor_vfn_0_5B68_1 @ 0x82185B68
+void* cmOperatorCtor_cmAnimCamFov() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimCamFov_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimBonePosition inline constructor ──────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5C00_1 @ 0x82185C00 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets field+36 to 3 (numInputs),
+ * and sets vtable to rage::cmAnimBonePosition.
+ */
+// cmOperatorCtor_vfn_0_5C00_1 @ 0x82185C00
+void* cmOperatorCtor_cmAnimBonePosition() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimBonePosition_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimBoneOrientation inline constructor ───────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5CA0_1 @ 0x82185CA0 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets field+36 to 3 (numInputs),
+ * and sets vtable to rage::cmAnimBoneOrientation.
+ */
+// cmOperatorCtor_vfn_0_5CA0_1 @ 0x82185CA0
+void* cmOperatorCtor_cmAnimBoneOrientation() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimBoneOrientation_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimDuration inline constructor ──────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5D40_1 @ 0x82185D40 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmAnimDuration.
+ */
+// cmOperatorCtor_vfn_0_5D40_1 @ 0x82185D40
+void* cmOperatorCtor_cmAnimDuration() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimDuration_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAnimCamFStop inline constructor ──────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_5DD0_1 @ 0x82185DD0 | size: 0x94
+ *
+ * Allocates 32 bytes, zero-initializes, sets field+28 to 2 (numInputs),
+ * and sets vtable to rage::cmAnimCamFStop.
+ */
+// cmOperatorCtor_vfn_0_5DD0_1 @ 0x82185DD0
+void* cmOperatorCtor_cmAnimCamFStop() {
+    void* mem = cmOperatorCtor_Allocate(32);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 2;  // +28  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAnimCamFStop_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmAbs inline constructor ───────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7248_1 @ 0x82267248 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmAbs.
+ */
+// cmOperatorCtor_vfn_0_7248_1 @ 0x82267248
+void* cmOperatorCtor_cmAbs() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmAbs_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmSign inline constructor ──────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_72D8_1 @ 0x822672D8 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmSign.
+ */
+// cmOperatorCtor_vfn_0_72D8_1 @ 0x822672D8
+void* cmOperatorCtor_cmSign() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmSign_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmInverse inline constructor ───────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_7368_1 @ 0x82267368 | size: 0x8c
+ *
+ * Allocates 24 bytes, zero-initializes, sets field+20 to 1 (numInputs),
+ * and sets vtable to rage::cmInverse.
+ */
+// cmOperatorCtor_vfn_0_7368_1 @ 0x82267368
+void* cmOperatorCtor_cmInverse() {
+    void* mem = cmOperatorCtor_Allocate(24);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 1;  // +20  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmInverse_vtable;
+        return mem;
+    }
+    return nullptr;
+}
+
+// ── rage::cmLerp inline constructor ──────────────────────────────────────────
+
+/**
+ * cmOperatorCtor_vfn_0_73F8_1 @ 0x822673F8 | size: 0x9c
+ *
+ * Allocates 40 bytes, zero-initializes, sets field+36 to 3 (numInputs),
+ * and sets vtable to rage::cmLerp.
+ */
+// cmOperatorCtor_vfn_0_73F8_1 @ 0x822673F8
+void* cmOperatorCtor_cmLerp() {
+    void* mem = cmOperatorCtor_Allocate(40);
+    if (mem != nullptr) {
+        uint32_t* fields = (uint32_t*)mem;
+        fields[1] = 0;  // +4
+        fields[2] = 0;  // +8
+        fields[3] = 0;  // +12
+        fields[4] = 0;  // +16
+        fields[5] = 0;  // +20
+        fields[6] = 0;  // +24
+        fields[7] = 0;  // +28
+        fields[8] = 0;  // +32
+        fields[9] = 3;  // +36  numInputs
+        fields[0] = (uint32_t)(uintptr_t)&rage_cmLerp_vtable;
+        return mem;
+    }
+    return nullptr;
+}
