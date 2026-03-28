@@ -6180,3 +6180,536 @@ void rage::phBoundCapsule::UnpackAndStoreVertex(uint32_t packedVertex, uint8_t c
     float converted = (float)colorFlag;
     *(float*)(floatOffset) = converted;
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phArticulatedCollider — Additional Articulated Collider Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// External function declarations for new phArticulatedCollider functions
+extern void phCollider_vfn_1(phArticulatedCollider* collider);
+extern void phArticulatedCollider_57F0_fw(void* jointData);
+extern void phArticulatedCollider_5A40_wrh(void* jointData);
+extern void phArticulatedCollider_5FE0(void* jointData);
+extern void SinglesNetworkClient_0978_g(void* skeleton, void* assertMsg, void* assertFile);
+extern int pongCreatureInst_F5C8(void* boneMap, int boneIndex);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::Reset (vfn_1) @ 0x8224E6D8 | size: 0x48
+//
+// Resets the articulated collider to its initial state. Calls the parent
+// phCollider::Reset, clears the joint state pointer and active flag, then
+// reinitializes joint data structures.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::Reset() {
+    // Call parent class reset
+    phCollider_vfn_1(this);
+
+    // Clear the joint state pointer and active flag
+    field_0x01d8 = 0;         // +472: joint state pointer
+    *(uint8_t*)((char*)this + 468) = 0;  // +468: active flag byte
+
+    // Reinitialize joint frame data
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_57F0_fw(jointData);
+
+    // Reset joint internal state
+    jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_5D58(jointData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ZeroForcesAndUpdate (vfn_2) @ 0x8224E720 | size: 0x80
+//
+// Zeros out all accumulated force/torque vectors, calls the virtual Update
+// method, then resets the joint working state. The four 16-byte vectors at
+// offsets +224, +240, +256, +272 represent accumulated linear/angular
+// forces and impulses that are cleared each frame before re-accumulation.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ZeroForcesAndUpdate() {
+    // Zero out 4 SIMD vectors: accumulated forces/impulses
+    // +224: linear force accumulator
+    float* vec0 = (float*)((char*)this + 224);
+    vec0[0] = 0.0f; vec0[1] = 0.0f; vec0[2] = 0.0f; vec0[3] = 0.0f;
+
+    // +240: angular force accumulator
+    float* vec1 = (float*)((char*)this + 240);
+    vec1[0] = 0.0f; vec1[1] = 0.0f; vec1[2] = 0.0f; vec1[3] = 0.0f;
+
+    // +256: linear impulse accumulator
+    float* vec2 = (float*)((char*)this + 256);
+    vec2[0] = 0.0f; vec2[1] = 0.0f; vec2[2] = 0.0f; vec2[3] = 0.0f;
+
+    // +272: angular impulse accumulator
+    float* vec3 = (float*)((char*)this + 272);
+    vec3[0] = 0.0f; vec3[1] = 0.0f; vec3[2] = 0.0f; vec3[3] = 0.0f;
+
+    // Call virtual Update (vfn_4) via vtable
+    void** vt = *(void***)this;
+    typedef void (*UpdateFunc)(phArticulatedCollider*);
+    UpdateFunc update = (UpdateFunc)vt[4];
+    update(this);
+
+    // Reset joint working state
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_5A40_wrh(jointData);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::UpdateChildBodies (vfn_9) @ 0x8224EBC8 | size: 0x8C
+//
+// Iterates over all child bodies in the articulated chain (excluding the root)
+// and calls their virtual UpdateBody method (vtable slot 18) on each body
+// that has a non-null physics data pointer (offset +20).
+//
+// The joint data at +464 contains an array of body pointers starting at
+// offset +168, with the count at offset +4.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::UpdateChildBodies() {
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    int bodyCount = (int)jointData[1];  // +4: body count
+
+    for (int i = bodyCount - 1; i > 0; i--) {
+        // Body pointer array starts at jointData + 168 bytes = +42 words
+        uint32_t bodyPtr = jointData[42 + (bodyCount - 1 - i)];
+
+        // Check if body has physics data (offset +20)
+        uint32_t physicsData = *(uint32_t*)(bodyPtr + 20);
+        bool hasPhysics = (physicsData != 0);
+
+        if (hasPhysics) {
+            // Call vtable slot 18 (UpdateBody) on the body
+            void** bodyVTable = *(void***)(uintptr_t)bodyPtr;
+            typedef void (*UpdateBodyFunc)(void*);
+            UpdateBodyFunc updateBody = (UpdateBodyFunc)bodyVTable[18];
+            updateBody((void*)(uintptr_t)bodyPtr);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::ApplyScaledLinearVelocity (vfn_27) @ 0x8224FD58 | size: 0x4C
+//
+// Applies a scaled linear velocity to the root body. Loads the mass from
+// offset +100, multiplies by the velocity scale factor (f1 param), builds
+// a vector {0, scaled_mass, 0}, and dispatches to the parent class
+// implementation via vtable slot 33 (byte offset 132).
+//
+// @param velocityScale - Scale factor for velocity application
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::ApplyScaledLinearVelocity(float velocityScale) {
+    // Load vtable for indirect call
+    void** vt = *(void***)this;
+
+    // Load mass from +100
+    float mass = *(float*)((char*)this + 100);
+
+    // Scale mass by velocity factor
+    float scaledMass = mass * velocityScale;
+
+    // Build vector: {0, scaledMass, 0}
+    float vec[4];
+    vec[0] = 0.0f;
+    vec[1] = scaledMass;
+    vec[2] = 0.0f;
+
+    // Dispatch to parent AddScaledForce (vtable slot 33, byte offset 132)
+    typedef void (*AddScaledForceFunc)(phArticulatedCollider*, const float*);
+    AddScaledForceFunc addForce = (AddScaledForceFunc)vt[33];
+    addForce(this, vec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetScaledInertiaAxisX (vfn_28) @ 0x8224FDA8 | size: 0x94
+//
+// Extracts the X components from the root body's 4x4 inertia tensor rows
+// (stored at joint[0]+144 as four 16-byte row vectors), assembles them into
+// a single column vector, scales by the inverse mass (joint[0]+128 * f1),
+// and dispatches via vtable slot 33.
+//
+// @param scale - Scale factor for the inertia axis
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::GetScaledInertiaAxisX(float scale) {
+    void** vt = *(void***)this;
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    // Get root body pointer from joint data array at +40
+    uint32_t rootBody = jointData[10];  // +40
+
+    // Matrix starts at rootBody + 144, laid out as 4 row vectors of 16 bytes
+    float* row0 = (float*)(rootBody + 144);
+    float* row1 = (float*)(rootBody + 160);
+    float* row2 = (float*)(rootBody + 176);
+    float* row3 = (float*)(rootBody + 192);
+
+    // Extract X component (element [0]) from each row to form column vector
+    // vmrghw extracts high words - this transposes to get column X
+    float columnX[4];
+    columnX[0] = row0[0];
+    columnX[1] = row1[0];
+    columnX[2] = row2[0];
+    columnX[3] = row3[0];
+
+    // Load inverse mass from rootBody + 128, scale by parameter
+    float inverseMass = *(float*)(rootBody + 128);
+    float scaleFactor = inverseMass * scale;
+
+    // Scale the column vector
+    float scaledVec[4];
+    scaledVec[0] = columnX[0] * scaleFactor;
+    scaledVec[1] = columnX[1] * scaleFactor;
+    scaledVec[2] = columnX[2] * scaleFactor;
+    scaledVec[3] = columnX[3] * scaleFactor;
+
+    // Dispatch to parent via vtable slot 33 (byte offset 132)
+    typedef void (*ApplyForceFunc)(phArticulatedCollider*, const float*);
+    ApplyForceFunc applyForce = (ApplyForceFunc)vt[33];
+    applyForce(this, scaledVec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetScaledInertiaAxisY (vfn_29) @ 0x8224FE40 | size: 0x94
+//
+// Same as GetScaledInertiaAxisX but extracts the Y components (element [1])
+// from each row of the 4x4 matrix, assembles them into a column vector,
+// and scales by rootBody+136 (Y-axis inverse inertia).
+//
+// @param scale - Scale factor for the inertia axis
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::GetScaledInertiaAxisY(float scale) {
+    void** vt = *(void***)this;
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    // Get root body pointer from joint data array at +40
+    uint32_t rootBody = jointData[10];  // +40
+
+    // Matrix at rootBody + 144
+    float* row0 = (float*)(rootBody + 144);
+    float* row1 = (float*)(rootBody + 160);
+    float* row2 = (float*)(rootBody + 176);
+    float* row3 = (float*)(rootBody + 192);
+
+    // Extract Y component (element [1]) from each row - vmrglw transposes to column Y
+    float columnY[4];
+    columnY[0] = row0[1];
+    columnY[1] = row1[1];
+    columnY[2] = row2[1];
+    columnY[3] = row3[1];
+
+    // Load Y-axis inverse inertia from rootBody + 136, scale by parameter
+    float inverseInertiaY = *(float*)(rootBody + 136);
+    float scaleFactor = inverseInertiaY * scale;
+
+    // Scale the column vector
+    float scaledVec[4];
+    scaledVec[0] = columnY[0] * scaleFactor;
+    scaledVec[1] = columnY[1] * scaleFactor;
+    scaledVec[2] = columnY[2] * scaleFactor;
+    scaledVec[3] = columnY[3] * scaleFactor;
+
+    // Dispatch to parent via vtable slot 33 (byte offset 132)
+    typedef void (*ApplyForceFunc)(phArticulatedCollider*, const float*);
+    ApplyForceFunc applyForce = (ApplyForceFunc)vt[33];
+    applyForce(this, scaledVec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetScaledInertiaAxisZ (vfn_30) @ 0x8224FED8 | size: 0x94
+//
+// Same as GetScaledInertiaAxisX/Y but extracts Z components. Uses vmrghw
+// then vmrglw to get column Z from the matrix rows, scales by
+// rootBody+132 (Z-axis inverse inertia).
+//
+// @param scale - Scale factor for the inertia axis
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::GetScaledInertiaAxisZ(float scale) {
+    void** vt = *(void***)this;
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    // Get root body pointer from joint data array at +40
+    uint32_t rootBody = jointData[10];  // +40
+
+    // Matrix at rootBody + 144
+    float* row0 = (float*)(rootBody + 144);
+    float* row1 = (float*)(rootBody + 160);
+    float* row2 = (float*)(rootBody + 176);
+    float* row3 = (float*)(rootBody + 192);
+
+    // Extract Z component (element [2]) from each row
+    // vmrghw + vmrglw combination extracts the third element column
+    float columnZ[4];
+    columnZ[0] = row0[2];
+    columnZ[1] = row1[2];
+    columnZ[2] = row2[2];
+    columnZ[3] = row3[2];
+
+    // Load Z-axis inverse inertia from rootBody + 132, scale by parameter
+    float inverseInertiaZ = *(float*)(rootBody + 132);
+    float scaleFactor = inverseInertiaZ * scale;
+
+    // Scale the column vector
+    float scaledVec[4];
+    scaledVec[0] = columnZ[0] * scaleFactor;
+    scaledVec[1] = columnZ[1] * scaleFactor;
+    scaledVec[2] = columnZ[2] * scaleFactor;
+    scaledVec[3] = columnZ[3] * scaleFactor;
+
+    // Dispatch to parent via vtable slot 33 (byte offset 132)
+    typedef void (*ApplyForceFunc)(phArticulatedCollider*, const float*);
+    ApplyForceFunc applyForce = (ApplyForceFunc)vt[33];
+    applyForce(this, scaledVec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::SaveAndClearBodyForces (vfn_63) @ 0x8224E2D8 | size: 0xBC
+//
+// Iterates over all bodies in the articulated chain. For each body, saves
+// the current force vectors (at +304 and +320) into backup slots (at +1040
+// and +1056), then zeros out both the force vectors and the velocity vectors
+// at +272 and +288.
+//
+// This is called at the start of a simulation substep to preserve forces for
+// constraint solving while clearing accumulators for the new substep.
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider::SaveAndClearBodyForces() {
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
+    phArticulatedCollider_5FE0(jointData);
+
+    uint32_t* jd = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int bodyCount = (int)jd[1];  // +4: body count
+
+    for (int i = 0; i < bodyCount; i++) {
+        // Body pointer from array at +40
+        uint32_t bodyPtr = jd[10 + i];  // +40 offset, 4 bytes each
+
+        // Save force vector at +304 to backup at +1040
+        float* forceVec = (float*)(bodyPtr + 304);
+        float* backupForce = (float*)(bodyPtr + 1040);
+        backupForce[0] = forceVec[0];
+        backupForce[1] = forceVec[1];
+        backupForce[2] = forceVec[2];
+        backupForce[3] = forceVec[3];
+
+        // Save torque vector at +320 to backup at +1056
+        float* torqueVec = (float*)(bodyPtr + 320);
+        float* backupTorque = (float*)(bodyPtr + 1056);
+        backupTorque[0] = torqueVec[0];
+        backupTorque[1] = torqueVec[1];
+        backupTorque[2] = torqueVec[2];
+        backupTorque[3] = torqueVec[3];
+
+        // Zero the force vector at +320 (reusing pointer as +304+16)
+        torqueVec[0] = 0.0f; torqueVec[1] = 0.0f;
+        torqueVec[2] = 0.0f; torqueVec[3] = 0.0f;
+
+        // Zero the force vector at +304
+        forceVec[0] = 0.0f; forceVec[1] = 0.0f;
+        forceVec[2] = 0.0f; forceVec[3] = 0.0f;
+
+        // Zero velocity vector at +272
+        float* velVec = (float*)(bodyPtr + 272);
+        velVec[0] = 0.0f; velVec[1] = 0.0f;
+        velVec[2] = 0.0f; velVec[3] = 0.0f;
+
+        // Zero angular velocity vector at +288
+        float* angVelVec = (float*)(bodyPtr + 288);
+        angVelVec[0] = 0.0f; angVelVec[1] = 0.0f;
+        angVelVec[2] = 0.0f; angVelVec[3] = 0.0f;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::NormalizeDirectionVector (E398_p33) @ 0x8224E398 | size: 0x94
+//
+// Copies a 3-component float vector from source to dest, then normalizes it.
+// If the squared magnitude is above a small epsilon, divides each component
+// by the magnitude (1/sqrt(dot)). If at or below epsilon, stores a default
+// unit vector from a global constant.
+//
+// @param source - Input 3-component float vector
+// @param dest   - Output normalized 3-component float vector (16-byte aligned)
+// ─────────────────────────────────────────────────────────────────────────────
+void phArticulatedCollider_NormalizeDirectionVector(const float* source, float* dest) {
+    // Copy source XYZ to dest
+    dest[0] = source[0];
+    dest[1] = source[1];
+    dest[2] = source[2];
+
+    // Compute squared magnitude (dot product of vector with itself, 3 components)
+    float sqMag = dest[0] * dest[0] + dest[1] * dest[1] + dest[2] * dest[2];
+
+    // Compare against epsilon (small positive float from .rdata)
+    extern const float g_phNormalizeEpsilon;  // @ 0x82079C58
+
+    if (sqMag > g_phNormalizeEpsilon) {
+        // Compute 1/sqrt(sqMag) for normalization
+        float mag = sqrtf(sqMag);
+        float invMag = 1.0f / mag;
+
+        // Scale all components by inverse magnitude
+        dest[0] *= invMag;
+        dest[1] *= invMag;
+        dest[2] *= invMag;
+        dest[3] *= invMag;
+    } else {
+        // Magnitude too small; store default unit vector from global
+        extern const float g_phDefaultUnitVector[4];  // @ 0x82083B80
+        dest[0] = g_phDefaultUnitVector[0];
+        dest[1] = g_phDefaultUnitVector[1];
+        dest[2] = g_phDefaultUnitVector[2];
+        dest[3] = g_phDefaultUnitVector[3];
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArticulatedCollider::GetJointLinkIndex (E668) @ 0x8224E668 | size: 0x70
+//
+// Resolves a bone index to its corresponding joint link index in the
+// articulated collider. Uses the skeleton's bone map to translate the
+// external bone index into an internal joint array offset.
+//
+// @param boneIndex - External bone index to look up
+// @return Joint link pointer at the resolved offset in this collider
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phArticulatedCollider::GetJointLinkIndex(int boneIndex) {
+    // Get skeleton pointer from +16
+    uint32_t* skeletonPtr = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 16);
+
+    // Get bone data from skeleton: skeleton[1] -> +4, then +12 for bone map
+    uint32_t* boneData = (uint32_t*)(uintptr_t)skeletonPtr[1];
+    void* boneMap = (void*)(uintptr_t)boneData[3];  // +12
+
+    // Assert file and message strings for debug validation
+    extern const char g_phAssertMsg[];   // debug assert string
+    extern const char g_phAssertFile[];  // debug assert file
+
+    // Validate bone map via debug assertion
+    SinglesNetworkClient_0978_g(boneMap, (void*)g_phAssertMsg, (void*)g_phAssertFile);
+
+    // Look up internal joint index from bone map
+    int jointIndex = pongCreatureInst_F5C8(boneMap, boneIndex);
+
+    // Compute offset: (jointIndex + 129) * 4 and load from this
+    uint32_t offset = (uint32_t)(jointIndex + 129) * 4;
+    return *(uint32_t*)((char*)this + offset);
+}
+
+} // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phInst — Virtual Accessor / Dispatch Functions (8-24B)
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * phInst::SetCollisionGroup (vfn_16) @ 0x8248B8C8 | size: 0x8
+ *
+ * Stores the collision group identifier at offset +284 (0x011C).
+ * The collision group controls which physics groups this instance
+ * belongs to for broadphase collision filtering.
+ */
+void phInst::SetCollisionGroup(uint32_t val) {
+    *(uint32_t*)((char*)this + 284) = val;
+}
+
+/**
+ * phInst::GetCollisionGroup (vfn_19) @ 0x8248B8D0 | size: 0x8
+ *
+ * Returns the collision group identifier stored at offset +284 (0x011C).
+ */
+uint32_t phInst::GetCollisionGroup() {
+    return *(uint32_t*)((char*)this + 284);
+}
+
+/**
+ * phInst::SetCollisionMask (vfn_38) @ 0x8248D808 | size: 0x8
+ *
+ * Stores the collision mask at offset +444 (0x01BC).
+ * The collision mask is a bitmask controlling which collision groups
+ * this instance can interact with during narrowphase tests.
+ */
+void phInst::SetCollisionMask(uint32_t val) {
+    *(uint32_t*)((char*)this + 444) = val;
+}
+
+/**
+ * phInst::GetCollisionMask (vfn_44) @ 0x8248D810 | size: 0x8
+ *
+ * Returns the collision mask stored at offset +444 (0x01BC).
+ */
+uint32_t phInst::GetCollisionMask() {
+    return *(uint32_t*)((char*)this + 444);
+}
+
+/**
+ * phInst::SetUserData (vfn_39) @ 0x8248D818 | size: 0x8
+ *
+ * Stores a user-defined data word at offset +448 (0x01C0).
+ * This field allows game code to associate arbitrary data with
+ * a physics instance (e.g., entity index, type tag).
+ */
+void phInst::SetUserData(uint32_t val) {
+    *(uint32_t*)((char*)this + 448) = val;
+}
+
+/**
+ * phInst::GetUserData (vfn_45) @ 0x8248D820 | size: 0x8
+ *
+ * Returns the user data word stored at offset +448 (0x01C0).
+ */
+uint32_t phInst::GetUserData() {
+    return *(uint32_t*)((char*)this + 448);
+}
+
+/**
+ * phInst::GetArchetype (vfn_71) @ 0x82488480 | size: 0x8
+ *
+ * Returns the 64-bit archetype pointer stored at offset +64 (0x0040).
+ * The archetype describes the shared physical properties (shape,
+ * mass, material) for this instance.
+ */
+void* phInst::GetArchetype() {
+    return *(void**)((char*)this + 64);
+}
+
+/**
+ * phInst::GetErrorCode (vfn_48) @ 0x8247E2D0 | size: 0xC
+ *
+ * Returns the constant 0x80004001 (E_NOTIMPL).
+ * Base implementation for a query interface that is not supported
+ * at this level of the hierarchy; subclasses override with real logic.
+ */
+uint32_t phInst::GetErrorCode() {
+    return 0x80004001;
+}
+
+/**
+ * phInst::DispatchSlot13_204 (vfn_15) @ 0x8248D888 | size: 0x18
+ *
+ * Tail-calls vtable slot 13 (the generic dispatch handler) passing
+ * a pointer to the field block at offset +204 (0x00CC) and size 40.
+ * r3=this, r4/r5 pass through from caller, r6=40, r7=this+204.
+ * Dispatches processing of the local transform matrix region.
+ */
+void phInst::DispatchSlot13_204() {
+    typedef void (*Fn)(void*, void*, void*, int, void*);
+    void** vt = *(void***)this;
+    void* fieldPtr = (char*)this + 204;
+    ((Fn)vt[13])(this, nullptr, nullptr, 40, fieldPtr);
+}
+
+/**
+ * phInst::DispatchSlot13_284 (vfn_34) @ 0x8248D868 | size: 0x18
+ *
+ * Tail-calls vtable slot 13 with a pointer to the field block at
+ * offset +284 (0x011C) and size 40.
+ * r3=this, r4/r5 pass through from caller, r6=40, r7=this+284.
+ * Dispatches processing of the collision group / filter data region.
+ */
+void phInst::DispatchSlot13_284() {
+    typedef void (*Fn)(void*, void*, void*, int, void*);
+    void** vt = *(void***)this;
+    void* fieldPtr = (char*)this + 284;
+    ((Fn)vt[13])(this, nullptr, nullptr, 40, fieldPtr);
+}

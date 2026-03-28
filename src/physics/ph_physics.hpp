@@ -1551,6 +1551,7 @@ struct phInst {
     int AllocateAndStore(uint32_t* outPtr);
     void SetField9(uint32_t val);
     void SetField11(uint32_t val);
+    void* GetArchetype();
 };
 
 // ── rage::phInstStatic ───────────────────────────────────────────────────────
