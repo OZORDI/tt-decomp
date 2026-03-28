@@ -8189,3 +8189,342 @@ void phArticulatedCollider::DispatchJointSolve(int index) {
     JointSolveFunc fn = (JointSolveFunc)vtbl[6];
     fn(jointObj, constraintEntry);
 }
+
+// =========================================================================
+// rage::phBound — Base Collision Bound Constructors & Utilities
+// =========================================================================
+
+// External references for phBound subsystem
+extern void ke_1B00(void* listHead);                     // Intrusive list head init
+extern void ph_9BC0(void* thisPtr);                      // Collision manager base init
+extern void ph_1310(void* thisPtr);                      // phBoundGeometry base init
+extern void phBoundSphere_vfn_37(void* thisPtr);         // phBoundSphere finalize init
+
+extern uint8_t g_phBoundInitialized;                     // @ 0x82606060
+extern float g_identityVector[4];                        // @ 0x82606740
+
+// Vtable pointers for phBound hierarchy
+extern void* g_phBound_vtable;                           // @ 0x82057EF4 — rage::phBound
+extern void* g_phBoundGeometry_vtable;                   // @ 0x82058494 — rage::phBoundGeometry
+extern void* g_phBoundOTGrid_vtable;                     // @ 0x82058854 — rage::phBoundOTGrid
+extern void* g_phBoundComposite_vtable;                  // @ 0x82057FD4 — rage::phBoundComposite
+extern void* g_phBoundSphere_vtable;                     // @ 0x82058584 — rage::phBoundSphere
+extern void* g_phBoundRibbon_vtable;                     // @ 0x820589BC — rage::phBoundRibbon
+extern float g_phDefaultSphereRadius;                    // @ 0x8202D108
+
+/**
+ * rage::phBound::phBound @ 0x8228CE50 | size: 0x90 (144 bytes)
+ *
+ * Base constructor for all physics collision bounds in RAGE.
+ * Initializes vtable, bound type, radius fields, flag bytes,
+ * copies a 16-byte identity vector into SIMD slots, sets
+ * reference count to 1, and zeroes trailing 16-bit slots.
+ */
+void phBound_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    *(void**)(obj + 0) = &g_phBound_vtable;
+    *(uint8_t*)(obj + 4) = 0xFF;
+    *(float*)(obj + 8) = g_floatZero;
+    *(float*)(obj + 12) = g_floatZero;
+    *(uint8_t*)(obj + 5) = 0;
+    *(uint8_t*)(obj + 6) = 0;
+    *(uint8_t*)(obj + 7) = 0;
+
+    memcpy(obj + 16, g_identityVector, 16);
+    memcpy(obj + 32, g_identityVector, 16);
+    memcpy(obj + 48, g_identityVector, 16);
+    memcpy(obj + 80, g_identityVector, 16);
+
+    *(uint16_t*)(obj + 96) = 1;
+    for (int i = 0; i < 7; i++) {
+        *(uint16_t*)(obj + 98 + i * 2) = 0;
+    }
+}
+
+/**
+ * phBoundGeometry_Constructor @ 0x82290F78 | size: 0x8C (140 bytes)
+ *
+ * Constructor for rage::phBoundGeometry. Calls phBound base constructor,
+ * sets geometry vtable, bound type = 3, zeroes all geometry-specific
+ * fields, sets two sentinels to -1, and clears 7-byte padding.
+ */
+void phBoundGeometry_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(void**)(obj + 0) = &g_phBoundGeometry_vtable;
+    *(uint8_t*)(obj + 4) = 3;
+
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint8_t*)(obj + 128) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 148) = 0;
+    *(uint32_t*)(obj + 152) = 0;
+    *(uint32_t*)(obj + 112) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 160) = 0;
+    *(uint32_t*)(obj + 164) = 0;
+    *(uint32_t*)(obj + 132) = (uint32_t)-1;
+    *(uint32_t*)(obj + 140) = (uint32_t)-1;
+    *(uint8_t*)(obj + 168) = 0;
+
+    for (int i = 0; i < 7; i++) {
+        *(uint8_t*)(obj + 169 + i) = 0;
+    }
+}
+
+/**
+ * phBoundOTGrid_Constructor @ 0x8229B4E0 | size: 0x70 (112 bytes)
+ *
+ * Constructor for rage::phBoundOTGrid. Calls phBound base constructor,
+ * sets OTGrid vtable, bound type = 6, initializes radius floats,
+ * sentinel at +148, and zeroes grid state fields.
+ */
+void phBoundOTGrid_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint8_t*)(obj + 4) = 6;
+    *(void**)(obj + 0) = &g_phBoundOTGrid_vtable;
+
+    *(float*)(obj + 112) = g_floatZero;
+    *(float*)(obj + 116) = g_floatZero;
+    *(uint32_t*)(obj + 148) = (uint32_t)-1;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint32_t*)(obj + 128) = 0;
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+    *(uint32_t*)(obj + 152) = 0;
+    *(uint32_t*)(obj + 156) = 0;
+}
+
+/**
+ * phBoundComposite_Constructor @ 0x8228DE80 | size: 0x7C (124 bytes)
+ *
+ * Constructor for rage::phBoundComposite. Calls phBound base constructor,
+ * sets composite vtable, bound type = 9, initializes two intrusive list
+ * heads, zeroes a 16-byte SIMD vector at +48, and clears state fields.
+ */
+void phBoundComposite_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(void**)(obj + 0) = &g_phBoundComposite_vtable;
+
+    ke_1B00(obj + 120);
+    ke_1B00(obj + 124);
+
+    *(uint32_t*)(obj + 112) = 0;
+    *(uint8_t*)(obj + 4) = 9;
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+
+    memset(obj + 48, 0, 16);
+
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+}
+
+/**
+ * phBoundSphere_Constructor @ 0x822954C8 | size: 0x7C (124 bytes)
+ *
+ * Constructor for rage::phBoundSphere. Calls phBound base constructor,
+ * sets sphere vtable, bound type = 0, initializes radius, zeroes
+ * center vector, splats radius into extent vector, and finalizes.
+ */
+void phBoundSphere_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint8_t*)(obj + 4) = 0;
+    *(void**)(obj + 0) = &g_phBoundSphere_vtable;
+    *(float*)(obj + 8) = g_phDefaultSphereRadius;
+    *(uint32_t*)(obj + 128) = 0;
+
+    float radius = g_phDefaultSphereRadius;
+    *(float*)(obj + 112) = radius;
+    *(float*)(obj + 116) = radius;
+    *(float*)(obj + 120) = radius;
+    *(float*)(obj + 124) = radius;
+
+    memset(obj + 48, 0, 16);
+
+    phBoundSphere_vfn_37(thisPtr);
+
+    *(uint32_t*)(obj + 132) = 0;
+    *(uint32_t*)(obj + 136) = 0;
+    *(uint32_t*)(obj + 140) = 0;
+}
+
+/**
+ * phBoundRibbon_Constructor @ 0x8229D8D0 | size: 0xA0 (160 bytes)
+ *
+ * Constructor for rage::phBoundRibbon. Calls phBound base constructor,
+ * sets ribbon vtable, bound type = 7, initializes default radii,
+ * zeroes strip vector, sets sentinel, and clears all ribbon fields.
+ */
+void phBoundRibbon_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phBound_Constructor(thisPtr);
+
+    *(uint8_t*)(obj + 4) = 7;
+    *(void**)(obj + 0) = &g_phBoundRibbon_vtable;
+    *(float*)(obj + 8) = g_phDefaultSphereRadius;
+    *(float*)(obj + 12) = g_phDefaultSphereRadius;
+
+    *(uint32_t*)(obj + 116) = 0;
+    *(uint32_t*)(obj + 120) = 0;
+    *(uint32_t*)(obj + 124) = 0;
+    *(uint32_t*)(obj + 112) = 0;
+
+    memset(obj + 48, 0, 16);
+
+    *(uint32_t*)(obj + 136) = (uint32_t)-1;
+    *(float*)(obj + 128) = g_phDefaultSphereRadius;
+
+    *(uint32_t*)(obj + 164) = 0;
+    *(uint32_t*)(obj + 168) = 0;
+    *(uint32_t*)(obj + 172) = 0;
+    *(uint32_t*)(obj + 176) = 0;
+    *(uint32_t*)(obj + 180) = 0;
+    *(uint32_t*)(obj + 184) = 0;
+    *(uint32_t*)(obj + 144) = 0;
+    *(uint32_t*)(obj + 148) = 0;
+    *(uint32_t*)(obj + 152) = 0;
+    *(uint32_t*)(obj + 156) = 0;
+    *(uint32_t*)(obj + 160) = 0;
+}
+
+/**
+ * phCollisionManager_Constructor @ 0x82298F50 | size: 0x58 (88 bytes)
+ *
+ * Constructor for a collision manager wrapping phBoundGeometry. Calls
+ * ph_1310 for base init, sets manager vtable, initializes collision
+ * subsystem at +176, and links subsystem back to this manager.
+ */
+void phCollisionManager_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    ph_1310(thisPtr);
+
+    extern void* g_phCollisionMgr_vtable;
+    *(void**)(obj + 0) = &g_phCollisionMgr_vtable;
+
+    void* subsystem = obj + 176;
+    ph_9BC0(subsystem);
+
+    uint32_t* subsysVtPtr = *(uint32_t**)(obj + 176);
+    *(uint32_t*)((uint8_t*)subsysVtPtr + 4) = (uint32_t)(uintptr_t)thisPtr;
+}
+
+/**
+ * phStateArrayReset @ 0x8221FD78 | size: 0x58 (88 bytes)
+ *
+ * Resets a physics state array to defaults. Early-exits if the global
+ * initialized flag is set. Zeroes four 16-bit values at +16, sets
+ * four 16-bit sentinels at +24, and zeroes four floats at +0.
+ */
+void phStateArrayReset(void* stateArray) {
+    if (g_phBoundInitialized != 0) {
+        return;
+    }
+
+    uint8_t* arr = (uint8_t*)stateArray;
+
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(arr + 16 + i * 2) = 0;
+    }
+    for (int i = 0; i < 4; i++) {
+        *(uint16_t*)(arr + 24 + i * 2) = 0xFFFF;
+    }
+
+    *(float*)(arr + 0) = g_floatZero;
+    *(float*)(arr + 4) = g_floatZero;
+    *(float*)(arr + 8) = g_floatZero;
+    *(float*)(arr + 12) = g_floatZero;
+}
+
+/**
+ * phCollisionTreeLookup @ 0x82118DB8 | size: 0x44 (68 bytes)
+ *
+ * Performs a collision tree node lookup. Reads collision data at +164,
+ * extracts tree data at +4, calls ph_3760 with maxDepth=255 and
+ * no filter, and stores the result at +168.
+ */
+void phCollisionTreeLookup(void* thisPtr, void* queryNode) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    uint32_t queryTreeData = *(uint32_t*)((uint8_t*)queryNode + 4);
+    void* collisionData = *(void**)(obj + 164);
+    uint32_t treeDataArray = *(uint32_t*)((uint8_t*)collisionData + 4);
+
+    uint32_t result = (uint32_t)(uintptr_t)ph_3760(
+        (void*)(uintptr_t)queryTreeData,
+        (void*)(uintptr_t)treeDataArray,
+        NULL, 255, 0, 0);
+
+    *(uint32_t*)(obj + 168) = result;
+}
+
+/**
+ * phMatrixTransposeMultiply3x4 @ 0x821181C8 | size: 0xB0 (176 bytes)
+ *
+ * Computes transpose-multiply of two 4x3 matrices in-place. Given
+ * matrices A and B, computes C = A^T * B where the transpose is over
+ * the 3x3 rotation part, and the translation row uses (A.row3 - B.row3).
+ * Result overwrites matrix A.
+ */
+void phMatrixTransposeMultiply3x4(float* matA, const float* matB) {
+    float a0[4], a1[4], a2[4], a3[4];
+    float b0[4], b1[4], b2[4], b3[4];
+
+    memcpy(a0, matA + 0, 16);
+    memcpy(a1, matA + 4, 16);
+    memcpy(a2, matA + 8, 16);
+    memcpy(a3, matA + 12, 16);
+
+    memcpy(b0, matB + 0, 16);
+    memcpy(b1, matB + 4, 16);
+    memcpy(b2, matB + 8, 16);
+    memcpy(b3, matB + 12, 16);
+
+    float delta[4];
+    delta[0] = a3[0] - b3[0];
+    delta[1] = a3[1] - b3[1];
+    delta[2] = a3[2] - b3[2];
+    delta[3] = a3[3] - b3[3];
+
+    float dot_a0_b0 = a0[0]*b0[0] + a0[1]*b0[1] + a0[2]*b0[2];
+    float dot_a0_b1 = a0[0]*b1[0] + a0[1]*b1[1] + a0[2]*b1[2];
+    float dot_a0_b2 = a0[0]*b2[0] + a0[1]*b2[1] + a0[2]*b2[2];
+
+    float dot_a1_b0 = a1[0]*b0[0] + a1[1]*b0[1] + a1[2]*b0[2];
+    float dot_a1_b1 = a1[0]*b1[0] + a1[1]*b1[1] + a1[2]*b1[2];
+    float dot_a1_b2 = a1[0]*b2[0] + a1[1]*b2[1] + a1[2]*b2[2];
+
+    float dot_a2_b0 = a2[0]*b0[0] + a2[1]*b0[1] + a2[2]*b0[2];
+    float dot_a2_b1 = a2[0]*b1[0] + a2[1]*b1[1] + a2[2]*b1[2];
+    float dot_a2_b2 = a2[0]*b2[0] + a2[1]*b2[1] + a2[2]*b2[2];
+
+    float dot_delta_b0 = delta[0]*b0[0] + delta[1]*b0[1] + delta[2]*b0[2];
+    float dot_delta_b1 = delta[0]*b1[0] + delta[1]*b1[1] + delta[2]*b1[2];
+    float dot_delta_b2 = delta[0]*b2[0] + delta[1]*b2[1] + delta[2]*b2[2];
+
+    matA[0] = dot_a0_b0;  matA[1] = dot_a0_b1;  matA[2] = dot_a0_b2;  matA[3] = 0.0f;
+    matA[4] = dot_a1_b0;  matA[5] = dot_a1_b1;  matA[6] = dot_a1_b2;  matA[7] = 0.0f;
+    matA[8] = dot_a2_b0;  matA[9] = dot_a2_b1;  matA[10] = dot_a2_b2; matA[11] = 0.0f;
+    matA[12] = dot_delta_b0; matA[13] = dot_delta_b1; matA[14] = dot_delta_b2; matA[15] = 0.0f;
+}
