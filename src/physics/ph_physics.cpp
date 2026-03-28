@@ -9004,3 +9004,195 @@ void rage::phBoundCapsule::CopyFrom(const rage::phBoundCapsule* source) {
 
     *(uint16_t*)((char*)this + 96) = 1;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundSphere — Virtual Accessor and Computation Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// External globals for phBoundSphere
+extern void* g_phMaterialAllocator;        // @ SDA 0x826066E4
+extern const float g_phSphereVolumeCoeff;  // @ 0x82079C30 — (4/3)*pi
+extern const float g_phSphereInertiaCoeff; // @ 0x82029B60
+extern const uint8_t g_phXYZMask[16];     // @ 0x82629E60 — xyz mask (clear w)
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::DispatchMaterialAlloc (vfn_11) @ 0x82295478 | size: 0x20 (32B)
+//    Loads material index from +128, fetches the global material allocator,
+//    and tail-calls its vtable slot 5 to allocate material data.
+// ---------------------------------------------------------------------------
+void phBoundSphere::DispatchMaterialAlloc() {
+    uint32_t materialIdx = *(uint32_t*)((char*)this + 128);
+    void* allocator = g_phMaterialAllocator;
+    void** vt = *(void***)allocator;
+    typedef void (*AllocFn)(void*, uint32_t);
+    ((AllocFn)vt[5])(allocator, materialIdx);
+}
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::GetMaterialIndex (vfn_12) @ 0x82295498 | size: 0x8 (8B)
+//    Returns the material index stored at offset +128.
+// ---------------------------------------------------------------------------
+uint32_t phBoundSphere::GetMaterialIndex() {
+    return *(uint32_t*)((char*)this + 128);
+}
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::SetMaterialIndex (vfn_13) @ 0x822954A0 | size: 0x8 (8B)
+//    Stores a material index at offset +128.
+// ---------------------------------------------------------------------------
+void phBoundSphere::SetMaterialIndex(uint32_t index) {
+    *(uint32_t*)((char*)this + 128) = index;
+}
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::ComputeVolume (vfn_8) @ 0x822954A8 | size: 0x1C (28B)
+//    Computes sphere volume: (4/3)*pi*r^3 where r is at offset +8.
+// ---------------------------------------------------------------------------
+float phBoundSphere::ComputeVolume() {
+    float r = *(float*)((char*)this + 8);
+    float r3 = r * r * r;
+    return r3 * g_phSphereVolumeCoeff;
+}
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::ComputeInertiaTensor (vfn_9) @ 0x82295678 | size: 0x30 (48B)
+//    Computes inertia = coeff * density * r^3, splats result to output vec4.
+//    @param outTensor - 16-byte aligned output vector (all 4 components set)
+//    @param source    - Object with radius at +8
+//    @param density   - Density scalar (f1)
+// ---------------------------------------------------------------------------
+void phBoundSphere::ComputeInertiaTensor(float* outTensor, const void* source, float density) {
+    float r = *(float*)((char*)source + 8);
+    float r2 = r * r;
+    float r2d = r2 * density;
+    float inertia = r2d * g_phSphereInertiaCoeff;
+    // Splat inertia to all 4 components of output vector
+    outTensor[0] = inertia;
+    outTensor[1] = inertia;
+    outTensor[2] = inertia;
+    outTensor[3] = inertia;
+}
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::GetProjectedExtent (vfn_33) @ 0x82295860 | size: 0x34 (52B)
+//    Projects the sphere center (+48 vec4) onto a direction (r4 vec4),
+//    then adds the radius (+8). Returns early if the byte flag (r5) is set.
+//    @param direction - 16-byte aligned direction vector
+//    @param flags     - If nonzero, returns radius without projection
+//    @return Projected extent = dot(center, direction) + radius
+// ---------------------------------------------------------------------------
+float phBoundSphere::GetProjectedExtent(const float* direction, uint8_t flags) {
+    float radius = *(float*)((char*)this + 8);
+    if (flags != 0) return radius;
+    // dot3(center, direction)
+    float* center = (float*)((char*)this + 48);
+    float dot = center[0] * direction[0] + center[1] * direction[1] + center[2] * direction[2];
+    return dot + radius;
+}
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::RenderDebug (vfn_14) @ 0x8233A8F8 | size: 0x14 (20B)
+//    Tail-calls vtable slot 11 with parameter 0. Used to dispatch the debug
+//    rendering with default arguments.
+// ---------------------------------------------------------------------------
+void phBoundSphere::RenderDebug() {
+    void** vt = *(void***)this;
+    typedef void (*RenderFn)(void*, int);
+    ((RenderFn)vt[11])(this, 0);
+}
+
+// ---------------------------------------------------------------------------
+// phBoundSphere::SetPositionAndUpdateFlags (vfn_6) @ 0x8233AB08 | size: 0x48 (72B)
+//    Copies position vector (r4) into center at +48, masks xyz components,
+//    checks if any are nonzero, sets the "has position" flag at +5, then
+//    tail-calls vtable slot 37 to update derived bounds.
+// ---------------------------------------------------------------------------
+void phBoundSphere::SetPositionAndUpdateFlags(const float* position) {
+    float* center = (float*)((char*)this + 48);
+    // Copy position to center
+    memcpy(center, position, 16);
+    // Mask to xyz only (clear w) and check if nonzero
+    uint32_t* cInt = (uint32_t*)center;
+    bool hasPosition = (cInt[0] | cInt[1] | cInt[2]) != 0;
+    *(uint8_t*)((char*)this + 5) = hasPosition ? 1 : 0;
+    // Tail-call vtable slot 37 to update derived data
+    void** vt = *(void***)this;
+    typedef void (*UpdateFn)(void*);
+    ((UpdateFn)vt[37])(this);
+}
+
+} // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Physics constructor / initializer free functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External declarations
+extern void ph_ctor_FFD8(void* thisPtr, void* param);
+extern void ph_95A8_h(void* thisPtr);
+extern void ph_3870_h(void* param, void* dest);
+extern void phJoint3Dof_0170_g(void* dest, int stride, const void* srcTemplate, int count);
+
+// ---------------------------------------------------------------------------
+// phBoundGeometryIntermediate_Constructor @ 0x82291310 | size: 0x6C (108B)
+//    Intermediate constructor for phBoundGeometry. Calls the base bound
+//    constructor (ph_ctor_FFD8) passing through r4, installs the
+//    phBoundGeometry vtable, calls ph_95A8_h, then initializes the
+//    material table at +160 via ph_3870_h. Returns this pointer.
+// ---------------------------------------------------------------------------
+// ph_1310
+void* phBoundGeometryIntermediate_Constructor(void* thisPtr, void* param) {
+    // Call base constructor, passing through param
+    ph_ctor_FFD8(thisPtr, param);
+
+    // Install phBoundGeometry vtable
+    extern void* g_phBoundGeometryVtable;  // @ 0x82058494
+    *(void**)thisPtr = &g_phBoundGeometryVtable;
+
+    // Initialize static data
+    ph_95A8_h(thisPtr);
+
+    // Initialize material table at +160
+    void* materialDest = (void*)((uint8_t*)thisPtr + 160);
+    ph_3870_h(param, materialDest);
+
+    return thisPtr;
+}
+
+// ---------------------------------------------------------------------------
+// phJointChain_Constructor @ 0x8225DD70 | size: 0x74 (116B)
+//    Constructor for a physics joint chain containing 16 phJoint3Dof joints.
+//    Sets the vtable, then iterates 16 times calling phJoint3Dof_0170_g to
+//    initialize each joint slot at a stride of 3016 bytes. After init,
+//    clears the total active joints counter and the enabled flag.
+// ---------------------------------------------------------------------------
+// ph_DD70
+void phJointChain_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Install joint chain vtable
+    extern void* g_phJointChainVtable;  // @ 0x82050078
+    *(void**)(obj + 0) = &g_phJointChainVtable;
+
+    // Base offset for joint array: obj + 8
+    uint8_t* jointBase = obj + 8;
+
+    // Initialize 16 joints (index 15 down to 0)
+    uint8_t* jointSlot = jointBase + 132;  // first joint at +140 from obj
+    extern const void* g_phJoint3DofTemplate;  // @ 0x82069E70
+
+    for (int i = 15; i >= 0; i--) {
+        phJoint3Dof_0170_g(jointSlot, 144, &g_phJoint3DofTemplate, 20);
+        // Clear per-joint active flag at +2880 from joint slot
+        *(uint32_t*)(jointSlot + 2880) = 0;
+        jointSlot += 3016;  // stride between joint slots
+    }
+
+    // Clear total active joints counter at jointBase + 48256
+    *(uint32_t*)(jointBase + 48256) = 0;
+
+    // Clear enabled flag
+    *(uint8_t*)(obj + 4) = 0;
+}
