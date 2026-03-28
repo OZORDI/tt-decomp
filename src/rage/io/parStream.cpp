@@ -7,8 +7,35 @@
  */
 
 #include "rage/parStream.hpp"
+#include "rage/misc/rage_fi.hpp"
 #include <cstring>
 #include <cstdio>
+#include <cstdint>
+#include <cstdlib>
+
+// Forward declarations for external C functions used by parStreamOutXml
+extern "C" void fiAsciiTokenizer_FlushBuffer(void* file, int flags);
+extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
+extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
+
+// Forward declarations for CRT/kernel functions
+extern "C" {
+void KeBugCheck(uint32_t code);
+void _crt_spinlock_acquire(int index);
+void _crt_spinlock_release(int index);
+void _doexit(int code, int flags);
+int _atSingleton_dispatch(void* ptr);
+void _crt_signal_event(void* event);
+void RtlEnterCriticalSection(void* cs);
+void RtlLeaveCriticalSection(void* cs);
+void _fp_init_helper();
+void* _crt_get_tls_data();
+void* _crt_alloc(size_t size);
+void _crt_locale_init(void* locale, void* a1, void* a2, void* a3, int a4);
+void _crt_global_init();
+void _crt_secondary_init();
+void _crt_cleanup(void* ptr);
+}
 
 namespace rage {
 
@@ -553,7 +580,7 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
     // Look up field name in dictionary
     uint32_t dictionaryPtr = m_currentOffset;  // From offset +60
     if (dictionaryPtr == 0) {
-        dictionaryPtr = reinterpret_cast<uint32_t>(this) + 68;  // Default dictionary offset
+        dictionaryPtr = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this) + 68);  // Default dictionary offset
     }
     
     // Check if field ID matches dictionary entry
@@ -581,6 +608,15 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
 }
 
 
+
+bool parStreamInXml::BeginObject(const char* name) {
+    // @ 0x8241ABF8
+    return false;  // TODO: implement
+}
+
+void parStreamInXml::EndObject() {
+    // @ 0x8241AC40
+}
 
 bool parStreamInXml::BeginArray(const char* name, uint32_t* count) {
     // @ 0x8241AD38
@@ -678,7 +714,6 @@ bool parStreamOutXml::CreateFile(const char* filename) {
  * Flushes the XML output buffer to the file handle.
  */
 bool parStreamOutXml::FlushToFile() {
-    extern "C" void fiAsciiTokenizer_FlushBuffer(void* file, int flags);
     fiAsciiTokenizer_FlushBuffer(*(void**)((char*)this + 4), 0);
     return true;
 }
@@ -692,7 +727,6 @@ void parStreamOutXml::SetIndentation(int spaces) {
  * Opens an XML element tag. Tail-calls the tokenizer with isArray=false.
  */
 bool parStreamOutXml::BeginObject(const char* name) {
-    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
     return fiAsciiTokenizer_BeginElement(this, name, 0);
 }
 
@@ -706,7 +740,6 @@ void parStreamOutXml::EndObject() {
  * then resets m_arrayElementIndex (+28) to 0.
  */
 bool parStreamOutXml::BeginArray(const char* name, uint32_t* count) {
-    extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
     fiAsciiTokenizer_BeginElement(this, name, 1);
     *(uint32_t*)((char*)this + 28) = 0;  // m_arrayElementIndex = 0
     return true;
@@ -722,7 +755,6 @@ void parStreamOutXml::EndArray() {
  * loads a "%d" format string, and calls the XML formatter.
  */
 bool parStreamOutXml::WriteInt(const char* name, int32_t value) {
-    extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
     void* file = *(void**)((char*)this + 4);
     parStreamOutXml_WriteFormatted(file, "%d", value);
     return true;
@@ -785,44 +817,6 @@ void parStreamInRbf::CloseFile() {
 
 bool parStreamInRbf::IsValid() const {
     return m_isValid;
-}
-
-bool parStreamInRbf::BeginObject(const char* name) {
-    // @ 0x8241C7E8
-    return false;  // TODO: implement
-}
-
-void parStreamInRbf::EndObject() {
-    // @ 0x8241C8C8
-}
-
-bool parStreamInRbf::BeginArray(const char* name, uint32_t* count) {
-    // @ 0x8241CA10
-    return false;  // TODO: implement
-}
-
-void parStreamInRbf::EndArray() {
-    // @ 0x8241C868
-}
-
-bool parStreamInRbf::ReadInt(const char* name, int32_t* value) {
-    // @ 0x8241C930
-    return false;  // TODO: implement
-}
-
-bool parStreamInRbf::ReadFloat(const char* name, float* value) {
-    // @ 0x8241CB38
-    return false;  // TODO: implement
-}
-
-bool parStreamInRbf::ReadString(const char* name, char* buffer, size_t bufferSize) {
-    // @ 0x8241C140
-    return false;  // TODO: implement
-}
-
-bool parStreamInRbf::ReadBool(const char* name, bool* value) {
-    // @ 0x8241C1D8
-    return false;  // TODO: implement
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1117,6 +1111,23 @@ extern "C" void* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
     }
 
     return nullptr;
+}
+
+} // namespace rage
+
+// Forward declarations for CRT helpers used below
+extern "C" {
+void fiAsciiTokenizer_A4F8_2h(void* a, void* b, void* c, void* d, void* e, void* f);
+void fiAsciiTokenizer_A378_v12(void* a, void* b);
+void fiAsciiTokenizer_A418_2h(void* a, void* b);
+void RtlInitAnsiString(void* ansiStr, const char* str);
+void _nt_process_ansi_string(void* ansiStr);
+void fiAsciiTokenizer_CF40_w(void* obj, const char* name, void* arg);
+void fiAsciiTokenizer_F1D0_w(void* obj, const char* name, void* arg);
+void rage_free(void* ptr);
+void rage_A088(void* obj);
+void rage_B3B0(void* obj);
+void atSingleton_dtor(void* obj, int mode);
 }
 
 // ── CRT / kernel wrappers ──────────────────────────────────────────────────
@@ -1427,7 +1438,7 @@ int _crt_exception_filter(void* excRec, void* outContext, void* excContext) {
     }
     // Store exception pointers
     uint32_t* ctx = reinterpret_cast<uint32_t*>(outContext);
-    ctx[3] = reinterpret_cast<uint32_t>(excContext);
+    ctx[3] = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(excContext));
     ctx[0] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 48);
     ctx[1] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 56);
     ctx[2] = *reinterpret_cast<uint32_t*>(reinterpret_cast<char*>(excContext) + 64);
@@ -1937,6 +1948,8 @@ void _crt_fpscr_trampoline() {
     __asm__ volatile("" ::: "memory");
 }
 
+namespace rage {
+
 void parStreamOutRbf::EndArray() {
     // @ 0x8241CF90
 }
@@ -1959,155 +1972,6 @@ bool parStreamOutRbf::WriteString(const char* name, const char* value) {
 bool parStreamOutRbf::WriteBool(const char* name, bool value) {
     // @ 0x8241D128
     return false;  // TODO: implement
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// fiAsciiTokenizer — ASCII file I/O tokenizer virtual methods
-// ────────────────────────────────────────────────────────────────────────────
-
-/**
- * fiAsciiTokenizer::ReadIntToken @ 0x822E5E78 | size: 0x10
- * vtable slot 2
- *
- * Trampoline that tail-calls ReadInt (vtable slot 4).
- * Provides a simplified interface for reading an integer token.
- */
-int32_t fiAsciiTokenizer::ReadIntToken() {
-    return ReadInt();
-}
-
-/**
- * fiAsciiTokenizer::AdvancePosition @ 0x820C2E08 | size: 0x10
- * vtable slot 30
- *
- * Advances the stream read position by the given byte offset.
- */
-void fiAsciiTokenizer::AdvancePosition(int32_t offset) {
-    m_position += offset;
-}
-
-/**
- * fiAsciiTokenizer::SkipToken @ 0x822E6260 | size: 0x3C
- * vtable slot 11
- *
- * Reads and discards the next token from the stream.
- * Allocates a 64-byte local buffer, clears it, and calls ReadToken.
- */
-void fiAsciiTokenizer::SkipToken() {
-    char buffer[64];
-    buffer[0] = '\0';
-    ReadToken(buffer, 64);
-}
-
-/**
- * fiAsciiTokenizer::SkipAndReadInt @ 0x822E62A0 | size: 0x5C
- * vtable slot 12
- *
- * Skips a label/name token, then reads and returns the following integer value.
- * Used for parsing "key value" pairs where the key is discarded.
- */
-int32_t fiAsciiTokenizer::SkipAndReadInt() {
-    char buffer[64];
-    buffer[0] = '\0';
-    ReadToken(buffer, 64);
-    return ReadInt();
-}
-
-/**
- * fiAsciiTokenizer::SkipAndReadFloat @ 0x822E6300 | size: 0x5C
- * vtable slot 13
- *
- * Skips a label/name token, then reads and returns the following float value.
- * Used for parsing "key value" pairs where the key is discarded.
- */
-float fiAsciiTokenizer::SkipAndReadFloat() {
-    char buffer[64];
-    buffer[0] = '\0';
-    ReadToken(buffer, 64);
-    return ReadFloat();
-}
-
-/**
- * fiAsciiTokenizer::ReadFloat2 @ 0x822E5F98 | size: 0x60
- * vtable slot 10
- *
- * Reads two consecutive float tokens and stores them in the output array.
- */
-void fiAsciiTokenizer::ReadFloat2(float* out) {
-    out[0] = ReadFloat();
-    out[1] = ReadFloat();
-}
-
-/**
- * fiAsciiTokenizer::ExpectAndReadInt @ 0x822E6590 | size: 0x40
- * vtable slot 19
- *
- * Reads the next token and compares it (case-insensitive) against the expected
- * name, then reads and returns the following integer value.
- */
-int32_t fiAsciiTokenizer::ExpectAndReadInt(const char* name) {
-    ExpectToken(name);
-    return ReadInt();
-}
-
-/**
- * fiAsciiTokenizer::ExpectAndReadFloat @ 0x822E65D0 | size: 0x40
- * vtable slot 20
- *
- * Reads the next token and compares it (case-insensitive) against the expected
- * name, then reads and returns the following float value.
- */
-float fiAsciiTokenizer::ExpectAndReadFloat(const char* name) {
-    ExpectToken(name);
-    return ReadFloat();
-}
-
-/**
- * fiAsciiTokenizer::ExpectAndReadFloat2 @ 0x822E6610 | size: 0x50
- * vtable slot 25
- *
- * Expects a named token, then reads two consecutive float values into the
- * output array.
- */
-void fiAsciiTokenizer::ExpectAndReadFloat2(const char* name, float* out) {
-    ExpectToken(name);
-    ReadFloat2(out);
-}
-
-/**
- * fiAsciiTokenizer::ExpectAndReadFloat3 @ 0x822E6660 | size: 0x50
- * vtable slot 24
- *
- * Expects a named token, then reads three consecutive float values into the
- * output array via ReadFloat3 (vtable slot 9).
- */
-void fiAsciiTokenizer::ExpectAndReadFloat3(const char* name, float* out) {
-    ExpectToken(name);
-    ReadFloat3(out);
-}
-
-/**
- * fiAsciiTokenizer::ExpectAndReadFloat4 @ 0x822E66B0 | size: 0x50
- * vtable slot 23
- *
- * Expects a named token, then reads four consecutive float values into the
- * output array via ReadFloat4 (vtable slot 8).
- */
-void fiAsciiTokenizer::ExpectAndReadFloat4(const char* name, float* out) {
-    ExpectToken(name);
-    ReadFloat4(out);
-}
-
-/**
- * fiAsciiTokenizer::ExpectAndReadVector3 @ 0x822E6700 | size: 0x50
- * vtable slot 22
- *
- * Expects a named token, then reads a 3-component vector via ReadVector3
- * (vtable slot 7).
- */
-void fiAsciiTokenizer::ExpectAndReadVector3(const char* name, float* out) {
-    ExpectToken(name);
-    ReadVector3(out);
 }
 
 } // namespace rage
