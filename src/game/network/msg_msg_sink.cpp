@@ -2134,3 +2134,439 @@ uint32_t msgMsgSink::SetMessageBuffer(void* param) {
     RtlLeaveCriticalSection(criticalSection);
     return result;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 10 msgMsgSink message dispatch functions (108-200B)
+ * Ref-count walkers, slot lookup, session filtering, thread-safe property
+ * accessors, and handler lifecycle management.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// Forward declarations for callees
+extern void msgMsgSink_EC28_g(void* sink, uint32_t key, void* outSlot, uint32_t flags);
+extern void util_B158(void* slot, float value, uint32_t flags);
+extern void game_3F28_h(void* session, void* priorityData);
+extern int32_t _crt_tls_fiber_setup();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_D168_sp @ 0x8244D168 | 108 bytes
+// Walks a message chain starting from r4 (slot index). For each valid slot
+// (index != 0xFFFF), increments the reference count in the counter array
+// at +104, then calls vtable slot 6 to get the next slot index.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink_D168_sp(void* self, uint16_t slotIndex) {
+    uint16_t index = slotIndex;
+
+    while (index != 0xFFFF) {
+        // Increment reference count: counterArray[index]++
+        uint32_t* counterArray = *(uint32_t**)((uint8_t*)self + 104);
+        counterArray[index]++;
+
+        // Call vtable slot 6 to get next slot index
+        typedef uint16_t (*GetNextFn)(void*);
+        void** vt = *(void***)self;
+        GetNextFn getNext = (GetNextFn)vt[6];
+        index = getNext(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_D1D8_sp @ 0x8244D1D8 | 108 bytes
+// Walks a message chain starting from r4 (slot index). For each valid slot
+// (index != 0xFFFF), decrements the reference count in the counter array
+// at +104, then calls vtable slot 6 to get the next slot index.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink_D1D8_sp(void* self, uint16_t slotIndex) {
+    uint16_t index = slotIndex;
+
+    while (index != 0xFFFF) {
+        // Decrement reference count: counterArray[index]--
+        uint32_t* counterArray = *(uint32_t**)((uint8_t*)self + 104);
+        counterArray[index]--;
+
+        // Call vtable slot 6 to get next slot index
+        typedef uint16_t (*GetNextFn)(void*);
+        void** vt = *(void***)self;
+        GetNextFn getNext = (GetNextFn)vt[6];
+        index = getNext(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_8D10_g @ 0x82448D10 | 128 bytes
+// Looks up slot data by index. Loads the message handler object from +124.
+// If present, calls handler vtable slot 11 to get the entry count, validates
+// that the index is within range, then calls handler vtable slot 2 to
+// retrieve the slot data pointer. Returns nullptr on failure.
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink_8D10_g(void* self, uint32_t slotIndex) {
+    void* handler = *(void**)((uint8_t*)self + 124);
+
+    if (handler != nullptr) {
+        // Call vtable slot 11 to get the slot table descriptor
+        typedef void* (*GetDescFn)(void*);
+        void** vt = *(void***)handler;
+        GetDescFn getDesc = (GetDescFn)vt[11];
+        void* desc = getDesc(handler);
+
+        // Check index against entry count at desc+11 (uint16)
+        uint16_t entryCount = *(uint16_t*)((uint8_t*)desc + 11);
+        uint16_t idx = (uint16_t)(slotIndex & 0xFFFF);
+
+        if (idx >= entryCount) {
+            return nullptr;
+        }
+
+        // Call vtable slot 2 to get slot data by index
+        typedef void* (*GetSlotFn)(void*, uint32_t);
+        void** vt2 = *(void***)handler;
+        GetSlotFn getSlot = (GetSlotFn)vt2[2];
+        return getSlot(handler, slotIndex);
+    }
+
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink_8BA8_2hr @ 0x82448BA8 | 184 bytes
+// Iterates the intrusive list anchored at +128/+132, filtering sessions by
+// up to three optional criteria: a vtable-slot-24 match (r4), a field +284
+// match (r5), and a uint16 +292 match (r6, 0xFFFF = skip). Destroys
+// matching sessions by calling their destructor at +12. Continues until
+// the list is exhausted.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink_8BA8_2hr(void* self, void* matchKey, void* matchSession,
+                         uint16_t matchSlot) {
+    void* anchor = (uint8_t*)self + 128;
+    void* node = *(void**)((uint8_t*)self + 132);
+
+    while (node != anchor) {
+        // Save next pointer before potential destruction
+        void* next = *(void**)((uint8_t*)node + 4);
+
+        // Adjust node pointer: entry is at node - 12
+        void* entry = (uint8_t*)node - 12;
+
+        // Filter 1: matchKey (vtable slot 24 comparison)
+        if (matchKey != nullptr) {
+            typedef int (*MatchFn)(void*, void*);
+            void** vt = *(void***)entry;
+            MatchFn matchFn = (MatchFn)vt[24];
+            if (matchFn(entry, matchKey) == 0) {
+                goto skipEntry;
+            }
+        }
+
+        // Filter 2: matchSession (field +284 comparison)
+        if (matchSession != nullptr) {
+            void* entrySession = *(void**)((uint8_t*)entry + 284);
+            if (entrySession != matchSession) {
+                goto skipEntry;
+            }
+        }
+
+        // Filter 3: matchSlot (uint16 at +292 comparison)
+        if ((matchSlot & 0xFFFF) != 0xFFFF) {
+            uint16_t entrySlot = *(uint16_t*)((uint8_t*)entry + 292);
+            if (entrySlot != (matchSlot & 0xFFFF)) {
+                goto skipEntry;
+            }
+        }
+
+        // All filters passed - destroy the entry
+        if (entry != nullptr) {
+            void* objToDestroy = (uint8_t*)entry + 12;
+            typedef void (*DtorFn)(void*, int);
+            void** objVt = *(void***)objToDestroy;
+            DtorFn dtor = (DtorFn)objVt[0];
+            dtor(objToDestroy, 1);
+        }
+
+    skipEntry:
+        node = next;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::UpdatePrioritiesLocked() [vtable slot 28 @ 0x8244E4C0] | 168 bytes
+// Thread-safe priority update: enters critical section, iterates over
+// entries in the priority data structure. For each entry whose index is
+// less than the local count at +296, copies the priority float from the
+// data buffer at +300. Entries beyond the count get a default zero float.
+// Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::UpdatePrioritiesLocked(void* priorityData) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    uint8_t entryCount = *(uint8_t*)priorityData;
+
+    if (entryCount != 0) {
+        float defaultPriority = 0.0f;
+        uint8_t localCount = *(uint8_t*)((uint8_t*)this + 296);
+        void* dataBuffer = *(void**)((uint8_t*)this + 300);
+
+        for (uint8_t i = 0; i < entryCount; i++) {
+            uint8_t* entry = (uint8_t*)priorityData + 4 + ((uint32_t)i << 3);
+            uint8_t entryIndex = *(uint8_t*)entry;
+
+            if (entryIndex < localCount) {
+                float* srcPriority = (float*)((uint8_t*)dataBuffer +
+                                              ((uint32_t)entryIndex << 3) + 4);
+                *(float*)(entry + 4) = *srcPriority;
+            } else {
+                *(float*)(entry + 4) = defaultPriority;
+            }
+        }
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ApplyPrioritiesLocked() [vtable slot 29 @ 0x8244E568] | 168 bytes
+// Thread-safe priority apply: enters critical section, iterates entries in
+// the priority data. For each entry whose index is in range, copies the
+// float from the entry into the local data buffer at +300. After the loop,
+// forwards the data to the session object at +52 via game_3F28_h.
+// Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::ApplyPrioritiesLocked(void* priorityData) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    uint8_t entryCount = *(uint8_t*)priorityData;
+
+    if (entryCount != 0) {
+        for (uint8_t i = 0; i < entryCount; i++) {
+            uint8_t* srcEntry = (uint8_t*)priorityData + 4 + ((uint32_t)i << 3);
+            uint8_t entryIndex = *(uint8_t*)srcEntry;
+            uint8_t localCount = *(uint8_t*)((uint8_t*)this + 296);
+
+            if (entryIndex < localCount) {
+                float srcFloat = *(float*)(srcEntry + 4);
+                void* dataBuffer = *(void**)((uint8_t*)this + 300);
+                float* dstPriority = (float*)((uint8_t*)dataBuffer +
+                                              ((uint32_t)entryIndex << 3) + 4);
+                *dstPriority = srcFloat;
+            }
+        }
+    }
+
+    // Forward to session if present
+    void* session = *(void**)((uint8_t*)this + 52);
+    if (session != nullptr) {
+        game_3F28_h(session, priorityData);
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::SetPropertyLocked() [vtable slot 31 @ 0x8244F268] | 200 bytes
+// Thread-safe property set: acquires generation lock, locates the message
+// slot via msgMsgSink_EC28_g, validates the slot is active (bit 0) and not
+// disconnecting (bit 1). If the new float value differs from the current
+// one, applies it via util_B158. Returns error 0x8A65000A if slot invalid.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::SetPropertyLocked(uint32_t key, float value) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    void* session = *(void**)((uint8_t*)this + 56);
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t genResult = msgMsgSink_84C0_gen(session);
+
+    uint32_t result = (uint32_t)genResult;
+    void* slot = nullptr;
+
+    if (genResult >= 0) {
+        msgMsgSink_EC28_g(this, key, &slot, 0);
+        result = (uint32_t)(uintptr_t)slot;
+
+        if ((int32_t)result >= 0 && slot != nullptr) {
+            void* desc = *(void**)((uint8_t*)slot + 16);
+            uint8_t flags = *(uint8_t*)desc;
+
+            if ((flags & 0x1) != 1) {
+                result = 0x8A65000A;
+            } else if (flags & 0x2) {
+                result = 0x8A65000A;
+            } else {
+                float currentVal = *(float*)((uint8_t*)slot + 20);
+                if (value != currentVal) {
+                    util_B158(slot, value, 0);
+                }
+            }
+        }
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetPropertyLocked() [vtable slot 32 @ 0x8244F330] | 200 bytes
+// Thread-safe property get: acquires generation lock, validates the key
+// (rejects keys 1 and 2), locates the message slot, validates it is active
+// (bit 0 set), reads the float at slot+20 into the output pointer.
+// Returns error 0x8A65000A if slot is invalid.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::GetPropertyLocked(uint32_t key, float* outValue) {
+    void* sessionObj = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    void* session = *(void**)((uint8_t*)this + 56);
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t genResult = msgMsgSink_84C0_gen(session);
+
+    uint32_t result = (uint32_t)genResult;
+
+    if (genResult >= 0) {
+        uint16_t keyLower = (uint16_t)(key & 0xFFFF);
+        if (keyLower == 1 || keyLower == 2) {
+            RtlLeaveCriticalSection(criticalSection);
+            return result;
+        }
+
+        void* slot = nullptr;
+        msgMsgSink_EC28_g(this, key, &slot, 0);
+        result = (uint32_t)(uintptr_t)slot;
+
+        if ((int32_t)result >= 0 && slot != nullptr) {
+            void* desc = *(void**)((uint8_t*)slot + 16);
+            uint8_t flags = *(uint8_t*)desc;
+
+            if (flags & 0x1) {
+                float propValue = *(float*)((uint8_t*)slot + 20);
+                *outValue = propValue;
+
+                RtlLeaveCriticalSection(criticalSection);
+                return result;
+            }
+
+            result = 0x8A65000A;
+        }
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::FlushPendingMessagesLocked() [vtable slot 130 @ 0x8244F9E8] | 188 bytes
+// Thread-safe flush: acquires generation lock, then while the session at
+// +240 is non-null, dequeues the head message from the pending list at
+// +28/+204 and calls its destructor (vtable slot 0) with +4 as param.
+// After the loop, destroys the sub-object at +12. Returns the generation
+// result.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::FlushPendingMessagesLocked() {
+    void* sessionObj = *(void**)((uint8_t*)this + 24);
+    void* criticalSection = (uint8_t*)sessionObj + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    void* session = *(void**)((uint8_t*)this + 24);
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    int32_t genResult = msgMsgSink_84C0_gen(session);
+
+    if (genResult >= 0) {
+        uint32_t sessionField = *(uint32_t*)((uint8_t*)this + 240);
+        bool hasSession = (sessionField != 0);
+
+        while (hasSession) {
+            void* pendingList = (uint8_t*)this + 28;
+            void* pendingHead = *(void**)((uint8_t*)pendingList + 204);
+            void* msg;
+
+            if (pendingHead != nullptr) {
+                msg = *(void**)pendingHead;
+            } else {
+                msg = nullptr;
+            }
+
+            typedef void (*DtorFn)(void*, void*);
+            void** vt = *(void***)msg;
+            DtorFn dtor = (DtorFn)vt[0];
+            dtor(msg, (void*)((uint8_t*)this + 4));
+
+            sessionField = *(uint32_t*)((uint8_t*)this + 240);
+            hasSession = (sessionField != 0);
+        }
+
+        void* subObj = (uint8_t*)this + 12;
+        typedef void (*SubDtorFn)(void*, int);
+        void** subVt = *(void***)subObj;
+        SubDtorFn subDtor = (SubDtorFn)subVt[0];
+        subDtor(subObj, 1);
+    }
+
+    RtlLeaveCriticalSection(criticalSection);
+    return (uint32_t)genResult;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::DisconnectMatchingHandlers() [vtable slot 123 @ 0x82450610] | 192 bytes
+// Walks the handler linked list from +224. For each node, extracts the
+// handler object (node[0] - 8), calls vtable slot 24 to match against the
+// provided key (adjusted by -4). If the match succeeds, destroys the
+// handler's sub-object at +8. After the loop, calls vtable slot 1 on the
+// key object for final cleanup.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::DisconnectMatchingHandlers(void* key) {
+    void* adjustedKey = (key != nullptr) ? (uint8_t*)key - 4 : nullptr;
+
+    void* node = *(void**)((uint8_t*)this + 224);
+
+    while (node != nullptr) {
+        void* rawHandler = *(void**)node;
+        void* next = *(void**)((uint8_t*)node + 4);
+
+        void* handler = (rawHandler != nullptr) ? (uint8_t*)rawHandler - 8 : nullptr;
+
+        typedef int (*MatchFn)(void*, void*);
+        void** vt = *(void***)handler;
+        MatchFn matchFn = (MatchFn)vt[24];
+        int matched = matchFn(handler, adjustedKey);
+
+        if (matched != 0) {
+            void* adjustedSelf = ((uintptr_t)this > 8) ?
+                                 (uint8_t*)this - 4 : nullptr;
+
+            void* subObj = (uint8_t*)handler + 8;
+            typedef void (*DtorFn)(void*, void*);
+            void** subVt = *(void***)subObj;
+            DtorFn dtor = (DtorFn)subVt[0];
+            dtor(subObj, adjustedSelf);
+        }
+
+        node = next;
+    }
+
+    if (key != nullptr) {
+        typedef void (*CleanupFn)(void*, void*);
+        void** keyVt = *(void***)key;
+        CleanupFn cleanup = (CleanupFn)keyVt[1];
+        cleanup(key, (void*)this);
+    }
+}
