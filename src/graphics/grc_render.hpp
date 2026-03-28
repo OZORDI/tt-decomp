@@ -31,6 +31,13 @@ struct grcDirtyDisc {
 // ── rage::grcRenderTargetXenon  [vtable @ 0x82035344] ─────────────────────
 struct grcRenderTargetXenon {
     void** vtable;  // +0x00
+    uint8_t  pad_04[16];    // +0x04
+    uint16_t m_nWidth;      // +0x14
+    uint16_t m_nHeight;     // +0x16
+    uint8_t  pad_18[8];     // +0x18
+    uint8_t  m_bColorEnabled;  // +0x1C
+    uint8_t  m_bDepthEnabled;  // +0x1D
+    uint8_t  m_nMSAAMode;      // +0x1E
 
     virtual ~grcRenderTargetXenon();    // [0] @ 0x8215E750
     virtual void vfn_7();               // [7] @ 0x8215EB28
@@ -38,7 +45,7 @@ struct grcRenderTargetXenon {
     virtual void vfn_9();               // [9] @ 0x8215DD60
     virtual void vfn_13();              // [13] @ 0x8215DD68
     virtual void vfn_14();              // [14] @ 0x8215DD78
-    virtual void vfn_15();              // [15] @ 0x8215DDB0
+    virtual uint8_t GetMSAAMode();      // [15] @ 0x8215DDB0
     virtual void vfn_16();              // [16] @ 0x8215DD90
     virtual void vfn_18();              // [18] @ 0x82151250
     virtual void vfn_20();              // [20] @ 0x8215EB10
@@ -119,18 +126,24 @@ struct grcTextureString {
 
 // ── rage::grcTextureXenon  [vtable @ 0x820353CC] ─────────────────────────
 struct grcTextureXenon {
-    void** vtable;  // +0x00
+    void** vtable;      // +0x00
+    uint8_t pad_04[20]; // +0x04
+    uint8_t m_bColorEnabled;   // +0x18
+    uint8_t m_bDepthEnabled;   // +0x19
+    uint8_t pad_1A;            // +0x1A
+    uint8_t m_nLodLevel;       // +0x1B
+    float   m_fLodBias;        // +0x1C
 
-    virtual ~grcTextureXenon();   // [0] @ 0x8215F198
-    virtual void vfn_7();         // [7] @ 0x8215FB88
-    virtual void vfn_13();        // [13] @ 0x8215DDB8
-    virtual void vfn_14();        // [14] @ 0x8215DDC8
-    virtual void vfn_15();        // [15] @ 0x8215DDE8
-    virtual void vfn_16();        // [16] @ 0x8215DDE0
-    virtual void vfn_18();        // [18] @ 0x8215DDF0
-    virtual void vfn_20();        // [20] @ 0x8215FC98
-    virtual void vfn_21();        // [21] @ 0x8215FAB0
-    virtual void vfn_22();        // [22] @ 0x8215FB70
+    virtual ~grcTextureXenon();                       // [0] @ 0x8215F198
+    virtual void vfn_7();                             // [7] @ 0x8215FB88
+    virtual void SetChannelFlags(uint8_t c, uint8_t d); // [13] @ 0x8215DDB8
+    virtual void GetChannelFlags(uint8_t* c, uint8_t* d); // [14] @ 0x8215DDC8
+    virtual uint8_t GetLodLevel();                    // [15] @ 0x8215DDE8
+    virtual void SetLodLevel(uint8_t level);          // [16] @ 0x8215DDE0
+    virtual void GetLodBias(float* pBiasOut);         // [18] @ 0x8215DDF0
+    virtual void vfn_20();                            // [20] @ 0x8215FC98
+    virtual void vfn_21();                            // [21] @ 0x8215FAB0
+    virtual void vfn_22();                            // [22] @ 0x8215FB70
 };
 
 } // namespace rage

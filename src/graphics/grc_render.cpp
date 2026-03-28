@@ -1224,4 +1224,56 @@ void* grcRenderTargetXenon_BeginScene(void* pThis) {
     return *reinterpret_cast<void**>(pObj + 40);  // +0x28 m_pResolveTarget
 }
 
+// ---------------------------------------------------------------------------
+// grcRenderTargetXenon::vfn_15  [vtable slot 15 @ 0x8215DDB0]
+// GetMSAAMode -- returns the multisample anti-aliasing mode.
+// ---------------------------------------------------------------------------
+uint8_t grcRenderTargetXenon_GetMSAAMode(void* pThis) {
+    return reinterpret_cast<uint8_t*>(pThis)[30];   // +0x1E m_nMSAAMode
+}
+
+// ---------------------------------------------------------------------------
+// grcTextureXenon::vfn_13  [vtable slot 13 @ 0x8215DDB8]
+// SetChannelFlags -- stores color and depth enable bytes.
+// ---------------------------------------------------------------------------
+void grcTextureXenon_SetChannelFlags(void* pThis, uint8_t colorEnabled, uint8_t depthEnabled) {
+    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
+    pObj[24] = colorEnabled;   // +0x18
+    pObj[25] = depthEnabled;   // +0x19
+}
+
+// ---------------------------------------------------------------------------
+// grcTextureXenon::vfn_14  [vtable slot 14 @ 0x8215DDC8]
+// GetChannelFlags -- reads color and depth enable bytes into output params.
+// ---------------------------------------------------------------------------
+void grcTextureXenon_GetChannelFlags(void* pThis, uint8_t* pColorOut, uint8_t* pDepthOut) {
+    uint8_t* pObj = reinterpret_cast<uint8_t*>(pThis);
+    *pColorOut = pObj[24];     // +0x18
+    *pDepthOut = pObj[25];     // +0x19
+}
+
+// ---------------------------------------------------------------------------
+// grcTextureXenon::vfn_15  [vtable slot 15 @ 0x8215DDE8]
+// GetLodLevel -- returns the LOD level byte.
+// ---------------------------------------------------------------------------
+uint8_t grcTextureXenon_GetLodLevel(void* pThis) {
+    return reinterpret_cast<uint8_t*>(pThis)[27];   // +0x1B
+}
+
+// ---------------------------------------------------------------------------
+// grcTextureXenon::vfn_16  [vtable slot 16 @ 0x8215DDE0]
+// SetLodLevel -- stores the LOD level byte.
+// ---------------------------------------------------------------------------
+void grcTextureXenon_SetLodLevel(void* pThis, uint8_t level) {
+    reinterpret_cast<uint8_t*>(pThis)[27] = level;  // +0x1B
+}
+
+// ---------------------------------------------------------------------------
+// grcTextureXenon::vfn_18  [vtable slot 18 @ 0x8215DDF0]
+// GetLodBias -- reads the LOD bias float and writes it to the output pointer.
+// ---------------------------------------------------------------------------
+void grcTextureXenon_GetLodBias(void* pThis, float* pBiasOut) {
+    *pBiasOut = *reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(pThis) + 28);  // +0x1C
+}
+
 } // namespace rage
