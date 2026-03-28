@@ -851,7 +851,7 @@ struct pongCreatureInst {
     uint32_t     field_0x009c;  // +0x009c  R:1 W:0
     uint32_t     m_pGroupInst;  // +0x00A0  ptr to group instance  (R:1 W:1)
     uint32_t     field_0x00a4;  // +0x00a4  R:0 W:1
-    uint32_t     field_0x00a8;  // +0x00a8  R:1 W:1
+    uint32_t     m_pParentInst; // +0x00a8  ptr to parent fragInst (R:1 W:1)
     uint32_t     field_0x00ac;  // +0x00ac  R:0 W:1
     float        m_vecPosition[4]; // +0x00B0  position vector (lvx in vfn_42)  (R:3 W:1)
     
