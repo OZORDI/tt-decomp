@@ -1181,3 +1181,247 @@ uint8_t atSingleton_7FA8_w() {
     // All checks passed: input is ready
     return 1;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// atSingleton MI-base Adjustor Thunks (Virtual Destructor Forwarding)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/* External destructor targets */
+extern void atSingleton_vfn_0_A8F8_1(void* obj, uint32_t flags);
+extern void atSingleton_vfn_0_AA28_1(void* obj, uint32_t flags);
+extern void atSingleton_vfn_0_AC18_1(void* obj, uint32_t flags);
+extern void atSingleton_vfn_0_AC78_1(void* obj, uint32_t flags);
+extern void atSingleton_vfn_0_AAA0_1(void* obj, uint32_t flags);
+
+/* HSM context handler for mode 3 routing */
+extern void hsmContext_5ED8_w(void* obj);
+
+/**
+ * atSingleton_rtti_CE54_0  @ 0x821CAD40 | size: 0x8
+ *
+ * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
+ * the primary base, then delegates to atSingleton_vfn_0_A8F8_1 destructor.
+ */
+void atSingleton_rtti_CE54_0(void* adjustedThis, uint32_t flags) {
+    void* realThis = (void*)((char*)adjustedThis - 4);
+    atSingleton_vfn_0_A8F8_1(realThis, flags);
+}
+
+/**
+ * atSingleton_vfn_0_AD48_1  @ 0x821CAD48 | size: 0x8
+ *
+ * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
+ * the primary base, then delegates to atSingleton_vfn_0_AA28_1 destructor.
+ */
+void atSingleton_vfn_0_AD48_1(void* adjustedThis, uint32_t flags) {
+    void* realThis = (void*)((char*)adjustedThis - 4);
+    atSingleton_vfn_0_AA28_1(realThis, flags);
+}
+
+/**
+ * atSingleton_rtti_CFA4_0  @ 0x821CAD50 | size: 0x8
+ *
+ * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
+ * the primary base, then delegates to atSingleton_vfn_0_AC18_1 destructor.
+ */
+void atSingleton_rtti_CFA4_0(void* adjustedThis, uint32_t flags) {
+    void* realThis = (void*)((char*)adjustedThis - 4);
+    atSingleton_vfn_0_AC18_1(realThis, flags);
+}
+
+/**
+ * atSingleton_rtti_CFF4_0  @ 0x821CAD60 | size: 0x8
+ *
+ * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
+ * the primary base, then delegates to atSingleton_vfn_0_AC78_1 destructor.
+ */
+void atSingleton_rtti_CFF4_0(void* adjustedThis, uint32_t flags) {
+    void* realThis = (void*)((char*)adjustedThis - 4);
+    atSingleton_vfn_0_AC78_1(realThis, flags);
+}
+
+/**
+ * atSingleton_rtti_D01C_0  @ 0x821CAD68 | size: 0x8
+ *
+ * MI-base adjustor thunk. Adjusts `this` pointer by -4 bytes to recover
+ * the primary base, then delegates to atSingleton_vfn_0_AAA0_1 destructor.
+ */
+void atSingleton_rtti_D01C_0(void* adjustedThis, uint32_t flags) {
+    void* realThis = (void*)((char*)adjustedThis - 4);
+    atSingleton_vfn_0_AAA0_1(realThis, flags);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// atSingleton State Machine Dispatchers
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * atSingleton_62F0_w  @ 0x821C62F0 | size: 0x2C
+ *
+ * Conditional state dispatcher. Checks global game mode and routes
+ * to the HSM context handler for mode 1, otherwise clears the
+ * completion flag at offset 0x27EC.
+ *
+ * @param obj    Pointer to game state object
+ */
+void atSingleton_62F0_w(void* obj) {
+    // Load global game state pointer @ 0x8271A33C
+    uint32_t* globalState = *(uint32_t**)0x8271A33C;
+
+    // Load mode from global state offset +12
+    int32_t mode = *(int32_t*)((char*)globalState + 12);
+
+    if (mode == 1) {
+        hsmContext_5BC8_fw(obj);
+        return;
+    }
+
+    // Default: Clear flag at offset 0x27EC
+    *(uint32_t*)((char*)obj + 0x27EC) = 0;
+}
+
+/**
+ * atSingleton_70F8_p33  @ 0x821C70F8 | size: 0x2C
+ *
+ * Conditional state dispatcher. Checks global game mode and routes
+ * to the jump table handler for mode 1, otherwise clears the
+ * completion flag at offset 0x27EC.
+ *
+ * @param obj    Pointer to game state object
+ */
+void atSingleton_70F8_p33(void* obj) {
+    // Load global game state pointer @ 0x8271A33C
+    uint32_t* globalState = *(uint32_t**)0x8271A33C;
+
+    // Load mode from global state offset +12
+    int32_t mode = *(int32_t*)((char*)globalState + 12);
+
+    if (mode == 1) {
+        jumptable_5C20(obj);
+        return;
+    }
+
+    // Default: Clear flag at offset 0x27EC
+    *(uint32_t*)((char*)obj + 0x27EC) = 0;
+}
+
+/**
+ * atSingleton_72E8_p39  @ 0x821C72E8 | size: 0x38
+ *
+ * Conditional state dispatcher with two-way routing. Checks global
+ * game mode: routes to jump table handler for mode 1, to HSM context
+ * exit handler for mode 3, otherwise clears the completion flag.
+ *
+ * @param obj    Pointer to game state object
+ */
+void atSingleton_72E8_p39(void* obj) {
+    // Load global game state pointer @ 0x8271A33C
+    uint32_t* globalState = *(uint32_t**)0x8271A33C;
+
+    // Load mode from global state offset +12
+    int32_t mode = *(int32_t*)((char*)globalState + 12);
+
+    if (mode == 1) {
+        jumptable_5C20(obj);
+        return;
+    }
+
+    if (mode == 3) {
+        hsmContext_5ED8_w(obj);
+        return;
+    }
+
+    // Default: Clear flag at offset 0x27EC
+    *(uint32_t*)((char*)obj + 0x27EC) = 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// atSingleton Flag / Status Query
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * atSingleton_9C18_2hr  @ 0x820D9C18 | size: 0x54
+ *
+ * Checks whether a deeply-nested flag indicates availability.
+ * Traverses a global pointer chain to reach a status word, then
+ * checks bit 0 (active/busy) and bit 2 (ready) to determine
+ * if the resource is available.
+ *
+ * @return  1 if available (not active AND ready-bit set), 0 otherwise
+ */
+uint8_t atSingleton_9C18_2hr() {
+    // Load global pointer chain: @ 0x8271A2F8 -> +20 -> +9736 -> +0
+    uint32_t* globalPtr = *(uint32_t**)0x8271A2F8;
+    uint32_t* level1 = *(uint32_t**)((char*)globalPtr + 20);
+    uint32_t* level2 = *(uint32_t**)((char*)level1 + 9736);
+    uint32_t statusWord = *level2;
+
+    // Check bit 0: if set, resource is active/busy -> not available
+    if (statusWord & 0x1) {
+        return 0;
+    }
+
+    // Check bit 2: if set, resource is ready -> available
+    if (statusWord & 0x4) {
+        return 1;
+    }
+
+    return 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// atSingleton Array Initialization
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * atSingleton_B978_2hr  @ 0x821CB978 | size: 0x98
+ *
+ * Initializes a large array of 900 entries (48 bytes each) starting at
+ * offset +0 of the object. Each entry consists of:
+ *   - float at +0   (set to 0.0f)
+ *   - int32 at +4   (set to -1)
+ *   - uint16 at +8  (set to 0)
+ *   - uint16 at +10 (set to 0)
+ *   - float at +16  (set to 0.0f)
+ *   - float at +20  (set to 0.0f)
+ *   - float at +24  (set to 0.0f)
+ *   - float at +32  (set to 0.0f)
+ *
+ * After the array, initializes a trailing record at offset 43200 with
+ * similar structure, and clears 3 uint32 fields at offsets 43200, 43204, 43208.
+ *
+ * @param obj    Pointer to the object to initialize
+ */
+void atSingleton_B978_2hr(void* obj) {
+    uint8_t* base = (uint8_t*)obj;
+    float zero = 0.0f;
+
+    // Initialize 900 entries, 48 bytes each
+    for (int32_t i = 899; i >= 0; i--) {
+        uint8_t* entry = base + (899 - i) * 48;
+        *(float*)(entry + 0) = zero;
+        *(int32_t*)(entry + 4) = -1;
+        *(uint16_t*)(entry + 8) = 0;
+        *(uint16_t*)(entry + 10) = 0;
+        *(float*)(entry + 16) = zero;
+        *(float*)(entry + 20) = zero;
+        *(float*)(entry + 24) = zero;
+        *(float*)(entry + 32) = zero;
+    }
+
+    // Clear trailing control fields
+    *(uint32_t*)(base + 43208) = 0;  // offset 0xA8C8
+    *(uint32_t*)(base + 43204) = 0;  // offset 0xA8C4
+    *(uint32_t*)(base + 43200) = 0;  // offset 0xA8C0
+
+    // Initialize trailing record at offset 43216 (0x82XX + 65536 - 22320)
+    uint8_t* trailing = base + 43216;
+    *(float*)(trailing + 0) = zero;
+    *(int32_t*)(trailing + 4) = -1;
+    *(uint16_t*)(trailing + 8) = 0;
+    *(uint16_t*)(trailing + 10) = 0;
+    *(float*)(trailing + 16) = zero;
+    *(float*)(trailing + 20) = zero;
+    *(float*)(trailing + 24) = zero;
+    *(float*)(trailing + 32) = zero;
+}
