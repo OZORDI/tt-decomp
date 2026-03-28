@@ -104,7 +104,7 @@ void pongNetMessageHolder_vfn_2_0868_1(pongNetMessageHolder* holder) { (void)hol
 void pongNetMessageHolder_vfn_2_1628_1(pongNetMessageHolder* holder) { (void)holder; }
 void pongNetMessageHolder_vfn_2_1770_1(pongNetMessageHolder* holder) { (void)holder; }
 void pongNetMessageHolder_vfn_2_18D0_1(pongNetMessageHolder* holder) { (void)holder; }
-void pongNetMessageHolder_vfn_2_24B8_1(void* thisPtr) { (void)thisPtr; }
+void pongNetMessageHolder_vfn_2_24B8_1(pongNetMessageHolder* holder) { (void)holder; }
 void pongNetMessageHolder_vfn_2_3878_1(pongNetMessageHolder* holder) { (void)holder; }
 void pongNetMessageHolder_vfn_2_FD70_1(pongNetMessageHolder* holder) { (void)holder; }
 

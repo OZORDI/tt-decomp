@@ -3787,7 +3787,7 @@ extern void* g_pongNetMessageHolderVtable;      // @ 0x820701F8
 extern void* g_pongNetMessageHolderBaseVtable;  // @ 0x8206FA88
 
 // External functions
-extern void pongNetMessageHolder_vfn_2_24B8_1(void* thisPtr);  // Cleanup method
+extern void pongNetMessageHolder_vfn_2_24B8_1(pongNetMessageHolder* holder);  // Cleanup method
 extern void rage_free(void* ptr);                         // Memory deallocator
 
 /**
@@ -3818,7 +3818,7 @@ void pongNetMessageHolder_vfn_0_4F68_1(void* thisPtr, uint32_t shouldFree) {
     *(void**)(obj + 0) = (void*)0x820701F8;  // g_pongNetMessageHolderVtable
     
     // Call cleanup method (vfn_2)
-    pongNetMessageHolder_vfn_2_24B8_1(thisPtr);
+    pongNetMessageHolder_vfn_2_24B8_1(reinterpret_cast<pongNetMessageHolder*>(thisPtr));
     
     // Set base class vtable
     *(void**)(obj + 0) = (void*)0x8206FA88;  // g_pongNetMessageHolderBaseVtable
@@ -4137,4 +4137,154 @@ void pongNetMessageHolder_vfn_1_1FA8_1(pongNetMessageHolder* holder) {
     } else {
         holder->m_pInternalArray = nullptr;
     }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// pongNetMessageHolder Static Destructor Wrappers — Batch (92B each)
+//
+// Each function is a static destructor wrapper for a global
+// pongNetMessageHolder instance. Pattern:
+//   1. Set vtable to variant vtable (message-specific)
+//   2. Call cleanup vfn_2 (releases internal arrays)
+//   3. Set vtable to base class vtable (0x8206FA88)
+//   4. Decrement global live instance count
+// ═══════════════════════════════════════════════════════════════════════════
+
+extern void pongNetMessageHolder_vfn_2(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_vfn_2_07A8_1(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_vfn_2_FF38_1(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_vfn_2_FFF8_1(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_vfn_2_0638_1(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_vfn_2_0260_1(pongNetMessageHolder* holder);
+extern void pongNetMessageHolder_vfn_2_04D0_1(pongNetMessageHolder* holder);
+
+// ===========================================================================
+// pongNetMessageHolder_4238_w @ 0x82584238 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D0FFC.
+// ===========================================================================
+void pongNetMessageHolder_4238_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D0FFCu);
+    holder->vtable = reinterpret_cast<void**>(0x8207007Cu);
+    pongNetMessageHolder_vfn_2(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_4298_w @ 0x82584298 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D1014.
+// ===========================================================================
+void pongNetMessageHolder_4298_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D1014u);
+    holder->vtable = reinterpret_cast<void**>(0x82070090u);
+    pongNetMessageHolder_vfn_2_0868_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_42F8_w @ 0x825842F8 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D102C.
+// ===========================================================================
+void pongNetMessageHolder_42F8_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D102Cu);
+    holder->vtable = reinterpret_cast<void**>(0x820700A4u);
+    pongNetMessageHolder_vfn_2_07A8_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_43B8_w @ 0x825843B8 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D105C.
+// ===========================================================================
+void pongNetMessageHolder_43B8_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D105Cu);
+    holder->vtable = reinterpret_cast<void**>(0x820700CCu);
+    pongNetMessageHolder_vfn_2_24B8_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_4418_w @ 0x82584418 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D1074.
+// ===========================================================================
+void pongNetMessageHolder_4418_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D1074u);
+    holder->vtable = reinterpret_cast<void**>(0x820700E0u);
+    pongNetMessageHolder_vfn_2_FF38_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_4478_w @ 0x82584478 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D108C.
+// ===========================================================================
+void pongNetMessageHolder_4478_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D108Cu);
+    holder->vtable = reinterpret_cast<void**>(0x820700F4u);
+    pongNetMessageHolder_vfn_2_FFF8_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_44D8_w @ 0x825844D8 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D10A4.
+// ===========================================================================
+void pongNetMessageHolder_44D8_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D10A4u);
+    holder->vtable = reinterpret_cast<void**>(0x82070108u);
+    pongNetMessageHolder_vfn_2_0638_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_4538_w @ 0x82584538 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D10BC.
+// ===========================================================================
+void pongNetMessageHolder_4538_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D10BCu);
+    holder->vtable = reinterpret_cast<void**>(0x8207011Cu);
+    pongNetMessageHolder_vfn_2_0260_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_4598_w @ 0x82584598 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D10D4.
+// ===========================================================================
+void pongNetMessageHolder_4598_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D10D4u);
+    holder->vtable = reinterpret_cast<void**>(0x82070130u);
+    pongNetMessageHolder_vfn_2_07A8_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+}
+
+// ===========================================================================
+// pongNetMessageHolder_45F8_w @ 0x825845F8 | size: 0x5C
+//
+// Static dtor wrapper for the holder instance at 0x825D10EC.
+// ===========================================================================
+void pongNetMessageHolder_45F8_w() {
+    auto* holder = reinterpret_cast<pongNetMessageHolder*>(0x825D10ECu);
+    holder->vtable = reinterpret_cast<void**>(0x82070144u);
+    pongNetMessageHolder_vfn_2_04D0_1(holder);
+    holder->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
 }
