@@ -1953,3 +1953,184 @@ uint32_t msgMsgSink::QueryConnectionStatus(uint32_t* outStatus) {
     RtlLeaveCriticalSection(criticalSection);
     return 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * GROUP 23: msgMsgSink vtable dispatch thunks (8-196B)
+ * Small vtable methods: this-adjustment thunks, field accessors,
+ * and locked message buffer operations.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// External callees for group 23
+extern void msgMsgSink_5098_g(void* self, uint32_t mode);
+extern void msgMsgSink_EC28_g(void* self, uint32_t param1, uint32_t param2, uint32_t param3);
+extern void msgMsgSink_7970_w(void* self);
+extern void msgMsgSink_7DD8_w(void* self);
+extern void msgMsgSink_8638_w(void* self);
+extern void* rage_01B8(uint32_t size, uint32_t allocatorId);
+extern void _locale_register(void* obj, uint32_t allocatorId);
+
+// msgMsgSink::NotifySessionEvent() [vtable slot 14 @ 0x82455540 | 12B]
+// Adjusts this by -4 to reach the parent object, then tail-calls
+// msgMsgSink_5098_g with mode=1 to notify a session event.
+// MATCH: 0x82455540
+void msgMsgSink::NotifySessionEvent() {
+    void* parent = (uint8_t*)this - 4;
+    msgMsgSink_5098_g(parent, 1);
+}
+
+// msgMsgSink::GetPeerDataSize() [vtable slot 12 @ 0x82455630 | 12B]
+// Returns the 16-bit peer data size field from the descriptor object
+// at offset +28, reading the uint16 at descriptor+10.
+// MATCH: 0x82455630
+uint16_t msgMsgSink::GetPeerDataSize() {
+    void* descriptor = *(void**)((uint8_t*)this + 28);
+    return *(uint16_t*)((uint8_t*)descriptor + 10);
+}
+
+// msgMsgSink::GetPeerDataPtr() [vtable slot 11 @ 0x82455688 | 12B]
+// Returns a pointer to the peer data region within the descriptor
+// object at offset +28, computed as descriptor+10.
+// MATCH: 0x82455688
+void* msgMsgSink::GetPeerDataPtr() {
+    uint8_t* descriptor = *(uint8_t**)((uint8_t*)this + 28);
+    return descriptor + 10;
+}
+
+// msgMsgSink::DispatchEventDefault() [vtable slot 42 @ 0x8244ED38 | 48B]
+// Calls msgMsgSink_EC28_g with default parameters (0, 0, 1) to dispatch
+// an event with a single-shot flag, then returns 0 (success).
+// MATCH: 0x8244ED38
+uint32_t msgMsgSink::DispatchEventDefault() {
+    msgMsgSink_EC28_g(this, 0, 0, 1);
+    return 0;
+}
+
+// msgMsgSink::ReplaceMessageObject() [vtable slot 21 @ 0x8244EE90 | 120B]
+// Replaces the current message object. If the new object (param) is
+// non-null, calls vtable[1] (scalar deleting destructor) on it, passing
+// this (or null if base offset is zero). Then destroys the sub-object
+// at this-8 offset +12 via its destructor with delete flag=1.
+// MATCH: 0x8244EE90
+void msgMsgSink::ReplaceMessageObject(void* newObj) {
+    if (newObj == nullptr) {
+        return;
+    }
+
+    uint8_t* baseObj = (uint8_t*)this - 8;
+
+    // Call vtable[1] (scalar deleting destructor) on newObj
+    void* context = (baseObj != nullptr) ? (void*)this : nullptr;
+    typedef void (*ScalarDtorFn)(void*, void*);
+    void** vt = *(void***)newObj;
+    ScalarDtorFn scalarDtor = (ScalarDtorFn)vt[1];
+    scalarDtor(newObj, context);
+
+    // If base object is null, skip cleanup
+    if (baseObj == nullptr) {
+        return;
+    }
+
+    // Destroy the nested object at baseObj+12 with delete flag
+    void* nested = baseObj + 12;
+    typedef void (*DtorFn)(void*, uint32_t);
+    void** nestedVt = *(void***)nested;
+    DtorFn dtor = (DtorFn)nestedVt[0];
+    dtor(nested, 1);
+}
+
+// msgMsgSink::ForwardToMatchHandler() [vtable slot 41 @ 0x82456688 | 8B]
+// Adjusts this by -12 to reach the containing network object, then
+// tail-calls msgMsgSink_7970_w for match handling.
+// MATCH: 0x82456688
+void msgMsgSink::ForwardToMatchHandler() {
+    void* outer = (uint8_t*)this - 12;
+    msgMsgSink_7970_w(outer);
+}
+
+// msgMsgSink::ForwardToLeaderboard() [vtable slot 77 @ 0x82457DD0 | 8B]
+// Adjusts this by -8 to reach the containing object, then tail-calls
+// msgMsgSink_7DD8_w for leaderboard data processing.
+// MATCH: 0x82457DD0
+void msgMsgSink::ForwardToLeaderboard() {
+    void* outer = (uint8_t*)this - 8;
+    msgMsgSink_7DD8_w(outer);
+}
+
+// msgMsgSink::ForwardToStatsHandler() [vtable slot 95 @ 0x82457FF0 | 8B]
+// Adjusts this by -8 to reach the containing object, then tail-calls
+// msgMsgSink_8638_w for stats handling.
+// MATCH: 0x82457FF0
+void msgMsgSink::ForwardToStatsHandler() {
+    void* outer = (uint8_t*)this - 8;
+    msgMsgSink_8638_w(outer);
+}
+
+// msgMsgSink::ForwardToSessionSync() [vtable slot 116 @ 0x824584F0 | 8B]
+// Adjusts this by -12 to reach the containing object, then tail-calls
+// msgMsgSink_vfn_121 for session synchronization.
+// MATCH: 0x824584F0
+void msgMsgSink::ForwardToSessionSync() {
+    void* outer = (uint8_t*)this - 12;
+    extern void msgMsgSink_vfn_121(void*);
+    msgMsgSink_vfn_121(outer);
+}
+
+// msgMsgSink::SetMessageBuffer() [vtable slot 34 @ 0x8244E1D8 | 196B]
+// Thread-safe message buffer allocation and installation.
+// Enters critical section from session manager at +56, allocates a
+// buffer of the required size (derived from the message header byte
+// at param+0, shifted left by 3), copies data from param+4 into it,
+// registers the buffer with the locale system if a previous buffer
+// existed, stores the new buffer at +332 and header byte at +328,
+// notifies the session via msgMsgSink_3E68_g, sets the dirty flag
+// at +336, and leaves the critical section. Returns 0 on success,
+// or 0x8007000E on allocation failure.
+// MATCH: 0x8244E1D8
+uint32_t msgMsgSink::SetMessageBuffer(void* param) {
+    // Get critical section from session manager at +56
+    void* sessionMgr = *(void**)((uint8_t*)this + 56);
+    void* criticalSection = (uint8_t*)sessionMgr + 144;
+
+    extern void RtlEnterCriticalSection(void*);
+    extern void RtlLeaveCriticalSection(void*);
+    RtlEnterCriticalSection(criticalSection);
+
+    // Compute allocation size: header byte << 3
+    uint8_t headerByte = *(uint8_t*)param;
+    uint32_t allocSize = (uint32_t)headerByte << 3;
+
+    // Allocate buffer with allocator ID 0x20840001
+    uint32_t result = 0;
+    void* buffer = rage_01B8(allocSize, 0x20840001);
+
+    if (buffer == nullptr) {
+        result = (uint32_t)0x8007000E;
+        RtlLeaveCriticalSection(criticalSection);
+        return result;
+    }
+
+    // Copy data from param+4 into the allocated buffer
+    void* srcData = *(void**)((uint8_t*)param + 4);
+    memcpy(buffer, srcData, allocSize);
+
+    // If a previous buffer existed at +332, register with locale system
+    void* prevBuffer = *(void**)((uint8_t*)this + 332);
+    if (prevBuffer != nullptr) {
+        _locale_register(prevBuffer, 0x20840001);
+    }
+
+    // Store new buffer and header byte
+    *(void**)((uint8_t*)this + 332) = buffer;
+    uint8_t tag = *(uint8_t*)param;
+    *(uint8_t*)((uint8_t*)this + 328) = tag;
+
+    // Notify session
+    void* session = *(void**)((uint8_t*)this + 52);
+    msgMsgSink_3E68_g(session, *(uint32_t*)((uint8_t*)this + 328));
+
+    // Set dirty flag
+    *(uint32_t*)((uint8_t*)this + 336) = 1;
+
+    RtlLeaveCriticalSection(criticalSection);
+    return result;
+}

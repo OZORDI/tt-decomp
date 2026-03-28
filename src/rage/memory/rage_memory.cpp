@@ -593,3 +593,477 @@ void atSingleton_89F8_2hr(void* pThis, uint32_t param)
         currentNode = *(uint32_t*)(currentNode + 4);
     }
 }
+
+/* ── External dependencies for atSingleton batch 2 ───────────────────────── */
+
+/* Array element destructor @ 0x820E7628 */
+extern void atSingleton_dtor_7628(void* element);
+
+/* Free memory @ 0x820C00C0 */
+extern void rage_free_00C0(void* ptr);
+
+/* Find singleton ownership @ 0x820F90D0 */
+extern uint8_t atSingleton_Find_90D0(void* ptr);
+
+/* Heap allocator @ 0x820DEC88 */
+extern void* xe_EC88(uint32_t size);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// atSingleton Functions — Batch 2
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * atSingleton_9C18_2hr @ 0x820D9C18 | size: 0x54 (84 bytes)
+ *
+ * Checks a global singleton state flag to determine if a feature is enabled.
+ * Follows a chain of pointers from a global data pointer, reads a flags word,
+ * and returns true if bit 2 (0x4) is set AND bit 0 is clear.
+ *
+ * @return  1 if the feature flag is enabled, 0 otherwise
+ */
+uint8_t atSingleton_9C18_2hr() {
+    // Load global data pointer from 0x8271A2F8
+    uint32_t* globalPtr = *(uint32_t**)0x8271A2F8;
+
+    // Follow pointer chain: +20 -> +9736 -> +0
+    uint32_t* level1 = *(uint32_t**)((char*)globalPtr + 20);
+    uint32_t* level2 = *(uint32_t**)((char*)level1 + 9736);
+    uint32_t flags = *(uint32_t*)level2;
+
+    // If bit 0 is set, return 0 (feature disabled)
+    if (flags & 0x1) {
+        return 0;
+    }
+
+    // Check if bit 2 is set
+    if (flags & 0x4) {
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * atSingleton_74B8 @ 0x820E74B8 | size: 0x68 (104 bytes)
+ *
+ * Destroys an array of 8-byte elements by calling a destructor on each
+ * element in reverse order, then frees the backing allocation.
+ * The array header stores the count at offset -4 from the data pointer.
+ *
+ * @param obj  Pointer to array descriptor with count at +6 and data at +0
+ */
+void atSingleton_74B8(void* obj) {
+    uint16_t count = *(uint16_t*)((char*)obj + 6);
+    if (count == 0) {
+        return;
+    }
+
+    uint32_t* dataPtr = *(uint32_t**)obj;
+    if (dataPtr == nullptr) {
+        return;
+    }
+
+    // Header is at dataPtr - 4, stores element count
+    uint32_t* header = (uint32_t*)((char*)dataPtr - 4);
+    uint32_t elementCount = *header;
+
+    // Calculate end of array: base + count * 8
+    uint8_t* arrayEnd = (uint8_t*)dataPtr + (elementCount * 8);
+
+    // Destroy elements in reverse order
+    for (int32_t i = (int32_t)elementCount - 1; i >= 0; i--) {
+        arrayEnd -= 8;
+        atSingleton_dtor_7628(arrayEnd);
+    }
+
+    // Free the allocation (header is the allocation base)
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_8620 @ 0x820C8620 | size: 0x78 (120 bytes)
+ *
+ * Destroys an array of objects with virtual destructors. Each element is
+ * 80 bytes, and destruction proceeds in reverse order. Objects are accessed
+ * via a vtable pointer at offset +0, and the virtual destructor is called
+ * with a "deleting" flag of 1.
+ *
+ * @param data  Pointer to first element (allocation header at data - 16)
+ */
+void atSingleton_8620(void* data) {
+    uint8_t* base = (uint8_t*)data;
+    uint32_t* header = (uint32_t*)(base - 16);
+    uint32_t elementCount = *header;
+
+    int32_t remaining = (int32_t)elementCount - 1;
+
+    if (remaining >= 0) {
+        // Calculate stride: count + count*4 = count*5, then *16 = count*80
+        // End pointer = data + count*80 + 64
+        uint32_t totalStride = (elementCount + elementCount * 4) * 16;
+        uint8_t* cursor = base + totalStride + 64;
+
+        for (int32_t i = remaining; i >= 0; i--) {
+            cursor -= 80;
+            void* objPtr = *(void**)cursor;
+            if (objPtr != nullptr) {
+                // Call virtual destructor (vtable slot 0) with deleting=1
+                uint32_t* vtable = *(uint32_t**)objPtr;
+                typedef void (*VDtorFn)(void*, int);
+                VDtorFn vdtor = (VDtorFn)vtable[0];
+                vdtor(objPtr, 1);
+            }
+        }
+    }
+
+    // Free allocation base
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_5F48_2h @ 0x82125F48 | size: 0x74 (116 bytes)
+ *
+ * Finds the last (rightmost) node in a binary tree by following the right
+ * child pointer chain. If the initial right child is null, walks up the
+ * parent chain to find the nearest ancestor where we came from the left.
+ *
+ * @param unused  Unused first parameter
+ * @param node    Starting tree node with parent at +52, right child at +56, left child at +60
+ * @return        Pointer to the found node, or nullptr if tree is empty
+ */
+void* atSingleton_5F48_2h(void* unused, void* node) {
+    (void)unused;
+    uint8_t* current = (uint8_t*)node;
+
+    // Check right child first (offset +60)
+    void* rightChild = *(void**)((char*)current + 60);
+    if (rightChild != nullptr) {
+        // Follow right child's left-child chain to find in-order successor
+        uint8_t* cursor = (uint8_t*)rightChild;
+        void* next = *(void**)(cursor + 56);
+        while (next != nullptr) {
+            cursor = (uint8_t*)next;
+            next = *(void**)(cursor + 56);
+        }
+        return cursor;
+    }
+
+    // No right child - walk up parent chain
+    while (true) {
+        void* parent = *(void**)((char*)current + 52);
+        if (parent == nullptr) {
+            break;
+        }
+
+        // Check if current is the right child of parent
+        void* parentRight = *(void**)((char*)parent + 56);
+        if (parentRight == current) {
+            return (void*)parent;
+        }
+
+        current = (uint8_t*)parent;
+    }
+
+    return nullptr;
+}
+
+/**
+ * atSingleton_BF40_2h @ 0x8212BF40 | size: 0x74 (116 bytes)
+ *
+ * Reads or writes an animation property value based on a direction flag.
+ * If the flag at offset +4 is non-zero (read mode), calls vtable slot 39
+ * to read a uint16 property by index. If zero (write mode), calls vtable
+ * slot 3 to get a uint16 value and stores it to the output.
+ *
+ * @param wrapper  Object with data pointer at +0 and direction flag at +4
+ * @param value    Pointer to uint16 value (read source or write destination)
+ */
+void atSingleton_BF40_2h(void* wrapper, void* value) {
+    uint8_t direction = *(uint8_t*)((char*)wrapper + 4);
+    void* obj = *(void**)wrapper;
+
+    if (direction != 0) {
+        // Read mode: call vtable slot 39 with property index from value
+        uint32_t* vtable = *(uint32_t**)obj;
+        uint16_t index = *(uint16_t*)value;
+        typedef void (*ReadFn)(void*, uint16_t);
+        ReadFn readFunc = (ReadFn)vtable[39];
+        readFunc(obj, index);
+        return;
+    }
+
+    // Write mode: call vtable slot 3 to get uint16 value
+    uint32_t* vtable = *(uint32_t**)obj;
+    typedef uint16_t (*GetFn)(void*);
+    GetFn getFunc = (GetFn)vtable[3];
+    uint16_t result = getFunc(obj);
+    *(uint16_t*)value = result;
+}
+
+/**
+ * atSingleton_8D30_p42 @ 0x82118D30 | size: 0x88 (136 bytes)
+ *
+ * Formats a player name string by querying a virtual method on the name
+ * provider object, then stores the result into a fixed-size buffer.
+ * Clears a 64-byte stack buffer, calls vtable slot 1 to retrieve the
+ * name string, then stores the result byte at offset +444.
+ *
+ * @param obj      Target object receiving the formatted name at offset +444
+ * @param wrapper  Wrapper with name provider at offset +4
+ */
+void atSingleton_8D30_p42(void* obj, void* wrapper) {
+    char nameBuffer[64];
+
+    // Zero-initialize the buffer
+    nameBuffer[0] = 0;
+    memset(nameBuffer + 1, 0, 63);
+
+    // Get name provider from wrapper and call vtable slot 1
+    void* nameProvider = *(void**)((char*)wrapper + 4);
+    uint32_t* vtable = *(uint32_t**)nameProvider;
+    typedef void (*GetNameFn)(void*, char*, int);
+    GetNameFn getName = (GetNameFn)vtable[1];
+    getName(nameProvider, nameBuffer, 64);
+
+    // Load global string table and call format function at offset +12
+    uint32_t* globalBase = *(uint32_t**)0x82600000;
+    void* stringTable = (void*)((char*)globalBase + 908);
+    typedef uint8_t (*FormatFn)(void*, char*);
+    uint32_t* stVtable = *(uint32_t**)((char*)stringTable);
+    FormatFn formatFunc = (FormatFn)stVtable[3];
+    uint8_t result = formatFunc(stringTable, nameBuffer);
+
+    // Store result
+    *(uint8_t*)((char*)obj + 444) = result;
+}
+
+/**
+ * atSingleton_DCE8_gen @ 0x8212DCE8 | size: 0xA4 (164 bytes)
+ *
+ * Destroys an array of 20-byte resource entries. For each entry with a
+ * non-zero reference count (offset +8) and a valid data pointer (offset +0),
+ * checks if the pointer is a registered singleton. If not, deallocates it
+ * through the global singleton manager's vtable slot 2.
+ * Frees the array backing allocation when done.
+ *
+ * @param data  Pointer to first element (allocation header at data - 4)
+ */
+void atSingleton_DCE8_gen(void* data) {
+    uint8_t* base = (uint8_t*)data;
+    uint32_t* header = (uint32_t*)(base - 4);
+    uint32_t elementCount = *header;
+
+    int32_t remaining = (int32_t)elementCount - 1;
+
+    if (remaining >= 0) {
+        // Calculate end: count + count*4 = count*5, then *4 = count*20
+        // Cursor starts at data + count*20 + 8
+        uint32_t totalSize = (elementCount + elementCount * 4) * 4;
+        uint8_t* cursor = base + totalSize + 8;
+
+        for (int32_t i = remaining; i >= 0; i--) {
+            cursor -= 20;
+            int32_t refCount = *(int32_t*)(cursor + 8);
+            if (refCount != 0) {
+                void* ptr = *(void**)cursor;
+                if (ptr == nullptr) {
+                    continue;
+                }
+
+                uint8_t isSingleton = atSingleton_Find_90D0(ptr);
+                if (isSingleton != 0) {
+                    continue;
+                }
+
+                // Deallocate through global singleton manager
+                uint32_t* sdaBase = *(uint32_t**)0x82600000;
+                void* manager = *(void**)((char*)sdaBase + 4);
+                uint32_t* mgrVtable = *(uint32_t**)manager;
+                typedef void (*DeallocFn)(void*, void*);
+                DeallocFn dealloc = (DeallocFn)mgrVtable[2];
+                dealloc(manager, ptr);
+            }
+        }
+    }
+
+    // Free allocation base
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_DB60 @ 0x8212DB60 | size: 0xB4 (180 bytes)
+ *
+ * Destroys an array of 20-byte compound entries. Each entry may contain
+ * a sub-array at offset +8 that is cleaned up via atSingleton_DCE8_gen,
+ * and a data pointer at offset +0 that is deallocated if not a singleton.
+ * Frees the backing allocation when done.
+ *
+ * @param data  Pointer to first element (allocation header at data - 4)
+ */
+void atSingleton_DB60(void* data) {
+    uint8_t* base = (uint8_t*)data;
+    uint32_t* header = (uint32_t*)(base - 4);
+    uint32_t elementCount = *header;
+
+    int32_t remaining = (int32_t)elementCount - 1;
+
+    // Calculate end pointer
+    uint32_t totalSize = (elementCount + elementCount * 4) * 4;
+    uint8_t* cursor = base + totalSize;
+
+    for (int32_t i = remaining; i >= 0; i--) {
+        cursor -= 20;
+
+        // Check if sub-array needs cleanup (refcount at +16)
+        int32_t subRefCount = *(int32_t*)(cursor + 16);
+        if (subRefCount != 0) {
+            void* subArray = *(void**)(cursor + 8);
+            if (subArray != nullptr) {
+                atSingleton_DCE8_gen(subArray);
+            }
+        }
+
+        // Check main data pointer
+        void* ptr = *(void**)cursor;
+        if (ptr != nullptr) {
+            uint8_t isSingleton = atSingleton_Find_90D0(ptr);
+            if (isSingleton == 0) {
+                // Deallocate through global singleton manager
+                uint32_t* sdaBase = *(uint32_t**)0x82600000;
+                void* manager = *(void**)((char*)sdaBase + 4);
+                uint32_t* mgrVtable = *(uint32_t**)manager;
+                typedef void (*DeallocFn)(void*, void*);
+                DeallocFn dealloc = (DeallocFn)mgrVtable[2];
+                dealloc(manager, ptr);
+            }
+        }
+    }
+
+    // Free allocation base
+    rage_free_00C0(header);
+}
+
+/**
+ * atSingleton_DC18 @ 0x8212DC18 | size: 0xCC (204 bytes)
+ *
+ * Assignment operator for a dynamic array of uint32 elements.
+ * Copies count and data from source to destination, reallocating the
+ * backing buffer if needed. If the source has elements, allocates new
+ * storage via xe_EC88 and copies element-by-element.
+ *
+ * @param dst  Destination array descriptor (data at +0, count at +4, capacity at +8)
+ * @param src  Source array descriptor
+ * @return     Pointer to destination
+ */
+void* atSingleton_DC18(void* dst, void* src) {
+    if (dst == src) {
+        return dst;
+    }
+
+    uint8_t* dstBase = (uint8_t*)dst;
+    uint8_t* srcBase = (uint8_t*)src;
+
+    // Free existing data if allocated
+    int32_t dstCapacity = *(int32_t*)(dstBase + 8);
+    if (dstCapacity != 0) {
+        void* dstData = *(void**)dstBase;
+        rage_free_00C0(dstData);
+    }
+
+    // Copy count and set capacity
+    int32_t srcCount = *(int32_t*)(srcBase + 4);
+    *(int32_t*)(dstBase + 4) = srcCount;
+    *(int32_t*)(dstBase + 8) = srcCount;
+
+    if (srcCount != 0) {
+        // Allocate new buffer: count * 4 bytes, with overflow check
+        uint32_t allocSize = (uint32_t)srcCount * 4;
+        if ((uint32_t)srcCount > 0x3FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+        void* newData = xe_EC88(allocSize);
+        *(void**)dstBase = newData;
+    } else {
+        *(void**)dstBase = nullptr;
+    }
+
+    // Copy elements
+    int32_t count = *(int32_t*)(dstBase + 4);
+    if (count > 0) {
+        for (int32_t i = 0; i < count; i++) {
+            uint32_t* srcData = *(uint32_t**)srcBase;
+            uint32_t* dstData = *(uint32_t**)dstBase;
+            dstData[i] = srcData[i];
+            count = *(int32_t*)(dstBase + 4);
+        }
+    }
+
+    return dst;
+}
+
+/**
+ * atSingleton_F5C0_h @ 0x8212F5C0 | size: 0xD8 (216 bytes)
+ *
+ * Resizes a dynamic array of uint16 elements. Allocates a new buffer,
+ * copies existing elements (up to the minimum of old and new counts),
+ * then frees the old buffer through the singleton manager if it is not
+ * a registered singleton.
+ *
+ * @param arrayDesc     Array descriptor (data at +0, count at +4, capacity at +8)
+ * @param newCapacity   New number of elements
+ */
+void atSingleton_F5C0_h(void* arrayDesc, int32_t newCapacity) {
+    uint8_t* desc = (uint8_t*)arrayDesc;
+    void* newData = nullptr;
+
+    // Allocate new buffer if capacity > 0
+    if (newCapacity > 0) {
+        uint32_t allocSize = (uint32_t)newCapacity * 2;
+        if ((uint32_t)newCapacity > 0x7FFFFFFF) {
+            allocSize = (uint32_t)-1;
+        }
+        newData = xe_EC88(allocSize);
+    }
+
+    // Determine copy count: min(newCapacity, oldCount)
+    int32_t oldCount = *(int32_t*)(desc + 4);
+    int32_t copyCount = newCapacity;
+    if (newCapacity >= oldCount) {
+        copyCount = oldCount;
+    }
+
+    // Copy existing elements (uint16 each)
+    if (copyCount > 0) {
+        uint16_t* oldBuf = *(uint16_t**)desc;
+        uint16_t* newBuf = (uint16_t*)newData;
+        for (int32_t i = copyCount; i > 0; i--) {
+            *newBuf++ = *oldBuf++;
+        }
+    }
+
+    // Save old data pointer before updating
+    void* oldData = *(void**)desc;
+
+    // Update descriptor
+    *(int32_t*)(desc + 8) = newCapacity;
+    *(int32_t*)(desc + 4) = copyCount;
+
+    // Free old buffer if allocated
+    if (oldData != nullptr) {
+        uint8_t isSingleton = atSingleton_Find_90D0(oldData);
+        if (isSingleton != 0) {
+            *(void**)desc = newData;
+            return;
+        }
+
+        // Deallocate through global singleton manager
+        uint32_t* sdaBase = *(uint32_t**)0x82600000;
+        void* manager = *(void**)((char*)sdaBase + 4);
+        uint32_t* mgrVtable = *(uint32_t**)manager;
+        typedef void (*DeallocFn)(void*, void*);
+        DeallocFn dealloc = (DeallocFn)mgrVtable[2];
+        dealloc(manager, oldData);
+    }
+
+    *(void**)desc = newData;
+}
