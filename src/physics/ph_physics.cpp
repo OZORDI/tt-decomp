@@ -2593,13 +2593,13 @@ phObject::~phObject() {
 // Initializes object state and memory references
 // ─────────────────────────────────────────────────────────────────────────────
 void phObject::ResetState() {
-    m_field_500 = 0;
+    m_nViewCount = 0;
     m_pResource = nullptr;
     m_field_504 = 1;
     m_field_512 = 0;
     m_field_520 = 0;
-    m_pChild4 = 0;
-    m_pChild8 = 1;
+    m_field_524 = 0;
+    m_field_528 = 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2712,9 +2712,9 @@ void* phObject::CreateOutputViews() {
 // Disposes or releases sub-objects
 // ─────────────────────────────────────────────────────────────────────────────
 void phObject::ReleaseViews() {
-    m_field_132 = this;
-    if (m_field_500 != 0) {
-        m_field_500 = 0;
+    m_pParent = this;
+    if (m_nViewCount != 0) {
+        m_nViewCount = 0;
     }
     
     if (m_pChild != nullptr) {
@@ -6926,4 +6926,728 @@ void* phInst::SetBoundScale_Locked(float scale) {
     void* result = ((VFn)vt[22])(bound, scale);
     RtlLeaveCriticalSection(g_phInstCritSection);
     return result;
+}
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phInst — Thread-safe accessors and utility functions (batch 3)
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * rage::phInst::GetTypeIndex_Locked @ 0x824608B8 | size: 0x64
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * calls vtable slot 2 on this instance (returns a type index or class ID),
+ * then releases the lock. Returns the virtual call result.
+ *
+ * Pattern: EnterCS -> VCALL(this, slot 2) -> LeaveCS -> return result
+ */
+void* phInst::GetTypeIndex_Locked() {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    typedef void* (*VFn)(void*);
+    void** vt = *(void***)this;
+    void* result = ((VFn)vt[2])(this);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::CallVirtual12_Locked @ 0x82460AA0 | size: 0x54
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * calls vtable slot 12 on this instance with a parameter, then releases
+ * the lock. Returns the virtual call result.
+ *
+ * Pattern: EnterCS -> VCALL(this, slot 12, param) -> LeaveCS -> return
+ */
+void* phInst::CallVirtual12_Locked(void* param) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    typedef void* (*VFn)(void*, void*);
+    void** vt = *(void***)this;
+    void* result = ((VFn)vt[12])(this, param);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::GetBoundSlot12_Locked @ 0x82460CB0 | size: 0x64
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * loads the bound pointer from offset +76 (0x4C), calls vtable slot 12
+ * on that bound object, then releases the lock. Returns the result.
+ *
+ * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 12) -> LeaveCS
+ */
+void* phInst::GetBoundSlot12_Locked() {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    void* bound = *(void**)((char*)this + 76);
+    typedef void* (*VFn)(void*);
+    void** vt = *(void***)bound;
+    void* result = ((VFn)vt[12])(bound);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::GetBoundSlot13_Locked @ 0x82460D18 | size: 0x54
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * loads the bound pointer from offset +76 (0x4C), calls vtable slot 13
+ * on that bound with a parameter, then releases the lock.
+ *
+ * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 13, param) -> LeaveCS
+ */
+void* phInst::GetBoundSlot13_Locked(void* param) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    void* bound = *(void**)((char*)this + 76);
+    typedef void* (*VFn)(void*, void*);
+    void** vt = *(void***)bound;
+    void* result = ((VFn)vt[13])(bound, param);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::GetBoundSlot14_Locked @ 0x82460D70 | size: 0x54
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * loads the bound pointer from offset +76 (0x4C), calls vtable slot 14
+ * on that bound with a parameter, then releases the lock.
+ *
+ * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 14, param) -> LeaveCS
+ */
+void* phInst::GetBoundSlot14_Locked(void* param) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    void* bound = *(void**)((char*)this + 76);
+    typedef void* (*VFn)(void*, void*);
+    void** vt = *(void***)bound;
+    void* result = ((VFn)vt[14])(bound, param);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+/**
+ * rage::phInst::GetBoundSlot16_Locked @ 0x82460DC8 | size: 0x54
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * loads the bound pointer from offset +76 (0x4C), calls vtable slot 16
+ * on that bound with a parameter, then releases the lock.
+ *
+ * Pattern: EnterCS -> bound=this[76] -> VCALL(bound, slot 16, param) -> LeaveCS
+ */
+void* phInst::GetBoundSlot16_Locked(void* param) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    void* bound = *(void**)((char*)this + 76);
+    typedef void* (*VFn)(void*, void*);
+    void** vt = *(void***)bound;
+    void* result = ((VFn)vt[16])(bound, param);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+// Global singleton pointer for phInst system manager
+// lbl_825E788C [.data sz:0x4] @ 0x825E788C
+extern "C" void* g_phInstManager;  // @ 0x825E788C
+
+/**
+ * rage::phInst::GetManagerSlot2_Locked @ 0x82460FE8 | size: 0x7C
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * checks if the global phInst manager singleton (g_phInstManager) is valid,
+ * and if so calls vtable slot 2 on it. Returns NULL if the manager is not
+ * initialized. Releases the lock before returning.
+ *
+ * Pattern: EnterCS -> if(!g_phInstManager) { LeaveCS; return 0 }
+ *          -> VCALL(manager, slot 2) -> LeaveCS -> return result
+ */
+void* phInst::GetManagerSlot2_Locked() {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    if (g_phInstManager == NULL) {
+        RtlLeaveCriticalSection(g_phInstCritSection);
+        return NULL;
+    }
+    typedef void* (*VFn)(void*);
+    void** vt = *(void***)g_phInstManager;
+    void* result = ((VFn)vt[2])(g_phInstManager);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return result;
+}
+
+// Forward declaration for dispatch helper
+extern "C" void* ke_9A90(void* manager, void* param);
+
+/**
+ * rage::phInst::DispatchToManager_Locked @ 0x82461168 | size: 0x7C
+ *
+ * Thread-safe accessor that acquires the global phInst critical section,
+ * checks if the global phInst manager singleton is valid, and if so
+ * dispatches to ke_9A90 with the manager and a parameter. Returns
+ * 0x80004005 (E_FAIL) if the manager is not initialized.
+ *
+ * Pattern: EnterCS -> if(!g_phInstManager) { LeaveCS; return 0x80004005 }
+ *          -> ke_9A90(manager, param) -> LeaveCS -> return result
+ */
+uint32_t phInst::DispatchToManager_Locked(void* param) {
+    RtlEnterCriticalSection(g_phInstCritSection);
+    if (g_phInstManager == NULL) {
+        RtlLeaveCriticalSection(g_phInstCritSection);
+        return 0x80004005;  // E_FAIL - manager not initialized
+    }
+    void* result = ke_9A90(g_phInstManager, param);
+    RtlLeaveCriticalSection(g_phInstCritSection);
+    return (uint32_t)(uintptr_t)result;
+}
+
+/**
+ * rage::phInst::ComputeAllocationSize @ 0x82465938 | size: 0x48
+ *
+ * Computes the byte size needed to allocate storage for a phInst with
+ * a given element count. The element count comes from offset +8 of the
+ * instance, but may be capped by a maximum stored at the pointer at
+ * offset +12 (first byte). If the instance's count exceeds the maximum,
+ * the maximum is used instead.
+ *
+ * Formula: size = (count * 3) * 4 + 28
+ * This accounts for 3 uint32_t fields per element plus a 28-byte header.
+ *
+ * Stores the computed size into *outSize and returns 0 (success).
+ */
+int phInst::ComputeAllocationSize(uint32_t* outSize) {
+    uint8_t count = *(uint8_t*)((char*)this + 8);
+    void* maxPtr = *(void**)((char*)this + 12);
+
+    if (maxPtr != NULL) {
+        uint8_t maxCount = *(uint8_t*)maxPtr;
+        if ((uint32_t)count > (uint32_t)maxCount) {
+            count = maxCount;
+        }
+    }
+
+    // size = (count * 3) * 4 + 28
+    uint32_t stride = (uint32_t)count * 3;
+    uint32_t size = stride * 4 + 28;
+    *outSize = size;
+    return 0;
+}
+
+/**
+ * rage::phInst::GetAllocator @ 0x82465D40 | size: 0x20
+ *
+ * Given a pointer to an allocation block, adjusts back by 8 bytes to
+ * reach the block header, loads the vtable, and tail-calls vtable
+ * slot 1 (the GetAllocator method). If the input pointer is NULL,
+ * passes NULL directly (which will fault - caller must ensure non-NULL).
+ *
+ * Assembly: cmplwi r3,0; addi r3,r3,-8; lwz vtable; call slot 1
+ */
+void* phInst::GetAllocator(void* blockPtr) {
+    if (blockPtr == NULL) {
+        blockPtr = NULL;
+    } else {
+        blockPtr = (char*)blockPtr - 8;
+    }
+    typedef void* (*VFn)(void*);
+    void** vt = *(void***)blockPtr;
+    return ((VFn)vt[1])(blockPtr);
+}
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ph_ free functions — Batch 2: Physics utility and constructor routines
+// 10 functions, 88-192 bytes each
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External function declarations (Batch 2)
+extern void parStreamInXml_ReadChar(void* stream);         // parStreamInXml_3308_gen
+extern void ke_1B00(void* node);                           // intrusive list node init
+extern void SinglesNetworkClient_8108_gen(void* obj);      // datBase init
+extern void phArchetype_InitDefaults(void* thisPtr);       // phArchetype_vfn_3
+extern void* phArchetype_AllocateInstance(void* thisPtr);   // ph_9EC0_1
+extern void phBoundGeometry_Constructor(void* thisPtr, void* param);  // ph_0F78 (intermediate ctor)
+extern void phBoundGeometry_InitSearchTree(void* tree);     // ph_FA58
+extern void ph_CEE0(void* bound, int doFree);              // phBound release/free
+extern void ph_6FC8_FindBound(void* pool, const char* name); // ph_6FC8
+extern void ph_E010_CreateBound(void* pool, void* config, const char* name); // ph_E010
+
+// External globals (Batch 2)
+extern float g_phSpringDamping;           // @ 0x825C807C (.data)
+extern const float g_phZeroThreshold;     // @ lbl_8202D10C (.rdata)
+extern const float g_phOneFloat;          // @ lbl_8202D110 (.rdata)
+extern const float g_phMassThreshold;     // @ lbl_8202D10C (.rdata, -12020 from base)
+
+// ---------------------------------------------------------------------------
+// phBound_SpringDampenToward @ 0x822B0690 | size: 0xC0 (192 bytes)
+//
+// Moves a 3D point (r3) toward a target (r4) with spring-like damping.
+// Computes the difference vector, measures its squared length, and if above
+// a threshold, normalizes it and scales by a damped factor. The result is
+// added to the target position and stored back. If the distance is below
+// the threshold, applies a fixed scale factor and adds to target.
+//
+// Parameters:
+//   r3 = float[4]* currentPos (in/out)
+//   r4 = float[4]* targetPos
+//   f1 = damping factor
+// ---------------------------------------------------------------------------
+// ph_0690
+void phBound_SpringDampenToward(float* currentPos, const float* targetPos, float dampFactor) {
+    // Compute difference: delta = current - target
+    float dx = currentPos[0] - targetPos[0];
+    float dy = currentPos[1] - targetPos[1];
+    float dz = currentPos[2] - targetPos[2];
+
+    // Store delta as current position initially
+    currentPos[0] = dx;
+    currentPos[1] = dy;
+    currentPos[2] = dz;
+
+    // Compute squared length of delta
+    float distSq = dx * dx + dy * dy + dz * dz;
+
+    if (distSq > 0.0f) {
+        // Distance is non-negligible
+        float oneF = 1.0f;
+        if (distSq != oneF) {
+            float dist = sqrtf(distSq);
+            oneF = 1.0f / dist;
+        }
+        // Scale: factor = 1/dist * damping + 1.0
+        float scale = oneF * g_phSpringDamping + 1.0f;
+
+        // Scale delta by combined factor
+        currentPos[0] = dx * scale;
+        currentPos[1] = dy * scale;
+        currentPos[2] = dz * scale;
+
+        // Add target back: result = scaled_delta + target
+        currentPos[0] += targetPos[0];
+        currentPos[1] += targetPos[1];
+        currentPos[2] += targetPos[2];
+    } else {
+        // Distance negligible — just use fixed scale
+        float fixedScale = *(float*)0x825CD184;  // fixed fallback scale
+
+        currentPos[0] = dx * fixedScale;
+        currentPos[1] = dy * fixedScale;
+        currentPos[2] = dz * fixedScale;
+
+        currentPos[0] += targetPos[0];
+        currentPos[1] += targetPos[1];
+        currentPos[2] += targetPos[2];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// parStreamInXml_ReadNextChar @ 0x822E53F8 | size: 0x68 (104 bytes)
+//
+// Reads the next character from an XML parser stream. If there are buffered
+// characters remaining (field +24 > 0), returns the next one from the buffer
+// at offset +28. Otherwise, reads from the underlying stream object at +12.
+// If the character is a newline (0x0A), increments the line counter at +8.
+//
+// Parameters:
+//   r3 = parStreamInXml* this
+// Returns:
+//   r3 = int32_t next character (sign-extended byte)
+// ---------------------------------------------------------------------------
+// ph_53F8
+int32_t parStreamInXml_ReadNextChar(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+    int32_t ch;
+
+    int32_t buffered = *(int32_t*)(obj + 24);
+    if (buffered != 0) {
+        // Read from internal buffer
+        buffered--;
+        *(int32_t*)(obj + 24) = buffered;
+        ch = (int8_t)*(uint8_t*)(obj + 28 + buffered);
+    } else {
+        // Read from underlying stream
+        void* stream = *(void**)(obj + 12);
+        ch = (int32_t)parStreamInXml_ReadChar(stream);
+    }
+
+    // Track line numbers
+    if (ch == 10) {
+        int32_t lineNum = *(int32_t*)(obj + 8);
+        *(int32_t*)(obj + 8) = lineNum + 1;
+    }
+
+    return ch;
+}
+
+// ---------------------------------------------------------------------------
+// rage::phArchetype::phArchetype @ 0x822C98B8 | size: 0x5C (92 bytes)
+//
+// Constructor for phArchetype. Sets vtable to rage::phArchetype, initializes
+// intrusive list node at +8, datBase at +12, clears bound pointer (+4),
+// name field (+26), and list pointers, then calls InitDefaults (vfn_3).
+//
+// Parameters:
+//   r3 = phArchetype* this
+// Returns:
+//   r3 = this
+// ---------------------------------------------------------------------------
+// ph_98B8
+void* phArchetype_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Install vtable: rage::phArchetype @ 0x82059B4C
+    *(uint32_t*)(obj + 0) = 0x82059B4C;
+
+    // Initialize intrusive list node at +8
+    ke_1B00((void*)(obj + 8));
+
+    // Initialize datBase at +12
+    SinglesNetworkClient_8108_gen((void*)(obj + 12));
+
+    // Clear fields
+    *(uint32_t*)(obj + 4) = 0;     // bound pointer
+    *(uint16_t*)(obj + 26) = 0;    // name/flags
+    *(uint32_t*)(obj + 12) = 0;    // datBase data
+    *(uint32_t*)(obj + 8) = 0;     // list node
+
+    // Call virtual InitDefaults
+    phArchetype_InitDefaults(thisPtr);
+
+    return thisPtr;
+}
+
+// ---------------------------------------------------------------------------
+// rage::phArchetype::~phArchetype @ 0x822C99C8 | size: 0x5C (92 bytes)
+//
+// Destructor for phArchetype. Reinstalls the phArchetype vtable, releases
+// the bound at +12 if non-null (via ph_CEE0), clears the bound pointer,
+// then installs the phArchetypeBase vtable (base class teardown).
+//
+// Parameters:
+//   r3 = phArchetype* this
+// ---------------------------------------------------------------------------
+// ph_99C8
+void phArchetype_Destructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Reinstall phArchetype vtable for correct dispatch during destruction
+    *(uint32_t*)(obj + 0) = 0x82059B4C;
+
+    // Release bound at +12 if non-null
+    void* bound = *(void**)(obj + 12);
+    if (bound != nullptr) {
+        ph_CEE0(bound, 1);
+    }
+
+    // Clear bound pointer
+    *(uint32_t*)(obj + 12) = 0;
+
+    // Install base class vtable: rage::phArchetypeBase @ 0x82059B40
+    *(uint32_t*)(obj + 0) = 0x82059B40;
+}
+
+// ---------------------------------------------------------------------------
+// rage::phArchetypeDamp::phArchetypeDamp @ 0x822CA350 | size: 0x88 (136 bytes)
+//
+// Constructor for phArchetypeDamp. Calls phArchetype::AllocateInstance
+// (ph_9EC0_1), sets type=2, installs the phArchetypeDamp vtable, then
+// zeroes 6 SIMD vectors at +80 through +176 and 6 flag bytes at +176-181,
+// plus 5 halfword fields at +182-190.
+//
+// Parameters:
+//   r3 = phArchetypeDamp* this
+// Returns:
+//   r3 = this
+// ---------------------------------------------------------------------------
+// ph_A350
+void* phArchetypeDamp_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Call base class allocation/init
+    phArchetype_AllocateInstance(thisPtr);
+
+    // Set type = 2 (damped archetype)
+    *(uint32_t*)(obj + 4) = 2;
+
+    // Install vtable: rage::phArchetypeDamp @ 0x82059BEC
+    *(uint32_t*)(obj + 0) = 0x82059BEC;
+
+    // Zero 6 SIMD vectors at offsets +80, +96, +112, +128, +144, +160
+    uint8_t* vecBase = obj + 80;
+    for (int i = 0; i < 6; i++) {
+        *(uint32_t*)(vecBase + 0) = 0;
+        *(uint32_t*)(vecBase + 4) = 0;
+        *(uint32_t*)(vecBase + 8) = 0;
+        *(uint32_t*)(vecBase + 12) = 0;
+        // Clear flag byte at +176+i
+        *(uint8_t*)(obj + 176 + i) = 0;
+        vecBase += 16;
+    }
+
+    // Clear 5 halfword fields
+    *(uint16_t*)(obj + 182) = 0;
+    *(uint16_t*)(obj + 184) = 0;
+    *(uint16_t*)(obj + 186) = 0;
+    *(uint16_t*)(obj + 188) = 0;
+    *(uint16_t*)(obj + 190) = 0;
+
+    return thisPtr;
+}
+
+// ---------------------------------------------------------------------------
+// phBound_FindOrCreateByName @ 0x822DDC90 | size: 0x94 (148 bytes)
+//
+// Searches a physics pool for a bound matching the given name. If found with
+// a non-null data pointer (+4), formats a new suffixed name (e.g. "name_1",
+// "name_2") using snprintf and retries. If not found, calls ph_E010 to
+// create the bound from config. The name buffer is 256 chars on the stack.
+//
+// Parameters:
+//   r3 = void* pool
+//   r4 = void* config
+//   r5 = const char* baseName
+// ---------------------------------------------------------------------------
+// ph_DC90
+void phBound_FindOrCreateByName(void* pool, void* config, const char* baseName) {
+    uint8_t* poolObj = (uint8_t*)pool;
+    char nameBuf[256];
+
+    // Initialize: copy base name, null-terminate
+    nameBuf[255] = '\0';
+    strncpy(nameBuf, baseName, 255);
+
+    int suffix = 1;
+    const char* fmtStr = (const char*)0x82059F04;  // "%s_%d" format string
+
+    while (1) {
+        // Search pool for bound matching nameBuf
+        void* found = (void*)ph_6FC8_FindBound(*(void**)(poolObj + 8), nameBuf);
+
+        if (found == nullptr) {
+            // Not found — create a new bound
+            ph_E010_CreateBound(pool, config, nameBuf);
+            return;
+        }
+
+        // Check if the found entry has data
+        uint32_t data = *(uint32_t*)((uint8_t*)found + 4);
+        if (data == 0) {
+            // Found entry with no data — create a new bound
+            ph_E010_CreateBound(pool, config, nameBuf);
+            return;
+        }
+
+        // Name collision — format a suffixed name and retry
+        _snprintf(nameBuf, 255, fmtStr, baseName, suffix);
+        suffix++;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// phContactPair_ClearActiveFlags @ 0x822B8ED0 | size: 0x98 (152 bytes)
+//
+// Clears the "active" bit (bit 3, mask 0x08) from the contact flags byte
+// at +276 for physics instances whose mass (+52) exceeds a threshold.
+// Processes the primary instance (r3), optionally its secondary contact
+// region at +288, then the partner instance (r4) similarly. The mass
+// threshold is computed as f1 * g_phMassThreshold.
+//
+// Parameters:
+//   r3 = void* instanceA
+//   r4 = void* instanceB (may be null)
+//   r5 = uint8_t  checkSecondaryA
+//   r6 = uint8_t  checkSecondaryB
+//   f1 = float    massScale
+// ---------------------------------------------------------------------------
+// ph_8ED0
+void phContactPair_ClearActiveFlags(void* instA, void* instB,
+                                     uint8_t checkSecondaryA, uint8_t checkSecondaryB,
+                                     float massScale) {
+    uint8_t* objA = (uint8_t*)instA;
+    uint8_t* objB = (uint8_t*)instB;
+
+    // Compute mass threshold
+    float threshold = massScale * (*(float*)0x8202D10C);
+
+    // Check instance A's mass at +52
+    float massA = *(float*)(objA + 52);
+    if (massA > threshold) {
+        // Clear bit 3 of flags at +276
+        *(uint8_t*)(objA + 276) &= 0xF7;  // ~0x08 = 0xF7
+    }
+
+    // Optionally check A's secondary contact region at +288
+    if (checkSecondaryA != 0) {
+        float massA2 = *(float*)(objA + 340);
+        if (massA2 > threshold) {
+            *(uint8_t*)(objA + 288 + 276) &= 0xF7;
+        }
+    }
+
+    // Check instance B if non-null
+    if (objB == nullptr) return;
+
+    float massB = *(float*)(objB + 52);
+    if (massB > threshold) {
+        *(uint8_t*)(objB + 276) &= 0xF7;
+    }
+
+    // Optionally check B's secondary contact region
+    if (checkSecondaryB == 0) return;
+
+    float massB2 = *(float*)(objB + 340);
+    if (massB2 > threshold) {
+        *(uint8_t*)(objB + 288 + 276) &= 0xF7;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// phBound_CompareWithTolerance @ 0x822B48F8 | size: 0x64 (100 bytes)
+//
+// Compares two float values with a multiplicative tolerance. Returns 1 if
+// neither value is within the other's tolerance range (i.e., they are
+// significantly different), 0 otherwise. Used in collision detection to
+// determine if contact parameters have changed meaningfully.
+//
+// Parameters:
+//   r3 = float* valueA
+//   r4 = float* valueB
+// Returns:
+//   r3 = int (1 if values differ beyond tolerance, 0 otherwise)
+// ---------------------------------------------------------------------------
+// ph_48F8_h
+int phBound_CompareWithTolerance(const float* valueA, const float* valueB) {
+    float a = *valueA;
+    float b = *valueB;
+    float tolerance = *(float*)0x82028078;  // multiplicative tolerance factor
+
+    if (a > b) {
+        // Check if b is within tolerance of a
+        float limitA = a * tolerance;
+        if (b <= limitA) return 0;
+
+        // Check if a is within tolerance of b
+        float limitB = b * tolerance;
+        if (a <= limitB) return 0;
+
+        return 1;
+    } else {
+        // a <= b
+        float limitA = a * tolerance;
+        if (b < limitA) {
+            float limitB = b * tolerance;
+            if (a < limitB) return 1;
+        }
+        return 0;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// rage::phBoundQuadtree::phBoundQuadtree @ 0x822AD088 | size: 0x68 (104 bytes)
+//
+// Constructor for phBoundQuadtree. Calls the base phBoundGeometry intermediate
+// constructor (ph_0F78), sets hasOctree flag at +128, installs the
+// phBoundQuadtree vtable, initializes the search tree at +176 via ph_FA58,
+// sets bound type to 5 (quadtree), and clears the search tree root at +176.
+//
+// Parameters:
+//   r3 = phBoundQuadtree* this
+// Returns:
+//   r3 = this
+// ---------------------------------------------------------------------------
+// ph_D088
+void* phBoundQuadtree_Constructor(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Call base phBoundGeometry constructor
+    phBoundGeometry_Constructor(thisPtr, nullptr);
+
+    // Set hasOctree/quadtree flag
+    *(uint8_t*)(obj + 128) = 1;
+
+    // Install vtable: rage::phBoundQuadtree @ 0x82058C34
+    *(uint32_t*)(obj + 0) = 0x82058C34;
+
+    // Initialize search tree at +176
+    phBoundGeometry_InitSearchTree((void*)(obj + 176));
+
+    // Set bound type = 5 (quadtree)
+    *(uint8_t*)(obj + 4) = 5;
+
+    // Clear search tree root pointer
+    *(uint32_t*)(obj + 176) = 0;
+
+    return thisPtr;
+}
+
+// ---------------------------------------------------------------------------
+// rage::phBoundQuadtree::InitFromGeometry @ 0x822AD610 | size: 0x58 (88 bytes)
+//
+// Initializes a phBoundQuadtree from existing geometry data. Calls the
+// phBoundGeometry intermediate constructor (ph_1310), installs the
+// phBoundQuadtree vtable, initializes the search tree at +176, then links
+// the search tree's owner pointer (+4 from the tree's first entry) back to
+// this object.
+//
+// Parameters:
+//   r3 = phBoundQuadtree* this
+// Returns:
+//   r3 = this
+// ---------------------------------------------------------------------------
+// ph_D610
+void* phBoundQuadtree_InitFromGeometry(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Call intermediate phBoundGeometry constructor
+    phBoundGeometryIntermediate_Constructor(thisPtr, nullptr);
+
+    // Install vtable: rage::phBoundQuadtree @ 0x82058C34
+    *(uint32_t*)(obj + 0) = 0x82058C34;
+
+    // Initialize search tree at +176
+    phBoundGeometry_InitSearchTree((void*)(obj + 176));
+
+    // Link search tree owner pointer back to this object
+    uint32_t treeEntry = *(uint32_t*)(obj + 176);
+    *(uint32_t*)(treeEntry + 4) = (uint32_t)(uintptr_t)thisPtr;
+
+    return thisPtr;
+}
+
+// ---------------------------------------------------------------------------
+// phCollider_GetJointByIndex @ 0x82448C60 | size: 0x6C (108 bytes)
+//
+// Retrieves a joint pointer from an articulated collider by index. Loads the
+// collider from +124, calls vtable slot 11 to get the joint skeleton, reads
+// the joint count from +11 (u16), and if the index is in range, returns a
+// pointer into the joint array at +124 of the skeleton (stride 252 bytes
+// per joint). Returns null if out of range.
+//
+// Parameters:
+//   r3 = void* thisPtr (physics world or wrapper, collider at +124)
+//   r4 = uint16_t jointIndex
+// Returns:
+//   r3 = void* joint pointer, or null if out of range
+// ---------------------------------------------------------------------------
+// ph_8C60
+void* phCollider_GetJointByIndex(void* thisPtr, uint16_t jointIndex) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Get collider from +124
+    void* collider = *(void**)(obj + 124);
+
+    // Call vtable slot 11 to get skeleton/joint data
+    typedef void* (*GetSkeletonFn)(void*);
+    void** vtable = *(void***)collider;
+    void* skeleton = ((GetSkeletonFn)vtable[11])(collider);
+
+    // Read joint count from skeleton +11 (u16)
+    uint16_t jointCount = *(uint16_t*)((uint8_t*)skeleton + 11);
+
+    // Bounds check
+    uint16_t idx = jointIndex & 0xFFFF;
+    if (idx < jointCount) {
+        // Compute joint pointer: skeleton.joints[+124] + index * 252
+        uint8_t* jointArray = *(uint8_t**)((uint8_t*)skeleton + 124);
+        return (void*)(jointArray + (uint32_t)idx * 252);
+    }
+
+    return nullptr;
 }

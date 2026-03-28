@@ -543,10 +543,10 @@ struct phBoundCapsule {
     void**      vtable;           // +0x00
 
     uint8_t     field_0x0001;     // +0x0001  R:1
-    uint32_t    field_0x0004;     // +0x0004  R:72 W:20  — most-read field; likely type/flags
-    uint8_t     field_0x0005;     // +0x0005  R:5 W:1
+    uint32_t    m_nType;          // +0x0004  R:72 W:20  — bound type / flags
+    uint8_t     m_bHasOffset;     // +0x0005  R:5 W:1  — set to 1 when center has non-zero offset
     uint8_t     field_0x0006;     // +0x0006  W:2
-    uint8_t     field_0x0007;     // +0x0007  R:1
+    uint8_t     m_bHasTransform;  // +0x0007  R:1  — checked before applying world transform
     uint64_t    field_0x0008;     // +0x0008  R:59 W:21  — packed pair
     uint32_t    field_0x000c;     // +0x000c  R:20 W:10
     uint32_t    field_0x0010;     // +0x0010  R:14 W:8
@@ -564,9 +564,9 @@ struct phBoundCapsule {
     uint32_t    field_0x0028;     // +0x0028  R:19 W:21
     uint8_t     field_0x002a;     // +0x002a  W:1
     uint32_t    field_0x002c;     // +0x002c  R:13 W:3
-    uint32_t    field_0x0030;     // +0x0030  R:15 W:4
-    uint32_t    field_0x0034;     // +0x0034  R:10 W:3
-    uint32_t    field_0x0038;     // +0x0038  R:7 W:3
+    uint32_t    m_vCenterX;       // +0x0030  R:15 W:4  — center position X
+    uint32_t    m_vCenterY;       // +0x0034  R:10 W:3  — center position Y
+    uint32_t    m_vCenterZ;       // +0x0038  R:7 W:3   — center position Z
     uint8_t     field_0x0039;     // +0x0039  R:1 W:1
     uint32_t    field_0x003c;     // +0x003c  R:13 W:4
     uint32_t    field_0x0040;     // +0x0040  R:9 W:4
@@ -582,29 +582,29 @@ struct phBoundCapsule {
     uint32_t    field_0x0068;     // +0x0068  R:2 W:3
     uint32_t    field_0x006c;     // +0x006c  R:1 W:4
     uint16_t    field_0x006e;     // +0x006e  R:7 W:2
-    uint32_t    field_0x0070;     // +0x0070  R:17 W:2
+    uint32_t    m_pVertices;      // +0x0070  R:17 W:2  — pointer to vertex array (or halfHeight for capsule)
     uint32_t    field_0x0074;     // +0x0074  R:7 W:3
     uint32_t    field_0x0078;     // +0x0078  R:3 W:2
     uint32_t    field_0x007c;     // +0x007c  R:1 W:1
-    uint32_t    field_0x0080;     // +0x0080  R:12 W:1
+    uint32_t    m_fRadius;        // +0x0080  R:12 W:1  — capsule radius (float stored as uint32)
     uint32_t    field_0x0084;     // +0x0084  R:2 W:1
     uint32_t    field_0x0088;     // +0x0088  R:1
     uint32_t    field_0x008c;     // +0x008c  R:7 W:1
     uint32_t    field_0x0090;     // +0x0090  R:8 W:1
-    uint32_t    field_0x0094;     // +0x0094  R:2 W:1
+    uint32_t    m_nVertexCount;   // +0x0094  R:2 W:1  — number of vertices in bound
     uint32_t    field_0x0098;     // +0x0098  R:4 W:1
     uint16_t    field_0x009a;     // +0x009a  W:1
     uint32_t    field_0x009c;     // +0x009c  R:2 W:2
     uint8_t     field_0x009d;     // +0x009d  R:1
     uint8_t     field_0x009e;     // +0x009e  W:3
-    uint32_t    field_0x00a0;     // +0x00a0  R:2 W:1
-    uint32_t    field_0x00a4;     // +0x00a4  R:3 W:1
-    uint64_t    field_0x00a8;     // +0x00a8  R:2 W:1
+    uint32_t    m_pMaterials;     // +0x00a0  R:2 W:1  — pointer to material array
+    uint32_t    m_pCurrentMaterial; // +0x00a4  R:3 W:1  — current material pointer
+    uint64_t    m_nMaterialCount; // +0x00a8  R:2 W:1  — number of materials (uint8 in low byte)
     uint32_t    field_0x00ac;     // +0x00ac  R:2
     uint64_t    field_0x00b0;     // +0x00b0  R:2 W:2
     uint32_t    field_0x00b4;     // +0x00b4  R:1
     uint64_t    field_0x00b8;     // +0x00b8  R:1 W:2
-    uint32_t    field_0x00c0;     // +0x00c0  R:8 W:4
+    uint32_t    m_nMaterialIndex; // +0x00c0  R:8 W:4  — active material index for rendering
     uint8_t     field_0x00c8;     // +0x00c8  W:1
     uint8_t     field_0x00c9;     // +0x00c9  W:1
     uint16_t    field_0x00ca;     // +0x00ca  W:1
@@ -662,7 +662,7 @@ struct phBoundCapsule {
     uint32_t    field_0x017c;     // +0x017c  W:1
     uint32_t    field_0x0184;     // +0x0184  R:2 W:3
     uint32_t    field_0x0188;     // +0x0188  R:1 W:3
-    uint32_t    field_0x018c;     // +0x018c  W:18
+    uint32_t    m_nBoundType;     // +0x018c  W:18  — bound type tag (written during init)
     uint32_t    field_0x0190;     // +0x0190  R:1 W:1
     uint32_t    field_0x0194;     // +0x0194  R:1 W:1
     uint32_t    field_0x0198;     // +0x0198  W:5
@@ -903,7 +903,7 @@ struct phBoundGeometry {
     uint8_t     _pad0x002c[52];
     uint16_t    field_0x0060;     // +0x0060  W:1
     uint8_t     _pad0x0062[12];
-    uint32_t    field_0x0070;     // +0x0070  R:20 W:2
+    uint32_t    m_pVertices;      // +0x0070  R:20 W:2  — pointer to vertex array
     uint32_t    field_0x0074;     // +0x0074  R:2 W:1
     uint32_t    field_0x0078;     // +0x0078  R:11 W:2
     uint32_t    field_0x007c;     // +0x007c  R:4 W:1
@@ -915,15 +915,15 @@ struct phBoundGeometry {
     uint32_t    field_0x0088;     // +0x0088  R:1 W:1
     uint32_t    field_0x008c;     // +0x008c  W:1
     uint32_t    field_0x0090;     // +0x0090  W:1
-    uint32_t    field_0x0094;     // +0x0094  R:12 W:1
+    uint32_t    m_nVertexCount;   // +0x0094  R:12 W:1  — number of vertices
     uint32_t    field_0x0098;     // +0x0098  R:11 W:1
     uint8_t     field_0x009c;     // +0x009c  W:1
     uint8_t     field_0x009d;     // +0x009d  W:1
     uint8_t     field_0x009e;     // +0x009e  W:1
     uint8_t     field_0x009f;     // +0x009f  W:1
-    uint32_t    field_0x00a0;     // +0x00a0  R:5 W:2
-    uint32_t    field_0x00a4;     // +0x00a4  R:2 W:2
-    uint8_t     field_0x00a8;     // +0x00a8  R:7 W:1
+    uint32_t    m_pMaterials;     // +0x00a0  R:5 W:2  — pointer to material array
+    uint32_t    m_pCurrentMaterial; // +0x00a4  R:2 W:2  — current material pointer
+    uint8_t     m_nMaterialCount; // +0x00a8  R:7 W:1  — number of materials
     uint8_t     field_0x00a9;     // +0x00a9  W:1
     uint8_t     field_0x00aa;     // +0x00aa  W:1
     uint8_t     field_0x00ab;     // +0x00ab  W:1
@@ -1298,35 +1298,35 @@ struct phInst {
     void**      vtable;           // +0x00
 
     uint8_t     field_0x0001;     // +0x0001  R:3
-    uint32_t    field_0x0004;     // +0x0004  R:28 W:21
+    uint32_t    m_pBound;         // +0x0004  R:28 W:21  — pointer to phBound
     uint8_t     field_0x0005;     // +0x0005  R:1
-    uint64_t    field_0x0008;     // +0x0008  R:52 W:15
+    uint64_t    m_pDestructor;    // +0x0008  R:52 W:15  — destructor callback pointer
     uint8_t     field_0x0009;     // +0x0009  R:1
-    uint32_t    field_0x000c;     // +0x000c  R:19 W:11
-    uint64_t    field_0x0010;     // +0x0010  R:12 W:8
-    uint32_t    field_0x0014;     // +0x0014  R:7 W:5
+    uint32_t    m_nRefCount;      // +0x000c  R:19 W:11  — atomic reference count
+    uint64_t    m_CriticalSection; // +0x0010  R:12 W:8  — critical section for Lock/Unlock
+    uint32_t    m_pBoundData;     // +0x0014  R:7 W:5   — secondary bound data pointer
     uint8_t     field_0x0015;     // +0x0015  W:3
-    uint64_t    field_0x0018;     // +0x0018  R:10 W:6
+    uint64_t    m_pDirtyFlags;    // +0x0018  R:10 W:6  — dirty flag tracking
     uint8_t     field_0x0019;     // +0x0019  R:1
     uint16_t    field_0x001a;     // +0x001a  R:1
     uint32_t    field_0x001c;     // +0x001c  R:4 W:3
-    uint32_t    field_0x0020;     // +0x0020  R:7 W:4
-    uint32_t    field_0x0024;     // +0x0024  R:8 W:3
+    uint32_t    m_nFlags;         // +0x0020  R:7 W:4   — packed flags (physics layer in bits 6-9)
+    uint32_t    m_pBoundResource; // +0x0024  R:8 W:3   — page-aligned bound resource ptr
     uint16_t    field_0x0026;     // +0x0026  R:1
     uint64_t    field_0x0028;     // +0x0028  R:3 W:2
     uint16_t    field_0x002a;     // +0x002a  R:1
-    uint32_t    field_0x002c;     // +0x002c  R:12 W:10
-    uint64_t    field_0x0030;     // +0x0030  R:4 W:11
+    uint32_t    m_nState;         // +0x002c  R:12 W:10  — instance state / sub-object count
+    uint64_t    m_nState2;        // +0x0030  R:4 W:11  — secondary state word
     uint32_t    field_0x0034;     // +0x0034  R:3 W:5
-    uint64_t    field_0x0038;     // +0x0038  R:37 W:8  — heavily accessed
+    uint64_t    m_pOwner;         // +0x0038  R:37 W:8  — pointer to owner/parent object
     uint8_t     field_0x003b;     // +0x003b  R:1
     uint32_t    field_0x003c;     // +0x003c  R:8 W:7
     uint16_t    field_0x003e;     // +0x003e  R:5 W:4
-    uint64_t    field_0x0040;     // +0x0040  R:7 W:10
-    uint32_t    field_0x0044;     // +0x0044  R:8 W:7
+    uint64_t    m_pArchetype;     // +0x0040  R:7 W:10  — archetype pointer (shared properties)
+    uint32_t    m_nDataIndex;     // +0x0044  R:8 W:7   — index into physics data table
     uint8_t     field_0x0045;     // +0x0045  R:2 W:1
-    uint64_t    field_0x0048;     // +0x0048  R:12 W:12
-    uint32_t    field_0x004c;     // +0x004c  R:10 W:4
+    uint64_t    m_pSimulator;     // +0x0048  R:12 W:12 — simulator / physics world pointer
+    uint32_t    m_pBoundShape;    // +0x004c  R:10 W:4  — bound shape for SetBoundScale
     uint64_t    field_0x0050;     // +0x0050  R:4 W:6
     uint32_t    field_0x0054;     // +0x0054  R:1
     uint64_t    field_0x0058;     // +0x0058  R:7 W:3
@@ -1349,7 +1349,7 @@ struct phInst {
     uint32_t    field_0x0110;     // +0x0110  R:1
     uint32_t    field_0x0114;     // +0x0114  R:1
     uint64_t    field_0x0118;     // +0x0118  R:2
-    uint32_t    field_0x011c;     // +0x011c  R:2 W:2
+    uint32_t    m_nCollisionGroup; // +0x011c  R:2 W:2  — collision group ID
     uint8_t     _pad0x0120[8];
     uint64_t    field_0x0128;     // +0x0128  W:1
     uint32_t    field_0x0130;     // +0x0130  W:1
@@ -1378,8 +1378,8 @@ struct phInst {
     uint32_t    field_0x01a8;     // +0x01a8  R:1
     uint32_t    field_0x01b0;     // +0x01b0  R:1
     uint8_t     _pad0x01b4[8];
-    uint32_t    field_0x01bc;     // +0x01bc  R:1 W:2
-    uint32_t    field_0x01c0;     // +0x01c0  R:1 W:2
+    uint32_t    m_nCollisionMask; // +0x01bc  R:1 W:2  — collision bitmask for filtering
+    uint32_t    m_nUserData;      // +0x01c0  R:1 W:2  — user-defined data word
     uint8_t     _pad0x01c4[40];
     uint32_t    field_0x01ec;     // +0x01ec  R:1
     uint16_t    field_0x01f0;     // +0x01f0  R:1
@@ -1577,6 +1577,20 @@ struct phInst {
     void* ResourceLookup_Locked();
     void* CallVirtual15_Locked(void* param);
     void* SetBoundScale_Locked(float scale);
+
+    // Thread-safe locked accessors (batch 3)
+    void* GetTypeIndex_Locked();
+    void* CallVirtual12_Locked(void* param);
+    void* GetBoundSlot12_Locked();
+    void* GetBoundSlot13_Locked(void* param);
+    void* GetBoundSlot14_Locked(void* param);
+    void* GetBoundSlot16_Locked(void* param);
+    void* GetManagerSlot2_Locked();
+    uint32_t DispatchToManager_Locked(void* param);
+
+    // Utility methods
+    int ComputeAllocationSize(uint32_t* outSize);
+    static void* GetAllocator(void* blockPtr);
 };
 
 // ── rage::phInstStatic ───────────────────────────────────────────────────────
@@ -1997,18 +2011,18 @@ struct phSpringAninmatedAttachment {
 struct phObject {
     void** vtable;            // +0x00
     uint8_t _pad0x04[0x44];   // +0x04
-    void* m_field_48;         // +0x30 (48)
-    phObject* m_field_52;     // +0x34 (52)
+    void* m_pData;            // +0x30 (48)
+    phObject* m_pChild;       // +0x34 (52)  — child object (Release()'d in ReleaseViews)
     uint8_t _pad0x38[0x38];   // +0x38 (56)
     uint32_t m_field_112;     // +0x70 (112)
     uint32_t m_field_116;     // +0x74 (116)
     uint32_t m_field_120;     // +0x78 (120)
     uint8_t _pad0x7C[0x08];   // +0x7C (124)
-    phObject* m_field_132;    // +0x84 (132)
+    phObject* m_pParent;      // +0x84 (132)  — set to 'this' in ReleaseViews
     uint8_t _pad0x88[0x16C];  // +0x88 (136)
-    uint32_t m_field_500;     // +0x1F4 (500)
+    uint32_t m_nViewCount;    // +0x1F4 (500)  — zeroed in ReleaseViews
     uint32_t m_field_504;     // +0x1F8 (504)
-    void* m_field_508;        // +0x1FC (508)
+    void* m_pResource;        // +0x1FC (508)
     uint64_t m_field_512;     // +0x200 (512)
     uint32_t m_field_520;     // +0x208 (520)
     uint32_t m_field_524;     // +0x20C (524)
