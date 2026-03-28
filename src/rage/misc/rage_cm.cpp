@@ -83,74 +83,12 @@
 // ── Forward declarations for cross-node calls ─────────────────────────────────
 namespace rage {
 
-// ── GLOBAL DATA REFERENCES ───────────────────────────────────────────────────
-
-// Current frame delta-time (seconds). Updated each game tick.
-extern float g_cm_frameTime;    // @ 0x825C4958
-
-// Constant 0.0f for unconnected port default return.
-extern const float g_cm_zeroFloat;  // @ 0x8202D110
-
-// {-1.f, -1.f, -1.f, -1.f} used by cmNegate's vector evaluation.
-extern float g_cm_negateVec[4]; // @ 0x825C5938
-// ── Missing forward declarations ──────────────────────────────────────────────
-extern float g_cm_frameRate;       // @ 0x829DAEC8 — per-frame rate constant (Differential)
-void*  rage_alloc_aligned(size_t size, size_t align); // RAGE heap aligned alloc
-void   rage_free(void* ptr);                          // RAGE heap free
+// Globals and free functions declared in rage_cm_types.hpp.
+// Forward-declare static helper used before its definition in this file:
 static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
-uint8_t cmNode_GetBool(const cmNodePort* port);
 
 
-// ── PORT / DATA STRUCTURES ───────────────────────────────────────────────────
-
-/**
- * cmDataObj — typed data buffer stored in a port's m_pData when m_type==DIRECT.
- * The actual payload sits at offset 0 (float, vec4, bool, or int depending on dim).
- * @ various allocations (16-byte aligned)
- */
-struct cmDataObj {
-    union {
-        float    m_float;    // +0x00  when m_dim == CM_DIM_FLOAT
-        uint8_t  m_bool;     // +0x00  when m_dim == CM_DIM_BOOL
-        int32_t  m_int;      // +0x00  when m_dim == CM_DIM_INT/INT32
-        float    m_vec4[4];  // +0x00  when m_dim == CM_DIM_VEC4 (16-byte aligned)
-    };
-    // bytes 4–15: padding / additional vec4 components
-    uint8_t  m_dim;          // +0x10  dimension type code (CM_DIM_*)
-    uint8_t  m_pad[3];       // +0x11
-};
-
-
-// Port type codes
-static constexpr int CM_PORT_NONE   = 0;
-static constexpr int CM_PORT_DIRECT = 1;
-static constexpr int CM_PORT_NODE   = 2;
-
-// Dimension codes
-static constexpr int CM_DIM_INT   = 0;
-static constexpr int CM_DIM_FLOAT = 1;
-static constexpr int CM_DIM_VEC4  = 2;
-static constexpr int CM_DIM_BOOL  = 3;
-static constexpr int CM_DIM_INT32 = 4;
-
-// ── PORT DESCRIPTOR ───────────────────────────────────────────────────────────
-
-/**
- * cmPortDesc — 4-byte descriptor passed to TryConnect / TryConnectUnary.
- * Describes the required input dimensions and expected output dimension.
- *   portA_dim : required dimension for input port A (0 = any/don't check)
- *   portB_dim : required dimension for input port B (0 = unary node)
- *   portC_dim : required dimension for input port C (0 = at most binary)
- *   output_dim: output dimension written to node->m_outputType on match
- */
-struct cmPortDesc {
-    uint8_t portA_dim;
-    uint8_t portB_dim;
-    uint8_t portC_dim;
-    uint8_t output_dim;
-};
-
-// ── BASE NODE ─────────────────────────────────────────────────────────────────
+// ── Types (cmDataObj, cmPortDesc, CM_PORT_*, CM_DIM_*) from rage_cm_types.hpp ─
 
 
 
