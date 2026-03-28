@@ -3286,3 +3286,405 @@ void pongPlayer::UpdateDirtyFlags(void* obj, uint8_t forceReset) {  // pongPlaye
     // Neither flag set -- mark as needing sync
     *flag41 = 1;
 }
+
+
+// ===========================================================================
+// SECTION 38 — MarkNetDirtyPosition  @ 0x82198AC0 | size: 0x1C (28 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::MarkNetDirtyPosition()
+ *
+ * If network dirty tracking is enabled (m_bNetDirtyEnabled != 0),
+ * sets bit 0 of the network dirty flags word.  This marks the
+ * player's position data as needing replication.
+ *
+ * Called from pongPlayer_Process to flag position changes.
+ */
+void pongPlayer::MarkNetDirtyPosition() {  // pongPlayer_8AC0_p33 @ 0x82198AC0
+    if (!m_bNetDirtyEnabled)
+        return;
+    m_netDirtyFlags |= 0x1;
+}
+
+
+// ===========================================================================
+// SECTION 39 — MarkNetDirtyRotation  @ 0x82198AE0 | size: 0x1C (28 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::MarkNetDirtyRotation()
+ *
+ * If network dirty tracking is enabled, sets bit 1 of the network
+ * dirty flags word.  Marks the player's rotation data for replication.
+ */
+void pongPlayer::MarkNetDirtyRotation() {  // pongPlayer_8AE0_p33 @ 0x82198AE0
+    if (!m_bNetDirtyEnabled)
+        return;
+    m_netDirtyFlags |= 0x2;
+}
+
+
+// ===========================================================================
+// SECTION 40 — SyncFieldWithCallback  @ 0x82199EA8 | size: 0x7C (124 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::SyncFieldWithCallback(void* target, void* source)
+ *
+ * Compares the uint32_t value at target+0 with source+0.  If they differ
+ * and a callback pointer is stored at target+8, the callback is invoked
+ * with the argument from target+4.  The new value from source is then
+ * written to target+0.
+ *
+ * Used by the network sync system to update fields and fire change
+ * notifications (e.g. animation state transitions, score changes).
+ */
+void pongPlayer::SyncFieldWithCallback(void* target, void* source) {  // pongPlayer_9EA8_g @ 0x82199EA8
+    uint32_t* targetVal = reinterpret_cast<uint32_t*>(target);
+    uint32_t* sourceVal = reinterpret_cast<uint32_t*>(source);
+
+    if (*targetVal == *sourceVal)
+        return;
+
+    // Check for a registered callback at target+8
+    void* callback = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(target) + 8);
+    if (callback) {
+        void* arg = *reinterpret_cast<void**>(
+            reinterpret_cast<uintptr_t>(target) + 4);
+        typedef void (*CallbackFn)(void*);
+        reinterpret_cast<CallbackFn>(callback)(arg);
+    }
+
+    // Store the new value
+    *targetVal = *sourceVal;
+}
+
+
+// ===========================================================================
+// SECTION 41 — ResetShotSyncFields  @ 0x82199310 | size: 0x7C (124 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::ResetShotSyncFields(void* shotState, uint8_t clearNetFlags)
+ *
+ * Resets the float-typed sync fields within a shot tracking sub-object.
+ * Zeroes out two float sync entries (at shotState+8 and shotState+20)
+ * via SyncFloatField, stores 0.0 at shotState+32, clears byte flag
+ * at shotState+36, then calls SyncFieldWithCallback on the sub-object
+ * at shotState+44 passing the clearNetFlags argument.
+ *
+ * Called from ResetShotTrackingState and the main shot processing loop.
+ */
+void pongPlayer::ResetShotSyncFields(void* shotState, uint8_t clearNetFlags) {  // pongPlayer_9310_g @ 0x82199310
+    extern const float g_kZeroFloat;  // @ 0x82079D10 (0.0f)
+
+    float zero = g_kZeroFloat;
+
+    // Reset first float sync field at shotState+8
+    float syncBuf = zero;
+    SyncFloatField(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(shotState) + 8),
+                   &syncBuf);
+
+    // Reset second float sync field at shotState+20
+    syncBuf = zero;
+    SyncFloatField(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(shotState) + 20),
+                   &syncBuf);
+
+    // Clear float at shotState+32 (accumulated timing)
+    *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(shotState) + 32) = zero;
+
+    // Clear byte flag at shotState+36
+    *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(shotState) + 36) = 0;
+
+    // Sync the sub-field at shotState+44 with the clearNetFlags argument
+    uint32_t flagVal = clearNetFlags;
+    SyncFieldWithCallback(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(shotState) + 44),
+                          &flagVal);
+}
+
+
+// ===========================================================================
+// SECTION 42 — ResetShotTrackingState  @ 0x821992A0 | size: 0x70 (112 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::ResetShotTrackingState()
+ *
+ * Full reset of the player's shot tracking subsystem.  Called from
+ * pongPlayer_Process when transitioning to an idle state:
+ *
+ *   1. Calls ResetShotSyncFields to zero the float sync entries.
+ *   2. Calls pongPlayer_9918_g twice (with indices 0 and 1) to reset
+ *      per-player-slot shot data using the global button state table.
+ *   3. Clears the shot result dword (+72), and three byte flags at
+ *      +69, +76, +77 (shot active, pending, committed).
+ */
+extern void pongPlayer_9918_g(void* buttonStateBase, int slotIndex);
+
+void pongPlayer::ResetShotTrackingState() {  // pongPlayer_92A0_g @ 0x821992A0
+    // Reset all shot sync fields
+    uint8_t clearFlags = 0;
+    ResetShotSyncFields(this, clearFlags);
+
+    // Reset shot data for both player slots
+    pongPlayer_9918_g(reinterpret_cast<void*>(g_pButtonStateTable), 0);
+    pongPlayer_9918_g(reinterpret_cast<void*>(g_pButtonStateTable), 1);
+
+    // Clear shot result and tracking flags
+    *reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(this) + 72) = 0;
+    *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(this) + 69) = 0;
+    *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(this) + 76) = 0;
+    *reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(this) + 77) = 0;
+}
+
+
+// ===========================================================================
+// SECTION 43 — ClearSwingTrajectoryData  @ 0x8219E748 | size: 0x68 (104 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::ClearSwingTrajectoryData(void* trajectoryBlock)
+ *
+ * Zeroes out the swing trajectory data structure:
+ *   - 4 x 16-byte vector slots at +32..+95 (via AltiVec vxor + stvx loop)
+ *   - Floats at +4 and +8 set to 0.0
+ *   - 16-byte vector at +16 zeroed
+ *   - Global 16-byte vector at a fixed address zeroed
+ *   - Bytes at +0 and +1 cleared
+ *
+ * This is a full initialisation of the trajectory prediction buffer
+ * used during swing animation playback.
+ */
+void pongPlayer::ClearSwingTrajectoryData(void* trajectoryBlock) {  // pongPlayer_E748_p33 @ 0x8219E748
+    uint8_t* base = reinterpret_cast<uint8_t*>(trajectoryBlock);
+
+    // Zero 4 x 16-byte vector slots at +32..+95
+    memset(base + 32, 0, 64);
+
+    // Zero floats at +4 and +8
+    *reinterpret_cast<float*>(base + 4) = 0.0f;
+    *reinterpret_cast<float*>(base + 8) = 0.0f;
+
+    // Zero 16-byte vector at +16
+    memset(base + 16, 0, 16);
+
+    // Zero global trajectory vector
+    extern uint8_t g_swingTrajectoryGlobal[];  // @ 0x825C6720
+    memset(g_swingTrajectoryGlobal, 0, 16);
+
+    // Clear byte flags at +0 and +1
+    base[1] = 0;
+    base[0] = 0;
+}
+
+
+// ===========================================================================
+// SECTION 44 — ResetSwingTrackingState  @ 0x8219FA40 | size: 0x74 (116 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::ResetSwingTrackingState()
+ *
+ * Resets the player's per-swing tracking state to default values.
+ * Called from FinalizeServeSetup and pongPlayer_1460_g (button release
+ * handler) when a swing/serve is finalised or cancelled.
+ *
+ *   1. Zeroes floats at +4, +8 (position deltas)
+ *   2. Clears byte flags at +84, +86, +85 (swing phase, type, active)
+ *   3. Zeroes floats at +64, +72, +76, +80 (swing vectors/power)
+ *   4. Calls ClearSwingSlotGrid on two grid sub-objects at +96 and +2800
+ *   5. Clears byte flag at +5513 (swing committed)
+ */
+extern void pongPlayer_E640_g(void* gridSubObj);  // ClearSwingSlotGrid
+
+void pongPlayer::ResetSwingTrackingState() {  // pongPlayer_FA40_g @ 0x8219FA40
+    uint8_t* base = reinterpret_cast<uint8_t*>(this);
+
+    // Zero position delta floats
+    *reinterpret_cast<float*>(base + 4) = 0.0f;
+    *reinterpret_cast<float*>(base + 8) = 0.0f;
+
+    // Clear swing phase flags
+    base[84] = 0;
+    base[86] = 0;
+    base[85] = 0;
+
+    // Zero swing vector/power floats
+    *reinterpret_cast<float*>(base + 64) = 0.0f;
+    *reinterpret_cast<float*>(base + 72) = 0.0f;
+    *reinterpret_cast<float*>(base + 76) = 0.0f;
+    *reinterpret_cast<float*>(base + 80) = 0.0f;
+
+    // Clear both swing slot grids
+    pongPlayer_E640_g(base + 96);
+    pongPlayer_E640_g(base + 2800);
+
+    // Clear swing committed flag
+    base[5513] = 0;
+}
+
+
+// ===========================================================================
+// SECTION 45 — FinalizeServeSetup  @ 0x8219F9C0 | size: 0x80 (128 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::FinalizeServeSetup()
+ *
+ * Completes the serve setup phase by copying shot data to the global
+ * character table, resetting swing tracking, and marking the player
+ * as ready for the next rally point.
+ *
+ * Called from SetupServe, pongPlayer_2D88_g (serve confirm), and
+ * pongPlayer_0780_g (serve input handler).
+ *
+ *   1. If the player's character slot index (at m_pParent+464) is valid
+ *      (!= -1), copies shot data into the character table via
+ *      pongPlayer_5F70_g.
+ *   2. Stores the player's shot type byte (+5504) into the character
+ *      table at the corresponding slot.
+ *   3. Clears the serve pending flag (m_pParent+6380).
+ *   4. Resets swing tracking state via ResetSwingTrackingState.
+ *   5. Clears byte at +5512 and sets +5504 to 1 (default shot type).
+ *   6. Calls ref_fi_FCD8 to finalise the serve FSM transition.
+ */
+extern void pongPlayer_5F70_g(void* charSlotEntry);  // copy shot data to char table
+extern void ref_fi_FCD8(void* self);                  // finalise serve FSM
+
+void pongPlayer::FinalizeServeSetup() {  // pongPlayer_F9C0_g @ 0x8219F9C0
+    extern uint8_t g_characterTable[];  // @ 0x8261A3D0
+    uint8_t* base = reinterpret_cast<uint8_t*>(this);
+
+    // Read parent object pointer (this+44) and get character slot index
+    void* parent = *reinterpret_cast<void**>(base + 44);
+    int32_t charSlot = *reinterpret_cast<int32_t*>(
+        reinterpret_cast<uintptr_t>(parent) + 464);
+
+    // If character slot is valid, copy shot data to the character table
+    if (charSlot != -1) {
+        void* charEntry = reinterpret_cast<void*>(
+            reinterpret_cast<uintptr_t>(g_characterTable) + 48 + charSlot * 416);
+        pongPlayer_5F70_g(charEntry);
+    }
+
+    // Store shot type byte into character table at the slot's offset +264
+    void* parent2 = *reinterpret_cast<void**>(base + 44);
+    int32_t charSlot2 = *reinterpret_cast<int32_t*>(
+        reinterpret_cast<uintptr_t>(parent2) + 464);
+    uint8_t shotType = base[5504];
+    *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(g_characterTable) + 264 + charSlot2 * 416) = shotType;
+
+    // Clear serve pending flag on parent
+    void* parent3 = *reinterpret_cast<void**>(base + 44);
+    *reinterpret_cast<uint8_t*>(
+        reinterpret_cast<uintptr_t>(parent3) + 6380) = 0;
+
+    // Reset swing tracking state
+    ResetSwingTrackingState();
+
+    // Clear byte at +5512, set shot type to 1 (default)
+    base[5512] = 0;
+    base[5504] = 1;
+
+    // Finalise serve FSM transition
+    ref_fi_FCD8(this);
+}
+
+
+// ===========================================================================
+// SECTION 46 — LookupElementByFloatKey  @ 0x821EB1E0 | size: 0x90 (144 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::LookupElementByFloatKey(void* table, float key)
+ *
+ * Given a table structure with:
+ *   +24 : pointer to an array of uint32_t element pointers
+ *   +28 : uint16_t element count
+ *
+ * Returns the element pointer at the index corresponding to `key`,
+ * clamped to [0, count-1].  If key >= count or is negative/NaN,
+ * returns the first element (index 0).
+ *
+ * Called from 32+ animation/physics lookup functions that index into
+ * per-frame data arrays using a normalised float time value.
+ */
+void* pongPlayer::LookupElementByFloatKey(void* table, float key) {  // pongPlayer_B1E0_g @ 0x821EB1E0
+    uint16_t count = *reinterpret_cast<uint16_t*>(
+        reinterpret_cast<uintptr_t>(table) + 28);
+    uint32_t* elements = *reinterpret_cast<uint32_t**>(
+        reinterpret_cast<uintptr_t>(table) + 24);
+
+    float countF = static_cast<float>(static_cast<int32_t>(count));
+
+    // Check if key is within [0, count)
+    if (key + 0.5f <= countF && !(key < 0.0f)) {
+        // Clamp key to [0, count-1] and convert to index
+        float clamped = key;
+        if (clamped < 0.0f)
+            clamped = 0.0f;
+        float maxVal = static_cast<float>(count);
+        if (clamped >= maxVal)
+            clamped = maxVal;
+        int32_t index = static_cast<int32_t>(clamped);
+
+        return reinterpret_cast<void*>(elements[index]);
+    }
+
+    // Fallback: return first element
+    return reinterpret_cast<void*>(elements[0]);
+}
+
+
+// ===========================================================================
+// SECTION 47 — RegisterDebugDrawEntries  @ 0x8218BB38 | size: 0xA4 (164 bytes)
+// ===========================================================================
+/**
+ * pongPlayer::RegisterDebugDrawEntries()
+ *
+ * Registers the player's debug draw objects with the global debug
+ * render system.  Called from pongPlayer_Activate and pongPlayer_B6F0_g
+ * (initialisation path).
+ *
+ * Adds up to 3 entries to the global debug draw table:
+ *   1. Skeleton debug draw object (at this+6208, offset +4), type 1031, priority 128
+ *   2. If m_pParent field +248 is non-null: that object, type 15, priority 128
+ *   3. Player base object (this+4), type 1703, priority 128
+ *
+ * The global table has three parallel arrays (pointer, type, priority)
+ * indexed by a shared counter at a fixed SDA address.
+ */
+void pongPlayer::RegisterDebugDrawEntries() {  // pongPlayer_BB38_g @ 0x8218BB38
+    extern uint32_t  g_debugDrawCount;        // @ SDA+14436
+    extern uint32_t  g_debugDrawPtrs[];       // @ SDA+14440  (pointer array)
+    extern uint32_t  g_debugDrawTypes[];      // @ SDA+14696  (type ID array)
+    extern uint8_t   g_debugDrawPriority[];   // @ SDA+14952  (priority array)
+
+    uint8_t* base = reinterpret_cast<uint8_t*>(this);
+
+    // Get skeleton debug draw object (this+6208 -> +4)
+    void* skelDebugObj = *reinterpret_cast<void**>(base + 6208);
+    void* skelEntry = skelDebugObj ? reinterpret_cast<void*>(
+        reinterpret_cast<uintptr_t>(skelDebugObj) + 4) : nullptr;
+
+    uint32_t idx = g_debugDrawCount;
+
+    // Entry 1: skeleton debug draw
+    g_debugDrawPtrs[idx]     = reinterpret_cast<uintptr_t>(skelEntry);
+    g_debugDrawTypes[idx]    = 1031;
+    g_debugDrawPriority[idx] = 128;
+    idx++;
+
+    // Entry 2: optional sub-object from m_pParent field +248
+    void* parentState = *reinterpret_cast<void**>(base + 452);
+    void* subObj = *reinterpret_cast<void**>(
+        reinterpret_cast<uintptr_t>(parentState) + 248);
+    if (subObj) {
+        g_debugDrawPtrs[idx]     = reinterpret_cast<uintptr_t>(subObj);
+        g_debugDrawTypes[idx]    = 15;
+        g_debugDrawPriority[idx] = 128;
+        idx++;
+    }
+
+    // Entry 3: player base object (this+4)
+    g_debugDrawPtrs[idx]     = reinterpret_cast<uintptr_t>(base + 4);
+    g_debugDrawTypes[idx]    = 1703;
+    g_debugDrawPriority[idx] = 128;
+    idx++;
+
+    g_debugDrawCount = idx;
+}
