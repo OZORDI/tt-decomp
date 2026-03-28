@@ -188,7 +188,6 @@ struct LocomotionStateAnim {
     bool Load(void* parentState, void* fileLoader);
     void Update();
 
-    // ── implemented methods ──
     void* FindAnimationByID(uint16_t animID_high, uint8_t animID_low);  // @ 0x8224BEF8
     bool SetupAnimationPair(uint16_t animID1, uint16_t animID2, void* param);  // @ 0x8224C418
     void CopyAnimationData();       // @ 0x8214C8F8
@@ -561,10 +560,10 @@ struct pcrSwingAbortSet {
 
     // ── virtual methods ──
     virtual ~pcrSwingAbortSet();                  // [0] @ 0x820e8f70
-    virtual void vfn_3();  // [3] @ 0x820e95b0
-    virtual void vfn_20();  // [20] @ 0x820e94f8
-    virtual void vfn_21();  // [21] @ 0x820e9540
-    virtual void vfn_22();  // [22] @ 0x820e94e8
+    virtual void ResolveChildren();  // [3] @ 0x820e95b0
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820e94f8
+    virtual void LoadProperties();  // [21] @ 0x820e9540
+    virtual const char* GetTypeName() const;  // [22] @ 0x820e94e8
 };
 
 // ── pcrSwingBlend  [vtable @ 0x82028A84] ──────────────────────────
@@ -573,9 +572,9 @@ struct pcrSwingBlend {
 
     // ── virtual methods ──
     virtual ~pcrSwingBlend();                  // [0] @ 0x820db990
-    virtual void vfn_20();  // [20] @ 0x820dc280
-    virtual void vfn_21();  // [21] @ 0x820dc2c8
-    virtual void vfn_22();  // [22] @ 0x820dc270
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820dc280
+    virtual void LoadProperties();  // [21] @ 0x820dc2c8
+    virtual const char* GetTypeName() const;  // [22] @ 0x820dc270
 };
 
 // ── pcrSwingBlender  [2 vtables — template/MI] ──────────────────────────
@@ -596,9 +595,9 @@ struct pcrSwingData {
 
     // ── virtual methods ──
     virtual ~pcrSwingData();                  // [0] @ 0x820eb718
-    virtual void vfn_20();  // [20] @ 0x820eb448
-    virtual void vfn_21();  // [21] @ 0x820eb490
-    virtual void vfn_22();  // [22] @ 0x820eb438
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820eb448
+    virtual void LoadProperties();  // [21] @ 0x820eb490
+    virtual const char* GetTypeName() const;  // [22] @ 0x820eb438
 };
 
 // ── pcrSwingMissData  [vtable @ 0x8202E3FC] ──────────────────────────
@@ -607,10 +606,10 @@ struct pcrSwingMissData {
 
     // ── virtual methods ──
     virtual ~pcrSwingMissData();                  // [0] @ 0x820e7cb8
-    virtual void vfn_3();  // [3] @ 0x820e83f8
-    virtual void vfn_20();  // [20] @ 0x820e8268
-    virtual void vfn_21();  // [21] @ 0x820e82b0
-    virtual void vfn_22();  // [22] @ 0x820e8258
+    virtual void ResolveChildren();  // [3] @ 0x820e83f8
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820e8268
+    virtual void LoadProperties();  // [21] @ 0x820e82b0
+    virtual const char* GetTypeName() const;  // [22] @ 0x820e8258
 };
 
 // ── pcrSwingMissRange  [vtable @ 0x8202EF54] ──────────────────────────
@@ -626,11 +625,11 @@ struct pcrSwingMissRangeHeading {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x820ec4e0
-    virtual void vfn_21();  // [21] @ 0x820ec528
-    virtual void vfn_22();  // [22] @ 0x820e7ca8
-    virtual void vfn_23();  // [23] @ 0x820ec358
-    virtual void vfn_24();  // [24] @ 0x820ec3b0
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820ec4e0
+    virtual void LoadProperties();  // [21] @ 0x820ec528
+    virtual const char* GetTypeName() const;  // [22] @ 0x820e7ca8
+    virtual void SetTransform(const void* matrix);  // [23] @ 0x820ec358
+    virtual bool TestPoint(const void* point) const;  // [24] @ 0x820ec3b0
 };
 
 // ── pcrSwingMissRangeSphere  [vtable @ 0x8202EFC4] ──────────────────────────
@@ -638,11 +637,11 @@ struct pcrSwingMissRangeSphere {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_20();  // [20] @ 0x820ec248
-    virtual void vfn_21();  // [21] @ 0x820ec290
-    virtual void vfn_22();  // [22] @ 0x820e7c98
-    virtual void vfn_23();  // [23] @ 0x820ec158
-    virtual void vfn_24();  // [24] @ 0x820ec1f8
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820ec248
+    virtual void LoadProperties();  // [21] @ 0x820ec290
+    virtual const char* GetTypeName() const;  // [22] @ 0x820e7c98
+    virtual void SetTransform(const void* matrix);  // [23] @ 0x820ec158
+    virtual bool TestPoint(const void* point) const;  // [24] @ 0x820ec1f8
 };
 
 // ── pcrSwingMissSet  [vtable @ 0x8202E2CC] ──────────────────────────
@@ -651,9 +650,9 @@ struct pcrSwingMissSet {
 
     // ── virtual methods ──
     virtual ~pcrSwingMissSet();                  // [0] @ 0x820e79a8
-    virtual void vfn_3();  // [3] @ 0x820e7a78
-    virtual void vfn_20();  // [20] @ 0x820e7a30
-    virtual void vfn_22();  // [22] @ 0x820e7a20
+    virtual void ResolveChildren();  // [3] @ 0x820e7a78
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820e7a30
+    virtual const char* GetTypeName() const;  // [22] @ 0x820e7a20
 };
 
 // ── pcrSwingSet  [vtable @ 0x8202E914] ──────────────────────────
@@ -662,10 +661,10 @@ struct pcrSwingSet {
 
     // ── virtual methods ──
     virtual ~pcrSwingSet();                  // [0] @ 0x820ea1b8
-    virtual void vfn_3();  // [3] @ 0x820ea4d0
-    virtual void vfn_20();  // [20] @ 0x820ea248
-    virtual void vfn_21();  // [21] @ 0x820ea290
-    virtual void vfn_22();  // [22] @ 0x820ea238
+    virtual void ResolveChildren();  // [3] @ 0x820ea4d0
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820ea248
+    virtual void LoadProperties();  // [21] @ 0x820ea290
+    virtual const char* GetTypeName() const;  // [22] @ 0x820ea238
 };
 
 namespace pcrSwingSetInner {
@@ -675,7 +674,7 @@ struct xmlNodeStructSpecialty {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_5();  // [5] @ 0x820eb200
+    virtual void* GetTypeIdPtr() const;  // [5] @ 0x820eb200
 };
 
 } // namespace pcrSwingSetInner
@@ -694,10 +693,10 @@ struct pcrSwingSpace {
 
     // ── virtual methods ──
     virtual ~pcrSwingSpace();                  // [0] @ 0x820e9808
-    virtual void vfn_3();  // [3] @ 0x820e9d78
-    virtual void vfn_20();  // [20] @ 0x820e9ca0
-    virtual void vfn_21();  // [21] @ 0x820e9ce8
-    virtual void vfn_22();  // [22] @ 0x820e9c90
+    virtual void ResolveChildren();  // [3] @ 0x820e9d78
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820e9ca0
+    virtual void LoadProperties();  // [21] @ 0x820e9ce8
+    virtual const char* GetTypeName() const;  // [22] @ 0x820e9c90
 };
 
 // ── pcrSwingSpaceMgr  [vtable @ 0x82028CCC] ──────────────────────────
@@ -724,22 +723,20 @@ struct pongBlendLookAtDriver {
     // ── virtual methods ──
     virtual ~pongBlendLookAtDriver();                  // [0] @ 0x820d0740
     virtual void ScalarDtor(int flags); // [1] @ 0x820d0c20
-    virtual void vfn_4();  // [4] @ 0x820d12b0
-    virtual void vfn_5();  // [5] @ 0x820d16f8
-    virtual void vfn_6();  // [6] @ 0x820d1738
-    virtual void vfn_7();  // [7] @ 0x820d1750
-    virtual void vfn_9();  // [9] @ 0x820d1758
-    virtual void vfn_12();  // [12] @ 0x820d0c80
+    virtual void Apply(void* poseData, bool fullBody);    // [4] @ 0x820d12b0
+    virtual void Activate(uint8_t side);                  // [5] @ 0x820d16f8
+    virtual void Deactivate();                            // [6] @ 0x820d1738
+    virtual bool IsDeactivating() const;                  // [7] @ 0x820d1750
+    virtual void Reset();                                 // [9] @ 0x820d1758
+    virtual void SetMaxWeight();                          // [12] @ 0x820d0c80
     virtual void GetName();  // [13] @ 0x820d0c90
-    virtual void vfn_18();  // [18] @ 0x820d0ca0
-    virtual void vfn_20();  // [20] @ 0x820d0cd0
+    virtual float CalculateBlendFactor() const;           // [18] @ 0x820d0ca0
+    virtual void Update(float f1, float f2, float f3);    // [20] @ 0x820d0cd0
 
     // ── non-virtual methods (from debug strings) ──
     void UpdateBody();
     void UpdateFace();
     
-    // ── implemented methods ──
-    float CalculateBlendFactor();  // @ 0x820D0CA0 [vtable slot 18]
 };
 
 // ── pongBlender  [2 vtables — template/MI] ──────────────────────────
@@ -832,18 +829,17 @@ struct pongCreatureInst {
     // ── inline 4x4 matrix (local transform), 64 bytes +0x0010..+0x004C ──
     float        m_mtxLocal[16];// +0x0010  4x4 local-to-world matrix (vfn_3 SetMatrix, vfn_28)
     uint32_t     m_flags;       // +0x0050  state flags (ori bit0=active, bit1=dirty)  (R:7 W:8)
-    uint32_t     m_pFragment;   // +0x0054  ptr to fragment instance; +456=sub-struct  (R:10 W:1)
-    uint32_t     field_0x0058;  // +0x0058  R:0 W:2
-    uint32_t     field_0x005c;  // +0x005c  R:1 W:1
+    uint32_t     m_pPhysInst;   // +0x0054  ptr to phInst; +456=phBitSet (R:10 W:1)
+    uint32_t     m_pNextInst;   // +0x0058  linked list next ptr (R:0 W:2)
+    uint32_t     m_pPrevInst;   // +0x005c  linked list prev ptr (R:1 W:1)
     uint32_t     field_0x0060;  // +0x0060  R:0 W:1
     uint32_t     field_0x0064;  // +0x0064  R:0 W:1
     uint32_t     field_0x0068;  // +0x0068  R:0 W:1
     float        m_vecWorldPos[4]; // +0x0070  world pos from matrix transform (vfn_28/46 stvx)  (R:7 W:1)
-    
-    uint32_t     m_stateFlags;  // +0x0080  state bits (ori bit0, bit1)  (R:2 W:3)
+    float        m_fBoundRadius;// +0x0080  bounding radius (stfs in vfn_28/48) (R:2 W:3)
     uint16_t     m_wStateBits;  // +0x0082  halfword status (lhz)  (R:1 W:0)
     uint32_t     field_0x0084;  // +0x0084  R:0 W:1
-    uint32_t     m_pListNext;   // +0x0088  linked-list next ptr (creature chain, vfn_41)  (R:0 W:1)
+    uint32_t     field_0x0088;  // +0x0088  R:0 W:1
     uint32_t     m_pCreatureData; // +0x0090  ptr to creature def; +24=owner  (R:11 W:1)
     uint32_t     m_pOwnerDef;   // +0x0094  ptr to owner def (alt path via +148)  (R:11 W:1)
     uint32_t     m_pInstData;   // +0x0098  ptr to instance-specific data  (R:1 W:1)
@@ -853,10 +849,11 @@ struct pongCreatureInst {
     uint32_t     field_0x00a4;  // +0x00a4  R:0 W:1
     uint32_t     m_pParentInst; // +0x00a8  ptr to parent fragInst (R:1 W:1)
     uint32_t     field_0x00ac;  // +0x00ac  R:0 W:1
-    float        m_vecPosition[4]; // +0x00B0  position vector (lvx in vfn_42)  (R:3 W:1)
-    
-    
-    uint32_t     m_nRenderState; // +0x00C0  render/draw state  (R:4 W:1)
+    uint32_t     m_pBoneArray;  // +0x00b0  ptr to array of bone ptrs (R:3 W:1)
+    uint32_t     m_pBoneMatrices;// +0x00b4  ptr to bone matrix array (R:1 W:1)
+    uint32_t     field_0x00b8;  // +0x00b8  R:1 W:1
+    uint32_t     field_0x00bc;  // +0x00bc  R:1 W:1
+    uint32_t     m_pAllocator;  // +0x00c0  ptr to sysMemAllocator (R:4 W:1)
     uint32_t     field_0x00c4;  // +0x00c4  R:0 W:1
     uint32_t     field_0x00c8;  // +0x00c8  R:0 W:1
     uint32_t     field_0x00cc;  // +0x00cc  R:0 W:1
