@@ -14,6 +14,35 @@ extern "C" void* rage_alloc(uint32_t size);  // RAGE heap alloc (defined in heap
 #include <math.h>
 #include <string.h>
 
+/* --- Vtable pointers (resolved from .rdata) --- */
+extern void* g_vtable_phInstWrapper;         // @ 0x82005828 (40B, ph_vt57D8_20 wrapper vtable)
+extern void* g_vtable_phInst;               // @ 0x820057D8 (80B, phInst embedded vtable)
+extern void* g_vtable_phDemoWorld;           // @ 0x82003DB0 (20B, phDemoWorld vtable)
+extern void* g_vtable_phNamedNode;           // @ 0x8200460C (phNamedNode vtable)
+extern void* g_vtable_fiAsciiTokenizer;      // @ 0x8202777C (168B, rage::fiAsciiTokenizer RTTI)
+extern void* g_vtable_phInstCleanup;         // @ 0x82022D2C (inside lbl_82022D00, phInst cleanup vtable)
+extern void* g_vtable_phInstTriple;          // @ 0x82005918 (60B, phInst triple-init primary vtable)
+extern void* g_vtable_phInstParam;           // @ 0x8200586C (44B, phInst param-init primary vtable)
+extern void* g_vtable_phInstParamSecondary;  // @ 0x82005850 (28B, phInst param-init secondary vtable)
+extern void* g_vtable_phInstDerived;         // @ 0x82005A40 (24B, phInst derived class vtable)
+extern void* g_vtable_phCtor0460;            // @ 0x820014C8 (phCtor vtable)
+extern void* g_vtable_phObjectBase;          // @ 0x82019168 (phObject base vtable)
+extern void* g_vtable_phObject;              // @ 0x82008918 (140B, phObject destructor vtable)
+
+/* --- Global data pointers --- */
+extern void* g_phDemoWorldSingleton;    // @ 0x823E7888 (phDemoWorld singleton instance)
+extern void* g_phWorldPtr;             // @ 0x826065EC (12B, physics world pointer, SDA)
+extern const uint8_t g_phCapsuleTemplate[];  // @ 0x825CB800 (64B, capsule template data)
+extern int32_t g_phPhysicsOffset;       // @ 0x82607A48 (physics data offset global)
+extern const char g_phFormatStr[];      // @ 0x82059F04 (6B, format string)
+extern void* g_phDispatchFunc;          // @ 0x82019690 (phObject dispatch function ptr)
+extern void* g_phJointConstraintData;   // @ 0x8207E6D0 (24B, joint constraint data)
+
+/* --- Float constants used as raw addresses --- */
+extern const float g_phMinThreshold;    // @ 0x8202D010
+extern const float g_phMaxThreshold;    // @ 0x8202D008
+extern const float g_phScaleFactor;     // @ 0x8202CFF0
+
 /**
  * rage_strchr @ 0x824321B0 | size: 0x3C
  *
@@ -102,10 +131,10 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
     
     // Set up vtable pointers
     // Main vtable at offset 0
-    *(void**)(obj + 0) = (void*)0x82005828;
+    *(void**)(obj + 0) = &g_vtable_phInstWrapper;  // lbl_82005828
     
     // Embedded phInst vtable at offset 12
-    *(void**)(obj + 12) = (void*)0x820057D8;
+    *(void**)(obj + 12) = &g_vtable_phInst;  // lbl_820057D8
     
     // Initialize the embedded phInst object at offset +0x0C
     // phInst_6158_p39 is the phInst initialization function
@@ -114,13 +143,13 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
     // phInst_6158_p39(phInstPtr);
     
     // Update main vtable after phInst initialization
-    *(void**)(obj + 0) = (void*)0x82003DB0;
+    *(void**)(obj + 0) = &g_vtable_phDemoWorld;  // lbl_82003DB0
     
     // If bit 0 of registerWithWorld is set, register with phDemoWorld
     if (registerWithWorld & 0x1) {
         // phDemoWorld_67D0_g is a global registration function
         // Parameters: phDemoWorld singleton address, this object, flags
-        void* phDemoWorldSingleton = (void*)0x823E7888;
+        void* phDemoWorldSingleton = &g_phDemoWorldSingleton;  // lbl_823E7888
         uint32_t flags = 0x61820000;
         
         // Call phDemoWorld registration
@@ -277,7 +306,7 @@ void phNamedNode_Init(void* thisPtr, const char* name) {
     uint8_t* obj = (uint8_t*)thisPtr;
     
     // Set vtable pointer at offset 0
-    *(void**)(obj + 0) = (void*)0x8200460C;
+    *(void**)(obj + 0) = &g_vtable_phNamedNode;  // lbl_8200460C
     
     // Initialize circular doubly-linked list pointers
     // Both prev and next point to self initially
@@ -862,7 +891,7 @@ void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
     uint8_t* src = (uint8_t*)sourceObj;
     
     // Load template data address
-    const uint8_t* templateData = (const uint8_t*)0x825CB800;  // lbl_825CB800
+    const uint8_t* templateData = g_phCapsuleTemplate;  // lbl_825CB800
     
     // Copy 64 bytes of template data (4 x 16-byte SIMD vectors)
     for (int i = 0; i < 64; i += 16) {
@@ -874,7 +903,7 @@ void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
     
     // Get physics data pointer from source object
     void* physicsData = *(void**)(src + 400);
-    const int32_t physicsOffset = *(int32_t*)0x82607A48;  // Global offset
+    const int32_t physicsOffset = g_phPhysicsOffset;  // lbl_82607A48
     uint8_t* physicsObj = (uint8_t*)physicsData + physicsOffset;
     
     // Check flags at offset +64
@@ -1590,7 +1619,7 @@ void phBoundGeometry::UpdateBounds(const float* offset) {
     bool hasOffset = !(masked[0] == 0 && masked[1] == 0 &&
                        masked[2] == 0 && masked[3] == 0);
 
-    field_0x0005 = hasOffset ? 1 : 0;  // +5
+    m_bHasOffset = hasOffset ? 1 : 0;  // +5
     
     // Call vtable slot 37 to finalize the update
     void** vtable = *(void***)this;
@@ -1656,7 +1685,7 @@ void ph_2DF0(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
     
     // Set vtable pointer for rage::fiAsciiTokenizer
-    *(void**)(obj + 0) = (void*)0x8202777C;
+    *(void**)(obj + 0) = &g_vtable_fiAsciiTokenizer;  // lbl_8202777C
     
     // Clear internal state field
     *(uint32_t*)(obj + 160) = 0;
@@ -1888,7 +1917,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     // Get resource manager and material info
     uint32_t resourceMgr = *(uint32_t*)((uint8_t*)loadContext + 96);
     void* materialInfo = (void*)*(uint32_t*)((uint8_t*)resourceMgr + 212);
-    void* physicsWorld = (void*)0x826065EC;  // Global physics world pointer
+    void* physicsWorld = &g_phWorldPtr;  // lbl_826065EC
     
     // Normalize the asset path
     normalizedPath[255] = '\0';
@@ -1896,7 +1925,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     
     // Try to find existing archetype in resource system
     int attemptCount = 1;
-    const char* formatStr = (const char*)0x82059F04;  // Format string for path variants
+    const char* formatStr = g_phFormatStr;  // lbl_82059F04
     
     while (true) {
         void* existingArchetype = ph_6FC8(*(void**)((uint8_t*)physicsWorld + 8), normalizedPath);
@@ -2555,7 +2584,7 @@ int ph_0CC0(void* stateObj) {
 // Destructor
 // ─────────────────────────────────────────────────────────────────────────────
 phObject::~phObject() {
-    this->vtable = (void**)0x82008918;
+    this->vtable = (void**)&g_vtable_phObject;  // lbl_82008918
     this->Release();
 }
 
@@ -2565,12 +2594,12 @@ phObject::~phObject() {
 // ─────────────────────────────────────────────────────────────────────────────
 void phObject::ResetState() {
     m_field_500 = 0;
-    m_field_508 = nullptr;
+    m_pResource = nullptr;
     m_field_504 = 1;
     m_field_512 = 0;
     m_field_520 = 0;
-    m_field_524 = 0;
-    m_field_528 = 1;
+    m_pChild4 = 0;
+    m_pChild8 = 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2581,7 +2610,7 @@ void phObject::Initialize(void* a2, void* a3, void* a4) {
     int32_t result = this->Release();
     if (result >= 0) {
         void* ptr = (void*)0x208C801D;
-        m_field_508 = ptr;
+        m_pResource = ptr;
         if (ptr != nullptr) {
             uint32_t valA2 = *(uint32_t*)&a2;
             m_field_112 = *(uint32_t*)(uintptr_t)(valA2 + 8);
@@ -2645,8 +2674,8 @@ int32_t phObject::QueryInterface(int32_t) {
 // Cleanup and state clear
 // ─────────────────────────────────────────────────────────────────────────────
 int32_t phObject::Release() {
-    if (m_field_508 != nullptr) {
-        m_field_508 = nullptr;
+    if (m_pResource != nullptr) {
+        m_pResource = nullptr;
     }
     
     this->ReleaseViews();
@@ -2660,11 +2689,11 @@ int32_t phObject::Release() {
 // Sub-object update
 // ─────────────────────────────────────────────────────────────────────────────
 void* phObject::CreateResource() {
-    if (m_field_52 != nullptr) {
-        if (m_field_52->QueryInterface(1) < 0) {
+    if (m_pChild != nullptr) {
+        if (m_pChild->QueryInterface(1) < 0) {
             return nullptr;
         }
-        this->CreateViews(m_field_52);
+        this->CreateViews(m_pChild);
     }
     return nullptr;
 }
@@ -2688,9 +2717,9 @@ void phObject::ReleaseViews() {
         m_field_500 = 0;
     }
     
-    if (m_field_52 != nullptr) {
-        m_field_52->Release();
-        m_field_52 = nullptr;
+    if (m_pChild != nullptr) {
+        m_pChild->Release();
+        m_pChild = nullptr;
     }
 }
 // ═════════════════════════════════════════════════════════════════════════════
@@ -3412,7 +3441,7 @@ void phInst::LoadGlobalAndCall() {  // E2C0_2h
  */
 void phInst::InitVtableAndCleanup() {  // 87F8
     // Set vtable to phInst base
-    *(void**)this = (void*)0x82022D2C;
+    *(void**)this = &g_vtable_phInstCleanup;  // lbl_82022D2C
     phInst_Cleanup(this);
 }
 
@@ -3656,9 +3685,9 @@ void phInst::DispatchTransformA(void* arg1, void* arg2) {  // vfn_14_D828_1
  * Primary vtable at +0 = 0x82005918, secondary at +4 = 0x82003DB0.
  */
 void phInst::InitTripleVtable() {  // 5910_p39
-    *(void**)((char*)this + 0) = (void*)0x82005918;
+    *(void**)((char*)this + 0) = &g_vtable_phInstTriple;  // lbl_82005918
     // +4 first written as 0x820058FC, then overwritten with 0x82003DB0
-    *(void**)((char*)this + 4) = (void*)0x82003DB0;
+    *(void**)((char*)this + 4) = &g_vtable_phDemoWorld;  // lbl_82003DB0
 }
 
 /**
@@ -3670,8 +3699,8 @@ void phInst::InitTripleVtable() {  // 5910_p39
 void phInst::InitWithParam(void* param) {  // 1508_2hr
     *(uint32_t*)((char*)this + 8) = 1;
     *(uint32_t*)((char*)this + 12) = *(uint32_t*)((char*)param + 4);
-    *(void**)((char*)this + 0) = (void*)0x8200586C;
-    *(void**)((char*)this + 4) = (void*)0x82005850;
+    *(void**)((char*)this + 0) = &g_vtable_phInstParam;  // lbl_8200586C
+    *(void**)((char*)this + 4) = &g_vtable_phInstParamSecondary;  // lbl_82005850
 }
 
 /**
@@ -4222,7 +4251,7 @@ int ph_vt58FC_15_SetByte26(void* thisPtr, uint8_t value) {
 // ph_vt5A40_0_6108 @ 0x82466108 | size: 0x10
 // Destructor stub: sets vtable to lbl_82005A40
 void ph_vt5A40_0_SetVtable(void* thisPtr) {
-    *(void**)thisPtr = (void*)0x82005A40;  // lbl_82005A40 vtable
+    *(void**)thisPtr = &g_vtable_phInstDerived;  // lbl_82005A40 vtable
 }
 
 // ph_vt5A60_40_68C0 @ 0x824668C0 | size: 0x8
@@ -4689,7 +4718,7 @@ void* ph_GetBoundPointer(void* thisPtr, uint8_t useFirst) {
 void ph_ctor_0460_Destructor(void* thisPtr) {
     extern void fiAsciiTokenizer_3310_g(void* obj);
     // Set vtable
-    *(void**)thisPtr = (void*)0x820014C8;  // lbl_820014C8 vtable
+    *(void**)thisPtr = &g_vtable_phCtor0460;  // lbl_820014C8 vtable
     uint32_t childFlag = *(uint32_t*)((char*)thisPtr + 8);
     if (childFlag != 0) {
         void* child = *(void**)((char*)thisPtr + 4);
@@ -5127,7 +5156,7 @@ int32_t phObject_33(void* thisPtr, uint32_t valueA, uint32_t valueB) {
 // then tail-calls util_85C8 (via thunk_fn_824885C8) for base cleanup.
 // ─────────────────────────────────────────────────────────────────────────────
 void phObject_B878_h(void* thisPtr) {
-    *(void**)thisPtr = (void*)0x82019168;  // lis r11,-32255; addi r11,r11,-28312
+    *(void**)thisPtr = &g_vtable_phObjectBase;  // lbl_82019168
     thunk_fn_824885C8(thisPtr);
 }
 
@@ -5478,7 +5507,7 @@ void phObject_0(void* thisPtr, uint32_t registerFlag) {
     uint8_t* obj = (uint8_t*)thisPtr;
 
     // Set vtable
-    *(void**)(obj + 0) = (void*)0x82008918;
+    *(void**)(obj + 0) = &g_vtable_phObject;  // lbl_82008918
 
     // Call shutdown to initialize base state
     phObject_15(thisPtr);
