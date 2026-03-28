@@ -74,6 +74,8 @@ extern pongNetMessageHolder* pongNetMessageHolder_FAE0_isl();
 extern void pongNetMessageHolder_5038_w();
 extern void rage_27C0(void* instance);
 extern "C" void rage_free_00C0(void* ptr);
+extern void game_5E70(void* gameState);
+extern void pongNetMessageHolder_7668_2hr(void* stateArray);
 
 namespace {
 struct PongNetMessageHolderStaticNode {
@@ -4900,4 +4902,266 @@ void pongNetMessageHolder_vfn_2_3FD0_1(pongNetMessageHolder* holder) {
         rage_free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
+}
+
+
+// ===========================================================================
+// pongNetMessageHolder::InitNetworkState @ 0x821D75B0 | size: 0xB8
+//
+// Initialises a network state structure. Zeroes 6 floats at +0 through +24,
+// calls pongNetMessageHolder_7668_2hr on the sub-object at +32, stores a
+// default float at +9732, zeroes +9728, calls InitTimerArray on +9736,
+// calls game_5E70 on +9760, zeroes +10208 and +10212, and copies 16 bytes
+// of default data from 0x8261A0C0 into +10216.
+// ===========================================================================
+void pongNetMessageHolder_75B0(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    // Zero 6 floats (positions/velocities)
+    float zero = *(float*)0x8202D110u;
+    *(float*)(obj + 0) = zero;
+    *(float*)(obj + 4) = zero;
+    *(float*)(obj + 8) = zero;
+    *(float*)(obj + 16) = zero;
+    *(float*)(obj + 20) = zero;
+    *(float*)(obj + 24) = zero;
+
+    // Init sub-object at +32
+    pongNetMessageHolder_7668_2hr(obj + 32);
+
+    // Store default float at +9732, zero byte at +9728
+    float defaultTimer = *(float*)0x825C5948u;
+    *(float*)(obj + 9732) = defaultTimer;
+    *(uint8_t*)(obj + 9728) = 0;
+
+    // Init timer array at +9736
+    pongNetMessageHolder_6D08_2hr(obj + 9736);
+
+    // Init game state at +9760
+    game_5E70(obj + 9760);
+
+    // Zero remaining fields
+    *(uint32_t*)(obj + 10208) = 0;
+    *(uint8_t*)(obj + 10212) = 0;
+
+    // Copy 16 bytes of default data from global
+    uint32_t* src = (uint32_t*)0x8261A0C0u;
+    uint32_t* dst = (uint32_t*)(obj + 10216);
+    dst[0] = src[0];
+    dst[1] = src[1];
+    dst[2] = src[2];
+    dst[3] = src[3];
+}
+
+
+// ===========================================================================
+// pongNetMessageHolder::InitInputData @ 0x821E0138 | size: 0xBC
+//
+// Constructor for an input-data holder (gdInputData). Sets vtable, zeroes
+// control fields, initialises a sub-array at offset +796 with capacity 58,
+// and allocates a zeroed buffer of 232 bytes for the entries.
+// ===========================================================================
+void pongNetMessageHolder_0138_w(void* self) {
+    uint8_t* obj = (uint8_t*)self;
+
+    *(uint32_t*)(obj + 0) = 0x82041468u;  // gdInputData vtable
+    *(uint8_t*)(obj + 4) = 0;
+    *(uint8_t*)(obj + 5) = 0;
+    *(uint8_t*)(obj + 6) = 0;
+    *(uint8_t*)(obj + 7) = 0;
+    *(uint32_t*)(obj + 8) = 0;
+    *(uint8_t*)(obj + 12) = 0;
+    *(uint32_t*)(obj + 16) = 0;
+    *(uint32_t*)(obj + 24) = 0;
+    *(uint32_t*)(obj + 20) = 0;
+
+    // Init sub-array at +796
+    uint8_t* subArray = obj + 796;
+    *(uint32_t*)(subArray + 0) = 0;
+    *(uint16_t*)(subArray + 4) = 0;
+    *(uint16_t*)(subArray + 6) = 0;
+    *(uint32_t*)(obj + 804) = 0;
+
+    uint16_t currentCapacity = *(uint16_t*)(subArray + 6);
+    if (currentCapacity == 0) {
+        *(uint16_t*)(subArray + 6) = 58;
+
+        // Allocate 232 bytes (58 * 4)
+        void* buf = xe_EC88(232);
+        if (buf != nullptr) {
+            // Zero the entire buffer byte-by-byte (58 entries * 4 bytes each)
+            uint8_t* p = (uint8_t*)buf + 2;
+            for (int i = 57; i >= 0; i--) {
+                *(p - 2) = 0;
+                *(p - 1) = 0;
+                *(p + 0) = 0;
+                *(p + 1) = 0;
+                p += 4;
+            }
+        }
+        *(void**)(subArray + 0) = buf;
+    }
+
+    *(uint16_t*)(subArray + 4) = 58;
+}
+
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C46F8 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x82070090), calls vfn_2_0868_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_46F8_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x82070090u);
+    pongNetMessageHolder_vfn_2_0868_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
+}
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C4770 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x820700A4), calls vfn_2_07A8_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_4770_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x820700A4u);
+    pongNetMessageHolder_vfn_2_07A8_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
+}
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C47E8 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x820700B8), calls vfn_2_FD70_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_47E8_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x820700B8u);
+    pongNetMessageHolder_vfn_2_FD70_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
+}
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C4860 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x820700CC), calls vfn_2_24B8_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_4860_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x820700CCu);
+    pongNetMessageHolder_vfn_2_24B8_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
+}
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C48D8 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x820700E0), calls vfn_2_FF38_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_48D8_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x820700E0u);
+    pongNetMessageHolder_vfn_2_FF38_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
+}
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C4950 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x820700F4), calls vfn_2_FFF8_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_4950_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x820700F4u);
+    pongNetMessageHolder_vfn_2_FFF8_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
+}
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C49C8 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x82070108), calls vfn_2_0638_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_49C8_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x82070108u);
+    pongNetMessageHolder_vfn_2_0638_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
+}
+
+// ===========================================================================
+// pongNetMessageHolder destructor variant @ 0x823C4A40 | size: 0x78
+//
+// Deleting destructor for MI vtable variant.
+// Sets derived vtable (0x8207011C), calls vfn_2_0260_1 cleanup, resets to
+// base vtable (0x8206FA88), decrements live count, conditionally frees.
+// ===========================================================================
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_4A40_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(0x8207011Cu);
+    pongNetMessageHolder_vfn_2_0260_1(self);
+    self->vtable = reinterpret_cast<void**>(0x8206FA88u);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+
+    return self;
 }
