@@ -84,8 +84,8 @@ extern void phArticulatedCollider_6B40_wrh(void* jointData);
 extern void phArticulatedCollider_6D30_h(void* collider);
 extern void phArticulatedCollider_77F0_w(void* jointData, int linkIndex, const float* delta);
 extern void phArticulatedCollider_7918_w(void* jointData, int linkIndex);
-extern void phBoundCapsule_01D0_g_joint(phJoint3Dof*, float);
-extern void phBoundCapsule_6C28_fw(void* capsule);
+extern void ph_Sqrtf_joint(phJoint3Dof*, float);
+extern void ph_ApplyAngularVelocity(void* capsule);
 extern void phBoundCapsule_ACB0_p45(void* capsule);
 extern void phCollider_vfn_4(phArticulatedCollider* collider);
 extern void phInst_5910_p39(void* obj);
@@ -148,9 +148,9 @@ extern void  msgMsgSink_8DA0_sp(void* obj);
 extern void atSingleton_8A48_p42(void* obj);
 extern void fiAsciiTokenizer_3310_g(void* obj);
 extern void strncpy(char*, const char*, int);
-extern void util_4628(phJoint3Dof*, int);
+extern void phJoint3Dof_ResetAllJoints(phJoint3Dof*, int);
 extern void util_B680(void* thisPtr);
-extern void util_D150(void*, void*, void*);
+extern void rage_CopyMatrixAndBind(void*, void*, void*);
 
 /* --- Other functions --- */
 extern void pg_6C80_g(int ms);              // Sleep/yield helper @ 0x82566C80
@@ -273,7 +273,7 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
 
 
 // External references
-extern void util_B8A0(void* obj);  // Base initialization
+extern void rmcDrawable_Init(void* obj);  // Base initialization
 extern const float g_floatZero;    // @ 0x8202D110
 extern const float g_floatOne;     // @ 0x8202D110 - 8
 extern void* g_fragDrawableVtable; // @ 0x82033094
@@ -285,7 +285,7 @@ extern void* g_fragDrawableVtable; // @ 0x82033094
  * for fragmented/destructible geometry in the RAGE engine.
  *
  * The constructor:
- * 1. Calls base class initialization (util_B8A0)
+ * 1. Calls base class initialization (rmcDrawable_Init)
  * 2. Sets up the vtable pointer
  * 3. Zeros out all state fields (256-302)
  * 4. Initializes a 3x3 identity matrix at offset +192
@@ -301,7 +301,7 @@ extern void* g_fragDrawableVtable; // @ 0x82033094
 void fragDrawable_Constructor(void* thisPtr) {
     void* self = thisPtr; (void)self;
     // Call base class initialization
-    util_B8A0(thisPtr);
+    rmcDrawable_Init(thisPtr);
 
     // Set vtable pointer
     *(void**)thisPtr = g_fragDrawableVtable;  // @ 0x82033094
@@ -774,10 +774,10 @@ int rage::phBoundOTGrid::WorldPositionToGridIndex(const float* position) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // External function declarations (helper functions)
-extern float phBoundCapsule_01D0_g(float value);  // sqrt wrapper
-extern float phBoundCapsule_01D8_g(float value);  // trigonometric function
-extern float phBoundCapsule_0FE0_g(float f1, float f2);  // capsule calculation
-extern float phBoundCapsule_02B0_g(float value);  // normalization function
+extern float ph_Sqrtf(float value);  // sqrt wrapper
+extern float ph_Sinf(float value);  // trigonometric function
+extern float ph_Atan2f(float f1, float f2);  // capsule calculation
+extern float ph_Cosf(float value);  // normalization function
 extern float atSingleton_1308_g(float value, double param);  // singleton math helper
 
 // External constants
@@ -786,29 +786,29 @@ extern const float g_floatOne;       // @ 0x8202D108
 extern const float g_capsuleRadius;  // @ 0x82079B30
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_0550_g @ 0x820D0550 | size: 0x50
+// ph_Atan2fSafe @ 0x820D0550 | size: 0x50
 //
 // Conditional capsule calculation wrapper. If both f2 and f1 are zero,
 // returns zero. Otherwise calls the main capsule calculation function.
 // ─────────────────────────────────────────────────────────────────────────────
-float phBoundCapsule_0550_g(float f1, float f2) {
+float ph_Atan2fSafe(float f1, float f2) {
     if (f2 == g_floatZero) {
         if (f1 != g_floatZero) {
-            return phBoundCapsule_0FE0_g(f1, f2);
+            return ph_Atan2f(f1, f2);
         }
         return g_floatZero;
     }
-    return phBoundCapsule_0FE0_g(f1, f2);
+    return ph_Atan2f(f1, f2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_B6A0_g @ 0x820CB6A0 | size: 0x50
+// ph_ClampAndSin @ 0x820CB6A0 | size: 0x50
 //
 // Applies a clamped trigonometric transformation to an input value.
 // If the value is outside the valid range [minThreshold, maxThreshold],
 // it's clamped. Otherwise, it's scaled and passed through a trig function.
 // ─────────────────────────────────────────────────────────────────────────────
-float phBoundCapsule_B6A0_g(float inputValue) {
+float ph_ClampAndSin(float inputValue) {
     // Load threshold constants from global data
     const float minThreshold = *(float*)0x8202D010;  // offset +288 from base
     const float maxThreshold = *(float*)0x8202D008;  // offset +280 from base
@@ -824,16 +824,16 @@ float phBoundCapsule_B6A0_g(float inputValue) {
     
     // Apply scaling and trigonometric transformation
     float scaledValue = inputValue * scaleFactor;
-    return phBoundCapsule_01D8_g(scaledValue);
+    return ph_Sinf(scaledValue);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_B598_g @ 0x820CB598 | size: 0x58
+// ph_GetCapsuleRadius @ 0x820CB598 | size: 0x58
 //
 // Returns a capsule property based on flags at offset +64.
 // Checks bit 1 (0x02) and bit 4 (0x10) to determine which value to return.
 // ─────────────────────────────────────────────────────────────────────────────
-float phBoundCapsule_B598_g(void* capsule) {
+float ph_GetCapsuleRadius(void* capsule) {
     uint8_t* obj = (uint8_t*)capsule;
     uint8_t flags = obj[64];
     
@@ -852,31 +852,31 @@ float phBoundCapsule_B598_g(void* capsule) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_04F0_g @ 0x820D04F0 | size: 0x60
+// ph_SinCos @ 0x820D04F0 | size: 0x60
 //
 // Computes two related capsule properties and stores them in output pointers.
 // Normalizes the first input, then applies a trigonometric transformation
 // to the second input.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_04F0_g(float* outNormalized, float* outTransformed, float input1, float input2) {
-    float normalized = phBoundCapsule_02B0_g(input1);
+void ph_SinCos(float* outNormalized, float* outTransformed, float input1, float input2) {
+    float normalized = ph_Cosf(input1);
     *outNormalized = normalized;
     
-    float transformed = phBoundCapsule_01D8_g(input2);
+    float transformed = ph_Sinf(input2);
     *outTransformed = transformed;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_3F10_g @ 0x820C3F10 | size: 0x84
+// ph_BuildRotationMatrixX @ 0x820C3F10 | size: 0x84
 //
 // Initializes a capsule structure with computed geometry values.
 // Sets up a vertical capsule aligned along the Y axis.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_3F10_g(void* capsule, float height, float radius) {
+void ph_BuildRotationMatrixX(void* capsule, float height, float radius) {
     uint8_t* obj = (uint8_t*)capsule;
     
-    float normalizedHeight = phBoundCapsule_02B0_g(height);
-    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    float normalizedHeight = ph_Cosf(height);
+    float transformedRadius = ph_Sinf(radius);
     
     const float negOne = *(float*)0x8202D108;  // -1.0f
     const float zero = *(float*)0x8202D110;    // 0.0f
@@ -894,16 +894,16 @@ void phBoundCapsule_3F10_g(void* capsule, float height, float radius) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_3F98_g @ 0x820C3F98 | size: 0x84
+// ph_BuildRotationMatrixY @ 0x820C3F98 | size: 0x84
 //
 // Initializes a capsule structure with computed geometry values.
 // Sets up a horizontal capsule aligned along the X axis.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_3F98_g(void* capsule, float length, float radius) {
+void ph_BuildRotationMatrixY(void* capsule, float length, float radius) {
     uint8_t* obj = (uint8_t*)capsule;
     
-    float normalizedLength = phBoundCapsule_02B0_g(length);
-    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    float normalizedLength = ph_Cosf(length);
+    float transformedRadius = ph_Sinf(radius);
     
     const float one = *(float*)0x8202D100;   // 1.0f (offset +8 from base)
     const float zero = *(float*)0x8202D0F8;  // 0.0f (offset +0 from base)
@@ -921,16 +921,16 @@ void phBoundCapsule_3F98_g(void* capsule, float length, float radius) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_4020_g @ 0x820C4020 | size: 0x84
+// ph_BuildRotationMatrixZ @ 0x820C4020 | size: 0x84
 //
 // Initializes a capsule structure with computed geometry values.
 // Sets up a capsule aligned along the Z axis.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_4020_g(void* capsule, float depth, float radius) {
+void ph_BuildRotationMatrixZ(void* capsule, float depth, float radius) {
     uint8_t* obj = (uint8_t*)capsule;
     
-    float normalizedDepth = phBoundCapsule_02B0_g(depth);
-    float transformedRadius = phBoundCapsule_01D8_g(radius);
+    float normalizedDepth = ph_Cosf(depth);
+    float transformedRadius = ph_Sinf(radius);
     
     const float one = *(float*)0x8202D100;   // 1.0f (offset +8 from base)
     const float zero = *(float*)0x8202D0F8;  // 0.0f (offset +0 from base)
@@ -948,13 +948,13 @@ void phBoundCapsule_4020_g(void* capsule, float depth, float radius) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_9CF8_g @ 0x820C9CF8 | size: 0xA0
+// ph_MoveTowardTarget2D @ 0x820C9CF8 | size: 0xA0
 //
 // Adjusts capsule position based on a 2D offset vector and interpolation factors.
 // Computes the distance from the offset, normalizes it, and applies scaled
 // movement along the offset direction.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_9CF8_g(void* capsule, float* offsetVec, float scaleFactor, float lerpFactor) {
+void ph_MoveTowardTarget2D(void* capsule, float* offsetVec, float scaleFactor, float lerpFactor) {
     uint8_t* obj = (uint8_t*)capsule;
     
     // Load current capsule position
@@ -973,7 +973,7 @@ void phBoundCapsule_9CF8_g(void* capsule, float* offsetVec, float scaleFactor, f
     float distSq = deltaX * deltaX + deltaY * deltaY;
     
     // Compute square root (distance)
-    float distance = phBoundCapsule_01D0_g(distSq);
+    float distance = ph_Sqrtf(distSq);
     
     // Normalize and apply singleton transformation
     const double normalizationFactor = *(double*)0x82079B30;
@@ -1025,7 +1025,7 @@ void phBoundCapsule_9730_fw(void* capsule, void* sourceObj) {
     if (flags == 0) {
         // Apply radius transformation
         const float defaultRadius = *(float*)0x82079B30;  // g_capsuleRadius
-        phBoundCapsule_3F98_g(capsule, defaultRadius, 0.0f);
+        ph_BuildRotationMatrixY(capsule, defaultRadius, 0.0f);
     }
     
     // Copy transformation matrix from source object (offset +384, 16 bytes)
@@ -1143,7 +1143,7 @@ void rage::phBoundCapsule::ScaleRadius(float scale) {
     float scaledValue = scale * scaleFactor;
     
     // Call helper function to apply the scaled value
-    phBoundCapsule_01D8_g(scaledValue);
+    ph_Sinf(scaledValue);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1159,11 +1159,11 @@ void rage::phBoundCapsule::ScaleRadius(float scale) {
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::ComputeBounds(float scale, float* outMin, float* outMax) {
     // Compute minimum bound
-    float minBound = phBoundCapsule_02B0_g(scale);
+    float minBound = ph_Cosf(scale);
     *outMin = minBound;
     
     // Compute maximum bound using the scale
-    float maxBound = phBoundCapsule_01D8_g(scale);
+    float maxBound = ph_Sinf(scale);
     *outMax = maxBound;
 }
 
@@ -1190,11 +1190,11 @@ float rage::phBoundCapsule::ComputeExtent(float param1, float param2) const {
         }
         
         // Otherwise compute extent with param1 (param2 is zero)
-        return phBoundCapsule_0FE0_g(param1, param2);
+        return ph_Atan2f(param1, param2);
     }
 
     // General case: compute extent with both parameters
-    return phBoundCapsule_0FE0_g(param1, param2);
+    return ph_Atan2f(param1, param2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1209,8 +1209,8 @@ float rage::phBoundCapsule::ComputeExtent(float param1, float param2) const {
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::InitializeAxisAlignedX(float halfLength, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     const float* constants = (const float*)0x8202D110;
     const float zero = constants[0];   // +0 = 0.0f
@@ -1245,8 +1245,8 @@ void rage::phBoundCapsule::InitializeAxisAlignedX(float halfLength, float* outMa
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::InitializeAxisAlignedY(float halfLength, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     const float* constants = (const float*)0x8202D108;
     const float one = constants[0];   // +0 = 1.0f
@@ -1286,8 +1286,8 @@ void rage::phBoundCapsule::InitializeAxisAlignedY(float halfLength, float* outMa
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::InitializeAxisAlignedZ(float halfLength, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     const float* constants = (const float*)0x8202D108;
     const float one = constants[0];   // +0 = 1.0f
@@ -1323,8 +1323,8 @@ void rage::phBoundCapsule::InitializeAxisAlignedZ(float halfLength, float* outMa
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::TransformByDirection(float halfLength, const float* direction, float* outMatrix) {
     // Compute capsule parameters
-    float minBound = phBoundCapsule_02B0_g(halfLength);
-    float maxBound = phBoundCapsule_01D8_g(halfLength);
+    float minBound = ph_Cosf(halfLength);
+    float maxBound = ph_Sinf(halfLength);
     
     // Load direction components
     float dirX = direction[0];
@@ -2067,7 +2067,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     pongCreatureInst_9030_g(creatureInst, physicsInst);
     
     // Finalize registration
-    util_D150(loadContext, creatureInst, (void*)((uint8_t*)creatureInst + 16));
+    rage_CopyMatrixAndBind(loadContext, creatureInst, (void*)((uint8_t*)creatureInst + 16));
     
     // Call vtable method on context
     void* contextObj = *(void**)((uint8_t*)contextPtr + 20);
@@ -2138,7 +2138,7 @@ void rage::phArticulatedCollider::DelegateToJointProcessor() {
 // Used for capsule-based collision detection on articulated bodies.
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phArticulatedCollider::DelegateToCapsuleHandler() {
-    phBoundCapsule_6C28_fw((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
+    ph_ApplyAngularVelocity((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2579,7 +2579,7 @@ void rage::phArticulatedCollider::NormalizeVector(const float* src, float* dst) 
 // @param timestep - The physics simulation timestep in seconds
 // ─────────────────────────────────────────────────────────────────────────────
                                        float dampingFactor, float springFactor);
-extern void phBoundCapsule_6968_g(void* jointData);
+extern void ph_IntegrateJointPositions(void* jointData);
 extern void phArticulatedCollider_8450(void* jointData);
 
 void rage::phArticulatedCollider::SetTimestep(float timestep) {
@@ -2599,7 +2599,7 @@ void rage::phArticulatedCollider::SetTimestep(float timestep) {
     phArticulatedCollider_60F8(jointData, timestep, dampingFactor, springFactor);
 
     // Reconfigure capsule geometry for new timestep
-    phBoundCapsule_6968_g(jointData);
+    ph_IntegrateJointPositions(jointData);
 
     // Rebuild joint weight/response data
     phArticulatedCollider_6B40_wrh(jointData);
@@ -2949,14 +2949,14 @@ void phJoint3Dof_C4F8_w(phJoint3Dof* joint) {
     char* current = reinterpret_cast<char*>(joint);
     
     for (int i = 3; i >= 0; i--) {
-        // phJoint3Dof_0170_g iterates over the block calling util_4628
+        // phJoint3Dof_0170_g iterates over the block calling phJoint3Dof_ResetAllJoints
         phJoint3Dof_0170_g(current, 64, 8, reinterpret_cast<void*>(0x8207E6D0));
         
         phJoint3Dof* blockObj = reinterpret_cast<phJoint3Dof*>(current);
         *(uint16_t*)(current + 528) = 3;  // offset 0x0210
         *(uint16_t*)(current + 530) = 3;  // offset 0x0212
         
-        util_4628(blockObj, -1);
+        phJoint3Dof_ResetAllJoints(blockObj, -1);
         
         // Advance pointer to the next block (544 bytes stride)
         current += 544;
@@ -3098,7 +3098,7 @@ void phJoint3Dof::SetLimits() {
     lengthSq *= FLT_MULT;
     
     // External bound function likely normalizes or validates the result
-    phBoundCapsule_01D0_g_joint(this, lengthSq);
+    ph_Sqrtf_joint(this, lengthSq);
     
     *(float*)((char*)this + 1668) = lengthSq;
 }
@@ -3145,7 +3145,7 @@ void phJoint3Dof_E7C8_2h(phJoint3Dof* joint, uint32_t index) {
  * ph_Sqrt @ 0x824301D0 | size: 0x8
  * Inline float square root. Single fsqrt instruction wrapper.
  */
-float ph_Sqrt(float x) {  // phBoundCapsule_01D0_g
+float ph_Sqrt(float x) {  // ph_Sqrtf
     return sqrtf(x);
 }
 
@@ -4125,18 +4125,18 @@ void rage::phBoundCapsule::GetSupportPoint(void* direction, void* outPoint) {
 }
 
 // ---------------------------------------------------------------------------
-// 6. phBoundCapsule_0E88_g @ 0x82430E88 | size: 0x8
+// 6. ph_TokenizerReadInt @ 0x82430E88 | size: 0x8
 //    Calls fiAsciiTokenizer_0BA8_g with mode=0 (read mode).
 // ---------------------------------------------------------------------------
-void phBoundCapsule_0E88_g(void* tokenizer) {
+void ph_TokenizerReadInt(void* tokenizer) {
     fiAsciiTokenizer_0BA8_g(tokenizer, 0);
 }
 
 // ---------------------------------------------------------------------------
-// 7. phBoundCapsule_0E90_g @ 0x82430E90 | size: 0x8
+// 7. ph_TokenizerReadFloat @ 0x82430E90 | size: 0x8
 //    Calls fiAsciiTokenizer_0BA8_g with mode=1 (write mode).
 // ---------------------------------------------------------------------------
-void phBoundCapsule_0E90_g(void* tokenizer) {
+void ph_TokenizerReadFloat(void* tokenizer) {
     fiAsciiTokenizer_0BA8_g(tokenizer, 1);
 }
 
@@ -5354,11 +5354,11 @@ extern void phObject_2588_w(void* thisPtr, uint32_t param);
 extern "C" void _locale_register(void* ptr, uint32_t tag);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_29 @ 0x82485108 | size: 0x8
+// phObject_GetField120 @ 0x82485108 | size: 0x8
 //
 // Simple getter: returns the field at offset +120 (m_field_120).
 // ─────────────────────────────────────────────────────────────────────────────
-uint32_t phObject_29(void* thisPtr) {
+uint32_t phObject_GetField120(void* thisPtr) {
     return *(uint32_t*)((uint8_t*)thisPtr + 120);
 }
 
@@ -5925,7 +5925,7 @@ int32_t phObject_UnbindResource(void* thisPtr) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // External subroutines used by the articulated collider
-extern void phBoundCapsule_6968_g(void* jointArray);           // Update capsule bounds from joints
+extern void ph_IntegrateJointPositions(void* jointArray);           // Update capsule bounds from joints
 extern void phArticulatedCollider_8450(void* jointArray);      // Post-integrate joint transforms
 extern void phArticulatedCollider_5D58(void* jointArray);      // Reset joint integration state
 extern void phArticulatedCollider_57F0_fw(void* jointArray);   // Reset joint chain state
@@ -6022,7 +6022,7 @@ void rage::phArticulatedCollider::PostIntegrate() {
     uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
 
     // Step 1: Update capsule bounds from current joint positions
-    phBoundCapsule_6968_g(jointArray);
+    ph_IntegrateJointPositions(jointArray);
 
     // Step 2: Post-integrate joint transforms
     phArticulatedCollider_8450(jointArray);
@@ -6194,8 +6194,8 @@ void rage::phArticulatedCollider::SyncAfterBaseUpdate() {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // External declarations for capsule operations
-extern float phBoundCapsule_0FE0_g(float x, float y);       // atan2
-extern float phBoundCapsule_01D0_g(float val);               // sqrtf wrapper
+extern float ph_Atan2f(float x, float y);       // atan2
+extern float ph_Sqrtf(float val);               // sqrtf wrapper
 extern void  phBoundCapsule_8EA0_g(void* obj, float y, float z);  // angle computation
 extern void  phBoundCapsule_3598_g(void* obj);               // capsule update
 extern void  phBoundCapsule_81D8_g(void* thisPtr, void* p1, void* p2, float f1, float f2, float f3, float f4, void* p3);
@@ -6489,7 +6489,7 @@ int rage::phBoundCapsule::NormalizeVector2D(float* outVec) const {
 
     // Compute magnitude: sqrt(x*x + y*y)
     float magSq = x * x + y * y;
-    float mag = (float)phBoundCapsule_01D0_g(magSq);  // sqrtf
+    float mag = (float)ph_Sqrtf(magSq);  // sqrtf
 
     // Small epsilon check (constant at lbl_8202D110 + 20 bytes = offset 0x8202D124)
     const float epsilon = *(const float*)0x8202D124;
@@ -7642,7 +7642,7 @@ int32_t rage::phBoundCapsule::TestPointContainment(const float* point) {
 //    Sets half-height and radius vectors, computes total extent,
 //    zeros center offset, then calls vfn_37 to update derived data.
 // ---------------------------------------------------------------------------
-extern float phBoundCapsule_0E88_g(float value);
+extern float ph_TokenizerReadInt(float value);
 void rage::phBoundCapsule::InitializeCapsule(float halfHeight, float radius) {
 
     // Splat halfHeight into vector at +112
@@ -7684,8 +7684,8 @@ void rage::phBoundCapsule::InitializeCapsule(float halfHeight, float radius) {
 //    new[+4] = old[+4]*cos - old[+8]*sin
 // ---------------------------------------------------------------------------
 void phBoundCapsule_RotateAxisXZ(float* vec, float angle) {
-    float sinVal = (float)phBoundCapsule_01D8_g(angle);
-    float cosVal = (float)phBoundCapsule_02B0_g(angle);
+    float sinVal = (float)ph_Sinf(angle);
+    float cosVal = (float)ph_Cosf(angle);
 
     float oldX = vec[1];  // +4
     float oldZ = vec[2];  // +8
@@ -7704,8 +7704,8 @@ void phBoundCapsule_RotateAxisXZ(float* vec, float angle) {
 //    new[+0] = old[+0]*cos + old[+8]*sin
 // ---------------------------------------------------------------------------
 void phBoundCapsule_RotateAxisYZ(float* vec, float angle) {
-    float sinVal = (float)phBoundCapsule_01D8_g(angle);
-    float cosVal = (float)phBoundCapsule_02B0_g(angle);
+    float sinVal = (float)ph_Sinf(angle);
+    float cosVal = (float)ph_Cosf(angle);
 
     float oldY = vec[0];  // +0
     float oldZ = vec[2];  // +8
@@ -7753,7 +7753,7 @@ void phBoundCapsule_ComputeJointAngleSin(void* /*r3*/, void* /*r4*/,
                                           void* jointData, float* output) {
     output[1] = 4;  // joint type = 4
     float angle = phBoundCapsule_A688_g(jointData);
-    float sinVal = (float)phBoundCapsule_01D8_g(angle);
+    float sinVal = (float)ph_Sinf(angle);
     output[0] = sinVal;
 }
 
@@ -7838,9 +7838,9 @@ float phBoundCapsule_TransformPointToLocal(void* capsule, const float* worldPoin
     float localY = row1[0] * dx + row1[1] * dy + row1[2] * dz;
 
     // Compute atan2(localX, localY)
-    float atanAngle = (float)phBoundCapsule_0FE0_g(localY, localX);
-    float sinAngle = (float)phBoundCapsule_01D8_g(atanAngle);
-    float cosAngle = (float)phBoundCapsule_02B0_g(atanAngle);
+    float atanAngle = (float)ph_Atan2f(localY, localX);
+    float sinAngle = (float)ph_Sinf(atanAngle);
+    float cosAngle = (float)ph_Cosf(atanAngle);
 
     // Compute capsule distance metric
     float sinSq = sinAngle * sinAngle;
@@ -7878,7 +7878,7 @@ void phBoundCapsule_DecomposeMatrixToEuler(const float* matrix, float* outEuler)
     if (pitchY == g_floatZero && pitchX == g_floatZero) {
         pitch = g_floatZero;
     } else {
-        pitch = (float)phBoundCapsule_0FE0_g(pitchX, pitchY);
+        pitch = (float)ph_Atan2f(pitchX, pitchY);
     }
 
     // Compute yaw from rows 2 and 3
@@ -7889,12 +7889,12 @@ void phBoundCapsule_DecomposeMatrixToEuler(const float* matrix, float* outEuler)
     if (yawY == g_floatZero && yawX == g_floatZero) {
         yaw = g_floatZero;
     } else {
-        yaw = (float)phBoundCapsule_0FE0_g(yawX, yawY);
+        yaw = (float)ph_Atan2f(yawX, yawY);
     }
 
     // Compute roll from the Z-axis component
     float rollInput = -localMatrix[9];  // -row2[1]
-    float roll = (float)phBoundCapsule_0E88_g(rollInput);
+    float roll = (float)ph_TokenizerReadInt(rollInput);
 
     // Store Euler angles
     outEuler[1] = (float)yaw;
@@ -9568,9 +9568,9 @@ void CPeakMeterEffect_Create(void* config, void* allocator, void** outResult) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // Forward declarations for this batch
-extern void ph_Sqrtf(float radius);
-extern float aud_2478(float angle);  // atan2-like angle computation
-extern void ph_Atan2f(float x, float z);  // atan2(x, z)
+extern float ph_Sqrtf(float value);  // sqrtf wrapper
+extern float aud_2478(float angle);  // exp-like computation
+extern float ph_Atan2f(float x, float z);  // atan2(x, z)
 extern void phBoundCapsule_8EA0_g(void* obj, float yaw, float pitch);
 extern void phBoundCapsule_3598_g(void* camera);
 extern void pongCameraMgr_3E98_g(void* camera);
@@ -9819,7 +9819,7 @@ float phBoundCapsule_26B8(float height, float radius) {
     // Multiply by constant (3.0 or similar scale) from .rdata
     float scaledRadiusSq = radiusSq * 3.0f;  // constant from lbl_8202D108+124
 
-    // Call exp(-scaledRadiusSq) via ph_Sqrtf
+    // Call sqrtf on scaled radius squared
     float expResult = (float)ph_Sqrtf(scaledRadiusSq);
 
     float heightSq = height * height;
@@ -9999,8 +9999,7 @@ float phBoundCapsule_38A8_fw(float* data) {
     float x = data[0];
 
     // Compute atan2(x, z)
-    ph_Atan2f(x, z);
-    float angle = (float)*(double*)&ctx_f1;  // result in f1, round to float
+    float angle = (float)ph_Atan2f(x, z);
 
     float zero = 0.0f;   // @ lbl_8202D110
     float twoPi = g_phTwoPi;  // @ lbl_8202C02C (6.283185...)
