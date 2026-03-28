@@ -5,7 +5,7 @@
  * Implementation of audio control wrapper classes.
  */
 
-#include "rage/audio_control_wrappers.hpp"
+#include "audio_control_wrappers.hpp"
 #include <cstdlib>
 
 // Forward declarations for rage audio types
