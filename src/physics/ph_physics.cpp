@@ -8528,3 +8528,243 @@ void phMatrixTransposeMultiply3x4(float* matA, const float* matB) {
     matA[8] = dot_a2_b0;  matA[9] = dot_a2_b1;  matA[10] = dot_a2_b2; matA[11] = 0.0f;
     matA[12] = dot_delta_b0; matA[13] = dot_delta_b1; matA[14] = dot_delta_b2; matA[15] = 0.0f;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Virtual and Utility Functions (10 functions)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External declarations
+extern void ph_1B78(void* outVec, float halfLength, float radius);
+extern void util_DA50(void* dst, const void* src);  // phBound::CopyFrom base
+extern void* g_display_obj_ptr;
+extern void phBoundCapsule_3F90_g(void* thisPtr, const float* midpoint, const float* axisA, const float* axisB);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetPolygonCount (vfn_12) @ 0x8256FBD0 | size: 0x08
+//
+// Returns the polygon count stored at offset +192 (0xC0).
+// For a capsule bound, this represents the tessellation polygon count
+// used when rendering/approximating the capsule shape.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t rage::phBoundCapsule::GetPolygonCount() const {
+    return *(uint32_t*)((char*)this + 192);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::SetPolygonCount (vfn_13) @ 0x822A2E00 | size: 0x08
+//
+// Sets the polygon count at offset +192 (0xC0).
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::SetPolygonCount(uint32_t count) {
+    *(uint32_t*)((char*)this + 192) = count;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetExtents (vfn_9) @ 0x822A3258 | size: 0x10
+//
+// Computes the bounding extents of the capsule and stores them in the
+// output vector. Reads the half-length (+112) and radius (+128), then
+// tail-calls ph_1B78 which builds the axis-aligned extents vector.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::GetExtents(float* outExtents, const void* params) {
+    float halfLength = *(float*)((char*)params + 112);
+    float radius = *(float*)((char*)params + 128);
+    ph_1B78(outExtents, halfLength, radius);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::RenderDebug (vfn_11) @ 0x822A2DE0 | size: 0x20
+//
+// Renders debug visualization for the capsule bound. Loads the polygon
+// count from offset +192 into r4, retrieves the global display object,
+// and dispatches to its vtable slot 5 (DrawBoundCapsule).
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::RenderDebug() {
+    uint32_t polyCount = *(uint32_t*)((char*)this + 192);
+    void* displayObj = g_display_obj_ptr;
+    void** vtable = *(void***)displayObj;
+    typedef void (*DrawFunc)(void*, uint32_t);
+    DrawFunc drawBound = (DrawFunc)vtable[5];
+    drawBound(displayObj, polyCount);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::CalculateVolume (vfn_8) @ 0x822A2DB0 | size: 0x2C
+//
+// Computes the volume of the capsule bound:
+//   volume = (halfLength * 2.0 + radius) * halfLength^2 * (4/3)*pi
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::CalculateVolume() const {
+    float halfLength = *(float*)((char*)this + 112);
+    float radius = *(float*)((char*)this + 128);
+    static const float kTwo = 2.0f;
+    static const float kFourThirdsPi = 4.18879032f;
+    float combined = halfLength * kTwo + radius;
+    float lengthSq = combined * halfLength;
+    float lengthCubed = lengthSq * halfLength;
+    return lengthCubed * kFourThirdsPi;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::SetCentroidOffset (vfn_7) @ 0x8233AB50 | size: 0x48
+//
+// Translates the capsule centroid by an offset vector. Loads the current
+// centroid at offset +48, adds the input offset vector component-wise,
+// then calls vtable slot 6 (SetCentroid) with the resulting position.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::SetCentroidOffset(const float* offset) {
+    float* centroid = (float*)((char*)this + 48);
+    float result[4];
+    result[0] = centroid[0] + offset[0];
+    result[1] = centroid[1] + offset[1];
+    result[2] = centroid[2] + offset[2];
+    result[3] = centroid[3] + offset[3];
+
+    void** vtable = *(void***)this;
+    typedef void (*SetCentroidFunc)(void*, const float*);
+    SetCentroidFunc setCentroid = (SetCentroidFunc)vtable[6];
+    setCentroid(this, result);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetBoundingDistance (vfn_33) @ 0x822A3268 | size: 0x50
+//
+// Returns the bounding distance of the capsule along a given direction:
+//   distance = halfLength + fabs(direction.y) * radius * 2.0
+// If includeCenter is zero, adds centroid dot product with direction.
+// ─────────────────────────────────────────────────────────────────────────────
+float rage::phBoundCapsule::GetBoundingDistance(const float* direction, uint8_t includeCenter) const {
+    float absY = direction[1];
+    if (absY < 0.0f) absY = -absY;
+
+    float radius = *(float*)((char*)this + 128);
+    float halfLength = *(float*)((char*)this + 112);
+    static const float kTwo = 2.0f;
+
+    float scaledRadius = radius * absY;
+    float distance = scaledRadius * kTwo + halfLength;
+
+    if (includeCenter != 0)
+        return distance;
+
+    float* centroid = (float*)((char*)this + 48);
+    float dot = centroid[0] * direction[0]
+              + centroid[1] * direction[1]
+              + centroid[2] * direction[2];
+
+    return dot + distance;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::ValidateAndSetExtents @ 0x82143F08 | size: 0x84
+//
+// Validates that a rotation vector is non-zero before applying capsule
+// extents. If the rotation column (row 1) is all-zero, returns immediately.
+// Otherwise computes the midpoint (row0 + row2) and dispatches to
+// phBoundCapsule_3F90_g for full capsule setup.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::ValidateAndSetExtents(const float* matrix) {
+    const float* rotation = matrix + 4;
+
+    uint32_t absX = *(uint32_t*)(rotation + 0) & 0x7FFFFFFF;
+    uint32_t absY = *(uint32_t*)(rotation + 1) & 0x7FFFFFFF;
+    uint32_t absZ = *(uint32_t*)(rotation + 2) & 0x7FFFFFFF;
+    uint32_t absW = *(uint32_t*)(rotation + 3) & 0x7FFFFFFF;
+
+    bool allZero = (absX == 0 && absY == 0 && absZ == 0 && absW == 0);
+    if (allZero)
+        return;
+
+    const float* row0 = matrix;
+    const float* row2 = matrix + 8;
+    float midpoint[4];
+    midpoint[0] = row0[0] + row2[0];
+    midpoint[1] = row0[1] + row2[1];
+    midpoint[2] = row0[2] + row2[2];
+    midpoint[3] = row0[3] + row2[3];
+
+    phBoundCapsule_3F90_g(this, midpoint, rotation, row2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::GetJointLimitsForAxis @ 0x820DF420 | size: 0xC4
+//
+// Retrieves joint limit min/max values for a given axis index from the
+// joint data at offset +8. Each entry is 104 bytes. The axis selects
+// which limit pair to read. Validates min >= -1.0; retries with axis=11
+// as fallback if below threshold.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::GetJointLimitsForAxis(uint32_t jointIndex, uint32_t axis,
+                                                  float* outMin, float* outMax) {
+    static const float kNegativeOne = -1.0f;
+
+retry:
+    if (axis <= 3) {
+        uint8_t* jointData = *(uint8_t**)((char*)this + 8);
+        uint8_t* entry = jointData + jointIndex * 104;
+
+        switch (axis) {
+        case 0: {
+            float val = *(float*)(entry + 0);
+            *outMax = val;
+            *outMin = val;
+            break;
+        }
+        case 2: {
+            float lo = *(float*)(entry + 4);
+            *outMin = lo;
+            float hi = *(float*)(entry + 8);
+            *outMax = hi;
+            break;
+        }
+        case 1: {
+            float lo = *(float*)(entry + 12);
+            *outMin = lo;
+            float hi = *(float*)(entry + 16);
+            *outMax = hi;
+            break;
+        }
+        case 3: {
+            float lo = *(float*)(entry + 20);
+            *outMin = lo;
+            float hi = *(float*)(entry + 24);
+            *outMax = hi;
+            break;
+        }
+        }
+    }
+
+    float minVal = *outMin;
+    if (minVal < kNegativeOne) {
+        axis = 11;
+        goto retry;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule::CopyFrom (vfn_34) @ 0x822A2F28 | size: 0xBC
+//
+// Deep-copies all capsule-specific fields from a source phBoundCapsule.
+// Calls base phBound::CopyFrom, then copies capsule vectors at offsets
+// 112-176, polygon count at 192, 12 parameter bytes at 196, and sets
+// the dirty flag at offset 96 to 1.
+// ─────────────────────────────────────────────────────────────────────────────
+void rage::phBoundCapsule::CopyFrom(const rage::phBoundCapsule* source) {
+    util_DA50(this, source);
+
+    memcpy((char*)this + 112, (const char*)source + 112, 16);
+    memcpy((char*)this + 128, (const char*)source + 128, 16);
+    memcpy((char*)this + 144, (const char*)source + 144, 16);
+    memcpy((char*)this + 160, (const char*)source + 160, 16);
+    memcpy((char*)this + 176, (const char*)source + 176, 16);
+
+    *(uint32_t*)((char*)this + 192) = *(const uint32_t*)((const char*)source + 192);
+
+    const uint8_t* srcBytes = (const uint8_t*)source + 196;
+    uint8_t* dstBytes = (uint8_t*)this + 196;
+    for (int i = 0; i < 12; i++) {
+        dstBytes[i] = srcBytes[i];
+    }
+
+    *(uint16_t*)((char*)this + 96) = 1;
+}
