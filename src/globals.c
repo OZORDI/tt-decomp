@@ -3,7 +3,7 @@
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  *
  * All global variable definitions for the project, consolidated from
- * globals.c and globals_extended.c.
+ * globals.c, globals_extended.c, and globals_linker.cpp.
  */
 
 #include <stddef.h>
@@ -473,3 +473,353 @@ const char* k_initSceneTime = "0.0";
 const char* k_lineSpacing = "lineSpacing";
 const char* k_SAVING = "SAVING";
 const char* kFaceAnimStartPhase = "0.0";
+
+// ============================================================================
+// Globals merged from globals_linker.cpp
+// ============================================================================
+
+// Forward struct used by g_swipePatterns
+struct SwipePattern {
+    float    duration;
+    float    timingParam;
+    float    startCorner1[4];
+    float    startCorner2[4];
+    float    endCorner1[4];
+    float    endCorner2[4];
+    uint8_t  reverseFlag;
+    uint8_t  pauseFlag;
+    uint8_t  _pad[14];
+};
+
+// AI type IDs
+uint32_t* g_aiTypeId_1 = NULL;             // @ 0x825C60B4
+uint32_t* g_aiTypeId_2 = NULL;             // @ 0x825C803C
+uint32_t* g_aiTypeId_3 = NULL;             // @ 0x825C8038
+
+// Animation
+const float g_animBlendWeight = 0.0f;      // @ 0x8202D110
+
+// Ball / swing attribute hashes
+uint32_t g_attrHash_HitZone    = 0;        // @ 0x825C761C
+uint32_t g_attrHash_SwingType1 = 0;        // @ 0x825C8038
+uint32_t g_attrHash_SwingType2 = 0;        // @ 0x825C803C
+const float g_alphaMultiplier  = 0.0f;     // @ 0x82079BE0
+
+// CRT atexit guards
+int32_t g_atexit_guard_0 = 0;              // @ 0x82733048
+int32_t g_atexit_guard_1 = 0;              // @ 0x8273304C
+
+// Bink video player
+void* g_binkVideoPlayer = NULL;            // @ 0x825EB988
+
+// Camera system
+float    g_cameraAdjustment  = 0.0f;       // @ 0x8202CFF4
+uint8_t  g_cameraFlagA       = 0;
+uint8_t  g_cameraFlagB       = 0;
+uint8_t  g_cameraFlag_7532   = 0;
+uint8_t  g_cameraFlag_8897   = 0;
+uint8_t  g_cameraFlag_8898   = 0;
+uint32_t g_cameraFlags       = 0;          // @ 0x826064D0
+uint32_t g_cameraMode        = 0;          // @ 0x825C5EB8
+uint32_t g_cameraProperty1   = 0;          // @ 0x825C8A40
+uint32_t g_cameraProperty2   = 0;          // @ 0x825C93D0
+uint8_t  g_cameraSelector    = 0;
+int32_t  g_cameraState       = 0;
+float    g_cameraThreshold   = 0.0f;
+
+// Network debug flag
+uint8_t g_bNetworkDebugFlag = 0;           // @ 0x826065EB
+
+// Character view system
+void*    g_charViewData_ptr       = NULL;  // @ 0x8271A2F0
+uint32_t g_charViewSelectCounter  = 0;     // @ 0x82606490
+uint32_t g_charViewSelectFlag     = 0;     // @ 0x82606494
+uint32_t g_charViewTypeId         = 0;     // @ 0x825C2BC4
+uint32_t g_character_type_id      = 0;     // @ 0x825C2BC0
+uint32_t g_character_type_id_2    = 0;     // @ 0x825C803C
+uint32_t g_character_type_id_3    = 0;     // @ 0x825C8038
+
+// Network: cmRefreshable vtable
+const void* g_cmRefreshableCtorVtable = NULL; // @ 0x820533CC
+
+// Player contact zone constants
+const float g_contactZoneMinA = 0.0f;
+const float g_contactZoneMaxA = 0.0f;
+const float g_contactZoneMinB = 0.0f;
+const float g_contactZoneMaxB = 0.0f;
+
+// Creature manager
+void* g_creatureManager = NULL;            // @ 0x826063B8
+
+// Render state
+void* g_currentRenderState = NULL;         // @ 0x821EBAA0
+
+// Debug mode
+uint8_t g_debugMode = 0;                   // @ 0x825C64AD
+
+// Default constants
+const float g_defaultDuration            = 0.0f;  // @ 0x825C755C
+float       g_defaultVibrationIntensity  = 0.0f;  // @ 0x8202D110
+const float g_default_float_zero         = 0.0f;  // @ 0x825CAF94
+const float g_default_float_value        = 0.0f;  // @ 0x825CAF88
+const float g_default_float_value_2      = 0.0f;  // @ 0x825CAF90
+
+// Draw bucket
+void* g_drawBucket = NULL;                 // @ 0x826064F4
+
+// Error / debug strings
+const char* g_error_attract_exit      = "";
+const char* g_error_charview_enter    = "";
+const char* g_error_charview_exit     = "";
+const char* g_error_type_mismatch     = "";
+const char* g_error_unhandled_event   = "";
+
+// Event type table
+void* g_eventTypeTable = NULL;             // @ 0x82017888
+
+// Float constants (network / physics)
+const float g_floatConstant1 = 0.0f;       // @ 0x82079AD4
+const float g_floatConstant2 = 0.0f;       // @ 0x8202D110
+const float g_floatConstant3 = 0.0f;       // @ 0x8202D110
+const float g_floatConstant4 = 0.0f;       // @ 0x825C7600
+const float g_floatEpsilon   = 0.0f;       // @ 0x8202D110
+const float g_floatNegOne    = 0.0f;       // @ 0x8202D110
+const float g_floatOne       = 0.0f;       // @ 0x8202D110
+const float g_floatZero      = 0.0f;       // @ 0x8202D110
+
+// FloatAverager vtables (network classes)
+void* g_FloatAverager_vtable_1 = NULL;     // @ 0x8203A910
+void* g_FloatAverager_vtable_2 = NULL;     // @ 0x8203A91C
+void* g_FloatAverager_vtable_3 = NULL;     // @ 0x82070D78
+void* g_FloatAverager_vtable_4 = NULL;     // @ 0x8207166C
+
+// Physics: fragDrawable vtable
+void* g_fragDrawableVtable = NULL;         // @ 0x82033094
+
+// Frame sync object
+void* g_frameSyncObj = NULL;               // @ 0x825F64F4
+
+// Game data manager
+void* g_gameDataMgr       = NULL;          // @ 0x8271A2E4
+void* g_game_data_manager  = NULL;         // @ 0x825CA174
+void* g_game_state_ptr     = NULL;         // @ 0x8271A2F8
+
+// Game data type IDs
+uint32_t g_gdEventBase_typeId    = 0;      // @ 0x825C5800
+uint32_t g_gdRivalryData_typeId  = 0;      // @ 0x825C5F68
+uint32_t g_gdRivalry_typeId      = 0;      // @ 0x825C5F6C
+uint32_t g_gdTierMember_typeId   = 0;      // @ 0x825C5F70
+uint32_t g_gdTier_typeId         = 0;      // @ 0x825C5F80
+uint32_t g_gdVibEvent_typeId     = 0;      // @ 0x825C5DF4
+
+// Global streamer
+void* g_globalStreamer = NULL;             // @ 0x82606600
+
+// UI state
+uint32_t* g_global_ui_state = NULL;        // @ 0x8271A348
+
+// HUD
+void* g_hudFlashBase   = NULL;            // @ 0x82606454
+float g_hudRenderParam = 0.0f;            // @ 0x82140110
+
+// Player adjustment / input / timing constants
+float       g_kAdjustmentScale     = 0.0f;  // @ 0x82079BAC
+const float g_kAdjustmentThreshold = 0.0f;  // @ 0x8202D110
+const float g_kInputScale          = 0.0f;  // @ 0x825C5938
+const float g_kInputThresholdHigh  = 0.0f;  // @ 0x8202D110
+const float g_kMaxAdjustment       = 0.0f;  // @ 0x82079CD8
+const float g_kQuantScale1         = 0.0f;  // @ 0x82079FFC
+const float g_kQuantScale2         = 0.0f;  // @ 0x82079FF8
+const float g_kSpecialThreshold    = 0.0f;  // @ 0x825C8A50
+float       g_kTimingConstant      = 0.0f;  // @ 0x825C4930
+const float g_kZeroThreshold       = 0.0f;  // @ 0x8202D108
+
+// Local user pointer
+void* g_localUserPtr = NULL;
+
+// Locomotion / creature animation
+void*       g_locomotionAnimInstance = NULL;  // @ 0x8271A378
+const float g_lookAtMultiplier       = 0.0f;  // @ 0x8202D184
+const float g_lookAtRefAngle         = 0.0f;  // @ 0x8202D10C
+
+// Match result / player select tables
+void* g_matchResultTable  = NULL;          // @ 0x82027884
+
+// Matrix / resource field types
+void* g_matrixFieldType   = NULL;          // @ 0x825CAFA4
+
+// Message sink
+uint32_t      g_msgSinkBitfield      = 0;        // @ 0x825B0C30
+const float   g_msgSinkInitFloat     = 0.0f;     // @ 0x825C5938
+const uint32_t g_msgSinkTemplate[4]  = {0};      // @ 0x8241A0C0
+
+// Network globals
+uint32_t  g_netMessageHolderCount = 0;     // @ 0x826066A4
+int32_t   g_networkMode           = 0;
+void*     g_networkStatePtr       = NULL;  // @ 0x8271A36C
+uint32_t  g_networkTimestamp      = 0;
+void*     g_networkTimingObject   = NULL;  // @ 0x8271A328
+
+// Network pointer globals
+void*     g_pAtSingleton              = NULL;   // @ 0x821EAB08
+void*     g_pAtSingletonPtr           = NULL;   // @ 0x8271A328
+void*     g_pCleanupVtable            = NULL;   // @ 0x8206C394
+uint8_t*  g_pDataRequestMsgPoolBase   = NULL;   // @ 0x825D129C
+void*     g_pDataRequestMsgSingleton  = NULL;   // @ 0x825D1290
+uint8_t*  g_pDataSendMsgPoolBase      = NULL;   // @ 0x825D12B4
+void*     g_pDataSendMsgSingleton     = NULL;   // @ 0x825D12A8
+void*     g_pGameStatePtr             = NULL;   // @ 0x8271A328
+void**    g_pInputArrayTable          = NULL;   // @ 0x825EAB28
+void**    g_pMessageQueuePool         = NULL;   // @ 0x825D128C
+void*     g_pNetworkBase              = NULL;   // @ 0x8271A7B0
+void*     g_pNetworkState             = NULL;   // @ 0x8271A7B0
+uint32_t* g_pNetworkStatePtr          = NULL;   // @ 0x8271A7B0
+void*     g_pNetworkTimer             = NULL;   // @ 0x8201A328
+void*     g_pPlayerArrayBase          = NULL;   // @ 0x8211A31C
+uint8_t*  g_pPlayerInputTable         = NULL;
+uint8_t*  g_pTournamentMsgPool        = NULL;   // @ 0x825D1464
+void*     g_pTournamentMsgSingleton   = NULL;   // @ 0x825D1458
+
+// Pause flag
+uint8_t g_pauseFlag = 0;                  // @ 0x82606670
+
+// Physics callbacks
+void* g_phCallback0 = NULL;               // @ 0x825EA900
+void* g_phCallback1 = NULL;               // @ 0x825EA904
+void* g_phCallback2 = NULL;               // @ 0x825EA908
+void* g_phCallback3 = NULL;               // @ 0x825EA90C
+void* g_phCallback4 = NULL;               // @ 0x825EA910
+void* g_phCallback5 = NULL;               // @ 0x825EA914
+
+// Physics system
+void** g_physicsStateArray = NULL;
+void*  g_physicsSystem     = NULL;         // @ 0x82606568
+
+// Player movement message pool
+uint8_t* g_playerMovementMsgPool          = NULL; // @ 0x825D1164
+void*    g_playerMovementMsgPoolSingleton  = NULL; // @ 0x825D1158
+
+// Player property types
+uint32_t g_playerPropType1 = 0;            // @ 0x82062D7C
+uint32_t g_playerPropType2 = 0;            // @ 0x820693D0
+
+// Player select / slot state
+void*    g_playerSelectTable     = NULL;   // @ 0x82027888
+int32_t* g_playerSlotIndices     = NULL;
+int32_t* g_playerSlotStates      = NULL;
+void*    g_player_controller_ptr = NULL;   // @ 0x825C6564
+void*    g_player_manager_ptr    = NULL;   // @ 0x8271A2D0
+
+// Random state
+uint64_t g_randomState = 0;               // @ 0x825DA268
+
+// Recovery constants
+const float g_recoveryScale     = 0.0f;
+float       g_recoveryThreshold = 0.0f;
+
+// Render system
+void* g_renderContext        = NULL;       // @ 0x826063D4
+int   g_renderModeIndex      = 0;          // @ 0x821F0898
+void* g_renderStateStack[16] = {0};        // @ 0x821EBA9C
+void* g_rendererState        = NULL;       // @ 0x8260641C
+
+// Resource / string field types
+void* g_resourceFieldType = NULL;          // @ 0x825CAF88
+void* g_stringFieldType   = NULL;          // @ 0x825CAF88
+
+// Scene render objects
+void* g_sceneRenderObj  = NULL;            // @ 0x82606430
+void* g_sceneRenderObj2 = NULL;            // @ 0x8260641C
+
+// Scene reset matrix
+uint32_t g_sceneResetMatrix[4] = {0};      // @ 0x8261A0C0
+
+// Selected character index
+int32_t g_selectedCharacterIndex = -1;     // @ 0x825C76B8
+
+// Scene graph type IDs
+uint32_t g_sgNode_typeId       = 0;        // @ 0x825C93D0
+uint32_t g_sgRMDrawable_typeId = 0;        // @ 0x825C2D78
+
+// Slow motion manager
+void* g_slowmo_manager_ptr = NULL;         // @ 0x825C6540
+
+// Misc render objects
+void* g_someRenderObj1 = NULL;             // @ 0x82606654
+void* g_someRenderObj2 = NULL;             // @ 0x825FEAB0
+
+// State name strings
+const char* g_stateName_attract  = "";     // @ 0x8205E094
+const char* g_stateName_charView = "";     // @ 0x8205EF5C
+
+// Game data error strings
+const char* g_str_gdLadder_duplicateLevel       = "";
+const char* g_str_gdLadder_missingLadder        = "";
+const char* g_str_gdLadder_unknownNodeType      = "";
+const char* g_str_gdRivalryData_noCharName      = "";
+const char* g_str_gdRivalryData_noRivalName     = "";
+const char* g_str_gdRivalryData_unknownRival    = "";
+const char* g_str_gdRivalry_duplicateChar       = "";
+const char* g_str_gdRivalry_missingRival        = "";
+const char* g_str_gdRivalry_unknownChar         = "";
+const char* g_str_gdRivalry_unknownNodeType     = "";
+const char* g_str_gdTierMember_noCharName       = "";
+const char* g_str_gdTierMember_unknownChar      = "";
+const char* g_str_gdTier_noTierName             = "";
+const char* g_str_gdTier_unknownNodeType        = "";
+
+// Pong strings
+const char* g_str_pongDrill_tooManySuccesses = "";
+const char* g_str_pongMover_calcInitMatrix   = "";
+
+// Swipe patterns array
+struct SwipePattern g_swipePatterns[17] = {{0}};  // @ 0x825D09A0
+
+// Network RTTI / type name strings
+const char g_szCreateMachineRTTI[]          = "";  // @ 0x825DEEB0
+const char g_szDataRequestTypeName[]        = "";  // @ 0x8206EA74
+const char g_szDataSendTypeName[]           = "";  // @ 0x8206EA88
+const char g_szDefaultError[]               = "";  // @ 0x82027423
+const char g_szInvalidError[]               = "";  // @ 0x8204EF04
+const char g_szMessageType[]                = "";  // @ 0x8205DFB0
+const char g_szNetworkDebugMsg[]            = "";  // @ 0x8205AE98
+const char g_szRageRTTI[]                   = "";  // @ 0x825DEECC
+const char g_szTopSpin[]                    = "";  // @ 0x8206CB54
+const char g_szTournamentCompleteTypeName[] = "";  // @ 0x8206EC40
+
+// Thread-local storage base
+void** g_tls_base = NULL;                 // @ 0x82600000
+
+// UI list manager
+void* g_uiListManager = NULL;             // @ 0x825D16AC
+
+// UI context / objects
+void*    g_ui_context         = NULL;      // @ 0x8271A81C
+uint8_t  g_ui_object_flags[64]  = {0};     // @ 0x825F3A68
+void*    g_ui_object_ptrs[256]  = {0};     // @ 0x825F3968
+uint32_t g_ui_object_types[256] = {0};     // @ 0x825F3868
+uint32_t g_ui_state_counter     = 0;       // @ 0x825F3864
+
+// Vibration system
+void*    g_vibrationMgr        = NULL;     // @ 0x8271A3A8
+uint8_t* g_vibrationStateArray = NULL;     // @ 0x8271A364
+
+// Vtable pointers
+void* g_vtable_char_view_cs              = NULL;
+void* g_vtable_pong_attract_context      = NULL;
+void* g_vtable_pong_attract_context_2    = NULL;
+void* g_vtable_pong_char_view_context    = NULL;
+void* g_vtable_pong_char_view_context_2  = NULL;
+void* g_vtable_pong_char_view_context_3  = NULL;
+void* g_vtable_pong_char_view_state      = NULL;
+
+// XEX exec info
+void* g_xex_exec_info = NULL;             // @ 0x825E6E64
+
+// XML node struct type IDs
+uint32_t g_xmlNodeStruct_typeId  = 0;      // @ 0x825C803C
+uint32_t g_xmlNodeStruct_typeId2 = 0;      // @ 0x825C8038
+
+// Zero / constant floats
+const float g_zeroConstant = 0.0f;         // @ 0x8202D110
+const float g_zeroFloat    = 0.0f;         // @ 0x82079AD8
