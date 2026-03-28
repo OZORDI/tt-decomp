@@ -204,9 +204,19 @@ struct phArticulatedCollider {
     uint32_t    field_0x01b0;     // +0x01b0  R:1
     uint32_t    field_0x01b4;     // +0x01b4  R:1
     uint8_t     _pad0x01b8[24];
-    uint32_t    m_nActiveJoints;  // +0x01d0  R:50  — joint count (most-read field)
-    uint8_t     m_jointFlags;     // +0x01d4  W:3   — packed joint flags
-    uint32_t    field_0x01d8;     // +0x01d8  R:8 W:2
+    union {
+        uint32_t    m_nActiveJoints;  // +0x01d0  R:50  — joint count (most-read field)
+        uint32_t*   m_pJointArray;    // +0x01d0  — same field, used as pointer
+    };
+    union {
+        uint8_t     m_bJointsActive;  // +0x01d4  W:3   — joints active flag
+        uint8_t     m_bJointDirtyFlag; // +0x01d4  — alias
+    };
+    union {
+        uint32_t    m_nJointCount;    // +0x01d8  R:8 W:2  — joint count
+        void*       m_pJointStatePtr; // +0x01d8  — alias (used as pointer)
+        void*       m_pJointProcessor;// +0x01d8  — alias (joint processor)
+    };
     uint32_t    field_0x01dc;     // +0x01dc  R:8
     uint16_t    field_0x01e2;     // +0x01e2  R:1
     uint32_t    field_0x01e4;     // +0x01e4  R:8
@@ -377,6 +387,114 @@ struct phArticulatedCollider {
     virtual void vfn_61();                            // [61] @ 0x8224E270
     virtual void vfn_62();                            // [62] @ 0x8224E280
     virtual void vfn_63();                            // [63] @ 0x8224E2D8
+
+    // Non-virtual methods
+    void* GetActiveJointsPointer();
+    void DelegateToJointProcessor();
+    void DelegateToCapsuleHandler();
+    void DelegateToColliderHandler();
+    float GetJointMass(int jointIndex);
+    float GetJointInertia(int jointIndex);
+    float GetJointDamping(int jointIndex);
+    void Update();
+    void AddForceToJoint(const float* forceVector);
+    void ApplyImpulse(void* param1, void* param2, void* param3);
+    void ScalarDestructor();
+    void ResetForces();
+    void ResetActiveJoints();
+    void ApplyScaledGravity(float scale);
+    void AccumulateScaledForceX(float scale);
+    void AccumulateScaledForceY(float scale);
+    void AccumulateScaledForceZ(float scale);
+    void SaveAndClearJointForces();
+    void NormalizeVector(const float* src, float* dst);
+    void SetTimestep(float timestep);
+    void SetVelocityScaled(const float* velocity);
+    void SetAngularVelocity(const float* angularVelocity);
+    void UpdatePostIntegrate();
+    void CopyJointTransformMatrix(float* outMatrix, int boneIndex);
+    void CopyJointVelocityMatrix(float* outMatrix, int boneIndex);
+    void CopyJointRotationMatrix(float* outMatrix, int boneIndex);
+    void ApplyDeltaPositionToJoint(int param, const float* targetPos, const float* altTarget, int solverParam);
+    void GetJointBackupForce(float* outVec, phArticulatedCollider* srcCollider, int boneIndex);
+    void AccumulateScaledJointForces(float* outVec, float scale);
+    void GetJointOrientationVector(float* outVec, int boneIndex);
+    void ApplyDeltaToJointForce(const float* targetPos, int boneIndex);
+    void ResetJointConstraintState(int boneIndex);
+    void DispatchJointSlot12(int jointIndex, float* outVec);
+    void DispatchJointSlot7(int jointIndex);
+    void DelegateToBoundCapsule();
+    void DispatchJointSlot5(int jointIndex);
+    float GetJointStiffness(int jointIndex);
+    void AccumulateForceAtJoint(const float* forceVec, int boneIndex);
+    void AccumulateTorqueAtRootJoint(const float* forceVec);
+    void ComputeJointCrossProduct(float* outVec, const float* targetPos, phArticulatedCollider* otherCollider, int boneIndex);
+    // Bitfield accessors
+    uint32_t GetSolverParam_0(); uint32_t GetSolverParam_3(); uint32_t GetSolverParam_11();
+    uint32_t GetSolverParam_14(); uint32_t GetSolverParam_17(); uint32_t GetSolverParam_21();
+    uint32_t GetRotAxis_0(); uint32_t GetRotAxis_3(); uint32_t GetRotAxis_6();
+    uint32_t GetRotAxis_9(); uint32_t GetRotAxis_12(); uint32_t GetRotAxis_15();
+    uint32_t GetRotAxis_18(); uint32_t GetRotAxis_21(); uint32_t GetRotAxis_24();
+    uint32_t GetRotAxis_27(); uint32_t GetRotAxis_30();
+    uint32_t GetConstraint_0(); uint32_t GetConstraint_4(); uint32_t GetConstraint_8();
+    uint32_t GetConstraint_12(); uint32_t GetConstraint_16(); uint32_t GetConstraint_20();
+    uint32_t GetConstraint_24(); uint32_t GetConstraint_28();
+    uint32_t GetFlag7C_0(); uint32_t GetFlag7C_1(); uint32_t GetFlag7C_4();
+    uint32_t GetFlag7C_4b(); uint32_t GetFlag7C_5(); uint32_t GetFlag7C_Byte();
+    uint32_t GetActive_0(); uint32_t GetActive_1(); uint32_t GetActive_2();
+    uint32_t GetActive_2b(); uint32_t GetActive_3(); uint32_t GetActive_5();
+    uint32_t GetDofFlag_0(); uint32_t GetLimitType_0(); uint32_t GetSolverFlag_18();
+    uint32_t GetCBCField_23();
+    uint32_t GetIndexedByteFlag_0(int index); uint32_t GetIndexedByteFlag_1(int index);
+    uint32_t GetIndexedByteFlag_2(int index);
+    uint32_t GetIndexedField(int index, int shift, int mask);
+    uint32_t GetBoneField_5778(int index); uint32_t GetBoneField_5B90(int index);
+    uint32_t GetBoneField_5BE0(int index); uint32_t GetBoneField_5C30(int index);
+    uint32_t GetBoneField_5C88(int index); uint32_t GetBoneField_5CE0(int index);
+    uint32_t GetBoneField_5D38(int index); uint32_t GetBoneField_5D90(int index);
+    uint32_t GetBoneFieldNeg_5DF0(int index);
+    bool IsBoneFieldNonZero(int index); bool IsElementActive(int index);
+    float GetInterpolatedLimit(int index); float GetScaledFloat();
+    // Setters
+    void SetActive_2b(uint32_t value); void SetActive_3(uint32_t value);
+    void SetActive_5(uint32_t value); void SetActive_11648(uint32_t value);
+    void SetActiveByte_11650(uint8_t value);
+    void SetConstraint_0b(uint32_t value); void SetConstraint_4b(uint32_t value);
+    void SetConstraint_8b(uint32_t value); void SetConstraint_12b(uint32_t value);
+    void SetConstraint_28b(uint32_t value); void SetConstraint_11628(uint32_t value);
+    void SetCBCField_23(uint32_t value);
+    void SetDofFlag_0(uint32_t value); void SetDofU16_11840(uint32_t value);
+    void SetFlag7C_4b(uint32_t value); void SetFlag7C_24(uint32_t value);
+    void SetFlags_11644(uint32_t value);
+    void SetFourConsecutive(uint32_t value);
+    void SetJointParam_0(uint32_t value); void SetJointParam_28(uint32_t value);
+    void SetLimitFloat_11708(float value); void SetLimitFloat_11712(float value);
+    void SetLimitType_0(uint32_t value);
+    void SetMiscField_11652(uint32_t value); void SetField_11544(uint32_t value);
+    void SetRangeFloat_11780(float value); void SetRangeFloat_11784(float value);
+    void SetRangeFloat_11788(float value); void SetRangeFloat_11792(float value);
+    void SetRotAxis_2(uint32_t value); void SetRotAxis_8(uint32_t value);
+    void SetRotAxis_14(uint32_t value); void SetRotAxis_20(uint32_t value);
+    void SetRotAxis_26(uint32_t value);
+    void SetSolverParam_11636(uint32_t value); void SetSolverParam_15(uint32_t value);
+    void SetSolverParam_21(uint32_t value);
+    void ClearJointForces();
+    void DispatchConstraintSolver(void* param1, void* param2);
+    void AccumulateJointForce(int jointParam, const float* forceVec);
+    void PostIntegrate();
+    void Reset();
+    void ClearForces();
+    void UpdateChildJoints();
+    void ApplyScaledForce(float scaleFactor);
+    void SetVelocityAndSync(const float* velocityVec);
+    void SyncAfterBaseUpdate();
+    void Shutdown();
+    void ApplyScaledMatrixRowX(float scale);
+    void ApplyScaledMatrixRowY(float scale);
+    void ApplyScaledMatrixRowZ(float scale);
+    void SetupJointConstraints();
+    void DispatchJointUpdate(int index);
+    void DispatchJointSolve(int index);
 };
 
 // ── rage::phBound  [vtable @ 0x82057EF4] ─────────────────────────────────────
@@ -712,6 +830,43 @@ struct phBoundCapsule {
 
     // Non-virtual methods
     int32_t ComputeFixedPointDotProduct();  // @ 0x824C35C8
+    float GetRadius() const;
+    void ScaleRadius(float scale);
+    void ComputeBounds(float scale, float* outMin, float* outMax);
+    float ComputeExtent(float param1, float param2) const;
+    void InitializeAxisAlignedX(float halfLength, float* outMatrix);
+    void InitializeAxisAlignedY(float halfLength, float* outMatrix);
+    void InitializeAxisAlignedZ(float halfLength, float* outMatrix);
+    void TransformByDirection(float halfLength, const float* direction, float* outMatrix);
+    void InitializeFromDirection(float halfLength, const float* direction, float* outMatrix);
+    void ApplyTransform(const float* transform, const float* inPoints);
+    void SetMaterialIndex(uint32_t index);
+    uint32_t GetMaterialIndex() const;
+    float GetVolume() const;
+    void UpdateBound();
+    void GetSupportPoint(void* direction, void* outPoint);
+    void CopyFrom(const phBoundCapsule* source);
+    int CheckValueSign() const;
+    int CheckScaledValueSign() const;
+    void SetupCapsuleFromState();
+    float SumFloatArray(int count) const;
+    void RotateVectors();
+    void RotateVectorsAlt();
+    int NormalizeVector2D(float* outVec) const;
+    void LookupTableValues(void* outValues);
+    void SetActiveState(int stateIndex);
+    void DispatchCapsuleFromCamera(void* param1, void* param2);
+    int32_t TestPointContainment(const float* point);
+    void InitializeCapsule(float halfHeight, float radius);
+    uint32_t GetPolygonCount() const;
+    void SetPolygonCount(uint32_t count);
+    void GetExtents(float* outExtents, const void* params);
+    void RenderDebug();
+    float CalculateVolume() const;
+    void SetCentroidOffset(const float* offset);
+    float GetBoundingDistance(const float* direction, uint8_t includeCenter) const;
+    void ValidateAndSetExtents(const float* matrix);
+    void GetJointLimitsForAxis(uint32_t jointIndex, uint32_t axis, float* outMin, float* outMax);
 };
 
 // ── rage::phBoundComposite  [vtable @ 0x82057FD4] ────────────────────────────
@@ -865,6 +1020,18 @@ struct phBoundGeometry {
 
     // debug string: "phBoundGeometry::Load_v110(%s) -- 'centroid:' not supported"
     void Load_v110();
+
+    // Non-virtual methods
+    void* GetDisplayObject();
+    uint8_t GetMaterialCount() const;
+    void* GetMaterialAtIndex(int index) const;
+    void SetAllMaterials(void* material);
+    void RenderDebugGeometry();
+    void SelectMaterialForRendering();
+    void CheckBoundsAndUpdate(const float* point);
+    void UpdateBounds(const float* offset);
+    void Destructor(int shouldFree);
+    bool CallVTableSlot37();
 };
 
 // ── rage::phBoundOTGrid  [vtable @ 0x82058854] ───────────────────────────────
@@ -1043,6 +1210,16 @@ struct phBoundSphere {
     virtual void vfn_33();        // [33] @ 0x82295860
     virtual void vfn_36();        // [36] @ 0x822956A8
     virtual void vfn_37();        // [37] @ 0x82295598
+
+    // Non-virtual methods
+    void DispatchMaterialAlloc();
+    uint32_t GetMaterialIndex();
+    void SetMaterialIndex(uint32_t index);
+    float ComputeVolume();
+    void ComputeInertiaTensor(float* outTensor, const void* source, float density);
+    float GetProjectedExtent(const float* direction, uint8_t flags);
+    void RenderDebug();
+    void SetPositionAndUpdateFlags(const float* position);
 };
 
 // ── rage::phBoundSurface  [vtable @ 0x82058CE4] ──────────────────────────────
@@ -1359,6 +1536,71 @@ struct phInst {
     virtual void vfn_78();                        // [78] @ 0x82487AA8
     virtual void vfn_79();                        // [79] @ 0x82487CE0
     virtual void vfn_80();                        // [80] @ 0x82487E60
+
+    // Non-virtual methods
+    void* GetBoundPtr();
+    void* GetField14();
+    void SetField9(void* val);
+    void SetField11(void* val);
+    int GetStaticSize();
+    int StoreSize(int* outParam);
+    void ForwardSlot23(void* arg);
+    void ForwardSlot12();
+    void AdjustorSlot1();
+    void AdjustorSlot2(void* arg);
+    void AdjustorSlot5();
+    void AdjustorSlot6(void* arg);
+    int GetPhysicsLayer();
+    int GetU16Delta();
+    int ComputeDataOffset();
+    int AddRef();
+    int Release();
+    void Lock();
+    void Unlock();
+    void ShiftArgsAndCall(void* a, void* b, void* c);
+    void LoadGlobalAndCall();
+    void InitVtableAndCleanup();
+    void SetIndexedFlag(int index);
+    void ClearIndexedFlag(int index);
+    void ConditionalStore(int flag, uint32_t val1, uint32_t val2);
+    void ZeroFieldRange();
+    void ZeroFieldRanges();
+    void ClearSubStatePtr();
+    int StoreSizeConstant(uint32_t* outParam);
+    void DispatchTransformA(void* arg1, void* arg2);
+    void InitTripleVtable();
+    void InitWithParam(void* param);
+    int GetSubObjectPtr(void** outPtr);
+    void SetPhysicsLayer(void* arg);
+    void ConditionalBroadcast(void* msg, bool includeData);
+    void ReadMMIOAndStore();
+    void SetUserData(uint32_t val);
+    uint32_t GetUserData();
+    void SetCollisionGroup(uint32_t val);
+    uint32_t GetCollisionGroup();
+    void SetCollisionMask(uint32_t val);
+    uint32_t GetCollisionMask();
+    uint32_t GetErrorCode();
+    void CallVfn12ThenInit();
+    void AtomicDecrementAndCallback();
+    void SetCollisionFlags(uint32_t flags);
+    uint32_t GetCollisionFlags();
+    void SetContactFilter(uint32_t filter);
+    uint32_t GetContactFilter();
+    void SetContactCallback(uint32_t callback);
+    uint32_t GetContactCallback();
+    uint64_t GetArchetypeData();
+    uint32_t GetSupportedFlags();
+    void CopyCurrentTransform(void* src, uint32_t srcLen);
+    void CopyLastTransform(void* src, uint32_t srcLen);
+};
+
+// ── rage::phInstStatic ───────────────────────────────────────────────────────
+struct phInstStatic {
+    void**      vtable;           // +0x00
+
+    void ClearMotionState();
+    void ClearAllMotion();
 };
 
 // ── rage::phInstBehavior  [vtable @ 0x82065080] ──────────────────────────────
@@ -1583,6 +1825,16 @@ struct phJoint3Dof {
     virtual void vfn_29();                        // [29] @ 0x822550F8
     virtual void vfn_30();                        // [30] @ 0x82255160
     virtual void vfn_31();                        // [31] @ 0x82253920
+
+    // Non-virtual methods
+    void SetDampingAndStiffness(float arg1, float arg2);
+    void SetLimitAtIndex(int index, float val);
+    void AccumulateForces(int index, float* outVec);
+    void AccumulateTorques(int index, float* outVec);
+    void GetLowerLimit(int index, float* outVec);
+    void GetUpperLimit(int index, float* outVec);
+    void ComputeJacobian();
+    void SetLimits();
 };
 
 // ── rage::phLevelBase  [vtable @ 0x82059F24] ─────────────────────────────────
@@ -1811,4 +2063,17 @@ struct phObject {
     virtual void* vfn_30();                            // [30]
     virtual void* vfn_31();                            // [31]
     virtual void vfn_32();                             // [32]
+
+    // Non-virtual methods
+    void ResetState();
+    void Initialize(void* a2, void* a3, void* a4);
+    void* GetDescription();
+    void SetDescription(void* a2);
+    int32_t QueryInterface(int32_t);
+    int32_t Release();
+    void* CreateResource();
+    void* CreateViews(phObject* param);
+    void* CreateOutputViews();
+    void ReleaseViews();
+    void ReleaseResources();
 };
