@@ -13,20 +13,20 @@
 #include <cstring>
 
 // External dependencies
-extern void rage_Free(void* ptr);
+extern void rage_free(void* ptr);
 extern void rage_DebugLog(const char* msg, ...);
-extern void nop_8240E6D0(const char* msg, ...);  // @ 0x8240E6D0 — debug logger (no-op in retail)
+extern void rage_DebugLogNop(const char* msg, ...);  // @ 0x8240E6D0 — debug logger (no-op in retail)
 extern "C" int _stricmp(const char* s1, const char* s2);
-extern void pongCreature_7CE8_g(void* creature, void* matrix, int param1, int param2, int param3, int param4);
-extern void* pg_9C00_g(void* player, int index);  // @ 0x82019C00 — returns creature info ptr
-extern void pongPlayer_9CD0_g(void* player, int index, void* outMatrix1, void* outMatrix2);
+extern void pongCreature_ApplyMatrix(void* creature, void* matrix, int param1, int param2, int param3, int param4);
+extern void* pongGame_GetCreatureInfo(void* player, int index);  // @ 0x82019C00 — returns creature info ptr
+extern void pongPlayer_GetCreatureMatrices(void* player, int index, void* outMatrix1, void* outMatrix2);
 
 // Forward declarations
 bool IsMatrixIdentity(const float* matrix);  // @ 0x820C3C70 - Matrix identity check
 
 // LocomotionStateAnim helper functions
-extern void LocomotionStateAnim_88E0_g(void* containerData, void* containerParams, float time, int p1, int p2);
-extern void LocomotionStateAnim_C8F8_g(void* animationList);
+extern void LocomotionStateAnim_SetupContainer(void* containerData, void* containerParams, float time, int p1, int p2);
+extern void LocomotionStateAnim_FinalizeProcessing(void* animationList);
 
 // Ref-counting helpers
 extern "C" void rage_AddRef(void* obj);
@@ -131,7 +131,7 @@ void pongMover::Reset(void* creatureData) {
     
     // Apply matrix to creature if valid
     if (m_pCreature && subEntry != 0) {
-        pongCreature_7CE8_g(m_pCreature, initMatrix, 0, 1, 0, 0);
+        pongCreature_ApplyMatrix(m_pCreature, initMatrix, 0, 1, 0, 0);
     } else {
         rage_DebugLog("pongMover::Reset() - no creature to reset");  /* UNVERIFIED — string not found in binary */
     }
@@ -201,7 +201,7 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
             uint32_t creatureIndex = *(uint32_t*)((char*)mover + 68);
             
             void* playerCreature = (void*)((char*)player + creatureIndex);
-            void* creatureInfo = pg_9C00_g(player, creatureIndex);
+            void* creatureInfo = pongGame_GetCreatureInfo(player, creatureIndex);
             void* creatureStats = *(void**)((char*)creatureInfo + 44);
             
             // Check if mirrored
@@ -252,9 +252,9 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
     float tempMatrix1[16];
     float tempMatrix2[16];
     
-    pongPlayer_9CD0_g(player, creatureIndex, tempMatrix1, tempMatrix2);
+    pongPlayer_GetCreatureMatrices(player, creatureIndex, tempMatrix1, tempMatrix2);
     
-    void* creatureInfo = pg_9C00_g(player, creatureIndex);
+    void* creatureInfo = pongGame_GetCreatureInfo(player, creatureIndex);
     void* creatureStats = *(void**)((char*)creatureInfo + 44);
     
     // Get height offset
@@ -329,7 +329,7 @@ uint8_t game_3C70(const float* matrix) {
  */
 float pongBlendLookAtDriver::CalculateBlendFactor() {
     // Load current look-at angle from +224
-    float currentAngle = *(float*)((char*)this + 224);
+    float currentAngle = *(float*)((char*)this + 224);  // pongBlendLookAtDriver +0xE0
     
     // Load blend weight from +16
     float blendWeight = *(float*)((char*)this + 16);
@@ -543,8 +543,8 @@ void LocomotionStateAnim::CopyAnimationData() {
     if (helperObj != nullptr) {
         // Use pongCreatureInst helper to perform the copy
         // This likely handles more complex transformation logic
-        extern void pongCreatureInst_EDC0_g(void* dst, void* src, void* helper);
-        pongCreatureInst_EDC0_g(dstBuffer, srcBuffer, helperObj);
+        extern void pongCreatureInst_CopyTransform(void* dst, void* src, void* helper);
+        pongCreatureInst_CopyTransform(dstBuffer, srcBuffer, helperObj);
     } else {
         // Manual copy: 64 bytes (4 x 16-byte vectors) of transformation data
         // This is likely a 4x4 transformation matrix (16 floats = 64 bytes)
@@ -599,8 +599,8 @@ void LocomotionStateAnim::CopyAnimationData() {
         void* srcPtr = (char*)srcBuffer + srcOffset;
         void* indexedDstPtr = (char*)dstBuffer + indexedDstOffset;
         
-        extern void pongCreatureInst_EDC0_g(void* dst, void* src, void* indexed);
-        pongCreatureInst_EDC0_g(dstPtr, srcPtr, indexedDstPtr);
+        extern void pongCreatureInst_CopyTransform(void* dst, void* src, void* indexed);
+        pongCreatureInst_CopyTransform(dstPtr, srcPtr, indexedDstPtr);
     }
 }
 
@@ -630,7 +630,7 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
     float currentTime = *(float*)((char*)this + 8);
     
     // Call setup function to prepare animations
-    LocomotionStateAnim_88E0_g(containerData, containerParams, currentTime, 1, 0);
+    LocomotionStateAnim_SetupContainer(containerData, containerParams, currentTime, 1, 0);
     
     // Determine which processing function to use based on animation flags
     void* animListData = *(void**)((char*)animationList + 4);
@@ -667,7 +667,7 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
     }
     
     // Finalize animation processing
-    LocomotionStateAnim_C8F8_g(animationList);
+    LocomotionStateAnim_FinalizeProcessing(animationList);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -677,12 +677,11 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
 // External references
 extern void LocomotionState_OnEnter(void* state);
 extern void rage_free(void* ptr);
-extern void rage_FF70(void* obj);
-extern void ph_59C8(void* loader, const char* name, int flag);
-extern int util_5A70(void* loader, void* outBuffer, int maxLen, int param1, int param2);
-extern void rage_DebugLog(const char* fmt, ...);
-extern void phBoundCapsule_5138_g(void* capsule, void* params, void* data);
-extern void LocomotionStateAnim_8278_g(void* state, void* animData);
+extern void LocomotionStateAnim_BaseDtor(void* obj);
+extern void phLoader_CheckAnimExists(void* loader, const char* name, int flag);
+extern int phLoader_ReadFileName(void* loader, void* outBuffer, int maxLen, int param1, int param2);
+extern void phBoundCapsule_ApplyCollision(void* capsule, void* params, void* data);
+extern void LocomotionStateAnim_ApplyAnimData(void* state, void* animData);
 
 // Global constants
 extern const float g_floatZero;      // @ 0x8202D110
@@ -694,7 +693,7 @@ extern const float g_floatOne;       // @ 0x8202D108
 // ─────────────────────────────────────────────────────────────────────────────
 LocomotionStateAnim::~LocomotionStateAnim() {
     // Call parent destructor
-    rage_FF70(this);
+    LocomotionStateAnim_BaseDtor(this);
     
     // Note: The 'flags' parameter (r4) determines if memory should be freed
     // This is handled by the scalar destructor (vfn_1), not here
@@ -706,9 +705,9 @@ LocomotionStateAnim::~LocomotionStateAnim() {
 // ─────────────────────────────────────────────────────────────────────────────
 void LocomotionStateAnim::Reset() {
     // Clear animation state fields
-    *(uint32_t*)((char*)this + 60) = 0;   // Clear state flags
-    *(uint32_t*)((char*)this + 320) = 0;  // Clear animation pointer
-    *(uint32_t*)((char*)this + 324) = 0;  // Clear animation data
+    this->field_0x003c = 0;   // Clear state flags
+    this->field_0x0140 = 0;  // Clear animation pointer
+    this->field_0x0144 = 0;  // Clear animation data
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -717,10 +716,10 @@ void LocomotionStateAnim::Reset() {
 // ─────────────────────────────────────────────────────────────────────────────
 float LocomotionStateAnim::GetAnimationProgress() {
     // Get current animation data
-    void* animData = *(void**)((char*)this + 320);
+    void* animData = (void*)this->field_0x0140;
     
     // Get animation timing values
-    float currentTime = *(float*)((char*)this + 184);
+    float currentTime = *(float*)&this->field_0x00b8;
     float duration = *(float*)((char*)this + 40);
     float animEndTime = *(float*)((char*)animData + 12);
     
@@ -737,7 +736,7 @@ float LocomotionStateAnim::GetAnimationProgress() {
 // ─────────────────────────────────────────────────────────────────────────────
 float LocomotionStateAnim::GetAnimationDuration() {
     // Get current animation data
-    void* animData = *(void**)((char*)this + 320);
+    void* animData = (void*)this->field_0x0140;
     
     // Get timing values
     float duration = *(float*)((char*)this + 40);
@@ -755,7 +754,7 @@ float LocomotionStateAnim::GetAnimationDuration() {
 // ─────────────────────────────────────────────────────────────────────────────
 bool LocomotionStateAnim::IsAnimationComplete() {
     // Check completion flag at offset +328
-    uint8_t isComplete = *(uint8_t*)((char*)this + 328);
+    uint8_t isComplete = this->field_0x0148;
     
     // Return inverted: 0 means complete, non-zero means still playing
     // This is a cntlzw + rlwinm pattern: count leading zeros and extract bit
@@ -811,11 +810,11 @@ void LocomotionStateAnim::Initialize() {
     }
     
     // Initialize state fields
-    *(float*)((char*)this + 184) = zero;   // Current time
-    *(uint32_t*)((char*)this + 324) = 0;   // Animation data pointer
-    *(uint32_t*)((char*)this + 320) = 0;   // Animation object pointer
-    *(float*)((char*)this + 332) = zero;   // Blend weight
-    *(uint8_t*)((char*)this + 328) = 1;    // Mark as not complete
+    *(float*)&this->field_0x00b8 = zero;   // Current time
+    this->field_0x0144 = 0;   // Animation data pointer
+    this->field_0x0140 = 0;   // Animation object pointer
+    *(float*)&this->field_0x014c = zero;   // Blend weight
+    this->field_0x0148 = 1;    // Mark as not complete
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -891,7 +890,7 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
         uint8_t found = 0;
         
         // Call loader to check if animation exists
-        ph_59C8(fileLoader, animName, 1);
+        phLoader_CheckAnimExists(fileLoader, animName, 1);
         // Result in r3 (0 = not found, 1 = found)
         
         if (found == 0) {
@@ -914,7 +913,7 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
         const char* animName = animNames2[i];
         uint8_t found = 0;
         
-        ph_59C8(fileLoader, animName, 1);
+        phLoader_CheckAnimExists(fileLoader, animName, 1);
         
         if (found == 0) {
             animIndex2++;
@@ -927,7 +926,7 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
     
     // Load animation file name
     char fileNameBuffer[256];
-    int result = util_5A70(fileLoader, fileNameBuffer, 255, 10, 1);
+    int result = phLoader_ReadFileName(fileLoader, fileNameBuffer, 255, 10, 1);
     
     if (result == 0) {
         // Failed to read file name
@@ -1100,12 +1099,12 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
         }
         
         // Call capsule collision function
-        phBoundCapsule_5138_g(outputState, capsuleDiff, (void*)0x825C9B60);
+        phBoundCapsule_ApplyCollision(outputState, capsuleDiff, (void*)0x825C9B60);
         
     } else {
         // Use simple animation data
         void* simpleAnimData = (void*)((char*)animSubData + 32);
-        LocomotionStateAnim_8278_g(outputState, simpleAnimData);
+        LocomotionStateAnim_ApplyAnimData(outputState, simpleAnimData);
     }
     
     // Copy final capsule data to output
@@ -1377,7 +1376,7 @@ void* pongCreatureInst::GetSubObjectTransform(int index) {  // vfn_3
  * creature has the visibility/render flag set.
  */
 bool pongCreatureInst::HasVisibilityFlag() {  // 5378
-    uint8_t flags = *(uint8_t*)((char*)this + 431);
+    uint8_t flags = this->field_0x01af;
     return (flags & 0x4) != 0;
 }
 
@@ -1534,7 +1533,7 @@ void pongCreatureInst::StoreVCallResultAtField429(void* arg) {  // 8E70_p42
     void** vt = *(void***)target;
     GetFunc fn = (GetFunc)vt[4];
     uint8_t result = fn(target);
-    *(uint8_t*)((char*)this + 429) = result;
+    this->field_0x01ad = result;
 }
 
 /**
@@ -1548,7 +1547,7 @@ void pongCreatureInst::StoreVCallResultAtField446(void* arg) {  // 9180_p42
     void** vt = *(void***)target;
     GetFunc fn = (GetFunc)vt[4];
     uint8_t result = fn(target);
-    *(uint8_t*)((char*)this + 446) = result;
+    this->field_0x01be = result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1630,7 +1629,7 @@ void pongCreatureInst::UpdateFlag445(void* arg) {  // 8EB0_p42
     void* target = *(void**)((char*)arg + 4);
     typedef uint8_t (*GetFn)(void*);
     uint8_t val = ((GetFn)(*(void***)target)[4])(target);
-    *(uint8_t*)((char*)this + 445) = val;
+    this->field_0x01bd = val;
 }
 
 /**
@@ -1642,7 +1641,7 @@ void pongCreatureInst::UpdateFlag447(void* arg) {  // 8F70_p42
     void* target = *(void**)((char*)arg + 4);
     typedef uint8_t (*GetFn)(void*);
     uint8_t val = ((GetFn)(*(void***)target)[4])(target);
-    *(uint8_t*)((char*)this + 447) = val;
+    this->field_0x01bf = val;
 }
 
 /**
@@ -1656,7 +1655,7 @@ void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
     typedef uint8_t (*GetFn)(void*);
     uint8_t val = ((GetFn)(*(void***)target)[4])(target);
 
-    uint8_t* flags = (uint8_t*)((char*)this + 431);
+    uint8_t* flags = &this->field_0x01af;
     if (val) {
         *flags |= 0x08;   // set bit 3
     } else {
@@ -1675,7 +1674,7 @@ void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
  */
 void pongCreature::LookupHashValue(void* outPtr, void* keyPtr) {  // 79F0_p45
     uint32_t key = *(uint32_t*)keyPtr;
-    void* hashTable = *(void**)((char*)this + 160);
+    void* hashTable = (void*)this->field_0x00a0;
     char* entries = *(char**)((char*)hashTable + 8);
     char* entry = entries + (key << 3);
 
@@ -1695,7 +1694,7 @@ void pongCreature::LookupHashValue(void* outPtr, void* keyPtr) {  // 79F0_p45
  */
 void pongCreature::FindIndexByKey(void* outPtr, void* keyPtr) {  // 7990_p45
     uint32_t searchKey = *(uint32_t*)keyPtr;
-    void* arrayBase = *(void**)((char*)this + 160);
+    void* arrayBase = (void*)this->field_0x00a0;
     char* entries = *(char**)((char*)arrayBase + 8);
     uint32_t count = *(uint32_t*)((char*)arrayBase + 12);
 
@@ -1738,7 +1737,7 @@ uint32_t pongCreatureInst::LookupContainer() {  // CFB0_h
  * active animation or physics slots.
  */
 bool pongCreatureInst::HasMultipleActiveSlots() {  // 7BD8_h
-    uint32_t bitfield = *(uint32_t*)((char*)this + 464);
+    uint32_t bitfield = this->field_0x01d0;
     int count = 0;
     while (bitfield) {
         count += (bitfield & 1);
@@ -1858,7 +1857,7 @@ void pongCreatureInst::Detach() {  // D470_p33
 
     // Remove from parent's child list
     void* parent = *(void**)((char*)g_creatureManager + 876);
-    void* childToRemove = *(void**)((char*)this + 192);
+    void* childToRemove = (void*)this->field_0x00c0;
     typedef void (*RemoveFn)(void*, void*);
     RemoveFn removeChild = (RemoveFn)(*(void***)parent)[3];
     removeChild(parent, childToRemove);
@@ -2224,7 +2223,7 @@ void LocomotionStateMf::EraseRange(void* rangeStart, void* rangeEnd) {  // 31A8
  * array, scaled by a factor from this+40.
  */
 float LocomotionStateMf::ComputeWeightedSum(const float* weights, const float* data, int count) {  // 3148_h
-    float scale = *(float*)((char*)this + 40);
+    float scale = *(float*)((char*)this + 40);  // LocomotionStateMf +0x28
     float sum = 0.0f;
 
     for (int i = 0; i < count; i++) {
@@ -2258,11 +2257,11 @@ void LocomotionStateMf::SerializeTriple(void* serializer, void* data) {  // 7480
 ////////////////////////////////////////////////////////////////////////////////
 
 // External helpers used by newly-lifted functions
-extern void phBoundCapsule_4360_g(void* capsule, void* outResult);
-extern void phBoundCapsule_7B08_g(void* matrix, float* outVec);
+extern void phBoundCapsule_FindSegmentIndex(void* capsule, void* outResult);
+extern void phBoundCapsule_ExtractPosition(void* matrix, float* outVec);
 extern float LocomotionStateAnim_A1F8_g(float value, float rangeMin, float rangeMax);
-extern void LocomotionStateAnim_8278_g(void* matrix, float* vec);
-extern void LocomotionStateAnim_B218_g(void* dst, void* srcMatrix);
+extern void LocomotionStateAnim_ApplyAnimData(void* matrix, float* vec);
+extern void LocomotionStateAnim_CopyMatrixData(void* dst, void* srcMatrix);
 extern void LocomotionStateAnim_6E90_w(void* self, float weight);
 extern bool LocomotionStateAnim_04F0_g(void* animData, uint16_t animID_high, uint16_t* outIndex);
 extern void util_BBB0(void* dst, float* src, float* work);
@@ -2340,7 +2339,7 @@ void LocomotionStateAnim_47E8_g(void* self, void* capsule) {
     memcpy((char*)self + 16, (char*)capsule + 48, 16);
 
     // Call capsule angle computation
-    phBoundCapsule_4360_g(capsule, result);
+    phBoundCapsule_FindSegmentIndex(capsule, result);
 
     // Read the angle from result[1]
     float angle = result[1];
@@ -2390,7 +2389,7 @@ void LocomotionStateAnim_8110_g(void* quat, float* minVec, float* maxVec) {
     LocomotionStateAnim_AD30_g(matrix, (const float*)quat);
 
     // Extract position vector from matrix
-    phBoundCapsule_7B08_g(matrix, vec);
+    phBoundCapsule_ExtractPosition(matrix, vec);
 
     // Clamp each component: LocomotionStateAnim_A1F8_g(value, min, max)
     vec[0] = LocomotionStateAnim_A1F8_g(vec[0], minVec[0], maxVec[0]);
@@ -2398,10 +2397,10 @@ void LocomotionStateAnim_8110_g(void* quat, float* minVec, float* maxVec) {
     vec[2] = LocomotionStateAnim_A1F8_g(vec[2], minVec[2], maxVec[2]);
 
     // Write clamped vector back into matrix
-    LocomotionStateAnim_8278_g(matrix, vec);
+    LocomotionStateAnim_ApplyAnimData(matrix, vec);
 
     // Apply matrix to destination
-    LocomotionStateAnim_B218_g(quat, matrix);
+    LocomotionStateAnim_CopyMatrixData(quat, matrix);
 }
 
 /**
@@ -2426,8 +2425,8 @@ void LocomotionStateAnim_10D8(void* self, void* dst, void* unused, void* contain
     // Get animation list from self+28
     void* animList = *(void**)((char*)self + 28);
 
-    // Configure container with timing: LocomotionStateAnim_88E0_g(container, animList, time, 1, 0)
-    LocomotionStateAnim_88E0_g(container, animList, time, 1, 0);
+    // Configure container with timing: LocomotionStateAnim_SetupContainer(container, animList, time, 1, 0)
+    LocomotionStateAnim_SetupContainer(container, animList, time, 1, 0);
 
     // Query position from container
     float posVec[4];
@@ -2556,7 +2555,7 @@ bool LocomotionStateAnim_C4A8_g(void* self, uint16_t animID1, uint16_t animID2, 
  * each entry. The callback is either LocomotionStateAnim_C128_g or
  * LocomotionStateAnim_C288_g, depending on whether the animation
  * data has the "mirrored" flag set (bit 0 of field +20 at sub-data +4).
- * After processing, calls LocomotionStateAnim_C8F8_g on self+36.
+ * After processing, calls LocomotionStateAnim_FinalizeProcessing on self+36.
  */
 // LocomotionStateAnim_6380_g @ 0x82386380
 void LocomotionStateAnim_6380_g(void* self, void* animList) {
@@ -2583,7 +2582,7 @@ void LocomotionStateAnim_6380_g(void* self, void* animList) {
     }
 
     // Finalize
-    LocomotionStateAnim_C8F8_g(*(void**)((char*)self + 36));
+    LocomotionStateAnim_FinalizeProcessing(*(void**)((char*)self + 36));
 }
 
 /**
@@ -2970,11 +2969,11 @@ void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
 // diagnostic message via the nop debug function and returns early.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName1, const char* boneName2) {
-    uint8_t boneCount = *(uint8_t*)((char*)this + 426);   // m_boneCount at +0x1AA
+    uint8_t boneCount = this->field_0x01aa;   // m_boneCount at +0x1AA
 
     if (boneCount == 0) {
         // No bones available — log and return
-        nop_8240E6D0(boneName1, boneName2);
+        rage_DebugLogNop(boneName1, boneName2);
         return;
     }
 
@@ -2983,7 +2982,7 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
 
     for (int i = 0; i < boneCount; i++) {
         // Bone pointer array at this+176 (0xB0)
-        void** boneArray = *(void***)((char*)this + 176);
+        void** boneArray = (void***)this->field_0x00b0;
         void* boneEntry = boneArray[i];
 
         // Bone name string starts at boneEntry+29
@@ -2998,13 +2997,13 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
 
     if (foundIndex1 == -1 || foundIndex2 == -1) {
         // One or both bones not found — log and return
-        nop_8240E6D0(boneName1, boneName2);
+        rage_DebugLogNop(boneName1, boneName2);
         return;
     }
 
     // Store the found indices into the mapping arrays
-    uint8_t* mappingArray1 = *(uint8_t**)((char*)this + 208);  // +0xD0
-    uint8_t* mappingArray2 = *(uint8_t**)((char*)this + 212);  // +0xD4
+    uint8_t* mappingArray1 = (uint8_t*)this->field_0x00d0;  // +0xD0
+    uint8_t* mappingArray2 = (uint8_t*)this->field_0x00d4;  // +0xD4
     mappingArray1[mappingIndex] = (uint8_t)foundIndex1;
     mappingArray2[mappingIndex] = (uint8_t)foundIndex2;
 }
@@ -3031,9 +3030,9 @@ void pongCreatureInst::ReadBoneNamesAndMap(void* xmlNode) {
     readString(dataObj, boneName2, 39);
 
     // Increment the bone pair count at +424 (0x1A8)
-    uint8_t pairCount = *(uint8_t*)((char*)this + 424);
+    uint8_t pairCount = (uint8_t)this->field_0x01a8;
     pairCount++;
-    *(uint8_t*)((char*)this + 424) = pairCount;
+    this->field_0x01a8 = pairCount;
 
     // Find and map the bone pair using the previous count as the mapping index
     FindBonePairByName((uint8_t)(pairCount - 1), boneName1, boneName2);
@@ -3053,7 +3052,7 @@ void pongCreatureInst::StoreBoneResult(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    *(uint8_t*)((char*)this + 429) = (uint8_t)result;
+    this->field_0x01ad = (uint8_t)result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3069,7 +3068,7 @@ void pongCreatureInst::StoreBoneFlag(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    *(uint8_t*)((char*)this + 445) = (result != 0) ? 1 : 0;
+    this->field_0x01bd = (result != 0) ? 1 : 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3087,9 +3086,9 @@ void pongCreatureInst::SetOrClearBoneFlag8(void* xmlNode) {
     int result = readValue(dataObj);
 
     if (result != 0) {
-        *(uint8_t*)((char*)this + 431) |= 0x08;
+        this->field_0x01af |= 0x08;
     } else {
-        *(uint8_t*)((char*)this + 431) &= ~0x08;
+        this->field_0x01af &= ~0x08;
     }
 }
 
@@ -3106,7 +3105,7 @@ void pongCreatureInst::StoreMirrorFlag(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    *(uint8_t*)((char*)this + 447) = (result != 0) ? 1 : 0;
+    this->field_0x01bf = (result != 0) ? 1 : 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3122,5 +3121,5 @@ void pongCreatureInst::StoreBlendFlag(void* xmlNode) {
     ReadValueFn readValue = (ReadValueFn)dataVtable[4];
     int result = readValue(dataObj);
 
-    *(uint8_t*)((char*)this + 446) = (uint8_t)result;
+    this->field_0x01be = (uint8_t)result;
 }

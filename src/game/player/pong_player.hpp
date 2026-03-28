@@ -71,7 +71,7 @@
  *   +0x1D0  int32_t             m_inputSlotIdx       player's button/input slot index
  *                                                    (used in vtable slot 7, 9; also as +464)
  *   +0x1EC  ?                                        R:23 W:0
- *   +0x1F0  void*               m_pActionState       passed to pongPlayer_1460_g in Update
+ *   +0x1F0  void*               m_pActionState       passed to pongPlayer_InitActionState in Update
  *
  *   NOTE: +0x1D0 above is the MOST ACCESSED field (R:112 W:2). At first I called this
  *         m_pMatch, but Reset and Update use it as an integer input slot index.
@@ -112,7 +112,17 @@ struct pongTimingSubState {
 struct pongRecoveryState;
 struct pongAnimState;
 struct pongCreatureState;
-struct pongSwingData;
+// ── Sub-struct: pongSwingData ────────────────────────────────────────────
+struct pongSwingData {
+    uint32_t vtable_ptr;     // +0   (32-bit game ptr kept as uint32 for layout)
+    uint8_t  _pad1[337];     // +4..+340
+    uint8_t  _pad341;        // +341
+    uint8_t  m_bTriggered;   // +342  byte flag — 1 = swing triggered
+    uint8_t  _pad343;        // +343
+    float    m_swingStrength; // +344  swing power
+    uint8_t  _pad348[4];     // +348..+351
+    float    m_swingVec[3];  // +352  target vec3
+};
 struct pongPlayerState;
 struct vec3 {
     float x, y, z;
@@ -222,16 +232,35 @@ struct pongPlayer {
     uint8_t             _pad10[249];
     uint8_t             m_bSwingCommit1;     // +0x0E6 (+230) — checked in 5890_g
     uint8_t             m_bSwingCommit2;     // +0x0E7 (+231)
-    uint8_t             _pad11[468];
+    uint8_t             _pad11[212];
+    void*               m_pDrawData;         // +0x1BC (+444) draw data object (vtable slot 1 = render)
+    void*               m_pCreatureState3;   // +0x1C0 (+448) creature-state for serve/input init
     pongPlayer*         m_pOpponent;         // +0x1C4 (+452) R:66 W:0 — set once at init
     uint32_t            _unk_0x1C8;          // +0x1C8
-    uint32_t            _unk_0x1CC;          // +0x1CC
+    int32_t             m_actionStateIdx;    // +0x1CC (+460) action state (2=serve,3=rally,4=active)
     int32_t             m_inputSlotIdx;      // +0x1D0 (+464) — player's button/input slot index
                                              //   MOST ACCESSED (R:112); per-frame input polling
     uint8_t             _pad12[20];
     void*               _unk_0x1E8;          // +0x1E8
     uint32_t            _unk_0x1EC;          // +0x1EC
-    void*               m_pActionState;      // +0x1F0 (+496) — passed to pongPlayer_1460_g
+    void*               m_pActionState;      // +0x1F0 (+496) — passed to pongPlayer_InitActionState
+    uint8_t             _pad13[0x151C - 0x1F4];
+    void*               m_pSwingTimingObj;   // +0x151C (+5404) swing timing sub-object
+    uint8_t             _pad14[0x15E0 - 0x1520];
+    float               m_shotStartTime;     // +0x15E0 (+5600) shot start timestamp
+    float               m_shotDuration;      // +0x15E4 (+5604) shot duration
+    float               m_shotSpeedMul;      // +0x15E8 (+5608) shot speed multiplier
+    uint8_t             m_bShotFlag1;        // +0x15EC (+5612) shot active flag 1
+    uint8_t             m_bShotFlag2;        // +0x15ED (+5613) shot active flag 2
+    uint8_t             _pad15[0x1970 - 0x15EE];
+    float               m_shotTimerA;        // +0x1970 (+6512) shot timing float A
+    float               m_shotTimerB;        // +0x1974 (+6516) shot timing float B
+    uint8_t             _pad16[0x1989 - 0x1978];
+    uint8_t             m_bShotPending;      // +0x1989 (+6537) shot pending flag
+    uint8_t             _pad17[0x19AC - 0x198A];
+    float               m_shotTimerC;        // +0x19AC (+6572) shot timing float C
+    uint8_t             _pad18[0x19ED - 0x19B0];
+    uint8_t             m_bShotReady;        // +0x19ED (+6637) shot readiness flag
 
     // ── Vtable methods (confirmed slots) ───────────────────────────────
     virtual ~pongPlayer();                               // slot 0

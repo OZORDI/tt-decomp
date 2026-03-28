@@ -140,11 +140,19 @@ void LocomotionStateAnim::ScalarDtor(int flags) {
     (void)flags;
 }
 
-void LocomotionStateAnim::vfn_6() {}
+void LocomotionStateAnim::UpdateAnimation(float dt, void* outputState, float blendWeight) {
+    (void)dt; (void)outputState; (void)blendWeight;
+}
 
-void LocomotionStateAnim::vfn_7() {}
+bool LocomotionStateAnim::EvaluateAnimation(void* outputState) {
+    (void)outputState;
+    return false;
+}
 
-void LocomotionStateAnim::vfn_9() {}
+bool LocomotionStateAnim::GetAnimTransform(void* outMatrix) {
+    (void)outMatrix;
+    return false;
+}
 
 // ============================================================================
 // 30. LocomotionStateAnim_8278_g
