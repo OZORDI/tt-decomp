@@ -459,6 +459,10 @@ struct phArticulatedCollider {
     void CopyBodyPosition(void* outVec, phArticulatedCollider* other, int jointIndex);
     void ApplyBodyForceAtJoint(const float* forceVec, int jointIndex);
     void ApplyBodyImpulseAtJoint(int jointIndex);
+    void ResetJointForces(int jointIndex);
+    void GetBodyTransformVector(phArticulatedCollider* source, int jointIndex);
+    void GetJointPivotPosition(int jointIndex, float* outPos);
+    void GetJointMatrix(float* outMatrix, int jointIndex);
 };
 
 // ── rage::phBound  [vtable @ 0x82057EF4] ─────────────────────────────────────

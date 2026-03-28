@@ -6625,6 +6625,217 @@ uint32_t phArticulatedCollider::GetJointLinkIndex(int boneIndex) {
     return *(uint32_t*)((char*)this + offset);
 }
 
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointVfn1 (vfn_17) @ 0x822505B0 | size: 0x34
+//
+// Looks up the joint object for a given joint index using the type array
+// (+476) and object array (+484), resolves the body pointer from the
+// active joints array, then dispatches to vtable slot 1 on that body.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::DispatchJointVfn1(int jointIndex) {
+    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
+    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+
+    uint32_t jointObj = jointObjArray[jointIndex];
+    uint32_t linkType = jointTypeArray[jointIndex];
+
+    int linkDataIndex = linkType + 42;
+    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
+
+    void** vtable = *(void***)body;
+    typedef void (*UpdateFunc)(void*, uint32_t);
+    UpdateFunc func = (UpdateFunc)vtable[1];
+    func(body, jointObj);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointVfn6 (vfn_50) @ 0x82250578 | size: 0x34
+//
+// Looks up the joint object for a given joint index, resolves the body
+// pointer, then dispatches to vtable slot 6 on that body.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::DispatchJointVfn6(int jointIndex) {
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
+    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+    uint32_t jointObj = jointObjArray[jointIndex];
+
+    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
+
+    void** vtable = *(void***)body;
+    typedef void (*ResetFunc)(void*, uint32_t, uint32_t);
+    ResetFunc func = (ResetFunc)vtable[6];
+    func(body, linkType, jointObj);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointVfn5 (vfn_51) @ 0x822505E8 | size: 0x34
+//
+// Looks up the joint object for a given joint index, resolves the body
+// pointer, then dispatches to vtable slot 5 on that body.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::DispatchJointVfn5(int jointIndex) {
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
+    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+    uint32_t jointObj = jointObjArray[jointIndex];
+
+    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
+
+    void** vtable = *(void***)body;
+    typedef void (*SolveFunc)(void*, uint32_t, uint32_t);
+    SolveFunc func = (SolveFunc)vtable[5];
+    func(body, linkType, jointObj);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointVfn12 (vfn_55) @ 0x822508A8 | size: 0x38
+//
+// Looks up the joint object for a given joint index, resolves the body
+// pointer, then dispatches to vtable slot 12 with an additional parameter.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::DispatchJointVfn12(int jointIndex, void* param) {
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
+    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    uint32_t jointObj = jointObjArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+
+    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
+
+    void** vtable = *(void***)body;
+    typedef void (*ApplyFunc)(void*, uint32_t, uint32_t, void*);
+    ApplyFunc func = (ApplyFunc)vtable[12];
+    func(body, linkType, jointObj, param);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointVfn7 (vfn_58) @ 0x82250910 | size: 0x34
+//
+// Looks up the joint object for a given joint index, resolves the body
+// pointer, then dispatches to vtable slot 7 on that body.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::DispatchJointVfn7(int jointIndex) {
+    uint32_t* jointTypeArray = (uint32_t*)(uintptr_t)field_0x01dc;  // +476
+    uint32_t* activeJoints = (uint32_t*)(uintptr_t)m_nActiveJoints; // +464
+    uint32_t* jointObjArray = (uint32_t*)(uintptr_t)field_0x01e4;   // +484
+
+    uint32_t linkType = jointTypeArray[jointIndex];
+    int linkDataIndex = linkType + 42;
+    uint32_t jointObj = jointObjArray[jointIndex];
+
+    void* body = (void*)(uintptr_t)activeJoints[linkDataIndex];
+
+    void** vtable = *(void***)body;
+    typedef void (*ComputeFunc)(void*, uint32_t);
+    ComputeFunc func = (ComputeFunc)vtable[7];
+    func(body, jointObj);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ResetJointForces (vfn_53) @ 0x82250870 | size: 0x38
+//
+// Resets force accumulators for a specific joint. Resolves the joint index
+// via GetJointLinkIndex (E668), then delegates to 7918_w.
+// ---------------------------------------------------------------------------
+extern void phArticulatedCollider_7918_w(void* jointData, int linkIndex);
+
+void phArticulatedCollider::ResetJointForces(int jointIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_7918_w(jointData, linkIndex);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::GetBodyTransformVector (vfn_20) @ 0x82250440 | size: 0x64
+//
+// Retrieves a body's cached transform vector from a source articulated
+// collider. Copies the 16-byte vector at body offset +1072 into this.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::GetBodyTransformVector(phArticulatedCollider* source, int jointIndex) {
+    int linkIndex = phArticulatedCollider_E668(source, jointIndex);
+
+    uint32_t* srcJointData = (uint32_t*)(uintptr_t)source->m_nActiveJoints;
+    int arrayIndex = linkIndex + 10;
+    uint8_t* body = (uint8_t*)(uintptr_t)srcJointData[arrayIndex];
+
+    float* srcVec = (float*)(body + 1072);
+    float* destVec = (float*)this;
+    destVec[0] = srcVec[0];
+    destVec[1] = srcVec[1];
+    destVec[2] = srcVec[2];
+    destVec[3] = srcVec[3];
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::GetJointPivotPosition (vfn_49) @ 0x82250710 | size: 0x60
+//
+// Retrieves the pivot position for a specific joint. Reads the body's
+// hinge count, computes stride = count * 32, copies vector at
+// body + stride + 16 into output.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::GetJointPivotPosition(int jointIndex, float* outPos) {
+    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int arrayIndex = linkIndex + 10;
+    uint8_t* body = (uint8_t*)(uintptr_t)jointData[arrayIndex];
+
+    uint32_t hingeCount = *(uint32_t*)body;
+    uint32_t stride = hingeCount * 32;
+
+    float* srcVec = (float*)(body + stride + 16);
+    outPos[0] = srcVec[0];
+    outPos[1] = srcVec[1];
+    outPos[2] = srcVec[2];
+    outPos[3] = srcVec[3];
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::GetJointMatrix (vfn_13) @ 0x822500E8 | size: 0x88
+//
+// Retrieves the 4x4 orientation matrix for a specific joint. Copies four
+// 16-byte rows from body offset +720 into the output matrix buffer.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::GetJointMatrix(float* outMatrix, int jointIndex) {
+    int linkIndex = phArticulatedCollider_E668(this, jointIndex);
+
+    uint32_t* jointData = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int arrayIndex = linkIndex + 10;
+    uint8_t* body = (uint8_t*)(uintptr_t)jointData[arrayIndex];
+
+    float* srcRow0 = (float*)(body + 720);
+    float* srcRow1 = (float*)(body + 736);
+    float* srcRow2 = (float*)(body + 752);
+    float* srcRow3 = (float*)(body + 768);
+
+    float* dstRow0 = outMatrix;
+    float* dstRow1 = outMatrix + 4;
+    float* dstRow2 = outMatrix + 8;
+    float* dstRow3 = outMatrix + 12;
+
+    dstRow0[0] = srcRow0[0]; dstRow0[1] = srcRow0[1];
+    dstRow0[2] = srcRow0[2]; dstRow0[3] = srcRow0[3];
+
+    dstRow1[0] = srcRow1[0]; dstRow1[1] = srcRow1[1];
+    dstRow1[2] = srcRow1[2]; dstRow1[3] = srcRow1[3];
+
+    dstRow2[0] = srcRow2[0]; dstRow2[1] = srcRow2[1];
+    dstRow2[2] = srcRow2[2]; dstRow2[3] = srcRow2[3];
+
+    dstRow3[0] = srcRow3[0]; dstRow3[1] = srcRow3[1];
+    dstRow3[2] = srcRow3[2]; dstRow3[3] = srcRow3[3];
+}
+
 } // namespace rage
 
 // ═════════════════════════════════════════════════════════════════════════════
