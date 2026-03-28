@@ -437,7 +437,7 @@ void grcDevice_clear(grcDeviceClear* pDevice)
 /* External function declarations */
 extern void grcCommandBuffer_flushDirtyState(void* pDevice);
 extern void* grcCommandBuffer_expand(void* pDevice);
-extern void grcCommandBuffer_finalizePacket(void* pDevice);
+extern void* grcCommandBuffer_finalizePacket(void* pDevice);
 extern void grcCommandBuffer_submitViewport(void* pDevice);
 
 /* Shader constant data table @ 0x8202C328 (.rdata, 440 bytes) */
@@ -450,16 +450,16 @@ void grcCommandBuffer_initShaderConstants(void* pDevice) {
     grcCommandBuffer_flushDirtyState(pDevice);
     
     /* Load current write pointer and buffer end */
-    uint32_t writePtr = *(uint32_t*)(device + 0);
-    uint32_t bufferEnd = *(uint32_t*)(device + 8);
-    
+    uintptr_t writePtr = *(uintptr_t*)(device + 0);
+    uintptr_t bufferEnd = *(uintptr_t*)(device + 8);
+
     /* Check if we need to expand buffer */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)grcCommandBuffer_expand(pDevice);
+        writePtr = (uintptr_t)grcCommandBuffer_expand(pDevice);
     }
-    
+
     /* ── Build first packet: shader constant upload (108 bytes data) ────── */
-    
+
     uint32_t* pkt1 = (uint32_t*)(writePtr + 4);
     pkt1[0] = 0xC01C2B00;  /* PM4 command: shader constant load */
     pkt1[1] = 0;           /* Parameter 1 */
@@ -469,15 +469,15 @@ void grcCommandBuffer_initShaderConstants(void* pDevice) {
     memcpy(&pkt1[3], &g_shaderConstantData[40], 108);
     
     /* Update write pointer (12 header + 108 data = 120 bytes) */
-    writePtr = (uint32_t)&pkt1[3] + 108;
-    
+    writePtr = (uintptr_t)&pkt1[3] + 108;
+
     /* Check buffer space again */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)grcCommandBuffer_expand(pDevice);
+        writePtr = (uintptr_t)grcCommandBuffer_expand(pDevice);
     }
-    
+
     /* ── Build second packet: another shader constant (36 bytes + extras) ── */
-    
+
     uint32_t* pkt2 = (uint32_t*)(writePtr + 4);
     pkt2[0] = 0xC00A2B00;  /* PM4 command */
     pkt2[1] = 1;           /* Parameter 1 */
@@ -493,20 +493,20 @@ void grcCommandBuffer_initShaderConstants(void* pDevice) {
     extra[2] = 0;
     
     /* Update write pointer */
-    writePtr = (uint32_t)&extra[3];
-    *(uint32_t*)(device + 0) = writePtr;
-    
+    writePtr = (uintptr_t)&extra[3];
+    *(uintptr_t*)(device + 0) = writePtr;
+
     /* Check buffer space */
     if (writePtr > bufferEnd) {
-        writePtr = (uint32_t)grcCommandBuffer_expand(pDevice);
+        writePtr = (uintptr_t)grcCommandBuffer_expand(pDevice);
     }
-    
+
     /* ── Finalize packet construction ────────────────────────────────────── */
-    
-    writePtr = (uint32_t)grcCommandBuffer_finalizePacket(pDevice);
-    
+
+    writePtr = (uintptr_t)grcCommandBuffer_finalizePacket(pDevice);
+
     /* ── Build third packet: GPU register writes ─────────────────────────── */
-    
+
     uint32_t* pkt3 = (uint32_t*)(writePtr + 4);
     pkt3[0] = 8704;   /* Register 0x2200 */
     pkt3[1] = 0;
@@ -540,8 +540,8 @@ void grcCommandBuffer_initShaderConstants(void* pDevice) {
     flags[1] |= 0x0000001000000000ULL;  /* bit 36 (rldicr 1,36,63) */
     
     /* Update write pointer */
-    writePtr = (uint32_t)&pkt3[12];
-    *(uint32_t*)(device + 0) = writePtr;
+    writePtr = (uintptr_t)&pkt3[12];
+    *(uintptr_t*)(device + 0) = writePtr;
     
     /* ── Submit commands ──────────────────────────────────────────────────── */
     
@@ -614,8 +614,8 @@ void grcTextureFactoryXenon_vfn_10(
     uint8_t* device = (uint8_t*)pDevice;
     
     /* Load device offset calculation parameters */
-    uint32_t baseAddress = *(uint32_t*)(device + 4);
-    uint32_t strideSize = *(uint32_t*)(device + 76);
+    uintptr_t baseAddress = *(uintptr_t*)(device + 4);
+    uintptr_t strideSize = *(uintptr_t*)(device + 76);
     
     /* Process each texture in the array */
     for (int i = 0; i < count; i++) {
@@ -627,17 +627,17 @@ void grcTextureFactoryXenon_vfn_10(
         
         /* ── Step 1: Adjust texture data pointer if non-null ────────────── */
         
-        uint32_t dataPtr = (uint32_t)pTexture[0];
-        
+        uintptr_t dataPtr = (uintptr_t)pTexture[0];
+
         if (dataPtr != 0) {
             /* Calculate offset index from data pointer */
-            uint32_t offsetFromBase = dataPtr - baseAddress;
-            uint32_t offsetIndex = offsetFromBase / strideSize;
-            
+            uintptr_t offsetFromBase = dataPtr - baseAddress;
+            uintptr_t offsetIndex = offsetFromBase / strideSize;
+
             /* Look up offset value in device table at (offsetIndex + 2) */
-            uint32_t tableIndex = (offsetIndex + 2) * 4;  /* *4 for pointer array indexing */
-            uint32_t offsetValue = *(uint32_t*)(device + tableIndex);
-            
+            uintptr_t tableIndex = (offsetIndex + 2) * 4;  /* *4 for pointer array indexing */
+            uintptr_t offsetValue = *(uintptr_t*)(device + tableIndex);
+
             /* Adjust the texture data pointer */
             pTexture[0] = (void*)(dataPtr + offsetValue);
         }
