@@ -5343,6 +5343,337 @@ int32_t phObject_1F28_gen(void* thisPtr, uint32_t param2, void** outPtr) {
     return 0;
 }
 
+// Forward declarations for additional phObject helpers
+extern void phInstStatic_88F8_fw(void* thisPtr);
+extern void phObject_9A48_h(void* thisPtr);
+extern void ph_ctor_32E8(void* thisPtr);
+extern void phInst_87F8(void* thisPtr);
+extern "C" void* rage_01B8_alloc(uint32_t size, uint32_t tag);
+extern void rage_4CD0(void* thisPtr);
+extern int32_t phObject_28C8_wrh(void* thisPtr, void* r4, void* r5, void* r6, void* r7, void* outPtr);
+extern int32_t rage_A518(void* outPtr, void* thisPtr, void* resource);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_32 @ 0x82484758 | size: 0x50
+//
+// Resets physics simulation state on a phObject. Calls phInstStatic_88F8_fw
+// for static instance cleanup, then zeroes out simulation fields at
+// offsets +500..+524 and sets the enabled flags at +504 and +528 to 1.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_32(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    phInstStatic_88F8_fw(thisPtr);
+
+    *(uint32_t*)(obj + 500) = 0;
+    *(uint32_t*)(obj + 504) = 1;
+    *(uint32_t*)(obj + 508) = 0;
+    *(uint32_t*)(obj + 512) = 0;
+    *(uint32_t*)(obj + 516) = 0;
+    *(uint32_t*)(obj + 520) = 0;
+    *(uint32_t*)(obj + 524) = 0;
+    *(uint32_t*)(obj + 528) = 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_15 @ 0x82484890 | size: 0x88
+//
+// Shutdown/cleanup for a phObject. If the resource handle at +508 is
+// non-null, releases it via _locale_register and clears the field. Then
+// calls three vtable cleanup methods: slot 19 (OnPreShutdown), slot 20
+// (OnShutdown), and slot 32 (OnPostShutdown). Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_15(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    uint32_t resource = *(uint32_t*)(obj + 508);
+    if (resource != 0) {
+        _locale_register((void*)(uintptr_t)resource, 0x208C801D);
+        *(uint32_t*)(obj + 508) = 0;
+    }
+
+    // Call vtable slot 19: OnPreShutdown
+    void** vt = *(void***)thisPtr;
+    typedef void (*VtFunc)(void*);
+    ((VtFunc)vt[19])(thisPtr);
+
+    // Call vtable slot 20: OnShutdown
+    vt = *(void***)thisPtr;
+    ((VtFunc)vt[20])(thisPtr);
+
+    // Call vtable slot 32: OnPostShutdown
+    vt = *(void***)thisPtr;
+    ((VtFunc)vt[32])(thisPtr);
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_18 @ 0x82484918 | size: 0x64
+//
+// Attaches a physics bound (phBound) to this phObject. Calls the bound's
+// vtable slot 1 (AddRef), then calls this object's vtable slot 20
+// (OnShutdown) to reset state, stores the bound pointer at offset +48,
+// and returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_18(void* thisPtr, void* bound) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Call bound->AddRef() via vtable slot 1
+    void** boundVt = *(void***)bound;
+    typedef void (*AddRefFunc)(void*);
+    ((AddRefFunc)boundVt[1])(bound);
+
+    // Call this->OnShutdown() via vtable slot 20
+    void** vt = *(void***)thisPtr;
+    typedef void (*VtFunc)(void*);
+    ((VtFunc)vt[20])(thisPtr);
+
+    // Store the bound pointer
+    *(void**)(obj + 48) = bound;
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_19 @ 0x82484988 | size: 0x94
+//
+// Detaches and cleans up physics state. If the collision data at +500 is
+// non-null, calls phObject_9A48_h to release it and clears the field.
+// Then if the bound at +52 is non-null, calls its vtable slot 2 (Release)
+// and clears the pointer. Returns 0.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_19(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Release collision data at +500
+    uint32_t collisionData = *(uint32_t*)(obj + 500);
+    if (collisionData != 0) {
+        phObject_9A48_h((void*)(obj + 500));
+        *(uint32_t*)(obj + 500) = 0;
+    }
+
+    // Release bound at +52
+    uint32_t bound = *(uint32_t*)(obj + 52);
+    if (bound != 0) {
+        void** boundVt = *(void***)(uintptr_t)bound;
+        typedef void (*ReleaseFunc)(void*);
+        ((ReleaseFunc)boundVt[2])((void*)(uintptr_t)bound);
+        *(uint32_t*)(obj + 52) = 0;
+    }
+
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_0 @ 0x82485250 | size: 0x84
+//
+// Constructor for phObject. Sets the vtable, calls phObject_15 (shutdown
+// to initialize base state), initializes three embedded sub-objects at
+// +200, +124, and +56 via their respective constructors, calls util_85C8
+// for base setup, and optionally registers via _locale_register if the
+// register flag (bit 0) is set.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_0(void* thisPtr, uint32_t registerFlag) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Set vtable
+    *(void**)(obj + 0) = (void*)0x82008918;
+
+    // Call shutdown to initialize base state
+    phObject_15(thisPtr);
+
+    // Initialize embedded sub-objects
+    phObject_B878_h((void*)(obj + 200));
+    ph_ctor_32E8((void*)(obj + 124));
+    phInst_87F8((void*)(obj + 56));
+
+    // Base setup
+    util_85C8(thisPtr);
+
+    // Optionally register with allocator
+    if (registerFlag & 0x1) {
+        _locale_register(thisPtr, 0x208C801D);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_16 @ 0x82485978 | size: 0x70
+//
+// Conditionally detaches the current bound. Loads the bound pointer from
+// +52; if non-null, calls its vtable slot 14 with param=1 (TryDetach).
+// If TryDetach succeeds (returns >= 0), calls this object's vtable slot 17
+// (OnBoundDetached) passing the old bound pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void phObject_16(void* thisPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    void* bound = *(void**)(obj + 52);
+    if (bound == NULL) {
+        return;
+    }
+
+    // Call bound->TryDetach(1) via vtable slot 14
+    void** boundVt = *(void***)bound;
+    typedef int32_t (*TryDetachFunc)(void*, int);
+    int32_t result = ((TryDetachFunc)boundVt[14])(bound, 1);
+
+    if (result < 0) {
+        return;
+    }
+
+    // Call this->OnBoundDetached(bound) via vtable slot 17
+    void** vt = *(void***)thisPtr;
+    typedef void (*OnDetachFunc)(void*, void*);
+    ((OnDetachFunc)vt[17])(thisPtr, *(void**)(obj + 52));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_27 @ 0x824889A8 | size: 0x60
+//
+// Retrieves a pointer to the embedded sub-object at offset +200, stores
+// it in *outPtr, then calls vtable slot 13 (Validate) on the sub-object
+// at +124. Returns 0 on success, or error 0x8000000A on validation failure.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_27(void* thisPtr, void** outPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    void* subObj124 = (void*)(obj + 124);
+    void* subObj200 = (void*)(obj + 200);
+    *outPtr = subObj200;
+
+    // Call subObj124->Validate() via vtable slot 13
+    void** subVt = *(void***)subObj124;
+    typedef int32_t (*ValidateFunc)(void*);
+    int32_t result = ((ValidateFunc)subVt[13])(subObj124);
+
+    if (result != 0) {
+        return 0;
+    }
+
+    return (int32_t)0x8000000A;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_9450_2h @ 0x82489450 | size: 0x70
+//
+// Attempts to process collision data from the resource at +536. If the
+// resource is null, returns error 0x803000A8. Otherwise calls
+// phObject_28C8_wrh to process it. If processing fails (< 0) returns
+// early. If the output is still null after processing, clears the handle.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_9450_2h(void* thisPtr, void* r4, void* r5, void* outPtr) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    void* resource = *(void**)(obj + 536);
+    if (resource == NULL) {
+        return (int32_t)0x803000A8;
+    }
+
+    int32_t result = phObject_28C8_wrh(resource, r4, r5, NULL, NULL, outPtr);
+    if (result < 0) {
+        return result;
+    }
+
+    uint32_t outValue = *(uint32_t*)outPtr;
+    if (outValue != 0) {
+        return result;
+    }
+
+    *(void**)(obj + 536) = NULL;
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_1980_h @ 0x82491980 | size: 0x70
+//
+// Allocates a 2040-byte zeroed buffer using rage_01B8_alloc with physics
+// allocator tag 0x208C8000. On success, zeroes the buffer with memset,
+// stores it into *outPtr and returns 0. On failure returns 0x8007000E.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_1980_h(void** outPtr) {
+    void* buffer = rage_01B8_alloc(2040, 0x208C8000);
+
+    if (buffer == NULL) {
+        return (int32_t)0x8007000E;
+    }
+
+    memset(buffer, 0, 2040);
+    *outPtr = buffer;
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_AD78_h @ 0x8248AD78 | size: 0x80
+//
+// Allocates and initializes a collision result object. First calls
+// phObject_1980_h to allocate a buffer. If allocation succeeds, calls
+// rage_A518 to populate the result. On any failure, releases the buffer
+// via phObject_1F70 and returns 0 (NULL). On success returns the result.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phObject_AD78_h(void* thisPtr) {
+    void* buffer = NULL;
+    uint32_t result = 0;
+
+    int32_t allocStatus = phObject_1980_h(&buffer);
+    if (allocStatus < 0) {
+        phObject_1F70(buffer);
+        return 0;
+    }
+
+    int32_t initStatus = rage_A518((void*)&result, thisPtr, buffer);
+    if (initStatus < 0) {
+        phObject_1F70(buffer);
+        return 0;
+    }
+
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject_17 @ 0x82485118 | size: 0xAC
+//
+// Binds a physics bound to this phObject and initializes collision data.
+// Calls the bound's vtable slot 1 (AddRef), then this object's vtable
+// slot 19 (OnPreShutdown). Stores the bound at +52, calls phObject_AD78_h
+// to allocate collision result storage at +500. If allocation fails,
+// returns error 0x8000FFFF. On success, calls rage_4CD0 to finalize.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t phObject_17(void* thisPtr, void* bound) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Call bound->AddRef() via vtable slot 1
+    void** boundVt = *(void***)bound;
+    typedef void (*AddRefFunc)(void*);
+    ((AddRefFunc)boundVt[1])(bound);
+
+    // Call this->OnPreShutdown() via vtable slot 19
+    void** vt = *(void***)thisPtr;
+    typedef void (*VtFunc)(void*);
+    ((VtFunc)vt[19])(thisPtr);
+
+    // Store the bound
+    *(void**)(obj + 52) = bound;
+
+    // Allocate collision result storage
+    uint32_t collisionData = phObject_AD78_h(thisPtr);
+    *(uint32_t*)(obj + 500) = collisionData;
+
+    int32_t result;
+    if (collisionData != 0) {
+        result = 0;
+    } else {
+        result = (int32_t)0x8000FFFF;
+    }
+
+    // If successful, finalize
+    if (result >= 0) {
+        rage_4CD0(thisPtr);
+    }
+
+    return result;
+}
+
 // =============================================================================
 // rage::phBoundCapsule -- Capsule Collision Bound Functions (72-196B)
 // =============================================================================
@@ -5572,4 +5903,280 @@ void rage::phBoundCapsule::SetupCameraCollision(void* param1, void* param2) {
     float* cameraTransform = (float*)(camera + 64);
     phBoundCapsule_81D8_g(this, param1, param2, scale, nearPlane, farPlane, fov,
                           cameraTransform, param2);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::phBoundCapsule — Capsule Rotation, Normalization & Lookup Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External helpers (already declared elsewhere in this TU)
+extern float phBoundCapsule_01D8_g(float angle);  // sin(angle)
+extern float phBoundCapsule_02B0_g(float angle);  // cos(angle)
+extern float phBoundCapsule_0FE0_g(float a, float b); // atan2(a, b)
+extern void  phBoundCapsule_0E90_g(float x);      // acos helper
+extern void  atSingleton_1308_g(double base, float exp); // pow(base, exp)
+
+// ---------------------------------------------------------------------------
+// 1. phBoundCapsule::RotateYZ @ 0x8223AB00 | size: 0x6C (108B)
+//    Rotates the Y/Z components (+4, +8) of a vector by an angle.
+//    new_z = z * cos - y * sin;  new_y = y * cos + z * sin
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::RotateYZ(float* vec, float angle) {
+    float sinA = phBoundCapsule_01D8_g(angle);
+    float cosA = (float)phBoundCapsule_02B0_g(angle);
+    float y = vec[1];   // +4
+    float z = vec[2];   // +8
+    vec[2] = z * cosA + y * sinA;     // fmadds
+    vec[1] = y * cosA - z * sinA;     // fmsubs -> negated order
+}
+
+// ---------------------------------------------------------------------------
+// 2. phBoundCapsule::RotateXZ @ 0x8223AB70 | size: 0x6C (108B)
+//    Rotates the X/Z components (+0, +8) of a vector by an angle.
+//    new_z = z * cos - x * sin;  new_x = x * cos + z * sin
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::RotateXZ(float* vec, float angle) {
+    float sinA = phBoundCapsule_01D8_g(angle);
+    float cosA = (float)phBoundCapsule_02B0_g(angle);
+    float x = vec[0];   // +0
+    float z = vec[2];   // +8
+    vec[2] = z * cosA - x * sinA;     // fmsubs
+    vec[0] = x * cosA + z * sinA;     // fmadds
+}
+
+// ---------------------------------------------------------------------------
+// 3. phBoundCapsule::NormalizeAngle @ 0x822238A8 | size: 0x6C (108B)
+//    Computes atan2(z, x) from vec[0] and vec[2], then normalizes the
+//    resulting angle into the range [0, TWO_PI) by adding/subtracting TWO_PI.
+// ---------------------------------------------------------------------------
+float rage::phBoundCapsule::NormalizeAngle(const float* vec) {
+    extern const float g_phTwoPi;   // @ 0x8202C02C
+    extern const float g_floatZero; // @ 0x8202D110
+    float angle = (float)phBoundCapsule_0FE0_g(vec[2], vec[0]);
+    while (angle < g_floatZero) {
+        angle += g_phTwoPi;
+    }
+    while (angle >= g_phTwoPi) {
+        angle -= g_phTwoPi;
+    }
+    return angle;
+}
+
+// ---------------------------------------------------------------------------
+// 4. phBoundCapsule::ClampAddVector @ 0x8223ACB0 | size: 0x7C (124B)
+//    Adds delta vector to position, clamping if the dot product indicates
+//    the delta is within bounds. If delta magnitude > dot, scales delta
+//    to preserve direction while limiting displacement.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::ClampAddVector(float* position, const float* delta) {
+    extern const float g_floatOne;  // @ 0x8202D108
+    float dot = position[0] * delta[0] + position[1] * delta[1] + position[2] * delta[2];
+    if (dot <= g_floatOne) {
+        // Small displacement: just add
+        position[0] += delta[0];
+        position[1] += delta[1];
+        position[2] += delta[2];
+        position[3] += delta[3];
+        return;
+    }
+    float deltaSq = delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2];
+    if (deltaSq <= dot) return;
+    float ratio = dot / deltaSq;
+    float blend = g_floatOne - ratio;
+    position[0] = delta[0] * blend + position[0];
+    position[1] = delta[1] * blend + position[1];
+    position[2] = delta[2] * blend + position[2];
+    position[3] = delta[3] * blend + position[3];
+}
+
+// ---------------------------------------------------------------------------
+// 5. phBoundCapsule::ComputeSinCosMatrix @ 0x823FA2A0 | size: 0x7C (124B)
+//    Computes sin/cos of a scaled angle, stores symmetric rotation entries
+//    into a 6-float output structure: [cos, sin, -sin, cos, 0, 0].
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::ComputeSinCosMatrix(float* outMatrix, float angle) {
+    extern const float g_phAngleScale;  // scaling factor for angle conversion
+    extern const float g_floatZero;
+    float scaled = angle * g_phAngleScale;
+    float cosVal = (float)phBoundCapsule_02B0_g(scaled);
+    float sinVal = (float)phBoundCapsule_01D8_g(scaled);
+    outMatrix[0] = cosVal;   // +0
+    outMatrix[3] = cosVal;   // +12
+    outMatrix[5] = g_floatZero;  // +20
+    outMatrix[4] = g_floatZero;  // +16
+    outMatrix[1] = sinVal;  // +4
+    outMatrix[2] = -sinVal; // +8
+}
+
+// ---------------------------------------------------------------------------
+// 6. phBoundCapsule::CollectMatchingEntities @ 0x8237A1F8 | size: 0x94 (148B)
+//    Iterates through a linked list of entities from a spatial partition,
+//    testing each against a global filter via vtable call (slot 20).
+//    Matching entities are stored in a 848-byte strided result array.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::CollectMatchingEntities(uint32_t partitionIndex) {
+    extern uint32_t g_phEntityFilter;  // @ global
+    uint32_t count = 0;
+    *(uint32_t*)((char*)this + 108) = 0;
+    uint32_t* partitionTable = *(uint32_t**)((char*)this + 96);
+    uint32_t* entry = (uint32_t*)partitionTable[partitionIndex];
+    uint32_t* listHead = (uint32_t*)(*(uint32_t*)((char*)entry + 4));
+    if (listHead == NULL) return;
+    uint32_t* node = (uint32_t*)(*(uint32_t*)((char*)listHead + 12));
+    if (node == NULL) {
+        *(uint32_t*)((char*)this + 108) = count;
+        return;
+    }
+    while (node != NULL) {
+        // Call vtable slot 20 on node with global filter param
+        void** vtable = *(void***)node;
+        typedef uint8_t (*FilterFn)(void*, uint32_t);
+        FilterFn filterFunc = (FilterFn)vtable[20];
+        uint8_t result = filterFunc(node, g_phEntityFilter);
+        if (result != 0) {
+            uint32_t* resultArray = *(uint32_t**)((char*)this + 104);
+            char* slot = (char*)resultArray + count * 848;
+            *(uint32_t*)(slot + 824) = (uint32_t)(uintptr_t)node;
+            count++;
+        }
+        node = (uint32_t*)(*(uint32_t*)((char*)node + 8));
+    }
+    *(uint32_t*)((char*)this + 108) = count;
+}
+
+// ---------------------------------------------------------------------------
+// 7. phBoundCapsule::FixedPointToFloat @ 0x824C3A98 | size: 0x9C (156B)
+//    Converts a fixed-point integer exponent to a floating-point value using
+//    a lookup table. Negative exponents divide by power-of-2, positive
+//    exponents multiply by power-of-2, using table entries as mantissa.
+// ---------------------------------------------------------------------------
+float rage::phBoundCapsule::FixedPointToFloat(int32_t exponent) {
+    extern const float g_phFixedNegTable[];  // negative exponent LUT
+    extern const float g_phFixedPosTable[];  // positive exponent LUT
+    if (exponent <= 0) {
+        if (exponent < -72) exponent = -71;
+        int shift = (-exponent) >> 2;
+        int tableIdx = -exponent;
+        float tableVal = g_phFixedNegTable[tableIdx];
+        int divisor = 1 << shift;
+        return tableVal / (float)divisor;
+    }
+    if (exponent >= 62) exponent = 62;
+    int shift = exponent >> 2;
+    float tableVal = g_phFixedPosTable[exponent - 1];
+    int multiplier = 1 << shift;
+    return (float)multiplier * tableVal;
+}
+
+// ---------------------------------------------------------------------------
+// 8. phBoundCapsule::ConvertValueByMode @ 0x82453A98 | size: 0xAC (172B)
+//    Converts a raw value based on a mode flag (field +12):
+//      mode 0: direct copy from field +20
+//      mode 2: sin(value * PI_SCALE) 
+//      mode 1: pow(value, EXP_SCALE) * LINEAR_SCALE
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::ConvertValueByMode(void* obj) {
+    char* self = (char*)obj;
+    int32_t mode = *(int32_t*)(self + 12);
+    float rawValue = *(float*)(self + 20);
+    if (mode != 1 && mode != 2) {
+        // mode 0: direct assignment
+        *(float*)(self + 4) = rawValue;
+        return;
+    }
+    if (mode == 2) {
+        // mode 2: compute sin of scaled angle
+        extern const double g_phPiScale;  // PI conversion factor
+        float result = (float)phBoundCapsule_01D8_g((float)(rawValue * g_phPiScale));
+        *(float*)(self + 4) = result;
+        return;
+    }
+    // mode 1: power function with linear scale
+    extern const double g_phExpBase;     // exponent base
+    extern const float g_phLinearScale;  // linear scale factor
+    float powered = (float)atSingleton_1308_g(g_phExpBase, rawValue);
+    *(float*)(self + 4) = powered * g_phLinearScale;
+}
+
+// ---------------------------------------------------------------------------
+// 9. phBoundCapsule::QuantizedLookupAdvance @ 0x824C3B38 | size: 0xAC (172B)
+//    Advances through a quantized lookup table, finding the correct bucket
+//    for a shifted value and computing the interpolated result from the
+//    bucket's quantization level relative to a maximum.
+// ---------------------------------------------------------------------------
+int32_t rage::phBoundCapsule::QuantizedLookupAdvance(
+    int32_t shiftedVal, int32_t* indexPtr, int32_t maxVal,
+    const int32_t* bucketTable, int32_t shiftAmount, int32_t unused1) {
+    int32_t index = *indexPtr;
+    int32_t nextIdx = index + 1;
+    int32_t bucket = bucketTable[nextIdx];
+    int32_t shifted = (shiftedVal << shiftAmount) >> 6;  // arithmetic shift
+    while (shifted >= bucket) {
+        index = *indexPtr + 1;
+        *indexPtr = index;
+        nextIdx = index + 1;
+        bucket = bucketTable[nextIdx];
+    }
+    index = *indexPtr;
+    if (index >= unused1) return 0;  // past end
+    int32_t nextBucket = bucketTable[index + 1];
+    int32_t result;
+    if (shiftAmount > 6) {
+        int32_t hiShift = shiftAmount - 7;
+        int32_t correction = 1 << hiShift;
+        result = (nextBucket + correction) >> (shiftAmount - 6);
+    } else {
+        result = nextBucket << (6 - shiftAmount);
+    }
+    if (result > maxVal) return maxVal;
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+// 10. phBoundCapsule::UnpackAndStoreVertex @ 0x8215A928 | size: 0xB4 (180B)
+//     Unpacks a packed vertex from a compressed mesh buffer. Decodes position
+//     index, color flag, and normal bits from a 32-bit packed word, updates
+//     the vertex bitmap, and writes the converted position into the output
+//     buffer at the resolved offset.
+// ---------------------------------------------------------------------------
+void rage::phBoundCapsule::UnpackAndStoreVertex(uint32_t packedVertex, uint8_t colorFlag) {
+    void** vtable = *(void***)this;
+    uint32_t positionIndex = (packedVertex >> 1) & 0x1FFFF;
+    uint32_t parity = packedVertex & 0x1;
+    uint32_t normalBits = positionIndex & 0x7;
+    uint32_t vertexOffset = (packedVertex << 17) & 0x1FFF8;
+    uint32_t byteIndex = positionIndex >> 3;
+    uint32_t mask = parity - 1;  // 0 or 0xFFFFFFFF
+    uint32_t vertexCount = *(uint32_t*)((char*)this + 16);
+    *(uint32_t*)((char*)this + 16) = vertexCount - 1;
+
+    uint32_t posBase = *(uint32_t*)((char*)vtable + 268);
+    uint32_t colBase = *(uint32_t*)((char*)vtable + 300);
+    uint32_t normBase = *(uint32_t*)((char*)vtable + 264);
+    uint32_t idxBase = *(uint32_t*)((char*)vtable + 256);
+    uint32_t normBase2 = *(uint32_t*)((char*)vtable + 296);
+
+    extern const uint8_t g_phNormalLUT[];  // normal lookup table
+    uint32_t posWord = *(uint32_t*)(posBase);
+    uint32_t colWord = *(uint32_t*)(colBase);
+    uint8_t normalEntry = g_phNormalLUT[normalBits];
+
+    uint32_t normIndex = normBase & mask;
+    uint32_t posCleared = posWord & ~mask;
+    uint32_t normCleared = normBase2 & mask;
+    uint32_t finalPos = posCleared + normIndex;
+    uint32_t idxCleared = idxBase & ~mask;
+    uint32_t colCleared = colWord & ~mask;
+    uint32_t idxFinal = idxCleared + (vtable[0] != 0 ? mask & (uint32_t)(uintptr_t)vtable[0] : 0);
+    uint32_t colFinal = colCleared + normCleared;
+
+    // OR the normal entry into the bitmap
+    uint8_t existing = *(uint8_t*)(byteIndex + idxFinal);
+    *(uint8_t*)(byteIndex + idxFinal) = existing | normalEntry;
+
+    // Write converted color float at the resolved vertex position
+    uint32_t meshWord = *(uint32_t*)(finalPos + vertexOffset + 4);
+    uint32_t floatOffset = ((meshWord << 4) & 0xFFFF0) + colFinal;
+    float converted = (float)colorFlag;
+    *(float*)(floatOffset) = converted;
 }
