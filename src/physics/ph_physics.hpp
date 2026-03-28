@@ -400,7 +400,6 @@ struct phArticulatedCollider {
     void AddForceToJoint(const float* forceVector);
     void ApplyImpulse(void* param1, void* param2, void* param3);
     void ScalarDestructor();
-    void ResetForces();
     void ResetActiveJoints();
     void ApplyScaledGravity(float scale);
     void AccumulateScaledForceX(float scale);
@@ -843,7 +842,6 @@ struct phBoundCapsule {
     void SetMaterialIndex(uint32_t index);
     uint32_t GetMaterialIndex() const;
     float GetVolume() const;
-    void UpdateBound();
     void GetSupportPoint(void* direction, void* outPoint);
     void CopyFrom(const phBoundCapsule* source);
     int CheckValueSign() const;
@@ -1213,7 +1211,6 @@ struct phBoundSphere {
 
     // Non-virtual methods
     void DispatchMaterialAlloc();
-    uint32_t GetMaterialIndex();
     void SetMaterialIndex(uint32_t index);
     float ComputeVolume();
     void ComputeInertiaTensor(float* outTensor, const void* source, float density);

@@ -349,7 +349,7 @@ typedef struct CrtCmdLineState {
 
 /* External functions used only by __mainCRTStartup */
 int  _check_xdk_version(void);                           /* @ 0x8242BB70 */
-void __crt_main_entry(int argc, char** argv, int envp);  /* @ 0x820C0128 */
+void __crt_main_entry(void* pStartupParms, void* pBase);  /* @ 0x820C0128 */
 void DbgPrint(const char* fmt, ...);                      /* @ 0x82585DCC */
 void XamLoaderTerminateTitle(void);                       /* @ 0x82585D0C */
 
@@ -497,16 +497,16 @@ void __mainCRTStartup(void)
             *state.m_pArgvWrite = NULL;
 
             /* 6. Enter the game via __crt_main_entry. */
-            __crt_main_entry(state.m_argc, state.m_argv, 0);
+            __crt_main_entry((void*)(uintptr_t)state.m_argc, (void*)state.m_argv);
             exitCode = state.m_argc;
         } else {
             /* No command line string available. */
-            __crt_main_entry(0, NULL, 0);
+            __crt_main_entry(NULL, NULL);
             exitCode = 0;
         }
     } else {
         /* No exec info block — pass empty argc/argv. */
-        __crt_main_entry(0, NULL, 0);
+        __crt_main_entry(NULL, NULL);
         exitCode = 0;
     }
 

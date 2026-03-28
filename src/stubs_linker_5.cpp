@@ -178,14 +178,7 @@ void snSession_6C98_h(void* a) { (void)a; }
 
 void snSession_AddNode_C068(void* a, void* b) { (void)a; (void)b; }
 
-// strncpy — 3rd param is int in the mangled signature
-char* strncpy(char* dest, const char* src, int n) {
-    if (!dest) return dest;
-    int i = 0;
-    for (; i < n && src[i]; i++) dest[i] = src[i];
-    for (; i < n; i++) dest[i] = '\0';
-    return dest;
-}
+// strncpy — removed; use libc strncpy instead
 
 void sub_821A8F58(void* a, const char* b, void* c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;

@@ -47,17 +47,20 @@ void RtlLeaveCriticalSection(void* cs) {
     (void)cs;
 }
 
-void* _KeTlsAlloc_thunk(void) {
-    return NULL;
+int _KeTlsAlloc_thunk(void* destructorThunk) {
+    (void)destructorThunk;
+    return 0;
 }
 
-void ke_KeTlsFree_624C(void* slot) {
-    (void)slot;
+int ke_KeTlsFree_624C(uint32_t tlsIndex) {
+    (void)tlsIndex;
+    return 0;
 }
 
-void ke_KeTlsSetValue_622C(void* slot, void* value) {
-    (void)slot;
+int ke_KeTlsSetValue_622C(uint32_t tlsIndex, void* value) {
+    (void)tlsIndex;
     (void)value;
+    return 0;
 }
 
 // ============================================================================
@@ -91,28 +94,24 @@ void XGetVideoMode(void* mode) {
 // CRT Functions
 // ============================================================================
 
-void __cinit_impl(void) {
+int __cinit_impl(void) {
     // C++ static initializers
+    return 1;
 }
 
 void* __imp_ExLoadedCommandLine = NULL;
 void* __imp_ExThreadObjectType = NULL;
 
-void _crt_spinlock_acquire(void* lock) {
-    (void)lock;
+void _crt_spinlock_acquire(int id) {
+    (void)id;
 }
 
-void _crt_spinlock_release(void* lock) {
-    (void)lock;
+void _crt_spinlock_release(int id) {
+    (void)id;
 }
 
 void _crt_tls_fiber_setup(void) {
     // TLS fiber setup
-}
-
-void __run_table(void* start, void* end) {
-    (void)start;
-    (void)end;
 }
 
 void _xe_strcpyn_10(char* dest, const char* src, size_t n) {
@@ -455,8 +454,10 @@ void thunk_game_C330(void) {
     // Game thunk
 }
 
-void util_7AE8(void) {
-    // Utility function
+void util_7AE8(void* pXtf, void* stackBase, uint32_t stackSize) {
+    (void)pXtf;
+    (void)stackBase;
+    (void)stackSize;
 }
 
 void util_CE30(void) {
@@ -488,8 +489,11 @@ void xe_main_thread_init(void) {
     // Main thread init
 }
 
-void* xe_phys_alloc_6AC8(size_t size) {
-    (void)size;
+void* xe_phys_alloc_6AC8(uint32_t sizeBytes, int32_t protectFlags, uint32_t alignment, uint32_t allocFlags) {
+    (void)sizeBytes;
+    (void)protectFlags;
+    (void)alignment;
+    (void)allocFlags;
     return NULL;
 }
 
