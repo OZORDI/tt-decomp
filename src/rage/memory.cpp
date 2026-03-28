@@ -11,6 +11,11 @@
 extern void CCalChannel_60A8_p46(void* obj, uint32_t param);
 extern void grc_DCA8(void* obj);
 extern void MmFreePhysicalMemory(uint32_t flags, void* address);
+extern void* atSingleton_29E0_g(const char* str);
+extern void atSingleton_22B0(void* array, uint32_t newCapacity);
+extern uint8_t rage_FindSingleton(void* ptr);
+extern void* g_allocator_ptr;
+void datArray_DestroyGeneric(uint8_t* arrayData);
 
 // Global data
 uint32_t g_grcDevicePtr = 0;  // @ 0x8260637C (SDA +25468)
@@ -2434,4 +2439,304 @@ void atSingleton_LookupAndStorePropertyByte(uint8_t* obj, void* context) {
 
     // Store the result byte at offset +444
     *(uint8_t*)(obj + 444) = result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atStringHash()  @ 0x82165338 | size: 0x50
+//
+// Computes a hash of a null-terminated string using a nibble-shift algorithm.
+// Used for string-based lookups in hash tables and dictionaries.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t atStringHash(const char* str) {
+    uint32_t hash = 0;
+
+    int8_t c = (int8_t)*str;
+    if (c == 0) {
+        return 0;
+    }
+
+    do {
+        str++;
+        hash = (hash << 4) + (uint32_t)c;
+
+        uint32_t topNibble = hash & 0xF0000000;
+        if (topNibble != 0) {
+            uint32_t shifted = (topNibble >> 24) & 0xFF;
+            hash ^= shifted ^ topNibble;
+        }
+
+        c = (int8_t)*str;
+    } while (c != 0);
+
+    return hash;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xmlTree_SetAttribute()  @ 0x821A8218 | size: 0x50
+//
+// Replaces an attribute entry in an XML tree node.
+// Searches for slot, frees old key string, stores new key and value.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* atSingleton_8588_g(void* arrayBase, uint32_t elementSize);
+
+void xmlTree_SetAttribute(void* node, const char* keyStr, uint32_t value) {
+    uint8_t* slot = (uint8_t*)atSingleton_8588_g((uint8_t*)node + 8, 16);
+
+    void* oldKey = *(void**)slot;
+    rage_free(oldKey);
+
+    void* newKey = atSingleton_29E0_g(keyStr);
+    *(void**)slot = newKey;
+
+    *(uint32_t*)(slot + 4) = value;
+    *(uint32_t*)(slot + 8) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_CopyInit48()  @ 0x821257F0 | size: 0x84
+//
+// Copy-initializes a 64-byte structure from source data, then duplicates
+// a string from a secondary source and clears trailing fields.
+// ─────────────────────────────────────────────────────────────────────────────
+void datBase_CopyInit48(uint8_t* dest, void** src2, uint8_t* src1) {
+    memcpy(dest, src1, 16);
+    memcpy(dest + 16, src1 + 16, 16);
+
+    *(uint32_t*)(dest + 32) = *(uint32_t*)(src1 + 32);
+    *(uint32_t*)(dest + 36) = *(uint32_t*)(src1 + 36);
+    *(uint32_t*)(dest + 40) = *(uint32_t*)(src1 + 40);
+    *(uint32_t*)(dest + 44) = *(uint32_t*)(src1 + 44);
+
+    const char* srcStr = (const char*)*src2;
+    void* dupStr = atSingleton_29E0_g(srcStr);
+
+    *(void**)(dest + 48) = dupStr;
+    *(uint32_t*)(dest + 52) = 0;
+    *(uint32_t*)(dest + 56) = 0;
+    *(uint32_t*)(dest + 60) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datBase_SerializeField()  @ 0x8212BF40 | size: 0x74
+//
+// Conditionally serializes or deserializes a 16-bit field.
+// If flag at +4 is set, calls vtable slot 39; otherwise calls slot 3.
+// ─────────────────────────────────────────────────────────────────────────────
+void datBase_SerializeField(uint8_t* wrapper, uint16_t* field) {
+    uint8_t flag = *(wrapper + 4);
+    void* obj = *(void**)wrapper;
+
+    if (flag != 0) {
+        void** vtable = *(void***)obj;
+        typedef void (*SerializeFunc)(void*, uint16_t);
+        SerializeFunc serialize = (SerializeFunc)vtable[39];
+        serialize(obj, *field);
+    } else {
+        void** vtable = *(void***)obj;
+        typedef uint16_t (*DeserializeFunc)(void*);
+        DeserializeFunc deserialize = (DeserializeFunc)vtable[3];
+        *field = deserialize(obj);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datArray_DestroyWithUnbind()  @ 0x8212DB60 | size: 0xB4
+//
+// Destroys a dynamic array of 20-byte elements, unbinding tracked objects.
+// Frees untracked pointers via allocator and cleans up pending entries.
+// ─────────────────────────────────────────────────────────────────────────────
+void datArray_DestroyWithUnbind(uint8_t* arrayData) {
+    uint8_t* arrayBase = arrayData - 4;
+    uint32_t elementCount = *(uint32_t*)arrayBase;
+
+    uint32_t totalSize = elementCount * 20;
+    uint8_t* cursor = arrayData + totalSize;
+
+    for (int32_t i = elementCount - 1; i >= 0; i--) {
+        cursor -= 20;
+
+        int32_t pendingFlag = *(int32_t*)(cursor + 16);
+        if (pendingFlag != 0) {
+            void* trackedPtr = *(void**)(cursor + 8);
+            if (trackedPtr != nullptr) {
+                datArray_DestroyGeneric((uint8_t*)trackedPtr);
+            }
+        }
+
+        void* objPtr = *(void**)cursor;
+        if (objPtr != nullptr) {
+            if (rage_FindSingleton(objPtr) == 0) {
+                void** allocatorBase = (void**)&g_allocator_ptr;
+                void* allocator = *(void**)((uint8_t*)allocatorBase + 4);
+                void** allocVtable = *(void***)allocator;
+                typedef void (*FreeFunc)(void*, void*);
+                FreeFunc freeFunc = (FreeFunc)allocVtable[2];
+                freeFunc(allocator, objPtr);
+            }
+        }
+    }
+
+    rage_free(arrayBase);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datArray_DestroyGeneric()  @ 0x8212DCE8 | size: 0xA4
+//
+// Generic array destructor for 20-byte elements with tracked pointers.
+// Frees untracked entries via allocator vtable slot 2.
+// ─────────────────────────────────────────────────────────────────────────────
+void datArray_DestroyGeneric(uint8_t* arrayData) {
+    uint8_t* arrayBase = arrayData - 4;
+    uint32_t elementCount = *(uint32_t*)arrayBase;
+
+    uint32_t totalSize = elementCount * 20;
+    uint8_t* cursor = arrayData + totalSize + 8;
+
+    for (int32_t i = elementCount - 1; i >= 0; i--) {
+        cursor -= 20;
+
+        int32_t pendingFlag = *(int32_t*)(cursor + 8);
+        if (pendingFlag == 0) {
+            continue;
+        }
+
+        void* objPtr = *(void**)cursor;
+        if (objPtr == nullptr) {
+            continue;
+        }
+
+        if (rage_FindSingleton(objPtr) != 0) {
+            continue;
+        }
+
+        void** allocatorBase = (void**)&g_allocator_ptr;
+        void* allocator = *(void**)((uint8_t*)allocatorBase + 4);
+        void** allocVtable = *(void***)allocator;
+        typedef void (*FreeFunc)(void*, void*);
+        FreeFunc freeFunc = (FreeFunc)allocVtable[2];
+        freeFunc(allocator, objPtr);
+    }
+
+    rage_free(arrayBase);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audEffect_AllocAndInit()  @ 0x821B2630 | size: 0x78
+//
+// Allocates an audio effect (148 bytes) and initializes it with type ID.
+// Binds the effect to context via vtable slot 7.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void* atSingleton_1E58_fw(void* effect, uint32_t typeId);
+
+void audEffect_AllocAndInit(uint8_t* context, void* allocator, void** outPtr) {
+    void** allocVtable = *(void***)allocator;
+    typedef void* (*AllocFunc)(void*, uint32_t);
+    AllocFunc allocFunc = (AllocFunc)allocVtable[5];
+    void* effect = allocFunc(allocator, 148);
+
+    if (effect == nullptr) {
+        effect = nullptr;
+    } else {
+        uint32_t typeId = *(uint32_t*)(context + 4);
+        effect = atSingleton_1E58_fw(effect, typeId);
+    }
+
+    void** effectVtable = *(void***)effect;
+    typedef void (*BindFunc)(void*, uint8_t*, void*);
+    BindFunc bindFunc = (BindFunc)effectVtable[7];
+    bindFunc(effect, context, allocator);
+
+    *outPtr = effect;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datPairArray_Append()  @ 0x82133F30 | size: 0x74
+//
+// Appends a key-value pair to a paired array. Grows by 256 if needed.
+// Stores key at [count] and value at [count+1], increments count by 2.
+// ─────────────────────────────────────────────────────────────────────────────
+void datPairArray_Append(uint8_t* array, uint32_t* key, uint32_t* value) {
+    uint32_t count = *(uint32_t*)(array + 4);
+    uint32_t capacity = *(uint32_t*)(array + 8);
+
+    if (count + 2 >= capacity) {
+        atSingleton_22B0(array, capacity + 256);
+    }
+
+    uint32_t currentCount = *(uint32_t*)(array + 4);
+    uint32_t* dataPtr = *(uint32_t**)(array + 0);
+    dataPtr[currentCount] = *key;
+
+    currentCount = *(uint32_t*)(array + 4);
+    dataPtr = *(uint32_t**)(array + 0);
+    dataPtr[currentCount + 1] = *value;
+
+    *(uint32_t*)(array + 4) = *(uint32_t*)(array + 4) + 2;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datPtrArray_DestroyAll()  @ 0x821350B8 | size: 0x7C
+//
+// Destroys all elements in a pointer array by freeing sub-allocations
+// at offsets +8 and +16, then frees entries, data array, and descriptor.
+// ─────────────────────────────────────────────────────────────────────────────
+void datPtrArray_DestroyAll(uint8_t* array) {
+    uint32_t count = *(uint32_t*)(array + 4);
+
+    if (count > 0) {
+        uint32_t index = 0;
+        uint32_t offset = 0;
+
+        do {
+            uint32_t* dataPtr = *(uint32_t**)(array + 0);
+            void* entry = (void*)*(uint32_t*)((uint8_t*)dataPtr + offset);
+
+            if (entry != nullptr) {
+                void* sub1 = *(void**)((uint8_t*)entry + 8);
+                rage_free(sub1);
+
+                void* sub2 = *(void**)((uint8_t*)entry + 16);
+                rage_free(sub2);
+
+                rage_free(entry);
+            }
+
+            count = *(uint32_t*)(array + 4);
+            index++;
+            offset += 4;
+        } while (index < count);
+    }
+
+    void* dataPtr = *(void**)(array + 0);
+    rage_free(dataPtr);
+
+    rage_free(array);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// datArray_MoveAssign()  @ 0x82131E18 | size: 0x84
+//
+// Move-assigns one array descriptor to another. Cleans up destination
+// data via datArray_DestroyGeneric, transfers fields, zeroes source.
+// ─────────────────────────────────────────────────────────────────────────────
+void datArray_MoveAssign(uint8_t* dest, uint8_t* src) {
+    if (dest == src) {
+        return;
+    }
+
+    int32_t destCapacity = *(int32_t*)(dest + 8);
+    if (destCapacity != 0) {
+        void* destData = *(void**)dest;
+        if (destData != nullptr) {
+            datArray_DestroyGeneric((uint8_t*)destData);
+        }
+    }
+
+    *(uint32_t*)(dest + 0) = *(uint32_t*)(src + 0);
+    *(uint32_t*)(dest + 4) = *(uint32_t*)(src + 4);
+    *(uint32_t*)(dest + 8) = *(uint32_t*)(src + 8);
+
+    *(uint32_t*)(src + 0) = 0;
+    *(uint32_t*)(src + 8) = 0;
+    *(uint32_t*)(src + 4) = 0;
 }
