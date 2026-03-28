@@ -91,7 +91,8 @@ set(SOURCES
     src/rage/misc/rage_cm.cpp
     src/rage/misc/rage_globals.cpp
     src/rage/misc/rage_misc.cpp
-    
+    src/rage/rage_engine_dtors.cpp
+
     # Game logic
     src/game/char_view/char_view.cpp
     src/game/cutscene/pong_cutscene.cpp
