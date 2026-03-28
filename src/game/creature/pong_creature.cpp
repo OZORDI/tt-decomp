@@ -1376,7 +1376,7 @@ void* pongCreatureInst::GetSubObjectTransform(int index) {  // vfn_3
  * creature has the visibility/render flag set.
  */
 bool pongCreatureInst::HasVisibilityFlag() {  // 5378
-    uint8_t flags = this->field_0x01af;
+    uint8_t flags = this->m_bStateReady;
     return (flags & 0x4) != 0;
 }
 
@@ -1655,7 +1655,7 @@ void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
     typedef uint8_t (*GetFn)(void*);
     uint8_t val = ((GetFn)(*(void***)target)[4])(target);
 
-    uint8_t* flags = &this->field_0x01af;
+    uint8_t* flags = &this->m_bStateReady;
     if (val) {
         *flags |= 0x08;   // set bit 3
     } else {
@@ -1857,7 +1857,7 @@ void pongCreatureInst::Detach() {  // D470_p33
 
     // Remove from parent's child list
     void* parent = *(void**)((char*)g_creatureManager + 876);
-    void* childToRemove = (void*)this->field_0x00c0;
+    void* childToRemove = (void*)(uintptr_t)this->m_pAllocator;
     typedef void (*RemoveFn)(void*, void*);
     RemoveFn removeChild = (RemoveFn)(*(void***)parent)[3];
     removeChild(parent, childToRemove);
@@ -2969,7 +2969,7 @@ void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
 // diagnostic message via the nop debug function and returns early.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName1, const char* boneName2) {
-    uint8_t boneCount = this->field_0x01aa;   // m_boneCount at +0x1AA
+    uint8_t boneCount = this->m_bIsActive;   // m_boneCount at +0x1AA
 
     if (boneCount == 0) {
         // No bones available — log and return
@@ -2982,7 +2982,7 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
 
     for (int i = 0; i < boneCount; i++) {
         // Bone pointer array at this+176 (0xB0)
-        void** boneArray = (void***)this->field_0x00b0;
+        void** boneArray = (void**)(uintptr_t)this->m_pBoneArray;
         void* boneEntry = boneArray[i];
 
         // Bone name string starts at boneEntry+29
@@ -3030,9 +3030,9 @@ void pongCreatureInst::ReadBoneNamesAndMap(void* xmlNode) {
     readString(dataObj, boneName2, 39);
 
     // Increment the bone pair count at +424 (0x1A8)
-    uint8_t pairCount = (uint8_t)this->field_0x01a8;
+    uint8_t pairCount = (uint8_t)this->m_statusFlags;
     pairCount++;
-    this->field_0x01a8 = pairCount;
+    this->m_statusFlags = pairCount;
 
     // Find and map the bone pair using the previous count as the mapping index
     FindBonePairByName((uint8_t)(pairCount - 1), boneName1, boneName2);
@@ -3086,9 +3086,9 @@ void pongCreatureInst::SetOrClearBoneFlag8(void* xmlNode) {
     int result = readValue(dataObj);
 
     if (result != 0) {
-        this->field_0x01af |= 0x08;
+        this->m_bStateReady |= 0x08;
     } else {
-        this->field_0x01af &= ~0x08;
+        this->m_bStateReady &= ~0x08;
     }
 }
 
