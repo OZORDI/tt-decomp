@@ -7888,3 +7888,304 @@ void phBoundCapsule_DecomposeMatrixToEuler(const float* matrix, float* outEuler)
     outEuler[2] = (float)pitch;
     outEuler[0] = (float)roll;
 }
+
+// =========================================================================
+// rage::phArticulatedCollider -- Additional Virtual Methods
+// =========================================================================
+
+// External functions used by phArticulatedCollider methods
+extern void phCollider_vfn_1(void* collider);
+extern void phArticulatedCollider_57F0_fw(void* jointData);
+extern void phArticulatedCollider_5D58(void* jointData);
+extern void phArticulatedCollider_5A40_wrh(void* jointData);
+extern void phArticulatedCollider_5FE0(void* jointData);
+extern void phArticulatedCollider_8C98_wrh(void* jointData, uint32_t boneMap,
+    uint32_t constraintMap, uint32_t jointParamA, uint32_t jointParamB, uint32_t jointParamC);
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::Shutdown (vfn_1) @ 0x8224E6D8 | size: 0x48
+//
+// Overrides phCollider::Shutdown (scalar destructor slot). Calls the base
+// class shutdown, then zeros the joint processing state (m_pJointProcessor
+// at +472 and m_bJointsActive flag at +468), and performs two-phase joint
+// data cleanup via phArticulatedCollider_57F0_fw and _5D58.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::Shutdown() {
+    phCollider_vfn_1(this);
+
+    m_pJointProcessor = nullptr;  // +472
+    m_bJointsActive = 0;          // +468 (byte)
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_57F0_fw(jointData);
+
+    jointData = (void*)(uintptr_t)m_nActiveJoints;  // reload +464
+    phArticulatedCollider_5D58(jointData);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ResetForces (vfn_2) @ 0x8224E720 | size: 0x80
+//
+// Clears four 16-byte SIMD vectors at offsets +224, +240, +256, +272
+// (force/torque accumulators), then dispatches to Update (vfn_4) and
+// calls phArticulatedCollider_5A40_wrh to finalize the reset.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::ResetForces() {
+    // Zero force accumulator vectors (4 x 16-byte SIMD vectors)
+    memset((char*)this + 256, 0, 16);   // +256: accumulated force X
+    memset((char*)this + 272, 0, 16);   // +272: accumulated force Y
+    memset((char*)this + 224, 0, 16);   // +224: accumulated torque X
+    memset((char*)this + 240, 0, 16);   // +240: accumulated torque Y
+
+    // Call Update (vtable slot 4)
+    this->Update();
+
+    // Finalize reset on joint data
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
+    phArticulatedCollider_5A40_wrh(jointData);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::PostIntegrate (vfn_9) @ 0x8224EBC8 | size: 0x8C
+//
+// Iterates over all joints (count - 1) in the joint data array. For each
+// joint that has a non-null reference at offset +20, calls vtable slot 18
+// (PostIntegrate) on the joint object. The joint array starts at offset +168
+// within the joint data block.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::PostIntegrate() {
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+    int jointCount = *(int*)((char*)jointDataBase + 4);
+    int numToProcess = jointCount - 1;
+
+    if (numToProcess <= 0)
+        return;
+
+    uint32_t* jointPtrArray = (uint32_t*)((char*)jointDataBase + 168);
+
+    for (int i = 0; i < numToProcess; i++) {
+        void* jointObj = (void*)(uintptr_t)jointPtrArray[i];
+        uint32_t refField = *(uint32_t*)((char*)jointObj + 20);
+
+        bool isActive = (refField != 0);
+        if (isActive) {
+            // Call vtable slot 18 on the joint object
+            void** vtbl = *(void***)jointObj;
+            typedef void (*PostIntegrateFunc)(void*);
+            PostIntegrateFunc fn = (PostIntegrateFunc)vtbl[18];
+            fn(jointObj);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ApplyScaledForce (vfn_27) @ 0x8224FD58 | size: 0x4C
+//
+// Applies a force to the collider, scaled by the mass value at offset +100
+// of this object multiplied by the input scale factor (f1). Constructs a
+// 3-component force vector [0, scaledMass, 0] and calls the base class
+// ApplyForce (vtable slot 33) via an indirect call through the vtable.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::ApplyScaledForce(float scale) {
+    float mass = *(float*)((char*)this + 100);      // +0x64: mass
+    float scaledForce = mass * scale;
+
+    float forceVec[4];
+    forceVec[0] = 0.0f;
+    forceVec[1] = scaledForce;
+    forceVec[2] = 0.0f;
+    forceVec[3] = 0.0f;  // padding
+
+    // Load vtable and call slot 33 (ApplyForce on base phCollider)
+    void** vtbl = *(void***)this;
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc fn = (ApplyForceFunc)vtbl[33];
+    fn(this, forceVec);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ApplyScaledMatrixRowX (vfn_28) @ 0x8224FDA8 | size: 0x94
+//
+// Extracts the X-axis row from the 4x4 transform matrix at offset +144
+// within the root joint data (joint[0] at +40 in the joint data block).
+// Uses vmrghw to interleave high words from matrix rows 0..3 to form
+// the X-components, then scales the result by the float at matrix +128
+// multiplied by the input scale, and calls vtable slot 33 (ApplyForce).
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::ApplyScaledMatrixRowX(float scale) {
+    void** vtbl = *(void***)this;
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    // Get root joint's transform matrix base at +144
+    uint32_t* rootJoint = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)jointDataBase + 40);
+    float* matrixBase = (float*)((char*)rootJoint + 144);
+
+    // Extract X-axis row using high-word interleave of matrix columns
+    // Rows at +0, +16, +32, +48 of the 4x4 matrix
+    float axisVec[4];
+    axisVec[0] = matrixBase[0];   // row0.x
+    axisVec[1] = matrixBase[4];   // row1.x
+    axisVec[2] = matrixBase[8];   // row2.x
+    axisVec[3] = matrixBase[12];  // row3.x
+
+    // Scale by mass float at matrix +128 (offset -16 from matrix = rootJoint+128)
+    float massScale = *(float*)((char*)rootJoint + 128);
+    float combinedScale = massScale * scale;
+
+    axisVec[0] *= combinedScale;
+    axisVec[1] *= combinedScale;
+    axisVec[2] *= combinedScale;
+    axisVec[3] *= combinedScale;
+
+    // Call vtable slot 33 (ApplyForce)
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc fn = (ApplyForceFunc)vtbl[33];
+    fn(this, axisVec);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ApplyScaledMatrixRowY (vfn_29) @ 0x8224FE40 | size: 0x94
+//
+// Same pattern as ApplyScaledMatrixRowX but extracts the Y-axis row using
+// vmrglw (low-word interleave). Scales by the float at rootJoint +136
+// multiplied by the input scale, and calls vtable slot 33.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::ApplyScaledMatrixRowY(float scale) {
+    void** vtbl = *(void***)this;
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    uint32_t* rootJoint = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)jointDataBase + 40);
+    float* matrixBase = (float*)((char*)rootJoint + 144);
+
+    // Extract Y-axis row using low-word interleave of matrix columns
+    float axisVec[4];
+    axisVec[0] = matrixBase[1];   // row0.y
+    axisVec[1] = matrixBase[5];   // row1.y
+    axisVec[2] = matrixBase[9];   // row2.y
+    axisVec[3] = matrixBase[13];  // row3.y
+
+    // Scale by float at rootJoint +136
+    float massScale = *(float*)((char*)rootJoint + 136);
+    float combinedScale = massScale * scale;
+
+    axisVec[0] *= combinedScale;
+    axisVec[1] *= combinedScale;
+    axisVec[2] *= combinedScale;
+    axisVec[3] *= combinedScale;
+
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc fn = (ApplyForceFunc)vtbl[33];
+    fn(this, axisVec);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::ApplyScaledMatrixRowZ (vfn_30) @ 0x8224FED8 | size: 0x94
+//
+// Same pattern as the X/Y variants but extracts the Z-axis row. Uses a
+// combination of vmrghw and vmrglw to pick out the third component from
+// each matrix row. Scales by the float at rootJoint +132 multiplied by
+// the input scale, and calls vtable slot 33.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::ApplyScaledMatrixRowZ(float scale) {
+    void** vtbl = *(void***)this;
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;  // +464
+
+    uint32_t* rootJoint = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)jointDataBase + 40);
+    float* matrixBase = (float*)((char*)rootJoint + 144);
+
+    // Extract Z-axis row from matrix columns
+    float axisVec[4];
+    axisVec[0] = matrixBase[2];   // row0.z
+    axisVec[1] = matrixBase[6];   // row1.z
+    axisVec[2] = matrixBase[10];  // row2.z
+    axisVec[3] = matrixBase[14];  // row3.z
+
+    // Scale by float at rootJoint +132
+    float massScale = *(float*)((char*)rootJoint + 132);
+    float combinedScale = massScale * scale;
+
+    axisVec[0] *= combinedScale;
+    axisVec[1] *= combinedScale;
+    axisVec[2] *= combinedScale;
+    axisVec[3] *= combinedScale;
+
+    typedef void (*ApplyForceFunc)(void*, float*);
+    ApplyForceFunc fn = (ApplyForceFunc)vtbl[33];
+    fn(this, axisVec);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::SetupJointConstraints (vfn_47) @ 0x82250528 | size: 0x50
+//
+// Initializes the joint constraint system. Sets the m_bJointsActive flag
+// at +468 to 1, loads five parameter pointers from offsets +476, +484,
+// +492, +500, +508 (bone map, constraint map, joint parameters), and
+// dispatches to phArticulatedCollider_8C98_wrh for constraint setup.
+// Stores the returned constraint handle at +472.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::SetupJointConstraints() {
+    m_bJointsActive = 1;  // +468 (byte flag)
+
+    void* jointData = (void*)(uintptr_t)m_nActiveJoints;    // +464
+    uint32_t boneMap = *(uint32_t*)((char*)this + 476);      // +0x1DC
+    uint32_t constraintMap = *(uint32_t*)((char*)this + 484);// +0x1E4
+    uint32_t jointParamA = *(uint32_t*)((char*)this + 492);  // +0x1EC
+    uint32_t jointParamB = *(uint32_t*)((char*)this + 500);  // +0x1F4
+    uint32_t jointParamC = *(uint32_t*)((char*)this + 508);  // +0x1FC
+
+    uint32_t result = (uint32_t)(uintptr_t)phArticulatedCollider_8C98_wrh(
+        jointData, boneMap, constraintMap, jointParamA, jointParamB, jointParamC);
+
+    m_pJointProcessor = (void*)(uintptr_t)result;  // +472
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointUpdate (vfn_17) @ 0x822505B0 | size: 0x34
+//
+// Looks up a joint by index through two indirection tables (bone map at +484,
+// link map at +476), resolves the joint object from the joint data array at
+// +464, and tail-calls vtable slot 1 on the resolved joint object.
+//
+// Index resolution: boneMap[index] -> linkIndex, linkMap[index] -> nodeIndex,
+//   then jointData[(nodeIndex + 42) * 4] -> joint object -> vtable[1](joint, boneMapEntry)
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::DispatchJointUpdate(int index) {
+    uint32_t* boneMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);       // +0x1E4
+    uint32_t* linkMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);       // +0x1DC
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;                 // +464
+
+    uint32_t boneEntry = linkMap[index];
+    uint32_t nodeIndex = boneEntry + 42;
+    uint32_t constraintEntry = boneMap[index];
+
+    void* jointObj = (void*)(uintptr_t)jointDataBase[nodeIndex];
+
+    // Tail-call vtable slot 1 on the joint object
+    void** vtbl = *(void***)jointObj;
+    typedef void (*JointUpdateFunc)(void*, uint32_t);
+    JointUpdateFunc fn = (JointUpdateFunc)vtbl[1];
+    fn(jointObj, constraintEntry);
+}
+
+// ---------------------------------------------------------------------------
+// phArticulatedCollider::DispatchJointSolve (vfn_50) @ 0x82250578 | size: 0x34
+//
+// Same indirection as DispatchJointUpdate but tail-calls vtable slot 6
+// (Solve) on the resolved joint object instead of slot 1.
+// ---------------------------------------------------------------------------
+void phArticulatedCollider::DispatchJointSolve(int index) {
+    uint32_t* linkMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 476);       // +0x1DC
+    uint32_t* jointDataBase = (uint32_t*)(uintptr_t)m_nActiveJoints;                 // +464
+    uint32_t* boneMap = (uint32_t*)(uintptr_t)*(uint32_t*)((char*)this + 484);       // +0x1E4
+
+    uint32_t nodeIndex = linkMap[index] + 42;
+    uint32_t constraintEntry = boneMap[index];
+
+    void* jointObj = (void*)(uintptr_t)jointDataBase[nodeIndex];
+
+    // Tail-call vtable slot 6 on the joint object
+    void** vtbl = *(void***)jointObj;
+    typedef void (*JointSolveFunc)(void*, uint32_t);
+    JointSolveFunc fn = (JointSolveFunc)vtbl[6];
+    fn(jointObj, constraintEntry);
+}
