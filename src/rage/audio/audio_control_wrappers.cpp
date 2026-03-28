@@ -6,21 +6,10 @@
  */
 
 #include "rage/audio_control_wrappers.hpp"
+#include "rage/audio/rage_audio.hpp"
 #include <cstdlib>
 
-// Forward declarations for rage audio types
 namespace rage {
-    struct audControl {
-        void** vtable;
-    };
-    struct audControl3d : audControl {};
-    struct audControl2d : audControl {};
-}
-
-namespace rage {
-
-// Forward declaration — canonical rage_free @ 0x820C00C0 (see src/crt/heap.c)
-extern "C" void rage_free(void* ptr);
 
 /**
  * audControlWrapper::cleanupControl @ 0x823F7C28 | size: 0x5C

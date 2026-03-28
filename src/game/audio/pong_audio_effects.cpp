@@ -27,8 +27,8 @@
  */
 
 #include "pong_audio.hpp"
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
 
 // ============================================================================
 // CShelvingFilterEffect — Low/High Shelf EQ Filter
