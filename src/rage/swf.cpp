@@ -1217,13 +1217,13 @@ bool swfCONTEXT_B1F0_w() {
 
 
 /**
- * swfCONTEXT_CA50_2hr @ 0x823FCA50 | size: 0x118
+ * swfCONTEXT_ProcessContextTree @ 0x823FCA50 | size: 0x118
  * 
  * Recursive context processing function. Checks context state flags,
  * calls virtual methods, and manages a context stack. Recursively
  * processes child contexts in a linked list.
  */
-void swfCONTEXT_CA50_2hr(swfCONTEXT* ctx) {
+void swfCONTEXT_ProcessContextTree(swfCONTEXT* ctx) {
     // External declarations
     extern void* g_currentSwfContext;  // @ 0x8260281C (SDA offset 10268)
     extern uint8_t g_contextStack[128];  // @ 0x82604C68 (SDA offset 19560)
@@ -1289,7 +1289,7 @@ void swfCONTEXT_CA50_2hr(swfCONTEXT* ctx) {
     // Recursively process child contexts (linked list at offset +180/+184)
     void* childCtx = *((void**)((char*)ctx + 180));
     while (childCtx != nullptr) {
-        swfCONTEXT_CA50_2hr((swfCONTEXT*)childCtx);
+        swfCONTEXT_ProcessContextTree((swfCONTEXT*)childCtx);
         childCtx = *((void**)((char*)childCtx + 184));
     }
 }

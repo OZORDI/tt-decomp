@@ -851,13 +851,13 @@ void phBoundCapsule_9CF8_g(void* capsule, float* offsetVec, float scaleFactor, f
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_9730_fw @ 0x820D9730 | size: 0xB0
+// phBoundCapsule_InitFromTemplate @ 0x820D9730 | size: 0xB0
 //
 // Initializes a capsule from a template and applies transformations from
 // a source object. Copies 64 bytes of template data, then conditionally
 // applies a radius transformation based on flags.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_9730_fw(void* capsule, void* sourceObj) {
+void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
     uint8_t* dest = (uint8_t*)capsule;
     uint8_t* src = (uint8_t*)sourceObj;
     
@@ -894,13 +894,13 @@ void phBoundCapsule_9730_fw(void* capsule, void* sourceObj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_F548_wrh @ 0x820DF548 | size: 0x80
+// phBoundCapsule_GetValidCapsuleGeometry @ 0x820DF548 | size: 0x80
 //
 // Extracts capsule geometry data from an array of capsule structures.
 // Searches for the first valid capsule (non-zero radius) and copies its
 // geometry parameters to output pointers.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_F548_wrh(void* container, int* outIndex, float* outX, float* outY, float* outZ, float* outRadius) {
+void phBoundCapsule_GetValidCapsuleGeometry(void* container, int* outIndex, float* outX, float* outY, float* outZ, float* outRadius) {
     uint8_t* obj = (uint8_t*)container;
     
     // Get capsule array pointer
@@ -2896,12 +2896,12 @@ void phJoint3Dof::SetLimits() {
 }
 
 /**
- * phJoint3Dof_E7C8_2h @ 0x822CE7C8 | size: 0x8C
+ * phJoint3Dof_InitConstraintMatrix @ 0x822CE7C8 | size: 0x8C
  *
  * Initializes an indexed constraint matrix to identity and clears
  * subsequent row vectors.
  */
-void phJoint3Dof_E7C8_2h(phJoint3Dof* joint, uint32_t index) {
+void phJoint3Dof_InitConstraintMatrix(phJoint3Dof* joint, uint32_t index) {
     // Navigate to the constraint structure base
     // Constraint stride is 64 bytes, starting offset is 112
     char* base = reinterpret_cast<char*>(joint) + (index * 64) + 112;
@@ -3825,29 +3825,29 @@ void phBoundCapsule_0E90_g(void* tokenizer) {
 }
 
 // ---------------------------------------------------------------------------
-// 8. phBoundCapsule_DAD8_p33 @ 0x823FDAD8 | size: 0x14
+// 8. phBoundCapsule_SetResultTypeCapsule @ 0x823FDAD8 | size: 0x14
 //    Initializes a result pair: sets type=3 (capsule) and value=0.
 //    r6 = output struct pointer.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_DAD8_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, uint32_t* outResult) {
+void phBoundCapsule_SetResultTypeCapsule(void* /*r3*/, void* /*r4*/, void* /*r5*/, uint32_t* outResult) {
     outResult[1] = 3;   // type = capsule
     outResult[0] = 0;   // value = 0
 }
 
 // ---------------------------------------------------------------------------
-// 9. phBoundCapsule_DAF0_p33 @ 0x823FDAF0 | size: 0x14
+// 9. phBoundCapsule_SetResultTypeSphere @ 0x823FDAF0 | size: 0x14
 //    Initializes a result pair: sets type=2 (sphere) and byte[0]=0.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_DAF0_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* outResult) {
+void phBoundCapsule_SetResultTypeSphere(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* outResult) {
     *(uint32_t*)((char*)outResult + 4) = 2;  // type = sphere
     *(uint8_t*)outResult = 0;                 // flag = 0
 }
 
 // ---------------------------------------------------------------------------
-// 10. phBoundCapsule_9C78_2hr @ 0x82459C78 | size: 0x14
+// 10. phBoundCapsule_ForwardToNestedSink @ 0x82459C78 | size: 0x14
 //     If field +24 is non-null, tail-calls msgMsgSink_8DA0_sp on it.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_9C78_2hr(void* obj) {
+void phBoundCapsule_ForwardToNestedSink(void* obj) {
     void* sink = *(void**)((char*)obj + 24);
     if (sink == nullptr) return;
     msgMsgSink_8DA0_sp(sink);
@@ -3875,21 +3875,21 @@ int32_t phBoundCapsule_FCC0_p39(void* base, void* /*r4*/, void* /*r5*/, uint32_t
 }
 
 // ---------------------------------------------------------------------------
-// 13. phBoundCapsule_FD60_p39 @ 0x824AFD60 | size: 0xC
+// 13. phBoundCapsule_StoreElement16 @ 0x824AFD60 | size: 0xC
 //     Stores a 16-bit value into an array at index.
 //     base = r4, index = r6, value = r3.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_FD60_p39(uint16_t value, int16_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_StoreElement16(uint16_t value, int16_t* base, void* /*r5*/, uint32_t index) {
     base[index] = (int16_t)value;
 }
 
 // ---------------------------------------------------------------------------
-// 14. phBoundCapsule_FD70_p33 @ 0x824AFD70 | size: 0x24
+// 14. phBoundCapsule_StorePackedElement24 @ 0x824AFD70 | size: 0x24
 //     Stores a 24-bit packed value into a 3-byte-stride array.
 //     The value in r3 is decomposed: byte2 = r3 & 0xFF, byte1 = (r3>>8) & 0xFF,
 //     byte0 = (r3>>16) & 0xFF, stored at base + index*3.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_FD70_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_StorePackedElement24(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
     uint32_t stride = index * 3;
     uint8_t* dst = base + stride;
     int32_t mid = value >> 8;
@@ -3915,10 +3915,10 @@ int32_t phBoundCapsule_FCD8_p39(void* base, void* /*r4*/, void* /*r5*/, uint32_t
 }
 
 // ---------------------------------------------------------------------------
-// 16. phBoundCapsule_FD98_p33 @ 0x824AFD98 | size: 0x28
+// 16. phBoundCapsule_StoreShiftedElement24 @ 0x824AFD98 | size: 0x28
 //     Stores a value left-shifted by 4 into a 3-byte-stride packed array.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_FD98_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_StoreShiftedElement24(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
     uint32_t shifted = (uint32_t)value << 4;
     // Decompose 32-bit shifted value into 3 bytes (big-endian order)
     uint8_t* tmp = (uint8_t*)&shifted;
@@ -3930,21 +3930,21 @@ void phBoundCapsule_FD98_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_
 }
 
 // ---------------------------------------------------------------------------
-// 17. phBoundCapsule_BAF0_2h @ 0x8256BAF0 | size: 0x14
+// 17. phBoundCapsule_AllocArray @ 0x8256BAF0 | size: 0x14
 //     Multiplies r3 * r4, then tail-calls rage_Alloc with that size
 //     and allocator pointer 0x6489_0018.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_BAF0_2h(int32_t elemSize, int32_t count) {
+void phBoundCapsule_AllocArray(int32_t elemSize, int32_t count) {
     int32_t totalSize = elemSize * count;
     extern void* g_phAllocator;  // @ 0x64890018 (constructed from lis+ori)
     rage_Alloc(totalSize, g_phAllocator);
 }
 
 // ---------------------------------------------------------------------------
-// 18. phBoundCapsule_BBB8_2h @ 0x8256BBB8 | size: 0xC
+// 18. phBoundCapsule_FreeMemory @ 0x8256BBB8 | size: 0xC
 //     Tail-calls _locale_register with a fixed allocator pointer.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_BBB8_2h(void* ptr) {
+void phBoundCapsule_FreeMemory(void* ptr) {
     extern void* g_phAllocator;  // @ 0x64890018
     _locale_register(ptr, g_phAllocator);
 }
@@ -5097,12 +5097,12 @@ uint32_t phObject_29(void* thisPtr) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_5100_p46 @ 0x82485100 | size: 0x8
+// phObject_ForwardDispatch @ 0x82485100 | size: 0x8
 //
 // Forwarding stub: passes the 4th argument (r7) as 'this' to
 // phObject_4F28_p46. Used as a trampoline for indirect dispatches.
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject_5100_p46(void* thisPtr, uint32_t a2, uint32_t a3, void* target) {
+void phObject_ForwardDispatch(void* thisPtr, uint32_t a2, uint32_t a3, void* target) {
     phObject_4F28_p46(target);
 }
 
@@ -5132,14 +5132,14 @@ void phObject_B878_h(void* thisPtr) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_20B0_wrh @ 0x824920B0 | size: 0x10
+// phObject_IndirectCallTrampoline @ 0x824920B0 | size: 0x10
 //
 // Indirect call trampoline: loads a function pointer from a fixed global
 // address and calls it with the current arguments. Used for late-bound
 // dispatch in the physics write/read/hash pipeline.
 // ─────────────────────────────────────────────────────────────────────────────
 typedef void (*phObjectDispatchFunc)(void);
-void phObject_20B0_wrh() {
+void phObject_IndirectCallTrampoline() {
     // lis r11, -32255 -> 0x81E10000; lwz r11, -26992(r11) -> 0x81E10000 + 0xFFFF9690 = global at 0x82019690 area
     // Load function pointer from global and call it
     volatile phObjectDispatchFunc* pFunc = (volatile phObjectDispatchFunc*)0x82019690;

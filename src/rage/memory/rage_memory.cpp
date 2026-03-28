@@ -204,7 +204,7 @@ extern void atSingleton_2038(void* array, uint32_t newCapacity);
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * atSingleton_9728_2h @ 0x82169728 | size: 0x18
+ * atSingleton_MergeFlags @ 0x82169728 | size: 0x18
  * 
  * Merges flags from source object into target singleton's flags field.
  * Performs bitwise OR operation to combine flag bits.
@@ -212,7 +212,7 @@ extern void atSingleton_2038(void* array, uint32_t newCapacity);
  * @param target    Pointer to target singleton wrapper
  * @param source    Pointer to source object containing flags at offset +16
  */
-void atSingleton_9728_2h(void* target, void* source) {
+void atSingleton_MergeFlags(void* target, void* source) {
     // Get pointer to singleton instance from wrapper
     uint32_t* singletonPtr = *(uint32_t**)((char*)target + 4);
     
@@ -230,14 +230,14 @@ void atSingleton_9728_2h(void* target, void* source) {
 }
 
 /**
- * atSingleton_6F38_p33 @ 0x821C6F38 | size: 0x14
+ * atSingleton_ClearFlagAndInitNetwork @ 0x821C6F38 | size: 0x14
  * 
  * Clears a specific flag field and jumps to network client initialization.
  * Sets field at offset 0x27EC (10220) to zero.
  * 
  * @param obj    Pointer to singleton object
  */
-void atSingleton_6F38_p33(void* obj) {
+void atSingleton_ClearFlagAndInitNetwork(void* obj) {
     // Calculate offset: (1 << 16) | 10220 = 0x27EC = 10220
     const uint32_t offset = 0x27EC;
     
@@ -295,14 +295,14 @@ uint8_t atSingleton_vfn_6(void* obj, int32_t index) {
 }
 
 /**
- * atSingleton_E3F0_p44 @ 0x82255E3F0 | size: 0x18
+ * atSingleton_ClearRegion128 @ 0x82255E3F0 | size: 0x18
  * 
  * Clears a 16-byte region starting at offset 128.
  * Initializes four consecutive 32-bit fields to zero.
  * 
  * @param obj    Pointer to object
  */
-void atSingleton_E3F0_p44(void* obj) {
+void atSingleton_ClearRegion128(void* obj) {
     // Clear 16 bytes (4 x uint32_t) starting at offset 128
     *(uint32_t*)((char*)obj + 128) = 0;
     *(uint32_t*)((char*)obj + 132) = 0;
@@ -362,14 +362,14 @@ void atSingleton_6BC0_w(void* obj) {
 }
 
 /**
- * atSingleton_6108_p33 @ 0x821C6108 | size: 0x38
+ * atSingleton_DispatchByGameMode @ 0x821C6108 | size: 0x38
  * 
  * Similar to atSingleton_6BC0_w but routes to different handler for mode 3.
  * Conditional state machine dispatcher with alternate mode 3 handler.
  * 
  * @param obj    Pointer to game state object
  */
-void atSingleton_6108_p33(void* obj) {
+void atSingleton_DispatchByGameMode(void* obj) {
     // Load global game state pointer
     uint32_t* globalState = *(uint32_t**)0x825EA13C;
     
@@ -562,7 +562,7 @@ extern void atSingleton_0128_wrh(void* pNode, uint32_t param);
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * atSingleton_89F8_2hr @ 0x824489F8 | size: 0x4c (76 bytes)
+ * atSingleton_TraverseLinkedList @ 0x824489F8 | size: 0x4c (76 bytes)
  *
  * Traverses a linked list and calls a processing function on each node.
  *
@@ -586,7 +586,7 @@ extern void atSingleton_0128_wrh(void* pNode, uint32_t param);
  *      c. Load next node from current node + 4
  *   4. Return when list end is reached
  * ═══════════════════════════════════════════════════════════════════════════ */
-void atSingleton_89F8_2hr(void* pThis, uint32_t param)
+void atSingleton_TraverseLinkedList(void* pThis, uint32_t param)
 {
     uint8_t* singleton = (uint8_t*)pThis;
     
@@ -746,6 +746,7 @@ void atSingleton_4EF0(void* pDrawable, void* pDataSource) {
     readString(innerObj, fieldNameBuffer, 128);
 
     // Compare field name against known key (case-insensitive)
+    extern int _stricmp(const char* a, const char* b);
     extern const char lbl_8202769C[];  // known field key string
     if (_stricmp(fieldNameBuffer, lbl_8202769C) != 0) {
         // Hash the field name to get a data object
@@ -872,14 +873,14 @@ int32_t atSingleton_8128_g(void* pHashTable, uint32_t startIndex, uint32_t strid
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_8438_p39 @ 0x82118438 | size: 0xA8 (168 bytes)
+// atSingleton_AccumulateWeights @ 0x82118438 | size: 0xA8 (168 bytes)
 // Accumulates float weights from an array of object pointers.
 // Each object has a weight float at offset +144. The function sums all
 // weights, processing 4 elements at a time (loop unrolling) for elements
 // at index >= 4, then handles the remainder one at a time.
 // Returns the accumulated sum in f1.
 // ─────────────────────────────────────────────────────────────────────────────
-float atSingleton_8438_p39(void* pWeightArray) {
+float atSingleton_AccumulateWeights(void* pWeightArray) {
     uint8_t* weightArray = (uint8_t*)pWeightArray;
 
     // Read element count from offset +427 (byte field)
@@ -934,14 +935,14 @@ float atSingleton_8438_p39(void* pWeightArray) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_7D28_fw @ 0x82117D28 | size: 0xE4 (228 bytes)
+// atSingleton_HashMapInsertA @ 0x82117D28 | size: 0xE4 (228 bytes)
 // Capacity-gated hash map insertion (variant A).
 // Checks if the entry count is below the maximum capacity. If room exists,
 // reads the player slot entry for the given index, calls vtable slot 2
 // to get a sequence number, validates it against min/max thresholds,
 // then calls the virtual GetKey method and inserts via atSingleton_7068_fw.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_7D28_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
+void atSingleton_HashMapInsertA(void* pHashMap, uint32_t playerIndex, void* pEntry) {
     uint8_t* entry = (uint8_t*)pEntry;
 
     // Check capacity: count (+4) vs max (+8)
@@ -1002,13 +1003,13 @@ void atSingleton_7D28_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_7E10_fw @ 0x82117E10 | size: 0xDC (220 bytes)
+// atSingleton_HashMapInsertB @ 0x82117E10 | size: 0xDC (220 bytes)
 // Capacity-gated hash map insertion (variant B).
-// Similar to atSingleton_7D28_fw but uses a different sequence threshold:
+// Similar to atSingleton_HashMapInsertA but uses a different sequence threshold:
 // reads frame counts from the render object and sums them, comparing
 // against the entry's minimum threshold before proceeding.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_7E10_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
+void atSingleton_HashMapInsertB(void* pHashMap, uint32_t playerIndex, void* pEntry) {
     uint8_t* entry = (uint8_t*)pEntry;
 
     // Check capacity: count (+4) vs max (+8)
@@ -1065,13 +1066,13 @@ void atSingleton_7E10_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// atSingleton_7EF0_fw @ 0x82117EF0 | size: 0xB8 (184 bytes)
+// atSingleton_HashMapInsertC @ 0x82117EF0 | size: 0xB8 (184 bytes)
 // Capacity-gated hash map insertion (variant C).
 // Checks capacity, then reads the player slot's network object, calls
 // vtable slot 2 with arg=21 to get a sequence number, validates against
 // min threshold, then calls the entry's virtual GetKey to insert.
 // ─────────────────────────────────────────────────────────────────────────────
-void atSingleton_7EF0_fw(void* pHashMap, uint32_t playerIndex, void* pEntry) {
+void atSingleton_HashMapInsertC(void* pHashMap, uint32_t playerIndex, void* pEntry) {
     uint8_t* entry = (uint8_t*)pEntry;
 
     // Check capacity: count (+4) vs max (+8)
@@ -1281,7 +1282,7 @@ void atSingleton_62F0_w(void* obj) {
 }
 
 /**
- * atSingleton_70F8_p33  @ 0x821C70F8 | size: 0x2C
+ * atSingleton_DispatchMode1Only  @ 0x821C70F8 | size: 0x2C
  *
  * Conditional state dispatcher. Checks global game mode and routes
  * to the jump table handler for mode 1, otherwise clears the
@@ -1289,7 +1290,7 @@ void atSingleton_62F0_w(void* obj) {
  *
  * @param obj    Pointer to game state object
  */
-void atSingleton_70F8_p33(void* obj) {
+void atSingleton_DispatchMode1Only(void* obj) {
     // Load global game state pointer @ 0x8271A33C
     uint32_t* globalState = *(uint32_t**)0x8271A33C;
 
@@ -1306,7 +1307,7 @@ void atSingleton_70F8_p33(void* obj) {
 }
 
 /**
- * atSingleton_72E8_p39  @ 0x821C72E8 | size: 0x38
+ * atSingleton_DispatchMode1And3  @ 0x821C72E8 | size: 0x38
  *
  * Conditional state dispatcher with two-way routing. Checks global
  * game mode: routes to jump table handler for mode 1, to HSM context
@@ -1314,7 +1315,7 @@ void atSingleton_70F8_p33(void* obj) {
  *
  * @param obj    Pointer to game state object
  */
-void atSingleton_72E8_p39(void* obj) {
+void atSingleton_DispatchMode1And3(void* obj) {
     // Load global game state pointer @ 0x8271A33C
     uint32_t* globalState = *(uint32_t**)0x8271A33C;
 
@@ -1374,7 +1375,7 @@ uint8_t atSingleton_9C18_2hr() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * atSingleton_B978_2hr  @ 0x821CB978 | size: 0x98
+ * atSingleton_InitWeightArray  @ 0x821CB978 | size: 0x98
  *
  * Initializes a large array of 900 entries (48 bytes each) starting at
  * offset +0 of the object. Each entry consists of:
@@ -1392,7 +1393,7 @@ uint8_t atSingleton_9C18_2hr() {
  *
  * @param obj    Pointer to the object to initialize
  */
-void atSingleton_B978_2hr(void* obj) {
+void atSingleton_InitWeightArray(void* obj) {
     uint8_t* base = (uint8_t*)obj;
     float zero = 0.0f;
 

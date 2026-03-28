@@ -253,7 +253,7 @@ void msgMsgSink::DispatchVirtualMethod() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * msgMsgSink_8DE0_sp @ 0x82458DE0 | size: 0x20 (32 bytes)
+ * msgMsgSink_ForwardToNestedVtable29 @ 0x82458DE0 | size: 0x20 (32 bytes)
  *
  * Thunk function that forwards a call to vtable slot 29 of a nested object.
  *
@@ -266,7 +266,7 @@ void msgMsgSink::DispatchVirtualMethod() {
  * The nested object's vtable slot 29 (offset +116) is invoked with the
  * nested object as the 'this' pointer.
  * ═══════════════════════════════════════════════════════════════════════════ */
-void msgMsgSink_8DE0_sp(msgMsgSink* pThis)
+void msgMsgSink_ForwardToNestedVtable29(msgMsgSink* pThis)
 {
     /* Load nested object pointer from offset +36 */
     void* pNestedObject = *(void**)((uint8_t*)pThis + 36);
@@ -675,9 +675,9 @@ void msgMsgSink_vfn_42_EFE8_1(void* self) {
     rage_C1A8((uint8_t*)self + 60);
 }
 
-// msgMsgSink_3258_wrh @ 0x82353258 | size: 0xC
+// msgMsgSink_ResetGraphicsResource @ 0x82353258 | size: 0xC
 // Loads field at +12, passes it with zero to grc_2CC8
-void msgMsgSink_3258_wrh(void* self) {
+void msgMsgSink_ResetGraphicsResource(void* self) {
     uint32_t val = *(uint32_t*)((uint8_t*)self + 12);
     grc_2CC8((void*)(uintptr_t)val, 0, 0);
 }
@@ -721,16 +721,16 @@ void msgMsgSink_3A38_g(void* self) {
  * GROUP 4: Store-and-forward stubs (set field, then tail-call)
  * ─────────────────────────────────────────────────────────────────────────── */
 
-// msgMsgSink_6080_p33 @ 0x82456080 | size: 0x10
+// msgMsgSink_SetFlagAndForward @ 0x82456080 | size: 0x10
 // Sets field at +252 to 1, then tail-calls atSingleton_5CD0_fw with param=14
-void msgMsgSink_6080_p33(void* self) {
+void msgMsgSink_SetFlagAndForward(void* self) {
     *(uint32_t*)((uint8_t*)self + 252) = 1;
     atSingleton_5CD0_fw(self, 14);
 }
 
-// msgMsgSink_DA10_p46 @ 0x8256DA10 | size: 0x10
+// msgMsgSink_ClearVtableField @ 0x8256DA10 | size: 0x10
 // Loads pointer at +0, then zeroes field at +1092 of that pointer
-void msgMsgSink_DA10_p46(void* self) {
+void msgMsgSink_ClearVtableField(void* self) {
     void* ptr = *(void**)self;
     *(uint32_t*)((uint8_t*)ptr + 1092) = 0;
 }
@@ -956,9 +956,9 @@ uint32_t msgMsgSink_1C08_g(void* self) {
  * GROUP 15: Multi-vtable init + tail-call
  * ─────────────────────────────────────────────────────────────────────────── */
 
-// msgMsgSink_7DA8_p33 @ 0x82457DA8 | size: 0x28
+// msgMsgSink_InitVtablesAndReset @ 0x82457DA8 | size: 0x28
 // Sets 3 vtable pointers at +0, +4, +8, then tail-calls msgMsgSink_6138_2hr
-void msgMsgSink_7DA8_p33(void* self) {
+void msgMsgSink_InitVtablesAndReset(void* self) {
     *(void**)((uint8_t*)self + 0) = kVtable_4FF0;
     *(void**)((uint8_t*)self + 4) = kVtable_4FE8;
     *(void**)((uint8_t*)self + 8) = kVtable_4FE4;
@@ -1058,10 +1058,10 @@ void msgMsgSink_vfn_43_EFA8_1(void* self, void* key) {
  * GROUP 19: Multi-vtable init with extra field + tail-call
  * ─────────────────────────────────────────────────────────────────────────── */
 
-// msgMsgSink_7FB8_p33 @ 0x82457FB8 | size: 0x34
+// msgMsgSink_InitExtendedVtables @ 0x82457FB8 | size: 0x34
 // Sets 3 vtable pointers at +0/+4/+8 and extra vtable at +292,
 // then tail-calls msgMsgSink_6138_2hr
-void msgMsgSink_7FB8_p33(void* self) {
+void msgMsgSink_InitExtendedVtables(void* self) {
     *(void**)((uint8_t*)self + 0)   = kVtable_5030;
     *(void**)((uint8_t*)self + 4)   = kVtable_4FE8;
     *(void**)((uint8_t*)self + 8)   = kVtable_502C;
