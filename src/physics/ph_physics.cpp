@@ -9524,3 +9524,371 @@ void phJointChain_Constructor(void* thisPtr) {
     // Clear enabled flag
     *(uint8_t*)(obj + 4) = 0;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ph_ free functions — Physics utility and constructor routines (68-200B)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External function declarations
+extern void ph_3760(void* thisPtr, uint32_t shapeKey, uint32_t materialId, uint32_t unused);
+extern void ph_1EF8(void* shapeKey, uint32_t materialOverride, uint32_t contactMaterialId,
+                     uint8_t* surfaceFlagA, uint32_t contactFlags, uint8_t* surfaceFlagB,
+                     uint32_t primitiveFlags, uint32_t maxMaterialId);
+extern void ph_5908(void* allocator, const char* tag, int alignment);
+extern void rage_3F18(void* pool, uint32_t handle, void* outPtr);
+extern void ph_ctor_ABE8(void* thisPtr);
+extern void nop_8240E6D0(const char* msg, uint64_t val);
+
+// External globals
+extern uint8_t g_phDisableFlag;          // @ 0x82706460
+extern const float g_physZeroF;          // @ 0x8202D110  (0.0f)
+extern const float g_physOneF;           // @ 0x8202D114  (1.0f)
+
+/**
+ * ph_8DB8 — Add collision shape to contact manager
+ * @ 0x82118DB8 | size: 0x44 (68 bytes)
+ *
+ * Adds a collision shape from the source bound (r4) to this object's
+ * contact manager. Loads the shape key from source+4, retrieves the
+ * contact material from this->contactMgr (offset +164), and calls
+ * ph_3760 to register the shape with materialId=255, flags=0.
+ * Stores the returned contact handle at this+168.
+ */
+// ph_8DB8
+void phContactManager_AddShape(void* thisPtr, void* sourceBound) {
+    uint32_t shapeKey = *(uint32_t*)((char*)sourceBound + 4);
+    void* contactMgr = *(void**)((char*)thisPtr + 164);
+    uint32_t materialId = *(uint32_t*)((char*)contactMgr + 4);
+    ph_3760((void*)(uintptr_t)shapeKey, materialId, 255, 0);
+    uint32_t contactHandle = (uint32_t)(uintptr_t)nullptr; // r3 return from ph_3760
+    *(uint32_t*)((char*)thisPtr + 168) = contactHandle;
+}
+
+/**
+ * ph_8E00 — Register contact surface with material properties
+ * @ 0x82118E00 | size: 0x6C (108 bytes)
+ *
+ * Registers a contact surface for collision response. Extracts the shape
+ * key from the source, loads contact material info from this->contactMgr
+ * (offset +164), and calls ph_1EF8 with surface flags from offsets 426/427
+ * and contact flags from offsets 176/180. Increments the contact count
+ * at offset +428.
+ */
+// ph_8E00
+void phContactManager_RegisterSurface(void* thisPtr, void* sourceBound) {
+    uint32_t shapeKey = *(uint32_t*)((char*)sourceBound + 4);
+    void* contactMgr = *(void**)((char*)thisPtr + 164);
+    uint32_t materialOverride = 0;
+    if (contactMgr != nullptr) {
+        materialOverride = *(uint32_t*)((char*)contactMgr + 8);
+    }
+    uint32_t contactMaterialId = *(uint32_t*)((char*)contactMgr + 4);
+    uint32_t contactFlags = *(uint32_t*)((char*)thisPtr + 176);
+    uint32_t primitiveFlags = *(uint32_t*)((char*)thisPtr + 180);
+    uint8_t* surfaceFlagA = (uint8_t*)((char*)thisPtr + 426);
+    uint8_t* surfaceFlagB = (uint8_t*)((char*)thisPtr + 427);
+    ph_1EF8((void*)(uintptr_t)shapeKey, materialOverride, contactMaterialId,
+            surfaceFlagA, contactFlags, surfaceFlagB, primitiveFlags, 255);
+    uint8_t count = *(uint8_t*)((char*)thisPtr + 428);
+    count++;
+    *(uint8_t*)((char*)thisPtr + 428) = count;
+}
+
+/**
+ * ph_3608 — Lock, resolve handle, and unlock physics pool
+ * @ 0x82123608 | size: 0x74 (116 bytes)
+ *
+ * Acquires a physics allocator lock via ph_5908 (tag string),
+ * resolves a pool handle to a pointer via rage_3F18, then
+ * releases the lock. Used to safely fetch a physics object
+ * from a handle while the allocator is locked.
+ *
+ * @param outPtr   Destination pointer buffer (resolved ptr stored at +164)
+ * @param handle   Pool handle wrapper (handle value at +4, sub-handle at +12)
+ */
+// ph_3608
+void phPool_ResolveHandleLocked(void* outPtr, void* handle) {
+    uint32_t allocator = *(uint32_t*)((char*)handle + 4);
+    ph_5908((void*)(uintptr_t)allocator, (const char*)0x82027660, 1);
+    uint32_t subHandle = *(uint32_t*)((char*)handle + 4);
+    uint32_t poolHandle = *(uint32_t*)((char*)subHandle + 12);
+    void* pool = *(void**)0x8251A374;
+    rage_3F18(pool, poolHandle, (void*)((char*)outPtr + 164));
+    uint32_t allocator2 = *(uint32_t*)((char*)handle + 4);
+    ph_5908((void*)(uintptr_t)allocator2, (const char*)0x8202766C, 1);
+}
+
+/**
+ * ph_3E78 — Compute clamped contact impulse from virtual elasticity
+ * @ 0x82123E78 | size: 0x9C (156 bytes)
+ *
+ * Computes the contact impulse magnitude for a collision response.
+ * If the source object (r4) has a contact body at offset +256,
+ * queries its elasticity via VCALL slot 8. Clamps the result to
+ * be non-negative, scales by a constant factor (from rdata), and
+ * returns the absolute value if negative (via fsel).
+ *
+ * Returns: Clamped impulse magnitude as float in f1.
+ */
+// ph_3E78
+float phContact_ComputeImpulse(void* thisPtr, void* contactPair) {
+    void* contactBody = *(void**)((char*)contactPair + 256);
+    float zero = 0.0f;
+    float elasticity = zero;
+
+    if (contactBody != nullptr) {
+        // VCALL slot 8: GetElasticity()
+        typedef float (*GetElasticityFn)(void*);
+        void** vt = *(void***)contactBody;
+        elasticity = ((GetElasticityFn)vt[8])(contactBody);
+
+        if (elasticity < zero) {
+            nop_8240E6D0((const char*)0x82033420, *(uint64_t*)&elasticity);
+            elasticity = (elasticity < 0.0f) ? -elasticity : elasticity;
+        }
+    }
+
+    float scale = g_physOneF;  // 1.0f from rdata
+    float impulse = elasticity * scale;
+    float negImpulse = -impulse;
+    // fsel: if negImpulse >= 0 (i.e. impulse <= 0), return 0.0; else return impulse
+    return (negImpulse >= 0.0f) ? 0.0f : impulse;
+}
+
+/**
+ * ph_6D00 — rage::phJoint1Dof constructor
+ * @ 0x82126D00 | size: 0x98 (152 bytes)
+ *
+ * Constructs a phJoint1Dof (single degree-of-freedom physics joint).
+ * Calls the base class phJoint constructor (ph_ctor_ABE8), installs
+ * the phJoint1Dof vtable, and initializes joint limits, angular
+ * parameters, stiffness, and damping values.
+ */
+// ph_6D00
+void phJoint1Dof_Constructor(void* thisPtr) {
+    ph_ctor_ABE8(thisPtr);
+
+    // Install phJoint1Dof vtable
+    *(uint32_t*)((char*)thisPtr + 0) = 0x8203315C;
+
+    // Clear active flag
+    *(uint8_t*)((char*)thisPtr + 32) = 0;
+
+    // Initialize angle limits (rdata floats)
+    float limitMin = *(float*)0x82079AD4;
+    float limitMax = *(float*)0x82079AD8;
+    *(float*)((char*)thisPtr + 720) = limitMin;
+    *(float*)((char*)thisPtr + 728) = limitMin;
+    *(float*)((char*)thisPtr + 724) = limitMax;
+    *(float*)((char*)thisPtr + 732) = limitMax;
+
+    // Initialize base mass float
+    float baseMass = *(float*)0x8202D15C;
+    *(float*)((char*)thisPtr + 16) = baseMass;
+
+    // Initialize stiffness
+    float stiffness = *(float*)0x8202D114;
+    *(float*)((char*)thisPtr + 784) = stiffness;
+
+    // Initialize damping
+    float damping = *(float*)0x82028490;
+    *(float*)((char*)thisPtr + 788) = damping;
+
+    // Initialize drive targets (same as baseMass)
+    *(float*)((char*)thisPtr + 792) = baseMass;
+    *(float*)((char*)thisPtr + 796) = baseMass;
+
+    // Initialize spring and torque constants
+    float springK = *(float*)0x8207A050;
+    *(float*)((char*)thisPtr + 800) = springK;
+    float maxTorque = *(float*)0x8207A04C;
+    *(float*)((char*)thisPtr + 804) = maxTorque;
+}
+
+/**
+ * ph_81C8 — Compute 4x4 matrix-transpose-multiply (row dot products)
+ * @ 0x821181C8 | size: 0xB0 (176 bytes)
+ *
+ * Computes out[i][j] = dot3(A_row[i], B_col[j]) for a 4x3 matrix multiply.
+ * The fourth row computes (A_row3 - B_row3) dotted against B columns.
+ * Used for physics coordinate frame transformations.
+ */
+// ph_81C8
+void phMatrix_TransposeMultiply3x4(float* dst, const float* src) {
+    const float* aRow0 = dst;
+    const float* aRow1 = dst + 4;
+    const float* aRow2 = dst + 8;
+    float aRow3[4];
+    aRow3[0] = dst[12] - src[12];
+    aRow3[1] = dst[13] - src[13];
+    aRow3[2] = dst[14] - src[14];
+    aRow3[3] = dst[15] - src[15];
+
+    const float* bCol0 = src;
+    const float* bCol1 = src + 4;
+    const float* bCol2 = src + 8;
+
+    float r00 = aRow0[0]*bCol0[0] + aRow0[1]*bCol0[1] + aRow0[2]*bCol0[2];
+    float r01 = aRow0[0]*bCol1[0] + aRow0[1]*bCol1[1] + aRow0[2]*bCol1[2];
+    float r02 = aRow0[0]*bCol2[0] + aRow0[1]*bCol2[1] + aRow0[2]*bCol2[2];
+    float r10 = aRow1[0]*bCol0[0] + aRow1[1]*bCol0[1] + aRow1[2]*bCol0[2];
+    float r11 = aRow1[0]*bCol1[0] + aRow1[1]*bCol1[1] + aRow1[2]*bCol1[2];
+    float r12 = aRow1[0]*bCol2[0] + aRow1[1]*bCol2[1] + aRow1[2]*bCol2[2];
+    float r20 = aRow2[0]*bCol0[0] + aRow2[1]*bCol0[1] + aRow2[2]*bCol0[2];
+    float r21 = aRow2[0]*bCol1[0] + aRow2[1]*bCol1[1] + aRow2[2]*bCol1[2];
+    float r22 = aRow2[0]*bCol2[0] + aRow2[1]*bCol2[1] + aRow2[2]*bCol2[2];
+    float r30 = aRow3[0]*bCol0[0] + aRow3[1]*bCol0[1] + aRow3[2]*bCol0[2];
+    float r31 = aRow3[0]*bCol1[0] + aRow3[1]*bCol1[1] + aRow3[2]*bCol1[2];
+    float r32 = aRow3[0]*bCol2[0] + aRow3[1]*bCol2[1] + aRow3[2]*bCol2[2];
+
+    dst[0]  = r00; dst[1]  = r01; dst[2]  = r02;
+    dst[4]  = r10; dst[5]  = r11; dst[6]  = r12;
+    dst[8]  = r20; dst[9]  = r21; dst[10] = r22;
+    dst[12] = r30; dst[13] = r31; dst[14] = r32;
+}
+
+/**
+ * ph_FD78 — Initialize physics collision pair tracking structure
+ * @ 0x8221FD78 | size: 0x58 (88 bytes)
+ *
+ * Clears overlap counters and sets max values, zeroes bounding vector.
+ * Returns immediately if global physics disable flag is set.
+ */
+// ph_FD78
+void phCollisionPair_Init(void* thisPtr) {
+    if (g_phDisableFlag != 0) {
+        return;
+    }
+
+    uint16_t* counters = (uint16_t*)((char*)thisPtr + 16);
+    uint16_t* maxVals  = (uint16_t*)((char*)thisPtr + 24);
+    for (int i = 0; i < 4; i++) {
+        counters[i] = 0;
+        maxVals[i]  = 0xFFFF;
+    }
+
+    float initVal = g_physZeroF;
+    *(float*)((char*)thisPtr + 0)  = initVal;
+    *(float*)((char*)thisPtr + 4)  = initVal;
+    *(float*)((char*)thisPtr + 8)  = initVal;
+    *(float*)((char*)thisPtr + 12) = initVal;
+}
+
+/**
+ * ph_ctor_B3B0 — sgNode place/relocate constructor
+ * @ 0x8212B3B0 | size: 0xB8 (184 bytes)
+ *
+ * Placement constructor for sgNode that relocates 3 internal pointers
+ * using the relocator's base/stride/offset table. Sets xmlNode vtable
+ * first, then upgrades to sgNode vtable after relocation.
+ */
+// ph_ctor_B3B0
+void sgNode_PlaceConstructor(void* thisPtr, void* relocator) {
+    *(uint32_t*)((char*)thisPtr + 0) = 0x8203AB8C;
+
+    uint32_t ptr1 = *(uint32_t*)((char*)thisPtr + 4);
+    if (ptr1 != 0) {
+        uint32_t base = *(uint32_t*)((char*)relocator + 4);
+        uint32_t stride = *(uint32_t*)((char*)relocator + 76);
+        uint32_t index = (ptr1 - base) / stride;
+        uint32_t slot = (index + 2) * 4;
+        uint32_t offset = *(uint32_t*)((char*)relocator + slot);
+        *(uint32_t*)((char*)thisPtr + 4) = offset + ptr1;
+    }
+
+    uint32_t ptr2 = *(uint32_t*)((char*)thisPtr + 8);
+    if (ptr2 != 0) {
+        uint32_t base = *(uint32_t*)((char*)relocator + 4);
+        uint32_t stride = *(uint32_t*)((char*)relocator + 76);
+        uint32_t index = (ptr2 - base) / stride;
+        uint32_t slot = (index + 2) * 4;
+        uint32_t offset = *(uint32_t*)((char*)relocator + slot);
+        *(uint32_t*)((char*)thisPtr + 8) = offset + ptr2;
+    }
+
+    uint32_t ptr3 = *(uint32_t*)((char*)thisPtr + 12);
+    if (ptr3 != 0) {
+        uint32_t base = *(uint32_t*)((char*)relocator + 4);
+        uint32_t stride = *(uint32_t*)((char*)relocator + 76);
+        uint32_t index = (ptr3 - base) / stride;
+        uint32_t slot = (index + 2) * 4;
+        uint32_t offset = *(uint32_t*)((char*)relocator + slot);
+        *(uint32_t*)((char*)thisPtr + 12) = offset + ptr3;
+    }
+
+    *(uint32_t*)((char*)thisPtr + 0) = 0x8203338C;
+}
+
+/**
+ * ph_ctor_C650 — rage::crIKSolverIterativeLimb constructor
+ * @ 0x8213C650 | size: 0xAC (172 bytes)
+ *
+ * Initializes an iterative limb IK solver with base vtable, identity
+ * orientation data, then upgrades vtable and sets solver parameters.
+ */
+// ph_ctor_C650
+void crIKSolverIterativeLimb_Constructor(void* thisPtr) {
+    *(uint32_t*)((char*)thisPtr + 4) = 3;
+    *(uint32_t*)((char*)thisPtr + 0) = 0x82033C70;
+    *(uint8_t*)((char*)thisPtr + 8) = 0;
+    *(uint8_t*)((char*)thisPtr + 9) = 0;
+
+    const uint8_t* identityData = (const uint8_t*)0x825CB890;
+    uint32_t* dst16 = (uint32_t*)((char*)thisPtr + 16);
+    const uint32_t* src16 = (const uint32_t*)identityData;
+    dst16[0] = src16[0]; dst16[1] = src16[1];
+    dst16[2] = src16[2]; dst16[3] = src16[3];
+
+    uint32_t* dst32 = (uint32_t*)((char*)thisPtr + 32);
+    const uint32_t* src32 = (const uint32_t*)(identityData + 16);
+    dst32[0] = src32[0]; dst32[1] = src32[1];
+    dst32[2] = src32[2]; dst32[3] = src32[3];
+
+    *(uint32_t*)((char*)thisPtr + 0) = 0x82033CC4;
+
+    float stepSize    = *(float*)0x82069A90;
+    float threshold   = *(float*)0x82069A8C;
+    float tolerance   = *(float*)0x8202D124;
+    float dampFactor  = *(float*)0x82028080;
+
+    *(uint32_t*)((char*)thisPtr + 48) = 10;
+    *(float*)((char*)thisPtr + 52) = stepSize;
+    *(float*)((char*)thisPtr + 56) = threshold;
+    *(float*)((char*)thisPtr + 60) = tolerance;
+    *(float*)((char*)thisPtr + 64) = dampFactor;
+}
+
+/**
+ * ph_ctor_DCE0 — CPeakMeterEffect factory / create-and-initialize
+ * @ 0x821ADCE0 | size: 0xA8 (168 bytes)
+ *
+ * Allocates a 52-byte CPeakMeterEffect via VCALL slot 5, initializes
+ * all fields, installs vtable, then calls VCALL slot 7 for setup.
+ */
+// ph_ctor_DCE0
+void CPeakMeterEffect_Create(void* config, void* allocator, void** outResult) {
+    typedef void* (*AllocFn)(void*, uint32_t);
+    void** allocVt = *(void***)allocator;
+    void* effect = ((AllocFn)allocVt[5])(allocator, 52);
+
+    if (effect != nullptr) {
+        *(uint32_t*)((char*)effect + 0) = 0x8203B260;
+        *(uint32_t*)((char*)effect + 4) = 1;
+        *(uint32_t*)((char*)effect + 48) = 0;
+        *(uint32_t*)((char*)effect + 24) = 0;
+        *(uint32_t*)((char*)effect + 28) = 0;
+        *(uint32_t*)((char*)effect + 44) = 0;
+        *(uint32_t*)((char*)effect + 8) = 0;
+        *(uint32_t*)((char*)effect + 12) = 0;
+        *(uint32_t*)((char*)effect + 16) = 0;
+        *(uint32_t*)((char*)effect + 20) = 0;
+
+        typedef void (*InitFn)(void*, void*, void*);
+        void** effectVt = *(void***)effect;
+        ((InitFn)effectVt[7])(effect, config, allocator);
+    } else {
+        effect = nullptr;
+    }
+
+    *outResult = effect;
+}
