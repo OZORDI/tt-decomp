@@ -409,9 +409,9 @@ struct pcrEmoteData {
 
     // ── virtual methods ──
     virtual ~pcrEmoteData();                  // [0] @ 0x820eb8e8
-    virtual void vfn_20();  // [20] @ 0x820eb9e8
-    virtual void vfn_21();  // [21] @ 0x820eba30
-    virtual void vfn_22();  // [22] @ 0x820eb948
+    virtual bool IsTypeOf(uint32_t type) const;  // [20] @ 0x820eb9e8
+    virtual void LoadProperties();  // [21] @ 0x820eba30
+    virtual const char* GetTypeName() const;  // [22] @ 0x820eb948
 };
 
 // ── pcrCreatureState  (internal data block, no vtable) ──────────────────────
@@ -730,7 +730,7 @@ struct pongBlendLookAtDriver {
     virtual void Reset();                                 // [9] @ 0x820d1758
     virtual void SetMaxWeight();                          // [12] @ 0x820d0c80
     virtual void GetName();  // [13] @ 0x820d0c90
-    virtual float CalculateBlendFactor() const;           // [18] @ 0x820d0ca0
+    virtual float CalculateBlendFactor();                  // [18] @ 0x820d0ca0
     virtual void Update(float f1, float f2, float f3);    // [20] @ 0x820d0cd0
 
     // ── non-virtual methods (from debug strings) ──
