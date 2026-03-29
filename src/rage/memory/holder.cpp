@@ -1,276 +1,239 @@
 /**
- * holder.cpp — Holder template class implementation
+ * holder.cpp — Holder Template Class Implementation
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
- * 
- * Implementation of the Holder template class for game parameter/fragment management.
- * This class manages tuning data, float parameters, and vector/matrix data for
- * game fragments loaded from the tuning system.
- * 
- * The class has 6 template specializations, each with its own vtable and singleton.
+ *
+ * Implementation of the Holder class for game parameter/fragment management.
+ * Manages tuning data, float parameters, and vector/matrix data for game
+ * fragments loaded from the tuning system ($/tune/types/fragments).
+ *
+ * The class has 6 template specializations, each with its own vtable and
+ * singleton instance (28 bytes each at g_HolderSingletons @ 0x825D4560).
+ *
+ * Functions implemented:
+ *   GetSingleton           — returns per-specialization singleton pointer
+ *   AllocateAndInitialize  — TLS allocator + AltiVec copy
+ *   Constructor            — initializes all fields to defaults
+ *   SetParam 1-3, 8-10    — vtable-dispatched float extraction
+ *   SetInitializedFlag     — sets bit 0 of init flags
+ *   DispatchVtableSlot55   — tail-call to large vtable slot 55
  */
 
-#include "rage/holder.h"
-#include <cstring>  // for memset
+#include "holder.h"
+#include <cstring>
 
-// Global singleton array - 6 specializations, 28 bytes each
-// Original address: 0x825D4560
-// Each Holder_vfn_1 variant returns a different 28-byte entry from this array
+// ─────────────────────────────────────────────────────────────────────────────
+// External functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+// TLS memory allocator initialization — ensures the per-thread allocator
+// table is set up before allocation.
+// @ 0x820C0XXX (sysMemAllocator)
+extern "C" void sysMemAllocator_InitMainThread();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// External globals
+// ─────────────────────────────────────────────────────────────────────────────
+
+// TLS base pointer — r13 SDA base, points to the thread-local storage root.
+// @ 0x82600000
+extern void** g_tls_base;
+
+// Holder vtable (primary, 20 bytes = 5 slots).
+// @ 0x82032E34 | RTTI-confirmed: Holder
+extern void* g_Holder_vtable[];
+
+// Default constant data — 64 bytes of identity/default transform values.
+// Located adjacent to rage::spdApical vtable in .rdata (0x82032F48).
+// @ 0x82032F48
+extern uint8_t g_Holder_defaultTransformData[64];
+
+// Global singleton array — 6 specializations, 28 bytes each.
+// @ 0x825D4560
 uint8_t g_HolderSingletons[168] __attribute__((aligned(16)));
 
-/**
- * Holder::GetSingleton
- * @ 0x82121BF8 | size: 0xC
- * 
- * Returns the global singleton instance for this Holder specialization.
- * This is vtable slot 1 (labeled "scalar_destructor" in RTTI, but actually returns singleton).
- * 
- * There are 6 variants of this function, each returning a different singleton:
- * - Holder_vfn_1:        returns 0x825D4560 (base + 0x00)
- * - Holder_vfn_1_1C98_1: returns 0x825D457C (base + 0x1C = 28 bytes)
- * - Holder_vfn_1_1D30_1: returns 0x825D4598 (base + 0x38 = 56 bytes)
- * - Holder_vfn_1_1DC8_1: returns 0x825D45B4 (base + 0x54 = 84 bytes)
- * - Holder_vfn_1_1E60_1: returns 0x825D45EC (base + 0x70 = 112 bytes)
- * - Holder_vfn_1_AC90_1: returns 0x825D45EC (base + 0x8C = 140 bytes)
- * 
- * Original assembly:
- *   lis r11, -32163      // r11 = 0x825D0000
- *   addi r3, r11, 17760  // r3 = 0x825D0000 + 0x4560 = 0x825D4560
- *   blr
- */
-void* Holder::GetSingleton() {
-    // Return the base singleton address
-    // In a real implementation, this would return the appropriate specialization's singleton
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Holder::GetSingleton  [vtable slot 1]
+//
+//  @ 0x82121BF8 | size: 0x0C
+//
+//  Returns the global singleton instance for this Holder specialization.
+//  There are 6 variants, each returning a different 28-byte entry:
+//    vfn_1:         base + 0x00  (0x825D4560)
+//    vfn_1_1C98_1:  base + 0x1C  (0x825D457C)
+//    vfn_1_1D30_1:  base + 0x38  (0x825D4598)
+//    vfn_1_1DC8_1:  base + 0x54  (0x825D45B4)
+//    vfn_1_1E60_1:  base + 0x70  (0x825D45EC)
+//    vfn_1_AC90_1:  base + 0x8C  (0x825D45EC)
+// ═══════════════════════════════════════════════════════════════════════════════
+void* Holder::GetSingleton()
+{
     return &g_HolderSingletons[0];
 }
 
-/**
- * Holder::AllocateAndInitialize
- * @ 0x82121C08 | size: 0x8C
- * 
- * Allocates memory for a new Holder instance (32 bytes with 16-byte alignment)
- * and initializes it by copying 16 bytes of vector data from this object.
- * 
- * This is vtable slot 2.
- * 
- * Returns: Pointer to newly allocated and initialized Holder, or nullptr on failure
- * 
- * Original assembly flow:
- * 1. Call sysMemAllocator_InitMainThread for TLS setup
- * 2. Get allocator from TLS: lwz r11, 0(r13); lwzx r3, r10, r11
- * 3. Allocate 32 bytes with 16-byte alignment via vtable slot 1
- * 4. Set vtable pointer to 0x82032E34
- * 5. Copy 16 bytes from this+0x10 to new+0x10 using AltiVec
- */
-void* Holder::AllocateAndInitialize() {
-    extern "C" void sysMemAllocator_InitMainThread();
-    extern void** g_tls_base;  // @ 0x82600000 (r13 SDA base)
-    extern void* g_vtable_holder;  // @ 0x82032E34
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Holder::AllocateAndInitialize  [vtable slot 2]
+//
+//  @ 0x82121C08 | size: 0x8C
+//
+//  Allocates a 32-byte, 16-byte-aligned object via the TLS memory allocator,
+//  sets its vtable to g_Holder_vtable, and copies the 16-byte default vector
+//  from this+0x10 to the new object+0x10 (using AltiVec on original hardware).
+//
+//  Returns: Pointer to new Holder, or nullptr on allocation failure.
+// ═══════════════════════════════════════════════════════════════════════════════
+void* Holder::AllocateAndInitialize()
+{
     sysMemAllocator_InitMainThread();
 
-    // Get allocator from TLS (r13+0 → allocator table, entry at +4)
+    // Get allocator from TLS — r13+0 → allocator table, entry at index 1
     void** pTLS = *(void***)g_tls_base;
-    void* pAllocator = pTLS[1];
+    void*  pAllocator = pTLS[1];
 
-    // Allocate 32 bytes, 16-byte aligned via allocator vtable slot 1
-    typedef void* (*AllocFunc)(void*, uint32_t, uint32_t);
+    // Allocate 32 bytes with 16-byte alignment via allocator vtable slot 1
+    typedef void* (*AllocFn)(void*, uint32_t size, uint32_t alignment);
     void** allocVtable = *(void***)pAllocator;
-    AllocFunc alloc = (AllocFunc)allocVtable[1];
+    AllocFn alloc = reinterpret_cast<AllocFn>(allocVtable[1]);
     void* newObj = alloc(pAllocator, 32, 16);
 
-    if (newObj) {
+    if (newObj != nullptr) {
         // Set vtable pointer
-        *(void**)newObj = &g_vtable_holder;
+        *static_cast<void**>(newObj) = g_Holder_vtable;
 
-        // Copy 16-byte default vector from this+0x10 to new+0x10 (AltiVec copy)
-        memcpy((char*)newObj + 0x10, (char*)this + 0x10, 16);
+        // Copy 16-byte default vector from this+0x10 to new+0x10
+        // Original uses AltiVec lvx/stvx for aligned 16-byte copy
+        memcpy(static_cast<char*>(newObj) + 0x10,
+               reinterpret_cast<char*>(this) + 0x10, 16);
     }
 
     return newObj;
 }
 
-/**
- * Holder::Holder (constructor)
- * @ 0x82122798 | size: 0x11C
- * 
- * Initializes a Holder instance with default values for fragment/tuning management.
- * 
- * This constructor is called when creating fragment type holders for game resources
- * and tuning data (see IDA pseudocode: "$/tune/types/fragments"). It initializes:
- * - Default identity vector to (0,0,0,0)
- * - Constant transform data from global memory (4 x vec4 @ 0x82032F48)
- * - Tuning parameter arrays to 0.0
- * - Transform cache and animation state regions (cleared with AltiVec)
- * - Extended parameters to 0.0
- * - State flags to 0
- * 
- * Note: m_tuningParam1/2/3 and m_tuningParam8/9/10 are NOT initialized here -
- * they're set later via SetParamX methods which call external vtable slot 5.
- */
-Holder::Holder() {
-    // Vtable pointer is set by compiler
-    
-    // Initialize default identity vector to (0,0,0,0)
-    // Original loads float constant 0.0f from 0x8202D110
-    m_defaultVectorX = 0.0f;  // +0x10
-    m_defaultVectorY = 0.0f;  // +0x14
-    m_defaultVectorZ = 0.0f;  // +0x18
-    m_defaultVectorW = 0.0f;  // +0x1C
-    
-    // Load constant transform data from global memory @ 0x82032F48
-    // Original uses lvx128 to load 4 x 16-byte vectors (64 bytes total)
-    // These are likely identity matrix or default transform constants
-    // For now, we'll zero them until we can extract the actual global data
-    memset(m_constantVectors, 0, sizeof(m_constantVectors));  // +0xE0, 64 bytes
-    
-    // Initialize tuning parameter array to 0.0
-    // Original stores 8 consecutive floats at +0x130 (304) through +0x14C (332)
-    m_tuningParams[0] = 0.0f;  // +0x130 (304)
-    m_tuningParams[1] = 0.0f;  // +0x134 (308)
-    m_tuningParams[2] = 0.0f;  // +0x138 (312)
-    m_tuningParams[3] = 0.0f;  // +0x13C (316)
-    m_tuningParams[4] = 0.0f;  // +0x140 (320)
-    m_tuningParams[5] = 0.0f;  // +0x144 (324)
-    m_tuningParams[6] = 0.0f;  // +0x148 (328)
-    m_tuningParams[7] = 0.0f;  // +0x14C (332)
-    
-    // Clear transform cache (6 x vec4 = 96 bytes)
-    // Original: loop with vxor v0, v0, v0; stvx v0, r0, r11
-    memset(m_transformCache, 0, sizeof(m_transformCache));  // +0x1B0, 96 bytes
-    
-    // Clear animation state (8 x vec4 = 128 bytes)
-    // Original: loop with vxor v12, v0, v0; stvx v12, r0, r11
-    memset(m_animationState, 0, sizeof(m_animationState));  // +0x210, 128 bytes
-    
-    // Initialize extended parameters to 0.0
-    // Original stores via r11 = this + 656 (0x290)
-    m_extendedParam0 = 0.0f;  // +0x290 (656) = r11+0
-    m_extendedParam1 = 0.0f;  // +0x294 (660) = r11+4
-    m_extendedParam2 = 0.0f;  // +0x298 (664) = r11+8
-    // Gap at +0x29C (668) - 4 bytes (likely int/enum field)
-    m_extendedParam3 = 0.0f;  // +0x2A0 (672) = r11+16
-    m_extendedParam4 = 0.0f;  // +0x2A4 (676) = r11+20
-    m_extendedParam5 = 0.0f;  // +0x2A8 (680) = r11+24
-    // Gap at +0x2AC (684) - 4 bytes (likely int/enum field)
-    m_extendedParam6 = 0.0f;  // +0x2B0 (688) = r11+32
-    
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Holder::Holder (Constructor)
+//
+//  @ 0x82122798 | size: 0x11C (284 bytes)
+//
+//  Initializes a Holder instance with default values for fragment/tuning
+//  management.  Called when creating fragment type holders for game resources
+//  and tuning data (see debug string: "$/tune/types/fragments").
+//
+//  Initialization sequence:
+//    1. Default vector → (0,0,0,0)
+//    2. Constant transform data → copy from g_Holder_defaultTransformData
+//    3. Tuning params [0..7] → 0.0f
+//    4. Transform cache (96 bytes) → zeroed (AltiVec vxor + stvx loop)
+//    5. Animation state (128 bytes) → zeroed (AltiVec vxor + stvx loop)
+//    6. Extended params → 0.0f
+//    7. State/status flags → 0
+//
+//  NOTE: m_tuningParam1/2/3 and m_tuningParam8/9/10 are NOT initialized
+//  here — they are set later via SetParam methods which call external
+//  vtable slot 5 on a source object.
+// ═══════════════════════════════════════════════════════════════════════════════
+Holder::Holder()
+{
+    // Initialize default identity vector to (0,0,0,0) at +0x10
+    m_defaultVectorX = 0.0f;
+    m_defaultVectorY = 0.0f;
+    m_defaultVectorZ = 0.0f;
+    m_defaultVectorW = 0.0f;
+
+    // Load constant transform data from .rdata @ 0x82032F48
+    // Original uses lvx128 to load 4 × 16-byte vectors (64 bytes total)
+    memcpy(m_constantVectors, g_Holder_defaultTransformData,
+           sizeof(m_constantVectors));
+
+    // Initialize tuning parameter array to 0.0f
+    for (int i = 0; i < 8; i++) {
+        m_tuningParams[i] = 0.0f;
+    }
+
+    // Clear transform cache (6 × vec4 = 96 bytes)
+    // Original: AltiVec vxor v0,v0,v0 + stvx loop
+    memset(m_transformCache, 0, sizeof(m_transformCache));
+
+    // Clear animation state (8 × vec4 = 128 bytes)
+    // Original: AltiVec vxor v12,v12,v12 + stvx loop
+    memset(m_animationState, 0, sizeof(m_animationState));
+
+    // Initialize extended parameters to 0.0f
+    m_extendedParam0 = 0.0f;
+    m_extendedParam1 = 0.0f;
+    m_extendedParam2 = 0.0f;
+    // gap at +0x29C (likely int/enum field, not initialized)
+    m_extendedParam3 = 0.0f;
+    m_extendedParam4 = 0.0f;
+    m_extendedParam5 = 0.0f;
+    // gap at +0x2AC (likely int/enum field, not initialized)
+    m_extendedParam6 = 0.0f;
+
     // Initialize state flags to 0
-    // Original: li r11, 0; stb r11, 704(r3); stb r11, 705(r3)
-    m_stateFlags = 0;   // +0x2C0 (704)
-    m_statusFlags = 0;  // +0x2C1 (705)
-    
-    // Note: Dynamic tuning parameters (m_tuningParam1/2/3, m_tuningParam8/9/10)
-    // are NOT initialized in constructor - they're set via SetParamX methods
+    m_stateFlags  = 0;
+    m_statusFlags = 0;
 }
 
-/**
- * Holder::SetParam1
- * @ 0x82123488 | size: 0x40
- * 
- * Calls vtable slot 5 on the source object and stores the float result at +0x04.
- * This is used to dynamically set tuning parameters from fragment data.
- * 
- * Original assembly:
- *   mr r31, r3              // Save 'this'
- *   lwz r3, 4(r4)           // Load pointer from source+4
- *   lwz r10, 20(r11)        // Load vtable slot 5 (offset +20)
- *   bctrl                   // Call function
- *   stfs f1, 4(r31)         // Store float result at this+4
- * 
- * Parameters:
- *   source - Pointer to object with vtable slot 5 method that returns float
- */
-void Holder::SetParam1(void* source) {
-    // Load object from source+4, call its vtable slot 5 to get float value
-    void* obj = *(void**)((char*)source + 4);
-    typedef float (*GetFloatFunc)(void*);
-    void** vtable = *(void***)obj;
-    m_tuningParam1 = ((GetFloatFunc)vtable[5])(obj);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SetParam1..3, SetParam8..10
+//
+//  @ 0x82123488..0x821235C8 | size: 0x40 each
+//
+//  Each method extracts a float from a source object by:
+//    1. Loading the object pointer from source+4
+//    2. Calling that object's vtable slot 5 (which returns a float in f1)
+//    3. Storing the result in the corresponding member field
+//
+//  This is the RAGE tuning system's way of extracting typed parameter values
+//  from fragment descriptor objects.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Helper: Extract float from source via vtable slot 5
+static float ExtractFloatParam(void* source)
+{
+    void* obj = *reinterpret_cast<void**>(static_cast<char*>(source) + 4);
+    typedef float (*GetFloatFn)(void*);
+    void** vtable = *reinterpret_cast<void***>(obj);
+    return reinterpret_cast<GetFloatFn>(vtable[5])(obj);
 }
 
-/**
- * Holder::SetParam2 @ 0x821234C8 | size: 0x40
- */
-void Holder::SetParam2(void* source) {
-    void* obj = *(void**)((char*)source + 4);
-    typedef float (*GetFloatFunc)(void*);
-    void** vtable = *(void***)obj;
-    m_tuningParam2 = ((GetFloatFunc)vtable[5])(obj);
-}
+void Holder::SetParam1(void* source)  { m_tuningParam1  = ExtractFloatParam(source); }  // @ 0x82123488
+void Holder::SetParam2(void* source)  { m_tuningParam2  = ExtractFloatParam(source); }  // @ 0x821234C8
+void Holder::SetParam3(void* source)  { m_tuningParam3  = ExtractFloatParam(source); }  // @ 0x82123508
+void Holder::SetParam8(void* source)  { m_tuningParam8  = ExtractFloatParam(source); }  // @ 0x82123548
+void Holder::SetParam9(void* source)  { m_tuningParam9  = ExtractFloatParam(source); }  // @ 0x82123588
+void Holder::SetParam10(void* source) { m_tuningParam10 = ExtractFloatParam(source); }  // @ 0x821235C8
 
-/**
- * Holder::SetParam3 @ 0x82123508 | size: 0x40
- */
-void Holder::SetParam3(void* source) {
-    void* obj = *(void**)((char*)source + 4);
-    typedef float (*GetFloatFunc)(void*);
-    void** vtable = *(void***)obj;
-    m_tuningParam3 = ((GetFloatFunc)vtable[5])(obj);
-}
 
-/**
- * Holder::SetParam8 @ 0x82123548 | size: 0x40
- */
-void Holder::SetParam8(void* source) {
-    void* obj = *(void**)((char*)source + 4);
-    typedef float (*GetFloatFunc)(void*);
-    void** vtable = *(void***)obj;
-    m_tuningParam8 = ((GetFloatFunc)vtable[5])(obj);
-}
-
-/**
- * Holder::SetParam9 @ 0x82123588 | size: 0x40
- */
-void Holder::SetParam9(void* source) {
-    void* obj = *(void**)((char*)source + 4);
-    typedef float (*GetFloatFunc)(void*);
-    void** vtable = *(void***)obj;
-    m_tuningParam9 = ((GetFloatFunc)vtable[5])(obj);
-}
-
-/**
- * Holder::SetParam10 @ 0x821235C8 | size: 0x40
- */
-void Holder::SetParam10(void* source) {
-    void* obj = *(void**)((char*)source + 4);
-    typedef float (*GetFloatFunc)(void*);
-    void** vtable = *(void***)obj;
-    m_tuningParam10 = ((GetFloatFunc)vtable[5])(obj);
-}
-
-/**
- * Holder::SetInitializedFlag
- * @ 0x82123478 | size: 0x10
- * 
- * Sets bit 0 of the initialization flags byte at offset +0x99 (153).
- * This marks the Holder as initialized and ready for use.
- * 
- * Original assembly:
- *   lbz r11, 153(r3)     // Load byte at +0x99
- *   ori r10, r11, 1      // Set bit 0
- *   stb r10, 153(r3)     // Store back
- */
-void Holder::SetInitializedFlag() {
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Holder::SetInitializedFlag
+//
+//  @ 0x82123478 | size: 0x10
+//
+//  Sets bit 0 of the initialization flags byte at +0x99.
+//  Marks the Holder as initialized and ready for use.
+// ═══════════════════════════════════════════════════════════════════════════════
+void Holder::SetInitializedFlag()
+{
     m_initFlags |= 0x01;
 }
 
-/**
- * Holder::CallVtableSlot55
- * @ 0x82122BF0 | size: 0x10
- * 
- * Performs an indirect call through vtable slot 55 (offset +220).
- * This demonstrates that Holder has a LARGE vtable with at least 55 slots.
- * 
- * Original assembly:
- *   lwz r11, 0(r3)       // Load vtable pointer
- *   lwz r10, 220(r11)    // Load function pointer at vtable +220 (slot 55)
- *   mtctr r10            // Move to count register
- *   bctr                 // Branch to function
- */
-void Holder::CallVtableSlot55() {
-    // Tail call to virtual method at vtable slot 55 (byte offset +220)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Holder::DispatchVtableSlot55
+//
+//  @ 0x82122BF0 | size: 0x10
+//
+//  Tail-calls vtable slot 55 (byte offset +220).  This indicates the
+//  Holder class has a LARGE vtable with at least 56 slots — likely due
+//  to virtual-base MI with many inherited virtual methods.
+// ═══════════════════════════════════════════════════════════════════════════════
+void Holder::DispatchVtableSlot55()
+{
     typedef void (*VFunc)(void*);
-    void** vtable = *(void***)this;
-    VFunc fn = (VFunc)vtable[55];
+    void** vtable = *reinterpret_cast<void***>(this);
+    VFunc fn = reinterpret_cast<VFunc>(vtable[55]);
     fn(this);
 }
