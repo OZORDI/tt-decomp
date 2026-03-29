@@ -2178,7 +2178,7 @@ void datBase_DestroyArray192(uint8_t *container) {
 // Destroys a hash map structure with 8-byte entries. Each entry
 // contains a pointer that may be tracked by the singleton system.
 // After clearing all entries, frees the backing array through
-// net_5B40 (a memory pool free function), then clears the container.
+// mfResource_Free (a memory pool free function), then clears the container.
 // ─────────────────────────────────────────────────────────────────────────────
 void datBase_DestroyHashMap(uint8_t *hashMap) {
   int16_t entryCount = *(int16_t *)(hashMap + 4);
@@ -2213,11 +2213,11 @@ void datBase_DestroyHashMap(uint8_t *hashMap) {
     }
   }
 
-  // Free backing array through net_5B40
+  // Free backing array through mfResource_Free
   void *arrayPtr = *(void **)hashMap;
   if (arrayPtr != nullptr) {
-    extern void net_5B40(void *ptr, int mode);
-    net_5B40(arrayPtr, 3);
+    extern void mfResource_Free(void *ptr, int mode);
+    mfResource_Free(arrayPtr, 3);
   }
 
   // Clear the container

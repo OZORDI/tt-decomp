@@ -66,8 +66,8 @@
 
 //   +0x00  vtable          — primary vtable pointer   (implicit in C++)
 //   +0x04  vtable2         — secondary MI vtable ptr  (implicit in C++)
-//   +0x38  m_pResource1    — pointer freed in base dtor (rage_2E18 called)
-//   +0x3C  m_pResource2    — pointer freed in base dtor (rage_2E18 called)
+//   +0x38  m_pResource1    — pointer freed in base dtor (rage_ReleaseRef called)
+//   +0x3C  m_pResource2    — pointer freed in base dtor (rage_ReleaseRef called)
 //   +0x40  m_pInnerObject  — inner Flash context object; freed in derived dtor
 //   +0x54  m_bEnabled      — uint8 visibility / active flag (checked in vfn_3)
 //   +0x5C  m_pPageGroup    — pointer to SinglesNetworkClient page-group object
@@ -128,7 +128,7 @@ public:
 // ─────────────────────────────────────────────────────────────────────────────
 class hudBoot : public hudFlashBase {
 public:
-    virtual ~hudBoot();          // [0] @ 0x82306988  calls rage_69D8 then free
+    virtual ~hudBoot();          // [0] @ 0x82306988  calls hudBoot_BaseDtor then free
     virtual void OnEnter();      // [5] @ 0x82306A50  creates XAM handles,
                                  //   configures SinglesNetworkClient settings
                                  //   for online/offline mode, fills m_buffer

@@ -58,7 +58,7 @@ struct grcTextureFactory {
 #define RAGE_ASSERT(expr) ((void)(expr))
 #endif
 
-// Release helper for grcTexture ref-counting (rage_2E18)
+// Release helper for grcTexture ref-counting (rage_ReleaseRef)
 extern void Release(grcTexture* pTex);
 
 // ---------------------------------------------------------------------------
@@ -379,7 +379,7 @@ void grcLockedTexture::SetPixel(uint32_t col, uint32_t row, uint32_t value)
 // @ 0x8215D5F0 | size: 0x68
 //
 // Extends the base destructor to also release m_pTexture (+0x10) via
-// the ref-counted Release() helper (rage_2E18).
+// the ref-counted Release() helper (rage_ReleaseRef).
 // Called from the slot-0 virtual destructor below; never called directly.
 // ---------------------------------------------------------------------------
 void grcTextureReference::DestructorBody()
@@ -389,7 +389,7 @@ void grcTextureReference::DestructorBody()
 
     // Release the inner texture (decrement refcount; deletes if it reaches zero)
     if (m_pTexture)
-        Release(m_pTexture);    // rage_2E18 @ 0x820C2E18
+        Release(m_pTexture);    // rage_ReleaseRef @ 0x820C2E18
 
     // Chain to base-class cleanup (resets vtable to grcTextureReferenceBase, then datBase)
     // [vtable reset - compiler managed]

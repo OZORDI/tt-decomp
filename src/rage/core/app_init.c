@@ -189,13 +189,13 @@ void grcSetup_Startup(void)
 //
 // Tears down all subsystems created by Startup, in reverse order:
 //
-//  1. If g_pGrcRenderer is set: release its internal resource via rage_2E18,
+//  1. If g_pGrcRenderer is set: release its internal resource via rage_ReleaseRef,
 //     free its backing buffer (+24), then free the renderer struct itself.
 //     Clear g_pGrcRenderer.
-//  2. Release and clear g_pGrcScene via rage_2E18.
+//  2. Release and clear g_pGrcScene via rage_ReleaseRef.
 //  3. Release and clear g_pGrcSceneB; call atSingleton_1C70_fw to deregister
 //     the scene singleton.
-//  4. Release g_pGameLoop via rage_2E18.
+//  4. Release g_pGameLoop via rage_ReleaseRef.
 //  5. If g_pGrcDevice is set: call its vtable slot 0 destructor.
 //     Clear g_pGrcDevice.
 // ===========================================================================

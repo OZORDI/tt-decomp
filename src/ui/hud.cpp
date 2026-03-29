@@ -148,17 +148,17 @@ void hudFlashBase::SetPropertyById(int objectId, int value)
 /* ── External dependencies for network cleanup ────────────────────────────── */
 
 /* RAGE cleanup function @ 0x8214C788 */
-extern void rage_C788(void* pObject);
+extern void mfResource_Release(void* pObject);
 
 /* Network cleanup function @ 0x82115B40 */
-extern void net_5B40(void* pObject, int mode);
+extern void mfResource_Free(void* pObject, int mode);
 
 /* Vtable for rage::mfAnimationController @ 0x8205A054 */
 extern void* g_vtable_mfAnimationController;  /* @ 0x8205A054 */
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * net_F5D8 @ 0x822DF5D8 | size: 0x5c (92 bytes)
+ * mfAnimationController_DestroyBody @ 0x822DF5D8 | size: 0x5c (92 bytes)
  *
  * Network object cleanup/destructor function.
  *
@@ -173,12 +173,12 @@ extern void* g_vtable_mfAnimationController;  /* @ 0x8205A054 */
  *
  * Algorithm:
  *   1. Set vtable to mfAnimationController
- *   2. Call rage_C788 on embedded object at offset +4
+ *   2. Call mfResource_Release on embedded object at offset +4
  *   3. If flags at embedded+30 are non-zero:
  *      a. Check if resource pointer at embedded+24 is non-null
- *      b. If so, call net_5B40 with mode 3 to clean up resource
+ *      b. If so, call mfResource_Free with mode 3 to clean up resource
  * ═══════════════════════════════════════════════════════════════════════════ */
-void net_F5D8(void* pThis)
+void mfAnimationController_DestroyBody(void* pThis)
 {
     uint8_t* netObj = (uint8_t*)pThis;
     
@@ -189,7 +189,7 @@ void net_F5D8(void* pThis)
     void* pEmbedded = netObj + 4;
     
     /* Call RAGE cleanup on embedded object */
-    rage_C788(pEmbedded);
+    mfResource_Release(pEmbedded);
     
     /* Check flags at embedded+30 */
     uint16_t flags = *(uint16_t*)((uint8_t*)pEmbedded + 30);
@@ -200,7 +200,7 @@ void net_F5D8(void* pThis)
         
         if (pResource != NULL) {
             /* Clean up resource with mode 3 */
-            net_5B40(pResource, 3);
+            mfResource_Free(pResource, 3);
         }
     }
 }
