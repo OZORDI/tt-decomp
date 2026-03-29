@@ -60,9 +60,9 @@ struct audControl {
     virtual bool IsActive();    // [19] @ 0x82160780 — returns true if state at +16 is nonzero
 };
 
-// ── rage::audControl2dWrapper  [vtable @ 0x82074BA8] ──────────────────────────
-// See include/rage/audio_control_wrappers.hpp for full definition
+// Forward declarations for wrapper subclasses (defined after audControlWrapper)
 struct audControl2dWrapper;
+struct audControl3dWrapper;
 
 // ── rage::audControl3d  [vtable @ 0x82035594] ──────────────────────────
 struct audControl3d {
@@ -85,9 +85,7 @@ struct audControl3d {
     virtual bool IsActive();           // [19] @ 0x821609a8
 };
 
-// ── rage::audControl3dWrapper  [vtable @ 0x82074B98] ──────────────────────────
-// See include/rage/audio_control_wrappers.hpp for full definition
-struct audControl3dWrapper;
+// audControl3dWrapper — defined after audControlWrapper below
 
 // ── rage::audControlGroup  [vtable @ 0x8203572C] ──────────────────────────
 struct audControlGroup {
@@ -119,8 +117,33 @@ struct audControlMgr {
 };
 
 // ── rage::audControlWrapper  [vtable @ 0x82074B88] ──────────────────────────
-// See include/rage/audio_control_wrappers.hpp for full definition
-struct audControlWrapper;
+// Thin wrapper that owns an audControl pointer and manages its lifecycle.
+// Layout (12 bytes per element):
+//   +0x00  vtable pointer
+//   +0x04  m_pControl (audControl*) — owned pointer, destroyed on wrapper dtor
+//   +0x08  (padding / list link in array contexts)
+struct audControlWrapper {
+    void**      vtable;           // +0x00
+    audControl* m_pControl;       // +0x04: owned audio control pointer
+
+    // ── virtual methods ──
+    virtual ~audControlWrapper();          // [0] @ 0x823F7C88
+
+    // ── non-virtual methods ──
+    void cleanupControl();                // @ 0x823F7C28 — destroys m_pControl
+};
+
+// ── rage::audControl2dWrapper  [vtable @ 0x82074BA8] ──────────────────────────
+struct audControl2dWrapper : public audControlWrapper {
+    // Inherits m_pControl from audControlWrapper
+    // Uses base class destructor
+};
+
+// ── rage::audControl3dWrapper  [vtable @ 0x82074B98] ──────────────────────────
+// 3D variant with array-delete support (12-byte stride per element).
+struct audControl3dWrapper : public audControlWrapper {
+    virtual ~audControl3dWrapper();    // [0] @ 0x823F8138
+};
 
 // ── rage::audVoice  [vtable @ 0x82035A9C] ──────────────────────────
 struct audVoice {

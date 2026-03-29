@@ -1055,4 +1055,60 @@ bool audVoiceStream::IsReady() {
     return streamData[1] == 15;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// audControlWrapper — Audio Control Wrapper Destructors
+//
+// Thin wrapper classes that own an audControl* pointer and handle its
+// lifecycle (destruction).  The 3D variant adds array-delete support for
+// batches of 12-byte wrapper elements.
+//
+// Vtable: rage::audControlWrapper  @ 0x82074B88  [RTTI confirmed]
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audControlWrapper::cleanupControl @ 0x823F7C28 | size: 0x5C
+//
+// Core cleanup helper (non-virtual).  Destroys the wrapped audControl
+// object via its virtual destructor and nulls the pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void audControlWrapper::cleanupControl()
+{
+    if (m_pControl != nullptr) {
+        delete m_pControl;
+        m_pControl = nullptr;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audControlWrapper::~audControlWrapper @ 0x823F7C88 | size: 0x50
+//
+// Base wrapper destructor.  Calls cleanupControl() then the compiler
+// handles the optional scalar-delete (flag bit 0 in the destructor's
+// hidden parameter).
+// ─────────────────────────────────────────────────────────────────────────────
+audControlWrapper::~audControlWrapper()
+{
+    cleanupControl();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audControl3dWrapper::~audControl3dWrapper @ 0x823F8138 | size: 0xD0
+//
+// 3D wrapper destructor with array-delete support.
+//
+// The assembly checks bit 1 of the flags parameter to determine if this
+// is an array delete.  In the array path, it:
+//   1. Reads the element count from (this - 4)
+//   2. Iterates count elements in reverse (stride 12 bytes each)
+//   3. Resets each element's vtable to audControlWrapper base
+//   4. Destroys each element's m_pControl via virtual destructor
+//   5. Frees the array (including the count prefix)
+//
+// For standard C++ delete, the compiler handles this via delete[].
+// ─────────────────────────────────────────────────────────────────────────────
+audControl3dWrapper::~audControl3dWrapper()
+{
+    // Base class destructor (cleanupControl) called automatically by C++
+}
+
 } // namespace rage
