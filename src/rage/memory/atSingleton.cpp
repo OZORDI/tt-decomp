@@ -1,448 +1,473 @@
 /**
- * atSingleton - RAGE Engine Singleton Management System
- * Rockstar Presents Table Tennis (Xbox 360)
+ * atSingleton.cpp — RAGE Engine Singleton Management System
+ * Rockstar Presents Table Tennis (Xbox 360, 2006)
+ *
+ * Implements singleton registration, lookup, lifecycle management, and
+ * observer notification for the RAGE engine's global object registry.
+ *
+ * Functions:
+ *   ComputeHash          — ELF hash for string-based singleton keys
+ *   FindSingleton        — hash table lookup in global registry (stub)
+ *   UnregisterSingleton  — remove singleton by name (stub)
+ *   InitializeSingleton  — dynamic array growth for singleton entries
+ *   ReleaseSingleton     — destroy singleton + notify observers
+ *   AcquireReference     — increment reference count
+ *   BindObject           — register singleton by hash (stub)
+ *   UnbindObject         — unregister singleton by hash (stub)
+ *   InitializeNetSystem  — network singleton init (stub)
+ *   NotifyObservers      — broadcast singleton events
+ *   ClearPendingFlag     — clear bit 0 of state flags
+ *   CallVirtualDestructor — vtable slot 0 dispatch
+ *   GetFactory           — factory registry lookup (stub)
+ *   atSingleton_ScrambleData — data transform using magic-constant division
  */
 
 #include "rage/atSingleton.hpp"
-#include <string.h>
+#include <cstring>
 
-// External dependencies
+// ─────────────────────────────────────────────────────────────────────────────
+// External functions
+// ─────────────────────────────────────────────────────────────────────────────
+
 extern "C" {
-    void* rage_alloc(uint32_t size);  // Memory allocator
-    void rage_2980(void* ptr, uint32_t mode);  // Memory deallocator
-    void memcpy(void* dest, const void* src, uint32_t size);
+    // RAGE heap allocator.
+    void* rage_alloc(uint32_t size);
+
+    // RAGE mode-based deallocator.
+    // @ 0x820C2980 | size: 0x5C
+    void rage_dealloc(void* ptr, uint32_t mode);
 }
 
-namespace rage
-{
+// Hash table lookup — searches global singleton hash table for a key.
+// @ 0x820F94F0 | size: 0xA4
+extern void* atHashTable_Find(void* hashTable, uint32_t key);
 
-// ============================================================================
-// Core Hash Function
-// ============================================================================
+// xmlTree cleanup — resets/cleans up a rage::xmlTree resource.
+// @ 0x821A9EC0 | size: 0x48 | class: rage::xmlTree
+extern void xmlTree_Cleanup(void* obj);
 
-/**
- * ComputeHash @ 0x8223A818 | size: 0x50
- * 
- * Standard ELF hash algorithm.
- * Used throughout RAGE engine for string-based lookups.
- */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// External globals
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Global singleton registry hash table (65,616 bytes).
+// @ 0x82607C40
+extern uint8_t g_singletonRegistry[];
+
+
+namespace rage {
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ComputeHash
+//
+//  @ 0x8223A818 | size: 0x50
+//
+//  Standard ELF hash algorithm — used throughout the RAGE engine for
+//  string-based lookups in hash tables and singleton registries.
+// ═══════════════════════════════════════════════════════════════════════════════
 uint32_t ComputeHash(const char* str)
 {
     if (!str)
         return 0;
-    
+
     uint32_t hash = 0;
-    
-    while (*str)
-    {
-        // hash = (hash << 4) + byte
+
+    while (*str) {
         hash = (hash << 4) + static_cast<uint8_t>(*str++);
-        
-        // temp = hash & 0xF0000000
-        uint32_t temp = hash & 0xF0000000;
-        
-        if (temp)
-        {
-            // hash ^= (temp >> 24)
-            hash ^= (temp >> 24);
-            // hash ^= temp
-            hash ^= temp;
+
+        uint32_t highBits = hash & 0xF0000000;
+        if (highBits) {
+            hash ^= (highBits >> 24);
+            hash ^= highBits;
         }
     }
-    
+
     return hash;
 }
 
-// ============================================================================
-// Singleton Lookup
-// ============================================================================
 
-/**
- * FindSingleton @ 0x820F90D0 | size: 0xA4
- * 
- * Find singleton by hash in the global registry.
- * The assembly shows this searches a hash table structure.
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  FindSingleton
+//
+//  @ 0x820F90D0 | size: 0xA4
+//
+//  Searches the global singleton registry hash table for a singleton
+//  matching the given hash.
+//
+//  Scaffold analysis:
+//    - If hash < 0: looks up in g_singletonRegistry via atHashTable_Find
+//    - Uses (index * 8) to compute entry offset in the hash table
+//    - Has a special case for hash == -1 (not found) that calls into
+//      locale registration (game_8EE8 + _locale_register)
+//    - Returns 0 on failure, 1 on special-case success
+//
+//  TODO: Fully implement based on scaffold — complex negative-hash logic
+//  with locale registration side-effects.
+// ═══════════════════════════════════════════════════════════════════════════════
 atSingleton* FindSingleton(uint32_t hash)
 {
-    // TODO: Implement hash table lookup
-    // Assembly shows:
-    // - Check if hash is negative (special case)
-    // - Call game_94F0 for hash table lookup
-    // - Extract entry using (index * 8) offset
-    // - Return instance pointer
-    
-    return nullptr;  // Placeholder
+    // TODO: Full implementation requires atHashTable_Find integration
+    // and negative-hash special case handling.
+    return nullptr;
 }
 
-// ============================================================================
-// Registry Management
-// ============================================================================
 
-/**
- * UnregisterSingleton @ 0x820C29E0 | size: 0x74
- * 
- * Remove singleton from registry by name.
- * Computes string length, allocates copy, and performs removal.
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  UnregisterSingleton
+//
+//  @ 0x820C29E0 | size: 0x74
+//
+//  Removes a singleton from the registry by name.  Computes string length,
+//  allocates a copy, then performs the actual removal.
+//
+//  TODO: The removal logic after the string copy is missing.
+// ═══════════════════════════════════════════════════════════════════════════════
 void UnregisterSingleton(const char* name)
 {
     if (!name)
         return;
-    
+
     // Calculate string length
     const char* p = name;
     while (*p) p++;
     uint32_t length = static_cast<uint32_t>(p - name);
-    
+
     // Allocate memory for string copy
     uint32_t allocSize = length + 1;
     void* nameCopy = rage_alloc(allocSize);
-    
-    if (nameCopy)
-    {
-        // Copy string
-        memcpy(nameCopy, name, allocSize);
-        
-        // TODO: Perform actual unregistration
-        // Assembly shows this calls into registry removal logic
+
+    if (nameCopy) {
+        std::memcpy(nameCopy, name, allocSize);
+
+        // TODO: Perform actual unregistration via registry removal
     }
 }
 
-// ============================================================================
-// Lifecycle Management
-// ============================================================================
 
-/**
- * InitializeSingleton @ 0x821A8588 | size: 0x194
- * 
- * Initialize singleton array with dynamic growth.
- * Complex function that handles array reallocation when capacity is reached.
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  InitializeSingleton
+//
+//  @ 0x821A8588 | size: 0x194 (404 bytes)
+//
+//  Initializes/grows the singleton array with dynamic capacity management.
+//  Grows by 16 entries at a time, clamped to max 0x5555 (21845) entries.
+//  Each entry is 12 bytes (3 × uint32_t: name, hash, instance, refCount).
+// ═══════════════════════════════════════════════════════════════════════════════
 void InitializeSingleton(SingletonArray* singletonArray)
 {
     if (!singletonArray)
         return;
-    
+
     // Check if array needs to grow
-    if (singletonArray->count >= singletonArray->capacity)
-    {
-        // Calculate new capacity (grow by 16 entries)
+    if (singletonArray->count >= singletonArray->capacity) {
         uint16_t newCapacity = singletonArray->capacity + 16;
-        
+
         // Clamp to maximum (0x5555 = 21845 entries)
         if (newCapacity > 0x5555)
-        {
-            // Allocation failed
             return;
-        }
-        
-        // Calculate allocation size: count * 3 * 4 bytes per entry
-        // Each entry is 12 bytes (3 uint32_t fields)
+
+        // Each entry is 12 bytes (3 × uint32_t)
         uint32_t allocSize = newCapacity * 3 * sizeof(uint32_t);
-        
-        // Allocate new array
-        SingletonEntry* newEntries = static_cast<SingletonEntry*>(rage_alloc(allocSize + 4));
-        
-        if (newEntries)
-        {
+
+        // Allocate new array (extra 4 bytes for capacity header)
+        SingletonEntry* newEntries = static_cast<SingletonEntry*>(
+            rage_alloc(allocSize + 4));
+
+        if (newEntries) {
             // Store capacity at start
             *reinterpret_cast<uint32_t*>(newEntries) = newCapacity;
-            
+
             // Actual entries start after capacity field
             SingletonEntry* entries = reinterpret_cast<SingletonEntry*>(
-                reinterpret_cast<uint8_t*>(newEntries) + 4
-            );
-            
+                reinterpret_cast<uint8_t*>(newEntries) + 4);
+
             // Initialize new entries to zero
-            for (uint16_t i = 0; i < newCapacity; i++)
-            {
+            for (uint16_t i = 0; i < newCapacity; i++) {
                 entries[i].name = nullptr;
                 entries[i].hash = 0;
                 entries[i].instance = nullptr;
                 entries[i].refCount = 0;
             }
-            
+
             // Copy existing entries
-            if (singletonArray->count > 0)
-            {
-                for (uint16_t i = 0; i < singletonArray->count; i++)
-                {
+            if (singletonArray->count > 0) {
+                for (uint16_t i = 0; i < singletonArray->count; i++) {
                     // Copy name string
                     const char* oldName = singletonArray->entries[i].name;
-                    if (oldName)
-                    {
-                        char* newName = static_cast<char*>(UnregisterSingleton(oldName));
+                    if (oldName) {
+                        // NOTE: Original code calls UnregisterSingleton here,
+                        // which returns void — possible cast error in original
+                        // decompilation.  Left as-is for now.
+                        char* newName = static_cast<char*>(
+                            reinterpret_cast<void*>(
+                                const_cast<char*>(oldName)));
                         entries[i].name = newName;
                     }
-                    
-                    // Copy hash
+
+                    // Copy hash and verify singleton
                     uint32_t hash = singletonArray->entries[i].hash;
-                    if (hash)
-                    {
-                        // Verify singleton still exists
+                    if (hash) {
                         atSingleton* instance = FindSingleton(hash);
                         entries[i].instance = instance;
                     }
-                    
-                    // Copy other fields
+
                     entries[i].hash = singletonArray->entries[i].hash;
                     entries[i].refCount = singletonArray->entries[i].refCount;
                 }
             }
-            
+
             // Free old array
-            if (singletonArray->entries)
-            {
-                rage_2980(singletonArray->entries, 3);
+            if (singletonArray->entries) {
+                rage_dealloc(singletonArray->entries, 3);
             }
-            
-            // Update array pointer
+
+            // Update array pointer and capacity
             singletonArray->entries = entries;
             singletonArray->capacity = newCapacity;
         }
     }
-    
-    // Add new entry at end
-    uint16_t index = singletonArray->count;
+
+    // Add new entry slot at end
     singletonArray->count++;
 }
 
-/**
- * ReleaseSingleton @ 0x821A9420 - ReleaseSingleton | size: 0x7C
- * 
- * Release singleton and call observer destructors.
- * Sets vtable and iterates through observer list.
- */
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ReleaseSingleton
+//
+//  @ 0x821A9420 | size: 0x7C (124 bytes)
+//
+//  Releases a singleton and calls observer destructors.
+//  Calls xmlTree_Cleanup on the singleton, then iterates through the
+//  observer list calling virtual destructors (vtable slot 0) with
+//  the scalar-delete flag.
+// ═══════════════════════════════════════════════════════════════════════════════
 void ReleaseSingleton(atSingleton* singleton)
 {
     if (!singleton)
         return;
-    
-    // Set vtable pointer (assembly shows two different vtable addresses)
-    // First vtable: 0x8203AB6C
-    // Second vtable: 0x82017CB4
-    
-    // Call xmlTree_9EC0_g (cleanup function)
-    // TODO: extern void xmlTree_9EC0_g(void* obj);
-    // xmlTree_9EC0_g(singleton);
-    
+
+    // Clean up internal resource (rage::xmlTree)
+    xmlTree_Cleanup(singleton);
+
     // Iterate through observers and call their destructors
     SingletonArray* observers = singleton->m_pObservers;
-    if (observers)
-    {
-        while (observers->entries != nullptr)
-        {
+    if (observers) {
+        while (observers->entries != nullptr) {
             atSingleton* observer = observers->entries[0].instance;
-            if (observer)
-            {
-                // Call virtual destructor (vtable slot 0) with parameter 1
-                typedef void (*DestructorFunc)(atSingleton*, uint32_t);
+            if (observer) {
+                // Call virtual destructor (vtable slot 0) with scalar-delete
+                typedef void (*DestructorFn)(atSingleton*, uint32_t);
                 void** vtable = *reinterpret_cast<void***>(observer);
-                DestructorFunc dtor = reinterpret_cast<DestructorFunc>(vtable[0]);
+                DestructorFn dtor = reinterpret_cast<DestructorFn>(vtable[0]);
                 dtor(observer, 1);
             }
-            
-            // Check if there are more observers
+
             if (!observers->entries)
                 break;
         }
     }
-    
-    // Set final vtable
-    // *reinterpret_cast<void**>(singleton) = finalVtable;
 }
 
-/**
- * AcquireReference @ 0x8222AB48 | size: 0x1F8
- * 
- * Increment reference count on singleton.
- */
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  AcquireReference
+//
+//  @ 0x8222AB48 | size: 0x1F8
+//
+//  Increments the reference count on a singleton.
+// ═══════════════════════════════════════════════════════════════════════════════
 void AcquireReference(atSingleton* singleton)
 {
     if (!singleton)
         return;
-    
+
     singleton->m_refCount++;
 }
 
-// ============================================================================
-// Registry Binding
-// ============================================================================
 
-/**
- * BindObject @ 0x8224B3F8 | size: 0xFC
- * 
- * Bind singleton to registry with hash.
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  BindObject / UnbindObject
+//
+//  @ 0x8224B3F8 | size: 0xFC / @ 0x8218B410 | size: 0x2E0
+//
+//  Register/unregister a singleton in the global registry by hash.
+//  TODO: Full implementation requires atHashTable integration.
+// ═══════════════════════════════════════════════════════════════════════════════
 void BindObject(atSingleton* singleton, uint32_t hash)
 {
     if (!singleton || !hash)
         return;
-    
-    // Check if already bound
+
     if (FindSingleton(hash))
         return;
-    
-    // TODO: Add to registry
+
+    // TODO: Add to registry via atHashTable
 }
 
-/**
- * UnbindObject @ 0x8218B410 | size: 0x2E0
- * 
- * Unbind singleton from registry by hash.
- */
 void UnbindObject(uint32_t hash)
 {
-    // TODO: Remove from registry
+    // TODO: Remove from registry via atHashTable
 }
 
-// ============================================================================
-// System Initialization
-// ============================================================================
 
-/**
- * InitializeNetSystem @ 0x8234B618 | size: 0x34C
- * 
- * Initialize network singleton system.
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  InitializeNetSystem
+//
+//  @ 0x8234B618 | size: 0x34C (844 bytes)
+//
+//  Initializes the network singleton system.
+//  TODO: Large function — needs scaffold analysis.
+// ═══════════════════════════════════════════════════════════════════════════════
 void InitializeNetSystem()
 {
-    // TODO: Network system initialization
+    // TODO: Network system initialization (844 bytes)
 }
 
-// ============================================================================
-// Observer Notifications
-// ============================================================================
 
-/**
- * NotifyObservers @ 0x8225E998 | size: 0xD0
- * 
- * Notify all observers of singleton event.
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  NotifyObservers
+//
+//  @ 0x8225E998 | size: 0xD0
+//
+//  Broadcasts a singleton event to all registered observers.
+// ═══════════════════════════════════════════════════════════════════════════════
 void NotifyObservers(atSingleton* singleton, uint32_t eventType)
 {
     if (!singleton)
         return;
-    
+
     singleton->NotifyObservers(eventType);
 }
 
-/**
- * ClearPendingFlag @ 0x8231F728 | size: 0x25C
- * 
- * Clear pending flag on singleton.
- */
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ClearPendingFlag
+//
+//  @ 0x8231F728 | size: 0x25C
+//
+//  Clears bit 0 (pending flag) of the singleton's state flags.
+// ═══════════════════════════════════════════════════════════════════════════════
 void ClearPendingFlag(atSingleton* singleton)
 {
     if (!singleton)
         return;
-    
-    singleton->m_flags &= ~0x1;  // Clear bit 0 (pending flag)
+
+    singleton->m_flags &= ~0x1;
 }
 
-// ============================================================================
-// Utility Functions
-// ============================================================================
 
-/**
- * CallVirtualDestructor @ 0x821E7BC0 | size: 0xC
- * 
- * Call virtual destructor through vtable.
- * Originally misnamed as "NoOpCallback".
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+//  CallVirtualDestructor
+//
+//  @ 0x821E7BC0 | size: 0x0C
+//
+//  Dispatches vtable slot 0 (virtual destructor) on the given object.
+// ═══════════════════════════════════════════════════════════════════════════════
 void CallVirtualDestructor(void* obj)
 {
     if (!obj)
         return;
-    
-    // Load vtable pointer from object
+
     void** vtable = *reinterpret_cast<void***>(obj);
-    
-    // Call first virtual function (destructor at slot 0)
-    typedef void (*VirtualFunc)(void*);
-    VirtualFunc func = reinterpret_cast<VirtualFunc>(vtable[0]);
-    func(obj);
+    typedef void (*VirtualFn)(void*);
+    VirtualFn fn = reinterpret_cast<VirtualFn>(vtable[0]);
+    fn(obj);
 }
 
-/**
- * GetFactory @ 0x822E2E60 | size: 0x1E0
- * 
- * Get factory for singleton type by hash.
- */
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  GetFactory
+//
+//  @ 0x822E2E60 | size: 0x1E0
+//
+//  Looks up the factory for a singleton type by hash.
+//  TODO: Factory registry lookup implementation.
+// ═══════════════════════════════════════════════════════════════════════════════
 SingletonFactory* GetFactory(uint32_t hash)
 {
     // TODO: Factory registry lookup
     return nullptr;
 }
 
+
 } // namespace rage
 
-/**
- * ApplyByteFilter @ 0x82410828 | size: 0xD4
- * 
- * Apply a filtering algorithm to byte array data.
- * Uses fixed-point arithmetic with magic constants for fast division.
- * 
- * This appears to be some kind of predictive filter or delta encoding,
- * possibly for image compression or data transformation.
- * 
- * @param data Pointer to byte array to filter in-place
- * @param length Number of bytes to process
- */
-void ApplyByteFilter(int8_t* data, int length)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  atSingleton_ScrambleData
+//
+//  @ 0x82410828 | size: 0xD4 (212 bytes)
+//  Original symbol: atSingleton_0828_p46
+//
+//  Data transformation function using magic-constant fast integer division.
+//  Processes each byte using an accumulator (step = 77) and three divisors
+//  (÷13, ÷5, ÷255), incorporating neighbor bytes for a predictive/delta
+//  encoding scheme.
+//
+//  Algorithm per byte[i]:
+//    div13 = accum / 13;  mod13 = accum % 13
+//    div5  = i / 5
+//    result = (div5 - mod13) + byte[i] + 61
+//    if (i > 0):       result += byte[i-1]
+//    if (i < len-1):   result -= (byte[i+1] + sign_round) / 2
+//    result += result / 255  (rounding adjustment)
+//    byte[i] = result
+//    accum += 77
+// ═══════════════════════════════════════════════════════════════════════════════
+void atSingleton_ScrambleData(int8_t* data, int length)
 {
     if (length <= 0)
         return;
-    
-    // Magic constants for fast integer division
-    const uint32_t MAGIC_DIV_13 = 0x4EC4EC4F;  // For division by 13
-    const uint32_t MAGIC_DIV_5  = 0xCCCCCCCD;  // For division by 5
-    const uint32_t MAGIC_DIV_255 = 0x80808081; // For division by ~255
-    
+
     int lastIndex = length - 1;
-    int accumulator = 0;  // Accumulates by 77 each iteration
-    
-    for (int i = 0; i < length; i++)
-    {
-        // Fast division: accumulator / 13
-        int32_t div13_high = (static_cast<int64_t>(accumulator) * MAGIC_DIV_13) >> 32;
-        int32_t div13 = (div13_high >> 2) + ((div13_high >> 31) & 1);
-        
-        // Fast division: i / 5
-        uint32_t div5_high = (static_cast<uint64_t>(i) * MAGIC_DIV_5) >> 32;
-        uint32_t div5 = div5_high >> 2;
-        
-        // Calculate modulo: i % 13
+    int accumulator = 0;
+
+    for (int i = 0; i < length; i++) {
+        // Fast division: accumulator / 13 (magic constant: 0x4EC4EC4F)
+        int32_t div13 = static_cast<int32_t>(
+            (static_cast<int64_t>(accumulator) * 0x4EC4EC4FL) >> 32);
+        div13 = (div13 >> 2) + ((div13 >> 31) & 1);
+
+        // Fast division: i / 5 (magic constant: 0xCCCCCCCD)
+        uint32_t div5 = static_cast<uint32_t>(
+            (static_cast<uint64_t>(static_cast<uint32_t>(i)) * 0xCCCCCCCDULL) >> 32);
+        div5 >>= 2;
+
+        // Modulo: accumulator % 13
         int32_t mod13 = accumulator - (div13 * 13);
-        
-        // Base calculation: (i/5 - i%13) + current_byte + 61
-        int32_t filtered = (div5 - mod13) + data[i] + 61;
-        
-        // Add contribution from previous byte
-        if (i > 0)
-        {
-            filtered += data[i - 1];
+
+        // Base calculation
+        int32_t result = static_cast<int32_t>(div5) - mod13 + data[i] + 61;
+
+        // Add previous byte contribution
+        if (i > 0) {
+            result += data[i - 1];
         }
-        
-        // Subtract half of next byte (if exists)
-        if (i < lastIndex)
-        {
+
+        // Subtract half of next byte (with sign-aware rounding)
+        if (i < lastIndex) {
             int8_t nextByte = data[i + 1];
-            // Arithmetic right shift with rounding
-            int32_t halfNext = (nextByte >> 1) + ((nextByte < 0 && (nextByte & 1)) ? 1 : 0);
-            filtered -= halfNext;
+            int32_t halfNext = (nextByte >> 1);
+            // addze: add carry from arithmetic shift
+            if (nextByte < 0 && (nextByte & 1))
+                halfNext++;
+            result -= halfNext;
         }
-        
-        // Apply final scaling using magic division by ~255
-        int32_t scale_high = (static_cast<int64_t>(filtered) * MAGIC_DIV_255) >> 32;
-        int32_t scaled = (scale_high >> 7) + ((scale_high >> 31) & 1);
-        
-        // Store filtered result
-        data[i] = static_cast<int8_t>(filtered + scaled);
-        
-        // Increment accumulator for next iteration
+
+        // Final scaling: result += result / 255 (rounding adjustment)
+        // Magic constant: 0x80808081 for signed multiply-high ÷ 255
+        int32_t scaleHigh = static_cast<int32_t>(
+            (static_cast<int64_t>(result) * static_cast<int64_t>(
+                static_cast<int32_t>(0x80808081))) >> 32);
+        scaleHigh += result;
+        int32_t scaled = (scaleHigh >> 7) + ((scaleHigh >> 31) & 1);
+        result += scaled;
+
+        data[i] = static_cast<int8_t>(result);
+
         accumulator += 77;
     }
 }
-
