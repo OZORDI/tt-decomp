@@ -1277,7 +1277,7 @@ void SinglesNetworkClient::ProcessNetworkTimingUpdate(uint32_t timestamp)
             rage::EvtAcceptJoinRequestSucceeded evt;
             evt.vtable = (void**)0x82072D94;  // EvtAcceptJoinRequestSucceeded vtable
             
-            util_DA08(&evt);  // Initialize event
+            hsmEvent_Init(&evt);  // Initialize event
             
             // Notify HSM that join request was accepted
             snHsmAcceptingJoinRequest_9A70(this, &evt);
@@ -1292,7 +1292,7 @@ void SinglesNetworkClient::ProcessNetworkTimingUpdate(uint32_t timestamp)
         
         // Create event object on stack
         rage::EvtAcceptJoinRequestSucceeded evt;
-        util_DA08(&evt);
+        hsmEvent_Init(&evt);
         
         // Get session object via vtable call (slot 11)
         void** vtable = *(void***)this;
@@ -1668,7 +1668,7 @@ bool SinglesNetworkClient::IsStateActive()
 void SinglesNetworkClient::ProcessMessageQueue()
 {
     // External function declarations for message processing pipeline
-    extern void* SinglesNetworkClient_0978_g(void* msg, int param1, void* rttiStr1, void* rttiStr2, int param2);
+    extern void* rlEvent_Init(void* msg, int param1, void* rttiStr1, void* rttiStr2, int param2);
     extern bool  SinglesNetworkClient_A250_g(void* queueBase, void* msgBuffer);
     extern int   SinglesNetworkClient_4928_g(void* msgHandler);
     extern void* SinglesNetworkClient_9720_g(void* stackBuf, void* client);
@@ -1726,7 +1726,7 @@ void SinglesNetworkClient::ProcessMessageQueue()
     while (currentMsg != nullptr) {
         // Allocate/create a message handler object
         // Parameters: message, 0, rttiStr1, rttiStr2, 0
-        void* msgHandler = SinglesNetworkClient_0978_g(
+        void* msgHandler = rlEvent_Init(
             currentMsg,
             0,
             (void*)g_szRageRTTI,

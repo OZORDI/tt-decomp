@@ -331,7 +331,7 @@ void snDestroying_OnEnter(void* thisPtr) { // @ 0x823E2E30
     if (!leaveResult) {
         // Leave failed immediately — create event and transition
         char evtState[24];
-        util_DA08(evtState);
+        hsmEvent_Init(evtState);
         *(void**)evtState = (void*)&thunk_fn_snSession_2D48; // vtable
         snSession_TransitionDestroying(thisPtr, evtState);
     }
@@ -388,7 +388,7 @@ void snStartingSession_OnEnter(void* thisPtr) { // @ 0x823E41F8
     if (!result) {
         // Start completed immediately — create event and transition
         char evtState[24];
-        util_DA08(evtState);
+        hsmEvent_Init(evtState);
         *(void**)evtState = (void*)&thunk_fn_snSession_4110; // vtable
         snSession_TransitionStarting(thisPtr, evtState);
     }
@@ -421,7 +421,7 @@ void snEnding_OnEnter(void* thisPtr) { // @ 0x823E4698
     if (!result) {
         // End completed immediately — create event and transition
         char evtState[24];
-        util_DA08(evtState);
+        hsmEvent_Init(evtState);
         *(void**)evtState = (void*)&thunk_fn_snSession_45B0; // vtable
         snSession_TransitionEnding(thisPtr, evtState);
     }
@@ -636,7 +636,7 @@ void snWaitingForReplies_OnTick(void* thisPtr, void* event, uint8_t* consumed) {
     if (result == 0) {
         // All replies received — create transition event
         char evtState[24];
-        util_DA08(evtState);
+        hsmEvent_Init(evtState);
         *(void**)evtState = (void*)&thunk_fn_snSession_88F8; // vtable
         snSession_TransitionChanging(thisPtr, evtState);
     } else {
@@ -723,17 +723,17 @@ void snStarting_OnUpdate(void* thisPtr) { // @ 0x823E4078
 // ─────────────────────────────────────────────────────────────────────────────
 
 // External destructor helpers
-extern void util_5B50(void* thisPtr);  // @ 0x823E5B50 — snMigrating-level destructor body
+extern void snMigrateMachine_DestroyBody(void* thisPtr);  // @ 0x823E5B50 — snMigrating-level destructor body
 
 /**
  * snMigrating::~snMigrating @ 0x823E5998 | size: 0x5C | vfn_0
  *
  * Destructor for the Migrating state. Destroys the embedded migrate machine
- * child at this+24 via util_5B50, then calls hsmState base destructor.
+ * child at this+24 via snMigrateMachine_DestroyBody, then calls hsmState base destructor.
  * Conditionally frees memory if flags bit 0 is set.
  */
 void snMigrating_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5998
-    util_5B50((char*)thisPtr + 24);
+    snMigrateMachine_DestroyBody((char*)thisPtr + 24);
     snSession_9010_gen(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
@@ -802,7 +802,7 @@ void snSession_DD70_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
         uint32_t sessionId = *(uint32_t*)((char*)session + 276);
 
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(uint32_t*)(eventData + 12) = sessionId;
         // Copy 8 bytes of session handle from session+280
         uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
@@ -817,7 +817,7 @@ void snSession_DD70_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
     if (resultCode == 3) {
         // Failure — build EvtCreateFailed
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
         snSession_DispatchSimpleEvent(thisPtr, eventData);
     }
@@ -836,7 +836,7 @@ void snSession_E1A0_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
         uint32_t sessionId = *(uint32_t*)((char*)session + 276);
 
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(uint32_t*)(eventData + 12) = sessionId;
         uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
         *(uint64_t*)(eventData + 16) = sessionHandle;
@@ -848,7 +848,7 @@ void snSession_E1A0_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
 
     if (resultCode == 9) {
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
         snSession_DispatchSimpleEvent(thisPtr, eventData);
     }
@@ -868,7 +868,7 @@ void snSession_E990(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 
         uint32_t sessionId = *(uint32_t*)((char*)session + 276);
 
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(uint32_t*)(eventData + 12) = sessionId;
         uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
         *(uint64_t*)(eventData + 16) = sessionHandle;
@@ -880,7 +880,7 @@ void snSession_E990(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 
 
     if (resultCode == 11) {
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(void**)eventData = (void*)0x82072A8C;  // EvtStartSessionFailed vtable
         snSession_DispatchStartEvent(thisPtr, eventData);
     }
@@ -897,7 +897,7 @@ void snSession_E990(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 
 void snSession_EB48_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DEB48
     if (resultCode == 14) {
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
         snSession_DispatchSimpleEvent(thisPtr, eventData);
         return;
@@ -905,7 +905,7 @@ void snSession_EB48_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
 
     if (resultCode == 15) {
         uint8_t eventData[24];
-        util_DA08(eventData);
+        hsmEvent_Init(eventData);
         *(void**)eventData = (void*)0x82072A28;  // EvtCreateFailed vtable
         snSession_DispatchSimpleEvent(thisPtr, eventData);
     }
@@ -931,7 +931,7 @@ bool snSession_EnqueueDestroyEvent(void* thisPtr) { // @ 0x823E6D68
 
     // Initialize event data on stack with EvtDestroy vtable
     uint8_t eventData[24];
-    util_DA08(eventData);
+    hsmEvent_Init(eventData);
     *(void**)eventData = (void*)0x82072968;  // EvtDestroy vtable
 
     // Get event queue via vfn_11 (session+212 has its own vtable)

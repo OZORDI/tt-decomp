@@ -71,7 +71,7 @@ hsmContext::hsmContext() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Forward declarations
-extern "C" void util_5B50(void* obj);           // @ 0x823E5B50 - Base class destructor
+extern "C" void snMigrateMachine_DestroyBody(void* obj);           // @ 0x823E5B50 - Base class destructor
 extern "C" void rage_free(void* ptr);      // @ 0x820C00C0 - Free memory
 
 /**
@@ -86,7 +86,7 @@ extern "C" void rage_free(void* ptr);      // @ 0x820C00C0 - Free memory
  */
 extern "C" void snMigrateMachine_vfn_0(void* obj, int flags) {
     // Call base class destructor to clean up internal state
-    util_5B50(obj);
+    snMigrateMachine_DestroyBody(obj);
     
     // If delete flag is set, free the object's memory
     if (flags & 0x1) {
@@ -102,7 +102,7 @@ extern uint8_t SinglesNetworkClient_19E0_g(void* pClient);  /* @ 0x823F19E0 */
 extern uint8_t util_1550(void* pClient);                     /* @ 0x823F1550 */
 
 /* Event initialization */
-extern void util_DA08(void* pEvent);  /* @ 0x823DDA08 */
+extern void hsmEvent_Init(void* pEvent);  /* @ 0x823DDA08 */
 
 /* State transition handler */
 extern void snHsmAcceptingLeaveRequest_9E60(
@@ -164,7 +164,7 @@ void snHsmAcceptingLeaveRequest::OnEnter()
     } event;
     
     /* Initialize event structure */
-    util_DA08(&event);
+    hsmEvent_Init(&event);
     
     /* Set vtable for EvtAcceptLeaveRequestFailed */
     event.vtable = &g_vtable_EvtAcceptLeaveRequestFailed;

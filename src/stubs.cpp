@@ -853,7 +853,7 @@ void SetPageGroupVisible(void* a) { (void)a; }
 void snBitStream_Reset(void* a) { (void)a; }
 void snBitStream_WriteBits(void* a, uint32_t b, int c) { (void)a; (void)b; (void)c; }
 uint32_t SinglesNetworkClient_0738_g(void* a, const char* b, uint32_t c) { (void)a; (void)b; (void)c; return 0; }
-void* SinglesNetworkClient_0978_g(void* a, int b, void* c, void* d, int e) {
+void* rlEvent_Init(void* a, int b, void* c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e; return nullptr;
 }
 void snBitStream_ReadSigned(void* a, uint32_t* b, int c) { (void)a; (void)b; (void)c; }
@@ -1516,7 +1516,7 @@ void util_C930(void* a) { (void)a; }
 void util_CDF0(void* a, const void* b, unsigned int c) { (void)a; (void)b; (void)c; }
 void util_D150(void* a, void* b) { (void)a; (void)b; }
 void util_D150(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void util_DA08(void* a) { (void)a; }
+void hsmEvent_Init(void* a) { (void)a; }
 void util_PackColorRGBA(uint32_t* a, const float* b) { (void)a; (void)b; }
 void* xam_singleton_init_8D60(void* a) { (void)a; return nullptr; }
 

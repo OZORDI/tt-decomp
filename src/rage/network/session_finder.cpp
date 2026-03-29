@@ -314,7 +314,7 @@ void snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::GetStateName() {
  * - [+16]+0x928 (2344): snJoinMachine instance
  *
  * Calls:
- * - SinglesNetworkClient_0978_g with addresses 0x825E573C and 0x825E5448
+ * - rlEvent_Init with addresses 0x825E573C and 0x825E5448
  * - snJoinMachine_03D0_g to initialize join machine
  * - SinglesNetworkClient_08C8_g if network object is valid
  */

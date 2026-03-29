@@ -300,7 +300,7 @@ void snHsmCreatingHost::OnUpdate() {
     const char* sessionType = reinterpret_cast<const char*>(0x825E5448);
     
     // Call network client to create session
-    // SinglesNetworkClient_0978_g creates the session
+    // rlEvent_Init creates the session
     
     // Get session handle
     uint64_t sessionHandle = snSession_GetSessionHandle(nullptr, nullptr);
@@ -364,7 +364,7 @@ void snHsmCreatingGuest::OnUpdate() {
     const char* sessionType = reinterpret_cast<const char*>(0x825E5448);
     
     // Create session as guest
-    // SinglesNetworkClient_0978_g handles guest join
+    // rlEvent_Init handles guest join
     
     // Clear session handle (guest doesn't create)
     machine->m_sessionHandle = 0;
@@ -574,7 +574,7 @@ void snHsmRequestingConfig::OnUpdate() {
     // 2. Store state context pointers at offsets +28 and +32
     //    - Vtable pointer at 0x82031AF8 (calculated from lis -32193, addi -20264)
     // 3. Get network client from parent at offset +20, then +16
-    // 4. Query config status: SinglesNetworkClient_A940_g @ 0x823DA940
+    // 4. Query config status: snSession_QueryConfigStatus @ 0x823DA940
     // 5. Retrieve config: SinglesNetworkClient_C2B0_g @ 0x823DC2B0
     // 6. Check config availability:
     //    - Load config data at offset +84, check if >= 0
@@ -584,12 +584,12 @@ void snHsmRequestingConfig::OnUpdate() {
     //    - If >= 10: timeout, create error event
     // 8. Process join requests: SinglesNetworkClient_2178_g @ 0x823F2178
     // 9. If timeout, create EvtRequestConfigFailed event:
-    //    - Call util_DA08 @ 0x823DDA08 to initialize event state
+    //    - Call hsmEvent_Init @ 0x823DDA08 to initialize event state
     //    - Set vtable to 0x82072A50 (rage::EvtRequestConfigFailed)
     //    - Call vfn_11 to get session
     //    - Allocate event with vfn_1 (slot 1, size 12)
     //    - Store event data and call snSession_AddNode @ 0x823EC068
-    // 10. Otherwise, increment retry count and call util_D4F8 @ 0x823ED4F8 with timeout 500
+    // 10. Otherwise, increment retry count and call hsmState_SetTimeout @ 0x823ED4F8 with timeout 500
 }
 
 /**
