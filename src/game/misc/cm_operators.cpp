@@ -1228,8 +1228,8 @@ void cmOperatorCtor_SingletonDispatchSlot10(void* a1, void* a2) {
 
 // Action sampler functions (camera parameter readers)
 extern "C" void atSingleton_9728_2h(void* actionCtx, void* actionNode);
-extern "C" void cmSampleCamActions_9740_fw(void* actionCtx, void* actionNode);
-extern "C" void cmSampleCamActions_97F8_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_OrientationPair(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_HeadingAndFOV(void* actionCtx, void* actionNode);
 
 // Common callback functions shared by all camera action factories
 extern "C" void rage_DebugLog(const char* fmt, ...);     // @ 0x8240E6D0 — nop in release
@@ -1294,11 +1294,11 @@ void* cmOperatorCtor_CamActionVec4Pair_A(void* callerArg) {
  *
  * Creates a cmAction that samples two vec4 values from ports 0 and 1,
  * writing them to camera output vec4 slots 14 and 15.
- * Uses cmSampleCamActions_9740_fw as the action sampler.
+ * Uses cmSampleCamActions_OrientationPair as the action sampler.
  */
 // cmOperatorCtor_CBC8_w @ 0x8217CBC8
 void* cmOperatorCtor_CamActionVec4Pair_B(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9740_fw, 0xC000);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_OrientationPair, 0xC000);
 }
 
 // ── Camera base params factory (flags=0x7 = position XYZ) ────────────────────
@@ -1399,12 +1399,12 @@ void* cmOperatorCtor_CamActionAllSlots(void* callerArg) {
  *
  * Creates a cmAction that samples 2 floats from ports 0 and 1, checking
  * port status and writing to camera output slots 0 and 1.
- * Uses cmSampleCamActions_97F8_g as the action sampler.
+ * Uses cmSampleCamActions_HeadingAndFOV as the action sampler.
  * Dirty flags 0x7 = base position slots.
  */
 // cmOperatorCtor_D4D0_w @ 0x8217D4D0
 void* cmOperatorCtor_CamAction2Float(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_97F8_g, 7);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_HeadingAndFOV, 7);
 }
 
 // ── cmOperatorCtor factory functions — batch 4 (logic & arithmetic operators) ─
@@ -1697,11 +1697,11 @@ void* cmOperatorCtor_cmMultiply() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Action sampler functions (camera parameter readers — batch 4)
-extern "C" void cmSampleCamActions_98A8_g(void* actionCtx, void* actionNode);
-extern "C" void cmSampleCamActions_9918_g(void* actionCtx, void* actionNode);
-extern "C" void cmSampleCamActions_99D0_g(void* actionCtx, void* actionNode);
-extern "C" void cmSampleCamActions_9A88_g(void* actionCtx, void* actionNode);
-extern "C" void cmSampleCamActions_9B30_g(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_Rotation(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_BaseXYZ(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_FOV(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_Orientation(void* actionCtx, void* actionNode);
+extern "C" void cmSampleCamActions_LookAtTarget(void* actionCtx, void* actionNode);
 extern "C" void cmSampleCamActions_9BD8_g(void* actionCtx, void* actionNode);
 extern "C" void cmSampleCamActions_9D80_g(void* actionCtx, void* actionNode);
 extern "C" void cmSampleCamActions_A060_g(void* actionCtx, void* actionNode);
@@ -1712,60 +1712,60 @@ extern "C" void cmSampleCamActions_A488_g(void* actionCtx, void* actionNode);
  * cmOperatorCtor_D5F0_w @ 0x8217D5F0 | size: 0x120
  *
  * Creates a cmAction that samples camera rotation (pitch + yaw).
- * Uses cmSampleCamActions_98A8_g as the action sampler.
+ * Uses cmSampleCamActions_Rotation as the action sampler.
  * Dirty flags 0x3 = slots 0, 1.
  */
 // cmOperatorCtor_D5F0_w @ 0x8217D5F0
 void* cmOperatorCtor_CamActionRotation_B(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_98A8_g, 3);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_Rotation, 3);
 }
 
 /**
  * cmOperatorCtor_D710_w @ 0x8217D710 | size: 0x120
  *
  * Creates a cmAction that samples camera base position parameters (XYZ).
- * Uses cmSampleCamActions_9918_g as the action sampler.
+ * Uses cmSampleCamActions_BaseXYZ as the action sampler.
  * Dirty flags 0x7 = slots 0, 1, 2.
  */
 // cmOperatorCtor_D710_w @ 0x8217D710
 void* cmOperatorCtor_CamActionBaseXYZ_B(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9918_g, 7);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_BaseXYZ, 7);
 }
 
 /**
  * cmOperatorCtor_D830_w @ 0x8217D830 | size: 0x120
  *
  * Creates a cmAction that samples the camera field of view.
- * Uses cmSampleCamActions_99D0_g as the action sampler.
+ * Uses cmSampleCamActions_FOV as the action sampler.
  * Dirty flags 0x4 = slot 2.
  */
 // cmOperatorCtor_D830_w @ 0x8217D830
 void* cmOperatorCtor_CamActionFOV_B(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_99D0_g, 4);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_FOV, 4);
 }
 
 /**
  * cmOperatorCtor_D950_w @ 0x8217D950 | size: 0x120
  *
  * Creates a cmAction that samples camera base position parameters (XYZ).
- * Uses cmSampleCamActions_9A88_g as the action sampler.
+ * Uses cmSampleCamActions_Orientation as the action sampler.
  * Dirty flags 0x7 = slots 0, 1, 2.
  */
 // cmOperatorCtor_D950_w @ 0x8217D950
 void* cmOperatorCtor_CamActionBaseXYZ_C(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9A88_g, 7);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_Orientation, 7);
 }
 
 /**
  * cmOperatorCtor_DA70_w @ 0x8217DA70 | size: 0x120
  *
  * Creates a cmAction that samples the camera look-at target position.
- * Uses cmSampleCamActions_9B30_g as the action sampler.
+ * Uses cmSampleCamActions_LookAtTarget as the action sampler.
  * Dirty flags 0x38 = slots 3, 4, 5.
  */
 // cmOperatorCtor_DA70_w @ 0x8217DA70
 void* cmOperatorCtor_CamActionLookAtTarget_B(void* callerArg) {
-    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_9B30_g, 56);
+    return cmOperatorCtor_CreateCamAction(callerArg, (void*)cmSampleCamActions_LookAtTarget, 56);
 }
 
 /**
