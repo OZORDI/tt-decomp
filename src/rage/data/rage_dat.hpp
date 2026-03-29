@@ -41,6 +41,18 @@ public:
 class datParserRecord {
 public:
     virtual ~datParserRecord();
+
+    /**
+     * Cleanup @ 0x82177A68 | size: 0x68
+     * Destructor body helper — conditionally deletes the owned sub-object
+     * when m_type == 10 (pointer-owning record).
+     */
+    void Cleanup();
+
+private:
+    std::int32_t m_type;            // +0x04  record type (10 = pointer-owning)
+    std::uint8_t m_pad08[0x44];     // +0x08..+0x4B
+    datBase* m_pOwnedObject;        // +0x4C  owned sub-object (deleted if type==10)
 };
 
 class datSerialize {
@@ -66,7 +78,21 @@ public:
     virtual void DrawDebugOverlay(void* renderContext, const char* label, float blend);
     virtual void DrawDebugValue(void* renderContext, const char* label, float value);
     virtual const char* GetDebugName() const;
+
+    /**
+     * ProcessPolarInput @ 0x823F7128 | size: 0x5D8
+     * Processes camera input in orbit mode (azimuth/elevation/distance)
+     * and look mode (pan lookAt target). Returns true if state was modified.
+     */
+    bool ProcessPolarInput(float dt);
 };
+
+/**
+ * DrawDebugText @ 0x8227DEC0 | size: 0x114
+ * Draws debug text with a drop shadow at (x, y), returns next Y position.
+ * Free function in the same translation unit as dcamPolarCam.
+ */
+int DrawDebugText(int x, int y, const char* text, std::uint32_t color);
 
 class netBBAllocator {
 public:
