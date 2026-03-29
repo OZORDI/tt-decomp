@@ -4,8 +4,9 @@ AI-assisted decompilation of **Rockstar Presents Table Tennis** (Xbox 360, 2006)
 
 ## Project Status
 
-- **16,653 functions** identified and named (100% coverage)
-- **631 functions** implemented (3.79% complete)
+- **13,545 functions** in the binary
+- **3,413 functions** decompiled (**25.2%** complete)
+- **8,263 functions** documented with addresses (61.0% coverage)
 - **PowerPC → C++** translation using AI-assisted workflow
 - **Cross-platform** target: Windows, macOS, Linux (SDL2 + OpenGL 3.3)
 
