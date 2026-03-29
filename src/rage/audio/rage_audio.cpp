@@ -23,15 +23,15 @@ extern "C" void audDebugLog(const char* fmt, ...);
 extern "C" float audRandom_Float(void* context);
 
 // Audio voice delegation functions.
-extern void audVoiceStream_B328_fw(
+extern void audVoiceSfx_PlayInternal(
     void* streamRef, int32_t bankSlot, void* bankEntryData,
     float volume, float pitch, float pan, float playVariance,
     uint32_t userParamA, uint32_t userParamB, uint8_t userParamC);
 extern void audVoiceNonStream_Play(void* streamRef, int32_t bankSlot, uint32_t bankEntryData,
                      float volume, float pitch, float pan, float playVariance,
                      uint32_t userParamA, uint32_t userParamB, uint8_t userParamC);
-extern void audVoiceStream_B430_fw(void* sfxRef, int flag);
-extern void audVoiceStream_B298_fw(void* streamRef, int flag);
+extern void audVoiceSfx_SetPaused(void* sfxRef, int flag);
+extern void audVoiceStream_SetPaused(void* streamRef, int flag);
 
 // Float constant tables.
 extern const float g_audZeroConst;      // randomization trigger / zero constant
@@ -175,7 +175,7 @@ void audVoiceSfx::PlayByEntry(
         PushSfxPlayCommand(streamHandle);
     }
 
-    audVoiceStream_B328_fw(
+    audVoiceSfx_PlayInternal(
         m_pSfxRef,
         bankEntry.GetBankSlot(),
         bankEntry.GetBankEntryData(),
@@ -393,41 +393,41 @@ void* audVoiceStream_GetStreamRef() // @ 0x82163D28
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audVoiceStream_AEE8_g @ 0x821AAEE8 | size: 0x70
+// audCommand_Enqueue @ 0x821AAEE8 | size: 0x70
 //
 // Low-level audio command enqueue. Writes a command header (class, id,
 // param count) and copies parameter words into the ring buffer.
 // ─────────────────────────────────────────────────────────────────────────────
-void audVoiceStream_AEE8_g(uint8_t cmdClass, uint16_t cmdId,  // @ 0x821AAEE8
+void audCommand_Enqueue(uint8_t cmdClass, uint16_t cmdId,  // @ 0x821AAEE8
                            const uint32_t* params, uint8_t paramCount)
 {
     PushAudioCommand(cmdClass, cmdId, paramCount, params);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audVoiceStream_AF58_g @ 0x821AAF58 | size: 0x54
+// audCommand_SetEnabled @ 0x821AAF58 | size: 0x54
 //
 // Sends a boolean-valued audio command (cmdId 4124 = 0x101C).
 // Packs {voiceHandle, boolValue} as two uint32_t params.
 // Used to enable/disable a voice stream.
 // ─────────────────────────────────────────────────────────────────────────────
-void audVoiceStream_AF58_g(uint32_t voiceHandle, bool enabled) // @ 0x821AAF58
+void audCommand_SetEnabled(uint32_t voiceHandle, bool enabled) // @ 0x821AAF58
 {
     uint32_t params[2];
     params[0] = voiceHandle;
     params[1] = enabled ? 1u : 0u;
 
-    audVoiceStream_AEE8_g(1, 4124, params, 2);
+    audCommand_Enqueue(1, 4124, params, 2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audVoiceStream_AFB0_g @ 0x821AAFB0 | size: 0x6C
+// audCommand_SetVolumePair @ 0x821AAFB0 | size: 0x6C
 //
 // Sends a volume-pair command (cmdId 4125 = 0x101D).
 // Converts two float volumes (0.0..1.0 range) to integer scale and packs
 // {voiceHandle, scaledVol1, scaledVol2} as three uint32_t params.
 // ─────────────────────────────────────────────────────────────────────────────
-void audVoiceStream_AFB0_g(uint32_t voiceHandle, float vol1, float vol2) // @ 0x821AAFB0
+void audCommand_SetVolumePair(uint32_t voiceHandle, float vol1, float vol2) // @ 0x821AAFB0
 {
     uint32_t params[3];
     params[0] = voiceHandle;
@@ -437,7 +437,7 @@ void audVoiceStream_AFB0_g(uint32_t voiceHandle, float vol1, float vol2) // @ 0x
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((vol1 - offset) * scale));
     params[2] = static_cast<uint32_t>(static_cast<int32_t>((vol2 - offset) * scale));
 
-    audVoiceStream_AEE8_g(1, 4125, params, 3);
+    audCommand_Enqueue(1, 4125, params, 3);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -467,7 +467,7 @@ void audVoiceSfx::SetReverbVolume(void* bankEntry, float volume) // @ 0x821639A0
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
 
-    audVoiceStream_AEE8_g(2, 16398, params, 2);
+    audCommand_Enqueue(2, 16398, params, 2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -496,7 +496,7 @@ void audVoiceSfx::SetEffectVolume(void* bankEntry, float volume) // @ 0x82163A28
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
 
-    audVoiceStream_AEE8_g(2, 16401, params, 2);
+    audCommand_Enqueue(2, 16401, params, 2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -525,7 +525,7 @@ void audVoiceStream::SetReverbVolume(void* bankEntry, float volume) // @ 0x82164
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
 
-    audVoiceStream_AEE8_g(3, 8207, params, 2);
+    audCommand_Enqueue(3, 8207, params, 2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -554,7 +554,7 @@ void audVoiceStream::SetEffectVolume(void* bankEntry, float volume) // @ 0x82164
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
 
-    audVoiceStream_AEE8_g(3, 8209, params, 2);
+    audCommand_Enqueue(3, 8209, params, 2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -584,7 +584,7 @@ void audVoiceStream::Prime(void* bankEntry) // @ 0x82163E50
     params[1] = static_cast<uint32_t>(bankSlot);
     params[2] = entryDataPtr;
 
-    audVoiceStream_AEE8_g(3, 8194, params, 3);
+    audCommand_Enqueue(3, 8194, params, 3);
 
     // Set stream state to primed
     streamData[1] = 14;
@@ -629,13 +629,13 @@ void audVoiceStream::PlayByEntry(void* bankEntry, float volume, float pitch, // 
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audVoiceStream_ctor_3BA8 @ 0x82163BA8 | size: 0xA0
+// audVoiceStream_Construct @ 0x82163BA8 | size: 0xA0
 //
 // Constructor for audVoiceStream. Sets the vtable, enqueues an audio command
 // to register the voice (cmdId 8199 = 0x2007), then re-links the node in
 // the intrusive list to use the stream vtable.
 // ─────────────────────────────────────────────────────────────────────────────
-void audVoiceStream_ctor_3BA8(void* self) // @ 0x82163BA8
+void audVoiceStream_Construct(void* self) // @ 0x82163BA8
 {
     uint32_t* voice = static_cast<uint32_t*>(self);
 
@@ -651,7 +651,7 @@ void audVoiceStream_ctor_3BA8(void* self) // @ 0x82163BA8
     params[0] = voiceHandle;
 
     // cmdClass=3, cmdId=8199, 2 params
-    audVoiceStream_AEE8_g(3, 8199, params, 2);
+    audCommand_Enqueue(3, 8199, params, 2);
 
     // Set final vtable
     voice[0] = reinterpret_cast<uintptr_t>(g_audVoiceStream_vtable);
@@ -670,13 +670,13 @@ void audVoiceStream_ctor_3BA8(void* self) // @ 0x82163BA8
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audSystem_ctor_6DC0 @ 0x82166DC0 | size: 0x78
+// audSystem_Destroy @ 0x82166DC0 | size: 0x78
 //
 // Destructor for the audSystem class. Sets base class vtables, calls the
 // gameLoop audio teardown, installs the final vtable, and optionally frees
 // memory (scalar deleting destructor pattern).
 // ─────────────────────────────────────────────────────────────────────────────
-void audSystem_ctor_6DC0(void* self, uint32_t flags) // @ 0x82166DC0
+void audSystem_Destroy(void* self, uint32_t flags) // @ 0x82166DC0
 {
     uint32_t* obj = static_cast<uint32_t*>(self);
 
@@ -698,14 +698,14 @@ void audSystem_ctor_6DC0(void* self, uint32_t flags) // @ 0x82166DC0
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audBankMgr_2D48_wrh @ 0x82162D48 | size: 0xA8
+// audBankMgr_Destroy @ 0x82162D48 | size: 0xA8
 //
 // Destructor for audBankMgr. Installs the audBankMgr vtable, iterates all
 // hash buckets, calling the destructor (vfn_0) on each bank's resource
 // pointer, then frees the hash table storage twice (two internal arrays),
 // and installs the final base vtable.
 // ─────────────────────────────────────────────────────────────────────────────
-void audBankMgr_2D48_wrh(void* self) // @ 0x82162D48
+void audBankMgr_Destroy(void* self) // @ 0x82162D48
 {
     uint32_t* mgr = static_cast<uint32_t*>(self);
 
@@ -751,13 +751,13 @@ void audBankMgr_2D48_wrh(void* self) // @ 0x82162D48
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audMsgSink_3A10_g @ 0x821B3A10 | size: 0x5C
+// audMsgSink_Reset @ 0x821B3A10 | size: 0x5C
 //
 // Resets an audio message sink. Calls vfn_4 (Stop) on the control at +20,
 // then clears the state: sets volume to 0.0, clears the handle at +24,
 // and zeroes the three flag bytes at +32, +33, +34.
 // ─────────────────────────────────────────────────────────────────────────────
-void audMsgSink_3A10_g(void* self) // @ 0x821B3A10
+void audMsgSink_Reset(void* self) // @ 0x821B3A10
 {
     uint32_t* sink = static_cast<uint32_t*>(self);
 
@@ -785,13 +785,13 @@ void audMsgSink_3A10_g(void* self) // @ 0x821B3A10
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audMsgSink_8598_g @ 0x821B8598 | size: 0x68
+// audMsgSink_Release @ 0x821B8598 | size: 0x68
 //
 // Releases/cleans up an audio message sink resource. If the object pointer
 // at +0 is non-null, calls vfn_4 (Stop) on it, then sets +0 to null.
 // If already null, just ensures it stays null.
 // ─────────────────────────────────────────────────────────────────────────────
-void audMsgSink_8598_g(void* self) // @ 0x821B8598
+void audMsgSink_Release(void* self) // @ 0x821B8598
 {
     uint32_t* sink = static_cast<uint32_t*>(self);
     void* resource = reinterpret_cast<void*>(sink[0]);
@@ -812,12 +812,12 @@ void audMsgSink_8598_g(void* self) // @ 0x821B8598
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audControl3d_C678_2hr @ 0x8257C678 | size: 0x44
+// audControl3d_InitAll @ 0x8257C678 | size: 0x44
 //
 // Iterates over a global array of 4 audControl3d objects (stride 176 bytes)
 // and calls audControl3d_Initialize (a reset/init method) on each one.
 // ─────────────────────────────────────────────────────────────────────────────
-void audControl3d_C678_2hr() // @ 0x8257C678
+void audControl3d_InitAll() // @ 0x8257C678
 {
     uint8_t* control = g_audControl3dArray;
 
@@ -832,13 +832,13 @@ void audControl3d_C678_2hr() // @ 0x8257C678
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// aud_4D48 @ 0x82164D48 | size: 0x44
+// audBankEntry_IsStreaming @ 0x82164D48 | size: 0x44
 //
 // Checks if a bank entry is of streaming type. Reads the entry offset from
 // the voice at +16, looks up the type byte at +16 of the entry data, and
 // returns true if the type is 25 (streaming) or 28 (alternate streaming).
 // ─────────────────────────────────────────────────────────────────────────────
-bool aud_4D48(void* voice) // @ 0x82164D48
+bool audBankEntry_IsStreaming(void* voice) // @ 0x82164D48
 {
     uint32_t* v = static_cast<uint32_t*>(voice);
     int32_t entryOffset = static_cast<int32_t>(v[4]); // +16
@@ -855,13 +855,13 @@ bool aud_4D48(void* voice) // @ 0x82164D48
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// aud_4D90 @ 0x82164D90 | size: 0x38
+// audBankEntry_IsXMA @ 0x82164D90 | size: 0x38
 //
 // Checks if a bank entry is of XMA (compressed audio) type. Reads the entry
 // offset from the voice at +16, looks up the type byte, and returns true
 // if the type is 27 (XMA).
 // ─────────────────────────────────────────────────────────────────────────────
-bool aud_4D90(void* voice) // @ 0x82164D90
+bool audBankEntry_IsXMA(void* voice) // @ 0x82164D90
 {
     uint32_t* v = static_cast<uint32_t*>(voice);
     int32_t entryOffset = static_cast<int32_t>(v[4]); // +16
@@ -881,13 +881,13 @@ bool aud_4D90(void* voice) // @ 0x82164D90
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// aud_AE30 @ 0x8246AE30 | size: 0x50
+// audScene_CleanupAndRegister @ 0x8246AE30 | size: 0x50
 //
 // Wraps audio scene cleanup. Calls audScene_Shutdown (which performs the main scene
 // teardown), then if the input pointer is non-null, calls atList_InsertItem
 // to register it in the audio scene's object list. Returns 0 (null).
 // ─────────────────────────────────────────────────────────────────────────────
-void* aud_AE30(void* obj) // @ 0x8246AE30
+void* audScene_CleanupAndRegister(void* obj) // @ 0x8246AE30
 {
     audScene_Shutdown(obj);
 
@@ -900,13 +900,13 @@ void* aud_AE30(void* obj) // @ 0x8246AE30
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// aud_7B70 @ 0x82447B70 | size: 0x18
+// audScene_DispatchStop @ 0x82447B70 | size: 0x18
 //
 // Global thunk that loads the audio scene singleton pointer, reads its
 // vtable, and tail-calls vfn_4 (vtable slot 4, byte offset 16).
 // Effectively: return g_pAudioScene->vfn_4();
 // ─────────────────────────────────────────────────────────────────────────────
-void aud_7B70() // @ 0x82447B70
+void audScene_DispatchStop() // @ 0x82447B70
 {
     void* scene = g_pAudSceneSingleton;
     uint32_t** vtbl = reinterpret_cast<uint32_t**>(scene);
@@ -916,13 +916,13 @@ void aud_7B70() // @ 0x82447B70
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// aud_7A80 @ 0x82447A80 | size: 0x30
+// audScene_DispatchUpdate @ 0x82447A80 | size: 0x30
 //
 // Global thunk that loads the audio scene singleton, prepends it as the
 // first argument, and tail-calls vfn_5 (vtable slot 5, byte offset 20).
 // Effectively: g_pAudioScene->vfn_5(arg1, arg2, arg3, arg4);
 // ─────────────────────────────────────────────────────────────────────────────
-void aud_7A80(void* a1, void* a2, void* a3, void* a4) // @ 0x82447A80
+void audScene_DispatchUpdate(void* a1, void* a2, void* a3, void* a4) // @ 0x82447A80
 {
     void* scene = g_pAudSceneSingleton;
     uint32_t** vtbl = reinterpret_cast<uint32_t**>(scene);
@@ -932,13 +932,13 @@ void aud_7A80(void* a1, void* a2, void* a3, void* a4) // @ 0x82447A80
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// aud_7AB0 @ 0x82447AB0 | size: 0x30
+// audScene_DispatchRender @ 0x82447AB0 | size: 0x30
 //
 // Global thunk that loads the audio scene singleton, prepends it as the
 // first argument, and tail-calls vfn_6 (vtable slot 6, byte offset 24).
 // Effectively: g_pAudioScene->vfn_6(arg1, arg2, arg3, arg4);
 // ─────────────────────────────────────────────────────────────────────────────
-void aud_7AB0(void* a1, void* a2, void* a3, void* a4) // @ 0x82447AB0
+void audScene_DispatchRender(void* a1, void* a2, void* a3, void* a4) // @ 0x82447AB0
 {
     void* scene = g_pAudSceneSingleton;
     uint32_t** vtbl = reinterpret_cast<uint32_t**>(scene);
@@ -999,18 +999,18 @@ const char* audControlGroup::GetTypeNameB() {
 
 /**
  * audVoiceSfx::Pause @ 0x82163918 | size: 0xC
- * Pauses the SFX voice by delegating to audVoiceStream_B430_fw with flag=0.
+ * Pauses the SFX voice by delegating to audVoiceSfx_SetPaused with flag=0.
  */
 void audVoiceSfx::Pause() {
-    audVoiceStream_B430_fw(m_pSfxRef, 0);
+    audVoiceSfx_SetPaused(m_pSfxRef, 0);
 }
 
 /**
  * audVoiceSfx::Unpause @ 0x82163928 | size: 0xC
- * Unpauses the SFX voice by delegating to audVoiceStream_B430_fw with flag=1.
+ * Unpauses the SFX voice by delegating to audVoiceSfx_SetPaused with flag=1.
  */
 void audVoiceSfx::Unpause() {
-    audVoiceStream_B430_fw(m_pSfxRef, 1);
+    audVoiceSfx_SetPaused(m_pSfxRef, 1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1019,18 +1019,18 @@ void audVoiceSfx::Unpause() {
 
 /**
  * audVoiceStream::Pause @ 0x821643D0 | size: 0xC
- * Pauses the stream voice by delegating to audVoiceStream_B298_fw with flag=0.
+ * Pauses the stream voice by delegating to audVoiceStream_SetPaused with flag=0.
  */
 void audVoiceStream::Pause() {
-    audVoiceStream_B298_fw(reinterpret_cast<void*>(m_pStreamRef), 0);
+    audVoiceStream_SetPaused(reinterpret_cast<void*>(m_pStreamRef), 0);
 }
 
 /**
  * audVoiceStream::Unpause @ 0x821643E0 | size: 0xC
- * Unpauses the stream voice by delegating to audVoiceStream_B298_fw with flag=1.
+ * Unpauses the stream voice by delegating to audVoiceStream_SetPaused with flag=1.
  */
 void audVoiceStream::Unpause() {
-    audVoiceStream_B298_fw(reinterpret_cast<void*>(m_pStreamRef), 1);
+    audVoiceStream_SetPaused(reinterpret_cast<void*>(m_pStreamRef), 1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
