@@ -113,6 +113,7 @@ set(SOURCES
     
     # Physics
     src/physics/ph_physics.cpp
+    src/physics/ph_update_object.cpp
     
     # Graphics
     src/graphics/grc_device.cpp

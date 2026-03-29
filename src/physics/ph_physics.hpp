@@ -79,29 +79,47 @@ struct phMaterialMgrImpl {
 //   +0x00  vtable pointer
 //   +0x04  unknown/padding
 //   +0x10  inline 4x4 local-to-world matrix (4×16 bytes = 64 bytes)
+//   +0x04  m_lodParam       — LOD/render distance parameter
+//   +0x08  m_visFlags       — visibility/render pass flags
+//   +0x10  m_updateMode     — update mode (1=add to world, 2=remove)
 //   +0x14  m_pData          — ptr to external data block; NULL = inactive
-//   +0x18  inline matrix row 1 (part of local transform)
-//   +0x50  inline matrix end / additional state
-//   +0x60  m_pStateOwner    — ptr to a state-owning object (offset 96)
-//   +0x6C  m_pState         — ptr to linked state struct (offset 108)
+//   +0x20  m_localTransform — inline 4×4 local-to-world matrix (64 bytes)
+//   +0x60  m_pDrawable      — renderable/physics instance (offset 96)
+//   +0x64  m_pDrawable2     — secondary drawable (offset 100)
+//   +0x68  m_pTransformSrc  — fallback transform source (offset 104)
+//   +0x6C  m_pCollider      — articulated collider reference (offset 108)
 //   +0x80  m_pFrameBuffer   — double-buffered frame array base (offset 128)
 //   +0x85  m_bActive        — activity flag (offset 133)
 struct phUpdateObject {
     void**      vtable;           // +0x00
 
-    uint8_t     _pad0x04[16];
-    void*       m_pData;          // +0x14  Non-NULL when object has active state
-    uint8_t     _pad0x18[104];
-    void*       m_pFrameBuffer;   // +0x80  Base of double-buffered per-frame array
-    uint8_t     _pad0x84[1];
+    float       m_lodParam;       // +0x04  LOD/render distance parameter
+    uint32_t    m_visFlags;       // +0x08  Visibility/render pass flags
+    uint32_t    _pad0x0C;         // +0x0C
+    int         m_updateMode;     // +0x10  Update mode: 1=add to world, 2=remove
+
+    void*       m_pData;          // +0x14  Data descriptor block; NULL = inactive
+
+    uint8_t     _pad0x18[8];      // +0x18
+    uint8_t     m_localTransform[64]; // +0x20  Inline 4×4 local-to-world matrix
+
+    void*       m_pDrawable;      // +0x60  Renderable/drawable physics instance
+    void*       m_pDrawable2;     // +0x64  Secondary drawable (destroyed in cleanup)
+    void*       m_pTransformSrc;  // +0x68  Fallback transform source pointer
+    void*       m_pCollider;      // +0x6C  Articulated collider reference
+
+    uint8_t     _pad0x70[16];     // +0x70
+
+    void*       m_pFrameBuffer;   // +0x80  Double-buffered per-frame array base
+    uint8_t     _pad0x84[1];      // +0x84
     uint8_t     m_bActive;        // +0x85  Object is active / enabled
 
-    virtual ~phUpdateObject();                // [0] @ 0x8227DA08
-    virtual void ScalarDtor(int flags);       // [1] @ 0x8227D960
-    virtual void Update();                    // [2] @ 0x820C41E8  — per-frame update
-    virtual void vfn_3();                     // [3] @ 0x8227D5B0  — AddToWorld / step
-    virtual void vfn_4();                     // [4] @ 0x8227D768
-    virtual void vfn_5();                     // [5] @ 0x8227D898
+    virtual ~phUpdateObject();                        // [0] @ 0x8227DA08
+    virtual void ScalarDtor(int flags);               // [1] @ 0x8227D960
+    virtual void Destroy(int flags);                  // [2] @ 0x820C41E8  — deleting destructor
+    virtual void Reset(void* world, void* scene);     // [3] @ 0x8227D5B0  — world sync / init
+    virtual void AddToRenderBucket();                 // [4] @ 0x8227D768
+    virtual void RenderShadow(float shadowScale);     // [5] @ 0x8227D898
     virtual void Cleanup(void* frameData, uint32_t flags);  // [6] @ 0x8227DA40
 };
 
