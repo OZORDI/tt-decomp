@@ -59,6 +59,13 @@ struct mcMemcardControl : fsmMachine {
         std::int32_t m_stateToken;
     };
 
+    struct SearchStateRecord : mcMemcardState {
+        std::int32_t m_statePhase;
+        std::int32_t m_field08;
+        std::int32_t m_field0C;
+        std::int32_t m_field10;
+    };
+
     std::int32_t              m_activeState;
     std::int32_t              m_requestedState;
     std::int32_t              m_primaryResultCode;

@@ -117,6 +117,21 @@ static mcMemcardControl::ExtendedStateRecord* AllocateExtendedStateRecord(std::u
     return state;
 }
 
+static mcMemcardControl::SearchStateRecord* AllocateSearchStateRecord(std::uintptr_t stateVtable)
+{
+    xe_main_thread_init();
+
+    auto* state = static_cast<mcMemcardControl::SearchStateRecord*>(
+        rage_malloc(sizeof(mcMemcardControl::SearchStateRecord)));
+    if (state == nullptr) {
+        return nullptr;
+    }
+
+    state->m_pVtable = reinterpret_cast<void*>(stateVtable);
+    state->m_statePhase = 0;
+    return state;
+}
+
 static void DestroyStateRecord(mcMemcardState* state)
 {
     if (state == nullptr) {
@@ -181,11 +196,11 @@ void mcMemcardControl::Init()
     m_ppRegisteredStates[STATE_SAVE_ICON] =
         reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kSaveIconStateVtable));
     m_ppRegisteredStates[STATE_SEARCH] =
-        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kSearchStateVtable));
-    m_ppRegisteredStates[STATE_REMOVE] =
-        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kRemoveStateVtable));
-    m_ppRegisteredStates[STATE_GET_FREE_SPACE] =
-        reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kGetFreeSpaceStateVtable));
+        reinterpret_cast<mcMemcardState*>(AllocateSearchStateRecord(kSearchStateVtable));
+    m_ppRegisteredStates[STATE_REMOVE] = reinterpret_cast<mcMemcardState*>(
+        AllocateExtendedStateRecord(kRemoveStateVtable));
+    m_ppRegisteredStates[STATE_GET_FREE_SPACE] = reinterpret_cast<mcMemcardState*>(
+        AllocateExtendedStateRecord(kGetFreeSpaceStateVtable));
     m_ppRegisteredStates[STATE_FORMAT] =
         reinterpret_cast<mcMemcardState*>(AllocateStateRecord(kFormatStateVtable));
     m_ppRegisteredStates[STATE_UNFORMAT] =
