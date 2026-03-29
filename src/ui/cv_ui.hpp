@@ -34,6 +34,10 @@ public:
     virtual void ScalarDtor();            // [1] @ 0x8222ECE8
 };
 
+// Resource relocation constructor — relocates serialized pointers
+// during datResource loading.
+void cvCurve_RelocatePointers(cvCurve* self, void* resourceMap);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // cvCurveNurbs  [4 vtables @ 0x8204ED2C, 0x8204ED7C, 0x8204EE68, 0x8204EEB8]
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,6 +63,9 @@ class cvCurveNurbsWM : public cvCurveNurbs {
 public:
     virtual ~cvCurveNurbsWM();            // [0] @ 0x8222EC48
     virtual void ScalarDtor();            // [1] @ 0x8222EE48
+
+    // Convenience: zeroes output, evaluates at t=0
+    cvCurveNurbsWM* EvaluateAtZero(void* outBuffer);  // @ 0x8222EBE0
 
     /**
      * Evaluate @ 0x8222F058 | size: 0x338  [vtable slot 2]
