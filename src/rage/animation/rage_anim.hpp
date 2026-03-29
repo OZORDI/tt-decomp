@@ -351,19 +351,22 @@ struct crAnimDofQuaternion {
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8224c7c8
-    virtual void vfn_2();  // [2] @ 0x820c4b20
-    virtual void vfn_4();  // [4] @ 0x820c4bf0
-    virtual void vfn_5();  // [5] @ 0x820c4c00
-    virtual void vfn_6();  // [6] @ 0x820c4d30
-    virtual void vfn_7();  // [7] @ 0x820c4d80
-    virtual void vfn_8();  // [8] @ 0x820c4ec8
-    virtual void vfn_9();  // [9] @ 0x820c5120
+    virtual void* GetValue();           // [2] @ 0x820c4b20
+    virtual void Evaluate(void* animContext, float time, float* outQuat); // [4] @ 0x820c4bf0
+    virtual void Blend(void* animContext, float blendFactor, float* outQuat); // [5] @ 0x820c4c00
+    virtual void CopyFrom(void* sourceAnimDof);        // [6] @ 0x820c4d30
+    virtual void BlendFrom(void* sourceAnimDof, float blendFactor); // [7] @ 0x820c4d80
+    virtual void ScaleFrom(void* sourceAnimDof, float scaleFactor); // [8] @ 0x820c4ec8
+    virtual void ThresholdFrom(void* sourceAnimDof, float threshold); // [9] @ 0x820c5120
     virtual void vfn_10();  // [10] @ 0x820c51a0
     virtual void vfn_11();  // [11] @ 0x820c51a8
-    virtual void vfn_12();  // [12] @ 0x820c5220
-    virtual void vfn_13();  // [13] @ 0x820c52b0
-    virtual void vfn_18();  // [18] @ 0x820c52d8
-    virtual void vfn_20();  // [20] @ 0x8210cbd0
+    virtual void TransformBy(void* transformAnimDof);  // [12] @ 0x820c5220
+    virtual void Normalize();          // [13] @ 0x820c52b0
+    virtual void SetValue(const float* sourceQuat);    // [18] @ 0x820c52d8
+    virtual int  IsQuaternion();       // [20] @ 0x8210cbd0
+
+    // ── non-virtual helper methods ──
+    void EvaluateChannels(void* animContext, float time, float* outQuat);
 };
 
 // ── rage::crAnimDofVector3  [vtable @ 0x82027B9C] ──────────────────────────
