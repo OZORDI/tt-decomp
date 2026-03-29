@@ -92,24 +92,43 @@ uint32_t ComputeHash(const char* str)
 //  FindSingleton
 //
 //  @ 0x820F90D0 | size: 0xA4
+//  Original symbol: atSingleton_Find_90D0
 //
 //  Searches the global singleton registry hash table for a singleton
 //  matching the given hash.
 //
-//  Scaffold analysis:
-//    - If hash < 0: looks up in g_singletonRegistry via atHashTable_Find
-//    - Uses (index * 8) to compute entry offset in the hash table
-//    - Has a special case for hash == -1 (not found) that calls into
-//      locale registration (game_8EE8 + _locale_register)
-//    - Returns 0 on failure, 1 on special-case success
+//  If hash < 0 (signed):
+//    1. Stores hash as search key in stack locals
+//    2. Calls atHashTable_Find on g_singletonRegistry
+//    3. If found (result != -1): computes entry address via (index << 3)
+//       and reads data from the registry
+//    4. If not found (-1): falls through to return 0
 //
-//  TODO: Fully implement based on scaffold — complex negative-hash logic
-//  with locale registration side-effects.
+//  Returns: pointer to singleton entry, or nullptr if not found.
 // ═══════════════════════════════════════════════════════════════════════════════
 atSingleton* FindSingleton(uint32_t hash)
 {
-    // TODO: Full implementation requires atHashTable_Find integration
-    // and negative-hash special case handling.
+    if (static_cast<int32_t>(hash) < 0) {
+        // Search the global singleton registry hash table
+        int32_t index = reinterpret_cast<intptr_t>(
+            atHashTable_Find(g_singletonRegistry, hash));
+
+        if (index != -1) {
+            // Compute entry offset: (index << 3) = index * 8
+            uint32_t entryOffset = static_cast<uint32_t>(index) << 3;
+            uint32_t* registryBase = reinterpret_cast<uint32_t*>(
+                g_singletonRegistry);
+
+            // Read entry base from registry at computed offset
+            uint32_t entryBase = *reinterpret_cast<uint32_t*>(
+                reinterpret_cast<uint8_t*>(registryBase) + entryOffset);
+
+            // Compute final pointer: hash - entryBase
+            return reinterpret_cast<atSingleton*>(
+                static_cast<uintptr_t>(hash - entryBase));
+        }
+    }
+
     return nullptr;
 }
 
@@ -289,27 +308,65 @@ void AcquireReference(atSingleton* singleton)
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  BindObject / UnbindObject
+//  PopulateEntries  (was: BindObject — name corrected from scaffold)
 //
-//  @ 0x8224B3F8 | size: 0xFC / @ 0x8218B410 | size: 0x2E0
+//  @ 0x8224B3F8 | size: 0xFC (252 bytes)
+//  Original symbol: atSingleton_B3F8_g
 //
-//  Register/unregister a singleton in the global registry by hash.
-//  TODO: Full implementation requires atHashTable integration.
+//  Batch-imports entries from a source config object into the entry array.
+//  NOT a simple bind-by-hash — it reads count from source+40, iterates
+//  calling vtable slot 1 on self to create entries, then populates each
+//  entry with byte/half-word data from the source items at +36.
+//
+//  Dependencies: atSingleton_AC28_g, atSingleton_DDE8_g, atSingleton_DE98_g
+//
+//  TODO: Implement — requires resolving 3 sub-functions:
+//    atSingleton_AC28_g  — pre-population setup
+//    atSingleton_DDE8_g  — entry copy with existing count
+//    atSingleton_DE98_g  — entry array growth/append
 // ═══════════════════════════════════════════════════════════════════════════════
-void BindObject(atSingleton* singleton, uint32_t hash)
+void PopulateEntries(atSingleton* singleton, void* sourceConfig)
 {
-    if (!singleton || !hash)
+    if (!singleton)
         return;
 
-    if (FindSingleton(hash))
-        return;
-
-    // TODO: Add to registry via atHashTable
+    // TODO: Read count from sourceConfig+40, iterate and populate entries
+    // via vtable slot 1 dispatch on self
 }
 
-void UnbindObject(uint32_t hash)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Destroy  (was: UnbindObject — name corrected from scaffold)
+//
+//  @ 0x8218B410 | size: 0x2E0 (736 bytes)
+//  Original symbol: atSingleton_B410_h
+//
+//  Large destructor function.  Sets 3 vtable pointers at +0, +4, +8,
+//  then destroys objects at 10+ field offsets via virtual destructors
+//  (vtable slot 0, flags=1).  Iterates array at +6164 (count at +6168)
+//  destroying each entry.  Loops over 4 entries at +6148 calling
+//  FindSingleton + TLS allocator vtable slot 2.  Frees memory at +6128
+//  via rage_free.  Sets final vtable to rage::datBase (0x820276C4) at
+//  +6236.
+//
+//  Object fields destroyed (in order):
+//    +452, +6132, +6208 → virtual dtor(1)
+//    +6164[0..count] → virtual dtor(1) per entry, then null
+//    +6172, +492, +496, +500 → virtual dtor(1)
+//    +6128 → rage_free
+//    +6140, +6144 → virtual dtor(1)
+//    +6148[0..3] → FindSingleton + TLS alloc vtable slot 2
+//    +6236 = rage::datBase vtable
+//
+//  TODO: Implement — pattern is clear (repeated null-check + vdtor call)
+//  but 736 bytes is large and has specific field offset dependencies.
+// ═══════════════════════════════════════════════════════════════════════════════
+void Destroy(void* self)
 {
-    // TODO: Remove from registry via atHashTable
+    // TODO: Implement large destructor (736 bytes)
+    // Pattern: for each field at specific offset:
+    //   if (field != nullptr) { field->vdtor(1); }
+    //   field = nullptr;
 }
 
 
@@ -317,9 +374,12 @@ void UnbindObject(uint32_t hash)
 //  InitializeNetSystem
 //
 //  @ 0x8234B618 | size: 0x34C (844 bytes)
+//  Original symbol: atSingleton_B618_h
 //
-//  Initializes the network singleton system.
-//  TODO: Large function — needs scaffold analysis.
+//  Initializes the network singleton system.  Largest function in this
+//  file — needs its own dedicated scaffold analysis session.
+//
+//  TODO: Implement (844 bytes — needs independent scaffold analysis).
 // ═══════════════════════════════════════════════════════════════════════════════
 void InitializeNetSystem()
 {
@@ -381,14 +441,32 @@ void CallVirtualDestructor(void* obj)
 // ═══════════════════════════════════════════════════════════════════════════════
 //  GetFactory
 //
-//  @ 0x822E2E60 | size: 0x1E0
+//  @ 0x822E2E60 | size: 0x1E0 (480 bytes)
+//  Original symbol: atSingleton_2E60_g
+//  Also lifted in: stubs.cpp, mc_memcard.cpp
 //
-//  Looks up the factory for a singleton type by hash.
-//  TODO: Factory registry lookup implementation.
+//  Builds a path string from the input and looks up a factory in the
+//  global factory registry at lbl_825D0080.
+//
+//  Path resolution:
+//    - First byte '$': skip 2 bytes, use remainder as path
+//    - First byte '/' or '\': path is relative — prefix with
+//      factory name from registry (lbl_825D0080 + 384 + counter*128)
+//    - Otherwise: no path manipulation needed
+//
+//  After building the path into a 256-byte stack buffer:
+//    1. Calls game_2628(path, 128) — factory lookup by path
+//    2. Increments the factory counter at lbl_825D0080 + 1536
+//
+//  Dependencies: ph_21B0 (strchr-like), game_2628 (factory lookup)
+//
+//  TODO: Implement — path building is clear from scaffold, needs
+//  game_2628 (factory lookup) resolution.
 // ═══════════════════════════════════════════════════════════════════════════════
 SingletonFactory* GetFactory(uint32_t hash)
 {
-    // TODO: Factory registry lookup
+    // TODO: Implement path-based factory lookup
+    // See scaffold analysis above for full algorithm
     return nullptr;
 }
 
