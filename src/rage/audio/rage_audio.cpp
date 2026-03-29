@@ -19,66 +19,66 @@ namespace rage {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // External engine entry points.
-extern "C" void nop_8240E6D0(const char* fmt, ...);
-extern "C" float aud_2458(void* context);
+extern "C" void audDebugLog(const char* fmt, ...);
+extern "C" float audRandom_Float(void* context);
 
 // Audio voice delegation functions.
 extern void audVoiceStream_B328_fw(
     void* streamRef, int32_t bankSlot, void* bankEntryData,
     float volume, float pitch, float pan, float playVariance,
     uint32_t userParamA, uint32_t userParamB, uint8_t userParamC);
-extern void aud_B148(void* streamRef, int32_t bankSlot, uint32_t bankEntryData,
+extern void audVoiceNonStream_Play(void* streamRef, int32_t bankSlot, uint32_t bankEntryData,
                      float volume, float pitch, float pan, float playVariance,
                      uint32_t userParamA, uint32_t userParamB, uint8_t userParamC);
 extern void audVoiceStream_B430_fw(void* sfxRef, int flag);
 extern void audVoiceStream_B298_fw(void* streamRef, int flag);
 
 // Float constant tables.
-extern const float lbl_8202D110;      // randomization trigger / zero constant
-extern const float lbl_8202D998[3];   // randomization constants table
-extern const float lbl_8202D3C4;      // volume scale factor
-extern const float lbl_8202CFC4;      // volume offset (subtracted before scaling)
+extern const float g_audZeroConst;      // randomization trigger / zero constant
+extern const float g_audRandomConstants[3];   // randomization constants table
+extern const float g_audVolumeScaleFactor;      // volume scale factor
+extern const float g_audVolumeOffset;      // volume offset (subtracted before scaling)
 
 // Audio command ring buffer globals.
-extern uint32_t lbl_825EE220;         // audio command write index
-extern uint32_t* lbl_825EBD2C;        // audio command ring buffer
+extern uint32_t g_audCommandWriteIndex;         // audio command write index
+extern uint32_t* g_pAudCommandRingBuffer;        // audio command ring buffer
 
 // Voice free list sentinels.
-extern uint8_t lbl_825F5758[];        // SFX voice free list sentinel @ 0x825F5758
-extern uint8_t lbl_825F57C0[];        // Stream voice free list sentinel @ 0x825F57C0
-extern uint32_t* lbl_825F5810;        // Audio system active flag pointer @ 0x825F5810
+extern uint8_t g_audSfxVoiceFreeList[];        // SFX voice free list sentinel @ 0x825F5758
+extern uint8_t g_audStreamVoiceFreeList[];        // Stream voice free list sentinel @ 0x825F57C0
+extern uint32_t* g_pAudSystemActiveFlag;        // Audio system active flag pointer @ 0x825F5810
 
 // Vtable pointers.
-extern void* lbl_82025AFC[];          // audVoice base vtable
-extern void* lbl_82025ADC[];          // audVoiceStream vtable (intermediate)
-extern void* lbl_82025A7C[];          // audVoiceStream vtable (final)
-extern void* lbl_82025D2C[];          // audSystem intermediate vtable A
-extern void* lbl_82025D3C[];          // audSystem intermediate vtable B
-extern void* lbl_82027B34[];          // audSystem final (base) vtable
-extern void* lbl_82025768[];          // audBankMgr vtable (intermediate)
-extern void* lbl_82027644[];          // audBankMgr vtable (final/base)
+extern void* g_audVoice_vtable[];          // audVoice base vtable
+extern void* g_audVoiceStream_vtable_intermediate[];          // audVoiceStream vtable (intermediate)
+extern void* g_audVoiceStream_vtable[];          // audVoiceStream vtable (final)
+extern void* g_audSystem_vtable_A[];          // audSystem intermediate vtable A
+extern void* g_audSystem_vtable_B[];          // audSystem intermediate vtable B
+extern void* g_msgMsgSink_vtable[];          // audSystem final (base) vtable
+extern void* g_audBankMgr_vtable_intermediate[];          // audBankMgr vtable (intermediate)
+extern void* g_audBankMgr_vtable[];          // audBankMgr vtable (final/base)
 
 // audControlGroup type name strings.
-extern const char lbl_820356B0[];
-extern const char lbl_820356B4[];
+extern const char g_audControlGroupTypeName_short[];
+extern const char g_audControlGroupTypeName[];
 
 // audSystem / audBankMgr helpers.
-extern void gameLoop_DestroyAudio_27A8(void* self);
-extern void rage_free_00C0(void* ptr);
-extern void util_5140(void* hashTable);
+extern void audSystem_DestroyInternal(void* self);
+extern void rage_free(void* ptr);
+extern void audHashTable_Destroy(void* hashTable);
 
 // audControl3d globals.
-extern uint8_t lbl_825F5810_arr[];    // Global array of 4 audControl3d objects
-extern void audControl3d_13C8_w(void* control);
+extern uint8_t g_audControl3dArray[];    // Global array of 4 audControl3d objects
+extern void audControl3d_Initialize(void* control);
 
 // Bank entry type check globals.
-extern uint32_t* lbl_825EE224_ptr;    // Audio bank entry data base @ 0x825EE224
+extern uint32_t* g_pAudBankEntryData;    // Audio bank entry data base @ 0x825EE224
 
 // Audio scene globals.
-extern void* lbl_825E7864;            // Audio scene singleton @ 0x825E7864
-extern void aud_67E0(void* self);
-extern void phDemoWorld_67D0_g(void* list, void* obj, uint32_t flags);
-extern uint8_t lbl_825E7878[];        // Audio scene list @ 0x825E7878
+extern void* g_pAudSceneSingleton;            // Audio scene singleton @ 0x825E7864
+extern void audScene_Shutdown(void* self);
+extern void atList_InsertItem(void* list, void* obj, uint32_t flags);
+extern uint8_t g_audSceneList[];        // Audio scene list @ 0x825E7878
 
 namespace {
 
@@ -86,11 +86,11 @@ constexpr int32_t kInvalidBankSlot = -1;
 constexpr uint8_t kAudioCommandClass = 2;
 constexpr uint16_t kSfxPlayCommandId = 16387;
 
-const float& g_playVarianceThreshold = lbl_8202D110;
-const float& g_playVarianceScale = lbl_8202D998[1];
+const float& g_playVarianceThreshold = g_audZeroConst;
+const float& g_playVarianceScale = g_audRandomConstants[1];
 
-uint32_t& g_audioCommandWriteIndex = lbl_825EE220;
-uint32_t*& g_pAudioCommandRing = lbl_825EBD2C;
+uint32_t& g_audioCommandWriteIndex = g_audCommandWriteIndex;
+uint32_t*& g_pAudioCommandRing = g_pAudCommandRingBuffer;
 
 struct audCommandHeader {
     uint8_t m_class;
@@ -160,12 +160,12 @@ void audVoiceSfx::PlayByEntry(
 {
     const audSfxEntryView bankEntry(entry);
     if (bankEntry.IsNull() || bankEntry.GetBankSlot() == kInvalidBankSlot) {
-        nop_8240E6D0("audVoiceSfx::PlayByEntry - invalid entry (%p)", entry);
+        audDebugLog("audVoiceSfx::PlayByEntry - invalid entry (%p)", entry);
         return;
     }
 
     if (playVariance > g_playVarianceThreshold) {
-        const float randomSample = aud_2458(this);
+        const float randomSample = audRandom_Float(this);
         playVariance = randomSample * g_playVarianceScale;
     }
 
@@ -234,7 +234,7 @@ audVoice::~audVoice() {
 // Unimplemented stub - logs a message and returns.
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::Stop() {
-    nop_8240E6D0(reinterpret_cast<const char*>(0x82035770));
+    audDebugLog(reinterpret_cast<const char*>(0x82035770));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -243,7 +243,7 @@ void audVoice::Stop() {
 // Unimplemented stub - logs a message and returns.
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::StopImmediate() {
-    nop_8240E6D0(reinterpret_cast<const char*>(0x82035794));
+    audDebugLog(reinterpret_cast<const char*>(0x82035794));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ void audVoice::StopImmediate() {
 // Unimplemented stub - logs format string "char_%l_%s".
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::Play() {
-    nop_8240E6D0(g_str_audVoiceSfx_formatChar);
+    audDebugLog(g_str_audVoiceSfx_formatChar);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ void audVoice::Play() {
 // Unimplemented stub - logs format string "_%s".
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::StopAndRelease() {
-    nop_8240E6D0(g_str_audVoiceSfx_formatSuffix);
+    audDebugLog(g_str_audVoiceSfx_formatSuffix);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -270,7 +270,7 @@ void audVoice::StopAndRelease() {
 // Unimplemented stub - logs format string "_%l".
 // ─────────────────────────────────────────────────────────────────────────────
 void audVoice::SetLooping(uint32_t handle, bool loop) {
-    nop_8240E6D0(g_str_audVoiceSfx_formatLevel);
+    audDebugLog(g_str_audVoiceSfx_formatLevel);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ void audVoice::SetLooping(uint32_t handle, bool loop) {
 // Unimplemented stub - logs a message and returns false.
 // ─────────────────────────────────────────────────────────────────────────────
 bool audVoice::IsPlaying() {
-    nop_8240E6D0(g_str_audVoiceSfx_ankle);
+    audDebugLog(g_str_audVoiceSfx_ankle);
     return false;
 }
 
@@ -289,8 +289,8 @@ bool audVoice::IsPlaying() {
 
 namespace {
 
-uint32_t& g_cmdWriteIndex = lbl_825EE220;  // reuses file-scope extern
-uint32_t*& g_pCmdRing     = lbl_825EBD2C;  // reuses file-scope extern
+uint32_t& g_cmdWriteIndex = g_audCommandWriteIndex;  // reuses file-scope extern
+uint32_t*& g_pCmdRing     = g_pAudCommandRingBuffer;  // reuses file-scope extern
 
 // Packed command header written into the ring buffer as a single uint32_t:
 //   byte 0: command class (voice type)
@@ -328,14 +328,14 @@ void PushAudioCommand(uint8_t cmdClass, uint16_t cmdId, uint8_t paramCount,
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// audVoiceSfx_32F8_p45 @ 0x821632F8 | size: 0x5C
+// audVoiceFreeList_Dequeue @ 0x821632F8 | size: 0x5C
 //
 // Dequeues the first voice node from an intrusive doubly-linked list (the
 // voice free list), then re-links it into a second list (the active voice
-// list sentinel at lbl_825F5758+4). Returns the dequeued node, or nullptr
+// list sentinel at g_audSfxVoiceFreeList+4). Returns the dequeued node, or nullptr
 // if the list is empty or points to itself (sentinel-only).
 // ─────────────────────────────────────────────────────────────────────────────
-void* audVoiceSfx_32F8_p45(void* listHead) // @ 0x821632F8
+void* audVoiceFreeList_Dequeue(void* listHead) // @ 0x821632F8
 {
     uint32_t* head = static_cast<uint32_t*>(listHead);
     uint32_t* node = reinterpret_cast<uint32_t*>(head[2]); // head->next (+8)
@@ -355,8 +355,8 @@ void* audVoiceSfx_32F8_p45(void* listHead) // @ 0x821632F8
     nodeNext = reinterpret_cast<uint32_t*>(node[2]);
     nodeNext[1] = reinterpret_cast<uintptr_t>(head);
 
-    // Insert into active list at lbl_825F5758+4 (sentinel)
-    uint32_t* activeSentinel = reinterpret_cast<uint32_t*>(&lbl_825F5758[4]);
+    // Insert into active list at g_audSfxVoiceFreeList+4 (sentinel)
+    uint32_t* activeSentinel = reinterpret_cast<uint32_t*>(&g_audSfxVoiceFreeList[4]);
     uint32_t* activeTail = reinterpret_cast<uint32_t*>(activeSentinel[1]); // sentinel->prev
 
     if (activeTail != nullptr) {
@@ -375,18 +375,18 @@ void* audVoiceSfx_32F8_p45(void* listHead) // @ 0x821632F8
 // audVoiceStream_GetStreamRef @ 0x82163D28 | size: 0x60
 //
 // Allocates a voice node from the stream free list by calling
-// audVoiceSfx_32F8_p45. If allocation fails and the audio system is active,
+// audVoiceFreeList_Dequeue. If allocation fails and the audio system is active,
 // logs a warning. Returns the allocated node (or nullptr).
 // ─────────────────────────────────────────────────────────────────────────────
 
 void* audVoiceStream_GetStreamRef() // @ 0x82163D28
 {
-    void* node = audVoiceSfx_32F8_p45(&lbl_825F57C0[0]);
+    void* node = audVoiceFreeList_Dequeue(&g_audStreamVoiceFreeList[0]);
     if (node == nullptr) {
         // Check if audio system is active (flag at offset +4 of the pointer)
-        uint8_t* sysPtr = reinterpret_cast<uint8_t*>(lbl_825F5810);
+        uint8_t* sysPtr = reinterpret_cast<uint8_t*>(g_pAudSystemActiveFlag);
         if (sysPtr != nullptr && sysPtr[4] != 0) {
-            nop_8240E6D0("audVoiceStream::GetStreamRef - no free stream voices");
+            audDebugLog("audVoiceStream::GetStreamRef - no free stream voices");
         }
     }
     return node;
@@ -432,8 +432,8 @@ void audVoiceStream_AFB0_g(uint32_t voiceHandle, float vol1, float vol2) // @ 0x
     uint32_t params[3];
     params[0] = voiceHandle;
 
-    float offset = lbl_8202CFC4;
-    float scale  = lbl_8202D3C4;
+    float offset = g_audVolumeOffset;
+    float scale  = g_audVolumeScaleFactor;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((vol1 - offset) * scale));
     params[2] = static_cast<uint32_t>(static_cast<int32_t>((vol2 - offset) * scale));
 
@@ -453,7 +453,7 @@ void audVoiceSfx::SetReverbVolume(void* bankEntry, float volume) // @ 0x821639A0
         reinterpret_cast<uint8_t*>(bankEntry) + 4);
 
     if (bankSlot == -1) {
-        nop_8240E6D0("audVoiceSfx::SetReverbVolume - bank not resident for SFX entry (%p)",
+        audDebugLog("audVoiceSfx::SetReverbVolume - bank not resident for SFX entry (%p)",
                       bankEntry);
         return;
     }
@@ -461,8 +461,8 @@ void audVoiceSfx::SetReverbVolume(void* bankEntry, float volume) // @ 0x821639A0
     uint32_t* sfxData = static_cast<uint32_t*>(m_pSfxRef);
     uint32_t voiceHandle = sfxData[0];
 
-    float offset = lbl_8202CFC4;
-    float scale  = lbl_8202D3C4;
+    float offset = g_audVolumeOffset;
+    float scale  = g_audVolumeScaleFactor;
     uint32_t params[2];
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
@@ -482,7 +482,7 @@ void audVoiceSfx::SetEffectVolume(void* bankEntry, float volume) // @ 0x82163A28
         reinterpret_cast<uint8_t*>(bankEntry) + 4);
 
     if (bankSlot == -1) {
-        nop_8240E6D0("audVoiceSfx::SetEffectVolume - bank not resident for SFX entry (%p)",
+        audDebugLog("audVoiceSfx::SetEffectVolume - bank not resident for SFX entry (%p)",
                       bankEntry);
         return;
     }
@@ -490,8 +490,8 @@ void audVoiceSfx::SetEffectVolume(void* bankEntry, float volume) // @ 0x82163A28
     uint32_t* sfxData = static_cast<uint32_t*>(m_pSfxRef);
     uint32_t voiceHandle = sfxData[0];
 
-    float offset = lbl_8202CFC4;
-    float scale  = lbl_8202D3C4;
+    float offset = g_audVolumeOffset;
+    float scale  = g_audVolumeScaleFactor;
     uint32_t params[2];
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
@@ -511,7 +511,7 @@ void audVoiceStream::SetReverbVolume(void* bankEntry, float volume) // @ 0x82164
         reinterpret_cast<uint8_t*>(bankEntry) + 4);
 
     if (bankSlot == -1) {
-        nop_8240E6D0("audVoiceStream::SetReverbVolume - bank not resident for stream entry (%p)",
+        audDebugLog("audVoiceStream::SetReverbVolume - bank not resident for stream entry (%p)",
                       bankEntry);
         return;
     }
@@ -519,8 +519,8 @@ void audVoiceStream::SetReverbVolume(void* bankEntry, float volume) // @ 0x82164
     uint32_t* streamData = reinterpret_cast<uint32_t*>(m_pStreamRef);
     uint32_t voiceHandle = streamData[0];
 
-    float offset = lbl_8202CFC4;
-    float scale  = lbl_8202D3C4;
+    float offset = g_audVolumeOffset;
+    float scale  = g_audVolumeScaleFactor;
     uint32_t params[2];
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
@@ -540,7 +540,7 @@ void audVoiceStream::SetEffectVolume(void* bankEntry, float volume) // @ 0x82164
         reinterpret_cast<uint8_t*>(bankEntry) + 4);
 
     if (bankSlot == -1) {
-        nop_8240E6D0("audVoiceStream::SetEffectVolume - bank not resident for stream entry (%p)",
+        audDebugLog("audVoiceStream::SetEffectVolume - bank not resident for stream entry (%p)",
                       bankEntry);
         return;
     }
@@ -548,8 +548,8 @@ void audVoiceStream::SetEffectVolume(void* bankEntry, float volume) // @ 0x82164
     uint32_t* streamData = reinterpret_cast<uint32_t*>(m_pStreamRef);
     uint32_t voiceHandle = streamData[0];
 
-    float offset = lbl_8202CFC4;
-    float scale  = lbl_8202D3C4;
+    float offset = g_audVolumeOffset;
+    float scale  = g_audVolumeScaleFactor;
     uint32_t params[2];
     params[0] = voiceHandle;
     params[1] = static_cast<uint32_t>(static_cast<int32_t>((volume - offset) * scale));
@@ -570,7 +570,7 @@ void audVoiceStream::Prime(void* bankEntry) // @ 0x82163E50
         reinterpret_cast<uint8_t*>(bankEntry) + 4);
 
     if (bankSlot == -1) {
-        nop_8240E6D0("audVoiceStream::Prime - bank not resident for audBankEntry (%p)",
+        audDebugLog("audVoiceStream::Prime - bank not resident for audBankEntry (%p)",
                       bankEntry);
         return;
     }
@@ -606,20 +606,20 @@ void audVoiceStream::PlayByEntry(void* bankEntry, float volume, float pitch, // 
         reinterpret_cast<uint8_t*>(bankEntry) + 4);
 
     if (bankSlot == -1) {
-        nop_8240E6D0("audVoiceStream::PlayByEntry - bank not resident for audBankEntry (%p)",
+        audDebugLog("audVoiceStream::PlayByEntry - bank not resident for audBankEntry (%p)",
                       bankEntry);
         return;
     }
 
-    if (playVariance > lbl_8202D110) {
-        float randomSample = aud_2458(this);
-        playVariance = randomSample * lbl_8202D998[1];
+    if (playVariance > g_audZeroConst) {
+        float randomSample = audRandom_Float(this);
+        playVariance = randomSample * g_audRandomConstants[1];
     }
 
     uint32_t bankEntryData = *reinterpret_cast<uint32_t*>(
         reinterpret_cast<uint8_t*>(bankEntry) + 8);
 
-    aud_B148(reinterpret_cast<void*>(m_pStreamRef), bankSlot, bankEntryData,
+    audVoiceNonStream_Play(reinterpret_cast<void*>(m_pStreamRef), bankSlot, bankEntryData,
              volume, pitch, pan, playVariance,
              userParamA, userParamB, userParamC);
 }
@@ -643,7 +643,7 @@ void audVoiceStream_ctor_3BA8(void* self) // @ 0x82163BA8
     uint32_t* refPtr = reinterpret_cast<uint32_t*>(voice[3]);
 
     // Write intermediate vtable
-    voice[0] = reinterpret_cast<uintptr_t>(lbl_82025ADC);
+    voice[0] = reinterpret_cast<uintptr_t>(g_audVoiceStream_vtable_intermediate);
 
     // Enqueue voice registration command
     uint32_t voiceHandle = refPtr[0];
@@ -654,7 +654,7 @@ void audVoiceStream_ctor_3BA8(void* self) // @ 0x82163BA8
     audVoiceStream_AEE8_g(3, 8199, params, 2);
 
     // Set final vtable
-    voice[0] = reinterpret_cast<uintptr_t>(lbl_82025A7C);
+    voice[0] = reinterpret_cast<uintptr_t>(g_audVoiceStream_vtable);
 
     // Re-link prev/next in intrusive list
     uint32_t* prev = reinterpret_cast<uint32_t*>(voice[1]);
@@ -681,19 +681,19 @@ void audSystem_ctor_6DC0(void* self, uint32_t flags) // @ 0x82166DC0
     uint32_t* obj = static_cast<uint32_t*>(self);
 
     // Install intermediate vtables
-    obj[0] = reinterpret_cast<uintptr_t>(lbl_82025D2C);
+    obj[0] = reinterpret_cast<uintptr_t>(g_audSystem_vtable_A);
     uint32_t* subObj = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(obj) + 4);
-    subObj[0] = reinterpret_cast<uintptr_t>(lbl_82025D3C);
+    subObj[0] = reinterpret_cast<uintptr_t>(g_audSystem_vtable_B);
 
     // Call base class teardown
-    gameLoop_DestroyAudio_27A8(subObj);
+    audSystem_DestroyInternal(subObj);
 
     // Install final vtable
-    obj[0] = reinterpret_cast<uintptr_t>(lbl_82027B34);
+    obj[0] = reinterpret_cast<uintptr_t>(g_msgMsgSink_vtable);
 
     // Scalar delete if flag bit 0 is set
     if (flags & 1) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 }
 
@@ -710,7 +710,7 @@ void audBankMgr_2D48_wrh(void* self) // @ 0x82162D48
     uint32_t* mgr = static_cast<uint32_t*>(self);
 
     // Install intermediate vtable
-    mgr[0] = reinterpret_cast<uintptr_t>(lbl_82025768);
+    mgr[0] = reinterpret_cast<uintptr_t>(g_audBankMgr_vtable_intermediate);
 
     // Iterate hash buckets and destroy bank resources
     uint16_t numBuckets = *reinterpret_cast<uint16_t*>(
@@ -739,11 +739,11 @@ void audBankMgr_2D48_wrh(void* self) // @ 0x82162D48
     // Free hash table storage (called twice for two internal arrays)
     void* hashTablePtr = reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(mgr) + 20);
-    util_5140(hashTablePtr);
-    util_5140(hashTablePtr);
+    audHashTable_Destroy(hashTablePtr);
+    audHashTable_Destroy(hashTablePtr);
 
     // Install final base vtable
-    mgr[0] = reinterpret_cast<uintptr_t>(lbl_82027644);
+    mgr[0] = reinterpret_cast<uintptr_t>(g_audBankMgr_vtable);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -815,14 +815,14 @@ void audMsgSink_8598_g(void* self) // @ 0x821B8598
 // audControl3d_C678_2hr @ 0x8257C678 | size: 0x44
 //
 // Iterates over a global array of 4 audControl3d objects (stride 176 bytes)
-// and calls audControl3d_13C8_w (a reset/init method) on each one.
+// and calls audControl3d_Initialize (a reset/init method) on each one.
 // ─────────────────────────────────────────────────────────────────────────────
 void audControl3d_C678_2hr() // @ 0x8257C678
 {
-    uint8_t* control = lbl_825F5810_arr;
+    uint8_t* control = g_audControl3dArray;
 
     for (int32_t i = 3; i >= 0; i--) {
-        audControl3d_13C8_w(control);
+        audControl3d_Initialize(control);
         control += 176;
     }
 }
@@ -847,7 +847,7 @@ bool aud_4D48(void* voice) // @ 0x82164D48
         return false;
     }
 
-    uint8_t* entryBase = reinterpret_cast<uint8_t*>(lbl_825EE224_ptr);
+    uint8_t* entryBase = reinterpret_cast<uint8_t*>(g_pAudBankEntryData);
     uint8_t entryType = entryBase[entryOffset + 16];
     int8_t typeSigned = static_cast<int8_t>(entryType);
 
@@ -870,7 +870,7 @@ bool aud_4D90(void* voice) // @ 0x82164D90
         return false;
     }
 
-    uint8_t* entryBase = reinterpret_cast<uint8_t*>(lbl_825EE224_ptr);
+    uint8_t* entryBase = reinterpret_cast<uint8_t*>(g_pAudBankEntryData);
     uint8_t entryType = entryBase[entryOffset + 16];
 
     return (entryType == 27);
@@ -883,17 +883,17 @@ bool aud_4D90(void* voice) // @ 0x82164D90
 // ─────────────────────────────────────────────────────────────────────────────
 // aud_AE30 @ 0x8246AE30 | size: 0x50
 //
-// Wraps audio scene cleanup. Calls aud_67E0 (which performs the main scene
-// teardown), then if the input pointer is non-null, calls phDemoWorld_67D0_g
+// Wraps audio scene cleanup. Calls audScene_Shutdown (which performs the main scene
+// teardown), then if the input pointer is non-null, calls atList_InsertItem
 // to register it in the audio scene's object list. Returns 0 (null).
 // ─────────────────────────────────────────────────────────────────────────────
 void* aud_AE30(void* obj) // @ 0x8246AE30
 {
-    aud_67E0(obj);
+    audScene_Shutdown(obj);
 
     if (obj != nullptr) {
         static constexpr uint32_t kAudioSceneRegFlags = 0x81020007;
-        phDemoWorld_67D0_g(lbl_825E7878, obj, kAudioSceneRegFlags);
+        atList_InsertItem(g_audSceneList, obj, kAudioSceneRegFlags);
     }
 
     return nullptr;
@@ -908,7 +908,7 @@ void* aud_AE30(void* obj) // @ 0x8246AE30
 // ─────────────────────────────────────────────────────────────────────────────
 void aud_7B70() // @ 0x82447B70
 {
-    void* scene = lbl_825E7864;
+    void* scene = g_pAudSceneSingleton;
     uint32_t** vtbl = reinterpret_cast<uint32_t**>(scene);
     typedef void (*VFn)(void*);
     VFn fn = reinterpret_cast<VFn>((*vtbl)[4]);
@@ -924,7 +924,7 @@ void aud_7B70() // @ 0x82447B70
 // ─────────────────────────────────────────────────────────────────────────────
 void aud_7A80(void* a1, void* a2, void* a3, void* a4) // @ 0x82447A80
 {
-    void* scene = lbl_825E7864;
+    void* scene = g_pAudSceneSingleton;
     uint32_t** vtbl = reinterpret_cast<uint32_t**>(scene);
     typedef void (*VFn)(void*, void*, void*, void*, void*);
     VFn fn = reinterpret_cast<VFn>((*vtbl)[5]);
@@ -940,7 +940,7 @@ void aud_7A80(void* a1, void* a2, void* a3, void* a4) // @ 0x82447A80
 // ─────────────────────────────────────────────────────────────────────────────
 void aud_7AB0(void* a1, void* a2, void* a3, void* a4) // @ 0x82447AB0
 {
-    void* scene = lbl_825E7864;
+    void* scene = g_pAudSceneSingleton;
     uint32_t** vtbl = reinterpret_cast<uint32_t**>(scene);
     typedef void (*VFn)(void*, void*, void*, void*, void*);
     VFn fn = reinterpret_cast<VFn>((*vtbl)[6]);
@@ -979,18 +979,18 @@ float audControlGroup::GetPitch() {
 
 /**
  * audControlGroup::GetTypeNameA @ 0x82162538 | size: 0xC
- * Returns a pointer to a static type name string (lbl_820356B0).
+ * Returns a pointer to a static type name string (g_audControlGroupTypeName_short).
  */
 const char* audControlGroup::GetTypeNameA() {
-    return lbl_820356B0;
+    return g_audControlGroupTypeName_short;
 }
 
 /**
  * audControlGroup::GetTypeNameB @ 0x82162548 | size: 0xC
- * Returns a pointer to a static type name string (lbl_820356B4).
+ * Returns a pointer to a static type name string (g_audControlGroupTypeName).
  */
 const char* audControlGroup::GetTypeNameB() {
-    return lbl_820356B4;
+    return g_audControlGroupTypeName;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
