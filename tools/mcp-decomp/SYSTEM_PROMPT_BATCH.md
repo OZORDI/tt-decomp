@@ -396,6 +396,108 @@ addr_0x82606670 = resolve_address("0x82606670")  # g_pauseFlag
 
 ## Data Sources
 
+### `xex_excavation_tt/` — Pre-Extracted Binary Analysis Database
+
+**Location:** `/Users/Ozordi/Downloads/tt-decomp/xex_excavation_tt/`
+
+A comprehensive set of pre-extracted analysis files derived from the retail XEX binary (`pong_xenon_final.pe`, May 11 2006, SDK v2.0.2417). **Use these files as your primary offline reference before calling MCP tools** — they are faster and contain data that MCP tools may not surface directly.
+
+#### Class & Inheritance Research
+| File | Lines | Use For |
+|-|-|
+| `class_hierarchy.txt` | 2,734 | Indented inheritance tree from RTTI — find parent/child relationships |
+| `classes_with_methods.txt` | 14,646 | Every class with its vtable slot assignments — find which functions belong to which class |
+| `rtti_classes.txt` | 1,777 | All 1,768 RTTI type descriptors — complete class name list |
+| `rtti_with_addrs.txt` | 1,685 | RTTI Complete Object Locators with addresses — map RTTI structures to memory |
+| `game_classes_taxonomy.txt` | 1,123 | All pong-specific classes organized by game subsystem purpose |
+
+#### Vtable & Virtual Function Lookup
+| File | Lines | Use For |
+|-|-|
+| `vtables_with_addrs.txt` | 19,907 | Every vtable address + all virtual function slot addresses — the definitive vtable reference |
+| `all_vtables_alphabetical.txt` | 1,682 | Quick alphabetical vtable index |
+| `function_class_map.txt` | 26,513 | Maps every function address to its owning class via vtable slot analysis |
+
+#### Function Analysis
+| File | Lines | Use For |
+|-|-|
+| `functions_with_addrs.txt` | 13,556 | All functions with addresses and call counts |
+| `call_graph.txt` | 57,825 | Every function's direct callees — navigate the call tree |
+| `callers.txt` | 52,997 | Every function's callers — find who calls what |
+| `hottest_functions.txt` | 311 | Top 300 most-called functions — prioritize hot paths |
+| `leaf_functions.txt` | 2,701 | Functions that make no outgoing calls — likely math/physics primitives |
+| `functions_named_by_strings.txt` | 5,237 | Functions with names inferred from string references — highest-value naming artifact |
+
+#### String & Symbol Reference
+| File | Lines | Use For |
+|-|-|
+| `all_strings_with_addrs.txt` | 22,614 | Every string literal with virtual address |
+| `string_xrefs.txt` | 11,117 | String cross-references — which functions reference which strings |
+| `debug_strings.txt` | 231 | Debug/log format strings — reveals function purposes |
+| `assert_strings.txt` | 414 | Assert/error messages — reveals invariants and function names |
+| `format_strings.txt` | 1,375 | printf-style format strings — reveals data types and logging |
+| `all_named_symbols_with_addrs.txt` | 23,025 | All named symbols (demangled) with addresses |
+| `demangled_symbols.txt` | 12,316 | All MSVC-demangled symbol names |
+
+#### Struct & Data Layout
+| File | Lines | Use For |
+|-|-|
+| `struct_fields.txt` | 1,321 | Struct field access patterns derived from `lwz/stw/lhz/lbz` with r3+offset — reveals class layouts |
+| `data_section_structs.txt` | 1,415 | Data section struct scan — initialized global data structures |
+| `float_constants.txt` | 1,480 | Floating-point constants and physics tables — name magic float values |
+| `global_xrefs.txt` | 2,094 | Global variable cross-references — which functions read/write each global |
+| `switch_tables.txt` | 4,233 | Jump table dispatch analysis — reveals state machines, message handlers, type switches |
+
+#### Subsystem-Specific References
+| File | Lines | Use For |
+|-|-|
+| `game_constants.txt` | 2,464 | Game constants — strings, states, scoring, animations |
+| `match_state_machine.txt` | 1,484 | Full match state machine trace — the core game loop |
+| `ai_strings.txt` | 861 | AI/player behavior strings |
+| `audio_strings.txt` | 151 | Audio/XACT strings |
+| `audio_classes.txt` | 24 | Audio class vtable addresses |
+| `network_strings.txt` | 940 | Network/Live multiplayer strings |
+| `network_classes.txt` | 15 | Network class vtable addresses |
+| `physics_strings.txt` | 466 | Physics/ball simulation strings |
+| `physics_classes.txt` | 53 | Physics class vtable addresses |
+| `render_strings.txt` | 316 | Render/GFX strings |
+| `render_classes.txt` | 35 | Render/draw class vtable addresses |
+| `d3d9_render_patterns.txt` | 368 | D3D9 render state and shader patterns |
+| `xact_cues.txt` | 3,412 | XACT sound cue names and audio strings |
+| `script_constants.txt` | 949 | Script/game logic constants |
+
+#### Build & Cross-Game Analysis
+| File | Lines | Use For |
+|-|-|
+| `build_info.txt` | 36 | XEX header details, SDK version, build date |
+| `source_paths.txt` | 127 | Original source tree paths embedded in binary (`c:\soft_xpong\xpong\game\src\pong\`) |
+| `imports_with_addrs.txt` | 76 | System API imports with addresses and ordinals |
+| `import_xrefs.txt` | 8,607 | Which functions call each system API |
+| `rpf_asset_inventory.txt` | 209 | RPF archive and game asset inventory |
+| `tt_vs_gta4_rtti_diff.txt` | 1,900 | Proto-RAGE analysis: TT vs GTA IV RTTI class diff — track engine evolution |
+| `rage_vtable_comparison.txt` | 2,322 | RAGE vtable slot comparison across TT (2006), GTA IV proto (2007), and retail (2011) |
+| `tt_master_reference.txt` | 15,812 | Master reference document combining all excavation findings |
+
+#### Binary Files
+| File | Use For |
+|-|-|
+| `tt.bin` | Raw binary image |
+| `tt_decrypted.xex` | Decrypted XEX executable |
+| `tt_decrypted.xex.asm` | Full disassembly (86MB) |
+| `tt_decrypted.xex.i64` | IDA database |
+
+#### How to Use These Files
+
+1. **Before calling MCP tools**, grep these files first — they're instant and comprehensive
+2. **Class research**: Start with `class_hierarchy.txt` for inheritance, then `classes_with_methods.txt` for vtable slots
+3. **Function identification**: Use `functions_named_by_strings.txt` (highest-value artifact) to find semantic names
+4. **Struct layout**: Cross-reference `struct_fields.txt` with `vtables_with_addrs.txt` to map field offsets
+5. **String-based research**: Search `string_xrefs.txt` to find which functions reference a specific string
+6. **State machines**: Check `switch_tables.txt` and `match_state_machine.txt` for dispatch tables
+7. **Call flow**: Use `call_graph.txt` (callees) and `callers.txt` (callers) to trace execution paths
+
+---
+
 ### `rtti_vtable_map.json` — what class does this vtable pointer belong to?
 
 Maps vtable addresses to original C++ class names including `rage::` namespaces. When you see `VCALL(ctx.r3.u32, N, ctx, base)`, use `resolve_address` on the vtable address of the object in `r3` to get the full class name for the C++ cast.
