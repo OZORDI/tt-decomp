@@ -1,0 +1,940 @@
+; ===================================================================
+; NETWORK / LIVE STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x82009450  KeepAlive
+  0x8202FD0C  ReloadBuild(%s): Version mismatch, expected %d, got %d
+  0x8202FD60  LoadBuild(%s): Version mismatch, expected %d, got %d
+  0x8202FF08  Failed to match vertex %d
+  0x8203070C  timedmatch
+  0x82030718  Starting the match timer -- time left = %f
+  0x82030744  forcing timed match %f seconds long
+  0x82030780  gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d
+  0x8203085C  gmLogicSinglesMatch's next state was %s, is %s
+  0x820308D4  PreMatchSync
+  0x820308E4  PreMatch
+  0x82030AB4  our scoring player %d peer scoringPlayer %d
+  0x82030BA0  gmLogicSinglesMatch::stateReplay::onEnterState
+  0x82030BE4  Elapsed Match Rally Time: %f
+  0x82030C94  PostMatch
+  0x82032518  pongLadder::ComputeLadder() - unknown opponent type '%d' for match '%d'
+  0x82032560  pongLadder::ComputeLadder() - unknown arena type '%d' for match '%d'
+  0x82032C40  Child count changed in group %s in fragment type %s, from %d to %d, could result in a mismatch
+  0x8203350C  Channel names don't match
+  0x82033528  Channel field counts don't match
+  0x82033658  crIKBodyBase::Init - mismatch between number of bone finders %d and body parts %d
+  0x820385C8  localhost
+  0x82038AB4  Accumulated free counters don't match up
+  0x82038AE0  Accumulated free count doesn't match actual free
+  0x8203A4D8  EmoteMatchFactor
+  0x8203A510  RallyMatchFactor
+  0x8203A580  MaxMatchIntensity
+  0x8203A694  StartMatchIntensity
+  0x8203A6A8  MidMatchIntensity
+  0x8203A6BC  EndMatchIntensity
+  0x8203A6D0  PlayerBiasMatchWeight
+  0x8203B764  %s:Announcer_ScoreTied
+  0x8203CBCC  winningscore
+  0x8203CBDC  gamespermatch
+  0x8203CD10  networkedShotTester
+  0x8203DCF0  ScoreVal
+  0x8203DD08  ScoreDiff
+  0x8203DD14  ConsScore
+  0x8203E1D5  pongBallSpinData.CalcNetworkingValue
+  0x8203FE0C  HighestRankTime
+  0x8203FFE8  gdDrillMovementData::PostLoadProperties() - 'HighestRankTime' cannot be negative
+  0x82040040  gdDrillMovementData::PostLoadProperties() - 'HighestRankTime' cannot be greater than 'DrillTime'
+  0x82040630  HiRankNumFullCharges
+  0x82040758  gdDrillChargingData::PostLoadProperties() - 'HiRankNumFullCharges' cannot be negative
+  0x820407B0  gdDrillChargingData::PostLoadProperties() - 'HiRankNumFullCharges' cannot be less than 'MinNumFullCharges'
+  0x820416B4  NumMatches
+  0x820416F4  GamesPerMatch
+  0x82042918  gdLadderMatch
+  0x82042974  gdLadderMatch::PostLoadProperties() - 'Opponent' not specified
+  0x820429B4  gdLadderMatch::PostLoadProperties() - 'Arena' not specified
+  0x820429F0  gdLadderMatch::PostLoadProperties() - 'TourneyLevel' not specified
+  0x82042A38  gdLadderMatch::PostLoadProperties() - 'TourneyType' not specified
+  0x82042A84  gdLadderMatch::PostLoadProperties() - unknown opponent '%s'
+  0x82042AC8  gdLadderMatch::PostLoadProperties() - unknown arena '%s'
+  0x82042B20  gdLadderMatch::PostLoadProperties() - unknown tourney level '%s'
+  0x82042BA0  gdLadderMatch::PostLoadProperties() - unknown tourney type '%s'
+  0x82042BF0  gdLadderMatch::PostLoadProperties() - unknown crowd size '%s'
+  0x82042C38  gdLadderMatch::PostLoadProperties() - unknown crowd rowdiness '%s'
+  0x82043294  TimesPerMatch
+  0x820432A4  Incorrect TimesPerMatch[%d], using default
+  0x82043974  WindowPaddleHitThenScore
+  0x82043990  WindowPaddleHitThenScoreA
+  0x820439AC  WindowPaddleHitThenScoreB
+  0x820439C8  PaddleHitThenScoreA_NotAlmostInterestConclude
+  0x820439F8  MatchPaddleHitThenScoreA
+  0x82043A14  MatchNotAlmostInterestConcludeExcludeScore
+  0x82043A40  PaddleHitThenScoreB_NotAlmostInterestConclude
+  0x82043A70  MatchPaddleHitThenScoreB
+  0x82043A90  WindowPaddleHitThenScore_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043AD8  MatchTimerPointFiveSec
+  0x82043AF0  WindowPaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043B38  WindowPaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043B80  WindowPaddleHitThenScore_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043BD0  MatchTimerPointThreeSevenFiveSec
+  0x82043BF8  WindowPaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043C48  WindowPaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043C98  PaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043CD8  PaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043D18  PaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043D68  PaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043DBC  MatchScore
+  0x82043DC8  ScoreA
+  0x82043DD0  MatchScoreA
+  0x82043DDC  ScoreB
+  0x82043DE4  MatchScoreB
+  0x82043DF0  WindowScore
+  0x82043DFC  MatchWindowScore
+  0x82043E10  WindowScoreA
+  0x82043E20  MatchWindowScoreA
+  0x82043E34  WindowScoreB
+  0x82043E44  MatchWindowScoreB
+  0x82043E58  WindowScoreNotMiss
+  0x82043E6C  MatchWindowScoreNotMiss
+  0x82043E84  WindowScoreBNotMissA
+  0x82043E9C  MatchWindowScoreBNotMissA
+  0x82043EB8  WindowScoreANotMissB
+  0x82043ED0  MatchWindowScoreANotMissB
+  0x82043EEC  WindowMissOrScoreNotReturnOut
+  0x82043F0C  MatchWindowMissOrScoreNotReturnOut
+  0x82043F38  MatchMiss
+  0x82043F4C  MatchMissA
+  0x82043F60  MatchMissB
+  0x82043F78  MatchWindowMiss
+  0x82043F94  MatchWindowMissA
+  0x82043FB4  MatchWindowMissB
+  0x82043FC8  WindowMissOrScore
+  0x82043FDC  WindowMissAOrScoreB
+  0x82043FF0  WindowMissBOrScoreA
+  0x82044010  MatchReturnOut
+  0x82044034  MatchReturnOutSideNearPZ
+  0x82044064  MatchReturnOutSideNearNZ
+  0x82044094  MatchReturnOutSideFarPZ
+  0x820440C0  MatchReturnOutSideFarNZ
+  0x820440E8  MatchWindowReturnOut
+  0x8204411C  MatchWindowReturnOutSideNearPZ
+  0x82044158  MatchWindowReturnOutSideNearNZ
+  0x82044194  MatchWindowReturnOutSideFarPZ
+  0x820441D0  MatchWindowReturnOutSideFarNZ
+  0x8204421C  MatchWindowInterestConclude
+  0x82044274  MatchLetA
+  0x82044288  MatchLetB
+  0x820442A0  MatchPaddleHit
+  0x820442BC  MatchPaddleHitA
+  0x820442D8  MatchPaddleHitB
+  0x820442FC  MatchPaddleHitDisplaced
+  0x82044328  MatchPaddleHitDisplacedA
+  0x82044358  MatchPaddleHitDisplacedB
+  0x82044384  MatchWindowPaddleHit
+  0x820443B0  MatchWindowPaddleHitA
+  0x820443DC  MatchWindowPaddleHitB
+  0x82044464  MatchTimerOneSec
+  0x8204460C  MatchAlmostWayLowB
+  0x8204463C  MatchAlmostWayLowA
+  0x8204466C  MatchAlmostFarApartB
+  0x820446A0  MatchAlmostFarApartA
+  0x820446D8  MatchNotAlmostInterestConclude
+  0x820446F8  MatchNotAlmostInterestRally
+  0x82044890  MatchPopFlyA
+  0x820448A8  MatchPopFlyB
+  0x820448C8  MatchTableEndHitPZ_A
+  0x820448F0  MatchTableEndHitPZ_B
+  0x82044918  MatchTableEndHitNZ_A
+  0x82044940  MatchTableEndHitNZ_B
+  0x82044970  MatchTableSideHitNearPZ_A
+  0x820449A4  MatchTableSideHitNearPZ_B
+  0x820449D8  MatchTableSideHitNearNZ_A
+  0x82044A0C  MatchTableSideHitNearNZ_B
+  0x82044A3C  MatchTableSideHitFarPZ_A
+  0x82044A6C  MatchTableSideHitFarPZ_B
+  0x82044A9C  MatchTableSideHitFarNZ_A
+  0x82044ACC  MatchTableSideHitFarNZ_B
+  0x82044D9C  MatchWindowPopFlyA
+  0x82044DEC  MatchWindowPopFlyB
+  0x82044E44  MatchWindowTableEndHitPZ_A
+  0x82044EA4  MatchWindowTableEndHitPZ_B
+  0x82044F04  MatchWindowTableEndHitNZ_A
+  0x82044F64  MatchWindowTableEndHitNZ_B
+  0x82044FC8  MatchWindowTableSideHitNearPZ_A
+  0x82045030  MatchWindowTableSideHitNearPZ_B
+  0x82045098  MatchWindowTableSideHitNearNZ_A
+  0x82045100  MatchWindowTableSideHitNearNZ_B
+  0x82045168  MatchWindowTableSideHitFarPZ_A
+  0x820451D0  MatchWindowTableSideHitFarPZ_B
+  0x82045238  MatchWindowTableSideHitFarNZ_A
+  0x820452A0  MatchWindowTableSideHitFarNZ_B
+  0x82045778  MatchOnceTimerPointThreeSevenFiveSec
+  0x82045C24  MatchOnceTimerPointFiveSec
+  0x82046034  MatchWindowFocusWinPointA
+  0x82046068  MatchWindowFocusWinPointB
+  0x82046098  MatchWindowFocusMissA
+  0x820460C4  MatchWindowFocusMissB
+  0x820460F4  MatchWindowLungeWinPointA
+  0x82046128  MatchWindowLungeWinPointB
+  0x82046158  MatchWindowLungeMissA
+  0x82046184  MatchWindowLungeMissB
+  0x820461B4  MatchWindowNetCollideOver
+  0x820461E8  MatchWindowNetCollideRebound
+  0x82046224  MatchWindowNetCollideReboundA
+  0x82046260  MatchWindowNetCollideReboundB
+  0x82046294  MatchWindowPlayerCollide
+  0x820462C8  MatchWindowPlayerCollideA
+  0x820462FC  MatchWindowPlayerCollideB
+  0x82046340  MatchInterestRally
+  0x820463C8  MatchCounterTwoHits
+  0x820463F0  MatchCounterThreeHits
+  0x82046418  MatchCounterFourHits
+  0x82046440  MatchCounterFiveHits
+  0x82046468  MatchCounterSixHits
+  0x820464A0  MatchCounterOneHits
+  0x8204659C  MatchNotAlmostInterestRallyA
+  0x820465BC  MatchNotAlmostInterestConcludeA
+  0x820466CC  MatchNotAlmostInterestRallyB
+  0x820466EC  MatchNotAlmostInterestConcludeB
+  0x82047564  MatchPOI_PPBA_EnteringViewFrustum
+  0x820475A8  MatchPOI_PPBB_EnteringViewFrustum
+  0x820476A4  MatchFocusShotMaskA
+  0x8204771C  MatchFocusShotMaskB
+  0x82047794  MatchJustInTimeMaskA
+  0x82047814  MatchJustInTimeMaskB
+  0x82047898  MatchOverTheTableMaskA
+  0x82047918  MatchOverTheTableMaskB
+  0x82047998  MatchLungeForehandMaskA
+  0x82047A18  MatchLungeForehandMaskB
+  0x82047A98  MatchLungeBackhandMaskA
+  0x82047B18  MatchLungeBackhandMaskB
+  0x82047F40  MatchOnceTimerPointTwoFiveSec
+  0x82048DF8  MatchChoiceOne
+  0x82048E14  MatchChoiceTwo
+  0x82048E30  MatchChoiceThree
+  0x82048E50  MatchChoiceFour
+  0x82048E6C  MatchChoiceFive
+  0x82048E88  MatchChoiceSix
+  0x82048EA4  MatchChoiceSeven
+  0x82048EC4  MatchChoiceEight
+  0x82048EE4  MatchChoiceNine
+  0x82048F00  MatchChoiceTen
+  0x82048F20  MatchChoiceEleven
+  0x82048F44  MatchChoiceTwelve
+  0x82048F68  MatchChoiceThirteen
+  0x82048F8C  MatchChoiceFourteen
+  0x82048FB0  MatchChoiceFifteen
+  0x82048FD4  MatchChoiceSixteen
+  0x82048FF8  MatchChoiceSeventeen
+  0x82049020  MatchChoiceEighteen
+  0x82049044  MatchChoiceNineteen
+  0x82049068  MatchChoiceTwenty
+  0x8204908C  MatchChoiceTwentyOne
+  0x820490B4  MatchChoiceTwentyTwo
+  0x820490D8  MatchSelectCCW
+  0x820490F4  MatchSelectCW
+  0x8204A2B0  match %s winner = %d
+  0x8204A2C8  match %s loser = %d
+  0x8204A2DC  match %s tied = %d
+  0x8204A838  HighestRanks
+  0x8204A9E0  Condition_Win_Match
+  0x8204AA08  Condition_CPU_Match_Wins
+  0x8204AA24  Condition_Char_Match_Count
+  0x8204AA40  Condition_Match_Time
+  0x8204ABB4  Condition_Ranked_Skunks
+  0x8204ABCC  Condition_Ranked_Tourney_Wins
+  0x8204ABEC  Condition_Ranked_Win_Streak
+  0x8204AC08  Condition_Online_Matches
+  0x8204AC24  Condition_Spectated_Match
+  0x8204C808  Games_Per_Match
+  0x8204C818  incorrect number of matches specified
+  0x8204C840  incorrect number of char matches specified
+  0x8204CDB4  Offline Session
+  0x820502F0  UpdateScoreCard
+  0x82050330  DoneWaitingForPeerToFinishIntro
+  0x82050350  WaitingForPeerToFinishIntro
+  0x8205036C  ScoreUpdated
+  0x820503AC  QuitMatch
+  0x820503E8  MatchComplete
+  0x82050428  MatchTie
+  0x82050434  MatchWinnerB
+  0x82050444  MatchWinnerA
+  0x82050454  MatchPointB
+  0x82050460  MatchPointA
+  0x8205046C  ExitPostMatch
+  0x8205047C  EnterPostMatch
+  0x820505A0  EnterPreMatch
+  0x82050674  SetScores
+  0x82050680  PointScoredB
+  0x82050690  PointScoredA
+  0x82050E60  HigherRank
+  0x82050E6C  RankIncreased
+  0x82050F50  PlayCSPostMatchUI
+  0x82050F78  PlayCSPostMatch
+  0x82050FC0  PlayCSMatchIntro
+  0x820510B4  SpecHostExitingPostPointCS
+  0x82051228  LocalGamerJoingingSpectatorSession
+  0x820512A8  SignalExternalSpectatorSessionJoin
+  0x820512CC  SignalSpectatorSessionLeave
+  0x820512F8  TourneyNextMatchReady
+  0x820513D8  SpectatorReceivedScoreData
+  0x820513F4  HostQuit
+  0x82051400  UnlockMatchTimer
+  0x82051414  LockMatchTimer
+  0x82051424  ResetMatchTimer
+  0x820514D4  SinglesPeerConnectionLost
+  0x82051568  ScoreDataQuery
+  0x82051688  EnterSPFindHostFailed
+  0x820516A0  EnterSPConnectHost
+  0x820516B4  EnterSPFindHost
+  0x82051774  StatsMatchUpdated
+  0x8205192C  PostMatchUIEnd
+  0x82051960  PostMatchUIBegin
+  0x82051CC4  PointScored
+  0x820570F0  GamePaceNetworkBias
+  0x8205713C  NetworkFastestBallTravelTime
+  0x82057694  Samples don't quite match!
+  0x8205AA68  WriteFile error [%d], bytes written [%d] does not match save data bytes [%d]!
+  0x8205B1B0  iPostMatchMsgDone
+  0x8205B1C4  hideScorecards
+  0x8205B1E4  Sending internal message: final score is ready
+  0x8205B214  iSkipPostMatchMsg
+  0x8205B250  iRematchDone
+  0x8205B260  iRematchSelection
+  0x8205B37C  gamesPerMatch
+  0x8205B494  stxt_score
+  0x8205B4C4  stxt_match_point
+  0x8205B4D8  t_match_point
+  0x8205B56C  stxt_final_score
+  0x8205B580  t_final_score
+  0x8205B5AC  stxt_match_over
+  0x8205B5BC  t_match_over
+  0x8205B5E8  stxt_rematch
+  0x8205B5F8  t_rematch
+  0x8205BCE4  stxt_wins_the_match
+  0x8205BCF8  t_wins_match
+  0x8205BDBC  stxt_matches_won
+  0x8205BDD0  t_matches_won
+  0x8205BDF4  ghostITZ_p%d
+  0x8205BE14  intensity_ghost_p%d
+  0x8205BE8C  player2Score
+  0x8205BE9C  player1Score
+  0x8205BEAC  animateScoreB
+  0x8205BEBC  animateScoreA
+  0x8205BEF0  numGamesPlayed = %d, numVisibleGameScores = %d, matchOver = %s
+  0x8205BF5C  tourneyGame_scores
+  0x8205BF70  Score Row %d = 
+  0x8205C06C  matches_won
+  0x8205C1F0  iPostMatchMsg
+  0x8205C214  Starting post match tournament rematch menu
+  0x8205C240  iShowRematchMenu
+  0x8205C254  Starting post match rematch menu
+  0x8205C358  iMatchWinner
+  0x8205C3C8  iMatchScores
+  0x8205C3E8  iMatchPoint
+  0x8205C614  stxt_choose_match_internal
+  0x8205C630  stxt_choose_match_external
+  0x8205C678  tourneyGame_scores0
+  0x8205C854  HUDranking
+  0x8205C88C  ghost_meter
+  0x8205C898  charging_score
+  0x8205CE7C  Quick Match...
+  0x8205CEA0  Custom Match...
+  0x8205CEB0  Custom Match Settings Confirmed...
+  0x8205CEF4  hosting...
+  0x8205CF30  Unsupported Games Per Match enum value = %d
+  0x8205CF8C  currentMatchSelection
+  0x8205CFA4  Joining game sessionIndex = %d, host = %s
+  0x8205CFD0  hosting system link...
+  0x8205D000  MatchOver -- Booting spectator from lobby!
+  0x8205D288  felive_lobby_waiting_for_player
+  0x8205D2C8  spectatableMatch
+  0x8205D484  Invalid MatchQueryResult_MAIN_QUERY::GAMES_PER_MATCH = %d
+  0x8205D558  Join from Hud -- Joining new session
+  0x8205D5B8  Search failed -- user chose to create new match
+  0x8205D5E8  Search failed -- user didn't want to create match
+  0x8205D61C  CreateNewMatch Dialog aborted?
+  0x8205D6C0  custom_GamesPerMatch
+  0x8205D6D8  Unknown custom_GamesPerMatch = %d
+  0x8205D7F0  create_GamesPerMatch
+  0x8205D808  Unknown create_GamesPerMatch = %d
+  0x8205D950  -lobbysyncfail, forcing peer to drop from session
+  0x8205D994  -lobbyarbfail, forcing peer to drop from session
+  0x8205D9C8  Someone dropped out during session start or arbitration phase! Booting player out of session.
+  0x8205DA28  Session start or arbitration failed! Booting player out of session.
+  0x8205DA7C  -lobbyreadyfail, forcing peer to drop from session
+  0x8205DAB0  Someone dropped out after session start/arbitration phase! Booting player out of session.
+  0x8205DC18  Quick Match timed out after %d ms... giving up
+  0x8205DD14  PopulatePostLobbyScreen exhibition scoreboard
+  0x8205DD44  PopulatePostLobbyScreen tournament scoreboard round %d
+  0x8205DE74  tourneyGame_scores%d
+  0x8205F3A0  finalmatch
+  0x8205F488  picking level for first tourney match: %s (%d)
+  0x8205FAA0  SpectatorScoreCardsShownCanSpectate
+  0x8205FAC4  SpectatorScoreCardsShown
+  0x8205FD60  stxt_quitMessageOnlineRanked
+  0x8206052C  stxt_restart_match
+  0x82060540  t_restart_match
+  0x82060550  stxt_restart_match_warning
+  0x82060D24  ranking
+  0x82061A94  match_info
+  0x82061AA0  t_match_info
+  0x82061BF0  stxt_rank
+  0x82061BFC  t_rank
+  0x82061D4C  stxt_rank_%d
+  0x82061E10  numberofMatches
+  0x82061E34  matchesWon
+  0x82061E40  circuitMatchesWon
+  0x82061F8C  standings_rank
+  0x82061FD0  playerRank
+  0x82061FDC  stxt_roundrobin_match_ups
+  0x82061FF8  t_match_ups
+  0x82062004  tourneyGame_matchups
+  0x8206201C  matchup_portraits
+  0x82062030  matchup_position
+  0x82062E40  t_score
+  0x82062ED8  stxt_games_per_match
+  0x82062EF0  t_games_per_match
+  0x820631E0  stxt_standard_match
+  0x820631F4  t_standard_match
+  0x82063208  stxt_ranked_match
+  0x8206321C  t_ranked_match
+  0x8206322C  stxt_create_match
+  0x82063240  t_create_match
+  0x82063278  stxt_world_ranking
+  0x8206328C  t_world_ranking
+  0x820632F8  stxt_rank_select
+  0x8206330C  t_rank_select
+  0x82063340  stxt_points_per_match
+  0x82063358  t_points_per_match
+  0x8206336C  stxt_matches_per_set
+  0x82063384  t_matches_per_set
+  0x82063464  stxt_public_private_match
+  0x82063480  t_public_private_match
+  0x820634BC  stxt_quick_match
+  0x820634D0  t_quick_match
+  0x820634E0  stxt_custom_match
+  0x820634F4  t_custom_match
+  0x820635B0  stxt_find_match
+  0x820635C0  t_find_match
+  0x820635FC  stxt_match_results
+  0x82063610  t_match_results
+  0x82063630  stxt_find_match_msg
+  0x82063644  t_find_match_msg
+  0x82063880  stxt_xbox_live
+  0x82063890  t_xbox_live
+  0x8206389C  stxt_xbox_live_options
+  0x820638B4  t_xbox_live_options
+  0x820638FC  stxt_create_xbox_live_game
+  0x82063918  t_create_xbox_live_game
+  0x82063930  stxt_post_xbox_live_lobby
+  0x8206394C  t_post_xbox_live_lobby
+  0x82063B80  stxt_host_start_game
+  0x82063B98  t_host_start_game
+  0x82063BAC  stxt_match_mode
+  0x82063BBC  t_match_mode
+  0x82063E04  stxt_ranked
+  0x82063E10  t_ranked
+  0x82063EF8  stxt_matching_games
+  0x82063F0C  t_matching_games
+  0x8206401C  t_host
+  0x82064318  stxt_spectate_match
+  0x8206432C  t_spectate_match
+  0x82064DB8  dataRank
+  0x8206632F      on a draw call doesn't properly match the primitive type (e.g.,
+  0x82066450  The GPU state doesn't match any known hangs.  Please send a repro
+  0x82066E54  Packet size doesn't match recvfrom size - dropping
+  0x82066FC8  Gamer:"%s" - creating session as host...
+  0x82066FF4  Attempt to create a session while another operation is pending
+  0x82067034  Cannot create session - owner:"%s" is not online
+  0x82067068  Error configuring session
+  0x82067084  XCreateSession()
+  0x820670A8  Gamer:"%s" - creating of session as guest...
+  0x820670D8  Resolving session:0x%I64x as guest...
+  0x82067100  Attempt to resolve a non-idle session
+  0x82067128  Cannot resolve a session that already has members
+  0x8206715C  Cannot resolve session - owner:"%s" is not online
+  0x82067190  Cannot resolve a session with a schema that contains nil fields
+  0x820671D0  Error re-configuring session
+  0x820671F0  XSessionModify()
+  0x82067204  Gamer:"%s" - creating offline session...
+  0x82067230  Cannot create session - gamer:"%s" is not signed in
+  0x82067264  Changing flags for session:0x%I64x...
+  0x8206728C  Attempt to change presence on a non-existent session
+  0x820672C8  Attempt to change presence on a session while another operation is pending
+  0x82067318  Certain flags cannot be changed when the session is in progress
+  0x82067358  Attempt to change presence on a guest session with an invalid session descriptor
+  0x820673DC  These flags:0x%08x can only be changed on an idle session
+  0x82067418  These flags:0x%08x cannot be changed on an arbitrated session that has already started
+  0x82067470  XSessionDelete()
+  0x82067484  Error leaving gamers from session
+  0x820674A8  Error joining gamers to session
+  0x820674C8  Attempt to migrate a non-existent session
+  0x8206752C  Cannot migrate session - owner:"%s" is not online
+  0x82067560  Migrating session from:0x%I64x to:0x%I64x...
+  0x82067590  Acquiring host for session:0x%I64x...
+  0x820675B8  Starting session:0x%I64x...
+  0x820675D4  Attempt to start a non-idle session
+  0x820675F8  Cannot start session - owner:"%s" is not online
+  0x82067628  Attempt to start a ranked session before registering for arbitration
+  0x82067670  Attempt to re-start a ranked session
+  0x82067698  Attempt to start an arbitrated session before registering for arbitration
+  0x820676E4  Cannot start session
+  0x820676FC  XSessionStart()
+  0x8206770C  Ending session:0x%I64x...
+  0x82067728  Attempt to end a session while another operation is pending
+  0x82067764  Cannot end session - not in progress
+  0x8206778C  XSessionEnd()
+  0x8206779C  Destroying session:0x%I64x...
+  0x820677F0  Attempt to join an arbitrated/ranked session that has already started
+  0x82067858  Cannot join gamer to session - owner:"%s" is not online
+  0x820678C4  Leaver:"%s" is not a member of the session
+  0x82067930  Registering session:0x%I64x for arbitration with key:0x%I64x...
+  0x820679B8  Cannot register for arbitration - session must be idle.
+  0x82067A2C  Cannot register for arbitration - session is not arbitrated.
+  0x82067A6C  Cannot register for arbitration - session has already started.
+  0x82067AAC  XSessionArbitrationRegister()
+  0x82067AE8  Cannot re-configure a session with a different number of public slots
+  0x82067B30  Cannot re-configure a session with a different number of private slots
+  0x82067B78  Cannot re-configure a session with a different session type
+  0x82067BB8  Cannot re-configure a session with a schema that contains nil fields
+  0x82067C50  /ranked
+  0x82067C78  Gamer:"%s" creating session %s%s%s, slots(pub:%d, priv:%d) as %s:...
+  0x82067CC8  %s gamer:"%s" joined session:0x%I64x
+  0x82067CF0  %s gamer:"%s" failed to join session:0x%I64x
+  0x82067D20  %s gamer:"%s" left session:0x%I64x
+  0x82067D44  XSessionJoinLocal()
+  0x82067D58  XSessionJoinRemote()
+  0x82067D70  XSessionLeaveLocal()
+  0x82067D88  XSessionLeaveRemote()
+  0x82067DA0  Error leaving gamers from old session
+  0x82067DC8  Error joining gamers to new session
+  0x82067DEC  Host create session:0x%08I64x %s
+  0x82067E10  Guest create session:0x%08I64x %s
+  0x82067E34  Resolve of session:0x%08I64x %s
+  0x82067E54  Offline create session:0x%08I64x %s
+  0x82067E78  Change flags for session:0x%08I64x %s
+  0x82067EA0  Start session:0x%08I64x %s
+  0x82067EBC  End session:0x%08I64x %s
+  0x82067ED8  Destroy session:0x%08I64x failed
+  0x82067EFC  Migrate session %s
+  0x82067F10  Arbitration registration for session:0x%08I64x %s
+  0x82067F5C  %s gamer:"%s" is joining session:0x%I64x in a %s slot...
+  0x82067F98  Gamer must be signed in to join a session
+  0x82067FC4  Gamer:"%s" must be online to join an online session
+  0x82067FF8  Gamer:"%s" is already a member of the session
+  0x8206808C  %s gamer:"%s" is leaving session:0x%I64x...
+  0x820680B8  Gamer:"%s" is not a member of the session
+  0x82068324  Retrieving local peer descriptor...
+  0x82068348  Retrieved local peer descriptor
+  0x82068368    XNADDR: Local host has a dynamic IP address via DHCP
+  0x820683A0    XNADDR: Local host has a PPPoE-assigned IP address
+  0x820683D8    XNADDR: Local host has a static IP address
+  0x82068408    XNADDR: Local host has one or more DNS servers configured
+  0x82068444    XNADDR: *** Local host no DNS servers configured
+  0x82068478    XNADDR: Local host has an Ethernet address
+  0x820684A8    XNADDR: *** Local host has no Ethernet address
+  0x820684E0    XNADDR: Local host has one or more Internet gateways configured
+  0x82068524    XNADDR: *** Local host has no Internet gateways configured
+  0x82068568    XNADDR: Either the network stack is not initialized or no debugger was found
+  0x820685B8    XNADDR: Local host is currently connected to Xbox Live
+  0x820685F4    XNADDR: *** Local host is NOT connected to Xbox Live
+  0x8206862C  Failed to retrieve local peer descriptor
+  0x8206A078  noliveupdate
+  0x8206A088  live zoom center
+  0x8206A09C  live zoom UL
+  0x8206A0AC  live from top
+  0x8206A0BC  live from left
+  0x8206B540  MRB- Maximum games played limit (%d) was reached! Match Over. Calling Time Up.
+  0x8206B590  MRB- Spec match expired. Triggering post game ui cs
+  0x8206B6A0  MRB- Spectator match dead on arrival? Host cxn is invalid. Quitting match.
+  0x8206B700  MRB- Spectator match ended during sync state. Host cxn is invalid. Quitting match.
+  0x8206B848  MRB- host cxn was reset or someone dropped. Forcing exit from  gmLogicSpectator::statePostPointCS()
+  0x8206B8AC  MatchEnded
+  0x8206BEFC  Forcing Match Time %s
+  0x8206BF18  Abs time difference (in seconds) between match timers %f, new time %s
+  0x8206BF60  Abs time difference (in seconds (which is way too big)) between match timers %f, new time %s
+  0x8206C0A8  SinglesNetworkClient::AddSpectatorConnection
+  0x8206C0E8  MRB- ResetPeerConnection(sendDisconnect=%d, resetOwner=%d, viaForfeit=%d)
+  0x8206C134  Accepting peer singles connection
+  0x8206C200  SinglesNetworkClient::HandleBallHitMessage
+  0x8206C5E0  Got forfeit: Tagging player %s %d as a quitter for spectator session
+  0x8206C660  Requesting to spectate off of peer:%d
+  0x8206C688  Requesting to spectate off of peer:%d in match:%d
+  0x8206C820  WriteStats - done, stats not written because it's not a Ranked Match
+  0x8206C868  WriteStats - done, stats not written because you're not a member of this session!
+  0x8206C998  WriteStatsQuitter - done, stats not written because it's not a Ranked Match, or local player already quit (loozer)!
+  0x8206CA10  WriteStatsQuitter - done, stats not written because you're not part of this session!
+  0x8206CB2C  Sending next round match messages...
+  0x8206CBC8  UpdateFinalize() -- Tournament outcome is known, write stats/scores!
+  0x8206CCD8  Advancing to next match in the tournament!
+  0x8206CD04  Sending kTourneyNextMatchReady
+  0x8206CD5C  Broadcasting match scores to all
+  0x8206CDB0  HandleMatchScoreMessage: MatchIndex=%d: Name=%s, %d vs %d (%s) NumGames=%d
+  0x8206CDFC  Received final score message for %d (won) vs %d (lost) 
+  0x8206CE34  Received final score message for %d (lost) vs %d (won)
+  0x8206CE6C  Received final score message for %d vs %d (tied)
+  0x8206CEA0  Received intermediate score message for %d vs %d
+  0x8206CED4  Sending next round match messages for match %s
+  0x8206CF08  Match %s was unplayable -- nobody left to play it (home=%d, away=%d)
+  0x8206CF50  Match %s was unplayable -- home player %d forfeit
+  0x8206CF84  Match %s was unplayable -- away player %d forfeit
+  0x8206CFB8  Match %s was unplayable but neither player foreit?? (home=%d, away=%d)
+  0x8206D000  HandleNextMatchMessage: Got first round next match message
+  0x8206D03C  HandleNextMatchMessage: Got a next match message
+  0x8206D070  opponent quit -- but not signalling forfeit because match already ended
+  0x8206D148  player:"%s" quit -- but not from match we're spectating
+  0x8206D1A8  WriteRelativeScore aborted -- local player already quit
+  0x8206D1E0  Relative score for %s (peerIndex=%d) is %d
+  0x8206D20C  [Skipped Quitter!] Relative score for %s (peerIndex=%d) is %d
+  0x8206D24C  Begin writing relative scores...
+  0x8206D270  Finished writing relative scores...
+  0x8206D294  Begin writing relative score...
+  0x8206D2B4  Finished writing relative score...
+  0x8206D3CC  FinalizeMatch() -- begin, winnerPeerIndex=%d
+  0x8206D3FC  FinalizeMatch() -- done, match was already finalized
+  0x8206D434  FinalizeMatch() -- done
+  0x8206D644  SpectatorSession
+  0x8206D658  GameSession
+  0x8206D7D0  pongLiveManager::GetAvailablePeerIndex() Out of peer indexes!!!
+  0x8206D810  pongLiveManager::GetAvailableSpectatorIndex() Out of peer indexes!!!
+  0x8206D858  FindSessions: last find is still pending...
+  0x8206D884  Requesting to join game session...
+  0x8206D8A8  Local gamer %s (index = %d) joining %s game session with characterId = %d,%d
+  0x8206D8F8  Requesting to join spectator session...
+  0x8206D920  Local gamer %s (index = %d) joining spectator session with characterId = %d
+  0x8206D96C  SetPeer: %d = %s
+  0x8206D980  pongLiveManager::StartSession called..
+  0x8206D9A8  pongLiveManager::EndSession() called..
+  0x8206D9D0  pongLiveManager::EndSession() -- user is offline, can't end or write stats
+  0x8206DA1C  Terminating the old session...
+  0x8206DA3C  Destroying %s session
+  0x8206DA94  *** Player:"%s" failed to join the spectator session!! ***
+  0x8206DAD0  NOTIFY_GAMER_REMOVED: %s peerIndex = %d %s session
+  0x8206DB04  Host quit -- starting a 'clean' host migration
+  0x8206DB34  Lost host connection -- starting a 'dirty' host migration
+  0x8206DB70  Host dropped out before we successfully joined! NOT migrating host.
+  0x8206DBB4  Host Migration Success: We are the new session host
+  0x8206DBE8  HM - got schema from spec session
+  0x8206DC0C  HM - got schema from game session
+  0x8206DC30  Host Migration Failed: Trying again...
+  0x8206DCD0  NOTIFY_JOIN_REQUEST: %s peerIndex = %d connection = %d charId = %d,%d
+  0x8206DDF0  NOTIFY_GAMER_ADDED: %s peerIndex = %d connection = %d charId = %d,%d state = %d to %s session
+  0x8206DE90  Migration -- Electing self %s (%d) as new host!
+  0x8206DEC0  Migration -- Electing %s (%d) as new host!
+  0x8206E568  A system link session was found!!!
+  0x8206E58C  An online session was found!
+  0x8206E61C  latency for session %d = %d ms
+  0x8206E86C  MatchTimeSyncMessage
+  0x8206E884  MatchTimeSyncRequestMessage
+  0x8206E8A0  MatchTimeSyncRequestMessageEx
+  0x8206E8C0  ForceMatchTimeSyncMessage
+  0x8206E8DC  SessionTimeSyncMessage
+  0x8206E8F4  SessionTimeSyncRequestMessage
+  0x8206E914  ForceSessionTimeSyncMessage
+  0x8206EB6C  JoinSpectatorSessionMessage
+  0x8206EB88  LeaveSpectatorSessionMessage
+  0x8206EC10  NextMatchMessage
+  0x8206EC24  NextMatchSpectatorMessage
+  0x8206EC5C  MatchScoreMessage
+  0x8206EC88  MatchDataSyncMessage
+  0x8206ECA0  MatchDataSyncResponseMessage
+  0x8206ED04  ScoreMessage
+  0x8206ED4C  ForfeitMatchMessage
+  0x8206EDE0  MatchStatsMessage
+  0x8206EE20  MatchDataMessage
+  0x8206F2A8  ForceMatchTimeSyncMessage %s
+  0x8206F2C8  ForceSessionTimeSyncMessage %s
+  0x82070878  Gamer %d presence set to: Prep. Online Match
+  0x82070920  SessionMessageRequester: StartRequest called for msgId = %d
+  0x8207095C  SessionMessageRequester: Finish()
+  0x82070980  SessionMessageRequester: Entering state %s
+  0x820709AC  SessionMessageRequester: Exiting state %s
+  0x820709D8  SessionMessageRequester::stateRequestingMessage: No peers left to query at present?
+  0x82070A40  SessionMessageRequester: Sending request to %d
+  0x82070A70  SessionMessageRequester: Waiting for response
+  0x82070E4C  policies.keepAliveInterval
+  0x820718B0  pongGameContext::Process()  msgNet::kTourneyNextMatchReady messsage -- Loading into next match
+  0x820719D4  Loading networking HUDs...
+  0x82071E08  Error retrieving peer address
+  0x82071E68  Error opening connection to peer
+  0x82071EA8  Error associating connection:%d with session:0x%I64x
+  0x82071F44  EvtHostChangePresenceSucceeded
+  0x8207204C  EvtHostCreate
+  0x82072118  EvtStartInProgressSession
+  0x82072134  EvtStartSessionFailed
+  0x82072170  CreatingHost
+  0x820721B4  Attempt:%d to request session config from host
+  0x820721F4  StartingSession
+  0x82072204  DestroyingSession
+  0x82072300  EvtSessionJoinSucceeded
+  0x82072318  EvtSessionJoinFailed
+  0x820724F8  EvtSessionLeaveSucceeded
+  0x82072514  EvtSessionLeaveFailed
+  0x820725E8  EvtMigrateSession
+  0x820725FC  EvtAcquireHostSucceeded
+  0x82072614  EvtAcquireHostFailed
+  0x82072670  AcquiringHost
+  0x82072774  ArbHostRegistering
+  0x82072790  Initializing session
+  0x820727A8  Shutting down session
+  0x820727DC  Error creating peer
+  0x820727F0  Error adding gamer to peer
+  0x8207282C  Attempt to allocate too many peers
+  0x82073D98  Initializing session manager
+  0x82073DB8  Shutting down session manager
+  0x82073FC0  EvtFindSessionCancel
+  0x82073FD8  EvtFindSessionSyslink
+  0x82073FF0  EvtFindSessionOnline
+  0x82074008  SessionFinderRoot
+  0x82074060  Initializing session finder
+  0x82074300  Error adding gamer:%s to session
+  0x820743F4  Cannot request leave - no connection to host
+  0x82074490  Error retrieving host network address
+  0x82074508  EvtSessionMigrateSucceeded
+  0x82074524  EvtSessionMigrateFailed
+  0x82074578  EvtArbHostRegister
+  0x820745BC  Peer registered for arbitration
+  0x820745DC  Peer failed to register for arbitration
+  0x82074604  Some peers failed to register for arbitration
+  0x82074638  Session was only able to register %d out of %d gamers for arbitration
+  0x82074788  snNetMsgStartSession
+  0x820747A0  snNetMsgEndSession
+  0x820747E8  snNetMsgMigrateSession
+  0x820748E0  header crc mismatch
+  0x82078174  netHardware::StartNetwork() failed
+  0x8207835C  Network error "%s"
+  0x8207860C  netKeepAliveMessage
+  0x8207884C  Network error:"%s" sending to:%d.%d.%d.%d:%d
+  0x82078D1C  Network down
+  0x82078D60  Host unreachable
+  0x82078FA4  tourney_currentmatch
+  0x82079138  Cannot write stats - session is not in progress
+  0x820791D0  XSessionWriteStats()
+  0x820791E8  Writing score - gamer:"%s", score:%d, teamId:%d...
+  0x820793DC  Finding sessions...
+  0x820793F0  Attempt to find sessions while another find is pending
+  0x82079428  Error:%d calling XSessionSearch()
+  0x8207944C  Found:%d matching sessions
+  0x825C1B1B  /xmatch/xmatchhost2.ashx
+  0x825C1B34  /xmatch/xmatchhostdelete2.ashx
+  0x825C1B53  /xmatch/xmatchclient2.ashx
+  0x825C2352  /xstats/xstatenumbyrank.ashx
+  0x825C2970  .?AVMatchData@@
+  0x825C2988  .?AV?$atSingleton@VMatchData@@@@
+  0x825D3994  .?AVstatePostTourney@gmLogicSinglesMatch@@
+  0x825D39C8  .?AVstatePostMatch@gmLogicSinglesMatch@@
+  0x825D39FC  .?AVstateSaveDialog@gmLogicSinglesMatch@@
+  0x825D3A30  .?AVstateUnlockDialog@gmLogicSinglesMatch@@
+  0x825D3A64  .?AVstatePostTourneyMovie@gmLogicSinglesMatch@@
+  0x825D3A9C  .?AVstatePostPostGame@gmLogicSinglesMatch@@
+  0x825D3AD0  .?AVstatePostGame@gmLogicSinglesMatch@@
+  0x825D3B00  .?AVstatePostPointCS@gmLogicSinglesMatch@@
+  0x825D3B34  .?AVstateReplay@gmLogicSinglesMatch@@
+  0x825D3B64  .?AVstateReplayNegotiation@gmLogicSinglesMatch@@
+  0x825D3BA0  .?AVstateReplayNegotiationPreSync@gmLogicSinglesMatch@@
+  0x825D3BE0  .?AVstatePostPoint@gmLogicSinglesMatch@@
+  0x825D3C14  .?AVstatePostPointScoringSync@gmLogicSinglesMatch@@
+  0x825D3C50  .?AVstatePointScoringNet@gmLogicSinglesMatch@@
+  0x825D3C88  .?AVstatePointScoring@gmLogicSinglesMatch@@
+  0x825D3CBC  .?AVstatePointScoringSync@gmLogicSinglesMatch@@
+  0x825D3CF4  .?AVstateHelpTips@gmLogicSinglesMatch@@
+  0x825D3D24  .?AVstateReturnHit@gmLogicSinglesMatch@@
+  0x825D3D58  .?AVstateAwaitReturnHit@gmLogicSinglesMatch@@
+  0x825D3D90  .?AVstateAwaitServeReturnHit@gmLogicSinglesMatch@@
+  0x825D3DCC  .?AVstateRallyBase@gmLogicSinglesMatch@@
+  0x825D3E00  .?AVstateLet@gmLogicSinglesMatch@@
+  0x825D3E2C  .?AVstateHitNetServe@gmLogicSinglesMatch@@
+  0x825D3E60  .?AVstateServeBounce@gmLogicSinglesMatch@@
+  0x825D3E94  .?AVstateServeHit@gmLogicSinglesMatch@@
+  0x825D3EC4  .?AVstateServeToss@gmLogicSinglesMatch@@
+  0x825D3EF8  .?AVstatePreServe@gmLogicSinglesMatch@@
+  0x825D3F28  .?AVstatePreServeSync@gmLogicSinglesMatch@@
+  0x825D3F60  .?AVstatePreServeSpectatorSyncState@gmLogicSinglesMatch@@
+  0x825D3FA4  .?AVstatePrePreServe@gmLogicSinglesMatch@@
+  0x825D3FD8  .?AVstateAnticipationCam@gmLogicSinglesMatch@@
+  0x825D4010  .?AVstatePreGame@gmLogicSinglesMatch@@
+  0x825D4040  .?AVstatePreMatch@gmLogicSinglesMatch@@
+  0x825D4070  .?AVstatePreMatchSync@gmLogicSinglesMatch@@
+  0x825D40A4  .?AVstateInit@gmLogicSinglesMatch@@
+  0x825D40D0  .?AVstateCutScene@gmLogicSinglesMatch@@
+  0x825D4100  .?AVstateBase@gmLogicSinglesMatch@@
+  0x825D412C  .?AVgmLogicSinglesMatch@@
+  0x825D8428  .?AVgdLadderMatch@@
+  0x825D89A4  .?AVgdUnlockConditionSpectatedMatch@@
+  0x825D89D4  .?AVgdUnlockConditionOnlineMatches@@
+  0x825D8A04  .?AVgdUnlockConditionRankedWinStreak@@
+  0x825D8A34  .?AVgdUnlockConditionRankedTourneyWins@@
+  0x825D8A68  .?AVgdUnlockConditionRankedSkunks@@
+  0x825D8D3C  .?AVgdUnlockConditionMatchTimeData@@
+  0x825D8D6C  .?AVgdUnlockConditionCharMatchCountData@@
+  0x825D8DA0  .?AVgdUnlockConditionCPUMatchWinsData@@
+  0x825D8DFC  .?AVgdUnlockConditionWinMatchData@@
+  0x825D90BC  .?AVgdStatsMatch@@
+  0x825D91B0  .?AVxmlNodeStructGamesPerMatch@gdUnlockConditionSettingsData@@
+  0x825D9374  .?AVgdStatsOfflineSession@@
+  0x825DECD0  .?AV?$atFunctor3@XPAVsnSession@rage@@$$CBW4NotifyCode@12@PAVsnNotifyBase@2@@rage@@
+  0x825DED30  .?AVNotifyHandler@?$rlNotifier@VsnSession@rage@@VsnNotifyBase@2@@rage@@
+  0x825DED98  .?AV?$atFunctor3@IABVrlPeerDescriptor@rage@@$$CBHABVnetMessage@2@@rage@@
+  0x825DEE24  .?AVLogicNetworkClient@@
+  0x825DEE48  .?AVSpectatorNetworkClient@@
+  0x825DFE40  .?AV?$atSafeContainer@VNotifyHandler@?$rlNotifier@VrlSession@rage@@X@rage@@V?$DLListSimple@VNotifyHandler@?$rlNotifier@VrlSession@rage@@X@rage@@$0M@@3@@rage@@
+  0x825DFEE8  .?AV?$atSafeDLListSimple@VNotifyHandler@?$rlNotifier@VrlSession@rage@@X@rage@@$0M@@rage@@
+  0x825DFFDC  .?AUMigrateWorker@rlSession@rage@@
+  0x825E0008  .?AULeaveWorker@rlSession@rage@@
+  0x825E0034  .?AUJoinWorker@rlSession@rage@@
+  0x825E005C  .?AVSessionWorker@rlSession@rage@@
+  0x825E0088  .?AVrlSession@rage@@
+  0x825E0670  .?AVstateMatchEnded@gmLogicSpectator@@
+  0x825E0908  .?AVstatePreMatch@gmLogicSpectator@@
+  0x825E0A0C  .?AVSinglesNetworkClient@@
+  0x825E0A30  .?AVNetworkClient@@
+  0x825E0A6C  .?AVNetMatchTimer@@
+  0x825E0CB8  .?AV?$atSafeDLListSimple@VNotifyHandler@?$rlNotifier@VsnSessionFinder@rage@@VsnNotifyBase@2@@rage@@$0M@@rage@@
+  0x825E0D30  .?AV?$atFunctor3@XPAVsnSessionFinder@rage@@$$CBW4NotifyCode@12@PAVsnNotifyBase@2@@rage@@
+  0x825E0D98  .?AVNotifyHandler@?$rlNotifier@VsnSessionFinder@rage@@VsnNotifyBase@2@@rage@@
+  0x825E0DF0  .?AV?$atFunctor3@XPAVrlSessionFinder@rage@@$$CBW4NotifyCode@12@PAX@rage@@
+  0x825E0E48  .?AVNotifyHandler@?$rlNotifier@VrlSessionFinder@rage@@X@rage@@
+  0x825E11D0  .?AVsnSessionManager@rage@@
+  0x825E11F4  .?AVSessionManager@pongLiveManager@@
+  0x825E131C  .?AUsnNotifyPeerDropped@rage@@
+  0x825E13C0  .?AV?$hsmState@VsnSessionFinder@rage@@VslfRoot@12@@rage@@
+  0x825E153C  .?AV?$pongNetMessageHolder@VMatchDataMessage@@$01@@
+  0x825E15FC  .?AV?$pongNetMessageHolder@VMatchStatsMessage@@$01@@
+  0x825E17C4  .?AV?$pongNetMessageHolder@VForfeitMatchMessage@@$04@@
+  0x825E1898  .?AV?$pongNetMessageHolder@VScoreMessage@@$04@@
+  0x825E19D8  .?AV?$pongNetMessageHolder@VMatchScoreMessage@@$04@@
+  0x825E1A18  .?AV?$pongNetMessageHolder@VMatchDataSyncResponseMessage@@$01@@
+  0x825E1A60  .?AV?$pongNetMessageHolder@VMatchDataSyncMessage@@$01@@
+  0x825E1AE8  .?AV?$pongNetMessageHolder@VNextMatchSpectatorMessage@@$00@@
+  0x825E1B30  .?AV?$pongNetMessageHolder@VNextMatchMessage@@$00@@
+  0x825E1C88  .?AV?$pongNetMessageHolder@VLeaveSpectatorSessionMessage@@$01@@
+  0x825E1CD0  .?AV?$pongNetMessageHolder@VJoinSpectatorSessionMessage@@$01@@
+  0x825E23F0  .?AV?$pongNetMessageHolder@VForceSessionTimeSyncMessage@@$09@@
+  0x825E2438  .?AV?$pongNetMessageHolder@VSessionTimeSyncRequestMessage@@$09@@
+  0x825E2488  .?AV?$pongNetMessageHolder@VSessionTimeSyncMessage@@$09@@
+  0x825E24D0  .?AV?$pongNetMessageHolder@VForceMatchTimeSyncMessage@@$09@@
+  0x825E2518  .?AV?$pongNetMessageHolder@VMatchTimeSyncRequestMessageEx@@$09@@
+  0x825E2568  .?AV?$pongNetMessageHolder@VMatchTimeSyncRequestMessage@@$09@@
+  0x825E25B0  .?AV?$pongNetMessageHolder@VMatchTimeSyncMessage@@$09@@
+  0x825E2810  .?AVMatchDataMessage@@
+  0x825E287C  .?AVMatchStatsMessage@@
+  0x825E2968  .?AVScoreMessage@@
+  0x825E2A18  .?AVNextMatchSpectatorMessage@@
+  0x825E2A68  .?AVLeaveSpectatorSessionMessage@@
+  0x825E2A94  .?AVJoinSpectatorSessionMessage@@
+  0x825E2C10  .?AVMatchTimeSyncRequestMessageEx@@
+  0x825E2CF8  .?AVForfeitMatchMessage@@
+  0x825E2D98  .?AVMatchDataSyncResponseMessage@@
+  0x825E2DC4  .?AVMatchDataSyncMessage@@
+  0x825E2DE8  .?AVMatchScoreMessage@@
+  0x825E2E08  .?AVNextMatchMessage@@
+  0x825E30F8  .?AVForceSessionTimeSyncMessage@@
+  0x825E3124  .?AVSessionTimeSyncRequestMessage@@
+  0x825E3150  .?AVSessionTimeSyncMessage@@
+  0x825E3178  .?AVForceMatchTimeSyncMessage@@
+  0x825E31A0  .?AVMatchTimeSyncRequestMessage@@
+  0x825E31CC  .?AVMatchTimeSyncMessage@@
+  0x825E3290  .?AVstateAwaitingMessage@SessionMessageRequester@@
+  0x825E32CC  .?AVstateRequestingMessage@SessionMessageRequester@@
+  0x825E330C  .?AVstateIdle@SessionMessageRequester@@
+  0x825E333C  .?AVstateBase@SessionMessageRequester@@
+  0x825E336C  .?AVSessionMessageRequester@@
+  0x825E3B28  .?AV?$atSafeContainer@VNotifyHandler@?$rlNotifier@VsnSession@rage@@VsnNotifyBase@2@@rage@@V?$DLListSimple@VNotifyHandler@?$rlNotifier@VsnSession@rage@@VsnNotifyBase@2@@rage@@$0M@@3@@rage@@
+  0x825E3BF0  .?AV?$atSafeDLListSimple@VNotifyHandler@?$rlNotifier@VsnSession@rage@@VsnNotifyBase@2@@rage@@$0M@@rage@@
+  0x825E3C68  .?AV?$atFunctor3@XPAVrlSession@rage@@$$CBW4NotifyCode@12@PAX@rage@@
+  0x825E3CB8  .?AVNotifyHandler@?$rlNotifier@VrlSession@rage@@X@rage@@
+  0x825E3CFC  .?AUsnEnding@snActive@snRoot@snSession@rage@@
+  0x825E3D38  .?AUsnStartingSession@snStarting@snActive@snRoot@snSession@rage@@
+  0x825E3D88  .?AUsnArbHostRegistering@snStarting@snActive@snRoot@snSession@rage@@
+  0x825E3DD8  .?AUsnStarting@snActive@snRoot@snSession@rage@@
+  0x825E3E10  .?AUsnInProgress@snActive@snRoot@snSession@rage@@
+  0x825E3E50  .?AUsnArbGuestRegistering@snIdle@snActive@snRoot@snSession@rage@@
+  0x825E3E9C  .?AUsnIdle@snActive@snRoot@snSession@rage@@
+  0x825E3ED0  .?AUsnActive@snRoot@snSession@rage@@
+  0x825E3F00  .?AUsnMigrating@snRoot@snSession@rage@@
+  0x825E3F30  .?AUsnWaitingForReplies@snChangingPresence@snRoot@snSession@rage@@
+  0x825E3F80  .?AUsnChanging@snChangingPresence@snRoot@snSession@rage@@
+  0x825E3FC4  .?AUsnChangingPresence@snRoot@snSession@rage@@
+  0x825E3FFC  .?AUsnDestroying@snRoot@snSession@rage@@
+  0x825E4030  .?AUsnCreating@snRoot@snSession@rage@@
+  0x825E4060  .?AUsnDormant@snRoot@snSession@rage@@
+  0x825E4090  .?AUsnLeaving@snRoot@snSession@rage@@
+  0x825E40C0  .?AUsnJoining@snRoot@snSession@rage@@
+  0x825E40F0  .?AV?$hsmState@VsnSession@rage@@UsnRoot@12@@rage@@
+  0x825E412C  .?AUsnRoot@snSession@rage@@
+  0x825E4220  .?AUsnNotifyingGuests@snAcquiringHost@snMigrateMachine@rage@@
+  0x825E4268  .?AUsnMigrating@snAcquiringHost@snMigrateMachine@rage@@
+  0x825E42A8  .?AUsnAcquiringHost@snMigrateMachine@rage@@
+  0x825E42E0  .?AV?$hsmState@VsnSession@rage@@VsnMigrateMachine@2@@rage@@
+  0x825E43A4  .?AUEvtAcquireHostFailed@rage@@
+  0x825E43CC  .?AUEvtAcquireHostSucceeded@rage@@
+  0x825E43F8  .?AUEvtMigrateSession@rage@@
+  0x825E4420  .?AV?$hsmState@VsnSession@rage@@VsnArbMachine@2@@rage@@
+  0x825E4638  .?AV?$hsmState@VsnSession@rage@@VsnLeaveMachine@2@@rage@@
+  0x825E4704  .?AUEvtSessionLeaveFailed@rage@@
+  0x825E4730  .?AUEvtSessionLeaveSucceeded@rage@@
+  0x825E4B10  .?AV?$hsmState@VsnSession@rage@@VsnJoinMachine@2@@rage@@
+  0x825E4BFC  .?AUEvtSessionJoinFailed@rage@@
+  0x825E4C24  .?AUEvtSessionJoinSucceeded@rage@@
+  0x825E4DF8  .?AUsnHsmDestroyingSession@snCreateMachine@rage@@
+  0x825E4E34  .?AUsnHsmStartingSession@snCreateMachine@rage@@
+  0x825E4F50  .?AUsnHsmCreatingHost@snCreateMachine@rage@@
+  0x825E4F88  .?AV?$hsmState@VsnSession@rage@@VsnCreateMachine@2@@rage@@
+  0x825E5018  .?AUEvtStartSessionFailed@rage@@
+  0x825E5044  .?AUEvtStartInProgressSession@rage@@
+  0x825E5200  .?AUEvtHostCreate@rage@@
+  0x825E5400  .?AUEvtHostChangePresenceSucceeded@rage@@
+  0x825E548C  .?AVsnSession@rage@@
+  0x825E5564  .?AUslfFinal@slfRoot@snSessionFinder@rage@@
+  0x825E5598  .?AUslfFindingOnline@slfSearching@slfRoot@snSessionFinder@rage@@
+  0x825E55E8  .?AUslfBroadcasting@slfFindingSyslink@slfSearching@slfRoot@snSessionFinder@rage@@
+  0x825E5648  .?AUslfFindingSyslink@slfSearching@slfRoot@snSessionFinder@rage@@
+  0x825E5694  .?AUslfSearching@slfRoot@snSessionFinder@rage@@
+  0x825E56CC  .?AVslfRoot@snSessionFinder@rage@@
+  0x825E56F8  .?AVsnSessionFinder@rage@@
+  0x825E571C  .?AUEvtFindSessionOnline@rage@@
+  0x825E5744  .?AUEvtFindSessionSyslink@rage@@
+  0x825E5770  .?AUEvtFindSessionCancel@rage@@
+  0x825E582C  .?AUEvtSessionMigrateFailed@rage@@
+  0x825E5858  .?AUEvtSessionMigrateSucceeded@rage@@
+  0x825E6800  .?AV?$atSafeContainer@VNotifyHandler@?$rlNotifier@VrlSessionFinder@rage@@X@rage@@V?$DLListSimple@VNotifyHandler@?$rlNotifier@VrlSessionFinder@rage@@X@rage@@$0M@@3@@rage@@
+  0x825E68B8  .?AV?$atSafeDLListSimple@VNotifyHandler@?$rlNotifier@VrlSessionFinder@rage@@X@rage@@$0M@@rage@@
+  0x82741996  Manches par match
+  0x82741C7D  Score actuel
+  0x82741F1F  EMarquez le meilleur score pour chaque exercice du mode Entra
+  0x8274246F  Session spectateur
+  0x82742F97  Spiele pro Match
+  0x82743498  Matches gewonnen - Standard
+  0x827434B7  Matches gewonnen - Rangliste
+  0x82745CD8  Nome livello
+  0x82746512  /Tutti i livelli del gioco sono stati sbloccati.
+  0x82746680  Sessione spettatore
+  0x82746F62  Ranked
+  0x82747082  Games Per Match
+  0x827470BE  5 Match Winning Streak
+  0x827470D7  -Has won 5 Ranked Exhibition Matches in a row.
+  0x82747109  Network Port
+  0x8274731A  Current Score
+  0x82747497  an online match
+  0x8274751C  Matches Won - Standard
+  0x82747536  Matches Won - Ranked
+  0x8274757C  7Earn the highest score on every drill in Training Mode.
+  0x827477DB  MAchieve the highest TrueSkill rating possible in any Ranked online game mode.
+  0x82747940  WHas shutout opponents in 5+ non-consecutive games (any settings) in Ranked online play.
+  0x827479B0  1Has won 50+ (non-consecutive) Ranked Tournaments.
+  0x82747A24  Spectator Session
+  0x82747A4C  2Complete your first online match in any game mode.
+  0x82747AEA  *Awarded for spectating in an online match.
+  0x82747B19  3 Match Winning Streak
+  0x82747B32  -Has won 3 Ranked Exhibition Matches in a row.
+  0x82747B64  4 Match Winning Streak
+  0x82747B7D  -Has won 4 Ranked Exhibition Matches in a row.
+  0x8274811F  SShutout opponents in 5+ non-consecutive games (any settings) in Ranked online play.
+  0x82748176  )Win 3 Ranked Exhibition Matches in a row.
+  0x827481A3  )Win 4 Ranked Exhibition Matches in a row.
+  0x827481D0  )Win 5 Ranked Exhibition Matches in a row.

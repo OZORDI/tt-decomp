@@ -1,0 +1,949 @@
+; ===================================================================
+; SCRIPT / GAME LOGIC CONSTANTS
+; Rockstar Table Tennis  -  default.xex
+; ===================================================================
+
+; State machine class names visible in binary
+
+  0x82027878  [state_name]  pongCreature::ReplayStarting
+  0x820279D4  [state_name]  pongCreature::StartEmote
+  0x8202806C  [state_name]  pongMover::Reset
+  0x82028528  [state_name]  pongBlendLookAtDriver::UpdateBody--%i poses not supported.
+  0x82028564  [state_name]  pongBlendLookAtDriver::UpdateFace--%i poses not supported.
+  0x820287C0  [state_name]  pongSkelLookAtDriver::UpdateBody--bones are missing.
+  0x820300DC  [state_name]  gmLogicNode
+  0x820303B8  [state_name]  gmLogicSwingPractice::stateAim::onEnterState
+  0x8203085C  [state_name]  gmLogicSinglesMatch's next state was %s, is %s
+  0x82030BA0  [state_name]  gmLogicSinglesMatch::stateReplay::onEnterState
+  0x820319D4  [state_name]  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031AB8  [state_name]  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  [state_name]  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82035DB8  [state_name]  pongCameraMgr
+  0x820361C0  [state_name]  pongInlineCinematics
+  0x82039B2C  [state_name]  pongPlayer::Activate() - creature already activated
+  0x82039B80  [state_name]  pongPlayer::Activate() - creature already deactivated
+  0x82039BB8  [state_name]  pongPlayer::Deactivate() - SetLocalRemoteStatus()
+  0x82039BEC  [state_name]  pongPlayer::Deactivate() - UnRegisterMessages()
+  0x82039C1C  [state_name]  pongPlayer::Deactivate() - StopClothThreads()
+  0x82039C4C  [state_name]  pongPlayer::Deactivate() - RemoveCreatureFromLevel()
+  0x82039CA4  [state_name]  pongPlayer::PostUpdate() - player is not active
+  0x82039CD4  [state_name]  pongPlayer::Update() - player is not active
+  0x82039D00  [state_name]  pongPlayer::Update1() - player is not active
+  0x82039D30  [state_name]  pongPlayer::Update2() - player is not active
+  0x82039DC8  [state_name]  pongPlayer::UpdateReplay() - player is not active
+  0x82039DFC  [state_name]  pongPlayer::Draw() - player is not active
+  0x82039E28  [state_name]  pongPlayer::Render() - player[%d] is not active
+  0x82039E58  [state_name]  pongPlayer::SaveDrawData() - player is not active
+  0x82039FFC  [state_name]  pongPlayer::StartSwing() %s
+  0x8203A070  [state_name]  pongPlayer::FinalizeServe() %s
+  0x8203A114  [state_name]  pongPlayer::FinalizeSwing() %s
+  0x8203A1E0  [state_name]  pongPlayer::EnterServeMode
+  0x8203A1FC  [state_name]  pongPlayer::SetupServe %s
+  0x8203A218  [state_name]  pongPlayer::StartServe() %s
+  0x8203A234  [state_name]  pongPlayer::Serve() %s
+  0x8203A264  [state_name]  pongPlayer::Process() - player is not active
+  0x8203A294  [state_name]  pongPlayer::Process
+  0x8203A330  [state_name]  pongPlayer::HitBall
+  0x8203D240  [state_name]  pongLerpQueue::FindNeighborIndices - queue is empty!
+  0x8203E1B1  [state_name]  pongBallSpinData.Axis
+  0x8203E1D5  [state_name]  pongBallSpinData.CalcNetworkingValue
+  0x8203E464  [state_name]  pongBallHitData
+  0x8204E158  [state_name]  pongDrawBucketManager::Load() - invalid default bucket: %d
+  0x82056FE4  [state_name]  pongBallInstance::ActivateBall
+  0x820570A0  [state_name]  gmBallNode
+  0x82057170  [state_name]  gmBallNode::Reset
+  0x820594A4  [state_name]  pongRenderThread__Thread
+  0x820595B4  [state_name]  pongRenderThread releasing Device
+  0x820595D8  [state_name]  pongRenderThread Aquiring Device
+  0x820595FC  [state_name]  pongRenderThread Exiting
+  0x8205963C  [state_name]  pongBootState
+  0x8205E094  [state_name]  pongAttractState
+  0x8205E478  [state_name]  pongLogosState
+  0x8205E5C4  [state_name]  pongTrainingUIState
+  0x8205E85C  [state_name]  pongLoadingState
+  0x8205E9C8  [state_name]  pongPauseState
+  0x8205ED50  [state_name]  pongCreditsState
+  0x8205EF5C  [state_name]  pongCharViewState
+  0x8205F230  [state_name]  pongDialogState
+  0x8205F784  [state_name]  pongFrontendState
+  0x8205F854  [state_name]  pongLegalsState
+  0x8205FD34  [state_name]  pongPause_001
+  0x82062A64  [state_name]  pongUI_001
+  0x820653C0  [state_name]  pongCutSceneManager::Load() - cannot load cut scene '%s'
+  0x820655F4  [state_name]  pongCSActionCamAnim::Play() - empty camera shot sequence
+  0x8206A524  [state_name]  pongLightGlowSquare
+  0x8206A568  [state_name]  pongLightGlowCapsule
+  0x8206B818  [state_name]  gmLogicSpectator::stateReplay::onEnterState
+  0x8206C4F0  [state_name]  pongRemotePlayer::StartJunkSwing
+  0x8206D798  [state_name]  pongLiveManager
+  0x8206D980  [state_name]  pongLiveManager::StartSession called..
+  0x8206D9A8  [state_name]  pongLiveManager::EndSession() called..
+  0x82071844  [state_name]  pongGameState
+  0x82071B78  [state_name]  pongCSReplayDirector
+
+; Drill mode identifiers
+
+  0x820301E8  [drill]  training_drills
+  0x82030248  [drill]  Loading training mode tuning...
+  0x82030268  [drill]  $/tune/training
+  0x82030284  [drill]  gdTrainingDrills
+  0x82030298  [drill]  gdDrillMovementData
+  0x820302AC  [drill]  gdDrillServeMeterData
+  0x820302C4  [drill]  gdDrillServingData
+  0x820302D8  [drill]  gdDrillReturnData
+  0x820302EC  [drill]  gdDrillPlacementData
+  0x82030304  [drill]  gdDrillSoftShotData
+  0x82030318  [drill]  gdDrillChargingData
+  0x8203032C  [drill]  gdDrillSpinData
+  0x8203033C  [drill]  gdDrillFocusShotData
+  0x82030354  [drill]  gdDrillCounterSpinData
+  0x8203036C  [drill]  gdDrillSmashData
+  0x82030398  [drill]  Training mode tuning load done.
+  0x820303B8  [drill]  gmLogicSwingPractice::stateAim::onEnterState
+  0x820319D4  [drill]  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031A78  [drill]  pongDrillSoftShot::SetUpBallHitData() - unknown spin type [%d]
+  0x82031AB8  [drill]  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  [drill]  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82031B88  [drill]  pongDrillCounterSpin::IncreaseNumTries() - unknown spin type [%d]
+  0x82032374  [drill]  practice_targets
+  0x8203F014  [drill]  lvl_training
+  0x8203F644  [drill]  gdTrainingDrillData
+  0x8203F710  [drill]  UnlockDrillName
+  0x8203F730  [drill]  gdTrainingDrillData::PostLoadProperties() - 'TotalNumTries' must be positive
+  0x8203F840  [drill]  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpeed' must be in [0, %f]
+  0x8203F8F8  [drill]  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpeed' must be in [0, %f]
+  0x8203F948  [drill]  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' must be in [0, 1]
+  0x8203F9F8  [drill]  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpin' must be in [0, 1]
+  0x8203FB68  [drill]  gdTrainingDrillData::PostLoadProperties() - 'AimDelay' cannot be negative
+  0x8203FBB8  [drill]  gdTrainingDrillData::PostLoadProperties() - 'PostPointDelay' cannot be negative
+  0x8203FC08  [drill]  gdTrainingDrillData::PostLoadProperties() - 'NumEasyShots' cannot be negative
+  0x8203FCC0  [drill]  gdTrainingDrillData::PostLoadProperties() - 'ProbSameShot' cannot be negative
+  0x8203FE00  [drill]  DrillTime
+  0x8203FE38  [drill]  gdDrillMovementData::PostLoadProperties() - 'TargetRadius' must be positive
+  0x8203FEE0  [drill]  gdDrillMovementData::PostLoadProperties() - 'DetectRadius' must be positive
+  0x8203FF98  [drill]  gdDrillMovementData::PostLoadProperties() - 'DrillTime' cannot be negative
+  0x820400A8  [drill]  gdDrillMovementData::PostLoadProperties() - 'UrgentTime' cannot be negative
+  0x82040158  [drill]  gdDrillMovementData::PostLoadProperties() - 'TargetHitTime' cannot be negative
+  0x820401B0  [drill]  gdDrillServingData::PostLoadProperties() - 'TryTime' must be positive
+  0x82040260  [drill]  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be negative
+  0x820403D8  [drill]  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative
+  0x82040660  [drill]  gdDrillChargingData::PostLoadProperties() - 'DrillTime' cannot be negative
+  0x820406B0  [drill]  gdDrillChargingData::PostLoadProperties() - 'ChargePerFrame' must be positive
+  0x82040820  [drill]  gdDrillChargingData::PostLoadProperties() - 'UrgentTime' cannot be negative
+  0x820408E8  [drill]  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040930  [drill]  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040980  [drill]  gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040A28  [drill]  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040AD0  [drill]  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040B78  [drill]  gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x8204A848  [drill]  gdTrainingSaveValues
+  0x8204AB50  [drill]  Condition_Beat_Training
+  0x8204E3CC  [drill]  TrainingPopUp
+  0x8204E3DC  [drill]  TrainingHUD
+  0x8204E623  [drill]    training popup: %d
+  0x8204E638  [drill]      training hud: %d
+  0x820500B0  [drill]  msgTraining
+  0x82050834  [drill]  ExitTrainingUIState
+  0x82050848  [drill]  EnterTrainingUIState
+  0x82050860  [drill]  GoToTrainingUIState
+  0x82050E3C  [drill]  ClearRestartDrill
+  0x82050E50  [drill]  RestartDrill
+  0x82050E98  [drill]  DrillFailed
+  0x82050EA4  [drill]  DrillSuccessful
+  0x82050EC0  [drill]  EndDrill
+  0x82050ECC  [drill]  StartDrill
+  0x82050ED8  [drill]  ExitTrainingMode
+  0x82050EEC  [drill]  EnterTrainingMode
+  0x82050F00  [drill]  Incorrect message format for msgTraining::%s
+  0x8205C82C  [drill]  training_state
+  0x8205E5C4  [drill]  pongTrainingUIState
+  0x8205E5F4  [drill]  Training Mode UI loaded.
+  0x8205E610  [drill]  entered training mode UI state from invalid state '%s' (%d)
+  0x8205E64C  [drill]  exiting training mode UI state to invalid state '%s' (%d)
+  0x8205E78C  [drill]  Loading training mode loading screen...
+  0x8205E7E8  [drill]  trainingLoad
+  0x820600A0  [drill]  stxt_resume_drill
+  0x82060378  [drill]  stxt_training_menu
+  0x8206038C  [drill]  t_training_menu
+  0x8206039C  [drill]  stxt_restart_drill
+  0x820603B0  [drill]  t_restart_drill
+  0x82060C2C  [drill]  TrainingMode
+  0x82060C3C  [drill]  resetTraining
+  0x82060D10  [drill]  unknown drill %d!
+  0x82060D6C  [drill]  need to handle drill state %d!
+  0x82060DA4  [drill]  drill_serve_meter
+  0x82060DB8  [drill]  hudTrainingPopUp::Restart() - invalid user index %d for player 0
+  0x82060DFC  [drill]  drill_serving
+  0x82060E0C  [drill]  drill_return
+  0x82060E1C  [drill]  drill_charging
+  0x82060E2C  [drill]  drill_spin
+  0x82060E38  [drill]  drill_placement
+  0x82060E48  [drill]  drill_soft_shot
+  0x82060E58  [drill]  drill_smash
+  0x82060E64  [drill]  drill_focus_shot
+  0x82060E78  [drill]  drill_counter_spin
+  0x82060FEC  [drill]  stxt_t_training
+  0x82060FFC  [drill]  t_training
+  0x82061910  [drill]  stxt_start_drill
+  0x82061924  [drill]  t_start_drill
+  0x82061960  [drill]  stxt_training_unlock
+  0x82061984  [drill]  stxt_training_unlock_text
+  0x820620C0  [drill]  stxt_training_mode
+  0x820620D4  [drill]  t_training_mode
+  0x820620E4  [drill]  stxt_training_mode_txt
+  0x820620FC  [drill]  t_training_text
+  0x8206210C  [drill]  stxt_training_mode_loading
+  0x82062138  [drill]  t_training_level
+  0x82062DF8  [drill]  trainingLocked
+  0x820708A8  [drill]  Gamer %d presence set to: Training Mode
+  0x820719F0  [drill]  Loading Training Mode HUD...
+  0x82071A10  [drill]  Training Mode HUD loaded.
+  0x825D3778  [drill]  .?AVstatePostPoint@gmLogicSwingPractice@@
+  0x825D37AC  [drill]  .?AVstateReturnHit@gmLogicSwingPractice@@
+  0x825D37E0  [drill]  .?AVstateAwaitReturnHit@gmLogicSwingPractice@@
+  0x825D3818  [drill]  .?AVstateShoot@gmLogicSwingPractice@@
+  0x825D3848  [drill]  .?AVstateAim@gmLogicSwingPractice@@
+  0x825D3874  [drill]  .?AVstateMainMenu@gmLogicSwingPractice@@
+  0x825D38A8  [drill]  .?AVstateInit@gmLogicSwingPractice@@
+  0x825D38D8  [drill]  .?AVstatePreInit@gmLogicSwingPractice@@
+  0x825D3908  [drill]  .?AVstateBase@gmLogicSwingPractice@@
+  0x825D3938  [drill]  .?AVgmLogicSwingPractice@@
+  0x825D4170  [drill]  .?AVpongDrillSmash@@
+  0x825D4190  [drill]  .?AVpongDrillCounterSpin@@
+  0x825D41B4  [drill]  .?AVpongDrillFocusShot@@
+  0x825D41D8  [drill]  .?AVpongDrillSpin@@
+  0x825D41F4  [drill]  .?AVpongDrillCharging@@
+  0x825D4214  [drill]  .?AVpongDrillSoftShot@@
+  0x825D4234  [drill]  .?AVpongDrillPlacement@@
+  0x825D4258  [drill]  .?AVpongDrillReturn@@
+  0x825D4278  [drill]  .?AVpongDrillServing@@
+  0x825D4298  [drill]  .?AVpongDrillServeMeter@@
+  0x825D42BC  [drill]  .?AVpongDrillMovement@@
+  0x825D42DC  [drill]  .?AVpongTrainingDrill@@
+  0x825D4318  [drill]  .?AVgmPracticeTarget@@
+  0x825D755C  [drill]  .?AV?$atSingleton@VgdTrainingSaveData@@@@
+  0x825D7590  [drill]  .?AVgdTrainingSaveData@@
+  0x825D7F6C  [drill]  .?AVgdDrillSmashData@@
+  0x825D7F8C  [drill]  .?AVgdDrillCounterSpinData@@
+  0x825D7FB4  [drill]  .?AVgdDrillFocusShotData@@
+  0x825D7FD8  [drill]  .?AVgdDrillSpinData@@
+  0x825D7FF8  [drill]  .?AVgdDrillChargingData@@
+  0x825D801C  [drill]  .?AVgdDrillSoftShotData@@
+  0x825D8040  [drill]  .?AVgdDrillPlacementData@@
+  0x825D8064  [drill]  .?AVgdDrillReturnData@@
+  0x825D8084  [drill]  .?AVgdDrillServingData@@
+  0x825D80A8  [drill]  .?AVgdDrillServeMeterData@@
+  0x825D80CC  [drill]  .?AVgdDrillMovementData@@
+  0x825D80F0  [drill]  .?AVgdTrainingDrillData@@
+  0x825D8114  [drill]  .?AVgdTrainingDrills@@
+  0x825D893C  [drill]  .?AVgdTrainingSaveValues@@
+  0x825D8B1C  [drill]  .?AVgdUnlockConditionBeatTraining@@
+  0x825DEEE8  [drill]  .?AVhudTrainingHUD@@
+  0x825DEFDC  [drill]  .?AVpongTrainingUIContext@@
+  0x825DF000  [drill]  .?AVpongTrainingUIState@@
+  0x825DF024  [drill]  .?AVpongTrainingLoadingContext@@
+  0x825DF388  [drill]  .?AVhudTrainingPopUp@@
+  0x825DF3A8  [drill]  .?AVhudTrainingLoadScreen@@
+  0x8274318A  [drill]  Das Trainingscenter
+  0x827431E4  [drill]  Der Trainingsraum
+  0x82743508  [drill]  >Hole bei jedem Drill im Trainingsmodus die h
+  0x82743A15  [drill]  Spielt Trainingsmodus mit {c2}
+  0x82747264  [drill]  The Training Center
+  0x827472B6  [drill]  The Practice Room
+  0x8274757C  [drill]  7Earn the highest score on every drill in Training Mode.
+  0x827479E5  [drill]   Playing Training Mode
+
+; Animation/shot type identifiers
+
+  0x820275CC  [anim]  smash
+  0x82027678  [anim]  serve
+  0x820278F0  [anim]  pongCreature::StartEmote() - specify an animation before starting to play
+  0x82028124  [anim]  spine00
+  0x820281C8  [anim]  Interrupting Player %d Serve Blender
+  0x8202826C  [anim]  pcrAnimObserved
+  0x82028290  [anim]  pcrAnimObserved - Can't find anim '%s'.
+  0x82028518  [anim]  spine03
+  0x82028AF8  [anim]  pcrServeData
+  0x82028B14  [anim]  Backhand
+  0x82028B20  [anim]  Forehand
+  0x82028B2C  [anim]  ServeType
+  0x82028E98  [anim]  ServeRightStopWrong
+  0x82028EAC  [anim]  ServeRightStop
+  0x82028EBC  [anim]  ServeRightMove
+  0x82028ECC  [anim]  ServeRightStart
+  0x82028EDC  [anim]  ServeRightIdleInner
+  0x82028EF0  [anim]  ServeRightIdleExit
+  0x82028F04  [anim]  ServeRightIdleEnter
+  0x82028F18  [anim]  ServeLeftStopWrong
+  0x82028F2C  [anim]  ServeLeftStop
+  0x82028F3C  [anim]  ServeLeftMove
+  0x82028F4C  [anim]  ServeLeftStart
+  0x82028F5C  [anim]  ServeLeftIdleInner
+  0x82028F70  [anim]  ServeLeftIdleExit
+  0x82028F84  [anim]  ServeLeftIdleEnter
+  0x82028F98  [anim]  ServeIdle
+  0x8202E3A4  [anim]  MaxFramesBefore
+  0x8202E574  [anim]  SidespinOnly
+  0x8202E584  [anim]  BackspinOnly
+  0x8202E594  [anim]  TopspinOnly
+  0x8202E64C  [anim]  AllowFallbackFromITZ
+  0x8202E664  [anim]  AllowFallbackFromSoft
+  0x8202E6B4  [anim]  AutoMoveForehand
+  0x8202E6C8  [anim]  AutoMoveBackhand
+  0x8202E6DC  [anim]  ForehandPush
+  0x8202E6EC  [anim]  BackhandPush
+  0x8202E71C  [anim]  ForehandSlam
+  0x8202E72C  [anim]  BackhandSlam
+  0x8202E73C  [anim]  ForehandLow
+  0x8202E748  [anim]  BackhandLow
+  0x8202E754  [anim]  ForehandLunge
+  0x8202E764  [anim]  BackhandLunge
+  0x8202E774  [anim]  ForehandLungeFar
+  0x8202E788  [anim]  BackhandLungeFar
+  0x8202EA0C  [anim]  MidAutoMoveBackhand
+  0x8202EA20  [anim]  MidAutoMoveForehand
+  0x820302AC  [anim]  gdDrillServeMeterData
+  0x8203032C  [anim]  gdDrillSpinData
+  0x82030354  [anim]  gdDrillCounterSpinData
+  0x8203036C  [anim]  gdDrillSmashData
+  0x82030908  [anim]  PrePreServe
+  0x82030914  [anim]  PreServeSpectatorSyncState
+  0x82030930  [anim]  PreServeSync
+  0x82030940  [anim]  PreServe
+  0x8203094C  [anim]  ServeToss
+  0x82030958  [anim]  ServeHit
+  0x820309AC  [anim]  ServeBounce
+  0x820309B8  [anim]  HitNetServe
+  0x82030A14  [anim]  AwaitServeReturnHit
+  0x820318FC  [anim]  Serve Meter
+  0x82031908  [anim]  Serve Aim
+  0x82031940  [anim]  Spin
+  0x82031954  [anim]  Counter Spin
+  0x82031964  [anim]  Smash
+  0x820319D4  [anim]  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031A78  [anim]  pongDrillSoftShot::SetUpBallHitData() - unknown spin type [%d]
+  0x82031AB8  [anim]  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  [anim]  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82031B88  [anim]  pongDrillCounterSpin::IncreaseNumTries() - unknown spin type [%d]
+  0x820326E4  [anim]  ServeTip
+  0x82032750  [anim]  BadBackSpinDefenseTip
+  0x82032768  [anim]  FirstServeTip
+  0x8203386C  [anim]  spine+
+  0x82033874  [anim]  spine
+  0x82033880  [anim]  crIKSpine::Init - failed to find root bone
+  0x820338AC  [anim]  crIKSpine::Init - spine bone count < 1
+  0x820338D4  [anim]  crIKSpine::Init - failed to find spine bone %d
+  0x82033904  [anim]  crIKSpine::Init - failed to find pelvis bone
+  0x82033934  [anim]  crIKHead::Init - failed to find spine bone
+  0x820339E8  [anim]  crIKLimb::Init - failed to find spine bone (isArm %d, isLeftRight %c)
+  0x82033DE8  [anim]  globalShaderTime
+  0x82034A78  [anim]  Unexpected padding before a field in %s?
+  0x82034DAC  [anim]  LookupGlobalVar(%s) failed on required variable.
+  0x820351F4  [anim]  Unable to create backup texture for rendertarget
+  0x82035228  [anim]  Unable to create backup texture for depth render target
+  0x82035714  [anim]  UseGlobalEffects
+  0x82035C10  [anim]  audBank::RemoveUser %s - trying to remove before loaded.
+  0x820360B4  [anim]  inline_serveready
+  0x820360C8  [anim]  inline_serve
+  0x82036304  [anim]  UseGlobalClip
+  0x82036758  [anim]  _back
+  0x82036760  [anim]  _fore
+  0x82036D78  [anim]  [inlineMiniEmote] Post-point animation happened before end of point?
+  0x82036DC0  [anim]  [inlineMiniEmote] post-point animation before end-of-point?
+  0x82036F84  [anim]  SwingCam_SideShiftServe
+  0x82036FB0  [anim]  Inline_Backhand
+  0x82037388  [anim]  ServeLockedIn
+  0x82038DA4  [anim]  Cheat_NoBallSpin
+  0x82038DD0  [anim]  ITZ_RightSpinButton
+  0x82038DE4  [anim]  ITZ_LeftSpinButton
+  0x82038DF8  [anim]  ITZ_BackSpinButton
+  0x82038E0C  [anim]  ITZ_TopSpinButton
+  0x82038E20  [anim]  ITZ_RightSpinStick
+  0x82038E34  [anim]  ITZ_LeftSpinStick
+  0x82038E48  [anim]  ITZ_BackSpinStick
+  0x82038E5C  [anim]  ITZ_TopSpinStick
+  0x820399C8  [anim]  controller %d: got callback for unknown sequence %s
+  0x82039AF4  [anim]  noautoserves
+  0x82039B14  [anim]  servemeter
+  0x82039E8C  [anim]  Trying out serve contact pos %d
+  0x8203A070  [anim]  pongPlayer::FinalizeServe() %s
+  0x8203A1E0  [anim]  pongPlayer::EnterServeMode
+  0x8203A1FC  [anim]  pongPlayer::SetupServe %s
+  0x8203A218  [anim]  pongPlayer::StartServe() %s
+  0x8203A234  [anim]  pongPlayer::Serve() %s
+  0x8203A724  [anim]  LobHeightMeters
+  0x8203A848  [anim]  pongPlayerShaderParams::UpdateParams() called before m_player is set!
+  0x8203AD94  [anim]  xact2System: Unable to find global settings file '%s'
+  0x8203ADCC  [anim]  xact2System: No global settings file specified!
+  0x8203AF48  [anim]  [xact2System] Creating global effect bus with '%s' (managerIndex %d)...
+  0x8203AF90  [anim]  [xact2System] No global effect specified.  Creating pass-through voice...
+  0x8203B6D4  [anim]  %s:Announcer_Serve_%s
+  0x8203B77C  [anim]  %s:Announcer_LetServe
+  0x8203C208  [anim]  [pongAmbiencePlayer] Cheer timer expired.  Requesting priority drop.
+  0x8203C3F4  [anim]  global
+  0x8203C3FC  [anim]  global.data
+  0x8203D1E0  [anim]  gdReplayMgr::PurgeReplaySampleBallAfterTime(%f) - dropped %d samples
+  0x8203D8F0  [anim]  UISpin
+  0x8203DADC  [anim]  AceServe
+  0x8203E0D4  [anim]  SoftServe
+  0x8203E0E0  [anim]  Serve
+  0x8203E1B1  [anim]  pongBallSpinData.Axis
+  0x8203E1D5  [anim]  pongBallSpinData.CalcNetworkingValue
+  0x8203E34D  [anim]  ServesThisGame
+  0x8203E379  [anim]  ServeMeterVal
+  0x8203E391  [anim]  ServeHitVel
+  0x8203E3A9  [anim]  ServeHitAngVel
+  0x8203E3C4  [anim]  Is Serve
+  0x8203E3D0  [anim]  Not a Serve
+  0x8203E4E4  [anim]  ServeMeterVal
+  0x8203E52C  [anim]  IsServe
+  0x8203E534  [anim]  SpinAxis
+  0x8203E540  [anim]  ServeHitVel
+  0x8203E54C  [anim]  ServeHitAngVel
+  0x8203F698  [anim]  MinBallSpin
+  0x8203F6A4  [anim]  MaxBallSpin
+  0x8203F948  [anim]  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' must be in [0, 1]
+  0x8203F9F8  [anim]  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpin' must be in [0, 1]
+  0x820401F8  [anim]  NumSpinShots
+  0x8204021C  [anim]  MinPrimarySpin
+  0x8204022C  [anim]  MaxSecondaryTopBackSpin
+  0x82040244  [anim]  MaxSecondaryLeftRightSpin
+  0x82040260  [anim]  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be negative
+  0x820403D8  [anim]  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative
+  0x820408CC  [anim]  MinSpin
+  0x820408D4  [anim]  ProbSameSpin
+  0x820408E8  [anim]  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040930  [anim]  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040980  [anim]  gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040A28  [anim]  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040AD0  [anim]  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040B78  [anim]  gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x820416E4  [anim]  PointsPerServe
+  0x820418C0  [anim]  SpinAdjustment
+  0x82041918  [anim]  ConserveMeter
+  0x8204195C  [anim]  UseSpinCounter
+  0x8204197C  [anim]  CombineSpin
+  0x82041B14  [anim]  spin detection node already found in shots.xml: %s
+  0x82041BE0  [anim]  gdaiComeBackLogic
+  0x820430D8  [anim]  Invalid serve tip found: %d
+  0x820430F4  [anim]  Invalid serve tip, setting InARow to default
+  0x820438EC  [anim]  ServeHitA
+  0x820438F8  [anim]  ServeHitB
+  0x82043904  [anim]  WindowServeHit
+  0x82043914  [anim]  WindowServeHitA
+  0x82043924  [anim]  WindowServeHitB
+  0x820447D0  [anim]  LungeForehand
+  0x820447E0  [anim]  LungeBackhand
+  0x820447F0  [anim]  LungeForehandA
+  0x82044800  [anim]  LungeForehandB
+  0x82044810  [anim]  LungeBackhandA
+  0x82044820  [anim]  LungeBackhandB
+  0x8204484C  [anim]  OverTheTableForehand
+  0x82044864  [anim]  OverTheTableBackhand
+  0x82047998  [anim]  MatchLungeForehandMaskA
+  0x82047A18  [anim]  MatchLungeForehandMaskB
+  0x82047A98  [anim]  MatchLungeBackhandMaskA
+  0x82047B18  [anim]  MatchLungeBackhandMaskB
+  0x82048AF0  [anim]  POI_PPBA_EnteringViewFrustum_LungeForehandMaskA_NotAlmostInterestConclude
+  0x82048B40  [anim]  POI_PPBB_EnteringViewFrustum_LungeForehandMaskB_NotAlmostInterestConclude
+  0x82048B90  [anim]  POI_PPBA_EnteringViewFrustum_LungeBackhandMaskA_NotAlmostInterestConclude
+  0x82048BE0  [anim]  POI_PPBB_EnteringViewFrustum_LungeBackhandMaskB_NotAlmostInterestConclude
+  0x820498BC  [anim]  Backhand JIT
+  0x820498CC  [anim]  Backhand SOT
+  0x820498DC  [anim]  Backhand OTT
+  0x820498EC  [anim]  Backhand Scoop
+  0x820498FC  [anim]  Backhand Smash
+  0x8204990C  [anim]  Backhand Lunge Far
+  0x82049920  [anim]  Backhand Lunge
+  0x82049930  [anim]  Forehand JIT
+  0x82049940  [anim]  Forehand SOT
+  0x82049950  [anim]  Forehand OTT
+  0x82049960  [anim]  Forehand Scoop
+  0x82049970  [anim]  Forehand Smash
+  0x82049980  [anim]  Forehand Lunge Far
+  0x82049994  [anim]  Forehand Lunge
+  0x820499AC  [anim]  VertSpin
+  0x820499B8  [anim]  SideSpin
+  0x820499C4  [anim]  SpinDef
+  0x82049AA4  [anim]  TopSpin
+  0x82049AAC  [anim]  BackSpin
+  0x82049AB8  [anim]  Sidespin
+  0x82049AC4  [anim]  SpinDefense
+  0x82049AD0  [anim]  SideSpinDefense
+  0x82049AE0  [anim]  TopSpinITZ
+  0x82049AEC  [anim]  BackSpinITZ
+  0x82049B04  [anim]  SidespinITZ
+  0x82049B1C  [anim]  SpinDefenseITZ
+  0x82049B2C  [anim]  SideSpinDefenseITZ
+  0x82049B40  [anim]  TopSpinMaxITZ
+  0x82049B50  [anim]  BackSpinMaxITZ
+  0x82049B70  [anim]  SidespinMaxITZ
+  0x82049B90  [anim]  SpinDefenseMaxITZ
+  0x82049BA4  [anim]  SideSpinDefenseMaxITZ
+  0x82049C18  [anim]  LocoServeSpeed
+  0x82049C28  [anim]  LocoServeAccel
+  0x82049C38  [anim]  ServeTopSpin
+  0x82049C48  [anim]  ServeBackSpin
+  0x82049C58  [anim]  ServeLeftSpin
+  0x82049C68  [anim]  ServeRightSpin
+  0x82049C78  [anim]  ServeAccuracy
+  0x82049C98  [anim]  MaxTopSpinRPS
+  0x82049CA8  [anim]  MaxBackSpinRPS
+  0x82049CB8  [anim]  MaxSideSpinRPS
+  0x82049CC8  [anim]  MaxTopSpinRPSITZ
+  0x82049CDC  [anim]  MaxBackSpinRPSITZ
+  0x82049CF0  [anim]  MaxSideSpinRPSITZ
+  0x82049D04  [anim]  MaxTopSpinRPSMaxITZ
+  0x82049D18  [anim]  MaxBackSpinRPSMaxITZ
+  0x82049D30  [anim]  MaxSideSpinRPSMaxITZ
+  0x82049D48  [anim]  MaxTopSpinRPSServe
+  0x82049D5C  [anim]  MaxBackSpinRPSServe
+  0x82049D70  [anim]  MaxSideSpinRPSServe
+  0x82049D84  [anim]  MaxSpinChargeTime
+  0x82049D98  [anim]  MaxSpinChargeTimeITZ
+  0x82049DB0  [anim]  MaxSpinChargeTimeMaxITZ
+  0x82049E74  [anim]  LocoServeMaxSpeed
+  0x82049E88  [anim]  LocoServeMaxAccel
+  0x82049ED0  [anim]  MaxSpinChargeRate
+  0x82049EE4  [anim]  MaxSpinChargeRateITZ
+  0x82049EFC  [anim]  MaxSpinChargeRateMaxITZ
+  0x8204A2F0  [anim]  Tried to advance to next round before round %d was complete!
+  0x8204A70C  [anim]  attempting to unload root "%s" before initializing manager %s
+  0x8204C494  [anim]  BallSpin
+  0x8204C4A0  [anim]  ComebackWin
+  0x8204C4E8  [anim]  Incorrect BallSpin[%.2f], setting to default
+  0x8204C518  [anim]  Incorrect ComebackWin[%d]
+  0x8204C87C  [anim]  Spin_Type
+  0x8204C9DC  [anim]  GlobalLimit
+  0x8204DDF4  [anim]  FrontToBack
+  0x8204DE00  [anim]  BackToFront
+  0x8204DE58  [anim]  PreDrawCallback:
+  0x8204DE70  [anim]  pongDrawBucket::Load() - unknown pre-draw callback '%s' for bucket '%s'
+  0x8204DEB8  [anim]  PostDrawCallback:
+  0x8204DED0  [anim]  pongDrawBucket::Load() - unknown post-draw callback '%s' for bucket '%s'
+  0x8204EB58  [anim]  looping disabled for this mfRegisteredPlayback
+  0x8205037C  [anim]  StopServeMeter
+  0x8205038C  [anim]  StartServeMeter
+  0x82050540  [anim]  EnterPreServe
+  0x82050550  [anim]  EnterPrePreServe
+  0x820506F0  [anim]  ServeAce
+  0x820506FC  [anim]  ServeSuccess
+  0x8205070C  [anim]  ServeFault
+  0x82050718  [anim]  ServeLet
+  0x82050724  [anim]  ServeTimeout
+  0x82050734  [anim]  ReadyServeB
+  0x82050740  [anim]  ReadyServeA
+  0x820509BC  [anim]  ServeReallyReady
+  0x820509F4  [anim]  ExitServeReady
+  0x82050A04  [anim]  EnterServeReady
+  0x82050B8C  [anim]  ServeAnimStart
+  0x82050B9C  [anim]  ServeChargeStart
+  0x82050BB0  [anim]  ServeReady
+  0x82050D08  [anim]  ExitServe
+  0x82050D14  [anim]  EnterServe
+  0x82051140  [anim]  CancelLobbyCountdown
+  0x82051158  [anim]  StartLobbyCountdown
+  0x820513C4  [anim]  ServeStartReceived
+  0x82051434  [anim]  PostSignalReadyToServeMessage
+  0x82051454  [anim]  OpponentDropSpectatorMode
+  0x82051578  [anim]  LobbyToGame
+  0x820515F4  [anim]  ServeAnimReady
+  0x82051604  [anim]  ServeStartedResponse
+  0x8205161C  [anim]  ServeStarted
+  0x8205162C  [anim]  ServeAbort
+  0x82051900  [anim]  LobbyToGameSignalled
+  0x82051A20  [anim]  serve anim start
+  0x82051BD0  [anim]  LobApex
+  0x820521A0  [anim]  Warning: Can't run action '%s'. Using '%s' as a fallback
+  0x820570BC  [anim]  VisualSpinScale
+  0x820572D8  [anim]  Could not find a successful serve for %d iterations
+  0x82057310  [anim]  Num valid bad serves was zero for %d iterations
+  0x82057344  [anim]  Could not find a bad serve for %d iterations
+  0x8205A7F0  [anim]  Unable to establish server on port %d, already in use?
+  0x8205B138  [anim]  toggleServeMeter
+  0x8205B3BC  [anim]  DroppedPlayer
+  0x8205B474  [anim]  playersServe
+  0x8205B484  [anim]  perfectServe
+  0x8205B6D0  [anim]  stxt_points_from_serves
+  0x8205B6E8  [anim]  t_point_off_serves
+  0x8205B770  [anim]  stxt_forehand_shots
+  0x8205B784  [anim]  t_forehand_shots
+  0x8205B798  [anim]  stxt_backhand_shots
+  0x8205B7AC  [anim]  t_backhand_shots
+  0x8205B7C0  [anim]  stxt_points_from_forehand
+  0x8205B7DC  [anim]  t_points_off_forehand
+  0x8205B7F4  [anim]  stxt_points_from_backhand
+  0x8205B810  [anim]  t_points_off_backhand
+  0x8205B828  [anim]  stxt_points_from_topspin
+  0x8205B844  [anim]  t_points_from_topspin
+  0x8205B85C  [anim]  stxt_points_from_rightspin
+  0x8205B878  [anim]  t_points_from_sidespin_rt
+  0x8205B894  [anim]  stxt_points_from_leftspin
+  0x8205B8B0  [anim]  t_points_from_sidespin_lft
+  0x8205B8CC  [anim]  stxt_points_from_backspin
+  0x8205B8E8  [anim]  t_points_from_backspin
+  0x8205B900  [anim]  stxt_points_from_smash
+  0x8205B918  [anim]  t_smash_points
+  0x8205B928  [anim]  stxt_smash_shots
+  0x8205B93C  [anim]  t_smash_shots
+  0x8205BE50  [anim]  ServeMeterX
+  0x8205BE5C  [anim]  ServeMeterY
+  0x8205BE68  [anim]  playerServeTimer
+  0x8205BE7C  [anim]  ServeMeterscale
+  0x8205C094  [anim]  point_off_serves
+  0x8205C0D8  [anim]  forehand_shots
+  0x8205C0E8  [anim]  backhand_shots
+  0x8205C0F8  [anim]  points_off_forehand
+  0x8205C10C  [anim]  points_off_backhand
+  0x8205C120  [anim]  points_from_topspin
+  0x8205C134  [anim]  points_from_sidespin_rt
+  0x8205C14C  [anim]  points_from_sidespin_lft
+  0x8205C168  [anim]  points_from_backspin
+  0x8205C180  [anim]  smash_points
+  0x8205C190  [anim]  smash_shots
+  0x8205C368  [anim]  iDelayServer
+  0x8205C378  [anim]  iCurrServer
+  0x8205C384  [anim]  playersSpin
+  0x8205C390  [anim]  spinalpha
+  0x8205C5E0  [anim]  stxt_dropped_player
+  0x8205C5F4  [anim]  t_dropped_player
+  0x8205C7FC  [anim]  SpinWheelSpeed
+  0x8205C8A8  [anim]  currentSpin
+  0x8205C8C0  [anim]  serve_meter
+  0x8205C900  [anim]  spin
+  0x8205C914  [anim]  counterspin
+  0x8205C9D8  [anim]  stxt_t_topspin
+  0x8205C9E8  [anim]  t_topspin
+  0x8205C9F4  [anim]  stxt_t_backspin
+  0x8205CA04  [anim]  t_backspin
+  0x8205CA10  [anim]  stxt_t_leftspin
+  0x8205CA20  [anim]  t_leftspin
+  0x8205CA2C  [anim]  stxt_t_rightspin
+  0x8205CA40  [anim]  t_rightspin
+  0x8205CA4C  [anim]  stxt_t_focus_topspin
+  0x8205CA64  [anim]  t_focus_topspin
+  0x8205CA74  [anim]  stxt_t_focus_backspin
+  0x8205CA8C  [anim]  t_focus_backspin
+  0x8205CAA0  [anim]  stxt_t_focus_leftspin
+  0x8205CAB8  [anim]  t_focus_leftspin
+  0x8205CACC  [anim]  stxt_t_focus_rightspin
+  0x8205CAE4  [anim]  t_focus_rightspin
+  0x8205CD30  [anim]  lobbytimer
+  0x8205CD3C  [anim]  lobbycreatefail
+  0x8205CD4C  [anim]  lobbyjoinfail
+  0x8205CD5C  [anim]  lobbysyncfail
+  0x8205CD6C  [anim]  lobbyarbfail
+  0x8205CD7C  [anim]  lobbyreadyfail
+  0x8205CF5C  [anim]  Unsupported points per serve enum value = %d
+  0x8205D000  [anim]  MatchOver -- Booting spectator from lobby!
+  0x8205D288  [anim]  felive_lobby_waiting_for_player
+  0x8205D2A8  [anim]  currentLobbyTourneySelection
+  0x8205D3A0  [anim]  Kicking user from lobby/limbo to %d
+  0x8205D3E0  [anim]  currentPostLobbySelection
+  0x8205D518  [anim]  Join from Hud -- Exiting old lobby
+  0x8205D738  [anim]  custom_PointsPerServe
+  0x8205D750  [anim]  Unknown custom_PointsPerServe = %d
+  0x8205D868  [anim]  create_PointsPerServe
+  0x8205D880  [anim]  Unknown create_PointsPerServe = %d
+  0x8205D8CC  [anim]  lobbyNextCharacter
+  0x8205D8E0  [anim]  lobbyNextVariant
+  0x8205D904  [anim]  lobbyNextLevel
+  0x8205D940  [anim]  EnterLobbySync
+  0x8205D950  [anim]  -lobbysyncfail, forcing peer to drop from session
+  0x8205D984  [anim]  EnterLobbyArb
+  0x8205D994  [anim]  -lobbyarbfail, forcing peer to drop from session
+  0x8205DA6C  [anim]  EnterLobbyReady
+  0x8205DA7C  [anim]  -lobbyreadyfail, forcing peer to drop from session
+  0x8205DB6C  [anim]  Exiting limbo to flashState %d, lobbyState %d
+  0x8205DB9C  [anim]  Waiting for complete transition before exiting limbo...
+  0x8205DBD4  [anim]  PreEnterLobbyState = %d
+  0x8205DCA0  [anim]  PopulatePostLobbyScreen %d
+  0x8205DCBC  [anim]  PopulatePostLobbyScreen exhibition stats
+  0x8205DCE8  [anim]  PopulatePostLobbyScreen tournament stats
+  0x8205DD14  [anim]  PopulatePostLobbyScreen exhibition scoreboard
+  0x8205DD44  [anim]  PopulatePostLobbyScreen tournament scoreboard round %d
+  0x8205DD7C  [anim]  PopulatePostLobbyScreen() screen %d is invalid type %d.
+  0x8205DDB4  [anim]  PopulatePostLobbyScreen() -- GLOBAL_PLAYERS_ROW == %d
+  0x8205DF70  [anim]  stxt_list_back
+  0x8205FF94  [anim]  stxt_back
+  0x8205FFA0  [anim]  t_back
+  0x8205FFA8  [anim]  stxt_left_spin
+  0x8205FFB8  [anim]  t_left_spin
+  0x8205FFC4  [anim]  stxt_right_spin
+  0x8205FFD4  [anim]  t_right_spin
+  0x8206000C  [anim]  stxt_back_spin
+  0x8206001C  [anim]  t_back_spin
+  0x82060028  [anim]  stxt_top_spin
+  0x82060038  [anim]  t_top_spin
+  0x82060808  [anim]  stxt_spin
+  0x82060814  [anim]  t_spin
+  0x82060C4C  [anim]  stxt_tip_serve_meter
+  0x82060CC4  [anim]  stxt_tip_spin
+  0x82060CE8  [anim]  stxt_tip_counter_spin
+  0x82060D00  [anim]  stxt_tip_smash
+  0x82060DA4  [anim]  drill_serve_meter
+  0x82060E2C  [anim]  drill_spin
+  0x82060E58  [anim]  drill_smash
+  0x82060E78  [anim]  drill_counter_spin
+  0x82060FE0  [anim]  stxt_t_back
+  0x82061040  [anim]  stxt_t_serve_meter
+  0x82061054  [anim]  t_serve_meter
+  0x820610EC  [anim]  stxt_t_spin
+  0x82061140  [anim]  stxt_t_counterspin
+  0x82061154  [anim]  t_counterspin
+  0x820611A8  [anim]  stxt_t_smashes
+  0x820611B8  [anim]  t_smashes
+  0x820611F4  [anim]  stxt_t_back_spin
+  0x82061208  [anim]  stxt_t_left_spin
+  0x8206121C  [anim]  stxt_t_right_spin
+  0x82061230  [anim]  stxt_t_top_spin
+  0x820612C4  [anim]  stxt_t_serve_meter_1
+  0x820612DC  [anim]  t_serve_meter_1
+  0x820612EC  [anim]  stxt_t_serve_meter_2
+  0x82061304  [anim]  t_serve_meter_2
+  0x82061314  [anim]  stxt_t_serve_meter_3
+  0x8206132C  [anim]  t_serve_meter_3
+  0x8206133C  [anim]  stxt_t_serve_meter_4
+  0x82061354  [anim]  t_serve_meter_4
+  0x82061364  [anim]  stxt_t_serve_meter_5
+  0x8206137C  [anim]  t_serve_meter_5
+  0x82061504  [anim]  stxt_t_spin_1
+  0x82061514  [anim]  t_spin_1
+  0x82061520  [anim]  stxt_t_spin_2
+  0x82061530  [anim]  t_spin_2
+  0x8206153C  [anim]  stxt_t_spin_3
+  0x8206154C  [anim]  t_spin_3
+  0x82061558  [anim]  stxt_t_spin_4
+  0x82061568  [anim]  t_spin_4
+  0x82061574  [anim]  stxt_t_spin_5
+  0x82061584  [anim]  t_spin_5
+  0x82061590  [anim]  stxt_t_counterspin_1
+  0x820615A8  [anim]  t_counterspin_1
+  0x820615B8  [anim]  stxt_t_counterspin_2
+  0x820615D0  [anim]  t_counterspin_2
+  0x820615E0  [anim]  stxt_t_counterspin_3
+  0x820615F8  [anim]  t_counterspin_3
+  0x82061674  [anim]  stxt_t_smashes_1
+  0x82061688  [anim]  t_smashes_1
+  0x82061694  [anim]  stxt_t_smashes_2
+  0x820616A8  [anim]  t_smashes_2
+  0x820616B4  [anim]  stxt_t_smashes_3
+  0x820616C8  [anim]  t_smashes_3
+  0x820616D4  [anim]  stxt_t_smashes_4
+  0x820616E8  [anim]  t_smashes_4
+  0x82061828  [anim]  stxt_brief_serve_meter
+  0x8206187C  [anim]  stxt_brief_spin
+  0x820618BC  [anim]  stxt_brief_smash
+  0x820618E8  [anim]  stxt_brief_counter_spin
+  0x82061CB8  [anim]  t_prompt_back
+  0x820623F8  [anim]  Please specify the credits setting before any credits!
+  0x8206246C  [anim]  back_prompt_alpha
+  0x82062628  [anim]  stxt_charview_back
+  0x820633E4  [anim]  stxt_lobby
+  0x820633F0  [anim]  t_lobby
+  0x82063930  [anim]  stxt_post_xbox_live_lobby
+  0x8206394C  [anim]  t_post_xbox_live_lobby
+  0x82063BF8  [anim]  stxt_post_game_lobby
+  0x82063C10  [anim]  t_post_game_lobby
+  0x82063CC4  [anim]  stxt_hold_spin
+  0x82063CD4  [anim]  t_hold_spin
+  0x82063D5C  [anim]  stxt_points_per_serve
+  0x82063D74  [anim]  t_points_per_serve
+  0x82063ED8  [anim]  stxt_post_lobby
+  0x82063EE8  [anim]  t_post_lobby
+  0x82064158  [anim]  stxt_postlobby_gameswon
+  0x82064178  [anim]  stxt_postlobby_gameslost
+  0x8206419C  [anim]  stxt_postlobby_roundswon
+  0x820641C0  [anim]  stxt_postlobby_roundslost
+  0x820641E4  [anim]  stxt_postlobby_roundstied
+  0x82064208  [anim]  stxt_postlobby_chat
+  0x82066E14  [anim]  Packet is too small - dropping
+  0x82066E34  [anim]  Packet is too big - dropping
+  0x82066E54  [anim]  Packet size doesn't match recvfrom size - dropping
+  0x82066E88  [anim]  Packet has no payload - dropping
+  0x82066EAC  [anim]  Packet payload is too big - dropping
+  0x82067628  [anim]  Attempt to start a ranked session before registering for arbitration
+  0x82067698  [anim]  Attempt to start an arbitrated session before registering for arbitration
+  0x82068408  [anim]    XNADDR: Local host has one or more DNS servers configured
+  0x82068444  [anim]    XNADDR: *** Local host no DNS servers configured
+  0x8206AADC  [anim]  num_spins
+  0x8206AAE8  [anim]  no_spin
+  0x8206AAF0  [anim]  top_right_spin
+  0x8206AB00  [anim]  right_spin
+  0x8206AB0C  [anim]  back_right_spin
+  0x8206AB1C  [anim]  back_spin
+  0x8206AB28  [anim]  back_left_spin
+  0x8206AB38  [anim]  left_spin
+  0x8206AB44  [anim]  top_left_spin
+  0x8206AB54  [anim]  top_spin
+  0x8206B0C8  [anim]  spin_wisp_c
+  0x8206B0D4  [anim]  spin_tex_c
+  0x8206B0E0  [anim]  spin_lines_c
+  0x8206B0F0  [anim]  spin_wisp_b
+  0x8206B0FC  [anim]  spin_tex_b
+  0x8206B108  [anim]  spin_lines_b
+  0x8206B118  [anim]  spin_wisp_a
+  0x8206B124  [anim]  spin_tex_a
+  0x8206B130  [anim]  spin_lines_a
+  0x8206B140  [anim]  numspins
+  0x8206B14C  [anim]  nospin
+  0x8206B154  [anim]  toprightspin
+  0x8206B164  [anim]  rightspin
+  0x8206B170  [anim]  backrightspin
+  0x8206B180  [anim]  backspin
+  0x8206B18C  [anim]  backleftspin
+  0x8206B19C  [anim]  leftspin
+  0x8206B1A8  [anim]  topleftspin
+  0x8206B1B4  [anim]  topspin
+  0x8206B1BC  [anim]  AxisSpin
+  0x8206B1C8  [anim]  MinTopspin
+  0x8206B250  [anim]  BallSpinData
+  0x8206B260  [anim]  spindicators
+  0x8206B278  [anim]  ballspin
+  0x8206B284  [anim]  Cannot load ball spin tuning file ballspin.fx!
+  0x8206B2B4  [anim]  fxBallSpinLines::Update() - initialAngVel is bad
+  0x8206B2E8  [anim]  fxBallSpinLines::Update() - ballPos is bad
+  0x8206B314  [anim]  fxBallSpinLines::Update() - pos is bad
+  0x8206B33C  [anim]  fxBallSpinLines::Update() - m_OrbitMtx.c is bad
+  0x8206B3F8  [anim]  TopSpinColor
+  0x8206B408  [anim]  BackSpinColor
+  0x8206B418  [anim]  NoSpinColor
+  0x8206C158  [anim]  Received RemoteServeReadyMessage at %s
+  0x8206C180  [anim]  Unlocking Serve at %s
+  0x8206C198  [anim]  Received ServeUnlockMessage at %s
+  0x8206CFB8  [anim]  Match %s was unplayable but neither player foreit?? (home=%d, away=%d)
+  0x8206DB70  [anim]  Host dropped out before we successfully joined! NOT migrating host.
+  0x8206E75C  [anim]  PostGameLobby
+  0x8206E77C  [anim]  PreGameLobbyReady
+  0x8206E790  [anim]  PreGameLobbyArb
+  0x8206E7A0  [anim]  PreGameLobbySync
+  0x8206E7B4  [anim]  PreGameLobby
+  0x8206E840  [anim]  ServeUnlockMessage
+  0x8206E854  [anim]  RemoteServeReadyMessage
+  0x8206E98C  [anim]  SignalReadyToServeMessage
+  0x8206E9A8  [anim]  ServeReadyMessage
+  0x8206E9BC  [anim]  ServeAbortMessage
+  0x8206E9D0  [anim]  ServeStartedMessage
+  0x8206E9E4  [anim]  ServeFaultMessage
+  0x8206E9F8  [anim]  ServeLetMessage
+  0x8206EAE4  [anim]  DropSpectatorConnection
+  0x8206EE4C  [anim]  StartLobbyCountdownMessage
+  0x8206EE68  [anim]  CancelLobbyCountdownMessage
+  0x8206EF0A  [anim]  total serves this game <message(%d), game(%d)>
+  0x8206F270  [anim]  unlocking serve %s
+  0x8206F284  [anim]  Remote Player Is Ready To Serve %s
+  0x8206F2E8  [anim]  RemotePlayer cannot send ServeStartedMessage
+  0x8206F318  [anim]  ignoring ServeFaultMessage game(%d) message(%d)
+  0x8206F348  [anim]  ignoring ServeLetMessage game(%d) message(%d)
+  0x82070BD0  [anim]  MRB- #2 msgNet::kOpponentDropSpectatorMode, winner=%d forfeit=%d
+  0x82070CAC  [anim]  MRB- msgNet::kOpponentDropSpectatorMode winner=%d forfeit=%d
+  0x82070F24  [anim]  serveTimeDelay
+  0x82070FCC  [anim]  LobbyCountdownSeconds
+  0x82070FFC  [anim]  latancyAmountToStartFrameDrop
+  0x8207101C  [anim]  latencyToFrameDropFactor
+  0x820710A0  [anim]  serverReadyRemoteGoalTolerance
+  0x820710DC  [anim]  remoteServeReadyVelocity
+  0x820712E4  [anim]  StartBeforeSyncState %s, killing wait time
+  0x82071310  [anim]  StartBeforeSyncState %s
+  0x82071328  [anim]  Cannot StartBeforeSyncState %s, still syncing
+  0x82072094  [anim]  EvtDroppedConnection
+  0x820749EC  [anim]  invalid distance too far back
+  0x82074C58  [anim]  global array [%s] does not exist
+  0x82074DC4  [anim]  _global
+  0x82074EBC  [anim]  __drawcallback
+  0x82075030  [anim]  GlobalMethod %s does not exist!
+  0x82075700  [anim]  Must call STRINGTABLE.Init() or STRINGTABLE.Load() before txtStringTable::Get()
+  0x82075894  [anim]  Back Right
+  0x820758A0  [anim]  Back Left
+  0x820759F4  [anim]  Feedback
+  0x82076BD0  [anim]  temporarily mark the last used animation '%s' before recycle as used again
+  0x820770BC  [anim]  IsServer
+  0x820783E0  [anim]  S%d: Dropping "%s" (%s), id:%d, size:%d, seq:%d
+  0x820785A0  [anim]  Dropping connection:%d
+  0x82078640  [anim]  netNotifyDropMessage
+  0x82078920  [anim]  Received unreliable message before receiving first reliable message
+  0x82078A58  [anim]  Packet is still compressed, Validate will fail, call UnPack before we validate.
+  0x82078AA8  [anim]  Packet with invalid size:%d dropped
+  0x82078ACC  [anim]  Invalid packet with reported size:%d (actually:%d) dropped
+  0x82078B08  [anim]  Invalid message with bogus size %d dropped
+  0x82078B38  [anim]  Total message count (%d) doesn't agree with packet message count (%d) - dropped
+  0x82078B88  [anim]  Total message size (%d) doesn't agree with packet size (%d) - dropped
+  0x825C1A75  [anim]  /msgserver/vetstring2.ashx
+  0x825C1AE8  [anim]  /msgserver/msgserver.ashx
+  0x825C1CF8  [anim]  /msgserver/getstring2.ashx
+  0x825C1D2E  [anim]  /fbserver/enumrecdreview.ashx
+  0x825C1D4C  [anim]  /fbserver/enumsentreview.ashx
+  0x825C1D6A  [anim]  /fbserver/getaggreview.ashx
+  0x825C1D86  [anim]  /fbserver/submitcomplaint.ashx
+  0x825C1DA5  [anim]  /fbserver/submitreview.ashx
+  0x825C2067  [anim]  /xuacs/XeReserveGamertag.ashx
+  0x825D2E34  [anim]  .?AVpcrAnimObserverHash@@
+  0x825D2E58  [anim]  .?AVpcrAnimObserver@@
+  0x825D2E78  [anim]  .?AVpcrAnimObserved@@
+  0x825D30E0  [anim]  .?AVpcrServeBlender@@
+  0x825D3100  [anim]  .?AVpcrServeData@@
+  0x825D311C  [anim]  .?AVxmlNodeStructServeType@pcrServeData@@
+  0x825D3D90  [anim]  .?AVstateAwaitServeReturnHit@gmLogicSinglesMatch@@
+  0x825D3E2C  [anim]  .?AVstateHitNetServe@gmLogicSinglesMatch@@
+  0x825D3E60  [anim]  .?AVstateServeBounce@gmLogicSinglesMatch@@
+  0x825D3E94  [anim]  .?AVstateServeHit@gmLogicSinglesMatch@@
+  0x825D3EC4  [anim]  .?AVstateServeToss@gmLogicSinglesMatch@@
+  0x825D3EF8  [anim]  .?AVstatePreServe@gmLogicSinglesMatch@@
+  0x825D3F28  [anim]  .?AVstatePreServeSync@gmLogicSinglesMatch@@
+  0x825D3F60  [anim]  .?AVstatePreServeSpectatorSyncState@gmLogicSinglesMatch@@
+  0x825D3FA4  [anim]  .?AVstatePrePreServe@gmLogicSinglesMatch@@
+  0x825D4170  [anim]  .?AVpongDrillSmash@@
+  0x825D4190  [anim]  .?AVpongDrillCounterSpin@@
+  0x825D41D8  [anim]  .?AVpongDrillSpin@@
+  0x825D4298  [anim]  .?AVpongDrillServeMeter@@
+  0x825D48E8  [anim]  .?AVcrIKSpine@rage@@
+  0x825D4A04  [anim]  .?AVcrIKSolverSimpleSpine@rage@@
+  0x825D706C  [anim]  .?AVaiSpin@@
+  0x825D7F6C  [anim]  .?AVgdDrillSmashData@@
+  0x825D7F8C  [anim]  .?AVgdDrillCounterSpinData@@
+  0x825D7FD8  [anim]  .?AVgdDrillSpinData@@
+  0x825D80A8  [anim]  .?AVgdDrillServeMeterData@@
+  0x825D820C  [anim]  .?AVgdaiComeBackLogic@@
+  0x825D84C0  [anim]  .?AVfirstServeTipData@@
+  0x825D84E0  [anim]  .?AVbackspinTipData@@
+  0x825D85BC  [anim]  .?AVxmlNodeStructGroupType@serveTipData@@
+  0x825D85F0  [anim]  .?AVserveTipData@@
+  0x825D9168  [anim]  .?AVxmlNodeStructSpinType@gdUnlockConditionFinalHitData@@
+  0x825D97A4  [anim]  .?AVmfRegisteredPlayback@rage@@
+  0x825DE024  [anim]  .?AVfxBallSpinTex@@
+  0x825DE040  [anim]  .?AVfxBallSpin@@
+  0x825DE05C  [anim]  .?AVfxBallSpinLines@@
+  0x825DE72C  [anim]  .?AVfxBallSpinDataMgr@@
+  0x825DE74C  [anim]  .?AV?$atSingleton@VfxBallSpinDataMgr@@@@
+  0x825E059C  [anim]  .?AVfxBallSpinWispData@@
+  0x825E05C0  [anim]  .?AVfxBallSpinTexData@@
+  0x825E05E0  [anim]  .?AVfxBallSpinLineData@@
+  0x825E0604  [anim]  .?AVfxBallSpinData@@
+  0x825E07EC  [anim]  .?AVstateServeBounce@gmLogicSpectator@@
+  0x825E081C  [anim]  .?AVstateServeHit@gmLogicSpectator@@
+  0x825E084C  [anim]  .?AVstateServeToss@gmLogicSpectator@@
+  0x825E087C  [anim]  .?AVstatePreServe@gmLogicSpectator@@
+  0x825E131C  [anim]  .?AUsnNotifyPeerDropped@rage@@
+  0x825E1468  [anim]  .?AV?$pongNetMessageHolder@VCancelLobbyCountdownMessage@@$00@@
+  0x825E14B0  [anim]  .?AV?$pongNetMessageHolder@VStartLobbyCountdownMessage@@$00@@
+  0x825E1E68  [anim]  .?AV?$pongNetMessageHolder@VDropSpectatorConnection@@$01@@
+  0x825E2154  [anim]  .?AV?$pongNetMessageHolder@VServeLetMessage@@$01@@
+  0x825E2190  [anim]  .?AV?$pongNetMessageHolder@VServeFaultMessage@@$01@@
+  0x825E21D0  [anim]  .?AV?$pongNetMessageHolder@VServeStartedMessage@@$03@@
+  0x825E2210  [anim]  .?AV?$pongNetMessageHolder@VServeAbortMessage@@$03@@
+  0x825E2250  [anim]  .?AV?$pongNetMessageHolder@VServeReadyMessage@@$03@@
+  0x825E2290  [anim]  .?AV?$pongNetMessageHolder@VSignalReadyToServeMessage@@$09@@
+  0x825E25F0  [anim]  .?AV?$pongNetMessageHolder@VRemoteServeReadyMessage@@$03@@
+  0x825E2634  [anim]  .?AV?$pongNetMessageHolder@VServeUnlockMessage@@$03@@
+  0x825E2794  [anim]  .?AVCancelLobbyCountdownMessage@@
+  0x825E27C0  [anim]  .?AVStartLobbyCountdownMessage@@
+  0x825E2B30  [anim]  .?AVDropSpectatorConnection@@
+  0x825E2BA4  [anim]  .?AVServeLetMessage@@
+  0x825E2BC4  [anim]  .?AVServeFaultMessage@@
+  0x825E2C3C  [anim]  .?AVRemoteServeReadyMessage@@
+  0x825E2C64  [anim]  .?AVServeUnlockMessage@@
+  0x825E2FE0  [anim]  .?AVServeStartedMessage@@
+  0x825E3004  [anim]  .?AVServeAbortMessage@@
+  0x825E3024  [anim]  .?AVServeReadyMessage@@
+  0x825E3068  [anim]  .?AVSignalReadyToServeMessage@@
+  0x825E5140  [anim]  .?AUEvtDroppedConnection@rage@@

@@ -1,0 +1,2322 @@
+; ===================================================================
+; RAGE VTABLE SLOT COMPARISON: TT (2006) ↔ GTA IV PROTO (2007) ↔ RETAIL (2011)
+; Rockstar Table Tennis vs GTA IV — tracking RAGE engine evolution
+; ===================================================================
+
+; TT vtables:            1,671
+; GTA4 proto vtables:    1,959
+; GTA4 retail vtables:   3,016
+
+; Shared (all 3 builds): 64
+; Shared (TT + proto):   68
+; TT-only classes:       1599
+
+; ── VTABLE SLOT COUNT COMPARISON (classes in all 3 builds) ──
+
+;  CLASS                                                    TT PROTO RETAIL  CHANGE
+;  ------------------------------------------------------- --- ----- ------  --------------------
+   SessionWorker_rlSession                                   1     4      3  ~ TT→P:+3 P→R:-1
+   __Holder_H_atAny                                          2     3      2  ~ TT→P:+1 P→R:-1
+   __Holder_M_atAny                                          2     3      2  ~ TT→P:+1 P→R:-1
+   __Holder_PAVfragInst_rage___atAny                         2     3      2  ~ TT→P:+1 P→R:-1
+   __Holder_PAVphInst_rage___atAny                           2     3      2  ~ TT→P:+1 P→R:-1
+   __Holder_PBVMatrix34_rage___atAny                         2     3      2  ~ TT→P:+1 P→R:-1
+   __Holder_VVector3_rage___atAny                            2     3      2  ~ TT→P:+1 P→R:-1
+   crAnimChannelCurveFloat                                  13    20     19  ~ TT→P:+7 P→R:-1
+   crAnimChannelRawBool                                     14    21     20  ~ TT→P:+7 P→R:-1
+   crAnimChannelRawFloat                                    14    21     20  ~ TT→P:+7 P→R:-1
+   crAnimChannelRawInt                                      14    21     20  ~ TT→P:+7 P→R:-1
+   crAnimChannelRawQuaternion                               14    21     20  ~ TT→P:+7 P→R:-1
+   crAnimChannelRawVector3                                  14    21     20  ~ TT→P:+7 P→R:-1
+   crAnimChannelStaticQuaternion                            14    21     20  ~ TT→P:+7 P→R:-1
+   crAnimation                                               0     1      0  ~ TT→P:+1 P→R:-1
+   evtSet                                                    0     1      0  ~ TT→P:+1 P→R:-1
+   fiAsciiTokenizer                                          0    41     40  ~ TT→P:+41 P→R:-1
+   fiBinTokenizer                                           39    41     40  ~ TT→P:+2 P→R:-1
+   fiDevice                                                 22    32     31  ~ TT→P:+10 P→R:-1
+   fiDeviceMemory                                           22    32     31  ~ TT→P:+10 P→R:-1
+   fiDeviceTcpIp                                            22    32     31  ~ TT→P:+10 P→R:-1
+   fiPackfile                                               23    33     32  ~ TT→P:+10 P→R:-1
+   fiTokenizer                                               0    41     40  ~ TT→P:+41 P→R:-1
+   fragDrawable                                             16    23     22  ~ TT→P:+7 P→R:-1
+   fragInst                                                 58    64     66  > grew +8
+   fragType                                                  2     6      5  ~ TT→P:+4 P→R:-1
+   fragTypeChild                                             0     1      0  ~ TT→P:+1 P→R:-1
+   grcRenderTargetXenon                                     30    37     36  ~ TT→P:+7 P→R:-1
+   grcSetup                                                  6     7      6  ~ TT→P:+1 P→R:-1
+   grcTextureReference                                      26    25     24  < shrank -2
+   grcTextureString                                         26    25     24  < shrank -2
+   grcTextureXenon                                          26    25     24  < shrank -2
+   grmSetup                                                  6     7      6  ~ TT→P:+1 P→R:-1
+   grmShaderFactoryStandard                                  7     8      7  ~ TT→P:+1 P→R:-1
+   grmShaderFx                                              19    22     21  ~ TT→P:+3 P→R:-1
+   grmShaderGroup                                            0     1      0  ~ TT→P:+1 P→R:-1
+   netConnectionManager                                      0     1      0  ~ TT→P:+1 P→R:-1
+   parMemberSimple                                           3     4      3  ~ TT→P:+1 P→R:-1
+   parMemberString                                          10    12     11  ~ TT→P:+2 P→R:-1
+   parMemberStruct                                          10    12     11  ~ TT→P:+2 P→R:-1
+   parStreamInRbf                                            8     9      8  ~ TT→P:+1 P→R:-1
+   parStreamInXml                                            9    10      9  ~ TT→P:+1 P→R:-1
+   parStreamOutRbf                                           6     7      6  ~ TT→P:+1 P→R:-1
+   parStructure                                              1     3      2  ~ TT→P:+2 P→R:-1
+   phArchetype                                              16    21     20  ~ TT→P:+5 P→R:-1
+   phArchetypeDamp                                          16    20     19  ~ TT→P:+4 P→R:-1
+   phArchetypePhys                                          16    20     19  ~ TT→P:+4 P→R:-1
+   phBound                                                  37    52     51  ~ TT→P:+15 P→R:-1
+   phBoundBox                                               39    56     55  ~ TT→P:+17 P→R:-1
+   phBoundPolyhedron                                        39    56     55  ~ TT→P:+17 P→R:-1
+   phBoundQuadtree                                          41    63     62  ~ TT→P:+22 P→R:-1
+   phJoint1Dof                                              33    32     31  < shrank -2
+   phJoint3Dof                                              33    32     31  < shrank -2
+   phLevelNew                                               30     1      0  < shrank -30
+   phMaterialMgr                                            15    18     17  ~ TT→P:+3 P→R:-1
+   phRope                                                    9    10      9  ~ TT→P:+1 P→R:-1
+   phSimulator                                               7     8      7  ~ TT→P:+1 P→R:-1
+   rlSession                                                 0     1      0  ~ TT→P:+1 P→R:-1
+   rmcDrawable                                              15    22     21  ~ TT→P:+7 P→R:-1
+   rmcDrawableBase                                          10    17     16  ~ TT→P:+7 P→R:-1
+   rmcTypeFileParser                                         0     1      0  ~ TT→P:+1 P→R:-1
+   spdShaft                                                  5     6      5  ~ TT→P:+1 P→R:-1
+   sysMemAllocator                                          20    29     28  ~ TT→P:+9 P→R:-1
+   sysMemSimpleAllocator                                    20    30     29  ~ TT→P:+10 P→R:-1
+
+; Summary: 0 identical | 1 grew | 6 shrank | 57 other
+
+
+; ── SLOT-BY-SLOT COMPARISON FOR KEY RAGE CLASSES ──
+
+  ═══ SessionWorker_rlSession ═══  (TT:1 | PROTO:4 | RETAIL:3 slots)
+    [ 0]  TT:sub_82430180          P:sub_82732558          R:sub_82165060        
+    [ 1]  TT:---                   P:sub_82423A30          R:sub_829EE188        
+    [ 2]  TT:---                   P:sub_827254D0          R:loc_829FA070        
+    [ 3]  TT:---                   P:sub_827416E8          R:---                 
+
+  ═══ __Holder_PAVphInst_rage___atAny ═══  (TT:2 | PROTO:3 | RETAIL:2 slots)
+    [ 0]  TT:loc_82121E60          P:sub_8289A6B8          R:loc_827B3AE8        
+    [ 1]  TT:sub_82121E70          P:loc_8289A668          R:sub_827B46C8        
+    [ 2]  TT:---                   P:sub_8289B3A0          R:---                 
+
+  ═══ crAnimChannelCurveFloat ═══  (TT:13 | PROTO:20 | RETAIL:19 slots)
+    [ 0]  TT:loc_82246730          P:sub_828912E0          R:sub_828426A0        
+    [ 1]  TT:sub_822448F8          P:sub_828916D0          R:nullsub_1           
+    [ 2]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 3]  TT:nullsub_1             P:nullsub_1             R:sub_82841198        
+    [ 4]  TT:sub_822467F8          P:sub_828901C8          R:nullsub_1           
+    [ 5]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 6]  TT:nullsub_1             P:nullsub_1             R:sub_8283B138        
+    [ 7]  TT:sub_82246938          P:sub_8288AA20          R:sub_8283B180        
+    [ 8]  TT:sub_8210CAF8          P:sub_8288AA68          R:sub_8283B1C8        
+    [ 9]  TT:sub_8210CAF8          P:sub_8288AAB0          R:sub_8283B210        
+    [10]  TT:sub_8210CAF8          P:sub_8288AAF8          R:nullsub_1           
+    [11]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [12]  TT:sub_822475A0          P:nullsub_1             R:sub_8283B258        
+    [13]  TT:---                   P:sub_8288AB40          R:sub_82842470        
+    [14]  TT:---                   P:sub_828914A0          R:sub_82165060        
+    [15]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [16]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [17]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [18]  TT:---                   P:sub_82423A30          R:sub_82841C60        
+    [19]  TT:---                   P:sub_82890C90          R:---                 
+
+  ═══ crAnimChannelRawBool ═══  (TT:14 | PROTO:21 | RETAIL:20 slots)
+    [ 0]  TT:loc_82246208          P:sub_8288D418          R:sub_8283F600        
+    [ 1]  TT:sub_82244620          P:sub_8288E630          R:nullsub_1           
+    [ 2]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 3]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 4]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 5]  TT:nullsub_1             P:nullsub_1             R:loc_8283DAF0        
+    [ 6]  TT:loc_82246260          P:loc_8288CA10          R:sub_8283B138        
+    [ 7]  TT:sub_8210CAF8          P:sub_8288AA20          R:sub_8283B180        
+    [ 8]  TT:sub_8210CAF8          P:sub_8288AA68          R:sub_8283B1C8        
+    [ 9]  TT:sub_8210CAF8          P:sub_8288AAB0          R:sub_8283B210        
+    [10]  TT:sub_8210CAF8          P:sub_8288AAF8          R:nullsub_1           
+    [11]  TT:sub_822462C8          P:nullsub_1             R:nullsub_1           
+    [12]  TT:loc_822464A0          P:nullsub_1             R:sub_8283B258        
+    [13]  TT:sub_822464B0          P:sub_8288AB40          R:sub_82165060        
+    [14]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [15]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [16]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [17]  TT:---                   P:sub_82423A30          R:sub_8283EF28        
+    [18]  TT:---                   P:sub_8288DF58          R:loc_8283DB50        
+    [19]  TT:---                   P:loc_8288CA70          R:sub_8283F0C8        
+    [20]  TT:---                   P:sub_8288E0F8          R:---                 
+
+  ═══ crAnimChannelRawFloat ═══  (TT:14 | PROTO:21 | RETAIL:20 slots)
+    [ 0]  TT:loc_822454C8          P:sub_8288CFA8          R:sub_8283F3D0        
+    [ 1]  TT:sub_82244088          P:sub_8288E400          R:nullsub_1           
+    [ 2]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 3]  TT:nullsub_1             P:nullsub_1             R:sub_8283D5C0        
+    [ 4]  TT:sub_82245520          P:sub_8288C4E0          R:nullsub_1           
+    [ 5]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 6]  TT:nullsub_1             P:nullsub_1             R:sub_8283B138        
+    [ 7]  TT:sub_82245650          P:sub_8288AA20          R:sub_8283B180        
+    [ 8]  TT:sub_8210CAF8          P:sub_8288AA68          R:loc_8283DF68        
+    [ 9]  TT:sub_8210CAF8          P:loc_8288CEF0          R:sub_8283B210        
+    [10]  TT:sub_8210CAF8          P:sub_8288AAF8          R:nullsub_1           
+    [11]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [12]  TT:loc_822461F8          P:nullsub_1             R:loc_8283DF90        
+    [13]  TT:sub_82245758          P:loc_8288CF18          R:sub_8283E570        
+    [14]  TT:---                   P:sub_8288D5A0          R:sub_82165060        
+    [15]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [16]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [17]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [18]  TT:---                   P:sub_82423A30          R:loc_8283D6F0        
+    [19]  TT:---                   P:loc_8288C610          R:sub_8283EE40        
+    [20]  TT:---                   P:sub_8288D6B8          R:---                 
+
+  ═══ crAnimChannelRawInt ═══  (TT:14 | PROTO:21 | RETAIL:20 slots)
+    [ 0]  TT:loc_822460C0          P:sub_8288D208          R:sub_8283F548        
+    [ 1]  TT:sub_822444F8          P:sub_8288E578          R:nullsub_1           
+    [ 2]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 3]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 4]  TT:nullsub_1             P:nullsub_1             R:loc_8283DA88        
+    [ 5]  TT:loc_82246118          P:loc_8288C9A8          R:nullsub_1           
+    [ 6]  TT:nullsub_1             P:nullsub_1             R:sub_8283B138        
+    [ 7]  TT:sub_8210CAF8          P:sub_8288AA20          R:sub_8283B180        
+    [ 8]  TT:sub_8210CAF8          P:sub_8288AA68          R:sub_8283B1C8        
+    [ 9]  TT:sub_8210CAF8          P:sub_8288AAB0          R:loc_8283E1F8        
+    [10]  TT:sub_82246180          P:loc_8288D180          R:nullsub_1           
+    [11]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [12]  TT:loc_822461F8          P:nullsub_1             R:sub_8283B258        
+    [13]  TT:sub_82245758          P:sub_8288AB40          R:sub_82165060        
+    [14]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [15]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [16]  TT:---                   P:sub_82423A30          R:sub_8283EDA0        
+    [17]  TT:---                   P:sub_8288DEB8          R:sub_82165060        
+    [18]  TT:---                   P:sub_82423A30          R:loc_8283D6F0        
+    [19]  TT:---                   P:loc_8288C610          R:sub_8283EE40        
+    [20]  TT:---                   P:sub_8288D6B8          R:---                 
+
+  ═══ crAnimChannelRawQuaternion ═══  (TT:14 | PROTO:21 | RETAIL:20 slots)
+    [ 0]  TT:loc_82245AF0          P:sub_8288B4E0          R:sub_8283BA60        
+    [ 1]  TT:sub_82244320          P:sub_8288B390          R:nullsub_1           
+    [ 2]  TT:nullsub_1             P:nullsub_1             R:sub_8283D878        
+    [ 3]  TT:sub_82245B48          P:sub_8288C798          R:nullsub_1           
+    [ 4]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 5]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 6]  TT:nullsub_1             P:nullsub_1             R:sub_8283B138        
+    [ 7]  TT:sub_8210CAF8          P:sub_8288AA20          R:loc_8283BAB8        
+    [ 8]  TT:sub_8210CAF8          P:loc_8288B3E8          R:sub_8283B1C8        
+    [ 9]  TT:sub_82245CD8          P:sub_8288AAB0          R:sub_8283B210        
+    [10]  TT:sub_8210CAF8          P:sub_8288AAF8          R:nullsub_1           
+    [11]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [12]  TT:loc_82246018          P:nullsub_1             R:sub_8283B258        
+    [13]  TT:sub_82246028          P:sub_8288AB40          R:sub_82165060        
+    [14]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [15]  TT:---                   P:sub_82423A30          R:sub_8283E948        
+    [16]  TT:---                   P:sub_8288DA60          R:sub_82165060        
+    [17]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [18]  TT:---                   P:sub_82423A30          R:loc_8283D868        
+    [19]  TT:---                   P:loc_8288C788          R:sub_8283ECE0        
+    [20]  TT:---                   P:sub_8288DDF8          R:---                 
+
+  ═══ crAnimChannelRawVector3 ═══  (TT:14 | PROTO:21 | RETAIL:20 slots)
+    [ 0]  TT:loc_82245820          P:sub_8288B318          R:sub_8283B958        
+    [ 1]  TT:sub_822441F8          P:sub_8288B288          R:sub_8283D700        
+    [ 2]  TT:sub_82245878          P:sub_8288C620          R:nullsub_1           
+    [ 3]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 4]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 5]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 6]  TT:nullsub_1             P:nullsub_1             R:loc_8283B9B0        
+    [ 7]  TT:sub_8210CAF8          P:loc_8288B2E0          R:sub_8283B180        
+    [ 8]  TT:sub_822459E0          P:sub_8288AA68          R:sub_8283B1C8        
+    [ 9]  TT:sub_8210CAF8          P:sub_8288AAB0          R:sub_8283B210        
+    [10]  TT:sub_8210CAF8          P:sub_8288AAF8          R:nullsub_1           
+    [11]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [12]  TT:loc_82246018          P:nullsub_1             R:sub_8283B258        
+    [13]  TT:sub_82245A58          P:sub_8288AB40          R:sub_82165060        
+    [14]  TT:---                   P:sub_82423A30          R:sub_8283E738        
+    [15]  TT:---                   P:sub_8288D850          R:sub_82165060        
+    [16]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [17]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [18]  TT:---                   P:sub_82423A30          R:loc_8283D868        
+    [19]  TT:---                   P:loc_8288C788          R:sub_8283E7D8        
+    [20]  TT:---                   P:sub_8288D8F0          R:---                 
+
+  ═══ crAnimChannelStaticQuaternion ═══  (TT:14 | PROTO:21 | RETAIL:20 slots)
+    [ 0]  TT:loc_82246640          P:sub_8288E1D8          R:sub_8283F6B8        
+    [ 1]  TT:sub_82244830          P:sub_8288E6E8          R:nullsub_1           
+    [ 2]  TT:nullsub_1             P:nullsub_1             R:loc_8283DC38        
+    [ 3]  TT:loc_82246658          P:loc_8288CB58          R:nullsub_1           
+    [ 4]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 5]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 6]  TT:nullsub_1             P:nullsub_1             R:sub_8283B138        
+    [ 7]  TT:sub_8210CAF8          P:sub_8288AA20          R:loc_8283DC20        
+    [ 8]  TT:sub_8210CAF8          P:loc_8288CB40          R:sub_8283B1C8        
+    [ 9]  TT:loc_82246670          P:sub_8288AAB0          R:sub_8283B210        
+    [10]  TT:sub_8210CAF8          P:sub_8288AAF8          R:nullsub_1           
+    [11]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [12]  TT:loc_820C4BE8          P:nullsub_1             R:sub_8283B258        
+    [13]  TT:sub_82246720          P:sub_8288AB40          R:sub_82165060        
+    [14]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [15]  TT:---                   P:sub_82423A30          R:loc_8283DC50        
+    [16]  TT:---                   P:loc_8288CB70          R:sub_82165060        
+    [17]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [18]  TT:---                   P:sub_82423A30          R:loc_821BF048        
+    [19]  TT:---                   P:loc_824243A8          R:sub_8283DD10        
+    [20]  TT:---                   P:sub_8288CC30          R:---                 
+
+  ═══ fiDevice ═══  (TT:22 | PROTO:32 | RETAIL:31 slots)
+    [ 0]  TT:sub_82430180          P:sub_82105440          R:sub_82165060        
+    [ 1]  TT:sub_82430180          P:sub_82423A30          R:sub_82174068        
+    [ 2]  TT:sub_82430180          P:sub_8268CD60          R:sub_82174068        
+    [ 3]  TT:sub_82430180          P:sub_8268CD60          R:sub_82165060        
+    [ 4]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 5]  TT:sub_82430180          P:sub_82423A30          R:sub_82174068        
+    [ 6]  TT:sub_822E1A10          P:sub_8268CD60          R:sub_82174068        
+    [ 7]  TT:sub_8210CAF8          P:sub_8268CD60          R:sub_82165060        
+    [ 8]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [ 9]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [10]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82174068        
+    [11]  TT:sub_822E1988          P:sub_8268CD60          R:sub_82854B40        
+    [12]  TT:sub_82430180          P:sub_821A35D0          R:sub_82165060        
+    [13]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [14]  TT:sub_824FF7C8          P:sub_82423A30          R:sub_82165060        
+    [15]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [16]  TT:sub_824FF7C8          P:sub_82423A30          R:sub_82165060        
+    [17]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82854AA8        
+    [18]  TT:sub_824FF7C8          P:sub_821A3538          R:sub_82165060        
+    [19]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [20]  TT:loc_822E1B48          P:sub_82423A30          R:sub_82174068        
+    [21]  TT:sub_822E1A90          P:sub_8268CD60          R:sub_82165060        
+    [22]  TT:---                   P:sub_82423A30          R:sub_82174068        
+    [23]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [24]  TT:---                   P:sub_82423A30          R:sub_82174068        
+    [25]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [26]  TT:---                   P:sub_82423A30          R:sub_82854BC0        
+    [27]  TT:---                   P:sub_821A3650          R:sub_82174068        
+    [28]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [29]  TT:---                   P:sub_82423A30          R:nullsub_1           
+    ... 2 more slots
+
+  ═══ fiDeviceMemory ═══  (TT:22 | PROTO:32 | RETAIL:31 slots)
+    [ 0]  TT:sub_822E1C00          P:sub_82105440          R:sub_82854DB8        
+    [ 1]  TT:sub_822E1D08          P:sub_821A3848          R:sub_82854F20        
+    [ 2]  TT:sub_822E1DF8          P:sub_821A39B0          R:sub_82174068        
+    [ 3]  TT:sub_822E1E98          P:sub_8268CD60          R:sub_82854FD8        
+    [ 4]  TT:loc_822E2020          P:sub_821A3A68          R:sub_828550C0        
+    [ 5]  TT:sub_822E1F40          P:sub_821A3B50          R:sub_82854F98        
+    [ 6]  TT:sub_822E1A10          P:sub_821A3A28          R:sub_82174068        
+    [ 7]  TT:sub_8210CAF8          P:sub_8268CD60          R:sub_82855160        
+    [ 8]  TT:sub_8210CAF8          P:sub_821A3BF0          R:loc_82855298        
+    [ 9]  TT:sub_8210CAF8          P:loc_821A3D28          R:sub_82855208        
+    [10]  TT:sub_8210CAF8          P:sub_821A3C98          R:sub_82165060        
+    [11]  TT:sub_822E1988          P:sub_82423A30          R:sub_82854B40        
+    [12]  TT:sub_8210CAF8          P:sub_821A35D0          R:sub_82165060        
+    [13]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [14]  TT:sub_824FF7C8          P:sub_82423A30          R:sub_82165060        
+    [15]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [16]  TT:sub_824FF7C8          P:sub_82423A30          R:sub_82165060        
+    [17]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82855330        
+    [18]  TT:sub_824FF7C8          P:sub_821A3DC0          R:sub_82165060        
+    [19]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [20]  TT:loc_822E1B48          P:sub_82423A30          R:sub_82174068        
+    [21]  TT:sub_822E1A90          P:sub_8268CD60          R:sub_82165060        
+    [22]  TT:---                   P:sub_82423A30          R:sub_82174068        
+    [23]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [24]  TT:---                   P:sub_82423A30          R:loc_821BF138        
+    [25]  TT:---                   P:loc_824A8A00          R:sub_82165060        
+    [26]  TT:---                   P:sub_82423A30          R:sub_82854BC0        
+    [27]  TT:---                   P:sub_821A3650          R:sub_82174068        
+    [28]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [29]  TT:---                   P:sub_82423A30          R:nullsub_1           
+    ... 2 more slots
+
+  ═══ fiDeviceTcpIp ═══  (TT:22 | PROTO:32 | RETAIL:31 slots)
+    [ 0]  TT:sub_822E8A18          P:sub_82105440          R:sub_82870B68        
+    [ 1]  TT:loc_822E8BD8          P:sub_821A8290          R:sub_82174068        
+    [ 2]  TT:sub_822E8C48          P:sub_8268CD60          R:sub_82174068        
+    [ 3]  TT:sub_822E8BF0          P:sub_8268CD60          R:loc_828708E8        
+    [ 4]  TT:sub_824FF7C8          P:loc_821A8010          R:sub_82870900        
+    [ 5]  TT:loc_822E8CA0          P:sub_821A8028          R:sub_82174068        
+    [ 6]  TT:sub_822E1A10          P:sub_8268CD60          R:sub_82174068        
+    [ 7]  TT:sub_8210CAF8          P:sub_8268CD60          R:sub_82870B10        
+    [ 8]  TT:sub_8210CAF8          P:sub_821A8238          R:sub_82174068        
+    [ 9]  TT:sub_8210CAF8          P:sub_8268CD60          R:loc_82870958        
+    [10]  TT:sub_8210CAF8          P:loc_821A8080          R:sub_82174068        
+    [11]  TT:sub_822E1988          P:sub_8268CD60          R:sub_82854B40        
+    [12]  TT:sub_8210CAF8          P:sub_821A35D0          R:sub_82165060        
+    [13]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [14]  TT:sub_824FF7C8          P:sub_82423A30          R:sub_82165060        
+    [15]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [16]  TT:sub_824FF7C8          P:sub_82423A30          R:sub_82165060        
+    [17]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82854AA8        
+    [18]  TT:sub_824FF7C8          P:sub_821A3538          R:sub_82165060        
+    [19]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [20]  TT:loc_822E1B48          P:sub_82423A30          R:sub_82174068        
+    [21]  TT:sub_822E1A90          P:sub_8268CD60          R:sub_82165060        
+    [22]  TT:---                   P:sub_82423A30          R:sub_82174068        
+    [23]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [24]  TT:---                   P:sub_82423A30          R:sub_82174068        
+    [25]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [26]  TT:---                   P:sub_82423A30          R:sub_82854BC0        
+    [27]  TT:---                   P:sub_821A3650          R:sub_82174068        
+    [28]  TT:---                   P:sub_8268CD60          R:sub_82165060        
+    [29]  TT:---                   P:sub_82423A30          R:nullsub_1           
+    ... 2 more slots
+
+  ═══ fragType ═══  (TT:2 | PROTO:6 | RETAIL:5 slots)
+    [ 0]  TT:sub_8211C508          P:sub_828A74D0          R:loc_827AE2E0        
+    [ 1]  TT:nullsub_1             P:loc_828A4358          R:nullsub_1           
+    [ 2]  TT:---                   P:nullsub_1             R:sub_827AF850        
+    [ 3]  TT:---                   P:sub_828A4DC8          R:sub_827B1440        
+    [ 4]  TT:---                   P:sub_828A6928          R:sub_827B09F0        
+    [ 5]  TT:---                   P:sub_828A5ED8          R:---                 
+
+  ═══ fragTypeChild ═══  (TT:0 | PROTO:1 | RETAIL:0 slots)
+    [ 0]  TT:---                   P:sub_828CC620          R:---                 
+
+  ═══ grcTextureReference ═══  (TT:26 | PROTO:25 | RETAIL:24 slots)
+    [ 0]  TT:nullsub_1             P:sub_821EE0A0          R:nullsub_1           
+    [ 1]  TT:nullsub_1             P:nullsub_1             R:sub_828E1288        
+    [ 2]  TT:loc_8210CBD0          P:sub_821EE2B0          R:sub_82708728        
+    [ 3]  TT:sub_8215D6A8          P:sub_82324808          R:sub_828E0DD0        
+    [ 4]  TT:sub_8215D8A0          P:sub_821EDDF8          R:sub_828E0E18        
+    [ 5]  TT:sub_8215D8E8          P:sub_821EDE40          R:sub_828E0D20        
+    [ 6]  TT:sub_8215D6B0          P:sub_821EDD48          R:sub_828E0D78        
+    [ 7]  TT:sub_8215D720          P:sub_821EDDA0          R:sub_826041E8        
+    [ 8]  TT:sub_8215D778          P:sub_82424060          R:sub_826041E8        
+    [ 9]  TT:loc_8210CBD0          P:sub_82424060          R:sub_828E0E70        
+    [10]  TT:loc_8215DAC0          P:sub_821EDE98          R:sub_828E0EE8        
+    [11]  TT:loc_8215DAC0          P:sub_821EDF10          R:loc_828E0F60        
+    [12]  TT:sub_8215D7D0          P:loc_821EDF88          R:loc_828E0F60        
+    [13]  TT:sub_8215D838          P:loc_821EDF88          R:sub_828E0B70        
+    [14]  TT:sub_8215D998          P:sub_821EDB98          R:sub_828E0C80        
+    [15]  TT:sub_8215D940          P:sub_821EDCA8          R:sub_828E0CD0        
+    [16]  TT:sub_8215D9F0          P:sub_821EDCF8          R:sub_828E0BC8        
+    [17]  TT:sub_8215DA58          P:sub_821EDBF0          R:sub_828E0C28        
+    [18]  TT:nullsub_1             P:sub_821EDC50          R:nullsub_1           
+    [19]  TT:sub_8215D510          P:nullsub_1             R:nullsub_1           
+    [20]  TT:sub_8215D458          P:nullsub_1             R:loc_828E0FE8        
+    [21]  TT:sub_8215D4B8          P:loc_821EE010          R:nullsub_1           
+    [22]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [23]  TT:nullsub_1             P:nullsub_1             R:sub_828E0B00        
+    [24]  TT:loc_8215DB48          P:sub_821EDB28          R:---                 
+    [25]  TT:sub_82151B38          P:---                   R:---                 
+
+  ═══ grcTextureString ═══  (TT:26 | PROTO:25 | RETAIL:24 slots)
+    [ 0]  TT:nullsub_1             P:sub_827FA5C8          R:nullsub_1           
+    [ 1]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 2]  TT:loc_8210CBD0          P:nullsub_1             R:sub_82708728        
+    [ 3]  TT:sub_8215D6A8          P:sub_82324808          R:nullsub_1           
+    [ 4]  TT:nullsub_1             P:nullsub_1             R:sub_82165060        
+    [ 5]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [ 6]  TT:nullsub_1             P:sub_82423A30          R:sub_82165060        
+    [ 7]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_826041E8        
+    [ 8]  TT:sub_8210CAF8          P:sub_82424060          R:sub_826041E8        
+    [ 9]  TT:loc_8210CBD0          P:sub_82424060          R:loc_828C2398        
+    [10]  TT:nullsub_1             P:loc_821E3760          R:loc_828C2398        
+    [11]  TT:nullsub_1             P:loc_821E3760          R:nullsub_1           
+    [12]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [13]  TT:loc_8215FE70          P:nullsub_1             R:sub_82165060        
+    [14]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [15]  TT:nullsub_1             P:sub_82423A30          R:sub_82165060        
+    [16]  TT:nullsub_1             P:sub_82423A30          R:sub_82165060        
+    [17]  TT:loc_82151250          P:sub_82423A30          R:nullsub_1           
+    [18]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [19]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [20]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [21]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [22]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [23]  TT:nullsub_1             P:nullsub_1             R:sub_826041E8        
+    [24]  TT:nullsub_1             P:sub_82424060          R:---                 
+    [25]  TT:sub_82151B38          P:---                   R:---                 
+
+  ═══ grcTextureXenon ═══  (TT:26 | PROTO:25 | RETAIL:24 slots)
+    [ 0]  TT:nullsub_1             P:sub_821EA9D0          R:nullsub_1           
+    [ 1]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [ 2]  TT:loc_8210CBD0          P:nullsub_1             R:sub_82708728        
+    [ 3]  TT:sub_8215D6A8          P:sub_82324808          R:nullsub_1           
+    [ 4]  TT:nullsub_1             P:nullsub_1             R:sub_82165060        
+    [ 5]  TT:sub_8210CAF8          P:sub_82423A30          R:loc_828D9678        
+    [ 6]  TT:sub_8215FB88          P:loc_821E88D0          R:loc_828D9680        
+    [ 7]  TT:loc_8215DD58          P:loc_821E88D8          R:sub_826041E8        
+    [ 8]  TT:loc_8215DD60          P:sub_82424060          R:sub_82191F00        
+    [ 9]  TT:loc_8210CBD0          P:sub_82142300          R:loc_828D9688        
+    [10]  TT:nullsub_1             P:loc_821E88E0          R:loc_828D96A8        
+    [11]  TT:nullsub_1             P:loc_821E8900          R:nullsub_1           
+    [12]  TT:loc_8215DDB8          P:nullsub_1             R:nullsub_1           
+    [13]  TT:loc_8215DDC8          P:nullsub_1             R:sub_82165060        
+    [14]  TT:loc_8215DDE8          P:sub_82423A30          R:loc_828D9F98        
+    [15]  TT:loc_8215DDE0          P:loc_821E91F0          R:loc_828D9F98        
+    [16]  TT:loc_82122748          P:loc_821E91F0          R:sub_828D9DC8        
+    [17]  TT:loc_8215DDF0          P:sub_821E9020          R:sub_828D9F08        
+    [18]  TT:nullsub_1             P:sub_821E9160          R:nullsub_1           
+    [19]  TT:loc_8215FC98          P:nullsub_1             R:nullsub_1           
+    [20]  TT:sub_8215FAB0          P:nullsub_1             R:nullsub_1           
+    [21]  TT:sub_8215FB70          P:nullsub_1             R:nullsub_1           
+    [22]  TT:nullsub_1             P:nullsub_1             R:nullsub_1           
+    [23]  TT:nullsub_1             P:nullsub_1             R:sub_828D9AC8        
+    [24]  TT:nullsub_1             P:sub_821E8D20          R:---                 
+    [25]  TT:sub_82151B38          P:---                   R:---                 
+
+  ═══ phArchetype ═══  (TT:16 | PROTO:21 | RETAIL:20 slots)
+    [ 0]  TT:sub_8210CAF8          P:sub_82765178          R:sub_82165060        
+    [ 1]  TT:loc_822C94E0          P:sub_82423A30          R:loc_82960820        
+    [ 2]  TT:sub_822C9968          P:loc_827645C8          R:sub_82960758        
+    [ 3]  TT:sub_822C9A28          P:sub_82764500          R:sub_82960898        
+    [ 4]  TT:sub_822C9C18          P:sub_82764650          R:sub_82960A98        
+    [ 5]  TT:sub_822C9CD0          P:sub_82764850          R:sub_829616C8        
+    [ 6]  TT:loc_822C94F0          P:sub_82765480          R:nullsub_1           
+    [ 7]  TT:loc_822C94F0          P:nullsub_1             R:sub_82504458        
+    [ 8]  TT:loc_822C9500          P:sub_826F5648          R:sub_825E94C0        
+    [ 9]  TT:loc_822C9500          P:sub_82764620          R:sub_825E94C0        
+    [10]  TT:loc_822C9510          P:sub_82764620          R:loc_82960830        
+    [11]  TT:loc_822C94F0          P:loc_827645D8          R:loc_82960830        
+    [12]  TT:nullsub_1             P:loc_827645D8          R:loc_82960840        
+    [13]  TT:nullsub_1             P:loc_827645E8          R:sub_825E94C0        
+    [14]  TT:nullsub_1             P:sub_82764620          R:nullsub_1           
+    [15]  TT:sub_8210CAF8          P:nullsub_1             R:nullsub_1           
+    [16]  TT:---                   P:nullsub_1             R:nullsub_1           
+    [17]  TT:---                   P:nullsub_1             R:loc_82960878        
+    [18]  TT:---                   P:loc_82764630          R:loc_82960888        
+    [19]  TT:---                   P:loc_82764640          R:sub_82165060        
+    [20]  TT:---                   P:sub_82423A30          R:---                 
+
+  ═══ phArchetypeDamp ═══  (TT:16 | PROTO:20 | RETAIL:19 slots)
+    [ 0]  TT:loc_8210CC08          P:sub_82765178          R:sub_82175650        
+    [ 1]  TT:loc_822C9600          P:sub_82423A28          R:loc_82961568        
+    [ 2]  TT:sub_822CA3D8          P:loc_82765320          R:sub_82960F80        
+    [ 3]  TT:sub_822CA438          P:sub_82764D38          R:sub_82960FD8        
+    [ 4]  TT:sub_822CA680          P:sub_82764D90          R:sub_82961238        
+    [ 5]  TT:sub_822C9CD0          P:sub_82764FF0          R:sub_829616C8        
+    [ 6]  TT:loc_82162528          P:sub_82765480          R:nullsub_1           
+    [ 7]  TT:loc_82160768          P:nullsub_1             R:sub_82504458        
+    [ 8]  TT:loc_82380920          P:sub_826F5648          R:sub_823FE848        
+    [ 9]  TT:loc_822C95F8          P:sub_8246F898          R:loc_8234C830        
+    [10]  TT:sub_822CA278          P:loc_82674138          R:sub_829DBAA8        
+    [11]  TT:loc_82162530          P:sub_826C54C0          R:loc_823FE570        
+    [12]  TT:sub_822C9568          P:loc_826C54C8          R:sub_82504448        
+    [13]  TT:sub_822CA238          P:sub_82674140          R:sub_82960650        
+    [14]  TT:loc_822C95F0          P:sub_827643F8          R:sub_829606B0        
+    [15]  TT:loc_8210CBD0          P:sub_82764458          R:sub_82960558        
+    [16]  TT:---                   P:sub_82169120          R:sub_82504450        
+    [17]  TT:---                   P:sub_826741A0          R:loc_8234C890        
+    [18]  TT:---                   P:loc_82471BA8          R:sub_826041E8        
+    [19]  TT:---                   P:sub_82424060          R:---                 
+
+  ═══ phArchetypePhys ═══  (TT:16 | PROTO:20 | RETAIL:19 slots)
+    [ 0]  TT:loc_8210CBD0          P:sub_82765178          R:sub_826041E8        
+    [ 1]  TT:loc_822C9558          P:sub_82424060          R:loc_829614D0        
+    [ 2]  TT:sub_822C9F38          P:loc_82765288          R:sub_82960B50        
+    [ 3]  TT:sub_822C9F90          P:sub_82764908          R:sub_82960BF0        
+    [ 4]  TT:sub_822CA288          P:sub_827649A8          R:sub_82960EB8        
+    [ 5]  TT:sub_822C9CD0          P:sub_82764C70          R:sub_829616C8        
+    [ 6]  TT:loc_82162528          P:sub_82765480          R:nullsub_1           
+    [ 7]  TT:loc_82160768          P:nullsub_1             R:sub_82504458        
+    [ 8]  TT:loc_82380920          P:sub_826F5648          R:sub_823FE848        
+    [ 9]  TT:loc_822C95F8          P:sub_8246F898          R:loc_8234C830        
+    [10]  TT:sub_822CA278          P:loc_82674138          R:sub_829DBAA8        
+    [11]  TT:loc_82162530          P:sub_826C54C0          R:loc_823FE570        
+    [12]  TT:sub_822C9568          P:loc_826C54C8          R:sub_82504448        
+    [13]  TT:sub_822CA238          P:sub_82674140          R:sub_82960650        
+    [14]  TT:loc_822C95F0          P:sub_827643F8          R:sub_829606B0        
+    [15]  TT:sub_8210CAF8          P:sub_82764458          R:sub_82960558        
+    [16]  TT:---                   P:sub_82169120          R:sub_82504450        
+    [17]  TT:---                   P:sub_826741A0          R:loc_8234C890        
+    [18]  TT:---                   P:loc_82471BA8          R:sub_82165060        
+    [19]  TT:---                   P:sub_82423A30          R:---                 
+
+  ═══ phBound ═══  (TT:37 | PROTO:52 | RETAIL:51 slots)
+    [ 0]  TT:loc_8228CE18          P:sub_82747040          R:loc_82939E00        
+    [ 1]  TT:loc_8228CE20          P:loc_82746E78          R:sub_829ABF50        
+    [ 2]  TT:sub_8228D0E8          P:sub_827AE1C0          R:sub_829AC048        
+    [ 3]  TT:loc_8210CBD0          P:sub_827AE2B8          R:loc_82939E10        
+    [ 4]  TT:sub_8210CAF8          P:loc_82746E88          R:sub_82165060        
+    [ 5]  TT:loc_8228D178          P:sub_82423A30          R:sub_82939D38        
+    [ 6]  TT:nullsub_1             P:sub_82746DB0          R:nullsub_1           
+    [ 7]  TT:loc_8228CE28          P:nullsub_1             R:loc_82939E18        
+    [ 8]  TT:loc_8228CE38          P:loc_82746E90          R:loc_82939E60        
+    [ 9]  TT:loc_8210CBD0          P:loc_82746ED8          R:sub_82939E70        
+    [10]  TT:sub_82430180          P:sub_82746EE8          R:sub_82939ED0        
+    [11]  TT:sub_82430180          P:sub_82746F48          R:loc_82939EC0        
+    [12]  TT:nullsub_1             P:loc_82746F38          R:loc_82939EC8        
+    [13]  TT:loc_8228D2F0          P:loc_82746F40          R:sub_82939940        
+    [14]  TT:loc_8228D2F0          P:sub_827469B8          R:sub_826041E8        
+    [15]  TT:sub_8210CAF8          P:sub_82424060          R:sub_82165060        
+    [16]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_829399D0        
+    [17]  TT:sub_8210CAF8          P:sub_82746A48          R:nullsub_1           
+    [18]  TT:sub_82430180          P:nullsub_1             R:loc_829397B0        
+    [19]  TT:sub_82430180          P:loc_82746828          R:loc_829397E8        
+    [20]  TT:sub_8210CAF8          P:loc_82746860          R:sub_826041E8        
+    [21]  TT:sub_8210CAF8          P:sub_82424060          R:sub_82165060        
+    [22]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [23]  TT:sub_8210CAF8          P:sub_82423A30          R:nullsub_1           
+    [24]  TT:sub_8228D450          P:nullsub_1             R:sub_82165060        
+    [25]  TT:sub_8210CAF8          P:sub_82423A30          R:loc_82939AC0        
+    [26]  TT:loc_8228D978          P:loc_82746B38          R:sub_82165060        
+    [27]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [28]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [29]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    ... 22 more slots
+
+  ═══ phBoundBox ═══  (TT:39 | PROTO:56 | RETAIL:55 slots)
+    [ 0]  TT:loc_8228CE18          P:sub_8278B1A0          R:sub_8298E110        
+    [ 1]  TT:loc_8228CE20          P:sub_8278ADF8          R:sub_829ABF50        
+    [ 2]  TT:sub_822B00D0          P:sub_827AE1C0          R:sub_829AC048        
+    [ 3]  TT:loc_8210CBD0          P:sub_827AE2B8          R:loc_82939E10        
+    [ 4]  TT:sub_8210CAF8          P:loc_82746E88          R:sub_826041E8        
+    [ 5]  TT:loc_822A77E0          P:sub_82424060          R:sub_82939D38        
+    [ 6]  TT:loc_822A7898          P:sub_82746DB0          R:nullsub_1           
+    [ 7]  TT:loc_822A6A10          P:nullsub_1             R:loc_82939E18        
+    [ 8]  TT:loc_822A7AA0          P:loc_82746E90          R:loc_82939E60        
+    [ 9]  TT:loc_8210CBD0          P:loc_82746ED8          R:sub_82939E70        
+    [10]  TT:loc_822A69E0          P:sub_82746EE8          R:sub_82939ED0        
+    [11]  TT:loc_822A6A00          P:sub_82746F48          R:loc_82939EC0        
+    [12]  TT:loc_822A6A08          P:loc_82746F38          R:loc_82939EC8        
+    [13]  TT:loc_8233A8F8          P:loc_82746F40          R:sub_8297FF58        
+    [14]  TT:loc_8233A8F8          P:sub_8277C710          R:sub_826041E8        
+    [15]  TT:sub_8210CAF8          P:sub_82424060          R:sub_82165060        
+    [16]  TT:loc_8210CBD0          P:sub_82423A30          R:sub_8298D1D0        
+    [17]  TT:loc_822AACF0          P:sub_82789EB8          R:loc_8298D2B8        
+    [18]  TT:sub_822AAEB0          P:loc_82789FA0          R:loc_8298CE58        
+    [19]  TT:sub_822AB018          P:loc_82790790          R:sub_8298CEB8        
+    [20]  TT:sub_822AB2E0          P:sub_827907F0          R:sub_826041E8        
+    [21]  TT:sub_822ABA68          P:sub_82424060          R:loc_8298CE28        
+    [22]  TT:sub_8210CAF8          P:loc_82789C20          R:loc_8298CE48        
+    [23]  TT:sub_8210CAF8          P:loc_82789C40          R:loc_8298CE50        
+    [24]  TT:sub_8228D450          P:loc_82789C60          R:loc_8299BB38        
+    [25]  TT:loc_8210CBD0          P:loc_82789C68          R:loc_8299BB50        
+    [26]  TT:loc_8228D978          P:loc_82789C48          R:sub_826041E8        
+    [27]  TT:sub_822A7B10          P:sub_82424060          R:loc_829909F0        
+    [28]  TT:sub_822B0F10          P:loc_8278D6F0          R:sub_8298DCA8        
+    [29]  TT:sub_822A8000          P:sub_8278A990          R:sub_8298DE30        
+    ... 26 more slots
+
+  ═══ phBoundPolyhedron ═══  (TT:39 | PROTO:56 | RETAIL:55 slots)
+    [ 0]  TT:loc_8228CE18          P:sub_827D4848          R:loc_82939E00        
+    [ 1]  TT:loc_8228CE20          P:loc_82746E78          R:sub_829ABF50        
+    [ 2]  TT:sub_822B00D0          P:sub_827AE1C0          R:sub_829AC048        
+    [ 3]  TT:loc_8210CBD0          P:sub_827AE2B8          R:loc_82939E10        
+    [ 4]  TT:sub_8210CAF8          P:loc_82746E88          R:sub_826041E8        
+    [ 5]  TT:loc_8228D178          P:sub_82424060          R:sub_82939D38        
+    [ 6]  TT:nullsub_1             P:sub_82746DB0          R:nullsub_1           
+    [ 7]  TT:loc_822B9468          P:nullsub_1             R:loc_82939E18        
+    [ 8]  TT:sub_822B9918          P:loc_82746E90          R:loc_82939E60        
+    [ 9]  TT:loc_8210CBD0          P:loc_82746ED8          R:sub_82939E70        
+    [10]  TT:sub_82430180          P:sub_82746EE8          R:sub_82939ED0        
+    [11]  TT:sub_8210CAF8          P:sub_82746F48          R:loc_82939EC0        
+    [12]  TT:nullsub_1             P:loc_82746F38          R:loc_82939EC8        
+    [13]  TT:loc_8228D2F0          P:loc_82746F40          R:sub_8297FF58        
+    [14]  TT:loc_8228D2F0          P:sub_8277C710          R:sub_826041E8        
+    [15]  TT:sub_8210CAF8          P:sub_82424060          R:sub_82165060        
+    [16]  TT:loc_8210CBD0          P:sub_82423A30          R:sub_829399D0        
+    [17]  TT:sub_822B9AD8          P:sub_82746A48          R:nullsub_1           
+    [18]  TT:sub_822B9D40          P:nullsub_1             R:loc_82981868        
+    [19]  TT:sub_822B9DE8          P:loc_8277E2E0          R:sub_82981988        
+    [20]  TT:sub_822BA048          P:sub_8277E400          R:sub_826041E8        
+    [21]  TT:sub_822BA0B0          P:sub_82424060          R:sub_82165060        
+    [22]  TT:sub_8210CAF8          P:sub_82423A30          R:sub_82165060        
+    [23]  TT:sub_8210CAF8          P:sub_82423A30          R:nullsub_1           
+    [24]  TT:sub_8228D450          P:nullsub_1             R:sub_82165060        
+    [25]  TT:sub_8210CAF8          P:sub_82423A30          R:loc_82939AC0        
+    [26]  TT:loc_8228D978          P:loc_82746B38          R:sub_826041E8        
+    [27]  TT:sub_822B08A8          P:sub_82424060          R:sub_82987238        
+    [28]  TT:sub_822B0F10          P:sub_82783CB0          R:sub_82981FF0        
+    [29]  TT:loc_822AD8C8          P:sub_8277EA68          R:sub_829874D0        
+    ... 26 more slots
+
+  ═══ phBoundQuadtree ═══  (TT:41 | PROTO:63 | RETAIL:62 slots)
+    [ 0]  TT:loc_8228CE18          P:sub_827BBF98          R:loc_82939E00        
+    [ 1]  TT:loc_8228CE20          P:loc_82746E78          R:sub_829ABF50        
+    [ 2]  TT:sub_822B00D0          P:sub_827AE1C0          R:sub_829AC048        
+    [ 3]  TT:loc_8210CBD0          P:sub_827AE2B8          R:loc_82939E10        
+    [ 4]  TT:sub_8210CAF8          P:loc_82746E88          R:sub_82165060        
+    [ 5]  TT:sub_82293D88          P:sub_82423A30          R:sub_82939D38        
+    [ 6]  TT:loc_82293E10          P:sub_82746DB0          R:nullsub_1           
+    [ 7]  TT:loc_822B9468          P:nullsub_1             R:loc_82939E18        
+    [ 8]  TT:sub_822B9918          P:loc_82746E90          R:loc_82939E60        
+    [ 9]  TT:loc_82290F60          P:loc_82746ED8          R:sub_82939E70        
+    [10]  TT:sub_822912A8          P:sub_82746EE8          R:sub_82939ED0        
+    [11]  TT:loc_82290F68          P:sub_82746F48          R:loc_82939EC0        
+    [12]  TT:loc_82293D50          P:loc_82746F38          R:loc_82939EC8        
+    [13]  TT:sub_82293BE8          P:loc_82746F40          R:sub_8297FF58        
+    [14]  TT:loc_82293CF8          P:sub_8277C710          R:sub_826041E8        
+    [15]  TT:sub_82293C48          P:sub_82424060          R:sub_82165060        
+    [16]  TT:loc_8210CBD0          P:sub_82423A30          R:sub_82962200        
+    [17]  TT:sub_8210CAF8          P:sub_8275FA50          R:sub_82962270        
+    [18]  TT:sub_822AED40          P:sub_8275FAC0          R:loc_82981868        
+    [19]  TT:sub_822B9DE8          P:loc_8277E2E0          R:sub_82981988        
+    [20]  TT:sub_822AEDB0          P:sub_8277E400          R:loc_82961A78        
+    [21]  TT:sub_822AEE00          P:loc_8275F2C8          R:loc_82961AC0        
+    [22]  TT:sub_8210CAF8          P:loc_8275F310          R:loc_82961A80        
+    [23]  TT:sub_8210CAF8          P:loc_8275F2D0          R:loc_82961F58        
+    [24]  TT:sub_822AED78          P:loc_8275F7A8          R:loc_82961E88        
+    [25]  TT:sub_8210CAF8          P:loc_8275F6D8          R:loc_82961F00        
+    [26]  TT:loc_8228D978          P:loc_8275F750          R:sub_826041E8        
+    [27]  TT:sub_822AD668          P:sub_82424060          R:sub_82165060        
+    [28]  TT:sub_822AD798          P:sub_82423A30          R:loc_829B8CA0        
+    [29]  TT:loc_822AD8C8          P:loc_827BB138          R:loc_829B9A58        
+    ... 33 more slots
+
+  ═══ phMaterialMgr ═══  (TT:15 | PROTO:18 | RETAIL:17 slots)
+    [ 0]  TT:sub_82430180          P:sub_82627298          R:sub_82165060        
+    [ 1]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 2]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 3]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 4]  TT:loc_82228BD8          P:sub_82423A30          R:loc_826BD160        
+    [ 5]  TT:sub_82494130          P:loc_826272E8          R:loc_826BD170        
+    [ 6]  TT:sub_82410900          P:loc_826272F8          R:sub_8293C7D8        
+    [ 7]  TT:sub_82430180          P:sub_827466F0          R:sub_82165060        
+    [ 8]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 9]  TT:sub_82430180          P:sub_82423A30          R:loc_8293C688        
+    [10]  TT:sub_82430180          P:loc_827465A0          R:sub_82165060        
+    [11]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [12]  TT:nullsub_1             P:sub_82423A30          R:sub_82165060        
+    [13]  TT:sub_824109A0          P:sub_82423A30          R:sub_82165060        
+    [14]  TT:sub_82410AF0          P:sub_82423A30          R:nullsub_1           
+    [15]  TT:---                   P:nullsub_1             R:sub_8293C698        
+    [16]  TT:---                   P:sub_827465B0          R:sub_8293C758        
+    [17]  TT:---                   P:sub_82746670          R:---                 
+
+  ═══ rlSession ═══  (TT:0 | PROTO:1 | RETAIL:0 slots)
+    [ 0]  TT:---                   P:sub_82741BE0          R:---                 
+
+  ═══ rmcDrawable ═══  (TT:15 | PROTO:22 | RETAIL:21 slots)
+    [ 0]  TT:loc_8225B880          P:sub_827E5878          R:sub_828CB7F8        
+    [ 1]  TT:sub_8225BD28          P:sub_827E4A48          R:sub_828CB850        
+    [ 2]  TT:sub_8225BC60          P:sub_827E4AA0          R:loc_8218FB70        
+    [ 3]  TT:sub_8225BDE8          P:loc_82140318          R:sub_828CB630        
+    [ 4]  TT:sub_8225C7E0          P:sub_827E4840          R:sub_828CB988        
+    [ 5]  TT:sub_8225C838          P:sub_827E4BD8          R:sub_828CBA28        
+    [ 6]  TT:sub_8225C910          P:sub_827E4C78          R:loc_828CB770        
+    [ 7]  TT:sub_8225C430          P:loc_827E4980          R:loc_828CC158        
+    [ 8]  TT:sub_8225C368          P:loc_827E53A8          R:loc_828CB778        
+    [ 9]  TT:loc_82124168          P:loc_827E4988          R:loc_828CC178        
+    [10]  TT:sub_8225C018          P:loc_827E53C8          R:sub_828CC1A0        
+    [11]  TT:sub_8225C0A0          P:sub_827E53F0          R:sub_828CC298        
+    [12]  TT:sub_8225BF88          P:sub_827E54E8          R:loc_828CC130        
+    [13]  TT:sub_8225C158          P:loc_827E5380          R:sub_828CBF68        
+    [14]  TT:sub_8225C238          P:sub_827E51B8          R:sub_828CBE20        
+    [15]  TT:---                   P:sub_827E5070          R:loc_8247E6B8        
+    [16]  TT:---                   P:loc_824DE8D0          R:sub_828CBC60        
+    [17]  TT:---                   P:sub_827E4EB0          R:sub_828CBCC0        
+    [18]  TT:---                   P:sub_827E4F10          R:sub_828CBD78        
+    [19]  TT:---                   P:sub_827E4FC8          R:sub_828CBBE0        
+    [20]  TT:---                   P:sub_827E4E30          R:sub_828CB6F0        
+    [21]  TT:---                   P:sub_827E4900          R:---                 
+
+  ═══ rmcDrawableBase ═══  (TT:10 | PROTO:17 | RETAIL:16 slots)
+    [ 0]  TT:loc_8225B880          P:sub_827E49E8          R:sub_828CB7F8        
+    [ 1]  TT:sub_82430180          P:sub_827E4A48          R:sub_828CB850        
+    [ 2]  TT:sub_82430180          P:sub_827E4AA0          R:loc_8218FB70        
+    [ 3]  TT:sub_82430180          P:loc_82140318          R:sub_82165060        
+    [ 4]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 5]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 6]  TT:nullsub_1             P:sub_82423A30          R:sub_82165060        
+    [ 7]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 8]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [ 9]  TT:sub_82430180          P:sub_82423A30          R:sub_82165060        
+    [10]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [11]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [12]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [13]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [14]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [15]  TT:---                   P:sub_82423A30          R:sub_82165060        
+    [16]  TT:---                   P:sub_82423A30          R:---                 
+
+
+; ── TT-ONLY VTABLE CLASSES (not in any GTA IV build) ──
+
+;  --- Game-specific (pong/gm/pcr/state) ---
+   MatchData                                                  0 slots
+   MatchDataMessage                                           7 slots
+   MatchDataSyncMessage                                       7 slots
+   MatchDataSyncResponseMessage                               7 slots
+   MatchScoreMessage                                          7 slots
+   MatchStatsMessage                                          7 slots
+   MatchTimeSyncMessage                                       7 slots
+   MatchTimeSyncRequestMessage                                7 slots
+   MatchTimeSyncRequestMessageEx                              7 slots
+   gdAssetData                                               23 slots
+   gdAssetDataFile                                            5 slots
+   gdAssetDataMgr                                             7 slots
+   gdAssetRootMgr                                             0 slots
+   gdAttributeBuffer                                          0 slots
+   gdAudData                                                 22 slots
+   gdBTgtBoneName                                            22 slots
+   gdBallFudgeData                                           22 slots
+   gdBallFudgeMgr                                             0 slots
+   gdBallPredictManager                                       0 slots
+   gdBlendTargetName                                         22 slots
+   gdBlendTargets                                            22 slots
+   gdCSActionCamAnimData                                     22 slots
+   gdCSActionCharAmbAnimData                                 22 slots
+   gdCSActionCharAnimData                                    22 slots
+   gdCSActionCharVisibleData                                 22 slots
+   gdCSActionDoInOrderData                                   22 slots
+   gdCSActionDoTogetherData                                  22 slots
+   gdCSActionElseData                                        22 slots
+   gdCSActionIfData                                          22 slots
+   gdCSActionLoopData                                        22 slots
+   gdCSActionLvlAmbAnimData                                  22 slots
+   gdCSActionLvlAnimData                                     22 slots
+   gdCSActionPlayAudioData                                   22 slots
+   gdCSActionShowAllAmbientsData                             22 slots
+   gdCSActionWaitData                                        22 slots
+   gdCSCamAnimNames                                          22 slots
+   gdCSCamAnimShotName                                       22 slots
+   gdCSCamAnimShotNameSeq                                    22 slots
+   gdCSCharAnimData                                          22 slots
+   gdCSCharAnimNames                                         22 slots
+   gdCSCharCamShotName                                       22 slots
+   gdCSCharCamShotNameSeq                                    22 slots
+   gdCSNameData                                              22 slots
+   gdCamData                                                 22 slots
+   gdCameraDef                                               22 slots
+   gdCameraDest                                              22 slots
+   gdCameraInst                                              22 slots
+   gdCharData                                                22 slots
+   gdCharDataMgr                                              0 slots
+   gdCharEmoFactors                                          22 slots
+   gdCharIntensityFactors                                    22 slots
+   gdCharPlayerBias                                          22 slots
+   gdCharSweatFactors                                        22 slots
+   gdCrAttachmentData                                        22 slots
+   gdCrData                                                  22 slots
+   gdCutSceneData                                            22 slots
+   gdCutSceneNames                                           22 slots
+   gdDifficultyLadder                                        22 slots
+   gdDrillChargingData                                       22 slots
+   gdDrillCounterSpinData                                    22 slots
+   gdDrillFocusShotData                                      22 slots
+   gdDrillMovementData                                       22 slots
+   gdDrillPlacementData                                      22 slots
+   gdDrillReturnData                                         22 slots
+   gdDrillServeMeterData                                     22 slots
+   gdDrillServingData                                        22 slots
+   gdDrillSmashData                                          22 slots
+   gdDrillSoftShotData                                       22 slots
+   gdDrillSpinData                                           22 slots
+   gdEnvelope                                                22 slots
+   gdGameData                                                 5 slots
+   gdITZData                                                 22 slots
+   gdITZDataMgr                                               0 slots
+   gdInputData                                                0 slots
+   gdInputDataMgr                                             0 slots
+   gdInputSeq                                                 0 slots
+   gdLadder                                                  22 slots
+   gdLadderCommonData                                        22 slots
+   gdLadderMatch                                             22 slots
+   gdLevelData                                               22 slots
+   gdLevelDataManager                                         0 slots
+   gdLevelDataRoot                                           22 slots
+   gdLevelPieceData                                          22 slots
+   gdLevelRegionalBias                                       22 slots
+   gdLogicalClipDataMgr                                       0 slots
+   gdMotionRange                                             22 slots
+   gdMotionRangeMgr                                           0 slots
+   gdMovieData                                               22 slots
+   gdNetData                                                 23 slots
+   gdNetDataFile                                              5 slots
+   gdNetDataMgr                                               7 slots
+   gdOptionsData                                              4 slots
+   gdOptionsValues                                            0 slots
+   gdPatternBank                                              0 slots
+   gdPatternSet                                               0 slots
+   gdPlyrAttr                                                22 slots
+   gdPlyrLimits                                              22 slots
+   gdProfileOptionsValues                                     0 slots
+   gdPropData                                                23 slots
+   gdPropDataFile                                             5 slots
+   gdPropDataMgr                                              7 slots
+   gdReplayMgr                                                0 slots
+   gdRivalry                                                 22 slots
+   gdRivalryData                                             22 slots
+   gdShotData                                                22 slots
+   gdShotDataMgr                                              0 slots
+   gdShotMultiSet                                            31 slots
+   gdShotName                                                22 slots
+   gdShotSet                                                 31 slots
+   gdStatsGame                                                6 slots
+   gdStatsMatch                                               5 slots
+   gdStatsMgr                                                 8 slots
+   gdStatsOfflineCharacter                                    6 slots
+   gdStatsOfflineCircuit                                      5 slots
+   gdStatsOfflineGeneral                                      5 slots
+   gdStatsOfflineHumanCPU                                     5 slots
+   gdStatsOfflineSession                                      5 slots
+   gdStatsOnlineGeneral                                       5 slots
+   gdStatsProfile                                             1 slots
+   gdStatsProfileGroup                                        1 slots
+   gdStatsProfileNamedGroup                                   1 slots
+   gdTier                                                    22 slots
+   gdTierMember                                              22 slots
+   gdTimeline                                                 0 slots
+   gdTourneySaveData                                          4 slots
+   gdTourneySaveValues                                        0 slots
+   gdTrainingDrillData                                       22 slots
+   gdTrainingDrills                                          22 slots
+   gdTrainingSaveData                                         4 slots
+   gdTrainingSaveValues                                       0 slots
+   gdUnlockConditionAce                                      23 slots
+   gdUnlockConditionBeatAllTourneys                          23 slots
+   gdUnlockConditionBeatTraining                             23 slots
+   gdUnlockConditionCPUMatchWinsData                         23 slots
+   gdUnlockConditionChar                                     23 slots
+   gdUnlockConditionCharMatchCountData                       23 slots
+   gdUnlockConditionFinalHitData                             23 slots
+   gdUnlockConditionGameDeficit                              23 slots
+   gdUnlockConditionHighestSkill                             23 slots
+   gdUnlockConditionLevel                                    23 slots
+   gdUnlockConditionMatchTimeData                            23 slots
+   gdUnlockConditionMultiBounce                              23 slots
+   gdUnlockConditionNetHit                                   23 slots
+   gdUnlockConditionOnlineMatches                            23 slots
+   gdUnlockConditionPlayTime                                 23 slots
+   gdUnlockConditionPointDeficit                             23 slots
+   gdUnlockConditionRallyCount                               23 slots
+   gdUnlockConditionRankedSkunks                             23 slots
+   gdUnlockConditionRankedTourneyWins                        23 slots
+   gdUnlockConditionRankedWinStreak                          23 slots
+   gdUnlockConditionSettingsData                             23 slots
+   gdUnlockConditionSkunk                                    23 slots
+   gdUnlockConditionSpectatedMatch                           23 slots
+   gdUnlockConditionTourneyTimeData                          23 slots
+   gdUnlockConditionUnlockedGroup                            23 slots
+   gdUnlockConditionVersus                                   23 slots
+   gdUnlockConditionWinMatchData                             23 slots
+   gdUnlockConditionWinTournamentData                        23 slots
+   gdUnlockDataMgr                                            0 slots
+   gdUnlockGroupData                                         22 slots
+   gdUnlockItemData                                          22 slots
+   gdUnlockItemRuleData                                      22 slots
+   gdUnlockMgr                                                4 slots
+   gdUnlockProfile                                            1 slots
+   gdUnlockProfileItem                                        0 slots
+   gdUnlockProfileRule                                        0 slots
+   gdUnlockRuleData                                          22 slots
+   gdVibActuator                                             22 slots
+   gdVibEffect                                               22 slots
+   gdVibEvent                                                23 slots
+   gdVibMgr                                                   0 slots
+   gdVibSample                                               22 slots
+   gdVibrator                                                 0 slots
+   gdViewData                                                22 slots
+   gdaiComeBackLogic                                         22 slots
+   gdaiData                                                  22 slots
+   gdaiDataMgr                                                0 slots
+   gdaiDefPos                                                22 slots
+   gdaiDeficit                                               22 slots
+   gdaiDifficulty                                            22 slots
+   gdaiLead                                                  22 slots
+   gdaiMeterLogic                                            22 slots
+   gdaiOffPos                                                22 slots
+   gdaiShotSelection                                         22 slots
+   gdaiSkillSet                                              22 slots
+   gdaiSkillStats                                            22 slots
+   gmBallNode                                                42 slots
+   gmBallRobot                                                1 slots
+   gmLogic                                                   22 slots
+   gmLogicNode                                               32 slots
+   gmLogicSinglesMatch                                       22 slots
+   gmLogicSpectator                                          22 slots
+   gmLogicSwingPractice                                      23 slots
+   gmPracticeTarget                                           3 slots
+   pcrAnimEvent                                              23 slots
+   pcrAnimEventFootAud                                       24 slots
+   pcrAnimEventFootContact                                   24 slots
+   pcrAnimEventFootScuff                                     24 slots
+   pcrAnimEventFootStep                                      24 slots
+   pcrAnimEventFootStomp                                     24 slots
+   pcrAnimEventMsg                                           24 slots
+   pcrAnimEventMsg_s                                         24 slots
+   pcrAnimObserved                                           22 slots
+   pcrAnimObserver                                            0 slots
+   pcrAnimObserverHash                                        0 slots
+   pcrEmoteBlender                                           10 slots
+   pcrEmoteData                                              22 slots
+   pcrFaceAnimBlender                                         0 slots
+   pcrJunkSwingData                                          22 slots
+   pcrPostPointBlender                                        9 slots
+   pcrServeBlender                                            0 slots
+   pcrServeData                                              22 slots
+   pcrSwingAbortData                                         22 slots
+   pcrSwingAbortSet                                          22 slots
+   pcrSwingBlend                                             22 slots
+   pcrSwingBlender                                            1 slots
+   pcrSwingData                                              22 slots
+   pcrSwingMissData                                          22 slots
+   pcrSwingMissRange                                         24 slots
+   pcrSwingMissRangeHeading                                  24 slots
+   pcrSwingMissRangeSphere                                   24 slots
+   pcrSwingMissSet                                           22 slots
+   pcrSwingSet                                               22 slots
+   pcrSwingSolver                                             0 slots
+   pcrSwingSpace                                             22 slots
+   pcrSwingSpaceMgr                                           0 slots
+   pongAmbiencePlayer                                         0 slots
+   pongAnimationInfo                                          0 slots
+   pongAttractContext                                        23 slots
+   pongAttractState                                          14 slots
+   pongAudioManager                                           5 slots
+   pongBallAudio                                              0 slots
+   pongBallHit                                                0 slots
+   pongBallHitData                                           22 slots
+   pongBallInstance                                          32 slots
+   pongBinkMovie                                              4 slots
+   pongBlendLookAtDriver                                     19 slots
+   pongBlender                                                1 slots
+   pongBootState                                             14 slots
+   pongCMCamera                                               0 slots
+   pongCSAction                                              12 slots
+   pongCSActionCamAnim                                       12 slots
+   pongCSActionCharAmbAnim                                   12 slots
+   pongCSActionCharAnim                                      12 slots
+   pongCSActionCharVisible                                   12 slots
+   pongCSActionDoInOrder                                     12 slots
+   pongCSActionDoTogether                                    12 slots
+   pongCSActionElse                                          12 slots
+   pongCSActionIf                                            12 slots
+   pongCSActionLoop                                          12 slots
+   pongCSActionLvlAmbAnim                                    12 slots
+   pongCSActionLvlAnim                                       12 slots
+   pongCSActionPlayAudio                                     12 slots
+   pongCSActionShowAllAmbients                               12 slots
+   pongCSActionWait                                          12 slots
+   pongCSReplayDirector                                      31 slots
+   pongCamGovernor                                            0 slots
+   pongCameraMgr                                             31 slots
+   pongCameraState                                            0 slots
+   pongCharViewContext                                       24 slots
+   pongCharViewState                                         14 slots
+   pongCineCamMgr                                             0 slots
+   pongControlGroup                                          12 slots
+   pongCreature                                               8 slots
+   pongCreatureInst                                          58 slots
+   pongCreatureType                                           0 slots
+   pongCreditsContext                                        23 slots
+   pongCreditsState                                          14 slots
+   pongCutScene                                              12 slots
+   pongCutSceneManager                                        1 slots
+   pongDialogContext                                         23 slots
+   pongDialogState                                           14 slots
+   pongDrawBucketManager                                      0 slots
+   pongDrawable                                              15 slots
+   pongDrillCharging                                         32 slots
+   pongDrillCounterSpin                                      32 slots
+   pongDrillFocusShot                                        32 slots
+   pongDrillMovement                                         32 slots
+   pongDrillPlacement                                        32 slots
+   pongDrillReturn                                           32 slots
+   pongDrillServeMeter                                       32 slots
+   pongDrillServing                                          32 slots
+   pongDrillSmash                                            32 slots
+   pongDrillSoftShot                                         32 slots
+   pongDrillSpin                                             32 slots
+   pongFrontendContext                                       23 slots
+   pongFrontendLive                                           1 slots
+   pongFrontendState                                         14 slots
+   pongGame                                                   1 slots
+   pongGameContext                                           23 slots
+   pongGameState                                             14 slots
+   pongGammaControl                                           0 slots
+   pongHUDLive                                                1 slots
+   pongHairData                                               7 slots
+   pongInlineCinematics                                      31 slots
+   pongLeaderboardContext                                    23 slots
+   pongLegalsContext                                         22 slots
+   pongLegalsState                                           14 slots
+   pongLightGlowCapsule                                      22 slots
+   pongLightGlowMgr                                           0 slots
+   pongLightGlowSquare                                       22 slots
+   pongLiveManager                                            1 slots
+   pongLoadingContext                                        30 slots
+   pongLoadingState                                          14 slots
+   pongLocomotionController                                  17 slots
+   pongLogosContext                                          22 slots
+   pongLogosState                                            14 slots
+   pongLookAtController                                       1 slots
+   pongLookAtDriver                                          20 slots
+   pongMover                                                  0 slots
+   pongMovie                                                 22 slots
+   pongNetMessageHolderBase                                   2 slots
+   pongPaddle                                                 2 slots
+   pongPauseContext                                          23 slots
+   pongPauseState                                            14 slots
+   pongPlayer                                                11 slots
+   pongPlayerShaderParams                                     0 slots
+   pongPostEffects                                            0 slots
+   pongPresence                                               1 slots
+   pongRandomizer                                             0 slots
+   pongRemotePlayer                                           3 slots
+   pongRenderThread                                           0 slots
+   pongRenderable                                             1 slots
+   pongSaveFile                                               4 slots
+   pongScreenCapture                                          1 slots
+   pongScreenCaptureMgr                                       0 slots
+   pongScrnTransFadeIn                                        6 slots
+   pongScrnTransFreezeAndCrossFade                            6 slots
+   pongScrnTransFreezeAndFadeOut                              6 slots
+   pongScrnTransSwipe                                         6 slots
+   pongShadowMap                                              0 slots
+   pongShell                                                 33 slots
+   pongSkelLookAtDriver                                      20 slots
+   pongStatsContext                                          23 slots
+   pongSurface                                                2 slots
+   pongTrainingDrill                                         32 slots
+   pongTrainingLoadingContext                                30 slots
+   pongTrainingUIContext                                     24 slots
+   pongTrainingUIState                                       14 slots
+   pongXMVMovie                                              22 slots
+   stateAim_gmLogicSwingPractice                             17 slots
+   stateAnticipationCam_gmLogicSinglesMatch                  19 slots
+   stateAwaitReturnHit_gmLogicSinglesMatch                   20 slots
+   stateAwaitReturnHit_gmLogicSpectator                      16 slots
+   stateAwaitReturnHit_gmLogicSwingPractice                  17 slots
+   stateAwaitServeReturnHit_gmLogicSinglesMatch              20 slots
+   stateAwaitingMessage_SessionMessageRequester              14 slots
+   stateEnterState_NetStateSync                              14 slots
+   stateFinish_NetDataQuery                                  14 slots
+   stateHelpTips_gmLogicSinglesMatch                         19 slots
+   stateHitNetServe_gmLogicSinglesMatch                      19 slots
+   stateIdle_SessionMessageRequester                         14 slots
+   stateInit_NetDataQuery                                    14 slots
+   stateInit_NetStateSync                                    14 slots
+   stateInit_gmLogicSinglesMatch                             19 slots
+   stateInit_gmLogicSpectator                                16 slots
+   stateInit_gmLogicSwingPractice                            17 slots
+   stateLet_gmLogicSinglesMatch                              19 slots
+   stateMainMenu_gmLogicSwingPractice                        17 slots
+   stateMatchEnded_gmLogicSpectator                          16 slots
+   statePointScoringNet_gmLogicSinglesMatch                  19 slots
+   statePointScoringSync_gmLogicSinglesMatch                 19 slots
+   statePointScoring_gmLogicSinglesMatch                     19 slots
+   statePostGame_gmLogicSinglesMatch                         19 slots
+   statePostGame_gmLogicSpectator                            16 slots
+   statePostMatch_gmLogicSinglesMatch                        19 slots
+   statePostPointCS_gmLogicSinglesMatch                      19 slots
+   statePostPointCS_gmLogicSpectator                         16 slots
+   statePostPointScoringSync_gmLogicSinglesMatch             19 slots
+   statePostPoint_gmLogicSinglesMatch                        19 slots
+   statePostPoint_gmLogicSpectator                           16 slots
+   statePostPoint_gmLogicSwingPractice                       17 slots
+   statePostPostGame_gmLogicSinglesMatch                     19 slots
+   statePostTourneyMovie_gmLogicSinglesMatch                 19 slots
+   statePostTourney_gmLogicSinglesMatch                      19 slots
+   statePreGameSync_gmLogicSpectator                         16 slots
+   statePreGame_gmLogicSinglesMatch                          19 slots
+   statePreGame_gmLogicSpectator                             16 slots
+   statePreInit_gmLogicSpectator                             16 slots
+   statePreInit_gmLogicSwingPractice                         17 slots
+   statePreMatchSync_gmLogicSinglesMatch                     19 slots
+   statePreMatch_gmLogicSinglesMatch                         19 slots
+   statePreMatch_gmLogicSpectator                            16 slots
+   statePrePreServe_gmLogicSinglesMatch                      19 slots
+   statePreServeSpectatorSyncState_gmLogicSinglesMatch       19 slots
+   statePreServeSync_gmLogicSinglesMatch                     19 slots
+   statePreServe_gmLogicSinglesMatch                         19 slots
+   statePreServe_gmLogicSpectator                            16 slots
+   stateQuit_gmLogicSpectator                                16 slots
+   stateReceiveData_NetDataQuery                             14 slots
+   stateReceiveSyncronization_NetStateSync                   14 slots
+   stateReplayNegotiationPreSync_gmLogicSinglesMatch         19 slots
+   stateReplayNegotiation_gmLogicSinglesMatch                19 slots
+   stateReplay_gmLogicSinglesMatch                           19 slots
+   stateReplay_gmLogicSpectator                              16 slots
+   stateRequestData_NetDataQuery                             14 slots
+   stateRequestSyncronization_NetStateSync                   14 slots
+   stateRequestingMessage_SessionMessageRequester            14 slots
+   stateReturnHit_gmLogicSinglesMatch                        20 slots
+   stateReturnHit_gmLogicSpectator                           16 slots
+   stateReturnHit_gmLogicSwingPractice                       17 slots
+   stateSaveDialog_gmLogicSinglesMatch                       19 slots
+   stateScoring_gmLogicSpectator                             16 slots
+   stateSendSyncronization_NetStateSync                      14 slots
+   stateServeBounce_gmLogicSinglesMatch                      19 slots
+   stateServeBounce_gmLogicSpectator                         16 slots
+   stateServeHit_gmLogicSinglesMatch                         19 slots
+   stateServeHit_gmLogicSpectator                            16 slots
+   stateServeToss_gmLogicSinglesMatch                        19 slots
+   stateServeToss_gmLogicSpectator                           16 slots
+   stateShoot_gmLogicSwingPractice                           17 slots
+   stateUnlockDialog_gmLogicSinglesMatch                     19 slots
+   stateWaitForSyncState_NetStateSync                        14 slots
+   stateWaitTime_NetStateSync                                14 slots
+
+;  --- Engine classes removed before GTA IV ---
+   AcceptMessage                                              7 slots
+   AcceptSpectatorMessage                                     7 slots
+   AckHandling                                                0 slots
+   Allocator_datBitBuffer                                     3 slots
+   BallHitMessage                                             8 slots
+   CBiquadFilterEffect                                        7 slots
+   CCompEffect                                                6 slots
+   CDelayEffect                                               7 slots
+   CMtoCSAdapter                                             12 slots
+   CPeakMeterEffect                                           7 slots
+   CShelvingFilterEffect                                      7 slots
+   CancelLobbyCountdownMessage                                7 slots
+   DataRequestFailedMessage                                   7 slots
+   DataRequestMessage                                         7 slots
+   DataSendMessage                                            7 slots
+   DenySpectatorMessage                                       7 slots
+   DisconnectingSinglesClientMessage                          7 slots
+   DropSpectatorConnection                                    7 slots
+   EnteringReplayMessage                                      7 slots
+   EventBase                                                  0 slots
+   EventSwingStart                                            0 slots
+   EvtAcceptJoinRequestFailed                                 2 slots
+   EvtAcceptJoinRequestSucceeded                              2 slots
+   EvtAcceptLeaveRequestFailed                                2 slots
+   EvtAcceptLeaveRequestSucceeded                             2 slots
+   EvtAcquireHostFailed                                       2 slots
+   EvtAcquireHostSucceeded                                    2 slots
+   EvtApplyConfigFailed                                       2 slots
+   EvtArbGuestRegister                                        2 slots
+   EvtArbRegisterFailed                                       2 slots
+   EvtArbRegisterSucceeded                                    2 slots
+   EvtChangePresence                                          2 slots
+   EvtChangePresenceFailed                                    2 slots
+   EvtChangePresenceSucceeded                                 2 slots
+   EvtClosedConnection                                        2 slots
+   EvtCreateFailed                                            2 slots
+   EvtCreateSucceeded                                         2 slots
+   EvtDestroy                                                 2 slots
+   EvtDestroyFailed                                           2 slots
+   EvtDestroySucceeded                                        2 slots
+   EvtDoGuestMigrate                                          2 slots
+   EvtDroppedConnection                                       2 slots
+   EvtEnd                                                     2 slots
+   EvtEndFailed                                               2 slots
+   EvtEndSucceeded                                            2 slots
+   EvtFindSessionCancel                                       2 slots
+   EvtFindSessionOnline                                       2 slots
+   EvtFindSessionSyslink                                      2 slots
+   EvtGuestCreate                                             2 slots
+   EvtGuestCreateSucceeded                                    2 slots
+   EvtHostChangePresenceSucceeded                             2 slots
+   EvtHostCreate                                              2 slots
+   EvtJoin                                                    2 slots
+   EvtJoinAccepted                                            2 slots
+   EvtJoinDenied                                              2 slots
+   EvtJoinFailed                                              2 slots
+   EvtJoinReply                                               2 slots
+   EvtJoinRequest                                             2 slots
+   EvtJoinSucceeded                                           2 slots
+   EvtKillConnection                                          2 slots
+   EvtLeave                                                   2 slots
+   EvtLeaveAccepted                                           2 slots
+   EvtLeaveDenied                                             2 slots
+   EvtLeaveFailed                                             2 slots
+   EvtLeaveRequest                                            2 slots
+   EvtLeaveSucceeded                                          2 slots
+   EvtLocalJoinFailed                                         2 slots
+   EvtLocalJoinSucceeded                                      2 slots
+   EvtLocalLeaveFailed                                        2 slots
+   EvtLocalLeaveSucceeded                                     2 slots
+   EvtMigrateAsGuestFailed                                    2 slots
+   EvtMigrateAsGuestSucceeded                                 2 slots
+   EvtMigrateFailed                                           2 slots
+   EvtMigrateSession                                          2 slots
+   EvtMigrateSucceeded                                        2 slots
+   EvtReceivedConfig                                          2 slots
+   EvtRemoteJoin                                              2 slots
+   EvtRemoteJoinFailed                                        2 slots
+   EvtRemoteJoinSucceeded                                     2 slots
+   EvtRemoteLeave                                             2 slots
+   EvtRemoteLeaveFailed                                       2 slots
+   EvtRemoteLeaveSucceeded                                    2 slots
+   EvtRequestConfigFailed                                     2 slots
+   EvtRequestJoinFailed                                       2 slots
+   EvtRequestJoinSucceeded                                    2 slots
+   EvtRequestLeaveFailed                                      2 slots
+   EvtRequestLeaveSucceeded                                   2 slots
+   EvtSessionJoinFailed                                       2 slots
+   EvtSessionJoinSucceeded                                    2 slots
+   EvtSessionLeaveFailed                                      2 slots
+   EvtSessionLeaveSucceeded                                   2 slots
+   EvtSessionMigrateFailed                                    2 slots
+   EvtSessionMigrateSucceeded                                 2 slots
+   EvtStart                                                   2 slots
+   EvtStartFailed                                             2 slots
+   EvtStartInProgressSession                                  2 slots
+   EvtStartSessionFailed                                      2 slots
+   EvtStartSucceeded                                          2 slots
+   ExitPostGameMessage                                        7 slots
+   Find_mcMemcardControl                                     13 slots
+   ForceMatchTimeSyncMessage                                  7 slots
+   ForceSessionTimeSyncMessage                                7 slots
+   ForfeitMatchMessage                                        7 slots
+   Format_mcMemcardControl                                   13 slots
+   FrameTimeEstimate                                          0 slots
+   Gamer                                                      5 slots
+   GamerReadyMessage                                          7 slots
+   GamerUpdateMessage                                         7 slots
+   GetFreeSpace_mcMemcardControl                             13 slots
+   H_SmoothLookAt_LimitedTilt_cmSampleCamActions             15 slots
+   HitDataMessage                                             7 slots
+   HitMessage                                                 8 slots
+   Idle_mcMemcardControl                                     13 slots
+   InternalMessageRelay                                       7 slots
+   JoinSpectatorSessionMessage                                7 slots
+   JoinWorker_rlSession                                       1 slots
+   JunkSwingStartedMessage                                    7 slots
+   LeaveSpectatorSessionMessage                               7 slots
+   LeaveWorker_rlSession                                      1 slots
+   LevelConfigMessage                                         7 slots
+   LoadDataQuery                                              7 slots
+   LoadDataQueryResponse                                      7 slots
+   Load_mcMemcardControl                                     13 slots
+   LoadingStateRequestMessage                                 7 slots
+   LoadingStateResponseMessage                                7 slots
+   LocomotionController                                      17 slots
+   LocomotionState                                           16 slots
+   LocomotionStateAnim                                       16 slots
+   LocomotionStateMf                                         16 slots
+   LogicNetworkClient                                        21 slots
+   MatrixMND                                                  0 slots
+   MessageHandler_netConnectionManager                        0 slots
+   MessageHandler_snConnectionManager                         0 slots
+   MigrateWorker_rlSession                                    1 slots
+   NetBallHitManager                                          0 slots
+   NetDataQuery                                              14 slots
+   NetLoadingThread                                           0 slots
+   NetMatchTimer                                              3 slots
+   NetStateSync                                              14 slots
+   NetTimedMessageSortedQueue                                 3 slots
+   NetTimer                                                   3 slots
+   NetTimerBase                                               3 slots
+   NetTuningData                                              7 slots
+   NetworkClient                                              8 slots
+   NextMatchMessage                                           7 slots
+   NextMatchSpectatorMessage                                  7 slots
+   NotifyHandler___rlNotifier_VrlAchievementReader_rage__X    0 slots
+   NotifyHandler___rlNotifier_VrlAchievementWriter_rage__X    0 slots
+   NotifyHandler___rlNotifier_VrlFriendsReader_rage__X        0 slots
+   NotifyHandler___rlNotifier_VrlGamerProfileReader_rage__X    0 slots
+   NotifyHandler___rlNotifier_VrlGamer_rage__X                0 slots
+   NotifyHandler___rlNotifier_VrlQos_rage__UQosResult_12_     0 slots
+   NotifyHandler___rlNotifier_VrlSessionFinder_rage__X        0 slots
+   NotifyHandler___rlNotifier_VrlSession_rage__X              0 slots
+   NotifyHandler___rlNotifier_VrlStatsReader_rage__X          0 slots
+   NotifyHandler___rlNotifier_VsnSessionFinder_rage__VsnNotifyBase_2_    0 slots
+   NotifyHandler___rlNotifier_VsnSession_rage__VsnNotifyBase_2_    0 slots
+   P_VelocityFollow_cmSampleCamActions                       15 slots
+   PlaceHolder_atAny                                          2 slots
+   PlayerCacheMessage                                         7 slots
+   PlayerMovementMessage                                      7 slots
+   PlayerStopMessage                                          7 slots
+   PlayerUpdateMessage                                        7 slots
+   PointDeclaredMessage                                       7 slots
+   PongNet                                                    2 slots
+   PongNetExhibitionCoordinator                              24 slots
+   PongNetGameModeCoordinator                                24 slots
+   PongNetGameModeManager                                     9 slots
+   PongNetMessage                                             7 slots
+   PongNetProxyCoordinator                                   24 slots
+   PongNetRoundRobinCoordinator                              24 slots
+   PostPointExitMessage                                       7 slots
+   PresenceWorker_rlGamer                                     1 slots
+   RemoteServeReadyMessage                                    8 slots
+   RemoveSpectatorMessage                                     7 slots
+   Remove_mcMemcardControl                                   13 slots
+   ReplayEmoteMessage                                         7 slots
+   RequestDataMessage                                         7 slots
+   Root_gdAssetRootMgr                                        0 slots
+   RoundRobinDataMessage                                      7 slots
+   SaveIcon_mcMemcardControl                                 13 slots
+   Save_mcMemcardControl                                     13 slots
+   ScoreMessage                                               7 slots
+   Search_mcMemcardControl                                   13 slots
+   Select_mcMemcardControl                                   13 slots
+   ServeAbortMessage                                          8 slots
+   ServeFaultMessage                                          8 slots
+   ServeLetMessage                                            8 slots
+   ServeReadyMessage                                          8 slots
+   ServeStartedMessage                                        7 slots
+   ServeUnlockMessage                                         8 slots
+   SessionManager_pongLiveManager                             2 slots
+   SessionMessageRequester                                   14 slots
+   SessionTimeSyncMessage                                     7 slots
+   SessionTimeSyncRequestMessage                              7 slots
+   SignalReadyToServeMessage                                  8 slots
+   SinglesConnectRequest                                      7 slots
+   SinglesNetworkClient                                      23 slots
+   SkipReplayMessage                                          7 slots
+   SpectatorBallHitMessage                                    8 slots
+   SpectatorConnectRequest                                    7 slots
+   SpectatorHudItem                                           5 slots
+   SpectatorHudItemPage                                       0 slots
+   SpectatorHudItemPageMgr                                    0 slots
+   SpectatorHudItemWithText                                   5 slots
+   SpectatorNetworkClient                                    22 slots
+   SpectatorQuitMessage                                       7 slots
+   StartLobbyCountdownMessage                                 7 slots
+   StateSyncMessage                                           7 slots
+   StateSyncRequestMessage                                    7 slots
+   SwingStartedMessage                                        7 slots
+   TerminateRallyMessage                                      7 slots
+   TimedGameUpdateTimerMessage                                7 slots
+   TimerAlert                                                 0 slots
+   Top_hsmContext                                            15 slots
+   TournamentCompleteMessage                                  7 slots
+   TwoMinuteWarningMessage                                    7 slots
+   Type_xmlNodeStruct                                         2 slots
+   Unformat_mcMemcardControl                                 13 slots
+   UserRequestReplayMessage                                   7 slots
+   VectorND                                                   0 slots
+   VectorNI                                                   0 slots
+   __FloatAverager__09_0DOI_                                  0 slots
+   __FloatAverager__0BE__0DOI_                                0 slots
+   __FloatAverager__0DM__0DOI_                                0 slots
+   __FloatAverager__0HI__0DOI_                                0 slots
+   __atSafeContainer_UCxnRecord_netConnectionManager_rage__V__DLListSimple_UCxnRecord_netConnectionManager_rage___0A__3_    0 slots
+   __atSafeContainer_UCxnRecord_netConnectionManager_rage__V__atInBinTree_VnetAddress_rage__UCxnRecord_netConnectionManager_2__07V__atLess_VnetAddress_rage___2__3_    0 slots
+   __atSafeContainer_VMessageHandler_netConnectionManager_rage__V__DLListSimple_VMessageHandler_netConnectionManager_rage___0M__3_    0 slots
+   __atSafeContainer_VMessageHandler_snConnectionManager_rage__V__DLListSimple_VMessageHandler_snConnectionManager_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlAchievementReader_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlAchievementReader_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlAchievementWriter_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlAchievementWriter_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlFriendsReader_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlFriendsReader_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlGamerProfileReader_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlGamerProfileReader_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlGamerProfileWriter_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlGamerProfileWriter_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlGamer_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlGamer_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlQos_rage__UQosResult_12__rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlQos_rage__UQosResult_12__rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlSessionFinder_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlSessionFinder_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlSession_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlSession_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlStatsReader_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlStatsReader_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlStatsWriter_rage__X_rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlStatsWriter_rage__X_rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VrlVoice_rage____CBUNotification_12__rage__V__DLListSimple_VNotifyHandler___rlNotifier_VrlVoice_rage____CBUNotification_12__rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VsnSessionFinder_rage__VsnNotifyBase_2__rage__V__DLListSimple_VNotifyHandler___rlNotifier_VsnSessionFinder_rage__VsnNotifyBase_2__rage___0M__3_    0 slots
+   __atSafeContainer_VNotifyHandler___rlNotifier_VsnSession_rage__VsnNotifyBase_2__rage__V__DLListSimple_VNotifyHandler___rlNotifier_VsnSession_rage__VsnNotifyBase_2__rage___0M__3_    0 slots
+   __atSafeDLListSimple_UCxnRecord_netConnectionManager_rage___0A_    0 slots
+   __atSafeDLListSimple_VMessageHandler_netConnectionManager_rage___0M_    0 slots
+   __atSafeDLListSimple_VMessageHandler_snConnectionManager_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlAchievementReader_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlAchievementWriter_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlFriendsReader_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlGamerProfileReader_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlGamerProfileWriter_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlGamer_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlQos_rage__UQosResult_12__rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlSessionFinder_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlSession_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlStatsReader_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlStatsWriter_rage__X_rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VrlVoice_rage____CBUNotification_12__rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VsnSessionFinder_rage__VsnNotifyBase_2__rage___0M_    0 slots
+   __atSafeDLListSimple_VNotifyHandler___rlNotifier_VsnSession_rage__VsnNotifyBase_2__rage___0M_    0 slots
+   __atSafeInBinTree_VnetAddress_rage__UCxnRecord_netConnectionManager_2__07V__atLess_VnetAddress_rage___2__00    0 slots
+   __atSingleton_VMatchData__                                 0 slots
+   __atSingleton_VPongNet__                                   2 slots
+   __atSingleton_VcamShotMgr__                               15 slots
+   __atSingleton_VctxManager__                                0 slots
+   __atSingleton_VdialogManager__                             1 slots
+   __atSingleton_VfxBallSpinDataMgr__                         0 slots
+   __atSingleton_VfxTrailDataMgr__                            0 slots
+   __atSingleton_VgdAssetRootMgr__                            0 slots
+   __atSingleton_VgdBallFudgeMgr__                            0 slots
+   __atSingleton_VgdBallPredictManager__                      0 slots
+   __atSingleton_VgdCharDataMgr__                             0 slots
+   __atSingleton_VgdCharEmotionManager__                      1 slots
+   __atSingleton_VgdGameData__                                5 slots
+   __atSingleton_VgdITZDataMgr__                              0 slots
+   __atSingleton_VgdInputDataMgr__                            0 slots
+   __atSingleton_VgdLevelDataManager__                        0 slots
+   __atSingleton_VgdLogicalClipDataMgr__                      0 slots
+   __atSingleton_VgdMotionRangeMgr__                          0 slots
+   __atSingleton_VgdNetDataMgr__                              7 slots
+   __atSingleton_VgdOptionsData__                             4 slots
+   __atSingleton_VgdPropDataMgr__                             7 slots
+   __atSingleton_VgdReplayMgr__                               0 slots
+   __atSingleton_VgdShotDataMgr__                             0 slots
+   __atSingleton_VgdStatsMgr__                                8 slots
+   __atSingleton_VgdTourneySaveData__                         4 slots
+   __atSingleton_VgdTrainingSaveData__                        4 slots
+   __atSingleton_VgdUnlockMgr__                               4 slots
+   __atSingleton_VgdVibMgr__                                  0 slots
+   __atSingleton_VgdaiDataMgr__                               0 slots
+   __atSingleton_VgmSceneGraph__                             13 slots
+   __atSingleton_VhelpTipsManager__                           1 slots
+   __atSingleton_VmcMemcardControl__                         14 slots
+   __atSingleton_VplyrIntensityMgr__                          1 slots
+   __atSingleton_VpongConfig__                                0 slots
+   __atSingleton_VpongControllerContext__                    22 slots
+   __atSingleton_VpongCutSceneManager__                       1 slots
+   __atSingleton_VpongCutScenePlayer__                        1 slots
+   __atSingleton_VpongLiveManager__                           1 slots
+   __atSingleton_VpongSaveFile__                              4 slots
+   __atSingleton_VpongScreenCaptureMgr__                      0 slots
+   __atSingleton_VpongShellContext__                         22 slots
+   __atSingleton_VpongShell__                                33 slots
+   __atSingleton_VpongUnlockContext__                        23 slots
+   __atSingleton_VpostPointMgr__                              1 slots
+   __cmActionCtor_VH_SmoothLookAt_LimitedTilt_cmSampleCamActions_rage___01_0DI_    0 slots
+   __cmActionCtor_VP_VelocityFollow_cmSampleCamActions_rage___01_0DMAA_    0 slots
+   __cmApproach2Ctor_VcmApproach2_rage___00_00                1 slots
+   __cmApproach2Ctor_VcmApproach2_rage___00_01                1 slots
+   __cmApproach2Ctor_VcmApproach2_rage___00_02                1 slots
+   __cmApproach2Ctor_VcmApproach2_rage___00_0A_               1 slots
+   __cmApproach2Ctor_VcmApproach2_rage___0A__00               1 slots
+   __cmApproach2Ctor_VcmApproach2_rage___0A__01               1 slots
+   __cmApproach2Ctor_VcmApproach2_rage___0A__02               1 slots
+   __cmApproach2Ctor_VcmApproach2_rage___0A__0A_              1 slots
+   __cmCond__01                                              18 slots
+   __cmCond__02                                              18 slots
+   __cmCond__03                                              18 slots
+   __cmCond__04                                              18 slots
+   __cmCond__05                                              18 slots
+   __cmLinearRemap__01                                       18 slots
+   __cmLinearRemap__02                                       18 slots
+   __cmLinearRemap__03                                       18 slots
+   __cmLinearRemap__04                                       18 slots
+   __cmLinearRemap__05                                       18 slots
+   __cmLookup__01UcmCmp_less_equal_rage__                    18 slots
+   __cmLookup__02UcmCmp_less_equal_rage__                    18 slots
+   __cmLookup__03UcmCmp_less_equal_rage__                    18 slots
+   __cmLookup__04UcmCmp_less_equal_rage__                    18 slots
+   __cmLookup__05UcmCmp_less_equal_rage__                    18 slots
+   __cmNaryOperator__0L_                                     18 slots
+   __cmNaryOperator__0M_                                     18 slots
+   __cmNaryOperator__0N_                                     18 slots
+   __cmNaryOperator__0O_                                     18 slots
+   __cmOperatorCtor_V__cmCond__01_rage__                      1 slots
+   __cmOperatorCtor_V__cmCond__02_rage__                      1 slots
+   __cmOperatorCtor_V__cmCond__03_rage__                      1 slots
+   __cmOperatorCtor_V__cmCond__04_rage__                      1 slots
+   __cmOperatorCtor_V__cmCond__05_rage__                      1 slots
+   __cmOperatorCtor_V__cmLinearRemap__01_rage__               1 slots
+   __cmOperatorCtor_V__cmLinearRemap__02_rage__               1 slots
+   __cmOperatorCtor_V__cmLinearRemap__03_rage__               1 slots
+   __cmOperatorCtor_V__cmLinearRemap__04_rage__               1 slots
+   __cmOperatorCtor_V__cmLinearRemap__05_rage__               1 slots
+   __cmOperatorCtor_V__cmLookup__01UcmCmp_less_equal_rage___rage__    1 slots
+   __cmOperatorCtor_V__cmLookup__02UcmCmp_less_equal_rage___rage__    1 slots
+   __cmOperatorCtor_V__cmLookup__03UcmCmp_less_equal_rage___rage__    1 slots
+   __cmOperatorCtor_V__cmLookup__04UcmCmp_less_equal_rage___rage__    1 slots
+   __cmOperatorCtor_V__cmLookup__05UcmCmp_less_equal_rage___rage__    1 slots
+   __cmOperatorCtor_V__cmSmoothRemap__01_rage__               1 slots
+   __cmOperatorCtor_V__cmSmoothRemap__02_rage__               1 slots
+   __cmOperatorCtor_V__cmSmoothRemap__03_rage__               1 slots
+   __cmOperatorCtor_V__cmSmoothRemap__04_rage__               1 slots
+   __cmOperatorCtor_V__cmSmoothRemap__05_rage__               1 slots
+   __cmOperatorCtor_V__cmSwitch__01_rage__                    1 slots
+   __cmOperatorCtor_V__cmSwitch__02_rage__                    1 slots
+   __cmOperatorCtor_V__cmSwitch__03_rage__                    1 slots
+   __cmOperatorCtor_V__cmSwitch__04_rage__                    1 slots
+   __cmOperatorCtor_V__cmSwitch__05_rage__                    1 slots
+   __cmOperatorCtor_VcmAbsAngleDiff_rage__                    1 slots
+   __cmOperatorCtor_VcmAbs_rage__                             1 slots
+   __cmOperatorCtor_VcmAdd_rage__                             1 slots
+   __cmOperatorCtor_VcmAnd_rage__                             1 slots
+   __cmOperatorCtor_VcmAngleDiff_rage__                       1 slots
+   __cmOperatorCtor_VcmAngleLerp_rage__                       1 slots
+   __cmOperatorCtor_VcmAngle_rage__                           1 slots
+   __cmOperatorCtor_VcmAnimBoneOrientation_rage__             1 slots
+   __cmOperatorCtor_VcmAnimBonePosition_rage__                1 slots
+   __cmOperatorCtor_VcmAnimCamFStop_rage__                    1 slots
+   __cmOperatorCtor_VcmAnimCamFov_rage__                      1 slots
+   __cmOperatorCtor_VcmAnimCamOrientation_rage__              1 slots
+   __cmOperatorCtor_VcmAnimCamPosition_rage__                 1 slots
+   __cmOperatorCtor_VcmAnimDuration_rage__                    1 slots
+   __cmOperatorCtor_VcmArcCosine_rage__                       1 slots
+   __cmOperatorCtor_VcmArcTangent_rage__                      1 slots
+   __cmOperatorCtor_VcmClampRange_rage__                      1 slots
+   __cmOperatorCtor_VcmClamp_rage__                           1 slots
+   __cmOperatorCtor_VcmCompMult_rage__                        1 slots
+   __cmOperatorCtor_VcmCosine_rage__                          1 slots
+   __cmOperatorCtor_VcmCross_rage__                           1 slots
+   __cmOperatorCtor_VcmDevArg_rage__                          1 slots
+   __cmOperatorCtor_VcmDifferential_rage__                    1 slots
+   __cmOperatorCtor_VcmDist2_rage__                           1 slots
+   __cmOperatorCtor_VcmDist_rage__                            1 slots
+   __cmOperatorCtor_VcmDivide_rage__                          1 slots
+   __cmOperatorCtor_VcmDot_rage__                             1 slots
+   __cmOperatorCtor_VcmDrawVec_rage__                         1 slots
+   __cmOperatorCtor_VcmEquals_rage__                          1 slots
+   __cmOperatorCtor_VcmFOV_rage__                             1 slots
+   __cmOperatorCtor_VcmFlatDist2_rage__                       1 slots
+   __cmOperatorCtor_VcmFlatDist_rage__                        1 slots
+   __cmOperatorCtor_VcmFlatDot_rage__                         1 slots
+   __cmOperatorCtor_VcmFlatten_rage__                         1 slots
+   __cmOperatorCtor_VcmGNoise_rage__                          1 slots
+   __cmOperatorCtor_VcmGraph_rage__                           1 slots
+   __cmOperatorCtor_VcmGreaterThan_rage__                     1 slots
+   __cmOperatorCtor_VcmIf_rage__                              1 slots
+   __cmOperatorCtor_VcmInfo_rage__                            1 slots
+   __cmOperatorCtor_VcmInverse_rage__                         1 slots
+   __cmOperatorCtor_VcmIsValid_rage__                         1 slots
+   __cmOperatorCtor_VcmLerp_rage__                            1 slots
+   __cmOperatorCtor_VcmLessThan_rage__                        1 slots
+   __cmOperatorCtor_VcmLocalRestart_rage__                    1 slots
+   __cmOperatorCtor_VcmLookAtAngles_rage__                    1 slots
+   __cmOperatorCtor_VcmMag2_rage__                            1 slots
+   __cmOperatorCtor_VcmMag_rage__                             1 slots
+   __cmOperatorCtor_VcmMax_rage__                             1 slots
+   __cmOperatorCtor_VcmMin_rage__                             1 slots
+   __cmOperatorCtor_VcmModulo_rage__                          1 slots
+   __cmOperatorCtor_VcmMultiply_rage__                        1 slots
+   __cmOperatorCtor_VcmNegate_rage__                          1 slots
+   __cmOperatorCtor_VcmNoise_rage__                           1 slots
+   __cmOperatorCtor_VcmNormal_rage__                          1 slots
+   __cmOperatorCtor_VcmNot_rage__                             1 slots
+   __cmOperatorCtor_VcmOr_rage__                              1 slots
+   __cmOperatorCtor_VcmPow_rage__                             1 slots
+   __cmOperatorCtor_VcmPrint_rage__                           1 slots
+   __cmOperatorCtor_VcmRange_rage__                           1 slots
+   __cmOperatorCtor_VcmRotateX_rage__                         1 slots
+   __cmOperatorCtor_VcmRotateY_rage__                         1 slots
+   __cmOperatorCtor_VcmRotateZ_rage__                         1 slots
+   __cmOperatorCtor_VcmSPrint_rage__                          1 slots
+   __cmOperatorCtor_VcmScale_rage__                           1 slots
+   __cmOperatorCtor_VcmScreenToWorld_rage__                   1 slots
+   __cmOperatorCtor_VcmSelectPointerFromArray_rage__          1 slots
+   __cmOperatorCtor_VcmSign_rage__                            1 slots
+   __cmOperatorCtor_VcmSine_rage__                            1 slots
+   __cmOperatorCtor_VcmSlowInOut_rage__                       1 slots
+   __cmOperatorCtor_VcmSlowIn_rage__                          1 slots
+   __cmOperatorCtor_VcmSlowOut_rage__                         1 slots
+   __cmOperatorCtor_VcmSphericalNoise_rage__                  1 slots
+   __cmOperatorCtor_VcmSqrt_rage__                            1 slots
+   __cmOperatorCtor_VcmSubtract_rage__                        1 slots
+   __cmOperatorCtor_VcmTangent_rage__                         1 slots
+   __cmOperatorCtor_VcmVectorGNoise_rage__                    1 slots
+   __cmOperatorCtor_VcmVectorNoise_rage__                     1 slots
+   __cmOperatorCtor_VcmVectorToBearing_rage__                 1 slots
+   __cmOperatorCtor_VcmVector_rage__                          1 slots
+   __cmOperatorCtor_VcmVizVectorBlue_rage__                   1 slots
+   __cmOperatorCtor_VcmVizVectorRed_rage__                    1 slots
+   __cmOperatorCtor_VcmVizVectorSpline_rage__                 1 slots
+   __cmOperatorCtor_VcmVizVectorWhite_rage__                  1 slots
+   __cmOperatorCtor_VcmWorldToScreen_rage__                   1 slots
+   __cmOperatorCtor_VcmX_rage__                               1 slots
+   __cmOperatorCtor_VcmXor_rage__                             1 slots
+   __cmOperatorCtor_VcmY_rage__                               1 slots
+   __cmOperatorCtor_VcmZ_rage__                               1 slots
+   __cmRefreshableCtor_VcmAlarmTimer_rage__                   1 slots
+   __cmRefreshableCtor_VcmAngleLinearApproach_rage__          1 slots
+   __cmRefreshableCtor_VcmAnglePowerApproach_rage__           1 slots
+   __cmRefreshableCtor_VcmApproachOperator_rage__             1 slots
+   __cmRefreshableCtor_VcmCapture_rage__                      1 slots
+   __cmRefreshableCtor_VcmChanged_rage__                      1 slots
+   __cmRefreshableCtor_VcmDifferentiate_rage__                1 slots
+   __cmRefreshableCtor_VcmExpandPauseApproach_rage__          1 slots
+   __cmRefreshableCtor_VcmIntegrate0_rage__                   1 slots
+   __cmRefreshableCtor_VcmIntegrate_rage__                    1 slots
+   __cmRefreshableCtor_VcmMaxPauseApproach_rage__             1 slots
+   __cmRefreshableCtor_VcmMemory_rage__                       1 slots
+   __cmRefreshableCtor_VcmMinPauseApproach_rage__             1 slots
+   __cmRefreshableCtor_VcmNormalizedTimer_rage__              1 slots
+   __cmRefreshableCtor_VcmPowerApproach_rage__                1 slots
+   __cmRefreshableCtor_VcmResettableTimer_rage__              1 slots
+   __cmRefreshableCtor_VcmTurnsOff_rage__                     1 slots
+   __cmRefreshableCtor_VcmTurnsOn_rage__                      1 slots
+   __cmRefreshableCtor_VcmUnwarpedAlarmTimer_rage__           1 slots
+   __cmRefreshableCtor_VcmUnwarpedNormalizedTimer_rage__      1 slots
+   __cmReporterCtor_VcmAndReporter__                          0 slots
+   __cmReporterCtor_VcmAvgReporter__                          0 slots
+   __cmReporterCtor_VcmBitwiseAndReporter__                   0 slots
+   __cmReporterCtor_VcmBitwiseOrReporter__                    0 slots
+   __cmReporterCtor_VcmFirstReporter__                        0 slots
+   __cmReporterCtor_VcmFurthestFromReporter__                 0 slots
+   __cmReporterCtor_VcmLastReporter__                         0 slots
+   __cmReporterCtor_VcmMaxReporter__                          0 slots
+   __cmReporterCtor_VcmMinReporter__                          0 slots
+   __cmReporterCtor_VcmMostReporter__                         0 slots
+   __cmReporterCtor_VcmNearestToReporter__                    0 slots
+   __cmReporterCtor_VcmNoneReporter__                         0 slots
+   __cmReporterCtor_VcmOrReporter__                           0 slots
+   __cmReporterCtor_VcmSumReporter__                          0 slots
+   __cmSimpleActionCtor__1_All_SetDofs_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_StartBehindPlayer_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_TransBearingToHead_MovePlatform_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_TransBearingToHead_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_TransBearingToPlatform_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_TransFromPlatAttach_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_TransToPlatAttach_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_TransToZeroBearingPlatAttach_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DPPP_    0 slots
+   __cmSimpleActionCtor__1_All_TwoPointAlignment_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DPPP_    0 slots
+   __cmSimpleActionCtor__1_C_Set_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DMA_    0 slots
+   __cmSimpleActionCtor__1_C_SwingCut_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DMA_    0 slots
+   __cmSimpleActionCtor__1_D_Set_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0MAAA_    0 slots
+   __cmSimpleActionCtor__1_F_SetAll_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_06    0 slots
+   __cmSimpleActionCtor__1_F_SetVertigo_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_03    0 slots
+   __cmSimpleActionCtor__1_F_SetVertigo_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_06    0 slots
+   __cmSimpleActionCtor__1_F_Set_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_02    0 slots
+   __cmSimpleActionCtor__1_F_Set_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_06    0 slots
+   __cmSimpleActionCtor__1_H_LookAt_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DI_    0 slots
+   __cmSimpleActionCtor__1_H_Set_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DI_    0 slots
+   __cmSimpleActionCtor__1_H_SmoothLookAt_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DI_    0 slots
+   __cmSimpleActionCtor__1_P_Drive_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DMAA_    0 slots
+   __cmSimpleActionCtor__1_P_FollowSimple_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DMAA_    0 slots
+   __cmSimpleActionCtor__1_P_Pivot_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DMAA_    0 slots
+   __cmSimpleActionCtor__1_P_Set_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DMAA_    0 slots
+   __cmSimpleActionCtor__1_P_SwingCut_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_0A__0DMAA_    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_02    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_03    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_06    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DI_    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DMAA_    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DMA_    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0DPPP_    0 slots
+   __cmSimpleActionCtor__1_Safe_DoNothing_cmSampleCamActions_rage__YAXPAVcmBlockUpdateData_3_PAVcmSimpleAction_3__Z_01_0MAAA_    0 slots
+   __cmSmoothRemap__01                                       18 slots
+   __cmSmoothRemap__02                                       18 slots
+   __cmSmoothRemap__03                                       18 slots
+   __cmSmoothRemap__04                                       18 slots
+   __cmSmoothRemap__05                                       18 slots
+   __cmSwitch__01                                            18 slots
+   __cmSwitch__02                                            18 slots
+   __cmSwitch__03                                            18 slots
+   __cmSwitch__04                                            18 slots
+   __cmSwitch__05                                            18 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___00_00           1 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___00_01           1 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___00_02           1 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___00_0A_          1 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___0A__00          1 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___0A__01          1 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___0A__02          1 slots
+   __cmWorldApproach2Ctor_VcmApproach2_rage___0A__0A_         1 slots
+   __cmWorldRefreshableCtor_VcmAlarmTimer_rage__              1 slots
+   __cmWorldRefreshableCtor_VcmApproachOperator_rage__        1 slots
+   __cmWorldRefreshableCtor_VcmCapture_rage__                 1 slots
+   __cmWorldRefreshableCtor_VcmChanged_rage__                 1 slots
+   __cmWorldRefreshableCtor_VcmDifferentiate_rage__           1 slots
+   __cmWorldRefreshableCtor_VcmExpandPauseApproach_rage__     1 slots
+   __cmWorldRefreshableCtor_VcmIntegrate0_rage__              1 slots
+   __cmWorldRefreshableCtor_VcmIntegrate_rage__               1 slots
+   __cmWorldRefreshableCtor_VcmMaxPauseApproach_rage__        1 slots
+   __cmWorldRefreshableCtor_VcmMemory_rage__                  1 slots
+   __cmWorldRefreshableCtor_VcmMinPauseApproach_rage__        1 slots
+   __cmWorldRefreshableCtor_VcmNormalizedTimer_rage__         1 slots
+   __cmWorldRefreshableCtor_VcmPowerApproach_rage__           1 slots
+   __cmWorldRefreshableCtor_VcmResettableTimer_rage__         1 slots
+   __cmWorldRefreshableCtor_VcmTurnsOff_rage__                1 slots
+   __cmWorldRefreshableCtor_VcmTurnsOn_rage__                 1 slots
+   __cmWorldRefreshableCtor_VcmUnwarpedAlarmTimer_rage__      1 slots
+   __cmWorldRefreshableCtor_VcmUnwarpedNormalizedTimer_rage__    1 slots
+   __cvCurveNurbsWM_VVector2WM_rage__                         7 slots
+   __cvCurveNurbsWM_VVector3WM_rage__                         7 slots
+   __cvCurveNurbsWM_V__VectorN__0BO__rage__                   7 slots
+   __cvCurveNurbsWM_V__VectorN__0FK__rage__                   7 slots
+   __cvCurveNurbs_VVector2WM_rage__                           7 slots
+   __cvCurveNurbs_VVector3WM_rage__                           7 slots
+   __cvCurveNurbs_V__VectorN__0BO__rage__                     7 slots
+   __cvCurveNurbs_V__VectorN__0FK__rage__                     7 slots
+   __cvCurve_VVector2WM_rage__                                7 slots
+   __cvCurve_VVector3WM_rage__                                7 slots
+   __cvCurve_VVector3_rage__                                  7 slots
+   __cvCurve_V__VectorN__0BO__rage__                          7 slots
+   __cvCurve_V__VectorN__0FK__rage__                          7 slots
+   __hsmState_VsnSessionFinder_rage__VslfRoot_12_             5 slots
+   __hsmState_VsnSession_rage__UsnRoot_12_                    5 slots
+   __hsmState_VsnSession_rage__VsnArbMachine_2_               5 slots
+   __hsmState_VsnSession_rage__VsnCreateMachine_2_            5 slots
+   __hsmState_VsnSession_rage__VsnJoinMachine_2_              5 slots
+   __hsmState_VsnSession_rage__VsnLeaveMachine_2_             5 slots
+   __hsmState_VsnSession_rage__VsnMigrateMachine_2_           5 slots
+   __pgDictionary_VgrcTexture_rage__                          0 slots
+   __phMaterialMgrImpl_VpongSurface__VphMaterialMgr_rage__   15 slots
+   __pongNetMessageHolder_VAcceptMessage_                     2 slots
+   __pongNetMessageHolder_VAcceptSpectatorMessage_            2 slots
+   __pongNetMessageHolder_VBallHitMessage_                    2 slots
+   __pongNetMessageHolder_VCancelLobbyCountdownMessage_       2 slots
+   __pongNetMessageHolder_VDataRequestFailedMessage_          2 slots
+   __pongNetMessageHolder_VDataRequestMessage_                2 slots
+   __pongNetMessageHolder_VDataSendMessage_                   2 slots
+   __pongNetMessageHolder_VDenySpectatorMessage_              2 slots
+   __pongNetMessageHolder_VDisconnectingSinglesClientMessage_    2 slots
+   __pongNetMessageHolder_VDropSpectatorConnection_           2 slots
+   __pongNetMessageHolder_VEnteringReplayMessage_             2 slots
+   __pongNetMessageHolder_VExitPostGameMessage_               2 slots
+   __pongNetMessageHolder_VForceMatchTimeSyncMessage_         2 slots
+   __pongNetMessageHolder_VForceSessionTimeSyncMessage_       2 slots
+   __pongNetMessageHolder_VForfeitMatchMessage_               2 slots
+   __pongNetMessageHolder_VGamerReadyMessage___0BP_           2 slots
+   __pongNetMessageHolder_VGamerUpdateMessage___0BP_          2 slots
+   __pongNetMessageHolder_VHitDataMessage___0DC_              2 slots
+   __pongNetMessageHolder_VHitMessage_                        2 slots
+   __pongNetMessageHolder_VInternalMessageRelay_              2 slots
+   __pongNetMessageHolder_VJoinSpectatorSessionMessage_       2 slots
+   __pongNetMessageHolder_VJunkSwingStartedMessage___0BE_     2 slots
+   __pongNetMessageHolder_VLeaveSpectatorSessionMessage_      2 slots
+   __pongNetMessageHolder_VLevelConfigMessage_                2 slots
+   __pongNetMessageHolder_VLoadDataQueryResponse_             2 slots
+   __pongNetMessageHolder_VLoadDataQuery_                     2 slots
+   __pongNetMessageHolder_VLoadingStateRequestMessage_        2 slots
+   __pongNetMessageHolder_VLoadingStateResponseMessage_       2 slots
+   __pongNetMessageHolder_VMatchDataMessage_                  2 slots
+   __pongNetMessageHolder_VMatchDataSyncMessage_              2 slots
+   __pongNetMessageHolder_VMatchDataSyncResponseMessage_      2 slots
+   __pongNetMessageHolder_VMatchScoreMessage_                 2 slots
+   __pongNetMessageHolder_VMatchStatsMessage_                 2 slots
+   __pongNetMessageHolder_VMatchTimeSyncMessage_              2 slots
+   __pongNetMessageHolder_VMatchTimeSyncRequestMessageEx_     2 slots
+   __pongNetMessageHolder_VMatchTimeSyncRequestMessage_       2 slots
+   __pongNetMessageHolder_VNextMatchMessage_                  2 slots
+   __pongNetMessageHolder_VNextMatchSpectatorMessage_         2 slots
+   __pongNetMessageHolder_VPlayerCacheMessage_                2 slots
+   __pongNetMessageHolder_VPlayerMovementMessage___0MI_       2 slots
+   __pongNetMessageHolder_VPlayerStopMessage___0MI_           2 slots
+   __pongNetMessageHolder_VPlayerUpdateMessage___0MI_         2 slots
+   __pongNetMessageHolder_VPointDeclaredMessage_              2 slots
+   __pongNetMessageHolder_VPostPointExitMessage_              2 slots
+   __pongNetMessageHolder_VRemoteServeReadyMessage_           2 slots
+   __pongNetMessageHolder_VRemoveSpectatorMessage_            2 slots
+   __pongNetMessageHolder_VReplayEmoteMessage_                2 slots
+   __pongNetMessageHolder_VRequestDataMessage_                2 slots
+   __pongNetMessageHolder_VRoundRobinDataMessage_             2 slots
+   __pongNetMessageHolder_VScoreMessage_                      2 slots
+   __pongNetMessageHolder_VServeAbortMessage_                 2 slots
+   __pongNetMessageHolder_VServeFaultMessage_                 2 slots
+   __pongNetMessageHolder_VServeLetMessage_                   2 slots
+   __pongNetMessageHolder_VServeReadyMessage_                 2 slots
+   __pongNetMessageHolder_VServeStartedMessage_               2 slots
+   __pongNetMessageHolder_VServeUnlockMessage_                2 slots
+   __pongNetMessageHolder_VSessionTimeSyncMessage_            2 slots
+   __pongNetMessageHolder_VSessionTimeSyncRequestMessage_     2 slots
+   __pongNetMessageHolder_VSignalReadyToServeMessage_         2 slots
+   __pongNetMessageHolder_VSinglesConnectRequest_             2 slots
+   __pongNetMessageHolder_VSkipReplayMessage_                 2 slots
+   __pongNetMessageHolder_VSpectatorBallHitMessage___0CI_     2 slots
+   __pongNetMessageHolder_VSpectatorConnectRequest_           2 slots
+   __pongNetMessageHolder_VSpectatorQuitMessage___0BO_        2 slots
+   __pongNetMessageHolder_VStartLobbyCountdownMessage_        2 slots
+   __pongNetMessageHolder_VStateSyncMessage_                  2 slots
+   __pongNetMessageHolder_VStateSyncRequestMessage_           2 slots
+   __pongNetMessageHolder_VSwingStartedMessage___0BE_         2 slots
+   __pongNetMessageHolder_VTerminateRallyMessage_             2 slots
+   __pongNetMessageHolder_VTimedGameUpdateTimerMessage_       2 slots
+   __pongNetMessageHolder_VTournamentCompleteMessage_         2 slots
+   __pongNetMessageHolder_VTwoMinuteWarningMessage_           2 slots
+   __pongNetMessageHolder_VUserRequestReplayMessage_          2 slots
+   __rlConcreteStatsView__03_00                               0 slots
+   __rlConcreteStatsView__0L__00                              0 slots
+   __sysThreadPool__01                                        0 slots
+   __xmlNodeStructArray_D_xmlNodeStruct                       2 slots
+   __xmlNodeStructArray_H_xmlNodeStruct                       2 slots
+   aiPlayer                                                   0 slots
+   aiSpin                                                     0 slots
+   assetVersions                                             22 slots
+   assetVersionsChar                                         22 slots
+   assetVersionsCharSpecific                                 22 slots
+   audBank                                                    0 slots
+   audBankMgr                                                 0 slots
+   audControl                                                18 slots
+   audControl2dWrapper                                        1 slots
+   audControl3d                                              18 slots
+   audControl3dWrapper                                        1 slots
+   audControlGroup                                           12 slots
+   audControlMgr                                              5 slots
+   audControlWrapper                                          1 slots
+   audMsgSink                                                 1 slots
+   audVoice                                                  21 slots
+   audVoiceSfx                                               21 slots
+   audVoiceStream                                            21 slots
+   backspinTipData                                           22 slots
+   badSoftShotTipData                                        22 slots
+   camBaseCS                                                 12 slots
+   camShot                                                   13 slots
+   camShotMgr                                                15 slots
+   camViewCS                                                 10 slots
+   cameraShake                                                0 slots
+   cellData                                                  22 slots
+   charViewCS                                                12 slots
+   charViewCharData                                          22 slots
+   charViewData                                              22 slots
+   clothController                                            0 slots
+   cmAbs                                                     18 slots
+   cmAbsAngleDiff                                            18 slots
+   cmAction                                                  15 slots
+   cmActionFactory                                            3 slots
+   cmAdd                                                     18 slots
+   cmAlarmTimer                                              18 slots
+   cmAnd                                                     18 slots
+   cmAndReporter                                              3 slots
+   cmAngle                                                   18 slots
+   cmAngleDiff                                               18 slots
+   cmAngleLerp                                               18 slots
+   cmAngleLinearApproach                                     19 slots
+   cmAnglePowerApproach                                      19 slots
+   cmAnimBoneOrientation                                     18 slots
+   cmAnimBonePosition                                        18 slots
+   cmAnimCamFStop                                            18 slots
+   cmAnimCamFov                                              18 slots
+   cmAnimCamOrientation                                      18 slots
+   cmAnimCamPosition                                         18 slots
+   cmAnimDuration                                            18 slots
+   cmApproach2                                               19 slots
+   cmApproachOperator                                        19 slots
+   cmArcCosine                                               18 slots
+   cmArcTangent                                              18 slots
+   cmAvgReporter                                              3 slots
+   cmBitwiseAndReporter                                       3 slots
+   cmBitwiseOrReporter                                        3 slots
+   cmBlock                                                    9 slots
+   cmBlockBank                                                3 slots
+   cmCachedOperator                                          18 slots
+   cmCapture                                                 18 slots
+   cmChanged                                                 18 slots
+   cmClamp                                                   18 slots
+   cmClampRange                                              18 slots
+   cmCompMult                                                18 slots
+   cmCompiledMachineBank                                      3 slots
+   cmControlRef                                              18 slots
+   cmCosine                                                  18 slots
+   cmCross                                                   18 slots
+   cmDepthProbe                                              18 slots
+   cmDevArg                                                  18 slots
+   cmDiffTuningSet                                           14 slots
+   cmDifferential                                            18 slots
+   cmDifferentiate                                           18 slots
+   cmDist                                                    18 slots
+   cmDist2                                                   18 slots
+   cmDivide                                                  18 slots
+   cmDot                                                     18 slots
+   cmDrawVec                                                 18 slots
+   cmEquals                                                  18 slots
+   cmExpandPauseApproach                                     19 slots
+   cmFOV                                                     18 slots
+   cmFirstReporter                                            3 slots
+   cmFlatDist                                                18 slots
+   cmFlatDist2                                               18 slots
+   cmFlatDot                                                 18 slots
+   cmFlatten                                                 18 slots
+   cmFurthestFromReporter                                     3 slots
+   cmGNoise                                                  18 slots
+   cmGang                                                    10 slots
+   cmGraph                                                   18 slots
+   cmGreaterThan                                             18 slots
+   cmHitProbe                                                18 slots
+   cmIf                                                      18 slots
+   cmInfo                                                    18 slots
+   cmIntegrate                                               18 slots
+   cmIntegrate0                                              18 slots
+   cmInverse                                                 18 slots
+   cmIsValid                                                 18 slots
+   cmLastReporter                                             3 slots
+   cmLerp                                                    18 slots
+   cmLessThan                                                18 slots
+   cmLocalRestart                                            18 slots
+   cmLookAtAngles                                            18 slots
+   cmMachine                                                 10 slots
+   cmMachineBank                                              3 slots
+   cmMag                                                     18 slots
+   cmMag2                                                    18 slots
+   cmMaterialProbe                                           18 slots
+   cmMax                                                     18 slots
+   cmMaxPauseApproach                                        19 slots
+   cmMaxReporter                                              3 slots
+   cmMemory                                                  18 slots
+   cmMetafileTuningSet                                       14 slots
+   cmMin                                                     18 slots
+   cmMinPauseApproach                                        19 slots
+   cmMinReporter                                              3 slots
+   cmModulo                                                  18 slots
+   cmMostReporter                                             3 slots
+   cmMotorPlant                                               6 slots
+   cmMultiply                                                18 slots
+   cmNamedValueSet                                            9 slots
+   cmNearestToReporter                                        3 slots
+   cmNegate                                                  18 slots
+   cmNoise                                                   18 slots
+   cmNoneReporter                                             3 slots
+   cmNormal                                                  18 slots
+   cmNormalProbe                                             18 slots
+   cmNormalizedTimer                                         18 slots
+   cmNot                                                     18 slots
+   cmOperator                                                18 slots
+   cmOperatorSet                                              0 slots
+   cmOr                                                      18 slots
+   cmOrReporter                                               3 slots
+   cmPassThrough                                             18 slots
+   cmPositionProbe                                           18 slots
+   cmPow                                                     18 slots
+   cmPowerApproach                                           19 slots
+   cmPrint                                                   18 slots
+   cmProbeOperator                                           18 slots
+   cmRange                                                   18 slots
+   cmReporter                                                 3 slots
+   cmResettableTimer                                         18 slots
+   cmRotateX                                                 18 slots
+   cmRotateY                                                 18 slots
+   cmRotateZ                                                 18 slots
+   cmSPrint                                                  18 slots
+   cmSampleCamConfigurationState                              1 slots
+   cmSampleCamMachineBank                                     3 slots
+   cmSampleCamMotorPlant                                      6 slots
+   cmScale                                                   18 slots
+   cmScreenToWorld                                           18 slots
+   cmSelectPointerFromArray                                  18 slots
+   cmSign                                                    18 slots
+   cmSimple                                                  10 slots
+   cmSimpleAction                                            13 slots
+   cmSine                                                    18 slots
+   cmSlowIn                                                  18 slots
+   cmSlowInOut                                               18 slots
+   cmSlowOut                                                 18 slots
+   cmSphericalNoise                                          18 slots
+   cmSqrt                                                    18 slots
+   cmSubtract                                                18 slots
+   cmSumReporter                                              3 slots
+   cmTangent                                                 18 slots
+   cmTunable                                                 18 slots
+   cmTuningSet                                               10 slots
+   cmTurnsOff                                                18 slots
+   cmTurnsOn                                                 18 slots
+   cmUnwarpedAlarmTimer                                      18 slots
+   cmUnwarpedNormalizedTimer                                 18 slots
+   cmValueSet                                                 9 slots
+   cmVector                                                  18 slots
+   cmVectorGNoise                                            18 slots
+   cmVectorNoise                                             18 slots
+   cmVectorToBearing                                         18 slots
+   cmVizVectorBlue                                           18 slots
+   cmVizVectorRed                                            18 slots
+   cmVizVectorSpline                                         18 slots
+   cmVizVectorWhite                                          18 slots
+   cmWorldToScreen                                           18 slots
+   cmX                                                       18 slots
+   cmXor                                                     18 slots
+   cmY                                                       18 slots
+   cmZ                                                       18 slots
+   crAnimChannel                                             14 slots
+   crAnimChannelQuantizeFloat                                14 slots
+   crAnimChannelStaticFloat                                  14 slots
+   crAnimDof                                                 19 slots
+   crAnimDofFloat                                            20 slots
+   crAnimDofQuaternion                                       20 slots
+   crAnimDofVector3                                          19 slots
+   crAnimFrame                                                2 slots
+   crAnimPlayer                                               2 slots
+   crAnimWeightSet                                            0 slots
+   crIKArm                                                    8 slots
+   crIKBodyBase                                               3 slots
+   crIKBodyBoneFinder                                         2 slots
+   crIKBodyBoneFinderByName                                   2 slots
+   crIKBodyHumanoid                                           4 slots
+   crIKHead                                                   6 slots
+   crIKLeg                                                    8 slots
+   crIKLimb                                                   8 slots
+   crIKPart                                                   6 slots
+   crIKSolverBase                                             2 slots
+   crIKSolverGleicherLimb                                     3 slots
+   crIKSolverIterativeLimb                                    3 slots
+   crIKSolverSimpleHead                                       2 slots
+   crIKSolverSimpleSpine                                      2 slots
+   crIKSpine                                                  6 slots
+   creditsData                                               22 slots
+   creditsSettings                                           22 slots
+   ctxManager                                                 0 slots
+   datBitBufferDefaultAllocator                               3 slots
+   datParser                                                  0 slots
+   datParserRecord                                            0 slots
+   dcamCam                                                   12 slots
+   dcamPolarCam                                              12 slots
+   dialogData                                                22 slots
+   dialogManager                                              1 slots
+   environmentCloth                                           0 slots
+   evtInstance                                                3 slots
+   exception_std                                              2 slots
+   fiDirtyDisc                                                2 slots
+   fiSerialize                                               11 slots
+   firstServeTipData                                         22 slots
+   focusMeterTipData                                         22 slots
+   fontData                                                  22 slots
+   forcedFromTableCenterTipData                              22 slots
+   fragHeapAllocator                                         20 slots
+   frontendData                                              22 slots
+   fsmMachine                                                14 slots
+   fxAmbAnimData                                              1 slots
+   fxAmbient                                                  8 slots
+   fxAmbientMgr                                              31 slots
+   fxBallShadow                                               1 slots
+   fxBallSpin                                                 6 slots
+   fxBallSpinDataMgr                                          0 slots
+   fxBallSpinLineData                                         0 slots
+   fxBallSpinTex                                              7 slots
+   fxBallSpinTexData                                          0 slots
+   fxBallSpinWispData                                         1 slots
+   fxBallSplash2D                                             2 slots
+   fxBallTrail                                                6 slots
+   fxBallTrailData                                            4 slots
+   fxBoneSpringAnim                                           0 slots
+   fxBoneSpringAnimSpring                                     9 slots
+   fxBoobSpring                                               9 slots
+   fxBoobs                                                    0 slots
+   fxCloth                                                    0 slots
+   fxCrowdAnim                                               22 slots
+   fxCrowdArchetype                                          22 slots
+   fxCrowdGfx                                                 4 slots
+   fxCrowdManager                                             0 slots
+   fxHair                                                     0 slots
+   fxHairGroup                                                0 slots
+   fxLightShaft                                               0 slots
+   fxLightShaftMgr                                            1 slots
+   fxLightShaftTune                                          22 slots
+   fxLvlAnimData                                              1 slots
+   fxLvlAnimSet                                               0 slots
+   fxReticle                                                  5 slots
+   fxSpecialFx                                               31 slots
+   fxStringGroup                                              0 slots
+   fxTrail                                                    6 slots
+   fxTrailData                                                3 slots
+   fxTrailDataMgr                                             0 slots
+   grcDirtyDisc                                               2 slots
+   grcTextureDictionaryReference                             26 slots
+   grcTextureFactoryString                                   15 slots
+   grcTextureFactoryXenon                                    15 slots
+   grcTextureReferenceBase                                   26 slots
+   grmEdgeModel                                               0 slots
+   grmModel                                                   3 slots
+   grmModelFactory                                            2 slots
+   grmModelGeom                                               3 slots
+   grmShader                                                 17 slots
+   grmShaderBasic                                            17 slots
+   grmShaderBasicClamped                                     17 slots
+   grmShaderFactory                                           7 slots
+   grmShaderPreset                                            0 slots
+   hitTipData                                                22 slots
+   hsmContext                                                 1 slots
+   hsmEvent                                                   2 slots
+   hsmEventTimeout                                            2 slots
+   hsmStateBase                                              15 slots
+   hudBoot                                                    8 slots
+   hudCharView                                                8 slots
+   hudController                                              8 slots
+   hudCredits                                                 8 slots
+   hudDialog                                                  8 slots
+   hudFlashBase                                               8 slots
+   hudFrontEnd                                                8 slots
+   hudHUD                                                     9 slots
+   hudLeaderboard                                             8 slots
+   hudLegals                                                  8 slots
+   hudList                                                    8 slots
+   hudLoadingScreen                                          15 slots
+   hudLogosScreen                                             8 slots
+   hudPause                                                   8 slots
+   hudShell                                                   8 slots
+   hudTrainingHUD                                             9 slots
+   hudTrainingLoadScreen                                     15 slots
+   hudTrainingPopUp                                           8 slots
+   hudUnlocks                                                 8 slots
+   interactiveStats_hudLoadingScreen                          7 slots
+   interactiveTips_hudLoadingScreen                           7 slots
+   interactiveUnlocks_hudLoadingScreen                        7 slots
+   listData                                                  22 slots
+   listItemData                                              22 slots
+   lvlLevel                                                  30 slots
+   lvlLevelMgr                                               31 slots
+   lvlLevelPiece                                             41 slots
+   lvlTable                                                  42 slots
+   lvlTableTop                                               41 slots
+   mcFileSegment                                              3 slots
+   mcMemcardControl                                          14 slots
+   mcMemcardStatus_mcMemcardControl                           0 slots
+   mcSegmentContainer                                         3 slots
+   mfAnimationController                                      5 slots
+   mfHierarchy                                                7 slots
+   mfHierarchyRAGE                                            7 slots
+   mfMotionClipFactory                                        0 slots
+   mfMotionClipRAGE                                           3 slots
+   mfNativeAnimationController                                5 slots
+   mfRegisteredPlayback                                       0 slots
+   mfRegistrationCurveData                                    0 slots
+   miniheapAllocator                                         20 slots
+   msgEventHandler                                           23 slots
+   msgMsgSink                                                 1 slots
+   netBBAllocator                                             3 slots
+   netPoliciesDerived                                         0 slots
+   noSoftShotsTipData                                        22 slots
+   parFileIO                                                  7 slots
+   parRTStructure                                             1 slots
+   parStream                                                  0 slots
+   phArchetypeBase                                            0 slots
+   phArchetypeMgr                                             0 slots
+   phArticulatedCollider                                     70 slots
+   phBoundCapsule                                            37 slots
+   phBoundComposite                                          39 slots
+   phBoundGeomCullable                                       41 slots
+   phBoundGeometry                                           41 slots
+   phBoundOTGrid                                             39 slots
+   phBoundOctree                                             41 slots
+   phBoundRibbon                                             37 slots
+   phBoundSphere                                             37 slots
+   phBoundSurface                                            38 slots
+   phBoundTaperedCapsule                                     37 slots
+   phClothVerletBehavior                                      9 slots
+   phClothVerletInst                                         31 slots
+   phCollider                                                68 slots
+   phConstrainedCollider                                     68 slots
+   phDemoObject                                               6 slots
+   phDemoWorld                                                7 slots
+   phInst                                                    31 slots
+   phLevelBase                                               30 slots
+   phMorphGeometry                                           41 slots
+   phSleep                                                    0 slots
+   phSpringAninmatedAttachment                                9 slots
+   phUpdateObject                                             8 slots
+   plrPlayerMgr                                              33 slots
+   plrPropMgr                                                30 slots
+   plrSwingLogic                                              0 slots
+   powerZoneAttr                                             22 slots
+   powerZoneData                                             22 slots
+   reviewOnlyTipData                                         22 slots
+   rlGamer                                                    4 slots
+   rlStatsView                                                0 slots
+   rmPtxBirth                                                 1 slots
+   rmPtxKeyframe                                              0 slots
+   rmPtxSystem                                                9 slots
+   sAlerts_Timer                                              0 slots
+   serveTipData                                              22 slots
+   sgNode                                                    30 slots
+   sgPhysicalObject                                          41 slots
+   sgRMDrawable                                              32 slots
+   sgSceneGraph                                              13 slots
+   sgTraverseDraw                                             1 slots
+   sgTraverseDrawDebug                                        1 slots
+   sgTraverseInitialize                                       1 slots
+   sgTraversePostUpdate                                       1 slots
+   sgTraverseReset                                            1 slots
+   sgTraverseRestart                                          1 slots
+   sgTraverseTerminate                                        1 slots
+   sgTraverseUpdate                                           1 slots
+   shEnd                                                     14 slots
+   shInit                                                    14 slots
+   shShell                                                   33 slots
+   shotTarget                                                 0 slots
+   slfBroadcasting_slfFindingSyslink_slfSearching_slfRoot_snSessionFinder   15 slots
+   slfFinal_slfRoot_snSessionFinder                          15 slots
+   slfFindingOnline_slfSearching_slfRoot_snSessionFinder     15 slots
+   slfFindingSyslink_slfSearching_slfRoot_snSessionFinder    15 slots
+   slfRoot_snSessionFinder                                   15 slots
+   slfSearching_slfRoot_snSessionFinder                      15 slots
+   snAcquiringHost_snMigrateMachine                          15 slots
+   snActive_snRoot_snSession                                 15 slots
+   snArbGuestRegistering_snIdle_snActive_snRoot_snSession    15 slots
+   snArbHostRegistering_snStarting_snActive_snRoot_snSession   15 slots
+   snArbMachine                                              15 slots
+   snChangingPresence_snRoot_snSession                       15 slots
+   snChanging_snChangingPresence_snRoot_snSession            15 slots
+   snConnectionManager                                        0 slots
+   snCreateMachine                                           14 slots
+   snCreating_snRoot_snSession                               15 slots
+   snDestroying_snRoot_snSession                             15 slots
+   snDormant_snRoot_snSession                                15 slots
+   snEnding_snActive_snRoot_snSession                        15 slots
+   snGamer                                                    5 slots
+   snHsmAcceptingJoinRequest_snJoinMachine                   15 slots
+   snHsmAcceptingLeaveRequest_snLeaveMachine                 15 slots
+   snHsmApplyingConfig_snCreateMachine                       15 slots
+   snHsmCreatingGuest_snCreateMachine                        15 slots
+   snHsmCreatingHost_snCreateMachine                         15 slots
+   snHsmCreatingOffline_snCreateMachine                      15 slots
+   snHsmDestroyingSession_snCreateMachine                    15 slots
+   snHsmJoinPending_snHsmRequestingJoin_snJoinMachine        15 slots
+   snHsmLeavePending_snHsmRequestingLeave_snLeaveMachine     15 slots
+   snHsmLocalJoinPending_snJoinMachine                       15 slots
+   snHsmLocalLeavePending_snLeaveMachine                     15 slots
+   snHsmRemoteJoinPending_snJoinMachine                      15 slots
+   snHsmRemoteLeavePending_snLeaveMachine                    15 slots
+   snHsmRequestingConfig_snCreateMachine                     15 slots
+   snHsmRequestingJoin_snJoinMachine                         15 slots
+   snHsmRequestingLeave_snLeaveMachine                       15 slots
+   snHsmStartingSession_snCreateMachine                      15 slots
+   snHsmUndoingJoinRequest_snHsmRequestingJoin_snJoinMachine   15 slots
+   snHsmWaitingForReply_snHsmRequestingJoin_snJoinMachine    15 slots
+   snHsmWaitingForReply_snHsmRequestingLeave_snLeaveMachine   15 slots
+   snIdle_snActive_snRoot_snSession                          15 slots
+   snInProgress_snActive_snRoot_snSession                    15 slots
+   snJoinMachine                                             15 slots
+   snJoining_snRoot_snSession                                15 slots
+   snLeaveMachine                                            15 slots
+   snLeaving_snRoot_snSession                                15 slots
+   snMigrateMachine                                          15 slots
+   snMigratingAsGuest_snMigrateMachine                       15 slots
+   snMigrating_snAcquiringHost_snMigrateMachine              15 slots
+   snMigrating_snMigratingAsGuest_snMigrateMachine           15 slots
+   snMigrating_snRoot_snSession                              15 slots
+   snNotifyBase                                               0 slots
+   snNotifyFoundOnline                                        0 slots
+   snNotifyFoundSyslink                                       0 slots
+   snNotifyGamerAdded                                         0 slots
+   snNotifyGamerRemoved                                       0 slots
+   snNotifyJoin                                               0 slots
+   snNotifyJoinRequest                                        0 slots
+   snNotifyLeave                                              0 slots
+   snNotifyPeerDropped                                        0 slots
+   snNotifySyslinkRequest                                     0 slots
+   snNotifyingGuests_snAcquiringHost_snMigrateMachine        15 slots
+   snRoot_snSession                                          15 slots
+   snSendingGamerData_snJoinMachine                          14 slots
+   snSession                                                  1 slots
+   snSessionFinder                                            1 slots
+   snSessionManager                                           2 slots
+   snStartingSession_snStarting_snActive_snRoot_snSession    15 slots
+   snStarting_snActive_snRoot_snSession                      15 slots
+   snWaitingForMigrateMsg_snMigratingAsGuest_snMigrateMachine   15 slots
+   snWaitingForReplies_snChangingPresence_snRoot_snSession   15 slots
+   spdApical                                                  5 slots
+   statsThresholdData                                        22 slots
+   swfACTIONFUNC                                             14 slots
+   swfBASE                                                   14 slots
+   swfBITMAP                                                  9 slots
+   swfBUTTON                                                  9 slots
+   swfCMD                                                     5 slots
+   swfCMD_DoAction                                            5 slots
+   swfCMD_DoInitAction                                        5 slots
+   swfCMD_PlaceObject2                                        5 slots
+   swfCMD_PlaceObject2ClipEvent                               5 slots
+   swfCMD_RemoveObject2                                       5 slots
+   swfCONTEXT                                                 2 slots
+   swfEDITTEXT                                                9 slots
+   swfFILE                                                   10 slots
+   swfFONT                                                    9 slots
+   swfINSTANCE                                               13 slots
+   swfOBJECT                                                  9 slots
+   swfSCRIPTARRAY                                            14 slots
+   swfSCRIPTOBJECT                                           14 slots
+   swfSHAPE                                                   9 slots
+   swfSPRITE                                                  9 slots
+   swfTEXT                                                    9 slots
+   sysThreadPoolBase                                          0 slots
+   sysThreadWorker                                            1 slots
+   sysTimeManager                                             0 slots
+   tooFarFromTableTipData                                    22 slots
+   uiList                                                     4 slots
+   xmlNode                                                   20 slots
+   xmlNodeString                                             20 slots
+   xmlNodeStruct                                             22 slots
+   xmlNodeStructAlignmentType                                 7 slots
+   xmlNodeStructAnimHashEntry                                 2 slots
+   xmlNodeStructAnimHashEntryArray                            2 slots
+   xmlNodeStructApproxHitZone_pcrSwingAbortData               7 slots
+   xmlNodeStructAvgFcnType_gdBTgtBoneName                     7 slots
+   xmlNodeStructBlendFcnType_gdBlendTargetName                7 slots
+   xmlNodeStructBool                                          2 slots
+   xmlNodeStructCamType_gdCamData                             7 slots
+   xmlNodeStructCategory_pcrActivationCategory                7 slots
+   xmlNodeStructChar                                          2 slots
+   xmlNodeStructColType_listItemData                          7 slots
+   xmlNodeStructDifficulty_gdUnlockConditionSettingsData      7 slots
+   xmlNodeStructEntryPose_LocomotionController                7 slots
+   xmlNodeStructFaceType_fontData                             7 slots
+   xmlNodeStructFloat                                         2 slots
+   xmlNodeStructGameType_gdUnlockConditionSettingsData        7 slots
+   xmlNodeStructGamesPerMatch_gdUnlockConditionSettingsData    7 slots
+   xmlNodeStructGroupType_gdUnlockGroupData                   7 slots
+   xmlNodeStructGroupType_hitTipData                          7 slots
+   xmlNodeStructGroupType_serveTipData                        7 slots
+   xmlNodeStructHitType_gdUnlockConditionFinalHitData         7 slots
+   xmlNodeStructHitZone_pongBallHitData                       7 slots
+   xmlNodeStructInt                                           2 slots
+   xmlNodeStructInterpFcnType_gdBTgtBoneName                  7 slots
+   xmlNodeStructMatrix34                                      2 slots
+   xmlNodeStructMovieType_gdMovieData                         7 slots
+   xmlNodeStructPointsPerGame_gdUnlockConditionSettingsData    7 slots
+   xmlNodeStructPropType_gdPropData                           7 slots
+   xmlNodeStructReverbMode                                    7 slots
+   xmlNodeStructServeType_pcrServeData                        7 slots
+   xmlNodeStructShort                                         2 slots
+   xmlNodeStructSpecialty_pcrSwingSet                         7 slots
+   xmlNodeStructSpinType_gdUnlockConditionFinalHitData        7 slots
+   xmlNodeStructString                                        2 slots
+   xmlNodeStructSubCamType_gdCamData                          7 slots
+   xmlNodeStructSwingType_gdUnlockConditionFinalHitData       7 slots
+   xmlNodeStructSwingType_pongBallHitData                     7 slots
+   xmlNodeStructVector2                                       2 slots
+   xmlNodeStructVector3                                       2 slots
+   xmlNodeStructVector4                                       2 slots
+   xmlRoot                                                   20 slots
+   xmlTree                                                   11 slots

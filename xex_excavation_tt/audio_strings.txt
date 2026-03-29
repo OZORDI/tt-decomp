@@ -1,0 +1,151 @@
+; ===================================================================
+; AUDIO / XACT STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x82034FB8  localbank
+  0x82034FC4  remotebank
+  0x82035548  audiopath
+  0x820356B4  tune\audio
+  0x82035840  audVoiceSfx::GetSfxRef out of free sounds
+  0x82035870  audVoiceSfx::PlayByEntry - bank not resident for SFX entry (%p)
+  0x820358B0  audVoiceSfx::SetReverbVolume - bank not resident for SFX entry (%p)
+  0x820358F8  audVoiceSfx::SetEffectVolume - bank not resident for SFX entry (%p)
+  0x82035970  audVoiceStream::Prime - bank not resident for audBankEntry (%p)
+  0x820359B0  audVoiceStream::PlayByEntry - bank not resident for audBankEntry (%p)
+  0x820359F8  audVoiceStream::SetReverbVolume - bank not resident for stream entry (%p)
+  0x82035A48  audVoiceStream::SetEffectVolume - bank not resident for stream entry (%p)
+  0x82035BB8  audBank::LoadBank %s timeout
+  0x82035BD8  audBank::RemoveUser: %s - timed out trying to unload!
+  0x82035C10  audBank::RemoveUser %s - trying to remove before loaded.
+  0x82035C54  $/audio/TDFiles
+  0x82035C68  audBank::LoadBank - TD file for bank: '%s' uses an old version (%3.2f)
+  0x82038D5C  Cheat_VintageAudio
+  0x8203A7B4  RallyMusicStartThreshold
+  0x8203AC5C  audio: Driver Stopped
+  0x8203AC78  audio: Error: Something broke in the audio system.
+  0x8203AD1C  Invalid RAGE audio command %d
+  0x8203AD40  RageAud: xact2System: Not a xact2System command: command = 0x%04X, data = %d
+  0x8203AD94  xact2System: Unable to find global settings file '%s'
+  0x8203ADCC  xact2System: No global settings file specified!
+  0x8203ADFC  [xact2System] Setting up mastering effect(s)...
+  0x8203AE2C  $/audio
+  0x8203AE50  [xact2System] Configuring mastering effect '%s' (managerIndex %d)...
+  0x8203AE98  [xact2System] Done.
+  0x8203AEB0  [xact2System] Creating DSP effect '%s' at index %d (managerIndex %d)...
+  0x8203AEF8  [xact2System] Loaded.
+  0x8203AF10  [xact2System] No '$/audio/effects.list' file found!
+  0x8203AF48  [xact2System] Creating global effect bus with '%s' (managerIndex %d)...
+  0x8203AF90  [xact2System] No global effect specified.  Creating pass-through voice...
+  0x8203AFE0  [xact2System] Trying to load bank %s but slot %d is still loading!
+  0x8203B028  [xact2System] Trying to load bank %s but slot %d is still unloading!
+  0x8203B070  [xact2System] Trying to unload bank (%d) which is still pending!
+  0x8203B0B8  [xact2System] Trying to unload bank (%d) which is still unloading!
+  0x8203B0FC  [xact2System::SetCategoryVolume] Cannot get category '%s'
+  0x8203B138  [xact2System::PauseCategory] Cannot get category '%s'
+  0x8203B180  Unable to create streaming wave bank for %s
+  0x8203B1AC  [xact2Bank] %s file not found
+  0x8203B1CC  [xact2Bank] Unable to create memory wave bank.
+  0x8203B1FC  [xact2Bank] Unable to create sound bank.
+  0x8203B228  [xact2Bank] Sound bank is for wrong architecture.
+  0x8203B2B0  AgeSnd: xactSound: Not a xactSound command SfxNum = %d, command = %d
+  0x8203B2F8  [xact2Sound] Trying to play a sound (%d) whose bank (%d) is not loaded!
+  0x8203B340  [xact2Sound] Attempting to play from a streaming bank (%d) that is not yet prepared!
+  0x8203B398  [xact2Sound] Attempting to play a stream that is still pending
+  0x8203B3D8  [xact2Sound] Unable to prepare cue %d from bank %d!
+  0x8203B40C  [xact2Sound] Unable to play sound cue %d from bank %d
+  0x8203B448  [xact2Sound] Trying to prime a sound (%d) whose bank (%d) is not loaded!
+  0x8203B498  [xact2Sound] Unable to prepare cue %d from bank %d! OUT OF MEMEORY!!!!
+  0x8203B4F4  Failed to get state from stopping cue!
+  0x8203B808  audio/TDFiles/PONG.xgs
+  0x8203B8B4  audio/soundbanks
+  0x8203B8C8  soundbanks.static
+  0x8203B8DD  [32mLoaded %d static sound banks.
+  0x8203B908  soundbanks.dynamic
+  0x8203B91D  [32mLoaded %d dynamic sound banks.
+  0x8203B978  [pongAudioManager] In slow mo, but GetTimeWarp() == 1.0f!
+  0x8203BAA8  Play2dSound: Unable to find sound %s
+  0x8203BAD0  Play3dSound: Unable to find sound %s
+  0x8203BAF8  Play3dSound: Unable to allocate 3d control for %s
+  0x8203BC94  [pongAudioEffectManager] Enabling focus filters.
+  0x8203BCC8  [pongAudioEffectManager] Putting focus filters in bypass.
+  0x8203BDE4  [pongMusicPlayer] Invalid music type!
+  0x8203BE0C  [pongMusicPlayer] Can't find music: %s
+  0x8203BE34  [pongMusicPlayer] Cannot get control from pool!
+  0x8203C190  [amb player] Unable to find POINT sound: '%s'
+  0x8203C374  [pongSoundTracker] Unable to find sound %s
+  0x8203C3A0  [pongSoundTracker] Unable to allocate a 3d control for %s
+  0x8203C3DC  $/tune/audio
+  0x8203C7B8  Unable to get 3d sound control for fan callout!
+  0x8203C890  [pongSpeechPlayer::DoEmoteSpeech] Playing speech sound '%s' for player %d (reverb volume %f)
+  0x8203C8F0  [pongSpeechPlayer::DoEmoteSpeech] Unable to find speech sound '%s' for player %d!
+  0x8203CB70  noaudio
+  0x8203CB78  nomusic
+  0x8203EBA8  BallBankName
+  0x8203EBB8  CrowdBankName
+  0x8203EBC8  IntroMusic
+  0x8204A4DC  MusicVol
+  0x8204A4F4  musicvol
+  0x8204BB9C  AudioName
+  0x8204BBA8  AudioSuffix
+  0x8204BBB4  PaddleSound
+  0x8204DAC0  X360Banks.rpf
+  0x8204DAD0  audio\X360Banks
+  0x820500FC  msgAudio
+  0x82051AD4  RallyMusicThresholdReached
+  0x82051E20  UnloadBank
+  0x82051E2C  LoadBank
+  0x82051E6C  Incorrect message format for msgAudio::%s
+  0x82056EA0  [pongBallInstance] got a material with a bad sound index: %s
+  0x820579F4  $\audio
+  0x820579FC  ballsounds
+  0x82057A08  ballsounds.list
+  0x82057A40  [pongBallAudio] Sound index %d out of range!
+  0x82057B54  Unhandled instance type (%d) in pongBallAudio::PreImpact
+  0x8205E748  noloadingaudio
+  0x8205FD14  audioSelection
+  0x8205FF48  stxt_audio_options
+  0x8205FF5C  t_audio_options
+  0x820600E0  stxt_music_volume
+  0x820600F4  t_music_volume
+  0x82062A38  audioOptions
+  0x8206353C  stxt_audio
+  0x82063548  t_audio
+  0x82065334  PlayAudio
+  0x82065630  [pongCSActionPlayAudio::Play] Invalid audio event type (%s)!
+  0x82074B2C  [audControlPool] Out of 3d audio controls!
+  0x82074B58  [audControlPool] Out of 2d audio controls!
+  0x82074C34  PlaySound(%s,%s)
+  0x82074C48  StopSound(%s)
+  0x82074EFC  soundName
+  0x82074F08  attachSound
+  0x82075F34  OverrideUserMusic
+  0x820760AC  MinAudioMotorSpeed
+  0x82077648  AudioEventType
+  0x82077658  AudioEvent
+  0x82077668  gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEventType'
+  0x820776C0  gdCSActionPlayAudioData::PostLoadProperties() - missing property 'AudioEvent'
+  0x82077710  kMusic
+  0x82077730  gdCSActionPlayAudioData::PostLoadProperties() - unknown audio event type: '%s'
+  0x82077790  gdCSActionPlayAudioData::PostLoadProperties() - unknown audio event ID: '%s'
+  0x825D4FE4  .?AVaudBankMgr@rage@@
+  0x825D5064  .?AVaudBank@rage@@
+  0x825D522C  .?AVcmBlockBank@rage@@
+  0x825D524C  .?AVcmMachineBank@rage@@
+  0x825D5270  .?AVcmSampleCamMachineBank@rage@@
+  0x825D6818  .?AVcmCompiledMachineBank@rage@@
+  0x825D68F0  .?AVoffsetHead@?3??CreateRoamCamera@cmSampleCamMachineBank@rage@@IAAPAVcmBlock@3@AAVcmActionFactory@3@AAVcmOperatorSet@3@ABVcmValueSet@3@AAVcmConstValueSet@3@AAVcmTuningSet@3@AAV73@@Z@
+  0x825D69B8  .?AVmovePushed@?2??CreateRoamCamera@cmSampleCamMachineBank@rage@@IAAPAVcmBlock@3@AAVcmActionFactory@3@AAVcmOperatorSet@3@ABVcmValueSet@3@AAVcmConstValueSet@3@AAVcmTuningSet@3@AAV73@@Z@
+  0x825D6A80  .?AVnullZone@?2??CreateStandRoam@cmSampleCamMachineBank@rage@@IAAPAVcmBlock@3@AAVcmActionFactory@3@AAVcmOperatorSet@3@ABVcmValueSet@3@AAVcmConstValueSet@3@AAVcmTuningSet@3@AAV73@@Z@
+  0x825D72AC  .?AUIXAudioRefCount@@
+  0x825D72CC  .?AUIXAudioEffect@@
+  0x825D7388  .?AVpongAudioManager@@
+  0x825D7B54  .?AVgdPatternBank@@
+  0x825DE148  .?AVpongBallAudio@@
+  0x825DF8F0  .?AVpongCSActionPlayAudio@@
+  0x825E5E88  .?AVgdCSActionPlayAudioData@@
+  0x827446B9  Escuela Liberty Northside

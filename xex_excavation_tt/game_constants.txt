@@ -1,0 +1,2464 @@
+; ===================================================================
+; GAME CONSTANTS — STRINGS, STATES, SCORING, ANIMATIONS
+; Rockstar Table Tennis  -  default.xex
+; ===================================================================
+
+; ── MATCH STATE MACHINE STRINGS ──
+
+  0x82027878  pongCreature::ReplayStarting
+  0x820279D4  pongCreature::StartEmote
+  0x8202806C  pongMover::Reset
+  0x82028528  pongBlendLookAtDriver::UpdateBody--%i poses not supported.
+  0x82028564  pongBlendLookAtDriver::UpdateFace--%i poses not supported.
+  0x820287C0  pongSkelLookAtDriver::UpdateBody--bones are missing.
+  0x820300DC  gmLogicNode
+  0x820303B8  gmLogicSwingPractice::stateAim::onEnterState
+  0x8203085C  gmLogicSinglesMatch's next state was %s, is %s
+  0x82030BA0  gmLogicSinglesMatch::stateReplay::onEnterState
+  0x820319D4  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031AB8  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82035DB8  pongCameraMgr
+  0x820361C0  pongInlineCinematics
+  0x82039B2C  pongPlayer::Activate() - creature already activated
+  0x82039B80  pongPlayer::Activate() - creature already deactivated
+  0x82039BB8  pongPlayer::Deactivate() - SetLocalRemoteStatus()
+  0x82039BEC  pongPlayer::Deactivate() - UnRegisterMessages()
+  0x82039C1C  pongPlayer::Deactivate() - StopClothThreads()
+  0x82039C4C  pongPlayer::Deactivate() - RemoveCreatureFromLevel()
+  0x82039CA4  pongPlayer::PostUpdate() - player is not active
+  0x82039CD4  pongPlayer::Update() - player is not active
+  0x82039D00  pongPlayer::Update1() - player is not active
+  0x82039D30  pongPlayer::Update2() - player is not active
+  0x82039DC8  pongPlayer::UpdateReplay() - player is not active
+  0x82039DFC  pongPlayer::Draw() - player is not active
+  0x82039E28  pongPlayer::Render() - player[%d] is not active
+  0x82039E58  pongPlayer::SaveDrawData() - player is not active
+  0x82039FFC  pongPlayer::StartSwing() %s
+  0x8203A070  pongPlayer::FinalizeServe() %s
+  0x8203A114  pongPlayer::FinalizeSwing() %s
+  0x8203A1E0  pongPlayer::EnterServeMode
+  0x8203A1FC  pongPlayer::SetupServe %s
+  0x8203A218  pongPlayer::StartServe() %s
+  0x8203A234  pongPlayer::Serve() %s
+  0x8203A264  pongPlayer::Process() - player is not active
+  0x8203A294  pongPlayer::Process
+  0x8203A330  pongPlayer::HitBall
+  0x8203D240  pongLerpQueue::FindNeighborIndices - queue is empty!
+  0x8203E1B1  pongBallSpinData.Axis
+  0x8203E1D5  pongBallSpinData.CalcNetworkingValue
+  0x8203E464  pongBallHitData
+  0x8204E158  pongDrawBucketManager::Load() - invalid default bucket: %d
+  0x82056FE4  pongBallInstance::ActivateBall
+  0x820570A0  gmBallNode
+  0x82057170  gmBallNode::Reset
+  0x820594A4  pongRenderThread__Thread
+  0x820595B4  pongRenderThread releasing Device
+  0x820595D8  pongRenderThread Aquiring Device
+  0x820595FC  pongRenderThread Exiting
+  0x8205963C  pongBootState
+  0x8205E094  pongAttractState
+  0x8205E478  pongLogosState
+  0x8205E5C4  pongTrainingUIState
+  0x8205E85C  pongLoadingState
+  0x8205E9C8  pongPauseState
+  0x8205ED50  pongCreditsState
+  0x8205EF5C  pongCharViewState
+  0x8205F230  pongDialogState
+  0x8205F784  pongFrontendState
+  0x8205F854  pongLegalsState
+  0x8205FD34  pongPause_001
+  0x82062A64  pongUI_001
+  0x820653C0  pongCutSceneManager::Load() - cannot load cut scene '%s'
+  0x820655F4  pongCSActionCamAnim::Play() - empty camera shot sequence
+  0x8206A524  pongLightGlowSquare
+  0x8206A568  pongLightGlowCapsule
+  0x8206B818  gmLogicSpectator::stateReplay::onEnterState
+  0x8206C4F0  pongRemotePlayer::StartJunkSwing
+  0x8206D798  pongLiveManager
+  0x8206D980  pongLiveManager::StartSession called..
+  0x8206D9A8  pongLiveManager::EndSession() called..
+  0x82071844  pongGameState
+  0x82071B78  pongCSReplayDirector
+
+; ── SCORING / MATCH STRINGS ──
+
+  0x82001AC4  R6030
+  0x82001D56  - floating point not loaded
+  0x82002594  `default constructor closure'
+  0x82019873  6,-2:30!;!"9
+  0x82027424  game:\assets
+  0x82027488  Using '%s' for asset path
+  0x82027684  pcrFaceAnimBlender::StartPostPoint - body=(%s) face=(%s)
+  0x82027C50  default
+  0x8202806C  pongMover::Reset
+  0x820288C0  pcrSwingSet
+  0x820288DC  pcrSwingMissSet
+  0x82028900  pcrSwingAbortSet
+  0x82028938  Unknown SOT swing set!  (Power Zone %d)
+  0x82028A38  ContactPoint
+  0x82028C34  Player %d: starting post-point anim '%s'
+  0x8202E12C  ..\default\%s
+  0x8202E878  pcrSwingSet '%s' MaxStartToContactTime is too low (%f).  Setting to %f
+  0x8202E8C0  pcrSwingSet '%s' FarMaxStartToContactTime is too low (%f).  Setting to %f
+  0x8202F630  Couldn't open preset %s
+  0x8202F6DC  rage_default.shadert
+  0x8202FB8C  Invalid pointer passed to UntrackMemory
+  0x8203023C  PostPoint
+  0x82030780  gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d
+  0x82030820  Retaining next state as kPointScoringSync, disregarding %s
+  0x8203088C  SetPostPointDelay - Invalid state/msg combination (%s/%s)
+  0x820308F0  PreGame
+  0x82030968  Encountered fault condition, but the ball is not a miss -- ignoring
+  0x82030A28  PointScoringSync
+  0x82030A94  PointScoring
+  0x82030AA4  PointScoringNet
+  0x82030B48  PostPointScoringSync
+  0x82030BD8  PostPointCS
+  0x82030C48  PostGame
+  0x82030C54  PostPostGame
+  0x82032390  TargetDefaultColor
+  0x820323E4  HeightOffset
+  0x8203243C  char_default_ladder
+  0x82032824  Player won the point, retracting help tip
+  0x82032980  rootCGOffset
+  0x8203307C  offset
+  0x82033488  Offset
+  0x82033B64  Unable to determine roll axis, using defaults
+  0x82033B98  Unable to determine bend axis (missing joint limits), using defaults
+  0x82034044  StencilSet
+  0x82034110  BrightPassOffset
+  0x82034424  BoundOffset:
+  0x820344D8  ShadowSet:
+  0x82034F60  %s - Neither FOURCC or RGB bits set in pixel format
+  0x820355F0  Default
+  0x82035CDC  shot not found in set: %s
+  0x82036020  replay patternset '%s' does not exist.
+  0x82036B18  IL_LookAtOffset
+  0x82036C68  [inlineMiniEmote] Reset()
+  0x82036C88  [inlineMiniEmote] no end-of-point timestamp despite active mini-emote?
+  0x82036D18  [inlineMiniEmote] Recording end-of-point
+  0x82036D44  [inlineMiniEmote] More than one end-of-point?
+  0x82036D78  [inlineMiniEmote] Post-point animation happened before end of point?
+  0x82036DC0  [inlineMiniEmote] post-point animation before end-of-point?
+  0x82036E00  [inlineMiniEmote] Player %d started more than one post-point animation?
+  0x82036E9C  CameraReset
+  0x82037398  AnimTimeOffset
+  0x820375EC  cr_offset
+  0x82037604  D_Set
+  0x8203766C  F_Set
+  0x820376BC  H_Set
+  0x820376C4  C_Set
+  0x820376CC  P_Set
+  0x82037738  All_TwoPointAlignment
+  0x82038580  A:\default.xex
+  0x82038958  sysMemSimpleAllocator::GetSize called on a free block or bogus pointer?
+  0x82039568  loading Player[%d] from game data: Character[%d], Variation[%d]
+  0x820397A8  No home player set
+  0x8203A044  Swing Pending set to false for player %d
+  0x8203A4B4  EmotePointFactor
+  0x8203A4C8  EmoteGameFactor
+  0x8203A4EC  RallyPointFactor
+  0x8203A500  RallyGameFactor
+  0x8203A53C  PointIntensityReplayThresh
+  0x8203A558  MaxPointIntensity
+  0x8203A56C  MaxGameIntensity
+  0x8203A594  PointIntensityRangeLow
+  0x8203A5AC  PointIntensityRangeLowMed
+  0x8203A5C8  PointIntensityRangeMed
+  0x8203A5E0  PointIntensityRangeMedHigh
+  0x8203A5FC  PointIntensityRangeHigh
+  0x8203A614  GameIntensityRangeLow
+  0x8203A62C  GameIntensityRangeLowMed
+  0x8203A648  GameIntensityRangeMed
+  0x8203A660  GameIntensityRangeMedHigh
+  0x8203A67C  GameIntensityRangeHigh
+  0x8203A7D0  PointIntensityCutsceneThresh
+  0x8203A7F0  MiniEmotePointIntensityThresh
+  0x8203A848  pongPlayerShaderParams::UpdateParams() called before m_player is set!
+  0x8203B644  %s:Announcer_Game_%s
+  0x8203B74C  %s:Announcer_Point_%s
+  0x8203B764  %s:Announcer_ScoreTied
+  0x8203B794  %s:Announcer_Fault_%s
+  0x8203CA74  disablesavegames
+  0x8203CA94  savegame_displayname
+  0x8203CAD0  Rejecting save game request[ %d ], for user[ %d ], not signed in!
+  0x8203CB54  nogame
+  0x8203CBCC  winningscore
+  0x8203CBDC  gamespermatch
+  0x8203CC10  testgamepace
+  0x8203CDC0  Tried to set an invalid points per game = %d
+  0x8203D1A4  [REPLAYMGR] Heap size after Reset() = %d bytes = %.3fK
+  0x8203DADC  AceServe
+  0x8203DAE8  PointWin
+  0x8203DB2C  RallyOffset
+  0x8203DC50  Deuce
+  0x8203DC58  GamePoint
+  0x8203DC70  PointIntDecTime
+  0x8203DC80  PointIntDecAmount
+  0x8203DC94  GameIntDecTime
+  0x8203DCA4  GameIntDecAmount
+  0x8203DCF0  ScoreVal
+  0x8203DD08  ScoreDiff
+  0x8203DD14  ConsScore
+  0x8203DD64  EndGameVal
+  0x8203E265  KickPitchOffset
+  0x8203E2C1  GamePace
+  0x8203E34D  ServesThisGame
+  0x8203E365  gameCount
+  0x8203E49C  KickPitchOffset
+  0x8203E4D8  GamePace
+  0x8203E6D0  %s called BallPredictData::Reset() %s
+  0x8203EED4  PostBrightPassOffset
+  0x8203F210  Timer::SetAlert - could not set alert as the alert queue is full!
+  0x8203F2C4  gdShotSet
+  0x8203F308  shot in shot set not found: %s
+  0x8203F328  gdShotMultiSet
+  0x8203F338  no subsets found in shot set %s
+  0x8203F358  minimum number of shots in multi set %s is 0!
+  0x8203F6E0  PostPointDelay
+  0x8203FBB8  gdTrainingDrillData::PostLoadProperties() - 'PostPointDelay' cannot be negative
+  0x8203FDF0  VerticalOffset
+  0x820416E4  PointsPerServe
+  0x820416F4  GamesPerMatch
+  0x82041704  PointsPerGame
+  0x82041A00  gdaiSkillSet
+  0x82041C20  DifficultyOffset
+  0x82041D2C  Missing AI Skill Set
+  0x820430AC  Invalid hit tip, setting InARow to default
+  0x820430F4  Invalid serve tip, setting InARow to default
+  0x82043144  Incorrect FocusMeterFills[%d], using default
+  0x82043174  Incorrect FocusShotsUsed[%d], using default
+  0x820431A0  AtLeastPointLost
+  0x820431B4  Incorrect AtLeastPointsLost[%d], using default
+  0x820431E4  AtLeastGame
+  0x82043200  Incorrect AtLeastGame[%d], using default
+  0x8204322C  Incorrect SoftShotsUsed[%d], using default
+  0x82043258  TimesPerGame
+  0x82043268  Incorrect TimesPerGame[%d], using default
+  0x820432A4  Incorrect TimesPerMatch[%d], using default
+  0x82043820  Game
+  0x82043934  EndOfPointA
+  0x82043940  EndOfPointB
+  0x8204394C  WindowEndOfPointA
+  0x82043960  WindowEndOfPointB
+  0x82043974  WindowPaddleHitThenScore
+  0x82043990  WindowPaddleHitThenScoreA
+  0x820439AC  WindowPaddleHitThenScoreB
+  0x820439C8  PaddleHitThenScoreA_NotAlmostInterestConclude
+  0x820439F8  MatchPaddleHitThenScoreA
+  0x82043A14  MatchNotAlmostInterestConcludeExcludeScore
+  0x82043A40  PaddleHitThenScoreB_NotAlmostInterestConclude
+  0x82043A70  MatchPaddleHitThenScoreB
+  0x82043A90  WindowPaddleHitThenScore_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043AD8  MatchTimerPointFiveSec
+  0x82043AF0  WindowPaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043B38  WindowPaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043B80  WindowPaddleHitThenScore_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043BD0  MatchTimerPointThreeSevenFiveSec
+  0x82043BF8  WindowPaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043C48  WindowPaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043C98  PaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043CD8  PaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82043D18  PaddleHitThenScoreA_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043D68  PaddleHitThenScoreB_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82043DB4  Score
+  0x82043DBC  MatchScore
+  0x82043DC8  ScoreA
+  0x82043DD0  MatchScoreA
+  0x82043DDC  ScoreB
+  0x82043DE4  MatchScoreB
+  0x82043DF0  WindowScore
+  0x82043DFC  MatchWindowScore
+  0x82043E10  WindowScoreA
+  0x82043E20  MatchWindowScoreA
+  0x82043E34  WindowScoreB
+  0x82043E44  MatchWindowScoreB
+  0x82043E58  WindowScoreNotMiss
+  0x82043E6C  MatchWindowScoreNotMiss
+  0x82043E84  WindowScoreBNotMissA
+  0x82043E9C  MatchWindowScoreBNotMissA
+  0x82043EB8  WindowScoreANotMissB
+  0x82043ED0  MatchWindowScoreANotMissB
+  0x82043EEC  WindowMissOrScoreNotReturnOut
+  0x82043F0C  MatchWindowMissOrScoreNotReturnOut
+  0x82043FC8  WindowMissOrScore
+  0x82043FDC  WindowMissAOrScoreB
+  0x82043FF0  WindowMissBOrScoreA
+  0x820441F0  WindowInterestConclude_TimerPointFiveSec
+  0x82044238  WindowInterestConclude_TimerPointThreeSevenFiveSec
+  0x82044408  PaddleHitA_TimerPointFiveSec
+  0x82044428  PaddleHitA_TimerPointSevenFiveSec
+  0x8204448C  PaddleHitB_TimerPointFiveSec
+  0x820444AC  PaddleHitB_TimerPointSevenFiveSec
+  0x82044500  WindowPaddleHitA_TimerPointFiveSec
+  0x82044524  WindowPaddleHitA_TimerPointSevenFiveSec
+  0x82044584  WindowPaddleHitB_TimerPointFiveSec
+  0x820445A8  WindowPaddleHitB_TimerPointSevenFiveSec
+  0x82044D60  WindowPopFlyA_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82044DB0  WindowPopFlyB_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82044E00  WindowTableEndHitPZ_A_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82044E60  WindowTableEndHitPZ_B_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82044EC0  WindowTableEndHitNZ_A_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82044F20  WindowTableEndHitNZ_B_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82044F80  WindowTableSideHitNearPZ_A_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82044FE8  WindowTableSideHitNearPZ_B_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82045050  WindowTableSideHitNearNZ_A_NotAlmostInterestConclude_TimerPointFiveSec
+  0x820450B8  WindowTableSideHitNearNZ_B_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82045120  WindowTableSideHitFarPZ_A_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82045188  WindowTableSideHitFarPZ_B_NotAlmostInterestConclude_TimerPointFiveSec
+  0x820451F0  WindowTableSideHitFarNZ_A_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82045258  WindowTableSideHitFarNZ_B_NotAlmostInterestConclude_TimerPointFiveSec
+  0x820452C0  WindowPopFlyA_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82045308  WindowPopFlyB_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82045350  WindowTableEndHitPZ_A_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x820453A0  WindowTableEndHitPZ_B_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x820453F0  WindowTableEndHitNZ_A_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82045440  WindowTableEndHitNZ_B_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x820455F0  WindowTableSideHitFarPZ_A_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82045640  WindowTableSideHitFarPZ_B_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82045690  WindowTableSideHitFarNZ_A_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x820456E0  WindowTableSideHitFarNZ_B_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x82045730  WindowPopFlyA_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x82045778  MatchOnceTimerPointThreeSevenFiveSec
+  0x820457A0  WindowPopFlyB_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x820457E8  WindowTableEndHitPZ_A_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x82045838  WindowTableEndHitPZ_B_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x82045888  WindowTableEndHitNZ_A_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x820458D8  WindowTableEndHitNZ_B_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x82045BE4  WindowPopFlyA_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045C24  MatchOnceTimerPointFiveSec
+  0x82045C40  WindowPopFlyB_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045C80  WindowTableEndHitPZ_A_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045CC8  WindowTableEndHitPZ_B_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045D10  WindowTableEndHitNZ_A_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045D58  WindowTableEndHitNZ_B_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045DA0  WindowTableSideHitNearPZ_A_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045DF0  WindowTableSideHitNearPZ_B_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045E40  WindowTableSideHitNearNZ_A_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045E90  WindowTableSideHitNearNZ_B_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045EE0  WindowTableSideHitFarPZ_A_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045F30  WindowTableSideHitFarPZ_B_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045F80  WindowTableSideHitFarNZ_A_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82045FD0  WindowTableSideHitFarNZ_B_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x8204601C  WindowFocusWinPointA
+  0x82046034  MatchWindowFocusWinPointA
+  0x82046050  WindowFocusWinPointB
+  0x82046068  MatchWindowFocusWinPointB
+  0x820460DC  WindowLungeWinPointA
+  0x820460F4  MatchWindowLungeWinPointA
+  0x82046110  WindowLungeWinPointB
+  0x82046128  MatchWindowLungeWinPointB
+  0x82046374  TimerPointFiveSec
+  0x82046388  TimerPointSevenFiveSec
+  0x820468DC  CounterOneHits_NotAlmostInterestAny_TimerPointFiveSec
+  0x82046914  CounterTwoHits_NotAlmostInterestAny_TimerPointFiveSec
+  0x8204694C  CounterThreeHits_NotAlmostInterestAny_TimerPointFiveSec
+  0x82046984  CounterFourHits_NotAlmostInterestAny_TimerPointFiveSec
+  0x820469BC  CounterFiveHits_NotAlmostInterestAny_TimerPointFiveSec
+  0x820469F4  CounterSixHits_NotAlmostInterestAny_TimerPointFiveSec
+  0x82046A30  CounterOneHits_NotAlmostInterestAny_TimerPointThreeSevenFiveSec
+  0x82046A70  CounterTwoHits_NotAlmostInterestAny_TimerPointThreeSevenFiveSec
+  0x82046AB0  CounterThreeHits_NotAlmostInterestAny_TimerPointThreeSevenFiveSec
+  0x82046AF8  CounterFourHits_NotAlmostInterestAny_TimerPointThreeSevenFiveSec
+  0x82046B40  CounterFiveHits_NotAlmostInterestAny_TimerPointThreeSevenFiveSec
+  0x82046B88  CounterSixHits_NotAlmostInterestAny_TimerPointThreeSevenFiveSec
+  0x82046BC8  CounterOneHits_NotAlmostInterestAnyA_TimerPointFiveSec
+  0x82046C00  CounterTwoHits_NotAlmostInterestAnyA_TimerPointFiveSec
+  0x82046C38  CounterThreeHits_NotAlmostInterestAnyA_TimerPointFiveSec
+  0x82046C74  CounterFourHits_NotAlmostInterestAnyA_TimerPointFiveSec
+  0x82046CAC  CounterFiveHits_NotAlmostInterestAnyA_TimerPointFiveSec
+  0x82046CE4  CounterSixHits_NotAlmostInterestAnyA_TimerPointFiveSec
+  0x82046D1C  CounterOneHits_NotAlmostInterestAnyB_TimerPointFiveSec
+  0x82046D54  CounterTwoHits_NotAlmostInterestAnyB_TimerPointFiveSec
+  0x82046D8C  CounterThreeHits_NotAlmostInterestAnyB_TimerPointFiveSec
+  0x82046DC8  CounterFourHits_NotAlmostInterestAnyB_TimerPointFiveSec
+  0x82046E00  CounterFiveHits_NotAlmostInterestAnyB_TimerPointFiveSec
+  0x82046E38  CounterSixHits_NotAlmostInterestAnyB_TimerPointFiveSec
+  0x82046E70  CounterOneHits_NotAlmostInterestAnyA_TimerPointThreeSevenFiveSec
+  0x82046EB8  CounterTwoHits_NotAlmostInterestAnyA_TimerPointThreeSevenFiveSec
+  0x82046F00  CounterThreeHits_NotAlmostInterestAnyA_TimerPointThreeSevenFiveSec
+  0x82046F48  CounterFourHits_NotAlmostInterestAnyA_TimerPointThreeSevenFiveSec
+  0x82046F90  CounterFiveHits_NotAlmostInterestAnyA_TimerPointThreeSevenFiveSec
+  0x82046FD8  CounterSixHits_NotAlmostInterestAnyA_TimerPointThreeSevenFiveSec
+  0x82047020  CounterOneHits_NotAlmostInterestAnyB_TimerPointThreeSevenFiveSec
+  0x82047068  CounterTwoHits_NotAlmostInterestAnyB_TimerPointThreeSevenFiveSec
+  0x820470B0  CounterThreeHits_NotAlmostInterestAnyB_TimerPointThreeSevenFiveSec
+  0x820470F8  CounterFourHits_NotAlmostInterestAnyB_TimerPointThreeSevenFiveSec
+  0x82047140  CounterFiveHits_NotAlmostInterestAnyB_TimerPointThreeSevenFiveSec
+  0x82047188  CounterSixHits_NotAlmostInterestAnyB_TimerPointThreeSevenFiveSec
+  0x820471D0  CounterOneHits_NotAlmostInterestConclude_TimerTimerPointFiveSec
+  0x82047210  CounterTwoHits_NotAlmostInterestConclude_TimerTimerPointFiveSec
+  0x82047250  CounterThreeHits_NotAlmostInterestConclude_TimerTimerPointFiveSec
+  0x82047298  CounterFourHits_NotAlmostInterestConclude_TimerTimerPointFiveSec
+  0x820472E0  CounterFiveHits_NotAlmostInterestConclude_TimerTimerPointFiveSec
+  0x82047328  CounterSixHits_NotAlmostInterestConclude_TimerTimerPointFiveSec
+  0x82047368  CounterOneHits_NotAlmostInterestConclude_TimerTimerPointThreeSevenFiveSec
+  0x820473B8  CounterTwoHits_NotAlmostInterestConclude_TimerTimerPointThreeSevenFiveSec
+  0x82047408  CounterThreeHits_NotAlmostInterestConclude_TimerTimerPointThreeSevenFiveSec
+  0x82047458  CounterFourHits_NotAlmostInterestConclude_TimerTimerPointThreeSevenFiveSec
+  0x820474A8  CounterFiveHits_NotAlmostInterestConclude_TimerTimerPointThreeSevenFiveSec
+  0x820474F8  CounterSixHits_NotAlmostInterestConclude_TimerTimerPointThreeSevenFiveSec
+  0x82047F40  MatchOnceTimerPointTwoFiveSec
+  0x8204A060  Could not set pad actuator this frame -- another vibration is pending!
+  0x8204A2F0  Tried to advance to next round before round %d was complete!
+  0x8204A63C  received invalid asset ID in %s
+  0x8204A8AC  BaseLosePointDelta
+  0x8204AAC4  Condition_Game_Deficit
+  0x8204AADC  Condition_Point_Deficit
+  0x8204AB28  Condition_Ace
+  0x8204C008  gdCamData: invalid camera type found (defaulting to swing cam): %d
+  0x8204C04C  gdCamData: invalid anim type: %i (defaulting to ANIM_STRAIGHT)
+  0x8204C090  gdCamData: invalid tracking type: %i (defaulting to TRACK_NONE)
+  0x8204C0D0  gdCamData: invalid  DOF tracking type: %i (defaulting to DOF_TRACK_NONE)
+  0x8204C120  gdCamData: invalid  Unlockable play type: %i (defaulting to UL_PLAY_ALWAYS)
+  0x8204C334  Invalid column type found[ %d ], using default[ %d ]
+  0x8204C4E8  Incorrect BallSpin[%.2f], setting to default
+  0x8204C7EC  Game_Type
+  0x8204C7F8  Points_Per_Game
+  0x8204C808  Games_Per_Match
+  0x8204C8DC  Games
+  0x8204C8E4  incorrect number of games specified
+  0x8204C908  Points
+  0x8204C910  incorrect number of points specified
+  0x8204CC1C  GamerPictureID
+  0x8204CDF8  Looking for saved games, userIndex[%d], content[%d]...
+  0x8204CE8C  Savegame found on 1 device[%d]
+  0x8204CEAC  Savegames found on %d devices
+  0x8204CECC  No savegames found on any devices
+  0x8204CFD0  Load: Looking for saved games, userIndex[%d], content[%d]...
+  0x8204D048  Loading save game, userIndex[%d], content[%d], device[%x], size[%d]...
+  0x8204D14C  Load: no savegames found on any devices
+  0x8204D1C4  Saving save game, userIndex[%d], content[%d], size[%d]...
+  0x8204D3C8  Searching for current saved games, userIndex[%d], content[%d]...
+  0x8204D4F4  Removing save game, userIndex[%d], content[%d]...
+  0x8204D650  icon_saveGame
+  0x8204DC98  Attempting to set next machine state to %s (%d) when it is already %s (%d)
+  0x8204DD54  edgeset
+  0x8204E148  DefaultBucket:
+  0x8204E158  pongDrawBucketManager::Load() - invalid default bucket: %d
+  0x8204E4B8  got asset version numbers:
+  0x8204E6A4  got character asset version numbers:
+  0x8204E888  Attempting to set invalid framelock value (%f), defaulting to 1.
+  0x8204EB30  invalid operation set: %d
+  0x8204F598  netCenterPoint
+  0x8204F5B8  netImpactPoint
+  0x8204FCCC  unknown play type set, resource is probably bad
+  0x82050110  msgGame
+  0x820502C0  kPostPointSequenceDecided
+  0x820502F0  UpdateScoreCard
+  0x8205036C  ScoreUpdated
+  0x820503F8  GameComplete
+  0x82050454  MatchPointB
+  0x82050460  MatchPointA
+  0x82050520  ExitPostPoint
+  0x82050530  EnterPostPoint
+  0x82050590  EnterPreGame
+  0x820505BC  EnterSwPPostPoint
+  0x82050630  GameWinnerB
+  0x8205063C  GameWinnerA
+  0x82050648  GamePointB
+  0x82050654  GamePointA
+  0x82050660  MidGame
+  0x82050668  SetGames
+  0x82050674  SetScores
+  0x82050680  PointScoredB
+  0x82050690  PointScoredA
+  0x820506F0  ServeAce
+  0x8205070C  ServeFault
+  0x82050718  ServeLet
+  0x82050774  ResumeGame
+  0x82050780  PauseGame
+  0x820507EC  SetGameLogicType
+  0x82050874  ExitGameState
+  0x82050884  EnterGameState
+  0x82050938  Incorrect message format for msgGame::%s
+  0x82050AD0  StartingPostPoint
+  0x82050B6C  PreGameReady
+  0x82050F64  PlayCSPostGameUI
+  0x82050F88  PlayCSPostGame
+  0x82050F98  PlayCSPostPoint
+  0x820510B4  SpecHostExitingPostPointCS
+  0x8205116C  GamerAdded
+  0x82051228  LocalGamerJoingingSpectatorSession
+  0x82051310  ExitingPostPoint
+  0x82051398  SpectatorPostGameUIEnd
+  0x820513D8  SpectatorReceivedScoreData
+  0x820514A0  PointDeclaredReceived
+  0x820514B8  PointDeclared
+  0x82051568  ScoreDataQuery
+  0x82051578  LobbyToGame
+  0x82051788  StatsGameUpdated
+  0x8205179C  StatsPointUpdated
+  0x82051864  VibChangedInGame
+  0x820518B8  SaveGameLoaded
+  0x82051900  LobbyToGameSignalled
+  0x8205193C  PostGameUIEnd
+  0x82051974  PostGameUIBegin
+  0x82051984  kGamerPictureUnlocked
+  0x820519AC  GameWonComplete
+  0x82051A0C  end of point start
+  0x82051CC4  PointScored
+  0x82051CDC  ServiceAce
+  0x820523CC  cmNaryOperator::Evaluate - Can't evaluate to 'Pointer'
+  0x82052730  SelectPointerFromArray
+  0x82056724  cmMetafileTuningSet::Load() - can't load %s.cmt
+  0x82056CB0  Reset:            ?
+  0x820570CC  GamePaceFactor
+  0x820570DC  GamePaceNormalBias
+  0x820570F0  GamePaceNetworkBias
+  0x82057104  GamePaceStart
+  0x82057114  MinGamePaceDelta
+  0x82057128  MaxGamePaceDelta
+  0x82057170  gmBallNode::Reset
+  0x820587D8  phPolytree:Configure - default max polygons only allowed in tools (__TOOL)
+  0x82058FBC  using asset path: "%s"
+  0x8205A110  game:
+  0x8205A118  fiDevice::GetDevice - Filename '%s' not in mount list, no default device
+  0x8205B164  iGameWonMsgDone
+  0x8205B174  iPostGameMsgDone
+  0x8205B188  iSkipPostGameMsg
+  0x8205B1C4  hideScorecards
+  0x8205B1E4  Sending internal message: final score is ready
+  0x8205B35C  iReset
+  0x8205B37C  gamesPerMatch
+  0x8205B494  stxt_score
+  0x8205B4B0  stxt_fault
+  0x8205B4BC  t_fault
+  0x8205B4C4  stxt_match_point
+  0x8205B4D8  t_match_point
+  0x8205B4E8  stxt_game_point
+  0x8205B4F8  t_game_point
+  0x8205B508  stxt_deuce
+  0x8205B514  t_deuce
+  0x8205B530  stxt_let
+  0x8205B53C  t_let
+  0x8205B56C  stxt_final_score
+  0x8205B580  t_final_score
+  0x8205B590  stxt_game_over
+  0x8205B5A0  t_game_over
+  0x8205B66C  stxt_games_won
+  0x8205B67C  t_games_won
+  0x8205B6D0  stxt_points_from_serves
+  0x8205B6E8  t_point_off_serves
+  0x8205B718  stxt_points_from_itzs
+  0x8205B730  t_points_from_itz
+  0x8205B7C0  stxt_points_from_forehand
+  0x8205B7DC  t_points_off_forehand
+  0x8205B7F4  stxt_points_from_backhand
+  0x8205B810  t_points_off_backhand
+  0x8205B828  stxt_points_from_topspin
+  0x8205B844  t_points_from_topspin
+  0x8205B85C  stxt_points_from_rightspin
+  0x8205B878  t_points_from_sidespin_rt
+  0x8205B894  stxt_points_from_leftspin
+  0x8205B8B0  t_points_from_sidespin_lft
+  0x8205B8CC  stxt_points_from_backspin
+  0x8205B8E8  t_points_from_backspin
+  0x8205B900  stxt_points_from_smash
+  0x8205B918  t_smash_points
+  0x8205B970  stxt_points_from_saves
+  0x8205B988  t_points_from_saves
+  0x8205B99C  stxt_largest_point_lead
+  0x8205B9B4  t_largest_point_lead
+  0x8205B9CC  stxt_deuces
+  0x8205B9D8  t_deuce_situations
+  0x8205BA8C  stxt_faults
+  0x8205BA98  t_faults
+  0x8205BAD4  stxt_tie_game
+  0x8205BAE4  t_tie_game
+  0x8205BCC4  stxt_wins_the_game
+  0x8205BCD8  t_wins_game
+  0x8205BE8C  player2Score
+  0x8205BE9C  player1Score
+  0x8205BEAC  animateScoreB
+  0x8205BEBC  animateScoreA
+  0x8205BECC  iGameWinner
+  0x8205BED8  iPostGameMsgDuration
+  0x8205BEF0  numGamesPlayed = %d, numVisibleGameScores = %d, matchOver = %s
+  0x8205BF5C  tourneyGame_scores
+  0x8205BF70  Score Row %d = 
+  0x8205BF90   GamesWon=%d
+  0x8205BFA0  finalGame
+  0x8205BFCC  iPostGameMsg
+  0x8205C078  games_won
+  0x8205C094  point_off_serves
+  0x8205C0B4  points_from_itz
+  0x8205C0F8  points_off_forehand
+  0x8205C10C  points_off_backhand
+  0x8205C120  points_from_topspin
+  0x8205C134  points_from_sidespin_rt
+  0x8205C14C  points_from_sidespin_lft
+  0x8205C168  points_from_backspin
+  0x8205C180  smash_points
+  0x8205C1AC  points_from_saves
+  0x8205C1C0  largest_point_lead
+  0x8205C1D4  deuce_situations
+  0x8205C39C  iLet
+  0x8205C3C8  iMatchScores
+  0x8205C3E8  iMatchPoint
+  0x8205C3F4  iGamePoint
+  0x8205C400  iDeuce
+  0x8205C408  iFault
+  0x8205C598  Gamertag%d
+  0x8205C5A4  Gamertags
+  0x8205C5B0  Gamer Tags Intersect: (%d,%d,%f) --> (%d,%d,%f)
+  0x8205C664  currentGame
+  0x8205C670  maxGame
+  0x8205C678  tourneyGame_scores0
+  0x8205C68C  finalGames
+  0x8205C6CC  reset
+  0x8205C6D4  tourneyGame_names
+  0x8205C6E8  p1_gamer_tag
+  0x8205C6F8  p2_gamer_tag
+  0x8205C898  charging_score
+  0x8205CF00  Unsupported Game Mode = %d
+  0x8205CF30  Unsupported Games Per Match enum value = %d
+  0x8205CF5C  Unsupported points per serve enum value = %d
+  0x8205CFA4  Joining game sessionIndex = %d, host = %s
+  0x8205D478  gamerTags
+  0x8205D6C0  custom_GamesPerMatch
+  0x8205D6D8  Unknown custom_GamesPerMatch = %d
+  0x8205D6FC  custom_PointsPerGame
+  0x8205D714  Unknown custom_PointsPerGame = %d
+  0x8205D738  custom_PointsPerServe
+  0x8205D750  Unknown custom_PointsPerServe = %d
+  0x8205D7F0  create_GamesPerMatch
+  0x8205D808  Unknown create_GamesPerMatch = %d
+  0x8205D82C  create_PointsPerGame
+  0x8205D844  Unknown create_PointsPerGame = %d
+  0x8205D868  create_PointsPerServe
+  0x8205D880  Unknown create_PointsPerServe = %d
+  0x8205DC60  Invalid LOBBY_STATE_STARTING gamer state (%d)!
+  0x8205DD14  PopulatePostLobbyScreen exhibition scoreboard
+  0x8205DD44  PopulatePostLobbyScreen tournament scoreboard round %d
+  0x8205DE04  maxOnlineGames
+  0x8205DE74  tourneyGame_scores%d
+  0x8205DEA0  numTourneyGames
+  0x8205F5C8  User %d just became an active user, requesting saved game load...
+  0x8205F60C  Setting Default Difficulty: EASY
+  0x8205F630  Setting Default Difficulty: MEDIUM
+  0x8205F654  Setting Default Difficulty: HARD
+  0x8205FA40  SpectatorPostGame
+  0x8205FAA0  SpectatorScoreCardsShownCanSpectate
+  0x8205FAC4  SpectatorScoreCardsShown
+  0x8205FAE0  SpectatorDefaultTournament
+  0x8205FAFC  SpectatorDefaultExhibition
+  0x8205FC80  Empty Stack, Setting default settings
+  0x8205FD24  gameSelection
+  0x8205FDB4  t_resume_game
+  0x8205FF24  stxt_game_options
+  0x8205FF38  t_game_options
+  0x8206008C  stxt_resume_game
+  0x820601BC  stxt_quit_game
+  0x820601CC  t_quit_game
+  0x82060238  stxt_restore_defaults
+  0x82060250  t_restore_defaults
+  0x820609F0  game:\movies\%s_p%s
+  0x82060A04  game:\movies\%s_w%s
+  0x82060A18  game:\movies\%s%s
+  0x8206194C  t_default_controls
+  0x82061B6C  stxt_roundrobin_gamer_tag
+  0x82061B88  t_gamer_tag
+  0x82061F60  tourneyGame_standings
+  0x82062004  tourneyGame_matchups
+  0x82062A48  gameOptions
+  0x82062E40  t_score
+  0x82062ED8  stxt_games_per_match
+  0x82062EF0  t_games_per_match
+  0x82063340  stxt_points_per_match
+  0x82063358  t_points_per_match
+  0x8206336C  stxt_matches_per_set
+  0x82063384  t_matches_per_set
+  0x820635D0  stxt_available_games
+  0x820635E8  t_available_games
+  0x82063658  stxt_online_game_mode
+  0x82063670  t_online_game_mode
+  0x820637F8  stxt_exit_current_game
+  0x82063810  t_exit_current_game
+  0x82063824  stxt_show_gamer_card
+  0x8206383C  t_show_gamer_card
+  0x820638C8  stxt_custom_game_settings
+  0x820638E4  t_custom_game_settings
+  0x820638FC  stxt_create_xbox_live_game
+  0x82063918  t_create_xbox_live_game
+  0x82063988  stxt_game_mode
+  0x82063998  t_game_mode
+  0x820639D0  stxt_points_per_game
+  0x820639E8  t_points_per_game
+  0x82063AD0  stxt_gamer_tag
+  0x82063B5C  stxt_gamer_cards
+  0x82063B70  t_gamer_cards
+  0x82063B80  stxt_host_start_game
+  0x82063B98  t_host_start_game
+  0x82063BF8  stxt_post_game_lobby
+  0x82063C10  t_post_game_lobby
+  0x82063CEC  stxt_start_game
+  0x82063CFC  t_start_game
+  0x82063D5C  stxt_points_per_serve
+  0x82063D74  t_points_per_serve
+  0x82063EF8  stxt_matching_games
+  0x82063F0C  t_matching_games
+  0x8206408C  save_game
+  0x82064098  t_save_game
+  0x820640A4  load_game
+  0x820640B0  t_load_game
+  0x820640BC  save_game_settings
+  0x820640D0  t_save_game_settings
+  0x820640E8  load_game_settings
+  0x820640FC  t_load_game_settings
+  0x82064158  stxt_postlobby_gameswon
+  0x82064178  stxt_postlobby_gameslost
+  0x8206437C  Gamer Profile Difficulty: Unknown(%d)
+  0x82064C6C  stxt_t_view_gamecard
+  0x82064C84  t_view_gamecard
+  0x82064E84  Gamertag
+  0x820655CC  char_default
+  0x820655DC  lvl_default
+  0x8206670C  Invald gamer index:%d
+  0x8206674C  Gamer:"%s"[%d] - friend presence changed
+  0x82066778  Gamer:"%s"[%d] - profile changed
+  0x8206679C  Gamer:"%s"[%d] - profile setting changed
+  0x820667D4  Gamer:"%s"[%d] - setting presence %s
+  0x820667FC  Gamer:"%s"[%d] - setting presence:%d...
+  0x82066844  Gamer:"%s"[%d] signed off line
+  0x82066864  Gamer:"%s"[%d] signed out
+  0x82066880  Gamer:"%s"[%d] signed in
+  0x8206689C  Gamer:"%s"[%d] signed online
+  0x82066A68  Failed to set socket to non-blocking
+  0x82066B44  Error:0x%08x calling GetLocalChatData() for local gamer:"%s"
+  0x82066BE0  Gamer:"%s" is not online
+  0x82066C48  Gamer:"%s" does not have communication privileges
+  0x82066C7C  Error:0x%08x calling RegisterLocalTalker() for gamer:"%s"
+  0x82066CE8  Error:0x%08x calling RegisterRemoteTalker() for gamer:"%s"
+  0x82066D40  Error:0x%08x calling UnregisterLocalTalker() for gamer:"%s"
+  0x82066DA4  Error:0x%08x calling UnregisterRemoteTalker() for gamer:"%s"
+  0x82066F1C  Gamer:"%s" is muting gamer:"%s"...
+  0x82066F40  Gamer:"%s" is un-muting gamer:"%s"...
+  0x82066FC8  Gamer:"%s" - creating session as host...
+  0x820670A8  Gamer:"%s" - creating of session as guest...
+  0x82067204  Gamer:"%s" - creating offline session...
+  0x82067230  Cannot create session - gamer:"%s" is not signed in
+  0x82067484  Error leaving gamers from session
+  0x820674A8  Error joining gamers to session
+  0x82067858  Cannot join gamer to session - owner:"%s" is not online
+  0x82067C00  Invalid gamer index for owner
+  0x82067C78  Gamer:"%s" creating session %s%s%s, slots(pub:%d, priv:%d) as %s:...
+  0x82067CC8  %s gamer:"%s" joined session:0x%I64x
+  0x82067CF0  %s gamer:"%s" failed to join session:0x%I64x
+  0x82067D20  %s gamer:"%s" left session:0x%I64x
+  0x82067DA0  Error leaving gamers from old session
+  0x82067DC8  Error joining gamers to new session
+  0x82067F5C  %s gamer:"%s" is joining session:0x%I64x in a %s slot...
+  0x82067F98  Gamer must be signed in to join a session
+  0x82067FC4  Gamer:"%s" must be online to join an online session
+  0x82067FF8  Gamer:"%s" is already a member of the session
+  0x82068028  Gamer:"%s" - join failed - no more public slots
+  0x82068058  Gamer:"%s" - join failed - no more private slots
+  0x8206808C  %s gamer:"%s" is leaving session:0x%I64x...
+  0x820680B8  Gamer:"%s" is not a member of the session
+  0x82068154  Invalid gamer index:%d
+  0x820681A0  Reset() called while read is pending
+  0x8206A9EC  fxAmbAnimSet - anim queue is too full for %s
+  0x8206AA24  fxAmbAnimSet::AddAnimation() - animation '%s' not found!
+  0x8206AE7C  %s_DefaultTileColor
+  0x8206B540  MRB- Maximum games played limit (%d) was reached! Match Over. Calling Time Up.
+  0x8206B590  MRB- Spec match expired. Triggering post game ui cs
+  0x8206B61C  MRB- Clearing stale forfeit flag... (kExitGameState)
+  0x8206B754  PreGameSync
+  0x8206C55C  Requesting current copy of GameModeData
+  0x8206C584  PongNetGameModeCoordinator::Reset()
+  0x8206C6BC  WriteStats - Gamer:%s - yrWin=%d yrLoss=%d wkWin=%d wkLoss=%d
+  0x8206CAB4  WriteStatsQuitter - invalid gamer, not writing
+  0x8206CBC8  UpdateFinalize() -- Tournament outcome is known, write stats/scores!
+  0x8206CCD8  Advancing to next match in the tournament!
+  0x8206CD5C  Broadcasting match scores to all
+  0x8206CDB0  HandleMatchScoreMessage: MatchIndex=%d: Name=%s, %d vs %d (%s) NumGames=%d
+  0x8206CDFC  Received final score message for %d (won) vs %d (lost) 
+  0x8206CE34  Received final score message for %d (lost) vs %d (won)
+  0x8206CE6C  Received final score message for %d vs %d (tied)
+  0x8206CEA0  Received intermediate score message for %d vs %d
+  0x8206D0E0  Requesting to spectate off gamer:"%s"
+  0x8206D1A8  WriteRelativeScore aborted -- local player already quit
+  0x8206D1E0  Relative score for %s (peerIndex=%d) is %d
+  0x8206D20C  [Skipped Quitter!] Relative score for %s (peerIndex=%d) is %d
+  0x8206D24C  Begin writing relative scores...
+  0x8206D270  Finished writing relative scores...
+  0x8206D294  Begin writing relative score...
+  0x8206D2B4  Finished writing relative score...
+  0x8206D658  GameSession
+  0x8206D678  Tried to write a gamer picture, while another write is in progress!
+  0x8206D6BC  Started writing the gamer picture[ %d ] for user[ %d ]
+  0x8206D6F8  Could not start writing the gamer picture[ %d ] for user[ %d ], ERROR[ %x ]
+  0x8206D744  Finished writing the gamer picture!
+  0x8206D768  Could not write the gamer picture, ERROR[ %x ]
+  0x8206D7B8  Gamer caches cleared!
+  0x8206D884  Requesting to join game session...
+  0x8206D8A8  Local gamer %s (index = %d) joining %s game session with characterId = %d,%d
+  0x8206D920  Local gamer %s (index = %d) joining spectator session with characterId = %d
+  0x8206DC0C  HM - got schema from game session
+  0x8206DE50  Alloc'ed a remote gamer: %s
+  0x8206DE6C  Freed a remote gamer: (%d,%d) %s
+  0x8206DF24  Migration -- Not electing (%d) -- null gamer ptr!
+  0x8206DF98  pongLiveManager::StatsReaderNotifyHandler - Working on gamer: %s row: %d
+  0x8206E288  pongLiveManager::StatsReaderNotifyHandler - Working on Gamer: %s
+  0x8206E2D0  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 8pWeekWins=%d
+  0x8206E320  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 8pYearWins=%d
+  0x8206E370  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 4pWeekWins=%d
+  0x8206E3C0  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 4pYearWins=%d
+  0x8206E410  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d WeekLosses=%d
+  0x8206E460  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d YearLosses=%d
+  0x8206E66C  Gamer cache is full! Could not add '%s'.
+  0x8206E75C  PostGameLobby
+  0x8206E76C  InGame
+  0x8206E77C  PreGameLobbyReady
+  0x8206E790  PreGameLobbyArb
+  0x8206E7A0  PreGameLobbySync
+  0x8206E7B4  PreGameLobby
+  0x8206E930  TimedGameUpdateTimerMessage
+  0x8206E9E4  ServeFaultMessage
+  0x8206EA08  ExitPostGameMessage
+  0x8206EC5C  MatchScoreMessage
+  0x8206EC70  PostPointExitMessage
+  0x8206ECC0  PointDeclaredMessage
+  0x8206ED04  ScoreMessage
+  0x8206EDB8  GamerReadyMessage
+  0x8206EDCC  GamerUpdateMessage
+  0x8206EECC  game number <message(%d), game(%d)>
+  0x8206EF0A  total serves this game <message(%d), game(%d)>
+  0x8206EF5C  rally count <message(%d), game(%d)>
+  0x8206EF9C  update count out of order <message(%d), game(%d)>
+  0x8206EFEF  <message(%d), game(%d)>
+  0x8206F008  Can Use Rally Message games %d, rally count %d update %d
+  0x8206F1CE  game number <message(%d), game(%d)>
+  0x8206F20E  rally count <message(%d), game(%d)>
+  0x8206F318  ignoring ServeFaultMessage game(%d) message(%d)
+  0x8206F348  ignoring ServeLetMessage game(%d) message(%d)
+  0x8206F45E  gamers <%s,%d> <%s,%d>
+  0x8206F484  GamerReadyMessage: Gamer = '%s' %I64u
+  0x8206F4AC  GamerUpdateMessage: Gamer = '%s' %I64u
+  0x8207066C  Gamer %d presence set to: Default
+  0x82070690  Gamer %d presence set to: Online Exhibition: %d to %d
+  0x820706C8  Gamer %d presence set to: Spectating Exhibition
+  0x820706F8  Gamer %d presence set to: Offline Exhibition 2P: %d to %d
+  0x82070734  Gamer %d presence set to: Offline Exhibition 1P: %d to %d
+  0x82070770  Gamer %d presence set to: Online Tournament: %d to %d
+  0x820707A8  Gamer %d presence set to: Spectating Tournament
+  0x820707D8  Gamer %d presence set to: Offline Tournament: %d to %d
+  0x82070810  Gamer %d presence set to: Prep. Offline Exhibition
+  0x82070844  Gamer %d presence set to: Prep. Offline Tournament
+  0x82070878  Gamer %d presence set to: Prep. Online Match
+  0x820708A8  Gamer %d presence set to: Training Mode
+  0x820708D0  pongPresence::SetInGamePresence called in a non-in-game state??
+  0x82070C80  received ExitPostGameMessage, state = %s
+  0x82070EBC  inGame
+  0x82071844  pongGameState
+  0x82071978  pongGameContext::Process -- Got kJoinFromHudRequested message
+  0x82071A2C  Game framerate: %.2f Hz
+  0x82071A44  entered game state from invalid state %s (%d)
+  0x82071A74  exiting game state to invalid state %s (%d)
+  0x820723F4  SendingGamerData
+  0x820727C0  Error allocating gamer:%s
+  0x820727F0  Error adding gamer to peer
+  0x8207280C  Error inserting gamer into map
+  0x82073DD8  Creating remote gamer:%s...
+  0x82073DF4  Gamer:%s already exists
+  0x82073E0C  Error allocating gamer for:%s
+  0x82073E2C  Error allocating gamer record
+  0x82074300  Error adding gamer:%s to session
+  0x82074638  Session was only able to register %d out of %d gamers for arbitration
+  0x82074680  Local gamer:"%s" failed to registered for arbitration
+  0x8207470C  snNetMsgAddGamer
+  0x82074748  snNetMsgRemoveGamer
+  0x820748C4  unknown header flags set
+  0x8207494C  invalid code lengths set
+  0x82074984  invalid literal/lengths set
+  0x820749A0  invalid distances set
+  0x8207603C  MaxHeightOffset
+  0x8207604C  FarViewHeightOffset
+  0x82076464  DefaultAlign
+  0x8207649C  Invalid alignment found: %d, using default: %d
+  0x820764CC  Invalid face type found: %d, using default: %d
+  0x820764FC  Invalid scale found: %d, using default
+  0x8207655C  InitialOffset
+  0x820765A0  FontPointSize
+  0x820769AC  TimeOffset
+  0x82076A28  gdCSCharAnimData::PostLoadProperties() - 'TimeOffset' cannot be negative
+  0x82076EC8  gdCSCamAnimShotName::PostLoadProperties() - 'TimeOffset' cannot be negative
+  0x82077090  GameType
+  0x820770A4  LosePoint
+  0x820770B0  WinPoint
+  0x82078D38  Connection Reset
+  0x820791A0  Writing to leaderboard:0x%08x for gamer:"%s"...
+  0x820791E8  Writing score - gamer:"%s", score:%d, teamId:%d...
+  0x82079234  Reset() called while write is pending
+  0x82079294  Invalid user index:%d for gamer
+  0x820792B4  Writing profile setting:0x%08x for gamer:"%s"...
+  0x820793B4  Reset() called while find is pending
+  0x820796C4  Gamer:"%s" - read %d friends
+  0x8207976C  Not Allowed to Load PTX Effects at this point
+  0x82079980  NumPoints
+  0x8207A3F8  c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+  0x820D7AD6  40|kKx
+  0x82115DF6  40=@
+  0x821165D8  9k40
+  0x8216B7C9  40d8
+  0x82238EF6  @P}K40
+  0x82260BBC  |f40|
+  0x822C65D2  40UJ
+  0x82423DDE  15=`
+  0x82594265  I40A
+  0x825A0502  Kx}i40T
+  0x825A0B3A  Cx}J40T
+  0x825A1C3C  }%X0}=40|
+  0x825A1F6B  x}^40Td
+  0x825A22CB   }*P0}>40}HCx|
+  0x825A240B   }*40
+  0x825A25CB   }&408
+  0x825A27A4  }#40;
+  0x825A29B3   }&408
+  0x825A2BA6  Cx}>40|
+  0x825A2CAA  L0}^40|
+  0x825A4317  0}F40|i
+  0x825C1E1D  /xuacs/ChangeGamertag.ashx
+  0x825C1ED0  /xuacs/XeGetLinkedGamertag.ashx
+  0x825C1F14  /xuacs/XeGetPointsBalance.ashx
+  0x825C2067  /xuacs/XeReserveGamertag.ashx
+  0x825C22A9  /xbos/XeOfferPurchaseGamertag.ashx
+  0x825C23D8  /xstats/xstatsreset.ashx
+  0x825C29B4  .?AVgdGameData@@
+  0x825C29D0  .?AV?$atSingleton@VgdGameData@@@@
+  0x825D302C  .?AVpcrSwingSet@@
+  0x825D3048  .?AVpcrSwingMissSet@@
+  0x825D3068  .?AVpcrSwingAbortSet@@
+  0x825D3150  .?AVpcrPostPointBlender@@
+  0x825D3320  .?AVxmlNodeStructSpecialty@pcrSwingSet@@
+  0x825D360C  .?AVgrmShaderPreset@rage@@
+  0x825D3778  .?AVstatePostPoint@gmLogicSwingPractice@@
+  0x825D3A9C  .?AVstatePostPostGame@gmLogicSinglesMatch@@
+  0x825D3AD0  .?AVstatePostGame@gmLogicSinglesMatch@@
+  0x825D3B00  .?AVstatePostPointCS@gmLogicSinglesMatch@@
+  0x825D3BE0  .?AVstatePostPoint@gmLogicSinglesMatch@@
+  0x825D3C14  .?AVstatePostPointScoringSync@gmLogicSinglesMatch@@
+  0x825D3C50  .?AVstatePointScoringNet@gmLogicSinglesMatch@@
+  0x825D3C88  .?AVstatePointScoring@gmLogicSinglesMatch@@
+  0x825D3CBC  .?AVstatePointScoringSync@gmLogicSinglesMatch@@
+  0x825D3E00  .?AVstateLet@gmLogicSinglesMatch@@
+  0x825D4010  .?AVstatePreGame@gmLogicSinglesMatch@@
+  0x825D52F8  .?AVcmValueSet@rage@@
+  0x825D5318  .?AVcmNamedValueSet@rage@@
+  0x825D5380  .?AVcmDiffTuningSet@rage@@
+  0x825D53A4  .?AVcmTuningSet@rage@@
+  0x825D53C4  .?AVcmMetafileTuningSet@rage@@
+  0x825D7800  .?AV?$atSingleton@VpostPointMgr@@@@
+  0x825D782C  .?AVpostPointMgr@@
+  0x825D7F34  .?AVgdShotSet@@
+  0x825D7F4C  .?AVgdShotMultiSet@@
+  0x825D82A0  .?AVgdaiSkillSet@@
+  0x825D8670  .?AVgdStatsGame@@
+  0x825D86A8  .?AVgdPatternSet@@
+  0x825D8B74  .?AVgdUnlockConditionAce@@
+  0x825D8C0C  .?AVgdUnlockConditionPointDeficit@@
+  0x825D8C38  .?AVgdUnlockConditionGameDeficit@@
+  0x825D91B0  .?AVxmlNodeStructGamesPerMatch@gdUnlockConditionSettingsData@@
+  0x825D91F8  .?AVxmlNodeStructPointsPerGame@gdUnlockConditionSettingsData@@
+  0x825D9240  .?AVxmlNodeStructGameType@gdUnlockConditionSettingsData@@
+  0x825D95C4  .?AVevtSet@rage@@
+  0x825D9E3C  .?AVcrAnimWeightSet@rage@@
+  0x825D9EA8  .?AVdatBitBufferDefaultAllocator@rage@@
+  0x825DA85C  .?AVcmSelectPointerFromArray@rage@@
+  0x825DBDE0  .?AU?$cmOperatorCtor@VcmSelectPointerFromArray@rage@@@rage@@
+  0x825DD648  .?AVcmOperatorSet@rage@@
+  0x825DEE90  .?AUsnNotifyGamerRemoved@rage@@
+  0x825DEEB8  .?AVsnGamer@rage@@
+  0x825DEED4  .?AVGamer@@
+  0x825DFCAC  .?AUPresenceWorker@rlGamer@rage@@
+  0x825DFCD8  .?AVrlGamer@rage@@
+  0x825DFF50  .?AV?$atFunctor3@XPAVrlGamer@rage@@$$CBW4NotifyCode@12@PAX@rage@@
+  0x825DFF9C  .?AVNotifyHandler@?$rlNotifier@VrlGamer@rage@@X@rage@@
+  0x825E0580  .?AVfxLvlAnimSet@@
+  0x825E06A0  .?AVstatePostGame@gmLogicSpectator@@
+  0x825E06D0  .?AVstatePostPointCS@gmLogicSpectator@@
+  0x825E072C  .?AVstatePostPoint@gmLogicSpectator@@
+  0x825E08AC  .?AVstatePreGameSync@gmLogicSpectator@@
+  0x825E08DC  .?AVstatePreGame@gmLogicSpectator@@
+  0x825E0ADC  .?AVPongNetGameModeManager@@
+  0x825E0B04  .?AVPongNetGameModeCoordinator@@
+  0x825E0F38  .?AV?$atFunctor3@XPAVrlGamerProfileReader@rage@@$$CBW4NotifyCode@12@PAX@rage@@
+  0x825E0F90  .?AVNotifyHandler@?$rlNotifier@VrlGamerProfileReader@rage@@X@rage@@
+  0x825E12F4  .?AUsnNotifyGamerAdded@rage@@
+  0x825E1640  .?AV?$pongNetMessageHolder@VGamerUpdateMessage@@$0BP@@@
+  0x825E1680  .?AV?$pongNetMessageHolder@VGamerReadyMessage@@$0BP@@@
+  0x825E1898  .?AV?$pongNetMessageHolder@VScoreMessage@@$04@@
+  0x825E1958  .?AV?$pongNetMessageHolder@VPointDeclaredMessage@@$04@@
+  0x825E1998  .?AV?$pongNetMessageHolder@VPostPointExitMessage@@$01@@
+  0x825E19D8  .?AV?$pongNetMessageHolder@VMatchScoreMessage@@$04@@
+  0x825E2114  .?AV?$pongNetMessageHolder@VExitPostGameMessage@@$01@@
+  0x825E2190  .?AV?$pongNetMessageHolder@VServeFaultMessage@@$01@@
+  0x825E23A8  .?AV?$pongNetMessageHolder@VTimedGameUpdateTimerMessage@@$09@@
+  0x825E289C  .?AVGamerUpdateMessage@@
+  0x825E28C0  .?AVGamerReadyMessage@@
+  0x825E2968  .?AVScoreMessage@@
+  0x825E29CC  .?AVPostPointExitMessage@@
+  0x825E2B80  .?AVExitPostGameMessage@@
+  0x825E2BC4  .?AVServeFaultMessage@@
+  0x825E2BE4  .?AVTimedGameUpdateTimerMessage@@
+  0x825E2D74  .?AVPointDeclaredMessage@@
+  0x825E2DE8  .?AVMatchScoreMessage@@
+  0x825E37C8  .?AVpongGameContext@@
+  0x825E37E8  .?AVpongGameState@@
+  0x825E3804  .?AVpongGame@@
+  0x825E3984  .?AVsgTraverseReset@@
+  0x825E490C  .?AUsnSendingGamerData@snJoinMachine@rage@@
+  0x82741B83  Le Chalet
+  0x82741C7D  Score actuel
+  0x82741E12  Rockstar Games
+  0x82741F1F  EMarquez le meilleur score pour chaque exercice du mode Entra
+  0x82742856  faut en moins de 14 minutes 30 ou...
+  0x82742985  faut en moins de 13 minutes 30 ou...
+  0x82743416  Rockstar Games
+  0x827449FE  Rockstar Games
+  0x8274603F  Rockstar Games
+  0x827465B4   set non consecutivi durante partite classificate online.
+  0x82746E3D   set non consecutivi durante partite classificate online.
+  0x82746F55  Game Type
+  0x82746F78  Game Mode
+  0x82747011  Games Won
+  0x82747026  Gamer Name
+  0x8274703C  Gamer Name
+  0x82747060  Games Lost
+  0x82747082  Games Per Match
+  0x8274731A  Current Score
+  0x827474AA  Rockstar Games
+  0x827474D2  Best table tennis game ever
+  0x827474F1  Buy this game!
+  0x8274754E  Single game
+  0x8274757C  7Earn the highest score on every drill in Training Mode.
+  0x827475C8  -Beat the Amateur Circuit on default settings.
+  0x8274760C  ,Beat the Rookie Circuit on default settings.
+  0x8274764E  )Beat the Pro Circuit on default settings.
+  0x8274768B  .Beat the All-Star Circuit on default settings.
+  0x8274775B  +Rack up 10+ hours of offline gameplay time.
+  0x8274779D  *Rack up 10+ hours of online gameplay time.
+  0x827477DB  MAchieve the highest TrueSkill rating possible in any Ranked online game mode.
+  0x8274783A  +Every outfit in the game has been unlocked.
+  0x82747876  .Every character in the game has been unlocked.
+  0x827478B7  *Every level in the game has been unlocked.
+  0x827478F6  4Every unlockable item in the game has been unlocked.
+  0x82747A4C  2Complete your first online match in any game mode.
+  0x82747A90  3Awarded for your first win in any online game mode.
+  0x82747D02  MBeat the Rookie Circuit with default settings in less than 14.5 minutes or...
+  0x82747D75  MBeat the Rookie Circuit with default settings in less than 14 minutes or...
+  0x82747E0A  OBeat the Rookie Circuit with default settings in less than 13.5 minutes or...
+  0x827519AC  408!
+  0x82754054  VhU40
+  0x82766471  40~)
+
+; ── SHOT / ANIMATION TYPE STRINGS ──
+
+  0x820275CC  smash
+  0x82027678  serve
+  0x820278F0  pongCreature::StartEmote() - specify an animation before starting to play
+  0x82028124  spine00
+  0x820281C8  Interrupting Player %d Serve Blender
+  0x8202826C  pcrAnimObserved
+  0x82028290  pcrAnimObserved - Can't find anim '%s'.
+  0x82028518  spine03
+  0x82028AF8  pcrServeData
+  0x82028B14  Backhand
+  0x82028B20  Forehand
+  0x82028B2C  ServeType
+  0x82028E98  ServeRightStopWrong
+  0x82028EAC  ServeRightStop
+  0x82028EBC  ServeRightMove
+  0x82028ECC  ServeRightStart
+  0x82028EDC  ServeRightIdleInner
+  0x82028EF0  ServeRightIdleExit
+  0x82028F04  ServeRightIdleEnter
+  0x82028F18  ServeLeftStopWrong
+  0x82028F2C  ServeLeftStop
+  0x82028F3C  ServeLeftMove
+  0x82028F4C  ServeLeftStart
+  0x82028F5C  ServeLeftIdleInner
+  0x82028F70  ServeLeftIdleExit
+  0x82028F84  ServeLeftIdleEnter
+  0x82028F98  ServeIdle
+  0x8202E3A4  MaxFramesBefore
+  0x8202E574  SidespinOnly
+  0x8202E584  BackspinOnly
+  0x8202E594  TopspinOnly
+  0x8202E64C  AllowFallbackFromITZ
+  0x8202E664  AllowFallbackFromSoft
+  0x8202E6B4  AutoMoveForehand
+  0x8202E6C8  AutoMoveBackhand
+  0x8202E6DC  ForehandPush
+  0x8202E6EC  BackhandPush
+  0x8202E71C  ForehandSlam
+  0x8202E72C  BackhandSlam
+  0x8202E73C  ForehandLow
+  0x8202E748  BackhandLow
+  0x8202E754  ForehandLunge
+  0x8202E764  BackhandLunge
+  0x8202E774  ForehandLungeFar
+  0x8202E788  BackhandLungeFar
+  0x8202EA0C  MidAutoMoveBackhand
+  0x8202EA20  MidAutoMoveForehand
+  0x820302AC  gdDrillServeMeterData
+  0x8203032C  gdDrillSpinData
+  0x82030354  gdDrillCounterSpinData
+  0x8203036C  gdDrillSmashData
+  0x82030908  PrePreServe
+  0x82030914  PreServeSpectatorSyncState
+  0x82030930  PreServeSync
+  0x82030940  PreServe
+  0x8203094C  ServeToss
+  0x82030958  ServeHit
+  0x820309AC  ServeBounce
+  0x820309B8  HitNetServe
+  0x82030A14  AwaitServeReturnHit
+  0x820318FC  Serve Meter
+  0x82031908  Serve Aim
+  0x82031940  Spin
+  0x82031954  Counter Spin
+  0x82031964  Smash
+  0x820319D4  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031A78  pongDrillSoftShot::SetUpBallHitData() - unknown spin type [%d]
+  0x82031AB8  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82031B88  pongDrillCounterSpin::IncreaseNumTries() - unknown spin type [%d]
+  0x820326E4  ServeTip
+  0x82032750  BadBackSpinDefenseTip
+  0x82032768  FirstServeTip
+  0x8203386C  spine+
+  0x82033874  spine
+  0x82033880  crIKSpine::Init - failed to find root bone
+  0x820338AC  crIKSpine::Init - spine bone count < 1
+  0x820338D4  crIKSpine::Init - failed to find spine bone %d
+  0x82033904  crIKSpine::Init - failed to find pelvis bone
+  0x82033934  crIKHead::Init - failed to find spine bone
+  0x820339E8  crIKLimb::Init - failed to find spine bone (isArm %d, isLeftRight %c)
+  0x82033DE8  globalShaderTime
+  0x82034A78  Unexpected padding before a field in %s?
+  0x82034DAC  LookupGlobalVar(%s) failed on required variable.
+  0x820351F4  Unable to create backup texture for rendertarget
+  0x82035228  Unable to create backup texture for depth render target
+  0x82035714  UseGlobalEffects
+  0x82035C10  audBank::RemoveUser %s - trying to remove before loaded.
+  0x820360B4  inline_serveready
+  0x820360C8  inline_serve
+  0x82036304  UseGlobalClip
+  0x82036758  _back
+  0x82036760  _fore
+  0x82036D78  [inlineMiniEmote] Post-point animation happened before end of point?
+  0x82036DC0  [inlineMiniEmote] post-point animation before end-of-point?
+  0x82036F84  SwingCam_SideShiftServe
+  0x82036FB0  Inline_Backhand
+  0x82037388  ServeLockedIn
+  0x82038DA4  Cheat_NoBallSpin
+  0x82038DD0  ITZ_RightSpinButton
+  0x82038DE4  ITZ_LeftSpinButton
+  0x82038DF8  ITZ_BackSpinButton
+  0x82038E0C  ITZ_TopSpinButton
+  0x82038E20  ITZ_RightSpinStick
+  0x82038E34  ITZ_LeftSpinStick
+  0x82038E48  ITZ_BackSpinStick
+  0x82038E5C  ITZ_TopSpinStick
+  0x820399C8  controller %d: got callback for unknown sequence %s
+  0x82039AF4  noautoserves
+  0x82039B14  servemeter
+  0x82039E8C  Trying out serve contact pos %d
+  0x8203A070  pongPlayer::FinalizeServe() %s
+  0x8203A1E0  pongPlayer::EnterServeMode
+  0x8203A1FC  pongPlayer::SetupServe %s
+  0x8203A218  pongPlayer::StartServe() %s
+  0x8203A234  pongPlayer::Serve() %s
+  0x8203A724  LobHeightMeters
+  0x8203A848  pongPlayerShaderParams::UpdateParams() called before m_player is set!
+  0x8203AD94  xact2System: Unable to find global settings file '%s'
+  0x8203ADCC  xact2System: No global settings file specified!
+  0x8203AF48  [xact2System] Creating global effect bus with '%s' (managerIndex %d)...
+  0x8203AF90  [xact2System] No global effect specified.  Creating pass-through voice...
+  0x8203B6D4  %s:Announcer_Serve_%s
+  0x8203B77C  %s:Announcer_LetServe
+  0x8203C208  [pongAmbiencePlayer] Cheer timer expired.  Requesting priority drop.
+  0x8203C3F4  global
+  0x8203C3FC  global.data
+  0x8203D1E0  gdReplayMgr::PurgeReplaySampleBallAfterTime(%f) - dropped %d samples
+  0x8203D8F0  UISpin
+  0x8203DADC  AceServe
+  0x8203E0D4  SoftServe
+  0x8203E0E0  Serve
+  0x8203E1B1  pongBallSpinData.Axis
+  0x8203E1D5  pongBallSpinData.CalcNetworkingValue
+  0x8203E34D  ServesThisGame
+  0x8203E379  ServeMeterVal
+  0x8203E391  ServeHitVel
+  0x8203E3A9  ServeHitAngVel
+  0x8203E3C4  Is Serve
+  0x8203E3D0  Not a Serve
+  0x8203E4E4  ServeMeterVal
+  0x8203E52C  IsServe
+  0x8203E534  SpinAxis
+  0x8203E540  ServeHitVel
+  0x8203E54C  ServeHitAngVel
+  0x8203F698  MinBallSpin
+  0x8203F6A4  MaxBallSpin
+  0x8203F948  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' must be in [0, 1]
+  0x8203F9F8  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpin' must be in [0, 1]
+  0x820401F8  NumSpinShots
+  0x8204021C  MinPrimarySpin
+  0x8204022C  MaxSecondaryTopBackSpin
+  0x82040244  MaxSecondaryLeftRightSpin
+  0x82040260  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be negative
+  0x820403D8  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative
+  0x820408CC  MinSpin
+  0x820408D4  ProbSameSpin
+  0x820408E8  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040930  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040980  gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040A28  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040AD0  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040B78  gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x820416E4  PointsPerServe
+  0x820418C0  SpinAdjustment
+  0x82041918  ConserveMeter
+  0x8204195C  UseSpinCounter
+  0x8204197C  CombineSpin
+  0x82041B14  spin detection node already found in shots.xml: %s
+  0x82041BE0  gdaiComeBackLogic
+  0x820430D8  Invalid serve tip found: %d
+  0x820430F4  Invalid serve tip, setting InARow to default
+  0x820438EC  ServeHitA
+  0x820438F8  ServeHitB
+  0x82043904  WindowServeHit
+  0x82043914  WindowServeHitA
+  0x82043924  WindowServeHitB
+  0x820447D0  LungeForehand
+  0x820447E0  LungeBackhand
+  0x820447F0  LungeForehandA
+  0x82044800  LungeForehandB
+  0x82044810  LungeBackhandA
+  0x82044820  LungeBackhandB
+  0x8204484C  OverTheTableForehand
+  0x82044864  OverTheTableBackhand
+  0x82047998  MatchLungeForehandMaskA
+  0x82047A18  MatchLungeForehandMaskB
+  0x82047A98  MatchLungeBackhandMaskA
+  0x82047B18  MatchLungeBackhandMaskB
+  0x82048AF0  POI_PPBA_EnteringViewFrustum_LungeForehandMaskA_NotAlmostInterestConclude
+  0x82048B40  POI_PPBB_EnteringViewFrustum_LungeForehandMaskB_NotAlmostInterestConclude
+  0x82048B90  POI_PPBA_EnteringViewFrustum_LungeBackhandMaskA_NotAlmostInterestConclude
+  0x82048BE0  POI_PPBB_EnteringViewFrustum_LungeBackhandMaskB_NotAlmostInterestConclude
+  0x820498BC  Backhand JIT
+  0x820498CC  Backhand SOT
+  0x820498DC  Backhand OTT
+  0x820498EC  Backhand Scoop
+  0x820498FC  Backhand Smash
+  0x8204990C  Backhand Lunge Far
+  0x82049920  Backhand Lunge
+  0x82049930  Forehand JIT
+  0x82049940  Forehand SOT
+  0x82049950  Forehand OTT
+  0x82049960  Forehand Scoop
+  0x82049970  Forehand Smash
+  0x82049980  Forehand Lunge Far
+  0x82049994  Forehand Lunge
+  0x820499AC  VertSpin
+  0x820499B8  SideSpin
+  0x820499C4  SpinDef
+  0x82049AA4  TopSpin
+  0x82049AAC  BackSpin
+  0x82049AB8  Sidespin
+  0x82049AC4  SpinDefense
+  0x82049AD0  SideSpinDefense
+  0x82049AE0  TopSpinITZ
+  0x82049AEC  BackSpinITZ
+  0x82049B04  SidespinITZ
+  0x82049B1C  SpinDefenseITZ
+  0x82049B2C  SideSpinDefenseITZ
+  0x82049B40  TopSpinMaxITZ
+  0x82049B50  BackSpinMaxITZ
+  0x82049B70  SidespinMaxITZ
+  0x82049B90  SpinDefenseMaxITZ
+  0x82049BA4  SideSpinDefenseMaxITZ
+  0x82049C18  LocoServeSpeed
+  0x82049C28  LocoServeAccel
+  0x82049C38  ServeTopSpin
+  0x82049C48  ServeBackSpin
+  0x82049C58  ServeLeftSpin
+  0x82049C68  ServeRightSpin
+  0x82049C78  ServeAccuracy
+  0x82049C98  MaxTopSpinRPS
+  0x82049CA8  MaxBackSpinRPS
+  0x82049CB8  MaxSideSpinRPS
+  0x82049CC8  MaxTopSpinRPSITZ
+  0x82049CDC  MaxBackSpinRPSITZ
+  0x82049CF0  MaxSideSpinRPSITZ
+  0x82049D04  MaxTopSpinRPSMaxITZ
+  0x82049D18  MaxBackSpinRPSMaxITZ
+  0x82049D30  MaxSideSpinRPSMaxITZ
+  0x82049D48  MaxTopSpinRPSServe
+  0x82049D5C  MaxBackSpinRPSServe
+  0x82049D70  MaxSideSpinRPSServe
+  0x82049D84  MaxSpinChargeTime
+  0x82049D98  MaxSpinChargeTimeITZ
+  0x82049DB0  MaxSpinChargeTimeMaxITZ
+  0x82049E74  LocoServeMaxSpeed
+  0x82049E88  LocoServeMaxAccel
+  0x82049ED0  MaxSpinChargeRate
+  0x82049EE4  MaxSpinChargeRateITZ
+  0x82049EFC  MaxSpinChargeRateMaxITZ
+  0x8204A2F0  Tried to advance to next round before round %d was complete!
+  0x8204A70C  attempting to unload root "%s" before initializing manager %s
+  0x8204C494  BallSpin
+  0x8204C4A0  ComebackWin
+  0x8204C4E8  Incorrect BallSpin[%.2f], setting to default
+  0x8204C518  Incorrect ComebackWin[%d]
+  0x8204C87C  Spin_Type
+  0x8204C9DC  GlobalLimit
+  0x8204DDF4  FrontToBack
+  0x8204DE00  BackToFront
+  0x8204DE58  PreDrawCallback:
+  0x8204DE70  pongDrawBucket::Load() - unknown pre-draw callback '%s' for bucket '%s'
+  0x8204DEB8  PostDrawCallback:
+  0x8204DED0  pongDrawBucket::Load() - unknown post-draw callback '%s' for bucket '%s'
+  0x8204EB58  looping disabled for this mfRegisteredPlayback
+  0x8205037C  StopServeMeter
+  0x8205038C  StartServeMeter
+  0x82050540  EnterPreServe
+  0x82050550  EnterPrePreServe
+  0x820506F0  ServeAce
+  0x820506FC  ServeSuccess
+  0x8205070C  ServeFault
+  0x82050718  ServeLet
+  0x82050724  ServeTimeout
+  0x82050734  ReadyServeB
+  0x82050740  ReadyServeA
+  0x820509BC  ServeReallyReady
+  0x820509F4  ExitServeReady
+  0x82050A04  EnterServeReady
+  0x82050B8C  ServeAnimStart
+  0x82050B9C  ServeChargeStart
+  0x82050BB0  ServeReady
+  0x82050D08  ExitServe
+  0x82050D14  EnterServe
+  0x82051140  CancelLobbyCountdown
+  0x82051158  StartLobbyCountdown
+  0x820513C4  ServeStartReceived
+  0x82051434  PostSignalReadyToServeMessage
+  0x82051454  OpponentDropSpectatorMode
+  0x82051578  LobbyToGame
+  0x820515F4  ServeAnimReady
+  0x82051604  ServeStartedResponse
+  0x8205161C  ServeStarted
+  0x8205162C  ServeAbort
+  0x82051900  LobbyToGameSignalled
+  0x82051A20  serve anim start
+  0x82051BD0  LobApex
+  0x820521A0  Warning: Can't run action '%s'. Using '%s' as a fallback
+  0x820570BC  VisualSpinScale
+  0x820572D8  Could not find a successful serve for %d iterations
+  0x82057310  Num valid bad serves was zero for %d iterations
+  0x82057344  Could not find a bad serve for %d iterations
+  0x8205A7F0  Unable to establish server on port %d, already in use?
+  0x8205B138  toggleServeMeter
+  0x8205B3BC  DroppedPlayer
+  0x8205B474  playersServe
+  0x8205B484  perfectServe
+  0x8205B6D0  stxt_points_from_serves
+  0x8205B6E8  t_point_off_serves
+  0x8205B770  stxt_forehand_shots
+  0x8205B784  t_forehand_shots
+  0x8205B798  stxt_backhand_shots
+  0x8205B7AC  t_backhand_shots
+  0x8205B7C0  stxt_points_from_forehand
+  0x8205B7DC  t_points_off_forehand
+  0x8205B7F4  stxt_points_from_backhand
+  0x8205B810  t_points_off_backhand
+  0x8205B828  stxt_points_from_topspin
+  0x8205B844  t_points_from_topspin
+  0x8205B85C  stxt_points_from_rightspin
+  0x8205B878  t_points_from_sidespin_rt
+  0x8205B894  stxt_points_from_leftspin
+  0x8205B8B0  t_points_from_sidespin_lft
+  0x8205B8CC  stxt_points_from_backspin
+  0x8205B8E8  t_points_from_backspin
+  0x8205B900  stxt_points_from_smash
+  0x8205B918  t_smash_points
+  0x8205B928  stxt_smash_shots
+  0x8205B93C  t_smash_shots
+  0x8205BE50  ServeMeterX
+  0x8205BE5C  ServeMeterY
+  0x8205BE68  playerServeTimer
+  0x8205BE7C  ServeMeterscale
+  0x8205C094  point_off_serves
+  0x8205C0D8  forehand_shots
+  0x8205C0E8  backhand_shots
+  0x8205C0F8  points_off_forehand
+  0x8205C10C  points_off_backhand
+  0x8205C120  points_from_topspin
+  0x8205C134  points_from_sidespin_rt
+  0x8205C14C  points_from_sidespin_lft
+  0x8205C168  points_from_backspin
+  0x8205C180  smash_points
+  0x8205C190  smash_shots
+  0x8205C368  iDelayServer
+  0x8205C378  iCurrServer
+  0x8205C384  playersSpin
+  0x8205C390  spinalpha
+  0x8205C5E0  stxt_dropped_player
+  0x8205C5F4  t_dropped_player
+  0x8205C7FC  SpinWheelSpeed
+  0x8205C8A8  currentSpin
+  0x8205C8C0  serve_meter
+  0x8205C900  spin
+  0x8205C914  counterspin
+  0x8205C9D8  stxt_t_topspin
+  0x8205C9E8  t_topspin
+  0x8205C9F4  stxt_t_backspin
+  0x8205CA04  t_backspin
+  0x8205CA10  stxt_t_leftspin
+  0x8205CA20  t_leftspin
+  0x8205CA2C  stxt_t_rightspin
+  0x8205CA40  t_rightspin
+  0x8205CA4C  stxt_t_focus_topspin
+  0x8205CA64  t_focus_topspin
+  0x8205CA74  stxt_t_focus_backspin
+  0x8205CA8C  t_focus_backspin
+  0x8205CAA0  stxt_t_focus_leftspin
+  0x8205CAB8  t_focus_leftspin
+  0x8205CACC  stxt_t_focus_rightspin
+  0x8205CAE4  t_focus_rightspin
+  0x8205CD30  lobbytimer
+  0x8205CD3C  lobbycreatefail
+  0x8205CD4C  lobbyjoinfail
+  0x8205CD5C  lobbysyncfail
+  0x8205CD6C  lobbyarbfail
+  0x8205CD7C  lobbyreadyfail
+  0x8205CF5C  Unsupported points per serve enum value = %d
+  0x8205D000  MatchOver -- Booting spectator from lobby!
+  0x8205D288  felive_lobby_waiting_for_player
+  0x8205D2A8  currentLobbyTourneySelection
+  0x8205D3A0  Kicking user from lobby/limbo to %d
+  0x8205D3E0  currentPostLobbySelection
+  0x8205D518  Join from Hud -- Exiting old lobby
+  0x8205D738  custom_PointsPerServe
+  0x8205D750  Unknown custom_PointsPerServe = %d
+  0x8205D868  create_PointsPerServe
+  0x8205D880  Unknown create_PointsPerServe = %d
+  0x8205D8CC  lobbyNextCharacter
+  0x8205D8E0  lobbyNextVariant
+  0x8205D904  lobbyNextLevel
+  0x8205D940  EnterLobbySync
+  0x8205D950  -lobbysyncfail, forcing peer to drop from session
+  0x8205D984  EnterLobbyArb
+  0x8205D994  -lobbyarbfail, forcing peer to drop from session
+  0x8205DA6C  EnterLobbyReady
+  0x8205DA7C  -lobbyreadyfail, forcing peer to drop from session
+  0x8205DB6C  Exiting limbo to flashState %d, lobbyState %d
+  0x8205DB9C  Waiting for complete transition before exiting limbo...
+  0x8205DBD4  PreEnterLobbyState = %d
+  0x8205DCA0  PopulatePostLobbyScreen %d
+  0x8205DCBC  PopulatePostLobbyScreen exhibition stats
+  0x8205DCE8  PopulatePostLobbyScreen tournament stats
+  0x8205DD14  PopulatePostLobbyScreen exhibition scoreboard
+  0x8205DD44  PopulatePostLobbyScreen tournament scoreboard round %d
+  0x8205DD7C  PopulatePostLobbyScreen() screen %d is invalid type %d.
+  0x8205DDB4  PopulatePostLobbyScreen() -- GLOBAL_PLAYERS_ROW == %d
+  0x8205DF70  stxt_list_back
+  0x8205FF94  stxt_back
+  0x8205FFA0  t_back
+  0x8205FFA8  stxt_left_spin
+  0x8205FFB8  t_left_spin
+  0x8205FFC4  stxt_right_spin
+  0x8205FFD4  t_right_spin
+  0x8206000C  stxt_back_spin
+  0x8206001C  t_back_spin
+  0x82060028  stxt_top_spin
+  0x82060038  t_top_spin
+  0x82060808  stxt_spin
+  0x82060814  t_spin
+  0x82060C4C  stxt_tip_serve_meter
+  0x82060CC4  stxt_tip_spin
+  0x82060CE8  stxt_tip_counter_spin
+  0x82060D00  stxt_tip_smash
+  0x82060DA4  drill_serve_meter
+  0x82060E2C  drill_spin
+  0x82060E58  drill_smash
+  0x82060E78  drill_counter_spin
+  0x82060FE0  stxt_t_back
+  0x82061040  stxt_t_serve_meter
+  0x82061054  t_serve_meter
+  0x820610EC  stxt_t_spin
+  0x82061140  stxt_t_counterspin
+  0x82061154  t_counterspin
+  0x820611A8  stxt_t_smashes
+  0x820611B8  t_smashes
+  0x820611F4  stxt_t_back_spin
+  0x82061208  stxt_t_left_spin
+  0x8206121C  stxt_t_right_spin
+  0x82061230  stxt_t_top_spin
+  0x820612C4  stxt_t_serve_meter_1
+  0x820612DC  t_serve_meter_1
+  0x820612EC  stxt_t_serve_meter_2
+  0x82061304  t_serve_meter_2
+  0x82061314  stxt_t_serve_meter_3
+  0x8206132C  t_serve_meter_3
+  0x8206133C  stxt_t_serve_meter_4
+  0x82061354  t_serve_meter_4
+  0x82061364  stxt_t_serve_meter_5
+  0x8206137C  t_serve_meter_5
+  0x82061504  stxt_t_spin_1
+  0x82061514  t_spin_1
+  0x82061520  stxt_t_spin_2
+  0x82061530  t_spin_2
+  0x8206153C  stxt_t_spin_3
+  0x8206154C  t_spin_3
+  0x82061558  stxt_t_spin_4
+  0x82061568  t_spin_4
+  0x82061574  stxt_t_spin_5
+  0x82061584  t_spin_5
+  0x82061590  stxt_t_counterspin_1
+  0x820615A8  t_counterspin_1
+  0x820615B8  stxt_t_counterspin_2
+  0x820615D0  t_counterspin_2
+  0x820615E0  stxt_t_counterspin_3
+  0x820615F8  t_counterspin_3
+  0x82061674  stxt_t_smashes_1
+  0x82061688  t_smashes_1
+  0x82061694  stxt_t_smashes_2
+  0x820616A8  t_smashes_2
+  0x820616B4  stxt_t_smashes_3
+  0x820616C8  t_smashes_3
+  0x820616D4  stxt_t_smashes_4
+  0x820616E8  t_smashes_4
+  0x82061828  stxt_brief_serve_meter
+  0x8206187C  stxt_brief_spin
+  0x820618BC  stxt_brief_smash
+  0x820618E8  stxt_brief_counter_spin
+  0x82061CB8  t_prompt_back
+  0x820623F8  Please specify the credits setting before any credits!
+  0x8206246C  back_prompt_alpha
+  0x82062628  stxt_charview_back
+  0x820633E4  stxt_lobby
+  0x820633F0  t_lobby
+  0x82063930  stxt_post_xbox_live_lobby
+  0x8206394C  t_post_xbox_live_lobby
+  0x82063BF8  stxt_post_game_lobby
+  0x82063C10  t_post_game_lobby
+  0x82063CC4  stxt_hold_spin
+  0x82063CD4  t_hold_spin
+  0x82063D5C  stxt_points_per_serve
+  0x82063D74  t_points_per_serve
+  0x82063ED8  stxt_post_lobby
+  0x82063EE8  t_post_lobby
+  0x82064158  stxt_postlobby_gameswon
+  0x82064178  stxt_postlobby_gameslost
+  0x8206419C  stxt_postlobby_roundswon
+  0x820641C0  stxt_postlobby_roundslost
+  0x820641E4  stxt_postlobby_roundstied
+  0x82064208  stxt_postlobby_chat
+  0x82066E14  Packet is too small - dropping
+  0x82066E34  Packet is too big - dropping
+  0x82066E54  Packet size doesn't match recvfrom size - dropping
+  0x82066E88  Packet has no payload - dropping
+  0x82066EAC  Packet payload is too big - dropping
+  0x82067628  Attempt to start a ranked session before registering for arbitration
+  0x82067698  Attempt to start an arbitrated session before registering for arbitration
+  0x82068408    XNADDR: Local host has one or more DNS servers configured
+  0x82068444    XNADDR: *** Local host no DNS servers configured
+  0x8206AADC  num_spins
+  0x8206AAE8  no_spin
+  0x8206AAF0  top_right_spin
+  0x8206AB00  right_spin
+  0x8206AB0C  back_right_spin
+  0x8206AB1C  back_spin
+  0x8206AB28  back_left_spin
+  0x8206AB38  left_spin
+  0x8206AB44  top_left_spin
+  0x8206AB54  top_spin
+  0x8206B0C8  spin_wisp_c
+  0x8206B0D4  spin_tex_c
+  0x8206B0E0  spin_lines_c
+  0x8206B0F0  spin_wisp_b
+  0x8206B0FC  spin_tex_b
+  0x8206B108  spin_lines_b
+  0x8206B118  spin_wisp_a
+  0x8206B124  spin_tex_a
+  0x8206B130  spin_lines_a
+  0x8206B140  numspins
+  0x8206B14C  nospin
+  0x8206B154  toprightspin
+  0x8206B164  rightspin
+  0x8206B170  backrightspin
+  0x8206B180  backspin
+  0x8206B18C  backleftspin
+  0x8206B19C  leftspin
+  0x8206B1A8  topleftspin
+  0x8206B1B4  topspin
+  0x8206B1BC  AxisSpin
+  0x8206B1C8  MinTopspin
+  0x8206B250  BallSpinData
+  0x8206B260  spindicators
+  0x8206B278  ballspin
+  0x8206B284  Cannot load ball spin tuning file ballspin.fx!
+  0x8206B2B4  fxBallSpinLines::Update() - initialAngVel is bad
+  0x8206B2E8  fxBallSpinLines::Update() - ballPos is bad
+  0x8206B314  fxBallSpinLines::Update() - pos is bad
+  0x8206B33C  fxBallSpinLines::Update() - m_OrbitMtx.c is bad
+  0x8206B3F8  TopSpinColor
+  0x8206B408  BackSpinColor
+  0x8206B418  NoSpinColor
+  0x8206C158  Received RemoteServeReadyMessage at %s
+  0x8206C180  Unlocking Serve at %s
+  0x8206C198  Received ServeUnlockMessage at %s
+  0x8206CFB8  Match %s was unplayable but neither player foreit?? (home=%d, away=%d)
+  0x8206DB70  Host dropped out before we successfully joined! NOT migrating host.
+  0x8206E75C  PostGameLobby
+  0x8206E77C  PreGameLobbyReady
+  0x8206E790  PreGameLobbyArb
+  0x8206E7A0  PreGameLobbySync
+  0x8206E7B4  PreGameLobby
+  0x8206E840  ServeUnlockMessage
+  0x8206E854  RemoteServeReadyMessage
+  0x8206E98C  SignalReadyToServeMessage
+  0x8206E9A8  ServeReadyMessage
+  0x8206E9BC  ServeAbortMessage
+  0x8206E9D0  ServeStartedMessage
+  0x8206E9E4  ServeFaultMessage
+  0x8206E9F8  ServeLetMessage
+  0x8206EAE4  DropSpectatorConnection
+  0x8206EE4C  StartLobbyCountdownMessage
+  0x8206EE68  CancelLobbyCountdownMessage
+  0x8206EF0A  total serves this game <message(%d), game(%d)>
+  0x8206F270  unlocking serve %s
+  0x8206F284  Remote Player Is Ready To Serve %s
+  0x8206F2E8  RemotePlayer cannot send ServeStartedMessage
+  0x8206F318  ignoring ServeFaultMessage game(%d) message(%d)
+  0x8206F348  ignoring ServeLetMessage game(%d) message(%d)
+  0x82070BD0  MRB- #2 msgNet::kOpponentDropSpectatorMode, winner=%d forfeit=%d
+  0x82070CAC  MRB- msgNet::kOpponentDropSpectatorMode winner=%d forfeit=%d
+  0x82070F24  serveTimeDelay
+  0x82070FCC  LobbyCountdownSeconds
+  0x82070FFC  latancyAmountToStartFrameDrop
+  0x8207101C  latencyToFrameDropFactor
+  0x820710A0  serverReadyRemoteGoalTolerance
+  0x820710DC  remoteServeReadyVelocity
+  0x820712E4  StartBeforeSyncState %s, killing wait time
+  0x82071310  StartBeforeSyncState %s
+  0x82071328  Cannot StartBeforeSyncState %s, still syncing
+  0x82072094  EvtDroppedConnection
+  0x820749EC  invalid distance too far back
+  0x82074C58  global array [%s] does not exist
+  0x82074DC4  _global
+  0x82074EBC  __drawcallback
+  0x82075030  GlobalMethod %s does not exist!
+  0x82075700  Must call STRINGTABLE.Init() or STRINGTABLE.Load() before txtStringTable::Get()
+  0x82075894  Back Right
+  0x820758A0  Back Left
+  0x820759F4  Feedback
+  0x82076BD0  temporarily mark the last used animation '%s' before recycle as used again
+  0x820770BC  IsServer
+  0x820783E0  S%d: Dropping "%s" (%s), id:%d, size:%d, seq:%d
+  0x820785A0  Dropping connection:%d
+  0x82078640  netNotifyDropMessage
+  0x82078920  Received unreliable message before receiving first reliable message
+  0x82078A58  Packet is still compressed, Validate will fail, call UnPack before we validate.
+  0x82078AA8  Packet with invalid size:%d dropped
+  0x82078ACC  Invalid packet with reported size:%d (actually:%d) dropped
+  0x82078B08  Invalid message with bogus size %d dropped
+  0x82078B38  Total message count (%d) doesn't agree with packet message count (%d) - dropped
+  0x82078B88  Total message size (%d) doesn't agree with packet size (%d) - dropped
+  0x825C1A75  /msgserver/vetstring2.ashx
+  0x825C1AE8  /msgserver/msgserver.ashx
+  0x825C1CF8  /msgserver/getstring2.ashx
+  0x825C1D2E  /fbserver/enumrecdreview.ashx
+  0x825C1D4C  /fbserver/enumsentreview.ashx
+  0x825C1D6A  /fbserver/getaggreview.ashx
+  0x825C1D86  /fbserver/submitcomplaint.ashx
+  0x825C1DA5  /fbserver/submitreview.ashx
+  0x825C2067  /xuacs/XeReserveGamertag.ashx
+  0x825D2E34  .?AVpcrAnimObserverHash@@
+  0x825D2E58  .?AVpcrAnimObserver@@
+  0x825D2E78  .?AVpcrAnimObserved@@
+  0x825D30E0  .?AVpcrServeBlender@@
+  0x825D3100  .?AVpcrServeData@@
+  0x825D311C  .?AVxmlNodeStructServeType@pcrServeData@@
+  0x825D3D90  .?AVstateAwaitServeReturnHit@gmLogicSinglesMatch@@
+  0x825D3E2C  .?AVstateHitNetServe@gmLogicSinglesMatch@@
+  0x825D3E60  .?AVstateServeBounce@gmLogicSinglesMatch@@
+  0x825D3E94  .?AVstateServeHit@gmLogicSinglesMatch@@
+  0x825D3EC4  .?AVstateServeToss@gmLogicSinglesMatch@@
+  0x825D3EF8  .?AVstatePreServe@gmLogicSinglesMatch@@
+  0x825D3F28  .?AVstatePreServeSync@gmLogicSinglesMatch@@
+  0x825D3F60  .?AVstatePreServeSpectatorSyncState@gmLogicSinglesMatch@@
+  0x825D3FA4  .?AVstatePrePreServe@gmLogicSinglesMatch@@
+  0x825D4170  .?AVpongDrillSmash@@
+  0x825D4190  .?AVpongDrillCounterSpin@@
+  0x825D41D8  .?AVpongDrillSpin@@
+  0x825D4298  .?AVpongDrillServeMeter@@
+  0x825D48E8  .?AVcrIKSpine@rage@@
+  0x825D4A04  .?AVcrIKSolverSimpleSpine@rage@@
+  0x825D706C  .?AVaiSpin@@
+  0x825D7F6C  .?AVgdDrillSmashData@@
+  0x825D7F8C  .?AVgdDrillCounterSpinData@@
+  0x825D7FD8  .?AVgdDrillSpinData@@
+  0x825D80A8  .?AVgdDrillServeMeterData@@
+  0x825D820C  .?AVgdaiComeBackLogic@@
+  0x825D84C0  .?AVfirstServeTipData@@
+  0x825D84E0  .?AVbackspinTipData@@
+  0x825D85BC  .?AVxmlNodeStructGroupType@serveTipData@@
+  0x825D85F0  .?AVserveTipData@@
+  0x825D9168  .?AVxmlNodeStructSpinType@gdUnlockConditionFinalHitData@@
+  0x825D97A4  .?AVmfRegisteredPlayback@rage@@
+  0x825DE024  .?AVfxBallSpinTex@@
+  0x825DE040  .?AVfxBallSpin@@
+  0x825DE05C  .?AVfxBallSpinLines@@
+  0x825DE72C  .?AVfxBallSpinDataMgr@@
+  0x825DE74C  .?AV?$atSingleton@VfxBallSpinDataMgr@@@@
+  0x825E059C  .?AVfxBallSpinWispData@@
+  0x825E05C0  .?AVfxBallSpinTexData@@
+  0x825E05E0  .?AVfxBallSpinLineData@@
+  0x825E0604  .?AVfxBallSpinData@@
+  0x825E07EC  .?AVstateServeBounce@gmLogicSpectator@@
+  0x825E081C  .?AVstateServeHit@gmLogicSpectator@@
+  0x825E084C  .?AVstateServeToss@gmLogicSpectator@@
+  0x825E087C  .?AVstatePreServe@gmLogicSpectator@@
+  0x825E131C  .?AUsnNotifyPeerDropped@rage@@
+  0x825E1468  .?AV?$pongNetMessageHolder@VCancelLobbyCountdownMessage@@$00@@
+  0x825E14B0  .?AV?$pongNetMessageHolder@VStartLobbyCountdownMessage@@$00@@
+  0x825E1E68  .?AV?$pongNetMessageHolder@VDropSpectatorConnection@@$01@@
+  0x825E2154  .?AV?$pongNetMessageHolder@VServeLetMessage@@$01@@
+  0x825E2190  .?AV?$pongNetMessageHolder@VServeFaultMessage@@$01@@
+  0x825E21D0  .?AV?$pongNetMessageHolder@VServeStartedMessage@@$03@@
+  0x825E2210  .?AV?$pongNetMessageHolder@VServeAbortMessage@@$03@@
+  0x825E2250  .?AV?$pongNetMessageHolder@VServeReadyMessage@@$03@@
+  0x825E2290  .?AV?$pongNetMessageHolder@VSignalReadyToServeMessage@@$09@@
+  0x825E25F0  .?AV?$pongNetMessageHolder@VRemoteServeReadyMessage@@$03@@
+  0x825E2634  .?AV?$pongNetMessageHolder@VServeUnlockMessage@@$03@@
+  0x825E2794  .?AVCancelLobbyCountdownMessage@@
+  0x825E27C0  .?AVStartLobbyCountdownMessage@@
+  0x825E2B30  .?AVDropSpectatorConnection@@
+  0x825E2BA4  .?AVServeLetMessage@@
+  0x825E2BC4  .?AVServeFaultMessage@@
+  0x825E2C3C  .?AVRemoteServeReadyMessage@@
+  0x825E2C64  .?AVServeUnlockMessage@@
+  0x825E2FE0  .?AVServeStartedMessage@@
+  0x825E3004  .?AVServeAbortMessage@@
+  0x825E3024  .?AVServeReadyMessage@@
+  0x825E3068  .?AVSignalReadyToServeMessage@@
+  0x825E5140  .?AUEvtDroppedConnection@rage@@
+
+; ── DRILL / TRAINING STRINGS ──
+
+  0x820301E8  training_drills
+  0x82030248  Loading training mode tuning...
+  0x82030268  $/tune/training
+  0x82030284  gdTrainingDrills
+  0x82030298  gdDrillMovementData
+  0x820302AC  gdDrillServeMeterData
+  0x820302C4  gdDrillServingData
+  0x820302D8  gdDrillReturnData
+  0x820302EC  gdDrillPlacementData
+  0x82030304  gdDrillSoftShotData
+  0x82030318  gdDrillChargingData
+  0x8203032C  gdDrillSpinData
+  0x8203033C  gdDrillFocusShotData
+  0x82030354  gdDrillCounterSpinData
+  0x8203036C  gdDrillSmashData
+  0x82030398  Training mode tuning load done.
+  0x820303B8  gmLogicSwingPractice::stateAim::onEnterState
+  0x820319D4  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031A78  pongDrillSoftShot::SetUpBallHitData() - unknown spin type [%d]
+  0x82031AB8  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82031B88  pongDrillCounterSpin::IncreaseNumTries() - unknown spin type [%d]
+  0x82032374  practice_targets
+  0x8203F014  lvl_training
+  0x8203F644  gdTrainingDrillData
+  0x8203F710  UnlockDrillName
+  0x8203F730  gdTrainingDrillData::PostLoadProperties() - 'TotalNumTries' must be positive
+  0x8203F840  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpeed' must be in [0, %f]
+  0x8203F8F8  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpeed' must be in [0, %f]
+  0x8203F948  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' must be in [0, 1]
+  0x8203F9F8  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpin' must be in [0, 1]
+  0x8203FB68  gdTrainingDrillData::PostLoadProperties() - 'AimDelay' cannot be negative
+  0x8203FBB8  gdTrainingDrillData::PostLoadProperties() - 'PostPointDelay' cannot be negative
+  0x8203FC08  gdTrainingDrillData::PostLoadProperties() - 'NumEasyShots' cannot be negative
+  0x8203FCC0  gdTrainingDrillData::PostLoadProperties() - 'ProbSameShot' cannot be negative
+  0x8203FE00  DrillTime
+  0x8203FE38  gdDrillMovementData::PostLoadProperties() - 'TargetRadius' must be positive
+  0x8203FEE0  gdDrillMovementData::PostLoadProperties() - 'DetectRadius' must be positive
+  0x8203FF98  gdDrillMovementData::PostLoadProperties() - 'DrillTime' cannot be negative
+  0x820400A8  gdDrillMovementData::PostLoadProperties() - 'UrgentTime' cannot be negative
+  0x82040158  gdDrillMovementData::PostLoadProperties() - 'TargetHitTime' cannot be negative
+  0x820401B0  gdDrillServingData::PostLoadProperties() - 'TryTime' must be positive
+  0x82040260  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be negative
+  0x820403D8  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative
+  0x82040660  gdDrillChargingData::PostLoadProperties() - 'DrillTime' cannot be negative
+  0x820406B0  gdDrillChargingData::PostLoadProperties() - 'ChargePerFrame' must be positive
+  0x82040820  gdDrillChargingData::PostLoadProperties() - 'UrgentTime' cannot be negative
+  0x820408E8  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040930  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040980  gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040A28  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040AD0  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040B78  gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x8204A848  gdTrainingSaveValues
+  0x8204AB50  Condition_Beat_Training
+  0x8204E3CC  TrainingPopUp
+  0x8204E3DC  TrainingHUD
+  0x8204E623    training popup: %d
+  0x8204E638      training hud: %d
+  0x820500B0  msgTraining
+  0x82050834  ExitTrainingUIState
+  0x82050848  EnterTrainingUIState
+  0x82050860  GoToTrainingUIState
+  0x82050E3C  ClearRestartDrill
+  0x82050E50  RestartDrill
+  0x82050E98  DrillFailed
+  0x82050EA4  DrillSuccessful
+  0x82050EC0  EndDrill
+  0x82050ECC  StartDrill
+  0x82050ED8  ExitTrainingMode
+  0x82050EEC  EnterTrainingMode
+  0x82050F00  Incorrect message format for msgTraining::%s
+  0x8205C82C  training_state
+  0x8205E5C4  pongTrainingUIState
+  0x8205E5F4  Training Mode UI loaded.
+  0x8205E610  entered training mode UI state from invalid state '%s' (%d)
+  0x8205E64C  exiting training mode UI state to invalid state '%s' (%d)
+  0x8205E78C  Loading training mode loading screen...
+  0x8205E7E8  trainingLoad
+  0x820600A0  stxt_resume_drill
+  0x82060378  stxt_training_menu
+  0x8206038C  t_training_menu
+  0x8206039C  stxt_restart_drill
+  0x820603B0  t_restart_drill
+  0x82060C2C  TrainingMode
+  0x82060C3C  resetTraining
+  0x82060D10  unknown drill %d!
+  0x82060D6C  need to handle drill state %d!
+  0x82060DA4  drill_serve_meter
+  0x82060DB8  hudTrainingPopUp::Restart() - invalid user index %d for player 0
+  0x82060DFC  drill_serving
+  0x82060E0C  drill_return
+  0x82060E1C  drill_charging
+  0x82060E2C  drill_spin
+  0x82060E38  drill_placement
+  0x82060E48  drill_soft_shot
+  0x82060E58  drill_smash
+  0x82060E64  drill_focus_shot
+  0x82060E78  drill_counter_spin
+  0x82060FEC  stxt_t_training
+  0x82060FFC  t_training
+  0x82061910  stxt_start_drill
+  0x82061924  t_start_drill
+  0x82061960  stxt_training_unlock
+  0x82061984  stxt_training_unlock_text
+  0x820620C0  stxt_training_mode
+  0x820620D4  t_training_mode
+  0x820620E4  stxt_training_mode_txt
+  0x820620FC  t_training_text
+  0x8206210C  stxt_training_mode_loading
+  0x82062138  t_training_level
+  0x82062DF8  trainingLocked
+  0x820708A8  Gamer %d presence set to: Training Mode
+  0x820719F0  Loading Training Mode HUD...
+  0x82071A10  Training Mode HUD loaded.
+  0x825D3778  .?AVstatePostPoint@gmLogicSwingPractice@@
+  0x825D37AC  .?AVstateReturnHit@gmLogicSwingPractice@@
+  0x825D37E0  .?AVstateAwaitReturnHit@gmLogicSwingPractice@@
+  0x825D3818  .?AVstateShoot@gmLogicSwingPractice@@
+  0x825D3848  .?AVstateAim@gmLogicSwingPractice@@
+  0x825D3874  .?AVstateMainMenu@gmLogicSwingPractice@@
+  0x825D38A8  .?AVstateInit@gmLogicSwingPractice@@
+  0x825D38D8  .?AVstatePreInit@gmLogicSwingPractice@@
+  0x825D3908  .?AVstateBase@gmLogicSwingPractice@@
+  0x825D3938  .?AVgmLogicSwingPractice@@
+  0x825D4170  .?AVpongDrillSmash@@
+  0x825D4190  .?AVpongDrillCounterSpin@@
+  0x825D41B4  .?AVpongDrillFocusShot@@
+  0x825D41D8  .?AVpongDrillSpin@@
+  0x825D41F4  .?AVpongDrillCharging@@
+  0x825D4214  .?AVpongDrillSoftShot@@
+  0x825D4234  .?AVpongDrillPlacement@@
+  0x825D4258  .?AVpongDrillReturn@@
+  0x825D4278  .?AVpongDrillServing@@
+  0x825D4298  .?AVpongDrillServeMeter@@
+  0x825D42BC  .?AVpongDrillMovement@@
+  0x825D42DC  .?AVpongTrainingDrill@@
+  0x825D4318  .?AVgmPracticeTarget@@
+  0x825D755C  .?AV?$atSingleton@VgdTrainingSaveData@@@@
+  0x825D7590  .?AVgdTrainingSaveData@@
+  0x825D7F6C  .?AVgdDrillSmashData@@
+  0x825D7F8C  .?AVgdDrillCounterSpinData@@
+  0x825D7FB4  .?AVgdDrillFocusShotData@@
+  0x825D7FD8  .?AVgdDrillSpinData@@
+  0x825D7FF8  .?AVgdDrillChargingData@@
+  0x825D801C  .?AVgdDrillSoftShotData@@
+  0x825D8040  .?AVgdDrillPlacementData@@
+  0x825D8064  .?AVgdDrillReturnData@@
+  0x825D8084  .?AVgdDrillServingData@@
+  0x825D80A8  .?AVgdDrillServeMeterData@@
+  0x825D80CC  .?AVgdDrillMovementData@@
+  0x825D80F0  .?AVgdTrainingDrillData@@
+  0x825D8114  .?AVgdTrainingDrills@@
+  0x825D893C  .?AVgdTrainingSaveValues@@
+  0x825D8B1C  .?AVgdUnlockConditionBeatTraining@@
+  0x825DEEE8  .?AVhudTrainingHUD@@
+  0x825DEFDC  .?AVpongTrainingUIContext@@
+  0x825DF000  .?AVpongTrainingUIState@@
+  0x825DF024  .?AVpongTrainingLoadingContext@@
+  0x825DF388  .?AVhudTrainingPopUp@@
+  0x825DF3A8  .?AVhudTrainingLoadScreen@@
+  0x8274318A  Das Trainingscenter
+  0x827431E4  Der Trainingsraum
+  0x82743508  >Hole bei jedem Drill im Trainingsmodus die h
+  0x82743A15  Spielt Trainingsmodus mit {c2}
+  0x82747264  The Training Center
+  0x827472B6  The Practice Room
+  0x8274757C  7Earn the highest score on every drill in Training Mode.
+  0x827479E5   Playing Training Mode
+
+; ── ACHIEVEMENT STRINGS ──
+
+  0x82030C24  Pushing Unlock Context for user %d
+  0x82030C78  UnlockDialog
+  0x82038DB8  Cheat_UnlockAllItems
+  0x8203A2A8  Unlocked swing Input for player %d because he hit the ball
+  0x8203A2E8  Unlocked swing Input for player %d because of message kSwingAnimDone
+  0x8203E43C  Cannot Lock when Unlock is not enabled
+  0x8203EB5C  IsUnlockable
+  0x8203F710  UnlockDrillName
+  0x82042250  unlockall
+  0x8204225C  achieveall
+  0x82042268  alwaysunlock
+  0x82042288  gdUnlockProfile
+  0x82042298  gdUnlockProfileRule
+  0x820422AC  gdUnlockProfileItem
+  0x82049444  UnlockablePlayType
+  0x8204A9A0  UnlockRule
+  0x8204A9AC  UnlockItem
+  0x8204A9B8  UnlockGroup
+  0x8204AB98  Condition_Unlocked_Group
+  0x8204AC60  $/tune/unlockables
+  0x8204AC74  Loading unlock rules...
+  0x8204AC98  Unlock rules load done...
+  0x8204ACB4  Loading unlock groups...
+  0x8204ACD0  unlockables.xml
+  0x8204ACE0  invalid unlock group id[ %d ]
+  0x8204AD38  Unlock groups load done...
+  0x8204C120  gdCamData: invalid  Unlockable play type: %i (defaulting to UL_PLAY_ALWAYS)
+  0x8204CC0C  AchievementID
+  0x8204CC58  unlock item name [%s] is too long by %d characters!
+  0x8204CC8C  Invalid unlock dialog message found: %d for item: %s
+  0x8204E418  UnlocksHUD
+  0x8204E4A0       unlocks hud: %d
+  0x82051400  UnlockMatchTimer
+  0x82051700  UnlocksChanged
+  0x82051850  AchievementsLoaded
+  0x82051984  kGamerPictureUnlocked
+  0x8205199C  ItemUnlocked
+  0x8205B19C  iShowUnlockables
+  0x8205BB0C  stxt_view_unlocked
+  0x8205BB20  t_view_unlocked
+  0x8205BFBC  unlockedItems
+  0x8205C3D8  iUnlock
+  0x8205C7AC  Loading unlock screen...
+  0x8205C7C8  Unlock screen loaded.
+  0x82060708  unlockable
+  0x82060724  resetUnlock
+  0x8206075C  stxt_unlocked
+  0x8206076C  No rule hints available to unlock [%s], group [%d]
+  0x820607A0  hint_unlock_outfitab
+  0x820607D4  t_unlock_method
+  0x820607E4  t_unlocked
+  0x82060860  stxt_unlockables
+  0x82060874  t_unlockables
+  0x820608DC  stxt_next_unlocked_item
+  0x82061960  stxt_training_unlock
+  0x82061978  t_unlock
+  0x82061984  stxt_training_unlock_text
+  0x820619A0  t_unlock_text
+  0x82061C24  stxt_load_unlocked_items
+  0x82061C40  t_prompt_unlockables
+  0x82063694  t_unlockable_sweden
+  0x820636B8  t_unlockable_austria
+  0x820636D0  t_unlockable_japan
+  0x820636F0  t_unlockable_usa
+  0x82063714  t_unlockable_china
+  0x82063738  t_unlockable_france
+  0x8206375C  t_unlockable_egypt
+  0x82063780  t_unlockable_brazil
+  0x82063D94  stxt_unlocked_items
+  0x82063DA8  t_unlocked_items
+  0x82064134  stxt_achievements
+  0x82064148  t_achievements
+  0x8206C180  Unlocking Serve at %s
+  0x8206C198  Received ServeUnlockMessage at %s
+  0x8206E840  ServeUnlockMessage
+  0x8206F270  unlocking serve %s
+  0x82079344  Attempt to write achievement while another write is pending
+  0x82079380  XUserWriteAchievements()
+  0x82079550  Reading achievements...
+  0x82079568  Attempt to read achievements while another read is pending
+  0x820795A4  Couldn't create achievement enumerator - error:%d.
+  0x820795D8  Requestor:"%s" - read %d achievements
+  0x825C2508  /xstats/xachievementenum.ashx
+  0x825C2558  /xstats/syncachievements.ashx
+  0x825D3A30  .?AVstateUnlockDialog@gmLogicSinglesMatch@@
+  0x825D7514  .?AVgdUnlockMgr@@
+  0x825D7530  .?AV?$atSingleton@VgdUnlockMgr@@@@
+  0x825D7B18  .?AVgdUnlockProfile@@
+  0x825D834C  .?AVgdUnlockProfileItem@@
+  0x825D8370  .?AVgdUnlockProfileRule@@
+  0x825D8978  .?AVgdUnlockConditionHighestSkill@@
+  0x825D89A4  .?AVgdUnlockConditionSpectatedMatch@@
+  0x825D89D4  .?AVgdUnlockConditionOnlineMatches@@
+  0x825D8A04  .?AVgdUnlockConditionRankedWinStreak@@
+  0x825D8A34  .?AVgdUnlockConditionRankedTourneyWins@@
+  0x825D8A68  .?AVgdUnlockConditionRankedSkunks@@
+  0x825D8A94  .?AVgdUnlockConditionUnlockedGroup@@
+  0x825D8AC4  .?AVgdUnlockConditionPlayTime@@
+  0x825D8AEC  .?AVgdUnlockConditionBeatAllTourneys@@
+  0x825D8B1C  .?AVgdUnlockConditionBeatTraining@@
+  0x825D8B48  .?AVgdUnlockConditionRallyCount@@
+  0x825D8B74  .?AVgdUnlockConditionAce@@
+  0x825D8B98  .?AVgdUnlockConditionVersus@@
+  0x825D8BC0  .?AVgdUnlockConditionChar@@
+  0x825D8BE4  .?AVgdUnlockConditionLevel@@
+  0x825D8C0C  .?AVgdUnlockConditionPointDeficit@@
+  0x825D8C38  .?AVgdUnlockConditionGameDeficit@@
+  0x825D8C64  .?AVgdUnlockConditionSkunk@@
+  0x825D8C8C  .?AVgdUnlockConditionNetHit@@
+  0x825D8CB4  .?AVgdUnlockConditionMultiBounce@@
+  0x825D8CE0  .?AVgdUnlockConditionFinalHitData@@
+  0x825D8D0C  .?AVgdUnlockConditionTourneyTimeData@@
+  0x825D8D3C  .?AVgdUnlockConditionMatchTimeData@@
+  0x825D8D6C  .?AVgdUnlockConditionCharMatchCountData@@
+  0x825D8DA0  .?AVgdUnlockConditionCPUMatchWinsData@@
+  0x825D8DD0  .?AVgdUnlockConditionSettingsData@@
+  0x825D8DFC  .?AVgdUnlockConditionWinMatchData@@
+  0x825D8E28  .?AVgdUnlockConditionWinTournamentData@@
+  0x825D8E5C  .?AVgdUnlockItemRuleData@@
+  0x825D8E80  .?AVgdUnlockDataMgr@@
+  0x825D8EA0  .?AVgdUnlockGroupData@@
+  0x825D8EC0  .?AVgdUnlockItemData@@
+  0x825D8EE0  .?AVgdUnlockRuleData@@
+  0x825D90D8  .?AVxmlNodeStructSwingType@gdUnlockConditionFinalHitData@@
+  0x825D9120  .?AVxmlNodeStructHitType@gdUnlockConditionFinalHitData@@
+  0x825D9168  .?AVxmlNodeStructSpinType@gdUnlockConditionFinalHitData@@
+  0x825D91B0  .?AVxmlNodeStructGamesPerMatch@gdUnlockConditionSettingsData@@
+  0x825D91F8  .?AVxmlNodeStructPointsPerGame@gdUnlockConditionSettingsData@@
+  0x825D9240  .?AVxmlNodeStructGameType@gdUnlockConditionSettingsData@@
+  0x825D9288  .?AVxmlNodeStructDifficulty@gdUnlockConditionSettingsData@@
+  0x825D92CC  .?AVxmlNodeStructGroupType@gdUnlockGroupData@@
+  0x825DE37C  .?AVpongUnlockContext@@
+  0x825DE39C  .?AV?$atSingleton@VpongUnlockContext@@@@
+  0x825DF2E4  .?AVhudUnlocks@@
+  0x825DF3FC  .?AVinteractiveUnlocks@hudLoadingScreen@@
+  0x825E0FE0  .?AV?$atFunctor3@XPAVrlAchievementReader@rage@@$$CBW4NotifyCode@12@PAX@rage@@
+  0x825E1038  .?AVNotifyHandler@?$rlNotifier@VrlAchievementReader@rage@@X@rage@@
+  0x825E1088  .?AV?$atFunctor3@XPAVrlAchievementWriter@rage@@$$CBW4NotifyCode@12@PAX@rage@@
+  0x825E10E0  .?AVNotifyHandler@?$rlNotifier@VrlAchievementWriter@rage@@X@rage@@
+  0x825E2634  .?AV?$pongNetMessageHolder@VServeUnlockMessage@@$03@@
+  0x825E2C64  .?AVServeUnlockMessage@@
+  0x825E6790  .?AV?$atSafeDLListSimple@VNotifyHandler@?$rlNotifier@VrlAchievementWriter@rage@@X@rage@@$0M@@rage@@
+  0x825E6B10  .?AV?$atSafeDLListSimple@VNotifyHandler@?$rlNotifier@VrlAchievementReader@rage@@X@rage@@$0M@@rage@@
+  0x827477DB  MAchieve the highest TrueSkill rating possible in any Ranked online game mode.
+  0x8274783A  +Every outfit in the game has been unlocked.
+  0x82747876  .Every character in the game has been unlocked.
+  0x827478B7  *Every level in the game has been unlocked.
+  0x827478F6  4Every unlockable item in the game has been unlocked.
+  0x82747A90  3Awarded for your first win in any online game mode.
+  0x82747AEA  *Awarded for spectating in an online match.
+  0x82747BAF  Unlocked Juergen
+  0x82747BC3  Juergen has been unlocked.
+  0x82747BE1  Unlocked Kumi
+  0x82747BF2  Kumi has been unlocked.
+  0x82747C0D  Unlocked Solayman
+  0x82747C22  Solayman has been unlocked.
+  0x82747C41  Unlocked Carmen
+  0x82747C54  Carmen has been unlocked.
+  0x82747C71  Unlocked Cassidy
+  0x82747C85  Cassidy has been unlocked.
+  0x82747CA3  Unlocked Jung Soo
+  0x82747CB8  Jung Soo has been unlocked.
+  0x82747CD7  Unlocked Mark
+  0x82747CE8  Mark has been unlocked.
+
+; ── CHARACTER NAME STRINGS ──
+
+  0x82027414  T:\pong\assets
+  0x82027454  T:\pong\bin\iop\modules
+  0x8202746C  //sanpong/pong/pong/assets
+  0x820274A4  pong
+  0x82027878  pongCreature::ReplayStarting
+  0x820279D4  pongCreature::StartEmote
+  0x82027CC8  xmlNodeStructAnimHashEntryArray::Save - Skipping string %s
+  0x8202806C  pongMover::Reset
+  0x82028528  pongBlendLookAtDriver::UpdateBody--%i poses not supported.
+  0x82028564  pongBlendLookAtDriver::UpdateFace--%i poses not supported.
+  0x820287C0  pongSkelLookAtDriver::UpdateBody--bones are missing.
+  0x820288A0  DoBallFudge - skipping
+  0x8202DA34  looping
+  0x8202E010  damping
+  0x8202FF5C  pong_motionblur
+  0x820319D4  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031AB8  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82032990  dampingLinearC
+  0x820329A0  dampingLinearV
+  0x820329B0  dampingLinearV2
+  0x820329C0  dampingAngularC
+  0x820329D0  dampingAngularV
+  0x820329E0  dampingAngularV2
+  0x82033E50  pong_postfx
+  0x820344F4  pong_shadowdepth
+  0x82034508  pong_shadowmap
+  0x82035DB8  pongCameraMgr
+  0x82035DC8  pongcam
+  0x820361C0  pongInlineCinematics
+  0x8203648C  PongCamera
+  0x82036498  pongcamera
+  0x820364A4  pongcamera_tunables
+  0x820364F8  pongcam.1
+  0x82039B2C  pongPlayer::Activate() - creature already activated
+  0x82039B60  ENTER pongPlayer::Deactivate()
+  0x82039B80  pongPlayer::Activate() - creature already deactivated
+  0x82039BB8  pongPlayer::Deactivate() - SetLocalRemoteStatus()
+  0x82039BEC  pongPlayer::Deactivate() - UnRegisterMessages()
+  0x82039C1C  pongPlayer::Deactivate() - StopClothThreads()
+  0x82039C4C  pongPlayer::Deactivate() - RemoveCreatureFromLevel()
+  0x82039C84  EXIT pongPlayer::Deactivate()
+  0x82039CA4  pongPlayer::PostUpdate() - player is not active
+  0x82039CD4  pongPlayer::Update() - player is not active
+  0x82039D00  pongPlayer::Update1() - player is not active
+  0x82039D30  pongPlayer::Update2() - player is not active
+  0x82039DC8  pongPlayer::UpdateReplay() - player is not active
+  0x82039DFC  pongPlayer::Draw() - player is not active
+  0x82039E28  pongPlayer::Render() - player[%d] is not active
+  0x82039E58  pongPlayer::SaveDrawData() - player is not active
+  0x82039FFC  pongPlayer::StartSwing() %s
+  0x8203A070  pongPlayer::FinalizeServe() %s
+  0x8203A114  pongPlayer::FinalizeSwing() %s
+  0x8203A1E0  pongPlayer::EnterServeMode
+  0x8203A1FC  pongPlayer::SetupServe %s
+  0x8203A218  pongPlayer::StartServe() %s
+  0x8203A234  pongPlayer::Serve() %s
+  0x8203A264  pongPlayer::Process() - player is not active
+  0x8203A294  pongPlayer::Process
+  0x8203A330  pongPlayer::HitBall
+  0x8203B4F4  Failed to get state from stopping cue!
+  0x8203B978  [pongAudioManager] In slow mo, but GetTimeWarp() == 1.0f!
+  0x8203BC94  [pongAudioEffectManager] Enabling focus filters.
+  0x8203BCC8  [pongAudioEffectManager] Putting focus filters in bypass.
+  0x8203BDE4  [pongMusicPlayer] Invalid music type!
+  0x8203BE0C  [pongMusicPlayer] Can't find music: %s
+  0x8203BE34  [pongMusicPlayer] Cannot get control from pool!
+  0x8203C374  [pongSoundTracker] Unable to find sound %s
+  0x8203C3A0  [pongSoundTracker] Unable to allocate a 3d control for %s
+  0x8203C7E8  [pongSpeechPlayer::Callout] Unable to find fan callout: %s
+  0x8203D240  pongLerpQueue::FindNeighborIndices - queue is empty!
+  0x8203D48C  CeilingVStooping
+  0x8203D4A0  FloorVStooping
+  0x8203D4B0  WarpVStooping
+  0x8203E1B1  pongBallSpinData.Axis
+  0x8203E1D5  pongBallSpinData.CalcNetworkingValue
+  0x8203E464  pongBallHitData
+  0x8204E158  pongDrawBucketManager::Load() - invalid default bucket: %d
+  0x8204EB58  looping disabled for this mfRegisteredPlayback
+  0x8204F164  invalid table name for level '%s', skipping table loading
+  0x82052488  Tangent
+  0x82052490  ArcTangent
+  0x82056FE4  pongBallInstance::ActivateBall
+  0x82057A40  [pongBallAudio] Sound index %d out of range!
+  0x82057B54  Unhandled instance type (%d) in pongBallAudio::PreImpact
+  0x8205900C  Loading Rockstar Presents screen...
+  0x82059030  Rockstar Presents screen loaded
+  0x820594A4  pongRenderThread__Thread
+  0x820595B4  pongRenderThread releasing Device
+  0x820595D8  pongRenderThread Aquiring Device
+  0x820595FC  pongRenderThread Exiting
+  0x8205963C  pongBootState
+  0x82059FF4  MF doesnt like looping .anim files - reexport %s
+  0x8205A6B8  cache:\rockstar.cachelist.new
+  0x8205A6D8  cache:\rockstar.cachelist
+  0x8205B104  loopingtourneymovie
+  0x8205B118  Pong_HUD_001
+  0x8205E094  pongAttractState
+  0x8205E374  [Boot Movie] StopMovieEvent received, stopping movie...
+  0x8205E478  pongLogosState
+  0x8205E5C4  pongTrainingUIState
+  0x8205E85C  pongLoadingState
+  0x8205E9C8  pongPauseState
+  0x8205EB30  stxt_rockstar_presents
+  0x8205EB48  t_rockstar_presents
+  0x8205EC20  [Rockstar Presents Movie] Setting StopMovieEvent...
+  0x8205EC54  [Rockstar Presents Movie] Waiting for StoppedMovieEvent...
+  0x8205ED50  pongCreditsState
+  0x8205EF5C  pongCharViewState
+  0x8205F230  pongDialogState
+  0x8205F784  pongFrontendState
+  0x8205F854  pongLegalsState
+  0x8205FD34  pongPause_001
+  0x82062790  Pong_Popups_001
+  0x82062A64  pongUI_001
+  0x820653C0  pongCutSceneManager::Load() - cannot load cut scene '%s'
+  0x820655F4  pongCSActionCamAnim::Play() - empty camera shot sequence
+  0x82066E14  Packet is too small - dropping
+  0x82066E34  Packet is too big - dropping
+  0x82066E54  Packet size doesn't match recvfrom size - dropping
+  0x82066E88  Packet has no payload - dropping
+  0x82066EAC  Packet payload is too big - dropping
+  0x82069F24  Thread pool thread:%d stopping...
+  0x82069F7C  Thread pool dispatcher stopping...
+  0x8206A314  pong_lightshaft
+  0x8206A524  pongLightGlowSquare
+  0x8206A568  pongLightGlowCapsule
+  0x8206AC30  pong_itztrail
+  0x8206C4F0  pongRemotePlayer::StartJunkSwing
+  0x8206C584  PongNetGameModeCoordinator::Reset()
+  0x8206D798  pongLiveManager
+  0x8206D980  pongLiveManager::StartSession called..
+  0x8206D9A8  pongLiveManager::EndSession() called..
+  0x82070DE4  PongBallHitDataStack::Insert failed
+  0x82070ED8  PongNet
+  0x82071844  pongGameState
+  0x82071B78  pongCSReplayDirector
+  0x82071DC8  sgIter - Skipping non-sgNode '%s'
+  0x820783E0  S%d: Dropping "%s" (%s), id:%d, size:%d, seq:%d
+  0x820785A0  Dropping connection:%d
+  0x82078620  netPingMessage
+  0x82078630  netPongMessage
+  0x8207A3F8  c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+  0x825C2A30  .?AVpongShell@@
+  0x825C2A48  .?AV?$atSingleton@VpongShell@@@@
+  0x825D2AD8  .?AVpongCreatureType@@
+  0x825D2AF8  .?AVpongAnimationInfo@@
+  0x825D2B84  .?AVpongCreature@@
+  0x825D2BBC  .?AVpongLookAtController@@
+  0x825D2BE0  .?AVpongRenderable@@
+  0x825D2C3C  .?AVpongLookAtDriver@@
+  0x825D2C5C  .?AVpongBlendLookAtDriver@@
+  0x825D2CDC  .?AVpongBallInstance@@
+  0x825D2DC0  .?AVpongCreatureInst@@
+  0x825D2DE0  .?AVpongMover@@
+  0x825D2DF8  .?AVpongBlender@@
+  0x825D2EF8  .?AVpongHairData@@
+  0x825D2F38  .?AVpongLocomotionController@@
+  0x825D2FE8  .?AVpongSkelLookAtDriver@@
+  0x825D4170  .?AVpongDrillSmash@@
+  0x825D4190  .?AVpongDrillCounterSpin@@
+  0x825D41B4  .?AVpongDrillFocusShot@@
+  0x825D41D8  .?AVpongDrillSpin@@
+  0x825D41F4  .?AVpongDrillCharging@@
+  0x825D4214  .?AVpongDrillSoftShot@@
+  0x825D4234  .?AVpongDrillPlacement@@
+  0x825D4258  .?AVpongDrillReturn@@
+  0x825D4278  .?AVpongDrillServing@@
+  0x825D4298  .?AVpongDrillServeMeter@@
+  0x825D42BC  .?AVpongDrillMovement@@
+  0x825D42DC  .?AVpongTrainingDrill@@
+  0x825D4A54  .?AVpongPostEffects@@
+  0x825D4A74  .?AVpongShadowMap@@
+  0x825D4AFC  .?AVpongGammaControl@@
+  0x825D50E0  .?AVpongCameraMgr@@
+  0x825D5118  .?AVpongRandomizer@@
+  0x825D5138  .?AVpongCineCamMgr@@
+  0x825D5158  .?AVpongCamGovernor@@
+  0x825D5178  .?AVpongCameraState@@
+  0x825D5198  .?AVpongInlineCinematics@@
+  0x825D529C  .?AVpongCMCamera@@
+  0x825D6F7C  .?AVpongPlayer@@
+  0x825D7044  .?AVpongPlayerShaderParams@@
+  0x825D7388  .?AVpongAudioManager@@
+  0x825D73A8  .?AVpongControlGroup@@
+  0x825D73C8  .?AVpongAmbiencePlayer@@
+  0x825D7468  .?AVpongSaveFile@@
+  0x825D7D60  .?AVxmlNodeStructSwingType@pongBallHitData@@
+  0x825D7D98  .?AVxmlNodeStructHitZone@pongBallHitData@@
+  0x825D7DCC  .?AVpongBallHitData@@
+  0x825D9600  .?AVpongDrawable@@
+  0x825D961C  .?AVpongDrawBucketManager@@
+  0x825D9C28  .?AVpongSurface@@
+  0x825DAE70  .?AVcmArcTangent@rage@@
+  0x825DAE90  .?AVcmTangent@rage@@
+  0x825DD200  .?AU?$cmOperatorCtor@VcmArcTangent@rage@@@rage@@
+  0x825DD23C  .?AU?$cmOperatorCtor@VcmTangent@rage@@@rage@@
+  0x825DE008  .?AVpongInstance@@
+  0x825DE12C  .?AVpongBallHit@@
+  0x825DE148  .?AVpongBallAudio@@
+  0x825DE320  .?AV?$atSingleton@VpongSaveFile@@@@
+  0x825DE37C  .?AVpongUnlockContext@@
+  0x825DE39C  .?AV?$atSingleton@VpongUnlockContext@@@@
+  0x825DE3D0  .?AVpongShellContext@@
+  0x825DE3F0  .?AV?$atSingleton@VpongShellContext@@@@
+  0x825DE484  .?AVpongContextBase@@
+  0x825DE4A4  .?AVpongControllerContext@@
+  0x825DE4C8  .?AV?$atSingleton@VpongControllerContext@@@@
+  0x825DE500  .?AV?$atSingleton@VpongScreenCaptureMgr@@@@
+  0x825DE564  .?AVPongNet@@
+  0x825DE57C  .?AV?$atSingleton@VPongNet@@@@
+  0x825DE780  .?AVpongCutScenePlayer@@
+  0x825DE7A4  .?AV?$atSingleton@VpongCutScenePlayer@@@@
+  0x825DE7D8  .?AVpongCutSceneManager@@
+  0x825DE7FC  .?AV?$atSingleton@VpongCutSceneManager@@@@
+  0x825DE830  .?AVpongConfig@@
+  0x825DE84C  .?AV?$atSingleton@VpongConfig@@@@
+  0x825DE878  .?AVpongScreenCaptureMgr@@
+  0x825DE8E4  .?AVpongRenderThread@@
+  0x825DE904  .?AVpongBootState@@
+  0x825DE920  .?AVpongStateBase@@
+  0x825DECB0  .?AVpongScreenCapture@@
+  0x825DEF08  .?AVpongFrontendLive@@
+  0x825DEF40  .?AVpongAttractContext@@
+  0x825DEF64  .?AVpongAttractState@@
+  0x825DEF9C  .?AVpongLogosContext@@
+  0x825DEFBC  .?AVpongLogosState@@
+  0x825DEFDC  .?AVpongTrainingUIContext@@
+  0x825DF000  .?AVpongTrainingUIState@@
+  0x825DF024  .?AVpongTrainingLoadingContext@@
+  0x825DF050  .?AVpongLoadingContext@@
+  0x825DF074  .?AVpongLoadingState@@
+  0x825DF094  .?AVpongPauseContext@@
+  0x825DF0B4  .?AVpongPauseState@@
+  0x825DF0EC  .?AVpongCreditsState@@
+  0x825DF10C  .?AVpongCreditsContext@@
+  0x825DF130  .?AVpongCharViewContext@@
+  0x825DF154  .?AVpongCharViewState@@
+  0x825DF174  .?AVpongDialogContext@@
+  0x825DF194  .?AVpongDialogState@@
+  0x825DF1B4  .?AVpongFrontendContext@@
+  0x825DF1D8  .?AVpongFrontendState@@
+  0x825DF1F8  .?AVpongLegalsState@@
+  0x825DF218  .?AVpongLegalsContext@@
+  0x825DF318  .?AVpongXMVMovie@@
+  0x825DF334  .?AVpongMovie@@
+  0x825DF34C  .?AVpongBinkMovie@@
+  0x825DF51C  .?AVpongStatsContext@@
+  0x825DF53C  .?AVpongLeaderboardContext@@
+  0x825DF850  .?AVpongCSActionShowAllAmbients@@
+  0x825DF87C  .?AVpongCSActionCharAmbAnim@@
+  0x825DF8A4  .?AVpongCSActionLvlAmbAnim@@
+  0x825DF8CC  .?AVpongCSActionLvlAnim@@
+  0x825DF8F0  .?AVpongCSActionPlayAudio@@
+  0x825DF914  .?AVpongCSActionCharVisible@@
+  0x825DF93C  .?AVpongCSActionCharAnim@@
+  0x825DF960  .?AVpongCSActionCamAnim@@
+  0x825DF984  .?AVpongCSActionWait@@
+  0x825DF9A4  .?AVpongCSActionElse@@
+  0x825DF9C4  .?AVpongCSActionIf@@
+  0x825DF9E4  .?AVpongCSActionLoop@@
+  0x825DFA04  .?AVpongCSActionDoInOrder@@
+  0x825DFA28  .?AVpongCSActionDoTogether@@
+  0x825DFA50  .?AVpongCutScene@@
+  0x825DFA6C  .?AVpongCSAction@@
+  0x825E0230  .?AVpongScrnTransSwipe@@
+  0x825E0254  .?AVpongScrnTransFreezeAndCrossFade@@
+  0x825E0284  .?AVpongScrnTransFadeIn@@
+  0x825E02A8  .?AVpongScrnTransFreezeAndFadeOut@@
+  0x825E02D4  .?AVpongScrnTransition@@
+  0x825E02F8  .?AVpongLightGlowMgr@@
+  0x825E0318  .?AVpongLightGlowSquare@@
+  0x825E033C  .?AVpongLightGlowCapsule@@
+  0x825E09BC  .?AVpongLiveManager@@
+  0x825E09DC  .?AV?$atSingleton@VpongLiveManager@@@@
+  0x825E0A4C  .?AVPongNetMessage@@
+  0x825E0ABC  .?AVpongRemotePlayer@@
+  0x825E0ADC  .?AVPongNetGameModeManager@@
+  0x825E0B04  .?AVPongNetGameModeCoordinator@@
+  0x825E0B30  .?AVPongNetExhibitionCoordinator@@
+  0x825E0B5C  .?AVPongNetRoundRobinCoordinator@@
+  0x825E0B88  .?AVPongNetProxyCoordinator@@
+  0x825E11F4  .?AVSessionManager@pongLiveManager@@
+  0x825E1424  .?AV?$pongNetMessageHolder@VPlayerCacheMessage@@$00@@
+  0x825E14F8  .?AV?$pongNetMessageHolder@VRoundRobinDataMessage@@$00@@
+  0x825E153C  .?AV?$pongNetMessageHolder@VMatchDataMessage@@$01@@
+  0x825E1578  .?AV?$pongNetMessageHolder@VRequestDataMessage@@$01@@
+  0x825E15B8  .?AV?$pongNetMessageHolder@VTwoMinuteWarningMessage@@$01@@
+  0x825E15FC  .?AV?$pongNetMessageHolder@VMatchStatsMessage@@$01@@
+  0x825E1640  .?AV?$pongNetMessageHolder@VGamerUpdateMessage@@$0BP@@@
+  0x825E1680  .?AV?$pongNetMessageHolder@VGamerReadyMessage@@$0BP@@@
+  0x825E16C0  .?AV?$pongNetMessageHolder@VLoadDataQueryResponse@@$01@@
+  0x825E1704  .?AV?$pongNetMessageHolder@VLoadDataQuery@@$01@@
+  0x825E1740  .?AV?$pongNetMessageHolder@VInternalMessageRelay@@$09@@
+  0x825E1780  .?AV?$pongNetMessageHolder@VTerminateRallyMessage@@$09@@
+  0x825E17C4  .?AV?$pongNetMessageHolder@VForfeitMatchMessage@@$04@@
+  0x825E1898  .?AV?$pongNetMessageHolder@VScoreMessage@@$04@@
+  0x825E18D0  .?AV?$pongNetMessageHolder@VEnteringReplayMessage@@$01@@
+  0x825E1914  .?AV?$pongNetMessageHolder@VReplayEmoteMessage@@$04@@
+  0x825E1958  .?AV?$pongNetMessageHolder@VPointDeclaredMessage@@$04@@
+  0x825E1998  .?AV?$pongNetMessageHolder@VPostPointExitMessage@@$01@@
+  0x825E19D8  .?AV?$pongNetMessageHolder@VMatchScoreMessage@@$04@@
+  0x825E1A60  .?AV?$pongNetMessageHolder@VMatchDataSyncMessage@@$01@@
+  0x825E1B30  .?AV?$pongNetMessageHolder@VNextMatchMessage@@$00@@
+  0x825E1BC0  .?AV?$pongNetMessageHolder@VSkipReplayMessage@@$01@@
+  0x825E1C00  .?AV?$pongNetMessageHolder@VUserRequestReplayMessage@@$01@@
+  0x825E1C44  .?AV?$pongNetMessageHolder@VLevelConfigMessage@@$03@@
+  0x825E1D18  .?AV?$pongNetMessageHolder@VRemoveSpectatorMessage@@$01@@
+  0x825E1D60  .?AV?$pongNetMessageHolder@VDenySpectatorMessage@@$01@@
+  0x825E1DA0  .?AV?$pongNetMessageHolder@VAcceptSpectatorMessage@@$01@@
+  0x825E1DE4  .?AV?$pongNetMessageHolder@VAcceptMessage@@$01@@
+  0x825E1E20  .?AV?$pongNetMessageHolder@VSpectatorQuitMessage@@$0BO@@@
+  0x825E1E68  .?AV?$pongNetMessageHolder@VDropSpectatorConnection@@$01@@
+  0x825E1EB0  .?AV?$pongNetMessageHolder@VSpectatorConnectRequest@@$00@@
+  0x825E1EF8  .?AV?$pongNetMessageHolder@VSinglesConnectRequest@@$00@@
+  0x825E1F40  .?AV?$pongNetMessageHolder@VDataRequestFailedMessage@@$01@@
+  0x825E1F84  .?AV?$pongNetMessageHolder@VDataSendMessage@@$01@@
+  0x825E1FC0  .?AV?$pongNetMessageHolder@VDataRequestMessage@@$01@@
+  0x825E2000  .?AV?$pongNetMessageHolder@VStateSyncMessage@@$01@@
+  0x825E2040  .?AV?$pongNetMessageHolder@VStateSyncRequestMessage@@$01@@
+  0x825E20D0  .?AV?$pongNetMessageHolder@VSwingStartedMessage@@$0BE@@@
+  0x825E2114  .?AV?$pongNetMessageHolder@VExitPostGameMessage@@$01@@
+  0x825E2154  .?AV?$pongNetMessageHolder@VServeLetMessage@@$01@@
+  0x825E2190  .?AV?$pongNetMessageHolder@VServeFaultMessage@@$01@@
+  0x825E21D0  .?AV?$pongNetMessageHolder@VServeStartedMessage@@$03@@
+  0x825E2210  .?AV?$pongNetMessageHolder@VServeAbortMessage@@$03@@
+  0x825E2250  .?AV?$pongNetMessageHolder@VServeReadyMessage@@$03@@
+  0x825E22D8  .?AV?$pongNetMessageHolder@VPlayerStopMessage@@$0MI@@@
+  0x825E2318  .?AV?$pongNetMessageHolder@VPlayerMovementMessage@@$0MI@@@
+  0x825E2360  .?AV?$pongNetMessageHolder@VPlayerUpdateMessage@@$0MI@@@
+  0x825E2488  .?AV?$pongNetMessageHolder@VSessionTimeSyncMessage@@$09@@
+  0x825E25B0  .?AV?$pongNetMessageHolder@VMatchTimeSyncMessage@@$09@@
+  0x825E25F0  .?AV?$pongNetMessageHolder@VRemoteServeReadyMessage@@$03@@
+  0x825E2634  .?AV?$pongNetMessageHolder@VServeUnlockMessage@@$03@@
+  0x825E26C0  .?AV?$pongNetMessageHolder@VBallHitMessage@@$09@@
+  0x825E26FC  .?AV?$pongNetMessageHolder@VHitMessage@@$09@@
+  0x825E2734  .?AV?$pongNetMessageHolder@VHitDataMessage@@$0DC@@@
+  0x825E2CD0  .?AVpongNetMessageHolderBase@@
+  0x825E3274  .?AVpongPresence@@
+  0x825E3790  .?AVpongPaddle@@
+  0x825E37C8  .?AVpongGameContext@@
+  0x825E37E8  .?AVpongGameState@@
+  0x825E3804  .?AVpongGame@@
+  0x825E6444  .?AVpongHUDLive@@
+  0x825E6460  .?AVpongCSReplayDirector@@
+  0x82741893  Liu Ping
+  0x827418DC  Rockstar Table Tennis
+  0x82741E12  Rockstar Games
+  0x82741E24  Rockstar San Diego
+  0x82742EB1  Liu Ping
+  0x82742EFD  Rockstar Tischtennis
+  0x827431B3  Die Pong-Halle
+  0x82743416  Rockstar Games
+  0x82743428  Rockstar San Diego
+  0x8274443D  Liu Ping
+  0x8274448B  Rockstar Table Tennis
+  0x82744799  n Pong
+  0x827449FE  Rockstar Games
+  0x82744A10  Rockstar San Diego
+  0x82745AE6  Liu Ping
+  0x82745B30  Rockstar Table Tennis
+  0x82745E05  La sala di ping pong
+  0x8274603F  Rockstar Games
+  0x82746051  Rockstar San Diego
+  0x82746FB1  Liu Ping
+  0x82746FF8  Rockstar Table Tennis
+  0x8274728C  The Pong Hall
+  0x827474AA  Rockstar Games
+  0x827474BC  Rockstar San Diego
+
+; ── LIKELY HASH/ID CONSTANTS (from cmpwi/xori instructions) ──
+

@@ -1,0 +1,861 @@
+; ===================================================================
+; AI / PLAYER STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x8200191C  DOMAIN error
+  0x82009280  CCalMoviePlayer::Rewind
+  0x82009298  CCalMoviePlayer::Seek
+  0x820275AC  softshot
+  0x8202782C  noplayerdraw
+  0x820278A0  Player %d can't swing because a swing or junk swing is already in progress
+  0x820279F0  pongCreature::Teleport() - teleporting player[%d] to [%f,%f,%f]
+  0x82027A30  Player %d is queueing a swing
+  0x82027A50  Player %d is dequeueing a swing
+  0x82027A8C  Function calling Teleport is %s (player %d)%s
+  0x820281A0  Interrupting Player %d Swing Blender
+  0x820281C8  Interrupting Player %d Serve Blender
+  0x820281F0  Interrupting Player %d Junk Swing Blender
+  0x8202826C  pcrAnimObserved
+  0x82028290  pcrAnimObserved - Can't find anim '%s'.
+  0x82028AF8  pcrServeData
+  0x82028B2C  ServeType
+  0x82028C34  Player %d: starting post-point anim '%s'
+  0x82028E98  ServeRightStopWrong
+  0x82028EAC  ServeRightStop
+  0x82028EBC  ServeRightMove
+  0x82028ECC  ServeRightStart
+  0x82028EDC  ServeRightIdleInner
+  0x82028EF0  ServeRightIdleExit
+  0x82028F04  ServeRightIdleEnter
+  0x82028F18  ServeLeftStopWrong
+  0x82028F2C  ServeLeftStop
+  0x82028F3C  ServeLeftMove
+  0x82028F4C  ServeLeftStart
+  0x82028F5C  ServeLeftIdleInner
+  0x82028F70  ServeLeftIdleExit
+  0x82028F84  ServeLeftIdleEnter
+  0x82028F98  ServeIdle
+  0x8202E79C  SoftShotMidPush
+  0x8202E7AC  SoftShotNearPush
+  0x8202FEBC  Cloth Simulation thread for player %d starting on CPU %d
+  0x82030094  TwoPlayer
+  0x820300A0  OnePlayer
+  0x820300AC  OnePlayerPZ
+  0x820300B8  OnePlayerNZ
+  0x820300C4  TwoPlayerPZ
+  0x820300D0  TwoPlayerNZ
+  0x820302AC  gdDrillServeMeterData
+  0x82030304  gdDrillSoftShotData
+  0x8203033C  gdDrillFocusShotData
+  0x8203036C  gdDrillSmashData
+  0x82030908  PrePreServe
+  0x82030914  PreServeSpectatorSyncState
+  0x82030930  PreServeSync
+  0x82030940  PreServe
+  0x8203094C  ServeToss
+  0x82030958  ServeHit
+  0x820309AC  ServeBounce
+  0x820309B8  HitNetServe
+  0x82030A14  AwaitServeReturnHit
+  0x82030AB4  our scoring player %d peer scoringPlayer %d
+  0x82030AE0  Possibly not enough time for another point, forcing timer to expire! (My timer=%f, Opponent timer=%f)
+  0x820318FC  Serve Meter
+  0x82031908  Serve Aim
+  0x82031928  Soft Shot
+  0x82031948  Focus Shot
+  0x82031A78  pongDrillSoftShot::SetUpBallHitData() - unknown spin type [%d]
+  0x82031BD0  pongDrillSmash::ChooseRobotTarget() - no robot target on the same side as table target, pick first one
+  0x820322F4  LS_LVL_TRAINING:ROBOPONG_MOTOR_LP
+  0x82032518  pongLadder::ComputeLadder() - unknown opponent type '%d' for match '%d'
+  0x820326E4  ServeTip
+  0x8203271C  NoSoftShotsTip
+  0x82032740  BadSoftShotTip
+  0x82032768  FirstServeTip
+  0x82032794  multiplayerhelptips
+  0x82032824  Player won the point, retracting help tip
+  0x820342D4  crossfade screenshot
+  0x82035010  c:/Screenshot
+  0x82035CCC  shot change: %s
+  0x82035CDC  shot not found in set: %s
+  0x82035DD0  loading shot tuning files...
+  0x82035DF0  shot tuning files loaded
+  0x82035F2C  shotprintdebug
+  0x82035FDC  clips.xml refers to shot '%s' missing in shots.xml
+  0x820360B4  inline_serveready
+  0x820360C8  inline_serve
+  0x820361D8  Hit zone is '%s', swing type is '%s', playerID is %d
+  0x820367E0  trying to setup a shot when players are invalid.  zeroing.  please see shot info just printed.
+  0x82036B50  IL_TVShotNearPlayer
+  0x82036B64  IL_TVShotFarPlayer
+  0x82036CD0  [inlineMiniEmote] player %d is too late to activate their mini-emote
+  0x82036E00  [inlineMiniEmote] Player %d started more than one post-point animation?
+  0x82036EA8  CineCamOneshot
+  0x82036EE8  PlayerN_Tossing
+  0x82036EF8  PlayerN_MoveMode
+  0x82036F0C  PlayerN_Height
+  0x82036F1C  PlayerF_MoveMode
+  0x82036F30  PlayerF_Height
+  0x82036F84  SwingCam_SideShiftServe
+  0x82037050  PlayerPosZPos
+  0x82037060  PlayerPosZPosEndOfShot
+  0x82037078  PlayerPosZFacingDir
+  0x8203708C  PlayerPaddlePosZPosEndOfShot
+  0x820370AC  PlayerPosZHeadHeight
+  0x820370C4  PlayerNegZPos
+  0x820370D4  PlayerNegZPosEndOfShot
+  0x820370EC  PlayerNegZFacingDir
+  0x82037100  PlayerPaddleNegZPosEndOfShot
+  0x82037120  PlayerNegZHeadHeight
+  0x82037138  PlayerPosZ_X_Norm
+  0x8203714C  PlayerPosZ_Z_Norm
+  0x82037160  PlayerNegZ_X_Norm
+  0x82037174  PlayerNegZ_Z_Norm
+  0x82037188  PlayerNPos
+  0x82037194  PlayerFPos
+  0x820371A0  PlayerN_X_Norm
+  0x820371B0  PlayerN_Z_Norm
+  0x820371C0  PlayerF_X_Norm
+  0x820371D0  PlayerF_Z_Norm
+  0x82037388  ServeLockedIn
+  0x82037720  All_StartBehindPlayer
+  0x82038CF4  Cheat_AIBattle
+  0x82038E70  dirtyPlayerAssert
+  0x82038E88  [CHAR LOAD THREAD] CANCEL BEFORE GetAsyncLoadCharInfo() player[%d] char[%d] var[%d] lod[%d]
+  0x82038EE8  [CHAR LOAD THREAD] CANCEL AFTER GetAsyncLoadCharInfo() player[%d] char[%d] var[%d] lod[%d]
+  0x82038F48  [CHAR LOAD THREAD] AsyncUnloadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82038F98  [CHAR LOAD THREAD] AsyncUnloadCharacter() DONE player[%d] char[%d] var[%d] lod[%d]
+  0x82038FF0  [CHAR LOAD THREAD] CANCEL AFTER AsyncUnloadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82039050  [CHAR LOAD THREAD] StartLoadPaddle() player[%d] char[%d] var[%d] lod[%d]
+  0x820390A0  [CHAR LOAD THREAD] CANCEL AFTER StartLoadPaddle() player[%d] char[%d] var[%d] lod[%d]
+  0x820390F8  [CHAR LOAD THREAD] AsyncStartLoadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82039150  [CHAR LOAD THREAD] AsyncStartLoadCharacter() DONE player[%d] char[%d] var[%d] lod[%d]
+  0x820391A8  [CHAR LOAD THREAD] CANCEL AFTER AsyncStartLoadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82039208  [CHAR LOAD THREAD] BEGIN UpdateAsyncLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x82039258  [CHAR LOAD THREAD] CANCEL AFTER UpdateAsyncLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x820392B0  [CHAR LOAD THREAD] LOAD COMPLETE player[%d] char[%d] var[%d] lod[%d]
+  0x820392F8  plrPlayerMgr
+  0x82039338  [PLAYERMGR] character load complete, AddCreatureToLevel() player[%d] char[%d] var[%d] lod[%d]
+  0x82039398  [PLAYERMGR] InitCloth() player[%d] char[%d] var[%d] lod[%d]
+  0x820393D4  [PLAYERMGR] FinishLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x82039414  [PLAYERMGR] need to wait for player[%d] load to end
+  0x82039448  [PLAYERMGR] calling RequestPlayerLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x82039494  PlayerBufferSize
+  0x820394A8  PlayerBufferSizeFE
+  0x820394BC  [PLAYERMGR] load player[%d] char[%d] var[%d] lod[%d] REQUESTED
+  0x82039500  Character and variation is the same for both players! Using alternate variation for the away player.
+  0x82039568  loading Player[%d] from game data: Character[%d], Variation[%d]
+  0x820396A8  canceling character load stream for Player[%d] LOD[%d]
+  0x820396E0  [PLAYERMGR] deactivate player[%d] REQUESTED
+  0x82039738  [PLAYERMGR] StopCharacterLoad() called for player[%d]
+  0x82039770  [PLAYERMGR] SET STOP CHARACTER LOAD EVENT player[%d]
+  0x820397A8  No home player set
+  0x820397D0  [PLAYERMGR] Deactivating Player[%d]
+  0x820397F4  [PLAYERMGR] no need to deactivate player[%d]
+  0x82039824  are you requesting loading player of the correct LOD?
+  0x8203985C  Player[%d] still active but switching to LOD[%d]
+  0x82039890  [PLAYERMGR] SET LOAD CHAR EVENT player[%d] char[%d] var[%d] lod[%d]
+  0x820398D4  already loaded character for player %d: %s
+  0x82039900  loading character for player %d: %s (%d)
+  0x8203992C  started streaming player[%d] char[%d] var[%d] lod[%d]
+  0x82039964  finished streaming character for player[%d] lod[%d]
+  0x82039998  unloading player[%d] lod[%d]
+  0x82039AD4  AfterOpponentSwingStart
+  0x82039AF4  noautoserves
+  0x82039B14  servemeter
+  0x82039B2C  pongPlayer::Activate() - creature already activated
+  0x82039B60  ENTER pongPlayer::Deactivate()
+  0x82039B80  pongPlayer::Activate() - creature already deactivated
+  0x82039BB8  pongPlayer::Deactivate() - SetLocalRemoteStatus()
+  0x82039BEC  pongPlayer::Deactivate() - UnRegisterMessages()
+  0x82039C1C  pongPlayer::Deactivate() - StopClothThreads()
+  0x82039C4C  pongPlayer::Deactivate() - RemoveCreatureFromLevel()
+  0x82039C84  EXIT pongPlayer::Deactivate()
+  0x82039CA4  pongPlayer::PostUpdate() - player is not active
+  0x82039CD4  pongPlayer::Update() - player is not active
+  0x82039D00  pongPlayer::Update1() - player is not active
+  0x82039D30  pongPlayer::Update2() - player is not active
+  0x82039D60  === Player %d hit the ball ===
+  0x82039D80  Player %d can't hit ball because:
+  0x82039DC8  pongPlayer::UpdateReplay() - player is not active
+  0x82039DFC  pongPlayer::Draw() - player is not active
+  0x82039E28  pongPlayer::Render() - player[%d] is not active
+  0x82039E58  pongPlayer::SaveDrawData() - player is not active
+  0x82039E8C  Trying out serve contact pos %d
+  0x82039EAC  Player ID %d just pressed the swing button at time %f sec
+  0x82039EE8  player %d: activated ITZ
+  0x82039F04  Player %d tried to swing, but swing input was locked out.
+  0x82039F40  Player %d tried to swing,  but the move mode was invalid.
+  0x82039F90  Locked Out swing Input for player %d.
+  0x82039FB8  Called Init Swing for Player %d
+  0x82039FD8  Called Setup Swing for Player %d
+  0x82039FFC  pongPlayer::StartSwing() %s
+  0x8203A018  Attempting Specialty Swing for player: %d
+  0x8203A044  Swing Pending set to false for player %d
+  0x8203A070  pongPlayer::FinalizeServe() %s
+  0x8203A090  Player ID %d just reached anticipation at time %f
+  0x8203A0C8  The elapsed time from button press to anticipation for player%d is %f ms
+  0x8203A114  pongPlayer::FinalizeSwing() %s
+  0x8203A134  Player ID %d just reached anticipation at time %f sec
+  0x8203A170  The ellapsed time from button press to anticipation for player%d is %f ms
+  0x8203A1BD  Player %d started a junk swing
+  0x8203A1E0  pongPlayer::EnterServeMode
+  0x8203A1FC  pongPlayer::SetupServe %s
+  0x8203A218  pongPlayer::StartServe() %s
+  0x8203A234  pongPlayer::Serve() %s
+  0x8203A24C  Player#%d
+  0x8203A264  pongPlayer::Process() - player is not active
+  0x8203A294  pongPlayer::Process
+  0x8203A2A8  Unlocked swing Input for player %d because he hit the ball
+  0x8203A2E8  Unlocked swing Input for player %d because of message kSwingAnimDone
+  0x8203A330  pongPlayer::HitBall
+  0x8203A358  Player ID %d just hit the ball at time %f sec
+  0x8203A388  The elapsed time between anticipation and hit for player%d is %f ms
+  0x8203A3D0  The ellapsed time between player0 and player1 anticipations is %f ms
+  0x8203A6D0  PlayerBiasMatchWeight
+  0x8203A6E8  PlayerBiasRegionalWeight
+  0x8203A704  PlayerBiasRelationshipWeight
+  0x8203A848  pongPlayerShaderParams::UpdateParams() called before m_player is set!
+  0x8203A890  m_player->GetCreature()== NULL
+  0x8203A8B0  m_player->GetCreature()->GetCreatureType()->GetModelRM() == NULL
+  0x8203B6D4  %s:Announcer_Serve_%s
+  0x8203B77C  %s:Announcer_LetServe
+  0x8203BDC8  TRAINING_START_LP
+  0x8203BDE4  [pongMusicPlayer] Invalid music type!
+  0x8203BE0C  [pongMusicPlayer] Can't find music: %s
+  0x8203BE34  [pongMusicPlayer] Cannot get control from pool!
+  0x8203C190  [amb player] Unable to find POINT sound: '%s'
+  0x8203C208  [pongAmbiencePlayer] Cheer timer expired.  Requesting priority drop.
+  0x8203C250  [pongAmbiencePlayer::ForcePriorityDrop] Reducing current cheer priority to minimum.
+  0x8203C2A8  [pongAmbiencePlayer::ForcePriorityDrop] NOT dropping cheer priority since we're in kAnticipateRally!
+  0x8203C4BC  LS_LVL_TRAINING:TRAINING_SUB_SUCCESS
+  0x8203C4E4  LS_LVL_TRAINING:TRAINING_SUB_FAIL
+  0x8203C508  LS_LVL_TRAINING:TRAINING_RANK_UP
+  0x8203C5B8  [audMsgSink] Got a face anim message for player %d but ignoring because subject seems to be player %d
+  0x8203C620  [audMsgSink] Got a face anim message for player %d, but unable to determine camera subject!!
+  0x8203C6E0  [audMsgSink::Update] Want fan callout in post point CS, but no player visible?!?!  Picking random player :(
+  0x8203C7E8  [pongSpeechPlayer::Callout] Unable to find fan callout: %s
+  0x8203C828  [pongSpeechPlayer::DoSwingSpeech] Rejecting swing speech '%s' because player %d is already talking!
+  0x8203C890  [pongSpeechPlayer::DoEmoteSpeech] Playing speech sound '%s' for player %d (reverb volume %f)
+  0x8203C8F0  [pongSpeechPlayer::DoEmoteSpeech] Unable to find speech sound '%s' for player %d!
+  0x8203C948  [pongSpeechPlayer] Playing emote/post point speech for both characters this frame!
+  0x8203CB68  players
+  0x8203CC20  playername
+  0x8203CC2C  playermodel
+  0x8203CD10  networkedShotTester
+  0x8203CD28  gdGameData::CalculateVariation() - unable to find unique variation for player %d
+  0x8203DA2C  gdCharPlayerBias
+  0x8203DAC0  OpponentName
+  0x8203DADC  AceServe
+  0x8203DB4C  FocusShotSucc
+  0x8203DB5C  FocusShotFail
+  0x8203DB6C  FocusShotRetSuccess
+  0x8203DB80  FocusShotRetFail
+  0x8203DBE8  ExtremeAngleShot
+  0x8203DC30  FarShot
+  0x8203DC38  FarShotDist
+  0x8203DC64  SlamShot
+  0x8203E0D4  SoftServe
+  0x8203E34D  ServesThisGame
+  0x8203E379  ServeMeterVal
+  0x8203E391  ServeHitVel
+  0x8203E3A9  ServeHitAngVel
+  0x8203E3C4  Is Serve
+  0x8203E3D0  Not a Serve
+  0x8203E4E4  ServeMeterVal
+  0x8203E52C  IsServe
+  0x8203E540  ServeHitVel
+  0x8203E54C  ServeHitAngVel
+  0x8203F260  gdShotData
+  0x8203F280  empty name specified for either cam or view in shot %s
+  0x8203F2B8  gdShotName
+  0x8203F2C4  gdShotSet
+  0x8203F308  shot in shot set not found: %s
+  0x8203F328  gdShotMultiSet
+  0x8203F338  no subsets found in shot set %s
+  0x8203F358  minimum number of shots in multi set %s is 0!
+  0x8203F3A0  Loading camera shot data...
+  0x8203F3BC  shots.xml
+  0x8203F3C8  unknown node type found in shots.xml: %s
+  0x8203F3F4  shot %s has bad cam name: %s
+  0x8203F414  shot %s has bad view name: %s
+  0x8203F434  Camera shot data load done...
+  0x8203F6F0  NumEasyShots
+  0x8203F700  ProbSameShot
+  0x8203FC08  gdTrainingDrillData::PostLoadProperties() - 'NumEasyShots' cannot be negative
+  0x8203FC58  gdTrainingDrillData::PostLoadProperties() - 'NumEasyShots' cannot be greater than 'TotalNumTries'
+  0x8203FCC0  gdTrainingDrillData::PostLoadProperties() - 'ProbSameShot' cannot be negative
+  0x8203FD10  gdTrainingDrillData::PostLoadProperties() - 'ProbSameShot' cannot be greater than 1.0
+  0x820401F8  NumSpinShots
+  0x82040208  MaxSameShotInARoll
+  0x82040260  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be negative
+  0x820402B0  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be greater than 'TotalNumTries'
+  0x82040318  gdDrillSoftShotData::PostLoadProperties() - 'MaxSameShotInARoll' cannot be negative
+  0x82040370  gdDrillSoftShotData::PostLoadProperties() - 'MaxSameShotInARoll' cannot be greater than 'TotalNumTries'
+  0x820403D8  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative
+  0x82040428  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be greater than 1.0
+  0x82040480  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be negative
+  0x820404E0  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be greater than 1.0
+  0x82040548  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be negative
+  0x820405A8  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be greater than 1.0
+  0x82040A28  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040A78  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040AD0  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040B20  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0
+  0x820416E4  PointsPerServe
+  0x82041714  Difficulty
+  0x82041918  ConserveMeter
+  0x82041928  DoFocusShot
+  0x82041934  gdaiShotSelection
+  0x820419BC  DefendSoftShot
+  0x820419F4  UseKillShot
+  0x82041A00  gdaiSkillSet
+  0x82041A10  ShotTiming
+  0x82041A7C  gdaiDifficulty
+  0x82041A8C  awareness node already found in shots.xml: %s
+  0x82041ABC  def pos node already found in shots.xml: %s
+  0x82041AE8  off pos node already found in shots.xml: %s
+  0x82041B14  spin detection node already found in shots.xml: %s
+  0x82041B48  gdaiSkillStats
+  0x82041B58  WorstShotTiming
+  0x82041C20  DifficultyOffset
+  0x82041C5C  Loading AI data...
+  0x82041C7C  AI data load done...
+  0x82041C94  Missing Defensive Positioning Difficulty
+  0x82041CC0  Missing Offensive Positioning Difficulty
+  0x82041CEC  Missing ITZ Awareness Difficulty
+  0x82041D10  Missing AI Shots Difficulty
+  0x82041D2C  Missing AI Skill Set
+  0x82042928  Opponent
+  0x82042974  gdLadderMatch::PostLoadProperties() - 'Opponent' not specified
+  0x82042A84  gdLadderMatch::PostLoadProperties() - unknown opponent '%s'
+  0x82042C7C  gdDifficultyLadder
+  0x82042C98  gdDifficultyLadder::PostLoadProperties() - invalid level value '%d'
+  0x82042CE0  gdDifficultyLadder::PostLoadChildren() - unknown node type '%s'
+  0x820430D8  Invalid serve tip found: %d
+  0x820430F4  Invalid serve tip, setting InARow to default
+  0x82043134  FocusShotsUsed
+  0x82043174  Incorrect FocusShotsUsed[%d], using default
+  0x820431F0  SoftShotsUsed
+  0x8204322C  Incorrect SoftShotsUsed[%d], using default
+  0x820438EC  ServeHitA
+  0x820438F8  ServeHitB
+  0x82043904  WindowServeHit
+  0x82043914  WindowServeHitA
+  0x82043924  WindowServeHitB
+  0x8204487C  FocusShot
+  0x82046280  WindowPlayerCollide
+  0x82046294  MatchWindowPlayerCollide
+  0x820462B0  WindowPlayerCollideA
+  0x820462C8  MatchWindowPlayerCollideA
+  0x820462E4  WindowPlayerCollideB
+  0x820462FC  MatchWindowPlayerCollideB
+  0x82047640  POI_PPBA_EnteringViewFrustum_FocusShotMaskA_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x820476A4  MatchFocusShotMaskA
+  0x820476B8  POI_PPBB_EnteringViewFrustum_FocusShotMaskB_NotAlmostInterestConclude_TimerPointThreeSevenFiveSec
+  0x8204771C  MatchFocusShotMaskB
+  0x82047B30  POI_PPBA_EnteringViewFrustum_FocusShotMaskA_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82047B88  POI_PPBB_EnteringViewFrustum_FocusShotMaskB_NotAlmostInterestConclude_TimerPointFiveSec
+  0x82047EE0  POI_PPBA_EnteringViewFrustum_FocusShotMaskA_NotAlmostInterestConclude_OnceTimerPointTwoFiveSec
+  0x82047F60  POI_PPBB_EnteringViewFrustum_FocusShotMaskB_NotAlmostInterestConclude_OnceTimerPointTwoFiveSec
+  0x820482F0  POI_PPBA_EnteringViewFrustum_FocusShotMaskA_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x82048358  POI_PPBB_EnteringViewFrustum_FocusShotMaskB_NotAlmostInterestConclude_OnceTimerPointThreeSevenFiveSec
+  0x82048730  POI_PPBA_EnteringViewFrustum_FocusShotMaskA_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82048790  POI_PPBB_EnteringViewFrustum_FocusShotMaskB_NotAlmostInterestConclude_OnceTimerPointFiveSec
+  0x82048CC0  POI_PPBA_EnteringViewFrustum_FocusShotMaskA_NotAlmostInterestConclude
+  0x82048D08  POI_PPBB_EnteringViewFrustum_FocusShotMaskB_NotAlmostInterestConclude
+  0x82049250  no condition for dest CamInst '%s' (of src CamInst '%s'), so src CamDef '%s' must be a Oneshot.
+  0x820492F4  ShotDef
+  0x820493A8  gdCameraInst - could not bind to ShotDef %s
+  0x82049414  Oneshot
+  0x82049428  PlayerSide
+  0x820494E0  gdCameraDef::PostLoadProperties--'PlayerSide' attribute=%i is out of range
+  0x820498FC  Backhand Smash
+  0x82049970  Forehand Smash
+  0x82049C18  LocoServeSpeed
+  0x82049C28  LocoServeAccel
+  0x82049C38  ServeTopSpin
+  0x82049C48  ServeBackSpin
+  0x82049C58  ServeLeftSpin
+  0x82049C68  ServeRightSpin
+  0x82049C78  ServeAccuracy
+  0x82049D48  MaxTopSpinRPSServe
+  0x82049D5C  MaxBackSpinRPSServe
+  0x82049D70  MaxSideSpinRPSServe
+  0x82049E74  LocoServeMaxSpeed
+  0x82049E88  LocoServeMaxAccel
+  0x8204A458  MultiPlayerCamera
+  0x8204A46C  SinglePlayerCamera
+  0x8204A860  TRAINING
+  0x8204AC40  Condition_Highest_Skill
+  0x8204C04C  gdCamData: invalid anim type: %i (defaulting to ANIM_STRAIGHT)
+  0x8204C7D4  AllowHigherDifficulty
+  0x8204C9A4  MinDifficulty
+  0x8204CB6C  GROUP_TRAINING_DRILLS
+  0x82050080  GetPlayerID - msg tgt not player 0 ^ 1!
+  0x82050300  RobotShotBall
+  0x8205037C  StopServeMeter
+  0x8205038C  StartServeMeter
+  0x82050540  EnterPreServe
+  0x82050550  EnterPrePreServe
+  0x820506F0  ServeAce
+  0x820506FC  ServeSuccess
+  0x8205070C  ServeFault
+  0x82050718  ServeLet
+  0x82050724  ServeTimeout
+  0x82050734  ReadyServeB
+  0x82050740  ReadyServeA
+  0x8205075C  ShotChange
+  0x820507B8  LoadPlayerDone
+  0x820507C8  PlayerVarChanged
+  0x820507DC  LoadPlayerReq
+  0x820509BC  ServeReallyReady
+  0x820509F4  ExitServeReady
+  0x82050A04  EnterServeReady
+  0x82050B8C  ServeAnimStart
+  0x82050B9C  ServeChargeStart
+  0x82050BB0  ServeReady
+  0x82050D08  ExitServe
+  0x82050D14  EnterServe
+  0x82050DDC  ExitFocusShot
+  0x82050DEC  EnterFocusShot
+  0x8205107C  LocalPlayerStopped
+  0x82051090  LocalPlayerMoved
+  0x820511F8  SetSpectatorPlayerSides
+  0x820513C4  ServeStartReceived
+  0x82051434  PostSignalReadyToServeMessage
+  0x82051454  OpponentDropSpectatorMode
+  0x82051470  OpponentForfeitSpectatorMode
+  0x82051490  OpponentForfeit
+  0x82051584  SendPlayerData
+  0x820515F4  ServeAnimReady
+  0x82051604  ServeStartedResponse
+  0x8205161C  ServeStarted
+  0x8205162C  ServeAbort
+  0x82051A20  serve anim start
+  0x82051B74  SoftShotMissed
+  0x82051B84  SoftShotLanded
+  0x82051B94  SoftShot
+  0x82051BA0  SlamShotMissed
+  0x82051BB0  SlamShotLanded
+  0x82051BC0  BallHitPlayer
+  0x82051BE0  FarLungeShotHit
+  0x82051BF0  FarLungeShotMiss
+  0x82051C04  LungeShotHit
+  0x82051C14  LungeShotMiss
+  0x82051C24  FocusShotMissed
+  0x82051C34  FocusShotLanded
+  0x8205207C  PastPlayer
+  0x820520BC  CollidePlayerHard
+  0x820520D0  CollidePlayerSoft
+  0x82056FAC  Ball collided with player
+  0x820572D8  Could not find a successful serve for %d iterations
+  0x82057310  Num valid bad serves was zero for %d iterations
+  0x82057344  Could not find a bad serve for %d iterations
+  0x82057708  This shot may end up being a double-table bounce or dinker, but we're not marking it as such.
+  0x820577B8  (This shot may end up being a double-table bounce or dinker, but we're not marking it as such.)
+  0x82057C00  LS_LVL_TRAINING:ROBOPONG_LAUNCH
+  0x8205A7F0  Unable to establish server on port %d, already in use?
+  0x8205B138  toggleServeMeter
+  0x8205B36C  sPlayerNames
+  0x8205B3BC  DroppedPlayer
+  0x8205B474  playersServe
+  0x8205B484  perfectServe
+  0x8205B6D0  stxt_points_from_serves
+  0x8205B6E8  t_point_off_serves
+  0x8205B6FC  stxt_itz_shots
+  0x8205B70C  t_itz_shots
+  0x8205B758  t_returned_itz_shots
+  0x8205B770  stxt_forehand_shots
+  0x8205B784  t_forehand_shots
+  0x8205B798  stxt_backhand_shots
+  0x8205B7AC  t_backhand_shots
+  0x8205B900  stxt_points_from_smash
+  0x8205B918  t_smash_points
+  0x8205B928  stxt_smash_shots
+  0x8205B93C  t_smash_shots
+  0x8205BA6C  stxt_soft_shots
+  0x8205BA7C  t_soft_shots
+  0x8205BE50  ServeMeterX
+  0x8205BE5C  ServeMeterY
+  0x8205BE68  playerServeTimer
+  0x8205BE7C  ServeMeterscale
+  0x8205BE8C  player2Score
+  0x8205BE9C  player1Score
+  0x8205BFDC  player_wins
+  0x8205BFE8  t_player_wins
+  0x8205C020  player1Highlight
+  0x8205C034  player2Highlight
+  0x8205C094  point_off_serves
+  0x8205C0A8  itz_shots
+  0x8205C0C4  returned_itz_shots
+  0x8205C0D8  forehand_shots
+  0x8205C0E8  backhand_shots
+  0x8205C180  smash_points
+  0x8205C190  smash_shots
+  0x8205C368  iDelayServer
+  0x8205C378  iCurrServer
+  0x8205C384  playersSpin
+  0x8205C420  stxt_generic_player
+  0x8205C5E0  stxt_dropped_player
+  0x8205C5F4  t_dropped_player
+  0x8205C698  curPlayerSelection
+  0x8205C820  player_name
+  0x8205C8C0  serve_meter
+  0x8205C8E8  soft_shots
+  0x8205C908  focus_shots
+  0x8205C95C  stxt_t_successful_shots
+  0x8205C974  t_successful_shots
+  0x8205C988  stxt_t_remaining_shots
+  0x8205C9A0  t_remaining_shots
+  0x8205CC40  already loaded portrait player[%d], character[%d], variation[%d]
+  0x8205CC84  loading portrait player[%d], character[%d], variation[%d]
+  0x8205CCCC  finished portrait load for player[%d]
+  0x8205CD0C  halfmaxplayers
+  0x8205CF1C  numberPlayersOnline
+  0x8205CF5C  Unsupported points per serve enum value = %d
+  0x8205D228  onlinePlayerTag
+  0x8205D238  onlinePlayerName
+  0x8205D24C  onlineOpponentTag
+  0x8205D260  onlineOpponentName
+  0x8205D288  felive_lobby_waiting_for_player
+  0x8205D484  Invalid MatchQueryResult_MAIN_QUERY::GAMES_PER_MATCH = %d
+  0x8205D6AC  custom_NumPlayers
+  0x8205D738  custom_PointsPerServe
+  0x8205D750  Unknown custom_PointsPerServe = %d
+  0x8205D79C  create_NumPlayers
+  0x8205D7B0  Max_Players = %d
+  0x8205D868  create_PointsPerServe
+  0x8205D880  Unknown create_PointsPerServe = %d
+  0x8205D9C8  Someone dropped out during session start or arbitration phase! Booting player out of session.
+  0x8205DA28  Session start or arbitration failed! Booting player out of session.
+  0x8205DAB0  Someone dropped out after session start/arbitration phase! Booting player out of session.
+  0x8205F44C  Difficulty is %d
+  0x8205F460  setting first tourney opponent: %s (%d)
+  0x8205F5A0  unhandled player confirm state: %d
+  0x8205F60C  Setting Default Difficulty: EASY
+  0x8205F630  Setting Default Difficulty: MEDIUM
+  0x8205F654  Setting Default Difficulty: HARD
+  0x8205F6E0  pongFrontendState::WaitForCharLoadToEnd() - waiting for player[%d] load to finish
+  0x8205F738  pongFrontendState::WaitForCharLoadToEnd() - need to deactivate player[%d]
+  0x8205F9B4  PlayerPostTournamentCanSpectate
+  0x8205F9D4  PlayerPostTournament
+  0x8205FDC4  GAME_TYPE_TRAINING
+  0x8205FE3C  LIST_iPAUSE_MAIN
+  0x8205FE80  playerSelection
+  0x8205FE90  GLOBAL_SHOW_TRAINING_MENU
+  0x82060138  t_player_volume
+  0x82060274  stxt_soft_shot
+  0x82060284  t_soft_shot
+  0x82060470  stxt_t_soft_shot_2
+  0x82060490  stxt_t_soft_shot
+  0x820604B4  stxt_currentplayer_view
+  0x820604CC  t_currentplayer_view
+  0x820604E4  stxt_dplayer1_view
+  0x820604F8  t_dplayer1_view
+  0x82060508  stxt_dplayer2_view
+  0x8206051C  t_dplayer2_view
+  0x82060A40  [%x] Could not create xmv player from file: %s
+  0x82060C4C  stxt_tip_serve_meter
+  0x82060C9C  stxt_tip_soft_shot
+  0x82060CD4  stxt_tip_focus_shot
+  0x82060D00  stxt_tip_smash
+  0x82060D98  LIST_MAIN
+  0x82060DA4  drill_serve_meter
+  0x82060DB8  hudTrainingPopUp::Restart() - invalid user index %d for player 0
+  0x82060E48  drill_soft_shot
+  0x82060E58  drill_smash
+  0x82060E64  drill_focus_shot
+  0x82060F98  TM_MAIN
+  0x82060FAC  TM_FAIL
+  0x82060FC4  TM_TIP_FAIL
+  0x82061040  stxt_t_serve_meter
+  0x82061054  t_serve_meter
+  0x820610BC  stxt_t_soft_shots
+  0x8206111C  stxt_t_focus_shots
+  0x82061130  t_focus_shots
+  0x820611A8  stxt_t_smashes
+  0x820611B8  t_smashes
+  0x82061240  t_soft_shot_2
+  0x82061250  stxt_t_focus_shot
+  0x82061264  t_focus_shot
+  0x820612C4  stxt_t_serve_meter_1
+  0x820612DC  t_serve_meter_1
+  0x820612EC  stxt_t_serve_meter_2
+  0x82061304  t_serve_meter_2
+  0x82061314  stxt_t_serve_meter_3
+  0x8206132C  t_serve_meter_3
+  0x8206133C  stxt_t_serve_meter_4
+  0x82061354  t_serve_meter_4
+  0x82061364  stxt_t_serve_meter_5
+  0x8206137C  t_serve_meter_5
+  0x82061608  stxt_t_soft_shots_1
+  0x8206161C  t_soft_shots_1
+  0x8206162C  stxt_t_soft_shots_2
+  0x82061640  t_soft_shots_2
+  0x82061650  stxt_t_soft_shots_3
+  0x82061664  t_soft_shots_3
+  0x82061674  stxt_t_smashes_1
+  0x82061688  t_smashes_1
+  0x82061694  stxt_t_smashes_2
+  0x820616A8  t_smashes_2
+  0x820616B4  stxt_t_smashes_3
+  0x820616C8  t_smashes_3
+  0x820616D4  stxt_t_smashes_4
+  0x820616E8  t_smashes_4
+  0x820616F4  stxt_t_focus_shots_1
+  0x8206170C  t_focus_shots_1
+  0x8206171C  stxt_t_focus_shots_2
+  0x82061734  t_focus_shots_2
+  0x82061744  stxt_t_focus_shots_3
+  0x8206175C  t_focus_shots_3
+  0x8206176C  stxt_t_focus_shots_4
+  0x82061784  t_focus_shots_4
+  0x82061828  stxt_brief_serve_meter
+  0x820618A4  stxt_brief_soft_shot
+  0x820618BC  stxt_brief_smash
+  0x820618D0  stxt_brief_focus_shot
+  0x82061E54  playerFlag
+  0x82061F08  next_opponent
+  0x82061F18  t_nextopponent
+  0x82061FD0  playerRank
+  0x82062AD8  Frontend selected player[%d] char[%d]
+  0x82062B2C  Player already loaded
+  0x82062BAC  Frontend selected a new outfit for player[%d] char[%d]
+  0x82062C50  request_difficulty_exhibition
+  0x82062C90  request_difficulty_tournament
+  0x82062D80  GLOBAL_ENTER_MAIN_OK
+  0x82062E08  Challenger, player[%d], controller[%d]
+  0x82062E30  newPlayerJoins
+  0x82062F04  stxt_difficulty
+  0x82062F14  t_difficulty
+  0x82062F24  stxt_player_volume
+  0x820633F8  stxt_max_number_of_players
+  0x82063414  t_max_number_of_players
+  0x820637B8  stxt_player_character
+  0x820637D0  t_player_character
+  0x82063850  stxt_show_player_review
+  0x82063868  t_show_player_review
+  0x820639A4  stxt_number_of_players
+  0x820639BC  t_number_of_players
+  0x82063A64  stxt_players
+  0x82063A74  t_players
+  0x82063B04  stxt_player_review
+  0x82063B18  t_player_review
+  0x82063D5C  stxt_points_per_serve
+  0x82063D74  t_points_per_serve
+  0x8206437C  Gamer Profile Difficulty: Unknown(%d)
+  0x820644A4  stxt_lb_TrueSkill_Short
+  0x8206451C  stxt_lb_Trn_TrueSkill
+  0x82064574  stxt_lb_TrueSkill
+  0x82064E10  stxt_lb_TrueSkill_Yr
+  0x82064E28  stxt_lb_TrueSkill_Wk
+  0x82064E40  stxt_lb_TrueSkill_Trn_Wk
+  0x82064E5C  stxt_lb_TrueSkill_Trn_Yr
+  0x82064EC8    TrueSkill=%d
+  0x820655F4  pongCSActionCamAnim::Play() - empty camera shot sequence
+  0x82066100  CP_MEQ_AVAIL
+  0x82066140  CP_CSQ_AVAIL
+  0x820669CC  WSAEADDRNOTAVAIL
+  0x82068408    XNADDR: Local host has one or more DNS servers configured
+  0x82068444    XNADDR: *** Local host no DNS servers configured
+  0x82068AB8  XONLINE_E_LOGON_SERVICE_TEMPORARILY_UNAVAILABLE
+  0x820690B0  XONLINE_E_SESSION_CREATE_KEY_FAILED
+  0x820690F8  XONLINE_E_SESSION_REGISTER_KEY_FAILED
+  0x82069120  XONLINE_E_SESSION_UNREGISTER_KEY_FAILED
+  0x82069494  XONLINE_E_COMP_NO_BYES_AVAILABLE
+  0x82069684  XONLINE_E_STAT_SET_FAILED_0
+  0x820698D8  XONLINE_E_SIGNATURE_SERVICE_UNAVAILABLE
+  0x82069900  XONLINE_E_ARBITRATION_SERVICE_UNAVAILABLE
+  0x82069DA8  XONLINE_E_STORAGE_UNKNOWN_DOMAIN
+  0x8206AF64  OneShot
+  0x8206B760  Replay manager still isn't recording when entering gmLogicSpectator::stateServeToss
+  0x8206C158  Received RemoteServeReadyMessage at %s
+  0x8206C180  Unlocking Serve at %s
+  0x8206C198  Received ServeUnlockMessage at %s
+  0x8206C234  kHomePlayer
+  0x8206C240  kAwayPlayer
+  0x8206C4F0  pongRemotePlayer::StartJunkSwing
+  0x8206C515  Player %d %s
+  0x8206C5A8  Got forfeit: Tagging player %s (%d,%d) as a quitter
+  0x8206C5E0  Got forfeit: Tagging player %s %d as a quitter for spectator session
+  0x8206C628  Spectator Quitting: Tagging player %s %d as a quitter
+  0x8206C998  WriteStatsQuitter - done, stats not written because it's not a Ranked Match, or local player already quit (loozer)!
+  0x8206CD24  Next opponent %d has forfeit, sitting out this round.
+  0x8206CF50  Match %s was unplayable -- home player %d forfeit
+  0x8206CF84  Match %s was unplayable -- away player %d forfeit
+  0x8206CFB8  Match %s was unplayable but neither player foreit?? (home=%d, away=%d)
+  0x8206D070  opponent quit -- but not signalling forfeit because match already ended
+  0x8206D148  player:"%s" quit -- but not from match we're spectating
+  0x8206D1A8  WriteRelativeScore aborted -- local player already quit
+  0x8206DA94  *** Player:"%s" failed to join the spectator session!! ***
+  0x8206DC78  NOTIFY_DESTROY_FAILED for %s
+  0x8206DD58  NOTIFY_JOIN_SUCCESS: Successfully joined system link as singles player
+  0x8206E840  ServeUnlockMessage
+  0x8206E854  RemoteServeReadyMessage
+  0x8206E94C  PlayerUpdateMessage
+  0x8206E960  PlayerMovementMessage
+  0x8206E978  PlayerStopMessage
+  0x8206E98C  SignalReadyToServeMessage
+  0x8206E9A8  ServeReadyMessage
+  0x8206E9BC  ServeAbortMessage
+  0x8206E9D0  ServeStartedMessage
+  0x8206E9E4  ServeFaultMessage
+  0x8206E9F8  ServeLetMessage
+  0x8206EE84  PlayerCacheMessage
+  0x8206EF0A  total serves this game <message(%d), game(%d)>
+  0x8206F270  unlocking serve %s
+  0x8206F284  Remote Player Is Ready To Serve %s
+  0x8206F2E8  RemotePlayer cannot send ServeStartedMessage
+  0x8206F318  ignoring ServeFaultMessage game(%d) message(%d)
+  0x8206F348  ignoring ServeLetMessage game(%d) message(%d)
+  0x82070BD0  MRB- #2 msgNet::kOpponentDropSpectatorMode, winner=%d forfeit=%d
+  0x82070CAC  MRB- msgNet::kOpponentDropSpectatorMode winner=%d forfeit=%d
+  0x82070F24  serveTimeDelay
+  0x82071054  playerMovementSamplesPerSecond
+  0x82071074  remotePlayerMaxVelocity
+  0x820710A0  serverReadyRemoteGoalTolerance
+  0x820710DC  remoteServeReadyVelocity
+  0x82071700  [plrPropMgr] Player=%d: Correct paddle already loaded (charID=%d)
+  0x82071748  [plrPropMgr] Player=%d: Unload paddle for charID=%d and load paddle for charID=%d
+  0x82071864  setting next tourney opponent: %s (%d)
+  0x82074C2C  oneshot
+  0x82075B8C  I3DL2_ENVIRONMENT_PRESET_PLAIN
+  0x82075BCC  I3DL2_ENVIRONMENT_PRESET_MOUNTAINS
+  0x820767B4  gdCSCharCamShotName
+  0x820767C8  ShotNamePosZ
+  0x820767D8  ShotNameNegZ
+  0x820767E8  gdCSCharCamShotName::PostLoadProperties() - cannot have negative weight
+  0x82076830  gdCSCharCamShotName::PostLoadProperties() - missing property 'ShotNamePosZ'
+  0x82076880  gdCSCharCamShotName::PostLoadProperties() - missing property 'ShotNameNegZ'
+  0x820768D0  gdCSCharCamShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'
+  0x82076928  gdCSCharCamShotNameSeq
+  0x82076940  gdCSCharCamShotNameSeq::PostLoadProperties() - cannot have negative weight
+  0x82076B15  choose a CS char anim for player[%d] (%s) with intensity %f
+  0x82076E14  gdCSCamAnimShotName
+  0x82076E28  ShotName
+  0x82076E38  gdCSCamAnimShotName::PostLoadProperties() - cannot have negative weight
+  0x82076E80  gdCSCamAnimShotName::PostLoadProperties() - missing property 'ShotName'
+  0x82076EC8  gdCSCamAnimShotName::PostLoadProperties() - 'TimeOffset' cannot be negative
+  0x82076F18  gdCSCamAnimShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'
+  0x82076F70  gdCSCamAnimShotNameSeq
+  0x82076F88  gdCSCamAnimShotNameSeq::PostLoadProperties() - cannot have negative weight
+  0x820770BC  IsServer
+  0x820770C8  FocusPlayer
+  0x820771F0  PlayerID
+  0x82077258  gdCSActionIfData::PostLoadProperties() - condition '%s' requires property 'PlayerID'
+  0x82077550  gdCSActionCharAnimData::PostLoadProperties() - missing property 'PlayerID'
+  0x820775F8  gdCSActionCharVisibleData::PostLoadProperties() - missing property 'PlayerID'
+  0x820778E0  gdCSActionCharAmbAnimData::PostLoadProperties() - missing property 'PlayerID'
+  0x820B1837  _ B!X T!\ C!Z V!^ B!Y U!] C![ W!_ C1X E2\ D1Z V2^ C1Y E2] D1[ W2_0D2X1F3\0E2Z1G3^0D2Y1F3]0E2[1G3_0FBJ1HD\0GCK1IE^0FBJ1HD]0GCK1IE_ EAI GC\ FBZ HD^ EAI GC] FB[ HD_
+  0x825C1A75  /msgserver/vetstring2.ashx
+  0x825C1AE8  /msgserver/msgserver.ashx
+  0x825C1CF8  /msgserver/getstring2.ashx
+  0x825C1D2E  /fbserver/enumrecdreview.ashx
+  0x825C1D4C  /fbserver/enumsentreview.ashx
+  0x825C1D6A  /fbserver/getaggreview.ashx
+  0x825C1D86  /fbserver/submitcomplaint.ashx
+  0x825C1DA5  /fbserver/submitreview.ashx
+  0x825C2067  /xuacs/XeReserveGamertag.ashx
+  0x825D2E34  .?AVpcrAnimObserverHash@@
+  0x825D2E58  .?AVpcrAnimObserver@@
+  0x825D2E78  .?AVpcrAnimObserved@@
+  0x825D30E0  .?AVpcrServeBlender@@
+  0x825D3100  .?AVpcrServeData@@
+  0x825D311C  .?AVxmlNodeStructServeType@pcrServeData@@
+  0x825D3D90  .?AVstateAwaitServeReturnHit@gmLogicSinglesMatch@@
+  0x825D3E2C  .?AVstateHitNetServe@gmLogicSinglesMatch@@
+  0x825D3E60  .?AVstateServeBounce@gmLogicSinglesMatch@@
+  0x825D3E94  .?AVstateServeHit@gmLogicSinglesMatch@@
+  0x825D3EC4  .?AVstateServeToss@gmLogicSinglesMatch@@
+  0x825D3EF8  .?AVstatePreServe@gmLogicSinglesMatch@@
+  0x825D3F28  .?AVstatePreServeSync@gmLogicSinglesMatch@@
+  0x825D3F60  .?AVstatePreServeSpectatorSyncState@gmLogicSinglesMatch@@
+  0x825D3FA4  .?AVstatePrePreServe@gmLogicSinglesMatch@@
+  0x825D4170  .?AVpongDrillSmash@@
+  0x825D41B4  .?AVpongDrillFocusShot@@
+  0x825D4214  .?AVpongDrillSoftShot@@
+  0x825D4298  .?AVpongDrillServeMeter@@
+  0x825D5080  .?AVcamShotMgr@@
+  0x825D509C  .?AVcamShot@@
+  0x825D50B4  .?AV?$atSingleton@VcamShotMgr@@@@
+  0x825D5BB8  .?AU?$cmSimpleActionCtor@$1?All_StartBehindPlayer@cmSampleCamActions@rage@@YAXPAVcmBlockUpdateData@3@PAVcmSimpleAction@3@@Z$01$0DPPP@@rage@@
+  0x825D6F60  .?AVplrPlayerMgr@@
+  0x825D6F7C  .?AVpongPlayer@@
+  0x825D7010  .?AVshotTarget@@
+  0x825D702C  .?AVaiPlayer@@
+  0x825D7044  .?AVpongPlayerShaderParams@@
+  0x825D73C8  .?AVpongAmbiencePlayer@@
+  0x825D7700  .?AVgdShotDataMgr@@
+  0x825D771C  .?AV?$atSingleton@VgdShotDataMgr@@@@
+  0x825D7C94  .?AVgdCharPlayerBias@@
+  0x825D7EFC  .?AVgdShotName@@
+  0x825D7F18  .?AVgdShotData@@
+  0x825D7F34  .?AVgdShotSet@@
+  0x825D7F4C  .?AVgdShotMultiSet@@
+  0x825D7F6C  .?AVgdDrillSmashData@@
+  0x825D7FB4  .?AVgdDrillFocusShotData@@
+  0x825D801C  .?AVgdDrillSoftShotData@@
+  0x825D80A8  .?AVgdDrillServeMeterData@@
+  0x825D8260  .?AVgdaiSkillStats@@
+  0x825D8280  .?AVgdaiDifficulty@@
+  0x825D82A0  .?AVgdaiSkillSet@@
+  0x825D82BC  .?AVgdaiShotSelection@@
+  0x825D8404  .?AVgdDifficultyLadder@@
+  0x825D84C0  .?AVfirstServeTipData@@
+  0x825D8500  .?AVbadSoftShotTipData@@
+  0x825D854C  .?AVnoSoftShotsTipData@@
+  0x825D85BC  .?AVxmlNodeStructGroupType@serveTipData@@
+  0x825D85F0  .?AVserveTipData@@
+  0x825D8978  .?AVgdUnlockConditionHighestSkill@@
+  0x825D9288  .?AVxmlNodeStructDifficulty@gdUnlockConditionSettingsData@@
+  0x825D9E1C  .?AVcrAnimPlayer@rage@@
+  0x825DE780  .?AVpongCutScenePlayer@@
+  0x825DE7A4  .?AV?$atSingleton@VpongCutScenePlayer@@@@
+  0x825DF6E0  .?AVgdCSCharCamShotName@@
+  0x825DF704  .?AVgdCSCharCamShotNameSeq@@
+  0x825DF74C  .?AVgdCSCamAnimShotName@@
+  0x825DF770  .?AVgdCSCamAnimShotNameSeq@@
+  0x825E07EC  .?AVstateServeBounce@gmLogicSpectator@@
+  0x825E081C  .?AVstateServeHit@gmLogicSpectator@@
+  0x825E084C  .?AVstateServeToss@gmLogicSpectator@@
+  0x825E087C  .?AVstatePreServe@gmLogicSpectator@@
+  0x825E0ABC  .?AVpongRemotePlayer@@
+  0x825E1424  .?AV?$pongNetMessageHolder@VPlayerCacheMessage@@$00@@
+  0x825E2154  .?AV?$pongNetMessageHolder@VServeLetMessage@@$01@@
+  0x825E2190  .?AV?$pongNetMessageHolder@VServeFaultMessage@@$01@@
+  0x825E21D0  .?AV?$pongNetMessageHolder@VServeStartedMessage@@$03@@
+  0x825E2210  .?AV?$pongNetMessageHolder@VServeAbortMessage@@$03@@
+  0x825E2250  .?AV?$pongNetMessageHolder@VServeReadyMessage@@$03@@
+  0x825E2290  .?AV?$pongNetMessageHolder@VSignalReadyToServeMessage@@$09@@
+  0x825E22D8  .?AV?$pongNetMessageHolder@VPlayerStopMessage@@$0MI@@@
+  0x825E2318  .?AV?$pongNetMessageHolder@VPlayerMovementMessage@@$0MI@@@
+  0x825E2360  .?AV?$pongNetMessageHolder@VPlayerUpdateMessage@@$0MI@@@
+  0x825E25F0  .?AV?$pongNetMessageHolder@VRemoteServeReadyMessage@@$03@@
+  0x825E2634  .?AV?$pongNetMessageHolder@VServeUnlockMessage@@$03@@
+  0x825E2770  .?AVPlayerCacheMessage@@
+  0x825E2BA4  .?AVServeLetMessage@@
+  0x825E2BC4  .?AVServeFaultMessage@@
+  0x825E2C3C  .?AVRemoteServeReadyMessage@@
+  0x825E2C64  .?AVServeUnlockMessage@@
+  0x825E2FE0  .?AVServeStartedMessage@@
+  0x825E3004  .?AVServeAbortMessage@@
+  0x825E3024  .?AVServeReadyMessage@@
+  0x825E3044  .?AVPlayerActionMessage@@
+  0x825E3068  .?AVSignalReadyToServeMessage@@
+  0x825E3090  .?AVPlayerStopMessage@@
+  0x825E30B0  .?AVPlayerMovementMessage@@
+  0x825E30D4  .?AVPlayerUpdateMessage@@
+  0x825E31F0  .?AVPlayerTimedMessage@@
+  0x827421D1  XObtenez le meilleur classement TrueSkill possible dans un mode en ligne avec classement.
+  0x82743806  gliche TrueSkill Einstufung.
+  0x82744E02  n de TrueSkill en cualquier modo de juego igualado en l
+  0x8274642E   alta classificazione TrueSkill in qualsiasi modalit
+  0x827472FC  # Players
+  0x827477DB  MAchieve the highest TrueSkill rating possible in any Ranked online game mode.
+  0x82747940  WHas shutout opponents in 5+ non-consecutive games (any settings) in Ranked online play.
+  0x8274811F  SShutout opponents in 5+ non-consecutive games (any settings) in Ranked online play.

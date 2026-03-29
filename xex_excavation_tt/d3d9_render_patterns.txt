@@ -1,0 +1,368 @@
+; ===================================================================
+; D3D9 RENDER STATE & SHADER PATTERNS
+; Rockstar Table Tennis  -  default.xex
+; TT uses D3D9LTCG (link-time code gen D3D) — earliest RAGE renderer
+; ===================================================================
+
+; ── RENDER-RELATED VTABLE CLASSES ──
+
+  0x8202781C  [  0 slots]  __pgDictionary_VgrcTexture_rage___rage
+  0x8202F193  [ 19 slots]  grmShaderFx_rage
+  0x8202F1F4  [  3 slots]  grmModel_rage
+  0x8202F208  [  3 slots]  grmModelGeom_rage
+  0x8202F2CE  [  0 slots]  grmShaderGroup_rage
+  0x8202F2DD  [  2 slots]  grmModelFactory_rage
+  0x8202F5BC  [ 17 slots]  grmShader_rage
+  0x8202F612  [  0 slots]  grmShaderPreset_rage
+  0x8202F647  [  7 slots]  grmShaderFactory_rage
+  0x8202F66F  [  7 slots]  grmShaderFactoryStandard_rage
+  0x8202F69B  [ 17 slots]  grmShaderBasicClamped_rage
+  0x8202F6F0  [ 17 slots]  grmShaderBasic_rage
+  0x82030F18  [  1 slots]  pongRenderable
+  0x820312F8  [ 16 slots]  fragDrawable_rage
+  0x8203378C  [  0 slots]  pongShadowMap
+  0x820348C3  [  2 slots]  grcDirtyDisc_rage
+  0x820348E8  [ 15 slots]  grcTextureFactory_rage
+  0x8203502A  [  6 slots]  grcSetup_rage
+  0x8203504C  [ 26 slots]  grcTextureReferenceBase_rage
+  0x820350BC  [ 26 slots]  grcTextureReference_rage
+  0x82035134  [ 26 slots]  grcTextureDictionaryReference_rage
+  0x820351BC  [ 30 slots]  grcRenderTargetXenon_rage
+  0x82035244  [ 26 slots]  grcTextureXenon_rage
+  0x820352B4  [ 15 slots]  grcTextureFactoryXenon_rage
+  0x820352F8  [ 26 slots]  grcTextureString_rage
+  0x82035368  [ 15 slots]  grcTextureFactoryString_rage
+  0x820358FC  [ 31 slots]  pongCameraMgr
+  0x820359FE  [  0 slots]  pongCameraState
+  0x82035BD0  [  0 slots]  pongCMCamera
+  0x82038FAE  [  0 slots]  pongPlayerShaderParams
+  0x82043028  [ 22 slots]  gdCameraDef
+  0x82043090  [ 22 slots]  gdCameraInst
+  0x82043158  [ 22 slots]  gdCameraDest
+  0x8204DB10  [ 15 slots]  pongDrawable
+  0x8204DB90  [  0 slots]  pongDrawBucketManager
+  0x8204DFA1  [  6 slots]  grmSetup_rage
+  0x8204ECF8  [ 10 slots]  rmcDrawableBase_rage
+  0x8204ED28  [ 15 slots]  rmcDrawable_rage
+  0x82052B9C  [  1 slots]  __cmOperatorCtor_VcmDrawVec_rage___rage
+  0x82054084  [ 18 slots]  cmDrawVec_rage
+  0x82055E9A  [  1 slots]  fxBallShadow
+  0x820581D8  [  0 slots]  pongRenderThread
+  0x82066AB6  [  0 slots]  grmEdgeModel_rage
+  0x82066BC8  [  0 slots]  fxLightShaft
+  0x82066BD4  [  1 slots]  fxLightShaftMgr
+  0x82066BE8  [ 22 slots]  fxLightShaftTune
+  0x82066C50  [ 22 slots]  pongLightGlowCapsule
+  0x82066CB0  [ 22 slots]  pongLightGlowSquare
+  0x82066D14  [  0 slots]  pongLightGlowMgr
+  0x82070271  [ 32 slots]  sgRMDrawable
+  0x82070379  [  1 slots]  sgTraverseDraw
+  0x82070385  [  1 slots]  sgTraverseDrawDebug
+
+; ── D3D / RENDER STRINGS IN BINARY ──
+
+  0x82008427  Microsoft (R) Xbox 360 Shader Compiler 2.0.2500.0
+  0x820085F5  Microsoft (R) Xbox 360 Shader Compiler 2.0.2500.0
+  0x820087CD  Microsoft (R) Xbox 360 Shader Compiler 2.0.2500.0
+  0x8202806C  pongMover::Reset
+  0x8202F224  Unable to load shader template '%s'
+  0x8202F488  Required grmShaderGroupVar '%s' not found.
+  0x8202F4E4  Shaders
+  0x8202F530  grmModelFactory::sm_DeclMap not properly cleaned out?
+  0x8202F620  shader
+  0x8202F630  Couldn't open preset %s
+  0x8202F698  grcTexture
+  0x8202F6CC  cheapshaders
+  0x8202F6DC  rage_default.shadert
+  0x8202F6F4  rage_alpha.shadert
+  0x8202F708  rage_clamped.shadert
+  0x8202F720  Invalid type %d in grmShaderFactoryStandard::PlaceShaders
+  0x8202F76C  Preloading shaders from '%s'...
+  0x8202F78C  .shadert
+  0x8202F798  .shadert isn't supported any longer
+  0x8202F7F8  shadergroup
+  0x8202FF08  Failed to match vertex %d
+  0x82033DA8  pixelregs
+  0x82033DC0  $/tune/shaders/lib
+  0x82033DD4  $/tune/shaders/db
+  0x82033DE8  globalShaderTime
+  0x82033E3C  tune/shaders/lib
+  0x820348D4  debugshaders
+  0x820349E0  Error: grcDevice::BeginTiledRendering() - More than %d different tiled rendering sizes have been used!
+  0x82034F60  %s - Neither FOURCC or RGB bits set in pixel format
+  0x820352C0  grcTextureXenon - Texture '%s' - invalid resolution %d by %d
+  0x82035300  Bad resource type %d in grcTextureFactoryXenon::PlaceTexture
+  0x82036C68  [inlineMiniEmote] Reset()
+  0x82036E9C  CameraReset
+  0x8203A848  pongPlayerShaderParams::UpdateParams() called before m_player is set!
+  0x8203D1A4  [REPLAYMGR] Heap size after Reset() = %d bytes = %.3fK
+  0x8203E6D0  %s called BallPredictData::Reset() %s
+  0x82042FF4  DID_NOT_CLEAR_NET
+  0x8204FF34  Shader (%s) has unsupported version (%i)
+  0x82050E3C  ClearRestartDrill
+  0x82051424  ResetMatchTimer
+  0x82052634  ResettableTimer
+  0x82052644  WorldResettableTimer
+  0x82056CB0  Reset:            ?
+  0x82056EE0  got a material that isn't a pongSurface::PONG_MATERIAL material: %s
+  0x82057170  gmBallNode::Reset
+  0x82058194  vertexmaterial:
+  0x8205900C  Loading Rockstar Presents screen...
+  0x82059030  Rockstar Presents screen loaded
+  0x8205A340  DirtyDiscRenderThread
+  0x8205B35C  iReset
+  0x8205C6CC  reset
+  0x8205EB30  stxt_rockstar_presents
+  0x8205EB48  t_rockstar_presents
+  0x8205EB90  [Rockstar Presents Movie] Movie stopped, setting StoppedMovieEvent...
+  0x8205EBD8  [Rockstar Presents Movie] StopMovieEvent received, stopping movie...
+  0x8205EC20  [Rockstar Presents Movie] Setting StopMovieEvent...
+  0x8205EC54  [Rockstar Presents Movie] Waiting for StoppedMovieEvent...
+  0x8205EC90  [Rockstar Presents Movie] StoppedMovieEvent received, deleting events...
+  0x8206062C  resetArrays
+  0x82060724  resetUnlock
+  0x82060C3C  resetTraining
+  0x8206214C  resetLoad
+  0x82062548  CMD_RESET
+  0x820662EF      rendered.  A partial primitive occurs when the vertex count
+  0x82066373      by calling DrawVertices using D3DPT_TRILIST with a vertex
+  0x820669BC  WSAECONNRESET
+  0x820681A0  Reset() called while read is pending
+  0x820687B4  XONLINE_E_USER_NOT_PRESENT
+  0x820696C4  XONLINE_E_STAT_LEADERBOARD_WAS_RESET
+  0x82069FBC  grmEdgeModel::Create - '%s' is not an em file
+  0x8206B61C  MRB- Clearing stale forfeit flag... (kExitGameState)
+  0x8206B848  MRB- host cxn was reset or someone dropped. Forcing exit from  gmLogicSpectator::statePostPointCS()
+  0x8206C0E8  MRB- ResetPeerConnection(sendDisconnect=%d, resetOwner=%d, viaForfeit=%d)
+  0x8206C2D0  MRB- ResetSpectatorConnections( viaForfeit=%d )
+  0x8206C584  PongNetGameModeCoordinator::Reset()
+  0x8206D7B8  Gamer caches cleared!
+  0x820709D8  SessionMessageRequester::stateRequestingMessage: No peers left to query at present?
+  0x82071B5C  sgRMDrawable
+  0x82074DE8  Resetting current frame to 0: frame [%d/%d] is invalid for new object.
+  0x820752C8  clearInterval
+  0x820752D8  clearInterval not implemented
+  0x82075A4C  I3DL2_ENVIRONMENT_PRESET_PLATE
+  0x82075A6C  I3DL2_ENVIRONMENT_PRESET_LARGEHALL
+  0x82075A90  I3DL2_ENVIRONMENT_PRESET_MEDIUMHALL
+  0x82075AB4  I3DL2_ENVIRONMENT_PRESET_LARGEROOM
+  0x82075AD8  I3DL2_ENVIRONMENT_PRESET_MEDIUMROOM
+  0x82075AFC  I3DL2_ENVIRONMENT_PRESET_SMALLROOM
+  0x82075B20  I3DL2_ENVIRONMENT_PRESET_UNDERWATER
+  0x82075B44  I3DL2_ENVIRONMENT_PRESET_SEWERPIPE
+  0x82075B68  I3DL2_ENVIRONMENT_PRESET_PARKINGLOT
+  0x82075B8C  I3DL2_ENVIRONMENT_PRESET_PLAIN
+  0x82075BAC  I3DL2_ENVIRONMENT_PRESET_QUARRY
+  0x82075BCC  I3DL2_ENVIRONMENT_PRESET_MOUNTAINS
+  0x82075BF0  I3DL2_ENVIRONMENT_PRESET_CITY
+  0x82075C10  I3DL2_ENVIRONMENT_PRESET_FOREST
+  0x82075C30  I3DL2_ENVIRONMENT_PRESET_ALLEY
+  0x82075C50  I3DL2_ENVIRONMENT_PRESET_STONECORRIDOR
+  0x82075C78  I3DL2_ENVIRONMENT_PRESET_HALLWAY
+  0x82075C9C  I3DL2_ENVIRONMENT_PRESET_CARPETEDHALLWAY
+  0x82075CC8  I3DL2_ENVIRONMENT_PRESET_HANGAR
+  0x82075CE8  I3DL2_ENVIRONMENT_PRESET_ARENA
+  0x82075D08  I3DL2_ENVIRONMENT_PRESET_CAVE
+  0x82075D28  I3DL2_ENVIRONMENT_PRESET_CONCERTHALL
+  0x82075D50  I3DL2_ENVIRONMENT_PRESET_AUDITORIUM
+  0x82075D74  I3DL2_ENVIRONMENT_PRESET_STONEROOM
+  0x82075D98  I3DL2_ENVIRONMENT_PRESET_LIVINGROOM
+  0x82075DBC  I3DL2_ENVIRONMENT_PRESET_BATHROOM
+  0x82075DE0  I3DL2_ENVIRONMENT_PRESET_ROOM
+  0x82075E00  I3DL2_ENVIRONMENT_PRESET_PADDEDCELL
+  0x82075E24  I3DL2_ENVIRONMENT_PRESET_GENERIC
+  0x82075E48  I3DL2_ENVIRONMENT_PRESET_DEFAULT
+  0x82078D38  Connection Reset
+  0x82079234  Reset() called while write is pending
+  0x820793B4  Reset() called while find is pending
+  0x82079878  [rmPtxEmitter] NULL shader group passed, emitter cannot be loaded
+  0x820798E4  [rmPtxBirth] NULL shader group passed, birth cannot be loaded
+  0x82079928  [rmPtxBirth] m_ShaderGroup is NULL, birth cannot be loaded from file
+  0x82079970  rmptx.shadert
+  0x825C23D8  /xstats/xstatsreset.ashx
+  0x825C24F0  /xstats/cleartitle.ashx
+  0x825C8E58  $/tune/shaders/lib
+  0x825D2A58  .?AV?$pgDictionary@VgrcTexture@rage@@@rage@@
+  0x825D3514  .?AVgrmShader@rage@@
+  0x825D3534  .?AVgrmShaderFx@rage@@
+  0x825D3588  .?AVgrmModelGeom@rage@@
+  0x825D35A8  .?AVgrmModel@rage@@
+  0x825D35C4  .?AVgrmShaderGroup@rage@@
+  0x825D35E8  .?AVgrmModelFactory@rage@@
+  0x825D360C  .?AVgrmShaderPreset@rage@@
+  0x825D3630  .?AVgrmShaderBasic@rage@@
+  0x825D3654  .?AVgrmShaderBasicClamped@rage@@
+  0x825D3680  .?AVgrmShaderFactoryStandard@rage@@
+  0x825D36AC  .?AVgrmShaderFactory@rage@@
+  0x825D4634  .?AVrmcDrawableBase@rage@@
+  0x825D4658  .?AVrmcDrawable@rage@@
+  0x825D4BC0  .?AVgrcDirtyDisc@rage@@
+  0x825D4C00  .?AVgrcTextureFactory@rage@@
+  0x825D4C28  .?AVgrcRenderTarget@rage@@
+  0x825D4C4C  .?AVgrcTexture@rage@@
+  0x825D4D64  .?AVgrcSetup@rage@@
+  0x825D4D80  .?AVgrcTextureDictionaryReference@rage@@
+  0x825D4DB4  .?AVgrcTextureReference@rage@@
+  0x825D4DDC  .?AVgrcTextureReferenceBase@rage@@
+  0x825D4E08  .?AVgrcTextureFactoryXenon@rage@@
+  0x825D4E34  .?AVgrcTextureXenonProxy@rage@@
+  0x825D4E5C  .?AVgrcTextureXenon@rage@@
+  0x825D4E80  .?AVgrcRenderTargetXenon@rage@@
+  0x825D4F08  .?AVgrcTextureFactoryString@rage@@
+  0x825D4F34  .?AVgrcTextureString@rage@@
+  0x825D7044  .?AVpongPlayerShaderParams@@
+  0x825D96D0  .?AV?$phMaterialMgrImpl@VpongSurface@@VphMaterialMgr@rage@@@rage@@
+  0x825D9788  .?AVgrmSetup@rage@@
+  0x825D9B44  .?AVsgRMDrawable@@
+  0x825D9C08  .?AVphSurface@rage@@
+  0x825D9C28  .?AVpongSurface@@
+  0x825DC768  .?AU?$cmWorldRefreshableCtor@VcmResettableTimer@rage@@@rage@@
+  0x825DC7B0  .?AU?$cmRefreshableCtor@VcmResettableTimer@rage@@@rage@@
+  0x825DDEA8  .?AVcmResettableTimer@rage@@
+  0x825DE2FC  .?AVphBoundSurface@rage@@
+  0x825E0210  .?AVgrmEdgeModel@rage@@
+  0x825E3984  .?AVsgTraverseReset@@
+
+; ── D3D-RELATED FUNCTION CALLS ──
+
+  NtSetInformationFile  [called by 7 functions]
+    <- 0x82567188  sub_82567188
+    <- 0x825679E0  sub_825679E0
+    <- 0x82567B28  sub_82567B28
+    <- 0x82567BD0  sub_82567BD0
+    <- 0x82567EC0  sub_82567EC0
+    <- 0x82567FF8  sub_82567FF8
+    <- 0x82568C20  sub_82568C20
+
+  j_XamShowFriendsUI  [called by 4 functions]
+    <- 0x822FE7C8  sub_822FE7C8
+    <- 0x822FEB38  sub_822FEB38
+    <- 0x822FF050  sub_822FF050
+    <- 0x822FF348  sub_822FF348
+
+  KeSetEvent  [called by 4 functions]
+    <- 0x82366CA0  sub_82366CA0
+    <- 0x82367568  sub_82367568
+    <- 0x82367A20  sub_82367A20
+    <- 0x82368898  sub_82368898
+
+  XamUserReadProfileSettings  [called by 4 functions]
+    <- 0x8256FC50  sub_8256FC50
+    <- 0x82570A20  sub_82570A20
+    <- 0x8257B7A0  sub_8257B7A0
+    <- 0x8257B808  sub_8257B808
+
+  KeTlsSetValue  [called by 2 functions]
+    <- 0x82188190  sub_82188190
+    <- 0x82188220  sub_82188220
+
+  j_XamContentCreateEnumerator  [called by 2 functions]
+    <- 0x822E8E60  sub_822E8E60
+    <- 0x82410420  sub_82410420
+
+  VdSetSystemCommandBufferGpuIdentifierAddress  [called by 2 functions]
+    <- 0x8235AF08  sub_8235AF08
+    <- 0x82366CA0  sub_82366CA0
+
+  ExGetXConfigSetting  [called by 2 functions]
+    <- 0x82366A30  sub_82366A30
+    <- 0x8242BB70  sub_8242BB70
+
+  VdSetGraphicsInterruptCallback  [called by 2 functions]
+    <- 0x82366A30  sub_82366A30
+    <- 0x82366CA0  sub_82366CA0
+
+  KeResetEvent  [called by 2 functions]
+    <- 0x82367568  sub_82367568
+    <- 0x82367938  sub_82367938
+
+  ExCreateThread  [called by 2 functions]
+    <- 0x82367DD8  sub_82367DD8
+    <- 0x82568DA0  sub_82568DA0
+
+  KeSetBasePriorityThread  [called by 2 functions]
+    <- 0x82367DD8  sub_82367DD8
+    <- 0x8242B7D0  sub_8242B7D0
+
+  NtCreateEvent  [called by 2 functions]
+    <- 0x8242B9F0  sub_8242B9F0
+    <- 0x82566C88  sub_82566C88
+
+  XAudioUnregisterRenderDriverClient  [called by 2 functions]
+    <- 0x82461350  sub_82461350
+    <- 0x82461498  sub_82461498
+
+  NtCreateFile  [called by 2 functions]
+    <- 0x82567368  sub_82567368
+    <- 0x82567CE8  sub_82567CE8
+
+  XamUserCreateStatsEnumerator  [called by 2 functions]
+    <- 0x8257B320  sub_8257B320
+    <- 0x8257B380  sub_8257B380
+
+  sub_821AD3D0  [called by 1 functions]
+    <- 0x821AB4C0  sub_821AB4C0
+
+  j_XamContentSetThumbnail  [called by 1 functions]
+    <- 0x822E9BD8  sub_822E9BD8
+
+  VdSetDisplayMode  [called by 1 functions]
+    <- 0x823667E0  sub_823667E0
+
+  sub_8236D3D0  [called by 1 functions]
+    <- 0x823E4BC0  sub_823E4BC0
+
+  NtSuspendThread  [called by 1 functions]
+    <- 0x8242B850  sub_8242B850
+
+  KeSetAffinityThread  [called by 1 functions]
+    <- 0x8242B8A8  sub_8242B8A8
+
+  XAudioRegisterRenderDriverClient  [called by 1 functions]
+    <- 0x82461350  sub_82461350
+
+  XAudioSubmitRenderDriverFrame  [called by 1 functions]
+    <- 0x82461440  sub_82461440
+
+  XMACreateContext  [called by 1 functions]
+    <- 0x8246B638  sub_8246B638
+
+  NtSetEvent  [called by 1 functions]
+    <- 0x82566C40  sub_82566C40
+
+  NtCreateSemaphore  [called by 1 functions]
+    <- 0x82566D28  sub_82566D28
+
+  XamCustomSetBannerImage  [called by 1 functions]
+    <- 0x82567100  sub_82567100
+
+  XamSessionCreateHandle  [called by 1 functions]
+    <- 0x82569D40  sub_82569D40
+
+  XamNotifyCreateListener  [called by 1 functions]
+    <- 0x8256F150  sub_8256F150
+
+  XamVoiceHeadsetPresent  [called by 1 functions]
+    <- 0x8256FC50  sub_8256FC50
+
+  XamUserAreUsersFriends  [called by 1 functions]
+    <- 0x8256FC50  sub_8256FC50
+
+  XamVoiceCreate  [called by 1 functions]
+    <- 0x82570968  sub_82570968
+
+  XamUserCreateAchievementEnumerator  [called by 1 functions]
+    <- 0x8257B3F8  sub_8257B3F8
+
+  NtSetTimerEx  [called by 1 functions]
+    <- 0x8257B538  sub_8257B538
+
+  NtCreateTimer  [called by 1 functions]
+    <- 0x8257B5A0  sub_8257B5A0
+
+  NtCreateMutant  [called by 1 functions]
+    <- 0x8257B6B0  sub_8257B6B0
+
+  XamUserWriteProfileSettings  [called by 1 functions]
+    <- 0x8257B878  sub_8257B878
+

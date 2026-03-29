@@ -1,0 +1,35 @@
+; ===================================================================
+; RENDER / DRAW — VTABLE ADDRESSES
+; Rockstar Table Tennis  -  default.xex  (pong_xenon_final.pe)
+; Build: May 11 2006  |  SDK v2.0.2417  |  TT-2015
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; ===================================================================
+
+; ADDRESS       VFUNCS  CLASS NAME
+; ------------  ------  --------------------------------------------------
+
+  0x8202F193      19  grmShaderFx_rage
+  0x8202F1F4       3  grmModel_rage
+  0x8202F208       3  grmModelGeom_rage
+  0x8202F2CE       0  grmShaderGroup_rage
+  0x8202F2DD       2  grmModelFactory_rage
+  0x8202F5BC      17  grmShader_rage
+  0x8202F612       0  grmShaderPreset_rage
+  0x8202F647       7  grmShaderFactory_rage
+  0x8202F66F       7  grmShaderFactoryStandard_rage
+  0x8202F69B      17  grmShaderBasicClamped_rage
+  0x8202F6F0      17  grmShaderBasic_rage
+  0x820348C3       2  grcDirtyDisc_rage
+  0x820348E8      15  grcTextureFactory_rage
+  0x8203502A       6  grcSetup_rage
+  0x8203504C      26  grcTextureReferenceBase_rage
+  0x820350BC      26  grcTextureReference_rage
+  0x82035134      26  grcTextureDictionaryReference_rage
+  0x820351BC      30  grcRenderTargetXenon_rage
+  0x82035244      26  grcTextureXenon_rage
+  0x820352B4      15  grcTextureFactoryXenon_rage
+  0x820352F8      26  grcTextureString_rage
+  0x82035368      15  grcTextureFactoryString_rage
+  0x8204DFA1       6  grmSetup_rage
+  0x82066AB6       0  grmEdgeModel_rage

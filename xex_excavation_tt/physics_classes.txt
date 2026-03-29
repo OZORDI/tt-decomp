@@ -1,0 +1,53 @@
+; ===================================================================
+; PHYSICS CLASSES — VTABLE ADDRESSES
+; Rockstar Table Tennis  -  default.xex  (pong_xenon_final.pe)
+; Build: May 11 2006  |  SDK v2.0.2417  |  TT-2015
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; ===================================================================
+
+; ADDRESS       VFUNCS  CLASS NAME
+; ------------  ------  --------------------------------------------------
+
+  0x820310FC       2  fragType_rage
+  0x82031114      58  fragInst_rage
+  0x820312DC       0  fragTypeChild_rage
+  0x820312F8      16  fragDrawable_rage
+  0x8203134C      33  phJoint1Dof_rage
+  0x820313D8      33  phJoint3Dof_rage
+  0x82031464       0  phSleep_rage
+  0x820332F8      20  fragHeapAllocator_rage
+  0x8204E055      15  phMaterialMgr_rage
+  0x8204EB3C      70  phArticulatedCollider_rage
+  0x8204EC64      33  phJoint_rage
+  0x82057518      37  phBound_rage
+  0x820575C0      39  phBoundComposite_rage
+  0x8205769C      41  phBoundGeometry_rage
+  0x8205774C      37  phBoundSphere_rage
+  0x820577FC      41  phBoundOctree_rage
+  0x820578AC      39  phBoundOTGrid_rage
+  0x82057955      37  phBoundRibbon_rage
+  0x82057A1D      37  phBoundCapsule_rage
+  0x82057ABC      39  phBoundBox_rage
+  0x82057B60      41  phBoundQuadtree_rage
+  0x82057C0C      38  phBoundSurface_rage
+  0x82057CB8      39  phBoundPolyhedron_rage
+  0x82057D5C      41  phBoundGeomCullable_rage
+  0x82058236       7  phSimulator_rage
+  0x82058264      30  phLevelNew_rage
+  0x820582EC      31  phInst_rage
+  0x820583A2       0  phArchetypeBase_rage
+  0x820583AC      16  phArchetype_rage
+  0x820583FC      16  phArchetypePhys_rage
+  0x8205844C      16  phArchetypeDamp_rage
+  0x8205849C      68  phCollider_rage
+  0x820585BD      68  phConstrainedCollider_rage
+  0x820586DE       0  phArchetypeMgr_rage
+  0x820586E8      30  phLevelBase_rage
+  0x820615D5      37  phBoundTaperedCapsule_rage
+  0x82061672       9  phInstBehavior_rage
+  0x820616A2       9  phRope_rage
+  0x820616D4      41  phMorphGeometry_rage
+  0x82066E9C       9  phSpringAninmatedAttachment_rage
+  0x820701D0      31  phClothVerletInst_rage
+  0x82078EC2       9  phClothVerletBehavior_rage

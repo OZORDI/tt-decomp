@@ -1,0 +1,1321 @@
+; ===================================================================
+; STEP 6: STRUCT FIELD ACCESS PATTERNS
+; Rockstar Table Tennis  -  default.xex
+; Derived from lwz/stw/lhz/lbz with r3+offset in virtual methods
+; ===================================================================
+
+; Format: class -> list of offsets touched by virtual methods (with frequency)
+; High-frequency offsets at low addresses are likely vtable ptr, ref count, etc.
+; Cluster of sequential offsets = probable struct field group
+
+class BallHitMessage  [1 unique offsets  1 total accesses]
+  +0x0008  (   1x)  █
+
+class CMtoCSAdapter  [2 unique offsets  7 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0004  (   1x)  █
+
+class Gamer  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class GamerReadyMessage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class H_SmoothLookAt_LimitedTilt_cmSampleCamActions_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class HitMessage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class JunkSwingStartedMessage  [2 unique offsets  2 total accesses]
+  +0x0008  (   1x)  █
+  +0x0009  (   1x)  █
+
+class LocomotionController  [2 unique offsets  9 total accesses]
+  +0x0000  (   8x)  ████████
+  +0x0008  (   1x)  █
+
+class LocomotionState  [2 unique offsets  6 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0004  (   1x)  █
+
+class LocomotionStateAnim  [1 unique offsets  13 total accesses]
+  +0x0000  (  13x)  █████████████
+
+class LocomotionStateMf  [3 unique offsets  24 total accesses]
+  +0x0000  (  16x)  ████████████████
+  +0x0004  (   5x)  █████
+  +0x0008  (   3x)  ███
+
+class MatchStatsMessage  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class NetDataQuery  [3 unique offsets  17 total accesses]
+  +0x0000  (   9x)  █████████
+  +0x0004  (   4x)  ████
+  +0x0008  (   4x)  ████
+
+class NetMatchTimer  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class NetStateSync  [3 unique offsets  29 total accesses]
+  +0x0000  (  15x)  ███████████████
+  +0x0004  (   7x)  ███████
+  +0x0008  (   7x)  ███████
+
+class NetTimer  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class P_VelocityFollow_cmSampleCamActions_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class PointDeclaredMessage  [1 unique offsets  1 total accesses]
+  +0x0008  (   1x)  █
+
+class PongNetExhibitionCoordinator  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class PongNetGameModeCoordinator  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class PongNetGameModeManager  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class PongNetRoundRobinCoordinator  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class PostPointExitMessage  [1 unique offsets  1 total accesses]
+  +0x0008  (   1x)  █
+
+class ServeAbortMessage  [1 unique offsets  1 total accesses]
+  +0x0008  (   1x)  █
+
+class ServeLetMessage  [1 unique offsets  1 total accesses]
+  +0x0008  (   1x)  █
+
+class SessionManager_pongLiveManager  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class SessionMessageRequester  [2 unique offsets  11 total accesses]
+  +0x0000  (   8x)  ████████
+  +0x0004  (   3x)  ███
+
+class SinglesNetworkClient  [3 unique offsets  13 total accesses]
+  +0x0000  (  10x)  ██████████
+  +0x0004  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class SpectatorBallHitMessage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class SpectatorHudItem  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class SpectatorNetworkClient  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class TerminateRallyMessage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __Holder_H_atAny_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class __Holder_M_atAny_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class __Holder_PAVfragInst_rage___atAny_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class __Holder_PAVphInst_rage___atAny_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class __Holder_PBVMatrix34_rage___atAny_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class __Holder_VVector3_rage___atAny_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class __atSingleton_VPongNet__  [1 unique offsets  6 total accesses]
+  +0x0000  (   6x)  ██████
+
+class __atSingleton_VgdCharEmotionManager__  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __atSingleton_VgdGameData__  [5 unique offsets  66 total accesses]
+  +0x0000  (  59x)  ██████████████████████████████
+  +0x0004  (   3x)  ███
+  +0x0005  (   1x)  █
+  +0x0006  (   1x)  █
+  +0x0008  (   2x)  ██
+
+class __atSingleton_VgdNetDataMgr__  [3 unique offsets  4 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __atSingleton_VgdPropDataMgr__  [3 unique offsets  4 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __atSingleton_VgdStatsMgr__  [1 unique offsets  34 total accesses]
+  +0x0000  (  34x)  ██████████████████████████████
+
+class __atSingleton_VgmSceneGraph__  [1 unique offsets  16 total accesses]
+  +0x0000  (  16x)  ████████████████
+
+class __atSingleton_VpongControllerContext__  [1 unique offsets  8 total accesses]
+  +0x0000  (   8x)  ████████
+
+class __atSingleton_VpongCutSceneManager__  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class __atSingleton_VpongCutScenePlayer__  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __atSingleton_VpongLiveManager__  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __atSingleton_VpongShellContext__  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class __atSingleton_VpongShell__  [3 unique offsets  57 total accesses]
+  +0x0000  (  54x)  ██████████████████████████████
+  +0x0004  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class __atSingleton_VpongUnlockContext__  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class __cvCurveNurbsWM_VVector3WM_rage___rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __hsmState_VsnSessionFinder_rage__VslfRoot_12__rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class __phMaterialMgrImpl_VpongSurface__VphMaterialMgr_rage___rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class __pongNetMessageHolder_VCancelLobbyCountdownMessage___00  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VDataRequestFailedMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VDataRequestMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VDataSendMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VDenySpectatorMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VDisconnectingSinglesClientMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VDropSpectatorConnection___01  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __pongNetMessageHolder_VEnteringReplayMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VExitPostGameMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VLeaveSpectatorSessionMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VLevelConfigMessage___03  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __pongNetMessageHolder_VLoadDataQueryResponse___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VLoadDataQuery___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VLoadingStateRequestMessage___03  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VLoadingStateResponseMessage___03  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __pongNetMessageHolder_VMatchDataSyncMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VMatchStatsMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VNextMatchMessage___00  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __pongNetMessageHolder_VNextMatchSpectatorMessage___00  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VPointDeclaredMessage___04  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VPostPointExitMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VRemoveSpectatorMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VRequestDataMessage___01  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __pongNetMessageHolder_VServeAbortMessage___03  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VServeFaultMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VServeLetMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VServeUnlockMessage___03  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VSinglesConnectRequest___00  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VSkipReplayMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VSpectatorConnectRequest___00  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VStartLobbyCountdownMessage___00  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VStateSyncMessage___01  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __pongNetMessageHolder_VStateSyncRequestMessage___01  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class __pongNetMessageHolder_VSwingStartedMessage___0BE_  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class __pongNetMessageHolder_VTournamentCompleteMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VTwoMinuteWarningMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class __pongNetMessageHolder_VUserRequestReplayMessage___01  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class audControl3d_rage  [1 unique offsets  11 total accesses]
+  +0x0000  (  11x)  ███████████
+
+class audControlMgr_rage  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class audControl_rage  [1 unique offsets  12 total accesses]
+  +0x0000  (  12x)  ████████████
+
+class audMsgSink  [5 unique offsets  24 total accesses]
+  +0x0000  (  16x)  ████████████████
+  +0x0004  (   4x)  ████
+  +0x0005  (   1x)  █
+  +0x0007  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class audVoiceStream_rage  [2 unique offsets  10 total accesses]
+  +0x0004  (   5x)  █████
+  +0x0008  (   5x)  █████
+
+class camViewCS  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class charViewData  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class cmActionFactory_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class cmAnimCamPosition_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class cmApproach2_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class cmCapture_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class cmChanged_rage  [2 unique offsets  4 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   1x)  █
+
+class cmGreaterThan_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class cmLessThan_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class cmMaterialProbe_rage  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class cmMemory_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class cmMetafileTuningSet_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class cmMostReporter  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class cmNormalizedTimer_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class cmPowerApproach_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class cmSampleCamMachineBank_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class cmSampleCamMotorPlant_rage  [2 unique offsets  19 total accesses]
+  +0x0000  (  18x)  ██████████████████
+  +0x0004  (   1x)  █
+
+class cmSimple_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class cmTunable_rage  [1 unique offsets  6 total accesses]
+  +0x0000  (   6x)  ██████
+
+class cmValueSet_rage  [1 unique offsets  5 total accesses]
+  +0x0000  (   5x)  █████
+
+class crAnimChannelCurveFloat_rage  [1 unique offsets  8 total accesses]
+  +0x0000  (   8x)  ████████
+
+class crAnimChannelQuantizeFloat_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class crAnimChannelRawBool_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class crAnimChannelRawFloat_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class crAnimChannelRawInt_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class crAnimChannelRawQuaternion_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class crAnimChannelRawVector3_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class crAnimChannelStaticFloat_rage  [4 unique offsets  6 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   1x)  █
+  +0x0005  (   1x)  █
+  +0x0006  (   1x)  █
+
+class crAnimChannelStaticQuaternion_rage  [4 unique offsets  6 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   1x)  █
+  +0x0005  (   1x)  █
+  +0x0006  (   1x)  █
+
+class crAnimDofFloat_rage  [4 unique offsets  7 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   1x)  █
+  +0x0005  (   1x)  █
+  +0x0006  (   1x)  █
+
+class crAnimDofQuaternion_rage  [4 unique offsets  9 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0004  (   1x)  █
+  +0x0005  (   1x)  █
+  +0x0006  (   1x)  █
+
+class crAnimDofVector3_rage  [4 unique offsets  8 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0004  (   1x)  █
+  +0x0005  (   1x)  █
+  +0x0006  (   1x)  █
+
+class crIKBodyBase_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class crIKBodyHumanoid_rage  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class datBitBufferDefaultAllocator_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class dcamPolarCam_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class exception_std  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class fiBinTokenizer_rage  [1 unique offsets  2 total accesses]
+  +0x0008  (   2x)  ██
+
+class fiPackfile_rage  [2 unique offsets  6 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0008  (   1x)  █
+
+class fiSerialize_rage  [3 unique offsets  37 total accesses]
+  +0x0000  (  16x)  ████████████████
+  +0x0004  (   7x)  ███████
+  +0x0008  (  14x)  ██████████████
+
+class fragDrawable_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class fragInst_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class fxAmbient  [3 unique offsets  8 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0001  (   1x)  █
+  +0x0004  (   2x)  ██
+
+class fxAmbientMgr  [1 unique offsets  9 total accesses]
+  +0x0000  (   9x)  █████████
+
+class fxBoobSpring  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class fxCrowdGfx  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class fxLvlAnimData  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class fxReticle  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class fxSpecialFx  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gdCharData  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gdLadderCommonData  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gdLevelData  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdNetDataFile  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gdPropDataFile  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gdShotMultiSet  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionAce  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionCPUMatchWinsData  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionGameDeficit  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionOnlineMatches  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gdUnlockConditionPlayTime  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionPointDeficit  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionRallyCount  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class gdUnlockConditionRankedSkunks  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionRankedTourneyWins  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionRankedWinStreak  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdUnlockConditionSkunk  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class gdVibActuator  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gdVibEffect  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class gmBallNode  [3 unique offsets  36 total accesses]
+  +0x0000  (  32x)  ██████████████████████████████
+  +0x0004  (   2x)  ██
+  +0x0008  (   2x)  ██
+
+class gmLogic  [1 unique offsets  10 total accesses]
+  +0x0000  (  10x)  ██████████
+
+class gmLogicNode  [3 unique offsets  13 total accesses]
+  +0x0000  (   9x)  █████████
+  +0x0004  (   2x)  ██
+  +0x0008  (   2x)  ██
+
+class gmLogicSinglesMatch  [3 unique offsets  141 total accesses]
+  +0x0000  (  73x)  ██████████████████████████████
+  +0x0004  (  34x)  ██████████████████████████████
+  +0x0008  (  34x)  ██████████████████████████████
+
+class gmLogicSpectator  [3 unique offsets  77 total accesses]
+  +0x0000  (  41x)  ██████████████████████████████
+  +0x0004  (  18x)  ██████████████████
+  +0x0008  (  18x)  ██████████████████
+
+class gmLogicSwingPractice  [3 unique offsets  84 total accesses]
+  +0x0000  (  46x)  ██████████████████████████████
+  +0x0004  (  19x)  ███████████████████
+  +0x0008  (  19x)  ███████████████████
+
+class gmPracticeTarget  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class grcDirtyDisc_rage  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class grcSetup_rage  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class grcTextureFactoryString_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class grcTextureFactoryXenon_rage  [2 unique offsets  8 total accesses]
+  +0x0000  (   7x)  ███████
+  +0x0004  (   1x)  █
+
+class grcTextureReferenceBase_rage  [1 unique offsets  30 total accesses]
+  +0x0000  (  30x)  ██████████████████████████████
+
+class grmModelGeom_rage  [2 unique offsets  5 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   1x)  █
+
+class grmSetup_rage  [1 unique offsets  6 total accesses]
+  +0x0000  (   6x)  ██████
+
+class grmShaderBasicClamped_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class grmShaderBasic_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class grmShaderFactoryStandard_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class grmShaderFx_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class hsmContext_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class hudBoot  [2 unique offsets  8 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   4x)  ████
+
+class hudCharView  [2 unique offsets  4 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   2x)  ██
+
+class hudController  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0004  (   1x)  █
+
+class hudCredits  [2 unique offsets  19 total accesses]
+  +0x0000  (  15x)  ███████████████
+  +0x0004  (   4x)  ████
+
+class hudDialog  [2 unique offsets  20 total accesses]
+  +0x0000  (  10x)  ██████████
+  +0x0004  (  10x)  ██████████
+
+class hudFlashBase  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class hudFrontEnd  [2 unique offsets  26 total accesses]
+  +0x0000  (  13x)  █████████████
+  +0x0004  (  13x)  █████████████
+
+class hudHUD  [2 unique offsets  65 total accesses]
+  +0x0000  (  33x)  ██████████████████████████████
+  +0x0004  (  32x)  ██████████████████████████████
+
+class hudLeaderboard  [2 unique offsets  16 total accesses]
+  +0x0000  (   8x)  ████████
+  +0x0004  (   8x)  ████████
+
+class hudLegals  [2 unique offsets  12 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0004  (   6x)  ██████
+
+class hudList  [2 unique offsets  18 total accesses]
+  +0x0000  (   9x)  █████████
+  +0x0004  (   9x)  █████████
+
+class hudLoadingScreen  [3 unique offsets  40 total accesses]
+  +0x0000  (  21x)  █████████████████████
+  +0x0004  (  18x)  ██████████████████
+  +0x0006  (   1x)  █
+
+class hudPause  [2 unique offsets  35 total accesses]
+  +0x0000  (  19x)  ███████████████████
+  +0x0004  (  16x)  ████████████████
+
+class hudShell  [2 unique offsets  4 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   2x)  ██
+
+class hudTrainingHUD  [2 unique offsets  10 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0004  (   5x)  █████
+
+class hudTrainingLoadScreen  [3 unique offsets  20 total accesses]
+  +0x0000  (  10x)  ██████████
+  +0x0004  (   9x)  █████████
+  +0x0006  (   1x)  █
+
+class hudTrainingPopUp  [2 unique offsets  18 total accesses]
+  +0x0000  (  10x)  ██████████
+  +0x0004  (   8x)  ████████
+
+class hudUnlocks  [2 unique offsets  8 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   4x)  ████
+
+class interactiveStats_hudLoadingScreen  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class interactiveTips_hudLoadingScreen  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class interactiveUnlocks_hudLoadingScreen  [2 unique offsets  11 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0004  (   5x)  █████
+
+class lvlLevel  [1 unique offsets  10 total accesses]
+  +0x0000  (  10x)  ██████████
+
+class lvlLevelMgr  [1 unique offsets  8 total accesses]
+  +0x0000  (   8x)  ████████
+
+class lvlTable  [2 unique offsets  23 total accesses]
+  +0x0000  (  18x)  ██████████████████
+  +0x0008  (   5x)  █████
+
+class lvlTableTop  [2 unique offsets  5 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   1x)  █
+
+class mcMemcardControl  [2 unique offsets  45 total accesses]
+  +0x0000  (  35x)  ██████████████████████████████
+  +0x0004  (  10x)  ██████████
+
+class msgEventHandler  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class netBBAllocator_rage  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0004  (   1x)  █
+
+class parMemberArray_rage  [3 unique offsets  13 total accesses]
+  +0x0000  (  11x)  ███████████
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class parMemberStruct_rage  [3 unique offsets  6 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class parStreamInXml_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   2x)  ██
+
+class parStreamOutXml_rage  [1 unique offsets  2 total accesses]
+  +0x0004  (   2x)  ██
+
+class parStructure_rage  [1 unique offsets  7 total accesses]
+  +0x0000  (   7x)  ███████
+
+class pcrAnimEventFootAud  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class pcrAnimObserved  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class pcrPostPointBlender  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class pcrSwingAbortSet  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class pcrSwingMissData  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class pcrSwingMissSet  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class phArchetypePhys_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class phArchetype_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class phArticulatedCollider_rage  [1 unique offsets  11 total accesses]
+  +0x0000  (  11x)  ███████████
+
+class phBoundCapsule_rage  [3 unique offsets  4 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0005  (   1x)  █
+  +0x0007  (   1x)  █
+
+class phBoundComposite_rage  [2 unique offsets  17 total accesses]
+  +0x0000  (  15x)  ███████████████
+  +0x0004  (   2x)  ██
+
+class phBoundGeometry_rage  [3 unique offsets  8 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0005  (   1x)  █
+  +0x0007  (   1x)  █
+
+class phBoundOTGrid_rage  [1 unique offsets  11 total accesses]
+  +0x0000  (  11x)  ███████████
+
+class phBoundRibbon_rage  [4 unique offsets  17 total accesses]
+  +0x0000  (  13x)  █████████████
+  +0x0004  (   2x)  ██
+  +0x0005  (   1x)  █
+  +0x0008  (   1x)  █
+
+class phBoundSphere_rage  [1 unique offsets  1 total accesses]
+  +0x0005  (   1x)  █
+
+class phBoundTaperedCapsule_rage  [1 unique offsets  1 total accesses]
+  +0x0007  (   1x)  █
+
+class phBound_rage  [2 unique offsets  2 total accesses]
+  +0x0004  (   1x)  █
+  +0x0007  (   1x)  █
+
+class phClothVerletBehavior_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class phCollider_rage  [1 unique offsets  5 total accesses]
+  +0x0000  (   5x)  █████
+
+class phConstrainedCollider_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class phDemoWorld  [1 unique offsets  8 total accesses]
+  +0x0000  (   8x)  ████████
+
+class phJoint3Dof_rage  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class phLevelNew_rage  [2 unique offsets  15 total accesses]
+  +0x0000  (  14x)  ██████████████
+  +0x0004  (   1x)  █
+
+class phMaterialMgr_rage  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class phRope_rage  [3 unique offsets  7 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   1x)  █
+  +0x0008  (   2x)  ██
+
+class phSimulator_rage  [1 unique offsets  19 total accesses]
+  +0x0000  (  19x)  ███████████████████
+
+class phSpringAninmatedAttachment_rage  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class phUpdateObject  [1 unique offsets  6 total accesses]
+  +0x0000  (   6x)  ██████
+
+class plrPlayerMgr  [4 unique offsets  16 total accesses]
+  +0x0000  (  12x)  ████████████
+  +0x0004  (   1x)  █
+  +0x0006  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class pongAttractState  [3 unique offsets  6 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class pongAudioManager  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class pongBinkMovie  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class pongBootState  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class pongCSAction  [3 unique offsets  60 total accesses]
+  +0x0000  (  30x)  ██████████████████████████████
+  +0x0004  (  15x)  ███████████████
+  +0x0008  (  15x)  ███████████████
+
+class pongCSActionCamAnim  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class pongCSActionCharAmbAnim  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class pongCSActionCharAnim  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class pongCSActionDoInOrder  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class pongCSActionIf  [1 unique offsets  7 total accesses]
+  +0x0000  (   7x)  ███████
+
+class pongCSActionLoop  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class pongCameraMgr  [3 unique offsets  31 total accesses]
+  +0x0000  (  24x)  ████████████████████████
+  +0x0004  (   4x)  ████
+  +0x0008  (   3x)  ███
+
+class pongCharViewContext  [1 unique offsets  10 total accesses]
+  +0x0000  (  10x)  ██████████
+
+class pongCharViewState  [3 unique offsets  8 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   2x)  ██
+  +0x0008  (   3x)  ███
+
+class pongCreatureInst  [2 unique offsets  6 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   2x)  ██
+
+class pongCreditsContext  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class pongCreditsState  [3 unique offsets  5 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class pongDialogContext  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class pongDialogState  [3 unique offsets  8 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class pongDrillCharging  [2 unique offsets  6 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   3x)  ███
+
+class pongDrillFocusShot  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0004  (   1x)  █
+
+class pongDrillServeMeter  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class pongDrillSmash  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0004  (   1x)  █
+
+class pongDrillSpin  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0004  (   1x)  █
+
+class pongFrontendContext  [1 unique offsets  16 total accesses]
+  +0x0000  (  16x)  ████████████████
+
+class pongFrontendState  [2 unique offsets  4 total accesses]
+  +0x0000  (   1x)  █
+  +0x0004  (   3x)  ███
+
+class pongGameContext  [1 unique offsets  18 total accesses]
+  +0x0000  (  18x)  ██████████████████
+
+class pongGameState  [3 unique offsets  10 total accesses]
+  +0x0000  (   7x)  ███████
+  +0x0004  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class pongLeaderboardContext  [2 unique offsets  5 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   1x)  █
+
+class pongLegalsContext  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class pongLegalsState  [3 unique offsets  8 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   3x)  ███
+  +0x0008  (   1x)  █
+
+class pongLoadingContext  [2 unique offsets  10 total accesses]
+  +0x0000  (   8x)  ████████
+  +0x0004  (   2x)  ██
+
+class pongLoadingState  [3 unique offsets  16 total accesses]
+  +0x0000  (  12x)  ████████████
+  +0x0004  (   2x)  ██
+  +0x0008  (   2x)  ██
+
+class pongLocomotionController  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class pongLogosState  [3 unique offsets  9 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0004  (   3x)  ███
+  +0x0008  (   1x)  █
+
+class pongPauseContext  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class pongPauseState  [3 unique offsets  6 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class pongPlayer  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class pongRemotePlayer  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class pongStatsContext  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class pongTrainingDrill  [2 unique offsets  5 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   2x)  ██
+
+class pongTrainingLoadingContext  [2 unique offsets  6 total accesses]
+  +0x0000  (   4x)  ████
+  +0x0004  (   2x)  ██
+
+class pongTrainingUIContext  [2 unique offsets  4 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   1x)  █
+
+class pongTrainingUIState  [3 unique offsets  11 total accesses]
+  +0x0000  (   7x)  ███████
+  +0x0004  (   2x)  ██
+  +0x0008  (   2x)  ██
+
+class pongXMVMovie  [1 unique offsets  2 total accesses]
+  +0x0004  (   2x)  ██
+
+class rmPtxBirth_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class rmPtxSystem_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class sgPhysicalObject  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class shInit  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class slfBroadcasting_slfFindingSyslink_slfSearching_slfRoot_snSessionFinder_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class slfFindingOnline_slfSearching_slfRoot_snSessionFinder_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class slfRoot_snSessionFinder_rage  [2 unique offsets  9 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0008  (   4x)  ████
+
+class slfSearching_slfRoot_snSessionFinder_rage  [2 unique offsets  6 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0008  (   4x)  ████
+
+class snAcquiringHost_snMigrateMachine_rage  [2 unique offsets  6 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0008  (   4x)  ████
+
+class snActive_snRoot_snSession_rage  [2 unique offsets  21 total accesses]
+  +0x0000  (  13x)  █████████████
+  +0x0008  (   8x)  ████████
+
+class snArbGuestRegistering_snIdle_snActive_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snArbMachine_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class snChangingPresence_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snChanging_snChangingPresence_snRoot_snSession_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class snCreateMachine_rage  [2 unique offsets  24 total accesses]
+  +0x0000  (  10x)  ██████████
+  +0x0008  (  14x)  ██████████████
+
+class snCreating_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snDestroying_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snDormant_snRoot_snSession_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snEnding_snActive_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snHsmAcceptingJoinRequest_snJoinMachine_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snHsmAcceptingLeaveRequest_snLeaveMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmApplyingConfig_snCreateMachine_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snHsmCreatingGuest_snCreateMachine_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class snHsmJoinPending_snHsmRequestingJoin_snJoinMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmLeavePending_snHsmRequestingLeave_snLeaveMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmLocalJoinPending_snJoinMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmLocalLeavePending_snLeaveMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmRemoteJoinPending_snJoinMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmRemoteLeavePending_snLeaveMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmRequestingConfig_snCreateMachine_rage  [1 unique offsets  4 total accesses]
+  +0x0000  (   4x)  ████
+
+class snHsmRequestingJoin_snJoinMachine_rage  [2 unique offsets  9 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0008  (   6x)  ██████
+
+class snHsmRequestingLeave_snLeaveMachine_rage  [2 unique offsets  6 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0008  (   4x)  ████
+
+class snHsmStartingSession_snCreateMachine_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class snHsmWaitingForReply_snHsmRequestingJoin_snJoinMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snHsmWaitingForReply_snHsmRequestingLeave_snLeaveMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snIdle_snActive_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snInProgress_snActive_snRoot_snSession_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class snJoinMachine_rage  [2 unique offsets  26 total accesses]
+  +0x0000  (  16x)  ████████████████
+  +0x0008  (  10x)  ██████████
+
+class snJoining_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snLeaveMachine_rage  [2 unique offsets  23 total accesses]
+  +0x0000  (  15x)  ███████████████
+  +0x0008  (   8x)  ████████
+
+class snLeaving_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snMigrateMachine_rage  [2 unique offsets  10 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0008  (   4x)  ████
+
+class snMigratingAsGuest_snMigrateMachine_rage  [2 unique offsets  6 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0008  (   4x)  ████
+
+class snMigrating_snAcquiringHost_snMigrateMachine_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snMigrating_snMigratingAsGuest_snMigrateMachine_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class snMigrating_snRoot_snSession_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snNotifyingGuests_snAcquiringHost_snMigrateMachine_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class snRoot_snSession_rage  [2 unique offsets  26 total accesses]
+  +0x0000  (  10x)  ██████████
+  +0x0008  (  16x)  ████████████████
+
+class snStarting_snActive_snRoot_snSession_rage  [2 unique offsets  10 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0008  (   4x)  ████
+
+class snWaitingForMigrateMsg_snMigratingAsGuest_snMigrateMachine_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class snWaitingForReplies_snChangingPresence_snRoot_snSession_rage  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class stateAim_gmLogicSwingPractice  [1 unique offsets  7 total accesses]
+  +0x0000  (   7x)  ███████
+
+class stateAwaitReturnHit_gmLogicSinglesMatch  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0008  (   1x)  █
+
+class stateAwaitReturnHit_gmLogicSpectator  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class stateIdle_SessionMessageRequester  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class stateInit_gmLogicSpectator  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class stateMainMenu_gmLogicSwingPractice  [1 unique offsets  2 total accesses]
+  +0x0008  (   2x)  ██
+
+class statePostGame_gmLogicSinglesMatch  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class statePostGame_gmLogicSpectator  [1 unique offsets  1 total accesses]
+  +0x0008  (   1x)  █
+
+class statePostPointCS_gmLogicSinglesMatch  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class statePostPoint_gmLogicSpectator  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class statePostPoint_gmLogicSwingPractice  [1 unique offsets  5 total accesses]
+  +0x0000  (   5x)  █████
+
+class statePreGameSync_gmLogicSpectator  [2 unique offsets  14 total accesses]
+  +0x0000  (   8x)  ████████
+  +0x0004  (   6x)  ██████
+
+class statePreInit_gmLogicSwingPractice  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class statePreServeSpectatorSyncState_gmLogicSinglesMatch  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0008  (   1x)  █
+
+class stateReplay_gmLogicSpectator  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class stateReturnHit_gmLogicSwingPractice  [2 unique offsets  2 total accesses]
+  +0x0000  (   1x)  █
+  +0x0004  (   1x)  █
+
+class stateWaitTime_NetStateSync  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class swfACTIONFUNC_rage  [2 unique offsets  7 total accesses]
+  +0x0000  (   6x)  ██████
+  +0x0004  (   1x)  █
+
+class swfBUTTON_rage  [3 unique offsets  5 total accesses]
+  +0x0000  (   3x)  ███
+  +0x0004  (   1x)  █
+  +0x0008  (   1x)  █
+
+class swfCMD_RemoveObject2_rage  [1 unique offsets  2 total accesses]
+  +0x0000  (   2x)  ██
+
+class swfINSTANCE_rage  [2 unique offsets  12 total accesses]
+  +0x0000  (  11x)  ███████████
+  +0x0004  (   1x)  █
+
+class swfSCRIPTOBJECT_rage  [2 unique offsets  3 total accesses]
+  +0x0000  (   2x)  ██
+  +0x0004  (   1x)  █
+
+class sysMemSimpleAllocator_rage  [1 unique offsets  1 total accesses]
+  +0x0004  (   1x)  █
+
+class xmlNodeStructAnimHashEntry  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class xmlNodeStructCategory_pcrActivationCategory  [1 unique offsets  1 total accesses]
+  +0x0000  (   1x)  █
+
+class xmlNodeStruct_rage  [1 unique offsets  3 total accesses]
+  +0x0000  (   3x)  ███
+
+class xmlTree_rage  [2 unique offsets  6 total accesses]
+  +0x0000  (   5x)  █████
+  +0x0004  (   1x)  █
+

@@ -1,0 +1,209 @@
+; ===================================================================
+; RPF ARCHIVE & GAME ASSET INVENTORY
+; Rockstar Table Tennis  -  extracted from ISO
+; ===================================================================
+
+; Total files: 83
+; Total size:  3343.0 MB
+
+; ── FILE LISTING (sorted by path) ──
+
+      1.6 MB  $SystemUpdate/su20076000_00000000
+        6 KB  .DS_Store
+      2.8 MB  assets/assets.rpf
+    945.5 MB  assets/audio/X360Banks/X360Banks.rpf
+     15.8 MB  assets/resource/ambients/ambients.rpf
+   1357.8 MB  assets/resource/characters/characters.rpf
+    138.8 MB  assets/resource/charlowres/charlowres.rpf
+     46.0 MB  assets/resource/crowd/crowd.rpf
+      5.8 MB  assets/resource/flash/flash.rpf
+    346.7 MB  assets/resource/level/level.rpf
+     23.3 MB  assets/resource/portraits/portraits.rpf
+      2.2 MB  assets/resource/props/props.rpf
+     16.9 MB  assets/resource/table/table.rpf
+      6.1 MB  default.xex
+     51.1 MB  movies/attract_movie.bik
+     51.1 MB  movies/attract_movie_p.bik
+     49.8 MB  movies/attract_movie_w.bik
+      1.9 MB  movies/logos_movie.bik
+      5.1 MB  movies/logos_movie_p.bik
+      5.1 MB  movies/logos_movie_w.bik
+     12.0 MB  movies/mainmenu_movie_0.bik
+     12.8 MB  movies/mainmenu_movie_0_p.bik
+     16.6 MB  movies/mainmenu_movie_0_w.bik
+      2.7 MB  movies/movie_austria_Arena.bik
+      2.9 MB  movies/movie_austria_Arena_p.bik
+      3.7 MB  movies/movie_austria_Arena_w.bik
+      2.7 MB  movies/movie_austria_Home.bik
+      2.9 MB  movies/movie_austria_Home_p.bik
+      3.8 MB  movies/movie_austria_Home_w.bik
+      2.3 MB  movies/movie_brazil_Arena.bik
+      2.5 MB  movies/movie_brazil_Arena_p.bik
+      3.2 MB  movies/movie_brazil_Arena_w.bik
+      4.3 MB  movies/movie_brazil_Home.bik
+      4.6 MB  movies/movie_brazil_Home_p.bik
+      5.9 MB  movies/movie_brazil_Home_w.bik
+      3.5 MB  movies/movie_china_Arena.bik
+      3.5 MB  movies/movie_china_Arena_p.bik
+      4.6 MB  movies/movie_china_Arena_w.bik
+      3.7 MB  movies/movie_china_Home.bik
+      4.3 MB  movies/movie_china_Home_p.bik
+      5.5 MB  movies/movie_china_Home_w.bik
+      2.4 MB  movies/movie_egypt_Arena.bik
+      2.5 MB  movies/movie_egypt_Arena_p.bik
+      3.2 MB  movies/movie_egypt_Arena_w.bik
+      3.5 MB  movies/movie_egypt_Home.bik
+      3.6 MB  movies/movie_egypt_Home_p.bik
+      4.5 MB  movies/movie_egypt_Home_w.bik
+      3.7 MB  movies/movie_england_Home.bik
+      3.9 MB  movies/movie_england_Home_p.bik
+      4.8 MB  movies/movie_england_Home_w.bik
+      2.9 MB  movies/movie_france_Arena.bik
+      3.0 MB  movies/movie_france_Arena_p.bik
+      4.0 MB  movies/movie_france_Arena_w.bik
+      3.2 MB  movies/movie_france_Home.bik
+      3.6 MB  movies/movie_france_Home_p.bik
+      4.6 MB  movies/movie_france_Home_w.bik
+      4.1 MB  movies/movie_ireland_Home.bik
+      4.3 MB  movies/movie_ireland_Home_p.bik
+      5.6 MB  movies/movie_ireland_Home_w.bik
+      1.7 MB  movies/movie_japan_Arena.bik
+      1.9 MB  movies/movie_japan_Arena_p.bik
+      2.2 MB  movies/movie_japan_Arena_w.bik
+      3.2 MB  movies/movie_japan_Home.bik
+      3.4 MB  movies/movie_japan_Home_p.bik
+      4.1 MB  movies/movie_japan_Home_w.bik
+      4.2 MB  movies/movie_korea_Home.bik
+      4.2 MB  movies/movie_korea_Home_p.bik
+      5.3 MB  movies/movie_korea_Home_w.bik
+      6.1 MB  movies/movie_random_Level.bik
+      6.3 MB  movies/movie_random_Level_p.bik
+     10.1 MB  movies/movie_random_Level_w.bik
+      1.7 MB  movies/movie_sweden_Arena.bik
+      1.7 MB  movies/movie_sweden_Arena_p.bik
+      2.3 MB  movies/movie_sweden_Arena_w.bik
+      4.2 MB  movies/movie_sweden_Home.bik
+      4.4 MB  movies/movie_sweden_Home_p.bik
+      5.4 MB  movies/movie_sweden_Home_w.bik
+      3.0 MB  movies/movie_usa_Arena.bik
+      3.1 MB  movies/movie_usa_Arena_p.bik
+      4.1 MB  movies/movie_usa_Arena_w.bik
+      3.5 MB  movies/movie_usa_Home.bik
+      3.5 MB  movies/movie_usa_Home_p.bik
+      4.5 MB  movies/movie_usa_Home_w.bik
+
+; ── BY EXTENSION ──
+
+  .rpf          11 files  2901.6 MB total
+  .bik          69 files  433.7 MB total
+  .xex           1 files  6.1 MB total
+  (none)         2 files  1.6 MB total
+
+; ── RPF ARCHIVE HEADERS ──
+
+  assets/assets.rpf
+    Magic: RPF0  Version: 2097408  Entries: 1644691456  Size: 2.8 MB
+
+  assets/audio/X360Banks/X360Banks.rpf
+    Magic: RPF0  Version: 2097152  Entries: 3338665984  Size: 945.5 MB
+
+  assets/resource/ambients/ambients.rpf
+    Magic: RPF0  Version: 524288  Entries: 268435456  Size: 15.8 MB
+
+  assets/resource/characters/characters.rpf
+    Magic: RPF0  Version: 524288  Entries: 956301312  Size: 1357.8 MB
+
+  assets/resource/charlowres/charlowres.rpf
+    Magic: RPF0  Version: 1048576  Entries: 956301312  Size: 138.8 MB
+
+  assets/resource/crowd/crowd.rpf
+    Magic: RPF0  Version: 524288  Entries: 150994944  Size: 46.0 MB
+
+  assets/resource/flash/flash.rpf
+    Magic: RPF0  Version: 524288  Entries: 301989888  Size: 5.8 MB
+
+  assets/resource/level/level.rpf
+    Magic: RPF0  Version: 524288  Entries: 385875968  Size: 346.7 MB
+
+  assets/resource/portraits/portraits.rpf
+    Magic: RPF0  Version: 1048576  Entries: 1325400064  Size: 23.3 MB
+
+  assets/resource/props/props.rpf
+    Magic: RPF0  Version: 524288  Entries: 218103808  Size: 2.2 MB
+
+  assets/resource/table/table.rpf
+    Magic: RPF0  Version: 524288  Entries: 369098752  Size: 16.9 MB
+
+
+; ── BINK VIDEO FILES ──
+
+  51.1 MB  movies/attract_movie.bik
+  51.1 MB  movies/attract_movie_p.bik
+  49.8 MB  movies/attract_movie_w.bik
+  1.9 MB  movies/logos_movie.bik
+  5.1 MB  movies/logos_movie_p.bik
+  5.1 MB  movies/logos_movie_w.bik
+  12.0 MB  movies/mainmenu_movie_0.bik
+  12.8 MB  movies/mainmenu_movie_0_p.bik
+  16.6 MB  movies/mainmenu_movie_0_w.bik
+  2.7 MB  movies/movie_austria_Arena.bik
+  2.9 MB  movies/movie_austria_Arena_p.bik
+  3.7 MB  movies/movie_austria_Arena_w.bik
+  2.7 MB  movies/movie_austria_Home.bik
+  2.9 MB  movies/movie_austria_Home_p.bik
+  3.8 MB  movies/movie_austria_Home_w.bik
+  2.3 MB  movies/movie_brazil_Arena.bik
+  2.5 MB  movies/movie_brazil_Arena_p.bik
+  3.2 MB  movies/movie_brazil_Arena_w.bik
+  4.3 MB  movies/movie_brazil_Home.bik
+  4.6 MB  movies/movie_brazil_Home_p.bik
+  5.9 MB  movies/movie_brazil_Home_w.bik
+  3.5 MB  movies/movie_china_Arena.bik
+  3.5 MB  movies/movie_china_Arena_p.bik
+  4.6 MB  movies/movie_china_Arena_w.bik
+  3.7 MB  movies/movie_china_Home.bik
+  4.3 MB  movies/movie_china_Home_p.bik
+  5.5 MB  movies/movie_china_Home_w.bik
+  2.4 MB  movies/movie_egypt_Arena.bik
+  2.5 MB  movies/movie_egypt_Arena_p.bik
+  3.2 MB  movies/movie_egypt_Arena_w.bik
+  3.5 MB  movies/movie_egypt_Home.bik
+  3.6 MB  movies/movie_egypt_Home_p.bik
+  4.5 MB  movies/movie_egypt_Home_w.bik
+  3.7 MB  movies/movie_england_Home.bik
+  3.9 MB  movies/movie_england_Home_p.bik
+  4.8 MB  movies/movie_england_Home_w.bik
+  2.9 MB  movies/movie_france_Arena.bik
+  3.0 MB  movies/movie_france_Arena_p.bik
+  4.0 MB  movies/movie_france_Arena_w.bik
+  3.2 MB  movies/movie_france_Home.bik
+  3.6 MB  movies/movie_france_Home_p.bik
+  4.6 MB  movies/movie_france_Home_w.bik
+  4.1 MB  movies/movie_ireland_Home.bik
+  4.3 MB  movies/movie_ireland_Home_p.bik
+  5.6 MB  movies/movie_ireland_Home_w.bik
+  1.7 MB  movies/movie_japan_Arena.bik
+  1.9 MB  movies/movie_japan_Arena_p.bik
+  2.2 MB  movies/movie_japan_Arena_w.bik
+  3.2 MB  movies/movie_japan_Home.bik
+  3.4 MB  movies/movie_japan_Home_p.bik
+  4.1 MB  movies/movie_japan_Home_w.bik
+  4.2 MB  movies/movie_korea_Home.bik
+  4.2 MB  movies/movie_korea_Home_p.bik
+  5.3 MB  movies/movie_korea_Home_w.bik
+  6.1 MB  movies/movie_random_Level.bik
+  6.3 MB  movies/movie_random_Level_p.bik
+  10.1 MB  movies/movie_random_Level_w.bik
+  1.7 MB  movies/movie_sweden_Arena.bik
+  1.7 MB  movies/movie_sweden_Arena_p.bik
+  2.3 MB  movies/movie_sweden_Arena_w.bik
+  4.2 MB  movies/movie_sweden_Home.bik
+  4.4 MB  movies/movie_sweden_Home_p.bik
+  5.4 MB  movies/movie_sweden_Home_w.bik
+  3.0 MB  movies/movie_usa_Arena.bik
+  3.1 MB  movies/movie_usa_Arena_p.bik
+  4.1 MB  movies/movie_usa_Arena_w.bik
+  3.5 MB  movies/movie_usa_Home.bik
+  3.5 MB  movies/movie_usa_Home_p.bik
+  4.5 MB  movies/movie_usa_Home_w.bik
+  Total: 69 videos, 434 MB

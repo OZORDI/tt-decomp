@@ -1,0 +1,1484 @@
+; ===================================================================
+; MATCH STATE MACHINE — FULL TRACE
+; Rockstar Table Tennis  -  default.xex
+; gmLogicSinglesMatch is the central match loop with 25+ RTTI states
+; Each state has vtable slots for Enter/Update/Exit/etc.
+; ===================================================================
+
+; MATCH FLOW (inferred from RTTI state names):
+;
+;   stateInit -> statePreMatch -> statePreMatchSync -> statePreGame
+;   -> stateAnticipationCam -> statePrePreServe -> statePreServeSpectatorSyncState
+;   -> statePreServeSync -> statePreServe -> stateServeToss -> stateServeHit
+;   -> stateServeBounce -> [stateHitNetServe | stateLet]
+;   -> stateAwaitServeReturnHit -> stateAwaitReturnHit -> stateReturnHit
+;   -> stateHelpTips -> statePointScoring -> statePointScoringSync
+;   -> statePointScoringNet -> statePostPoint -> statePostPointScoringSync
+;   -> stateReplayNegotiationPreSync -> stateReplayNegotiation -> stateReplay
+;   -> statePostPointCS -> statePostGame -> statePostPostGame
+;   -> stateUnlockDialog -> stateSaveDialog -> statePostMatch
+;   -> statePostTourneyMovie -> statePostTourney
+;
+; Each state is an RTTI-registered class inheriting gmLogicSinglesMatch.
+
+
+═══ gmLogicSinglesMatch ═══
+  vtable: 0x8202FC48  [22 slots]
+  parent: gmLogic
+
+  [  0] 0x82222930  sub_82222930  vfunc[0] (destructor?)
+         -> 0x00000000  __savegprlr_28
+  [  1] 0x822229C0  sub_822229C0  vfunc[1] (Enter?)
+         -> 0x00000000  __savegprlr_29
+  [  2] 0x82222A78  sub_82222A78  vfunc[2] (Exit?)
+         -> 0x00000000  __savegprlr_29
+  [  3] 0x82222B20  sub_82222B20  vfunc[3] (Update?)
+  [  4] 0x82222BA0  sub_82222BA0  vfunc[4]
+  [  5] 0x82222BF0  loc_82222BF0  vfunc[5]
+  [  6] 0x82222C18  sub_82222C18  vfunc[6]
+         -> 0x00000000  __savegprlr_28
+  [  7] 0x82104778  sub_82104778  vfunc[7]
+         -> 0x00000000  __savegprlr_27
+         -> 0x820C0038  sub_820C0038
+  [  8] 0x82222CC8  sub_82222CC8  vfunc[8]
+         -> 0x00000000  __savegprlr_29
+         -> 0x820C00C0  sub_820C00C0
+  [  9] 0x82105AA8  sub_82105AA8  vfunc[9]
+         -> 0x82105860  sub_82105860
+         -> 0x821058E0  sub_821058E0
+         -> 0x82105B70  sub_82105B70
+  [ 10] 0x82105568  sub_82105568  vfunc[10]
+         -> 0x00000000  __savegprlr_27
+         -> 0x00000000  nullsub_1
+         -> 0x821010E0  sub_821010E0
+         -> 0x821053E0  sub_821053E0
+         -> 0x821DC880  sub_821DC880
+         ... and 1 more calls
+  [ 11] 0x821057C0  sub_821057C0  vfunc[11]
+         -> 0x82105D38  sub_82105D38
+         -> 0x821067E0  sub_821067E0
+         -> 0x823D25D0  sub_823D25D0
+  [ 12] 0x82105AF8  loc_82105AF8  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x00000000  nullsub_1  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82101EE8  loc_82101EE8  vfunc[16]
+  [ 17] 0x82106458  sub_82106458  vfunc[17]
+         -> 0x00000000  __savegprlr_27
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 18] 0x8210CAF8  sub_8210CAF8  vfunc[18]
+  [ 19] 0x82106788  sub_82106788  vfunc[19]
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 20] 0x8210CBD0  loc_8210CBD0  vfunc[20]
+  [ 21] 0x8210CBD0  loc_8210CBD0  vfunc[21]
+
+═══ stateAnticipationCam_gmLogicSinglesMatch ═══
+  vtable: 0x8202FE00  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82107528  sub_82107528  vfunc[10]
+         -> 0x00000000  __savegprlr_29
+         -> 0x82106318  sub_82106318
+         -> 0x82106A60  sub_82106A60
+         -> 0x8218C690  sub_8218C690
+         -> 0x8225E480  sub_8225E480
+         ... and 1 more calls
+  [ 11] 0x8210B560  sub_8210B560  vfunc[11]
+  [ 12] 0x82107708  loc_82107708  vfunc[12]
+  [ 13] 0x821070C0  sub_821070C0  vfunc[13]
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 14] 0x821076F0  loc_821076F0  vfunc[14]
+  [ 15] 0x82107660  sub_82107660  vfunc[15]
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateAwaitReturnHit_gmLogicSinglesMatch ═══
+  vtable: 0x820301A8  [20 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82108A78  sub_82108A78  vfunc[9]
+         -> 0x82106CB0  sub_82106CB0
+         -> 0x82106D18  sub_82106D18
+         -> 0x823941F8  sub_823941F8
+  [ 10] 0x82109318  sub_82109318  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 11] 0x82108A10  sub_82108A10  vfunc[11]
+         -> 0x82106B18  sub_82106B18
+         -> 0x8225E480  sub_8225E480
+  [ 12] 0x82101F50  loc_82101F50  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x821090A0  loc_821090A0  vfunc[14]
+  [ 15] 0x82109388  sub_82109388  vfunc[15]
+         -> 0x82106D18  sub_82106D18
+         -> 0x82108DD0  sub_82108DD0
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82109090  sub_82109090  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+  [ 19] 0x00000000  nullsub_1  vfunc[19]
+
+═══ stateAwaitServeReturnHit_gmLogicSinglesMatch ═══
+  vtable: 0x82030148  [20 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82108A78  sub_82108A78  vfunc[9]
+         -> 0x82106CB0  sub_82106CB0
+         -> 0x82106D18  sub_82106D18
+         -> 0x823941F8  sub_823941F8
+  [ 10] 0x82109318  sub_82109318  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 11] 0x82108A10  sub_82108A10  vfunc[11]
+         -> 0x82106B18  sub_82106B18
+         -> 0x8225E480  sub_8225E480
+  [ 12] 0x82109308  loc_82109308  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x821090A0  loc_821090A0  vfunc[14]
+  [ 15] 0x821090D0  sub_821090D0  vfunc[15]
+         -> 0x82106D18  sub_82106D18
+         -> 0x82108DD0  sub_82108DD0
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82109090  sub_82109090  vfunc[17]
+  [ 18] 0x821092C8  loc_821092C8  vfunc[18]
+  [ 19] 0x821092C8  loc_821092C8  vfunc[19]
+
+═══ stateHelpTips_gmLogicSinglesMatch ═══
+  vtable: 0x82030268  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210A930  sub_8210A930  vfunc[9]
+         -> 0x8210AA50  sub_8210AA50
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 10] 0x8210A8E8  sub_8210A8E8  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8210AA50  sub_8210AA50
+  [ 11] 0x00000000  nullsub_1  vfunc[11]
+  [ 12] 0x8210AAE8  loc_8210AAE8  vfunc[12]
+  [ 13] 0x8210AA40  loc_8210AA40  vfunc[13]
+  [ 14] 0x821073D0  loc_821073D0  vfunc[14]
+  [ 15] 0x8210A9B0  sub_8210A9B0  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x823794B8  sub_823794B8
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateHitNetServe_gmLogicSinglesMatch ═══
+  vtable: 0x820300A0  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82106A60  sub_82106A60  vfunc[10]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x821088F8  loc_821088F8  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x821086B8  loc_821086B8  vfunc[14]
+  [ 15] 0x821086E8  sub_821086E8  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateInit_gmLogicSinglesMatch ═══
+  vtable: 0x8202FCB0  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82107118  sub_82107118  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x823D1958  loc_823D1958  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82103688  loc_82103688  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateLet_gmLogicSinglesMatch ═══
+  vtable: 0x820300F4  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82108928  sub_82108928  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82108A00  loc_82108A00  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82108908  loc_82108908  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePointScoringNet_gmLogicSinglesMatch ═══
+  vtable: 0x82030364  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82109DA8  sub_82109DA8  vfunc[9]
+         -> 0x82105EF8  sub_82105EF8
+         -> 0x82106CB0  sub_82106CB0
+         -> 0x82109F68  sub_82109F68
+         -> 0x823D18B0  sub_823D18B0
+  [ 10] 0x82109CB0  sub_82109CB0  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+         -> 0x823D18B0  sub_823D18B0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82109F30  loc_82109F30  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82109D88  loc_82109D88  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePointScoringSync_gmLogicSinglesMatch ═══
+  vtable: 0x820302BC  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82109B30  loc_82109B30  vfunc[9]
+  [ 10] 0x82109A58  sub_82109A58  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x823961F0  sub_823961F0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82109B98  loc_82109B98  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82109B10  loc_82109B10  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePointScoring_gmLogicSinglesMatch ═══
+  vtable: 0x82030310  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82109BA8  sub_82109BA8  vfunc[10]
+         -> 0x00000000  nullsub_1
+         -> 0x82105EF8  sub_82105EF8
+         -> 0x821062A0  sub_821062A0
+         -> 0x82106A60  sub_82106A60
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82109CA0  loc_82109CA0  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82109C88  loc_82109C88  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostGame_gmLogicSinglesMatch ═══
+  vtable: 0x820305B0  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210BBD8  sub_8210BBD8  vfunc[9]
+         -> 0x821045D0  sub_821045D0
+         -> 0x8210BD58  sub_8210BD58
+  [ 10] 0x8210B988  sub_8210B988  vfunc[10]
+         -> 0x00000000  __savegprlr_24
+         -> 0x00000000  nullsub_1
+         -> 0x821010E0  sub_821010E0
+         -> 0x821012A0  sub_821012A0
+         -> 0x82106A60  sub_82106A60
+         ... and 5 more calls
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210BD48  loc_8210BD48  vfunc[12]
+  [ 13] 0x8210BE90  sub_8210BE90  vfunc[13]
+         -> 0x822F9B88  sub_822F9B88
+  [ 14] 0x8210BD20  loc_8210BD20  vfunc[14]
+  [ 15] 0x8210BC70  sub_8210BC70  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x8222AD40  sub_8222AD40
+         -> 0x8225E998  sub_8225E998
+         -> 0x822F9AF8  sub_822F9AF8
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostMatch_gmLogicSinglesMatch ═══
+  vtable: 0x82030754  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210C530  sub_8210C530  vfunc[9]
+  [ 10] 0x8210C368  sub_8210C368  vfunc[10]
+         -> 0x00000000  __savegprlr_29
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210C5A0  loc_8210C5A0  vfunc[12]
+  [ 13] 0x821070C0  sub_821070C0  vfunc[13]
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 14] 0x8210C588  loc_8210C588  vfunc[14]
+  [ 15] 0x8210C558  loc_8210C558  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostPointCS_gmLogicSinglesMatch ═══
+  vtable: 0x8203055C  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x8210B410  loc_8210B410  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x8210B420  sub_8210B420  vfunc[10]
+         -> 0x00000000  __savegprlr_29
+         -> 0x82101048  sub_82101048
+         -> 0x821010E0  sub_821010E0
+         -> 0x82106A60  sub_82106A60
+         -> 0x8210B8F8  sub_8210B8F8
+         ... and 2 more calls
+  [ 11] 0x8210B560  sub_8210B560  vfunc[11]
+  [ 12] 0x8210B690  loc_8210B690  vfunc[12]
+  [ 13] 0x821070C0  sub_821070C0  vfunc[13]
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 14] 0x8210B670  loc_8210B670  vfunc[14]
+  [ 15] 0x8210B568  sub_8210B568  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x821010E0  sub_821010E0
+         -> 0x8210B6A0  sub_8210B6A0
+         -> 0x8210B8F8  sub_8210B8F8
+         -> 0x821CCE00  sub_821CCE00
+         ... and 1 more calls
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostPointScoringSync_gmLogicSinglesMatch ═══
+  vtable: 0x820303B8  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210A150  sub_8210A150  vfunc[9]
+         -> 0x82105EF8  sub_82105EF8
+  [ 10] 0x8210A0F0  sub_8210A0F0  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x823961F0  sub_823961F0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210A1E0  loc_8210A1E0  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82109C88  loc_82109C88  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostPoint_gmLogicSinglesMatch ═══
+  vtable: 0x8203040C  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210A3C8  sub_8210A3C8  vfunc[9]
+         -> 0x00000000  __savegprlr_29
+         -> 0x8210A558  sub_8210A558
+         -> 0x8225E6E0  sub_8225E6E0
+         -> 0x82395F78  sub_82395F78
+  [ 10] 0x8210A1F0  sub_8210A1F0  vfunc[10]  // "iii"
+         -> 0x00000000  __savegprlr_25
+         -> 0x82101048  sub_82101048
+         -> 0x82106A60  sub_82106A60
+         -> 0x821CCE00  sub_821CCE00
+         -> 0x8225E480  sub_8225E480
+         ... and 4 more calls
+  [ 11] 0x8210A3B8  loc_8210A3B8  vfunc[11]
+  [ 12] 0x82101F70  loc_82101F70  vfunc[12]
+  [ 13] 0x8210A518  loc_8210A518  vfunc[13]
+  [ 14] 0x8210A8D0  loc_8210A8D0  vfunc[14]
+  [ 15] 0x8210A698  sub_8210A698  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x82101048  sub_82101048
+         -> 0x821180C8  sub_821180C8
+         -> 0x823794B8  sub_823794B8
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostPostGame_gmLogicSinglesMatch ═══
+  vtable: 0x82030604  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210BF98  loc_8210BF98  vfunc[9]
+  [ 10] 0x8210BED8  sub_8210BED8  vfunc[10]
+         -> 0x821067E0  sub_821067E0
+         -> 0x82106A60  sub_82106A60
+         -> 0x823961F0  sub_823961F0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210C038  loc_8210C038  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x8210C000  loc_8210C000  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostTourneyMovie_gmLogicSinglesMatch ═══
+  vtable: 0x82030658  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x8210C048  sub_8210C048  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210C140  loc_8210C140  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x8210C128  loc_8210C128  vfunc[14]
+  [ 15] 0x8210C0A0  sub_8210C0A0  vfunc[15]
+         -> 0x821C9D68  sub_821C9D68
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePostTourney_gmLogicSinglesMatch ═══
+  vtable: 0x820307A8  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210C8F8  sub_8210C8F8  vfunc[9]  // "allstar"
+         -> 0x00000000  __savegprlr_26
+         -> 0x82104510  sub_82104510
+         -> 0x8210CB10  sub_8210CB10
+         -> 0x822EB2A8  sub_822EB2A8
+         -> 0x822EB320  sub_822EB320
+         ... and 2 more calls
+  [ 10] 0x8210C870  sub_8210C870  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8210CB10  sub_8210CB10
+         -> 0x821C9D68  sub_821C9D68
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210CB00  loc_8210CB00  vfunc[12]
+  [ 13] 0x8210CAE0  loc_8210CAE0  vfunc[13]
+  [ 14] 0x8210CAF8  sub_8210CAF8  vfunc[14]
+  [ 15] 0x8210CAA8  sub_8210CAA8  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePreGame_gmLogicSinglesMatch ═══
+  vtable: 0x8202FDAC  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x821073E8  sub_821073E8  vfunc[10]
+         -> 0x00000000  __savegprlr_28
+         -> 0x82105860  sub_82105860
+         -> 0x82106A60  sub_82106A60
+         -> 0x821DFF48  sub_821DFF48
+         -> 0x8225E480  sub_8225E480
+         ... and 1 more calls
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8238DF80  loc_8238DF80  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x821073D0  loc_821073D0  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePreMatchSync_gmLogicSinglesMatch ═══
+  vtable: 0x8202FD04  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82107210  loc_82107210  vfunc[9]
+  [ 10] 0x82107178  sub_82107178  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82107250  loc_82107250  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x821071F0  loc_821071F0  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePreMatch_gmLogicSinglesMatch ═══
+  vtable: 0x8202FD58  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82107260  sub_82107260  vfunc[10]
+         -> 0x00000000  __savegprlr_27
+         -> 0x82105860  sub_82105860
+         -> 0x82105B70  sub_82105B70
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+         ... and 2 more calls
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8238DDC8  loc_8238DDC8  vfunc[12]
+  [ 13] 0x821070C0  sub_821070C0  vfunc[13]
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 14] 0x82103808  loc_82103808  vfunc[14]
+  [ 15] 0x82107378  loc_82107378  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePrePreServe_gmLogicSinglesMatch ═══
+  vtable: 0x8202FE54  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82107718  loc_82107718  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82107948  sub_82107948  vfunc[9]
+         -> 0x82106CB0  sub_82106CB0
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 10] 0x82107768  sub_82107768  vfunc[10]
+         -> 0x00000000  __savegprlr_28
+         -> 0x821010E0  sub_821010E0
+         -> 0x82105DF0  sub_82105DF0
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E480  sub_8225E480
+         ... and 3 more calls
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82107A80  loc_82107A80  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82107928  loc_82107928  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePreServeSpectatorSyncState_gmLogicSinglesMatch ═══
+  vtable: 0x8202FEA8  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82107AB8  sub_82107AB8  vfunc[9]
+         -> 0x82106CB0  sub_82106CB0
+  [ 10] 0x82107A90  sub_82107A90  vfunc[10]
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82107B90  loc_82107B90  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82107A98  loc_82107A98  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePreServeSync_gmLogicSinglesMatch ═══
+  vtable: 0x8202FEFC  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82107C40  loc_82107C40  vfunc[9]
+  [ 10] 0x82107BA0  sub_82107BA0  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x823961F0  sub_823961F0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82107CA8  loc_82107CA8  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82107C28  loc_82107C28  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ statePreServe_gmLogicSinglesMatch ═══
+  vtable: 0x8202FF50  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82107CD0  sub_82107CD0  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8238E860  loc_8238E860  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82107CB8  loc_82107CB8  vfunc[14]
+  [ 15] 0x82107D50  loc_82107D50  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateReplayNegotiationPreSync_gmLogicSinglesMatch ═══
+  vtable: 0x82030460  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210ABB8  loc_8210ABB8  vfunc[9]
+  [ 10] 0x8210AAF8  sub_8210AAF8  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x823961F0  sub_823961F0
+  [ 11] 0x8210AB98  loc_8210AB98  vfunc[11]
+  [ 12] 0x8210AC80  loc_8210AC80  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x8210AC60  loc_8210AC60  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateReplayNegotiation_gmLogicSinglesMatch ═══
+  vtable: 0x820304B4  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210AD70  sub_8210AD70  vfunc[9]
+         -> 0x821CCE00  sub_821CCE00
+         -> 0x823D18B0  sub_823D18B0
+  [ 10] 0x8210AC90  sub_8210AC90  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x823D18B0  sub_823D18B0
+  [ 11] 0x8210AD58  loc_8210AD58  vfunc[11]
+  [ 12] 0x8210AF48  loc_8210AF48  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x8210AF30  loc_8210AF30  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateReplay_gmLogicSinglesMatch ═══
+  vtable: 0x82030508  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210B170  sub_8210B170  vfunc[9]
+         -> 0x00000000  XGetVideoMode
+         -> 0x00000000  __savegprlr_26
+         -> 0x8210B320  sub_8210B320
+         -> 0x821CE310  sub_821CE310
+         -> 0x823794B8  sub_823794B8
+  [ 10] 0x8210AFD0  sub_8210AFD0  vfunc[10]
+         -> 0x00000000  __savegprlr_27
+         -> 0x82106A60  sub_82106A60
+         -> 0x8210B320  sub_8210B320
+         -> 0x821676A8  sub_821676A8
+         -> 0x821CCE00  sub_821CCE00
+         ... and 2 more calls
+  [ 11] 0x8210B138  sub_8210B138  vfunc[11]
+         -> 0x82106B18  sub_82106B18
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 12] 0x8210B400  loc_8210B400  vfunc[12]
+  [ 13] 0x8210AF70  sub_8210AF70  vfunc[13]
+         -> 0x821CC450  sub_821CC450
+  [ 14] 0x8210B3E0  loc_8210B3E0  vfunc[14]
+  [ 15] 0x8210B398  loc_8210B398  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateReturnHit_gmLogicSinglesMatch ═══
+  vtable: 0x82030208  [20 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x82108A78  sub_82108A78  vfunc[9]
+         -> 0x82106CB0  sub_82106CB0
+         -> 0x82106D18  sub_82106D18
+         -> 0x823941F8  sub_823941F8
+  [ 10] 0x82109560  sub_82109560  vfunc[10]
+         -> 0x82105C18  sub_82105C18
+         -> 0x82106A60  sub_82106A60
+  [ 11] 0x82108A10  sub_82108A10  vfunc[11]
+         -> 0x82106B18  sub_82106B18
+         -> 0x8225E480  sub_8225E480
+  [ 12] 0x82101F60  loc_82101F60  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x821095B0  loc_821095B0  vfunc[14]
+  [ 15] 0x821095E0  sub_821095E0  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x82106D18  sub_82106D18
+         -> 0x82108DD0  sub_82108DD0
+         -> 0x82222800  sub_82222800
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82109090  sub_82109090  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+  [ 19] 0x82109A10  loc_82109A10  vfunc[19]
+
+═══ stateSaveDialog_gmLogicSinglesMatch ═══
+  vtable: 0x82030700  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210C2E8  sub_8210C2E8  vfunc[9]
+         -> 0x821045D0  sub_821045D0
+  [ 10] 0x8210C2A0  sub_8210C2A0  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210C358  loc_8210C358  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x8210C340  loc_8210C340  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateServeBounce_gmLogicSinglesMatch ═══
+  vtable: 0x8203004C  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82106A60  sub_82106A60  vfunc[10]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x821086A8  loc_821086A8  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82108308  loc_82108308  vfunc[14]
+  [ 15] 0x82108340  sub_82108340  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x821059E0  sub_821059E0
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateServeHit_gmLogicSinglesMatch ═══
+  vtable: 0x8202FFF8  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82108018  sub_82108018  vfunc[10]
+         -> 0x82105C18  sub_82105C18
+         -> 0x82106A60  sub_82106A60
+  [ 11] 0x8210B560  sub_8210B560  vfunc[11]
+  [ 12] 0x821082F8  loc_821082F8  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82108070  loc_82108070  vfunc[14]
+  [ 15] 0x821080A0  sub_821080A0  vfunc[15]
+         -> 0x00000000  __savegprlr_29
+         -> 0x821059E0  sub_821059E0
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateServeToss_gmLogicSinglesMatch ═══
+  vtable: 0x8202FFA4  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x00000000  nullsub_1  vfunc[9]
+  [ 10] 0x82107DC0  sub_82107DC0  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x82108008  loc_82108008  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x82107E18  loc_82107E18  vfunc[14]
+  [ 15] 0x82107E38  sub_82107E38  vfunc[15]
+         -> 0x821059E0  sub_821059E0
+         -> 0x8225E6E0  sub_8225E6E0
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x82107040  sub_82107040  vfunc[17]
+         -> 0x82106D18  sub_82106D18
+         -> 0x8225E998  sub_8225E998
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+═══ stateUnlockDialog_gmLogicSinglesMatch ═══
+  vtable: 0x820306AC  [19 slots]
+
+  [  0] 0x82222D48  loc_82222D48  vfunc[0] (destructor?)
+  [  1] 0x82222D68  loc_82222D68  vfunc[1] (Enter?)
+  [  2] 0x82222D78  loc_82222D78  vfunc[2] (Exit?)
+  [  3] 0x82222D88  loc_82222D88  vfunc[3] (Update?)
+  [  4] 0x82228BD8  loc_82228BD8  vfunc[4]
+  [  5] 0x82494130  sub_82494130  vfunc[5]
+  [  6] 0x00000000  nullsub_1  vfunc[6]
+  [  7] 0x00000000  nullsub_1  vfunc[7]
+  [  8] 0x00000000  nullsub_1  vfunc[8]
+  [  9] 0x8210C198  sub_8210C198  vfunc[9]
+         -> 0x822F9AF8  sub_822F9AF8
+  [ 10] 0x8210C150  sub_8210C150  vfunc[10]
+         -> 0x82106A60  sub_82106A60
+  [ 11] 0x82106B18  sub_82106B18  vfunc[11]
+         -> 0x00000000  nullsub_1
+         -> 0x82391480  sub_82391480
+  [ 12] 0x8210C290  loc_8210C290  vfunc[12]
+  [ 13] 0x00000000  nullsub_1  vfunc[13]
+  [ 14] 0x8210C278  loc_8210C278  vfunc[14]
+  [ 15] 0x00000000  nullsub_1  vfunc[15]
+  [ 16] 0x82106BB8  sub_82106BB8  vfunc[16]
+         -> 0x00000000  __savegprlr_29
+         -> 0x00000000  nullsub_1
+         -> 0x82222800  sub_82222800
+         -> 0x822228B8  sub_822228B8  // "UNKNOWN"
+  [ 17] 0x824FF7C8  sub_824FF7C8  vfunc[17]
+  [ 18] 0x00000000  nullsub_1  vfunc[18]
+
+
+═══ TOP-LEVEL: pongShell (atSingleton) ═══
+
+  [  0] 0x82228F30  sub_82228F30  // "root.sys", "scenegraph"
+  [  1] 0x822294B8  sub_822294B8
+  [  2] 0x82229760  loc_82229760
+  [  3] 0x822297D8  sub_822297D8
+  [  4] 0x82229F40  sub_82229F40
+  [  5] 0x82222BF0  loc_82222BF0
+  [  6] 0x82229648  sub_82229648  // "UNKNOWN"
+  [  7] 0x822BC590  sub_822BC590
+  [  8] 0x822BC850  sub_822BC850
+  [  9] 0x00000000  nullsub_1
+  [ 10] 0x822BCF08  sub_822BCF08
+  [ 11] 0x822BD228  sub_822BD228
+  [ 12] 0x822BD948  sub_822BD948
+  [ 13] 0x00000000  nullsub_1
+  [ 14] 0x82229638  loc_82229638
+  [ 15] 0x822BDC38  loc_822BDC38
+  [ 16] 0x00000000  nullsub_1
+  [ 17] 0x82229768  sub_82229768
+  [ 18] 0x822C1B10  sub_822C1B10
+  [ 19] 0x00000000  nullsub_1
+  [ 20] 0x82229938  loc_82229938
+  [ 21] 0x822BD500  sub_822BD500
+  [ 22] 0x82229950  sub_82229950
+  [ 23] 0x822BD598  sub_822BD598
+  [ 24] 0x82229A58  sub_82229A58
+  [ 25] 0x822BD6C0  sub_822BD6C0
+  [ 26] 0x82229AF8  sub_82229AF8
+  [ 27] 0x822BD7B0  sub_822BD7B0
+  [ 28] 0x82229BA0  sub_82229BA0
+  [ 29] 0x82229F30  loc_82229F30
+  [ 30] 0x822BD8A8  sub_822BD8A8
+  [ 31] 0x8248EC78  loc_8248EC78
+  [ 32] 0x00000000  nullsub_1
+
+
+═══ DRILL / TRAINING MODES ═══
+
+  gdDrillChargingData  vtable=0x8203C1E4  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DF520  sub_821DF520
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillCounterSpinData  vtable=0x8203C314  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DFB90  sub_821DFB90
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillFocusShotData  vtable=0x8203C2AC  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DF910  sub_821DF910
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillMovementData  vtable=0x8203BF8C  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DEAC8  sub_821DEAC8
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillPlacementData  vtable=0x8203C11C  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DE5C8  sub_821DE5C8
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillReturnData  vtable=0x8203C0BC  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DE5C8  sub_821DE5C8
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillServeMeterData  vtable=0x8203BFF4  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DEE20  sub_821DEE20
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillServingData  vtable=0x8203C054  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DEE20  sub_821DEE20
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillSmashData  vtable=0x8203C374  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DE5C8  sub_821DE5C8
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillSoftShotData  vtable=0x8203C184  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DF200  sub_821DF200
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdDrillSpinData  vtable=0x8203C24C  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DF700  sub_821DF700
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdTrainingDrillData  vtable=0x8203BF2C  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821DE5C8  sub_821DE5C8
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  gdTrainingDrills  vtable=0x8203BEC4  [22 slots]
+    [0] 0x00000000  loc_821A88D0
+    [1] 0x821A8988  sub_821A8988
+    [2] 0x00000000  nullsub_1
+    [3] 0x821A88E0  sub_821A88E0
+    [4] 0x821A8988  sub_821A8988
+
+  pongDrillCharging  vtable=0x82030C1A  [32 slots]
+    [0] 0x8210F600  sub_8210F600
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210F668
+    [3] 0x8210F6C0  sub_8210F6C0
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillCounterSpin  vtable=0x82030DCA  [32 slots]
+    [0] 0x82110C60  sub_82110C60
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_82110CC8
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x82110D18  sub_82110D18
+
+  pongDrillFocusShot  vtable=0x82030D3A  [32 slots]
+    [0] 0x82110720  sub_82110720
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_821101E0
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillMovement  vtable=0x820308BA  [32 slots]
+    [0] 0x8210DAE0  sub_8210DAE0
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210DB48
+    [3] 0x8210DBA0  sub_8210DBA0
+    [4] 0x8210DC48  sub_8210DC48
+
+  pongDrillPlacement  vtable=0x82030AFA  [32 slots]
+    [0] 0x8210ED38  sub_8210ED38
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210EAD0
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillReturn  vtable=0x82030A6A  [32 slots]
+    [0] 0x8210EA68  sub_8210EA68
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210EAD0
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillServeMeter  vtable=0x8203094A  [32 slots]
+    [0] 0x8210E490  sub_8210E490
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210E4F8
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillServing  vtable=0x820309DA  [32 slots]
+    [0] 0x8210EA00  sub_8210EA00
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210E4F8
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillSmash  vtable=0x82030E5A  [32 slots]
+    [0] 0x82111798  sub_82111798
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210EAD0
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillSoftShot  vtable=0x82030B8A  [32 slots]
+    [0] 0x8210EDA0  sub_8210EDA0
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210EE08
+    [3] 0x8210EE50  sub_8210EE50
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongDrillSpin  vtable=0x82030CAA  [32 slots]
+    [0] 0x82110178  sub_82110178
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_821101E0
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+
+  pongTrainingDrill  vtable=0x8203082A  [32 slots]
+    [0] 0x00000000  loc_8210CDA0
+    [1] 0x00000000  loc_8210CDA8
+    [2] 0x00000000  loc_8210CDB8
+    [3] 0x8210CDE8  sub_8210CDE8
+    [4] 0x8210CFF0  sub_8210CFF0
+

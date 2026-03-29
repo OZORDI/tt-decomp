@@ -1,0 +1,2094 @@
+; ===================================================================
+; GLOBAL VARIABLE CROSS-REFERENCES
+; Rockstar Table Tennis  -  default.xex
+; Which functions read/write each global variable
+; ===================================================================
+
+; Total global labels: 38
+; Globals with xrefs: 5,361
+; Total xref edges: 6,980
+
+; ── MOST-REFERENCED GLOBALS (sorted by reference count) ──
+
+  0x00000000  off_820014CC  [referenced by 3 functions]
+    <- 0x82430418  sub_82430418
+    <- 0x82430488  sub_82430488
+    <- 0x824304F0  sub_824304F0
+
+  0x00000000  off_82003DCC  [referenced by 3 functions]
+    <- 0x82449000  sub_82449000
+    <- 0x82449140  sub_82449140
+    <- 0x8244A2A0  sub_8244A2A0
+
+  0x00000000  off_82003DE0  [referenced by 3 functions]
+    <- 0x82448DB8  sub_82448DB8
+    <- 0x82449000  sub_82449000
+    <- 0x8244A2A0  sub_8244A2A0
+
+  0x00000000  off_82003E24  [referenced by 3 functions]
+    <- 0x82430180  sub_82430180
+    <- 0x8244A970  sub_8244A970
+    <- 0x8244ED68  sub_8244ED68
+
+  0x00000000  off_82003E2C  [referenced by 3 functions]
+    <- 0x8244A970  sub_8244A970
+    <- 0x8244AF18  sub_8244AF18
+    <- 0x8244AF78  sub_8244AF78
+
+  0x00000000  off_82003E54  [referenced by 3 functions]
+    <- 0x8244B230  sub_8244B230
+    <- 0x8244B2A8  sub_8244B2A8
+    <- 0x8244D0B8  sub_8244D0B8
+
+  0x00000000  off_82003E58  [referenced by 3 functions]
+    <- 0x8244B330  sub_8244B330
+    <- 0x8244B7E0  sub_8244B7E0
+    <- 0x8244BCF8  sub_8244BCF8
+
+  0x00000000  off_82003EA0  [referenced by 3 functions]
+    <- 0x8244BEA8  sub_8244BEA8
+    <- 0x8244C228  sub_8244C228
+    <- 0x8244C2E8  sub_8244C2E8
+
+  0x00000000  off_820042C8  [referenced by 3 functions]
+    <- 0x8244C6D8  sub_8244C6D8
+    <- 0x8244C980  sub_8244C980
+    <- 0x8244D2B8  sub_8244D2B8
+
+  0x00000000  off_82004310  [referenced by 3 functions]
+    <- 0x82430180  sub_82430180
+    <- 0x8244ED68  sub_8244ED68
+    <- 0x82450518  sub_82450518
+
+  0x00000000  off_82004318  [referenced by 3 functions]
+    <- 0x8244ED68  sub_8244ED68
+    <- 0x8244EE88  sub_8244EE88
+    <- 0x8244EFF0  sub_8244EFF0
+
+  0x00000000  off_8200431C  [referenced by 3 functions]
+    <- 0x8244ED68  sub_8244ED68
+    <- 0x8244EE90  sub_8244EE90
+    <- 0x8244EFF0  sub_8244EFF0
+
+  0x00000000  off_82004320  [referenced by 3 functions]
+    <- 0x8244DD50  sub_8244DD50
+    <- 0x8244ED68  sub_8244ED68
+    <- 0x8244EFF0  sub_8244EFF0
+
+  0x00000000  off_820043A4  [referenced by 3 functions]
+    <- 0x8244F688  sub_8244F688
+    <- 0x8244F8A8  sub_8244F8A8
+    <- 0x824501D0  sub_824501D0
+
+  0x00000000  off_820043A8  [referenced by 3 functions]
+    <- 0x8244DD50  sub_8244DD50
+    <- 0x8244F688  sub_8244F688
+    <- 0x824501D0  sub_824501D0
+
+  0x00000000  off_8200442C  [referenced by 3 functions]
+    <- 0x8244F6F8  sub_8244F6F8
+    <- 0x8244F8B0  sub_8244F8B0
+    <- 0x82450480  sub_82450480
+
+  0x00000000  off_82004430  [referenced by 3 functions]
+    <- 0x8244DD50  sub_8244DD50
+    <- 0x8244F6F8  sub_8244F6F8
+    <- 0x82450480  sub_82450480
+
+  0x00000000  off_820044B4  [referenced by 3 functions]
+    <- 0x82450518  sub_82450518
+    <- 0x82450610  sub_82450610
+    <- 0x824506D8  sub_824506D8
+
+  0x00000000  off_820044B8  [referenced by 3 functions]
+    <- 0x82450518  sub_82450518
+    <- 0x824506D0  sub_824506D0
+    <- 0x824506D8  sub_824506D8
+
+  0x00000000  off_820044C0  [referenced by 3 functions]
+    <- 0x8244FF38  sub_8244FF38
+    <- 0x82450518  sub_82450518
+    <- 0x824506D8  sub_824506D8
+
+  0x00000000  off_82004514  [referenced by 3 functions]
+    <- 0x82450518  sub_82450518
+    <- 0x824505C8  sub_824505C8
+    <- 0x824506D8  sub_824506D8
+
+  0x00000000  off_82004518  [referenced by 3 functions]
+    <- 0x82450830  sub_82450830
+    <- 0x824508A8  sub_824508A8
+    <- 0x82450BE0  sub_82450BE0
+
+  0x00000000  off_82004520  [referenced by 3 functions]
+    <- 0x8244FF38  sub_8244FF38
+    <- 0x82450830  sub_82450830
+    <- 0x82450BE0  sub_82450BE0
+
+  0x00000000  off_82004574  [referenced by 3 functions]
+    <- 0x82451208  sub_82451208
+    <- 0x82451278  sub_82451278
+    <- 0x82451450  sub_82451450
+
+  0x00000000  off_82004578  [referenced by 3 functions]
+    <- 0x82451208  sub_82451208
+    <- 0x82451450  sub_82451450
+    <- 0x82455DC0  sub_82455DC0
+
+  0x00000000  off_820045B4  [referenced by 3 functions]
+    <- 0x824514F0  sub_824514F0
+    <- 0x82451560  sub_82451560
+    <- 0x82451880  sub_82451880
+
+  0x00000000  off_820045B8  [referenced by 3 functions]
+    <- 0x824514F0  sub_824514F0
+    <- 0x82451880  sub_82451880
+    <- 0x82455DC0  sub_82455DC0
+
+  0x00000000  off_82004A4C  [referenced by 3 functions]
+    <- 0x82452A30  sub_82452A30
+    <- 0x82453098  sub_82453098
+    <- 0x82453108  sub_82453108
+
+  0x00000000  off_82004A50  [referenced by 3 functions]
+    <- 0x824534A8  sub_824534A8
+    <- 0x824536A0  sub_824536A0
+    <- 0x82453710  sub_82453710
+
+  0x00000000  off_82004A88  [referenced by 3 functions]
+    <- 0x824537D0  sub_824537D0
+    <- 0x82453878  sub_82453878
+    <- 0x82453998  sub_82453998
+
+  0x00000000  off_82004EB0  [referenced by 3 functions]
+    <- 0x824543A8  sub_824543A8
+    <- 0x824544F0  sub_824544F0
+    <- 0x82454CF0  sub_82454CF0
+
+  0x00000000  off_82004ECC  [referenced by 3 functions]
+    <- 0x824544F0  sub_824544F0
+    <- 0x82455550  sub_82455550
+    <- 0x82455698  sub_82455698
+
+  0x00000000  off_82004EF0  [referenced by 3 functions]
+    <- 0x824544F0  sub_824544F0
+    <- 0x82455940  sub_82455940
+    <- 0x824559F0  sub_824559F0
+
+  0x00000000  off_82004F0C  [referenced by 3 functions]
+    <- 0x82456090  sub_82456090
+    <- 0x82456130  sub_82456130
+    <- 0x82456138  sub_82456138
+
+  0x00000000  off_82004F10  [referenced by 3 functions]
+    <- 0x82455DC0  sub_82455DC0
+    <- 0x82456090  sub_82456090
+    <- 0x82456138  sub_82456138
+
+  0x00000000  off_82004F54  [referenced by 3 functions]
+    <- 0x824565B0  sub_824565B0
+    <- 0x82456688  sub_82456688
+    <- 0x82456F90  sub_82456F90
+
+  0x00000000  off_82004F58  [referenced by 3 functions]
+    <- 0x8244ED68  sub_8244ED68
+    <- 0x8244EFE8  sub_8244EFE8
+    <- 0x8244EFF0  sub_8244EFF0
+
+  0x00000000  off_82004F60  [referenced by 3 functions]
+    <- 0x824565B0  sub_824565B0
+    <- 0x82456F90  sub_82456F90
+    <- 0x82457B40  sub_82457B40
+
+  0x00000000  off_82004FE4  [referenced by 3 functions]
+    <- 0x82457D50  sub_82457D50
+    <- 0x82457DA8  sub_82457DA8
+    <- 0x82457DD0  sub_82457DD0
+
+  0x00000000  off_82004FE8  [referenced by 3 functions]
+    <- 0x82451208  sub_82451208
+    <- 0x82451450  sub_82451450
+    <- 0x824514E8  sub_824514E8
+
+  0x00000000  off_82004FF0  [referenced by 3 functions]
+    <- 0x82455DC0  sub_82455DC0
+    <- 0x82457D50  sub_82457D50
+    <- 0x82457DA8  sub_82457DA8
+
+  0x00000000  off_8200502C  [referenced by 3 functions]
+    <- 0x82457FB8  sub_82457FB8
+    <- 0x82457FF0  sub_82457FF0
+    <- 0x824585A0  sub_824585A0
+
+  0x00000000  off_82005030  [referenced by 3 functions]
+    <- 0x82455DC0  sub_82455DC0
+    <- 0x82457FB8  sub_82457FB8
+    <- 0x824585A0  sub_824585A0
+
+  0x00000000  off_82005080  [referenced by 3 functions]
+    <- 0x824584F0  sub_824584F0
+    <- 0x824584F8  sub_824584F8
+    <- 0x82458708  sub_82458708
+
+  0x00000000  off_82005094  [referenced by 3 functions]
+    <- 0x824584F8  sub_824584F8
+    <- 0x82458708  sub_82458708
+    <- 0x82458A88  sub_82458A88
+
+  0x00000000  off_82005098  [referenced by 3 functions]
+    <- 0x82458EB0  sub_82458EB0
+    <- 0x82458F18  sub_82458F18
+    <- 0x824598A0  sub_824598A0
+
+  0x00000000  off_820054A0  [referenced by 3 functions]
+    <- 0x82459988  sub_82459988
+    <- 0x8245A0F8  sub_8245A0F8
+    <- 0x8245A4F8  sub_8245A4F8
+
+  0x00000000  off_820054E8  [referenced by 3 functions]
+    <- 0x8245C078  sub_8245C078
+    <- 0x8245C560  sub_8245C560
+    <- 0x8245CFD8  sub_8245CFD8
+
+  0x00000000  off_82005624  [referenced by 3 functions]
+    <- 0x8245DAE8  sub_8245DAE8
+    <- 0x8245DB50  sub_8245DB50
+    <- 0x8245DB60  sub_8245DB60
+
+  0x00000000  off_82005710  [referenced by 3 functions]
+    <- 0x8245F420  sub_8245F420
+    <- 0x8245F540  sub_8245F540
+    <- 0x8245F7D0  sub_8245F7D0
+
+  0x00000000  off_820057A4  [referenced by 3 functions]
+    <- 0x8245F998  sub_8245F998
+    <- 0x8245FA08  sub_8245FA08
+    <- 0x8245FA50  sub_8245FA50
+
+  0x00000000  off_820057B8  [referenced by 3 functions]
+    <- 0x8245FEF8  sub_8245FEF8
+    <- 0x824601A0  sub_824601A0
+    <- 0x82461508  sub_82461508
+
+  0x00000000  off_820057D8  [referenced by 3 functions]
+    <- 0x8245FEF8  sub_8245FEF8
+    <- 0x8245FF70  sub_8245FF70
+    <- 0x82460148  sub_82460148
+
+  0x00000000  off_82005828  [referenced by 3 functions]
+    <- 0x8245FEF8  sub_8245FEF8
+    <- 0x82460148  sub_82460148
+    <- 0x82460718  sub_82460718
+
+  0x00000000  off_82005850  [referenced by 3 functions]
+    <- 0x824613B8  sub_824613B8
+    <- 0x82461498  sub_82461498
+    <- 0x82461508  sub_82461508
+
+  0x00000000  off_82005A60  [referenced by 3 functions]
+    <- 0x82466118  sub_82466118
+    <- 0x82466158  sub_82466158
+    <- 0x82466288  sub_82466288
+
+  0x00000000  off_82005AB0  [referenced by 3 functions]
+    <- 0x824667E0  sub_824667E0
+    <- 0x824668C8  sub_824668C8
+    <- 0x82467C28  sub_82467C28
+
+  0x00000000  off_82005B00  [referenced by 3 functions]
+    <- 0x824667E0  sub_824667E0
+    <- 0x824668C0  sub_824668C0
+    <- 0x82467C28  sub_82467C28
+
+  0x00000000  off_82005B98  [referenced by 3 functions]
+    <- 0x82468950  sub_82468950
+    <- 0x82468A48  sub_82468A48
+    <- 0x824690A0  sub_824690A0
+
+  0x00000000  off_82005BE8  [referenced by 3 functions]
+    <- 0x82468948  sub_82468948
+    <- 0x82468A48  sub_82468A48
+    <- 0x824690A0  sub_824690A0
+
+  0x00000000  off_82005C98  [referenced by 3 functions]
+    <- 0x8246A428  sub_8246A428
+    <- 0x8246AA18  sub_8246AA18
+    <- 0x8246AAD0  sub_8246AAD0
+
+  0x00000000  off_82005CD8  [referenced by 3 functions]
+    <- 0x8246C750  sub_8246C750
+    <- 0x8246CD38  sub_8246CD38
+    <- 0x8246CE30  sub_8246CE30
+
+  0x00000000  off_82005D38  [referenced by 3 functions]
+    <- 0x8246D440  sub_8246D440
+    <- 0x8246D5E0  sub_8246D5E0
+    <- 0x8246D6F0  sub_8246D6F0
+
+  0x00000000  off_82006E40  [referenced by 3 functions]
+    <- 0x8247E1E8  sub_8247E1E8
+    <- 0x8247E368  sub_8247E368
+    <- 0x8247E880  sub_8247E880
+
+  0x00000000  off_82006EA8  [referenced by 3 functions]
+    <- 0x8247EB10  sub_8247EB10
+    <- 0x8247EBE8  sub_8247EBE8
+    <- 0x8247ECB0  sub_8247ECB0
+
+  0x00000000  off_82006ED4  [referenced by 3 functions]
+    <- 0x8247EB18  sub_8247EB18
+    <- 0x8247EC60  sub_8247EC60
+    <- 0x8247ED60  sub_8247ED60
+
+  0x00000000  off_82006EE8  [referenced by 3 functions]
+    <- 0x8247EEB0  sub_8247EEB0
+    <- 0x8247F2B8  sub_8247F2B8
+    <- 0x8247F600  sub_8247F600
+
+  0x00000000  off_82006F40  [referenced by 3 functions]
+    <- 0x8247F8E8  sub_8247F8E8
+    <- 0x8247FC60  sub_8247FC60
+    <- 0x8247FD00  sub_8247FD00
+
+  0x00000000  off_82008308  [referenced by 3 functions]
+    <- 0x824832E8  sub_824832E8
+    <- 0x82483360  sub_82483360
+    <- 0x824833C8  sub_824833C8
+
+  0x00000000  off_82008348  [referenced by 3 functions]
+    <- 0x82483430  sub_82483430
+    <- 0x824834E0  sub_824834E0
+    <- 0x82483550  sub_82483550
+
+  0x00000000  off_82008D10  [referenced by 3 functions]
+    <- 0x82487770  sub_82487770
+    <- 0x824877C0  sub_824877C0
+    <- 0x8248DFD8  sub_8248DFD8
+
+  0x00000000  off_82008DF0  [referenced by 3 functions]
+    <- 0x824887F8  sub_824887F8
+    <- 0x82488840  sub_82488840
+    <- 0x82488890  sub_82488890
+
+  0x00000000  off_82009168  [referenced by 3 functions]
+    <- 0x8248B878  sub_8248B878
+    <- 0x8248B8D8  sub_8248B8D8
+    <- 0x8248B950  sub_8248B950
+
+  0x00000000  off_820091B8  [referenced by 3 functions]
+    <- 0x8248D748  sub_8248D748
+    <- 0x8248D8A8  sub_8248D8A8
+    <- 0x8248D960  sub_8248D960
+
+  0x00000000  off_82009220  [referenced by 3 functions]
+    <- 0x8248DDB0  sub_8248DDB0
+    <- 0x8248DE10  sub_8248DE10
+    <- 0x8248E078  sub_8248E078
+
+  0x00000000  off_820092C0  [referenced by 3 functions]
+    <- 0x8248ED48  sub_8248ED48
+    <- 0x824915C8  sub_824915C8
+    <- 0x82491608  sub_82491608
+
+  0x00000000  off_820093F8  [referenced by 3 functions]
+    <- 0x82491720  sub_82491720
+    <- 0x824917B8  sub_824917B8
+    <- 0x82491928  sub_82491928
+
+  0x00000000  off_82059FE0  [referenced by 3 functions]
+    <- 0x822DF238  sub_822DF238
+    <- 0x822DF348  sub_822DF348
+    <- 0x82430180  sub_82430180
+
+  0x00000000  off_8205A598  [referenced by 3 functions]
+    <- 0x82164DC8  sub_82164DC8
+    <- 0x821AC0B0  sub_821AC0B0
+    <- 0x822E5550  sub_822E5550
+
+  0x00000000  off_820666E0  [referenced by 3 functions]
+    <- 0x82361BC8  sub_82361BC8
+    <- 0x82368158  sub_82368158
+    <- 0x823684F8  sub_823684F8
+
+  0x00000000  off_825B14F0  [referenced by 3 functions]
+    <- 0x824348D0  sub_824348D0
+    <- 0x82435690  sub_82435690
+    <- 0x8243DC78  sub_8243DC78
+
+  0x00000000  off_825C3E48  [referenced by 3 functions]
+    <- 0x82366A08  sub_82366A08
+    <- 0x82366A30  sub_82366A30
+    <- 0x82366CA0  sub_82366CA0
+
+  0x00000000  word_82002C40  [referenced by 2 functions]
+    <- 0x82432A80  sub_82432A80
+    <- 0x82432F58  sub_82432F58
+
+  0x00000000  flt_82003DA8  [referenced by 2 functions]
+    <- 0x82447DD0  sub_82447DD0
+    <- 0x82448170  sub_82448170
+
+  0x00000000  flt_82003DAC  [referenced by 2 functions]
+    <- 0x82448170  sub_82448170
+    <- 0x82448AB8  sub_82448AB8
+
+  0x00000000  off_82003DB0  [referenced by 2 functions]
+    <- 0x82448F20  sub_82448F20
+    <- 0x82449000  sub_82449000
+
+  0x00000000  off_82003DC4  [referenced by 2 functions]
+    <- 0x82448F68  sub_82448F68
+    <- 0x82449000  sub_82449000
+
+  0x00000000  off_82003DC8  [referenced by 2 functions]
+    <- 0x82448FB0  sub_82448FB0
+    <- 0x82449000  sub_82449000
+
+  0x00000000  off_82003E28  [referenced by 2 functions]
+    <- 0x8244A970  sub_8244A970
+    <- 0x8244AF18  sub_8244AF18
+
+  0x00000000  flt_82003EB8  [referenced by 2 functions]
+    <- 0x8244C3A8  sub_8244C3A8
+    <- 0x82452278  sub_82452278
+
+  0x00000000  off_8200460C  [referenced by 2 functions]
+    <- 0x82451B08  sub_82451B08
+    <- 0x82451B58  sub_82451B58
+
+  0x00000000  flt_82004A10  [referenced by 2 functions]
+    <- 0x82452400  sub_82452400
+    <- 0x82452A30  sub_82452A30
+
+  0x00000000  flt_82004A30  [referenced by 2 functions]
+    <- 0x82452400  sub_82452400
+    <- 0x82453878  sub_82453878
+
+  0x00000000  off_82004A34  [referenced by 2 functions]
+    <- 0x824526E8  sub_824526E8
+    <- 0x82452770  sub_82452770
+
+  0x00000000  off_82004A48  [referenced by 2 functions]
+    <- 0x82453098  sub_82453098
+    <- 0x82453108  sub_82453108
+
+  0x00000000  off_82004A94  [referenced by 2 functions]
+    <- 0x82453A08  sub_82453A08
+    <- 0x82453A38  sub_82453A38
+
+  0x00000000  flt_82004A9C  [referenced by 2 functions]
+    <- 0x82453A98  sub_82453A98
+    <- 0x8246D8B0  sub_8246D8B0
+
+  0x00000000  off_82004EE8  [referenced by 2 functions]
+    <- 0x824543A8  sub_824543A8
+    <- 0x82454CF0  sub_82454CF0
+
+  0x00000000  off_82004F48  [referenced by 2 functions]
+    <- 0x824565B0  sub_824565B0
+    <- 0x82456F90  sub_82456F90
+
+  0x00000000  off_82004F4C  [referenced by 2 functions]
+    <- 0x8244ED68  sub_8244ED68
+    <- 0x8244EFF0  sub_8244EFF0
+
+  0x00000000  off_820054A4  [referenced by 2 functions]
+    <- 0x8245A698  sub_8245A698
+    <- 0x8245A6F0  sub_8245A6F0
+
+  0x00000000  off_820054B8  [referenced by 2 functions]
+    <- 0x8245A828  sub_8245A828
+    <- 0x8245AA78  sub_8245AA78
+
+  0x00000000  off_820054BC  [referenced by 2 functions]
+    <- 0x8245B450  sub_8245B450
+    <- 0x8245B468  sub_8245B468
+
+  0x00000000  off_820054C0  [referenced by 2 functions]
+    <- 0x8245B570  sub_8245B570
+    <- 0x8245B5E0  sub_8245B5E0
+
+  0x00000000  off_82005510  [referenced by 2 functions]
+    <- 0x8245D718  sub_8245D718
+    <- 0x8245D780  sub_8245D780
+
+  0x00000000  off_82005590  [referenced by 2 functions]
+    <- 0x8245D3E8  sub_8245D3E8
+    <- 0x8245D780  sub_8245D780
+
+  0x00000000  off_8200560C  [referenced by 2 functions]
+    <- 0x8245DA40  sub_8245DA40
+    <- 0x8245DA80  sub_8245DA80
+
+  0x00000000  off_82005638  [referenced by 2 functions]
+    <- 0x8245DD88  sub_8245DD88
+    <- 0x8245DDE0  sub_8245DDE0
+
+  0x00000000  flt_8200564C  [referenced by 2 functions]
+    <- 0x8245DE50  sub_8245DE50
+    <- 0x8245E358  sub_8245E358
+
+  0x00000000  off_82005650  [referenced by 2 functions]
+    <- 0x8245E290  sub_8245E290
+    <- 0x8245E2E8  sub_8245E2E8
+
+  0x00000000  off_82005664  [referenced by 2 functions]
+    <- 0x8245E800  sub_8245E800
+    <- 0x8245E848  sub_8245E848
+
+  0x00000000  off_82005678  [referenced by 2 functions]
+    <- 0x8245EBE8  sub_8245EBE8
+    <- 0x8245EC68  sub_8245EC68
+
+  0x00000000  off_82005690  [referenced by 2 functions]
+    <- 0x8245ECD0  sub_8245ECD0
+    <- 0x8245EDE0  sub_8245EDE0
+
+  0x00000000  off_8200570C  [referenced by 2 functions]
+    <- 0x8245F420  sub_8245F420
+    <- 0x8245F760  sub_8245F760
+
+  0x00000000  off_82005790  [referenced by 2 functions]
+    <- 0x8245F828  sub_8245F828
+    <- 0x8245F868  sub_8245F868
+
+  0x00000000  off_8200586C  [referenced by 2 functions]
+    <- 0x82461498  sub_82461498
+    <- 0x82461508  sub_82461508
+
+  0x00000000  off_8200588C  [referenced by 2 functions]
+    <- 0x82461338  sub_82461338
+    <- 0x82461540  sub_82461540
+
+  0x00000000  flt_820058A8  [referenced by 2 functions]
+    <- 0x82461B00  sub_82461B00
+    <- 0x82462C38  sub_82462C38
+
+  0x00000000  flt_820058AC  [referenced by 2 functions]
+    <- 0x824631B8  sub_824631B8
+    <- 0x8246FD88  sub_8246FD88
+
+  0x00000000  off_820058B0  [referenced by 2 functions]
+    <- 0x82464888  sub_82464888
+    <- 0x82464A78  sub_82464A78
+
+  0x00000000  off_820058B4  [referenced by 2 functions]
+    <- 0x82464A78  sub_82464A78
+    <- 0x82464AF0  sub_82464AF0
+
+  0x00000000  flt_820058F4  [referenced by 2 functions]
+    <- 0x82465550  sub_82465550
+    <- 0x82470E80  sub_82470E80
+
+  0x00000000  flt_820058F8  [referenced by 2 functions]
+    <- 0x82465550  sub_82465550
+    <- 0x82579608  sub_82579608
+
+  0x00000000  off_8200594C  [referenced by 2 functions]
+    <- 0x82464E80  sub_82464E80
+    <- 0x82465980  sub_82465980
+
+  0x00000000  flt_82005954  [referenced by 2 functions]
+    <- 0x82465550  sub_82465550
+    <- 0x82572210  sub_82572210
+
+  0x00000000  dword_82005988  [referenced by 2 functions]
+    <- 0x82469E70  sub_82469E70
+    <- 0x8246A838  sub_8246A838
+
+  0x00000000  word_82005A58  [referenced by 2 functions]
+    <- 0x824604F8  sub_824604F8
+    <- 0x82467A38  sub_82467A38
+
+  0x00000000  flt_82005A5C  [referenced by 2 functions]
+    <- 0x82467D90  sub_82467D90
+    <- 0x824691C0  sub_824691C0
+
+  0x00000000  off_82005B28  [referenced by 2 functions]
+    <- 0x824667E0  sub_824667E0
+    <- 0x82467C28  sub_82467C28
+
+  0x00000000  off_82005C10  [referenced by 2 functions]
+    <- 0x82468A48  sub_82468A48
+    <- 0x824690A0  sub_824690A0
+
+  0x00000000  dword_82005C78  [referenced by 2 functions]
+    <- 0x82468AA0  sub_82468AA0
+    <- 0x824690A0  sub_824690A0
+
+  0x00000000  off_82005C84  [referenced by 2 functions]
+    <- 0x82469DD8  sub_82469DD8
+    <- 0x8246A428  sub_8246A428
+
+  0x00000000  off_82005CAC  [referenced by 2 functions]
+    <- 0x8246C018  sub_8246C018
+    <- 0x8246C130  sub_8246C130
+
+  0x00000000  off_82005D14  [referenced by 2 functions]
+    <- 0x8246C750  sub_8246C750
+    <- 0x8246D080  sub_8246D080
+
+  0x00000000  flt_82005DA4  [referenced by 2 functions]
+    <- 0x8246D830  sub_8246D830
+    <- 0x8246EB88  sub_8246EB88
+
+  0x00000000  flt_82005DA8  [referenced by 2 functions]
+    <- 0x8246D830  sub_8246D830
+    <- 0x8246D8B0  sub_8246D8B0
+
+  0x00000000  flt_82005DAC  [referenced by 2 functions]
+    <- 0x8246D830  sub_8246D830
+    <- 0x8246D8B0  sub_8246D8B0
+
+  0x00000000  flt_82005DB0  [referenced by 2 functions]
+    <- 0x8246D830  sub_8246D830
+    <- 0x8246EB88  sub_8246EB88
+
+  0x00000000  flt_82006A40  [referenced by 2 functions]
+    <- 0x8246DD10  sub_8246DD10
+    <- 0x8246EB88  sub_8246EB88
+
+  0x00000000  flt_82006A44  [referenced by 2 functions]
+    <- 0x8246D8B0  sub_8246D8B0
+    <- 0x8246EB88  sub_8246EB88
+
+  0x00000000  flt_82006A50  [referenced by 2 functions]
+    <- 0x8246DD10  sub_8246DD10
+    <- 0x8249CFF0  sub_8249CFF0
+
+  0x00000000  flt_82006A54  [referenced by 2 functions]
+    <- 0x8246DD10  sub_8246DD10
+    <- 0x824C3F70  sub_824C3F70
+
+  0x00000000  flt_82006A58  [referenced by 2 functions]
+    <- 0x8246DD10  sub_8246DD10
+    <- 0x824BF6A8  sub_824BF6A8
+
+  0x00000000  flt_82006ABC  [referenced by 2 functions]
+    <- 0x8246DD10  sub_8246DD10
+    <- 0x8246EB88  sub_8246EB88
+
+  0x00000000  flt_82006AC0  [referenced by 2 functions]
+    <- 0x8246DD10  sub_8246DD10
+    <- 0x82572488  sub_82572488
+
+  0x00000000  flt_82006AD4  [referenced by 2 functions]
+    <- 0x8246F758  sub_8246F758
+    <- 0x825782D8  sub_825782D8
+
+  0x00000000  flt_82006AD8  [referenced by 2 functions]
+    <- 0x8246F758  sub_8246F758
+    <- 0x8249CFF0  sub_8249CFF0
+
+  0x00000000  flt_82006AEC  [referenced by 2 functions]
+    <- 0x8246FB90  sub_8246FB90
+    <- 0x824B01E0  sub_824B01E0
+
+  0x00000000  dword_82006AF0  [referenced by 2 functions]
+    <- 0x82464AF0  sub_82464AF0
+    <- 0x8246FB90  sub_8246FB90
+
+  0x00000000  off_82006AF8  [referenced by 2 functions]
+    <- 0x82470CC0  sub_82470CC0
+    <- 0x82473090  sub_82473090
+
+  0x00000000  flt_82006CD8  [referenced by 2 functions]
+    <- 0x82474588  sub_82474588
+    <- 0x82474A20  sub_82474A20
+
+  0x00000000  flt_82006CDC  [referenced by 2 functions]
+    <- 0x82475DD8  sub_82475DD8
+    <- 0x82476260  sub_82476260
+
+  0x00000000  flt_82006CE0  [referenced by 2 functions]
+    <- 0x8247A9B8  sub_8247A9B8
+    <- 0x8247AF10  sub_8247AF10
+
+  0x00000000  dword_82006CF0  [referenced by 2 functions]
+    <- 0x8247C880  sub_8247C880
+    <- 0x8247CAB0  sub_8247CAB0
+
+  0x00000000  dword_82006D00  [referenced by 2 functions]
+    <- 0x8247C880  sub_8247C880
+    <- 0x8247CAB0  sub_8247CAB0
+
+  0x00000000  flt_82006DB0  [referenced by 2 functions]
+    <- 0x824719C8  sub_824719C8
+    <- 0x82471D60  sub_82471D60
+
+  0x00000000  dword_82006DC0  [referenced by 2 functions]
+    <- 0x8246FD88  sub_8246FD88
+    <- 0x82470048  sub_82470048
+
+  0x00000000  dword_82006DD0  [referenced by 2 functions]
+    <- 0x8246FD88  sub_8246FD88
+    <- 0x82470048  sub_82470048
+
+  0x00000000  dword_82006DE0  [referenced by 2 functions]
+    <- 0x824719C8  sub_824719C8
+    <- 0x82471D60  sub_82471D60
+
+  0x00000000  dword_82006DF0  [referenced by 2 functions]
+    <- 0x824719C8  sub_824719C8
+    <- 0x82471D60  sub_82471D60
+
+  0x00000000  off_82006E94  [referenced by 2 functions]
+    <- 0x8247EA88  sub_8247EA88
+    <- 0x8247EAF8  sub_8247EAF8
+
+  0x00000000  off_82006EBC  [referenced by 2 functions]
+    <- 0x8247EA88  sub_8247EA88
+    <- 0x8247EBE8  sub_8247EBE8
+
+  0x00000000  flt_820082D0  [referenced by 2 functions]
+    <- 0x82480920  sub_82480920
+    <- 0x82480BC0  sub_82480BC0
+
+  0x00000000  flt_820082D4  [referenced by 2 functions]
+    <- 0x82480920  sub_82480920
+    <- 0x824B4A38  sub_824B4A38
+
+  0x00000000  flt_82008300  [referenced by 2 functions]
+    <- 0x824813F0  sub_824813F0
+    <- 0x82481788  sub_82481788
+
+  0x00000000  off_82008388  [referenced by 2 functions]
+    <- 0x824837F0  sub_824837F0
+    <- 0x82483DB0  sub_82483DB0
+
+  0x00000000  off_820088A8  [referenced by 2 functions]
+    <- 0x82483F90  sub_82483F90
+    <- 0x824846D8  sub_824846D8
+
+  0x00000000  off_82008918  [referenced by 2 functions]
+    <- 0x824851D0  sub_824851D0
+    <- 0x82485250  sub_82485250
+
+  0x00000000  off_82008A48  [referenced by 2 functions]
+    <- 0x82486448  sub_82486448
+    <- 0x824864B8  sub_824864B8
+
+  0x00000000  off_82008B08  [referenced by 2 functions]
+    <- 0x82486BF0  sub_82486BF0
+    <- 0x82487168  sub_82487168
+
+  0x00000000  off_82008B80  [referenced by 2 functions]
+    <- 0x82487200  sub_82487200
+    <- 0x82487240  sub_82487240
+
+  0x00000000  off_82008CA8  [referenced by 2 functions]
+    <- 0x82487410  sub_82487410
+    <- 0x82487468  sub_82487468
+
+  0x00000000  off_82008D0C  [referenced by 2 functions]
+    <- 0x824872B8  sub_824872B8
+    <- 0x82487468  sub_82487468
+
+  0x00000000  off_82008D70  [referenced by 2 functions]
+    <- 0x82488488  sub_82488488
+    <- 0x82488510  sub_82488510
+
+  0x00000000  dword_82009460  [referenced by 2 functions]
+    <- 0x824946E0  sub_824946E0
+    <- 0x824A70F0  sub_824A70F0
+
+  0x00000000  dword_82009470  [referenced by 2 functions]
+    <- 0x824946E0  sub_824946E0
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_82009480  [referenced by 2 functions]
+    <- 0x82496700  sub_82496700
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_82009490  [referenced by 2 functions]
+    <- 0x82496700  sub_82496700
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_820094A0  [referenced by 2 functions]
+    <- 0x82494B48  sub_82494B48
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_820094D0  [referenced by 2 functions]
+    <- 0x82494B48  sub_82494B48
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_82009500  [referenced by 2 functions]
+    <- 0x82496700  sub_82496700
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_82009510  [referenced by 2 functions]
+    <- 0x82496700  sub_82496700
+    <- 0x82496BF0  sub_82496BF0
+
+  0x00000000  dword_82009520  [referenced by 2 functions]
+    <- 0x82496BF0  sub_82496BF0
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_82009530  [referenced by 2 functions]
+    <- 0x82496BF0  sub_82496BF0
+    <- 0x82496FC0  sub_82496FC0
+
+  0x00000000  dword_82009550  [referenced by 2 functions]
+    <- 0x82496700  sub_82496700
+    <- 0x82496BF0  sub_82496BF0
+
+  0x00000000  flt_82009670  [referenced by 2 functions]
+    <- 0x8249CFF0  sub_8249CFF0
+    <- 0x82509C38  sub_82509C38
+
+  0x00000000  flt_82009684  [referenced by 2 functions]
+    <- 0x8249D7C8  sub_8249D7C8
+    <- 0x825760F8  sub_825760F8
+
+  0x00000000  off_82009690  [referenced by 2 functions]
+    <- 0x824920B0  sub_824920B0
+    <- 0x824A9CB8  sub_824A9CB8
+
+  0x00000000  off_820096A8  [referenced by 2 functions]
+    <- 0x824A1628  sub_824A1628
+    <- 0x824A7348  sub_824A7348
+
+  0x00000000  flt_82009824  [referenced by 2 functions]
+    <- 0x824B01E0  sub_824B01E0
+    <- 0x824C3F70  sub_824C3F70
+
+  0x00000000  flt_82009828  [referenced by 2 functions]
+    <- 0x824B01E0  sub_824B01E0
+    <- 0x824C3F70  sub_824C3F70
+
+  0x00000000  flt_82009840  [referenced by 2 functions]
+    <- 0x824B0D30  sub_824B0D30
+    <- 0x82576F50  sub_82576F50
+
+  0x00000000  dword_8200B944  [referenced by 2 functions]
+    <- 0x824BBFE8  sub_824BBFE8
+    <- 0x824BC438  sub_824BC438
+
+  0x00000000  dword_8200BD08  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_8200C3D8  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_8200F060  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_820104D0  [referenced by 2 functions]
+    <- 0x824B4A38  sub_824B4A38
+    <- 0x824C4350  sub_824C4350
+
+  0x00000000  dword_82010538  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_820108F0  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_82011378  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_82011DE8  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_82013918  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_82013E48  [referenced by 2 functions]
+    <- 0x8249F430  sub_8249F430
+    <- 0x824BDE18  sub_824BDE18
+
+  0x00000000  dword_820153F0  [referenced by 2 functions]
+    <- 0x824A1FA0  sub_824A1FA0
+    <- 0x824A59B0  sub_824A59B0
+
+  0x00000000  dword_82015400  [referenced by 2 functions]
+    <- 0x824A1FA0  sub_824A1FA0
+    <- 0x824A7920  sub_824A7920
+
+  0x00000000  dword_82015410  [referenced by 2 functions]
+    <- 0x824A7920  sub_824A7920
+    <- 0x824A9930  sub_824A9930
+
+  0x00000000  flt_82015464  [referenced by 2 functions]
+    <- 0x824C3F70  sub_824C3F70
+    <- 0x82572690  sub_82572690
+
+  0x00000000  flt_82015468  [referenced by 2 functions]
+    <- 0x824C3F70  sub_824C3F70
+    <- 0x8257A740  sub_8257A740
+
+  0x00000000  flt_82015508  [referenced by 2 functions]
+    <- 0x824C5C50  sub_824C5C50
+    <- 0x824C8D78  sub_824C8D78
+
+  0x00000000  flt_820157B0  [referenced by 2 functions]
+    <- 0x824C7D28  sub_824C7D28
+    <- 0x82572A80  sub_82572A80
+
+  0x00000000  dword_82018490  [referenced by 2 functions]
+    <- 0x824F3018  sub_824F3018
+    <- 0x824F3350  sub_824F3350
+
+  0x00000000  dword_82018C78  [referenced by 2 functions]
+    <- 0x82563080  sub_82563080
+    <- 0x82563AA8  sub_82563AA8
+
+  0x00000000  dword_8201A770  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201AA18  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201AD08  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201AF60  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201B178  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201B318  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201B4B8  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201B778  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201BA08  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201CB40  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201DC78  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201DE80  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201E088  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201E290  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201E498  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201E5A0  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201E788  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201E970  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201EB58  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201ED40  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201EE48  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201EF50  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F058  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F160  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F288  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F3B0  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F4D8  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F600  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F730  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F860  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201F990  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FAC0  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FB00  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FB40  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FB80  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FBC0  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FC08  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FC50  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FC94  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FCB8  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  dword_8201FCDC  [referenced by 2 functions]
+    <- 0x824E90E8  sub_824E90E8
+    <- 0x824ED1A0  sub_824ED1A0
+
+  0x00000000  off_820227C0  [referenced by 2 functions]
+    <- 0x8236A4D0  sub_8236A4D0
+    <- 0x8236AD30  sub_8236AD30
+
+  0x00000000  flt_82022A48  [referenced by 2 functions]
+    <- 0x82572488  sub_82572488
+    <- 0x82572690  sub_82572690
+
+  0x00000000  flt_82022BB4  [referenced by 2 functions]
+    <- 0x82572690  sub_82572690
+    <- 0x82577038  sub_82577038
+
+  0x00000000  flt_82022BB8  [referenced by 2 functions]
+    <- 0x82572690  sub_82572690
+    <- 0x82575750  sub_82575750
+
+  0x00000000  flt_82022BBC  [referenced by 2 functions]
+    <- 0x82572690  sub_82572690
+    <- 0x825757E8  sub_825757E8
+
+  0x00000000  flt_82022BC0  [referenced by 2 functions]
+    <- 0x82572690  sub_82572690
+    <- 0x825757E8  sub_825757E8
+
+  0x00000000  dword_82022BC4  [referenced by 2 functions]
+    <- 0x82570968  sub_82570968
+    <- 0x82574498  sub_82574498
+
+  0x00000000  flt_820242B0  [referenced by 2 functions]
+    <- 0x825756F8  sub_825756F8
+    <- 0x82575750  sub_82575750
+
+  0x00000000  flt_820242E0  [referenced by 2 functions]
+    <- 0x82575838  sub_82575838
+    <- 0x82575918  sub_82575918
+
+  0x00000000  flt_82024320  [referenced by 2 functions]
+    <- 0x825764C8  sub_825764C8
+    <- 0x825794E0  sub_825794E0
+
+  0x00000000  flt_8202457C  [referenced by 2 functions]
+    <- 0x82577A30  sub_82577A30
+    <- 0x82578DB8  sub_82578DB8
+
+  0x00000000  flt_82026150  [referenced by 2 functions]
+    <- 0x82572D40  sub_82572D40
+    <- 0x82578790  sub_82578790
+
+  0x00000000  dword_820268E0  [referenced by 2 functions]
+    <- 0x82579B58  sub_82579B58
+    <- 0x82579C78  sub_82579C78
+
+  0x00000000  flt_820271F8  [referenced by 2 functions]
+    <- 0x8257A640  sub_8257A640
+    <- 0x8257A740  sub_8257A740
+
+  0x00000000  dword_820272E8  [referenced by 2 functions]
+    <- 0x823578F0  sub_823578F0
+    <- 0x82357B30  sub_82357B30
+
+  0x00000000  dword_820272EC  [referenced by 2 functions]
+    <- 0x823578F0  sub_823578F0
+    <- 0x82357B30  sub_82357B30
+
+  0x00000000  dword_820276D8  [referenced by 2 functions]
+    <- 0x82144888  sub_82144888
+    <- 0x8227D220  sub_8227D220
+
+  0x00000000  off_82027780  [referenced by 2 functions]
+    <- 0x8228C3C0  sub_8228C3C0
+    <- 0x822E5550  sub_822E5550
+
+  0x00000000  off_8202780C  [referenced by 2 functions]
+    <- 0x82177D88  sub_82177D88
+    <- 0x822E6998  sub_822E6998
+
+  0x00000000  dword_82027C4C  [referenced by 2 functions]
+    <- 0x820C8958  sub_820C8958
+    <- 0x820C8B48  sub_820C8B48
+
+  0x00000000  flt_820290F0  [referenced by 2 functions]
+    <- 0x820CA390  sub_820CA390
+    <- 0x820D4050  sub_820D4050
+
+  0x00000000  flt_8202C02C  [referenced by 2 functions]
+    <- 0x820E6E90  sub_820E6E90
+    <- 0x82102A90  sub_82102A90
+
+  0x00000000  dword_8202C030  [referenced by 2 functions]
+    <- 0x82369F90  sub_82369F90
+    <- 0x823B22B8  sub_823B22B8
+
+  0x00000000  dword_8202C044  [referenced by 2 functions]
+    <- 0x82369F90  sub_82369F90
+    <- 0x823B22B8  sub_823B22B8
+
+  0x00000000  dword_8202C328  [referenced by 2 functions]
+    <- 0x8235C728  sub_8235C728
+    <- 0x8235CB48  sub_8235CB48
+
+  0x00000000  dword_8202C350  [referenced by 2 functions]
+    <- 0x8235C728  sub_8235C728
+    <- 0x8235CB48  sub_8235CB48
+
+  0x00000000  flt_8202C4E0  [referenced by 2 functions]
+    <- 0x820D10B0  sub_820D10B0
+    <- 0x821A06F0  sub_821A06F0
+
+  0x00000000  flt_8202C4E4  [referenced by 2 functions]
+    <- 0x820E8CD8  sub_820E8CD8
+    <- 0x82111F50  sub_82111F50
+
+  0x00000000  flt_8202C4E8  [referenced by 2 functions]
+    <- 0x82144258  sub_82144258
+    <- 0x821490A0  sub_821490A0
+
+  0x00000000  flt_8202C504  [referenced by 2 functions]
+    <- 0x820D20B8  sub_820D20B8
+    <- 0x8210A1F0  sub_8210A1F0
+
+  0x00000000  flt_8202C518  [referenced by 2 functions]
+    <- 0x821486A8  sub_821486A8
+    <- 0x821490A0  sub_821490A0
+
+  0x00000000  flt_8202CE44  [referenced by 2 functions]
+    <- 0x821286E0  sub_821286E0
+    <- 0x821DAA28  sub_821DAA28
+
+  0x00000000  flt_8202CE48  [referenced by 2 functions]
+    <- 0x822B6B20  sub_822B6B20
+    <- 0x822B6DA0  sub_822B6DA0
+
+  0x00000000  byte_8202CE50  [referenced by 2 functions]
+    <- 0x822A8CA0  sub_822A8CA0
+    <- 0x822A8E18  sub_822A8E18
+
+  0x00000000  word_8202CE52  [referenced by 2 functions]
+    <- 0x822A8CA0  sub_822A8CA0
+    <- 0x822A8E18  sub_822A8E18
+
+  0x00000000  byte_8202CE54  [referenced by 2 functions]
+    <- 0x822A8CA0  sub_822A8CA0
+    <- 0x822A8E18  sub_822A8E18
+
+  0x00000000  byte_8202CE80  [referenced by 2 functions]
+    <- 0x822A6E20  sub_822A6E20
+    <- 0x822A8000  sub_822A8000
+
+  0x00000000  word_8202CE82  [referenced by 2 functions]
+    <- 0x822A6E20  sub_822A6E20
+    <- 0x822A8000  sub_822A8000
+
+  0x00000000  byte_8202CEE0  [referenced by 2 functions]
+    <- 0x822A8000  sub_822A8000
+    <- 0x822A9490  sub_822A9490
+
+  0x00000000  word_8202CF10  [referenced by 2 functions]
+    <- 0x822A7450  sub_822A7450
+    <- 0x822A9490  sub_822A9490
+
+  0x00000000  flt_8202CFE4  [referenced by 2 functions]
+    <- 0x820D4050  sub_820D4050
+    <- 0x820E4188  sub_820E4188
+
+  0x00000000  flt_8202CFEC  [referenced by 2 functions]
+    <- 0x822851D0  sub_822851D0
+    <- 0x822860D8  sub_822860D8
+
+  0x00000000  flt_8202CFF4  [referenced by 2 functions]
+    <- 0x8214A980  sub_8214A980
+    <- 0x8219D8E8  sub_8219D8E8
+
+  0x00000000  flt_8202CFFC  [referenced by 2 functions]
+    <- 0x82249248  sub_82249248
+    <- 0x82249A18  sub_82249A18
+
+  0x00000000  flt_8202D05C  [referenced by 2 functions]
+    <- 0x820C96A0  sub_820C96A0
+    <- 0x821D0BA0  sub_821D0BA0
+
+  0x00000000  flt_8202D0DC  [referenced by 2 functions]
+    <- 0x821B02A8  sub_821B02A8
+    <- 0x821B2408  sub_821B2408
+
+  0x00000000  flt_8202D0E8  [referenced by 2 functions]
+    <- 0x82192AE0  sub_82192AE0
+    <- 0x821B02A8  sub_821B02A8
+
+  0x00000000  flt_8202D0F8  [referenced by 2 functions]
+    <- 0x821B02A8  sub_821B02A8
+    <- 0x821B2408  sub_821B2408
+
+  0x00000000  flt_8202D110  [referenced by 2 functions]
+    <- 0x820C0378  sub_820C0378
+    <- 0x820C0CA0  sub_820C0CA0
+
+  0x00000000  flt_8202D118  [referenced by 2 functions]
+    <- 0x8210FCD8  sub_8210FCD8
+    <- 0x82119398  sub_82119398
+
+  0x00000000  flt_8202D124  [referenced by 2 functions]
+    <- 0x8213C650  sub_8213C650
+    <- 0x8216FDA0  sub_8216FDA0
+
+  0x00000000  flt_8202D128  [referenced by 2 functions]
+    <- 0x82109BA8  sub_82109BA8
+    <- 0x82109F68  sub_82109F68
+
+  0x00000000  flt_8202D12C  [referenced by 2 functions]
+    <- 0x821B02A8  sub_821B02A8
+    <- 0x821B1B28  sub_821B1B28
+
+  0x00000000  flt_8202D130  [referenced by 2 functions]
+    <- 0x821AE2C8  sub_821AE2C8
+    <- 0x821B02A8  sub_821B02A8
+
+  0x00000000  flt_8202D144  [referenced by 2 functions]
+    <- 0x8213F160  sub_8213F160
+    <- 0x82144258  sub_82144258
+
+  0x00000000  flt_8202D168  [referenced by 2 functions]
+    <- 0x820C47B0  sub_820C47B0
+    <- 0x820C4898  sub_820C4898
+
+  0x00000000  flt_8202D16C  [referenced by 2 functions]
+    <- 0x82110A08  sub_82110A08
+    <- 0x82119398  sub_82119398
+
+  0x00000000  flt_8202D17C  [referenced by 2 functions]
+    <- 0x821608A8  sub_821608A8
+    <- 0x821609E0  sub_821609E0
+
+  0x00000000  flt_8202D184  [referenced by 2 functions]
+    <- 0x820C4340  sub_820C4340
+    <- 0x820C56B0  sub_820C56B0
+
+  0x00000000  flt_8202D188  [referenced by 2 functions]
+    <- 0x82149748  sub_82149748
+    <- 0x821B02A8  sub_821B02A8
+
+  0x00000000  flt_8202D194  [referenced by 2 functions]
+    <- 0x820FA628  sub_820FA628
+    <- 0x82149748  sub_82149748
+
+  0x00000000  flt_8202D2D8  [referenced by 2 functions]
+    <- 0x821B02A8  sub_821B02A8
+    <- 0x8224EC58  sub_8224EC58
+
+  0x00000000  flt_8202D338  [referenced by 2 functions]
+    <- 0x8219FDD0  sub_8219FDD0
+    <- 0x821AE2C8  sub_821AE2C8
+
+  0x00000000  flt_8202D340  [referenced by 2 functions]
+    <- 0x82144258  sub_82144258
+    <- 0x82175E38  sub_82175E38
+
+  0x00000000  flt_8202D348  [referenced by 2 functions]
+    <- 0x821AE500  sub_821AE500
+    <- 0x821B02A8  sub_821B02A8
+
+  0x00000000  flt_8202D350  [referenced by 2 functions]
+    <- 0x821AE2C8  sub_821AE2C8
+    <- 0x821B02A8  sub_821B02A8
+
+  0x00000000  flt_8202D354  [referenced by 2 functions]
+    <- 0x821AE500  sub_821AE500
+    <- 0x821B02A8  sub_821B02A8
+
+  0x00000000  flt_8202D998  [referenced by 2 functions]
+    <- 0x82187BE8  sub_82187BE8
+    <- 0x8218CF30  sub_8218CF30
+
+  0x00000000  flt_8202D99C  [referenced by 2 functions]
+    <- 0x82163498  sub_82163498
+    <- 0x821637D8  sub_821637D8
+
+  0x00000000  flt_8202D9E0  [referenced by 2 functions]
+    <- 0x82130998  sub_82130998
+    <- 0x82131838  sub_82131838
+
+  0x00000000  dword_8202F0A0  [referenced by 2 functions]
+    <- 0x82159660  sub_82159660
+    <- 0x82159780  sub_82159780
+
+  0x00000000  dword_8202F5B8  [referenced by 2 functions]
+    <- 0x820F0780  sub_820F0780
+    <- 0x820F6040  sub_820F6040
+
+  0x00000000  off_82033280  [referenced by 2 functions]
+    <- 0x82126EF8  sub_82126EF8
+    <- 0x822DD238  sub_822DD238
+
+  0x00000000  dword_82034D60  [referenced by 2 functions]
+    <- 0x82156228  sub_82156228
+    <- 0x82156A40  sub_82156A40
+
+  0x00000000  dword_82034D70  [referenced by 2 functions]
+    <- 0x82156228  sub_82156228
+    <- 0x82156A40  sub_82156A40
+
+  0x00000000  dword_82034D80  [referenced by 2 functions]
+    <- 0x82155B08  sub_82155B08
+    <- 0x82155BD8  sub_82155BD8
+
+  0x00000000  dword_820374A8  [referenced by 2 functions]
+    <- 0x82178DD8  sub_82178DD8
+    <- 0x82276860  sub_82276860
+
+  0x00000000  dword_82037E04  [referenced by 2 functions]
+    <- 0x821845E8  sub_821845E8
+    <- 0x82263278  sub_82263278
+
+  0x00000000  qword_82038530  [referenced by 2 functions]
+    <- 0x82186418  sub_82186418
+    <- 0x822E8CA8  sub_822E8CA8
+
+  0x00000000  off_82038CAC  [referenced by 2 functions]
+    <- 0x82187BE8  sub_82187BE8
+    <- 0x821DFDF0  sub_821DFDF0
+
+  0x00000000  dword_8203A95C  [referenced by 2 functions]
+    <- 0x821A8C38  sub_821A8C38
+    <- 0x8223A638  sub_8223A638
+
+  0x00000000  dword_8203AAD4  [referenced by 2 functions]
+    <- 0x821A94A0  sub_821A94A0
+    <- 0x824195A8  sub_824195A8
+
+  0x00000000  dword_8203AAD8  [referenced by 2 functions]
+    <- 0x821A94A0  sub_821A94A0
+    <- 0x824195A8  sub_824195A8
+
+  0x00000000  dword_820573B0  [referenced by 2 functions]
+    <- 0x822870C8  sub_822870C8
+    <- 0x823B6128  sub_823B6128
+
+  0x00000000  dword_820573B4  [referenced by 2 functions]
+    <- 0x822870C8  sub_822870C8
+    <- 0x823B6128  sub_823B6128
+
+  0x00000000  dword_8205A638  [referenced by 2 functions]
+    <- 0x822E7C00  sub_822E7C00
+    <- 0x8241B8C8  sub_8241B8C8
+
+  0x00000000  off_8205A644  [referenced by 2 functions]
+    <- 0x820E16C0  sub_820E16C0
+    <- 0x822E7378  sub_822E7378
+
+  0x00000000  off_82060BA8  [referenced by 2 functions]
+    <- 0x823177A0  sub_823177A0
+    <- 0x823179A0  sub_823179A0
+
+  0x00000000  off_82065A38  [referenced by 2 functions]
+    <- 0x8234CA88  sub_8234CA88
+    <- 0x8234E0D8  sub_8234E0D8
+
+  0x00000000  off_82065A78  [referenced by 2 functions]
+    <- 0x8234F6C0  sub_8234F6C0
+    <- 0x8234F6F0  sub_8234F6F0
+
+  0x00000000  byte_82065C68  [referenced by 2 functions]
+    <- 0x82358000  sub_82358000
+    <- 0x82358410  sub_82358410
+
+  0x00000000  dword_82065CE8  [referenced by 2 functions]
+    <- 0x823536E8  sub_823536E8
+    <- 0x8235C038  sub_8235C038
+
+  0x00000000  dword_82065D10  [referenced by 2 functions]
+    <- 0x82355418  sub_82355418
+    <- 0x823555A8  sub_823555A8
+
+  0x00000000  dword_82065DD0  [referenced by 2 functions]
+    <- 0x8214F088  sub_8214F088
+    <- 0x8235CF28  sub_8235CF28
+
+  0x00000000  dword_82065E50  [referenced by 2 functions]
+    <- 0x8235DD08  sub_8235DD08
+    <- 0x8247F110  sub_8247F110
+
+  0x00000000  unk_82066670  [referenced by 2 functions]
+    <- 0x823645F8  sub_823645F8
+    <- 0x823646E0  sub_823646E0
+
+  0x00000000  unk_82066680  [referenced by 2 functions]
+    <- 0x823645F8  sub_823645F8
+    <- 0x823646E0  sub_823646E0
+
+  0x00000000  flt_82079AD0  [referenced by 2 functions]
+    <- 0x822FA950  sub_822FA950
+    <- 0x824049A0  sub_824049A0
+
+  0x00000000  flt_82079AD4  [referenced by 2 functions]
+    <- 0x820F1348  sub_820F1348
+    <- 0x82126D00  sub_82126D00
+
+  0x00000000  flt_82079ADC  [referenced by 2 functions]
+    <- 0x823FDA80  sub_823FDA80
+    <- 0x82572D40  sub_82572D40
+
+  0x00000000  flt_82079AE4  [referenced by 2 functions]
+    <- 0x8213C420  sub_8213C420
+    <- 0x823644F8  sub_823644F8
+
+  0x00000000  flt_82079AF4  [referenced by 2 functions]
+    <- 0x820FDFC0  sub_820FDFC0
+    <- 0x8214AE00  sub_8214AE00
+
+  0x00000000  flt_82079B10  [referenced by 2 functions]
+    <- 0x820CA790  sub_820CA790
+    <- 0x820FB8B8  sub_820FB8B8
+
+  0x00000000  flt_82079B14  [referenced by 2 functions]
+    <- 0x822A4DC8  sub_822A4DC8
+    <- 0x822A8000  sub_822A8000
+
+  0x00000000  flt_82079B18  [referenced by 2 functions]
+    <- 0x820C9AC0  sub_820C9AC0
+    <- 0x820D18B0  sub_820D18B0
+
+  0x00000000  flt_82079B1C  [referenced by 2 functions]
+    <- 0x820D0DA0  sub_820D0DA0
+    <- 0x821A1460  sub_821A1460
+
+  0x00000000  flt_82079B20  [referenced by 2 functions]
+    <- 0x820E6DD8  sub_820E6DD8
+    <- 0x822847B8  sub_822847B8
+
+  0x00000000  flt_82079B24  [referenced by 2 functions]
+    <- 0x822847B8  sub_822847B8
+    <- 0x82285170  sub_82285170
+
+  0x00000000  flt_82079B30  [referenced by 2 functions]
+    <- 0x820C3D48  sub_820C3D48
+    <- 0x820C4340  sub_820C4340
+
+  0x00000000  flt_82079B34  [referenced by 2 functions]
+    <- 0x8223F968  sub_8223F968
+    <- 0x82410058  sub_82410058
+
+  0x00000000  flt_82079B38  [referenced by 2 functions]
+    <- 0x820D1BB0  sub_820D1BB0
+    <- 0x8223F968  sub_8223F968
+
+  0x00000000  flt_82079B3C  [referenced by 2 functions]
+    <- 0x82138FD8  sub_82138FD8
+    <- 0x8223AD30  sub_8223AD30
+
+  0x00000000  flt_82079B40  [referenced by 2 functions]
+    <- 0x82234518  sub_82234518
+    <- 0x82246938  sub_82246938
+
+  0x00000000  flt_82079B44  [referenced by 2 functions]
+    <- 0x820E16C0  sub_820E16C0
+    <- 0x8219A508  sub_8219A508
+
+  0x00000000  flt_82079B50  [referenced by 2 functions]
+    <- 0x821B1718  sub_821B1718
+    <- 0x821B1B28  sub_821B1B28
+
+  0x00000000  flt_82079B54  [referenced by 2 functions]
+    <- 0x821B1B28  sub_821B1B28
+    <- 0x82576E48  sub_82576E48
+
+  0x00000000  flt_82079B74  [referenced by 2 functions]
+    <- 0x8218F6D0  sub_8218F6D0
+    <- 0x821A7BF8  sub_821A7BF8
+
+  0x00000000  flt_82079B7C  [referenced by 2 functions]
+    <- 0x82112370  sub_82112370
+    <- 0x821187D8  sub_821187D8
+
+  0x00000000  flt_82079B84  [referenced by 2 functions]
+    <- 0x82165960  sub_82165960
+    <- 0x8216D9B8  sub_8216D9B8
+
+  0x00000000  flt_82079B8C  [referenced by 2 functions]
+    <- 0x8211ECC0  sub_8211ECC0
+    <- 0x8211F060  sub_8211F060
+
+  0x00000000  flt_82079B90  [referenced by 2 functions]
+    <- 0x8211ECC0  sub_8211ECC0
+    <- 0x8211F060  sub_8211F060
+
+  0x00000000  flt_82079BA4  [referenced by 2 functions]
+    <- 0x820DE040  sub_820DE040
+    <- 0x822C82B8  sub_822C82B8
+
+  0x00000000  flt_82079BA8  [referenced by 2 functions]
+    <- 0x820E7FE0  sub_820E7FE0
+    <- 0x82184550  sub_82184550
+
+  0x00000000  flt_82079BAC  [referenced by 2 functions]
+    <- 0x820D3550  sub_820D3550
+    <- 0x820E16C0  sub_820E16C0
+
+  0x00000000  flt_82079BB0  [referenced by 2 functions]
+    <- 0x820DEFF8  sub_820DEFF8
+    <- 0x820DF050  sub_820DF050
+
+  0x00000000  flt_82079BB4  [referenced by 2 functions]
+    <- 0x820DEFF8  sub_820DEFF8
+    <- 0x820DF050  sub_820DF050
+
+  0x00000000  flt_82079BB8  [referenced by 2 functions]
+    <- 0x820C7890  sub_820C7890
+    <- 0x820CC678  sub_820CC678
+
+  0x00000000  flt_82079BBC  [referenced by 2 functions]
+    <- 0x820C1B90  sub_820C1B90
+    <- 0x820D0DA0  sub_820D0DA0
+
+  0x00000000  flt_82079BC0  [referenced by 2 functions]
+    <- 0x8219FDD0  sub_8219FDD0
+    <- 0x821A1460  sub_821A1460
+
+  0x00000000  flt_82079BC8  [referenced by 2 functions]
+    <- 0x82183C08  sub_82183C08
+    <- 0x822847B8  sub_822847B8
+
+  0x00000000  flt_82079BCC  [referenced by 2 functions]
+    <- 0x8214AD18  sub_8214AD18
+    <- 0x82411B78  sub_82411B78
+
+  0x00000000  flt_82079BD0  [referenced by 2 functions]
+    <- 0x82144258  sub_82144258
+    <- 0x82228F30  sub_82228F30
+
+  0x00000000  flt_82079BE0  [referenced by 2 functions]
+    <- 0x82112DF8  sub_82112DF8
+    <- 0x8213D050  sub_8213D050
+
+  0x00000000  flt_82079BE8  [referenced by 2 functions]
+    <- 0x824060B8  sub_824060B8
+    <- 0x824CAEF8  sub_824CAEF8
+
+  0x00000000  flt_82079BF4  [referenced by 2 functions]
+    <- 0x82404340  sub_82404340
+    <- 0x82404CF8  sub_82404CF8
+
+  0x00000000  flt_82079BF8  [referenced by 2 functions]
+    <- 0x820D20B8  sub_820D20B8
+    <- 0x82140420  sub_82140420
+
+  0x00000000  flt_82079BFC  [referenced by 2 functions]
+    <- 0x822847B8  sub_822847B8
+    <- 0x82342238  sub_82342238
+
+  0x00000000  flt_82079C00  [referenced by 2 functions]
+    <- 0x82149748  sub_82149748
+    <- 0x821610B8  sub_821610B8
+
+  0x00000000  flt_82079C04  [referenced by 2 functions]
+    <- 0x8213CEE8  sub_8213CEE8
+    <- 0x82199AE0  sub_82199AE0
+
+  0x00000000  flt_82079C10  [referenced by 2 functions]
+    <- 0x823501D8  sub_823501D8
+    <- 0x82350BF0  sub_82350BF0
+
+  0x00000000  flt_82079C20  [referenced by 2 functions]
+    <- 0x821A4D90  sub_821A4D90
+    <- 0x822F8F40  sub_822F8F40
+
+  0x00000000  flt_82079C28  [referenced by 2 functions]
+    <- 0x822F8F40  sub_822F8F40
+    <- 0x8231FE70  sub_8231FE70
+
+  0x00000000  flt_82079C2C  [referenced by 2 functions]
+    <- 0x8220E050  sub_8220E050
+    <- 0x822EAC88  sub_822EAC88
+
+  0x00000000  flt_82079C38  [referenced by 2 functions]
+    <- 0x82144258  sub_82144258
+    <- 0x82285C88  sub_82285C88
+
+  0x00000000  flt_82079C48  [referenced by 2 functions]
+    <- 0x820C4248  sub_820C4248
+    <- 0x820C47B0  sub_820C47B0
+
+  0x00000000  flt_82079C4C  [referenced by 2 functions]
+    <- 0x82244CB8  sub_82244CB8
+    <- 0x822479B0  sub_822479B0
+
+  0x00000000  flt_82079C50  [referenced by 2 functions]
+    <- 0x821125F0  sub_821125F0
+    <- 0x8223ABE0  sub_8223ABE0
+
+  0x00000000  flt_82079C54  [referenced by 2 functions]
+    <- 0x822203C8  sub_822203C8
+    <- 0x822205B0  sub_822205B0
+
+  0x00000000  flt_82079C58  [referenced by 2 functions]
+    <- 0x820FB8B8  sub_820FB8B8
+    <- 0x821D4EA0  sub_821D4EA0
+
+  0x00000000  flt_82079C84  [referenced by 2 functions]
+    <- 0x8219D0F0  sub_8219D0F0
+    <- 0x821A6290  sub_821A6290
+
+  0x00000000  flt_82079C9C  [referenced by 2 functions]
+    <- 0x82287B50  sub_82287B50
+    <- 0x82388D70  sub_82388D70
+
+  0x00000000  flt_82079CA8  [referenced by 2 functions]
+    <- 0x820D4DA0  sub_820D4DA0
+    <- 0x8216A308  sub_8216A308
+
+  0x00000000  flt_82079CB8  [referenced by 2 functions]
+    <- 0x8212B468  sub_8212B468
+    <- 0x821AE630  sub_821AE630
+
+  0x00000000  flt_82079CC8  [referenced by 2 functions]
+    <- 0x821AE630  sub_821AE630
+    <- 0x821B26C0  sub_821B26C0
+
+  0x00000000  flt_82079CCC  [referenced by 2 functions]
+    <- 0x821637D8  sub_821637D8
+    <- 0x82164298  sub_82164298
+
+  0x00000000  flt_82079CD0  [referenced by 2 functions]
+    <- 0x82163868  sub_82163868
+    <- 0x82233210  sub_82233210
+
+  0x00000000  flt_82079CD4  [referenced by 2 functions]
+    <- 0x82164328  sub_82164328
+    <- 0x82475DD8  sub_82475DD8
+
+  0x00000000  flt_82079CD8  [referenced by 2 functions]
+    <- 0x820FA628  sub_820FA628
+    <- 0x8216A308  sub_8216A308
+
+  0x00000000  flt_82079CE8  [referenced by 2 functions]
+    <- 0x8219D558  sub_8219D558
+    <- 0x822860D8  sub_822860D8
+
+  0x00000000  flt_82079D18  [referenced by 2 functions]
+    <- 0x820D37C0  sub_820D37C0
+    <- 0x820FA628  sub_820FA628
+
+  0x00000000  flt_82079D1C  [referenced by 2 functions]
+    <- 0x8216A308  sub_8216A308
+    <- 0x8219E008  sub_8219E008
+
+  0x00000000  flt_82079D28  [referenced by 2 functions]
+    <- 0x821480C0  sub_821480C0
+    <- 0x82153598  sub_82153598
+
+  0x00000000  flt_82079D38  [referenced by 2 functions]
+    <- 0x820CC678  sub_820CC678
+    <- 0x82364D50  sub_82364D50
+
+  0x00000000  flt_82079D50  [referenced by 2 functions]
+    <- 0x820D0DA0  sub_820D0DA0
+    <- 0x821D6100  sub_821D6100
+
+  0x00000000  flt_82079D54  [referenced by 2 functions]
+    <- 0x8240FE58  sub_8240FE58
+    <- 0x82578DB8  sub_82578DB8
+
+  0x00000000  flt_82079D58  [referenced by 2 functions]
+    <- 0x820FBE70  sub_820FBE70
+    <- 0x8222F058  sub_8222F058
+
+  0x00000000  flt_82079D5C  [referenced by 2 functions]
+    <- 0x821053E0  sub_821053E0
+    <- 0x82391570  sub_82391570
+
+  0x00000000  flt_82079DAC  [referenced by 2 functions]
+    <- 0x821490A0  sub_821490A0
+    <- 0x82364D50  sub_82364D50
+
+  0x00000000  flt_82079DB8  [referenced by 2 functions]
+    <- 0x82360EF8  sub_82360EF8
+    <- 0x823610E8  sub_823610E8
+
+  0x00000000  flt_82079DBC  [referenced by 2 functions]
+    <- 0x82360EF8  sub_82360EF8
+    <- 0x823610E8  sub_823610E8
+
+  0x00000000  flt_82079DD0  [referenced by 2 functions]
+    <- 0x82360E40  sub_82360E40
+    <- 0x82360EF8  sub_82360EF8
+
+  0x00000000  flt_82079DE0  [referenced by 2 functions]
+    <- 0x82360E40  sub_82360E40
+    <- 0x82360EF8  sub_82360EF8
+
+  0x00000000  flt_82079E00  [referenced by 2 functions]
+    <- 0x820D61C8  sub_820D61C8
+    <- 0x82360E40  sub_82360E40
+
+  0x00000000  flt_82079E18  [referenced by 2 functions]
+    <- 0x820E5E40  sub_820E5E40
+    <- 0x82350BF0  sub_82350BF0
+
+  0x00000000  flt_82079E28  [referenced by 2 functions]
+    <- 0x822830E0  sub_822830E0
+    <- 0x822860D8  sub_822860D8
+
+  0x00000000  flt_82079E3C  [referenced by 2 functions]
+    <- 0x82284078  sub_82284078
+    <- 0x82294B90  sub_82294B90
+
+  0x00000000  flt_82079E48  [referenced by 2 functions]
+    <- 0x822836C8  sub_822836C8
+    <- 0x82283F10  sub_82283F10
+
+  0x00000000  flt_82079E4C  [referenced by 2 functions]
+    <- 0x821A3CD0  sub_821A3CD0
+    <- 0x82283F10  sub_82283F10
+
+  0x00000000  flt_82079E58  [referenced by 2 functions]
+    <- 0x82149748  sub_82149748
+    <- 0x822830E0  sub_822830E0
+
+  0x00000000  flt_82079E5C  [referenced by 2 functions]
+    <- 0x820E8CD8  sub_820E8CD8
+    <- 0x8227E360  sub_8227E360
+
+  0x00000000  flt_82079E64  [referenced by 2 functions]
+    <- 0x8222F058  sub_8222F058
+    <- 0x8222F390  sub_8222F390
+
+  0x00000000  flt_82079E68  [referenced by 2 functions]
+    <- 0x820C0BF0  sub_820C0BF0
+    <- 0x820D20B8  sub_820D20B8
+
+  0x00000000  flt_82079E7C  [referenced by 2 functions]
+    <- 0x82190780  sub_82190780
+    <- 0x822836C8  sub_822836C8
+
+  0x00000000  flt_82079E84  [referenced by 2 functions]
+    <- 0x821B22F0  sub_821B22F0
+    <- 0x821B2408  sub_821B2408
+
+  0x00000000  flt_82079E88  [referenced by 2 functions]
+    <- 0x821B0DE0  sub_821B0DE0
+    <- 0x821B13A0  sub_821B13A0
+
+  0x00000000  flt_82079E8C  [referenced by 2 functions]
+    <- 0x821B0DE0  sub_821B0DE0
+    <- 0x821B13A0  sub_821B13A0
+
+  0x00000000  flt_82079EB0  [referenced by 2 functions]
+    <- 0x82194720  sub_82194720
+    <- 0x821A1460  sub_821A1460
+
+  0x00000000  flt_82079EB4  [referenced by 2 functions]
+    <- 0x82113A98  sub_82113A98
+    <- 0x821A06F0  sub_821A06F0
+
+  0x00000000  flt_82079ED0  [referenced by 2 functions]
+    <- 0x821937E0  sub_821937E0
+    <- 0x821A0388  sub_821A0388
+
+  0x00000000  flt_82079EE8  [referenced by 2 functions]
+    <- 0x820FE860  sub_820FE860
+    <- 0x82153D18  sub_82153D18
+
+  0x00000000  flt_82079EF0  [referenced by 2 functions]
+    <- 0x820D3550  sub_820D3550
+    <- 0x820E2958  sub_820E2958
+
+  0x00000000  flt_82079EF8  [referenced by 2 functions]
+    <- 0x820E2958  sub_820E2958
+    <- 0x820E45A0  sub_820E45A0
+
+  0x00000000  flt_82079F10  [referenced by 2 functions]
+    <- 0x820E2958  sub_820E2958
+    <- 0x820E5E40  sub_820E5E40
+
+  0x00000000  flt_82079F28  [referenced by 2 functions]
+    <- 0x820D1770  sub_820D1770
+    <- 0x820E2958  sub_820E2958
+
+  0x00000000  flt_82079F30  [referenced by 2 functions]
+    <- 0x820C4948  sub_820C4948
+    <- 0x820C4EC8  sub_820C4EC8
+
+  0x00000000  flt_82079F34  [referenced by 2 functions]
+    <- 0x820FE860  sub_820FE860
+    <- 0x822ABA68  sub_822ABA68
+
+  0x00000000  flt_82079F38  [referenced by 2 functions]
+    <- 0x823797F0  sub_823797F0
+    <- 0x8237A768  sub_8237A768
+
+  0x00000000  flt_82079F44  [referenced by 2 functions]
+    <- 0x823797F0  sub_823797F0
+    <- 0x825794E0  sub_825794E0
+
+  0x00000000  flt_82079F5C  [referenced by 2 functions]
+    <- 0x82360EF8  sub_82360EF8
+    <- 0x823610E8  sub_823610E8
+
+  0x00000000  flt_82079F68  [referenced by 2 functions]
+    <- 0x8235D700  sub_8235D700
+    <- 0x82509C38  sub_82509C38
+
+  0x00000000  flt_82079F74  [referenced by 2 functions]
+    <- 0x822CCFA0  sub_822CCFA0
+    <- 0x82365870  sub_82365870
+
+  0x00000000  flt_82079F78  [referenced by 2 functions]
+    <- 0x82298280  sub_82298280
+    <- 0x822AE238  sub_822AE238
+
+  0x00000000  flt_82079F84  [referenced by 2 functions]
+    <- 0x82193A68  sub_82193A68
+    <- 0x822A1230  sub_822A1230
+
+  0x00000000  flt_82079F9C  [referenced by 2 functions]
+    <- 0x82228F30  sub_82228F30
+    <- 0x82482C68  sub_82482C68
+
+  0x00000000  flt_82079FA0  [referenced by 2 functions]
+    <- 0x82223A60  sub_82223A60
+    <- 0x82224AD8  sub_82224AD8
+
+  0x00000000  flt_82079FA4  [referenced by 2 functions]
+    <- 0x8213B870  sub_8213B870
+    <- 0x8221FE48  sub_8221FE48
+
+  0x00000000  flt_82079FA8  [referenced by 2 functions]
+    <- 0x8213B870  sub_8213B870
+    <- 0x8221FE48  sub_8221FE48
+
+  0x00000000  flt_82079FAC  [referenced by 2 functions]
+    <- 0x8221FE48  sub_8221FE48
+    <- 0x82576F50  sub_82576F50
+
+  0x00000000  flt_82079FC4  [referenced by 2 functions]
+    <- 0x821C8F00  sub_821C8F00
+    <- 0x822809B8  sub_822809B8
+
+  0x00000000  flt_82079FD8  [referenced by 2 functions]
+    <- 0x821B65A8  sub_821B65A8
+    <- 0x821B9410  sub_821B9410
+
+  0x00000000  flt_82079FDC  [referenced by 2 functions]
+    <- 0x821A5078  sub_821A5078
+    <- 0x825760F8  sub_825760F8
+
+  0x00000000  flt_82079FE4  [referenced by 2 functions]
+    <- 0x820F95B0  sub_820F95B0
+    <- 0x8219E830  sub_8219E830
+
+  0x00000000  flt_82079FE8  [referenced by 2 functions]
+    <- 0x821A3CD0  sub_821A3CD0
+    <- 0x821BEA98  sub_821BEA98
+
+  0x00000000  flt_82079FF0  [referenced by 2 functions]
+    <- 0x8219D8E8  sub_8219D8E8
+    <- 0x821A06F0  sub_821A06F0
+
+  0x00000000  flt_82079FFC  [referenced by 2 functions]
+    <- 0x821A0050  sub_821A0050
+    <- 0x822847B8  sub_822847B8
+
+  0x00000000  flt_8207A00C  [referenced by 2 functions]
+    <- 0x8219D630  sub_8219D630
+    <- 0x8219D8E8  sub_8219D8E8
+
+  0x00000000  flt_8207A010  [referenced by 2 functions]
+    <- 0x8219D0F0  sub_8219D0F0
+    <- 0x823CC3C8  sub_823CC3C8
+
+  0x00000000  flt_8207A018  [referenced by 2 functions]
+    <- 0x82170430  sub_82170430
+    <- 0x82185140  sub_82185140
+
+  0x00000000  flt_8207A01C  [referenced by 2 functions]
+    <- 0x82170430  sub_82170430
+    <- 0x82185140  sub_82185140
+
+  0x00000000  flt_8207A024  [referenced by 2 functions]
+    <- 0x82149748  sub_82149748
+    <- 0x82184550  sub_82184550
+
+  0x00000000  flt_8207A048  [referenced by 2 functions]
+    <- 0x82144180  sub_82144180
+    <- 0x82144888  sub_82144888
+
+  0x00000000  flt_8207A04C  [referenced by 2 functions]
+    <- 0x82126D00  sub_82126D00
+    <- 0x82126D98  sub_82126D98
+
+  0x00000000  flt_8207A050  [referenced by 2 functions]
+    <- 0x82126D00  sub_82126D00
+    <- 0x82126D98  sub_82126D98
+
+  0x00000000  flt_8207A054  [referenced by 2 functions]
+    <- 0x82121328  sub_82121328
+    <- 0x821263B8  sub_821263B8
+
+  0x00000000  flt_8207A06C  [referenced by 2 functions]
+    <- 0x820C6378  sub_820C6378
+    <- 0x820FD7F8  sub_820FD7F8
+
+  0x00000000  flt_8207A080  [referenced by 2 functions]
+    <- 0x820CAC78  sub_820CAC78
+    <- 0x821A1460  sub_821A1460
+
+  0x00000000  flt_8207A084  [referenced by 2 functions]
+    <- 0x820C1978  sub_820C1978
+    <- 0x820CBBC8  sub_820CBBC8
+
+  0x00000000  flt_8207A088  [referenced by 2 functions]
+    <- 0x82137FD8  sub_82137FD8
+    <- 0x82138238  sub_82138238
+
+  0x00000000  flt_8207A08C  [referenced by 2 functions]
+    <- 0x823DA1F8  sub_823DA1F8
+    <- 0x823DA2E0  sub_823DA2E0
+
+  0x00000000  flt_8207A094  [referenced by 2 functions]
+    <- 0x821286E0  sub_821286E0
+    <- 0x82342AE8  sub_82342AE8
+
+  0x00000000  flt_8207A098  [referenced by 2 functions]
+    <- 0x821286E0  sub_821286E0
+    <- 0x82149748  sub_82149748
+
+  0x00000000  flt_8207A09C  [referenced by 2 functions]
+    <- 0x821286E0  sub_821286E0
+    <- 0x82342AE8  sub_82342AE8
+
+  0x00000000  flt_8207A0A0  [referenced by 2 functions]
+    <- 0x822A4DC8  sub_822A4DC8
+    <- 0x8233CC50  sub_8233CC50
+
+  0x00000000  flt_8207A0A4  [referenced by 2 functions]
+    <- 0x822A48D8  sub_822A48D8
+    <- 0x8233C760  sub_8233C760
+
+  0x00000000  flt_8207A0A8  [referenced by 2 functions]
+    <- 0x823202D0  sub_823202D0
+    <- 0x82381868  sub_82381868
+
+  0x00000000  flt_8207A0AC  [referenced by 2 functions]
+    <- 0x823202D0  sub_823202D0
+    <- 0x82381868  sub_82381868
+
+  0x00000000  flt_8207A0B0  [referenced by 2 functions]
+    <- 0x823202D0  sub_823202D0
+    <- 0x82482908  sub_82482908
+
+  0x00000000  flt_8207A0C0  [referenced by 2 functions]
+    <- 0x822EF688  sub_822EF688
+    <- 0x8246DD10  sub_8246DD10
+
+  0x00000000  flt_8207A0C4  [referenced by 2 functions]
+    <- 0x8227EF30  sub_8227EF30
+    <- 0x822EF598  sub_822EF598
+
+  0x00000000  flt_8207A0C8  [referenced by 2 functions]
+    <- 0x8227B988  sub_8227B988
+    <- 0x8227BA78  sub_8227BA78
+
+  0x00000000  flt_8207A0F0  [referenced by 2 functions]
+    <- 0x8227B988  sub_8227B988
+    <- 0x8227BA78  sub_8227BA78
+
+  0x00000000  flt_8207A1B0  [referenced by 2 functions]
+    <- 0x82137FD8  sub_82137FD8
+    <- 0x8213C650  sub_8213C650
+
+  0x00000000  flt_8207A234  [referenced by 2 functions]
+    <- 0x821B5FC0  sub_821B5FC0
+    <- 0x821B9278  sub_821B9278
+
+  0x00000000  flt_8207A238  [referenced by 2 functions]
+    <- 0x821B5FC0  sub_821B5FC0
+    <- 0x821B9278  sub_821B9278
+
+  0x00000000  flt_8207A248  [referenced by 2 functions]
+    <- 0x821A2968  sub_821A2968
+    <- 0x82389248  sub_82389248
+
+  0x00000000  flt_8207A26C  [referenced by 2 functions]
+    <- 0x821486A8  sub_821486A8
+    <- 0x821709F8  sub_821709F8
+
+  0x00000000  flt_8207A278  [referenced by 2 functions]
+    <- 0x823D0C98  sub_823D0C98
+    <- 0x825794E0  sub_825794E0
+

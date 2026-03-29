@@ -1,0 +1,1375 @@
+; ===================================================================
+; FORMAT STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x820013D0  [XAPI RETURN VALUE] %d
+  0x82008ACC  CAL: NYI %s
+  0x82022430  \Device\Harddisk0\Cache%u
+  0x8202244C  \Device\Harddisk0\Cache%u\
+  0x82022468  \Device\cache%d
+  0x8202743C  Failed to load file %s
+  0x82027488  Using '%s' for asset path
+  0x82027684  pcrFaceAnimBlender::StartPostPoint - body=(%s) face=(%s)
+  0x82027708  Texture '%s' already in this texdict!
+  0x820278A0  Player %d can't swing because a swing or junk swing is already in progress
+  0x82027940  pongCreature::StartEmote() - trying to play nonexistent anim '%s'
+  0x82027988  pongCreature::StartEmote() - '%s' playing '%s' anim at (%.2f, %.2f, %.2f)
+  0x820279F0  pongCreature::Teleport() - teleporting player[%d] to [%f,%f,%f]
+  0x82027A30  Player %d is queueing a swing
+  0x82027A50  Player %d is dequeueing a swing
+  0x82027A8C  Function calling Teleport is %s (player %d)%s
+  0x82027C58  Could not load %s/%s or %s/%s
+  0x82027C78  Could not find animation '%s' in hashtable.  Please check %s.ans for errors.
+  0x82027CC8  xmlNodeStructAnimHashEntryArray::Save - Skipping string %s
+  0x82027D10  xmlNodeStructAnimHashEntryArray::Save - exceeded buffer length (%d) with string
+  0x82027D60  '%s...'
+  0x82027EA0  pongBlendShapeController::UpdateBlendShape() - blend function '%s' not supported
+  0x82027EF8  pongBlendShapeController::CalcBoneValue() - interpolation function '%s' not supported
+  0x82027F50  pongBlendShapeController::CalcBoneValue() - average function '%s' not supported
+  0x82028088  pongMover::CalcInitMatrix() - setting rest mtx to remote rest mtx [%f,%f,%f]
+  0x820281A0  Interrupting Player %d Swing Blender
+  0x820281C8  Interrupting Player %d Serve Blender
+  0x820281F0  Interrupting Player %d Junk Swing Blender
+  0x82028290  pcrAnimObserved - Can't find anim '%s'.
+  0x820282B8  Non-pcrAnimEvent child! (%s)
+  0x82028528  pongBlendLookAtDriver::UpdateBody--%i poses not supported.
+  0x82028564  pongBlendLookAtDriver::UpdateFace--%i poses not supported.
+  0x82028618  locomotion anim '%s' has mover
+  0x8202874C  %c %c|%c %s
+  0x82028938  Unknown SOT swing set!  (Power Zone %d)
+  0x8202896C  Invalid blend end phase! (phase==%f, frame==%d)
+  0x8202899C  pcrSwingBlender::UpdatePhase--anim %s is kAnimFrozenAtEnd
+  0x820289F4  anim %s has no mover channels!
+  0x82028C34  Player %d: starting post-point anim '%s'
+  0x82028CA4  Loading %s/%s...
+  0x82028DE0  Unknown AnimEvent type (%d)
+  0x8202DA80  LocomotionStateAnim::Load - failed to load alternative anim file '%s%s
+  0x8202DAC8  LocomotionStateAnim::Load - failed to load anim file '%s%s
+  0x8202DB10  anim%d
+  0x8202DB18  LocomotionStateAnim::Load - missing base animation '%d'
+  0x8202DB60  alternative%d
+  0x8202DB70  LocomotionStateAnim::Load - missing alt animation '%d'
+  0x8202DBF0  LocomotionStateAnim::Update - selecting new alternative idle animation '%s'
+  0x8202DC4C  LocomotionStateMf::Load - invalid number of clips '%d'
+  0x8202DC84  clip%d
+  0x8202DC90  LocomotionStateMf::Load - failed to load anim for clip '%d' file '%s
+  0x8202DCD8  LocomotionStateMf::Load - failed to create clip '%d' file '%s
+  0x8202DD18  LocomotionStateMf::Load - failed to find clip '%d'
+  0x8202DD60  ..\mf\%s
+  0x8202DEDC  LocomotionStateMf::Load - bad number of limits %d
+  0x8202DF10  limit%d
+  0x8202DF18  LocomotionStateMf::Load - bad limit magnitude [%d] %f
+  0x8202DF50  LocomotionStateMf::Load - bad / non sequential limit heading [%d] %f
+  0x8202DF98  LocomotionStateMf::Load - missing limit [%d]
+  0x8202DFD4  LocomotionStateMf::Load - bad realignment value %f
+  0x8202E018  Motion Families: calculated %s magnitude limits min %.3f max %.3f
+  0x8202E12C  ..\default\%s
+  0x8202E360  Unknown SwingMissRange type (%d)
+  0x8202E830  Can't figure out hit zone for string '%s'
+  0x8202E878  pcrSwingSet '%s' MaxStartToContactTime is too low (%f).  Setting to %f
+  0x8202E8C0  pcrSwingSet '%s' FarMaxStartToContactTime is too low (%f).  Setting to %f
+  0x8202EE0C  Could not find message %s
+  0x8202F1B0  Need to preload template '%s'!
+  0x8202F224  Unable to load shader template '%s'
+  0x8202F288  Demand-loaded template '%s' into slot %d
+  0x8202F2B4  Unable to demand-load template '%s'
+  0x8202F344  Attempting to merge %d materials in %s
+  0x8202F36C  [MergeSameMaterials on '%s' reduced count from %d to %d]
+  0x8202F488  Required grmShaderGroupVar '%s' not found.
+  0x8202F4BC  Auto-creating tex dict with %d files...
+  0x8202F4FC  Tuning data '%s' too long!
+  0x8202F630  Couldn't open preset %s
+  0x8202F648  No device returned for %s
+  0x8202F720  Invalid type %d in grmShaderFactoryStandard::PlaceShaders
+  0x8202F76C  Preloading shaders from '%s'...
+  0x8202F7C4  preload.list file missing in '%s'
+  0x8202FBB6   dwLength %d
+  0x8202FBC6   dwMemoryLoad %d
+  0x8202FBDA   dwTotalPhys %d
+  0x8202FBEE   dwAvailPhys %d
+  0x8202FC02   dwTotalPageFile %d
+  0x8202FC1A   dwAvailPageFile %d
+  0x8202FC32   dwTotalVirtual %d
+  0x8202FC4A   dwAvailVirtual %d
+  0x8202FC60  current allocator memory: %d bytes, %d MB
+  0x8202FC8C  XMemAlloc (%dM) failed - Out of physical memory
+  0x8202FCBC  ReloadBuild(%s): Old format
+  0x8202FCD8  ReloadBuild(%s): Buffer not large enough (%d > %d)
+  0x8202FD0C  ReloadBuild(%s): Version mismatch, expected %d, got %d
+  0x8202FD44  LoadBuild(%s): Old format
+  0x8202FD60  LoadBuild(%s): Version mismatch, expected %d, got %d
+  0x8202FDC8  fxCloth::CreateClothSim() originally:  m_nIterations = %d, m_nIterationsPerCollision = %d
+  0x8202FE28  fxCloth::CreateClothSim() changed to: m_nIterations = %d, m_nIterationsPerCollision = %d
+  0x8202FEBC  Cloth Simulation thread for player %d starting on CPU %d
+  0x8202FF08  Failed to match vertex %d
+  0x82030000  fxHair::Init() - cannot find bone '%s'!
+  0x82030279  file: %s
+  0x82030380  unknown node type: %s
+  0x82030718  Starting the match timer -- time left = %f
+  0x82030744  forcing timed match %f seconds long
+  0x82030768  Rally Count %d, time %s
+  0x82030780  gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d
+  0x820307C8  Entering state %s, time %s
+  0x820307E4  Exiting Singles state %s, time %s
+  0x82030808  Setting next state %s
+  0x82030820  Retaining next state as kPointScoringSync, disregarding %s
+  0x8203085C  gmLogicSinglesMatch's next state was %s, is %s
+  0x8203088C  SetPostPointDelay - Invalid state/msg combination (%s/%s)
+  0x820309C8  Going to Scoring because %s %s
+  0x820309E8  Ignoring Scoring message %s %s Pending Hit
+  0x82030A40  Possibly not enough time for another point, forcing timer to expire! (My timer=%f)
+  0x82030AB4  our scoring player %d peer scoringPlayer %d
+  0x82030AE0  Possibly not enough time for another point, forcing timer to expire! (My timer=%f, Opponent timer=%f)
+  0x82030BE4  Elapsed Match Rally Time: %f
+  0x82030C04  Elapsed Circuit Rally Time: %f
+  0x82030C24  Pushing Unlock Context for user %d
+  0x820319D4  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031A68  %d:0%d
+  0x82031A78  pongDrillSoftShot::SetUpBallHitData() - unknown spin type [%d]
+  0x82031AB8  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82031B30  pongDrillCounterSpin::IncreaseNumTries() - not sure which spin to use on try [%d]
+  0x82031B88  pongDrillCounterSpin::IncreaseNumTries() - unknown spin type [%d]
+  0x820324C8  pongLadder::ComputeLadder() - out of characters to choose from tier '%s'
+  0x82032518  pongLadder::ComputeLadder() - unknown opponent type '%d' for match '%d'
+  0x82032560  pongLadder::ComputeLadder() - unknown arena type '%d' for match '%d'
+  0x820327E4  unknown node type found in %s: %s
+  0x82032871  [34mRegenerating fragment type %s
+  0x820328A5  [34m...found tuning data %s
+  0x820328C4  Can't find self collision pair %s, %s
+  0x82032A60  Group %d and group %d have the same name %s, tuning could be problematic!
+  0x82032AB0  Fragment type '%s' has nested composite bounds!  Objects of this type will not behave properly when breaking!
+  0x82032B20  Entity.type for banger archetype %s is simple but has no bounds! - aborting
+  0x82032B70  Ascii load failed for fragment type %s.  Moving on to the next one
+  0x82032BB8  Tuning data for fragment type %s might be wrong, the hierarchy has changed.
+  0x82032C04  Couldn't find the group %s in the fragment tune file for %s
+  0x82032C40  Child count changed in group %s in fragment type %s, from %d to %d, could result in a mismatch
+  0x82032CD0  Fragment cache entry could not be allocated for instance of type '%s' at <%f %f %f>
+  0x82033020  Bound part has volume %f!
+  0x820330F8  Fragment type %s requests rope in its tuning, but has non-capsules bounds.
+  0x8203361C  crIKBodyBase::Init - missing bone finder for body part %d
+  0x82033658  crIKBodyBase::Init - mismatch between number of bone finders %d and body parts %d
+  0x820337AC  char_%l_%s%d
+  0x820337BC  char_%l_%s
+  0x820337C8  char_%s%d
+  0x820337D4  char_%s
+  0x820337DC  %s%d%L
+  0x820337EC  %s%d_%l
+  0x820337F4  %s%D_%l
+  0x820338D4  crIKSpine::Init - failed to find spine bone %d
+  0x82033988  crIKHead::Init - failed to find neck bone %d
+  0x820339E8  crIKLimb::Init - failed to find spine bone (isArm %d, isLeftRight %c)
+  0x82033A30  crIKLimb::Init - failed to find joint bone (isArm %d, isLeftRight %c)
+  0x82033A78  crIKLimb::Init - failed to find upper limb bone (isArm %d, isLeftRight %c)
+  0x82033AC8  crIKLimb::Init - failed to find lower limb bone (isArm %d, isLeftRight %c)
+  0x82033B18  crIKLimb::Init - failed to find appendage bone (isArm %d, isLeftRight %c)
+  0x82034400  Too many bounds specified (Max=%d)
+  0x8203444C  Number of casters not specified, assuming %d (OLD STYLE)
+  0x82034488  Too many shadows specified (Max=%d)
+  0x8203468C  pongShadowMap::GenerateShadowMaps() - Missing bone data for %s
+  0x820346EC  crSkeketonData::AllocateAndLoad - failed to load skeleton '%s'
+  0x82034738  %s_%02d
+  0x82034820  crBoneData:Load_v101(): Name is %s, buffer is %s - error in file
+  0x82034998  TileCount = %d (%d x %d -> %d x %d)
+  0x820349E0  Error: grcDevice::BeginTiledRendering() - More than %d different tiled rendering sizes have been used!
+  0x82034A78  Unexpected padding before a field in %s?
+  0x82034AA4  Unexpected padding at end of structure %s?
+  0x82034ADC  Probable leak: %d outstanding references to None texture.
+  0x82034B58  ParseParameters(%s,%d) - Unknown token '%s'
+  0x82034DA0  Clone of %s
+  0x82034DAC  LookupGlobalVar(%s) failed on required variable.
+  0x82034DE0  LookupVar(%s) failed on required variable.
+  0x82034E0C  LookupTechnique(%s) failed on required technique.
+  0x82034E50  Unknown format %x
+  0x82034E68  Short read on header for '%s'
+  0x82034E88  %s - Unrecognized FOURCC code %c%c%c%c
+  0x82034EB0  Short read on body for '%s'
+  0x82034ECC  %s - Unrecognized RGB format (%d bits total)
+  0x82034EFC  %s - Unrecognized alpha format (%d bits total)
+  0x82034F2C  %s - Unrecognized luminance format (%d bits total)
+  0x82034F60  %s - Neither FOURCC or RGB bits set in pixel format
+  0x82034F94  [gr-001] Unable to load image '%s'
+  0x82035260  unsupported render target type %d
+  0x820352C0  grcTextureXenon - Texture '%s' - invalid resolution %d by %d
+  0x82035300  Bad resource type %d in grcTextureFactoryXenon::PlaceTexture
+  0x82035BB8  audBank::LoadBank %s timeout
+  0x82035BD8  audBank::RemoveUser: %s - timed out trying to unload!
+  0x82035C10  audBank::RemoveUser %s - trying to remove before loaded.
+  0x82035C68  audBank::LoadBank - TD file for bank: '%s' uses an old version (%3.2f)
+  0x82035CCC  shot change: %s
+  0x82035CDC  shot not found in set: %s
+  0x82035E0C  camera change: %s
+  0x82035FDC  clips.xml refers to shot '%s' missing in shots.xml
+  0x82036020  replay patternset '%s' does not exist.
+  0x820361D8  Hit zone is '%s', swing type is '%s', playerID is %d
+  0x82036768  %s/shake_continuous
+  0x8203677C  %s/shake_stomp
+  0x82036790  %s_fast
+  0x82036798  %s_medium
+  0x820367A4  %s_slow
+  0x820367BC  %s_43_2p
+  0x82036B88  [INLINECAMERAMGR] Problem with SendLookAtPosition() a=%d,b=%d,frac=%f
+  0x82036BD0  [inlineEvent] Couldn't send an inline event start message %d
+  0x82036C10  [inlineEvent] Couldn't send an inline event stop message %d
+  0x82036CD0  [inlineMiniEmote] player %d is too late to activate their mini-emote
+  0x82036E00  [inlineMiniEmote] Player %d started more than one post-point animation?
+  0x820373D8  geomBoxes::TestSegmentToBox() - single hit returned in t2=%f
+  0x820374AC  CAMMACH: Tunable %s not found for camera room %s
+  0x82037AA4  Can't find cammach file %s.ccm
+  0x82037AC4  The .ccm file refers to a parameter (%s) that doesn't exist
+  0x82037B00  The .ccm file refers to a DOF (%s) that doesn't exist
+  0x82037B38  Tunable %s was in camera description (.ccm) file, but isn't in current code
+  0x82037B88  Indirect tunable %s was in camera description (.ccm) file, but isn't in current code
+  0x82037CA4  Couldn't create operator named '%s'
+  0x82037CF8  Wrong version of camera description (.ccm) file. File version is %s, expecting %s
+  0x82037D54  Ignoring unused report '%s' in %s block
+  0x82037D80  Action %s in .ccm camera description not found in code
+  0x82038538  *** Unknown option '%s' on command line.
+  0x82038610  Unable to allocate %dK heap
+  0x8203862C  Attempting to allocate %u bytes on a locked heap
+  0x82038698  Not enough memory to allocate %u bytes
+  0x82038790  Not enough memory to allocate %u bytes (fragmented) (largest available block = %u bytes)
+  0x82038A70  Counted up %u used, %u free, %u overhead, total was %u, expected %u
+  0x82038BE0  Memory leaks in layer '%s':
+  0x82038BFC  Leak allocid=%u, bucket=%u, size=%u bytes
+  0x82038C30  %d leak(s) total
+  0x82038E88  [CHAR LOAD THREAD] CANCEL BEFORE GetAsyncLoadCharInfo() player[%d] char[%d] var[%d] lod[%d]
+  0x82038EE8  [CHAR LOAD THREAD] CANCEL AFTER GetAsyncLoadCharInfo() player[%d] char[%d] var[%d] lod[%d]
+  0x82038F48  [CHAR LOAD THREAD] AsyncUnloadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82038F98  [CHAR LOAD THREAD] AsyncUnloadCharacter() DONE player[%d] char[%d] var[%d] lod[%d]
+  0x82038FF0  [CHAR LOAD THREAD] CANCEL AFTER AsyncUnloadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82039050  [CHAR LOAD THREAD] StartLoadPaddle() player[%d] char[%d] var[%d] lod[%d]
+  0x820390A0  [CHAR LOAD THREAD] CANCEL AFTER StartLoadPaddle() player[%d] char[%d] var[%d] lod[%d]
+  0x820390F8  [CHAR LOAD THREAD] AsyncStartLoadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82039150  [CHAR LOAD THREAD] AsyncStartLoadCharacter() DONE player[%d] char[%d] var[%d] lod[%d]
+  0x820391A8  [CHAR LOAD THREAD] CANCEL AFTER AsyncStartLoadCharacter() player[%d] char[%d] var[%d] lod[%d]
+  0x82039208  [CHAR LOAD THREAD] BEGIN UpdateAsyncLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x82039258  [CHAR LOAD THREAD] CANCEL AFTER UpdateAsyncLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x820392B0  [CHAR LOAD THREAD] LOAD COMPLETE player[%d] char[%d] var[%d] lod[%d]
+  0x82039338  [PLAYERMGR] character load complete, AddCreatureToLevel() player[%d] char[%d] var[%d] lod[%d]
+  0x82039398  [PLAYERMGR] InitCloth() player[%d] char[%d] var[%d] lod[%d]
+  0x820393D4  [PLAYERMGR] FinishLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x82039414  [PLAYERMGR] need to wait for player[%d] load to end
+  0x82039448  [PLAYERMGR] calling RequestPlayerLoad() player[%d] char[%d] var[%d] lod[%d]
+  0x820394BC  [PLAYERMGR] load player[%d] char[%d] var[%d] lod[%d] REQUESTED
+  0x82039568  loading Player[%d] from game data: Character[%d], Variation[%d]
+  0x820396A8  canceling character load stream for Player[%d] LOD[%d]
+  0x820396E0  [PLAYERMGR] deactivate player[%d] REQUESTED
+  0x82039738  [PLAYERMGR] StopCharacterLoad() called for player[%d]
+  0x82039770  [PLAYERMGR] SET STOP CHARACTER LOAD EVENT player[%d]
+  0x820397D0  [PLAYERMGR] Deactivating Player[%d]
+  0x820397F4  [PLAYERMGR] no need to deactivate player[%d]
+  0x8203985C  Player[%d] still active but switching to LOD[%d]
+  0x82039890  [PLAYERMGR] SET LOAD CHAR EVENT player[%d] char[%d] var[%d] lod[%d]
+  0x820398D4  already loaded character for player %d: %s
+  0x82039900  loading character for player %d: %s (%d)
+  0x8203992C  started streaming player[%d] char[%d] var[%d] lod[%d]
+  0x82039964  finished streaming character for player[%d] lod[%d]
+  0x82039998  unloading player[%d] lod[%d]
+  0x820399C8  controller %d: got callback for unknown sequence %s
+  0x820399FC  controller %d: sequence %s entered
+  0x82039D60  === Player %d hit the ball ===
+  0x82039D80  Player %d can't hit ball because:
+  0x82039E28  pongPlayer::Render() - player[%d] is not active
+  0x82039E8C  Trying out serve contact pos %d
+  0x82039EAC  Player ID %d just pressed the swing button at time %f sec
+  0x82039EE8  player %d: activated ITZ
+  0x82039F04  Player %d tried to swing, but swing input was locked out.
+  0x82039F40  Player %d tried to swing,  but the move mode was invalid.
+  0x82039F7C  Move mode is %d.
+  0x82039F90  Locked Out swing Input for player %d.
+  0x82039FB8  Called Init Swing for Player %d
+  0x82039FD8  Called Setup Swing for Player %d
+  0x82039FFC  pongPlayer::StartSwing() %s
+  0x8203A018  Attempting Specialty Swing for player: %d
+  0x8203A044  Swing Pending set to false for player %d
+  0x8203A070  pongPlayer::FinalizeServe() %s
+  0x8203A090  Player ID %d just reached anticipation at time %f
+  0x8203A0C8  The elapsed time from button press to anticipation for player%d is %f ms
+  0x8203A114  pongPlayer::FinalizeSwing() %s
+  0x8203A134  Player ID %d just reached anticipation at time %f sec
+  0x8203A170  The ellapsed time from button press to anticipation for player%d is %f ms
+  0x8203A1BD  Player %d started a junk swing
+  0x8203A1FC  pongPlayer::SetupServe %s
+  0x8203A218  pongPlayer::StartServe() %s
+  0x8203A234  pongPlayer::Serve() %s
+  0x8203A24C  Player#%d
+  0x8203A2A8  Unlocked swing Input for player %d because he hit the ball
+  0x8203A2E8  Unlocked swing Input for player %d because of message kSwingAnimDone
+  0x8203A344  %s plyrID = %d %s
+  0x8203A358  Player ID %d just hit the ball at time %f sec
+  0x8203A388  The elapsed time between anticipation and hit for player%d is %f ms
+  0x8203A3D0  The ellapsed time between player0 and player1 anticipations is %f ms
+  0x8203A968  %f %f %f
+  0x8203A974  %f %f %f %f
+  0x8203A980  %f %f %f %f %f %f %f %f %f %f %f %f
+  0x8203A9A8  xmlNodeStruct::SavePropertyValue just trashed memory writing '%s' (buffer capacity=%d, strlen=%d)
+  0x8203AAF0  (%s,%d) : Expected '/>' here.
+  0x8203AB10  (%s,%d) : Expected '=' here.
+  0x8203AB30  (%s,%d) : Expected '>' here.
+  0x8203ACAB  SystemError = %d
+  0x8203AD1C  Invalid RAGE audio command %d
+  0x8203AD40  RageAud: xact2System: Not a xact2System command: command = 0x%04X, data = %d
+  0x8203AD94  xact2System: Unable to find global settings file '%s'
+  0x8203AE50  [xact2System] Configuring mastering effect '%s' (managerIndex %d)...
+  0x8203AEB0  [xact2System] Creating DSP effect '%s' at index %d (managerIndex %d)...
+  0x8203AF48  [xact2System] Creating global effect bus with '%s' (managerIndex %d)...
+  0x8203AFE0  [xact2System] Trying to load bank %s but slot %d is still loading!
+  0x8203B028  [xact2System] Trying to load bank %s but slot %d is still unloading!
+  0x8203B070  [xact2System] Trying to unload bank (%d) which is still pending!
+  0x8203B0B8  [xact2System] Trying to unload bank (%d) which is still unloading!
+  0x8203B0FC  [xact2System::SetCategoryVolume] Cannot get category '%s'
+  0x8203B138  [xact2System::PauseCategory] Cannot get category '%s'
+  0x8203B170  %s.xsb
+  0x8203B178  %s.xwb
+  0x8203B180  Unable to create streaming wave bank for %s
+  0x8203B1AC  [xact2Bank] %s file not found
+  0x8203B2B0  AgeSnd: xactSound: Not a xactSound command SfxNum = %d, command = %d
+  0x8203B2F8  [xact2Sound] Trying to play a sound (%d) whose bank (%d) is not loaded!
+  0x8203B340  [xact2Sound] Attempting to play from a streaming bank (%d) that is not yet prepared!
+  0x8203B3D8  [xact2Sound] Unable to prepare cue %d from bank %d!
+  0x8203B40C  [xact2Sound] Unable to play sound cue %d from bank %d
+  0x8203B448  [xact2Sound] Trying to prime a sound (%d) whose bank (%d) is not loaded!
+  0x8203B498  [xact2Sound] Unable to prepare cue %d from bank %d! OUT OF MEMEORY!!!!
+  0x8203B5BC  %s:%s_VS_%s
+  0x8203B5C8  %s:SINGLEGAME_%dPOINTS
+  0x8203B5E0  %s:BESTOF%d_%dPOINTS
+  0x8203B5F8  %s:%dPOINTS_%dMINUTES
+  0x8203B610  %s:FINALGAME
+  0x8203B620  %s:GAME%d
+  0x8203B62C  %s:Announcer_MATCH_%s
+  0x8203B644  %s:Announcer_Game_%s
+  0x8203B65C  %s:%d_GAME_%d
+  0x8203B66C  %s:TOURNAMENT_TIE
+  0x8203B680  %s:TOURNAMENT_WIN_%s
+  0x8203B698  %s:MATCHPOINT
+  0x8203B6A8  %s:GAMEPOINT
+  0x8203B6B8  %s:ADVANTAGE_%s
+  0x8203B6C8  %s:DEUCE
+  0x8203B6D4  %s:Announcer_Serve_%s
+  0x8203B6EC  %s:%s_lead_%s
+  0x8203B6FC  %s:%s_LEAD
+  0x8203B708  %s:%s_trail_%s
+  0x8203B724  %s:%s_%s_%d
+  0x8203B730  %s:Announcer_%dserving%d
+  0x8203B74C  %s:Announcer_Point_%s
+  0x8203B764  %s:Announcer_ScoreTied
+  0x8203B77C  %s:Announcer_LetServe
+  0x8203B794  %s:Announcer_Fault_%s
+  0x8203B7AC  %s:Announcer_OUT
+  0x8203B7C0  %s:Announcer_NET
+  0x8203B7D4  %s:POINT
+  0x8203B7E0  %s:TS_%d_%d
+  0x8203B7EC  %s:%d_%d
+  0x8203B7F8  %s:BOREDOM_%02d
+  0x8203B8DD  [32mLoaded %d static sound banks.
+  0x8203B91D  [32mLoaded %d dynamic sound banks.
+  0x8203B948  FANS_%s
+  0x8203B950  AMB_%s
+  0x8203B9D0  CAMERADATA.GetCameraMtx() returned an invalid matrix (%s).  Someone please fix this!
+  0x8203BA7C  [FLASH TRIGGERING SOUND] "%s" (frame %d)
+  0x8203BAA8  Play2dSound: Unable to find sound %s
+  0x8203BAD0  Play3dSound: Unable to find sound %s
+  0x8203BAF8  Play3dSound: Unable to allocate 3d control for %s
+  0x8203BB2C  %s:RUN
+  0x8203BB34  %s:WALK
+  0x8203BB3C  %s:SIDESTEP
+  0x8203BB48  %s:STOMP
+  0x8203BB54  %s:IDLE
+  0x8203BB5C  %s:SCUFF
+  0x8203BB94  %s master volume multiplier = %f
+  0x8203BBB8  %s direct volume multiplier = %f
+  0x8203BBDC  %s reverb volume multiplier = %f
+  0x8203BC00  %s effect volume multiplier = %f
+  0x8203BDB8  CHARVIEW_%s_LP
+  0x8203BE0C  [pongMusicPlayer] Can't find music: %s
+  0x8203C0DC  %s:%sFRNT_LP
+  0x8203C0EC  %s:%sSRND_LP
+  0x8203C0FC  %s:ROOMTONE_LP
+  0x8203C10C  %s:NOIZ_GAME
+  0x8203C11C  %s:NOIZ_IDLE
+  0x8203C17C  %s:%s%02d
+  0x8203C188  %s:WIN
+  0x8203C190  [amb player] Unable to find POINT sound: '%s'
+  0x8203C1C0  EMOTE_%s_WIN
+  0x8203C1D0  EMOTE_%s_LOSE
+  0x8203C1E0  CHANT_%s
+  0x8203C1EC  ANTICIPATION_CHANT_%s
+  0x8203C328  %s:%s_FRNT%02d
+  0x8203C338  %s:%s_SRND%02d
+  0x8203C348  %s:%s_FRNT
+  0x8203C354  %s:%s_SRND
+  0x8203C374  [pongSoundTracker] Unable to find sound %s
+  0x8203C3A0  [pongSoundTracker] Unable to allocate a 3d control for %s
+  0x8203C5B8  [audMsgSink] Got a face anim message for player %d but ignoring because subject seems to be player %d
+  0x8203C620  [audMsgSink] Got a face anim message for player %d, but unable to determine camera subject!!
+  0x8203C680  HUD:%s
+  0x8203C75C  %s:SHUT_UP_%02d
+  0x8203C76C  %s:ADM_%02d_%s
+  0x8203C77C  %s:ENC_%02d_%s
+  0x8203C78C  %s:BOREDOM_%02d_%02d
+  0x8203C7A4  %s:HECKLE_%02d_%02d
+  0x8203C7E8  [pongSpeechPlayer::Callout] Unable to find fan callout: %s
+  0x8203C828  [pongSpeechPlayer::DoSwingSpeech] Rejecting swing speech '%s' because player %d is already talking!
+  0x8203C890  [pongSpeechPlayer::DoEmoteSpeech] Playing speech sound '%s' for player %d (reverb volume %f)
+  0x8203C8F0  [pongSpeechPlayer::DoEmoteSpeech] Unable to find speech sound '%s' for player %d!
+  0x8203C9A8  %s:PROGRESS_POS_01_%02d
+  0x8203C9C0  %s:PROGRESS_NEG_01_%02d
+  0x8203C9E0  %s:COMPLETION_%s_01_%02d
+  0x8203C9FC  narrator not found: %s
+  0x8203CAD0  Rejecting save game request[ %d ], for user[ %d ], not signed in!
+  0x8203CD28  gdGameData::CalculateVariation() - unable to find unique variation for player %d
+  0x8203CDC0  Tried to set an invalid points per game = %d
+  0x8203D080  [REPLAYMGR] Init() spent %d bytes = %.3fK
+  0x8203D0AC  [REPLAYMGR] Heap available = %d bytes = %.3fK
+  0x8203D0DC  [REPLAYMGR] Shutdown() reclaimed %d bytes = %.3fK
+  0x8203D110  [REPLAYMGR] Leaked %d bytes = %.3fK
+  0x8203D134  [REPLAYMGR] Heap size after shutdown = %d bytes = %.3fK
+  0x8203D16C  [REPLAYMGR] Least memory available now %d bytes = %.3fK
+  0x8203D1A4  [REPLAYMGR] Heap size after Reset() = %d bytes = %.3fK
+  0x8203D1E0  gdReplayMgr::PurgeReplaySampleBallAfterTime(%f) - dropped %d samples
+  0x8203D308  gdCrAttachmentData::PostLoadCreature() - bone '%s' does not exist
+  0x8203D4F0  gdCrData::PostLoadChildren() - character '%s' missing required model LOD '%d' variation '%d'
+  0x8203D550  gdCrData::PostLoadChildren() - character '%s' missing model LOD '%d' variation '%d'
+  0x8203D5A8  gdCrData::PostLoadChildren() - character '%s' variation '%d' missing model color
+  0x8203D600  gdCrData::PostLoadChildren() - character '%s' variation '%d' missing blend shape tuning file name
+  0x8203D664  ModelNameLod%dVar%d
+  0x8203D678  HasFaceRigLod%dVar%d
+  0x8203D690  ModelVar%dColor
+  0x8203D6A0  BlendShape%d
+  0x8203D914  tournament level not found for character %s: "%s"
+  0x8203D948  arena level not found for character %s: "%s"
+  0x8203D978  Home level not found for character %s: "%s"
+  0x8203DF58  unknown node type found: %s
+  0x8203DFA4  %s.bsd
+  0x8203E1C8  %f %f %f
+  0x8203E1FB  %f %f %f
+  0x8203E258  %f %f %f
+  0x8203E289  %f %f %f
+  0x8203E2A2  %f %f %f
+  0x8203E39F  %f %f %f
+  0x8203E3B9  %f %f %f
+  0x8203E678  [POSTPOINTMGR] mini-emote=%d, emote=%d, replay=%d, anticipation subject was=%d
+  0x8203E6D0  %s called BallPredictData::Reset() %s
+  0x8203E794  num table bounces accumulated <%d,%d>
+  0x8203E7BC  num table bounces expired <%d,%d>
+  0x8203E820  Could not load %s/%s!
+  0x8203E838  Unknown hit zone '%s'
+  0x8203E850  Hit zone '%s' already assigned
+  0x8203E870  No ball fudge defined for zone '%s'
+  0x8203E894  Done loading %s/%s
+  0x8203E8A8  Errors found loading %s/%s.  Please see the above output.
+  0x8203EAD8  wrong number of views in gdLevelPieceData "%s", got %d, expected %d
+  0x8203EDA0  gdLevelData::AddValues() - unhandled light group %d!
+  0x8203EDD8  %sL%dDir
+  0x8203EDE4  %sL%dPos
+  0x8203EDF0  %sL%dIntensity
+  0x8203EE00  %sL%dFalloff
+  0x8203EE10  %sL%dColor
+  0x8203EE1C  %sAmbient
+  0x8203EE28  %sAmbPosX
+  0x8203EE34  %sAmbNegX
+  0x8203EE40  %sAmbPosY
+  0x8203EE4C  %sAmbNegY
+  0x8203EE58  %sAmbPosZ
+  0x8203EE64  %sAmbNegZ
+  0x8203EFCC  unknown node type (%s) found in gdLevelData
+  0x8203F280  empty name specified for either cam or view in shot %s
+  0x8203F2E0  unknown node type found in %s node: %s
+  0x8203F308  shot in shot set not found: %s
+  0x8203F338  no subsets found in shot set %s
+  0x8203F358  minimum number of shots in multi set %s is 0!
+  0x8203F3C8  unknown node type found in shots.xml: %s
+  0x8203F3F4  shot %s has bad cam name: %s
+  0x8203F414  shot %s has bad view name: %s
+  0x8203F720  RobotTarget%d
+  0x8203F840  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpeed' must be in [0, %f]
+  0x8203F8F8  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpeed' must be in [0, %f]
+  0x8203FAA0  gdTrainingDrillData::PostLoadProperties() - 'KickPitchOffset' cannot be greater than %d
+  0x8203FAF8  gdTrainingDrillData::PostLoadProperties() - 'TableTargetSetID' is %d, but it should not be greater than %d
+  0x8203FD68  gdTrainingDrillData::PostLoadProperties() - '%s', (%f, %f), is outside the allowed [-1.0f, 1.0f] range
+  0x820415AC  Circuit completed in %f seconds
+  0x820415D4  stat_%d_%d
+  0x82041A8C  awareness node already found in shots.xml: %s
+  0x82041ABC  def pos node already found in shots.xml: %s
+  0x82041AE8  off pos node already found in shots.xml: %s
+  0x82041B14  spin detection node already found in shots.xml: %s
+  0x820422C1  Using Required Rule: %s
+  0x820422DD  Using Non-Required Rule: %s
+  0x82042330  dialog_%d
+  0x82042478  Net data for table: %s is missing! Update tune/tables/net.xml to include this!
+  0x82042620  gdRivalryData::PostLoadProperties() - unknown rival character '%s'
+  0x82042670  gdRivalry::PostLoadChildren() - unknown character '%s'
+  0x820426A8  gdRivalry::PostLoadChildren() - duplicate entries for character '%s'
+  0x820426F0  gdRivalry::PostLoadChildren() - unknown node type '%s'
+  0x82042728  gdRivalry::PostLoadChildren() - '%s' does not have a rival
+  0x820427BC  gdTierMember::PostLoadProperties() - unknown character '%s'
+  0x82042844  gdTier::PostLoadChildren() - unknown node type '%s'
+  0x82042890  gdLadderCommonData::PostLoadChildren() - cannot have more than one '%s'
+  0x820428D8  gdLadderCommonData::PostLoadChildren() - unknown node type '%s'
+  0x82042A84  gdLadderMatch::PostLoadProperties() - unknown opponent '%s'
+  0x82042AC8  gdLadderMatch::PostLoadProperties() - unknown arena '%s'
+  0x82042B20  gdLadderMatch::PostLoadProperties() - unknown tourney level '%s'
+  0x82042BA0  gdLadderMatch::PostLoadProperties() - unknown tourney type '%s'
+  0x82042BF0  gdLadderMatch::PostLoadProperties() - unknown crowd size '%s'
+  0x82042C38  gdLadderMatch::PostLoadProperties() - unknown crowd rowdiness '%s'
+  0x82042C98  gdDifficultyLadder::PostLoadProperties() - invalid level value '%d'
+  0x82042CE0  gdDifficultyLadder::PostLoadChildren() - unknown node type '%s'
+  0x82042D30  gdLadder::PostLoadChildren() - duplicate entries for level '%d'
+  0x82042D70  gdLadder::PostLoadChildren() - unknown node type '%s'
+  0x82042DA8  gdLadder::PostLoadChildren() - level '%d' does not have a ladder
+  0x82043090  Invalid hit tip found: %d
+  0x820430D8  Invalid serve tip found: %d
+  0x82043144  Incorrect FocusMeterFills[%d], using default
+  0x82043174  Incorrect FocusShotsUsed[%d], using default
+  0x820431B4  Incorrect AtLeastPointsLost[%d], using default
+  0x82043200  Incorrect AtLeastGame[%d], using default
+  0x8204322C  Incorrect SoftShotsUsed[%d], using default
+  0x82043268  Incorrect TimesPerGame[%d], using default
+  0x820432A4  Incorrect TimesPerMatch[%d], using default
+  0x820432D0  Invalid Dialog ID %d, for review only tip!
+  0x820437AC  Invalid Stats Group %d
+  0x820437DC  Cheat[ %d ] %s by User[ %d ]!
+  0x8204386C  %d %s, %d:%.2d:%.2d
+  0x82043880  %d:%.2d:%.2d
+  0x820438B0  %.2f %s
+  0x820438B8  name_%s
+  0x820438D0  circuit_%d
+  0x820491EC  gdCameraDest - couldn't bind CameraInst %s
+  0x82049218  bad parent to parent to (sic) gdCameraDest: '%s'
+  0x82049250  no condition for dest CamInst '%s' (of src CamInst '%s'), so src CamDef '%s' must be a Oneshot.
+  0x820492B0  bad parent to gdCameraDest: '%s'
+  0x8204937C  unknown node type found in clips.xml: %s
+  0x820493A8  gdCameraInst - could not bind to ShotDef %s
+  0x820493D8  gdCameraInst - could not bind to CameraDef %s
+  0x82049490  gdCameraDef::PostLoadProperties--'PickOneOf' must be less than or equal to %i
+  0x820494E0  gdCameraDef::PostLoadProperties--'PlayerSide' attribute=%i is out of range
+  0x82049530  camera recursion is illegal: CameraInst '%s' is parented to self
+  0x82049578  CameraDef '%s' with 'PickOneOf=%i' has %i child CameraInsts--not enough!
+  0x82049808  invalid timeouts found in sequence %s, forcing disabled state
+  0x82049848  desired range for sequence %s is invalid - min: %d max: %d, got: %d
+  0x8204A0B4  gdVibEvent::PostLoadProperties - Could not find effect '%s'
+  0x8204A2B0  match %s winner = %d
+  0x8204A2C8  match %s loser = %d
+  0x8204A2DC  match %s tied = %d
+  0x8204A2F0  Tried to advance to next round before round %d was complete!
+  0x8204A5EC  gdAssetRootMgr: loading "%s"
+  0x8204A63C  received invalid asset ID in %s
+  0x8204A65C  %s: loaded data file in root %s
+  0x8204A67C  %s: %s\%s.%s not found in root %s
+  0x8204A6A0  %s: attempting to load %s\%s.%s again from root %s
+  0x8204A6D4  did not load, hit maximum file count (%d) on root "%s"
+  0x8204A70C  attempting to unload root "%s" before initializing manager %s
+  0x8204A74C  attempting to use invalid starting index: %d (max %d)
+  0x8204ACE0  invalid unlock group id[ %d ]
+  0x8204AD00  Multiple group definitions for group[ %d ], ignored...
+  0x8204C008  gdCamData: invalid camera type found (defaulting to swing cam): %d
+  0x8204C04C  gdCamData: invalid anim type: %i (defaulting to ANIM_STRAIGHT)
+  0x8204C090  gdCamData: invalid tracking type: %i (defaulting to TRACK_NONE)
+  0x8204C0D0  gdCamData: invalid  DOF tracking type: %i (defaulting to DOF_TRACK_NONE)
+  0x8204C120  gdCamData: invalid  Unlockable play type: %i (defaulting to UL_PLAY_ALWAYS)
+  0x8204C178  missing anim '%s' for CAM_ANIMATED*
+  0x8204C324  Text%d
+  0x8204C32C  Type%d
+  0x8204C334  Invalid column type found[ %d ], using default[ %d ]
+  0x8204C518  Incorrect ComebackWin[%d]
+  0x8204C96C  character[%s] not found!
+  0x8204CA10  rule name [%s] is too long by %d characters!
+  0x8204CBE8  invalid rule name: %s
+  0x8204CC58  unlock item name [%s] is too long by %d characters!
+  0x8204CC8C  Invalid unlock dialog message found: %d for item: %s
+  0x8204CCD8  Invalid group type found: %d
+  0x8204CDF8  Looking for saved games, userIndex[%d], content[%d]...
+  0x8204CE8C  Savegame found on 1 device[%d]
+  0x8204CEAC  Savegames found on %d devices
+  0x8204CEF0  Selecting storage device, userIndex[%d], fileSize[%d]...
+  0x8204CF78  Device[%x] selected
+  0x8204CFD0  Load: Looking for saved games, userIndex[%d], content[%d]...
+  0x8204D048  Loading save game, userIndex[%d], content[%d], device[%x], size[%d]...
+  0x8204D0B8  Unsupported sub state %d in Load
+  0x8204D194  Load complete - (%u bytes read)
+  0x8204D1C4  Saving save game, userIndex[%d], content[%d], size[%d]...
+  0x8204D220  Could not begin save on storage device[%d]!
+  0x8204D290  Save complete - %s, saved to existing file - %s
+  0x8204D2F8  Saving icon, userIndex[%d], content[%d]...
+  0x8204D348  Could not begin icon save on storage device[%d]!
+  0x8204D3C8  Searching for current saved games, userIndex[%d], content[%d]...
+  0x8204D448  Current save file not found on any of the [%d] storage devices!
+  0x8204D4D4  Invalid Search sub-state[%d]!
+  0x8204D4F4  Removing save game, userIndex[%d], content[%d]...
+  0x8204D54C  Could not begin remove on storage device[%d]!
+  0x8204D664  icon loaded: %s.%s %d bytes
+  0x8204D9C8  Normal calculation failed!  Polygon AreaSq: %f, Normal: <%f, %f, %f>
+  0x8204DA1C  Couldn't find registered type %s
+  0x8204DC00  %s\%s\%s
+  0x8204DC0C  mounting rpf: %s
+  0x8204DC1D    cache path: %s
+  0x8204DC30  Cannot load archive '%s'
+  0x8204DC4C  %s\%s\
+  0x8204DC54  Cannot mount archive '%s' at '%s'
+  0x8204DC78  %s\contents.txt
+  0x8204DC98  Attempting to set next machine state to %s (%d) when it is already %s (%d)
+  0x8204DCE4  Invalid state transition (%s -> %s)
+  0x8204DE18  pongDrawBucket::Load() - unknown sort type '%s' for bucket '%s'
+  0x8204DE70  pongDrawBucket::Load() - unknown pre-draw callback '%s' for bucket '%s'
+  0x8204DED0  pongDrawBucket::Load() - unknown post-draw callback '%s' for bucket '%s'
+  0x8204DF20  pongDrawBucket::AddEntry() - adding more than %d entries to bucket '%s'
+  0x8204E060  pongDrawBucketManager::Load() - cannot load draw bucket config file '%s.%s'
+  0x8204E0BC  pongDrawBucketManager::Load() - cannot have %d draw buckets!
+  0x8204E100  pongDrawBucketManager::Load() - cannot have more than %d draw buckets!
+  0x8204E158  pongDrawBucketManager::Load() - invalid default bucket: %d
+  0x8204E1B8  pongDrawBucketManager::Load() - cannot have %d entries in draw bucket '%s'!
+  0x8204E208  pongDrawBucketManager::Load() - cannot have more than %d entries in bucket '%s'!
+  0x8204E4A0       unlocks hud: %d
+  0x8204E4D3            levels: %d
+  0x8204E4E8    level ambients: %d
+  0x8204E4FD     char ambients: %d
+  0x8204E512          frontend: %d
+  0x8204E527        pause menu: %d
+  0x8204E53C       dialog menu: %d
+  0x8204E551               hud: %d
+  0x8204E566    loading screen: %d
+  0x8204E57B     credit screen: %d
+  0x8204E590       leaderboard: %d
+  0x8204E5A5       boot screen: %d
+  0x8204E5BA      legal screen: %d
+  0x8204E5CF            paddle: %d
+  0x8204E5E4    crowd ambients: %d
+  0x8204E5F9    instance crowd: %d
+  0x8204E60E       char viewer: %d
+  0x8204E623    training popup: %d
+  0x8204E638      training hud: %d
+  0x8204E64D     sub title hud: %d
+  0x8204E662          list hud: %d
+  0x8204E677         shell hud: %d
+  0x8204E68C    controller hud: %d
+  0x8204E6D4  %16s: %d
+  0x8204E6E0  %16s: %d(hi) %d(lo)
+  0x8204E888  Attempting to set invalid framelock value (%f), defaulting to 1.
+  0x8204E920  __shShell__ entered state: %s
+  0x8204EA90  Material file %s.mtl in materials.list but not found in the directory.
+  0x8204EB30  invalid operation set: %d
+  0x8204EB88  time: %f 
+  0x8204EC0C  uAtEnd %f >= mCurrentU %f
+  0x8204EC28  elapsedT is invalid: %f
+  0x8204EC80  [RSV] currentU (%f) out of expected range.
+  0x8204EDD4  currently not more than %d motions can be registered
+  0x8204F0B4  loading level: %s
+  0x8204F0E0  already loaded level: %s
+  0x8204F164  invalid table name for level '%s', skipping table loading
+  0x8204F9EC  COULDN'T LOAD '%s'
+  0x8204FA00  Anim '%s' is a "cmp" file format - this is no longer supported.  Please re-export using up-to-date version of exporter...
+  0x8204FA80  Anim '%s' is a "ani" file format - this is no longer supported.  Please re-export using up-to-date version of exporter...
+  0x8204FB00  Anim '%s' is a "ANI5" file format - this is no longer supported.  Please re-export using up-to-date version of exporter...
+  0x8204FB80  Anim '%s' has unsupported format identifier (%x)!  Corrupt, or not an animation file?
+  0x8204FBD8  Anim '%s' is a "ANI1" file format - converting to new data structures.
+  0x8204FF34  Shader (%s) has unsupported version (%i)
+  0x82050018  No entities to handle %s in '%s.type' file
+  0x82050044  No sections registered to handle %s in file %s
+  0x82050270  Incorrect message format for msgCrowd::%s
+  0x8205029A  (%s, should be %s)
+  0x82050938  Incorrect message format for msgGame::%s
+  0x82050961  (%s, should be %s)
+  0x82050BC8  Incorrect message format for msgPlyr::%s
+  0x82050BF1  (%s, should be %s)
+  0x82050DFC  Incorrect message format for msgInline::%s
+  0x82050E27  (%s, should be %s)
+  0x82050F00  Incorrect message format for msgTraining::%s
+  0x82050F2D  (%s, should be %s)
+  0x82051028  Incorrect message format for msgCS::%s
+  0x8205104F  (%s, should be %s)
+  0x820519D0  Incorrect message format for msgUI::%s
+  0x820519F7  (%s, should be %s)
+  0x82051A98  Incorrect message format for msgFace::%s
+  0x82051AC1  (%s, should be %s)
+  0x82051CE8  Incorrect message format for msgIntensity::%s
+  0x82051D16  (%s, should be %s)
+  0x82051E6C  Incorrect message format for msgAudio::%s
+  0x82051E96  (%s, should be %s)
+  0x82052148  Incorrect message format for msgBall::%s
+  0x82052171  (%s, should be %s)
+  0x820521A0  Warning: Can't run action '%s'. Using '%s' as a fallback
+  0x820521DC  Warning: Can't run action '%s'
+  0x820521FC  Couldn't create action named %s
+  0x82052B68  Couldn't create operator named %s
+  0x820561EC  Invalid operator type for cached operator: %d
+  0x820563E4  Couldn't create reporter named %s
+  0x82056648  Unknown tuning type %d
+  0x82056698  Can't create tunable of type %s
+  0x82056700  Error: Unknown tuning type %d
+  0x82056724  cmMetafileTuningSet::Load() - can't load %s.cmt
+  0x82056BDD  loading phDemoObject: %s
+  0x82056BF9  %d tristrips, %d verts, %5.2f avg
+  0x82056DB8  Average Collide Time (from phDemoWorld): %f
+  0x82056DE4  Sphere Tests : %d / %d (%f)
+  0x82056EA0  [pongBallInstance] got a material with a bad sound index: %s
+  0x82056EE0  got a material that isn't a pongSurface::PONG_MATERIAL material: %s
+  0x820572D8  Could not find a successful serve for %d iterations
+  0x82057310  Num valid bad serves was zero for %d iterations
+  0x82057344  Could not find a bad serve for %d iterations
+  0x820573B8  Sending msgBall::kBounceTable%s now(%f)
+  0x820574AC  Num samples: %d
+  0x820574DC  RallyElapsedTime: %f
+  0x8205753D  Collided with net. Sample pos x:%f, y:%f, z:%f
+  0x8205756E  start: %f %f %f
+  0x82057581  axis: %f %f %f
+  0x82057591  radius: %f
+  0x8205759D  length: %f
+  0x82057630  Not fudging ball position because %s (idx==%d)
+  0x82057660  Not fudging ball timestamps because %s (idx==%d)
+  0x82057868  Could not extrapolate a ball event after computing %d extra samples!
+  0x82057A18  %s:BALL_TABLE_BOUNCE
+  0x82057A30  %s:%s_BOUNCE
+  0x82057A40  [pongBallAudio] Sound index %d out of range!
+  0x82057A70  %s:PONG_BALL_TABLE
+  0x82057A98  %s:BALL_TABLE_SMASH
+  0x82057AAC  %s:BALL_TABLE_HARD
+  0x82057AC0  %s:BALL_TABLE_MEDIUM
+  0x82057AD8  %s:BALL_TABLE_SOFT
+  0x82057AEC  %s:PONG_BALL_NET
+  0x82057B00  %s:BALL_NET
+  0x82057B20  %s:BALL_HIT_PERSON
+  0x82057B4C  %s:%s%s
+  0x82057B54  Unhandled instance type (%d) in pongBallAudio::PreImpact
+  0x82057B90  %s:PONG_BALL_PADDLE
+  0x82057DBC  phBound:Load - couldn't open filename '%s'
+  0x82057DE8  Bound %s uses material %s that was not in the materials list
+  0x82057E28  phBound:CalculateExtents - not defined for this bound type, %d
+  0x82057E9C  phBound::Load_v110 - not defined for this bound type (%d)
+  0x82057ED8  Unknown bound type %d
+  0x820580C0  phBoundGeometry::Load_v110(%s) -- 'centroid:' not supported
+  0x820581C4  phBoundGeom:Load() - Expecting 'tri' or 'quad'; found '%s'
+  0x82058200  phBoundGeom:Load(ASCII token) - Polygon %i has a non-unit normal
+  0x82058244   verts (%d,%d,%d,%d)
+  0x820582AC   verts (%d,%d,%d)
+  0x820582F8  phBoundGeometry:LoadAscii - Bad file version number: %s
+  0x82058330  phBoundGeometry:LoadAscii - found zero vertices in %s.bnd.
+  0x8205836C  phBoundGeometry:LoadAscii - found zero polygons in %s.bnd.
+  0x820583A8  phBoundGeom:Load()- Expecting 'tri' or 'quad'; found '%s'
+  0x820583E4  phBoundGeom:LoadAscii - Polygon %i has a non-unit normal
+  0x82058468  m_NumPolygons = %i 
+  0x8205847C   partIndex = %i 
+  0x820586F4  Colliding bound has too many vertices (v %d, p %d)
+  0x820588F8  Road has %d vertices, resulting in a tree of depth %d.  This is too many (clamping to 6).
+  0x82058958  Road has %d vertices, resulting in %d segments.  This is too many (clamping to 64).
+  0x82058A68  Unrecognized token '%s'
+  0x82058D88  More than two polygons are incident at the same edge in file '%s'.
+  0x82058F54  Received system notification: %d %d
+  0x82058F78  pongShell::onIsStateChangeOK() - unhandled current state '%s' (%d)
+  0x82058FBC  using asset path: "%s"
+  0x82059584  Time at finish = %f(%f)
+  0x8205959C  Time at run = %f(%f)
+  0x82059618  Time after CB = %f(%f)
+  0x8205964C  entered boot state from invalid state %s (%d)
+  0x82059710  phSimulator::FindWeakestInst(): Maximum number of breakable components %d exceeded: %d
+  0x820597B0  Object %d is out of the bounds of the physics level!
+  0x820597E8  Object %d has gotten too big for the physics level!
+  0x820599C0  phArchetype::Load() -- .phys file %s does not exist
+  0x820599F4  phArchetype:CreateOfType - unknown version number, %d
+  0x82059A4C  phArchetype:Load - boundsource unknown, '%s'
+  0x82059D54  There are %i impacts in a collision between %s and %s
+  0x82059EC4  phArchetypeMgr:GetArchetype - unable to load bound file '%s'
+  0x82059FF4  MF doesnt like looping .anim files - reexport %s
+  0x8205A028  time out of range:%f not in [0, %f]
+  0x8205A118  fiDevice::GetDevice - Filename '%s' not in mount list, no default device
+  0x8205A1C4  memory:$%p,%d,%d:%s
+  0x8205A398  Filename '%s' is too long!
+  0x8205A3C4  Creating '%s'...
+  0x8205A414  Missing filename: %s
+  0x8205A430  fiStream::Open(%s,%d) %s
+  0x8205A44C  '%s' is not a valid rpf file
+  0x8205A474  fiPackfile::Open(%s) - inflateInit failed.
+  0x8205A6F4  DISKCACHE: srcDevice = NULL on file %s
+  0x8205A71C  DISKCACHE: dstDevice = NULL on file %s
+  0x8205A744  DISKCACHE: Filesize of file %s is 0!
+  0x8205A76C  Caching file: %s
+  0x8205A7C8  Waiting for connection on port %d...
+  0x8205A7F0  Unable to establish server on port %d, already in use?
+  0x8205A914  Unexpected error (%x) during device select.
+  0x8205A98C  Unexpected error (%x) during enumeration.
+  0x8205A9B8  XContentCreate failed (%x).
+  0x8205AA04  Unexpected error (%x) in CreateFile during save
+  0x8205AA34  Unexpected error (%x) in WriteFile during save
+  0x8205AA68  WriteFile error [%d], bytes written [%d] does not match save data bytes [%d]!
+  0x8205AAB8  Unexpected error (%x) in XContentClose during save
+  0x8205AB0C  Unexpected error (%x) during save.
+  0x8205AB30  Unexpected error (%x) in CreateFile during load
+  0x8205AB60  Unexpected error (%x) in ReadFile during load
+  0x8205AB90  Unexpected error (%x) in XContentClose during load
+  0x8205ABE4  Unexpected error (%x) during load.
+  0x8205AC08  XContentSetThumbnail failed (%x).
+  0x8205AC2C  Unexpected error (%x) during icon save.
+  0x8205AC54  Unexpected error (%x) in CreateFile during content verify
+  0x8205AC90  Unexpected error (%x) in XContentClose during content verify
+  0x8205ACF4  Unexpected error (%x) during content verify.
+  0x8205AD24  XContentDelete failed (%x).
+  0x8205AD40  Unexpected error (%x) during delete.
+  0x8205AD68  ReadFile returned %d, retrying
+  0x8205ADC4  InitWinSock - Couldn't find a usable WinSock DLL (version=%x)
+  0x8205AE58  [hudFlashBase] Could not create a context for flash file %s
+  0x8205AFE0  dialogs_%s
+  0x8205AFEC  Invalid line count %d, for dialog %d [%s]
+  0x8205B0AC  dialog_title_%d
+  0x8205B0BC  %s[%d] %s, %s
+  0x8205B2A0  %s_wins
+  0x8205B2CC  P%d_alpha
+  0x8205B2D8  focus_alpha_p%d
+  0x8205BDEC  ITZ_p%d
+  0x8205BDF4  ghostITZ_p%d
+  0x8205BE04  intensity_p%d
+  0x8205BE14  intensity_ghost_p%d
+  0x8205BE28  focusColor_p%d
+  0x8205BE38  flashingIntensity_p%d
+  0x8205BEF0  numGamesPlayed = %d, numVisibleGameScores = %d, matchOver = %s
+  0x8205BF70  Score Row %d = 
+  0x8205BF90   GamesWon=%d
+  0x8205BFF8  Highlight[0] = %d, Highlight[1] = %d
+  0x8205C320  tourney_name_%d_%d
+  0x8205C598  Gamertag%d
+  0x8205C5B0  Gamer Tags Intersect: (%d,%d,%f) --> (%d,%d,%f)
+  0x8205CC40  already loaded portrait player[%d], character[%d], variation[%d]
+  0x8205CC84  loading portrait player[%d], character[%d], variation[%d]
+  0x8205CCC0  %s/%s/%s
+  0x8205CCCC  finished portrait load for player[%d]
+  0x8205CE20  FlashState Changed (%d ---> %d)
+  0x8205CF00  Unsupported Game Mode = %d
+  0x8205CF30  Unsupported Games Per Match enum value = %d
+  0x8205CF5C  Unsupported points per serve enum value = %d
+  0x8205CFA4  Joining game sessionIndex = %d, host = %s
+  0x8205D054  online NOT authorized, requesting signin ui (errorCode = %d)
+  0x8205D0D8  online STILL NOT authorized, showing error dialog! (errorCode = %d)
+  0x8205D2DC  Spectator selected to follow %d
+  0x8205D2FC  Next outfit requested (current outfit = %d)...
+  0x8205D32C  Previous outfit requested (current outfit = %d)...
+  0x8205D360  New outfit = %d
+  0x8205D380  stxt_%s
+  0x8205D3A0  Kicking user from lobby/limbo to %d
+  0x8205D484  Invalid MatchQueryResult_MAIN_QUERY::GAMES_PER_MATCH = %d
+  0x8205D53C  Join From Hud -- Delay = %d
+  0x8205D674  Unknown onlineMode = %d
+  0x8205D68C  Unknown iCurrChooseModeSel = %d
+  0x8205D6D8  Unknown custom_GamesPerMatch = %d
+  0x8205D714  Unknown custom_PointsPerGame = %d
+  0x8205D750  Unknown custom_PointsPerServe = %d
+  0x8205D7B0  Max_Players = %d
+  0x8205D7DC  Private_Slots = %d
+  0x8205D808  Unknown create_GamesPerMatch = %d
+  0x8205D844  Unknown create_PointsPerGame = %d
+  0x8205D880  Unknown create_PointsPerServe = %d
+  0x8205DB38  Entering limbo, state = %s
+  0x8205DB6C  Exiting limbo to flashState %d, lobbyState %d
+  0x8205DBD4  PreEnterLobbyState = %d
+  0x8205DBEC  JumpToFlashState = %d
+  0x8205DC18  Quick Match timed out after %d ms... giving up
+  0x8205DC60  Invalid LOBBY_STATE_STARTING gamer state (%d)!
+  0x8205DCA0  PopulatePostLobbyScreen %d
+  0x8205DD44  PopulatePostLobbyScreen tournament scoreboard round %d
+  0x8205DD7C  PopulatePostLobbyScreen() screen %d is invalid type %d.
+  0x8205DDB4  PopulatePostLobbyScreen() -- GLOBAL_PLAYERS_ROW == %d
+  0x8205DE74  tourneyGame_scores%d
+  0x8205DEFC  %d lines in the flash file, but code only supports up to %d
+  0x8205DFC0  COLUMN%d_TEXT
+  0x8205DFD0  COLUMN%d_TYPE
+  0x8205E030  entered attract state from invalid state %s (%d)
+  0x8205E064  exiting attract state to invalid state %s (%d)
+  0x8205E2EC  duplicate filename[%s] found in %s
+  0x8205E4B4  entered logos state from invalid state %s (%d)
+  0x8205E4E4  exiting logos state to invalid state %s (%d)
+  0x8205E610  entered training mode UI state from invalid state '%s' (%d)
+  0x8205E64C  exiting training mode UI state to invalid state '%s' (%d)
+  0x8205E7F8  entered loading state from invalid state %s (%d)
+  0x8205E82C  exiting loading state to invalid state %s (%d)
+  0x8205EA04  Entering pause state from invalid state %s (%d)
+  0x8205EA34  Exiting pause state to invalid state %s (%d)
+  0x8205ED98  Entering credits state from invalid state %s (%d)
+  0x8205EDCC  Exiting credits state to invalid state %s (%d)
+  0x8205EEBC  Loaded custom xenon banner image %s, width = %d, height = %d
+  0x8205EF00  Failed to activate custom xenon banner from %s.dds, error = %d. Check the size and format.
+  0x8205F0F8  Entering character viewer state from invalid state %s (%d)
+  0x8205F134  Exiting character viewer state to invalid state %s (%d)
+  0x8205F26C  Entering dialog state from invalid state %s (%d)
+  0x8205F2A0  Exiting dialog state to invalid state %s (%d)
+  0x8205F44C  Difficulty is %d
+  0x8205F460  setting first tourney opponent: %s (%d)
+  0x8205F488  picking level for first tourney match: %s (%d)
+  0x8205F5A0  unhandled player confirm state: %d
+  0x8205F5C8  User %d just became an active user, requesting saved game load...
+  0x8205F678  entered frontend state from invalid state %s (%d)
+  0x8205F6AC  exiting frontend state to invalid state %s (%d)
+  0x8205F6E0  pongFrontendState::WaitForCharLoadToEnd() - waiting for player[%d] load to finish
+  0x8205F738  pongFrontendState::WaitForCharLoadToEnd() - need to deactivate player[%d]
+  0x8205F898  entered legals state from invalid state %s (%d)
+  0x8205F8C8  exiting legals state to invalid state %s (%d)
+  0x8205FB90  Unknown SpectatorHudItem token %s
+  0x8205FBB4  hudItem %s
+  0x8205FBC0  visible %d
+  0x8205FBD4  txtStr "%s"
+  0x8205FBE0  undefined SpectatorHudItem %s
+  0x8205FC28  undefined SpectatorHudItemPage %s
+  0x8205FC58  Setting Current Spectator Hud Page %s
+  0x8206076C  No rule hints available to unlock [%s], group [%d]
+  0x820609F0  game:\movies\%s_p%s
+  0x82060A04  game:\movies\%s_w%s
+  0x82060A18  game:\movies\%s%s
+  0x82060A2C  Loading Movie: %s
+  0x82060A40  [%x] Could not create xmv player from file: %s
+  0x82060A70  Unloaded Movie: %s
+  0x82060B54  Loading BINK Movie: %s
+  0x82060B70  Unloading BINK Movie: %s
+  0x82060D10  unknown drill %d!
+  0x82060D6C  need to handle drill state %d!
+  0x82060DB8  hudTrainingPopUp::Restart() - invalid user index %d for player 0
+  0x82061A74  level_name_%s
+  0x82061D4C  stxt_rank_%d
+  0x82062064  User[ %d ] is entering interactive loading screen state[ %d ]
+  0x82062310  ctrl_%d_label_%d
+  0x820624B0  Ran out of flash cells for this font! Only %d can be on screen at the same time!
+  0x82062574  strengths_%s
+  0x82062584  born_%s
+  0x8206258C  age_%s
+  0x82062594  height_%s
+  0x820625A0  weight_%s
+  0x82062830  prompt_YES_%d
+  0x8206284C  prompt_NO_%d
+  0x82062868  prompt_CANCEL_%d
+  0x82062AD8  Frontend selected player[%d] char[%d]
+  0x82062B50  GLOBAL_VARIANT_STATES_%d
+  0x82062BAC  Frontend selected a new outfit for player[%d] char[%d]
+  0x82062D48  GLOBAL_VARIANT_COLORS_%d
+  0x82062E08  Challenger, player[%d], controller[%d]
+  0x8206437C  Gamer Profile Difficulty: Unknown(%d)
+  0x820647B4  hudLeaderboard: Debug Level %d
+  0x82064834  hudLeaderboard - 1st Read - EXH TRUESKILL - found: %d
+  0x8206486C  hudLeaderboard - 1st Read - TRN TRUESKILL - found: %d
+  0x820648A4  hudLeaderboard - 1st Read - EXH YEAR WIN - found: %d
+  0x820648DC  hudLeaderboard - 1st Read - TRN YEAR 4P - found: %d
+  0x82064910  hudLeaderboard - 1st Read - TRN YEAR 8P - found: %d
+  0x82064944  hudLeaderboard - 1st Read - EXH WEEK WIN - found: %d
+  0x8206497C  hudLeaderboard - 1st Read - TRN WEEK 4P - found: %d
+  0x820649B0  hudLeaderboard - 1st Read - TRN WEEK 8P - found: %d
+  0x820649E4  hudLeaderboard - 1st Read - EXH YEAR LOSS - found: %d
+  0x82064A1C  hudLeaderboard - 1st Read - TRN YEAR LOSS - found: %d
+  0x82064A54  hudLeaderboard - 1st Read - EXH WEEK LOSS - found: %d
+  0x82064A8C  hudLeaderboard - 1st Read - TRN WEEK LOSS - found: %d
+  0x82064AC4  hudLeaderboard - 1st Read - EXH YEAR DNF - found: %d
+  0x82064AFC  hudLeaderboard - 1st Read - TRN YEAR DNF - found: %d
+  0x82064B34  hudLeaderboard - 1st Read - EXH WEEK DNF - found: %d
+  0x82064B6C  hudLeaderboard - 1st Read - TRN WEEK DNF - found: %d
+  0x82064DC4  data%d
+  0x82064EC8    TrueSkill=%d
+  0x82064ED8    Win      =%d
+  0x82064EE8    Loss     =%d
+  0x82064EF8    DNF      =%d
+  0x820653C0  pongCutSceneManager::Load() - cannot load cut scene '%s'
+  0x820655E8  lvl_%s_%s
+  0x82065630  [pongCSActionPlayAudio::Play] Invalid audio event type (%s)!
+  0x82066258  %s 0x%02x: 
+  0x82066275  D3D version is %i.%i %s, kernel is %i, frame is %i.
+  0x8206670C  Invald gamer index:%d
+  0x8206674C  Gamer:"%s"[%d] - friend presence changed
+  0x82066778  Gamer:"%s"[%d] - profile changed
+  0x8206679C  Gamer:"%s"[%d] - profile setting changed
+  0x820667D4  Gamer:"%s"[%d] - setting presence %s
+  0x820667FC  Gamer:"%s"[%d] - setting presence:%d...
+  0x82066824  Error retrieving privilege:%d
+  0x82066844  Gamer:"%s"[%d] signed off line
+  0x82066864  Gamer:"%s"[%d] signed out
+  0x82066880  Gamer:"%s"[%d] signed in
+  0x8206689C  Gamer:"%s"[%d] signed online
+  0x82066A18  Creating voice socket on port:%d...
+  0x82066A4C  Failed to bind on port %d
+  0x82066B44  Error:0x%08x calling GetLocalChatData() for local gamer:"%s"
+  0x82066BC4  Adding %s talker:%"%s"...
+  0x82066BE0  Gamer:"%s" is not online
+  0x82066C18  Attempt to redundantly add local talker:"%s"
+  0x82066C48  Gamer:"%s" does not have communication privileges
+  0x82066C7C  Error:0x%08x calling RegisterLocalTalker() for gamer:"%s"
+  0x82066CB8  Attempt to redundantly add remote talker:"%s"
+  0x82066CE8  Error:0x%08x calling RegisterRemoteTalker() for gamer:"%s"
+  0x82066D24  Removing %s talker:%"%s"...
+  0x82066D40  Error:0x%08x calling UnregisterLocalTalker() for gamer:"%s"
+  0x82066D7C  Remote talker:"%s" is not registered
+  0x82066DA4  Error:0x%08x calling UnregisterRemoteTalker() for gamer:"%s"
+  0x82066DE4  Error sending to address:0x%08x, sendto():"%s"
+  0x82066ED4  Error calling recvfrom() : "%s"
+  0x82066EF4  Muter:"%s" is not local - cannot mute
+  0x82066F1C  Gamer:"%s" is muting gamer:"%s"...
+  0x82066F40  Gamer:"%s" is un-muting gamer:"%s"...
+  0x82066FC8  Gamer:"%s" - creating session as host...
+  0x82067034  Cannot create session - owner:"%s" is not online
+  0x82067098  %s:%d/0x%x:%s
+  0x820670A8  Gamer:"%s" - creating of session as guest...
+  0x8206715C  Cannot resolve session - owner:"%s" is not online
+  0x82067204  Gamer:"%s" - creating offline session...
+  0x82067230  Cannot create session - gamer:"%s" is not signed in
+  0x820673AC  Cannot change flags - owner:"%s" is not online
+  0x8206752C  Cannot migrate session - owner:"%s" is not online
+  0x820675F8  Cannot start session - owner:"%s" is not online
+  0x82067858  Cannot join gamer to session - owner:"%s" is not online
+  0x820678C4  Leaver:"%s" is not a member of the session
+  0x820678F0  Leaver:"%s" is not fully joined
+  0x820679F0  Cannot register for arbitration - owner:"%s" is not online
+  0x82067C78  Gamer:"%s" creating session %s%s%s, slots(pub:%d, priv:%d) as %s:...
+  0x82067CC8  %s gamer:"%s" joined session:0x%I64x
+  0x82067CF0  %s gamer:"%s" failed to join session:0x%I64x
+  0x82067D20  %s gamer:"%s" left session:0x%I64x
+  0x82067DEC  Host create session:0x%08I64x %s
+  0x82067E10  Guest create session:0x%08I64x %s
+  0x82067E34  Resolve of session:0x%08I64x %s
+  0x82067E54  Offline create session:0x%08I64x %s
+  0x82067E78  Change flags for session:0x%08I64x %s
+  0x82067EA0  Start session:0x%08I64x %s
+  0x82067EBC  End session:0x%08I64x %s
+  0x82067EFC  Migrate session %s
+  0x82067F10  Arbitration registration for session:0x%08I64x %s
+  0x82067F5C  %s gamer:"%s" is joining session:0x%I64x in a %s slot...
+  0x82067FC4  Gamer:"%s" must be online to join an online session
+  0x82067FF8  Gamer:"%s" is already a member of the session
+  0x82068028  Gamer:"%s" - join failed - no more public slots
+  0x82068058  Gamer:"%s" - join failed - no more private slots
+  0x8206808C  %s gamer:"%s" is leaving session:0x%I64x...
+  0x820680B8  Gamer:"%s" is not a member of the session
+  0x82068154  Invalid gamer index:%d
+  0x8206816C  Field:%d is nil
+  0x8206817C  Invalid field type:%u
+  0x82068204  Error:%d computing stats buffer size - expected:%d, got:%d
+  0x82068240  Buffer size - expected:%d, got:%d
+  0x82068278  Couldn't create stats enumerator - error:%d.
+  0x820682A8  Retrieved %d rows of stats for leaderboard:0x%08x
+  0x820682DC  Configuring leaderboard:0x%08x, columns:%d...
+  0x82069EF4  %s[Invoker]
+  0x82069F00  Thread pool thread:%d starting...
+  0x82069F24  Thread pool thread:%d stopping...
+  0x82069F48  %s[Dispatcher]
+  0x82069FBC  grmEdgeModel::Create - '%s' is not an em file
+  0x8206A438  %s_light_shafts.xml
+  0x8206A46C  unknown node type found in light shaft tune file: %s
+  0x8206A5D4  %s_light_glows.xml
+  0x8206A83C  loading ambient resource for level '%s'...
+  0x8206A8A4  %s/%s_%s
+  0x8206A8B0  loading crowd resource for level: %s
+  0x8206A9A4  Attempting to play nonexistent animation: %s
+  0x8206A9D4  Animation%d:
+  0x8206A9EC  fxAmbAnimSet - anim queue is too full for %s
+  0x8206AA24  fxAmbAnimSet::AddAnimation() - animation '%s' not found!
+  0x8206ABB8  trail_length_%s
+  0x8206ABC8  swing_power_alpha_scale_%s
+  0x8206ABE4  trail_color_%s
+  0x8206AD88  fxString::Init() - cannot find bone '%s'!
+  0x8206AE48  %s_Width
+  0x8206AE54  %s_FrameColor
+  0x8206AE64  %s_SelectedTileColor
+  0x8206AE7C  %s_DefaultTileColor
+  0x8206B540  MRB- Maximum games played limit (%d) was reached! Match Over. Calling Time Up.
+  0x8206B5C4  SyncRallyCount: setting rally count from %d to %d
+  0x8206B5F8  Spectator Rally Count %d, time %s
+  0x8206B654  Entering Spectator state %s, time %s
+  0x8206B67C  Exiting Spectator state %s, time %s
+  0x8206BEFC  Forcing Match Time %s
+  0x8206BF18  Abs time difference (in seconds) between match timers %f, new time %s
+  0x8206BF60  Abs time difference (in seconds (which is way too big)) between match timers %f, new time %s
+  0x8206BFE4  Sending Finalized Ball Hit Data This Frame %d %d %d %s
+  0x8206C01C  Sending Initial Ball Hit Data This Frame %d %d %d %s
+  0x8206C054  Sending Ball Hit Data This Frame %d %d %d %s
+  0x8206C084  SwingStartedMessage being sent %s
+  0x8206C0D8  %s adding %d
+  0x8206C0E8  MRB- ResetPeerConnection(sendDisconnect=%d, resetOwner=%d, viaForfeit=%d)
+  0x8206C158  Received RemoteServeReadyMessage at %s
+  0x8206C180  Unlocking Serve at %s
+  0x8206C198  Received ServeUnlockMessage at %s
+  0x8206C1BC  SwingStartedMessage received %s
+  0x8206C1DC  received HitDataMessage %d %d %d %s
+  0x8206C24C  HandleSwingStartMessage %s
+  0x8206C268  adding hit message for %s %s
+  0x8206C288  ValidateHitTimeEstimate returnring soonest hit time %f, estimated %f
+  0x8206C2D0  MRB- ResetSpectatorConnections( viaForfeit=%d )
+  0x8206C428  %s%d:%2.2d:%3.3d
+  0x8206C43C  %d:%2.2d:%3.3d
+  0x8206C44C  NetTimer::Release() called with bad ref count %d
+  0x8206C4C8  Cannot Junk Swing in this move mode %d
+  0x8206C515  Player %d %s
+  0x8206C5A8  Got forfeit: Tagging player %s (%d,%d) as a quitter
+  0x8206C5E0  Got forfeit: Tagging player %s %d as a quitter for spectator session
+  0x8206C628  Spectator Quitting: Tagging player %s %d as a quitter
+  0x8206C660  Requesting to spectate off of peer:%d
+  0x8206C688  Requesting to spectate off of peer:%d in match:%d
+  0x8206C6BC  WriteStats - Gamer:%s - yrWin=%d yrLoss=%d wkWin=%d wkLoss=%d
+  0x8206C6FC  Writing 4P Win Stats for (%s) - WinPctYr=%d WinPctWk=%d
+  0x8206C734  Writing 8P Win Stats for (%s) - WinPctYr=%d WinPctWk=%d
+  0x8206C76C  Writing Loser Stats for (%s) - WinPctYr=%d WinPctWk=%d
+  0x8206CAE4  WriteStats - New WinPctYr=%d WinPctWk=%d
+  0x8206CB9C  **** Round Robin Winner = %d %s ****
+  0x8206CC3C  Internal spectator request:%d denied
+  0x8206CC64  External spectate request:%d denied
+  0x8206CC88  Internal spectate request:%d accepted
+  0x8206CCB0  External spectate request:%d accepted
+  0x8206CD24  Next opponent %d has forfeit, sitting out this round.
+  0x8206CDB0  HandleMatchScoreMessage: MatchIndex=%d: Name=%s, %d vs %d (%s) NumGames=%d
+  0x8206CDFC  Received final score message for %d (won) vs %d (lost) 
+  0x8206CE34  Received final score message for %d (lost) vs %d (won)
+  0x8206CE6C  Received final score message for %d vs %d (tied)
+  0x8206CEA0  Received intermediate score message for %d vs %d
+  0x8206CED4  Sending next round match messages for match %s
+  0x8206CF08  Match %s was unplayable -- nobody left to play it (home=%d, away=%d)
+  0x8206CF50  Match %s was unplayable -- home player %d forfeit
+  0x8206CF84  Match %s was unplayable -- away player %d forfeit
+  0x8206CFB8  Match %s was unplayable but neither player foreit?? (home=%d, away=%d)
+  0x8206D0B8  External spectator request:%d timed out
+  0x8206D0E0  Requesting to spectate off gamer:"%s"
+  0x8206D108  **** ADVANCED TO ROUND %d OF THE ROUND ROBIN TOURNAMENT ****
+  0x8206D148  player:"%s" quit -- but not from match we're spectating
+  0x8206D180  Internal spectator request:%d timed out
+  0x8206D1E0  Relative score for %s (peerIndex=%d) is %d
+  0x8206D20C  [Skipped Quitter!] Relative score for %s (peerIndex=%d) is %d
+  0x8206D350  WriteStats - writing loser stats for (%s)
+  0x8206D37C  WriteStats - %s is also a quitter!
+  0x8206D3A0  WriteStats - writing winner stats for (%s)
+  0x8206D3CC  FinalizeMatch() -- begin, winnerPeerIndex=%d
+  0x8206D6BC  Started writing the gamer picture[ %d ] for user[ %d ]
+  0x8206D6F8  Could not start writing the gamer picture[ %d ] for user[ %d ], ERROR[ %x ]
+  0x8206D768  Could not write the gamer picture, ERROR[ %x ]
+  0x8206D8A8  Local gamer %s (index = %d) joining %s game session with characterId = %d,%d
+  0x8206D920  Local gamer %s (index = %d) joining spectator session with characterId = %d
+  0x8206D96C  SetPeer: %d = %s
+  0x8206DA3C  Destroying %s session
+  0x8206DA94  *** Player:"%s" failed to join the spectator session!! ***
+  0x8206DAD0  NOTIFY_GAMER_REMOVED: %s peerIndex = %d %s session
+  0x8206DC58  NOTIFY_DESTROY_SUCCEEDED for %s
+  0x8206DC78  NOTIFY_DESTROY_FAILED for %s
+  0x8206DCD0  NOTIFY_JOIN_REQUEST: %s peerIndex = %d connection = %d charId = %d,%d
+  0x8206DD18  NOTIFY_JOIN_REQUEST: REJECTED! %s connection = %d charId = %d
+  0x8206DDF0  NOTIFY_GAMER_ADDED: %s peerIndex = %d connection = %d charId = %d,%d state = %d to %s session
+  0x8206DE50  Alloc'ed a remote gamer: %s
+  0x8206DE6C  Freed a remote gamer: (%d,%d) %s
+  0x8206DE90  Migration -- Electing self %s (%d) as new host!
+  0x8206DEC0  Migration -- Electing %s (%d) as new host!
+  0x8206DEEC  Migration -- Not electing %s (%d) -- not associated!
+  0x8206DF24  Migration -- Not electing (%d) -- null gamer ptr!
+  0x8206DF98  pongLiveManager::StatsReaderNotifyHandler - Working on gamer: %s row: %d
+  0x8206DFE8  pongLiveManager::StatsReaderNotifyHandler - valid row - weekly losses=%d
+  0x8206E088  pongLiveManager::StatsReaderNotifyHandler - valid row - yearly losses=%d
+  0x8206E128  pongLiveManager::StatsReaderNotifyHandler - valid row - yearly wins=%d
+  0x8206E1B8  pongLiveManager::StatsReaderNotifyHandler - valid row - weekly wins=%d
+  0x8206E288  pongLiveManager::StatsReaderNotifyHandler - Working on Gamer: %s
+  0x8206E2D0  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 8pWeekWins=%d
+  0x8206E320  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 8pYearWins=%d
+  0x8206E370  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 4pWeekWins=%d
+  0x8206E3C0  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d 4pYearWins=%d
+  0x8206E410  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d WeekLosses=%d
+  0x8206E460  pongLiveManager::StatsReaderNotifyHandler - (%s) - gameid=%d YearLosses=%d
+  0x8206E4B0  pongLiveManager::StatsReaderNotifyHandler - Saving Totals for Gamer:%s wk_win=%d yr_win=%d wk_loss=%d yr_loss=%d
+  0x8206E61C  latency for session %d = %d ms
+  0x8206E66C  Gamer cache is full! Could not add '%s'.
+  0x8206EE98  Estimated Hit Time = %s
+  0x8206EECC  game number <message(%d), game(%d)>
+  0x8206EF0A  total serves this game <message(%d), game(%d)>
+  0x8206EF5C  rally count <message(%d), game(%d)>
+  0x8206EF9C  update count out of order <message(%d), game(%d)>
+  0x8206EFEF  <message(%d), game(%d)>
+  0x8206F008  Can Use Rally Message games %d, rally count %d update %d
+  0x8206F048  received BallHitMessage (which means we are late), using message now, %f(s) late
+  0x8206F09C  Avg Time (%s) not elapsed yet (%s), reinserting HitMessage
+  0x8206F0D8  Really bad prediction %f(s)
+  0x8206F104  PONGNET.GetNetBallHitManager().BallAlreadyHit() %s %d
+  0x8206F14C  sending msgBall::kBouncePaddle%s from %s
+  0x8206F18C  sending msgBall::kBouncePaddle from %s
+  0x8206F1CE  game number <message(%d), game(%d)>
+  0x8206F20E  rally count <message(%d), game(%d)>
+  0x8206F234  message arrived late %f(s)
+  0x8206F270  unlocking serve %s
+  0x8206F284  Remote Player Is Ready To Serve %s
+  0x8206F2A8  ForceMatchTimeSyncMessage %s
+  0x8206F2C8  ForceSessionTimeSyncMessage %s
+  0x8206F318  ignoring ServeFaultMessage game(%d) message(%d)
+  0x8206F348  ignoring ServeLetMessage game(%d) message(%d)
+  0x8206F3D1  realTime difference Estimate: %s
+  0x8206F3F2  merge time: %f
+  0x8206F429  characters <%d,%d> <%d,%d>
+  0x8206F445  level %d
+  0x8206F44E  from %s machine
+  0x8206F45E  gamers <%s,%d> <%s,%d>
+  0x8206F484  GamerReadyMessage: Gamer = '%s' %I64u
+  0x8206F4AC  GamerUpdateMessage: Gamer = '%s' %I64u
+  0x8207066C  Gamer %d presence set to: Default
+  0x82070690  Gamer %d presence set to: Online Exhibition: %d to %d
+  0x820706C8  Gamer %d presence set to: Spectating Exhibition
+  0x820706F8  Gamer %d presence set to: Offline Exhibition 2P: %d to %d
+  0x82070734  Gamer %d presence set to: Offline Exhibition 1P: %d to %d
+  0x82070770  Gamer %d presence set to: Online Tournament: %d to %d
+  0x820707A8  Gamer %d presence set to: Spectating Tournament
+  0x820707D8  Gamer %d presence set to: Offline Tournament: %d to %d
+  0x82070810  Gamer %d presence set to: Prep. Offline Exhibition
+  0x82070844  Gamer %d presence set to: Prep. Offline Tournament
+  0x82070878  Gamer %d presence set to: Prep. Online Match
+  0x820708A8  Gamer %d presence set to: Training Mode
+  0x82070920  SessionMessageRequester: StartRequest called for msgId = %d
+  0x82070980  SessionMessageRequester: Entering state %s
+  0x820709AC  SessionMessageRequester: Exiting state %s
+  0x82070A40  SessionMessageRequester: Sending request to %d
+  0x82070BD0  MRB- #2 msgNet::kOpponentDropSpectatorMode, winner=%d forfeit=%d
+  0x82070C2C  received SkipReplayMessage, state = %s
+  0x82070C54  received EnteringReplayMessage, state = %s
+  0x82070C80  received ExitPostGameMessage, state = %s
+  0x82070CAC  MRB- msgNet::kOpponentDropSpectatorMode winner=%d forfeit=%d
+  0x82070CEC  setting delay %f, retrans time = %d
+  0x820712CC  StartFromSyncState %s
+  0x820712E4  StartBeforeSyncState %s, killing wait time
+  0x82071310  StartBeforeSyncState %s
+  0x82071328  Cannot StartBeforeSyncState %s, still syncing
+  0x820715F4  Warning: failed to receive Ack for packet %d
+  0x82071624  AckHandling::ProcessSequence processing %d
+  0x820716CD  loading paddle resource '%s' for character '%s'...
+  0x82071700  [plrPropMgr] Player=%d: Correct paddle already loaded (charID=%d)
+  0x82071748  [plrPropMgr] Player=%d: Unload paddle for charID=%d and load paddle for charID=%d
+  0x82071864  setting next tourney opponent: %s (%d)
+  0x8207188C  setting next tourney level: %s (%d)
+  0x82071A44  entered game state from invalid state %s (%d)
+  0x82071A74  exiting game state to invalid state %s (%d)
+  0x82071DC8  sgIter - Skipping non-sgNode '%s'
+  0x82071DEC  Destroying connection:%d
+  0x82071EA8  Error associating connection:%d with session:0x%I64x
+  0x82071EE0  Received non-broadcast message:%s(%d) from an invalid address
+  0x820721B4  Attempt:%d to request session config from host
+  0x820727C0  Error allocating gamer:%s
+  0x82073DD8  Creating remote gamer:%s...
+  0x82073DF4  Gamer:%s already exists
+  0x82073E0C  Error allocating gamer for:%s
+  0x82073EAC  Leaving: %s
+  0x82073EB8  Timing out at:%d
+  0x82073ECC  Entering: %s
+  0x82073EDC  Setting timeout:%d ms at:%d
+  0x82073EFC  [%s:%d]
+  0x82074300  Error adding gamer:%s to session
+  0x82074638  Session was only able to register %d out of %d gamers for arbitration
+  0x82074680  Local gamer:"%s" failed to registered for arbitration
+  0x82074C34  PlaySound(%s,%s)
+  0x82074C48  StopSound(%s)
+  0x82074C58  global array [%s] does not exist
+  0x82074DCC  SYMTAB::Delete(%s) failed
+  0x82074DE8  Resetting current frame to 0: frame [%d/%d] is invalid for new object.
+  0x82075030  GlobalMethod %s does not exist!
+  0x82075054  Unsupported script method: %s
+  0x82075074  Unable to find dictionary object: %s
+  0x82075144  FSCommand detected but no handler was specified: %s
+  0x82075178  GetURL(%s)
+  0x82075220  Unsupported comparison types %d and %d
+  0x82075248  ActionDelete: can't delete property %s from non-object
+  0x82075280  URLs are not supported: %s
+  0x8207529C  Unhandled action code 0x%x in actionlist
+  0x820752F8  Function %s not found
+  0x820753FC  swfOBJECT::Fixup - unknown type %d
+  0x820755A4  PlaceObject2 - Inst [%s] missing obj at depth %d?
+  0x820755D8  swfCMD::Fixup - unknown type %d
+  0x820756C0  No data for language %d
+  0x820756D8  No translations available for %s
+  0x82075750  String '%s' not in stringtable (creating temporary entry).
+  0x82075844  Failed to load font %s
+  0x8207585C  Version number on file '%s' is %0.2f; expected %0.2f
+  0x82075E78  Invalid dialog ID[%d]
+  0x82075E90  Invalid Lines[%d] for dialog[%d]
+  0x82075F5C  Invalid Movie: %d
+  0x82075F70  Invalid movie volume: %f
+  0x82075F8C  Invalid Filename for Movie: %d
+  0x8207649C  Invalid alignment found: %d, using default: %d
+  0x820764CC  Invalid face type found: %d, using default: %d
+  0x820764FC  Invalid scale found: %d, using default
+  0x820768D0  gdCSCharCamShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'
+  0x82076B15  choose a CS char anim for player[%d] (%s) with intensity %f
+  0x82076B54  other character selected '%s', remove it from possible choices
+  0x82076BD0  temporarily mark the last used animation '%s' before recycle as used again
+  0x82076CC4  selected animation: %s
+  0x82076F18  gdCSCamAnimShotName::PostLoadProperties() - shot name '%s' does not exist in set '%s'
+  0x82077138  gdCSNameData::PostLoadProperties() - unknown trigger message '%s'
+  0x820771A0  gdCutSceneData::PostLoadProperties() - unknown skip message '%s'
+  0x82077208  gdCSActionIfData::PostLoadProperties() - unknown if-statement condition '%s'
+  0x82077258  gdCSActionIfData::PostLoadProperties() - condition '%s' requires property 'PlayerID'
+  0x820772B0  gdCSActionIfData::PostLoadProperties() - condition '%s' requires property 'Percent'
+  0x82077308  gdCSActionIfData::PostLoadProperties() - property 'Percent' cannot exceed %d
+  0x82077358  gdCSActionIfData::PostLoadProperties() - condition '%s' requires property 'GameType'
+  0x820773B0  gdCSActionIfData::PostLoadProperties() - property 'GameType' has invalid value '%s'
+  0x82077408  gdCSActionIfData::PostLoadProperties() - condition '%s' requires property 'ArenaType'
+  0x82077470  gdCSActionIfData::PostLoadProperties() - property 'ArenaType' has invalid value '%s'
+  0x82077730  gdCSActionPlayAudioData::PostLoadProperties() - unknown audio event type: '%s'
+  0x82077790  gdCSActionPlayAudioData::PostLoadProperties() - unknown audio event ID: '%s'
+  0x82077F9C  Could not read the file[%s]
+  0x82077FB8  Could not create the file[%s]
+  0x820780E8  current region: %d
+  0x820780FC  current language: %d
+  0x82078114  current product code: %s
+  0x82078140  base save file name: %s
+  0x820781B0  Error binding socket to port:%d
+  0x820781D0  Creating connection to %d.%d.%d.%d:%d...
+  0x820781FC  Connection to %d.%d.%d.%d:%d already exists
+  0x82078228  Cannot add connection for %d.%d.%d.%d:%d - no connections left in pool.
+  0x82078270  Requesting connection to %d.%d.%d.%d:%d...
+  0x8207829C  Error sending initial message on connection:%d
+  0x820782CC  Invalid connection:%d
+  0x820782E4  Connection:%d is already closed
+  0x82078304  Closing connection:%d - %d.%d.%d.%d:%d...
+  0x82078330  Denying connection from %d.%d.%d.%d:%d...
+  0x8207835C  Network error "%s"
+  0x82078370  Attempt to queue "%s":%d to a connection that cannot send
+  0x820783AC  Unable to queue "%s":%d to connection %d
+  0x820783E0  S%d: Dropping "%s" (%s), id:%d, size:%d, seq:%d
+  0x82078410  Attempt to add an existing connection: %d.%d.%d.%d:%d
+  0x82078448  Cannot create a new connection to: %d.%d.%d.%d:%d - no more available connections
+  0x8207849C  Added connection:%d (%d.%d.%d.%d:%d)
+  0x820784C4  Removing connection:%d
+  0x820784DC  Connection attempt for connection:%d failed due to timeout
+  0x82078518  Killing connection:%d (%d.%d.%d.%d:%d)
+  0x82078564  Received unhandled %s message "%s":%d from %d.%d.%d.%d:%d
+  0x820785A0  Dropping connection:%d
+  0x82078804  S%d: Queued "%s" (R), id:%d, seq:%d
+  0x82078828  S%d: Queued "%s" (U), id:%d, seq:%d
+  0x8207884C  Network error:"%s" sending to:%d.%d.%d.%d:%d
+  0x8207887C  S%d: Processing "%s" (R), id:%d, size:%d, seq:%d
+  0x820788B0  S%d: Unexpected "%s" (R) - expected seq:%d, got seq:%d
+  0x820788E8  S%d: Processing "%s" (U), id:%d, size:%d, seq:%d
+  0x82078964  S%d: Unexpected "%s" (U) - expected seq:%d, got seq:%d
+  0x8207899C  S%d: Received ACK for seq:%d
+  0x820789BC  S%d: Received duplicate ACK seq:%d?
+  0x820789E0  S%d: Received ACK of unknown seq:%d
+  0x82078A08  S%d: %sSending "%s" (%s), id:%d, size:%d, seq:%d, retries:%d, to:%d.%d.%d.%d:%d
+  0x82078AA8  Packet with invalid size:%d dropped
+  0x82078ACC  Invalid packet with reported size:%d (actually:%d) dropped
+  0x82078B08  Invalid message with bogus size %d dropped
+  0x82078B38  Total message count (%d) doesn't agree with packet message count (%d) - dropped
+  0x82078B88  Total message size (%d) doesn't agree with packet size (%d) - dropped
+  0x82078BEC  Compression failed for packet of size %u
+  0x82078C18  Compressed packet %u down to %u
+  0x82078C38  Packet decompressed to (%u) larger than our internal buffers size (%u)
+  0x82078C80  Successfully decompress packet from %u to %u
+  0x82078CD4  Couldn't find a usable WinSock DLL (version=%x)
+  0x82078E06  <!-- %s -->
+  0x82078E14   v="%d.%d"
+  0x820791A0  Writing to leaderboard:0x%08x for gamer:"%s"...
+  0x820791E8  Writing score - gamer:"%s", score:%d, teamId:%d...
+  0x82079294  Invalid user index:%d for gamer
+  0x820792B4  Writing profile setting:0x%08x for gamer:"%s"...
+  0x82079428  Error:%d calling XSessionSearch()
+  0x8207944C  Found:%d matching sessions
+  0x820794B8  Invalid user index:%d for requestor
+  0x820794DC  Error:%d computing profile buffer size - expected:%d, got:%d
+  0x820795A4  Couldn't create achievement enumerator - error:%d.
+  0x820795D8  Requestor:"%s" - read %d achievements
+  0x82079654  Couldn't create friend enumerator - error:%d.
+  0x82079684  Error:%d computing friends buffer size - expected:%d, got:%d
+  0x820796C4  Gamer:"%s" - read %d friends
+  0x82079A3C  [rmPtxBirth] Could not open %s
+  0x82114627  x9k%x}c[xK
+  0x821B7373   H%s];
+  0x82224AB3  :}%X.|iR
+  0x823CCA84  }%X.}dX.
+  0x824DA75B  :9J%x= 
+  0x824DD56B  :9J%x= 
+  0x824DF21F  :9J%x= 
+  0x8250E723  :}%X0H
+  0x8254F168  }%&p}%X
+  0x82598376  @.}%XP8k
+  0x825A1C3C  }%X0}=40|
+  0x8274F05E  P}%i4))w

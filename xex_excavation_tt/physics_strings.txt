@@ -1,0 +1,466 @@
+; ===================================================================
+; PHYSICS / BALL SIMULATION STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x82028124  spine00
+  0x82028518  spine03
+  0x820288A0  DoBallFudge - skipping
+  0x8202E574  SidespinOnly
+  0x8202E584  BackspinOnly
+  0x8202E594  TopspinOnly
+  0x8202FDC8  fxCloth::CreateClothSim() originally:  m_nIterations = %d, m_nIterationsPerCollision = %d
+  0x8202FE28  fxCloth::CreateClothSim() changed to: m_nIterations = %d, m_nIterationsPerCollision = %d
+  0x8203032C  gdDrillSpinData
+  0x82030354  gdDrillCounterSpinData
+  0x82030968  Encountered fault condition, but the ball is not a miss -- ignoring
+  0x820309AC  ServeBounce
+  0x82031954  Counter Spin
+  0x820319D4  pongTrainingDrill::SetUpBallSpin() - unknown spin type [%d]
+  0x82031A78  pongDrillSoftShot::SetUpBallHitData() - unknown spin type [%d]
+  0x82031AB8  pongDrillSpin::Process() - unknown goal spin type [%d]
+  0x82031AF0  pongDrillCounterSpin::Process() - unknown spin type [%d]
+  0x82031B30  pongDrillCounterSpin::IncreaseNumTries() - not sure which spin to use on try [%d]
+  0x82031B88  pongDrillCounterSpin::IncreaseNumTries() - unknown spin type [%d]
+  0x82032750  BadBackSpinDefenseTip
+  0x820328C4  Can't find self collision pair %s, %s
+  0x820329F4  selfCollisionCount
+  0x82032A08  selfCollision
+  0x82033004  collisionEvents
+  0x8203386C  spine+
+  0x82033880  crIKSpine::Init - failed to find root bone
+  0x820338AC  crIKSpine::Init - spine bone count < 1
+  0x820338D4  crIKSpine::Init - failed to find spine bone %d
+  0x82033904  crIKSpine::Init - failed to find pelvis bone
+  0x82033934  crIKHead::Init - failed to find spine bone
+  0x820339E8  crIKLimb::Init - failed to find spine bone (isArm %d, isLeftRight %c)
+  0x8203703C  Ball_InPlay
+  0x82037048  BallPos
+  0x82037308  AnimBallpathFOROrigin
+  0x82037320  AnimBallpathFORBearing
+  0x82037770  P_VelocityFollow
+  0x82038D70  Cheat_BigBall
+  0x82038DA4  Cheat_NoBallSpin
+  0x82038DD0  ITZ_RightSpinButton
+  0x82038DE4  ITZ_LeftSpinButton
+  0x82038DF8  ITZ_BackSpinButton
+  0x82038E0C  ITZ_TopSpinButton
+  0x82038E20  ITZ_RightSpinStick
+  0x82038E34  ITZ_LeftSpinStick
+  0x82038E48  ITZ_BackSpinStick
+  0x82038E5C  ITZ_TopSpinStick
+  0x82039ABC  BallComingTowardPlyr
+  0x82039D60  === Player %d hit the ball ===
+  0x82039D80  Player %d can't hit ball because:
+  0x82039DA5  Not enough ball predict samples
+  0x8203A2A8  Unlocked swing Input for player %d because he hit the ball
+  0x8203A330  pongPlayer::HitBall
+  0x8203A358  Player ID %d just hit the ball at time %f sec
+  0x8203D1E0  gdReplayMgr::PurgeReplaySampleBallAfterTime(%f) - dropped %d samples
+  0x8203D8F0  UISpin
+  0x8203DC20  DoubleBounce
+  0x8203E1B1  pongBallSpinData.Axis
+  0x8203E1D5  pongBallSpinData.CalcNetworkingValue
+  0x8203E204  BallHitData:
+  0x8203E27D  BallPos
+  0x8203E2E5  ExtraCornerBounceAngle
+  0x8203E305  Gravity
+  0x8203E464  pongBallHitData
+  0x8203E500  ExtraCornerBounceAngle
+  0x8203E518  Gravity
+  0x8203E534  SpinAxis
+  0x8203E6D0  %s called BallPredictData::Reset() %s
+  0x8203E6F8  gdBallPredictData::FindNearestHittableSample - Could not find a hittable samples!
+  0x8203E750  gdBallPredictData::SetInitialBallAngVelocity() - angVelocity is bad
+  0x8203E794  num table bounces accumulated <%d,%d>
+  0x8203E7BC  num table bounces expired <%d,%d>
+  0x8203E7E0  gdBallFudgeData
+  0x8203E870  No ball fudge defined for zone '%s'
+  0x8203E8E4  ballfudge.xml
+  0x8203EBA8  BallBankName
+  0x8203EFC0  BallColor
+  0x8203F678  MinBallSpeed
+  0x8203F688  MaxBallSpeed
+  0x8203F698  MinBallSpin
+  0x8203F6A4  MaxBallSpin
+  0x8203F840  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpeed' must be in [0, %f]
+  0x8203F890  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpeed' cannot be greater than 'MaxBallSpeed'
+  0x8203F8F8  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpeed' must be in [0, %f]
+  0x8203F948  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' must be in [0, 1]
+  0x8203F998  gdTrainingDrillData::PostLoadProperties() - 'MinBallSpin' cannot be greater than 'MaxBallSpin'
+  0x8203F9F8  gdTrainingDrillData::PostLoadProperties() - 'MaxBallSpin' must be in [0, 1]
+  0x820401F8  NumSpinShots
+  0x8204021C  MinPrimarySpin
+  0x8204022C  MaxSecondaryTopBackSpin
+  0x82040244  MaxSecondaryLeftRightSpin
+  0x82040260  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be negative
+  0x820402B0  gdDrillSoftShotData::PostLoadProperties() - 'NumSpinShots' cannot be greater than 'TotalNumTries'
+  0x820403D8  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative
+  0x82040428  gdDrillSoftShotData::PostLoadProperties() - 'MinPrimarySpin' cannot be greater than 1.0
+  0x82040480  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be negative
+  0x820404E0  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be greater than 1.0
+  0x82040548  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be negative
+  0x820405A8  gdDrillSoftShotData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be greater than 1.0
+  0x820408CC  MinSpin
+  0x820408D4  ProbSameSpin
+  0x820408E8  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040930  gdDrillSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040980  gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x820409D0  gdDrillSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0
+  0x82040A28  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040A78  gdDrillFocusShotData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040AD0  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040B20  gdDrillFocusShotData::PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0
+  0x82040B78  gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be negative
+  0x82040BC8  gdDrillCounterSpinData::PostLoadProperties() - 'MinSpin' cannot be greater than 1.0
+  0x82040C20  gdDrillCounterSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be negative
+  0x82040C78  gdDrillCounterSpinData::PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0
+  0x82040CD8  gdDrillCounterSpinData::PostLoadProperties() - 'MinPrimarySpin' cannot be negative
+  0x82040D30  gdDrillCounterSpinData::PostLoadProperties() - 'MinPrimarySpin' cannot be greater than 1.0
+  0x82040D90  gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be negative
+  0x82040DF0  gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryTopBackSpin' cannot be greater than 1.0
+  0x82040E58  gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be negative
+  0x82040EB8  gdDrillCounterSpinData::PostLoadProperties() - 'MaxSecondaryLeftRightSpin' cannot be greater than 1.0
+  0x820418C0  SpinAdjustment
+  0x8204195C  UseSpinCounter
+  0x8204197C  CombineSpin
+  0x82041B14  spin detection node already found in shots.xml: %s
+  0x82042444  NetBallFriction
+  0x82042454  NetBallElasticity
+  0x820499AC  VertSpin
+  0x820499B8  SideSpin
+  0x820499C4  SpinDef
+  0x82049AA4  TopSpin
+  0x82049AAC  BackSpin
+  0x82049AB8  Sidespin
+  0x82049AC4  SpinDefense
+  0x82049AD0  SideSpinDefense
+  0x82049AE0  TopSpinITZ
+  0x82049AEC  BackSpinITZ
+  0x82049B04  SidespinITZ
+  0x82049B1C  SpinDefenseITZ
+  0x82049B2C  SideSpinDefenseITZ
+  0x82049B40  TopSpinMaxITZ
+  0x82049B50  BackSpinMaxITZ
+  0x82049B70  SidespinMaxITZ
+  0x82049B90  SpinDefenseMaxITZ
+  0x82049BA4  SideSpinDefenseMaxITZ
+  0x82049C38  ServeTopSpin
+  0x82049C48  ServeBackSpin
+  0x82049C58  ServeLeftSpin
+  0x82049C68  ServeRightSpin
+  0x82049C98  MaxTopSpinRPS
+  0x82049CA8  MaxBackSpinRPS
+  0x82049CB8  MaxSideSpinRPS
+  0x82049CC8  MaxTopSpinRPSITZ
+  0x82049CDC  MaxBackSpinRPSITZ
+  0x82049CF0  MaxSideSpinRPSITZ
+  0x82049D04  MaxTopSpinRPSMaxITZ
+  0x82049D18  MaxBackSpinRPSMaxITZ
+  0x82049D30  MaxSideSpinRPSMaxITZ
+  0x82049D48  MaxTopSpinRPSServe
+  0x82049D5C  MaxBackSpinRPSServe
+  0x82049D70  MaxSideSpinRPSServe
+  0x82049D84  MaxSpinChargeTime
+  0x82049D98  MaxSpinChargeTimeITZ
+  0x82049DB0  MaxSpinChargeTimeMaxITZ
+  0x82049ED0  MaxSpinChargeRate
+  0x82049EE4  MaxSpinChargeRateITZ
+  0x82049EFC  MaxSpinChargeRateMaxITZ
+  0x8204AA88  Condition_Multi_Bounce
+  0x8204BE1C  CAM_ANIMATED_BALL_TRACKER
+  0x8204BE48  CAM_LOOKATTARGET_ELLIPSE_BALL
+  0x8204BEC4  CAM_LOOKATELLIPSE_BALL
+  0x8204BF20  CAM_LOOKATLERP_BALL
+  0x8204C494  BallSpin
+  0x8204C4C8  MissedBallDist
+  0x8204C4E8  Incorrect BallSpin[%.2f], setting to default
+  0x8204C560  Incorrect MissedBallDist[%.2f]
+  0x8204C87C  Spin_Type
+  0x8204FD20  Redundant collision requested in phArticulatedCollider::SetPartsCanCollide
+  0x82050118  msgBall
+  0x82050300  RobotShotBall
+  0x82050A5C  BallHitDataDone
+  0x82051528  BallOwnershipQuery
+  0x82051BC0  BallHitPlayer
+  0x82051F60  HitBall
+  0x82052108  BouncePaddleB
+  0x82052118  BouncePaddleA
+  0x82052128  BounceTableB
+  0x82052138  BounceTableA
+  0x82052148  Incorrect message format for msgBall::%s
+  0x82056EA0  [pongBallInstance] got a material with a bad sound index: %s
+  0x82056F24  Ball collided with Paddle A
+  0x82056F40  Ball collided with Paddle B
+  0x82056F5C  Ball collided with net
+  0x82056F74  Ball collided with table
+  0x82056F90  Ball collided with unknown
+  0x82056FAC  Ball collided with player
+  0x82056FC8  Ball Activation Disabled
+  0x82056FE4  pongBallInstance::ActivateBall
+  0x820570A0  gmBallNode
+  0x820570BC  VisualSpinScale
+  0x8205713C  NetworkFastestBallTravelTime
+  0x82057164  Ball_Color
+  0x82057170  gmBallNode::Reset
+  0x820573B8  Sending msgBall::kBounceTable%s now(%f)
+  0x820573E0  Hit end of buffer -- activating ball
+  0x82057408  ballPredict::ProcessHit() - postHitAngVel is bad
+  0x8205743C  ballPredict::ProcessHit
+  0x82057458  ******** ballPredict::ProcessHit() - buffer will be immediately consumed! ********
+  0x820574F8  ballPredict::ProcessHit() - buffer will be immediately consumed!
+  0x820575D8  Adjacent samples are being marked as BounceTable
+  0x82057630  Not fudging ball position because %s (idx==%d)
+  0x82057660  Not fudging ball timestamps because %s (idx==%d)
+  0x820576B0  Ball prediction outcome unknown!
+  0x82057708  This shot may end up being a double-table bounce or dinker, but we're not marking it as such.
+  0x820577B8  (This shot may end up being a double-table bounce or dinker, but we're not marking it as such.)
+  0x82057868  Could not extrapolate a ball event after computing %d extra samples!
+  0x820578B0  BALL_PROPADDLE_TRICKY
+  0x820578C8  BALL_PENPADDLE_TRICKY
+  0x820578E0  BALL_PADDLE_TRICKY
+  0x820578F4  BALL_PROPADDLE_SMASH
+  0x8205790C  BALL_PENPADDLE_SMASH
+  0x82057924  BALL_PADDLE_SMASH
+  0x82057938  BALL_PROPADDLE_HARD
+  0x8205794C  BALL_PENPADDLE_HARD
+  0x82057960  BALL_PADDLE_HARD
+  0x82057974  BALL_PROPADDLE_MEDIUM
+  0x8205798C  BALL_PENPADDLE_MEDIUM
+  0x820579A4  BALL_PADDLE_MEDIUM
+  0x820579B8  BALL_PROPADDLE_SOFT
+  0x820579CC  BALL_PENPADDLE_SOFT
+  0x820579E0  BALL_PADDLE_SOFT
+  0x820579FC  ballsounds
+  0x82057A08  ballsounds.list
+  0x82057A18  %s:BALL_TABLE_BOUNCE
+  0x82057A40  [pongBallAudio] Sound index %d out of range!
+  0x82057A70  %s:PONG_BALL_TABLE
+  0x82057A84  HUD:KICKBALL_TABLE
+  0x82057A98  %s:BALL_TABLE_SMASH
+  0x82057AAC  %s:BALL_TABLE_HARD
+  0x82057AC0  %s:BALL_TABLE_MEDIUM
+  0x82057AD8  %s:BALL_TABLE_SOFT
+  0x82057AEC  %s:PONG_BALL_NET
+  0x82057B00  %s:BALL_NET
+  0x82057B0C  HUD:KICKBALL_PERSON
+  0x82057B20  %s:BALL_HIT_PERSON
+  0x82057B54  Unhandled instance type (%d) in pongBallAudio::PreImpact
+  0x82057B90  %s:PONG_BALL_PADDLE
+  0x82057BA4  HUD:KICKBALL_PADDLE
+  0x82057BB8  BALL_PADDLE_RALLYHIT
+  0x82057BD0  BALL_PENPADDLE_RALLYHIT
+  0x82057BE8  BALL_PROPADDLE_RALLYHIT
+  0x82057C20  HUD:BALL_TOPSPIN
+  0x82057C48  HUD:BALL_BACKSPIN
+  0x82057C70  HUD:BALL_SIDESPIN_LEFT
+  0x82057CA4  HUD:BALL_SIDESPIN_RIGHT
+  0x820596C8  Too many recurses breaking objects in phSimulator::DoCollision()
+  0x820597B0  Object %d is out of the bounds of the physics level!
+  0x820597E8  Object %d has gotten too big for the physics level!
+  0x82059820  The physics level will still work properly, but performance may be very poor and this is probably an error!
+  0x82059AE4  gravityFactor:
+  0x82059D54  There are %i impacts in a collision between %s and %s
+  0x8205B828  stxt_points_from_topspin
+  0x8205B844  t_points_from_topspin
+  0x8205B85C  stxt_points_from_rightspin
+  0x8205B878  t_points_from_sidespin_rt
+  0x8205B894  stxt_points_from_leftspin
+  0x8205B8B0  t_points_from_sidespin_lft
+  0x8205B8CC  stxt_points_from_backspin
+  0x8205B8E8  t_points_from_backspin
+  0x8205C120  points_from_topspin
+  0x8205C134  points_from_sidespin_rt
+  0x8205C14C  points_from_sidespin_lft
+  0x8205C168  points_from_backspin
+  0x8205C384  playersSpin
+  0x8205C390  spinalpha
+  0x8205C7FC  SpinWheelSpeed
+  0x8205C8A8  currentSpin
+  0x8205C914  counterspin
+  0x8205C9D8  stxt_t_topspin
+  0x8205C9E8  t_topspin
+  0x8205C9F4  stxt_t_backspin
+  0x8205CA04  t_backspin
+  0x8205CA10  stxt_t_leftspin
+  0x8205CA20  t_leftspin
+  0x8205CA2C  stxt_t_rightspin
+  0x8205CA40  t_rightspin
+  0x8205CA4C  stxt_t_focus_topspin
+  0x8205CA64  t_focus_topspin
+  0x8205CA74  stxt_t_focus_backspin
+  0x8205CA8C  t_focus_backspin
+  0x8205CAA0  stxt_t_focus_leftspin
+  0x8205CAB8  t_focus_leftspin
+  0x8205CACC  stxt_t_focus_rightspin
+  0x8205CAE4  t_focus_rightspin
+  0x8205FFA8  stxt_left_spin
+  0x8205FFB8  t_left_spin
+  0x8205FFC4  stxt_right_spin
+  0x8205FFD4  t_right_spin
+  0x8206000C  stxt_back_spin
+  0x8206001C  t_back_spin
+  0x82060028  stxt_top_spin
+  0x82060038  t_top_spin
+  0x82060808  stxt_spin
+  0x82060814  t_spin
+  0x82060CC4  stxt_tip_spin
+  0x82060CE8  stxt_tip_counter_spin
+  0x82060E2C  drill_spin
+  0x82060E78  drill_counter_spin
+  0x820610EC  stxt_t_spin
+  0x82061140  stxt_t_counterspin
+  0x82061154  t_counterspin
+  0x820611F4  stxt_t_back_spin
+  0x82061208  stxt_t_left_spin
+  0x8206121C  stxt_t_right_spin
+  0x82061230  stxt_t_top_spin
+  0x82061504  stxt_t_spin_1
+  0x82061514  t_spin_1
+  0x82061520  stxt_t_spin_2
+  0x82061530  t_spin_2
+  0x8206153C  stxt_t_spin_3
+  0x8206154C  t_spin_3
+  0x82061558  stxt_t_spin_4
+  0x82061568  t_spin_4
+  0x82061574  stxt_t_spin_5
+  0x82061584  t_spin_5
+  0x82061590  stxt_t_counterspin_1
+  0x820615A8  t_counterspin_1
+  0x820615B8  stxt_t_counterspin_2
+  0x820615D0  t_counterspin_2
+  0x820615E0  stxt_t_counterspin_3
+  0x820615F8  t_counterspin_3
+  0x8206187C  stxt_brief_spin
+  0x820618E8  stxt_brief_counter_spin
+  0x82063CC4  stxt_hold_spin
+  0x82063CD4  t_hold_spin
+  0x8206AA80  ball_comet
+  0x8206AA9C  ball_max_itz
+  0x8206AAAC  ball_full_itz
+  0x8206AABC  ball_partial_itz
+  0x8206AAD0  ball_normal
+  0x8206AADC  num_spins
+  0x8206AAE8  no_spin
+  0x8206AAF0  top_right_spin
+  0x8206AB00  right_spin
+  0x8206AB0C  back_right_spin
+  0x8206AB1C  back_spin
+  0x8206AB28  back_left_spin
+  0x8206AB38  left_spin
+  0x8206AB44  top_left_spin
+  0x8206AB54  top_spin
+  0x8206AC74  fx/tex/ball_trail
+  0x8206B0C8  spin_wisp_c
+  0x8206B0D4  spin_tex_c
+  0x8206B0E0  spin_lines_c
+  0x8206B0F0  spin_wisp_b
+  0x8206B0FC  spin_tex_b
+  0x8206B108  spin_lines_b
+  0x8206B118  spin_wisp_a
+  0x8206B124  spin_tex_a
+  0x8206B130  spin_lines_a
+  0x8206B140  numspins
+  0x8206B14C  nospin
+  0x8206B154  toprightspin
+  0x8206B164  rightspin
+  0x8206B170  backrightspin
+  0x8206B180  backspin
+  0x8206B18C  backleftspin
+  0x8206B19C  leftspin
+  0x8206B1A8  topleftspin
+  0x8206B1B4  topspin
+  0x8206B1BC  AxisSpin
+  0x8206B1C8  MinTopspin
+  0x8206B250  BallSpinData
+  0x8206B260  spindicators
+  0x8206B278  ballspin
+  0x8206B284  Cannot load ball spin tuning file ballspin.fx!
+  0x8206B2B4  fxBallSpinLines::Update() - initialAngVel is bad
+  0x8206B2E8  fxBallSpinLines::Update() - ballPos is bad
+  0x8206B314  fxBallSpinLines::Update() - pos is bad
+  0x8206B33C  fxBallSpinLines::Update() - m_OrbitMtx.c is bad
+  0x8206B36C  ball_trail
+  0x8206B3F8  TopSpinColor
+  0x8206B408  BackSpinColor
+  0x8206B418  NoSpinColor
+  0x8206B47C  BallSplashData
+  0x8206B48C  ballsplash
+  0x8206B498  Cannot load ball splash tuning file ballsplash.fx!
+  0x8206B4CC  BallShadowData
+  0x8206B4DC  ballshadow
+  0x8206B4E8  Cannot load ball shadow tuning file ballshadow.fx!
+  0x8206BFE4  Sending Finalized Ball Hit Data This Frame %d %d %d %s
+  0x8206C01C  Sending Initial Ball Hit Data This Frame %d %d %d %s
+  0x8206C054  Sending Ball Hit Data This Frame %d %d %d %s
+  0x8206C200  SinglesNetworkClient::HandleBallHitMessage
+  0x8206E818  BallHitMessage
+  0x8206E828  SpectatorBallHitMessage
+  0x8206EEF0  rejecting BallHitMessage:
+  0x8206F048  received BallHitMessage (which means we are late), using message now, %f(s) late
+  0x8206F104  PONGNET.GetNetBallHitManager().BallAlreadyHit() %s %d
+  0x8206F14C  sending msgBall::kBouncePaddle%s from %s
+  0x8206F178  BallHitMessage::Use
+  0x8206F18C  sending msgBall::kBouncePaddle from %s
+  0x8206F1B4  rejecting BallHitMessage:
+  0x8206F1F4  rejecting BallHitMessage:
+  0x8206F250  SpectatorBallHitMessage::Use
+  0x82070D98  NetBallHitManagerFreeList::Get() failed
+  0x82070DE4  PongBallHitDataStack::Insert failed
+  0x82070FA0  ballRollingTimeout
+  0x82071074  remotePlayerMaxVelocity
+  0x820710C0  maxSamplesForHelperVelocity
+  0x820710DC  remoteServeReadyVelocity
+  0x820716A8  BallBufferSize
+  0x82078FE0  max collision objects exceeded for cloth
+  0x820799A8  Velocity
+  0x820799B4  VelocityVar
+  0x825D2CDC  .?AVpongBallInstance@@
+  0x825D3E60  .?AVstateServeBounce@gmLogicSinglesMatch@@
+  0x825D4190  .?AVpongDrillCounterSpin@@
+  0x825D41D8  .?AVpongDrillSpin@@
+  0x825D42FC  .?AVgmBallRobot@@
+  0x825D48E8  .?AVcrIKSpine@rage@@
+  0x825D4A04  .?AVcrIKSolverSimpleSpine@rage@@
+  0x825D5928  .?AU?$cmActionCtor@VP_VelocityFollow@cmSampleCamActions@rage@@$01$0DMAA@@rage@@
+  0x825D67BC  .?AVP_VelocityFollow@cmSampleCamActions@rage@@
+  0x825D706C  .?AVaiSpin@@
+  0x825D7484  .?AVgdBallFudgeMgr@@
+  0x825D74A4  .?AV?$atSingleton@VgdBallFudgeMgr@@@@
+  0x825D79DC  .?AVgdBallPredictManager@@
+  0x825D7A00  .?AV?$atSingleton@VgdBallPredictManager@@@@
+  0x825D7D60  .?AVxmlNodeStructSwingType@pongBallHitData@@
+  0x825D7D98  .?AVxmlNodeStructHitZone@pongBallHitData@@
+  0x825D7DCC  .?AVpongBallHitData@@
+  0x825D7DEC  .?AVgdBallFudgeData@@
+  0x825D7F8C  .?AVgdDrillCounterSpinData@@
+  0x825D7FD8  .?AVgdDrillSpinData@@
+  0x825D84E0  .?AVbackspinTipData@@
+  0x825D8CB4  .?AVgdUnlockConditionMultiBounce@@
+  0x825D9168  .?AVxmlNodeStructSpinType@gdUnlockConditionFinalHitData@@
+  0x825DE024  .?AVfxBallSpinTex@@
+  0x825DE040  .?AVfxBallSpin@@
+  0x825DE05C  .?AVfxBallSpinLines@@
+  0x825DE07C  .?AVgmBallNode@@
+  0x825DE0B0  .?AVfxBallTrail@@
+  0x825DE0CC  .?AVfxBallSplash2D@@
+  0x825DE0EC  .?AVfxBallShadow@@
+  0x825DE12C  .?AVpongBallHit@@
+  0x825DE148  .?AVpongBallAudio@@
+  0x825DE72C  .?AVfxBallSpinDataMgr@@
+  0x825DE74C  .?AV?$atSingleton@VfxBallSpinDataMgr@@@@
+  0x825E0410  .?AVfxBallTrailData@@
+  0x825E059C  .?AVfxBallSpinWispData@@
+  0x825E05C0  .?AVfxBallSpinTexData@@
+  0x825E05E0  .?AVfxBallSpinLineData@@
+  0x825E0604  .?AVfxBallSpinData@@
+  0x825E07EC  .?AVstateServeBounce@gmLogicSpectator@@
+  0x825E2678  .?AV?$pongNetMessageHolder@VSpectatorBallHitMessage@@$0CI@@@
+  0x825E26C0  .?AV?$pongNetMessageHolder@VBallHitMessage@@$09@@
+  0x825E2C88  .?AVSpectatorBallHitMessage@@
+  0x825E2CB0  .?AVBallHitMessage@@
+  0x825E33E8  .?AVNetBallHitManager@@

@@ -1,0 +1,19 @@
+; ===================================================================
+; RAGE ENGINE — VTABLE ADDRESSES
+; Rockstar Table Tennis  -  default.xex  (pong_xenon_final.pe)
+; Build: May 11 2006  |  SDK v2.0.2417  |  TT-2015
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; ===================================================================
+
+; ADDRESS       VFUNCS  CLASS NAME
+; ------------  ------  --------------------------------------------------
+
+  0x820348AF       2  fiDirtyDisc_rage
+  0x8204ECF8      10  rmcDrawableBase_rage
+  0x8204ED28      15  rmcDrawable_rage
+  0x82050006       0  rmcTypeFileParser_rage
+  0x8205A09B      22  fiDevice_rage
+  0x8205A0FC      22  fiDeviceLocal_rage
+  0x8205A164      22  fiDeviceMemory_rage
+  0x8205A6BA      22  fiDeviceTcpIp_rage

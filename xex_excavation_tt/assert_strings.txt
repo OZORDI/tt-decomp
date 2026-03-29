@@ -1,0 +1,414 @@
+; ===================================================================
+; ASSERT / ERROR STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x820018F0  runtime error 
+  0x82001900  TLOSS error
+  0x82001910  SING error
+  0x8200191C  DOMAIN error
+  0x82001BF6  - unexpected heap error
+  0x82001C16  - unexpected multithread lock error
+  0x82001D84  (null)
+  0x82022544  Domain error
+  0x82022588  Invalid seek
+  0x82022618  Invalid argument
+  0x82022708  Exec format error
+  0x8202274C  Input/output error
+  0x82027254  Error reading Bink header.
+  0x820272B8  Error opening file.
+  0x8202743C  Failed to load file %s
+  0x82027C78  Could not find animation '%s' in hashtable.  Please check %s.ans for errors.
+  0x8202896C  Invalid blend end phase! (phase==%f, frame==%d)
+  0x8202DA80  LocomotionStateAnim::Load - failed to load alternative anim file '%s%s
+  0x8202DAC8  LocomotionStateAnim::Load - failed to load anim file '%s%s
+  0x8202DBBC  LocomotionStateAnim::Load - failed to find anim
+  0x8202DC4C  LocomotionStateMf::Load - invalid number of clips '%d'
+  0x8202DC90  LocomotionStateMf::Load - failed to load anim for clip '%d' file '%s
+  0x8202DCD8  LocomotionStateMf::Load - failed to create clip '%d' file '%s
+  0x8202DD18  LocomotionStateMf::Load - failed to find clip '%d'
+  0x8202E13C  ERROR: OUT OF RANGE
+  0x8202E688  DisableIfSpecialtyCheckFails
+  0x8202F720  Invalid type %d in grmShaderFactoryStandard::PlaceShaders
+  0x8202F9F0  pgStreamer::Read - invalid handle
+  0x8202FA90  pgStreamer::Close - invalid handle
+  0x8202FB8C  Invalid pointer passed to UntrackMemory
+  0x8202FC8C  XMemAlloc (%dM) failed - Out of physical memory
+  0x8202FF08  Failed to match vertex %d
+  0x8203088C  SetPostPointDelay - Invalid state/msg combination (%s/%s)
+  0x82032B70  Ascii load failed for fragment type %s.  Moving on to the next one
+  0x82033880  crIKSpine::Init - failed to find root bone
+  0x820338D4  crIKSpine::Init - failed to find spine bone %d
+  0x82033904  crIKSpine::Init - failed to find pelvis bone
+  0x82033934  crIKHead::Init - failed to find spine bone
+  0x82033988  crIKHead::Init - failed to find neck bone %d
+  0x820339B8  crIKHead::Init - failed to find head bone
+  0x820339E8  crIKLimb::Init - failed to find spine bone (isArm %d, isLeftRight %c)
+  0x82033A30  crIKLimb::Init - failed to find joint bone (isArm %d, isLeftRight %c)
+  0x82033A78  crIKLimb::Init - failed to find upper limb bone (isArm %d, isLeftRight %c)
+  0x82033AC8  crIKLimb::Init - failed to find lower limb bone (isArm %d, isLeftRight %c)
+  0x82033B18  crIKLimb::Init - failed to find appendage bone (isArm %d, isLeftRight %c)
+  0x820346EC  crSkeketonData::AllocateAndLoad - failed to load skeleton '%s'
+  0x82034790  crBoneData:Load_v100() - error in file
+  0x82034820  crBoneData:Load_v101(): Name is %s, buffer is %s - error in file
+  0x820349E0  Error: grcDevice::BeginTiledRendering() - More than %d different tiled rendering sizes have been used!
+  0x82034DAC  LookupGlobalVar(%s) failed on required variable.
+  0x82034DE0  LookupVar(%s) failed on required variable.
+  0x82034E0C  LookupTechnique(%s) failed on required technique.
+  0x82035000  nullhardware
+  0x820352C0  grcTextureXenon - Texture '%s' - invalid resolution %d by %d
+  0x82035F78  replay system failed to load a description.  please check 'assets/tune/camera/clips.xml' for errors
+  0x820367E0  trying to setup a shot when players are invalid.  zeroing.  please see shot info just printed.
+  0x820374E0  Error: Sanity check (number of diffs < 10000) failed
+  0x82037FFC  cmAnimCamPosition: NULL animation
+  0x82038020  cmAnimCamOrientation: NULL animation
+  0x82038048  cmAnimCamFov: NULL animation
+  0x82038068  cmAnimCamFStop: NULL animation
+  0x82038088  cmAnimDuration: NULL animation
+  0x820380A8  cmAnimBonePosition: NULL animation
+  0x820380CC  cmAnimBoneOrientation: NULL animation
+  0x82038A10  Prev node invalid %p->Prev=%p, expected %p
+  0x82038E70  dirtyPlayerAssert
+  0x82039F40  Player %d tried to swing,  but the move mode was invalid.
+  0x8203A890  m_player->GetCreature()== NULL
+  0x8203A8B0  m_player->GetCreature()->GetCreatureType()->GetModelRM() == NULL
+  0x8203AC78  audio: Error: Something broke in the audio system.
+  0x8203ACAB  SystemError = %d
+  0x8203AD1C  Invalid RAGE audio command %d
+  0x8203B4F4  Failed to get state from stopping cue!
+  0x8203B9D0  CAMERADATA.GetCameraMtx() returned an invalid matrix (%s).  Someone please fix this!
+  0x8203BDE4  [pongMusicPlayer] Invalid music type!
+  0x8203CDC0  Tried to set an invalid points per game = %d
+  0x8203DB5C  FocusShotFail
+  0x8203DB80  FocusShotRetFail
+  0x8203E568  TableTgtError
+  0x8203E588  TgtMaxError
+  0x8203E8A8  Errors found loading %s/%s.  Please see the above output.
+  0x82042C98  gdDifficultyLadder::PostLoadProperties() - invalid level value '%d'
+  0x82043090  Invalid hit tip found: %d
+  0x820430AC  Invalid hit tip, setting InARow to default
+  0x820430D8  Invalid serve tip found: %d
+  0x820430F4  Invalid serve tip, setting InARow to default
+  0x820432D0  Invalid Dialog ID %d, for review only tip!
+  0x820437AC  Invalid Stats Group %d
+  0x82049808  invalid timeouts found in sequence %s, forcing disabled state
+  0x82049848  desired range for sequence %s is invalid - min: %d max: %d, got: %d
+  0x82049E9C  TgtErrorRangeX
+  0x82049EAC  TgtErrorRangeZ
+  0x8204A63C  received invalid asset ID in %s
+  0x8204A74C  attempting to use invalid starting index: %d (max %d)
+  0x8204ACE0  invalid unlock group id[ %d ]
+  0x8204C008  gdCamData: invalid camera type found (defaulting to swing cam): %d
+  0x8204C04C  gdCamData: invalid anim type: %i (defaulting to ANIM_STRAIGHT)
+  0x8204C090  gdCamData: invalid tracking type: %i (defaulting to TRACK_NONE)
+  0x8204C0D0  gdCamData: invalid  DOF tracking type: %i (defaulting to DOF_TRACK_NONE)
+  0x8204C120  gdCamData: invalid  Unlockable play type: %i (defaulting to UL_PLAY_ALWAYS)
+  0x8204C334  Invalid column type found[ %d ], using default[ %d ]
+  0x8204C8B8  invalid final hit condition
+  0x8204CBE8  invalid rule name: %s
+  0x8204CC8C  Invalid unlock dialog message found: %d for item: %s
+  0x8204CCD8  Invalid group type found: %d
+  0x8204D1B4  Load failed!
+  0x8204D288  failed
+  0x8204D4D4  Invalid Search sub-state[%d]!
+  0x8204D9C8  Normal calculation failed!  Polygon AreaSq: %f, Normal: <%f, %f, %f>
+  0x8204DCE4  Invalid state transition (%s -> %s)
+  0x8204E158  pongDrawBucketManager::Load() - invalid default bucket: %d
+  0x8204E888  Attempting to set invalid framelock value (%f), defaulting to 1.
+  0x8204EB30  invalid operation set: %d
+  0x8204EC28  elapsedT is invalid: %f
+  0x8204F164  invalid table name for level '%s', skipping table loading
+  0x82050E7C  TryFailed
+  0x82050E98  DrillFailed
+  0x8205126C  ExternalSpectatorJoinFailed
+  0x8205133C  InternalSpectatorJoinFailed
+  0x82051688  EnterSPFindHostFailed
+  0x820561EC  Invalid operator type for cached operator: %d
+  0x820566B8  Error: Load Tuning Descriptions sanity check (<10000 tunables) failed!
+  0x82056700  Error: Unknown tuning type %d
+  0x820567D4  Error: Invalid ease type
+  0x82057818  Invalid sample found while extrapolating next event.  See output for details.
+  0x82058824  phPolytree::TestProbe() precision error
+  0x8205964C  entered boot state from invalid state %s (%d)
+  0x82059820  The physics level will still work properly, but performance may be very poor and this is probably an error!
+  0x8205A3FC  missingfilesarefatal
+  0x8205A474  fiPackfile::Open(%s) - inflateInit failed.
+  0x8205A4B8  Fatal disc error
+  0x8205A6F4  DISKCACHE: srcDevice = NULL on file %s
+  0x8205A71C  DISKCACHE: dstDevice = NULL on file %s
+  0x8205A8F4  XShowDeviceSelectorUI failed.
+  0x8205A914  Unexpected error (%x) during device select.
+  0x8205A978  XEnumerate failed.
+  0x8205A98C  Unexpected error (%x) during enumeration.
+  0x8205A9B8  XContentCreate failed (%x).
+  0x8205AA04  Unexpected error (%x) in CreateFile during save
+  0x8205AA34  Unexpected error (%x) in WriteFile during save
+  0x8205AA68  WriteFile error [%d], bytes written [%d] does not match save data bytes [%d]!
+  0x8205AAB8  Unexpected error (%x) in XContentClose during save
+  0x8205AAEC  invalid substate in CheckSave
+  0x8205AB0C  Unexpected error (%x) during save.
+  0x8205AB30  Unexpected error (%x) in CreateFile during load
+  0x8205AB60  Unexpected error (%x) in ReadFile during load
+  0x8205AB90  Unexpected error (%x) in XContentClose during load
+  0x8205ABC4  invalid substate in CheckLoad
+  0x8205ABE4  Unexpected error (%x) during load.
+  0x8205AC08  XContentSetThumbnail failed (%x).
+  0x8205AC2C  Unexpected error (%x) during icon save.
+  0x8205AC54  Unexpected error (%x) in CreateFile during content verify
+  0x8205AC90  Unexpected error (%x) in XContentClose during content verify
+  0x8205ACD0  invalid substate in ContentVerify
+  0x8205ACF4  Unexpected error (%x) during content verify.
+  0x8205AD24  XContentDelete failed (%x).
+  0x8205AD40  Unexpected error (%x) during delete.
+  0x8205AE98  [*** FLASHBASE ERROR ***] Updating without grabbing flash sema!
+  0x8205AFEC  Invalid line count %d, for dialog %d [%s]
+  0x8205CD3C  lobbycreatefail
+  0x8205CD4C  lobbyjoinfail
+  0x8205CD5C  lobbysyncfail
+  0x8205CD6C  lobbyarbfail
+  0x8205CD7C  lobbyreadyfail
+  0x8205D054  online NOT authorized, requesting signin ui (errorCode = %d)
+  0x8205D0D8  online STILL NOT authorized, showing error dialog! (errorCode = %d)
+  0x8205D484  Invalid MatchQueryResult_MAIN_QUERY::GAMES_PER_MATCH = %d
+  0x8205D5B8  Search failed -- user chose to create new match
+  0x8205D5E8  Search failed -- user didn't want to create match
+  0x8205D950  -lobbysyncfail, forcing peer to drop from session
+  0x8205D994  -lobbyarbfail, forcing peer to drop from session
+  0x8205DA28  Session start or arbitration failed! Booting player out of session.
+  0x8205DA7C  -lobbyreadyfail, forcing peer to drop from session
+  0x8205DC48  Join from Hud -- Failed
+  0x8205DC60  Invalid LOBBY_STATE_STARTING gamer state (%d)!
+  0x8205DD7C  PopulatePostLobbyScreen() screen %d is invalid type %d.
+  0x8205E030  entered attract state from invalid state %s (%d)
+  0x8205E064  exiting attract state to invalid state %s (%d)
+  0x8205E4B4  entered logos state from invalid state %s (%d)
+  0x8205E4E4  exiting logos state to invalid state %s (%d)
+  0x8205E610  entered training mode UI state from invalid state '%s' (%d)
+  0x8205E64C  exiting training mode UI state to invalid state '%s' (%d)
+  0x8205E7F8  entered loading state from invalid state %s (%d)
+  0x8205E82C  exiting loading state to invalid state %s (%d)
+  0x8205EA04  Entering pause state from invalid state %s (%d)
+  0x8205EA34  Exiting pause state to invalid state %s (%d)
+  0x8205ED98  Entering credits state from invalid state %s (%d)
+  0x8205EDCC  Exiting credits state to invalid state %s (%d)
+  0x8205EF00  Failed to activate custom xenon banner from %s.dds, error = %d. Check the size and format.
+  0x8205F0F8  Entering character viewer state from invalid state %s (%d)
+  0x8205F134  Exiting character viewer state to invalid state %s (%d)
+  0x8205F26C  Entering dialog state from invalid state %s (%d)
+  0x8205F2A0  Exiting dialog state to invalid state %s (%d)
+  0x8205F678  entered frontend state from invalid state %s (%d)
+  0x8205F6AC  exiting frontend state to invalid state %s (%d)
+  0x8205F898  entered legals state from invalid state %s (%d)
+  0x8205F8C8  exiting legals state to invalid state %s (%d)
+  0x82060DB8  hudTrainingPopUp::Restart() - invalid user index %d for player 0
+  0x82061178  stxt_t_fail
+  0x82061184  t_fail
+  0x820617B4  stxt_t_fail_text
+  0x820617C8  t_fail_text
+  0x82065630  [pongCSActionPlayAudio::Play] Invalid audio event type (%s)!
+  0x82065C04  Invalid type for simple member
+  0x82065E68  crashdump.pix2
+  0x82065E81  The PIX capture is now saved to xe:\pix\crashdump.pix2.  Please power cycle your
+  0x82066592            crash-dump PIX file that can be sent to Xbox developer
+  0x8206668D  6BaD3D: GPU initialization (HSIO training) has failed so no graphics will render.
+  0x82066724  Failed to create notification listener.
+  0x82066824  Error retrieving privilege:%d
+  0x82066900  *** UNKNOWN SOCKET ERROR ***
+  0x82066A3C  socket() failed
+  0x82066A4C  Failed to bind on port %d
+  0x82066A68  Failed to set socket to non-blocking
+  0x82066AAC  Error:0x%08x calling XHVCreateEngine()
+  0x82066AD4  Error allocating talker pool
+  0x82066B44  Error:0x%08x calling GetLocalChatData() for local gamer:"%s"
+  0x82066B84  Error:0x%08x calling SubmitIncomingChatData()
+  0x82066C7C  Error:0x%08x calling RegisterLocalTalker() for gamer:"%s"
+  0x82066CE8  Error:0x%08x calling RegisterRemoteTalker() for gamer:"%s"
+  0x82066D40  Error:0x%08x calling UnregisterLocalTalker() for gamer:"%s"
+  0x82066DA4  Error:0x%08x calling UnregisterRemoteTalker() for gamer:"%s"
+  0x82066DE4  Error sending to address:0x%08x, sendto():"%s"
+  0x82066ED4  Error calling recvfrom() : "%s"
+  0x82067068  Error configuring session
+  0x820671D0  Error re-configuring session
+  0x82067358  Attempt to change presence on a guest session with an invalid session descriptor
+  0x82067484  Error leaving gamers from session
+  0x820674A8  Error joining gamers to session
+  0x82067838  Error initializing join worker
+  0x82067910  Error initializing leave worker
+  0x82067C00  Invalid gamer index for owner
+  0x82067C20  Error committing schema
+  0x82067CF0  %s gamer:"%s" failed to join session:0x%I64x
+  0x82067DA0  Error leaving gamers from old session
+  0x82067DC8  Error joining gamers to new session
+  0x82067ED8  Destroy session:0x%08I64x failed
+  0x82068028  Gamer:"%s" - join failed - no more public slots
+  0x82068058  Gamer:"%s" - join failed - no more private slots
+  0x82068154  Invalid gamer index:%d
+  0x8206817C  Invalid field type:%u
+  0x82068204  Error:%d computing stats buffer size - expected:%d, got:%d
+  0x82068278  Couldn't create stats enumerator - error:%d.
+  0x8206862C  Failed to retrieve local peer descriptor
+  0x82068674  Unknown XONLINE error
+  0x82068724  XONLINE_E_INTERNAL_ERROR
+  0x8206876C  XONLINE_E_SERVER_ERROR
+  0x82068784  XONLINE_E_IO_ERROR
+  0x82068884  XONLINE_E_SERVER_CONFIG_ERROR
+  0x82068B60  XONLINE_E_LOGON_MU_IO_ERROR
+  0x82068E98  XONLINE_E_MATCH_SERVER_ERROR
+  0x82069048  XONLINE_E_SESSION_REGISTRATION_ERROR
+  0x820693B4  XONLINE_E_COMP_TOPOLOGY_ERROR
+  0x82069580  XONLINE_E_FEEDBACK_NULL_TARGET
+  0x82069780  XONLINE_E_STAT_STAT_POST_PROC_ERROR
+  0x82069E94  XONLINE_E_STORAGE_DATABASE_ERROR
+  0x8206B6A0  MRB- Spectator match dead on arrival? Host cxn is invalid. Quitting match.
+  0x8206B700  MRB- Spectator match ended during sync state. Host cxn is invalid. Quitting match.
+  0x8206CAB4  WriteStatsQuitter - invalid gamer, not writing
+  0x8206D6F8  Could not start writing the gamer picture[ %d ] for user[ %d ], ERROR[ %x ]
+  0x8206D768  Could not write the gamer picture, ERROR[ %x ]
+  0x8206DA94  *** Player:"%s" failed to join the spectator session!! ***
+  0x8206DC30  Host Migration Failed: Trying again...
+  0x8206DF24  Migration -- Not electing (%d) -- null gamer ptr!
+  0x8206E038  pongLiveManager::StatsReaderNotifyHandler - invalid row - weekly losses=0
+  0x8206E0D8  pongLiveManager::StatsReaderNotifyHandler - invalid row - yearly losses=0
+  0x8206E170  pongLiveManager::StatsReaderNotifyHandler - invalid row - yearly wins=0
+  0x8206E200  pongLiveManager::StatsReaderNotifyHandler - invalid row - weekly wins=0
+  0x8206EA98  DataRequestFailedMessage
+  0x82070D98  NetBallHitManagerFreeList::Get() failed
+  0x82070DE4  PongBallHitDataStack::Insert failed
+  0x820715F4  Warning: failed to receive Ack for packet %d
+  0x82071A44  entered game state from invalid state %s (%d)
+  0x82071A74  exiting game state to invalid state %s (%d)
+  0x82071E08  Error retrieving peer address
+  0x82071E68  Error opening connection to peer
+  0x82071E8C  Error allocating connection
+  0x82071EA8  Error associating connection:%d with session:0x%I64x
+  0x82071EE0  Received non-broadcast message:%s(%d) from an invalid address
+  0x82071F80  EvtChangePresenceFailed
+  0x82071FAC  EvtMigrateFailed
+  0x82071FE0  EvtStartFailed
+  0x82072008  EvtEndFailed
+  0x82072038  EvtDestroyFailed
+  0x820720C0  EvtCreateFailed
+  0x820720E8  EvtRequestConfigFailed
+  0x82072100  EvtApplyConfigFailed
+  0x82072134  EvtStartSessionFailed
+  0x8207222C  EvtJoinFailed
+  0x82072254  EvtLocalJoinFailed
+  0x82072280  EvtRemoteJoinFailed
+  0x820722AC  EvtRequestJoinFailed
+  0x820722E4  EvtAcceptJoinRequestFailed
+  0x82072318  EvtSessionJoinFailed
+  0x8207241C  EvtLeaveFailed
+  0x82072444  EvtLocalLeaveFailed
+  0x82072470  EvtRemoteLeaveFailed
+  0x820724A4  EvtRequestLeaveFailed
+  0x820724DC  EvtAcceptLeaveRequestFailed
+  0x82072514  EvtSessionLeaveFailed
+  0x82072614  EvtAcquireHostFailed
+  0x82072648  EvtMigrateAsGuestFailed
+  0x820727C0  Error allocating gamer:%s
+  0x820727DC  Error creating peer
+  0x820727F0  Error adding gamer to peer
+  0x8207280C  Error inserting gamer into map
+  0x82073E0C  Error allocating gamer for:%s
+  0x82073E2C  Error allocating gamer record
+  0x82074300  Error adding gamer:%s to session
+  0x82074324  Error sending join request message
+  0x82074424  Error sending message
+  0x82074490  Error retrieving host network address
+  0x820744B8  Error sending config request message
+  0x82074524  EvtSessionMigrateFailed
+  0x820745A4  EvtArbRegisterFailed
+  0x820745DC  Peer failed to register for arbitration
+  0x82074604  Some peers failed to register for arbitration
+  0x82074680  Local gamer:"%s" failed to registered for arbitration
+  0x820748B0  invalid window size
+  0x820748F4  invalid block type
+  0x82074908  invalid stored block lengths
+  0x8207494C  invalid code lengths set
+  0x82074968  invalid bit length repeat
+  0x82074984  invalid literal/lengths set
+  0x820749A0  invalid distances set
+  0x820749B8  invalid literal/length code
+  0x820749D4  invalid distance code
+  0x820749EC  invalid distance too far back
+  0x82074A54  buffer error
+  0x82074A78  data error
+  0x82074A84  stream error
+  0x82074A94  file error
+  0x82074DCC  SYMTAB::Delete(%s) failed
+  0x82074DE8  Resetting current frame to 0: frame [%d/%d] is invalid for new object.
+  0x82075184  #ERROR#
+  0x82075844  Failed to load font %s
+  0x82075E78  Invalid dialog ID[%d]
+  0x82075E90  Invalid Lines[%d] for dialog[%d]
+  0x82075F5C  Invalid Movie: %d
+  0x82075F70  Invalid movie volume: %f
+  0x82075F8C  Invalid Filename for Movie: %d
+  0x8207649C  Invalid alignment found: %d, using default: %d
+  0x820764CC  Invalid face type found: %d, using default: %d
+  0x820764FC  Invalid scale found: %d, using default
+  0x82076AC0  gdCSCharAnimData::PostLoadProperties() - invalid emote range
+  0x820773B0  gdCSActionIfData::PostLoadProperties() - property 'GameType' has invalid value '%s'
+  0x82077470  gdCSActionIfData::PostLoadProperties() - property 'ArenaType' has invalid value '%s'
+  0x82077FF0  Invalid root save name.
+  0x82078174  netHardware::StartNetwork() failed
+  0x82078198  Error creating socket
+  0x820781B0  Error binding socket to port:%d
+  0x8207829C  Error sending initial message on connection:%d
+  0x820782CC  Invalid connection:%d
+  0x8207835C  Network error "%s"
+  0x820784DC  Connection attempt for connection:%d failed due to timeout
+  0x82078658  netNotifyConnectFailedMessage
+  0x820786D4  Attempt to send on an invalid socket
+  0x82078724  Attempt to receive on an invalid socket
+  0x8207884C  Network error:"%s" sending to:%d.%d.%d.%d:%d
+  0x82078A58  Packet is still compressed, Validate will fail, call UnPack before we validate.
+  0x82078AA8  Packet with invalid size:%d dropped
+  0x82078ACC  Invalid packet with reported size:%d (actually:%d) dropped
+  0x82078B08  Invalid message with bogus size %d dropped
+  0x82078BEC  Compression failed for packet of size %u
+  0x82078D10  No error
+  0x82078D74  Unknown error
+  0x82079294  Invalid user index:%d for gamer
+  0x82079428  Error:%d calling XSessionSearch()
+  0x820794B8  Invalid user index:%d for requestor
+  0x820794DC  Error:%d computing profile buffer size - expected:%d, got:%d
+  0x820795A4  Couldn't create achievement enumerator - error:%d.
+  0x82079654  Couldn't create friend enumerator - error:%d.
+  0x82079684  Error:%d computing friends buffer size - expected:%d, got:%d
+  0x82079710  QOS query failed
+  0x82079878  [rmPtxEmitter] NULL shader group passed, emitter cannot be loaded
+  0x820798E4  [rmPtxBirth] NULL shader group passed, birth cannot be loaded
+  0x82079928  [rmPtxBirth] m_ShaderGroup is NULL, birth cannot be loaded from file
+  0x825D6A80  .?AVnullZone@?2??CreateStandRoam@cmSampleCamMachineBank@rage@@IAAPAVcmBlock@3@AAVcmActionFactory@3@AAVcmOperatorSet@3@ABVcmValueSet@3@AAVcmConstValueSet@3@AAVcmTuningSet@3@AAV73@@Z@
+  0x825E1F40  .?AV?$pongNetMessageHolder@VDataRequestFailedMessage@@$01@@
+  0x825E2B58  .?AVDataRequestFailedMessage@@
+  0x825E4348  .?AUEvtMigrateAsGuestFailed@rage@@
+  0x825E43A4  .?AUEvtAcquireHostFailed@rage@@
+  0x825E4704  .?AUEvtSessionLeaveFailed@rage@@
+  0x825E475C  .?AUEvtAcceptLeaveRequestFailed@rage@@
+  0x825E47C0  .?AUEvtRequestLeaveFailed@rage@@
+  0x825E4818  .?AUEvtRemoteLeaveFailed@rage@@
+  0x825E486C  .?AUEvtLocalLeaveFailed@rage@@
+  0x825E48C0  .?AUEvtLeaveFailed@rage@@
+  0x825E4BFC  .?AUEvtSessionJoinFailed@rage@@
+  0x825E4C50  .?AUEvtAcceptJoinRequestFailed@rage@@
+  0x825E4CB4  .?AUEvtRequestJoinFailed@rage@@
+  0x825E4D08  .?AUEvtRemoteJoinFailed@rage@@
+  0x825E4D5C  .?AUEvtLocalJoinFailed@rage@@
+  0x825E4DB0  .?AUEvtJoinFailed@rage@@
+  0x825E5018  .?AUEvtStartSessionFailed@rage@@
+  0x825E5074  .?AUEvtApplyConfigFailed@rage@@
+  0x825E509C  .?AUEvtRequestConfigFailed@rage@@
+  0x825E50F4  .?AUEvtCreateFailed@rage@@
+  0x825E5224  .?AUEvtDestroyFailed@rage@@
+  0x825E5290  .?AUEvtEndFailed@rage@@
+  0x825E52F0  .?AUEvtStartFailed@rage@@
+  0x825E5358  .?AUEvtMigrateFailed@rage@@
+  0x825E53A4  .?AUEvtChangePresenceFailed@rage@@
+  0x825E582C  .?AUEvtSessionMigrateFailed@rage@@
+  0x825E5888  .?AUEvtArbRegisterFailed@rage@@

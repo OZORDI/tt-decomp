@@ -1,0 +1,76 @@
+; ===================================================================
+; IMPORTS WITH ADDRESSES AND ORDINALS
+; Rockstar Table Tennis  -  default.xex  (pong_xenon_final.pe)
+; Build: May 11 2006  |  SDK v2.0.2417  |  TT-2015
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; ===================================================================
+
+; ADDRESS       ORDINAL   LIBRARY           NAME
+; ------------  --------  ----------------  ----------------------------------------
+
+  0x82000000  0x02DC    xam.xex           XamShowMessageBoxUIEx
+  0x82000004  0x03CD    xboxkrnl.exe      XGetLanguage
+  0x82000008  0x01A9    xam.xex           XamLoaderTerminateTitle
+  0x8200000C  0x0280    xam.xex           XamGetExecutionId
+  0x82000010  0x020A    xam.xex           XamUserGetXUID
+  0x82000014  0x02EE    xam.xex           XamUserCreateAchievementEnumerator
+  0x82000018  0x02F0    xam.xex           XamWriteGamerTile
+  0x8200001C  0x02F7    xam.xex           XamUserCreateStatsEnumerator
+  0x82000020  0x020E    xam.xex           XamUserGetName
+  0x82000024  0x030C    xam.xex           XamVoiceCreate
+  0x82000028  0x030E    xam.xex           XamVoiceSubmitPacket
+  0x8200002C  0x01F8    xboxkrnl.exe      XMsgCancelIORequest
+  0x82000030  0x030F    xam.xex           XamVoiceClose
+  0x82000034  0x030D    xam.xex           XamVoiceHeadsetPresent
+  0x82000038  0x0210    xam.xex           XamUserGetSigninState
+  0x8200003C  0x0219    xam.xex           XamUserReadProfileSettings
+  0x82000040  0x0212    xam.xex           XamUserCheckPrivilege
+  0x82000044  0x0213    xam.xex           XamUserAreUsersFriends
+  0x82000048  0x03D1    xboxkrnl.exe      XGetVideoMode
+  0x8200004C  0x028B    xboxkrnl.exe      XNotifyGetNext
+  0x8200006C  0x000B    xboxkrnl.exe      NetDll_bind
+  0x82000070  0x000C    xboxkrnl.exe      NetDll_connect
+  0x82000074  0x000D    xboxkrnl.exe      NetDll_listen
+  0x82000078  0x000E    xboxkrnl.exe      NetDll_accept
+  0x8200007C  0x0012    xboxkrnl.exe      NetDll_recv
+  0x82000080  0x0014    xboxkrnl.exe      NetDll_recvfrom
+  0x82000084  0x0016    xboxkrnl.exe      NetDll_send
+  0x82000088  0x0018    xboxkrnl.exe      NetDll_sendto
+  0x8200008C  0x001A    xboxkrnl.exe      NetDll_inet_addr
+  0x82000090  0x001B    xboxkrnl.exe      NetDll_WSAGetLastError
+  0x82000094  0x0033    xboxkrnl.exe      NetDll_XNetStartup
+  0x82000098  0x0034    xboxkrnl.exe      NetDll_XNetCleanup
+  0x8200009C  0x0039    xboxkrnl.exe      NetDll_XNetXnAddrToInAddr
+  0x820000A0  0x003C    xboxkrnl.exe      NetDll_XNetInAddrToXnAddr
+  0x820000A4  0x0045    xboxkrnl.exe      NetDll_XNetQosListen
+  0x820000A8  0x0046    xboxkrnl.exe      NetDll_XNetQosLookup
+  0x820000AC  0x0048    xboxkrnl.exe      NetDll_XNetQosRelease
+  0x820000B0  0x0049    xboxkrnl.exe      NetDll_XNetGetTitleXnAddr
+  0x820000B4  0x01FC    xboxkrnl.exe      XMsgStartIORequestEx
+  0x820000B8  0x0282    xam.xex           XamGetSystemVersion
+  0x820000BC  0x01F4    xboxkrnl.exe      XMsgInProcessCall
+  0x820000C0  0x01F7    xboxkrnl.exe      XMsgStartIORequest
+  0x820000C4  0x0191    xam.xex           XamInputGetState
+  0x820000C8  0x0192    xam.xex           XamInputSetState
+  0x820000CC  0x028A    xam.xex           XamNotifyCreateListener
+  0x820000D0  0x02BC    xam.xex           XamShowSigninUI
+  0x820000D4  0x02BF    xam.xex           XamShowFriendsUI
+  0x820000D8  0x02D5    xam.xex           XamShowGamerCardUIForXUID
+  0x820000DC  0x02C5    xam.xex           XamShowAchievementsUI
+  0x820000E0  0x02C6    xam.xex           XamShowPlayerReviewUI
+  0x820000E4  0x02CB    xam.xex           XamShowDeviceSelectorUI
+  0x820000E8  0x02D9    xam.xex           XamShowDirtyDiscErrorUI
+  0x820000EC  0x01D7    xam.xex           XamCustomSetBannerImage
+  0x820000F0  0x0258    xam.xex           XamContentCreate
+  0x820000F4  0x025B    xam.xex           XamContentDelete
+  0x820000F8  0x025A    xam.xex           XamContentClose
+  0x820000FC  0x0260    xam.xex           XamContentSetThumbnail
+  0x82000100  0x025C    xam.xex           XamContentCreateEnumerator
+  0x82000104  0x0250    xam.xex           XamEnumerate
+  0x82000108  0x01A4    xam.xex           XamLoaderLaunchTitle
+  0x8200010C  0x0316    xam.xex           XamSessionCreateHandle
+  0x82000110  0x0317    xam.xex           XamSessionRefObjByHandle
+  0x82000114  0x01EA    xam.xex           XamAlloc
+  0x82000118  0x01EC    xam.xex           XamFree
+  0x8200011C  0x021A    xam.xex           XamUserWriteProfileSettings

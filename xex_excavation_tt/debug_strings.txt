@@ -1,0 +1,231 @@
+; ===================================================================
+; DEBUG / LOG STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x8202762C  debugface
+  0x820285FC  debugheadik
+  0x82028608  debugheadxy
+  0x820300DC  gmLogicNode
+  0x820303B8  gmLogicSwingPractice::stateAim::onEnterState
+  0x82030780  gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d
+  0x8203085C  gmLogicSinglesMatch's next state was %s, is %s
+  0x82030BA0  gmLogicSinglesMatch::stateReplay::onEnterState
+  0x82030C78  UnlockDialog
+  0x82030C88  SaveDialog
+  0x82034030  DebugDOFAndBloom
+  0x820348D4  debugshaders
+  0x82035F2C  shotprintdebug
+  0x82035F3C  camprintdebug
+  0x82037288  DebugPadState
+  0x82037298  DebugPad3State
+  0x820372A8  DebugPad3Movestick
+  0x820372BC  DebugPad3Lookstick
+  0x820375C0  Warning: target == camera in h_smoothlookat
+  0x820384AC  DebugHeadPosition
+  0x820384C0  DebugHeadOrientation
+  0x820385AC  logmemory
+  0x820385B8  logallocstack
+  0x820385D4  c:/logmemory.csv
+  0x8203AC44  debugsndsys
+  0x8203AC50  debugsnd
+  0x8203C69C  HUD:TIMER_WARNING
+  0x8203CD00  loggingEnabled
+  0x820418FC  gdaiMeterLogic
+  0x82041BE0  gdaiComeBackLogic
+  0x820421C8  DialogID
+  0x82042330  dialog_%d
+  0x820432D0  Invalid Dialog ID %d, for review only tip!
+  0x82049610  loading logical clip data...
+  0x8204963C  logical clip data load done.
+  0x8204CC8C  Invalid unlock dialog message found: %d for item: %s
+  0x8204E33C  DialogMenu
+  0x8204E53C       dialog menu: %d
+  0x8204E82C  logopen
+  0x820502B0  SetNextLogic
+  0x8205031C  TwoMinuteWarning
+  0x820507EC  SetGameLogicType
+  0x82050900  ExitDialog
+  0x8205090C  EnterDialog
+  0x82050AE4  SwingDebugModeExit
+  0x820517D0  TerminateDialog
+  0x820517E0  TerminateAllDialogs
+  0x82051E04  TimerWarning
+  0x820521A0  Warning: Can't run action '%s'. Using '%s' as a fallback
+  0x820521DC  Warning: Can't run action '%s'
+  0x820522D0  cammachdebug
+  0x82056CC4  Draw Debug:       ?
+  0x8205AE20  debugflash
+  0x8205AFB0  Dialog
+  0x8205AFB8  Loading dialog data...
+  0x8205AFD0  $/tune/dialogs
+  0x8205AFE0  dialogs_%s
+  0x8205AFEC  Invalid line count %d, for dialog %d [%s]
+  0x8205B018  Dialog data load done...
+  0x8205B038  Tried to enter dialog state, but there are no dialogs types to show!
+  0x8205B0AC  dialog_title_%d
+  0x8205C54C  sm_logo_isvisble
+  0x8205C80C  debug_text
+  0x8205D0D8  online STILL NOT authorized, showing error dialog! (errorCode = %d)
+  0x8205D61C  CreateNewMatch Dialog aborted?
+  0x8205E478  pongLogosState
+  0x8205E488  Loading logos screen...
+  0x8205E4A0  Logos screen loaded
+  0x8205E4B4  entered logos state from invalid state %s (%d)
+  0x8205E4E4  exiting logos state to invalid state %s (%d)
+  0x8205F230  pongDialogState
+  0x8205F240  Loading dialog box...
+  0x8205F258  Dialog box loaded.
+  0x8205F26C  Entering dialog state from invalid state %s (%d)
+  0x8205F2A0  Exiting dialog state to invalid state %s (%d)
+  0x8205FB60  TableTennisLogo
+  0x82060550  stxt_restart_match_warning
+  0x8206479C  debugboards
+  0x820647B4  hudLeaderboard: Debug Level %d
+  0x82065F26  for postmortem debugging.
+  0x82065FA8  VGT_DEBUG
+  0x82065FB4  PA_SU_DEBUG
+  0x82065FC0  PA_SC_DEBUG
+  0x82065FCC  RBBM DEBUG
+  0x82065FD8  CP DEBUG
+  0x8206602C  RB_DEBUG_0
+  0x82066150  CP_DEBUG
+  0x82066510  ERR[D3D]: Try reproducing the hang with the debug or instrumented
+  0x820665E8  Breaking into the debugger.  The GPU is hung and can't be recovered
+  0x82068568    XNADDR: Either the network stack is not initialized or no debugger was found
+  0x82068658  rlDebug
+  0x820686B8  XONLINE_E_USER_NOT_LOGGED_ON
+  0x820688BC  XONLINE_E_LOGON_NO_NETWORK_CONNECTION
+  0x820688E4  XONLINE_E_LOGON_CANNOT_ACCESS_SERVICE
+  0x8206890C  XONLINE_E_LOGON_UPDATE_REQUIRED
+  0x8206892C  XONLINE_E_LOGON_SERVERS_TOO_BUSY
+  0x82068950  XONLINE_E_LOGON_CONNECTION_LOST
+  0x82068970  XONLINE_E_LOGON_KICKED_BY_DUPLICATE_LOGON
+  0x8206899C  XONLINE_E_LOGON_INVALID_USER
+  0x820689BC  XONLINE_E_LOGON_FLASH_UPDATE_REQUIRED
+  0x820689E4  XONLINE_S_LOGON_CONNECTION_ESTABLISHED
+  0x82068A0C  XONLINE_S_LOGON_DISCONNECTED
+  0x82068A2C  XONLINE_S_LOGON_CHANGING
+  0x82068A48  XONLINE_S_LOGON_TICKETS_ONLY
+  0x82068A68  XONLINE_E_LOGON_SERVICE_NOT_REQUESTED
+  0x82068A90  XONLINE_E_LOGON_SERVICE_NOT_AUTHORIZED
+  0x82068AB8  XONLINE_E_LOGON_SERVICE_TEMPORARILY_UNAVAILABLE
+  0x82068AE8  XONLINE_S_LOGON_USER_HAS_MESSAGE
+  0x82068B0C  XONLINE_E_LOGON_USER_ACCOUNT_REQUIRES_MANAGEMENT
+  0x82068B40  XONLINE_E_LOGON_MU_NOT_MOUNTED
+  0x82068B60  XONLINE_E_LOGON_MU_IO_ERROR
+  0x82068B7C  XONLINE_E_LOGON_NOT_LOGGED_ON
+  0x82069070  XONLINE_E_SESSION_NOT_LOGGED_ON
+  0x820693B4  XONLINE_E_COMP_TOPOLOGY_ERROR
+  0x820693D4  XONLINE_E_COMP_TOPOLOGY_PENDING
+  0x820695BC  XONLINE_E_FEEDBACK_CANNOT_LOG
+  0x82069EE8  stpDebug
+  0x8206B528  debugcrowd
+  0x8206B760  Replay manager still isn't recording when entering gmLogicSpectator::stateServeToss
+  0x8206B7C0  gmLogicSpectator::stateReplay - replay buffer is not done recording; skipping replay
+  0x8206B818  gmLogicSpectator::stateReplay::onEnterState
+  0x8206B848  MRB- host cxn was reset or someone dropped. Forcing exit from  gmLogicSpectator::statePostPointCS()
+  0x8206BEC4  netDebugPolicies
+  0x8206EDF4  TwoMinuteWarningMessage
+  0x82070F0C  introWaitWarningLimit
+  0x820715F4  Warning: failed to receive Ack for packet %d
+  0x82073E90  hsmDebug
+  0x820750E8  Warning: Attempting to pop object from the stack but nothing is on the stack
+  0x82075E78  Invalid dialog ID[%d]
+  0x82075E90  Invalid Lines[%d] for dialog[%d]
+  0x820770D4  nocsdebug
+  0x82078D04  netDebug
+  0x825C24D4  /xuacs/XePassportLogin.ashx
+  0x825D3744  .?AVgmLogicNode@@
+  0x825D3760  .?AVgmLogic@@
+  0x825D3778  .?AVstatePostPoint@gmLogicSwingPractice@@
+  0x825D37AC  .?AVstateReturnHit@gmLogicSwingPractice@@
+  0x825D37E0  .?AVstateAwaitReturnHit@gmLogicSwingPractice@@
+  0x825D3818  .?AVstateShoot@gmLogicSwingPractice@@
+  0x825D3848  .?AVstateAim@gmLogicSwingPractice@@
+  0x825D3874  .?AVstateMainMenu@gmLogicSwingPractice@@
+  0x825D38A8  .?AVstateInit@gmLogicSwingPractice@@
+  0x825D38D8  .?AVstatePreInit@gmLogicSwingPractice@@
+  0x825D3908  .?AVstateBase@gmLogicSwingPractice@@
+  0x825D3938  .?AVgmLogicSwingPractice@@
+  0x825D395C  .?AVstateBase@gmLogic@@
+  0x825D3994  .?AVstatePostTourney@gmLogicSinglesMatch@@
+  0x825D39C8  .?AVstatePostMatch@gmLogicSinglesMatch@@
+  0x825D39FC  .?AVstateSaveDialog@gmLogicSinglesMatch@@
+  0x825D3A30  .?AVstateUnlockDialog@gmLogicSinglesMatch@@
+  0x825D3A64  .?AVstatePostTourneyMovie@gmLogicSinglesMatch@@
+  0x825D3A9C  .?AVstatePostPostGame@gmLogicSinglesMatch@@
+  0x825D3AD0  .?AVstatePostGame@gmLogicSinglesMatch@@
+  0x825D3B00  .?AVstatePostPointCS@gmLogicSinglesMatch@@
+  0x825D3B34  .?AVstateReplay@gmLogicSinglesMatch@@
+  0x825D3B64  .?AVstateReplayNegotiation@gmLogicSinglesMatch@@
+  0x825D3BA0  .?AVstateReplayNegotiationPreSync@gmLogicSinglesMatch@@
+  0x825D3BE0  .?AVstatePostPoint@gmLogicSinglesMatch@@
+  0x825D3C14  .?AVstatePostPointScoringSync@gmLogicSinglesMatch@@
+  0x825D3C50  .?AVstatePointScoringNet@gmLogicSinglesMatch@@
+  0x825D3C88  .?AVstatePointScoring@gmLogicSinglesMatch@@
+  0x825D3CBC  .?AVstatePointScoringSync@gmLogicSinglesMatch@@
+  0x825D3CF4  .?AVstateHelpTips@gmLogicSinglesMatch@@
+  0x825D3D24  .?AVstateReturnHit@gmLogicSinglesMatch@@
+  0x825D3D58  .?AVstateAwaitReturnHit@gmLogicSinglesMatch@@
+  0x825D3D90  .?AVstateAwaitServeReturnHit@gmLogicSinglesMatch@@
+  0x825D3DCC  .?AVstateRallyBase@gmLogicSinglesMatch@@
+  0x825D3E00  .?AVstateLet@gmLogicSinglesMatch@@
+  0x825D3E2C  .?AVstateHitNetServe@gmLogicSinglesMatch@@
+  0x825D3E60  .?AVstateServeBounce@gmLogicSinglesMatch@@
+  0x825D3E94  .?AVstateServeHit@gmLogicSinglesMatch@@
+  0x825D3EC4  .?AVstateServeToss@gmLogicSinglesMatch@@
+  0x825D3EF8  .?AVstatePreServe@gmLogicSinglesMatch@@
+  0x825D3F28  .?AVstatePreServeSync@gmLogicSinglesMatch@@
+  0x825D3F60  .?AVstatePreServeSpectatorSyncState@gmLogicSinglesMatch@@
+  0x825D3FA4  .?AVstatePrePreServe@gmLogicSinglesMatch@@
+  0x825D3FD8  .?AVstateAnticipationCam@gmLogicSinglesMatch@@
+  0x825D4010  .?AVstatePreGame@gmLogicSinglesMatch@@
+  0x825D4040  .?AVstatePreMatch@gmLogicSinglesMatch@@
+  0x825D4070  .?AVstatePreMatchSync@gmLogicSinglesMatch@@
+  0x825D40A4  .?AVstateInit@gmLogicSinglesMatch@@
+  0x825D40D0  .?AVstateCutScene@gmLogicSinglesMatch@@
+  0x825D4100  .?AVstateBase@gmLogicSinglesMatch@@
+  0x825D412C  .?AVgmLogicSinglesMatch@@
+  0x825D6FB4  .?AVgmLogicSpectator@@
+  0x825D6FD4  .?AVplrSwingLogic@@
+  0x825D7848  .?AVgdLogicalClipDataMgr@@
+  0x825D786C  .?AV?$atSingleton@VgdLogicalClipDataMgr@@@@
+  0x825D820C  .?AVgdaiComeBackLogic@@
+  0x825D82DC  .?AVgdaiMeterLogic@@
+  0x825DE5A4  .?AVdialogManager@@
+  0x825DE5C0  .?AV?$atSingleton@VdialogManager@@@@
+  0x825DEE24  .?AVLogicNetworkClient@@
+  0x825DEF9C  .?AVpongLogosContext@@
+  0x825DEFBC  .?AVpongLogosState@@
+  0x825DF174  .?AVpongDialogContext@@
+  0x825DF194  .?AVpongDialogState@@
+  0x825DF368  .?AVhudLogosScreen@@
+  0x825DF504  .?AVhudDialog@@
+  0x825E0644  .?AVstateQuit@gmLogicSpectator@@
+  0x825E0670  .?AVstateMatchEnded@gmLogicSpectator@@
+  0x825E06A0  .?AVstatePostGame@gmLogicSpectator@@
+  0x825E06D0  .?AVstatePostPointCS@gmLogicSpectator@@
+  0x825E0700  .?AVstateReplay@gmLogicSpectator@@
+  0x825E072C  .?AVstatePostPoint@gmLogicSpectator@@
+  0x825E075C  .?AVstateScoring@gmLogicSpectator@@
+  0x825E0788  .?AVstateReturnHit@gmLogicSpectator@@
+  0x825E07B8  .?AVstateAwaitReturnHit@gmLogicSpectator@@
+  0x825E07EC  .?AVstateServeBounce@gmLogicSpectator@@
+  0x825E081C  .?AVstateServeHit@gmLogicSpectator@@
+  0x825E084C  .?AVstateServeToss@gmLogicSpectator@@
+  0x825E087C  .?AVstatePreServe@gmLogicSpectator@@
+  0x825E08AC  .?AVstatePreGameSync@gmLogicSpectator@@
+  0x825E08DC  .?AVstatePreGame@gmLogicSpectator@@
+  0x825E0908  .?AVstatePreMatch@gmLogicSpectator@@
+  0x825E0938  .?AVstateInit@gmLogicSpectator@@
+  0x825E0964  .?AVstatePreInit@gmLogicSpectator@@
+  0x825E0990  .?AVstateBase@gmLogicSpectator@@
+  0x825E15B8  .?AV?$pongNetMessageHolder@VTwoMinuteWarningMessage@@$01@@
+  0x825E2854  .?AVTwoMinuteWarningMessage@@
+  0x825E38DC  .?AVsgTraverseDrawDebug@@
+  0x825E5C40  .?AVdialogData@@

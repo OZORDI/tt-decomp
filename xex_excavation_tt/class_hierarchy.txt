@@ -1,0 +1,2734 @@
+; ===================================================================
+; STEP 4: CLASS HIERARCHY FROM RTTI
+; Rockstar Table Tennis  -  default.xex
+; Format: indented tree showing inheritance (child extends parent)
+; ===================================================================
+
+; 1668 classes with RTTI  |  1668 with hierarchy info
+; 135 root classes  |  1533 classes with known parent
+
+; ── GAME CLASS TREES ──
+
+AckHandling
+
+EventBase
+  └─ EventSwingStart
+
+FrameTimeEstimate
+
+LocomotionState
+  └─ LocomotionStateAnim
+  └─ LocomotionStateMf
+
+NetTimerBase
+  └─ NetMatchTimer
+    └─ NetTimedMessageSortedQueue
+  └─ NetTimer
+
+PongNetMessage
+  └─ AcceptMessage
+  └─ AcceptSpectatorMessage
+  └─ CancelLobbyCountdownMessage
+  └─ DataRequestFailedMessage
+  └─ DataRequestMessage
+  └─ DataSendMessage
+  └─ DenySpectatorMessage
+  └─ DisconnectingSinglesClientMessage
+  └─ DropSpectatorConnection
+  └─ EnteringReplayMessage
+  └─ ExitPostGameMessage
+  └─ ForceMatchTimeSyncMessage
+  └─ ForceSessionTimeSyncMessage
+  └─ ForfeitMatchMessage
+  └─ GamerReadyMessage
+  └─ GamerUpdateMessage
+  └─ HitDataMessage
+  └─ InternalMessageRelay
+  └─ JoinSpectatorSessionMessage
+  └─ JunkSwingStartedMessage
+  └─ LeaveSpectatorSessionMessage
+  └─ LevelConfigMessage
+  └─ LoadDataQuery
+  └─ LoadDataQueryResponse
+  └─ LoadingStateRequestMessage
+  └─ LoadingStateResponseMessage
+  └─ MatchDataMessage
+  └─ MatchDataSyncMessage
+  └─ MatchDataSyncResponseMessage
+  └─ MatchScoreMessage
+  └─ MatchStatsMessage
+  └─ MatchTimeSyncMessage
+  └─ MatchTimeSyncRequestMessage
+  └─ MatchTimeSyncRequestMessageEx
+  └─ NextMatchMessage
+  └─ NextMatchSpectatorMessage
+  └─ PlayerCacheMessage
+  └─ PlayerMovementMessage
+  └─ PlayerStopMessage
+  └─ PlayerUpdateMessage
+  └─ PointDeclaredMessage
+  └─ PostPointExitMessage
+  └─ RemoveSpectatorMessage
+  └─ ReplayEmoteMessage
+  └─ RequestDataMessage
+  └─ RoundRobinDataMessage
+  └─ ScoreMessage
+  └─ ServeFaultMessage
+  └─ ServeLetMessage
+  └─ ServeStartedMessage
+  └─ SessionTimeSyncMessage
+  └─ SessionTimeSyncRequestMessage
+  └─ SinglesConnectRequest
+  └─ SkipReplayMessage
+  └─ SpectatorConnectRequest
+  └─ SpectatorQuitMessage
+  └─ StartLobbyCountdownMessage
+  └─ StateSyncMessage
+  └─ StateSyncRequestMessage
+  └─ SwingStartedMessage
+  └─ TerminateRallyMessage
+  └─ TimedGameUpdateTimerMessage
+  └─ TournamentCompleteMessage
+  └─ TwoMinuteWarningMessage
+  └─ UserRequestReplayMessage
+
+TimerAlert
+  └─ Timer::sAlerts
+
+fxLightShaft
+
+fxLvlAnimData
+  └─ fxAmbAnimData
+
+fxTrailData
+  └─ fxBallTrailData
+
+gdAttributeBuffer
+
+gdGameData
+  └─ VgdGameData::?$atSingleton
+
+gdOptionsValues
+
+gdPatternBank
+
+gdPatternSet
+
+gdProfileOptionsValues
+
+gdStatsProfile
+
+gdStatsProfileGroup
+
+gdStatsProfileNamedGroup
+
+gdTimeline
+
+gdTourneySaveValues
+
+gdTrainingSaveValues
+
+gdUnlockDataMgr
+
+gdUnlockProfile
+
+gdUnlockProfileItem
+
+gdUnlockProfileRule
+
+msgMsgSink
+  └─ audMsgSink
+  └─ camShotMgr
+    └─ VcamShotMgr::?$atSingleton
+  └─ fxBallSplash2D
+  └─ gdStatsMgr
+    └─ VgdStatsMgr::?$atSingleton
+  └─ pongCutSceneManager
+    └─ VpongCutSceneManager::?$atSingleton
+  └─ pongFrontendLive
+  └─ pongGame
+  └─ pongHUDLive
+  └─ pongLiveManager
+    └─ VpongLiveManager::?$atSingleton
+  └─ pongLookAtController
+  └─ pongPresence
+
+phDemoWorld
+
+pongCSAction
+  └─ pongCSActionCamAnim
+  └─ pongCSActionCharAmbAnim
+  └─ pongCSActionCharAnim
+  └─ pongCSActionCharVisible
+  └─ pongCSActionDoInOrder
+  └─ pongCSActionDoTogether
+  └─ pongCSActionElse
+  └─ pongCSActionIf
+  └─ pongCSActionLoop
+  └─ pongCSActionLvlAmbAnim
+  └─ pongCSActionLvlAnim
+  └─ pongCSActionPlayAudio
+  └─ pongCSActionShowAllAmbients
+  └─ pongCSActionWait
+  └─ pongCutScene
+
+pongCamGovernor
+
+pongCameraState
+
+pongCineCamMgr
+
+pongLookAtDriver
+  └─ pongBlendLookAtDriver
+  └─ pongSkelLookAtDriver
+
+pongMover
+
+pongNetMessageHolderBase
+  └─ $00::VCancelLobbyCountdownMessage::?$pongNetMessageHolder
+  └─ $00::VNextMatchMessage::?$pongNetMessageHolder
+  └─ $00::VNextMatchSpectatorMessage::?$pongNetMessageHolder
+  └─ $00::VPlayerCacheMessage::?$pongNetMessageHolder
+  └─ $00::VRoundRobinDataMessage::?$pongNetMessageHolder
+  └─ $00::VSinglesConnectRequest::?$pongNetMessageHolder
+  └─ $00::VSpectatorConnectRequest::?$pongNetMessageHolder
+  └─ $00::VStartLobbyCountdownMessage::?$pongNetMessageHolder
+  └─ $01::VAcceptMessage::?$pongNetMessageHolder
+  └─ $01::VAcceptSpectatorMessage::?$pongNetMessageHolder
+  └─ $01::VDataRequestFailedMessage::?$pongNetMessageHolder
+  └─ $01::VDataRequestMessage::?$pongNetMessageHolder
+  └─ $01::VDataSendMessage::?$pongNetMessageHolder
+  └─ $01::VDenySpectatorMessage::?$pongNetMessageHolder
+  └─ $01::VDisconnectingSinglesClientMessage::?$pongNetMessageHolder
+  └─ $01::VDropSpectatorConnection::?$pongNetMessageHolder
+  └─ $01::VEnteringReplayMessage::?$pongNetMessageHolder
+  └─ $01::VExitPostGameMessage::?$pongNetMessageHolder
+  └─ $01::VJoinSpectatorSessionMessage::?$pongNetMessageHolder
+  └─ $01::VLeaveSpectatorSessionMessage::?$pongNetMessageHolder
+  └─ $01::VLoadDataQuery::?$pongNetMessageHolder
+  └─ $01::VLoadDataQueryResponse::?$pongNetMessageHolder
+  └─ $01::VMatchDataMessage::?$pongNetMessageHolder
+  └─ $01::VMatchDataSyncMessage::?$pongNetMessageHolder
+  └─ $01::VMatchDataSyncResponseMessage::?$pongNetMessageHolder
+  └─ $01::VMatchStatsMessage::?$pongNetMessageHolder
+  └─ $01::VPostPointExitMessage::?$pongNetMessageHolder
+  └─ $01::VRemoveSpectatorMessage::?$pongNetMessageHolder
+  └─ $01::VRequestDataMessage::?$pongNetMessageHolder
+  └─ $01::VServeFaultMessage::?$pongNetMessageHolder
+  └─ $01::VServeLetMessage::?$pongNetMessageHolder
+  └─ $01::VSkipReplayMessage::?$pongNetMessageHolder
+  └─ $01::VStateSyncMessage::?$pongNetMessageHolder
+  └─ $01::VStateSyncRequestMessage::?$pongNetMessageHolder
+  └─ $01::VTournamentCompleteMessage::?$pongNetMessageHolder
+  └─ $01::VTwoMinuteWarningMessage::?$pongNetMessageHolder
+  └─ $01::VUserRequestReplayMessage::?$pongNetMessageHolder
+  └─ $03::VLevelConfigMessage::?$pongNetMessageHolder
+  └─ $03::VLoadingStateRequestMessage::?$pongNetMessageHolder
+  └─ $03::VLoadingStateResponseMessage::?$pongNetMessageHolder
+  └─ $03::VRemoteServeReadyMessage::?$pongNetMessageHolder
+  └─ $03::VServeAbortMessage::?$pongNetMessageHolder
+  └─ $03::VServeReadyMessage::?$pongNetMessageHolder
+  └─ $03::VServeStartedMessage::?$pongNetMessageHolder
+  └─ $03::VServeUnlockMessage::?$pongNetMessageHolder
+  └─ $04::VForfeitMatchMessage::?$pongNetMessageHolder
+  └─ $04::VMatchScoreMessage::?$pongNetMessageHolder
+  └─ $04::VPointDeclaredMessage::?$pongNetMessageHolder
+  └─ $04::VReplayEmoteMessage::?$pongNetMessageHolder
+  └─ $04::VScoreMessage::?$pongNetMessageHolder
+  └─ $09::VBallHitMessage::?$pongNetMessageHolder
+  └─ $09::VForceMatchTimeSyncMessage::?$pongNetMessageHolder
+  └─ $09::VForceSessionTimeSyncMessage::?$pongNetMessageHolder
+  └─ $09::VHitMessage::?$pongNetMessageHolder
+  └─ $09::VInternalMessageRelay::?$pongNetMessageHolder
+  └─ $09::VMatchTimeSyncMessage::?$pongNetMessageHolder
+  └─ $09::VMatchTimeSyncRequestMessage::?$pongNetMessageHolder
+  └─ $09::VMatchTimeSyncRequestMessageEx::?$pongNetMessageHolder
+  └─ $09::VSessionTimeSyncMessage::?$pongNetMessageHolder
+  └─ $09::VSessionTimeSyncRequestMessage::?$pongNetMessageHolder
+  └─ $09::VSignalReadyToServeMessage::?$pongNetMessageHolder
+  └─ $09::VTerminateRallyMessage::?$pongNetMessageHolder
+  └─ $09::VTimedGameUpdateTimerMessage::?$pongNetMessageHolder
+  └─ $0BE::VJunkSwingStartedMessage::?$pongNetMessageHolder
+  └─ $0BE::VSwingStartedMessage::?$pongNetMessageHolder
+  └─ $0BO::VSpectatorQuitMessage::?$pongNetMessageHolder
+  └─ $0BP::VGamerReadyMessage::?$pongNetMessageHolder
+  └─ $0BP::VGamerUpdateMessage::?$pongNetMessageHolder
+  └─ $0CI::VSpectatorBallHitMessage::?$pongNetMessageHolder
+  └─ $0DC::VHitDataMessage::?$pongNetMessageHolder
+  └─ $0MI::VPlayerMovementMessage::?$pongNetMessageHolder
+  └─ $0MI::VPlayerStopMessage::?$pongNetMessageHolder
+  └─ $0MI::VPlayerUpdateMessage::?$pongNetMessageHolder
+
+pongRenderable
+  └─ fxBallShadow
+  └─ fxBallSpin
+  └─ fxCrowdGfx
+  └─ fxTrail
+    └─ fxBallTrail
+  └─ phDemoObject
+    └─ phUpdateObject
+  └─ pongMovie
+    └─ pongBinkMovie
+    └─ pongXMVMovie
+  └─ pongPaddle
+  └─ pongScreenCapture
+
+pongScreenCaptureMgr
+  └─ VpongScreenCaptureMgr::?$atSingleton
+
+pongTrainingDrill
+  └─ pongDrillCharging
+  └─ pongDrillCounterSpin
+  └─ pongDrillFocusShot
+  └─ pongDrillMovement
+  └─ pongDrillPlacement
+  └─ pongDrillReturn
+  └─ pongDrillServeMeter
+  └─ pongDrillServing
+  └─ pongDrillSmash
+  └─ pongDrillSoftShot
+  └─ pongDrillSpin
+
+uiList
+
+
+; ── RAGE ENGINE CLASS TREES ──
+
+$09$0DOI::?$FloatAverager
+
+$0DOI::$0BE::?$FloatAverager
+
+$0DOI::$0DM::?$FloatAverager
+
+$0DOI::$0HI::?$FloatAverager
+
+rage::12::$$CBUNotification::rage::VrlVoice::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ $0M::rage::12::$$CBUNotification::rage::VrlVoice::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::12::UQosResult::rage::VrlQos::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::12::UQosResult::rage::VrlQos::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::2::VsnNotifyBase::rage::VsnSession::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::2::VsnNotifyBase::rage::VsnSession::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::2::VsnNotifyBase::rage::VsnSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ $0M::rage::2::VsnNotifyBase::rage::VsnSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::MatrixMND
+
+rage::VectorND
+
+rage::VectorNI
+
+rage::VnetAddress::V?$atInBinTree::rage::netConnectionManager::UCxnRecord::?$atSafeContainer
+  └─ rage::VnetAddress::$07V?$atLess::2::netConnectionManager::UCxnRecord::rage::VnetAddress::?$atSafeInBinTree
+
+rage::X::rage::VrlAchievementReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlAchievementReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlAchievementWriter::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlAchievementWriter::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlFriendsReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlFriendsReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlGamer::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlGamer::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlGamerProfileReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlGamerProfileReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlGamerProfileWriter::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlGamerProfileWriter::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlSession::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlSession::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlStatsReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlStatsReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::X::rage::VrlStatsWriter::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  └─ rage::$0M::rage::X::rage::VrlStatsWriter::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple
+
+rage::atAny::PlaceHolder
+  └─ rage::atAny::H::?$Holder
+  └─ rage::atAny::M::?$Holder
+  └─ rage::atAny::rage::PAVfragInst::?$Holder
+  └─ rage::atAny::rage::PAVphInst::?$Holder
+  └─ rage::atAny::rage::PBVMatrix34::?$Holder
+  └─ rage::atAny::rage::VVector3::?$Holder
+
+rage::audControlWrapper
+  └─ rage::audControl2dWrapper
+  └─ rage::audControl3dWrapper
+
+rage::audVoice
+  └─ rage::audVoiceSfx
+  └─ rage::audVoiceStream
+
+rage::clothController
+
+rage::cmBlock
+  └─ rage::cmAction
+    └─ rage::cmSampleCamActions::H_SmoothLookAt_LimitedTilt
+    └─ rage::cmSampleCamActions::P_VelocityFollow
+    └─ rage::cmSimpleAction
+  └─ rage::cmMachine
+    └─ rage::cmGang
+    └─ rage::cmSimple
+
+rage::cmBlockBank
+  └─ rage::cmActionFactory
+  └─ rage::cmMachineBank
+    └─ rage::cmCompiledMachineBank
+    └─ rage::cmSampleCamMachineBank
+
+rage::cmMotorPlant
+  └─ rage::cmSampleCamMotorPlant
+
+rage::cmOperator
+  └─ rage::$0L::?$cmNaryOperator
+    └─ rage::$04::?$cmCond
+    └─ rage::$04::?$cmLinearRemap
+    └─ rage::$04::?$cmSmoothRemap
+  └─ rage::$0M::?$cmNaryOperator
+    └─ rage::$04::?$cmSwitch
+    └─ rage::rage::$04UcmCmp_less_equal::?$cmLookup
+  └─ rage::$0N::?$cmNaryOperator
+    └─ rage::$05::?$cmCond
+    └─ rage::$05::?$cmLinearRemap
+    └─ rage::$05::?$cmSmoothRemap
+  └─ rage::$0O::?$cmNaryOperator
+    └─ rage::$05::?$cmSwitch
+    └─ rage::rage::$05UcmCmp_less_equal::?$cmLookup
+
+rage::cmOperatorSet
+
+rage::cmReporter
+  └─ cmAndReporter
+  └─ cmBitwiseAndReporter
+  └─ cmBitwiseOrReporter
+  └─ cmFirstReporter
+  └─ cmFurthestFromReporter
+  └─ cmLastReporter
+  └─ cmMaxReporter
+  └─ cmMinReporter
+  └─ cmMostReporter
+  └─ cmNearestToReporter
+  └─ cmNoneReporter
+  └─ cmOrReporter
+  └─ cmSumReporter
+    └─ cmAvgReporter
+
+rage::cmValueSet
+  └─ rage::cmNamedValueSet
+  └─ rage::cmTuningSet
+
+rage::crAnimChannel
+  └─ rage::crAnimChannelCurveFloat
+  └─ rage::crAnimChannelQuantizeFloat
+  └─ rage::crAnimChannelRawBool
+  └─ rage::crAnimChannelRawFloat
+  └─ rage::crAnimChannelRawInt
+  └─ rage::crAnimChannelRawQuaternion
+  └─ rage::crAnimChannelRawVector3
+  └─ rage::crAnimChannelStaticFloat
+  └─ rage::crAnimChannelStaticQuaternion
+
+rage::crAnimDof
+  └─ rage::crAnimDofFloat
+  └─ rage::crAnimDofQuaternion
+  └─ rage::crAnimDofVector3
+
+rage::crAnimFrame
+
+rage::crAnimPlayer
+
+rage::crIKBodyBase
+  └─ rage::crIKBodyHumanoid
+
+rage::crIKBodyBoneFinder
+  └─ rage::crIKBodyBoneFinderByName
+
+rage::crIKPart
+  └─ rage::crIKHead
+  └─ rage::crIKLimb
+    └─ rage::crIKArm
+    └─ rage::crIKLeg
+  └─ rage::crIKSpine
+
+rage::datBase
+  └─ LocomotionController
+    └─ pongLocomotionController
+  └─ MatchData
+    └─ VMatchData::?$atSingleton
+  └─ NetBallHitManager
+  └─ NetLoadingThread
+  └─ NetworkClient
+    └─ LogicNetworkClient
+      └─ SinglesNetworkClient
+      └─ SpectatorNetworkClient
+    └─ PongNetGameModeCoordinator
+      └─ PongNetExhibitionCoordinator
+      └─ PongNetProxyCoordinator
+      └─ PongNetRoundRobinCoordinator
+    └─ PongNetGameModeManager
+  └─ PongNet
+    └─ VPongNet::?$atSingleton
+  └─ SpectatorHudItem
+    └─ SpectatorHudItemWithText
+  └─ SpectatorHudItemPage
+  └─ SpectatorHudItemPageMgr
+  └─ aiPlayer
+  └─ aiSpin
+  └─ cameraShake
+  └─ ctxManager
+    └─ VctxManager::?$atSingleton
+  └─ dialogManager
+    └─ VdialogManager::?$atSingleton
+  └─ fsmMachine
+    └─ NetDataQuery
+    └─ NetStateSync
+    └─ SessionMessageRequester
+    └─ gmLogic
+      └─ gmLogicSinglesMatch
+      └─ gmLogicSpectator
+      └─ gmLogicSwingPractice
+    └─ mcMemcardControl
+      └─ VmcMemcardControl::?$atSingleton
+    └─ shShell
+      └─ pongShell
+        └─ VpongShell::?$atSingleton
+  └─ fxAmbient
+  └─ fxBallSpinDataMgr
+    └─ VfxBallSpinDataMgr::?$atSingleton
+  └─ fxBoneSpringAnim
+  └─ fxBoobs
+  └─ fxCloth
+  └─ fxCrowdManager
+  └─ fxHair
+  └─ fxHairGroup
+  └─ fxLightShaftMgr
+  └─ fxLvlAnimSet
+  └─ fxReticle
+  └─ fxStringGroup
+  └─ fxTrailDataMgr
+    └─ VfxTrailDataMgr::?$atSingleton
+  └─ gdAssetDataFile
+    └─ gdNetDataFile
+    └─ gdPropDataFile
+  └─ gdAssetRootMgr
+    └─ VgdAssetRootMgr::?$atSingleton
+  └─ gdAssetRootMgr::Root
+  └─ gdBallFudgeMgr
+    └─ VgdBallFudgeMgr::?$atSingleton
+  └─ gdBallPredictManager
+    └─ VgdBallPredictManager::?$atSingleton
+  └─ gdCharDataMgr
+    └─ VgdCharDataMgr::?$atSingleton
+  └─ gdITZDataMgr
+    └─ VgdITZDataMgr::?$atSingleton
+  └─ gdInputData
+  └─ gdInputDataMgr
+    └─ VgdInputDataMgr::?$atSingleton
+  └─ gdInputSeq
+  └─ gdLevelDataManager
+    └─ VgdLevelDataManager::?$atSingleton
+  └─ gdLogicalClipDataMgr
+    └─ VgdLogicalClipDataMgr::?$atSingleton
+  └─ gdMotionRangeMgr
+    └─ VgdMotionRangeMgr::?$atSingleton
+  └─ gdReplayMgr
+    └─ VgdReplayMgr::?$atSingleton
+  └─ gdShotDataMgr
+    └─ VgdShotDataMgr::?$atSingleton
+  └─ gdVibMgr
+    └─ VgdVibMgr::?$atSingleton
+  └─ gdVibrator
+  └─ gdaiDataMgr
+    └─ VgdaiDataMgr::?$atSingleton
+  └─ gmBallRobot
+  └─ gmPracticeTarget
+  └─ hudFlashBase
+    └─ hudBoot
+    └─ hudCharView
+    └─ hudController
+    └─ hudCredits
+    └─ hudDialog
+    └─ hudFrontEnd
+    └─ hudHUD
+    └─ hudLeaderboard
+    └─ hudLegals
+    └─ hudList
+    └─ hudLoadingScreen
+      └─ hudTrainingLoadScreen
+    └─ hudLogosScreen
+    └─ hudPause
+    └─ hudShell
+    └─ hudTrainingHUD
+    └─ hudTrainingPopUp
+    └─ hudUnlocks
+  └─ mcFileSegment
+    └─ gdOptionsData
+      └─ VgdOptionsData::?$atSingleton
+    └─ gdTourneySaveData
+      └─ VgdTourneySaveData::?$atSingleton
+    └─ gdTrainingSaveData
+      └─ VgdTrainingSaveData::?$atSingleton
+    └─ gdUnlockMgr
+      └─ VgdUnlockMgr::?$atSingleton
+    └─ mcSegmentContainer
+  └─ mcMemcardControl::mcMemcardStatus
+  └─ netPoliciesDerived
+  └─ pcrAnimObserver
+  └─ pcrAnimObserverHash
+  └─ pcrEmoteBlender
+    └─ pcrPostPointBlender
+  └─ pcrFaceAnimBlender
+  └─ pcrServeBlender
+  └─ pcrSwingBlender
+  └─ pcrSwingSolver
+  └─ pcrSwingSpaceMgr
+  └─ plrSwingLogic
+  └─ pongAmbiencePlayer
+  └─ pongAnimationInfo
+  └─ pongBallAudio
+  └─ pongBallHit
+  └─ pongBlender
+  └─ pongCMCamera
+  └─ pongCreature
+  └─ pongCreatureType
+  └─ pongDrawBucketManager
+  └─ pongGammaControl
+  └─ pongLightGlowMgr
+  └─ pongPlayer
+  └─ pongPlayerShaderParams
+  └─ pongPostEffects
+  └─ pongRemotePlayer
+  └─ pongRenderThread
+  └─ pongShadowMap
+  └─ rage::audBank
+  └─ rage::audBankMgr
+  └─ rage::audControl
+    └─ rage::audControl3d
+  └─ rage::audControlMgr
+    └─ pongAudioManager
+  └─ rage::cmMetafileTuningSet
+    └─ rage::cmDiffTuningSet
+  └─ rage::crAnimWeightSet
+  └─ rage::crAnimation
+  └─ rage::crIKSolverBase
+    └─ rage::crIKSolverSimpleHead
+    └─ rage::crIKSolverSimpleSpine
+  └─ rage::environmentCloth
+  └─ rage::evtInstance
+  └─ rage::evtSet
+  └─ rage::fragTypeChild
+  └─ rage::grcSetup
+    └─ rage::grmSetup
+  └─ rage::grmEdgeModel
+  └─ rage::grmModel
+    └─ rage::grmModelGeom
+  └─ rage::grmShader
+    └─ rage::grmShaderBasic
+      └─ rage::grmShaderBasicClamped
+    └─ rage::grmShaderFx
+  └─ rage::grmShaderGroup
+  └─ rage::grmShaderPreset
+  └─ rage::parFileIO
+    └─ NetTuningData
+    └─ camBaseCS
+      └─ CMtoCSAdapter
+      └─ charViewCS
+    └─ camViewCS
+    └─ pongHairData
+    └─ rage::audControlGroup
+      └─ pongControlGroup
+  └─ rage::phArchetypeMgr
+  └─ rage::phInst
+    └─ rage::phClothVerletInst
+  └─ rage::phMaterialMgr
+    └─ rage::rage::VphMaterialMgr::VpongSurface::?$phMaterialMgrImpl
+  └─ rage::rage::VgrcTexture::?$pgDictionary
+  └─ rage::rmPtxBirth
+  └─ rage::rmPtxKeyframe
+  └─ rage::rmcDrawableBase
+    └─ rage::rmcDrawable
+      └─ pongDrawable
+      └─ rage::fragDrawable
+  └─ rage::rmcTypeFileParser
+  └─ rage::xmlNode
+    └─ rage::xmlNodeString
+    └─ rage::xmlNodeStruct
+      └─ assetVersions
+      └─ assetVersionsChar
+      └─ assetVersionsCharSpecific
+      └─ cellData
+      └─ charViewCharData
+      └─ charViewData
+      └─ creditsData
+      └─ creditsSettings
+      └─ dialogData
+      └─ fontData
+      └─ frontendData
+      └─ fxCrowdAnim
+      └─ fxCrowdArchetype
+      └─ fxLightShaftTune
+      └─ gdAssetData
+        └─ gdNetData
+        └─ gdPropData
+      └─ gdAudData
+      └─ gdBTgtBoneName
+      └─ gdBallFudgeData
+      └─ gdBlendTargetName
+      └─ gdBlendTargets
+      └─ gdCSCamAnimNames
+      └─ gdCSCamAnimShotName
+        └─ gdCSCamAnimShotNameSeq
+      └─ gdCSCharAnimData
+      └─ gdCSCharAnimNames
+      └─ gdCSCharCamShotName
+        └─ gdCSCharCamShotNameSeq
+      └─ gdCSNameData
+      └─ gdCamData
+      └─ gdCameraDef
+      └─ gdCameraDest
+      └─ gdCameraInst
+      └─ gdCharData
+      └─ gdCharEmoFactors
+      └─ gdCharIntensityFactors
+      └─ gdCharPlayerBias
+      └─ gdCharSweatFactors
+      └─ gdCrAttachmentData
+      └─ gdCrData
+      └─ gdCutSceneNames
+      └─ gdDifficultyLadder
+      └─ gdEnvelope
+      └─ gdITZData
+      └─ gdLadder
+      └─ gdLadderCommonData
+      └─ gdLadderMatch
+      └─ gdLevelData
+      └─ gdLevelDataRoot
+      └─ gdLevelPieceData
+      └─ gdLevelRegionalBias
+      └─ gdMotionRange
+      └─ gdMovieData
+      └─ gdPlyrAttr
+      └─ gdPlyrLimits
+      └─ gdRivalry
+      └─ gdRivalryData
+      └─ gdShotData
+      └─ gdShotName
+      └─ gdShotSet
+        └─ gdShotMultiSet
+      └─ gdTier
+      └─ gdTierMember
+      └─ gdTrainingDrillData
+        └─ gdDrillChargingData
+        └─ gdDrillCounterSpinData
+        └─ gdDrillFocusShotData
+        └─ gdDrillMovementData
+        └─ gdDrillPlacementData
+        └─ gdDrillReturnData
+        └─ gdDrillServeMeterData
+        └─ gdDrillServingData
+        └─ gdDrillSmashData
+        └─ gdDrillSoftShotData
+        └─ gdDrillSpinData
+      └─ gdTrainingDrills
+      └─ gdUnlockConditionAce
+      └─ gdUnlockConditionBeatAllTourneys
+      └─ gdUnlockConditionBeatTraining
+      └─ gdUnlockConditionCPUMatchWinsData
+      └─ gdUnlockConditionChar
+      └─ gdUnlockConditionCharMatchCountData
+      └─ gdUnlockConditionFinalHitData
+      └─ gdUnlockConditionGameDeficit
+      └─ gdUnlockConditionHighestSkill
+      └─ gdUnlockConditionLevel
+      └─ gdUnlockConditionMatchTimeData
+      └─ gdUnlockConditionMultiBounce
+      └─ gdUnlockConditionNetHit
+      └─ gdUnlockConditionOnlineMatches
+      └─ gdUnlockConditionPlayTime
+      └─ gdUnlockConditionPointDeficit
+      └─ gdUnlockConditionRallyCount
+      └─ gdUnlockConditionRankedSkunks
+      └─ gdUnlockConditionRankedTourneyWins
+      └─ gdUnlockConditionRankedWinStreak
+      └─ gdUnlockConditionSettingsData
+      └─ gdUnlockConditionSkunk
+      └─ gdUnlockConditionSpectatedMatch
+      └─ gdUnlockConditionTourneyTimeData
+      └─ gdUnlockConditionUnlockedGroup
+      └─ gdUnlockConditionVersus
+      └─ gdUnlockConditionWinMatchData
+      └─ gdUnlockConditionWinTournamentData
+      └─ gdUnlockGroupData
+      └─ gdUnlockItemData
+      └─ gdUnlockItemRuleData
+      └─ gdUnlockRuleData
+      └─ gdVibActuator
+      └─ gdVibEffect
+      └─ gdVibSample
+      └─ gdViewData
+      └─ gdaiComeBackLogic
+      └─ gdaiData
+      └─ gdaiDefPos
+      └─ gdaiDeficit
+      └─ gdaiDifficulty
+      └─ gdaiLead
+      └─ gdaiMeterLogic
+      └─ gdaiOffPos
+      └─ gdaiShotSelection
+      └─ gdaiSkillSet
+      └─ gdaiSkillStats
+      └─ listData
+      └─ listItemData
+      └─ msgEventHandler
+      └─ pcrAnimEvent
+        └─ pcrAnimEventFootAud
+          └─ pcrAnimEventFootContact
+          └─ pcrAnimEventFootScuff
+          └─ pcrAnimEventFootStep
+          └─ pcrAnimEventFootStomp
+        └─ pcrAnimEventMsg
+          └─ pcrAnimEventMsg_s
+      └─ pcrAnimObserved
+      └─ pcrEmoteData
+      └─ pcrServeData
+      └─ pcrSwingAbortData
+      └─ pcrSwingAbortSet
+      └─ pcrSwingBlend
+      └─ pcrSwingData
+        └─ pcrJunkSwingData
+      └─ pcrSwingMissData
+      └─ pcrSwingMissRange
+        └─ pcrSwingMissRangeHeading
+        └─ pcrSwingMissRangeSphere
+      └─ pcrSwingMissSet
+      └─ pcrSwingSet
+      └─ pcrSwingSpace
+      └─ pongBallHitData
+      └─ pongLightGlowCapsule
+      └─ pongLightGlowSquare
+      └─ powerZoneAttr
+      └─ powerZoneData
+      └─ sgNode
+        └─ fxAmbientMgr
+        └─ fxSpecialFx
+        └─ gmLogicNode
+        └─ lvlLevel
+        └─ lvlLevelMgr
+        └─ plrPlayerMgr
+        └─ plrPropMgr
+        └─ pongCSReplayDirector
+        └─ pongCameraMgr
+        └─ pongInlineCinematics
+        └─ sgRMDrawable
+          └─ sgPhysicalObject
+            └─ gmBallNode
+            └─ lvlLevelPiece
+            └─ lvlTable
+            └─ lvlTableTop
+      └─ statsThresholdData
+    └─ xmlRoot
+  └─ rage::xmlTree
+    └─ sgSceneGraph
+  └─ shotTarget
+
+rage::datBitBuffer::Allocator
+  └─ rage::datBitBufferDefaultAllocator
+  └─ rage::netBBAllocator
+
+rage::datParser
+
+rage::datParserRecord
+
+rage::datSerialize
+  └─ rage::fiSerialize
+
+rage::dcamCam
+  └─ rage::dcamPolarCam
+
+rage::fiDevice
+  └─ rage::fiDeviceLocal
+  └─ rage::fiDeviceMemory
+  └─ rage::fiDeviceTcpIp
+  └─ rage::fiPackfile
+
+rage::fiDirtyDisc
+  └─ rage::grcDirtyDisc
+
+rage::grcTextureFactory
+  └─ rage::grcTextureFactoryString
+  └─ rage::grcTextureFactoryXenon
+
+rage::grmModelFactory
+
+rage::grmShaderFactory
+  └─ rage::grmShaderFactoryStandard
+
+rage::hsmContext
+  └─ rage::snSession
+  └─ rage::snSessionFinder
+
+rage::hsmEvent
+  └─ rage::EvtArbGuestRegister
+  └─ rage::EvtChangePresence
+  └─ rage::EvtDoGuestMigrate
+  └─ rage::EvtFindSessionOnline
+  └─ rage::EvtFindSessionSyslink
+  └─ rage::EvtGuestCreate
+  └─ rage::EvtHostCreate
+  └─ rage::EvtJoin
+  └─ rage::EvtJoinReply
+    └─ rage::EvtJoinAccepted
+    └─ rage::EvtJoinDenied
+  └─ rage::EvtJoinRequest
+  └─ rage::EvtKillConnection
+    └─ rage::EvtClosedConnection
+    └─ rage::EvtDroppedConnection
+  └─ rage::EvtLeave
+  └─ rage::EvtLeaveRequest
+  └─ rage::EvtMigrateSession
+  └─ rage::EvtRemoteJoin
+  └─ rage::EvtRemoteLeave
+  └─ rage::hsmEventTimeout
+  └─ rage::snEvent
+    └─ rage::EvtAcceptJoinRequestFailed
+    └─ rage::EvtAcceptJoinRequestSucceeded
+    └─ rage::EvtAcceptLeaveRequestFailed
+    └─ rage::EvtAcceptLeaveRequestSucceeded
+    └─ rage::EvtAcquireHostFailed
+    └─ rage::EvtAcquireHostSucceeded
+    └─ rage::EvtApplyConfigFailed
+    └─ rage::EvtArbRegisterFailed
+    └─ rage::EvtArbRegisterSucceeded
+    └─ rage::EvtChangePresenceFailed
+    └─ rage::EvtChangePresenceSucceeded
+    └─ rage::EvtCreateFailed
+    └─ rage::EvtCreateSucceeded
+    └─ rage::EvtDestroy
+    └─ rage::EvtDestroyFailed
+    └─ rage::EvtDestroySucceeded
+    └─ rage::EvtEnd
+    └─ rage::EvtEndFailed
+    └─ rage::EvtEndSucceeded
+    └─ rage::EvtFindSessionCancel
+    └─ rage::EvtGuestCreateSucceeded
+    └─ rage::EvtHostChangePresenceSucceeded
+    └─ rage::EvtJoinFailed
+    └─ rage::EvtJoinSucceeded
+    └─ rage::EvtLeaveAccepted
+    └─ rage::EvtLeaveDenied
+    └─ rage::EvtLeaveFailed
+    └─ rage::EvtLeaveSucceeded
+    └─ rage::EvtLocalJoinFailed
+    └─ rage::EvtLocalJoinSucceeded
+    └─ rage::EvtLocalLeaveFailed
+    └─ rage::EvtLocalLeaveSucceeded
+    └─ rage::EvtMigrateAsGuestFailed
+    └─ rage::EvtMigrateAsGuestSucceeded
+    └─ rage::EvtMigrateFailed
+    └─ rage::EvtMigrateSucceeded
+    └─ rage::EvtReceivedConfig
+    └─ rage::EvtRemoteJoinFailed
+    └─ rage::EvtRemoteJoinSucceeded
+    └─ rage::EvtRemoteLeaveFailed
+    └─ rage::EvtRemoteLeaveSucceeded
+    └─ rage::EvtRequestConfigFailed
+    └─ rage::EvtRequestJoinFailed
+    └─ rage::EvtRequestJoinSucceeded
+    └─ rage::EvtRequestLeaveFailed
+    └─ rage::EvtRequestLeaveSucceeded
+    └─ rage::EvtSessionJoinFailed
+    └─ rage::EvtSessionJoinSucceeded
+    └─ rage::EvtSessionLeaveFailed
+    └─ rage::EvtSessionLeaveSucceeded
+    └─ rage::EvtSessionMigrateFailed
+    └─ rage::EvtSessionMigrateSucceeded
+    └─ rage::EvtStart
+    └─ rage::EvtStartFailed
+    └─ rage::EvtStartInProgressSession
+    └─ rage::EvtStartSessionFailed
+    └─ rage::EvtStartSucceeded
+
+rage::hsmStateBase
+  └─ rage::12::UsnRoot::rage::VsnSession::?$hsmState
+    └─ rage::snSession::snRoot
+    └─ rage::snSession::snRoot::snActive
+    └─ rage::snSession::snRoot::snActive::snEnding
+    └─ rage::snSession::snRoot::snActive::snIdle
+    └─ rage::snSession::snRoot::snActive::snIdle::snArbGuestRegistering
+    └─ rage::snSession::snRoot::snActive::snInProgress
+    └─ rage::snSession::snRoot::snActive::snStarting
+    └─ rage::snSession::snRoot::snActive::snStarting::snArbHostRegistering
+    └─ rage::snSession::snRoot::snActive::snStarting::snStartingSession
+    └─ rage::snSession::snRoot::snChangingPresence
+    └─ rage::snSession::snRoot::snChangingPresence::snChanging
+    └─ rage::snSession::snRoot::snChangingPresence::snWaitingForReplies
+    └─ rage::snSession::snRoot::snCreating
+    └─ rage::snSession::snRoot::snDestroying
+    └─ rage::snSession::snRoot::snDormant
+    └─ rage::snSession::snRoot::snJoining
+    └─ rage::snSession::snRoot::snLeaving
+    └─ rage::snSession::snRoot::snMigrating
+  └─ rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState
+    └─ rage::snSessionFinder::slfRoot
+    └─ rage::snSessionFinder::slfRoot::slfFinal
+    └─ rage::snSessionFinder::slfRoot::slfSearching
+    └─ rage::snSessionFinder::slfRoot::slfSearching::slfFindingOnline
+    └─ rage::snSessionFinder::slfRoot::slfSearching::slfFindingSyslink
+    └─ rage::snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting
+  └─ rage::2::VsnArbMachine::rage::VsnSession::?$hsmState
+    └─ rage::snArbMachine
+  └─ rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState
+    └─ rage::snCreateMachine
+    └─ rage::snCreateMachine::snHsmApplyingConfig
+    └─ rage::snCreateMachine::snHsmCreatingGuest
+    └─ rage::snCreateMachine::snHsmCreatingHost
+    └─ rage::snCreateMachine::snHsmCreatingOffline
+    └─ rage::snCreateMachine::snHsmDestroyingSession
+    └─ rage::snCreateMachine::snHsmRequestingConfig
+    └─ rage::snCreateMachine::snHsmStartingSession
+  └─ rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState
+    └─ rage::snJoinMachine
+    └─ rage::snJoinMachine::snHsmAcceptingJoinRequest
+    └─ rage::snJoinMachine::snHsmLocalJoinPending
+    └─ rage::snJoinMachine::snHsmRemoteJoinPending
+    └─ rage::snJoinMachine::snHsmRequestingJoin
+    └─ rage::snJoinMachine::snHsmRequestingJoin::snHsmJoinPending
+    └─ rage::snJoinMachine::snHsmRequestingJoin::snHsmUndoingJoinRequest
+    └─ rage::snJoinMachine::snHsmRequestingJoin::snHsmWaitingForReply
+    └─ rage::snJoinMachine::snSendingGamerData
+  └─ rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState
+    └─ rage::snLeaveMachine
+    └─ rage::snLeaveMachine::snHsmAcceptingLeaveRequest
+    └─ rage::snLeaveMachine::snHsmLocalLeavePending
+    └─ rage::snLeaveMachine::snHsmRemoteLeavePending
+    └─ rage::snLeaveMachine::snHsmRequestingLeave
+    └─ rage::snLeaveMachine::snHsmRequestingLeave::snHsmLeavePending
+    └─ rage::snLeaveMachine::snHsmRequestingLeave::snHsmWaitingForReply
+  └─ rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState
+    └─ rage::snMigrateMachine
+    └─ rage::snMigrateMachine::snAcquiringHost
+    └─ rage::snMigrateMachine::snAcquiringHost::snMigrating
+    └─ rage::snMigrateMachine::snAcquiringHost::snNotifyingGuests
+    └─ rage::snMigrateMachine::snMigratingAsGuest
+    └─ rage::snMigrateMachine::snMigratingAsGuest::snMigrating
+    └─ rage::snMigrateMachine::snMigratingAsGuest::snWaitingForMigrateMsg
+  └─ rage::hsmContext::Top
+
+rage::mfAnimationController
+  └─ rage::mfNativeAnimationController
+
+rage::mfHierarchy
+  └─ rage::mfHierarchyRAGE
+
+rage::mfMotionClip
+  └─ rage::mfMotionClipRAGE
+
+rage::mfMotionClipFactory
+
+rage::mfRegisteredPlayback
+
+rage::mfRegistrationCurveData
+
+rage::netConnectionManager
+  └─ rage::snConnectionManager
+
+rage::netConnectionManager::UCxnRecord::?$atSafeContainer
+  └─ rage::$0A::rage::netConnectionManager::UCxnRecord::?$atSafeDLListSimple
+
+rage::netConnectionManager::VMessageHandler::?$atSafeContainer
+  └─ rage::$0M::rage::netConnectionManager::VMessageHandler::?$atSafeDLListSimple
+
+rage::parMember
+  └─ rage::parMemberArray
+  └─ rage::parMemberSimple
+  └─ rage::parMemberString
+  └─ rage::parMemberStruct
+
+rage::parStream
+
+rage::parStructure
+  └─ rage::parRTStructure
+
+rage::phArchetypeBase
+  └─ rage::phArchetype
+    └─ rage::phArchetypePhys
+      └─ rage::phArchetypeDamp
+
+rage::phCollider
+  └─ rage::phArticulatedCollider
+  └─ rage::phConstrainedCollider
+
+rage::phInstBehavior
+  └─ rage::phClothVerletBehavior
+  └─ rage::phRope
+  └─ rage::phSpringAninmatedAttachment
+    └─ fxBoneSpringAnimSpring
+    └─ fxBoobSpring
+
+rage::phJoint
+  └─ rage::phJoint1Dof
+  └─ rage::phJoint3Dof
+
+rage::phLevelBase
+  └─ rage::phLevelNew
+
+rage::phSimulator
+
+rage::phSleep
+
+rage::rage::$0BO::V?$VectorN::?$cvCurve
+  └─ rage::rage::$0BO::V?$VectorN::?$cvCurveNurbs
+    └─ rage::rage::$0BO::V?$VectorN::?$cvCurveNurbsWM
+
+rage::rage::$0FK::V?$VectorN::?$cvCurve
+  └─ rage::rage::$0FK::V?$VectorN::?$cvCurveNurbs
+    └─ rage::rage::$0FK::V?$VectorN::?$cvCurveNurbsWM
+
+rage::rage::VVector2WM::?$cvCurve
+  └─ rage::rage::VVector2WM::?$cvCurveNurbs
+    └─ rage::rage::VVector2WM::?$cvCurveNurbsWM
+
+rage::rage::VVector3::?$cvCurve
+
+rage::rage::VVector3WM::?$cvCurve
+  └─ rage::rage::VVector3WM::?$cvCurveNurbs
+    └─ rage::rage::VVector3WM::?$cvCurveNurbsWM
+
+rage::rlGamer
+  └─ rage::snGamer
+    └─ Gamer
+
+rage::rlSession
+
+rage::rlStatsView
+  └─ rage::$00::$0L::?$rlConcreteStatsView
+  └─ rage::$03$00::?$rlConcreteStatsView
+
+rage::rmPtxSystem
+
+rage::snConnectionManager::VMessageHandler::?$atSafeContainer
+  └─ rage::$0M::rage::snConnectionManager::VMessageHandler::?$atSafeDLListSimple
+
+rage::snNotifyBase
+  └─ rage::snNotifyFoundOnline
+  └─ rage::snNotifyFoundSyslink
+  └─ rage::snNotifyGamerAdded
+  └─ rage::snNotifyGamerRemoved
+  └─ rage::snNotifyJoin
+  └─ rage::snNotifyJoinRequest
+  └─ rage::snNotifyLeave
+  └─ rage::snNotifyPeerDropped
+  └─ rage::snNotifySyslinkRequest
+
+rage::snSessionManager
+  └─ pongLiveManager::SessionManager
+
+rage::spdApical
+  └─ rage::spdShaft
+
+rage::swfBASE
+  └─ rage::swfACTIONFUNC
+  └─ rage::swfINSTANCE
+  └─ rage::swfSCRIPTOBJECT
+    └─ rage::swfSCRIPTARRAY
+
+rage::swfCMD
+  └─ rage::swfCMD_DoAction
+  └─ rage::swfCMD_DoInitAction
+  └─ rage::swfCMD_PlaceObject2
+    └─ rage::swfCMD_PlaceObject2ClipEvent
+  └─ rage::swfCMD_RemoveObject2
+
+rage::swfCONTEXT
+
+rage::swfOBJECT
+  └─ rage::swfBITMAP
+  └─ rage::swfBUTTON
+  └─ rage::swfEDITTEXT
+  └─ rage::swfFONT
+  └─ rage::swfSHAPE
+  └─ rage::swfSPRITE
+    └─ rage::swfFILE
+  └─ rage::swfTEXT
+
+rage::sysMemAllocator
+  └─ rage::fragHeapAllocator
+  └─ rage::miniheapAllocator
+  └─ rage::sysMemSimpleAllocator
+
+rage::sysThreadPoolBase
+  └─ rage::$01::?$sysThreadPool
+
+rage::sysThreadWorker
+  └─ rage::rlGamer::PresenceWorker
+  └─ rage::rlSession::SessionWorker
+    └─ rage::rlSession::JoinWorker
+    └─ rage::rlSession::LeaveWorker
+    └─ rage::rlSession::MigrateWorker
+
+rage::sysTimeManager
+
+rage::xmlNodeStruct::Type
+  └─ rage::xmlNodeStruct::D::?$xmlNodeStructArray
+  └─ rage::xmlNodeStruct::H::?$xmlNodeStructArray
+  └─ rage::xmlNodeStructBool
+  └─ rage::xmlNodeStructChar
+  └─ rage::xmlNodeStructFloat
+  └─ rage::xmlNodeStructInt
+  └─ rage::xmlNodeStructMatrix34
+  └─ rage::xmlNodeStructShort
+  └─ rage::xmlNodeStructString
+  └─ rage::xmlNodeStructVector2
+  └─ rage::xmlNodeStructVector3
+  └─ rage::xmlNodeStructVector4
+  └─ xmlNodeStructAnimHashEntry
+  └─ xmlNodeStructAnimHashEntryArray
+
+std::exception
+
+
+; ── FULL FLAT INHERITANCE LIST ──
+
+  $00::VCancelLobbyCountdownMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $00::VNextMatchMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $00::VNextMatchSpectatorMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $00::VPlayerCacheMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $00::VRoundRobinDataMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $00::VSinglesConnectRequest::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $00::VSpectatorConnectRequest::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $00::VStartLobbyCountdownMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VAcceptMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VAcceptSpectatorMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VDataRequestFailedMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VDataRequestMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VDataSendMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VDenySpectatorMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VDisconnectingSinglesClientMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VDropSpectatorConnection::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VEnteringReplayMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VExitPostGameMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VJoinSpectatorSessionMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VLeaveSpectatorSessionMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VLoadDataQuery::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VLoadDataQueryResponse::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VMatchDataMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VMatchDataSyncMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VMatchDataSyncResponseMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VMatchStatsMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VPostPointExitMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VRemoveSpectatorMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VRequestDataMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VServeFaultMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VServeLetMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VSkipReplayMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VStateSyncMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VStateSyncRequestMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VTournamentCompleteMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VTwoMinuteWarningMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $01::VUserRequestReplayMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VLevelConfigMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VLoadingStateRequestMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VLoadingStateResponseMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VRemoteServeReadyMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VServeAbortMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VServeReadyMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VServeStartedMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $03::VServeUnlockMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $04::VForfeitMatchMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $04::VMatchScoreMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $04::VPointDeclaredMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $04::VReplayEmoteMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $04::VScoreMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VBallHitMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VForceMatchTimeSyncMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VForceSessionTimeSyncMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VHitMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VInternalMessageRelay::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VMatchTimeSyncMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VMatchTimeSyncRequestMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VMatchTimeSyncRequestMessageEx::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VSessionTimeSyncMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VSessionTimeSyncRequestMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VSignalReadyToServeMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VTerminateRallyMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $09::VTimedGameUpdateTimerMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0BE::VJunkSwingStartedMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0BE::VSwingStartedMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0BO::VSpectatorQuitMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0BP::VGamerReadyMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0BP::VGamerUpdateMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0CI::VSpectatorBallHitMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0DC::VHitDataMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0M::rage::12::$$CBUNotification::rage::VrlVoice::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::12::$$CBUNotification::rage::VrlVoice::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  $0M::rage::2::VsnNotifyBase::rage::VsnSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::2::VsnNotifyBase::rage::VsnSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  $0MI::VPlayerMovementMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0MI::VPlayerStopMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  $0MI::VPlayerUpdateMessage::?$pongNetMessageHolder  :  pongNetMessageHolderBase
+  3::PAVcmSimpleAction::3::YAXPAVcmBlockUpdateData::rage::cmSampleCamActions::$1?C_Set::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  3::PAVcmSimpleAction::3::YAXPAVcmBlockUpdateData::rage::cmSampleCamActions::$1?D_Set::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  3::PAVcmSimpleAction::3::YAXPAVcmBlockUpdateData::rage::cmSampleCamActions::$1?F_Set::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  3::PAVcmSimpleAction::3::YAXPAVcmBlockUpdateData::rage::cmSampleCamActions::$1?H_Set::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  3::PAVcmSimpleAction::3::YAXPAVcmBlockUpdateData::rage::cmSampleCamActions::$1?P_Set::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  AcceptMessage  :  PongNetMessage
+  AcceptSpectatorMessage  :  PongNetMessage
+  BallHitMessage  :  PlayerTimedMessage, PongNetMessage
+  CBiquadFilterEffect  :  IXAudioEffect, IXAudioRefCount
+  CCompEffect  :  IXAudioEffect, IXAudioRefCount
+  CDelayEffect  :  IXAudioEffect, IXAudioRefCount
+  CMtoCSAdapter  :  camBaseCS, rage::parFileIO, rage::datBase
+  CPeakMeterEffect  :  IXAudioEffect, IXAudioRefCount
+  CShelvingFilterEffect  :  IXAudioEffect, IXAudioRefCount
+  CancelLobbyCountdownMessage  :  PongNetMessage
+  DataRequestFailedMessage  :  PongNetMessage
+  DataRequestMessage  :  PongNetMessage
+  DataSendMessage  :  PongNetMessage
+  DenySpectatorMessage  :  PongNetMessage
+  DisconnectingSinglesClientMessage  :  PongNetMessage
+  DropSpectatorConnection  :  PongNetMessage
+  EnteringReplayMessage  :  PongNetMessage
+  EventSwingStart  :  EventBase
+  ExitPostGameMessage  :  PongNetMessage
+  ForceMatchTimeSyncMessage  :  PongNetMessage
+  ForceSessionTimeSyncMessage  :  PongNetMessage
+  ForfeitMatchMessage  :  PongNetMessage
+  Gamer  :  rage::snGamer, rage::rlGamer
+  GamerReadyMessage  :  PongNetMessage
+  GamerUpdateMessage  :  PongNetMessage
+  HitDataMessage  :  PongNetMessage
+  HitMessage  :  PlayerTimedMessage, PongNetMessage
+  InternalMessageRelay  :  PongNetMessage
+  JoinSpectatorSessionMessage  :  PongNetMessage
+  JunkSwingStartedMessage  :  PongNetMessage
+  LeaveSpectatorSessionMessage  :  PongNetMessage
+  LevelConfigMessage  :  PongNetMessage
+  LoadDataQuery  :  PongNetMessage
+  LoadDataQueryResponse  :  PongNetMessage
+  LoadingStateRequestMessage  :  PongNetMessage
+  LoadingStateResponseMessage  :  PongNetMessage
+  LocomotionController  :  rage::datBase
+  LocomotionController::xmlNodeStructEntryPose  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  LocomotionStateAnim  :  LocomotionState
+  LocomotionStateMf  :  LocomotionState
+  LogicNetworkClient  :  NetworkClient, rage::datBase
+  MatchData  :  rage::datBase
+  MatchDataMessage  :  PongNetMessage
+  MatchDataSyncMessage  :  PongNetMessage
+  MatchDataSyncResponseMessage  :  PongNetMessage
+  MatchScoreMessage  :  PongNetMessage
+  MatchStatsMessage  :  PongNetMessage
+  MatchTimeSyncMessage  :  PongNetMessage
+  MatchTimeSyncRequestMessage  :  PongNetMessage
+  MatchTimeSyncRequestMessageEx  :  PongNetMessage
+  NetBallHitManager  :  rage::datBase
+  NetDataQuery  :  fsmMachine, rage::datBase
+  NetDataQuery::stateFinish  :  NetDataQuery::stateBase, fsmState, rage::datBase
+  NetDataQuery::stateInit  :  NetDataQuery::stateBase, fsmState, rage::datBase
+  NetDataQuery::stateReceiveData  :  NetDataQuery::stateBase, fsmState, rage::datBase
+  NetDataQuery::stateRequestData  :  NetDataQuery::stateBase, fsmState, rage::datBase
+  NetLoadingThread  :  rage::datBase
+  NetMatchTimer  :  NetTimerBase
+  NetStateSync  :  fsmMachine, rage::datBase
+  NetStateSync::stateEnterState  :  NetStateSync::stateBase, fsmState, rage::datBase
+  NetStateSync::stateInit  :  NetStateSync::stateBase, fsmState, rage::datBase
+  NetStateSync::stateReceiveSyncronization  :  NetStateSync::stateBase, fsmState, rage::datBase
+  NetStateSync::stateRequestSyncronization  :  NetStateSync::stateBase, fsmState, rage::datBase
+  NetStateSync::stateSendSyncronization  :  NetStateSync::stateBase, fsmState, rage::datBase
+  NetStateSync::stateWaitForSyncState  :  NetStateSync::stateBase, fsmState, rage::datBase
+  NetStateSync::stateWaitTime  :  NetStateSync::stateBase, fsmState, rage::datBase
+  NetTimedMessageSortedQueue  :  NetMatchTimer, NetTimerBase
+  NetTimer  :  NetTimerBase
+  NetTuningData  :  rage::parFileIO, rage::datBase
+  NetworkClient  :  rage::datBase
+  NextMatchMessage  :  PongNetMessage
+  NextMatchSpectatorMessage  :  PongNetMessage
+  PlayerCacheMessage  :  PongNetMessage
+  PlayerMovementMessage  :  PongNetMessage
+  PlayerStopMessage  :  PongNetMessage
+  PlayerUpdateMessage  :  PongNetMessage
+  PointDeclaredMessage  :  PongNetMessage
+  PongNet  :  rage::datBase
+  PongNetExhibitionCoordinator  :  PongNetGameModeCoordinator, NetworkClient, rage::datBase
+  PongNetGameModeCoordinator  :  NetworkClient, rage::datBase
+  PongNetGameModeManager  :  NetworkClient, rage::datBase, msgMsgSink
+  PongNetProxyCoordinator  :  PongNetGameModeCoordinator, NetworkClient, rage::datBase
+  PongNetRoundRobinCoordinator  :  PongNetGameModeCoordinator, NetworkClient, rage::datBase
+  PostPointExitMessage  :  PongNetMessage
+  RemoteServeReadyMessage  :  PlayerTimedMessage, PongNetMessage
+  RemoveSpectatorMessage  :  PongNetMessage
+  ReplayEmoteMessage  :  PongNetMessage
+  RequestDataMessage  :  PongNetMessage
+  RoundRobinDataMessage  :  PongNetMessage
+  ScoreMessage  :  PongNetMessage
+  ServeAbortMessage  :  PlayerActionMessage, PongNetMessage
+  ServeFaultMessage  :  PongNetMessage
+  ServeLetMessage  :  PongNetMessage
+  ServeReadyMessage  :  PlayerActionMessage, PongNetMessage
+  ServeStartedMessage  :  PongNetMessage
+  ServeUnlockMessage  :  PlayerTimedMessage, PongNetMessage
+  SessionMessageRequester  :  fsmMachine, rage::datBase
+  SessionMessageRequester::stateAwaitingMessage  :  SessionMessageRequester::stateBase, fsmState, rage::datBase
+  SessionMessageRequester::stateIdle  :  SessionMessageRequester::stateBase, fsmState, rage::datBase
+  SessionMessageRequester::stateRequestingMessage  :  SessionMessageRequester::stateBase, fsmState, rage::datBase
+  SessionTimeSyncMessage  :  PongNetMessage
+  SessionTimeSyncRequestMessage  :  PongNetMessage
+  SignalReadyToServeMessage  :  PlayerActionMessage, PongNetMessage
+  SinglesConnectRequest  :  PongNetMessage
+  SinglesNetworkClient  :  LogicNetworkClient, NetworkClient, rage::datBase
+  SkipReplayMessage  :  PongNetMessage
+  SpectatorBallHitMessage  :  PlayerTimedMessage, PongNetMessage
+  SpectatorConnectRequest  :  PongNetMessage
+  SpectatorHudItem  :  rage::datBase
+  SpectatorHudItemPage  :  rage::datBase
+  SpectatorHudItemPageMgr  :  rage::datBase
+  SpectatorHudItemWithText  :  SpectatorHudItem, rage::datBase
+  SpectatorNetworkClient  :  LogicNetworkClient, NetworkClient, rage::datBase
+  SpectatorQuitMessage  :  PongNetMessage
+  StartLobbyCountdownMessage  :  PongNetMessage
+  StateSyncMessage  :  PongNetMessage
+  StateSyncRequestMessage  :  PongNetMessage
+  SwingStartedMessage  :  PongNetMessage
+  TerminateRallyMessage  :  PongNetMessage
+  TimedGameUpdateTimerMessage  :  PongNetMessage
+  Timer::sAlerts  :  TimerAlert
+  TournamentCompleteMessage  :  PongNetMessage
+  TwoMinuteWarningMessage  :  PongNetMessage
+  UserRequestReplayMessage  :  PongNetMessage
+  VMatchData::?$atSingleton  :  MatchData, rage::datBase
+  VPongNet::?$atSingleton  :  PongNet, rage::datBase
+  VcamShotMgr::?$atSingleton  :  camShotMgr, msgMsgSink, fsmMachine, rage::datBase
+  VctxManager::?$atSingleton  :  ctxManager, rage::datBase
+  VdialogManager::?$atSingleton  :  dialogManager, rage::datBase, msgMsgSink
+  VfxBallSpinDataMgr::?$atSingleton  :  fxBallSpinDataMgr, rage::datBase
+  VfxTrailDataMgr::?$atSingleton  :  fxTrailDataMgr, rage::datBase
+  VgdAssetRootMgr::?$atSingleton  :  gdAssetRootMgr, rage::datBase
+  VgdBallFudgeMgr::?$atSingleton  :  gdBallFudgeMgr, rage::datBase
+  VgdBallPredictManager::?$atSingleton  :  gdBallPredictManager, rage::datBase
+  VgdCharDataMgr::?$atSingleton  :  gdCharDataMgr, rage::datBase
+  VgdCharEmotionManager::?$atSingleton  :  gdCharEmotionManager, msgMsgSink
+  VgdGameData::?$atSingleton  :  gdGameData
+  VgdITZDataMgr::?$atSingleton  :  gdITZDataMgr, rage::datBase
+  VgdInputDataMgr::?$atSingleton  :  gdInputDataMgr, rage::datBase
+  VgdLevelDataManager::?$atSingleton  :  gdLevelDataManager, rage::datBase
+  VgdLogicalClipDataMgr::?$atSingleton  :  gdLogicalClipDataMgr, rage::datBase
+  VgdMotionRangeMgr::?$atSingleton  :  gdMotionRangeMgr, rage::datBase
+  VgdNetDataMgr::?$atSingleton  :  gdNetDataMgr, gdAssetDataMgr, gdAssetLoader, rage::datBase
+  VgdOptionsData::?$atSingleton  :  gdOptionsData, mcFileSegment, rage::datBase, msgMsgSink
+  VgdPropDataMgr::?$atSingleton  :  gdPropDataMgr, gdAssetDataMgr, gdAssetLoader, rage::datBase
+  VgdReplayMgr::?$atSingleton  :  gdReplayMgr, rage::datBase
+  VgdShotDataMgr::?$atSingleton  :  gdShotDataMgr, rage::datBase
+  VgdStatsMgr::?$atSingleton  :  gdStatsMgr, msgMsgSink, mcFileSegment, rage::datBase, uiList
+  VgdTourneySaveData::?$atSingleton  :  gdTourneySaveData, mcFileSegment, rage::datBase, msgMsgSink
+  VgdTrainingSaveData::?$atSingleton  :  gdTrainingSaveData, mcFileSegment, rage::datBase, msgMsgSink
+  VgdUnlockMgr::?$atSingleton  :  gdUnlockMgr, mcFileSegment, rage::datBase, msgMsgSink
+  VgdVibMgr::?$atSingleton  :  gdVibMgr, rage::datBase
+  VgdaiDataMgr::?$atSingleton  :  gdaiDataMgr, rage::datBase
+  VgmSceneGraph::?$atSingleton  :  gmSceneGraph, sgSceneGraph, rage::xmlTree, rage::datBase
+  VhelpTipsManager::?$atSingleton  :  helpTipsManager, rage::datBase, msgMsgSink
+  VmcMemcardControl::?$atSingleton  :  mcMemcardControl, fsmMachine, rage::datBase
+  VplyrIntensityMgr::?$atSingleton  :  plyrIntensityMgr, msgMsgSink
+  VpongConfig::?$atSingleton  :  pongConfig, rage::datBase
+  VpongControllerContext::?$atSingleton  :  pongControllerContext, pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase
+  VpongCutSceneManager::?$atSingleton  :  pongCutSceneManager, msgMsgSink
+  VpongCutScenePlayer::?$atSingleton  :  pongCutScenePlayer, msgMsgSink
+  VpongLiveManager::?$atSingleton  :  pongLiveManager, msgMsgSink
+  VpongSaveFile::?$atSingleton  :  pongSaveFile, mcFile, mcSegmentContainer, mcFileSegment, rage::datBase, msgMsgSink
+  VpongScreenCaptureMgr::?$atSingleton  :  pongScreenCaptureMgr
+  VpongShell::?$atSingleton  :  pongShell, shShell, fsmMachine, rage::datBase
+  VpongShellContext::?$atSingleton  :  pongShellContext, pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase
+  VpongUnlockContext::?$atSingleton  :  pongUnlockContext, pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  VpostPointMgr::?$atSingleton  :  postPointMgr, msgMsgSink
+  aiPlayer  :  rage::datBase
+  aiSpin  :  rage::datBase
+  assetVersions  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  assetVersionsChar  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  assetVersionsCharSpecific  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  audMsgSink  :  msgMsgSink
+  backspinTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  badSoftShotTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  camBaseCS  :  rage::parFileIO, rage::datBase
+  camShot  :  fsmState, rage::datBase
+  camShotMgr  :  msgMsgSink, fsmMachine, rage::datBase
+  camViewCS  :  rage::parFileIO, rage::datBase
+  cameraShake  :  rage::datBase
+  cellData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  charViewCS  :  camBaseCS, rage::parFileIO, rage::datBase
+  charViewCharData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  charViewData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  cmAndReporter  :  rage::cmReporter
+  cmAvgReporter  :  cmSumReporter, rage::cmReporter
+  cmBitwiseAndReporter  :  rage::cmReporter
+  cmBitwiseOrReporter  :  rage::cmReporter
+  cmFirstReporter  :  rage::cmReporter
+  cmFurthestFromReporter  :  rage::cmReporter
+  cmLastReporter  :  rage::cmReporter
+  cmMaxReporter  :  rage::cmReporter
+  cmMinReporter  :  rage::cmReporter
+  cmMostReporter  :  rage::cmReporter
+  cmNearestToReporter  :  rage::cmReporter
+  cmNoneReporter  :  rage::cmReporter
+  cmOrReporter  :  rage::cmReporter
+  cmSumReporter  :  rage::cmReporter
+  creditsData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  creditsSettings  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  ctxManager  :  rage::datBase
+  dialogData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  dialogManager  :  rage::datBase, msgMsgSink
+  firstServeTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  focusMeterTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  fontData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  fontData::xmlNodeStructFaceType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  forcedFromTableCenterTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  frontendData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  fsmMachine  :  rage::datBase
+  fxAmbAnimData  :  fxLvlAnimData
+  fxAmbient  :  rage::datBase, pongRenderable
+  fxAmbientMgr  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  fxBallShadow  :  pongRenderable
+  fxBallSpin  :  pongRenderable, msgMsgSink
+  fxBallSpinDataMgr  :  rage::datBase
+  fxBallSpinLineData  :  fxBallSpinData
+  fxBallSpinTex  :  fxBallSpinLines, fxBallSpin, pongRenderable, msgMsgSink
+  fxBallSpinTexData  :  fxBallSpinLineData, fxBallSpinData
+  fxBallSpinWispData  :  fxBallSpinLineData, fxBallSpinData
+  fxBallSplash2D  :  msgMsgSink, pongRenderable
+  fxBallTrail  :  fxTrail, pongRenderable
+  fxBallTrailData  :  fxTrailData
+  fxBoneSpringAnim  :  rage::datBase
+  fxBoneSpringAnimSpring  :  rage::phSpringAninmatedAttachment, rage::phInstBehavior
+  fxBoobSpring  :  rage::phSpringAninmatedAttachment, rage::phInstBehavior
+  fxBoobs  :  rage::datBase
+  fxCloth  :  rage::datBase
+  fxCrowdAnim  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  fxCrowdArchetype  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  fxCrowdGfx  :  pongRenderable
+  fxCrowdManager  :  rage::datBase
+  fxHair  :  rage::datBase
+  fxHairGroup  :  rage::datBase
+  fxLightShaftMgr  :  rage::datBase, pongRenderable
+  fxLightShaftTune  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  fxLvlAnimSet  :  rage::datBase
+  fxReticle  :  rage::datBase, msgMsgSink, pongRenderable
+  fxSpecialFx  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, pongRenderable
+  fxStringGroup  :  rage::datBase
+  fxTrail  :  pongRenderable
+  fxTrailDataMgr  :  rage::datBase
+  gdAssetData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdAssetDataFile  :  rage::datBase
+  gdAssetDataMgr  :  gdAssetLoader, rage::datBase
+  gdAssetRootMgr  :  rage::datBase
+  gdAssetRootMgr::Root  :  rage::datBase
+  gdAudData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdBTgtBoneName  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdBTgtBoneName::xmlNodeStructAvgFcnType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdBTgtBoneName::xmlNodeStructInterpFcnType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdBallFudgeData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdBallFudgeMgr  :  rage::datBase
+  gdBallPredictManager  :  rage::datBase
+  gdBlendTargetName  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdBlendTargetName::xmlNodeStructBlendFcnType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdBlendTargets  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionCamAnimData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionCharAmbAnimData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionCharAnimData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionCharVisibleData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionDoInOrderData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionDoTogetherData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionElseData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionIfData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionLoopData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionLvlAmbAnimData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionLvlAnimData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionPlayAudioData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionShowAllAmbientsData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSActionWaitData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSCamAnimNames  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSCamAnimShotName  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSCamAnimShotNameSeq  :  gdCSCamAnimShotName, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSCharAnimData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSCharAnimNames  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSCharCamShotName  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSCharCamShotNameSeq  :  gdCSCharCamShotName, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCSNameData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCamData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCamData::xmlNodeStructCamType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdCamData::xmlNodeStructSubCamType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdCameraDef  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCameraDest  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCameraInst  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCharData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCharDataMgr  :  rage::datBase
+  gdCharEmoFactors  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCharIntensityFactors  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCharPlayerBias  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCharSweatFactors  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCrAttachmentData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCrData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCutSceneData  :  gdCSActionData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdCutSceneNames  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDifficultyLadder  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillChargingData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillCounterSpinData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillFocusShotData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillMovementData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillPlacementData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillReturnData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillServeMeterData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillServingData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillSmashData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillSoftShotData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdDrillSpinData  :  gdTrainingDrillData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdEnvelope  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdITZData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdITZDataMgr  :  rage::datBase
+  gdInputData  :  rage::datBase
+  gdInputDataMgr  :  rage::datBase
+  gdInputSeq  :  rage::datBase
+  gdLadder  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdLadderCommonData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdLadderMatch  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdLevelData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdLevelDataManager  :  rage::datBase
+  gdLevelDataRoot  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdLevelPieceData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdLevelRegionalBias  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdLogicalClipDataMgr  :  rage::datBase
+  gdMotionRange  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdMotionRangeMgr  :  rage::datBase
+  gdMovieData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdMovieData::xmlNodeStructMovieType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdNetData  :  gdAssetData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdNetDataFile  :  gdAssetDataFile, rage::datBase
+  gdNetDataMgr  :  gdAssetDataMgr, gdAssetLoader, rage::datBase
+  gdOptionsData  :  mcFileSegment, rage::datBase, msgMsgSink
+  gdPlyrAttr  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdPlyrLimits  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdPropData  :  gdAssetData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdPropData::xmlNodeStructPropType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdPropDataFile  :  gdAssetDataFile, rage::datBase
+  gdPropDataMgr  :  gdAssetDataMgr, gdAssetLoader, rage::datBase
+  gdReplayMgr  :  rage::datBase
+  gdRivalry  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdRivalryData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdShotData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdShotDataMgr  :  rage::datBase
+  gdShotMultiSet  :  gdShotSet, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdShotName  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdShotSet  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdStatsGame  :  gdStatsGroup
+  gdStatsMatch  :  gdStatsGroup
+  gdStatsMgr  :  msgMsgSink, mcFileSegment, rage::datBase, uiList
+  gdStatsOfflineCharacter  :  gdStatsGroup
+  gdStatsOfflineCircuit  :  gdStatsGroup
+  gdStatsOfflineGeneral  :  gdStatsGroup
+  gdStatsOfflineHumanCPU  :  gdStatsGroup
+  gdStatsOfflineSession  :  gdStatsGroup
+  gdStatsOnlineGeneral  :  gdStatsGroup
+  gdTier  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdTierMember  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdTourneySaveData  :  mcFileSegment, rage::datBase, msgMsgSink
+  gdTrainingDrillData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdTrainingDrills  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdTrainingSaveData  :  mcFileSegment, rage::datBase, msgMsgSink
+  gdUnlockConditionAce  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionBeatAllTourneys  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionBeatTraining  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionCPUMatchWinsData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionChar  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionCharMatchCountData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionFinalHitData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionFinalHitData::xmlNodeStructHitType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockConditionFinalHitData::xmlNodeStructSpinType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockConditionFinalHitData::xmlNodeStructSwingType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockConditionGameDeficit  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionHighestSkill  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionLevel  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionMatchTimeData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionMultiBounce  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionNetHit  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionOnlineMatches  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionPlayTime  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionPointDeficit  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionRallyCount  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionRankedSkunks  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionRankedTourneyWins  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionRankedWinStreak  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionSettingsData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionSettingsData::xmlNodeStructDifficulty  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockConditionSettingsData::xmlNodeStructGameType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockConditionSettingsData::xmlNodeStructGamesPerMatch  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockConditionSettingsData::xmlNodeStructPointsPerGame  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockConditionSkunk  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionSpectatedMatch  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionTourneyTimeData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionUnlockedGroup  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionVersus  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionWinMatchData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockConditionWinTournamentData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockGroupData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockGroupData::xmlNodeStructGroupType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  gdUnlockItemData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockItemRuleData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdUnlockMgr  :  mcFileSegment, rage::datBase, msgMsgSink
+  gdUnlockRuleData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdVibActuator  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdVibEffect  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdVibEvent  :  msgEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdVibMgr  :  rage::datBase
+  gdVibSample  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdVibrator  :  rage::datBase
+  gdViewData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiComeBackLogic  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiDataMgr  :  rage::datBase
+  gdaiDefPos  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiDeficit  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiDifficulty  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiLead  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiMeterLogic  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiOffPos  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiShotSelection  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiSkillSet  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gdaiSkillStats  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  gmBallNode  :  sgPhysicalObject, sgRMDrawable, sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, pongRenderable, msgMsgSink
+  gmBallRobot  :  rage::datBase, msgMsgSink
+  gmLogic  :  fsmMachine, rage::datBase
+  gmLogicNode  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  gmLogicSinglesMatch  :  gmLogic, fsmMachine, rage::datBase
+  gmLogicSinglesMatch::stateAnticipationCam  :  gmLogicSinglesMatch::stateCutScene, gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateAwaitReturnHit  :  gmLogicSinglesMatch::stateRallyBase, gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateAwaitServeReturnHit  :  gmLogicSinglesMatch::stateRallyBase, gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateHelpTips  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateHitNetServe  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateInit  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateLet  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePointScoring  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePointScoringNet  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePointScoringSync  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostGame  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostMatch  :  gmLogicSinglesMatch::stateCutScene, gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostPoint  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostPointCS  :  gmLogicSinglesMatch::stateCutScene, gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostPointScoringSync  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostPostGame  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostTourney  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePostTourneyMovie  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePreGame  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePreMatch  :  gmLogicSinglesMatch::stateCutScene, gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePreMatchSync  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePrePreServe  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePreServe  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePreServeSpectatorSyncState  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::statePreServeSync  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateReplay  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateReplayNegotiation  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateReplayNegotiationPreSync  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateReturnHit  :  gmLogicSinglesMatch::stateRallyBase, gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateSaveDialog  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateServeBounce  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateServeHit  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateServeToss  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSinglesMatch::stateUnlockDialog  :  gmLogicSinglesMatch::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator  :  gmLogic, fsmMachine, rage::datBase
+  gmLogicSpectator::stateAwaitReturnHit  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateInit  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateMatchEnded  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePostGame  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePostPoint  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePostPointCS  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePreGame  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePreGameSync  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePreInit  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePreMatch  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::statePreServe  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateQuit  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateReplay  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateReturnHit  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateScoring  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateServeBounce  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateServeHit  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSpectator::stateServeToss  :  gmLogicSpectator::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice  :  gmLogic, fsmMachine, rage::datBase
+  gmLogicSwingPractice::stateAim  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice::stateAwaitReturnHit  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice::stateInit  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice::stateMainMenu  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice::statePostPoint  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice::statePreInit  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice::stateReturnHit  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmLogicSwingPractice::stateShoot  :  gmLogicSwingPractice::stateBase, gmLogic::stateBase, fsmState, rage::datBase
+  gmPracticeTarget  :  rage::datBase, pongRenderable
+  hitTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  hitTipData::xmlNodeStructGroupType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  hudBoot  :  hudFlashBase, rage::datBase, pongRenderable
+  hudCharView  :  hudFlashBase, rage::datBase, pongRenderable
+  hudController  :  hudFlashBase, rage::datBase, pongRenderable
+  hudCredits  :  hudFlashBase, rage::datBase, pongRenderable
+  hudDialog  :  hudFlashBase, rage::datBase, pongRenderable
+  hudFlashBase  :  rage::datBase, pongRenderable
+  hudFrontEnd  :  hudFlashBase, rage::datBase, pongRenderable
+  hudHUD  :  hudFlashBase, rage::datBase, pongRenderable, msgMsgSink
+  hudLeaderboard  :  hudFlashBase, rage::datBase, pongRenderable
+  hudLegals  :  hudFlashBase, rage::datBase, pongRenderable
+  hudList  :  hudFlashBase, rage::datBase, pongRenderable
+  hudLoadingScreen  :  hudFlashBase, rage::datBase, pongRenderable
+  hudLoadingScreen::interactiveStats  :  hudLoadingScreen::interactiveState, rage::datBase
+  hudLoadingScreen::interactiveTips  :  hudLoadingScreen::interactiveState, rage::datBase
+  hudLoadingScreen::interactiveUnlocks  :  hudLoadingScreen::interactiveState, rage::datBase
+  hudLogosScreen  :  hudFlashBase, rage::datBase, pongRenderable
+  hudPause  :  hudFlashBase, rage::datBase, pongRenderable
+  hudShell  :  hudFlashBase, rage::datBase, pongRenderable
+  hudTrainingHUD  :  hudFlashBase, rage::datBase, pongRenderable, msgMsgSink
+  hudTrainingLoadScreen  :  hudLoadingScreen, hudFlashBase, rage::datBase, pongRenderable
+  hudTrainingPopUp  :  hudFlashBase, rage::datBase, pongRenderable
+  hudUnlocks  :  hudFlashBase, rage::datBase, pongRenderable
+  listData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  listItemData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  listItemData::xmlNodeStructColType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  lvlLevel  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  lvlLevelMgr  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  lvlLevelPiece  :  sgPhysicalObject, sgRMDrawable, sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, pongRenderable
+  lvlTable  :  sgPhysicalObject, sgRMDrawable, sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, pongRenderable
+  lvlTableTop  :  sgPhysicalObject, sgRMDrawable, sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, pongRenderable
+  mcFileSegment  :  rage::datBase
+  mcMemcardControl  :  fsmMachine, rage::datBase
+  mcMemcardControl::Find  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Format  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::GetFreeSpace  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Idle  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Load  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Remove  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Save  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::SaveIcon  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Search  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Select  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::Unformat  :  mcMemcardControl::mcControlState, fsmState, rage::datBase
+  mcMemcardControl::mcMemcardStatus  :  rage::datBase
+  mcSegmentContainer  :  mcFileSegment, rage::datBase
+  msgEventHandler  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  netPoliciesDerived  :  rage::datBase
+  noSoftShotsTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrActivationCategory::xmlNodeStructCategory  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  pcrAnimEvent  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimEventFootAud  :  pcrAnimEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimEventFootContact  :  pcrAnimEventFootAud, pcrAnimEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimEventFootScuff  :  pcrAnimEventFootAud, pcrAnimEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimEventFootStep  :  pcrAnimEventFootAud, pcrAnimEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimEventFootStomp  :  pcrAnimEventFootAud, pcrAnimEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimEventMsg  :  pcrAnimEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimEventMsg_s  :  pcrAnimEventMsg, pcrAnimEvent, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimObserved  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrAnimObserver  :  rage::datBase
+  pcrAnimObserverHash  :  rage::datBase
+  pcrEmoteBlender  :  rage::datBase
+  pcrEmoteData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrFaceAnimBlender  :  rage::datBase
+  pcrJunkSwingData  :  pcrSwingData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrPostPointBlender  :  pcrEmoteBlender, rage::datBase
+  pcrServeBlender  :  rage::datBase
+  pcrServeData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrServeData::xmlNodeStructServeType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  pcrSwingAbortData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingAbortData::xmlNodeStructApproxHitZone  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  pcrSwingAbortSet  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingBlend  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingBlender  :  rage::datBase, msgMsgSink
+  pcrSwingData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingMissData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingMissRange  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingMissRangeHeading  :  pcrSwingMissRange, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingMissRangeSphere  :  pcrSwingMissRange, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingMissSet  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingSet  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingSet::xmlNodeStructSpecialty  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  pcrSwingSolver  :  rage::datBase
+  pcrSwingSpace  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pcrSwingSpaceMgr  :  rage::datBase
+  phDemoObject  :  pongRenderable
+  phUpdateObject  :  phDemoObject, pongRenderable
+  plrPlayerMgr  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  plrPropMgr  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  plrSwingLogic  :  rage::datBase
+  pongAmbiencePlayer  :  rage::datBase
+  pongAnimationInfo  :  rage::datBase
+  pongAttractContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongAttractState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongAudioManager  :  rage::audControlMgr, rage::datBase
+  pongBallAudio  :  rage::datBase
+  pongBallHit  :  rage::datBase
+  pongBallHitData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pongBallHitData::xmlNodeStructHitZone  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  pongBallHitData::xmlNodeStructSwingType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  pongBallInstance  :  pongInstance, rage::phInst, rage::datBase, msgMsgSink
+  pongBinkMovie  :  pongMovie, pongRenderable
+  pongBlendLookAtDriver  :  pongLookAtDriver
+  pongBlender  :  rage::datBase, msgMsgSink
+  pongBootState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongCMCamera  :  rage::datBase
+  pongCSActionCamAnim  :  pongCSAction
+  pongCSActionCharAmbAnim  :  pongCSAction
+  pongCSActionCharAnim  :  pongCSAction
+  pongCSActionCharVisible  :  pongCSAction
+  pongCSActionDoInOrder  :  pongCSAction
+  pongCSActionDoTogether  :  pongCSAction
+  pongCSActionElse  :  pongCSAction
+  pongCSActionIf  :  pongCSAction
+  pongCSActionLoop  :  pongCSAction
+  pongCSActionLvlAmbAnim  :  pongCSAction
+  pongCSActionLvlAnim  :  pongCSAction
+  pongCSActionPlayAudio  :  pongCSAction
+  pongCSActionShowAllAmbients  :  pongCSAction
+  pongCSActionWait  :  pongCSAction
+  pongCSReplayDirector  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  pongCameraMgr  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  pongCharViewContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongCharViewState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongControlGroup  :  rage::audControlGroup, rage::parFileIO, rage::datBase
+  pongCreature  :  rage::datBase, phUpdateObject, phDemoObject, pongRenderable
+  pongCreatureInst  :  rage::fragInst, rage::phInstBreakable, rage::phInst, rage::datBase
+  pongCreatureType  :  rage::datBase
+  pongCreditsContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongCreditsState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongCutScene  :  pongCSAction
+  pongCutSceneManager  :  msgMsgSink
+  pongDialogContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongDialogState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongDrawBucketManager  :  rage::datBase
+  pongDrawable  :  rage::rmcDrawable, rage::rmcDrawableBase, rage::datBase
+  pongDrillCharging  :  pongTrainingDrill
+  pongDrillCounterSpin  :  pongTrainingDrill
+  pongDrillFocusShot  :  pongTrainingDrill
+  pongDrillMovement  :  pongTrainingDrill
+  pongDrillPlacement  :  pongTrainingDrill
+  pongDrillReturn  :  pongTrainingDrill
+  pongDrillServeMeter  :  pongTrainingDrill
+  pongDrillServing  :  pongTrainingDrill
+  pongDrillSmash  :  pongTrainingDrill
+  pongDrillSoftShot  :  pongTrainingDrill
+  pongDrillSpin  :  pongTrainingDrill
+  pongFrontendContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongFrontendLive  :  msgMsgSink
+  pongFrontendState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongGame  :  msgMsgSink
+  pongGameContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongGameState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongGammaControl  :  rage::datBase
+  pongHUDLive  :  msgMsgSink
+  pongHairData  :  rage::parFileIO, rage::datBase
+  pongInlineCinematics  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, msgMsgSink
+  pongLeaderboardContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongLegalsContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase
+  pongLegalsState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongLightGlowCapsule  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pongLightGlowMgr  :  rage::datBase
+  pongLightGlowSquare  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  pongLiveManager  :  msgMsgSink
+  pongLiveManager::SessionManager  :  rage::snSessionManager
+  pongLoadingContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase
+  pongLoadingState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongLocomotionController  :  LocomotionController, rage::datBase
+  pongLogosContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase
+  pongLogosState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongLookAtController  :  msgMsgSink
+  pongMovie  :  pongRenderable
+  pongPaddle  :  pongRenderable
+  pongPauseContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongPauseState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongPlayer  :  rage::datBase, msgMsgSink, pongRenderable
+  pongPlayerShaderParams  :  rage::datBase
+  pongPostEffects  :  rage::datBase
+  pongPresence  :  msgMsgSink
+  pongRandomizer  :  aRandomizer
+  pongRemotePlayer  :  rage::datBase
+  pongRenderThread  :  rage::datBase
+  pongSaveFile  :  mcFile, mcSegmentContainer, mcFileSegment, rage::datBase, msgMsgSink
+  pongScreenCapture  :  pongRenderable
+  pongScrnTransFadeIn  :  pongScrnTransition
+  pongScrnTransFreezeAndCrossFade  :  pongScrnTransition
+  pongScrnTransFreezeAndFadeOut  :  pongScrnTransition
+  pongScrnTransSwipe  :  pongScrnTransition
+  pongShadowMap  :  rage::datBase
+  pongShell  :  shShell, fsmMachine, rage::datBase
+  pongSkelLookAtDriver  :  pongLookAtDriver
+  pongStatsContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongSurface  :  rage::phSurface, rage::phMaterial, rage::datBase
+  pongTrainingLoadingContext  :  pongLoadingContext, pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase
+  pongTrainingUIContext  :  pongContextBase, ctxContext, ctxTransitionContext, ctxContextSwitchable, rage::datBase, msgMsgSink
+  pongTrainingUIState  :  pongStateBase, shStateBase, fsmState, rage::datBase
+  pongXMVMovie  :  pongMovie, pongRenderable
+  powerZoneAttr  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  powerZoneData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  rage::$00$00::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00$00::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00$01::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00$01::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00$02::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00$02::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00$0A::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00$0A::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00::$0A::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00::$0A::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$00::$0L::?$rlConcreteStatsView  :  rage::rlStatsView
+  rage::$01$0DI::rage::cmSampleCamActions::VH_SmoothLookAt_LimitedTilt::?$cmActionCtor  :  rage::cmActionCtorBase
+  rage::$01$0DMAA::rage::cmSampleCamActions::VP_VelocityFollow::?$cmActionCtor  :  rage::cmActionCtorBase
+  rage::$01::$0A::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$01::$0A::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$01::?$cmCond  :  rage::$04::?$cmNaryOperator, rage::cmOperator
+  rage::$01::?$cmLinearRemap  :  rage::$04::?$cmNaryOperator, rage::cmOperator
+  rage::$01::?$cmSmoothRemap  :  rage::$04::?$cmNaryOperator, rage::cmOperator
+  rage::$01::?$cmSwitch  :  rage::$05::?$cmNaryOperator, rage::cmOperator
+  rage::$01::?$sysThreadPool  :  rage::sysThreadPoolBase
+  rage::$02::$0A::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$02::$0A::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$02::?$cmCond  :  rage::$06::?$cmNaryOperator, rage::cmOperator
+  rage::$02::?$cmLinearRemap  :  rage::$06::?$cmNaryOperator, rage::cmOperator
+  rage::$02::?$cmSmoothRemap  :  rage::$06::?$cmNaryOperator, rage::cmOperator
+  rage::$02::?$cmSwitch  :  rage::$07::?$cmNaryOperator, rage::cmOperator
+  rage::$03$00::?$rlConcreteStatsView  :  rage::rlStatsView
+  rage::$03::?$cmCond  :  rage::$08::?$cmNaryOperator, rage::cmOperator
+  rage::$03::?$cmLinearRemap  :  rage::$08::?$cmNaryOperator, rage::cmOperator
+  rage::$03::?$cmSmoothRemap  :  rage::$08::?$cmNaryOperator, rage::cmOperator
+  rage::$03::?$cmSwitch  :  rage::$09::?$cmNaryOperator, rage::cmOperator
+  rage::$04::?$cmCond  :  rage::$0L::?$cmNaryOperator, rage::cmOperator
+  rage::$04::?$cmLinearRemap  :  rage::$0L::?$cmNaryOperator, rage::cmOperator
+  rage::$04::?$cmSmoothRemap  :  rage::$0L::?$cmNaryOperator, rage::cmOperator
+  rage::$04::?$cmSwitch  :  rage::$0M::?$cmNaryOperator, rage::cmOperator
+  rage::$05::?$cmCond  :  rage::$0N::?$cmNaryOperator, rage::cmOperator
+  rage::$05::?$cmLinearRemap  :  rage::$0N::?$cmNaryOperator, rage::cmOperator
+  rage::$05::?$cmSmoothRemap  :  rage::$0N::?$cmNaryOperator, rage::cmOperator
+  rage::$05::?$cmSwitch  :  rage::$0O::?$cmNaryOperator, rage::cmOperator
+  rage::$0A::$0A::rage::VcmApproach2::?$cmApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$0A::$0A::rage::VcmApproach2::?$cmWorldApproach2Ctor  :  rage::cmOperatorCtorBase
+  rage::$0A::rage::netConnectionManager::UCxnRecord::?$atSafeDLListSimple  :  rage::netConnectionManager::UCxnRecord::?$atSafeContainer
+  rage::$0L::?$cmNaryOperator  :  rage::cmOperator
+  rage::$0M::?$cmNaryOperator  :  rage::cmOperator
+  rage::$0M::rage::12::UQosResult::rage::VrlQos::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::12::UQosResult::rage::VrlQos::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::2::VsnNotifyBase::rage::VsnSession::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::2::VsnNotifyBase::rage::VsnSession::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlAchievementReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlAchievementReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlAchievementWriter::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlAchievementWriter::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlFriendsReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlFriendsReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlGamer::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlGamer::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlGamerProfileReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlGamerProfileReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlGamerProfileWriter::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlGamerProfileWriter::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlSession::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlSession::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlSessionFinder::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlStatsReader::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlStatsReader::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::X::rage::VrlStatsWriter::?$rlNotifier::VNotifyHandler::?$atSafeDLListSimple  :  rage::X::rage::VrlStatsWriter::?$rlNotifier::VNotifyHandler::?$atSafeContainer
+  rage::$0M::rage::netConnectionManager::VMessageHandler::?$atSafeDLListSimple  :  rage::netConnectionManager::VMessageHandler::?$atSafeContainer
+  rage::$0M::rage::snConnectionManager::VMessageHandler::?$atSafeDLListSimple  :  rage::snConnectionManager::VMessageHandler::?$atSafeContainer
+  rage::$0N::?$cmNaryOperator  :  rage::cmOperator
+  rage::$0O::?$cmNaryOperator  :  rage::cmOperator
+  rage::12::UQosResult::rage::VrlQos::?$rlNotifier::NotifyHandler  :  rage::12::PAUQosResult::12::$$CBW4NotifyCode::rage::XPAVrlQos::?$atFunctor3
+  rage::12::UsnRoot::rage::VsnSession::?$hsmState  :  rage::hsmStateBase
+  rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState  :  rage::hsmStateBase
+  rage::2::VsnArbMachine::rage::VsnSession::?$hsmState  :  rage::hsmStateBase
+  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState  :  rage::hsmStateBase
+  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState  :  rage::hsmStateBase
+  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState  :  rage::hsmStateBase
+  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState  :  rage::hsmStateBase
+  rage::2::VsnNotifyBase::rage::VsnSession::?$rlNotifier::NotifyHandler  :  rage::2::PAVsnNotifyBase::12::$$CBW4NotifyCode::rage::XPAVsnSession::?$atFunctor3
+  rage::2::VsnNotifyBase::rage::VsnSessionFinder::?$rlNotifier::NotifyHandler  :  rage::2::PAVsnNotifyBase::12::$$CBW4NotifyCode::rage::XPAVsnSessionFinder::?$atFunctor3
+  rage::EvtAcceptJoinRequestFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtAcceptJoinRequestSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtAcceptLeaveRequestFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtAcceptLeaveRequestSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtAcquireHostFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtAcquireHostSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtApplyConfigFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtArbGuestRegister  :  rage::hsmEvent
+  rage::EvtArbRegisterFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtArbRegisterSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtChangePresence  :  rage::hsmEvent
+  rage::EvtChangePresenceFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtChangePresenceSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtClosedConnection  :  rage::EvtKillConnection, rage::hsmEvent
+  rage::EvtCreateFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtCreateSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtDestroy  :  rage::snEvent, rage::hsmEvent
+  rage::EvtDestroyFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtDestroySucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtDoGuestMigrate  :  rage::hsmEvent
+  rage::EvtDroppedConnection  :  rage::EvtKillConnection, rage::hsmEvent
+  rage::EvtEnd  :  rage::snEvent, rage::hsmEvent
+  rage::EvtEndFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtEndSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtFindSessionCancel  :  rage::snEvent, rage::hsmEvent
+  rage::EvtFindSessionOnline  :  rage::hsmEvent
+  rage::EvtFindSessionSyslink  :  rage::hsmEvent
+  rage::EvtGuestCreate  :  rage::hsmEvent
+  rage::EvtGuestCreateSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtHostChangePresenceSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtHostCreate  :  rage::hsmEvent
+  rage::EvtJoin  :  rage::hsmEvent
+  rage::EvtJoinAccepted  :  rage::EvtJoinReply, rage::hsmEvent
+  rage::EvtJoinDenied  :  rage::EvtJoinReply, rage::hsmEvent
+  rage::EvtJoinFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtJoinReply  :  rage::hsmEvent
+  rage::EvtJoinRequest  :  rage::hsmEvent
+  rage::EvtJoinSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtKillConnection  :  rage::hsmEvent
+  rage::EvtLeave  :  rage::hsmEvent
+  rage::EvtLeaveAccepted  :  rage::snEvent, rage::hsmEvent
+  rage::EvtLeaveDenied  :  rage::snEvent, rage::hsmEvent
+  rage::EvtLeaveFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtLeaveRequest  :  rage::hsmEvent
+  rage::EvtLeaveSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtLocalJoinFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtLocalJoinSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtLocalLeaveFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtLocalLeaveSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtMigrateAsGuestFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtMigrateAsGuestSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtMigrateFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtMigrateSession  :  rage::hsmEvent
+  rage::EvtMigrateSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtReceivedConfig  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRemoteJoin  :  rage::hsmEvent
+  rage::EvtRemoteJoinFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRemoteJoinSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRemoteLeave  :  rage::hsmEvent
+  rage::EvtRemoteLeaveFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRemoteLeaveSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRequestConfigFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRequestJoinFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRequestJoinSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRequestLeaveFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtRequestLeaveSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtSessionJoinFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtSessionJoinSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtSessionLeaveFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtSessionLeaveSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtSessionMigrateFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtSessionMigrateSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::EvtStart  :  rage::snEvent, rage::hsmEvent
+  rage::EvtStartFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtStartInProgressSession  :  rage::snEvent, rage::hsmEvent
+  rage::EvtStartSessionFailed  :  rage::snEvent, rage::hsmEvent
+  rage::EvtStartSucceeded  :  rage::snEvent, rage::hsmEvent
+  rage::VcmAndReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmAvgReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmBitwiseAndReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmBitwiseOrReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmFirstReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmFurthestFromReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmLastReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmMaxReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmMinReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmMostReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmNearestToReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmNoneReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmOrReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VcmSumReporter::?$cmReporterCtor  :  rage::cmReporterCtorBase
+  rage::VnetAddress::$07V?$atLess::2::netConnectionManager::UCxnRecord::rage::VnetAddress::?$atSafeInBinTree  :  rage::VnetAddress::V?$atInBinTree::rage::netConnectionManager::UCxnRecord::?$atSafeContainer
+  rage::X::rage::VrlAchievementReader::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlAchievementReader::?$atFunctor3
+  rage::X::rage::VrlAchievementWriter::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlAchievementWriter::?$atFunctor3
+  rage::X::rage::VrlFriendsReader::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlFriendsReader::?$atFunctor3
+  rage::X::rage::VrlGamer::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlGamer::?$atFunctor3
+  rage::X::rage::VrlGamerProfileReader::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlGamerProfileReader::?$atFunctor3
+  rage::X::rage::VrlSession::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlSession::?$atFunctor3
+  rage::X::rage::VrlSessionFinder::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlSessionFinder::?$atFunctor3
+  rage::X::rage::VrlStatsReader::?$rlNotifier::NotifyHandler  :  rage::PAX::12::$$CBW4NotifyCode::rage::XPAVrlStatsReader::?$atFunctor3
+  rage::atAny::H::?$Holder  :  rage::atAny::PlaceHolder
+  rage::atAny::M::?$Holder  :  rage::atAny::PlaceHolder
+  rage::atAny::rage::PAVfragInst::?$Holder  :  rage::atAny::PlaceHolder
+  rage::atAny::rage::PAVphInst::?$Holder  :  rage::atAny::PlaceHolder
+  rage::atAny::rage::PBVMatrix34::?$Holder  :  rage::atAny::PlaceHolder
+  rage::atAny::rage::VVector3::?$Holder  :  rage::atAny::PlaceHolder
+  rage::audBank  :  rage::datBase
+  rage::audBankMgr  :  rage::datBase
+  rage::audControl  :  rage::datBase
+  rage::audControl2dWrapper  :  rage::audControlWrapper
+  rage::audControl3d  :  rage::audControl, rage::datBase
+  rage::audControl3dWrapper  :  rage::audControlWrapper
+  rage::audControlGroup  :  rage::parFileIO, rage::datBase
+  rage::audControlMgr  :  rage::datBase
+  rage::audVoiceSfx  :  rage::audVoice
+  rage::audVoiceStream  :  rage::audVoice
+  rage::cmAbs  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmAbsAngleDiff  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAction  :  rage::cmBlock
+  rage::cmActionFactory  :  rage::cmBlockBank
+  rage::cmAdd  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAlarmTimer  :  rage::cmTimer, rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnd  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAngle  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAngleDiff  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAngleLerp  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmAngleLinearApproach  :  rage::cmApproachOperator, rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnglePowerApproach  :  rage::cmApproachOperator, rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnimBoneOrientation  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnimBonePosition  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnimCamFStop  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnimCamFov  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnimCamOrientation  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnimCamPosition  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmAnimDuration  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmApproach2  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmApproachOperator  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmArcCosine  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmArcTangent  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmCachedOperator  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmCapture  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmChanged  :  rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmClamp  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmClampRange  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmCompMult  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmCompiledMachineBank  :  rage::cmMachineBank, rage::cmBlockBank
+  rage::cmControlRef  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmCosine  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmCross  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmDepthProbe  :  rage::cmProbeOperator, rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmDevArg  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmDiffTuningSet  :  rage::cmMetafileTuningSet, rage::datBase, rage::cmTuningSet, rage::cmValueSet
+  rage::cmDifferential  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmDifferentiate  :  rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmDist  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmDist2  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmDivide  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmDot  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmDrawVec  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmEquals  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmExpandPauseApproach  :  rage::cmApproachOperator, rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmFOV  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmFlatDist  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmFlatDist2  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmFlatDot  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmFlatten  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmGNoise  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmGang  :  rage::cmMachine, rage::cmBlock
+  rage::cmGraph  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmGreaterThan  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmHitProbe  :  rage::cmProbeOperator, rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmIf  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmInfo  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmIntegrate  :  rage::cmRefreshableInitOperator, rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmIntegrate0  :  rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmInverse  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmIsValid  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmLerp  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmLessThan  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmLocalRestart  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmLookAtAngles  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmMachine  :  rage::cmBlock
+  rage::cmMachineBank  :  rage::cmBlockBank
+  rage::cmMag  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmMag2  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmMaterialProbe  :  rage::cmProbeOperator, rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmMax  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmMaxPauseApproach  :  rage::cmApproachOperator, rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmMemory  :  rage::cmRefreshableInitOperator, rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmMetafileTuningSet  :  rage::datBase, rage::cmTuningSet, rage::cmValueSet
+  rage::cmMin  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmMinPauseApproach  :  rage::cmApproachOperator, rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmModulo  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmMultiply  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmNamedValueSet  :  rage::cmValueSet
+  rage::cmNegate  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmNoise  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmNormal  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmNormalProbe  :  rage::cmProbeOperator, rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmNormalizedTimer  :  rage::cmTimer, rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmNot  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmOr  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmPassThrough  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmPositionProbe  :  rage::cmProbeOperator, rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmPow  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmPowerApproach  :  rage::cmApproachOperator, rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmPrint  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmProbeOperator  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmRange  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmResettableTimer  :  rage::cmRefreshableInitOperator, rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmRotateX  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmRotateY  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmRotateZ  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmSPrint  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSampleCamActions::$1?All_SetDofs::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_StartBehindPlayer::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_TransBearingToHead::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_TransBearingToHead_MovePlatform::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_TransBearingToPlatform::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_TransFromPlatAttach::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_TransToPlatAttach::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_TransToZeroBearingPlatAttach::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?All_TwoPointAlignment::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?C_SwingCut::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?F_SetAll::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?F_SetVertigo::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?H_LookAt::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?H_SmoothLookAt::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?P_Drive::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?P_FollowSimple::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?P_Pivot::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?P_SwingCut::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::$1?Safe_DoNothing::?$cmSimpleActionCtor  :  rage::cmActionCtorBase
+  rage::cmSampleCamActions::H_SmoothLookAt_LimitedTilt  :  rage::cmAction, rage::cmBlock
+  rage::cmSampleCamActions::P_VelocityFollow  :  rage::cmAction, rage::cmBlock
+  rage::cmSampleCamConfigurationState  :  rage::cmConfigurationState
+  rage::cmSampleCamMachineBank  :  rage::cmMachineBank, rage::cmBlockBank
+  rage::cmSampleCamMachineBank::?2??CreateRoamCamera::movePushed  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSampleCamMachineBank::?2??CreateStandRoam::nullZone  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSampleCamMachineBank::?3??CreateRoamCamera::offsetHead  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSampleCamMotorPlant  :  rage::cmMotorPlant
+  rage::cmScale  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmScreenToWorld  :  rage::$05::?$cmNaryOperator, rage::cmOperator
+  rage::cmSelectPointerFromArray  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSign  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSimple  :  rage::cmMachine, rage::cmBlock
+  rage::cmSimpleAction  :  rage::cmAction, rage::cmBlock
+  rage::cmSine  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSlowIn  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSlowInOut  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSlowOut  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSphericalNoise  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmSqrt  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmSubtract  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmTangent  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmTunable  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmTuningSet  :  rage::cmValueSet
+  rage::cmTurnsOff  :  rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmTurnsOn  :  rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmUnwarpedAlarmTimer  :  rage::cmTimer, rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmUnwarpedNormalizedTimer  :  rage::cmTimer, rage::cmRefreshableOperator, rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmVector  :  rage::$02::?$cmNaryOperator, rage::cmOperator
+  rage::cmVectorGNoise  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmVectorNoise  :  rage::$0A::?$cmNaryOperator, rage::cmOperator
+  rage::cmVectorToBearing  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmVizVectorBlue  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmVizVectorRed  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmVizVectorSpline  :  rage::$08::?$cmNaryOperator, rage::cmOperator
+  rage::cmVizVectorWhite  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmWorldToScreen  :  rage::$05::?$cmNaryOperator, rage::cmOperator
+  rage::cmX  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmXor  :  rage::cmBinaryOperator, rage::$01::?$cmNaryOperator, rage::cmOperator
+  rage::cmY  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::cmZ  :  rage::cmUnaryOperator, rage::$00::?$cmNaryOperator, rage::cmOperator
+  rage::crAnimChannelCurveFloat  :  rage::crAnimChannel
+  rage::crAnimChannelQuantizeFloat  :  rage::crAnimChannel
+  rage::crAnimChannelRawBool  :  rage::crAnimChannel
+  rage::crAnimChannelRawFloat  :  rage::crAnimChannel
+  rage::crAnimChannelRawInt  :  rage::crAnimChannel
+  rage::crAnimChannelRawQuaternion  :  rage::crAnimChannel
+  rage::crAnimChannelRawVector3  :  rage::crAnimChannel
+  rage::crAnimChannelStaticFloat  :  rage::crAnimChannel
+  rage::crAnimChannelStaticQuaternion  :  rage::crAnimChannel
+  rage::crAnimDofFloat  :  rage::crAnimDof
+  rage::crAnimDofQuaternion  :  rage::crAnimDof
+  rage::crAnimDofVector3  :  rage::crAnimDof
+  rage::crAnimWeightSet  :  rage::datBase
+  rage::crAnimation  :  rage::datBase
+  rage::crIKArm  :  rage::crIKLimb, rage::crIKPart
+  rage::crIKBodyBoneFinderByName  :  rage::crIKBodyBoneFinder
+  rage::crIKBodyHumanoid  :  rage::crIKBodyBase
+  rage::crIKHead  :  rage::crIKPart
+  rage::crIKLeg  :  rage::crIKLimb, rage::crIKPart
+  rage::crIKLimb  :  rage::crIKPart
+  rage::crIKSolverBase  :  rage::datBase
+  rage::crIKSolverGleicherLimb  :  rage::crIKSolverLimbBase, rage::crIKSolverBase, rage::datBase
+  rage::crIKSolverIterativeLimb  :  rage::crIKSolverLimbBase, rage::crIKSolverBase, rage::datBase
+  rage::crIKSolverSimpleHead  :  rage::crIKSolverBase, rage::datBase
+  rage::crIKSolverSimpleSpine  :  rage::crIKSolverBase, rage::datBase
+  rage::crIKSpine  :  rage::crIKPart
+  rage::datBitBufferDefaultAllocator  :  rage::datBitBuffer::Allocator
+  rage::dcamPolarCam  :  rage::dcamCam
+  rage::environmentCloth  :  rage::datBase
+  rage::evtInstance  :  rage::datBase
+  rage::evtSet  :  rage::datBase
+  rage::fiAsciiTokenizer  :  rage::fiBaseTokenizer
+  rage::fiBinTokenizer  :  rage::fiBaseTokenizer
+  rage::fiDeviceLocal  :  rage::fiDevice
+  rage::fiDeviceMemory  :  rage::fiDevice
+  rage::fiDeviceTcpIp  :  rage::fiDevice
+  rage::fiPackfile  :  rage::fiDevice
+  rage::fiSerialize  :  rage::datSerialize
+  rage::fiTokenizer  :  rage::fiAsciiTokenizer, rage::fiBaseTokenizer
+  rage::fragDrawable  :  rage::rmcDrawable, rage::rmcDrawableBase, rage::datBase
+  rage::fragHeapAllocator  :  rage::sysMemAllocator
+  rage::fragInst  :  rage::phInstBreakable, rage::phInst, rage::datBase
+  rage::fragType  :  rage::pgBase, rage::datBase
+  rage::fragTypeChild  :  rage::datBase
+  rage::grcDirtyDisc  :  rage::fiDirtyDisc
+  rage::grcRenderTargetXenon  :  rage::grcRenderTarget, rage::grcTexture, rage::pgBase, rage::datBase
+  rage::grcSetup  :  rage::datBase
+  rage::grcTextureDictionaryReference  :  rage::grcTextureReference, rage::grcTextureReferenceBase, rage::grcTexture, rage::pgBase, rage::datBase
+  rage::grcTextureFactoryString  :  rage::grcTextureFactory
+  rage::grcTextureFactoryXenon  :  rage::grcTextureFactory
+  rage::grcTextureReference  :  rage::grcTextureReferenceBase, rage::grcTexture, rage::pgBase, rage::datBase
+  rage::grcTextureReferenceBase  :  rage::grcTexture, rage::pgBase, rage::datBase
+  rage::grcTextureString  :  rage::grcTexture, rage::pgBase, rage::datBase
+  rage::grcTextureXenon  :  rage::grcTextureXenonProxy, rage::grcTexture, rage::pgBase, rage::datBase
+  rage::grmEdgeModel  :  rage::datBase
+  rage::grmModel  :  rage::datBase
+  rage::grmModelGeom  :  rage::grmModel, rage::datBase
+  rage::grmSetup  :  rage::grcSetup, rage::datBase
+  rage::grmShader  :  rage::datBase
+  rage::grmShaderBasic  :  rage::grmShader, rage::datBase
+  rage::grmShaderBasicClamped  :  rage::grmShaderBasic, rage::grmShader, rage::datBase
+  rage::grmShaderFactoryStandard  :  rage::grmShaderFactory
+  rage::grmShaderFx  :  rage::grmShader, rage::datBase
+  rage::grmShaderGroup  :  rage::datBase
+  rage::grmShaderPreset  :  rage::datBase
+  rage::hsmContext::Top  :  rage::hsmStateBase
+  rage::hsmEventTimeout  :  rage::hsmEvent
+  rage::mfHierarchyRAGE  :  rage::mfHierarchy
+  rage::mfMotionClipRAGE  :  rage::mfMotionClip
+  rage::mfNativeAnimationController  :  rage::mfAnimationController
+  rage::miniheapAllocator  :  rage::sysMemAllocator
+  rage::netBBAllocator  :  rage::datBitBuffer::Allocator
+  rage::netConnectionManager::MessageHandler  :  rage::2::$$CBHABVnetMessage::rage::IABVnetAddress::?$atFunctor3
+  rage::parFileIO  :  rage::datBase
+  rage::parMemberArray  :  rage::parMember
+  rage::parMemberSimple  :  rage::parMember
+  rage::parMemberString  :  rage::parMember
+  rage::parMemberStruct  :  rage::parMember
+  rage::parRTStructure  :  rage::parStructure
+  rage::parStreamInRbf  :  rage::parStreamIn, rage::parStream
+  rage::parStreamInXml  :  rage::parStreamIn, rage::parStream
+  rage::parStreamOutRbf  :  rage::parStreamOut, rage::parStream
+  rage::parStreamOutXml  :  rage::parStreamOut, rage::parStream
+  rage::phArchetype  :  rage::phArchetypeBase
+  rage::phArchetypeDamp  :  rage::phArchetypePhys, rage::phArchetype, rage::phArchetypeBase
+  rage::phArchetypeMgr  :  rage::datBase
+  rage::phArchetypePhys  :  rage::phArchetype, rage::phArchetypeBase
+  rage::phArticulatedCollider  :  rage::phCollider
+  rage::phBound  :  rage::phBoundBase, rage::datBase
+  rage::phBoundBox  :  rage::phBoundPolyhedron, rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundCapsule  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundComposite  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundGeomCullable  :  rage::phBoundGeometry, rage::phBoundPolyhedron, rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundGeometry  :  rage::phBoundPolyhedron, rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundOTGrid  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundOctree  :  rage::phBoundGeomCullable, rage::phBoundGeometry, rage::phBoundPolyhedron, rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundPolyhedron  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundQuadtree  :  rage::phBoundGeomCullable, rage::phBoundGeometry, rage::phBoundPolyhedron, rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundRibbon  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundSphere  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundSurface  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phBoundTaperedCapsule  :  rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phClothVerletBehavior  :  rage::phInstBehavior
+  rage::phClothVerletInst  :  rage::phInst, rage::datBase
+  rage::phConstrainedCollider  :  rage::phCollider
+  rage::phInst  :  rage::datBase
+  rage::phJoint1Dof  :  rage::phJoint
+  rage::phJoint3Dof  :  rage::phJoint
+  rage::phLevelNew  :  rage::phLevelBase
+  rage::phMaterialMgr  :  rage::datBase
+  rage::phMorphGeometry  :  rage::phBoundGeometry, rage::phBoundPolyhedron, rage::phBound, rage::phBoundBase, rage::datBase
+  rage::phRope  :  rage::phInstBehavior
+  rage::phSpringAninmatedAttachment  :  rage::phInstBehavior
+  rage::rage::$01::V?$cmCond::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$01::V?$cmLinearRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$01::V?$cmSmoothRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$01::V?$cmSwitch::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$01UcmCmp_less_equal::?$cmLookup  :  rage::$05::?$cmNaryOperator, rage::cmOperator
+  rage::rage::$02::V?$cmCond::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$02::V?$cmLinearRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$02::V?$cmSmoothRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$02::V?$cmSwitch::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$02UcmCmp_less_equal::?$cmLookup  :  rage::$07::?$cmNaryOperator, rage::cmOperator
+  rage::rage::$03::V?$cmCond::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$03::V?$cmLinearRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$03::V?$cmSmoothRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$03::V?$cmSwitch::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$03UcmCmp_less_equal::?$cmLookup  :  rage::$09::?$cmNaryOperator, rage::cmOperator
+  rage::rage::$04::V?$cmCond::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$04::V?$cmLinearRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$04::V?$cmSmoothRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$04::V?$cmSwitch::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$04UcmCmp_less_equal::?$cmLookup  :  rage::$0M::?$cmNaryOperator, rage::cmOperator
+  rage::rage::$05::V?$cmCond::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$05::V?$cmLinearRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$05::V?$cmSmoothRemap::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$05::V?$cmSwitch::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::$05UcmCmp_less_equal::?$cmLookup  :  rage::$0O::?$cmNaryOperator, rage::cmOperator
+  rage::rage::$0BO::V?$VectorN::?$cvCurveNurbs  :  rage::rage::$0BO::V?$VectorN::?$cvCurve
+  rage::rage::$0BO::V?$VectorN::?$cvCurveNurbsWM  :  rage::rage::$0BO::V?$VectorN::?$cvCurveNurbs, rage::rage::$0BO::V?$VectorN::?$cvCurve
+  rage::rage::$0FK::V?$VectorN::?$cvCurveNurbs  :  rage::rage::$0FK::V?$VectorN::?$cvCurve
+  rage::rage::$0FK::V?$VectorN::?$cvCurveNurbsWM  :  rage::rage::$0FK::V?$VectorN::?$cvCurveNurbs, rage::rage::$0FK::V?$VectorN::?$cvCurve
+  rage::rage::VVector2WM::?$cvCurveNurbs  :  rage::rage::VVector2WM::?$cvCurve
+  rage::rage::VVector2WM::?$cvCurveNurbsWM  :  rage::rage::VVector2WM::?$cvCurveNurbs, rage::rage::VVector2WM::?$cvCurve
+  rage::rage::VVector3WM::?$cvCurveNurbs  :  rage::rage::VVector3WM::?$cvCurve
+  rage::rage::VVector3WM::?$cvCurveNurbsWM  :  rage::rage::VVector3WM::?$cvCurveNurbs, rage::rage::VVector3WM::?$cvCurve
+  rage::rage::VcmAbs::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAbsAngleDiff::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAdd::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAlarmTimer::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAlarmTimer::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnd::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAngle::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAngleDiff::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAngleLerp::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAngleLinearApproach::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnglePowerApproach::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnimBoneOrientation::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnimBonePosition::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnimCamFStop::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnimCamFov::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnimCamOrientation::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnimCamPosition::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmAnimDuration::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmApproachOperator::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmApproachOperator::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmArcCosine::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmArcTangent::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmCapture::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmCapture::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmChanged::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmChanged::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmClamp::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmClampRange::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmCompMult::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmCosine::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmCross::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDevArg::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDifferential::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDifferentiate::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDifferentiate::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDist2::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDist::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDivide::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDot::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmDrawVec::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmEquals::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmExpandPauseApproach::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmExpandPauseApproach::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmFOV::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmFlatDist2::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmFlatDist::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmFlatDot::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmFlatten::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmGNoise::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmGraph::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmGreaterThan::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmIf::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmInfo::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmIntegrate0::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmIntegrate0::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmIntegrate::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmIntegrate::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmInverse::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmIsValid::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmLerp::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmLessThan::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmLocalRestart::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmLookAtAngles::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMag2::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMag::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMax::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMaxPauseApproach::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMaxPauseApproach::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMemory::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMemory::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMin::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMinPauseApproach::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMinPauseApproach::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmModulo::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmMultiply::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmNegate::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmNoise::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmNormal::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmNormalizedTimer::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmNormalizedTimer::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmNot::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmOr::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmPow::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmPowerApproach::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmPowerApproach::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmPrint::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmRange::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmResettableTimer::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmResettableTimer::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmRotateX::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmRotateY::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmRotateZ::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSPrint::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmScale::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmScreenToWorld::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSelectPointerFromArray::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSign::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSine::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSlowIn::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSlowInOut::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSlowOut::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSphericalNoise::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSqrt::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmSubtract::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmTangent::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmTurnsOff::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmTurnsOff::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmTurnsOn::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmTurnsOn::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmUnwarpedAlarmTimer::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmUnwarpedAlarmTimer::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmUnwarpedNormalizedTimer::?$cmRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmUnwarpedNormalizedTimer::?$cmWorldRefreshableCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVector::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVectorGNoise::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVectorNoise::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVectorToBearing::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVizVectorBlue::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVizVectorRed::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVizVectorSpline::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmVizVectorWhite::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmWorldToScreen::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmX::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmXor::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmY::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VcmZ::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::VgrcTexture::?$pgDictionary  :  rage::datBase
+  rage::rage::VphMaterialMgr::VpongSurface::?$phMaterialMgrImpl  :  rage::phMaterialMgr, rage::datBase
+  rage::rage::rage::$01UcmCmp_less_equal::V?$cmLookup::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::rage::$02UcmCmp_less_equal::V?$cmLookup::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::rage::$03UcmCmp_less_equal::V?$cmLookup::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::rage::$04UcmCmp_less_equal::V?$cmLookup::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rage::rage::$05UcmCmp_less_equal::V?$cmLookup::?$cmOperatorCtor  :  rage::cmOperatorCtorBase
+  rage::rlGamer::PresenceWorker  :  rage::sysThreadWorker
+  rage::rlSession::JoinWorker  :  rage::rlSession::SessionWorker, rage::sysThreadWorker
+  rage::rlSession::LeaveWorker  :  rage::rlSession::SessionWorker, rage::sysThreadWorker
+  rage::rlSession::MigrateWorker  :  rage::rlSession::SessionWorker, rage::sysThreadWorker
+  rage::rlSession::SessionWorker  :  rage::sysThreadWorker
+  rage::rmPtxBirth  :  rage::datBase
+  rage::rmPtxKeyframe  :  rage::datBase
+  rage::rmcDrawable  :  rage::rmcDrawableBase, rage::datBase
+  rage::rmcDrawableBase  :  rage::datBase
+  rage::rmcTypeFileParser  :  rage::datBase
+  rage::snArbMachine  :  rage::2::VsnArbMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snConnectionManager  :  rage::netConnectionManager
+  rage::snConnectionManager::MessageHandler  :  rage::2::$$CBHABVnetMessage::rage::IABVrlPeerDescriptor::?$atFunctor3
+  rage::snCreateMachine  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snCreateMachine::snHsmApplyingConfig  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snCreateMachine::snHsmCreatingGuest  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snCreateMachine::snHsmCreatingHost  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snCreateMachine::snHsmCreatingOffline  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snCreateMachine::snHsmDestroyingSession  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snCreateMachine::snHsmRequestingConfig  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snCreateMachine::snHsmStartingSession  :  rage::2::VsnCreateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snEvent  :  rage::hsmEvent
+  rage::snGamer  :  rage::rlGamer
+  rage::snJoinMachine  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snHsmAcceptingJoinRequest  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snHsmLocalJoinPending  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snHsmRemoteJoinPending  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snHsmRequestingJoin  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snHsmRequestingJoin::snHsmJoinPending  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snHsmRequestingJoin::snHsmUndoingJoinRequest  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snHsmRequestingJoin::snHsmWaitingForReply  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snJoinMachine::snSendingGamerData  :  rage::2::VsnJoinMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snLeaveMachine  :  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snLeaveMachine::snHsmAcceptingLeaveRequest  :  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snLeaveMachine::snHsmLocalLeavePending  :  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snLeaveMachine::snHsmRemoteLeavePending  :  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snLeaveMachine::snHsmRequestingLeave  :  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snLeaveMachine::snHsmRequestingLeave::snHsmLeavePending  :  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snLeaveMachine::snHsmRequestingLeave::snHsmWaitingForReply  :  rage::2::VsnLeaveMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snMigrateMachine  :  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snMigrateMachine::snAcquiringHost  :  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snMigrateMachine::snAcquiringHost::snMigrating  :  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snMigrateMachine::snAcquiringHost::snNotifyingGuests  :  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snMigrateMachine::snMigratingAsGuest  :  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snMigrateMachine::snMigratingAsGuest::snMigrating  :  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snMigrateMachine::snMigratingAsGuest::snWaitingForMigrateMsg  :  rage::2::VsnMigrateMachine::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snNotifyFoundOnline  :  rage::snNotifyBase
+  rage::snNotifyFoundSyslink  :  rage::snNotifyBase
+  rage::snNotifyGamerAdded  :  rage::snNotifyBase
+  rage::snNotifyGamerRemoved  :  rage::snNotifyBase
+  rage::snNotifyJoin  :  rage::snNotifyBase
+  rage::snNotifyJoinRequest  :  rage::snNotifyBase
+  rage::snNotifyLeave  :  rage::snNotifyBase
+  rage::snNotifyPeerDropped  :  rage::snNotifyBase
+  rage::snNotifySyslinkRequest  :  rage::snNotifyBase
+  rage::snSession  :  rage::hsmContext
+  rage::snSession::snRoot  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive::snEnding  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive::snIdle  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive::snIdle::snArbGuestRegistering  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive::snInProgress  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive::snStarting  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive::snStarting::snArbHostRegistering  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snActive::snStarting::snStartingSession  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snChangingPresence  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snChangingPresence::snChanging  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snChangingPresence::snWaitingForReplies  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snCreating  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snDestroying  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snDormant  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snJoining  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snLeaving  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSession::snRoot::snMigrating  :  rage::12::UsnRoot::rage::VsnSession::?$hsmState, rage::hsmStateBase
+  rage::snSessionFinder  :  rage::hsmContext
+  rage::snSessionFinder::slfRoot  :  rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState, rage::hsmStateBase
+  rage::snSessionFinder::slfRoot::slfFinal  :  rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState, rage::hsmStateBase
+  rage::snSessionFinder::slfRoot::slfSearching  :  rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState, rage::hsmStateBase
+  rage::snSessionFinder::slfRoot::slfSearching::slfFindingOnline  :  rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState, rage::hsmStateBase
+  rage::snSessionFinder::slfRoot::slfSearching::slfFindingSyslink  :  rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState, rage::hsmStateBase
+  rage::snSessionFinder::slfRoot::slfSearching::slfFindingSyslink::slfBroadcasting  :  rage::12::VslfRoot::rage::VsnSessionFinder::?$hsmState, rage::hsmStateBase
+  rage::spdShaft  :  rage::spdApical
+  rage::swfACTIONFUNC  :  rage::swfBASE
+  rage::swfBITMAP  :  rage::swfOBJECT
+  rage::swfBUTTON  :  rage::swfOBJECT
+  rage::swfCMD_DoAction  :  rage::swfCMD
+  rage::swfCMD_DoInitAction  :  rage::swfCMD
+  rage::swfCMD_PlaceObject2  :  rage::swfCMD
+  rage::swfCMD_PlaceObject2ClipEvent  :  rage::swfCMD_PlaceObject2, rage::swfCMD
+  rage::swfCMD_RemoveObject2  :  rage::swfCMD
+  rage::swfEDITTEXT  :  rage::swfOBJECT
+  rage::swfFILE  :  rage::swfSPRITE, rage::swfOBJECT
+  rage::swfFONT  :  rage::swfOBJECT
+  rage::swfINSTANCE  :  rage::swfBASE
+  rage::swfSCRIPTARRAY  :  rage::swfSCRIPTOBJECT, rage::swfBASE
+  rage::swfSCRIPTOBJECT  :  rage::swfBASE
+  rage::swfSHAPE  :  rage::swfOBJECT
+  rage::swfSPRITE  :  rage::swfOBJECT
+  rage::swfTEXT  :  rage::swfOBJECT
+  rage::sysMemSimpleAllocator  :  rage::sysMemAllocator
+  rage::xmlNode  :  rage::datBase
+  rage::xmlNodeString  :  rage::xmlNode, rage::datBase
+  rage::xmlNodeStruct  :  rage::xmlNode, rage::datBase
+  rage::xmlNodeStruct::D::?$xmlNodeStructArray  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStruct::H::?$xmlNodeStructArray  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructBool  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructChar  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructFloat  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructInt  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructMatrix34  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructShort  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructString  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructVector2  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructVector3  :  rage::xmlNodeStruct::Type
+  rage::xmlNodeStructVector4  :  rage::xmlNodeStruct::Type
+  rage::xmlTree  :  rage::datBase
+  reviewOnlyTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  serveTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  serveTipData::xmlNodeStructGroupType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  sgNode  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  sgPhysicalObject  :  sgRMDrawable, sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase, pongRenderable
+  sgRMDrawable  :  sgNode, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  sgSceneGraph  :  rage::xmlTree, rage::datBase
+  sgTraverseDraw  :  sgTraverse
+  sgTraverseDrawDebug  :  sgTraverse
+  sgTraverseInitialize  :  sgTraverse
+  sgTraversePostUpdate  :  sgTraverse
+  sgTraverseReset  :  sgTraverse
+  sgTraverseRestart  :  sgTraverse
+  sgTraverseTerminate  :  sgTraverse
+  sgTraverseUpdate  :  sgTraverse
+  shEnd  :  shStateBase, fsmState, rage::datBase
+  shInit  :  shStateBase, fsmState, rage::datBase
+  shShell  :  fsmMachine, rage::datBase
+  shotTarget  :  rage::datBase
+  statsThresholdData  :  rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  tooFarFromTableTipData  :  tipData, rage::xmlNodeStruct, rage::xmlNode, rage::datBase
+  xmlNodeStructAlignmentType  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  xmlNodeStructAnimHashEntry  :  rage::xmlNodeStruct::Type
+  xmlNodeStructAnimHashEntryArray  :  rage::xmlNodeStruct::Type
+  xmlNodeStructReverbMode  :  xmlNodeStructEnumIncremental, xmlNodeStructEnum, rage::xmlNodeStruct::Type
+  xmlRoot  :  rage::xmlNode, rage::datBase

@@ -1,0 +1,127 @@
+; =====================================================================
+; SOURCE TREE PATHS EMBEDDED IN BINARY
+; Rockstar Table Tennis  -  default.xex  (May 11 2006, "pong")
+; Load base: 0x82000000  |  Entry point: 0x8242BD20
+; XEX SDK: v2.0.2417  |  PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; =====================================================================
+;
+; These paths come from RSDS debug info, asset path constants, and
+; debug/assert strings compiled into the binary.
+;
+; Build root:     c:\soft_xpong\xpong\game\src\pong\
+; Asset root:     T:\pong\
+; Network share:  //sanpong/pong/pong/assets
+; PDB output:     c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+;
+; NOTES:
+;   "soft_xpong" = Rockstar San Diego (née Angel Studios) Xbox Pong project
+;   "pong"       = internal working title, never renamed in production
+;   "sanpong"    = network server name — "san" (San Diego) + "pong"
+;   T: drive     = mapped network asset share on dev machines
+;   e: drive     = Xbox 360 devkit HDD (standard devkit drive letter)
+;
+; ADDRESS       PATH
+; ------------  ----------------------------------------------------------
+
+; ── PDB / Debug Info ──
+  0x8207A3E0  [RSDS]  GUID=33250C91AAD5234787D6A9221D796F69  Age=10
+  0x8207A3F8  c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+
+; ── Development Asset Paths ──
+  0x82027408  D:\assets
+  0x82027414  T:\pong\assets
+  0x82027454  T:\pong\bin\iop\modules
+  0x8204DAA8  e:\assets
+  0x82038580  A:\default.xex
+
+; ── Network Share Paths ──
+  0x8202746C  //sanpong/pong/pong/assets
+
+; ── Source Files ──
+  0x820334B0  BoxMatrix.c
+  0x8206F0F6  message.cpp
+
+; ── Debug / Logging Output Paths ──
+  0x82035010  c:/Screenshot
+  0x820385D4  c:/logmemory.csv
+  0x820385E8  c:/leaks.txt
+
+; ── Devkit Paths (e: = Xbox 360 devkit HDD) ──
+  0x8205A6BC  e:\rockstar.cachelist.new
+  0x8205A6DC  e:\rockstar.cachelist
+  0x820609F3  e:\movies\%s_p%s
+  0x82060A07  e:\movies\%s_w%s
+  0x82060A1B  e:\movies\%s%s
+  0x82065EA2  e:\pix\crashdump.pix2
+  0x82065F54  e:\xbperfview.cap
+
+
+; ── Reconstructed Source & Asset Tree ──
+;
+; └── c:
+;     └── soft_xpong                         (Rockstar San Diego project root)
+;         └── xpong
+;             └── game
+;                 └── src
+;                     └── pong
+;                         └── xenon_final    (Xbox 360 final build config)
+;                             └── pong.pdb
+;
+; └── T:  (mapped network drive — asset server)
+;     └── pong
+;         ├── assets                         (game asset root)
+;         └── bin
+;             └── iop                        (I/O processor modules — PS2 legacy?)
+;                 └── modules
+;
+; └── //sanpong  (network server — San Diego "pong" machine)
+;     └── pong
+;         └── pong
+;             └── assets
+;
+; └── D:  (secondary dev drive)
+;     └── assets
+;
+; └── e:  (Xbox 360 devkit HDD)
+;     ├── assets
+;     ├── movies
+;     │   ├── %s_p%s                         (progressive scan variant)
+;     │   ├── %s_w%s                         (widescreen variant)
+;     │   └── %s%s                           (standard)
+;     ├── pix
+;     │   └── crashdump.pix2                 (PIX GPU crash dump)
+;     ├── rockstar.cachelist
+;     ├── rockstar.cachelist.new
+;     └── xbperfview.cap                     (Xbox perf capture)
+
+
+; ── Developer Context Strings ──
+; (assert/debug messages that reveal class names and source structure)
+
+  0x82039B60  ENTER pongPlayer::Deactivate()
+  0x82039C84  EXIT pongPlayer::Deactivate()
+  0x82056EE0  got a material that isn't a pongSurface::PONG_MATERIAL material: %s
+  0x82057B54  Unhandled instance type (%d) in pongBallAudio::PreImpact
+  0x82027FA0  pongLookAtDriver::VirtualConstructFromPtr--resource fried for unimplemented pongLookAtDriver subclass
+
+
+; ── Comparison with GTA IV ──
+;
+; GTA IV Prototype (Nov 2007):
+;   Build root:  X:\rage\dev_north_gta\        (Rockstar North, Edinburgh)
+;   PDB:         x:\gta\build\GTA4Final_xenon.pdb
+;   Source:      X:\rage\dev_north_gta\rage\naturalmotion\src\...  (Euphoria SDK)
+;   Network:     (none embedded)
+;
+; Table Tennis (May 2006):
+;   Build root:  c:\soft_xpong\                (Rockstar San Diego)
+;   PDB:         c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+;   Source:      BoxMatrix.c, message.cpp       (minimal — retail stripped)
+;   Network:     //sanpong/pong/pong/assets     (San Diego asset server)
+;
+; Key differences:
+;   - TT built at Rockstar San Diego (C: local), GTA IV at Rockstar North (X: network)
+;   - TT has no NaturalMotion/Euphoria paths — predates integration
+;   - TT has "iop/modules" path — PS2 I/O Processor legacy from Angel Studios
+;   - TT uses T: mapped drive for assets, GTA IV uses X: for everything
+;   - "sanpong" server name = San Diego + pong, no equivalent in GTA IV

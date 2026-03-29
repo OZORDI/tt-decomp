@@ -1,0 +1,36 @@
+; ===================================================================
+; BUILD INFORMATION
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+Game         : Rockstar Games Presents Table Tennis
+Internal     : pong_xenon_final.pe  (they called it pong!)
+Title ID     : 545407DF  (TT-2015)
+Media ID     : 434C4803
+Region       : North America + PAL (AU/NZ + Europe)
+Build Date   : Thu May 11 01:40:52 2006
+Version      : v0.0.0.1
+Binary Size  : 7,798,784 bytes (7.44 MB — much smaller than GTA IV)
+
+PDB Path     : c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+PDB GUID     : 33250C91AAD5234787D6A9221D796F69
+PDB VA       : 0x8207A3E0
+
+Load Address : 0x82000000
+Entry Point  : 0x8242BD20
+Image Size   : 0x770000  (7.4 MB)
+Code start   : 0x820C0000
+Data start   : 0x825B0000
+
+SDK Version  : v2.0.2417  (very early! GTA IV proto used 6274, retail 6683)
+Static Libs  : XAPILIB, XBOXKRNL, LIBCPMT, XGRAPHC, XACT, XAUD, X3DAUD,
+               XNET, XMEDIA, XMP, XONLINE, XHV, D3D9LTCG
+Note         : Uses D3D9LTCG (link-time code gen D3D) — pre-XGRAPHC era
+
+Interesting  : One of the first Xbox 360 retail titles. SDK 2417 vs GTA IV's
+               6274 shows this was built nearly 2 years before even the GTA IV
+               prototype. The xpong/pong working title was never changed internally.

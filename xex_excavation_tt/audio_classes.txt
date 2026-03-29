@@ -1,0 +1,24 @@
+; ===================================================================
+; AUDIO — VTABLE ADDRESSES
+; Rockstar Table Tennis  -  default.xex  (pong_xenon_final.pe)
+; Build: May 11 2006  |  SDK v2.0.2417  |  TT-2015
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; ===================================================================
+
+; ADDRESS       VFUNCS  CLASS NAME
+; ------------  ------  --------------------------------------------------
+
+  0x820353B2       5  audControlMgr_rage
+  0x820353D0      18  audControl3d_rage
+  0x8203542A      18  audControl_rage
+  0x820356CA      12  audControlGroup_rage
+  0x82035706       0  audBankMgr_rage
+  0x82035730      21  audVoice_rage
+  0x8203578C      21  audVoiceSfx_rage
+  0x820357E8      21  audVoiceStream_rage
+  0x82035850       0  audBank_rage
+  0x8203AED9       1  audMsgSink
+  0x8207420C       1  audControlWrapper_rage
+  0x8207421C       1  audControl3dWrapper_rage
+  0x8207422C       1  audControl2dWrapper_rage

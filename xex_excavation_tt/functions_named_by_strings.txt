@@ -1,0 +1,5237 @@
+; ===================================================================
+; FUNCTION NAMES INFERRED FROM STRING REFERENCES
+; Rockstar Table Tennis  -  THIS IS THE HIGHEST-VALUE RE ARTIFACT
+; Functions that reference specific game strings -> likely handle that feature
+; ===================================================================
+
+  sub_820C0378  (9 string refs)
+    "%s\\"
+    "%s\\%s"
+    "D:\\assets"
+    "T:\\pong\\assets"
+    "assets.rpf"
+    "game:\\assets"
+    "memory:$%p,%d,%d:%s"
+    "pong"
+    "unavailable"
+
+  sub_820C2678  (1 string refs)
+    "is"
+
+  sub_820C7CE8  (2 string refs)
+    " (IMMEDIATELY)"
+    "(deferred)"
+
+  sub_820C8958  (2 string refs)
+    "anim"
+    "default"
+
+  sub_820C8D08  (1 string refs)
+    "%s%s"
+
+  sub_820C9F40  (1 string refs)
+    "WTF"
+
+  sub_820CED80  (2 string refs)
+    "AnimName"
+    "Mutex"
+
+  sub_820CFC68  (6 string refs)
+    "m_diffuseColor"
+    "m_noiseScale"
+    "m_normalShift"
+    "m_primaryShift"
+    "m_specExp1"
+    "m_specExp2"
+
+  sub_820D2D70  (1 string refs)
+    "fff"
+
+  sub_820D4DA0  (1 string refs)
+    "%c %c|%c %s"
+
+  sub_820DC2C8  (8 string refs)
+    "Anim0"
+    "Anim1"
+    "Anim2"
+    "ContactNormal"
+    "ContactPoint"
+    "W0"
+    "W1"
+    "W2"
+
+  sub_820DDA68  (7 string refs)
+    "AnimName"
+    "BlendOutFrame"
+    "ContactFrame"
+    "HighAnimName"
+    "LowAnimName"
+    "ReleaseFrame"
+    "ServeType"
+
+  sub_820DDD78  (2 string refs)
+    "pcrEmoteData"
+    "root"
+
+  sub_820DE820  (1 string refs)
+    "Frames"
+
+  sub_820DEA18  (1 string refs)
+    "%d"
+
+  sub_820DF918  (8 string refs)
+    "anim"
+    "bone"
+    "earlyroot"
+    "fullmagnitude"
+    "looping"
+    "overlay"
+    "speedup"
+    "timewarp"
+
+  sub_820E02D8  (3 string refs)
+    "alternative%d"
+    "anim%d"
+    "numanims"
+
+  sub_820E16C0  (11 string refs)
+    "..\\mf\\%s"
+    "clip%d"
+    "direction"
+    "heading"
+    "left"
+    "limit%d"
+    "numclips"
+    "numlimits"
+    "pattern"
+    "realignment"
+    "right"
+
+  sub_820E6978  (1 string refs)
+    "..\\default\\%s"
+
+  sub_820E76D8  (1 string refs)
+    "out of memory\n"
+
+  sub_820E82B0  (4 string refs)
+    "ContactFrame"
+    "HitZone"
+    "MaxStartPosX"
+    "MinStartPosX"
+
+  sub_820E9540  (2 string refs)
+    "AutoMoveWidth"
+    "MidRangeWidth"
+
+  sub_820E9CE8  (2 string refs)
+    "AnimList"
+    "MaxDistBehind"
+
+  sub_820EA290  (7 string refs)
+    "DevColor"
+    "EntryPose"
+    "HitZone"
+    "IsSpecialty"
+    "Name"
+    "OrderTriStrip"
+    "ReverseNormal"
+
+  sub_820EA4D0  (2 string refs)
+    "ForwardLunge"
+    "ShortAndLow"
+
+  sub_820EA7B0  (15 string refs)
+    "Backhand"
+    "BackhandLow"
+    "BackhandLunge"
+    "BackhandPush"
+    "BackhandSlam"
+    "Forehand"
+    "ForehandLow"
+    "ForehandLunge"
+    "ForehandPush"
+    "ForehandSlam"
+    "JustInTimeBH"
+    "JustInTimeFH"
+    "JustInTimePsh"
+    "SideOfTableBH"
+    "SideOfTableFH"
+
+  sub_820EB568  (1 string refs)
+    "ApproxHitZone"
+
+  sub_820EB7E0  (1 string refs)
+    "BlendOutFrame"
+
+  sub_820EBA30  (1 string refs)
+    "Emotion"
+
+  sub_820EBC30  (1 string refs)
+    "Volume"
+
+  sub_820EBC80  (1 string refs)
+    "ffff"
+
+  sub_820EBE88  (1 string refs)
+    "MsgName"
+
+  sub_820EC010  (2 string refs)
+    "MsgName"
+    "PayloadStr"
+
+  sub_820EC290  (2 string refs)
+    "Center"
+    "Radius"
+
+  sub_820EC528  (4 string refs)
+    "MaxAngle"
+    "MaxDist"
+    "MinAngle"
+    "MinDist"
+
+  sub_820EF0C8  (3 string refs)
+    "Bucket"
+    "inline sva"
+    "sva"
+
+  sub_820EF340  (1 string refs)
+    "default"
+
+  sub_820EF7A0  (2 string refs)
+    "ResourceName"
+    "__unknown"
+
+  sub_820F00D0  (7 string refs)
+    "UIHelp"
+    "UIHint"
+    "UIMax"
+    "UIMin"
+    "UIName"
+    "UIStep"
+    "UIWidget"
+
+  sub_820F1028  (1 string refs)
+    "mesh"
+
+  sub_820F2028  (1 string refs)
+    "mesh"
+
+  sub_820F25D8  (5 string refs)
+    ".dds"
+    ".sps"
+    "Shaders"
+    "Vers:"
+    "sva"
+
+  sub_820F3010  (3 string refs)
+    ".sps"
+    "memory:$%p,%d,%d:%s"
+    "tuningData"
+
+  sub_820F48B0  (1 string refs)
+    "no%d"
+
+  sub_820F5798  (4 string refs)
+    "%s/%s"
+    "comment"
+    "shader"
+    "sps"
+
+  sub_820F5D88  (1 string refs)
+    "%s/%s"
+
+  sub_820F68D0  (10 string refs)
+    "Count"
+    "Matrix34"
+    "Matrix44"
+    "Vector2"
+    "Vector3"
+    "Vector4"
+    "bool"
+    "float"
+    "grcTexture"
+    "none"
+
+  sub_820F72D8  (5 string refs)
+    ".fx"
+    ".fx2"
+    ".shadert"
+    "list"
+    "preload"
+
+  sub_820F74F8  (2 string refs)
+    "Count"
+    "shadinggroup"
+
+  sub_820F7640  (1 string refs)
+    "shadergroup"
+
+  sub_820F7818  (1 string refs)
+    "DiffuseTex"
+
+  sub_820F7A08  (3 string refs)
+    ".sva"
+    "BaseTexture"
+    "none"
+
+  sub_820F8D18  (1 string refs)
+    "xeck"
+
+  sub_820F8FB0  (4 string refs)
+    "\t\t dwAvailPhys %d"
+    "\t\t dwLength %d"
+    "\t\t dwMemoryLoad %d"
+    "\t\t dwTotalPhys %d"
+
+  sub_820F9208  (1 string refs)
+    "xeck"
+
+  sub_820FD1A8  (5 string refs)
+    "FB_copy_object"
+    "blurScale"
+    "mbVariables"
+    "prevModelView"
+    "screenSize"
+
+  sub_820FFF78  (7 string refs)
+    "ambXNeg"
+    "ambXPos"
+    "ambYFalloff"
+    "ambYNeg"
+    "ambYPos"
+    "ambZNeg"
+    "ambZPos"
+
+  sub_82100CB8  (1 string refs)
+    "ii"
+
+  sub_82100D68  (1 string refs)
+    "ii"
+
+  sub_82101C18  (6 string refs)
+    "OnePlayer"
+    "OnePlayerNZ"
+    "OnePlayerPZ"
+    "TwoPlayer"
+    "TwoPlayerNZ"
+    "TwoPlayerPZ"
+
+  sub_82102F58  (1 string refs)
+    "$/tune/training"
+
+  sub_82103878  (2 string refs)
+    "ff"
+    "fff"
+
+  sub_821041E8  (1 string refs)
+    "ff"
+
+  sub_8210A1F0  (1 string refs)
+    "iii"
+
+  sub_8210C8F8  (1 string refs)
+    "allstar"
+
+  sub_8210CDE8  (1 string refs)
+    "HUDranking"
+
+  sub_8210E378  (2 string refs)
+    "%d:%d"
+    "%d:0%d"
+
+  sub_8210F718  (2 string refs)
+    "charge_meter"
+    "ghost_meter"
+
+  sub_8210FCD8  (1 string refs)
+    "charging_score"
+
+  sub_82110060  (2 string refs)
+    "%d:%d"
+    "%d:0%d"
+
+  sub_82110530  (1 string refs)
+    "currentSpin"
+
+  sub_82110A08  (1 string refs)
+    "currentSpin"
+
+  sub_82112160  (3 string refs)
+    "launcher00"
+    "robot"
+    "robot_reload"
+
+  sub_82112DF8  (7 string refs)
+    "$/fx"
+    "$/fx/tex"
+    "NumSets"
+    "Set"
+    "fx"
+    "fx_target"
+    "fx_target2"
+
+  sub_82113DF8  (4 string refs)
+    "AltColor"
+    "Color"
+    "HeightOffset"
+    "TextureName"
+
+  sub_82113F20  (1 string refs)
+    "NumTargets"
+
+  sub_82114510  (9 string refs)
+    "$/tune/tourney"
+    "%s%s"
+    "_ladder"
+    "gdLadder"
+    "gdLadderMatch"
+    "gdRivalry"
+    "gdRivalryData"
+    "gdTier"
+    "gdTierMember"
+
+  sub_82116490  (5 string refs)
+    "FirstServeTip"
+    "FocusMeterTip"
+    "HitTip"
+    "ReviewOnlyTip"
+    "ServeTip"
+
+  sub_82116A78  (2 string refs)
+    "$/tune/helptips"
+    "helptips.xml"
+
+  sub_82117290  (3 string refs)
+    "%s[%d] %s, %s"
+    "dialog_%d"
+    "dialog_title_%d"
+
+  sub_82118990  (3 string refs)
+    "fragment.type"
+    "tune"
+    "type"
+
+  sub_82119398  (23 string refs)
+    "all"
+    "animation"
+    "arm_l"
+    "arm_r"
+    "artAssetID"
+    "becomeRope"
+    "bonetag"
+    "bound"
+    "child"
+    "class"
+    "damageRegions"
+    "edge"
+    "entityclass"
+    "fragments"
+    "group"
+    "locator"
+    "lodgroup"
+    "minMoveForce"
+    "rootCGOffset"
+    "selfCollision"
+    "shadinggroup"
+    "skel"
+    "skeletontype"
+
+  sub_82121EF8  (5 string refs)
+    "RotationSpeed"
+    "Strength"
+    "child"
+    "damagedChild"
+    "group"
+
+  sub_82123760  (9 string refs)
+    "DamageHealth"
+    "DamagedMass"
+    "LatchBreak"
+    "PristineMass"
+    "all"
+    "bound"
+    "breakEvents"
+    "edge"
+    "lodgroup"
+
+  sub_821245E0  (3 string refs)
+    "autoplay"
+    "hide"
+    "rootsonly"
+
+  sub_82124F78  (5 string refs)
+    "animation"
+    "bonetag"
+    "locator"
+    "skel"
+    "skeletontype"
+
+  sub_8212C190  (3 string refs)
+    "Name"
+    "Prim"
+    "Priority"
+
+  sub_8212C288  (3 string refs)
+    "Idx"
+    "Priority"
+    "Type"
+
+  sub_8212C558  (18 string refs)
+    "Adj"
+    "BoxMatrix.a"
+    "BoxMatrix.b"
+    "BoxMatrix.c"
+    "BoxMatrix.d"
+    "BoxSize"
+    "Cpv"
+    "Mtl"
+    "Nrm"
+    "Offset"
+    "Pos"
+    "PosSkin"
+    "Skinned"
+    "Sphere"
+    "TanBi0"
+    "Tex0"
+    "Tex1"
+    "Version"
+
+  sub_8212DD90  (1 string refs)
+    "{ "
+
+  sub_8212DF98  (1 string refs)
+    "{ "
+
+  sub_82130EF8  (3 string refs)
+    "Channels"
+    "Prim"
+    "Verts"
+
+  sub_82133DC0  (2 string refs)
+    "Idx"
+    "Type"
+
+  sub_82137310  (4 string refs)
+    "%02d"
+    "%d"
+    "left"
+    "right"
+
+  sub_8213CCA8  (1 string refs)
+    "reflection"
+
+  sub_8213E520  (18 string refs)
+    "$/tune/shaders/db"
+    "GroundFog"
+    "blur"
+    "bucket"
+    "cfg"
+    "finsPass2"
+    "longHairColor"
+    "longHairDepth"
+    "netmotionblur"
+    "netshadow"
+    "noblur"
+    "preshadow"
+    "projLightPtx"
+    "refract_sprite"
+    "selfshadow"
+    "silhouette"
+    "testMask"
+    "zprepass"
+
+  sub_8213F5F0  (54 string refs)
+    "1/16 Screen"
+    "1/2 Screen"
+    "1/2 Screen 2"
+    "1/4 Screen"
+    "16x16 RT"
+    "1x1 RT"
+    "4x4 RT"
+    "64x64 RT"
+    "Bright Pass"
+    "BrightPass"
+    "ColorCorrect"
+    "ConstAdd"
+    "Contrast"
+    "CopyRT"
+    "CrossBlend"
+    "CrossFade"
+    "DOFAlone"
+    "DOFAndBloom"
+    "DOF_PARAMS"
+    "DOF_PROJ"
+    "DepthCopy"
+    "DepthMap"
+    "DepthMask"
+    "DownSampleRT"
+    "ElapsedTime"
+    "Exposed FS"
+    "Exposure"
+    "FBRestore"
+    "FOG_COLOR"
+    "FOG_PARAMS"
+    "FPS"
+    "FullResMap"
+    "Gauss RT"
+    "GaussX"
+    "GaussY"
+    "GaussianBlur"
+    "HalfContrast"
+    "KawaseBloom"
+    "MiddleGray"
+    "RenderMap"
+    "Scale"
+    "ScaledCopyRT"
+    "Scratch pad RT"
+    "StencilSet"
+    "TexelSize"
+    "TexelWeight"
+    "ToneMap"
+    "ToneMapDOF"
+    "ToneMapSepia"
+    "deSat"
+    "fIteration"
+    "horzTapOffs"
+    "pong_postfx"
+    "vertTapOffs"
+
+  sub_82144258  (1 string refs)
+    "uninitilized"
+
+  sub_82144888  (10 string refs)
+    "BoundOffset:"
+    "BoundSize:"
+    "Bounds:"
+    "LightPosition:"
+    "ShadowBlur:"
+    "ShadowColor:"
+    "ShadowSet:"
+    "Shadows"
+    "Shadows:"
+    "tune/shadows"
+
+  sub_82144FB0  (4 string refs)
+    "ShadowTexture"
+    "Shadow_Poisson"
+    "Shadowmap_Misc"
+    "pong_shadowmap"
+
+  sub_8214B638  (2 string refs)
+    "bone"
+    "version:"
+
+  sub_8214D6E8  (4 string refs)
+    "offset"
+    "root"
+    "rotmax"
+    "rotmin"
+
+  sub_8214D9B8  (2 string refs)
+    "limit"
+    "lock"
+
+  sub_8214DAA0  (11 string refs)
+    "offset"
+    "rotX"
+    "rotY"
+    "rotZ"
+    "scaleX"
+    "scaleY"
+    "scaleZ"
+    "transX"
+    "transY"
+    "transZ"
+    "visibility"
+
+  sub_8214DFE0  (15 string refs)
+    "boneid"
+    "euler"
+    "orient"
+    "rotX"
+    "rotY"
+    "rotZ"
+    "scale"
+    "scaleX"
+    "scaleY"
+    "scaleZ"
+    "sorient"
+    "transX"
+    "transY"
+    "transZ"
+    "visibility"
+
+  sub_8214F648  (5 string refs)
+    "/rage_im"
+    "draw"
+    "drawblit"
+    "drawskinned"
+    "unlit_draw"
+
+  sub_82150500  (1 string refs)
+    "m_DepthBuffer"
+
+  sub_82151168  (1 string refs)
+    "appName"
+
+  sub_821513A0  (1 string refs)
+    "nonresident"
+
+  sub_821515A0  (5 string refs)
+    "clamps"
+    "clampt"
+    "d3d_bias"
+    "ps2_bias"
+    "textune"
+
+  sub_82153ED0  (4 string refs)
+    "ViewInverse"
+    "World"
+    "WorldInverse"
+    "WorldView"
+
+  sub_82154320  (5 string refs)
+    "Ambient"
+    "Diffuse"
+    "LightCount"
+    "LightType"
+    "Position"
+
+  sub_82159FE8  (1 string refs)
+    "fxl_final"
+
+  sub_8215A1F8  (1 string refs)
+    "Clone of %s"
+
+  sub_8215BC80  (1 string refs)
+    "dds"
+
+  sub_8215CB60  (1 string refs)
+    "c:/Screenshot"
+
+  sub_8215E260  (1 string refs)
+    "image"
+
+  sub_8215F220  (1 string refs)
+    "nonresident"
+
+  sub_8215FEF8  (1 string refs)
+    "image"
+
+  sub_82160280  (2 string refs)
+    "$/"
+    "Default"
+
+  sub_821620D0  (1 string refs)
+    "Direct:"
+
+  sub_82162558  (1 string refs)
+    "ControlGroup"
+
+  sub_821629B8  (5 string refs)
+    "Direct"
+    "Effect"
+    "MasterVolume"
+    "MuteOnPause"
+    "Reverb"
+
+  sub_82164DC8  (3 string refs)
+    "$/audio/TDFiles"
+    "%s:%s"
+    "td"
+
+  sub_82165608  (1 string refs)
+    "shot change: %s"
+
+  sub_821656A0  (1 string refs)
+    "$/tune/camera"
+
+  sub_82165960  (2 string refs)
+    "$/tune/camera"
+    "pongcam"
+
+  sub_821665B8  (1 string refs)
+    "camera change: %s"
+
+  sub_82167950  (1 string refs)
+    "Replay"
+
+  sub_82167A00  (1 string refs)
+    "Cam0"
+
+  sub_82167EA8  (2 string refs)
+    "Trim"
+    "Wildcard"
+
+  sub_8216CEB0  (3 string refs)
+    "Clip Far"
+    "Clip Near"
+    "UseGlobalClip"
+
+  sub_8216D0C0  (10 string refs)
+    "SH_Continuous"
+    "SH_Enable"
+    "SH_Magnitude"
+    "SH_RotAmp"
+    "SH_RotFreq"
+    "SH_RotRandom"
+    "SH_StompTime"
+    "SH_TranAmp"
+    "SH_TranFreq"
+    "SH_TranRandom"
+
+  sub_8216DBB8  (5 string refs)
+    "BlendGoal"
+    "BlendTime"
+    "CameraFOV"
+    "CameraFar"
+    "CameraNear"
+
+  sub_8216DF88  (4 string refs)
+    "PongCamera"
+    "cameraroot"
+    "pongcam"
+    "pongcamera"
+
+  sub_8216E760  (1 string refs)
+    "pongcam.1"
+
+  sub_8216F0D8  (21 string refs)
+    "%s/"
+    "%s/shake_stomp"
+    "%s_2p"
+    "%s_43"
+    "%s_43_2p"
+    "%s_fast"
+    "%s_medium"
+    "%s_slow"
+    "_back"
+    "_far"
+    "_fore"
+    "_near"
+    "high"
+    "low"
+    "sidecam/side"
+    "sidecam/side_2p"
+    "sidecam/side_43"
+    "swingcam/high"
+    "swingcam/low"
+    "swingcam/low_2p"
+    "swingcam/low_43"
+
+  sub_821709F8  (2 string refs)
+    "AspectRatio"
+    "CameraFocus"
+
+  sub_82172F00  (28 string refs)
+    "IL_Enable"
+    "IL_EventShift"
+    "IL_IntervalAB"
+    "IL_IntervalEF"
+    "IL_IntervalGH"
+    "IL_IntervalKL"
+    "IL_LookAt"
+    "IL_LookAtA"
+    "IL_LookAtB"
+    "IL_LookAtC"
+    "IL_LookAtD"
+    "IL_LookAtE"
+    "IL_LookAtF"
+    "IL_LookAtG"
+    "IL_LookAtH"
+    "IL_LookAtI"
+    "IL_LookAtJ"
+    "IL_LookAtK"
+    "IL_LookAtL"
+    "IL_TimewarpA"
+    "IL_TimewarpB"
+    "IL_TimewarpE"
+    "IL_TimewarpF"
+    "IL_TimewarpG"
+    "IL_TimewarpH"
+    "IL_TimewarpK"
+    "IL_TimewarpL"
+    "IL_TransInStop"
+
+  sub_82175248  (44 string refs)
+    "AnimArray"
+    "AnimSideNegZ"
+    "AnimType"
+    "BallPos"
+    "Ball_InPlay"
+    "CamType"
+    "CameraForward"
+    "CameraLookAt"
+    "CameraPos"
+    "CameraPosZ"
+    "CameraReset"
+    "CameraRight"
+    "CameraUp"
+    "DebugPadState"
+    "Inline_Active"
+    "Inline_Done"
+    "Inline_Flip"
+    "Inline_LookAt"
+    "Inline_Near"
+    "Inline_Type"
+    "LookstickX"
+    "LookstickY"
+    "MainCamPosZ"
+    "MovestickX"
+    "MovestickY"
+    "PaddleNegZPos"
+    "PaddlePosZPos"
+    "PlayerFPos"
+    "PlayerF_Height"
+    "PlayerF_X_Norm"
+    "PlayerF_Z_Norm"
+    "PlayerNPos"
+    "PlayerN_Height"
+    "PlayerN_X_Norm"
+    "PlayerN_Z_Norm"
+    "PlayerNegZPos"
+    "PlayerPosZPos"
+    "Rally_Count"
+    "ServeLockedIn"
+    "Spectator"
+    "SwingCam_Tilt"
+    "Timewarp"
+    "Tossing"
+    "TrackingType"
+
+  sub_82177CE8  (2 string refs)
+    "type: a"
+    "type: b"
+
+  sub_82177D88  (2 string refs)
+    "\n"
+    "type: a"
+
+  sub_82178360  (4 string refs)
+    "  "
+    "\n"
+    "{\n"
+    "}\n"
+
+  sub_8217BC40  (1 string refs)
+    "cr_offset"
+
+  sub_8217BEF8  (24 string refs)
+    "All_DoNothing"
+    "All_SetDofs"
+    "C_DoNothing"
+    "C_Set"
+    "C_SwingCut"
+    "D_DoNothing"
+    "D_Set"
+    "F_DE_DoNothing"
+    "F_DoNothing"
+    "F_Set"
+    "F_SetAll"
+    "F_SetVertigo"
+    "F_V_DoNothing"
+    "H_DoNothing"
+    "H_LookAt"
+    "H_LookAtWithUp"
+    "H_Set"
+    "H_SmoothLookAt"
+    "P_DoNothing"
+    "P_Drive"
+    "P_FollowSimple"
+    "P_Pivot"
+    "P_Set"
+    "P_SwingCut"
+
+  sub_8217F9D8  (12 string refs)
+    "active"
+    "depth"
+    "devarg"
+    "graph"
+    "hit"
+    "info"
+    "material"
+    "normal"
+    "position"
+    "print"
+    "sprint"
+    "startframe"
+
+  sub_82180778  (8 string refs)
+    "active"
+    "devarg"
+    "graph"
+    "info"
+    "material"
+    "print"
+    "sprint"
+    "startframe"
+
+  sub_82180DB8  (3 string refs)
+    "%s.%s"
+    "pongcam.1"
+    "true"
+
+  sub_82183C08  (7 string refs)
+    "C_Set"
+    "FlatDist"
+    "MoveRoam"
+    "P_FollowSimple"
+    "PowerApproach"
+    "SmoothRemap2"
+    "Vector"
+
+  sub_821840F8  (7 string refs)
+    "C_SwingCut"
+    "Differential"
+    "EOApproach2"
+    "P_Pivot"
+    "P_SwingCut"
+    "StandRoam"
+    "Vector"
+
+  sub_821845E8  (3 string refs)
+    "F_DoNothing"
+    "H_SmoothLookAt"
+    "RoamCamera"
+
+  sub_82184A50  (2 string refs)
+    "D_DoNothing"
+    "cameraroot"
+
+  sub_82184D60  (3 string refs)
+    "AnimCamFStop"
+    "AnimCamFov"
+    "AnimDuration"
+
+  sub_82185058  (1 string refs)
+    "zxy"
+
+  sub_821853D8  (1 string refs)
+    "zxy"
+
+  sub_82185EE8  (6 string refs)
+    "CraneBearing"
+    "FocusDistance"
+    "FocusEdge"
+    "HeadBearing"
+    "HeadRoll"
+    "HeadTilt"
+
+  sub_821867F8  (1 string refs)
+    "A:\\default.xex"
+
+  sub_82186970  (3 string refs)
+    "Main()"
+    "c:/leaks.txt"
+    "c:/logmemory.csv"
+
+  sub_82186BE8  (1 string refs)
+    "A:"
+
+  sub_821879B8  (2 string refs)
+    "%d leak(s) total"
+    "%u\r\n"
+
+  sub_82188DD8  (3 string refs)
+    "$/fx/tex"
+    "ITZ"
+    "__charcubemap"
+
+  sub_82189B48  (1 string refs)
+    "iii"
+
+  sub_8218A948  (1 string refs)
+    "$/characters"
+
+  sub_8218B6F0  (1 string refs)
+    "FootStompVibe"
+
+  sub_8218DBD8  (1 string refs)
+    "ffff"
+
+  sub_8218F958  (1 string refs)
+    "Move mode is %d.\n"
+
+  sub_82195690  (1 string refs)
+    "\n"
+
+  sub_821981D0  (1 string refs)
+    "%s plyrID = %d %s"
+
+  sub_8219C810  (2 string refs)
+    "$/tune/intensity"
+    "intensity"
+
+  sub_821A7E08  (1 string refs)
+    "perfectServe"
+
+  sub_821A8C70  (1 string refs)
+    "%f %f"
+
+  sub_821A8CB0  (1 string refs)
+    "%f %f"
+
+  sub_821A8CF8  (1 string refs)
+    "%f %f %f"
+
+  sub_821A8D38  (1 string refs)
+    "%f %f %f"
+
+  sub_821A8D88  (1 string refs)
+    "%f %f %f %f"
+
+  sub_821A8DD0  (1 string refs)
+    "%f %f %f %f"
+
+  sub_821A8EB0  (1 string refs)
+    "%f %f %f %f %f %f %f %f %f %f %f %f"
+
+  sub_821A94A0  (3 string refs)
+    "amp"
+    "apos"
+    "quot"
+
+  sub_821ABC00  (1 string refs)
+    "xgs"
+
+  sub_821AC0B0  (5 string refs)
+    "$/audio"
+    "ShelvingEQ"
+    "effects"
+    "effects.list"
+    "list"
+
+  sub_821AC228  (3 string refs)
+    "$/audio"
+    "effects"
+    "effects.list"
+
+  sub_821ACC18  (1 string refs)
+    "ShelvingEQ"
+
+  sub_821AD098  (2 string refs)
+    "%s.xsb"
+    "%s.xwb"
+
+  sub_821AFD10  (1 string refs)
+    "Pitch"
+
+  sub_821AFD90  (1 string refs)
+    "Distance"
+
+  sub_821B02A8  (21 string refs)
+    "Attack"
+    "Average"
+    "Bandwidth"
+    "Biquad"
+    "Compressor"
+    "Delay"
+    "Delay Time"
+    "Feedback"
+    "Gain"
+    "High Gain"
+    "Hz"
+    "Low Gain"
+    "Mode"
+    "Ratio"
+    "Release"
+    "Resonance"
+    "Slope"
+    "Threshold"
+    "dB"
+    "ms"
+    "sec"
+
+  sub_821B2DA8  (1 string refs)
+    "%s:%s_VS_%s"
+
+  sub_821B2FA8  (1 string refs)
+    "%s:%d_GAME_%d"
+
+  sub_821B3240  (10 string refs)
+    "%s:%s_%s_%d"
+    "%s:%s_LEAD"
+    "%s:%s_lead_%s"
+    "%s:%s_trail_%s"
+    "%s:ADVANTAGE_%s"
+    "%s:DEUCE"
+    "%s:GAMEPOINT"
+    "%s:MATCHPOINT"
+    "DOWN"
+    "UP"
+
+  sub_821B3718  (1 string refs)
+    "%s:POINT"
+
+  sub_821B3810  (2 string refs)
+    "%s:%d_%d"
+    "%s:TS_%d_%d"
+
+  sub_821B39A8  (1 string refs)
+    "%s:BOREDOM_%02d"
+
+  sub_821B3F18  (16 string refs)
+    "AMB"
+    "ANNOUNCER"
+    "BALL"
+    "CALLOUT"
+    "CROWD"
+    "CROWD_FX"
+    "EMOTE"
+    "FOLEY"
+    "FOOTWORK"
+    "HUD"
+    "Music"
+    "NARRATOR"
+    "RALLY_FX"
+    "ROOMTONE"
+    "SPEECH"
+    "UI"
+
+  sub_821B4C28  (3 string refs)
+    "HUD"
+    "dynamic"
+    "static"
+
+  sub_821B5310  (6 string refs)
+    "AMB_%s"
+    "ANNOUNCER"
+    "FANS_%s"
+    "FS_%s"
+    "LS_%s"
+    "VO_%s"
+
+  sub_821B57D8  (1 string refs)
+    "FEMUSIC_%02d"
+
+  sub_821B5A68  (2 string refs)
+    "a.x = -QNaN"
+    "a.x = QNaN"
+
+  sub_821B5D58  (1 string refs)
+    "%s:%s"
+
+  sub_821B61A8  (6 string refs)
+    "%s:IDLE"
+    "%s:RUN"
+    "%s:SCUFF"
+    "%s:SIDESTEP"
+    "%s:STOMP"
+    "%s:WALK"
+
+  sub_821B8230  (14 string refs)
+    "CHARVIEW_%s_LP"
+    "FRONTEND_LP"
+    "GAME_END"
+    "MATCH_END"
+    "MUSIC"
+    "RALLY"
+    "REPLAY_END"
+    "REPLAY_LP"
+    "UN_GAME_END"
+    "UN_MATCH_END"
+    "UN_START_HIGH_LP"
+    "UN_START_LOW_LP"
+    "UN_START_LP"
+    "UN_START_MED_LP"
+
+  sub_821B8D60  (5 string refs)
+    "%s:%sFRNT_LP"
+    "%s:%sSRND_LP"
+    "%s:ROOMTONE_LP"
+    "AMB_"
+    "AMB_SM_"
+
+  sub_821B9278  (2 string refs)
+    "%s:NOIZ_GAME"
+    "%s:NOIZ_IDLE"
+
+  sub_821B9410  (2 string refs)
+    "%s:%s%02d"
+    "NOIZ_SPECIAL"
+
+  sub_821B9650  (1 string refs)
+    "%s:WIN"
+
+  sub_821B9B70  (1 string refs)
+    "%s:POINT"
+
+  sub_821BB060  (2 string refs)
+    "EMOTE_%s_LOSE"
+    "EMOTE_%s_WIN"
+
+  sub_821BB7C0  (1 string refs)
+    "CHANT_%s"
+
+  sub_821BC440  (7 string refs)
+    "%s:%s_FRNT"
+    "%s:%s_FRNT%02d"
+    "%s:%s_SRND"
+    "%s:%s_SRND%02d"
+    "CROWD_RS"
+    "SM_CROWD_RS"
+    "ifff"
+
+  sub_821BCC40  (4 string refs)
+    "$/tune/audio"
+    "data"
+    "global"
+    "global.data"
+
+  sub_821BEA98  (20 string refs)
+    "%s:Announcer_NET"
+    "%s:Announcer_OUT"
+    "%s:FINALGAME"
+    "%s:GAME%d"
+    "%s:IDLE"
+    "HUD:%s"
+    "HUD:ITZ_CONTACT"
+    "HUD:ITZ_ENTER"
+    "HUD:MENU_PAUSE"
+    "HUD:MENU_RESUME"
+    "HUD:METER_FULL_L"
+    "HUD:METER_FULL_R"
+    "HUD:SLOMO_ENTER"
+    "HUD:SLOMO_EXIT"
+    "HUD:TIMER_BEEP"
+    "MUSIC"
+    "RALLY"
+    "REPLAY_END"
+    "REPLAY_LP"
+    "is"
+
+  sub_821C25E0  (4 string refs)
+    "GAME_END"
+    "MATCH_END"
+    "UN_GAME_END"
+    "UN_MATCH_END"
+
+  sub_821C3A48  (1 string refs)
+    "%s:SHUT_UP_%02d"
+
+  sub_821C3B30  (2 string refs)
+    "%s:ADM_%02d_%s"
+    "%s:ENC_%02d_%s"
+
+  sub_821C41B8  (1 string refs)
+    "%s:HECKLE_%02d_%02d"
+
+  sub_821C4B58  (1 string refs)
+    "NARRATOR"
+
+  sub_821C4D48  (2 string refs)
+    "NEG"
+    "POS"
+
+  sub_821C4FB0  (3 string refs)
+    "CMD_PLAY_ANIM"
+    "CMD_UPDATE"
+    "t_status"
+
+  sub_821C52F0  (1 string refs)
+    "SAVEFILE"
+
+  sub_821C7948  (5 string refs)
+    "$/"
+    "gdITZData"
+    "gdMotionRange"
+    "gdNetDataMgr"
+    "gdPropDataMgr"
+
+  sub_821C85E0  (7 string refs)
+    "$/anim"
+    "$/tune/input"
+    "$/tune/itz"
+    "Done loading %s/%s"
+    "Loading %s/%s..."
+    "itzdata.xml"
+    "vibration.xml"
+
+  sub_821D0740  (5 string refs)
+    "BoneName"
+    "Eulers"
+    "LocalDotBone"
+    "Offset"
+    "PropName"
+
+  sub_821D0BA0  (1 string refs)
+    "$/tune/character"
+
+  sub_821D1038  (6 string refs)
+    "CVIdleAnim"
+    "FEIdleAnim"
+    "FEReadyAnim"
+    "RootPosY"
+    "SkelScale"
+    "WarpVStooping"
+
+  sub_821D1398  (8 string refs)
+    "ankle_l"
+    "ankle_r"
+    "ball"
+    "head"
+    "neck"
+    "paddle"
+    "toe_l"
+    "toe_r"
+
+  sub_821D16E8  (1 string refs)
+    "BlendShape%d"
+
+  sub_821D19F8  (7 string refs)
+    "ArenaLevel"
+    "HomeLevel"
+    "IsBoss"
+    "UIAccuracy"
+    "UIPower"
+    "UISpeed"
+    "UISpin"
+
+  sub_821D1F68  (7 string refs)
+    "gdAudData"
+    "gdCharData"
+    "gdCrData"
+    "gdPlyrAttr"
+    "gdPlyrLimits"
+    "powerZoneAttr"
+    "powerZoneData"
+
+  sub_821D2288  (1 string refs)
+    "characters.xml"
+
+  sub_821D27B8  (2 string refs)
+    "BiasRating"
+    "OpponentName"
+
+  sub_821D28E0  (23 string refs)
+    "AceServe"
+    "Deuce"
+    "DoubleBounce"
+    "EdgeOfTable"
+    "FarShot"
+    "FarShotDist"
+    "FocusShotFail"
+    "FocusShotSucc"
+    "GamePoint"
+    "HitNetNoPlay"
+    "HitNetNoRet"
+    "HitNetRet"
+    "LungeMiss"
+    "LungeRet"
+    "NPIMaxDec"
+    "NPIMaxDecVal"
+    "NPIMinInc"
+    "NPIMinIncVal"
+    "PointWin"
+    "RallyOffset"
+    "RallyThresh"
+    "ServiceNet"
+    "SlamShot"
+
+  sub_821D2DF8  (5 string refs)
+    "ConsScore"
+    "NumTies"
+    "RallyCount"
+    "ScoreDiff"
+    "ScoreVal"
+
+  sub_821D2FB0  (5 string refs)
+    "EndGameVal"
+    "FadePeriod"
+    "FadeStartTime"
+    "ITZVal"
+    "SwingVal"
+
+  sub_821D4860  (2 string refs)
+    "BlendFcn"
+    "Enable"
+
+  sub_821D4988  (2 string refs)
+    "%s.bsd"
+    ".bsd"
+
+  sub_821D4C98  (9 string refs)
+    "AvgFcn"
+    "InterpFcn"
+    "MinMaxAngX"
+    "MinMaxAngY"
+    "MinMaxAngZ"
+    "Weight"
+    "WeightX"
+    "WeightY"
+    "WeightZ"
+
+  sub_821D5AD8  (18 string refs)
+    "BallHitData:\n"
+    "Is Finalized"
+    "Is Serve"
+    "Not Finalized"
+    "Not a Serve"
+    "\t%s"
+    "\tElasticity\t\t\t\t\t%f"
+    "\tForce\t\t\t\t\t%f"
+    "\tGamePace\t\t\t\t%f"
+    "\tGravity\t\t\t\t\t%f"
+    "\tHitForce\t\t\t\t\t%f"
+    "\tHitZone\t\t\t\t\t%s"
+    "\tPostHitSpeed\t\t\t\t%f"
+    "\tQuality\t\t\t\t\t%f"
+    "\tRallyCount\t\t\t\t%d"
+    "\tSwingType\t\t\t\t%s"
+    "\tgameCount\t\t\t\t%d"
+    "\tupdate Count\t\t\t\t%d"
+
+  sub_821D6608  (19 string refs)
+    "BallPos"
+    "Elasticity"
+    "Force"
+    "GamePace"
+    "Gravity"
+    "HitForce"
+    "IsServe"
+    "PaddleVel"
+    "PostHitSpeed"
+    "Quality"
+    "ServeHitVel"
+    "ServeMeterVal"
+    "SpinAxis"
+    "SwingType"
+    "TableTgtError"
+    "TableTgtKick"
+    "TableTgtPos"
+    "TgtMaxError"
+    "WorldTgtPos"
+
+  sub_821D9D08  (3 string refs)
+    "DistPerSecond"
+    "MaxFudgeDist"
+    "MinFudgeDist"
+
+  sub_821D9D90  (4 string refs)
+    "$/anim"
+    "Done loading %s/%s"
+    "Loading %s/%s..."
+    "ballfudge.xml"
+
+  sub_821DA160  (6 string refs)
+    "PassIfInside"
+    "PosX"
+    "PosZ"
+    "Radius"
+    "SizeX"
+    "SizeZ"
+
+  sub_821DA6B8  (2 string refs)
+    "BiasRating"
+    "CharacterName"
+
+  sub_821DA8B0  (2 string refs)
+    "EnableFog"
+    "EntityName"
+
+  sub_821DAEF0  (52 string refs)
+    "%sAmbNegX"
+    "%sAmbNegY"
+    "%sAmbNegZ"
+    "%sAmbPosX"
+    "%sAmbPosY"
+    "%sAmbPosZ"
+    "%sAmbient"
+    "%sL%dColor"
+    "%sL%dDir"
+    "%sL%dFalloff"
+    "%sL%dIntensity"
+    "%sL%dPos"
+    "BallBankName"
+    "BallColor"
+    "CrowdBankName"
+    "DecayHFRatio"
+    "DecayTime"
+    "Density"
+    "Diffusion"
+    "FloorBlur"
+    "FloorFadeDist"
+    "FogColor"
+    "FogEndPos"
+    "FogStartPos"
+    "FriendlyName"
+    "HFReference"
+    "HasCrowd"
+    "IntroMusic"
+    "IsInterior"
+    "IsSelectable"
+    "IsUnlockable"
+    "JudgeName"
+    "LevelName"
+    "LightsCrowd"
+    "LightsFarChar"
+    "LightsLevel"
+    "PostAdapt"
+    "PostConstAdd"
+    "PostContrast"
+    "PostExposure"
+    "PostRHO"
+    "PostScale"
+    "PostdeSat"
+    "Reflections"
+    "Reverb"
+    "ReverbDelay"
+    "ReverbLevel"
+    "Room"
+    "RoomHF"
+    "TableBlur"
+    "TableFadeDist"
+    "TableName"
+
+  sub_821DBFB8  (1 string refs)
+    "gdLevelData"
+
+  sub_821DC0D8  (4 string refs)
+    "frontend"
+    "level"
+    "levels.xml"
+    "lvl_training"
+
+  sub_821DCC28  (2 string refs)
+    "CamName"
+    "ViewName"
+
+  sub_821DD038  (1 string refs)
+    "CanUserCycle"
+
+  sub_821DDBF0  (5 string refs)
+    "gdCamData"
+    "gdShotData"
+    "gdShotName"
+    "gdShotSet"
+    "gdViewData"
+
+  sub_821DDD90  (3 string refs)
+    "OnePlayer"
+    "TwoPlayer"
+    "shots.xml"
+
+  sub_821DE3C0  (10 string refs)
+    "AimDelay"
+    "EnableReticle"
+    "MaxBallSpeed"
+    "MaxBallSpin"
+    "MinBallSpeed"
+    "MinBallSpin"
+    "NumEasyShots"
+    "ProbSameShot"
+    "RobotTarget%d"
+    "TotalNumTries"
+
+  sub_821DE5C8  (1 string refs)
+    "RobotTarget%d"
+
+  sub_821DE9C8  (5 string refs)
+    "DetectRadius"
+    "DrillTime"
+    "TargetHitTime"
+    "TargetRadius"
+    "UrgentTime"
+
+  sub_821DECE8  (1 string refs)
+    "TryTime"
+
+  sub_821DF130  (1 string refs)
+    "NumSpinShots"
+
+  sub_821DF448  (2 string refs)
+    "DrillTime"
+    "UrgentTime"
+
+  sub_821DF898  (2 string refs)
+    "MinSpin"
+    "ProbSameSpin"
+
+  sub_821DFAC8  (2 string refs)
+    "MinSpin"
+    "ProbSameSpin"
+
+  sub_821E1A18  (3 string refs)
+    "$/tune/stats"
+    "Thresholds"
+    "stats.xml"
+
+  sub_821E1BB0  (4 string refs)
+    "$/tune/stats"
+    "Item"
+    "List"
+    "list.xml"
+
+  sub_821E69A0  (1 string refs)
+    "STATS"
+
+  sub_821E7180  (1 string refs)
+    "stat_%d_%d"
+
+  sub_821E8430  (1 string refs)
+    "TOURNEY"
+
+  sub_821E8EA8  (2 string refs)
+    "Awareness"
+    "DefendSlam"
+
+  sub_821E90B8  (1 string refs)
+    "Awareness"
+
+  sub_821E92B0  (3 string refs)
+    "ChargeMeter"
+    "ConserveMeter"
+    "DoFocusShot"
+
+  sub_821E94F8  (9 string refs)
+    "AimForEdge"
+    "AttackLong"
+    "AttackShort"
+    "AttackWide"
+    "Charging"
+    "CombineSpin"
+    "MixUpTargets"
+    "UseKillShot"
+    "UseTouch"
+
+  sub_821E9850  (8 string refs)
+    "Accuracy"
+    "Decisiveness"
+    "Intelligence"
+    "Positioning"
+    "Precision"
+    "ReactionTime"
+    "ShotTiming"
+    "TopSpeed"
+
+  sub_821E9F10  (5 string refs)
+    "MaxTopSpeed"
+    "MinTopSpeed"
+    "SafeZoneX"
+    "SafeZoneZ"
+    "WorstAccuracy"
+
+  sub_821EA9A0  (2 string refs)
+    "CurrentLead"
+    "PreviousLead"
+
+  sub_821EAB08  (6 string refs)
+    "gdaiData"
+    "gdaiDefPos"
+    "gdaiDeficit"
+    "gdaiLead"
+    "gdaiOffPos"
+    "gdaiSkillSet"
+
+  sub_821EAED0  (3 string refs)
+    "$/tune/ai"
+    "Loading AI data..."
+    "aidata.xml"
+
+  sub_821EF0D0  (2 string refs)
+    "goat"
+    "spectator"
+
+  sub_821EF4A8  (7 string refs)
+    "char_austria"
+    "char_brazil"
+    "char_cassidy"
+    "char_egypt"
+    "char_england"
+    "char_japan"
+    "char_korea"
+
+  sub_821EF718  (1 string refs)
+    "UNLOCKS"
+
+  sub_821F0098  (3 string refs)
+    "NetDampening"
+    "NetLooseSize"
+    "NetLowerRight"
+
+  sub_821F0260  (1 string refs)
+    "gdNetData"
+
+  sub_821F0370  (1 string refs)
+    "tune/tables"
+
+  sub_821F0738  (2 string refs)
+    "CharacterName"
+    "RivalName"
+
+  sub_821F14F0  (6 string refs)
+    "Arena"
+    "CrowdSize"
+    "Difficulty"
+    "Opponent"
+    "TourneyLevel"
+    "TourneyType"
+
+  sub_821F15F0  (13 string refs)
+    "Championships"
+    "Home"
+    "Large"
+    "National"
+    "Normal"
+    "Playoffs"
+    "Quarterfinals"
+    "Regional"
+    "Rival"
+    "Rowdy"
+    "Semifinals"
+    "Small"
+    "World"
+
+  sub_821F21D0  (4 string refs)
+    "AtLeast"
+    "InARow"
+    "OutOf"
+    "Param1"
+
+  sub_821F2368  (3 string refs)
+    "AtLeast"
+    "InARow"
+    "OutOf"
+
+  sub_821F26C0  (2 string refs)
+    "AtLeastGame"
+    "SoftShotsUsed"
+
+  sub_821F2C10  (3 string refs)
+    "Activated"
+    "ConfirmCheat"
+    "Deactivated"
+
+  sub_821F3130  (10 string refs)
+    "%.2d:%.2d"
+    "%.2f"
+    "%.2f %s"
+    "%d %s, %d:%.2d:%.2d"
+    "%d:%.2d:%.2d"
+    "circuit_%d"
+    "name_%s"
+    "stxt_stats_day"
+    "stxt_stats_days"
+    "stxt_stats_none"
+
+  sub_821F9EA8  (32 string refs)
+    "EndOfPointA"
+    "EndOfPointB"
+    "LetA"
+    "LetB"
+    "MatchLetA"
+    "MatchLetB"
+    "MatchMiss"
+    "MatchMissA"
+    "MatchMissB"
+    "MatchScore"
+    "MatchScoreA"
+    "MatchScoreB"
+    "Miss"
+    "MissA"
+    "MissB"
+    "PaddleHit"
+    "PaddleHitA"
+    "PaddleHitB"
+    "ReturnOut"
+    "Score"
+    "ScoreA"
+    "ScoreB"
+    "ServeHit"
+    "ServeHitA"
+    "ServeHitB"
+    "Service"
+    "WindowMiss"
+    "WindowMissA"
+    "WindowMissB"
+    "WindowScore"
+    "WindowScoreA"
+    "WindowScoreB"
+
+  sub_821FD648  (19 string refs)
+    "FocusShot"
+    "JustInTime"
+    "Lunge"
+    "LungeBackhand"
+    "LungeForehand"
+    "MatchPopFlyA"
+    "MatchPopFlyB"
+    "OverTheTable"
+    "PopFlyA"
+    "PopFlyB"
+    "Slam"
+    "SlamA"
+    "SlamA_Timer"
+    "SlamB"
+    "SlamB_Timer"
+    "Slam_Timer"
+    "WindowSlam"
+    "WindowSlamA"
+    "WindowSlamB"
+
+  sub_822024A0  (3 string refs)
+    "Timer"
+    "TimerOneSec"
+    "TimerTwoSec"
+
+  sub_82206D60  (21 string refs)
+    "ChoiceEight"
+    "ChoiceEleven"
+    "ChoiceFifteen"
+    "ChoiceFive"
+    "ChoiceFour"
+    "ChoiceNine"
+    "ChoiceOne"
+    "ChoiceSeven"
+    "ChoiceSix"
+    "ChoiceSixteen"
+    "ChoiceTen"
+    "ChoiceThree"
+    "ChoiceTwelve"
+    "ChoiceTwenty"
+    "ChoiceTwo"
+    "MatchSelectCW"
+    "SelectCCW"
+    "SelectCW"
+    "TestWildcard"
+    "Try"
+    "Wildcard"
+
+  sub_8220BD48  (5 string refs)
+    "Action"
+    "AndCondition"
+    "Condition"
+    "Dontcare"
+    "OrCondition"
+
+  sub_8220C230  (1 string refs)
+    "ShotDef"
+
+  sub_8220C6D8  (3 string refs)
+    "Oneshot"
+    "PickOneOf"
+    "PlayerSide"
+
+  sub_8220CB08  (6 string refs)
+    "APS"
+    "Attack"
+    "Decay"
+    "Release"
+    "Sustain"
+    "Timewarp"
+
+  sub_8220CCD0  (4 string refs)
+    "gdCameraDef"
+    "gdCameraDest"
+    "gdCameraInst"
+    "gdEnvelope"
+
+  sub_8220CDF0  (1 string refs)
+    "clips.xml"
+
+  sub_8220D958  (7 string refs)
+    "Accuracy"
+    "PZone"
+    "SideSpin"
+    "SpeedDef"
+    "SpinDef"
+    "Strength"
+    "VertSpin"
+
+  sub_8220DC28  (19 string refs)
+    "AccuracyITZ"
+    "ApproachRate"
+    "BackSpin"
+    "BackSpinITZ"
+    "Footwork"
+    "Momentum"
+    "ServeAccuracy"
+    "ServeBackSpin"
+    "ServeLeftSpin"
+    "ServeTopSpin"
+    "Serving"
+    "Sidespin"
+    "SidespinITZ"
+    "Speed"
+    "SpinDefense"
+    "StrengthITZ"
+    "TopSpin"
+    "TopSpinITZ"
+    "TopSpinMaxITZ"
+
+  sub_8220E3E8  (3 string refs)
+    "MaxMoveAccel"
+    "MaxMoveSpeed"
+    "MaxTopSpinRPS"
+
+  sub_8220E888  (2 string refs)
+    "Magnitude"
+    "Time"
+
+  sub_8220F0A8  (4 string refs)
+    "gdVibActuator"
+    "gdVibEffect"
+    "gdVibEvent"
+    "gdVibSample"
+
+  sub_8220FAA8  (1 string refs)
+    "EffectName"
+
+  sub_8220FC20  (1 string refs)
+    "%d-%d"
+
+  sub_822106A8  (1 string refs)
+    "match %s winner = %d"
+
+  sub_82210760  (1 string refs)
+    "match %s loser = %d"
+
+  sub_82210818  (1 string refs)
+    "match %s tied = %d"
+
+  sub_82211478  (1 string refs)
+    "PropType"
+
+  sub_82211528  (1 string refs)
+    "gdPropData"
+
+  sub_82211AF0  (3 string refs)
+    "en"
+    "es"
+    "jp"
+
+  sub_82211F58  (1 string refs)
+    "OPTIONS"
+
+  sub_822125D8  (2 string refs)
+    "AssetName"
+    "EntityName"
+
+  sub_82212778  (1 string refs)
+    "%s.%s"
+
+  sub_82212FF0  (1 string refs)
+    "TRAINING"
+
+  sub_82213308  (1 string refs)
+    "BaseHitDelta"
+
+  sub_82214A60  (3 string refs)
+    "Condition_Ace"
+    "Condition_Char"
+    "Rule"
+
+  sub_82215670  (3 string refs)
+    "UnlockGroup"
+    "UnlockItem"
+    "UnlockRule"
+
+  sub_82215830  (1 string refs)
+    "rules.xml"
+
+  sub_822176D8  (7 string refs)
+    "AudioName"
+    "AudioSuffix"
+    "CharacterID"
+    "HasNewFans"
+    "IntroMusic"
+    "PaddleSound"
+    "UseNewVO"
+
+  sub_822179F8  (7 string refs)
+    "AnimType"
+    "CamName"
+    "CamType"
+    "DOFBlurMax"
+    "SideNegZ"
+    "SubCamType"
+    "TrackingType"
+
+  sub_82217BA0  (1 string refs)
+    "$/camera"
+
+  sub_82217EB8  (4 string refs)
+    "FarAlpha"
+    "NearAlpha"
+    "OnSidePosZ"
+    "ViewName"
+
+  sub_82218340  (5 string refs)
+    "GroupIndex"
+    "ItemIndex"
+    "SubItemIndex"
+    "Text%d"
+    "Type%d"
+
+  sub_82218760  (2 string refs)
+    "BallSpin"
+    "ComebackWin"
+
+  sub_82219728  (4 string refs)
+    "Difficulty"
+    "Game_Type"
+    "Games_Per_Match"
+    "Points_Per_Game"
+
+  sub_82219B70  (2 string refs)
+    "Over"
+    "Under"
+
+  sub_82219EB8  (5 string refs)
+    "Hit_Type"
+    "SpeedOver"
+    "SpeedUnder"
+    "Spin_Type"
+    "Swing_Type"
+
+  sub_8221A8E8  (1 string refs)
+    "CPU"
+
+  sub_8221AA78  (1 string refs)
+    "AtLeastDiff"
+
+  sub_8221AF58  (1 string refs)
+    "Offline"
+
+  sub_8221B610  (3 string refs)
+    "Losses"
+    "Total"
+    "Wins"
+
+  sub_8221B6E0  (3 string refs)
+    "DialogID"
+    "GlobalLimit"
+    "Hint"
+
+  sub_8221C2A0  (1 string refs)
+    "Required"
+
+  sub_8221C3C8  (4 string refs)
+    "AchievementID"
+    "DontSave"
+    "IconID"
+    "NumRequired"
+
+  sub_8221C718  (2 string refs)
+    "NotifyUser"
+    "Prefix"
+
+  sub_8221D940  (1 string refs)
+    "Load failed!"
+
+  sub_8221DCA8  (4 string refs)
+    "NO"
+    "SUCCESS!"
+    "YES"
+    "failed"
+
+  sub_8221E628  (3 string refs)
+    "$/icons"
+    "icon_saveGame"
+    "png"
+
+  sub_8221EE40  (1 string refs)
+    "SAVEFILE"
+
+  sub_82220B48  (1 string refs)
+    "type"
+
+  sub_82221ED0  (4 string refs)
+    "%s\\"
+    "%s\\%s"
+    "assets.rpf"
+    "cache:\\assets"
+
+  sub_82222060  (6 string refs)
+    "%s\\%s\\"
+    "%s\\%s\\%s"
+    "%s\\contents.txt"
+    "cache:\\assets"
+    "contents"
+    "game:\\assets"
+
+  sub_822228B8  (1 string refs)
+    "UNKNOWN"
+
+  sub_82223210  (6 string refs)
+    "cloth"
+    "edgeset"
+    "hair"
+    "haircomb"
+    "shirt"
+    "shorts"
+
+  sub_82223608  (3 string refs)
+    "autoplay"
+    "hide"
+    "rootsonly"
+
+  sub_82223A60  (1 string refs)
+    "CrowdSlot:"
+
+  sub_822244F8  (1 string refs)
+    "boneCount"
+
+  sub_822247C0  (1 string refs)
+    "boneCount"
+
+  sub_82225150  (1 string refs)
+    "BucketSort:"
+
+  sub_822260B8  (6 string refs)
+    "BeginPostFxCB"
+    "EndPostFxCB"
+    "FogDisableCB"
+    "FogEnableCB"
+    "GfxDirtyCB"
+    "LevelAlpha1CB"
+
+  sub_82227430  (9 string refs)
+    "$/tune/settings"
+    "BucketCount:"
+    "BucketSize:"
+    "DefaultBucket:"
+    "DrawBucket:"
+    "Effects"
+    "UI"
+    "bucket"
+    "cfg"
+
+  sub_82227D30  (21 string refs)
+    "BootScreen"
+    "CharAmbient"
+    "CharViewMenu"
+    "ControllerHUD"
+    "CreditsScreen"
+    "CrowdAmbient"
+    "DialogMenu"
+    "FrontEnd"
+    "Leaderboard"
+    "LegalScreen"
+    "Level"
+    "ListHUD"
+    "LoadingScreen"
+    "LvlAmbient"
+    "PauseMenu"
+    "PropPaddle"
+    "ShellHUD"
+    "SubTitleHUD"
+    "TrainingHUD"
+    "TrainingPopUp"
+    "UnlocksHUD"
+
+  sub_822282D0  (1 string refs)
+    "LowResVer"
+
+  sub_822284A8  (6 string refs)
+    "     unlocks hud: %d\n"
+    "%16s: %d"
+    "%16s: %d(hi) %d(lo)"
+    "Base"
+    "assetVersions"
+    "versions.xml"
+
+  sub_82228F30  (2 string refs)
+    "root.sys"
+    "scenegraph"
+
+  sub_82229648  (1 string refs)
+    "UNKNOWN"
+
+  sub_8222A040  (2 string refs)
+    "materials"
+    "mtl"
+
+  sub_8222B8F8  (11 string refs)
+    "   f"
+    "   w"
+    " %20s "
+    " %6.4f"
+    " MCM %1d %6.4f "
+    " g %6.4f %6.4f %6.4f"
+    "Hips"
+    "no_interrupt"
+    "no_masterclock"
+    "time: %f "
+    "u %f "
+
+  sub_8222CC50  (1 string refs)
+    "out of memory\n"
+
+  sub_8222CEB8  (1 string refs)
+    "basic_string"
+
+  sub_8222D5E8  (1 string refs)
+    "basic_string"
+
+  sub_8222E578  (1 string refs)
+    "REGC"
+
+  sub_82233210  (1 string refs)
+    "d: %f\n"
+
+  sub_822380C8  (3 string refs)
+    "hip_l"
+    "hip_r"
+    "pelvis"
+
+  sub_822381B8  (10 string refs)
+    "clavicle_l"
+    "clavicle_r"
+    "head"
+    "hip_l"
+    "hip_r"
+    "neck"
+    "spine00"
+    "spine03"
+    "wrist_l"
+    "wrist_r"
+
+  sub_82238600  (1 string refs)
+    "*** UNKNOWN ID ***"
+
+  sub_8223A638  (2 string refs)
+    "false"
+    "true"
+
+  sub_82240010  (7 string refs)
+    "__envcubemap"
+    "__envcubemap2"
+    "__framebuffer"
+    "__groundmap"
+    "__refractmap"
+    "refraction_tex"
+    "tabletop"
+
+  sub_82240620  (3 string refs)
+    "$/level"
+    "$/resource/level"
+    "loading level: %s"
+
+  sub_82240860  (1 string refs)
+    "loading level: %s"
+
+  sub_82240A90  (1 string refs)
+    "$/resource/table"
+
+  sub_82243580  (3 string refs)
+    "netImpactVec"
+    "netSize"
+    "netUpperLeft"
+
+  sub_82243EA8  (2 string refs)
+    "SndFx:"
+    "effect:"
+
+  sub_82243F78  (2 string refs)
+    "\tSndFx: "
+    "\teffect: "
+
+  sub_82248F98  (1 string refs)
+    "COULDN'T LOAD '%s'"
+
+  sub_8225BD28  (1 string refs)
+    "Version:"
+
+  sub_8225BDE8  (2 string refs)
+    "blendshape"
+    "blendshapes"
+
+  sub_8225C158  (1 string refs)
+    "em"
+
+  sub_8225D570  (6 string refs)
+    "box"
+    "center"
+    "high"
+    "low"
+    "radius"
+    "vlow"
+
+  sub_82261748  (1 string refs)
+    "PongCamera"
+
+  sub_82263278  (115 string refs)
+    "Abs"
+    "AbsAngleDiff"
+    "Add"
+    "AlarmTimer"
+    "And"
+    "Angle"
+    "AngleDiff"
+    "AngleLerp"
+    "Approach2"
+    "ArcCosine"
+    "ArcTangent"
+    "Capture"
+    "Changed"
+    "Clamp"
+    "ClampRange"
+    "CompMult"
+    "Cond2"
+    "Cond3"
+    "Cond4"
+    "Cond5"
+    "Cond6"
+    "Cosine"
+    "Cross"
+    "DevArg"
+    "Differential"
+    "Differentiate"
+    "Dist"
+    "Dist2"
+    "Divide"
+    "Dot"
+    "DrawVec"
+    "EIApproach2"
+    "EIEOApproach2"
+    "EOApproach2"
+    "Equals"
+    "FOV"
+    "FlatDist"
+    "FlatDist2"
+    "FlatDot"
+    "Flatten"
+    "GNoise"
+    "Graph"
+    "GreaterThan"
+    "If"
+    "Info"
+    "Integrate"
+    "Integrate0"
+    "Inverse"
+    "IsValid"
+    "Lerp"
+    "LessThan"
+    "LinearRemap2"
+    "LinearRemap3"
+    "LinearRemap4"
+    "LinearRemap5"
+    "LinearRemap6"
+    "LocalRestart"
+    "LookAtAngles"
+    "Mag"
+    "Mag2"
+    "Max"
+    "Memory"
+    "Min"
+    "Modulo"
+    "Multiply"
+    "Negate"
+    "Noise"
+    "Normal"
+    "Or"
+    "Pow"
+    "PowerApproach"
+    "Print"
+    "Range"
+    "RotateX"
+    "RotateY"
+    "RotateZ"
+    "SPrint"
+    "Scale"
+    "ScreenToWorld"
+    "Sign"
+    "Sine"
+    "SlowIn"
+    "SlowInOut"
+    "SlowOut"
+    "SmoothRemap2"
+    "SmoothRemap3"
+    "SmoothRemap4"
+    "SmoothRemap5"
+    "SmoothRemap6"
+    "Sqrt"
+    "StdLookup2"
+    "StdLookup3"
+    "StdLookup4"
+    "StdLookup5"
+    "StdLookup6"
+    "Subtract"
+    "Switch2"
+    "Switch3"
+    "Switch4"
+    "Switch5"
+    "Switch6"
+    "Tangent"
+    "TurnsOff"
+    "TurnsOn"
+    "VectorGNoise"
+    "VectorNoise"
+    "VizVectorBlue"
+    "VizVectorRed"
+    "WorldCapture"
+    "WorldChanged"
+    "WorldMemory"
+    "WorldToScreen"
+    "WorldTurnsOff"
+    "WorldTurnsOn"
+    "Xor"
+
+  sub_822742B0  (13 string refs)
+    "and"
+    "avg"
+    "bitwiseand"
+    "bitwiseor"
+    "first"
+    "furthestfrom"
+    "last"
+    "max"
+    "min"
+    "most"
+    "nearestto"
+    "or"
+    "sum"
+
+  sub_82276340  (7 string refs)
+    "BOOL"
+    "FLOAT"
+    "GROUP"
+    "INT"
+    "SUBGROUP"
+    "TITLE"
+    "VECTOR"
+
+  sub_82276C88  (1 string refs)
+    "cmt"
+
+  sub_8227D220  (1 string refs)
+    "entity"
+
+  sub_8227EF30  (16 string refs)
+    "Awaken All:       ?"
+    "Cycle Draw Mode:  ?"
+    "Display Help:     ?"
+    "Draw Debug:       ?"
+    "FPS: %6.2f"
+    "Paused"
+    "Reset:            ?"
+    "Rotate Down:      ?"
+    "Rotate Left:      ?"
+    "Rotate Right:     ?"
+    "Rotate Up:        ?"
+    "Zoom in:          ?"
+    "Zoom out:         ?"
+    "clock msec/f: %6.3f"
+    "sim msec/f:   %6.3f"
+    "timewarp:         %6.3f"
+
+  sub_8227F6A8  (1 string refs)
+    "%s_%i"
+
+  sub_82280B98  (4 string refs)
+    "Fixed"
+    "GamePace"
+    "GamePaceStart"
+    "ServeTimeout"
+
+  sub_82280D48  (2 string refs)
+    "$/props"
+    "Ball_Color"
+
+  sub_82287B50  (3 string refs)
+    "First Sample:"
+    "Last Sample:"
+    "Num samples: %d"
+
+  sub_82288368  (4 string refs)
+    "\n"
+
+  sub_82288C68  (1 string refs)
+    "lastIdx<1"
+
+  sub_82289110  (1 string refs)
+    "lastIdx<1"
+
+  sub_8228A7D8  (2 string refs)
+    "$\\audio"
+    "ballsounds"
+
+  sub_8228AD58  (7 string refs)
+    "%s:%s%s"
+    "%s:%s_BOUNCE"
+    "%s:BALL_NET"
+    "%s:PONG_BALL_NET"
+    "_HARD"
+    "_MEDIUM"
+    "_SOFT"
+
+  sub_8228C3C0  (17 string refs)
+    "/bound"
+    "/bound/bound"
+    "1.01"
+    "1.1"
+    "1.10"
+    "BOX"
+    "CAPSULE"
+    "COMPOSITE"
+    "GEOMETRY"
+    "HOTDOG"
+    "OCTREE"
+    "OTGRID"
+    "QUADTREE"
+    "RIBBON"
+    "SPHERE"
+    "bbnd"
+    "bnd"
+
+  sub_8228CA78  (13 string refs)
+    "1.01"
+    "1.1"
+    "1.10"
+    "BOX"
+    "CAPSULE"
+    "COMPOSITE"
+    "GEOMETRY"
+    "HOTDOG"
+    "OCTREE"
+    "OTGRID"
+    "QUADTREE"
+    "RIBBON"
+    "SPHERE"
+
+  sub_8228D308  (1 string refs)
+    "type:"
+
+  sub_8228E2B0  (7 string refs)
+    "bound:"
+    "centroid:"
+    "cg:"
+    "materials:"
+    "matrix:"
+    "name:"
+    "position:"
+
+  sub_822914F8  (6 string refs)
+    "centroid:"
+    "cg:"
+    "edges:"
+    "materials:"
+    "polys:"
+    "verts:"
+
+  sub_82291738  (2 string refs)
+    "quad"
+    "tri"
+
+  sub_82292110  (10 string refs)
+    " verts (%d,%d,%d)"
+    " verts (%d,%d,%d,%d)"
+    "bnd"
+    "edges:"
+    "polys:"
+    "quad"
+    "tri"
+    "type:"
+    "version:"
+    "verts:"
+
+  sub_82292EA8  (2 string refs)
+    " verts (%d,%d,%d)"
+    " verts (%d,%d,%d,%d)"
+
+  sub_822A06D0  (1 string refs)
+    "curve:"
+
+  sub_822A2948  (2 string refs)
+    "closed"
+    "open"
+
+  sub_822AD358  (6 string refs)
+    "otBoxMax:"
+    "otBoxMin:"
+    "otMaxHeight:"
+    "otMaxPerCell:"
+    "otNumCells:"
+    "otNumPolys:"
+
+  sub_822BC440  (1 string refs)
+    "SAVEDATA"
+
+  sub_822BDC80  (2 string refs)
+    "$/strtbl"
+    "global"
+
+  sub_822BE268  (2 string refs)
+    "$/tune/materials"
+    "CutScene"
+
+  sub_822BEAA0  (7 string refs)
+    "$/fx"
+    "ball_trail"
+    "finish fx load"
+    "icons"
+    "scenegraph.xml"
+    "start fx load"
+    "tex"
+
+  sub_822BFE88  (5 string refs)
+    "21"
+    "543"
+    "BA"
+    "PONG"
+    "SLUS"
+
+  sub_822C0C48  (2 string refs)
+    "Time after CB = %f(%f)"
+    "Time at run = %f(%f)"
+
+  sub_822C9610  (1 string refs)
+    "phys"
+
+  sub_822C9750  (3 string refs)
+    "BASE"
+    "DAMP"
+    "PHYS"
+
+  sub_822C9A28  (6 string refs)
+    "IncludeFlags:"
+    "PropertyFlags:"
+    "TypeFlags:"
+    "boundsource:"
+    "file"
+    "local"
+
+  sub_822C9F90  (6 string refs)
+    "angInertia:"
+    "density:"
+    "gravityFactor:"
+    "inertiaBox:"
+    "inertiaScale:"
+    "mass:"
+
+  sub_822CA438  (7 string refs)
+    "angularC:"
+    "angularV2:"
+    "angularV:"
+    "damping"
+    "linearC:"
+    "linearV2:"
+    "linearV:"
+
+  sub_822DDC90  (1 string refs)
+    "%s_%i"
+
+  sub_822DDE78  (1 string refs)
+    "%s%i"
+
+  sub_822E12A0  (4 string refs)
+    "cache:"
+    "game:"
+    "memory:"
+    "tcpip:"
+
+  sub_822E14E8  (1 string refs)
+    "/\\"
+
+  sub_822E1C00  (1 string refs)
+    "memory:"
+
+  sub_822E30B8  (1 string refs)
+    "Creating '%s'..."
+
+  sub_822E3518  (2 string refs)
+    "failed"
+    "ok"
+
+  sub_822E36F0  (1 string refs)
+    "ok"
+
+  sub_822E4488  (1 string refs)
+    "1.2.1"
+
+  sub_822E6AB8  (1 string refs)
+    "%.8g "
+
+  sub_822E6B30  (1 string refs)
+    "%.8g\t%.8g "
+
+  sub_822E6BC0  (1 string refs)
+    "%.8g\t%.8g\t%.8g "
+
+  sub_822E6C58  (1 string refs)
+    "%g\t%g\t%g\t%g "
+
+  sub_822E7110  (1 string refs)
+    "type: b"
+
+  sub_822E8240  (1 string refs)
+    "cache:\\"
+
+  sub_822E8560  (1 string refs)
+    "Caching file: %s"
+
+  sub_822E8A18  (2 string refs)
+    "LISTEN"
+    "tcpip:"
+
+  sub_822E8F98  (1 string refs)
+    ":\\"
+
+  sub_822E9628  (1 string refs)
+    ":\\"
+
+  sub_822EA7D8  (1 string refs)
+    "%s\\*"
+
+  sub_822EADF8  (2 string refs)
+    "$/flash"
+    "swf"
+
+  sub_822EBC10  (1 string refs)
+    "length"
+
+  sub_822EBC98  (1 string refs)
+    "length"
+
+  sub_822EBD20  (1 string refs)
+    "CTRL_CFG_SCRN"
+
+  sub_822EBF88  (1 string refs)
+    "controllers"
+
+  sub_822EC418  (2 string refs)
+    "fs_measure_font"
+    "fs_measure_size"
+
+  sub_822EC5C0  (2 string refs)
+    "dialog_%d"
+    "dialog_title_%d"
+
+  sub_822EC960  (3 string refs)
+    "$/tune/dialogs"
+    "Dialog"
+    "dialogs_%s"
+
+  sub_822EDB58  (1 string refs)
+    "Pong_HUD_001"
+
+  sub_822EE2F0  (8 string refs)
+    "%s_wins"
+    "METERS_ALPHA"
+    "SPECTATOR_MODE"
+    "iRematchDone"
+    "iTourneyDone"
+    "iTourneyTied"
+    "pressStartP1"
+    "pressStartP2"
+
+  sub_822EF598  (1 string refs)
+    "P%d_alpha"
+
+  sub_822EF688  (1 string refs)
+    "focus_alpha_p%d"
+
+  sub_822EF778  (15 string refs)
+    "DroppedPlayer"
+    "SPECTATOR_MODE"
+    "aspect"
+    "flashingFocus"
+    "iReset"
+    "lang"
+    "name_%s"
+    "online"
+    "pressStartP1"
+    "pressStartP2"
+    "sPlayerNames"
+    "spectating"
+    "spectators"
+    "t_round_number"
+    "waiting"
+
+  sub_822F0070  (10 string refs)
+    "animateScoreA"
+    "iFault"
+    "iLet"
+    "iMODE_GAME_PLAY"
+    "iMODE_REPLAY"
+    "iMode"
+    "iOut"
+    "iUnlock"
+    "player1Score"
+    "rallyCommand"
+
+  sub_822F1408  (1 string refs)
+    "playersServe"
+
+  sub_822F1558  (71 string refs)
+    "stxt_accept"
+    "stxt_aces"
+    "stxt_continue"
+    "stxt_deuce"
+    "stxt_deuces"
+    "stxt_fault"
+    "stxt_faults"
+    "stxt_final"
+    "stxt_focus"
+    "stxt_game_over"
+    "stxt_game_point"
+    "stxt_games_won"
+    "stxt_hud_quit"
+    "stxt_intensity"
+    "stxt_itz_shots"
+    "stxt_let"
+    "stxt_match_over"
+    "stxt_net"
+    "stxt_num_saves"
+    "stxt_out"
+    "stxt_rally"
+    "stxt_rematch"
+    "stxt_round"
+    "stxt_score"
+    "stxt_service"
+    "stxt_soft_shots"
+    "stxt_tie_game"
+    "stxt_tie_round"
+    "stxt_wins"
+    "t_accept"
+    "t_aces"
+    "t_continue"
+    "t_deuce"
+    "t_fault"
+    "t_faults"
+    "t_final"
+    "t_final_score"
+    "t_focus"
+    "t_game_over"
+    "t_game_point"
+    "t_games_won"
+    "t_intensity"
+    "t_itz_shots"
+    "t_let"
+    "t_longest_rally"
+    "t_match_over"
+    "t_match_point"
+    "t_matches_won"
+    "t_net"
+    "t_next_camera"
+    "t_out"
+    "t_press_start"
+    "t_quit"
+    "t_rally"
+    "t_rematch"
+    "t_replay_button"
+    "t_skip_replay"
+    "t_slow_motion"
+    "t_smash_points"
+    "t_smash_shots"
+    "t_soft_shots"
+    "t_spectators"
+    "t_stats_title"
+    "t_tie_game"
+    "t_tie_round"
+    "t_time_up"
+    "t_view_unlocked"
+    "t_wins"
+    "t_wins_circuit"
+    "t_wins_game"
+    "t_wins_match"
+
+  sub_822F2588  (6 string refs)
+    "ITZ_p%d"
+    "P%d_alpha"
+    "focusColor_p%d"
+    "focus_alpha_p%d"
+    "ghostITZ_p%d"
+    "intensity_p%d"
+
+  sub_822F2B80  (2 string refs)
+    "ServeMeterX"
+    "ServeMeterY"
+
+  sub_822F2CA8  (3 string refs)
+    "animateScoreA"
+    "animateScoreB"
+    "player2Score"
+
+  sub_822F2D68  (1 string refs)
+    "iGameWinner"
+
+  sub_822F2DF8  (14 string refs)
+    " %d "
+    " - "
+    " GamesWon=%d\n"
+    "Score Row %d = "
+    "false"
+    "finalGame"
+    "final\n"
+    "final_tourney"
+    "iPostGameMsg"
+    "player_wins"
+    "prelim\n"
+    "showMedal"
+    "t_player_wins"
+    "unlockedItems"
+
+  sub_822F3518  (15 string refs)
+    "%s_2"
+    "CYCLE_NAMES"
+    "CYCLE_SCORES"
+    "aces"
+    "backhand_shots"
+    "forehand_shots"
+    "games_won"
+    "iPostMatchMsg"
+    "itz_shots"
+    "longest_rally"
+    "matches_won"
+    "number_of_saves"
+    "points_from_itz"
+    "smash_points"
+    "smash_shots"
+
+  sub_822F4320  (3 string refs)
+    "circuit_%d"
+    "tourney_name_%d_%d"
+    "tourney_win"
+
+  sub_822F4618  (1 string refs)
+    "iMatchWinner"
+
+  sub_822F4768  (5 string refs)
+    "iCurrServer"
+    "iDelayServer"
+    "iDeuce"
+    "iGamePoint"
+    "iMatchPoint"
+
+  sub_822F4938  (2 string refs)
+    "playersSpin"
+    "spinalpha"
+
+  sub_822F4C98  (1 string refs)
+    "newChallenger"
+
+  sub_822F4D08  (1 string refs)
+    "rallyCount"
+
+  sub_822F4E38  (1 string refs)
+    "iMatchScores"
+
+  sub_822F4EE0  (1 string refs)
+    "iNet"
+
+  sub_822F4F70  (3 string refs)
+    "stxt_waiting"
+    "t_waiting"
+    "waiting"
+
+  sub_822F5628  (1 string refs)
+    "t_sm_a_prompt"
+
+  sub_822F5750  (1 string refs)
+    "t_sm_b_prompt"
+
+  sub_822F5878  (1 string refs)
+    "t_sm_x_prompt"
+
+  sub_822F59A0  (1 string refs)
+    "t_sm_y_prompt"
+
+  sub_822F5C80  (1 string refs)
+    "toggle_HUD"
+
+  sub_822F6070  (1 string refs)
+    "toggle_HUD"
+
+  sub_822F6130  (1 string refs)
+    "replayButton"
+
+  sub_822F65D0  (4 string refs)
+    "Gamertag%d"
+    "Gamertags"
+    "stxt_cpu"
+    "stxt_no_name"
+
+  sub_822F6A58  (1 string refs)
+    "Gamertag%d"
+
+  sub_822F6F88  (1 string refs)
+    "DroppedPlayer"
+
+  sub_822F71A0  (1 string refs)
+    "spectators"
+
+  sub_822F73B8  (1 string refs)
+    "iTimeUpMsg"
+
+  sub_822F74A0  (1 string refs)
+    "t_waiting"
+
+  sub_822F76F8  (4 string refs)
+    "currentGame"
+    "finalGame"
+    "finalGames"
+    "maxGame"
+
+  sub_822F7D70  (1 string refs)
+    "HUD:SELECT"
+
+  sub_822F8750  (6 string refs)
+    "aspect"
+    "p1_gamer_tag"
+    "p1_name"
+    "p2_gamer_tag"
+    "p2_name"
+    "reset"
+
+  sub_822F8F40  (1 string refs)
+    "Samson"
+
+  sub_822F91C8  (1 string refs)
+    "SHOW_CONTROLS"
+
+  sub_822F9658  (1 string refs)
+    "%s %d"
+
+  sub_822F9EA8  (1 string refs)
+    "TrainingHUD"
+
+  sub_822FA1B0  (1 string refs)
+    "training_state"
+
+  sub_822FA5F8  (3 string refs)
+    "debug_text"
+    "player_name"
+    "t_time"
+
+  sub_822FA718  (1 string refs)
+    "training_state"
+
+  sub_822FA7B8  (1 string refs)
+    "possible"
+
+  sub_822FA818  (1 string refs)
+    "completed"
+
+  sub_822FA878  (1 string refs)
+    "time_low"
+
+  sub_822FA950  (4 string refs)
+    "ServeMeterX"
+    "ServeMeterY"
+    "playersSpin"
+    "spinalpha"
+
+  sub_822FAB80  (1 string refs)
+    "playersServe"
+
+  sub_822FAC08  (1 string refs)
+    "charging_score"
+
+  sub_822FACC8  (11 string refs)
+    "charging"
+    "counterspin"
+    "focus_shots"
+    "movement"
+    "placement"
+    "returns"
+    "serve_meter"
+    "serving"
+    "smash_shots"
+    "soft_shots"
+    "spin"
+
+  sub_822FAE80  (5 string refs)
+    "blank_arrow"
+    "down_arrow"
+    "left_arrow"
+    "right_arrow"
+    "up_arrow"
+
+  sub_822FAF58  (10 string refs)
+    "stxt_t_backspin"
+    "stxt_t_leftspin"
+    "stxt_t_topspin"
+    "t_backspin"
+    "t_focus_topspin"
+    "t_leftspin"
+    "t_meters_filled"
+    "t_rightspin"
+    "t_target_hits"
+    "t_topspin"
+
+  sub_822FB5E0  (3 string refs)
+    "$/portraits"
+    "characters"
+    "levels"
+
+  sub_822FB6B0  (1 string refs)
+    "%s/%s/%s"
+
+  sub_822FBA38  (5 string refs)
+    "stxt_final"
+    "stxt_gpm_1of1"
+    "stxt_gpm_2of3"
+    "stxt_gpm_3of5"
+    "stxt_round"
+
+  sub_822FBD50  (4 string refs)
+    "CMD_PLAY_ANIM"
+    "CMD_UPDATE"
+    "requestOnline"
+    "t_status"
+
+  sub_822FC150  (1 string refs)
+    "Custom Match..."
+
+  sub_822FCA80  (1 string refs)
+    "Quick Match..."
+
+  sub_822FCC70  (1 string refs)
+    "hosting..."
+
+  sub_822FD580  (1 string refs)
+    "requestOnline"
+
+  sub_822FD878  (1 string refs)
+    "stxt_searching"
+
+  sub_822FDF10  (1 string refs)
+    "SHOW_GAMER_TAG"
+
+  sub_822FE240  (3 string refs)
+    "SHOW_GAMER_TAG"
+    "t_final"
+    "tourneyList_4"
+
+  sub_822FEB38  (1 string refs)
+    "tourneyList_4"
+
+  sub_822FF958  (1 string refs)
+    "New outfit = %d"
+
+  sub_822FFC28  (2 string refs)
+    "canPickLevel"
+    "stxt_%s"
+
+  sub_82300848  (5 string refs)
+    "gamerTags"
+    "online_GPM"
+    "online_PPG"
+    "online_PPS"
+    "online_SPEC"
+
+  sub_82300C28  (1 string refs)
+    "onlineMode"
+
+  sub_82300FF8  (1 string refs)
+    "onlineMode"
+
+  sub_82301618  (2 string refs)
+    "Max_Players = %d"
+    "Private_Slots = %d"
+
+  sub_82301F38  (1 string refs)
+    "EnterLobbyArb"
+
+  sub_82302508  (1 string refs)
+    "STATE_ACTION"
+
+  sub_82302FB0  (1 string refs)
+    "STATE_ACTION"
+
+  sub_82303660  (4 string refs)
+    "gamerTags"
+    "online_GL"
+    "online_GW"
+    "online_RANK"
+
+  sub_82303A68  (6 string refs)
+    "online_GL"
+    "online_GW"
+    "online_RANK"
+    "online_RL"
+    "online_RT"
+    "online_RW"
+
+  sub_82303F60  (4 string refs)
+    "finalGames"
+    "maxGame"
+    "round_val"
+    "t_round"
+
+  sub_823042D0  (2 string refs)
+    "round_val"
+    "t_round"
+
+  sub_82305050  (9 string refs)
+    "LOADING"
+    "NUM_LINES"
+    "PROMPT_BACK"
+    "PROMPT_NEXT"
+    "PROMPT_PREV"
+    "reset"
+    "stxt_list_back"
+    "stxt_list_next"
+    "stxt_list_prev"
+
+  sub_82305258  (3 string refs)
+    "UP_ARROW_ALPHA"
+    "done"
+    "quit"
+
+  sub_82305390  (4 string refs)
+    "CMD"
+    "COLUMN%d_TEXT"
+    "COLUMN%d_TYPE"
+    "TITLE"
+
+  sub_82305B90  (3 string refs)
+    "$/tune/movies"
+    "Movie"
+    "movies.xml"
+
+  sub_82306358  (1 string refs)
+    "movies.xml"
+
+  sub_82306898  (1 string refs)
+    "legals"
+
+  sub_82306A50  (4 string refs)
+    "done"
+    "ready"
+    "stxt_legals"
+    "t_legals"
+
+  sub_82306BB8  (1 string refs)
+    "ready"
+
+  sub_823071B8  (1 string refs)
+    "SAVING"
+
+  sub_82308498  (2 string refs)
+    "LadderLoad"
+    "trainingLoad"
+
+  sub_82308ED8  (1 string refs)
+    "gameSelection"
+
+  sub_82309358  (1 string refs)
+    "boot"
+
+  sub_82309580  (1 string refs)
+    "quit"
+
+  sub_82309970  (1 string refs)
+    "show"
+
+  sub_82309B40  (1 string refs)
+    "show"
+
+  sub_8230A6B0  (1 string refs)
+    "arrows_alpha"
+
+  sub_8230A8F8  (3 string refs)
+    "CharSettings"
+    "Settings"
+    "settings.xml"
+
+  sub_8230B000  (3 string refs)
+    "CMD_SHOW_BACK"
+    "CMD_SHOW_FADE"
+    "CMD_SHOW_X"
+
+  sub_8230B138  (4 string refs)
+    "CMD_SHOW_BACK"
+    "CMD_SHOW_X"
+    "HUD:BACK"
+    "HUD:MENU_SCROLL"
+
+  sub_8230B3C0  (1 string refs)
+    "CMD_SHOW_HELP"
+
+  sub_8230B4F0  (1 string refs)
+    "FADE"
+
+  sub_8230B960  (1 string refs)
+    "CHARVIEW_%s_LP"
+
+  sub_8230D198  (1 string refs)
+    "Frontend"
+
+  sub_8230D278  (4 string refs)
+    "$/tune/frontend"
+    "Settings"
+    "__char_select"
+    "settings.xml"
+
+  sub_8230DB30  (1 string refs)
+    "Difficulty is %d"
+
+  sub_823114F8  (2 string refs)
+    "hudItem"
+    "visible"
+
+  sub_82311610  (3 string refs)
+    "UndefinedItem"
+    "hudItem %s"
+    "visible %d"
+
+  sub_82311898  (1 string refs)
+    "txtStr"
+
+  sub_82311938  (1 string refs)
+    "txtStr \"
+
+  sub_82311E70  (3 string refs)
+    "HudItemPages"
+    "Spectator"
+    "tune/net"
+
+  sub_82312120  (2 string refs)
+    "HudItemPages"
+    "tune/net"
+
+  sub_82312250  (1 string refs)
+    "UndefinedPage"
+
+  sub_82312B60  (1 string refs)
+    "pongPause_001"
+
+  sub_82312D28  (1 string refs)
+    "t_resume_game"
+
+  sub_823132F0  (1 string refs)
+    "currState"
+
+  sub_823137D8  (2 string refs)
+    "ConfirmVib"
+    "gameSelection"
+
+  sub_82314038  (1 string refs)
+    "PauseToggle"
+
+  sub_82314170  (74 string refs)
+    "resetArrays"
+    "stxt_accept"
+    "stxt_back"
+    "stxt_back_spin"
+    "stxt_far"
+    "stxt_help_tips"
+    "stxt_left_spin"
+    "stxt_near"
+    "stxt_no"
+    "stxt_off"
+    "stxt_on"
+    "stxt_options"
+    "stxt_or"
+    "stxt_pause"
+    "stxt_quit"
+    "stxt_quit_game"
+    "stxt_right_spin"
+    "stxt_sfx_volume"
+    "stxt_soft_shot"
+    "stxt_speakers"
+    "stxt_static"
+    "stxt_t_soft_shot"
+    "stxt_top_spin"
+    "stxt_tv"
+    "stxt_vibration"
+    "stxt_yes"
+    "t_accept"
+    "t_audio_options"
+    "t_auto_activate"
+    "t_back"
+    "t_back_spin"
+    "t_brightness"
+    "t_camera_view"
+    "t_controller"
+    "t_crowd_volume"
+    "t_dplayer1_view"
+    "t_dplayer2_view"
+    "t_far"
+    "t_focus_moves"
+    "t_game_options"
+    "t_help"
+    "t_home_theater"
+    "t_left_spin"
+    "t_left_trigger"
+    "t_music_volume"
+    "t_near"
+    "t_no"
+    "t_noteConfig_0"
+    "t_noteConfig_1"
+    "t_noteConfig_2"
+    "t_off"
+    "t_on"
+    "t_options"
+    "t_or"
+    "t_pause"
+    "t_player_volume"
+    "t_quick_flick"
+    "t_quick_tap"
+    "t_quit"
+    "t_quitMessage"
+    "t_quit_game"
+    "t_restart_drill"
+    "t_restart_match"
+    "t_right_spin"
+    "t_right_trigger"
+    "t_sfx_volume"
+    "t_soft_shot"
+    "t_speakers"
+    "t_static"
+    "t_top_spin"
+    "t_training_menu"
+    "t_tv"
+    "t_vibration"
+    "t_yes"
+
+  sub_82315058  (1 string refs)
+    "unlockable"
+
+  sub_82315250  (2 string refs)
+    "LOADING"
+    "resetUnlock"
+
+  sub_82315440  (2 string refs)
+    "DONE"
+    "STATE_CURRENT"
+
+  sub_82315598  (5 string refs)
+    "STATE_CURRENT"
+    "\r"
+    "stxt_unlocked"
+    "t_unlock_method"
+    "t_unlocked"
+
+  sub_82315AE8  (2 string refs)
+    "LIST_MEDALS"
+    "charNames"
+
+  sub_82315F60  (21 string refs)
+    "stxt_accuracy"
+    "stxt_back"
+    "stxt_continue"
+    "stxt_locked"
+    "stxt_next_page"
+    "stxt_power"
+    "stxt_speed"
+    "stxt_spin"
+    "stxt_unlocked"
+    "t_accuracy"
+    "t_back"
+    "t_continue"
+    "t_locked"
+    "t_next"
+    "t_next_page"
+    "t_power"
+    "t_previous_page"
+    "t_speed"
+    "t_spin"
+    "t_unlockables"
+    "t_unlocked"
+
+  sub_82316220  (3 string refs)
+    "NEXT_ITEM"
+    "NEXT_PAGE"
+    "POST_GAME"
+
+  sub_82316778  (1 string refs)
+    "shell"
+
+  sub_82316A20  (1 string refs)
+    "ANIM_CURRENT"
+
+  sub_82316AC8  (1 string refs)
+    "LIGHT_RING"
+
+  sub_82316CD8  (5 string refs)
+    ".bik"
+    ".wmv"
+    "game:\\movies\\%s%s"
+    "game:\\movies\\%s_p%s"
+    "game:\\movies\\%s_w%s"
+
+  sub_82316FE8  (1 string refs)
+    "Loading Movie: %s"
+
+  sub_82317838  (1 string refs)
+    "bik"
+
+  sub_82317EB8  (1 string refs)
+    "TrainingMode"
+
+  sub_823185B0  (7 string refs)
+    "SHOW_UNLOCK"
+    "ranking"
+    "resetTraining"
+    "stxt_tip_return"
+    "stxt_tip_smash"
+    "stxt_tip_spin"
+    "unknown drill %d!"
+
+  sub_82318B80  (1 string refs)
+    "EXIT_DONE"
+
+  sub_82318E28  (7 string refs)
+    "LIST_MAIN"
+    "drill_charging"
+    "drill_return"
+    "drill_serving"
+    "drill_smash"
+    "drill_soft_shot"
+    "drill_spin"
+
+  sub_82319C58  (8 string refs)
+    "TM_BEGIN_EXIT"
+    "TM_BEGIN_RETRY"
+    "TM_BEGIN_SPIN"
+    "TM_COMPLETE"
+    "TM_FAIL"
+    "TM_MAIN"
+    "TM_TIP_COMPLETE"
+    "TM_TIP_FAIL"
+
+  sub_82319ED0  (115 string refs)
+    "stxt_brief_exit"
+    "stxt_brief_spin"
+    "stxt_help_tips"
+    "stxt_next_page"
+    "stxt_power"
+    "stxt_t_accept"
+    "stxt_t_back"
+    "stxt_t_back_spin"
+    "stxt_t_charging"
+    "stxt_t_complete"
+    "stxt_t_exit"
+    "stxt_t_exit_text"
+    "stxt_t_fail"
+    "stxt_t_fail_text"
+    "stxt_t_left_spin"
+    "stxt_t_movement"
+    "stxt_t_no"
+    "stxt_t_overview"
+    "stxt_t_returns"
+    "stxt_t_returns_1"
+    "stxt_t_returns_2"
+    "stxt_t_serving"
+    "stxt_t_serving_1"
+    "stxt_t_serving_2"
+    "stxt_t_serving_3"
+    "stxt_t_smashes"
+    "stxt_t_smashes_1"
+    "stxt_t_smashes_2"
+    "stxt_t_smashes_3"
+    "stxt_t_smashes_4"
+    "stxt_t_soft_shot"
+    "stxt_t_spin"
+    "stxt_t_spin_1"
+    "stxt_t_spin_2"
+    "stxt_t_spin_3"
+    "stxt_t_spin_4"
+    "stxt_t_spin_5"
+    "stxt_t_top_spin"
+    "stxt_t_training"
+    "stxt_t_yes"
+    "t_back_spin"
+    "t_charging"
+    "t_charging_1"
+    "t_charging_2"
+    "t_charging_3"
+    "t_complete"
+    "t_complete_text"
+    "t_counterspin"
+    "t_counterspin_1"
+    "t_counterspin_2"
+    "t_counterspin_3"
+    "t_exit"
+    "t_exit_text"
+    "t_fail"
+    "t_fail_text"
+    "t_focus_meter"
+    "t_focus_shot"
+    "t_focus_shots"
+    "t_focus_shots_1"
+    "t_focus_shots_2"
+    "t_focus_shots_3"
+    "t_focus_shots_4"
+    "t_help_tip"
+    "t_help_tip_text"
+    "t_left_spin"
+    "t_meters_filled"
+    "t_movement"
+    "t_movement_text"
+    "t_next_page"
+    "t_no"
+    "t_overview"
+    "t_overview_text"
+    "t_placement"
+    "t_placement_1"
+    "t_placement_2"
+    "t_placement_3"
+    "t_power"
+    "t_previous_page"
+    "t_returns"
+    "t_returns_1"
+    "t_returns_2"
+    "t_right_spin"
+    "t_serve_meter"
+    "t_serve_meter_1"
+    "t_serve_meter_2"
+    "t_serve_meter_3"
+    "t_serve_meter_4"
+    "t_serve_meter_5"
+    "t_serving"
+    "t_serving_1"
+    "t_serving_2"
+    "t_serving_3"
+    "t_smashes"
+    "t_smashes_1"
+    "t_smashes_2"
+    "t_smashes_3"
+    "t_smashes_4"
+    "t_soft_shot"
+    "t_soft_shot_2"
+    "t_soft_shots"
+    "t_soft_shots_1"
+    "t_soft_shots_2"
+    "t_soft_shots_3"
+    "t_spin"
+    "t_spin_1"
+    "t_spin_2"
+    "t_spin_3"
+    "t_spin_4"
+    "t_spin_5"
+    "t_start_drill"
+    "t_top_spin"
+    "t_training"
+    "t_unlock"
+    "t_unlock_text"
+    "t_yes"
+
+  sub_8231B6C8  (10 string refs)
+    "LOADING_TYPE"
+    "level_name_%s"
+    "match_info"
+    "p0Name"
+    "p1Name"
+    "restartMe"
+    "stadiumName1"
+    "stxt_loading"
+    "t_loading"
+    "t_match_info"
+
+  sub_8231BD58  (24 string refs)
+    "charNames"
+    "prompt_YES_11"
+    "random"
+    "stxt_accuracy"
+    "stxt_list_next"
+    "stxt_list_prev"
+    "stxt_load_stats"
+    "stxt_rank"
+    "stxt_rank_%d"
+    "stxt_speed"
+    "stxt_spin"
+    "stxt_t_back"
+    "t_accuracy"
+    "t_controls"
+    "t_gamer_tag"
+    "t_help_tips"
+    "t_losses"
+    "t_prompt_back"
+    "t_prompt_stats"
+    "t_rank"
+    "t_speed"
+    "t_ties"
+    "t_vs"
+    "t_wins"
+
+  sub_8231C410  (1 string refs)
+    "portraits"
+
+  sub_8231C748  (1 string refs)
+    "LoadFinished"
+
+  sub_8231CC58  (2 string refs)
+    "loadDone"
+    "t_loading"
+
+  sub_8231CD60  (8 string refs)
+    "circuitLevel"
+    "final_tourney"
+    "flagList"
+    "matchesWon"
+    "next_opponent"
+    "playerFlag"
+    "t_nextopponent"
+    "tourney_name_%d_%d"
+
+  sub_8231D300  (7 string refs)
+    "Quitter"
+    "playerRank"
+    "standings_rank"
+    "standings_ties"
+    "standings_wins"
+    "t_match_ups"
+    "t_round_results"
+
+  sub_8231DC58  (3 string refs)
+    "activeUser"
+    "t_tip"
+    "tip_action"
+
+  sub_8231E378  (1 string refs)
+    "t_unlockables"
+
+  sub_8231E628  (1 string refs)
+    "t_stats"
+
+  sub_8231E730  (5 string refs)
+    "lang"
+    "resetLoad"
+    "stxt_un_japan"
+    "t_training_mode"
+    "t_training_text"
+
+  sub_8231EBB0  (1 string refs)
+    "loadDone"
+
+  sub_8231ED70  (1 string refs)
+    "controller"
+
+  sub_8231EFF0  (2 string refs)
+    "controller_x"
+    "controller_y"
+
+  sub_8231F0F0  (3 string refs)
+    "ctrl_%d_label_%d"
+    "t_labels"
+    "update_config"
+
+  sub_8231F4C0  (1 string refs)
+    "credits"
+
+  sub_8231F728  (3 string refs)
+    "Cell"
+    "Credit"
+    "Font"
+
+  sub_8231F988  (2 string refs)
+    "$/tune/credits"
+    "fonts.xml"
+
+  sub_8231FB58  (2 string refs)
+    "$/tune/credits"
+    "credits.xml"
+
+  sub_82320138  (1 string refs)
+    "NUM_CELLS"
+
+  sub_823202D0  (2 string refs)
+    "Whitcher"
+    "cells"
+
+  sub_82320890  (1 string refs)
+    "HUD:BACK"
+
+  sub_82320A20  (1 string refs)
+    "charviewer"
+
+  sub_82320BE0  (1 string refs)
+    "CMD_RESET"
+
+  sub_82320D68  (1 string refs)
+    "CURRENT_STATE"
+
+  sub_82320DF8  (1 string refs)
+    "CMD_GOTO_VIEW"
+
+  sub_82320EC8  (12 string refs)
+    "CHARACTER"
+    "age_%s"
+    "born_%s"
+    "height_%s"
+    "strengths_%s"
+    "t_age_desc"
+    "t_born_desc"
+    "t_height_desc"
+    "t_name"
+    "t_strengths"
+    "t_weight_desc"
+    "weight_%s"
+
+  sub_82321190  (19 string refs)
+    "stxt_age"
+    "stxt_born"
+    "stxt_controls"
+    "stxt_height"
+    "stxt_loading"
+    "stxt_weight"
+    "stxt_zoom_in"
+    "stxt_zoom_out"
+    "t_age"
+    "t_born"
+    "t_confirm"
+    "t_controls"
+    "t_height"
+    "t_help_pan"
+    "t_help_rotate"
+    "t_weight"
+    "t_x_button"
+    "t_zoom_in"
+    "t_zoom_out"
+
+  sub_823215A8  (1 string refs)
+    "arrows_alpha"
+
+  sub_82321620  (1 string refs)
+    "Pong_Popups_001"
+
+  sub_82321858  (7 string refs)
+    "iDisableHints"
+    "iDone"
+    "iInputMode"
+    "iLastPage"
+    "iNextPage"
+    "iPopup"
+    "iText"
+
+  sub_82321A20  (9 string refs)
+    "iDesc"
+    "iIcon"
+    "iInput"
+    "iLastPage"
+    "iMESSAGE_TYPE"
+    "iResult"
+    "iText"
+    "iTextLines"
+    "iTitle"
+
+  sub_82321C60  (6 string refs)
+    "iPROMPT_CANCEL"
+    "iPROMPT_NO"
+    "iPROMPT_YES"
+    "prompt_CANCEL_%d"
+    "prompt_NO_%d"
+    "prompt_YES_%d"
+
+  sub_82321E90  (1 string refs)
+    "iButtonActive"
+
+  sub_82322090  (3 string refs)
+    "iNextPage"
+    "iPopup"
+    "iResult"
+
+  sub_82322470  (1 string refs)
+    "iDone"
+
+  sub_823225E8  (1 string refs)
+    "stxt_no_name"
+
+  sub_82323238  (1 string refs)
+    "pongUI_001"
+
+  sub_823235A0  (2 string refs)
+    "BEST_TOURNEY"
+    "name_random"
+
+  sub_82323B08  (1 string refs)
+    "GLOBAL_LEVEL"
+
+  sub_823240A0  (4 string refs)
+    "MOVIE_INDEX"
+    "UI_STATE"
+    "positionA"
+    "positionB"
+
+  sub_82324778  (1 string refs)
+    "gameOptions"
+
+  sub_82324828  (1 string refs)
+    "gameOptions"
+
+  sub_823248F0  (1 string refs)
+    "audioOptions"
+
+  sub_82324AA0  (2 string refs)
+    "ConfirmVib"
+    "audioOptions"
+
+  sub_823254B0  (1 string refs)
+    "GLOBAL_LEVEL"
+
+  sub_82325C88  (244 string refs)
+    "circuit_0"
+    "circuit_1"
+    "circuit_2"
+    "circuit_3"
+    "gpm"
+    "host"
+    "load_game"
+    "num_plyrs"
+    "ppg"
+    "pps"
+    "resetArrays"
+    "round_timer"
+    "save_game"
+    "select_level"
+    "spec"
+    "stxt_1_of_1"
+    "stxt_2_of_3"
+    "stxt_3_of_5"
+    "stxt_VS"
+    "stxt_all"
+    "stxt_all_star"
+    "stxt_all_stars"
+    "stxt_any"
+    "stxt_audio"
+    "stxt_austria"
+    "stxt_back_spin"
+    "stxt_brazil"
+    "stxt_character"
+    "stxt_china"
+    "stxt_confirmed"
+    "stxt_cpu"
+    "stxt_credits"
+    "stxt_dp_england"
+    "stxt_dp_ireland"
+    "stxt_dp_korea"
+    "stxt_easy"
+    "stxt_egypt"
+    "stxt_exit"
+    "stxt_extras"
+    "stxt_far"
+    "stxt_find_match"
+    "stxt_france"
+    "stxt_game_mode"
+    "stxt_gamer_tag"
+    "stxt_hard"
+    "stxt_hold_soft"
+    "stxt_hold_spin"
+    "stxt_in_play"
+    "stxt_japan"
+    "stxt_left_spin"
+    "stxt_level"
+    "stxt_levels"
+    "stxt_lobby"
+    "stxt_main"
+    "stxt_main_menu"
+    "stxt_match_mode"
+    "stxt_medium"
+    "stxt_mode"
+    "stxt_near"
+    "stxt_none"
+    "stxt_off"
+    "stxt_on"
+    "stxt_online"
+    "stxt_options"
+    "stxt_or"
+    "stxt_p1"
+    "stxt_p2"
+    "stxt_p3"
+    "stxt_p4"
+    "stxt_players"
+    "stxt_post_lobby"
+    "stxt_quick_tap"
+    "stxt_rank"
+    "stxt_ranked"
+    "stxt_right_spin"
+    "stxt_score"
+    "stxt_searching"
+    "stxt_service"
+    "stxt_sfx_volume"
+    "stxt_soft_shot"
+    "stxt_speakers"
+    "stxt_standard"
+    "stxt_start"
+    "stxt_start_game"
+    "stxt_static"
+    "stxt_stats"
+    "stxt_sweden"
+    "stxt_top_spin"
+    "stxt_tv"
+    "stxt_un_austria"
+    "stxt_un_brazil"
+    "stxt_un_china"
+    "stxt_un_egypt"
+    "stxt_un_france"
+    "stxt_un_japan"
+    "stxt_un_sweden"
+    "stxt_un_usa"
+    "stxt_usa"
+    "stxt_vibration"
+    "stxt_voice_chat"
+    "stxt_xbox_live"
+    "t_1_of_1"
+    "t_2_of_3"
+    "t_3_of_5"
+    "t_VS"
+    "t_achievements"
+    "t_all"
+    "t_all_star"
+    "t_all_stars"
+    "t_any"
+    "t_audio"
+    "t_audio_options"
+    "t_austria"
+    "t_auto_activate"
+    "t_brazil"
+    "t_brightness"
+    "t_change_gear"
+    "t_change_level"
+    "t_character"
+    "t_characters"
+    "t_chat"
+    "t_china"
+    "t_choose_arena"
+    "t_choose_mode"
+    "t_choose_venue"
+    "t_confirmed"
+    "t_connecting"
+    "t_controller"
+    "t_cpu"
+    "t_create_match"
+    "t_credits"
+    "t_crowd_volume"
+    "t_custom_match"
+    "t_difficulty"
+    "t_dplayer1_view"
+    "t_dplayer2_view"
+    "t_easy"
+    "t_egypt"
+    "t_england"
+    "t_event_camera"
+    "t_exhibition"
+    "t_exit"
+    "t_extras"
+    "t_far"
+    "t_find_match"
+    "t_find_match_msg"
+    "t_france"
+    "t_friends_list"
+    "t_game_mode"
+    "t_game_options"
+    "t_gamer_cards"
+    "t_gamer_tag"
+    "t_gl"
+    "t_gpm"
+    "t_gw"
+    "t_hard"
+    "t_help_tips"
+    "t_hold_soft"
+    "t_hold_spin"
+    "t_home_theater"
+    "t_host"
+    "t_in_play"
+    "t_ireland"
+    "t_japan"
+    "t_join_message"
+    "t_korea"
+    "t_leaderboard"
+    "t_leaderboards"
+    "t_left_trigger"
+    "t_level"
+    "t_levels"
+    "t_load_game"
+    "t_lobby"
+    "t_locked"
+    "t_main"
+    "t_main_menu"
+    "t_marketplace"
+    "t_match_mode"
+    "t_match_results"
+    "t_medium"
+    "t_mode"
+    "t_mode_select"
+    "t_music_volume"
+    "t_near"
+    "t_next_round"
+    "t_none"
+    "t_num_plyrs"
+    "t_off"
+    "t_on"
+    "t_online"
+    "t_options"
+    "t_or"
+    "t_p1"
+    "t_p2"
+    "t_p3"
+    "t_p4"
+    "t_player_review"
+    "t_player_volume"
+    "t_players"
+    "t_post_lobby"
+    "t_ppg"
+    "t_pps"
+    "t_press_start"
+    "t_private_slots"
+    "t_pro_circuit"
+    "t_quick_match"
+    "t_quick_tap"
+    "t_random_level"
+    "t_rank"
+    "t_rank_select"
+    "t_ranked"
+    "t_ranked_match"
+    "t_relative"
+    "t_right_trigger"
+    "t_rl"
+    "t_round_timer"
+    "t_rt"
+    "t_rw"
+    "t_save_game"
+    "t_score"
+    "t_searching"
+    "t_select_level"
+    "t_service"
+    "t_sfx_volume"
+    "t_speakers"
+    "t_spec"
+    "t_spectators"
+    "t_speech_volume"
+    "t_standard"
+    "t_start"
+    "t_start_game"
+    "t_static"
+    "t_stats"
+    "t_sweden"
+    "t_table_tennis"
+    "t_tournament"
+    "t_training_mode"
+    "t_tv"
+    "t_usa"
+    "t_vibration"
+    "t_voice_chat"
+    "t_voice_output"
+    "t_world_ranking"
+    "t_xbox_live"
+
+  sub_823291F8  (1 string refs)
+    "allstar"
+
+  sub_82329E90  (1 string refs)
+    "leaderboard"
+
+  sub_8232BA78  (1 string refs)
+    "currentColumn"
+
+  sub_8232BC50  (1 string refs)
+    "noData"
+
+  sub_8232BD78  (1 string refs)
+    "GLOBAL_COMMAND"
+
+  sub_8232C048  (1 string refs)
+    "currentColumn"
+
+  sub_8232E7A0  (4 string refs)
+    "FC_IDLE"
+    "FC_NEXT_BOARD"
+    "FC_PREV_BOARD"
+    "FC_TOP_GAMERTAG"
+
+  sub_8232E918  (8 string refs)
+    "data%d"
+    "dataRank"
+    "dataTitleLong"
+    "t_change_flter"
+    "t_leaderboards"
+    "t_no_data"
+    "t_sort_category"
+    "t_view_gamecard"
+
+  sub_8232ECF0  (1 string refs)
+    "dataTitleLong"
+
+  sub_8232EE48  (1 string refs)
+    "maxColumn"
+
+  sub_8232F100  (3 string refs)
+    "COLUMN_DNF"
+    "Gamertag"
+    "Rank"
+
+  sub_823300B0  (4 string refs)
+    "  DNF      =%d"
+    "  Loss     =%d"
+    "  TrueSkill=%d"
+    "  Win      =%d"
+
+  sub_82345D08  (1 string refs)
+    "MORPHGEOMETRY"
+
+  sub_82345D90  (1 string refs)
+    "name:"
+
+  sub_82347A70  (4 string refs)
+    "$/tune/cutscene"
+    "\tfile: %s"
+    "cutscene_names"
+    "gdCSNameData"
+
+  sub_82348168  (12 string refs)
+    "CamAnim"
+    "CharAmbAnim"
+    "CharAnim"
+    "CharVisible"
+    "DoInOrder"
+    "DoTogether"
+    "Else"
+    "Loop"
+    "LvlAmbAnim"
+    "LvlAnim"
+    "PlayAudio"
+    "Wait"
+
+  sub_8234A038  (3 string refs)
+    "%s_%s"
+    "lvl_%s_%s"
+    "lvl_default"
+
+  sub_8234A108  (3 string refs)
+    "%s_%s"
+    "lvl_%s_%s"
+    "lvl_default"
+
+  sub_8234A4B8  (1 string refs)
+    "char_default"
+
+  sub_8234A590  (1 string refs)
+    "char_default"
+
+  sub_8234DAE0  (1 string refs)
+    "value"
+
+  sub_8234DBC0  (1 string refs)
+    "value"
+
+  sub_8234DC80  (2 string refs)
+    "ascii"
+    "content"
+
+  sub_8234E370  (8 string refs)
+    "char_array"
+    "content"
+    "float_array"
+    "int_array"
+    "short_array"
+    "vector2_array"
+    "vector3_array"
+    "vector4_array"
+
+  sub_8234EBD0  (1 string refs)
+    "NULL"
+
+  sub_82361CA8  (3 string refs)
+    "PIX!Gpu"
+    "crashdump.pix2"
+    "unnamed.pix2"
+
+  sub_82361F48  (2 string refs)
+    "PIX!NO"
+    "PIX!OK"
+
+  sub_823640E8  (4 string refs)
+    "   %25s: 0x%08x\n"
+    "%08x "
+    "%s 0x%02x: "
+    "%s\n"
+
+  sub_82364258  (3 string refs)
+    ", "
+    "LTCG"
+    "\n"
+
+  sub_82369218  (1 string refs)
+    "succeeded"
+
+  sub_8236A178  (9 string refs)
+    "WSAEACCES"
+    "WSAECONNRESET"
+    "WSAEINVAL"
+    "WSAEMSGSIZE"
+    "WSAENOBUFS"
+    "WSAENOTCONN"
+    "WSAENOTSOCK"
+    "WSAESHUTDOWN"
+    "WSAETIMEDOUT"
+
+  sub_8236A4D0  (1 string refs)
+    "socket() failed"
+
+  sub_8236AD30  (2 string refs)
+    "LOCAL"
+    "REMOTE"
+
+  sub_8236B278  (2 string refs)
+    "LOCAL"
+    "REMOTE"
+
+  sub_8236D758  (1 string refs)
+    "%s:%d/0x%x:%s"
+
+  sub_8236D900  (1 string refs)
+    "%s:%d/0x%x:%s"
+
+  sub_8236E6C0  (1 string refs)
+    "XSessionStart()"
+
+  sub_8236E920  (1 string refs)
+    "XSessionEnd()"
+
+  sub_8236FCD0  (8 string refs)
+    "/ranked"
+    "/standard"
+    "/stats"
+    "Guest"
+    "Host"
+    "offline"
+    "online"
+    "system link"
+
+  sub_82370330  (2 string refs)
+    "Local"
+    "Remote"
+
+  sub_82370710  (1 string refs)
+    "XSessionStart()"
+
+  sub_82370B40  (1 string refs)
+    "succeeded"
+
+  sub_823713A0  (3 string refs)
+    "INVALID"
+    "PRIVATE"
+    "PUBLIC"
+
+  sub_82372200  (1 string refs)
+    "Field:%d is nil"
+
+  sub_82375570  (2 string refs)
+    "%s[Dispatcher]"
+    "%s[Invoker]"
+
+  sub_823764A0  (2 string refs)
+    "optimized:"
+    "tris:"
+
+  sub_82378218  (1 string refs)
+    "unlit"
+
+  sub_823799E0  (7 string refs)
+    "m_farSize"
+    "m_lookAtPos"
+    "m_nearSize"
+    "m_noiseScale"
+    "m_ortho"
+    "m_pos_d"
+    "m_ptxColorMod"
+
+  sub_82379C20  (10 string refs)
+    "CookieTex"
+    "NoiseTex"
+    "PtxTex"
+    "isMono"
+    "lightPos"
+    "lightProjMtx"
+    "noiseScale"
+    "projMat"
+    "ptxColorMod"
+    "worldMtx"
+
+  sub_8237A168  (1 string refs)
+    "tune/level"
+
+  sub_8237A768  (3 string refs)
+    "entity"
+    "fx/tex/fx_dot"
+    "fx/tex/fx_square"
+
+  sub_8237C9A8  (3 string refs)
+    "m_color"
+    "m_pos"
+    "m_size"
+
+  sub_8237CB68  (4 string refs)
+    "m_color"
+    "m_posA"
+    "m_posB"
+    "m_size"
+
+  sub_8237D3C0  (1 string refs)
+    "tune/level"
+
+  sub_8237E128  (2 string refs)
+    "judge"
+    "pigeon"
+
+  sub_8237E518  (1 string refs)
+    "jdg_sit_stn"
+
+  sub_8237E630  (2 string refs)
+    "$/fx/ambient"
+    "dp_england"
+
+  sub_8237E788  (1 string refs)
+    "$/fx/ambient"
+
+  sub_8237EBC8  (3 string refs)
+    "jdg_pnt_lft"
+    "jdg_pnt_rgt"
+    "jdg_sit_stn"
+
+  sub_8237ED28  (2 string refs)
+    "%s/%s_%s"
+    "std"
+
+  sub_8237F0E0  (1 string refs)
+    "LevelPiece:"
+
+  sub_8237F938  (3 string refs)
+    ".anim"
+    "Animation%d:"
+    "NumLoops:"
+
+  sub_8237FF90  (1 string refs)
+    "anim/"
+
+  sub_82380938  (7 string refs)
+    "Converge"
+    "EndColor"
+    "FadeOutTime"
+    "Length"
+    "StartColor"
+    "drawAsVolume"
+    "refractTrail"
+
+  sub_82380BB8  (6 string refs)
+    "Converge"
+    "Length"
+    "drawAsVolume"
+    "refractTrail"
+    "trail_color_%s"
+    "trail_length_%s"
+
+  sub_82380F38  (3 string refs)
+    "TrailData"
+    "fx"
+    "trail"
+
+  sub_82381010  (4 string refs)
+    "BumpDlTex"
+    "FbDlTex"
+    "pong_itztrail"
+    "screenRes"
+
+  sub_82384780  (5 string refs)
+    "Base"
+    "Target"
+    "actual_reticle"
+    "ideal_reticle"
+    "reticle"
+
+  sub_82385218  (4 string refs)
+    "Color"
+    "HeightOffset"
+    "Size"
+    "TextureName"
+
+  sub_823853E0  (2 string refs)
+    "%s_FrameColor"
+    "%s_Width"
+
+  sub_823862A8  (6 string refs)
+    "gAmbient"
+    "gCrowdBones"
+    "gCrowdWorld"
+    "gLightColor"
+    "gLightPosDir"
+    "gLightType"
+
+  sub_823866A8  (1 string refs)
+    "Series"
+
+  sub_823872F0  (6 string refs)
+    "BlendIn"
+    "BlendOut"
+    "DelayTime"
+    "OneShot"
+    "RandomRange"
+    "Series"
+
+  sub_82388100  (2 string refs)
+    "AxisSpin"
+    "MinTopspin"
+
+  sub_82388408  (5 string refs)
+    "LineSpread"
+    "MaxAngVel"
+    "NumArcs"
+    "NumLines"
+    "PrimaryAngle"
+
+  sub_82388500  (4 string refs)
+    "LineSpread"
+    "MaxAngVel"
+    "NumArcs"
+    "PrimaryAngle"
+
+  sub_823885B8  (4 string refs)
+    "m_lifeTime"
+    "m_radMax"
+    "m_radMin"
+    "m_spawnRate"
+
+  sub_82388838  (4 string refs)
+    "BallSpinData"
+    "Number"
+    "ballspin"
+    "spindicators"
+
+  sub_82389950  (10 string refs)
+    "BackSpinColor"
+    "BeginSize"
+    "Enable"
+    "EndSizeLarge"
+    "EndSizeSmall"
+    "MaxRotAngle"
+    "NoSpinColor"
+    "ScaleTimeFast"
+    "ScaleTimeSlow"
+    "TopSpinColor"
+
+  sub_82389AC8  (2 string refs)
+    "ballsplash"
+    "tex"
+
+  sub_8238A968  (1 string refs)
+    "ballshadow"
+
+  sub_8238B5F0  (1 string refs)
+    "ifff"
+
+  sub_82392318  (1 string refs)
+    "???"
+
+  sub_82393F10  (1 string refs)
+    "%s adding %d"
+
+  sub_82395750  (3 string refs)
+    "%s %s"
+    "kAwayPlayer"
+    "kHomePlayer"
+
+  sub_823960C0  (2 string refs)
+    "kAwayPlayer"
+    "kHomePlayer"
+
+  sub_8239A718  (1 string refs)
+    "iif"
+
+  sub_8239BD98  (1 string refs)
+    "0:00:000"
+
+  sub_8239BE00  (1 string refs)
+    "0:00:000"
+
+  sub_8239BE30  (1 string refs)
+    "%s%d:%2.2d:%3.3d"
+
+  sub_8239BF30  (1 string refs)
+    "%d:%2.2d:%3.3d"
+
+  sub_823A1E98  (1 string refs)
+    "Nobody (tie)!!!"
+
+  sub_823A2BC8  (5 string refs)
+    "INVALID!!!"
+    "awayWon"
+    "homeWon"
+    "on-going"
+    "tie"
+
+  sub_823A32E0  (1 string refs)
+    "Nobody (tie)!!!"
+
+  sub_823AD730  (2 string refs)
+    "RANKED"
+    "STANDARD"
+
+  sub_823ADAC0  (1 string refs)
+    "SetPeer: %d = %s"
+
+  sub_823B6128  (2 string refs)
+    ".\\message.cpp"
+    "HitMessage::Use"
+
+  sub_823BB9D8  (2 string refs)
+    "host"
+    "peer"
+
+  sub_823BE768  (1 string refs)
+    "<Unknown>"
+
+  sub_823BEA68  (1 string refs)
+    "<Unknown>"
+
+  sub_823C7FE0  (11 string refs)
+    "char_austria"
+    "char_brazil"
+    "char_china"
+    "char_egypt"
+    "char_england"
+    "char_france"
+    "char_ireland"
+    "char_japan"
+    "char_korea"
+    "char_sweden"
+    "char_usa"
+
+  sub_823D0C98  (5 string refs)
+    "PongNet"
+    "inGame"
+    "initial"
+    "loading"
+    "spectator"
+
+  sub_823D0FF0  (2 string refs)
+    "mergeTime"
+    "timeSyncLimit"
+
+  sub_823D4930  (1 string refs)
+    "$/resource/props"
+
+  sub_823D6650  (2 string refs)
+    "HUD loaded."
+    "Loading HUD..."
+
+  sub_823D7930  (10 string refs)
+    "fxAmbientMgr"
+    "fxSpecialFx"
+    "gmBallNode"
+    "gmLogicNode"
+    "lvlLevelMgr"
+    "plrPlayerMgr"
+    "plrPropMgr"
+    "pongCameraMgr"
+    "sgNode"
+    "sgRMDrawable"
+
+  sub_823D8F18  (2 string refs)
+    "matrix"
+    "name"
+
+  sub_823D94C0  (1 string refs)
+    "Fixed"
+
+  sub_823D9708  (1 string refs)
+    "$/bound"
+
+  sub_823D9B70  (1 string refs)
+    "scenegraph.xml"
+
+  sub_823ED290  (1 string refs)
+    ".%s"
+
+  sub_823ED820  (1 string refs)
+    "Timing out at:%d"
+
+  sub_823ED988  (1 string refs)
+    "Leaving: %s"
+
+  sub_823EDA90  (1 string refs)
+    "Entering: %s"
+
+  sub_823EDC40  (2 string refs)
+    "NIL"
+    "[%s:%d]"
+
+  sub_823F7B08  (2 string refs)
+    "L1 & R1: zoom in/out"
+    "L2 & R2: up/down"
+
+  sub_823F8CF8  (1 string refs)
+    "StopSound(%s)"
+
+  sub_823FA768  (1 string refs)
+    "%0.f"
+
+  sub_823FB970  (15 string refs)
+    "_alpha"
+    "_global"
+    "_height"
+    "_name"
+    "_parent"
+    "_root"
+    "_rotation"
+    "_width"
+    "_x"
+    "_xscale"
+    "_y"
+    "_yscale"
+    "onEnterFrame"
+    "textColor"
+    "this"
+
+  sub_823FBFC0  (2 string refs)
+    "prototype"
+    "this"
+
+  sub_823FC1A8  (13 string refs)
+    "__drawcallback"
+    "__texturename"
+    "_alpha"
+    "_rotation"
+    "_seamFix"
+    "_x"
+    "_xscale"
+    "_y"
+    "_yscale"
+    "onEnterFrame"
+    "onRelease"
+    "text"
+    "textColor"
+
+  sub_823FDC00  (1 string refs)
+    "soundName"
+
+  sub_823FDC48  (1 string refs)
+    "soundName"
+
+  sub_823FDD70  (3 string refs)
+    "attachSound"
+    "start"
+    "stop"
+
+  sub_823FDE40  (1 string refs)
+    "_target"
+
+  sub_823FDF20  (2 string refs)
+    "_target"
+    "setRGB"
+
+  sub_823FDFA8  (21 string refs)
+    "Array"
+    "Key"
+    "Math"
+    "MovieClip"
+    "SharedObject"
+    "Sound"
+    "Stage"
+    "_global"
+    "acos"
+    "addListener"
+    "asin"
+    "atan"
+    "cos"
+    "getAscii"
+    "getCode"
+    "isDown"
+    "isToggled"
+    "random"
+    "sin"
+    "sqrt"
+    "tan"
+
+  sub_823FE500  (8 string refs)
+    "attachMovie"
+    "getBytesTotal"
+    "gotoAndPlay"
+    "gotoAndStop"
+    "nextFrame"
+    "play"
+    "prevFrame"
+    "stop"
+
+  sub_823FE8D0  (2 string refs)
+    "MovieClip"
+    "prototype"
+
+  sub_823FF590  (2 string refs)
+    "_parent"
+    "_root"
+
+  sub_823FF7E8  (9 string refs)
+    "#ERROR#"
+    "Array"
+    "FSCommand:"
+    "GetURL(%s)"
+    "bool"
+    "number"
+    "object"
+    "string"
+    "undefined"
+
+  sub_82403090  (1 string refs)
+    "clearInterval"
+
+  sub_82403628  (1 string refs)
+    "CLIP_FRAME"
+
+  sub_82405260  (13 string refs)
+    "0x"
+    "</"
+    "S</sws>"
+    "align"
+    "br"
+    "center"
+    "color"
+    "face"
+    "font"
+    "li"
+    "size"
+    "tab"
+    "textformat"
+
+  sub_824083D8  (1 string refs)
+    "CLIP_LOAD"
+
+  sub_824084B0  (1 string refs)
+    "CLIP_FRAME"
+
+  sub_82408C28  (1 string refs)
+    "strtbl"
+
+  sub_82409128  (1 string refs)
+    "arial12"
+
+  sub_824098E8  (2 string refs)
+    "%s_%02d"
+    "fonttex"
+
+  sub_8240AEB0  (2 string refs)
+    "ID"
+    "Lines"
+
+  sub_8240B058  (5 string refs)
+    "AllowCrop"
+    "File"
+    "HasPal"
+    "HasWideScreen"
+    "Volume"
+
+  sub_8240B168  (1 string refs)
+    "Invalid Movie: %d"
+
+  sub_8240B770  (15 string refs)
+    "DeadZone"
+    "HighResTimer"
+    "LowResTimer"
+    "MaxFOV"
+    "MaxFarClip"
+    "MaxNearClip"
+    "MaxRotSpeed"
+    "MaxZoomSpeed"
+    "MaxZoomValue"
+    "MinFOV"
+    "MinFarClip"
+    "MinNearClip"
+    "MinZoomValue"
+    "RotFriction"
+    "ZoomFriction"
+
+  sub_8240BD08  (3 string refs)
+    "DefaultAlign"
+    "Face"
+    "Indent"
+
+  sub_8240BF00  (2 string refs)
+    "Align"
+    "Text"
+
+  sub_8240C120  (2 string refs)
+    "Flags"
+    "NoGap"
+
+  sub_8240C308  (7 string refs)
+    "Acceleration"
+    "FontPointSize"
+    "GapSize"
+    "InitialOffset"
+    "InitialSpeed"
+    "MaxSpeed"
+    "OffsetClamp"
+
+  sub_8240C510  (3 string refs)
+    "ShotNameNegZ"
+    "ShotNamePosZ"
+    "Weight"
+
+  sub_8240CBD0  (7 string refs)
+    "EmoteMax"
+    "EmoteMin"
+    "FileName"
+    "IgnoreEmotion"
+    "Orientation"
+    "Position"
+    "TimeOffset"
+
+  sub_8240D4A8  (5 string refs)
+    "%24s\t%8s\t%8s"
+    "Disabled"
+    "Enabled"
+    "Not Used"
+    "Used"
+
+  sub_8240DD18  (2 string refs)
+    "ShotName"
+    "TimeOffset"
+
+  sub_8240E7B8  (2 string refs)
+    "FileName"
+    "TriggerMsg"
+
+  sub_8240E9A8  (2 string refs)
+    "SkipMsg"
+    "SkippableBy"
+
+  sub_8240EB80  (2 string refs)
+    "EndDependent"
+    "NumTimes"
+
+  sub_8240ECB0  (5 string refs)
+    "ArenaType"
+    "Condition"
+    "GameType"
+    "Percent"
+    "PlayerID"
+
+  sub_8240ED80  (4 string refs)
+    "Arena"
+    "Exhibition"
+    "NonArena"
+    "Tournament"
+
+  sub_8240F150  (1 string refs)
+    "Time"
+
+  sub_8240F210  (1 string refs)
+    "NoRepeat"
+
+  sub_8240F368  (4 string refs)
+    "NoRepeatAnim"
+    "NoRepeatCam"
+    "PlayerID"
+    "UseCamera"
+
+  sub_8240F530  (1 string refs)
+    "Visible"
+
+  sub_8240F660  (1 string refs)
+    "AudioEvent"
+
+  sub_8240F6F0  (2 string refs)
+    "LevelIntro"
+    "kMusic"
+
+  sub_8240FA08  (2 string refs)
+    "AmbName"
+    "Immediate"
+
+  sub_8240FC10  (2 string refs)
+    "AmbName"
+    "Immediate"
+
+  sub_8240FDE8  (1 string refs)
+    "Show"
+
+  sub_82410420  (2 string refs)
+    "root.sys"
+    "save"
+
+  sub_82410BF8  (2 string refs)
+    "\telasticity: "
+    "\tfriction: "
+
+  sub_82410CB8  (7 string refs)
+    "depth:"
+    "drag:"
+    "grip:"
+    "height:"
+    "ptxindex:"
+    "ptxthreshold:"
+    "width:"
+
+  sub_82410EB0  (6 string refs)
+    "\tdepth: "
+    "\tdrag: "
+    "\tgrip: "
+    "\theight: "
+    "\tptxindex: "
+    "\twidth: "
+
+  sub_82413F30  (1 string refs)
+    "Network error \"
+
+  sub_824144A8  (1 string refs)
+    "Network error \"
+
+  sub_82415048  (3 string refs)
+    "BROADCAST"
+    "RELIABLE"
+    "UNRELIABLE"
+
+  sub_824186A0  (1 string refs)
+    "Re-"
+
+  sub_82419350  (4 string refs)
+    "Network down"
+    "No buffers"
+    "No error"
+    "Unknown error"
+
+  sub_824195A8  (3 string refs)
+    "amp"
+    "apos"
+    "quot"
+
+  sub_82419C18  (3 string refs)
+    "!--"
+    "-->"
+    "?>"
+
+  sub_8241A8E8  (4 string refs)
+    "/>"
+    "</"
+    "S<"
+    "s=s"
+
+  sub_8241AC40  (1 string refs)
+    "S</sws>"
+
+  sub_8241AEF8  (1 string refs)
+    "sws>"
+
+  sub_8241B228  (5 string refs)
+    "&amp;"
+    "&apos;"
+    "&gt;"
+    "&lt;"
+    "&quot;"
+
+  sub_8241B840  (1 string refs)
+    "\r\n"
+
+  sub_8241B8C8  (5 string refs)
+    " %s=\"
+    " v=\"
+    "%s=\"
+    "/>"
+    "<%s"
+
+  sub_8241BB40  (1 string refs)
+    "</%s>"
+
+  sub_8241BC20  (5 string refs)
+    "%d\r\n"
+    "%f\n"
+    "%f\t%f\r\n"
+    "%f\t%f\t%f\r\n"
+    "%f\t%f\t%f\t%f\r\n"
+
+  sub_8241DA60  (12 string refs)
+    "ascii"
+    "binary"
+    "char_array"
+    "float_array"
+    "int_array"
+    "raw_xml"
+    "short_array"
+    "text"
+    "utf16"
+    "vector2_array"
+    "vector3_array"
+    "vector4_array"
+
+  sub_8241ED40  (1 string refs)
+    "TargetCount"
+
+  sub_8241F578  (1 string refs)
+    "BaseCount"
+
+  sub_8241F980  (1 string refs)
+    "bsd"
+
+  sub_824203D8  (5 string refs)
+    "APlane"
+    "YPlane"
+    "cBPlane"
+    "cRPlane"
+    "rage_bink"
+
+  sub_82421470  (1 string refs)
+    "Quitter"
+
+  sub_82421958  (1 string refs)
+    "spectating"
+
+  sub_82427600  (2 string refs)
+    "$/rmptx/levelfx"
+    "levelfx"
+
+  sub_82428288  (3 string refs)
+    "InvLife"
+    "TimeWarp"
+    "rmptxemitter"
+
+  sub_824294F8  (1 string refs)
+    "Untitled Birth"
+
+  sub_824298E0  (1 string refs)
+    "rmptx.shadert"
+
+  sub_82429968  (10 string refs)
+    "Life"
+    "LifeVar"
+    "MinShadowMod"
+    "NumPoints"
+    "PositionVar"
+    "Rate"
+    "Recycle"
+    "UseShadowBox"
+    "Velocity"
+    "VelocityVar"
+
+  sub_82429B60  (1 string refs)
+    "rmptx"
+
+  sub_8243A570  (1 string refs)
+    "e+000"
+
+  sub_8243CBC0  (4 string refs)
+    "1#IND"
+    "1#INF"
+    "1#QNAN"
+    "1#SNAN"
+
+  sub_824868D0  (1 string refs)
+    "CAL: NYI %s\n"
+
+  sub_8248A710  (4 string refs)
+    "-acodec"
+    "-vcodec"
+    "WMFDecodeX86"
+    "passthru"
+
+  sub_8248ADF8  (2 string refs)
+    "WMFDecodeX86"
+    "wmv"
+
+  sub_8248E758  (1 string refs)
+    "CAL: NYI %s\n"
+
+  sub_824A9CB8  (1 string refs)
+    "wmv"
+
+  sub_824AB418  (2 string refs)
+    "BRT"
+    "FileSeek"
+
+  sub_824AC8B0  (2 string refs)
+    "BRT"
+    "KeepAlive"
+
+  sub_824ADA18  (1 string refs)
+    "LocalBuffer"
+
+  sub_82569010  (1 string refs)
+    "XLNI_DET_MEDIA"
+
+  sub_8259CCE8  (2 string refs)
+    "Not a Bink file."
+    "Out of memory."
+

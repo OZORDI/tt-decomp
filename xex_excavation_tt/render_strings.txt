@@ -1,0 +1,316 @@
+; ===================================================================
+; RENDER / GFX STRINGS
+; Rockstar Games Presents Table Tennis  -  default.xex
+; Internal name: pong_xenon_final.pe  (Title ID: TT-2015)
+; Build date: Thu May 11 01:40:52 2006  |  SDK v2.0.2417
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; GUID: 33250C91AAD5234787D6A9221D796F69
+; ===================================================================
+  0x82008427  Microsoft (R) Xbox 360 Shader Compiler 2.0.2500.0
+  0x820085F5  Microsoft (R) Xbox 360 Shader Compiler 2.0.2500.0
+  0x820087CD  Microsoft (R) Xbox 360 Shader Compiler 2.0.2500.0
+  0x820276DC  entityTextureList
+  0x820276F0  entityTextureList.txt
+  0x82027708  Texture '%s' already in this texdict!
+  0x8202782C  noplayerdraw
+  0x8202F180  drawmemexport
+  0x8202F190  drawblit
+  0x8202F19C  drawskinned
+  0x8202F1D0  __rage_drawbucket
+  0x8202F224  Unable to load shader template '%s'
+  0x8202F488  Required grmShaderGroupVar '%s' not found.
+  0x8202F4E4  Shaders
+  0x8202F620  shader
+  0x8202F698  grcTexture
+  0x8202F6CC  cheapshaders
+  0x8202F6DC  rage_default.shadert
+  0x8202F6F4  rage_alpha.shadert
+  0x8202F708  rage_clamped.shadert
+  0x8202F720  Invalid type %d in grmShaderFactoryStandard::PlaceShaders
+  0x8202F76C  Preloading shaders from '%s'...
+  0x8202F78C  .shadert
+  0x8202F798  .shadert isn't supported any longer
+  0x8202F7F8  shadergroup
+  0x8202F8BC  BaseTexture
+  0x8202F8C8  The base texture to use
+  0x8202F8E0  Diffuse Texture
+  0x8202F8F0  texture
+  0x820323C4  TextureName
+  0x82033D60  __refractiontexture
+  0x82033DC0  $/tune/shaders/lib
+  0x82033DD4  $/tune/shaders/db
+  0x82033DE8  globalShaderTime
+  0x82033E30  overdraw
+  0x82033E3C  tune/shaders/lib
+  0x820340A4  RenderMap
+  0x820340B0  RenderMapLinear
+  0x82034370  noshadowdraw
+  0x82034380  noselfshadows
+  0x82034390  shadowtest
+  0x820343AC  selfshadow
+  0x820343B8  preshadow
+  0x820343C4  netshadow
+  0x820343E0  tune/shadows
+  0x820343F0  Shadows
+  0x82034440  Shadows:
+  0x82034488  Too many shadows specified (Max=%d)
+  0x820344AC  LightPosition:
+  0x820344BC  ShadowColor:
+  0x820344CC  ShadowBlur:
+  0x820344D8  ShadowSet:
+  0x820344E4  SelfShadowBlur:
+  0x820344F4  pong_shadowdepth
+  0x82034508  pong_shadowmap
+  0x82034518  ShadowTexture
+  0x82034528  ShadowDepthTexture
+  0x8203453C  ShadowDepthLinearTexture
+  0x82034558  ShadowDepth2Texture
+  0x8203456C  ShadowDepth2LinearTexture
+  0x82034588  Shadowmap_ShadowColor
+  0x820345A0  Shadowmap_LightCompositMatrix
+  0x820345C0  Shadowmap_Misc
+  0x820345D0  Shadow_Poisson
+  0x820345F4  SelfShadowDepthBuffer1
+  0x8203460C  SelfShadowDepthBuffer2
+  0x82034624  SelfShadowDepthBuffer2med
+  0x82034640  SelfShadowDepthBuffer2high
+  0x8203465C  ShadowCompositeTable
+  0x82034674  ShadowCompositeFloor
+  0x8203468C  pongShadowMap::GenerateShadowMaps() - Missing bone data for %s
+  0x820348D4  debugshaders
+  0x82034978  unlit_draw
+  0x82034984  unlit_drawskinned
+  0x820349CC  m_ShadowComposite
+  0x820349E0  Error: grcDevice::BeginTiledRendering() - More than %d different tiled rendering sizes have been used!
+  0x82034ADC  Probable leak: %d outstanding references to None texture.
+  0x82034D34  LightCount
+  0x82034D40  LightType
+  0x820351F4  Unable to create backup texture for rendertarget
+  0x82035228  Unable to create backup texture for depth render target
+  0x82035260  unsupported render target type %d
+  0x820352C0  grcTextureXenon - Texture '%s' - invalid resolution %d by %d
+  0x82035300  Bad resource type %d in grcTextureFactoryXenon::PlaceTexture
+  0x82035CBC  $/tune/camera
+  0x82035DB8  pongCameraMgr
+  0x82035E0C  camera change: %s
+  0x82035F78  replay system failed to load a description.  please check 'assets/tune/camera/clips.xml' for errors
+  0x820363F8  tune/camera
+  0x8203641C  CameraFOV
+  0x82036428  CameraNear
+  0x82036434  CameraFar
+  0x8203648C  PongCamera
+  0x82036498  pongcamera
+  0x820364A4  pongcamera_tunables
+  0x820364B8  cameraroot
+  0x820364C4  CameraHasSides
+  0x820364D4  CameraHasFinish
+  0x820364E4  CameraIsFinished
+  0x820367C8  CameraFocus
+  0x82036E84  CameraPosZ
+  0x82036E9C  CameraReset
+  0x82037230  DesiredCameraPos
+  0x82037244  CameraRight
+  0x82037250  CameraUp
+  0x8203725C  CameraForward
+  0x8203726C  CameraPos
+  0x82037278  CameraLookAt
+  0x820374AC  CAMMACH: Tunable %s not found for camera room %s
+  0x820375C0  Warning: target == camera in h_smoothlookat
+  0x82037B38  Tunable %s was in camera description (.ccm) file, but isn't in current code
+  0x82037B88  Indirect tunable %s was in camera description (.ccm) file, but isn't in current code
+  0x82037CF8  Wrong version of camera description (.ccm) file. File version is %s, expecting %s
+  0x82037D80  Action %s in .ccm camera description not found in code
+  0x82037E74  RoamCamera
+  0x82039B04  nopaddledraw
+  0x82039DFC  pongPlayer::Draw() - player is not active
+  0x82039E28  pongPlayer::Render() - player[%d] is not active
+  0x82039E58  pongPlayer::SaveDrawData() - player is not active
+  0x8203A848  pongPlayerShaderParams::UpdateParams() called before m_player is set!
+  0x8203B9D0  CAMERADATA.GetCameraMtx() returned an invalid matrix (%s).  Someone please fix this!
+  0x8203C620  [audMsgSink] Got a face anim message for player %d, but unable to determine camera subject!!
+  0x8203CBBC  nolightshafts
+  0x8203EA28  LightsCrowd
+  0x8203EA34  LightsLevel
+  0x8203EA40  LightsFarChar
+  0x8203EA50  LightsNearChar
+  0x8203EDA0  gdLevelData::AddValues() - unhandled light group %d!
+  0x8203EE70  OnFireLightIncrease
+  0x8203EF98  PostShowRenderTargets
+  0x8203F3A0  Loading camera shot data...
+  0x8203F434  Camera shot data load done...
+  0x82049124  gdCameraDest
+  0x82049134  CameraInstanceName
+  0x820491B8  gdCameraDest::PostLoadProperties--no name specified
+  0x820491EC  gdCameraDest - couldn't bind CameraInst %s
+  0x82049218  bad parent to parent to (sic) gdCameraDest: '%s'
+  0x820492B0  bad parent to gdCameraDest: '%s'
+  0x820492D4  gdCameraInst
+  0x820492FC  gdCameraInst::PostLoadProperties--no instance name specified
+  0x8204933C  gdCameraInst::PostLoadProperties--no definition name specified
+  0x820493A8  gdCameraInst - could not bind to ShotDef %s
+  0x820493D8  gdCameraInst - could not bind to CameraDef %s
+  0x82049408  gdCameraDef
+  0x82049458  gdCameraDef::PostLoadProperties--no name specified
+  0x82049490  gdCameraDef::PostLoadProperties--'PickOneOf' must be less than or equal to %i
+  0x820494E0  gdCameraDef::PostLoadProperties--'PlayerSide' attribute=%i is out of range
+  0x82049530  camera recursion is illegal: CameraInst '%s' is parented to self
+  0x82049578  CameraDef '%s' with 'PickOneOf=%i' has %i child CameraInsts--not enough!
+  0x8204A458  MultiPlayerCamera
+  0x8204A46C  SinglePlayerCamera
+  0x8204A480  EnableInlineCamera
+  0x8204C008  gdCamData: invalid camera type found (defaulting to swing cam): %d
+  0x8204C16C  $/camera
+  0x8204DDE8  DrawOrder
+  0x8204DE18  pongDrawBucket::Load() - unknown sort type '%s' for bucket '%s'
+  0x8204DE58  PreDrawCallback:
+  0x8204DE70  pongDrawBucket::Load() - unknown pre-draw callback '%s' for bucket '%s'
+  0x8204DEB8  PostDrawCallback:
+  0x8204DED0  pongDrawBucket::Load() - unknown post-draw callback '%s' for bucket '%s'
+  0x8204DF20  pongDrawBucket::AddEntry() - adding more than %d entries to bucket '%s'
+  0x8204DF68  pongDrawBucket::InitStatics() - this function should only be called once!
+  0x8204E02C  loading draw bucket config file...
+  0x8204E060  pongDrawBucketManager::Load() - cannot load draw bucket config file '%s.%s'
+  0x8204E0BC  pongDrawBucketManager::Load() - cannot have %d draw buckets!
+  0x8204E100  pongDrawBucketManager::Load() - cannot have more than %d draw buckets!
+  0x8204E158  pongDrawBucketManager::Load() - invalid default bucket: %d
+  0x8204E194  DrawBucket:
+  0x8204E1B8  pongDrawBucketManager::Load() - cannot have %d entries in draw bucket '%s'!
+  0x8204E208  pongDrawBucketManager::Load() - cannot have more than %d entries in bucket '%s'!
+  0x8204E25C  draw bucket config load done
+  0x8204EF8C  noleveldraw
+  0x8204EF98  notabledraw
+  0x8204F414  forcefloordraw
+  0x8204FF34  Shader (%s) has unsupported version (%i)
+  0x82052718  DrawVec
+  0x82056C9C  Cycle Draw Mode:  ?
+  0x82056CC4  Draw Debug:       ?
+  0x82058F28  nomultithreaddraw
+  0x820594A4  pongRenderThread__Thread
+  0x820595B4  pongRenderThread releasing Device
+  0x820595D8  pongRenderThread Aquiring Device
+  0x820595FC  pongRenderThread Exiting
+  0x8205A340  DirtyDiscRenderThread
+  0x8205B0F8  nohuddraw
+  0x8205BC34  t_next_camera
+  0x8205BC5C  t_previous_camera
+  0x8205BFF8  Highlight[0] = %d, Highlight[1] = %d
+  0x8205C020  player1Highlight
+  0x8205C034  player2Highlight
+  0x8206032C  stxt_inline_camera
+  0x82060340  t_cinematic_camera
+  0x82060354  stxt_camera_view
+  0x82060368  t_camera_view
+  0x82062A70  FrontendRenderTarget
+  0x82062D08  renderTargetAlpha
+  0x82064308  t_event_camera
+  0x820655F4  pongCSActionCamAnim::Play() - empty camera shot sequence
+  0x820662EF      rendered.  A partial primitive occurs when the vertex count
+  0x8206632F      on a draw call doesn't properly match the primitive type (e.g.,
+  0x82066373      by calling DrawVertices using D3DPT_TRILIST with a vertex
+  0x8206668D  6BaD3D: GPU initialization (HSIO training) has failed so no graphics will render.
+  0x8206A008  Edgemodel packet count > 1, can cause shadow volume artifacts!  May need to increase packet size
+  0x8206A204  fxLightShaftTune
+  0x8206A248  m_lightFalloffDist
+  0x8206A25C  m_lightFalloffExp
+  0x8206A294  m_spotlightWidth
+  0x8206A2A8  m_spotlightHeight
+  0x8206A314  pong_lightshaft
+  0x8206A338  lightProjMtx
+  0x8206A348  lightProjMtxS0
+  0x8206A358  lightProjMtxS1
+  0x8206A368  lightProjMtxS2
+  0x8206A378  lightProjMtxS3
+  0x8206A3A8  lightPos
+  0x8206A3BC  lightFalloffDist
+  0x8206A3D0  lightFalloffExp
+  0x8206A3FC  projLightPtx
+  0x8206A40C  Loading light shaft tuning...
+  0x8206A438  %s_light_shafts.xml
+  0x8206A44C  light shaft tuning load done...
+  0x8206A46C  unknown node type found in light shaft tune file: %s
+  0x8206A4A4  props/light_shaft
+  0x8206A4B8  props/light_shaft_single
+  0x8206A524  pongLightGlowSquare
+  0x8206A568  pongLightGlowCapsule
+  0x8206A590  fx/tex/fx_light_glow
+  0x8206A5C0  Loading light glows
+  0x8206A5D4  %s_light_glows.xml
+  0x8206A5E8  light glow tuning load done...
+  0x8206ABA8  drawAsVolume
+  0x8206AE00  nodrawbasegrid
+  0x8206AF08  gLightPosDir
+  0x8206AF18  gLightColor
+  0x8206AF24  gLightType
+  0x8206B4CC  BallShadowData
+  0x8206B4DC  ballshadow
+  0x8206B4E8  Cannot load ball shadow tuning file ballshadow.fx!
+  0x82071B5C  sgRMDrawable
+  0x82074EAC  __texturename
+  0x82074EBC  __drawcallback
+  0x82076088  DrawCharacterStall
+  0x82076FE8  all available cameras used once, NEED TO RECYCLE!!!
+  0x82077524  UseCamera
+  0x82079878  [rmPtxEmitter] NULL shader group passed, emitter cannot be loaded
+  0x820798E4  [rmPtxBirth] NULL shader group passed, birth cannot be loaded
+  0x82079928  [rmPtxBirth] m_ShaderGroup is NULL, birth cannot be loaded from file
+  0x82079970  rmptx.shadert
+  0x820799D0  UseShadowBox
+  0x820799E0  MinShadowMod
+  0x820799F0  NumTextureTilesX
+  0x82079A04  NumTextureTilesY
+  0x82079A18  StartTextureTile
+  0x82079A2C  EndTextureTile
+  0x82079A5C  [rmPtx] Too many frames for one texture
+  0x825C8E58  $/tune/shaders/lib
+  0x825D2A58  .?AV?$pgDictionary@VgrcTexture@rage@@@rage@@
+  0x825D2BE0  .?AVpongRenderable@@
+  0x825D3514  .?AVgrmShader@rage@@
+  0x825D3534  .?AVgrmShaderFx@rage@@
+  0x825D35C4  .?AVgrmShaderGroup@rage@@
+  0x825D360C  .?AVgrmShaderPreset@rage@@
+  0x825D3630  .?AVgrmShaderBasic@rage@@
+  0x825D3654  .?AVgrmShaderBasicClamped@rage@@
+  0x825D3680  .?AVgrmShaderFactoryStandard@rage@@
+  0x825D36AC  .?AVgrmShaderFactory@rage@@
+  0x825D4634  .?AVrmcDrawableBase@rage@@
+  0x825D4658  .?AVrmcDrawable@rage@@
+  0x825D4678  .?AVfragDrawable@rage@@
+  0x825D4A74  .?AVpongShadowMap@@
+  0x825D4C00  .?AVgrcTextureFactory@rage@@
+  0x825D4C28  .?AVgrcRenderTarget@rage@@
+  0x825D4C4C  .?AVgrcTexture@rage@@
+  0x825D4D80  .?AVgrcTextureDictionaryReference@rage@@
+  0x825D4DB4  .?AVgrcTextureReference@rage@@
+  0x825D4DDC  .?AVgrcTextureReferenceBase@rage@@
+  0x825D4E08  .?AVgrcTextureFactoryXenon@rage@@
+  0x825D4E34  .?AVgrcTextureXenonProxy@rage@@
+  0x825D4E5C  .?AVgrcTextureXenon@rage@@
+  0x825D4E80  .?AVgrcRenderTargetXenon@rage@@
+  0x825D4F08  .?AVgrcTextureFactoryString@rage@@
+  0x825D4F34  .?AVgrcTextureString@rage@@
+  0x825D50E0  .?AVpongCameraMgr@@
+  0x825D5178  .?AVpongCameraState@@
+  0x825D5210  .?AVcameraShake@@
+  0x825D529C  .?AVpongCMCamera@@
+  0x825D68F0  .?AVoffsetHead@?3??CreateRoamCamera@cmSampleCamMachineBank@rage@@IAAPAVcmBlock@3@AAVcmActionFactory@3@AAVcmOperatorSet@3@ABVcmValueSet@3@AAVcmConstValueSet@3@AAVcmTuningSet@3@AAV73@@Z@
+  0x825D69B8  .?AVmovePushed@?2??CreateRoamCamera@cmSampleCamMachineBank@rage@@IAAPAVcmBlock@3@AAVcmActionFactory@3@AAVcmOperatorSet@3@ABVcmValueSet@3@AAVcmConstValueSet@3@AAVcmTuningSet@3@AAV73@@Z@
+  0x825D7044  .?AVpongPlayerShaderParams@@
+  0x825D86C4  .?AVgdCameraDest@@
+  0x825D86FC  .?AVgdCameraInst@@
+  0x825D8718  .?AVgdCameraDef@@
+  0x825D9600  .?AVpongDrawable@@
+  0x825D961C  .?AVpongDrawBucketManager@@
+  0x825D9B44  .?AVsgRMDrawable@@
+  0x825DA8E0  .?AVcmDrawVec@rage@@
+  0x825DC3F8  .?AU?$cmOperatorCtor@VcmDrawVec@rage@@@rage@@
+  0x825DE0EC  .?AVfxBallShadow@@
+  0x825DE8E4  .?AVpongRenderThread@@
+  0x825E02F8  .?AVpongLightGlowMgr@@
+  0x825E0318  .?AVpongLightGlowSquare@@
+  0x825E033C  .?AVpongLightGlowCapsule@@
+  0x825E0360  .?AVfxLightShaftTune@@
+  0x825E0380  .?AVfxLightShaftMgr@@
+  0x825E03A0  .?AVfxLightShaft@@
+  0x825E38DC  .?AVsgTraverseDrawDebug@@
+  0x825E3900  .?AVsgTraverseDraw@@

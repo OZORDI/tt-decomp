@@ -1,0 +1,15 @@
+; ===================================================================
+; NETWORK / LIVE — VTABLE ADDRESSES
+; Rockstar Table Tennis  -  default.xex  (pong_xenon_final.pe)
+; Build: May 11 2006  |  SDK v2.0.2417  |  TT-2015
+; Load base: 0x82000000  |  Entry: 0x8242BD20
+; PDB: c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb
+; ===================================================================
+
+; ADDRESS       VFUNCS  CLASS NAME
+; ------------  ------  --------------------------------------------------
+
+  0x8206689C       0  rlSession_rage
+  0x820668F8       0  rlStatsView_rage
+  0x820704BC       2  snEvent_rage
+  0x82071674      15  snEnding_snActive_snRoot_snSession_rage
