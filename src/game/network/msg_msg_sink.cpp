@@ -780,9 +780,9 @@ void* msgMsgSink_8A60_sp(void* self) {
  * These forward calls to the nested object's vtable.
  * ─────────────────────────────────────────────────────────────────────────── */
 
-// msgMsgSink_8DA0_sp @ 0x82458DA0 | size: 0x20
+// msgMsgSink_DispatchNested @ 0x82458DA0 | size: 0x20
 // Forwards to nested->vtable[17] (offset 68 in vtable)
-void msgMsgSink_8DA0_sp(void* self) {
+void msgMsgSink_DispatchNested(void* self) {
     void* nested = *(void**)((uint8_t*)self + 36);
     if (nested == nullptr) return;
     typedef void (*Fn)(void*);

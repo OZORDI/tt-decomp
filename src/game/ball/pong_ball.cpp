@@ -616,11 +616,11 @@ void pongBallInstance::ActivateBall(void* activationContext) {
  * Sets up ball state and configuration from data structure.
  */
 void* pongBallInstance::InitializeFromData(void* initData) {
-    extern void* xe_F4C0();
+    extern void* xe_GetLoadContext();
     extern void util_D150(void*, void*);
     
     // Allocate ball instance
-    void* ballInstance = xe_F4C0();
+    void* ballInstance = xe_GetLoadContext();
     
     // Initialize from data (copy 16-byte header)
     util_D150(initData, reinterpret_cast<uint8_t*>(initData) + 16);

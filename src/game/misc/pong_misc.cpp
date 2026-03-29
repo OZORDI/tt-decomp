@@ -1043,7 +1043,7 @@ extern "C" void util_85C8(void* obj);            // @ 0x824885C8 - base destruct
 extern "C" void util_0850(void* obj);            // @ 0x82460850 - physics instance release
 extern "C" void* _crt_tls_fiber_setup();         // @ 0x82566B78 - fiber context setup
 extern "C" void _locale_register(void* ptr);     // @ 0x820C02D0 - memory dealloc
-extern "C" void pg_6C80_g(int frames);           // @ 0x82566C80 - wait N frames
+extern "C" void pg_SleepYield(int frames);           // @ 0x82566C80 - wait N frames
 extern "C" void pg_6F48(void* ptr);              // @ 0x82566F48 - release page ref
 
 /**
@@ -1410,7 +1410,7 @@ void CCalMoviePlayer::StopPlaybackSimple(uint32_t mode, void* param) {
  * Full stop with buffering delay: calls vtable slot 62 (IsPlaying check).
  * If not playing (bit 0 == 0), calls audio provider vtable slot 19 with
  * mode. If the reported buffer count > 5, waits (bufCount - 5) frames
- * via pg_6C80_g to allow buffers to drain. Then calls vtable slot 21
+ * via pg_SleepYield to allow buffers to drain. Then calls vtable slot 21
  * (finalize) and clears any pending page reference at +240.
  */
 void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
@@ -1428,7 +1428,7 @@ void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
 
         // If buffer count > 5, wait for buffers to drain
         if ((int32_t)bufCount > 5) {
-            pg_6C80_g((int32_t)bufCount - 5);
+            pg_SleepYield((int32_t)bufCount - 5);
         }
     }
 

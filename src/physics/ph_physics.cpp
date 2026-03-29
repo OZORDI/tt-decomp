@@ -72,18 +72,18 @@ extern uint32_t g_identityVec[];  // @ 0x82606740 — 16-byte identity/zero vect
 /* --- Physics functions --- */
 extern float phJoint1Dof_AE38(void*);
 extern int phArticulatedCollider_E668(phArticulatedCollider* collider, int boneIndex);
-extern void  phBoundCapsule_9B58_w(void* a, void* b, int count);
+extern void  phBoundCapsule_CopyEntries(void* a, void* b, int count);
 extern void  phBoundCapsule_9DA0_2h(void* a, void* b, int count);
 extern void  phBoundCapsule_F5F8_p39(void* data);
 extern void  phBoundCapsule_ForwardToSink_9C78_1(void* a, void* b, int count);
 extern void  ph_1B78(void* thisPtr, float f2, float f3, void* r6);
-extern void phArticulatedCollider_5B50_wrh(void* activeJoints);
-extern void phArticulatedCollider_5C60_sp(void* collider);
+extern void phArticulatedCollider_UpdateJointTransforms(void* activeJoints);
+extern void phArticulatedCollider_ProcessJoints(void* collider);
 extern void phArticulatedCollider_60F8(void* jointData, float recipTimestep,
-extern void phArticulatedCollider_6B40_wrh(void* jointData);
-extern void phArticulatedCollider_6D30_h(void* collider);
-extern void phArticulatedCollider_77F0_w(void* jointData, int linkIndex, const float* delta);
-extern void phArticulatedCollider_7918_w(void* jointData, int linkIndex);
+extern void phArticulatedCollider_RebuildJointWeights(void* jointData);
+extern void phArticulatedCollider_ProcessColliderState(void* collider);
+extern void phArticulatedCollider_ApplyJointDelta(void* jointData, int linkIndex, const float* delta);
+extern void phArticulatedCollider_ResetJointLink(void* jointData, int linkIndex);
 extern void ph_Sqrtf_joint(phJoint3Dof*, float);
 extern void ph_ApplyAngularVelocity(void* capsule);
 extern void phBoundCapsule_ACB0_p45(void* capsule);
@@ -91,8 +91,8 @@ extern void phCollider_vfn_4(phArticulatedCollider* collider);
 extern void phInst_5910_p39(void* obj);
 extern void phJoint1Dof_AFF8_p42(phJoint3Dof*, int, float*);
 extern void phJoint_1388(phJoint3Dof*, int, float, float*, float*);
-extern void phJoint_1618_g(phJoint3Dof*);
-extern void phJoint_7A30_fw(void* jointData, int linkIndex, const float* delta, int param);
+extern void phJoint_PreSyncState(phJoint3Dof*);
+extern void phJoint_ApplyDelta(void* jointData, int linkIndex, const float* delta, int param);
 extern void ph_9E50(void*, void*);
 extern void ph_A330(void* obj);
 extern void ph_CEE0(void*, int);
@@ -124,36 +124,36 @@ extern void* ph_E010(void*, void*, const char*);
 
 /* --- RAGE / kernel functions --- */
 extern void  rage_Alloc(int size, void* allocator);  // rage_01B8
-extern void ke_A428(void* obj);
-extern void ke_C750(void* obj);
-extern void ke_D440(void* obj);
+extern void ke_ConstructObject(void* obj);
+extern void ke_DestroyObjectA(void* obj);
+extern void ke_DestroyObjectB(void* obj);
 extern void rage_1058(void*);
 extern void rage_D220(void*, const char*);
 extern void rage_free(void*);
-extern void* xe_F4C0(void*);
+extern void* xe_GetLoadContext(void*);
 
 /* --- Game functions --- */
 extern "C" void pongCreatureInst_E828_v12(void*, uint32_t);
 extern void game_CE58(void* collider);
-extern void pongCreatureInst_9030_g(void*, void*);
+extern void pongCreatureInst_RegisterPhysics(void*, void*);
 
 /* --- Audio functions --- */
 extern void aud_1498(void* obj);
 extern void aud_6A20_wrap_6A20(void* obj);
 
 /* --- Utility / tokenizer / singleton functions --- */
-extern uint8_t fiAsciiTokenizer_2110_gen(void*, void*, void*);
-extern void  fiAsciiTokenizer_0BA8_g(void* tokenizer, int mode);
-extern void  msgMsgSink_8DA0_sp(void* obj);
+extern uint8_t fiAsciiTokenizer_ReadBool(void*, void*, void*);
+extern void  fiAsciiTokenizer_ReadToken(void* tokenizer, int mode);
+extern void  msgMsgSink_DispatchNested(void* obj);
 extern void atSingleton_8A48_p42(void* obj);
-extern void fiAsciiTokenizer_3310_g(void* obj);
+extern void fiAsciiTokenizer_Destroy(void* obj);
 extern void strncpy(char*, const char*, int);
 extern void phJoint3Dof_ResetAllJoints(phJoint3Dof*, int);
 extern void util_B680(void* thisPtr);
 extern void rage_CopyMatrixAndBind(void*, void*, void*);
 
 /* --- Other functions --- */
-extern void pg_6C80_g(int ms);              // Sleep/yield helper @ 0x82566C80
+extern void pg_SleepYield(int ms);              // Sleep/yield helper @ 0x82566C80
 extern void statePreInit_vfn_6(void* obj);  // @ 0x82494130
 
 
@@ -261,13 +261,13 @@ void ph_vt57D8_20_Constructor(void* thisPtr, uint32_t registerWithWorld) {
     
     // If bit 0 of registerWithWorld is set, register with phDemoWorld
     if (registerWithWorld & 0x1) {
-        // phDemoWorld_67D0_g is a global registration function
+        // phDemoWorld_GetInstance is a global registration function
         // Parameters: phDemoWorld singleton address, this object, flags
         void* phDemoWorldSingleton = (void*)0x823E7888;
         uint32_t flags = 0x61820000;
         
         // Call phDemoWorld registration
-        // phDemoWorld_67D0_g(phDemoWorldSingleton, thisPtr, flags);
+        // phDemoWorld_GetInstance(phDemoWorldSingleton, thisPtr, flags);
     }
 }
 
@@ -778,7 +778,7 @@ extern float ph_Sqrtf(float value);  // sqrt wrapper
 extern float ph_Sinf(float value);  // trigonometric function
 extern float ph_Atan2f(float f1, float f2);  // capsule calculation
 extern float ph_Cosf(float value);  // normalization function
-extern float atSingleton_1308_g(float value, double param);  // singleton math helper
+extern float math_SafeReciprocal(float value, double param);  // singleton math helper
 
 // External constants
 extern const float g_floatZero;      // @ 0x8202D110
@@ -977,7 +977,7 @@ void ph_MoveTowardTarget2D(void* capsule, float* offsetVec, float scaleFactor, f
     
     // Normalize and apply singleton transformation
     const double normalizationFactor = *(double*)0x82079B30;
-    float normalizedDist = atSingleton_1308_g(distance, normalizationFactor);
+    float normalizedDist = math_SafeReciprocal(distance, normalizationFactor);
     
     // Compute movement direction (normalized delta)
     float dirX = normalizedDist * scaleFactor * deltaX;
@@ -993,13 +993,13 @@ void ph_MoveTowardTarget2D(void* capsule, float* offsetVec, float scaleFactor, f
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_9730_fw @ 0x820D9730 | size: 0xB0
+// phBoundCapsule_InitFromTemplate @ 0x820D9730 | size: 0xB0
 //
 // Initializes a capsule from a template and applies transformations from
 // a source object. Copies 64 bytes of template data, then conditionally
 // applies a radius transformation based on flags.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_9730_fw(void* capsule, void* sourceObj) {
+void phBoundCapsule_InitFromTemplate(void* capsule, void* sourceObj) {
     uint8_t* dest = (uint8_t*)capsule;
     uint8_t* src = (uint8_t*)sourceObj;
     
@@ -1036,13 +1036,13 @@ void phBoundCapsule_9730_fw(void* capsule, void* sourceObj) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phBoundCapsule_F548_wrh @ 0x820DF548 | size: 0x80
+// phBoundCapsule_FindFirstValid @ 0x820DF548 | size: 0x80
 //
 // Extracts capsule geometry data from an array of capsule structures.
 // Searches for the first valid capsule (non-zero radius) and copies its
 // geometry parameters to output pointers.
 // ─────────────────────────────────────────────────────────────────────────────
-void phBoundCapsule_F548_wrh(void* container, int* outIndex, float* outX, float* outY, float* outZ, float* outRadius) {
+void phBoundCapsule_FindFirstValid(void* container, int* outIndex, float* outX, float* outY, float* outZ, float* outRadius) {
     uint8_t* obj = (uint8_t*)container;
     
     // Get capsule array pointer
@@ -1832,7 +1832,7 @@ float ph_3AC0(const float* vector) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_3870_h @ 0x820C3870 | size: 0x38
+// ph_AdvanceSegmentedPtr @ 0x820C3870 | size: 0x38
 //
 // Advances a pointer within a segmented array structure. This function:
 // 1. Checks if the input pointer is valid (non-null)
@@ -1845,7 +1845,7 @@ float ph_3AC0(const float* vector) {
 //   arrayBase - Base pointer to the segmented array structure
 //   ptrToAdvance - Pointer to advance (modified in-place)
 // ─────────────────────────────────────────────────────────────────────────────
-void ph_3870_h(void* arrayBase, void** ptrToAdvance) {
+void ph_AdvanceSegmentedPtr(void* arrayBase, void** ptrToAdvance) {
     uint8_t* base = (uint8_t*)arrayBase;
     uint32_t currentPtr = *(uint32_t*)ptrToAdvance;
     
@@ -1934,14 +1934,14 @@ uint32_t ph_9598(uint32_t value) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_95A8_h @ 0x820F95A8 | size: 0x8
+// ph_GetSimulationContext @ 0x820F95A8 | size: 0x8
 //
 // Simple getter that returns a pointer field at offset +148.
 // Likely retrieves a physics simulation context or state object.
 //
 // Returns: void* - Pointer to physics object at offset +148
 // ─────────────────────────────────────────────────────────────────────────────
-void* ph_95A8_h(void* thisPtr) {
+void* ph_GetSimulationContext(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
     return *(void**)(obj + 148);
 }
@@ -2005,7 +2005,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     char normalizedPath[256];
     
     // Create temporary loading context
-    void* loadContext = xe_F4C0(contextPtr);
+    void* loadContext = xe_GetLoadContext(contextPtr);
     *(uint32_t*)((uint8_t*)loadContext + 96) = 0;
     
     // Initialize path normalization
@@ -2064,7 +2064,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     
     // Register with physics world and creature
     void* physicsInst = ph_E010(physicsWorld, archetype, normalizedPath);
-    pongCreatureInst_9030_g(creatureInst, physicsInst);
+    pongCreatureInst_RegisterPhysics(creatureInst, physicsInst);
     
     // Finalize registration
     rage_CopyMatrixAndBind(loadContext, creatureInst, (void*)((uint8_t*)creatureInst + 16));
@@ -2082,7 +2082,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_FC68_h @ 0x8246FC68 | size: 0x38
+// ph_CleanupCompositePhInst @ 0x8246FC68 | size: 0x38
 //
 // Dual cleanup function that calls phInst_A3A0_p33 twice:
 // 1. Once on an embedded phInst at offset +12
@@ -2094,7 +2094,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
 // ─────────────────────────────────────────────────────────────────────────────
 extern void phInst_A3A0_p33(void*);
 
-void ph_FC68_h(void* obj) {
+void ph_CleanupCompositePhInst(void* obj) {
     // Call phInst cleanup on embedded instance at offset +12
     void* embeddedPhInst = (char*)obj + 12;
     phInst_A3A0_p33(embeddedPhInst);
@@ -2128,7 +2128,7 @@ void* rage::phArticulatedCollider::GetActiveJointsPointer() {
 // Used during physics update to process all active joints.
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phArticulatedCollider::DelegateToJointProcessor() {
-    phArticulatedCollider_5C60_sp((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
+    phArticulatedCollider_ProcessJoints((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2148,7 +2148,7 @@ void rage::phArticulatedCollider::DelegateToCapsuleHandler() {
 // Used for complex collision scenarios involving multiple joints.
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phArticulatedCollider::DelegateToColliderHandler() {
-    phArticulatedCollider_6D30_h((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
+    phArticulatedCollider_ProcessColliderState((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2204,7 +2204,7 @@ void rage::phArticulatedCollider::Update() {
     phCollider_vfn_4(this);
     
     // Update active joints
-    phArticulatedCollider_5B50_wrh((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
+    phArticulatedCollider_UpdateJointTransforms((void*)(uintptr_t)m_nActiveJoints);  // +464 (0x1D0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2268,7 +2268,7 @@ void rage::phArticulatedCollider::ScalarDestructor() {
 
     // Clean up joint array data
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_57F0_fw(jointData);
+    phArticulatedCollider_ResetJointChain(jointData);
 
     // Reset constraint data
     jointData = (void*)(uintptr_t)m_nActiveJoints;
@@ -2301,7 +2301,7 @@ void rage::phArticulatedCollider::ResetForces() {
 
     // Reinitialize joint weight/response data
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464 (0x1D0)
-    phArticulatedCollider_5A40_wrh(jointData);
+    phArticulatedCollider_ResetForceAccumulators(jointData);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2602,7 +2602,7 @@ void rage::phArticulatedCollider::SetTimestep(float timestep) {
     ph_IntegrateJointPositions(jointData);
 
     // Rebuild joint weight/response data
-    phArticulatedCollider_6B40_wrh(jointData);
+    phArticulatedCollider_RebuildJointWeights(jointData);
 
     // Recompute joint hierarchy transforms
     phArticulatedCollider_8450(jointData);
@@ -2919,7 +2919,7 @@ extern void phJoint3Dof_0170_g(void*, int, int, void*);
 /**
  * rage::phJoint3Dof::SetDampingAndStiffness @ 0x82251268 | size: 0x40
  *
- * Aliases: phJoint_12A8_fw
+ * Aliases: phJoint_InitConstraint
  * Sets internal damping/stiffness values based on input parameters.
  */
 void phJoint3Dof::SetDampingAndStiffness(float arg1, float arg2) {
@@ -3082,7 +3082,7 @@ void phJoint3Dof::ComputeJacobian() {
  * Calculates vector dot products and magnitude norms for the sub-joints.
  */
 void phJoint3Dof::SetLimits() {
-    phJoint_1618_g(this); // Pre-sync
+    phJoint_PreSyncState(this); // Pre-sync
     
     float f1_a = phJoint1Dof_AE38(reinterpret_cast<char*>(this) + 896);
     float f0_a = *(float*)((char*)this + 928);
@@ -3606,7 +3606,7 @@ void phInst::ShiftArgsAndCall(void* a, void* b, void* c) {  // 92F8_p42
 
 /**
  * phInst::LoadGlobalAndCall @ 0x8212E2C0 | size: 0xC
- * Loads a global pointer and tail-calls ke_9F58.
+ * Loads a global pointer and tail-calls ke_DispatchPhysics.
  */
 
 void phInst::LoadGlobalAndCall() {  // E2C0_2h
@@ -4126,18 +4126,18 @@ void rage::phBoundCapsule::GetSupportPoint(void* direction, void* outPoint) {
 
 // ---------------------------------------------------------------------------
 // 6. ph_TokenizerReadInt @ 0x82430E88 | size: 0x8
-//    Calls fiAsciiTokenizer_0BA8_g with mode=0 (read mode).
+//    Calls fiAsciiTokenizer_ReadToken with mode=0 (read mode).
 // ---------------------------------------------------------------------------
 void ph_TokenizerReadInt(void* tokenizer) {
-    fiAsciiTokenizer_0BA8_g(tokenizer, 0);
+    fiAsciiTokenizer_ReadToken(tokenizer, 0);
 }
 
 // ---------------------------------------------------------------------------
 // 7. ph_TokenizerReadFloat @ 0x82430E90 | size: 0x8
-//    Calls fiAsciiTokenizer_0BA8_g with mode=1 (write mode).
+//    Calls fiAsciiTokenizer_ReadToken with mode=1 (write mode).
 // ---------------------------------------------------------------------------
 void ph_TokenizerReadFloat(void* tokenizer) {
-    fiAsciiTokenizer_0BA8_g(tokenizer, 1);
+    fiAsciiTokenizer_ReadToken(tokenizer, 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -4161,12 +4161,12 @@ void phBoundCapsule_DAF0_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* out
 
 // ---------------------------------------------------------------------------
 // 10. phBoundCapsule_ForwardToSink @ 0x82459C78 | size: 0x14
-//     If field +24 is non-null, tail-calls msgMsgSink_8DA0_sp on it.
+//     If field +24 is non-null, tail-calls msgMsgSink_DispatchNested on it.
 // ---------------------------------------------------------------------------
 void phBoundCapsule_ForwardToSink(void* obj) {
     void* sink = *(void**)((char*)obj + 24);
     if (sink == nullptr) return;
-    msgMsgSink_8DA0_sp(sink);
+    msgMsgSink_DispatchNested(sink);
 }
 
 // ---------------------------------------------------------------------------
@@ -4806,9 +4806,9 @@ uint32_t ph_vt5CD8_14_ReturnNotImpl() {
 }
 
 // ph_vt5CD8_0_CE30 @ 0x8246CE30 | size: 0x30
-// Calls ke_C750 cleanup, returns this (destructor pattern)
+// Calls ke_DestroyObjectA cleanup, returns this (destructor pattern)
 void* ph_vt5CD8_0_Destructor(void* thisPtr) {
-    ke_C750(thisPtr);
+    ke_DestroyObjectA(thisPtr);
     return thisPtr;
 }
 
@@ -4820,9 +4820,9 @@ int ph_vt5D38_12_GetByte61(void* thisPtr, uint8_t* out) {
 }
 
 // ph_vt5D38_0_D6F0 @ 0x8246D6F0 | size: 0x30
-// Calls ke_D440 cleanup, returns this (destructor pattern)
+// Calls ke_DestroyObjectB cleanup, returns this (destructor pattern)
 void* ph_vt5D38_0_Destructor(void* thisPtr) {
-    ke_D440(thisPtr);
+    ke_DestroyObjectB(thisPtr);
     return thisPtr;
 }
 
@@ -4834,9 +4834,9 @@ void* ph_vt6E40_0_Destructor(void* thisPtr) {
 }
 
 // ph_vt5C84_5_AAD0 @ 0x8246AAD0 | size: 0x30
-// Calls ke_A428, returns this (init + return-self pattern)
+// Calls ke_ConstructObject, returns this (init + return-self pattern)
 void* ph_vt5C84_5_InitAndReturn(void* thisPtr) {
-    ke_A428(thisPtr);
+    ke_ConstructObject(thisPtr);
     return thisPtr;
 }
 
@@ -4924,9 +4924,9 @@ void ph_SetCollisionBits(uint32_t bits, uint8_t enable) {
 }
 
 // ph_20D0 @ 0x822920D0 | size: 0x40
-// Wrapper that forwards args to fiAsciiTokenizer_2110_gen and returns byte result
+// Wrapper that forwards args to fiAsciiTokenizer_ReadBool and returns byte result
 uint8_t ph_TokenizerReadBool(void* a, void* b, void* c) {
-    return fiAsciiTokenizer_2110_gen(a, b, c);
+    return fiAsciiTokenizer_ReadBool(a, b, c);
 }
 
 // ph_5278 @ 0x822E5278 | size: 0x34
@@ -4942,7 +4942,7 @@ void ph_InitPhysicsConfig(void* cfg, uint32_t typeId, uint32_t flagMask) {
     *(uint32_t*)((char*)cfg + 156) = 0;           // state = 0
 }
 
-// ph_FFB8_h @ 0x822AFFB8 | size: 0x1C
+// ph_GetBoundPointer @ 0x822AFFB8 | size: 0x1C
 // Returns one of two pointers from high offsets based on boolean flag
 void* ph_GetBoundPointer(void* thisPtr, uint8_t useFirst) {
     if (useFirst) {
@@ -4959,7 +4959,7 @@ void ph_ctor_0460_Destructor(void* thisPtr) {
     uint32_t childFlag = *(uint32_t*)((char*)thisPtr + 8);
     if (childFlag != 0) {
         void* child = *(void**)((char*)thisPtr + 4);
-        fiAsciiTokenizer_3310_g(child);
+        fiAsciiTokenizer_Destroy(child);
     }
 }
 
@@ -5350,7 +5350,7 @@ void rage::phArticulatedCollider::SetConstraint_12b(uint32_t value) {
 extern void phObject_4F28_p46(void* thisPtr);
 extern void thunk_fn_824885C8(void* thisPtr);  // -> util_85C8
 extern void set_3348(void* thisPtr, float value);
-extern void phObject_2588_w(void* thisPtr, uint32_t param);
+extern void phObject_WriteValue(void* thisPtr, uint32_t param);
 extern "C" void _locale_register(void* ptr, uint32_t tag);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -5387,25 +5387,25 @@ int32_t phObject_33(void* thisPtr, uint32_t valueA, uint32_t valueB) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_B878_h @ 0x8248B878 | size: 0x10
+// phObject_DestructorThunk @ 0x8248B878 | size: 0x10
 //
 // Destructor helper: sets the vtable pointer for a specific subclass,
 // then tail-calls util_85C8 (via thunk_fn_824885C8) for base cleanup.
 // ─────────────────────────────────────────────────────────────────────────────
-void phObject_B878_h(void* thisPtr) {
+void phObject_DestructorThunk(void* thisPtr) {
     *(void**)thisPtr = (void*)0x82019168;  // lis r11,-32255; addi r11,r11,-28312
     thunk_fn_824885C8(thisPtr);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_20B0_wrh @ 0x824920B0 | size: 0x10
+// phObject_DispatchIndirect @ 0x824920B0 | size: 0x10
 //
 // Indirect call trampoline: loads a function pointer from a fixed global
 // address and calls it with the current arguments. Used for late-bound
 // dispatch in the physics write/read/hash pipeline.
 // ─────────────────────────────────────────────────────────────────────────────
 typedef void (*phObjectDispatchFunc)(void);
-void phObject_20B0_wrh() {
+void phObject_DispatchIndirect() {
     // lis r11, -32255 -> 0x81E10000; lwz r11, -26992(r11) -> 0x81E10000 + 0xFFFF9690 = global at 0x82019690 area
     // Load function pointer from global and call it
     volatile phObjectDispatchFunc* pFunc = (volatile phObjectDispatchFunc*)0x82019690;
@@ -5413,12 +5413,12 @@ void phObject_20B0_wrh() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_1E18_h @ 0x82491E18 | size: 0x18
+// phObject_ClearDirtyState @ 0x82491E18 | size: 0x18
 //
 // Clears a flag byte at offset +1524 and a 32-bit word at offset +1528.
 // Returns 0. Used to reset an active/dirty state on a physics object.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_1E18_h(void* thisPtr) {
+int32_t phObject_ClearDirtyState(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
     *(uint8_t*)(obj + 1524) = 0;
     *(uint32_t*)(obj + 1528) = 0;
@@ -5438,13 +5438,13 @@ int32_t phObject_34(void* thisPtr, float value) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_2340_gen @ 0x82492340 | size: 0x28
+// phObject_GetArrayElement @ 0x82492340 | size: 0x28
 //
 // Array element lookup: reads element at index from a 32-bit array (this),
 // stores it to the output pointer. Returns 0 on success, or an error code
 // (0x80300016) if the element is NULL.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_2340_gen(uint32_t* array, uint32_t index, uint32_t* outValue) {
+int32_t phObject_GetArrayElement(uint32_t* array, uint32_t index, uint32_t* outValue) {
     uint32_t element = array[index];
     *outValue = element;
     if (element == 0) {
@@ -5457,7 +5457,7 @@ int32_t phObject_2340_gen(uint32_t* array, uint32_t index, uint32_t* outValue) {
 // phObject_ValidateAndForward @ 0x8248A4A0 | size: 0x2C
 //
 // Null-validates three parameters (this, param1, param3), then loads the
-// first word from param1 and tail-calls phObject_2588_w.
+// first word from param1 and tail-calls phObject_WriteValue.
 // Returns error 0x80070057 on null parameter.
 // ─────────────────────────────────────────────────────────────────────────────
 int32_t phObject_ValidateAndForward(void* thisPtr, void* param1, uint32_t param2, void* param3) {
@@ -5465,7 +5465,7 @@ int32_t phObject_ValidateAndForward(void* thisPtr, void* param1, uint32_t param2
         return (int32_t)0x80070057;
     }
     uint32_t value = *(uint32_t*)param1;
-    phObject_2588_w((void*)(uintptr_t)value, param2);
+    phObject_WriteValue((void*)(uintptr_t)value, param2);
     return 0;
 }
 
@@ -5550,13 +5550,13 @@ void phObject_12(void* thisPtr, uint32_t param1, uint32_t param2) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_1AD0_w @ 0x82491AD0 | size: 0x48
+// phObject_ClearStridedEntry @ 0x82491AD0 | size: 0x48
 //
 // Clears a 12-byte entry in a strided array. Each entry is 12 bytes
 // (3 x uint32). Index must be < 127. Returns 0x80070057 on out-of-range
 // or null this. Zeroes the 3 words at this[index * 12].
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_1AD0_w(void* thisPtr, int32_t index) {
+int32_t phObject_ClearStridedEntry(void* thisPtr, int32_t index) {
     if (!thisPtr) {
         return 0;
     }
@@ -5577,7 +5577,7 @@ int32_t phObject_1AD0_w(void* thisPtr, int32_t index) {
 //
 // Null-validates this, param1, and param3. Loads two values from param1
 // at offsets +56 and +60. If the value at +56 is zero, returns early.
-// Otherwise loads param3+608 as array base, and calls phObject_1AD0_w
+// Otherwise loads param3+608 as array base, and calls phObject_ClearStridedEntry
 // to clear the entry at the given index.
 // Returns 0x80070057 on null parameters.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -5593,16 +5593,16 @@ int32_t phObject_ValidateAndClearEntry(void* thisPtr, void* param1, uint32_t par
 
     int32_t index = *(int32_t*)((uint8_t*)param1 + 60);
     void* arrayBase = *(void**)((uint8_t*)param3 + 608);
-    return phObject_1AD0_w(arrayBase, index);
+    return phObject_ClearStridedEntry(arrayBase, index);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// phObject_1F28_gen @ 0x82491F28 | size: 0x44
+// phObject_UnregisterResource @ 0x82491F28 | size: 0x44
 //
 // Unregisters a resource: calls _locale_register on the value stored at
 // *outPtr (param3), then clears *outPtr to NULL. Returns 0.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t phObject_1F28_gen(void* thisPtr, uint32_t param2, void** outPtr) {
+int32_t phObject_UnregisterResource(void* thisPtr, uint32_t param2, void** outPtr) {
     void* resource = *outPtr;
     _locale_register(resource, 0x208C8000);
     *outPtr = NULL;
@@ -5614,11 +5614,11 @@ int32_t phObject_1F28_gen(void* thisPtr, uint32_t param2, void** outPtr) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // Forward declarations for phObject stream helpers
-extern void phObject_28C8_wrh(void* stream, uint32_t a2, uint32_t a3,
+extern void phObject_BindOutputStream(void* stream, uint32_t a2, uint32_t a3,
                                uint32_t a4, uint32_t a5, void* outPtr);
 extern void rage_A518(void* outCtx, void* thisPtr, void* bufferPtr);
-extern void phObject_8BC0_w(void* thisPtr);
-extern void phObject_3E10_w(void* ptr);
+extern void phObject_ReleaseStreamContext(void* thisPtr);
+extern void phObject_ReleaseSavedField(void* ptr);
 extern "C" void* rage_01B8(uint32_t size, uint32_t tag);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -5712,13 +5712,13 @@ int32_t phObject_DestroyStreamContext(void** contextPtr) {
     uint32_t savedField = *(uint32_t*)(ctx + 548);
     void* streamObj = *(void**)(ctx + 608);
 
-    phObject_1E18_h(streamObj);
-    phObject_8BC0_w(context);
+    phObject_ClearDirtyState(streamObj);
+    phObject_ReleaseStreamContext(context);
 
     if (savedField != 0) {
-        phObject_3E10_w((void*)(uintptr_t)savedField);
+        phObject_ReleaseSavedField((void*)(uintptr_t)savedField);
         void* statePtr = (void*)(uintptr_t)savedField;
-        phObject_1F28_gen(streamObj, 8, &statePtr);
+        phObject_UnregisterResource(streamObj, 8, &statePtr);
     }
 
     *contextPtr = NULL;
@@ -5729,7 +5729,7 @@ int32_t phObject_DestroyStreamContext(void** contextPtr) {
 // ─────────────────────────────────────────────────────────────────────────────
 // phObject::FlushOutputStream @ 0x82489450 | size: 0x70
 //
-// Flushes the output stream at offset +536. Calls phObject_28C8_wrh to
+// Flushes the output stream at offset +536. Calls phObject_BindOutputStream to
 // perform the write. Clears the stream pointer if it becomes empty.
 // Returns error 0x801000A8 if no stream is active.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -5743,7 +5743,7 @@ int32_t phObject_FlushOutputStream(void* thisPtr, uint32_t a2, uint32_t a3,
     }
 
     uint32_t outVal = *(uint32_t*)(obj + 524);
-    phObject_28C8_wrh(stream, a2, a3, a5, outVal, outPtr);
+    phObject_BindOutputStream(stream, a2, a3, a5, outVal, outPtr);
 
     uint32_t outputWord = *(uint32_t*)outPtr;
     if (outputWord == 0) {
@@ -5775,7 +5775,7 @@ void phObject_ReleaseStreamSlot(void* thisPtr, uint32_t slotIndex) {
     uint32_t* slotPtr = (uint32_t*)(obj + slotIndex * 4);
     void* resource = *(void**)(obj + 508);
     void** slotAsPtr = (void**)slotPtr;
-    int32_t result = phObject_1F28_gen(resource, 2, slotAsPtr);
+    int32_t result = phObject_UnregisterResource(resource, 2, slotAsPtr);
 
     if (result >= 0) {
         *slotPtr = 0;
@@ -5928,11 +5928,11 @@ int32_t phObject_UnbindResource(void* thisPtr) {
 extern void ph_IntegrateJointPositions(void* jointArray);           // Update capsule bounds from joints
 extern void phArticulatedCollider_8450(void* jointArray);      // Post-integrate joint transforms
 extern void phArticulatedCollider_5D58(void* jointArray);      // Reset joint integration state
-extern void phArticulatedCollider_57F0_fw(void* jointArray);   // Reset joint chain state
+extern void phArticulatedCollider_ResetJointChain(void* jointArray);   // Reset joint chain state
 extern void phArticulatedCollider_8A30(void* jointArray, float* forceVec);  // Sync joint velocities
 extern void phArticulatedCollider_8B10(void* jointArray, float* torqueVec); // Sync joint torques
 
-extern void phArticulatedCollider_5A40_wrh(void* jointArray);  // Reset joint force accumulators
+extern void phArticulatedCollider_ResetForceAccumulators(void* jointArray);  // Reset joint force accumulators
 extern void phArticulatedCollider_F0E0(void* collider);        // Update articulated internal state
 extern void phCollider_CDF0_p39(void* collider);               // Update collider position from velocity
 extern void phCollider_vfn_1(void* collider);                  // phCollider::Reset
@@ -6053,7 +6053,7 @@ void rage::phArticulatedCollider::Reset() {
     m_bJointDirtyFlag = 0;      // +468 (0x1D4) — dirty flag (byte)
 
     // Reset joint chain state
-    phArticulatedCollider_57F0_fw(jointArray);
+    phArticulatedCollider_ResetJointChain(jointArray);
 
     // Reset joint integration accumulators
     jointArray = m_pJointArray;  // reload
@@ -6086,7 +6086,7 @@ void rage::phArticulatedCollider::ClearForces() {
 
     // Reset per-joint force accumulators
     uint32_t* jointArray = m_pJointArray;  // +464 (0x1D0)
-    phArticulatedCollider_5A40_wrh(jointArray);
+    phArticulatedCollider_ResetForceAccumulators(jointArray);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6196,12 +6196,12 @@ void rage::phArticulatedCollider::SyncAfterBaseUpdate() {
 // External declarations for capsule operations
 extern float ph_Atan2f(float x, float y);       // atan2
 extern float ph_Sqrtf(float val);               // sqrtf wrapper
-extern void  phBoundCapsule_8EA0_g(void* obj, float y, float z);  // angle computation
-extern void  phBoundCapsule_3598_g(void* obj);               // capsule update
-extern void  phBoundCapsule_81D8_g(void* thisPtr, void* p1, void* p2, float f1, float f2, float f3, float f4, void* p3);
-extern void  pongCameraMgr_3E98_g(void* obj);                // camera get angle
+extern void  phBoundCapsule_ComputeAngleXZ(void* obj, float y, float z);  // angle computation
+extern void  phBoundCapsule_UpdateCapsuleState(void* obj);               // capsule update
+extern void  phBoundCapsule_DispatchCollisionTest(void* thisPtr, void* p1, void* p2, float f1, float f2, float f3, float f4, void* p3);
+extern void  pongCameraMgr_GetCameraAngle(void* obj);                // camera get angle
 extern void  rage_debugLog(const char* name, int param);      // debug log (no-op in release)
-extern int   phBoundCapsule_7D90_g(void* obj);               // resolve player index
+extern int   phBoundCapsule_ResolvePlayerIndex(void* obj);               // resolve player index
 extern int   game_1700(void* obj);                           // get player from object
 
 // Global pointers used by capsule operations
@@ -6333,12 +6333,12 @@ void rage::phBoundCapsule::SetupCapsuleFromState() {
     void* computeObj = (void*)(uintptr_t)(*(uint32_t*)((char*)0x82030000 + (-21712)));
 
     // Compute angle from X/Z components
-    phBoundCapsule_8EA0_g(computeObj, posX, posY);
+    phBoundCapsule_ComputeAngleXZ(computeObj, posX, posY);
 
     // Store position data into physics object
     float field164 = *(float*)((char*)this + 164);
     *(float*)((char*)physObj + 824) = field164;
-    // f1 is the result from phBoundCapsule_8EA0_g (returned in f1)
+    // f1 is the result from phBoundCapsule_ComputeAngleXZ (returned in f1)
     // Store computed results
     *(float*)((char*)physObj + 832) = posX;
     *(float*)((char*)physObj + 836) = posY;
@@ -6347,7 +6347,7 @@ void rage::phBoundCapsule::SetupCapsuleFromState() {
     *(uint8_t*)((char*)physObj + 864) = 1;
 
     // Update the capsule
-    phBoundCapsule_3598_g((void*)physObj);
+    phBoundCapsule_UpdateCapsuleState((void*)physObj);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6521,7 +6521,7 @@ int rage::phBoundCapsule::NormalizeVector2D(float* outVec) const {
 // ─────────────────────────────────────────────────────────────────────────────
 // 8. rage::phBoundCapsule::LookupTableValues @ 0x8216CF48 | size: 0x70 (112B)
 //
-// Resolves a player index through phBoundCapsule_7D90_g and uses it to
+// Resolves a player index through phBoundCapsule_ResolvePlayerIndex and uses it to
 // look up two float values from global constant tables. Stores the results
 // into the output structure at offsets +4 and +8.
 //
@@ -6533,7 +6533,7 @@ void rage::phBoundCapsule::LookupTableValues(void* outValues) {
     void* globalObj = *(void**)((char*)0x82120000 + (-23764));
 
     // First lookup: get player index
-    int index1 = phBoundCapsule_7D90_g(globalObj);
+    int index1 = phBoundCapsule_ResolvePlayerIndex(globalObj);
 
     // Look up float from first table and store at +4
     const float* table1 = (const float*)((char*)0x82120000 + (-22564));
@@ -6541,7 +6541,7 @@ void rage::phBoundCapsule::LookupTableValues(void* outValues) {
 
     // Second lookup with same global
     globalObj = *(void**)((char*)0x82120000 + (-23764));
-    int index2 = phBoundCapsule_7D90_g(globalObj);
+    int index2 = phBoundCapsule_ResolvePlayerIndex(globalObj);
 
     // Look up float from second table and store at +8
     const float* table2 = (const float*)((char*)0x82060000 + (-32332));
@@ -6563,7 +6563,7 @@ void rage::phBoundCapsule::LookupTableValues(void* outValues) {
 // Parameters:
 //   stateIndex - Index of the new active state
 // ─────────────────────────────────────────────────────────────────────────────
-extern void phBoundCapsule_DB10_g(void* obj);
+extern void phBoundCapsule_SetupFromState(void* obj);
 void rage::phBoundCapsule::SetActiveState(int stateIndex) {
     // Store the state index at +28
     *(int*)((char*)this + 28) = stateIndex;
@@ -6604,8 +6604,8 @@ void rage::phBoundCapsule::SetActiveState(int stateIndex) {
     uint32_t idx2 = (currentIndex + 8);
     void* activePhysObj = (void*)(uintptr_t)(*(uint32_t*)((char*)this + idx2 * 4));
 
-    // Call SetupCapsuleFromState (phBoundCapsule_DB10_g)
-    phBoundCapsule_DB10_g(activePhysObj);
+    // Call SetupCapsuleFromState (phBoundCapsule_SetupFromState)
+    phBoundCapsule_SetupFromState(activePhysObj);
 
     // Update global debug pointer
     uint32_t* stateObj2 = (uint32_t*)(uintptr_t)(*(uint32_t*)((char*)this + 40));
@@ -6644,7 +6644,7 @@ void rage::phBoundCapsule::DispatchCapsuleFromCamera(void* param1, void* param2)
     void* cameraEntry = (void*)((char*)cameraArray + cameraIndex * 912);
 
     // Get camera angle
-    pongCameraMgr_3E98_g(cameraEntry);
+    pongCameraMgr_GetCameraAngle(cameraEntry);
     float cameraAngle = *(float*)&cameraEntry;  // result returned in f1
 
     // Load camera parameters
@@ -6664,7 +6664,7 @@ void rage::phBoundCapsule::DispatchCapsuleFromCamera(void* param1, void* param2)
     void* capsuleExtent = (void*)((char*)cameraArray + cameraIndex * 912 + 64);
 
     // Dispatch the full capsule collision test
-    phBoundCapsule_81D8_g(this, param1, param2, camPosX, clampedY, camPosZ, cameraAngle, capsuleExtent);
+    phBoundCapsule_DispatchCollisionTest(this, param1, param2, camPosX, clampedY, camPosZ, cameraAngle, capsuleExtent);
 }
 
 
@@ -6822,7 +6822,7 @@ extern void phBoundSphere_vfn_37(void* bound); // Sphere-specific init
 extern void ph_9BC0(void* listHead);           // Collision list init
 
 // Global identity-like AABB template vector
-extern const uint8_t lbl_826067C0[16];
+extern const uint8_t g_phBoundAABBTemplate[16];
 
 /**
  * rage::phBound::phBound @ 0x8228CE50 | size: 0x90 (144 bytes)
@@ -6844,10 +6844,10 @@ void phBound_Constructor(void* thisPtr) {
     *(uint8_t*)(obj + 7) = 0;
 
     // Copy AABB template into 4 vector slots
-    memcpy(obj + 16, lbl_826067C0, 16);
-    memcpy(obj + 32, lbl_826067C0, 16);
-    memcpy(obj + 48, lbl_826067C0, 16);
-    memcpy(obj + 80, lbl_826067C0, 16);
+    memcpy(obj + 16, g_phBoundAABBTemplate, 16);
+    memcpy(obj + 32, g_phBoundAABBTemplate, 16);
+    memcpy(obj + 48, g_phBoundAABBTemplate, 16);
+    memcpy(obj + 80, g_phBoundAABBTemplate, 16);
 
     // Material count = 1, clear 7 material index slots
     *(uint16_t*)(obj + 96) = 1;
@@ -7582,11 +7582,11 @@ void phBound_RelocatePointers(void* thisPtr, void* relocDesc) {
 // coordinate transformation utilities.
 // =========================================================================
 
-extern float phBoundCapsule_A688_g(void* capsuleData);
-extern int32_t phBoundCapsule_7D90_g(void* capsuleData);
-extern void phBoundCapsule_8EA0_g(void* camera, float fovHoriz, float fovVert);
-extern void phBoundCapsule_3598_g(void* camera);
-extern void phBoundCapsule_9220_g(float* inMatrix, float* row0, float* row1, float* row2, float* row3);
+extern float phBoundCapsule_GetJointAngle(void* capsuleData);
+extern int32_t phBoundCapsule_ResolvePlayerIndex(void* capsuleData);
+extern void phBoundCapsule_ComputeAngleXZ(void* camera, float fovHoriz, float fovVert);
+extern void phBoundCapsule_UpdateCapsuleState(void* camera);
+extern void phBoundCapsule_DecomposeRotation(float* inMatrix, float* row0, float* row1, float* row2, float* row3);
 
 // ---------------------------------------------------------------------------
 // 1. phBoundCapsule::TestPointContainment @ 0x822A4288 | size: 0xAC
@@ -7747,12 +7747,12 @@ int32_t phBoundCapsule_ClassifyValueBySign(float* input) {
 // ---------------------------------------------------------------------------
 // 6. phBoundCapsule::ComputeJointAngleSin @ 0x823FD888 | size: 0x44
 //    Sets the joint type to 4 (capsule constraint), computes angle from
-//    joint data via phBoundCapsule_A688_g, stores sin of result.
+//    joint data via phBoundCapsule_GetJointAngle, stores sin of result.
 // ---------------------------------------------------------------------------
 void phBoundCapsule_ComputeJointAngleSin(void* /*r3*/, void* /*r4*/,
                                           void* jointData, float* output) {
     output[1] = 4;  // joint type = 4
-    float angle = phBoundCapsule_A688_g(jointData);
+    float angle = phBoundCapsule_GetJointAngle(jointData);
     float sinVal = (float)ph_Sinf(angle);
     output[0] = sinVal;
 }
@@ -7766,12 +7766,12 @@ void phBoundCapsule_LookupRandomTableValues(void* capsule) {
 
     uint32_t rngState = *(uint32_t*)(uintptr_t)g_phRandomSeedPtr;
 
-    int32_t index1 = phBoundCapsule_7D90_g((void*)(uintptr_t)rngState);
+    int32_t index1 = phBoundCapsule_ResolvePlayerIndex((void*)(uintptr_t)rngState);
     float val1 = g_phTableA[index1];
     *(float*)((char*)capsule + 4) = val1;
 
     rngState = *(uint32_t*)(uintptr_t)g_phRandomSeedPtr;
-    int32_t index2 = phBoundCapsule_7D90_g((void*)(uintptr_t)rngState);
+    int32_t index2 = phBoundCapsule_ResolvePlayerIndex((void*)(uintptr_t)rngState);
     float val2 = g_phTableB[index2];
     *(float*)((char*)capsule + 8) = val2;
 }
@@ -7792,7 +7792,7 @@ void phBoundCapsule_UpdateCameraFromBound(void* bound) {
     float fovHoriz = *(float*)((char*)bound + 168);
 
     uint32_t cameraBase = *(uint32_t*)(uintptr_t)g_phActiveCameraPtr;
-    phBoundCapsule_8EA0_g((void*)(uintptr_t)cameraBase, fovHoriz, fovVert);
+    phBoundCapsule_ComputeAngleXZ((void*)(uintptr_t)cameraBase, fovHoriz, fovVert);
 
     float nearPlane = *(float*)((char*)bound + 164);
     *(float*)((char*)camera + 824) = nearPlane;
@@ -7803,7 +7803,7 @@ void phBoundCapsule_UpdateCameraFromBound(void* bound) {
     *(float*)((char*)camera + 836) = fovVert;
     *(uint8_t*)((char*)camera + 864) = 1;  // dirty flag
 
-    phBoundCapsule_3598_g(camera);
+    phBoundCapsule_UpdateCapsuleState(camera);
 }
 
 // ---------------------------------------------------------------------------
@@ -7867,7 +7867,7 @@ void phBoundCapsule_DecomposeMatrixToEuler(const float* matrix, float* outEuler)
     memcpy(localMatrix + 12, matrix + 12, 16);  // row 3
 
     // Decompose: extract axis angles from the 3x3 rotation sub-matrix
-    phBoundCapsule_9220_g(localMatrix, localMatrix, localMatrix + 4,
+    phBoundCapsule_DecomposeRotation(localMatrix, localMatrix, localMatrix + 4,
                           localMatrix + 8, localMatrix + 12);
 
     // Compute pitch angle from rows 1 and 2 (atan2)
@@ -7908,11 +7908,11 @@ void phBoundCapsule_DecomposeMatrixToEuler(const float* matrix, float* outEuler)
 
 // External functions used by phArticulatedCollider methods
 extern void phCollider_vfn_1(void* collider);
-extern void phArticulatedCollider_57F0_fw(void* jointData);
+extern void phArticulatedCollider_ResetJointChain(void* jointData);
 extern void phArticulatedCollider_5D58(void* jointData);
-extern void phArticulatedCollider_5A40_wrh(void* jointData);
+extern void phArticulatedCollider_ResetForceAccumulators(void* jointData);
 extern void phArticulatedCollider_5FE0(void* jointData);
-extern void* phArticulatedCollider_8C98_wrh(void* jointData, uint32_t boneMap,
+extern void* phArticulatedCollider_CreateJointConstraints(void* jointData, uint32_t boneMap,
     uint32_t constraintMap, uint32_t jointParamA, uint32_t jointParamB, uint32_t jointParamC);
 
 // ---------------------------------------------------------------------------
@@ -7921,7 +7921,7 @@ extern void* phArticulatedCollider_8C98_wrh(void* jointData, uint32_t boneMap,
 // Overrides phCollider::Shutdown (scalar destructor slot). Calls the base
 // class shutdown, then zeros the joint processing state (m_pJointProcessor
 // at +472 and m_bJointsActive flag at +468), and performs two-phase joint
-// data cleanup via phArticulatedCollider_57F0_fw and _5D58.
+// data cleanup via phArticulatedCollider_ResetJointChain and _5D58.
 // ---------------------------------------------------------------------------
 void rage::phArticulatedCollider::Shutdown() {
     phCollider_vfn_1((void*)this);
@@ -7930,7 +7930,7 @@ void rage::phArticulatedCollider::Shutdown() {
     m_bJointsActive = 0;          // +468 (byte)
 
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
-    phArticulatedCollider_57F0_fw(jointData);
+    phArticulatedCollider_ResetJointChain(jointData);
 
     jointData = (void*)(uintptr_t)m_nActiveJoints;  // reload +464
     phArticulatedCollider_5D58(jointData);
@@ -8052,7 +8052,7 @@ void rage::phArticulatedCollider::ApplyScaledMatrixRowZ(float scale) {
 // Initializes the joint constraint system. Sets the m_bJointsActive flag
 // at +468 to 1, loads five parameter pointers from offsets +476, +484,
 // +492, +500, +508 (bone map, constraint map, joint parameters), and
-// dispatches to phArticulatedCollider_8C98_wrh for constraint setup.
+// dispatches to phArticulatedCollider_CreateJointConstraints for constraint setup.
 // Stores the returned constraint handle at +472.
 // ---------------------------------------------------------------------------
 void rage::phArticulatedCollider::SetupJointConstraints() {
@@ -8065,7 +8065,7 @@ void rage::phArticulatedCollider::SetupJointConstraints() {
     uint32_t jointParamB = *(uint32_t*)((char*)this + 500);  // +0x1F4
     uint32_t jointParamC = *(uint32_t*)((char*)this + 508);  // +0x1FC
 
-    uint32_t result = (uint32_t)(uintptr_t)phArticulatedCollider_8C98_wrh(
+    uint32_t result = (uint32_t)(uintptr_t)phArticulatedCollider_CreateJointConstraints(
         jointData, boneMap, constraintMap, jointParamA, jointParamB, jointParamC);
 
     m_pJointProcessor = (void*)(uintptr_t)result;  // +472
@@ -8342,7 +8342,7 @@ void rage::phArticulatedCollider::ApplyDeltaPositionToJoint(int param, const flo
     int linkIndex = phArticulatedCollider_E668(this, resolveParam);
 
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
-    phJoint_7A30_fw(jointData, linkIndex, delta, param);
+    phJoint_ApplyDelta(jointData, linkIndex, delta, param);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8423,7 +8423,7 @@ void rage::phArticulatedCollider::GetJointOrientationVector(float* outVec, int b
 // phArticulatedCollider::ApplyDeltaToJointForce (vfn_52) @ 0x82250818 | size: 0x54
 //
 // Computes the delta between a target position and the collider's position
-// (offset +208), then dispatches via phArticulatedCollider_77F0_w.
+// (offset +208), then dispatches via phArticulatedCollider_ApplyJointDelta.
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phArticulatedCollider::ApplyDeltaToJointForce(const float* targetPos, int boneIndex) {
     float* currentPos = (float*)((char*)this + 208);
@@ -8436,7 +8436,7 @@ void rage::phArticulatedCollider::ApplyDeltaToJointForce(const float* targetPos,
     int linkIndex = phArticulatedCollider_E668(this, boneIndex);
 
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
-    phArticulatedCollider_77F0_w(jointData, linkIndex, delta);
+    phArticulatedCollider_ApplyJointDelta(jointData, linkIndex, delta);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8448,7 +8448,7 @@ void rage::phArticulatedCollider::ResetJointConstraintState(int boneIndex) {
     int linkIndex = phArticulatedCollider_E668(this, boneIndex);
 
     void* jointData = (void*)(uintptr_t)m_nActiveJoints;  // +464
-    phArticulatedCollider_7918_w(jointData, linkIndex);
+    phArticulatedCollider_ResetJointLink(jointData, linkIndex);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8828,7 +8828,7 @@ void rage::phArticulatedCollider::AccumulateTorqueAtRootJoint(const float* force
 extern void ph_1B78_3(void* outVec, float halfLength, float radius);
 extern void util_DA50(void* dst, const void* src);  // phBound::CopyFrom base
 extern void* g_display_obj_ptr;
-extern void phBoundCapsule_3F90_g(void* thisPtr, const float* midpoint, const float* axisA, const float* axisB);
+extern void phBoundCapsule_SetCapsuleExtents(void* thisPtr, const float* midpoint, const float* axisA, const float* axisB);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // phBoundCapsule::GetPolygonCount (vfn_12) @ 0x8256FBD0 | size: 0x08
@@ -8952,7 +8952,7 @@ float rage::phBoundCapsule::GetBoundingDistance(const float* direction, uint8_t 
 // Validates that a rotation vector is non-zero before applying capsule
 // extents. If the rotation column (row 1) is all-zero, returns immediately.
 // Otherwise computes the midpoint (row0 + row2) and dispatches to
-// phBoundCapsule_3F90_g for full capsule setup.
+// phBoundCapsule_SetCapsuleExtents for full capsule setup.
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phBoundCapsule::ValidateAndSetExtents(const float* matrix) {
     const float* rotation = matrix + 4;
@@ -8974,7 +8974,7 @@ void rage::phBoundCapsule::ValidateAndSetExtents(const float* matrix) {
     midpoint[2] = row0[2] + row2[2];
     midpoint[3] = row0[3] + row2[3];
 
-    phBoundCapsule_3F90_g(this, midpoint, rotation, row2);
+    phBoundCapsule_SetCapsuleExtents(this, midpoint, rotation, row2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -9182,16 +9182,16 @@ void phBoundSphere::SetPositionAndUpdateFlags(const float* position) {
 
 // External declarations
 extern void ph_ctor_FFD8(void* thisPtr, void* param);
-// extern void ph_95A8_h(void* thisPtr);  // removed: conflicts with definition returning void*
-extern void ph_3870_h(void* param, void* dest);
+// extern void ph_GetSimulationContext(void* thisPtr);  // removed: conflicts with definition returning void*
+extern void ph_AdvanceSegmentedPtr(void* param, void* dest);
 extern void phJoint3Dof_0170_g(void* dest, int stride, const void* srcTemplate, int count);
 
 // ---------------------------------------------------------------------------
 // phBoundGeometryIntermediate_Constructor @ 0x82291310 | size: 0x6C (108B)
 //    Intermediate constructor for phBoundGeometry. Calls the base bound
 //    constructor (ph_ctor_FFD8) passing through r4, installs the
-//    phBoundGeometry vtable, calls ph_95A8_h, then initializes the
-//    material table at +160 via ph_3870_h. Returns this pointer.
+//    phBoundGeometry vtable, calls ph_GetSimulationContext, then initializes the
+//    material table at +160 via ph_AdvanceSegmentedPtr. Returns this pointer.
 // ---------------------------------------------------------------------------
 // ph_1310
 void* phBoundGeometryIntermediate_Constructor(void* thisPtr, void* param) {
@@ -9202,11 +9202,11 @@ void* phBoundGeometryIntermediate_Constructor(void* thisPtr, void* param) {
     *(void**)thisPtr = &g_phBoundGeometryVtable;
 
     // Initialize static data
-    ph_95A8_h(thisPtr);
+    ph_GetSimulationContext(thisPtr);
 
     // Initialize material table at +160
     void* materialDest = (void*)((uint8_t*)thisPtr + 160);
-    ph_3870_h(param, materialDest);
+    ph_AdvanceSegmentedPtr(param, materialDest);
 
     return thisPtr;
 }
@@ -9611,7 +9611,7 @@ float phBoundCapsule_26B8(float height, float radius) {
 // (8608, CF48, DB10 already lifted above as DispatchCapsuleFromCamera/LookupTableValues/SetupCapsuleFromState)
 
 /**
- * phBoundCapsule_38A8_fw @ 0x822238A8 | size: 0x6C (108 bytes)
+ * phBoundCapsule_ComputeNormalizedAngle @ 0x822238A8 | size: 0x6C (108 bytes)
  *
  * Computes an atan2-based angle from two components of an input vector,
  * then normalizes the result to the range [0, 2*PI).
@@ -9619,7 +9619,7 @@ float phBoundCapsule_26B8(float height, float radius) {
  * @param data - Pointer to float pair (data[0] = x, data[2] = z)
  * @return Normalized angle in radians [0, 2*PI)
  */
-float phBoundCapsule_38A8_fw(float* data) {
+float phBoundCapsule_ComputeNormalizedAngle(float* data) {
     float z = data[2];
     float x = data[0];
 
