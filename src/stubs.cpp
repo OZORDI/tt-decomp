@@ -390,7 +390,7 @@ void xam_CreateEvent_c(void) {}
 
 void grmShaderPreset_AllocArray_c(void) {}
 
-void* xe_EC88_c(uint32_t size) {
+void* rage_Alloc_c(uint32_t size) {
     (void)size;
     return nullptr;
 }
@@ -923,7 +923,7 @@ void atSingleton_8E88_p42(void* a, void* b, uint32_t c, uint32_t d, uint32_t e) 
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
 void* atSingleton_91E0_gen(uint32_t a) { (void)a; return nullptr; }
-void atSingleton_E998_g(void* a, void* b) { (void)a; (void)b; }
+void atSingleton_QueryEventData(void* a, void* b) { (void)a; (void)b; }
 
 // ── Audio ───────────────────────────────────────────────────────────────────
 
@@ -966,19 +966,19 @@ float fiAsciiTokenizer_2628_g(float a) { (void)a; return 0.0f; }
 
 // ── Game logic functions ────────────────────────────────────────────────────
 
-void* game_1620(void* a) { (void)a; return nullptr; }
+void* DialogPageGroup_Construct(void* a) { (void)a; return nullptr; }
 void game_2E80(void* a) { (void)a; }
 void game_2EE0(void* a) { (void)a; }
 void game_36E8(void* a, const float* b) { (void)a; (void)b; }
 void game_3860(void* a, int b, const char* c) { (void)a; (void)b; (void)c; }
 void game_8EE8(void* a) { (void)a; }
-void* game_9358(void* a) { (void)a; return nullptr; }
+void* LegalsPageGroup_Construct(void* a) { (void)a; return nullptr; }
 void game_9CF8_h(void* a, uint32_t b) { (void)a; (void)b; }
 void game_9D10_h(void* a, uint32_t b) { (void)a; (void)b; }
 void game_9D28_h(void* a, uint32_t b) { (void)a; (void)b; }
 void game_AA88(void* a) { (void)a; }
-void game_AAF8(void* a, int b, int c) { (void)a; (void)b; (void)c; }
-void* game_AD40(void* a, uint32_t b) { (void)a; (void)b; return nullptr; }
+void CreditsRoll_Deactivate(void* a, int b, int c) { (void)a; (void)b; (void)c; }
+void* CreditsRoll_NotifyEntry(void* a, uint32_t b) { (void)a; (void)b; return nullptr; }
 void game_CD20(void* a) { (void)a; }
 void game_D060(void* a) { (void)a; }
 void game_D3B0_h(void* a) { (void)a; }
@@ -1520,11 +1520,11 @@ void util_DA08(void* a) { (void)a; }
 void util_PackColorRGBA(uint32_t* a, const float* b) { (void)a; (void)b; }
 void* xam_singleton_init_8D60(void* a) { (void)a; return nullptr; }
 
-void* xe_EC88(int a) { (void)a; return nullptr; }
-void* xe_EC88(unsigned int a) { (void)a; return nullptr; }
+void* rage_Alloc(int a) { (void)a; return nullptr; }
+void* rage_Alloc(unsigned int a) { (void)a; return nullptr; }
 void xe_F4C0() {}
 void xe_F4C0(void* a) { (void)a; }
-void xe_main_thread_init_0038() {}
+void rage_AssertMainThread() {}
 void xmlNodeStruct_Init(void* a) { (void)a; }
 int xml_ReadInt(const char* a) { (void)a; return 0; }
 void xml_ReadString(const char* a, char* b, int c) { (void)a; if (b && c > 0) b[0] = '\0'; }

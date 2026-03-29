@@ -13,8 +13,8 @@
 // External function declarations
 extern "C" {
     void rage_free(void* ptr);
-    void* xe_EC88(uint32_t size);
-    void xe_main_thread_init_0038();
+    void* rage_Alloc(uint32_t size);
+    void rage_AssertMainThread();
     void rage::ReleaseSingleton(void* obj);
     void audControl_Destructor(void* obj);  // @ 0x82161568
     void atArray_Destructor(void* obj);
@@ -177,7 +177,7 @@ const char* pongAttractState::GetStateName() const {
  * Creates a pongAttractContext object (32 bytes) with dual vtables for multiple inheritance.
  */
 void pongAttractState::OnEnter() {
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
     
     // Get allocator from TLS (thread-local storage)
     void** pTLS = g_tls_base;
@@ -325,7 +325,7 @@ void charViewData::LoadViewData() {
         if (charCount > 0x3FFFFFFF) {
             allocSize = 0xFFFFFFFF;
         }
-        m_pAllocatedData = xe_EC88(allocSize);
+        m_pAllocatedData = rage_Alloc(allocSize);
     } else {
         m_pAllocatedData = nullptr;
     }
@@ -345,7 +345,7 @@ void charViewData::LoadViewData() {
         void* pAllocator = pTLS[1];
         
         for (uint32_t i = 0; i < charCount; i++) {
-            xe_main_thread_init_0038();
+            rage_AssertMainThread();
             
             // Allocate view element (8 bytes: 2 floats)
             typedef void* (*AllocFunc)(void*, uint32_t, uint32_t);
@@ -604,7 +604,7 @@ const char* pongCharViewState::GetStateName() const {
  * to initial values, then calls the context's initialization method.
  */
 void pongCharViewState::OnEnter() {
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     // Get allocator from TLS
     void** pTLS = g_tls_base;

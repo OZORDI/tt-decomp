@@ -44,7 +44,7 @@ struct pongPageGroup {
 
 
 extern void rage_free(void* ptr);                  // @ 0x820C00C0
-extern void* xe_EC88(uint32_t size);               // @ 0x820DEC88
+extern void* rage_Alloc(uint32_t size);               // @ 0x820DEC88
 extern void rage_debugLog(const void* fmt, ...);  // @ 0x8240E6D0 — debug logger (no-op in release)
 
 // Field registration helper (rage serialization system)
@@ -55,7 +55,7 @@ extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, 
 extern void  QueueGameMessage(int a, int b, void* c, int d, void* e, void* f); // @ 0x823794B8
 extern void  DismissPageGroup(void* obj);                         // page group helper
 extern void  pongAttractState_Shutdown(void* state);       // attract state cleanup
-extern void  xe_main_thread_init_0038();                   // thread init
+extern void  rage_AssertMainThread();                   // thread init
 extern void  InitializePageGroup(void* pageGroup);         // @ 0x8231F4C0 - page group constructor
 extern void  rage_RegisterUIContext(void* obj, uint32_t categoryId, const char* nameStr);  // @ 0x822EADF8
 extern void  xmlNodeStruct_Init(void* obj);                // XML node base init
@@ -72,12 +72,12 @@ namespace rage {
     void ClearPendingFlag(void* obj);     // HSM pending flag clear
 }
 
-extern void  hsmContext_SetNextState_2800(void* ctx, int stateIdx); // HSM transition
+extern void  hsmContext_SetNextState(void* ctx, int stateIdx); // HSM transition
 extern void  hsmContext_RequestTransition(void* ctx, int idx);      // HSM request
 extern bool  hsmContext_IsTransitioning(void* ctx);                 // HSM query
 extern void  SendContextMessage(int code, int mask, int a3, int a4);  // @ 0x8220E6E0 — broadcast msg
 extern void  PostPageGroupMessage(void* record, int code, int mask, int a3, int a4); // @ 0x8220E6E0 — targeted
-extern void* game_AD40(void* obj, uint32_t count);       // credits-roll notify @ 0x8240AD40
+extern void* CreditsRoll_NotifyEntry(void* obj, uint32_t count);       // credits-roll notify @ 0x8240AD40
 extern void* PostStateTransitionRequest(void* hsmCtx, int stateIdx); // @ 0x822228B8
 extern void  FadePageGroup(void* mgr, int type, int mode, float fadeTime, float param2); // UI fade
 extern bool  CheckButtonPressed(void* record);                    // input button state check @ 0x8225FFF8
@@ -88,11 +88,11 @@ extern void    snSession_ReleaseLock(void* pg);   // page group notify
 extern void    snSession_BeginOperation(void* pg);   // page group input clear
 extern void*   PageGroup_GetTextEntry(void* pg, const char* key); // @ 0x820C9280 — text entry lookup
 extern int32_t TextEntry_GetValue(void* entry);         // @ 0x820CA5C8 — text entry value
-extern void* game_9358(void* mem);                   // page-group constructor @ 0x8230x
+extern void* LegalsPageGroup_Construct(void* mem);                   // page-group constructor @ 0x8230x
 extern void  PageGroup_Register(void* pg);              // @ 0x820C9510 — register page group
 extern void  HSM_QueueNotification(void* ctx);          // @ 0x820C0708 — queue HSM notification
-extern void  game_AAF8(void* roll, int a, int b);    // credits roll toggle
-extern void* game_1620(void* mem);                   // dialog page-group constructor
+extern void  CreditsRoll_Deactivate(void* roll, int a, int b);    // credits roll toggle
+extern void* DialogPageGroup_Construct(void* mem);                   // dialog page-group constructor
 
 
 
@@ -216,7 +216,7 @@ void creditsData::BuildActiveList() {
     void** activeArray = nullptr;
     if (validCount > 0) {
         uint32_t allocSize = validCount * sizeof(void*);
-        activeArray = (void**)xe_EC88(allocSize);
+        activeArray = (void**)rage_Alloc(allocSize);
     }
     m_pActiveEntries = activeArray;
     m_activeCount    = (uint16_t)validCount;
@@ -401,7 +401,7 @@ void pongCreditsContext::OnEnterCredits() {
 
     // Transition to state 6 (credits roll)
     extern void* g_hsmContextPtr;   // @ lbl_8271A81C
-    hsmContext_SetNextState_2800(g_hsmContextPtr, 6 /*STATE_CREDITS_ROLL*/);
+    hsmContext_SetNextState(g_hsmContextPtr, 6 /*STATE_CREDITS_ROLL*/);
 
     // Check if the global movie record has valid frame range
     extern void* g_movieRecord;   // @ lbl_8271A320
@@ -456,7 +456,7 @@ void pongCreditsContext::OnExitCredits() {
  * then registers this context with the credits roll manager.
  *
  * Steps:
- *   1. Calls xe_main_thread_init_0038 to assert we're on the main thread.
+ *   1. Calls rage_AssertMainThread to assert we're on the main thread.
  *   2. Allocates a 220-byte page group object from the main thread allocator
  *      (via vtable slot 1 of the SDA-resident allocator table).
  *   3. If allocation succeeds, calls InitializePageGroup to construct the page group.
@@ -473,7 +473,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
     // rage_debugLog(g_str_pongStates_cfail);   // stripped in release
 
     // Assert main thread is ready
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     // Allocate a UI page group (220 bytes, 16-byte aligned).
     // The main allocator table is at SDA offset 0 (base 0x82600000);
@@ -536,7 +536,7 @@ pongCreditsState::~pongCreditsState() {
  * pongCreditsState::Init  @ 0x8230A068  |  size: 0x108
  *
  * Slot 14.  Initialises the credits state:
- *   1. Calls the main-thread init stub (xe_main_thread_init_0038).
+ *   1. Calls the main-thread init stub (rage_AssertMainThread).
  *   2. Allocates a new pongCreditsContext via the thread's allocator
  *      (vtable slot 1, requesting 32 bytes at alignment 16).
  *   3. Populates the new context object: sets vtable pointers, zeroes
@@ -544,7 +544,7 @@ pongCreditsState::~pongCreditsState() {
  *   4. Registers the context with the credits-roll manager (slot 23).
  */
 void pongCreditsState::Init() {
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     // Allocate pongCreditsContext through the thread allocator
     // (SDA[0] is the main allocator table; slot 1 = Alloc(size, align))
@@ -640,9 +640,9 @@ void pongCreditsState::OnEnter(int prevStateIdx) {
         slotArray[newCount - 1] = (uint32_t)(uintptr_t)m_pContext;
 
         // Notify roll of the new count
-        game_AD40(g_creditsRoll, newCount);
+        CreditsRoll_NotifyEntry(g_creditsRoll, newCount);
 
-        pongCreditsState_9D68_h(m_pContext, 0 /*not visible*/);
+        pongCreditsState_SetDisplayMode(m_pContext, 0 /*not visible*/);
         return;
     }
 
@@ -653,7 +653,7 @@ void pongCreditsState::OnEnter(int prevStateIdx) {
         *(uint32_t*)((uint8_t*)g_creditsRoll + 52) = 2;    // mode = 2
         *(uint32_t*)((uint8_t*)g_creditsRoll + 56) = (uint32_t)(uintptr_t)m_pContext;
 
-        pongCreditsState_9D68_h(m_pContext, 0);
+        pongCreditsState_SetDisplayMode(m_pContext, 0);
         return;
     }
 
@@ -701,7 +701,7 @@ void pongCreditsState::OnExit(int nextStateIdx) {
 }
 
 /**
- * pongCreditsState_9D68_h  @ 0x82309D68  |  size: ~0x80
+ * pongCreditsState_SetDisplayMode  @ 0x82309D68  |  size: ~0x80
  *
  * Helper shared between pongCreditsContext::CanTransition and
  * pongCreditsState::OnEnter.
@@ -713,7 +713,7 @@ void pongCreditsState::OnExit(int nextStateIdx) {
  * state byte (+155) and calls slot 5 (SetVisible/Refresh), then
  * clears the m_bActive flag on the credits state.
  */
-void pongCreditsState_9D68_h(pongCreditsContext* ctx, uint8_t visible) {
+void pongCreditsState_SetDisplayMode(pongCreditsContext* ctx, uint8_t visible) {
     if (visible == 0) {
         extern void* g_uiManagerPtr;   // @ lbl_8271A81C
         extern float g_fadeTime;       // @ lbl_8253C000 - 12016 (e.g. 2.0f)
@@ -892,7 +892,7 @@ void pongLegalsContext::Update() {
     // If saving entry had a positive value, transition to state 6
     if (resultValue > 0) {
         extern void* g_hsmContextPtr;   // @ loaded from 0x825EAB30
-        hsmContext_SetNextState_2800(g_hsmContextPtr, 6);
+        hsmContext_SetNextState(g_hsmContextPtr, 6);
     }
 }
 
@@ -934,12 +934,12 @@ void* pongLegalsState::GetContext() {
  *   1. Allocates a pongLegalsContext (28 bytes, 16-byte aligned).
  *   2. Zeros all fields, sets its vtable to 0x8205F8FC.
  *   3. Stores the context in m_pContext (this+8).
- *   4. Allocates a 240-byte page group sub-object via game_9358.
+ *   4. Allocates a 240-byte page group sub-object via LegalsPageGroup_Construct.
  *   5. Stores the page group in the context's m_pPageGroup (+20).
  *   6. Calls PageGroup_Register to register.
  */
 void pongLegalsState::Init() {
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     // Allocate pongLegalsContext (28 bytes, 16-byte aligned)
     // g_mainAllocTable declared externally   // SDA @ 0x82600000
@@ -966,14 +966,14 @@ void pongLegalsState::Init() {
     rage_debugLog("pongLegalsState::Init - context");   // @ 0x8205F864
 
     // Allocate page-group sub-object (240 bytes, 16-byte aligned)
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
     allocBase = (uint32_t*)*(uint32_t*)&g_mainAllocTable;
     allocator = (void*)allocBase[1];
     void* pgMem = VCALL_ALLOC(allocator, /*size=*/240, /*align=*/16);
 
     void* pageGroup = nullptr;
     if (pgMem != nullptr) {
-        pageGroup = game_9358(pgMem);   // construct page group
+        pageGroup = LegalsPageGroup_Construct(pgMem);   // construct page group
     }
 
     // Store page group in context (+20)
@@ -1047,7 +1047,7 @@ void pongLegalsState::OnEnter(int prevStateIdx) {
  *
  * Slot 12.  State exit handler.
  *
- *   nextState == 6  → Leaving to attract/frontend: call game_AAF8
+ *   nextState == 6  → Leaving to attract/frontend: call CreditsRoll_Deactivate
  *                     on the credits roll with (0, 0).
  *   other           → Post transition via PostStateTransitionRequest + log.
  */
@@ -1061,7 +1061,7 @@ void pongLegalsState::OnExit(int nextStateIdx) {
 
     // Leaving to state 6 (attract)
     extern void* g_creditsRoll;   // @ 0x8271A358
-    game_AAF8(g_creditsRoll, 0, 0);
+    CreditsRoll_Deactivate(g_creditsRoll, 0, 0);
 }
 
 
@@ -1106,9 +1106,9 @@ static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
  * then registers this context with the dialog system.
  *
  * Steps:
- *   1. Asserts main thread via xe_main_thread_init_0038.
+ *   1. Asserts main thread via rage_AssertMainThread.
  *   2. Allocates 1508 bytes (16-byte aligned) from the main allocator.
- *   3. Constructs the page group via game_1620.
+ *   3. Constructs the page group via DialogPageGroup_Construct.
  *   4. Stores the result in m_pPageGroup (+24).
  *   5. Loads the dialog manager name from g_pDialogRollObj (+50).
  *   6. Registers this context via rage_RegisterUIContext with category 204.
@@ -1117,7 +1117,7 @@ static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
 void pongDialogContext::Register() {
     rage_debugLog("pongDialogContext::Register enter");   // @ 0x8205F240
 
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     // Allocate dialog page group (1508 bytes, 16-byte aligned)
     // g_mainAllocTable declared externally   // SDA @ 0x82600000
@@ -1127,7 +1127,7 @@ void pongDialogContext::Register() {
 
     void* pageGroup = nullptr;
     if (pgMem != nullptr) {
-        pageGroup = game_1620(pgMem);   // construct dialog page group
+        pageGroup = DialogPageGroup_Construct(pgMem);   // construct dialog page group
     }
     m_pPageGroup = pageGroup;
 
@@ -1170,7 +1170,7 @@ void pongDialogContext::Update() {
 
     // Transition to the stored next state
     extern void* g_hsmContextPtr;   // loaded from 0x825EAB30 area
-    hsmContext_SetNextState_2800(g_hsmContextPtr, m_nextStateIdx);
+    hsmContext_SetNextState(g_hsmContextPtr, m_nextStateIdx);
 }
 
 /**
@@ -1287,7 +1287,7 @@ void* pongDialogState::GetContext() {
  *   5. Calls the context's Register (slot 23) to set up the page group.
  */
 void pongDialogState::Init() {
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     // Allocate pongDialogContext (36 bytes, 16-byte aligned)
     // g_mainAllocTable declared externally
@@ -1363,7 +1363,7 @@ void pongDialogState::OnEnter(int prevStateIdx) {
         entryArray[count - 1] = (uint32_t)(uintptr_t)m_pContext;
 
         // Notify of new count
-        game_AD40(g_creditsRoll, count);
+        CreditsRoll_NotifyEntry(g_creditsRoll, count);
 
         // If overlay was not previously set, show the page group
         if (m_savedOverlay == 0) {
@@ -1390,7 +1390,7 @@ void pongDialogState::OnEnter(int prevStateIdx) {
  * Slot 12.  State exit handler.
  *   - Posts DIALOG_EXIT_MSG.
  *   - If saved overlay was 0, restores HSM overlay to 0.
- *   - If nextState in [5..11] or 13: calls game_AAF8 on credits roll.
+ *   - If nextState in [5..11] or 13: calls CreditsRoll_Deactivate on credits roll.
  *   - Otherwise: posts generic transition via PostStateTransitionRequest.
  */
 void pongDialogState::OnExit(int nextStateIdx) {
@@ -1409,7 +1409,7 @@ void pongDialogState::OnExit(int nextStateIdx) {
 
     if (isDialogState) {
         extern void* g_creditsRoll;
-        game_AAF8(g_creditsRoll, 0, 0);
+        CreditsRoll_Deactivate(g_creditsRoll, 0, 0);
         return;
     }
 
@@ -1661,7 +1661,7 @@ pongDialogContext::~pongDialogContext() {
  * Process:
  *   1. Initialize main thread context
  *   2. Allocate page group memory (1508 bytes, 16-byte aligned)
- *   3. Construct page group via game_1620 (dialog constructor)
+ *   3. Construct page group via DialogPageGroup_Construct (dialog constructor)
  *   4. Store in m_pPageGroup (+24)
  *   5. Register with UI system (category 204, name from global)
  *   6. Store globally for other systems to access
@@ -1670,7 +1670,7 @@ void pongDialogContext::Register() {
     rage_debugLog("pongDialogContext::Register");
     
     // Initialize main thread context
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
     
     // Get main allocator from SDA[0]
     extern uint32_t* g_sdaBase;  // r13 base
@@ -1682,7 +1682,7 @@ void pongDialogContext::Register() {
     
     if (pageGroupMem != nullptr) {
         // Construct dialog page group
-        m_pPageGroup = game_1620(pageGroupMem);
+        m_pPageGroup = DialogPageGroup_Construct(pageGroupMem);
     } else {
         m_pPageGroup = nullptr;
     }
@@ -1723,7 +1723,7 @@ void pongDialogContext::Update() {
     
     // Transition to next state
     extern void* g_hsmManager;  // @ 0x8271A81C (SDA -21712)
-    hsmContext_SetNextState_2800(g_hsmManager, m_nextStateIdx);
+    hsmContext_SetNextState(g_hsmManager, m_nextStateIdx);
 }
 
 /**
@@ -1751,19 +1751,19 @@ void pongDialogContext::OnExit() {
 }
 
 /**
- * pongDialogContext_rtti_F384_0  @ 0x8230CF88  |  size: 0x8
+ * pongDialogContext_MI_Dtor  @ 0x8230CF88  |  size: 0x8
  *
  * MI-base thunk destructor. Adjusts `this` pointer by -20 bytes
  * to recover the true object pointer before delegating to the
  * primary destructor. Standard Itanium ABI thunk for non-primary base.
  */
-extern "C" void pongDialogContext_rtti_F384_0(pongDialogContext* adjustedThis) {
+extern "C" void pongDialogContext_MI_Dtor(pongDialogContext* adjustedThis) {
     pongDialogContext* realThis = (pongDialogContext*)((char*)adjustedThis - 20);
     realThis->~pongDialogContext();
 }
 
 /**
- * pongDialogContext_rtti_F384_1  @ 0x8230C9A8  |  size: 0x274
+ * pongDialogContext_OnEvent  @ 0x8230C9A8  |  size: 0x274
  *
  * Event handler for dialog-related game events. Processes various
  * dialog trigger events and updates dialog state accordingly.
@@ -1782,7 +1782,7 @@ extern "C" void pongDialogContext_rtti_F384_0(pongDialogContext* adjustedThis) {
  * network error events, checks error state. For match result events,
  * validates match completion state.
  */
-extern "C" void pongDialogContext_rtti_F384_1(pongDialogContext* ctx, void* eventData) {
+extern "C" void pongDialogContext_OnEvent(pongDialogContext* ctx, void* eventData) {
     uint16_t eventType = *(uint16_t*)eventData;
     
     // Check for save/load confirm events (8207 or 8206)
@@ -1793,7 +1793,7 @@ extern "C" void pongDialogContext_rtti_F384_1(pongDialogContext* ctx, void* even
         // Query active player index from singleton system
         uint32_t playerIndex = 0;
         extern void* g_eventTypeTable;  // @ 0x82017888
-        atSingleton_E998_g(&playerIndex, g_eventTypeTable);
+        atSingleton_QueryEventData(&playerIndex, g_eventTypeTable);
         
         // Get match state from context field +4
         void* matchState = *(void**)((char*)ctx + 4);
@@ -1838,7 +1838,7 @@ extern "C" void pongDialogContext_rtti_F384_1(pongDialogContext* ctx, void* even
     if (eventType == 8219) {
         uint32_t playerData[2];
         extern void* g_playerSelectTable;  // @ 0x82027888
-        atSingleton_E998_g(playerData, g_playerSelectTable);
+        atSingleton_QueryEventData(playerData, g_playerSelectTable);
         
         void* matchState = *(void**)((char*)ctx + 4);
         if (matchState == nullptr) {
@@ -1888,7 +1888,7 @@ extern "C" void pongDialogContext_rtti_F384_1(pongDialogContext* ctx, void* even
         // Query match completion state
         uint32_t completionData[2];
         extern void* g_matchResultTable;  // @ 0x82027884
-        atSingleton_E998_g(completionData, g_matchResultTable);
+        atSingleton_QueryEventData(completionData, g_matchResultTable);
         
         // Validate match mode at +108
         int32_t matchMode = *(int32_t*)((char*)matchState + 108);

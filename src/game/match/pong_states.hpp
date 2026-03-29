@@ -124,7 +124,7 @@ struct pongCreditsState : public pongAttractState {
 };
 // Helper shared by pongCreditsContext::CanTransition and pongCreditsState::OnEnter
 // Sets the page group's visible state and clears the context's m_bActive flag.
-void pongCreditsState_9D68_h(pongCreditsContext* ctx, uint8_t visible);  // @ 0x82309D68
+void pongCreditsState_SetDisplayMode(pongCreditsContext* ctx, uint8_t visible);  // @ 0x82309D68
 
 
 

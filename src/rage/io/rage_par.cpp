@@ -7,7 +7,7 @@
 #include <cstring>
 
 extern "C" {
-void xe_main_thread_init_0038(void);
+void rage_AssertMainThread(void);
 void* atSingleton_CAD0_g(void* self);
 void SinglesNetworkClient_8990_g(const char* src, char* dest, int maxSize);
 int RtlMultiByteToUnicodeN_6FA8_w(
@@ -23,7 +23,7 @@ std::uint32_t* g_sda_base;
 void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags);
 void fiAsciiTokenizer_CFA8_w(void* pStringValue, const char* pBegin, const char* pEnd);
 void rage_EC58(void* pStringValue, const char* pText);
-void* xe_EC88(std::uint32_t size);
+void* rage_Alloc(std::uint32_t size);
 void rage_free_00C0(void* ptr);
 void rage_debugLog(const char* fmt, ...);
 void* phMaterialMgrImpl_C208_g(void* pHashBucketSet, const char* pLookupName);
@@ -523,7 +523,7 @@ parRTStructure::parRTStructure() {
             *reinterpret_cast<std::uint32_t*>(runtimeStruct) = kParRTStructureVtable;
         }
 
-        xe_main_thread_init_0038();
+        rage_AssertMainThread();
 
         slotHeader->m_bufferPtr = 0;
         if (allocator != nullptr) {
@@ -647,7 +647,7 @@ void parMemberString::ApplyOperator(const cmOperator* pValueOperator, std::uint3
     if ((GetMemberFlags(this) & kFlagIndirectStorage) != 0u) {
         Address32* pStorage = ResolveAddress<Address32>(memberAddress);
         *pStorage = static_cast<Address32>(
-            reinterpret_cast<std::uintptr_t>(xe_EC88(sourceLength + 1u))
+            reinterpret_cast<std::uintptr_t>(rage_Alloc(sourceLength + 1u))
         );
         std::memcpy(
             ResolveAddress<void>(*pStorage),
@@ -824,7 +824,7 @@ void parMemberArray::E138(
  * operator nodes.
  */
 cmOperator* parMemberArray::CreateOperator(std::uint32_t memberOffset) {
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
     auto* pOperatorData = (allocator != nullptr)
@@ -1133,7 +1133,7 @@ std::uint32_t parMemberStruct::EB10(std::uint32_t memberOffset) {
  * members this emits type-identification labels before serializing children.
  */
 cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
     auto* pOperatorData = (allocator != nullptr)

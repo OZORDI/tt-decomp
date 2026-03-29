@@ -26,7 +26,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Thread / allocator init
-extern void xe_main_thread_init_0038();                     // @ 0x820C0038 — ensure TLS initialised
+extern void rage_AssertMainThread();                     // @ 0x820C0038 — ensure TLS initialised
 
 // HSM helpers
 extern const char* hsmContext_GetStateName(void* hsmCtx, uint32_t stateIdx);
@@ -43,7 +43,7 @@ extern void    grcPageGroup_SetFade(void* grcDevice, float fadeValue,
 extern void    grcDevice_BeginScene(void* grcDevice);       // @ 0x82305E78
 
 // UI manager helpers
-extern void    game_AAF8(void* uiMgr, uint32_t screenId, uint32_t contextPtr);
+extern void    CreditsRoll_Deactivate(void* uiMgr, uint32_t screenId, uint32_t contextPtr);
                                                             // @ 0x8222AAF8 — pop/clear active screen context
 
 // hudLogosScreen constructor
@@ -186,7 +186,7 @@ const char* pongLogosState_GetName(pongLogosState* self) {
 // ─────────────────────────────────────────────────────────────────────────────
 void pongLogosState_Init(pongLogosState* self) {
     // Ensure thread-local storage is set up for the allocator
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
 
     // Get the allocator from the SDA global table (r13+0 → table, slot 4 → allocator ptr)
     void* allocator = *(void**)((uint8_t*)g_mainAllocTable + 4);
@@ -215,7 +215,7 @@ void pongLogosState_Init(pongLogosState* self) {
     rage_debugLog(STR_INIT_LOG_1);
 
     // ── Allocate hudLogosScreen (96 bytes, 16-byte aligned) ──
-    xe_main_thread_init_0038();
+    rage_AssertMainThread();
     void* screenMem = AllocatorAlloc(allocator, 96, 16);
 
     void* logosScreen = nullptr;
@@ -312,5 +312,5 @@ void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateIdx) {
     grcPageGroup_SetFade(g_grcDevice, FADE_FULL_OPACITY, 0xFFFFFFFF, 0, 0);
 
     // Clear the UI manager's active screen
-    game_AAF8(g_uiManager, 0, 0);
+    CreditsRoll_Deactivate(g_uiManager, 0, 0);
 }

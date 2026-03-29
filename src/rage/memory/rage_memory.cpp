@@ -606,7 +606,7 @@ extern void rage_free_00C0(void* ptr);
 extern uint8_t atSingleton_Find_90D0(void* ptr);
 
 /* Heap allocator @ 0x820DEC88 */
-extern void* xe_EC88(uint32_t size);
+extern void* rage_Alloc(uint32_t size);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // atSingleton Functions — Batch 2
@@ -949,7 +949,7 @@ void atSingleton_DB60(void* data) {
  * Assignment operator for a dynamic array of uint32 elements.
  * Copies count and data from source to destination, reallocating the
  * backing buffer if needed. If the source has elements, allocates new
- * storage via xe_EC88 and copies element-by-element.
+ * storage via rage_Alloc and copies element-by-element.
  *
  * @param dst  Destination array descriptor (data at +0, count at +4, capacity at +8)
  * @param src  Source array descriptor
@@ -981,7 +981,7 @@ void* atSingleton_DC18(void* dst, void* src) {
         if ((uint32_t)srcCount > 0x3FFFFFFF) {
             allocSize = (uint32_t)-1;
         }
-        void* newData = xe_EC88(allocSize);
+        void* newData = rage_Alloc(allocSize);
         *(void**)dstBase = newData;
     } else {
         *(void**)dstBase = nullptr;
@@ -1022,7 +1022,7 @@ void atSingleton_F5C0_h(void* arrayDesc, int32_t newCapacity) {
         if ((uint32_t)newCapacity > 0x7FFFFFFF) {
             allocSize = (uint32_t)-1;
         }
-        newData = xe_EC88(allocSize);
+        newData = rage_Alloc(allocSize);
     }
 
     // Determine copy count: min(newCapacity, oldCount)

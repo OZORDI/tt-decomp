@@ -1405,7 +1405,7 @@ void pongNetMessageHolder::InitializeInternalArray()
     // Check if internal array is already allocated
     if (m_pInternalArray == nullptr) {
         // Allocate 1296 bytes for the internal array
-        void* newArray = xe_EC88(1296);
+        void* newArray = rage_Alloc(1296);
         
         if (newArray != nullptr) {
             // Initialize the allocated array
@@ -2091,7 +2091,7 @@ void pongNetMessageHolder::RemoveElementByPointer(void* targetPtr)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // External references
-extern "C" void* xe_EC88(uint32_t size);  // Memory allocator @ 0x820DEC88
+extern "C" void* rage_Alloc(uint32_t size);  // Memory allocator @ 0x820DEC88
 extern void pongNetMessageHolder_vfn_2_1770_1(pongNetMessageHolder* holder);
 extern void pongNetMessageHolder_vfn_2_18D0_1(pongNetMessageHolder* holder);
 extern void pongNetMessageHolder_68D0_wrh(void* msg);  // AcceptMessage constructor
@@ -2168,7 +2168,7 @@ void pongNetMessageHolder::LazyInitMessagePool() {
     }
     
     // Allocate memory for message pool (12016 bytes)
-    void* memory = xe_EC88(12016);
+    void* memory = rage_Alloc(12016);
     
     if (memory != nullptr) {
         // Construct the message object
@@ -2192,7 +2192,7 @@ void pongNetMessageHolder_vfn_1_FC68_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for AcceptMessage (176 bytes)
-    void* memory = xe_EC88(176);
+    void* memory = rage_Alloc(176);
     
     if (memory != nullptr) {
         // Construct AcceptMessage
@@ -2216,7 +2216,7 @@ void pongNetMessageHolder_vfn_1_FCC0_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for BallHitMessage (256 bytes)
-    void* memory = xe_EC88(256);
+    void* memory = rage_Alloc(256);
     
     if (memory != nullptr) {
         // Construct BallHitMessage
@@ -2240,7 +2240,7 @@ void pongNetMessageHolder_vfn_1_FD18_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (8976 bytes)
-    void* memory = xe_EC88(8976);
+    void* memory = rage_Alloc(8976);
     
     if (memory != nullptr) {
         // Construct message
@@ -2264,7 +2264,7 @@ void pongNetMessageHolder_vfn_1_FEE0_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (96 bytes)
-    void* memory = xe_EC88(96);
+    void* memory = rage_Alloc(96);
     
     if (memory != nullptr) {
         // Construct message
@@ -2288,7 +2288,7 @@ void pongNetMessageHolder_vfn_1_FFA0_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (368 bytes)
-    void* memory = xe_EC88(368);
+    void* memory = rage_Alloc(368);
     
     if (memory != nullptr) {
         // Construct message
@@ -2312,7 +2312,7 @@ void pongNetMessageHolder_vfn_1_0810_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (176 bytes)
-    void* memory = xe_EC88(176);
+    void* memory = rage_Alloc(176);
     
     if (memory != nullptr) {
         // Construct message
@@ -2336,7 +2336,7 @@ void pongNetMessageHolder_vfn_1_0990_1(pongNetMessageHolder* holder) {
     }
     
     // Allocate memory for message (16016 bytes)
-    void* memory = xe_EC88(16016);
+    void* memory = rage_Alloc(16016);
     
     if (memory != nullptr) {
         // Construct message
@@ -4058,7 +4058,7 @@ void pongNetMessageHolder_D2E8_w(void* self, uint32_t count) {
             allocSize = (uint32_t)-1;
         }
 
-        void* newBuffer = xe_EC88(allocSize);
+        void* newBuffer = rage_Alloc(allocSize);
         *(void**)(obj + 0) = newBuffer;
     } else {
         *(uint32_t*)(obj + 8) = 0;
@@ -4094,7 +4094,7 @@ void pongNetMessageHolder_3EB8_w(void* self, uint32_t count) {
             allocSize = (uint32_t)-1;
         }
 
-        void* newBuffer = xe_EC88(allocSize);
+        void* newBuffer = rage_Alloc(allocSize);
         *(void**)(obj + 0) = newBuffer;
     } else {
         *(uint32_t*)(obj + 8) = 0;
@@ -4119,7 +4119,7 @@ void pongNetMessageHolder_79C8_w(void* self, uint32_t count) {
             allocSize = (uint32_t)-1;
         }
 
-        void* newArray = xe_EC88(allocSize);
+        void* newArray = rage_Alloc(allocSize);
 
         if (newArray == nullptr) {
             *(uint16_t*)(obj + 6) = (uint16_t)count;
@@ -4166,8 +4166,8 @@ void pongNetMessageHolder_8BB0_w(void* self, uint32_t newIndex) {
         uint8_t newCapacity = (uint8_t)(n + 1);
 
         // Allocate two new buffers
-        void* newBuffer1 = xe_EC88((uint32_t)newCapacity);
-        void* newBuffer2 = xe_EC88((uint32_t)newCapacity);
+        void* newBuffer1 = rage_Alloc((uint32_t)newCapacity);
+        void* newBuffer2 = rage_Alloc((uint32_t)newCapacity);
 
         // Copy existing data from old buffers
         uint8_t usedCount = *(uint8_t*)(obj + 424);
@@ -4987,7 +4987,7 @@ void pongNetMessageHolder_0138_w(void* self) {
         *(uint16_t*)(subArray + 6) = 58;
 
         // Allocate 232 bytes (58 * 4)
-        void* buf = xe_EC88(232);
+        void* buf = rage_Alloc(232);
         if (buf != nullptr) {
             // Zero the entire buffer byte-by-byte (58 entries * 4 bytes each)
             uint8_t* p = (uint8_t*)buf + 2;

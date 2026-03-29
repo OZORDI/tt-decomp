@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" {
     void  rage_free(void* ptr);                  // @ 0x820C00C0
-    void* xe_EC88(uint32_t size);                // @ 0x820DEC88
+    void* rage_Alloc(uint32_t size);                // @ 0x820DEC88
     void  util_CE30(void* slot);                 // @ 0x8234CE30 - init parStructure
 }
 
@@ -575,7 +575,7 @@ const void* assetVersionsCharSpecific::GetTypeDescriptor() const
 
 extern "C" {
     // External function declarations
-    void hsmContext_SetNextState_2800(void* hsmContext, int stateIndex);
+    void hsmContext_SetNextState(void* hsmContext, int stateIndex);
 }
 
 /**
@@ -634,7 +634,7 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     struct2[3] = 4;                   // Count/size
     
     // Transition to state 2
-    hsmContext_SetNextState_2800(hsmContext, 2);
+    hsmContext_SetNextState(hsmContext, 2);
     
     // Store time value at offset +1088
     *(float*)((char*)pContext + 1088) = timeValue;
@@ -682,7 +682,7 @@ void io_9B88_w(io* self) {
     }
     
     // Trigger credits roll
-    game_AAF8(g_creditsRoll, 0, 0);
+    CreditsRoll_Deactivate(g_creditsRoll, 0, 0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

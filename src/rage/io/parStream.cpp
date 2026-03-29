@@ -591,7 +591,7 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
         // grc_3C68(m_pRbfData, &stringLength, 1);
         
         // Allocate buffer
-        char* stringBuffer = nullptr;  // xe_EC88(stringLength + 1);
+        char* stringBuffer = nullptr;  // rage_Alloc(stringLength + 1);
         
         // Read string data
         // rage_obj_bind_3828(m_pRbfData, stringBuffer, stringLength);
@@ -1054,7 +1054,7 @@ void fiAsciiTokenizer::WriteNewline() {
 // External functions used by allocation helpers
 extern "C" void fiAsciiTokenizer_1F08_g(const char* errorMsg);
 extern "C" void fiAsciiTokenizer_FB40_g(int exitCode);
-extern "C" void* xe_EC88(uint32_t size);
+extern "C" void* rage_Alloc(uint32_t size);
 
 /**
  * AllocateUint32Array @ 0x820E76D8 | size: 0x64
@@ -1069,7 +1069,7 @@ extern "C" void* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
     }
 
     if (count != 0) {
-        return xe_EC88(count * 4);
+        return rage_Alloc(count * 4);
     }
 
     return nullptr;
@@ -1088,7 +1088,7 @@ extern "C" void* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
     }
 
     if (count != 0) {
-        return xe_EC88(count);
+        return rage_Alloc(count);
     }
 
     return nullptr;
@@ -1107,7 +1107,7 @@ extern "C" void* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
     }
 
     if (count != 0) {
-        return xe_EC88(count * 2);
+        return rage_Alloc(count * 2);
     }
 
     return nullptr;
