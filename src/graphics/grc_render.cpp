@@ -10,7 +10,7 @@
  *       calls grcDevice_beginGPUPass to begin the GPU pass and dispatches BeginScene
  *       + channel-flag calls to the attached grcRenderTargetXenon.
  *
- *   grcDevice_clear_9290  @ 0x82379290 (400 bytes)
+ *   grcDevice_clear  @ 0x82379290 (400 bytes)
  *     — Advances the render-command ring: releases the old current entry
  *       (vtable[5]), promotes the queued next entry, copies the device's
  *       viewport rectangles into it and executes it (vtable[2]), then
@@ -338,7 +338,7 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
- * grcDevice_clear_9290 @ 0x82379290 | size: 0x190 (400 bytes)
+ * grcDevice_clear @ 0x82379290 | size: 0x190 (400 bytes)
  *
  * Advances the render-command ring buffer by one slot, copying the device's
  * current viewport rectangles into the new entry and executing it.
@@ -552,7 +552,7 @@ void grcCommandBuffer_initShaderConstants(void* pDevice) {
 /* ── External dependencies for texture factory ────────────────────────────── */
 
 /* Debug log function (no-op) @ 0x8240E6D0 */
-extern void nop_8240E6D0(const char* fmt, ...);
+extern void grcDebugLog(const char* fmt, ...);
 
 /* Texture processing functions */
 extern void grcTextureXenon_initRaw(void* pTexture, void* pDevice);  /* @ 0x8215FD68 */
@@ -597,7 +597,7 @@ extern const char g_invalidTextureTypeMsg[];  /* @ 0x82035300 */
  *        - Type 0: Call grcTextureXenon_initRaw (raw texture processing)
  *        - Type 1: Skip (already processed)
  *        - Type 2: Call grcTextureXenon_initCompressed (compressed texture processing)
- *        - Type 3+: Log error via nop_8240E6D0 (invalid type)
+ *        - Type 3+: Log error via grcDebugLog (invalid type)
  * ═══════════════════════════════════════════════════════════════════════════ */
 void grcTextureFactoryXenon_vfn_10(
     void* pThis,
@@ -666,7 +666,7 @@ void grcTextureFactoryXenon_vfn_10(
         }
         else {
             /* Type 3+: Invalid texture type - log error */
-            nop_8240E6D0(g_invalidTextureTypeMsg);
+            grcDebugLog(g_invalidTextureTypeMsg);
         }
     }
 }
