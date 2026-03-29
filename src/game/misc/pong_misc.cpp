@@ -22,7 +22,7 @@ namespace rage {
 }
 
 // Logging stub (calls internal debug printf, no-op in release builds)
-extern void nop_8240E6D0(const char* fmt, ...); // @ 0x8240E6D0
+extern void rage_debugLog(const char* fmt, ...); // @ 0x8240E6D0
 
 // Field registration helper (rage serialization system)
 // game_8F58: registers a field of 'obj' with the data system
@@ -599,7 +599,7 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
     // Format: "eSessionTimeSyncMessage %s"
     // This appears to be session synchronization logging
     const char* logFormat = (const char*)0x820712CC;  // "eSessionTimeSyncMessage %s"
-    nop_8240E6D0(logFormat, 0, 0, 0, 4, 0, 4);
+    rage_debugLog(logFormat, 0, 0, 0, 4, 0, 4);
     
     // Call virtual method slot 3 on HSM context
     // This is likely an initialization or reset method
@@ -913,12 +913,12 @@ int CCalMoviePlayer::DispatchSlot37() {  // ED18_p33
  * Both log a debug message and return STATUS_NOT_IMPLEMENTED.
  */
 int CCalMoviePlayer::Rewind() {  // E758
-    nop_8240E6D0("CCalMoviePlayer::Rewind() - not implemented");
+    rage_debugLog("CCalMoviePlayer::Rewind() - not implemented");
     return -1;  // STATUS_NOT_IMPLEMENTED
 }
 
 int CCalMoviePlayer::Seek() {  // Seek stub
-    nop_8240E6D0("CCalMoviePlayer::Seek() - not implemented");
+    rage_debugLog("CCalMoviePlayer::Seek() - not implemented");
     return -1;
 }
 

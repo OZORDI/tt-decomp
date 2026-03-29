@@ -63,7 +63,7 @@ extern void snMigrating_A1A8(void* state, void* event);             // @ 0x823EA
 extern void snSession_9F08_fw(void* state, void* event);            // @ 0x823E9F08 — MigrateMachine forward handler (host start)
 extern void snSession_9FB0_fw(void* state, void* event);            // @ 0x823E9FB0 — MigrateMachine forward handler (guest start)
 extern void game_2720(void* client);                                 // @ 0x823F2720 — game-level migrate cleanup
-extern void snSession_AddNode_C068(void* nodeList, void* node);     // @ 0x823EC068 — add node to session linked list
+extern void snSession_AddNode(void* nodeList, void* node);     // @ 0x823EC068 — add node to session linked list
 extern void SinglesNetworkClient_2FD0_g(void* thisPtr);             // @ 0x823F2FD0 — migration completion handler
 extern void SinglesNetworkClient_0978_g(void* evtObj, int p1, void* p2, void* p3, int p4); // @ 0x82430978 — broadcast init
 
@@ -802,7 +802,7 @@ void snMigratingAsGuest_Migrating_OnEvent(void* thisPtr, void* event, bool* hand
         uint64_t combined = ((uint64_t)evtData0 << 32) | evtData1;
         *(uint64_t*)((char*)newNode + 4) = combined;
 
-        snSession_AddNode_C068((char*)nodeList + 8, newNode);
+        snSession_AddNode((char*)nodeList + 8, newNode);
         return;
     }
 

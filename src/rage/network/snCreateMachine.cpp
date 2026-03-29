@@ -588,7 +588,7 @@ void snHsmRequestingConfig::OnUpdate() {
     //    - Set vtable to 0x82072A50 (rage::EvtRequestConfigFailed)
     //    - Call vfn_11 to get session
     //    - Allocate event with vfn_1 (slot 1, size 12)
-    //    - Store event data and call snSession_AddNode_C068 @ 0x823EC068
+    //    - Store event data and call snSession_AddNode @ 0x823EC068
     // 10. Otherwise, increment retry count and call util_D4F8 @ 0x823ED4F8 with timeout 500
 }
 

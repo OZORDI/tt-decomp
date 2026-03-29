@@ -630,3 +630,28 @@ This project follows the coding style of the original Rockstar Table Tennis code
 - Headers in `include/` directory, implementation in `src/` directory, grouped by subsystem
 - Document ABI considerations, note correspondence with assembly addresses, explain non-obvious arithmetic or bit manipulation, reference original Xbox 360 behavior where relevant
 - Use SDL2 for window/input/audio; OpenGL 3.3 Core for graphics; avoid platform-specific code outside `crt/`
+
+`pong_xenon_final.pe` — they literally called it pong internally. May 2006, SDK 2417, one of the earliest 360 retail titles. Let me run the full pipeline.`c:\soft_xpong\xpong\game\src\pong\` — confirmed pong. Now fire IDA and excavate in parallel.Table Tennis IDA is already done (86MB ASM). That other IDA process is a separate decompile session on the retail GTA IV. Let me run the full ASM excavation now.Done. Here's the full summary:
+
+---
+
+**Rockstar Table Tennis — Excavation Results**
+
+**XEX Header highlights:**
+- Internal PE name: **`pong_xenon_final.pe`** — they never renamed it from `pong`
+- PDB path: **`c:\soft_xpong\xpong\game\src\pong\xenon_final\pong.pdb`** — working folder was literally `soft_xpong`
+- Build date: **May 11, 2006** — about 6 months after Xbox 360 launch
+- SDK **v2.0.2417** — extremely early. GTA IV prototype used 6274, retail used 6683. This is nearly 2 years older than the GTA IV prototype SDK
+- Uses **D3D9LTCG** (link-time code gen D3D) rather than the XGRAPHC abstraction RAGE later adopted
+
+| Stat | Table Tennis | GTA IV Prototype | GTA IV Retail |
+|---|---|---|---|
+| Image size | 7.4 MB | 17 MB | 19 MB |
+| Functions | 13,545 | 32,297 | 31,782 |
+| Vtables | 1,671 | 1,959 | 3,016 |
+| RTTI classes | 1,674 | 2,286 | 3,332 |
+| SDK version | 2417 | 6274 | 6683 |
+
+You can already see the RAGE engine embryo — `pongShell`, `grdGameData`, `MatchData`, `pongAnimationInfo`, `pongCreatureType` are the game-specific classes sitting on top of a much smaller but recognizable `rage::`, `ph`, `fiAsciiTokenizer`, `pgDictionary` foundation. This is proto-RAGE before they even called it RAGE.
+
+All files are in `/Users/Ozordi/Downloads/xex_excavation_tt/`.

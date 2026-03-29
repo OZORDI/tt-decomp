@@ -922,7 +922,7 @@ void snSession_EB48_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
  * Gets the event queue from context+56 (via vfn_11 on the session offset+212),
  * allocates a 24-byte event node via the queue's allocator (vfn_1 at +4),
  * copies the EvtDestroy data into it, and inserts it into the queue via
- * snSession_AddNode_C068.
+ * snSession_AddNode.
  *
  * Returns true if the event was successfully enqueued, false if allocation failed.
  */
@@ -962,7 +962,7 @@ bool snSession_EnqueueDestroyEvent(void* thisPtr) { // @ 0x823E6D68
 
     // Insert into event queue
     void* eventQueue = (char*)sessionOffset + 8;  // queue at offset+8 from session+212
-    snSession_AddNode_C068(eventQueue, eventNode);
+    snSession_AddNode(eventQueue, eventNode);
 
     return true;
 }

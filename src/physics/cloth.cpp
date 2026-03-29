@@ -50,7 +50,7 @@ extern void pongCreatureInst_UpdateSkin(void* creatureMgr, float radius, uint16_
 
 // Debug trace — compiled to a single `blr` in release builds.
 // @ 0x8240E6D0
-extern void nop_8240E6D0(const char* msg);
+extern void rage_debugLog(const char* msg);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Global data
@@ -320,7 +320,7 @@ void phClothVerletBehavior::AttachToCreatureInst(void* physFrameTable)
     uint16_t frameHalfword = *(uint16_t*)((uint8_t*)this + 20);
     if (frameHalfword >= 255) {
         // Too many frames — log warning and bail
-        nop_8240E6D0("phClothVerletBehavior::AttachToCreatureInst - too many frames");
+        rage_debugLog("phClothVerletBehavior::AttachToCreatureInst - too many frames");
         return;
     }
 

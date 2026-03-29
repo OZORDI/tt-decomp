@@ -10,12 +10,12 @@
 struct SinglesNetworkClient;
 
 // External function declarations
-extern void SinglesNetworkClient_8CC0_w(void* ctx, void* base);
+extern void snDevice_ValidateIndex(void* ctx, void* base);
 extern void* xam_GetInitSingleton(void* ctx, void* base);
-extern void SinglesNetworkClient_0268_g(void* ctx, void* base);
-extern void SinglesNetworkClient_8DF8_g(void* ctx, void* base);
-extern void SinglesNetworkClient_0448_g(void* ctx, void* base);
-extern void SinglesNetworkClient_8AE0_g(void* ctx, void* base);
+extern void snBitStream_Reset(void* ctx, void* base);
+extern void snBitStream_ReadBits(void* ctx, void* base);
+extern void snBitStream_WriteBits(void* ctx, void* base);
+extern void snBitStream_ValidateWrite(void* ctx, void* base);
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ uint32_t SinglesNetworkClient_ComputeStringHash(const char* str)
 const char* SinglesNetworkClient_GetDeviceString(int deviceIndex)
 {
     // Call helper to validate device index
-    // SinglesNetworkClient_8CC0_w(ctx, base);
+    // snDevice_ValidateIndex(ctx, base);
     
     if (deviceIndex < 0) {
         // Return error string for invalid device index
@@ -138,8 +138,8 @@ void SinglesNetworkClient_Initialize(void* client)
     clientData[5] = 0;   // field +20
     
     // Call initialization helper twice
-    // SinglesNetworkClient_0268_g(ctx, base);
-    // SinglesNetworkClient_0268_g(ctx, base);
+    // snBitStream_Reset(ctx, base);
+    // snBitStream_Reset(ctx, base);
     
     // Set field +20 to 8128
     clientData[5] = 8128;
@@ -160,7 +160,7 @@ void SinglesNetworkClient_ReadBufferSize(void* client, uint16_t bitValue)
     uint32_t* clientData = (uint32_t*)client;
     
     // Call pre-read helper
-    // SinglesNetworkClient_8AE0_g(ctx, base);
+    // snBitStream_ValidateWrite(ctx, base);
     
     // Save current field +28 value
     uint32_t savedField28 = clientData[7];
@@ -170,7 +170,7 @@ void SinglesNetworkClient_ReadBufferSize(void* client, uint16_t bitValue)
     
     // Read message data
     uint32_t messageData = 0;
-    // SinglesNetworkClient_8DF8_g(ctx, base);  // reads into messageData
+    // snBitStream_ReadBits(ctx, base);  // reads into messageData
     
     // Restore field +28
     clientData[7] = savedField28;
@@ -185,7 +185,7 @@ void SinglesNetworkClient_ReadBufferSize(void* client, uint16_t bitValue)
     clientData[8] = 16;
     
     // Write modified message data
-    // SinglesNetworkClient_0448_g(ctx, base);
+    // snBitStream_WriteBits(ctx, base);
     
     // Restore field +32
     clientData[8] = savedField32;
@@ -223,7 +223,7 @@ uint16_t SinglesNetworkClient_GetMaxBufferIndex(void* client)
         
         // Read message data
         uint32_t messageData = 0;
-        // SinglesNetworkClient_8DF8_g(ctx, base);  // reads into messageData
+        // snBitStream_ReadBits(ctx, base);  // reads into messageData
         
         // Restore field +28
         clientData[7] = savedField28;
@@ -267,7 +267,7 @@ uint32_t SinglesNetworkClient_ReadMessageHeader(void* client)
         
         // Read message data
         uint32_t messageData = 0;
-        // SinglesNetworkClient_8DF8_g(ctx, base);  // reads into messageData
+        // snBitStream_ReadBits(ctx, base);  // reads into messageData
         
         // Restore field +28
         clientData[7] = savedField28;
@@ -309,7 +309,7 @@ uint16_t SinglesNetworkClient_ReadUInt16(void* client)
         
         // Read message data
         uint32_t messageData = 0;
-        // SinglesNetworkClient_8DF8_g(ctx, base);  // reads into messageData
+        // snBitStream_ReadBits(ctx, base);  // reads into messageData
         
         // Restore field +28
         clientData[7] = savedField28;
@@ -353,7 +353,7 @@ bool SinglesNetworkClient_ReadBooleanFlag(void* client)
         clientData[7] = 16;
         
         // Read message data
-        // SinglesNetworkClient_8DF8_g(ctx, base);  // reads into messageData
+        // snBitStream_ReadBits(ctx, base);  // reads into messageData
         
         // Restore field +28
         clientData[7] = savedField28;
@@ -378,7 +378,7 @@ void SinglesNetworkClient_WriteBooleanFlag1(void* client, bool flag)
     uint32_t* clientData = (uint32_t*)client;
     
     // Call pre-write helper
-    // SinglesNetworkClient_8AE0_g(ctx, base);
+    // snBitStream_ValidateWrite(ctx, base);
     
     // Save current field +28 value
     uint32_t savedField28 = clientData[7];
@@ -388,7 +388,7 @@ void SinglesNetworkClient_WriteBooleanFlag1(void* client, bool flag)
     
     // Read current message data
     uint32_t messageData = 0;
-    // SinglesNetworkClient_8DF8_g(ctx, base);  // reads into messageData
+    // snBitStream_ReadBits(ctx, base);  // reads into messageData
     
     // Restore field +28
     clientData[7] = savedField28;
@@ -407,7 +407,7 @@ void SinglesNetworkClient_WriteBooleanFlag1(void* client, bool flag)
     clientData[8] = 16;
     
     // Write modified message data
-    // SinglesNetworkClient_0448_g(ctx, base);
+    // snBitStream_WriteBits(ctx, base);
     
     // Restore field +32
     clientData[8] = savedField32;
@@ -428,7 +428,7 @@ void SinglesNetworkClient_WriteBooleanFlag2(void* client, bool flag)
     uint32_t* clientData = (uint32_t*)client;
     
     // Call pre-write helper
-    // SinglesNetworkClient_8AE0_g(ctx, base);
+    // snBitStream_ValidateWrite(ctx, base);
     
     // Save current field +28 value
     uint32_t savedField28 = clientData[7];
@@ -438,7 +438,7 @@ void SinglesNetworkClient_WriteBooleanFlag2(void* client, bool flag)
     
     // Read current message data
     uint32_t messageData = 0;
-    // SinglesNetworkClient_8DF8_g(ctx, base);  // reads into messageData
+    // snBitStream_ReadBits(ctx, base);  // reads into messageData
     
     // Restore field +28
     clientData[7] = savedField28;
@@ -457,7 +457,7 @@ void SinglesNetworkClient_WriteBooleanFlag2(void* client, bool flag)
     clientData[8] = 16;
     
     // Write modified message data
-    // SinglesNetworkClient_0448_g(ctx, base);
+    // snBitStream_WriteBits(ctx, base);
     
     // Restore field +32
     clientData[8] = savedField32;
@@ -515,16 +515,16 @@ uint16_t SinglesNetworkClient_WriteUInt16WithBufferSize(void* client, uint16_t v
     uint32_t* clientData = (uint32_t*)client;
     
     // Call pre-write helper
-    // SinglesNetworkClient_8AE0_g(client, base);
+    // snBitStream_ValidateWrite(client, base);
     
     // Write the 16-bit value
-    // SinglesNetworkClient_0688_g(client, value, 16);
+    // snBitStream_WriteField(client, value, 16);
     
     // Get buffer size from field +16
     uint32_t bufferSize = clientData[4];
     
     // Call pre-write helper again
-    // SinglesNetworkClient_8AE0_g(client, base);
+    // snBitStream_ValidateWrite(client, base);
     
     // Save current field +32 value
     uint32_t savedField32 = clientData[8];
@@ -534,7 +534,7 @@ uint16_t SinglesNetworkClient_WriteUInt16WithBufferSize(void* client, uint16_t v
     
     // Write buffer size divided by 8 as 16-bit value
     uint16_t bufferSizeDiv8 = (uint16_t)((bufferSize + 7) / 8);
-    // SinglesNetworkClient_0448_g(client, bufferSizeDiv8, 16);
+    // snBitStream_WriteBits(client, bufferSizeDiv8, 16);
     
     // Restore field +32
     clientData[8] = savedField32;
@@ -592,15 +592,15 @@ int SinglesNetworkClient_ValidatePlayerStates(void* client)
 void SinglesNetworkClient_ReadVector3(void* client, float* outVector)
 {
     // Read first float (X component)
-    // SinglesNetworkClient_8DF8_g(client, &tempBuffer, 32);
+    // snBitStream_ReadBits(client, &tempBuffer, 32);
     // outVector[0] = tempBuffer;
     
     // Read second float (Y component)
-    // SinglesNetworkClient_8DF8_g(client, &tempBuffer, 32);
+    // snBitStream_ReadBits(client, &tempBuffer, 32);
     // outVector[1] = tempBuffer;
     
     // Read third float (Z component)
-    // SinglesNetworkClient_8DF8_g(client, &tempBuffer, 32);
+    // snBitStream_ReadBits(client, &tempBuffer, 32);
     // outVector[2] = tempBuffer;
     
     // Stub implementation
@@ -629,7 +629,7 @@ bool SinglesNetworkClient_ReadUInt64(void* client, uint64_t* outValue)
     uint32_t lowWord = 0;
     
     // Read high 32 bits
-    // bool success1 = SinglesNetworkClient_8DF8_g(client, &highWord, 32);
+    // bool success1 = snBitStream_ReadBits(client, &highWord, 32);
     bool success1 = false;
     
     if (!success1) {
@@ -638,7 +638,7 @@ bool SinglesNetworkClient_ReadUInt64(void* client, uint64_t* outValue)
     }
     
     // Read low 32 bits
-    // bool success2 = SinglesNetworkClient_8DF8_g(client, &lowWord, 32);
+    // bool success2 = snBitStream_ReadBits(client, &lowWord, 32);
     bool success2 = false;
     
     if (!success2) {
@@ -791,8 +791,8 @@ void SinglesNetworkClient_AllocateNetworkEvent(void* client, void** outEventPtr)
     // eventObject[0] = vtableAddress;
     
     // Initialize event fields
-    // ke_1B00(eventObject + 2);  // Initialize at offset +8
-    // SinglesNetworkClient_8108_gen(eventObject + 3);  // Initialize at offset +12
+    // snListNode_Init(eventObject + 2);  // Initialize at offset +8
+    // snSession_InitNode(eventObject + 3);  // Initialize at offset +12
     
     *outEventPtr = eventObject + 2;  // Return pointer to offset +8
 }
@@ -818,7 +818,7 @@ bool SinglesNetworkClient_WriteUInt64(void* client, uint64_t value)
     uint32_t highWord = (uint32_t)(value >> 32);
     
     // Write low 32 bits
-    // bool success1 = SinglesNetworkClient_0448_g(client, lowWord, 32);
+    // bool success1 = snBitStream_WriteBits(client, lowWord, 32);
     bool success1 = false;
     
     if (!success1) {
@@ -826,7 +826,7 @@ bool SinglesNetworkClient_WriteUInt64(void* client, uint64_t value)
     }
     
     // Write high 32 bits
-    // bool success2 = SinglesNetworkClient_0448_g(client, highWord, 32);
+    // bool success2 = snBitStream_WriteBits(client, highWord, 32);
     bool success2 = false;
     
     return success2;
@@ -851,18 +851,18 @@ uint8_t SinglesNetworkClient_WriteBooleanFlag(void* client, bool flag)
     uint32_t* clientData = (uint32_t*)client;
     
     // Call pre-write helper
-    // SinglesNetworkClient_8AE0_g(client, base);
+    // snBitStream_ValidateWrite(client, base);
     
     // Write boolean as 1-bit value
     uint8_t bitValue = flag ? 1 : 0;
-    // uint8_t result = SinglesNetworkClient_0448_g(client, bitValue, 1);
+    // uint8_t result = snBitStream_WriteBits(client, bitValue, 1);
     uint8_t result = 0;
     
     // Get buffer size from field +16
     uint32_t bufferSize = clientData[4];
     
     // Call pre-write helper again
-    // SinglesNetworkClient_8AE0_g(client, base);
+    // snBitStream_ValidateWrite(client, base);
     
     // Save current field +32 value
     uint32_t savedField32 = clientData[8];
@@ -872,7 +872,7 @@ uint8_t SinglesNetworkClient_WriteBooleanFlag(void* client, bool flag)
     
     // Write buffer size divided by 8 as 16-bit value
     uint16_t bufferSizeDiv8 = (uint16_t)((bufferSize + 7) / 8);
-    // SinglesNetworkClient_0448_g(client, bufferSizeDiv8, 16);
+    // snBitStream_WriteBits(client, bufferSizeDiv8, 16);
     
     // Restore field +32
     clientData[8] = savedField32;
@@ -898,7 +898,7 @@ void SinglesNetworkClient_LinkNode(void* source, void* node)
     
     // Initialize the node structure at offset +28
     uint32_t* nodeStruct = (uint32_t*)((char*)node + 28);
-    SinglesNetworkClient_0268_g(nodeStruct, nullptr);
+    snBitStream_Reset(nodeStruct, nullptr);
     
     // Get the list head from source vtable
     uint32_t* listHead = (uint32_t*)sourceData[0];
@@ -951,7 +951,7 @@ void* SinglesNetworkClient_InitializeWithParent(void* client, void* parent)
     clientData[8] = 0;   // field +32
     
     // Call initialization helper
-    SinglesNetworkClient_0188_g(client, nullptr);
+    snBitStream_Init(client, nullptr);
     
     return client;
 }
@@ -988,14 +988,14 @@ void* SinglesNetworkClient_GetOrCreateSession(void* client)
         
         if (existingSession == 0) {
             // Create new session
-            SinglesNetworkClient_1378_g(nullptr, nullptr);
+            snSession_CreateLocal(nullptr, nullptr);
             clientData[12] = 0;  // Store result at offset +48
             return (void*)clientData[12];
         }
     }
     
     // Create session with parameters
-    SinglesNetworkClient_1410_g(nullptr, nullptr);
+    snSession_CreateRemote(nullptr, nullptr);
     uint32_t newSession = 0;  // Result from function call
     clientData[12] = newSession;
     
@@ -1037,7 +1037,7 @@ void SinglesNetworkClient_CleanupGlobalArrays()
     uint8_t* arrayPtr = g_network_array1;
     
     for (int i = 0; i < 4; i++) {
-        SinglesNetworkClient_FA50((void*)arrayPtr, nullptr);
+        snSession_CleanupEntry((void*)arrayPtr, nullptr);
         arrayPtr += 36;
     }
     
@@ -1120,7 +1120,7 @@ bool SinglesNetworkClient_ReadSignedValue(void* client, uint32_t* outValue, int 
     bool hasValue = false;
     
     // First read: check if value exists (1 bit)
-    SinglesNetworkClient_8DF8_g(client, nullptr);
+    snBitStream_ReadBits(client, nullptr);
     uint32_t checkResult = 0;  // Result from read
     
     if (checkResult != 0) {
@@ -1134,7 +1134,7 @@ bool SinglesNetworkClient_ReadSignedValue(void* client, uint32_t* outValue, int 
     }
     
     // Second read: get the actual value
-    SinglesNetworkClient_8DF8_g(client, nullptr);
+    snBitStream_ReadBits(client, nullptr);
     uint32_t actualValue = 0;  // Result from second read
     
     // Check if second read was successful
@@ -1187,7 +1187,7 @@ void SinglesNetworkClient_ProcessActiveDevices(void* client)
         if (deviceFlags[0] != 0) {
             // Get device ID and call cleanup
             uint32_t deviceId = deviceIds[0];
-            SinglesNetworkClient_F090((void*)deviceId, nullptr);
+            snSession_ProcessNode((void*)deviceId, nullptr);
         }
         
         // Move to next device
@@ -1235,7 +1235,7 @@ bool SinglesNetworkClient_CheckAndSetNetworkFlag(void* client)
     uint32_t* networkInterface = (uint32_t*)((char*)networkSystem + 52);
     
     // Call network initialization function
-    pg_C3B8_g((void*)networkInterface, nullptr);
+    pgBase_AcquireRef((void*)networkInterface, nullptr);
     
     // Set the flag
     g_network_active_flag = 1;
@@ -1279,7 +1279,7 @@ void SinglesNetworkClient_ClearNetworkFlag(void* client)
     uint32_t* networkInterface = (uint32_t*)((char*)networkSystem + 52);
     
     // Call network shutdown function
-    pg_6DC0_g((void*)networkInterface, nullptr);
+    pgBase_ReleaseRef((void*)networkInterface, nullptr);
     
     // Clear the flag
     g_network_active_flag = 0;
@@ -1299,14 +1299,14 @@ void SinglesNetworkClient_ClearNetworkFlag(void* client)
 void SinglesNetworkClient_SetupNetworkContext(void* client, uint32_t contextValue)
 {
     // Check and set network flag
-    bool flagSet = SinglesNetworkClient_B2A8_g(client, nullptr);
+    bool flagSet = snSession_AcquireLock(client, nullptr);
     
     // Get or create network context
-    SinglesNetworkClient_B1E8_g(client, nullptr);
+    snSession_BeginOperation(client, nullptr);
     
     // Find context structure
     const char* contextName = "NetworkContext";
-    void* context = SinglesNetworkClient_9318_g(nullptr, (void*)contextName);
+    void* context = snSession_FindProperty(nullptr, (void*)contextName);
     
     if (context != nullptr) {
         uint32_t* contextData = (uint32_t*)context;
@@ -1320,7 +1320,7 @@ void SinglesNetworkClient_SetupNetworkContext(void* client, uint32_t contextValu
     
     // If flag was set, clear it
     if (flagSet) {
-        SinglesNetworkClient_B320_g(client, nullptr);
+        snSession_ReleaseLock(client, nullptr);
     }
 }
 
@@ -1367,10 +1367,10 @@ int SinglesNetworkClient::FindNodeSlotIndex() {
 //   value - The 16-bit value to write into the stream body
 // ─────────────────────────────────────────────────────────────────────────────
 void SinglesNetworkClient::WriteAlignedBufferSize(uint32_t value) {
-    SinglesNetworkClient_8AE0_g(this);
+    snBitStream_ValidateWrite(this);
 
     // Write value into stream with 16 bits
-    uint32_t result = SinglesNetworkClient_0688_g(this, value, 16);
+    uint32_t result = snBitStream_WriteField(this, value, 16);
 
     // Compute aligned buffer size: (bufferSize + 7) / 8
     uint32_t bufferSize = *(uint32_t*)((uint8_t*)this + 16);
@@ -1380,7 +1380,7 @@ void SinglesNetworkClient::WriteAlignedBufferSize(uint32_t value) {
     uint32_t savedWriteOffset = *(uint32_t*)((uint8_t*)this + 32);
     *(uint32_t*)((uint8_t*)this + 32) = 32;
 
-    SinglesNetworkClient_0448_g(this, alignedSize, 16);
+    snBitStream_WriteBits(this, alignedSize, 16);
 
     *(uint32_t*)((uint8_t*)this + 32) = savedWriteOffset;
 }
@@ -1399,15 +1399,15 @@ void SinglesNetworkClient::ReadVector3FromStream(float* outVec) {
     float temp;
 
     // Read X component
-    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    snBitStream_ReadBits(this, &temp, 32);
     outVec[0] = temp;
 
     // Read Y component
-    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    snBitStream_ReadBits(this, &temp, 32);
     outVec[1] = temp;
 
     // Read Z component
-    SinglesNetworkClient_8DF8_g(this, &temp, 32);
+    snBitStream_ReadBits(this, &temp, 32);
     outVec[2] = temp;
 }
 
@@ -1431,7 +1431,7 @@ void SinglesNetworkClient::ProcessActiveNodes() {
 
     for (int32_t i = 0; i < nodeCount; i++) {
         if (enabledFlags[i * 36] != 0) {
-            SinglesNetworkClient_F090(nodeArray[i]);
+            snSession_ProcessNode(nodeArray[i]);
         }
 
         // Re-read count each iteration (may be modified by ProcessNode)
@@ -1453,13 +1453,13 @@ void SinglesNetworkClient::ActivateAndNotify() {
     *(uint8_t*)((uint8_t*)this + 84) = 1;
 
     // Poll network state
-    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+    uint8_t pollResult = snSession_AcquireLock(this);
 
     // Get network interface pointer from offset +92
     void* networkInterface = *(void**)((uint8_t*)this + 92);
 
     // Find message slot for this notification type
-    void* messageSlot = SinglesNetworkClient_9318_g(networkInterface,
+    void* messageSlot = snSession_FindProperty(networkInterface,
         (const char*)0x8205AEF0);  // message type string @ 0x8205AEF0
 
     if (messageSlot != nullptr) {
@@ -1469,7 +1469,7 @@ void SinglesNetworkClient::ActivateAndNotify() {
 
     // If poll returned nonzero, flush notification queue
     if ((pollResult & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(this);
+        snSession_ReleaseLock(this);
     }
 }
 
@@ -1524,7 +1524,7 @@ void SinglesNetworkClient::PostDualSlotMessage(void** eventHandlerPtr,
 // ─────────────────────────────────────────────────────────────────────────────
 void SinglesNetworkClient::PostFloatMessage(float floatValue) {
     // Poll network state
-    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+    uint8_t pollResult = snSession_AcquireLock(this);
 
     // Increment global message counter
     uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
@@ -1532,10 +1532,10 @@ void SinglesNetworkClient::PostFloatMessage(float floatValue) {
     *pMessageCounter = savedCounter;
 
     // Prepare message
-    SinglesNetworkClient_B1E8_g(this);
+    snSession_BeginOperation(this);
 
     // Find message slot for float message type
-    void* messageSlot = SinglesNetworkClient_9318_g(this,
+    void* messageSlot = snSession_FindProperty(this,
         (const char*)0x8205B474);  // message type string @ 0x8205B474
 
     if (messageSlot != nullptr) {
@@ -1547,7 +1547,7 @@ void SinglesNetworkClient::PostFloatMessage(float floatValue) {
 
     // Flush or decrement counter
     if ((pollResult & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(this);
+        snSession_ReleaseLock(this);
         *pMessageCounter = *pMessageCounter - 1;
         return;
     }
@@ -1576,7 +1576,7 @@ void SinglesNetworkClient::SetModeAndNotify(int32_t newMode) {
 
     // Create state snapshot on stack
     uint8_t stateSnapshot[16];
-    SinglesNetworkClient_9838_g(stateSnapshot, this);
+    snSession_SaveSnapshot(stateSnapshot, this);
 
     // Store new mode
     *(int32_t*)((uint8_t*)this + 3488) = newMode;
@@ -1585,9 +1585,9 @@ void SinglesNetworkClient::SetModeAndNotify(int32_t newMode) {
     uint32_t boolValue = (newMode != 0) ? 1 : 0;
 
     // Prepare and post message
-    SinglesNetworkClient_B1E8_g(this);
+    snSession_BeginOperation(this);
 
-    void* messageSlot = SinglesNetworkClient_9318_g(this,
+    void* messageSlot = snSession_FindProperty(this,
         (const char*)0x8205B1D4);  // message type string @ 0x8205B1D4
 
     if (messageSlot != nullptr) {
@@ -1599,7 +1599,7 @@ void SinglesNetworkClient::SetModeAndNotify(int32_t newMode) {
     uint8_t snapshotFlag = stateSnapshot[4];
     if (snapshotFlag != 0) {
         void* snapshotClient = *(void**)&stateSnapshot[0];
-        SinglesNetworkClient_B320_g(snapshotClient);
+        snSession_ReleaseLock(snapshotClient);
     }
 
     // Decrement global message counter
@@ -1620,7 +1620,7 @@ void SinglesNetworkClient::SetModeAndNotify(int32_t newMode) {
 // ─────────────────────────────────────────────────────────────────────────────
 void SinglesNetworkClient::PostIntMessage(int32_t value) {
     // Poll network state
-    uint8_t pollResult = SinglesNetworkClient_B2A8_g(this);
+    uint8_t pollResult = snSession_AcquireLock(this);
 
     // Increment global message counter
     uint32_t* pMessageCounter = (uint32_t*)0x8271A834;
@@ -1628,10 +1628,10 @@ void SinglesNetworkClient::PostIntMessage(int32_t value) {
     *pMessageCounter = savedCounter;
 
     // Prepare message
-    SinglesNetworkClient_B1E8_g(this);
+    snSession_BeginOperation(this);
 
     // Find message slot
-    void* messageSlot = SinglesNetworkClient_9318_g(this,
+    void* messageSlot = snSession_FindProperty(this,
         (const char*)0x8205BECC);  // message type string @ 0x8205BECC
 
     if (messageSlot != nullptr) {
@@ -1641,7 +1641,7 @@ void SinglesNetworkClient::PostIntMessage(int32_t value) {
 
     // Flush or decrement counter
     if ((pollResult & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(this);
+        snSession_ReleaseLock(this);
         *pMessageCounter = *pMessageCounter - 1;
         return;
     }
@@ -1657,7 +1657,7 @@ void SinglesNetworkClient::PostIntMessage(int32_t value) {
 // event node list. Initializes the event with the EvtStart vtable, then
 // calls the session's event allocator (vtable slot 1). If allocation
 // succeeds, copies event data into the allocated node and adds it to
-// the session node list via snSession_AddNode_C068.
+// the session node list via snSession_AddNode.
 //
 // Returns:
 //   true if the event was successfully allocated and added, false otherwise
@@ -1665,7 +1665,7 @@ void SinglesNetworkClient::PostIntMessage(int32_t value) {
 bool SinglesNetworkClient::FireStartEvent() {
     // Initialize a stack-local EvtStart event
     uint8_t evtStartData[16];
-    util_DA08(evtStartData);
+    snEvent_Init(evtStartData);
 
     // Access the session at offset +212 from this
     uint8_t* sessionBase = (uint8_t*)this + 212;
@@ -1695,7 +1695,7 @@ bool SinglesNetworkClient::FireStartEvent() {
         *(uint64_t*)((uint8_t*)eventNode + 4) = payload;
 
         // Add node to the session node list at sessionBase+8
-        snSession_AddNode_C068((uint8_t*)sessionBase + 8, eventNode);
+        snSession_AddNode((uint8_t*)sessionBase + 8, eventNode);
         return true;
     }
 
@@ -1704,15 +1704,15 @@ bool SinglesNetworkClient::FireStartEvent() {
 
 
 // External function declarations for newly decompiled functions
-extern void SinglesNetworkClient_0738_g(void* client, uint32_t value, int bitWidth);
-extern void atSingleton_05F0_g(void* client, uint32_t value, int bitWidth);
-extern void ke_1B00(void* node);
-extern void* SinglesNetworkClient_9280_g(void* context, const char* name);
-extern void SinglesNetworkClient_A5C8_g(void* result);
-extern void* SinglesNetworkClient_9318_g(void* context, const char* name);
-extern void SinglesNetworkClient_B320_g(void* client);
-extern void SinglesNetworkClient_B2A8_g(void* client);
-extern void nop_8240E6D0(const char* msg);
+extern void snBitStream_ReadField(void* client, uint32_t value, int bitWidth);
+extern void snBitStream_WriteExtended(void* client, uint32_t value, int bitWidth);
+extern void snListNode_Init(void* node);
+extern void* snSession_LookupProperty(void* context, const char* name);
+extern void snSession_GetPropertyInt(void* result);
+extern void* snSession_FindProperty(void* context, const char* name);
+extern void snSession_ReleaseLock(void* client);
+extern void snSession_AcquireLock(void* client);
+extern void rage_debugLog(const char* msg);
 
 // Global flag: network debug assertions disabled
 extern uint8_t g_networkAssertionsDisabled;  // lbl_826065EB
@@ -1735,10 +1735,10 @@ void SinglesNetworkClient_ReadDataAndWriteAlignedSize(void* client, uint32_t val
     uint32_t* data = (uint32_t*)client;
 
     // Validate buffer state
-    SinglesNetworkClient_8AE0_g(client, nullptr);
+    snBitStream_ValidateWrite(client, nullptr);
 
     // Read bits from the buffer
-    SinglesNetworkClient_0738_g(client, value, bitWidth);
+    snBitStream_ReadField(client, value, bitWidth);
 
     // Compute byte-aligned size: (bufferBits + 7) / 8
     uint32_t bufferBits = data[4];  // field +16: bit count
@@ -1748,7 +1748,7 @@ void SinglesNetworkClient_ReadDataAndWriteAlignedSize(void* client, uint32_t val
     uint32_t savedWriteOffset = data[8];  // field +32
     data[8] = 32;
 
-    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+    snBitStream_WriteBits(client, (void*)(uintptr_t)alignedBytes);
 
     data[8] = savedWriteOffset;
 }
@@ -1771,10 +1771,10 @@ void SinglesNetworkClient_WriteDataAndUpdateAlignedSize(void* client, uint32_t v
     uint32_t* data = (uint32_t*)client;
 
     // Validate buffer state
-    SinglesNetworkClient_8AE0_g(client, nullptr);
+    snBitStream_ValidateWrite(client, nullptr);
 
     // Write bits to the buffer
-    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)value);
+    snBitStream_WriteBits(client, (void*)(uintptr_t)value);
 
     // Compute byte-aligned size: (bufferBits + 7) / 8
     uint32_t bufferBits = data[4];  // field +16: bit count
@@ -1784,7 +1784,7 @@ void SinglesNetworkClient_WriteDataAndUpdateAlignedSize(void* client, uint32_t v
     uint32_t savedWriteOffset = data[8];  // field +32
     data[8] = 32;
 
-    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+    snBitStream_WriteBits(client, (void*)(uintptr_t)alignedBytes);
 
     data[8] = savedWriteOffset;
 }
@@ -1807,10 +1807,10 @@ void SinglesNetworkClient_WriteExtDataAndUpdateAlignedSize(void* client, uint32_
     uint32_t* data = (uint32_t*)client;
 
     // Validate buffer state
-    SinglesNetworkClient_8AE0_g(client, nullptr);
+    snBitStream_ValidateWrite(client, nullptr);
 
     // Write extended data to the buffer
-    atSingleton_05F0_g(client, value, bitWidth);
+    snBitStream_WriteExtended(client, value, bitWidth);
 
     // Compute byte-aligned size: (bufferBits + 7) / 8
     uint32_t bufferBits = data[4];  // field +16: bit count
@@ -1820,7 +1820,7 @@ void SinglesNetworkClient_WriteExtDataAndUpdateAlignedSize(void* client, uint32_
     uint32_t savedWriteOffset = data[8];  // field +32
     data[8] = 32;
 
-    SinglesNetworkClient_0448_g(client, (void*)(uintptr_t)alignedBytes);
+    snBitStream_WriteBits(client, (void*)(uintptr_t)alignedBytes);
 
     data[8] = savedWriteOffset;
 }
@@ -1849,7 +1849,7 @@ void* SinglesNetworkClient_GetSessionContext(void* client)
         uint32_t* stateObj = (uint32_t*)g_networkState[139];  // offset +556
         if (stateObj != nullptr && !g_networkAssertionsDisabled) {
             // Fire debug assertion (nop in release)
-            nop_8240E6D0("SinglesNetworkClient::GetSessionContext");
+            rage_debugLog("SinglesNetworkClient::GetSessionContext");
         }
     }
 
@@ -1875,19 +1875,19 @@ void* SinglesNetworkClient_MessageHandlerCtor(void* handler)
     uint32_t* data = (uint32_t*)handler;
 
     // Set vtable pointer
-    extern uint32_t lbl_8205C690[];  // MessageHandler vtable
-    data[0] = (uint32_t)(uintptr_t)lbl_8205C690;
+    extern uint32_t g_MessageHandlerVtable[];  // MessageHandler vtable
+    data[0] = (uint32_t)(uintptr_t)g_MessageHandlerVtable;
 
     // Zero out fields
     data[1] = 0;  // flags (+4)
     data[2] = 0;  // field +8
 
     // Initialize linked list node at offset +12
-    ke_1B00((void*)((uint8_t*)handler + 12));
+    snListNode_Init((void*)((uint8_t*)handler + 12));
 
     // Initialize linked list node at offset +16
     uint8_t* node2 = (uint8_t*)handler + 16;
-    ke_1B00(node2);
+    snListNode_Init(node2);
 
     // Clear both list node pointers and user data
     *(uint32_t*)node2 = 0;            // +16
@@ -1913,11 +1913,11 @@ void* SinglesNetworkClient_FindAndInvokeNetCallback(void* client)
     void* context = SinglesNetworkClient_GetSessionContext(client);
 
     // Look up the callback by name
-    void* result = SinglesNetworkClient_9280_g(context, (const char*)0x8205C440);  // string key
+    void* result = snSession_LookupProperty(context, (const char*)0x8205C440);  // string key
 
     if (result != nullptr) {
         // Found callback - invoke it
-        SinglesNetworkClient_A5C8_g(result);
+        snSession_GetPropertyInt(result);
         return result;
     }
 
@@ -1940,14 +1940,14 @@ void* SinglesNetworkClient_FindAndInvokeNetCallback(void* client)
 void SinglesNetworkClient_SendDrillScoreMessage(void* client, uint32_t score)
 {
     // Begin network transaction
-    SinglesNetworkClient_B2A8_g(client);
+    snSession_AcquireLock(client);
     uint8_t shouldSend = (uint8_t)(uintptr_t)client;  // transaction result in low byte
 
     // Get session context
     void* context = SinglesNetworkClient_GetSessionContext(client);
 
     // Create the message
-    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C83C);
+    void* msg = snSession_FindProperty(context, (const char*)0x8205C83C);
 
     if (msg != nullptr) {
         // Store score value and message type (3)
@@ -1958,7 +1958,7 @@ void SinglesNetworkClient_SendDrillScoreMessage(void* client, uint32_t score)
 
     // Send if transaction was started
     if ((shouldSend & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(client);
+        snSession_ReleaseLock(client);
     }
 }
 
@@ -1977,14 +1977,14 @@ void SinglesNetworkClient_SendDrillScoreMessage(void* client, uint32_t score)
 void SinglesNetworkClient_SendDrillSuccessMessage(void* client, uint32_t value)
 {
     // Begin network transaction
-    SinglesNetworkClient_B2A8_g(client);
+    snSession_AcquireLock(client);
     uint8_t shouldSend = (uint8_t)(uintptr_t)client;
 
     // Get session context
     void* context = SinglesNetworkClient_GetSessionContext(client);
 
     // Create the message
-    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C848);
+    void* msg = snSession_FindProperty(context, (const char*)0x8205C848);
 
     if (msg != nullptr) {
         uint32_t* msgData = (uint32_t*)msg;
@@ -1994,7 +1994,7 @@ void SinglesNetworkClient_SendDrillSuccessMessage(void* client, uint32_t value)
 
     // Send if transaction was started
     if ((shouldSend & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(client);
+        snSession_ReleaseLock(client);
     }
 }
 
@@ -2014,7 +2014,7 @@ void SinglesNetworkClient_SendDrillMovementMessage(void* client)
     uint32_t* data = (uint32_t*)client;
 
     // Begin network transaction
-    SinglesNetworkClient_B2A8_g(client);
+    snSession_AcquireLock(client);
     uint8_t shouldSend = (uint8_t)(uintptr_t)client;
 
     // Get session context
@@ -2024,7 +2024,7 @@ void SinglesNetworkClient_SendDrillMovementMessage(void* client)
     uint32_t movementValue = data[46];  // +184 = 46 * 4
 
     // Create the message
-    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C86C);
+    void* msg = snSession_FindProperty(context, (const char*)0x8205C86C);
 
     if (msg != nullptr) {
         uint32_t* msgData = (uint32_t*)msg;
@@ -2034,7 +2034,7 @@ void SinglesNetworkClient_SendDrillMovementMessage(void* client)
 
     // Send if transaction was started
     if ((shouldSend & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(client);
+        snSession_ReleaseLock(client);
     }
 }
 
@@ -2053,14 +2053,14 @@ void SinglesNetworkClient_SendDrillMovementMessage(void* client)
 void SinglesNetworkClient_SendDrillChargingMessage(void* client, uint32_t value)
 {
     // Begin network transaction
-    SinglesNetworkClient_B2A8_g(client);
+    snSession_AcquireLock(client);
     uint8_t shouldSend = (uint8_t)(uintptr_t)client;
 
     // Get session context
     void* context = SinglesNetworkClient_GetSessionContext(client);
 
     // Create the message
-    void* msg = SinglesNetworkClient_9318_g(context, (const char*)0x8205C898);
+    void* msg = snSession_FindProperty(context, (const char*)0x8205C898);
 
     if (msg != nullptr) {
         uint32_t* msgData = (uint32_t*)msg;
@@ -2070,7 +2070,7 @@ void SinglesNetworkClient_SendDrillChargingMessage(void* client, uint32_t value)
 
     // Send if transaction was started
     if ((shouldSend & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(client);
+        snSession_ReleaseLock(client);
     }
 }
 
@@ -2079,19 +2079,19 @@ void SinglesNetworkClient_SendDrillChargingMessage(void* client, uint32_t value)
 // SinglesNetworkClient::CopyPositionVector @ 0x8239DA50 | size: 0x40
 //
 // Copies a 16-byte aligned position vector from the result of
-// SinglesNetworkClient_D7A8_p46 into the caller's storage. Uses
+// snSession_ComputePosition into the caller's storage. Uses
 // VMX128 vector load/store for aligned 128-bit copy.
 //
 // Parameters:
 //   this - Destination pointer for the 16-byte vector (aligned)
 // ─────────────────────────────────────────────────────────────────────────────
-extern void* SinglesNetworkClient_D7A8_p46(void* stackBuf);
+extern void* snSession_ComputePosition(void* stackBuf);
 
 void SinglesNetworkClient_CopyPositionVector(void* self)
 {
     // Compute source position into a stack-local buffer
     uint8_t alignedBuf[16] __attribute__((aligned(16)));
-    void* srcPtr = SinglesNetworkClient_D7A8_p46(alignedBuf);
+    void* srcPtr = snSession_ComputePosition(alignedBuf);
 
     // Copy 16 bytes (vector register width) from source to self
     memcpy(self, srcPtr, 16);
@@ -2103,7 +2103,7 @@ void SinglesNetworkClient_CopyPositionVector(void* self)
 //
 // Validates whether a player state transition is permitted by checking
 // the target state against the current state at offset +992. If states
-// differ, calls SinglesNetworkClient_7038_g on the state buffer at
+// differ, calls snSession_FindState on the state buffer at
 // offset +996 to search for the target state. Returns true if the
 // transition is valid (state matches or found in buffer).
 //
@@ -2114,7 +2114,7 @@ void SinglesNetworkClient_CopyPositionVector(void* self)
 // Returns:
 //   true if transition is valid, false otherwise
 // ─────────────────────────────────────────────────────────────────────────────
-extern int SinglesNetworkClient_7038_g(void* stateBuffer);
+extern int snSession_FindState(void* stateBuffer);
 
 bool SinglesNetworkClient_ValidatePlayerTransition(void* self, int targetState)
 {
@@ -2127,7 +2127,7 @@ bool SinglesNetworkClient_ValidatePlayerTransition(void* self, int targetState)
     }
 
     // Search state buffer at offset +996 for target state
-    int result = SinglesNetworkClient_7038_g((void*)&data[996 / 4]);
+    int result = snSession_FindState((void*)&data[996 / 4]);
     if (result < 0) {
         return false;
     }
@@ -2171,7 +2171,7 @@ bool SinglesNetworkClient_IsSessionConnected(void* self)
 //
 // Reads a 16-bit field from the network stream at read cursor position 16.
 // Temporarily sets the read cursor (offset +28) to 16, reads via
-// SinglesNetworkClient_8DF8_g, then restores the original cursor.
+// snBitStream_ReadBits, then restores the original cursor.
 //
 // Parameters:
 //   this - Pointer to SinglesNetworkClient (network stream)
@@ -2191,7 +2191,7 @@ uint32_t SinglesNetworkClient_ReadStreamField16(void* self)
 
     // Read 16-bit value into stack buffer
     uint32_t result = 0;
-    SinglesNetworkClient_8DF8_g(self, &result, 16);
+    snBitStream_ReadBits(self, &result, 16);
 
     // Restore original cursor
     data[28 / 4] = savedCursor;
@@ -2206,7 +2206,7 @@ uint32_t SinglesNetworkClient_ReadStreamField16(void* self)
 // Checks whether the current network session is in the "replay" state
 // (state == 4). Looks up the session property via the session state
 // pointer at offset +5556 (0x15B4) using the "play" message type key.
-// If found, calls SinglesNetworkClient_A5C8_g to get the current state
+// If found, calls snSession_GetPropertyInt to get the current state
 // value.
 //
 // Parameters:
@@ -2215,8 +2215,8 @@ uint32_t SinglesNetworkClient_ReadStreamField16(void* self)
 // Returns:
 //   true if the session state equals 4 (replay), false otherwise
 // ─────────────────────────────────────────────────────────────────────────────
-extern void* SinglesNetworkClient_9280_g(void* sessionState, const char* key);
-extern int SinglesNetworkClient_A5C8_g(void* property);
+extern void* snSession_LookupProperty(void* sessionState, const char* key);
+extern int snSession_GetPropertyInt(void* property);
 
 bool SinglesNetworkClient_IsSessionInReplayState(void* self)
 {
@@ -2227,11 +2227,11 @@ bool SinglesNetworkClient_IsSessionInReplayState(void* self)
 
     // Look up property with "play" key
     extern const char g_szReplayPropertyKey[];  // @ 0x8205DC90
-    void* property = SinglesNetworkClient_9280_g(sessionState, g_szReplayPropertyKey);
+    void* property = snSession_LookupProperty(sessionState, g_szReplayPropertyKey);
 
     int stateValue;
     if (property != nullptr) {
-        stateValue = SinglesNetworkClient_A5C8_g(property);
+        stateValue = snSession_GetPropertyInt(property);
     } else {
         stateValue = 0;
     }
@@ -2246,7 +2246,7 @@ bool SinglesNetworkClient_IsSessionInReplayState(void* self)
 // Reads a 3-bit signed value from the match data stream at cursor
 // position 28. Operates on the sub-buffer at offset +2652 within the
 // network client, temporarily setting the read cursor and reading
-// 3 bits via SinglesNetworkClient_0E18_g.
+// 3 bits via snBitStream_ReadSigned.
 //
 // Parameters:
 //   this - Pointer to SinglesNetworkClient instance
@@ -2267,7 +2267,7 @@ int32_t SinglesNetworkClient_ReadMatchRoundIndex(void* self)
 
     // Read 3-bit signed value
     uint32_t result = 0;
-    SinglesNetworkClient_0E18_g((void*)subStream, &result, 3);
+    snBitStream_ReadSigned((void*)subStream, &result, 3);
 
     // Restore cursor
     subStream[28 / 4] = savedCursor;
@@ -2282,7 +2282,7 @@ int32_t SinglesNetworkClient_ReadMatchRoundIndex(void* self)
 // Reads a 6-bit signed value from the match data stream at cursor
 // position 48. Operates on the sub-buffer at offset +2652, temporarily
 // setting the read cursor and reading 6 bits via
-// SinglesNetworkClient_0E18_g.
+// snBitStream_ReadSigned.
 //
 // Parameters:
 //   this - Pointer to SinglesNetworkClient instance
@@ -2303,7 +2303,7 @@ int32_t SinglesNetworkClient_ReadMatchSetCount(void* self)
 
     // Read 6-bit signed value
     uint32_t result = 0;
-    SinglesNetworkClient_0E18_g((void*)subStream, &result, 6);
+    snBitStream_ReadSigned((void*)subStream, &result, 6);
 
     // Restore cursor
     subStream[28 / 4] = savedCursor;
@@ -2317,7 +2317,7 @@ int32_t SinglesNetworkClient_ReadMatchSetCount(void* self)
 //
 // Constructor for a rage::VsnSession notify handler. Sets the vtable for
 // rage::VsnNotifyBase (at 0x8205C7A4), zeros state fields, initializes
-// two linked-list nodes via ke_1B00, clears node pointers and the
+// two linked-list nodes via snListNode_Init, clears node pointers and the
 // pending-notification field.
 //
 // Parameters:
@@ -2341,10 +2341,10 @@ void SinglesNetworkClient_VsnNotifyHandlerCtor(void* self)
     data[2] = 0;  // offset +8
 
     // Initialize linked-list node at offset +12
-    ke_1B00((void*)&data[12 / 4]);
+    snListNode_Init((void*)&data[12 / 4]);
 
     // Initialize linked-list node at offset +16
-    ke_1B00((void*)&data[16 / 4]);
+    snListNode_Init((void*)&data[16 / 4]);
 
     // Clear node data
     data[16 / 4] = 0;
@@ -2360,7 +2360,7 @@ void SinglesNetworkClient_VsnNotifyHandlerCtor(void* self)
 //
 // Retrieves the current round value from the network coordinator.
 // Looks up a property from the session state at offset +5556 using
-// the "t" key string. If found, calls SinglesNetworkClient_A420_g
+// the "t" key string. If found, calls snSession_GetPropertyValue
 // to extract the value; otherwise returns 0.
 //
 // Parameters:
@@ -2369,7 +2369,7 @@ void SinglesNetworkClient_VsnNotifyHandlerCtor(void* self)
 // Returns:
 //   Current round value, or 0 if property not found
 // ─────────────────────────────────────────────────────────────────────────────
-extern void* SinglesNetworkClient_A420_g(void* property);
+extern void* snSession_GetPropertyValue(void* property);
 
 uint32_t SinglesNetworkClient_GetCoordinatorRoundValue(void* self)
 {
@@ -2380,10 +2380,10 @@ uint32_t SinglesNetworkClient_GetCoordinatorRoundValue(void* self)
 
     // Look up property with "t" key
     extern const char g_szRoundPropertyKey[];  // @ 0x8205D63C
-    void* property = SinglesNetworkClient_9280_g(sessionState, g_szRoundPropertyKey);
+    void* property = snSession_LookupProperty(sessionState, g_szRoundPropertyKey);
 
     if (property != nullptr) {
-        return (uint32_t)(uintptr_t)SinglesNetworkClient_A420_g(property);
+        return (uint32_t)(uintptr_t)snSession_GetPropertyValue(property);
     }
 
     return 0;
@@ -2396,7 +2396,7 @@ uint32_t SinglesNetworkClient_GetCoordinatorRoundValue(void* self)
 // Looks up a session property by key and stores its integer value.
 // Takes the session state and key, plus a pointer where the result
 // should be stored. If found, extracts the value via
-// SinglesNetworkClient_A5C8_g, stores it, and returns true.
+// snSession_GetPropertyInt, stores it, and returns true.
 //
 // Parameters:
 //   sessionState - Session state pointer
@@ -2409,11 +2409,11 @@ uint32_t SinglesNetworkClient_GetCoordinatorRoundValue(void* self)
 bool SinglesNetworkClient_LookupSessionPropertyValue(void* sessionState, const char* key, uint32_t* outValue)
 {
     // Look up property
-    void* property = SinglesNetworkClient_9280_g(sessionState, key);
+    void* property = snSession_LookupProperty(sessionState, key);
 
     if (property != nullptr) {
         // Get property value and store it
-        int value = SinglesNetworkClient_A5C8_g(property);
+        int value = snSession_GetPropertyInt(property);
         *outValue = (uint32_t)value;
         return true;
     }
@@ -2435,12 +2435,12 @@ bool SinglesNetworkClient_LookupSessionPropertyValue(void* sessionState, const c
 void SinglesNetworkClient_InitMessageHandler(void* handler)
 {
     // Vtable for rage::snConnectionManager::MessageHandler @ 0x8205C750
-    extern uint32_t lbl_8205C750;
+    extern uint32_t g_snConnectionManagerMsgHandlerVtable;
 
     uint32_t* h = (uint32_t*)handler;
 
     // Set vtable pointer
-    h[0] = (uint32_t)&lbl_8205C750;
+    h[0] = (uint32_t)&g_snConnectionManagerMsgHandlerVtable;
 
     // Zero flags and state fields
     h[1] = 0;  // +4
@@ -2450,8 +2450,8 @@ void SinglesNetworkClient_InitMessageHandler(void* handler)
     uint8_t* nodeA = (uint8_t*)handler + 12;
     uint8_t* nodeB = (uint8_t*)handler + 16;
 
-    ke_1B00(nodeA);
-    ke_1B00(nodeB);
+    snListNode_Init(nodeA);
+    snListNode_Init(nodeB);
 
     // Zero node pointers after init
     *(uint32_t*)nodeB = 0;
@@ -2486,8 +2486,8 @@ void SinglesNetworkClient_ActivateSessionContext(void* client)
     void* session = *(void**)(c + 92);
 
     // Look up context property by name
-    extern const char lbl_8205AEF0[];
-    void* context = SinglesNetworkClient_9318_g(session, lbl_8205AEF0);
+    extern const char g_szActivatePropertyKey[];
+    void* context = snSession_FindProperty(session, g_szActivatePropertyKey);
 
     if (context != nullptr) {
         uint32_t* contextData = (uint32_t*)context;
@@ -2524,21 +2524,21 @@ void SinglesNetworkClient_SetSessionProperties(void* client, void* args, uint32_
     void* session = (void*)argArray[0];
 
     // String at 0x8205AED8
-    extern const char lbl_8205AED8[];
+    extern const char g_szEventDescPropertyKey[];
 
-    // Build first property: {value=0, type=7, name=lbl_8205AED8, enabled=1}
+    // Build first property: {value=0, type=7, name=g_szEventDescPropertyKey, enabled=1}
     struct {
         uint32_t value;
         uint32_t type;
         const char* name;
         uint32_t enabled;
-    } prop1 = {0, 7, lbl_8205AED8, 1};
+    } prop1 = {0, 7, g_szEventDescPropertyKey, 1};
 
     // Call vtable slot 10 to set the property
     typedef void (*SetPropertyFn)(void*, void*, void*);
     uint32_t* vt = *(uint32_t**)session;
     SetPropertyFn setProperty = (SetPropertyFn)vt[10];
-    setProperty(session, (void*)&prop1, (void*)&lbl_8205AED8);
+    setProperty(session, (void*)&prop1, (void*)&g_szEventDescPropertyKey);
 
     // Build second property: {value=dataPtr, type=3}
     struct {
@@ -2555,7 +2555,7 @@ void SinglesNetworkClient_SetSessionProperties(void* client, void* args, uint32_
 // SinglesNetworkClient::RelocateAndInitEntries @ 0x820E7350 | size: 0x8C
 //
 // Relocates a vtable pointer using a relocation table, then iterates
-// over an array of 16-byte entries and initializes each one via ke_1B00.
+// over an array of 16-byte entries and initializes each one via snListNode_Init.
 // Used during deserialization to fix up pointers after loading.
 //
 // Parameters:
@@ -2588,7 +2588,7 @@ void* SinglesNetworkClient_RelocateAndInitEntries(void* obj, void* relocTbl)
     for (int i = 0; i < entryCount; i++) {
         uint8_t* entry = (uint8_t*)o[0] + (i * 16);
         if (entry != nullptr) {
-            ke_1B00(entry);
+            snListNode_Init(entry);
         }
     }
 
@@ -2630,7 +2630,7 @@ bool SinglesNetworkClient_CheckStreamAlignment(void* client)
     c[7] = 16;
 
     // Read 16 bits into temp buffer
-    SinglesNetworkClient_8DF8_g(client, &tempBuf, 16);
+    snBitStream_ReadBits(client, &tempBuf, 16);
 
     // Restore original position
     c[7] = savedPos;
@@ -2669,13 +2669,13 @@ void SinglesNetworkClient_TryDestroyInactiveSession(void* client, void* event)
     if (activeFlag == 0) return;
 
     // Check if game manager exists
-    extern uint32_t lbl_825D07CC;
-    uint32_t* managerRef = (uint32_t*)((uint8_t*)&lbl_825D07CC + 4);
+    extern uint32_t g_pGameManagerBase;
+    uint32_t* managerRef = (uint32_t*)((uint8_t*)&g_pGameManagerBase + 4);
     if (*managerRef == 0) return;
 
     // Check global session manager
-    extern uint32_t lbl_8271A81C;
-    void* sessionMgr = *(void**)&lbl_8271A81C;
+    extern uint32_t g_pSnSessionManager;
+    void* sessionMgr = *(void**)&g_pSnSessionManager;
     if (sessionMgr == nullptr) return;
 
     // Check active flag at offset +112 of session manager
@@ -2712,16 +2712,16 @@ void SinglesNetworkClient_SetFloatContextProperty(void* client, float value)
     bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
 
     // Increment global recursion counter
-    extern uint32_t lbl_8271A834;
-    uint32_t savedCounter = lbl_8271A834 + 1;
-    lbl_8271A834 = savedCounter;
+    extern uint32_t g_networkRecursionCounter;
+    uint32_t savedCounter = g_networkRecursionCounter + 1;
+    g_networkRecursionCounter = savedCounter;
 
     // Begin network operation
-    SinglesNetworkClient_B1E8_g(client);
+    snSession_BeginOperation(client);
 
     // Look up context property by name
-    extern const char lbl_8205B474[];
-    void* context = SinglesNetworkClient_9318_g(nullptr, lbl_8205B474);
+    extern const char g_szFloatPropertyKey[];
+    void* context = snSession_FindProperty(nullptr, g_szFloatPropertyKey);
 
     if (context != nullptr) {
         uint32_t* contextData = (uint32_t*)context;
@@ -2733,12 +2733,12 @@ void SinglesNetworkClient_SetFloatContextProperty(void* client, float value)
     // Release lock and decrement counter
     if (lockAcquired) {
         SinglesNetworkClient_ClearNetworkFlag(client);
-        lbl_8271A834--;
+        g_networkRecursionCounter--;
         return;
     }
 
     // Decrement counter (lock wasn't held)
-    lbl_8271A834 = savedCounter - 1;
+    g_networkRecursionCounter = savedCounter - 1;
 }
 
 
@@ -2760,16 +2760,16 @@ void SinglesNetworkClient_SetIntContextProperty(void* client, uint32_t value)
     bool lockAcquired = SinglesNetworkClient_CheckAndSetNetworkFlag(client);
 
     // Increment global recursion counter
-    extern uint32_t lbl_8271A834;
-    uint32_t savedCounter = lbl_8271A834 + 1;
-    lbl_8271A834 = savedCounter;
+    extern uint32_t g_networkRecursionCounter;
+    uint32_t savedCounter = g_networkRecursionCounter + 1;
+    g_networkRecursionCounter = savedCounter;
 
     // Begin network operation
-    SinglesNetworkClient_B1E8_g(client);
+    snSession_BeginOperation(client);
 
     // Look up context property by name
-    extern const char lbl_8205BECC[];
-    void* context = SinglesNetworkClient_9318_g(nullptr, lbl_8205BECC);
+    extern const char g_szIntPropertyKey[];
+    void* context = snSession_FindProperty(nullptr, g_szIntPropertyKey);
 
     if (context != nullptr) {
         uint32_t* contextData = (uint32_t*)context;
@@ -2780,12 +2780,12 @@ void SinglesNetworkClient_SetIntContextProperty(void* client, uint32_t value)
     // Release lock and decrement counter
     if (lockAcquired) {
         SinglesNetworkClient_ClearNetworkFlag(client);
-        lbl_8271A834--;
+        g_networkRecursionCounter--;
         return;
     }
 
     // Decrement counter (lock wasn't held)
-    lbl_8271A834 = savedCounter - 1;
+    g_networkRecursionCounter = savedCounter - 1;
 }
 
 
@@ -2801,8 +2801,8 @@ void SinglesNetworkClient_SetIntContextProperty(void* client, uint32_t value)
 // Parameters:
 //   session - Pointer to match session state structure
 // ─────────────────────────────────────────────────────────────────────────────
-extern void util_6CB0(void* player);
-extern void SinglesNetworkClient_5D90_g(void* sessionData, int newState);
+extern void snSession_GetTimingValue(void* player);
+extern void snSession_TransitionPhase(void* sessionData, int newState);
 
 void SinglesNetworkClient_HandleSessionStateTransition(void* session)
 {
@@ -2830,11 +2830,11 @@ void SinglesNetworkClient_HandleSessionStateTransition(void* session)
         }
 
         // Get timing value from player
-        util_6CB0(player);
+        snSession_GetTimingValue(player);
 
         // Check against threshold from global tuning data
-        extern uint32_t lbl_8271A328;
-        void* tuning = *(void**)&lbl_8271A328;
+        extern uint32_t g_pTuningData;
+        void* tuning = *(void**)&g_pTuningData;
         float* tuningData = (float*)((uint8_t*)tuning + 4);
         float threshold = *(float*)((uint8_t*)tuningData + 308);
 
@@ -2850,7 +2850,7 @@ void SinglesNetworkClient_HandleSessionStateTransition(void* session)
 
     // Transition to new session phase (state=2)
     void* activeSessionData = *(void**)(sb + 48);
-    SinglesNetworkClient_5D90_g(activeSessionData, 2);
+    snSession_TransitionPhase(activeSessionData, 2);
 }
 
 
@@ -2872,7 +2872,7 @@ void SinglesNetworkClient_HandleSessionStateTransition(void* session)
 // Returns:
 //   true if both fields match, false otherwise
 // ─────────────────────────────────────────────────────────────────────────────
-extern bool pongFrontendContext_8280_g(void* table, int playerSlot, int round);
+extern bool pongFrontendContext_Validate(void* table, int playerSlot, int round);
 
 bool SinglesNetworkClient_ValidateFrontendEntry(void* table, int playerSlot,
                                                  int expectedPlayer, int expectedRound,
@@ -2881,7 +2881,7 @@ bool SinglesNetworkClient_ValidateFrontendEntry(void* table, int playerSlot,
     uint32_t* t = (uint32_t*)table;
 
     // First validate via frontend context helper
-    bool valid = pongFrontendContext_8280_g(table, playerSlot, round);
+    bool valid = pongFrontendContext_Validate(table, playerSlot, round);
 
     if (!valid) {
         return false;
@@ -2919,18 +2919,18 @@ bool SinglesNetworkClient_ValidateFrontendEntry(void* table, int playerSlot,
 
 
 // ── External function declarations for session management ──────────────────
-extern void ke_1B00(void* listNode);
-extern uint8_t SinglesNetworkClient_B2A8_g(void* client);
-extern void* SinglesNetworkClient_B1E8_g(void* client);
-extern void* SinglesNetworkClient_9318_g(void* clientState, const char* msgType);
-extern void SinglesNetworkClient_B320_g(void* client);
-extern uint32_t SinglesNetworkClient_87D8_g(void* client);
-extern void SinglesNetworkClient_F090(void* session);
-extern void SinglesNetworkClient_7038_g(void* sessionList, int sessionId);
-extern void pg_E630_g(void* pageGroup, int eventCode);
-extern void pg_E7D0_g(void* pageGroup, uint32_t connectionCount, int param1, int param2);
-extern void SinglesNetworkClient_3E00_g(void* sessionData);
-extern void SinglesNetworkClient_F508_g(void* sessionList, void* node);
+extern void snListNode_Init(void* listNode);
+extern uint8_t snSession_AcquireLock(void* client);
+extern void* snSession_BeginOperation(void* client);
+extern void* snSession_FindProperty(void* clientState, const char* msgType);
+extern void snSession_ReleaseLock(void* client);
+extern uint32_t snBitStream_GetReadPos(void* client);
+extern void snSession_ProcessNode(void* session);
+extern void snSession_FindState(void* sessionList, int sessionId);
+extern void pgBase_PostEvent(void* pageGroup, int eventCode);
+extern void pgBase_PostEventWithParams(void* pageGroup, uint32_t connectionCount, int param1, int param2);
+extern void snSession_ResetState(void* sessionData);
+extern void snSession_InsertNode(void* sessionList, void* node);
 
 // ── Globals ────────────────────────────────────────────────────────────────
 extern uint32_t g_sessionRegistrationCount;  // @ global counter for session registrations
@@ -2954,16 +2954,16 @@ void SinglesNetworkClient_InitSessionNode(void* self)
     uint32_t* node = (uint32_t*)self;
 
     // Set vtable pointer (cmRefreshableCtor vtable @ 0x820533CC)
-    extern uint32_t lbl_820533CC;
-    node[0] = (uint32_t)&lbl_820533CC;
+    extern uint32_t g_cmRefreshableNodeVtable;
+    node[0] = (uint32_t)&g_cmRefreshableNodeVtable;
 
     // Zero core state fields
     node[1] = 0;  // flags
     node[2] = 0;  // field +8
 
     // Detach both internal linked-list nodes at offsets +12 and +16
-    ke_1B00((void*)(node + 3));  // list node at +12
-    ke_1B00((void*)(node + 4));  // list node at +16
+    snListNode_Init((void*)(node + 3));  // list node at +12
+    snListNode_Init((void*)(node + 4));  // list node at +16
 
     // Clear the list node pointers and status field
     node[4] = 0;  // +16
@@ -2990,7 +2990,7 @@ void SinglesNetworkClient_RegisterSessionEntry(void* self, uint32_t entry)
     regData[0] = entry;
 
     // Validate the entry through the polling subsystem
-    uint8_t result = SinglesNetworkClient_B2A8_g((void*)entry);
+    uint8_t result = snSession_AcquireLock((void*)entry);
 
     // Store validation result as byte at offset +4
     *(uint8_t*)((uint8_t*)self + 4) = (uint8_t)result;
@@ -3014,14 +3014,14 @@ void SinglesNetworkClient_RegisterSessionEntry(void* self, uint32_t entry)
 void SinglesNetworkClient_SendTrainingDrillResult(void* self, uint32_t value)
 {
     // Poll current button state
-    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+    uint8_t wasActive = snSession_AcquireLock(self);
 
     // Get the network client instance
-    void* client = SinglesNetworkClient_B1E8_g(self);
+    void* client = snSession_BeginOperation(self);
 
     // Look up the "TrainingDrillResult" message type string (@ 0x8205C83C)
-    extern const char lbl_8205C83C[];
-    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C83C);
+    extern const char g_szDrillResultMsgType[];
+    void* msgSlot = snSession_FindProperty(client, g_szDrillResultMsgType);
 
     if (msgSlot != nullptr) {
         uint32_t* slot = (uint32_t*)msgSlot;
@@ -3031,7 +3031,7 @@ void SinglesNetworkClient_SendTrainingDrillResult(void* self, uint32_t value)
 
     // If polling was active, re-initiate the connection
     if ((wasActive & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(self);
+        snSession_ReleaseLock(self);
     }
 }
 
@@ -3051,17 +3051,17 @@ void SinglesNetworkClient_SendTrainingDrillResult(void* self, uint32_t value)
 void SinglesNetworkClient_SendDrillMovementState(void* self)
 {
     // Poll current button state
-    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+    uint8_t wasActive = snSession_AcquireLock(self);
 
     // Get the network client instance
-    void* client = SinglesNetworkClient_B1E8_g(self);
+    void* client = snSession_BeginOperation(self);
 
     // Read movement value from context at offset +184
     uint32_t movementValue = *(uint32_t*)((uint8_t*)self + 184);
 
     // Look up the "DrillMovementState" message type string (@ 0x8205C86C)
-    extern const char lbl_8205C86C[];
-    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C86C);
+    extern const char g_szDrillMovementMsgType[];
+    void* msgSlot = snSession_FindProperty(client, g_szDrillMovementMsgType);
 
     if (msgSlot != nullptr) {
         uint32_t* slot = (uint32_t*)msgSlot;
@@ -3071,7 +3071,7 @@ void SinglesNetworkClient_SendDrillMovementState(void* self)
 
     // If polling was active, re-initiate the connection
     if ((wasActive & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(self);
+        snSession_ReleaseLock(self);
     }
 }
 
@@ -3089,14 +3089,14 @@ void SinglesNetworkClient_SendDrillMovementState(void* self)
 void SinglesNetworkClient_SendDrillChargingState(void* self, uint32_t value)
 {
     // Poll current button state
-    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+    uint8_t wasActive = snSession_AcquireLock(self);
 
     // Get the network client instance
-    void* client = SinglesNetworkClient_B1E8_g(self);
+    void* client = snSession_BeginOperation(self);
 
     // Look up the "DrillChargingState" message type string (@ 0x8205C898)
-    extern const char lbl_8205C898[];
-    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C898);
+    extern const char g_szDrillChargingMsgType[];
+    void* msgSlot = snSession_FindProperty(client, g_szDrillChargingMsgType);
 
     if (msgSlot != nullptr) {
         uint32_t* slot = (uint32_t*)msgSlot;
@@ -3106,7 +3106,7 @@ void SinglesNetworkClient_SendDrillChargingState(void* self, uint32_t value)
 
     // If polling was active, re-initiate the connection
     if ((wasActive & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(self);
+        snSession_ReleaseLock(self);
     }
 }
 
@@ -3124,14 +3124,14 @@ void SinglesNetworkClient_SendDrillChargingState(void* self, uint32_t value)
 void SinglesNetworkClient_SendTrainingHUDUpdate(void* self, uint32_t value)
 {
     // Poll current button state
-    uint8_t wasActive = SinglesNetworkClient_B2A8_g(self);
+    uint8_t wasActive = snSession_AcquireLock(self);
 
     // Get the network client instance
-    void* client = SinglesNetworkClient_B1E8_g(self);
+    void* client = snSession_BeginOperation(self);
 
     // Look up the "TrainingHUDUpdate" message type string (@ 0x8205C8A8)
-    extern const char lbl_8205C8A8[];
-    void* msgSlot = SinglesNetworkClient_9318_g(client, lbl_8205C8A8);
+    extern const char g_szTrainingHUDMsgType[];
+    void* msgSlot = snSession_FindProperty(client, g_szTrainingHUDMsgType);
 
     if (msgSlot != nullptr) {
         uint32_t* slot = (uint32_t*)msgSlot;
@@ -3141,7 +3141,7 @@ void SinglesNetworkClient_SendTrainingHUDUpdate(void* self, uint32_t value)
 
     // If polling was active, re-initiate the connection
     if ((wasActive & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(self);
+        snSession_ReleaseLock(self);
     }
 }
 
@@ -3173,7 +3173,7 @@ bool SinglesNetworkClient_ValidateMessageBounds(void* header, void* message)
     uint16_t dataLength = (uint16_t)((rawLen >> 8) | (rawLen << 8));
 
     // Get current read position from the message buffer
-    uint32_t readPos = SinglesNetworkClient_87D8_g(message);
+    uint32_t readPos = snBitStream_GetReadPos(message);
 
     // Compute the data start offset (header is 8 bytes)
     uint32_t dataStart = 8;  // hdr + 8
@@ -3223,7 +3223,7 @@ void SinglesNetworkClient_ProcessActiveSessionUpdates(void* self)
         if (isActive != 0) {
             // Process the session update for this slot's connection
             uint32_t sessionHandle = slotArray[i];
-            SinglesNetworkClient_F090((void*)sessionHandle);
+            snSession_ProcessNode((void*)sessionHandle);
         }
 
         // Advance to next slot table entry (stride = 36 bytes)
@@ -3291,8 +3291,8 @@ bool SinglesNetworkClient_FindSessionByName(void* self, const char* name)
 //
 // Routes a page group event based on the current connection mode. If the
 // connection mode indicates a high-priority connection (mode > 1) or the
-// connection count exceeds 3, routes directly via pg_E630_g with a forced
-// event code of 1. Otherwise routes through pg_E7D0_g with the full
+// connection count exceeds 3, routes directly via pgBase_PostEvent with a forced
+// event code of 1. Otherwise routes through pgBase_PostEventWithParams with the full
 // connection parameters.
 //
 // Parameters:
@@ -3321,10 +3321,10 @@ void SinglesNetworkClient_RoutePageGroupEvent(void* self, uint32_t connCount, in
 
     if (highPriority) {
         // Route directly with forced event code 1
-        pg_E630_g(g_pPageGroupManager, 1);
+        pgBase_PostEvent(g_pPageGroupManager, 1);
     } else {
         // Route with full connection parameters
-        pg_E7D0_g(g_pPageGroupManager, activeConns, connCount, eventParam);
+        pgBase_PostEventWithParams(g_pPageGroupManager, activeConns, connCount, eventParam);
     }
 }
 
@@ -3348,14 +3348,14 @@ extern "C" int SinglesNetworkClient_GetStateId()
 // SinglesNetworkClient::EnablePaused (vfn_12) @ 0x8239AF80 | size: 0x18
 //
 // Sets the paused flag to true (1) on the match instance accessed through
-// the global singles network client pointer at lbl_8271A318.
+// the global singles network client pointer at g_pSinglesNetworkClient.
 // Writes to byte offset +88 of the match object at slot 3 (+12) of the global.
 // ─────────────────────────────────────────────────────────────────────────────
-extern uint32_t* lbl_8271A318;
+extern uint32_t* g_pSinglesNetworkClient;
 
 extern "C" void SinglesNetworkClient_EnablePaused()
 {
-    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* global = (uint32_t*)(uintptr_t)g_pSinglesNetworkClient;
     uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
     *(uint8_t*)((uint8_t*)matchObj + 88) = 1;
 }
@@ -3365,12 +3365,12 @@ extern "C" void SinglesNetworkClient_EnablePaused()
 // SinglesNetworkClient::DisablePaused (vfn_13) @ 0x8239AF98 | size: 0x18
 //
 // Clears the paused flag to false (0) on the match instance accessed through
-// the global singles network client pointer at lbl_8271A318.
+// the global singles network client pointer at g_pSinglesNetworkClient.
 // Writes to byte offset +88 of the match object at slot 3 (+12) of the global.
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" void SinglesNetworkClient_DisablePaused()
 {
-    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* global = (uint32_t*)(uintptr_t)g_pSinglesNetworkClient;
     uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
     *(uint8_t*)((uint8_t*)matchObj + 88) = 0;
 }
@@ -3388,7 +3388,7 @@ extern "C" void SinglesNetworkClient_DisablePaused()
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" float SinglesNetworkClient_GetElapsedTime()
 {
-    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* global = (uint32_t*)(uintptr_t)g_pSinglesNetworkClient;
     uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
 
     int32_t ticks = (int32_t)matchObj[1];            // offset +4
@@ -3410,7 +3410,7 @@ extern "C" float SinglesNetworkClient_GetElapsedTime()
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" void SinglesNetworkClient_DelegateToBaseUpdate(void* self)
 {
-    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* global = (uint32_t*)(uintptr_t)g_pSinglesNetworkClient;
     uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
 
     // Tail-call vtable slot 2
@@ -3434,7 +3434,7 @@ extern "C" void SinglesNetworkClient_DelegateToBaseUpdate(void* self)
 extern "C" void SinglesNetworkClient_StartMatchTiming(void* self)
 {
     uint8_t* data = (uint8_t*)self;
-    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* global = (uint32_t*)(uintptr_t)g_pSinglesNetworkClient;
     uint32_t* timerObj = (uint32_t*)(uintptr_t)global[1];
 
     float matchTime = *(float*)((uint8_t*)timerObj + 332);
@@ -3450,14 +3450,14 @@ extern "C" void SinglesNetworkClient_StartMatchTiming(void* self)
 //
 // Checks the connection state at offset +28 of this object. If the state
 // is 2 or 3 (connected/active), forwards the message by calling
-// atSingleton_1570_h with the global pointer and rearranged parameters.
+// snSession_ForwardMessage with the global pointer and rearranged parameters.
 //
 // Parameters:
 //   self  - Pointer to SinglesNetworkClient (this)
 //   param - Message parameter (r4)
 //   data  - Message data (r5)
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void atSingleton_1570_h(void* global, int zero, void* param, void* data);
+extern "C" void snSession_ForwardMessage(void* global, int zero, void* param, void* data);
 
 extern "C" void SinglesNetworkClient_ForwardMessageIfConnected(void* self, void* param, void* data)
 {
@@ -3468,8 +3468,8 @@ extern "C" void SinglesNetworkClient_ForwardMessageIfConnected(void* self, void*
         return;
     }
 
-    void* global = (void*)(uintptr_t)lbl_8271A318;
-    atSingleton_1570_h(global, 0, param, data);
+    void* global = (void*)(uintptr_t)g_pSinglesNetworkClient;
+    snSession_ForwardMessage(global, 0, param, data);
 }
 
 
@@ -3477,7 +3477,7 @@ extern "C" void SinglesNetworkClient_ForwardMessageIfConnected(void* self, void*
 // SinglesNetworkClient::~SinglesNetworkClient (vfn_0) @ 0x82391F98 | size: 0x50
 //
 // Destructor for SinglesNetworkClient. Calls the base class destructor
-// (ph_ctor_1FE8), then conditionally frees memory if the scalar deleting
+// (snSession_BaseDtor), then conditionally frees memory if the scalar deleting
 // destructor flag (bit 0 of param) is set.
 //
 // Parameters:
@@ -3487,15 +3487,15 @@ extern "C" void SinglesNetworkClient_ForwardMessageIfConnected(void* self, void*
 // Returns:
 //   Pointer to the destroyed object
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void ph_ctor_1FE8(void* self);
-extern "C" void rage_free_00C0(void* ptr);
+extern "C" void snSession_BaseDtor(void* self);
+extern "C" void rage_free(void* ptr);
 
 extern "C" void* SinglesNetworkClient_Destructor(void* self, uint32_t param)
 {
-    ph_ctor_1FE8(self);
+    snSession_BaseDtor(self);
 
     if ((param & 1) != 0) {
-        rage_free_00C0(self);
+        rage_free(self);
     }
 
     return self;
@@ -3506,7 +3506,7 @@ extern "C" void* SinglesNetworkClient_Destructor(void* self, uint32_t param)
 // SinglesNetworkClient::TransformAndDispatchEvent (vfn_16) @ 0x8239B030 | size: 0x50
 //
 // Copies an 8-byte event structure from the source pointer (r5) into a
-// local buffer, transforms it via util_EA38, then dispatches the transformed
+// local buffer, transforms it via snEvent_Transform, then dispatches the transformed
 // event through the object's own vtable slot 17.
 //
 // Parameters:
@@ -3514,7 +3514,7 @@ extern "C" void* SinglesNetworkClient_Destructor(void* self, uint32_t param)
 //   param  - Event parameter (r4, forwarded to vtable call)
 //   source - Pointer to 8-byte source event data (r5)
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void util_EA38(void* dest);
+extern "C" void snEvent_Transform(void* dest);
 
 extern "C" void SinglesNetworkClient_TransformAndDispatchEvent(void* self, void* param, void* source)
 {
@@ -3525,7 +3525,7 @@ extern "C" void SinglesNetworkClient_TransformAndDispatchEvent(void* self, void*
     *(float*)&localBuf[1] = *(float*)&src[1];
 
     // Transform the event
-    util_EA38((void*)localBuf);
+    snEvent_Transform((void*)localBuf);
 
     // Dispatch via vtable slot 17 (vfn_17)
     // self->vfn_17(self, param, &localBuf)
@@ -3541,16 +3541,16 @@ extern "C" void SinglesNetworkClient_TransformAndDispatchEvent(void* self, void*
 //
 // Resets match state by first calling the scalar deleting destructor
 // (vtable slot 1) on the match object from the global pointer, then
-// reinitializing the sub-object at offset +784 via SinglesNetworkClient_2F28_g.
+// reinitializing the sub-object at offset +784 via snSession_ReinitSubObject.
 //
 // Parameters:
 //   self - Pointer to SinglesNetworkClient instance (this)
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void SinglesNetworkClient_2F28_g(void* subObj);
+extern "C" void snSession_ReinitSubObject(void* subObj);
 
 extern "C" void SinglesNetworkClient_ResetMatchState(void* self)
 {
-    uint32_t* global = (uint32_t*)(uintptr_t)lbl_8271A318;
+    uint32_t* global = (uint32_t*)(uintptr_t)g_pSinglesNetworkClient;
     uint32_t* matchObj = (uint32_t*)(uintptr_t)global[3];
 
     // Call match object's vtable slot 1 (scalar deleting destructor)
@@ -3560,5 +3560,5 @@ extern "C" void SinglesNetworkClient_ResetMatchState(void* self)
     dtor(matchObj);
 
     // Reinitialize sub-object at offset +784
-    SinglesNetworkClient_2F28_g((void*)((uint8_t*)self + 784));
+    snSession_ReinitSubObject((void*)((uint8_t*)self + 784));
 }

@@ -18,7 +18,7 @@
  *       +0xE1 (225) = is-not-server flag (inverted at read — stored as bool NOT)
  *       +0xE2 (226) = secondary player index / handedness flag
  *
- * Serialisation uses SinglesNetworkClient_8DF8_g (write float, size=32) and
+ * Serialisation uses snBitStream_ReadBits (write float, size=32) and
  * util_7A08 (write byte, size=8).  Deserialisation uses WriteFloatToNetworkStream
  * and SinglesNetworkClient_6838_g (read byte, size=8).
  *
@@ -44,7 +44,7 @@
 
 // ── External functions ─────────────────────────────────────────────────────
 // Network serialisation helpers
-extern void  SinglesNetworkClient_8DF8_g(void* client, void* buf, int size);  // write float
+extern void  snBitStream_ReadBits(void* client, void* buf, int size);  // write float
 extern void  SinglesNetworkClient_6838_g(void* client, uint8_t val, int size); // write byte
 extern void* SinglesNetworkClient_58E8_g(uint8_t playerIdx);                  // lookup player
 
@@ -61,7 +61,7 @@ extern void  PostPageGroupMessage(int eventCode, int arg1, int arg2, int arg3, i
 extern uint8_t* g_pNetMsgPoolBase;    // @ 0x825D11D0 (singleton pointer)
 extern const char g_szServeStartedTypeName[];  // @ 0x8206E9D0
 extern void* g_pNetMsgSingleton;              // @ 0x825D11D0 singleton object
-extern void nop_8240E6D0(const char* fmt, ...);  // debug nop / assert print
+extern void rage_debugLog(const char* fmt, ...);  // debug nop / assert print
 extern void ServeStartedMessage_5728(void* matchObj, void* slotA, void* slotB, float timingRef);  // serve-start coordinator
 
 // pongNetMessageHolder helpers used by static init/dtor wrappers.
@@ -119,7 +119,7 @@ void ServeStartedMessage::Deserialise(void* client)
 {
     // Read timing float (32-bit field, stream size=32).
     float timingRef;
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_timingRef = timingRef;
 
     // Read 16-byte target position vector.
@@ -127,16 +127,16 @@ void ServeStartedMessage::Deserialise(void* client)
     WriteBallHitDataToNetwork(&m_targetPos, client);  // finalise position read
 
     // Read four velocity floats.
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_velocityX = timingRef;
 
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_velocityY = timingRef;
 
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_velocityZ = timingRef;
 
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_spin = timingRef;
 
     // Read three byte flags.
@@ -211,7 +211,7 @@ void ServeStartedMessage::Process(void* matchObj)
     // Step 2: debug assert — action state must be initialised.
     int32_t actionState = *(int32_t*)((uint8_t*)player + 468);
     if (actionState == 0) {
-        nop_8240E6D0("ServeStartedMessage::Process(): player action state is null");
+        rage_debugLog("ServeStartedMessage::Process(): player action state is null");
     }
 
     // Step 3: copy target position into the player's lerp table entry.
@@ -365,8 +365,8 @@ int PongNetGameModeCoordinator::CheckNetworkStatus()
     
     // Query network status (result stored on stack at offset 80)
     uint32_t statusResult = 0;
-    extern void SinglesNetworkClient_0E18_g(void*, uint32_t*, int);
-    SinglesNetworkClient_0E18_g(networkClient, &statusResult, 2);
+    extern void snBitStream_ReadSigned(void*, uint32_t*, int);
+    snBitStream_ReadSigned(networkClient, &statusResult, 2);
     
     // Restore original state
     *(uint32_t*)((char*)networkClient + 28) = savedState;
@@ -755,11 +755,11 @@ const char* RequestDataMessage::vfn_7() {
 // Each player slot has button state fields that are checked via CheckButtonPressed.
 //
 // Network setup involves:
-//  - Getting network status via SinglesNetworkClient_B2A8_g
+//  - Getting network status via snSession_AcquireLock
 //  - Checking a global singleton flag
-//  - Finding a network message slot via SinglesNetworkClient_9318_g
+//  - Finding a network message slot via snSession_FindProperty
 //  - Initializing the message slot with values 1 and 3
-//  - Calling SinglesNetworkClient_B320_g if network status is non-zero
+//  - Calling snSession_ReleaseLock if network status is non-zero
 //  - Setting the ready flag at this+24 to 1
 // ===========================================================================
 void SinglesNetworkClient::CheckAllPlayersReady()
@@ -799,7 +799,7 @@ setup_network:
     void* networkClient = m_pNetworkClient;
 
     // Query network status
-    uint8_t networkStatus = SinglesNetworkClient_B2A8_g(networkClient);
+    uint8_t networkStatus = snSession_AcquireLock(networkClient);
 
     // Check global singleton flag at offset +556
     extern void* g_pAtSingleton;  // @ 0x821EAB08
@@ -812,14 +812,14 @@ setup_network:
         if (g_bNetworkDebugFlag == 0) {
             // Debug print (nop in release builds)
             extern const char g_szNetworkDebugMsg[];  // @ 0x8205AE98
-            nop_8240E6D0(g_szNetworkDebugMsg);
+            rage_debugLog(g_szNetworkDebugMsg);
         }
     }
 
     // Find available network message slot
     extern const char g_szMessageType[];  // @ 0x8205DFB0
     uint32_t clientState = *(uint32_t*)((uint8_t*)networkClient + 92);
-    void* messageSlot = SinglesNetworkClient_9318_g((void*)clientState, g_szMessageType);
+    void* messageSlot = snSession_FindProperty((void*)clientState, g_szMessageType);
 
     // Initialize message slot if found
     if (messageSlot != nullptr) {
@@ -829,7 +829,7 @@ setup_network:
 
     // Perform network client update if status is non-zero
     if (networkStatus != 0) {
-        SinglesNetworkClient_B320_g(networkClient);
+        snSession_ReleaseLock(networkClient);
     }
 
     // Mark all players as ready
@@ -961,13 +961,13 @@ void* SinglesNetworkClient::PopMessageFromQueue()
 // External references for SinglesNetworkClient
 extern void* g_pNetworkBase;  // @ 0x8271A7B0
 extern void net_6BA0_fw(void* session, void* param1, void* param2);
-extern void snSession_6C98_h(void* session);
+extern void snSession_Detach(void* session);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SinglesNetworkClient::ProcessSessions @ 0x822FDDC0 | size: 0x150
 //
 // Processes all active network sessions in two phases:
-// 1. First loop: Calls net_6BA0_fw and snSession_6C98_h on each session
+// 1. First loop: Calls net_6BA0_fw and snSession_Detach on each session
 // 2. Second loop: Copies session data to client buffer at offset +5572
 //
 // Returns:
@@ -1003,8 +1003,8 @@ int SinglesNetworkClient::ProcessSessions()
                 net_6BA0_fw(sessionPtr, param1, param2);
             }
             
-            // Always call snSession_6C98_h
-            snSession_6C98_h(sessionPtr);
+            // Always call snSession_Detach
+            snSession_Detach(sessionPtr);
         }
     }
     
@@ -1122,10 +1122,10 @@ void SinglesNetworkClient::ProcessPendingMessages()
     TempMessageStruct msg1 = {0, 0};
     TempMessageStruct msg2 = {0, 0};
     
-    // Initialize the structures (calls ke_1B00)
-    extern void ke_1B00(void* msg);
-    ke_1B00(&msg1);
-    ke_1B00(&msg2);
+    // Initialize the structures (calls snListNode_Init)
+    extern void snListNode_Init(void* msg);
+    snListNode_Init(&msg1);
+    snListNode_Init(&msg2);
     
     // Set up processing flag structure
     struct ProcessingFlags {
@@ -1324,7 +1324,7 @@ void SinglesNetworkClient::ProcessNetworkTimingUpdate(uint32_t timestamp)
             
             // Add node to session
             void* sessionNodeList = (char*)sessionData + 8;
-            snSession_AddNode_C068(sessionNodeList, newNode);
+            snSession_AddNode(sessionNodeList, newNode);
         }
     }
 }
@@ -1382,9 +1382,9 @@ uint32_t SinglesNetworkClient::ReadStringFromStream(const char* stringBuffer) {
     }
     
     // Clear/reset 8 bits in the stream
-    // SinglesNetworkClient_0448_g is ReadBitsFromStream
-    extern uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bitWidth);
-    SinglesNetworkClient_0448_g(this, 0, 8);
+    // snBitStream_WriteBits is ReadBitsFromStream
+    extern uint32_t snBitStream_WriteBits(void* client, uint32_t value, int bitWidth);
+    snBitStream_WriteBits(this, 0, 8);
     
     // Return string length + 1
     return stringLength + 1;
@@ -1673,7 +1673,7 @@ void SinglesNetworkClient::ProcessMessageQueue()
     extern int   SinglesNetworkClient_4928_g(void* msgHandler);
     extern void* SinglesNetworkClient_9720_g(void* stackBuf, void* client);
     extern void  SinglesNetworkClient_4128_g(void* dispatcher, int msgId, void* context, int param1, int param2);
-    extern void  SinglesNetworkClient_0268_g(void* context);
+    extern void  snBitStream_Reset(void* context);
     extern void* SinglesNetworkClient_C838_g(void* currentMsg);
     
     // Global network state object
@@ -1757,7 +1757,7 @@ void SinglesNetworkClient::ProcessMessageQueue()
                 SinglesNetworkClient_4128_g(dispatcher, messageId, context, 1, 0);
                 
                 // Clean up the dispatch context
-                SinglesNetworkClient_0268_g(dispatchContext);
+                snBitStream_Reset(dispatchContext);
             }
         }
         
@@ -1778,7 +1778,7 @@ void SinglesNetworkClient::ProcessMessageQueue()
 // a page group event if conditions are met.
 //
 // Logic:
-//  1. Calls nop_8240E6D0 with "top_spin" string (debug/logging)
+//  1. Calls rage_debugLog with "top_spin" string (debug/logging)
 //  2. Checks g_loop_obj_ptr[578] (boolean flag)
 //  3. If flag is false, checks g_loop_obj_ptr[12] == 8 (state check)
 //  4. If state matches, sets g_input_obj_ptr[48] = 4
@@ -1788,7 +1788,7 @@ void TournamentCompleteMessage::Process()
 {
     // Debug logging with "top_spin" string
     extern const char g_szTopSpin[];  // @ 0x8206CB54
-    nop_8240E6D0(g_szTopSpin);
+    rage_debugLog(g_szTopSpin);
     
     // Load global loop object pointer
     extern void* g_loop_obj_ptr;  // @ 0x825EAB30
@@ -2375,7 +2375,7 @@ extern void* g_pDataRequestMsgSingleton;    // @ 0x825D1290
 extern const char g_szDataRequestTypeName[];  // @ 0x8206EA74
 
 // Network I/O helpers (already declared in pong_network.cpp)
-extern void SinglesNetworkClient_8DF8_g(void* client, void* buf, int size);
+extern void snBitStream_ReadBits(void* client, void* buf, int size);
 extern void SinglesNetworkClient_68A8_g(void* client, int16_t value, int bitWidth);
 extern void WriteFloatToNetworkStream(void* client, float value);
 extern uint8_t util_7970(void* client, void* dst, int bitWidth);
@@ -2395,7 +2395,7 @@ void DataRequestMessage::Deserialise(void* client)
 {
     // Read timing float (32-bit field)
     float timingRef;
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_timingRef = timingRef;
     
     // Read 16-bit data identifier using util_7970
@@ -2535,7 +2535,7 @@ void DataSendMessage::Deserialise(void* client)
 {
     // Read timing float (32-bit field)
     float timingRef;
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_timingRef = timingRef;
     
     // Read data type identifier (16-bit field)
@@ -3486,11 +3486,11 @@ bool SinglesNetworkClient::Read64BitValue(uint64_t* outValue) {
     uint32_t lowBits = 0;
     
     // Read high 32 bits (32-bit field size)
-    bool readHigh = SinglesNetworkClient_8DF8_g(this, &highBits, 32);
+    bool readHigh = snBitStream_ReadBits(this, &highBits, 32);
     
     if (readHigh) {
         // Read low 32 bits
-        bool readLow = SinglesNetworkClient_8DF8_g(this, &lowBits, 32);
+        bool readLow = snBitStream_ReadBits(this, &lowBits, 32);
         
         if (readLow) {
             // Combine into 64-bit value: (high << 32) | low
@@ -3592,8 +3592,8 @@ void SinglesNetworkClient::InitializeNetworkState() {
     *(uint32_t*)((char*)this + 32) = 0;
     
     // Initialize network buffers
-    SinglesNetworkClient_0268_g(this);
-    SinglesNetworkClient_0268_g(this);
+    snBitStream_Reset(this);
+    snBitStream_Reset(this);
     
     // Set default buffer size
     *(uint32_t*)((char*)this + 20) = 8128;
@@ -3610,7 +3610,7 @@ void SinglesNetworkClient::InitializeNetworkState() {
 // ───────────────────────────────────────────────────────────────────────────
 void SinglesNetworkClient::WriteValueWithMask(uint32_t value) {
     // Prepare for write operation
-    SinglesNetworkClient_8AE0_g(this);
+    snBitStream_ValidateWrite(this);
     
     // Save current bit positions
     int savedBitPos = m_bitPosition;
@@ -3621,7 +3621,7 @@ void SinglesNetworkClient::WriteValueWithMask(uint32_t value) {
     
     // Read current value from stream
     uint32_t currentValue = 0;
-    SinglesNetworkClient_8DF8_g(this, &currentValue, 16);
+    snBitStream_ReadBits(this, &currentValue, 16);
     
     // Restore bit position
     m_bitPosition = savedBitPos;
@@ -3633,7 +3633,7 @@ void SinglesNetworkClient::WriteValueWithMask(uint32_t value) {
     *(int*)((char*)this + 32) = 16;
     
     // Write the merged value
-    SinglesNetworkClient_0448_g(this, maskedValue, 16);
+    snBitStream_WriteBits(this, maskedValue, 16);
     
     // Restore write position
     *(int*)((char*)this + 32) = savedWritePos;
@@ -3666,7 +3666,7 @@ uint32_t SinglesNetworkClient::Read14BitValue() {
     
     // Read 16-bit value
     uint32_t value = 0;
-    SinglesNetworkClient_8DF8_g(this, &value, 16);
+    snBitStream_ReadBits(this, &value, 16);
     
     // Restore bit position
     m_bitPosition = savedBitPos;
@@ -3699,7 +3699,7 @@ uint32_t SinglesNetworkClient::ReadTimestamp() {
         m_bitPosition = 32;
         
         // Read 16-bit timestamp
-        SinglesNetworkClient_8DF8_g(this, &timestamp, 16);
+        snBitStream_ReadBits(this, &timestamp, 16);
         
         // Restore bit position
         m_bitPosition = savedBitPos;
@@ -3732,7 +3732,7 @@ uint16_t SinglesNetworkClient::ReadSequenceNumber() {
         m_bitPosition = 0;
         
         // Read 16-bit value
-        SinglesNetworkClient_8DF8_g(this, &seqNum, 16);
+        snBitStream_ReadBits(this, &seqNum, 16);
         
         // Restore bit position
         m_bitPosition = savedBitPos;
@@ -3856,7 +3856,7 @@ void pongNetMessageHolder_2028_2hr(void* thisPtr) {
 void HitMessage::Deserialise(void* client) {
     // Read 32-bit float from stream into temporary buffer
     float timingRef;
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
 
     // Store timing reference at +0x04
     m_timingRef = timingRef;
@@ -3873,7 +3873,7 @@ void HitMessage::Deserialise(void* client) {
 void HitDataMessage::Deserialise(void* client) {
     // Read timing reference float
     float timingRef;
-    SinglesNetworkClient_8DF8_g(client, &timingRef, 32);
+    snBitStream_ReadBits(client, &timingRef, 32);
     m_timingRef = timingRef;
 
     // Read ball hit data block at +0x10 (192-byte structure)
@@ -3881,7 +3881,7 @@ void HitDataMessage::Deserialise(void* client) {
 
     // Read secondary timing float (recovery/power value)
     float recoveryTiming;
-    SinglesNetworkClient_8DF8_g(client, &recoveryTiming, 32);
+    snBitStream_ReadBits(client, &recoveryTiming, 32);
     m_recoveryTiming = recoveryTiming;
 
     // Read player index byte at +0xD4
@@ -3942,7 +3942,7 @@ void MatchTimeSyncMessage::Deserialise(void* client) {
 
     // Read timing float
     float syncTiming;
-    SinglesNetworkClient_8DF8_g(client, &syncTiming, 32);
+    snBitStream_ReadBits(client, &syncTiming, 32);
     m_syncDelta = syncTiming;
 
     // Read 16-bit frame counter at +0x1C
@@ -4018,7 +4018,7 @@ void ForceMatchTimeSyncMessage::Process() {
 
     // Log the formatted time string (no-op in retail build)
     // String at 0x8206F298 references the sync debug output
-    nop_8240E6D0(formattedTime);
+    rage_debugLog(formattedTime);
 }
 
 
@@ -4026,7 +4026,7 @@ void ForceMatchTimeSyncMessage::Process() {
 // pongNetMessageHolder — Buffer Management & Cleanup Functions (10 functions)
 // ═══════════════════════════════════════════════════════════════════════════
 
-extern void ke_1B00(void* ptr);           // Element initializer
+extern void snListNode_Init(void* ptr);           // Element initializer
 extern void cmOperatorCtor_68E0_w(void* ptr, int count);  // Operator constructor
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -4105,7 +4105,7 @@ void pongNetMessageHolder_3EB8_w(void* self, uint32_t count) {
 // pongNetMessageHolder::AllocateAndInitPointerArray @ 0x821379C8 | size: 0x94
 //
 // Allocates an array of `count` pointer-sized (4-byte) entries, initializes
-// each element via ke_1B00, and stores the result in the object.
+// each element via snListNode_Init, and stores the result in the object.
 // Sets the element count at offset +0x06 (uint16) and the array pointer
 // at offset +0x00. If allocation fails, stores null with the count.
 // ───────────────────────────────────────────────────────────────────────────
@@ -4130,7 +4130,7 @@ void pongNetMessageHolder_79C8_w(void* self, uint32_t count) {
         // Initialize each 4-byte element
         uint8_t* ptr = (uint8_t*)newArray;
         for (int32_t i = (int32_t)(count - 1); i >= 0; i--) {
-            ke_1B00(ptr);
+            snListNode_Init(ptr);
             ptr += 4;
         }
 

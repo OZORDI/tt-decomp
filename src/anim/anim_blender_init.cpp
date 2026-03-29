@@ -25,7 +25,7 @@
 
 // Debug trace stub — compiled to a single `blr` in release builds.
 // @ 0x8240E6D0 | size: 0x4
-extern void nop_8240E6D0(const void*, const void*, uint32_t);
+extern void rage_debugLog(const void*, const void*, uint32_t);
 
 // Indirect call dispatcher: loads vtable[0] from the object and calls it.
 // Used as the "invoke" half of each callback pair in the blender state.
@@ -198,12 +198,12 @@ void crAnimBlenderState_Init(crAnimBlenderState* state)
     //   [1] = indirect call dispatcher (calls vtable[0] on the target)
     //   [2] = nullptr (context / target — not set until activation)
     //   [3] = indirect call dispatcher (backup/secondary)
-    state->m_callbacksA[0] = (void*)nop_8240E6D0;
+    state->m_callbacksA[0] = (void*)rage_debugLog;
     state->m_callbacksA[1] = (void*)rage_IndirectCallDispatch;
     state->m_callbacksA[2] = nullptr;
     state->m_callbacksA[3] = (void*)rage_IndirectCallDispatch;
 
-    state->m_callbacksB[0] = (void*)nop_8240E6D0;
+    state->m_callbacksB[0] = (void*)rage_debugLog;
     state->m_callbacksB[1] = (void*)rage_IndirectCallDispatch;
     state->m_callbacksB[2] = nullptr;
     state->m_callbacksB[3] = (void*)rage_IndirectCallDispatch;

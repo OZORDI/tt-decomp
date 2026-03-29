@@ -21,7 +21,7 @@ extern "C" {
     void atArray_Clear(void* obj);
     void xmlNodeStruct_SerializeField(void* obj, const char* name, void* target, void* defaultVal, uint32_t flags);
     int32_t util_2458_FindCharacterIndex(void* gameData, const char* name);
-    void nop_8240E6D0(const char* message, void* a, void* b);
+    void rage_debugLog(const char* message, void* a, void* b);
     void PostPageGroupMessage(int code, int param1, int param2, int param3);
     void PostStateTransitionRequest(void* manager, int32_t eventType);
     void FadePageGroup(void* context, float param, int p2, int p3, int p4, int p5);
@@ -130,7 +130,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         PostStateTransitionRequest(m_pManager, eventType);
         
         // Log unhandled event error
-        nop_8240E6D0(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);
+        rage_debugLog(g_error_unhandled_event, m_pManager, (void*)(intptr_t)eventType);
     }
 }
 
@@ -157,7 +157,7 @@ void pongAttractState::OnExitEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        nop_8240E6D0(g_error_attract_exit, stateName, (void*)(intptr_t)eventType);
+        rage_debugLog(g_error_attract_exit, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -409,7 +409,7 @@ void charViewData::LoadViewData() {
             const char* name1 = getName1(pNode);
             const char* name2 = getName2(this);
             
-            nop_8240E6D0(g_error_type_mismatch, (void*)name2, (void*)name1);
+            rage_debugLog(g_error_type_mismatch, (void*)name2, (void*)name1);
         }
         
         pNode = pNode->pNext;
@@ -543,7 +543,7 @@ void pongCharViewState::OnEnterEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        nop_8240E6D0(g_error_charview_enter, stateName, (void*)(intptr_t)eventType);
+        rage_debugLog(g_error_charview_enter, stateName, (void*)(intptr_t)eventType);
     }
 }
 
@@ -583,7 +583,7 @@ void pongCharViewState::OnExitEvent(int32_t eventType) {
     } else {
         // Forward unhandled event to state manager
         void* stateName = GetStateContextName(m_pManager);
-        nop_8240E6D0(g_error_charview_exit, stateName, (void*)(intptr_t)eventType);
+        rage_debugLog(g_error_charview_exit, stateName, (void*)(intptr_t)eventType);
     }
 }
 

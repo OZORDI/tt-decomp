@@ -398,7 +398,7 @@ void rage_render_scene(rageSceneRenderCtx* pThis)
 // ─────────────────────────────────────────────────────────────────────────────
 void rage_scene_cleanup(void* sceneState) {
     extern void pg_6C40_g(void* streamer);           // @ 0x82566C40 — flush streaming buffer
-    extern void pg_C3B8_g(void* obj, int param);     // @ 0x8242C3B8 — reset profiling bracket
+    extern void pgBase_AcquireRef(void* obj, int param);     // @ 0x8242C3B8 — reset profiling bracket
     extern void* _crt_tls_fiber_setup();             // @ 0x82566B78 — get/create fiber context
     extern void game_7868(void* obj, int param);     // @ 0x82227868 — frame sync
     extern void rage_DebugLog(const char* msg, ...);
@@ -428,10 +428,10 @@ void rage_scene_cleanup(void* sceneState) {
 
     // Reset profiling brackets
     void* profBracket1 = *(void**)((char*)sceneState + 40);
-    pg_C3B8_g(profBracket1, -1);
+    pgBase_AcquireRef(profBracket1, -1);
 
     void* profBracket2 = *(void**)((char*)sceneState + 24);
-    pg_C3B8_g(profBracket2, 0);
+    pgBase_AcquireRef(profBracket2, 0);
 
     // Copy 16-byte identity/reset matrix from global @ 0x8261A0C0 to +60
     extern uint32_t g_sceneResetMatrix[4];  // @ 0x8261A0C0

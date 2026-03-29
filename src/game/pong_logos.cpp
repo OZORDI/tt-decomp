@@ -50,7 +50,7 @@ extern void    game_AAF8(void* uiMgr, uint32_t screenId, uint32_t contextPtr);
 extern void    hudLogosScreen_Init(void* mem);              // @ 0x822EAC88 — base init for logos screen object
 
 // Logging (no-op in release builds)
-extern void    nop_8240E6D0(const char* fmt, ...);          // @ 0x8240E6D0
+extern void    rage_debugLog(const char* fmt, ...);          // @ 0x8240E6D0
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Global pointers (resolved from .data / SDA)
@@ -212,7 +212,7 @@ void pongLogosState_Init(pongLogosState* self) {
     self->m_pLogosContext = logosContext;
 
     // Log initialisation
-    nop_8240E6D0(STR_INIT_LOG_1);
+    rage_debugLog(STR_INIT_LOG_1);
 
     // ── Allocate hudLogosScreen (96 bytes, 16-byte aligned) ──
     xe_main_thread_init_0038();
@@ -236,7 +236,7 @@ void pongLogosState_Init(pongLogosState* self) {
     }
 
     // Log completion
-    nop_8240E6D0(STR_INIT_LOG_2);
+    rage_debugLog(STR_INIT_LOG_2);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ void pongLogosState_OnEnter(pongLogosState* self, uint32_t prevStateIdx) {
     if (prevStateIdx != BOOT_STATE_SPLASH) {
         // Path A: log the transition
         const char* prevStateName = hsmContext_GetStateName(self->m_pHSMContext, prevStateIdx);
-        nop_8240E6D0(STR_ON_ENTER_LOG, prevStateName, prevStateIdx);
+        rage_debugLog(STR_ON_ENTER_LOG, prevStateName, prevStateIdx);
         return;
     }
 
@@ -304,7 +304,7 @@ void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateIdx) {
     if (nextStateIdx != BOOT_STATE_LEGALS) {
         // Path A: non-standard exit — log the transition
         const char* nextStateName = hsmContext_GetStateName(self->m_pHSMContext, nextStateIdx);
-        nop_8240E6D0(STR_ON_EXIT_LOG, nextStateName, nextStateIdx);
+        rage_debugLog(STR_ON_EXIT_LOG, nextStateName, nextStateIdx);
         return;
     }
 

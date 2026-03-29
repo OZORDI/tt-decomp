@@ -274,18 +274,18 @@ void WriteVector3ToNetwork(void* client, void* vec3Data) {
  */
 
 extern "C" {
-    // Original name: SinglesNetworkClient_0448_g
-    uint32_t SinglesNetworkClient_0448_g(void* client, uint32_t value, int bitWidth) {
+    // Original name: snBitStream_WriteBits
+    uint32_t snBitStream_WriteBits(void* client, uint32_t value, int bitWidth) {
         return ReadBitsFromStream(client, value, bitWidth);
     }
     
-    // Original name: SinglesNetworkClient_8AE0_g
-    void SinglesNetworkClient_8AE0_g(void* client) {
+    // Original name: snBitStream_ValidateWrite
+    void snBitStream_ValidateWrite(void* client) {
         BeginNetworkWrite(client);
     }
     
-    // Original name: SinglesNetworkClient_8DF8_g
-    void SinglesNetworkClient_8DF8_g(void* client) {
+    // Original name: snBitStream_ReadBits
+    void snBitStream_ReadBits(void* client) {
         EndNetworkWrite(client);
     }
     
@@ -309,18 +309,18 @@ extern "C" {
     
     // SinglesNetworkClient_A818_g — lifted in src/game/network.cpp
     
-    // Original name: SinglesNetworkClient_B2A8_g
-    uint8_t SinglesNetworkClient_B2A8_g(void* pageGroup) {
+    // Original name: snSession_AcquireLock
+    uint8_t snSession_AcquireLock(void* pageGroup) {
         return PollButtonState(pageGroup);
     }
     
-    // Original name: SinglesNetworkClient_B1E8_g
-    void* SinglesNetworkClient_B1E8_g(void* context) {
+    // Original name: snSession_BeginOperation
+    void* snSession_BeginOperation(void* context) {
         return GetNetworkClient(context);
     }
     
-    // Original name: SinglesNetworkClient_B320_g
-    void SinglesNetworkClient_B320_g(void* context) {
+    // Original name: snSession_ReleaseLock
+    void snSession_ReleaseLock(void* context) {
         InitiateConnection(context);
     }
     

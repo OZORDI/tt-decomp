@@ -575,7 +575,7 @@ void atSafeDLListSimple_ctor_D610(atSafeDLListSimple* obj) {
         
         // Call cleanup on worker's thread handle at offset +8
         void* threadHandle = *(void**)(workerBase + 8);
-        pg_C3B8_g(threadHandle, 0xFFFFFFFF);
+        pgBase_AcquireRef(threadHandle, 0xFFFFFFFF);
         
         // Release worker's resources at offsets +4 and +8
         void* resource1 = *(void**)(workerBase + 4);

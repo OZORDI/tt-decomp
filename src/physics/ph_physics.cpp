@@ -6200,7 +6200,7 @@ extern void  phBoundCapsule_8EA0_g(void* obj, float y, float z);  // angle compu
 extern void  phBoundCapsule_3598_g(void* obj);               // capsule update
 extern void  phBoundCapsule_81D8_g(void* thisPtr, void* p1, void* p2, float f1, float f2, float f3, float f4, void* p3);
 extern void  pongCameraMgr_3E98_g(void* obj);                // camera get angle
-extern void  nop_8240E6D0(const char* name, int param);      // debug log (no-op in release)
+extern void  rage_debugLog(const char* name, int param);      // debug log (no-op in release)
 extern int   phBoundCapsule_7D90_g(void* obj);               // resolve player index
 extern int   game_1700(void* obj);                           // get player from object
 
@@ -6618,7 +6618,7 @@ void rage::phBoundCapsule::SetActiveState(int stateIndex) {
     const int* nameTable = (const int*)((char*)0x82060000 + (-30152));
     int logParam = nameTable[logIndex];
     const char* logName = (const char*)0x82085E0C;  // debug string
-    nop_8240E6D0(logName, logParam);
+    rage_debugLog(logName, logParam);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6817,7 +6817,7 @@ void phCollisionPairArrayInit(void* contactPair) {
 // =========================================================================
 
 // Forward declarations for init helpers
-extern void ke_1B00(void* listNode);           // Intrusive list node init
+extern void snListNode_Init(void* listNode);           // Intrusive list node init
 extern void phBoundSphere_vfn_37(void* bound); // Sphere-specific init
 extern void ph_9BC0(void* listHead);           // Collision list init
 
@@ -6971,8 +6971,8 @@ void phBoundComposite_Constructor(void* thisPtr) {
     *(uint32_t*)(obj + 0) = 0x82057FD4;  // vtable -> rage::phBoundComposite
 
     // Initialize two intrusive list nodes
-    ke_1B00((void*)(obj + 120));
-    ke_1B00((void*)(obj + 124));
+    snListNode_Init((void*)(obj + 120));
+    snListNode_Init((void*)(obj + 124));
 
     *(uint8_t*)(obj + 4) = 9;  // bound type = composite
     *(uint32_t*)(obj + 112) = 0;
@@ -8128,7 +8128,7 @@ void rage::phArticulatedCollider::DispatchJointSolve(int index) {
 // =========================================================================
 
 // External references for phBound subsystem
-extern void ke_1B00(void* listHead);                     // Intrusive list head init
+extern void snListNode_Init(void* listHead);                     // Intrusive list head init
 extern void ph_9BC0(void* thisPtr);                      // Collision manager base init
 extern void ph_1310(void* thisPtr);                      // phBoundGeometry base init
 extern void phBoundSphere_vfn_37(void* thisPtr);         // phBoundSphere finalize init
@@ -9257,7 +9257,7 @@ extern void ph_1EF8(void* shapeKey, uint32_t materialOverride, uint32_t contactM
 extern void ph_5908(void* allocator, const char* tag, int alignment);
 extern void rage_3F18(void* pool, uint32_t handle, void* outPtr);
 extern void ph_ctor_ABE8(void* thisPtr);
-extern void nop_8240E6D0(const char* msg, uint64_t val);
+extern void rage_debugLog(const char* msg, uint64_t val);
 
 // External globals
 extern uint8_t g_phDisableFlag;          // @ 0x82706460
@@ -9363,7 +9363,7 @@ float phContact_ComputeImpulse(void* thisPtr, void* contactPair) {
         elasticity = ((GetElasticityFn)vt[8])(contactBody);
 
         if (elasticity < zero) {
-            nop_8240E6D0((const char*)0x82033420, *(uint64_t*)&elasticity);
+            rage_debugLog((const char*)0x82033420, *(uint64_t*)&elasticity);
             elasticity = (elasticity < 0.0f) ? -elasticity : elasticity;
         }
     }

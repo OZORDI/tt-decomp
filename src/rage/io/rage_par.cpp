@@ -25,7 +25,7 @@ void fiAsciiTokenizer_CFA8_w(void* pStringValue, const char* pBegin, const char*
 void rage_EC58(void* pStringValue, const char* pText);
 void* xe_EC88(std::uint32_t size);
 void rage_free_00C0(void* ptr);
-void nop_8240E6D0(const char* fmt, ...);
+void rage_debugLog(const char* fmt, ...);
 void* phMaterialMgrImpl_C208_g(void* pHashBucketSet, const char* pLookupName);
 void* rage_97A8(const void* pOperator, const char* pNodeName);
 void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicateOwner);
@@ -748,7 +748,7 @@ void parMemberArray::E138(
         }
 
         case 1: {
-            nop_8240E6D0(ResolveAddress<const char>(kParArrayLegacyProbeString));
+            rage_debugLog(ResolveAddress<const char>(kParArrayLegacyProbeString));
 
             const Address32 memberAddress = GetArrayMemberBaseAddress(this) + memberOffset;
             Address32* pLargeCount = ResolveAddress<Address32>(memberAddress + kParArrayLargeStorageOffset);

@@ -282,7 +282,7 @@ void netSystem_Shutdown(void) {}
 
 // ── Debug/Logging Functions ─────────────────────────────────────────────────
 
-void nop_8240E6D0_c(const char* fmt, ...) {
+void rage_debugLog_c(const char* fmt, ...) {
     (void)fmt;
 }
 
@@ -639,7 +639,7 @@ extern "C" uint8_t jumptable_E058_h(void* a) { (void)a; return 0; }
 // ── Page Group Internals ────────────────────────────────────────────────────
 
 extern "C" void pg_6C40_g(void* a) { (void)a; }
-extern "C" void pg_C3B8_g(void* a, int b) { (void)a; (void)b; }
+extern "C" void pgBase_AcquireRef(void* a, int b) { (void)a; (void)b; }
 
 // ── Camera Manager ──────────────────────────────────────────────────────────
 
@@ -850,13 +850,13 @@ void SetPageGroupVisible(void* a) { (void)a; }
 
 // ── SinglesNetworkClient free-function stubs ────────────────────────────────
 
-void SinglesNetworkClient_0268_g(void* a) { (void)a; }
-void SinglesNetworkClient_0448_g(void* a, uint32_t b, int c) { (void)a; (void)b; (void)c; }
+void snBitStream_Reset(void* a) { (void)a; }
+void snBitStream_WriteBits(void* a, uint32_t b, int c) { (void)a; (void)b; (void)c; }
 uint32_t SinglesNetworkClient_0738_g(void* a, const char* b, uint32_t c) { (void)a; (void)b; (void)c; return 0; }
 void* SinglesNetworkClient_0978_g(void* a, int b, void* c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e; return nullptr;
 }
-void SinglesNetworkClient_0E18_g(void* a, uint32_t* b, int c) { (void)a; (void)b; (void)c; }
+void snBitStream_ReadSigned(void* a, uint32_t* b, int c) { (void)a; (void)b; (void)c; }
 void SinglesNetworkClient_0F80_g(void* a) { (void)a; }
 uint8_t SinglesNetworkClient_1178_g(void* a) { (void)a; return 0; }
 void SinglesNetworkClient_2F28_g(void* a) { (void)a; }
@@ -872,15 +872,15 @@ void SinglesNetworkClient_5A40_g(void* a) { (void)a; }
 bool SinglesNetworkClient_5EA0_g(void* a, uint32_t* b) { (void)a; (void)b; return false; }
 void SinglesNetworkClient_6918_g(void* a, bool b) { (void)a; (void)b; }
 void SinglesNetworkClient_70A0_g(void* a, uint8_t* b) { (void)a; (void)b; }
-void SinglesNetworkClient_8AE0_g(void* a) { (void)a; }
+void snBitStream_ValidateWrite(void* a) { (void)a; }
 int SinglesNetworkClient_8CC0_w(void* a) { (void)a; return 0; }
-void SinglesNetworkClient_8DF8_g(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
-void* SinglesNetworkClient_9318_g(void* a, const char* b) { (void)a; (void)b; return nullptr; }
+void snBitStream_ReadBits(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
+void* snSession_FindProperty(void* a, const char* b) { (void)a; (void)b; return nullptr; }
 void* SinglesNetworkClient_9720_g(void* a, void* b) { (void)a; (void)b; return nullptr; }
 bool SinglesNetworkClient_A250_g(void* a, void* b) { (void)a; (void)b; return false; }
-void SinglesNetworkClient_B1E8_g(void* a) { (void)a; }
-uint8_t SinglesNetworkClient_B2A8_g(void* a) { (void)a; return 0; }
-void SinglesNetworkClient_B320_g(void* a) { (void)a; }
+void snSession_BeginOperation(void* a) { (void)a; }
+uint8_t snSession_AcquireLock(void* a) { (void)a; return 0; }
+void snSession_ReleaseLock(void* a) { (void)a; }
 void SinglesNetworkClient_BE30_g(void* a, int b) { (void)a; (void)b; }
 void* SinglesNetworkClient_C838_g(void* a) { (void)a; return nullptr; }
 
@@ -1058,7 +1058,7 @@ void jumptable_3A48(void* a, unsigned int b, unsigned int c, unsigned int d) {
     (void)a; (void)b; (void)c; (void)d;
 }
 void jumptable_5C20(void* a) { (void)a; }
-void ke_1B00(void* a) { (void)a; }
+void snListNode_Init(void* a) { (void)a; }
 
 // ── Motion clip free function ───────────────────────────────────────────────
 
@@ -1140,11 +1140,11 @@ void* msgMsgSink_F518_wrh(uint32_t a) { (void)a; return nullptr; }
 
 void net_6BA0_fw(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 
-// ── nop_8240E6D0 overloads (C++ mangled) ────────────────────────────────────
+// ── rage_debugLog overloads (C++ mangled) ────────────────────────────────────
 
-void nop_8240E6D0() {}
-void nop_8240E6D0(const char* fmt, ...) { (void)fmt; }
-void nop_8240E6D0(const void* ptr, ...) { (void)ptr; }
+void rage_debugLog() {}
+void rage_debugLog(const char* fmt, ...) { (void)fmt; }
+void rage_debugLog(const void* ptr, ...) { (void)ptr; }
 
 // ── Animation blending ──────────────────────────────────────────────────────
 
@@ -1492,8 +1492,8 @@ void rage_free(void* p) { free(p); }
 void rage_threadpool_cleanup_6878() {}
 void sgSceneGraph_FreeLists(void* a) { (void)a; }
 void snHsmAcceptingJoinRequest_9A70(void* a, void* b) { (void)a; (void)b; }
-void snSession_6C98_h(void* a) { (void)a; }
-void snSession_AddNode_C068(void* a, void* b) { (void)a; (void)b; }
+void snSession_Detach(void* a) { (void)a; }
+void snSession_AddNode(void* a, void* b) { (void)a; (void)b; }
 
 void sub_821A8F58(void* a, const char* b, void* c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;

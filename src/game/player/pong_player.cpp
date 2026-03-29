@@ -82,7 +82,7 @@ extern void pongPlayer_GetAnimNormalizedTime(pongPlayer* state);    // @ 0x820CD
 // extern void pongPlayer_CheckAnimTimeInRange(...);  // TODO: verify signature @ ~0x820CD298
 
 // Logging no-op (debug only)
-extern void nop_8240E6D0(const char* fmt, ...);
+extern void rage_debugLog(const char* fmt, ...);
 
 // Geometry / position helpers used by D7B0.
 extern void* pg_GetGeometryRecord(void* singleton);              // → returns geometry record
@@ -519,7 +519,7 @@ void pongPlayer::CancelSwing()
             g_swingCountFlag            = 0;           // stw r10,25408(r9) @ lis(-32160)
             m_pTimingState->m_vel5      = kZero;       // +88
             m_pTimingState->m_bComplete = 0;           // byte +141
-            nop_8240E6D0("pongPlayer::CancelSwing() timing reset", (uintptr_t)m_pCreature);
+            rage_debugLog("pongPlayer::CancelSwing() timing reset", (uintptr_t)m_pCreature);
         }
     }
 
@@ -527,7 +527,7 @@ void pongPlayer::CancelSwing()
     if (IsRecovering())
     {
         game_CD20(m_pRecoveryState);     // flush recovery state @ 0x820DCD20
-        nop_8240E6D0("pongPlayer::CancelSwing() recovery flush", (uintptr_t)m_pCreature);
+        rage_debugLog("pongPlayer::CancelSwing() recovery flush", (uintptr_t)m_pCreature);
     }
 
     // ── PATH C: reset anim phase-blocked state ───────────────────────────
@@ -536,7 +536,7 @@ void pongPlayer::CancelSwing()
         pongAnimState* anim = m_pAnimState;
         crAnimBlenderState_Init((uint8_t*)anim + 16);   // reset phase-blocked sub-system @ 0x8224C810
         anim->m_swingPhase = kZero;        // clear swing phase progress (+412)
-        nop_8240E6D0("pongPlayer::CancelSwing() anim reset", (uintptr_t)m_pCreature);
+        rage_debugLog("pongPlayer::CancelSwing() anim reset", (uintptr_t)m_pCreature);
     }
 }
 
@@ -1074,7 +1074,7 @@ void pongPlayer::ProcessSwingDecision(int r4, int r5,
 
     if (result == 4 || result == 3) {
         // Queued events — log the swing queue and reset active flag.
-        nop_8240E6D0("pongPlayer::ProcessSwingDecision() queued", m_swingInputSlot);
+        rage_debugLog("pongPlayer::ProcessSwingDecision() queued", m_swingInputSlot);
         SetSwingActiveState(true);
         return;
     }
@@ -1243,7 +1243,7 @@ bool pongPlayer::IsActionComplete() const
 // Updates the m_bSwingActive flag at +197 (+0xC5) with transition logging.
 //
 // Only acts when the new value differs from the current stored value.
-// On a state change: logs the transition via nop_8240E6D0 (which is a
+// On a state change: logs the transition via rage_debugLog (which is a
 // debug trampoline — always a no-op in release builds, but leaves the string
 // literals as breadcrumbs in the binary), then stores the new value.
 //
@@ -1256,10 +1256,10 @@ void pongPlayer::SetSwingActiveState(bool active)
         return;  // already in the requested state — no-op
 
     if (active) {
-        nop_8240E6D0("pongPlayer::SetSwingActiveState() swing entered",
+        rage_debugLog("pongPlayer::SetSwingActiveState() swing entered",
                      m_swingInputSlot);
     } else {
-        nop_8240E6D0("pongPlayer::SetSwingActiveState() swing exited",
+        rage_debugLog("pongPlayer::SetSwingActiveState() swing exited",
                      m_swingInputSlot);
     }
 
@@ -2249,7 +2249,7 @@ void pongPlayer::SetPlayerSide(uint8_t side) {
     if (m_courtSide != side) {
         // Log the change (debug only)
         const char* sideStr = side ? "right" : "left";
-        nop_8240E6D0("pongPlayer::SetPlayerSide() - setting to %s", sideStr);
+        rage_debugLog("pongPlayer::SetPlayerSide() - setting to %s", sideStr);
         
         // Update the side
         m_courtSide = side;
@@ -2953,7 +2953,7 @@ void pongPlayer::ClampMovementToCourtBounds(float* delta) {
  */
 void pongPlayer::SaveDrawData() {  // pongPlayer_SaveDrawData @ 0x8218E860
     if (!m_bVisible) {  // byte +36
-        nop_8240E6D0("pongPlayer::SaveDrawData() not visible");  // debug logging no-op
+        rage_debugLog("pongPlayer::SaveDrawData() not visible");  // debug logging no-op
         return;
     }
     void* renderObj = this->m_pDrawData;

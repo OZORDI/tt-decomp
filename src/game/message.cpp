@@ -80,7 +80,7 @@ extern void vec3_Copy(float* dst, const float* src);
 
 // Debug trace — no-op in release.
 // @ 0x8240E6D0
-extern void nop_8240E6D0(const char* msg);
+extern void rage_debugLog(const char* msg);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Global data
@@ -327,7 +327,7 @@ void BallHitMessage_Use(BallHitMessage* self)
     g_ballHitTime = kZeroFloat;
 
     // Debug log (no-op in release)
-    nop_8240E6D0("BallHitMessage::Use");
+    rage_debugLog("BallHitMessage::Use");
 
     // Determine message state: 4 if rally active, 3 if idle
     uint32_t msgState = (rallyState != 0) ? 4 : 3;

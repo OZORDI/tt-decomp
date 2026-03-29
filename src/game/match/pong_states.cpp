@@ -45,7 +45,7 @@ struct pongPageGroup {
 
 extern void rage_free(void* ptr);                  // @ 0x820C00C0
 extern void* xe_EC88(uint32_t size);               // @ 0x820DEC88
-extern void nop_8240E6D0(const void* fmt, ...);  // @ 0x8240E6D0 — debug logger (no-op in release)
+extern void rage_debugLog(const void* fmt, ...);  // @ 0x8240E6D0 — debug logger (no-op in release)
 
 // Field registration helper (rage serialization system)
 extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
@@ -81,11 +81,11 @@ extern void* game_AD40(void* obj, uint32_t count);       // credits-roll notify 
 extern void* PostStateTransitionRequest(void* hsmCtx, int stateIdx); // @ 0x822228B8
 extern void  FadePageGroup(void* mgr, int type, int mode, float fadeTime, float param2); // UI fade
 extern bool  CheckButtonPressed(void* record);                    // input button state check @ 0x8225FFF8
-extern uint8_t SinglesNetworkClient_B2A8_g(void* pg);   // page group button poll
+extern uint8_t snSession_AcquireLock(void* pg);   // page group button poll
 extern uint8_t Dialog_IsComplete(void* pg);             // @ 0x820C2470 — dialog completion check
 extern void*   PageGroup_LookupText(uint32_t table, const char* key); // @ 0x820C9318 — text lookup
-extern void    SinglesNetworkClient_B320_g(void* pg);   // page group notify
-extern void    SinglesNetworkClient_B1E8_g(void* pg);   // page group input clear
+extern void    snSession_ReleaseLock(void* pg);   // page group notify
+extern void    snSession_BeginOperation(void* pg);   // page group input clear
 extern void*   PageGroup_GetTextEntry(void* pg, const char* key); // @ 0x820C9280 — text entry lookup
 extern int32_t TextEntry_GetValue(void* entry);         // @ 0x820CA5C8 — text entry value
 extern void* game_9358(void* mem);                   // page-group constructor @ 0x8230x
@@ -189,7 +189,7 @@ void creditsData::RegisterFields() {
  * allocates a pointer array for them, then fills it in a second pass.
  * The result is stored in m_pActiveEntries (+32) / m_activeCount (+38).
  *
- * Nodes that fail the filter are logged via nop_8240E6D0 with the
+ * Nodes that fail the filter are logged via rage_debugLog with the
  * "BoneName" key @ 0x8203F2E0.
  */
 void creditsData::BuildActiveList() {
@@ -207,7 +207,7 @@ void creditsData::BuildActiveList() {
             const char* key = "BoneName";   // @ 0x8203F2E0
             const char* self_name = VCALL_slot19(node);
             const char* our_name  = VCALL_slot19(this);
-            nop_8240E6D0(key, our_name, self_name);
+            rage_debugLog(key, our_name, self_name);
         }
         node = *(void**)((uint8_t*)node + 8);   // node->m_pNext
     }
@@ -465,12 +465,12 @@ void pongCreditsContext::OnExitCredits() {
  *      passing the credits roll name string and the category tag 202.
  *
  * Debug note: the strings "cfail" / "yreadyfail" are debug log tags
- * passed to the no-op logger (nop_8240E6D0) as bookends; they are
+ * passed to the no-op logger (rage_debugLog) as bookends; they are
  * harmless in the shipping build.
  */
 void pongCreditsContext::RegisterWithCreditsRoll() {
     // Entry debug bookend: "cfail" @ 0x8205ED64
-    // nop_8240E6D0(g_str_pongStates_cfail);   // stripped in release
+    // rage_debugLog(g_str_pongStates_cfail);   // stripped in release
 
     // Assert main thread is ready
     xe_main_thread_init_0038();
@@ -501,7 +501,7 @@ void pongCreditsContext::RegisterWithCreditsRoll() {
     rage_RegisterUIContext(this, /*category=*/202, nameStr);
 
     // Exit debug bookend: "yreadyfail" @ 0x8205ED80
-    // nop_8240E6D0(g_str_pongStates_yreadyfail);   // stripped in release
+    // rage_debugLog(g_str_pongStates_yreadyfail);   // stripped in release
 }
 
 
@@ -661,7 +661,7 @@ void pongCreditsState::OnEnter(int prevStateIdx) {
     void* transReq = PostStateTransitionRequest(m_pHSMContext, prevStateIdx);
     // Notify credits-roll of transition (address of static table entry)
     extern void* g_creditsTransTable;   // @ lbl_8205F2D4 - 4712 area
-    nop_8240E6D0(g_creditsTransTable, transReq, prevStateIdx);
+    rage_debugLog(g_creditsTransTable, transReq, prevStateIdx);
 }
 
 /**
@@ -697,7 +697,7 @@ void pongCreditsState::OnExit(int nextStateIdx) {
     // Generic next-state: post a transition request
     void* transReq = PostStateTransitionRequest(m_pHSMContext, nextStateIdx);
     extern void* g_creditsExitTable;   // @ lbl_8205F2D4 - 4660 area
-    nop_8240E6D0(g_creditsExitTable, transReq, nextStateIdx);
+    rage_debugLog(g_creditsExitTable, transReq, nextStateIdx);
 }
 
 /**
@@ -818,7 +818,7 @@ static void pongLegalsContext_InputPoll(pongLegalsContext* ctx) {
 input_found:
     {
         void* pageGroup = ctx->m_pPageGroup;
-        uint8_t buttonState = SinglesNetworkClient_B2A8_g(pageGroup);
+        uint8_t buttonState = snSession_AcquireLock(pageGroup);
 
         // Check HSM manager's context pointer (+556)
         extern void* g_hsmMgrPtr;   // @ 0x825EAB30 (g_loop_obj_ptr)
@@ -837,7 +837,7 @@ input_found:
         }
 
         if ((buttonState & 0xFF) != 0) {
-            SinglesNetworkClient_B320_g(pageGroup);
+            snSession_ReleaseLock(pageGroup);
         }
 
         ctx->m_bInputDetected = 1;
@@ -872,10 +872,10 @@ void pongLegalsContext::Update() {
     int32_t resultValue = 0;
 
     // Check button state
-    uint8_t buttonState = SinglesNetworkClient_B2A8_g(pg);
+    uint8_t buttonState = snSession_AcquireLock(pg);
 
     // Process input
-    SinglesNetworkClient_B1E8_g(pg);
+    snSession_BeginOperation(pg);
 
     // Look up "SAVING" string in page group
     extern const char* k_SAVING;   // @ 0x8205DFB8
@@ -886,7 +886,7 @@ void pongLegalsContext::Update() {
 
     // If button was pressed, notify
     if ((buttonState & 0xFF) != 0) {
-        SinglesNetworkClient_B320_g(pg);
+        snSession_ReleaseLock(pg);
     }
 
     // If saving entry had a positive value, transition to state 6
@@ -963,7 +963,7 @@ void pongLegalsState::Init() {
     m_pContext = ctx;
 
     // Debug log
-    nop_8240E6D0("pongLegalsState::Init - context");   // @ 0x8205F864
+    rage_debugLog("pongLegalsState::Init - context");   // @ 0x8205F864
 
     // Allocate page-group sub-object (240 bytes, 16-byte aligned)
     xe_main_thread_init_0038();
@@ -984,7 +984,7 @@ void pongLegalsState::Init() {
     // Register with the state manager
     PageGroup_Register(pageGroup);
 
-    nop_8240E6D0("pongLegalsState::Init - done");   // @ 0x8205F880
+    rage_debugLog("pongLegalsState::Init - done");   // @ 0x8205F880
 }
 
 /**
@@ -1002,7 +1002,7 @@ void pongLegalsState::OnEnter(int prevStateIdx) {
     if (prevStateIdx != 3) {
         // Generic previous state: post a transition request
         void* transReq = PostStateTransitionRequest(m_pHSMContext, prevStateIdx);
-        nop_8240E6D0("pongLegalsState::OnEnter generic", transReq, prevStateIdx);
+        rage_debugLog("pongLegalsState::OnEnter generic", transReq, prevStateIdx);
         return;
     }
 
@@ -1055,7 +1055,7 @@ void pongLegalsState::OnExit(int nextStateIdx) {
     if (nextStateIdx != 6) {
         // Generic next state
         void* transReq = PostStateTransitionRequest(m_pHSMContext, nextStateIdx);
-        nop_8240E6D0("pongLegalsState::OnExit generic", transReq, nextStateIdx);
+        rage_debugLog("pongLegalsState::OnExit generic", transReq, nextStateIdx);
         return;
     }
 
@@ -1115,7 +1115,7 @@ static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
  *   7. Stores the page group in g_dialogPageGroup global.
  */
 void pongDialogContext::Register() {
-    nop_8240E6D0("pongDialogContext::Register enter");   // @ 0x8205F240
+    rage_debugLog("pongDialogContext::Register enter");   // @ 0x8205F240
 
     xe_main_thread_init_0038();
 
@@ -1140,7 +1140,7 @@ void pongDialogContext::Register() {
     extern void* g_dialogPageGroup;   // @ 0x82606628  [.data, 4 bytes]
     g_dialogPageGroup = m_pPageGroup;
 
-    nop_8240E6D0("pongDialogContext::Register done");   // @ 0x8205F258
+    rage_debugLog("pongDialogContext::Register done");   // @ 0x8205F258
 }
 
 /**
@@ -1381,7 +1381,7 @@ void pongDialogState::OnEnter(int prevStateIdx) {
 
     // Generic previous state: post transition
     void* transReq = PostStateTransitionRequest(m_pHSMContext, prevStateIdx);
-    nop_8240E6D0("pongDialogState::OnEnter generic", transReq, prevStateIdx);
+    rage_debugLog("pongDialogState::OnEnter generic", transReq, prevStateIdx);
 }
 
 /**
@@ -1415,7 +1415,7 @@ void pongDialogState::OnExit(int nextStateIdx) {
 
     // Generic next state: post transition
     void* transReq = PostStateTransitionRequest(m_pHSMContext, nextStateIdx);
-    nop_8240E6D0("pongDialogState::OnExit generic", transReq, nextStateIdx);
+    rage_debugLog("pongDialogState::OnExit generic", transReq, nextStateIdx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1568,7 +1568,7 @@ void dialogData::RegisterFields() {
  * dialogData::Validate  @ 0x8240AF20  |  size: 0x6C
  *
  * Slot 2.  Validates the loaded dialog data fields to ensure they are
- * within acceptable ranges.  Logs warnings via nop_8240E6D0 if values
+ * within acceptable ranges.  Logs warnings via rage_debugLog if values
  * are out of bounds, then delegates to the base class validation
  * (xmlNodeStruct_Init).
  * 
@@ -1584,7 +1584,7 @@ void dialogData::Validate() {
     if (m_dialogType <= 0 || m_dialogType >= 210) {
         // Log validation error for dialog type
         extern const char* k_dialogTypeError;   // @ 0x82075E78 (22 bytes)
-        nop_8240E6D0(k_dialogTypeError);
+        rage_debugLog(k_dialogTypeError);
     }
     
     // Validate m_buttonCount is at least 1
@@ -1592,7 +1592,7 @@ void dialogData::Validate() {
         // Log validation error for button count
         // String references m_dialogType value in error message
         extern const char* k_buttonCountError;  // @ 0x82075E90 (44 bytes, starts with "hsmDebug")
-        nop_8240E6D0(k_buttonCountError, m_dialogType);
+        rage_debugLog(k_buttonCountError, m_dialogType);
     }
     
     // Delegate to base class validation (xmlNodeStruct)
@@ -1667,7 +1667,7 @@ pongDialogContext::~pongDialogContext() {
  *   6. Store globally for other systems to access
  */
 void pongDialogContext::Register() {
-    nop_8240E6D0("pongDialogContext::Register");
+    rage_debugLog("pongDialogContext::Register");
     
     // Initialize main thread context
     xe_main_thread_init_0038();
@@ -1696,7 +1696,7 @@ void pongDialogContext::Register() {
     extern void** g_dialogPageGroupPtr;  // @ 0x82606628 (SDA +26152)
     *g_dialogPageGroupPtr = m_pPageGroup;
     
-    nop_8240E6D0("pongDialogContext::Register complete");
+    rage_debugLog("pongDialogContext::Register complete");
 }
 
 /**
