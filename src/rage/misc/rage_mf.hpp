@@ -69,15 +69,19 @@ struct mfMotionClipRAGE {
 };
 
 // ── rage::mfNativeAnimationController  [vtable @ 0x8205A08C] ──────────────────────────
+// Native implementation of the motion-framework animation controller.
+// Wraps a playback state object (at field +44) that manages frame timing,
+// clip wrapping, and animation frame evaluation.
 struct mfNativeAnimationController {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~mfNativeAnimationController();                  // [0] @ 0x822df688
-    virtual void vfn_2();  // [2] @ 0x822e0d60
-    virtual void vfn_3();  // [3] @ 0x822e0dc8
-    virtual void vfn_4();  // [4] @ 0x822e0fb0
-    virtual void vfn_5();  // [5] @ 0x822e1010
+    virtual ~mfNativeAnimationController();            // [0] @ 0x822DF688
+    virtual void ScalarDtor(intptr_t animFrame);       // [1] — updates anim state
+    virtual void ResetPlayback();                      // [2] @ 0x822E0D60 — resets time + evaluates
+    virtual void Tick(float deltaTime);                // [3] @ 0x822E0DC8 — advances time, wraps clips
+    virtual float GetPlaybackProgress();               // [4] @ 0x822E0FB0 — returns normalized [0,1]
+    virtual void* GetAnimFrame();                      // [5] @ 0x822E1010 — returns playback+200
 };
 
 // ── rage::mfRegisteredPlayback  [vtable @ 0x8204EC44] ──────────────────────────
