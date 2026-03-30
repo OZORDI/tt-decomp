@@ -428,7 +428,7 @@ struct pcrCreatureState {
     // +0x48..+0xAF  (other fields)
     // +0xB0  phFaceMaterialTable m_faceMaterial
     //        — hash table mapping clip data ptrs → face material entries
-    //        — passed to phMaterialMgrImpl_C208_g as the first argument
+    //        — passed to atHashMap_Find as the first argument
     uint8_t      m_faceMaterial[0x40]; // +0xB0  inline hash-table (size estimated)
 };
 

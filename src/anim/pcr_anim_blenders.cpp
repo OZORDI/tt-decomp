@@ -65,7 +65,7 @@ extern void rage_free(void* ptr);
 // Hash-table lookup in pcrCreatureState::m_faceMaterial.
 // Returns a pointer to the matched entry's value cell, or null on miss.
 // @ 0x8234C208
-extern void* phMaterialMgrImpl_C208_g(void* table, const void* key);
+extern void* atHashMap_Find(void* table, const void* key);
 
 // No-op in release; debug would fire a material-bind notification.
 // @ 0x8240E6D0
@@ -210,10 +210,10 @@ void* pcrFaceAnimBlender::StartPostPoint()
 
     // ── Look up the face material for this clip ───────────────────────────
     //
-    // phMaterialMgrImpl_C208_g performs a hash-table lookup inside the
+    // atHashMap_Find performs a hash-table lookup inside the
     // creature's face-material registry (an inline struct at cs+0xB0).
     // Returns a pointer to the matched value cell, or null on miss.
-    void* materialResult = phMaterialMgrImpl_C208_g(&cs->m_faceMaterial, clipData);
+    void* materialResult = atHashMap_Find(&cs->m_faceMaterial, clipData);
     if (!materialResult)
         return activationToken;
 

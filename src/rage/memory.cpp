@@ -11,7 +11,7 @@
 extern void CCalChannel_60A8_p46(void *obj, uint32_t param);
 extern void grc_DCA8(void *obj);
 extern void MmFreePhysicalMemory(uint32_t flags, void *address);
-extern void *atSingleton_29E0_g(const char *str);
+extern void *rage_strDuplicate(const char *str);
 extern void atSingleton_22B0(void *array, uint32_t newCapacity);
 extern uint8_t rage_FindSingleton(void *ptr);
 extern void *g_allocator_ptr;
@@ -1375,8 +1375,8 @@ void phBound_WriteChannelDataAlt(uint8_t *dest, uint8_t *descriptor) {
 // ─────────────────────────────────────────────────────────────────────────────
 void fragDrawable_LoadDamageShape(uint8_t *drawable, void *shapeDesc) {
   extern int _stricmp(const char *a, const char *b);
-  extern void *atSingleton_29E0_g(const char *name);
-  extern void rage_free_00C0(void *ptr);
+  extern void *rage_strDuplicate(const char *name);
+  extern void sysMemAllocator_Free(void *ptr);
 
   // Get shape name from descriptor via vtable slot 1
   char nameBuffer[128];
@@ -1390,11 +1390,11 @@ void fragDrawable_LoadDamageShape(uint8_t *drawable, void *shapeDesc) {
   // Compare against "dShape%d" pattern
   if (_stricmp(nameBuffer, "dShape%d") != 0) {
     // Not the default shape - look up by name hash
-    void *newShape = atSingleton_29E0_g(nameBuffer);
+    void *newShape = rage_strDuplicate(nameBuffer);
 
     // Free the old shape at offset +288
     void *oldShape = *(void **)(drawable + 288);
-    rage_free_00C0(oldShape);
+    sysMemAllocator_Free(oldShape);
 
     // Store new shape
     *(void **)(drawable + 288) = newShape;
@@ -1464,7 +1464,7 @@ int32_t pgArray_FindActiveEntry(uint8_t *array, int32_t startOffset,
 // ─────────────────────────────────────────────────────────────────────────────
 void datBase_DestroyPointerArray(atSingleton *obj) {
   extern bool atSingleton_Find_90D0(void *ptr);
-  extern void rage_free_00C0(void *ptr);
+  extern void sysMemAllocator_Free(void *ptr);
 
   // Only process if refCount is non-zero
   if (obj->refCount == 0) {
@@ -1967,11 +1967,11 @@ const char *gdGameData_GetPropertyString() { return (const char *)0x8204E918; }
 // datBase_CopyDataAndResolve()  @ 0x821257F0 | size: 0x84
 //
 // Copies 48 bytes of data from source into the destination object,
-// then resolves a name reference via atSingleton_29E0_g and stores
+// then resolves a name reference via rage_strDuplicate and stores
 // the result at offset +48. Clears fields at offsets +52, +56, +60.
 // Used by fragDrawable to initialize draw data from a template.
 // ─────────────────────────────────────────────────────────────────────────────
-extern void *atSingleton_29E0_g(const void *key);
+extern void *rage_strDuplicate(const void *key);
 
 void datBase_CopyDataAndResolve(void *dest, void *nameSource,
                                 const void *srcData) {
@@ -1986,7 +1986,7 @@ void datBase_CopyDataAndResolve(void *dest, void *nameSource,
 
   // Resolve name from nameSource and store at offset +48
   const void *name = *(const void **)nameSource;
-  void *resolved = atSingleton_29E0_g(name);
+  void *resolved = rage_strDuplicate(name);
 
   uint32_t *destFields = (uint32_t *)((uint8_t *)dest + 48);
   destFields[0] = (uint32_t)(uintptr_t)resolved;
@@ -2369,14 +2369,14 @@ uint8_t atSingleton_IsSimulationActive() {
 //
 // Initializes an object by copying 48 bytes of shape/transform data from
 // a source buffer (two 16-byte vectors + 4 uint32 fields), then hashes
-// a name key via atSingleton_29E0_g and stores it at +48, clearing the
+// a name key via rage_strDuplicate and stores it at +48, clearing the
 // remaining 3 fields (+52, +56, +60) to zero.
 //
 // Layout at dest:
 //   +0x00  vec4 (16 bytes)
 //   +0x10  vec4 (16 bytes)
 //   +0x20  uint32 field[4] (16 bytes)
-//   +0x30  nameHash (from atSingleton_29E0_g)
+//   +0x30  nameHash (from rage_strDuplicate)
 //   +0x34  0
 //   +0x38  0
 //   +0x3C  0
@@ -2402,8 +2402,8 @@ void atSingleton_InitShapeFromSource(uint8_t *dest, const void *nameKey,
   *(uint32_t *)(dest + 44) = *(uint32_t *)(src + 44);
 
   // Hash the name key and store result
-  extern void *atSingleton_29E0_g(const void *key);
-  void *nameHash = atSingleton_29E0_g(*(void **)nameKey);
+  extern void *rage_strDuplicate(const void *key);
+  void *nameHash = rage_strDuplicate(*(void **)nameKey);
   *(void **)(dest + 48) = nameHash;
 
   // Clear remaining fields
@@ -2495,7 +2495,7 @@ void xmlTree_SetAttribute(void *node, const char *keyStr, uint32_t value) {
   void *oldKey = *(void **)slot;
   rage_free(oldKey);
 
-  void *newKey = atSingleton_29E0_g(keyStr);
+  void *newKey = rage_strDuplicate(keyStr);
   *(void **)slot = newKey;
 
   *(uint32_t *)(slot + 4) = value;
@@ -2518,7 +2518,7 @@ void datBase_CopyInit48(uint8_t *dest, void **src2, uint8_t *src1) {
   *(uint32_t *)(dest + 44) = *(uint32_t *)(src1 + 44);
 
   const char *srcStr = (const char *)*src2;
-  void *dupStr = atSingleton_29E0_g(srcStr);
+  void *dupStr = rage_strDuplicate(srcStr);
 
   *(void **)(dest + 48) = dupStr;
   *(uint32_t *)(dest + 52) = 0;

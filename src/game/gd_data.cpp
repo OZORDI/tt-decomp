@@ -695,7 +695,7 @@ void gdStatsOnlineGeneral::ScalarDtor(int flags) {
 
 // External dependencies
 extern void* atSingleton_91E0_gen(uint32_t size);      // @ 0x821A91E0 - Get singleton
-extern void* atSingleton_29E0_g(const void* key);      // @ 0x820C29E0 - Hash field key
+extern void* rage_strDuplicate(const void* key);      // @ 0x820C29E0 - Hash field key
 extern void rage_free(void* ptr);                 // @ 0x820C00C0 - Free memory
 
 // Global serialization registry (SDA offset 0)
@@ -743,7 +743,7 @@ void RegisterSerializedField(void* obj,
     rage_free(existingMetadata);
     
     // Hash the field key to generate unique identifier
-    void* fieldHash = atSingleton_29E0_g(fieldKey);
+    void* fieldHash = rage_strDuplicate(fieldKey);
     
     // Store new field metadata in the registry
     ((void**)fieldRegistry)[0] = fieldHash;      // +0x00: field hash/ID

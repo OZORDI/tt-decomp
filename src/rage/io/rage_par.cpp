@@ -21,38 +21,38 @@ int RtlMultiByteToUnicodeN_6FA8_w(
 );
 std::uint32_t* g_sda_base;
 
-void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags);
-void fiAsciiTokenizer_CFA8_w(void* pStringValue, const char* pBegin, const char* pEnd);
-void rage_EC58(void* pStringValue, const char* pText);
+void* cmOperator_CreateString(void* pOwner, const char* pText, int flags);
+void fiAsciiTokenizer_SetString(void* pStringValue, const char* pBegin, const char* pEnd);
+void datString_Set(void* pStringValue, const char* pText);
 void* rage_Alloc(std::uint32_t size);
-void rage_free_00C0(void* ptr);
+void sysMemAllocator_Free(void* ptr);
 void rage_debugLog(const char* fmt, ...);
-void* phMaterialMgrImpl_C208_g(void* pHashBucketSet, const char* pLookupName);
-void* rage_97A8(const void* pOperator, const char* pNodeName);
-void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicateOwner);
-void jumptable_9498(
+void* atHashMap_Find(void* pHashBucketSet, const char* pLookupName);
+void* cmOperator_FindChild(const void* pOperator, const char* pNodeName);
+void cmOperator_SetName(void* pOperator, void* pOwner, std::uint32_t duplicateOwner);
+void cmOperator_SetLabel(
     void* pOperator,
     const char* pPrimaryName,
     const char* pSecondaryName,
     std::uint32_t copyPrimary,
     std::uint32_t copySecondary
 );
-void cmOperatorCtor_D8C0_w(void* pOperator, const void* pValueData, std::uint32_t valueSize);
-void atSingleton_DA18_p46(void* pNode, void* pRootNode);
-void atSingleton_D210_p46(void* pStructType, void* pStructInstance, void* pOperator);
-std::uint8_t jumptable_E058_h(void* pMemberArray);
-void rage_F6F0();
-void cmOperatorCtor_DAE0_w(void* pOperator, std::uint32_t valueData, int flags);
-void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags);
-float parStreamInXml_A5D0(void* pOperator);
-bool jumptable_A578_h(void* pOperator);
-void* atSingleton_29E0_g(void* pSource);
-void jumptable_A2E8(void* pTemp, const char* pName, int flags);
-void rage_A258(void* pTemp);
-void jumptable_95F0(void* pOperator, const char* pLabelAddr, int value);
-void jumptable_9698(void* pOperator, const char* pLabelAddr, float value);
-void* cmSampleCamMachineBank_65C0_g(void* pListHead, int nodeSize);
-void jumptable_A370(void* pNameNode, const char* pName, std::uint32_t copyName);
+void cmOperator_SetData(void* pOperator, const void* pValueData, std::uint32_t valueSize);
+void datNode_ChangeParent(void* pNode, void* pRootNode);
+void parStruct_SerializeMembers(void* pStructType, void* pStructInstance, void* pOperator);
+std::uint8_t parMemberArray_IsFixedSize(void* pMemberArray);
+void parMember_Destructor();
+void cmOperator_CreateFloat(void* pOperator, std::uint32_t valueData, int flags);
+void cmOperator_CreateInt(void* pOperator, int value, int flags);
+float cmOperator_GetFloat(void* pOperator);
+bool cmOperator_GetBool(void* pOperator);
+void* rage_strDuplicate(void* pSource);
+void cmOperator_SetPrimaryName(void* pTemp, const char* pName, int flags);
+void cmOperator_ClearName(void* pTemp);
+void cmOperator_SetInt(void* pOperator, const char* pLabelAddr, int value);
+void cmOperator_SetFloat(void* pOperator, const char* pLabelAddr, float value);
+void* atFreeList_Alloc(void* pListHead, int nodeSize);
+void cmOperator_SetSecondaryName(void* pNameNode, const char* pName, std::uint32_t copyName);
 }
 
 namespace {
@@ -340,7 +340,7 @@ void AttachOperatorOwner(cmOperatorArrayPayload32* pOperator, Address32 ownerAdd
     }
 
     if ((pOperator->m_flags & 0x1u) != 0u && pOperator->m_pOwner != 0u) {
-        rage_free_00C0(ResolveAddress<void>(pOperator->m_pOwner));
+        sysMemAllocator_Free(ResolveAddress<void>(pOperator->m_pOwner));
     }
 
     pOperator->m_pOwner = ownerAddress;
@@ -477,7 +477,7 @@ Address32 CreateStructFromOperator(const parMemberStructDescriptor32* pDescripto
 
 Address32 FindStructOperatorNode(const rage::cmOperator* pValueOperator, Address32 nodeNameAddress) {
     return static_cast<Address32>(reinterpret_cast<std::uintptr_t>(
-        rage_97A8(pValueOperator, ResolveAddress<const char>(nodeNameAddress))
+        cmOperator_FindChild(pValueOperator, ResolveAddress<const char>(nodeNameAddress))
     ));
 }
 
@@ -618,7 +618,7 @@ cmOperator* parMemberString::CreateOperator(std::uint32_t memberOffset) {
         selectedTextAddress = memberBase + memberOffset;
     }
 
-    return static_cast<cmOperator*>(cmOperatorCtor_DC80_w(
+    return static_cast<cmOperator*>(cmOperator_CreateString(
         ResolveAddress<void>(GetOwnerAddress(this)),
         ResolveAddress<const char>(selectedTextAddress),
         0
@@ -635,7 +635,7 @@ void parMemberString::ApplyOperator(const cmOperator* pValueOperator, std::uint3
 
     if (storageMode >= 1u) {
         if (storageMode == 1u) {
-            fiAsciiTokenizer_CFA8_w(
+            fiAsciiTokenizer_SetString(
                 ResolveAddress<void>(memberAddress),
                 ResolveAddress<const char>(sourceText),
                 ResolveAddress<const char>(sourceText + sourceLength)
@@ -644,7 +644,7 @@ void parMemberString::ApplyOperator(const cmOperator* pValueOperator, std::uint3
         }
 
         if (storageMode < 3u) {
-            rage_EC58(
+            datString_Set(
                 ResolveAddress<void>(memberAddress),
                 ResolveAddress<const char>(sourceText)
             );
@@ -698,7 +698,7 @@ void* parMemberArray::Destroy(std::uint32_t freeSelf) {
     E0D8_h();
 
     if ((freeSelf & 0x1u) != 0u) {
-        rage_free_00C0(this);
+        sysMemAllocator_Free(this);
     }
 
     return this;
@@ -857,14 +857,14 @@ cmOperator* parMemberArray::CreateOperator(std::uint32_t memberOffset) {
 
     const Address32 valueTypeLabel = GetArrayTypeLabel(valueType);
     if (valueTypeLabel != 0u) {
-        jumptable_9498(
+        cmOperator_SetLabel(
             pOperatorData,
             ResolveAddress<const char>(kParArrayTypeRootLabel),
             ResolveAddress<const char>(valueTypeLabel),
             1u,
             1u
         );
-        cmOperatorCtor_D8C0_w(
+        cmOperator_SetData(
             pOperatorData,
             ResolveAddress<const void>(memberDataAddress),
             descriptor->m_elementStride * elementCount
@@ -884,7 +884,7 @@ cmOperator* parMemberArray::CreateOperator(std::uint32_t memberOffset) {
             descriptor->m_elementStride * static_cast<std::uint32_t>(elementIndex)
         );
         cmOperator* pElementNode = ExportSerializedElement(m_pElementSerializer, memberDataAddress);
-        atSingleton_DA18_p46(pElementNode, pOperatorData);
+        datNode_ChangeParent(pElementNode, pOperatorData);
     }
 
     return reinterpret_cast<cmOperator*>(pOperatorData);
@@ -947,7 +947,7 @@ void parMemberArray::ApplyOperator(const cmOperator* pValueOperator, std::uint32
         return;
     }
 
-    const bool requiresFixedTailFill = (jumptable_E058_h(this) != 0u);
+    const bool requiresFixedTailFill = (parMemberArray_IsFixedSize(this) != 0u);
 
     switch (resolvedValueType) {
         case 1:
@@ -1053,7 +1053,7 @@ std::uint32_t parMemberStruct::BBC0(std::uint32_t structRegistryAddress, const c
     }
 
     const Address32 slotAddress = static_cast<Address32>(reinterpret_cast<std::uintptr_t>(
-        phMaterialMgrImpl_C208_g(ResolveAddress<void>(structRegistryAddress + 16u), pLookupName)
+        atHashMap_Find(ResolveAddress<void>(structRegistryAddress + 16u), pLookupName)
     ));
     if (slotAddress == 0u) {
         return 0u;
@@ -1152,7 +1152,7 @@ cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
     }
 
     InitializeArrayOperator(pOperatorData);
-    util_9410(pOperatorData, ResolveAddress<void>(GetStructOwnerAddress(this)), 0u);
+    cmOperator_SetName(pOperatorData, ResolveAddress<void>(GetStructOwnerAddress(this)), 0u);
 
     const bool isIndirectMember = HasStructFlag(this, kParStructFlagIndirectStorage);
     Address32 structInstanceAddress = GetStructMemberBaseAddress(this) + memberOffset;
@@ -1164,7 +1164,7 @@ cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
         if (GetStructStorageMode(this) == 1u) {
             if (structInstanceAddress == 0u) {
                 if (!HasStructFlag(this, kParStructFlagNullSentinel)) {
-                    jumptable_9498(
+                    cmOperator_SetLabel(
                         pOperatorData,
                         ResolveAddress<const char>(kParStructNullTypeNameAddr),
                         ResolveAddress<const char>(kParStructTypeNodeKeyAddr),
@@ -1176,7 +1176,7 @@ cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
             }
 
             const Address32 typeNameAddress = ResolveStructTypeName(GetStructDescriptor(this), structInstanceAddress);
-            jumptable_9498(
+            cmOperator_SetLabel(
                 pOperatorData,
                 ResolveAddress<const char>(typeNameAddress),
                 ResolveAddress<const char>(kParStructTypeNodeKeyAddr),
@@ -1187,7 +1187,7 @@ cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
         }
 
         if (structInstanceAddress == 0u) {
-            jumptable_9498(
+            cmOperator_SetLabel(
                 pOperatorData,
                 ResolveAddress<const char>(kParStructNullTypeNameAddr),
                 ResolveAddress<const char>(kParStructFactoryNodeKeyAddr),
@@ -1215,7 +1215,7 @@ cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
         GetStructStorageMode(this) != 1u &&
         structInstanceAddress != 0u) {
         const Address32 typeNameAddress = *ResolveAddress<Address32>(structTypeAddress + 4u);
-        jumptable_9498(
+        cmOperator_SetLabel(
             pOperatorData,
             ResolveAddress<const char>(typeNameAddress),
             ResolveAddress<const char>(kParStructFactoryNodeKeyAddr),
@@ -1225,7 +1225,7 @@ cmOperator* parMemberStruct::CreateOperator(std::uint32_t memberOffset) {
     }
 
     (void)GetStructFlags(this);
-    atSingleton_D210_p46(
+    parStruct_SerializeMembers(
         ResolveAddress<void>(structTypeAddress),
         ResolveAddress<void>(structInstanceAddress),
         pOperatorData
@@ -1360,10 +1360,10 @@ std::uint32_t parMemberStruct::CompareAndApply(const cmOperator* pValueOperator,
  * Destructor with optional self-free (vtable slot 0)
  */
 void* parMemberSimple::Destroy(uint32_t freeSelf) {
-    rage_F6F0();
+    parMember_Destructor();
     
     if (freeSelf & 0x1) {
-        rage_free_00C0(this);
+        sysMemAllocator_Free(this);
     }
     
     return this;
@@ -1529,49 +1529,49 @@ cmOperator* parMemberSimple::CreateOperator(uint32_t memberOffset) {
         case 7: {
             float value = *reinterpret_cast<float*>(pStorage);
             pOperator = reinterpret_cast<cmOperator*>(GetType());
-            cmOperatorCtor_DAE0_w(pOperator, *reinterpret_cast<uint32_t*>(&value), 0);
+            cmOperator_CreateFloat(pOperator, *reinterpret_cast<uint32_t*>(&value), 0);
             break;
         }
         
         case 1: {
             int8_t value = *reinterpret_cast<int8_t*>(pStorage);
             pOperator = reinterpret_cast<cmOperator*>(GetType());
-            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            cmOperator_CreateInt(pOperator, value, 0);
             break;
         }
         
         case 2: {
             uint8_t value = *pStorage;
             pOperator = reinterpret_cast<cmOperator*>(GetType());
-            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            cmOperator_CreateInt(pOperator, value, 0);
             break;
         }
         
         case 3: {
             int16_t value = *reinterpret_cast<int16_t*>(pStorage);
             pOperator = reinterpret_cast<cmOperator*>(GetType());
-            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            cmOperator_CreateInt(pOperator, value, 0);
             break;
         }
         
         case 4: {
             uint16_t value = *reinterpret_cast<uint16_t*>(pStorage);
             pOperator = reinterpret_cast<cmOperator*>(GetType());
-            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            cmOperator_CreateInt(pOperator, value, 0);
             break;
         }
         
         case 5: {
             int32_t value = *reinterpret_cast<int32_t*>(pStorage);
             pOperator = reinterpret_cast<cmOperator*>(GetType());
-            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            cmOperator_CreateInt(pOperator, value, 0);
             break;
         }
         
         case 6: {
             uint32_t value = *reinterpret_cast<uint32_t*>(pStorage);
             pOperator = reinterpret_cast<cmOperator*>(GetType());
-            cmOperatorCtor_DBC0_w(pOperator, value, 0);
+            cmOperator_CreateInt(pOperator, value, 0);
             break;
         }
         
@@ -1603,42 +1603,42 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
     
     switch (dataType) {
         case 7: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
-            float value = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "value");
+            float value = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
             *reinterpret_cast<float*>(pStorage) = value;
             break;
         }
         
         case 1:
         case 2: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "value");
             break;
         }
         
         case 3:
         case 4: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "value");
             break;
         }
         
         case 5:
         case 6: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "value");
             break;
         }
         
         case 0: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "value");
-            bool value = jumptable_A578_h(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "value");
+            bool value = cmOperator_GetBool(const_cast<cmOperator*>(pValueOperator));
             *pStorage = value ? 1 : 0;
             break;
         }
         
         case 8: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
-            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
-            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
             float* pVec = reinterpret_cast<float*>(pStorage);
             pVec[0] = x;
             pVec[1] = y;
@@ -1646,12 +1646,12 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
         }
         
         case 9: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
-            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
-            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "z");
-            float z = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "z");
+            float z = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
             float* pVec = reinterpret_cast<float*>(pStorage);
             pVec[0] = x;
             pVec[1] = y;
@@ -1660,14 +1660,14 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
         }
         
         case 10: {
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "x");
-            float x = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "y");
-            float y = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "z");
-            float z = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
-            rage_97A8(const_cast<cmOperator*>(pValueOperator), "w");
-            float w = parStreamInXml_A5D0(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "x");
+            float x = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "y");
+            float y = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "z");
+            float z = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
+            cmOperator_FindChild(const_cast<cmOperator*>(pValueOperator), "w");
+            float w = cmOperator_GetFloat(const_cast<cmOperator*>(pValueOperator));
             float* pVec = reinterpret_cast<float*>(pStorage);
             pVec[0] = x;
             pVec[1] = y;
@@ -1691,12 +1691,12 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * jumptable_E058_h @ 0x8234E058 | size: 0x30
+ * parMemberArray_IsFixedSize @ 0x8234E058 | size: 0x30
  *
  * Returns 1 if the array member uses a fixed-capacity storage mode
  * (2 = fixed inline, 3 = fixed indirect, 4 = descriptor-based).
  */
-extern "C" std::uint8_t jumptable_E058_h(void* pMemberArray) {
+extern "C" std::uint8_t parMemberArray_IsFixedSize(void* pMemberArray) {
     auto* memberDesc = *reinterpret_cast<void**>(
         static_cast<std::uint8_t*>(pMemberArray) + 4
     );
@@ -1708,12 +1708,12 @@ extern "C" std::uint8_t jumptable_E058_h(void* pMemberArray) {
 }
 
 /**
- * parStreamInXml_A5D0 @ 0x8223A5D0 | size: 0x68
+ * cmOperator_GetFloat @ 0x8223A5D0 | size: 0x68
  *
  * Reads a floating-point value from a cmOperator node.
  * Type 2 = inline float at +4; type 0 = string → atof; else 0.0.
  */
-extern "C" float parStreamInXml_A5D0(void* pOperator) {
+extern "C" float cmOperator_GetFloat(void* pOperator) {
     auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
     std::uint8_t typeTag = op[8];
 
@@ -1730,13 +1730,13 @@ extern "C" float parStreamInXml_A5D0(void* pOperator) {
 }
 
 /**
- * jumptable_A578_h @ 0x8223A578 | size: 0x58
+ * cmOperator_GetBool @ 0x8223A578 | size: 0x58
  *
  * Reads a boolean value from a cmOperator node.
  * Type 3 = inline bool at +4; type 0 = string ('f'/'F'/'0' → false);
  * else false.
  */
-extern "C" bool jumptable_A578_h(void* pOperator) {
+extern "C" bool cmOperator_GetBool(void* pOperator) {
     auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
     std::uint8_t typeTag = op[8];
 
@@ -1754,13 +1754,13 @@ extern "C" bool jumptable_A578_h(void* pOperator) {
 }
 
 /**
- * util_9410 @ 0x82239410 | size: 0x88
+ * cmOperator_SetName @ 0x82239410 | size: 0x88
  *
  * Sets the owner pointer of a cmOperator payload. If bit 0 of the flags
  * byte (+4) is set, the previous owner is freed first. If duplicateOwner
- * is non-zero, the owner string is duplicated via atSingleton_29E0_g.
+ * is non-zero, the owner string is duplicated via rage_strDuplicate.
  */
-extern "C" void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicateOwner) {
+extern "C" void cmOperator_SetName(void* pOperator, void* pOwner, std::uint32_t duplicateOwner) {
     auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
     std::uint8_t flags = op[4];
 
@@ -1768,13 +1768,13 @@ extern "C" void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicate
     if ((flags & 0x1u) != 0) {
         auto ownerAddr = *reinterpret_cast<std::uintptr_t*>(op);
         if (ownerAddr != 0) {
-            rage_free_00C0(reinterpret_cast<void*>(ownerAddr));
+            sysMemAllocator_Free(reinterpret_cast<void*>(ownerAddr));
         }
     }
 
     if ((duplicateOwner & 0xFFu) != 0) {
         // Duplicate the owner string and mark as owned
-        void* copy = atSingleton_29E0_g(pOwner);
+        void* copy = rage_strDuplicate(pOwner);
         *reinterpret_cast<std::uintptr_t*>(op) = reinterpret_cast<std::uintptr_t>(copy);
         op[4] |= 0x1u;
     } else {
@@ -1785,14 +1785,14 @@ extern "C" void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicate
 }
 
 /**
- * atSingleton_DA18_p46 @ 0x8234DA18 | size: 0x60
+ * datNode_ChangeParent @ 0x8234DA18 | size: 0x60
  *
  * Unlinks a cmOperator node from its current parent's child list and
  * inserts it as the first child of a new parent node.
  *
  * Node layout: +20 = parent ptr, +24 = next sibling, parent+28 = first child.
  */
-extern "C" void atSingleton_DA18_p46(void* pNode, void* pRootNode) {
+extern "C" void datNode_ChangeParent(void* pNode, void* pRootNode) {
     if (pNode == pRootNode) {
         return;
     }
@@ -1823,26 +1823,26 @@ extern "C" void atSingleton_DA18_p46(void* pNode, void* pRootNode) {
 }
 
 /**
- * rage_EC58 @ 0x820CEC58 | size: 0x40
+ * datString_Set @ 0x820CEC58 | size: 0x40
  *
  * Replaces a heap-backed string value. Duplicates the input text, frees the
  * old string at self+0, and stores the new pointer.
  */
-extern "C" void rage_EC58(void* pStringValue, const char* pText) {
-    void* newStr = atSingleton_29E0_g(const_cast<char*>(const_cast<char*>(pText)));
+extern "C" void datString_Set(void* pStringValue, const char* pText) {
+    void* newStr = rage_strDuplicate(const_cast<char*>(const_cast<char*>(pText)));
     auto* storage = reinterpret_cast<std::uintptr_t*>(pStringValue);
     void* oldStr = reinterpret_cast<void*>(*storage);
-    rage_free_00C0(oldStr);
+    sysMemAllocator_Free(oldStr);
     *storage = reinterpret_cast<std::uintptr_t>(newStr);
 }
 
 /**
- * cmOperatorCtor_D8C0_w @ 0x8234D8C0 | size: 0x64
+ * cmOperator_SetData @ 0x8234D8C0 | size: 0x64
  *
  * Copies raw data into an operator payload. Allocates a buffer via the
  * main-thread heap, memcpys the source data, and sets the value size + flag.
  */
-extern "C" void cmOperatorCtor_D8C0_w(void* pOperator, const void* pValueData, std::uint32_t valueSize) {
+extern "C" void cmOperator_SetData(void* pOperator, const void* pValueData, std::uint32_t valueSize) {
     auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
 
     rage_AssertMainThread();
@@ -1864,12 +1864,12 @@ extern "C" void cmOperatorCtor_D8C0_w(void* pOperator, const void* pValueData, s
 }
 
 /**
- * cmOperatorCtor_DBC0_w @ 0x8234DBC0 | size: 0xC0
+ * cmOperator_CreateInt @ 0x8234DBC0 | size: 0xC0
  *
  * Creates a new cmOperator with an integer value. Allocates a 44-byte
- * operator payload, sets the owner, and stores the integer via jumptable_95F0.
+ * operator payload, sets the owner, and stores the integer via cmOperator_SetInt.
  */
-extern "C" void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags) {
+extern "C" void cmOperator_CreateInt(void* pOperator, int value, int flags) {
     (void)flags;
 
     rage_AssertMainThread();
@@ -1888,11 +1888,11 @@ extern "C" void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags) {
     }
 
     // Set owner
-    util_9410(newOp, pOperator, 0);
+    cmOperator_SetName(newOp, pOperator, 0);
 
     // Set value label and store integer
     constexpr std::uintptr_t kValueLabelAddr = 0x82065B20;
-    jumptable_95F0(newOp, reinterpret_cast<const char*>(kValueLabelAddr), value);
+    cmOperator_SetInt(newOp, reinterpret_cast<const char*>(kValueLabelAddr), value);
 
     // Return the new operator in the caller's expected location
     // The PPC code sets r3 = newOp, but in C the function is void
@@ -1901,12 +1901,12 @@ extern "C" void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags) {
 }
 
 /**
- * cmOperatorCtor_DAE0_w @ 0x8234DAE0 | size: 0xE0
+ * cmOperator_CreateFloat @ 0x8234DAE0 | size: 0xE0
  *
  * Creates a new cmOperator with a float value (passed as uint32_t bits).
- * Allocates a 44-byte operator, sets owner, stores float via jumptable_9698.
+ * Allocates a 44-byte operator, sets owner, stores float via cmOperator_SetFloat.
  */
-extern "C" void cmOperatorCtor_DAE0_w(void* pOperator, std::uint32_t valueData, int flags) {
+extern "C" void cmOperator_CreateFloat(void* pOperator, std::uint32_t valueData, int flags) {
     (void)flags;
 
     rage_AssertMainThread();
@@ -1922,22 +1922,22 @@ extern "C" void cmOperatorCtor_DAE0_w(void* pOperator, std::uint32_t valueData, 
         *reinterpret_cast<std::uint16_t*>(newOp + 18) = 0;
     }
 
-    util_9410(newOp, pOperator, 0);
+    cmOperator_SetName(newOp, pOperator, 0);
 
     constexpr std::uintptr_t kValueLabelAddr = 0x82065B20;
     float fValue = *reinterpret_cast<float*>(&valueData);
-    jumptable_9698(newOp, reinterpret_cast<const char*>(kValueLabelAddr), fValue);
+    cmOperator_SetFloat(newOp, reinterpret_cast<const char*>(kValueLabelAddr), fValue);
 
     (void)newOp;
 }
 
 /**
- * cmOperatorCtor_DC80_w @ 0x8234DC80 | size: 0x108
+ * cmOperator_CreateString @ 0x8234DC80 | size: 0x108
  *
  * Creates a new cmOperator for a string value. Allocates a 44-byte operator,
  * sets the owner, assigns primary/secondary labels, and copies the string data.
  */
-extern "C" void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags) {
+extern "C" void* cmOperator_CreateString(void* pOwner, const char* pText, int flags) {
     (void)flags;
 
     rage_AssertMainThread();
@@ -1956,12 +1956,12 @@ extern "C" void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flag
     }
 
     // Set owner reference (no duplication)
-    util_9410(newOp, pOwner, 0);
+    cmOperator_SetName(newOp, pOwner, 0);
 
     // Set label pair (primary = "value" @ 0x82065B28, secondary = "string" @ 0x82065B30)
     constexpr std::uintptr_t kPrimaryLbl = 0x82065B28;
     constexpr std::uintptr_t kSecondaryLbl = 0x82065B30;
-    jumptable_9498(
+    cmOperator_SetLabel(
         newOp,
         reinterpret_cast<const char*>(kSecondaryLbl),
         reinterpret_cast<const char*>(kPrimaryLbl),
@@ -1975,20 +1975,20 @@ extern "C" void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flag
         while (*p != '\0') { ++p; }
         textLen = static_cast<std::uint32_t>(p - pText);
     }
-    cmOperatorCtor_D8C0_w(newOp, pText, textLen);
+    cmOperator_SetData(newOp, pText, textLen);
 
     return newOp;
 }
 
 /**
- * rage_97A8 @ 0x822397A8 | size: 0x1E0
+ * cmOperator_FindChild @ 0x822397A8 | size: 0x1E0
  *
  * Searches for a child cmOperator node by name within the operator's children.
  * Uses binary search when the sorted flag (bit 1 of +4) is set, otherwise
  * falls back to linear search. The child array is at +8 (uint32 pointer array)
  * with count at +12 (uint16). Each child's first field (+0) is its name string.
  */
-extern "C" void* rage_97A8(const void* pOperator, const char* pNodeName) {
+extern "C" void* cmOperator_FindChild(const void* pOperator, const char* pNodeName) {
     auto* op = reinterpret_cast<const std::uint8_t*>(pOperator);
     std::uint8_t flags = op[4];
     bool isSorted = (flags & 0x2u) != 0;
@@ -2002,7 +2002,7 @@ extern "C" void* rage_97A8(const void* pOperator, const char* pNodeName) {
 
         // Initialize temp search context
         std::uint8_t tempCtx[16] = {};
-        jumptable_A2E8(tempCtx, pNodeName, 0);
+        cmOperator_SetPrimaryName(tempCtx, pNodeName, 0);
 
         // Binary search over sorted child array
         std::uintptr_t* searchBase = childArray;
@@ -2060,12 +2060,12 @@ extern "C" void* rage_97A8(const void* pOperator, const char* pNodeName) {
             }
 
             if (cmp == 0) {
-                rage_A258(tempCtx);
+                cmOperator_ClearName(tempCtx);
                 return child;
             }
         }
 
-        rage_A258(tempCtx);
+        cmOperator_ClearName(tempCtx);
         return nullptr;
     }
 

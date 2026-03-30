@@ -49,7 +49,7 @@ float phBoundCapsule_0FE0_g(float a, float b) { (void)b; return a; }
 void phBoundCapsule_5138_g(void*, void*, void*) {}
 void phBoundCapsule_A080_g(void*) {}
 void phInst_A3A0_p33(void*) {}
-void phMaterialMgrImpl_C208_g(void*, const void*) {}
+void atHashMap_Find(void*, const void*) {}
 void ph_59C8(void*, const char*, int) {}
 void* ph_6FC8(void*, const char*) { return nullptr; }
 void ph_9E50(void*, void*) {}
@@ -91,8 +91,8 @@ void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextStat
 void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pgPageGroup_DispatchEvent(a,b,c,d,e); }
-void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) __asm__("_phMaterialMgrImpl_C208_g");
-void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) { phMaterialMgrImpl_C208_g(a,b); }
+void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
+void _c_atHashMap_Find(void* a, const void* b) { atHashMap_Find(a,b); }
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
 void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
 void _c_xmlNodeStruct_Initialize(void* o) __asm__("_xmlNodeStruct_Initialize");

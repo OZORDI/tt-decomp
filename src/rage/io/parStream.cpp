@@ -17,6 +17,26 @@
 extern "C" void fiAsciiTokenizer_FlushBuffer(void* file, int flags);
 extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, int isArray);
 extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
+extern "C" void parStreamOutXml_FormatToBuffer(void* outBuf, const char* fmt, ...);  // 2A70 (vsnprintf)
+extern "C" void util_WriteBytes(void* file, const void* data, uint32_t size);  // 39B0
+extern "C" void util_WriteIndentation(void* self, int depth);  // B870
+extern "C" void fiAsciiTokenizer_CloseElement(void* self);  // B708
+extern "C" void fiAsciiTokenizer_51F0(void* fileHandle, int charCode);
+
+// Forward declarations for external C functions used by parStreamOutRbf
+extern "C" void util_WriteBytes(void* file, const void* data, uint32_t size);
+extern "C" void util_WriteUint32Array(void* file, const uint32_t* data, uint32_t count);
+extern "C" void rage_SeekFile(void* file, uint32_t pos);  // 3AC8
+extern "C" void parStreamOutRbf_FlushPending(void* self);  // CE58_gen
+extern "C" void parStreamOutRbf_WriteFieldHeader(void* self, uint32_t fieldType, const char* fieldName);  // D128
+extern "C" void parStreamOutRbf_WriteData(void* self, const void* data, uint32_t size, uint32_t dataType);  // CED0
+extern "C" uint32_t rage_HashString(const char* str);  // DA60
+extern "C" void* rage_FindMember(void* structure, const char* name);  // 97A8
+extern "C" bool parStreamInXml_ReadElement(void* self, const char* name);  // A8E8
+extern "C" bool parStreamInXml_ProcessFormat(void* self, const char* fmt, void* outBuf);  // 9920
+extern "C" int parStreamInXml_ReadArrayData(void* self, const char* name, uint32_t* count, uint32_t dataType);  // A3A0
+extern "C" void parStreamInXml_SkipUntilChar(void* self, const char* pattern);  // 9B38
+extern "C" bool parStreamInXml_ExpectChar(void* self, int ch, int pushBack);  // 9890
 
 // Forward declarations for CRT/kernel functions
 extern "C" {
@@ -133,7 +153,7 @@ bool parStreamInRbf::BeginObject(const char* name) {
     // Validate field name matches if provided
     if (name) {
         uint32_t expectedHash = 0; // TODO: Call hash function on name
-        // util_9410(name, expectedHash, hasName);
+        // cmOperator_SetName(name, expectedHash, hasName);
     }
     
     // Process the field based on type
@@ -355,7 +375,7 @@ bool parStreamInRbf::ReadFloat(const char* name, float* value) {
             
             // Validate name if provided
             if (name) {
-                // util_9410(name, fieldData, hasName);
+                // cmOperator_SetName(name, fieldData, hasName);
             }
             
             // Process the field
@@ -482,7 +502,7 @@ bool parStreamInRbf::ProcessField(const char* name, uint16_t fieldType) {
             // grc_3CD8(m_pRbfData, &intValue, 1);
             
             // Format and store
-            // jumptable_95F0(name, "%d", intValue, 0);
+            // cmOperator_SetInt(name, "%d", intValue, 0);
             return true;
         }
         
@@ -504,7 +524,7 @@ bool parStreamInRbf::ProcessField(const char* name, uint16_t fieldType) {
             // grc_3CD8(m_pRbfData, &floatValue, 1);
             
             // Format and store
-            // jumptable_9698(name, "%f", floatValue, 0);
+            // cmOperator_SetFloat(name, "%f", floatValue, 0);
             return true;
         }
         
@@ -514,9 +534,9 @@ bool parStreamInRbf::ProcessField(const char* name, uint16_t fieldType) {
             // grc_3CD8(m_pRbfData, vec, 3);
             
             // Format and store each component
-            // jumptable_9698(name, "x", vec[0], 0);
-            // jumptable_9698(name, "y", vec[1], 0);
-            // jumptable_9698(name, "z", vec[2], 0);
+            // cmOperator_SetFloat(name, "x", vec[0], 0);
+            // cmOperator_SetFloat(name, "y", vec[1], 0);
+            // cmOperator_SetFloat(name, "z", vec[2], 0);
             return true;
         }
         
@@ -611,25 +631,119 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
 
 bool parStreamInXml::BeginObject(const char* name) {
     // @ 0x8241ABF8
-    return false;  // TODO: implement
+    bool result = parStreamInXml_ReadElement(this, name);
+    *(uint8_t*)((char*)this + 1092) = result ? 1 : 0;
+    *(uint8_t*)((char*)this + 1094) = 0;
+    *(uint8_t*)((char*)this + 1093) = 1;
+    *(uint8_t*)((char*)this + 1095) = 0;
+    return result;
 }
 
 void parStreamInXml::EndObject() {
     // @ 0x8241AC40
+    bool result = parStreamInXml_ReadElement(this, nullptr);
+    if (!(result & 0xFF)) {
+        char buf[64];
+        parStreamInXml_ProcessFormat(this, "Sw", buf);
+    }
+    *(uint8_t*)((char*)this + 1092) = 0;
+    *(uint8_t*)((char*)this + 1093) = 0;
+    *(uint8_t*)((char*)this + 1094) = 0;
+    *(uint8_t*)((char*)this + 1095) = 0;
+    *(uint32_t*)((char*)this + 1096) = 0;
 }
 
 bool parStreamInXml::BeginArray(const char* name, uint32_t* count) {
     // @ 0x8241AD38
-    return false;  // TODO: implement
+    uint8_t hasAttr = *(uint8_t*)((char*)this + 1092);
+    if (hasAttr != 0) {
+        return false;
+    }
+
+    uint8_t isInElem = *(uint8_t*)((char*)this + 1093);
+    if (isInElem == 0) {
+        uint8_t isInArray = *(uint8_t*)((char*)this + 1094);
+        if (isInArray == 0) {
+            return false;
+        }
+        uint8_t lastRead = *(uint8_t*)((char*)this + 1095);
+        if (lastRead == 0) {
+            return false;
+        }
+    }
+
+    // Use element count from +1096 as the data type hint
+    uint32_t dataType = *(uint32_t*)((char*)this + 1096);
+
+    int result = parStreamInXml_ReadArrayData(this, name, count, dataType);
+
+    // Update state flags
+    *(uint8_t*)((char*)this + 1092) = 0;  // hasAttribute = false
+    *(uint8_t*)((char*)this + 1094) = 1;  // isInArray = true
+    *(uint8_t*)((char*)this + 1093) = 0;  // isInElement = false
+
+    return result != 0;
 }
 
 void parStreamInXml::EndArray() {
     // @ 0x8241AD08
+    char buf[80];
+    ReadString(nullptr, buf, sizeof(buf));
 }
 
 bool parStreamInXml::ReadInt(const char* name, int32_t* value) {
-    // @ 0x8241ADD0
-    return false;  // TODO: implement
+    // @ 0x8241ADD0 — XML tag nesting skipper / EndObject helper
+    // Clear state flags
+    *(uint8_t*)((char*)this + 1094) = 0;   // isInArray = false
+    *(uint8_t*)((char*)this + 1093) = 0;   // isInElement = false
+    *(uint8_t*)((char*)this + 1095) = 0;   // lastRead = false
+    *(uint32_t*)((char*)this + 1096) = 0;  // element counter = 0
+
+    uint8_t hasAttr = *(uint8_t*)((char*)this + 1092);
+    if (hasAttr != 0) {
+        *(uint8_t*)((char*)this + 1092) = 0;
+        return true;
+    }
+
+    // Skip nested XML tags until nesting level reaches 0
+    int32_t nestLevel = 1;
+    while (nestLevel > 0) {
+        parStreamInXml_SkipUntilChar(this, "<");
+
+        bool isClosing = parStreamInXml_ExpectChar(this, '/', 1);
+        if (isClosing) {
+            parStreamInXml_SkipUntilChar(this, ">");
+            nestLevel--;
+        } else {
+            // Read chars until '>' found, track last char for self-closing detection
+            int lastChar = 0;
+            int32_t bufCount = *(int32_t*)((char*)this + 1088);
+            uint8_t* ringBuf = (uint8_t*)((char*)this + 64);
+
+            while (true) {
+                // Read next character from ring buffer
+                if (bufCount <= 0) {
+                    break;
+                }
+                bufCount--;
+                int ch = ringBuf[bufCount];
+                *(int32_t*)((char*)this + 1088) = bufCount;
+
+                if (ch == '>') {
+                    break;
+                }
+                lastChar = ch;
+            }
+
+            if (lastChar == '/') {
+                // Self-closing tag <.../> — no nesting change
+            } else {
+                nestLevel++;
+            }
+        }
+    }
+
+    return true;
 }
 
 bool parStreamInXml::ReadFloat(const char* name, float* value) {
@@ -639,7 +753,16 @@ bool parStreamInXml::ReadFloat(const char* name, float* value) {
 
 bool parStreamInXml::ReadString(const char* name, char* buffer, size_t bufferSize) {
     // @ 0x8241ACA8
-    return false;  // TODO: implement
+    uint8_t flag = *(uint8_t*)((char*)this + 1092);
+    if (flag == 0) {
+        parStreamInXml_ProcessFormat(this, "Sw", buffer);
+    }
+    *(uint8_t*)((char*)this + 1092) = 0;
+    *(uint8_t*)((char*)this + 1094) = 0;
+    *(uint8_t*)((char*)this + 1093) = 0;
+    *(uint8_t*)((char*)this + 1095) = 0;
+    *(uint32_t*)((char*)this + 1096) = 0;
+    return true;
 }
 
 /**
@@ -730,8 +853,38 @@ bool parStreamOutXml::BeginObject(const char* name) {
     return fiAsciiTokenizer_BeginElement(this, name, 0);
 }
 
+/**
+ * parStreamOutXml::EndObject @ 0x8241BB40
+ * 
+ * Closes an XML element tag. Decrements indent depth, writes CRLF
+ * and indentation (or calls close element for inline arrays),
+ * then clears flags.
+ */
 void parStreamOutXml::EndObject() {
     // @ 0x8241BB40
+    uint32_t indent = *(uint32_t*)((char*)this + 8);
+    uint8_t flags = *(uint8_t*)((char*)this + 12);
+    indent--;
+    *(uint32_t*)((char*)this + 8) = indent;
+
+    if (flags != 0) {
+        uint32_t arrayType = *(uint32_t*)((char*)this + 28);
+        if (arrayType == 3) {
+            // Inline array element — close without CRLF
+            fiAsciiTokenizer_CloseElement(this);
+        }
+        // Otherwise skip to write formatted element count
+    } else {
+        // Write CR LF and indentation
+        void* file = *(void**)((char*)this + 4);
+        fiAsciiTokenizer_51F0(file, '\r');
+        fiAsciiTokenizer_51F0(file, '\n');
+        util_WriteIndentation(this, indent);
+    }
+
+    // Clear flags and array type
+    *(uint8_t*)((char*)this + 12) = 0;
+    *(uint32_t*)((char*)this + 28) = 0;
 }
 
 /**
@@ -745,8 +898,19 @@ bool parStreamOutXml::BeginArray(const char* name, uint32_t* count) {
     return true;
 }
 
+/**
+ * parStreamOutXml::EndArray @ 0x8241BC20 | size: ~642 PPC insns
+ * 
+ * Closes an XML array element. Contains a large switch(0-11)
+ * that writes array data in different formats based on element type.
+ * TODO: Full implementation of switch cases for all 12 array element types.
+ */
 void parStreamOutXml::EndArray() {
     // @ 0x8241BC20
+    // TODO: implement — massive switch(0-11) over array element types
+    // Each case formats array data differently (ints, floats, vectors, etc.)
+    // For now, delegate to EndObject behavior as a baseline
+    EndObject();
 }
 
 /**
@@ -760,19 +924,55 @@ bool parStreamOutXml::WriteInt(const char* name, int32_t value) {
     return true;
 }
 
+/**
+ * parStreamOutXml::WriteFloat @ 0x822E3E40
+ * 
+ * Writes a float value as XML text. Formats via vsnprintf into a
+ * stack buffer, then writes bytes to the file handle.
+ */
 bool parStreamOutXml::WriteFloat(const char* name, float value) {
     // @ 0x822E3E40
-    return false;  // TODO: implement
+    char buf[256];
+    void* file = *(void**)((char*)this + 4);
+    parStreamOutXml_FormatToBuffer(buf, "%g", (double)value);
+    util_WriteBytes(file, buf, strlen(buf));
+    return true;
 }
 
+/**
+ * parStreamOutXml::WriteString @ 0x822E5D48
+ * 
+ * Writes a string value as XML text. Clears counter at +20,
+ * formats the string into a buffer, then writes to file.
+ */
 bool parStreamOutXml::WriteString(const char* name, const char* value) {
     // @ 0x822E5D48
-    return false;  // TODO: implement
+    *(uint32_t*)((char*)this + 20) = 0;  // clear counter
+    char buf[1024];
+    void* file = *(void**)((char*)this + 4);
+    parStreamOutXml_FormatToBuffer(buf, "%s", value);
+    util_WriteBytes(file, buf, strlen(buf));
+    return true;
 }
 
+/**
+ * parStreamOutXml::WriteBool @ 0x822E5DC8
+ * 
+ * Writes a boolean value as XML text. Writes indentation,
+ * formats "true"/"false", writes the value, then writes newline.
+ */
 bool parStreamOutXml::WriteBool(const char* name, bool value) {
     // @ 0x822E5DC8
-    return false;  // TODO: implement
+    void* file = *(void**)((char*)this + 4);
+    uint32_t indent = *(uint32_t*)((char*)this + 8);
+    util_WriteIndentation(this, indent);
+    char buf[64];
+    parStreamOutXml_FormatToBuffer(buf, "%s", value ? "true" : "false");
+    util_WriteBytes(file, buf, strlen(buf));
+    // Write CRLF newline
+    fiAsciiTokenizer_51F0(file, '\r');
+    fiAsciiTokenizer_51F0(file, '\n');
+    return true;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -854,16 +1054,60 @@ bool parStreamOutRbf::FlushToFile() {
 
 bool parStreamOutRbf::BeginObject(const char* name) {
     // @ 0x8241D2C8
-    return false;  // TODO: implement
+    // Flush any pending data from previous writes
+    parStreamOutRbf_FlushPending(this);
+    
+    // Clear the field counter at +8
+    *(uint32_t*)((char*)this + 8) = 0;
+    
+    // Write field header with type=0 (object) and the structure name
+    parStreamOutRbf_WriteFieldHeader(this, 0, name);
+    
+    // TODO: Full implementation requires reading parStructure descriptor from 'name' param:
+    //   - Extract member count (upper 10 bits of +12) and data size (lower 16 bits of +12)
+    //   - Write member count, data size, hash bytes count as byte-swapped uint16
+    //   - Iterate member array at +8, for each member:
+    //     type 0 (string): D128 type=6, write strlen + string bytes
+    //     type 1 (int):    D128 type=1, write uint32 value
+    //     type 2 (float):  D128 type=4, write float as uint32
+    //     type 3 (bool):   D128 type=2/3, write uint32 value
+    
+    return true;
 }
 
 void parStreamOutRbf::EndObject() {
     // @ 0x8241D520
+    // Flush any pending accumulated data
+    parStreamOutRbf_FlushPending(this);
+    
+    // Write end-object marker (0xFFFF) to stream
+    void* file = *(void**)((char*)this + 4);
+    uint16_t marker = 0xFFFF;
+    util_WriteBytes(file, &marker, 2);
+    
+    // Clear field counter
+    *(uint32_t*)((char*)this + 8) = 0;
 }
 
 bool parStreamOutRbf::BeginArray(const char* name, uint32_t* count) {
     // @ 0x8241D570
-    return false;  // TODO: implement
+    // Flush any pending data from previous writes
+    parStreamOutRbf_FlushPending(this);
+    
+    // Clear the field counter at +8
+    *(uint32_t*)((char*)this + 8) = 0;
+    
+    // TODO: Full implementation should read member count from structure at name+12 as uint16
+    //   If count == 1: single element type optimization
+    //     - Get single member via rage_FindMember
+    //     - Check member type: 1=int, 2=float, 3=bool
+    //     - For vector3 (count==3, all floats): D128 type=5, write 3 floats
+    //   If count != 1 and != 3: fallback below
+    
+    // Fallback: delegate to BeginObject + EndObject
+    BeginObject(name);
+    EndObject();
+    return true;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1721,7 +1965,7 @@ void _static_init_reg_6() {
  * _static_dtor_free_0 @ 0x82583F28 | size: 0x40
  *
  * Static destructor: checks if buffer is SSO (internal), if not frees
- * the heap allocation via rage_free_00C0.
+ * the heap allocation via sysMemAllocator_Free.
  */
 void _static_dtor_free_0() {
     extern char g_dtorObj0[];
@@ -1948,30 +2192,171 @@ void _crt_fpscr_trampoline() {
     __asm__ volatile("" ::: "memory");
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// D128 algorithm — write RBF field header (parStreamOutRbf_WriteFieldHeader)
+// Binary params: (void* self, uint32_t fieldType, const char* fieldName)
+// C++ vtable slot WriteBool has incompatible signature; this static helper
+// implements the actual algorithm callable via the extern "C" wrapper.
+// ────────────────────────────────────────────────────────────────────────────
+static bool parStreamOutRbf_WriteFieldHeaderImpl(void* self, uint32_t fieldType, const char* fieldName) {
+    char* obj = (char*)self;
+    void* file = *(void**)(obj + 4);
+
+    // Hash table struct at self+24:
+    //   +0: bucket array pointer (void**)
+    //   +4: bucket count (uint16_t)
+    //   +6: next field ID counter (uint16_t)
+    void** buckets = *(void***)(obj + 24);
+    uint16_t bucketCount = *(uint16_t*)(obj + 28);
+    uint16_t* pNextID = (uint16_t*)(obj + 30);
+
+    // Hash field name and search bucket chain
+    uint32_t hash = rage_HashString(fieldName);
+    uint32_t bucketIdx = (bucketCount > 0) ? (hash % bucketCount) : 0;
+
+    uint16_t fieldID = 0;
+    bool isNewName = true;
+
+    // TODO: Traverse linked list at buckets[bucketIdx]
+    // Each entry: { const char* name, uint16_t fieldID, void* next }
+    // Compare fieldName against each entry->name to find existing fieldID.
+    // For now, always assigns a new ID:
+    fieldID = (*pNextID)++;
+
+    // Write compact or extended field header
+    if (fieldID < 8192) {
+        // Compact: type in bits 15-12, fieldID in bits 11-0
+        uint16_t compact = (uint16_t)((fieldType << 12) | fieldID);
+        // Byte-swap for big-endian RBF format
+        uint16_t swapped = (uint16_t)((compact >> 8) | (compact << 8));
+        util_WriteBytes(file, &swapped, 2);
+    } else {
+        // Extended: 0xFEFF marker + 32-bit header
+        uint16_t marker = 0xFEFF;
+        util_WriteBytes(file, &marker, 2);
+        uint32_t extended = (fieldType << 28) | fieldID;
+        util_WriteUint32Array(file, &extended, 1);
+    }
+
+    // If new name, write name length (byte-swapped uint16) + name bytes
+    if (isNewName && fieldName) {
+        uint32_t nameLen = (uint32_t)strlen(fieldName);
+        uint16_t len16 = (uint16_t)nameLen;
+        uint16_t lenSwapped = (uint16_t)((len16 >> 8) | (len16 << 8));
+        util_WriteBytes(file, &lenSwapped, 2);
+        util_WriteBytes(file, fieldName, nameLen);
+    }
+
+    return true;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// CED0 algorithm — type-dispatched data writer (parStreamOutRbf_WriteData)
+// Binary params: (void* self, const void* data, uint32_t size, uint32_t dataType)
+// C++ vtable slot WriteString has incompatible signature; this static helper
+// implements the actual algorithm callable via the extern "C" wrapper.
+// ────────────────────────────────────────────────────────────────────────────
+static bool parStreamOutRbf_WriteDataImpl(void* self, const void* data, uint32_t size, uint32_t dataType) {
+    if (!data) return false;
+    if (dataType > 11) return false;
+
+    void* file = *(void**)((char*)self + 4);
+
+    switch (dataType) {
+        case 0: case 1: case 3: case 4: case 6:
+            util_WriteBytes(file, data, size);
+            break;
+        case 2: case 7:
+            // TODO: fiBinTokenizer_3D50_w(file, data, size/2) — uint16 byte-swap writer
+            util_WriteBytes(file, data, size);  // fallback: raw write
+            break;
+        case 5: case 8: case 9: case 10: case 11:
+            util_WriteUint32Array(file, (const uint32_t*)data, size / 4);
+            break;
+        default:
+            break;
+    }
+
+    return true;
+}
+
 namespace rage {
 
 void parStreamOutRbf::EndArray() {
     // @ 0x8241CF90
+    // TODO: Complex internal function (~300+ lines) that handles flushing
+    // pending array element data. The vtable slot maps to an internal
+    // data-flushing function with type-based dispatch via CED0_wrh.
+    // Scaffold involves: pending flag check, 0xFDFF marker write,
+    // sentinel writes, and accumulated size tracking at +20.
 }
 
 bool parStreamOutRbf::WriteInt(const char* name, int32_t value) {
-    // @ 0x8241CDD8
-    return false;  // TODO: implement
+    // @ 0x8241CDD8 — writes string block marker to RBF stream
+    (void)value;  // unused in RBF implementation
+
+    // Flush any pending accumulated data
+    parStreamOutRbf_FlushPending(this);
+
+    // Compute string length of name
+    uint32_t len = 0;
+    if (name) {
+        const char* p = name;
+        while (*p) p++;
+        len = (uint32_t)(p - name);
+    }
+
+    // Write string block marker (0xFCFF) + length + name bytes
+    void* file = *(void**)((char*)this + 4);
+    uint16_t marker = 0xFCFF;
+    util_WriteBytes(file, &marker, 2);
+    util_WriteUint32Array(file, &len, 1);
+    if (name && len > 0) {
+        util_WriteBytes(file, name, len);
+    }
+    return true;
 }
 
 bool parStreamOutRbf::WriteFloat(const char* name, float value) {
-    // @ 0x8241CE58
-    return false;  // TODO: implement
+    // @ 0x8241CE58 — CE58_gen: flush pending accumulated data size
+    (void)name; (void)value;  // params unused in RBF flush implementation
+
+    uint8_t* pending = (uint8_t*)((char*)this + 16);
+    if (*pending != 0) {
+        void* file = *(void**)((char*)this + 4);
+        uint32_t savedPos = *(uint32_t*)((char*)this + 12);
+
+        // Compute current file position: file->pos + file->base
+        // (fields at file+16 and file+12 in the file handle struct)
+        uint32_t currentPos = *(uint32_t*)((char*)file + 16) + *(uint32_t*)((char*)file + 12);
+
+        // Seek to saved position, write accumulated data size, seek back
+        rage_SeekFile(file, savedPos);
+        uint32_t* accumSize = (uint32_t*)((char*)this + 20);
+        util_WriteUint32Array(file, accumSize, 1);
+        rage_SeekFile(file, currentPos);
+
+        *pending = 0;
+    }
+    return true;
 }
 
 bool parStreamOutRbf::WriteString(const char* name, const char* value) {
-    // @ 0x8241CED0
-    return false;  // TODO: implement
+    // @ 0x8241CED0 — CED0_wrh: type-dispatched data writer
+    // Binary params: (data, size, dataType). C++ vtable sig is a mismatch.
+    // Called internally via parStreamOutRbf_WriteData(self, data, size, dataType).
+    // See parStreamOutRbf_WriteDataImpl above for the full algorithm.
+    (void)name; (void)value;
+    return true;  // vtable stub — real calls go through extern "C" wrapper
 }
 
 bool parStreamOutRbf::WriteBool(const char* name, bool value) {
-    // @ 0x8241D128
-    return false;  // TODO: implement
+    // @ 0x8241D128 — D128: write RBF field header
+    // Binary params: (fieldType, fieldName). C++ vtable sig is a mismatch.
+    // Called internally via parStreamOutRbf_WriteFieldHeader(self, type, name).
+    // See parStreamOutRbf_WriteFieldHeaderImpl above for the full algorithm.
+    (void)name; (void)value;
+    return true;  // vtable stub — real calls go through extern "C" wrapper
 }
 
 } // namespace rage

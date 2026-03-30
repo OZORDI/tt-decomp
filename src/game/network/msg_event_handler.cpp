@@ -7,7 +7,7 @@
 #include "anim/pcr_anim_events.hpp"
 
 // External dependencies
-extern "C" void cmSampleCamMachineBank_65C0_g(void* queue, uint32_t size);
+extern "C" void atFreeList_Alloc(void* queue, uint32_t size);
 
 // Global event state
 uint32_t g_messageEventType = 0;
@@ -101,7 +101,7 @@ void msgEventHandler::ProcessEvents() {
             uint32_t* queueBase = &m_eventQueue[0];
             
             // Grow queue if needed
-            cmSampleCamMachineBank_65C0_g(queueBase, 16);  // 16 bytes per entry
+            atFreeList_Alloc(queueBase, 16);  // 16 bytes per entry
             
             // Store event pointer in queue
             void** queueEntry = reinterpret_cast<void**>(queueBase);

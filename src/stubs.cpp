@@ -341,7 +341,7 @@ const char* rage_StringFindChar(const char* str, char c) {
 
 void rage_ThreadPool_Cleanup(void) {}
 
-void rage_free_00C0(void* ptr) {
+void sysMemAllocator_Free(void* ptr) {
     extern void rage_free(void* ptr);
     rage_free(ptr);
 }
@@ -584,7 +584,7 @@ extern "C" void xmlNodeStruct_SerializeField(void* a, const char* b, void* c, vo
 extern "C" void* atArray_Destructor(void* a) { (void)a; return nullptr; }
 extern "C" void atSingleton_2E60_g(void* a) { (void)a; }
 extern "C" void* atSingleton_CAD0_g(void* a) { (void)a; return nullptr; }
-extern "C" void atSingleton_D210_p46(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+extern "C" void parStruct_SerializeMembers(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 
 // ── Audio ───────────────────────────────────────────────────────────────────
 
@@ -611,7 +611,7 @@ extern "C" float cmVec4_Atan2(float* a, float* b) { (void)a; (void)b; return 0.0
 
 // ── File I/O / Tokenizer ────────────────────────────────────────────────────
 
-extern "C" void fiAsciiTokenizer_CFA8_w(void* a, const char* b, const char* c) { (void)a; (void)b; (void)c; }
+extern "C" void fiAsciiTokenizer_SetString(void* a, const char* b, const char* c) { (void)a; (void)b; (void)c; }
 extern "C" void fiAsciiTokenizer_Process(void* a, int b) { (void)a; (void)b; }
 
 // ── parStream ───────────────────────────────────────────────────────────────
@@ -626,7 +626,7 @@ extern "C" void grmShaderPreset_AllocArray(uint32_t a) { (void)a; }
 
 // ── Jump Tables / Dispatch ──────────────────────────────────────────────────
 
-extern "C" void jumptable_9498(void* a, const char* b, const char* c, uint32_t d, uint32_t e) {
+extern "C" void cmOperator_SetLabel(void* a, const char* b, const char* c, uint32_t d, uint32_t e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
 
@@ -684,7 +684,7 @@ extern "C" void rage_AddRef(void* a) { (void)a; }
 extern "C" void rage_Release(void* a) { (void)a; }
 extern "C" void rage_ReleaseSingleton(void* a) { (void)a; }
 extern "C" void* parStreamInXml_FindChildByName(const void* a, const char* b) { (void)a; (void)b; return nullptr; }
-extern "C" void rage_F6F0(void) {}
+extern "C" void parMember_Destructor(void) {}
 extern "C" const void* rage_cmIntegrate_vtable = nullptr;
 extern "C" void rage_obj_bind_3828(void* a, void* b, uint32_t c) { (void)a; (void)b; (void)c; }
 extern "C" void* rage_obj_factory_create_3040(void* a, const char* b, int c, void* d, int e) {
@@ -1170,7 +1170,7 @@ void phBoundCapsule_A080_g(void* a) { (void)a; }
 // ── phInst / phObject ───────────────────────────────────────────────────────
 
 void phInst_A3A0_p33(void* a) { (void)a; }
-void* phMaterialMgrImpl_C208_g(void* a, const void* b) { (void)a; (void)b; return nullptr; }
+void* atHashMap_Find(void* a, const void* b) { (void)a; (void)b; return nullptr; }
 
 void* phObject::vfn_17(void* a) { (void)a; return nullptr; }
 void phObject::vfn_20() {}
@@ -1540,8 +1540,8 @@ void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextStat
 void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pg_6F68(a,b,c,d,e); }
-void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) __asm__("_phMaterialMgrImpl_C208_g");
-void _c_phMaterialMgrImpl_C208_g(void* a, const void* b) { phMaterialMgrImpl_C208_g(a,b); }
+void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
+void _c_atHashMap_Find(void* a, const void* b) { atHashMap_Find(a,b); }
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
 void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
 void _c_xmlNodeStruct_Initialize(void* o) __asm__("_xmlNodeStruct_Initialize");

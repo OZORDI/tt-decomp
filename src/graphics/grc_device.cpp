@@ -18,7 +18,7 @@
 extern void* g_pHudOverlay;            /* @ 0x825EBAA0 — HUD overlay object */
 
 /* Memory management */
-extern void rage_free_00C0(void* ptr);             /* @ 0x820C00C0 — sysMemFree */
+extern void sysMemAllocator_Free(void* ptr);             /* @ 0x820C00C0 — sysMemFree */
 
 /* Device management functions */
 extern void grmShaderGroup_destroy(void* pObj);    /* @ 0x82445BF8 — Destroy shader group (refcounted) */
@@ -81,7 +81,7 @@ void grcDevice_shutdown(void)
     }
 
     if (g_grcRenderObjects[1] != NULL) {
-        rage_free_00C0(g_grcRenderObjects[1]);
+        sysMemAllocator_Free(g_grcRenderObjects[1]);
         g_grcRenderObjects[1] = NULL;
     }
 
@@ -169,7 +169,7 @@ void grcDevice_shutdownAlt(void)
         }
 
         /* Free the device memory. */
-        rage_free_00C0(pDevice);
+        rage_free(pDevice);
     }
 
     /* Clear device pointer. */

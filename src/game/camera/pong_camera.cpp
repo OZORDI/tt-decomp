@@ -100,6 +100,25 @@ extern uint8_t pg_ApplyTransition(void* gameState, TransitionParams* params,
 extern uint8_t pongCameraMgr_6E08(void* gameState, TransitionParams* params,
                                    int mode, void* unused1, int unused2);
 
+// Static helper for the clamped-transition pattern shared by 14 functions
+static bool doClampedTransition(void* self, void* gameState, int mode, void* flags, int r7) {
+    float currentValue = *(float*)self;
+    extern float g_cameraThreshold;
+    float threshold = g_cameraThreshold;
+    float clampedMin = (threshold - currentValue >= 0.0f) ? currentValue : threshold;
+    float clampedMax = (currentValue - threshold >= 0.0f) ? currentValue : threshold;
+    TransitionParams params;
+    params.value = clampedMin;
+    params.vtableOrState = *(uint32_t*)self;
+    params.padding = 0;
+    uint8_t result = pongCameraMgr_6E08(gameState, &params, mode, flags, r7);
+    if (result != 0 && params.value <= clampedMax) {
+        *(float*)self = params.value;
+        return true;
+    }
+    return false;
+}
+
 /**
  * pongCameraMgr::TryTransition
  * @ 0x821F7338 | size: 0xE4
@@ -1054,4 +1073,1246 @@ bool pongCameraMgr::HasElapsedThreshold3() {
     float timeDelta = elapsedTime - g_cameraTransitionTime;
 
     return (timeDelta >= g_cameraElapsedThreshold3);
+}
+
+// ── Pattern O: Clamped Transition Functions (14 variants) ───────────────────
+// All share the doClampedTransition helper; differ in mode, flags, r7, and byte check.
+
+bool pongCameraMgr::TransitionMode6_V1(void* gameState) {  // @ 0x821F5188
+    uint32_t f[] = {3, 0, 5, 0};
+    return doClampedTransition(this, gameState, 6, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode6_V2(void* gameState) {  // @ 0x821F5248
+    uint32_t f[] = {3, 1, 5, 0};
+    return doClampedTransition(this, gameState, 6, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode6_V3(void* gameState) {  // @ 0x821F5308
+    uint32_t f[] = {5, 0};
+    return doClampedTransition(this, gameState, 6, f, 1);
+}
+
+bool pongCameraMgr::TransitionMode6_V4(void* gameState) {  // @ 0x821F53B8
+    uint32_t f[] = {5, 1};
+    return doClampedTransition(this, gameState, 6, f, 1);
+}
+
+bool pongCameraMgr::TransitionMode11_V1(void* gameState) {  // @ 0x821F5608
+    uint32_t f[] = {3, 0, 1, 0};
+    return doClampedTransition(this, gameState, 11, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode11_V2(void* gameState) {  // @ 0x821F56C8
+    uint32_t f[] = {3, 1, 1, 0};
+    return doClampedTransition(this, gameState, 11, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode11_V3(void* gameState) {  // @ 0x821F5788
+    uint32_t f[] = {3, 0, 1, 1};
+    return doClampedTransition(this, gameState, 11, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode11_V4(void* gameState) {  // @ 0x821F5848
+    uint32_t f[] = {3, 1, 1, 1};
+    return doClampedTransition(this, gameState, 11, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode19_V1(void* gameState) {  // @ 0x821F4C78
+    extern uint8_t g_cameraSelector;
+    uint32_t b = (g_cameraSelector != 0) ? 1 : 0;
+    uint32_t f[] = {1, 0, 2, b};
+    return doClampedTransition(this, gameState, 19, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode19_V2(void* gameState) {  // @ 0x821F4D48
+    extern uint8_t g_cameraSelector;
+    uint32_t b = (g_cameraSelector != 0) ? 1 : 0;
+    uint32_t f[] = {1, 1, 2, b};
+    return doClampedTransition(this, gameState, 19, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode19_V3(void* gameState) {  // @ 0x821F4E18
+    extern uint8_t g_cameraSelector;
+    uint32_t b = (g_cameraSelector == 0) ? 1 : 0;
+    uint32_t f[] = {1, 0, 2, b};
+    return doClampedTransition(this, gameState, 19, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode19_V4(void* gameState) {  // @ 0x821F4EE8
+    extern uint8_t g_cameraSelector;
+    uint32_t b = (g_cameraSelector == 0) ? 1 : 0;
+    uint32_t f[] = {1, 1, 2, b};
+    return doClampedTransition(this, gameState, 19, f, 2);
+}
+
+bool pongCameraMgr::TransitionMode12_V1(void* gameState) {  // @ 0x821F5D38
+    extern uint8_t g_cameraSelector;
+    uint32_t b = (g_cameraSelector != 0) ? 1 : 0;
+    uint32_t f[] = {3, 0, 1, 0, 2, b};
+    return doClampedTransition(this, gameState, 12, f, 3);
+}
+
+bool pongCameraMgr::TransitionMode12_V2(void* gameState) {  // @ 0x821F5E18
+    extern uint8_t g_cameraSelector;
+    uint32_t b = (g_cameraSelector != 0) ? 1 : 0;
+    uint32_t f[] = {3, 1, 1, 0, 2, b};
+    return doClampedTransition(this, gameState, 12, f, 3);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Multi-call camera transition functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Forward declarations for callees
+extern "C" bool pongCameraMgr_3ED8_2h(void* statePtr, void* gameState, int extra);
+extern "C" bool pg_6F68(void* gameState, void* params, int mode, unsigned int* flags, int enable);
+extern "C" bool pongCameraMgr_6990(void* statePtr, void* gameState, float f1, float f2);
+extern "C" bool pongCameraMgr_5308_fw(void* statePtr, void* gameState);
+extern "C" bool pongCameraMgr_6EC0(void* statePtr, void* gameState);
+extern "C" bool pongCameraMgr_6FA8(void* statePtr, void* gameState, float f1, float f2);
+extern "C" bool pongCameraMgr_7250(void* statePtr, void* gameState, float f1, float f2);
+extern "C" bool pongCameraMgr_7338_helper(void* statePtr, void* gameState, float f1, float f2);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr_3498_g  @ 0x821F3498 | size: 0x64
+// Initializes a 24-byte camera state struct with a value and fixed pointers
+// ─────────────────────────────────────────────────────────────────────────────
+struct CameraStateBlock {
+    uint32_t value;          // +0x00
+    uint32_t funcPtr;        // +0x04
+    uint32_t data[4];        // +0x08..+0x14 (copied from stack template)
+};
+
+extern "C" void pongCameraMgr_3498_g(CameraStateBlock* out, uint32_t value) {
+    extern uint32_t g_camStateTemplate[4];  // @ stack-based template constants
+    out->value = value;
+    // The scaffold stores fixed addresses at +4 and copies a 16-byte template at +8
+    // These are resolved link-time constants from the original binary
+    out->funcPtr = 0x8240E6D0;  // addi r9,-6448 from lis r9,-32191
+    out->data[0] = 0x8240E6D0;
+    out->data[1] = 0;
+    out->data[2] = 0;
+    out->data[3] = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryDualTransition3ED8()  @ 0x821F4000 | size: 0x80
+// Calls pongCameraMgr_3ED8_2h twice (extra=0 then extra=1), picks min result,
+// returns true if either call succeeded
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryDualTransition3ED8(void* gameState) {
+    // Create two local copies of the first 8 bytes (float value + state)
+    uint64_t copy1 = *(uint64_t*)this;
+    uint64_t copy2 = copy1;
+
+    // Call 3ED8 with extra=0 on first copy
+    bool result1 = pongCameraMgr_3ED8_2h(&copy1, gameState, 0);
+
+    // Call 3ED8 with extra=1 on second copy
+    bool result2 = pongCameraMgr_3ED8_2h(&copy2, gameState, 1);
+
+    // Pick min of the two float results using fsel pattern
+    float val1 = *(float*)&copy1;
+    float val2 = *(float*)&copy2;
+    float diff = val1 - val2;
+    float minVal = (diff >= 0.0f) ? val2 : val1;
+
+    // Store the minimum value back
+    *(float*)this = minVal;
+
+    // Return true if either call succeeded
+    if (!result1) {
+        return (result2 & 0xFF) != 0;
+    }
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionPg6F68_Mode0()  @ 0x821F4080 | size: 0xFC
+// Calls pg_6F68(mode=5, flags={3,0}), then pongCameraMgr_6E08(mode=3), 
+// then pongCameraMgr_6E08(mode=5) with offset-adjusted value
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionPg6F68_Mode0(void* gameState) {
+    extern float g_cameraTransitionOffset;  // @ 0x8202D168
+
+    // Prepare flags: {3, 0}
+    uint32_t flags[2] = { 3, 0 };
+
+    // Copy first 8 bytes as transition params
+    TransitionParams params;
+    *(uint64_t*)&params = *(uint64_t*)this;
+
+    // First call: pg_6F68 with mode=5
+    if (!pg_6F68(gameState, &params, 5, flags, 1)) {
+        return false;
+    }
+
+    // Reload state and call pongCameraMgr_6E08 with mode=3
+    TransitionParams params2;
+    *(uint64_t*)&params2 = *(uint64_t*)&params;
+    if (!pongCameraMgr_6E08(gameState, &params2, 3, flags, 1)) {
+        return false;
+    }
+
+    // Save the result value from first 6E08 call
+    float resultValue = params.value;
+
+    // Adjust value by adding offset, call 6E08 with mode=5
+    params2.value = resultValue + g_cameraTransitionOffset;
+    if (pongCameraMgr_6E08(gameState, &params2, 5, flags, 1)) {
+        // Third call succeeded - check if result < original
+        float result3 = params2.value;
+        if (result3 < resultValue) {
+            // Result went down, use original
+            *(float*)this = resultValue;
+            return true;
+        }
+        return false;
+    }
+
+    // Third call failed - store original result
+    *(float*)this = resultValue;
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryTransitionPg6F68_Mode1()  @ 0x821F4180 | size: 0xFC
+// Same as TryTransitionPg6F68_Mode0 but with flags={3, 1}
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryTransitionPg6F68_Mode1(void* gameState) {
+    extern float g_cameraTransitionOffset;  // @ 0x8202D168
+
+    // Prepare flags: {3, 1}
+    uint32_t flags[2] = { 3, 1 };
+
+    TransitionParams params;
+    *(uint64_t*)&params = *(uint64_t*)this;
+
+    if (!pg_6F68(gameState, &params, 5, flags, 1)) {
+        return false;
+    }
+
+    TransitionParams params2;
+    *(uint64_t*)&params2 = *(uint64_t*)&params;
+    if (!pongCameraMgr_6E08(gameState, &params2, 3, flags, 1)) {
+        return false;
+    }
+
+    float resultValue = params.value;
+    params2.value = resultValue + g_cameraTransitionOffset;
+    if (pongCameraMgr_6E08(gameState, &params2, 5, flags, 1)) {
+        float result3 = params2.value;
+        if (result3 < resultValue) {
+            *(float*)this = resultValue;
+            return true;
+        }
+        return false;
+    }
+
+    *(float*)this = resultValue;
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryClampedTransition_Mode0()  @ 0x821F4280 | size: 0x124
+// Clamps value to threshold, then triple-calls 6E08 with modes 5, 3, 5
+// flags = {3, 0}
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryClampedTransition_Mode0(void* gameState) {
+    extern float g_cameraThreshold;         // @ 0x825C5EC0
+    extern float g_cameraTransitionOffset;  // @ 0x8202D168
+
+    float currentValue = *(float*)this;
+    float threshold = g_cameraThreshold;
+
+    // fsel clamping: pick min(currentValue, threshold) and max
+    float diffMin = threshold - currentValue;
+    float diffMax = currentValue - threshold;
+    float clampedMin = (diffMin >= 0.0f) ? currentValue : threshold;  // min
+    float clampedMax = (diffMax >= 0.0f) ? currentValue : threshold;  // max
+
+    // Prepare flags: {3, 0}
+    uint32_t flags[2] = { 3, 0 };
+
+    TransitionParams params;
+    params.value = clampedMin;
+    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)this + 4);
+
+    // First call: 6E08 with mode=5
+    if (!pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+        return false;
+    }
+
+    float result1 = params.value;
+    if (result1 > clampedMax) {
+        return false;
+    }
+
+    // Second call: 6E08 with mode=3
+    *(uint64_t*)&params = *(uint64_t*)&params;  // reload
+    if (!pongCameraMgr_6E08(gameState, &params, 3, flags, 1)) {
+        return false;
+    }
+
+    float resultValue = result1;
+
+    // Third call: 6E08 with mode=5 using offset-adjusted value
+    params.value = resultValue + g_cameraTransitionOffset;
+    if (pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+        float result3 = params.value;
+        if (result3 < resultValue) {
+            *(float*)this = resultValue;
+            return true;
+        }
+        return false;
+    }
+
+    *(float*)this = resultValue;
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::TryClampedTransition_Mode1()  @ 0x821F43A8 | size: 0x124
+// Same as TryClampedTransition_Mode0 but with flags={3, 1}
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::TryClampedTransition_Mode1(void* gameState) {
+    extern float g_cameraThreshold;         // @ 0x825C5EC0
+    extern float g_cameraTransitionOffset;  // @ 0x8202D168
+
+    float currentValue = *(float*)this;
+    float threshold = g_cameraThreshold;
+
+    float diffMin = threshold - currentValue;
+    float diffMax = currentValue - threshold;
+    float clampedMin = (diffMin >= 0.0f) ? currentValue : threshold;
+    float clampedMax = (diffMax >= 0.0f) ? currentValue : threshold;
+
+    uint32_t flags[2] = { 3, 1 };
+
+    TransitionParams params;
+    params.value = clampedMin;
+    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)this + 4);
+
+    if (!pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+        return false;
+    }
+
+    float result1 = params.value;
+    if (result1 > clampedMax) {
+        return false;
+    }
+
+    *(uint64_t*)&params = *(uint64_t*)&params;
+    if (!pongCameraMgr_6E08(gameState, &params, 3, flags, 1)) {
+        return false;
+    }
+
+    float resultValue = result1;
+    params.value = resultValue + g_cameraTransitionOffset;
+    if (pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+        float result3 = params.value;
+        if (result3 < resultValue) {
+            *(float*)this = resultValue;
+            return true;
+        }
+        return false;
+    }
+
+    *(float*)this = resultValue;
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckTransition_Near_Mode0()  @ 0x821F83B8 | size: 0x6C
+// Calls 6E08 with flags={3,0}, checks if result > threshold
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckTransition_Near_Mode0(void* gameState, float threshold) {
+    uint32_t flags[2] = { 3, 0 };
+
+    TransitionParams params;
+    *(uint64_t*)&params = *(uint64_t*)this;
+
+    if (pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+        float result = params.value;
+        if (result <= threshold) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckTransition_Near_Mode1()  @ 0x821F8428 | size: 0x6C
+// Same as Mode0 but with flags={3,1}
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckTransition_Near_Mode1(void* gameState, float threshold) {
+    uint32_t flags[2] = { 3, 1 };
+
+    TransitionParams params;
+    *(uint64_t*)&params = *(uint64_t*)this;
+
+    if (pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+        float result = params.value;
+        if (result <= threshold) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckAllNearTransitions_Mode0()  @ 0x821F8498 | size: 0x140
+// Calls CheckTransition_Near_Mode0 with 7 different mode indices (7-13 excl 14),
+// using threshold = g_cameraThreshold + f2. Returns true only if ALL succeed.
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckAllNearTransitions_Mode0(void* gameState, float f2) {
+    extern float g_cameraThreshold;  // @ 0x825C5EC0
+    float threshold = g_cameraThreshold + f2;
+
+    uint64_t stateCopy;
+    int modes[] = { 7, 8, 9, 10, 13, 11, 12 };
+    bool results[7];
+
+    for (int i = 0; i < 7; i++) {
+        stateCopy = *(uint64_t*)this;
+        // Call CheckTransition_Near_Mode0 pattern inline
+        uint32_t flags[2] = { 3, 0 };
+        TransitionParams params;
+        *(uint64_t*)&params = stateCopy;
+        if (pongCameraMgr_6E08(gameState, &params, modes[i], flags, 1)) {
+            results[i] = (params.value > threshold);
+        } else {
+            results[i] = true;
+        }
+    }
+
+    // Return true only if ALL checks passed
+    for (int i = 0; i < 7; i++) {
+        if (!results[i]) return false;
+    }
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckAllNearTransitions_Mode1()  @ 0x821F85D8 | size: 0x140
+// Same as Mode0 but uses flags={3,1} via CheckTransition_Near_Mode1
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckAllNearTransitions_Mode1(void* gameState, float f2) {
+    extern float g_cameraThreshold;  // @ 0x825C5EC0
+    float threshold = g_cameraThreshold + f2;
+
+    uint64_t stateCopy;
+    int modes[] = { 7, 8, 9, 10, 13, 11, 12 };
+    bool results[7];
+
+    for (int i = 0; i < 7; i++) {
+        stateCopy = *(uint64_t*)this;
+        uint32_t flags[2] = { 3, 1 };
+        TransitionParams params;
+        *(uint64_t*)&params = stateCopy;
+        if (pongCameraMgr_6E08(gameState, &params, modes[i], flags, 1)) {
+            results[i] = (params.value > threshold);
+        } else {
+            results[i] = true;
+        }
+    }
+
+    for (int i = 0; i < 7; i++) {
+        if (!results[i]) return false;
+    }
+    return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::CheckAllCameraQueries()  @ 0x821F8250 | size: 0x164
+// Master query: calls 7 different query functions, returns true if ANY succeeded
+// ─────────────────────────────────────────────────────────────────────────────
+bool pongCameraMgr::CheckAllCameraQueries(void* gameState, float f1, float f2) {
+    // 1. ValidateAndClampTransition mode 21
+    uint64_t stateCopy = *(uint64_t*)this;
+    bool r1 = pongCameraMgr_3500_fw(reinterpret_cast<pongCameraMgr*>(&stateCopy), gameState, 21);
+
+    // 2. pongCameraMgr_6990
+    stateCopy = *(uint64_t*)this;
+    bool r2 = pongCameraMgr_6990(&stateCopy, gameState, f1, f2);
+
+    // 3. pongCameraMgr_5308_fw
+    stateCopy = *(uint64_t*)this;
+    bool r3 = pongCameraMgr_5308_fw(&stateCopy, gameState);
+
+    // 4. pongCameraMgr_6EC0
+    stateCopy = *(uint64_t*)this;
+    bool r4 = pongCameraMgr_6EC0(&stateCopy, gameState);
+
+    // 5. pongCameraMgr_6FA8
+    stateCopy = *(uint64_t*)this;
+    bool r5 = pongCameraMgr_6FA8(&stateCopy, gameState, f1, f2);
+
+    // 6. pongCameraMgr_7250
+    stateCopy = *(uint64_t*)this;
+    bool r6 = pongCameraMgr_7250(&stateCopy, gameState, f1, f2);
+
+    // 7. pongCameraMgr_7338
+    stateCopy = *(uint64_t*)this;
+    bool r7 = pongCameraMgr_7338_helper(&stateCopy, gameState, f1, f2);
+
+    // Return true if ANY query succeeded (OR logic)
+    return r1 || r2 || r3 || r4 || r5 || r6 || r7;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Forward declarations for helpers used below
+// ─────────────────────────────────────────────────────────────────────────────
+extern void sysMemAllocator_Free(void* ptr);                        // @ 0x820C00C0
+extern void atSingleton_9420(void* obj);                      // @ 0x821A9420
+extern void pongCameraMgr_3E98_g(void* obj);                  // @ 0x82143E98 (GetAspectRatio)
+extern void phBoundCapsule_3598_g(void* obj);                  // @ 0x82153598
+extern void pongCameraMgr_39F0_g(void* dst, void* src);       // @ 0x821539F0
+extern uint8_t pongCameraMgr_C450_g(void* node);              // @ 0x8220C450
+extern void pongCameraMgr_7EA8_g(void* mgr, void* state, int flag); // @ 0x82167EA8
+extern void pg_7CE0(void* mgr, void* node);                   // @ 0x82167CE0
+extern void game_85F0(void* flags);                            // @ 0x821685F0
+
+// Globals referenced by address
+extern uint32_t g_cameraMgrSingleton;   // @ 0x8260641C  (lis r7,-32160 + 25628)
+extern uint32_t g_cameraActiveIndex;    // @ 0x8260645C  (lis r10,-32160 + 26076)
+extern uint8_t  g_cameraResetFlag;      // @ 0x8260640A  (lis r8,-32160 + 25626)
+extern uint32_t g_cameraLerpCounter;    // @ 0x826064A0  (lis r10,-32160 + 25792)
+extern uint32_t g_cameraLerpState;      // @ 0x826064A4  (lis r10,-32160 + 25796)
+extern float    g_cameraLerpValue;      // @ 0x826064BC  (lis r10,-32160 + 25788)
+extern uint32_t g_cameraLerpFlags;      // @ 0x826064D0  (lis r10,-32160 + 25808)
+extern uint32_t g_cameraDataBasePtr;    // @ 0x8271A2EC  (global data base)
+extern float    g_cameraFloatTable[];   // @ data table base (lis r10,-32253 + offset)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::~pongCameraMgr()  [vfn_0] @ 0x821658E0 | size: 0x80
+// Destructor: sets vtables, clears singleton, calls base dtor, optionally frees
+// ─────────────────────────────────────────────────────────────────────────────
+pongCameraMgr::~pongCameraMgr() {
+    // Vtable writes (secondary at +0x10, then base at +0x00) handled by compiler.
+    // Clear the global singleton pointer.
+    g_cameraMgrSingleton = 0;
+    atSingleton_9420(this);
+    // Note: sysMemAllocator_Free called conditionally based on deletion mode flag,
+    // which the compiler handles via the deleting-destructor thunk.
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr::vfn_25()  [vtable slot 25] @ 0x82166068 | size: 0xAC
+// Resets camera state: calls slot-8 vcall on field_0x28, zeroes sub-fields,
+// writes default floats, updates global camera pointer
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCameraMgr::vfn_25() {
+    void* camObj = *(void**)((char*)this + 40);   // +0x28 m_cameraObj
+    field_0x0038 = 0;                              // +0x38 = 0
+
+    // Virtual call slot 8 on camObj
+    typedef void (*VFn8)(void*);
+    void** vt = *(void***)camObj;
+    ((VFn8)vt[8])(camObj);
+
+    // Load sub-state ptr from +0x2C
+    uint32_t* subState = *(uint32_t**)((char*)this + 44);  // +0x2C
+    subState[1] = 0;  // +4
+    subState[2] = 0;  // +8
+
+    // Load default float value from data table
+    extern float g_cameraDefaultFOV;  // @ const table
+    float defVal = g_cameraDefaultFOV;
+
+    // Write default to sub-state->field_16->+8,+12 and sub-state->field_20->+8,+12
+    uint32_t* inner1 = *(uint32_t**)(subState + 4);  // +16
+    *(float*)((char*)inner1 + 8) = defVal;
+    *(float*)((char*)inner1 + 12) = defVal;
+
+    uint32_t* inner2 = *(uint32_t**)(subState + 5);  // +20
+    *(float*)((char*)inner2 + 8) = defVal;
+    *(float*)((char*)inner2 + 12) = defVal;
+
+    // Update global camera pointer from camObj->+44->+16
+    void* camObj2 = *(void**)((char*)this + 40);
+    uint32_t* camData = *(uint32_t**)((char*)camObj2 + 44);
+    extern uint32_t* g_globalCamPtr1;  // @ global
+    extern uint32_t* g_globalCamPtr2;  // @ global
+    *g_globalCamPtr1 = (uint32_t)((char*)camData + 16);
+
+    // Virtual call slot 3 on g_globalCamPtr2
+    typedef void (*VFn3)(void*);
+    void** vt2 = *(void***)g_globalCamPtr2;
+    ((VFn3)vt2[3])((void*)((char*)g_globalCamPtr2 + 4));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr_6280_g  @ 0x82166280 | size: 0x90
+// Gets camera data from active camera, copies FOV/aspect data into indexed slot
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCameraMgr_6280_g(void* selfPtr) {
+    uint32_t* self = (uint32_t*)selfPtr;
+    void* camObj = *(void**)((char*)self + 40);                  // +0x28
+    uint32_t* camData = *(uint32_t**)((char*)camObj + 44);
+    void* activeCamera = (void*)camData[38];                     // +152
+
+    float fovY = *(float*)((char*)activeCamera + 836);           // +0x344
+    float fovX = *(float*)((char*)activeCamera + 832);           // +0x340
+
+    // Get aspect ratio (result returned in f1)
+    pongCameraMgr_3E98_g(activeCamera);
+
+    // Compute destination slot: self->+24 + g_cameraActiveIndex * 912
+    uint32_t* slotsBase = *(uint32_t**)((char*)self + 24);       // +0x18
+    int idx = (int)g_cameraActiveIndex;
+    char* dest = (char*)slotsBase + idx * 912;
+
+    *(float*)(dest + 824) = *(float*)((char*)activeCamera + 824); // +0x338
+    *(uint8_t*)(dest + 864) = 1;                                  // +0x360
+    // f1 holds aspect ratio from pongCameraMgr_3E98_g
+    // *(float*)(dest + 828) = aspectResult;  // stored by caller convention
+    *(float*)(dest + 832) = fovX;
+    *(float*)(dest + 836) = fovY;
+
+    phBoundCapsule_3598_g(dest);
+
+    // Copy matrix: activeCamera+64 -> dest (recomputed slot)
+    idx = (int)g_cameraActiveIndex;
+    slotsBase = *(uint32_t**)((char*)self + 24);
+    dest = (char*)slotsBase + idx * 912;
+    pongCameraMgr_39F0_g(dest, (char*)activeCamera + 64);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraState::~pongCameraState()  [vfn_0] @ 0x82167770 | size: 0x78
+// Destructor: sets vtable, destroys child at +0x10 if non-null, optionally frees
+// ─────────────────────────────────────────────────────────────────────────────
+pongCameraState::~pongCameraState() {
+    // Vtable write handled by compiler.
+    // If child object at +0x10 is non-null, destroy it (vcall slot 0 with delete flag)
+    void* child = *(void**)((char*)this + 16);   // +0x10
+    if (child != nullptr) {
+        typedef void (*DtorFn)(void*, int);
+        void** vt = *(void***)child;
+        ((DtorFn)vt[0])(child, 1);
+    }
+    // sysMemAllocator_Free called conditionally by deleting-destructor thunk
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr_77E8_w  @ 0x821677E8 | size: 0xB8
+// Walks camera node tree; returns 1 if a node with byte+28 set is found, else 0
+// ─────────────────────────────────────────────────────────────────────────────
+int pongCameraMgr_77E8_w(void* selfPtr, void* statePtr) {
+    uint32_t* self = (uint32_t*)selfPtr;
+
+    // Lookup current node: self->flags->+48[self->+8 * 4]
+    uint32_t* flags = *(uint32_t**)((char*)self + 4);
+    int curTime = *(int*)((char*)self + 8);
+    uint32_t* nodeTable = *(uint32_t**)((char*)flags + 48);
+    void* node = (void*)nodeTable[curTime];
+
+    if (!pongCameraMgr_C450_g(node))
+        return 0;
+
+    while (true) {
+        // Check if node has children (halfword at +36)
+        uint16_t childCount = *(uint16_t*)((char*)node + 36);
+        if (childCount != 0)
+            return 0;
+
+        // Check byte flag at +28
+        uint8_t flagByte = *(uint8_t*)((char*)node + 28);
+        if (flagByte != 0)
+            return 1;
+
+        // Traverse: node->+40->+16 gives index, statePtr->+32 gives table
+        uint32_t* link = *(uint32_t**)((char*)node + 40);
+        uint32_t* table2 = *(uint32_t**)((char*)statePtr + 32);
+        int linkIdx = *(int*)((char*)link + 16);
+        uint32_t* entry = (uint32_t*)table2[linkIdx];
+        uint32_t* nextFlags = *(uint32_t**)((char*)entry + 4);
+        int nextIdx = *(int*)((char*)entry + 8);
+        uint32_t* nextNodeTable = *(uint32_t**)((char*)nextFlags + 48);
+        node = (void*)nextNodeTable[nextIdx];
+
+        if (!pongCameraMgr_C450_g(node))
+            return 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr_7C18  @ 0x82167C18 | size: 0xC4
+// Sets up camera transition: clears globals, stores lerp value, dispatches
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCameraMgr_7C18(void* selfPtr, void* nodePtr, void* statePtr, uint8_t immediateFlag) {
+    // Compute lerp value from data table (offset 0x68CE4 = 6*65536+36068)
+    float lerpVal = *(float*)(g_cameraDataBasePtr + 0x68CE4);
+
+    // Clear transition globals
+    g_cameraLerpCounter = 0;
+    g_cameraLerpState = 0;
+    g_cameraLerpValue = lerpVal;
+    g_cameraLerpFlags = 0;
+
+    // Call recursive hierarchy setup
+    pongCameraMgr_7DF0_2hr(selfPtr, statePtr, *(int*)((char*)nodePtr + 16));
+
+    if (immediateFlag) {
+        // Immediate transition: flag=0
+        pongCameraMgr_7EA8_g(selfPtr, statePtr, 0);
+        return;
+    }
+
+    // Check if current node byte+28 is zero (inactive)
+    uint8_t active = *(uint8_t*)((char*)nodePtr + 28);
+    if (active == 0) {
+        // Walk to linked node: nodePtr->+40->+16 gives index into statePtr->+32
+        uint32_t* link = *(uint32_t**)((char*)nodePtr + 40);
+        uint32_t* table = *(uint32_t**)((char*)statePtr + 32);
+        int linkIdx = *(int*)((char*)link + 16);
+        void* linkedMgr = (void*)table[linkIdx];
+        pongCameraMgr_7EA8_g(linkedMgr, statePtr, 1);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr_7DF0_2hr  @ 0x82167DF0 | size: 0xB4
+// Recursively sets camera index and processes child nodes
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCameraMgr_7DF0_2hr(void* selfPtr, void* statePtr, int index) {
+    uint32_t* self = (uint32_t*)selfPtr;
+
+    // Store index at self->+8, look up node from flags->+48[index]
+    *(int*)((char*)self + 8) = index;
+    uint32_t* flags = *(uint32_t**)((char*)self + 4);
+    uint32_t* nodeTable = *(uint32_t**)((char*)flags + 48);
+    void* node = (void*)nodeTable[index];
+
+    // If node byte+28 is zero (inactive), recurse through its link
+    uint8_t active = *(uint8_t*)((char*)node + 28);
+    if (active == 0) {
+        uint32_t* link = *(uint32_t**)((char*)node + 40);
+        uint32_t* table = *(uint32_t**)((char*)statePtr + 32);
+        int linkIdx = *(int*)((char*)link + 16);
+        uint32_t* entry = (uint32_t*)table[linkIdx];
+        void* linkedMgr = (void*)entry;
+        int linkedIdx = *(int*)((char*)link + 16);  // re-read
+        pongCameraMgr_7DF0_2hr(linkedMgr, statePtr, linkedIdx);
+    }
+
+    // Process children: iterate node->+36 (child count), node->+32 (child array)
+    int16_t childCount = *(int16_t*)((char*)node + 36);
+    if (childCount > 0) {
+        for (int i = 0; i < childCount; i++) {
+            uint32_t* childArray = *(uint32_t**)((char*)node + 32);
+            void* childEntry = (void*)childArray[i];
+            void* childNode = *(void**)((char*)childEntry + 52);
+
+            uint8_t childActive = *(uint8_t*)((char*)childNode + 28);
+            if (childActive == 0) {
+                void* childLink = *(void**)((char*)childNode + 40);
+                pg_7CE0(statePtr, childLink);
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr_8C10  @ 0x82168C10 | size: 0xA0
+// Resets camera state: clears indices, resets globals, processes hierarchy
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCameraMgr_8C10(void* selfPtr) {
+    uint32_t* self = (uint32_t*)selfPtr;
+
+    // Compute lerp value from data table
+    float lerpVal = *(float*)(g_cameraDataBasePtr + 0x68CE4);
+
+    // Clear reset flag
+    g_cameraResetFlag = 0;
+
+    // Reset indices at +0x10, +0x14, +0x18 to -1
+    *(int*)((char*)self + 16) = -1;
+    *(int*)((char*)self + 20) = -1;
+    *(int*)((char*)self + 24) = -1;
+
+    // Clear lerp globals
+    g_cameraLerpCounter = 0;
+    g_cameraLerpState = 0;
+    g_cameraLerpFlags = 0;
+    g_cameraLerpValue = lerpVal;
+
+    // Process hierarchy: self->flags as param
+    void* flags = *(void**)((char*)self + 4);
+    pongCameraMgr_7DF0_2hr(flags, selfPtr, 0);  // index 0
+
+    // Apply transition with flag=1
+    flags = *(void**)((char*)self + 4);
+    pongCameraMgr_7EA8_g(flags, selfPtr, 1);
+
+    // Finalize
+    pongCameraMgr_8CB0_2hr(selfPtr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCameraMgr_8CB0_2hr  @ 0x82168CB0 | size: 0x88
+// Applies camera configuration from data tables; copies float params if reset
+// flag was set, then tail-calls game_85F0
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCameraMgr_8CB0_2hr(void* selfPtr) {
+    uint8_t resetFlag = g_cameraResetFlag;
+
+    // Load data table base and float table pointer
+    // r10 = base of float constants (lis r11,-32253 + addi -12020)
+    // r9 = g_cameraDataBasePtr
+
+    if (resetFlag != 0) {
+        // Copy a block of float params from the const table into the data region
+        // Destination: g_cameraDataBasePtr + 0x78CE4 (offset 7*65536 - 29404)
+        char* destBase = (char*)(g_cameraDataBasePtr + 0x78CE4 - 29404);
+        extern float g_cameraConstTable[];  // base of float constants
+
+        // Copy 7 float values
+        *(float*)(destBase + 0)  = g_cameraConstTable[0];   // f10
+        *(float*)(destBase + 4)  = g_cameraConstTable[1];   // f11
+        *(float*)(destBase + 8)  = g_cameraConstTable[7];   // f13
+        *(float*)(destBase + 12) = g_cameraConstTable[-1];  // f0 (offset -4)
+        *(float*)(destBase + 16) = g_cameraConstTable[-1];  // f0
+        *(float*)(destBase + 20) = g_cameraConstTable[30];  // f12 (offset 120)
+        *(float*)(destBase + 24) = g_cameraConstTable[-1];  // f0
+
+        g_cameraResetFlag = 0;
+
+        // Also store f0 at g_cameraDataBasePtr + 0x68CEC (offset 36076)
+        *(float*)(g_cameraDataBasePtr + 0x68CEC) = g_cameraConstTable[-1];
+    }
+
+    // Store a float value at g_cameraDataBasePtr + 0x68D04 (offset 36100)
+    extern float g_cameraFinalFloat;  // @ const table offset -3112
+    *(float*)(g_cameraDataBasePtr + 0x68D04) = g_cameraFinalFloat;
+
+    // Tail-call: game_85F0 with self->flags
+    void* flags = *(void**)((char*)selfPtr + 4);
+    game_85F0(flags);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pattern O: Clamped transition functions (14 functions)
+//
+// All follow: clamp *(float*)this to g_cameraThreshold, call 6E08/pg_6F68,
+// store result if in range.
+//
+// Parameter table:
+// Func     | Type       | Mode1 | Flags1           | Mode2 | Flags2 | r7 | ByteChk
+// 5EF8     | single     | 12    | {3,0,1,1,2,S}    | -     | -      | 3  | S=sel
+// 5FD8     | single     | 12    | {3,1,1,1,2,S}    | -     | -      | 3  | S=sel
+// 60B0     | single     | 12    | {3,0,1,0,2,I}    | -     | -      | 3  | I=!sel
+// 6188     | single     | 12    | {3,1,1,0,2,I}    | -     | -      | 3  | I=!sel
+// 6260     | single     | 12    | {3,0,1,1,2,I}    | -     | -      | 3  | I=!sel
+// 6338     | single     | 12    | {3,1,1,1,2,I}    | -     | -      | 3  | I=!sel
+// 6D00     | dual       | 10    | {3,0,3,1}        | 16    | {3,1}  | 1  | -
+// 6DE0     | dual       | 10    | {3,1,3,0}        | 16    | {3,0}  | 1  | -
+// 6EC0     | 6E08+6F68  | 10    | {3,0}            | 16    | {3,0}  | 1  | -
+// 6FA8     | 6E08+6F68  | 10    | {3,1}            | 16    | {3,1}  | 1  | -
+// 7090     | dual       | 7     | {3,0,3,1}        | 16    | {3,1}  | 1  | -
+// 7170     | dual       | 7     | {3,1,3,0}        | 16    | {3,0}  | 1  | -
+// 7250     | 6E08+6F68  | 7     | {3,0}            | 16    | {3,0}  | 1  | -
+// 3ED8_2h  | triple     | 5,3,5 | {3,E}            | -     | -      | 1  | E=extra
+//
+// S = (g_cameraSelector != 0) ? 1 : 0
+// I = (g_cameraSelector == 0) ? 1 : 0
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Helper: single 6E08 call with 6-field extended flags, mode=12, r7=3
+static bool clampedTransition12(void* self, void* gameState, const uint32_t flags[6]) {
+    extern float g_cameraThreshold;
+    float cur = *(float*)self;
+    float thr = g_cameraThreshold;
+    float dMin = thr - cur, dMax = cur - thr;
+    float cMin = (dMin >= 0.0f) ? cur : thr;
+    float cMax = (dMax >= 0.0f) ? cur : thr;
+
+    TransitionParams params;
+    params.value = cMin;
+    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)self + 4);
+
+    if (!pongCameraMgr_6E08(gameState, &params, 12, (void*)flags, 3)) return false;
+    if (params.value > cMax) return false;
+    *(float*)self = params.value;
+    return true;
+}
+
+// Helper: dual 6E08 call — first with mode1 + 4-field flags, second with mode=16 + flags[2..3]
+static bool clampedDualTransition(void* self, void* gameState, int mode1, const uint32_t flags[4]) {
+    extern float g_cameraThreshold;
+    float cur = *(float*)self;
+    float thr = g_cameraThreshold;
+    float dMin = thr - cur, dMax = cur - thr;
+    float cMin = (dMin >= 0.0f) ? cur : thr;
+    float cMax = (dMax >= 0.0f) ? cur : thr;
+
+    TransitionParams params;
+    params.value = cMin;
+    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)self + 4);
+    uint64_t saved = *(uint64_t*)&params;
+
+    if (!pongCameraMgr_6E08(gameState, &params, mode1, (void*)flags, 1)) return false;
+    if (params.value > cMax) return false;
+
+    *(uint64_t*)&params = saved;  // restore original clamped params for second call
+    if (!pongCameraMgr_6E08(gameState, &params, 16, (void*)&flags[2], 1)) return false;
+    if (params.value > cMax) return false;
+    *(float*)self = params.value;
+    return true;
+}
+
+// Helper: 6E08 call then pg_6F68 call, both clamped
+static bool clampedTransition_pg6F68(void* self, void* gameState, int mode1, uint32_t flags[2]) {
+    extern float g_cameraThreshold;
+    float cur = *(float*)self;
+    float thr = g_cameraThreshold;
+    float dMin = thr - cur, dMax = cur - thr;
+    float cMin = (dMin >= 0.0f) ? cur : thr;
+    float cMax = (dMax >= 0.0f) ? cur : thr;
+
+    TransitionParams params;
+    params.value = cMin;
+    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)self + 4);
+
+    if (!pongCameraMgr_6E08(gameState, &params, mode1, flags, 1)) return false;
+    if (params.value > cMax) return false;
+
+    if (!pg_6F68(gameState, &params, 16, flags, 1)) return false;
+    if (params.value > cMax) return false;
+    *(float*)self = params.value;
+    return true;
+}
+
+// ── Single-call pattern (6 functions): mode=12, 6-field flags, r7=3 ─────
+
+// pongCameraMgr_5EF8_fw @ 0x821F5EF8 — flags={3,0,1,1,2,sel}
+bool pongCameraMgr_5EF8_fw_impl(void* self, void* gameState) {
+    uint32_t s = (g_cameraSelector != 0) ? 1u : 0u;
+    uint32_t flags[6] = {3, 0, 1, 1, 2, s};
+    return clampedTransition12(self, gameState, flags);
+}
+
+// pongCameraMgr_5FD8_fw @ 0x821F5FD8 — flags={3,1,1,1,2,sel}
+bool pongCameraMgr_5FD8_fw_impl(void* self, void* gameState) {
+    uint32_t s = (g_cameraSelector != 0) ? 1u : 0u;
+    uint32_t flags[6] = {3, 1, 1, 1, 2, s};
+    return clampedTransition12(self, gameState, flags);
+}
+
+// pongCameraMgr_60B0_fw @ 0x821F60B0 — flags={3,0,1,0,2,!sel}
+bool pongCameraMgr_60B0_fw_impl(void* self, void* gameState) {
+    uint32_t inv = (g_cameraSelector == 0) ? 1u : 0u;
+    uint32_t flags[6] = {3, 0, 1, 0, 2, inv};
+    return clampedTransition12(self, gameState, flags);
+}
+
+// pongCameraMgr_6188_fw @ 0x821F6188 — flags={3,1,1,0,2,!sel}
+bool pongCameraMgr_6188_fw_impl(void* self, void* gameState) {
+    uint32_t inv = (g_cameraSelector == 0) ? 1u : 0u;
+    uint32_t flags[6] = {3, 1, 1, 0, 2, inv};
+    return clampedTransition12(self, gameState, flags);
+}
+
+// pongCameraMgr_6260_fw @ 0x821F6260 — flags={3,0,1,1,2,!sel}
+bool pongCameraMgr_6260_fw_impl(void* self, void* gameState) {
+    uint32_t inv = (g_cameraSelector == 0) ? 1u : 0u;
+    uint32_t flags[6] = {3, 0, 1, 1, 2, inv};
+    return clampedTransition12(self, gameState, flags);
+}
+
+// pongCameraMgr_6338_fw @ 0x821F6338 — flags={3,1,1,1,2,!sel}
+bool pongCameraMgr_6338_fw_impl(void* self, void* gameState) {
+    uint32_t inv = (g_cameraSelector == 0) ? 1u : 0u;
+    uint32_t flags[6] = {3, 1, 1, 1, 2, inv};
+    return clampedTransition12(self, gameState, flags);
+}
+
+// ── Dual-call pattern (4 functions): 6E08(mode1) then 6E08(mode=16) ────
+
+// pongCameraMgr_6D00_fw @ 0x821F6D00 — mode=10, flags={3,0,3,1}
+bool pongCameraMgr_6D00_fw_impl(void* self, void* gameState) {
+    uint32_t flags[4] = {3, 0, 3, 1};
+    return clampedDualTransition(self, gameState, 10, flags);
+}
+
+// pongCameraMgr_6DE0_fw @ 0x821F6DE0 — mode=10, flags={3,1,3,0}
+bool pongCameraMgr_6DE0_fw_impl(void* self, void* gameState) {
+    uint32_t flags[4] = {3, 1, 3, 0};
+    return clampedDualTransition(self, gameState, 10, flags);
+}
+
+// pongCameraMgr_7090_fw @ 0x821F7090 — mode=7, flags={3,0,3,1}
+bool pongCameraMgr_7090_fw_impl(void* self, void* gameState) {
+    uint32_t flags[4] = {3, 0, 3, 1};
+    return clampedDualTransition(self, gameState, 7, flags);
+}
+
+// pongCameraMgr_7170_fw @ 0x821F7170 — mode=7, flags={3,1,3,0}
+bool pongCameraMgr_7170_fw_impl(void* self, void* gameState) {
+    uint32_t flags[4] = {3, 1, 3, 0};
+    return clampedDualTransition(self, gameState, 7, flags);
+}
+
+// ── 6E08 + pg_6F68 pattern (3 functions) ────────────────────────────────
+
+// pongCameraMgr_6EC0 @ 0x821F6EC0 — mode=10, flags={3,0}
+extern "C" bool pongCameraMgr_6EC0(void* self, void* gameState) {
+    uint32_t flags[2] = {3, 0};
+    return clampedTransition_pg6F68(self, gameState, 10, flags);
+}
+
+// pongCameraMgr_6FA8 @ 0x821F6FA8 — mode=10, flags={3,1}
+extern "C" bool pongCameraMgr_6FA8(void* self, void* gameState, float /*f1*/, float /*f2*/) {
+    uint32_t flags[2] = {3, 1};
+    return clampedTransition_pg6F68(self, gameState, 10, flags);
+}
+
+// pongCameraMgr_7250 @ 0x821F7250 — mode=7, flags={3,0}
+extern "C" bool pongCameraMgr_7250(void* self, void* gameState, float /*f1*/, float /*f2*/) {
+    uint32_t flags[2] = {3, 0};
+    return clampedTransition_pg6F68(self, gameState, 7, flags);
+}
+
+// ── Triple-call pattern: 3ED8_2h (modes 5, 3, 5) ───────────────────────
+
+// pongCameraMgr_3ED8_2h @ 0x821F3ED8 — 3 args: (this, gameState, extraFlag)
+// First 6E08(mode=5), if OK → 6E08(mode=3), if OK → 6E08(mode=5, val+offset)
+// Store first-call result if third call fails or produces value < first.
+extern "C" bool pongCameraMgr_3ED8_2h(void* self, void* gameState, int extra) {
+    extern float g_cameraThreshold;
+    extern float g_cameraTransitionOffset;  // @ 0x8202D168
+
+    float cur = *(float*)self;
+    float thr = g_cameraThreshold;
+    float dMin = thr - cur, dMax = cur - thr;
+    float cMin = (dMin >= 0.0f) ? cur : thr;
+    float cMax = (dMax >= 0.0f) ? cur : thr;
+
+    TransitionParams params;
+    params.value = cMin;
+    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)self + 4);
+    uint32_t flags[2] = {3, (uint32_t)extra};
+
+    // First call: mode 5
+    if (!pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) return false;
+    float val1 = params.value;
+    if (val1 > cMax) return false;
+
+    // Second call: mode 3 (params preserved from first call)
+    uint64_t snap = *(uint64_t*)&params;
+    *(uint64_t*)&params = snap;
+    if (!pongCameraMgr_6E08(gameState, &params, 3, flags, 1)) return false;
+
+    // Third call: mode 5 with offset-adjusted value
+    params.value = val1 + g_cameraTransitionOffset;
+    if (pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+        if (params.value >= val1) return false;  // adjusted result too high
+    }
+
+    // Store first-call result (third call failed or produced lower value)
+    *(float*)self = val1;
+    return true;
+}
+
+// ── Threshold Query Functions ───────────────────────────────────────────────
+// Four variants: mode 17/18 × flag2 0/1
+// Each builds TransitionFlags/Params, calls pongCameraMgr_6E08, then checks
+// result against [*(float*)this, g_cameraThreshold + delta]. NaN → false.
+// ─────────────────────────────────────────────────────────────────────────────
+
+static bool CheckThresholdQuery(void* thisPtr, void* gameState, float delta,
+                                int mode, uint32_t flag2) {
+    extern float g_cameraThreshold;  // @ 0x825C5EC0
+
+    // Build params from first 8 bytes of object (value + state)
+    TransitionParams params;
+    *(uint64_t*)&params = *(uint64_t*)thisPtr;
+
+    TransitionFlags flags;
+    flags.flag1 = 3;
+    flags.flag2 = flag2;
+
+    uint8_t result = pongCameraMgr_6E08(gameState, &params, mode, &flags, 1);
+    if (!result) return false;
+
+    // Check range: params.value must be in [lower, upper]
+    // NaN comparisons: !(a <= b) catches both a > b AND NaN (bso/bns pattern)
+    float upper = g_cameraThreshold + delta;
+    float val = params.value;
+    if (!(val <= upper)) return false;
+
+    float lower = *(float*)thisPtr;
+    if (!(val >= lower)) return false;
+
+    return true;
+}
+
+// @ 0x821F9648 | 0x98 bytes — mode 17, flag2=0
+bool pongCameraMgr::ThresholdQuery_Mode17(void* gameState, float delta) {
+    return CheckThresholdQuery(this, gameState, delta, 17, 0);
+}
+
+// @ 0x821F96E0 | 0x98 bytes — mode 17, flag2=1
+bool pongCameraMgr::ThresholdQuery_Mode17_Reverse(void* gameState, float delta) {
+    return CheckThresholdQuery(this, gameState, delta, 17, 1);
+}
+
+// @ 0x821F9778 | 0x98 bytes — mode 18, flag2=0
+bool pongCameraMgr::ThresholdQuery_Mode18(void* gameState, float delta) {
+    return CheckThresholdQuery(this, gameState, delta, 18, 0);
+}
+
+// @ 0x821F9810 | 0x98 bytes — mode 18, flag2=1
+bool pongCameraMgr::ThresholdQuery_Mode18_Reverse(void* gameState, float delta) {
+    return CheckThresholdQuery(this, gameState, delta, 18, 1);
+}
+
+// ── Float Clamp Utility Functions ───────────────────────────────────────────
+// TINY functions (0x14 = 5 PPC instructions each), fsel-based float clamping
+// ─────────────────────────────────────────────────────────────────────────────
+
+// @ 0x821F3100 | 0x14 bytes — clampMin: *ptr = max(*ptr, limit)
+void pongCameraMgr_3100_p45(float* ptr, float limit) {
+    if (*ptr < limit) {
+        *ptr = limit;
+    }
+}
+
+// @ 0x821F3114 | 0x14 bytes — clampMax: *ptr = min(*ptr, limit)
+void pongCameraMgr_3114_p45(float* ptr, float limit) {
+    if (*ptr > limit) {
+        *ptr = limit;
+    }
+}
+
+// ── Global Camera Data Accessor Functions ───────────────────────────────────
+// Navigate: g_sceneRenderObj2 → +0x34 → +0x04 → +0x34 → vtable dispatch
+// All use vtable[3](target, param) then vtable[2](target, result)
+// Differ only in final data extraction from the result pointer
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern void* g_sceneRenderObj2;  // @ 0x8260641C (SDA offset 25628)
+
+// Helper: navigate the global pointer chain to the target object
+static void* GetCameraChainTarget() {
+    void* scene = *(void**)((char*)g_sceneRenderObj2 + 52);   // +0x34
+    void* sub   = *(void**)((char*)scene + 4);                // +0x04
+    return *(void**)((char*)sub + 52);                        // +0x34
+}
+
+// Helper: virtual dispatch through the chain target
+// Calls vtable[3](target, queryParam), then vtable[2](target, result1)
+typedef void* (*VTableFn2)(void*, void*);
+
+static void* DispatchCameraChain(void* queryParam) {
+    void* target = GetCameraChainTarget();
+    void** vtable = *(void***)target;
+
+    // First dispatch: vtable[3](target, queryParam)
+    VTableFn2 fn3 = (VTableFn2)vtable[3];
+    void* result1 = fn3(target, queryParam);
+
+    // Reload target (global could change between calls)
+    target = GetCameraChainTarget();
+    vtable = *(void***)target;
+
+    // Second dispatch: vtable[2](target, result1)
+    VTableFn2 fn2 = (VTableFn2)vtable[2];
+    return fn2(target, result1);
+}
+
+// @ 0x821734D0 | 0x78 bytes — returns float from chain result
+float pongCameraMgr_34D0_2hr(void* queryParam) {
+    void* result = DispatchCameraChain(queryParam);
+    return *(float*)result;
+}
+
+// @ 0x82173548 | 0x78 bytes — returns uint32 from chain result
+uint32_t pongCameraMgr_3548_2hr(void* queryParam) {
+    void* result = DispatchCameraChain(queryParam);
+    return *(uint32_t*)result;
+}
+
+// @ 0x821735C0 | 0x78 bytes — returns byte from chain result
+uint8_t pongCameraMgr_35C0_2h(void* queryParam) {
+    void* result = DispatchCameraChain(queryParam);
+    return *(uint8_t*)result;
+}
+
+// @ 0x82173638 | 0x8C bytes — copies 16-byte vector from chain result to dest
+void pongCameraMgr_3638_2h(void* dest) {
+    // For this variant, no explicit queryParam — vtable[3] is called
+    // with whatever r4 the caller provides (propagated from calling context)
+    void* target = GetCameraChainTarget();
+    void** vtable = *(void***)target;
+
+    // First dispatch: vtable[3](target)
+    typedef void* (*VTableFn1)(void*);
+    VTableFn1 fn3 = (VTableFn1)vtable[3];
+    void* result1 = fn3(target);
+
+    target = GetCameraChainTarget();
+    vtable = *(void***)target;
+
+    VTableFn2 fn2 = (VTableFn2)vtable[2];
+    void* result2 = fn2(target, result1);
+
+    // Copy 16 bytes (aligned vector) from result to dest
+    // Original uses lvx128/stvx128 (16-byte aligned vector load/store)
+    memcpy(dest, result2, 16);
+}
+
+// ── pongCameraMgr_9DE8_g — Camera Sample Object Factory ────────────────────
+// @ 0x821F9DE8 | 0xC0 bytes
+// Allocates a 40-byte camera sample object, initializes fields, and inserts
+// it into the camera sample machine bank on the owner.
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern "C" void xe_main_thread_init_0038();
+extern "C" void* atFreeList_Alloc(void* bankBase, uint32_t entrySize);
+
+extern float g_cameraSampleInitFloat1;  // .rdata @ 0x82079B4C
+extern float g_cameraSampleInitFloat2;  // .rdata @ 0x8202D110
+
+void* pongCameraMgr_9DE8_g(void* owner, uint32_t param1, uint32_t /*unused*/,
+                            uint8_t param2, uint32_t param3) {
+    xe_main_thread_init_0038();
+
+    // Navigate SDA to get allocator: SDA[0] → globalPtr → globalPtr+4 → allocator
+    extern void* g_sdaBase;     // @ 0x82600000 (r13+0)
+    void* globalPtr = g_sdaBase;
+    void* allocator = *(void**)((char*)globalPtr + 4);
+
+    // Call allocator->vtable[1](allocator, size=40, align=16)
+    void** allocVtable = *(void***)allocator;
+    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
+    AllocFn allocFn = (AllocFn)allocVtable[1];
+    void* newObj = allocFn(allocator, 40, 16);
+
+    if (newObj != nullptr) {
+        // Set vtable pointer (gdPatternSet vtable @ 0x8204911C)
+        extern void* g_cameraSampleVtable;  // vtable @ 0x8204911C
+        *(void**)((char*)newObj + 0) = &g_cameraSampleVtable;
+
+        // Initialize fields
+        *(uint32_t*)((char*)newObj + 4) = 0;       // flags
+        *(uint16_t*)((char*)newObj + 8) = 0;       // field_0x08
+        *(uint16_t*)((char*)newObj + 10) = 0;      // field_0x0A
+        *(float*)((char*)newObj + 12) = g_cameraSampleInitFloat2;  // field_0x0C
+        *(float*)((char*)newObj + 16) = g_cameraSampleInitFloat1;  // field_0x10
+        *(float*)((char*)newObj + 20) = g_cameraSampleInitFloat2;  // field_0x14
+        *(float*)((char*)newObj + 24) = g_cameraSampleInitFloat2;  // field_0x18
+        *(uint32_t*)((char*)newObj + 28) = param1;    // field_0x1C
+        *(uint8_t*)((char*)newObj + 32) = param2;     // field_0x20
+        *(uint32_t*)((char*)newObj + 36) = param3;    // field_0x24
+    }
+
+    // Insert into the camera sample machine bank at owner+4
+    void** slot = (void**)atFreeList_Alloc((char*)owner + 4, 16);
+    *slot = newObj;
+
+    return newObj;
 }

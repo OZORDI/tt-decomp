@@ -11,8 +11,8 @@
 
 // External helpers
 extern "C" long _xe_strcpyn_10(const char* str);               // strtol(str, NULL, 10) @ 0x82432120
-extern void* atSingleton_29E0_g(const char* str);               // String intern/copy @ 0x820C29E0
-extern void rage_free_00C0(void* ptr);                          // sysMemFree @ 0x820C00C0
+extern void* rage_strDuplicate(const char* str);               // String intern/copy @ 0x820C29E0
+extern void sysMemAllocator_Free(void* ptr);                          // sysMemFree @ 0x820C00C0
 extern "C" int fiAsciiTokenizer_0030_g(char* buf, const char* fmt, ...); // sprintf @ 0x82430030
 
 namespace rage {
@@ -64,8 +64,8 @@ void xmlNodeStructChar::FormatValue(char* dest, const unsigned char* src) {
 // Interns the source string (allocates a copy), frees the old string.
 // ─────────────────────────────────────────────────────────────────────────────
 bool xmlNodeStructString::ParseValue(const char** dest, const char* src) {
-    const char* interned = static_cast<const char*>(atSingleton_29E0_g(src));
-    rage_free_00C0(const_cast<char*>(*dest));
+    const char* interned = static_cast<const char*>(rage_strDuplicate(src));
+    sysMemAllocator_Free(const_cast<char*>(*dest));
     *dest = interned;
     return true;
 }

@@ -671,7 +671,7 @@ void rage::grcTextureReferenceBase::vfn_22(void* a)
 //
 // Constructs a grcTextureFactoryString instance. Sets up the vtable pointer
 // to rage::grcTextureFactoryString @ 0x82035504, zeroes all fields, and
-// calls atSingleton_29E0_g with the string parameter to obtain a name
+// calls rage_strDuplicate with the string parameter to obtain a name
 // handle which is stored at offset +12.
 //
 // Object layout:
@@ -680,9 +680,9 @@ void rage::grcTextureReferenceBase::vfn_22(void* a)
 //   +0x05  m_field05 (u8)    — 0
 //   +0x06  m_field06 (u16)   — 1
 //   +0x08  m_field08 (u32)   — 0
-//   +0x0C  m_pNameHandle     — result of atSingleton_29E0_g(pString)
+//   +0x0C  m_pNameHandle     — result of rage_strDuplicate(pString)
 // ─────────────────────────────────────────────────────────────────────────────
-extern void* atSingleton_29E0_g(const char* pString);
+extern void* rage_strDuplicate(const char* pString);
 
 // @ 0x8215FF68
 void grcTextureFactoryString_FF68(rage::grcTextureFactoryString* pObj, const char* pString)
@@ -699,7 +699,7 @@ void grcTextureFactoryString_FF68(rage::grcTextureFactoryString* pObj, const cha
     *(uint32_t*)(obj + 8) = 0;
 
     // Obtain name handle from singleton
-    void* nameHandle = atSingleton_29E0_g(pString);
+    void* nameHandle = rage_strDuplicate(pString);
     *(void**)(obj + 12) = nameHandle;
 }
 

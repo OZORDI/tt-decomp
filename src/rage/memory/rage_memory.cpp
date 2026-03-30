@@ -600,7 +600,7 @@ void atSingleton_89F8_2hr(void* pThis, uint32_t param)
 extern void atSingleton_dtor_7628(void* element);
 
 /* Free memory @ 0x820C00C0 */
-extern void rage_free_00C0(void* ptr);
+extern void sysMemAllocator_Free(void* ptr);
 
 /* Find singleton ownership @ 0x820F90D0 */
 extern uint8_t atSingleton_Find_90D0(void* ptr);
@@ -677,7 +677,7 @@ void atSingleton_74B8(void* obj) {
     }
 
     // Free the allocation (header is the allocation base)
-    rage_free_00C0(header);
+    sysMemAllocator_Free(header);
 }
 
 /**
@@ -717,7 +717,7 @@ void atSingleton_8620(void* data) {
     }
 
     // Free allocation base
-    rage_free_00C0(header);
+    sysMemAllocator_Free(header);
 }
 
 /**
@@ -887,7 +887,7 @@ void atSingleton_DCE8_gen(void* data) {
     }
 
     // Free allocation base
-    rage_free_00C0(header);
+    sysMemAllocator_Free(header);
 }
 
 /**
@@ -940,7 +940,7 @@ void atSingleton_DB60(void* data) {
     }
 
     // Free allocation base
-    rage_free_00C0(header);
+    sysMemAllocator_Free(header);
 }
 
 /**
@@ -967,7 +967,7 @@ void* atSingleton_DC18(void* dst, void* src) {
     int32_t dstCapacity = *(int32_t*)(dstBase + 8);
     if (dstCapacity != 0) {
         void* dstData = *(void**)dstBase;
-        rage_free_00C0(dstData);
+        sysMemAllocator_Free(dstData);
     }
 
     // Copy count and set capacity

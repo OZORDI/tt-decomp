@@ -73,7 +73,7 @@ extern void pongNetMessageHolder_vfn_2_1628_1(pongNetMessageHolder* holder);
 extern pongNetMessageHolder* pongNetMessageHolder_FAE0_isl();
 extern void pongNetMessageHolder_5038_w();
 extern void rage_27C0(void* instance);
-extern "C" void rage_free_00C0(void* ptr);
+extern "C" void sysMemAllocator_Free(void* ptr);
 extern void game_5E70(void* gameState);
 extern void pongNetMessageHolder_7668_2hr(void* stateArray);
 
@@ -450,7 +450,7 @@ SpectatorNetworkClient::~SpectatorNetworkClient() {
     
     // Note: Memory deallocation is handled by the compiler-generated
     // delete operator, which checks the flags parameter passed by the caller.
-    // If flags & 1, rage_free_00C0 is called to return memory to the pool.
+    // If flags & 1, sysMemAllocator_Free is called to return memory to the pool.
 }
 
 // ===========================================================================
@@ -571,7 +571,7 @@ pongNetMessageHolder* pongNetMessageHolder_vfn_0_4C98_1(pongNetMessageHolder* se
     --NetMessageHolderLiveCount();
 
     if ((flags & 1) != 0) {
-        rage_free_00C0(self);
+        sysMemAllocator_Free(self);
     }
 
     return self;
@@ -586,7 +586,7 @@ pongNetMessageHolder* pongNetMessageHolder_vfn_0_5B48_1(pongNetMessageHolder* se
     rage_27C0(self);
 
     if ((flags & 1) != 0) {
-        rage_free_00C0(self);
+        sysMemAllocator_Free(self);
     }
 
     return self;
@@ -620,7 +620,7 @@ void pongNetMessageHolder::CleanupInternalArray()
         }
         
         // Free the array
-        rage_free_00C0(arrayPtr);
+        sysMemAllocator_Free(arrayPtr);
         
         // Null out the pointer
         m_pInternalArray = nullptr;
@@ -662,7 +662,7 @@ pongNetMessageHolder::~pongNetMessageHolder()
     NetMessageHolderLiveCount()--;
     
     // Step 5: Memory deallocation is handled by operator delete if needed
-    // (The assembly checks bit 0 of flags and calls rage_free_00C0 conditionally)
+    // (The assembly checks bit 0 of flags and calls sysMemAllocator_Free conditionally)
 }
 
 // ===========================================================================
@@ -1985,7 +1985,7 @@ void pongNetMessageHolder::CleanupNestedArrays()
             uint8_t* element = (uint8_t*)array1 + (i * 96);
             *(uint32_t*)element = cleanupVtable;
         }
-        rage_free_00C0(array1);
+        sysMemAllocator_Free(array1);
     }
     
     // Clean up second array at offset +12
@@ -1996,7 +1996,7 @@ void pongNetMessageHolder::CleanupNestedArrays()
             uint8_t* element = (uint8_t*)array2 + (i * 96);
             *(uint32_t*)element = cleanupVtable;
         }
-        rage_free_00C0(array2);
+        sysMemAllocator_Free(array2);
     }
     
     // Clean up array at offset +80
@@ -2006,7 +2006,7 @@ void pongNetMessageHolder::CleanupNestedArrays()
     uint16_t count80 = *(uint16_t*)(offset80 + 14);
     if (count80 > 0) {
         void* buffer80 = *(void**)(offset80 + 8);
-        rage_free_00C0(buffer80);
+        sysMemAllocator_Free(buffer80);
     }
     *(uint32_t*)offset80 = cleanupVtable;
     
@@ -2017,7 +2017,7 @@ void pongNetMessageHolder::CleanupNestedArrays()
     uint16_t count16 = *(uint16_t*)(offset16 + 14);
     if (count16 > 0) {
         void* buffer16 = *(void**)(offset16 + 8);
-        rage_free_00C0(buffer16);
+        sysMemAllocator_Free(buffer16);
     }
     *(uint32_t*)offset16 = cleanupVtable;
     
@@ -2060,14 +2060,14 @@ void pongNetMessageHolder::RemoveElementByPointer(void* targetPtr)
             if (element != nullptr) {
                 // Free buffer at offset +8
                 void* buffer1 = *(void**)((uint8_t*)element + 8);
-                rage_free_00C0(buffer1);
+                sysMemAllocator_Free(buffer1);
                 
                 // Free buffer at offset +16
                 void* buffer2 = *(void**)((uint8_t*)element + 16);
-                rage_free_00C0(buffer2);
+                sysMemAllocator_Free(buffer2);
                 
                 // Free the element itself
-                rage_free_00C0(element);
+                sysMemAllocator_Free(element);
             }
             
             // Decrement count
@@ -3381,7 +3381,7 @@ const char* PlayerMovementMessage::GetTypeName() {
 //   2. If allocated, resets both message objects' vtables to base PongNetMessage
 //      - Object at offset 0 (first message)
 //      - Object at offset 640 (second message, stride = 640 bytes)
-//   3. Frees the entire array via rage_free_00C0
+//   3. Frees the entire array via sysMemAllocator_Free
 //   4. Nulls out the holder's pointer
 //
 // The vtable reset (0x8206C304 = PongNetMessage base vtable) ensures proper
@@ -3411,7 +3411,7 @@ void pongNetMessageHolder_vfn_2_2D20_1(pongNetMessageHolder* holder)
         *(uint32_t*)((uint8_t*)messageArray + 0) = BASE_VTABLE;
         
         // Free the entire array
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         
         // Null out the holder's pointer
         holder->m_pInternalArray = nullptr;
@@ -3755,7 +3755,7 @@ extern void* g_pongNetMessageHolderBaseVtable;  // @ 0x8206FA88
 
 // External functions
 extern void pongNetMessageHolder_vfn_2_24B8_1(void* thisPtr);  // Cleanup method
-extern void rage_free_00C0(void* ptr);                         // Memory deallocator
+extern void sysMemAllocator_Free(void* ptr);                         // Memory deallocator
 
 /**
  * pongNetMessageHolder_vfn_0_4F68_1 @ 0x823C4F68 | size: 0x78
@@ -3797,7 +3797,7 @@ void pongNetMessageHolder_vfn_0_4F68_1(void* thisPtr, uint32_t shouldFree) {
     bool shouldFreeMemory = (shouldFree & 0x1) != 0;
     
     if (shouldFreeMemory) {
-        rage_free_00C0(thisPtr);
+        sysMemAllocator_Free(thisPtr);
     }
 }
 
@@ -4044,7 +4044,7 @@ void pongNetMessageHolder_D2E8_w(void* self, uint32_t count) {
     // Free existing buffer if allocated
     if (existingCount != 0) {
         void* oldBuffer = *(void**)(obj + 0);
-        rage_free_00C0(oldBuffer);
+        sysMemAllocator_Free(oldBuffer);
         *(uint32_t*)(obj + 0) = 0;
         *(uint32_t*)(obj + 4) = 0;
     }
@@ -4080,7 +4080,7 @@ void pongNetMessageHolder_3EB8_w(void* self, uint32_t count) {
     // Free existing buffer if allocated
     if (existingCount != 0) {
         void* oldBuffer = *(void**)(obj + 0);
-        rage_free_00C0(oldBuffer);
+        sysMemAllocator_Free(oldBuffer);
         *(uint32_t*)(obj + 0) = 0;
         *(uint32_t*)(obj + 4) = 0;
     }
@@ -4259,7 +4259,7 @@ void pongNetMessageHolder_vfn_2_FFF8_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4285,7 +4285,7 @@ void pongNetMessageHolder_vfn_2_0260_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4306,7 +4306,7 @@ void pongNetMessageHolder_vfn_2_2910_1(pongNetMessageHolder* holder) {
         // Reset vtable for the single 24-byte message object
         *(uint32_t*)messageArray = BASE_VTABLE;
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4327,7 +4327,7 @@ void pongNetMessageHolder_vfn_2_2AB0_1(pongNetMessageHolder* holder) {
         // Reset vtable for the single 16-byte message object
         *(uint32_t*)messageArray = BASE_VTABLE;
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4356,7 +4356,7 @@ void pongNetMessageHolder_vfn_2_FF38_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4384,7 +4384,7 @@ void pongNetMessageHolder_vfn_2_04D0_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4412,7 +4412,7 @@ void pongNetMessageHolder_vfn_2_0638_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4440,7 +4440,7 @@ void pongNetMessageHolder_vfn_2_07A8_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4468,7 +4468,7 @@ void pongNetMessageHolder_vfn_2_13D0_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4496,7 +4496,7 @@ void pongNetMessageHolder_vfn_2_1E80_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4524,7 +4524,7 @@ void pongNetMessageHolder_vfn_2_1F40_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4552,7 +4552,7 @@ void pongNetMessageHolder_vfn_2_2000_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4580,7 +4580,7 @@ void pongNetMessageHolder_vfn_2_2280_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }
@@ -4608,7 +4608,7 @@ void pongNetMessageHolder_vfn_2_2E58_1(pongNetMessageHolder* holder) {
             *(uint32_t*)ptr = BASE_VTABLE;
         }
 
-        rage_free_00C0(messageArray);
+        sysMemAllocator_Free(messageArray);
         holder->m_pInternalArray = nullptr;
     }
 }

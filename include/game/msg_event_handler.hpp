@@ -50,7 +50,7 @@ protected:
 };
 
 // External dependencies
-extern "C" void cmSampleCamMachineBank_65C0_g(void* queue, uint32_t size);
+extern "C" void atFreeList_Alloc(void* queue, uint32_t size);
 
 // Global event type
 extern uint32_t g_messageEventType;  // @ 0x8271B800 (glob:lbl_8271B800)

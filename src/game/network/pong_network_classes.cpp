@@ -538,8 +538,8 @@ void pongPaddle_vfn_2(pongPaddle* self, int flags) {
     pongPaddle_4190_h(self);
 
     if (flags & 0x1) {
-        extern void rage_free_00C0(void* ptr);
-        rage_free_00C0(self);
+        extern void sysMemAllocator_Free(void* ptr);
+        sysMemAllocator_Free(self);
     }
 }
 
