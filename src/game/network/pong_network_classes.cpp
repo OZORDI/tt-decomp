@@ -227,13 +227,34 @@ void AckHandling_Destroy(AckHandling* self, int flags) {
 
 /**
  * AckHandling::Cleanup @ 0x823D34D0 | size: 0x5C
- * 
- * Internal cleanup - releases packet resources.
- * Called by destructor to clean up internal state.
+ *
+ * Internal cleanup — iterates through all tracked packets,
+ * calls AckHandling_3828 to release each one, and decrements the count.
+ * Called by the destructor before freeing the object.
  */
 void AckHandling_34D0_fw(AckHandling* self) {
-    // Implementation would release packet memory
-    // Stub for now - actual implementation needs packet management
+    // Set vtable to AckHandling @ 0x82071654
+    self->vtable = (void**)0x82071654;
+
+    uint32_t count = *(uint32_t*)((char*)self + 96);
+    if ((int32_t)count <= 0) {
+        return;
+    }
+
+    uint8_t* base = (uint8_t*)self + 16;
+    while (count > 0) {
+        // Read current count, decrement, then load the last packet pointer
+        uint32_t curCount = *(uint32_t*)(base + 80);
+        curCount--;
+        *(uint32_t*)(base + 80) = curCount;
+        void* packet = *(void**)(base + curCount * 4);
+
+        // Release the packet
+        extern void AckHandling_3828(AckHandling* self, void* packet);
+        AckHandling_3828(self, packet);
+
+        count--;
+    }
 }
 
 /**
@@ -334,11 +355,54 @@ void AckHandling_3530_w(AckHandling* self, float currentTime) {
 
 /**
  * AckHandling::RemovePacket @ 0x823D3828 | size: 0xA8
- * 
- * Removes a packet from the acknowledgment queue.
+ *
+ * Removes a packet from the pool and returns it to the free list.
+ * Resets packet fields (copies 16 bytes from global default data,
+ * clears sequence number/ack flag, stores default timestamp),
+ * then links it into the free list at base+112.
  */
 void AckHandling_3828(AckHandling* self, void* packet) {
-    // Stub - would remove packet from internal tracking
+    uint8_t* pkt = (uint8_t*)packet;
+    uint8_t* poolBase = (uint8_t*)self + 112;
+
+    // Copy 16 bytes of default data from global @ 0x8261A0C0
+    extern uint32_t g_defaultPacketData[4];  // @ 0x8261A0C0
+    uint32_t* dst = (uint32_t*)pkt;
+    dst[0] = g_defaultPacketData[0];
+    dst[1] = g_defaultPacketData[1];
+    dst[2] = g_defaultPacketData[2];
+    dst[3] = g_defaultPacketData[3];
+
+    // Store default timestamp at +20, clear sequence at +16, clear ack at +18
+    extern float g_defaultTimestamp;  // @ 0x82089A54
+    *(float*)(pkt + 20) = g_defaultTimestamp;
+    *(uint16_t*)(pkt + 16) = 0;
+    *(uint8_t*)(pkt + 18) = 0;
+
+    // Calculate slot index: (pkt - poolBase) / 28
+    // Uses mulhwu trick: (diff * 0x249249B5) >> 32, then fixup
+    uint32_t diff = (uint32_t)(pkt - poolBase);
+    uint64_t prod = (uint64_t)diff * 0x249249B5ULL;
+    uint32_t hi = (uint32_t)(prod >> 32);
+    uint32_t rem = diff - hi;
+    uint32_t slot = ((rem >> 1) + hi) >> 4;  // divide by 28
+    slot &= 0xFFFF;
+
+    // Link into free list: set next pointer on this slot
+    uint16_t headSlot = *(uint16_t*)(poolBase + 564);
+    *(uint16_t*)(poolBase + slot * 28 + 26) = (uint16_t)(slot + 1) & 0xFFFF;
+
+    // If head isn't 0xFFFF, update head's prev to point to this slot
+    if (headSlot != 0xFFFF) {
+        *(uint16_t*)(poolBase + headSlot * 28 + 24) = slot;
+    }
+
+    // Set new head
+    *(uint16_t*)(poolBase + 564) = slot;
+
+    // Increment free count
+    uint16_t freeCount = *(uint16_t*)(poolBase + 560);
+    *(uint16_t*)(poolBase + 560) = freeCount + 1;
 }
 
 /**
@@ -466,12 +530,17 @@ void pongPaddle_ScalarDtor(pongPaddle* self, int flags) {
 }
 
 /**
- * pongPaddle::Render @ 0x823D4140 | size: 0x50
- * 
- * Virtual method for rendering the paddle.
+ * pongPaddle::ScalarDestructor (vfn_2) @ 0x823D4140 | size: 0x50
+ *
+ * Scalar destructor — calls cleanup then conditionally frees.
  */
-void pongPaddle_Init(pongPaddle* self) {
-    // Stub - would render paddle geometry
+void pongPaddle_vfn_2(pongPaddle* self, int flags) {
+    pongPaddle_4190_h(self);
+
+    if (flags & 0x1) {
+        extern void rage_free_00C0(void* ptr);
+        rage_free_00C0(self);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -558,21 +627,97 @@ void* plrPropMgr_PostLoadChildren(plrPropMgr* self) {
  * 
  * Additional virtual methods - stubs for now.
  */
-void plrPropMgr_Validate(plrPropMgr* self) {}
-void plrPropMgr_PostLoadSetup(plrPropMgr* self) {}
-void plrPropMgr_OnActivate(plrPropMgr* self) {}
-void plrPropMgr_OnDeactivate(plrPropMgr* self) {}
+/**
+ * plrPropMgr::PostLoadChildren (vfn_21) @ 0x823D4730 | size: 0x6C
+ *
+ * Registers two property types with the property manager.
+ * Calls game_8F58 twice with property vtables at offsets +16 and +20.
+ */
+void plrPropMgr_Validate(plrPropMgr* self) {
+    extern void game_8F58(void* obj, void* propVtable, void* propData, void* storage, int flags);
+    extern uint32_t g_plrPropStorage;  // @ 0x825CAF90
 
-////////////////////////////////////////////////////////////////////////////////
-// External function stubs
-////////////////////////////////////////////////////////////////////////////////
+    // Register property type 1 (vtable @ 0x820716A8 = lis(-32249)+5800)
+    game_8F58(self, (void*)0x820716A8, (char*)self + 16, &g_plrPropStorage, 0);
 
-extern "C" {
-    // Stub for pongLookAtDriver destructor (base class of pongPaddle)
-    void pongLookAtDriver_PostLoadProperties(void* obj) {
-        // Stub - would call base class destructor
+    // Register property type 2 (vtable @ 0x820716B8 = lis(-32249)+5816)
+    game_8F58(self, (void*)0x820716B8, (char*)self + 20, &g_plrPropStorage, 0);
+}
+
+/**
+ * plrPropMgr::PostLoadSetup (vfn_23) @ 0x823D47A0 | size: 0x58
+ *
+ * Loads default property instances. Loads one from +16, stores at +24,
+ * then loads two from +20 and stores at +28 and +32.
+ * Finally stores singleton pointer to global @ 0x826066C0.
+ */
+void plrPropMgr_PostLoadSetup(plrPropMgr* self) {
+    extern void* game_8FB0(void* propTypeId, int defaultInstance);
+    extern void* g_plrPropMgrSingleton;  // @ 0x826066C0
+
+    // Load default for property type 1
+    void* prop1 = game_8FB0(*(void**)((char*)self + 16), 0);
+    *(void**)((char*)self + 24) = prop1;
+
+    // Load 2 defaults for property type 2
+    for (int i = 0; i < 2; i++) {
+        void* prop2 = game_8FB0(*(void**)((char*)self + 20), 0);
+        *(void**)((char*)self + 28 + i * 4) = prop2;
+    }
+
+    // Store singleton pointer
+    g_plrPropMgrSingleton = self;
+}
+
+/**
+ * plrPropMgr::OnDeactivate (vfn_24) @ 0x823D47F8 | size: 0x64
+ *
+ * Releases all 3 loaded property instances at +24, +28, and +32.
+ * Calls game_8EE8 then util_6C20 for each, then nulls the pointers.
+ */
+void plrPropMgr_OnActivate(plrPropMgr* self) {
+    extern void game_8EE8(void* prop);
+    extern void util_6C20(void* prop, int flags);
+
+    uint8_t* base = (uint8_t*)self + 24;
+    for (int i = 0; i < 3; i++) {
+        void* prop = *(void**)(base + i * 4);
+        if (prop) {
+            game_8EE8(prop);
+            util_6C20(prop, (int)0xE0010000);  // lis(-8191) = 0xE0010000
+        }
+    }
+
+    // Null all 3 property pointers
+    *(void**)((char*)self + 24) = nullptr;
+    *(void**)((char*)self + 28) = nullptr;
+    *(void**)((char*)self + 32) = nullptr;
+}
+
+/**
+ * plrPropMgr::OnActivate (vfn_25) @ 0x823D4860 | size: 0x40
+ *
+ * Marks two sub-objects at +36 and +40 as needing refresh.
+ * Sets bytes at +288, +290, +291 on each sub-object to 1.
+ */
+void plrPropMgr_OnDeactivate(plrPropMgr* self) {
+    void* obj1 = *(void**)((char*)self + 36);
+    if (obj1) {
+        *((uint8_t*)obj1 + 288) = 1;
+        *((uint8_t*)obj1 + 290) = 1;
+        *((uint8_t*)obj1 + 291) = 1;
+    }
+
+    void* obj2 = *(void**)((char*)self + 40);
+    if (obj2) {
+        *((uint8_t*)obj2 + 288) = 1;
+        *((uint8_t*)obj2 + 290) = 1;
+        *((uint8_t*)obj2 + 291) = 1;
     }
 }
+
+// pongLookAtDriver base class method — implemented elsewhere
+extern "C" void pongLookAtDriver_PostLoadProperties(void* obj);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -733,13 +878,66 @@ void NetDataQuery_Process(NetDataQuery* self) {
 }
 
 /**
- * NetDataQuery::vfn_10 @ 0x823D17C8 | size: 0x84
- * NetDataQuery::vfn_13 @ 0x823D1850 | size: 0x5C
- * 
- * Additional virtual methods - stubs for now.
+ * NetDataQuery::Reset (vfn_10) @ 0x823D17C8 | size: 0x84
+ *
+ * Resets the query state to initial configuration.
+ * Copies 16-byte default data to +540 and +556, clears counters and flags.
  */
-void NetDataQuery_OnComplete(NetDataQuery* self) {}
-void NetDataQuery_GetName(NetDataQuery* self) {}
+void NetDataQuery_OnComplete(NetDataQuery* self) {
+    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
+
+    uint8_t* p = (uint8_t*)self;
+
+    // Set status word to "uninitialized"
+    *(uint16_t*)(p + 528) = 0xFFFF;
+
+    // Clear query counters
+    *(uint16_t*)(p + 20) = 0;
+    *(uint16_t*)(p + 22) = 0;
+
+    // Copy 16-byte default data to +540 and +556
+    for (int i = 0; i < 4; i++) {
+        ((uint32_t*)(p + 540))[i] = g_defaultData16[i];
+        ((uint32_t*)(p + 556))[i] = g_defaultData16[i];
+    }
+
+    // Clear remaining state
+    *(uint8_t*)(p + 572) = 0;
+    *(uint32_t*)(p + 532) = 0;
+    *(uint32_t*)(p + 536) = 0;
+}
+
+/**
+ * NetDataQuery::IsStateReady (vfn_13) @ 0x823D1850 | size: 0x5C
+ *
+ * Checks if the given state index is valid and the machine is ready.
+ * If stateIndex >= stateCount, returns 0.
+ * If a current state is set, dispatches to state vtable[14] (offset 56).
+ * Otherwise returns 1 if stateIndex == 1, else 0.
+ */
+uint8_t NetDataQuery_GetName(NetDataQuery* self, int stateIndex) {
+    uint8_t* p = (uint8_t*)self;
+    int32_t stateCount = *(int32_t*)(p + 4);
+
+    if (stateIndex >= stateCount) {
+        return 0;
+    }
+
+    int32_t currentState = *(int32_t*)(p + 12);
+    if (currentState != -1) {
+        void** stateArray = *(void***)(p + 8);
+        void* stateObj = stateArray[currentState];
+        if (stateObj) {
+            void** vtbl = *(void***)stateObj;
+            typedef uint8_t (*IsReadyFn)(void*);
+            IsReadyFn isReady = (IsReadyFn)vtbl[14];
+            return isReady(stateObj);
+        }
+    }
+
+    // Default: state 1 returns 1, anything else returns 0
+    return (stateIndex == 1) ? 1 : 0;
+}
 
 /**
  * NetDataQuery::Constructor (alternate) @ 0x823D1530 | size: 0x98
@@ -785,19 +983,239 @@ void NetDataQuery_ctor_1530(NetDataQuery* self) {
  * Additional helper methods for network data query operations.
  */
 void NetDataQuery_A8D8(NetDataQuery* self) {
-    // Stub - helper function
+    extern void SinglesNetworkClient_DA08(void* obj);
+    extern float g_defaultTimeout;  // @ 0x82035928 (lis(-32164)+22840)
+    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
+
+    uint8_t* p = (uint8_t*)self;
+
+    // Set vtable @ 0x82070C84 (lis(-32249)+-15372)
+    *(void**)p = (void*)0x82070C84;
+
+    // Initialize sub-object at +4
+    SinglesNetworkClient_DA08(p + 4);
+
+    // Set vtable to 0x82070C84 -> 0x82070C30 (lis(-32249)+-15468)
+    *(void**)p = (void*)0x82070C30;
+
+    // Clear state fields
+    *(uint32_t*)(p + 28) = 0;
+    *(uint8_t*)(p + 32) = 0;
+    *(uint8_t*)(p + 33) = 0;
+
+    // Set timeout defaults
+    float timeout = g_defaultTimeout;
+    *(float*)(p + 40) = timeout;
+    *(float*)(p + 44) = timeout;
+    *(uint32_t*)(p + 36) = 0xFFFFFFFF;  // -1
+    *(uint8_t*)(p + 48) = 0;
+    *(uint8_t*)(p + 49) = 0;
+    *(uint32_t*)(p + 52) = 0;
+
+    // Copy 16 bytes of default data to +56 and +72
+    for (int i = 0; i < 4; i++) {
+        ((uint32_t*)(p + 56))[i] = g_defaultData16[i];
+        ((uint32_t*)(p + 72))[i] = g_defaultData16[i];
+    }
+
+    // Set vtable at +96 to 0x82071654 (lis(-32249)+5716)
+    *(void**)(p + 96) = (void*)0x82071654;
+    *(uint32_t*)(p + 96 + 96) = 0;  // count = 0 at +192
+
+    // Initialize pool at +96+16 via NetDataQuery_38D0_2h
+    extern void NetDataQuery_38D0_2h(void* obj);
+    NetDataQuery_38D0_2h(p + 96 + 16);
+
+    // Initialize component at +784
+    extern void SinglesNetworkClient_2E88_isl(void* obj);
+    SinglesNetworkClient_2E88_isl(p + 784);
+
+    *(uint8_t*)(p + 980) = 0;
 }
 
 void NetDataQuery_59F8_wrh(void* obj) {
-    // Stub - initialization helper
+    extern float g_defaultTimestamp;  // @ 0x82089A54 (lis(-32248)+-25900)
+    extern float g_defaultTimeout;   // @ 0x82035928 (lis(-32164)+22840)
+    extern void game_5128(void* obj);
+
+    uint8_t* p = (uint8_t*)obj;
+
+    // Set vtable @ 0x82070500 (lis(-32249)+-2816)
+    *(void**)p = (void*)0x82070500;
+
+    // Store default timestamp at +4
+    *(float*)(p + 4) = g_defaultTimestamp;
+
+    // Initialize sub-object at +16
+    game_5128(p + 16);
+
+    // Store default timeout at +208
+    *(float*)(p + 208) = g_defaultTimeout;
+
+    // Set byte at +212 to 0xFF (255)
+    *(uint8_t*)(p + 212) = 0xFF;
 }
 
 void NetDataQuery_2A30_2h(void* obj) {
-    // Stub - component initialization
+    extern float g_defaultTimestampAlt;  // @ 0x82089A58 (lis(-32248)+-25896)
+
+    uint8_t* p = (uint8_t*)obj;
+    float defVal = g_defaultTimestampAlt;
+
+    // Initialize 4 blocks of 36 bytes each starting at offset 0
+    // Each block: { -1, defVal, defVal, -1, 0, 0, 0, 0, defVal, defVal }
+    for (int blk = 0; blk < 4; blk++) {
+        int base = blk * 36;
+        *(uint32_t*)(p + base + 0) = 0xFFFFFFFF;   // -1
+        *(float*)(p + base + 4) = defVal;
+        *(float*)(p + base + 8) = defVal;
+        *(uint32_t*)(p + base + 16) = 0;
+        *(uint32_t*)(p + base + 20) = 0;
+        *(uint32_t*)(p + base + 24) = 0;
+        *(uint32_t*)(p + base + 28) = 0;
+        // Note: +12 = -1 (from next block's -4 store), handled by stride
+        *(uint32_t*)(p + base + 36 - 36 + 12) = 0xFFFFFFFF; // overlap with -1 at next -4
+    }
+
+    // Set pool header fields
+    *(uint16_t*)(p + 146) = 4;   // capacity per side
+    *(uint16_t*)(p + 144) = 4;
+    *(uint16_t*)(p + 148) = 0;   // used count
+    *(uint16_t*)(p + 32) = 0xFFFF;   // head pointer
+    *(uint16_t*)(p + 142) = 0xFFFF;  // tail pointer
+
+    // Link free list: slot[i].next = i+1 for i in 0..capacity-2
+    uint16_t capacity = *(uint16_t*)(p + 146);
+    if ((int16_t)(capacity - 1) > 0) {
+        uint16_t idx = 0;
+        uint16_t prev = 0;
+        for (uint16_t s = 0; s < capacity - 1; s++) {
+            uint16_t nextIdx = idx + 1;
+            // Each slot is at: idx * 3 * 4 = idx*12 bytes stride
+            // slot offset = (idx + idx*2) * 4 = idx*3*4 → slot[idx] at p + idx*12
+            // PPC: rlwinm r9,r11,3,0,28 => idx*8; add r7,r11,r9 => idx+idx*8=idx*9? No.
+            // Actually: r9 = r11<<3; r7 = r11+r9 = r11*9; r11 = r7<<2 = r11*36
+            // So stride is 36 bytes per slot (same as the blocks above)
+            uint32_t slotOff = (uint32_t)idx * 36;
+            *(uint16_t*)(p + slotOff + 34) = nextIdx;   // next link
+            *(uint16_t*)(p + slotOff + 68) = prev;       // prev link
+            prev = idx;
+            idx = nextIdx;
+        }
+    }
 }
 
 void NetDataQuery_2B28_2h(void* obj) {
-    // Stub - component initialization
+    uint8_t* p = (uint8_t*)obj;
+
+    // Initialize 50 entries of 24 bytes each: { -1, -1, 0, 0, 0, <pad> }
+    uint8_t* cursor = p + 4;
+    for (int i = 49; i >= 0; i--) {
+        *(uint32_t*)(cursor - 4) = 0xFFFFFFFF;  // -1
+        *(uint32_t*)(cursor + 0) = 0xFFFFFFFF;  // -1
+        *(uint32_t*)(cursor + 4) = 0;
+        *(uint32_t*)(cursor + 8) = 0;
+        *(uint32_t*)(cursor + 12) = 0;
+        cursor += 24;
+    }
+
+    // Set pool metadata
+    *(uint16_t*)(p + 1204) = 0;       // used count
+    *(uint16_t*)(p + 1200) = 50;      // capacity
+    *(uint16_t*)(p + 1202) = 50;      // total slots
+    *(uint16_t*)(p + 20) = 0xFFFF;    // head = -1
+    *(uint16_t*)(p + 1198) = 0xFFFF;  // tail = -1
+
+    // Link free list for 50 slots, stride = 3 entries * 8 bytes = 24 bytes
+    uint16_t capacity = *(uint16_t*)(p + 1202);
+    if ((int16_t)(capacity - 1) > 0) {
+        uint16_t idx = 0;
+        uint16_t prev = 0;
+        for (uint16_t s = 0; s < capacity - 1; s++) {
+            uint16_t nextIdx = idx + 1;
+            // stride = (idx + idx*2) * 8 = idx * 24
+            // PPC: r9=r11<<1; r11=r11+r9=(idx*3); r11=r11<<3=(idx*24)
+            uint32_t slotOff = (uint32_t)idx * 24;
+            *(uint16_t*)(p + slotOff + 22) = nextIdx;  // next
+            *(uint16_t*)(p + slotOff + 44) = prev;     // prev
+            prev = idx;
+            idx = nextIdx;
+        }
+    }
+
+    // Clear trailing metadata
+    *(uint32_t*)(p + 1216) = 0;
+    *(uint32_t*)(p + 1220) = 0;
+    *(uint32_t*)(p + 1224) = 0;
+    *(uint16_t*)(p + 1228) = 0;
+    *(uint16_t*)(p + 1230) = 0;
+    *(uint16_t*)(p + 1736) = 0xFFFF;  // -1
+}
+
+/**
+ * NetDataQuery::InitPool_38D0 @ 0x823D38D0 | size: 0xC8
+ *
+ * Initializes a pool of 20 entries with 28-byte stride.
+ * Each entry gets 16 bytes copied from global default data,
+ * a default float timestamp, and cleared link fields.
+ *
+ * Pool metadata layout:
+ * +560: capacity (uint16_t) = 20
+ * +562: total slots (uint16_t) = 20
+ * +564: used count (uint16_t) = 0
+ * +24:  head pointer (uint16_t) = 0xFFFF
+ * +558: tail pointer (uint16_t) = 0xFFFF
+ *
+ * Entry layout (28 bytes):
+ * +0-15:  default data (copied from global)
+ * +16-17: link field (uint16_t) = 0
+ * +18:    flag (uint8_t) = 0
+ * +20-23: default float timestamp
+ * +26:    next link (uint16_t)
+ */
+void NetDataQuery_38D0_2h(void* obj) {
+    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
+    extern float g_defaultTimestamp;     // @ 0x82089A54
+
+    uint8_t* p = (uint8_t*)obj;
+    float defTimestamp = g_defaultTimestamp;
+
+    // Initialize 20 entries of 28 bytes each
+    for (int i = 0; i < 20; i++) {
+        int base = i * 28;
+        // Copy 16 bytes of default data
+        for (int j = 0; j < 4; j++) {
+            ((uint32_t*)(p + base))[j] = g_defaultData16[j];
+        }
+        // Set link field to 0
+        *(uint16_t*)(p + base + 16) = 0;
+        // Set flag to 0
+        *(uint8_t*)(p + base + 18) = 0;
+        // Set default timestamp
+        *(float*)(p + base + 20) = defTimestamp;
+    }
+
+    // Set pool metadata
+    *(uint16_t*)(p + 564) = 0;       // used count
+    *(uint16_t*)(p + 560) = 20;      // capacity
+    *(uint16_t*)(p + 562) = 20;      // total slots
+    *(uint16_t*)(p + 24) = 0xFFFF;   // head = -1
+    *(uint16_t*)(p + 558) = 0xFFFF;  // tail = -1
+
+    // Link free list: slot[i].next = i+1, slot[i+1].prev = i
+    uint16_t capacity = *(uint16_t*)(p + 562);
+    if ((int16_t)(capacity - 1) > 0) {
+        uint16_t idx = 0;
+        uint16_t prev = 0;
+        for (uint16_t s = 0; s < capacity - 1; s++) {
+            uint16_t nextIdx = idx + 1;
+            uint32_t slotOff = (uint32_t)idx * 28;
+            *(uint16_t*)(p + slotOff + 26) = nextIdx;  // next link
+            *(uint16_t*)(p + slotOff + 52) = prev;     // prev link (in next slot)
+            prev = idx;
+            idx = nextIdx;
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -962,168 +1380,95 @@ void NetStateSync_Process(NetStateSync* self) {
  * 
  * Additional virtual methods - stubs for now.
  */
-void NetStateSync_OnComplete(NetStateSync* self) {}
-void NetStateSync_GetName(NetStateSync* self) {}
+/**
+ * NetStateSync::Reset (vfn_10) @ 0x823D1D70 | size: 0x60
+ *
+ * Resets the state sync to initial configuration.
+ * Copies 16 bytes of default data to +20, sets default timeout,
+ * clears state tracking fields.
+ */
+void NetStateSync_OnComplete(NetStateSync* self) {
+    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
+    extern float g_netSyncTimeout;       // @ 0x82033110 (lis(-32253)+-12016)
+
+    uint8_t* p = (uint8_t*)self;
+
+    // Copy 16 bytes from global default to +20
+    for (int i = 0; i < 4; i++) {
+        ((uint32_t*)(p + 20))[i] = g_defaultData16[i];
+    }
+
+    // Set default timeout at +56
+    *(float*)(p + 56) = g_netSyncTimeout;
+
+    // Clear state fields
+    *(uint32_t*)(p + 52) = 0xFFFFFFFF;  // -1
+    *(uint32_t*)(p + 60) = 0;
+    *(uint8_t*)(p + 68) = 0;
+    *(uint8_t*)(p + 69) = 0;
+    *(uint8_t*)(p + 70) = 0;
+    *(uint8_t*)(p + 71) = 0;
+}
+
+/**
+ * NetStateSync::IsStateReady (vfn_13) @ 0x823D1DD0 | size: 0x64
+ *
+ * Checks if the given state index is valid and ready.
+ * If stateIndex >= stateCount, returns 0.
+ * If a current state is set, dispatches to state vtable[14].
+ * Otherwise returns 1 if stateIndex is 1 or 2.
+ */
+uint8_t NetStateSync_GetName(NetStateSync* self, int stateIndex) {
+    uint8_t* p = (uint8_t*)self;
+    int stateCount = *(int32_t*)(p + 4);
+
+    if (stateIndex >= stateCount) {
+        return 0;
+    }
+
+    int32_t currentState = *(int32_t*)(p + 12);
+    if (currentState != -1) {
+        void** stateArray = *(void***)(p + 8);
+        void* stateObj = stateArray[currentState];
+        if (stateObj) {
+            void** vtbl = *(void***)stateObj;
+            typedef uint8_t (*IsReadyFn)(void*);
+            IsReadyFn isReady = (IsReadyFn)vtbl[14];
+            return isReady(stateObj);
+        }
+    }
+
+    // Default: state 1 or 2 returns 1, anything else returns 0
+    if (stateIndex == 1 || stateIndex == 2) {
+        return 1;
+    }
+    return 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
-// External function stubs
+// External function declarations
 ////////////////////////////////////////////////////////////////////////////////
 
 extern "C" {
-    // fsmMachine destructor (originally auto-named as gameLoop_DestroyAudio_27A8)
-    void fsmMachine_Destructor_27A8(void* obj) {
-        // Implemented in src/rage/fsmMachine.c
-        // This is the base class destructor for finite state machines
-    }
+    // fsmMachine destructor — implemented in src/rage/fsmMachine.c
+    void fsmMachine_Destructor_27A8(void* obj);
     
-    // Stub for rage initialization
-    void grcDevice_FinalizeRenderSetup_1(void* obj) {
-        // Stub - would initialize rage component
-    }
+    // Network/rendering subsystem initializers
+    void grcDevice_FinalizeRenderSetup_1(void* obj);
+    void SinglesNetworkClient_2BE8_g(void* obj);
+    void SinglesNetworkClient_51C8_g(void* obj);
+    void SinglesNetworkClient_2E88_isl(void* obj);
+    void SinglesNetworkClient_DA08(void* obj);
+    void util_AA38(void* obj);
+    void game_5128(void* obj);
     
-    // Stub for network client initialization
-    void SinglesNetworkClient_2BE8_g(void* obj) {
-        // Stub - would initialize network client
-    }
-    
-    // Stub for network client helper
-    void SinglesNetworkClient_51C8_g(void* obj) {
-        // Stub - would initialize network client component
-    }
-    
-    // Stub for utility initialization
-    void util_AA38(void* obj) {
-        // Stub - would perform utility initialization
-    }
-    
-    // Stub for thread initialization
-    void* rage_AssertMainThread() {
-        // Stub - would initialize thread context
-        return nullptr;
-    }
+    // Thread assertion
+    void* rage_AssertMainThread();
     
     // Global allocator pointer @ 0x82600004
-    void* g_allocator_ptr = nullptr;
+    extern void* g_allocator_ptr;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// FloatAverager — Utility class for averaging float values over time
-// ═════════════════════════════════════════════════════════════════════════════
-//
-// FloatAverager is a lightweight utility class used throughout the networking
-// subsystem for smoothing time-varying values like ping times, frame deltas,
-// and network latency. It has 4 vtable variants, likely from template
-// instantiations or different usage contexts.
-//
-// The class has 4 identical scalar destructors, one for each vtable variant:
-//   - vtable @ 0x8203A910 → FloatAverager_vfn_0 @ 0x821A7AA0
-//   - vtable @ 0x8203A91C → FloatAverager_vfn_0_7AE8_1 @ 0x821A7AE8
-//   - vtable @ 0x82070D78 → FloatAverager_vfn_0_D538_1 @ 0x823CD538
-//   - vtable @ 0x8207166C → FloatAverager_vfn_0_3EE8_1 @ 0x823D3EE8
-//
-// Each destructor follows the standard scalar destructor pattern:
-//   1. Store the vtable pointer
-//   2. Check the low bit of the flags parameter (r4 & 0x1)
-//   3. If set, call rage_free_00C0 to deallocate memory
-//
-// ═════════════════════════════════════════════════════════════════════════════
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FloatAverager::~FloatAverager()  [vtable slot 0 @ 0x821A7AA0]
-// Vtable: 0x8203A910
-//
-// Scalar destructor for FloatAverager (variant 1). Restores the vtable pointer
-// and optionally frees the object's memory if the deallocate flag is set.
-//
-// Parameters:
-//   this (r3) - pointer to FloatAverager object
-//   flags (r4) - destruction flags (bit 0: deallocate memory)
-//
-// Globals:
-//   vtable @ 0x8203A910 - FloatAverager vtable variant 1
-//
-// Logic:
-//   1. Store vtable pointer at +0x00
-//   2. Extract bit 0 of flags (r4 & 0x1)
-//   3. If bit 0 is set, call rage_free_00C0(this) to deallocate
-// ─────────────────────────────────────────────────────────────────────────────
-void FloatAverager::~FloatAverager() {
-    // Vtable address for variant 1
-    extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910
-
-    // Restore vtable pointer
-    *(void**)this = &g_FloatAverager_vtable_1;
-
-    // Note: Memory deallocation handled by scalar destructor wrapper
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FloatAverager scalar destructor variant 1  [@ 0x821A7AA0]
-// Wrapper that calls destructor and optionally frees memory
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void FloatAverager_vfn_0(FloatAverager* thisPtr, int flags) {
-    extern void* g_FloatAverager_vtable_1;  // @ 0x8203A910
-    extern void rage_free_00C0(void* ptr);
-
-    // Restore vtable
-    *(void**)thisPtr = &g_FloatAverager_vtable_1;
-
-    // If deallocate flag is set (bit 0), free the memory
-    if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FloatAverager scalar destructor variant 2  [@ 0x821A7AE8]
-// Vtable: 0x8203A91C
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void FloatAverager_vfn_0_7AE8_1(FloatAverager* thisPtr, int flags) {
-    extern void* g_FloatAverager_vtable_2;  // @ 0x8203A91C
-    extern void rage_free_00C0(void* ptr);
-
-    // Restore vtable
-    *(void**)thisPtr = &g_FloatAverager_vtable_2;
-
-    // If deallocate flag is set (bit 0), free the memory
-    if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FloatAverager scalar destructor variant 3  [@ 0x823CD538]
-// Vtable: 0x82070D78
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void FloatAverager_vfn_0_D538_1(FloatAverager* thisPtr, int flags) {
-    extern void* g_FloatAverager_vtable_3;  // @ 0x82070D78
-    extern void rage_free_00C0(void* ptr);
-
-    // Restore vtable
-    *(void**)thisPtr = &g_FloatAverager_vtable_3;
-
-    // If deallocate flag is set (bit 0), free the memory
-    if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FloatAverager scalar destructor variant 4  [@ 0x823D3EE8]
-// Vtable: 0x8207166C
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" void FloatAverager_vfn_0_3EE8_1(FloatAverager* thisPtr, int flags) {
-    extern void* g_FloatAverager_vtable_4;  // @ 0x8207166C
-    extern void rage_free_00C0(void* ptr);
-
-    // Restore vtable
-    *(void**)thisPtr = &g_FloatAverager_vtable_4;
-
-    // If deallocate flag is set (bit 0), free the memory
-    if (flags & 0x1) {
-        rage_free_00C0(thisPtr);
-    }
-}
 
 
 // ─────────────────────────────────────────────────────────────────────────────
