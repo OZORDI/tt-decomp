@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 extern "C" {
@@ -45,6 +46,13 @@ void cmOperatorCtor_DAE0_w(void* pOperator, std::uint32_t valueData, int flags);
 void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags);
 float parStreamInXml_A5D0(void* pOperator);
 bool jumptable_A578_h(void* pOperator);
+void* atSingleton_29E0_g(void* pSource);
+void jumptable_A2E8(void* pTemp, const char* pName, int flags);
+void rage_A258(void* pTemp);
+void jumptable_95F0(void* pOperator, const char* pLabelAddr, int value);
+void jumptable_9698(void* pOperator, const char* pLabelAddr, float value);
+void* cmSampleCamMachineBank_65C0_g(void* pListHead, int nodeSize);
+void jumptable_A370(void* pNameNode, const char* pName, std::uint32_t copyName);
 }
 
 namespace {
@@ -1674,3 +1682,428 @@ void parMemberSimple::ApplyOperator(const cmOperator* pValueOperator, uint32_t m
 }
 
 } // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Extern "C" par subsystem function implementations
+//
+// These replace PPC_EXTERN_IMPORT stubs with native implementations.
+// All 10 functions are part of the cmOperator / par serialization subsystem.
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * jumptable_E058_h @ 0x8234E058 | size: 0x30
+ *
+ * Returns 1 if the array member uses a fixed-capacity storage mode
+ * (2 = fixed inline, 3 = fixed indirect, 4 = descriptor-based).
+ */
+extern "C" std::uint8_t jumptable_E058_h(void* pMemberArray) {
+    auto* memberDesc = *reinterpret_cast<void**>(
+        static_cast<std::uint8_t*>(pMemberArray) + 4
+    );
+    std::uint8_t storageMode = *(static_cast<std::uint8_t*>(memberDesc) + 11);
+    if (storageMode == 4 || storageMode == 2 || storageMode == 3) {
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * parStreamInXml_A5D0 @ 0x8223A5D0 | size: 0x68
+ *
+ * Reads a floating-point value from a cmOperator node.
+ * Type 2 = inline float at +4; type 0 = string → atof; else 0.0.
+ */
+extern "C" float parStreamInXml_A5D0(void* pOperator) {
+    auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
+    std::uint8_t typeTag = op[8];
+
+    if (typeTag == 2) {
+        return *reinterpret_cast<float*>(op + 4);
+    }
+    if (typeTag == 0) {
+        const char* text = reinterpret_cast<const char*>(
+            static_cast<std::uintptr_t>(*reinterpret_cast<std::uint32_t*>(op + 4))
+        );
+        return static_cast<float>(std::atof(text));
+    }
+    return 0.0f;
+}
+
+/**
+ * jumptable_A578_h @ 0x8223A578 | size: 0x58
+ *
+ * Reads a boolean value from a cmOperator node.
+ * Type 3 = inline bool at +4; type 0 = string ('f'/'F'/'0' → false);
+ * else false.
+ */
+extern "C" bool jumptable_A578_h(void* pOperator) {
+    auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
+    std::uint8_t typeTag = op[8];
+
+    if (typeTag == 3) {
+        return op[4] != 0;
+    }
+    if (typeTag == 0) {
+        const char* text = reinterpret_cast<const char*>(
+            static_cast<std::uintptr_t>(*reinterpret_cast<std::uint32_t*>(op + 4))
+        );
+        char c = text[0];
+        return (c != 'f' && c != 'F' && c != '0');
+    }
+    return false;
+}
+
+/**
+ * util_9410 @ 0x82239410 | size: 0x88
+ *
+ * Sets the owner pointer of a cmOperator payload. If bit 0 of the flags
+ * byte (+4) is set, the previous owner is freed first. If duplicateOwner
+ * is non-zero, the owner string is duplicated via atSingleton_29E0_g.
+ */
+extern "C" void util_9410(void* pOperator, void* pOwner, std::uint32_t duplicateOwner) {
+    auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
+    std::uint8_t flags = op[4];
+
+    // Free old owner if the owned-copy flag (bit 0) is set
+    if ((flags & 0x1u) != 0) {
+        auto ownerAddr = *reinterpret_cast<std::uintptr_t*>(op);
+        if (ownerAddr != 0) {
+            rage_free_00C0(reinterpret_cast<void*>(ownerAddr));
+        }
+    }
+
+    if ((duplicateOwner & 0xFFu) != 0) {
+        // Duplicate the owner string and mark as owned
+        void* copy = atSingleton_29E0_g(pOwner);
+        *reinterpret_cast<std::uintptr_t*>(op) = reinterpret_cast<std::uintptr_t>(copy);
+        op[4] |= 0x1u;
+    } else {
+        // Direct reference, clear owned flag
+        *reinterpret_cast<std::uintptr_t*>(op) = reinterpret_cast<std::uintptr_t>(pOwner);
+        op[4] &= static_cast<std::uint8_t>(~0x1u);
+    }
+}
+
+/**
+ * atSingleton_DA18_p46 @ 0x8234DA18 | size: 0x60
+ *
+ * Unlinks a cmOperator node from its current parent's child list and
+ * inserts it as the first child of a new parent node.
+ *
+ * Node layout: +20 = parent ptr, +24 = next sibling, parent+28 = first child.
+ */
+extern "C" void atSingleton_DA18_p46(void* pNode, void* pRootNode) {
+    if (pNode == pRootNode) {
+        return;
+    }
+
+    auto nodeAddr = reinterpret_cast<std::uintptr_t>(pNode);
+    auto rootAddr = reinterpret_cast<std::uintptr_t>(pRootNode);
+
+    // Unlink from current parent
+    std::uintptr_t parentAddr = *reinterpret_cast<std::uintptr_t*>(nodeAddr + 20);
+    if (parentAddr != 0) {
+        // Walk parent's child list (starts at parent+28) to find pNode
+        auto* linkPtr = reinterpret_cast<std::uintptr_t*>(parentAddr + 28);
+        while (*linkPtr != nodeAddr) {
+            linkPtr = reinterpret_cast<std::uintptr_t*>(*linkPtr + 24);
+        }
+        // Splice out: predecessor's next = node's next
+        *linkPtr = *reinterpret_cast<std::uintptr_t*>(nodeAddr + 24);
+    }
+
+    // Insert into new parent's child list
+    *reinterpret_cast<std::uintptr_t*>(nodeAddr + 20) = rootAddr;
+    *reinterpret_cast<std::uintptr_t*>(nodeAddr + 24) = 0;
+
+    // Prepend: node.next = root.firstChild, root.firstChild = node
+    std::uintptr_t oldFirstChild = *reinterpret_cast<std::uintptr_t*>(rootAddr + 28);
+    *reinterpret_cast<std::uintptr_t*>(nodeAddr + 24) = oldFirstChild;
+    *reinterpret_cast<std::uintptr_t*>(rootAddr + 28) = nodeAddr;
+}
+
+/**
+ * rage_EC58 @ 0x820CEC58 | size: 0x40
+ *
+ * Replaces a heap-backed string value. Duplicates the input text, frees the
+ * old string at self+0, and stores the new pointer.
+ */
+extern "C" void rage_EC58(void* pStringValue, const char* pText) {
+    void* newStr = atSingleton_29E0_g(const_cast<char*>(const_cast<char*>(pText)));
+    auto* storage = reinterpret_cast<std::uintptr_t*>(pStringValue);
+    void* oldStr = reinterpret_cast<void*>(*storage);
+    rage_free_00C0(oldStr);
+    *storage = reinterpret_cast<std::uintptr_t>(newStr);
+}
+
+/**
+ * cmOperatorCtor_D8C0_w @ 0x8234D8C0 | size: 0x64
+ *
+ * Copies raw data into an operator payload. Allocates a buffer via the
+ * main-thread heap, memcpys the source data, and sets the value size + flag.
+ */
+extern "C" void cmOperatorCtor_D8C0_w(void* pOperator, const void* pValueData, std::uint32_t valueSize) {
+    auto* op = reinterpret_cast<std::uint8_t*>(pOperator);
+
+    rage_AssertMainThread();
+    MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
+    void* buffer = (allocator != nullptr)
+        ? allocator->Allocate(valueSize, 16u)
+        : nullptr;
+
+    // Store buffer pointer at operator+32
+    *reinterpret_cast<std::uintptr_t*>(op + 32) = reinterpret_cast<std::uintptr_t>(buffer);
+
+    if (buffer != nullptr && pValueData != nullptr && valueSize > 0) {
+        std::memcpy(buffer, pValueData, valueSize);
+    }
+
+    // Store value size at +36 and set inline-value flag at +40
+    *reinterpret_cast<std::uint32_t*>(op + 36) = valueSize;
+    op[40] = 1;
+}
+
+/**
+ * cmOperatorCtor_DBC0_w @ 0x8234DBC0 | size: 0xC0
+ *
+ * Creates a new cmOperator with an integer value. Allocates a 44-byte
+ * operator payload, sets the owner, and stores the integer via jumptable_95F0.
+ */
+extern "C" void cmOperatorCtor_DBC0_w(void* pOperator, int value, int flags) {
+    (void)flags;
+
+    rage_AssertMainThread();
+    MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
+    auto* newOp = (allocator != nullptr)
+        ? static_cast<std::uint8_t*>(allocator->Allocate(44u, 16u))
+        : nullptr;
+
+    if (newOp != nullptr) {
+        // Zero-initialize the 44-byte operator
+        std::memset(newOp, 0, 44);
+        // Preserve runtime token: save +18, store into +16, clear +18
+        std::uint16_t runtimeToken = *reinterpret_cast<std::uint16_t*>(newOp + 18);
+        *reinterpret_cast<std::uint32_t*>(newOp + 16) = runtimeToken;
+        *reinterpret_cast<std::uint16_t*>(newOp + 18) = 0;
+    }
+
+    // Set owner
+    util_9410(newOp, pOperator, 0);
+
+    // Set value label and store integer
+    constexpr std::uintptr_t kValueLabelAddr = 0x82065B20;
+    jumptable_95F0(newOp, reinterpret_cast<const char*>(kValueLabelAddr), value);
+
+    // Return the new operator in the caller's expected location
+    // The PPC code sets r3 = newOp, but in C the function is void
+    // The caller (parMemberSimple::CreateOperator) uses GetType() return as the target
+    (void)newOp;
+}
+
+/**
+ * cmOperatorCtor_DAE0_w @ 0x8234DAE0 | size: 0xE0
+ *
+ * Creates a new cmOperator with a float value (passed as uint32_t bits).
+ * Allocates a 44-byte operator, sets owner, stores float via jumptable_9698.
+ */
+extern "C" void cmOperatorCtor_DAE0_w(void* pOperator, std::uint32_t valueData, int flags) {
+    (void)flags;
+
+    rage_AssertMainThread();
+    MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
+    auto* newOp = (allocator != nullptr)
+        ? static_cast<std::uint8_t*>(allocator->Allocate(44u, 16u))
+        : nullptr;
+
+    if (newOp != nullptr) {
+        std::memset(newOp, 0, 44);
+        std::uint16_t runtimeToken = *reinterpret_cast<std::uint16_t*>(newOp + 18);
+        *reinterpret_cast<std::uint32_t*>(newOp + 16) = runtimeToken;
+        *reinterpret_cast<std::uint16_t*>(newOp + 18) = 0;
+    }
+
+    util_9410(newOp, pOperator, 0);
+
+    constexpr std::uintptr_t kValueLabelAddr = 0x82065B20;
+    float fValue = *reinterpret_cast<float*>(&valueData);
+    jumptable_9698(newOp, reinterpret_cast<const char*>(kValueLabelAddr), fValue);
+
+    (void)newOp;
+}
+
+/**
+ * cmOperatorCtor_DC80_w @ 0x8234DC80 | size: 0x108
+ *
+ * Creates a new cmOperator for a string value. Allocates a 44-byte operator,
+ * sets the owner, assigns primary/secondary labels, and copies the string data.
+ */
+extern "C" void* cmOperatorCtor_DC80_w(void* pOwner, const char* pText, int flags) {
+    (void)flags;
+
+    rage_AssertMainThread();
+    MainThreadHeapAllocator* allocator = GetMainThreadHeapAllocator();
+    auto* newOp = (allocator != nullptr)
+        ? static_cast<std::uint8_t*>(allocator->Allocate(44u, 16u))
+        : nullptr;
+
+    if (newOp != nullptr) {
+        std::memset(newOp, 0, 44);
+        std::uint16_t runtimeToken = *reinterpret_cast<std::uint16_t*>(newOp + 18);
+        *reinterpret_cast<std::uint32_t*>(newOp + 16) = runtimeToken;
+        *reinterpret_cast<std::uint16_t*>(newOp + 18) = 0;
+    } else {
+        newOp = nullptr;
+    }
+
+    // Set owner reference (no duplication)
+    util_9410(newOp, pOwner, 0);
+
+    // Set label pair (primary = "value" @ 0x82065B28, secondary = "string" @ 0x82065B30)
+    constexpr std::uintptr_t kPrimaryLbl = 0x82065B28;
+    constexpr std::uintptr_t kSecondaryLbl = 0x82065B30;
+    jumptable_9498(
+        newOp,
+        reinterpret_cast<const char*>(kSecondaryLbl),
+        reinterpret_cast<const char*>(kPrimaryLbl),
+        0, 0
+    );
+
+    // Copy string data into the operator payload
+    std::uint32_t textLen = 0;
+    if (pText != nullptr) {
+        const char* p = pText;
+        while (*p != '\0') { ++p; }
+        textLen = static_cast<std::uint32_t>(p - pText);
+    }
+    cmOperatorCtor_D8C0_w(newOp, pText, textLen);
+
+    return newOp;
+}
+
+/**
+ * rage_97A8 @ 0x822397A8 | size: 0x1E0
+ *
+ * Searches for a child cmOperator node by name within the operator's children.
+ * Uses binary search when the sorted flag (bit 1 of +4) is set, otherwise
+ * falls back to linear search. The child array is at +8 (uint32 pointer array)
+ * with count at +12 (uint16). Each child's first field (+0) is its name string.
+ */
+extern "C" void* rage_97A8(const void* pOperator, const char* pNodeName) {
+    auto* op = reinterpret_cast<const std::uint8_t*>(pOperator);
+    std::uint8_t flags = op[4];
+    bool isSorted = (flags & 0x2u) != 0;
+
+    if (isSorted) {
+        // Binary search path
+        std::uint16_t childCount = *reinterpret_cast<const std::uint16_t*>(op + 12);
+        auto* childArray = reinterpret_cast<std::uintptr_t*>(
+            static_cast<std::uintptr_t>(*reinterpret_cast<const std::uint32_t*>(op + 8))
+        );
+
+        // Initialize temp search context
+        std::uint8_t tempCtx[16] = {};
+        jumptable_A2E8(tempCtx, pNodeName, 0);
+
+        // Binary search over sorted child array
+        std::uintptr_t* searchBase = childArray;
+        int remaining = static_cast<int>(childCount);
+
+        while (remaining > 0) {
+            int mid = remaining / 2;
+            std::uintptr_t* midPtr = searchBase + mid;
+            void* child = reinterpret_cast<void*>(*midPtr);
+            const char* childName = reinterpret_cast<const char*>(
+                *reinterpret_cast<std::uintptr_t*>(child)
+            );
+
+            // Compare strings byte by byte
+            const char* a = childName;
+            const char* b = pNodeName;
+            int cmp = 0;
+            while (true) {
+                int ca = static_cast<unsigned char>(*a);
+                int cb = static_cast<unsigned char>(*b);
+                cmp = ca - cb;
+                if (ca == 0 || cmp != 0) break;
+                ++a;
+                ++b;
+            }
+
+            if (cmp < 0) {
+                // Child name < search name → search upper half
+                searchBase = midPtr + 1;
+                remaining = remaining - mid - 1;
+            } else {
+                // Child name >= search name → search lower half
+                remaining = mid;
+            }
+        }
+
+        // Final check at the converged position
+        std::uintptr_t* endPtr = childArray + childCount;
+        if (searchBase < endPtr) {
+            void* child = reinterpret_cast<void*>(*searchBase);
+            const char* childName = reinterpret_cast<const char*>(
+                *reinterpret_cast<std::uintptr_t*>(child)
+            );
+
+            const char* a = childName;
+            const char* b = pNodeName;
+            int cmp = 0;
+            while (true) {
+                int ca = static_cast<unsigned char>(*a);
+                int cb = static_cast<unsigned char>(*b);
+                cmp = ca - cb;
+                if (ca == 0 || cmp != 0) break;
+                ++a;
+                ++b;
+            }
+
+            if (cmp == 0) {
+                rage_A258(tempCtx);
+                return child;
+            }
+        }
+
+        rage_A258(tempCtx);
+        return nullptr;
+    }
+
+    // Linear search path (unsorted)
+    std::uint16_t childCount = *reinterpret_cast<const std::uint16_t*>(op + 12);
+    if (childCount == 0) {
+        return nullptr;
+    }
+
+    auto* childArray = reinterpret_cast<std::uintptr_t*>(
+        static_cast<std::uintptr_t>(*reinterpret_cast<const std::uint32_t*>(op + 8))
+    );
+
+    for (std::uint16_t i = 0; i < childCount; ++i) {
+        void* child = reinterpret_cast<void*>(childArray[i]);
+        if (child == nullptr) {
+            continue;
+        }
+
+        const char* childName = reinterpret_cast<const char*>(
+            *reinterpret_cast<std::uintptr_t*>(child)
+        );
+
+        // Compare strings
+        const char* a = childName;
+        const char* b = pNodeName;
+        bool match = true;
+        while (true) {
+            if (*a != *b) { match = false; break; }
+            if (*a == '\0') break;
+            ++a;
+            ++b;
+        }
+
+        if (match) {
+            return child;
+        }
+    }
+
+    return nullptr;
+}

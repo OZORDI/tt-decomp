@@ -585,7 +585,6 @@ extern "C" void* atArray_Destructor(void* a) { (void)a; return nullptr; }
 extern "C" void atSingleton_2E60_g(void* a) { (void)a; }
 extern "C" void* atSingleton_CAD0_g(void* a) { (void)a; return nullptr; }
 extern "C" void atSingleton_D210_p46(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-extern "C" void atSingleton_DA18_p46(void* a, void* b) { (void)a; (void)b; }
 
 // ── Audio ───────────────────────────────────────────────────────────────────
 
@@ -600,10 +599,7 @@ extern "C" uint32_t cmNode_GetDimValue(void* a) { (void)a; return 0; }
 extern "C" bool cmNode_TryConnect3(void* a, void* b) { (void)a; (void)b; return false; }
 extern "C" bool cmNode_TryConnectSingle(void* a, void* b) { (void)a; (void)b; return false; }
 extern "C" void cmNormalizedTimer_Allocate(void* a) { (void)a; }
-extern "C" void cmOperatorCtor_D8C0_w(void* a, const void* b, uint32_t c) { (void)a; (void)b; (void)c; }
-extern "C" void cmOperatorCtor_DAE0_w(void* a, uint32_t b, int c) { (void)a; (void)b; (void)c; }
-extern "C" void cmOperatorCtor_DBC0_w(void* a, int b, int c) { (void)a; (void)b; (void)c; }
-extern "C" void* cmOperatorCtor_DC80_w(void* a, const char* b, int c) { (void)a; (void)b; (void)c; return nullptr; }
+
 extern "C" void cmPort_CopyToBuffer(void* a, void* b) { (void)a; (void)b; }
 extern "C" void cmPort_SyncValue(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 extern "C" void cmPowerApproach_Step(float* out, float a, float b, float c) {
@@ -633,8 +629,7 @@ extern "C" void grmShaderPreset_AllocArray(uint32_t a) { (void)a; }
 extern "C" void jumptable_9498(void* a, const char* b, const char* c, uint32_t d, uint32_t e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
-extern "C" bool jumptable_A578_h(void* a) { (void)a; return false; }
-extern "C" uint8_t jumptable_E058_h(void* a) { (void)a; return 0; }
+
 
 // ── Page Group Internals ────────────────────────────────────────────────────
 
@@ -689,7 +684,6 @@ extern "C" void rage_AddRef(void* a) { (void)a; }
 extern "C" void rage_Release(void* a) { (void)a; }
 extern "C" void rage_ReleaseSingleton(void* a) { (void)a; }
 extern "C" void* parStreamInXml_FindChildByName(const void* a, const char* b) { (void)a; (void)b; return nullptr; }
-extern "C" void rage_EC58(void* a, const char* b) { (void)a; (void)b; }
 extern "C" void rage_F6F0(void) {}
 extern "C" const void* rage_cmIntegrate_vtable = nullptr;
 extern "C" void rage_obj_bind_3828(void* a, void* b, uint32_t c) { (void)a; (void)b; (void)c; }
@@ -741,7 +735,6 @@ extern "C" void sysMemAllocator_InitThreadHeap(void) {
 extern "C" float cmOperator_EvalFloat(void* a) { (void)a; return 0.0f; }
 extern "C" int util_4BD8(void* a) { (void)a; return 0; }
 extern "C" void util_92D8(void* a, void* b) { (void)a; (void)b; }
-extern "C" void util_9410(void* a, void* b, uint32_t c) { (void)a; (void)b; (void)c; }
 
 // CRT snprintf overload (C++ mangled)
 void ph_snprintf(char* buf, int size, const char* fmt, const char* str, int val) {
@@ -1339,9 +1332,9 @@ void pongPlayer_ApplyNetStateImpl(void* a) { (void)a; }
 void pongPlayer_B208_g(void* a, vec3* b, unsigned char c) { (void)a; (void)b; (void)c; }
 int pongPlayer_BF18_g(void* a, int b, vec3* c, vec3* d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
 void pongPlayer_C678_g(pongPlayer* a) { (void)a; }
-void pongPlayer_D238_g(pongPlayer* a) { (void)a; }
+// pongPlayer_D238_g: moved to src/game/player/pong_player.cpp (returns float)
 bool pongPlayer_DE98_g(void* a) { (void)a; return false; }
-void pongPlayer_E590_g(void* a, void* b, void* c, void* d, void* e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
+// pongPlayer_E590_g — moved to src/game/player/pong_player.cpp (full implementation)
 void pongPlayer_E7B0_g(vec3* a, void* b) { (void)a; (void)b; }
 void pongPlayer_FD20_g(void* a, int b, void* c, void* d, int e, void* f, void* g, unsigned char h) {
     (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g; (void)h;
