@@ -1707,6 +1707,462 @@ void CCalMoviePlayer::ScalarDeletingDtorBase(int flags) {
 
     // Free if ownership flag set
     if (flags & 1) {
-        rage_Free(this);
+        rage_free(this);
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Batch 4: State Management & Playback Control (244–484B)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * CCalMoviePlayer::InitializeDefaults @ 0x8248E0E8 | size: 0xF4
+ *
+ * Resets all media player state fields to default values (vtable slot 38).
+ * Zeroes all operational fields (ring buffer, KEVENTs, status) and sets
+ * status fields 212, 216 to 1 (initial state) and field 240 to 1 (active).
+ *
+ * Called when preparing the player for a new media session.
+ */
+void CCalMoviePlayer::InitializeDefaults() {
+    char* p = (char*)this;
+
+    // Zero all operational fields: +44 through +272
+    // Covers: sub-object ptr, buffer base, buffer count, read/write indices,
+    // callback, available count, callback userdata, KEVENTs (84-208),
+    // status fields (220-236), playback counters (244-272)
+    for (int i = 44; i <= 272; i += 4) {
+        *(uint32_t*)(p + i) = 0;
+    }
+
+    // Set initial state values
+    *(uint32_t*)(p + 212) = 1;  // Status A = initial
+    *(uint32_t*)(p + 216) = 1;  // Status B = initial
+    *(uint32_t*)(p + 240) = 1;  // Active flag = 1
+}
+
+/**
+ * CCalMoviePlayer::QueryPlaybackReady @ 0x8248E520 | size: 0x134
+ *
+ * Checks if the player is ready for playback by querying status slots
+ * 60 and 61 (vtable). Both must return 5 ("ready" state). If ready,
+ * queries the sub-object at +44 via vtable slot 25 for the result code,
+ * then sets status flags (vslots 71/72 with value 1) and signals events
+ * 48-51 to wake waiting threads.
+ *
+ * Acquires lock (vslot 3) before checks, releases (vslot 5) after.
+ *
+ * @return 0 or positive on success, 0x80004005 (E_FAIL) if not ready.
+ */
+int32_t CCalMoviePlayer::QueryPlaybackReady() {
+    typedef void (*VFuncV)(void*);
+    typedef int32_t (*VFuncI)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+
+    int32_t result;
+    void** vt = *(void***)this;
+
+    // Lock
+    ((VFuncV)vt[3])(this);
+
+    // Check status A via vtable slot 60
+    vt = *(void***)this;
+    if (((VFuncI)vt[60])(this) == 5) {
+        // Check status B via vtable slot 61
+        vt = *(void***)this;
+        if (((VFuncI)vt[61])(this) == 5) {
+            // Both ready — query sub-object
+            void* subObj = *(void**)((char*)this + 44);
+            void** subVt = *(void***)subObj;
+            result = ((VFuncI)subVt[25])(subObj);
+
+            // Signal status and events
+            vt = *(void***)this;
+            ((VFuncVI)vt[71])(this, 1);
+            vt = *(void***)this;
+            ((VFuncVI)vt[72])(this, 1);
+            vt = *(void***)this;
+            ((VFuncV)vt[48])(this);
+            vt = *(void***)this;
+            ((VFuncV)vt[49])(this);
+            vt = *(void***)this;
+            ((VFuncV)vt[50])(this);
+            vt = *(void***)this;
+            ((VFuncV)vt[51])(this);
+        } else {
+            result = (int32_t)0x80004005;  // E_FAIL
+        }
+    } else {
+        result = (int32_t)0x80004005;  // E_FAIL
+    }
+
+    // Unlock
+    vt = *(void***)this;
+    ((VFuncV)vt[5])(this);
+
+    return result;
+}
+
+/**
+ * CCalMoviePlayer::ResetPlaybackState @ 0x8248E658 | size: 0x100
+ *
+ * Resets playback state by setting status flags and signaling events.
+ * Sets status slots 71/72 to 1, slots 68/69 to 2 (reset markers),
+ * then signals events 48-51 to wake all waiting threads.
+ *
+ * Acquires lock (vslot 3) before modification, releases (vslot 5) after.
+ * Returns 0.
+ */
+int32_t CCalMoviePlayer::ResetPlaybackState() {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+
+    void** vt = *(void***)this;
+
+    // Lock
+    ((VFuncV)vt[3])(this);
+
+    // Set status flags
+    vt = *(void***)this;
+    ((VFuncVI)vt[71])(this, 1);
+    vt = *(void***)this;
+    ((VFuncVI)vt[72])(this, 1);
+    vt = *(void***)this;
+    ((VFuncVI)vt[68])(this, 2);
+    vt = *(void***)this;
+    ((VFuncVI)vt[69])(this, 2);
+
+    // Signal events
+    vt = *(void***)this;
+    ((VFuncV)vt[48])(this);
+    vt = *(void***)this;
+    ((VFuncV)vt[49])(this);
+    vt = *(void***)this;
+    ((VFuncV)vt[50])(this);
+    vt = *(void***)this;
+    ((VFuncV)vt[51])(this);
+
+    // Unlock
+    vt = *(void***)this;
+    ((VFuncV)vt[5])(this);
+
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::PreparePlayback @ 0x8248E968 | size: 0x1D4
+ *
+ * Prepares the player for playback (vtable slot 39). If both status slots
+ * (vslots 60/61) return 1 ("initialized"), skips directly to state setup.
+ * Otherwise, resets playback (vslot 24), waits for events 4-7 (vslots 44-47),
+ * and queries the sub-object at +44 via vslot 20 to start playback.
+ *
+ * On successful start: zeros playback counters (232-256), sets active flag
+ * (240 = 1), resets events 4-7 (vslots 56-59), sets channel flags
+ * (vslots 65/66 with 1), and status markers (vslots 71/72 with -1).
+ *
+ * @return 0 or positive on success, negative on failure.
+ */
+int32_t CCalMoviePlayer::PreparePlayback() {
+    typedef void (*VFuncV)(void*);
+    typedef int32_t (*VFuncI)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+
+    int32_t playbackResult = 0;
+    bool skipToInit = false;
+    void** vt;
+
+    // Check if already in initialized state (both status == 1)
+    vt = *(void***)this;
+    if (((VFuncI)vt[60])(this) == 1) {
+        vt = *(void***)this;
+        if (((VFuncI)vt[61])(this) == 1) {
+            skipToInit = true;
+        }
+    }
+
+    if (!skipToInit) {
+        // Not already initialized — reset and start fresh
+        vt = *(void***)this;
+        ((VFuncV)vt[24])(this);    // ResetPlaybackState
+        vt = *(void***)this;
+        ((VFuncV)vt[44])(this);    // WaitForEvent4
+        vt = *(void***)this;
+        ((VFuncV)vt[45])(this);    // WaitForEvent5
+        vt = *(void***)this;
+        ((VFuncV)vt[46])(this);    // WaitForEvent6
+        vt = *(void***)this;
+        ((VFuncV)vt[47])(this);    // WaitForEvent7
+
+        // Start playback via sub-object vslot 20
+        void* subObj = *(void**)((char*)this + 44);
+        void** subVt = *(void***)subObj;
+        playbackResult = ((VFuncI)subVt[20])(subObj);
+
+        if (playbackResult < 0) {
+            return playbackResult;  // Failed to start
+        }
+    }
+
+    // Initialize playback state
+    vt = *(void***)this;
+    ((VFuncV)vt[3])(this);         // Lock
+
+    vt = *(void***)this;
+    ((VFuncVI)vt[71])(this, -1);   // Set status A = -1
+    vt = *(void***)this;
+    ((VFuncVI)vt[72])(this, -1);   // Set status B = -1
+    vt = *(void***)this;
+    ((VFuncVI)vt[65])(this, 1);    // Set channel A = 1
+    vt = *(void***)this;
+    ((VFuncVI)vt[66])(this, 1);    // Set channel B = 1
+
+    // Zero playback counters
+    char* p = (char*)this;
+    *(uint32_t*)(p + 232) = 0;     // Frame counter A
+    *(uint32_t*)(p + 236) = 0;     // Frame counter B
+    *(uint32_t*)(p + 240) = 1;     // Active flag = 1
+    *(uint32_t*)(p + 244) = 0;     // Buffer counter
+    *(uint32_t*)(p + 248) = 0;     // Pending count
+    *(uint32_t*)(p + 252) = 0;     // Read position
+    *(uint32_t*)(p + 256) = 0;     // Write position
+
+    // Reset events 4-7
+    vt = *(void***)this;
+    ((VFuncV)vt[56])(this);        // ResetEvent4
+    vt = *(void***)this;
+    ((VFuncV)vt[57])(this);        // ResetEvent5
+    vt = *(void***)this;
+    ((VFuncV)vt[58])(this);        // ResetEvent6
+    vt = *(void***)this;
+    ((VFuncV)vt[59])(this);        // ResetEvent7
+
+    vt = *(void***)this;
+    ((VFuncV)vt[5])(this);         // Unlock
+
+    return playbackResult;
+}
+
+/**
+ * CCalMoviePlayer::ProcessWriteBuffer @ 0x82490A18 | size: 0x12C
+ *
+ * Processes the next write buffer in the ring (vtable slot 32). Queries
+ * the sub-object at +44 via vslot 17 for a media sample set, accesses
+ * the element at the current write index (+256), activates it (element
+ * vslot 14 with arg 1), reads data via element vslot 20, releases the
+ * element, then atomically decrements the buffer counter at +244 and
+ * advances the write index with wraparound.
+ *
+ * Finally dispatches the read data to the sub-object via vslot 22 and
+ * signals events 48 and 50 (SignalEvent0/2).
+ */
+void CCalMoviePlayer::ProcessWriteBuffer() {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef void (*VFunc4)(void*, void*, int32_t, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+    typedef void* (*VFuncP)(void*);
+    typedef void (*VFuncVP)(void*, void*);
+
+    char* p = (char*)this;
+
+    // Query sub-object at +44 for media sample set
+    void* subObj = *(void**)((char*)this + 44);
+    void** subVt = *(void***)subObj;
+
+    void* queryResult = nullptr;
+    ((VFunc4)subVt[17])(subObj, &queryResult, 0, 0);
+
+    // Get total buffer count from query result
+    uint32_t totalCount = *(uint32_t*)((char*)queryResult + 52);
+
+    // Get current write index
+    uint32_t writeIdx = *(uint32_t*)(p + 256);
+
+    // Get element by index from query result's ring buffer
+    char* base = *(char**)((char*)queryResult + 48);
+    char* element = base + writeIdx * 60;
+    {
+        void** elVt = *(void***)element;
+        if (elVt) ((VFuncV)elVt[1])(element);  // Activate
+    }
+
+    // Set element flag via vslot 14(element, 1)
+    {
+        void** elVt = *(void***)element;
+        ((VFuncVI)elVt[14])(element, 1);
+    }
+
+    // Read data from element via vslot 20
+    uint32_t dataValue;
+    {
+        void** elVt = *(void***)element;
+        void* dataPtr = ((VFuncP)elVt[20])(element);
+        dataValue = *(uint32_t*)((char*)dataPtr + 4);  // ld low-word (BE offset +4)
+    }
+
+    // Release element via vslot 2
+    {
+        void** elVt = *(void***)element;
+        ((VFuncV)elVt[2])(element);
+    }
+
+    // Release query result if non-null
+    if (queryResult != nullptr) {
+        void** qVt = *(void***)queryResult;
+        ((VFuncV)qVt[2])(queryResult);
+        queryResult = nullptr;
+    }
+
+    // Atomically decrement buffer counter at +244
+    volatile int32_t* pCounter = (volatile int32_t*)(p + 244);
+    int32_t oldVal;
+    do {
+        oldVal = *pCounter;
+    } while (!__sync_bool_compare_and_swap(pCounter, oldVal, oldVal - 1));
+
+    // Advance write index with wraparound
+    uint32_t nextIdx = writeIdx + 1;
+    if (nextIdx >= totalCount) {
+        nextIdx = 0;
+    }
+    *(uint32_t*)(p + 256) = nextIdx;
+
+    // Dispatch read data to sub-object via vslot 22
+    subObj = *(void**)((char*)this + 44);
+    subVt = *(void***)subObj;
+    ((VFuncVP)subVt[22])(subObj, (void*)(uintptr_t)dataValue);
+
+    // Signal events 0 and 2
+    void** vt = *(void***)this;
+    ((VFuncV)vt[48])(this);   // SignalEvent0
+    vt = *(void***)this;
+    ((VFuncV)vt[50])(this);   // SignalEvent2
+}
+
+/**
+ * CCalMoviePlayer::DrainPlaybackBuffer @ 0x8248FD58 | size: 0x1E4
+ *
+ * Drains the playback buffer by looping through available frames
+ * (vtable slot 21). Each iteration: clears the fiber flag on the buffer
+ * object at +48 (EB70), locks (vslot 3), sets channels to 2 (vslots 65/66),
+ * releases page refs at +260/+264/+272 via pg_6F48, unlocks (vslot 5),
+ * waits for events 4-7 (vslots 44-47), replaces fiber context on buffer
+ * object at +48 (EB30), then checks status flag bits to continue.
+ *
+ * Loop continues while:
+ *   - vslot 62 bit 1 is SET (flag A active)
+ *   - vslot 63 bit 1 is CLEAR (flag B clear)
+ *   - vslot 64 bit 1 is CLEAR (flag C clear)
+ *   - vslot 39 returns >= 0 (frames available)
+ *
+ * @param statusC  Value written to status field C (+220) before processing
+ * @return         Last frame index from vslot 39 (negative = exhausted)
+ */
+int32_t CCalMoviePlayer::DrainPlaybackBuffer(uint32_t statusC) {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+
+    char* p = (char*)this;
+    void** vt;
+
+    // Store statusC into field +220
+    *(uint32_t*)(p + 220) = statusC;
+
+    // Get initial frame result via vslot 39 (PreparePlayback)
+    vt = *(void***)this;
+    int32_t frameResult = ((VFuncI)vt[39])(this);
+
+    while (frameResult >= 0) {
+        // Clear fiber flag on buffer object (inline EB70)
+        {
+            char* bufObj = *(char**)(p + 48);
+            *(uint32_t*)(bufObj + 10376) = 0;
+        }
+
+        // Lock
+        vt = *(void***)this;
+        ((VFuncV)vt[3])(this);
+
+        // Set channels to 2 (pause/reset mode)
+        vt = *(void***)this;
+        ((VFuncVI)vt[65])(this, 2);
+        vt = *(void***)this;
+        ((VFuncVI)vt[66])(this, 2);
+
+        // Release page references
+        pg_6F48(*(void**)(p + 260));
+        pg_6F48(*(void**)(p + 264));
+        pg_6F48(*(void**)(p + 272));
+
+        // Unlock
+        vt = *(void***)this;
+        ((VFuncV)vt[5])(this);
+
+        // Wait for events 4-7
+        vt = *(void***)this;
+        ((VFuncV)vt[44])(this);
+        vt = *(void***)this;
+        ((VFuncV)vt[45])(this);
+        vt = *(void***)this;
+        ((VFuncV)vt[46])(this);
+        vt = *(void***)this;
+        ((VFuncV)vt[47])(this);
+
+        // Save and replace fiber context on buffer object (inline EB30)
+        {
+            char* bufObj = *(char**)(p + 48);
+            uint32_t existingCtx = *(uint32_t*)(bufObj + 10376);
+            if (existingCtx != 0) {
+                _crt_tls_fiber_setup();
+            }
+            void* newCtx = _crt_tls_fiber_setup();
+            *(void**)(bufObj + 10376) = newCtx;
+        }
+
+        // Lock
+        vt = *(void***)this;
+        ((VFuncV)vt[3])(this);
+
+        // Check flag A via vslot 62 — bit 1 must be set to continue
+        vt = *(void***)this;
+        int32_t flagA = ((VFuncI)vt[62])(this);
+        if (!(flagA & 0x2)) {
+            // Flag A not active — stop draining
+            vt = *(void***)this;
+            ((VFuncV)vt[5])(this);  // Unlock
+            break;
+        }
+
+        // Check flag B via vslot 63 — bit 1 must be clear to continue
+        vt = *(void***)this;
+        int32_t flagB = ((VFuncI)vt[63])(this);
+        if (flagB & 0x2) {
+            // Flag B set — stop draining
+            vt = *(void***)this;
+            ((VFuncV)vt[5])(this);  // Unlock
+            break;
+        }
+
+        // Check flag C via vslot 64 — bit 1 must be clear to continue
+        vt = *(void***)this;
+        int32_t flagC = ((VFuncI)vt[64])(this);
+        if (flagC & 0x2) {
+            // Flag C set — stop draining
+            vt = *(void***)this;
+            ((VFuncV)vt[5])(this);  // Unlock
+            break;
+        }
+
+        // Unlock and continue loop
+        vt = *(void***)this;
+        ((VFuncV)vt[5])(this);
+
+        // Check next frame
+        vt = *(void***)this;
+        frameResult = ((VFuncI)vt[39])(this);
+    }
+
+    return frameResult;
 }

@@ -1119,4 +1119,12 @@ public:
     int  SetVideoCallback(void* pCallback);            // @ 0x8248FCF0 - set video callback at +48
     int  ValidateOutputFormat();                       // @ 0x8248E450 - check width/height==3
     void ScalarDeletingDtorBase(int flags);            // @ 0x82491608 - base vtable dtor
+
+    // Batch 4 — state management & playback control (244–484B)
+    void InitializeDefaults();                         // @ 0x8248E0E8 - zero all operational fields
+    int32_t QueryPlaybackReady();                      // @ 0x8248E520 - check if ready (vslots 60/61==5)
+    int32_t ResetPlaybackState();                      // @ 0x8248E658 - reset status and signal events
+    int32_t PreparePlayback();                         // @ 0x8248E968 - prepare and start playback
+    void ProcessWriteBuffer();                         // @ 0x82490A18 - process next write buffer
+    int32_t DrainPlaybackBuffer(uint32_t statusC);     // @ 0x8248FD58 - drain all available frames
 };
