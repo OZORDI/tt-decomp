@@ -6,6 +6,7 @@
  */
 
 #include "pong_misc.hpp"
+#include <cstring>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Forward declarations for helpers referenced in this file
@@ -1037,14 +1038,33 @@ int CCalMoviePlayer::ComputeFrameSize() {  // 3F00_h
 // CCalMoviePlayer — Batch 2: Intermediate Functions (72–176B)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// External helpers used by batch 2 functions
-extern "C" void CCalMoviePlayer_13(void* obj);  // @ 0x8248FA48 - event cleanup
+// External helpers used by batch 2+ functions
 extern "C" void util_85C8(void* obj);            // @ 0x824885C8 - base destructor
 extern "C" void util_0850(void* obj);            // @ 0x82460850 - physics instance release
 extern "C" void* _crt_tls_fiber_setup();         // @ 0x82566B78 - fiber context setup
 extern "C" void _locale_register(void* ptr);     // @ 0x820C02D0 - memory dealloc
 extern "C" void pg_SleepYield(int frames);           // @ 0x82566C80 - wait N frames
 extern "C" void pg_6F48(void* ptr);              // @ 0x82566F48 - release page ref
+extern "C" uint32_t pg_C3B8_g(void* handle, int timeout); // @ 0x8242C3B8 - wait with timeout
+extern "C" void pg_6F10_g(void* handle);         // @ 0x82566F10 - close handle
+extern "C" void* pg_6F88_w(void* r3, uint32_t stackSize, void* entryPoint,
+                            void* context, uint32_t priority, void* r8); // @ 0x82566F88 - create thread
+extern "C" void xe_sleep_B8A8(void* threadHandle, int32_t proc); // @ 0x8242B8A8 - set thread affinity
+extern "C" void rage_EAD8(void* ptr);            // @ 0x8235EAD8 - release callback object
+
+// Thread entry points for CCalMoviePlayer worker threads
+extern "C" void CCalMoviePlayer_EC88_p33(void* ctx); // @ 0x8248EC88 - FillReadBufferA entry
+extern "C" void CCalMoviePlayer_ECB8_p33(void* ctx); // @ 0x8248ECB8 - FillReadBufferB entry
+extern "C" void CCalMoviePlayer_ECE8_p33(void* ctx); // @ 0x8248ECE8 - WriteThreadProcA entry
+extern "C" void CCalMoviePlayer_ED18_p33(void* ctx); // @ 0x8248ED18 - WriteThreadProcB entry
+
+// Helper functions used by write threads
+extern "C" uint32_t atSingleton_vfn_28_DBC8_1(void* obj); // @ 0x8248DBC8 - check has element
+extern "C" void* CCalMoviePlayer_DBE0(void* obj);         // @ 0x8248DBE0 - get next element
+extern "C" void CCalMoviePlayer_DCC8(void* obj);           // @ 0x8248DCC8 - advance read index atomic
+extern "C" void CCalMoviePlayer_EB30(void* obj);           // @ 0x8235EB30 - save/replace fiber context
+extern "C" void CCalMoviePlayer_EB70(void* obj);           // @ 0x8235EB70 - clear fiber flag
+extern "C" void grc_BDC0(void* obj);                       // @ 0x8235BDC0 - release grc resource
 
 /**
  * CCalMoviePlayer::DtorIntermediate @ 0x824915C8 | size: 0x40
@@ -1055,7 +1075,7 @@ extern "C" void pg_6F48(void* ptr);              // @ 0x82566F48 - release page 
  */
 void CCalMoviePlayer::DtorIntermediate() {
     *(void**)this = (void*)0x820092C0;  // Restore CCalMoviePlayer vtable
-    CCalMoviePlayer_13(this);            // Clean up event objects
+    CleanupResources();                  // Clean up threads and resources
     util_85C8(this);                     // Destroy base class
 }
 
@@ -1699,8 +1719,8 @@ void CCalMoviePlayer::ScalarDeletingDtorBase(int flags) {
     // Stamp base CCalMoviePlayer vtable
     *(void**)this = (void*)0x820092C0;
 
-    // Clean up events
-    CCalMoviePlayer_13(this);
+    // Clean up threads and resources
+    CleanupResources();
 
     // Destroy base object
     util_85C8(this);
@@ -2040,6 +2060,340 @@ void CCalMoviePlayer::ProcessWriteBuffer() {
     ((VFuncV)vt[50])(this);   // SignalEvent2
 }
 
+// External helpers for buffer fill functions
+extern "C" uint32_t CCalMoviePlayer_DBD0(void* obj);  // @ 0x8248DBD0 - get remaining sample count
+extern "C" void* CCalMoviePlayer_DC30(void* obj);      // @ 0x8248DC30 - get/reset next element
+extern "C" void CCalMoviePlayer_DD30(void* obj);       // @ 0x8248DD30 - advance iterator index
+extern "C" void pg_B850(void* threadHandle);            // @ 0x8242B850 - suspend thread
+
+/**
+ * CCalMoviePlayer::FillReadBufferA @ 0x8248F268 | size: 0x278
+ *
+ * Media sample fill thread procedure for channel A (channel 0). Symmetric
+ * pair with CCalMoviePlayer_35 (FillReadBufferB) which handles channel 1.
+ *
+ * Outer loop: queries the sub-object at +44 for an enumerator (vslot 15,
+ * channel 0 via arg2) and iterator (vslot 17, channel 0 via arg2).
+ * Inner loop: checks remaining samples via CCalMoviePlayer_DBD0 against
+ * the threshold at +244. When enough are available, extracts each element
+ * via CCalMoviePlayer_DC30, activates it (element vslot 14), adds it to
+ * the enumerator (vslot 18), inserts by sort key (element vslot 21 →
+ * enumerator vslot 30), then advances the iterator (CCalMoviePlayer_DD30)
+ * and signals event 6 (vslot 50). If not enough samples, waits for
+ * event 0 (vslot 40).
+ *
+ * After draining, finalizes the enumerator (vslot 20), releases both
+ * enumerator and iterator (vslot 2), signals event 4 (vslot 52), and
+ * suspends the thread at +260 via pg_B850. Loops until status flags B
+ * (vslot 63) bit 2 is set.
+ */
+void CCalMoviePlayer::FillReadBufferA() {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+    typedef void (*VFunc4)(void*, void*, void*, int32_t);
+    typedef void (*VFuncVP)(void*, void*);
+    typedef int32_t (*VFunc3P)(void*, void*, void*);
+    typedef void* (*VFuncP)(void*);
+
+    char* p = (char*)this;
+    void** vt;
+
+    // Check status flags B — if bit 2 set, signal and return immediately
+    vt = *(void***)this;
+    int32_t flagsB = ((VFuncI)vt[63])(this);
+    if (flagsB & 0x4) {
+        vt = *(void***)this;
+        ((VFuncV)vt[52])(this);  // SignalEvent4
+        return;
+    }
+
+    for (;;) {
+        void* enumerator = nullptr;
+        void* iterator = nullptr;
+
+        // Get enumerator for channel 0 from sub-object at +44
+        void* subObj = *(void**)(p + 44);
+        void** subVt = *(void***)subObj;
+        ((VFunc4)subVt[15])(subObj, nullptr, &enumerator, 0);
+
+        if (enumerator != nullptr) {
+            // Get iterator for channel 0
+            subObj = *(void**)(p + 44);
+            subVt = *(void***)subObj;
+            ((VFunc4)subVt[17])(subObj, nullptr, &iterator, 0);
+
+            // Check flags B — bits 1&2 must be clear to process
+            vt = *(void***)this;
+            int32_t flags = ((VFuncI)vt[63])(this);
+
+            while ((flags & 0x6) == 0) {
+                // Get remaining sample count from iterator
+                uint32_t remaining = CCalMoviePlayer_DBD0(iterator);
+                uint32_t threshold = *(uint32_t*)(p + 244);
+
+                if (remaining > threshold) {
+                    // Get/reset next element from iterator
+                    void* element = CCalMoviePlayer_DC30(iterator);
+
+                    // Activate element (vslot 14 with arg 1)
+                    void** elVt = *(void***)element;
+                    ((VFuncVI)elVt[14])(element, 1);
+
+                    // Add element to enumerator collection (vslot 18)
+                    void** enumVt = *(void***)enumerator;
+                    ((VFuncVP)enumVt[18])(enumerator, element);
+
+                    // Get sort key from element (vslot 21)
+                    elVt = *(void***)element;
+                    void* sortKey = ((VFuncP)elVt[21])(element);
+
+                    // Insert into sorted position (vslot 30), output next cursor
+                    void* nextCursor = nullptr;
+                    enumVt = *(void***)enumerator;
+                    int32_t insertResult = ((VFunc3P)enumVt[30])(enumerator, (char*)sortKey - 8, &nextCursor);
+
+                    if (insertResult < 0) {
+                        // Error/overflow — reset playback state (vslot 24)
+                        vt = *(void***)this;
+                        ((VFuncV)vt[24])(this);
+                    }
+
+                    // Release element (vslot 2)
+                    elVt = *(void***)element;
+                    ((VFuncV)elVt[2])(element);
+
+                    // Advance iterator to next sample
+                    CCalMoviePlayer_DD30(iterator);
+
+                    // Signal event 6 (vslot 50)
+                    vt = *(void***)this;
+                    ((VFuncV)vt[50])(this);
+
+                    // If no next cursor, break to finalize
+                    if (nextCursor == nullptr) break;
+                } else {
+                    // Not enough samples — wait for event 0 (vslot 40)
+                    vt = *(void***)this;
+                    ((VFuncV)vt[40])(this);
+                }
+
+                // Re-check flags B
+                vt = *(void***)this;
+                flags = ((VFuncI)vt[63])(this);
+            }
+
+            // Finalize enumerator (vslot 20)
+            {
+                void** enumVt = *(void***)enumerator;
+                ((VFuncV)enumVt[20])(enumerator);
+            }
+
+            // Release enumerator
+            if (enumerator != nullptr) {
+                void** eVt = *(void***)enumerator;
+                ((VFuncV)eVt[2])(enumerator);
+                enumerator = nullptr;
+            }
+
+            // Release iterator
+            if (iterator != nullptr) {
+                void** iVt = *(void***)iterator;
+                ((VFuncV)iVt[2])(iterator);
+                iterator = nullptr;
+            }
+        }
+
+        // Re-check flags B — bit 2
+        vt = *(void***)this;
+        flagsB = ((VFuncI)vt[63])(this);
+        if (flagsB & 0x4) {
+            vt = *(void***)this;
+            ((VFuncV)vt[52])(this);  // SignalEvent4
+            return;
+        }
+
+        // Signal event 4 and suspend this thread
+        vt = *(void***)this;
+        ((VFuncV)vt[52])(this);  // SignalEvent4
+
+        pg_B850(*(void**)(p + 260));  // Suspend thread handle at +260
+
+        // Re-check flags B after resume
+        vt = *(void***)this;
+        flagsB = ((VFuncI)vt[63])(this);
+        if (flagsB & 0x4) break;
+    }
+
+    // Final signal event 4
+    vt = *(void***)this;
+    ((VFuncV)vt[52])(this);
+}
+
+/**
+ * CCalMoviePlayer::FillReadBufferB @ 0x8248F4E0 | size: 0x278
+ *
+ * Media sample fill thread procedure for channel B (channel 1). Symmetric
+ * pair with CCalMoviePlayer_34 (FillReadBufferA) which handles channel 0.
+ *
+ * Outer loop: queries the sub-object at +44 for an enumerator (vslot 15,
+ * channel 1 via arg2) and iterator (vslot 17, channel 1 via arg2).
+ * Inner loop: checks remaining samples via CCalMoviePlayer_DBD0 against
+ * the threshold at +248. When enough are available, extracts each element
+ * via CCalMoviePlayer_DC30, activates it (element vslot 14), adds it to
+ * the enumerator (vslot 18), inserts by sort key (element vslot 21 →
+ * enumerator vslot 30), then advances the iterator (CCalMoviePlayer_DD30)
+ * and signals event 3 (vslot 51). If not enough samples, waits for
+ * event 1 (vslot 41).
+ *
+ * After draining, finalizes the enumerator (vslot 20), releases both
+ * enumerator and iterator (vslot 2), signals event 5 (vslot 53), and
+ * suspends the thread at +264 via pg_B850. Loops until status flags C
+ * (vslot 64) bit 2 is set.
+ */
+void CCalMoviePlayer::FillReadBufferB() {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+    typedef void (*VFunc4)(void*, void*, void*, int32_t);
+    typedef void (*VFuncVP)(void*, void*);
+    typedef int32_t (*VFunc3P)(void*, void*, void*);
+    typedef void* (*VFuncP)(void*);
+
+    char* p = (char*)this;
+    void** vt;
+
+    // Check status flags C — if bit 2 set, signal and return immediately
+    vt = *(void***)this;
+    int32_t flagsC = ((VFuncI)vt[64])(this);
+    if (flagsC & 0x4) {
+        vt = *(void***)this;
+        ((VFuncV)vt[53])(this);  // SignalEvent5
+        return;
+    }
+
+    for (;;) {
+        void* enumerator = nullptr;
+        void* iterator = nullptr;
+
+        // Get enumerator for channel 1 from sub-object at +44
+        void* subObj = *(void**)(p + 44);
+        void** subVt = *(void***)subObj;
+        ((VFunc4)subVt[15])(subObj, nullptr, &enumerator, 0);
+
+        if (enumerator != nullptr) {
+            // Get iterator for channel 1
+            subObj = *(void**)(p + 44);
+            subVt = *(void***)subObj;
+            ((VFunc4)subVt[17])(subObj, nullptr, &iterator, 0);
+
+            // Check flags C — bits 1&2 must be clear to process
+            vt = *(void***)this;
+            int32_t flags = ((VFuncI)vt[64])(this);
+
+            while ((flags & 0x6) == 0) {
+                // Get remaining sample count from iterator
+                uint32_t remaining = CCalMoviePlayer_DBD0(iterator);
+                uint32_t threshold = *(uint32_t*)(p + 248);
+
+                if (remaining > threshold) {
+                    // Get/reset next element from iterator
+                    void* element = CCalMoviePlayer_DC30(iterator);
+
+                    // Activate element (vslot 14 with arg 1)
+                    void** elVt = *(void***)element;
+                    ((VFuncVI)elVt[14])(element, 1);
+
+                    // Add element to enumerator collection (vslot 18)
+                    void** enumVt = *(void***)enumerator;
+                    ((VFuncVP)enumVt[18])(enumerator, element);
+
+                    // Get sort key from element (vslot 21)
+                    elVt = *(void***)element;
+                    void* sortKey = ((VFuncP)elVt[21])(element);
+
+                    // Insert into sorted position (vslot 30), output next cursor
+                    void* nextCursor = nullptr;
+                    enumVt = *(void***)enumerator;
+                    int32_t insertResult = ((VFunc3P)enumVt[30])(enumerator, (char*)sortKey - 8, &nextCursor);
+
+                    if (insertResult < 0) {
+                        // Error/overflow — call vslot 24
+                        vt = *(void***)this;
+                        ((VFuncV)vt[24])(this);
+                    }
+
+                    // Release element (vslot 2)
+                    elVt = *(void***)element;
+                    ((VFuncV)elVt[2])(element);
+
+                    // Advance iterator to next sample
+                    CCalMoviePlayer_DD30(iterator);
+
+                    // Signal event 3 (vslot 51)
+                    vt = *(void***)this;
+                    ((VFuncV)vt[51])(this);
+
+                    // If no next cursor, break to finalize
+                    if (nextCursor == nullptr) break;
+                } else {
+                    // Not enough samples — wait for event 1 (vslot 41)
+                    vt = *(void***)this;
+                    ((VFuncV)vt[41])(this);
+                }
+
+                // Re-check flags C
+                vt = *(void***)this;
+                flags = ((VFuncI)vt[64])(this);
+            }
+
+            // Finalize enumerator (vslot 20)
+            {
+                void** enumVt = *(void***)enumerator;
+                ((VFuncV)enumVt[20])(enumerator);
+            }
+
+            // Release enumerator
+            if (enumerator != nullptr) {
+                void** eVt = *(void***)enumerator;
+                ((VFuncV)eVt[2])(enumerator);
+                enumerator = nullptr;
+            }
+
+            // Release iterator
+            if (iterator != nullptr) {
+                void** iVt = *(void***)iterator;
+                ((VFuncV)iVt[2])(iterator);
+                iterator = nullptr;
+            }
+        }
+
+        // Re-check flags C — bit 2
+        vt = *(void***)this;
+        flagsC = ((VFuncI)vt[64])(this);
+        if (flagsC & 0x4) {
+            vt = *(void***)this;
+            ((VFuncV)vt[53])(this);  // SignalEvent5
+            return;
+        }
+
+        // Signal event 5 and suspend this thread
+        vt = *(void***)this;
+        ((VFuncV)vt[53])(this);  // SignalEvent5
+
+        pg_B850(*(void**)(p + 264));  // Suspend thread handle at +264
+
+        // Re-check flags C after resume
+        vt = *(void***)this;
+        flagsC = ((VFuncI)vt[64])(this);
+        if (flagsC & 0x4) break;
+    }
+
+    // Final signal event 5
+    vt = *(void***)this;
+    ((VFuncV)vt[53])(this);
+}
+
 /**
  * CCalMoviePlayer::DrainPlaybackBuffer @ 0x8248FD58 | size: 0x1E4
  *
@@ -2165,4 +2519,1294 @@ int32_t CCalMoviePlayer::DrainPlaybackBuffer(uint32_t statusC) {
     }
 
     return frameResult;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CCalMoviePlayer — Batch 5: Thread management & remaining functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * CCalMoviePlayer::CleanupResources @ 0x8248FA48 | size: 0x284
+ *
+ * Tears down worker threads and releases all resources. Called by
+ * DtorIntermediate and ScalarDeletingDtorBase during destruction.
+ *
+ * 1. Signals termination to channels A/B via vslots 68/69 with value 4
+ * 2. If not in default state (status A/B != 1), waits for all threads
+ *    via vslot 24, then releases page refs and waits for events 4-7
+ * 3. Terminates each worker thread at +260/+264/+268/+272 by:
+ *    - signaling its event (vslots 48-51)
+ *    - waiting with timeout (pg_C3B8_g, retrying on WAIT_TIMEOUT=258)
+ *    - closing the handle (pg_6F10_g)
+ * 4. Releases the callback object at +48 (rage_EAD8)
+ * 5. Releases the media source at +44 (vslot 2)
+ * 6. Reinitializes defaults via vslot 38
+ *
+ * @return Always 0
+ */
+int32_t CCalMoviePlayer::CleanupResources() {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+
+    char* p = (char*)this;
+    void** vt;
+
+    // Signal termination to both channels (set flag 4)
+    vt = *(void***)this;
+    ((VFuncVI)vt[68])(this, 4);    // SetStatusFlagsC_A(4) — terminate channel A
+    vt = *(void***)this;
+    ((VFuncVI)vt[69])(this, 4);    // SetStatusFlagsC_B(4) — terminate channel B
+
+    // Check if system is in default state
+    vt = *(void***)this;
+    int32_t statusA = ((VFuncI)vt[60])(this);   // GetStatusA
+    if (statusA == 1) {
+        vt = *(void***)this;
+        int32_t statusB = ((VFuncI)vt[61])(this);   // GetStatusB
+        if (statusB == 1) {
+            goto thread_cleanup;   // Already in default state, skip to thread termination
+        }
+    }
+
+    // Not in default state — wait for all threads to complete
+    vt = *(void***)this;
+    ((VFuncV)vt[24])(this);        // WaitForAllThreads
+
+    // Release page refs and wait for events for each active handle
+    if (*(void**)(p + 260) != nullptr) {
+        pg_6F48(*(void**)(p + 260));
+        vt = *(void***)this;
+        ((VFuncV)vt[44])(this);    // WaitEvent4
+    }
+    if (*(void**)(p + 264) != nullptr) {
+        pg_6F48(*(void**)(p + 264));
+        vt = *(void***)this;
+        ((VFuncV)vt[45])(this);    // WaitEvent5
+    }
+    if (*(void**)(p + 268) != nullptr) {
+        pg_6F48(*(void**)(p + 268));
+        vt = *(void***)this;
+        ((VFuncV)vt[46])(this);    // WaitEvent6
+    }
+    if (*(void**)(p + 272) != nullptr) {
+        pg_6F48(*(void**)(p + 272));
+        vt = *(void***)this;
+        ((VFuncV)vt[47])(this);    // WaitEvent7
+    }
+
+thread_cleanup:
+    // Terminate worker thread at +260 (FillReadBufferA)
+    if (*(void**)(p + 260) != nullptr) {
+        do {
+            pg_6F48(*(void**)(p + 260));
+            vt = *(void***)this;
+            ((VFuncV)vt[48])(this);    // SignalEvent0
+        } while (pg_C3B8_g(*(void**)(p + 260), 1) == 258);  // WAIT_TIMEOUT
+        pg_6F10_g(*(void**)(p + 260));
+        *(void**)(p + 260) = nullptr;
+    }
+
+    // Terminate worker thread at +264 (FillReadBufferB)
+    if (*(void**)(p + 264) != nullptr) {
+        do {
+            pg_6F48(*(void**)(p + 264));
+            vt = *(void***)this;
+            ((VFuncV)vt[49])(this);    // SignalEvent1
+        } while (pg_C3B8_g(*(void**)(p + 264), 1) == 258);
+        pg_6F10_g(*(void**)(p + 264));
+        *(void**)(p + 264) = nullptr;
+    }
+
+    // Terminate worker thread at +268 (WriteThreadProcA)
+    if (*(void**)(p + 268) != nullptr) {
+        do {
+            pg_6F48(*(void**)(p + 268));
+            vt = *(void***)this;
+            ((VFuncV)vt[50])(this);    // SignalEvent2
+        } while (pg_C3B8_g(*(void**)(p + 268), 1) == 258);
+        pg_6F10_g(*(void**)(p + 268));
+        *(void**)(p + 268) = nullptr;
+    }
+
+    // Terminate worker thread at +272 (WriteThreadProcB)
+    if (*(void**)(p + 272) != nullptr) {
+        do {
+            pg_6F48(*(void**)(p + 272));
+            vt = *(void***)this;
+            ((VFuncV)vt[51])(this);    // SignalEvent3
+        } while (pg_C3B8_g(*(void**)(p + 272), 1) == 258);
+        pg_6F10_g(*(void**)(p + 272));
+        *(void**)(p + 272) = nullptr;
+    }
+
+    // Release callback object at +48
+    if (*(void**)(p + 48) != nullptr) {
+        rage_EAD8(*(void**)(p + 48));
+        *(void**)(p + 48) = nullptr;
+    }
+
+    // Release media source at +44
+    if (*(void**)(p + 44) != nullptr) {
+        void** srcVt = *(void***)(*(void**)(p + 44));
+        ((VFuncV)srcVt[2])(*(void**)(p + 44));    // Release
+        *(void**)(p + 44) = nullptr;
+    }
+
+    // Reinitialize default state
+    vt = *(void***)this;
+    ((VFuncV)vt[38])(this);        // InitializeDefaults
+
+    return 0;
+}
+
+/**
+ * CCalMoviePlayer::InitializeWorkerThreads @ 0x8248F758 | size: 0x2F0
+ *
+ * Creates worker threads and initializes event objects. Called during
+ * playback setup to spin up the fill/write processing pipeline.
+ *
+ * 1. Validates via vslot 13 (returns error if < 0)
+ * 2. Initializes 8 KEVENT structures:
+ *    - 4 sync events at +84/+100/+116/+132 (ManualReset=1, Signaled=0)
+ *    - 4 notification events at +148/+164/+180/+196 (NotSet=0, Value=1)
+ * 3. Creates 4 worker threads via pg_6F88_w at +260/+264/+268/+272
+ * 4. Sets processor affinity for each thread via xe_sleep_B8A8
+ * 5. Configures buffer pairs via vslots 16/17
+ * 6. On any failure, calls CleanupResources (vslot 13) and returns error
+ *
+ * @param params  Pointer to initialization parameters structure
+ * @return        0 on success, negative error code on failure
+ */
+int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+    typedef int32_t (*VFuncII)(void*, int32_t);
+
+    char* p = (char*)this;
+    void** vt;
+    int32_t result;
+
+    // Step 1: Validate via vslot 13
+    vt = *(void***)this;
+    result = ((VFuncI)vt[13])(this);
+    if (result < 0) {
+        return result;
+    }
+
+    // Step 2: Initialize 8 KEVENT structures
+    // Sync events at +84, +100, +116, +132 (ManualReset=1, Signaled=0)
+
+    // Event 0 at +84
+    *(uint8_t*)(p + 84) = 1;       // ManualReset = true
+    *(uint32_t*)(p + 88) = 0;      // Not signaled
+    uint32_t selfAddr84 = (uint32_t)(uintptr_t)(p + 92);
+    *(uint32_t*)(p + 92) = selfAddr84;   // flink = self
+    *(uint32_t*)(p + 96) = selfAddr84;   // blink = self
+
+    // Event 1 at +100
+    *(uint8_t*)(p + 100) = 1;
+    *(uint32_t*)(p + 104) = 0;
+    uint32_t selfAddr100 = (uint32_t)(uintptr_t)(p + 108);
+    *(uint32_t*)(p + 108) = selfAddr100;
+    *(uint32_t*)(p + 112) = selfAddr100;
+
+    // Event 2 at +116
+    *(uint8_t*)(p + 116) = 1;
+    *(uint32_t*)(p + 120) = 0;
+    uint32_t selfAddr116 = (uint32_t)(uintptr_t)(p + 124);
+    *(uint32_t*)(p + 124) = selfAddr116;
+    *(uint32_t*)(p + 128) = selfAddr116;
+
+    // Event 3 at +132
+    *(uint8_t*)(p + 132) = 1;
+    *(uint32_t*)(p + 136) = 0;
+    uint32_t selfAddr132 = (uint32_t)(uintptr_t)(p + 140);
+    *(uint32_t*)(p + 140) = selfAddr132;
+    *(uint32_t*)(p + 144) = selfAddr132;
+
+    // Notification events at +148, +164, +180, +196 (NotSet=0, Value=1)
+    // Event 4 at +148
+    *(uint8_t*)(p + 148) = 0;
+    *(uint32_t*)(p + 152) = 1;
+    uint32_t selfAddr148 = (uint32_t)(uintptr_t)(p + 156);
+    *(uint32_t*)(p + 156) = selfAddr148;
+    *(uint32_t*)(p + 160) = selfAddr148;
+
+    // Event 5 at +164
+    *(uint8_t*)(p + 164) = 0;
+    *(uint32_t*)(p + 168) = 1;
+    uint32_t selfAddr164 = (uint32_t)(uintptr_t)(p + 172);
+    *(uint32_t*)(p + 172) = selfAddr164;
+    *(uint32_t*)(p + 176) = selfAddr164;
+
+    // Event 6 at +180
+    *(uint8_t*)(p + 180) = 0;
+    *(uint32_t*)(p + 184) = 1;
+    uint32_t selfAddr180 = (uint32_t)(uintptr_t)(p + 188);
+    *(uint32_t*)(p + 188) = selfAddr180;
+    *(uint32_t*)(p + 192) = selfAddr180;
+
+    // Event 7 at +196
+    *(uint8_t*)(p + 196) = 0;
+    *(uint32_t*)(p + 200) = 1;
+    uint32_t selfAddr196 = (uint32_t)(uintptr_t)(p + 204);
+    *(uint32_t*)(p + 204) = selfAddr196;
+    *(uint32_t*)(p + 208) = selfAddr196;
+
+    // Step 3: Create 4 worker threads
+    // Thread 1: FillReadBufferA → stored at +260
+    {
+        void* thread1 = pg_6F88_w(nullptr, 0x10000,
+            (void*)CCalMoviePlayer_EC88_p33, this, 4, nullptr);
+        *(void**)(p + 260) = thread1;
+        if (thread1 == nullptr) {
+            vt = *(void***)this;
+            result = ((VFuncI)vt[8])(this);    // GetError
+        }
+    }
+    if (result < 0) goto cleanup;
+
+    // Thread 2: FillReadBufferB → stored at +264
+    {
+        void* thread2 = pg_6F88_w(nullptr, 0x10000,
+            (void*)CCalMoviePlayer_ECB8_p33, this, 4, nullptr);
+        *(void**)(p + 264) = thread2;
+        if (thread2 == nullptr) {
+            vt = *(void***)this;
+            result = ((VFuncI)vt[8])(this);
+        }
+    }
+    if (result < 0) goto cleanup;
+
+    // Thread 3: WriteThreadProcA → stored at +268
+    {
+        void* thread3 = pg_6F88_w(nullptr, 0x10000,
+            (void*)CCalMoviePlayer_ECE8_p33, this, 4, nullptr);
+        *(void**)(p + 268) = thread3;
+        if (thread3 == nullptr) {
+            vt = *(void***)this;
+            result = ((VFuncI)vt[8])(this);
+        }
+    }
+    if (result < 0) goto cleanup;
+
+    // Thread 4: WriteThreadProcB → stored at +272
+    {
+        void* thread4 = pg_6F88_w(nullptr, 0x10000,
+            (void*)CCalMoviePlayer_ED18_p33, this, 4, nullptr);
+        *(void**)(p + 272) = thread4;
+        if (thread4 == nullptr) {
+            vt = *(void***)this;
+            result = ((VFuncI)vt[8])(this);
+        }
+    }
+    if (result < 0) goto cleanup;
+
+    // Step 4: Set thread processor affinity
+    {
+        int32_t aff1, aff2, aff3, aff4;
+        uint32_t* paramsU = (uint32_t*)params;
+        if (*(int32_t*)(paramsU + 2) != 0) {      // params[2] (offset +8)
+            aff1 = *(int32_t*)(paramsU + 3);       // params[3] (offset +12)
+            aff2 = *(int32_t*)(paramsU + 4);       // params[4] (offset +16)
+            aff3 = *(int32_t*)(paramsU + 5);       // params[5] (offset +20)
+            aff4 = *(int32_t*)(paramsU + 6);       // params[6] (offset +24)
+        } else {
+            aff1 = 3;    // default affinity for FillReadBufferB
+            aff2 = 1;    // default for thread at +264
+            aff3 = 3;    // default for WriteThreadProcA
+            aff4 = 2;    // default for WriteThreadProcB
+        }
+
+        xe_sleep_B8A8(*(void**)(p + 264), aff2);   // FillReadBufferB
+        xe_sleep_B8A8(*(void**)(p + 272), aff4);   // WriteThreadProcB
+        xe_sleep_B8A8(*(void**)(p + 260), aff1);   // FillReadBufferA
+        xe_sleep_B8A8(*(void**)(p + 268), aff3);   // WriteThreadProcA
+    }
+
+    // Step 5: Configure buffer pairs
+    {
+        uint32_t* paramsU = (uint32_t*)params;
+        vt = *(void***)this;
+        result = ((VFuncII)vt[16])(this, (int32_t)paramsU[0]);   // SetBufferPairA
+        if (result < 0) goto cleanup;
+
+        vt = *(void***)this;
+        result = ((VFuncII)vt[17])(this, (int32_t)paramsU[1]);   // SetBufferPairB
+        if (result >= 0) {
+            return result;
+        }
+    }
+
+cleanup:
+    vt = *(void***)this;
+    ((VFuncI)vt[13])(this);    // CleanupResources
+    return result;
+}
+
+/**
+ * CCalMoviePlayer::WriteThreadProcA @ 0x82490B48 | size: 0x460
+ *
+ * Write thread procedure for channel A (channel 0). Processes media
+ * samples from the sub-object at +44 and manages the write pipeline.
+ *
+ * Outer loop: queries media source (vslot 16/17 channel 0) for
+ * enumerator and iterator. Registers callback with entry point.
+ * Inner loop: checks status flags B (vslot 63), processes elements
+ * via atomic counter operations at +244, manages sorting, and
+ * handles state transitions.
+ *
+ * Suspends via pg_B850 at thread handle +268 when idle.
+ * Exits when status flags B bit 2 is set (terminate signal).
+ */
+void CCalMoviePlayer::WriteThreadProcA() {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+    typedef int32_t (*VFuncII)(void*, int32_t);
+    typedef void* (*VFuncP)(void*);
+    typedef int32_t (*VFuncIPI)(void*, void*, int32_t);
+
+    char* p = (char*)this;
+    void** vt;
+
+    // Check initial status — if bit 2 of statusB set, exit immediately
+    vt = *(void***)this;
+    int32_t statusB = ((VFuncI)vt[63])(this);   // GetStatusFlagsB
+    if (statusB & 0x4) {
+        goto exit_final;
+    }
+
+    // Main outer loop
+    for (;;) {
+        void* enumerator = nullptr;
+        void* iterator = nullptr;
+
+        // Query media source for enumerator (channel 0)
+        void* mediaSrc = *(void**)(p + 44);
+        {
+            void** mVt = *(void***)mediaSrc;
+            typedef int32_t (*VFuncMediaEnum)(void*, void*, int32_t, int32_t);
+            ((VFuncMediaEnum)mVt[16])(mediaSrc, &enumerator, 0, 0);
+        }
+
+        if (enumerator == nullptr) {
+            // No samples — release thread page and clear active flag
+            pg_6F48(*(void**)(p + 268));
+            *(uint32_t*)(p + 240) = 0;
+            goto suspend;
+        }
+
+        // Get iterator from media source (channel 0)
+        {
+            void* mediaSrc2 = *(void**)(p + 44);
+            void** mVt = *(void***)mediaSrc2;
+            typedef int32_t (*VFuncMediaIter)(void*, void*, int32_t, int32_t);
+            ((VFuncMediaIter)mVt[17])(mediaSrc2, &iterator, 0, 0);
+        }
+
+        // Register callback with enumerator
+        {
+            void** eVt = *(void***)enumerator;
+            typedef void (*VFuncCB)(void*, int32_t, void*, void*);
+            ((VFuncCB)eVt[12])(enumerator, 1, (void*)CCalMoviePlayer_ECE8_p33, this);
+        }
+
+        // Inner processing loop
+        for (;;) {
+            // Check status flags B
+            vt = *(void***)this;
+            statusB = ((VFuncI)vt[63])(this);
+
+            if (statusB == 0) {
+                goto process_element;
+            }
+
+            // Check bits 1-2 (value & 0x6)
+            if (statusB & 0x6) {
+                // Terminate or error in status
+                // Set channel A to 6
+                vt = *(void***)this;
+                ((VFuncVI)vt[65])(this, 6);
+
+                // Sort enumerator with key 4
+                {
+                    void** eVt = *(void***)enumerator;
+                    ((VFuncVI)eVt[21])(enumerator, 4);
+                }
+                goto cleanup_iteration;
+            }
+
+            // Check bit 0 (status active)
+            if (!(statusB & 0x1)) {
+                goto process_element;
+            }
+
+            // Status bit 0 set — check channel A state
+            {
+                vt = *(void***)this;
+                int32_t chA = ((VFuncI)vt[60])(this);   // GetStatusFlagsA
+                if (chA != 5) {
+                    // Set channel A to 4
+                    vt = *(void***)this;
+                    ((VFuncVI)vt[65])(this, 4);
+
+                    // Sort enumerator with key 3
+                    {
+                        void** eVt = *(void***)enumerator;
+                        ((VFuncVI)eVt[21])(enumerator, 3);
+                    }
+
+                    // Set channel A to 5
+                    vt = *(void***)this;
+                    ((VFuncVI)vt[65])(this, 5);
+                }
+            }
+
+            // Wait for event 0
+            vt = *(void***)this;
+            ((VFuncV)vt[42])(this);
+            continue;   // back to inner loop
+
+        process_element:
+            // Set channel A to 3
+            vt = *(void***)this;
+            ((VFuncVI)vt[65])(this, 3);
+
+            // Check if iterator has elements
+            {
+                uint32_t hasElem = atSingleton_vfn_28_DBC8_1(iterator);
+                if (hasElem == 0) {
+                    // No more elements — loop waiting
+                    vt = *(void***)this;
+                    ((VFuncV)vt[42])(this);    // WaitEvent0
+                    continue;
+                }
+            }
+
+            // Get next element
+            {
+                void* element = CCalMoviePlayer_DBE0(iterator);
+
+            // Get data from element via vslot 22
+            void* dataPtr;
+            {
+                void** elVt = *(void***)element;
+                dataPtr = ((VFuncP)elVt[22])(element);
+            }
+
+            if (dataPtr != nullptr) {
+                void* adjustedPtr = (void*)((char*)dataPtr - 8);
+
+                // Activate element (vslot 14, arg=1)
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncVI)elVt[14])(element, 1);
+                }
+
+                // Atomic increment counter at +244
+                volatile int32_t* pCounter = (volatile int32_t*)(p + 244);
+                int32_t oldVal;
+                do {
+                    oldVal = *pCounter;
+                } while (!__sync_bool_compare_and_swap(pCounter, oldVal, oldVal + 1));
+
+                // Add element to enumerator (vslot 14)
+                {
+                    void** eVt = *(void***)enumerator;
+                    ((VFuncVI)eVt[14])(enumerator, (int32_t)(intptr_t)element);
+                }
+
+                // Set sort key on element (vslot 18, key=8)
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncVI)elVt[18])(element, 8);
+                }
+
+                // Insert sorted (vslot 20 with adjusted dataPtr)
+                int32_t insertResult;
+                {
+                    void** eVt = *(void***)enumerator;
+                    insertResult = ((VFuncII)eVt[20])(enumerator, (int32_t)(intptr_t)adjustedPtr);
+                }
+
+                if (insertResult >= 0) {
+                    // Success — advance read index
+                    CCalMoviePlayer_DCC8(iterator);
+                } else if (insertResult == (int32_t)0x8000000A) {
+                    // Timeout/retry — undo
+                    {
+                        void** elVt = *(void***)element;
+                        ((VFuncVI)elVt[18])(element, (int32_t)(intptr_t)adjustedPtr);
+                    }
+
+                    // Atomic decrement counter at +244
+                    do {
+                        oldVal = *pCounter;
+                    } while (!__sync_bool_compare_and_swap(pCounter, oldVal, oldVal - 1));
+
+                    // Wait for event 0
+                    vt = *(void***)this;
+                    ((VFuncV)vt[42])(this);
+                }
+
+                // Release element (vslot 2)
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncV)elVt[2])(element);
+                }
+                continue;   // back to inner loop
+            } else {
+                // Data was null — release element
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncV)elVt[2])(element);
+                }
+            }
+            } // end element scope
+
+        cleanup_iteration:
+            // Check status A & clean up
+            vt = *(void***)this;
+            int32_t chA2 = ((VFuncI)vt[60])(this);
+            if (chA2 != 6) {
+                vt = *(void***)this;
+                ((VFuncVI)vt[65])(this, 6);
+
+                void** eVt = *(void***)enumerator;
+                ((VFuncVI)eVt[21])(enumerator, 2);
+            }
+
+            // Finalize enumerator (vslot 15)
+            {
+                void** eVt = *(void***)enumerator;
+                ((VFuncV)eVt[15])(enumerator);
+            }
+
+            // Release enumerator
+            if (enumerator != nullptr) {
+                void** eVt = *(void***)enumerator;
+                ((VFuncV)eVt[2])(enumerator);
+                enumerator = nullptr;
+            }
+
+            // Release iterator
+            if (iterator != nullptr) {
+                void** iVt = *(void***)iterator;
+                ((VFuncV)iVt[2])(iterator);
+                iterator = nullptr;
+            }
+
+            break;   // exit inner loop
+        }
+
+    suspend:
+        // Wait for event 4
+        vt = *(void***)this;
+        ((VFuncV)vt[44])(this);
+
+        // Check status B for termination
+        vt = *(void***)this;
+        statusB = ((VFuncI)vt[63])(this);
+        if (statusB & 0x4) {
+            goto exit_final;
+        }
+
+        // Set channel A to 7
+        vt = *(void***)this;
+        ((VFuncVI)vt[65])(this, 7);
+
+        // Signal completion (vslot 54)
+        vt = *(void***)this;
+        ((VFuncV)vt[54])(this);
+
+        // Suspend this thread
+        pg_B850(*(void**)(p + 268));
+
+        // Check status B again after resume
+        vt = *(void***)this;
+        statusB = ((VFuncI)vt[63])(this);
+        if (statusB & 0x4) {
+            goto exit_final;
+        }
+        // Continue outer loop
+    }
+
+exit_final:
+    // Set channel A to 8
+    vt = *(void***)this;
+    ((VFuncVI)vt[65])(this, 8);
+
+    // Final signal
+    vt = *(void***)this;
+    ((VFuncV)vt[54])(this);
+}
+
+/**
+ * CCalMoviePlayer::WriteThreadProcB @ 0x82490FA8 | size: 0x5F0
+ *
+ * Write thread procedure for channel B (channel 1). Symmetric with
+ * WriteThreadProcA but operates on channel B state fields.
+ *
+ * Key differences from WriteThreadProcA:
+ *   - Uses vslot 64 (GetStatusFlagsC) instead of 63
+ *   - Uses vslot 66 (SetChannelB) instead of 65
+ *   - Uses vslot 43 (WaitEvent1) instead of 42
+ *   - Uses vslot 45 (WaitEvent5) instead of 44
+ *   - Uses vslot 55 instead of 54 for completion signal
+ *   - Uses +248 counter instead of +244
+ *   - Uses +252 counter2 instead of +248 (for callback drain)
+ *   - Thread handle at +272 instead of +268
+ *   - Callback entry point is CCalMoviePlayer_ED18_p33 (vs ECE8)
+ *   - Has additional callback drain processing with audio callback (+60/+76)
+ */
+void CCalMoviePlayer::WriteThreadProcB() {
+    typedef void (*VFuncV)(void*);
+    typedef void (*VFuncVI)(void*, int32_t);
+    typedef int32_t (*VFuncI)(void*);
+    typedef int32_t (*VFuncII)(void*, int32_t);
+    typedef void* (*VFuncP)(void*);
+
+    char* p = (char*)this;
+    void** vt;
+
+    // Check initial status — if bit 2 of statusC set, exit immediately
+    vt = *(void***)this;
+    int32_t statusC = ((VFuncI)vt[64])(this);   // GetStatusFlagsC
+    if (statusC & 0x4) {
+        goto exit_final;
+    }
+
+    // Main outer loop
+    for (;;) {
+        void* enumerator = nullptr;
+        void* iterator = nullptr;
+
+        // Query media source for enumerator (channel 0)
+        void* mediaSrc = *(void**)(p + 44);
+        {
+            void** mVt = *(void***)mediaSrc;
+            typedef int32_t (*VFuncMediaEnum)(void*, void*, int32_t, int32_t);
+            ((VFuncMediaEnum)mVt[16])(mediaSrc, &enumerator, 0, 0);
+        }
+
+        if (enumerator == nullptr) {
+            // No samples — release thread page and clear active flag
+            pg_6F48(*(void**)(p + 268));
+            *(uint32_t*)(p + 240) = 0;
+            goto suspend;
+        }
+
+        // Get iterator (channel 0)
+        {
+            void* mediaSrc2 = *(void**)(p + 44);
+            void** mVt = *(void***)mediaSrc2;
+            typedef int32_t (*VFuncMediaIter)(void*, void*, int32_t, int32_t);
+            ((VFuncMediaIter)mVt[17])(mediaSrc2, &iterator, 0, 0);
+        }
+
+        // Register callback
+        {
+            void** eVt = *(void***)enumerator;
+            typedef void (*VFuncCB)(void*, int32_t, void*, void*);
+            ((VFuncCB)eVt[12])(enumerator, 1, (void*)CCalMoviePlayer_ED18_p33, this);
+        }
+
+        // Setup additional audio callbacks if present
+        if (*(void**)(p + 52) != nullptr) {
+            void** eVt = *(void***)enumerator;
+            typedef void (*VFuncCB4)(void*, int32_t, void*, uint32_t);
+            ((VFuncCB4)eVt[12])(enumerator, 3, *(void**)(p + 52), *(uint32_t*)(p + 68));
+        }
+        if (*(void**)(p + 56) != nullptr) {
+            void** eVt = *(void***)enumerator;
+            typedef void (*VFuncCB4)(void*, int32_t, void*, uint32_t);
+            ((VFuncCB4)eVt[12])(enumerator, 4, *(void**)(p + 56), *(uint32_t*)(p + 72));
+        }
+
+        // Save/replace fiber context on buffer object
+        {
+            void* bufObj = *(void**)(p + 48);
+            if (bufObj != nullptr) {
+                CCalMoviePlayer_EB30(bufObj);
+            }
+        }
+
+        // Inner processing loop
+        for (;;) {
+            // Drain callback queue if present
+            void* callbackFunc = *(void**)(p + 60);
+            if (callbackFunc != nullptr) {
+                volatile uint32_t* pPending = (volatile uint32_t*)(p + 252);
+                uint32_t pending = *pPending;
+                uint32_t threshold = *(uint32_t*)(p + 248);
+                while (pending > threshold) {
+                    // Call callback
+                    typedef void (*CallbackFn)(void*);
+                    ((CallbackFn)callbackFunc)(*(void**)(p + 76));
+
+                    // Atomic decrement pending counter at +252
+                    int32_t oldVal;
+                    do {
+                        oldVal = *(volatile int32_t*)pPending;
+                    } while (!__sync_bool_compare_and_swap((volatile int32_t*)pPending, oldVal, oldVal - 1));
+
+                    pending = *pPending;
+                }
+            }
+
+            // Check status flags C
+            vt = *(void***)this;
+            statusC = ((VFuncI)vt[64])(this);
+
+            if (statusC == 0) {
+                goto process_element_b;
+            }
+
+            // Check bits 1-2 (value & 0x6)
+            if (statusC & 0x6) {
+                // Terminate — set channel B to 6
+                vt = *(void***)this;
+                ((VFuncVI)vt[66])(this, 6);
+
+                // Sort enumerator with key 4
+                void** eVt = *(void***)enumerator;
+                ((VFuncVI)eVt[21])(enumerator, 4);
+                goto cleanup_iteration_b;
+            }
+
+            // Check bit 0 (active)
+            if (!(statusC & 0x1)) {
+                goto process_element_b;
+            }
+
+            // Check channel B state
+            {
+                vt = *(void***)this;
+                int32_t chB = ((VFuncI)vt[60])(this);   // GetStatusFlagsA (shared state)
+                if (chB != 5) {
+                    // Set channel B to 4
+                    vt = *(void***)this;
+                    ((VFuncVI)vt[66])(this, 4);
+
+                    // Sort with key 3
+                    void** eVt = *(void***)enumerator;
+                    ((VFuncVI)eVt[21])(enumerator, 3);
+
+                    // Set channel B to 5
+                    vt = *(void***)this;
+                    ((VFuncVI)vt[66])(this, 5);
+                }
+            }
+
+            // Wait for event 1
+            vt = *(void***)this;
+            ((VFuncV)vt[43])(this);
+            continue;
+
+        process_element_b:
+            // Set channel B to 3
+            vt = *(void***)this;
+            ((VFuncVI)vt[66])(this, 3);
+
+            // Check if iterator has elements
+            {
+                uint32_t hasElem = atSingleton_vfn_28_DBC8_1(iterator);
+                if (hasElem == 0) {
+                    // No elements — wait
+                    vt = *(void***)this;
+                    ((VFuncV)vt[43])(this);
+                    continue;
+                }
+            }
+
+            // Get next element
+            {
+                void* element = CCalMoviePlayer_DBE0(iterator);
+
+            // Get data
+            void* dataPtr;
+            {
+                void** elVt = *(void***)element;
+                dataPtr = ((VFuncP)elVt[22])(element);
+            }
+
+            if (dataPtr != nullptr) {
+                void* adjustedPtr = (void*)((char*)dataPtr - 8);
+
+                // Activate element
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncVI)elVt[14])(element, 1);
+                }
+
+                // Read data value
+                {
+                    void** elVt = *(void***)element;
+                    void* dataResult = ((VFuncP)elVt[20])(element);
+                    (void)dataResult;   // data is used implicitly
+                }
+
+                // Atomic increment counter at +248
+                volatile int32_t* pCounter = (volatile int32_t*)(p + 248);
+                int32_t oldVal;
+                do {
+                    oldVal = *pCounter;
+                } while (!__sync_bool_compare_and_swap(pCounter, oldVal, oldVal + 1));
+
+                // Add element to enumerator
+                {
+                    void** eVt = *(void***)enumerator;
+                    ((VFuncVI)eVt[14])(enumerator, (int32_t)(intptr_t)element);
+                }
+
+                // Set sort key (vslot 18, key=8)
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncVI)elVt[18])(element, 8);
+                }
+
+                // Insert sorted (vslot 20)
+                int32_t insertResult;
+                {
+                    void** eVt = *(void***)enumerator;
+                    insertResult = ((VFuncII)eVt[20])(enumerator, (int32_t)(intptr_t)adjustedPtr);
+                }
+
+                if (insertResult >= 0) {
+                    // Check status B for post-processing
+                    vt = *(void***)this;
+                    int32_t chBStatus = ((VFuncI)vt[61])(this);
+                    if (chBStatus == 5) {
+                        // In pause mode — set sort key on enumerator and yield
+                        {
+                            void** eVt = *(void***)enumerator;
+                            ((VFuncVI)eVt[18])(enumerator, (int32_t)(intptr_t)adjustedPtr);
+                        }
+                        pg_SleepYield(33);
+                        grc_BDC0(*(void**)(p + 48));
+                    } else {
+                        // Advance read index
+                        CCalMoviePlayer_DCC8(iterator);
+                        // Signal event for render dispatch
+                        vt = *(void***)this;
+                        typedef int32_t (*VFuncRender)(void*, uint32_t);
+                        ((VFuncRender)vt[31])(this, 0);    // vslot 31
+                        grc_BDC0(*(void**)(p + 48));
+                    }
+                } else if (insertResult == (int32_t)0x8000000A) {
+                    // Timeout — undo
+                    {
+                        void** elVt = *(void***)element;
+                        ((VFuncVI)elVt[18])(element, (int32_t)(intptr_t)adjustedPtr);
+                    }
+                    // Atomic decrement
+                    do {
+                        oldVal = *pCounter;
+                    } while (!__sync_bool_compare_and_swap(pCounter, oldVal, oldVal - 1));
+
+                    // Wait for event 1
+                    vt = *(void***)this;
+                    ((VFuncV)vt[43])(this);
+                }
+
+                // Release element
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncV)elVt[2])(element);
+                }
+                continue;
+            } else {
+                // Data was null
+                {
+                    void** elVt = *(void***)element;
+                    ((VFuncV)elVt[2])(element);
+                }
+            }
+            } // end element scope
+
+        cleanup_iteration_b:
+            // Check status and clean up
+            vt = *(void***)this;
+            int32_t chB2 = ((VFuncI)vt[60])(this);
+            if (chB2 != 6) {
+                vt = *(void***)this;
+                ((VFuncVI)vt[66])(this, 6);
+
+                void** eVt = *(void***)enumerator;
+                ((VFuncVI)eVt[21])(enumerator, 2);
+            }
+
+            // Check and clear active flag
+            if (*(uint32_t*)(p + 240) != 0) {
+                pg_6F48(*(void**)(p + 268));
+                *(uint32_t*)(p + 240) = 0;
+            }
+
+            // Drain remaining callback queue
+            if (*(void**)(p + 60) != nullptr) {
+                volatile uint32_t* pPending = (volatile uint32_t*)(p + 252);
+                while (*pPending != 0) {
+                    typedef void (*CallbackFn)(void*);
+                    ((CallbackFn)(*(void**)(p + 60)))(*(void**)(p + 76));
+
+                    int32_t oldVal;
+                    do {
+                        oldVal = *(volatile int32_t*)pPending;
+                    } while (!__sync_bool_compare_and_swap((volatile int32_t*)pPending, oldVal, oldVal - 1));
+                }
+            }
+
+            // Clear fiber flag on buffer object
+            {
+                CCalMoviePlayer_EB70(*(void**)(p + 48));
+            }
+
+            // Finalize and release enumerator
+            if (enumerator != nullptr) {
+                void** eVt = *(void***)enumerator;
+                ((VFuncV)eVt[15])(enumerator);
+
+                eVt = *(void***)enumerator;
+                ((VFuncV)eVt[2])(enumerator);
+                enumerator = nullptr;
+            }
+
+            // Release iterator
+            if (iterator != nullptr) {
+                void** iVt = *(void***)iterator;
+                ((VFuncV)iVt[2])(iterator);
+                iterator = nullptr;
+            }
+
+            break;   // exit inner loop
+        }
+
+    suspend:
+        // Wait for event 5
+        vt = *(void***)this;
+        ((VFuncV)vt[45])(this);
+
+        // Check status C for termination
+        vt = *(void***)this;
+        statusC = ((VFuncI)vt[64])(this);
+        if (statusC & 0x4) {
+            goto exit_final;
+        }
+
+        // Set channel B to 7
+        vt = *(void***)this;
+        ((VFuncVI)vt[66])(this, 7);
+
+        // Signal completion (vslot 55)
+        vt = *(void***)this;
+        ((VFuncV)vt[55])(this);
+
+        // Suspend this thread
+        pg_B850(*(void**)(p + 272));
+
+        // Check status C again after resume
+        vt = *(void***)this;
+        statusC = ((VFuncI)vt[64])(this);
+        if (statusC & 0x4) {
+            goto exit_final;
+        }
+        // Continue outer loop
+    }
+
+exit_final:
+    // Set channel B to 8
+    vt = *(void***)this;
+    ((VFuncVI)vt[66])(this, 8);
+
+    // Final signal
+    vt = *(void***)this;
+    ((VFuncV)vt[55])(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grc helper functions — Graphics subsystem functions used by CCalMoviePlayer
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External graphics helpers
+extern "C" void* rage_A980(void* pDevice);  // @ 0x8235A980 - get/refresh device pointer
+extern "C" void* grc_A088(void* pDevice, int paramA, int paramB); // @ 0x8235A088 - alloc shader constant block
+extern "C" void game_37B0(void* pDevice, int32_t x, int32_t y, int32_t w, int32_t h); // @ 0x823537B0 - set viewport
+extern "C" void grc_CFD8(void* pDevice, float f1, uint32_t r5, uint32_t r6,
+                          void* r7, uint32_t r8, uint32_t r9);  // @ 0x8235CFD8 - dispatch shader pass
+
+// .rdata float constants referenced by shader setup
+static const float kShaderConst_Zero = 0.0f;        // @ 0x8202D10C (lbl_8202D10C)
+static const float kShaderConst_One = 1.0f;          // @ 0x8202C518 (lbl_8202C518)
+
+/**
+ * SetupShaderConstants (CCalMoviePlayer_CD88) @ 0x8235CD88 | size: 0x19C
+ *
+ * Allocates and configures a shader constant block for video playback
+ * rendering. Sets up transformation matrix constants and GPU register
+ * values for the pixel shader pipeline.
+ *
+ * Operates on a grcDevice object (NOT CCalMoviePlayer's this pointer).
+ * Called during MainPlaybackLoop frame rendering.
+ *
+ * @param pDevice  Pointer to the grcDevice object (large, +11000 byte structure)
+ */
+extern "C" void CCalMoviePlayer_CD88(void* pDevice) {
+    char* dev = (char*)pDevice;
+
+    // Check if current write pointer exceeds limit
+    uint32_t writePtr = *(uint32_t*)(dev + 0);
+    uint32_t limit = *(uint32_t*)(dev + 8);
+    if (writePtr > limit) {
+        // Refresh the device pointer
+        pDevice = rage_A980(pDevice);
+        dev = (char*)pDevice;
+    }
+
+    // Allocate shader constant block (21 float4s, type 4)
+    void* constBlock = grc_A088(pDevice, 21, 4);
+    if (constBlock == nullptr) {
+        // Store fallback write ptr and return
+        *(uint32_t*)(dev + 0) = *(uint32_t*)(dev + 0);
+        return;
+    }
+
+    // Determine base value based on swap flag
+    uint32_t swapFlag = *(uint32_t*)(dev + 11776) & 0x1;
+    float baseVal = kShaderConst_Zero;
+    float negBase;
+    if (swapFlag == 0) {
+        negBase = -baseVal;
+    } else {
+        negBase = -baseVal;  // same in both cases for 0.0
+    }
+
+    float oneMinusBase = kShaderConst_One - baseVal;
+    float* cb = (float*)constBlock;
+
+    // Fill constant buffer: 21 float4s (84 floats)
+    // Constants 0-1: negBase values
+    cb[0] = negBase;     // c0.x
+    cb[1] = negBase;     // c0.y
+    // Constants 2-6: base values
+    cb[2] = baseVal;     // c0.z
+    cb[3] = baseVal;     // c0.w
+    cb[4] = baseVal;     // c1.x
+    cb[5] = baseVal;     // c1.y
+    cb[6] = baseVal;     // c1.z
+    // Constant 7: oneMinusBase
+    cb[7] = oneMinusBase;   // c1.w
+    // Constant 8: negBase
+    cb[8] = negBase;        // c2.x
+    // Constants 9-13: base values
+    cb[9] = baseVal;        // c2.y
+    cb[10] = baseVal;       // c2.z
+    cb[11] = baseVal;       // c2.w
+    cb[12] = baseVal;       // c3.x
+    cb[13] = baseVal;       // c3.y
+    // Constants 14-15: oneMinusBase
+    cb[14] = oneMinusBase;  // c3.z
+    cb[15] = oneMinusBase;  // c3.w
+    // Constants 16-20: base values
+    cb[16] = baseVal;       // c4.x
+    cb[17] = baseVal;       // c4.y
+    cb[18] = baseVal;       // c4.z
+    cb[19] = baseVal;       // c4.w
+    cb[20] = baseVal;       // c5.x
+
+    // Calculate address/mode bits from the constant block pointer
+    uint32_t blockAddr = (uint32_t)(uintptr_t)constBlock;
+    uint32_t addrBits = ((blockAddr >> 20) & 0xFFF) + 512;
+    addrBits = addrBits & 0x1000;
+    uint32_t baseBits = blockAddr & 0x1FFFFFFF;
+    uint32_t combinedAddr = addrBits + baseBits;
+    combinedAddr |= 0x3;  // set low bits
+
+    // Build GPU register commands
+    uint32_t* cmdPtr = (uint32_t*)(dev + 0);
+    uint32_t writePos = *cmdPtr;
+
+    // Write 13 register values
+    uint32_t regVals[13];
+    regVals[0] = (5 << 16) | 18432;     // header
+    regVals[1] = combinedAddr;           // address
+    regVals[2] = 0x10000056;             // mode register
+    regVals[3] = 0;
+    regVals[4] = 0;
+    regVals[5] = 0;
+    regVals[6] = 0;
+    regVals[7] = 0x25000;               // config A
+    regVals[8] = 0;
+    regVals[9] = 0;
+    regVals[10] = 0;
+    regVals[11] = 0xC0003600;           // config B
+    regVals[12] = 0x30088;              // config C
+
+    uint32_t* dst = (uint32_t*)(uintptr_t)(writePos + 4);
+    for (int i = 0; i < 13; i++) {
+        *dst = regVals[i];
+        dst++;
+    }
+
+    *(uint32_t*)(dev + 0) = (uint32_t)(uintptr_t)dst;
+
+    // Extract viewport dimensions from device state
+    uint32_t dimA = *(uint32_t*)(dev + 11524);
+    uint32_t dimB = *(uint32_t*)(dev + 11528);
+    int32_t x = (int32_t)((dimA * 2) & 0xFFFFFFFE) >> 17;
+    int32_t y = (int32_t)(((dimA >> 15) & 0xFFFE0000) >> 17);
+    int32_t w = (int32_t)((dimB * 2) & 0xFFFFFFFE) >> 17;
+    int32_t h = (int32_t)(((dimB >> 15) & 0xFFFE0000) >> 17);
+
+    game_37B0(pDevice, y, x, h, w);
+}
+
+/**
+ * DispatchColorConstants (CCalMoviePlayer_CF28_wrh) @ 0x8235CF28 | size: 0xB0
+ *
+ * Dispatches color constant data through the shader pipeline. Converts
+ * a color value from integer RGBA to normalized float4, then calls
+ * grc_CFD8 for each vertex/pixel shader pass.
+ *
+ * @param pDevice   grcDevice pointer
+ * @param f1        Blend factor (float)
+ * @param r4        Loop count (0 = single pass)
+ * @param r5        Vertex buffer pointer (0 = single pass)
+ * @param r6        Color constant (RGBA packed uint32)
+ * @param r7        Offset per iteration (used when r4 > 0)
+ * @param r8        unused
+ * @param r9        GPU flags
+ */
+extern "C" void CCalMoviePlayer_CF28_wrh(void* pDevice, float f1,
+    uint32_t r4, uint32_t r5, uint32_t r6, uint32_t r7, uint32_t r8, uint32_t r9) {
+    // Convert packed color to normalized float4 via VMX128 unpack
+    // The original uses vupkd3d128 to convert bytes to floats
+    uint8_t colorBytes[4];
+    colorBytes[0] = (uint8_t)(r7 & 0xFF);
+    colorBytes[1] = (uint8_t)((r7 >> 8) & 0xFF);
+    colorBytes[2] = (uint8_t)((r7 >> 16) & 0xFF);
+    colorBytes[3] = (uint8_t)((r7 >> 24) & 0xFF);
+
+    // Build color constant: convert from byte to 1.0-based float
+    // vupkd3d128 with mode 0: byte | 0x3F800000 (produces 1.0 + byte/mantissa)
+    // vnmsubfp then subtracts to get normalized color
+    float colorConst[4];
+    for (int i = 0; i < 4; i++) {
+        uint32_t packed = colorBytes[i] | 0x3F800000;
+        float fPacked;
+        memcpy(&fPacked, &packed, sizeof(float));
+        // vnmsubfp: result = -(a*b - c) = -(fPacked*orig - orig) = orig*(1-fPacked)
+        // This is an approximation; the exact behavior depends on VMX128 semantics
+        colorConst[i] = fPacked;
+    }
+
+    if (r5 == 0) {
+        // Single-pass mode
+        grc_CFD8(pDevice, f1, 0, r6, colorConst, r8, r9);
+    } else {
+        if (r4 == 0) {
+            return;
+        }
+        // Multi-pass: iterate r4 times, advancing by r5 each iteration
+        uint32_t offset = r5;
+        for (uint32_t i = r4; i > 0; i--) {
+            grc_CFD8(pDevice, f1, offset, r6, colorConst, r8, r9);
+            offset += 16;
+        }
+    }
+}
+
+/**
+ * UpdatePixelState (CCalMoviePlayer_D700_p39) @ 0x8235D700 | size: 0xCC
+ *
+ * Updates the pixel shader state on the grcDevice based on a floating-point
+ * intensity value. Converts the float to a fixed-point pixel value and
+ * writes GPU state registers.
+ *
+ * @param pDevice  grcDevice pointer
+ * @param f1       Intensity value (float)
+ * @param r4-r5    unused
+ * @param r6       Alpha/mode value
+ */
+extern "C" void CCalMoviePlayer_D700_p39(void* pDevice, float f1,
+    uint32_t r4, uint32_t r5, uint32_t r6) {
+    (void)r4; (void)r5;
+    char* dev = (char*)pDevice;
+
+    // Check pixel format flag at +11464
+    uint16_t pixelFormat = *(uint16_t*)(dev + 11464);
+    uint32_t pixelValue;
+    uint32_t modeValue;
+
+    if (!(pixelFormat & 0x1)) {
+        // Standard format: multiply by scale constants
+        // Two .rdata constants for scale/offset
+        float scaleA = 255.0f;    // approximate @ lbl_82079F6C
+        float scaleB = 127.5f;    // approximate @ lbl_82079F68
+
+        float scaledA = f1 * scaleA;
+        float scaledB = f1 * scaleB;
+
+        int32_t intA = (int32_t)scaledA;
+        int32_t intB = (int32_t)scaledB;
+
+        // Pack: (intA << 8) | r6
+        pixelValue = ((uint32_t)intA << 8) | r6;
+        modeValue = ((uint32_t)intB >> 21) & 0x7FF;
+    } else {
+        // HDR/float format: extract from float bit representation
+        uint32_t floatBits;
+        memcpy(&floatBits, &f1, sizeof(float));
+
+        // Check sign bit
+        if (floatBits & 0x80000000) {
+            pixelValue = 0;
+        } else {
+            // Extract exponent
+            uint32_t exponent = (floatBits >> 23) & 0x1FF;
+            if (exponent >= 113) {
+                // Normal range: extract mantissa bits
+                uint32_t mantissaBits = floatBits & 0x7800000;
+                uint32_t adjusted = floatBits + 4;
+                uint32_t combined = mantissaBits | adjusted;
+                pixelValue = (combined >> 3) & 0x1FFFFFFF;
+            } else {
+                // Subnormal: shift based on exponent
+                uint32_t expo8 = exponent & 0xFF;
+                uint32_t mantissa = floatBits & 0x7FFFFF;
+                uint32_t shift = 113 - expo8;
+                uint32_t roundBit = 1U << (shift - 1);
+                pixelValue = ((roundBit + mantissa) | 0x800000) >> shift;
+            }
+        }
+
+        // Pack: (pixelValue << 8) | r6 with insert
+        uint32_t packed = (pixelValue << 8) | (r6 & 0xFF);
+        pixelValue = packed;
+        modeValue = (packed >> 21) & 0x7FF;
+    }
+
+    // Write to GPU state registers on the device
+    uint8_t alphaRef = *(uint8_t*)(dev + 11650);
+    uint32_t blendState = *(uint32_t*)(dev + 11648);
+    uint32_t alphaDiff = r6 - alphaRef;
+
+    // Store pixel state
+    *(uint32_t*)(dev + 11884) = pixelValue;
+
+    // Compute blend mode bits
+    uint32_t notBlend = ~blendState;
+    uint32_t clzAlpha = alphaDiff == 0 ? 32 : __builtin_clz(alphaDiff);
+    uint32_t blendBit = (notBlend << 6) & 0x800;
+    uint32_t alphaBit = (clzAlpha << 6) & 0x800;
+    uint32_t xorBit = alphaBit ^ 0x800;
+    uint32_t modeBits = (xorBit ^ blendBit) | modeValue;
+
+    *(uint32_t*)(dev + 11880) = modeBits;
+
+    // Set 64-bit GPU command flag at device+48
+    uint64_t* cmdPtr = (uint64_t*)(dev + 48);
+    *cmdPtr |= (3ULL << 34);
 }

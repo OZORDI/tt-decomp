@@ -1125,6 +1125,14 @@ public:
     int32_t QueryPlaybackReady();                      // @ 0x8248E520 - check if ready (vslots 60/61==5)
     int32_t ResetPlaybackState();                      // @ 0x8248E658 - reset status and signal events
     int32_t PreparePlayback();                         // @ 0x8248E968 - prepare and start playback
+    void FillReadBufferA();                             // @ 0x8248F268 - fill sample buffer channel A
+    void FillReadBufferB();                             // @ 0x8248F4E0 - fill sample buffer channel B
     void ProcessWriteBuffer();                         // @ 0x82490A18 - process next write buffer
     int32_t DrainPlaybackBuffer(uint32_t statusC);     // @ 0x8248FD58 - drain all available frames
+
+    // Batch 5 — resource cleanup & thread management
+    int32_t CleanupResources();                        // @ 0x8248FA48 - signal threads, close handles, reinit
+    int32_t InitializeWorkerThreads(void* params);     // @ 0x8248F758 - create 4 worker threads + set affinity
+    void WriteThreadProcA();                           // @ 0x82490B48 - write thread for channel A
+    void WriteThreadProcB();                           // @ 0x82490FA8 - write thread for channel B
 };

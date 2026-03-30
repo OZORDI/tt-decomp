@@ -113,9 +113,7 @@ PPC_EXTERN_IMPORT(CCalChannel_0); // 0x82487168
 PPC_EXTERN_IMPORT(CCalChannel_DD98_h); // 0x8248DD98
 
 // --- CCalMoviePlayer ---
-PPC_EXTERN_IMPORT(CCalMoviePlayer_CD88); // 0x8235CD88
-PPC_EXTERN_IMPORT(CCalMoviePlayer_CF28_wrh); // 0x8235CF28
-PPC_EXTERN_IMPORT(CCalMoviePlayer_D700_p39); // 0x8235D700
+// CD88, CF28_wrh, D700_p39 implemented in pong_misc.cpp
 PPC_EXTERN_IMPORT(CCalMoviePlayer_EB30); // 0x8235EB30
 PPC_EXTERN_IMPORT(CCalMoviePlayer_EB70); // 0x8235EB70
 PPC_EXTERN_IMPORT(CCalMoviePlayer_3AD8_h); // 0x82483AD8
@@ -188,16 +186,12 @@ PPC_EXTERN_IMPORT(CCalMoviePlayer_sub_63_6); // 0x8248F0A8
 PPC_EXTERN_IMPORT(CCalMoviePlayer_sub_63_7); // 0x8248F110
 PPC_EXTERN_IMPORT(CCalMoviePlayer_sub_63_8); // 0x8248F178
 PPC_EXTERN_IMPORT(CCalMoviePlayer_33); // 0x8248F1E0
-PPC_EXTERN_IMPORT(CCalMoviePlayer_34); // 0x8248F268
-PPC_EXTERN_IMPORT(CCalMoviePlayer_35); // 0x8248F4E0
-PPC_EXTERN_IMPORT(CCalMoviePlayer_9); // 0x8248F758
-PPC_EXTERN_IMPORT(CCalMoviePlayer_13); // 0x8248FA48
+// CCalMoviePlayer_34, _35, _9, _13 implemented in pong_misc.cpp
 PPC_EXTERN_IMPORT(CCalMoviePlayer_16); // 0x8248FCF0
 PPC_EXTERN_IMPORT(CCalMoviePlayer_21); // 0x8248FD58
 PPC_EXTERN_IMPORT(CCalMoviePlayer_19); // 0x8248FF40
 PPC_EXTERN_IMPORT(CCalMoviePlayer_32); // 0x82490A18
-PPC_EXTERN_IMPORT(CCalMoviePlayer_36); // 0x82490B48
-PPC_EXTERN_IMPORT(CCalMoviePlayer_37); // 0x82490FA8
+// CCalMoviePlayer_36, _37 implemented in pong_misc.cpp
 PPC_EXTERN_IMPORT(CCalMoviePlayer_15C8_w); // 0x824915C8
 PPC_EXTERN_IMPORT(CCalMoviePlayer_vt92C0_0_1608); // 0x82491608
 
