@@ -42345,7 +42345,7 @@ PPC_FUNC_IMPL(__imp__fxSpecialFx_vfn_23) {
 	// mr r3,r29
 	ctx.r3.u64 = var_r29;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32160
 	ctx.r11.s64 = -2107637760;
 	// lwz r3,25604(r11)
@@ -42602,7 +42602,7 @@ PPC_FUNC_IMPL(__imp__rage_7600) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32248
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -42965,7 +42965,7 @@ loc_824278F8:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32142
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;

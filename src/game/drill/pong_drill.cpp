@@ -381,7 +381,7 @@ void hitTipData::PostLoadProperties() {
  * hitTipData::LoadProperties() @ 0x821F21D0 | size: 0xC8
  * vtable slot 21
  *
- * Registers 5 XML properties with the property system via game_8F58:
+ * Registers 5 XML properties with the property system via RegisterSerializationField:
  *   - "ShotType"  → m_shotType     (+16), type: ShotType enum (@ 0x825CB5B4)
  *   - property2   → m_minScore     (+20), type: int (@ 0x825CAF90)
  *   - property3   → m_scoreThreshold (+24), type: int

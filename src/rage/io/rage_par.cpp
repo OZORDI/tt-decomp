@@ -10,7 +10,7 @@
 extern "C" {
 void rage_AssertMainThread(void);
 void* atSingleton_CAD0_g(void* self);
-void SinglesNetworkClient_8990_g(const char* src, char* dest, int maxSize);
+void rage_atStringCopy(const char* src, char* dest, int maxSize);
 int RtlMultiByteToUnicodeN_6FA8_w(
     std::uint32_t codePage,
     std::uint32_t flags,
@@ -562,7 +562,7 @@ parRTStructure::parRTStructure() {
     registryTypes[registryIndex] = kRegistryTypeId;
 
     std::array<char, kUtf8LabelSize> utf8Label{};
-    SinglesNetworkClient_8990_g(
+    rage_atStringCopy(
         reinterpret_cast<const char*>(kPrimaryLabelAddr),
         utf8Label.data(),
         static_cast<int>(utf8Label.size())
@@ -576,7 +576,7 @@ parRTStructure::parRTStructure() {
         static_cast<int>(m_primaryPathUtf16.size())
     );
 
-    SinglesNetworkClient_8990_g(
+    rage_atStringCopy(
         reinterpret_cast<const char*>(kSecondaryLabelAddr),
         utf8Label.data(),
         static_cast<int>(utf8Label.size())

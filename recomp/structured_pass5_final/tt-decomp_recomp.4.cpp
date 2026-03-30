@@ -20383,7 +20383,7 @@ PPC_FUNC_IMPL(__imp__audBank_LoadBank_4DC8) {
 	// li r18,1
 	var_r18 = 1;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -21561,7 +21561,7 @@ PPC_FUNC_IMPL(__imp__game_56A0) {
 			// mr r3,r29
 			ctx.r3.u64 = var_r29;
 			// bl 0x822e2e60
-			atSingleton_2E60_g(ctx, base);
+			atFactory_GetFactory(ctx, base);
 			// lwz r11,25628(r26)
 			ctx.r11.u64 = PPC_LOAD_U32(var_r26 + 25628);
 			// li r6,1
@@ -40299,7 +40299,7 @@ loc_8216E118:
 	// mr r3,r28
 	ctx.r3.u64 = var_r28;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// lwz r9,0(r29)
 	ctx.r9.u64 = PPC_LOAD_U32(var_r29 + 0)/* rage_GameObject::vtable@+0x0 */;
@@ -41125,7 +41125,7 @@ loc_8216E800:
 	// mr r3,r27
 	ctx.r3.u64 = var_r27;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -42352,7 +42352,7 @@ PPC_FUNC_IMPL(__imp__game_F0D8) {
 	// lwz r4,300(r11)
 	ctx.r4.u64 = PPC_LOAD_U32(ctx.r11.u32 + 300);
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r10,304(r31)
 	ctx.r10.u64 = PPC_LOAD_U32(var_r31 + 304);
 	// lis r11,-32253
@@ -60483,7 +60483,7 @@ loc_821776C4:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// li r6,0
 	ctx.r6.s64 = 0;
 	// mr r5,r30
@@ -60587,7 +60587,7 @@ loc_8217779C:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// mr r5,r29
 	ctx.r5.u64 = var_r29;
 	// mr r4,r28
@@ -63859,8 +63859,8 @@ PPC_FUNC_IMPL(__imp__cmDiffTuningSet_vfn_0) {
 	return;
 }
 
-__attribute__((alias("__imp__util_92D8"))) PPC_WEAK_FUNC(util_92D8);
-PPC_FUNC_IMPL(__imp__util_92D8) {
+__attribute__((alias("__imp__cmNode_GetVector"))) PPC_WEAK_FUNC(cmNode_GetVector);
+PPC_FUNC_IMPL(__imp__cmNode_GetVector) {
 	PPC_FUNC_PROLOGUE();
 	uint32_t var_r31 = 0;
 	uint32_t ea{};
@@ -65244,7 +65244,7 @@ PPC_FUNC_IMPL(__imp__cmSampleCamActions_9BD8_g) {
 			// addi r3,r1,144
 			ctx.r3.s64 = ctx.r1.s64 + 144;
 			// bl 0x821792d8
-			util_92D8(ctx, base);
+			cmNode_GetVector(ctx, base);
 			// addi r4,r1,80
 			ctx.r4.s64 = ctx.r1.s64 + 80;
 			// lvx128 v0,r0,r3

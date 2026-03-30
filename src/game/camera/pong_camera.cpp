@@ -7,6 +7,7 @@
 
 #include "pong_camera.hpp"
 #include <cmath>
+#include <cstring>
 
 /**
  * pongCameraMgr::AdjustTimingForIndex

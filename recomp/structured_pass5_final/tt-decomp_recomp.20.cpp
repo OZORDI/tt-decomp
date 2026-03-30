@@ -5931,7 +5931,7 @@ PPC_FUNC_IMPL(__imp__StateSyncRequestMessage_vfn_1) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// blr
 	return;
 }
@@ -11416,7 +11416,7 @@ PPC_FUNC_IMPL(__imp__PointDeclaredMessage_vfn_1) {
 	temp.f32 = float(ctx.f0.f64);
 	PPC_STORE_U32(var_r31 + 4, temp.u32);
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// blr
 	return;
 }
@@ -12519,7 +12519,7 @@ PPC_FUNC_IMPL(__imp__LoadingStateResponseMessage_vfn_1) {
 	// addi r4,r11,8
 	ctx.r4.s64 = ctx.r11.s64 + 8;
 	// b 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	return;
 }
 
@@ -15130,7 +15130,7 @@ loc_823BEE10:
 		// extsh r4,r6
 		ctx.r4.s64 = ctx.r6.s16;
 		// bl 0x821f2fc0
-		util_2FC0(ctx, base);
+		rage_FillMemory32(ctx, base);
 	}
 loc_823BEE8C:
 	// addi r30,r30,1

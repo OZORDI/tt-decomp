@@ -13,7 +13,7 @@
 // External function declarations
 extern void rage_free(void* ptr);
 extern void datResourceMgr_RemoveEntry(void* obj);                    // @ 0x820F8EE8 - Object cleanup
-extern void util_6C20(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
+extern void sysMemAllocator_PlatformFree(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
 extern void sysMemAllocator_InitMainThread(void);          // @ 0x820C0038 - Main thread init
 
 namespace rage {
@@ -59,7 +59,7 @@ extern uint32_t g_xmlNodeStruct_typeId2; // @ 0x825C8038 (shared base type)
 extern void* g_stringFieldType;          // @ 0x825CAF88
 
 /**
- * game_B2E0 @ 0x8218B2E0 | size: 0x90
+ * plrPlayerMgr_ReleaseResourcePairs @ 0x8218B2E0 | size: 0x90
  * 
  * Destroys sub-object array containing 2 sub-objects (24 bytes each).
  * Each sub-object has 2 pointers: primary object and singleton-managed object.
@@ -73,10 +73,10 @@ extern void* g_stringFieldType;          // @ 0x825CAF88
  *   1. Start at base + 48 (end of array)
  *   2. Loop 2 times, moving back 24 bytes each iteration
  *   3. For each sub-object:
- *      - If primary object exists: call datResourceMgr_RemoveEntry, then util_6C20 with flag 0xE001
+ *      - If primary object exists: call datResourceMgr_RemoveEntry, then sysMemAllocator_PlatformFree with flag 0xE001
  *      - If singleton object exists and not in registry: free via allocator vtable slot 2
  */
-void game_B2E0(void* subObjectArrayBase) {
+void plrPlayerMgr_ReleaseResourcePairs(void* subObjectArrayBase) {
     struct SubObject {
         void* m_pObject1;       // +0x00
         uint32_t m_padding[3];  // +0x04
@@ -93,7 +93,7 @@ void game_B2E0(void* subObjectArrayBase) {
         // Handle primary object
         if (subObj->m_pObject1) {
             datResourceMgr_RemoveEntry(subObj->m_pObject1);
-            util_6C20(subObj->m_pObject1, 0xE001);
+            sysMemAllocator_PlatformFree(subObj->m_pObject1, 0xE001);
         }
         
         // Handle singleton-managed object
@@ -131,7 +131,7 @@ void game_B2E0(void* subObjectArrayBase) {
  * Destructor sequence:
  *   1. Set initial vtables for destruction phase
  *   2. Clear global player manager state
- *   3. Destroy sub-objects via game_B2E0 (processes in reverse order)
+ *   3. Destroy sub-objects via plrPlayerMgr_ReleaseResourcePairs (processes in reverse order)
  *   4. Restore base class vtables
  *   5. Call singleton cleanup
  *   6. Conditional free handled by caller based on flags
@@ -146,7 +146,7 @@ plrPlayerMgr::~plrPlayerMgr() {
     
     // Destroy sub-objects in reverse order
     // Pass pointer to sub-object array base at offset +20
-    game_B2E0(&m_subObjects[0]);
+    plrPlayerMgr_ReleaseResourcePairs(&m_subObjects[0]);
     
     // Restore base class vtables after sub-object destruction
     m_vtable2 = (void**)0x82027B34;   // Base class vtable (secondary)
@@ -599,7 +599,7 @@ void gdTierMember::RegisterFields() {
 /**
  * RegisterSerializedField @ 0x821A8F58 | size: 0xC8
  *
- * Original symbol: game_8F58
+ * Original symbol: RegisterSerializationField
  *
  * RAGE serialization system field registration helper.
  * Registers a single field of a data object with the serialization system,
@@ -640,7 +640,7 @@ void gdTierMember::RegisterFields() {
  */
 
 // External dependencies
-extern void* atSingleton_91E0_gen(uint32_t size);      // @ 0x821A91E0 - Get singleton
+extern void* atSingletonPool_AllocEntry(uint32_t size);      // @ 0x821A91E0 - Get singleton
 // rage::UnregisterSingleton declared in namespace block above
 extern void rage_free(void* ptr);                 // @ 0x820C00C0 - Free memory
 
@@ -682,7 +682,7 @@ void RegisterSerializedField(void* obj,
     }
     
     // Get the field registry singleton (16-byte aligned allocation)
-    void* fieldRegistry = atSingleton_91E0_gen(16);
+    void* fieldRegistry = atSingletonPool_AllocEntry(16);
     
     // Free any existing field metadata at this slot
     void* existingMetadata = ((void**)fieldRegistry)[0];

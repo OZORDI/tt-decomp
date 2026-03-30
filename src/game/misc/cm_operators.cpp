@@ -84,9 +84,9 @@ void* cmWorldRefreshableCtor_Destructor()
 // Forward declarations for utility functions
 extern "C" float cmOperator_EvalFloat(void* entry);  // Evaluates an entry and returns float
 extern "C" int cmSwitch_4B60(void* switchObj);  // Evaluates switch and returns int
-extern "C" int util_4BD8(void* obj);  // Evaluates object and returns int
+extern "C" int cmNode_GetInt(void* obj);  // Evaluates object and returns int
 extern "C" bool cmCond_21B0(void* condObj);  // Evaluates condition and returns bool
-extern "C" void util_92D8(void* dest, void* src);  // Copies vector data
+extern "C" void cmNode_GetVector(void* dest, void* src);  // Copies vector data
 extern "C" void cmCond_1038_g(void* condObj, void* dest);  // Evaluates condition into dest
 
 /**
@@ -209,19 +209,19 @@ void cmLookup::GetVector(void* outVector) {
         
         if (matches) {
             void* resultObj = (char*)this + 12 + entryIndex * 16;
-            util_92D8(outVector, resultObj);
+            cmNode_GetVector(outVector, resultObj);
             return;
         }
     }
     
-    util_92D8(outVector, (char*)this + 52);
+    cmNode_GetVector(outVector, (char*)this + 52);
 }
 
 /**
  * cmLookup::GetDimValue @ 0x8226DB18 | size: 0x9c
  * 
  * Scalar destructor - evaluates lookup table and returns matching int result (2-entry variant).
- * Similar to GetDim but uses util_4BD8 instead of cmSwitch_4B60.
+ * Similar to GetDim but uses cmNode_GetInt instead of cmSwitch_4B60.
  */
 void cmLookup::GetDimValue(int* outResult) {
     float keyValue = cmOperator_EvalFloat((char*)this + 12);
@@ -234,12 +234,12 @@ void cmLookup::GetDimValue(int* outResult) {
         
         if (matches) {
             void* resultObj = (char*)this + 12 + entryIndex * 16;
-            *outResult = util_4BD8(resultObj);
+            *outResult = cmNode_GetInt(resultObj);
             return;
         }
     }
     
-    *outResult = util_4BD8((char*)this + 52);
+    *outResult = cmNode_GetInt((char*)this + 52);
 }
 
 /**
@@ -700,12 +700,12 @@ void cmCond_vfn_2(void* self, void* out) {
 
     for (int i = 0; i < 2; i++) {
         if (cmCond_21B0(base + 12 + i * 16)) {
-            util_92D8(out, base + 20 + i * 16);
+            cmNode_GetVector(out, base + 20 + i * 16);
             return;
         }
     }
 
-    util_92D8(out, base + 44);
+    cmNode_GetVector(out, base + 44);
 }
 
 /**
@@ -718,12 +718,12 @@ void cmCond_vfn_1(void* self, int32_t* out) {
 
     for (int i = 0; i < 2; i++) {
         if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = util_4BD8(base + 20 + i * 16);
+            *out = cmNode_GetInt(base + 20 + i * 16);
             return;
         }
     }
 
-    *out = util_4BD8(base + 44);
+    *out = cmNode_GetInt(base + 44);
 }
 
 /**
@@ -810,12 +810,12 @@ void cmCond_vfn_2_D070_1(void* self, void* out) {
 
     for (int i = 0; i < 3; i++) {
         if (cmCond_21B0(base + 12 + i * 16)) {
-            util_92D8(out, base + 20 + i * 16);
+            cmNode_GetVector(out, base + 20 + i * 16);
             return;
         }
     }
 
-    util_92D8(out, base + 60);
+    cmNode_GetVector(out, base + 60);
 }
 
 /**
@@ -828,12 +828,12 @@ void cmCond_vfn_1_D0F8_1(void* self, int32_t* out) {
 
     for (int i = 0; i < 3; i++) {
         if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = util_4BD8(base + 20 + i * 16);
+            *out = cmNode_GetInt(base + 20 + i * 16);
             return;
         }
     }
 
-    *out = util_4BD8(base + 60);
+    *out = cmNode_GetInt(base + 60);
 }
 
 /**

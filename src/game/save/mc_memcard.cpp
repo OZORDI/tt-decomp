@@ -12,7 +12,7 @@
 #include <cstring>
 
 extern "C" {
-void atSingleton_2E60_g(void* singleton);  // @ 0x822E2E60
+void atFactory_GetFactory(void* singleton);  // @ 0x822E2E60
 void* rage_obj_factory_create_3040(void* singleton,
                                    const void* typeInfo,
                                    const void* typeOps,
@@ -212,7 +212,7 @@ void mcMemcardControl::Init()
     m_typeRegistration.m_typeStorageSize = 0;
 
     void* typeFactorySingleton = reinterpret_cast<void*>(kTypeFactorySingletonAddress);
-    atSingleton_2E60_g(typeFactorySingleton);
+    atFactory_GetFactory(typeFactorySingleton);
 
     void* factoryContext = rage_obj_factory_create_3040(typeFactorySingleton,
                                                         m_typeRegistration.m_pTypeInfo,

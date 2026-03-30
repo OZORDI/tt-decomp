@@ -334,6 +334,19 @@ struct pongPlayer {
     void UpdateDirtyFlags(void* obj, uint8_t forceReset);
     void MarkNetDirtyPosition();
     void MarkNetDirtyRotation();
+    void MarkNetDirtyVelocity();
+    void MarkNetDirtyAnimation();
+    void MarkNetDirtyShotState();
+    void MarkNetDirtyStamina();
+    void MarkNetDirtyScore();
+    void VtMarkNetDirtyPosition();
+    void VtMarkNetDirtyRotation();
+    void VtMarkNetDirtyVelocity();
+    void VtMarkNetDirtyAnimation();
+    void VtMarkNetDirtyShotState();
+    void VtMarkNetDirtyStamina();
+    void VtMarkNetDirtyScore();
+
     void SyncFieldWithCallback(void* target, void* source);
     void ResetShotSyncFields(void* shotState, uint8_t clearNetFlags);
     void ResetShotTrackingState();
@@ -342,6 +355,18 @@ struct pongPlayer {
     void FinalizeServeSetup();
     void* LookupElementByFloatKey(void* table, float key);
     void RegisterDebugDrawEntries();
+
+    // ── Additional methods (batch: pongPlayer small functions) ────────────
+    void Update();                                           // @ 0x8218CF08
+    void UpdateReplay();                                     // @ 0x8218E178
+    void ResetSwingDisplayValues();                          // @ 0x821A7038
+    void FindRegisteredListener(void* unused, void* target); // @ 0x8218AED0
+
+    // ── Additional methods (batch 10: medium pongPlayer functions) ──────
+    void UpdateOpponentBoundTransform();                      // @ 0x82194C08
+    void UpdateOpponentSwingTiming(float swingDir, float swingPower); // @ 0x82193738
+    static void ResetButtonSlotTrackingData(void* buttonStateBase, int slotIndex); // @ 0x821C9918
+    void SendServeOrMovementMessage(vec3* targetVec, uint8_t hasDirectMovement); // @ 0x82195598
 };
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────
@@ -364,3 +389,19 @@ extern const vec3  g_hitVectorFlip;
 extern void*       g_geomSingleton;
 extern uint32_t    g_swingInFlightFlag;      // @ lis(-32160)+25404
 extern uint32_t    g_swingCountFlag;         // @ lis(-32160)+25408
+
+// ── Batch 10 function declarations ──────────────────────────────────────
+extern void pongPlayer_E640_g(void* gridSubObj);                     // ClearSwingSlotGrid @ 0x8219E640
+extern void pongPlayer_E590_g(float* lerpFactors, uint8_t flip,
+                               float* outPos, float* boundsA,
+                               float* boundsB, float* offset);       // InterpolateGridPosition @ 0x8219E590
+extern void pongPlayer_3628_g(pongPlayer* player, uint8_t flip);     // SetServeSideFlip @ 0x82193628
+extern bool pongPlayer_6050_p46(int32_t swingType);                  // IsSwingType @ 0x821D6050
+extern void pongPlayer_0F10_g(void* stateObj, float* outSign,
+                               float deadZone);                       // GetCourtSideSign @ 0x821A0F10
+extern void pongPlayer_76E8_g(void* swingHistory);                   // InitSwingHistorySlots @ 0x821A76E8
+extern void pongPlayer_AE10_g(void* slotsBase, int32_t slotId,
+                               int32_t column);                       // RemoveSlotEntry @ 0x8218AE10
+extern void pongPlayer_4438_fw(void* transObj);                      // UpdateTransitionBlend @ 0x82384438
+extern void pongPlayer_D6C8_fw(void* animTransObj);                  // ResetAnimTransitionState @ 0x8239D6C8
+extern void pongPlayer_06A0_g(float* outVec, pongPlayer* player);   // ComputeSwingTargetDelta @ 0x821906A0

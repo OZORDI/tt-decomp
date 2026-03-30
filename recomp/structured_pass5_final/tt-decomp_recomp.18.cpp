@@ -18114,7 +18114,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// addi r5,r31,80
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 80;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18127,7 +18127,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18143,7 +18143,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18159,7 +18159,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18172,7 +18172,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18185,7 +18185,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18199,7 +18199,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32253
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18212,7 +18212,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18225,7 +18225,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18238,7 +18238,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18251,7 +18251,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18264,7 +18264,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18277,7 +18277,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18290,7 +18290,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18303,7 +18303,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -18316,7 +18316,7 @@ PPC_FUNC_IMPL(__imp__fxLightShaftTune_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	return;
 }
 
@@ -18994,7 +18994,7 @@ PPC_FUNC_IMPL(__imp__atSingleton_A168_g) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32249
 	// mr r6,r29
 	ctx.r6.u64 = var_r29;
@@ -20303,7 +20303,7 @@ loc_8237AAEC:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r3,16(r31)
 	ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 16);
 	// lis r11,-32254
@@ -20360,7 +20360,7 @@ loc_8237AB74:
 	// addi r4,r11,-23368
 	ctx.r4.s64 = ctx.r11.s64 + -23368;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r3,20(r31)
 	ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 20);
 	// li r6,1
@@ -24923,7 +24923,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowSquare_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -24937,7 +24937,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowSquare_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -24951,7 +24951,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowSquare_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -24965,7 +24965,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowSquare_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -25136,7 +25136,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowCapsule_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -25152,7 +25152,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowCapsule_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -25165,7 +25165,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowCapsule_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -25179,7 +25179,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowCapsule_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -25193,7 +25193,7 @@ PPC_FUNC_IMPL(__imp__pongLightGlowCapsule_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -26257,7 +26257,7 @@ PPC_FUNC_IMPL(__imp__atSingleton_D3C0_g) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32249
 	// mr r6,r29
 	ctx.r6.u64 = var_r29;
@@ -28459,7 +28459,7 @@ PPC_FUNC_IMPL(__imp__fxAmbientMgr_vfn_21) {
 	// addi r5,r31,44
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 44;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -28472,7 +28472,7 @@ PPC_FUNC_IMPL(__imp__fxAmbientMgr_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -28485,7 +28485,7 @@ PPC_FUNC_IMPL(__imp__fxAmbientMgr_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -28681,7 +28681,7 @@ loc_8237E690:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// cmplwi cr6,r31,0
 	// beq cr6,0x8237e730
 	if (var_r31 != 0) {
@@ -28816,7 +28816,7 @@ PPC_FUNC_IMPL(__imp__pg_E788_g) {
 	// mr r3,r29
 	ctx.r3.u64 = var_r29;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r30,-32142
 	var_r30 = (uint32_t)(-2106458112);
 	// li r31,0
@@ -31944,7 +31944,7 @@ loc_8238002C:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// li r5,0
 	ctx.r5.s64 = 0;
 	// li r4,0
@@ -34012,7 +34012,7 @@ loc_82380F6C:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// addi r3,r1,80
 	ctx.r3.s64 = ctx.r1.s64 + 80;
@@ -41602,7 +41602,7 @@ PPC_FUNC_IMPL(__imp__fxReticle_vfn_2) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -41813,7 +41813,7 @@ PPC_FUNC_IMPL(__imp__fxReticle_vfn_1) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r4,64(r31)
 	ctx.r4.u64 = PPC_LOAD_U32(var_r31 + 64);
 	// lis r29,-32160
@@ -45809,7 +45809,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdArchetype_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -45823,7 +45823,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdArchetype_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -47458,7 +47458,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -47474,7 +47474,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -47487,7 +47487,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -47500,7 +47500,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -47516,7 +47516,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -47529,7 +47529,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -47542,7 +47542,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -47556,7 +47556,7 @@ PPC_FUNC_IMPL(__imp__fxCrowdAnim_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -53060,7 +53060,7 @@ loc_82389B5C:
 	// mr r3,r27
 	ctx.r3.u64 = var_r27;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32160
 	// li r31,0
 	var_r31 = 0;
@@ -55319,7 +55319,7 @@ loc_8238AA04:
 		// mr r3,r31
 		ctx.r3.u64 = var_r31;
 		// bl 0x822e2e60
-		atSingleton_2E60_g(ctx, base);
+		atFactory_GetFactory(ctx, base);
 		// lis r11,-32160
 		// mr r4,r30
 		ctx.r4.u64 = var_r30;

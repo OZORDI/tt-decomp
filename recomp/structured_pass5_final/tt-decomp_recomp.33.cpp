@@ -1424,7 +1424,7 @@ PPC_FUNC_IMPL(__imp__fiAsciiTokenizer_3F08_p33) {
 	// addi r3,r11,-22704
 	ctx.r3.s64 = ctx.r11.s64 + -22704;
 	// b 0x8229a088
-	rage_A088(ctx, base);
+	parStructure_Install(ctx, base);
 	return;
 }
 

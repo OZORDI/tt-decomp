@@ -8150,7 +8150,7 @@ PPC_FUNC_IMPL(__imp__xe_89B8) {
 					// lwz r3,492(r29)
 					ctx.r3.u64 = PPC_LOAD_U32(var_r29 + 492);
 					// bl 0x822cb680
-					util_B680(ctx, base);
+					phCollider_RecalcBounds(ctx, base);
 					// lbz r6,427(r21)
 					ctx.r6.u64 = PPC_LOAD_U8(var_r21 + 427);
 					// mr r10,r14
@@ -54876,7 +54876,7 @@ PPC_FUNC_IMPL(__imp__ref_fi_F5F0) {
 	// mr r3,r28
 	ctx.r3.u64 = var_r28;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r3,25460(r30)
 	ctx.r3.u64 = PPC_LOAD_U32(var_r30 + 25460);
 	// lis r11,-32253
@@ -65968,7 +65968,7 @@ PPC_FUNC_IMPL(__imp__ph_4888) {
 	// mr r3,r20
 	ctx.r3.u64 = var_r20;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32254
 	// li r7,1
 	ctx.r7.s64 = 1;

@@ -31573,7 +31573,7 @@ PPC_FUNC_IMPL(__imp__plrPropMgr_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32249
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -31586,7 +31586,7 @@ PPC_FUNC_IMPL(__imp__plrPropMgr_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -31667,7 +31667,7 @@ loc_823D4814:
 		// mr r3,r31
 		ctx.r3.u64 = var_r31;
 		// bl 0x82566c20
-		util_6C20(ctx, base);
+		sysMemAllocator_PlatformFree(ctx, base);
 	}
 loc_823D4834:
 	// addi r29,r29,-1
@@ -40716,7 +40716,7 @@ PPC_FUNC_IMPL(__imp__sgRMDrawable_vfn_21) {
 	// addi r5,r31,80
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 80;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -40730,7 +40730,7 @@ PPC_FUNC_IMPL(__imp__sgRMDrawable_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -41403,7 +41403,7 @@ PPC_FUNC_IMPL(__imp__lvlTableTop_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -41715,7 +41715,7 @@ PPC_FUNC_IMPL(__imp__lvlTableTop_vfn_36) {
 		// mr r3,r28
 		ctx.r3.u64 = var_r28;
 		// bl 0x822e2e60
-		atSingleton_2E60_g(ctx, base);
+		atFactory_GetFactory(ctx, base);
 		// lis r29,-32160
 		var_r29 = (uint32_t)(-2107637760);
 		// lwz r4,80(r31)
@@ -41882,7 +41882,7 @@ loc_823D9918:
 	// stw r3,124(r31)
 	PPC_STORE_U32(var_r31 + 124, ctx.r3.u32);
 	// bl 0x8227d220
-	rage_D220(ctx, base);
+	datResource_Load(ctx, base);
 	// blr
 	return;
 }

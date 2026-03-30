@@ -16466,7 +16466,7 @@ PPC_FUNC_IMPL(__imp__lvlLevelMgr_vfn_21) {
 	// addi r5,r31,24
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 24;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32251
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -16479,7 +16479,7 @@ PPC_FUNC_IMPL(__imp__lvlLevelMgr_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32251
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -16492,7 +16492,7 @@ PPC_FUNC_IMPL(__imp__lvlLevelMgr_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -17440,7 +17440,7 @@ PPC_FUNC_IMPL(__imp__ke_0620) {
 	// mr r3,r25
 	ctx.r3.u64 = var_r25;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r30,76(r31)
 	var_r30 = (uint32_t)(PPC_LOAD_U32(var_r31 + 76));
 	// lwz r29,20(r28)
@@ -17817,7 +17817,7 @@ PPC_FUNC_IMPL(__imp__ref_net_0930) {
 	// addi r26,r11,144
 	var_r26 = (uint32_t)(ctx.r11.s64 + 144);  // addr:0x82600090
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lbz r11,96(r31)
 	ctx.r11.u64 = PPC_LOAD_U8(var_r31 + 96);
 	// cmplwi cr6,r11,0

@@ -12631,7 +12631,7 @@ PPC_FUNC_IMPL(__imp__cmAnimCamPosition_vfn_3) {
 	// addi r3,r1,80
 	ctx.r3.s64 = ctx.r1.s64 + 80;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// lfs f0,80(r1)
 	ctx.fpscr.disableFlushMode();
 	temp.u32 = PPC_LOAD_U32(ctx.r1.u32 + 80);
@@ -12691,7 +12691,7 @@ PPC_FUNC_IMPL(__imp__cmAnimCamPosition_vfn_2_49F8_1) {
 	// addi r3,r1,80
 	ctx.r3.s64 = ctx.r1.s64 + 80;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r11,r1,80
 	ctx.r11.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r11
@@ -12897,8 +12897,8 @@ loc_82184BC0:
 	return;
 }
 
-__attribute__((alias("__imp__util_4BD8"))) PPC_WEAK_FUNC(util_4BD8);
-PPC_FUNC_IMPL(__imp__util_4BD8) {
+__attribute__((alias("__imp__cmNode_GetInt"))) PPC_WEAK_FUNC(cmNode_GetInt);
+PPC_FUNC_IMPL(__imp__cmNode_GetInt) {
 	PPC_FUNC_PROLOGUE();
 	// FRAME: size=96, manual
 	// lwz r11,4(r3)
@@ -13011,7 +13011,7 @@ PPC_FUNC_IMPL(__imp__cmAnimDuration_vfn_16) {
 	// stb r11,80(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 80, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// blr
 	return;
 }
@@ -13320,7 +13320,7 @@ PPC_FUNC_IMPL(__imp__cmAnimCamPosition_vfn_2) {
 	// addi r3,r31,12
 	ctx.r3.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// lvx128 v0,r0,r29
 	ea = (var_r29) & ~0xF;
 	simde_mm_store_si128((simde__m128i*)ctx.v0.u8, simde_mm_shuffle_epi8(simde_mm_load_si128((simde__m128i*)PPC_RAW_ADDR(ea)), simde_mm_load_si128((simde__m128i*)VectorMaskL)));
@@ -13407,7 +13407,7 @@ PPC_FUNC_IMPL(__imp__cmAnimCamOrientation_vfn_2) {
 	// addi r3,r31,12
 	ctx.r3.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// lvx128 v0,r0,r29
 	ea = (var_r29) & ~0xF;
 	simde_mm_store_si128((simde__m128i*)ctx.v0.u8, simde_mm_shuffle_epi8(simde_mm_load_si128((simde__m128i*)PPC_RAW_ADDR(ea)), simde_mm_load_si128((simde__m128i*)VectorMaskL)));
@@ -13524,7 +13524,7 @@ PPC_FUNC_IMPL(__imp__cmAnimCamFov_vfn_4) {
 	// addi r3,r31,12
 	ctx.r3.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// lis r11,-32253
 	// mr r30,r3
 	var_r30 = ctx.r3.u32;
@@ -13638,7 +13638,7 @@ PPC_FUNC_IMPL(__imp__cmAnimCamFStop_vfn_4) {
 	// addi r3,r31,12
 	ctx.r3.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// lis r11,-32248
 	// mr r30,r3
 	var_r30 = ctx.r3.u32;
@@ -13724,7 +13724,7 @@ PPC_FUNC_IMPL(__imp__cmAnimDuration_vfn_4) {
 	// mr r31,r4
 	var_r31 = ctx.r4.u32;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// cmplwi cr6,r3,0
 	// bne cr6,0x82185304
 	if (ctx.r3.u32 == 0) {
@@ -13772,7 +13772,7 @@ PPC_FUNC_IMPL(__imp__cmAnimBonePosition_vfn_2) {
 	// addi r3,r31,12
 	ctx.r3.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// lvx128 v0,r0,r29
 	ea = (var_r29) & ~0xF;
 	simde_mm_store_si128((simde__m128i*)ctx.v0.u8, simde_mm_shuffle_epi8(simde_mm_load_si128((simde__m128i*)PPC_RAW_ADDR(ea)), simde_mm_load_si128((simde__m128i*)VectorMaskL)));
@@ -13865,7 +13865,7 @@ PPC_FUNC_IMPL(__imp__cmAnimBoneOrientation_vfn_2) {
 	// addi r3,r31,12
 	ctx.r3.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// lvx128 v0,r0,r29
 	ea = (var_r29) & ~0xF;
 	simde_mm_store_si128((simde__m128i*)ctx.v0.u8, simde_mm_shuffle_epi8(simde_mm_load_si128((simde__m128i*)PPC_RAW_ADDR(ea)), simde_mm_load_si128((simde__m128i*)VectorMaskL)));
@@ -13970,8 +13970,8 @@ loc_821854BC:
 	return;
 }
 
-__attribute__((alias("__imp__util_54C8"))) PPC_WEAK_FUNC(util_54C8);
-PPC_FUNC_IMPL(__imp__util_54C8) {
+__attribute__((alias("__imp__cmNode_TryConnectUnary"))) PPC_WEAK_FUNC(cmNode_TryConnectUnary);
+PPC_FUNC_IMPL(__imp__cmNode_TryConnectUnary) {
 	PPC_FUNC_PROLOGUE();
 	// lbz r9,2(r4)
 	ctx.r9.u64 = PPC_LOAD_U8(ctx.r4.u32 + 2);
@@ -21393,7 +21393,7 @@ loc_82188D80:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x8218b2e0
-	game_B2E0(ctx, base);
+	plrPlayerMgr_ReleaseResourcePairs(ctx, base);
 	// addi r29,r29,-1
 	var_r29 = (uint32_t)(var_r29 + -1);
 	// cmpwi cr6,r29,0
@@ -21501,7 +21501,7 @@ loc_82188E00:
 	// stw r11,14436(r9)
 	PPC_STORE_U32(ctx.r9.u32 + 14436, ctx.r11.u32);
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32160
 	ctx.r11.s64 = -2107637760;
 	// lwz r3,25604(r11)
@@ -23127,7 +23127,7 @@ PPC_FUNC_IMPL(__imp__plrPlayerMgr_vfn_21) {
 	// addi r5,r31,124
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 124;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -23140,7 +23140,7 @@ PPC_FUNC_IMPL(__imp__plrPlayerMgr_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -25035,7 +25035,7 @@ PPC_FUNC_IMPL(__imp__pg_A948) {
 	// stb r23,32(r31)
 	PPC_STORE_U8(var_r31 + 32, (uint8_t)var_r23);
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r5,44(r24)
 	ctx.r5.u64 = PPC_LOAD_U32(var_r24 + 44);
 	// mr r4,r30
@@ -26204,8 +26204,8 @@ PPC_FUNC_IMPL(__imp__plrPlayerMgr_rtti_9AB0_0) {
 	return;
 }
 
-__attribute__((alias("__imp__game_B2E0"))) PPC_WEAK_FUNC(game_B2E0);
-PPC_FUNC_IMPL(__imp__game_B2E0) {
+__attribute__((alias("__imp__plrPlayerMgr_ReleaseResourcePairs"))) PPC_WEAK_FUNC(plrPlayerMgr_ReleaseResourcePairs);
+PPC_FUNC_IMPL(__imp__plrPlayerMgr_ReleaseResourcePairs) {
 	PPC_FUNC_PROLOGUE();
 	uint32_t var_r30 = 0;
 	uint32_t var_r29 = 0;
@@ -26235,7 +26235,7 @@ loc_8218B2F8:
 		// mr r3,r31
 		ctx.r3.u64 = var_r31;
 		// bl 0x82566c20
-		util_6C20(ctx, base);
+		sysMemAllocator_PlatformFree(ctx, base);
 	}
 loc_8218B31C:
 	// lwz r31,16(r30)
@@ -63811,7 +63811,7 @@ PPC_FUNC_IMPL(__imp__ph_C810) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32252
 	// li r4,64
 	ctx.r4.s64 = 64;
@@ -92442,8 +92442,8 @@ PPC_FUNC_IMPL(__imp__xmlNodeStructMatrix34_vfn_2) {
 	return;
 }
 
-__attribute__((alias("__imp__game_8F58"))) PPC_WEAK_FUNC(game_8F58);
-PPC_FUNC_IMPL(__imp__game_8F58) {
+__attribute__((alias("__imp__RegisterSerializationField"))) PPC_WEAK_FUNC(RegisterSerializationField);
+PPC_FUNC_IMPL(__imp__RegisterSerializationField) {
 	PPC_FUNC_PROLOGUE();
 	uint32_t var_r30 = 0;
 	uint32_t var_r26 = 0;
@@ -92496,7 +92496,7 @@ loc_821A8FAC:
 	// addi r3,r11,-31408
 	ctx.r3.s64 = ctx.r11.s64 + -31408;
 	// bl 0x821a91e0
-	atSingleton_91E0_gen(ctx, base);
+	atSingletonPool_AllocEntry(ctx, base);
 	// mr r31,r3
 	var_r31 = ctx.r3.u32;
 	// mr r3,r29
@@ -92745,8 +92745,8 @@ loc_821A91D4:
 	return;
 }
 
-__attribute__((alias("__imp__atSingleton_91E0_gen"))) PPC_WEAK_FUNC(atSingleton_91E0_gen);
-PPC_FUNC_IMPL(__imp__atSingleton_91E0_gen) {
+__attribute__((alias("__imp__atSingletonPool_AllocEntry"))) PPC_WEAK_FUNC(atSingletonPool_AllocEntry);
+PPC_FUNC_IMPL(__imp__atSingletonPool_AllocEntry) {
 	PPC_FUNC_PROLOGUE();
 	uint32_t var_r27 = 0;
 	uint32_t var_r31 = 0;
@@ -98779,7 +98779,7 @@ PPC_FUNC_IMPL(__imp__rage_C0B0) {
 	// mr r3,r29
 	ctx.r3.u64 = var_r29;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -98973,7 +98973,7 @@ PPC_FUNC_IMPL(__imp__rage_C228) {
 	// mr r3,r15
 	ctx.r3.u64 = var_r15;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// li r7,1
 	ctx.r7.s64 = 1;

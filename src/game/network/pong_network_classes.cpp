@@ -631,17 +631,17 @@ void* plrPropMgr_PostLoadChildren(plrPropMgr* self) {
  * plrPropMgr::PostLoadChildren (vfn_21) @ 0x823D4730 | size: 0x6C
  *
  * Registers two property types with the property manager.
- * Calls game_8F58 twice with property vtables at offsets +16 and +20.
+ * Calls RegisterSerializationField twice with property vtables at offsets +16 and +20.
  */
 void plrPropMgr_Validate(plrPropMgr* self) {
-    extern void game_8F58(void* obj, void* propVtable, void* propData, void* storage, int flags);
+    extern void RegisterSerializationField(void* obj, void* propVtable, void* propData, void* storage, int flags);
     extern uint32_t g_plrPropStorage;  // @ 0x825CAF90
 
     // Register property type 1 (vtable @ 0x820716A8 = lis(-32249)+5800)
-    game_8F58(self, (void*)0x820716A8, (char*)self + 16, &g_plrPropStorage, 0);
+    RegisterSerializationField(self, (void*)0x820716A8, (char*)self + 16, &g_plrPropStorage, 0);
 
     // Register property type 2 (vtable @ 0x820716B8 = lis(-32249)+5816)
-    game_8F58(self, (void*)0x820716B8, (char*)self + 20, &g_plrPropStorage, 0);
+    RegisterSerializationField(self, (void*)0x820716B8, (char*)self + 20, &g_plrPropStorage, 0);
 }
 
 /**
@@ -673,18 +673,18 @@ void plrPropMgr_PostLoadSetup(plrPropMgr* self) {
  * plrPropMgr::OnDeactivate (vfn_24) @ 0x823D47F8 | size: 0x64
  *
  * Releases all 3 loaded property instances at +24, +28, and +32.
- * Calls game_8EE8 then util_6C20 for each, then nulls the pointers.
+ * Calls game_8EE8 then sysMemAllocator_PlatformFree for each, then nulls the pointers.
  */
 void plrPropMgr_OnActivate(plrPropMgr* self) {
     extern void game_8EE8(void* prop);
-    extern void util_6C20(void* prop, int flags);
+    extern void sysMemAllocator_PlatformFree(void* prop, int flags);
 
     uint8_t* base = (uint8_t*)self + 24;
     for (int i = 0; i < 3; i++) {
         void* prop = *(void**)(base + i * 4);
         if (prop) {
             game_8EE8(prop);
-            util_6C20(prop, (int)0xE0010000);  // lis(-8191) = 0xE0010000
+            sysMemAllocator_PlatformFree(prop, (int)0xE0010000);  // lis(-8191) = 0xE0010000
         }
     }
 

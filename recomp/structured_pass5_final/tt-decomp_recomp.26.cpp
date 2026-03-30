@@ -19447,8 +19447,8 @@ loc_8245A068:
 	return;
 }
 
-__attribute__((alias("__imp__rage_A088"))) PPC_WEAK_FUNC(rage_A088);
-PPC_FUNC_IMPL(__imp__rage_A088) {
+__attribute__((alias("__imp__parStructure_Install"))) PPC_WEAK_FUNC(parStructure_Install);
+PPC_FUNC_IMPL(__imp__parStructure_Install) {
 	PPC_FUNC_PROLOGUE();
 	uint32_t var_r29 = 0;
 	uint32_t var_r30 = 0;
@@ -19707,7 +19707,7 @@ loc_8245A288:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x8245a088
-	rage_A088(ctx, base);
+	parStructure_Install(ctx, base);
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	return;
@@ -19750,7 +19750,7 @@ PPC_FUNC_IMPL(__imp__rage_A2C0) {
 		// stw r11,24(r31)
 		PPC_STORE_U32(var_r31 + 24, ctx.r11.u32);
 		// bl 0x8245a088
-		rage_A088(ctx, base);
+		parStructure_Install(ctx, base);
 	}
 loc_8245A30C:
 	// mr r3,r30
@@ -31975,8 +31975,8 @@ PPC_FUNC_IMPL(__imp__phInst_0800_2h) {
 	return;
 }
 
-__attribute__((alias("__imp__util_0850"))) PPC_WEAK_FUNC(util_0850);
-PPC_FUNC_IMPL(__imp__util_0850) {
+__attribute__((alias("__imp__phInst_Release"))) PPC_WEAK_FUNC(phInst_Release);
+PPC_FUNC_IMPL(__imp__phInst_Release) {
 	PPC_FUNC_PROLOGUE();
 	uint32_t var_r31 = 0;
 	uint32_t var_r30 = 0;

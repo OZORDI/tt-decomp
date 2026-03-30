@@ -1619,7 +1619,7 @@ static_assert(sizeof(gdLadder) >= 32, "gdLadder minimum size check");
 
 /**
  * RegisterSerializedField @ 0x821A8F58
- * Original symbol: game_8F58
+ * Original symbol: RegisterSerializationField
  *
  * RAGE serialization system field registration helper.
  * Registers a single field of a data object with the serialization system.

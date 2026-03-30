@@ -32824,7 +32824,7 @@ PPC_FUNC_IMPL(__imp__rage_CC40) {
 	// mr r3,r28
 	ctx.r3.u64 = var_r28;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32252
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -49098,7 +49098,7 @@ loc_821C50F8:
 	// stwx r30,r10,r6
 	PPC_STORE_U32(ctx.r10.u32 + ctx.r6.u32, var_r30);
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r3,0
 	ctx.r3.s64 = 0;
 	// li r8,129
@@ -49122,7 +49122,7 @@ loc_821C50F8:
 	// addi r4,r1,80
 	ctx.r4.s64 = ctx.r1.s64 + 80;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r3,0
 	ctx.r3.s64 = 0;
 	// li r8,129
@@ -55958,7 +55958,7 @@ PPC_FUNC_IMPL(__imp__atSingleton_vfn_3_85E0_1) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r3,r30,4
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 4;
 	// lis r11,-32251
@@ -56052,7 +56052,7 @@ loc_821C869C:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r3,r30,4
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 4;
 	// li r6,1
@@ -56170,7 +56170,7 @@ loc_821C87A0:
 	// addi r4,r11,-22396
 	ctx.r4.s64 = ctx.r11.s64 + -22396;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r3,r30,4
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 4;
 	// lis r11,-32251
@@ -72930,7 +72930,7 @@ PPC_FUNC_IMPL(__imp__gdCrAttachmentData_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -72943,7 +72943,7 @@ PPC_FUNC_IMPL(__imp__gdCrAttachmentData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -72959,7 +72959,7 @@ PPC_FUNC_IMPL(__imp__gdCrAttachmentData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32253
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -72972,7 +72972,7 @@ PPC_FUNC_IMPL(__imp__gdCrAttachmentData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -72986,7 +72986,7 @@ PPC_FUNC_IMPL(__imp__gdCrAttachmentData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -73515,7 +73515,7 @@ PPC_FUNC_IMPL(__imp__atSingleton_0BA0_g) {
 	// mr r3,r15
 	ctx.r3.u64 = var_r15;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32252
 	// addi r17,r31,144
 	var_r17 = (uint32_t)(var_r31 + 144);
@@ -74119,7 +74119,7 @@ loc_821D1064:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// addi r27,r27,-1
 	var_r27 = (uint32_t)(var_r27 + -1);
 	// addi r28,r28,4
@@ -74156,7 +74156,7 @@ loc_821D10B4:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// addi r30,r30,64
 	var_r30 = (uint32_t)(var_r30 + 64);
 	// addi r10,r27,320
@@ -74185,7 +74185,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// addi r30,r30,64
 	var_r30 = (uint32_t)(var_r30 + 64);
 	// addi r9,r27,320
@@ -74207,7 +74207,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74223,7 +74223,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74236,7 +74236,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74249,7 +74249,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74265,7 +74265,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74278,7 +74278,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74291,7 +74291,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74304,7 +74304,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74317,7 +74317,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74330,7 +74330,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74343,7 +74343,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74356,7 +74356,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74370,7 +74370,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74383,7 +74383,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74396,7 +74396,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74409,7 +74409,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74422,7 +74422,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74435,7 +74435,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -74448,7 +74448,7 @@ loc_821D10F0:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32161
 	// addi r26,r31,261
 	var_r26 = (uint32_t)(var_r31 + 261);
@@ -74471,7 +74471,7 @@ loc_821D1358:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// addi r30,r30,1
 	var_r30 = (uint32_t)(var_r30 + 1);
 	// addi r29,r29,64
@@ -75313,7 +75313,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// addi r5,r31,20
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 20;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -75326,7 +75326,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -75339,7 +75339,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -75353,7 +75353,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -75369,7 +75369,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -75382,7 +75382,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -75395,7 +75395,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -75408,7 +75408,7 @@ PPC_FUNC_IMPL(__imp__gdCharData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -76340,7 +76340,7 @@ PPC_FUNC_IMPL(__imp__atSingleton_2288_g) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r3,r31,4
 	ctx.r3.s64 = (int64_t)(int32_t)var_r31 + 4;
 	// lis r11,-32252
@@ -77013,7 +77013,7 @@ PPC_FUNC_IMPL(__imp__gdCharPlayerBias_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77027,7 +77027,7 @@ PPC_FUNC_IMPL(__imp__gdCharPlayerBias_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -77141,7 +77141,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77154,7 +77154,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77167,7 +77167,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77180,7 +77180,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77193,7 +77193,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77206,7 +77206,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77219,7 +77219,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77232,7 +77232,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77245,7 +77245,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77258,7 +77258,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77271,7 +77271,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	ctx.r11.s64 = -2113667072;
 	// addi r4,r11,-9344
@@ -77285,7 +77285,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77298,7 +77298,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77311,7 +77311,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77324,7 +77324,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77337,7 +77337,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77350,7 +77350,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77363,7 +77363,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77376,7 +77376,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77389,7 +77389,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77402,7 +77402,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77415,7 +77415,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77428,7 +77428,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77441,7 +77441,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77454,7 +77454,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77467,7 +77467,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77480,7 +77480,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77493,7 +77493,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77506,7 +77506,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77519,7 +77519,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77532,7 +77532,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77545,7 +77545,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77558,7 +77558,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77571,7 +77571,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77584,7 +77584,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77597,7 +77597,7 @@ PPC_FUNC_IMPL(__imp__gdCharIntensityFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -77744,7 +77744,7 @@ PPC_FUNC_IMPL(__imp__gdCharEmoFactors_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77757,7 +77757,7 @@ PPC_FUNC_IMPL(__imp__gdCharEmoFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77770,7 +77770,7 @@ PPC_FUNC_IMPL(__imp__gdCharEmoFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77783,7 +77783,7 @@ PPC_FUNC_IMPL(__imp__gdCharEmoFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77796,7 +77796,7 @@ PPC_FUNC_IMPL(__imp__gdCharEmoFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -77949,7 +77949,7 @@ PPC_FUNC_IMPL(__imp__gdCharSweatFactors_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77962,7 +77962,7 @@ PPC_FUNC_IMPL(__imp__gdCharSweatFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77975,7 +77975,7 @@ PPC_FUNC_IMPL(__imp__gdCharSweatFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -77988,7 +77988,7 @@ PPC_FUNC_IMPL(__imp__gdCharSweatFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -78001,7 +78001,7 @@ PPC_FUNC_IMPL(__imp__gdCharSweatFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -78014,7 +78014,7 @@ PPC_FUNC_IMPL(__imp__gdCharSweatFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -78027,7 +78027,7 @@ PPC_FUNC_IMPL(__imp__gdCharSweatFactors_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -81455,7 +81455,7 @@ PPC_FUNC_IMPL(__imp__gdBlendTargetName_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -81469,7 +81469,7 @@ PPC_FUNC_IMPL(__imp__gdBlendTargetName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -81483,7 +81483,7 @@ PPC_FUNC_IMPL(__imp__gdBlendTargetName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -81993,7 +81993,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82009,7 +82009,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82022,7 +82022,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82035,7 +82035,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82051,7 +82051,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82064,7 +82064,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82077,7 +82077,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82090,7 +82090,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82104,7 +82104,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -82118,7 +82118,7 @@ PPC_FUNC_IMPL(__imp__gdBTgtBoneName_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// blr
 	return;
 }
@@ -83413,7 +83413,7 @@ PPC_FUNC_IMPL(__imp__util_5538) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// li r5,16
 	ctx.r5.s64 = 16;
 	// addi r4,r30,178
@@ -83439,7 +83439,7 @@ PPC_FUNC_IMPL(__imp__util_5538) {
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// lhz r11,0(r29)
 	ctx.r11.u64 = PPC_LOAD_U16(var_r29 + 0);
 	// rlwinm r10,r11,0,19,19
@@ -85669,7 +85669,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// addi r5,r31,16
 	ctx.r5.s64 = (int64_t)(int32_t)var_r31 + 16;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85682,7 +85682,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85695,7 +85695,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85711,7 +85711,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85725,7 +85725,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32253
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85738,7 +85738,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85751,7 +85751,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85764,7 +85764,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85777,7 +85777,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85790,7 +85790,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85803,7 +85803,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85816,7 +85816,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85829,7 +85829,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85842,7 +85842,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85856,7 +85856,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85870,7 +85870,7 @@ PPC_FUNC_IMPL(__imp__pongBallHitData_vfn_21) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lhz r11,198(r31)
 	ctx.r11.u64 = PPC_LOAD_U16(var_r31 + 198);
 	// rlwinm r10,r11,0,19,19
@@ -85901,7 +85901,7 @@ loc_821D6808:
 	// stb r10,0(r5)
 	PPC_STORE_U8(ctx.r5.u32 + 0, ctx.r10.u8);
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85914,7 +85914,7 @@ loc_821D6808:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85927,7 +85927,7 @@ loc_821D6808:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85940,7 +85940,7 @@ loc_821D6808:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32163
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85954,7 +85954,7 @@ loc_821D6808:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85967,7 +85967,7 @@ loc_821D6808:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85980,7 +85980,7 @@ loc_821D6808:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	// lis r11,-32252
 	// li r7,0
 	ctx.r7.s64 = 0;
@@ -85993,7 +85993,7 @@ loc_821D6808:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x821a8f58
-	game_8F58(ctx, base);
+	RegisterSerializationField(ctx, base);
 	return;
 }
 

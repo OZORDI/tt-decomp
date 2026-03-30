@@ -74919,7 +74919,7 @@ PPC_FUNC_IMPL(__imp__CCalMoviePlayer_3AD8_h) {
 	// lwz r3,56(r31)
 	ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 56);
 	// bl 0x82460850
-	util_0850(ctx, base);
+	phInst_Release(ctx, base);
 	// lwz r11,56(r31)
 	ctx.r11.u64 = PPC_LOAD_U32(var_r31 + 56);
 	// li r3,0

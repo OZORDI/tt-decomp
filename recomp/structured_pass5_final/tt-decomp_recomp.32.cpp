@@ -5042,7 +5042,7 @@ PPC_FUNC_IMPL(__imp__rage_EC10) {
 	// addi r3,r11,-22704
 	ctx.r3.s64 = ctx.r11.s64 + -22704;
 	// bl 0x8229a088
-	rage_A088(ctx, base);
+	parStructure_Install(ctx, base);
 	// lis r11,-32168
 	ctx.r11.s64 = -2108162048;
 	// addi r3,r11,16136

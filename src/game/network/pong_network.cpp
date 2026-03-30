@@ -3911,7 +3911,7 @@ void RemoteServeReadyMessage::Deserialise(void* client) {
     HitMessage::Deserialise(client);
 
     // Read 16-bit serve parameter at +0x0C
-    util_7830(client, &m_serveParam, 16);
+    snBitStream_ReadUnsigned(client, &m_serveParam, 16);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3946,7 +3946,7 @@ void MatchTimeSyncMessage::Deserialise(void* client) {
     m_syncDelta = syncTiming;
 
     // Read 16-bit frame counter at +0x1C
-    util_7830(client, &m_frameCounter, 16);
+    snBitStream_ReadUnsigned(client, &m_frameCounter, 16);
 
     // Apply scale factor from global config to sync delta
     // Scale factor is at g_matchTimeSyncConfig + 12 (0x825CAEC4)
@@ -3988,7 +3988,7 @@ void ForceMatchTimeSyncMessage::Deserialise(void* client) {
     SinglesNetworkClient_EA98_g(&m_timestamp, client);
 
     // Read 16-bit sync parameter at +0x10
-    util_7830(client, &m_syncParam, 16);
+    snBitStream_ReadUnsigned(client, &m_syncParam, 16);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

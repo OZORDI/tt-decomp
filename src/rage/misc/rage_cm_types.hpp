@@ -9,8 +9,8 @@
  * have been fully confirmed by assembly analysis.
  *
  * Evidence sources:
- *   util_92D8 (0x821792D8), cmOperator_EvalFloat (0x82179350), util_4BD8 (0x82184BD8)
- *   util_5698 (0x82185698), util_54C8 (0x821854C8), util_5380 (0x82275380)
+ *   cmNode_GetVector (0x821792D8), cmOperator_EvalFloat (0x82179350), cmNode_GetInt (0x82184BD8)
+ *   util_5698 (0x82185698), cmNode_TryConnectUnary (0x821854C8), cmNode_SetFromPort_Dispatch (0x82275380)
  *   cmAdd_vfn_2/4/5/16, cmNegate_vfn_2/4, cmMemory_vfn_*, cmIntegrate_vfn_10/16
  *   cmDifferential_vfn_2/4/16, cmApproachOperator_vfn_10 / _7D38_wrh
  */
@@ -164,7 +164,7 @@ struct cmNodeBase {
 
 /**
  * cmUnaryNode — one input port + connection count.
- * Uses util_54C8 (TryConnectUnary) for port registration.
+ * Uses cmNode_TryConnectUnary (TryConnectUnary) for port registration.
  * Examples: cmNegate, cmSine, cmCosine, cmAbs, cmDifferential, cmArcCosine
  */
 struct cmUnaryNode : cmNodeBase {
@@ -316,7 +316,7 @@ struct cmIntegrate0 : cmStatefulNode {
 
 /**
  * cmDifferential — outputs the rate-of-change (derivative) of portA per frame.
- * Uses unary layout (util_54C8). m_nConnected at +20.
+ * Uses unary layout (cmNode_TryConnectUnary). m_nConnected at +20.
  * vtable @ 0x82054884
  */
 struct cmDifferential : cmUnaryNode {
@@ -338,19 +338,19 @@ struct cmApproachOperator : cmApproachNode {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Port evaluation primitives
-float*    cmNode_GetVector(float* dst, const cmNodePort* port); // util_92D8
+float*    cmNode_GetVector(float* dst, const cmNodePort* port); // cmNode_GetVector
 float     cmNode_GetFloat(const cmNodePort* port);              // cmOperator_EvalFloat
-int32_t   cmNode_GetInt(const cmNodePort* port);                // util_4BD8
+int32_t   cmNode_GetInt(const cmNodePort* port);                // cmNode_GetInt
 int32_t   cmNode_GetDim(const cmNodePort* port);                // cmSwitch_4B60
 uint8_t   cmNode_GetBool(const cmNodePort* port);               // cmCond_21B0 (TODO)
 int32_t   cmNode_GetPortDim(const cmNodePort* port);            // inline helper
 
 // Port connection validation
 bool cmNode_TryConnect(cmBinaryNode* node, cmPortDesc desc);    // util_5698
-bool cmNode_TryConnectUnary(cmUnaryNode* node, cmPortDesc desc);// util_54C8
+bool cmNode_TryConnectUnary(cmUnaryNode* node, cmPortDesc desc);// cmNode_TryConnectUnary
 
 // Polymorphic port→data writer
-void cmNode_SetFromPort_Dispatch(void* dst,                     // util_5380
+void cmNode_SetFromPort_Dispatch(void* dst,                     // cmNode_SetFromPort_Dispatch
                                  const cmNodePort* port,
                                  int32_t dim);
 

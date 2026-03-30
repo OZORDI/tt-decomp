@@ -129,7 +129,7 @@ void ProcessNetworkPacket(void* client);
  * @param dest      Destination buffer
  * @param maxSize   Maximum size of destination buffer
  * 
- * Original symbol: SinglesNetworkClient_8990_g
+ * Original symbol: rage_atStringCopy
  */
 void CopyNetworkString(const char* src, char* dest, int maxSize);
 

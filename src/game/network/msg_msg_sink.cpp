@@ -2143,7 +2143,7 @@ uint32_t msgMsgSink::SetMessageBuffer(void* param) {
 
 // Forward declarations for callees
 extern void msgMsgSink_EC28_g(void* sink, uint32_t key, void* outSlot, uint32_t flags);
-extern void util_B158(void* slot, float value, uint32_t flags);
+extern void msgSlot_SetFloat(void* slot, float value, uint32_t flags);
 extern void game_3F28_h(void* session, void* priorityData);
 extern int32_t _crt_tls_fiber_setup();
 
@@ -2376,7 +2376,7 @@ uint32_t msgMsgSink::ApplyPrioritiesLocked(void* priorityData) {
 // Thread-safe property set: acquires generation lock, locates the message
 // slot via msgMsgSink_EC28_g, validates the slot is active (bit 0) and not
 // disconnecting (bit 1). If the new float value differs from the current
-// one, applies it via util_B158. Returns error 0x8A65000A if slot invalid.
+// one, applies it via msgSlot_SetFloat. Returns error 0x8A65000A if slot invalid.
 // ─────────────────────────────────────────────────────────────────────────────
 uint32_t msgMsgSink::SetPropertyLocked(uint32_t key, float value) {
     void* sessionObj = *(void**)((uint8_t*)this + 56);
@@ -2408,7 +2408,7 @@ uint32_t msgMsgSink::SetPropertyLocked(uint32_t key, float value) {
             } else {
                 float currentVal = *(float*)((uint8_t*)slot + 20);
                 if (value != currentVal) {
-                    util_B158(slot, value, 0);
+                    msgSlot_SetFloat(slot, value, 0);
                 }
             }
         }

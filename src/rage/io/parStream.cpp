@@ -1369,7 +1369,7 @@ void _nt_process_ansi_string(void* ansiStr);
 void fiAsciiTokenizer_CF40_w(void* obj, const char* name, void* arg);
 void fiAsciiTokenizer_F1D0_w(void* obj, const char* name, void* arg);
 void rage_free(void* ptr);
-void rage_A088(void* obj);
+void parStructure_Install(void* obj);
 void rage_B3B0(void* obj);
 void atSingleton_dtor(void* obj, int mode);
 }
@@ -2120,11 +2120,11 @@ void _static_dtor_free_8() {
 /**
  * _static_init_set_handler_0 @ 0x82583F08 | size: 0xC
  *
- * Loads static address and tail-calls rage_A088 handler registration.
+ * Loads static address and tail-calls parStructure_Install handler registration.
  */
 void _static_init_set_handler_0() {
     extern char g_handlerObj0[];
-    rage_A088(g_handlerObj0);
+    parStructure_Install(g_handlerObj0);
 }
 
 /**

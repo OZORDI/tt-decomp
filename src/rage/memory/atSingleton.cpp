@@ -442,7 +442,7 @@ void CallVirtualDestructor(void* obj)
 //  GetFactory
 //
 //  @ 0x822E2E60 | size: 0x1E0 (480 bytes)
-//  Original symbol: atSingleton_2E60_g
+//  Original symbol: atFactory_GetFactory
 //  Also lifted in: stubs.cpp, mc_memcard.cpp
 //
 //  Builds a path string from the input and looks up a factory in the
@@ -455,13 +455,13 @@ void CallVirtualDestructor(void* obj)
 //    - Otherwise: no path manipulation needed
 //
 //  After building the path into a 256-byte stack buffer:
-//    1. Calls game_2628(path, 128) — factory lookup by path
+//    1. Calls NormalizeDirPath(path, 128) — factory lookup by path
 //    2. Increments the factory counter at lbl_825D0080 + 1536
 //
-//  Dependencies: ph_21B0 (strchr-like), game_2628 (factory lookup)
+//  Dependencies: ph_21B0 (strchr-like), NormalizeDirPath (factory lookup)
 //
 //  TODO: Implement — path building is clear from scaffold, needs
-//  game_2628 (factory lookup) resolution.
+//  NormalizeDirPath (factory lookup) resolution.
 // ═══════════════════════════════════════════════════════════════════════════════
 SingletonFactory* GetFactory(uint32_t hash)
 {

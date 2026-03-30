@@ -12112,7 +12112,7 @@ PPC_FUNC_IMPL(__imp__cmNegate_vfn_16) {
 	// stb r11,83(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// clrlwi r11,r3,24
 	ctx.r11.u64 = ctx.r3.u32 & 0xFF;
 	// cmplwi cr6,r11,0
@@ -12133,7 +12133,7 @@ PPC_FUNC_IMPL(__imp__cmNegate_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 		// clrlwi r10,r3,24
 		ctx.r10.u64 = ctx.r3.u32 & 0xFF;
 		// cmplwi cr6,r10,0
@@ -12157,7 +12157,7 @@ PPC_FUNC_IMPL(__imp__cmNegate_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 	}
 loc_822623E0:
 	// blr
@@ -12183,7 +12183,7 @@ PPC_FUNC_IMPL(__imp__cmNormalizedTimer_vfn_16) {
 	// stb r11,83(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// blr
 	return;
 }
@@ -12235,7 +12235,7 @@ PPC_FUNC_IMPL(__imp__cmAbs_vfn_16) {
 	// stb r11,83(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// clrlwi r11,r3,24
 	ctx.r11.u64 = ctx.r3.u32 & 0xFF;
 	// cmplwi cr6,r11,0
@@ -12256,7 +12256,7 @@ PPC_FUNC_IMPL(__imp__cmAbs_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 	}
 loc_822624DC:
 	// blr
@@ -12729,7 +12729,7 @@ PPC_FUNC_IMPL(__imp__cmDifferential_vfn_16) {
 	// stb r11,83(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// clrlwi r11,r3,24
 	ctx.r11.u64 = ctx.r3.u32 & 0xFF;
 	// cmplwi cr6,r11,0
@@ -12750,7 +12750,7 @@ PPC_FUNC_IMPL(__imp__cmDifferential_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 	}
 loc_82262944:
 	// blr
@@ -12952,7 +12952,7 @@ PPC_FUNC_IMPL(__imp__cmAlarmTimer_vfn_16) {
 	// stb r11,80(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 80, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// blr
 	return;
 }
@@ -13078,7 +13078,7 @@ PPC_FUNC_IMPL(__imp__cmPassThrough_vfn_16) {
 	// stb r11,83(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// clrlwi r11,r3,24
 	ctx.r11.u64 = ctx.r3.u32 & 0xFF;
 	// cmplwi cr6,r11,0
@@ -13099,7 +13099,7 @@ PPC_FUNC_IMPL(__imp__cmPassThrough_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 		// clrlwi r10,r3,24
 		ctx.r10.u64 = ctx.r3.u32 & 0xFF;
 		// cmplwi cr6,r10,0
@@ -13123,7 +13123,7 @@ PPC_FUNC_IMPL(__imp__cmPassThrough_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 		// clrlwi r9,r3,24
 		ctx.r9.u64 = ctx.r3.u32 & 0xFF;
 		// cmplwi cr6,r9,0
@@ -13147,7 +13147,7 @@ PPC_FUNC_IMPL(__imp__cmPassThrough_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 		// clrlwi r8,r3,24
 		ctx.r8.u64 = ctx.r3.u32 & 0xFF;
 		// cmplwi cr6,r8,0
@@ -13171,7 +13171,7 @@ PPC_FUNC_IMPL(__imp__cmPassThrough_vfn_16) {
 		// stb r11,83(r1)
 		PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 		// bl 0x821854c8
-		util_54C8(ctx, base);
+		cmNode_TryConnectUnary(ctx, base);
 	}
 loc_82262CF8:
 	// blr
@@ -13416,7 +13416,7 @@ PPC_FUNC_IMPL(__imp__cmSelectPointerFromArray_vfn_16) {
 	// stb r11,83(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// blr
 	return;
 }
@@ -13442,7 +13442,7 @@ PPC_FUNC_IMPL(__imp__cmIsValid_vfn_16) {
 	// stb r11,80(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 80, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// blr
 	return;
 }
@@ -13466,7 +13466,7 @@ PPC_FUNC_IMPL(__imp__cmVizVectorRed_vfn_16) {
 	// stb r11,83(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 83, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// blr
 	return;
 }
@@ -13516,7 +13516,7 @@ PPC_FUNC_IMPL(__imp__cmVectorToBearing_vfn_16) {
 	// stb r11,80(r1)
 	PPC_STORE_U8(ctx.r1.u32 + 80, ctx.r11.u8);
 	// bl 0x821854c8
-	util_54C8(ctx, base);
+	cmNode_TryConnectUnary(ctx, base);
 	// blr
 	return;
 }
@@ -30226,7 +30226,7 @@ loc_8226CE44:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,96
 	ctx.r9.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r9
@@ -30246,7 +30246,7 @@ loc_8226CE88:
 	// addi r4,r11,20
 	ctx.r4.s64 = ctx.r11.s64 + 20;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,80
 	ctx.r10.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r10
@@ -30291,7 +30291,7 @@ loc_8226CECC:
 		// addi r3,r11,20
 		ctx.r3.s64 = ctx.r11.s64 + 20;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r28)
 		PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 		return;
@@ -30306,7 +30306,7 @@ loc_8226CECC:
 	// addi r3,r29,44
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 44;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -30518,7 +30518,7 @@ loc_8226D08C:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,96
 	ctx.r9.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r9
@@ -30538,7 +30538,7 @@ loc_8226D0D0:
 	// addi r4,r11,20
 	ctx.r4.s64 = ctx.r11.s64 + 20;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,80
 	ctx.r10.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r10
@@ -30583,7 +30583,7 @@ loc_8226D114:
 		// addi r3,r11,20
 		ctx.r3.s64 = ctx.r11.s64 + 20;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r28)
 		PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 		return;
@@ -30598,7 +30598,7 @@ loc_8226D114:
 	// addi r3,r29,60
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 60;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -30810,7 +30810,7 @@ loc_8226D2D4:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,96
 	ctx.r9.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r9
@@ -30830,7 +30830,7 @@ loc_8226D318:
 	// addi r4,r11,20
 	ctx.r4.s64 = ctx.r11.s64 + 20;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,80
 	ctx.r10.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r10
@@ -30875,7 +30875,7 @@ loc_8226D35C:
 		// addi r3,r11,20
 		ctx.r3.s64 = ctx.r11.s64 + 20;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r28)
 		PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 		return;
@@ -30890,7 +30890,7 @@ loc_8226D35C:
 	// addi r3,r29,76
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 76;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -31102,7 +31102,7 @@ loc_8226D51C:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,96
 	ctx.r9.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r9
@@ -31122,7 +31122,7 @@ loc_8226D560:
 	// addi r4,r11,20
 	ctx.r4.s64 = ctx.r11.s64 + 20;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,80
 	ctx.r10.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r10
@@ -31167,7 +31167,7 @@ loc_8226D5A4:
 		// addi r3,r11,20
 		ctx.r3.s64 = ctx.r11.s64 + 20;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r28)
 		PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 		return;
@@ -31182,7 +31182,7 @@ loc_8226D5A4:
 	// addi r3,r29,92
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 92;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -31394,7 +31394,7 @@ loc_8226D764:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,96
 	ctx.r9.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r9
@@ -31414,7 +31414,7 @@ loc_8226D7A8:
 	// addi r4,r11,20
 	ctx.r4.s64 = ctx.r11.s64 + 20;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,80
 	ctx.r10.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r10
@@ -31459,7 +31459,7 @@ loc_8226D7EC:
 		// addi r3,r11,20
 		ctx.r3.s64 = ctx.r11.s64 + 20;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r28)
 		PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 		return;
@@ -31474,7 +31474,7 @@ loc_8226D7EC:
 	// addi r3,r29,108
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 108;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -31737,7 +31737,7 @@ loc_8226DA08:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r8,r1,96
 	ctx.r8.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r8
@@ -31757,7 +31757,7 @@ loc_8226DA48:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,80
 	ctx.r9.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r9
@@ -31903,7 +31903,7 @@ loc_8226DB60:
 	// addi r3,r30,52
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 52;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -31915,7 +31915,7 @@ loc_8226DB94:
 	// addi r3,r11,12
 	ctx.r3.s64 = ctx.r11.s64 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -32139,7 +32139,7 @@ loc_8226DD40:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r8,r1,96
 	ctx.r8.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r8
@@ -32159,7 +32159,7 @@ loc_8226DD80:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,80
 	ctx.r9.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r9
@@ -32305,7 +32305,7 @@ loc_8226DE98:
 	// addi r3,r30,68
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 68;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -32317,7 +32317,7 @@ loc_8226DECC:
 	// addi r3,r11,12
 	ctx.r3.s64 = ctx.r11.s64 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -32541,7 +32541,7 @@ loc_8226E078:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r8,r1,96
 	ctx.r8.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r8
@@ -32561,7 +32561,7 @@ loc_8226E0B8:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,80
 	ctx.r9.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r9
@@ -32707,7 +32707,7 @@ loc_8226E1D0:
 	// addi r3,r30,84
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 84;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -32719,7 +32719,7 @@ loc_8226E204:
 	// addi r3,r11,12
 	ctx.r3.s64 = ctx.r11.s64 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -32943,7 +32943,7 @@ loc_8226E3B0:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r8,r1,96
 	ctx.r8.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r8
@@ -32963,7 +32963,7 @@ loc_8226E3F0:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,80
 	ctx.r9.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r9
@@ -33109,7 +33109,7 @@ loc_8226E508:
 	// addi r3,r30,100
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 100;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -33121,7 +33121,7 @@ loc_8226E53C:
 	// addi r3,r11,12
 	ctx.r3.s64 = ctx.r11.s64 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -33345,7 +33345,7 @@ loc_8226E6E8:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r8,r1,96
 	ctx.r8.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r8
@@ -33365,7 +33365,7 @@ loc_8226E728:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r9,r1,80
 	ctx.r9.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r9
@@ -33511,7 +33511,7 @@ loc_8226E840:
 	// addi r3,r30,116
 	ctx.r3.s64 = (int64_t)(int32_t)var_r30 + 116;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -33523,7 +33523,7 @@ loc_8226E874:
 	// addi r3,r11,12
 	ctx.r3.s64 = ctx.r11.s64 + 12;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r28)
 	PPC_STORE_U32(var_r28 + 0, ctx.r3.u32);
 	return;
@@ -33696,7 +33696,7 @@ loc_8226E9B0:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r10
@@ -33716,7 +33716,7 @@ loc_8226E9F0:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r11,r1,80
 	ctx.r11.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r11
@@ -33825,7 +33825,7 @@ loc_8226EAB8:
 		// addi r3,r11,12
 		ctx.r3.s64 = ctx.r11.s64 + 12;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r27)
 		PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 		return;
@@ -33840,7 +33840,7 @@ loc_8226EAB8:
 	// addi r3,r29,52
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 52;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r27)
 	PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 	return;
@@ -34013,7 +34013,7 @@ loc_8226EC20:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r10
@@ -34033,7 +34033,7 @@ loc_8226EC60:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r11,r1,80
 	ctx.r11.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r11
@@ -34142,7 +34142,7 @@ loc_8226ED28:
 		// addi r3,r11,12
 		ctx.r3.s64 = ctx.r11.s64 + 12;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r27)
 		PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 		return;
@@ -34157,7 +34157,7 @@ loc_8226ED28:
 	// addi r3,r29,68
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 68;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r27)
 	PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 	return;
@@ -34330,7 +34330,7 @@ loc_8226EE90:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r10
@@ -34350,7 +34350,7 @@ loc_8226EED0:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r11,r1,80
 	ctx.r11.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r11
@@ -34459,7 +34459,7 @@ loc_8226EF98:
 		// addi r3,r11,12
 		ctx.r3.s64 = ctx.r11.s64 + 12;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r27)
 		PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 		return;
@@ -34474,7 +34474,7 @@ loc_8226EF98:
 	// addi r3,r29,84
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 84;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r27)
 	PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 	return;
@@ -34647,7 +34647,7 @@ loc_8226F100:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r10
@@ -34667,7 +34667,7 @@ loc_8226F140:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r11,r1,80
 	ctx.r11.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r11
@@ -34776,7 +34776,7 @@ loc_8226F208:
 		// addi r3,r11,12
 		ctx.r3.s64 = ctx.r11.s64 + 12;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r27)
 		PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 		return;
@@ -34791,7 +34791,7 @@ loc_8226F208:
 	// addi r3,r29,100
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 100;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r27)
 	PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 	return;
@@ -34964,7 +34964,7 @@ loc_8226F370:
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// lvx128 v13,r0,r10
@@ -34984,7 +34984,7 @@ loc_8226F3B0:
 	// addi r4,r11,12
 	ctx.r4.s64 = ctx.r11.s64 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r11,r1,80
 	ctx.r11.s64 = ctx.r1.s64 + 80;
 	// lvx128 v0,r0,r11
@@ -35093,7 +35093,7 @@ loc_8226F478:
 		// addi r3,r11,12
 		ctx.r3.s64 = ctx.r11.s64 + 12;
 		// bl 0x82184bd8
-		util_4BD8(ctx, base);
+		cmNode_GetInt(ctx, base);
 		// stw r3,0(r27)
 		PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 		return;
@@ -35108,7 +35108,7 @@ loc_8226F478:
 	// addi r3,r29,116
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 116;
 	// bl 0x82184bd8
-	util_4BD8(ctx, base);
+	cmNode_GetInt(ctx, base);
 	// stw r3,0(r27)
 	PPC_STORE_U32(var_r27 + 0, ctx.r3.u32);
 	return;
@@ -35315,7 +35315,7 @@ PPC_FUNC_IMPL(__imp__cmLinearRemap_vfn_2) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -35354,7 +35354,7 @@ loc_8226F634:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -35395,13 +35395,13 @@ loc_8226F6A0:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// addi r9,r1,112
@@ -35635,7 +35635,7 @@ PPC_FUNC_IMPL(__imp__cmLinearRemap_vfn_2_F800_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -35674,7 +35674,7 @@ loc_8226F86C:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -35715,13 +35715,13 @@ loc_8226F8D8:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// addi r9,r1,112
@@ -35955,7 +35955,7 @@ PPC_FUNC_IMPL(__imp__cmLinearRemap_vfn_2_FA38_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -35994,7 +35994,7 @@ loc_8226FAA4:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -36035,13 +36035,13 @@ loc_8226FB10:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// addi r9,r1,112
@@ -36275,7 +36275,7 @@ PPC_FUNC_IMPL(__imp__cmLinearRemap_vfn_2_FC70_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -36314,7 +36314,7 @@ loc_8226FCDC:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -36355,13 +36355,13 @@ loc_8226FD48:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// addi r9,r1,112
@@ -36595,7 +36595,7 @@ PPC_FUNC_IMPL(__imp__cmLinearRemap_vfn_2_FEA8_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -36634,7 +36634,7 @@ loc_8226FF14:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -36675,13 +36675,13 @@ loc_8226FF80:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r10,r1,96
 	ctx.r10.s64 = ctx.r1.s64 + 96;
 	// addi r9,r1,112
@@ -36924,7 +36924,7 @@ PPC_FUNC_IMPL(__imp__cmSmoothRemap_vfn_2) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -36963,7 +36963,7 @@ loc_8227015C:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -37004,13 +37004,13 @@ loc_822701C8:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// fmr f1,f31
 	ctx.fpscr.disableFlushMode();
 	ctx.f1.f64 = var_f31;
@@ -37258,7 +37258,7 @@ PPC_FUNC_IMPL(__imp__cmSmoothRemap_vfn_2_0340_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -37297,7 +37297,7 @@ loc_822703AC:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -37338,13 +37338,13 @@ loc_82270418:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// fmr f1,f31
 	ctx.fpscr.disableFlushMode();
 	ctx.f1.f64 = var_f31;
@@ -37592,7 +37592,7 @@ PPC_FUNC_IMPL(__imp__cmSmoothRemap_vfn_2_0590_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -37631,7 +37631,7 @@ loc_822705FC:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -37672,13 +37672,13 @@ loc_82270668:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// fmr f1,f31
 	ctx.fpscr.disableFlushMode();
 	ctx.f1.f64 = var_f31;
@@ -37926,7 +37926,7 @@ PPC_FUNC_IMPL(__imp__cmSmoothRemap_vfn_2_07E0_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -37965,7 +37965,7 @@ loc_8227084C:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -38006,13 +38006,13 @@ loc_822708B8:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// fmr f1,f31
 	ctx.fpscr.disableFlushMode();
 	ctx.f1.f64 = var_f31;
@@ -38260,7 +38260,7 @@ PPC_FUNC_IMPL(__imp__cmSmoothRemap_vfn_2_0A30_1) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x821792d8
-		util_92D8(ctx, base);
+		cmNode_GetVector(ctx, base);
 		// addi r11,r1,80
 		ctx.r11.s64 = ctx.r1.s64 + 80;
 		// lvx128 v0,r0,r11
@@ -38299,7 +38299,7 @@ loc_82270A9C:
 	// addi r3,r1,128
 	ctx.r3.s64 = ctx.r1.s64 + 128;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r7,r1,128
 	ctx.r7.s64 = ctx.r1.s64 + 128;
 	// lvx128 v10,r0,r7
@@ -38340,13 +38340,13 @@ loc_82270B08:
 	// addi r4,r31,12
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 12;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// addi r4,r31,-4
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + -4;
 	// addi r3,r1,96
 	ctx.r3.s64 = ctx.r1.s64 + 96;
 	// bl 0x821792d8
-	util_92D8(ctx, base);
+	cmNode_GetVector(ctx, base);
 	// fmr f1,f31
 	ctx.fpscr.disableFlushMode();
 	ctx.f1.f64 = var_f31;
@@ -39138,7 +39138,7 @@ PPC_FUNC_IMPL(__imp__cmNormalizedTimer_vfn_14) {
 	// stw r10,84(r1)
 	PPC_STORE_U32(ctx.r1.u32 + 84, ctx.r10.u32);
 	// bl 0x82275380
-	util_5380(ctx, base);
+	cmNode_SetFromPort_Dispatch(ctx, base);
 	// blr
 	return;
 }
@@ -39351,7 +39351,7 @@ PPC_FUNC_IMPL(__imp__cmMemory_vfn_6) {
 	// lwz r3,32(r31)
 	ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 32);
 	// bl 0x82275380
-	util_5380(ctx, base);
+	cmNode_SetFromPort_Dispatch(ctx, base);
 	// lwz r11,32(r31)
 	ctx.r11.u64 = PPC_LOAD_U32(var_r31 + 32);
 	// li r10,1
@@ -39365,7 +39365,7 @@ PPC_FUNC_IMPL(__imp__cmMemory_vfn_6) {
 	// stw r10,84(r1)
 	PPC_STORE_U32(ctx.r1.u32 + 84, ctx.r10.u32);
 	// bl 0x82275380
-	util_5380(ctx, base);
+	cmNode_SetFromPort_Dispatch(ctx, base);
 	// lwz r9,8(r31)
 	ctx.r9.u64 = PPC_LOAD_U32(var_r31 + 8);
 	// rlwinm r8,r9,0,29,27
@@ -39423,7 +39423,7 @@ PPC_FUNC_IMPL(__imp__cmMemory_vfn_14) {
 	// stw r10,84(r1)
 	PPC_STORE_U32(ctx.r1.u32 + 84, ctx.r10.u32);
 	// bl 0x82275380
-	util_5380(ctx, base);
+	cmNode_SetFromPort_Dispatch(ctx, base);
 	// blr
 	return;
 }
@@ -40277,7 +40277,7 @@ loc_82271C34:
 				// stw r5,80(r31)
 				PPC_STORE_U32(var_r31 + 80, ctx.r5.u32);
 				// bl 0x82275380
-				util_5380(ctx, base);
+				cmNode_SetFromPort_Dispatch(ctx, base);
 				// lwz r4,8(r30)
 				ctx.r4.u64 = PPC_LOAD_U32(var_r30 + 8);
 				// ori r3,r4,32
@@ -40744,7 +40744,7 @@ PPC_FUNC_IMPL(__imp__cmSampleCamActions_2030_p25) {
 			// stw r5,80(r1)
 			PPC_STORE_U32(ctx.r1.u32 + 80, ctx.r5.u32);
 			// bl 0x82275380
-			util_5380(ctx, base);
+			cmNode_SetFromPort_Dispatch(ctx, base);
 		}
 	loc_8227209C:
 		// lhz r11,4(r29)
@@ -41210,7 +41210,7 @@ loc_8227241C:
 		// lwz r3,28(r31)
 		ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// bl 0x82275380
-		util_5380(ctx, base);
+		cmNode_SetFromPort_Dispatch(ctx, base);
 		// lwz r9,28(r31)
 		ctx.r9.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// lbz r8,0(r9)
@@ -41303,7 +41303,7 @@ loc_822724EC:
 		// lwz r3,28(r31)
 		ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// bl 0x82275380
-		util_5380(ctx, base);
+		cmNode_SetFromPort_Dispatch(ctx, base);
 		// lwz r9,28(r31)
 		ctx.r9.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// lwz r8,0(r9)
@@ -41397,7 +41397,7 @@ loc_822725BC:
 		// lwz r3,28(r31)
 		ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// bl 0x82275380
-		util_5380(ctx, base);
+		cmNode_SetFromPort_Dispatch(ctx, base);
 		// lwz r9,28(r31)
 		ctx.r9.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// lfs f0,0(r9)
@@ -41497,7 +41497,7 @@ loc_8227268C:
 		// lwz r3,28(r31)
 		ctx.r3.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// bl 0x82275380
-		util_5380(ctx, base);
+		cmNode_SetFromPort_Dispatch(ctx, base);
 		// lwz r9,28(r31)
 		ctx.r9.u64 = PPC_LOAD_U32(var_r31 + 28);
 		// lvx128 v0,r0,r9

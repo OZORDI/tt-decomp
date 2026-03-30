@@ -1275,7 +1275,7 @@ loc_822F4FD8:
 		// addi r4,r1,144
 		ctx.r4.s64 = ctx.r1.s64 + 144;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// lis r11,-32161
 		ctx.r11.s64 = -2107703296;
 		// lwz r10,-21720(r11)
@@ -1430,7 +1430,7 @@ loc_822F4FD8:
 		// addi r4,r1,80
 		ctx.r4.s64 = ctx.r1.s64 + 80;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// addi r6,r1,80
 		ctx.r6.s64 = ctx.r1.s64 + 80;
 	loc_822F5128:
@@ -4508,7 +4508,7 @@ loc_822F6604:
 				// mr r3,r14
 				ctx.r3.u64 = var_r14;
 				// bl 0x82228990
-				SinglesNetworkClient_8990_g(ctx, base);
+				rage_atStringCopy(ctx, base);
 				// addi r6,r28,1
 				ctx.r6.s64 = (int64_t)(int32_t)var_r28 + 1;
 				// addi r5,r1,160
@@ -4536,7 +4536,7 @@ loc_822F6604:
 				// addi r4,r1,128
 				ctx.r4.s64 = ctx.r1.s64 + 128;
 				// bl 0x82228990
-				SinglesNetworkClient_8990_g(ctx, base);
+				rage_atStringCopy(ctx, base);
 			}
 		loc_822F691C:
 			// addi r29,r1,128
@@ -5634,7 +5634,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_6F88_g) {
 			// addi r4,r1,96
 			ctx.r4.s64 = ctx.r1.s64 + 96;
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// addi r30,r31,2020
 			var_r30 = (uint32_t)(var_r31 + 2020);
 			// mr r6,r29
@@ -6320,7 +6320,7 @@ loc_822F7534:
 		}
 	loc_822F7608:
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 	}
 loc_822F760C:
 	// lbz r8,4648(r31)
@@ -8943,7 +8943,7 @@ loc_822F8A94:
 	// mr r4,r31
 	ctx.r4.u64 = var_r31;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lwz r11,-21712(r19)
 	ctx.r11.u64 = PPC_LOAD_U32(var_r19 + -21712);
 	// lis r28,-32160
@@ -9033,7 +9033,7 @@ loc_822F8B50:
 	// mr r4,r31
 	ctx.r4.u64 = var_r31;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lwz r11,-21712(r19)
 	ctx.r11.u64 = PPC_LOAD_U32(var_r19 + -21712);
 	// lwz r7,556(r11)
@@ -11896,7 +11896,7 @@ loc_822FA2D8:
 	// addi r3,r1,80
 	ctx.r3.s64 = ctx.r1.s64 + 80;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 loc_822FA318:
 	// li r4,0
 	ctx.r4.s64 = 0;
@@ -13536,7 +13536,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_AF58_g) {
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13565,7 +13565,7 @@ loc_822FAFA8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13592,7 +13592,7 @@ loc_822FAFE0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13619,7 +13619,7 @@ loc_822FB018:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13646,7 +13646,7 @@ loc_822FB050:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13673,7 +13673,7 @@ loc_822FB088:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13700,7 +13700,7 @@ loc_822FB0C0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13727,7 +13727,7 @@ loc_822FB0F8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13754,7 +13754,7 @@ loc_822FB130:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13781,7 +13781,7 @@ loc_822FB168:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13808,7 +13808,7 @@ loc_822FB1A0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13835,7 +13835,7 @@ loc_822FB1D8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -13862,7 +13862,7 @@ loc_822FB210:
 	// mr r4,r31
 	ctx.r4.u64 = var_r31;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -14341,7 +14341,7 @@ PPC_FUNC_IMPL(__imp__game_B5E0) {
 	// mr r27,r6
 	var_r27 = ctx.r6.u32;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// cmpwi cr6,r31,2
 	// bne cr6,0x822fb628
 	if ((int32_t)var_r31 == 2) {
@@ -14361,7 +14361,7 @@ loc_822FB630:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// mr r6,r27
 	ctx.r6.u64 = var_r27;
 	// mr r5,r28
@@ -14377,7 +14377,7 @@ loc_822FB630:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// mr r6,r27
 	ctx.r6.u64 = var_r27;
 	// mr r5,r28
@@ -15070,7 +15070,7 @@ loc_822FBBD8:
 	// addi r3,r11,-12916
 	ctx.r3.s64 = ctx.r11.s64 + -12916;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32160
 	// li r5,64
 	ctx.r5.s64 = 64;
@@ -15081,7 +15081,7 @@ loc_822FBBD8:
 	// addi r3,r11,-12896
 	ctx.r3.s64 = ctx.r11.s64 + -12896;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32160
 	// li r5,64
 	ctx.r5.s64 = 64;
@@ -15092,7 +15092,7 @@ loc_822FBBD8:
 	// addi r3,r11,-12876
 	ctx.r3.s64 = ctx.r11.s64 + -12876;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32160
 	// li r5,64
 	ctx.r5.s64 = 64;
@@ -15103,7 +15103,7 @@ loc_822FBBD8:
 	// addi r3,r11,-12860
 	ctx.r3.s64 = ctx.r11.s64 + -12860;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32160
 	// li r5,64
 	ctx.r5.s64 = 64;
@@ -15114,7 +15114,7 @@ loc_822FBBD8:
 	// addi r3,r11,-12844
 	ctx.r3.s64 = ctx.r11.s64 + -12844;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32160
 	// li r5,64
 	ctx.r5.s64 = 64;
@@ -15125,7 +15125,7 @@ loc_822FBBD8:
 	// addi r3,r11,-16928
 	ctx.r3.s64 = ctx.r11.s64 + -16928;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32160
 	// li r5,64
 	ctx.r5.s64 = 64;
@@ -15136,7 +15136,7 @@ loc_822FBBD8:
 	// addi r3,r11,-17616
 	ctx.r3.s64 = ctx.r11.s64 + -17616;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	return;
@@ -20923,7 +20923,7 @@ loc_822FE838:
 		// mr r3,r22
 		ctx.r3.u64 = var_r22;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// addi r6,r1,96
 		ctx.r6.s64 = ctx.r1.s64 + 96;
 		// mr r5,r29
@@ -21379,7 +21379,7 @@ loc_822FEBB0:
 		// mr r3,r21
 		ctx.r3.u64 = var_r21;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// addi r6,r1,96
 		ctx.r6.s64 = ctx.r1.s64 + 96;
 		// mr r5,r30
@@ -23854,7 +23854,7 @@ loc_822FFF68:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// lwz r3,5556(r24)
 	ctx.r3.u64 = PPC_LOAD_U32(var_r24 + 5556);
@@ -24257,7 +24257,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_0288_g) {
 	// addi r4,r11,3252
 	ctx.r4.s64 = ctx.r11.s64 + 3252;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// blr
 	return;
 }
@@ -27673,7 +27673,7 @@ loc_82301D70:
 		// mr r4,r31
 		ctx.r4.u64 = var_r31;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 	}
 loc_82301D90:
 	// blr
@@ -34288,7 +34288,7 @@ loc_82305184:
 		// mr r4,r29
 		ctx.r4.u64 = var_r29;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// lis r11,-32250
 		// mr r3,r30
 		ctx.r3.u64 = var_r30;
@@ -34315,7 +34315,7 @@ loc_82305184:
 		// mr r4,r29
 		ctx.r4.u64 = var_r29;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// lis r11,-32250
 		// mr r3,r30
 		ctx.r3.u64 = var_r30;
@@ -34342,7 +34342,7 @@ loc_82305184:
 		// mr r4,r29
 		ctx.r4.u64 = var_r29;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// lis r11,-32250
 		// mr r3,r30
 		ctx.r3.u64 = var_r30;
@@ -35683,7 +35683,7 @@ loc_82305BC0:
 		// mr r3,r31
 		ctx.r3.u64 = var_r31;
 		// bl 0x822e2e60
-		atSingleton_2E60_g(ctx, base);
+		atFactory_GetFactory(ctx, base);
 		// lis r11,-32250
 		// li r6,1
 		ctx.r6.s64 = 1;
@@ -37570,7 +37570,7 @@ loc_82306B5C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r29
 	ctx.r3.u64 = var_r29;
@@ -42643,7 +42643,7 @@ loc_823096B0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -42670,7 +42670,7 @@ loc_823096E8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -44971,7 +44971,7 @@ loc_8230A954:
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r3,r29,80
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 80;
 	// lis r11,-32250
@@ -50550,7 +50550,7 @@ loc_8230D5D0:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r3,r29,356
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 356;
 	// lis r11,-32250
@@ -55947,7 +55947,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_FF30_g) {
 		// addi r3,r1,96
 		ctx.r3.s64 = ctx.r1.s64 + 96;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// addi r8,r29,8
 		ctx.r8.s64 = (int64_t)(int32_t)var_r29 + 8;
 		// lwz r11,-23836(r28)
@@ -55981,7 +55981,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_FF30_g) {
 		// addi r3,r1,96
 		ctx.r3.s64 = ctx.r1.s64 + 96;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// lis r11,-32252
 		// li r4,64
 		ctx.r4.s64 = 64;
@@ -56000,7 +56000,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_FF30_g) {
 		// addi r3,r1,96
 		ctx.r3.s64 = ctx.r1.s64 + 96;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// lis r11,-32252
 		// li r6,93
 		ctx.r6.s64 = 93;
@@ -56019,7 +56019,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_FF30_g) {
 		// addi r3,r1,80
 		ctx.r3.s64 = ctx.r1.s64 + 80;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// addi r9,r1,288
 		ctx.r9.s64 = ctx.r1.s64 + 288;
 		// addi r8,r1,224
@@ -58998,7 +58998,7 @@ loc_823118DC:
 		// mr r3,r31
 		ctx.r3.u64 = var_r31;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 		// mr r3,r29
 		ctx.r3.u64 = var_r29;
 		return;
@@ -59646,7 +59646,7 @@ PPC_FUNC_IMPL(__imp__rage_1E70) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32250
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -59985,7 +59985,7 @@ PPC_FUNC_IMPL(__imp__rage_2120) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32250
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -61975,7 +61975,7 @@ loc_82312FCC:
 	}
 loc_82313050:
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// lwz r30,-21720(r28)
 	var_r30 = (uint32_t)(PPC_LOAD_U32(var_r28 + -21720));
@@ -64225,7 +64225,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_4170_g) {
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64257,7 +64257,7 @@ loc_823141C0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64287,7 +64287,7 @@ loc_823141FC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64317,7 +64317,7 @@ loc_82314238:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64347,7 +64347,7 @@ loc_82314274:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64377,7 +64377,7 @@ loc_823142B0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64407,7 +64407,7 @@ loc_823142EC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64437,7 +64437,7 @@ loc_82314328:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64467,7 +64467,7 @@ loc_82314364:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64497,7 +64497,7 @@ loc_823143A0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64527,7 +64527,7 @@ loc_823143DC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64557,7 +64557,7 @@ loc_82314418:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64587,7 +64587,7 @@ loc_82314454:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64617,7 +64617,7 @@ loc_82314490:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64647,7 +64647,7 @@ loc_823144CC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64675,7 +64675,7 @@ loc_82314508:
 	// addi r4,r31,652
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 652;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// li r5,32
 	ctx.r5.s64 = 32;
@@ -64684,7 +64684,7 @@ loc_82314508:
 	// addi r4,r31,684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// addi r30,r31,716
 	var_r30 = (uint32_t)(var_r31 + 716);
@@ -64695,7 +64695,7 @@ loc_82314508:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64725,7 +64725,7 @@ loc_8231456C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64755,7 +64755,7 @@ loc_823145A8:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64785,7 +64785,7 @@ loc_823145E4:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64815,7 +64815,7 @@ loc_82314620:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64845,7 +64845,7 @@ loc_8231465C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64875,7 +64875,7 @@ loc_82314698:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64905,7 +64905,7 @@ loc_823146D4:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64935,7 +64935,7 @@ loc_82314710:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64965,7 +64965,7 @@ loc_8231474C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -64995,7 +64995,7 @@ loc_82314788:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65025,7 +65025,7 @@ loc_823147C4:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65055,7 +65055,7 @@ loc_82314800:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65085,7 +65085,7 @@ loc_8231483C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65115,7 +65115,7 @@ loc_82314878:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65145,7 +65145,7 @@ loc_823148B4:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65175,7 +65175,7 @@ loc_823148F0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65205,7 +65205,7 @@ loc_8231492C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65235,7 +65235,7 @@ loc_82314968:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65265,7 +65265,7 @@ loc_823149A4:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65295,7 +65295,7 @@ loc_823149E0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65325,7 +65325,7 @@ loc_82314A1C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65355,7 +65355,7 @@ loc_82314A58:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65385,7 +65385,7 @@ loc_82314A94:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65415,7 +65415,7 @@ loc_82314AD0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65445,7 +65445,7 @@ loc_82314B0C:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65475,7 +65475,7 @@ loc_82314B48:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65505,7 +65505,7 @@ loc_82314B84:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65535,7 +65535,7 @@ loc_82314BC0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65565,7 +65565,7 @@ loc_82314BFC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65595,7 +65595,7 @@ loc_82314C38:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65625,7 +65625,7 @@ loc_82314C74:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65655,7 +65655,7 @@ loc_82314CB0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65685,7 +65685,7 @@ loc_82314CEC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65715,7 +65715,7 @@ loc_82314D28:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65745,7 +65745,7 @@ loc_82314D64:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65775,7 +65775,7 @@ loc_82314DA0:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65805,7 +65805,7 @@ loc_82314DDC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65835,7 +65835,7 @@ loc_82314E18:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65865,7 +65865,7 @@ loc_82314E54:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65895,7 +65895,7 @@ loc_82314E90:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65925,7 +65925,7 @@ loc_82314ECC:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -65955,7 +65955,7 @@ loc_82314F08:
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822eb1e8
@@ -67226,7 +67226,7 @@ loc_823155D4:
 						// mr r3,r31
 						ctx.r3.u64 = var_r31;
 						// bl 0x82228990
-						SinglesNetworkClient_8990_g(ctx, base);
+						rage_atStringCopy(ctx, base);
 						// b 0x82315a20
 						goto loc_82315A20;
 					}
@@ -67274,7 +67274,7 @@ loc_823155D4:
 			// addi r3,r1,96
 			ctx.r3.s64 = ctx.r1.s64 + 96;
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// lis r11,-32250
 			// li r5,64
 			ctx.r5.s64 = 64;
@@ -67283,7 +67283,7 @@ loc_823155D4:
 			// addi r4,r25,624
 			ctx.r4.s64 = (int64_t)(int32_t)var_r25 + 624;
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// cntlzw r6,r27
 			ctx.r6.u64 = var_r27 == 0 ? 32 : __builtin_clz(var_r27);
 			// rlwinm r5,r6,27,31,31
@@ -67333,7 +67333,7 @@ loc_823155D4:
 				// addi r4,r25,752
 				ctx.r4.s64 = (int64_t)(int32_t)var_r25 + 752;
 				// bl 0x82228990
-				SinglesNetworkClient_8990_g(ctx, base);
+				rage_atStringCopy(ctx, base);
 				// mr r30,r26
 				var_r30 = (uint32_t)(var_r26);
 			}
@@ -67404,7 +67404,7 @@ loc_823155D4:
 			// addi r4,r1,128
 			ctx.r4.s64 = ctx.r1.s64 + 128;
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// li r5,512
 			ctx.r5.s64 = 512;
 			// addi r4,r1,128
@@ -67736,7 +67736,7 @@ loc_82315B30:
 			// stw r25,108(r1)
 			PPC_STORE_U32(ctx.r1.u32 + 108, var_r25);
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// addi r6,r1,104
 			ctx.r6.s64 = ctx.r1.s64 + 104;
 			// stw r31,104(r1)
@@ -67767,7 +67767,7 @@ loc_82315B30:
 			// addi r3,r1,240
 			ctx.r3.s64 = ctx.r1.s64 + 240;
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// addi r6,r1,96
 			ctx.r6.s64 = ctx.r1.s64 + 96;
 			// stw r31,96(r1)
@@ -68040,7 +68040,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_5F60_g) {
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68069,7 +68069,7 @@ loc_82315FB0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68096,7 +68096,7 @@ loc_82315FE8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68123,7 +68123,7 @@ loc_82316020:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68150,7 +68150,7 @@ loc_82316058:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68177,7 +68177,7 @@ loc_82316090:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68204,7 +68204,7 @@ loc_823160C8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68231,7 +68231,7 @@ loc_82316100:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68258,7 +68258,7 @@ loc_82316138:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68285,7 +68285,7 @@ loc_82316170:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68312,7 +68312,7 @@ loc_823161A8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -68339,7 +68339,7 @@ loc_823161E0:
 	// mr r4,r31
 	ctx.r4.u64 = var_r31;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -69447,7 +69447,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_6AC8_g_6AC8_1) {
 		// mr r3,r6
 		ctx.r3.u64 = ctx.r6.u64;
 		// bl 0x82228990
-		SinglesNetworkClient_8990_g(ctx, base);
+		rage_atStringCopy(ctx, base);
 	}
 loc_82316B08:
 	// mr r3,r26
@@ -73160,7 +73160,7 @@ loc_8231873C:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_82318754:
@@ -73172,7 +73172,7 @@ loc_82318754:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_8231876C:
@@ -73184,7 +73184,7 @@ loc_8231876C:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_82318784:
@@ -73196,7 +73196,7 @@ loc_82318784:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_8231879C:
@@ -73208,7 +73208,7 @@ loc_8231879C:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_823187B4:
@@ -73220,7 +73220,7 @@ loc_823187B4:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_823187CC:
@@ -73232,7 +73232,7 @@ loc_823187CC:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_823187E4:
@@ -73244,7 +73244,7 @@ loc_823187E4:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_823187FC:
@@ -73256,7 +73256,7 @@ loc_823187FC:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_82318814:
@@ -73268,7 +73268,7 @@ loc_82318814:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x82318838
 	goto loc_82318838;
 loc_8231882C:
@@ -73389,7 +73389,7 @@ loc_823188FC:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_82318914:
@@ -73401,7 +73401,7 @@ loc_82318914:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_8231892C:
@@ -73413,7 +73413,7 @@ loc_8231892C:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_82318944:
@@ -73425,7 +73425,7 @@ loc_82318944:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_8231895C:
@@ -73437,7 +73437,7 @@ loc_8231895C:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_82318974:
@@ -73449,7 +73449,7 @@ loc_82318974:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_8231898C:
@@ -73461,7 +73461,7 @@ loc_8231898C:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_823189A4:
@@ -73473,7 +73473,7 @@ loc_823189A4:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_823189BC:
@@ -73485,7 +73485,7 @@ loc_823189BC:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_823189D4:
@@ -73497,7 +73497,7 @@ loc_823189D4:
 	// addi r4,r31,21684
 	ctx.r4.s64 = (int64_t)(int32_t)var_r31 + 21684;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// b 0x823189f8
 	goto loc_823189F8;
 loc_823189EC:
@@ -73618,7 +73618,7 @@ loc_82318ADC:
 	ctx.r3.s64 = ctx.r11.s64 + 3400;
 loc_82318AE4:
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lbz r4,105(r31)
 	ctx.r4.u64 = PPC_LOAD_U8(var_r31 + 105);
 	// li r30,1
@@ -76002,7 +76002,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_9ED0_g) {
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76031,7 +76031,7 @@ loc_82319F28:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76058,7 +76058,7 @@ loc_82319F60:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76085,7 +76085,7 @@ loc_82319F98:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76112,7 +76112,7 @@ loc_82319FD0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76139,7 +76139,7 @@ loc_8231A008:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76166,7 +76166,7 @@ loc_8231A040:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76193,7 +76193,7 @@ loc_8231A078:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76220,7 +76220,7 @@ loc_8231A0B0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76247,7 +76247,7 @@ loc_8231A0E8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76274,7 +76274,7 @@ loc_8231A120:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76301,7 +76301,7 @@ loc_8231A158:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76328,7 +76328,7 @@ loc_8231A190:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76355,7 +76355,7 @@ loc_8231A1C8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76382,7 +76382,7 @@ loc_8231A200:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76409,7 +76409,7 @@ loc_8231A238:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76436,7 +76436,7 @@ loc_8231A270:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76463,7 +76463,7 @@ loc_8231A2A8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76490,7 +76490,7 @@ loc_8231A2E0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76517,7 +76517,7 @@ loc_8231A318:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76544,7 +76544,7 @@ loc_8231A350:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76571,7 +76571,7 @@ loc_8231A388:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76598,7 +76598,7 @@ loc_8231A3C0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76625,7 +76625,7 @@ loc_8231A3F8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76652,7 +76652,7 @@ loc_8231A430:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76679,7 +76679,7 @@ loc_8231A468:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76706,7 +76706,7 @@ loc_8231A4A0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76733,7 +76733,7 @@ loc_8231A4D8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76760,7 +76760,7 @@ loc_8231A510:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76787,7 +76787,7 @@ loc_8231A548:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76814,7 +76814,7 @@ loc_8231A580:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76841,7 +76841,7 @@ loc_8231A5B8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76868,7 +76868,7 @@ loc_8231A5F0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76895,7 +76895,7 @@ loc_8231A628:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76922,7 +76922,7 @@ loc_8231A660:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76949,7 +76949,7 @@ loc_8231A698:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -76976,7 +76976,7 @@ loc_8231A6D0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77003,7 +77003,7 @@ loc_8231A708:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77030,7 +77030,7 @@ loc_8231A740:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77057,7 +77057,7 @@ loc_8231A778:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77084,7 +77084,7 @@ loc_8231A7B0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77111,7 +77111,7 @@ loc_8231A7E8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77138,7 +77138,7 @@ loc_8231A820:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77165,7 +77165,7 @@ loc_8231A858:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77192,7 +77192,7 @@ loc_8231A890:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77219,7 +77219,7 @@ loc_8231A8C8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77246,7 +77246,7 @@ loc_8231A900:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77273,7 +77273,7 @@ loc_8231A938:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77300,7 +77300,7 @@ loc_8231A970:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77327,7 +77327,7 @@ loc_8231A9A8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77354,7 +77354,7 @@ loc_8231A9E0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77381,7 +77381,7 @@ loc_8231AA18:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77408,7 +77408,7 @@ loc_8231AA50:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77435,7 +77435,7 @@ loc_8231AA88:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77462,7 +77462,7 @@ loc_8231AAC0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77489,7 +77489,7 @@ loc_8231AAF8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77516,7 +77516,7 @@ loc_8231AB30:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77543,7 +77543,7 @@ loc_8231AB68:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77570,7 +77570,7 @@ loc_8231ABA0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77597,7 +77597,7 @@ loc_8231ABD8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77624,7 +77624,7 @@ loc_8231AC10:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77651,7 +77651,7 @@ loc_8231AC48:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77678,7 +77678,7 @@ loc_8231AC80:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77705,7 +77705,7 @@ loc_8231ACB8:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77732,7 +77732,7 @@ loc_8231ACF0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77759,7 +77759,7 @@ loc_8231AD28:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77786,7 +77786,7 @@ loc_8231AD60:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77813,7 +77813,7 @@ loc_8231AD98:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77840,7 +77840,7 @@ loc_8231ADD0:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77867,7 +77867,7 @@ loc_8231AE08:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77894,7 +77894,7 @@ loc_8231AE40:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77921,7 +77921,7 @@ loc_8231AE78:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -77974,7 +77974,7 @@ loc_8231AED4:
 	// stw r9,84(r1)
 	PPC_STORE_U32(ctx.r1.u32 + 84, ctx.r9.u32);
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
@@ -78002,7 +78002,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,1
@@ -78027,7 +78027,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,2
@@ -78052,7 +78052,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,3
@@ -78077,7 +78077,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,4
@@ -78102,7 +78102,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// stw r27,80(r1)
 	PPC_STORE_U32(ctx.r1.u32 + 80, var_r27);
 	// stw r28,84(r1)
@@ -78127,7 +78127,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,6
@@ -78152,7 +78152,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,7
@@ -78177,7 +78177,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,8
@@ -78202,7 +78202,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,9
@@ -78227,7 +78227,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,10
@@ -78252,7 +78252,7 @@ loc_8231AED4:
 	// mr r4,r27
 	ctx.r4.u64 = var_r27;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// addi r6,r1,80
 	ctx.r6.s64 = ctx.r1.s64 + 80;
 	// li r5,11
@@ -78277,7 +78277,7 @@ loc_8231AED4:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -78304,7 +78304,7 @@ loc_8231B194:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -78331,7 +78331,7 @@ loc_8231B1CC:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -78358,7 +78358,7 @@ loc_8231B204:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -78385,7 +78385,7 @@ loc_8231B23C:
 	// mr r4,r29
 	ctx.r4.u64 = var_r29;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
@@ -78412,7 +78412,7 @@ loc_8231B274:
 	// mr r4,r31
 	ctx.r4.u64 = var_r31;
 	// bl 0x82228990
-	SinglesNetworkClient_8990_g(ctx, base);
+	rage_atStringCopy(ctx, base);
 	// lis r11,-32250
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;

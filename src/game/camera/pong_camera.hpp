@@ -231,6 +231,40 @@ struct pongCameraMgr {
     bool IsCameraStateEleven() const;    // @ 0x821F7F80
     bool IsCameraStateTwelve() const;    // @ 0x821F7FA0
     bool IsCameraStateThirteen() const;  // @ 0x821F7FC0
+
+    // Clamped transition functions (mode, flags[], r7 variants)
+    bool TransitionMode6_V1(void* gameState);   // @ 0x821F5188
+    bool TransitionMode6_V2(void* gameState);   // @ 0x821F5248
+    bool TransitionMode6_V3(void* gameState);   // @ 0x821F5308
+    bool TransitionMode6_V4(void* gameState);   // @ 0x821F53B8
+    bool TransitionMode11_V1(void* gameState);  // @ 0x821F5608
+    bool TransitionMode11_V2(void* gameState);  // @ 0x821F56C8
+    bool TransitionMode11_V3(void* gameState);  // @ 0x821F5788
+    bool TransitionMode11_V4(void* gameState);  // @ 0x821F5848
+    bool TransitionMode19_V1(void* gameState);  // @ 0x821F4C78
+    bool TransitionMode19_V2(void* gameState);  // @ 0x821F4D48
+    bool TransitionMode19_V3(void* gameState);  // @ 0x821F4E18
+    bool TransitionMode19_V4(void* gameState);  // @ 0x821F4EE8
+    bool TransitionMode12_V1(void* gameState);  // @ 0x821F5D38
+    bool TransitionMode12_V2(void* gameState);  // @ 0x821F5E18
+
+    // Multi-call camera transition functions
+    bool TryDualTransition3ED8(void* gameState);           // @ 0x821F4000 (4000_fw)
+    bool TryTransitionPg6F68_Mode0(void* gameState);       // @ 0x821F4080 (4080_w)
+    bool TryTransitionPg6F68_Mode1(void* gameState);       // @ 0x821F4180 (4180_w)
+    bool TryClampedTransition_Mode0(void* gameState);      // @ 0x821F4280 (4280_fw)
+    bool TryClampedTransition_Mode1(void* gameState);      // @ 0x821F43A8 (43A8_fw)
+    bool CheckAllCameraQueries(void* gameState, float f1, float f2);  // @ 0x821F8250
+    bool CheckTransition_Near_Mode0(void* gameState, float threshold);  // @ 0x821F83B8 (83B8_fw)
+    bool CheckTransition_Near_Mode1(void* gameState, float threshold);  // @ 0x821F8428 (8428_fw)
+    bool CheckAllNearTransitions_Mode0(void* gameState, float f2);     // @ 0x821F8498 (8498_fw)
+    bool CheckAllNearTransitions_Mode1(void* gameState, float f2);     // @ 0x821F85D8 (85D8_fw)
+
+    // Threshold query functions (mode, flag2 variants)
+    bool ThresholdQuery_Mode17(void* gameState, float delta);           // @ 0x821F9648 (9648_fw)
+    bool ThresholdQuery_Mode17_Reverse(void* gameState, float delta);   // @ 0x821F96E0 (96E0_fw)
+    bool ThresholdQuery_Mode18(void* gameState, float delta);           // @ 0x821F9778 (9778_fw)
+    bool ThresholdQuery_Mode18_Reverse(void* gameState, float delta);   // @ 0x821F9810 (9810_fw)
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────

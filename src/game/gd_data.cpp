@@ -13,7 +13,7 @@
 // External function declarations
 extern void rage_free(void* ptr);
 extern void ReleaseObjectWithFlags(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
-extern void util_6C20(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
+extern void sysMemAllocator_PlatformFree(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
 extern bool atSingleton_Find_90D0(void* obj);        // @ 0x820F90D0 - Check if singleton exists
 extern int16_t game_94F0(void* templateRegistry, void* templateKey);  // @ 0x820F94F0 - Find template index
 // Global state
@@ -82,7 +82,7 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
  * 4. Decrement count
  * 
  * Called by:
- * - game_B2E0 (sub-object cleanup)
+ * - plrPlayerMgr_ReleaseResourcePairs (sub-object cleanup)
  * - Various manager destructors
  * 
  * @param templateKey Pointer to template identifier/key
@@ -133,7 +133,7 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
  * 4. Decrement count
  * 
  * Called by:
- * - game_B2E0 (sub-object cleanup)
+ * - plrPlayerMgr_ReleaseResourcePairs (sub-object cleanup)
  * - Various manager destructors
  * 
  * @param templateKey Pointer to template identifier/key
@@ -163,7 +163,7 @@ void datResourceMgr_RemoveEntry(void* templateKey) {
 }
 
 /**
- * game_B2E0 @ 0x8218B2E0 | size: 0x90nt at offset +0x10000
+ * plrPlayerMgr_ReleaseResourcePairs @ 0x8218B2E0 | size: 0x90nt at offset +0x10000
 struct TemplateRegistry {
     struct TemplateEntry {
         uint32_t field1;  // Template data field 1
@@ -180,7 +180,7 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
 
 /**
  * plrPlayerMgr_DestroySubObjects @ 0x8218B2E0 | size: 0x90
- * Original symbol: game_B2E0
+ * Original symbol: plrPlayerMgr_ReleaseResourcePairs
  * 
  * Destroys sub-object array containing 2 sub-objects (24 bytes each).
  * Each sub-object has 2 pointers: primary object and singleton-managed object.
@@ -194,7 +194,7 @@ extern uint32_t g_plrPlayerMgr_state;  // @ 0x82066430
  *   1. Start at base + 48 (end of array)
  *   2. Loop 2 times, moving back 24 bytes each iteration
  *   3. For each sub-object:
- *      - If primary object exists: call datResourceMgr_RemoveEntry, then util_6C20 with flag 0xE001
+ *      - If primary object exists: call datResourceMgr_RemoveEntry, then sysMemAllocator_PlatformFree with flag 0xE001
  *      - If singleton object exists and not in registry: free via allocator vtable slot 2
  */
 void plrPlayerMgr_DestroySubObjects(void* subObjectArrayBase) {
@@ -214,7 +214,7 @@ void plrPlayerMgr_DestroySubObjects(void* subObjectArrayBase) {
         // Handle primary object
         if (subObj->m_pObject1) {
             datResourceMgr_RemoveEntry(subObj->m_pObject1);
-            util_6C20(subObj->m_pObject1, 0xE001);
+            sysMemAllocator_PlatformFree(subObj->m_pObject1, 0xE001);
         }
         
         // Handle singleton-managed object
@@ -291,7 +291,7 @@ plrPlayerMgr::~plrPlayerMgr() {
  */
 
 // External utility function
-extern void util_2FC0(void* obj, uint32_t param1, uint32_t param2);
+extern void rage_FillMemory32(void* obj, uint32_t param1, uint32_t param2);
 
 /**
  * gdStatsOfflineGeneral::~gdStatsOfflineGeneral
@@ -328,9 +328,9 @@ gdStatsOfflineGeneral::~gdStatsOfflineGeneral() {
     }
     
     // Cleanup additional data structures
-    util_2FC0((char*)this + 244, 0xFFFFFFFF, 4);
-    util_2FC0((char*)this + 252, 0xFFFFFFFF, 4);
-    util_2FC0((char*)this + 260, 0xFFFFFFFF, 4);
+    rage_FillMemory32((char*)this + 244, 0xFFFFFFFF, 4);
+    rage_FillMemory32((char*)this + 252, 0xFFFFFFFF, 4);
+    rage_FillMemory32((char*)this + 260, 0xFFFFFFFF, 4);
 }
 
 /**
@@ -622,7 +622,7 @@ void InitializePageGroup(void* pageGroup) {
 /**
  * RegisterSerializedField @ 0x821A8F58 | size: 0xC8
  *
- * Original symbol: game_8F58
+ * Original symbol: RegisterSerializationField
  *
  * RAGE serialization system field registration helper.
  * Registers a single field of a data object with the serialization system,
@@ -653,7 +653,7 @@ void gdStatsOnlineGeneral::ScalarDtor(int flags) {
 /**
  * RegisterSerializedField @ 0x821A8F58 | size: 0xC8
  *
- * Original symbol: game_8F58
+ * Original symbol: RegisterSerializationField
  *
  * RAGE serialization system field registration helper.
  * Registers a single field of a data object with the serialization system,
@@ -694,7 +694,7 @@ void gdStatsOnlineGeneral::ScalarDtor(int flags) {
  */
 
 // External dependencies
-extern void* atSingleton_91E0_gen(uint32_t size);      // @ 0x821A91E0 - Get singleton
+extern void* atSingletonPool_AllocEntry(uint32_t size);      // @ 0x821A91E0 - Get singleton
 extern void* rage_strDuplicate(const void* key);      // @ 0x820C29E0 - Hash field key
 extern void rage_free(void* ptr);                 // @ 0x820C00C0 - Free memory
 
@@ -736,7 +736,7 @@ void RegisterSerializedField(void* obj,
     }
     
     // Get the field registry singleton (16-byte aligned allocation)
-    void* fieldRegistry = atSingleton_91E0_gen(16);
+    void* fieldRegistry = atSingletonPool_AllocEntry(16);
     
     // Free any existing field metadata at this slot
     void* existingMetadata = ((void**)fieldRegistry)[0];
@@ -841,7 +841,7 @@ int32_t game_94F0(TemplateRegistry* registry, const uint32_t* searchKey) {
  * 
  * Called by:
  * - pg_8C38_g, atSingleton_Find_90D0, lvlLevelMgr_vfn_24
- * - fxAmbientMgr_vfn_24, plrPropMgr_vfn_24, game_B2E0, pg_8918_gen
+ * - fxAmbientMgr_vfn_24, plrPropMgr_vfn_24, plrPlayerMgr_ReleaseResourcePairs, pg_8918_gen
  * 
  * @param templateKey Pointer to 8-byte template key to remove
  */

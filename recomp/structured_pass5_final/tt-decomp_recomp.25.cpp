@@ -50112,7 +50112,7 @@ while (var_r31 != var_r30) {
 					// frsp f1,f13
 					ctx.f1.f64 = double(float(ctx.f13.f64));
 					// bl 0x8244b158
-					util_B158(ctx, base);
+					msgSlot_SetFloat(ctx, base);
 				}
 			}
 		}
@@ -51382,7 +51382,7 @@ PPC_FUNC_IMPL(__imp__ph_vt3DB0_27_9830) {
 						// fmr f1,f31
 						ctx.f1.f64 = var_f31;
 						// bl 0x8244b158
-						util_B158(ctx, base);
+						msgSlot_SetFloat(ctx, base);
 						// b 0x824498d0
 						} else {
 					}
@@ -54552,8 +54552,8 @@ loc_8244B11C:
 	return;
 }
 
-__attribute__((alias("__imp__util_B158"))) PPC_WEAK_FUNC(util_B158);
-PPC_FUNC_IMPL(__imp__util_B158) {
+__attribute__((alias("__imp__msgSlot_SetFloat"))) PPC_WEAK_FUNC(msgSlot_SetFloat);
+PPC_FUNC_IMPL(__imp__msgSlot_SetFloat) {
 	PPC_FUNC_PROLOGUE();
 	uint32_t var_r30 = 0;
 	uint32_t var_r31 = 0;
@@ -62787,7 +62787,7 @@ PPC_FUNC_IMPL(__imp__msgMsgSink_vfn_31) {
 			// fmr f1,f31
 			ctx.f1.f64 = var_f31;
 			// bl 0x8244b158
-			util_B158(ctx, base);
+			msgSlot_SetFloat(ctx, base);
 			// b 0x8244f318
 		} else {
 		loc_8244F310:

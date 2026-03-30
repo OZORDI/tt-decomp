@@ -27381,7 +27381,7 @@ PPC_FUNC_IMPL(__imp__phInst_1070_w) {
 			// mr r3,r30
 			ctx.r3.u64 = var_r30;
 			// bl 0x82460850
-			util_0850(ctx, base);
+			phInst_Release(ctx, base);
 			// stfs f31,116(r1)
 			ctx.fpscr.disableFlushMode();
 			temp.f32 = float(var_f31);
@@ -27735,7 +27735,7 @@ loc_82571300:
 			// mr r3,r25
 			ctx.r3.u64 = var_r25;
 			// bl 0x82460850
-			util_0850(ctx, base);
+			phInst_Release(ctx, base);
 			// stfs f31,148(r1)
 			ctx.fpscr.disableFlushMode();
 			temp.f32 = float(var_f31);

@@ -63704,7 +63704,7 @@ PPC_FUNC_IMPL(__imp__BallHitMessage_vfn_1) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// li r5,8
 	ctx.r5.s64 = 8;
 	// addi r4,r31,14
@@ -64768,7 +64768,7 @@ PPC_FUNC_IMPL(__imp__RemoteServeReadyMessage_vfn_1) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// blr
 	return;
 }
@@ -65016,7 +65016,7 @@ PPC_FUNC_IMPL(__imp__MatchTimeSyncMessage_vfn_1) {
 	temp.f32 = float(ctx.f0.f64);
 	PPC_STORE_U32(var_r31 + 24, temp.u32);
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// lis r11,-32163
 	// lfs f13,24(r31)
 	ctx.fpscr.disableFlushMode();
@@ -65449,7 +65449,7 @@ PPC_FUNC_IMPL(__imp__MatchTimeSyncRequestMessageEx_vfn_1) {
 	temp.f32 = float(ctx.f0.f64);
 	PPC_STORE_U32(var_r31 + 16, temp.u32);
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// mr r4,r30
 	ctx.r4.u64 = var_r30;
 	// addi r3,r31,8
@@ -65859,7 +65859,7 @@ PPC_FUNC_IMPL(__imp__SessionTimeSyncMessage_vfn_1) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// blr
 	return;
 }
@@ -66291,7 +66291,7 @@ PPC_FUNC_IMPL(__imp__ForceMatchTimeSyncMessage_vfn_1) {
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x820d7830
-	util_7830(ctx, base);
+	snBitStream_ReadUnsigned(ctx, base);
 	// blr
 	return;
 }

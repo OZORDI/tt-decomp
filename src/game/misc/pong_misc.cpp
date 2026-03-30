@@ -26,7 +26,7 @@ namespace rage {
 extern void rage_debugLog(const char* fmt, ...); // @ 0x8240E6D0
 
 // Field registration helper (rage serialization system)
-// game_8F58: registers a field of 'obj' with the data system
+// RegisterSerializationField: registers a field of 'obj' with the data system
 // Signature: (obj, schemaKey, fieldPtr, fieldDesc, flags)
 extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
 
@@ -237,7 +237,7 @@ void pongSaveFile::DestructorThunk(pongSaveFile* ptr) {
 //   — 3 version slots at +0x10, +0x14, +0x18
 //   — Extra owned-pointer cleanup at +0x10 in its destructor
 //
-// The field-registration function (sub_821A8F58 / game_8F58) stores a triplet
+// The field-registration function (sub_821A8F58 / RegisterSerializationField) stores a triplet
 // {fieldNameString, fieldPtr, contextPtr} into a SDA-resident array.  The
 // "field name" strings passed in are string constants from .rdata and serve as
 // key identifiers; many appear to be suffix-optimised substrings sharing storage
@@ -1040,7 +1040,7 @@ int CCalMoviePlayer::ComputeFrameSize() {  // 3F00_h
 
 // External helpers used by batch 2+ functions
 extern "C" void util_85C8(void* obj);            // @ 0x824885C8 - base destructor
-extern "C" void util_0850(void* obj);            // @ 0x82460850 - physics instance release
+extern "C" void phInst_Release(void* obj);            // @ 0x82460850 - physics instance release
 extern "C" void* _crt_tls_fiber_setup();         // @ 0x82566B78 - fiber context setup
 extern "C" void _locale_register(void* ptr);     // @ 0x820C02D0 - memory dealloc
 extern "C" void pg_SleepYield(int frames);           // @ 0x82566C80 - wait N frames
@@ -1098,13 +1098,13 @@ void CCalMoviePlayer::SaveAndReplaceFiberContext() {
 /**
  * CCalMoviePlayer::QueryPhysicsInstance @ 0x82483AD8 | size: 0x48
  *
- * Queries the physics instance at field +56 via util_0850 (release/query),
+ * Queries the physics instance at field +56 via phInst_Release (release/query),
  * then writes the current value of field +56 into *outResult.
  * Returns 0.
  */
 int CCalMoviePlayer::QueryPhysicsInstance(void* outResult) {
     void* physInst = *(void**)((char*)this + 56);
-    util_0850(physInst);
+    phInst_Release(physInst);
     void* result = *(void**)((char*)this + 56);
     *(void**)outResult = result;
     return 0;

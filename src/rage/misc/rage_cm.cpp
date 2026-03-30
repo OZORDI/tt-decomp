@@ -24,7 +24,7 @@
  *
  * ── NODE LAYOUTS (two variants) ───────────────────────────────────────────────
  *
- * Unary nodes (cmDifferential, cmAbs, etc.) — uses util_54C8 for connection:
+ * Unary nodes (cmDifferential, cmAbs, etc.) — uses cmNode_TryConnectUnary for connection:
  *   +0x00  vtable
  *   +0x04  m_outputType  (int32, set by TryConnect on success)
  *   +0x08  m_flags       (bit3 = dirty/enabled toggle)
@@ -95,7 +95,7 @@ static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32
 
 
 
-// ── PORT EVALUATION UTILITIES (lifted from util_92D8, util_9350, etc.) ────────
+// ── PORT EVALUATION UTILITIES (lifted from cmNode_GetVector, util_9350, etc.) ────────
 
 /**
  * cmNode_GetVector @ 0x821792D8
@@ -157,7 +157,7 @@ static float cmNode_GetFloat(const cmNodePort* port) {
 }
 
 /**
- * cmNode_GetInt @ 0x82184BD8  (util_4BD8)
+ * cmNode_GetInt @ 0x82184BD8  (cmNode_GetInt)
  *
  * Reads a 32-bit integer from a port.
  * - DIRECT: returns *(int32_t*)port.m_pData
@@ -269,7 +269,7 @@ static bool cmNode_TryConnect(cmBinaryNode* node, cmPortDesc desc) {
 }
 
 /**
- * cmNode_TryConnectUnary @ 0x821854C8  (util_54C8)
+ * cmNode_TryConnectUnary @ 0x821854C8  (cmNode_TryConnectUnary)
  *
  * Single-input variant of TryConnect. m_nConnected at node+20.
  * Identical logic but validates only portA.
@@ -596,7 +596,7 @@ void cmMemory::GetFloat(float* out) {
 // at stack; clears bit 3 of m_flags.
 void cmMemory::Update() {
     // Resolve portA into m_pCurrentValue, using the generic SetFromPort dispatcher
-    // (util_5380 dispatches by m_outputType: float, bool, vec4, int, dim).
+    // (cmNode_SetFromPort_Dispatch dispatches by m_outputType: float, bool, vec4, int, dim).
     cmNode_SetFromPort_Dispatch(m_pCurrentValue, &portA, m_outputType);
 
     // Build a temporary port struct pointing m_pCurrentValue as a direct-data port
@@ -740,7 +740,7 @@ void cmIntegrate::RegisterPorts(cmBinaryNode* node) {
  * the frame rate constant. g_cm_frameRate is near address 0x829DAEC8.
  *
  * portA at +12/+16  : the value being differentiated
- * m_nConnected at +20 (unary layout — uses util_54C8)
+ * m_nConnected at +20 (unary layout — uses cmNode_TryConnectUnary)
  */
 
 // cmDifferential::GetFloat @ 0x82277E28
@@ -763,7 +763,7 @@ void cmDifferential::GetVector(float* out) {
 }
 
 // cmDifferential::RegisterPorts @ 0x822628E0
-// Uses the unary TryConnect (util_54C8): tries vec4 then int32.
+// Uses the unary TryConnect (cmNode_TryConnectUnary): tries vec4 then int32.
 void cmDifferential::RegisterPorts(cmUnaryNode* node) {
     if (cmNode_TryConnectUnary(node, {CM_DIM_VEC4,  0, 0, CM_DIM_VEC4}))  return;
     cmNode_TryConnectUnary(node, {CM_DIM_INT32, 0, 0, CM_DIM_INT32});
@@ -875,11 +875,11 @@ void cmApproachOperator::Tick() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  GENERIC PORT→DATA DISPATCHER (util_5380)
+//  GENERIC PORT→DATA DISPATCHER (cmNode_SetFromPort_Dispatch)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * cmNode_SetFromPort_Dispatch @ 0x82275380  (util_5380)
+ * cmNode_SetFromPort_Dispatch @ 0x82275380  (cmNode_SetFromPort_Dispatch)
  *
  * Evaluates `port` and writes the result into `dst` (a cmDataObj buffer).
  * The output type is determined by dst->m_dim:

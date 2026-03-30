@@ -24817,7 +24817,7 @@ PPC_FUNC_IMPL(__imp__gmPracticeTarget_vfn_1) {
 	// mr r3,r23
 	ctx.r3.u64 = var_r23;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -25381,7 +25381,7 @@ loc_82113260:
 	// stw r11,1536(r23)
 	PPC_STORE_U32(var_r23 + 1536, ctx.r11.u32);
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lwz r11,1536(r23)
 	ctx.r11.u64 = PPC_LOAD_U32(var_r23 + 1536);
 	// addi r11,r11,-1
@@ -27964,7 +27964,7 @@ PPC_FUNC_IMPL(__imp__atSingleton_4510_gen) {
 	// stw r22,84(r1)
 	PPC_STORE_U32(ctx.r1.u32 + 84, var_r22);
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// li r31,0
 	var_r31 = 0;
 	// addi r30,r29,8
@@ -32427,7 +32427,7 @@ PPC_FUNC_IMPL(__imp__pongHairData_6A78_g) {
 	// mr r3,r31
 	ctx.r3.u64 = var_r31;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r3,r29,8
 	ctx.r3.s64 = (int64_t)(int32_t)var_r29 + 8;
 	// lis r11,-32253
@@ -33530,7 +33530,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_7290_g) {
 			// addi r3,r1,80
 			ctx.r3.s64 = ctx.r1.s64 + 80;
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// li r6,2
 			ctx.r6.s64 = 2;
 			// mr r5,r26
@@ -33548,7 +33548,7 @@ PPC_FUNC_IMPL(__imp__SinglesNetworkClient_7290_g) {
 			// addi r3,r1,80
 			ctx.r3.s64 = ctx.r1.s64 + 80;
 			// bl 0x82228990
-			SinglesNetworkClient_8990_g(ctx, base);
+			rage_atStringCopy(ctx, base);
 			// addi r7,r1,1280
 			ctx.r7.s64 = ctx.r1.s64 + 1280;
 			// addi r6,r1,96
@@ -36760,7 +36760,7 @@ loc_82118A90:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// lis r11,-32253
 	// li r7,1
 	ctx.r7.s64 = 1;
@@ -36863,7 +36863,7 @@ loc_82118B50:
 	// mr r3,r30
 	ctx.r3.u64 = var_r30;
 	// bl 0x822e2e60
-	atSingleton_2E60_g(ctx, base);
+	atFactory_GetFactory(ctx, base);
 	// addi r5,r1,432
 	ctx.r5.s64 = ctx.r1.s64 + 432;
 	// mr r4,r31

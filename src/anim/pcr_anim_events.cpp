@@ -91,7 +91,7 @@ extern const char kTypeName_Msg[];
 extern const char kTypeName_Msg_s[];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Event type ID globals (populated at first process time via game_8F58).
+// Event type ID globals (populated at first process time via RegisterSerializationField).
 // @ 0x825C9C60, 0x825C803C, 0x825C8038
 // ─────────────────────────────────────────────────────────────────────────────
 uint32_t g_eventType_Default   = 0;   // @ 0x825C9C60

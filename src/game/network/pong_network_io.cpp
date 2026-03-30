@@ -302,8 +302,8 @@ extern "C" {
         ProcessNetworkPacket(client);
     }
     
-    // Original name: SinglesNetworkClient_8990_g
-    void SinglesNetworkClient_8990_g(const char* src, char* dest, int maxSize) {
+    // Original name: rage_atStringCopy
+    void rage_atStringCopy(const char* src, char* dest, int maxSize) {
         CopyNetworkString(src, dest, maxSize);
     }
     

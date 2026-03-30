@@ -128,7 +128,7 @@ extern void ke_ConstructObject(void* obj);
 extern void ke_DestroyObjectA(void* obj);
 extern void ke_DestroyObjectB(void* obj);
 extern void rage_1058(void*);
-extern void rage_D220(void*, const char*);
+extern void datResource_Load(void*, const char*);
 extern void rage_free(void*);
 extern void* xe_GetLoadContext(void*);
 
@@ -149,7 +149,7 @@ extern void atSingleton_8A48_p42(void* obj);
 extern void fiAsciiTokenizer_Destroy(void* obj);
 extern void strncpy(char*, const char*, int);
 extern void phJoint3Dof_ResetAllJoints(phJoint3Dof*, int);
-extern void util_B680(void* thisPtr);
+extern void phCollider_RecalcBounds(void* thisPtr);
 extern void rage_CopyMatrixAndBind(void*, void*, void*);
 
 /* --- Other functions --- */
@@ -2009,7 +2009,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     *(uint32_t*)((uint8_t*)loadContext + 96) = 0;
     
     // Initialize path normalization
-    rage_D220(loadContext, assetPath);
+    datResource_Load(loadContext, assetPath);
     
     // Get resource manager and material info
     uint32_t resourceMgr = *(uint32_t*)((uint8_t*)loadContext + 96);
@@ -8652,7 +8652,7 @@ void rage::phArticulatedCollider::SetAngularVelocity(const float* angularVelocit
 // ─────────────────────────────────────────────────────────────────────────────
 // phArticulatedCollider::UpdatePostIntegrate (vfn_11) @ 0x822CB360 | size: 0x54
 //
-// Calls vtable slot 10 (self-dispatch), then util_B680 for post-integration
+// Calls vtable slot 10 (self-dispatch), then phCollider_RecalcBounds for post-integration
 // cleanup, then dispatches vtable slot 28 on the skeleton object at +16.
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phArticulatedCollider::UpdatePostIntegrate() {
@@ -8662,7 +8662,7 @@ void rage::phArticulatedCollider::UpdatePostIntegrate() {
     ((Slot10Func)vt[10])(this);
 
     // Post-integration cleanup
-    util_B680(this);
+    phCollider_RecalcBounds(this);
 
     // Dispatch vtable slot 28 on skeleton at +16
     void* skeleton = (void*)(uintptr_t)*(uint32_t*)((char*)this + 16);

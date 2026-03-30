@@ -137,5 +137,5 @@ extern uint32_t g_eventType_Message;      // @ 0x8271B0DC (glob:lbl_8271B0DC)
 
 // Utility functions
 void util_E690();  // @ 0x820DE690 - Event cleanup utility
-void game_8F58(pcrAnimEvent* event, uint32_t param1, void* param2, 
+void RegisterSerializationField(pcrAnimEvent* event, uint32_t param1, void* param2, 
                const char* name, uint32_t flags, uint32_t userData);  // @ 0x821A8F58

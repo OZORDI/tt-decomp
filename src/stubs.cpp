@@ -542,7 +542,7 @@ extern "C" int NetDll_recvfrom(int a, void* b, void* c, int d, int e, void* f, i
 extern "C" int NetDll_sendto(int a, void* b, const void* c, int d, int e, const void* f, int g) {
     (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g; return 0;
 }
-extern "C" void SinglesNetworkClient_8990_g(const char* src, char* dest, int maxSize) {
+extern "C" void rage_atStringCopy(const char* src, char* dest, int maxSize) {
     if (dest && maxSize > 0) dest[0] = '\0';
     (void)src;
 }
@@ -582,7 +582,7 @@ extern "C" void xmlNodeStruct_SerializeField(void* a, const char* b, void* c, vo
 // ── atArray / atSingleton ───────────────────────────────────────────────────
 
 extern "C" void* atArray_Destructor(void* a) { (void)a; return nullptr; }
-extern "C" void atSingleton_2E60_g(void* a) { (void)a; }
+extern "C" void atFactory_GetFactory(void* a) { (void)a; }
 extern "C" void* atSingleton_CAD0_g(void* a) { (void)a; return nullptr; }
 extern "C" void parStruct_SerializeMembers(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 
@@ -733,8 +733,8 @@ extern "C" void sysMemAllocator_InitThreadHeap(void) {
 // ── Utility Functions ───────────────────────────────────────────────────────
 
 extern "C" float cmOperator_EvalFloat(void* a) { (void)a; return 0.0f; }
-extern "C" int util_4BD8(void* a) { (void)a; return 0; }
-extern "C" void util_92D8(void* a, void* b) { (void)a; (void)b; }
+extern "C" int cmNode_GetInt(void* a) { (void)a; return 0; }
+extern "C" void cmNode_GetVector(void* a, void* b) { (void)a; (void)b; }
 
 // CRT snprintf overload (C++ mangled)
 void ph_snprintf(char* buf, int size, const char* fmt, const char* str, int val) {
@@ -915,7 +915,7 @@ void atSingleton_5CD0_fw(void* a, uint32_t b) { (void)a; (void)b; }
 void atSingleton_8E88_p42(void* a, void* b, uint32_t c, uint32_t d, uint32_t e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
-void* atSingleton_91E0_gen(uint32_t a) { (void)a; return nullptr; }
+void* atSingletonPool_AllocEntry(uint32_t a) { (void)a; return nullptr; }
 void atSingleton_QueryEventData(void* a, void* b) { (void)a; (void)b; }
 
 // ── Audio ───────────────────────────────────────────────────────────────────
@@ -1479,7 +1479,7 @@ void util_F850(void* a, void* b) { (void)a; (void)b; }
 void rage_27C0(void* a) { (void)a; }
 void* rage_Allocate(unsigned int a) { (void)a; return nullptr; }
 void rage_C1A8(void* a) { (void)a; }
-void rage_D220(void* a, const char* b) { (void)a; (void)b; }
+void datResource_Load(void* a, const char* b) { (void)a; (void)b; }
 void rage_FF70(void* a) { (void)a; }
 void rage_free(void* p) { free(p); }
 void rage_threadpool_cleanup_6878() {}
@@ -1500,7 +1500,7 @@ void util_03C0(void* a, uint32_t* b) { (void)a; (void)b; }
 void util_0AF0(void* a, void* b) { (void)a; (void)b; }
 void util_0AF0(void* a, void* b, short c) { (void)a; (void)b; (void)c; }
 int util_5A70(void* a, void* b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
-void util_6C20(void* a, unsigned int b) { (void)a; (void)b; }
+void sysMemAllocator_PlatformFree(void* a, unsigned int b) { (void)a; (void)b; }
 void util_7970(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 void util_8FD0(void* a) { (void)a; }
 void util_AA38(NetDataQuery* a) { (void)a; }

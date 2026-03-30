@@ -283,7 +283,7 @@ void creditsSettings::RegisterFields() {
     extern const void* g_creditsSettingsSchema;   // @ lbl_825CAF94
 
     // Fields are registered at offsets +16 through +44 (8 float fields + 1 string)
-    // game_8F58 signature: (obj, schema, fieldPtr, desc, flags)
+    // RegisterSerializationField signature: (obj, schema, fieldPtr, desc, flags)
     extern const char* k_scrollSpeed;   // 25936
     extern const char* k_fadeInTime;    // 25948
     extern const char* k_fadeOutTime;   // 25964

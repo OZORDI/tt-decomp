@@ -1913,10 +1913,10 @@ void gdGameData_LoadProperties(atSingleton *obj) {
 //
 // Replaces a loaded property at a given slot index (0-3).
 // Each slot is 124 bytes. Destroys old property, looks up new property
-// via atSingleton_D6E8_g using a property name table, then links
+// via parMember_LoadByName using a property name table, then links
 // the replacement into the property chain.
 // ─────────────────────────────────────────────────────────────────────────────
-extern void atSingleton_D6E8_g(void *param, const char *name);
+extern void parMember_LoadByName(void *param, const char *name);
 
 void *gdGameData_ReplaceLoadedProperty(atSingleton *obj, void *registry,
                                        uint32_t slotIndex) {
@@ -1935,8 +1935,8 @@ void *gdGameData_ReplaceLoadedProperty(atSingleton *obj, void *registry,
   // Property name table at 0x82041748: "tLoadProperties() - 'TotalNumTries'
   // must be positive"
   void *result = (void *)slotBase;
-  extern void *atSingleton_D6E8_g_ret(void *registry, const char *name);
-  void *entry = atSingleton_D6E8_g_ret(registry, (const char *)0x82041748);
+  extern void *parMember_LoadByName_ret(void *registry, const char *name);
+  void *entry = parMember_LoadByName_ret(registry, (const char *)0x82041748);
 
   // Link the replacement property into the chain
   uint32_t *entryNext = (uint32_t *)((uint8_t *)entry + 4);
@@ -2306,7 +2306,7 @@ void atSingleton_DestructorThunk(atSingleton *obj) {
 // slots (0-3). Each slot is 124 bytes. The method:
 //   1. Validates slot index <= 3
 //   2. Calls the destructor on the existing slot contents
-//   3. Registers the new entry via atSingleton_D6E8_g
+//   3. Registers the new entry via parMember_LoadByName
 //   4. Links the new entry's back-pointer to the slot
 //   Always returns 0.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2326,9 +2326,9 @@ uint32_t atSingleton_ReplaceSlotEntry(atSingleton *obj, void *nameBuffer,
   dtor(slotBase);
 
   // Register the new entry with the singleton name registry
-  extern void *atSingleton_D6E8_g(void *nameBuffer, uint8_t *slotBase,
+  extern void *parMember_LoadByName(void *nameBuffer, uint8_t *slotBase,
                                   void *param);
-  void *entry = atSingleton_D6E8_g(nameBuffer, slotBase, (void *)0x82021748);
+  void *entry = parMember_LoadByName(nameBuffer, slotBase, (void *)0x82021748);
 
   // Link back-pointer: entry->field4 = slotBase
   *(uint8_t **)(*(uint8_t **)((uint8_t *)entry + 4)) = slotBase;

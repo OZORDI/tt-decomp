@@ -51,7 +51,7 @@ extern void* g_animState;     // @ 0x826063C4 (SDA offset 25540)
 // Base class destructor body — destroys owned sub-objects and frees frame buffer
 // Sets vtable to phDemoObject, destroys m_pDrawable(+96), m_pDrawable2(+100),
 // m_pData(+20) via virtual dtor, then frees m_pFrameBuffer(+128)
-extern void rage_CFA0(void* self); // @ 0x8227CFA0
+extern void phDemoObject_Dtor(void* self); // @ 0x8227CFA0
 
 // Canonical RAGE allocator free
 extern void rage_free(void* ptr);  // @ 0x820C00C0
@@ -155,7 +155,7 @@ void phUpdateObject::ScalarDtor(int flags)
 // phUpdateObject::Destroy(int flags)  [vtable slot 2 @ 0x820C41E8]
 // Deleting destructor — walks the destructor chain then optionally frees.
 // Sets vtable to phUpdateObject, calls the phDemoObject base destructor
-// (rage_CFA0) which destroys all owned sub-objects, then conditionally
+// (phDemoObject_Dtor) which destroys all owned sub-objects, then conditionally
 // frees this object if (flags & 1).
 // ─────────────────────────────────────────────────────────────────────────────
 /**
@@ -163,13 +163,13 @@ void phUpdateObject::ScalarDtor(int flags)
  *
  * Standard MSVC scalar deleting destructor. Resets the vtable to
  * phUpdateObject (0x82027AC0) for proper destructor chaining, then
- * delegates to rage_CFA0 (the phDemoObject base destructor) which
+ * delegates to phDemoObject_Dtor (the phDemoObject base destructor) which
  * destroys m_pDrawable, m_pDrawable2, m_pData via their virtual
  * destructors and frees m_pFrameBuffer.
  */
 void phUpdateObject::Destroy(int flags) {
     // Base class destructor chain: destroy all owned sub-objects
-    rage_CFA0(this);
+    phDemoObject_Dtor(this);
 
     if (flags & 1) {
         rage_free(this);
