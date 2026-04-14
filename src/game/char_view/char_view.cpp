@@ -9,6 +9,7 @@
 #include "game/char_view.hpp"
 #include "game/char_view_globals.hpp"
 #include <cstring>
+#include <cmath>
 
 // External function declarations
 extern "C" {
@@ -31,7 +32,39 @@ extern "C" {
     void ResetViewBound(void* screenObj, int param);         // @ 0x8230C2C8
     void FadePageGroupOut(void* context, float fade, int flags, int p2, int p3);  // @ 0x823061E8
     void xmlNodeStruct_BaseInitialize(void* obj);            // @ 0x821A8988
+
+    // ── charViewCS helper externs ──
+    // Parser field-registration helper used by RegisterXmlFields.
+    void pongHairData_7B60_g(void* parser, int type, const char* name,
+                              void* fieldAddr, int one, int defaultSlot);  // @ 0x82177B60
+    // Bound validator tail-called by charViewCS::Validate.
+    void phBoundCapsule_DB10_g(void* self);                   // @ 0x8216DB10
+    // Large update routine called by charViewCS::Update.
+    void charViewCS_Update_body(void* self);                  // @ 0x8216C200 (unlifted, stub)
 }
+
+// Global string tables (XML field names) referenced by RegisterXmlFields.
+// Addresses in the original binary, content from .rdata lookup.
+extern const char g_str_charViewCS_field_9C[];   // +156 field
+extern const char g_str_charViewCS_field_A0[];   // +160 field
+extern const char g_str_charViewCS_field_A4[];   // +164 field
+extern const char g_str_charViewCS_field_A8[];   // +168 field
+extern const char g_str_charViewCS_field_AC[];   // +172 field
+extern const char g_str_charViewCS_Shadows[];    // +180 field ("Shadows")
+
+// Linked-list sentinels used by PurgeFilteredNodes (at 0x825CA938/944/93C/948).
+struct charViewCS_Node { void* field_00; charViewCS_Node* next; charViewCS_Node* prev; void* info; };
+extern charViewCS_Node g_charViewCS_freeListHead;    // @ 0x825CA938 (free-list sentinel)
+extern charViewCS_Node g_charViewCS_activeListHead;  // @ 0x825CA944 (active-list sentinel)
+extern charViewCS_Node* g_charViewCS_activeTail;     // @ 0x825CA948
+extern charViewCS_Node* g_charViewCS_freeTail;       // @ 0x825CA93C
+
+// Math constants used by bound clamping (from .data / .rdata constant pool).
+extern const float g_charViewCS_boundHalfExtent;     // +84 when flag set / +8 otherwise
+extern const float g_charViewCS_scale;               // lbl_825C5938
+
+// Error/label strings.
+extern const char g_str_many_bounds_specified[];   // "many bounds specified (Max=%d)"
 
 // Forward declaration
 void ResetCharViewData(void* charViewData);  // @ 0x8240A570
@@ -493,6 +526,336 @@ charViewCS::~charViewCS() {
     // Call base cleanup
     atArray_Destructor(this);
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// charViewCS virtual + helper methods — 10 functions total
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * charViewCS::RegisterXmlFields (vfn_3)
+ * @ 0x8216DBB8 | size: 0xF4
+ *
+ * Registers six XML-serialisable fields with the parser. Five of the six are
+ * registered with type=6 (numeric) and one (at +180 / "Shadows") with type=1
+ * (boolean). All share default-slot=1, scalar=0.
+ *
+ * TODO: Replace the integer type constants (6 / 1) with named enum values
+ *       once the parser type taxonomy is nailed down elsewhere.
+ */
+void charViewCS::RegisterXmlFields(void* parser) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+
+    // Six fields register in the same structural pattern.
+    pongHairData_7B60_g(parser, 6, g_str_charViewCS_field_9C, self + 156, 1, 0);
+    pongHairData_7B60_g(parser, 6, g_str_charViewCS_field_A0, self + 160, 1, 0);
+    pongHairData_7B60_g(parser, 6, g_str_charViewCS_field_A4, self + 164, 1, 0);
+    pongHairData_7B60_g(parser, 6, g_str_charViewCS_field_A8, self + 168, 1, 0);
+    pongHairData_7B60_g(parser, 6, g_str_charViewCS_field_AC, self + 172, 1, 0);
+    pongHairData_7B60_g(parser, 1, g_str_charViewCS_Shadows,  self + 180, 1, 0);
+}
+
+/**
+ * charViewCS::Validate (vfn_4)
+ * @ 0x8216DCB0 | size: 0x4
+ *
+ * Tail-call to the bound-capsule validator. The only instruction in the
+ * original is a branch to phBoundCapsule_DB10_g.
+ */
+void charViewCS::Validate() {
+    phBoundCapsule_DB10_g(this);
+}
+
+/**
+ * charViewCS::GetName (vfn_6)
+ * @ 0x8216DB00 | size: 0xC
+ *
+ * Returns a pointer to the class-name / error-label string at lbl_82036404
+ * ("many bounds specified (Max=%d)" — the original binary keeps several
+ * diagnostic labels in the same string pool and this slot returns one of
+ * them).
+ */
+const char* charViewCS::GetName() {
+    return g_str_many_bounds_specified;
+}
+
+/**
+ * charViewCS::GetVariantName (vfn_7)
+ * @ 0x82177840 | size: 0xC
+ *
+ * Returns the "Shadows:" configuration label (lbl_82037400, the name of the
+ * final XML field this class registers).
+ */
+const char* charViewCS::GetVariantName() {
+    return g_str_charViewCS_Shadows;
+}
+
+/**
+ * charViewCS::Update (vfn_9)
+ * @ 0x8216C200 | size: 0x510
+ *
+ * Main per-frame update for the character-view camera shot. The body is
+ * 1296 bytes of float/vector arithmetic and a handful of dispatches into
+ * sub-objects — too large to lift by hand at this pass. Thunk to the still
+ * unlifted body keeps behaviour identical while letting this method be
+ * resolved by the C++ vtable builder.
+ *
+ * TODO: Lift the 1296-byte body. Likely does:
+ *         1. sample/blend driver state,
+ *         2. recompute bounds via RecalcBounds() / DispatchBoundsOrLookAt(),
+ *         3. push the result into the embedded control object at +292.
+ */
+void charViewCS::Update() {
+    charViewCS_Update_body(this);
+}
+
+/**
+ * charViewCS::RecalcBounds (vfn_10)
+ * @ 0x8216BED0 | size: 0x48
+ *
+ * Iterates the four bound slots. For each slot i it inspects the current
+ * bound count at this+252:
+ *   - if (count == i), or (count >= 4 regardless of i), call
+ *     RecalcBoundSlot(i) to rebuild that slot.
+ *
+ * This is the per-frame entry point into the bound recomputation helper
+ * chain (BF18 -> C100).
+ */
+void charViewCS::RecalcBounds() {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    for (int slot = 0; slot < 4; ++slot) {
+        int32_t count = *reinterpret_cast<const int32_t*>(self + 252);
+        if (count == slot || count >= 4) {
+            RecalcBoundSlot(slot);
+        }
+    }
+}
+
+/**
+ * charViewCS::PurgeFilteredNodes (vfn_11)
+ * @ 0x8216DB88 | size: 0x2C
+ *
+ * Walks the global active-node linked list starting at
+ * g_charViewCS_activeListHead. For each node, looks up its type tag at
+ * info->[+4]; if the tag is one of {5, 6, 12, 13, 14, 16} the node is kept
+ * and the function will return true. Otherwise the node is unlinked from
+ * the active list and pushed onto the free list at g_charViewCS_freeTail.
+ *
+ * @return true if at least one node matched the keep-filter, false if all
+ *         were recycled.
+ *
+ * TODO: Replace the magic tag-set with named constants once the node
+ *       taxonomy is understood ({Direct, Relative, Target, LookAt, ...}).
+ */
+bool charViewCS::PurgeFilteredNodes() {
+    bool kept = false;
+
+    charViewCS_Node* const activeHead = &g_charViewCS_activeListHead;
+    charViewCS_Node* iter = g_charViewCS_activeTail;
+    charViewCS_Node* nextAnchor = activeHead;
+
+    while (iter != activeHead) {
+        int32_t tag = *reinterpret_cast<const int32_t*>(
+            reinterpret_cast<const uint8_t*>(iter->info) + 4);
+        charViewCS_Node* next = iter->next;
+
+        if (tag == 5 || tag == 6 || tag == 12 || tag == 13 ||
+            tag == 14 || tag == 16) {
+            nextAnchor = iter;
+            kept = true;
+        } else {
+            // Unlink from active list.
+            if (iter->next) iter->next->prev = iter->prev;
+            if (iter->prev) iter->prev->next = iter->next;
+
+            // Push onto free list (head = &lbl_825CA938, tail = freeTail).
+            if (g_charViewCS_freeTail) {
+                g_charViewCS_freeTail->prev = iter;
+            }
+            iter->prev = &g_charViewCS_freeListHead;
+            iter->next = g_charViewCS_freeTail;
+            g_charViewCS_freeTail = iter;
+        }
+
+        iter = next;
+    }
+
+    (void)nextAnchor;  // bookkeeping variable in the original; unused here.
+    return kept;
+}
+
+/**
+ * charViewCS::RecalcBoundSlot
+ * @ 0x8216BF18 | size: 0x1E4
+ *
+ * Unpacks three int8 components from a 20-byte descriptor stored at
+ *   bounds_array + slot*20  (where bounds_array = this[+248])
+ * into normalized floats in [-1, 1], clamps each against the
+ * bound half-extent loaded from this[+248]->[+32], and forwards the
+ * normalized axis value to ApplyAxis for each non-zero axis.
+ *
+ * Layout of the descriptor (bytes +12, +13, +15 are the packed int8 axis
+ * samples; the offsets match the IDA lift).
+ *
+ * Numerical constants:
+ *   bias       = lbl_821F9974 (= 127.5f)
+ *   scale      = lbl_821F9970 (= 1/127.5f)
+ *   zero       = lbl_825C5938 (= 0.0f)
+ *   one        = lbl_82030FD0 (= 1.0f)
+ */
+void charViewCS::RecalcBoundSlot(int slot) {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+
+    const uint8_t* boundArray = *reinterpret_cast<const uint8_t* const*>(self + 248);
+    const float halfExtent = *reinterpret_cast<const float*>(boundArray + 32);
+
+    // Descriptor pointer = boundArray + slot * 20 (see lift: r10 = slot*20).
+    const uint8_t* desc = boundArray + slot * 20;
+
+    const float bias  = 127.5f;
+    const float scale = 1.0f / 127.5f;
+    const float zero  = 0.0f;
+    const float one   = 1.0f;
+
+    // Lambda: unpack a uint8 sample -> normalized float in [-1, 1], clamped
+    // to the bound half-extent, then dispatch to ApplyAxis(axis).
+    auto processAxis = [&](int byteOffset, int axis) {
+        uint8_t rawU = desc[byteOffset];
+        float raw = static_cast<float>(rawU);
+        float v = (raw - bias) * scale;                    // normalize
+        if (v < zero) v = zero;
+        if (v > one)  v = one;
+
+        float normalized;
+        if (v > halfExtent) {
+            normalized = (v - halfExtent) / (one - halfExtent);
+        } else if (v < -halfExtent) {
+            normalized = (v + halfExtent) / (one - halfExtent);
+        } else {
+            normalized = zero;
+        }
+
+        if (normalized * zero != zero) {
+            // NaN sentinel — original lift multiplies by zero to check.
+            ApplyAxis(axis);
+        }
+    };
+
+    processAxis(12, 0);   // X
+    processAxis(15, 1);   // Y
+    processAxis(13, 2);   // Z
+}
+
+/**
+ * charViewCS::ApplyAxis
+ * @ 0x8216C100 | size: 0x78
+ *
+ * Writes a clamped position value for one axis into the per-slot position
+ * array at this[+64 + axis*4]. Picks the bound half-extent from either
+ *   - lbl_821F2034 (+84) when byte at this[+180] ("Shadows") is non-zero,
+ *   - lbl_821F1FB8 (+8)  otherwise.
+ *
+ * Pseudocode of the clamp:
+ *     pos      = positions[axis]
+ *     extent   = halfExtentTable[shadowsFlag ? on : off]
+ *     base     = boundDesc[axis].weight   (at +80)
+ *     offset   = boundDesc[axis].offset   (at +68)
+ *     newPos   = pos + base * extent * scaleParam
+ *     newPos   = max(newPos - offset, -offset)  // via fsel trick
+ *     positions[axis] = newPos
+ */
+void charViewCS::ApplyAxis(int axis) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+
+    // Halfextent table: flag at +180 selects +84 vs +8 of table base.
+    const bool shadowsFlag = self[180] != 0;
+    const float extent = shadowsFlag
+        ? *(reinterpret_cast<const float*>(&g_charViewCS_boundHalfExtent) + 21)
+        :  g_charViewCS_boundHalfExtent;
+
+    uint8_t* boundArray = *reinterpret_cast<uint8_t**>(self + 248);
+    // Per-slot descriptor stride in the lift is (axis + axis*8) * 16 = axis*144,
+    // which is the same 16-byte vector layout used elsewhere in the bound table.
+    uint8_t* desc = boundArray + static_cast<uintptr_t>(axis) * 144;
+
+    const float base   = *reinterpret_cast<const float*>(desc + 80);
+    const float offset = *reinterpret_cast<const float*>(desc + 68);
+
+    float& pos = *reinterpret_cast<float*>(self + 64 + axis * 4);
+
+    const float scaleParam = g_charViewCS_scale;
+    float candidate = pos + base * extent * scaleParam;
+
+    // Branch-free max of (candidate - offset, -offset) via fsel in the lift.
+    float adjusted = candidate - offset;
+    if (adjusted < -offset) adjusted = -offset;
+    // Clamp upward bound as well (matches the second fsel in the lift).
+    if (adjusted > offset)  adjusted =  offset;
+
+    pos = adjusted + offset;
+}
+
+/**
+ * charViewCS::DispatchBoundsOrLookAt
+ * @ 0x8216C710 | size: 0x10C
+ *
+ * State-dependent dispatcher that forwards into the embedded sub-object at
+ * this+292 (the object audControl_Destructor cleans up):
+ *
+ *   - If field +284 != 1: call vtable slot 19 (a predicate). If it returns
+ *     non-zero, tail-call vtable slot 4 (handler A).
+ *   - Else (+284 == 1): compute s = |x| + |y| + |z| from floats at
+ *     +256/+260/+264 and compare against the bound threshold at
+ *     bounds->[+36]. If s < threshold, call slot 19 and if true tail-call
+ *     slot 4. Otherwise call slot 19 and if true tail-call slot 3.
+ *
+ * The fall-through path ends without dispatching when the predicate returns
+ * zero.
+ */
+void charViewCS::DispatchBoundsOrLookAt() {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* embedded = self + 292;
+    void*** vt = reinterpret_cast<void***>(embedded);
+
+    auto callPredicate19 = [&]() -> bool {
+        using Fn = bool (*)(void*);
+        Fn fn = reinterpret_cast<Fn>((*vt)[19]);
+        return fn(embedded) != 0;
+    };
+    auto tailCallSlot = [&](int slot) {
+        using Fn = void (*)(void*);
+        Fn fn = reinterpret_cast<Fn>((*vt)[slot]);
+        fn(embedded);
+    };
+
+    const int32_t state = *reinterpret_cast<const int32_t*>(self + 284);
+
+    if (state != 1) {
+        // Non-state-1: predicate -> slot 4 handler.
+        if (!callPredicate19()) return;
+        tailCallSlot(4);
+        return;
+    }
+
+    // State 1: evaluate bound budget.
+    const float absX = std::fabs(*reinterpret_cast<const float*>(self + 256));
+    const float absY = std::fabs(*reinterpret_cast<const float*>(self + 260));
+    const float absZ = std::fabs(*reinterpret_cast<const float*>(self + 264));
+    const uint8_t* bounds = *reinterpret_cast<uint8_t* const*>(self + 248);
+    const float threshold = *reinterpret_cast<const float*>(bounds + 36);
+
+    const float sum = absY + absX + absZ;
+
+    if (sum >= threshold) {
+        // Over-budget: slot 3 handler.
+        if (!callPredicate19()) return;
+        tailCallSlot(3);
+    } else {
+        // Under budget: slot 4 handler.
+        if (!callPredicate19()) return;
+        tailCallSlot(4);
+    }
+}
+
 
 // ────────────────────────────────────────────────────────────────────────────
 // pongCharViewState Implementation

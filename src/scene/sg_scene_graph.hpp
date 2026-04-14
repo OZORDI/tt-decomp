@@ -34,19 +34,53 @@ struct sgTraversalContext {
 
 // ---------------------------------------------------------------------------
 // Traversal visitor base — one concrete subclass per traversal type
+//
+// Each visitor's Apply() is a tiny thunk: it re-dispatches on the current
+// sgNode's vtable at a fixed slot, effectively invoking a per-node-type
+// virtual (Initialize/Update/Draw/…) polymorphically.
+//
+// The slot offsets (bytes from vtable base) are:
+//     slot 23  +0x5C (  92)  Initialize
+//     slot 24  +0x60 (  96)  Terminate        (also aliased by Reset impl 24)
+//     slot 25  +0x64 ( 100)  Reset
+//     slot 26  +0x68 ( 104)  Restart
+//     slot 27  +0x6C ( 108)  Update
+//     slot 28  +0x70 ( 112)  PostUpdate
+//     slot 29  +0x74 ( 116)  Draw
+//     slot 30  +0x78 ( 120)  DrawDebug
 // ---------------------------------------------------------------------------
 struct sgTraverseBase {
     void** vtable;  // +0x00
+
+    // Apply the visitor to a single scene-graph node.
+    // Implemented as a tail-call through pNode->vtable[slotN](pNode).
+    virtual void Apply(sgNode* pNode) = 0;
 };
 
-struct sgTraverseInitialize  : sgTraverseBase {};  // vtable @ 0x82071D4C  slot 23
-struct sgTraverseReset       : sgTraverseBase {};  // vtable @ 0x82071D5C  slot 24
-struct sgTraverseRestart     : sgTraverseBase {};  // vtable @ 0x82071D6C  slot 25
-struct sgTraverseUpdate      : sgTraverseBase {};  // vtable @ 0x82071D7C  slot 27
-struct sgTraversePostUpdate  : sgTraverseBase {};  // vtable @ 0x82071D8C  slot 28
-struct sgTraverseDraw        : sgTraverseBase {};  // vtable @ 0x82071D9C  slot 29
-struct sgTraverseDrawDebug   : sgTraverseBase {};  // vtable @ 0x82071DAC  slot 30
-struct sgTraverseTerminate   : sgTraverseBase {};  // vtable @ 0x82071DBC  slot 24 (alt)
+struct sgTraverseInitialize  : sgTraverseBase {  // vtable @ 0x82071D4C
+    void Apply(sgNode* pNode) override;           // @ 0x823D9F10
+};
+struct sgTraverseTerminate   : sgTraverseBase {  // vtable @ 0x82071DBC
+    void Apply(sgNode* pNode) override;           // @ 0x823D9FB8
+};
+struct sgTraverseReset       : sgTraverseBase {  // vtable @ 0x82071D5C
+    void Apply(sgNode* pNode) override;           // @ 0x823D9F28
+};
+struct sgTraverseRestart     : sgTraverseBase {  // vtable @ 0x82071D6C
+    void Apply(sgNode* pNode) override;           // @ 0x823D9F40
+};
+struct sgTraverseUpdate      : sgTraverseBase {  // vtable @ 0x82071D7C
+    void Apply(sgNode* pNode) override;           // @ 0x823D9F58
+};
+struct sgTraversePostUpdate  : sgTraverseBase {  // vtable @ 0x82071D8C
+    void Apply(sgNode* pNode) override;           // @ 0x823D9F70
+};
+struct sgTraverseDraw        : sgTraverseBase {  // vtable @ 0x82071D9C
+    void Apply(sgNode* pNode) override;           // @ 0x823D9F88
+};
+struct sgTraverseDrawDebug   : sgTraverseBase {  // vtable @ 0x82071DAC
+    void Apply(sgNode* pNode) override;           // @ 0x823D9FA0
+};
 
 // ---------------------------------------------------------------------------
 // sgSceneGraph  —  root container; holds 7 traversal lists

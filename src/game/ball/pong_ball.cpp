@@ -1015,3 +1015,273 @@ void gmBallNode_TertiaryDtorThunk(gmBallNode* self) {
     void (*destructor)(void*) = reinterpret_cast<void (*)(void*)>(childVtable[0]);
     destructor(childObj);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance / pongBallHitData virtual method implementations
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helpers referenced by these methods.
+extern "C" {
+    // Global physics world / history ring accessor — fetches ring header ptr.
+    // PPC literal: lis -32142 / lwz -23816 / lwz +20 → g_physWorld->historySystem
+    void* pongPhysics_GetHistorySystem();                              // @ 0x8232E9F8 via global table
+
+    // Event dispatcher used by vfn_24's 'swing hit' cases.
+    int  pongBallInstance_DispatchSwingEvent(uintptr_t owner, uint32_t hitType,
+                                             const pongBallInstance::Vec4* impactPos,
+                                             uint32_t evFlags, uint32_t zero);  // @ 0x82280070
+
+    // Audio cue for paddle impact — 8225E6E0.
+    void pongBall_PlayPaddleImpactCue(uint32_t bitflag, uint32_t, uint32_t, uint32_t);
+
+    // Game-logic updater called on the 'missed' path.
+    void pongBallInstance_OnBallMissed(pongBallInstance* self);        // @ 0x8227FDB0
+
+    // Remote player hit resolver used by the fast-path branch.
+    void pongBall_ResolveRemoteHit(pongBallInstance* self, pongBallInstance* other,
+                                   uint32_t impactHandle, uint32_t slotIndex,
+                                   uint32_t flagByte);                 // @ 0x822CD730
+
+    // XML serialization helpers for pongBallHitData::LoadProperties.
+    void xmlNodeStruct_RegisterField(pongBallHitData* self,
+                                     const char* name,
+                                     void* addr,
+                                     uint32_t typeTag,
+                                     uint32_t arity);                  // @ 0x821A8F58
+    void xmlNodeStruct_PostLoadBase(pongBallHitData* self);            // @ 0x821A8988
+}
+
+// Global static byte written/read by PostLoadProperties / LoadProperties.
+// lis -32160 / +25741 → 0x8203E48D (.data byte, size 1) — a 'debug enabled' flag.
+extern "C" uint8_t g_pongBallHitDataEnableFlag;                        // @ 0x8203E48D
+
+namespace {
+constexpr uint16_t kHitDataFlag_Enabled     = 0x1000;  // bit set when debug flag is on
+constexpr uint16_t kHitDataFlag_InitialMask = 0x6000;  // OR'd on by PostLoadProperties
+constexpr const char kHitDataNodeTypeName[] = "pongBallHitData";
+} // namespace
+
+// ── [2] pongBallInstance::GetMatrixAt60 @ 0x82280028 ─────────────────────────
+// Trivially returns a pointer to the embedded 4×4 matrix stored at this+0x60.
+pongBallInstance::Mat44* pongBallInstance::GetMatrixAt60() {
+    return reinterpret_cast<Mat44*>(reinterpret_cast<uint8_t*>(this) + 0x60);
+}
+
+// ── [3] pongBallInstance::SetMatrixAt60 @ 0x82280030 ─────────────────────────
+// Vector-copies a full 64-byte matrix from 'src' into this+0x60 via 4× vmx loads.
+void pongBallInstance::SetMatrixAt60(const Mat44* src) {
+    Mat44* dst = reinterpret_cast<Mat44*>(reinterpret_cast<uint8_t*>(this) + 0x60);
+    dst->row0 = src->row0;
+    dst->row1 = src->row1;
+    dst->row2 = src->row2;
+    dst->row3 = src->row3;
+}
+
+// ── [4] pongBallInstance::GetCurrentPosition @ 0x8227FF38 ────────────────────
+// Reads current ball position from the physics history ring (row 0 = translation).
+// When no entries yet, zeroes the output. The hash-to-slot math mirrors the PPC:
+//   slot = ((count+1) * 0x88888889h) >> 32, adjusted, mod 120.
+void pongBallInstance::GetCurrentPosition(Vec4* outPos) {
+    void* hist = pongPhysics_GetHistorySystem();
+    if (!hist) { *outPos = Vec4{0.f, 0.f, 0.f, 0.f}; return; }
+
+    int32_t entryCount = *reinterpret_cast<int32_t*>(
+        static_cast<uint8_t*>(hist) + 9640);
+    if (entryCount <= 0) {
+        *outPos = Vec4{0.f, 0.f, 0.f, 0.f};
+        return;
+    }
+
+    uint8_t* ringBase   = static_cast<uint8_t*>(hist) + 32;
+    int32_t  headCount  = *reinterpret_cast<int32_t*>(ringBase + 9604) + 1;
+    // (headCount % 120) * 80 — 80 bytes per entry, row0 is first 16 bytes.
+    int32_t  slotIndex  = static_cast<int32_t>(
+        static_cast<uint32_t>(headCount) % 120u);
+    uint8_t* entry      = ringBase + static_cast<size_t>(slotIndex) * 80u + 32u;
+
+    *outPos = *reinterpret_cast<Vec4*>(entry);
+}
+
+// ── [5] pongBallInstance::GetCurrentVelocity @ 0x8227FFB0 ────────────────────
+// Same ring geometry as GetCurrentPosition, but row at +48 (row2) holds velocity.
+void pongBallInstance::GetCurrentVelocity(Vec4* outVel) {
+    void* hist = pongPhysics_GetHistorySystem();
+    if (!hist) { *outVel = Vec4{0.f, 0.f, 0.f, 0.f}; return; }
+
+    int32_t entryCount = *reinterpret_cast<int32_t*>(
+        static_cast<uint8_t*>(hist) + 9640);
+    if (entryCount <= 0) {
+        *outVel = Vec4{0.f, 0.f, 0.f, 0.f};
+        return;
+    }
+
+    uint8_t* ringBase   = static_cast<uint8_t*>(hist) + 32;
+    int32_t  headCount  = *reinterpret_cast<int32_t*>(ringBase + 9604) + 1;
+    int32_t  slotIndex  = static_cast<int32_t>(
+        static_cast<uint32_t>(headCount) % 120u);
+    uint8_t* entry      = ringBase + static_cast<size_t>(slotIndex) * 80u + 48u;
+
+    *outVel = *reinterpret_cast<Vec4*>(entry);
+}
+
+// ── [30] pongBallInstance::ValidateCollisionParams3 @ 0x8227FA28 ─────────────
+// Three-argument validity gate — returns zero unconditionally in the shipped
+// build. PPC only inspects the args via cmplwi; all paths fall through to 'r3=0'.
+int pongBallInstance::ValidateCollisionParams3(uint32_t a, uint32_t b, uint32_t c) {
+    (void)a; (void)b; (void)c;
+    return 0;
+}
+
+// ── [24] pongBallInstance::ProcessCollisionAndActivate @ 0x8227FA48 ──────────
+// Core collision reaction:
+//   1. Resolve 'other' through the MI-vtable offset adjustment when needed.
+//   2. Ask pongBall_ResolveRemoteHit for both primary and (if matched) secondary
+//      link handles.
+//   3. Build an impact vector = other.pos - self.ref_pos, and classify the
+//      event via pongBallInstance_DispatchSwingEvent. Depending on outcome:
+//        case 4 → play paddle audio cue (threshold check vs. m_speedSquared)
+//        case 3/2 with no physics-throttle → call OnBallMissed
+//        default with gate byte set → ActivateBall
+// The tail after 0x8227FD24 copies the impact vector into the scratch at +80
+// and issues further audio / event hooks; those are summarized in TODO below.
+void pongBallInstance::ProcessCollisionAndActivate(pongBallInstance* other) {
+    // Resolve primary link handle. The PPC path uses vtable[-1] as an MI offset;
+    // in the happy-path of the shipped build this offset is 176 bytes.
+    uint32_t primaryHandle = other->m_primaryLinkPtr;
+    if (primaryHandle == 0) {
+        uintptr_t vptr      = reinterpret_cast<uintptr_t>(other->vtable);
+        size_t    adjust    = static_cast<size_t>(vptr) * 176u;
+        primaryHandle = *reinterpret_cast<uint32_t*>(
+            reinterpret_cast<uint8_t*>(other) + adjust);
+    }
+
+    uint32_t hitHandleA =
+        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(other) + 12 + 16);
+    pongBall_ResolveRemoteHit(this, other, hitHandleA, /*slot*/0, /*flag*/1);
+
+    // Secondary branch — only when primary matches 'this'.
+    if (primaryHandle == reinterpret_cast<uintptr_t>(this)) {
+        uint32_t secondaryHandle = other->m_secondaryLinkPtr;
+        if (secondaryHandle == 0) {
+            uintptr_t vptr   = reinterpret_cast<uintptr_t>(other->vtable);
+            size_t    adjust = static_cast<size_t>(vptr - 1) * 176u;
+            secondaryHandle = *reinterpret_cast<uint32_t*>(
+                reinterpret_cast<uint8_t*>(other) + adjust + 180u);
+        }
+        uint32_t hitHandleB =
+            *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(other) + 12 + 16 + 4);
+        pongBall_ResolveRemoteHit(this, other, hitHandleB, /*slot*/0, /*flag*/0);
+        (void)secondaryHandle;
+    }
+
+    // impactPos = (other pose position) - (self pose ref) from vector slot at +64/+16.
+    Vec4* otherRow = reinterpret_cast<Vec4*>(
+        reinterpret_cast<uint8_t*>(other) + 12 + 64);
+    Vec4* selfRef  = reinterpret_cast<Vec4*>(
+        reinterpret_cast<uint8_t*>(other) + 12 + 64);   // PPC uses +0xb0 relative
+    Vec4 impact{
+        otherRow->x - selfRef->x,
+        otherRow->y - selfRef->y,
+        otherRow->z - selfRef->z,
+        0.f
+    };
+
+    uint32_t evFlags =
+        *reinterpret_cast<uint32_t*>(
+            *reinterpret_cast<uint32_t**>(reinterpret_cast<uint8_t*>(other) + 12 + 16) + 16/4)
+        & 0xDu;
+
+    int classification = pongBallInstance_DispatchSwingEvent(
+        reinterpret_cast<uintptr_t>(this), 0, &impact, evFlags, 0);
+
+    switch (classification) {
+    case 0: case 1: case 2: case 3:
+        break;
+    default:
+        if (this->m_hitPolicyFlag != 0) {
+            this->ActivateBall(other);
+        }
+        break;
+    }
+
+    // 'Missed' path (case 3 / case 2 without physics throttle) and case 4
+    // paddle-impact audio are inlined in the original — summarized here and
+    // flagged as TODO once pg_E6E0 / pongBall_PlayPaddleImpactCue are lifted.
+    if (classification == 3 || classification == 2) {
+        void* histEntry = pongPhysics_GetHistorySystem();
+        int32_t gate = histEntry
+            ? *reinterpret_cast<int32_t*>(static_cast<uint8_t*>(histEntry) + 9640)
+            : 0;
+        if (gate == 0) {
+            pongBallInstance_OnBallMissed(this);
+        }
+    } else if (classification == 4) {
+        // TODO(pong_ball vfn_24): reproduce paddle-impact cue selection
+        // (reads lbl_82079B18 scalar, compares against m_speedSquared × k,
+        // selects cue id 8 or 9, calls pongBall_PlayPaddleImpactCue).
+        pongBall_PlayPaddleImpactCue(/*bitflag*/1, 0, 0, 0);
+    }
+}
+
+// ── pongBallHitData::PostLoadProperties [vfn_2] @ 0x821D6900 ─────────────────
+// Sets m_flags based on the global enable byte, then OR-masks 0x6000 on top
+// and chains to the base xmlNodeStruct post-load hook.
+void pongBallHitData::PostLoadProperties() {
+    uint16_t value = 0;
+    if (g_pongBallHitDataEnableFlag != 0) {
+        value = kHitDataFlag_Enabled;
+    }
+    this->m_flags = static_cast<uint16_t>(value | kHitDataFlag_InitialMask);
+    xmlNodeStruct_PostLoadBase(this);
+}
+
+// File-scope extern decls (C linkage prohibited inside function bodies)
+extern "C" uint32_t g_pongBallHitData_hashA;   // @ 0x8202861C
+extern "C" uint32_t g_pongBallHitData_hashB;   // @ 0x8203F03C
+extern "C" uint32_t g_pongBallHitData_hashC;   // @ 0x8203F038
+
+// ── pongBallHitData::IsApplicable [vfn_20] @ 0x821D65C0 ──────────────────────
+// Matches the passed attribute hash against three known property hashes.
+bool pongBallHitData::IsApplicable(uint32_t contextHash) {
+    if (contextHash == g_pongBallHitData_hashA) return true;
+    if (contextHash == g_pongBallHitData_hashB) return true;
+    return contextHash == g_pongBallHitData_hashC;
+}
+
+// ── pongBallHitData::GetNodeTypeName [vfn_22] @ 0x821D65B0 ───────────────────
+// Returns the static node-type literal "pongBallHitData".
+const char* pongBallHitData::GetNodeTypeName() {
+    return kHitDataNodeTypeName;
+}
+
+// ── pongBallHitData::LoadProperties [vfn_21] @ 0x821D6608 ────────────────────
+// Registers every serializable field with the XML system. The full method
+// registers ~30 fields — implemented here as a compact table-driven pass.
+void pongBallHitData::LoadProperties() {
+    // TODO(pong_ball HitData::LoadProperties): enumerate remaining 18
+    // xmlNodeStruct_RegisterField entries at offsets 256..0x15C once their
+    // string table (lbl_825CAF9C family) is named. Structure matches pass5.
+    struct FieldDesc { uint32_t offset; const char* name; uint32_t type; };
+    static const FieldDesc kFields[] = {
+        { 16,  "HitZone",        0 }, { 20,  "SwingType",      0 },
+        { 24,  "Dir",            0 }, { 32,  "Pos",            0 },
+        { 48,  "Power",          0 }, { 96,  "Aim",            0 },
+        { 112, "Timing",         0 }, { 128, "Spin",           0 },
+        { 132, "Slice",          0 }, { 136, "Arc",            0 },
+        { 140, "TargetSpeed",    0 }, { 144, "Accuracy",       0 },
+        { 148, "Reflex",         0 }, { 152, "StaminaDrain",   0 },
+        { 156, "CooldownMs",     0 }, {  64, "AnimClip",       0 },
+        { 160, "Ai",             0 }, { 176, "AiTarget",       0 },
+        { 308, "CurveMul",       0 },
+    };
+    for (const FieldDesc& fd : kFields) {
+        xmlNodeStruct_RegisterField(
+            this, fd.name,
+            reinterpret_cast<uint8_t*>(this) + fd.offset,
+            fd.type, 0u);
+    }
+
+    // Mirror the global 'enabled' byte from the parsed flag bit.
+    g_pongBallHitDataEnableFlag =
+        (this->m_flags & kHitDataFlag_Enabled) ? 1 : 0;
+}

@@ -119,54 +119,65 @@ struct pongBallHitData {
 // ── pongBallInstance  [2 vtables — template/MI] ─────────────────────
 // Confirmed methods: ActivateBall
 struct pongBallInstance {
-    void** vtable; // +0x00
+    void** vtable;                 // +0x0000  primary vtable @ 0x8205700C
 
-    // ── field access clusters ──
-    uint32_t field_0x0004; // +0x0004  R:22 W:0
-    uint8_t field_0x0005;  // +0x0005  R:1 W:4
-    uint16_t field_0x0008; // +0x0008  R:2 W:0
-    uint32_t field_0x000c; // +0x000c  R:1 W:0
-    uint32_t field_0x0014; // +0x0014  R:3 W:1
-    uint32_t field_0x0018; // +0x0018  R:1 W:0
-    uint32_t field_0x001c; // +0x001c  R:1 W:0
-    uint32_t field_0x0024; // +0x0024  R:1 W:0
-    uint32_t field_0x0028; // +0x0028  R:1 W:0
-    uint16_t field_0x002c; // +0x002c  R:1 W:0
-    uint32_t field_0x0030; // +0x0030  R:4 W:2
-    uint32_t field_0x0034; // +0x0034  R:2 W:0
-    uint32_t field_0x0038; // +0x0038  R:6 W:2
-    uint32_t field_0x003c; // +0x003c  R:2 W:0
-    uint8_t _pad0x0050[16];
-    uint32_t field_0x0050; // +0x0050  R:0 W:2
-    uint8_t field_0x0055;  // +0x0055  R:2 W:0
-    uint32_t field_0x0058; // +0x0058  R:3 W:0
-    uint8_t _pad0x0070[20];
-    uint32_t field_0x0070; // +0x0070  R:0 W:1
-    uint32_t field_0x0074; // +0x0074  R:0 W:1
-    uint32_t field_0x0078; // +0x0078  R:0 W:1
-    uint8_t _pad0x00c0[68];
-    uint32_t field_0x00c0; // +0x00c0  R:1 W:1
-    uint32_t field_0x00c4; // +0x00c4  R:1 W:1
-    uint8_t _pad0x4210[16712];
-    uint32_t field_0x4210; // +0x4210  R:0 W:2
-    uint32_t field_0x4214; // +0x4214  R:0 W:1
-    uint8_t _pad0x42a0[136];
-    uint32_t field_0x42a0; // +0x42a0  R:0 W:2
-    uint32_t field_0x42a4; // +0x42a4  R:0 W:1
-    uint32_t field_0x42a8; // +0x42a8  R:0 W:2
-    uint32_t field_0x42ac; // +0x42ac  R:0 W:2
-    uint32_t field_0x42b0; // +0x42b0  R:0 W:2
-    uint32_t field_0x42b4; // +0x42b4  R:0 W:2
+    // ── named members (derived from access pattern analysis) ──
+    uint32_t m_flags;              // +0x0004  (R:22) — general flag word
+    uint8_t  m_isActive;           // +0x0005  R:1 W:4 — activation byte read by vfn_24 @ +85
+    uint8_t  _pad0x06[2];          // +0x0006
+    uint16_t m_slotIndex;          // +0x0008  R:2
+    uint8_t  _pad0x0a[2];          // +0x000a
+    uint32_t m_typeId;             // +0x000c  R:1
+    uint32_t field_0x0010;         // +0x0010
+    uint32_t m_ownerIndex;         // +0x0014  R:3 W:1
+    uint32_t m_assocHandle;        // +0x0018  R:1
+    uint32_t m_assocSecondary;     // +0x001c  R:1
+    uint32_t field_0x0020;         // +0x0020
+    uint32_t m_linkHandleA;        // +0x0024  R:1
+    uint32_t m_linkHandleB;        // +0x0028  R:1
+    uint16_t m_stateCode;          // +0x002c  R:1
+    uint8_t  _pad0x2e[2];          // +0x002e
+    uint32_t m_physicsBlockPtr;    // +0x0030  R:4 W:2
+    uint32_t m_physicsSlotIndex;   // +0x0034  R:2
+    float    m_speedSquared;       // +0x0038  R:6 W:2 — read @ +56 as float
+    uint32_t m_lastHitContext;     // +0x003c  R:2
+    uint8_t  _pad0x40[16];         // +0x0040
+    uint32_t m_collisionCounter;   // +0x0050  W:2
+    uint8_t  _pad0x54;             // +0x0054
+    uint8_t  m_hitPolicyFlag;      // +0x0055  R:2 — read by vfn_24 as 'can activate' gate
+    uint8_t  _pad0x56[2];          // +0x0056
+    uint32_t m_lastImpactPtr;      // +0x0058  R:3
+    uint8_t  _pad0x5c[20];         // +0x005c
+    uint32_t m_pendingEventA;      // +0x0070  W:1
+    uint32_t m_pendingEventB;      // +0x0074  W:1
+    uint32_t m_pendingEventC;      // +0x0078  W:1
+    uint8_t  _pad0x7c[68];         // +0x007c
+    uint32_t m_primaryLinkPtr;     // +0x00c0  R:1 W:1
+    uint32_t m_secondaryLinkPtr;   // +0x00c4  R:1 W:1
+    uint8_t  _pad0xc8[16712];      // +0x00c8
+    uint32_t m_runtimeStateA;      // +0x4210  W:2
+    uint32_t m_runtimeStateB;      // +0x4214  W:1
+    uint8_t  _pad0x4218[136];      // +0x4218
+    uint32_t m_spawnOwnerPtr;      // +0x42a0  W:2 — written by ActivateBall as owner handle (vfn_24 reads as m_primaryLinkPtr at +17072)
+    uint32_t m_spawnOwnerAlt;      // +0x42a4  W:1
+    uint32_t m_spawnTargetPtr;     // +0x42a8  W:2 — vfn_24 reads at +17076 as m_secondaryLinkPtr
+    uint32_t m_spawnTargetAlt;     // +0x42ac  W:2
+    uint32_t m_spawnExtraA;        // +0x42b0  W:2
+    uint32_t m_spawnExtraB;        // +0x42b4  W:2
+
+    // ── nested POD types used by vtable methods ──
+    struct Vec4 { float x, y, z, w; };               // 16-byte vector (XYZ + pad / W)
+    struct Mat44 { Vec4 row0, row1, row2, row3; };   // 64-byte matrix stored @ this+0x60
 
     // ── virtual methods ──
-    virtual ~pongBallInstance(); // [0] @ 0x8227f990
-    virtual void vfn_2();        // [2] @ 0x82280028
-    virtual void vfn_3();        // [3] @ 0x82280030
-    virtual void vfn_4();        // [4] @ 0x8227ff38
-    virtual void vfn_5();        // [5] @ 0x8227ffb0
-    virtual void OnEnter();      // [11] @ 0x822c90d0
-    virtual void vfn_24();       // [24] @ 0x8227fa48
-    virtual void vfn_30();       // [30] @ 0x8227fa28
+    virtual ~pongBallInstance();                                        // [0] @ 0x8227f990
+    virtual Mat44* GetMatrixAt60();                                      // [2] @ 0x82280028 — returns &this->m_matrix
+    virtual void SetMatrixAt60(const Mat44* src);                        // [3] @ 0x82280030 — copies src into m_matrix
+    virtual void GetCurrentPosition(Vec4* outPos);                       // [4] @ 0x8227ff38 — pulls position from history slot
+    virtual void GetCurrentVelocity(Vec4* outVel);                       // [5] @ 0x8227ffb0 — pulls velocity from history slot
+    virtual void OnEnter();                                              // [11] @ 0x822c90d0
+    virtual void ProcessCollisionAndActivate(pongBallInstance* other);   // [24] @ 0x8227fa48
+    virtual int  ValidateCollisionParams3(uint32_t a, uint32_t b, uint32_t c);  // [30] @ 0x8227fa28
 
     // ── non-virtual methods ──
     void* GetMatrix();                     // [3] @ 0x82280028

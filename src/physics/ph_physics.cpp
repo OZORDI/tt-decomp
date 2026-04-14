@@ -9892,3 +9892,198 @@ int phInst_1488_sp(void* /*unused*/, uint32_t* outSize)
     return 0;
 }
 
+
+
+/* ======================================================================
+ *  rage::phBoundTaperedCapsule — virtual-method implementations
+ *
+ *  Slot numbering matches the shared phBound dispatch table; slot meanings
+ *  are inherited from phBoundBox / phBoundCapsule parent layouts.  All
+ *  functions were recovered from pass5_final recomp.  The struct layout
+ *  follows phBoundCapsule (radius / half-length / material index fields)
+ *  extended with tapered-endpoint radii.
+ * ====================================================================== */
+
+extern const float g_phTaperedCapsuleVolK1;  // @ .rdata (fmadds mid term)
+extern const float g_phTaperedCapsuleVolK2;  // @ .rdata (final scale ~4/3*PI)
+extern void  ph_1B78(void* dst, void* src, float radius, float halfLen);
+extern void* g_phBoundTaperedCapsuleUpdateImpl; // slot 20 of a global manager vtable
+
+namespace rage {
+
+/**
+ * phBoundTaperedCapsule::GetMaterialIndex @ 0x8233A8E8 | size: 8
+ * Returns the active material index stored at +0xF0.
+ */
+uint32_t phBoundTaperedCapsule::GetMaterialIndex() {
+    return this->m_nMaterialIndex;
+}
+
+/**
+ * phBoundTaperedCapsule::SetMaterialIndex @ 0x8233A8F0 | size: 8
+ * Writes the given material index to +0xF0.
+ */
+void phBoundTaperedCapsule::SetMaterialIndex(uint32_t idx) {
+    this->m_nMaterialIndex = idx;
+}
+
+/**
+ * phBoundTaperedCapsule::GetVolume @ 0x8233A898 | size: 0x2C
+ * Computes capsule volume as:
+ *   r = m_fRadiusA  (offset +0x70 in recomp: +112)
+ *   h = m_fRadiusB  (offset +0x90 in recomp: +144)
+ *   vol = ( (r * K1 + h) * r * r ) * K2
+ * where K2 ≈ 4/3 * PI.  Recovered from pass5_final (8233A898).
+ */
+float phBoundTaperedCapsule::GetVolume() {
+    const float r    = this->m_fRadiusA;
+    const float h    = this->m_fRadiusB;
+    const float midK = g_phTaperedCapsuleVolK1;
+    const float scl  = g_phTaperedCapsuleVolK2;
+    const float term = (r * midK) + h;   // fmadds f11,f0,f13,f12
+    return ((term * r) * r) * scl;
+}
+
+/**
+ * phBoundTaperedCapsule::GetSupportPoint @ 0x8233AD38 | size: 0x10
+ * Delegates to ph_1B78 with the direction-vector in r4 supplying the
+ * two tapered radii (+0x70 and +0x90) as geometry parameters.
+ */
+void phBoundTaperedCapsule::GetSupportPoint(void* direction, void* outPoint) {
+    phBoundTaperedCapsule* src = reinterpret_cast<phBoundTaperedCapsule*>(direction);
+    const float halfLen = src->m_fRadiusB;   // +0x90
+    const float radius  = src->m_fRadiusA;   // +0x70
+    ph_1B78(this, direction, radius, halfLen);
+    (void)outPoint;
+}
+
+/**
+ * phBoundTaperedCapsule::UpdateBound @ 0x8233A8C8 | size: 0x20
+ * Fetches the material index (+0xF0) and tail-calls slot 20 of the
+ * global update-dispatcher (the phBoundTaperedCapsule-update handler
+ * table, referenced via small-data-area).
+ */
+void phBoundTaperedCapsule::UpdateBound() {
+    const uint32_t matIdx = this->m_nMaterialIndex;
+    void** dispatcher = reinterpret_cast<void**>(&g_phBoundTaperedCapsuleUpdateImpl);
+    typedef void (*Slot20)(void*, uint32_t);
+    Slot20 fn = reinterpret_cast<Slot20>(dispatcher[5]);  // vtable slot 20 / entry 5
+    fn(dispatcher, matIdx);
+}
+
+/**
+ * phBoundTaperedCapsule::RecalcBounds @ 0x8233AA00 | size: 0x104
+ * Refreshes the derived AABB / centroid after a geometry change.
+ * NOTE: structured body not yet lifted (no Hex-Rays pseudocode and the
+ * pass5 scaffold makes heavy use of vector intrinsics we have not
+ * migrated to the clean source).  Kept as a thin forwarder to the raw
+ * recomp until the float-vector helper batch lands.
+ */
+void phBoundTaperedCapsule::RecalcBounds() {
+    // TODO: lift full body (requires vec4-friendly helpers shared with
+    // phBoundCapsule::UpdateBound); safe no-op while the pre-computed
+    // AABB in +0x08..+0x1E remains in sync.
+}
+
+/**
+ * phBoundTaperedCapsule::CalcAABB @ 0x8233AB98 | size: 0x19C
+ * Transforms the local AABB by the incoming matrix.
+ * TODO: lift — needs shared matrix-vs-extent helper from phBoundBox.
+ */
+void phBoundTaperedCapsule::CalcAABB() {
+    // TODO: shared with phBoundBox::CalcAABB; implement after the
+    // matrix/extent helper is consolidated into ph_math.
+}
+
+/**
+ * phBoundTaperedCapsule::ContainsPoint @ 0x8233B020 | size: 0x1D4
+ * Point-in-tapered-capsule test.  TODO: lift from raw recomp.
+ */
+void phBoundTaperedCapsule::ContainsPoint() {
+    // TODO: tapered-capsule point test; requires vec dot + clamp helpers.
+}
+
+/**
+ * phBoundTaperedCapsule::TestMovingSphere @ 0x8233ADA8 | size: 0x278
+ * Swept-sphere vs tapered-capsule collision.  TODO: lift.
+ */
+void phBoundTaperedCapsule::TestMovingSphere() {
+    // TODO: uses GJK-style root-finding; unlifted.
+}
+
+/**
+ * phBoundTaperedCapsule::ComputeSupportDistance @ 0x8233AD48 | size small
+ * Returns the support-distance along a direction for margin queries.
+ * TODO: lift — tiny body but uses tapered-radius interpolation helpers.
+ */
+float phBoundTaperedCapsule::ComputeSupportDistance() {
+    // TODO: lift — returns interpolated max(radiusA,radiusB) + margin.
+    return 0.0f;
+}
+
+/* ==========================================================================
+ *  rage::phBoundSurface — virtual-method implementations
+ * ========================================================================== */
+
+extern const float g_phBoundSurfaceCellScale;     // +4 of rdata struct
+extern const float g_phBoundSurfaceInvCellScale;  // +8 of rdata struct
+extern const float g_phBoundSurfaceOriginBias;    // +0  (origin/ref height)
+extern const float g_phBoundSurfaceHalfBias;      // +30112 (grid half-bias)
+
+/**
+ * phBoundSurface::SampleHeightBilinear @ 0x822AFE88 | size: 0x12C
+ *
+ * Bilinear height-field lookup. The surface stores a 32x32 height grid
+ * reachable via (heightGridPtr = *(this + 112)) + 8192 (first float cell).
+ * fx / fy are world-space XY coordinates; they are scaled by the cached
+ * per-surface inverse cell size (g_phBoundSurfaceCellScale), floor-quantized
+ * via fctiwz, biased to cell-corner coordinates and then bilinearly
+ * interpolated across the four neighbouring samples.  When the height
+ * pointer is NULL the function returns the constant fall-back height
+ * (g_phBoundSurfaceInvCellScale) as seen in the recomp early-exit path.
+ */
+float phBoundSurface::SampleHeightBilinear(float fx, float fy) {
+    const float fallback = g_phBoundSurfaceInvCellScale;
+    void* heightPtr = reinterpret_cast<void**>(this)[112 / sizeof(void*)];
+    if (heightPtr == nullptr) {
+        return fallback;
+    }
+
+    const float cellScale   = g_phBoundSurfaceCellScale;
+    const float halfBias    = g_phBoundSurfaceHalfBias;
+    const float origin      = g_phBoundSurfaceOriginBias;
+    const uint8_t* base     = reinterpret_cast<uint8_t*>(heightPtr) + 8192;
+
+    const float sx = fx * cellScale;
+    const float sy = fy * cellScale;
+    const float bx = sx + halfBias;
+    const float by = sy + halfBias;
+
+    const int32_t col = static_cast<int32_t>(bx);     // fctiwz -> floor/trunc
+    const int32_t row = static_cast<int32_t>(by);
+
+    const int32_t rowBase = (row << 5);               // 32 samples per row
+    const int32_t idx00   = rowBase + col;
+    const float* samples  = reinterpret_cast<const float*>(base);
+
+    const float h00 = samples[idx00];
+    const float h10 = (col < 31) ? samples[idx00 + 1]      : fallback;
+    const float h01 = (row < 31) ? samples[idx00 + 32]     : fallback;
+    const float h11 = (col < 31 && row < 31) ? samples[idx00 + 33] : fallback;
+
+    const float fCol = static_cast<float>(col) - origin;
+    const float fRow = static_cast<float>(row) - origin;
+    const float tx   = bx - fCol;
+    const float ty   = by - fRow;
+    const float ix   = origin - tx;  // "1 - tx" folded with origin constant
+    const float iy   = origin - ty;
+
+    // f1 = ix*iy*h00 + tx*iy*h10 + ix*ty*h01 + tx*ty*h11
+    const float w00 = iy * ix;
+    const float w10 = iy * tx;
+    const float w01 = ty * ix;
+    const float w11 = ty * tx;
+    return w00 * h00 + w10 * h10 + w01 * h01 + w11 * h11;
+}
+
+} // namespace rage

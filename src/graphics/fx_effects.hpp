@@ -18,18 +18,32 @@ struct fxAmbAnimData {
 };
 
 // ── fxAmbient  [2 vtables — template/MI] ──────────────────────────
+// Multi-vtable ambient animation effect. Aliases observed in binary:
+//   vfn_3 == vfn_2, vfn_5 == vfn_4, vfn_7 == vfn_6.
+// Known offsets (from vfn_2/vfn_4/vfn_6/vfn_1):
+//   +0x1C     ptr   — owning holder back-reference target at holder+8
+//   +0x20     embedded anim-state block (passed as &this+32)
+//   +0x68     ptr   — LocomotionStateAnim dispatch context
+//   +0x70     u8    — enabled flag (non-zero gates vfn_4/vfn_6)
+//   +0x74     embedded fxAmbAnimSet block (reinit in vfn_1 at this+116)
+//   +0xB8     ptr   — streaming/anim-list head
 struct fxAmbient {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~fxAmbient();                  // [0] @ 0x823874e0
-    virtual void ScalarDtor(int flags); // [1] @ 0x82387968
-    virtual void vfn_2();  // [2] @ 0x823879a8
-    virtual void vfn_3();  // [3] @ 0x823879e0
-    virtual void vfn_4();  // [4] @ 0x82387ae0
-    virtual void vfn_5();  // [5] @ 0x82387b08
-    virtual void vfn_6();  // [6] @ 0x82387b30
-    virtual void vfn_7();  // [7] @ 0x82387c08
+    virtual ~fxAmbient();                              // [0] @ 0x823874E0 — rage_77C0 + optional free
+    virtual void ScalarDtor(int flags);                // [1] @ 0x82387968 — xe_0710(this+104,11) + fxAmbAnimSet_F938_h
+    virtual void BindHolder();                         // [2] @ 0x823879A8 — patch holder back-ref, indirect dispatch via +184
+    virtual void BindHolderAlias();                    // [3] @ 0x823879E0 — alias of vfn_2
+    virtual void* Tick(void* unused, void* ctx);       // [4] @ 0x82387AE0 — tail-call LocomotionStateAnim_FAB0_w when enabled
+    virtual void* TickAlias(void* unused, void* ctx);  // [5] @ 0x82387B08 — alias of vfn_4
+    virtual void Play(void* bundle);                   // [6] @ 0x82387B30 — prime anim, iterate animList, call LocomotionStateAnim_C128_g / _C288_g
+    virtual void PlayAlias(void* bundle);              // [7] @ 0x82387C08 — alias of vfn_6
+
+    // ── non-virtual helpers from pass5 ──
+    void  RequestStreamSlot(int requestedSlot);  // @ 0x82112B00 (fxAmbient_2B00_h)
+    void  LoadAndApply(void* param);             // @ 0x82387E74 (fxAmbient_rtti_B0BC_0)
+    void  ApplyBoneOverrides();                  // @ 0x82387E40 (fxAmbient_rtti_B0BC_1)
 };
 
 // ── fxAmbientMgr  [2 vtables — template/MI] ──────────────────────────
@@ -77,6 +91,7 @@ struct fxBallSpinLineData {
 // ── fxBallSpinTex  [2 vtables — template/MI] ──────────────────────────
 struct fxMatrix44;   // 64-byte transform
 struct grcMaterial;  // opaque rage material
+struct fxVector4;    // 16-byte SIMD vector (forward decl, defined in fx_effects.cpp)
 
 struct fxBallSpinTex {
     void**      vtable;           // +0x00
@@ -299,18 +314,27 @@ struct fxReticle {
 };
 
 // ── fxSpecialFx  [2 vtables — template/MI] ──────────────────────────
+// Vfn aliasing observed in binary (pass5_final):
+//   vfn_22 == vfn_20, vfn_26 == vfn_23, vfn_29 == vfn_27.
+// Presumed container/owner of a set of fxSpecialFxEntry-like effect
+// slots (count @ +0x30 halfword, array base @ +0x2C) with a running
+// "active palette count" index @ +0xE8 and an is-active byte @ +0xEC.
 struct fxSpecialFx {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~fxSpecialFx();                  // [0] @ 0x82427050
-    virtual void vfn_20();  // [20] @ 0x82426f08
-    virtual void vfn_22();  // [22] @ 0x82426f40
-    virtual void vfn_23();  // [23] @ 0x82427408
-    virtual void vfn_25();  // [25] @ 0x824274e8
-    virtual void vfn_26();  // [26] @ 0x824274d0
-    virtual void vfn_27();  // [27] @ 0x82427a78
-    virtual void vfn_29();  // [29] @ 0x82427b08
+    virtual ~fxSpecialFx();                          // [0]  @ 0x82427050 — atSingleton cleanup + optional delete
+    virtual bool IsCategoryA(void* obj);             // [20] @ 0x82426f08 — compare obj ptr against 2 known singletons
+    virtual bool IsCategoryB(void* obj);             // [22] @ 0x82426f40 — alias of vfn_20 in binary
+    virtual void InitFactoryEntry();                 // [23] @ 0x82427408 — create factory obj, iterate templates
+    virtual void ResetPalette();                     // [25] @ 0x824274e8 — clear active flags across palette entries
+    virtual void InitFactoryEntryAlias();            // [26] @ 0x82426f40 — alias of vfn_23
+    virtual void ReleasePalette();                   // [27] @ 0x82427a78 — free palette alloc across entries
+    virtual void ReleasePaletteAlias();              // [29] @ 0x82427b08 — alias of vfn_27
+
+    // ── non-virtual helpers (from pass5) ──
+    void* FindFreeEntry();                           // @ 0x824279C8 (fxSpecialFx_79C8_p46)
+    void  PrimeEntryFromTemplate(uint32_t entryPtr); // @ 0x82428738 (fxSpecialFx_8738_wrh)
 };
 
 // ── fxStringGroup  [vtable @ 0x8203A430] ──────────────────────────

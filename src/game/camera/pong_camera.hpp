@@ -96,18 +96,44 @@ struct cameraShake {
 };
 
 // ── charViewCS  [vtable @ 0x820362C0] ──────────────────────────
+// Character-view camera subsystem. Drives per-frame character positions
+// via a set of axis controllers; interpolates position/bounds from byte
+// inputs (bf18) and writes scaled results into a float grid (c100).
 struct charViewCS {
-    void**      vtable;           // +0x00
+    void**      vtable;                 // +0x00
+    uint8_t     _pad_0x04[0x98];        // +0x04..+0x9B
+    float       m_axisHook0;            // +0x9C (+156) - hook registered by vfn_3 slot 0
+    float       m_axisHook1;            // +0xA0 (+160)
+    float       m_axisHook2;            // +0xA4 (+164)
+    float       m_axisHook3;            // +0xA8 (+168)
+    float       m_axisHook4;            // +0xAC (+172)
+    uint8_t     _pad_0xB0[4];           // +0xB0..+0xB3
+    uint8_t     m_enableModeB4;         // +0xB4 (+180) - selects secondary tuning
+    uint8_t     _pad_0xB5[3];           // +0xB5..+0xB7
+    uint8_t     _pad_0xB8[0x2C];        // +0xB8..+0xE3 (up to +228)
+    float       m_blendTime;            // +0xC4 (+196) - used by vfn_9 lerp
+    uint8_t     _pad_0xC8[0x1C];        // +0xC8..+0xE3
+    void*       m_stateTable;           // +0xF8 (+248) - per-character state block base
+    uint8_t     _pad_0xFC[0x20];        // +0xFC..+0x11B
+    int32_t     m_slotSourceIdx;        // +0xFC (+252) - used by vfn_10 to skip self
+    uint8_t     _pad_0x100[0x1C];       // +0x100..+0x11B
+    int32_t     m_transitionPhase;      // +0x11C (+284) - cmp against 1 in vfn_9
+    uint8_t     _pad_0x120[4];          // +0x120..+0x123
+    uint8_t     m_ownsHeap;             // +0x124 (+292) - destructor-cleanup tag passed to util_1568
 
     // ── virtual methods ──
-    virtual ~charViewCS();                  // [0] @ 0x8216bd20
-    virtual void vfn_3();  // [3] @ 0x8216dbb8
-    virtual void vfn_4();  // [4] @ 0x8216dcb0
-    virtual void vfn_6();  // [6] @ 0x8216db00
-    virtual void vfn_7();  // [7] @ 0x82177840
-    virtual void vfn_9();  // [9] @ 0x8216c200
-    virtual void vfn_10();  // [10] @ 0x8216bed0
-    virtual void OnEnter();  // [11] @ 0x8216db88
+    virtual ~charViewCS();                             // [0] @ 0x8216bd20 — cleanup +292, chain to rage dtor, optional delete
+    virtual void RegisterAxisHooks(void* paramHost);   // [3] @ 0x8216dbb8 — register 6 tunable axis hooks with paramHost
+    virtual void ForwardToBoundCapsule();              // [4] @ 0x8216dcb0 — direct forward to phBoundCapsule::vfn_0
+    virtual const char* GetTypeName();                 // [6] @ 0x8216db00 — returns class name string
+    virtual const char* GetDebugLabel();               // [7] @ 0x82177840 — returns debug-friendly label
+    virtual void UpdatePositions();                    // [9] @ 0x8216c200 — per-frame vector/position lerp over 7 slots
+    virtual void DispatchAllSlotInputs();              // [10] @ 0x8216bed0 — for each of 4 slots call ProcessAxisInputs
+    virtual void AccumulateDelta(const void* delta);   // [11] @ 0x8216db88 — v[+64] += *delta; v[+128] += *delta (SIMD)
+
+    // ── non-virtual helpers ──
+    void ProcessAxisInputs(int slotIndex);             // @ 0x8216bf18 — convert 3 axis bytes → normalized values, call ApplyAxisScaled
+    void ApplyAxisScaled(float factor, int axis);      // @ 0x8216c100 — scale + clamp single axis entry into float grid
 };
 
 // ── gdCameraDef  [vtable @ 0x82049664] ──────────────────────────

@@ -1232,32 +1232,41 @@ struct phBoundSphere {
 struct phBoundSurface {
     void**      vtable;           // +0x00
 
-    virtual void vfn_38();        // [38] @ 0x822AFE88
+    virtual float SampleHeightBilinear(float fx, float fy); // [38] @ 0x822AFE88
 };
 
 // ── rage::phBoundTaperedCapsule  [vtable @ 0x82064FBC] ───────────────────────
 struct phBoundTaperedCapsule {
     void**      vtable;           // +0x00
+    // Layout inherits phBoundCapsule (size ≈ 0xCC).  Tapered-specific fields
+    // added by this subclass begin after the parent's trailing padding.
+    uint8_t     _pad_parent[112 - sizeof(void*)]; // parent phBoundCapsule body
+    float       m_fRadiusA;       // +0x70  first-endpoint radius (tapered)
+    uint8_t     _pad_0x74[0x3C];  // +0x74
+    float       m_fRadiusB;       // +0x90  second-endpoint radius (tapered)
+    uint8_t     _pad_0x94[0x58];  // +0x94
+    uint32_t    m_nMaterialIndex; // +0xF0  active material/face index (used by slot 12/13)
 
-    virtual ~phBoundTaperedCapsule();  // [0] @ 0x820C9168
-    virtual void vfn_3();              // [3] @ 0x8233AB98
-    virtual void vfn_8();              // [8] @ 0x8233A898
-    virtual void vfn_9();              // [9] @ 0x8233AD38
-    virtual void vfn_11();             // [11] @ 0x8233A8C8
-    virtual void vfn_12();             // [12] @ 0x8233A8E8
-    virtual void vfn_13();             // [13] @ 0x8233A8F0
-    virtual void vfn_18();             // [18] @ 0x8233B020
-    virtual void vfn_19();             // [19] @ 0x8233B1F8
-    virtual void vfn_20();             // [20] @ 0x8233ADA8
-    virtual void vfn_21();             // [21] @ 0x8233B6F8
-    virtual void vfn_22();             // [22] @ 0x8233BC28
-    virtual void vfn_23();             // [23] @ 0x8233BA48
-    virtual void vfn_24();             // [24] @ 0x8233B8B8
-    virtual void vfn_28();             // [28] @ 0x8233C760
-    virtual void vfn_29();             // [29] @ 0x8233CC50
-    virtual void vfn_33();             // [33] @ 0x8233AD48
-    virtual void vfn_36();             // [36] @ 0x8233E688
-    virtual void vfn_37();             // [37] @ 0x8233AA00
+    virtual ~phBoundTaperedCapsule();                        // [0] @ 0x820C9168
+    virtual void   CalcAABB();                                // [3]  @ 0x8233AB98
+    virtual float  GetVolume();                               // [8]  @ 0x8233A898
+    virtual void   GetSupportPoint(void* direction,
+                                   void* outPoint);           // [9]  @ 0x8233AD38
+    virtual void   UpdateBound();                             // [11] @ 0x8233A8C8
+    virtual uint32_t GetMaterialIndex();                      // [12] @ 0x8233A8E8
+    virtual void   SetMaterialIndex(uint32_t idx);            // [13] @ 0x8233A8F0
+    virtual void   ContainsPoint();                           // [18] @ 0x8233B020
+    virtual void   TestSegment();                             // [19] @ 0x8233B1F8
+    virtual void   TestMovingSphere();                        // [20] @ 0x8233ADA8
+    virtual void   TestAABBOverlap();                         // [21] @ 0x8233B6F8
+    virtual void   TestSweep();                               // [22] @ 0x8233BC28
+    virtual void   TestMovingBound();                         // [23] @ 0x8233BA48
+    virtual void   TestMovingCapsule();                       // [24] @ 0x8233B8B8
+    virtual void   CollideVsBound();                          // [28] @ 0x8233C760
+    virtual void   CollideVsBoundEx();                        // [29] @ 0x8233CC50
+    virtual float  ComputeSupportDistance();                  // [33] @ 0x8233AD48
+    virtual void   Deserialize();                             // [36] @ 0x8233E688
+    virtual void   RecalcBounds();                            // [37] @ 0x8233AA00
 };
 
 // ── rage::phClothVerletBehavior  [vtable @ 0x82079010] ───────────────────────

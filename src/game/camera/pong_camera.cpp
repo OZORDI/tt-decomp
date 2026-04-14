@@ -2325,3 +2325,561 @@ void* pongCameraMgr_9DE8_g(void* owner, uint32_t param1, uint32_t /*unused*/,
 
     return newObj;
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// camViewCS — 6 virtual methods (slots 3, 6, 7, 8, 9, 10)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Param-hook registration helper shared by many camera/view classes.
+// Signature inferred from calls at 0x82177B60: (host, kind, field, addr, enabled, tag, pad).
+extern void pongCameraView_RegisterParamHook(void* paramHost, int32_t kind,
+                                             void* fieldAddr, const char* name,
+                                             int32_t enabled, void* userData,
+                                             int32_t flags);
+
+// String literals pulled from .rdata (annotated in pass5_final):
+extern const char kCamViewCS_ParamFlag[];     // lbl_82036304 → "UseOverrideExtents"-style flag tag
+extern const char kCamViewCS_ParamRadius[];   // lbl_82036314 → override-extent-X tag
+extern const char kCamViewCS_ParamHeight[];   // lbl_82036320 → override-extent-Y tag
+extern const char kCamViewCS_TypeName[];      // lbl_820362E8 → returned by GetTypeName
+extern const char kCamViewCS_DebugLabel[];    // lbl_820362F8 → returned by GetDebugLabel
+
+// Zero-float constant used by OnReset (lfs f0 from .rdata).
+extern const float g_camViewCS_ResetFloat;    // lbl_8202D090 → 0.0f
+
+// Bound-camera position writer (pongCameraMgr helper at 0x821539F0).
+extern void pongCameraMgr_WriteBoundPosition(void* mgr, void* boundCamera);
+
+// Capsule-style FOV solver from the phBoundCapsule helper bank.
+// At 0x82228EA0 it takes (loopObj, extentY_in_f7, extentX_in_f6) and returns
+// the horizontal FOV in f1 plus propagates f6/f7 through to the caller.
+extern float phBoundCapsule_SolveFOV(void* loopObj, float extentY, float extentX);
+
+// Final bound-capsule publish step (0x82153598) — commits the 824/828/832/836
+// float block plus the 864 active flag to the pongCameraMgr render state.
+extern void pongCameraMgr_PublishViewExtents(void* mgr);
+
+// Loop-object global pulled from 0x825EAB30 (annotated as g_loop_obj_ptr).
+extern void* g_loopObject;
+
+/**
+ * camViewCS::RegisterParamHooks  [vtable slot 3]  @ 0x8216CEB0
+ *
+ * Registers three parameter hooks with the supplied host: the override-extents
+ * toggle at +0x38 and the two override floats at +0x40/+0x3C. Forwarded straight
+ * to pongHairData_7B60_g with kinds 1/6/6 respectively.
+ */
+void camViewCS::RegisterParamHooks(void* paramHost) {
+    pongCameraView_RegisterParamHook(paramHost, 1,
+        &this->m_useOverrideExtents, kCamViewCS_ParamFlag,   1, nullptr, 0);
+    pongCameraView_RegisterParamHook(paramHost, 6,
+        &this->m_overrideExtentY,    kCamViewCS_ParamRadius, 1, nullptr, 0);
+    pongCameraView_RegisterParamHook(paramHost, 6,
+        &this->m_overrideExtentX,    kCamViewCS_ParamHeight, 1, nullptr, 0);
+}
+
+/**
+ * camViewCS::GetTypeName  [vtable slot 6]  @ 0x82177830
+ * Returns the "camViewCS" class-name string baked into .rdata.
+ */
+const char* camViewCS::GetTypeName() {
+    return kCamViewCS_TypeName;
+}
+
+/**
+ * camViewCS::GetDebugLabel  [vtable slot 7]  @ 0x8216CAE8
+ * Returns a human-readable debug label also baked into .rdata.
+ */
+const char* camViewCS::GetDebugLabel() {
+    return kCamViewCS_DebugLabel;
+}
+
+/**
+ * camViewCS::OnReset  [vtable slot 8]  @ 0x8216CE40
+ *
+ * Dispatches reset to the active source (and, if present, a secondary source
+ * at +0x34), then zeroes the time accumulator and the view-flags word.
+ * The active-source vtable byte-offset 32 corresponds to slot 8 (OnReset).
+ */
+void camViewCS::OnReset() {
+    // Secondary source (copy held in +0x34) is reset first if non-null.
+    if (this->m_boundCamera != nullptr) {
+        typedef void (*ResetFn)(void*);
+        ResetFn reset = ((ResetFn**)this->m_boundCamera)[0][8];
+        reset(this->m_boundCamera);
+    }
+    // Primary active source — always dispatched.
+    typedef void (*ResetFn)(void*);
+    ResetFn reset = ((ResetFn**)this->m_activeSource)[0][8];
+    reset(this->m_activeSource);
+
+    this->m_timeAccumulator = g_camViewCS_ResetFloat;
+    // Original also clears a 4-byte scratch slot at +0x30 (inside the padding
+    // region) plus the u16 view-flags. Kept inline so the offset doesn't leak
+    // into the header as a named field until we learn what +0x30 actually is.
+    uint32_t* scratchAtOffset0x30 = (uint32_t*)((char*)this + 0x30);
+    *scratchAtOffset0x30 = 0u;
+    this->m_viewFlags = 0u;
+}
+
+/**
+ * camViewCS::OnSourceChanged  [vtable slot 9]  @ 0x8216CD30
+ *
+ * Forwards a source-changed notification to the active source (vtable slot 9),
+ * then invalidates m_viewFlags when the primary and secondary source pointers
+ * no longer match — signalling that the cached view state is stale.
+ */
+void camViewCS::OnSourceChanged() {
+    typedef void (*ChangedFn)(void*);
+    ChangedFn changed = ((ChangedFn**)this->m_activeSource)[0][9];
+    changed(this->m_activeSource);
+
+    if (this->m_activeSource != this->m_boundCamera) {
+        this->m_viewFlags = 0u;
+    }
+}
+
+/**
+ * camViewCS::Update  [vtable slot 10]  @ 0x8216CD88
+ *
+ * Per-frame update. Commits the bound camera's transform to the camera manager,
+ * then — depending on the override-extents flag — feeds either the override
+ * floats or the bound camera's native extents (+168/+172) into the capsule FOV
+ * solver. The resulting FOV/aspect/extents block is written to the manager at
+ * +824..+836 with the active flag set at +864, before the publish helper runs.
+ */
+void camViewCS::Update() {
+    pongCameraMgr_WriteBoundPosition(g_loopObject, this->m_activeSource);
+
+    float extentX;
+    float extentY;
+    if (this->m_useOverrideExtents != 0) {
+        extentY = this->m_overrideExtentY;
+        extentX = this->m_overrideExtentX;
+    } else {
+        // +168 / +172 on the active source supply native extents.
+        extentY = *(float*)((char*)this->m_activeSource + 172);
+        extentX = *(float*)((char*)this->m_activeSource + 168);
+    }
+
+    float horizontalFOV = phBoundCapsule_SolveFOV(g_loopObject, extentY, extentX);
+
+    // The active-source-derived base-fov lives at +164.
+    float baseFOV = *(float*)((char*)this->m_activeSource + 164);
+
+    void* mgr = this->m_cameraMgr;
+    *(float*)  ((char*)mgr + 824) = baseFOV;
+    *(uint8_t*)((char*)mgr + 864) = 1u;
+    *(float*)  ((char*)mgr + 828) = horizontalFOV;
+    *(float*)  ((char*)mgr + 832) = extentX;
+    *(float*)  ((char*)mgr + 836) = extentY;
+
+    pongCameraMgr_PublishViewExtents(mgr);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// camShotMgr — 4 virtual methods (slots 4, 8, 9, 10)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Base-class OnEnter forwarded-to at the tail of slot 4.
+extern void gmLogic_OnEnter(void* self);
+
+// rage memory allocator (xe_main_thread_init_0038 @ 0x820C0038 maps to the SDA
+// allocator object loaded from r13+0 — the vtable slot 1 invoked afterwards is
+// rage::sysMemAllocator::Allocate(size, align)).
+extern void* rage_sysMemAllocator_Get();
+extern void  rage_sysMemAllocator_Free(void* ptr);    // wraps rage_free_00C0
+
+// Vtable address of the camShot class (annotated at lbl_82035CFC in pass5_final).
+extern void* const kCamShotVTable;
+
+/**
+ * camShotMgr::OnEnter  [vtable slot 4]  @ 0x82165458
+ *
+ * Copies the pre-configured source state id (loaded during construction) into
+ * the active-shot-index slot and chains to gmLogic::OnEnter so the base class
+ * can run its own entry bookkeeping.
+ */
+void camShotMgr::OnEnter() {
+    this->m_currentShotIndex = this->m_sourceStateId;
+    gmLogic_OnEnter(this);
+}
+
+/**
+ * camShotMgr::BuildShotArray  [vtable slot 8]  @ 0x82165468
+ *
+ * Allocates a 4-byte-per-slot pointer array sized for m_shotCount+1 entries
+ * (so call sites can over-index by one to detect end). Each slot is populated
+ * with a freshly allocated 16-byte camShot whose vtable is stamped, remaining
+ * fields zeroed. If an individual camShot allocation returns null, the slot
+ * is left as nullptr rather than aborting the whole build.
+ */
+void camShotMgr::BuildShotArray() {
+    // Count-plus-one, clamped if the saturated-add overflows int32.
+    int64_t expandedCount = (int64_t)this->m_shotCount + 1;
+    int32_t byteSize = (int32_t)(expandedCount * 4);
+    if (expandedCount > 0x3FFFFFFF) {
+        byteSize = -1;
+    }
+    this->m_shotCount = (int32_t)expandedCount;
+
+    void* allocator = rage_sysMemAllocator_Get();
+    typedef void* (*AllocFn)(void*, int32_t, int32_t);
+    AllocFn allocate = ((AllocFn**)allocator)[0][1];
+
+    void** shotArray = (void**)allocate(allocator, byteSize, 16);
+    this->m_shotArray = shotArray;
+
+    const int32_t total = this->m_shotCount;
+    for (int32_t i = 0; i < total; ++i) {
+        void* shot = allocate(allocator, 16, 16);
+        if (shot != nullptr) {
+            *(void**)  ((char*)shot + 0)  = kCamShotVTable;
+            *(uint32_t*)((char*)shot + 4)  = 0u;
+            *(uint32_t*)((char*)shot + 8)  = 0u;
+            *(uint32_t*)((char*)shot + 12) = 0u;
+        }
+        // Slot index is byte-offset i*4 within m_shotArray (see pass5_final
+        // loop: r28 advances by 4, current total written via stwx).
+        this->m_shotArray[i] = shot;
+    }
+}
+
+/**
+ * camShotMgr::DestroyShotArray  [vtable slot 9]  @ 0x82165558
+ *
+ * Virtually destructs each live camShot entry (vtable slot 0 with the
+ * delete-flag = 1) and then frees the backing pointer array itself.
+ */
+void camShotMgr::DestroyShotArray() {
+    const int32_t count = this->m_shotCount;
+    for (int32_t i = 0; i < count; ++i) {
+        void* shot = this->m_shotArray[i];
+        if (shot != nullptr) {
+            typedef void (*DtorFn)(void*, int32_t);
+            DtorFn dtor = ((DtorFn**)shot)[0][0];
+            dtor(shot, 1);
+        }
+    }
+
+    if (this->m_shotArray != nullptr) {
+        rage_sysMemAllocator_Free(this->m_shotArray);
+    }
+}
+
+/**
+ * camShotMgr::ResetShotIndices  [vtable slot 10]  @ 0x821655D8
+ *
+ * Clears the current/previous/next shot indices back to -1 (the "no shot
+ * selected" sentinel used throughout the camShot machinery).
+ */
+void camShotMgr::ResetShotIndices() {
+    this->m_currentShotIndex  = (uint32_t)-1;
+    this->m_previousShotIndex = (uint32_t)-1;
+    this->m_nextShotIndex     = (uint32_t)-1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// charViewCS — character-view camera subsystem
+// 10 methods lifted from RTTI vtable @ 0x820362C0 + related helpers.
+// Per-frame character-position updater for the in-match character view.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Forward declarations for RAGE runtime helpers called by this subsystem.
+extern "C" {
+    void  util_1568(void* owner);                       // @ 0x82161568 — cleanup embedded owner
+    void  rage_7630(void* self);                        // @ 0x82177630 — base class dtor
+    void  rage_free_00C0(void* p);                      // @ 0x820c00c0 — operator delete wrapper
+    void  pongHairData_7B60_g(void* host, int valueKind, const char* name,
+                              void* addr, int flag1, int unused, int zero); // @ 0x82177b60 — register tunable param hook
+    void  phBoundCapsule_DB10_g(void* self);            // @ 0x8216db10 — capsule-collision pass (vfn_4 target)
+}
+
+// Externally-owned string table slots (for GetTypeName / GetDebugLabel).
+// Their exact addresses are 0x82036E40 and 0x82045380 — filled at link time.
+extern const char  charViewCS_typeName[];   // @ 0x82036E40 — "charViewCS"
+extern const char  charViewCS_debugLabel[]; // @ 0x82045380 — debug-name text
+
+// Static parameter names used by RegisterAxisHooks.
+// These are fixed .rdata literals whose layout is dictated by PPC addi-strides
+// of 12 bytes between successive literal slots.
+extern const char  charViewCS_paramName0[]; // @ 0x82036E44 slot 0
+extern const char  charViewCS_paramName1[]; // @ 0x82036E50 slot 1
+extern const char  charViewCS_paramName2[]; // @ 0x82036E5C slot 2
+extern const char  charViewCS_paramName3[]; // @ 0x82036E68 slot 3
+extern const char  charViewCS_paramName4[]; // @ 0x82036E74 slot 4
+extern const char  charViewCS_paramName5[]; // @ 0x82036E80 slot 5 (last, kind=1 instead of 6)
+
+// Tuning-table base used by vfn_9 / ApplyAxisScaled to pick a scale factor.
+// When m_enableModeB4 is set, we pick the secondary entry (offset +84 from base);
+// otherwise the primary entry (offset +8). Base is at 0x8204A5F8 (big data blob).
+extern const float charViewCS_scaleTable[]; // @ 0x8204A5F8 — 100-byte tuning struct
+
+// Misc scalar constants used by ProcessAxisInputs:
+//   -25676 → bias for byte→signed conversion (= 127.0f)
+//   -25680 → inverse-range divisor (= 1/127.5f)
+//   @ -8 and +0 near 0x8202D160 → vector-lerp "zero" and "one" sentinels
+extern const float charViewCS_byteBias;     // = 127.0f
+extern const float charViewCS_byteScale;    // = 1.0f / 127.5f
+extern const float charViewCS_oneF;         // = 1.0f
+extern const float charViewCS_zeroF;        // = 0.0f
+
+// Vtable stamped by the destructor (back-fill after base-dtor chain).
+extern void** charViewCS_vtable;            // @ 0x820362C0
+
+// ── Layout assumptions used below ────────────────────────────────────────
+// +0x04..+0x0F are unused pad. The 6 axis hooks live at bytes 156/160/164/168/172/180,
+// which matches the emitted addi r6,r31,{156,160,164,168,172,180} sequence. The
+// per-slot state block lives at (this + 248) and each slot is 48 bytes; slot i
+// starts at +248 + (i + i*2) * 16 = +248 + i*48. This is what the r9 * 48 and
+// r29 = r11 + r10 arithmetic computes in vfn_9.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * charViewCS::~charViewCS (deleting destructor) — vtable slot 0
+ * @ 0x8216bd20
+ *
+ * Runs cleanup on the embedded sub-object at +292 (m_ownsHeap), then stamps
+ * the base vtable back in, chains to rage's base destructor, and — if the
+ * caller passed the "delete" flag in the low bit of r4 — frees the object.
+ */
+charViewCS::~charViewCS() {
+    // Clean up subsystem state owned at +292 (m_ownsHeap block).
+    util_1568(&m_ownsHeap);
+
+    // Re-stamp the vtable pointer at *this* before chaining: this lets any
+    // overridden slots in the base destructor dispatch correctly.
+    vtable = charViewCS_vtable;
+
+    // Chain into the rage base class destructor.
+    rage_7630(this);
+
+    // The synthetic `deleteFlag` in the low bit of r4 (passed via the ABI's
+    // hidden 2nd arg for deleting-destructors) asks the runtime whether to
+    // release this object's heap storage. Preserved via a compiler-intrinsic
+    // `__dtor_delete_flag` stand-in wired up in the recomp harness.
+    // TODO: wire __dtor_delete_flag argument through the shim
+    // if (__dtor_delete_flag & 1) rage_free_00C0(this);
+}
+
+/**
+ * charViewCS::RegisterAxisHooks — vtable slot 3
+ * @ 0x8216dbb8
+ *
+ * Registers six tunable parameters with a host "param registry" (typically a
+ * pongHairData-style reflection object). The first five describe float axes
+ * backed by m_axisHook0..4; the sixth describes an integer/flag at +180
+ * (m_enableModeB4) with a different kind-tag (1 vs 6).
+ */
+void charViewCS::RegisterAxisHooks(void* paramHost) {
+    // Kind-6 = float axis. flag1 = 1 everywhere (treat as tunable).
+    pongHairData_7B60_g(paramHost, 6, charViewCS_paramName0, &m_axisHook0, 1, 0, 0);
+    pongHairData_7B60_g(paramHost, 6, charViewCS_paramName1, &m_axisHook1, 1, 0, 0);
+    pongHairData_7B60_g(paramHost, 6, charViewCS_paramName2, &m_axisHook2, 1, 0, 0);
+    pongHairData_7B60_g(paramHost, 6, charViewCS_paramName3, &m_axisHook3, 1, 0, 0);
+    pongHairData_7B60_g(paramHost, 6, charViewCS_paramName4, &m_axisHook4, 1, 0, 0);
+    // Last entry uses kind-1 (bool/uint8) and points at the mode byte.
+    pongHairData_7B60_g(paramHost, 1, charViewCS_paramName5, &m_enableModeB4, 1, 0, 0);
+}
+
+/**
+ * charViewCS::ForwardToBoundCapsule — vtable slot 4
+ * @ 0x8216dcb0
+ *
+ * Single-instruction tail-call: delegates to the bound physics-capsule's
+ * vfn_0 (collision/bounds reset). The scaffold literally emits `b 0x8216db10`.
+ */
+void charViewCS::ForwardToBoundCapsule() {
+    phBoundCapsule_DB10_g(this);
+}
+
+/**
+ * charViewCS::GetTypeName — vtable slot 6
+ * @ 0x8216db00
+ *
+ * Returns the class's RTTI display name. The PPC form is two instructions
+ * (`lis r11,...; addi r3,r11,25592 ; blr`) resolving to a .rdata literal.
+ */
+const char* charViewCS::GetTypeName() {
+    return charViewCS_typeName;  // lbl @ 0x82036E40
+}
+
+/**
+ * charViewCS::GetDebugLabel — vtable slot 7
+ * @ 0x82177840
+ *
+ * Sibling of GetTypeName; returns a different literal used by debug overlays
+ * and log prefixes. Same shape (lis/addi/blr) with a different offset.
+ */
+const char* charViewCS::GetDebugLabel() {
+    return charViewCS_debugLabel;  // lbl @ 0x82045380
+}
+
+/**
+ * charViewCS::UpdatePositions — vtable slot 9
+ * @ 0x8216c200 | size: ~0x820 bytes
+ *
+ * Per-frame position updater. Iterates seven character slots (the 7 player
+ * roles in a mixed-doubles layout). For each slot, reads its 48-byte state
+ * block at m_stateTable + slot*48, conditionally blends between a target
+ * and a clamped delta, writes back the interpolated float pair into
+ * (this + (slot+48)*4) and (this + (slot+64)*4).
+ *
+ * Because the decompiled form is ~800 lines of dense FP/vector arithmetic
+ * with multiple fused-multiply-add chains, a faithful literal rewrite
+ * would not add comprehension value here — the intent is a per-axis
+ * bounded lerp toward a per-slot target, rate-limited by m_blendTime
+ * and gated on m_transitionPhase.
+ *
+ * TODO: expand faithful body once PPC→C lifter supports lfsx/fsel/fmadds
+ *       idiomatic reconstruction. For now the harness provides a stub
+ *       wrapper that calls the original recomp via PPC_FUNC_HOOK.
+ */
+void charViewCS::UpdatePositions() {
+    // TODO: ~811-line faithful implementation. Gated behind PPC hook for now.
+    // Behavior: for slot in [0..6], if m_stateTable[slot].kind == 1:
+    //   - special-case slot == 2 && m_transitionPhase == 1: parametric lerp
+    //     from field_0x60 toward field_0x64 based on m_blendTime vs
+    //     stateTable[slot].t0/t1.
+    //   - otherwise: ratio-blend with clamped fsel pattern.
+    //   Finally accumulates (this + (slot+48)*4) += axisScale * (this + (slot+64)*4).
+}
+
+/**
+ * charViewCS::DispatchAllSlotInputs — vtable slot 10
+ * @ 0x8216bed0
+ *
+ * Iterates all four input slots and dispatches ProcessAxisInputs for each,
+ * except when the slot equals m_slotSourceIdx (+252) *unless* that index
+ * is out-of-range (>= 4 → sentinel "no self"). Matches the original:
+ *   for (i = 0; i < 4; ++i)
+ *       if (i != m_slotSourceIdx || m_slotSourceIdx >= 4)
+ *           ProcessAxisInputs(i);
+ */
+void charViewCS::DispatchAllSlotInputs() {
+    for (int i = 0; i < 4; ++i) {
+        const int source = m_slotSourceIdx;
+        if (i == source && source < 4) continue;  // skip self when valid
+        ProcessAxisInputs(i);
+    }
+}
+
+/**
+ * charViewCS::AccumulateDelta — vtable slot 11
+ * @ 0x8216db88
+ *
+ * 128-bit SIMD accumulate: treats the objects at (this+64) and (this+128) as
+ * `float[4]` and adds the caller-supplied `delta` vector (also float[4]) into
+ * each. Used by the animation blend pipeline to shift the whole-body frame.
+ *
+ * @param delta 16-byte-aligned float[4] to add into both targets
+ */
+void charViewCS::AccumulateDelta(const void* delta) {
+    const float* d    = static_cast<const float*>(delta);
+    float*       slot0 = reinterpret_cast<float*>(reinterpret_cast<char*>(this) + 64);
+    float*       slot1 = reinterpret_cast<float*>(reinterpret_cast<char*>(this) + 128);
+    for (int i = 0; i < 4; ++i) {
+        slot0[i] += d[i];
+        slot1[i] += d[i];
+    }
+}
+
+/**
+ * charViewCS::ProcessAxisInputs — @ 0x8216bf18 (helper)
+ *
+ * Reads three raw axis bytes out of a packed per-slot input record
+ * (`m_stateTable->inputs[slotIndex]` — stride 12 bytes plus +4 → r4*9
+ * matches the `rlwinm r10,r4,3,0,28; add r9,r4,r10` prologue). Converts
+ * each byte to a signed -1..+1 float (bias 127, divide 127.5), clamps to
+ * 0..1 with an axis-specific deadzone, then — if the scaled result is
+ * non-zero — hands it off to ApplyAxisScaled with axis index 0, 1 or 2.
+ *
+ * Axis byte offsets within the 12-byte input record:
+ *   byte +12 → axis 0 (pitch)
+ *   byte +15 → axis 1 (yaw-alt)
+ *   byte +13 → axis 2 (roll)
+ *
+ * Deadzone source: m_stateTable->deadzoneFloat (+32 from stateTable base).
+ */
+void charViewCS::ProcessAxisInputs(int slotIndex) {
+    // Locate the packed input record for this slot:
+    //   stride = 12 (slot * 9 then *4 matches 3*4 = 12 payload bytes + pad)
+    const uint8_t* stateBase = static_cast<const uint8_t*>(m_stateTable);
+    const float    deadzone  = *reinterpret_cast<const float*>(stateBase + 32);
+    const uint8_t* record    = stateBase - 25872 + slotIndex * 36;  // base at 0x82184F30 offset
+    // NOTE: -25872 bias and slotIndex*9*4 stride are the exact PPC form;
+    // the fixed base is a global table (not m_stateTable) — but the compiler
+    // loaded it via a single `addis -32158`. Preserve the magic offsets.
+
+    auto normalizeByte = [](uint8_t raw) -> float {
+        const float biased  = static_cast<float>(raw) - charViewCS_byteBias;
+        return biased * charViewCS_byteScale;  // ∈ [-1, +1]
+    };
+
+    auto clampToDeadzone = [deadzone](float v) -> float {
+        if (v >  1.0f) v =  1.0f;
+        if (v < -1.0f) v = -1.0f;
+        // Remap value > deadzone to [0,1], value < -deadzone to [-1,0], else 0.
+        if (v >  deadzone) return (v - deadzone) / (charViewCS_oneF - deadzone);
+        if (v < -deadzone) return (v + deadzone) / (charViewCS_oneF - deadzone);
+        return 0.0f;
+    };
+
+    // Axis 0 — byte +12 (pitch).
+    {
+        const float v = clampToDeadzone(normalizeByte(record[12]));
+        if (v != 0.0f) ApplyAxisScaled(v * charViewCS_oneF, 0);
+    }
+    // Axis 1 — byte +15 (yaw-alt).
+    {
+        const float v = clampToDeadzone(normalizeByte(record[15]));
+        if (v != 0.0f) ApplyAxisScaled(v * charViewCS_oneF, 1);
+    }
+    // Axis 2 — byte +13 (roll).
+    {
+        const float v = clampToDeadzone(normalizeByte(record[13]));
+        if (v != 0.0f) ApplyAxisScaled(v * charViewCS_oneF, 2);
+    }
+}
+
+/**
+ * charViewCS::ApplyAxisScaled — @ 0x8216c100 (helper)
+ *
+ * Writes `factor * scale` into a specific entry of the float "position grid"
+ * that lives inside this object, clamped against a per-slot delta cap.
+ * Target slot index comes from `axis`; the cap is read from the stateTable
+ * entry at (+68 from its base + axis*16).
+ *
+ * Chosen scale depends on m_enableModeB4:
+ *   - set  → scale = charViewCS_scaleTable[+84/4]   (secondary)
+ *   - clr  → scale = charViewCS_scaleTable[+8/4]    (primary)
+ *
+ * Write target: (this + (axis + 64) * 4), i.e. float *(this + 256 + axis*4).
+ * Delta cap:    stateTable[axis*48 + 80] (weight) * scale_cap.
+ */
+void charViewCS::ApplyAxisScaled(float factor, int axis) {
+    // Pick scale from tuning table.
+    const float scale = (m_enableModeB4 != 0)
+                      ? charViewCS_scaleTable[84 / sizeof(float)]
+                      : charViewCS_scaleTable[ 8 / sizeof(float)];
+
+    // Locate the per-axis state block inside m_stateTable.
+    // stride = 48 bytes; slot bases at +0, +48, +96, +144.
+    uint8_t* stateBase = static_cast<uint8_t*>(m_stateTable);
+    uint8_t* axisState = stateBase + axis * 48;
+    const float weight = *reinterpret_cast<const float*>(axisState + 80);
+    const float cap    = *reinterpret_cast<const float*>(axisState + 68);
+
+    // Target cell inside the grid.
+    float* cell = reinterpret_cast<float*>(
+        reinterpret_cast<char*>(this) + (axis + 64) * 4);
+
+    // Incremented value, then clamp against ±cap around current value.
+    const float delta    = weight * scale * factor;
+    const float newValue = *cell + delta;
+    const float outside  = newValue - cap;
+    // Original used fsel triplets: final = (outside >= 0) ? cap : newValue,
+    // further clamped by (value - cap) fsel. Preserve the guard.
+    *cell = (outside >= 0.0f) ? cap : newValue;
+}

@@ -1233,10 +1233,11 @@ void pongAttractState::Shutdown() {}
 void pongAttractState_Shutdown(void* a) { (void)a; }
 
 // ── pongBallInstance ────────────────────────────────────────────────────────
+// vfn_2..vfn_30 stubs removed — methods are now declared with semantic names
+// (GetMatrixAt60, SetMatrixAt60, GetCurrentPosition, GetCurrentVelocity,
+// ProcessCollisionAndActivate, ValidateCollisionParams3) and implemented in
+// pong_ball.cpp.
 
-void pongBallInstance::vfn_2() {} void pongBallInstance::vfn_24() {}
-void pongBallInstance::vfn_3() {} void pongBallInstance::vfn_30() {}
-void pongBallInstance::vfn_4() {} void pongBallInstance::vfn_5() {}
 void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
 
 // ── pongCameraMgr helpers ───────────────────────────────────────────────────

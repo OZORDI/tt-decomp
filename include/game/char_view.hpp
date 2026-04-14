@@ -303,13 +303,79 @@ public:
     virtual ~charViewCS();
     
     // TODO: Research and rename these methods
-    virtual void vfn_3();         // @ 0x8216DBB8
-    virtual void vfn_4();         // @ 0x8216DCB0
-    virtual void vfn_6();         // @ 0x8216DB00
-    virtual void vfn_7();         // @ 0x82177840
-    virtual void vfn_9();         // @ 0x8216C200
-    virtual void vfn_10();        // @ 0x8216BED0
-    virtual void vfn_11();        // @ 0x8216DB88
+    /**
+     * RegisterXmlFields @ 0x8216DBB8
+     * Registers 6 XML-serializable fields (bound offset/size/shadows) with the
+     * parser infrastructure. Calls pongHairData_7B60_g for each field at
+     * offsets +156, +160, +164, +168, +172, +180.
+     */
+    virtual void RegisterXmlFields(void* parser);   // vfn_3 @ 0x8216DBB8
+
+    /**
+     * Validate @ 0x8216DCB0
+     * Tail-calls phBoundCapsule_DB10_g to validate bound data.
+     */
+    virtual void Validate();                        // vfn_4 @ 0x8216DCB0
+
+    /**
+     * GetName @ 0x8216DB00
+     * Returns a constant string "many bounds specified (Max=%d)" (class/error label).
+     */
+    virtual const char* GetName();                  // vfn_6 @ 0x8216DB00
+
+    /**
+     * GetVariantName @ 0x82177840
+     * Returns a constant string "Shadows:" (configuration block name).
+     */
+    virtual const char* GetVariantName();           // vfn_7 @ 0x82177840
+
+    /**
+     * Update @ 0x8216C200 (size: 0x510)
+     * Large per-frame update routine — animation/blend and driver dispatch.
+     */
+    virtual void Update();                          // vfn_9 @ 0x8216C200
+
+    /**
+     * RecalcBounds @ 0x8216BED0
+     * Iterates 4 bound slots; if bound count matches slot index and count >= 4,
+     * calls RecalcBoundSlot(slot).
+     */
+    virtual void RecalcBounds();                    // vfn_10 @ 0x8216BED0
+
+    /**
+     * PurgeFilteredNodes @ 0x8216DB88
+     * Walks the global active-node linked list at lbl_825CA938/944, keeping
+     * nodes whose type is one of {5, 6, 12, 13, 14, 16} and recycling the rest
+     * to the free list. Returns true if any kept node was found.
+     */
+    virtual bool PurgeFilteredNodes();              // vfn_11 @ 0x8216DB88
+
+    // ── non-virtual helpers ──
+    /**
+     * RecalcBoundSlot @ 0x8216BF18 (size: 0x1E4)
+     * Normalizes a single packed int16 bound descriptor into a float axis
+     * component (X/Y/Z). Called by RecalcBounds() per axis.
+     * @param slot  bound index in [0..3]
+     */
+    void RecalcBoundSlot(int slot);
+
+    /**
+     * ApplyAxis @ 0x8216C100 (size: 0x78)
+     * Helper: clamps a bound's world-space position along one axis using the
+     * bound's half-extent and the character's scale. Writes result back into
+     * the per-slot array at this[+64 + axis*4].
+     * @param axis  0=X, 1=Y, 2=Z
+     */
+    void ApplyAxis(int axis);
+
+    /**
+     * DispatchBoundsOrLookAt @ 0x8216C710 (size: 0x10C)
+     * If the shot is in state 1 (field +284), computes |x|+|y|+|z| and
+     * compares to bound-extent threshold, then virtual-dispatches one of
+     * slots 12, 16, or 19 on the embedded sub-object at this+292. Otherwise
+     * falls through to slot 19.
+     */
+    void DispatchBoundsOrLookAt();
 
 protected:
     void** m_vtable;              // +0x00

@@ -338,7 +338,7 @@ struct pongCSActionCharAnim {
     virtual void Play();  // [5] @ 0x8234a648
     virtual void Stop();  // [6] @ 0x8234a660
     virtual void Pause();  // [7] @ 0x8234a9a0
-    virtual void Resume();  // [8] @ 0x8234aaf8
+    virtual bool Resume();  // [8] @ 0x8234aaf8
     virtual void Seek();  // [9] @ 0x8234ab28
     virtual void OnComplete();  // [12] @ 0x8234abb0
 };
@@ -357,6 +357,7 @@ struct pongCSActionDoInOrder : pongCSAction {
     int         m_nCurrentChild;  // +0x10 (index of child currently playing)
 
     // ── virtual methods (overrides) ──
+    virtual void Init();  // [3] — forwards Init() to every child
     virtual void Play();
     virtual void Stop();
     virtual void Pause(float dt);
@@ -383,7 +384,7 @@ struct pongCSActionIf {
     virtual void Init();  // [3] @ 0x823499f0
     virtual void Stop();  // [6] @ 0x82349ab0
     virtual void Pause();  // [7] @ 0x82349cf8
-    virtual void Resume();  // [8] @ 0x82349da8
+    virtual bool Resume();  // [8] @ 0x82349da8
     virtual void Seek();  // [9] @ 0x82349e70
 };
 
