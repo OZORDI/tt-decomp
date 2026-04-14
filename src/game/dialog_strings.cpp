@@ -54,3 +54,11 @@ const char* g_str_dialog_enterFromInvalid    = "Entering dialog state from inval
 const char* g_str_dialog_exitToInvalid       = "Exiting dialog state to invalid state %s (%d)";    // @ 0x8205F2A0
 const char* g_str_dialog_invalidDialogID     = "Invalid dialog ID[%d]";                       // @ 0x82075E78
 const char* g_str_dialog_invalidLines        = "Invalid Lines[%d] for dialog[%d]";            // @ 0x82075E90
+
+// ────────────────────────────────────────────────────────────────────────────
+// Unlock / match-result diagnostic strings (referenced by dialog_validation.cpp)
+// ────────────────────────────────────────────────────────────────────────────
+const char* g_str_dialog_unlockItemNoName       = "no item name specified";
+const char* g_str_dialog_unlockItemNameTooLong  = "unlock item name [%s] is too long by %d characters!";
+const char* g_str_dialog_searchFailedCreate     = "Search failed -- user chose to create new match";
+const char* g_str_dialog_searchFailedDecline    = "Search failed -- user didn't want to create match";

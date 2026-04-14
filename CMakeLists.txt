@@ -97,6 +97,7 @@ set(SOURCES
     src/game/data/gd_vib_event.cpp
     src/game/debug_strings.cpp
     src/game/dialog_strings.cpp
+    src/game/dialog/dialog_validation.cpp
     src/game/pong_logos_strings.cpp
     src/game/pong_strings.cpp
     src/game/save/mc_memcard.cpp

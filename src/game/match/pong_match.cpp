@@ -1131,3 +1131,353 @@ void gmLogicSinglesMatch_MidGame(void* self) { // @ 0x8238CA38
     typedef void (*MidGameImplFn)(void*);
     ((MidGameImplFn)vt[/*slot filled by the dispatcher*/ 0])((char*)self + 8);
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// gmLogicSwingPractice — single-player swing practice mode
+//
+// Vtable @ 0x820303F4. Hierarchical state machine with 8 RTTI-tagged states:
+//   statePreInit, stateInit, stateMainMenu, stateAim, stateShoot,
+//   stateAwaitReturnHit, stateReturnHit, statePostPoint
+//
+// Key object layout (confirmed via callee offsets):
+//   +8    sub-object holding gmPracticeTarget pointer @ +152, flags @ +88..+89
+//   +12   float parameter (aim arc / shot power), sampled via cmSampleCamActions
+//   +16   int sub-state (-1 = none)
+//   +84   current HSM state index (valid range 0..10)
+//   +88   flag: whether target is armed
+//   +148  locomotion state anim controller
+//   +152  gmPracticeTarget sub-struct (fields: +22, +23, +96 pos, +100 latch)
+//   +156  "awaiting confirmation" byte flag
+//
+// Method dispatch pattern: states live at this+40..this+80 (slots 10..20) and
+// are invoked via `lwzx r3, r11, this` with a computed slot offset. Each state
+// slot holds a vtable pointer; slots 3/6/8/9/16 in the state vtable are:
+//   3  → Init / arm      6  → OnTick       8  → OnMessage
+//   9  → OnEnterState    16 → OnChildStateMessage
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Anchor: "gmLogicSwingPractice::stateAim::onEnterState" @ 0x820303B8
+extern const char* g_str_hsm_gmLogicSwingPractice_stateAim_onEnterState;
+
+// Per-mode globals identified via string xrefs
+static uint8_t* const g_SwingPracticeTargetDirty = /* 0x8205A37A */ (uint8_t*)0x8205A37A;
+static const float* const g_SwingPractice_AimDefaults = /* 0x8202D108 */ (const float*)0x8202D108;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSwingPractice::~gmLogicSwingPractice  [vtable slot 0 @ 0x82101F80]
+// Destructor — delegates to atSingleton teardown, then frees if owned (bit 0).
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSwingPractice_Destructor(void* self, uint32_t flags) { // @ 0x82101f80
+    atSingleton_Destructor(self);
+    if (flags & 1) {
+        rage_free(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSwingPractice::ResetAim  [vtable slot 10 @ 0x82102A58]
+// Called on return to aim state. Clears the target latch, re-arms the target,
+// clears the "was hit" flag, and resets the HSM state index to -1.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSwingPractice_ResetAim(void* self) { // @ 0x82102a58
+    void* target = *(void**)((char*)self + 152);
+    *((uint8_t*)target + 100) = 0;   // clear "hit" latch
+    *((uint8_t*)target + 23)  = 1;   // arm
+    void* target2 = *(void**)((char*)self + 152);
+    *((uint8_t*)target2 + 22) = 0;   // clear "served" flag
+
+    // If the "awaiting confirmation" flag is set, leave state index alone.
+    if (*((uint8_t*)self + 156) != 0) {
+        return;
+    }
+    *(int32_t*)((char*)self + 84) = -1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSwingPractice::Tick  [vtable slot 11 @ 0x82102A90]
+// Per-frame update: advances aim-target position, ticks locomotion, then
+// forwards OnTick (state vtable slot 6) to the active child state.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSwingPractice_Tick(void* self) { // @ 0x82102a90
+    // If aim input is active and target exists and is not latched…
+    if (*((uint8_t*)self + 88) != 0) {
+        void* target = *(void**)((char*)self + 152);
+        if (target != nullptr && *((uint8_t*)target + 100) == 0) {
+            // Integrate aim position by (default step * frame time)
+            float step     = g_SwingPractice_AimDefaults[2];   // [8]
+            float curPos   = *(float*)((char*)target + 96);
+            float frameDt  = rage_FrameTimeSeconds;           // -16340(-32253)
+            float newPos   = step * frameDt + curPos;
+            *(float*)((char*)target + 96) = newPos;
+
+            // Clamp via cmSampleCamActions to valid aim arc
+            newPos = cmSampleCamActions_Clamp(newPos, /*min*/ -0.0f, /*max*/ +0.0f);
+            *(float*)((char*)target + 96) = newPos;
+        }
+    }
+
+    // Tick locomotion/anim controller if present
+    void* locomotion = *(void**)((char*)self + 148);
+    if (locomotion != nullptr) {
+        LocomotionStateAnim_Tick(locomotion);
+    }
+
+    // Dispatch OnTick (slot 6) to current child state if index is valid.
+    int32_t stateIdx = *(int32_t*)((char*)self + 84);
+    if (stateIdx > -1 && stateIdx < 11) {
+        void** stateSlot = (void**)((char*)self + (stateIdx + 10) * 4);
+        void* state = *stateSlot;
+        VCALL_SLOT(state, 6);  // OnTick
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSwingPractice::GetSubState  [vtable slot 13 @ 0x82102B60]
+// Returns the vtable-dispatched sub-state object by index, or a default
+// 1-vs-(not-1) flag if the sub-state isn't instantiated.
+// Layout of (this): +4 = count, +8 = state-array base, +12 = active-idx.
+// ─────────────────────────────────────────────────────────────────────────────
+void* gmLogicSwingPractice_GetSubState(void* self, int32_t idx) { // @ 0x82102b60
+    int32_t count = *(int32_t*)((char*)self + 4);
+    if (idx >= count) {
+        return nullptr;
+    }
+    int32_t activeIdx = *(int32_t*)((char*)self + 12);
+    if (activeIdx != -1) {
+        void** arr = *(void***)((char*)self + 8);
+        void* state = arr[activeIdx];
+        if (state != nullptr) {
+            // Tail-call slot 15 (offset +60 in state vtable)
+            return VCALL_SLOT_RET(state, 15);
+        }
+    }
+    // Fallback: return (idx == 1) as a boolean-style flag
+    return (void*)(uintptr_t)(idx == 1 ? 1u : 0u);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSwingPractice::OnChildExit  [vtable slot 15 @ 0x82102BC0]
+// Forwards child-state exit notification to the nested state (vtable slot 2
+// at offset +8). No-op if the owning sub-struct or its target is null.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSwingPractice_OnChildExit(void* self) { // @ 0x82102bc0
+    if (*((uint8_t*)self + 88) == 0) return;
+    void* target = *(void**)((char*)self + 152);
+    if (target == nullptr) return;
+    VCALL_SLOT(target, 2);  // OnChildExit on practice target
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSwingPractice::OnMessage  [vtable slot 18 @ 0x82102BF0]
+// Central message router. Translates HSM messages:
+//   msg 0x500C (20492) → "begin awaiting confirmation": set +156=1, call vfn_3
+//   msg 0x500D (20493) → "cancel awaiting":             clear +156
+//   otherwise          → forward to current sub-state (vfn_16) and current
+//                        HSM state (slot 8 = OnMessage)
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSwingPractice_OnMessage(void* self, const void* msg) { // @ 0x82102bf0
+    int32_t activeIdx = *(int32_t*)((char*)self + 12);
+    void* subState = nullptr;
+    if (activeIdx != -1) {
+        void** arr = *(void***)((char*)self + 8);
+        subState = arr[activeIdx];
+    }
+
+    uint16_t msgId = *(const uint16_t*)msg;
+
+    if (msgId == 20492) {
+        // "Await confirmation" start — gate the aim state & invoke self-vfn_3
+        int32_t stateIdx = *(int32_t*)((char*)self + 84);
+        if (stateIdx > -1 && stateIdx < 11) {
+            *((uint8_t*)self + 156) = 1;
+            VCALL_SLOT(self, 3);  // self.OnAwaitConfirmStart
+        }
+        return;
+    }
+
+    if (msgId == 20493) {
+        // "Await confirmation" cancel
+        *((uint8_t*)self + 156) = 0;
+        return;
+    }
+
+    // General case: first forward to sub-state's vfn_16 unless it already has
+    // a pending response (+16 != -1), then forward OnMessage to current HSM.
+    if (subState != nullptr) {
+        int32_t pending = *(int32_t*)((char*)self + 16);
+        if (pending == -1) {
+            VCALL_SLOT_ARG(subState, 16, msg);
+        }
+    }
+    int32_t stateIdx = *(int32_t*)((char*)self + 84);
+    if (stateIdx > -1 && stateIdx < 11) {
+        void** stateSlot = (void**)((char*)self + (stateIdx + 10) * 4);
+        VCALL_SLOT_ARG(*stateSlot, 8, msg);   // state.OnMessage
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSwingPractice::stateAim::onEnterState  [@ 0x82103878, size 0x15C]
+// String anchor: "gmLogicSwingPractice::stateAim::onEnterState" @ 0x820303B8
+//
+// Enters the aim state. Resets aim parameter (+12) from defaults, clears
+// "shot fired" (+16), registers the aim camera, and if a target-update is
+// pending, refreshes the practice-target meter and clears the dirty flag.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSwingPractice_stateAim_OnEnterState(void* self) { // @ 0x82103878
+    float aimDefault = g_SwingPractice_AimDefaults[2];         // [8]
+    *(float*)((char*)self + 12) = aimDefault;
+    *((uint8_t*)self + 16) = 0;
+
+    // Log entry (hooked HSM log)
+    game_3860(g_HsmLogObject);
+
+    // Post "enter-aim" page-group message (id 2108, param 64)
+    PostPageGroupMessage(2108, 64, 0, nullptr);
+
+    // If a global target-dirty flag is set, rewrite meter & clear flag.
+    if (*g_SwingPracticeTargetDirty != 0) {
+        void* owner = *(void**)((char*)self + 8);
+        void* target = *(void**)((char*)owner + 152);
+        *((uint8_t*)target + 100) = 0;   // clear latch
+        *((uint8_t*)target + 23)  = 1;   // arm
+        void* owner2 = *(void**)((char*)self + 8);
+        void* target2 = *(void**)((char*)owner2 + 152);
+        gmPracticeTarget_RefreshMeter(target2);
+        *g_SwingPracticeTargetDirty = 0;
+    }
+
+    // If target + camera pose are valid, register a camera pose event.
+    void* owner3 = *(void**)((char*)self + 8);
+    if (*((uint8_t*)owner3 + 89) != 0) {
+        float px = *(float*)((char*)owner3 + 112);
+        float py = *(float*)((char*)owner3 + 116);
+        float pz = *(float*)((char*)owner3 + 120);
+        PostPageGroupMessage(4119, 1, /*strRef*/ 0x8202D594, px, py, pz);
+    }
+
+    // Always post the aim-hint message using default aim params.
+    float paramA = g_SwingPractice_AimDefaults[0];
+    PostPageGroupMessage(41, 128, /*strRef*/ 0x8202D500, paramA, aimDefault);
+
+    // Delegate to the parent HSM state if current index is valid (slot 9).
+    void* owner4 = *(void**)((char*)self + 8);
+    int32_t stateIdx = *(int32_t*)((char*)owner4 + 84);
+    if (stateIdx > -1 && stateIdx < 11) {
+        void** stateSlot = (void**)((char*)owner4 + (stateIdx + 10) * 4);
+        VCALL_SLOT(*stateSlot, 9);  // parent.OnEnterState
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// gdaiMeterLogic — AI node: reads the meter (power bar) globals
+//
+// Vtable @ 0x82041E84. Probes three named globals against `other`:
+//   +24756 @ 0x825D3DB4 : live meter ptr
+//   +(-32708) @ 0x825CFBFC, +(-32712) @ 0x825CFBF8 : alternates
+// Used by AI to decide "is this the target the meter is tracking?"
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdaiMeterLogic::IsSameTarget  [vtable slot 20 @ 0x821E91C0]
+// Returns 1 if `other` matches any of 3 well-known meter-target globals.
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t gdaiMeterLogic_IsSameTarget(void* /*self*/, void* other) { // @ 0x821e91c0
+    void* meterA = *(void**)0x825D3DB4;
+    if (other == meterA) return 1;
+    void* meterB = *(void**)0x825CFBFC;
+    if (other == meterB) return 1;
+    void* meterC = *(void**)0x825CFBF8;
+    return (other == meterC) ? 1 : 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gdaiMeterLogic::RegisterSerializationFields  [vtable slot 21 @ 0x821E92B0]
+// Registers 5 serialization fields (offsets +16/+20/+24/+28/+32) against the
+// AI-logic schema object @ 0x825CAF94. Field names live in .rdata @ various
+// offsets of lbl_82050E... (decode to "MinHits", "MaxHits", "MinPower", etc.).
+// ─────────────────────────────────────────────────────────────────────────────
+void gdaiMeterLogic_RegisterSerializationFields(void* self) { // @ 0x821e92b0
+    void* schema = (void*)0x825CAF94;
+    RegisterSerializationField(self, (const char*)0x82050E8C, (char*)self + 16, schema, 0);
+    RegisterSerializationField(self, (const char*)0x82050F0C, (char*)self + 20, schema, 0);
+    RegisterSerializationField(self, (const char*)0x82050F18, (char*)self + 24, schema, 0);
+    RegisterSerializationField(self, (const char*)0x82050F28, (char*)self + 28, schema, 0);
+    RegisterSerializationField(self, (const char*)0x82050E98, (char*)self + 32, schema, 0);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// gdaiComeBackLogic::BuildShotLists  [vtable slot 3 @ 0x821EA1B8]
+//
+// Scans the linked-list of candidate shots hanging off (this+12) and partitions
+// them into two buckets by calling `slot 20` (IsClassified) on each with two
+// different class tags stored at globals:
+//   g_AIClass_A @ 0x825D3E18  (weak/defensive shot)
+//   g_AIClass_B @ 0x825D3E14  (aggressive/return shot)
+//
+// Result layout inside `this`:
+//   +16 : array handle for class-B hits (size = var_r28)
+//   +24 : array handle for class-A hits (size = var_r25)
+// Each element also writes back its own index into entry+28.
+// Entries that match NEITHER get logged via nop_8240E6D0 with their slot-19
+// name string (debug trace).
+// ═════════════════════════════════════════════════════════════════════════════
+void gdaiComeBackLogic_BuildShotLists(void* self) { // @ 0x821ea1b8
+    uint16_t countA = 0, countB = 0;
+    void* classA = *(void**)0x825D3E18;
+    void* classB = *(void**)0x825D3E14;
+
+    // Pass 1: count classifications and log unknowns.
+    void* node = *(void**)((char*)self + 12);
+    while (node != nullptr) {
+        if (VCALL_SLOT_ARG_RET_U8(node, 20, classA)) {
+            countA++;
+        } else if (VCALL_SLOT_ARG_RET_U8(node, 20, classB)) {
+            countB++;
+        } else {
+            const char* name = (const char*)VCALL_SLOT_RET(node, 19);
+            nop_8240E6D0((const char*)0x8203F3C8, name);  // "leAnim%s" fmt
+        }
+        node = *(void**)((char*)node + 8);
+    }
+
+    // Allocate/clear result arrays.
+    void* arrB = (char*)self + 16;
+    if (countB != 0) {
+        game_DB80(arrB, countB);
+    } else {
+        *(uint32_t*)arrB = 0;
+        *((uint16_t*)arrB + 3) = 0;
+    }
+
+    void* arrA = (char*)self + 24;
+    if (countA != 0) {
+        game_DB80(arrA, countA);
+    } else {
+        *(uint32_t*)arrA = 0;
+        *((uint16_t*)arrA + 3) = 0;
+    }
+
+    // Pass 2: populate the arrays in the original list order.
+    uint32_t idxA = 0, idxB = 0;
+    node = *(void**)((char*)self + 12);
+    while (node != nullptr) {
+        if (VCALL_SLOT_ARG_RET_U8(node, 20, classA)) {
+            // Append to class-A bucket (+24)
+            uint16_t slot = *((uint16_t*)arrA + 2);   // write cursor
+            void** base   = *(void***)arrA;
+            *((uint16_t*)arrA + 2) = slot + 1;
+            base[slot] = node;
+            *(uint32_t*)((char*)node + 28) = idxA++;
+        } else if (VCALL_SLOT_ARG_RET_U8(node, 20, classB)) {
+            // Append to class-B bucket (+16)
+            uint16_t slot = *((uint16_t*)arrB + 2);
+            void** base   = *(void***)arrB;
+            *((uint16_t*)arrB + 2) = slot + 1;
+            base[slot] = node;
+            *(uint32_t*)((char*)node + 28) = idxB++;
+        }
+        node = *(void**)((char*)node + 8);
+    }
+}
