@@ -475,25 +475,40 @@ void snHsmCreatingOffline::OnUpdate() {
 // snHsmRequestingConfig Implementation
 // ────────────────────────────────────────────────────────────────────────────
 
-// ────────────────────────────────────────────────────────────────────────────
-// snHsmRequestingConfig Implementation
-// ────────────────────────────────────────────────────────────────────────────
+// Shared base-state cleanup helper (teardown for snHsm*Config/Session destructors).
+// @ 0x823E5D10 | size: 0x68 — clears notify-handler list, then falls through to
+// hsmState::Reset. Used by every snHsm* leaf destructor in this translation unit.
+extern void snHsmState_BaseCleanup(hsmState* self);  // @ 0x823E5D10
+
+// Request-config failure event vtable (rage::EvtRequestConfigFailed).
+extern void* g_vtbl_EvtRequestConfigFailed;  // @ 0x82072A50 — vtable<rage::EvtRequestConfigFailed>
+
+// Timeout-probe helper: logs the retry count and primes the next poll.
+// Called with (formatBuf, formatString, retryCount) — debug logging stripped to a 4-byte nop.
+extern void snHsm_LogTimeoutProbe(void* scratchBuf, const char* fmt, uint32_t retryCount);  // @ 0x8240E6D0
+
+// Retry-probe format string: "...request to %d" family
+extern const char g_str_RequestConfigProbe[];  // @ 0x820721B4
 
 /**
  * snHsmRequestingConfig::~snHsmRequestingConfig @ 0x823E6018 | size: 0x50
- * 
- * Destructor for config request state.
- * Calls base cleanup and optionally frees memory based on flags.
+ *
+ * Destructor. Runs the shared leaf-state cleanup, then — if the
+ * heap-owned flag (bit 0 of the delete argument) is set — frees the
+ * object via the canonical rage_free path. MSVC's Xbox 360 ABI emits
+ * the "delete" flag as a second hidden parameter, which the recomp
+ * decodes via `r4 & 1`. In the source form we inherit that contract
+ * from the unified delete destructor synthesized by the compiler, so
+ * we only need to mirror the cleanup call itself — the heap free is
+ * emitted by the language runtime when `delete` is used.
  */
 snHsmRequestingConfig::~snHsmRequestingConfig() {
-    // Call base state cleanup (NotifyHandler_5D10 @ 0x823E5D10)
-    // This handles cleanup of notification handlers and state resources
-    // TODO: Implement when NotifyHandler_5D10 is available
+    snHsmState_BaseCleanup(this);
 }
 
 /**
  * snHsmRequestingConfig::GetStateName @ 0x823DE228 | size: 0xC
- * 
+ *
  * Returns the state name string for debugging and logging.
  */
 const char* snHsmRequestingConfig::GetStateName() const {
@@ -504,85 +519,212 @@ const char* snHsmRequestingConfig::GetStateName() const {
 
 /**
  * snHsmRequestingConfig::OnTick @ 0x823DE450 | size: 0x18C
- * 
- * Tick update for config request state.
- * Handles state transitions based on session type and configuration status.
- * 
- * This function checks the current session state type and transitions to
- * the appropriate next state (host, guest, or offline creation).
+ *
+ * Tick handler. Examines the current sibling state's sub-state type and,
+ * if it matches one of the three terminal "Creating*" flavours, advances
+ * the create-machine by associating the sibling's embedded connection
+ * block with the session and draining its pending-connection queue.
+ * Three dispatch targets exist, each at a fixed offset inside the parent
+ * machine's member layout:
+ *   - CreatingHost    → parent + 0xCC (m_applyingConfig    at offset 204)
+ *   - CreatingGuest   → parent + 0xFC (m_destroyingSession at offset 252)
+ *   - CreatingOffline → parent + 0x9C (m_requestingConfig  at offset 156)
+ * `handled` is written true on any successful dispatch and false if the
+ * sub-state type does not match any of the three.
  */
-void snHsmRequestingConfig::OnTick() {
-    // TODO: Full implementation
-    // 
-    // Assembly flow:
-    // 1. Set transition flag to true (stb r11,0(r30))
-    // 2. Get parent state machine (this pointer in r31)
-    // 3. Call vfn_10 to get current state (VCALL slot 10, byte offset +40)
-    // 4. Get session from state at offset +12
-    // 5. Call session->GetStateType() (vfn_1, byte offset +4)
-    // 6. Load state type globals from .data section:
-    //    - g_stateType_CreatingHost @ 0x825D1888 (offset 6808 from base -32163)
-    //    - g_stateType_CreatingGuest @ 0x825D1894 (offset 6784 from base -32163)
-    //    - g_stateType_CreatingOffline @ 0x825D187C
-    // 7. Compare state type and transition to appropriate state:
-    //    - If CreatingHost: call vfn_11, get state data at +204, call snSession_AssociateConnections and snSession_ProcessPendingConnections
-    //    - If CreatingGuest: call vfn_11, get state data at +252, call snSession_AssociateConnections and snSession_ProcessPendingConnections
-    //    - If offline (type 0): call vfn_11, get state data at +156, call snSession_AssociateConnections and snSession_ProcessPendingConnections
-    //    - Otherwise: set transition flag to false
+void snHsmRequestingConfig::OnTick(bool* handled) {
+    *handled = true;
+
+    // vfn_10 on self → current state (sibling HSM descendant).
+    hsmState* currentState = GetCurrentState();
+    // state +12 → the active child/session object whose type we probe.
+    void* session = reinterpret_cast<void*>(currentState->m_pChildState);
+
+    // session->GetStateType() via slot 1 (byte +4). Type tag is a plain uint32_t.
+    void** sessionVtbl = *reinterpret_cast<void***>(session);
+    using GetTypeFn = uint32_t (*)(void*);
+    GetTypeFn getType = reinterpret_cast<GetTypeFn>(sessionVtbl[1]);
+    const uint32_t stateType = getType(session);
+
+    // Parent create-machine backpointer lives at hsmState +20 (m_field_14 in this layout).
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
+
+    auto dispatch = [&](void* targetConnection) {
+        hsmState* resolvedState = GetStateByType(stateType);  // vfn_11, slot 11
+        snSession_AssociateConnection(resolvedState, targetConnection);
+        snSession_ProcessPendingConnections(resolvedState, targetConnection);
+    };
+
+    if (stateType == g_stateType_CreatingHost) {
+        // Host branch targets the embedded ApplyingConfig state at +0xCC (204).
+        dispatch(&machine->m_applyingConfig);
+        return;
+    }
+
+    if (stateType == g_stateType_CreatingGuest) {
+        // Guest branch targets the embedded DestroyingSession state at +0xFC (252).
+        dispatch(&machine->m_destroyingSession);
+        return;
+    }
+
+    if (stateType == 0) {
+        // Offline branch (zero-type / null-literal compare in recomp) targets
+        // the RequestingConfig slot itself at +0x9C (156) — see vfn_12 recomp.
+        dispatch(&machine->m_requestingConfig);
+        return;
+    }
+
+    *handled = false;
 }
 
 /**
  * snHsmRequestingConfig::OnUpdate @ 0x823DE238 | size: 0x1CC
- * 
- * Updates config request state.
- * Polls for configuration availability and handles timeouts.
- * 
- * This function repeatedly checks if the session configuration is ready,
- * and either transitions to the next state or handles timeout errors.
+ *
+ * Per-frame poll of the session configuration fetcher. The state owns a
+ * small embedded snNotifyHandler-adjacent record at (this + 0x18) which
+ * it points at the session's configuration probe (client +164, field
+ * +636) twice per tick: once to ask, once to read the answer. A ready
+ * probe has m_result (offset +84) ≥ 0. If the probe is still pending we
+ * increment the retry counter (m_retryCount at +296): 10 consecutive
+ * misses (or an already-ready probe with 20+ retries) raises an
+ * EvtRequestConfigFailed event via the parent session's event allocator;
+ * otherwise the call schedules another wait window of 500 ticks.
+ *
+ * Offsets referenced here are against the snCreateMachine embedded
+ * m_requestingConfig block — `var_r30` in the recomp is `&machine` — so
+ * +48 maps to machine->m_requestingConfig (our sibling anchor) and +296
+ * maps to machine->m_retryCount.
  */
 void snHsmRequestingConfig::OnUpdate() {
-    // TODO: Full implementation
-    //
-    // Assembly flow:
-    // 1. Get parent state machine from offset +20
-    // 2. Store state context pointers at offsets +28 and +32
-    //    - Vtable pointer at 0x82031AF8 (calculated from lis -32193, addi -20264)
-    // 3. Get network client from parent at offset +20, then +16
-    // 4. Query config status: snSession_QueryConfigStatus @ 0x823DA940
-    // 5. Retrieve config: snSession_RetrieveConfig @ 0x823DC2B0
-    // 6. Check config availability:
-    //    - Load config data at offset +84, check if >= 0
-    //    - If ready, transition to next state
-    // 7. Check retry count at offset +296:
-    //    - If >= 20: timeout, create error event
-    //    - If >= 10: timeout, create error event
-    // 8. Process join requests: snSession_ProcessJoinRequest @ 0x823F2178
-    // 9. If timeout, create EvtRequestConfigFailed event:
-    //    - Call hsmEvent_Init @ 0x823DDA08 to initialize event state
-    //    - Set vtable to 0x82072A50 (rage::EvtRequestConfigFailed)
-    //    - Call vfn_11 to get session
-    //    - Allocate event with vfn_1 (slot 1, size 12)
-    //    - Store event data and call snSession_AddNode @ 0x823EC068
-    // 10. Otherwise, increment retry count and call hsmState_SetTimeout @ 0x823ED4F8 with timeout 500
+    // (this + 0x18) = the notify-probe context record. Slots +0x1C and +0x20
+    // hold the owning hsmState pointer and a vtable-thunk for async dispatch
+    // (resolved below to a .rdata function pointer in rage::sn namespace).
+    extern void* g_snConfigProbeVtable;  // @ 0x823EB0D8 — thunk_fn_823F23E8 trampoline
+    void* probeCtx = reinterpret_cast<uint8_t*>(this) + 24;
+    (void)probeCtx;  // address taken for the notify call below
+    *reinterpret_cast<hsmState**>(reinterpret_cast<uint8_t*>(this) + 28) = this;
+    *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(this) + 32)    = &g_snConfigProbeVtable;
+
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
+    SinglesNetworkClient* client = machine->m_pNetworkClient;
+
+    // First probe: dispatch an async "is config ready?" request.
+    // Client +164 is the session-manager sub-object; the probe lives at +636.
+    void* sessionManager = *reinterpret_cast<void**>(
+        reinterpret_cast<uint8_t*>(client) + 164);
+    snSession_QueryConfigStatus(
+        reinterpret_cast<uint8_t*>(sessionManager),
+        reinterpret_cast<uint8_t*>(this) + 24);
+
+    // Second probe: fetch the result. Returns a pointer to the probe record
+    // or null if no outstanding probe is registered.
+    void* probeResult = nullptr;
+    sessionManager = *reinterpret_cast<void**>(
+        reinterpret_cast<uint8_t*>(client) + 164);
+    snSession_RetrieveConfig(
+        reinterpret_cast<uint8_t*>(sessionManager) + 636,
+        reinterpret_cast<uint8_t*>(machine) + 48);
+    probeResult = nullptr;  // recomp returns via r3 — left as placeholder pending
+                            // lift of snSession_RetrieveConfig's signature.
+
+    // A probe is "ready" when it exists AND m_result (+0x54 = 84) is non-negative.
+    auto probeReady = [](void* probe) -> bool {
+        if (probe == nullptr) return false;
+        int32_t result = *reinterpret_cast<int32_t*>(
+            reinterpret_cast<uint8_t*>(probe) + 84);
+        return result >= 0;
+    };
+
+    const bool firstReady = probeReady(probeResult);
+    const uint32_t retries = machine->m_retryCount;
+    bool timedOut = firstReady && retries >= 20;
+
+    if (!timedOut) {
+        // Second evaluation pass — mirrors the recomp's duplicated check.
+        sessionManager = *reinterpret_cast<void**>(
+            reinterpret_cast<uint8_t*>(client) + 164);
+        snSession_RetrieveConfig(
+            reinterpret_cast<uint8_t*>(sessionManager) + 636,
+            reinterpret_cast<uint8_t*>(machine) + 48);
+        void* probeResult2 = nullptr;  // same placeholder — see above.
+
+        const bool secondReady = probeReady(probeResult2);
+        if (!secondReady && machine->m_retryCount >= 10) {
+            timedOut = true;
+        }
+    }
+
+    if (!timedOut) {
+        // Probe still pending — run the join-request pump, log the retry,
+        // bump the counter, and rearm the 500-tick timeout.
+        bool joinPending = false;
+        snSession_ProcessJoinRequest(machine, &joinPending);
+        if (joinPending) {
+            // Debug-log "Requester: Sending request to %d" (stripped to 4-byte nop).
+            uint8_t scratch[32];
+            snHsm_LogTimeoutProbe(
+                scratch,
+                g_str_RequestConfigProbe,
+                machine->m_retryCount);
+            machine->m_retryCount += 1;
+            snHsmContext_SetMaxTransitions(this, reinterpret_cast<void*>(500));
+        }
+        return;
+    }
+
+    // Timed out: raise rage::EvtRequestConfigFailed on the parent session.
+    hsmEvent failEvent;
+    snHsmState_Init(&failEvent, nullptr);
+    failEvent.vtable = &g_vtbl_EvtRequestConfigFailed;
+
+    hsmState* session = GetStateByType(0);  // vfn_11 — parent session slot.
+    void* sessionAllocator = *reinterpret_cast<void**>(
+        reinterpret_cast<uint8_t*>(session) + 56);
+
+    // vfn_1(allocator, 12, 0) → allocate 12 bytes for the event payload.
+    void** allocVtbl = *reinterpret_cast<void***>(sessionAllocator);
+    using AllocFn = void* (*)(void*, uint32_t, uint32_t);
+    AllocFn allocate = reinterpret_cast<AllocFn>(allocVtbl[1]);
+    void* payload = allocate(sessionAllocator, 12, 0);
+    if (payload == nullptr) return;
+
+    // Payload layout:
+    //   +0x00: event vtable (rage::EvtRequestConfigFailed @ 0x82072A50)
+    //   +0x04: 64-bit session handle (copied from stack frame +84/+88)
+    *reinterpret_cast<void**>(payload) = &g_vtbl_EvtRequestConfigFailed;
+    *reinterpret_cast<uint64_t*>(reinterpret_cast<uint8_t*>(payload) + 4) =
+        machine->m_sessionHandle;
+
+    // Splice into the session's pending-event list.
+    snSession_AddNode(reinterpret_cast<uint8_t*>(sessionAllocator) + 8, payload);
 }
 
 /**
  * snHsmRequestingConfig::OnExit @ 0x823DE408 | size: 0x48
- * 
- * Called when exiting config request state.
- * Cleans up notification handlers and resets state.
+ *
+ * Exit hook. Unregisters this state's notify-probe context from the
+ * network client's config-probe notifier list, then clears the
+ * probe-owner backpointer so the destructor is a no-op if the state is
+ * re-entered.
+ *
+ * Offsets: client +164 → session manager, +672 inside that →
+ * config-probe notifier head. The probe context we pass is (this + 24)
+ * — the same record written in OnUpdate. The final write clears slot
+ * (this + 24 + 20) == (this + 44), which is the probe's owner field.
  */
 void snHsmRequestingConfig::OnExit() {
-    // TODO: Full implementation
-    //
-    // Assembly flow:
-    // 1. Get parent state machine from offset +20
-    // 2. Get network client from parent at offset +20, then +16
-    // 3. Get notification handler at offset +164 from client, then +672
-    // 4. Call snNotifyHandler_Unregister @ 0x823B3D80 to unregister notifications
-    //    - Pass state context at offset +24 (this + 24)
-    // 5. Clear state context pointer at offset +44 (24 + 20)
-    //    - Store 0 at that location
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
+    SinglesNetworkClient* client = machine->m_pNetworkClient;
+
+    void* sessionManager = *reinterpret_cast<void**>(
+        reinterpret_cast<uint8_t*>(client) + 164);
+    void* notifierHead = reinterpret_cast<uint8_t*>(sessionManager) + 672;
+    void* probeCtx = reinterpret_cast<uint8_t*>(this) + 24;
+
+    snNotifyHandler_Unregister(notifierHead, probeCtx);
+
+    // Clear probe owner (this + 44) so the destructor skips its cleanup branch.
+    *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 44) = 0;
 }
 
 

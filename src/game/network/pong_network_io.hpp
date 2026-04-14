@@ -80,3 +80,58 @@ void WriteBallHitDataToNetwork(void* ballHitData, void* client);
  * @param vec3Data  Pointer to 3 consecutive floats (x, y, z)
  */
 void WriteVector3ToNetwork(void* client, void* vec3Data);
+
+/**
+ * ReadFloatFromNetworkStream @ 0x82238DF8
+ *
+ * Reads a 32-bit float from the network bit stream. Mirror of
+ * WriteFloatToNetworkStream (game_6990 @ 0x820D6990). Original symbol:
+ * SinglesNetworkClient_8DF8_g. The low-level primitive is invoked with
+ * bitWidth=32 and the output is written back to the caller-supplied buffer.
+ *
+ * @param client  SinglesNetworkClient object managing the network stream
+ * @return        Float value read from the stream
+ */
+float ReadFloatFromNetworkStream(void* client);
+
+/**
+ * ReadVector3FromNetwork @ 0x821D9B40
+ *
+ * Reads 3 consecutive floats (x, y, z) from the network stream. Mirror of
+ * WriteVector3ToNetwork (game_9BB8_h @ 0x821D9BB8). Original symbol:
+ * SinglesNetworkClient_9B40_fw (size 0x78).
+ *
+ * @param client   SinglesNetworkClient object managing the network stream
+ * @param outVec3  Destination pointer — 3 floats will be written (offsets 0/4/8)
+ */
+void ReadVector3FromNetwork(void* client, void* outVec3);
+
+/**
+ * ReadBallHitDataFromNetwork @ 0x821D5538
+ *
+ * Deserialises pongBallHitData from the network stream. Exact inverse of
+ * WriteBallHitDataToNetwork (game_5738 @ 0x821D5738, size 0x1fc). Original
+ * symbol: util_5538 (size 0x200).
+ *
+ * Layout read order matches the write side:
+ *   +0..+8, +16..+24   : primary position/velocity floats
+ *   +48..+56, +64..+72 : spin/trajectory via ReadVector3FromNetwork (×2)
+ *   +80..+88           : physics vec3 via ReadVector3FromNetwork
+ *   +96..+104          : physics vec3 via ReadVector3FromNetwork
+ *   +116, +112         : additional physics scalars (+112 read from 8-bit)
+ *   +32                : sign-magnitude i8 hit-type control (via 1-bit sign + 7-bit mag)
+ *   +124, +128, +132   : physics scalars (+132 from 8-bit via netStream_ReadBytes)
+ *   +136, +140         : state bytes (8 bits each, zero-extended into u32 fields)
+ *   +176 (u16)         : flags (16-bit unsigned)
+ *   +178 (u16)         : index (16-bit signed-semantic via netStream_ReadS16)
+ *   +180 (u8)          : state byte (8 bits)
+ *   +182 (u16)         : extended-flags (16-bit unsigned)
+ *   If (extendedFlags & 0x1000):
+ *     +120             : extended physics scalar
+ *     +144             : impact normal vec3
+ *     +160             : surface velocity vec3
+ *
+ * @param client       SinglesNetworkClient object managing the network stream
+ * @param ballHitData  Destination pongBallHitData buffer (~192 bytes)
+ */
+void ReadBallHitDataFromNetwork(void* client, void* ballHitData);

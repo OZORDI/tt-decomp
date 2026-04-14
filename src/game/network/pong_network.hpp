@@ -1898,7 +1898,7 @@ struct pongLiveManager {
     void SetSpectatorSlot();
     void GetAvailableSpectatorIndex();
     void EndSession();
-    void StatsReaderNotifyHandler();
+    void StatsReaderNotifyHandler(void* notifyEvent);
 };
 
 namespace pongLiveManagerInner {

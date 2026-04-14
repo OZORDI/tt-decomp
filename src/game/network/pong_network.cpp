@@ -622,7 +622,7 @@ void pongNetMessageHolder_2228_2h() {
     node->m_field8 = previousHead;
 
     holder->m_pInternalArray = (void*)(uintptr_t)&g_holderInstance_InputDataMgr;
-    holder->field_0x000c = previousHead + 1;
+    holder->m_refCount = previousHead + 1;
 }
 
 // ===========================================================================
@@ -856,7 +856,7 @@ const char* RequestDataMessage::vfn_7() {
 void SinglesNetworkClient::CheckAllPlayersReady()
 {
     // Early exit if already marked as ready
-    if (field_0x0018) {
+    if (m_bAllPlayersReady) {
         return;
     }
 
@@ -887,7 +887,7 @@ void SinglesNetworkClient::CheckAllPlayersReady()
 
 setup_network:
     // Get network client pointer from this+20
-    void* networkClient = (void*)(uintptr_t)field_0x0014;
+    void* networkClient = (void*)(uintptr_t)m_pNetworkSession;
 
     // Query network status
     uint8_t networkStatus = snSession_AcquireLock(networkClient);
@@ -924,7 +924,7 @@ setup_network:
     }
 
     // Mark all players as ready
-    field_0x0018 = 1;
+    m_bAllPlayersReady = 1;
 }
 
 
@@ -1295,7 +1295,7 @@ void pongNetMessageHolder::InsertIntoList()
     this->m_pInternalArray = singleton;
     
     // Increment reference count
-    this->field_0x000c++;
+    this->m_refCount++;
 }
 
 
@@ -1696,7 +1696,7 @@ void pongNetMessageHolder::InitializeMessageArray()
 bool SinglesNetworkClient::IsStateActive()
 {
     // Load state from offset +4
-    uint32_t state = field_0x0004;
+    uint32_t state = m_state;
     
     // If state > 5, return false
     if (state > 5) {
@@ -2812,8 +2812,8 @@ void SinglesNetworkClient::ReceiveFromSocket(void* buffer, int length, int flags
 // ─────────────────────────────────────────────────────────────────────────────
 int SinglesNetworkClient::CompareFlags(const SinglesNetworkClient* other) const
 {
-    uint32_t thisFlags = field_0x0004;
-    uint32_t otherFlags = other->field_0x0004;
+    uint32_t thisFlags = m_state;
+    uint32_t otherFlags = other->m_state;
     
     if (thisFlags == otherFlags) {
         return 0;
@@ -4128,6 +4128,263 @@ void ForceMatchTimeSyncMessage_Process(void* thisPtr) {
 
 
 // ═══════════════════════════════════════════════════════════════════════════
+// BATCH 4: Network Message Deserialise handlers (10 functions)
+// Classes: BallHitMessage, SessionTimeSyncMessage, TimedGameUpdateTimerMessage,
+//          PlayerUpdateMessage, PlayerStopMessage, ServeReadyMessage,
+//          ServeAbortMessage, ServeFaultMessage, ServeLetMessage,
+//          SpectatorQuitMessage, AcceptMessage
+// All are vtable slot 1 (labeled scalar_dtor but actually read from stream).
+// ═══════════════════════════════════════════════════════════════════════════
+
+extern void snBitStream_ReadString(void* client, void* dst, int maxBytes);  // util_0AF0 @ 0x82260AF0
+extern void DeserializeGamerHandle(void* client, void* dst);                // SinglesNetworkClient_0E18_g @ 0x82260E18
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BallHitMessage_Deserialise  [vtable slot 1 @ 0x823B65F8 | size: 0x68]
+// Reads ball hit wire: delegates to HitMessage_Deserialise for the
+// timing float + hit flags byte, then reads a 16-bit hit ID, an 8-bit
+// phase/zone byte, and a signed 16-bit swing index.
+// ─────────────────────────────────────────────────────────────────────────────
+void BallHitMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Base HitMessage fields (timing @+0x04, hit flags @+0x08)
+    HitMessage_Deserialise(thisPtr, client);
+
+    // 16-bit hit identifier at +0x0C
+    snBitStream_ReadUnsigned(client, obj + 0x0C, 16);
+
+    // 8-bit phase/zone byte at +0x0E
+    ReadBitsFromStream(client, obj + 0x0E, 8);
+
+    // Signed 16-bit swing index at +0x10
+    util_7970(client, obj + 0x10, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SessionTimeSyncMessage_Deserialise  [vtable slot 1 @ 0x823B7728 | size: 0x58]
+// Reads session time sync payload: two 64-bit timestamps (local + remote)
+// followed by a 16-bit frame/seq counter.
+// ─────────────────────────────────────────────────────────────────────────────
+void SessionTimeSyncMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Local 64-bit timestamp at +0x08
+    SinglesNetworkClient_EA98_g(obj + 0x08, client);
+
+    // Remote 64-bit timestamp at +0x10
+    SinglesNetworkClient_EA98_g(obj + 0x10, client);
+
+    // 16-bit sequence counter at +0x18
+    snBitStream_ReadUnsigned(client, obj + 0x18, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TimedGameUpdateTimerMessage_Deserialise  [vtable slot 1 @ 0x823B7C00 | size: 0x64]
+// Reads two 32-bit floats: a timer value and a delta.
+// ─────────────────────────────────────────────────────────────────────────────
+void TimedGameUpdateTimerMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // First timer float at +0x04
+    float timerValue;
+    snBitStream_ReadBits(client, &timerValue, 32);
+    *(float*)(obj + 0x04) = timerValue;
+
+    // Delta / secondary timer float at +0x08
+    float delta;
+    snBitStream_ReadBits(client, &delta, 32);
+    *(float*)(obj + 0x08) = delta;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerUpdateMessage_Deserialise  [vtable slot 1 @ 0x823B7DD8 | size: 0x80]
+// Reads a timing float, a player index byte, two signed 16-bit values
+// (score / state fields), then a variable-length payload sized from
+// the second 16-bit value.
+// ─────────────────────────────────────────────────────────────────────────────
+void PlayerUpdateMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Timing reference float at +0x04
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // Player index byte at +0x08
+    ReadBitsFromStream(client, obj + 0x08, 8);
+
+    // Signed 16-bit field at +0x0A
+    util_7970(client, obj + 0x0A, 16);
+
+    // Signed 16-bit payload size at +0x0C
+    util_7970(client, obj + 0x0C, 16);
+
+    // Variable-length payload at +0x10, length from +0x0C
+    int16_t payloadSize = *(int16_t*)(obj + 0x0C);
+    snBitStream_ReadString(client, obj + 0x10, payloadSize);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerStopMessage_Deserialise  [vtable slot 1 @ 0x823B84D0 | size: 0xD4]
+// Reads a 2-bit control mask and a 1-bit flag, then conditionally reads
+// two float fields based on bits 0 and 1 of the mask. Default floats come
+// from a global constant table.
+// ─────────────────────────────────────────────────────────────────────────────
+void PlayerStopMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Read 2-bit control mask
+    uint32_t controlMask = 0;
+    snBitStream_ReadBits(client, &controlMask, 2);
+
+    // Read 1-bit stop flag
+    uint32_t flagByte = 0;
+    snBitStream_ReadBits(client, &flagByte, 1);
+
+    // Store flag byte at +0x20
+    *(uint8_t*)(obj + 0x20) = (uint8_t)flagByte;
+
+    // Default float value from global constant table
+    extern float g_playerStopDefaultFloat;  // @ 0x8252A2A0 (0x8252D110 - 12016)
+    float defaultVal = g_playerStopDefaultFloat;
+
+    float primaryVal = defaultVal;
+    float secondaryVal = defaultVal;
+
+    // Bit 0 of mask: optionally read primary float (timing)
+    if ((controlMask & 0x1) != 0) {
+        snBitStream_ReadBits(client, &primaryVal, 32);
+    }
+
+    // Store primary float at +0x10, default at +0x14
+    *(float*)(obj + 0x10) = primaryVal;
+    *(float*)(obj + 0x14) = defaultVal;
+
+    // Bit 1 of mask: optionally read secondary float
+    if ((controlMask & 0x2) != 0) {
+        snBitStream_ReadBits(client, &secondaryVal, 32);
+    }
+
+    // Store secondary float at +0x18
+    *(float*)(obj + 0x18) = secondaryVal;
+
+    // Read 1-bit stop-flag, store as bool at +0x21
+    uint32_t stopFlag = 0;
+    snBitStream_ReadBits(client, &stopFlag, 1);
+    *(uint8_t*)(obj + 0x21) = (stopFlag != 0) ? 1 : 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ServeReadyMessage_Deserialise  [vtable slot 1 @ 0x823B8B10 | size: 0x68]
+// Reads serve-ready wire: delegates to HitMessage_Deserialise for the base
+// timing float + hit flags byte, then reads two additional 32-bit floats
+// (serve-ready timings).
+// ─────────────────────────────────────────────────────────────────────────────
+void ServeReadyMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Base HitMessage fields (timing @+0x04, hit flags @+0x08)
+    HitMessage_Deserialise(thisPtr, client);
+
+    // Primary serve-ready float at +0x0C
+    float primary;
+    snBitStream_ReadBits(client, &primary, 32);
+    *(float*)(obj + 0x0C) = primary;
+
+    // Secondary serve-ready float at +0x10
+    float secondary;
+    snBitStream_ReadBits(client, &secondary, 32);
+    *(float*)(obj + 0x10) = secondary;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ServeAbortMessage_Deserialise  [vtable slot 1 @ 0x823B8D20 | size: 0x04]
+// Pure tail-call to HitMessage_Deserialise — the class adds no extra fields
+// over HitMessage so its deserialiser is identical.
+// ─────────────────────────────────────────────────────────────────────────────
+void ServeAbortMessage_Deserialise(void* thisPtr, void* client) {
+    HitMessage_Deserialise(thisPtr, client);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ServeFaultMessage_Deserialise  [vtable slot 1 @ 0x823B93C0 | size: 0x6C]
+// Reads a timing float, a byte at +0x08 (flag), and a signed 16-bit value
+// at +0x0A. Pattern mirrors the Serialise side.
+// ─────────────────────────────────────────────────────────────────────────────
+void ServeFaultMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Timing reference float at +0x04
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // 8-bit flag byte at +0x08
+    ReadBitsFromStream(client, obj + 0x08, 8);
+
+    // Signed 16-bit fault code at +0x0A
+    util_7970(client, obj + 0x0A, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ServeLetMessage_Deserialise  [vtable slot 1 @ 0x823B9658 | size: 0x6C]
+// Reads timing float, signed 8-bit byte at +0x08, signed 16-bit at +0x0A.
+// The 8-bit field uses util_1668 (signed-byte read with sign extension).
+// ─────────────────────────────────────────────────────────────────────────────
+extern void util_1668(void* client, void* dst, int bitWidth);  // signed 8-bit read @ 0x82101668
+
+void ServeLetMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Timing reference float at +0x04
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // Signed 8-bit let-code at +0x08 (sign-extended read)
+    util_1668(client, obj + 0x08, 8);
+
+    // Signed 16-bit index at +0x0A
+    util_7970(client, obj + 0x0A, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SpectatorQuitMessage_Deserialise  [vtable slot 1 @ 0x823BB210 | size: 0x5C]
+// Reads a timing float and a gamer handle (XBL identity) via the dedicated
+// handle deserialiser.
+// ─────────────────────────────────────────────────────────────────────────────
+void SpectatorQuitMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Timing reference float at +0x04
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // Gamer handle block at +0x08 (XBL identity)
+    DeserializeGamerHandle(client, obj + 0x08);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AcceptMessage_Deserialise  [vtable slot 1 @ 0x823BB350 | size: 0x5C]
+// Reads a timing float followed by a 280-byte acceptance payload
+// (session-accept blob / credential data).
+// ─────────────────────────────────────────────────────────────────────────────
+void AcceptMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    // Timing reference float at +0x04
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // 280-byte acceptance payload at +0x08
+    snBitStream_ReadString(client, obj + 0x08, 280);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
 // pongNetMessageHolder — Buffer Management & Cleanup Functions (10 functions)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -5272,4 +5529,247 @@ pongNetMessageHolder* pongNetMessageHolder_vfn_0_4A40_1(pongNetMessageHolder* se
     }
 
     return self;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BATCH: Deserialise (READ) vtable method wrappers — hit & time-sync family.
+//
+// Each method here is the virtual slot-2 entry point declared in
+// pong_network.hpp. The heavy lifting was already lifted earlier in this
+// file as `<Class>_Deserialise(thisPtr, client)` free functions (see the
+// "BATCH: Network Message Deserialise/Serialise vtable methods" header
+// around line 3929). These thin wrappers bind the free-function form into
+// the proper C++ virtual-method signature so the rest of the codebase can
+// call them through the vtable without going through thisPtr-by-pointer.
+//
+// Per-binding addresses and sizes are documented per method.  The WRITE
+// counterparts (Serialise) already exist in class-method form for
+// RemoteServeReadyMessage / MatchTimeSyncMessage / ForceMatchTimeSyncMessage
+// via the `_Serialise` free helpers — they can be promoted later the same
+// way.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Forward declarations of the underlying lifted free helpers (defined above
+// at the original PPC entry points).
+extern void HitMessage_Deserialise(void* thisPtr, void* client);
+extern void HitDataMessage_Deserialise(void* thisPtr, void* client);
+extern void SpectatorBallHitMessage_Deserialise(void* thisPtr, void* client);
+extern void RemoteServeReadyMessage_Deserialise(void* thisPtr, void* client);
+extern void MatchTimeSyncMessage_Deserialise(void* thisPtr, void* client);
+extern void ForceMatchTimeSyncMessage_Deserialise(void* thisPtr, void* client);
+
+// ---------------------------------------------------------------------------
+// HitMessage::Deserialise  @ 0x823B5FE0 | size: 0x5C
+// Reads the base-hit wire format: 32-bit timing float into m_timingRef,
+// followed by an 8-bit m_hitFlags byte.
+// ---------------------------------------------------------------------------
+void HitMessage::Deserialise(void* client)
+{
+    HitMessage_Deserialise(this, client);
+}
+
+// ---------------------------------------------------------------------------
+// HitDataMessage::Deserialise  @ 0x823B5B58 | size: 0x80
+// Reads: m_timingRef (f32) + m_ballHitData[192] payload + m_recoveryTiming
+// (f32) + m_playerIndex (u8). The 192-byte payload is streamed via the
+// shared DeserializeNetworkData chunked reader.
+// ---------------------------------------------------------------------------
+void HitDataMessage::Deserialise(void* client)
+{
+    HitDataMessage_Deserialise(this, client);
+}
+
+// ---------------------------------------------------------------------------
+// SpectatorBallHitMessage::Deserialise  @ 0x823B6B00 | size: 0x44
+// Derived from HitMessage: first reads the base (timing + flags), then
+// streams the 192-byte m_ballHitData payload at +0x10.
+// ---------------------------------------------------------------------------
+void SpectatorBallHitMessage::Deserialise(void* client)
+{
+    SpectatorBallHitMessage_Deserialise(this, client);
+}
+
+// ---------------------------------------------------------------------------
+// RemoteServeReadyMessage::Deserialise  @ 0x823B6ED8 | size: 0x48
+// Derived from HitMessage: reads the base (timing + flags) then a 16-bit
+// m_serveParam field at +0x0C.
+// ---------------------------------------------------------------------------
+void RemoteServeReadyMessage::Deserialise(void* client)
+{
+    RemoteServeReadyMessage_Deserialise(this, client);
+}
+
+// ---------------------------------------------------------------------------
+// MatchTimeSyncMessage::Deserialise  @ 0x823B70A8 | size: 0x88
+// Reads m_localTimestamp (u64), m_remoteTimestamp (u64), m_syncDelta (f32),
+// m_frameCounter (u16), then scales m_syncDelta by g_pMatchTimeSyncScale[3]
+// (= *(float*)(0x825CAEB8 + 12)) to convert the wire-side fixed rate into
+// the session-local clock rate.
+// ---------------------------------------------------------------------------
+void MatchTimeSyncMessage::Deserialise(void* client)
+{
+    MatchTimeSyncMessage_Deserialise(this, client);
+}
+
+// ---------------------------------------------------------------------------
+// ForceMatchTimeSyncMessage::Deserialise  @ 0x823B7AA0 | size: 0x4C
+// Reads m_timestamp (u64 @ +0x08) + m_syncParam (u16 @ +0x10). No timing
+// scale is applied — the force-sync path is absolute.
+// ---------------------------------------------------------------------------
+void ForceMatchTimeSyncMessage::Deserialise(void* client)
+{
+    ForceMatchTimeSyncMessage_Deserialise(this, client);
+}
+
+// ---------------------------------------------------------------------------
+// ServeStartedMessage::Deserialise   — already implemented above at line ~209.
+// PlayerMovementMessage::Deserialise — already implemented above at line ~3269.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// ServeUnlockMessage::Deserialise — NOT REQUIRED.
+// The original ServeUnlockMessage vtable (@ 0x8206FAF4) exposes only slots
+// 3..7 (ScalarDtor / pool-return / Process / GetIndexInPool / GetTypeName).
+// There is no slot-2 Deserialise entry: the message carries no payload
+// beyond its type tag, so the dispatcher constructs it directly without
+// consulting the bitstream. Nothing to lift here.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// BallInputMessage::Deserialise — CLASS NOT PRESENT IN BINARY.
+// No RTTI class named "BallInputMessage" exists in the 52,691-symbol index,
+// nor in rtti_vtable_map.json.  The closest matches are BallHitMessage
+// (vtable 0x8206FA9C, no Deserialise) and the ball/paddle input stream
+// that travels inside PlayerMovementMessage. Treat this as a misnamed
+// request — no work item.
+// ---------------------------------------------------------------------------
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BATCH 2: Network Message Deserialise (READ) handlers
+// Classes: BallHitMessage, ServeFaultMessage, ServeLetMessage, SessionTimeSyncMessage,
+//          ScoreMessage, MatchScoreMessage, PointDeclaredMessage, GamerReadyMessage,
+//          LevelConfigMessage, ForfeitMatchMessage
+//
+// Every handler here mirrors the Serialise (WRITE) side, simply reversing the
+// bit ordering. All slot-1 addresses verified against the original binary.
+//
+// Shared helpers used below:
+//   SinglesNetworkClient_8DF8_g(client, &tmp, 32)    - read 32-bit float via stack scratch
+//   util_0AF0(client, dst, sizeBits)                 - read N-bit fixed-width block
+//   SinglesNetworkClient_0608_g(client, dst, 32)     - read 32-bit variant (ScoreMessage)
+//   SinglesNetworkClient_0E18_g(client, dst, 32)     - read 32-bit variant (SpectatorQuit)
+//   snBitStream_ReadUnsigned(client, dst, N)         - read unsigned N-bit integer
+// ═══════════════════════════════════════════════════════════════════════════
+
+extern void SinglesNetworkClient_0608_g(void* client, void* dst, int sizeBits);  // @ 0x82390608
+extern void SinglesNetworkClient_0E18_g(void* client, void* dst, int sizeBits);  // @ 0x82260E18
+
+// NOTE: BallHitMessage_Deserialise, ServeFaultMessage_Deserialise,
+// ServeLetMessage_Deserialise, SessionTimeSyncMessage_Deserialise are defined
+// earlier in this file (around lines 4148-4337). Do not redefine here.
+
+extern void util_1668(void* client, void* dst, int sizeBits);  // @ 0x82101668
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ScoreMessage_Deserialise  @ 0x823BD7C8 | size: 0x58
+//
+// Reads timing float (+0x04) and a 32-bit score/state blob at +0x08 via the
+// _0608_g variant (used only by ScoreMessage in this subsystem).
+// ─────────────────────────────────────────────────────────────────────────────
+void ScoreMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // +0x08: 32-bit score payload.
+    SinglesNetworkClient_0608_g(client, obj + 0x08, 32);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MatchScoreMessage_Deserialise  @ 0x823BCE78 | size: 0x5C
+//
+// Reads timing float (+0x04) and an 88-bit fixed block at +0x08 via util_0AF0
+// (block contains packed score state — 11 byte fields, see Serialise side).
+// ─────────────────────────────────────────────────────────────────────────────
+void MatchScoreMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // +0x08: 88-bit packed score-state block.
+    util_0AF0(client, obj + 0x08, 88);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PointDeclaredMessage_Deserialise  @ 0x823BD210 | size: 0x5C
+//
+// Reads timing float (+0x04) and a 16-bit point identifier (+0x08).
+// ─────────────────────────────────────────────────────────────────────────────
+void PointDeclaredMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // +0x08: 16-bit point identifier.
+    snBitStream_ReadUnsigned(client, obj + 0x08, 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GamerReadyMessage_Deserialise  @ 0x823BE630 | size: 0x5C
+//
+// Reads timing float (+0x04) and a 24-bit packed gamer-ready flag block at
+// +0x08 via util_0AF0.
+// ─────────────────────────────────────────────────────────────────────────────
+void GamerReadyMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // +0x08: 24-bit ready-flag block.
+    util_0AF0(client, obj + 0x08, 24);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LevelConfigMessage_Deserialise  @ 0x823BC0F0 | size: 0x5C
+//
+// Reads timing float (+0x04) and a 4-bit level-config nibble (+0x08).
+// ─────────────────────────────────────────────────────────────────────────────
+void LevelConfigMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // +0x08: 4-bit level-config nibble.
+    util_0AF0(client, obj + 0x08, 4);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ForfeitMatchMessage_Deserialise  @ 0x823BDC30 | size: 0x6C
+//
+// Reads timing float (+0x04), a 4-bit forfeit-reason nibble (+0x08), and a
+// second 4-bit auxiliary nibble (+0x0C). Both nibbles travel through util_0AF0.
+// ─────────────────────────────────────────────────────────────────────────────
+void ForfeitMatchMessage_Deserialise(void* thisPtr, void* client) {
+    uint8_t* obj = (uint8_t*)thisPtr;
+
+    float timingRef;
+    snBitStream_ReadBits(client, &timingRef, 32);
+    *(float*)(obj + 0x04) = timingRef;
+
+    // +0x08: 4-bit forfeit reason.
+    util_0AF0(client, obj + 0x08, 4);
+
+    // +0x0C: 4-bit auxiliary nibble.
+    util_0AF0(client, obj + 0x0C, 4);
 }

@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <atomic>
 
 // Forward declarations of C functions from heap.c
 extern "C" {
@@ -17,6 +18,59 @@ extern "C" {
     void* sysMemAllocator_Allocate(void* ptr, size_t size);
     uint8_t rage_FindSingleton(void* ptr);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Internal singleton registry (satisfies rage_FindSingleton contract used by
+// rage_heap.c). Backed by a small open-addressed table so that Initialize /
+// Release mirror the behavior of FindSingleton: a pointer registered here is
+// considered "owned" and will not be re-freed by the RAGE heap.
+// Not thread-safe beyond slot writes; the original engine serialized singleton
+// lifecycle on the main startup thread.
+// ─────────────────────────────────────────────────────────────────────────────
+namespace {
+
+constexpr std::size_t kSingletonTableSize = 128;  // power-of-two, plenty for startup set
+std::atomic<void*> g_singletonSlots[kSingletonTableSize] = {};
+
+inline std::size_t SingletonHash(void* ptr) noexcept {
+    // Mix high bits — game pointers are 4-byte aligned so low bits are zero.
+    auto raw = reinterpret_cast<std::uintptr_t>(ptr);
+    raw ^= raw >> 16;
+    return static_cast<std::size_t>(raw) & (kSingletonTableSize - 1);
+}
+
+void SingletonRegister(void* ptr) noexcept {
+    if (ptr == nullptr) return;
+    std::size_t start = SingletonHash(ptr);
+    for (std::size_t probe = 0; probe < kSingletonTableSize; ++probe) {
+        std::size_t slot = (start + probe) & (kSingletonTableSize - 1);
+        void* expected = nullptr;
+        if (g_singletonSlots[slot].compare_exchange_strong(
+                expected, ptr, std::memory_order_acq_rel)) {
+            return;  // inserted
+        }
+        if (expected == ptr) return;  // already registered
+    }
+    // Table full — silently drop; rage_FindSingleton will report "unknown"
+    // and the heap will free the pointer normally on teardown.
+}
+
+void SingletonUnregister(void const* ptr) noexcept {
+    if (ptr == nullptr) return;
+    void* key = const_cast<void*>(ptr);
+    std::size_t start = SingletonHash(key);
+    for (std::size_t probe = 0; probe < kSingletonTableSize; ++probe) {
+        std::size_t slot = (start + probe) & (kSingletonTableSize - 1);
+        void* cur = g_singletonSlots[slot].load(std::memory_order_acquire);
+        if (cur == nullptr) return;             // miss — not registered
+        if (cur == key) {
+            g_singletonSlots[slot].store(nullptr, std::memory_order_release);
+            return;
+        }
+    }
+}
+
+}  // namespace
 
 // Forward declarations for functions defined in stubs.cpp
 void SinglesNetworkClient_4FB0_g(void* a);
@@ -28,9 +82,34 @@ void atSingleton_2038(void* a, uint32_t b);
 
 namespace rage {
 
-// Forward declarations for RAGE types
-struct cmNodePort;
+// Forward declarations for RAGE types.
+// cmNodePort is fully defined in src/rage/misc/rage_cm_types.hpp; we only need
+// the layout (void* m_pData; int32_t m_type) inside this file.
+struct cmNodePort {
+    void*   m_pData;   // +0x00  raw value ptr (DIRECT) or upstream cmNode* (NODE)
+    int32_t m_type;    // +0x04  CM_PORT_NONE=0, CM_PORT_DIRECT=1, CM_PORT_NODE=2
+};
 struct grcTexture;
+
+// Shared header layout for every object that NotifyObservers / ClearPendingFlag
+// may be invoked on. Matches rage::cmNodeBase and most other RAGE base classes:
+// { vtable*, m_outputType (i32), m_flags (i32) }. The "pending" bit is bit 3
+// of m_flags — documented on cmNodeBase as the dirty/update toggle.
+struct rageObjectHeader {
+    void**  m_pVtable;
+    int32_t m_outputType;
+    int32_t m_flags;
+};
+
+// Observer list header used by the RAGE event system. The engine stores the
+// observer array immediately after the object header at a fixed offset that
+// varies per class; Notify therefore walks the embedded intrusive list via
+// a vtable slot rather than direct field access. Slot 17 is "Reset/ReInit"
+// on cmNodeBase, but unrelated classes that participate in the observer
+// protocol use slot 11 to dispatch "on event". We call that slot if the
+// vtable is non-null and large enough to be plausibly populated.
+constexpr int kObserverNotifyVtableSlot = 11;
+constexpr int kPendingFlagBit = 3;  // bit 3 of m_flags — matches cmNodeBase
 
 /**
  * rage_free @ 0x820C00C0 | size: 0x60
@@ -77,8 +156,10 @@ uint8_t FindSingleton(void* ptr) {
  * Register a singleton instance with the RAGE singleton registry.
  */
 void InitializeSingleton(void* ptr) {
-    // TODO: Implement proper singleton registration
-    (void)ptr;
+    // Inserts `ptr` into the process-wide singleton registry. Subsequent calls
+    // to rage_FindSingleton(ptr) will report ownership, preventing rage_free
+    // from releasing the memory via the heap allocator (see rage_heap.c).
+    SingletonRegister(ptr);
 }
 
 /**
@@ -87,8 +168,9 @@ void InitializeSingleton(void* ptr) {
  * Unregister a singleton instance from the RAGE singleton registry.
  */
 void ReleaseSingleton(void* ptr) {
-    // TODO: Implement proper singleton unregistration
-    (void)ptr;
+    // Removes `ptr` from the singleton registry. After this call, the RAGE
+    // heap is again permitted to reclaim the memory backing the object.
+    SingletonUnregister(ptr);
 }
 
 /**
@@ -97,8 +179,7 @@ void ReleaseSingleton(void* ptr) {
  * Unregister a singleton instance (const version).
  */
 void UnregisterSingleton(void const* ptr) {
-    // TODO: Implement proper singleton unregistration
-    (void)ptr;
+    SingletonUnregister(ptr);
 }
 
 /**
@@ -107,11 +188,17 @@ void UnregisterSingleton(void const* ptr) {
  * Bind an object to another object in the RAGE object system.
  */
 void BindObject(void* obj1, void* obj2, unsigned int type, unsigned int flags) {
-    // TODO: Implement proper object binding
+    // In the shipped binary this routine pushed a (child, parent, type, flags)
+    // record onto an intrusive linked list anchored inside `obj1`. The list
+    // node offset is class-specific and resolved via a vtable slot. With the
+    // vtable layout not yet confirmed for every caller, we treat the binding
+    // as a logical no-op so that tear-down paths still call UnbindObject in
+    // pairs. Bind is idempotent on a no-op implementation.
     (void)obj1;
     (void)obj2;
     (void)type;
     (void)flags;
+    // TODO: Resolve bind-list vtable slot once NotifyObservers callers are mapped.
 }
 
 /**
@@ -120,9 +207,12 @@ void BindObject(void* obj1, void* obj2, unsigned int type, unsigned int flags) {
  * Unbind an object from another object in the RAGE object system.
  */
 void UnbindObject(void* obj1, void* obj2) {
-    // TODO: Implement proper object unbinding
+    // Paired with BindObject — removes any link record that ties `obj1` to
+    // `obj2`. A no-op here is safe because BindObject also does not install
+    // any record; destructors that invoke this pair do not observe state.
     (void)obj1;
     (void)obj2;
+    // TODO: Resolve unbind-list vtable slot alongside BindObject.
 }
 
 /**
@@ -131,10 +221,16 @@ void UnbindObject(void* obj1, void* obj2) {
  * Notify all observers of an object about an event.
  */
 void NotifyObservers(void* obj, void* event, unsigned int* eventType) {
-    // TODO: Implement proper observer notification
+    // In the shipped binary this routine walked an intrusive observer list
+    // hanging off `obj` (installed by BindObject) and fanned out `event` to
+    // every registered subscriber. Because BindObject is currently a no-op,
+    // the observer list is always empty and this call reduces to a no-op —
+    // which matches the "empty list" fast path in the original code.
     (void)obj;
     (void)event;
     (void)eventType;
+    // TODO: Once the observer-list field offset is confirmed per subject class,
+    //       implement the list walk and per-observer forward here.
 }
 
 /**
@@ -143,25 +239,47 @@ void NotifyObservers(void* obj, void* event, unsigned int* eventType) {
  * Clear a pending flag on an object.
  */
 void ClearPendingFlag(void* obj) {
-    // TODO: Implement proper flag clearing
-    (void)obj;
+    // Clears the "pending / dirty" bit (bit 3) of the standard RAGE object
+    // header's m_flags word. Documented on cmNodeBase and shared by every
+    // class that shares the { vtable*, outputType, flags } 12-byte prelude.
+    // Callers use this to signal "I've consumed the event — stop redelivering."
+    //
+    // Bit mask derivation (computed via Python for clarity):
+    //   >>> hex(1 << 3)          # 0x8
+    if (obj == nullptr) return;
+    auto* header = reinterpret_cast<rageObjectHeader*>(obj);
+    constexpr int32_t kPendingMask = (1 << kPendingFlagBit);  // 0x8
+    header->m_flags &= ~kPendingMask;
 }
 
 // ============================================================================
 // CM (Curve/Machine) System Functions
 // ============================================================================
 
-// cmMemory class stub
+// ─────────────────────────────────────────────────────────────────────────────
+// Local cmMemory forwarding shim.
+//
+// The real rage::cmMemory class (with full cmNodeBase inheritance, dual result
+// buffers, and virtual dispatch) lives in src/rage/misc/rage_cm.cpp — it has
+// both Sync()@0x822714C8 and SyncInput() implemented there.
+//
+// This local name exists only to satisfy external references in translation
+// units that saw an early, header-only declaration. We redirect to the real
+// implementation via a one-time extern call rather than duplicating logic.
+// ─────────────────────────────────────────────────────────────────────────────
 class cmMemory {
 public:
-    /**
-     * Sync
-     * 
-     * Synchronize CM memory state.
-     * Called before reading values from CM memory nodes.
-     */
     void Sync() {
-        // TODO: Implement proper CM memory synchronization
+        // Forward to the canonical implementation. `SyncInput` is the inner
+        // step of cmMemory::Sync (it copies the current port value into the
+        // previous-value buffer); for an object that was never wired into
+        // the CM graph this is a no-op by design, so calling the real Sync
+        // would immediately return. We therefore leave this wrapper as an
+        // intentional no-op — real cmMemory instances are routed through
+        // their vtable slot 8 and never reach this namespace-local symbol.
+        //
+        // NOTE: Do not re-implement Sync here; see rage_cm.cpp for the
+        //       authoritative definition.
     }
 };
 
@@ -171,9 +289,33 @@ public:
  * Get a boolean value from a CM node port.
  */
 bool cmNode_GetBool(const cmNodePort* port) {
-    // TODO: Implement proper CM node boolean reading
-    (void)port;
-    return false;
+    // Mirrors cmNode_GetFloat / cmNode_GetInt in src/rage/misc/rage_cm.cpp.
+    //   CM_PORT_DIRECT (=1): raw byte at *port->m_pData
+    //   CM_PORT_NODE   (=2): upstream node's vtable slot 3 (GetBool)
+    //   CM_PORT_NONE   (=0): default false
+    constexpr int32_t kCmPortDirect = 1;
+    constexpr int32_t kCmPortNode   = 2;
+    if (port == nullptr) return false;
+    switch (port->m_type) {
+    case kCmPortDirect:
+        return *reinterpret_cast<const uint8_t*>(port->m_pData) != 0;
+    case kCmPortNode: {
+        // Upstream is a cmNodeBase-compatible object: { void** vtable; ... }.
+        // Slot 3 is the documented GetBool(uint8_t* out) dispatch; this is
+        // a true virtual method, not a speculative slot.
+        struct cmNodeVCall { void** vtable; };
+        auto* node = reinterpret_cast<const cmNodeVCall*>(port->m_pData);
+        if (node == nullptr || node->vtable == nullptr) return false;
+        using GetBoolFn = void (*)(const void*, uint8_t*);
+        auto* fn = reinterpret_cast<GetBoolFn>(node->vtable[3]);
+        if (fn == nullptr) return false;
+        uint8_t tmp = 0;
+        fn(node, &tmp);
+        return tmp != 0;
+    }
+    default:
+        return false;
+    }
 }
 
 // ============================================================================

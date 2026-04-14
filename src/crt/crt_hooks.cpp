@@ -41,6 +41,382 @@
 #include <stdint.h>
 
 /* =====================================================================
+ * PPC VARIADIC RECONSTRUCTION
+ *
+ * The Xbox 360 PPC64 SysV-derived ABI lays out variadic calls as:
+ *
+ *   GPR args :  r3..r10     (8 slots, 64-bit each)
+ *   FPR args :  f1..f13     (13 slots, 64-bit each — only f1..f8
+ *                            practically reachable from CRT format hooks)
+ *   Overflow :  caller's stack frame, pushed right-to-left after regs
+ *
+ * va_list on this ABI is a 12-byte struct in guest memory:
+ *
+ *   offset 0 : uint8_t  gpr_left       (GPR slots remaining, starts at 8)
+ *   offset 1 : uint8_t  fpr_left       (FPR slots remaining, starts at 13)
+ *   offset 2 : uint16_t reserved       (padding, zero)
+ *   offset 4 : uint32_t overflow_ea    (guest ptr to overflow stack area)
+ *   offset 8 : uint32_t reg_save_ea    (guest ptr to saved-register block)
+ *
+ * The register save area in guest memory is laid out as:
+ *
+ *   reg_save_ea + 0x00 : r3..r10    (8 × 8 bytes = 64 bytes)
+ *   reg_save_ea + 0x40 : f1..f13    (13 × 8 bytes = 104 bytes)
+ *
+ * va_arg(ap, int)    advances gpr_left  (reads low 32 bits of GPR slot)
+ * va_arg(ap, double) advances fpr_left  (reads full 64-bit FPR slot)
+ * When a register class is exhausted, further args come from overflow_ea.
+ *
+ * Byte offsets verified via Python:
+ *   sizeof(va_list) = 12; gpr_save=64B; fpr_save=104B; total_save=168B.
+ * ===================================================================== */
+
+namespace ppc_varargs {
+
+/* va_list struct layout in guest memory. */
+static constexpr size_t kVaListGprLeftOff    = 0;
+static constexpr size_t kVaListFprLeftOff    = 1;
+static constexpr size_t kVaListOverflowOff   = 4;
+static constexpr size_t kVaListRegSaveOff    = 8;
+
+/* Register save area layout. */
+static constexpr size_t kGprSlotCount        = 8;   /* r3..r10 */
+static constexpr size_t kFprSlotCount        = 13;  /* f1..f13 */
+static constexpr size_t kGprSlotWidth        = 8;   /* 64-bit GPR */
+static constexpr size_t kFprSlotWidth        = 8;   /* 64-bit FPR */
+static constexpr size_t kGprSaveAreaBytes    = kGprSlotCount * kGprSlotWidth;   /* 64  */
+static constexpr size_t kFprSaveAreaOffset   = kGprSaveAreaBytes;               /* 0x40 */
+
+/* Big-endian byte-swap helpers (guest is BE, host is typically LE). */
+static inline uint32_t bswap32_be(uint32_t v) {
+#if defined(__BIG_ENDIAN__)
+    return v;
+#else
+    return __builtin_bswap32(v);
+#endif
+}
+static inline uint64_t bswap64_be(uint64_t v) {
+#if defined(__BIG_ENDIAN__)
+    return v;
+#else
+    return __builtin_bswap64(v);
+#endif
+}
+
+/* Read a big-endian 32-bit word from guest memory. */
+static inline uint32_t guest_read_be32(uint32_t guest_ea) {
+    const uint32_t* p = (const uint32_t*)((uintptr_t)g_mem_base + guest_ea);
+    return bswap32_be(*p);
+}
+
+/* Read a big-endian 64-bit word from guest memory. */
+static inline uint64_t guest_read_be64(uint32_t guest_ea) {
+    const uint64_t* p = (const uint64_t*)((uintptr_t)g_mem_base + guest_ea);
+    return bswap64_be(*p);
+}
+
+/* Guest view of a PPC va_list, resolved to host pointers. */
+struct PpcVaList {
+    uint8_t* gpr_left_p;         /* byte: GPR slots remaining  */
+    uint8_t* fpr_left_p;         /* byte: FPR slots remaining  */
+    uint32_t reg_save_ea;        /* guest addr of save block   */
+    uint32_t overflow_ea;        /* guest addr of overflow     */
+};
+
+/* Resolve a guest va_list* into host-addressable fields. */
+static inline PpcVaList resolve(uint32_t va_list_ea) {
+    PpcVaList va{};
+    uint8_t* base = (uint8_t*)((uintptr_t)g_mem_base + va_list_ea);
+    va.gpr_left_p  = base + kVaListGprLeftOff;
+    va.fpr_left_p  = base + kVaListFprLeftOff;
+    va.overflow_ea = guest_read_be32(va_list_ea + kVaListOverflowOff);
+    va.reg_save_ea = guest_read_be32(va_list_ea + kVaListRegSaveOff);
+    return va;
+}
+
+/* Pull the next integer-class slot as a 64-bit value.
+ * Advances either the GPR register save area or the stack overflow area. */
+static inline uint64_t next_int64(PpcVaList& va) {
+    if (*va.gpr_left_p > 0) {
+        const uint32_t used = kGprSlotCount - *va.gpr_left_p;
+        const uint64_t v    = guest_read_be64(va.reg_save_ea + used * kGprSlotWidth);
+        --(*va.gpr_left_p);
+        return v;
+    }
+    /* Overflow: integers occupy 8-byte slots on this ABI. */
+    const uint64_t v = guest_read_be64(va.overflow_ea);
+    va.overflow_ea += kGprSlotWidth;
+    return v;
+}
+
+/* Pull the next floating-class slot as a host double.
+ * Advances either the FPR register save area or the stack overflow area. */
+static inline double next_double(PpcVaList& va) {
+    uint64_t bits;
+    if (*va.fpr_left_p > 0) {
+        const uint32_t used = kFprSlotCount - *va.fpr_left_p;
+        bits = guest_read_be64(va.reg_save_ea + kFprSaveAreaOffset
+                                              + used * kFprSlotWidth);
+        --(*va.fpr_left_p);
+    } else {
+        bits = guest_read_be64(va.overflow_ea);
+        va.overflow_ea += kFprSlotWidth;
+    }
+    double out;
+    static_assert(sizeof(out) == sizeof(bits), "double must be 64-bit");
+    memcpy(&out, &bits, sizeof(out));
+    return out;
+}
+
+/* Parse a printf conversion spec starting at '%' and classify the arg class.
+ * Returns the number of characters consumed and writes the arg class. */
+enum class ArgClass { None, Int32, Int64, Double, Pointer };
+
+static size_t classify_conversion(const char* p, ArgClass& out_class) {
+    out_class = ArgClass::None;
+    if (*p != '%') return 0;
+    const char* start = p;
+    ++p;
+    /* flags */
+    while (*p == '-' || *p == '+' || *p == ' ' || *p == '#' || *p == '0') ++p;
+    /* width */
+    if (*p == '*') { out_class = ArgClass::Int32; return (size_t)(p + 1 - start); }
+    while (*p >= '0' && *p <= '9') ++p;
+    /* precision */
+    if (*p == '.') {
+        ++p;
+        if (*p == '*') { out_class = ArgClass::Int32; return (size_t)(p + 1 - start); }
+        while (*p >= '0' && *p <= '9') ++p;
+    }
+    /* length modifier */
+    bool is_long_long = false;
+    bool is_long      = false;
+    if (p[0] == 'l' && p[1] == 'l') { is_long_long = true; p += 2; }
+    else if (p[0] == 'I' && p[1] == '6' && p[2] == '4') { is_long_long = true; p += 3; }
+    else if (*p == 'l') { is_long = true; ++p; }
+    else if (*p == 'h') { ++p; if (*p == 'h') ++p; }
+    else if (*p == 'z' || *p == 'j' || *p == 't') ++p;
+    /* conversion */
+    const char c = *p;
+    switch (c) {
+        case 'd': case 'i': case 'u': case 'o':
+        case 'x': case 'X': case 'c':
+            out_class = (is_long_long ? ArgClass::Int64 : ArgClass::Int32);
+            break;
+        case 'f': case 'F': case 'e': case 'E':
+        case 'g': case 'G': case 'a': case 'A':
+            out_class = ArgClass::Double;
+            break;
+        case 's': case 'p': case 'n':
+            out_class = ArgClass::Pointer;
+            break;
+        case '%':
+            out_class = ArgClass::None;
+            break;
+        default:
+            out_class = ArgClass::Int32;   /* conservative fallback */
+            break;
+    }
+    (void)is_long;
+    return (size_t)(p + 1 - start);
+}
+
+/* Maximum formatted output we ever produce from a hook.
+ * Xbox 360 debug paths assume unbounded sprintf but practical RAGE
+ * call-sites top out well below this ceiling. */
+static constexpr size_t kFormatScratchSize = 4096;
+
+/* Format a single conversion spec (copied verbatim from the user format)
+ * using the next value pulled from the PPC va_list. Returns bytes written. */
+static int format_one(char* dst, size_t dst_cap,
+                      const char* spec, size_t spec_len,
+                      ArgClass cls, PpcVaList& va)
+{
+    char spec_buf[64];
+    if (spec_len >= sizeof(spec_buf)) spec_len = sizeof(spec_buf) - 1;
+    memcpy(spec_buf, spec, spec_len);
+    spec_buf[spec_len] = '\0';
+
+    switch (cls) {
+        case ArgClass::Int32: {
+            const uint32_t v = (uint32_t)next_int64(va);
+            return snprintf(dst, dst_cap, spec_buf, v);
+        }
+        case ArgClass::Int64: {
+            const uint64_t v = next_int64(va);
+            return snprintf(dst, dst_cap, spec_buf, (long long)v);
+        }
+        case ArgClass::Double: {
+            const double d = next_double(va);
+            return snprintf(dst, dst_cap, spec_buf, d);
+        }
+        case ArgClass::Pointer: {
+            const uint32_t guest_ea = (uint32_t)next_int64(va);
+            const void* host_p = guest_ea ? (const void*)((uintptr_t)g_mem_base + guest_ea)
+                                          : NULL;
+            /* %s wants const char*; %p/%n also fit into a pointer slot. */
+            return snprintf(dst, dst_cap, spec_buf, host_p);
+        }
+        case ArgClass::None:
+        default:
+            if (dst_cap > 0) {
+                size_t n = spec_len < dst_cap - 1 ? spec_len : dst_cap - 1;
+                memcpy(dst, spec_buf, n);
+                dst[n] = '\0';
+                return (int)n;
+            }
+            return 0;
+    }
+}
+
+/* Core engine: walk fmt, emit literal bytes verbatim, and for every
+ * conversion spec pull the next arg out of the supplied va_list and
+ * delegate to the host snprintf for that single spec. */
+static int format_engine(char* out, size_t out_cap,
+                         const char* fmt, PpcVaList& va)
+{
+    if (!out || out_cap == 0 || !fmt) return -1;
+    size_t w = 0;
+    const char* p = fmt;
+    while (*p && w + 1 < out_cap) {
+        if (*p != '%') {
+            out[w++] = *p++;
+            continue;
+        }
+        ArgClass cls;
+        size_t consumed = classify_conversion(p, cls);
+        if (consumed == 0) { out[w++] = *p++; continue; }
+        int n = format_one(out + w, out_cap - w, p, consumed, cls, va);
+        if (n < 0) { out[w] = '\0'; return -1; }
+        w += (size_t)n;
+        if (w >= out_cap) { w = out_cap - 1; break; }
+        p += consumed;
+    }
+    out[w] = '\0';
+    return (int)w;
+}
+
+/* Build a synthetic va_list for sprintf from the live PPC context.
+ * sprintf itself has no guest va_list — the caller loaded arg values
+ * directly into r5..r10 and f1..f8. We materialize a save area on the
+ * host stack so the same format_engine path can be used. */
+struct SyntheticSaveArea {
+    uint64_t gpr_slots[kGprSlotCount];
+    uint64_t fpr_slots[kFprSlotCount];
+    uint8_t  gpr_left;
+    uint8_t  fpr_left;
+};
+
+static void build_synthetic_from_ctx(SyntheticSaveArea& area,
+                                     PPCRegContext& ctx,
+                                     unsigned gpr_start_index)
+{
+    /* gpr_start_index is 0 for sprintf (r5 is first varg at slot 0-ish
+     * after r3=buf, r4=fmt — BUT the PPC ABI places r5..r10 in save
+     * slots independent of callee use, so we copy r5..r10 + the
+     * variadic tail from r3,r4 semantics unchanged).
+     *
+     * For the sprintf(buf, fmt, ...) signature the first variadic arg
+     * is r5. We populate synthetic slots in GPR order r5..r10, mapping
+     * directly onto save-area indices 0..5 and marking slots 6,7 as
+     * already consumed so overflow kicks in if the format needs more. */
+    const uint64_t gprs[kGprSlotCount] = {
+        (uint64_t)ctx.r5.u64, (uint64_t)ctx.r6.u64,
+        (uint64_t)ctx.r7.u64, (uint64_t)ctx.r8.u64,
+        (uint64_t)ctx.r9.u64, (uint64_t)ctx.r10.u64,
+        0ULL,                 0ULL,
+    };
+    for (size_t i = 0; i < kGprSlotCount; ++i) area.gpr_slots[i] = gprs[i];
+
+    /* Copy f1..f8 bit patterns into the FPR save slots. */
+    const double fprs[8] = {
+        ctx.f1.f64, ctx.f2.f64, ctx.f3.f64, ctx.f4.f64,
+        ctx.f5.f64, ctx.f6.f64, ctx.f7.f64, ctx.f8.f64,
+    };
+    for (size_t i = 0; i < 8; ++i)
+        memcpy(&area.fpr_slots[i], &fprs[i], sizeof(uint64_t));
+    for (size_t i = 8; i < kFprSlotCount; ++i) area.fpr_slots[i] = 0ULL;
+
+    area.gpr_left = 6;   /* r5..r10 available (8 - 2 used for buf+fmt) */
+    area.fpr_left = 8;   /* f1..f8 carry float args */
+    (void)gpr_start_index;
+}
+
+/* Run format_engine against a synthesized save area (host memory, native
+ * endian). We build a tiny shim va_list in local host memory with the
+ * engine unchanged by reading host-native slots. */
+static int format_engine_synthetic(char* out, size_t out_cap,
+                                   const char* fmt,
+                                   SyntheticSaveArea& area)
+{
+    if (!out || out_cap == 0 || !fmt) return -1;
+    size_t w = 0;
+    uint8_t gpr_left = area.gpr_left;
+    uint8_t fpr_left = area.fpr_left;
+    size_t  overflow_idx = 0;  /* unused for sprintf — no stack recon */
+    const char* p = fmt;
+    while (*p && w + 1 < out_cap) {
+        if (*p != '%') { out[w++] = *p++; continue; }
+        ArgClass cls;
+        size_t consumed = classify_conversion(p, cls);
+        if (consumed == 0) { out[w++] = *p++; continue; }
+
+        char spec_buf[64];
+        size_t sl = consumed < sizeof(spec_buf) ? consumed : sizeof(spec_buf) - 1;
+        memcpy(spec_buf, p, sl);
+        spec_buf[sl] = '\0';
+
+        int n = 0;
+        switch (cls) {
+            case ArgClass::Int32: {
+                uint64_t v = 0;
+                if (gpr_left > 0) { v = area.gpr_slots[kGprSlotCount - gpr_left]; --gpr_left; }
+                n = snprintf(out + w, out_cap - w, spec_buf, (uint32_t)v);
+                break;
+            }
+            case ArgClass::Int64: {
+                uint64_t v = 0;
+                if (gpr_left > 0) { v = area.gpr_slots[kGprSlotCount - gpr_left]; --gpr_left; }
+                n = snprintf(out + w, out_cap - w, spec_buf, (long long)v);
+                break;
+            }
+            case ArgClass::Double: {
+                double d = 0.0;
+                if (fpr_left > 0) {
+                    memcpy(&d, &area.fpr_slots[kFprSlotCount - fpr_left], sizeof(double));
+                    --fpr_left;
+                }
+                n = snprintf(out + w, out_cap - w, spec_buf, d);
+                break;
+            }
+            case ArgClass::Pointer: {
+                uint32_t guest_ea = 0;
+                if (gpr_left > 0) {
+                    guest_ea = (uint32_t)area.gpr_slots[kGprSlotCount - gpr_left];
+                    --gpr_left;
+                }
+                const void* host_p = guest_ea
+                    ? (const void*)((uintptr_t)g_mem_base + guest_ea) : NULL;
+                n = snprintf(out + w, out_cap - w, spec_buf, host_p);
+                break;
+            }
+            default:
+                if (w + sl < out_cap) { memcpy(out + w, spec_buf, sl); n = (int)sl; }
+                break;
+        }
+        if (n < 0) { out[w] = '\0'; return -1; }
+        w += (size_t)n;
+        if (w >= out_cap) { w = out_cap - 1; break; }
+        p += consumed;
+        (void)overflow_idx;
+    }
+    out[w] = '\0';
+    return (int)w;
+}
+
+}  /* namespace ppc_varargs */
+
+/* =====================================================================
  * STRING FUNCTIONS
  * ===================================================================== */
 
@@ -193,18 +569,13 @@ PPC_FUNC_IMPL(crt_hook_memcpy) {
 /**
  * sprintf hook — 0x825863BC
  *
- * PPC: r3 = char* buf,  r4 = const char* fmt,  r5–r10 = variadic args
- *      →  r3 = int characters written
+ * PPC: r3 = char* buf,  r4 = const char* fmt,  r5..r10 = integer vargs,
+ *      f1..f8 = float vargs  →  r3 = int characters written
  *
- * LIMITATION: The PPC variadic ABI passes integer args in r5–r10 and
- * float args in f1–f8 with a parallel stack save area. We can reconstruct
- * up to 6 integer arguments directly. Format strings needing more than 6
- * integer args, or any float args, require the full va_list reconstruction
- * (see the TODO below).
- *
- * For the vast majority of RAGE log/debug calls (1–3 args, no floats)
- * this is sufficient. The original translated code is left as fallback
- * via PPC_HOOK_FALLBACK() for complex cases.
+ * Full variadic reconstruction: we synthesize a PPC save area from live
+ * register state (integers from r5..r10, doubles from f1..f8) and run
+ * our format engine against it so conversions like %f, %g, %e and mixed
+ * %d/%f sequences format correctly. See ppc_varargs:: for the ABI notes.
  */
 PPC_FUNC_IMPL(crt_hook_sprintf) {
     PPC_FUNC_PROLOGUE();
@@ -216,18 +587,12 @@ PPC_FUNC_IMPL(crt_hook_sprintf) {
         return;
     }
 
-    /*
-     * Reconstruct integer arguments from PPC registers.
-     * r5–r10 hold the first 6 non-format arguments. This covers the
-     * overwhelming majority of sprintf calls in RAGE (logging, name
-     * formatting, score display, etc.).
-     *
-     * TODO: Full variadic reconstruction for float args (f1–f8) and
-     *       calls with >6 integer args @ 0x825863BC — assembly unclear.
-     */
-    ctx.r3.s64 = (int64_t)sprintf(buf, fmt,
-                                   ctx.r5.u32, ctx.r6.u32, ctx.r7.u32,
-                                   ctx.r8.u32, ctx.r9.u32, ctx.r10.u32);
+    ppc_varargs::SyntheticSaveArea area;
+    ppc_varargs::build_synthetic_from_ctx(area, ctx, /*gpr_start_index=*/0);
+
+    const int written = ppc_varargs::format_engine_synthetic(
+        buf, ppc_varargs::kFormatScratchSize, fmt, area);
+    ctx.r3.s64 = (int64_t)written;
 }
 
 /**
@@ -258,29 +623,30 @@ PPC_FUNC_IMPL(crt_hook_snprintf) {
  * _vsnprintf hook — 0x825863CC
  *
  * PPC: r3 = char* buf,  r4 = size_t n,  r5 = const char* fmt,
- *      r6 = va_list* ap  →  r3 = int
+ *      r6 = va_list* ap  →  r3 = int characters written
  *
- * va_list on PPC64 is a struct on the guest stack, not a native va_list.
- * We can't directly pass it to native vsnprintf; reconstruct from the
- * register save area pointed to by r6.
- *
- * TODO: Implement full PPC va_list struct walk @ 0x825863CC.
- *       For now, fall through to translated code via the recomp.
+ * va_list on this ABI is a 12-byte guest-memory struct — we cannot hand
+ * it to the host's native vsnprintf. Instead we walk it slot-by-slot
+ * through our format engine, which pulls integer/pointer args from the
+ * GPR save area and double args from the FPR save area, falling back to
+ * the overflow stack when either register class is exhausted. Layout
+ * documented in ppc_varargs:: at the top of this file.
  */
 PPC_FUNC_IMPL(crt_hook_vsnprintf) {
     PPC_FUNC_PROLOGUE();
-    /*
-     * PPC va_list is a struct { char gpr_left, fpr_left, uint16_t reserved,
-     *                            uint32_t gpr_save_area, uint32_t fpr_save_area }
-     * The guest pointer in r6 points to this struct in guest memory.
-     * Reconstructing it for native vsnprintf requires reading the save area
-     * and building a host va_list — non-trivial and arch-specific.
-     *
-     * Fallback: leave ctx unchanged and let the scaffold run the translated
-     * version. This is correct; it just doesn't get the speed benefit.
-     * TODO: implement proper PPC va_list unwinding.
-     */
-    PPC_HOOK_FALLBACK();
+    char*       buf   = GUEST_MSTR(ctx.r3);
+    const size_t n    = (size_t)ctx.r4.u32;
+    const char* fmt   = GUEST_STR(ctx.r5);
+    const uint32_t ap = ctx.r6.u32;
+
+    if (!buf || !fmt || n == 0 || ap == 0) {
+        ctx.r3.s64 = -1;
+        return;
+    }
+
+    ppc_varargs::PpcVaList va = ppc_varargs::resolve(ap);
+    const int written = ppc_varargs::format_engine(buf, n, fmt, va);
+    ctx.r3.s64 = (int64_t)written;
 }
 
 /* =====================================================================

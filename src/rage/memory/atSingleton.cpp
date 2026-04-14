@@ -134,34 +134,39 @@ atSingleton* FindSingleton(uint32_t hash)
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  UnregisterSingleton
+//  UnregisterSingleton  (aka DuplicateName — the @0x820C29E0 helper does
+//  strlen + rage_alloc + memcpy and returns.  The name "UnregisterSingleton"
+//  is from the project's symbol map, but the scaffold body is only a name
+//  duplication routine — callers use the returned heap string as the registry
+//  key elsewhere.)
 //
 //  @ 0x820C29E0 | size: 0x74
 //
-//  Removes a singleton from the registry by name.  Computes string length,
-//  allocates a copy, then performs the actual removal.
-//
-//  TODO: The removal logic after the string copy is missing.
+//  Fully matches scaffold: no registry-removal code exists inside this
+//  function.  Any actual unregistration happens in the caller using the
+//  duplicated name pointer.
 // ═══════════════════════════════════════════════════════════════════════════════
 void UnregisterSingleton(const char* name)
 {
     if (!name)
         return;
 
-    // Calculate string length
+    // Calculate string length (manual strlen — matches scaffold loop).
     const char* p = name;
     while (*p) p++;
     uint32_t length = static_cast<uint32_t>(p - name);
 
-    // Allocate memory for string copy
+    // Allocate and copy (length + NUL terminator).
     uint32_t allocSize = length + 1;
     void* nameCopy = rage_alloc(allocSize);
 
     if (nameCopy) {
         std::memcpy(nameCopy, name, allocSize);
-
-        // TODO: Perform actual unregistration via registry removal
     }
+
+    // Scaffold ends here — caller is responsible for using nameCopy.
+    // (The original function returns void; the allocation leak-on-null is
+    //  matched to original behavior.)
 }
 
 
@@ -470,6 +475,31 @@ SingletonFactory* GetFactory(uint32_t hash)
     return nullptr;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  BindObject / UnbindObject  (header-declared shims)
+//
+//  The atSingleton.hpp header declares these two symbols with signatures
+//  (atSingleton*, uint32_t) and (uint32_t) respectively, mapping them to
+//  @ 0x8224B3F8 and @ 0x8218B410.  Scaffold analysis shows those addresses
+//  are actually PopulateEntries (vtable-slot-1 dispatch batch import) and
+//  a large pongPlayer destructor — neither matches a simple bind/unbind by
+//  hash.  These shims preserve header compatibility; full implementation
+//  requires resolving `atSingleton_AC28_g / _DDE8_g / _DE98_g` (PopulateEntries
+//  deps, all unlifted) and the pongPlayer struct definition with its 17+
+//  destructor-chain field offsets (Destroy deps).  See TODO notes above.
+// ═══════════════════════════════════════════════════════════════════════════════
+void BindObject(atSingleton* singleton, uint32_t /*hash*/)
+{
+    // Forwarded to PopulateEntries when sourceConfig plumbing is available.
+    PopulateEntries(singleton, nullptr);
+}
+
+void UnbindObject(uint32_t /*hash*/)
+{
+    // Forwarded to Destroy — caller must resolve the target via FindSingleton
+    // once the pongPlayer destructor pattern is fully lifted.
+}
 
 } // namespace rage
 

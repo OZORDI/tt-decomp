@@ -1517,6 +1517,9 @@ void util_0AF0(void* a, void* b, short c) { (void)a; (void)b; (void)c; }
 int util_5A70(void* a, void* b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
 void sysMemAllocator_PlatformFree(void* a, unsigned int b) { (void)a; (void)b; }
 void util_7970(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
+// ReadBallHitDataFromNetwork dependency (see src/game/network/pong_network_io.cpp).
+// util_1668 — sign-magnitude signed-8-bit bit-stream reader, not yet lifted.
+uint8_t netStream_ReadS8SignMagnitude(void* client, void* outByte) { (void)client; (void)outByte; return 0; }
 void util_8FD0(void* a) { (void)a; }
 void util_AA38(NetDataQuery* a) { (void)a; }
 void util_B8A0(void* a) { (void)a; }

@@ -129,7 +129,7 @@ class snHsmRequestingConfig : public hsmState {
 public:
     virtual ~snHsmRequestingConfig();                              // [0] @ 0x823E6018
     virtual const char* GetStateName() const;                      // [2] @ 0x823DE228
-    virtual void OnTick();                                         // [12] @ 0x823DE450
+    virtual void OnTick(bool* handled);                            // [12] @ 0x823DE450
     virtual void OnUpdate();                                       // [14] @ 0x823DE238
     virtual void OnExit();                                         // [15] @ 0x823DE408
 };

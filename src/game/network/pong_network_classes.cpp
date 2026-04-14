@@ -855,7 +855,7 @@ void NetDataQuery_Process(NetDataQuery* self) {
     *(uint32_t*)((char*)self + 4) = 4;
     
     // Get allocator from TLS
-    extern void* rage_AssertMainThread();
+    extern void rage_AssertMainThread();
     rage_AssertMainThread();
     
     // SDA r13+0 holds the rage allocator pointer; vtable slot 1 = Allocate(size, align)
@@ -1299,7 +1299,7 @@ void NetStateSync_Process(NetStateSync* self) {
     self->m_stateID = 7;
     
     // Get allocator from TLS
-    extern void* rage_AssertMainThread();
+    extern void rage_AssertMainThread();
     rage_AssertMainThread();
     
     // SDA r13+0 holds the rage allocator pointer; vtable slot 1 = Allocate(size, align)
@@ -1469,7 +1469,7 @@ void util_AA38(void* obj);
 void game_5128(void* obj);
 
 // Thread assertion
-void* rage_AssertMainThread();
+void rage_AssertMainThread();
 
 // Global allocator pointer @ 0x82600004
 extern void* g_allocator_ptr;

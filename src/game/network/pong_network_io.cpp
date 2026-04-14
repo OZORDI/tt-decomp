@@ -264,6 +264,171 @@ void WriteVector3ToNetwork(void* client, void* vec3Data) {
 
 
 // ══════════════════════════════════════════════════════════════════════════════
+// READ PRIMITIVES (deserialisation side)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── External low-level bit-stream read helpers (lifted elsewhere) ───────────
+//
+// These four primitives share the same low-level prologue as their write
+// counterparts — they advance the bit cursor on the client and write the
+// decoded value into a caller-supplied destination buffer.
+
+// Core read primitive @ 0x82238DF8 — reads `bitCount` bits into outBuf.
+// Original symbol: SinglesNetworkClient_8DF8_g (size 0x130).
+// Used with bitCount=32 to deserialise a float.
+extern void netStream_ReadFloat(void* client, void* outBuf, uint32_t bitCount);
+
+// Read unsigned bytes @ 0x820D7A08 (util_7A08).
+// Used to read 8-bit unsigned values (state bytes, flags).
+extern void netStream_ReadBytes(void* client, void* outBuf, uint32_t bitCount);
+
+// Read unsigned 16-bit value @ 0x820D7830 (snBitStream_ReadUnsigned).
+extern void snBitStream_ReadUnsigned(void* client, void* outBuf, int bitCount);
+
+// Read signed 16-bit value @ 0x820D7970 (util_7970).
+extern void netStream_ReadS16(void* client, void* outBuf, uint32_t bitCount);
+
+// Sign-magnitude signed 8-bit reader @ 0x82101668 (util_1668).
+// Reads a 1-bit sign flag followed by a 7-bit magnitude byte, then negates
+// the stored byte when the sign bit is set. Used for the hit-type control
+// byte stored at ballHitData+32.
+extern uint8_t netStream_ReadS8SignMagnitude(void* client, void* outByte);
+
+
+/**
+ * ReadFloatFromNetworkStream @ 0x82238DF8 | size: 0x130 (wrapper)
+ *
+ * Exact mirror of WriteFloatToNetworkStream @ 0x820D6990. Reads 32 bits from
+ * the bit stream into a local temporary and returns the result as a float.
+ *
+ * Original symbol: SinglesNetworkClient_8DF8_g (called with bitCount=32).
+ *
+ * @param client  SinglesNetworkClient object managing the network stream
+ * @return        Deserialised float
+ */
+float ReadFloatFromNetworkStream(void* client)
+{
+    float value = 0.0f;
+    netStream_ReadFloat(client, &value, 32);
+    return value;
+}
+
+
+/**
+ * ReadVector3FromNetwork @ 0x821D9B40 | size: 0x78
+ *
+ * Reads 3 consecutive floats (x, y, z) from the network stream into the
+ * caller-supplied destination. Mirror of WriteVector3ToNetwork @ 0x821D9BB8.
+ *
+ * Original symbol: SinglesNetworkClient_9B40_fw.
+ *
+ * @param client   SinglesNetworkClient object managing the network stream
+ * @param outVec3  Destination — 3 floats written at offsets 0, 4, 8
+ */
+void ReadVector3FromNetwork(void* client, void* outVec3)
+{
+    float* vec = static_cast<float*>(outVec3);
+
+    netStream_ReadFloat(client, &vec[0], 32);  // x component
+    netStream_ReadFloat(client, &vec[1], 32);  // y component
+    netStream_ReadFloat(client, &vec[2], 32);  // z component
+}
+
+
+/**
+ * ReadBallHitDataFromNetwork @ 0x821D5538 | size: 0x200
+ *
+ * Inverse of WriteBallHitDataToNetwork @ 0x821D5738. Deserialises the full
+ * pongBallHitData (~192 bytes) from the network stream in the exact same
+ * field order as the write side.
+ *
+ * Original symbol: util_5538. Called by the vfn_3 (deserialise) slot of
+ * HitDataMessage, BallHitMessage and SpectatorBallHitMessage.
+ *
+ * Sequence (mirrors WriteBallHitDataToNetwork):
+ *   - 3 scalar floats (+0, +4, +8)
+ *   - 5 vec3 groups via ReadVector3FromNetwork (+16, +48, +64, +80, +96)
+ *   - 2 scalar floats (+116, +112)
+ *   - sign-magnitude i8 hit-type → stack, later stored as s32 at +32
+ *   - 3 scalar floats (+124, +128, +132)
+ *   - 2 u8 state bytes → stack, later stored as u32 at +136, +140
+ *   - u16 flags at +176, s16 index at +178, u8 state at +180
+ *   - u16 extended-flags at +182; conditional block when (extFlags & 0x1000)
+ *     reads an extra float at +120 and two extra vec3s at +144 and +160.
+ *
+ * @param ballHitData  Destination pongBallHitData buffer
+ * @param client       SinglesNetworkClient object managing the network stream
+ */
+void ReadBallHitDataFromNetwork(void* ballHitData, void* client)
+{
+    uint8_t* hitData = static_cast<uint8_t*>(ballHitData);
+
+    // ── Primary vector group (position + initial velocity) ──
+    // First 3 floats live at +0, +4, +8 as individual scalars.
+    netStream_ReadFloat(client, hitData + 0,  32);
+    netStream_ReadFloat(client, hitData + 4,  32);
+    netStream_ReadFloat(client, hitData + 8,  32);
+
+    // Next 3 floats read as a vec3 at +16 (velocity sub-vector).
+    ReadVector3FromNetwork(client, hitData + 16);
+
+    // ── Secondary vector group (spin + trajectory, base +48) ──
+    ReadVector3FromNetwork(client, hitData + 48);  // spin vec3 at +48..+56
+    ReadVector3FromNetwork(client, hitData + 64);  // trajectory vec3 at +64..+72
+
+    // ── Physics vectors (bounce/timing/power scalars packed as vec3s) ──
+    ReadVector3FromNetwork(client, hitData + 80);  // +80, +84, +88
+    ReadVector3FromNetwork(client, hitData + 96);  // +96, +100, +104
+
+    // ── Scalar physics floats at +116 and +112 (order matches write) ──
+    netStream_ReadFloat(client, hitData + 116, 32);
+    netStream_ReadFloat(client, hitData + 112, 32);
+
+    // ── Hit-type / zone control byte: 1-bit sign + 7-bit magnitude ──
+    // Temporarily decoded into a local, then sign-extended into the s32
+    // slot at +32 to mirror the final `stw r11,32(r30)` in the recomp.
+    uint8_t hitTypeMag = 0;
+    netStream_ReadS8SignMagnitude(client, &hitTypeMag);
+    int32_t hitTypeZone = static_cast<int32_t>(static_cast<int8_t>(hitTypeMag));
+
+    // ── Additional physics scalars ──
+    netStream_ReadFloat(client, hitData + 124, 32);
+    netStream_ReadFloat(client, hitData + 128, 32);
+    netStream_ReadFloat(client, hitData + 132, 32);
+
+    // ── State bytes: 8-bit reads zero-extended into u32 fields at +136/+140 ──
+    uint8_t stateByte136 = 0;
+    uint8_t stateByte140 = 0;
+    netStream_ReadBytes(client, &stateByte136, 8);
+    netStream_ReadBytes(client, &stateByte140, 8);
+
+    // ── Flags and indices ──
+    snBitStream_ReadUnsigned(client, hitData + 176, 16);  // u16 flags
+    netStream_ReadS16       (client, hitData + 178, 16);  // s16 index
+    netStream_ReadBytes     (client, hitData + 180,  8);  // u8 state
+
+    // ── Extended physics flags ──
+    snBitStream_ReadUnsigned(client, hitData + 182, 16);
+
+    // Bit 12 (0x1000) gates the conditional collision/surface block.
+    uint16_t extendedFlags = *reinterpret_cast<uint16_t*>(hitData + 182);
+    bool hasExtendedPhysics = (extendedFlags & 0x1000) != 0;
+
+    if (hasExtendedPhysics) {
+        netStream_ReadFloat(client, hitData + 120, 32);   // extended scalar
+        ReadVector3FromNetwork(client, hitData + 144);    // impact normal
+        ReadVector3FromNetwork(client, hitData + 160);    // surface velocity
+    }
+
+    // ── Final stores mirroring the recomp tail ──
+    // u8 temporaries widen to u32 in the ball-hit struct's state fields.
+    *reinterpret_cast<uint32_t*>(hitData + 136) = stateByte136;
+    *reinterpret_cast<uint32_t*>(hitData + 140) = stateByte140;
+    *reinterpret_cast<int32_t *>(hitData +  32) = hitTypeZone;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
 // C LINKAGE ALIASES FOR BACKWARD COMPATIBILITY
 // ══════════════════════════════════════════════════════════════════════════════
 

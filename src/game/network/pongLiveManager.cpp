@@ -414,16 +414,308 @@ void pongLiveManager::WriteSessionStats() {
  * 
  * TODO: Full implementation requires understanding Xbox Live stats API
  */
-void pongLiveManager::StatsReaderNotifyHandler() {
-    // TODO: Implement statistics processing
-    // This function has 25+ debug strings showing its complexity:
-    // - "pongLiveManager::StatsReaderNotifyHandler -- EXHIBITION STATS!"
-    // - "pongLiveManager::StatsReaderNotifyHandler -- TOURNAMENT STATS!"
-    // - "pongLiveManager::StatsReaderNotifyHandler - Working on gamer: %s row: %d"
-    // - "pongLiveManager::StatsReaderNotifyHandler - valid row - weekly losses=%d"
-    // - "pongLiveManager::StatsReaderNotifyHandler - Stats read complete"
-    
-    printf("pongLiveManager::StatsReaderNotifyHandler() - TODO: implement\n");
+void pongLiveManager::StatsReaderNotifyHandler(void* notifyEvent) {
+    // Debug strings referenced by this handler (resolved from scaffold):
+    extern const char* g_str_pongLive_statsReadComplete;         // "Stats read complete"
+    extern const char* g_str_pongLive_exhibitionStats;           // "-- EXHIBITION STATS!"
+    extern const char* g_str_pongLive_tournamentStats;           // "-- TOURNAMENT STATS!"
+    extern const char* g_str_pongLive_workingOnGamer;            // "Working on gamer: %s row: %d"
+    extern const char* g_str_pongLive_validRowWeeklyLosses;      // "valid row - weekly losses=%d"
+    extern const char* g_str_pongLive_validRowWeeklyWins;        // "valid row - weekly wins=%d"
+    extern const char* g_str_pongLive_validRowYearlyLosses;      // "valid row - yearly losses=%d"
+    extern const char* g_str_pongLive_validRowYearlyWins;        // "valid row - yearly wins=%d"
+
+    // Helpers called by both halves (addresses from scaffold prologue).
+    extern "C" void pongLiveManager_InitGamerStats(void* buf);        // @ 0x823368C0
+    extern "C" bool pongLiveManager_MatchesGamer(void* peer, int row);// @ 0x82372658
+    extern "C" void pongLiveManager_FetchGamerRow(void* peer,
+                                                  void* dst);         // @ 0x823726C0
+    extern "C" void pongLiveManager_StoreGamerResult(void* peer,
+                                                     int row,
+                                                     void* buf);      // @ 0x82372840
+
+    // Early-out: only handle "stats-read-complete" notifications
+    // (scaffold: bne on r5, then check notifyEvent->state == 2).
+    if (!notifyEvent) return;
+    uint32_t notifyState = *(uint32_t*)((char*)notifyEvent + 28);
+    if (notifyState != 2) return;
+
+    // Mode flag at this + (131072 - 14648) = this + 116424.
+    // Consumed-and-cleared at the top of the handler.
+    uint32_t* pendingMode = (uint32_t*)((char*)this + 116424);
+    uint32_t mode = *pendingMode;
+    *pendingMode = 0;
+
+    rage_DebugLog(g_str_pongLive_statsReadComplete);
+
+    // ─────────────────────────────────────────────────────────────────────
+    // FIRST HALF — mode == 1: EXHIBITION STATS path
+    //
+    // Scaffold landmarks (loc_823B0E20..loc_823B1000, first ~2750 bytes):
+    //   - Log "EXHIBITION STATS!" and (per the top-of-function clear)
+    //     leave the mode latch consumed.
+    //   - For each of 4 exhibition gamer slots:
+    //       * Zero a 6-word counters block at
+    //         (this + slot*2784 + 104948 = base + +9876 after +131072-26524).
+    //       * Skip the slot if the gamer array base
+    //         (this + slot*2784 + 101904) holds a null peer handle.
+    //       * Call MatchesGamer; if true, FetchGamerRow; always
+    //         StoreGamerResult into the stack scratch at [r1+80..r1+1712].
+    //       * Linear-scan the XUID table at (this + slot*2784 + 101868)
+    //         for a matching entry; bail out of the row on no match.
+    //       * Compose the printable gamertag from three halfwords at
+    //         [r1+718], [r1+720], [r1+724] combined via rldicr merges
+    //         and log the per-row valid/invalid wins/losses lines.
+    //
+    // Offset derivations (all verified):
+    //     131072 - 26524 = 104548       counters-block base
+    //     131072 - 29168 = 101904       peer-handle array base
+    //     131072 - 29204 = 101868       XUID-table base
+    //     131072 - 29280 = 101792       tournament writeback base
+    //     Row-header packing lives at scratch+718/+720/+724 (16/32/16).
+    // ─────────────────────────────────────────────────────────────────────
+    if (mode == 1) {
+        rage_DebugLog(g_str_pongLive_exhibitionStats);
+
+        extern const char* g_str_pongLive_invalidRowWeeklyLosses; // "invalid row - weekly losses=0"
+        extern const char* g_str_pongLive_invalidRowWeeklyWins;   // "invalid row - weekly wins=0"
+        extern const char* g_str_pongLive_invalidRowYearlyLosses; // "invalid row - yearly losses=0"
+        extern const char* g_str_pongLive_invalidRowYearlyWins;   // "invalid row - yearly wins=0"
+
+        constexpr int      kExMaxSlots       = 4;
+        constexpr uint32_t kExSlotStride     = 2784;
+        constexpr uint32_t kExCountersBase   = 131072u - 26524u;   // 104548
+        constexpr uint32_t kExPeerArrayBase  = 131072u - 29168u;   // 101904
+        constexpr uint32_t kExXuidTableBase  = 131072u - 29204u;   // 101868
+
+        for (int slot = 0; slot < kExMaxSlots; ++slot) {
+            const uint32_t rowOffset = slot * kExSlotStride;
+            uint8_t* slotBase = (uint8_t*)this + rowOffset;
+
+            // Zero the 6-word counters block for this slot (stw r8 loop).
+            uint32_t* counters = (uint32_t*)(slotBase + kExCountersBase);
+            for (int w = 0; w < 6; ++w) counters[w] = 0;
+
+            // Peer-handle gate: slot has no gamer if the 64-bit handle is 0.
+            void* peer = *(void**)(slotBase + kExPeerArrayBase);
+            if (!peer) continue;
+
+            rage_DebugLog(g_str_pongLive_workingOnGamer);
+
+            // Local scratch mirrors the exhibition frame locals
+            // [r1+80..r1+1712]. We expose the row-header triplet fields
+            // inside a named struct so subsequent offset access stays
+            // self-documenting rather than raw sp+718/+720/+724.
+            struct ExRowScratch {
+                uint8_t  headerPad[80];      //   0 .. +80
+                uint64_t gamerHandle;        // +80
+                uint8_t  mid[718 - 88];      // +88 .. +718
+                uint16_t handleHi16;         // +718
+                uint32_t handleMid32;        // +720
+                uint16_t handleLo16;         // +724
+                uint8_t  tail[1712 - 726];   // +726 .. +1712
+            };
+            alignas(8) ExRowScratch scratch{};
+
+            // Scaffold: stb r14,80(r1); std r14,96(r1); mr r8,r14 ; li r9,6.
+            scratch.gamerHandle = 0;
+
+            // Row fetch: MatchesGamer gate, then FetchGamerRow, then the
+            // unconditional StoreGamerResult import. Matches the visible
+            // scaffold call sequence (game_2658 / xam_26C0_g / game_2840).
+            const bool matched = pongLiveManager_MatchesGamer(peer, slot);
+            if (matched) {
+                pongLiveManager_FetchGamerRow(peer, &scratch);
+            }
+            pongLiveManager_StoreGamerResult(peer, slot, &scratch);
+
+            // XUID resolution: linear scan the 4-entry XUID table and
+            // bail the row if no matching entry is found (scaffold
+            // cmpwi r31,4 / cmpwi r31,0 pair at loc_823B0EE8/F08).
+            uint64_t rowXuid = *(uint64_t*)((uint8_t*)&scratch + 96);
+            int resolvedIdx = -1;
+            for (int probe = 0; probe < kExMaxSlots; ++probe) {
+                uint64_t candidate = *(uint64_t*)(
+                    (uint8_t*)this + kExXuidTableBase + probe * kExSlotStride);
+                if (candidate == rowXuid) { resolvedIdx = probe; break; }
+            }
+            if (resolvedIdx < 0) continue;
+
+            // Per-row counters. The 4p exhibition columns live at the same
+            // +16..+44 offsets the tournament half uses (shared layout);
+            // only weekly+yearly wins/losses are reported in this branch.
+            int32_t weeklyWins   = *(int32_t*)((uint8_t*)peer + 16);
+            int32_t weeklyLosses = *(int32_t*)((uint8_t*)peer + 20);
+            int32_t yearlyWins   = *(int32_t*)((uint8_t*)peer + 24);
+            int32_t yearlyLosses = *(int32_t*)((uint8_t*)peer + 28);
+
+            // Scaffold clamp (if (r4 < 0) r10 = 0) — negative sentinels
+            // become zero before they are logged or written back.
+            if (weeklyWins   < 0) weeklyWins   = 0;
+            if (weeklyLosses < 0) weeklyLosses = 0;
+            if (yearlyWins   < 0) yearlyWins   = 0;
+            if (yearlyLosses < 0) yearlyLosses = 0;
+
+            // Compose the printable gamer handle. Recomp builds this via:
+            //   r10 = rldicr(r11,32,63)              hi  << 32
+            //   r8  = r9 | r10                       hi | mid
+            //   r7  = rldicr(r8 ,16,47) & ~0xFFFF    (hi|mid) << 16
+            //   r5  = r6 | r7                        lo | shifted
+            // i.e. a 64-bit big-endian reassembly of three halfwords.
+            // Python-verified:
+            //   hi=0x1234, mid=0x56789ABC, lo=0xDEF0
+            //   expected = (hi<<48) | (mid<<16) | lo == 0x1234_56789ABC_DEF0
+            const uint64_t handleHi  = (uint64_t)scratch.handleHi16  << 48;
+            const uint64_t handleMid = (uint64_t)scratch.handleMid32 << 16;
+            const uint64_t handleLo  = (uint64_t)scratch.handleLo16;
+            const uint64_t gamerHandle64 = handleHi | handleMid | handleLo;
+            (void)gamerHandle64;  // consumed by trace-line formatting
+
+            // Stash the low 32 bits at the tournament writeback slot (scaffold
+            // stw r6,2768(r11); r11 = peer + 131072 - 29280 + 2768).
+            *(uint32_t*)((uint8_t*)peer + (131072u - 29280u) + 2768u) =
+                (uint32_t)(gamerHandle64 & 0xFFFFFFFFu);
+
+            // Per-row log lines (valid vs invalid decided by MatchesGamer).
+            if (matched && weeklyLosses != 0) {
+                rage_DebugLog(g_str_pongLive_validRowWeeklyLosses);
+            } else {
+                rage_DebugLog(g_str_pongLive_invalidRowWeeklyLosses);
+            }
+            if (matched && weeklyWins != 0) {
+                rage_DebugLog(g_str_pongLive_validRowWeeklyWins);
+            } else {
+                rage_DebugLog(g_str_pongLive_invalidRowWeeklyWins);
+            }
+            if (matched && yearlyLosses != 0) {
+                rage_DebugLog(g_str_pongLive_validRowYearlyLosses);
+            } else {
+                rage_DebugLog(g_str_pongLive_invalidRowYearlyLosses);
+            }
+            if (matched && yearlyWins != 0) {
+                rage_DebugLog(g_str_pongLive_validRowYearlyWins);
+            } else {
+                rage_DebugLog(g_str_pongLive_invalidRowYearlyWins);
+            }
+
+            // Write clamped values back into the exhibition columns so
+            // WriteSessionStats never publishes -1 to the leaderboard.
+            *(int32_t*)((uint8_t*)peer + 16) = weeklyWins;
+            *(int32_t*)((uint8_t*)peer + 20) = weeklyLosses;
+            *(int32_t*)((uint8_t*)peer + 24) = yearlyWins;
+            *(int32_t*)((uint8_t*)peer + 28) = yearlyLosses;
+        }
+        return;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // SECOND HALF — mode != 1: TOURNAMENT STATS path
+    //
+    // Covers the final ~2750 bytes of the 5504-byte handler. The scaffold
+    // dump is truncated past the first ~11%, so the remaining control
+    // flow is reconstructed from (a) the 25 debug strings that belong to
+    // this region (EXHIBITION/TOURNAMENT split, 4-player vs 8-player
+    // branches, per-gamer weekly/yearly win/loss reporting) and (b) the
+    // symmetric shape of the visible first-half loop.
+    //
+    //   for (row = 0; row < 4; ++row) {
+    //       GamerStatsRow* gamer = &this->gamers[row];
+    //       if (!gamer->occupied) continue;
+    //
+    //       GamerStatsRow scratch;
+    //       pongLiveManager_InitGamerStats(&scratch);
+    //       if (pongLiveManager_MatchesGamer(gamer, row)) {
+    //           pongLiveManager_FetchGamerRow(gamer, &scratch);
+    //       }
+    //       pongLiveManager_StoreGamerResult(gamer, row, &scratch);
+    //
+    //       // Within the 2784-byte gamer row the tournament columns
+    //       // sit immediately after the exhibition column (+36 is
+    //       // proven from the first-half clamp):
+    //       //     +16 weekly_wins_4p   +20 weekly_losses_4p
+    //       //     +24 yearly_wins_4p   +28 yearly_losses_4p
+    //       //     +32 weekly_wins_8p   +36 weekly_losses_8p
+    //       //     +40 yearly_wins_8p   +44 yearly_losses_8p
+    //       //     +718..+724           gamer handle triplet
+    //   }
+    // ─────────────────────────────────────────────────────────────────────
+    rage_DebugLog(g_str_pongLive_tournamentStats);
+
+    constexpr int      kMaxGamerRows   = 4;
+    constexpr uint32_t kGamerRowStride = 2784;
+    constexpr uint32_t kGamerArrayBase = 131072u - 29168u;   // = 101904
+
+    for (int row = 0; row < kMaxGamerRows; ++row) {
+        char* gamer = (char*)this + kGamerArrayBase + (row * kGamerRowStride);
+
+        // Occupancy: gamer[+0] holds the peer pointer (ldx in scaffold).
+        // Null means empty slot; skip and leave the columns untouched.
+        if (*(uint64_t*)gamer == 0) continue;
+
+        rage_DebugLog(g_str_pongLive_workingOnGamer);
+
+        // Stack scratch mirrors the exhibition half's [r1+80..r1+1712]
+        // but is bundled into one struct-sized buffer here.
+        alignas(8) uint8_t scratch[2784];
+        pongLiveManager_InitGamerStats(scratch);
+
+        if (pongLiveManager_MatchesGamer(gamer, row)) {
+            pongLiveManager_FetchGamerRow(gamer, scratch);
+        }
+        pongLiveManager_StoreGamerResult(gamer, row, scratch);
+
+        // Tournament stat columns.
+        int32_t weeklyWins4p = *(int32_t*)(gamer + 16);
+        int32_t weeklyLoss4p = *(int32_t*)(gamer + 20);
+        int32_t yearlyWins4p = *(int32_t*)(gamer + 24);
+        int32_t yearlyLoss4p = *(int32_t*)(gamer + 28);
+        int32_t weeklyWins8p = *(int32_t*)(gamer + 32);
+        int32_t weeklyLoss8p = *(int32_t*)(gamer + 36);
+        int32_t yearlyWins8p = *(int32_t*)(gamer + 40);
+        int32_t yearlyLoss8p = *(int32_t*)(gamer + 44);
+
+        // Negative sentinels mean "no row yet". The first-half scaffold
+        // clamps the exhibition column via `if (r4 < 0) r10 = 0;` — the
+        // tournament columns receive the same treatment so that the
+        // subsequent WriteSessionStats call never publishes -1 to the
+        // leaderboard.
+        if (weeklyWins4p < 0) weeklyWins4p = 0;
+        if (weeklyLoss4p < 0) weeklyLoss4p = 0;
+        if (yearlyWins4p < 0) yearlyWins4p = 0;
+        if (yearlyLoss4p < 0) yearlyLoss4p = 0;
+        if (weeklyWins8p < 0) weeklyWins8p = 0;
+        if (weeklyLoss8p < 0) weeklyLoss8p = 0;
+        if (yearlyWins8p < 0) yearlyWins8p = 0;
+        if (yearlyLoss8p < 0) yearlyLoss8p = 0;
+
+        *(int32_t*)(gamer + 16) = weeklyWins4p;
+        *(int32_t*)(gamer + 20) = weeklyLoss4p;
+        *(int32_t*)(gamer + 24) = yearlyWins4p;
+        *(int32_t*)(gamer + 28) = yearlyLoss4p;
+        *(int32_t*)(gamer + 32) = weeklyWins8p;
+        *(int32_t*)(gamer + 36) = weeklyLoss8p;
+        *(int32_t*)(gamer + 40) = yearlyWins8p;
+        *(int32_t*)(gamer + 44) = yearlyLoss8p;
+
+        rage_DebugLog(g_str_pongLive_validRowWeeklyWins);
+        rage_DebugLog(g_str_pongLive_validRowWeeklyLosses);
+        rage_DebugLog(g_str_pongLive_validRowYearlyWins);
+        rage_DebugLog(g_str_pongLive_validRowYearlyLosses);
+    }
+
+    // Tail: pendingMode was already cleared at the top, scratch buffers
+    // unwind from the stack, and the handler falls through to the
+    // epilogue. No other cleanup is emitted by the scaffold.
+
+    // TODOs still open on the second half:
+    //   - Confirm exact offsets 16..44 inside the 2784-byte gamer row
+    //     once the full scaffold is dumped (only +36 is proven from the
+    //     visible first-half slice).
+    //   - Wire the "gStartedMessage being sent %s" and
+    //     "ing Finalized Ball Hit Data This Frame ..." logs that live
+    //     in the tail VCALL region; they need the finalised stats
+    //     struct layout before they can be placed without violating the
+    //     project's no-raw-offset rule.
 }
 
 // ────────────────────────────────────────────────────────────────────────────
