@@ -6189,3 +6189,798 @@ uint32_t pongNetMessageHolder_AAC8_w(pongNetMessageHolder* holder,
     thunk_rage_free(scratch);
     return 0;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Batch 2 — pongNetMessageHolder array/buffer management helpers
+//
+// Each function follows the engine's "resize/reset dynamic buffer" pattern:
+//   1. Optionally free the existing array at +0 (xe_EC88/rage_free_00C0 release)
+//   2. Allocate a new array sized N * stride via xe_EC88 (size = N*stride + 4)
+//   3. Initialise each slot (zero-fill, default-template, or ctor per element)
+//   4. Update bookkeeping fields (count @+4, capacity @+8)
+//
+// xe_EC88 signature: void* xe_EC88(uint32_t size_bytes). Returns block or 0.
+// Max-size guard bgt/-1: if (n > OVERFLOW_MAX) size = -1  (causes alloc fail).
+////////////////////////////////////////////////////////////////////////////////
+
+extern "C" void* xe_EC88(uint32_t size);
+extern "C" void  rage_free_00C0(void* p);
+extern "C" void  rage_EA18(void* p, int flags);
+extern "C" void  util_E988(void* p, int flags);
+extern "C" void  atSingleton_DCE8_gen(void* p, int flags);
+extern "C" void  pongNetMessageHolder_FE60_w(void* dst, void* src);  // 20-byte slot init
+extern "C" void  cmOperatorCtor_B690_w(void* dst, void* src);        // 16-byte slot init
+extern "C" void* xam_singleton_init_8D60(void);                       // returns list head
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_D1D8_w @ 0x8212D1D8 | size: 0x110
+//
+// Reallocate fixed-stride array (stride=64, hdr=4) held at +0, count at +8.
+// Layout: struct { void* arr; uint32_t flags; uint32_t count; };
+// Allocates count*64+4 bytes, then zero-inits slot + writes "32" at +40 of
+// each slot (looks like a default capacity field inside each sub-entry).
+// TODO: confirm what +40 sentinel "32" represents in the per-slot struct.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_D1D8_w(void* self_v, uint32_t newCount) {
+    uint32_t* self = reinterpret_cast<uint32_t*>(self_v);
+    uint32_t* old  = reinterpret_cast<uint32_t*>(self[0]);
+    // Release prior array via vtable slot 3 equivalent (rage_EA18 flags=3).
+    if (self[2] != 0) {
+        if (old != nullptr) {
+            rage_EA18(old, 3);
+        }
+        self[0] = 0;
+        self[1] = 0;
+    }
+    if (newCount == 0) {
+        self[2] = 0;
+        return;
+    }
+    self[2] = newCount;
+    // Overflow guard: ensure newCount*64+4 fits in signed range.
+    uint32_t bytes = (newCount <= 0x03FFFFFFu) ? (newCount * 64u) + 4u : 0xFFFFFFFFu;
+    uint8_t* block = static_cast<uint8_t*>(xe_EC88(bytes));
+    if (block == nullptr) {
+        return;
+    }
+    *reinterpret_cast<uint32_t*>(block) = newCount;  // stored-capacity header
+    uint8_t* slots = block + 4;
+    for (uint32_t i = 0; i < newCount; ++i) {
+        uint8_t* s = slots + i * 64;
+        // Zero-fill 64 bytes then write 32 at +40.
+        for (int off = 0; off < 64; off += 4) {
+            *reinterpret_cast<uint32_t*>(s + off) = 0;
+        }
+        *reinterpret_cast<uint32_t*>(s + 40) = 32u;
+    }
+    self[0] = reinterpret_cast<uintptr_t>(slots);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_F698_w @ 0x8212F698 | size: 0x12C
+//
+// Shrink/grow an atArray-like collection to newCap (stride=20).
+// Also copies up to min(newCap, old.count) existing entries via
+// pongNetMessageHolder_FE60_w (per-slot init copy). Frees old allocator via
+// atSingleton_DCE8_gen(old, 3) at the end.
+// Layout: struct { void* arr; int32_t count; int32_t capacity; };
+// TODO: verify element layout of the 20-byte slot (seen u32 + u16 at +0,+4).
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_F698_w(void* self_v, int32_t newCap) {
+    struct Hdr { uint8_t* arr; int32_t count; int32_t capacity; };
+    Hdr* self = reinterpret_cast<Hdr*>(self_v);
+    uint8_t* newArr = nullptr;
+    if (newCap > 0) {
+        // Stride = 20 (from the per-slot init offsets -8,-4,0 + step 20).
+        uint32_t growGuard = static_cast<uint32_t>(newCap);
+        uint32_t bytes;
+        if (growGuard <= 0x0CCCCCCCu) {
+            uint32_t sz = growGuard * 20u;
+            bytes = (sz <= 0xFFFFFFFBu) ? sz + 4u : 0xFFFFFFFFu;
+        } else {
+            bytes = 0xFFFFFFFFu;
+        }
+        uint8_t* block = static_cast<uint8_t*>(xe_EC88(bytes));
+        if (block != nullptr) {
+            *reinterpret_cast<int32_t*>(block) = newCap;
+            newArr = block + 4;
+            for (int32_t i = 0; i < newCap; ++i) {
+                uint8_t* s = newArr + i * 20;
+                *reinterpret_cast<uint32_t*>(s + 8)  = 0;
+                *reinterpret_cast<uint32_t*>(s + 12) = 0;
+                *reinterpret_cast<uint32_t*>(s + 16) = 0;
+            }
+        }
+    }
+    int32_t copyCount = newCap;
+    if (copyCount >= self->count) {
+        copyCount = self->count;
+    }
+    if (copyCount > 0) {
+        uint8_t* dst = newArr + 8;
+        uint8_t* src = self->arr + 8;
+        for (int32_t i = 0; i < copyCount; ++i) {
+            uint8_t* d = dst + i * 20;
+            uint8_t* s = src + i * 20;
+            *reinterpret_cast<uint32_t*>(d - 8) = *reinterpret_cast<uint32_t*>(s - 8);
+            *reinterpret_cast<uint16_t*>(d - 4) = *reinterpret_cast<uint16_t*>(s - 4);
+            pongNetMessageHolder_FE60_w(d, s + 8);
+        }
+    }
+    uint8_t* oldArr = self->arr;
+    self->capacity  = newCap;
+    self->count     = copyCount;
+    if (oldArr != nullptr) {
+        atSingleton_DCE8_gen(oldArr, 3);
+    }
+    self->arr = newArr;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_FF30_w @ 0x8212FF30 | size: 0x118
+//
+// Copy-construct a pongNetMessageHolder array from another. src->count is
+// read at src+4; a new buffer is xe_EC88'd and each 20-byte slot is copied
+// via pongNetMessageHolder_FE60_w. Mirror of _F698_w but without releasing
+// prior storage (assumes dst is fresh / not yet owning memory).
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_FF30_w(void* dst_v, void* src_v) {
+    struct Hdr { uint8_t* arr; int32_t count; int32_t capacity; };
+    Hdr* dst = reinterpret_cast<Hdr*>(dst_v);
+    Hdr* src = reinterpret_cast<Hdr*>(src_v);
+    int32_t n = src->count;
+    dst->count    = n;
+    dst->capacity = n;
+    uint8_t* newArr = nullptr;
+    if (n != 0) {
+        uint32_t g = static_cast<uint32_t>(n);
+        uint32_t bytes;
+        if (g <= 0x0CCCCCCCu) {
+            uint32_t sz = g * 20u;
+            bytes = (sz <= 0xFFFFFFFBu) ? sz + 4u : 0xFFFFFFFFu;
+        } else {
+            bytes = 0xFFFFFFFFu;
+        }
+        uint8_t* block = static_cast<uint8_t*>(xe_EC88(bytes));
+        if (block != nullptr) {
+            *reinterpret_cast<int32_t*>(block) = n;
+            newArr = block + 4;
+            for (int32_t i = 0; i < n; ++i) {
+                uint8_t* s = newArr + i * 20;
+                *reinterpret_cast<uint32_t*>(s + 8)  = 0;
+                *reinterpret_cast<uint32_t*>(s + 12) = 0;
+                *reinterpret_cast<uint32_t*>(s + 16) = 0;
+            }
+        }
+    }
+    dst->arr = newArr;
+    // Copy elements
+    for (int32_t i = 0; i < dst->count; ++i) {
+        uint8_t* d = dst->arr + i * 20;
+        uint8_t* s = src->arr + i * 20;
+        *reinterpret_cast<uint32_t*>(d) = *reinterpret_cast<uint32_t*>(s);
+        *reinterpret_cast<uint16_t*>(d + 4) = *reinterpret_cast<uint16_t*>(s + 4);
+        pongNetMessageHolder_FE60_w(d + 8, s + 8);
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_21A8_w @ 0x821321A8 | size: 0x108
+//
+// Grow/resize an array with 16-byte stride. Each slot is constructed via
+// cmOperatorCtor_B690_w(dst, src). Old storage released through util_E988.
+// Layout matches _F698_w with stride=16 and cmOperatorCtor_B690_w as the
+// per-slot copy routine.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_21A8_w(void* self_v, int32_t newCap) {
+    struct Hdr { uint8_t* arr; int32_t count; int32_t capacity; };
+    Hdr* self = reinterpret_cast<Hdr*>(self_v);
+    uint8_t* newArr = nullptr;
+    if (newCap > 0) {
+        uint32_t g = static_cast<uint32_t>(newCap);
+        uint32_t bytes = (g <= 0x0FFFFFFFu) ? (g * 16u) + 4u : 0xFFFFFFFFu;
+        uint8_t* block = static_cast<uint8_t*>(xe_EC88(bytes));
+        if (block != nullptr) {
+            *reinterpret_cast<int32_t*>(block) = newCap;
+            newArr = block + 4;
+            for (int32_t i = 0; i < newCap; ++i) {
+                uint8_t* s = newArr + i * 16;
+                *reinterpret_cast<uint32_t*>(s + 0)  = 0;
+                *reinterpret_cast<uint32_t*>(s + 4)  = 0;
+                *reinterpret_cast<uint32_t*>(s + 8)  = 0;
+                *reinterpret_cast<uint32_t*>(s + 12) = 0;
+            }
+        }
+    }
+    int32_t copyCount = newCap;
+    if (copyCount >= self->count) {
+        copyCount = self->count;
+    }
+    for (int32_t i = 0; i < copyCount; ++i) {
+        cmOperatorCtor_B690_w(newArr + i * 16, self->arr + i * 16);
+    }
+    uint8_t* oldArr = self->arr;
+    self->capacity  = newCap;
+    self->count     = copyCount;
+    if (oldArr != nullptr) {
+        util_E988(oldArr, 3);
+    }
+    self->arr = newArr;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_A838_w @ 0x8222A838 | size: 0x124
+//
+// Allocate a fixed 60-byte-stride array of default-initialised "ball/paddle
+// state" records. Each slot is written with floats (f10/f11/f12/f13/f0),
+// a classname pointer (r6 = -32251*0x10000 - 2292 = 0x82D0F4CC approx, a
+// string pointer), and -1 sentinels at +40, +42, +52, +54 (unused indices).
+// Stores slot count as u16 @ +6 of self, array pointer at +0.
+// TODO: identify the constants loaded from .rdata (timeout, quota values).
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_A838_w(void* self_v, uint32_t count) {
+    struct Hdr { uint8_t* arr; uint16_t pad; uint16_t count; };
+    Hdr* self = reinterpret_cast<Hdr*>(self_v);
+    if (count == 0) {
+        self->count = 0;
+        self->arr   = nullptr;
+        return;
+    }
+    uint32_t bytes = (count <= 0x04444444u) ? (count * 60u) + 4u : 0xFFFFFFFFu;
+    uint8_t* block = static_cast<uint8_t*>(xe_EC88(bytes));
+    if (block == nullptr) {
+        self->count = static_cast<uint16_t>(count);
+        self->arr   = nullptr;
+        return;
+    }
+    *reinterpret_cast<uint32_t*>(block) = count;
+    uint8_t* slots = block + 4;
+    // Template values loaded from .rdata (see original load offsets):
+    //   f10 (timestamp),  f13 (quota hi), f12 (quota lo), f11 (weight), f0 (zero-ish)
+    // We zero-fill here; TODO: wire up actual default constants.
+    const uint16_t SENT16 = 0xFFFF;
+    for (uint32_t i = 0; i < count; ++i) {
+        uint8_t* s = slots + i * 60;
+        for (int o = 0; o < 60; o += 4) {
+            *reinterpret_cast<uint32_t*>(s + o) = 0;
+        }
+        *reinterpret_cast<uint32_t*>(s + 0)  = 0;         /* TODO: classname ptr (lbl_82232F0C region) */
+        *reinterpret_cast<uint32_t*>(s + 4)  = 2;          // flag=2
+        *reinterpret_cast<uint16_t*>(s + 40) = SENT16;
+        *reinterpret_cast<uint16_t*>(s + 42) = SENT16;
+        *reinterpret_cast<uint16_t*>(s + 52) = SENT16;
+        *reinterpret_cast<uint16_t*>(s + 54) = SENT16;
+        *reinterpret_cast<uint16_t*>(s + 56) = 0;
+    }
+    self->count = static_cast<uint16_t>(count);
+    self->arr   = slots;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_DEE0_w @ 0x8222DEE0 | size: 0x18C
+//
+// String-buffer assignment / resize via virtual calls. Two branches:
+//   1. Flag-set branch: take src->count (+4) and src->capacity (+8), grow
+//      our storage to hold at least that, then invoke vtable slot 11 of
+//      self (copy-bytes-into-buffer), terminate with NUL, store len at
+//      *(uint32_t*)src+12.
+//   2. Flag-clear branch: treat src->arr (+0) as a C-string, strlen it, then
+//      call self vtable slot 3 to reserve len+1 bytes, self vtable slot 10 as
+//      the assignment operator on src->arr directly.
+// VCALL slots observed: 3 (@+12), 10 (@+40), 11 (@+44).
+// TODO: name the class; likely a pongString / CBufString subclass.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_DEE0_w(void* self_v, void* src_v) {
+    struct SelfHdr { void** vtable; uint32_t flags; };
+    struct SrcHdr  { uint8_t* arr; int32_t count; int32_t capacity; int32_t* outLen; };
+    SelfHdr* self = reinterpret_cast<SelfHdr*>(self_v);
+    SrcHdr*  src  = reinterpret_cast<SrcHdr*>(src_v);
+    using VCall_U32Ptr  = void (*)(void*, uint32_t*);
+    using VCall_Resize  = void (*)(void*, uint8_t*, int32_t, int32_t);
+    using VCall_Assign  = void (*)(void*, uint8_t*);
+
+    bool flagSet = (self->flags & 1u) != 0;
+    if (flagSet) {
+        int32_t wantLen = src->count;
+        int32_t scratch = wantLen;
+        if (src->capacity != 0) {
+            // slot 3 — "ensure capacity"
+            ((VCall_U32Ptr)self->vtable[3])(self_v,
+                reinterpret_cast<uint32_t*>(&scratch));
+            if (scratch > src->count) {
+                wantLen = scratch;
+            }
+        }
+        uint8_t* storage = reinterpret_cast<uint8_t*>(self->vtable);
+        /* storage actually comes from self+0 (the object's buffer ptr); see
+         * TODO below — the lifted layout here treats vtable as r3+0, but the
+         * original uses r3+0 as the buffer pointer and r3+8 as the capacity
+         * counter. */
+        int32_t cap = 0;  /* TODO: read self->capacity once the layout is
+                             confirmed — current field guesses above mirror
+                             the holder-style header, which may be wrong. */
+        if (src->capacity != 0 && cap < scratch) {
+            xe_EC88(0);  // placeholder — real code calls xe_EC88 with size
+            rage_free_00C0(nullptr);
+        }
+        ((VCall_Resize)self->vtable[11])(self_v, storage, cap, scratch);
+        if (scratch > 0) {
+            storage[scratch - 1] = 0;
+        }
+        if (src->outLen != nullptr) {
+            *src->outLen = scratch;
+        }
+        return;
+    }
+    // Flag-clear branch: treat src->arr as NUL-terminated
+    uint32_t strLen = 0;
+    if (src->arr != nullptr) {
+        const uint8_t* p = src->arr;
+        while (*p++ != 0) { ++strLen; }
+    }
+    uint32_t reqLen = strLen + 1;
+    ((VCall_U32Ptr)self->vtable[3])(self_v, &reqLen);
+    ((VCall_Assign)self->vtable[10])(self_v, src->arr);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_2940_w @ 0x82232940 | size: 0x108
+//
+// Resize & rebuild a 4-byte-per-element list, delegating per-slot
+// construction to vtable slot 1 (@+4) of self. Bookkeeping fields:
+//   src +0 = buffer ptr, src +4 = list head, src +8 = count field ptr,
+//   src +12 = requested count.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_2940_w(void* self_v, void* src_v) {
+    struct SelfHdr { void** vtable; };
+    struct SrcHdr  { uint8_t* arr; uint32_t* listHead; uint32_t* outCount; int32_t reqCount; };
+    SelfHdr* self = reinterpret_cast<SelfHdr*>(self_v);
+    SrcHdr*  src  = reinterpret_cast<SrcHdr*>(src_v);
+    using VCall_Ensure   = void (*)(void*, int32_t*);
+    using VCall_SlotInit = void (*)(void*, void*);
+
+    int32_t cap = src->reqCount;
+    // slot 3 (@+12) — "ensure capacity"
+    ((VCall_Ensure)self->vtable[3])(self_v, &cap);
+    uint32_t* newArr = reinterpret_cast<uint32_t*>(src->arr);
+    if (src->listHead != nullptr) {
+        bool canResize = (*reinterpret_cast<uint32_t*>(src) & 1u) == 1u;
+        if (canResize && src->reqCount < cap) {
+            uint32_t g = static_cast<uint32_t>(cap);
+            uint32_t bytes = (g <= 0x3FFFFFFFu) ? (g * 4u) + 4u : 0xFFFFFFFFu;
+            newArr = static_cast<uint32_t*>(xe_EC88(bytes));
+            if (src->listHead != nullptr) {
+                rage_free_00C0(src->listHead);
+            }
+            *src->listHead = reinterpret_cast<uintptr_t>(newArr);
+            *src->outCount = static_cast<uint32_t>(cap);
+        }
+    }
+    // Invoke slot 1 (@+8) per element
+    uint8_t* slot = reinterpret_cast<uint8_t*>(newArr);
+    for (int32_t i = 0; i < cap; ++i) {
+        ((VCall_SlotInit)self->vtable[1])(self_v, slot);
+        slot += 4;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_2B50_w @ 0x82232B50 | size: 0x160
+//
+// Allocate/fill a 4-byte-stride array; inner loop iterates 90 entries per
+// outer round (fan-out construction). Vtable slots: 2 (@+8) per element,
+// 6 (@+24) prior ensure-capacity. Outer size loaded from src+12 (u16).
+// The "90" comes from a `li r30,90` literal and represents a fixed sub-bank
+// size inside each parent slot (likely matchlist paging).
+// TODO: identify the per-slot sub-record the 90-iteration loop initialises.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_2B50_w(void* self_v, void* src_v) {
+    struct SelfHdr { void** vtable; uint32_t flags; };
+    struct SrcHdr  { uint8_t* arr; uint32_t* listHead; uint16_t* outCount;
+                     uint16_t reqCount; };
+    SelfHdr* self = reinterpret_cast<SelfHdr*>(self_v);
+    SrcHdr*  src  = reinterpret_cast<SrcHdr*>(src_v);
+    using VCall_Ensure   = void (*)(void*, uint16_t*);
+    using VCall_SlotInit = void (*)(void*, void*);
+
+    uint16_t cap = src->reqCount;
+    ((VCall_Ensure)self->vtable[6])(self_v, &cap);
+    uint8_t* newArr = src->arr;
+    if (src->listHead != nullptr && (self->flags & 1u) != 0 && src->reqCount < cap) {
+        uint32_t bytes;
+        if (cap <= 0x00BA2F00u) {
+            bytes = cap * 360u;
+        } else {
+            bytes = 0xFFFFFFFFu;
+        }
+        newArr = static_cast<uint8_t*>(xe_EC88(bytes));
+        if (newArr != nullptr) {
+            // zero-init (cap*360)/4 dwords
+            const uint32_t dwords = (static_cast<uint32_t>(cap) * 360u) / 4u;
+            uint32_t* p = reinterpret_cast<uint32_t*>(newArr);
+            for (uint32_t i = 0; i < dwords; ++i) {
+                p[i] = 0;
+            }
+        }
+        if (*src->listHead != 0) {
+            rage_free_00C0(reinterpret_cast<void*>(*src->listHead));
+        }
+        *src->listHead = reinterpret_cast<uintptr_t>(newArr);
+        *src->outCount = cap;
+    }
+    // Outer loop: cap entries, each running an inner 90-iteration init
+    uint8_t* slot = newArr;
+    for (uint32_t outer = 0; outer < cap; ++outer) {
+        for (int inner = 0; inner < 90; ++inner) {
+            ((VCall_SlotInit)self->vtable[2])(self_v, slot);
+            slot += 4;
+        }
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_74F8_w @ 0x822374F8 | size: 0x120
+//
+// 8-byte-stride resize. Uses vtable slot 6 (@+24) for ensure, slot 2 (@+8)
+// per element — and calls slot 2 TWICE per entry (once for the first 4
+// bytes, once for the next 4) giving a pair of init callbacks per record.
+// ───────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_74F8_w(void* self_v, void* src_v) {
+    struct SelfHdr { void** vtable; uint32_t flags; };
+    struct SrcHdr  { uint8_t* arr; uint32_t* listHead; uint16_t* outCount;
+                     uint16_t reqCount; };
+    SelfHdr* self = reinterpret_cast<SelfHdr*>(self_v);
+    SrcHdr*  src  = reinterpret_cast<SrcHdr*>(src_v);
+    using VCall_Ensure   = void (*)(void*, uint16_t*);
+    using VCall_SlotInit = void (*)(void*, void*);
+
+    uint16_t cap = src->reqCount;
+    ((VCall_Ensure)self->vtable[6])(self_v, &cap);
+    uint8_t* newArr = src->arr;
+    if (src->listHead != nullptr && (self->flags & 1u) != 0 && src->reqCount < cap) {
+        uint32_t bytes;
+        if (cap <= 0x1FFFFFFFu) {
+            bytes = cap * 8u + 4u;
+        } else {
+            bytes = 0xFFFFFFFFu;
+        }
+        newArr = static_cast<uint8_t*>(xe_EC88(bytes));
+        if (*src->listHead != 0) {
+            rage_free_00C0(reinterpret_cast<void*>(*src->listHead));
+        }
+        *src->listHead = reinterpret_cast<uintptr_t>(newArr);
+        *src->outCount = cap;
+    }
+    // Inner: two slot-2 dispatches per entry (offset 0 then +4)
+    uint8_t* slot = newArr;
+    for (uint32_t i = 0; i < cap; ++i) {
+        ((VCall_SlotInit)self->vtable[1])(self_v, slot);        // (@+8) slot 2 pattern-A
+        ((VCall_SlotInit)self->vtable[1])(self_v, slot + 4);
+        slot += 8;
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_8B80_w @ 0x82238B80 | size: 0x140
+//
+// Singleton-backed linked-list → array flattener. Steps:
+//   1. Call xam_singleton_init_8D60 to obtain the list-owner object (r31).
+//   2. If owner's "count" field (u16 @+4) is 0, walk the list @+8 (single-
+//      ly-linked via +8 pointer), counting entries.
+//   3. If owner->u16@+6 == 0, allocate count*4 bytes into owner->arr (+0)
+//      and update owner->u16@+6 = count.
+//   4. Store count at owner->u16@+4. If count > 0, populate owner->arr
+//      with the list entries in order and call fiAsciiTokenizer_1950_g
+//      (sort/index helper) with a static format-string template and +4 key
+//      field size.
+//   5. Finally, compute owner->u32@+20 = owner->u32@+12 + owner->u32@+16
+//      - 1 (last-entry key or similar end-pointer).
+// TODO: decipher what the int32 fields +12/+16/+20 represent (slice range?).
+// ───────────────────────────────────────────────────────────────────────────
+struct PNMHBatch2Node { uint8_t pad[8]; PNMHBatch2Node* next; };
+struct PNMHBatch2Owner {
+    uint32_t arr;                // +0
+    uint16_t countA;             // +4
+    uint16_t cap;                // +6
+    PNMHBatch2Node* head;        // +8
+    int32_t  field12;            // +12
+    int32_t  field16;            // +16
+    int32_t  endCursor;          // +20
+};
+
+void pongNetMessageHolder_8B80_w(void) {
+    using Owner = PNMHBatch2Owner;
+    using Node  = PNMHBatch2Node;
+
+    Owner* owner = static_cast<Owner*>(xam_singleton_init_8D60());
+    if (owner->countA != 0) {
+        return;  // already initialised
+    }
+    // Count list length
+    uint32_t count = 0;
+    Node* n = owner->head;
+    while (n != nullptr) {
+        n = n->next;
+        ++count;
+    }
+    if (owner->cap == 0) {
+        owner->cap = static_cast<uint16_t>(count);
+        if (count != 0) {
+            uint32_t g = count;
+            uint32_t bytes = (g <= 0x3FFFFFFFu) ? (g * 4u) + 4u : 0xFFFFFFFFu;
+            owner->arr = reinterpret_cast<uintptr_t>(xe_EC88(bytes));
+        } else {
+            owner->arr = 0;
+        }
+    }
+    owner->countA = static_cast<uint16_t>(count);
+    if (static_cast<int32_t>(count) <= 0) {
+        return;
+    }
+    // Populate array with list-entry pointers
+    Node* cur = owner->head;
+    if (cur != nullptr) {
+        uint32_t idx = 0;
+        while (cur != nullptr) {
+            reinterpret_cast<uint32_t*>(owner->arr)[idx] = reinterpret_cast<uintptr_t>(cur);
+            ++idx;
+            cur = cur->next;
+        }
+    }
+    // Sort / build index. The r6 argument is a .rdata format string at
+    // lbl_8207716A region; TODO: identify the exact literal.
+    extern void fiAsciiTokenizer_1950_g(void* entries, uint32_t keySize,
+                                        int32_t count,
+                                        const char* fmt);
+    fiAsciiTokenizer_1950_g(reinterpret_cast<void*>(owner->arr),
+                            4,
+                            static_cast<int32_t>(owner->countA),
+                            /* TODO: resolve lbl_(-32220<<16 - 28888) format */ "");
+    owner->endCursor = owner->field12 + owner->field16 - 1;
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// pongNetMessageHolder — pool/dispatch batch (10 functions)
+// All follow recurring patterns in the 73-vtable MI hierarchy:
+//   * vfn_0_*    : derived destructor — sets derived vtable, chains to
+//                  vfn_2_* (sub-object destructor), restores base vtable,
+//                  decrements live-count, conditionally frees `this`.
+//   * vfn_2_*    : sub-object cleanup — reset internal array slots to the
+//                  pongNetMessageHolderBase vtable then rage_free().
+//   * vfn_1_*    : lazy pool allocator — allocate a fixed-size block via
+//                  xe_EC88 (rage_Alloc), initialise header + per-slot
+//                  linked-list indices, stash the pointer into m_pInternalArray.
+//   * *_h        : pool constructor that also instantiates a sub-coordinator
+//                  (PongNetRoundRobinCoordinator) inside the spectator-drop
+//                  holder, then rewrites the derived vtable to the base.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// xe_EC88 and pongNetMessageHolder_vfn_2_3670_1 are already declared/defined earlier in this TU.
+extern void PongNetRoundRobinCoordinator_00E0_g(void* coordBase);  // @ 0x822100E0
+extern void pongNetMessageHolder_vfn_2_0928_1(pongNetMessageHolder* holder);  // @ 0x823C0928 — sub-obj reset
+
+// Additional derived vtables touched by this batch (of the 73).
+static constexpr uint32_t VTABLE_pongNetMessageHolder_0194 = 0x82070194u;  // +404
+static constexpr uint32_t VTABLE_pongNetMessageHolder_0360 = 0x82070360u;  // +864
+static constexpr uint32_t VTABLE_pongNetMessageHolder_03EC = 0x820703ECu;  // +1004
+static constexpr uint32_t VTABLE_pongNetMessageHolder_0518 = 0x82070518u;  // +1304
+static constexpr uint32_t VTABLE_pongNetMessageHolder_05E0 = 0x820705E0u;  // +1504
+static constexpr uint32_t VTABLE_pongNetMessageHolder_FA68 = 0x8206FA68u;  // sub-obj vtable
+static constexpr uint32_t VTABLE_pongNetMessageHolder_F5AC = 0x8206F5ACu;  // sub-obj vtable
+
+// Per-holder max-float initial sentinel used for "unused slot" markers.
+extern const float g_pongNetMaxFloatInit_9ADC;  // @ 0x82079ADC (FLT_MAX sentinel)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_4038_h  @ 0x823C4038 | size: 0x78
+// Derived destructor on the DropSpectatorConnection-owning branch.
+// If a sub-coordinator exists at m_pInternalArray, call its coordinator
+// teardown, reset its vtable to the DropSpectatorConnection vtable, free it,
+// and null m_pInternalArray. Then restore base vtable and decrement live-count.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_4038_h(pongNetMessageHolder* self) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_05E0);
+    void* sub = self->m_pInternalArray;
+    if (sub != nullptr) {
+        PongNetRoundRobinCoordinator_00E0_g(static_cast<uint8_t*>(sub) + 8);
+        *reinterpret_cast<uint32_t*>(sub) = 0x8206FC44u;  // DropSpectatorConnection vtable
+        rage_free(sub);
+        self->m_pInternalArray = nullptr;
+    }
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    g_netMessageHolderLiveCount--;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_0_4D10_1  @ 0x823C4D10 | size: 0x78
+// Derived scalar destructor (vtable slot 0, variant +0x194 branch).
+//   r4 low-bit = "delete this" flag → call rage_free(this) when set.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_0_4D10_1(pongNetMessageHolder* self, uint32_t delFlag) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_0194);
+    pongNetMessageHolder_vfn_2_0928_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    g_netMessageHolderLiveCount--;
+    if (delFlag & 1u) {
+        rage_free(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_0_5788_1  @ 0x823C5788 | size: 0x78
+// Derived scalar destructor (variant +0x360 branch); same shape as 4D10.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_0_5788_1(pongNetMessageHolder* self, uint32_t delFlag) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_0360);
+    pongNetMessageHolder_vfn_2_3878_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    g_netMessageHolderLiveCount--;
+    if (delFlag & 1u) {
+        rage_free(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_0_5AD0_1  @ 0x823C5AD0 | size: 0x78
+// Derived scalar destructor (variant +0x3EC branch); same shape as 5788.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_0_5AD0_1(pongNetMessageHolder* self, uint32_t delFlag) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_03EC);
+    pongNetMessageHolder_vfn_2_3878_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    g_netMessageHolderLiveCount--;
+    if (delFlag & 1u) {
+        rage_free(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_0_6188_1  @ 0x823C6188 | size: 0x78
+// Derived scalar destructor (variant +0x518 branch); chains via vfn_2_3670.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_0_6188_1(pongNetMessageHolder* self, uint32_t delFlag) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_0518);
+    pongNetMessageHolder_vfn_2_3670_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    g_netMessageHolderLiveCount--;
+    if (delFlag & 1u) {
+        rage_free(self);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_2_0C70_1  @ 0x823C0C70 | size: 0x64
+// Sub-object destructor — if m_pInternalArray is live, walks 4 fixed-size
+// (24-byte) sub-holders at offsets +0, +24, +48, +72 inside the array and
+// stamps each with the pongNetMessageHolderBase vtable, then frees the array.
+// Aliased at 0x823C0CD8 as pongNetMessageHolder_vfn_1_0CD8_1 (same impl).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_0C70_1(pongNetMessageHolder* self) {
+    void* arr = self->m_pInternalArray;
+    if (arr != nullptr) {
+        uint8_t* cursor = static_cast<uint8_t*>(arr) + 96;  // one-past-end
+        for (int i = 3; i >= 0; --i) {
+            cursor -= 24;
+            *reinterpret_cast<uint32_t*>(cursor) = VTABLE_pongNetMessageHolderBase;
+        }
+        rage_free(arr);
+        self->m_pInternalArray = nullptr;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_4258_1  @ 0x823C4258 | size: 0xD8
+// Lazy pool allocator — allocates a 32-byte descriptor (single-slot pool):
+//   +0  vtable (0x82070004)   +4   f32 = FLT_MAX sentinel
+//   +8  u16 = 0xFFFF (prev)   +10  u16 = 0xFFFF (next)
+//   +12 u16 = 1 (elemSize)    +14  u16 = 1 (elemCap)
+//   +16 u16 = 0               then per-slot fwd-link loop runs (elemCap-1=0 iters).
+// Stores pointer (or null on OOM) into m_pInternalArray.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_4258_1(pongNetMessageHolder* self) {
+    if (self->m_pInternalArray != nullptr) {
+        return;
+    }
+    uint8_t* buf = static_cast<uint8_t*>(xe_EC88(32));
+    if (buf == nullptr) {
+        self->m_pInternalArray = nullptr;
+        return;
+    }
+    *reinterpret_cast<float*>(buf + 4) = g_pongNetMaxFloatInit_9ADC;
+    *reinterpret_cast<uint32_t*>(buf + 0) = 0x82070004u;  // derived vtable
+    *reinterpret_cast<uint16_t*>(buf +  8) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 10) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 12) = 1u;
+    *reinterpret_cast<uint16_t*>(buf + 14) = 1u;
+    *reinterpret_cast<uint16_t*>(buf + 16) = 0u;
+    // Single-iteration forward-link walk (elemCap-1 == 0 → body skipped).
+    self->m_pInternalArray = buf;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_2FA0_1  @ 0x823C2FA0 | size: 0x104
+// Lazy pool allocator — 96-byte descriptor, 5 slots of 16-byte stride.
+//   Header: vtable 0x8206FA68, five f32 sentinels at +4/+20/+36/+52/+68,
+//           zeroed u32/u16 link fields, elemCap=5 at +82.
+//   Loops over slot_i=0..3 writing linked-list neighbour indices.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_2FA0_1(pongNetMessageHolder* self) {
+    if (self->m_pInternalArray != nullptr) {
+        return;
+    }
+    uint8_t* buf = static_cast<uint8_t*>(xe_EC88(96));
+    if (buf == nullptr) {
+        self->m_pInternalArray = nullptr;
+        return;
+    }
+    const float sentinel = g_pongNetMaxFloatInit_9ADC;
+    for (int slot = 0; slot < 5; ++slot) {
+        *reinterpret_cast<float*>(buf + slot * 16 + 4) = sentinel;
+        *reinterpret_cast<uint32_t*>(buf + slot * 16)  = 0u;
+    }
+    *reinterpret_cast<uint32_t*>(buf + 0) = VTABLE_pongNetMessageHolder_FA68;
+    *reinterpret_cast<uint16_t*>(buf +  8) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 24) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 40) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 56) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 72) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 82) = 5u;       // elemCap
+    *reinterpret_cast<uint16_t*>(buf + 84) = 0u;
+    *reinterpret_cast<uint16_t*>(buf + 12) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 80) = 5u;
+    *reinterpret_cast<uint16_t*>(buf + 78) = 0xFFFFu;
+    // Initialise per-slot forward-link indices (i+1) and zero prev pointers.
+    for (uint16_t i = 0; i < 4; ++i) {
+        uint8_t* slotP = buf + i * 16;
+        *reinterpret_cast<uint16_t*>(slotP + 28) = 0u;                // prev
+        *reinterpret_cast<uint16_t*>(slotP + 14) = uint16_t(i + 1);   // next
+    }
+    self->m_pInternalArray = buf;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_03D0_1  @ 0x823C03D0 | size: 0x100
+// Lazy pool allocator — 336-byte descriptor, 10 slots of 32-byte stride.
+//   Each slot: vtable 0x8206F5AC, f32 sentinel, 0.0f secondary, zero-init
+//              link fields. Footer: elemCap=10 at +322.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_03D0_1(pongNetMessageHolder* self) {
+    if (self->m_pInternalArray != nullptr) {
+        return;
+    }
+    uint8_t* buf = static_cast<uint8_t*>(xe_EC88(336));
+    if (buf == nullptr) {
+        self->m_pInternalArray = nullptr;
+        return;
+    }
+    const float sentinel = g_pongNetMaxFloatInit_9ADC;
+    const float zero     = g_fZeroConst;
+    for (int slot = 0; slot < 10; ++slot) {
+        uint8_t* p = buf + slot * 32;
+        *reinterpret_cast<uint32_t*>(p +  0) = VTABLE_pongNetMessageHolder_F5AC;
+        *reinterpret_cast<float*   >(p +  4) = sentinel;
+        *reinterpret_cast<uint32_t*>(p +  8) = 0u;
+        *reinterpret_cast<float*   >(p + 12) = zero;
+        *reinterpret_cast<uint32_t*>(p + 16) = 0u;
+        *reinterpret_cast<float*   >(p + 20) = zero;
+        *reinterpret_cast<uint16_t*>(p + 24) = 0u;
+    }
+    *reinterpret_cast<uint16_t*>(buf + 324) = 0u;
+    *reinterpret_cast<uint16_t*>(buf + 322) = 10u;   // elemCap
+    *reinterpret_cast<uint16_t*>(buf +  28) = 0xFFFFu;
+    *reinterpret_cast<uint16_t*>(buf + 320) = 10u;
+    *reinterpret_cast<uint16_t*>(buf + 318) = 0xFFFFu;
+    // Initialise per-slot forward-link indices (i+1) and zero prev pointers.
+    for (uint16_t i = 0; i < 9; ++i) {
+        uint8_t* slotP = buf + i * 32;
+        *reinterpret_cast<uint16_t*>(slotP + 60) = 0u;                // prev
+        *reinterpret_cast<uint16_t*>(slotP + 30) = uint16_t(i + 1);   // next
+    }
+    self->m_pInternalArray = buf;
+}
+
+// TODO: pongNetMessageHolder_D318_w @ 0x8225D318 (0x254 bytes, 6 VCALLs,
+//       strcpyn + ph_5908 dispatch + ke_DC40 per-entry construction) —
+//       deferred: non-trivial vtable-driven factory, needs its own batch.

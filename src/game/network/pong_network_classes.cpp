@@ -1979,3 +1979,151 @@ void pongNetMessageHolder_DeallocateInternalMessageRelayPool(void* self) {
     rage_free(buffer);
     *(void**)(obj + 8) = nullptr;
 }
+
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// pongNetMessageHolder — additional vfn_1 (alloc+construct) / vfn_2 (destroy+free)
+// lazy pool allocation slots. Each vfn_1 checks holder->pool (+0x8), and if null
+// allocates via rage_Alloc (xe_EC88 tail-call) then delegates to a ctor that
+// fills the pool layout. The paired vfn_2 walks the pool writing the
+// PongNetMessage base vtable sentinel into each entry's +0 slot, then frees.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Shared helper — identical loop body to the existing Allocate*Pool pattern.
+// holder->pool is at offset +0x8 on every pongNetMessageHolder sub-object.
+static inline void* pnmh_lazy_alloc(void* self, uint32_t size, void (*ctor)(void*)) {
+    uint8_t* obj = (uint8_t*)self;
+    if (*(void**)(obj + 8) != nullptr) {
+        return *(void**)(obj + 8);
+    }
+    void* memory = rage_Alloc(size);
+    if (memory != nullptr) {
+        ctor(memory);
+    }
+    *(void**)(obj + 8) = memory;
+    return memory;
+}
+
+static inline void pnmh_destroy_and_free(void* self, uint32_t entries, uint32_t stride) {
+    uint8_t* obj = (uint8_t*)self;
+    void* buffer = *(void**)(obj + 8);
+    if (buffer == nullptr) {
+        return;
+    }
+    uint8_t* cursor = (uint8_t*)buffer + entries * stride;
+    for (uint32_t i = 0; i < entries; ++i) {
+        cursor -= stride;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)&PongNetMessage_vtable;
+    }
+    rage_free(buffer);
+    *(void**)(obj + 8) = nullptr;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_1_FC68 @ 0x823BFC68 | size: 0x54
+// Lazy allocate a 176-byte pool (4 × 44-byte PongNetMessage entries).
+// Delegates to pongNetMessageHolder_68D0_wrh to lay out the entries.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void pongNetMessageHolder_68D0_wrh(void* memory);
+
+void pongNetMessageHolder_vfn_1_FC68(void* self) {
+    pnmh_lazy_alloc(self, 176, pongNetMessageHolder_68D0_wrh);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_1_FCC0 @ 0x823BFCC0 | size: 0x54
+// Lazy allocate a 256-byte pool (BallHitMessage) and delegate to its ctor.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void BallHitMessage_ctor_69C8(void* memory);
+
+void pongNetMessageHolder_vfn_1_FCC0(void* self) {
+    pnmh_lazy_alloc(self, 256, BallHitMessage_ctor_69C8);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_1_FD18 @ 0x823BFD18 | size: 0x54
+// Lazy allocate an 8976-byte pool (large message array, 40 × 224-byte slots +
+// 16-byte header). Delegates to pongNetMessageHolder_6B48_wrh.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void pongNetMessageHolder_6B48_wrh(void* memory);
+
+void pongNetMessageHolder_vfn_1_FD18(void* self) {
+    pnmh_lazy_alloc(self, 8976, pongNetMessageHolder_6B48_wrh);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_2_FD70 @ 0x823BFD70 | size: 0x64
+// Teardown paired with vfn_1_FD18.
+// Resets each of 40 entries (stride 224) to PongNetMessage vtable, then frees.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_FD70(void* self) {
+    pnmh_destroy_and_free(self, /*entries=*/40, /*stride=*/224);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_1_FEE0 @ 0x823BFEE0 | size: 0x54
+// Lazy allocate a 96-byte pool (4 × 24-byte entries).
+// Delegates to pongNetMessageHolder_6C98_wrh.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void pongNetMessageHolder_6C98_wrh(void* memory);
+
+void pongNetMessageHolder_vfn_1_FEE0(void* self) {
+    pnmh_lazy_alloc(self, 96, pongNetMessageHolder_6C98_wrh);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_2_FF38 @ 0x823BFF38 | size: 0x64
+// Teardown paired with vfn_1_FEE0. 4 entries × 20-byte stride.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_FF38(void* self) {
+    pnmh_destroy_and_free(self, /*entries=*/4, /*stride=*/20);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_1_FFA0 @ 0x823BFFA0 | size: 0x54
+// Lazy allocate a 368-byte pool (10 × 36-byte + header) via
+// pongNetMessageHolder_6D68_wrh.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void pongNetMessageHolder_6D68_wrh(void* memory);
+
+void pongNetMessageHolder_vfn_1_FFA0(void* self) {
+    pnmh_lazy_alloc(self, 368, pongNetMessageHolder_6D68_wrh);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_2_FFF8 @ 0x823BFFF8 | size: 0x64
+// Teardown paired with vfn_1_FFA0. 10 entries × 36-byte stride.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_FFF8(void* self) {
+    pnmh_destroy_and_free(self, /*entries=*/10, /*stride=*/36);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_2_0260 @ 0x823C0260 | size: 0x64
+// Teardown for a 10 × 28-byte pool.
+// TODO: identify the paired allocator (likely vfn_1 at 0x823C0160 or nearby)
+//       and the ctor it calls — scaffold shows inline construction.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_0260(void* self) {
+    pnmh_destroy_and_free(self, /*entries=*/10, /*stride=*/28);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder::vfn_2_04D0 @ 0x823C04D0 | size: 0x64
+// Teardown for a 10 × 32-byte pool.
+// TODO: identify paired allocator (likely vfn_1 at 0x823C03D0) and its ctor.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_2_04D0(void* self) {
+    pnmh_destroy_and_free(self, /*entries=*/10, /*stride=*/32);
+}

@@ -2750,3 +2750,705 @@ void datArray_MoveAssign(uint8_t *dest, uint8_t *src) {
   *(uint32_t *)(src + 8) = 0;
   *(uint32_t *)(src + 4) = 0;
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  Batch: 10 atSingleton helper functions lifted from pass5_final scaffold.
+//
+//  These are mid-size (0x68..0x588 bytes) helpers that the recomp classified
+//  under the "atSingleton" bucket because the containing object reuses the
+//  singleton vtable layout (vtable@+0x0, flags@+0x4). The actual domain of
+//  each function is annotated inline.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External helpers used by this batch.
+extern void atSingleton_BEF0_wrh(void *self, int32_t idx);        // @ 0x824BBEF0
+extern void atSingleton_BA68_w(void *self, int32_t value);        // @ 0x824BBA68
+extern void atSingleton_DC40_gen(void *ptr);                       // @ 0x824ADC40
+extern void atSingleton_2748_gen(void *self);                      // @ 0x824D2748
+extern int32_t  SinglesNetworkClient_0E18_g(void *ctx, void *out); // @ 0x82260E18
+extern void nop_8240E6D0(const char *msg);                         // @ 0x8240E6D0
+extern void xam_singleton_init_8D60();                             // @ 0x82238D60
+extern void rage_free_00C0(void *ptr);                             // @ 0x820C00C0
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_BFE8_w()  @ 0x824BBFE8 | size: 0x1B0
+//
+// Generic piecewise-linear interpolation lookup using a curve descriptor
+// stored in `self`:
+//   +8   : data pointer (non-null => curve active)
+//   +36  : "flags2" — toggles the mode with +48
+//   +48  : alternate-mode flag
+//   +200 : yBase
+//   +204 : slope (Q12.20 fixed-point, divided by 2^20 via sradi 20)
+//   +208 : xBase
+//
+// Modes (from outer flag combinations):
+//   - flags2 set + data set + alt-flag clear: linear eval with clamp at xBase
+//   - flags2 set + data set + alt-flag set:   delegate x via atSingleton_BEF0
+//       then linear eval on returned x
+//   - flags2 set + data clear:                pure delegation to BEF0
+//   - flags2 clear + data set:                same linear eval, no delegation
+//   - both clear:                             result = 0
+//
+// Final step: clamp result to [-0x04000000, 0x03FFFFFF] then invoke
+// atSingleton_BA68_w((int8_t)&lbl_82040084, clampedValue) — this is a
+// register-style sink that writes the fixed-point result into a global slot.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_BFE8_w(void *selfPtr, int32_t x) {
+  uint8_t *self = reinterpret_cast<uint8_t *>(selfPtr);
+  int32_t flags2   = *reinterpret_cast<int32_t *>(self + 36);
+  int32_t dataPtr  = *reinterpret_cast<int32_t *>(self + 8);
+  int32_t altFlag  = *reinterpret_cast<int32_t *>(self + 48);
+  int32_t yBase    = *reinterpret_cast<int32_t *>(self + 200);
+  int32_t slope    = *reinterpret_cast<int32_t *>(self + 204);
+  int32_t xBase    = *reinterpret_cast<int32_t *>(self + 208);
+
+  int32_t result;
+
+  if (flags2 != 0) {
+    if (dataPtr != 0) {
+      if (altFlag == 0) {
+        if (x <= xBase) {
+          result = yBase;
+        } else {
+          // result = yBase + ((x - xBase) * slope) >> 20  -- then adjusted
+          int64_t delta = static_cast<int64_t>(x - xBase);
+          int64_t scaled = (delta * static_cast<int64_t>(slope)) >> 20;
+          int32_t y = static_cast<int32_t>(scaled) + yBase;
+          // The PPC assembly does: r10 = y - x;  r11 = r10 + xBase  (i.e. y-x+xBase)
+          // This is the curious "subtract-x-add-xBase" tail of the original.
+          result = (y - x) + xBase;
+        }
+      } else {
+        // Delegate x through BEF0 first, then evaluate.
+        atSingleton_BEF0_wrh(self, x);
+        // NOTE: BEF0 return value is not directly observable in this lifted
+        // signature; the scaffold uses its r3 result. Fall back to xBase for
+        // continuity.  TODO: thread BEF0's int32_t return through properly.
+        int32_t delegatedX = x;  // placeholder for r3 from BEF0
+        if (delegatedX <= xBase) {
+          result = (yBase - x) + delegatedX;
+        } else {
+          int64_t delta = static_cast<int64_t>(delegatedX - xBase);
+          int64_t scaled = (delta * static_cast<int64_t>(slope)) >> 20;
+          int32_t y = static_cast<int32_t>(scaled) + yBase;
+          result = ((y - delegatedX) + xBase - x) + delegatedX;
+        }
+      }
+    } else {
+      // Data null but flags2 set: pure delegate.
+      atSingleton_BEF0_wrh(self, x);
+      int32_t delegatedX = x;  // TODO: see above
+      result = delegatedX - x;
+    }
+  } else if (dataPtr != 0) {
+    if (x <= xBase) {
+      result = yBase;
+    } else {
+      int64_t delta = static_cast<int64_t>(x - xBase);
+      int64_t scaled = (delta * static_cast<int64_t>(slope)) >> 20;
+      int32_t y = static_cast<int32_t>(scaled) + yBase;
+      result = (y - x) + xBase;
+    }
+  } else {
+    result = 0;
+  }
+
+  // Clamp to 26-bit signed range: [-0x04000000, 0x03FFFFFF].
+  constexpr int32_t kMin = -0x04000000;  // lis -1024 => 0xFC000000
+  constexpr int32_t kMax =  0x03FFFFFF;  // lis 1023 | 0xFFFF
+  if (result < kMin) result = kMin;
+  else if (result > kMax) result = kMax;
+
+  // Sink to register-addressed slot (arg r3 is a small int8_t-style tag).
+  atSingleton_BA68_w(reinterpret_cast<void *>(static_cast<intptr_t>(-18108)),
+                     result);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_0F80_w()  @ 0x824F0F80 | size: 0x68
+//
+// Three-field null-checked release:
+//   if (self->vtable)   rage_dealloc(self->vtable);  self->vtable = 0;
+//   if (self->flags)    rage_dealloc(self->flags);   self->flags  = 0;
+//   rage_dealloc(self);
+//   return 0;
+//
+// The scaffold calls atSingleton_DC40_gen (= rage_AllocRegistered/free alias)
+// on each non-null field.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t atSingleton_0F80_w(void *selfPtr) {
+  uint8_t *self = reinterpret_cast<uint8_t *>(selfPtr);
+
+  void *field0 = *reinterpret_cast<void **>(self + 0);
+  if (field0 != nullptr) {
+    atSingleton_DC40_gen(field0);
+    *reinterpret_cast<uint32_t *>(self + 0) = 0;
+  }
+
+  void *field1 = *reinterpret_cast<void **>(self + 4);
+  if (field1 != nullptr) {
+    atSingleton_DC40_gen(field1);
+    *reinterpret_cast<uint32_t *>(self + 4) = 0;
+  }
+
+  atSingleton_DC40_gen(self);
+  return 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_4000_w()  @ 0x824D4000 | size: 0x198
+//
+// Bit-stream consumer over a 20-byte record array. The stream descriptor
+// `stream` carries:
+//   +0   : uint64_t bit buffer
+//   +8   : int32_t  remaining-bit count (saturates to -1 → refill via
+//          atSingleton_2748_gen)
+//
+// For each of `count` records (20 bytes each, starting at `records`):
+//   - Pop 1 bit from the MSB of the buffer.
+//   - If the lowest-order record's bit 0 was "1":
+//       Pop another bit. If set, set bit31 of record[0] and record[20].
+//       Else pop one more bit; if set, clear bit31 of record[0] and set
+//       bit31 of record[20]; else swap — set bit31 of record[0] and clear
+//       bit31 of record[20].
+//     Otherwise just clear bit31 of both.
+//
+// The full state machine is a small Huffman-style two-bit decode that lifts
+// per-record "is-dirty" and "direction" flags out of a packed bitstream.
+// This is the critical loop used during serialized scene fix-up.
+//
+// TODO: The initial `flags & 1` branch (when count is odd) is partially
+// folded into the loop above — the exact record-stride offset may need
+// tightening if the caller ever passes count == 0.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_4000_w(uint8_t *records, int32_t count, uint8_t *stream) {
+  auto popBit = [&]() -> uint32_t {
+    uint64_t buf = *reinterpret_cast<uint64_t *>(stream + 0);
+    int32_t   rem = *reinterpret_cast<int32_t  *>(stream + 8);
+    uint32_t  out = static_cast<uint32_t>((buf >> 63) & 1u);
+    *reinterpret_cast<uint64_t *>(stream + 0) = buf << 1;
+    *reinterpret_cast<int32_t  *>(stream + 8) = rem - 1;
+    if (rem - 1 < 0) {
+      atSingleton_2748_gen(stream);
+    }
+    return out;
+  };
+
+  int32_t i = count & 1;
+
+  if (i != 0) {
+    // Odd-count prefix: consume one bit → bit31 of record[0].
+    uint32_t bit = popBit();
+    uint32_t w = *reinterpret_cast<uint32_t *>(records + 0);
+    w = (w & 0x7FFFFFFFu) | (bit << 31);
+    *reinterpret_cast<uint32_t *>(records + 0) = w;
+    records += 20;
+  }
+
+  if (i >= count) return;
+
+  int32_t pairs = ((count - i) - 1) >> 1;
+  pairs += 1;  // ceil((count-i)/2)
+
+  while (pairs != 0) {
+    uint32_t b0 = popBit();
+    if (b0 != 0) {
+      uint32_t b1 = popBit();
+      if (b1 != 0) {
+        // both bits → set bit31 of both words.
+        *reinterpret_cast<uint32_t *>(records + 0)  |= 0x80000000u;
+        *reinterpret_cast<uint32_t *>(records + 20) |= 0x80000000u;
+      } else {
+        uint32_t b2 = popBit();
+        if (b2 != 0) {
+          // 1,0,1 → clear [0]/bit31, set [20]/bit31.
+          *reinterpret_cast<uint32_t *>(records + 0)  &= 0x7FFFFFFFu;
+          *reinterpret_cast<uint32_t *>(records + 20) |= 0x80000000u;
+        } else {
+          // 1,0,0 → set [0]/bit31, clear [20]/bit31.
+          *reinterpret_cast<uint32_t *>(records + 0)  |= 0x80000000u;
+          *reinterpret_cast<uint32_t *>(records + 20) &= 0x7FFFFFFFu;
+        }
+      }
+    } else {
+      // Leading 0 → both bit31 cleared.
+      *reinterpret_cast<uint32_t *>(records + 0)  &= 0x7FFFFFFFu;
+      *reinterpret_cast<uint32_t *>(records + 20) &= 0x7FFFFFFFu;
+    }
+    records += 40;
+    --pairs;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_74C8_p39()  @ 0x821C74C8 | size: 0x68
+//
+// Per-state dispatch for jumptable state [+12] of a globally-referenced
+// machine (`*(uint32_t*)(lbl_XXX - 23748) + 12`).
+//
+//   state == 1 : tail-call jumptable_5C20(self).
+//   state == 3 : compute table-indexed flag from self[+532], pass through
+//                game_5D80(self, bit).
+//   default    : clear self[+76012]  (0x100 * 0x10 + 10220 = 75756; scaffold
+//                uses lis 1, ori 10220 ⇒ 0x1_27EC). We write zero there.
+// ─────────────────────────────────────────────────────────────────────────────
+extern int32_t g_jumptable_MachinePtr[];        // @ 0x??????-23748 base
+extern uint8_t g_classFlagTable_p39_56[];       // base-0x825E3858 + 56
+extern void jumptable_5C20(void *self);
+extern void game_5D80(void *self, uint32_t flag);
+
+void atSingleton_74C8_p39(uint8_t *self) {
+  // r11 = *(g_jumptable_MachinePtr); r11 = *(r11 + 12)
+  uint32_t *machine = reinterpret_cast<uint32_t *>(g_jumptable_MachinePtr[0]);
+  int32_t state = static_cast<int32_t>(machine[3]);  // offset 12 / 4
+
+  if (state == 1) {
+    jumptable_5C20(self);
+    return;
+  }
+
+  if (state == 3) {
+    uint32_t idx = *reinterpret_cast<uint32_t *>(self + 532);
+    // rlwinm r9,r10,7,0,24 == (idx << 7) & 0xFFFFFF80
+    uint32_t offset = (idx << 7) & 0xFFFFFF80u;
+    uint32_t entry  = *reinterpret_cast<uint32_t *>(
+        g_classFlagTable_p39_56 + offset);
+    uint32_t bit = (entry != 0) ? 1u : 0u;
+    game_5D80(self, bit);
+    return;
+  }
+
+  // Default branch: clear a dword at absolute offset 0x127EC inside `self`.
+  *reinterpret_cast<uint32_t *>(self + 0x127EC) = 0;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_vfn_0_AC78_1()  @ 0x821CAC78 | size: 0x60
+//
+// Destructor (vtable slot 0) for an atSingleton-layout gdTrainingSaveData
+// object: installs the 3 vtable-related constant pointers then optionally
+// calls rage_free on `self` when the low bit of `flag` is set
+// (scalar-delete flag).
+//
+// Constant addresses (recovered from lis/addi pairs):
+//   +4  (flags)   = 0x82045FB4 (first write, immediately overwritten)
+//   +4  (flags)   = 0x820477B4 (final value)
+//   +0  (vtable)  = 0x82047734
+// ─────────────────────────────────────────────────────────────────────────────
+void *atSingleton_vfn_0_AC78_1(uint8_t *self, uint32_t flag) {
+  *reinterpret_cast<uint32_t *>(self + 4) = 0x82045FB4u;  // transient write
+  *reinterpret_cast<uint32_t *>(self + 4) = 0x820477B4u;  // final flags tag
+  *reinterpret_cast<uint32_t *>(self + 0) = 0x82047734u;  // vtable ptr
+
+  if ((flag & 1u) != 0) {
+    rage_free_00C0(self);
+  }
+  return self;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_3270_2h()  @ 0x82513270 | size: 0x1A4
+//
+// Five-region strided memcpy: copies 5 blocks of 8 × 16-byte rows from a
+// source `src` to a destination whose per-row stride is supplied by the
+// caller (via r7, expanded to `stride`). Used by an animation/physics
+// transform array copier.
+//
+// Blocks (each = 8 rows × 16 bytes):
+//   src + 0   → dst1 + 0..+7 rows (stride = stride*2, rows stored with
+//                                   byte-offsets -8,-4,0,+4 relative to dst1+8)
+//   src + 128 → dst1 + 16..+23 rows (same stride)
+//   src + 256 → dst2 + 0..+7  rows (stride2 = stride*16? see below)
+//   src + 384 → dst2 + 16..+23 rows
+//   src + 512 → dst3 (packed 4-byte quads, stride = stride<<1)
+//   src + 640 → dst4 (same stride as dst3)
+//
+// The exact strides come from:
+//   stride = (r7 << 1);            // bytes between consecutive rows in
+//                                  // blocks 1/2/5/6
+//   stride2 = (r7 << 4);           // block 3 jumps dst by 16*r7 at block end
+// 
+// NOTE: block 3 reuses r4 after the earlier stride already advanced it; the
+// scaffold recomputes dst with `add r7, r10, r4` at loc_824d42fc — preserving
+// that we write dst3 at `dst2 + stride2` (dst2 already at +16 of original dst).
+//
+// This is a pure bulk copy — no field semantics beyond layout.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_3270_2h(const uint8_t *src, uint8_t *dst1, uint8_t *dst2,
+                         uint8_t *dst3, uint8_t *dst4, uint32_t rawStride) {
+  const uint32_t stride  = (rawStride << 1) & 0xFFFFFFFEu;
+  const uint32_t stride2 = (rawStride << 4) & 0xFFFFFFF0u;
+  const uint32_t strideHalfBit = ((rawStride & 1u) << 1) & 0xFFFFFFFEu;
+  (void)strideHalfBit;  // tracked for parity; not used distinctly in the
+                        // corrected lift — merged into `stride` above.
+
+  auto copy16x8 = [&](const uint8_t *s, uint8_t *d, uint32_t dstStride) {
+    for (int i = 0; i < 8; ++i) {
+      *reinterpret_cast<uint32_t *>(d + 0)  = *reinterpret_cast<const uint32_t *>(s + 0);
+      *reinterpret_cast<uint32_t *>(d + 4)  = *reinterpret_cast<const uint32_t *>(s + 4);
+      *reinterpret_cast<uint32_t *>(d + 8)  = *reinterpret_cast<const uint32_t *>(s + 8);
+      *reinterpret_cast<uint32_t *>(d + 12) = *reinterpret_cast<const uint32_t *>(s + 12);
+      s += 16;
+      d += dstStride;
+    }
+  };
+
+  // Block 1: src[0..127] → dst1 (rows laid out starting 8 bytes before dst1+8).
+  copy16x8(src + 0,   dst1 + 0,  stride);
+  // Block 2: src[128..255] → dst1 + 16, same stride.
+  copy16x8(src + 128, dst1 + 16, stride);
+
+  // Block 3: src[256..383] → dst2 (then block 4 right after).
+  copy16x8(src + 256, dst2 + 0,  stride);
+  copy16x8(src + 384, dst2 + 16, stride);
+  (void)stride2;  // block-3-to-4 cursor bump is already expressed as +16.
+
+  // Block 5: src[512..639] → dst3 (stride = stride).
+  copy16x8(src + 512, dst3, stride);
+  // Block 6: src[640..767] → dst4 (same stride).
+  copy16x8(src + 640, dst4, stride);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_2208_w()  @ 0x824B2208 | size: 0xD0
+//
+// Jagged-array destructor. The object has:
+//   +34   : int16_t outerCount   (1..)
+//   +548  : uint32_t **table     (nullable; when set: array of row ptrs)
+//
+// For each row r in [1..outerCount]:
+//   If r > 6, iterate inner slots [0..r-1], free each non-null slot via
+//   atSingleton_DC40_gen and null it.
+//   Then free the row pointer itself (if non-null) and null it in table.
+// Finally free the table itself (if non-null) and null table.
+//
+// The row-slot offset is r*4 (local `r30 = 4,8,12...`), and inside each
+// row slots are at offset s*4 (local `r31 = 0,4,8...`). Rows ≤ 6 skip the
+// inner sweep — those rows' inner pointers are owned elsewhere.
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_2208_w(uint8_t *self) {
+  uint32_t **table = *reinterpret_cast<uint32_t ***>(self + 548);
+  if (table == nullptr) return;
+
+  const int32_t outerCount = *reinterpret_cast<int16_t *>(self + 34);
+  if (outerCount >= 1) {
+    for (int32_t r = 1, rowOffset = 4; r <= outerCount; ++r, rowOffset += 4) {
+      if (r > 6) {
+        for (int32_t s = 0, innerOff = 0; s < r; ++s, innerOff += 4) {
+          uint32_t **tableCur = *reinterpret_cast<uint32_t ***>(self + 548);
+          uint32_t *row = reinterpret_cast<uint32_t *>(
+              reinterpret_cast<uint8_t *>(tableCur)[rowOffset / 4]);
+          // Actual scaffold: row = *(tableCur + rowOffset); slot = *(row + innerOff)
+          uint32_t *slotPtr = reinterpret_cast<uint32_t *>(
+              reinterpret_cast<uintptr_t>(tableCur) + rowOffset);
+          uint32_t *slotArr = *reinterpret_cast<uint32_t **>(slotPtr);
+          uint32_t **innerSlot = reinterpret_cast<uint32_t **>(
+              reinterpret_cast<uintptr_t>(slotArr) + innerOff);
+          if (*innerSlot != nullptr) {
+            atSingleton_DC40_gen(*innerSlot);
+            *innerSlot = nullptr;
+          }
+          (void)row;
+        }
+      }
+
+      uint32_t **tableCur = *reinterpret_cast<uint32_t ***>(self + 548);
+      uint32_t **rowSlot = reinterpret_cast<uint32_t **>(
+          reinterpret_cast<uintptr_t>(tableCur) + rowOffset);
+      if (*rowSlot != nullptr) {
+        atSingleton_DC40_gen(*rowSlot);
+        *rowSlot = nullptr;
+      }
+    }
+  }
+
+  uint32_t **finalTable = *reinterpret_cast<uint32_t ***>(self + 548);
+  if (finalTable != nullptr) {
+    atSingleton_DC40_gen(finalTable);
+    *reinterpret_cast<uint32_t **>(self + 548) = nullptr;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_01B0_h()  @ 0x823A01B0 | size: 0x234
+//
+// Constructor-style initializer for a PongNetRoundRobinCoordinator-like
+// network config object. Chosen-side logic uses the count-leading-zeros
+// of g_networkState[+468] to pick one of two 32-byte record sets.
+//
+// High-level pseudocode:
+//   uint32_t mode = *(g_mode);                // small indexed dispatch
+//   void*    base = *(g_tableBase - 22608);
+//   void*    entry = (mode <= 3) ? (char*)base + mode*2784 + ...
+//                                : nullptr;
+//   record = entry + 2652;                    // 48-byte header
+//
+//   record[+28] = 48;  call SinglesNetworkClient_0E18_g(record, &tmp80);
+//   restore record[+28].
+//
+//   out[+0] = tmp80;
+//
+//   gNetState = *(g_netBasePtr);
+//   if (gNetState[+472]!=0 && gNetState2[+472]==0)  warn "both sides active";
+//
+//   countLeadingZeros of gNetState[+468] → side bit (0 or 1).
+//   Copy 8 × uint32_t block per side from static tables into out[+8..+39]
+//   and out[+40..+71], plus out[+72..+79].
+//
+//   out[+80] = (uint16_t) table[base + 56252];    // or +62644 per side
+//   out[+82] = (uint16_t) table[base + 62644];
+//   out[+84] = 0;
+//
+//   if (param_byte != 0) {
+//     switch (gNetState[+104]) {
+//       case 0: out[+84] = side ? 1 : 2; break;
+//       case 1: out[+84] = side ? 2 : 1; break;
+//       default: out[+84] = 3;
+//     }
+//   }
+//
+// TODO: The two 8-dword copy blocks depend on fields at +28 and +32 of the
+// shared state. The exact mapping (which field becomes out[+8] vs out[+40])
+// flips with `side` — handled symbolically above. Needs a real caller to
+// verify which side corresponds to which participant.
+// ─────────────────────────────────────────────────────────────────────────────
+extern uint32_t *g_atSingleton_01B0_machine;   // @ 0x?? - 23780
+extern uint32_t *g_atSingleton_01B0_tableBase; // @ 0x?? - 22608
+extern uint32_t *g_atSingleton_01B0_netBase;   // @ 0x?? + 25648
+
+void atSingleton_01B0_h(uint8_t *out, uint32_t paramByte) {
+  uint32_t mode = g_atSingleton_01B0_machine[1];  // [+4]
+  uint32_t baseTable = reinterpret_cast<uint32_t>(g_atSingleton_01B0_tableBase);
+
+  uint8_t *record;
+  if (mode <= 3) {
+    // ((mode * 2784) + base) + 131072 - 29280 + 2652 = offset inside a
+    // per-mode struct.
+    uintptr_t addr = static_cast<uintptr_t>(mode) * 2784 +
+                     static_cast<uintptr_t>(baseTable) +
+                     131072 - 29280 + 2652;
+    record = reinterpret_cast<uint8_t *>(addr);
+  } else {
+    record = reinterpret_cast<uint8_t *>(static_cast<uintptr_t>(2652));
+  }
+
+  // Save/stamp/restore record[+28].
+  int32_t savedRec28 = *reinterpret_cast<int32_t *>(record + 28);
+  *reinterpret_cast<int32_t *>(record + 28) = 48;
+  uint32_t tmp80 = 0;
+  SinglesNetworkClient_0E18_g(record, &tmp80);
+  *reinterpret_cast<int32_t *>(record + 28) = savedRec28;
+
+  *reinterpret_cast<uint32_t *>(out + 0) = tmp80;
+
+  uint32_t *netState = g_atSingleton_01B0_netBase;
+  uint32_t *side0    = reinterpret_cast<uint32_t *>(netState[116 / 4]);
+  uint32_t *side1    = reinterpret_cast<uint32_t *>(netState[120 / 4]);
+
+  if (side0[472 / 4] != 0 && side1[472 / 4] == 0) {
+    // scaffold has an inverted check (both active warn); preserved as written.
+    nop_8240E6D0("atSingleton_01B0_h - both sides report active");
+    side0 = nullptr;
+  }
+
+  uint32_t flag468 = (side0 != nullptr) ? side0[468 / 4] : 0u;
+  uint32_t nlz  = (flag468 == 0) ? 32u : __builtin_clz(flag468);
+  uint32_t side = (nlz >> 5) & 1u;       // rlwinm r5,r5,27,31,31
+
+  *reinterpret_cast<uint32_t *>(out + 4) =
+      (side0 ? side0[28 / 4] + side0[32 / 4] : 0u);
+
+  // Copy two 8-dword blocks from (side0 + 36) and (side0 + 68) into out+8/out+40
+  // (or swapped when side != 0).
+  const uint32_t *blockA = reinterpret_cast<const uint32_t *>(
+      reinterpret_cast<const uint8_t *>(side0) + 36);
+  const uint32_t *blockB = reinterpret_cast<const uint32_t *>(
+      reinterpret_cast<const uint8_t *>(side0) + 68);
+
+  uint32_t *dstA = reinterpret_cast<uint32_t *>(out + (side ? 8 : 40));
+  uint32_t *dstB = reinterpret_cast<uint32_t *>(out + (side ? 40 : 8));
+  for (int i = 0; i < 8; ++i) dstA[i] = blockA[i];
+  for (int i = 0; i < 8; ++i) dstB[i] = blockB[i];
+
+  uint32_t field28 = side0 ? side0[28 / 4] : 0u;
+  uint32_t field32 = side0 ? side0[32 / 4] : 0u;
+  *reinterpret_cast<uint32_t *>(out + 72) = side ? field28 : field32;
+  *reinterpret_cast<uint32_t *>(out + 76) = side ? field32 : field28;
+
+  // out[+80..+83]: 16-bit entries pulled from two constant tables (62644 /
+  // 56252 offsets within baseTable). Kept literal per scaffold.
+  uint32_t *tbl = reinterpret_cast<uint32_t *>(
+      reinterpret_cast<uintptr_t>(baseTable));
+  uint16_t h80 = static_cast<uint16_t>(tbl[side ? (56252 / 4) : (62644 / 4)]);
+  uint16_t h82 = static_cast<uint16_t>(tbl[side ? (62644 / 4) : (56252 / 4)]);
+  *reinterpret_cast<uint16_t *>(out + 80) = h80;
+  *reinterpret_cast<uint16_t *>(out + 82) = h82;
+  *reinterpret_cast<uint32_t *>(out + 84) = 0;
+
+  if ((paramByte & 0xFF) != 0) {
+    uint32_t sub104 = side0 ? side0[104 / 4] : 0u;
+    uint32_t tag;
+    switch (sub104) {
+      case 0:  tag = side ? 1u : 2u; break;
+      case 1:  tag = side ? 2u : 1u; break;
+      default: tag = 3u;             break;
+    }
+    *reinterpret_cast<uint32_t *>(out + 84) = tag;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_vfn_2_0EE0_1()  @ 0x82390EE0 | size: 0x1B8
+//
+// Vtable slot 2 for a global xam-singleton-layout object. Runs teardown of
+// the singleton's owned sub-objects, then conditionally re-initializes the
+// xam singleton, then releases a final network client.
+//
+// Sequence:
+//   1. atSingleton_BFC0_g(g_xamSingletonBase);         // flush / finalize
+//   2. obj = *(g_xamSingletonBase); if (obj) obj->vtable[0](obj, 1);   // dtor
+//   3. If g_xamFlag[332] != 0:
+//        a. rage_free_00C0(this[+80]); this[+80] = 0;
+//        b. For each field in {+8, +28, +32}: if (!=0) vdtor0(field, 1); null.
+//        c. If g_xamSingletonPtr2 != 0: rage_free_00C0(g_xamSingletonPtr2).
+//        d. Clear g_xamFlag[332] = 0.
+//        e. If g_xamBool[26227] != 0:
+//             walk linked list at g_xamListHead via [+4] pointers; for each
+//             node call vtable[2](node).  Clear g_xamBool[26227] = 0.
+//   4. If g_reinitXamFlag (lbl_82606561) != 0:
+//        newObj = xam_singleton_init_8D60();
+//        rage_free_00C0(newObj->vtable);
+//        newObj->vtable = 0; newObj->field4 = 0; newObj->field6 = 0;
+//        newObj->field8 = 0; newObj->field12 = 0;
+//        g_reinitXamFlag = 0;
+//        newObj->field16 = 0; newObj->field20 = 0;
+//   5. If g_netClient (+13260 of r31 base) != 0: vdtor0(client, 1); null.
+//   6. Clear a trailing bool at r29+361.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void *g_xamSingletonBase;     // @ (r29 - 22608)
+extern void  atSingleton_BFC0_g(void *);
+extern uint8_t *g_xamFlagBase332;    // byte @ (r28 - 21720) + 332
+extern uint8_t  g_xamBool_26227;     // byte at lbl_82606573
+extern void    *g_xamListHead_26272; // pointer at lbl_826066A0
+extern uint8_t  g_reinitXamFlag_561; // byte at lbl_82606561
+extern void   **g_netClient_13260;   // ptr at r31 + 13260
+
+void atSingleton_vfn_2_0EE0_1(uint8_t *self) {
+  using Vdtor0 = void (*)(void *, uint32_t);
+  using Vslot2 = void (*)(void *);
+
+  atSingleton_BFC0_g(g_xamSingletonBase);
+
+  void *owned = g_xamSingletonBase;
+  if (owned != nullptr) {
+    void **vt = *reinterpret_cast<void ***>(owned);
+    reinterpret_cast<Vdtor0>(vt[0])(owned, 1);
+  }
+  // Clear the global pointer regardless.
+  g_xamSingletonBase = nullptr;
+
+  if (*g_xamFlagBase332 != 0) {
+    rage_free_00C0(*reinterpret_cast<void **>(self + 80));
+    *reinterpret_cast<void **>(self + 80) = nullptr;
+
+    for (int ofs : {8, 28, 32}) {
+      void *p = *reinterpret_cast<void **>(self + ofs);
+      if (p != nullptr) {
+        void **vt = *reinterpret_cast<void ***>(p);
+        reinterpret_cast<Vdtor0>(vt[0])(p, 1);
+      }
+      *reinterpret_cast<void **>(self + ofs) = nullptr;
+    }
+
+    // Secondary global free.
+    void *ptr2 = reinterpret_cast<void *>(static_cast<uintptr_t>(26296));
+    if (ptr2 != nullptr) {
+      rage_free_00C0(ptr2);
+    }
+    *g_xamFlagBase332 = 0;
+
+    if (g_xamBool_26227 != 0) {
+      void *node = g_xamListHead_26272;
+      while (node != nullptr) {
+        void **vt = *reinterpret_cast<void ***>(node);
+        reinterpret_cast<Vslot2>(vt[2])(node);
+        node = *reinterpret_cast<void **>(
+            reinterpret_cast<uint8_t *>(node) + 4);
+      }
+      g_xamBool_26227 = 0;
+    }
+  }
+
+  if (g_reinitXamFlag_561 != 0) {
+    xam_singleton_init_8D60();
+    uint8_t *newObj = reinterpret_cast<uint8_t *>(&g_reinitXamFlag_561); // TODO: real return value
+    // The scaffold reads ctx.r3 (return of xam_singleton_init_8D60) into r31
+    // and then mutates its header. Leaving as TODO because the return type
+    // of xam_singleton_init_8D60 is still void in the extern above.
+    (void)newObj;
+    g_reinitXamFlag_561 = 0;
+  }
+
+  void *client = (g_netClient_13260 != nullptr) ? *g_netClient_13260 : nullptr;
+  if (client != nullptr) {
+    void **vt = *reinterpret_cast<void ***>(client);
+    reinterpret_cast<Vdtor0>(vt[0])(client, 1);
+  }
+  if (g_netClient_13260 != nullptr) *g_netClient_13260 = nullptr;
+
+  // Trailing bool @ r29+361.
+  // TODO: identify the exact global; scaffold writes 0 there.
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// atSingleton_3D90_v12()  @ 0x82403D90 | size: 0x28C (660 bytes)
+//
+// Vector-path animation evaluator. Walks a packed (count × {time, amplitude})
+// stream at `self->vtable` and produces a pool of output records via
+// rage_2A78(1, 2) (a small typed allocator).
+//
+// The loop dispatches on (state - 1) into a 5-way switch and in state 0
+// computes transformed positions using 3 float inputs (f1/f2/f3 at entry),
+// multiplied by curve coefficients stored in a global table at
+// lbl_82606120, then stores into the allocated output record together with
+// a timestamp from a .data counter (-23036(r28)).
+//
+// Given the heavy float math, vector-table references and 5-way switch, a
+// faithful high-level lift needs its own session. The safe behaviour is to
+// early-out on empty streams (the scaffold does exactly this when
+// *(self->vtable) == 0).
+//
+// TODO: Full lift — requires:
+//   - Resolving all 9 `lis + addi` global-table bases (r20..r28).
+//   - Identifying the output record layout (32 bytes, see stfs offsets).
+//   - Understanding the 5-state switch (state values 1..5 all fall through
+//     to the same tail block at loc_82403FFC — likely a no-op).
+// ─────────────────────────────────────────────────────────────────────────────
+void atSingleton_3D90_v12(void *selfPtr, float a, float b, float c) {
+  uint8_t *self = reinterpret_cast<uint8_t *>(selfPtr);
+  uint8_t *stream = *reinterpret_cast<uint8_t **>(self + 0);
+  if (stream == nullptr) return;
+
+  uint32_t first = *reinterpret_cast<uint32_t *>(stream + 0);
+  if (first == 0) return;  // empty stream → fall-through return.
+
+  // TODO: Implement the 660-byte vector-math loop.  Inputs (a,b,c) map to
+  // f1/f2/f3 at entry; the function emits records of the form:
+  //   { float x, float y, uint32_t timestamp, float kA, float kB,
+  //     float kC, float kD, float kE, float kF, float kG }
+  // (32 bytes per record; see stfs offsets 0..32 at loc_82403EC4).
+  // The record's allocator is rage_2A78(1, 2) — a typed pool allocator.
+  (void)a; (void)b; (void)c;
+}

@@ -359,4 +359,218 @@ void sysMemSimpleAllocator::Init() {
     largestAvailBlock = largest;
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Extra at*/sysMem helpers lifted from the 0x82186000 / 0x82187000 /
+// 0x8212B000 / 0x82187D00 ranges. These complete the memory-subsystem
+// surface used by the boot path: GetSize, destructors, virtual Free
+// thunk, spinlock primitive, debug memset, and vfn_19 snapshot hook.
+// ═══════════════════════════════════════════════════════════════════════
+
+extern "C" void rage_free_00C0(void* ptr);
+
+// Guarded-init lock shared across rage singletons (process-wide).
+// @ 0x825EBCF8  [.data]
+uint32_t g_sysMemAllocatorInitLock = 0;
+
+// Debug fill flag for rage_stricmp_6358 (actually a memset-variant).
+// @ 0x82606315  [.data]
+extern "C" uint8_t g_sysMemDebugFillFlag = 0;
+
+// Forward declaration — defined below.
+extern "C" void sysMemSimpleAllocator_SpinAcquire(uint32_t* lock);
+
+// ═══════════════════════════════════════════════════════════════════════
+// sysMemSimpleAllocator::GetSize  @ 0x821874D8  (124 bytes)
+//
+// Returns the block size of a pointer previously returned by Allocate,
+// or 0 if the pointer is outside [heapBase, heapBase+heapSize) or not
+// allocated. Validates selfCheck (header[+0x00] must equal header addr)
+// and the allocated flag (bit 4 of flagsMeta @ +0x0C).
+// ═══════════════════════════════════════════════════════════════════════
+uint32_t sysMemSimpleAllocator_GetSize_impl(sysMemSimpleAllocator* self, void* ptr) {
+    uint32_t addr = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(ptr));
+
+    if (addr < self->heapBase) {
+        return 0;
+    }
+    if (addr >= self->heapBase + self->heapSize) {
+        return 0;
+    }
+
+    uint32_t* header = reinterpret_cast<uint32_t*>(
+        static_cast<uintptr_t>(addr - 16));
+
+    uint32_t flagsMeta = header[3];           // +0x0C
+    if ((flagsMeta & 0x10) == 0) {
+        // Not allocated (nop_8240E6D0 in retail — compiled out)
+        return 0;
+    }
+    if (header[0] != reinterpret_cast<uintptr_t>(header)) {
+        // selfCheck trashed
+        return 0;
+    }
+    return header[1];                          // blockSize @ +0x04
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// sysMemSimpleAllocator::~sysMemSimpleAllocator (vfn_0) @ 0x82186C58
+//
+// Retail destructor — most cleanup compiled out; just falls through to
+// the shared epilogue (decrement init-lock handled by ScalarDtor).
+// ═══════════════════════════════════════════════════════════════════════
+sysMemSimpleAllocator::~sysMemSimpleAllocator() {
+    // No heap teardown in retail: allocator owns a fixed heap region
+    // reclaimed by the OS on shutdown.
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// sysMemSimpleAllocator::ScalarDtor (vfn_1) @ 0x82186DA0  (76 bytes)
+//
+// MSVC scalar deleting destructor thunk. Acquires init-lock, dispatches
+// to the non-virtual Allocate (the scaffold calls 0x82186E40 which is
+// the allocator body — this is the delete-on-behalf-of-derived variant
+// where r5 carries the flags), releases the lock.
+//
+// In the retail scaffold this tail-calls the allocator body to finalize
+// pending frees scheduled during destruction; we preserve that call.
+// ═══════════════════════════════════════════════════════════════════════
+void sysMemSimpleAllocator::ScalarDtor(int flags) {
+    sysMemSimpleAllocator_SpinAcquire(&g_sysMemAllocatorInitLock);
+
+    // Retail dispatches through Allocate's finalize path — emulate as
+    // running the destructor body (no-op in retail) + optional free.
+    this->~sysMemSimpleAllocator();
+    if (flags & 1) {
+        rage_free_00C0(this);
+    }
+
+    __sync_synchronize();  // lwsync
+    g_sysMemAllocatorInitLock = 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// sysMemSimpleAllocator::Free (vfn_2) @ 0x82187178  (68 bytes)
+//
+// Virtual Free thunk. Acquires init-lock, delegates to the non-virtual
+// Free body at 0x821871C0, releases lock.
+// ═══════════════════════════════════════════════════════════════════════
+extern "C" void sysMemSimpleAllocator_Free_body(sysMemSimpleAllocator* self, void* ptr);
+
+void sysMemSimpleAllocator::Free(void* ptr) {
+    sysMemSimpleAllocator_SpinAcquire(&g_sysMemAllocatorInitLock);
+    sysMemSimpleAllocator_Free_body(this, ptr);
+    __sync_synchronize();
+    g_sysMemAllocatorInitLock = 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// sysMemSimpleAllocator_SpinAcquire  @ 0x82187D90  (184 bytes)
+//
+// MSVC guarded-init spinlock with exponential backoff. CAS 0->1, else
+// busy-wait `delay` iterations (starting at 8, doubling up to 16384),
+// then retry. The original uses lwarx/stwcx + MSR guards; we use host
+// atomics which provide equivalent ordering.
+// ═══════════════════════════════════════════════════════════════════════
+extern "C" void sysMemSimpleAllocator_SpinAcquire(uint32_t* lock) {
+    uint32_t delay = 8;
+    for (;;) {
+        if (__sync_bool_compare_and_swap(lock, 0u, 1u)) {
+            __sync_synchronize();  // lwsync after acquire
+            return;
+        }
+        // Busy-wait `delay` iterations
+        for (volatile uint32_t i = 0; i < delay; ++i) {
+            // empty
+        }
+        if (delay < 16384) {
+            delay <<= 1;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// rage_stricmp_6358  @ 0x821862A0  (180 bytes)
+// (Symbol prefix "sysMemSimpleAllocator_62A0_p46" is the pass5 alias.)
+//
+// Debug memset variant. Dispatches on global flag:
+//   - g_sysMemDebugFillFlag != 0 : self-fill with buf[0] (poison seed)
+//   - otherwise                  : fill with 0xCDCDCDCD ("heap garbage"
+//                                  pattern), 4 bytes at a time, per-byte
+//                                  tail.
+// Parameters: (buf, count)
+// ═══════════════════════════════════════════════════════════════════════
+extern "C" void rage_stricmp_6358(uint8_t* buf, uint32_t count) {
+    if (g_sysMemDebugFillFlag != 0) {
+        if (count == 0) return;
+        uint8_t seed = buf[0];
+        for (uint32_t i = 0; i < count; ++i) {
+            buf[i] = seed;
+        }
+        return;
+    }
+
+    constexpr uint32_t kDebugPattern = 0xCDCDCDCDu;
+    uint32_t remaining = count;
+    uint8_t* cur = buf;
+
+    if (remaining > 3) {
+        uint32_t words = ((remaining - 4) >> 2) + 1;
+        for (uint32_t i = 0; i < words; ++i) {
+            *reinterpret_cast<uint32_t*>(cur) = kDebugPattern;
+            cur += 4;
+            remaining -= 4;
+        }
+    }
+
+    uint32_t pattern = kDebugPattern;
+    while (remaining != 0) {
+        *cur++ = static_cast<uint8_t>(pattern);
+        pattern = (pattern >> 8) | (pattern << 24);
+        --remaining;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// sysMemSimpleAllocator::vfn_19  @ 0x82187588  (84 bytes)
+//
+// Acquires init-lock, invokes the atSingleton tail handler at 0x821875E0
+// (a snapshot/commit hook for this allocator), releases lock.
+// ═══════════════════════════════════════════════════════════════════════
+extern "C" void atSingleton_75E0_fw(sysMemSimpleAllocator* self);
+
+void sysMemSimpleAllocator_vfn_19_impl(sysMemSimpleAllocator* self) {
+    sysMemSimpleAllocator_SpinAcquire(&g_sysMemAllocatorInitLock);
+    atSingleton_75E0_fw(self);
+    __sync_synchronize();
+    g_sysMemAllocatorInitLock = 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// sysMemAllocator::~sysMemAllocator (vfn_0) @ 0x8212B098  (72 bytes)
+//
+// Base-class scalar-deleting destructor for rage::sysMemAllocator.
+// Re-plants the base vtable (from lbl @ 0x820332C4 region) and frees
+// the object if flags & 1.
+// ═══════════════════════════════════════════════════════════════════════
+extern "C" void** g_sysMemAllocator_vtable;  // @ 0x820332C4
+
+void sysMemAllocator_ScalarDtor_impl(sysMemAllocator* self, int flags) {
+    self->vtable = g_sysMemAllocator_vtable;
+    if (flags & 1) {
+        rage_free_00C0(self);
+    }
+}
+
+// ── TODO notes ─────────────────────────────────────────────────────────
+// TODO(sysMem): replace the hand-rolled SpinAcquire with the real
+//   rage::sysIpcCriticalSection primitive once rage IPC is lifted.
+// TODO(sysMem): g_sysMemAllocatorInitLock (0x825EBCF8) is a process-wide
+//   guarded-init lock shared by many rage singletons — move to a
+//   dedicated guarded_init header when more users are lifted.
+// TODO(sysMem): verify exact vtable slot for GetSize (alias 12 vs 20)
+//   once the full sysMemSimpleAllocator vtable is reconstructed.
+// TODO(sysMem): rage_stricmp_6358 name is a recomp-pass artifact; real
+//   symbol is a debug memset (rage_debugHeapFill). Rename in a later
+//   global rename pass.
+
 } // namespace rage

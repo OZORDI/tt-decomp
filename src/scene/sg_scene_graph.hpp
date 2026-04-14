@@ -32,6 +32,9 @@ struct sgTraversalContext {
     sgNode*  m_pCurrentNode;  // +0x04
 };
 
+// Forward decl — full definition appears below.
+struct sgTypedIterator;
+
 // ---------------------------------------------------------------------------
 // Traversal visitor base — one concrete subclass per traversal type
 //
@@ -59,6 +62,11 @@ struct sgTraverseBase {
 
 struct sgTraverseInitialize  : sgTraverseBase {  // vtable @ 0x82071D4C
     void Apply(sgNode* pNode) override;           // @ 0x823D9F10
+
+    // @ 0x823D9E90 — drive a typed iterator, calling Apply() on each node
+    // whose current position passes the cmSimple type filter. Loops until
+    // the iterator terminates (m_pCurrent == nullptr).
+    void Traverse(sgTypedIterator* pIter);
 };
 struct sgTraverseTerminate   : sgTraverseBase {  // vtable @ 0x82071DBC
     void Apply(sgNode* pNode) override;           // @ 0x823D9FB8
@@ -80,6 +88,38 @@ struct sgTraverseDraw        : sgTraverseBase {  // vtable @ 0x82071D9C
 };
 struct sgTraverseDrawDebug   : sgTraverseBase {  // vtable @ 0x82071DAC
     void Apply(sgNode* pNode) override;           // @ 0x823D9FA0
+};
+
+// ---------------------------------------------------------------------------
+// sgTypedIterator  —  stateful pre-order walker that stops on type-matched nodes
+//
+// Layout (confirmed by prime/advance functions at 0x823DA070 / 0x823D9FD0):
+//   +0x00  sgNode*  m_pRoot      // immutable walk boundary
+//   +0x04  sgNode*  m_pCurrent   // current visit position (==Root initially)
+//
+// Semantics:
+//   Prime  (@0x823DA070): if current is non-null and IS-NOT the target type
+//                         (slot 20 returned 0), logs a type mismatch via
+//                         slot 19 → fmt-stub @0x8240E6D0 and Advance()s.
+//                         The filter vtable loaded from +0x820562D0 is
+//                         rage::cmSimple, so this iterator visits cmSimple
+//                         subtree nodes specifically.
+//   Advance(@0x823D9FD0): pre-order successor —
+//                           first try m_pCurrent->m_pFirstChild (+0x0C)
+//                           else if m_pCurrent == m_pRoot, terminate
+//                           else try m_pCurrent->m_pNextSibling (+0x08)
+//                           else climb via m_pParent (+0x04) and try its
+//                           sibling (or nullptr at root).
+//                         After moving, re-Prime to skip type-mismatches.
+// ---------------------------------------------------------------------------
+struct sgTypedIterator {
+    sgNode*  m_pRoot;      // +0x00
+    sgNode*  m_pCurrent;   // +0x04
+
+    // @ 0x823DA070 — validate / advance until current matches the filter type
+    void Prime();
+    // @ 0x823D9FD0 — advance to the next pre-order node, then Prime()
+    void Advance();
 };
 
 // ---------------------------------------------------------------------------
