@@ -281,8 +281,14 @@ struct gdCutSceneNames {
 };
 
 // ── pongCSAction  [vtable @ 0x82065674] ──────────────────────────
+// Base class. Acts as a container that forwards virtual calls
+// (Update/Play/Stop/Pause/Resume/Seek) to each child action in m_pChildren.
 struct pongCSAction {
-    void**      vtable;           // +0x00
+    void**          vtable;        // +0x00
+    void*           m_pData;       // +0x04 (action data — enabled flag at +16)
+    pongCSAction**  m_pChildren;   // +0x08 (array of child action pointers)
+    uint16_t        m_nChildCount; // +0x0C
+    uint16_t        _pad0E;        // +0x0E
 
     // ── virtual methods ──
     virtual ~pongCSAction();                  // [0] @ 0x8234aca0
@@ -291,9 +297,9 @@ struct pongCSAction {
     virtual void Update();  // [4] @ 0x82349200
     virtual void Play();  // [5] @ 0x82349258
     virtual void Stop();  // [6] @ 0x82349318
-    virtual void Pause();  // [7] @ 0x823492b0
-    virtual void Resume();  // [8] @ 0x82349370
-    virtual void Seek();  // [9] @ 0x823493f8
+    virtual void Pause(float dt);  // [7] @ 0x823492b0
+    virtual bool Resume();  // [8] @ 0x82349370
+    virtual void Seek(float t);  // [9] @ 0x823493f8
     virtual void OnEnter();  // [11] @ 0x82349458
     virtual void OnComplete();  // [12] @ 0x82349510
 };
@@ -342,16 +348,17 @@ struct pongCSActionCharVisible {
 };
 
 // ── pongCSActionDoInOrder  [vtable @ 0x82065728] ──────────────────────────
-struct pongCSActionDoInOrder {
-    void**      vtable;           // +0x00
+// Plays children sequentially, advancing m_nCurrentChild when each finishes.
+struct pongCSActionDoInOrder : pongCSAction {
+    int         m_nCurrentChild;  // +0x10 (index of child currently playing)
 
-    // ── virtual methods ──
-    virtual void Play();  // [5] @ 0x82349680
-    virtual void Stop();  // [6] @ 0x823496b8
-    virtual void Pause();  // [7] @ 0x823496e8
-    virtual void Resume();  // [8] @ 0x82349798
-    virtual void Seek();  // [9] @ 0x823497c8
-    virtual void OnComplete();  // [12] @ 0x823497f8
+    // ── virtual methods (overrides) ──
+    virtual void Play();
+    virtual void Stop();
+    virtual void Pause(float dt);
+    virtual bool Resume();
+    virtual void Seek(float t);
+    virtual void OnComplete();
 };
 
 // ── pongCSActionDoTogether  [vtable @ 0x820656EC] ──────────────────────────

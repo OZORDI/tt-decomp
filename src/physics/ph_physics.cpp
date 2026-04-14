@@ -9645,3 +9645,19 @@ float phBoundCapsule_ComputeNormalizedAngle(float* data) {
 }
 
 // (2C08 already lifted above as SumFloatArray)
+
+/**
+ * phBoundCapsule_8C08_2h @ 0x82578C08 | size: 0xFC
+ *
+ * Null stub — compiler-generated epilogue fragment (marked [sp_wrong] in
+ * IDA: unusual stack frame with only a single callee-save GPR restore).
+ * No meaningful body; the function body reduces to an immediate return.
+ *
+ * In the original binary this is an alias/tail of a shared epilogue used
+ * by sibling phBoundCapsule methods; it is exported as its own symbol
+ * because the linker kept the entry label.
+ */
+void phBoundCapsule_8C08_2h()
+{
+    /* no-op: epilogue-shared null stub */
+}

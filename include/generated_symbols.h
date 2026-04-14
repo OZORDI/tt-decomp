@@ -65,12 +65,12 @@ PPC_EXTERN_IMPORT(AcceptSpectatorMessage_vfn_3); // 0x823BB9D8
 PPC_EXTERN_IMPORT(AcceptSpectatorMessage_BBC8_p46); // 0x823BBBC8
 
 // --- AckHandling ---
-PPC_EXTERN_IMPORT(AckHandling_AB18_w); // 0x8239AB18
+PPC_EXTERN_IMPORT(AckHandling_Initialize); // 0x8239AB18
 PPC_EXTERN_IMPORT(AckHandling_vfn_0); // 0x823D3480
-PPC_EXTERN_IMPORT(AckHandling_34D0_fw); // 0x823D34D0
-PPC_EXTERN_IMPORT(AckHandling_3530_w); // 0x823D3530
+PPC_EXTERN_IMPORT(AckHandling_ReleaseAllPackets); // 0x823D34D0
+PPC_EXTERN_IMPORT(AckHandling_Update); // 0x823D3530
 PPC_EXTERN_IMPORT(AckHandling_ProcessSequence); // 0x823D3740
-PPC_EXTERN_IMPORT(AckHandling_3828); // 0x823D3828
+PPC_EXTERN_IMPORT(AckHandling_ReleasePacket); // 0x823D3828
 
 // --- BallHitMessage ---
 PPC_EXTERN_IMPORT(BallHitMessage_vfn_5); // 0x823B63E0
@@ -1160,21 +1160,21 @@ PPC_EXTERN_IMPORT(NetBallHitManagerFreeList_06E0_2h); // 0x823D06E0
 
 // --- NetDataQuery ---
 PPC_EXTERN_IMPORT(NetDataQuery_1D80); // 0x82391D80
-PPC_EXTERN_IMPORT(NetDataQuery_A8D8); // 0x8239A8D8
-PPC_EXTERN_IMPORT(NetDataQuery_59F8_wrh); // 0x823B59F8
+PPC_EXTERN_IMPORT(NetDataQuery_InitStateSync); // 0x8239A8D8
+PPC_EXTERN_IMPORT(NetDataQuery_InitNetworkStats); // 0x823B59F8
 PPC_EXTERN_IMPORT(NetDataQuery_A2A0); // 0x823CA2A0
-PPC_EXTERN_IMPORT(NetDataQuery_ctor_A458); // 0x823CA458
+PPC_EXTERN_IMPORT(NetDataQuery_InitNested); // 0x823CA458
 PPC_EXTERN_IMPORT(NetDataQuery_D080_2h); // 0x823CD080
 PPC_EXTERN_IMPORT(NetDataQuery_0EA8_p46); // 0x823D0EA8
-PPC_EXTERN_IMPORT(NetDataQuery_ctor_1530); // 0x823D1530
+PPC_EXTERN_IMPORT(NetDataQuery_ConstructSmall); // 0x823D1530
 PPC_EXTERN_IMPORT(NetDataQuery_vfn_0); // 0x823D15C8
 PPC_EXTERN_IMPORT(NetDataQuery_vfn_8); // 0x823D1628
 PPC_EXTERN_IMPORT(NetDataQuery_vfn_10); // 0x823D17C8
 PPC_EXTERN_IMPORT(NetDataQuery_vfn_13); // 0x823D1850
 PPC_EXTERN_IMPORT(NetDataQuery_vfn_4); // 0x823D1AD0
-PPC_EXTERN_IMPORT(NetDataQuery_2A30_2h); // 0x823D2A30
+PPC_EXTERN_IMPORT(NetDataQuery_InitFrameBlocks); // 0x823D2A30
 PPC_EXTERN_IMPORT(NetDataQuery_2B28_2h); // 0x823D2B28
-PPC_EXTERN_IMPORT(NetDataQuery_38D0_2h); // 0x823D38D0
+PPC_EXTERN_IMPORT(NetDataQuery_InitAckPool); // 0x823D38D0
 
 // --- NetDll ---
 PPC_EXTERN_IMPORT(NetDll_WSAStartup_5F2C); // 0x82585F2C
