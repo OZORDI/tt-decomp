@@ -40,7 +40,7 @@ const char* g_str_dialog_boxLoaded           = "Dialog box loaded.";            
 // ────────────────────────────────────────────────────────────────────────────
 // Dialog menu tracing
 // ────────────────────────────────────────────────────────────────────────────
-const char* g_str_dialog_fmt_dialogMenuTrace = "       dialog menu: %d";                      // @ 0x8204E53C
+const char* g_str_dialog_fmt_dialogMenuTrace = "     dialog menu: %d";                        // @ 0x8204E53C (5 leading spaces, not 7)
 
 // ────────────────────────────────────────────────────────────────────────────
 // Dialog errors / warnings
