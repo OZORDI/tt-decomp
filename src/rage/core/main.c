@@ -505,9 +505,9 @@ int rage_Main(int argc, const char** argv)
 }
 
 // ── Entry point wrapper ─────────────────────────────────────────────────────
-// entry.c calls rage_main_6970(void*, void*) but the real impl is rage_Main(int, char**)
+// entry.c calls rage_main_stub(void*, void*) but the real impl is rage_Main(int, char**)
 // For now, just call rage_Main with argc=0, argv=NULL since the game doesn't use cmdline
-int rage_main_6970(void* pStartupParms, void* pBase) {
+int rage_main_stub(void* pStartupParms, void* pBase) {
     (void)pStartupParms;
     (void)pBase;
     return rage_Main(0, NULL);

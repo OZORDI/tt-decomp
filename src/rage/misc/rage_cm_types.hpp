@@ -339,7 +339,7 @@ struct cmApproachOperator : cmApproachNode {
 float*    cmNode_GetVector(float* dst, const cmNodePort* port); // cmNode_GetVector
 float     cmNode_GetFloat(const cmNodePort* port);              // cmOperator_EvalFloat
 int32_t   cmNode_GetInt(const cmNodePort* port);                // cmNode_GetInt
-int32_t   cmNode_GetDim(const cmNodePort* port);                // cmSwitch_4B60
+int32_t   cmNode_GetDim(const cmNodePort* port);                // cmNode_GetDim_stub
 uint8_t   cmNode_GetBool(const cmNodePort* port);               // cmCond_21B0 (TODO)
 int32_t   cmNode_GetPortDim(const cmNodePort* port);            // inline helper
 

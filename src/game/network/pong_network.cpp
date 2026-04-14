@@ -19,7 +19,7 @@
  *       +0xE2 (226) = secondary player index / handedness flag
  *
  * Serialisation uses snBitStream_ReadBits (write float, size=32) and
- * util_7A08 (write byte, size=8).  Deserialisation uses WriteFloatToNetworkStream
+ * BitStream_ReadU8 (write byte, size=8).  Deserialisation uses WriteFloatToNetworkStream
  * and SinglesNetworkClient_6838_g (read byte, size=8).
  *
  * ── Vtable layout ─────────────────────────────────────────────────────────

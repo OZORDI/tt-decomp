@@ -104,12 +104,12 @@ int _KeTlsAlloc_thunk(void* destructorThunk) {
     return 0;
 }
 
-int ke_KeTlsFree_624C(uint32_t tlsIndex) {
+int KeTlsFree_stub(uint32_t tlsIndex) {
     (void)tlsIndex;
     return 0;
 }
 
-int ke_KeTlsSetValue_622C(uint32_t tlsIndex, void* value) {
+int KeTlsSetValue_stub(uint32_t tlsIndex, void* value) {
     (void)tlsIndex; (void)value;
     return 0;
 }
@@ -162,8 +162,8 @@ void _xe_strcpyn_10(char* dest, const char* src, size_t n) {
 // ── Main Entry Point ────────────────────────────────────────────────────────
 
 int main(int argc, char** argv) {
-    extern int rage_main_6970(int argc, char** argv);
-    return rage_main_6970(argc, argv);
+    extern int rage_main_stub(int argc, char** argv);
+    return rage_main_stub(argc, argv);
 }
 
 // ── Singleton Functions ─────────────────────────────────────────────────────
@@ -237,7 +237,7 @@ void* fiStream_Open(const char* path, int mode) {
     return nullptr;
 }
 
-void parStreamOutXml_3E40(void* stream, const char* format, ...) {
+void parStreamOutXml_vprintf(void* stream, const char* format, ...) {
     (void)stream; (void)format;
 }
 
@@ -348,9 +348,9 @@ void sysMemAllocator_Free(void* ptr) {
 
 void hsmContext_Init(void* obj) { (void)obj; }
 
-int rage_main_6970(int argc, char** argv) {
+int rage_main_stub(int argc, char** argv) {
     (void)argc; (void)argv;
-    std::printf("rage_main_6970 - stub\n");
+    std::printf("rage_main_stub - stub\n");
     return 0;
 }
 
@@ -374,13 +374,13 @@ void* sysMemAllocator_Alloc(size_t size) {
 
 // ── Utility Functions ───────────────────────────────────────────────────────
 
-void thunk_game_C330(void) {}
+void game_CrtFatalExit_thunk(void) {}
 
-void util_7AE8(void* pXtf, void* stackBase, uint32_t stackSize) {
+void XeTlsBlock_InitStack(void* pXtf, void* stackBase, uint32_t stackSize) {
     (void)pXtf; (void)stackBase; (void)stackSize;
 }
 
-void util_CE30(void) {}
+void rage_parStructure_Init_stub(void) {}
 
 // ── XAM Functions ───────────────────────────────────────────────────────────
 
@@ -397,13 +397,13 @@ void* rage_Alloc_c(uint32_t size) {
 
 void xe_main_thread_init(void) {}
 
-void* xe_phys_alloc_6AC8(uint32_t sizeBytes, int32_t protectFlags,
+void* XePhysicalAlloc_stub(uint32_t sizeBytes, int32_t protectFlags,
                           uint32_t alignment, uint32_t allocFlags) {
     (void)sizeBytes; (void)protectFlags; (void)alignment; (void)allocFlags;
     return nullptr;
 }
 
-void xe_thread_ctx_init_6D40(void* ctx) { (void)ctx; }
+void XeTlsBlock_BindMainThread(void* ctx) { (void)ctx; }
 
 // ── XML Functions ───────────────────────────────────────────────────────────
 
@@ -473,7 +473,7 @@ extern "C" void ResetViewBound(void* a, int b) { (void)a; (void)b; }
 extern "C" void pongDrawBucket_AddEntry(void* a, void* b, void* c) {
     (void)a; (void)b; (void)c;
 }
-extern "C" void phInst_8F10(void* a, void* b, void* c, void* d) {
+extern "C" void phInst_SetMatrix_Impl(void* a, void* b, void* c, void* d) {
     (void)a; (void)b; (void)c; (void)d;
 }
 extern "C" void* phInst_BFB8_2hr(void* a) { (void)a; return nullptr; }
@@ -600,7 +600,7 @@ extern "C" void cmPowerApproach_Step(float* out, float a, float b, float c) {
     if (out) *out = 0.0f; (void)a; (void)b; (void)c;
 }
 extern "C" void cmReporter_Init(void* a) { (void)a; }
-extern "C" int cmSwitch_4B60(void* a) { (void)a; return 0; }
+extern "C" int cmNode_GetDim_stub(void* a) { (void)a; return 0; }
 extern "C" float cmVec4_Atan2(float* a, float* b) { (void)a; (void)b; return 0.0f; }
 
 // ── File I/O / Tokenizer ────────────────────────────────────────────────────
@@ -614,7 +614,7 @@ extern "C" float parStreamInXml_ReadFloat(void* a) { (void)a; return 0.0f; }
 
 // ── Game Logic ──────────────────────────────────────────────────────────────
 
-extern "C" void game_7868(void* a, int b) { (void)a; (void)b; }
+extern "C" void game_FrameSyncSignal(void* a, int b) { (void)a; (void)b; }
 extern "C" void gmLogic_StepFrame_impl(void* a) { (void)a; }
 extern "C" void grmShaderPreset_AllocArray(uint32_t a) { (void)a; }
 
@@ -680,11 +680,11 @@ extern "C" void rage_ReleaseSingleton(void* a) { (void)a; }
 extern "C" void* parStreamInXml_FindChildByName(const void* a, const char* b) { (void)a; (void)b; return nullptr; }
 extern "C" void parMember_Destructor(void) {}
 extern "C" const void* rage_cmIntegrate_vtable = nullptr;
-extern "C" void rage_obj_bind_3828(void* a, void* b, uint32_t c) { (void)a; (void)b; (void)c; }
-extern "C" void* rage_obj_factory_create_3040(void* a, const char* b, int c, void* d, int e) {
+extern "C" void fiStreamBuf_Read_stub(void* a, void* b, uint32_t c) { (void)a; (void)b; (void)c; }
+extern "C" void* rage_datTypeFactory_Create_stub(void* a, const char* b, int c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e; return nullptr;
 }
-extern "C" void rage_obj_finalize_3B38(void* a) { (void)a; }
+extern "C" void fiStreamBuf_Close_stub(void* a) { (void)a; }
 
 // ── SWF / Scaleform ─────────────────────────────────────────────────────────
 
@@ -902,7 +902,7 @@ void atArray_Clear(void* obj) { (void)obj; }
 void atSingleton_0128_wrh(void* a, uint32_t b) { (void)a; (void)b; }
 float math_SafeReciprocal(float a, double b) { (void)a; (void)b; return 0.0f; }
 void atSingleton_2038(void* a, uint32_t b) { (void)a; (void)b; }
-void atSingleton_22B0(void* a, uint32_t b) { (void)a; (void)b; }
+void datArray_Grow(void* a, uint32_t b) { (void)a; (void)b; }
 void atSingleton_23C0(void* a) { (void)a; }
 void atSingleton_29E8_p25(void* a) { (void)a; }
 void atSingleton_5CD0_fw(void* a, uint32_t b) { (void)a; (void)b; }
@@ -1204,7 +1204,7 @@ void* phObject::vfn_31() { return nullptr; }
 // ── Physics utility functions ───────────────────────────────────────────────
 
 void ph_59C8(void* a, const char* b, int c) { (void)a; (void)b; (void)c; }
-void* ph_6FC8(void* a, const char* b) { (void)a; (void)b; return nullptr; }
+void* phArchetype_Find(void* a, const char* b) { (void)a; (void)b; return nullptr; }
 void ph_9E50(void* a, void* b) { (void)a; (void)b; }
 void* ph_9EC0_1(void* a) { (void)a; return nullptr; }
 void ph_CEE0(void* a, int b) { (void)a; (void)b; }

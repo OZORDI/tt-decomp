@@ -13,13 +13,13 @@
 
 extern "C" {
 void atFactory_GetFactory(void* singleton);  // @ 0x822E2E60
-void* rage_obj_factory_create_3040(void* singleton,
+void* rage_datTypeFactory_Create_stub(void* singleton,
                                    const void* typeInfo,
                                    const void* typeOps,
                                    std::int32_t flags,
                                    std::int32_t isRootType);  // @ 0x822E3040
-void rage_obj_bind_3828(void* factoryContext, void* storage, std::uint32_t size);  // @ 0x822E3828
-void rage_obj_finalize_3B38(void* factoryContext);  // @ 0x822E3B38
+void fiStreamBuf_Read_stub(void* factoryContext, void* storage, std::uint32_t size);  // @ 0x822E3828
+void fiStreamBuf_Close_stub(void* factoryContext);  // @ 0x822E3B38
 void rage_DebugLog(const void* messageTag,
                   const void* typeInfo,
                   const void* typeOps,
@@ -214,7 +214,7 @@ void mcMemcardControl::Init()
     void* typeFactorySingleton = reinterpret_cast<void*>(kTypeFactorySingletonAddress);
     atFactory_GetFactory(typeFactorySingleton);
 
-    void* factoryContext = rage_obj_factory_create_3040(typeFactorySingleton,
+    void* factoryContext = rage_datTypeFactory_Create_stub(typeFactorySingleton,
                                                         m_typeRegistration.m_pTypeInfo,
                                                         m_typeRegistration.m_pTypeOps,
                                                         0,
@@ -226,10 +226,10 @@ void mcMemcardControl::Init()
         xe_main_thread_init();
         m_typeRegistration.m_pTypeStorage = rage_malloc(m_typeRegistration.m_typeStorageSize);
 
-        rage_obj_bind_3828(factoryContext,
+        fiStreamBuf_Read_stub(factoryContext,
                            m_typeRegistration.m_pTypeStorage,
                            m_typeRegistration.m_typeStorageSize);
-        rage_obj_finalize_3B38(factoryContext);
+        fiStreamBuf_Close_stub(factoryContext);
     }
 
     rage_DebugLog(reinterpret_cast<const void*>(kMemcardTypeDebugLabel),

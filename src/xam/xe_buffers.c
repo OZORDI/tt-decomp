@@ -90,10 +90,10 @@ static inline void* xe_alloc_aligned(uint32_t size, uint32_t alignment) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_8E30()  @ 0x820C8E30 | size: 0x68
+// AllocateU32Buffer()  @ 0x820C8E30 | size: 0x68
 // Allocates buffer for uint32_t array (4 bytes per element)
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_8E30(XeBuffer* buffer, uint16_t capacity) {
+void AllocateU32Buffer(XeBuffer* buffer, uint16_t capacity) {
     void* data = NULL;
     
     if (capacity != 0) {
@@ -109,10 +109,10 @@ void xe_8E30(XeBuffer* buffer, uint16_t capacity) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_0DA0()  @ 0x820F0DA0 | size: 0x60
+// EnsureBufferInit8()  @ 0x820F0DA0 | size: 0x60
 // Initializes buffer with capacity of 1 element (8 bytes)
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_0DA0(XeBuffer* buffer) {
+void EnsureBufferInit8(XeBuffer* buffer) {
     if (buffer->capacity == 0) {
         /* First-time initialization: allocate 8 bytes for 1 element */
         buffer->capacity = 1;
@@ -125,10 +125,10 @@ void xe_0DA0(XeBuffer* buffer) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_FF00()  @ 0x820FFF00 | size: 0x78
+// AllocateU16BufferOnce()  @ 0x820FFF00 | size: 0x78
 // Allocates buffer for uint16_t array (2 bytes per element)
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_FF00(XeBuffer* buffer, uint16_t newCapacity) {
+void AllocateU16BufferOnce(XeBuffer* buffer, uint16_t newCapacity) {
     if (buffer->capacity == 0) {
         /* First allocation */
         buffer->capacity = newCapacity;
@@ -149,10 +149,10 @@ void xe_FF00(XeBuffer* buffer, uint16_t newCapacity) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_CBD8()  @ 0x8213CBD8 | size: 0x78
+// Allocate64ByteElementBuffer()  @ 0x8213CBD8 | size: 0x78
 // Allocates buffer for 64-byte elements (capacity * 64)
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_CBD8(XeBuffer* buffer, uint16_t newCapacity) {
+void Allocate64ByteElementBuffer(XeBuffer* buffer, uint16_t newCapacity) {
     if (buffer->capacity == 0) {
         /* First allocation */
         buffer->capacity = newCapacity;
@@ -173,12 +173,12 @@ void xe_CBD8(XeBuffer* buffer, uint16_t newCapacity) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_C320()  @ 0x8214C320 | size: 0x68
+// InitStructWith10WordsZero()  @ 0x8214C320 | size: 0x68
 // Initializes a complex structure with multiple nested buffers
 // ─────────────────────────────────────────────────────────────────────────────
 extern void xe_C530(void* structure, uint32_t param);  /* @ 0x8214C530 */
 
-void xe_C320(void* structure) {
+void InitStructWith10WordsZero(void* structure) {
     /* Zero-initialize the structure (40 bytes) */
     uint32_t* words = (uint32_t*)structure;
     for (int i = 0; i < 10; i++) {
@@ -190,10 +190,10 @@ void xe_C320(void* structure) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_4408()  @ 0x82134408 | size: 0x84
+// AllocateU32AlignedWithCounter()  @ 0x82134408 | size: 0x84
 // Allocates aligned memory and initializes a structure with pointer and counter
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_4408(void* structure, uint32_t elementCount) {
+void AllocateU32AlignedWithCounter(void* structure, uint32_t elementCount) {
     uint32_t allocSize;
 
     /* Calculate allocation size: elementCount * 4 bytes */
@@ -212,10 +212,10 @@ void xe_4408(void* structure, uint32_t elementCount) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_62D0()  @ 0x821362D0 | size: 0x5C
+// AllocateFixed6Capacity24Bytes()  @ 0x821362D0 | size: 0x5C
 // Allocates 24 bytes and stores pointer with capacity of 6
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_62D0(XeBuffer* buffer) {
+void AllocateFixed6Capacity24Bytes(XeBuffer* buffer) {
     void* data = xe_alloc_aligned(24, 16);
     
     buffer->data = data;
@@ -223,10 +223,10 @@ void xe_62D0(XeBuffer* buffer) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_7E78()  @ 0x82247E78 | size: 0xB0
+// CopyVec16Buffer()  @ 0x82247E78 | size: 0xB0
 // Copies vector data from source to destination buffer
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_7E78(XeBuffer* dest, const XeBuffer* src) {
+void CopyVec16Buffer(XeBuffer* dest, const XeBuffer* src) {
     uint16_t capacity = src->capacity;
     
     /* Copy capacity to both count and capacity fields */
@@ -260,7 +260,7 @@ void xe_7E78(XeBuffer* dest, const XeBuffer* src) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_0048()  @ 0x82160048 | size: 0x60
+// InitAudioControlManager()  @ 0x82160048 | size: 0x60
 // Initializes audio control manager structure
 // ─────────────────────────────────────────────────────────────────────────────
 extern void xe_A750(uint32_t size, uint32_t alignment);  /* @ 0x821AA750 */
@@ -271,7 +271,7 @@ extern void xe_A750(uint32_t size, uint32_t alignment);  /* @ 0x821AA750 */
 extern uint32_t audVoice_vtable_word;  /* @ 0x82163570 (audVoiceSfx_PlayByEntry+0xD8) */
 extern uint32_t g_swfCMD_globalState;  /* @ 0x824063F4 (swfCMD_6290_p46+0x164) */
 
-void xe_0048(void* structure, uint8_t enableFlag) {
+void InitAudioControlManager(void* structure, uint8_t enableFlag) {
     uint32_t* words = (uint32_t*)structure;
 
     /* Store vtable pointer (raw word sitting mid-audVoiceSfx_PlayByEntry) */
@@ -291,7 +291,7 @@ void xe_0048(void* structure, uint8_t enableFlag) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_D5F8()  @ 0x821CD5F8 | size: 0x80
+// UpdateParamOffsetState()  @ 0x821CD5F8 | size: 0x80
 // Updates game state based on parameter offset calculations
 // ─────────────────────────────────────────────────────────────────────────────
 extern void pg_D678_gen(void* structure, int32_t value1, void* ptr, int32_t value2);
@@ -300,7 +300,7 @@ extern void pg_D678_gen(void* structure, int32_t value1, void* ptr, int32_t valu
  * atSingleton instance. TODO: rename to the resolved singleton accessor. */
 extern uint32_t* g_atSingleton_2940_ptr;  /* @ 0x82412968 */
 
-void xe_D5F8(void* structure, int32_t param) {
+void UpdateParamOffsetState(void* structure, int32_t param) {
     /* Calculate offset: (param + 0x20000 - 23877) * 4 */
     int32_t offset1 = ((param + 0x20000) - 23877) * 4;
     int32_t* structWords = (int32_t*)((uint8_t*)structure + offset1);
@@ -326,12 +326,12 @@ void xe_D5F8(void* structure, int32_t param) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_B958()  @ 0x820EB958 | size: 0x8C
+// AllocatePcrEmoteData()  @ 0x820EB958 | size: 0x8C
 // Allocates and initializes a 24-byte pcrEmoteData structure
 // ─────────────────────────────────────────────────────────────────────────────
 extern uint32_t* g_float_one_ptr;  /* @ 0x8202D110 */
 
-void* xe_B958(void) {
+void* AllocatePcrEmoteData(void) {
     void* obj = xe_alloc_aligned(24, 16);
     
     if (obj != NULL) {
@@ -358,10 +358,10 @@ void* xe_B958(void) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_D100()  @ 0x820FD100 | size: 0x9C
+// CopyU32Buffer()  @ 0x820FD100 | size: 0x9C
 // Copies buffer data from source to destination (4-byte elements)
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_D100(XeBuffer* dest, const XeBuffer* src) {
+void CopyU32Buffer(XeBuffer* dest, const XeBuffer* src) {
     uint16_t capacity = src->count;
     
     /* Copy capacity to both fields */
@@ -388,10 +388,10 @@ void xe_D100(XeBuffer* dest, const XeBuffer* src) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_1E48()  @ 0x82101E48 | size: 0xA0
+// AllocateVtableTrackedStruct32()  @ 0x82101E48 | size: 0xA0
 // Allocates and initializes a 32-byte game logic structure
 // ─────────────────────────────────────────────────────────────────────────────
-void* xe_1E48(void) {
+void* AllocateVtableTrackedStruct32(void) {
     void* obj = xe_alloc_aligned(32, 16);
     
     if (obj != NULL) {
@@ -420,10 +420,10 @@ void* xe_1E48(void) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_3508()  @ 0x820F3508 | size: 0xBC
+// AllocateU32BufferZeroed()  @ 0x820F3508 | size: 0xBC
 // Allocates buffer with capacity check and zero-initialization
 // ─────────────────────────────────────────────────────────────────────────────
-void xe_3508(XeBuffer* buffer, uint16_t capacity) {
+void AllocateU32BufferZeroed(XeBuffer* buffer, uint16_t capacity) {
     void* data = NULL;
     
     if (capacity != 0) {
@@ -463,12 +463,12 @@ void xe_3508(XeBuffer* buffer, uint16_t capacity) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// xe_73E0()  @ 0x820E73E0 | size: 0xD8
+// Allocate16ByteElementBufferOnce()  @ 0x820E73E0 | size: 0xD8
 // Allocates buffer for 16-byte elements with float initialization
 // ─────────────────────────────────────────────────────────────────────────────
 extern float g_float_zero;  /* @ 0x8202D108 */
 
-void xe_73E0(XeBuffer* buffer, uint16_t newCapacity) {
+void Allocate16ByteElementBufferOnce(XeBuffer* buffer, uint16_t newCapacity) {
     if (buffer->capacity == 0) {
         /* First allocation */
         buffer->capacity = newCapacity;

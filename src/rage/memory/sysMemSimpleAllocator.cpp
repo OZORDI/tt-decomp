@@ -34,12 +34,12 @@
 extern "C" void* fiStream_Open(const char* path, int mode);
 
 // fiStream::Printf — formatted write to open stream
-// parStreamOutXml_3E40 @ 0x822E3E40
-extern "C" void parStreamOutXml_3E40(void* stream, const char* format, ...);
+// parStreamOutXml_vprintf @ 0x822E3E40
+extern "C" void parStreamOutXml_vprintf(void* stream, const char* format, ...);
 
 // fiStream::Close — closes an open stream
-// rage_obj_finalize_3B38 @ 0x822E3B38
-extern "C" void rage_obj_finalize_3B38(void* stream);
+// fiStreamBuf_Close_stub @ 0x822E3B38
+extern "C" void fiStreamBuf_Close_stub(void* stream);
 
 // rage_debugLog — debug printf, compiled out (just blr)
 extern "C" void rage_debugLog(const char* format, ...);
@@ -242,7 +242,7 @@ void sysMemSimpleAllocator::DumpLeaks(const char* name, const char* logPath) {
 
                 // Write to log file if open
                 if (logFile != nullptr) {
-                    parStreamOutXml_3E40(logFile, "%d\n",
+                    parStreamOutXml_vprintf(logFile, "%d\n",
                                     (flagsMeta >> 6) & 0x3FFFFFF);
                 }
 
@@ -262,7 +262,7 @@ void sysMemSimpleAllocator::DumpLeaks(const char* name, const char* logPath) {
 
     // Close log file if opened
     if (logFile != nullptr) {
-        rage_obj_finalize_3B38(logFile);
+        fiStreamBuf_Close_stub(logFile);
     }
 }
 
@@ -289,7 +289,7 @@ void sysMemSimpleAllocator::BeginLogging(const char* path, bool countRef) {
 
     // Write CSV header if file opened successfully
     if (stream != nullptr) {
-        parStreamOutXml_3E40(stream, "op,address,size,total\n");
+        parStreamOutXml_vprintf(stream, "op,address,size,total\n");
     }
 
     // Store the countRef flag
@@ -306,7 +306,7 @@ void sysMemSimpleAllocator::EndLogging() {
     // Close log stream if open
     void* stream = reinterpret_cast<void*>(static_cast<uintptr_t>(logStream));
     if (stream != nullptr) {
-        rage_obj_finalize_3B38(stream);
+        fiStreamBuf_Close_stub(stream);
         logStream = 0;
     }
 

@@ -1956,7 +1956,7 @@ extern void msgMsgSink_EC28_g(void* self, uint32_t param1, uint32_t param2, uint
 extern void msgMsgSink_7970_w(void* self);
 extern void msgMsgSink_7DD8_w(void* self);
 extern void msgMsgSink_8638_w(void* self);
-extern void* rage_01B8(uint32_t size, uint32_t allocatorId);
+extern void* rage_AllocInternal(uint32_t size, uint32_t allocatorId);
 extern void _locale_register(void* obj, uint32_t allocatorId);
 
 // msgMsgSink::NotifySessionEvent() [vtable slot 14 @ 0x82455540 | 12B]
@@ -2091,7 +2091,7 @@ uint32_t msgMsgSink::SetMessageBuffer(void* param) {
 
     // Allocate buffer with allocator ID 0x20840001
     uint32_t result = 0;
-    void* buffer = rage_01B8(allocSize, 0x20840001);
+    void* buffer = rage_AllocInternal(allocSize, 0x20840001);
 
     if (buffer == nullptr) {
         result = (uint32_t)0x8007000E;

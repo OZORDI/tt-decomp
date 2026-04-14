@@ -182,7 +182,7 @@ int32_t cmNode_GetInt(const cmNodePort* port) {
 }
 
 /**
- * cmNode_GetDim @ 0x82184B60  (cmSwitch_4B60)
+ * cmNode_GetDim @ 0x82184B60  (cmNode_GetDim_stub)
  *
  * Reads an integer dimension count from a port.
  * - DIRECT: returns *(int32_t*)port.m_pData

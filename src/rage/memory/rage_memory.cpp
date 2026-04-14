@@ -77,7 +77,7 @@ void SinglesNetworkClient_4FB0_g(void* a);
 void jumptable_5C20(void* a);
 void hsmContext_5BC8_fw(void* a);
 void hsmContext_5B40_w(void* a);
-void atSingleton_22B0(void* a, uint32_t b);
+void datArray_Grow(void* a, uint32_t b);
 void atSingleton_2038(void* a, uint32_t b);
 
 namespace rage {
@@ -547,7 +547,7 @@ void* atSingleton_D078_fw(void* array) {
     if (count == capacity) {
         // Expand capacity by 256 elements
         uint32_t newCapacity = capacity + 256;
-        atSingleton_22B0(array, newCapacity);
+        datArray_Grow(array, newCapacity);
     }
     
     // Get base pointer to array data
@@ -754,7 +754,7 @@ extern void atSingleton_dtor_7628(void* element);
 extern void sysMemAllocator_Free(void* ptr);
 
 /* Find singleton ownership @ 0x820F90D0 */
-extern uint8_t atSingleton_Find_90D0(void* ptr);
+extern uint8_t atSingleton_IsTracked(void* ptr);
 
 /* Heap allocator @ 0x820DEC88 */
 extern void* rage_Alloc(uint32_t size);
@@ -1021,7 +1021,7 @@ void atSingleton_DCE8_gen(void* data) {
                     continue;
                 }
 
-                uint8_t isSingleton = atSingleton_Find_90D0(ptr);
+                uint8_t isSingleton = atSingleton_IsTracked(ptr);
                 if (isSingleton != 0) {
                     continue;
                 }
@@ -1077,7 +1077,7 @@ void atSingleton_DB60(void* data) {
         // Check main data pointer
         void* ptr = *(void**)cursor;
         if (ptr != nullptr) {
-            uint8_t isSingleton = atSingleton_Find_90D0(ptr);
+            uint8_t isSingleton = atSingleton_IsTracked(ptr);
             if (isSingleton == 0) {
                 // Deallocate through global singleton manager
                 uint32_t* sdaBase = *(uint32_t**)0x82600000;
@@ -1201,7 +1201,7 @@ void atSingleton_F5C0_h(void* arrayDesc, int32_t newCapacity) {
 
     // Free old buffer if allocated
     if (oldData != nullptr) {
-        uint8_t isSingleton = atSingleton_Find_90D0(oldData);
+        uint8_t isSingleton = atSingleton_IsTracked(oldData);
         if (isSingleton != 0) {
             *(void**)desc = newData;
             return;

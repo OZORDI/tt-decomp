@@ -12,11 +12,11 @@
 #include <string.h>
 
 /**
- * rage_01B8 — RAGE engine allocation function @ 0x820C01B8
+ * rage_AllocInternal — RAGE engine allocation function @ 0x820C01B8
  * Allocates memory with the given size and flags.
  * Flags are Xbox 360 specific allocation attributes (alignment, caching).
  */
-void* rage_01B8(uint32_t size, uint32_t flags) {
+void* rage_AllocInternal(uint32_t size, uint32_t flags) {
     (void)flags;  /* Flags are Xbox 360 specific — ignored on host */
     return malloc(size);
 }

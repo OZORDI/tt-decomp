@@ -352,7 +352,7 @@ void pgStreamer_Init(void)
 // ===========================================================================
 // fiStreamBuf — RAGE file-stream ring buffer
 //
-// The three functions fiStreamBuf_OpenAll, rage_obj_bind_3828, and
+// The three functions fiStreamBuf_OpenAll, fiStreamBuf_Read_stub, and
 // fiStreamBuf_Close (along with the helper rage_obj_close_3BA8) all
 // operate on the same ring-buffer object that mediates async file reads via
 // the fiDevice virtual-device abstraction.
@@ -621,7 +621,7 @@ static int fiStreamBuf_FetchChunk(fiStreamBuf* pBuf)
 
 
 // ---------------------------------------------------------------------------
-// rage_obj_bind_3828 / fiStreamBuf_Read @ 0x822E3828 | size: 0x184
+// fiStreamBuf_Read_stub / fiStreamBuf_Read @ 0x822E3828 | size: 0x184
 // Reads `size` bytes from the ring buffer into pDst.
 //
 // Algorithm:

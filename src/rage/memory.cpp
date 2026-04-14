@@ -9,10 +9,10 @@
 
 // External function declarations
 extern void CCalChannel_60A8_p46(void *obj, uint32_t param);
-extern void grc_DCA8(void *obj);
+extern void grcDevice_Shutdown(void *obj);
 extern void MmFreePhysicalMemory(uint32_t flags, void *address);
 extern void *rage_strDuplicate(const char *str);
-extern void atSingleton_22B0(void *array, uint32_t newCapacity);
+extern void datArray_Grow(void *array, uint32_t newCapacity);
 extern uint8_t rage_FindSingleton(void *ptr);
 extern void *g_allocator_ptr;
 void datArray_DestroyGeneric(uint8_t *arrayData);
@@ -24,12 +24,12 @@ uint32_t g_grcDevicePtr = 0; // @ 0x8260637C (SDA +25468)
 // rage_Alloc()  @ 0x824ADC30 | size: 0xC
 //
 // Allocates memory with specific flags via rage allocator.
-// This is a thin wrapper around rage_01B8 with hardcoded flags.
+// This is a thin wrapper around rage_AllocInternal with hardcoded flags.
 // ─────────────────────────────────────────────────────────────────────────────
 void *rage_Alloc(uint32_t size) {
   // Flags: 0x248C8001 = allocation flags for singleton objects
   // Likely includes: aligned allocation, zero-init, tracked allocation
-  return rage_01B8(size, 0x248C8001);
+  return rage_AllocInternal(size, 0x248C8001);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ void *rage_Alloc(uint32_t size) {
 // Separate symbol likely for different call sites or inlining control.
 // ─────────────────────────────────────────────────────────────────────────────
 void *rage_AllocRegistered(uint32_t size) {
-  return rage_01B8(size, 0x248C8001);
+  return rage_AllocInternal(size, 0x248C8001);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,12 +84,12 @@ void CCalChannel_ForwardCall(atSingleton *obj, uint32_t param) {
 // ─────────────────────────────────────────────────────────────────────────────
 // grcDevice_Callback()  @ 0x824B6EF0 | size: 0xC
 //
-// Calls grc_DCA8 with the global graphics device pointer.
+// Calls grcDevice_Shutdown with the global graphics device pointer.
 // Part of the graphics rendering system initialization/cleanup.
 // ─────────────────────────────────────────────────────────────────────────────
 void grcDevice_Callback() {
   void *grcDevice = (void *)g_grcDevicePtr;
-  grc_DCA8(grcDevice);
+  grcDevice_Shutdown(grcDevice);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -256,12 +256,12 @@ void rage_StoreTimebase() {
 // ─────────────────────────────────────────────────────────────────────────────
 // nt_InitThread()  @ 0x824FAA30 | size: 0x10
 //
-// Calls nt_8948 with parameters (obj, 0, 32768).
+// Calls netSocket_Configure with parameters (obj, 0, 32768).
 // Network or threading utility with specific flags.
 // ─────────────────────────────────────────────────────────────────────────────
 void nt_InitThread(void *obj) {
-  extern void nt_8948(void *obj, uint32_t param1, uint32_t param2);
-  nt_8948(obj, 0, 32768);
+  extern void netSocket_Configure(void *obj, uint32_t param1, uint32_t param2);
+  netSocket_Configure(obj, 0, 32768);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -348,8 +348,8 @@ void pgDictionary_Destroy(atSingleton *obj) {
   // Clean up field at +4 if present
   uint32_t *field4 = (uint32_t *)((uint8_t *)obj + 4);
   if (*field4 != 0) {
-    extern void util_36A8(uint32_t value);
-    util_36A8(*field4);
+    extern void rage_FreeRefCounted(uint32_t value);
+    rage_FreeRefCounted(*field4);
   }
 
   // Clear field at +4
@@ -1082,8 +1082,8 @@ void *crAnimation_LoadByName(atSingleton *loader, const char *animName,
                              uint8_t createIfMissing) {
   // Try to load from physics system
   void *physicsSystem = *(void **)((uint8_t *)loader + 4);
-  extern void *ph_6FC8(void *system);
-  void *animation = ph_6FC8(physicsSystem);
+  extern void *phArchetype_Find(void *system);
+  void *animation = phArchetype_Find(physicsSystem);
 
   if (animation != nullptr) {
     return animation;
@@ -1100,8 +1100,8 @@ void *crAnimation_LoadByName(atSingleton *loader, const char *animName,
   _snprintf(filename, 64, "%s", animName);
 
   // Find last '.' in filename
-  extern char *game_0EA0(const char *str, int ch);
-  char *dotPos = game_0EA0(filename, '.');
+  extern char *strrchr_impl(const char *str, int ch);
+  char *dotPos = strrchr_impl(filename, '.');
   if (dotPos != nullptr) {
     *dotPos = '\0'; // Truncate at dot
   }
@@ -1115,12 +1115,12 @@ void *crAnimation_LoadByName(atSingleton *loader, const char *animName,
   extern void crAnimCache_SetSource(void *cache, void *obj);
   crAnimCache_SetSource(animCache, baseObj);
 
-  extern uint8_t rage_3118(void *cache, const char *name, const char *ext);
-  uint8_t found = rage_3118(animCache, filename, "");
+  extern uint8_t crAnimCache_TryFindEntry(void *cache, const char *name, const char *ext);
+  uint8_t found = crAnimCache_TryFindEntry(animCache, filename, "");
 
   if (found) {
-    extern void *crAnimation_ctor_8F98(const char *name, int flag1, int flag2);
-    animation = crAnimation_ctor_8F98(animName, 1, 0);
+    extern void *crAnimation_Construct(const char *name, int flag1, int flag2);
+    animation = crAnimation_Construct(animName, 1, 0);
   }
 
   // Decrement reference count
@@ -1130,10 +1130,10 @@ void *crAnimation_LoadByName(atSingleton *loader, const char *animName,
   if (animation == nullptr) {
     // Try alternate extension
     crAnimCache_SetSource(animCache, baseObj);
-    found = rage_3118(animCache, filename, "");
+    found = crAnimCache_TryFindEntry(animCache, filename, "");
 
     if (found) {
-      animation = crAnimation_ctor_8F98(animName, 1, 0);
+      animation = crAnimation_Construct(animName, 1, 0);
     }
 
     (*refCount)--;
@@ -1305,26 +1305,26 @@ void datBase_InitFields14552(atSingleton *obj) {
 //   r4 = source descriptor
 // ─────────────────────────────────────────────────────────────────────────────
 void phBound_WriteChannelData(uint8_t *dest, uint8_t *descriptor) {
-  extern void ph_5908(void *flagsPtr, const void *key, uint32_t mode);
-  extern void rage_3F18(void *global, void *dataPtr, void *outBuf);
-  extern void ke_0E08(void *destBuf, void *srcData);
+  extern void phBound_LockChannel(void *flagsPtr, const void *key, uint32_t mode);
+  extern void rage_CopyChannelData(void *global, void *dataPtr, void *outBuf);
+  extern void crChannel_WriteData(void *destBuf, void *srcData);
 
   // Look up bound data from descriptor's flags field
   void *flagsPtr = *(void **)(descriptor + 4);
-  ph_5908(flagsPtr, (void *)0x82027660, 1);
+  phBound_LockChannel(flagsPtr, (void *)0x82027660, 1);
 
   // Get the data pointer from flags->field_12
   void *flagsPtr2 = *(void **)(descriptor + 4);
   void *dataPtr = *(void **)((uint8_t *)flagsPtr2 + 12);
   void *global = *(void **)0x8272A374;
-  rage_3F18(global, dataPtr, dest + 168);
+  rage_CopyChannelData(global, dataPtr, dest + 168);
 
   // Copy channel data: unlock and write from +168 to +176
   flagsPtr = *(void **)(descriptor + 4);
-  ph_5908(flagsPtr, (void *)0x8202766C, 1);
+  phBound_LockChannel(flagsPtr, (void *)0x8202766C, 1);
 
   void *srcData = *(void **)(dest + 168);
-  ke_0E08(dest + 176, srcData);
+  crChannel_WriteData(dest + 176, srcData);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1339,27 +1339,27 @@ void phBound_WriteChannelData(uint8_t *dest, uint8_t *descriptor) {
 //   r4 = source descriptor
 // ─────────────────────────────────────────────────────────────────────────────
 void phBound_WriteChannelDataAlt(uint8_t *dest, uint8_t *descriptor) {
-  extern void ph_5908(void *flagsPtr, const void *key, uint32_t mode);
-  extern void rage_3F18(void *global, void *dataPtr, void *outBuf);
-  extern void ke_0E08(void *destBuf, void *srcData);
+  extern void phBound_LockChannel(void *flagsPtr, const void *key, uint32_t mode);
+  extern void rage_CopyChannelData(void *global, void *dataPtr, void *outBuf);
+  extern void crChannel_WriteData(void *destBuf, void *srcData);
 
   // Lock channel for reading
   void *flagsPtr = *(void **)(descriptor + 4);
-  ph_5908(flagsPtr, (void *)0x82027660, 1);
+  phBound_LockChannel(flagsPtr, (void *)0x82027660, 1);
 
   // Copy data from descriptor into offset +172
   void *flagsPtr2 = *(void **)(descriptor + 4);
   void *dataPtr = *(void **)((uint8_t *)flagsPtr2 + 12);
   void *global = *(void **)0x8272A374;
-  rage_3F18(global, dataPtr, dest + 172);
+  rage_CopyChannelData(global, dataPtr, dest + 172);
 
   // Unlock channel
   flagsPtr = *(void **)(descriptor + 4);
-  ph_5908(flagsPtr, (void *)0x8202766C, 1);
+  phBound_LockChannel(flagsPtr, (void *)0x8202766C, 1);
 
   // Write channel data from +172 to +380
   void *srcData = *(void **)(dest + 172);
-  ke_0E08(dest + 380, srcData);
+  crChannel_WriteData(dest + 380, srcData);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1463,7 +1463,7 @@ int32_t pgArray_FindActiveEntry(uint8_t *array, int32_t startOffset,
 //   r3 = object with refCount at +6 and vtable/array pointer at +0
 // ─────────────────────────────────────────────────────────────────────────────
 void datBase_DestroyPointerArray(atSingleton *obj) {
-  extern bool atSingleton_Find_90D0(void *ptr);
+  extern bool atSingleton_IsTracked(void *ptr);
   extern void sysMemAllocator_Free(void *ptr);
 
   // Only process if refCount is non-zero
@@ -1490,7 +1490,7 @@ void datBase_DestroyPointerArray(atSingleton *obj) {
     }
 
     // Check if element is tracked by singleton system
-    if (!atSingleton_Find_90D0(element)) {
+    if (!atSingleton_IsTracked(element)) {
       // Not tracked - free via allocator (SDA vtable slot 2)
       void **sdaPtr = *(void ***)0x82600000;
       void *allocator = ((void **)sdaPtr)[1];
@@ -1767,7 +1767,7 @@ void netFirewall_TryAddByFrameRange(uint8_t *manager, uint32_t channelIdx,
 // ─────────────────────────────────────────────────────────────────────────────
 int32_t grmShaderFx_FindOrRegisterByName(const char *name) {
   extern int _stricmp(const char *a, const char *b);
-  extern void rage_FFE8(int32_t slotIndex, const char *name);
+  extern void grmShaderFx_RegisterSlot(int32_t slotIndex, const char *name);
   extern void rage_debugLog(const char *msg);
 
   // Global shader registry: 128 entries (512 bytes / 4 bytes per pointer)
@@ -1800,7 +1800,7 @@ int32_t grmShaderFx_FindOrRegisterByName(const char *name) {
     for (uint32_t i = 0; i < maxEntries; i++) {
       if (registry[i] == nullptr) {
         // Found empty slot - register the shader
-        rage_FFE8(emptySlot, name);
+        grmShaderFx_RegisterSlot(emptySlot, name);
 
         if (registry[emptySlot] != nullptr) {
           // Registration succeeded
@@ -1832,7 +1832,7 @@ int32_t grmShaderFx_FindOrRegisterByName(const char *name) {
 //   r3 = fxHairGroup object
 // ─────────────────────────────────────────────────────────────────────────────
 void fxHairGroup_Destroy(uint8_t *obj) {
-  extern bool atSingleton_Find_90D0(void *ptr);
+  extern bool atSingleton_IsTracked(void *ptr);
 
   // Set vtable to fxHairGroup
   *(void **)obj = (void *)0x82030040;
@@ -1857,7 +1857,7 @@ void fxHairGroup_Destroy(uint8_t *obj) {
   // Free the element array if it exists and is not tracked
   void *arrayPtr = *(void **)(obj + 36);
   if (arrayPtr != nullptr) {
-    if (!atSingleton_Find_90D0(arrayPtr)) {
+    if (!atSingleton_IsTracked(arrayPtr)) {
       // Not tracked - free via allocator (SDA vtable slot 2)
       void **sdaPtr = *(void ***)0x82600000;
       void *allocator = ((void **)sdaPtr)[1];
@@ -1898,13 +1898,13 @@ void gdGameData_Destructor(atSingleton *obj, int deleteFlag) {
 // vtable slot 2
 //
 // Loads game data properties by passing the global game data pointer
-// to the property loader function (game_C0D8).
+// to the property loader function (gdGameData_EnumerateResources).
 // ─────────────────────────────────────────────────────────────────────────────
 extern uint32_t g_gdGameDataPtr; // @ 0x8271A310
 
 void gdGameData_LoadProperties(atSingleton *obj) {
-  extern void game_C0D8(void *gameData);
-  game_C0D8((void *)g_gdGameDataPtr);
+  extern void gdGameData_EnumerateResources(void *gameData);
+  gdGameData_EnumerateResources((void *)g_gdGameDataPtr);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2068,7 +2068,7 @@ void phInst_FormatAndStoreName(uint8_t *obj, void *source) {
 // if the node is tracked by the singleton system and either frees
 // directly or unregisters through the allocator.
 // ─────────────────────────────────────────────────────────────────────────────
-extern bool atSingleton_Find_90D0(void *ptr);
+extern bool atSingleton_IsTracked(void *ptr);
 
 void datBase_DestroyTreeNode(void *node, int deleteFlag) {
   uint8_t *nodePtr = (uint8_t *)node;
@@ -2097,7 +2097,7 @@ void datBase_DestroyTreeNode(void *node, int deleteFlag) {
   }
 
   // Check if data is registered in singleton system
-  if (atSingleton_Find_90D0(dataPtr)) {
+  if (atSingleton_IsTracked(dataPtr)) {
     rage_free(node);
     return;
   }
@@ -2140,7 +2140,7 @@ void datBase_DestroyArray192(uint8_t *container) {
 
       if (element != nullptr) {
         // Check if element is tracked by singleton system
-        if (!atSingleton_Find_90D0(element)) {
+        if (!atSingleton_IsTracked(element)) {
           // Unregister through allocator
           extern void *g_allocator_ptr;
           void **allocatorBase = *(void ***)&g_allocator_ptr;
@@ -2192,7 +2192,7 @@ void datBase_DestroyHashMap(uint8_t *hashMap) {
       void *element = *(void **)entry;
       if (element != nullptr) {
         // Check if element is tracked
-        if (!atSingleton_Find_90D0(element)) {
+        if (!atSingleton_IsTracked(element)) {
           // Unregister through allocator
           extern void *g_allocator_ptr;
           void **allocatorBase = *(void ***)&g_allocator_ptr;
@@ -2249,13 +2249,13 @@ void atSingleton_Destructor(atSingleton *obj, uint32_t deleteFlag) {
 // atSingleton::CountLinkedResources()  @ 0x821C85D0 | size: 0xC
 //
 // Virtual method (vtable slot 2). Loads a global data pointer and
-// passes it to game_C0D8 for linked resource enumeration.
+// passes it to gdGameData_EnumerateResources for linked resource enumeration.
 // ─────────────────────────────────────────────────────────────────────────────
 void atSingleton_CountLinkedResources(atSingleton *obj) {
   extern uint32_t g_resourceRegistryPtr; // @ 0x8271A310
   void *registry = (void *)g_resourceRegistryPtr;
-  extern void game_C0D8(void *registry);
-  game_C0D8(registry);
+  extern void gdGameData_EnumerateResources(void *registry);
+  gdGameData_EnumerateResources(registry);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2670,7 +2670,7 @@ void datPairArray_Append(uint8_t *array, uint32_t *key, uint32_t *value) {
   uint32_t capacity = *(uint32_t *)(array + 8);
 
   if (count + 2 >= capacity) {
-    atSingleton_22B0(array, capacity + 256);
+    datArray_Grow(array, capacity + 256);
   }
 
   uint32_t currentCount = *(uint32_t *)(array + 4);

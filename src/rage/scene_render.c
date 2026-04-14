@@ -400,7 +400,7 @@ void rage_scene_cleanup(void* sceneState) {
     extern void pg_6C40_g(void* streamer);           // @ 0x82566C40 — flush streaming buffer
     extern void pgBase_AcquireRef(void* obj, int param);     // @ 0x8242C3B8 — reset profiling bracket
     extern void* _crt_tls_fiber_setup();             // @ 0x82566B78 — get/create fiber context
-    extern void game_7868(void* obj, int param);     // @ 0x82227868 — frame sync
+    extern void game_FrameSyncSignal(void* obj, int param);     // @ 0x82227868 — frame sync
     extern void rage_DebugLog(const char* msg, ...);
 
     // Check if scene is active (byte at +4)
@@ -453,7 +453,7 @@ void rage_scene_cleanup(void* sceneState) {
 
     // Frame sync notification
     extern void* g_frameSyncObj;  // @ 0x825F64F4 (SDA)
-    game_7868(g_frameSyncObj, 1);
+    game_FrameSyncSignal(g_frameSyncObj, 1);
 
     // Clear scene state flags
     *(uint8_t*)((char*)sceneState + 4) = 0;  // scene no longer active

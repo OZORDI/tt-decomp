@@ -51,7 +51,7 @@ void phBoundCapsule_A080_g(void*) {}
 void phInst_A3A0_p33(void*) {}
 void atHashMap_Find(void*, const void*) {}
 void ph_59C8(void*, const char*, int) {}
-void* ph_6FC8(void*, const char*) { return nullptr; }
+void* phArchetype_Find(void*, const char*) { return nullptr; }
 void ph_9E50(void*, void*) {}
 void* ph_9EC0_1(void*) { return nullptr; }
 void ph_CEE0(void*, int) {}

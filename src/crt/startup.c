@@ -89,8 +89,8 @@ void _crt_tls_callback(int initFlag);                      /* @ 0x82434090 */
 void _crt_fiber_destroy(void);                             /* @ 0x8242FCA8 */
 int _KeTlsAlloc_thunk(void* destructorThunk);              /* @ 0x8242FB70 */
 void* ke_KeTlsGetValue_621C(uint32_t tlsIndex);            /* @ 0x8258621C */
-int ke_KeTlsSetValue_622C(uint32_t tlsIndex, void* value); /* @ 0x8258622C */
-int ke_KeTlsFree_624C(uint32_t tlsIndex);                  /* @ 0x8258624C */
+int KeTlsSetValue_stub(uint32_t tlsIndex, void* value); /* @ 0x8258622C */
+int KeTlsFree_stub(uint32_t tlsIndex);                  /* @ 0x8258624C */
 extern const char* __imp_ExLoadedCommandLine;              /* @ 0x820008D4 */
 
 /**
@@ -246,8 +246,8 @@ int _cinit_setup(void)
 {
     g_tls_dispatch.m_tlsAlloc = _KeTlsAlloc_thunk;
     g_tls_dispatch.m_tlsGetValue = ke_KeTlsGetValue_621C;
-    g_tls_dispatch.m_tlsSetValue = ke_KeTlsSetValue_622C;
-    g_tls_dispatch.m_tlsFree = ke_KeTlsFree_624C;
+    g_tls_dispatch.m_tlsSetValue = KeTlsSetValue_stub;
+    g_tls_dispatch.m_tlsFree = KeTlsFree_stub;
 
     if (__cinit_impl() == 0) {
         _doexit_error();

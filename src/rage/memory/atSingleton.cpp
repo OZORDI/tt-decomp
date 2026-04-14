@@ -92,7 +92,7 @@ uint32_t ComputeHash(const char* str)
 //  FindSingleton
 //
 //  @ 0x820F90D0 | size: 0xA4
-//  Original symbol: atSingleton_Find_90D0
+//  Original symbol: atSingleton_IsTracked
 //
 //  Searches the global singleton registry hash table for a singleton
 //  matching the given hash.

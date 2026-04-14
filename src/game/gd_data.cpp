@@ -14,7 +14,7 @@
 extern void rage_free(void* ptr);
 extern void ReleaseObjectWithFlags(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
 extern void sysMemAllocator_PlatformFree(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
-extern bool atSingleton_Find_90D0(void* obj);        // @ 0x820F90D0 - Check if singleton exists
+extern bool atSingleton_IsTracked(void* obj);        // @ 0x820F90D0 - Check if singleton exists
 
 // Forward declaration — canonical definition lives later in this file alongside
 // the TemplateRegistry struct and the game_94F0 binary-search helper.
@@ -65,7 +65,7 @@ void plrPlayerMgr_DestroySubObjects(void* subObjectArrayBase) {
         // Handle singleton-managed object
         if (subObj->m_pObject2) {
             // Check if object is in singleton registry
-            if (!atSingleton_Find_90D0(subObj->m_pObject2)) {
+            if (!atSingleton_IsTracked(subObj->m_pObject2)) {
                 // Not in registry - free via allocator
                 // Get allocator from TLS and call vtable slot 2 (Free/Release)
                 // TODO: Implement proper TLS allocator access
@@ -685,7 +685,7 @@ int32_t game_94F0(TemplateRegistry* registry, const uint32_t* searchKey) {
  * with a count at offset 0x10000. Maximum capacity is 8192 entries.
  * 
  * Called by:
- * - pg_8C38_g, atSingleton_Find_90D0, lvlLevelMgr_vfn_24
+ * - pg_8C38_g, atSingleton_IsTracked, lvlLevelMgr_vfn_24
  * - fxAmbientMgr_vfn_24, plrPropMgr_vfn_24, plrPlayerMgr_ReleaseResourcePairs, pg_8918_gen
  * 
  * @param templateKey Pointer to 8-byte template key to remove

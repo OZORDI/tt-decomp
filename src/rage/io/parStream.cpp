@@ -21,7 +21,7 @@ extern "C" void parStreamOutXml_FormatToBuffer(void* outBuf, const char* fmt, ..
 extern "C" void util_WriteBytes(void* file, const void* data, uint32_t size);  // 39B0
 extern "C" void util_WriteIndentation(void* self, int depth);  // B870
 extern "C" void fiAsciiTokenizer_CloseElement(void* self);  // B708
-extern "C" void fiAsciiTokenizer_51F0(void* fileHandle, int charCode);
+extern "C" void fiAsciiTokenizer_WriteChar(void* fileHandle, int charCode);
 
 // Forward declarations for external C functions used by parStreamOutRbf
 extern "C" void util_WriteBytes(void* file, const void* data, uint32_t size);
@@ -301,7 +301,7 @@ bool parStreamInRbf::BeginArray(const char* name, uint32_t* count) {
             case 4:
             case 6:
                 // Single element types
-                // rage_obj_bind_3828(m_pRbfData, name, elementSize);
+                // fiStreamBuf_Read_stub(m_pRbfData, name, elementSize);
                 break;
                 
             case 2:
@@ -467,7 +467,7 @@ bool parStreamInRbf::ReadBool(const char* name, bool* value) {
         
         // Read chunk from buffer
         uint32_t bytesRead = 0;
-        // rage_obj_bind_3828(m_pRbfData, name, chunkSize);
+        // fiStreamBuf_Read_stub(m_pRbfData, name, chunkSize);
         
         // Update remaining bytes
         bytesToRead -= bytesRead;
@@ -614,7 +614,7 @@ void parStreamInRbf::ReadFieldHeader(uint16_t* outFieldType, uint16_t* outFieldI
         char* stringBuffer = nullptr;  // rage_Alloc(stringLength + 1);
         
         // Read string data
-        // rage_obj_bind_3828(m_pRbfData, stringBuffer, stringLength);
+        // fiStreamBuf_Read_stub(m_pRbfData, stringBuffer, stringLength);
         
         // Null-terminate
         if (stringBuffer) {
@@ -877,8 +877,8 @@ void parStreamOutXml::EndObject() {
     } else {
         // Write CR LF and indentation
         void* file = *(void**)((char*)this + 4);
-        fiAsciiTokenizer_51F0(file, '\r');
-        fiAsciiTokenizer_51F0(file, '\n');
+        fiAsciiTokenizer_WriteChar(file, '\r');
+        fiAsciiTokenizer_WriteChar(file, '\n');
         util_WriteIndentation(this, indent);
     }
 
@@ -970,8 +970,8 @@ bool parStreamOutXml::WriteBool(const char* name, bool value) {
     parStreamOutXml_FormatToBuffer(buf, "%s", value ? "true" : "false");
     util_WriteBytes(file, buf, strlen(buf));
     // Write CRLF newline
-    fiAsciiTokenizer_51F0(file, '\r');
-    fiAsciiTokenizer_51F0(file, '\n');
+    fiAsciiTokenizer_WriteChar(file, '\r');
+    fiAsciiTokenizer_WriteChar(file, '\n');
     return true;
 }
 
@@ -1205,7 +1205,7 @@ void fiAsciiTokenizer::ExpectTokenThenVec2(const char* expectedToken, float* out
 // ── Write/output formatting functions ───────────────────────────────────────
 
 // External function: writes a single character to the output stream
-extern "C" void fiAsciiTokenizer_51F0(void* fileHandle, int charCode);
+extern "C" void fiAsciiTokenizer_WriteChar(void* fileHandle, int charCode);
 
 /**
  * fiAsciiTokenizer::WriteBeginBlock @ 0x822E67A0 | size: 0x84
@@ -1218,12 +1218,12 @@ void fiAsciiTokenizer::WriteBeginBlock() {
     int32_t indent = m_streamPos;
     void* file = reinterpret_cast<void*>(m_fileHandle);
     while (indent != 0) {
-        fiAsciiTokenizer_51F0(file, '\t');
+        fiAsciiTokenizer_WriteChar(file, '\t');
         indent--;
     }
-    fiAsciiTokenizer_51F0(file, '{');
-    fiAsciiTokenizer_51F0(file, '\r');
-    fiAsciiTokenizer_51F0(file, '\n');
+    fiAsciiTokenizer_WriteChar(file, '{');
+    fiAsciiTokenizer_WriteChar(file, '\r');
+    fiAsciiTokenizer_WriteChar(file, '\n');
     m_streamPos++;
 }
 
@@ -1239,12 +1239,12 @@ void fiAsciiTokenizer::WriteEndBlock() {
     int32_t indent = m_streamPos;
     void* file = reinterpret_cast<void*>(m_fileHandle);
     while (indent != 0) {
-        fiAsciiTokenizer_51F0(file, '\t');
+        fiAsciiTokenizer_WriteChar(file, '\t');
         indent--;
     }
-    fiAsciiTokenizer_51F0(file, '}');
-    fiAsciiTokenizer_51F0(file, '\r');
-    fiAsciiTokenizer_51F0(file, '\n');
+    fiAsciiTokenizer_WriteChar(file, '}');
+    fiAsciiTokenizer_WriteChar(file, '\r');
+    fiAsciiTokenizer_WriteChar(file, '\n');
 }
 
 /**
@@ -1264,7 +1264,7 @@ void fiAsciiTokenizer::WriteIndent() {
     void* file = reinterpret_cast<void*>(m_fileHandle);
     if (indent != 0) {
         while (indent != 0) {
-            fiAsciiTokenizer_51F0(file, '\t');
+            fiAsciiTokenizer_WriteChar(file, '\t');
             indent--;
         }
         m_writeState = 1;
@@ -1288,16 +1288,16 @@ void fiAsciiTokenizer::WriteNewline() {
     }
 
     void* file = reinterpret_cast<void*>(m_fileHandle);
-    fiAsciiTokenizer_51F0(file, '\r');
-    fiAsciiTokenizer_51F0(file, '\n');
+    fiAsciiTokenizer_WriteChar(file, '\r');
+    fiAsciiTokenizer_WriteChar(file, '\n');
     m_writeState = 2;
 }
 
 // ── Memory allocation helpers ───────────────────────────────────────────────
 
 // External functions used by allocation helpers
-extern "C" void fiAsciiTokenizer_1F08_g(const char* errorMsg);
-extern "C" void fiAsciiTokenizer_FB40_g(int exitCode);
+extern "C" void fiAsciiTokenizer_ReportAllocError(const char* errorMsg);
+extern "C" void fiAsciiTokenizer_ExitWithCode(int exitCode);
 extern "C" void* rage_Alloc(uint32_t size);
 
 /**
@@ -1306,10 +1306,10 @@ extern "C" void* rage_Alloc(uint32_t size);
  * Allocates an array of uint32_t elements. Validates count against
  * max 0x3FFFFFFF. Returns nullptr if count is 0. Each element is 4 bytes.
  */
-extern "C" uint32_t* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
+extern "C" uint32_t* fiAsciiTokenizer_AllocateUint32Array(void* unused, uint32_t count) {
     if (count > 0x3FFFFFFFu) {
-        fiAsciiTokenizer_1F08_g("allocation overflow");
-        fiAsciiTokenizer_FB40_g(1);
+        fiAsciiTokenizer_ReportAllocError("allocation overflow");
+        fiAsciiTokenizer_ExitWithCode(1);
     }
 
     if (count != 0) {
@@ -1326,10 +1326,10 @@ extern "C" uint32_t* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
  * Allocates a byte array. Validates count against max 0xFFFFFFFF.
  * Returns nullptr if count is 0. Each element is 1 byte.
  */
-extern "C" uint8_t* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
+extern "C" uint8_t* fiAsciiTokenizer_AllocateByteArray(void* unused, uint32_t count) {
     if (count > 0xFFFFFFFFu) {
-        fiAsciiTokenizer_1F08_g("allocation overflow");
-        fiAsciiTokenizer_FB40_g(1);
+        fiAsciiTokenizer_ReportAllocError("allocation overflow");
+        fiAsciiTokenizer_ExitWithCode(1);
     }
 
     if (count != 0) {
@@ -1346,10 +1346,10 @@ extern "C" uint8_t* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
  * Allocates an array of uint16_t elements. Validates count against
  * max 0x7FFFFFFF. Returns nullptr if count is 0. Each element is 2 bytes.
  */
-extern "C" uint16_t* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
+extern "C" uint16_t* fiAsciiTokenizer_AllocateUint16Array(void* unused, uint32_t count) {
     if (count > 0x7FFFFFFFu) {
-        fiAsciiTokenizer_1F08_g("allocation overflow");
-        fiAsciiTokenizer_FB40_g(1);
+        fiAsciiTokenizer_ReportAllocError("allocation overflow");
+        fiAsciiTokenizer_ExitWithCode(1);
     }
 
     if (count != 0) {
@@ -1364,16 +1364,16 @@ extern "C" uint16_t* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
 
 // Forward declarations for CRT helpers used below
 extern "C" {
-void fiAsciiTokenizer_A4F8_2h(void* a, void* b, void* c, void* d, void* e, void* f);
-void fiAsciiTokenizer_A378_v12(void* a, void* b);
-void fiAsciiTokenizer_A418_2h(void* a, void* b);
+void fiAsciiTokenizer_InvokeWithSixArgs(void* a, void* b, void* c, void* d, void* e, void* f);
+void fiAsciiTokenizer_InvokeWithTwoArgs(void* a, void* b);
+void fiAsciiTokenizer_InvokeWithTwoArgsAlt(void* a, void* b);
 void RtlInitAnsiString(void* ansiStr, const char* str);
 void _nt_process_ansi_string(void* ansiStr);
-void fiAsciiTokenizer_CF40_w(void* obj, const char* name, void* arg);
-void fiAsciiTokenizer_F1D0_w(void* obj, const char* name, void* arg);
+void fiAsciiTokenizer_ConstructGlobal(void* obj, const char* name, void* arg);
+void fiAsciiTokenizer_ConstructGlobalAlt(void* obj, const char* name, void* arg);
 void rage_free(void* ptr);
 void parStructure_Install(void* obj);
-void rage_B3B0(void* obj);
+void rage_RegisterParSubsystemHandler(void* obj);
 void atSingleton_dtor(void* obj, int mode);
 }
 
@@ -1820,30 +1820,30 @@ bool _fp_is_valid_double(double* ptr) {
 // ── Tail-call thunks ───────────────────────────────────────────────────────
 
 /**
- * _thunk_tail_call_A4F8 @ 0x8243A558 | size: 0x8
+ * _thunk_InvokeWithSixArgs_DefaultNull @ 0x8243A558 | size: 0x8
  *
- * Sets r6=0 and tail-calls fiAsciiTokenizer_A4F8_2h.
+ * Sets r6=0 and tail-calls fiAsciiTokenizer_InvokeWithSixArgs.
  */
-void _thunk_tail_call_A4F8(void* a, void* b, void* c, void* d, void* e) {
-    fiAsciiTokenizer_A4F8_2h(a, b, c, d, e, nullptr);
+void _thunk_InvokeWithSixArgs_DefaultNull(void* a, void* b, void* c, void* d, void* e) {
+    fiAsciiTokenizer_InvokeWithSixArgs(a, b, c, d, e, nullptr);
 }
 
 /**
- * _thunk_tail_call_A378 @ 0x8243A560 | size: 0x8
+ * _thunk_InvokeWithTwoArgs_DefaultNull @ 0x8243A560 | size: 0x8
  *
- * Sets r4=0 and tail-calls fiAsciiTokenizer_A378_v12.
+ * Sets r4=0 and tail-calls fiAsciiTokenizer_InvokeWithTwoArgs.
  */
-void _thunk_tail_call_A378(void* a) {
-    fiAsciiTokenizer_A378_v12(a, nullptr);
+void _thunk_InvokeWithTwoArgs_DefaultNull(void* a) {
+    fiAsciiTokenizer_InvokeWithTwoArgs(a, nullptr);
 }
 
 /**
- * _thunk_tail_call_A418 @ 0x8243A568 | size: 0x8
+ * _thunk_InvokeWithTwoArgsAlt_DefaultNull @ 0x8243A568 | size: 0x8
  *
- * Sets r4=0 and tail-calls fiAsciiTokenizer_A418_2h.
+ * Sets r4=0 and tail-calls fiAsciiTokenizer_InvokeWithTwoArgsAlt.
  */
-void _thunk_tail_call_A418(void* a) {
-    fiAsciiTokenizer_A418_2h(a, nullptr);
+void _thunk_InvokeWithTwoArgsAlt_DefaultNull(void* a) {
+    fiAsciiTokenizer_InvokeWithTwoArgsAlt(a, nullptr);
 }
 
 // ── ANSI string init helper ────────────────────────────────────────────────
@@ -1867,13 +1867,13 @@ void _nt_init_ansi_string_and_process(const char* str) {
 /**
  * _static_init_reg_0 @ 0x8257EE28 | size: 0x40
  *
- * Static initializer: calls fiAsciiTokenizer_CF40_w to construct a global
+ * Static initializer: calls fiAsciiTokenizer_ConstructGlobal to construct a global
  * object, then registers its destructor via atexit().
  */
 void _static_init_reg_0() {
     extern void* g_staticObj0;
     extern const char g_staticName0[];
-    fiAsciiTokenizer_CF40_w(&g_staticObj0, g_staticName0, nullptr);
+    fiAsciiTokenizer_ConstructGlobal(&g_staticObj0, g_staticName0, nullptr);
     extern void (*g_staticDtor0)();
     atexit(g_staticDtor0);
 }
@@ -1886,7 +1886,7 @@ void _static_init_reg_0() {
 void _static_init_reg_1() {
     extern void* g_staticObj1;
     extern const char g_staticName1[];
-    fiAsciiTokenizer_CF40_w(&g_staticObj1, g_staticName1, nullptr);
+    fiAsciiTokenizer_ConstructGlobal(&g_staticObj1, g_staticName1, nullptr);
     extern void (*g_staticDtor1)();
     atexit(g_staticDtor1);
 }
@@ -1899,7 +1899,7 @@ void _static_init_reg_1() {
 void _static_init_reg_2() {
     extern void* g_staticObj2;
     extern const char g_staticName2[];
-    fiAsciiTokenizer_CF40_w(&g_staticObj2, g_staticName2, nullptr);
+    fiAsciiTokenizer_ConstructGlobal(&g_staticObj2, g_staticName2, nullptr);
     extern void (*g_staticDtor2)();
     atexit(g_staticDtor2);
 }
@@ -1912,7 +1912,7 @@ void _static_init_reg_2() {
 void _static_init_reg_3() {
     extern void* g_staticObj3;
     extern const char g_staticName3[];
-    fiAsciiTokenizer_CF40_w(&g_staticObj3, g_staticName3, nullptr);
+    fiAsciiTokenizer_ConstructGlobal(&g_staticObj3, g_staticName3, nullptr);
     extern void (*g_staticDtor3)();
     atexit(g_staticDtor3);
 }
@@ -1920,13 +1920,13 @@ void _static_init_reg_3() {
 /**
  * _static_init_reg_4 @ 0x8257EF48 | size: 0x40
  *
- * Static initializer: constructs global object via fiAsciiTokenizer_F1D0_w
+ * Static initializer: constructs global object via fiAsciiTokenizer_ConstructGlobalAlt
  * and registers destructor via atexit().
  */
 void _static_init_reg_4() {
     extern void* g_staticObj4;
     extern const char g_staticName4[];
-    fiAsciiTokenizer_F1D0_w(&g_staticObj4, g_staticName4, nullptr);
+    fiAsciiTokenizer_ConstructGlobalAlt(&g_staticObj4, g_staticName4, nullptr);
     extern void (*g_staticDtor4)();
     atexit(g_staticDtor4);
 }
@@ -1934,13 +1934,13 @@ void _static_init_reg_4() {
 /**
  * _static_init_reg_5 @ 0x8257EF88 | size: 0x40
  *
- * Static initializer: constructs global object via fiAsciiTokenizer_F1D0_w
+ * Static initializer: constructs global object via fiAsciiTokenizer_ConstructGlobalAlt
  * and registers destructor via atexit().
  */
 void _static_init_reg_5() {
     extern void* g_staticObj5;
     extern const char g_staticName5[];
-    fiAsciiTokenizer_F1D0_w(&g_staticObj5, g_staticName5, nullptr);
+    fiAsciiTokenizer_ConstructGlobalAlt(&g_staticObj5, g_staticName5, nullptr);
     extern void (*g_staticDtor5)();
     atexit(g_staticDtor5);
 }
@@ -1953,7 +1953,7 @@ void _static_init_reg_5() {
 void _static_init_reg_6() {
     extern void* g_staticObj6;
     extern const char g_staticName6[];
-    fiAsciiTokenizer_CF40_w(&g_staticObj6, g_staticName6, nullptr);
+    fiAsciiTokenizer_ConstructGlobal(&g_staticObj6, g_staticName6, nullptr);
     extern void (*g_staticDtor6)();
     atexit(g_staticDtor6);
 }
@@ -2129,11 +2129,11 @@ void _static_init_set_handler_0() {
 /**
  * _static_init_set_handler_1 @ 0x82583F18 | size: 0xC
  *
- * Loads static address and tail-calls rage_B3B0 handler registration.
+ * Loads static address and tail-calls rage_RegisterParSubsystemHandler handler registration.
  */
 void _static_init_set_handler_1() {
     extern char g_handlerObj1[];
-    rage_B3B0(g_handlerObj1);
+    rage_RegisterParSubsystemHandler(g_handlerObj1);
 }
 
 /**

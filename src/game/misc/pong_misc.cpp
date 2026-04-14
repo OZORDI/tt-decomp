@@ -14,7 +14,7 @@
 extern "C" {
     void  rage_free(void* ptr);                  // @ 0x820C00C0
     void* rage_Alloc(uint32_t size);                // @ 0x820DEC88
-    void  util_CE30(void* slot);                 // @ 0x8234CE30 - init parStructure
+    void  parStructure_ReleaseInstances(void* slot) __asm__("_util_CE30");                 // @ 0x8234CE30 - init parStructure
 }
 
 namespace rage {
@@ -108,7 +108,7 @@ fsmMachine::~fsmMachine()
 #include "rage/memory.h"
 
 // External function declarations
-extern void util_CE30(void* obj);  // @ 0x8234CE30 - Initialize rage::parStructure
+extern void parStructure_ReleaseInstances(void* obj) __asm__("_util_CE30");  // @ 0x8234CE30 - Initialize rage::parStructure
 // rage::NotifyObservers declared in namespace block above
 
 /**
@@ -121,7 +121,7 @@ extern void util_CE30(void* obj);  // @ 0x8234CE30 - Initialize rage::parStructu
  * iteration. This creates slots at offsets: 0xED30, 0xB26C, 0x77A8, 0x3CE4
  * (reverse order).
  *
- * Each parStructure is initialized by util_CE30 @ 0x8234CE30 which:
+ * Each parStructure is initialized by parStructure_ReleaseInstances @ 0x8234CE30 which:
  *   - Sets vtable to 0x82065A9C (rage::parStructure vtable)
  *   - Initializes member array pointer at +0x10
  *   - Sets count and flags at +0x14/+0x16
@@ -137,7 +137,7 @@ pongSaveFile::pongSaveFile() {
     for (int i = 0; i < SAVE_SLOT_COUNT; i++) {
         offset -= SAVE_SLOT_SIZE;
         void* saveSlot = reinterpret_cast<char*>(this) + offset;
-        util_CE30(saveSlot);  // Initialize parStructure @ 0x8234CE30
+        parStructure_ReleaseInstances(saveSlot);  // Initialize parStructure @ 0x8234CE30
     }
     
     // Set final vtables
@@ -694,7 +694,7 @@ void io_9B88_w(io* self) {
 // pg_4A58_fw @ 0x821F4A58 | size: 0x7C
 //
 // Page group input handler with conditional flag check.
-// Builds a parameter array and delegates to pg_6F68 for processing.
+// Builds a parameter array and delegates to bkGroup_DispatchEvent for processing.
 //
 // Parameters:
 //   - pPageGroup: Page group context object
@@ -707,14 +707,14 @@ void io_9B88_w(io* self) {
 
 // External declarations
 extern uint8_t g_uiInputFlag;  // @ SDA+25804 (0x826064CC) - UI input enable flag
-extern bool pg_6F68(void* pInputValue, void* pPageGroup, int eventType, 
-                    uint32_t* params, int paramCount);
+extern bool bkGroup_DispatchEvent(void* pInputValue, void* pPageGroup, int eventType,
+                    uint32_t* params, int paramCount) __asm__("_pg_6F68");
 
 /**
  * pg_4A58_fw @ 0x821F4A58 | size: 0x7C
  * 
  * Processes page group input with conditional flag checking.
- * Builds a 4-element parameter array and calls pg_6F68 for processing.
+ * Builds a 4-element parameter array and calls bkGroup_DispatchEvent for processing.
  */
 bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
     // Build parameter array on stack
@@ -731,7 +731,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
     
     // Call page group processor
     // Parameters: (inputValue, pageGroup, eventType=19, params, paramCount=2)
-    bool result = pg_6F68(pInputValue, pPageGroup, 19, params, 2);
+    bool result = bkGroup_DispatchEvent(pInputValue, pPageGroup, 19, params, 2);
     
     // Return true if processing succeeded (non-zero result)
     return result;
@@ -741,7 +741,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
  * pg_4900_fw @ 0x821F4900 | size: 0x5C
  * 
  * Page group input handler wrapper.
- * Swaps parameters and calls pg_6F68 with fixed event type and parameters.
+ * Swaps parameters and calls bkGroup_DispatchEvent with fixed event type and parameters.
  * 
  * Parameters:
  *   - pPageGroup: Page group context object
@@ -759,9 +759,9 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
     params[1] = 1;
     
     // Call page group processor with swapped parameters
-    // Note: pg_6F68 expects (inputValue, pageGroup, ...) but we receive (pageGroup, inputValue)
+    // Note: bkGroup_DispatchEvent expects (inputValue, pageGroup, ...) but we receive (pageGroup, inputValue)
     // Parameters: (inputValue, pageGroup, eventType=16, params, paramCount=1)
-    uint8_t result = pg_6F68(pInputValue, pPageGroup, 16, params, 1);
+    uint8_t result = bkGroup_DispatchEvent(pInputValue, pPageGroup, 16, params, 1);
     
     // Return true if processing succeeded (non-zero result)
     return (result != 0);
@@ -775,9 +775,9 @@ bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
 // processing, and page transitions.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Forward declaration for pg_6F68 (not yet lifted)
-extern "C" uint8_t pg_6F68(void* pageGroup, void* context, int eventType, 
-                           uint32_t* eventData, int enableFlag, int reserved);
+// Forward declaration for bkGroup_DispatchEvent (not yet lifted)
+extern "C" uint8_t bkGroup_DispatchEvent(void* pageGroup, void* context, int eventType,
+                           uint32_t* eventData, int enableFlag, int reserved) __asm__("_pg_6F68");
 
 /**
  * pg_6770_fw @ 0x821F6770 | size: 0x5C
@@ -804,7 +804,7 @@ bool pg_6770_fw(void* context, void* pageGroup) {
     //   - eventData contains event-specific data
     //   - 1 enables processing
     //   - 0 is reserved/unused
-    uint8_t handled = pg_6F68(pageGroup, context, 9, eventData, 1, 0);
+    uint8_t handled = bkGroup_DispatchEvent(pageGroup, context, 9, eventData, 1, 0);
     
     // Return true if event was handled, false otherwise
     return (handled != 0);
@@ -1036,18 +1036,18 @@ int CCalMoviePlayer::ComputeFrameSize() {  // 3F00_h
 // ─────────────────────────────────────────────────────────────────────────────
 
 // External helpers used by batch 2+ functions
-extern "C" void util_85C8(void* obj);            // @ 0x824885C8 - base destructor
+extern "C" void pong_EmptyVirtualDestructor(void* obj) __asm__("_util_85C8");            // @ 0x824885C8 - base destructor
 extern "C" void phInst_Release(void* obj);            // @ 0x82460850 - physics instance release
 extern "C" void* _crt_tls_fiber_setup();         // @ 0x82566B78 - fiber context setup
 extern "C" void _locale_register(void* ptr);     // @ 0x820C02D0 - memory dealloc
 extern "C" void pg_SleepYield(int frames);           // @ 0x82566C80 - wait N frames
-extern "C" void pg_6F48(void* ptr);              // @ 0x82566F48 - release page ref
+extern "C" void sysIpcHandle_Release(void* ptr) __asm__("_pg_6F48");              // @ 0x82566F48 - release page ref
 extern "C" uint32_t pg_C3B8_g(void* handle, int timeout); // @ 0x8242C3B8 - wait with timeout
 extern "C" void pg_6F10_g(void* handle);         // @ 0x82566F10 - close handle
 extern "C" void* pg_6F88_w(void* r3, uint32_t stackSize, void* entryPoint,
                             void* context, uint32_t priority, void* r8); // @ 0x82566F88 - create thread
 extern "C" void xe_sleep_B8A8(void* threadHandle, int32_t proc); // @ 0x8242B8A8 - set thread affinity
-extern "C" void rage_EAD8(void* ptr);            // @ 0x8235EAD8 - release callback object
+extern "C" void rmcDrawable_Release(void* ptr) __asm__("_rage_EAD8");            // @ 0x8235EAD8 - release callback object
 
 // Thread entry points for CCalMoviePlayer worker threads
 extern "C" void CCalMoviePlayer_EC88_p33(void* ctx); // @ 0x8248EC88 - FillReadBufferA entry
@@ -1057,10 +1057,10 @@ extern "C" void CCalMoviePlayer_ED18_p33(void* ctx); // @ 0x8248ED18 - WriteThre
 
 // Helper functions used by write threads
 extern "C" uint32_t atSingleton_vfn_28_DBC8_1(void* obj); // @ 0x8248DBC8 - check has element
-extern "C" void* CCalMoviePlayer_DBE0(void* obj);         // @ 0x8248DBE0 - get next element
-extern "C" void CCalMoviePlayer_DCC8(void* obj);           // @ 0x8248DCC8 - advance read index atomic
-extern "C" void CCalMoviePlayer_EB30(void* obj);           // @ 0x8235EB30 - save/replace fiber context
-extern "C" void CCalMoviePlayer_EB70(void* obj);           // @ 0x8235EB70 - clear fiber flag
+extern "C" void* CCalRingBuffer_PeekWriteSlot(void* obj) __asm__("_CCalMoviePlayer_DBE0");         // @ 0x8248DBE0 - get next element
+extern "C" void CCalRingBuffer_AdvanceWriteIndex(void* obj) __asm__("_CCalMoviePlayer_DCC8");           // @ 0x8248DCC8 - advance read index atomic
+extern "C" void CCalMoviePlayer_AcquireFiberContext(void* obj) __asm__("_CCalMoviePlayer_EB30");           // @ 0x8235EB30 - save/replace fiber context
+extern "C" void CCalMoviePlayer_ReleaseFiberContext(void* obj) __asm__("_CCalMoviePlayer_EB70");           // @ 0x8235EB70 - clear fiber flag
 extern "C" void grc_BDC0(void* obj);                       // @ 0x8235BDC0 - release grc resource
 
 /**
@@ -1073,7 +1073,7 @@ extern "C" void grc_BDC0(void* obj);                       // @ 0x8235BDC0 - rel
 void CCalMoviePlayer::DtorIntermediate() {
     *(void**)this = (void*)0x820092C0;  // Restore CCalMoviePlayer vtable
     CleanupResources();                  // Clean up threads and resources
-    util_85C8(this);                     // Destroy base class
+    pong_EmptyVirtualDestructor(this);                     // Destroy base class
 }
 
 /**
@@ -1378,7 +1378,7 @@ int CCalMoviePlayer::QueryAudioInterfaceViaProvider(void* outResult) {
  *
  * Simplified stop: if param is non-null, calls the audio provider's
  * vtable slot 19 (stop) with mode and param. Then calls vtable slot 21
- * (finalize). If field +240 is non-zero, calls pg_6F48 on field +268
+ * (finalize). If field +240 is non-zero, calls sysIpcHandle_Release on field +268
  * to release a page reference, and clears field +240.
  */
 void CCalMoviePlayer::StopPlaybackSimple(uint32_t mode, void* param) {
@@ -1397,7 +1397,7 @@ void CCalMoviePlayer::StopPlaybackSimple(uint32_t mode, void* param) {
 
     // Release page reference if pending
     if (m_activeFlag != 0) {
-        pg_6F48(m_hThreadWriteA);
+        sysIpcHandle_Release(m_hThreadWriteA);
         m_activeFlag = 0;
     }
 }
@@ -1437,7 +1437,7 @@ void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
 
     // Release page reference if pending
     if (m_activeFlag != 0) {
-        pg_6F48(m_hThreadWriteA);
+        sysIpcHandle_Release(m_hThreadWriteA);
         m_activeFlag = 0;
     }
 }
@@ -1448,8 +1448,8 @@ void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // External helpers
-extern void rage_EAC0(void* ptr);   // @ 0x8235EAC0 - AddRef on video callback
-extern void rage_EAD8(void* ptr);   // @ 0x8235EAD8 - Release video callback
+extern void rmcDrawable_AddRef(void* ptr) __asm__("_rage_EAC0");   // @ 0x8235EAC0 - AddRef on video callback
+extern void rmcDrawable_Release(void* ptr) __asm__("_rage_EAD8");   // @ 0x8235EAD8 - Release video callback
 
 /**
  * CCalMoviePlayer::SetStatusFlagsA @ 0x8248EF70 | size: 0x64
@@ -1577,8 +1577,8 @@ void CCalMoviePlayer::FlushAndNotify() {
  * CCalMoviePlayer::SetVideoCallback @ 0x8248FCF0 | size: 0x64
  *
  * Replaces the video callback object at offset +48. If a new callback is
- * provided, calls rage_EAC0 (AddRef) on it. If an existing callback is
- * stored, calls rage_EAD8 (Release) before replacing. Returns 0.
+ * provided, calls rmcDrawable_AddRef (AddRef) on it. If an existing callback is
+ * stored, calls rmcDrawable_Release (Release) before replacing. Returns 0.
  *
  * This mirrors SetAudioInterface but for the video path, using direct
  * helper calls rather than vtable dispatch for ref-counting.
@@ -1586,13 +1586,13 @@ void CCalMoviePlayer::FlushAndNotify() {
 int CCalMoviePlayer::SetVideoCallback(void* pCallback) {
     // AddRef on the new callback if non-null
     if (pCallback != nullptr) {
-        rage_EAC0(pCallback);
+        rmcDrawable_AddRef(pCallback);
     }
 
     // Release the old callback if present
     void* pOldCallback = m_pBufferObject;
     if (pOldCallback != nullptr) {
-        rage_EAD8(pOldCallback);
+        rmcDrawable_Release(pOldCallback);
         m_pBufferObject = nullptr;
     }
 
@@ -1646,7 +1646,7 @@ int CCalMoviePlayer::ValidateOutputFormat() {
  *
  * Scalar deleting destructor for the base CCalMoviePlayer class.
  * Stamps the base vtable (0x820092C0), runs the event cleanup helper
- * (CCalMoviePlayer_13), destroys the base object (util_85C8), and
+ * (CCalMoviePlayer_13), destroys the base object (pong_EmptyVirtualDestructor), and
  * optionally frees memory if bit 0 of flags is set.
  */
 void CCalMoviePlayer::ScalarDeletingDtorBase(int flags) {
@@ -1657,7 +1657,7 @@ void CCalMoviePlayer::ScalarDeletingDtorBase(int flags) {
     CleanupResources();
 
     // Destroy base object
-    util_85C8(this);
+    pong_EmptyVirtualDestructor(this);
 
     // Free if ownership flag set
     if (flags & 1) {
@@ -1933,10 +1933,10 @@ void CCalMoviePlayer::ProcessWriteBuffer() {
 }
 
 // External helpers for buffer fill functions
-extern "C" uint32_t CCalMoviePlayer_DBD0(void* obj);  // @ 0x8248DBD0 - get remaining sample count
-extern "C" void* CCalMoviePlayer_DC30(void* obj);      // @ 0x8248DC30 - get/reset next element
-extern "C" void CCalMoviePlayer_DD30(void* obj);       // @ 0x8248DD30 - advance iterator index
-extern "C" void pg_B850(void* threadHandle);            // @ 0x8242B850 - suspend thread
+extern "C" uint32_t CCalRingBuffer_GetFillCount(void* obj) __asm__("_CCalMoviePlayer_DBD0");  // @ 0x8248DBD0 - get remaining sample count
+extern "C" void* CCalRingBuffer_PeekReadSlot(void* obj) __asm__("_CCalMoviePlayer_DC30");      // @ 0x8248DC30 - get/reset next element
+extern "C" void CCalRingBuffer_AdvanceReadIndex(void* obj) __asm__("_CCalMoviePlayer_DD30");       // @ 0x8248DD30 - advance iterator index
+extern "C" void sysIpcThread_Suspend(void* threadHandle) __asm__("_pg_B850");            // @ 0x8242B850 - suspend thread
 
 /**
  * CCalMoviePlayer::FillReadBufferA @ 0x8248F268 | size: 0x278
@@ -1946,17 +1946,17 @@ extern "C" void pg_B850(void* threadHandle);            // @ 0x8242B850 - suspen
  *
  * Outer loop: queries the sub-object at +44 for an enumerator (vslot 15,
  * channel 0 via arg2) and iterator (vslot 17, channel 0 via arg2).
- * Inner loop: checks remaining samples via CCalMoviePlayer_DBD0 against
+ * Inner loop: checks remaining samples via CCalRingBuffer_GetFillCount against
  * the threshold at +244. When enough are available, extracts each element
- * via CCalMoviePlayer_DC30, activates it (element vslot 14), adds it to
+ * via CCalRingBuffer_PeekReadSlot, activates it (element vslot 14), adds it to
  * the enumerator (vslot 18), inserts by sort key (element vslot 21 →
- * enumerator vslot 30), then advances the iterator (CCalMoviePlayer_DD30)
+ * enumerator vslot 30), then advances the iterator (CCalRingBuffer_AdvanceReadIndex)
  * and signals event 6 (vslot 50). If not enough samples, waits for
  * event 0 (vslot 40).
  *
  * After draining, finalizes the enumerator (vslot 20), releases both
  * enumerator and iterator (vslot 2), signals event 4 (vslot 52), and
- * suspends the thread at +260 via pg_B850. Loops until status flags B
+ * suspends the thread at +260 via sysIpcThread_Suspend. Loops until status flags B
  * (vslot 63) bit 2 is set.
  */
 void CCalMoviePlayer::FillReadBufferA() {
@@ -1990,12 +1990,12 @@ void CCalMoviePlayer::FillReadBufferA() {
 
             while ((flags & 0x6) == 0) {
                 // Get remaining sample count from iterator
-                uint32_t remaining = CCalMoviePlayer_DBD0(iterator);
+                uint32_t remaining = CCalRingBuffer_GetFillCount(iterator);
                 uint32_t threshold = m_bufferCounterA;
 
                 if (remaining > threshold) {
                     // Get/reset next element from iterator
-                    void* element = CCalMoviePlayer_DC30(iterator);
+                    void* element = CCalRingBuffer_PeekReadSlot(iterator);
 
                     // Activate element (vslot 14 with arg 1)
                     void** elVt = *(void***)element;
@@ -2024,7 +2024,7 @@ void CCalMoviePlayer::FillReadBufferA() {
                     ((VFuncV)elVt[2])(element);
 
                     // Advance iterator to next sample
-                    CCalMoviePlayer_DD30(iterator);
+                    CCalRingBuffer_AdvanceReadIndex(iterator);
 
                     // Signal event 6 (vslot 50)
                     SignalEvent2();
@@ -2071,7 +2071,7 @@ void CCalMoviePlayer::FillReadBufferA() {
         // Signal event 4 and suspend this thread
         SignalEvent4();  // SignalEvent4
 
-        pg_B850(m_hThreadFillA);  // Suspend thread handle at +260
+        sysIpcThread_Suspend(m_hThreadFillA);  // Suspend thread handle at +260
 
         // Re-check flags B after resume
         flagsB = GetStatusFieldB();
@@ -2090,17 +2090,17 @@ void CCalMoviePlayer::FillReadBufferA() {
  *
  * Outer loop: queries the sub-object at +44 for an enumerator (vslot 15,
  * channel 1 via arg2) and iterator (vslot 17, channel 1 via arg2).
- * Inner loop: checks remaining samples via CCalMoviePlayer_DBD0 against
+ * Inner loop: checks remaining samples via CCalRingBuffer_GetFillCount against
  * the threshold at +248. When enough are available, extracts each element
- * via CCalMoviePlayer_DC30, activates it (element vslot 14), adds it to
+ * via CCalRingBuffer_PeekReadSlot, activates it (element vslot 14), adds it to
  * the enumerator (vslot 18), inserts by sort key (element vslot 21 →
- * enumerator vslot 30), then advances the iterator (CCalMoviePlayer_DD30)
+ * enumerator vslot 30), then advances the iterator (CCalRingBuffer_AdvanceReadIndex)
  * and signals event 3 (vslot 51). If not enough samples, waits for
  * event 1 (vslot 41).
  *
  * After draining, finalizes the enumerator (vslot 20), releases both
  * enumerator and iterator (vslot 2), signals event 5 (vslot 53), and
- * suspends the thread at +264 via pg_B850. Loops until status flags C
+ * suspends the thread at +264 via sysIpcThread_Suspend. Loops until status flags C
  * (vslot 64) bit 2 is set.
  */
 void CCalMoviePlayer::FillReadBufferB() {
@@ -2134,12 +2134,12 @@ void CCalMoviePlayer::FillReadBufferB() {
 
             while ((flags & 0x6) == 0) {
                 // Get remaining sample count from iterator
-                uint32_t remaining = CCalMoviePlayer_DBD0(iterator);
+                uint32_t remaining = CCalRingBuffer_GetFillCount(iterator);
                 uint32_t threshold = m_bufferCounterB;
 
                 if (remaining > threshold) {
                     // Get/reset next element from iterator
-                    void* element = CCalMoviePlayer_DC30(iterator);
+                    void* element = CCalRingBuffer_PeekReadSlot(iterator);
 
                     // Activate element (vslot 14 with arg 1)
                     void** elVt = *(void***)element;
@@ -2168,7 +2168,7 @@ void CCalMoviePlayer::FillReadBufferB() {
                     ((VFuncV)elVt[2])(element);
 
                     // Advance iterator to next sample
-                    CCalMoviePlayer_DD30(iterator);
+                    CCalRingBuffer_AdvanceReadIndex(iterator);
 
                     // Signal event 3 (vslot 51)
                     SignalEvent3();
@@ -2215,7 +2215,7 @@ void CCalMoviePlayer::FillReadBufferB() {
         // Signal event 5 and suspend this thread
         SignalEvent5();  // SignalEvent5
 
-        pg_B850(m_hThreadFillB);  // Suspend thread handle at +264
+        sysIpcThread_Suspend(m_hThreadFillB);  // Suspend thread handle at +264
 
         // Re-check flags C after resume
         flagsC = GetStatusFieldC();
@@ -2232,7 +2232,7 @@ void CCalMoviePlayer::FillReadBufferB() {
  * Drains the playback buffer by looping through available frames
  * (vtable slot 21). Each iteration: clears the fiber flag on the buffer
  * object at +48 (EB70), locks (vslot 3), sets channels to 2 (vslots 65/66),
- * releases page refs at +260/+264/+272 via pg_6F48, unlocks (vslot 5),
+ * releases page refs at +260/+264/+272 via sysIpcHandle_Release, unlocks (vslot 5),
  * waits for events 4-7 (vslots 44-47), replaces fiber context on buffer
  * object at +48 (EB30), then checks status flag bits to continue.
  *
@@ -2270,9 +2270,9 @@ int32_t CCalMoviePlayer::DrainPlaybackBuffer(uint32_t statusC) {
         SetChannelStatusB(2);
 
         // Release page references
-        pg_6F48(m_hThreadFillA);
-        pg_6F48(m_hThreadFillB);
-        pg_6F48(m_hThreadWriteB);
+        sysIpcHandle_Release(m_hThreadFillA);
+        sysIpcHandle_Release(m_hThreadFillB);
+        sysIpcHandle_Release(m_hThreadWriteB);
 
         // Unlock
         Unlock();
@@ -2348,7 +2348,7 @@ int32_t CCalMoviePlayer::DrainPlaybackBuffer(uint32_t statusC) {
  *    - signaling its event (vslots 48-51)
  *    - waiting with timeout (pg_C3B8_g, retrying on WAIT_TIMEOUT=258)
  *    - closing the handle (pg_6F10_g)
- * 4. Releases the callback object at +48 (rage_EAD8)
+ * 4. Releases the callback object at +48 (rmcDrawable_Release)
  * 5. Releases the media source at +44 (vslot 2)
  * 6. Reinitializes defaults via vslot 38
  *
@@ -2376,19 +2376,19 @@ int32_t CCalMoviePlayer::CleanupResources() {
 
     // Release page refs and wait for events for each active handle
     if (m_hThreadFillA != nullptr) {
-        pg_6F48(m_hThreadFillA);
+        sysIpcHandle_Release(m_hThreadFillA);
         WaitForEvent4();    // WaitEvent4
     }
     if (m_hThreadFillB != nullptr) {
-        pg_6F48(m_hThreadFillB);
+        sysIpcHandle_Release(m_hThreadFillB);
         WaitForEvent5();    // WaitEvent5
     }
     if (m_hThreadWriteA != nullptr) {
-        pg_6F48(m_hThreadWriteA);
+        sysIpcHandle_Release(m_hThreadWriteA);
         WaitForEvent6();    // WaitEvent6
     }
     if (m_hThreadWriteB != nullptr) {
-        pg_6F48(m_hThreadWriteB);
+        sysIpcHandle_Release(m_hThreadWriteB);
         WaitForEvent7();    // WaitEvent7
     }
 
@@ -2396,7 +2396,7 @@ thread_cleanup:
     // Terminate worker thread at +260 (FillReadBufferA)
     if (m_hThreadFillA != nullptr) {
         do {
-            pg_6F48(m_hThreadFillA);
+            sysIpcHandle_Release(m_hThreadFillA);
             SignalEvent0();    // SignalEvent0
         } while (pg_C3B8_g(m_hThreadFillA, 1) == 258);  // WAIT_TIMEOUT
         pg_6F10_g(m_hThreadFillA);
@@ -2406,7 +2406,7 @@ thread_cleanup:
     // Terminate worker thread at +264 (FillReadBufferB)
     if (m_hThreadFillB != nullptr) {
         do {
-            pg_6F48(m_hThreadFillB);
+            sysIpcHandle_Release(m_hThreadFillB);
             SignalEvent1();    // SignalEvent1
         } while (pg_C3B8_g(m_hThreadFillB, 1) == 258);
         pg_6F10_g(m_hThreadFillB);
@@ -2416,7 +2416,7 @@ thread_cleanup:
     // Terminate worker thread at +268 (WriteThreadProcA)
     if (m_hThreadWriteA != nullptr) {
         do {
-            pg_6F48(m_hThreadWriteA);
+            sysIpcHandle_Release(m_hThreadWriteA);
             SignalEvent2();    // SignalEvent2
         } while (pg_C3B8_g(m_hThreadWriteA, 1) == 258);
         pg_6F10_g(m_hThreadWriteA);
@@ -2426,7 +2426,7 @@ thread_cleanup:
     // Terminate worker thread at +272 (WriteThreadProcB)
     if (m_hThreadWriteB != nullptr) {
         do {
-            pg_6F48(m_hThreadWriteB);
+            sysIpcHandle_Release(m_hThreadWriteB);
             SignalEvent3();    // SignalEvent3
         } while (pg_C3B8_g(m_hThreadWriteB, 1) == 258);
         pg_6F10_g(m_hThreadWriteB);
@@ -2435,7 +2435,7 @@ thread_cleanup:
 
     // Release callback object at +48
     if (m_pBufferObject != nullptr) {
-        rage_EAD8(m_pBufferObject);
+        rmcDrawable_Release(m_pBufferObject);
         m_pBufferObject = nullptr;
     }
 
@@ -2599,7 +2599,7 @@ cleanup:
  * via atomic counter operations at +244, manages sorting, and
  * handles state transitions.
  *
- * Suspends via pg_B850 at thread handle +268 when idle.
+ * Suspends via sysIpcThread_Suspend at thread handle +268 when idle.
  * Exits when status flags B bit 2 is set (terminate signal).
  */
 void CCalMoviePlayer::WriteThreadProcA() {
@@ -2627,7 +2627,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
         if (enumerator == nullptr) {
             // No samples — release thread page and clear active flag
-            pg_6F48(m_hThreadWriteA);
+            sysIpcHandle_Release(m_hThreadWriteA);
             m_activeFlag = 0;
             goto suspend;
         }
@@ -2713,7 +2713,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
             // Get next element
             {
-                void* element = CCalMoviePlayer_DBE0(iterator);
+                void* element = CCalRingBuffer_PeekWriteSlot(iterator);
 
             // Get data from element via vslot 22
             void* dataPtr;
@@ -2759,7 +2759,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
                 if (insertResult >= 0) {
                     // Success — advance read index
-                    CCalMoviePlayer_DCC8(iterator);
+                    CCalRingBuffer_AdvanceWriteIndex(iterator);
                 } else if (insertResult == (int32_t)0x8000000A) {
                     // Timeout/retry — undo
                     {
@@ -2841,7 +2841,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
         SignalEvent6();
 
         // Suspend this thread
-        pg_B850(m_hThreadWriteA);
+        sysIpcThread_Suspend(m_hThreadWriteA);
 
         // Check status B again after resume
         statusB = GetStatusFieldB();
@@ -2902,7 +2902,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
         if (enumerator == nullptr) {
             // No samples — release thread page and clear active flag
-            pg_6F48(m_hThreadWriteA);
+            sysIpcHandle_Release(m_hThreadWriteA);
             m_activeFlag = 0;
             goto suspend;
         }
@@ -2937,7 +2937,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
         // Save/replace fiber context on buffer object
         {
             if (m_pBufferObject != nullptr) {
-                CCalMoviePlayer_EB30(m_pBufferObject);
+                CCalMoviePlayer_AcquireFiberContext(m_pBufferObject);
             }
         }
 
@@ -3023,7 +3023,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
             // Get next element
             {
-                void* element = CCalMoviePlayer_DBE0(iterator);
+                void* element = CCalRingBuffer_PeekWriteSlot(iterator);
 
             // Get data
             void* dataPtr;
@@ -3087,7 +3087,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
                         grc_BDC0(m_pBufferObject);
                     } else {
                         // Advance read index
-                        CCalMoviePlayer_DCC8(iterator);
+                        CCalRingBuffer_AdvanceWriteIndex(iterator);
                         // Signal event for render dispatch
                         RenderFrame(0);    // vslot 31
                         grc_BDC0(m_pBufferObject);
@@ -3134,7 +3134,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
             // Check and clear active flag
             if (m_activeFlag != 0) {
-                pg_6F48(m_hThreadWriteA);
+                sysIpcHandle_Release(m_hThreadWriteA);
                 m_activeFlag = 0;
             }
 
@@ -3154,7 +3154,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
             // Clear fiber flag on buffer object
             {
-                CCalMoviePlayer_EB70(m_pBufferObject);
+                CCalMoviePlayer_ReleaseFiberContext(m_pBufferObject);
             }
 
             // Finalize and release enumerator
@@ -3194,7 +3194,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
         SignalEvent7();
 
         // Suspend this thread
-        pg_B850(m_hThreadWriteB);
+        sysIpcThread_Suspend(m_hThreadWriteB);
 
         // Check status C again after resume
         statusC = GetStatusFieldC();
@@ -3228,7 +3228,7 @@ static const float kShaderConst_Zero = 0.0f;        // @ 0x8202D10C (lbl_8202D10
 static const float kShaderConst_One = 1.0f;          // @ 0x8202C518 (lbl_8202C518)
 
 /**
- * SetupShaderConstants (CCalMoviePlayer_CD88) @ 0x8235CD88 | size: 0x19C
+ * SetupShaderConstants (CCalMoviePlayer_SetupShaderConstants) @ 0x8235CD88 | size: 0x19C
  *
  * Allocates and configures a shader constant block for video playback
  * rendering. Sets up transformation matrix constants and GPU register
@@ -3239,7 +3239,8 @@ static const float kShaderConst_One = 1.0f;          // @ 0x8202C518 (lbl_8202C5
  *
  * @param pDevice  Pointer to the grcDevice object (large, +11000 byte structure)
  */
-extern "C" void CCalMoviePlayer_CD88(void* pDevice) {
+extern "C" void CCalMoviePlayer_SetupShaderConstants(void* pDevice) __asm__("_CCalMoviePlayer_CD88");
+extern "C" void CCalMoviePlayer_SetupShaderConstants(void* pDevice) {
     char* dev = (char*)pDevice;
 
     // Check if current write pointer exceeds limit

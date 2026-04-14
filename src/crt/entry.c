@@ -6,7 +6,7 @@
  *   __crt_main_entry  (XEX entry, called by the loader)
  *       └─ sysMemAllocator_InitMainThread   (init main thread's XTF context)
  *           └─ xe_alloc_thread_ctx_6CA8 (allocate physical thread stack/TLS)
- *       └─ rage_main_6970             (RAGE main loop)
+ *       └─ rage_main_stub             (RAGE main loop)
  *
  * The SDA base register (r13) points to a global struct that holds the
  * active memory allocator context at offset +4. xe_main_thread_init sets
@@ -37,11 +37,11 @@ struct XeTlsBlock {
 };
 
 /* ── Forward declarations ──────────────────────────────────────────── */
-int   rage_main_6970(void* parms, void* base);
+int   rage_main_stub(void* parms, void* base);
 int   atexit(void (*fn)(void));
-void* xe_phys_alloc_6AC8(uint32_t sizeBytes, int32_t protectFlags, uint32_t alignment, uint32_t allocFlags);
-void  util_7AE8(struct XeTlsBlock* pXtf, void* stackBase, uint32_t stackSize);
-void  xe_thread_ctx_init_6D40(struct XeTlsBlock* pXtf);
+void* XePhysicalAlloc_stub(uint32_t sizeBytes, int32_t protectFlags, uint32_t alignment, uint32_t allocFlags);
+void  XeTlsBlock_InitStack(struct XeTlsBlock* pXtf, void* stackBase, uint32_t stackSize);
+void  XeTlsBlock_BindMainThread(struct XeTlsBlock* pXtf);
 void  rage_DebugLog(const char* fmt, ...);
 
 /* ── Globals ───────────────────────────────────────────────────────── */
@@ -83,24 +83,24 @@ void xe_alloc_thread_ctx_6CA8(struct XeTlsBlock* pXtf, uint32_t stackSize, uint3
     pXtf->m_physFlag = pXtf->m_physFlag | 0x80;
     pXtf->m_pVtable = (void*)kThreadCtxCtorVtable;
 
-    void* stackBase = xe_phys_alloc_6AC8(alignedSize, -1, 0, kThreadPhysAllocFlags);
+    void* stackBase = XePhysicalAlloc_stub(alignedSize, -1, 0, kThreadPhysAllocFlags);
     if (stackBase == NULL) {
         rage_DebugLog((const char*)kThreadAllocFailFmt, (int32_t)alignedSize >> 10);
     }
 
-    /* The original always runs util_7AE8 even when allocation fails. */
-    util_7AE8(pXtf, stackBase, alignedSize);
+    /* The original always runs XeTlsBlock_InitStack even when allocation fails. */
+    XeTlsBlock_InitStack(pXtf, stackBase, alignedSize);
 }
 
 /**
  * xe_get_thread_ctx_36E8 @ 0x825836E8 | size: 0x0C
  *
  * atexit callback registered by sysMemAllocator_InitMainThread. It forwards the
- * process-global main-thread context object to xe_thread_ctx_init_6D40.
+ * process-global main-thread context object to XeTlsBlock_BindMainThread.
  */
 void xe_get_thread_ctx_36E8(void)
 {
-    xe_thread_ctx_init_6D40(&g_mainThreadXtf);
+    XeTlsBlock_BindMainThread(&g_mainThreadXtf);
 }
 
 
@@ -150,5 +150,5 @@ void __crt_main_entry(void* pStartupParms, void* pBase)
 #endif
 
     sysMemAllocator_InitMainThread();
-    (void)rage_main_6970(pStartupParms, pBase);
+    (void)rage_main_stub(pStartupParms, pBase);
 }

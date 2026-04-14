@@ -530,8 +530,8 @@ void gdCSCharAnimData::BuildFilteredArrays() {
     // Allocate pointer array for matching entries
     struct atArray { void* data; uint16_t count; uint16_t capacity; };
     atArray* matchArr = (atArray*)(&m_field_54);
-    extern "C" void xe_8E30(void* arr, uint32_t capacity);
-    xe_8E30(matchArr, matchCount);
+    extern "C" void AllocateU32Buffer(void* arr, uint32_t capacity);
+    AllocateU32Buffer(matchArr, matchCount);
 
     // Allocate byte flag array (at m_field_5C, 8 bytes after m_field_54)
     atArray* flagArr = (atArray*)(&m_field_5C);

@@ -125,12 +125,12 @@ extern void ph_vt5A8C_63_6A50(void* obj);
 extern void ph_vt5B98_40_8D50(void* obj);
 extern void ph_vt5B98_41_8E50(void* obj);
 extern void* phArchetype_Load(const char*, void*);
-extern void* ph_6FC8(void*, const char*);
+extern void* phArchetype_Find(void*, const char*);
 extern void* ph_9EC0_1(void*);
 extern void* ph_E010(void*, void*, const char*);
 
 /* --- RAGE / kernel functions --- */
-extern void  rage_Alloc(int size, void* allocator);  // rage_01B8
+extern void  rage_Alloc(int size, void* allocator);  // rage_AllocInternal
 extern void ke_ConstructObject(void* obj);
 extern void ke_DestroyObjectA(void* obj);
 extern void ke_DestroyObjectB(void* obj);
@@ -1794,14 +1794,14 @@ bool phBoundGeometry::CallVTableSlot37() {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_2DF0 @ 0x820C2DF0 | size: 0x18
+// phInitAsciiTokenizer @ 0x820C2DF0 | size: 0x18
 //
 // Initializes a rage::fiAsciiTokenizer object by setting its vtable pointer
 // and clearing the internal state field at offset +160.
 //
 // This is likely a constructor or reset function for the tokenizer class.
 // ─────────────────────────────────────────────────────────────────────────────
-void ph_2DF0(void* thisPtr) {
+void phInitAsciiTokenizer(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
     
     // Set vtable pointer for rage::fiAsciiTokenizer
@@ -1812,12 +1812,12 @@ void ph_2DF0(void* thisPtr) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_3AB0 @ 0x820C3AB0 | size: 0x10
+// phVec4Zero @ 0x820C3AB0 | size: 0x10
 //
 // Zeros out a 16-byte SIMD vector at the given address.
 // Uses AltiVec vxor instruction to efficiently clear the vector.
 // ─────────────────────────────────────────────────────────────────────────────
-void ph_3AB0(void* vectorPtr) {
+void phVec4Zero(void* vectorPtr) {
     uint32_t* vec = (uint32_t*)vectorPtr;
     vec[0] = 0;
     vec[1] = 0;
@@ -1826,14 +1826,14 @@ void ph_3AB0(void* vectorPtr) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_3AC0 @ 0x820C3AC0 | size: 0x18
+// phVec3MagSquared @ 0x820C3AC0 | size: 0x18
 //
 // Computes the dot product of a 3D vector with itself (magnitude squared).
 // Uses AltiVec vmsum3fp128 instruction for SIMD dot product calculation.
 //
 // Returns: float - The squared magnitude of the vector
 // ─────────────────────────────────────────────────────────────────────────────
-float ph_3AC0(const float* vector) {
+float phVec3MagSquared(const float* vector) {
     // Compute dot product: v.x*v.x + v.y*v.y + v.z*v.z
     float result = vector[0] * vector[0] + 
                    vector[1] * vector[1] + 
@@ -1884,7 +1884,7 @@ void ph_AdvanceSegmentedPtr(void* arrayBase, void** ptrToAdvance) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_0908 @ 0x820F0908 | size: 0x64
+// phNormalizePath @ 0x820F0908 | size: 0x64
 //
 // Normalizes a file path string by:
 // 1. Converting uppercase letters (A-Z) to lowercase (a-z)
@@ -1898,7 +1898,7 @@ void ph_AdvanceSegmentedPtr(void* arrayBase, void** ptrToAdvance) {
 //   src - Source path string
 //   maxLen - Maximum length to copy (including null terminator)
 // ─────────────────────────────────────────────────────────────────────────────
-void ph_0908(char* dest, const char* src, int maxLen) {
+void phNormalizePath(char* dest, const char* src, int maxLen) {
     int remaining = maxLen - 1;
     char* out = dest;
     
@@ -1928,7 +1928,7 @@ void ph_0908(char* dest, const char* src, int maxLen) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_9598 @ 0x820F9598 | size: 0xC
+// phAlignUp4 @ 0x820F9598 | size: 0xC
 //
 // Aligns a value up to the next 4-byte boundary.
 // Used for memory alignment in physics data structures.
@@ -1938,7 +1938,7 @@ void ph_0908(char* dest, const char* src, int maxLen) {
 //
 // Returns: uint32_t - Value aligned to 4-byte boundary
 // ─────────────────────────────────────────────────────────────────────────────
-uint32_t ph_9598(uint32_t value) {
+uint32_t phAlignUp4(uint32_t value) {
     // Add 3 and mask off lower 2 bits to round up to next multiple of 4
     return (value + 3) & 0xFFFFFFFC;
 }
@@ -1957,7 +1957,7 @@ void* ph_GetSimulationContext(void* thisPtr) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_FD58 @ 0x8221FD58 | size: 0x18
+// phGetStateCodeFromFlag22 @ 0x8221FD58 | size: 0x18
 //
 // Returns a state code based on a flag at offset +22.
 // Returns 3 if the flag is zero, 4 if the flag is non-zero.
@@ -1966,7 +1966,7 @@ void* ph_GetSimulationContext(void* thisPtr) {
 //
 // Returns: int - State code (3 or 4)
 // ─────────────────────────────────────────────────────────────────────────────
-int ph_FD58(void* thisPtr) {
+int phGetStateCodeFromFlag22(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
     uint16_t flag = *(uint16_t*)(obj + 22);
     
@@ -1977,7 +1977,7 @@ int ph_FD58(void* thisPtr) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_FD70 @ 0x8221FD70 | size: 0x8
+// phSetByteFlag15 @ 0x8221FD70 | size: 0x8
 //
 // Sets a byte flag at offset +15.
 // Simple setter for a physics object state flag.
@@ -1985,13 +1985,13 @@ int ph_FD58(void* thisPtr) {
 // Parameters:
 //   value - Byte value to store
 // ─────────────────────────────────────────────────────────────────────────────
-void ph_FD70(void* thisPtr, uint8_t value) {
+void phSetByteFlag15(void* thisPtr, uint8_t value) {
     uint8_t* obj = (uint8_t*)thisPtr;
     *(uint8_t*)(obj + 15) = value;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ph_F6A8 @ 0x8227F6A8 | size: 0x168
+// phLoadArchetypeForCreature @ 0x8227F6A8 | size: 0x168
 //
 // Complex physics archetype loading function. This function:
 // 1. Creates a temporary context for loading
@@ -2008,7 +2008,7 @@ void ph_FD70(void* thisPtr, uint8_t value) {
 //   creatureInst - Creature instance to associate with
 //   assetPath - Path to the physics archetype asset
 // ─────────────────────────────────────────────────────────────────────────────
-void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
+void phLoadArchetypeForCreature(void* contextPtr, void* creatureInst, const char* assetPath) {
     // External function declarations
     extern void* rage_alloc(uint32_t);
     
@@ -2035,7 +2035,7 @@ void ph_F6A8(void* contextPtr, void* creatureInst, const char* assetPath) {
     const char* formatStr = (const char*)0x82059F04;  // Format string for path variants
     
     while (true) {
-        void* existingArchetype = ph_6FC8(*(void**)((uint8_t*)physicsWorld + 8), normalizedPath);
+        void* existingArchetype = phArchetype_Find(*(void**)((uint8_t*)physicsWorld + 8), normalizedPath);
         
         if (existingArchetype != nullptr) {
             void* archetypeData = *(void**)((uint8_t*)existingArchetype + 4);
@@ -2625,14 +2625,14 @@ void rage::phArticulatedCollider::SetTimestep(float timestep) {
 } // namespace rage
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Physics State Machine — ph_0CC0
+// Physics State Machine — phStateMachineUpdate
 // ═════════════════════════════════════════════════════════════════════════════
 
 // External data tables
 extern const uint32_t g_phStateTransitionTable[];  // @ 0x82006AF8 (480 bytes)
 
 /**
- * ph_0CC0 @ 0x82470CC0 | size: 0x1C0
+ * phStateMachineUpdate @ 0x82470CC0 | size: 0x1C0
  *
  * Physics state machine update function. Manages state transitions for a
  * bounded physics system with interpolation support.
@@ -2661,7 +2661,7 @@ extern const uint32_t g_phStateTransitionTable[];  // @ 0x82006AF8 (480 bytes)
  * @param stateObj - Pointer to physics state machine object
  * @return Number of units processed (currentBound - initialBound)
  */
-int ph_0CC0(void* stateObj) {
+int phStateMachineUpdate(void* stateObj) {
     uint8_t* obj = (uint8_t*)stateObj;
     
     // Load bounds
@@ -3582,7 +3582,7 @@ int phInst::Release() {  // 37B0_p33
 } // namespace rage (temporary close for extern "C" declarations)
 extern "C" void RtlEnterCriticalSection(void* cs);
 extern "C" void RtlLeaveCriticalSection(void* cs);
-extern "C" void phInst_8F10(void* obj, void* a, void* b, void* c);
+extern "C" void phInst_SetMatrix_Impl(void* obj, void* a, void* b, void* c);
 extern "C" void ke_DispatchPhysics(void* state);
 extern "C" void phInst_Cleanup(void* obj);
 namespace rage { // reopen
@@ -3603,10 +3603,10 @@ void phInst::Unlock() {  // phInst_5
 
 /**
  * phInst::ShiftArgsAndCall @ 0x821292F8 | size: 0x18
- * Shifts argument registers and tail-calls phInst_8F10.
+ * Shifts argument registers and tail-calls phInst_SetMatrix_Impl.
  */
 void phInst::ShiftArgsAndCall(void* a, void* b, void* c) {  // 92F8_p42
-    phInst_8F10(this, a, b, c);
+    phInst_SetMatrix_Impl(this, a, b, c);
 }
 
 /**
@@ -4146,20 +4146,20 @@ void ph_TokenizerReadFloat(void* tokenizer) {
 }
 
 // ---------------------------------------------------------------------------
-// 8. phBoundCapsule_DAD8_p33 @ 0x823FDAD8 | size: 0x14
+// 8. phBoundCapsule_InitCapsuleResult @ 0x823FDAD8 | size: 0x14
 //    Initializes a result pair: sets type=3 (capsule) and value=0.
 //    r6 = output struct pointer.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_DAD8_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, uint32_t* outResult) {
+void phBoundCapsule_InitCapsuleResult(void* /*r3*/, void* /*r4*/, void* /*r5*/, uint32_t* outResult) {
     outResult[1] = 3;   // type = capsule
     outResult[0] = 0;   // value = 0
 }
 
 // ---------------------------------------------------------------------------
-// 9. phBoundCapsule_DAF0_p33 @ 0x823FDAF0 | size: 0x14
+// 9. phBoundCapsule_InitSphereResult @ 0x823FDAF0 | size: 0x14
 //    Initializes a result pair: sets type=2 (sphere) and byte[0]=0.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_DAF0_p33(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* outResult) {
+void phBoundCapsule_InitSphereResult(void* /*r3*/, void* /*r4*/, void* /*r5*/, void* outResult) {
     *(uint32_t*)((char*)outResult + 4) = 2;  // type = sphere
     *(uint8_t*)outResult = 0;                 // flag = 0
 }
@@ -4205,12 +4205,12 @@ void phBoundCapsule_WriteInt16Array(uint16_t value, int16_t* base, void* /*r5*/,
 }
 
 // ---------------------------------------------------------------------------
-// 14. phBoundCapsule_FD70_p33 @ 0x824AFD70 | size: 0x24
+// 14. phBoundCapsule_WritePacked24 @ 0x824AFD70 | size: 0x24
 //     Stores a 24-bit packed value into a 3-byte-stride array.
 //     The value in r3 is decomposed: byte2 = r3 & 0xFF, byte1 = (r3>>8) & 0xFF,
 //     byte0 = (r3>>16) & 0xFF, stored at base + index*3.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_FD70_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_WritePacked24(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
     uint32_t stride = index * 3;
     uint8_t* dst = base + stride;
     int32_t mid = value >> 8;
@@ -4236,10 +4236,10 @@ int32_t phBoundCapsule_ReadPacked24Shifted(void* base, void* /*r4*/, void* /*r5*
 }
 
 // ---------------------------------------------------------------------------
-// 16. phBoundCapsule_FD98_p33 @ 0x824AFD98 | size: 0x28
+// 16. phBoundCapsule_WritePacked24Shifted @ 0x824AFD98 | size: 0x28
 //     Stores a value left-shifted by 4 into a 3-byte-stride packed array.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_FD98_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
+void phBoundCapsule_WritePacked24Shifted(int32_t value, uint8_t* base, void* /*r5*/, uint32_t index) {
     uint32_t shifted = (uint32_t)value << 4;
     // Decompose 32-bit shifted value into 3 bytes (big-endian order)
     uint8_t* tmp = (uint8_t*)&shifted;
@@ -4251,20 +4251,20 @@ void phBoundCapsule_FD98_p33(int32_t value, uint8_t* base, void* /*r5*/, uint32_
 }
 
 // ---------------------------------------------------------------------------
-// 17. phBoundCapsule_BAF0_2h @ 0x8256BAF0 | size: 0x14
+// 17. phBoundCapsule_AllocArray @ 0x8256BAF0 | size: 0x14
 //     Multiplies r3 * r4, then tail-calls rage_Alloc with that size
 //     and allocator pointer 0x6489_0018.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_BAF0_2h(int32_t elemSize, int32_t count) {
+void phBoundCapsule_AllocArray(int32_t elemSize, int32_t count) {
     int32_t totalSize = elemSize * count;
     rage_Alloc(totalSize, g_phAllocator);
 }
 
 // ---------------------------------------------------------------------------
-// 18. phBoundCapsule_BBB8_2h @ 0x8256BBB8 | size: 0xC
+// 18. phBoundCapsule_RegisterLocaleHook @ 0x8256BBB8 | size: 0xC
 //     Tail-calls _locale_register with a fixed allocator pointer.
 // ---------------------------------------------------------------------------
-void phBoundCapsule_BBB8_2h(void* ptr) {
+void phBoundCapsule_RegisterLocaleHook(void* ptr) {
     _locale_register(ptr, g_phAllocator);
 }
 
@@ -4274,37 +4274,37 @@ void phBoundCapsule_BBB8_2h(void* ptr) {
 //        These register physics callback function pointers.
 // ---------------------------------------------------------------------------
 
-// 19. phBoundCapsule_FB70_2h @ 0x8256FB70 | size: 0x10
+// 19. phBoundCapsule_SetCallback0 @ 0x8256FB70 | size: 0x10
 int32_t phBoundCapsule_SetCallback0(uint32_t callback) {
     g_phCallback0 = callback;  // @ 0x825EA900
     return 0;
 }
 
-// 20. phBoundCapsule_FB80_2h @ 0x8256FB80 | size: 0x10
+// 20. phBoundCapsule_SetCallback1 @ 0x8256FB80 | size: 0x10
 int32_t phBoundCapsule_SetCallback1(uint32_t callback) {
     g_phCallback1 = callback;  // @ 0x825EA904
     return 0;
 }
 
-// 21. phBoundCapsule_FB90_2h @ 0x8256FB90 | size: 0x10
+// 21. phBoundCapsule_SetCallback2 @ 0x8256FB90 | size: 0x10
 int32_t phBoundCapsule_SetCallback2(uint32_t callback) {
     g_phCallback2 = callback;  // @ 0x825EA908
     return 0;
 }
 
-// 22. phBoundCapsule_FBA0_2h @ 0x8256FBA0 | size: 0x10
+// 22. phBoundCapsule_SetCallback3 @ 0x8256FBA0 | size: 0x10
 int32_t phBoundCapsule_SetCallback3(uint32_t callback) {
     g_phCallback3 = callback;  // @ 0x825EA90C
     return 0;
 }
 
-// 23. phBoundCapsule_FBB0_2h @ 0x8256FBB0 | size: 0x10
+// 23. phBoundCapsule_SetCallback4 @ 0x8256FBB0 | size: 0x10
 int32_t phBoundCapsule_SetCallback4(uint32_t callback) {
     g_phCallback4 = callback;  // @ 0x825EA910
     return 0;
 }
 
-// 24. phBoundCapsule_FBC0_2h @ 0x8256FBC0 | size: 0x10
+// 24. phBoundCapsule_SetCallback5 @ 0x8256FBC0 | size: 0x10
 int32_t phBoundCapsule_SetCallback5(uint32_t callback) {
     g_phCallback5 = callback;  // @ 0x825EA914
     return 0;
@@ -5624,7 +5624,7 @@ extern void phObject_BindOutputStream(void* stream, uint32_t a2, uint32_t a3,
 extern void rage_A518(void* outCtx, void* thisPtr, void* bufferPtr);
 extern void phObject_ReleaseStreamContext(void* thisPtr);
 extern void phObject_ReleaseSavedField(void* ptr);
-extern "C" void* rage_01B8(uint32_t size, uint32_t tag);
+extern "C" void* rage_AllocInternal(uint32_t size, uint32_t tag);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // phObject::SetupOutputStream @ 0x824889A8 | size: 0x60
@@ -5661,7 +5661,7 @@ int32_t phObject_SetupOutputStream(void* thisPtr, void* outPtr) {
 // stores the pointer at *outPtr. Returns 0 on success, error on failure.
 // ─────────────────────────────────────────────────────────────────────────────
 int32_t phObject_AllocateWorkBuffer(void** outPtr) {
-    void* buffer = rage_01B8(2040, 0x208C8000);
+    void* buffer = rage_AllocInternal(2040, 0x208C8000);
     if (buffer == NULL) {
         return (int32_t)0x8007000E;
     }
@@ -9199,7 +9199,6 @@ extern void phJoint3Dof_0170_g(void* dest, int stride, const void* srcTemplate, 
 //    phBoundGeometry vtable, calls ph_GetSimulationContext, then initializes the
 //    material table at +160 via ph_AdvanceSegmentedPtr. Returns this pointer.
 // ---------------------------------------------------------------------------
-// ph_1310
 void* phBoundGeometryIntermediate_Constructor(void* thisPtr, void* param) {
     // Call base constructor, passing through param
     ph_ctor_FFD8(thisPtr, param);
@@ -9224,7 +9223,6 @@ void* phBoundGeometryIntermediate_Constructor(void* thisPtr, void* param) {
 //    initialize each joint slot at a stride of 3016 bytes. After init,
 //    clears the total active joints counter and the enabled flag.
 // ---------------------------------------------------------------------------
-// ph_DD70
 void phJointChain_Constructor(void* thisPtr) {
     uint8_t* obj = (uint8_t*)thisPtr;
 
@@ -9260,8 +9258,8 @@ extern void ph_3760_4(void* thisPtr, uint32_t shapeKey, uint32_t materialId, uin
 extern void ph_1EF8(void* shapeKey, uint32_t materialOverride, uint32_t contactMaterialId,
                      uint8_t* surfaceFlagA, uint32_t contactFlags, uint8_t* surfaceFlagB,
                      uint32_t primitiveFlags, uint32_t maxMaterialId);
-extern void ph_5908(void* allocator, const char* tag, int alignment);
-extern void rage_3F18(void* pool, uint32_t handle, void* outPtr);
+extern void phBound_LockChannel(void* allocator, const char* tag, int alignment);
+extern void rage_CopyChannelData(void* pool, uint32_t handle, void* outPtr);
 extern void ph_ctor_ABE8(void* thisPtr);
 extern void rage_debugLog(const char* msg, uint64_t val);
 
@@ -9324,8 +9322,8 @@ void phContactManager_RegisterSurface(void* thisPtr, void* sourceBound) {
  * ph_3608 — Lock, resolve handle, and unlock physics pool
  * @ 0x82123608 | size: 0x74 (116 bytes)
  *
- * Acquires a physics allocator lock via ph_5908 (tag string),
- * resolves a pool handle to a pointer via rage_3F18, then
+ * Acquires a physics allocator lock via phBound_LockChannel (tag string),
+ * resolves a pool handle to a pointer via rage_CopyChannelData, then
  * releases the lock. Used to safely fetch a physics object
  * from a handle while the allocator is locked.
  *
@@ -9335,13 +9333,13 @@ void phContactManager_RegisterSurface(void* thisPtr, void* sourceBound) {
 // ph_3608
 void phPool_ResolveHandleLocked(void* outPtr, void* handle) {
     uint32_t allocator = *(uint32_t*)((char*)handle + 4);
-    ph_5908((void*)(uintptr_t)allocator, (const char*)0x82027660, 1);
+    phBound_LockChannel((void*)(uintptr_t)allocator, (const char*)0x82027660, 1);
     uint32_t subHandle = *(uint32_t*)((char*)handle + 4);
     uint32_t poolHandle = *(uint32_t*)((char*)subHandle + 12);
     void* pool = *(void**)0x8251A374;
-    rage_3F18(pool, poolHandle, (void*)((char*)outPtr + 164));
+    rage_CopyChannelData(pool, poolHandle, (void*)((char*)outPtr + 164));
     uint32_t allocator2 = *(uint32_t*)((char*)handle + 4);
-    ph_5908((void*)(uintptr_t)allocator2, (const char*)0x8202766C, 1);
+    phBound_LockChannel((void*)(uintptr_t)allocator2, (const char*)0x8202766C, 1);
 }
 
 /**

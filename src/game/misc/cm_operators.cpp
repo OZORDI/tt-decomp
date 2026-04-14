@@ -83,7 +83,7 @@ void* cmWorldRefreshableCtor_Destructor()
 
 // Forward declarations for utility functions
 extern "C" float cmOperator_EvalFloat(void* port);    // Evaluates a cmPort and returns float
-extern "C" int cmSwitch_4B60(void* port);              // Evaluates a cmPort and returns int
+extern "C" int cmNode_GetDim_stub(void* port);              // Evaluates a cmPort and returns int
 extern "C" int cmNode_GetInt(void* port);              // Evaluates a cmPort and returns int
 extern "C" bool cmCond_21B0(void* port);               // Evaluates a cmPort as bool
 extern "C" void cmNode_GetVector(void* dest, void* port);  // Evaluates a cmPort into vector
@@ -130,14 +130,14 @@ void cmLookup::GetDim(int* outResult) {
 
         if (keyValue <= threshold) {
             // Found match - evaluate and return this entry's result
-            *outResult = cmSwitch_4B60(&m_entries[i].valuePort);
+            *outResult = cmNode_GetDim_stub(&m_entries[i].valuePort);
             return;
         }
     }
 
     // No match - return default value (2-entry: default port overlaps entries[2])
     cmPort* defaultPort = (cmPort*)&m_entries[2];
-    *outResult = cmSwitch_4B60(defaultPort);
+    *outResult = cmNode_GetDim_stub(defaultPort);
 }
 
 /**
@@ -208,7 +208,7 @@ void cmLookup::GetVector(void* outVector) {
  * cmLookup::GetDimValue @ 0x8226DB18 | size: 0x9c
  * 
  * Scalar destructor - evaluates lookup table and returns matching int result (2-entry variant).
- * Similar to GetDim but uses cmNode_GetInt instead of cmSwitch_4B60.
+ * Similar to GetDim but uses cmNode_GetInt instead of cmNode_GetDim_stub.
  */
 void cmLookup::GetDimValue(int* outResult) {
     float keyValue = cmOperator_EvalFloat(&m_keyPort);
@@ -251,7 +251,7 @@ void cmLookup::CopyState(void* dest) {
  * 
  * 3-entry variant: Returns matching int result from 3-entry lookup table.
  */
-void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
+void cmLookup_GetDim_3entry(void* self, int* outResult) {
     cmLookup* node = (cmLookup*)self;
     float keyValue = cmOperator_EvalFloat(&node->m_keyPort);
 
@@ -259,14 +259,14 @@ void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
         float threshold = cmOperator_EvalFloat(&node->m_entries[i].condPort);
 
         if (keyValue <= threshold) {
-            *outResult = cmSwitch_4B60(&node->m_entries[i].valuePort);
+            *outResult = cmNode_GetDim_stub(&node->m_entries[i].valuePort);
             return;
         }
     }
 
     // Default port at +0x44 for 3-entry table
     cmPort* defaultPort = &node->m_defaultPort;
-    *outResult = cmSwitch_4B60(defaultPort);
+    *outResult = cmNode_GetDim_stub(defaultPort);
 }
 
 /**
@@ -274,7 +274,7 @@ void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
  * 
  * 3-entry variant: Returns matching float result from 3-entry lookup table.
  */
-void cmLookup_GetFloat_DC58_1(void* self, float* outResult) {
+void cmLookup_GetFloat_3entry(void* self, float* outResult) {
     cmLookup* node = (cmLookup*)self;
     float keyValue = cmOperator_EvalFloat(&node->m_keyPort);
 
@@ -296,7 +296,7 @@ void cmLookup_GetFloat_DC58_1(void* self, float* outResult) {
  * 
  * 3-entry variant: Returns matching bool result from 3-entry lookup table.
  */
-void cmLookup_GetBool_DDB0_1(void* self, bool* outResult) {
+void cmLookup_GetBool_3entry(void* self, bool* outResult) {
     cmLookup* node = (cmLookup*)self;
     float keyValue = cmOperator_EvalFloat(&node->m_keyPort);
 
@@ -596,7 +596,7 @@ extern "C" void cmCond_1038_g(void* condPort, void* dest) {
  * RegisterPorts — reads the connected port at +20 to determine
  * the output dimension type (m_outputType at +4).
  */
-void cmCond_vfn_16(void* self) {
+void cmCond_RegisterPorts_2cond(void* self) {
     cmCond* node = (cmCond*)self;
     cmPort* valuePort = &node->m_entries[0].valuePort;
 
@@ -618,18 +618,18 @@ void cmCond_vfn_16(void* self) {
  *
  * GetDim — evaluates 2-cond node, returns int dimension from matching port.
  */
-void cmCond_vfn_5(void* self, int32_t* out) {
+void cmCond_GetDim_2cond(void* self, int32_t* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
         if (cmCond_21B0(&node->m_entries[i].condPort)) {
-            *out = cmSwitch_4B60(&node->m_entries[i].valuePort);
+            *out = cmNode_GetDim_stub(&node->m_entries[i].valuePort);
             return;
         }
     }
 
     cmPort* defaultPort = (cmPort*)&node->m_entries[2];
-    *out = cmSwitch_4B60(defaultPort);
+    *out = cmNode_GetDim_stub(defaultPort);
 }
 
 /**
@@ -637,7 +637,7 @@ void cmCond_vfn_5(void* self, int32_t* out) {
  *
  * GetFloat — evaluates 2-cond node, returns float from matching port.
  */
-void cmCond_vfn_4(void* self, float* out) {
+void cmCond_GetFloat_2cond(void* self, float* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
@@ -656,7 +656,7 @@ void cmCond_vfn_4(void* self, float* out) {
  *
  * GetBool — evaluates 2-cond node, returns bool from matching port.
  */
-void cmCond_vfn_3(void* self, uint8_t* out) {
+void cmCond_GetBool_2cond(void* self, uint8_t* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
@@ -675,7 +675,7 @@ void cmCond_vfn_3(void* self, uint8_t* out) {
  *
  * GetVector — evaluates 2-cond node, returns vec4 from matching port.
  */
-void cmCond_vfn_2(void* self, void* out) {
+void cmCond_GetVector_2cond(void* self, void* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
@@ -694,7 +694,7 @@ void cmCond_vfn_2(void* self, void* out) {
  *
  * GetInt32 — evaluates 2-cond node, returns int32 from matching port.
  */
-void cmCond_vfn_1(void* self, int32_t* out) {
+void cmCond_GetInt32_2cond(void* self, int32_t* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
@@ -714,7 +714,7 @@ void cmCond_vfn_1(void* self, int32_t* out) {
  * CopyState — iterates all 5 ports (2 cond + 2 value + 1 default)
  * starting at +12, stepping by 8 bytes, calling cmCond_1038_g on each.
  */
-void cmCond_vfn_18(void* self, void* dest) {
+void cmCond_CopyState_2cond(void* self, void* dest) {
     cmCond* node = (cmCond*)self;
     // 2-cond: 5 ports = 2 cond + 2 value + 1 default, each 8 bytes
     cmPort* port = (cmPort*)&node->m_entries[0];
@@ -734,18 +734,18 @@ void cmCond_vfn_18(void* self, void* dest) {
  *
  * GetDim — 3-cond variant.
  */
-void cmCond_vfn_5_CF20_1(void* self, int32_t* out) {
+void cmCond_GetDim_3cond(void* self, int32_t* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
         if (cmCond_21B0(&node->m_entries[i].condPort)) {
-            *out = cmSwitch_4B60(&node->m_entries[i].valuePort);
+            *out = cmNode_GetDim_stub(&node->m_entries[i].valuePort);
             return;
         }
     }
 
     cmPort* defaultPort = (cmPort*)&node->m_entries[3];
-    *out = cmSwitch_4B60(defaultPort);
+    *out = cmNode_GetDim_stub(defaultPort);
 }
 
 /**
@@ -753,7 +753,7 @@ void cmCond_vfn_5_CF20_1(void* self, int32_t* out) {
  *
  * GetFloat — 3-cond variant.
  */
-void cmCond_vfn_4_CF90_1(void* self, float* out) {
+void cmCond_GetFloat_3cond(void* self, float* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
@@ -772,7 +772,7 @@ void cmCond_vfn_4_CF90_1(void* self, float* out) {
  *
  * GetBool — 3-cond variant.
  */
-void cmCond_vfn_3_D000_1(void* self, uint8_t* out) {
+void cmCond_GetBool_3cond(void* self, uint8_t* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
@@ -791,7 +791,7 @@ void cmCond_vfn_3_D000_1(void* self, uint8_t* out) {
  *
  * GetVector — 3-cond variant.
  */
-void cmCond_vfn_2_D070_1(void* self, void* out) {
+void cmCond_GetVector_3cond(void* self, void* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
@@ -810,7 +810,7 @@ void cmCond_vfn_2_D070_1(void* self, void* out) {
  *
  * GetInt32 — 3-cond variant.
  */
-void cmCond_vfn_1_D0F8_1(void* self, int32_t* out) {
+void cmCond_GetInt32_3cond(void* self, int32_t* out) {
     cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
@@ -829,7 +829,7 @@ void cmCond_vfn_1_D0F8_1(void* self, int32_t* out) {
  *
  * CopyState — 3-cond variant, iterates 7 ports.
  */
-void cmCond_vfn_18_0C50_1(void* self, void* dest) {
+void cmCond_CopyState_3cond(void* self, void* dest) {
     cmCond* node = (cmCond*)self;
     // 3-cond: 7 ports = 3 cond + 3 value + 1 default, each 8 bytes
     cmPort* port = (cmPort*)&node->m_entries[0];
