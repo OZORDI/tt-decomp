@@ -870,3 +870,264 @@ void stateHelpTips_Update(void* self) { // @ 0x8210A930
 const char* stateAnticipationCam_GetName(void* /*self*/) { // @ 0x82107708
     return "AnticipationCam";
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// gmLogicSinglesMatch — Singles match state machine
+//
+// Anchored by the state-transition log string
+//   "gmLogicSinglesMatch's next state was %s, is %s"
+// and by
+//   "gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d"
+//
+// The class's state family (from RTTI typeinfos) spans 33 sub-states, grouped
+// into: setup (stateInit, statePreMatchSync, statePreMatch, statePreGame,
+// stateAnticipationCam, statePrePreServe, statePreServeSpectatorSyncState,
+// stateServeBounce, stateServe, ...), mid-game (stateReplay, stateReplayNego-
+// tiation(PreSync), statePostPoint, statePostPointCS, statePostGame), and
+// closure (statePostMatch, statePostTourney, statePostTourneyMovie,
+// statePostPostGame, stateSaveDialog, stateUnlockDialog). All substates
+// inherit from hsmState and live in the vtable @ 0x82030CC4 family.
+//
+// Struct layout (fields actually touched by the vfns below):
+//   +0x04  uint32_t  m_flags               (or state count?)
+//   +0x08  void**    m_stateArray           (array of hsmState*)
+//   +0x0c  int32_t   m_currentStateIndex    (-1 == none)
+//   +0x1c  float     m_elapsedTotal         (vfn_11 accumulator)
+//   +0x20  uint8_t   m_updateReplayTimer
+//   +0x24  float     m_elapsedReplay
+//   +0x28  float     m_elapsedBonus         (only if state==3)
+//   +0x30  void*     m_pNetworkClient       (nullable)
+//   +0x34  uint8_t   m_isTrainingDrill      (enables substate 21)
+//   +0x36  uint8_t   m_bFlagB
+//   +0x38  uint32_t  m_someCounter
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Named externs for the match log/error strings (documented anchors)
+extern char g_str_gmLogicSinglesMatch_nextState[];       // "gmLogicSinglesMatch's next state was %s, is %s"
+extern char g_str_gmLogicSinglesMatch_MidGameBadEnum[];  // "gmLogicSinglesMatch::MidGame(): Unknown PointsPerGame enum value = %d"
+extern char g_str_gmLogicSinglesMatch_replayOnEnter[];   // "gmLogicSinglesMatch::stateReplay::onEnterState"
+
+// External helpers referenced by the vfns below (real PPC recomp names)
+extern "C" {
+    void  singles_Timer_58E0_h(void* self);                 // +0x821058E0
+    void  singles_5860(void* self);                         // +0x82105860 (base_onExit chain)
+    void  singles_5B70(void* self);                         // +0x82105B70 (base_onEnter chain)
+    void  singles_5D38_dispatch(void* self);                // +0x82105D38
+    void* SinglesNetworkClient_25D0_v12(void* netClient);   // +0x823D25D0 — network tick
+    void  PostGlobalMessage(int msgId, int mask, int argc, void* args); // pg_E6E0 @ 0x8225E6E0
+    void  hsmContext_SetNextState(void* self, int stateId);
+    uint8_t IsNetworkActiveAndNotDisconnected();            // pg_10E0_g @ 0x821010E0
+    bool  CanDispatchTrainingEvent_21(void* self, int evtId); // atSingleton_67E0_g @ 0x821067E0
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSinglesMatch::vfn_10  [slot 10 @ 0x82105AA8] | size: 0x4C
+// Mini-destructor / reset hook. Chains base reset + timer reset + clears
+// training-drill flags and counters (+44, +54, +56).
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSinglesMatch_vfn_10(void* self) { // @ 0x82105AA8
+    singles_5860(self);                     // base deinit
+    singles_5B70(self);                     // timer/serve reset
+    singles_Timer_58E0_h(self);             // secondary timer reset
+    *(uint8_t*)((char*)self + 44) = 0;
+    *(uint8_t*)((char*)self + 54) = 0;
+    *(uint32_t*)((char*)self + 56) = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSinglesMatch::vfn_12  [slot 12 @ 0x821057C0] | size: 0x9C
+// Per-frame dispatch. If a network client is attached at +0x30, tick it and,
+// if its session is positive, run the internal dispatch chain. Also gates a
+// "state 21" (training drill) event on m_isTrainingDrill.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSinglesMatch_vfn_12(void* self) { // @ 0x821057C0
+    void* netClient = *(void**)((char*)self + 48);
+    if (netClient != nullptr) {
+        // The game returns vtable@0x82030D60 via the v12 helper, effectively
+        // (char*)netClient + 0x0D60 — a subobject handled by SinglesNetwork-
+        // Client_25D0_v12. Treat as "if tick returned > 0, run dispatch".
+        SinglesNetworkClient_25D0_v12((char*)netClient + 3424);
+        int32_t tickResult = *(int32_t*)((char*)netClient + 3424);
+        if (tickResult > 0) {
+            singles_5D38_dispatch(self);
+        }
+    }
+
+    // Training-drill pipe: +0x34 flag, sub-state index at +0x0C must be [1,19]
+    if (*(uint8_t*)((char*)self + 52) != 0) {
+        int32_t idx = *(int32_t*)((char*)self + 12);
+        if (idx >= 1 && idx < 20) {
+            CanDispatchTrainingEvent_21(self, 21);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSinglesMatch::vfn_13  [slot 13 @ 0x82105AF8] | size: 0x78
+// CanTransitionTo(stateId). Rejects out-of-range ids, fast-paths the training-
+// drill virtual state (21), then delegates to the current sub-state's
+// vtable slot 15 (CanTransitionTo). Accepts state 3 when no sub-state set.
+// ─────────────────────────────────────────────────────────────────────────────
+bool gmLogicSinglesMatch_vfn_13(void* self, int stateId) { // @ 0x82105AF8
+    int32_t stateCount = *(int32_t*)((char*)self + 4);
+    if (stateId >= stateCount) {
+        return false;
+    }
+
+    // Training-drill virtual state
+    if (*(uint8_t*)((char*)self + 52) != 0 && stateId == 21) {
+        return true;
+    }
+
+    int32_t curIdx = *(int32_t*)((char*)self + 12);
+    if (curIdx != -1) {
+        void** stateArray = *(void***)((char*)self + 8);
+        void* curState = stateArray[curIdx];
+        if (curState != nullptr) {
+            void** vt = *(void***)curState;
+            typedef bool (*CanTransFn)(void*, int);
+            return ((CanTransFn)vt[15])(curState, stateId);
+        }
+    }
+
+    // No active state: only allow transition to state 3 (stateAnticipationCam)
+    return stateId == 3;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSinglesMatch::vfn_20  [slot 20 @ 0x82106788] | size: 0x58
+// Teardown / "force exit" hook. If a network client is attached, posts
+// event 14372 (MSG_NETWORK_FORCE_EXIT) and nulls the +0x30 pointer.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSinglesMatch_vfn_20(void* self) { // @ 0x82106788
+    if (*(void**)((char*)self + 48) != nullptr) {
+        uint32_t arg = 1;
+        PostGlobalMessage(14372, 0, 1, &arg);
+        *(void**)((char*)self + 48) = nullptr;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSinglesMatch::stateReplay::onEnterState  @ 0x8210AFD0 | size: 0x168
+// Anchored by the log string "gmLogicSinglesMatch::stateReplay::onEnterState".
+//
+// Enters replay mode. Steps:
+//   1. Chain to stateServeBounce_vfn_11 (base onEnter).
+//   2. Post global message 2128 (MSG_ENTER_REPLAY) to world channel 64.
+//   3. Peek flag at [match-context + 29] — if set, hot-path:
+//        a. Pull replay-buffer pointer from the global match context;
+//        b. If flags A/B at fixed bit-offsets are both clear, look up and
+//           activate the "replay player" actor (via game_76A8);
+//        c. If flag C is set, copy a pointer (+272 in match) into the
+//           replay slot and invoke util_CE00 (replay prep / playback init);
+//        d. If flag D is set, mark replay session "active" (write 1 into
+//           replay+36084);
+//        e. Set the HSM "is-replay-running" byte in the match struct (+37)
+//           and the state-local "entered" byte (this+16).
+//      Cold path: clear (this+16) and call stateReplay_B320 (replay fail-
+//      over / bail-out which drops state to stateServeBounce).
+//
+// In addition to +16, zeroes three status bytes at this+17/18/19 (replay
+// timers / scrub flags) and sets the class-wide "replay active" flag at
+// the singleton (lbl_82104650 + 26224 <- 0).
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" {
+    void stateServeBounce_vfn_11_base(void* self);      // 0x82106A60
+    void ReplayActor_Activate(void* actor, void* slot); // game_76A8 @ 0x821676A8
+    void ReplayInit_CE00(void* replaySlot);             // util_CE00 @ 0x821CCE00
+    void stateReplay_B320_fallback(void* self);         // @ 0x8210B320
+    void game_3860_unknown(void);                       // @ 0x821D3860
+
+    // Matchcontext / replay globals (reconstructed from the lis/addi pairs)
+    extern void* g_pActiveMatchContext;  // derived from r27 (-23812), +29 = flag
+    extern char  g_ReplayActive;         // r10 (-32160) + 26224
+    extern void* g_pReplayStateData;     // r28 (-23828) — base of replay slot
+    extern void* g_pHsmContextCurrent;   // -23772
+}
+
+void gmLogicSinglesMatch_stateReplay_OnEnter(void* self) { // @ 0x8210AFD0
+    stateServeBounce_vfn_11_base(self);
+
+    // Broadcast: "replay entered" to world (group mask 64).
+    PostGlobalMessage(2128, 64, 0, nullptr);
+
+    void* matchCtx = g_pActiveMatchContext;
+    uint8_t flagEntry = *((uint8_t*)matchCtx + 29);
+
+    // Local status bytes on this state
+    *((uint8_t*)self + 17) = 0;
+    *((uint8_t*)self + 18) = 0;
+    *((uint8_t*)self + 19) = 0;
+
+    // Class-wide flag: "replay active" pushed to false before re-arming
+    g_ReplayActive = 0;
+    game_3860_unknown();
+
+    if (flagEntry == 0) {
+        // Cold path — no replay buffer ready; bail to service fallback.
+        *((uint8_t*)self + 16) = 0;
+        stateReplay_B320_fallback(self);
+        return;
+    }
+
+    // Hot path — replay buffer ready.
+    char* replaySlot = (char*)g_pReplayStateData;
+
+    // Probe flags A (byte +36091) and B (byte +36094) in the replay slot.
+    if (replaySlot[36091] == 0) {
+        if (replaySlot[36094] == 0) {
+            void* actorPtr = *(void**)(replaySlot + 36112);
+            if (actorPtr != nullptr) {
+                uint16_t actorIndex = *(uint16_t*)((char*)actorPtr + 4);
+                // (actorIndex*16) walk into a per-actor table reachable via
+                // g_replayActorBase -> slot +44 -> table[0] + (idx<<4) - 16
+                void* table   = /* g_replayActorBase->slot44 */
+                    *(void**)(*(char**)(*(char**)((char*)&g_ReplayActive + 25628)) + 44);
+                void* dataSlot = (char*)(*(void**)((char*)table + 0))
+                                 + ((uint32_t)actorIndex << 4) - 16;
+                ReplayActor_Activate(actorPtr, dataSlot);
+            }
+        }
+        replaySlot = (char*)g_pReplayStateData;
+    }
+
+    // Flag C — replay owns a match-side pointer; copy HSM context+272 in.
+    if (replaySlot[36092] != 0) {
+        void* hsmCtx = g_pHsmContextCurrent;
+        *(void**)(replaySlot + 36096) = *(void**)((char*)hsmCtx + 272);
+    }
+
+    // Final init
+    ReplayInit_CE00(replaySlot);
+
+    // Flag D — arm replay "active" byte
+    if (replaySlot[36089] != 0) {
+        *(uint32_t*)(replaySlot + 36084) = 1;
+    }
+
+    // Mark both local and match-wide "replay running" flags
+    *((uint8_t*)self + 16) = 1;
+    *((uint8_t*)matchCtx + 37) = 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// gmLogicSinglesMatch::MidGame  @ 0x8238CA38 | size: 0x10 (thunk)
+//
+// Tiny dispatch thunk — the strings index points at the typeinfo that fires
+// the error log "MidGame(): Unknown PointsPerGame enum value = %d". The real
+// body is a tail-call to a jump table over m_PointsPerGame (0..N-1).
+// Shape observed in similar 0x10-byte vfn thunks across this codebase:
+//     r11 = this->vtable;
+//     r3  = this + 8;        // private "match state" context
+//     mtctr [r11 + <slot>];
+//     bctr
+// Documented here as a tail-call. The out-of-range case hits the error str.
+// ─────────────────────────────────────────────────────────────────────────────
+void gmLogicSinglesMatch_MidGame(void* self) { // @ 0x8238CA38
+    // Tail-call through vtable into the PointsPerGame jump-table impl.
+    // Default (out-of-range) slot logs g_str_gmLogicSinglesMatch_MidGameBadEnum.
+    void** vt = *(void***)self;
+    typedef void (*MidGameImplFn)(void*);
+    ((MidGameImplFn)vt[/*slot filled by the dispatcher*/ 0])((char*)self + 8);
+}

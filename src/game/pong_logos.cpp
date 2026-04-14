@@ -79,12 +79,19 @@ enum ScreenID {
     SCREEN_LOGOS = 2
 };
 
-// String constants — addresses in .rdata, content determined by resolve_address
-static const char* const STR_LOGOS_STATE_NAME   = (const char*)0x8205E478;  // GetName result
-static const char* const STR_ON_ENTER_LOG       = (const char*)0x8205E4B4;  // OnEnter debug format
-static const char* const STR_ON_EXIT_LOG        = (const char*)0x8205E4E4;  // OnExit debug format
-static const char* const STR_INIT_LOG_1         = (const char*)0x8205E488;  // Init debug msg 1
-static const char* const STR_INIT_LOG_2         = (const char*)0x8205E4A0;  // Init debug msg 2
+// String constants — lifted via named externs from pong_logos_strings.cpp
+// (addresses retained here for cross-reference with the XEX .rdata section).
+extern "C" const char* const g_str_pongLogosState;              // 0x8205E478 — GetName
+extern "C" const char* const g_str_loading_logos_screen;        // 0x8205E488 — "Loading logos screen..."
+extern "C" const char* const g_str_logos_screen_loaded;         // 0x8205E4A0 — "Logos screen loaded"
+extern "C" const char* const g_str_entered_logos_invalid_state; // 0x8205E4B4 — OnEnter invalid-prev format
+extern "C" const char* const g_str_exiting_logos_invalid_state; // 0x8205E4E4 — OnExit invalid-next format
+
+#define STR_LOGOS_STATE_NAME   g_str_pongLogosState
+#define STR_ON_ENTER_LOG       g_str_entered_logos_invalid_state
+#define STR_ON_EXIT_LOG        g_str_exiting_logos_invalid_state
+#define STR_INIT_LOG_1         g_str_loading_logos_screen
+#define STR_INIT_LOG_2         g_str_logos_screen_loaded
 
 // Vtable addresses
 static const uint32_t VTABLE_PONG_LOGOS_CONTEXT    = 0x8205E564;
@@ -313,4 +320,48 @@ void pongLogosState_OnExit(pongLogosState* self, uint32_t nextStateIdx) {
 
     // Clear the UI manager's active screen
     CreditsRoll_Deactivate(g_uiManager, 0, 0);
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  hudLogosScreen — UI Page Object (destructor)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Base destructor + operator-delete for the rage UI-page base class.
+extern void rage_uiPage_DtorBase(void* self);   // @ 0x822EAD88 — base page destructor (non-freeing)
+extern void rage_operator_delete(void* mem);    // @ 0x820C00C0 — rage::free
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudLogosScreen::~hudLogosScreen  [vtable slot 0 @ 0x82317E50 | size: 0x68]
+//
+// Standard "scalar deleting destructor" in the MSVC/Xbox ABI. Signature:
+//     hudLogosScreen* __thiscall dtor(hudLogosScreen* self, uint32_t flags);
+//
+// The low bit of `flags` is the delete-this flag: when set, the object
+// memory is freed after destruction; otherwise only the destructor runs
+// (e.g. stack / embedded instance).
+//
+// Sequence:
+//   1. Re-install both vtables (MI class — two vptrs at +0x00 and +0x04).
+//        primary   → 0x82060BF8
+//        secondary → 0x82060C20
+//      Restoring vptrs before chaining is the standard C++ destruction order.
+//   2. Call the base class destructor (rage UI-page base).
+//   3. If (flags & 1), release the underlying allocation.
+// ─────────────────────────────────────────────────────────────────────────────
+void* hudLogosScreen_Destruct(void* self, uint32_t flags) {
+    // Re-install the dual vtables for the destruction step.
+    *(uint32_t*)((uint8_t*)self + 0) = VTABLE_HUD_LOGOS_PRIMARY;
+    *(uint32_t*)((uint8_t*)self + 4) = VTABLE_HUD_LOGOS_SECONDARY;
+
+    // Chain to the base-class destructor.
+    rage_uiPage_DtorBase(self);
+
+    // Low bit of `flags` → also release the heap allocation.
+    if (flags & 1u) {
+        rage_operator_delete(self);
+    }
+
+    return self;
 }
