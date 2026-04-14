@@ -42,10 +42,11 @@ void CPeakMeterEffect::ScalarDtor(int flags) {
     // Decrement reference count (COM Release pattern)
     m_refCount--;
 
-    // If refcount reaches 0, clear effect data
+    // Scaffold clears two pointers at +28/+32 when refcount hits zero;
+    // overlaps with m_pInputBufB/m_pInputBufC in the typed layout.
     if (m_refCount == 0) {
-        m_pEffectData1 = nullptr;
-        m_pEffectData2 = nullptr;
+        m_pInputBufB = nullptr;
+        m_pInputBufC = nullptr;
     }
 }
 
@@ -73,9 +74,12 @@ CShelvingFilterEffect::~CShelvingFilterEffect() {
 void CShelvingFilterEffect::ScalarDtor(int flags) {
     m_refCount--;
 
+    // Scaffold clears two pointers at +28/+32 when refcount hits zero.
+    // CShelvingFilterEffect uses that region for per-channel state inside
+    // _pad0x08; the writes are preserved as raw-offset clears for fidelity.
     if (m_refCount == 0) {
-        m_pEffectData1 = nullptr;
-        m_pEffectData2 = nullptr;
+        *reinterpret_cast<void**>(reinterpret_cast<char*>(this) + 28) = nullptr;
+        *reinterpret_cast<void**>(reinterpret_cast<char*>(this) + 32) = nullptr;
     }
 }
 

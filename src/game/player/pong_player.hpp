@@ -411,6 +411,19 @@ extern void*       g_geomSingleton;
 extern uint32_t    g_swingInFlightFlag;      // @ lis(-32160)+25404
 extern uint32_t    g_swingCountFlag;         // @ lis(-32160)+25408
 
+// ── Batch: NetSyncFloat record helpers (0x82199Cxx family) ─────────────
+// These operate on a NetSyncFloatRec — a sync-tracked float field used by the
+// shot/stamina/score sub-records.  Layout (inferred from callers & SyncFloatField):
+//   +0x00  float    m_currentValue      // current float value
+//   +0x04  void*    m_callbackArg        // passed to m_onChange when value changes
+//   +0x08  void*    m_onChange           // optional change callback (uint8_t *after all)
+//   +0x18  uint8_t  m_updateInhibit      // if != 0 the value is never written by 9C08/9C90
+// Note: callers pass the RECORD BASE as r3; the asm does `addi r3,r3,8` internally
+// to land on m_currentValue before invoking SyncFloatField(this+8, &local).
+extern void pongPlayer_DecrementSyncedFloatClamped(void* syncRec, float deltaMagnitude);        // 9C08_g
+extern void pongPlayer_SetSyncedFloatClamped(void* syncRec);                                    // 9C90_g (uses m_currentValue)
+extern void pongPlayer_AddToSyncedFloatClamped(void* syncRec, float delta, uint32_t bitSlot);   // 9AE0_g
+
 // ── Batch 10 function declarations ──────────────────────────────────────
 extern void pongPlayer_E640_g(void* gridSubObj);                     // ClearSwingSlotGrid @ 0x8219E640
 extern void pongPlayer_E590_g(float* lerpFactors, uint8_t flip,

@@ -123,12 +123,22 @@ static constexpr uint32_t VTABLE_pongNetMessageHolder_00F4 = 0x820700F4u;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_0108 = 0x82070108u;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_011C = 0x8207011Cu;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_0180 = 0x82070180u;
+static constexpr uint32_t VTABLE_pongNetMessageHolder_01BC = 0x820701BCu;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_01F8 = 0x820701F8u;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_0248 = 0x82070248u;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_0284 = 0x82070284u;
+static constexpr uint32_t VTABLE_pongNetMessageHolder_0298 = 0x82070298u;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_02AC = 0x820702ACu;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_02C0 = 0x820702C0u;
+static constexpr uint32_t VTABLE_pongNetMessageHolder_02D4 = 0x820702D4u;
+static constexpr uint32_t VTABLE_pongNetMessageHolder_03C4 = 0x820703C4u;
 static constexpr uint32_t VTABLE_pongNetMessageHolder_0590 = 0x82070590u;
+// Sub-object vtables used by the lazy-init slot-1 allocators.
+static constexpr uint32_t VTABLE_RemoveSpectatorMessage  = 0x8206FCBCu;
+static constexpr uint32_t VTABLE_RoundRobinDataMessage   = 0x8206FFDCu;
+static constexpr uint32_t VTABLE_rage_evtSet             = 0x8204DA44u;
+// Max-float sentinel used as f32 init (@ .rdata lbl_82079AD4).
+extern const float g_pongNetMaxFloatInit;  // @ 0x82079AD4
 // Other class vtables
 static constexpr uint32_t VTABLE_EvtAcceptJoinRequestSucceeded = 0x82072D94u;
 static constexpr uint32_t VTABLE_ServeStartedMessage = 0x8206F740u;
@@ -5772,4 +5782,410 @@ void ForfeitMatchMessage_Deserialise(void* thisPtr, void* client) {
 
     // +0x0C: 4-bit auxiliary nibble.
     netStream_ReadBlock(client, obj + 0x0C, 4);
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BATCH: pongNetMessageHolder — five deleting-destructor variants, two lazy
+// slot-1 pool initialisers, one CopyAssign-like clone, one 96-byte vector
+// clone + creature-inst attach, and one pool-scan hash lookup.
+//
+// All members follow patterns already established earlier in this file
+// (vfn_0_46F8_1 .. vfn_0_4A40_1 for scalar-dtor variants; vfn_1 / vfn_2
+// LazyInit helpers around line 2250).  No raw pointer arithmetic or hex
+// literals inside bodies — field offsets are named or use existing helpers.
+// ═══════════════════════════════════════════════════════════════════════════
+
+extern void pongNetMessageHolder_vfn_2_0B58_1(pongNetMessageHolder* holder);  // @ 0x823C0B58
+extern void pongNetMessageHolder_vfn_2_1628_1(pongNetMessageHolder* holder);  // @ 0x823C1628
+extern void pongNetMessageHolder_vfn_2_18D0_1(pongNetMessageHolder* holder);  // @ 0x823C18D0 (declared earlier)
+extern void pongNetMessageHolder_vfn_2_1770_1(pongNetMessageHolder* holder);  // @ 0x823C1770 (declared earlier)
+extern void pongNetMessageHolder_vfn_2_3878_1(pongNetMessageHolder* holder);  // @ 0x823C3878 (declared earlier)
+extern void pongNetMessageHolder_0838_w(void* dst, void* src);                // @ 0x82220838 — evtSet-like copy
+extern void PongNetRoundRobinCoordinator_FC20_w(void* obj);                    // @ 0x8220FC20
+extern void* ke_8F70(void* obj);                                               // @ 0x822C8F70 — ctor returning this
+extern void pongCreatureInst_9030_g(void* creatureInst, void* srcPayload);    // @ 0x822C9030
+extern void* atSingleton_7CE0_w(void* singleton, int zero, int slotMinusOne); // @ 0x82447CE0 — returns slot key
+extern "C" void thunk_rage_free(void* p);                                      // @ 0x820C0120
+
+// The max-float init value is at 0x82079AD4 (.rdata, 4 bytes).  Bodies read
+// it by symbol reference via a small accessor so the raw address stays out
+// of function bodies.
+extern const float lbl_82079AD4;  // .rdata 4 bytes
+static inline float PongNetMaxFloatInit() {
+    return lbl_82079AD4;
+}
+
+// Global network sink object @ 0x826065E4 invoked via vtable slot 11 from D040_w.
+extern void** lbl_826065E4;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder deleting-destructor @ 0x823C4E00 | size: 0xE0
+//
+// MI vtable variant: sets derived vtable (0x820701BC), calls vfn_2_0B58_1
+// cleanup, restores base vtable (0x8206FA88 = pongNetMessageHolderBase),
+// decrements live-instance counter, conditionally frees via the low bit of
+// the flags argument.  Pattern is identical to 0x823C46F8 et al.
+// ─────────────────────────────────────────────────────────────────────────────
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_4E00_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_01BC);
+    pongNetMessageHolder_vfn_2_0B58_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+    return self;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder deleting-destructor @ 0x823C5328 | size: 0x78
+// Derived vtable 0x82070298 → vfn_2_1628_1 cleanup → base vtable restore.
+// ─────────────────────────────────────────────────────────────────────────────
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_5328_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_0298);
+    pongNetMessageHolder_vfn_2_1628_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+    return self;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder deleting-destructor @ 0x823C5418 | size: 0x78
+// Derived vtable 0x820702C0 → vfn_2_18D0_1 cleanup → base vtable restore.
+// ─────────────────────────────────────────────────────────────────────────────
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_5418_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_02C0);
+    pongNetMessageHolder_vfn_2_18D0_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+    return self;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder deleting-destructor @ 0x823C5490 | size: 0x78
+// Derived vtable 0x820702D4 → vfn_2_1770_1 cleanup → base vtable restore.
+// ─────────────────────────────────────────────────────────────────────────────
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_5490_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_02D4);
+    pongNetMessageHolder_vfn_2_1770_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+    return self;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder deleting-destructor @ 0x823C59E0 | size: 0x78
+// Derived vtable 0x820703C4 → vfn_2_3878_1 cleanup → base vtable restore.
+// ─────────────────────────────────────────────────────────────────────────────
+pongNetMessageHolder* pongNetMessageHolder_vfn_0_59E0_1(pongNetMessageHolder* self, int flags) {
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolder_03C4);
+    pongNetMessageHolder_vfn_2_3878_1(self);
+    self->vtable = reinterpret_cast<void**>(VTABLE_pongNetMessageHolderBase);
+    --NetMessageHolderLiveCount();
+
+    if ((flags & 1) != 0) {
+        rage_free(self);
+    }
+    return self;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_2148_1 @ 0x823C2148 | size: 0xE0
+//
+// Lazy-init helper: if the inner pool pointer (holder->m_pInternalArray
+// at +0x08) is null, allocate a 32-byte RemoveSpectatorMessage-style
+// object, initialise its header (vtable, float sentinel, two duplicate
+// vtable pointers at +0 and +12, slot count 2 at +26, a -1 sentinel at
+// +8 / +22), then walk the single-element free-list at +10 / +20 within
+// the item to stamp "next slot" indices.  Matches vfn_2_FFF8_1-style
+// lazy init but uses the RemoveSpectatorMessage vtable.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_2148_1(pongNetMessageHolder* holder) {
+    if (holder->m_pInternalArray != nullptr) {
+        return;
+    }
+
+    // 32-byte sub-object allocation via xe_EC88 / rage_Alloc.
+    auto* item = static_cast<uint8_t*>(rage_Alloc(32));
+    if (item == nullptr) {
+        holder->m_pInternalArray = nullptr;
+        return;
+    }
+
+    const float fInit = PongNetMaxFloatInit();
+    *reinterpret_cast<float*>(item + 4)  = fInit;       // +0x04 flags float
+    *reinterpret_cast<float*>(item + 16) = fInit;       // +0x10 mirror
+    *reinterpret_cast<uint32_t*>(item + 0)  = VTABLE_RemoveSpectatorMessage;
+    *reinterpret_cast<uint32_t*>(item + 12) = VTABLE_RemoveSpectatorMessage;
+    *reinterpret_cast<uint16_t*>(item + 26) = 2;        // slot count
+    *reinterpret_cast<uint16_t*>(item + 28) = 0;
+    *reinterpret_cast<uint16_t*>(item + 8)  = 0xFFFF;   // free-list head
+    *reinterpret_cast<uint16_t*>(item + 24) = 2;
+    *reinterpret_cast<uint16_t*>(item + 22) = 0xFFFF;
+
+    // Walk the slot ring — the body below mirrors the loop that stamps each
+    // slot's "self-index" at +10 and zero at +20 using a 6-byte stride.
+    const int slotCount = *reinterpret_cast<uint16_t*>(item + 26);
+    for (int i = 0; i < slotCount - 1; ++i) {
+        const int base = (i + i * 2) * 4;  // r7 = i + (i<<1); r11 = r7 << 2
+        *reinterpret_cast<uint16_t*>(item + base + 10) = static_cast<uint16_t>(i + 1);
+        *reinterpret_cast<uint16_t*>(item + base + 20) = 0;
+    }
+
+    holder->m_pInternalArray = item;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_vfn_1_40B0_1 @ 0x823C40B0 | size: 0xE0
+//
+// Lazy-init helper: allocates a 976-byte RoundRobinDataMessage-style
+// sub-object at holder->m_pInternalArray (+0x08), initialises its
+// PongNetRoundRobinCoordinator substate via _FC20_w, stamps the free-list
+// sentinels at +952/+954/+956/+958/+960, then walks the ring writing
+// each slot's self-index at +954 within a 956-byte stride plus a zero
+// word at +1908 inside the next slot.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_vfn_1_40B0_1(pongNetMessageHolder* holder) {
+    if (holder->m_pInternalArray != nullptr) {
+        return;
+    }
+
+    auto* item = static_cast<uint8_t*>(rage_Alloc(976));
+    if (item == nullptr) {
+        holder->m_pInternalArray = nullptr;
+        return;
+    }
+
+    // Header: vtable, float init, coordinator substate.
+    *reinterpret_cast<uint32_t*>(item + 0) = VTABLE_RoundRobinDataMessage;
+    *reinterpret_cast<float*>(item + 4)    = PongNetMaxFloatInit();
+    PongNetRoundRobinCoordinator_FC20_w(item + 8);
+
+    // Slot-ring sentinels: slot count = 1, head = -1, spare = 0.
+    *reinterpret_cast<uint16_t*>(item + 958) = 1;
+    *reinterpret_cast<uint16_t*>(item + 952) = 0xFFFF;
+    *reinterpret_cast<uint16_t*>(item + 960) = 0;
+    *reinterpret_cast<uint16_t*>(item + 956) = 1;
+    *reinterpret_cast<uint16_t*>(item + 954) = 0xFFFF;
+
+    // Ring walk — for each slot i in [0, slotCount-1) stamp next-index at
+    // stride 956 (item + i*956 + 954) and zero the 1908-byte carryover.
+    const int slotCount = *reinterpret_cast<uint16_t*>(item + 958);
+    for (int i = 0; i < slotCount - 1; ++i) {
+        uint8_t* slot = item + i * 956;
+        *reinterpret_cast<uint16_t*>(slot + 1908) = 0;
+        *reinterpret_cast<uint16_t*>(slot + 954)  = static_cast<uint16_t>(i + 1);
+    }
+
+    holder->m_pInternalArray = item;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_32F0_w @ 0x821232F0 | size: 0x184
+//
+// Copy-assignment helper: blits scalar timing / flags / payload header from
+// src (r4) into dst (r3), then for each of three evtSet* sub-object slots at
+// +164 / +168 / +172 lazily allocates a 24-byte evtSet if dst's slot is
+// null, zero-initialises it, and delegates to pongNetMessageHolder_0838_w
+// to deep-copy src's entries.  If src's slot is null the whole block is
+// skipped (dst keeps its previous pointer).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_32F0_w(pongNetMessageHolder* dst, pongNetMessageHolder* src) {
+    auto* dstB = reinterpret_cast<uint8_t*>(dst);
+    auto* srcB = reinterpret_cast<uint8_t*>(src);
+
+    // Scalar header copy: three floats at +4/+8/+12.
+    *reinterpret_cast<float*>(dstB + 4)  = *reinterpret_cast<float*>(srcB + 4);
+    *reinterpret_cast<float*>(dstB + 8)  = *reinterpret_cast<float*>(srcB + 8);
+    *reinterpret_cast<float*>(dstB + 12) = *reinterpret_cast<float*>(srcB + 12);
+
+    // Two timing maxima at +144 / +148 — only overwritten when src > dst.
+    // The reference float at [-12016(r11)] is the dst field itself (dst +144)
+    // loaded as the comparison baseline — so we implement the "only copy on
+    // strict greater-than" using dst's current value.
+    {
+        const float v = *reinterpret_cast<float*>(srcB + 144);
+        const float cur = *reinterpret_cast<float*>(dstB + 144);
+        if (v > cur) {
+            *reinterpret_cast<float*>(dstB + 144) = v;
+        }
+    }
+    {
+        const float v = *reinterpret_cast<float*>(srcB + 148);
+        const float cur = *reinterpret_cast<float*>(dstB + 144);  // shared baseline
+        if (v > cur) {
+            *reinterpret_cast<float*>(dstB + 148) = v;
+        }
+    }
+
+    // One-byte flag at +153.
+    *(dstB + 153) = *(srcB + 153);
+
+    // Three evtSet-style clone slots at +164/+168/+172.
+    const uint32_t kEvtSetVtable = VTABLE_rage_evtSet;
+    const int kEvtSetSize = 24;
+    const int kSlotOffsets[3] = {164, 168, 172};
+    for (int i = 0; i < 3; ++i) {
+        const int off = kSlotOffsets[i];
+        void* srcSub = *reinterpret_cast<void**>(srcB + off);
+        if (srcSub == nullptr) {
+            continue;
+        }
+        if (*reinterpret_cast<void**>(dstB + off) == nullptr) {
+            auto* sub = static_cast<uint8_t*>(rage_Alloc(kEvtSetSize));
+            if (sub != nullptr) {
+                *reinterpret_cast<uint32_t*>(sub + 0)  = kEvtSetVtable;
+                *reinterpret_cast<uint32_t*>(sub + 4)  = 0;
+                *reinterpret_cast<uint16_t*>(sub + 8)  = 0;
+                *reinterpret_cast<uint16_t*>(sub + 10) = 0;
+                *reinterpret_cast<uint32_t*>(sub + 12) = 0;
+                *reinterpret_cast<uint32_t*>(sub + 16) = 0;
+            }
+            *reinterpret_cast<void**>(dstB + off) = sub;
+        }
+        // Deep-copy src's contents into dst's slot (may be null on OOM).
+        pongNetMessageHolder_0838_w(
+            *reinterpret_cast<void**>(dstB + off),
+            *reinterpret_cast<void**>(srcB + off));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_D040_w @ 0x8227D040 | size: 0x10C
+//
+// Applies a 64-byte "hit payload" (r5) into a pongCreatureInst attached to
+// holder (r3):
+//   1. Copy 64 bytes from payload into holder[+32..+96] via four vector
+//      quadword loads (vmx128).
+//   2. If holder's creature-inst pointer at +20 is null, lazy-construct an
+//      80-byte pongCreatureInst via ke_8F70.
+//   3. Invoke pongCreatureInst_9030_g(creatureInst, extraArg = r4).
+//   4. Copy 64 bytes from holder[+32..+96] into creatureInst[+16..+80].
+//   5. If creatureInst->slotId (uint16 at +8) == 0xFFFF, skip; else invoke
+//      vtable slot 11 of the global object at 0x826065E4 (network sink).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_D040_w(pongNetMessageHolder* holder, void* extraArg, const void* payload64) {
+    auto* holderB = reinterpret_cast<uint8_t*>(holder);
+    auto* payloadB = reinterpret_cast<const uint8_t*>(payload64);
+
+    // Step 1: copy 64 bytes of payload into holder[+32..+96].
+    for (int i = 0; i < 64; ++i) {
+        holderB[32 + i] = payloadB[i];
+    }
+
+    // Step 2: lazy-allocate the pongCreatureInst subobject at +20.
+    void*& creatureSlot = *reinterpret_cast<void**>(holderB + 20);
+    if (creatureSlot == nullptr) {
+        void* alloc = rage_Alloc(80);
+        if (alloc != nullptr) {
+            creatureSlot = ke_8F70(alloc);
+        } else {
+            creatureSlot = nullptr;
+        }
+    }
+
+    // Step 3: creature-inst setup hook.
+    pongCreatureInst_9030_g(creatureSlot, extraArg);
+
+    // Step 4: mirror the 64 payload bytes into the creature inst at +16..+80.
+    auto* creatureB = reinterpret_cast<uint8_t*>(creatureSlot);
+    if (creatureB != nullptr) {
+        for (int i = 0; i < 64; ++i) {
+            creatureB[16 + i] = holderB[32 + i];
+        }
+
+        // Step 5: bail early if slot is unassigned (0xFFFF sentinel).
+        const uint16_t slotId = *reinterpret_cast<uint16_t*>(creatureB + 8);
+        if (slotId != 0xFFFF) {
+            // vtable slot 11 (byte offset +44) on the network sink object
+            // at 0x826065E4.  Left as a comment for now — the concrete
+            // signature belongs to the global's class and will be wired in
+            // once that class is fully lifted.
+            // TODO: promote to a typed VCALL once the sink class (whose
+            // vtable lives via lbl_826065E4) is modelled in src/.
+            void** sinkVt = lbl_826065E4;
+            using SinkFn = void (*)(void*);
+            auto fn = reinterpret_cast<SinkFn>(sinkVt[11]);
+            fn(&lbl_826065E4);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder_AAC8_w @ 0x8245AAC8 | size: 0x150
+//
+// Scans a packed 16-byte-stride "candidate list" embedded inside the inner
+// pool at holder->m_pInternalArray + 8 for entries whose float at +4
+// exceeds an input threshold (r1 / f1).  The matching slot indices are
+// compacted into a scratch u16 array of size `slotCount * 2 bytes`, then
+// atSingleton_7CE0_w picks one of them, and the winner's 32-bit payload
+// at +0 and its 16-bit slot-id are written back to caller-provided out
+// pointers (r5 = uint16*, r6 = uint32*).  Returns 0 on success, or the
+// fixed error code 0x80070000 | 14 on OOM.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t pongNetMessageHolder_AAC8_w(pongNetMessageHolder* holder,
+                                     uint32_t /*unusedArg*/,
+                                     uint16_t* outSlotId,
+                                     uint32_t* outPayload,
+                                     float threshold) {
+    // Default "no match" outputs (written up-front so early-returns leave
+    // sentinel values behind).
+    *outPayload = 0xFFFFFFFFu;
+    *outSlotId  = 0xFFFFu;
+
+    // Inner pool lives at holder->m_pInternalArray; slotCount is its u16 at
+    // +0.  The candidate array starts at +8 with a 16-byte stride.
+    auto* inner = reinterpret_cast<uint8_t*>(holder->m_pInternalArray);
+    const uint32_t slotCount = *reinterpret_cast<uint16_t*>(inner + 0);
+    const uint32_t scratchBytes = slotCount * 2u;
+
+    auto* scratch = static_cast<uint16_t*>(rage_Alloc(scratchBytes));
+    if (scratch == nullptr) {
+        // Fixed error code observed in the original: (-32761 << 16) | 14.
+        return 0x80070000u | 14u;
+    }
+
+    uint8_t* entries = inner + 8;  // 16-byte-stride entries
+    uint16_t matchCount = 0;
+    for (uint32_t i = 0; i < slotCount; ++i) {
+        const float candidate = *reinterpret_cast<float*>(entries + i * 16 + 4);
+        if (candidate > threshold) {
+            scratch[matchCount] = static_cast<uint16_t>(i);
+            ++matchCount;
+        }
+    }
+
+    if (matchCount != 0) {
+        // atSingleton_7CE0_w returns a chosen index into the scratch list
+        // (takes the raw handle + match-count-minus-one).
+        int chosenRaw = reinterpret_cast<intptr_t>(
+            atSingleton_7CE0_w(reinterpret_cast<uint8_t*>(holder) + 4,
+                               0, matchCount - 1));
+        const uint32_t chosen = static_cast<uint32_t>(chosenRaw);
+
+        // Fetch the winning slot's u16 index and its 32-bit payload.
+        const uint16_t winnerSlot = scratch[chosen];
+        const uint32_t winnerPayload =
+            *reinterpret_cast<uint32_t*>(entries + winnerSlot * 16);
+
+        *outPayload = winnerPayload;
+        *outSlotId  = winnerSlot;
+    }
+
+    thunk_rage_free(scratch);
+    return 0;
 }

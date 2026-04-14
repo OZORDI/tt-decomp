@@ -156,6 +156,10 @@ struct gdCSActionShowAllAmbientsData {
 // ── gdCSActionWaitData  [vtable @ 0x82077BE4] ──────────────────────────
 struct gdCSActionWaitData {
     void**      vtable;           // +0x00
+    uint32_t    _pad04[3];        // +0x04-0x0F
+    bool        m_bEnabled;       // +0x10
+    uint8_t     _pad11[3];        // +0x11-0x13
+    float       m_fDuration;      // +0x14 (seconds to wait)
 
     // ── virtual methods ──
     virtual void PostLoadProperties();  // [20] @ 0x8240f0f8
@@ -431,14 +435,17 @@ struct pongCSActionShowAllAmbients {
 };
 
 // ── pongCSActionWait  [vtable @ 0x82065818] ──────────────────────────
-struct pongCSActionWait {
-    void**      vtable;           // +0x00
+// Stalls the cutscene for the duration stored in the gdCSActionWaitData.
+// m_pData at +4 holds the wait data (enabled byte +16, duration float +20).
+struct pongCSActionWait : pongCSAction {
+    // Note: m_pChildren / m_nChildCount from the base are unused for Wait.
+    float       m_fElapsed;   // +0x14 (cumulative time since Play)
 
-    // ── virtual methods ──
-    virtual void Play();  // [5] @ 0x82349fc0
-    virtual void Pause();  // [7] @ 0x82349fd0
-    virtual void Resume();  // [8] @ 0x82349fe0
-    virtual void OnComplete();  // [12] @ 0x8234a020
+    // ── virtual methods (overrides) ──
+    virtual void Play();
+    virtual void Pause(float dt);
+    virtual bool Resume();
+    virtual void OnComplete();
 };
 
 // ── pongCSReplayDirector  [2 vtables — template/MI] ──────────────────────────

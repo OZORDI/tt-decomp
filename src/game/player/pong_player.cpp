@@ -122,9 +122,10 @@ extern const float g_kVecConst_7D110[4];     // @ 0x8207D110  (16B)
 extern const float g_kVecConst_7D168[3];     // @ 0x8207D168  (12B)
 
 // .rdata scalar constants (0x82079xxx)
-extern const double g_kDoubleConst_79D00;    // @ 0x82079D00  (8B)
-extern const double g_kDoubleConst_79B00;    // @ 0x82079B00  (8B)
-extern const float  g_kFloatConst_79C04;     // @ 0x82079C04
+extern const double g_kDoubleConst_79D00;    // @ 0x82079D00  (8B)  upper clamp bound
+extern const double g_kDoubleConst_79B00;    // @ 0x82079B00  (8B)  lower clamp bound (zero as double)
+extern const double g_kDoubleConst_79EC8;    // @ 0x82079EC8  (8B)  select-zero double (0.0)
+extern const float  g_kFloatConst_79C04;     // @ 0x82079C04          epsilon/deadzone
 extern const float  g_kFloatConst_79CD8;     // @ 0x82079CD8
 extern const float  g_kFloatConst_79BAC;     // @ 0x82079BAC
 extern const float  g_kFloatConst_79FFC;     // @ 0x82079FFC
@@ -5458,3 +5459,257 @@ void pongPlayer_CopyBitfieldState(void* dest, void* source) {  // pongPlayer_6D9
     *reinterpret_cast<float*>(dstBase + 8) =
         *reinterpret_cast<float*>(srcBase + 8);
 }
+
+
+// ===========================================================================
+// SECTION 58 — NetSyncFloat record helpers (0x82199Cxx family)
+// ===========================================================================
+//
+// These three helpers mutate a NetSyncFloatRec — a sync-tracked float field
+// owned by shot/stamina/score sub-records.  The record layout (inferred from
+// SyncFloatField (CF10_g) and ResetShotSyncFields (9310_g)) is:
+//
+//   +0x00  float    m_currentValue       // value replicated over the network
+//   +0x04  void*    m_callbackArg        // passed to m_onChange if value changes
+//   +0x08  void*    m_onChange           // optional change-notification callback
+//   +0x18  uint8_t  m_updateInhibit      // non-zero => skip the sync update
+//
+// The three helpers share a common clamp pipeline:
+//   1. Take |delta| (or direct value in 9C90).
+//   2. If |delta| < g_kFloatConst_79C04 (epsilon) treat as 0.
+//   3. Clamp the result to the upper bound g_kDoubleConst_79D00.
+//   4. Combine with m_currentValue (subtract / overwrite / add).
+//   5. Re-clamp to [0, upperBound] before calling SyncFloatField.
+//
+// Caller convention: r3 = record base, f1 = float delta (for 9C08/9AE0).
+// The asm does `addi r3, r3, 8` internally so the SyncFloatField call
+// receives (record+8) — matching the target layout used everywhere else.
+
+
+// ---------------------------------------------------------------------------
+// 9C08_g — DecrementSyncedFloatClamped  @ 0x82199C08 | size: 0x88 (136 bytes)
+// ---------------------------------------------------------------------------
+/**
+ * Decrement a NetSyncFloatRec's value by |deltaMagnitude|, re-clamped to the
+ * epsilon/upper-bound window, skipped entirely when m_updateInhibit is set.
+ *
+ * Called from pongPlayer_37E0_g, pongPlayer_3A68_g, and pongPlayer_Process
+ * to bleed off a sync float (e.g. stamina tick) each frame.
+ *
+ * TODO: confirm the exact semantic of m_updateInhibit vs. the "use current
+ *       value as baseline" branch — the pass5 asm treats the zero-inhibit
+ *       path as the one that actually performs the SyncFloatField write.
+ */
+void pongPlayer_DecrementSyncedFloatClamped(void* syncRec, float deltaMagnitude) {
+    // SyncFloatField operates on (rec + 8).  The first 0x18 bytes of the rec
+    // form the tracked-field header; byte at +0x18 is the update inhibit flag.
+    uint8_t* recBase  = reinterpret_cast<uint8_t*>(syncRec);
+    uint8_t* syncSlot = recBase + 8;                         // target of SyncFloatField
+    const uint8_t inhibit = syncSlot[0x1C];                  // recBase + 0x24 == syncSlot + 0x1C
+                                                             // matches `lbz r11,28(r3+8)`
+
+    // 1. Take absolute value.
+    double v = deltaMagnitude < 0.0f ? -double(deltaMagnitude) : double(deltaMagnitude);
+
+    // 2. Apply deadzone: if |delta| < epsilon → 0.
+    const double epsilon = double(g_kFloatConst_79C04);
+    if (v < epsilon) {
+        v = double(g_kDoubleConst_79EC8);                    // 0.0 (select-zero double)
+    }
+
+    // 3. Clamp to upper bound.
+    const double upperBound = g_kDoubleConst_79D00;
+    if (v > upperBound) {
+        v = upperBound;
+    }
+
+    if (inhibit == 0) {
+        // 4. Combine: newValue = clamp01(currentValue − v) (but clamped to upperBound).
+        float  oldValue = *reinterpret_cast<float*>(syncSlot);
+        double combined = double(oldValue) - v;
+
+        if (combined < 0.0) {
+            combined = double(g_kDoubleConst_79EC8);         // floor at 0.0
+        }
+        if (combined > upperBound) {
+            combined = upperBound;                           // re-clamp at ceiling
+        }
+
+        float newValue = float(combined);
+
+        // 5. Commit through the standard change-notification path.
+        //    Equivalent to pongPlayer::SyncFloatField(syncSlot, &newValue);
+        //    — inlined here to avoid making it a static call.
+        float* valPtr = reinterpret_cast<float*>(syncSlot);
+        if (*valPtr != newValue) {
+            void* callback = *reinterpret_cast<void**>(syncSlot + 8);
+            if (callback) {
+                void* cbArg = *reinterpret_cast<void**>(syncSlot + 4);
+                reinterpret_cast<void(*)(void*)>(callback)(cbArg);
+            }
+            *valPtr = newValue;
+        }
+    }
+    // else: inhibit != 0 → value is frozen this frame.
+}
+
+
+// ---------------------------------------------------------------------------
+// 9C90_g — SetSyncedFloatClamped  @ 0x82199C90 | size: 0x1B8 (440 bytes)
+// ---------------------------------------------------------------------------
+/**
+ * "Commit the pending value" variant of the net-sync record.  Rather than
+ * taking a new value from an argument, it reads m_currentValue, converts it
+ * to int (for flag lookup), and — depending on three state bytes at
+ * +0x28/+0x29/+0x2A of the record — either pushes the current value to the
+ * replicated slot, rolls the value back via a timer field at +0x3C/+0x40,
+ * or clears the pending latch entirely.
+ *
+ * This is the counterpart of DecrementSyncedFloatClamped: when the record is
+ * flagged as "value changed but not yet synced", this function chooses
+ * whether to publish, re-queue, or discard the change.  The full control-flow
+ * mirrors UpdateDirtyFlags (9E48_g) — three bytes forming a small state
+ * machine (immediate / queued / previous).
+ *
+ * TODO: The full function body pivots on three byte flags at record+40/41/42
+ *       plus two floats at +60 and +64 and a timer constant at lbl_8202D108.
+ *       A faithful lift needs disambiguation of these offsets — deferred to
+ *       a follow-up pass with ground-truth from the caller pongPlayer_Process.
+ *       For now we stub with the correct signature so other lifts can refer
+ *       to the function.
+ */
+void pongPlayer_SetSyncedFloatClamped(void* syncRec) {
+    (void)syncRec;
+    // TODO(9C90_g): flag-machine dispatch + float pin-to-bounds.
+}
+
+
+// ---------------------------------------------------------------------------
+// 9AE0_g — AddToSyncedFloatClamped  @ 0x82199AE0 | size: 0x128 (296 bytes)
+// ---------------------------------------------------------------------------
+/**
+ * Accumulator variant of the NetSyncFloat clamp helper.  Adds `delta` to the
+ * record's current value, clamped to [0, upperBound] with the same epsilon
+ * deadzone.  When the old value equals a sentinel (g_kFloatConst_79C04),
+ * also raises bit (1 << bitSlot) in the record's flag word via pg_E480 —
+ * this is the "first-touch since reset" notification path.
+ *
+ * Caller: pongPlayer_3A68_g passes bitSlot in r5 to select which bit of the
+ * queued-update bitmask to OR in.
+ *
+ * TODO: confirm the pg_E480 signature (currently {rec_flags_base, slotId,
+ *       bitmask, code=4129, stringPtr}) and the exact offset of the 64-byte
+ *       field used as both input baseline and output accumulator — the +44
+ *       and +64 offsets differ from pongPlayer proper, consistent with this
+ *       being called on the shot sub-record, not the player itself.
+ */
+void pongPlayer_AddToSyncedFloatClamped(void* syncRec, float delta, uint32_t bitSlot) {
+    (void)syncRec;
+    (void)delta;
+    (void)bitSlot;
+    // TODO(9AE0_g): full lift pending shot-record field map.
+}
+
+
+// ===========================================================================
+// SECTION 59 — Forward declarations for follow-up batch
+// ===========================================================================
+//
+// The functions below are grouped with the 9Cxx NetSyncFloat family by their
+// Process() call-graph neighbourhood but require additional struct reverse
+// engineering before they can be safely lifted under the no-raw-offset rule.
+// They are declared here so other translation units can reference them by
+// name while the stub pass5 implementations remain in place.
+//
+
+/**
+ * pongPlayer_9EC8_g @ 0x82189EC8 | size: 0x198 (408 bytes)
+ *
+ * Walks the two 4-byte player-record entries at this+0x74 and this+0x78
+ * (matching the m_pPlayer[2] slot table), writes a single byte (team side)
+ * into two deep sub-objects at +0x1C4+0xBC and +0x1C4+0x75, then polls the
+ * global button-state singleton and, depending on the replay/network flag
+ * at lbl_8207B6C0, either invokes xe_BB68 on the two vtable[160] helpers of
+ * each player record or stores a fixed status code 2 into the button-state.
+ *
+ * TODO: The +0x1BC/+0x1A4/+0xA4 chains need confirmation — likely touch the
+ *       creature state + character-config sub-object.  Function is too
+ *       structurally dense to lift without first lifting 7CC0_g and 05A8_g.
+ */
+extern "C" void pongPlayer_9EC8_g(void* /*this*/);
+
+/**
+ * pongPlayer_AB48_g @ 0x820CAB48 | size: 0x130 (304 bytes)
+ *
+ * SIMD (vmx128) vector-math helper.  Reads a v3 at (arg1+0x70)+0xA4+148
+ * through two vtable indirections, falls through to a scalar fallback that
+ * calls game_AF18 (court-bounds sample), then blends the two via
+ * pongPlayer_9CD0_g and clamps the output into out[0..3].
+ *
+ * TODO: depends on game_AF18 + 9CD0_g lifts; needs a proper vec4 typedef
+ *       surfaced into the header before it can be written cleanly.
+ */
+extern "C" void pongPlayer_AB48_g(void* outVec, void* playerLike);
+
+/**
+ * pongPlayer_94F8_wrh @ 0x820D94F8 | size: 0xE4 (228 bytes)
+ *
+ * Iterates the 120-byte-per-entry global button-slot table (at g_pButtonStateTable
+ * + 0x20), searching for the first active slot matching the current active
+ * player.  Returns in f1 the float at byte offset 0 of the selected slot
+ * (defaulting to g_kFloatConst_D110 if none found).
+ *
+ * The modular arithmetic `((v * 0x888D) >> 32 + v) >> 6` is a signed
+ * divide-by-120 Hacker's-Delight reciprocal — it should be expressed as a
+ * plain modulo in the lifted source once confirmed.
+ */
+extern "C" float pongPlayer_94F8_wrh();
+
+/**
+ * pongPlayer_DDC0_g @ 0x820CDDC0 | size: 0xD4 (212 bytes)
+ *
+ * Compound gate: returns true iff the anim phase is NOT blocked
+ * (IsSwingPhaseBlocked == false) AND timing state exists with currentTime
+ * already past targetTime AND neither creature state is active AND not
+ * recovering.  This is the "ready to enter swing" test used by
+ * pongPlayer_DE98_g (IsInReturnPosition) and pongPlayer_BF18_g.
+ *
+ * Fully lifted version is trivial — waiting on the companion DA58
+ * IsSwingApexReached rewrite before landing to avoid churn in the
+ * IsSwingPhaseBlocked / IsRecovering predicate chain.
+ */
+extern "C" bool pongPlayer_DDC0_g(pongPlayer* self);
+
+/**
+ * pongPlayer_D908_g @ 0x820CD908 | size: 0x150 (336 bytes) —
+ *    CancelSwing full variant (already declared in header at hpp:303).
+ *
+ * Body performs: if IsSwingPhaseBlocked → reset anim state floats at
+ * +12/+16/+20/+24/+28/+32/+36, clear two globals (g_swingInFlightFlag,
+ * g_swingCountFlag), clear inner flag at +141, call nop_8240E6D0.
+ * Then if IsRecovering → call game_CD20 on recovery state.  Finally if
+ * IsSwingPhaseBlocked (again) → reset the m_pShotState->m_phase chain and
+ * stamp float at +412.
+ *
+ * TODO: hit-cancel semantics need a second pass — defer.
+ */
+extern "C" void pongPlayer_D908_g(pongPlayer* self);
+
+/**
+ * pongPlayer_DCD8_g @ 0x820CDCD8 | size: 0xE8 (232 bytes) —
+ *    IsBeforeSwingPeak (declared in hpp:294).
+ *
+ * Conjunction of four predicates: IsSwingPhaseBlocked, IsSwingTimerActive,
+ * IsCreatureStateReady, IsRecovering — plus a sign check on
+ * m_pAnimState->m_phase relative to g_swingPhaseThreshold.  Currently
+ * implemented via forwarding; TODO merge the sub-predicate early-outs for
+ * cleaner control flow.
+ */
+
+/**
+ * pongPlayer_DA58_g @ 0x820CDA58 | size: 0x27C (636 bytes) —
+ *    IsSwingApexReached (declared in hpp:295).
+ *
+ * Large time/threshold compare over m_pAnimState + m_pTimingState; already
+ * stub-declared.  TODO: port the full body now that 9C08 is in place.
+ */

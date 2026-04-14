@@ -753,14 +753,14 @@ void CDelayEffect::LockForProcess() {}
 void CDelayEffect::Process() {}
 
 void CPeakMeterEffect::CalcInputFrames() {}
-void CPeakMeterEffect::GetRegistrationProperties() {}
-void CPeakMeterEffect::IsInputFormatSupported() {}
-void CPeakMeterEffect::LockForProcess() {}
-void CPeakMeterEffect::Process() {}
-void CPeakMeterEffect::UnlockForProcess() {}
+// CPeakMeterEffect::GetRegistrationProperties — lifted in pong_audio_effects.cpp
+// CPeakMeterEffect::GetPeakValues (vfn_3)      — lifted in pong_audio_effects.cpp
+// CPeakMeterEffect::LockForProcess  (vfn_4)    — lifted in pong_audio_effects.cpp
+// CPeakMeterEffect::UnlockForProcess (vfn_5)   — lifted in pong_audio_effects.cpp
+// CPeakMeterEffect::Process         (vfn_6)    — lifted in pong_audio_effects.cpp
 
 void CShelvingFilterEffect::CalcInputFrames() {}
-void CShelvingFilterEffect::LockForProcess() {}
+// CShelvingFilterEffect::SetParameter (vfn_4)  — lifted in pong_audio_effects.cpp
 
 // ── Misc free functions ─────────────────────────────────────────────────────
 
