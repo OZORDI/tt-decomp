@@ -75,16 +75,20 @@ struct fxBallSpinLineData {
 };
 
 // ── fxBallSpinTex  [2 vtables — template/MI] ──────────────────────────
+struct fxMatrix44;   // 64-byte transform
+struct grcMaterial;  // opaque rage material
+
 struct fxBallSpinTex {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
     virtual ~fxBallSpinTex();                  // [0] @ 0x82389248
     virtual void ScalarDtor(int flags); // [1] @ 0x82388b70
-    virtual void vfn_2();  // [2] @ 0x82388978
-    virtual void vfn_3();  // [3] @ 0x82388c58
-    virtual void vfn_4();  // [4] @ 0x82280898
-    virtual void vfn_6();  // [6] @ 0x82389740
+    virtual void RegisterAndInit();  // [2] @ 0x82388978 — reset state then register into draw registry slot
+    virtual void Reset();  // [3] @ 0x82388c58 — zero segment vectors, seed default floats
+    virtual void vfn_4();  // [4] @ 0x82280898 — (thunk; inherited)
+    virtual void DrawSpinTrail(float lifetime, const fxMatrix44& xform,
+                               grcMaterial* mat, const fxVector4& spinAxis);  // [6] @ 0x82389740 — emit 30-capsule trail
 };
 
 // ── fxBallSpinTexData  [vtable @ 0x8206B388] ──────────────────────────
@@ -106,6 +110,10 @@ struct fxBallSplash2D {
 };
 
 // ── fxBallTrail  [vtable @ 0x820571B8] ──────────────────────────
+// Forward declarations for parameter types (opaque — defined in math/physics)
+struct fxVector4;              // 16-byte SIMD vector (x,y,z,w)
+struct fxBallTrailData;        // trail capacity/config descriptor
+
 struct fxBallTrail {
     void**      vtable;           // +0x00
     char        _pad04[0x3C24];   // +0x04  padding
@@ -117,11 +125,12 @@ struct fxBallTrail {
     // ── virtual methods ──
     virtual ~fxBallTrail();                  // [0] @ 0x82382450
     virtual void ScalarDtor(int flags); // [1] @ 0x82382230
-    virtual void vfn_2();  // [2] @ 0x82381150
+    virtual void Reset();  // [2] @ 0x82381150 — clear ring buffer, reseed defaults
     virtual void SetEffectParameters(int effectIndex, uint32_t intensity, uint32_t duration);  // [3] @ 0x82381208
-    virtual void vfn_4();  // [4] @ 0x82381238
-    virtual void vfn_5();  // [5] @ 0x823814f8
-    virtual void vfn_6();  // [6] @ 0x82381780
+    virtual void AddSample(const fxVector4& worldPos);  // [4] @ 0x82381238 — append trail sample with normalization
+    virtual void BuildQuadStrip(const fxVector4& p0, const fxVector4& p1,
+                                const fxVector4& p2, const fxVector4& p3);  // [5] @ 0x823814f8 — build geometry from 3-point window
+    virtual void Tick();  // [6] @ 0x82381780 — advance lifetime timer, trigger Reset when expired
 };
 
 // ── fxBallTrailData  [vtable @ 0x8206ACB4] ──────────────────────────
@@ -207,9 +216,9 @@ struct fxCrowdGfx {
     // ── virtual methods ──
     virtual ~fxCrowdGfx();                  // [0] @ 0x82385ab0
     virtual void ScalarDtor(int flags); // [1] @ 0x82385a40
-    virtual void vfn_2(int flags);  // [2] @ 0x823856e0
-    virtual void vfn_3();  // [3] @ 0x82385998
-    virtual void vfn_4();  // [4] @ 0x823859d0
+    virtual void vfn_2(int flags);  // [2] @ 0x823856e0 — cleanup + optional self-free
+    virtual void UnloadResource();  // [3] @ 0x82385998 — free cached mesh and null manager ptr
+    virtual void SubmitDraw();  // [4] @ 0x823859d0 — seed render state then push into pongDrawBucket
 };
 
 // ── fxCrowdManager  [vtable @ 0x8206B538] ──────────────────────────

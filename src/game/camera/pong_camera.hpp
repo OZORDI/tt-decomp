@@ -40,30 +40,54 @@ struct camShot {
 
 // ── camShotMgr  [2 vtables — template/MI] ──────────────────────────
 struct camShotMgr {
-    void**      vtable;           // +0x00
+    void**      vtable;               // +0x00
+    int32_t     m_shotCount;          // +0x04 - number of camShot entries in array
+    void**      m_shotArray;          // +0x08 - array of camShot* pointers (sized 4*count)
+    uint32_t    m_sourceStateId;      // +0x0C - latched-in source state id (copied to +20 by OnEnter)
+    uint32_t    field_0x10;           // +0x10
+    uint32_t    m_currentShotIndex;   // +0x14 - active shot index (-1 when none)
+    uint32_t    m_previousShotIndex;  // +0x18 - previous shot index (-1 when none)
+    uint32_t    m_nextShotIndex;      // +0x1C - next shot index (-1 when none)
 
     // ── virtual methods ──
-    virtual ~camShotMgr();                  // [0] @ 0x82166e38
-    virtual void vfn_4();  // [4] @ 0x82165458
-    virtual void vfn_8();  // [8] @ 0x82165468
-    virtual void vfn_9();  // [9] @ 0x82165558
-    virtual void vfn_10();  // [10] @ 0x821655d8
-    virtual void GetName();  // [13] @ 0x821655f0
-    virtual void vfn_14();  // [14] @ 0x82165608
+    virtual ~camShotMgr();                               // [0] @ 0x82166e38
+    virtual void OnEnter();                              // [4] @ 0x82165458 — copy m_sourceStateId → m_currentShotIndex, call gmLogic::OnEnter
+    virtual void BuildShotArray();                       // [8] @ 0x82165468 — alloc m_shotArray[m_shotCount+1], construct camShot per slot
+    virtual void DestroyShotArray();                     // [9] @ 0x82165558 — virtual-destruct each shot and free m_shotArray
+    virtual void ResetShotIndices();                     // [10] @ 0x821655d8 — set current/previous/next shot indices to -1
+    virtual void GetName();                              // [13] @ 0x821655f0
+    virtual void vfn_14();                               // [14] @ 0x82165608
 };
 
 // ── camViewCS  [vtable @ 0x82036330] ──────────────────────────
+// Camera "view of current shot" — pulls position from active camera source and
+// writes final FOV/aspect/view-extents into the bound pongCameraMgr each frame.
 struct camViewCS {
-    void**      vtable;           // +0x00
+    void**      vtable;               // +0x00
+    uint8_t     _pad_0x04[12];        // +0x04..+0x0F
+    uint16_t    m_viewFlags;          // +0x10 - cleared by OnReset / invalidated on source change
+    uint8_t     _pad_0x12[2];         // +0x12..+0x13
+    float       m_timeAccumulator;    // +0x14 - reset to 0.0 by OnReset
+    uint8_t     _pad_0x18[20];        // +0x18..+0x2B
+    void*       m_cameraMgr;          // +0x28 - bound pongCameraMgr (receives FOV writes)
+    uint8_t     _pad_0x2C[4];         // +0x2C..+0x2F
+    void*       m_boundCamera;        // +0x30 - bound camera/source object (supplies position at +164)
+    uint8_t     _pad_0x34[4];         // +0x34..+0x37
+    void*       m_activeSource;       // +0x38 - active camShot / source dispatched through vtable
+    uint8_t     _pad_0x3C[8];         // +0x3C..+0x43
+    uint8_t     m_useOverrideExtents; // +0x44 - non-zero → use m_overrideX/Y instead of bound-camera extents
+    uint8_t     _pad_0x45[3];         // +0x45..+0x47
+    float       m_overrideExtentX;    // +0x48
+    float       m_overrideExtentY;    // +0x4C
 
     // ── virtual methods ──
-    virtual ~camViewCS();                  // [0] @ 0x8216caf8
-    virtual void vfn_3();  // [3] @ 0x8216ceb0
-    virtual void vfn_6();  // [6] @ 0x82177830
-    virtual void vfn_7();  // [7] @ 0x8216cae8
-    virtual void vfn_8();  // [8] @ 0x8216ce40
-    virtual void vfn_9();  // [9] @ 0x8216cd30
-    virtual void vfn_10();  // [10] @ 0x8216cd88
+    virtual ~camViewCS();                                  // [0] @ 0x8216caf8
+    virtual void RegisterParamHooks(void* paramHost);      // [3] @ 0x8216ceb0 — registers 3 parameter hooks (flag/radius/height) with the param host
+    virtual const char* GetTypeName();                     // [6] @ 0x82177830 — returns class name string
+    virtual const char* GetDebugLabel();                   // [7] @ 0x8216cae8 — returns debug label string
+    virtual void OnReset();                                // [8] @ 0x8216ce40 — reset accumulators / forward reset to active source
+    virtual void OnSourceChanged();                        // [9] @ 0x8216cd30 — forward change-notification to active source and clear m_viewFlags if source ptr changed
+    virtual void Update();                                 // [10] @ 0x8216cd88 — per-frame: update bound camera, write FOV/aspect/extents to pongCameraMgr
 };
 
 // ── cameraShake  [vtable @ 0x820363F0] ──────────────────────────

@@ -84,13 +84,16 @@ struct pongBallHit {
 
 // ── pongBallHitData  [vtable @ 0x8203E59C] ──────────────────────────
 struct pongBallHitData {
-    void** vtable;  // +0x00
+    void** vtable;              // +0x00
+    uint8_t m_payloadLo[194];   // +0x04..0xC5  (serialized fields registered by LoadProperties)
+    uint16_t m_flags;           // +0xC6  (W:PostLoadProperties, R:LoadProperties — bit 0x1000 = 'enabled')
+    uint8_t m_payloadHi[148];   // +0xC8..0x15B (remaining serialized fields)
 
     // ── virtual methods ──
-    virtual void PostLoadProperties(); // [2] @ 0x821d6900
-    virtual void IsApplicable();       // [20] @ 0x821d65c0
-    virtual void LoadProperties();     // [21] @ 0x821d6608
-    virtual void GetNodeTypeName();    // [22] @ 0x821d65b0
+    virtual void PostLoadProperties();                     // [2] @ 0x821d6900
+    virtual bool IsApplicable(uint32_t contextHash);       // [20] @ 0x821d65c0
+    virtual void LoadProperties();                         // [21] @ 0x821d6608
+    virtual const char* GetNodeTypeName();                 // [22] @ 0x821d65b0
 
     void Initialize();
     bool ValidateAttribute(uint32_t attributeHash);
