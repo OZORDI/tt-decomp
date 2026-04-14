@@ -89,9 +89,16 @@ set(SOURCES
 
     # Game logic
     src/game/char_view/char_view.cpp
+    src/game/cutscene/gd_cutscene_strings.cpp
     src/game/cutscene/pong_cutscene.cpp
     src/game/data/gd_data.cpp
+    src/game/data/gd_data_strings.cpp
+    src/game/data/gd_logic_strings.cpp
     src/game/data/gd_vib_event.cpp
+    src/game/debug_strings.cpp
+    src/game/dialog_strings.cpp
+    src/game/pong_logos_strings.cpp
+    src/game/pong_strings.cpp
     src/game/save/mc_memcard.cpp
     src/game/audio/pong_audio.cpp
     src/game/audio/pong_audio_effects.cpp
@@ -104,9 +111,13 @@ set(SOURCES
     src/game/network/pong_network.cpp
     src/game/network/pong_network_classes.cpp
     src/game/network/msg_msg_sink.cpp
+    src/game/network/xonline_strings.cpp
     src/game/player/pong_player.cpp
     src/game/pong_render.cpp
+    src/game/match/hsm_log_strings.cpp
     src/game/match/pong_states.cpp
+    src/game/match/match_rtti_strings.cpp
+    src/rage/rtti_class_strings.cpp
     
     # Animation
     src/anim/pcr_anim_blenders.cpp
@@ -116,6 +127,7 @@ set(SOURCES
     src/physics/ph_update_object.cpp
     
     # Graphics
+    src/graphics/grc_debug_strings.cpp
     src/graphics/grc_device.cpp
     src/graphics/grc_render.cpp
     src/graphics/texture_reference.cpp
