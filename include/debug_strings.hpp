@@ -133,7 +133,7 @@ extern const char* const g_str_logicalClipData_loading;
 extern const char* const g_str_logicalClipData_loadDone;
 extern const char* const g_str_gdaiComeBackLogic;
 extern const char* const g_str_gdaiMeterLogic;
-extern const char* const g_str_stpDebug;
+// g_str_stpDebug declared in include/game/debug_strings.hpp (cvar block above)
 extern const char* const g_str_loggingEnabled_intro;
 extern const char* const g_str_loggingEnabled_core;
 extern const char* const g_str_logopen;

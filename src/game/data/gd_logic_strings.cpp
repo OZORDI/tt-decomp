@@ -52,7 +52,8 @@ const char* const g_str_gdaiMeterLogic               = "gdaiMeterLogic";
 // --------------------------------------------------------------------------
 
 // 0x82069EE8 — storage-package debug category tag
-const char* const g_str_stpDebug                     = "stpDebug";
+// NOTE: Defined in src/game/debug_strings.cpp; declared extern here to avoid duplicate symbol.
+extern const char* g_str_stpDebug;
 
 // 0x82070F0C — intro-sequence wait-warning limit property name
 const char* const g_str_introWaitWarningLimit        = "introWaitWarningLimit";
