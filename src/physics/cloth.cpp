@@ -9,7 +9,9 @@
  *   clothController       — 1 function  (destructor)
  */
 
-#include "include/physics/cloth.hpp"
+#include "../include/physics/cloth.hpp"
+#include "../include/rage/parFileIO.hpp"    // rage::datBase — for typed child deletes
+#include <cstdint>
 #include <cstring>
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -158,17 +160,21 @@ void phClothVerletBehavior::Reset()
  */
 void phClothVerletBehavior::UpdateSimulation()
 {
-    void* bound = m_pClothBound;
+    // phBound field offsets for vec4 position data
+    static constexpr uint32_t kBoundLocalPosOffset  = 0x120;  // 288: local position vec4
+    static constexpr uint32_t kBoundWorldPosOffset  = 0x130;  // 304: world position vec4
 
-    // Copy world transform vec4 from bound+304 to local buffer
+    uint8_t* bound = (uint8_t*)m_pClothBound;
+
+    // Copy world transform vec4 from bound to local buffer
     float worldTransform[4];
-    memcpy(worldTransform, (uint8_t*)bound + 304, 16);
+    memcpy(worldTransform, bound + kBoundWorldPosOffset, 16);
 
     // Bind the bound to scene collision volumes
-    lvlTable_BindBounds(bound, &m_stateA, &m_stateB);
+    lvlTable_BindBounds(m_pClothBound, &m_stateA, &m_stateB);
 
     // Extract the current frame's transform from the bound
-    phBound_ExtractTransform(bound);
+    phBound_ExtractTransform(m_pClothBound);
 
     // Reset both state blocks (inline Reset logic)
     if (m_stateA.m_refCount == 0) {
@@ -184,53 +190,58 @@ void phClothVerletBehavior::UpdateSimulation()
     m_stateB.m_entryCount = 0;
 
     // Read bound position vectors
-    void* boundBase = m_pClothBound;
-    float* boundPos304 = (float*)((uint8_t*)boundBase + 304);  // world position
-    float* boundPos288 = (float*)((uint8_t*)boundBase + 288);  // local position
+    bound = (uint8_t*)m_pClothBound;
+    float* boundWorldPos = (float*)(bound + kBoundWorldPosOffset);
+    float* boundLocalPos = (float*)(bound + kBoundLocalPosOffset);
 
-    // Build transform vectors for the physics instance
-    // Pattern: [kInitialRadius, kZeroFloat, kZeroFloat, ...] basis vectors
-    void* physInst = m_pPhysicsInst;
-    uint8_t* instBase = (uint8_t*)physInst;
+    // Navigate to the sub-object that receives the transform:
+    //   m_pPhysicsInst -> field_0x04 -> field_0x0C -> target
+    // TODO: Type this chain once phInst layout is known
+    uint8_t* physInst = (uint8_t*)m_pPhysicsInst;
+    uint32_t subPtr1  = *(uint32_t*)(physInst + 4);
+    uint32_t subPtr2  = *(uint32_t*)((uint8_t*)(uintptr_t)subPtr1 + 12);
+    uint8_t* target   = (uint8_t*)(uintptr_t)subPtr2;
 
-    // Copy the world position vec4 into instance +16 (basis + offset)
-    float basisVec[4] = { kInitialRadius, kZeroFloat, kZeroFloat, 0.0f };
-    memcpy(instBase + 16, &basisVec, 16);
+    // Build identity-scale basis matrix into target +16..+48
+    float basisX[4] = { kInitialRadius, kZeroFloat, kZeroFloat, 0.0f };
+    memcpy(target + 16, &basisX, 16);
 
-    float basisVec2[4] = { kZeroFloat, kInitialRadius, kZeroFloat, 0.0f };
-    memcpy(instBase + 32, &basisVec2, 16);
+    float basisY[4] = { kZeroFloat, kInitialRadius, kZeroFloat, 0.0f };
+    memcpy(target + 32, &basisY, 16);
 
-    float basisVec3[4] = { kZeroFloat, kZeroFloat, kInitialRadius, 0.0f };
-    memcpy(instBase + 48, &basisVec3, 16);
+    float basisZ[4] = { kZeroFloat, kZeroFloat, kInitialRadius, 0.0f };
+    memcpy(target + 48, &basisZ, 16);
 
-    // Copy the bound's local position to instance +64
-    memcpy(instBase + 64, boundPos288, 16);
+    // Copy the bound's local position vec4 to target +64
+    memcpy(target + 64, boundLocalPos, 16);
 
-    // Write the bound radius from worldTransform to instance +8
+    // Write the bound radius to target +8
     float radius = worldTransform[0];
-    *(float*)(instBase + 8) = radius;
+    *(float*)(target + 8) = radius;
 
-    // Splat radius to fill instance +112 (16 bytes, all same value)
+    // Splat radius to fill target +112 (16 bytes, all same value)
     float radiusSplat[4] = { radius, radius, radius, radius };
-    memcpy(instBase + 112, &radiusSplat, 16);
+    memcpy(target + 112, &radiusSplat, 16);
 
-    // Call physics instance vtable[37] (apply transform)
+    // Call target vtable[37] — apply transform
+    // TODO: Replace with typed virtual call once target class is identified
     {
-        void** vtbl = *(void***)physInst;
-        typedef void (*ApplyFn)(void*);
-        ((ApplyFn)vtbl[37])(physInst);
+        void** vtbl = *(void***)target;
+        typedef void (*ApplyTransformFn)(void*);
+        ((ApplyTransformFn)vtbl[37])(target);
     }
 
-    // Call vtable[6] on physics instance (finalize transform) with mirror plane
+    // Call target vtable[6] — finalize transform with mirror plane
+    // TODO: Replace with typed virtual call once target class is identified
     {
-        void** vtbl = *(void***)physInst;
-        typedef void (*FinalizeFn)(void*, void*);
-        extern const float g_playerMirrorPlane[4];  // @ 0x82606750
-        ((FinalizeFn)vtbl[6])(physInst, (void*)g_playerMirrorPlane);
+        void** vtbl = *(void***)target;
+        typedef void (*FinalizeTransformFn)(void*, const float*);
+        extern const float g_playerMirrorPlane[4];  // @ 0x82606750 (.data, 32 bytes)
+        ((FinalizeTransformFn)vtbl[6])(target, g_playerMirrorPlane);
     }
 
     // Push updated cloth skin to the creature renderer
-    uint16_t boneIndex = *((uint16_t*)((uint8_t*)m_pPhysicsInst + 8));
+    uint16_t boneIndex = *(uint16_t*)(target + 8);
     pongCreatureInst_UpdateSkin(g_creatureMgr, worldTransform[0], boneIndex);
 }
 
@@ -261,6 +272,15 @@ void phClothVerletBehavior::UpdateSimulation()
  */
 void phClothVerletBehavior::AttachToCreatureInst(void* physFrameTable)
 {
+    // Frame table layout constants
+    static constexpr uint32_t kFrameEntryStride     = 176;   // 0xB0: bytes per frame entry
+    static constexpr uint32_t kFrameDataPtrOffset   = 180;   // 0xB4: frame data pointer within entry
+    static constexpr uint32_t kCachedCurrentFrame   = 17072; // 0x42B0: cached current frame pointer
+    static constexpr uint32_t kCachedNextFrame      = 17076; // 0x42B4: cached next frame pointer
+    static constexpr uint32_t kBoneMappingA         = 17064; // 0x42A8: bone mapping for current frame
+    static constexpr uint32_t kBoneMappingB         = 17068; // 0x42AC: bone mapping for next frame
+    static constexpr uint32_t kBoneBindDataOffset   = 160;   // 0xA0: bind data within bone object
+
     // Guard: cloth must be enabled
     if (!m_bEnabled) {
         return;
@@ -268,16 +288,15 @@ void phClothVerletBehavior::AttachToCreatureInst(void* physFrameTable)
 
     uint8_t* table = (uint8_t*)physFrameTable;
 
-    // Resolve the current frame — either from the cached pointer (+17072)
-    // or by computing it from the frame count
-    uint32_t cachedFrame = *(uint32_t*)(table + 17072);
+    // Resolve the current frame — either from the cached pointer
+    // or by computing from the frame count
+    uint32_t cachedFrame = *(uint32_t*)(table + kCachedCurrentFrame);
     uint32_t currentFrame;
     if (cachedFrame != 0) {
         currentFrame = cachedFrame;
     } else {
         uint32_t frameCount = *(uint32_t*)(table + 0);
-        uint32_t lastIdx = frameCount - 1;
-        currentFrame = *(uint32_t*)(table + (lastIdx + 1) * 176);
+        currentFrame = *(uint32_t*)(table + frameCount * kFrameEntryStride);
     }
 
     uint32_t nextFrame;
@@ -285,79 +304,76 @@ void phClothVerletBehavior::AttachToCreatureInst(void* physFrameTable)
     // Check if current frame matches our physics instance
     if (currentFrame == (uint32_t)(uintptr_t)m_pPhysicsInst) {
         // Match — resolve the next frame
-        uint32_t cachedNext = *(uint32_t*)(table + 17076);
+        uint32_t cachedNext = *(uint32_t*)(table + kCachedNextFrame);
         if (cachedNext != 0) {
             nextFrame = cachedNext;
         } else {
             uint32_t frameCount = *(uint32_t*)(table + 0);
             uint32_t lastIdx = frameCount - 1;
-            uint32_t offset = lastIdx * 176;
-            nextFrame = *(uint32_t*)(table + offset + 180);
+            nextFrame = *(uint32_t*)(table + lastIdx * kFrameEntryStride + kFrameDataPtrOffset);
         }
     } else {
-        // No match on current — try cached next or compute
+        // No match on current — try cached or compute
         if (cachedFrame != 0) {
             nextFrame = cachedFrame;
         } else {
             uint32_t frameCount = *(uint32_t*)(table + 0);
-            uint32_t lastIdx = frameCount - 1;
-            nextFrame = *(uint32_t*)(table + (lastIdx + 1) * 176);
+            nextFrame = *(uint32_t*)(table + frameCount * kFrameEntryStride);
         }
     }
 
     // Resolve the bone mapping based on which frame matches
     uint32_t boneData;
-    uint32_t cachedNext2 = *(uint32_t*)(table + 17076);
+    uint32_t cachedNext2 = *(uint32_t*)(table + kCachedNextFrame);
     if (nextFrame == cachedFrame) {
-        boneData = *(uint32_t*)(table + 17064);
+        boneData = *(uint32_t*)(table + kBoneMappingA);
     } else if (nextFrame == cachedNext2) {
-        boneData = *(uint32_t*)(table + 17068);
+        boneData = *(uint32_t*)(table + kBoneMappingB);
     } else {
         boneData = 0;
     }
 
-    // Check frame count limit
-    uint16_t frameHalfword = *(uint16_t*)((uint8_t*)this + 20);
-    if (frameHalfword >= 255) {
-        // Too many frames — log warning and bail
+    // Check entry count limit (m_stateA.m_entryCount at this+0x14)
+    if (m_stateA.m_entryCount >= 255) {
         rage_debugLog("phClothVerletBehavior::AttachToCreatureInst - too many frames");
         return;
     }
 
-    // Activate cloth on the bone data object
-    // Navigate: boneData -> +16 -> +4 -> +12 -> vtable[1](obj, 1) — activate
-    uint32_t* boneObj = (uint32_t*)(uintptr_t)boneData;
-    void* subObj1    = (void*)(uintptr_t)(*(uint32_t*)((uint8_t*)boneObj + 16));
-    void* subObj2    = (void*)(uintptr_t)(*(uint32_t*)((uint8_t*)subObj1 + 4));
-    void* targetObj  = (void*)(uintptr_t)(*(uint32_t*)((uint8_t*)subObj2 + 12));
+    // Navigate to the target sub-object for cloth activation:
+    //   boneData -> +0x10 -> +0x04 -> +0x0C -> target
+    // TODO: Type this chain once bone/skeleton layout is known
+    uint8_t* boneObj   = (uint8_t*)(uintptr_t)boneData;
+    uint8_t* subObj1   = (uint8_t*)(uintptr_t)(*(uint32_t*)(boneObj + 16));
+    uint8_t* subObj2   = (uint8_t*)(uintptr_t)(*(uint32_t*)(subObj1 + 4));
+    void*    targetObj = (void*)(uintptr_t)(*(uint32_t*)(subObj2 + 12));
 
-    // Call vtable[1] on target — activate cloth
+    // Call target vtable[1] — activate cloth (param: 1 = enable)
+    // TODO: Replace with typed virtual call once target class is identified
     {
         void** vtbl = *(void***)targetObj;
         typedef void (*ActivateFn)(void*, int);
         ((ActivateFn)vtbl[1])(targetObj, 1);
     }
 
-    // Navigate again for vtable[3] — bind cloth to frame
-    subObj1   = (void*)(uintptr_t)(*(uint32_t*)((uint8_t*)boneObj + 16));
-    subObj2   = (void*)(uintptr_t)(*(uint32_t*)((uint8_t*)subObj1 + 4));
-    targetObj = (void*)(uintptr_t)(*(uint32_t*)((uint8_t*)subObj2 + 12));
+    // Re-navigate (the binary re-reads the chain, not cached)
+    subObj1   = (uint8_t*)(uintptr_t)(*(uint32_t*)(boneObj + 16));
+    subObj2   = (uint8_t*)(uintptr_t)(*(uint32_t*)(subObj1 + 4));
+    targetObj = (void*)(uintptr_t)(*(uint32_t*)(subObj2 + 12));
 
-    // Call vtable[3] on target with boneData+160 as parameter — bind
+    // Call target vtable[3] — bind cloth to frame data at boneData+0xA0
+    // TODO: Replace with typed virtual call once target class is identified
     {
         void** vtbl = *(void***)targetObj;
         typedef void (*BindFn)(void*, void*);
-        ((BindFn)vtbl[3])(targetObj, (void*)((uint8_t*)boneData + 160));
+        ((BindFn)vtbl[3])(targetObj, (void*)(boneObj + kBoneBindDataOffset));
     }
 
     // Record the frame and bone data into state arrays
-    // State A: record nextFrame at current entry index
     uint32_t* dataArrayA = (uint32_t*)(uintptr_t)m_stateA.m_pDataArray;
     uint16_t idxA = m_stateA.m_entryCount;
     dataArrayA[idxA] = nextFrame;
     m_stateA.m_entryCount = idxA + 1;
 
-    // State B: record boneData at current entry index
     uint32_t* dataArrayB = (uint32_t*)(uintptr_t)m_stateB.m_pDataArray;
     uint16_t idxB = m_stateB.m_entryCount;
     dataArrayB[idxB] = boneData;
@@ -384,14 +400,11 @@ static void environmentCloth_Destroy(environmentCloth* self)
     // (In the original binary this is: stw vtable_82071C34, 0(self))
     // This is implicit in C++ — we're already in the destructor chain.
 
-    // Destroy all 6 child cloth objects
+    // Destroy all 6 child cloth objects via virtual delete
     for (int i = 0; i < 6; i++) {
-        void* child = self->m_pClothObjects[i];
+        datBase* child = self->m_pClothObjects[i];
         if (child != nullptr) {
-            // Virtual delete: call child->vtable[0](child, 1)
-            void** childVtbl = *(void***)child;
-            typedef void (*DtorFn)(void*, int);
-            ((DtorFn)childVtbl[0])(child, 1);
+            delete child;
         }
     }
 

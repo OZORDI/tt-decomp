@@ -26,7 +26,7 @@
 struct sgRMDrawable : sgNode {
     float  m_transform[4][4];  // +0x10  AltiVec-aligned 4×4 world matrix
     void*  m_pResource;        // +0x50  mesh/material data
-    void*  m_pPhysics;         // +0x54  physics instance
+    void*  m_pPhysics;         // +0x54  physics instance (atSingleton-derived)
 
     // slot  0 — ~sgRMDrawable @ 0x823D8E30 (size 0x74)
     //   Frees m_pResource via rage_free, calls atSingleton base dtor.

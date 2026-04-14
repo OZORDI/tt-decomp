@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 // Forward declarations of C functions from heap.c
 extern "C" {
@@ -16,6 +17,14 @@ extern "C" {
     void* sysMemAllocator_Allocate(void* ptr, size_t size);
     uint8_t rage_FindSingleton(void* ptr);
 }
+
+// Forward declarations for functions defined in stubs.cpp
+void SinglesNetworkClient_4FB0_g(void* a);
+void jumptable_5C20(void* a);
+void hsmContext_5BC8_fw(void* a);
+void hsmContext_5B40_w(void* a);
+void atSingleton_22B0(void* a, uint32_t b);
+void atSingleton_2038(void* a, uint32_t b);
 
 namespace rage {
 

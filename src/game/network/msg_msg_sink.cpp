@@ -4,10 +4,43 @@
  *
  * Lifted from recomp/structured_pass5_final/tt-decomp_recomp.14.cpp:73786
  *                                           tt-decomp_recomp.12.cpp:28709
+ *
+ * TODO: Duplicate function definitions exist for the same vtable addresses
+ *       (different names for the same underlying function). Needs dedup:
+ *       - 0x8244DCF0 (vslot 25): GenerateAndCleanup / GenerateWithLock
+ *       - 0x8244DB58 (vslot 52): SendEvent / ResetEventDispatch
+ *       - 0x8244E148 (vslot 46): GetNestedObjectValue / GetConnectionCount
+ *       - 0x8244E628 (vslot 49): FlushAndDisconnect / OnDisconnect
+ *       - 0x8244E680 (vslot 50): BeginDisconnect / OnReconnect
+ *       - 0x8244E6D0 (vslot 30): FindValidMessageSlot / FindGamerByIndex
+ *       - 0x8244FE80 (vslot 129): RegisterMessageHandler / CreateSessionLocked
+ *       - 0x8244FEE8 (vslot 131): QueryConnectionState / QueryConnectionStatus
+ *       - 0x8244EF38 (vslot 54): GetSessionPointer / GetSessionData
+ *       - 0x8244F8A8 (vslot 55): ForwardProcessMessage / ForwardToBaseWrite
+ *       - 0x8244F8B0 (vslot 89): ForwardDispatchMessage / ForwardToBaseUpdate
+ *       - 0x824505C8 (vslot 147): ForwardCleanupMessage / ForwardToBaseNotify
+ *       - 0x824508A8 (vslot 148): ForwardFinalizeMessage / ForwardToBaseProcess
+ *       - 0x824514E8 (vslot 78): ForwardToRageHandler / ForwardToEmbeddedObject
+ *       - 0x8244F7B8 (vslot 115): GetNameLength / GetMessageBufferPtr
+ *       - 0x8244F768 (vslot 119): SendPulseToConnection / GetSessionLock
+ *       - 0x824564A0 (vslot 120): DispatchEventWithSessionInfo / NotifyStateChange
+ *       - 0x8244DCF0 / 0x8244E0C0 / 0x8244E138 / 0x8244E148 also appear as
+ *         free-function msgMsgSink_XXXX_g alongside method versions.
+ *       These should be consolidated; most represent the same function body
+ *       renamed during incremental decomp passes.
+ *
+ * Vtable identity confirmed via RTTI:
+ *   0x8205B0D0 — dialogManager vtable (msgMsgSink derived)
+ *   0x82027B34 — msgMsgSink base vtable
+ *   0x820054E8 / 0x82003E28 — anonymous .rdata vtables (InitializeExtended)
  */
 
 #include "../misc/pong_misc.hpp"
 #include <cstring>
+
+// Xbox kernel critical-section stubs
+extern void RtlEnterCriticalSection(void*);
+extern void RtlLeaveCriticalSection(void*);
 
 // External dependencies
 extern void rage_free(void* ptr);
@@ -16,9 +49,11 @@ extern void* msgMsgSink_F518_wrh(uint32_t);
 extern void msgMsgSink_E860_g(void*, uint32_t, uint32_t, uint32_t);
 
 // Vtable pointers (from .rdata)
-static void* const kMsgMsgSink_Vtable      = (void*)0x8205B0D0;  // derived vtable
-static void* const kMsgMsgSink_SubVtable   = (void*)0x8205B0DC;  // stored at +4
-static void* const kMsgMsgSink_BaseVtable  = (void*)0x82027B34;  // base vtable (used in dtor)
+static void* const kMsgMsgSink_Vtable      = (void*)0x8205B0D0;  // dialogManager vtable (derived)
+static void* const kMsgMsgSink_SubVtable   = (void*)0x8205B0DC;  // dialogManager 2nd vtable (+4)
+static void* const kMsgMsgSink_BaseVtable  = (void*)0x82027B34;  // msgMsgSink base vtable
+static void* const kVtable_54E8            = (void*)0x820054E8;  // lbl_820054E8 (size 40)
+static void* const kVtable_3E28            = (void*)0x82003E28;  // lbl_82003E28 (secondary)
 
 // Constant data addresses used by constructor
 extern const float  g_msgSinkInitFloat;   // @ 0x825C5938  initial float per slot
@@ -38,59 +73,42 @@ msgMsgSink::msgMsgSink()
 {
     // Set vtable and secondary pointer
     vtable = (void**)kMsgMsgSink_Vtable;
-    field_0x0004 = (uint32_t)(uintptr_t)kMsgMsgSink_SubVtable;
+    m_subVtable = (uint32_t)(uintptr_t)kMsgMsgSink_SubVtable;
 
     // Zero initial fields
-    field_0x0008 = 0;
-    field_0x000c = 0;
-    field_0x0014 = 0;
+    m_controlByte = 0;
+    m_pSubVtable = 0;  // was field_0x000c
+    m_field0x14 = 0;   // was field_0x0014
 
-    // Initialize 32 message-slot entries at offset 864 (0x360)
-    // Each entry: 1152-byte stride (0x480)
-    uint8_t* slotBase = (uint8_t*)this + 864;
-
+    // Initialize 32 message slots
     for (int i = 0; i < 32; i++) {
-        uint8_t* slot = slotBase + (i * 1152);
+        MsgSlot* slot = &m_slots[i];
 
-        // +0x00: float constant
-        *(float*)(slot + 0) = g_msgSinkInitFloat;
-        // +0x04: zero
-        *(uint32_t*)(slot + 4) = 0;
-        // +0x08: zero
-        *(uint32_t*)(slot + 8) = 0;
-        // +0x0C: zero
-        *(uint32_t*)(slot + 12) = 0;
-        // +0x10: zero
-        *(uint32_t*)(slot + 16) = 0;
-        // +0x14: 1 (active flag)
-        *(uint32_t*)(slot + 20) = 1;
-        // +0x18: copy 16-byte template
-        *(uint32_t*)(slot + 24) = g_msgSinkTemplate[0];
-        *(uint32_t*)(slot + 28) = g_msgSinkTemplate[1];
-        *(uint32_t*)(slot + 32) = g_msgSinkTemplate[2];
-        *(uint32_t*)(slot + 36) = g_msgSinkTemplate[3];
-        // +0x28: zero
-        *(uint32_t*)(slot + 40) = 0;
-        // +0x2C: -1 (sentinel)
-        *(int32_t*)(slot + 44) = -1;
-        // +0x30: zero
-        *(uint32_t*)(slot + 48) = 0;
-        // +0x34: zero (byte)
-        *(uint8_t*)(slot + 52) = 0;
-        // +0x38: zero
-        *(uint32_t*)(slot + 56) = 0;
-        // +0x3C: zero
-        *(uint32_t*)(slot + 60) = 0;
+        slot->m_initFloat   = g_msgSinkInitFloat;
+        slot->m_field04     = 0;
+        slot->m_field08     = 0;
+        slot->m_field0C     = 0;
+        slot->m_field10     = 0;
+        slot->m_activeFlag  = 1;
+        slot->m_template[0] = g_msgSinkTemplate[0];
+        slot->m_template[1] = g_msgSinkTemplate[1];
+        slot->m_template[2] = g_msgSinkTemplate[2];
+        slot->m_template[3] = g_msgSinkTemplate[3];
+        slot->m_field28     = 0;
+        slot->m_sentinel    = -1;
+        slot->m_field30     = 0;
+        slot->m_flagByte    = 0;
+        slot->m_field38     = 0;
+        slot->m_field3C     = 0;
     }
 
-    // Zero sentinel at offset 864 + 36864 = 37728 (0x9360)
-    *(uint32_t*)((uint8_t*)this + 864 + 36864) = 0;
-    // Zero sentinel at offset 37784 (0x93A8)
-    *(uint32_t*)((uint8_t*)this + 37784) = 0;
+    // Zero sentinels after slot array
+    m_slotSentinel = 0;
+    m_tailSentinel = 0;
 
-    // Zero 210 uint32s (840 bytes) starting at offset +24 (0x18)
-    // This covers offsets +0x18 through +0x35F
-    uint32_t* zeroStart = (uint32_t*)((uint8_t*)this + 24);
+    // Zero 210 uint32s (840 bytes) from offset +0x18 through +0x35F
+    // This covers the region between the header fields and the slot array
+    uint32_t* zeroStart = (uint32_t*)(&m_eventSink);
     for (int i = 0; i < 210; i++) {
         zeroStart[i] = 0;
     }
@@ -131,8 +149,8 @@ void msgMsgSink::InitializeExtended() {
     msgMsgSink_A970_2h(this);
     
     // Set vtables
-    *(void**)((char*)this + 0) = (void*)0x820054E8;   // Primary vtable
-    *(void**)((char*)this + 12) = (void*)0x82003E28;  // Secondary vtable
+    *(void**)((char*)this + 0) = kVtable_54E8;    // Primary vtable (0x820054E8)
+    *(void**)((char*)this + 12) = kVtable_3E28;   // Secondary vtable (0x82003E28)
     
     // Clear upper 5 bits of flag byte at +212 (keep lower 5 bits)
     uint8_t flags = *((uint8_t*)this + 212);
@@ -169,7 +187,7 @@ void msgMsgSink::InitializeExtended() {
  */
 void msgMsgSink::ProcessMessageWithIndex(uint32_t param1, uint16_t msgIndex, uint32_t param2) {
     // Get message object from internal storage at offset +284 (0x11C)
-    void* msgObj = msgMsgSink_F518_wrh(this->field_0x011c);
+    void* msgObj = msgMsgSink_F518_wrh(this->m_connectionHandle);
     
     uint32_t calculatedOffset = 0;
     
@@ -687,7 +705,7 @@ void msgMsgSink_3258_wrh(void* self) {
  * ─────────────────────────────────────────────────────────────────────────── */
 
 // msgMsgSink_1D20_g @ 0x82451D20 | size: 0xC
-// Returns bits 1-3 of field_0x0004: (flags >> 1) & 7
+// Returns bits 1-3 of m_subVtable: (flags >> 1) & 7
 uint32_t msgMsgSink_1D20_g(void* self) {
     uint32_t flags = *(uint32_t*)((uint8_t*)self + 4);
     return (flags >> 1) & 0x7;
@@ -1572,8 +1590,8 @@ void msgMsgSink::SetActiveAndReleaseObject() {
 // External helpers used by batch 5
 extern void msgMsgSink_DC40_g(void*, uint32_t);
 extern void game_0388_h(void*, uint16_t);
-extern void game_8CF8_h(void*, uint16_t);
-extern void msgMsgSink_8D10_g(void*, uint16_t);
+extern uint32_t game_8CF8_h(void*, uint16_t);
+extern void* msgMsgSink_8D10_g(void*, uint16_t);
 extern void jumptable_3A48(void*, uint32_t, uint16_t, uint32_t);
 extern uint32_t msgMsgSink_3D70_p39(void*);
 extern void atSingleton_B0E8_sp(void*, uint32_t, uint32_t);
@@ -1785,10 +1803,10 @@ uint16_t msgMsgSink::FindGamerByIndex(uint16_t index) {
     RtlEnterCriticalSection(critSection);
 
     void* delegate = *(void**)((uint8_t*)this + 56);
-    uint16_t gamerHandle = (uint16_t)(uintptr_t)game_8CF8_h(delegate, index);
+    uint16_t gamerHandle = (uint16_t)game_8CF8_h(delegate, index);
 
     if ((gamerHandle & 0xFFFF) != 0xFFFF) {
-        void* gamerObj = (void*)(uintptr_t)msgMsgSink_8D10_g(delegate, gamerHandle);
+        void* gamerObj = msgMsgSink_8D10_g(delegate, gamerHandle);
 
         if (gamerObj != nullptr) {
             uint8_t statusByte = *(uint8_t*)gamerObj;
@@ -1924,34 +1942,6 @@ void* msgMsgSink::GetSessionLock() {
 void* msgMsgSink::GetMessageBufferPtr() {
     uint32_t bufferBase = *(uint32_t*)((uint8_t*)this + 48);
     return (void*)(bufferBase + 9);
-}
-
-/**
- * msgMsgSink::QueryConnectionStatus() [vtable slot 131 @ 0x8244FEE8]
- * size: 0x50 (80 bytes)
- *
- * Thread-safe query of the connection status. Enters the critical
- * section from the session manager at offset +24, checks whether the
- * connection object at offset +240 is non-null, and stores the boolean
- * result (1 = connected, 0 = not connected) into the output parameter.
- * Always returns 0 (success).
- */
-uint32_t msgMsgSink::QueryConnectionStatus(uint32_t* outStatus) {
-    // Get critical section from session manager
-    void* sessionMgr = *(void**)((uint8_t*)this + 24);
-    void* criticalSection = (uint8_t*)sessionMgr + 144;
-
-    extern void RtlEnterCriticalSection(void*);
-    extern void RtlLeaveCriticalSection(void*);
-    RtlEnterCriticalSection(criticalSection);
-
-    // Check if connection object at +240 is non-null
-    // Double cntlzw+rlwinm chain is equivalent to: result = (field != 0) ? 1 : 0
-    uint32_t connectionObj = *(uint32_t*)((uint8_t*)this + 240);
-    *outStatus = (connectionObj != 0) ? 1 : 0;
-
-    RtlLeaveCriticalSection(criticalSection);
-    return 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

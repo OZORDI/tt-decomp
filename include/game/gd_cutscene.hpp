@@ -30,8 +30,11 @@ struct xmlNodeStruct;
  * Stores character camera shot name reference for cutscenes.
  */
 struct gdCSCharCamShotName {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+
     // Virtual methods
     virtual ~gdCSCharCamShotName() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240C420
@@ -58,8 +61,8 @@ struct gdCSCharCamShotName {
 struct gdCSCharAnimData {
     void* vtable;                   // +0x00
     uint32_t m_field_04;            // +0x04
-    uint32_t m_field_08;            // +0x08
-    uint32_t m_field_0C;            // +0x0C
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
     const char* m_pFileName;        // +0x10 - Animation file name
     uint8_t m_bEnabled;             // +0x14 - Enabled flag (default: 1)
     uint8_t m_padding_15[11];       // +0x15 - Padding
@@ -67,15 +70,16 @@ struct gdCSCharAnimData {
     float m_field_24;               // +0x24 - (default: -1.0)
     float m_field_28;               // +0x28 - (default: -1.0)
     uint32_t m_field_2C;            // +0x2C
-    float m_field_30;               // +0x30 - (default: 0.0)
+    float m_duration;               // +0x30 - Duration (RegisterFields "Duration")
     float m_field_34;               // +0x34 - (default: 0.0)
     float m_field_38;               // +0x38 - (default: 0.0)
     uint32_t m_field_3C;            // +0x3C
-    float m_duration;               // +0x40 - Animation duration (default: 0.0)
-    int32_t m_weight;               // +0x44 - Selection weight (default: 1)
-    float m_emoteRangeMin;          // +0x48 - Emote range min (default: 0.0)
-    float m_emoteRangeMax;          // +0x4C - Emote range max (default: 1.0)
-    uint8_t m_bIsEmote;             // +0x50 - Is emote flag (default: 0)
+    int32_t m_weight;               // +0x40 - Weight (RegisterFields "Weight")
+    float m_emoteRangeMin;          // +0x44 - Emote range min (RegisterFields "EmoteRangeMin")
+    float m_emoteRangeMax;          // +0x48 - Emote range max (RegisterFields "EmoteRangeMax")
+    uint8_t m_bIsEmote;             // +0x4C - Is emote flag (RegisterFields "IsEmote")
+    uint8_t m_padding_4D[3];        // +0x4D - Padding
+    uint8_t m_animType;             // +0x50 - Anim type (RegisterFields "AnimType")
     uint8_t m_padding_51[3];        // +0x51 - Padding
     uint32_t m_field_54;            // +0x54
     uint16_t m_field_58;            // +0x58
@@ -89,8 +93,8 @@ struct gdCSCharAnimData {
     virtual bool IsType(uint32_t typeId);  // @ 0x8240C990
     virtual void RegisterFields();  // @ 0x8240CBD0 - Register XML properties
     virtual const char* GetTypeName();  // @ 0x8240C9D8
-    virtual void vfn_3();  // @ 0x8240CDE8
-    
+    virtual void BuildFilteredArrays();  // [23] @ 0x8240CDE8 - Build child type arrays
+
     // Methods
     void PostLoadProperties();  // @ 0x8240CD00 - Validate animation data
 };
@@ -104,8 +108,8 @@ struct gdCSCharAnimData {
 struct gdCSCharAnimNames {
     void* vtable;                       // +0x00
     uint32_t m_field_04;                // +0x04
-    uint32_t m_field_08;                // +0x08
-    uint32_t m_field_0C;                // +0x0C
+    void* m_pNext;                      // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;                // +0x0C - First child node
     gdCSCharAnimData** m_pAnimDataArray;  // +0x10 - Array of animation data pointers
     uint16_t m_animCount;               // +0x14 - Number of animations (also at +0x1C)
     uint16_t m_field_16;                // +0x16
@@ -121,8 +125,8 @@ struct gdCSCharAnimNames {
     virtual bool IsType(uint32_t typeId);  // @ 0x8240D130
     virtual void RegisterFields();
     virtual const char* GetTypeName();  // @ 0x8240D178
-    virtual void vfn_3();  // @ 0x8240D340
-    
+    virtual void BuildFilteredArrays();  // [23] @ 0x8240D340 - Build child type arrays
+
     // Methods
     void FindRandAnimData(uint32_t randomSeed, uint32_t selectionMode, uint32_t nameFilter);  // @ 0x8240D4A8
 };
@@ -133,14 +137,22 @@ struct gdCSCharAnimNames {
  * Camera animation shot name reference.
  */
 struct gdCSCamAnimShotName {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    int32_t m_weight;               // +0x10 - Selection weight
+    uint32_t m_field_14;            // +0x14
+    const char* m_pShotName;        // +0x18 - Shot name string
+    float m_timeOffset;             // +0x1C - Time offset
+    int32_t m_shotIndex;            // +0x20 - Resolved shot index in camera set
+
     // Virtual methods
     virtual ~gdCSCamAnimShotName() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240DBC0
     virtual void RegisterFields();  // @ 0x8240DD18
     virtual const char* GetTypeName();  // @ 0x8240DC08
-    
+
     // Methods
     void PostLoadProperties();  // @ 0x8240DDC0
 };
@@ -151,8 +163,11 @@ struct gdCSCamAnimShotName {
  * Collection of cutscene names.
  */
 struct gdCutSceneNames {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+
     // Virtual methods
     virtual ~gdCutSceneNames() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240E5F8
@@ -166,8 +181,13 @@ struct gdCutSceneNames {
  * Generic cutscene name data container.
  */
 struct gdCSNameData {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    const char* m_pFileName;        // +0x10 - File name
+    const char* m_pSceneName;       // +0x14 - Scene name
+
     // Virtual methods
     virtual ~gdCSNameData() = default;
     virtual bool IsType(uint32_t typeId);
@@ -188,11 +208,11 @@ struct gdCSNameData {
 struct gdCutSceneData {
     void* vtable;                   // +0x00
     uint32_t m_field_04;            // +0x04
-    uint32_t m_field_08;            // +0x08
-    uint32_t m_field_0C;            // +0x0C
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
     uint32_t m_field_10;            // +0x10
     const char* m_pCutsceneName;    // +0x14 - Cutscene name string
-    uint32_t m_field_18;            // +0x18
+    uint32_t m_priority;            // +0x18 - Priority
     uint16_t m_cutsceneId;          // +0x1C - Resolved cutscene ID
     uint16_t m_field_1E;            // +0x1E
     
@@ -217,8 +237,13 @@ struct gdCutSceneData {
  * Repeats a sequence of actions.
  */
 struct gdCSActionLoopData {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
+    uint32_t m_loopCount;           // +0x14 - Loop count
+
     // Virtual methods
     virtual ~gdCSActionLoopData() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240EB28 - Property validation
@@ -244,12 +269,12 @@ struct gdCSActionLoopData {
 struct gdCSActionIfData {
     void* vtable;                       // +0x00
     uint32_t m_field_04;                // +0x04
-    uint32_t m_field_08;                // +0x08
-    uint32_t m_field_0C;                // +0x0C
-    uint32_t m_field_10;                // +0x10
+    void* m_pNext;                      // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;                // +0x0C - First child node
+    uint32_t m_actionIndex;             // +0x10 - Action index
     const char* m_pConditionType;       // +0x14 - Condition type string
-    uint32_t m_field_18;                // +0x18
-    uint32_t m_field_1C;                // +0x1C
+    int32_t m_characterId;              // +0x18 - Character ID for condition
+    int32_t m_compareValue;             // +0x1C - Compare value for condition
     void* m_pThenActions;               // +0x20 - Actions to execute if true
     void* m_pElseActions;               // +0x24 - Actions to execute if false
     uint32_t m_conditionEnum;           // +0x28 - Parsed condition type (0-6, 7=invalid)
@@ -277,8 +302,8 @@ struct gdCSActionIfData {
 struct gdCSActionWaitData {
     void* vtable;                   // +0x00
     uint32_t m_field_04;            // +0x04
-    uint32_t m_field_08;            // +0x08
-    uint32_t m_field_0C;            // +0x0C
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
     const char* m_pWaitType;        // +0x10 - Wait type string
     float m_duration;               // +0x14 - Wait duration
     
@@ -297,17 +322,18 @@ struct gdCSActionWaitData {
 struct gdCSActionCamAnimData {
     void* vtable;                   // +0x00
     uint32_t m_field_04;            // +0x04
-    uint32_t m_field_08;            // +0x08
-    uint32_t m_field_0C;            // +0x0C
-    uint32_t m_field_10;            // +0x10
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
     const char* m_pCameraName;      // +0x14 - Camera animation name
-    
+    uint8_t m_bLoop;                // +0x18 - Loop flag
+
     // Virtual methods
     virtual ~gdCSActionCamAnimData() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240F1B8
     virtual void RegisterFields();  // @ 0x8240F210
     virtual const char* GetTypeName();  // @ 0x82347498 - Returns "CamAnim"
-    
+
     // Methods
     void PostLoadProperties();  // @ 0x8240F2A0 - Validate camera name
 };
@@ -320,18 +346,21 @@ struct gdCSActionCamAnimData {
 struct gdCSActionCharAnimData {
     void* vtable;                   // +0x00
     uint32_t m_field_04;            // +0x04
-    uint32_t m_field_08;            // +0x08
-    uint32_t m_field_0C;            // +0x0C
-    uint32_t m_field_10;            // +0x10
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
     int32_t m_characterId;          // +0x14 - Character ID (-1 = invalid)
     const char* m_pAnimName;        // +0x18 - Animation name
-    
+    uint8_t m_bBlendIn;             // +0x1C - Blend in flag
+    uint8_t m_bBlendOut;            // +0x1D - Blend out flag
+    uint8_t m_bFullBody;            // +0x1E - Full body flag
+
     // Virtual methods
     virtual ~gdCSActionCharAnimData() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240F310
     virtual void RegisterFields();  // @ 0x8240F368
     virtual const char* GetTypeName();  // @ 0x82347538 - Returns "CharAnim"
-    
+
     // Methods
     void PostLoadProperties();  // @ 0x8240F450 - Validate character ID and anim name
 };
@@ -344,17 +373,18 @@ struct gdCSActionCharAnimData {
 struct gdCSActionCharVisibleData {
     void* vtable;                   // +0x00
     uint32_t m_field_04;            // +0x04
-    uint32_t m_field_08;            // +0x08
-    uint32_t m_field_0C;            // +0x0C
-    uint32_t m_field_10;            // +0x10
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
     int32_t m_characterId;          // +0x14 - Character ID (-1 = invalid)
-    
+    uint8_t m_bVisible;             // +0x18 - Visible flag
+
     // Virtual methods
     virtual ~gdCSActionCharVisibleData() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240F4D8
     virtual void RegisterFields();  // @ 0x8240F530
     virtual const char* GetTypeName();  // @ 0x823475E8 - Returns "CharVisible"
-    
+
     // Methods
     void PostLoadProperties();  // @ 0x8240F5C0 - Validate character ID
 };
@@ -374,9 +404,9 @@ struct gdCSActionCharVisibleData {
 struct gdCSActionPlayAudioData {
     void* vtable;                   // +0x00
     uint32_t m_field_04;            // +0x04
-    uint32_t m_field_08;            // +0x08
-    uint32_t m_field_0C;            // +0x0C
-    uint32_t m_field_10;            // +0x10
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
     const char* m_pAudioType;       // +0x14 - "MUSIC" or "SOUND"
     const char* m_pAudioName;       // +0x18 - Audio asset name
     uint32_t m_audioTypeEnum;       // +0x1C - 0=MUSIC, 1=SOUND
@@ -398,14 +428,21 @@ struct gdCSActionPlayAudioData {
  * Level ambient animation action for cutscenes.
  */
 struct gdCSActionLvlAmbAnimData {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
+    const char* m_pAnimName;        // +0x14 - Ambient animation name
+    const char* m_pFileName;        // +0x18 - Animation file name
+    uint8_t m_bLoop;                // +0x1C - Loop flag
+
     // Virtual methods
     virtual ~gdCSActionLvlAmbAnimData() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240F948
     virtual void RegisterFields();  // @ 0x8240FA08
     virtual const char* GetTypeName();  // @ 0x823477C8 - Returns "LvlAmbAnim"
-    
+
     // Methods
     void PostLoadProperties();  // @ 0x8240FAA0
 };
@@ -416,14 +453,22 @@ struct gdCSActionLvlAmbAnimData {
  * Character ambient animation action for cutscenes.
  */
 struct gdCSActionCharAmbAnimData {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
+    int32_t m_characterId;          // +0x14 - Character ID (-1 = invalid)
+    const char* m_pAmbName;         // +0x18 - Ambient animation name
+    const char* m_pFileName;        // +0x1C - Animation file name
+    uint8_t m_bLoop;                // +0x20 - Loop flag
+
     // Virtual methods
     virtual ~gdCSActionCharAmbAnimData() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240FB50
     virtual void RegisterFields();  // @ 0x8240FC10
     virtual const char* GetTypeName();  // @ 0x82347868 - Returns "CharAmbAnim"
-    
+
     // Methods
     void PostLoadProperties();  // @ 0x8240FCC8
 };
@@ -434,8 +479,13 @@ struct gdCSActionCharAmbAnimData {
  * Show all ambient objects action for cutscenes.
  */
 struct gdCSActionShowAllAmbientsData {
-    void* vtable;  // +0x00
-    
+    void* vtable;                   // +0x00
+    uint32_t m_field_04;            // +0x04
+    void* m_pNext;                  // +0x08 - Next sibling in linked list
+    void* m_pFirstChild;            // +0x0C - First child node
+    uint32_t m_actionIndex;         // +0x10 - Action index
+    uint8_t m_bShowAll;             // +0x14 - Show all flag
+
     // Virtual methods
     virtual ~gdCSActionShowAllAmbientsData() = default;
     virtual bool IsType(uint32_t typeId);  // @ 0x8240FD90

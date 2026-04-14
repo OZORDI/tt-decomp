@@ -40,17 +40,61 @@ extern uint8_t g_bTextureEndianDirty;
 // Struct definitions are in texture_reference.hpp — see that file.
 
 // Additional declarations for incomplete types used in this TU.
+// grcTexture vtable layout (confirmed from grcTextureXenon @ 0x820353CC):
+//   slot  0: destructor
+//   slot  5: (forwarded by RefBase)
+//   slot  6: (forwarded by RefBase)
+//   slot  7: ApplyState(void*)
+//   slot  8: (forwarded by RefBase)
+//   slot  9: (forwarded by RefBase)
+//   slot 12: GetPlatformTexture() -> grcTexture*
+//   slot 13: (forwarded by RefBase)
+//   slot 14: (forwarded by RefBase)
+//   slot 15: (forwarded by RefBase)
+//   slot 16: (forwarded by RefBase)
+//   slot 17: (forwarded by RefBase)
+//   slot 18: (forwarded by RefBase)
+//   slot 20: Invalidate()
+//   slot 21: vfn_21(void*, void*, void*) -> grcTexture*
+//   slot 22: vfn_22(void*)
+//   slot 25: Flush()
 struct grcTexture {
-    void** vtable;
-    virtual void ApplyState(void* param);
-    virtual void Invalidate();
-    // slot 25 — forwarded by grcTextureReferenceBase::ForwardSlot25
-    // Called via raw vtable offset: slot 25 = byte offset +100
-    void Flush() { (*(void(**)(grcTexture*))((char*)this + 100))(this); }
+    virtual void destructor(bool deleteThis);       // slot  0
+    virtual void vfn_1();                           // slot  1
+    virtual void vfn_2();                           // slot  2
+    virtual void vfn_3();                           // slot  3
+    virtual void vfn_4();                           // slot  4
+    virtual void vfn_5();                           // slot  5
+    virtual void vfn_6();                           // slot  6
+    virtual void ApplyState(void* param);           // slot  7
+    virtual void vfn_8();                           // slot  8
+    virtual void vfn_9();                           // slot  9
+    virtual void vfn_10();                          // slot 10
+    virtual void vfn_11();                          // slot 11
+    virtual grcTexture* GetPlatformTexture();       // slot 12  (byte offset +48)
+    virtual void vfn_13(void*, void*);              // slot 13
+    virtual void vfn_14(void*, void*);              // slot 14
+    virtual void vfn_15();                          // slot 15
+    virtual void vfn_16(void*);                     // slot 16
+    virtual void vfn_17(float, void*);              // slot 17
+    virtual void vfn_18(void*, void*);              // slot 18
+    virtual void vfn_19();                          // slot 19
+    virtual void Invalidate();                      // slot 20
+    virtual grcTexture* vfn_21(void*, void*, void*);// slot 21
+    virtual void vfn_22(void*);                     // slot 22
+    virtual void vfn_23();                          // slot 23
+    virtual void vfn_24();                          // slot 24
+    virtual void Flush();                           // slot 25  (byte offset +100)
 };
 struct grcTextureFactory {
-    void** vtable;
-    virtual grcTexture* GetDefaultTexture();
+    virtual void destructor(bool deleteThis);       // slot  0
+    virtual void vfn_1();                           // slot  1
+    virtual void vfn_2();                           // slot  2
+    virtual void vfn_3();                           // slot  3
+    virtual void vfn_4();                           // slot  4
+    virtual void vfn_5();                           // slot  5
+    virtual void vfn_6();                           // slot  6
+    virtual grcTexture* GetDefaultTexture();        // slot  7
 };
 
 // RAGE_ASSERT — stripped in release builds, mapped to no-op here
@@ -114,13 +158,11 @@ void grcTextureReferenceBase::ForwardSlot7(void* param)
 
     if (pTex)
     {
-        // Forward to the inner texture's slot 7
-        pTex->ApplyState(param);            // VCALL slot 7, byte offset +28
+        pTex->ApplyState(param);
     }
     else
     {
-        // Fallback: use the factory singleton's default texture
-        grcTexture* pDefault = g_pTextureFactory->GetDefaultTexture();  // VCALL slot 7
+        grcTexture* pDefault = g_pTextureFactory->GetDefaultTexture();
         pDefault->ApplyState(param);
     }
 }
@@ -139,13 +181,12 @@ void grcTextureReferenceBase::ForwardSlot20()
 
     if (pTex)
     {
-        pTex->Invalidate();                // VCALL slot 20, byte offset +80
+        pTex->Invalidate();
     }
     else
     {
-        // Factory fallback
         grcTexture* pDefault = g_pTextureFactory->GetDefaultTexture();
-        pDefault->Invalidate();            // VCALL slot 20
+        pDefault->Invalidate();
     }
 }
 
@@ -420,8 +461,7 @@ void grcTextureReference::destructor(bool deleteThis)
 grcTexture* grcTextureReference::GetTexture()
 {
     if (m_pTexture)
-        // VCALL grcTexture slot 12 — resource/variant texture getter
-        return (*(grcTexture*(**)(grcTexture*))((char*)m_pTexture + 48))(m_pTexture);
+        return m_pTexture->GetPlatformTexture();   // VCALL slot 12
     return nullptr;
 }
 
@@ -436,7 +476,7 @@ void grcTextureReference::ForwardSlot25()
 {
     if (!m_pTexture)
         return;
-    ((void(*)(grcTexture*))(*(void***)m_pTexture)[25])(m_pTexture);  // VCALL grcTexture slot 25
+    m_pTexture->Flush();   // VCALL slot 25
 }
 
 } // namespace rage
@@ -444,7 +484,18 @@ void grcTextureReference::ForwardSlot25()
 using namespace rage;
 
 // Forward declaration for types used outside namespace block
-namespace rage { struct grcTextureFactoryString; }
+namespace rage {
+// grcTextureFactoryString — lightweight name wrapper (vtable @ 0x82035504)
+// Used by grcTextureFactory to hold string identifiers for texture lookups.
+struct grcTextureFactoryString {
+    // +0x00: vtable (compiler-managed)
+    uint8_t    m_field04;           // +0x04
+    uint8_t    m_field05;           // +0x05
+    uint16_t   m_field06;           // +0x06
+    uint32_t   m_field08;           // +0x08
+    void*      m_pNameHandle;       // +0x0C — result of rage_strDuplicate
+};
+} // namespace rage
 
 // ─────────────────────────────────────────────────────────────────────────────
 // grcTextureReferenceBase::ForwardSlot5  [vtable slot 5 @ 0x8215D8A0]
@@ -455,10 +506,7 @@ void rage::grcTextureReferenceBase::ForwardSlot5()
     grcTexture* texture = GetTexture();   // VCALL slot 11
     
     if (texture) {
-        // Forward to inner texture's slot 5 (byte offset +20)
-        typedef void (*Slot5Fn)(grcTexture*);
-        Slot5Fn fn = reinterpret_cast<Slot5Fn>(texture->vtable[5]);
-        fn(texture);
+        texture->vfn_5();
     }
 }
 
@@ -471,10 +519,7 @@ void rage::grcTextureReferenceBase::ForwardSlot6()
     grcTexture* texture = GetTexture();   // VCALL slot 11
     
     if (texture) {
-        // Forward to inner texture's slot 6 (byte offset +24)
-        typedef void (*Slot6Fn)(grcTexture*);
-        Slot6Fn fn = reinterpret_cast<Slot6Fn>(texture->vtable[6]);
-        fn(texture);
+        texture->vfn_6();
         return;
     }
     
@@ -491,10 +536,7 @@ void rage::grcTextureReferenceBase::ForwardSlot8()
     grcTexture* texture = GetTexture();   // VCALL slot 11
     
     if (texture) {
-        // Forward to inner texture's slot 8 (byte offset +32)
-        typedef void (*Slot8Fn)(grcTexture*);
-        Slot8Fn fn = reinterpret_cast<Slot8Fn>(texture->vtable[8]);
-        fn(texture);
+        texture->vfn_8();
         return;
     }
     
@@ -510,10 +552,7 @@ void rage::grcTextureReferenceBase::ForwardSlot9()
     grcTexture* texture = GetTexture();   // VCALL slot 11
     
     if (texture) {
-        // Forward to inner texture's slot 9 (byte offset +36)
-        typedef void (*Slot9Fn)(grcTexture*);
-        Slot9Fn fn = reinterpret_cast<Slot9Fn>(texture->vtable[9]);
-        fn(texture);
+        texture->vfn_9();
         return;
     }
     
@@ -529,10 +568,7 @@ void rage::grcTextureReferenceBase::ForwardSlot13(void* param1, void* param2)
     grcTexture* texture = GetTexture2();   // VCALL slot 12
     
     if (texture) {
-        // Forward to inner texture's slot 13 (byte offset +52)
-        typedef void (*Slot13Fn)(grcTexture*, void*, void*);
-        Slot13Fn fn = reinterpret_cast<Slot13Fn>(texture->vtable[13]);
-        fn(texture, param1, param2);
+        texture->vfn_13(param1, param2);
     }
 }
 
@@ -545,10 +581,7 @@ void rage::grcTextureReferenceBase::ForwardSlot14(void* param1, void* param2)
     grcTexture* texture = GetTexture();   // VCALL slot 11
     
     if (texture) {
-        // Forward to inner texture's slot 14 (byte offset +56)
-        typedef void (*Slot14Fn)(grcTexture*, void*, void*);
-        Slot14Fn fn = reinterpret_cast<Slot14Fn>(texture->vtable[14]);
-        fn(texture, param1, param2);
+        texture->vfn_14(param1, param2);
     }
 }
 
@@ -561,10 +594,7 @@ void rage::grcTextureReferenceBase::ForwardSlot15()
     grcTexture* texture = GetTexture();   // VCALL slot 11
     
     if (texture) {
-        // Forward to inner texture's slot 15 (byte offset +60)
-        typedef void (*Slot15Fn)(grcTexture*);
-        Slot15Fn fn = reinterpret_cast<Slot15Fn>(texture->vtable[15]);
-        fn(texture);
+        texture->vfn_15();
         return;
     }
     
@@ -580,10 +610,7 @@ void rage::grcTextureReferenceBase::ForwardSlot16(void* param)
     grcTexture* texture = GetTexture2();   // VCALL slot 12
     
     if (texture) {
-        // Forward to inner texture's slot 16 (byte offset +64)
-        typedef void (*Slot16Fn)(grcTexture*, void*);
-        Slot16Fn fn = reinterpret_cast<Slot16Fn>(texture->vtable[16]);
-        fn(texture, param);
+        texture->vfn_16(param);
     }
 }
 
@@ -596,10 +623,7 @@ void rage::grcTextureReferenceBase::ForwardSlot17(float value, void* param)
     grcTexture* texture = GetTexture2();   // VCALL slot 12
     
     if (texture) {
-        // Forward to inner texture's slot 17 (byte offset +68)
-        typedef void (*Slot17Fn)(grcTexture*, float, void*);
-        Slot17Fn fn = reinterpret_cast<Slot17Fn>(texture->vtable[17]);
-        fn(texture, value, param);
+        texture->vfn_17(value, param);
     }
 }
 
@@ -612,10 +636,7 @@ void rage::grcTextureReferenceBase::ForwardSlot18(void* param1, void* param2)
     grcTexture* texture = GetTexture();   // VCALL slot 11
     
     if (texture) {
-        // Forward to inner texture's slot 18 (byte offset +72)
-        typedef void (*Slot18Fn)(grcTexture*, void*, void*);
-        Slot18Fn fn = reinterpret_cast<Slot18Fn>(texture->vtable[18]);
-        fn(texture, param1, param2);
+        texture->vfn_18(param1, param2);
     }
 }
 
@@ -635,10 +656,7 @@ grcTexture* rage::grcTextureReferenceBase::vfn_21(void* a, void* b, void* c)
     grcTexture* pTex = GetTexture();   // VCALL slot 11
 
     if (pTex != NULL) {
-        // Forward to the inner texture's slot 21
-        typedef grcTexture* (*Slot21Fn)(grcTexture*, void*, void*, void*);
-        Slot21Fn fn = reinterpret_cast<Slot21Fn>(pTex->vtable[21]);
-        return fn(pTex, a, b, c);
+        return pTex->vfn_21(a, b, c);
     }
 
     return NULL;
@@ -658,10 +676,7 @@ void rage::grcTextureReferenceBase::vfn_22(void* a)
     grcTexture* pTex = GetTexture();   // VCALL slot 11
 
     if (pTex != NULL) {
-        // Forward to the inner texture's slot 22
-        typedef void (*Slot22Fn)(grcTexture*, void*);
-        Slot22Fn fn = reinterpret_cast<Slot22Fn>(pTex->vtable[22]);
-        fn(pTex, a);
+        pTex->vfn_22(a);
     }
 }
 
@@ -687,20 +702,14 @@ extern void* rage_strDuplicate(const char* pString);
 // @ 0x8215FF68
 void grcTextureFactoryString_FF68(rage::grcTextureFactoryString* pObj, const char* pString)
 {
-    uint8_t* obj = (uint8_t*)pObj;
+    // vtable set to rage::grcTextureFactoryString @ 0x82035504 (compiler-managed)
 
-    // Set vtable (compiler-managed in practice)
-    *(uint32_t*)(obj + 0) = 0x82035504;
+    pObj->m_field04 = 0;
+    pObj->m_field05 = 0;
+    pObj->m_field06 = 1;
+    pObj->m_field08 = 0;
 
-    // Zero fields
-    obj[4] = 0;
-    obj[5] = 0;
-    *(uint16_t*)(obj + 6) = 1;
-    *(uint32_t*)(obj + 8) = 0;
-
-    // Obtain name handle from singleton
-    void* nameHandle = rage_strDuplicate(pString);
-    *(void**)(obj + 12) = nameHandle;
+    pObj->m_pNameHandle = rage_strDuplicate(pString);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -721,13 +730,14 @@ extern void grc_5ED0(void* pDevice, float* pTransformData);
 // @ 0x8214EFE8
 void grcTextureFactoryXenon_EFE8(void* pDevice, void* pSrc, void* pParam)
 {
-    uint8_t* dev = (uint8_t*)g_grcTextureDevice;
-
     rage_6290(g_grcTextureDevice, pSrc, pParam);
 
-    // Copy 6 floats (24 bytes) from device+12808 into local buffer
+    // Copy 6 floats (24 bytes) from device+0x3208 into local buffer
+    // TODO: replace magic offset 0x3208 once grcTextureDevice layout is known
+    static const uint32_t kTransformDataOffset = 0x3208;  // 12808 decimal
     float transformData[6];
-    float* pSrcFloats = (float*)(dev + 12808);
+    float* pSrcFloats = reinterpret_cast<float*>(
+        reinterpret_cast<uint8_t*>(g_grcTextureDevice) + kTransformDataOffset);
     for (int i = 0; i < 6; i++) {
         transformData[i] = pSrcFloats[i];
     }

@@ -38,9 +38,7 @@
 
 #include <stdint.h>
 #include "rage/hsmState.hpp"
-
-// Forward declarations
-class atSingleton;
+#include "rage/atSingleton.hpp"
 
 // ────────────────────────────────────────────────────────────────────────────
 // pongAttractState — Base State Machine State for Attract Mode
@@ -193,7 +191,7 @@ protected:
  * 
  * Size: 0x184 (388 bytes)
  */
-class charViewData : public atSingleton {
+class charViewData : public rage::atSingleton {
 public:
     // Virtual methods
     

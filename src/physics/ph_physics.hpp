@@ -199,151 +199,142 @@ struct phArticulatedCollider {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint32_t    m_state;          // +0x0004  R:61  — primary state word
-    uint32_t    field_0x0008;     // +0x0008  R:10
-    uint32_t    field_0x000c;     // +0x000c  R:2
-    uint32_t    field_0x0010;     // +0x0010  R:8
-    uint32_t    field_0x0014;     // +0x0014  R:4
-    uint32_t    field_0x0018;     // +0x0018  R:3
-    uint32_t    field_0x0020;     // +0x0020  R:3
-    uint32_t    field_0x0024;     // +0x0024  R:3
-    uint32_t    field_0x0028;     // +0x0028  R:3 W:1
+    uint32_t    m_state;          // +0x0004  R:61  — primary state word / flags
+    uint32_t    m_pCollisionData; // +0x0008  R:10  — collision data pointer
+    uint32_t    m_nBodyType;      // +0x000c  R:2   — body type identifier
+    uint32_t    m_pBound;         // +0x0010  R:8   — pointer to phBound
+    uint32_t    m_pArchetype;     // +0x0014  R:4   — pointer to phArchetype
+    uint32_t    m_pPhysicsWorld;  // +0x0018  R:3   — pointer to physics world
+    uint32_t    m_pSimulator;     // +0x0020  R:3   — pointer to phSimulator
+    uint32_t    m_pLevel;         // +0x0024  R:3   — pointer to phLevelNew
+    uint32_t    m_pConstraints;   // +0x0028  R:3 W:1 — constraint array ptr
     uint8_t     _pad0x002c[8];
-    uint32_t    field_0x0034;     // +0x0034  W:1
+    uint32_t    m_nFlags;         // +0x0034  W:1   — initialization flags
     uint8_t     _pad0x0038[44];
-    uint32_t    field_0x0064;     // +0x0064  R:3
-    uint32_t    field_0x0068;     // +0x0068  R:1
+    uint32_t    m_pRootTransform; // +0x0064  R:3   — root joint transform ptr
+    uint32_t    m_pBodyState;     // +0x0068  R:1   — body state data ptr
     uint8_t     _pad0x006c[56];
-    uint32_t    field_0x00a4;     // +0x00a4  R:1
+    uint32_t    m_pInverseInertia; // +0x00a4  R:1  — inverse inertia tensor ptr
     uint8_t     _pad0x00a8[72];
-    uint32_t    field_0x00f0;     // +0x00f0  R:1 W:1
-    uint32_t    field_0x00f4;     // +0x00f4  R:1 W:1
+    uint32_t    m_fLinearDamping;  // +0x00f0  R:1 W:1 — linear velocity damping
+    uint32_t    m_fAngularDamping; // +0x00f4  R:1 W:1 — angular velocity damping
     uint8_t     _pad0x00f8[184];
-    uint32_t    field_0x01b0;     // +0x01b0  R:1
-    uint32_t    field_0x01b4;     // +0x01b4  R:1
+    uint32_t    m_fGravityScale;  // +0x01b0  R:1   — gravity scale factor
+    uint32_t    m_fTimeStep;      // +0x01b4  R:1   — simulation timestep
     uint8_t     _pad0x01b8[24];
-    union {
-        uint32_t    m_nActiveJoints;  // +0x01d0  R:50  — joint count (most-read field)
-        uint32_t*   m_pJointArray;    // +0x01d0  — same field, used as pointer
-    };
-    union {
-        uint8_t     m_bJointsActive;  // +0x01d4  W:3   — joints active flag
-        uint8_t     m_bJointDirtyFlag; // +0x01d4  — alias
-    };
-    union {
-        uint32_t    m_nJointCount;    // +0x01d8  R:8 W:2  — joint count
-        void*       m_pJointStatePtr; // +0x01d8  — alias (used as pointer)
-        void*       m_pJointProcessor;// +0x01d8  — alias (joint processor)
-    };
-    uint32_t    field_0x01dc;     // +0x01dc  R:8
+    uint32_t    m_pJointArray;    // +0x01d0  R:50  — joint object array ptr (most-read)
+    uint8_t     m_bJointsDirty;   // +0x01d4  W:3   — joints need update flag
+    uint8_t     _pad0x01d5[3];
+    uint32_t    m_pPhysicsData;   // +0x01d8  R:8 W:2 — physics data ptr (returned by GetPhysicsData at +472)
+    uint32_t    m_pJointTypeArray; // +0x01dc  R:8  — joint type lookup array ptr (used by GetJointFrictionAtIndex)
     uint16_t    field_0x01e2;     // +0x01e2  R:1
-    uint32_t    field_0x01e4;     // +0x01e4  R:8
-    uint32_t    field_0x01e8;     // +0x01e8  R:3
+    uint32_t    m_pJointConfigArray; // +0x01e4  R:8 — joint configuration array ptr
+    uint32_t    m_pJointFlags;    // +0x01e8  R:3   — joint flag data
     uint16_t    field_0x01ea;     // +0x01ea  R:1
-    uint32_t    field_0x01ec;     // +0x01ec  R:5
-    uint16_t    field_0x01f2;     // +0x01f2  R:1
-    uint32_t    field_0x01f4;     // +0x01f4  R:4
+    uint32_t    m_pJointInertiaArray; // +0x01ec  R:5 — per-joint inertia (float[]) (GetJointInertiaAtIndex)
+    uint16_t    m_nBoneParent;    // +0x01f2  R:1  — bone parent index
+    uint32_t    m_pJointDampingArray; // +0x01f4  R:4 — per-joint damping (float[]) (GetJointDampingAtIndex)
     uint16_t    field_0x01fa;     // +0x01fa  R:1
-    uint32_t    field_0x01fc;     // +0x01fc  R:5
-    uint32_t    field_0x0200;     // +0x0200  R:1
+    uint32_t    m_pJointMassArray; // +0x01fc  R:5  — per-joint mass (float[]) (GetJointMassAtIndex)
+    uint32_t    m_pJointFrictionArray; // +0x0200  R:1 — per-joint friction array
     uint16_t    field_0x0202;     // +0x0202  R:1
     uint8_t     _pad0x0204[94];
-    uint32_t    field_0x0264;     // +0x0264  R:1
+    uint32_t    m_pBoneTransforms; // +0x0264  R:1  — bone transform array ptr
     uint8_t     _pad0x0268[156];
-    uint32_t    field_0x0304;     // +0x0304  R:1
+    uint32_t    m_pJointPosArray;  // +0x0304  R:1  — joint position array ptr
     uint16_t    field_0x030a;     // +0x030a  R:1
-    uint32_t    field_0x030c;     // +0x030c  R:1
+    uint32_t    m_pJointRotArray;  // +0x030c  R:1  — joint rotation array ptr
     uint16_t    field_0x0312;     // +0x0312  R:1
     uint8_t     _pad0x0314[9606];
-    uint32_t    field_0x289c;     // +0x289c  R:1
+    uint32_t    m_nBoneCount;     // +0x289c  R:1   — number of bones
     uint8_t     _pad0x28a0[1048];
     uint32_t    m_nComponents;    // +0x2cb8  R:14 W:6 — component count
     uint32_t    m_nActiveComponents; // +0x2cbc  R:12 W:3
-    uint32_t    field_0x2cc4;     // +0x2cc4  R:1 W:1
-    uint32_t    field_0x2ccc;     // +0x2ccc  R:1 W:1
-    uint32_t    field_0x2cd0;     // +0x2cd0  R:1 W:1
-    uint32_t    field_0x2cd4;     // +0x2cd4  R:1 W:1
-    uint32_t    field_0x2cd8;     // +0x2cd8  W:1
+    uint32_t    m_fMass;          // +0x2cc4  R:1 W:1 — total mass
+    uint32_t    m_fInverseMass;   // +0x2ccc  R:1 W:1 — 1/mass
+    uint32_t    m_fRestitution;   // +0x2cd0  R:1 W:1 — bounce coefficient
+    uint32_t    m_fFriction;      // +0x2cd4  R:1 W:1 — friction coefficient
+    uint32_t    m_fSleepThreshold;// +0x2cd8  W:1    — sleep velocity threshold
     uint8_t     _pad0x2cdc[20];
-    uint32_t    field_0x2cf0;     // +0x2cf0  R:1 W:1
+    uint32_t    m_fMaxAngVel;     // +0x2cf0  R:1 W:1 — max angular velocity
     uint8_t     _pad0x2cf4[36];
-    uint32_t    field_0x2d18;     // +0x2d18  W:1
-    uint32_t    field_0x2d1c;     // +0x2d1c  R:4 W:4
-    uint32_t    field_0x2d20;     // +0x2d20  R:1 W:1
-    uint32_t    field_0x2d24;     // +0x2d24  R:1 W:1
-    uint32_t    field_0x2d28;     // +0x2d28  R:1 W:1
-    uint32_t    field_0x2d2c;     // +0x2d2c  R:1 W:1
+    uint32_t    m_pSolverData;    // +0x2d18  W:1    — solver data ptr
+    uint32_t    m_nSolverIterations; // +0x2d1c  R:4 W:4 — solver iteration count
+    uint32_t    m_fLinearSleep;   // +0x2d20  R:1 W:1 — linear sleep threshold
+    uint32_t    m_fAngularSleep;  // +0x2d24  R:1 W:1 — angular sleep threshold
+    uint32_t    m_fContactSleep;  // +0x2d28  R:1 W:1 — contact sleep threshold
+    uint32_t    m_fWakeThreshold; // +0x2d2c  R:1 W:1 — wake-up threshold
     uint8_t     _pad0x2d30[13];
-    uint8_t     field_0x2d3d;     // +0x2d3d  W:1
-    uint8_t     field_0x2d3e;     // +0x2d3e  W:1
-    uint8_t     field_0x2d3f;     // +0x2d3f  W:1
-    uint8_t     field_0x2d41;     // +0x2d41  W:1
-    uint8_t     field_0x2d42;     // +0x2d42  W:1
-    uint8_t     field_0x2d43;     // +0x2d43  W:1
-    uint32_t    field_0x2d44;     // +0x2d44  R:1 W:1
+    uint8_t     m_bSleeping;      // +0x2d3d  W:1    — body is sleeping
+    uint8_t     m_bFrozen;        // +0x2d3e  W:1    — body is frozen
+    uint8_t     m_bDisableGravity;// +0x2d3f  W:1    — gravity disabled
+    uint8_t     m_bKinematic;     // +0x2d41  W:1    — kinematic mode
+    uint8_t     m_bContinuous;    // +0x2d42  W:1    — continuous collision
+    uint8_t     m_bSensor;        // +0x2d43  W:1    — sensor mode (no response)
+    uint32_t    m_nSleepCounter;  // +0x2d44  R:1 W:1 — sleep frame counter
     uint8_t     _pad0x2d48[36];
     uint32_t    m_nJoints;        // +0x2d6c  R:16 W:8 — joint array count
-    uint32_t    field_0x2d70;     // +0x2d70  R:10 W:8
-    uint32_t    field_0x2d74;     // +0x2d74  R:22 W:11
-    uint32_t    field_0x2d78;     // +0x2d78  W:8
-    uint32_t    field_0x2d7c;     // +0x2d7c  R:8 W:4
-    uint32_t    field_0x2d80;     // +0x2d80  R:6 W:3
-    uint8_t     field_0x2d82;     // +0x2d82  W:1
-    uint32_t    field_0x2d84;     // +0x2d84  R:3 W:2
-    uint32_t    field_0x2d88;     // +0x2d88  R:10 W:8
-    uint32_t    field_0x2d8c;     // +0x2d8c  R:1 W:1
+    uint32_t    m_nActiveJointCount; // +0x2d70  R:10 W:8 — active joint count
+    uint32_t    m_nSolverFlags;   // +0x2d74  R:22 W:11 — solver configuration flags (most-written)
+    uint32_t    m_pSolverBuffer;  // +0x2d78  W:8     — solver scratch buffer ptr
+    uint32_t    m_nCollisionFlags;// +0x2d7c  R:8 W:4 — collision detection flags
+    uint32_t    m_nActiveState;   // +0x2d80  R:6 W:3 — active state bitfield
+    uint8_t     m_bSolverDirty;   // +0x2d82  W:1    — solver needs rebuild
+    uint32_t    m_nConstraintFlags;// +0x2d84  R:3 W:2 — constraint solve flags
+    uint32_t    m_nJointUpdateFlags; // +0x2d88  R:10 W:8 — per-frame joint update flags
+    uint32_t    m_nJointSolveMode;// +0x2d8c  R:1 W:1 — joint solver mode
     uint8_t     _pad0x2d90[8];
-    uint32_t    field_0x2d98;     // +0x2d98  W:8
-    uint32_t    field_0x2d9c;     // +0x2d9c  W:8
-    uint32_t    field_0x2da0;     // +0x2da0  W:8
-    uint16_t    field_0x2da4;     // +0x2da4  W:1
-    uint16_t    field_0x2da6;     // +0x2da6  W:1
-    uint16_t    field_0x2da8;     // +0x2da8  W:1
-    uint16_t    field_0x2daa;     // +0x2daa  W:1
+    uint32_t    m_vForceAccumX;   // +0x2d98  W:8    — accumulated force X
+    uint32_t    m_vForceAccumY;   // +0x2d9c  W:8    — accumulated force Y
+    uint32_t    m_vForceAccumZ;   // +0x2da0  W:8    — accumulated force Z
+    uint16_t    m_nForceGeneration;// +0x2da4  W:1   — force generation counter
+    uint16_t    m_nTorqueGeneration;// +0x2da6  W:1  — torque generation counter
+    uint16_t    m_nImpulseGeneration;// +0x2da8  W:1 — impulse generation counter
+    uint16_t    m_nVelocityGeneration;// +0x2daa  W:1 — velocity generation counter
     uint8_t     _pad0x2dac[10];
-    uint32_t    field_0x2db8;     // +0x2db8  R:2 W:1
-    uint32_t    field_0x2dbc;     // +0x2dbc  W:1
-    uint32_t    field_0x2dc0;     // +0x2dc0  W:1
+    uint32_t    m_pContactCache;  // +0x2db8  R:2 W:1 — contact point cache ptr
+    uint32_t    m_pContactList;   // +0x2dbc  W:1    — contact list head ptr
+    uint32_t    m_nContactCount;  // +0x2dc0  W:1    — active contact count
     uint8_t     _pad0x2dc4[60];
-    uint32_t    field_0x2e00;     // +0x2e00  R:2 W:1
-    uint32_t    field_0x2e04;     // +0x2e04  W:1
-    uint32_t    field_0x2e08;     // +0x2e08  W:1
-    uint32_t    field_0x2e0c;     // +0x2e0c  W:1
-    uint32_t    field_0x2e10;     // +0x2e10  W:1
+    uint32_t    m_pImpulseCache;  // +0x2e00  R:2 W:1 — impulse accumulator cache
+    uint32_t    m_fImpulseX;      // +0x2e04  W:1    — impulse component X
+    uint32_t    m_fImpulseY;      // +0x2e08  W:1    — impulse component Y
+    uint32_t    m_fImpulseZ;      // +0x2e0c  W:1    — impulse component Z
+    uint32_t    m_fImpulseW;      // +0x2e10  W:1    — impulse component W
     uint8_t     _pad0x2e14[44];
-    uint32_t    field_0x2e40;     // +0x2e40  W:1
+    uint32_t    m_fMaxAngularVel; // +0x2e40  W:1    — max angular velocity clamp
     uint8_t     _pad0x2e44[76];
-    uint32_t    field_0x2e90;     // +0x2e90  R:2 W:1
-    uint32_t    field_0x2e94;     // +0x2e94  R:1 W:1
-    uint32_t    field_0x2e98;     // +0x2e98  R:1 W:1
-    uint32_t    field_0x2e9c;     // +0x2e9c  R:1 W:1
+    uint32_t    m_vLinearVelX;    // +0x2e90  R:2 W:1 — linear velocity X
+    uint32_t    m_vLinearVelY;    // +0x2e94  R:1 W:1 — linear velocity Y
+    uint32_t    m_vLinearVelZ;    // +0x2e98  R:1 W:1 — linear velocity Z
+    uint32_t    m_vLinearVelW;    // +0x2e9c  R:1 W:1 — linear velocity W (padding)
     uint8_t     _pad0x2ea0[16];
-    uint32_t    field_0x2eb0;     // +0x2eb0  W:1
-    uint32_t    field_0x2eb4;     // +0x2eb4  W:1
-    uint32_t    field_0x2eb8;     // +0x2eb8  W:1
-    uint32_t    field_0x2ebc;     // +0x2ebc  W:1
-    uint32_t    field_0x2ec0;     // +0x2ec0  W:1
+    uint32_t    m_vAngularVelX;   // +0x2eb0  W:1    — angular velocity X
+    uint32_t    m_vAngularVelY;   // +0x2eb4  W:1    — angular velocity Y
+    uint32_t    m_vAngularVelZ;   // +0x2eb8  W:1    — angular velocity Z
+    uint32_t    m_vAngularVelW;   // +0x2ebc  W:1    — angular velocity W (padding)
+    uint32_t    m_fMaxLinearVel;  // +0x2ec0  W:1    — max linear velocity
     uint8_t     _pad0x2ec4[16];
-    uint32_t    field_0x2ed4;     // +0x2ed4  W:1
-    uint32_t    field_0x2ed8;     // +0x2ed8  W:1
-    uint32_t    field_0x2edc;     // +0x2edc  W:1
+    uint32_t    m_vTorqueAccumX;  // +0x2ed4  W:1    — accumulated torque X
+    uint32_t    m_vTorqueAccumY;  // +0x2ed8  W:1    — accumulated torque Y
+    uint32_t    m_vTorqueAccumZ;  // +0x2edc  W:1    — accumulated torque Z
     uint8_t     _pad0x2ee0[124];
-    uint32_t    field_0x2f5c;     // +0x2f5c  W:1
-    uint32_t    field_0x2f60;     // +0x2f60  W:1
-    uint32_t    field_0x2f64;     // +0x2f64  W:1
-    uint32_t    field_0x2f68;     // +0x2f68  W:1
-    uint32_t    field_0x2f6c;     // +0x2f6c  W:1
-    uint32_t    field_0x2f70;     // +0x2f70  W:1
-    uint32_t    field_0x2f74;     // +0x2f74  W:1
-    uint32_t    field_0x2f78;     // +0x2f78  W:1
-    uint32_t    field_0x2f7c;     // +0x2f7c  W:1
+    uint32_t    m_vPositionX;     // +0x2f5c  W:1    — world position X
+    uint32_t    m_vPositionY;     // +0x2f60  W:1    — world position Y
+    uint32_t    m_vPositionZ;     // +0x2f64  W:1    — world position Z
+    uint32_t    m_vPositionW;     // +0x2f68  W:1    — world position W (padding)
+    uint32_t    m_vOrientRow0X;   // +0x2f6c  W:1    — orientation matrix row 0 X
+    uint32_t    m_vOrientRow0Y;   // +0x2f70  W:1    — orientation matrix row 0 Y
+    uint32_t    m_vOrientRow0Z;   // +0x2f74  W:1    — orientation matrix row 0 Z
+    uint32_t    m_vOrientRow1X;   // +0x2f78  W:1    — orientation matrix row 1 X
+    uint32_t    m_vOrientRow1Y;   // +0x2f7c  W:1    — orientation matrix row 1 Y
     uint8_t     _pad0x2f80[376];
-    uint32_t    field_0x30f8;     // +0x30f8  R:2
-    uint32_t    field_0x30fc;     // +0x30fc  R:2
-    uint32_t    field_0x3100;     // +0x3100  R:2
-    uint32_t    field_0x3104;     // +0x3104  R:2
+    uint32_t    m_vGravityX;      // +0x30f8  R:2    — gravity vector X
+    uint32_t    m_vGravityY;      // +0x30fc  R:2    — gravity vector Y
+    uint32_t    m_vGravityZ;      // +0x3100  R:2    — gravity vector Z
+    uint32_t    m_vGravityW;      // +0x3104  R:2    — gravity vector W (padding)
     uint8_t     _pad0x3108[1160];
-    uint32_t    field_0x3590;     // +0x3590  R:1 W:1
+    uint32_t    m_nFrameCount;    // +0x3590  R:1 W:1 — simulation frame counter
 
     virtual ~phArticulatedCollider();                 // [0] @ 0x8224E580
     virtual void ScalarDtor(int flags);               // [1] @ 0x8224E6D8
@@ -542,32 +533,32 @@ struct phBound {
 struct phBoundBox {
     void**      vtable;           // +0x00
 
-    uint32_t    field_0x0004;     // +0x0004  R:10 W:1
-    uint8_t     field_0x0005;     // +0x0005  R:2 W:1
-    uint8_t     field_0x0006;     // +0x0006  W:2
-    uint32_t    field_0x0008;     // +0x0008  R:11 W:2
-    uint32_t    field_0x000c;     // +0x000c  W:1
-    uint32_t    field_0x0010;     // +0x0010  R:1
-    uint32_t    field_0x0014;     // +0x0014  R:1
-    uint32_t    field_0x0018;     // +0x0018  R:1
-    uint32_t    field_0x0020;     // +0x0020  R:1
-    uint32_t    field_0x0024;     // +0x0024  R:1
-    uint32_t    field_0x0028;     // +0x0028  R:1
+    uint32_t    m_nBoundType;     // +0x0004  R:10 W:1 — bound type ID
+    uint8_t     m_bHasOffset;     // +0x0005  R:2 W:1  — centroid offset present
+    uint8_t     m_nMaterialFlags; // +0x0006  W:2      — material flag bits
+    uint32_t    m_nFaceCount;     // +0x0008  R:11 W:2 — number of faces
+    uint32_t    m_nEdgeCount;     // +0x000c  W:1      — number of edges
+    uint32_t    m_vCentroidX;     // +0x0010  R:1      — centroid X
+    uint32_t    m_vCentroidY;     // +0x0014  R:1      — centroid Y
+    uint32_t    m_vCentroidZ;     // +0x0018  R:1      — centroid Z
+    uint32_t    m_vExtentMinX;    // +0x0020  R:1      — AABB min X
+    uint32_t    m_vExtentMinY;    // +0x0024  R:1      — AABB min Y
+    uint32_t    m_vExtentMinZ;    // +0x0028  R:1      — AABB min Z
     uint8_t     _pad0x002c[52];
-    uint16_t    field_0x0060;     // +0x0060  W:1
+    uint16_t    m_nRefCount;      // +0x0060  W:1      — reference count
     uint8_t     _pad0x0062[12];
-    uint32_t    field_0x0070;     // +0x0070  R:3 W:1
-    uint32_t    field_0x0078;     // +0x0078  R:2 W:1
+    uint32_t    m_pVertices;      // +0x0070  R:3 W:1  — vertex array ptr
+    uint32_t    m_pFaceIndices;   // +0x0078  R:2 W:1  — face index array ptr
     uint8_t     _pad0x007c[24];
-    uint32_t    field_0x0094;     // +0x0094  R:2
-    uint32_t    field_0x0098;     // +0x0098  R:2
-    uint32_t    field_0x00a0;     // +0x00a0  R:1
-    uint32_t    field_0x00a4;     // +0x00a4  R:1
-    uint32_t    field_0x00a8;     // +0x00a8  R:1
+    uint32_t    m_nVertexCount;   // +0x0094  R:2      — number of vertices
+    uint32_t    m_nIndexCount;    // +0x0098  R:2      — number of indices
+    uint32_t    m_pMaterials;     // +0x00a0  R:1      — material array ptr
+    uint32_t    m_pCurrentMaterial;// +0x00a4  R:1     — current material ptr
+    uint32_t    m_nMaterialCount; // +0x00a8  R:1      — number of materials
     uint8_t     _pad0x00ac[324];
     uint32_t    m_maxImpacts;     // +0x01f0  R:4 W:2 — max collision impacts
     uint8_t     _pad0x01f4[22944];
-    uint32_t    field_0x5b94;     // +0x5b94  W:2
+    uint32_t    m_nBoxImpactIdx;  // +0x5b94  W:2  — impact write index
 
     virtual void SetCentroidOffset();     // [6] @ 0x822A77E0
     virtual void TranslateAndDispatch(); // [7] @ 0x822A7898
@@ -595,234 +586,234 @@ struct phBoundBox {
 struct phBoundCapsule {
     void**      vtable;           // +0x00
 
-    uint8_t     field_0x0001;     // +0x0001  R:1
+    uint8_t     m_nBoundFlags;    // +0x0001  R:1  — bound-level flags
     uint32_t    m_nType;          // +0x0004  R:72 W:20  — bound type / flags
     uint8_t     m_bHasOffset;     // +0x0005  R:5 W:1  — set when center has non-zero offset
-    uint8_t     field_0x0006;     // +0x0006  W:2
+    uint8_t     m_nPadFlags;      // +0x0006  W:2  — padding/alignment flags
     uint8_t     m_bHasTransform;  // +0x0007  R:1  — checked before applying world transform
-    uint64_t    field_0x0008;     // +0x0008  R:59 W:21  — packed pair
-    uint32_t    field_0x000c;     // +0x000c  R:20 W:10
-    uint32_t    field_0x0010;     // +0x0010  R:14 W:8
-    uint8_t     field_0x0011;     // +0x0011  W:3
-    uint8_t     field_0x0012;     // +0x0012  R:1 W:2
-    uint8_t     field_0x0013;     // +0x0013  R:2
-    uint32_t    field_0x0014;     // +0x0014  R:24 W:6
-    uint32_t    field_0x0018;     // +0x0018  R:20 W:8
-    uint8_t     field_0x0019;     // +0x0019  R:1
-    uint32_t    field_0x001c;     // +0x001c  R:20 W:6
-    uint16_t    field_0x001e;     // +0x001e  W:1
-    uint32_t    field_0x0020;     // +0x0020  R:13 W:5
-    uint16_t    field_0x0022;     // +0x0022  R:27 W:2
-    uint32_t    field_0x0024;     // +0x0024  R:14 W:13
-    uint32_t    field_0x0028;     // +0x0028  R:19 W:21
-    uint8_t     field_0x002a;     // +0x002a  W:1
-    uint32_t    field_0x002c;     // +0x002c  R:13 W:3
+    uint64_t    m_fAABBMinX;      // +0x0008  R:59 W:21  — AABB min X (packed)
+    uint32_t    m_fAABBMinY;      // +0x000c  R:20 W:10  — AABB min Y
+    uint32_t    m_fAABBMinZ;      // +0x0010  R:14 W:8  — AABB min Z
+    uint8_t     m_nAABBMinZHi;    // +0x0011  W:3  — high byte overlap
+    uint8_t     m_nAABBPad0;      // +0x0012  R:1 W:2  — AABB padding
+    uint8_t     m_nAABBPad1;      // +0x0013  R:2  — AABB padding
+    uint32_t    m_fAABBMaxX;      // +0x0014  R:24 W:6  — AABB max X
+    uint32_t    m_fAABBMaxY;      // +0x0018  R:20 W:8  — AABB max Y
+    uint8_t     m_nAABBMaxYHi;    // +0x0019  R:1  — high byte overlap
+    uint32_t    m_fAABBMaxZ;      // +0x001c  R:20 W:6  — AABB max Z
+    uint16_t    m_nAABBMaxZHi;    // +0x001e  W:1  — high bytes overlap
+    uint32_t    m_fExtentX;       // +0x0020  R:13 W:5  — X half-extent
+    uint16_t    m_nExtentFlags;   // +0x0022  R:27 W:2  — extent flags / packed data
+    uint32_t    m_fExtentY;       // +0x0024  R:14 W:13  — Y half-extent
+    uint32_t    m_fExtentZ;       // +0x0028  R:19 W:21  — Z half-extent
+    uint8_t     m_nExtentPad;     // +0x002a  W:1  — extent padding
+    uint32_t    m_pOwnerBound;    // +0x002c  R:13 W:3  — owner/parent bound ptr
     uint32_t    m_vCenterX;       // +0x0030  R:15 W:4  — center position X
     uint32_t    m_vCenterY;       // +0x0034  R:10 W:3  — center position Y
     uint32_t    m_vCenterZ;       // +0x0038  R:7 W:3   — center position Z
-    uint8_t     field_0x0039;     // +0x0039  R:1 W:1
-    uint32_t    field_0x003c;     // +0x003c  R:13 W:4
-    uint32_t    field_0x0040;     // +0x0040  R:9 W:4
-    uint32_t    field_0x0044;     // +0x0044  R:3 W:2
-    uint32_t    field_0x0048;     // +0x0048  W:2
-    uint32_t    field_0x004c;     // +0x004c  W:2
-    uint32_t    field_0x0050;     // +0x0050  R:8 W:3
-    uint32_t    field_0x0054;     // +0x0054  R:2 W:3
-    uint32_t    field_0x0058;     // +0x0058  R:3 W:3
-    uint32_t    field_0x005c;     // +0x005c  R:1 W:3
-    uint32_t    field_0x0060;     // +0x0060  R:7 W:5
-    uint32_t    field_0x0064;     // +0x0064  R:2 W:2
-    uint32_t    field_0x0068;     // +0x0068  R:2 W:3
-    uint32_t    field_0x006c;     // +0x006c  R:1 W:4
-    uint16_t    field_0x006e;     // +0x006e  R:7 W:2
+    uint8_t     m_nCenterW;       // +0x0039  R:1 W:1  — centroid W component
+    uint32_t    m_fCGOffsetX;     // +0x003c  R:13 W:4  — CG offset X
+    uint32_t    m_fCGOffsetY;     // +0x0040  R:9 W:4  — CG offset Y
+    uint32_t    m_fCGOffsetZ;     // +0x0044  R:3 W:2  — CG offset Z
+    uint32_t    m_fCGOffsetW;     // +0x0048  W:2  — CG offset W (padding)
+    uint32_t    m_fInertiaScaleX; // +0x004c  W:2  — inertia scale X
+    uint32_t    m_fInertiaX;      // +0x0050  R:8 W:3  — inertia tensor X
+    uint32_t    m_fInertiaY;      // +0x0054  R:2 W:3  — inertia tensor Y
+    uint32_t    m_fInertiaZ;      // +0x0058  R:3 W:3  — inertia tensor Z
+    uint32_t    m_fInertiaW;      // +0x005c  R:1 W:3  — inertia tensor W (padding)
+    uint32_t    m_fMarginX;       // +0x0060  R:7 W:5  — collision margin X
+    uint32_t    m_fMarginY;       // +0x0064  R:2 W:2  — collision margin Y
+    uint32_t    m_fMarginZ;       // +0x0068  R:2 W:3  — collision margin Z
+    uint32_t    m_fMarginW;       // +0x006c  R:1 W:4  — collision margin W
+    uint16_t    m_nPolygonCount;  // +0x006e  R:7 W:2  — polygon/face count
     uint32_t    m_pVertices;      // +0x0070  R:17 W:2  — vertex array ptr (or halfHeight for capsule)
-    uint32_t    field_0x0074;     // +0x0074  R:7 W:3
-    uint32_t    field_0x0078;     // +0x0078  R:3 W:2
-    uint32_t    field_0x007c;     // +0x007c  R:1 W:1
+    uint32_t    m_pNormals;       // +0x0074  R:7 W:3  — normal array ptr
+    uint32_t    m_pFaceIndices;   // +0x0078  R:3 W:2  — face index array ptr
+    uint32_t    m_pEdgeData;      // +0x007c  R:1 W:1  — edge data ptr
     uint32_t    m_fRadius;        // +0x0080  R:12 W:1  — capsule radius (float as uint32)
-    uint32_t    field_0x0084;     // +0x0084  R:2 W:1
-    uint32_t    field_0x0088;     // +0x0088  R:1
-    uint32_t    field_0x008c;     // +0x008c  R:7 W:1
-    uint32_t    field_0x0090;     // +0x0090  R:8 W:1
+    uint32_t    m_fHalfHeight;    // +0x0084  R:2 W:1  — capsule half-height
+    uint32_t    m_fLength;         // +0x0088  R:1  — capsule length
+    uint32_t    m_fVolume;        // +0x008c  R:7 W:1  — precomputed volume
+    uint32_t    m_fSurfaceArea;   // +0x0090  R:8 W:1  — precomputed surface area
     uint32_t    m_nVertexCount;   // +0x0094  R:2 W:1  — number of vertices
-    uint32_t    field_0x0098;     // +0x0098  R:4 W:1
-    uint16_t    field_0x009a;     // +0x009a  W:1
-    uint32_t    field_0x009c;     // +0x009c  R:2 W:2
-    uint8_t     field_0x009d;     // +0x009d  R:1
-    uint8_t     field_0x009e;     // +0x009e  W:3
+    uint32_t    m_nEdgeCount;     // +0x0098  R:4 W:1  — edge count
+    uint16_t    m_nEdgePad;       // +0x009a  W:1  — edge count padding
+    uint32_t    m_nFaceStride;    // +0x009c  R:2 W:2  — face data stride
+    uint8_t     m_nVertexStride;  // +0x009d  R:1  — vertex data stride
+    uint8_t     m_nNormalStride;  // +0x009e  W:3  — normal data stride
     uint32_t    m_pMaterials;     // +0x00a0  R:2 W:1  — pointer to material array
     uint32_t    m_pCurrentMaterial; // +0x00a4  R:3 W:1  — current material pointer
     uint64_t    m_nMaterialCount; // +0x00a8  R:2 W:1  — material count (uint8 low byte)
-    uint32_t    field_0x00ac;     // +0x00ac  R:2
-    uint64_t    field_0x00b0;     // +0x00b0  R:2 W:2
-    uint32_t    field_0x00b4;     // +0x00b4  R:1
-    uint64_t    field_0x00b8;     // +0x00b8  R:1 W:2
+    uint32_t    m_pMaterialFlags; // +0x00ac  R:2  — material flags ptr
+    uint64_t    m_pCollisionData; // +0x00b0  R:2 W:2  — collision data ptr
+    uint32_t    m_nCollisionSize; // +0x00b4  R:1  — collision data size
+    uint64_t    m_pDisplayObject; // +0x00b8  R:1 W:2  — debug display object ptr
     uint32_t    m_nMaterialIndex; // +0x00c0  R:8 W:4  — active material index
-    uint8_t     field_0x00c8;     // +0x00c8  W:1
-    uint8_t     field_0x00c9;     // +0x00c9  W:1
-    uint16_t    field_0x00ca;     // +0x00ca  W:1
-    uint32_t    field_0x00cc;     // +0x00cc  R:1 W:1
-    uint32_t    field_0x00d0;     // +0x00d0  W:1
-    uint16_t    field_0x00d2;     // +0x00d2  W:1
-    uint32_t    field_0x00d4;     // +0x00d4  W:5
-    uint32_t    field_0x00d8;     // +0x00d8  R:1 W:5
-    uint32_t    field_0x00dc;     // +0x00dc  W:4
-    uint8_t     field_0x00dd;     // +0x00dd  W:1
-    uint8_t     field_0x00de;     // +0x00de  W:1
-    uint32_t    field_0x00e0;     // +0x00e0  W:2
-    uint32_t    field_0x00e4;     // +0x00e4  R:3 W:8
-    uint8_t     field_0x00e5;     // +0x00e5  W:1
-    uint32_t    field_0x00e8;     // +0x00e8  W:3
-    uint32_t    field_0x00ec;     // +0x00ec  W:4
-    uint8_t     field_0x00ed;     // +0x00ed  W:1
-    uint8_t     field_0x00ee;     // +0x00ee  W:1
-    uint32_t    field_0x00f0;     // +0x00f0  W:4
-    uint32_t    field_0x00f4;     // +0x00f4  R:6 W:4
-    uint32_t    field_0x00f8;     // +0x00f8  W:3
-    uint32_t    field_0x00fc;     // +0x00fc  R:3 W:3
+    uint8_t     m_nStreamFlags0;  // +0x00c8  W:1  — stream deserialization flag
+    uint8_t     m_nStreamFlags1;  // +0x00c9  W:1  — stream deserialization flag
+    uint16_t    m_nStreamFlags2;  // +0x00ca  W:1  — stream deserialization flag
+    uint32_t    m_nBoundVersion;  // +0x00cc  R:1 W:1  — bound format version
+    uint32_t    m_nSerialFlags0;  // +0x00d0  W:1  — serialization flag
+    uint16_t    m_nSerialFlags1;  // +0x00d2  W:1  — serialization flag
+    uint32_t    m_fCollisionExtX; // +0x00d4  W:5  — collision extent X
+    uint32_t    m_fCollisionExtY; // +0x00d8  R:1 W:5  — collision extent Y
+    uint32_t    m_fCollisionExtZ; // +0x00dc  W:4  — collision extent Z
+    uint8_t     m_nCollisionExtHi;// +0x00dd  W:1  — collision extent high byte
+    uint8_t     m_nCollisionPad;  // +0x00de  W:1  — collision extent padding
+    uint32_t    m_fCollisionMinX; // +0x00e0  W:2  — collision AABB min X
+    uint32_t    m_fCollisionMinY; // +0x00e4  R:3 W:8  — collision AABB min Y
+    uint8_t     m_nCollisionMinHi;// +0x00e5  W:1  — collision min high byte
+    uint32_t    m_fCollisionMinZ; // +0x00e8  W:3  — collision AABB min Z
+    uint32_t    m_fCollisionMaxX; // +0x00ec  W:4  — collision AABB max X
+    uint8_t     m_nCollisionMaxHi;// +0x00ed  W:1  — collision max high byte
+    uint8_t     m_nCollisionMaxPd;// +0x00ee  W:1  — collision max padding
+    uint32_t    m_fCollisionMaxY; // +0x00f0  W:4  — collision AABB max Y
+    uint32_t    m_fCollisionMaxZ; // +0x00f4  R:6 W:4  — collision AABB max Z
+    uint32_t    m_nBoundState0;   // +0x00f8  W:3  — bound state data
+    uint32_t    m_nBoundState1;   // +0x00fc  R:3 W:3  — bound state data
     uint32_t    m_vAxisTop;       // +0x0100  R:15 W:2  — capsule axis top endpoint
-    uint32_t    field_0x0104;     // +0x0104  R:1 W:2
-    uint32_t    field_0x0108;     // +0x0108  R:1 W:2
-    uint32_t    field_0x010c;     // +0x010c  R:5 W:2
-    uint32_t    field_0x0110;     // +0x0110  R:1 W:3
-    uint32_t    field_0x0114;     // +0x0114  R:2 W:4
-    uint32_t    field_0x0118;     // +0x0118  R:2 W:3
-    uint32_t    field_0x011c;     // +0x011c  W:2
-    uint32_t    field_0x0120;     // +0x0120  W:5
-    uint32_t    field_0x0124;     // +0x0124  W:3
-    uint32_t    field_0x0128;     // +0x0128  R:1 W:4
-    uint8_t     field_0x0129;     // +0x0129  W:1
-    uint32_t    field_0x012c;     // +0x012c  R:1 W:4
-    uint32_t    field_0x0130;     // +0x0130  W:1
-    uint32_t    field_0x0134;     // +0x0134  W:1
-    uint32_t    field_0x0138;     // +0x0138  W:1
-    uint32_t    field_0x013c;     // +0x013c  W:1
-    uint32_t    field_0x0140;     // +0x0140  R:12 W:1
-    uint32_t    field_0x0144;     // +0x0144  R:3 W:1
-    uint32_t    field_0x0148;     // +0x0148  R:2 W:1
-    uint32_t    field_0x014c;     // +0x014c  R:1 W:1
-    uint32_t    field_0x0150;     // +0x0150  R:1 W:1
-    uint32_t    field_0x0154;     // +0x0154  R:3 W:1
-    uint32_t    field_0x0158;     // +0x0158  R:2 W:1
-    uint32_t    field_0x015c;     // +0x015c  R:3 W:1
-    uint32_t    field_0x0160;     // +0x0160  W:1
-    uint32_t    field_0x0164;     // +0x0164  R:1 W:1
-    uint32_t    field_0x0168;     // +0x0168  R:1 W:1
-    uint32_t    field_0x016c;     // +0x016c  R:1 W:1
-    uint32_t    field_0x0170;     // +0x0170  R:1 W:1
-    uint32_t    field_0x0174;     // +0x0174  W:2
-    uint32_t    field_0x0178;     // +0x0178  W:1
-    uint32_t    field_0x017c;     // +0x017c  W:1
-    uint32_t    field_0x0184;     // +0x0184  R:2 W:3
-    uint32_t    field_0x0188;     // +0x0188  R:1 W:3
-    uint32_t    field_0x018c;     // +0x018c  W:18
-    uint32_t    field_0x0190;     // +0x0190  R:1 W:1
-    uint32_t    field_0x0194;     // +0x0194  R:1 W:1
-    uint32_t    field_0x0198;     // +0x0198  W:5
-    uint32_t    field_0x019c;     // +0x019c  W:1
-    uint32_t    field_0x01a0;     // +0x01a0  W:1
-    uint32_t    field_0x01a4;     // +0x01a4  W:1
-    uint32_t    field_0x01a8;     // +0x01a8  W:1
-    uint32_t    field_0x01ac;     // +0x01ac  W:1
-    uint32_t    field_0x01b0;     // +0x01b0  W:1
-    uint32_t    field_0x01b4;     // +0x01b4  W:1
-    uint32_t    field_0x01b8;     // +0x01b8  W:2
-    uint32_t    field_0x01bc;     // +0x01bc  R:2 W:3
-    uint32_t    field_0x01c0;     // +0x01c0  R:4 W:3
-    uint32_t    field_0x01c4;     // +0x01c4  R:1 W:6
-    uint32_t    field_0x01c8;     // +0x01c8  R:17 W:6
-    uint32_t    field_0x01cc;     // +0x01cc  R:4 W:3
-    uint32_t    field_0x01d0;     // +0x01d0  R:7 W:4
-    uint32_t    field_0x01d4;     // +0x01d4  R:4 W:4
-    uint32_t    field_0x01d8;     // +0x01d8  W:4
-    uint32_t    field_0x01dc;     // +0x01dc  W:4
-    uint32_t    field_0x01e0;     // +0x01e0  W:1
-    uint32_t    field_0x01e4;     // +0x01e4  W:1
-    uint32_t    field_0x01e8;     // +0x01e8  W:6
-    uint32_t    field_0x01ec;     // +0x01ec  W:1
-    uint32_t    field_0x01f0;     // +0x01f0  R:2 W:3
-    uint32_t    field_0x01f4;     // +0x01f4  W:2
-    uint32_t    field_0x01f8;     // +0x01f8  W:2
-    uint32_t    field_0x01fc;     // +0x01fc  W:2
-    uint32_t    field_0x0200;     // +0x0200  R:1 W:2
-    uint32_t    field_0x0204;     // +0x0204  R:1 W:3
-    uint32_t    field_0x0208;     // +0x0208  R:1 W:1
-    uint32_t    field_0x020c;     // +0x020c  W:1
+    uint32_t    m_vAxisTopY;      // +0x0104  R:1 W:2  — axis top Y
+    uint32_t    m_vAxisTopZ;      // +0x0108  R:1 W:2  — axis top Z
+    uint32_t    m_vAxisTopW;      // +0x010c  R:5 W:2  — axis top W (padding)
+    uint32_t    m_vAxisBotX;      // +0x0110  R:1 W:3  — axis bottom X
+    uint32_t    m_vAxisBotY;      // +0x0114  R:2 W:4  — axis bottom Y
+    uint32_t    m_vAxisBotZ;      // +0x0118  R:2 W:3  — axis bottom Z
+    uint32_t    m_vAxisBotW;      // +0x011c  W:2  — axis bottom W (padding)
+    uint32_t    m_fTransformM00;  // +0x0120  W:5  — transform row 0 col 0
+    uint32_t    m_fTransformM01;  // +0x0124  W:3  — transform row 0 col 1
+    uint32_t    m_fTransformM02;  // +0x0128  R:1 W:4  — transform row 0 col 2
+    uint8_t     m_nTransformPad;  // +0x0129  W:1  — transform padding
+    uint32_t    m_fTransformM03;  // +0x012c  R:1 W:4  — transform row 0 col 3
+    uint32_t    m_fTransformM10;  // +0x0130  W:1  — transform row 1 col 0
+    uint32_t    m_fTransformM11;  // +0x0134  W:1  — transform row 1 col 1
+    uint32_t    m_fTransformM12;  // +0x0138  W:1  — transform row 1 col 2
+    uint32_t    m_fTransformM13;  // +0x013c  W:1  — transform row 1 col 3
+    uint32_t    m_fTransformM20;  // +0x0140  R:12 W:1  — transform row 2 col 0
+    uint32_t    m_fTransformM21;  // +0x0144  R:3 W:1  — transform row 2 col 1
+    uint32_t    m_fTransformM22;  // +0x0148  R:2 W:1  — transform row 2 col 2
+    uint32_t    m_fTransformM23;  // +0x014c  R:1 W:1  — transform row 2 col 3
+    uint32_t    m_fTransformM30;  // +0x0150  R:1 W:1  — transform row 3 col 0
+    uint32_t    m_fTransformM31;  // +0x0154  R:3 W:1  — transform row 3 col 1
+    uint32_t    m_fTransformM32;  // +0x0158  R:2 W:1  — transform row 3 col 2
+    uint32_t    m_fTransformM33;  // +0x015c  R:3 W:1  — transform row 3 col 3
+    uint32_t    m_fInvTransM00;   // +0x0160  W:1  — inverse transform row 0
+    uint32_t    m_fInvTransM01;   // +0x0164  R:1 W:1  — inverse transform
+    uint32_t    m_fInvTransM02;   // +0x0168  R:1 W:1  — inverse transform
+    uint32_t    m_fInvTransM03;   // +0x016c  R:1 W:1  — inverse transform
+    uint32_t    m_fInvTransM10;   // +0x0170  R:1 W:1  — inverse transform
+    uint32_t    m_fInvTransM11;   // +0x0174  W:2  — inverse transform
+    uint32_t    m_fInvTransM12;   // +0x0178  W:1  — inverse transform
+    uint32_t    m_fInvTransM13;   // +0x017c  W:1  — inverse transform
+    uint32_t    m_fInvTransM21;   // +0x0184  R:2 W:3  — inverse transform
+    uint32_t    m_fInvTransM22;   // +0x0188  R:1 W:3  — inverse transform
+    uint32_t    m_nCollisionState; // +0x018c  W:18  — collision state (heavy write)
+    uint32_t    m_nCollisionPairA; // +0x0190  R:1 W:1  — collision pair A
+    uint32_t    m_nCollisionPairB; // +0x0194  R:1 W:1  — collision pair B
+    uint32_t    m_nImpactState;   // +0x0198  W:5  — impact state (heavy write)
+    uint32_t    m_nImpactData0;   // +0x019c  W:1  — impact data
+    uint32_t    m_nImpactData1;   // +0x01a0  W:1  — impact data
+    uint32_t    m_nImpactData2;   // +0x01a4  W:1  — impact data
+    uint32_t    m_nImpactData3;   // +0x01a8  W:1  — impact data
+    uint32_t    m_nImpactData4;   // +0x01ac  W:1  — impact data
+    uint32_t    m_nImpactData5;   // +0x01b0  W:1  — impact data
+    uint32_t    m_nImpactData6;   // +0x01b4  W:1  — impact data
+    uint32_t    m_nContactFlags;  // +0x01b8  W:2  — contact flags
+    uint32_t    m_fContactPointX; // +0x01bc  R:2 W:3  — contact point X
+    uint32_t    m_fContactPointY; // +0x01c0  R:4 W:3  — contact point Y
+    uint32_t    m_fContactPointZ; // +0x01c4  R:1 W:6  — contact point Z
+    uint32_t    m_pContactData;   // +0x01c8  R:17 W:6  — contact data ptr (most-read)
+    uint32_t    m_nContactCount;  // +0x01cc  R:4 W:3  — contact count
+    uint32_t    m_fContactNormX;  // +0x01d0  R:7 W:4  — contact normal X
+    uint32_t    m_fContactNormY;  // +0x01d4  R:4 W:4  — contact normal Y
+    uint32_t    m_fContactNormZ;  // +0x01d8  W:4  — contact normal Z
+    uint32_t    m_fContactNormW;  // +0x01dc  W:4  — contact normal W
+    uint32_t    m_fContactDepth;  // +0x01e0  W:1  — contact penetration depth
+    uint32_t    m_nContactMaterial;// +0x01e4  W:1  — contact material index
+    uint32_t    m_nSweepState;    // +0x01e8  W:6  — sweep test state
+    uint32_t    m_nSweepResult;   // +0x01ec  W:1  — sweep test result
+    uint32_t    m_fSweepFraction; // +0x01f0  R:2 W:3  — sweep fraction
+    uint32_t    m_fSweepNormX;    // +0x01f4  W:2  — sweep normal X
+    uint32_t    m_fSweepNormY;    // +0x01f8  W:2  — sweep normal Y
+    uint32_t    m_fSweepNormZ;    // +0x01fc  W:2  — sweep normal Z
+    uint32_t    m_fSweepPointX;   // +0x0200  R:1 W:2  — sweep hit point X
+    uint32_t    m_fSweepPointY;   // +0x0204  R:1 W:3  — sweep hit point Y
+    uint32_t    m_fSweepPointZ;   // +0x0208  R:1 W:1  — sweep hit point Z
+    uint32_t    m_nSweepMaterial;  // +0x020c  W:1  — sweep material index
     uint8_t     _pad0x0210[12];
-    uint32_t    field_0x021c;     // +0x021c  W:1
-    uint32_t    field_0x0220;     // +0x0220  W:1
-    uint32_t    field_0x0224;     // +0x0224  W:1
-    uint32_t    field_0x0228;     // +0x0228  W:1
-    uint32_t    field_0x022c;     // +0x022c  W:1
-    uint32_t    field_0x0230;     // +0x0230  W:1
-    uint32_t    field_0x0234;     // +0x0234  W:1
-    uint32_t    field_0x0238;     // +0x0238  W:1
-    uint32_t    field_0x023c;     // +0x023c  W:1
-    uint32_t    field_0x0240;     // +0x0240  W:1
-    uint16_t    field_0x0244;     // +0x0244  R:2 W:1
-    uint32_t    field_0x0248;     // +0x0248  R:1 W:1
-    uint32_t    field_0x024c;     // +0x024c  W:2
-    uint32_t    field_0x0254;     // +0x0254  W:1
-    uint32_t    field_0x0258;     // +0x0258  W:2
-    uint32_t    field_0x025c;     // +0x025c  W:2
-    uint32_t    field_0x0260;     // +0x0260  W:1
-    uint32_t    field_0x0264;     // +0x0264  W:1
-    uint32_t    field_0x0268;     // +0x0268  W:1
-    uint32_t    field_0x026c;     // +0x026c  W:1
-    uint32_t    field_0x0270;     // +0x0270  W:2
+    uint32_t    m_nOverlapState0;  // +0x021c  W:1  — overlap test state
+    uint32_t    m_nOverlapState1;  // +0x0220  W:1  — overlap test state
+    uint32_t    m_nOverlapState2;  // +0x0224  W:1  — overlap test state
+    uint32_t    m_nOverlapState3;  // +0x0228  W:1  — overlap test state
+    uint32_t    m_nOverlapState4;  // +0x022c  W:1  — overlap test state
+    uint32_t    m_nOverlapState5;  // +0x0230  W:1  — overlap test state
+    uint32_t    m_nOverlapState6;  // +0x0234  W:1  — overlap test state
+    uint32_t    m_nOverlapState7;  // +0x0238  W:1  — overlap test state
+    uint32_t    m_nOverlapState8;  // +0x023c  W:1  — overlap test state
+    uint32_t    m_nOverlapState9;  // +0x0240  W:1  — overlap test state
+    uint16_t    m_nRayTestFlags;  // +0x0244  R:2 W:1  — ray test flags
+    uint32_t    m_fRayTestDist;   // +0x0248  R:1 W:1  — ray test distance
+    uint32_t    m_nRayTestResult;  // +0x024c  W:2  — ray test result
+    uint32_t    m_nRayMaterial;    // +0x0254  W:1  — ray hit material index
+    uint32_t    m_fRayHitNormX;   // +0x0258  W:2  — ray hit normal X
+    uint32_t    m_fRayHitNormY;   // +0x025c  W:2  — ray hit normal Y
+    uint32_t    m_fRayHitNormZ;   // +0x0260  W:1  — ray hit normal Z
+    uint32_t    m_fRayHitPointX;  // +0x0264  W:1  — ray hit point X
+    uint32_t    m_fRayHitPointY;  // +0x0268  W:1  — ray hit point Y
+    uint32_t    m_fRayHitPointZ;  // +0x026c  W:1  — ray hit point Z
+    uint32_t    m_nDebugFlags;    // +0x0270  W:2  — debug rendering flags
     uint8_t     _pad0x0274[28];
-    uint32_t    field_0x0290;     // +0x0290  W:1
+    uint32_t    m_nDebugColor;    // +0x0290  W:1  — debug render color
     uint8_t     _pad0x0294[32];
-    uint32_t    field_0x02b4;     // +0x02b4  W:1
-    uint32_t    field_0x02b8;     // +0x02b8  W:1
+    uint32_t    m_nDebugLineWidth;// +0x02b4  W:1  — debug line width
+    uint32_t    m_nDebugMode;     // +0x02b8  W:1  — debug display mode
     uint8_t     _pad0x02bc[20];
-    uint32_t    field_0x02d0;     // +0x02d0  R:12 W:1
-    uint32_t    field_0x02d4;     // +0x02d4  R:12 W:1
+    uint32_t    m_fSegmentStartX; // +0x02d0  R:12 W:1  — segment test start X
+    uint32_t    m_fSegmentStartY; // +0x02d4  R:12 W:1  — segment test start Y
     uint8_t     _pad0x02d8[12];
-    uint32_t    field_0x02e4;     // +0x02e4  W:1
-    uint32_t    field_0x02e8;     // +0x02e8  W:2
+    uint32_t    m_fSegmentStartZ; // +0x02e4  W:1  — segment test start Z
+    uint32_t    m_nSegmentFlags;  // +0x02e8  W:2  — segment test flags
     uint8_t     _pad0x02ec[36];
-    uint32_t    field_0x0310;     // +0x0310  W:1
+    uint32_t    m_nQueryFlags;    // +0x0310  W:1  — spatial query flags
     uint8_t     _pad0x0314[28];
-    uint8_t     field_0x0330;     // +0x0330  W:1
-    uint8_t     field_0x0331;     // +0x0331  W:1
-    uint8_t     field_0x0332;     // +0x0332  W:1
-    uint8_t     field_0x0333;     // +0x0333  W:1
-    uint32_t    field_0x0334;     // +0x0334  W:2
-    uint8_t     field_0x0335;     // +0x0335  W:1
-    uint32_t    field_0x0338;     // +0x0338  R:3
-    uint32_t    field_0x033c;     // +0x033c  W:1
-    uint32_t    field_0x0340;     // +0x0340  R:1 W:1
-    uint32_t    field_0x0344;     // +0x0344  R:1 W:1
-    uint32_t    field_0x0348;     // +0x0348  W:1
+    uint8_t     m_nClosestPtFlag0;// +0x0330  W:1  — closest point flag
+    uint8_t     m_nClosestPtFlag1;// +0x0331  W:1  — closest point flag
+    uint8_t     m_nClosestPtFlag2;// +0x0332  W:1  — closest point flag
+    uint8_t     m_nClosestPtFlag3;// +0x0333  W:1  — closest point flag
+    uint32_t    m_nClosestPtDist; // +0x0334  W:2  — closest point distance
+    uint8_t     m_nClosestPtPad;  // +0x0335  W:1  — closest point padding
+    uint32_t    m_pSphereTestData;// +0x0338  R:3  — sphere test data ptr
+    uint32_t    m_nSphereTestRes; // +0x033c  W:1  — sphere test result
+    uint32_t    m_fSphereTestDist;// +0x0340  R:1 W:1  — sphere test distance
+    uint32_t    m_fSphereTestRad; // +0x0344  R:1 W:1  — sphere test radius
+    uint32_t    m_nSphereTestMat; // +0x0348  W:1  — sphere test material
     uint8_t     _pad0x034c[24];
-    uint32_t    field_0x0364;     // +0x0364  R:1
-    uint32_t    field_0x0368;     // +0x0368  R:1
-    uint32_t    field_0x036c;     // +0x036c  R:1
-    uint32_t    field_0x0370;     // +0x0370  R:1
-    uint32_t    field_0x0374;     // +0x0374  R:1
-    uint32_t    field_0x0378;     // +0x0378  R:1
-    uint32_t    field_0x037c;     // +0x037c  R:1
-    uint32_t    field_0x0380;     // +0x0380  R:1
+    uint32_t    m_fSweepAABBMinX; // +0x0364  R:1  — sweep AABB min X
+    uint32_t    m_fSweepAABBMinY; // +0x0368  R:1  — sweep AABB min Y
+    uint32_t    m_fSweepAABBMinZ; // +0x036c  R:1  — sweep AABB min Z
+    uint32_t    m_fSweepAABBMinW; // +0x0370  R:1  — sweep AABB min W
+    uint32_t    m_fSweepAABBMaxX; // +0x0374  R:1  — sweep AABB max X
+    uint32_t    m_fSweepAABBMaxY; // +0x0378  R:1  — sweep AABB max Y
+    uint32_t    m_fSweepAABBMaxZ; // +0x037c  R:1  — sweep AABB max Z
+    uint32_t    m_fSweepAABBMaxW; // +0x0380  R:1  — sweep AABB max W
     uint8_t     _pad0x0384[190];
-    uint8_t     field_0x0442;     // +0x0442  W:2
+    uint8_t     m_nCollidePairIdx; // +0x0442  W:2  — collide pair index
     uint8_t     _pad0x0443[26];
-    uint32_t    field_0x0460;     // +0x0460  R:1
+    uint32_t    m_pCollideBound;  // +0x0460  R:1  — collide bound ptr
     uint8_t     _pad0x0464[5012];
-    uint8_t     field_0x17f8;     // +0x17f8  W:2
+    uint8_t     m_nImpactTableIdx;// +0x17f8  W:2  — impact table write index
     uint8_t     _pad0x17f9[3464];
-    uint32_t    field_0x2584;     // +0x2584  R:2
+    uint32_t    m_pCollideResult0;// +0x2584  R:2  — collide result ptr A
     uint8_t     _pad0x2588[32];
-    uint32_t    field_0x25a8;     // +0x25a8  R:2
+    uint32_t    m_pCollideResult1;// +0x25a8  R:2  — collide result ptr B
     uint8_t     _pad0x25ac[260];
-    uint32_t    field_0x26b0;     // +0x26b0  R:1
+    uint32_t    m_pCollideGrid;   // +0x26b0  R:1  — collide grid ptr
     uint8_t     _pad0x26b4[2480];
-    uint32_t    field_0x3064;     // +0x3064  W:1
-    uint32_t    field_0x306c;     // +0x306c  W:1
+    uint32_t    m_nGridCellIdxA;  // +0x3064  W:1  — grid cell index A
+    uint32_t    m_nGridCellIdxB;  // +0x306c  W:1  — grid cell index B
     uint8_t     _pad0x3070[36];
-    uint32_t    field_0x3094;     // +0x3094  W:1
+    uint32_t    m_nGridCellState; // +0x3094  W:1  — grid cell state
     uint8_t     _pad0x3098[16796];
-    uint32_t    field_0x7234;     // +0x7234  R:1
+    uint32_t    m_nTriangleData;  // +0x7234  R:1  — triangle data offset
 
     virtual void CalcAABB();              // [3] @ 0x822A30C8  — extends base with capsule extents
     virtual void TranslateAndDispatch(); // [7] @ 0x8233AB50
@@ -889,25 +880,25 @@ struct phBoundCapsule {
 struct phBoundComposite {
     void**      vtable;           // +0x00
 
-    uint32_t    field_0x0004;     // +0x0004  R:32
-    uint8_t     field_0x0007;     // +0x0007  R:1
-    uint32_t    m_nChildren;      // +0x0008  R:15 W:15  — child bound count
-    uint8_t     field_0x000d;     // +0x000d  R:30  — packed flags (heavily read)
-    uint32_t    field_0x0014;     // +0x0014  R:30
-    uint32_t    field_0x0018;     // +0x0018  R:30
-    uint32_t    field_0x001c;     // +0x001c  R:15 W:15
-    uint32_t    field_0x0024;     // +0x0024  R:15 W:15
-    uint32_t    field_0x0028;     // +0x0028  R:15
+    uint32_t    m_nBoundType;     // +0x0004  R:32     — bound type flags
+    uint8_t     m_bHasTransform;  // +0x0007  R:1      — has world transform
+    uint32_t    m_nChildren;      // +0x0008  R:15 W:15 — child bound count
+    uint8_t     m_nChildType;     // +0x000d  R:30     — child type flags (heavily read)
+    uint32_t    m_pChildBounds;   // +0x0014  R:30     — child bound array ptr
+    uint32_t    m_pChildTransforms;// +0x0018  R:30    — child transform array ptr
+    uint32_t    m_pChildFlags;    // +0x001c  R:15 W:15 — child enabled flags array
+    uint32_t    m_pChildData;     // +0x0024  R:15 W:15 — child data array
+    uint32_t    m_pChildMaterials;// +0x0028  R:15     — child material indices
     uint8_t     _pad0x002c[8];
-    uint32_t    field_0x0034;     // +0x0034  R:7 W:11
+    uint32_t    m_nCompositeFlags;// +0x0034  R:7 W:11 — composite state flags
     uint8_t     _pad0x0038[40];
-    uint16_t    field_0x0060;     // +0x0060  W:1
+    uint16_t    m_nRefCount;      // +0x0060  W:1      — reference count
     uint8_t     _pad0x0062[12];
-    uint32_t    field_0x0070;     // +0x0070  R:13 W:2
-    uint32_t    field_0x0074;     // +0x0074  R:2 W:2
-    uint32_t    field_0x0078;     // +0x0078  R:2 W:2
-    uint32_t    field_0x007c;     // +0x007c  R:1 W:2
-    uint16_t    field_0x0080;     // +0x0080  R:2 W:2
+    uint32_t    m_pVertices;      // +0x0070  R:13 W:2 — vertex data ptr
+    uint32_t    m_pFaceData;      // +0x0074  R:2 W:2  — face data ptr
+    uint32_t    m_pEdgeData;      // +0x0078  R:2 W:2  — edge data ptr
+    uint32_t    m_pAdjacency;     // +0x007c  R:1 W:2  — adjacency data ptr
+    uint16_t    m_nVertexCount;   // +0x0080  R:2 W:2  — vertex count
     uint16_t    m_nMaxChildren;   // +0x0082  R:13 W:1  — allocated capacity
 
     virtual ~phBoundComposite();            // [0] @ 0x8228DF00
@@ -949,60 +940,60 @@ struct phBoundGeomCullable {
 struct phBoundGeometry {
     void**      vtable;           // +0x00
 
-    uint32_t    field_0x0004;     // +0x0004  R:31 W:3
-    uint8_t     field_0x0005;     // +0x0005  R:1 W:2
-    uint8_t     field_0x0007;     // +0x0007  R:1
-    uint32_t    m_nFaces;         // +0x0008  R:17 W:15  — face/polygon count
-    uint32_t    field_0x000c;     // +0x000c  W:1
-    uint8_t     field_0x000d;     // +0x000d  R:30  — packed flags
-    uint8_t     field_0x000f;     // +0x000f  R:1
-    uint16_t    field_0x0010;     // +0x0010  R:1
-    uint16_t    field_0x0012;     // +0x0012  R:1
-    uint32_t    field_0x0014;     // +0x0014  R:32 W:2
-    uint16_t    field_0x0016;     // +0x0016  R:1
-    uint32_t    field_0x0018;     // +0x0018  R:31 W:2
-    uint32_t    field_0x001c;     // +0x001c  R:15 W:15
-    uint32_t    field_0x0024;     // +0x0024  R:16 W:17
-    uint32_t    field_0x0028;     // +0x0028  R:16 W:2
+    uint32_t    m_nBoundType;     // +0x0004  R:31 W:3 — bound type / flags
+    uint8_t     m_bHasOffset;     // +0x0005  R:1 W:2  — centroid offset present
+    uint8_t     m_bHasTransform;  // +0x0007  R:1      — world transform set
+    uint32_t    m_nFaces;         // +0x0008  R:17 W:15 — face/polygon count
+    uint32_t    m_nEdgeCount;     // +0x000c  W:1       — edge count
+    uint8_t     m_nChildType;     // +0x000d  R:30      — type flags (heavily read)
+    uint8_t     m_nVersion;       // +0x000f  R:1       — format version
+    uint16_t    m_nStride;        // +0x0010  R:1       — vertex stride
+    uint16_t    m_nTriStride;     // +0x0012  R:1       — triangle stride
+    uint32_t    m_pFaceData;      // +0x0014  R:32 W:2  — face data array ptr (most-read)
+    uint16_t    m_nFaceStride;    // +0x0016  R:1       — face data stride
+    uint32_t    m_pNormals;       // +0x0018  R:31 W:2  — normal array ptr
+    uint32_t    m_pAABBTree;      // +0x001c  R:15 W:15 — AABB tree for spatial accel
+    uint32_t    m_pTriangleData;  // +0x0024  R:16 W:17 — triangle data array
+    uint32_t    m_pEdgeData;      // +0x0028  R:16 W:2  — edge data array ptr
     uint8_t     _pad0x002c[52];
-    uint16_t    field_0x0060;     // +0x0060  W:1
+    uint16_t    m_nRefCount;      // +0x0060  W:1       — reference count
     uint8_t     _pad0x0062[12];
     uint32_t    m_pVertices;      // +0x0070  R:20 W:2  — pointer to vertex array
-    uint32_t    field_0x0074;     // +0x0074  R:2 W:1
-    uint32_t    field_0x0078;     // +0x0078  R:11 W:2
-    uint32_t    field_0x007c;     // +0x007c  R:4 W:1
-    uint8_t     field_0x0080;     // +0x0080  R:2 W:1
-    uint8_t     field_0x0081;     // +0x0081  W:1
-    uint8_t     field_0x0082;     // +0x0082  W:1
-    uint8_t     field_0x0083;     // +0x0083  W:1
-    uint32_t    field_0x0084;     // +0x0084  R:1 W:1
-    uint32_t    field_0x0088;     // +0x0088  R:1 W:1
-    uint32_t    field_0x008c;     // +0x008c  W:1
-    uint32_t    field_0x0090;     // +0x0090  W:1
+    uint32_t    m_pColorData;     // +0x0074  R:2 W:1  — vertex color data ptr
+    uint32_t    m_pTexCoords;     // +0x0078  R:11 W:2 — texture coordinate ptr
+    uint32_t    m_pOctreeData;    // +0x007c  R:4 W:1  — octree/bvh node data
+    uint8_t     m_nVertexFormat;  // +0x0080  R:2 W:1  — vertex format flags
+    uint8_t     m_nColorFormat;   // +0x0081  W:1      — color format
+    uint8_t     m_nTexFormat;     // +0x0082  W:1      — texcoord format
+    uint8_t     m_nNormalFormat;  // +0x0083  W:1      — normal format
+    uint32_t    m_nVertexAlloc;   // +0x0084  R:1 W:1  — vertex allocation size
+    uint32_t    m_nFaceAlloc;     // +0x0088  R:1 W:1  — face allocation size
+    uint32_t    m_nEdgeAlloc;     // +0x008c  W:1      — edge allocation size
+    uint32_t    m_nNormalAlloc;   // +0x0090  W:1      — normal allocation size
     uint32_t    m_nVertexCount;   // +0x0094  R:12 W:1  — number of vertices
-    uint32_t    field_0x0098;     // +0x0098  R:11 W:1
-    uint8_t     field_0x009c;     // +0x009c  W:1
-    uint8_t     field_0x009d;     // +0x009d  W:1
-    uint8_t     field_0x009e;     // +0x009e  W:1
-    uint8_t     field_0x009f;     // +0x009f  W:1
+    uint32_t    m_nIndexCount;    // +0x0098  R:11 W:1 — number of triangle indices
+    uint8_t     m_bCompressed;    // +0x009c  W:1      — data is compressed
+    uint8_t     m_bQuantized;     // +0x009d  W:1      — vertices are quantized
+    uint8_t     m_bShared;        // +0x009e  W:1      — shared geometry
+    uint8_t     m_bDynamic;       // +0x009f  W:1      — dynamic geometry
     uint32_t    m_pMaterials;     // +0x00a0  R:5 W:2  — pointer to material array
-    uint32_t    m_pCurrentMaterial; // +0x00a4  R:2 W:2  — current material ptr
+    uint32_t    m_pCurrentMaterial; // +0x00a4  R:2 W:2 — current material ptr
     uint8_t     m_nMaterialCount; // +0x00a8  R:7 W:1  — number of materials
-    uint8_t     field_0x00a9;     // +0x00a9  W:1
-    uint8_t     field_0x00aa;     // +0x00aa  W:1
-    uint8_t     field_0x00ab;     // +0x00ab  W:1
-    uint8_t     field_0x00ac;     // +0x00ac  W:1
-    uint8_t     field_0x00ad;     // +0x00ad  W:1
-    uint8_t     field_0x00ae;     // +0x00ae  W:1
-    uint8_t     field_0x00af;     // +0x00af  W:1
-    uint32_t    field_0x00b0;     // +0x00b0  R:5
-    uint32_t    field_0x00b8;     // +0x00b8  R:4
-    uint16_t    field_0x00bc;     // +0x00bc  R:2
-    uint32_t    field_0x00c0;     // +0x00c0  W:1
-    uint32_t    field_0x00c4;     // +0x00c4  R:4 W:2
+    uint8_t     m_nDefaultMaterial;// +0x00a9  W:1     — default material index
+    uint8_t     m_nShadowMaterial;// +0x00aa  W:1      — shadow material index
+    uint8_t     m_nCollisionMaterial;// +0x00ab  W:1   — collision material index
+    uint8_t     m_nFlags0;        // +0x00ac  W:1      — flag byte 0
+    uint8_t     m_nFlags1;        // +0x00ad  W:1      — flag byte 1
+    uint8_t     m_nFlags2;        // +0x00ae  W:1      — flag byte 2
+    uint8_t     m_nFlags3;        // +0x00af  W:1      — flag byte 3
+    uint32_t    m_pQuantizeScale; // +0x00b0  R:5      — quantization scale ptr
+    uint32_t    m_pQuantizeOffset;// +0x00b8  R:4      — quantization offset ptr
+    uint16_t    m_nQuantizeBits;  // +0x00bc  R:2      — quantization bit depth
+    uint32_t    m_pDisplayObject; // +0x00c0  W:1      — display object ptr
+    uint32_t    m_pSurfaceData;   // +0x00c4  R:4 W:2  — surface/shader data ptr
     uint8_t     _pad0x00c8[16856];
-    uint32_t    field_0x42a0;     // +0x42a0  R:1
-    uint32_t    field_0x42a4;     // +0x42a4  R:1
+    uint32_t    m_nGeomTriResult0;// +0x42a0  R:1  — triangle result 0
+    uint32_t    m_nGeomTriResult1;// +0x42a4  R:1  — triangle result 1
 
     virtual ~phBoundGeometry();               // [0] @ 0x82291008
     virtual void CalcAABB();                  // [3] @ 0x822B00D0
@@ -1157,10 +1148,10 @@ struct phBoundQuadtree {
 // Total size: 168 bytes (0xA8)
 struct phBoundRibbon {
     void**      vtable;           // +0x00
-    uint32_t    field_0x04;       // +0x04
-    uint32_t    field_0x08;       // +0x08
-    uint32_t    field_0x0C;       // +0x0C
-    uint32_t    field_0x10;       // +0x10
+    uint32_t    m_nBoundType;     // +0x04 — bound type ID
+    uint32_t    m_nRibbonFlags;   // +0x08 — ribbon flags
+    uint32_t    m_nSegmentCount;  // +0x0C — segment count
+    uint32_t    m_pSegmentData;   // +0x10 — segment data ptr
     uint8_t     _pad0x14[12];     // +0x14
     
     // SIMD vectors for geometry/physics data
@@ -1182,8 +1173,8 @@ struct phBoundRibbon {
     float       m_vec7[4];        // +0x90 (144)
     
     // Trailing fields
-    uint32_t    field_0xA0;       // +0xA0 (160)
-    uint32_t    field_0xA4;       // +0xA4 (164)
+    uint32_t    m_nMaterialIndex; // +0xA0 (160) — material index
+    uint32_t    m_pMaterialData;  // +0xA4 (164) — material data ptr
 
     virtual ~phBoundRibbon();     // [0] @ 0x8229D970
     virtual void UpdateBound();    // [11] @ 0x8229D6A0
@@ -1290,23 +1281,23 @@ struct phClothVerletInst {
 struct phCollider {
     void**      vtable;           // +0x00
 
-    uint32_t    field_0x0004;     // +0x0004  R:1 W:1
-    uint32_t    field_0x0008;     // +0x0008  R:1 W:1
-    uint32_t    field_0x000c;     // +0x000c  W:1
-    uint32_t    field_0x0010;     // +0x0010  R:5 W:1
-    uint8_t     field_0x0014;     // +0x0014  W:1
+    uint32_t    m_fMass;          // +0x0004  R:1 W:1 — collider mass
+    uint32_t    m_fInverseMass;   // +0x0008  R:1 W:1 — 1/mass
+    uint32_t    m_nBodyType;      // +0x000c  W:1    — body type enum
+    uint32_t    m_pBound;         // +0x0010  R:5 W:1 — bound geometry ptr
+    uint8_t     m_bActive;        // +0x0014  W:1    — collider active flag
     uint8_t     _pad0x0015[75];
-    uint32_t    field_0x0064;     // +0x0064  R:1
-    uint32_t    field_0x0068;     // +0x0068  R:4
-    uint32_t    field_0x0070;     // +0x0070  R:1
-    uint32_t    field_0x0074;     // +0x0074  R:1
-    uint32_t    field_0x0078;     // +0x0078  R:1
-    uint32_t    field_0x0080;     // +0x0080  R:1
-    uint32_t    field_0x0084;     // +0x0084  R:1
-    uint32_t    field_0x0088;     // +0x0088  R:1
+    uint32_t    m_pTransform;     // +0x0064  R:1    — world transform matrix ptr
+    uint32_t    m_pOwner;         // +0x0068  R:4    — owner object ptr
+    uint32_t    m_vPositionX;     // +0x0070  R:1    — position X
+    uint32_t    m_vPositionY;     // +0x0074  R:1    — position Y
+    uint32_t    m_vPositionZ;     // +0x0078  R:1    — position Z
+    uint32_t    m_vLinearVelX;    // +0x0080  R:1    — linear velocity X
+    uint32_t    m_vLinearVelY;    // +0x0084  R:1    — linear velocity Y
+    uint32_t    m_vLinearVelZ;    // +0x0088  R:1    — linear velocity Z
     uint8_t     _pad0x008c[292];
-    uint32_t    field_0x01b0;     // +0x01b0  R:1 W:1
-    uint32_t    field_0x01b4;     // +0x01b4  W:1
+    uint32_t    m_fGravityScale;  // +0x01b0  R:1 W:1 — gravity scale factor
+    uint32_t    m_fTimeStep;      // +0x01b4  W:1    — simulation timestep
 
     virtual ~phCollider();                        // [0] @ 0x822C1998
     virtual void ScalarDtor(int flags);           // [1] @ 0x822CABE0
@@ -1370,137 +1361,137 @@ struct phConstrainedCollider {
 struct phInst {
     void**      vtable;           // +0x00
 
-    uint8_t     field_0x0001;     // +0x0001  R:3
+    uint8_t     m_nInstFlags;     // +0x0001  R:3  — instance flags byte
     uint32_t    m_pBound;         // +0x0004  R:28 W:21  — pointer to phBound
-    uint8_t     field_0x0005;     // +0x0005  R:1
+    uint8_t     m_nInstPadByte;   // +0x0005  R:1  — padding byte
     uint64_t    m_pDestructor;    // +0x0008  R:52 W:15  — destructor callback
-    uint8_t     field_0x0009;     // +0x0009  R:1
+    uint8_t     m_nDestructorHi;  // +0x0009  R:1  — destructor high byte
     uint32_t    m_nRefCount;      // +0x000c  R:19 W:11  — atomic reference count
     uint64_t    m_CriticalSection; // +0x0010  R:12 W:8  — mutex for Lock/Unlock
     uint32_t    m_pBoundData;     // +0x0014  R:7 W:5   — secondary bound data ptr
-    uint8_t     field_0x0015;     // +0x0015  W:3
+    uint8_t     m_nBoundDataHi;   // +0x0015  W:3  — bound data high bytes
     uint64_t    m_pDirtyFlags;    // +0x0018  R:10 W:6  — dirty flag tracking
-    uint8_t     field_0x0019;     // +0x0019  R:1
-    uint16_t    field_0x001a;     // +0x001a  R:1
-    uint32_t    field_0x001c;     // +0x001c  R:4 W:3
+    uint8_t     m_nDirtyHi;       // +0x0019  R:1  — dirty flags high byte
+    uint16_t    m_nDirtyPad;      // +0x001a  R:1  — dirty flags padding
+    uint32_t    m_nLayerMask;     // +0x001c  R:4 W:3  — physics layer mask
     uint32_t    m_nFlags;         // +0x0020  R:7 W:4   — packed flags (physics layer bits 6-9)
     uint32_t    m_pBoundResource; // +0x0024  R:8 W:3   — page-aligned bound resource ptr
-    uint16_t    field_0x0026;     // +0x0026  R:1
-    uint64_t    field_0x0028;     // +0x0028  R:3 W:2
-    uint16_t    field_0x002a;     // +0x002a  R:1
-    uint32_t    field_0x002c;     // +0x002c  R:12 W:10
-    uint64_t    field_0x0030;     // +0x0030  R:4 W:11
-    uint32_t    field_0x0034;     // +0x0034  R:3 W:5
+    uint16_t    m_nResourceHi;    // +0x0026  R:1  — resource high byte
+    uint64_t    m_pGroupData;     // +0x0028  R:3 W:2  — group data ptr
+    uint16_t    m_nGroupDataHi;   // +0x002a  R:1  — group data high byte
+    uint32_t    m_nStatusFlags;   // +0x002c  R:12 W:10  — status flags word
+    uint64_t    m_pPositionVec;   // +0x0030  R:4 W:11  — position vector ptr
+    uint32_t    m_pRotationQuat;  // +0x0034  R:3 W:5  — rotation quaternion ptr
     uint64_t    m_pOwner;         // +0x0038  R:37 W:8  — pointer to owner/parent object
-    uint8_t     field_0x003b;     // +0x003b  R:1
-    uint32_t    field_0x003c;     // +0x003c  R:8 W:7
-    uint16_t    field_0x003e;     // +0x003e  R:5 W:4
+    uint8_t     m_nOwnerHi;       // +0x003b  R:1  — owner ptr high byte
+    uint32_t    m_nSimState;      // +0x003c  R:8 W:7  — simulation state
+    uint16_t    m_nSimFlags;      // +0x003e  R:5 W:4  — simulation flags
     uint64_t    m_pArchetype;     // +0x0040  R:7 W:10  — archetype (shared phys properties)
     uint32_t    m_nDataIndex;     // +0x0044  R:8 W:7   — index into physics data table
-    uint8_t     field_0x0045;     // +0x0045  R:2 W:1
+    uint8_t     m_nDataIndexHi;   // +0x0045  R:2 W:1  — data index high byte
     uint64_t    m_pSimulator;     // +0x0048  R:12 W:12 — simulator / physics world ptr
     uint32_t    m_pBoundShape;    // +0x004c  R:10 W:4  — bound shape for SetBoundScale
-    uint64_t    field_0x0050;     // +0x0050  R:4 W:6
-    uint32_t    field_0x0054;     // +0x0054  R:1
-    uint64_t    field_0x0058;     // +0x0058  R:7 W:3
-    uint32_t    field_0x0060;     // +0x0060  R:9 W:2
-    uint32_t    field_0x0064;     // +0x0064  R:5 W:2
-    uint32_t    field_0x0068;     // +0x0068  R:5 W:5
-    uint32_t    field_0x006c;     // +0x006c  R:2 W:2
-    uint32_t    field_0x0070;     // +0x0070  R:1 W:2
-    uint32_t    field_0x0074;     // +0x0074  R:5 W:6
-    uint32_t    field_0x0078;     // +0x0078  R:8 W:3
-    uint32_t    field_0x007c;     // +0x007c  R:4 W:3
-    uint32_t    field_0x0080;     // +0x0080  R:3 W:1
+    uint64_t    m_pMotionState;   // +0x0050  R:4 W:6  — motion state ptr
+    uint32_t    m_nMotionStateHi; // +0x0054  R:1  — motion state high byte
+    uint64_t    m_pBroadphaseNode;// +0x0058  R:7 W:3  — broadphase node ptr
+    uint32_t    m_fMassInv;       // +0x0060  R:9 W:2  — inverse mass
+    uint32_t    m_fFriction;      // +0x0064  R:5 W:2  — friction coefficient
+    uint32_t    m_fRestitution;   // +0x0068  R:5 W:5  — restitution coefficient
+    uint32_t    m_fDamping;       // +0x006c  R:2 W:2  — damping coefficient
+    uint32_t    m_fColliderPosX;  // +0x0070  R:1  — collider position X W:2
+    uint32_t    m_fLinearDamping; // +0x0074  R:5 W:6  — linear damping
+    uint32_t    m_fAngularDamping;// +0x0078  R:8 W:3  — angular damping
+    uint32_t    m_fMaxAngVel;     // +0x007c  R:4 W:3  — max angular velocity
+    uint32_t    m_fBuoyancy;      // +0x0080  R:3 W:1  — buoyancy factor
     uint8_t     _pad0x0084[12];
-    uint8_t     field_0x0090;     // +0x0090  W:1
+    uint8_t     m_fGeomSurfArea;  // +0x0090  W:1  — precomputed surface area
     uint8_t     _pad0x0091[83];
-    uint16_t    field_0x00e4;     // +0x00e4  R:2
+    uint16_t    m_nBoneCount;     // +0x00e4  R:2  — bone count
     uint8_t     _pad0x00e6[34];
-    uint32_t    field_0x0108;     // +0x0108  R:1
-    uint32_t    field_0x010c;     // +0x010c  R:1
-    uint32_t    field_0x0110;     // +0x0110  R:1
-    uint32_t    field_0x0114;     // +0x0114  R:1
-    uint64_t    field_0x0118;     // +0x0118  R:2
+    uint32_t    m_fInertiaTensXX; // +0x0108  R:1  — inertia tensor XX
+    uint32_t    m_fInertiaTensYY; // +0x010c  R:1  — inertia tensor YY
+    uint32_t    m_fInertiaTensZZ; // +0x0110  R:1  — inertia tensor ZZ
+    uint32_t    m_fInertiaTensWW; // +0x0114  R:1  — inertia tensor WW
+    uint64_t    m_pConstraintList;// +0x0118  R:2  — constraint list ptr
     uint32_t    m_nCollisionGroup; // +0x011c  R:2 W:2  — collision group ID
     uint8_t     _pad0x0120[8];
-    uint64_t    field_0x0128;     // +0x0128  W:1
-    uint32_t    field_0x0130;     // +0x0130  W:1
-    uint8_t     field_0x0134;     // +0x0134  W:1
-    uint32_t    field_0x0138;     // +0x0138  W:1
+    uint64_t    m_pContactCallbk; // +0x0128  W:1  — contact callback ptr
+    uint32_t    m_nContactFilter; // +0x0130  W:1  — contact filter word
+    uint8_t     m_nContactFlags;  // +0x0134  W:1  — contact flags byte
+    uint32_t    m_pEventCallback; // +0x0138  W:1  — event callback ptr
     uint8_t     _pad0x013c[8];
-    uint32_t    field_0x0144;     // +0x0144  R:2 W:3
-    uint32_t    field_0x0148;     // +0x0148  R:2 W:3
-    uint32_t    field_0x014c;     // +0x014c  W:1
-    uint32_t    field_0x0150;     // +0x0150  W:2
-    uint32_t    field_0x0154;     // +0x0154  W:2
-    uint32_t    field_0x0158;     // +0x0158  W:2
-    uint32_t    field_0x015c;     // +0x015c  W:2
-    uint32_t    field_0x0160;     // +0x0160  W:2
-    uint32_t    field_0x0164;     // +0x0164  W:2
-    uint32_t    field_0x0168;     // +0x0168  W:2
-    uint32_t    field_0x016c;     // +0x016c  W:2
-    uint32_t    field_0x0170;     // +0x0170  R:2 W:1
-    uint32_t    field_0x0174;     // +0x0174  R:6 W:3
+    uint32_t    m_fSleepEnergy;   // +0x0144  R:2 W:3  — sleep energy threshold
+    uint32_t    m_fSleepTimer;    // +0x0148  R:2 W:3  — sleep timer
+    uint32_t    m_nSleepFlags;    // +0x014c  W:1  — sleep flags
+    uint32_t    m_fVelocityX;     // +0x0150  W:2  — linear velocity X
+    uint32_t    m_fVelocityY;     // +0x0154  W:2  — linear velocity Y
+    uint32_t    m_fVelocityZ;     // +0x0158  W:2  — linear velocity Z
+    uint32_t    m_fVelocityW;     // +0x015c  W:2  — linear velocity W (pad)
+    uint32_t    m_fAngVelocityX;  // +0x0160  W:2  — angular velocity X
+    uint32_t    m_fAngVelocityY;  // +0x0164  W:2  — angular velocity Y
+    uint32_t    m_fAngVelocityZ;  // +0x0168  W:2  — angular velocity Z
+    uint32_t    m_fAngVelocityW;  // +0x016c  W:2  — angular velocity W (pad)
+    uint32_t    m_fAccelerationX; // +0x0170  R:2 W:1  — acceleration X
+    uint32_t    m_fAccelerationY; // +0x0174  R:6 W:3  — acceleration Y
     uint8_t     _pad0x0178[16];
     uint32_t    m_pTransform;     // +0x0188  R:2 W:8  — pointer to transform matrix
-    uint64_t    field_0x0190;     // +0x0190  W:2
-    uint64_t    field_0x0198;     // +0x0198  W:1
-    uint32_t    field_0x01a0;     // +0x01a0  W:2
-    uint32_t    field_0x01a4;     // +0x01a4  W:2
-    uint32_t    field_0x01a8;     // +0x01a8  R:1
-    uint32_t    field_0x01b0;     // +0x01b0  R:1
+    uint64_t    m_pPrevTransform; // +0x0190  W:2  — previous transform ptr
+    uint64_t    m_pInterpTransfrm;// +0x0198  W:1  — interpolated transform ptr
+    uint32_t    m_nTransformFlags;// +0x01a0  W:2  — transform flags
+    uint32_t    m_nTransformState;// +0x01a4  W:2  — transform state
+    uint32_t    m_nCachedFlags;   // +0x01a8  R:1  — cached flags
+    uint32_t    m_nWorldFlags;    // +0x01b0  R:1  — world placement flags
     uint8_t     _pad0x01b4[8];
     uint32_t    m_nCollisionMask; // +0x01bc  R:1 W:2  — collision filter bitmask
     uint32_t    m_nUserData;      // +0x01c0  R:1 W:2  — user-defined data word
     uint8_t     _pad0x01c4[40];
-    uint32_t    field_0x01ec;     // +0x01ec  R:1
-    uint16_t    field_0x01f0;     // +0x01f0  R:1
+    uint32_t    m_nArchetypeIdx;  // +0x01ec  R:1  — archetype index
+    uint16_t    m_nBoneIdx;       // +0x01f0  R:1  — bone index
     uint16_t    field_0x01f2;     // +0x01f2  R:1
-    uint8_t     field_0x01f4;     // +0x01f4  R:2
+    uint8_t     m_nSimFlags2;     // +0x01f4  R:2  — simulation flags 2
     uint8_t     _pad0x01f5[15];
-    uint8_t     field_0x0204;     // +0x0204  R:1
-    uint16_t    field_0x0206;     // +0x0206  R:2
-    uint16_t    field_0x0208;     // +0x0208  W:1
-    uint8_t     field_0x020c;     // +0x020c  W:1
-    uint8_t     field_0x020d;     // +0x020d  R:2
+    uint8_t     m_nJointState;    // +0x0204  R:1  — joint state byte
+    uint16_t    m_nJointCount;    // +0x0206  R:2  — joint count
+    uint16_t    m_nJointFlags;    // +0x0208  W:1  — joint flags
+    uint8_t     m_nJointInit;     // +0x020c  W:1  — joint init flag
+    uint8_t     m_nCollisionLayer;// +0x020d  R:2  — collision layer
     uint8_t     _pad0x020e[14];
-    uint32_t    field_0x021c;     // +0x021c  R:2 W:2
-    uint16_t    field_0x0220;     // +0x0220  R:2 W:1
-    uint32_t    field_0x0224;     // +0x0224  R:2
+    uint32_t    m_nArticState;    // +0x021c  R:2 W:2  — articulated state
+    uint16_t    m_nArticFlags;    // +0x0220  R:2 W:1  — articulated flags
+    uint32_t    m_nArticData;     // +0x0224  R:2  — articulated data
     uint8_t     _pad0x0228[916];
-    uint32_t    field_0x05bc;     // +0x05bc  R:2 W:1
-    uint32_t    field_0x05c0;     // +0x05c0  W:3
-    uint32_t    field_0x05c4;     // +0x05c4  R:5 W:3
-    uint32_t    field_0x05c8;     // +0x05c8  R:3 W:4
-    uint32_t    field_0x05cc;     // +0x05cc  R:1 W:2
+    uint32_t    m_nConstraintCnt; // +0x05bc  R:2 W:1  — constraint count
+    uint32_t    m_nConstraintFlg; // +0x05c0  W:3  — constraint flags
+    uint32_t    m_pJointArray;    // +0x05c4  R:5 W:3  — joint array ptr
+    uint32_t    m_nJointArraySz;  // +0x05c8  R:3 W:4  — joint array size
+    uint32_t    m_nJointArrayFlg; // +0x05cc  R:1 W:2  — joint array flags
     uint8_t     _pad0x05d0[8896];
-    uint32_t    field_0x2890;     // +0x2890  R:2
-    uint32_t    field_0x2894;     // +0x2894  R:2
+    uint32_t    m_fWorldPosX;     // +0x2890  R:2  — world position X
+    uint32_t    m_fWorldPosY;     // +0x2894  R:2  — world position Y
     uint8_t     _pad0x2898[41];
-    uint8_t     field_0x28c1;     // +0x28c1  R:1
-    uint8_t     field_0x28c2;     // +0x28c2  R:1 W:1
+    uint8_t     m_nWorldState;    // +0x28c1  R:1  — world state byte
+    uint8_t     m_nWorldActive;   // +0x28c2  R:1 W:1  — world active flag
     uint8_t     _pad0x28c3[9];
-    uint32_t    field_0x28cc;     // +0x28cc  R:1 W:1
+    uint32_t    m_nWorldEnable;   // +0x28cc  R:1 W:1  — world enable flag
     uint8_t     _pad0x28d0[2496];
-    uint32_t    field_0x3290;     // +0x3290  R:1 W:1
+    uint32_t    m_nPhysicsState;  // +0x3290  R:1 W:1  — physics state flag
     uint8_t     _pad0x3294[588];
-    uint32_t    field_0x34e0;     // +0x34e0  R:3
-    uint32_t    field_0x34e4;     // +0x34e4  R:3
+    uint32_t    m_pSkeletonData;  // +0x34e0  R:3  — skeleton data ptr
+    uint32_t    m_nSkeletonSize;  // +0x34e4  R:3  — skeleton data size
     uint8_t     _pad0x34e8[452];
-    uint32_t    field_0x36ac;     // +0x36ac  R:1
-    uint32_t    field_0x36b0;     // +0x36b0  R:1
-    uint32_t    field_0x36b4;     // +0x36b4  R:1
-    uint32_t    field_0x36b8;     // +0x36b8  R:2
-    uint32_t    field_0x36bc;     // +0x36bc  R:1
-    uint32_t    field_0x36c0;     // +0x36c0  R:1 W:3
-    uint32_t    field_0x36c4;     // +0x36c4  R:4 W:1
-    uint32_t    field_0x36c8;     // +0x36c8  R:2 W:2
-    uint32_t    field_0x36cc;     // +0x36cc  R:1
+    uint32_t    m_nAnimState0;    // +0x36ac  R:1  — animation state
+    uint32_t    m_nAnimState1;    // +0x36b0  R:1  — animation state
+    uint32_t    m_nAnimState2;    // +0x36b4  R:1  — animation state
+    uint32_t    m_nAnimFlags;     // +0x36b8  R:2  — animation flags
+    uint32_t    m_nAnimIndex;     // +0x36bc  R:1  — animation index
+    uint32_t    m_fAnimBlend;     // +0x36c0  R:1 W:3  — animation blend weight
+    uint32_t    m_fAnimSpeed;     // +0x36c4  R:4 W:1  — animation speed
+    uint32_t    m_fAnimTime;      // +0x36c8  R:2 W:2  — animation time
+    uint32_t    m_nAnimFrame;     // +0x36cc  R:1  — animation frame
     uint8_t     _pad0x36d0[6416];
-    uint32_t    field_0x4fe0;     // +0x4fe0  R:4
+    uint32_t    m_pRenderData;    // +0x4fe0  R:4  — render data ptr
     uint8_t     _pad0x4fe4[136];
-    uint32_t    field_0x506c;     // +0x506c  R:2
+    uint32_t    m_nRenderFlags;   // +0x506c  R:2  — render flags
 
     virtual ~phInst();                            // [0] @ 0x82346400
     virtual void vfn_9();                         // [9] @ 0x8248D7C8
@@ -1636,39 +1627,39 @@ struct phJoint {
 struct phJoint1Dof {
     void**      vtable;           // +0x00
 
-    uint32_t    field_0x0004;     // +0x0004  R:5
-    uint32_t    field_0x0008;     // +0x0008  R:1
-    uint32_t    field_0x0010;     // +0x0010  R:5
-    uint32_t    field_0x0014;     // +0x0014  R:1
-    uint32_t    m_stiffness;      // +0x0018  R:11 W:1  — joint stiffness
-    uint32_t    m_damping;        // +0x001c  R:22 W:1  — joint damping (most-read field)
+    uint32_t    m_pColliderA;     // +0x0004  R:5      — first connected collider
+    uint32_t    m_pColliderB;     // +0x0008  R:1      — second connected collider
+    uint32_t    m_pAnchorA;       // +0x0010  R:5      — anchor point on body A
+    uint32_t    m_pAnchorB;       // +0x0014  R:1      — anchor point on body B
+    uint32_t    m_fStiffness;     // +0x0018  R:11 W:1 — joint stiffness
+    uint32_t    m_fDamping;       // +0x001c  R:22 W:1 — joint damping (most-read field)
     uint8_t     _pad0x0020[544];
-    uint32_t    field_0x0240;     // +0x0240  R:1
-    uint32_t    field_0x0248;     // +0x0248  R:1
-    uint32_t    field_0x0250;     // +0x0250  R:1
-    uint32_t    field_0x0258;     // +0x0258  R:1
-    uint32_t    field_0x0260;     // +0x0260  R:1
-    uint32_t    field_0x0268;     // +0x0268  R:1
+    uint32_t    m_fLimitMinX;     // +0x0240  R:1  — lower limit X
+    uint32_t    m_fLimitMinY;     // +0x0248  R:1  — lower limit Y
+    uint32_t    m_fLimitMinZ;     // +0x0250  R:1  — lower limit Z
+    uint32_t    m_fLimitMaxX;     // +0x0258  R:1  — upper limit X
+    uint32_t    m_fLimitMaxY;     // +0x0260  R:1  — upper limit Y
+    uint32_t    m_fLimitMaxZ;     // +0x0268  R:1  — upper limit Z
     uint8_t     _pad0x0270[36];
-    uint32_t    field_0x0290;     // +0x0290  R:1
-    uint32_t    field_0x0298;     // +0x0298  R:2
-    uint32_t    field_0x02a0;     // +0x02a0  R:1
-    uint32_t    field_0x02a8;     // +0x02a8  R:2
-    uint32_t    field_0x02b0;     // +0x02b0  R:1
-    uint32_t    field_0x02b8;     // +0x02b8  R:2
+    uint32_t    m_fAngleX;        // +0x0290  R:1  — current angle X
+    uint32_t    m_fAngleY;        // +0x0298  R:2  — current angle Y
+    uint32_t    m_fAngleZ;        // +0x02a0  R:1  — current angle Z
+    uint32_t    m_fTorqueX;       // +0x02a8  R:2  — applied torque X
+    uint32_t    m_fTorqueY;       // +0x02b0  R:1  — applied torque Y
+    uint32_t    m_fTorqueZ;       // +0x02b8  R:2  — applied torque Z
     uint8_t     _pad0x02c0[20];
-    uint32_t    field_0x02d0;     // +0x02d0  R:2 W:1
-    uint32_t    field_0x02d4;     // +0x02d4  R:2 W:1
-    uint32_t    field_0x02d8;     // +0x02d8  R:2 W:1
-    uint32_t    field_0x02dc;     // +0x02dc  R:2 W:1
-    uint32_t    field_0x02e0;     // +0x02e0  R:3 W:1
-    uint32_t    field_0x02e4;     // +0x02e4  R:2 W:3
-    uint32_t    field_0x02e8;     // +0x02e8  R:8 W:3
+    uint32_t    m_fJacobianRow0;  // +0x02d0  R:2 W:1  — Jacobian row 0
+    uint32_t    m_fJacobianRow1;  // +0x02d4  R:2 W:1  — Jacobian row 1
+    uint32_t    m_fJacobianRow2;  // +0x02d8  R:2 W:1  — Jacobian row 2
+    uint32_t    m_fJacobianRow3;  // +0x02dc  R:2 W:1  — Jacobian row 3
+    uint32_t    m_fCurrentAngle;  // +0x02e0  R:3 W:1 — current joint angle
+    uint32_t    m_fTargetAngle;   // +0x02e4  R:2 W:3 — target angle
+    uint32_t    m_fMotorTorque;   // +0x02e8  R:8 W:3 — motor applied torque (most-accessed)
     uint8_t     _pad0x02ec[132];
-    uint32_t    field_0x0370;     // +0x0370  R:1 W:1
-    uint32_t    field_0x0374;     // +0x0374  R:5 W:1
-    uint32_t    field_0x0378;     // +0x0378  R:5 W:1
-    uint32_t    field_0x037c;     // +0x037c  W:2
+    uint32_t    m_fLimitLow;      // +0x0370  R:1 W:1 — lower angle limit
+    uint32_t    m_fLimitHigh;     // +0x0374  R:5 W:1 — upper angle limit
+    uint32_t    m_fLimitRestitution;// +0x0378  R:5 W:1 — limit bounce coefficient
+    uint32_t    m_fLimitSpring;   // +0x037c  W:2     — limit spring constant
 
     virtual ~phJoint1Dof();                       // [0] @ 0x82259FF8
     virtual void ScalarDtor(int flags);           // [1] @ 0x82259AB0
@@ -1710,106 +1701,106 @@ struct phJoint1Dof {
 struct phJoint3Dof {
     void**      vtable;           // +0x00
 
-    uint32_t    field_0x0004;     // +0x0004  R:16 W:11
-    uint16_t    field_0x0006;     // +0x0006  R:4 W:8
-    uint32_t    field_0x0008;     // +0x0008  R:17 W:6
-    uint32_t    field_0x000c;     // +0x000c  R:8 W:3
-    uint8_t     field_0x000d;     // +0x000d  W:1
-    uint16_t    field_0x000e;     // +0x000e  W:1
-    uint32_t    field_0x0010;     // +0x0010  R:3 W:6
-    uint32_t    field_0x0014;     // +0x0014  R:5 W:6
-    uint16_t    field_0x0016;     // +0x0016  W:1
+    uint32_t    m_pColliderA;     // +0x0004  R:16 W:11 — first connected collider
+    uint16_t    m_nJointType;     // +0x0006  R:4 W:8  — joint type / DOF config
+    uint32_t    m_pColliderB;     // +0x0008  R:17 W:6 — second connected collider
+    uint32_t    m_pAnchorA;       // +0x000c  R:8 W:3  — anchor on body A
+    uint8_t     m_bEnabled;       // +0x000d  W:1      — joint enabled
+    uint16_t    m_nAnchorFlags;   // +0x000e  W:1      — anchor configuration flags
+    uint32_t    m_pAnchorB;       // +0x0010  R:3 W:6  — anchor on body B
+    uint32_t    m_pAxisData;      // +0x0014  R:5 W:6  — axis/frame data ptr
+    uint16_t    m_nAxisFlags;     // +0x0016  W:1      — axis configuration flags
     uint32_t    m_angularLimits;  // +0x0018  R:14 W:3  — angular constraint limits
     uint32_t    m_angularDamping; // +0x001c  R:28 W:1  — most-read; angular damping
-    uint16_t    field_0x001e;     // +0x001e  W:1
-    uint32_t    field_0x0020;     // +0x0020  R:2 W:4
-    uint32_t    field_0x0024;     // +0x0024  R:8 W:3
-    uint16_t    field_0x0026;     // +0x0026  W:1
-    uint32_t    field_0x0028;     // +0x0028  R:2 W:5
-    uint16_t    field_0x002c;     // +0x002c  W:1
-    uint16_t    field_0x002e;     // +0x002e  W:1
-    uint32_t    field_0x0030;     // +0x0030  W:2
-    uint16_t    field_0x0034;     // +0x0034  W:1
-    uint16_t    field_0x0036;     // +0x0036  W:1
-    uint32_t    field_0x0038;     // +0x0038  W:1
-    uint32_t    field_0x003c;     // +0x003c  R:1 W:1
-    uint16_t    field_0x003e;     // +0x003e  W:1
-    uint32_t    field_0x0040;     // +0x0040  R:2 W:1
-    uint16_t    field_0x0044;     // +0x0044  W:1
-    uint16_t    field_0x0046;     // +0x0046  W:1
+    uint16_t    m_nAngDampHi;     // +0x001e  W:1  — angular damping high byte
+    uint32_t    m_fStiffness3Dof; // +0x0020  R:2 W:4  — 3DOF stiffness
+    uint32_t    m_pMotorData;     // +0x0024  R:8 W:3 — motor/drive data ptr
+    uint16_t    m_nMotorFlags;    // +0x0026  W:1     — motor configuration flags
+    uint32_t    m_pBreakForce;    // +0x0028  R:2 W:5 — break force data
+    uint16_t    m_nBreakPad0;     // +0x002c  W:1  — break force padding
+    uint16_t    m_nBreakPad1;     // +0x002e  W:1  — break force padding
+    uint32_t    m_fBreakTorque;   // +0x0030  W:2  — break torque threshold
+    uint16_t    m_nBreakTorquePd; // +0x0034  W:1  — break torque padding
+    uint16_t    m_nBreakTorquePd2;// +0x0036  W:1  — break torque padding
+    uint32_t    m_fMaxTorque;     // +0x0038  W:1  — max torque
+    uint32_t    m_fSpringConst;   // +0x003c  R:1 W:1  — spring constant
+    uint16_t    m_nSpringPad;     // +0x003e  W:1  — spring padding
+    uint32_t    m_fDampingRatio;  // +0x0040  R:2 W:1  — damping ratio
+    uint16_t    m_nDampRatioPd;   // +0x0044  W:1  — damping ratio padding
+    uint16_t    m_nDampRatioPd2;  // +0x0046  W:1  — damping ratio padding
     uint8_t     _pad0x0048[22];
-    uint32_t    field_0x0060;     // +0x0060  R:7
-    uint32_t    field_0x0064;     // +0x0064  R:5
+    uint32_t    m_pFrameA;        // +0x0060  R:7     — reference frame A
+    uint32_t    m_pFrameB;        // +0x0064  R:5     — reference frame B
     uint8_t     _pad0x0068[8];
-    uint32_t    field_0x0070;     // +0x0070  R:1
+    uint32_t    m_pConstraintRow2;// +0x0070  R:1  — constraint row 2 ptr
     uint8_t     _pad0x0074[8];
-    uint32_t    field_0x007c;     // +0x007c  W:1
-    uint32_t    field_0x0080;     // +0x0080  R:4 W:1
-    uint32_t    field_0x0088;     // +0x0088  R:1
-    uint32_t    field_0x008c;     // +0x008c  W:1
-    uint32_t    field_0x0090;     // +0x0090  W:1
-    uint32_t    field_0x0094;     // +0x0094  W:1
-    uint32_t    field_0x0098;     // +0x0098  W:1
-    uint32_t    field_0x009c;     // +0x009c  W:1
-    uint32_t    field_0x00a0;     // +0x00a0  W:1
-    uint32_t    field_0x00a4;     // +0x00a4  W:1
-    uint32_t    field_0x00a8;     // +0x00a8  W:1
-    uint32_t    field_0x00ac;     // +0x00ac  W:1
-    uint32_t    field_0x00b0;     // +0x00b0  W:1
+    uint32_t    m_nConstraintInit;// +0x007c  W:1  — constraint init flag
+    uint32_t    m_pSolverCache;   // +0x0080  R:4 W:1 — solver constraint cache
+    uint32_t    m_fColliderVelZ;  // +0x0088  R:1  — collider velocity Z
+    uint32_t    m_fGeomVolume;    // +0x008c  W:1  — precomputed volume
+    uint32_t    m_nInitState;     // +0x0090  W:1  — initialization state flag
+    uint32_t    m_fSolverParam01; // +0x0094  W:1  — solver parameter
+    uint32_t    m_fSolverParam02; // +0x0098  W:1  — solver parameter
+    uint32_t    m_nGeomFaceStride;// +0x009c  W:1  — face stride
+    uint32_t    m_fSolverParam04; // +0x00a0  W:1  — solver parameter
+    uint32_t    m_fSolverParam05; // +0x00a4  W:1  — solver parameter
+    uint32_t    m_fSolverParam06; // +0x00a8  W:1  — solver parameter
+    uint32_t    m_nGeomMatFlags;  // +0x00ac  W:1  — material flags
+    uint32_t    m_fSolverParam08; // +0x00b0  W:1  — solver parameter
     uint8_t     _pad0x00b4[64];
-    uint32_t    field_0x00f4;     // +0x00f4  W:1
-    uint32_t    field_0x00f8;     // +0x00f8  W:1
-    uint32_t    field_0x00fc;     // +0x00fc  W:1
-    uint32_t    field_0x0100;     // +0x0100  W:1
-    uint32_t    field_0x0104;     // +0x0104  W:1
-    uint32_t    field_0x0108;     // +0x0108  W:1
+    uint32_t    m_fEffMass00;     // +0x00f4  W:1  — effective mass row 0
+    uint32_t    m_fEffMass01;     // +0x00f8  W:1  — effective mass row 1
+    uint32_t    m_fEffMass02;     // +0x00fc  W:1  — effective mass row 2
+    uint32_t    m_fEffMass03;     // +0x0100  W:1  — effective mass row 3
+    uint32_t    m_fEffMass04;     // +0x0104  W:1  — effective mass row 4
+    uint32_t    m_fEffMass05;     // +0x0108  W:1  — effective mass row 5
     uint8_t     _pad0x010c[8];
-    uint32_t    field_0x0114;     // +0x0114  W:1
-    uint32_t    field_0x0118;     // +0x0118  W:1
-    uint32_t    field_0x011c;     // +0x011c  W:1
-    uint32_t    field_0x0120;     // +0x0120  W:1
-    uint32_t    field_0x0124;     // +0x0124  W:1
-    uint32_t    field_0x0128;     // +0x0128  W:1
+    uint32_t    m_fRHS00;         // +0x0114  W:1  — RHS vector elem 0
+    uint32_t    m_fRHS01;         // +0x0118  W:1  — RHS vector elem 1
+    uint32_t    m_fRHS02;         // +0x011c  W:1  — RHS vector elem 2
+    uint32_t    m_fRHS03;         // +0x0120  W:1  — RHS vector elem 3
+    uint32_t    m_fRHS04;         // +0x0124  W:1  — RHS vector elem 4
+    uint32_t    m_fRHS05;         // +0x0128  W:1  — RHS vector elem 5
     uint8_t     _pad0x012c[420];
-    uint32_t    field_0x02d0;     // +0x02d0  W:1
-    uint32_t    field_0x02d4;     // +0x02d4  W:1
-    uint32_t    field_0x02d8;     // +0x02d8  W:1
-    uint32_t    field_0x02dc;     // +0x02dc  W:1
-    uint32_t    field_0x02e0;     // +0x02e0  R:2 W:1
-    uint32_t    field_0x02e4;     // +0x02e4  R:1 W:1
-    uint8_t     field_0x02e8;     // +0x02e8  W:1
-    uint8_t     field_0x02e9;     // +0x02e9  R:2 W:1
-    uint8_t     field_0x02ea;     // +0x02ea  R:4 W:3  — heavily-read byte flag
-    uint8_t     field_0x02eb;     // +0x02eb  R:1 W:4
-    uint32_t    field_0x02ec;     // +0x02ec  R:2
-    uint32_t    field_0x02f0;     // +0x02f0  R:2
-    uint32_t    field_0x02f4;     // +0x02f4  R:3 W:2
-    uint32_t    field_0x02f8;     // +0x02f8  R:4 W:2
-    uint32_t    field_0x02fc;     // +0x02fc  R:2 W:2
-    uint32_t    field_0x0300;     // +0x0300  R:3 W:4
-    uint32_t    field_0x0304;     // +0x0304  R:3
-    uint32_t    field_0x0308;     // +0x0308  R:5
+    uint32_t    m_fJacob3Row00;   // +0x02d0  W:1  — 3DOF Jacobian row 0
+    uint32_t    m_fJacob3Row01;   // +0x02d4  W:1  — 3DOF Jacobian row 1
+    uint32_t    m_fJacob3Row02;   // +0x02d8  W:1  — 3DOF Jacobian row 2
+    uint32_t    m_fJacob3Row03;   // +0x02dc  W:1  — 3DOF Jacobian row 3
+    uint32_t    m_fCurrentAngle0; // +0x02e0  R:2 W:1 — current angle axis 0
+    uint32_t    m_fCurrentAngle1; // +0x02e4  R:1 W:1 — current angle axis 1
+    uint8_t     m_bLimitActive0;  // +0x02e8  W:1     — limit active axis 0
+    uint8_t     m_bLimitActive1;  // +0x02e9  R:2 W:1 — limit active axis 1
+    uint8_t     m_nSolverState;   // +0x02ea  R:4 W:3 — solver state flags (heavily-read)
+    uint8_t     m_nIterCount;     // +0x02eb  R:1 W:4 — iteration counter
+    uint32_t    m_fLambda3X;      // +0x02ec  R:2  — lambda X component
+    uint32_t    m_fLambda3Y;      // +0x02f0  R:2  — lambda Y component
+    uint32_t    m_fMotorTarget0;  // +0x02f4  R:3 W:2 — motor target axis 0
+    uint32_t    m_fMotorTarget1;  // +0x02f8  R:4 W:2 — motor target axis 1
+    uint32_t    m_fMotorTarget2;  // +0x02fc  R:2 W:2 — motor target axis 2
+    uint32_t    m_fMotorForce;    // +0x0300  R:3 W:4 — motor applied force
+    uint32_t    m_fMotorStiffness;// +0x0304  R:3     — motor stiffness
+    uint32_t    m_fMotorDamping;  // +0x0308  R:5     — motor damping
     uint8_t     _pad0x030c[148];
-    uint32_t    field_0x03a0;     // +0x03a0  R:10
+    uint32_t    m_pConstraintData;// +0x03a0  R:10    — constraint solver data (most-read)
     uint8_t     _pad0x03a4[12];
-    uint32_t    field_0x03b0;     // +0x03b0  R:1
-    uint32_t    field_0x03b4;     // +0x03b4  R:1
+    uint32_t    m_fSolverRow0;    // +0x03b0  R:1  — solver row data 0
+    uint32_t    m_fSolverRow1;    // +0x03b4  R:1  — solver row data 1
     uint8_t     _pad0x03b8[8];
-    uint32_t    field_0x03c0;     // +0x03c0  R:1
-    uint32_t    field_0x03c4;     // +0x03c4  R:1
+    uint32_t    m_fSolverRow2;    // +0x03c0  R:1  — solver row data 2
+    uint32_t    m_fSolverRow3;    // +0x03c4  R:1  — solver row data 3
     uint8_t     _pad0x03c8[8];
-    uint32_t    field_0x03d0;     // +0x03d0  R:1
-    uint32_t    field_0x03d4;     // +0x03d4  R:1
+    uint32_t    m_fSolverRow4;    // +0x03d0  R:1  — solver row data 4
+    uint32_t    m_fSolverRow5;    // +0x03d4  R:1  — solver row data 5
     uint8_t     _pad0x03d8[380];
-    uint32_t    field_0x0554;     // +0x0554  R:1
+    uint32_t    m_nWarmStartFlg;  // +0x0554  R:1  — warm start flag
     uint8_t     _pad0x0558[16];
-    uint32_t    field_0x0568;     // +0x0568  R:1
+    uint32_t    m_nWarmStartData; // +0x0568  R:1  — warm start data
     uint8_t     _pad0x056c[276];
     uint32_t    m_nConstraints;   // +0x0680  R:6 W:1  — constraint count
     uint8_t     _pad0x0684[8728];
-    uint32_t    field_0x289c;     // +0x289c  R:1
+    uint32_t    m_nLargeState;    // +0x289c  R:1  — large state tracking
     uint8_t     _pad0x28a0[1108];
-    uint32_t    field_0x2cf4;     // +0x2cf4  R:1
+    uint32_t    m_nFinalState;    // +0x2cf4  R:1  — final state tracking
 
     virtual ~phJoint3Dof();                       // [0] @ 0x822551C8
     virtual void ScalarDtor(int flags);           // [1] @ 0x822526C8
@@ -1865,33 +1856,33 @@ struct phLevelNew {
     void**      vtable;           // +0x00
 
     uint8_t     m_bInitialized;   // +0x0004  R:1
-    uint32_t    field_0x0008;     // +0x0008  R:1
-    uint32_t    field_0x000c;     // +0x000c  R:2
-    uint8_t     field_0x000d;     // +0x000d  W:2
+    uint32_t    m_pBodyAFlags;    // +0x0008  R:1  — body A flags
+    uint32_t    m_nLevelCapacity; // +0x000c  R:2  — level capacity
+    uint8_t     m_nLevelDirty;    // +0x000d  W:2  — dirty flag
     uint16_t    m_nObjects;       // +0x000e  R:6  — object count
-    uint16_t    field_0x0010;     // +0x0010  R:3
+    uint16_t    m_nStaticObjects; // +0x0010  R:3  — static object count
     uint16_t    m_nActivePairs;   // +0x0012  R:4 W:4
-    uint16_t    field_0x0014;     // +0x0014  R:2 W:2
+    uint16_t    m_nDynamicPairs;  // +0x0014  R:2 W:2  — dynamic pair count
     uint16_t    m_nCollisionPairs;// +0x0016  R:4 W:4
     uint16_t    m_nProcessedPairs;// +0x0018  R:10 W:4  — most-read counter
-    uint16_t    field_0x001a;     // +0x001a  R:1
-    uint32_t    field_0x001c;     // +0x001c  R:14 W:1
-    uint32_t    field_0x0020;     // +0x0020  R:4 W:1
-    uint32_t    field_0x0024;     // +0x0024  R:3 W:1
-    uint32_t    field_0x0028;     // +0x0028  R:8 W:1
-    uint32_t    field_0x0030;     // +0x0030  R:5
+    uint16_t    m_nPendingPairs;  // +0x001a  R:1  — pending pair count
+    uint32_t    m_pColliderArray;  // +0x001c  R:14 W:1 — collider object array (most-read ptr)
+    uint32_t    m_pBroadphase;     // +0x0020  R:4 W:1  — broadphase structure ptr
+    uint32_t    m_pNarrowphase;    // +0x0024  R:3 W:1  — narrowphase data ptr
+    uint32_t    m_pConstraintArray;// +0x0028  R:8 W:1  — constraint array ptr
+    uint32_t    m_pAABBMin;        // +0x0030  R:5      — world AABB minimum (vec4 at +0x30)
     uint8_t     _pad0x0034[28];
-    uint32_t    field_0x0050;     // +0x0050  R:2
-    uint32_t    field_0x0054;     // +0x0054  R:1
-    uint32_t    field_0x0058;     // +0x0058  R:2
-    uint32_t    field_0x005c;     // +0x005c  R:21 W:2  — heavily read
-    uint32_t    field_0x0060;     // +0x0060  R:6 W:2
-    uint32_t    field_0x0064;     // +0x0064  R:5 W:2
-    uint32_t    field_0x0068;     // +0x0068  R:7 W:2
-    uint16_t    field_0x006c;     // +0x006c  R:4 W:1
-    uint16_t    m_broadphaseCount;// +0x006e  R:2 W:3
-    uint32_t    field_0x0070;     // +0x0070  R:23 W:2  — most-read field
-    uint32_t    field_0x0074;     // +0x0074  R:4 W:2
+    uint32_t    m_fAABBMaxX;       // +0x0050  R:2      — world AABB max X (part of vec4 at +0x40)
+    uint32_t    m_fAABBMaxY;       // +0x0054  R:1      — world AABB max Y
+    uint32_t    m_fAABBMaxZ;       // +0x0058  R:2      — world AABB max Z
+    uint32_t    m_pInstArray;      // +0x005c  R:21 W:2 — phInst array ptr (heavily read)
+    uint32_t    m_pInstBounds;     // +0x0060  R:6 W:2  — inst bounds array ptr
+    uint32_t    m_pInstTransforms; // +0x0064  R:5 W:2  — inst transform array ptr
+    uint32_t    m_pInstFlags;      // +0x0068  R:7 W:2  — inst flag array ptr
+    uint16_t    m_nInstCount;      // +0x006c  R:4 W:1  — instance count
+    uint16_t    m_broadphaseCount; // +0x006e  R:2 W:3  — broadphase pair count
+    uint32_t    m_pSimulator;      // +0x0070  R:23 W:2 — simulator ptr (most-read)
+    uint32_t    m_pGravity;        // +0x0074  R:4 W:2  — gravity vector ptr
 
     virtual ~phLevelNew();                        // [0] @ 0x822DE2E0
     virtual void vfn_2();                         // [2] @ 0x822C50D8
@@ -1960,35 +1951,35 @@ struct phRope {
 struct phSimulator {
     void**      vtable;           // +0x00
 
-    uint32_t    field_0x0004;     // +0x0004  R:10 W:3
-    uint32_t    field_0x0008;     // +0x0008  R:7
-    uint32_t    field_0x000c;     // +0x000c  R:5 W:2
-    uint32_t    field_0x0010;     // +0x0010  R:4 W:2
-    uint32_t    field_0x0014;     // +0x0014  R:3
-    uint32_t    field_0x0018;     // +0x0018  R:4
-    uint32_t    field_0x001c;     // +0x001c  R:8
-    uint32_t    field_0x0020;     // +0x0020  R:18
-    uint32_t    field_0x0024;     // +0x0024  R:30 W:1  — most-read
-    uint32_t    field_0x0028;     // +0x0028  R:12
-    uint16_t    field_0x002c;     // +0x002c  R:5
-    uint32_t    field_0x0030;     // +0x0030  R:4
-    uint16_t    field_0x0034;     // +0x0034  R:3
+    uint32_t    m_nFlags;         // +0x0004  R:10 W:3 — simulator state flags
+    uint32_t    m_pLevel;         // +0x0008  R:7      — pointer to phLevelNew
+    uint32_t    m_fTimeStep;      // +0x000c  R:5 W:2  — simulation timestep
+    uint32_t    m_fInvTimeStep;   // +0x0010  R:4 W:2  — 1/timestep
+    uint32_t    m_nSubSteps;      // +0x0014  R:3      — substep count
+    uint32_t    m_pColliderList;  // +0x0018  R:4      — collider linked list
+    uint32_t    m_pConstraintList;// +0x001c  R:8      — constraint linked list
+    uint32_t    m_pInstList;      // +0x0020  R:18     — phInst linked list
+    uint32_t    m_pSolverData;    // +0x0024  R:30 W:1 — solver data ptr (most-read)
+    uint32_t    m_pContactManager;// +0x0028  R:12     — contact manager ptr
+    uint16_t    m_nColliderCount; // +0x002c  R:5      — number of colliders
+    uint32_t    m_pBroadphase;    // +0x0030  R:4      — broadphase ptr
+    uint16_t    m_nConstraintCount;// +0x0034  R:3     — constraint count
     uint8_t     _pad0x0036[40];
-    uint32_t    field_0x0060;     // +0x0060  R:5
-    uint32_t    field_0x0064;     // +0x0064  R:2
+    uint32_t    m_pGravity;       // +0x0060  R:5      — gravity vector ptr
+    uint32_t    m_pWorldBounds;   // +0x0064  R:2      — world bounds AABB ptr
     uint8_t     _pad0x0068[24];
-    uint32_t    field_0x0080;     // +0x0080  R:3
+    uint32_t    m_pMaterialMgr;   // +0x0080  R:3      — material manager ptr
     uint8_t     _pad0x0084[332];
-    uint32_t    field_0x01d0;     // +0x01d0  R:3
+    uint32_t    m_pJointSolver;   // +0x01d0  R:3      — joint solver ptr
     uint8_t     _pad0x01d4[80];
-    uint32_t    field_0x0224;     // +0x0224  R:4 W:3
-    uint32_t    field_0x0228;     // +0x0228  R:1 W:3
-    uint32_t    field_0x022c;     // +0x022c  R:5 W:3
+    uint32_t    m_nFrameCount;    // +0x0224  R:4 W:3  — frame counter
+    uint32_t    m_nStepCount;     // +0x0228  R:1 W:3  — step counter
+    uint32_t    m_nSimulationFlags;// +0x022c  R:5 W:3 — simulation control flags
     uint8_t     _pad0x0230[16504];
     uint32_t    m_maxBreakableComponents;  // +0x42a8  R:5 — max breakable component count
-    uint32_t    field_0x42ac;     // +0x42ac  R:5
-    uint32_t    field_0x42b0;     // +0x42b0  R:3
-    uint32_t    field_0x42b4;     // +0x42b4  R:4
+    uint32_t    m_pBreakableArray; // +0x42ac  R:5     — breakable component array ptr
+    uint32_t    m_nBreakableCount; // +0x42b0  R:3     — active breakable count
+    uint32_t    m_pBreakableInsts; // +0x42b4  R:4     — breakable instance array
 
     virtual ~phSimulator();                       // [0] @ 0x822C14A0
     virtual void ScalarDtor(int flags);           // [1] @ 0x822C4C18

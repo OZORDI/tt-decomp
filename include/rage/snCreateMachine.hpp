@@ -53,17 +53,24 @@ public:
     
 protected:
     // ── Members ──
-    SinglesNetworkClient* m_pNetworkClient;  // +0x14 (20)
+    SinglesNetworkClient* m_pNetworkClient;  // +0x14 (20) — reuses hsmState::m_field_14
     void*                 m_pStateContext;   // +0x18 (24)
     hsmState*             m_pCurrentHsmState; // +0x1C (28)
     void*                 m_pStateVtable;    // +0x20 (32)
-    
-    // State-specific data at different offsets:
-    uint8_t               m_stateData[268];  // +0x24 to +0x12C (36-300)
-    // +0x54 (84):  CreatingHost state
-    // +0x6C (108): CreatingGuest state  
-    // +0x84 (132): CreatingOffline state
-    
+
+    // Padding from +0x24 to +0x53 (36-83)
+    uint8_t               m_pad_24[48];      // +0x24
+
+    // Embedded child HSM states
+    hsmState              m_creatingHost;     // +0x54 (84)  — snHsmCreatingHost
+    hsmState              m_creatingGuest;    // +0x6C (108) — snHsmCreatingGuest
+    hsmState              m_creatingOffline;  // +0x84 (132) — snHsmCreatingOffline
+    hsmState              m_requestingConfig; // +0x9C (156) — snHsmRequestingConfig
+    uint8_t               m_pad_B4[48];      // +0xB4 (180) — gap between RequestingConfig and ApplyingConfig
+    hsmState              m_applyingConfig;   // +0xCC (204) — snHsmApplyingConfig
+    hsmState              m_startingSession;  // +0xE4 (228) — snHsmStartingSession
+    hsmState              m_destroyingSession;// +0xFC (252) — snHsmDestroyingSession
+
     uint32_t              m_sessionId;       // +0x114 (276)
     uint64_t              m_sessionHandle;   // +0x118 (280)
     uint64_t              m_field_120;       // +0x120 (288)

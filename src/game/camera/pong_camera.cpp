@@ -32,7 +32,7 @@ void pongCameraMgr::AdjustTimingForIndex(int index) {
         int currentIndex = 0;
         
         // Pointer to timing array at offset +60 (0x3C)
-        float* timingArray = &m_timingArray[0];  // offset +60
+        float* timingArray = &m_timingArray;  // offset +0x3C (60)
         
         // Accumulate timing values until we cross the target threshold
         while (true) {
@@ -77,8 +77,9 @@ void pongCameraMgr::AdjustTimingForIndex(int index) {
     int clearIndex1 = index + 15;
     int clearIndex2 = index + 33;
     
-    m_timingArray[clearIndex1] = 0.0f;
-    m_timingArray[clearIndex2] = 0.0f;
+    float* timingArr = &m_timingArray;  // offset +0x3C
+    timingArr[clearIndex1] = 0.0f;
+    timingArr[clearIndex2] = 0.0f;
 }
 
 // Transition parameter structs used by TryTransition and related functions
@@ -254,17 +255,17 @@ bool pongCameraMgr::PostLoadProperties(uint32_t value) {
 float pongCameraMgr::GetAspectRatio() const {
     extern float g_floatOne;  // @ 0x8202D108 + 8
     
-    float verticalFOV = *(float*)((char*)this + 828);  // +0x33C
-    
+    float verticalFOV = m_verticalFOV;    // +0x33C
+
     // Check if vertical FOV is zero (using constant comparison)
     if (verticalFOV == g_floatOne) {
-        float horizontalFOV = *(float*)((char*)this + 804);  // +0x324
-        
+        float horizontalFOV = m_horizontalFOV;  // +0x324
+
         if (horizontalFOV != g_floatOne) {
             // Calculate aspect ratio from viewport dimensions
-            int32_t viewportWidth = *(int32_t*)((char*)this + 816);   // +0x330
-            int32_t viewportHeight = *(int32_t*)((char*)this + 820);  // +0x334
-            float baseWidth = *(float*)((char*)this + 800);           // +0x320
+            int32_t viewportWidth = m_viewportWidth;    // +0x330
+            int32_t viewportHeight = m_viewportHeight;  // +0x334
+            float baseWidth = m_baseWidth;              // +0x320
             
             // aspect = (viewportWidth * baseWidth) / (viewportHeight * horizontalFOV)
             float widthRatio = (float)viewportWidth * baseWidth;
@@ -495,7 +496,7 @@ void pongCameraMgr::CopyParametersToBuffer(uint32_t param1, uint32_t param2,
                                            uint32_t param5, uint32_t param6) {
     // Allocate buffer from camera manager (offset +4, size 16 bytes)
     extern void* pongCameraMgr_B9B0_g(void* mgr, int size);
-    void* buffer = pongCameraMgr_B9B0_g((char*)this + 4, 16);
+    void* buffer = pongCameraMgr_B9B0_g(&flags, 16);
     
     // Copy 6 parameters (24 bytes total) to the allocated buffer
     uint32_t* dest = (uint32_t*)buffer;
@@ -1334,15 +1335,15 @@ bool pongCameraMgr::TryClampedTransition_Mode0(void* gameState) {
     float clampedMin = (diffMin >= 0.0f) ? currentValue : threshold;  // min
     float clampedMax = (diffMax >= 0.0f) ? currentValue : threshold;  // max
 
-    // Prepare flags: {3, 0}
-    uint32_t flags[2] = { 3, 0 };
+    // Prepare transition flags: {3, 0}
+    uint32_t transFlags[2] = { 3, 0 };
 
     TransitionParams params;
     params.value = clampedMin;
-    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)this + 4);
+    params.vtableOrState = this->flags;  // copy struct flags field (+0x04)
 
     // First call: 6E08 with mode=5
-    if (!pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+    if (!pongCameraMgr_6E08(gameState, &params, 5, transFlags, 1)) {
         return false;
     }
 
@@ -1353,7 +1354,7 @@ bool pongCameraMgr::TryClampedTransition_Mode0(void* gameState) {
 
     // Second call: 6E08 with mode=3
     *(uint64_t*)&params = *(uint64_t*)&params;  // reload
-    if (!pongCameraMgr_6E08(gameState, &params, 3, flags, 1)) {
+    if (!pongCameraMgr_6E08(gameState, &params, 3, transFlags, 1)) {
         return false;
     }
 
@@ -1361,7 +1362,7 @@ bool pongCameraMgr::TryClampedTransition_Mode0(void* gameState) {
 
     // Third call: 6E08 with mode=5 using offset-adjusted value
     params.value = resultValue + g_cameraTransitionOffset;
-    if (pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+    if (pongCameraMgr_6E08(gameState, &params, 5, transFlags, 1)) {
         float result3 = params.value;
         if (result3 < resultValue) {
             *(float*)this = resultValue;
@@ -1390,13 +1391,13 @@ bool pongCameraMgr::TryClampedTransition_Mode1(void* gameState) {
     float clampedMin = (diffMin >= 0.0f) ? currentValue : threshold;
     float clampedMax = (diffMax >= 0.0f) ? currentValue : threshold;
 
-    uint32_t flags[2] = { 3, 1 };
+    uint32_t transFlags[2] = { 3, 1 };
 
     TransitionParams params;
     params.value = clampedMin;
-    *(uint32_t*)((char*)&params + 4) = *(uint32_t*)((char*)this + 4);
+    params.vtableOrState = this->flags;  // copy struct flags field (+0x04)
 
-    if (!pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+    if (!pongCameraMgr_6E08(gameState, &params, 5, transFlags, 1)) {
         return false;
     }
 
@@ -1406,13 +1407,13 @@ bool pongCameraMgr::TryClampedTransition_Mode1(void* gameState) {
     }
 
     *(uint64_t*)&params = *(uint64_t*)&params;
-    if (!pongCameraMgr_6E08(gameState, &params, 3, flags, 1)) {
+    if (!pongCameraMgr_6E08(gameState, &params, 3, transFlags, 1)) {
         return false;
     }
 
     float resultValue = result1;
     params.value = resultValue + g_cameraTransitionOffset;
-    if (pongCameraMgr_6E08(gameState, &params, 5, flags, 1)) {
+    if (pongCameraMgr_6E08(gameState, &params, 5, transFlags, 1)) {
         float result3 = params.value;
         if (result3 < resultValue) {
             *(float*)this = resultValue;
@@ -1526,6 +1527,9 @@ bool pongCameraMgr::CheckAllNearTransitions_Mode1(void* gameState, float f2) {
     return true;
 }
 
+// Forward declaration needed before CheckAllCameraQueries
+extern bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // pongCameraMgr::CheckAllCameraQueries()  @ 0x821F8250 | size: 0x164
 // Master query: calls 7 different query functions, returns true if ANY succeeded
@@ -1575,6 +1579,9 @@ extern uint8_t pongCameraMgr_C450_g(void* node);              // @ 0x8220C450
 extern void pongCameraMgr_7EA8_g(void* mgr, void* state, int flag); // @ 0x82167EA8
 extern void pg_7CE0(void* mgr, void* node);                   // @ 0x82167CE0
 extern void game_85F0(void* flags);                            // @ 0x821685F0
+extern bool pongCameraMgr_3500_fw(pongCameraMgr* mgr, void* gameState, int mode);  // @ 0x821F3500
+extern void pongCameraMgr_7DF0_2hr(void* selfPtr, void* statePtr, int index);      // @ 0x82167DF0
+extern void pongCameraMgr_8CB0_2hr(void* selfPtr);                                 // @ 0x82168CB0
 
 // Globals referenced by address
 extern uint32_t g_cameraMgrSingleton;   // @ 0x8260641C  (lis r7,-32160 + 25628)
@@ -1602,12 +1609,12 @@ pongCameraMgr::~pongCameraMgr() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // pongCameraMgr::vfn_25()  [vtable slot 25] @ 0x82166068 | size: 0xAC
-// Resets camera state: calls slot-8 vcall on field_0x28, zeroes sub-fields,
+// Resets camera state: calls slot-8 vcall on m_cameraObj, zeroes sub-fields,
 // writes default floats, updates global camera pointer
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCameraMgr::vfn_25() {
-    void* camObj = *(void**)((char*)this + 40);   // +0x28 m_cameraObj
-    field_0x0038 = 0;                              // +0x38 = 0
+    void* camObj = m_cameraObj;   // +0x28
+    m_resetCounter = 0;           // +0x38 = 0
 
     // Virtual call slot 8 on camObj
     typedef void (*VFn8)(void*);
@@ -1615,7 +1622,7 @@ void pongCameraMgr::vfn_25() {
     ((VFn8)vt[8])(camObj);
 
     // Load sub-state ptr from +0x2C
-    uint32_t* subState = *(uint32_t**)((char*)this + 44);  // +0x2C
+    uint32_t* subState = (uint32_t*)m_subState;  // +0x2C
     subState[1] = 0;  // +4
     subState[2] = 0;  // +8
 
@@ -1633,11 +1640,11 @@ void pongCameraMgr::vfn_25() {
     *(float*)((char*)inner2 + 12) = defVal;
 
     // Update global camera pointer from camObj->+44->+16
-    void* camObj2 = *(void**)((char*)this + 40);
+    void* camObj2 = m_cameraObj;  // +0x28
     uint32_t* camData = *(uint32_t**)((char*)camObj2 + 44);
     extern uint32_t* g_globalCamPtr1;  // @ global
     extern uint32_t* g_globalCamPtr2;  // @ global
-    *g_globalCamPtr1 = (uint32_t)((char*)camData + 16);
+    *g_globalCamPtr1 = (uint32_t)(uintptr_t)((char*)camData + 16);
 
     // Virtual call slot 3 on g_globalCamPtr2
     typedef void (*VFn3)(void*);
@@ -1650,34 +1657,35 @@ void pongCameraMgr::vfn_25() {
 // Gets camera data from active camera, copies FOV/aspect data into indexed slot
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCameraMgr_6280_g(void* selfPtr) {
-    uint32_t* self = (uint32_t*)selfPtr;
-    void* camObj = *(void**)((char*)self + 40);                  // +0x28
+    pongCameraMgr* self = (pongCameraMgr*)selfPtr;
+    void* camObj = self->m_cameraObj;                            // +0x28
     uint32_t* camData = *(uint32_t**)((char*)camObj + 44);
-    void* activeCamera = (void*)camData[38];                     // +152
+    pongCameraMgr* activeCamera = (pongCameraMgr*)camData[38];   // +152
 
-    float fovY = *(float*)((char*)activeCamera + 836);           // +0x344
-    float fovX = *(float*)((char*)activeCamera + 832);           // +0x340
+    float fovY = activeCamera->m_fovY;                           // +0x344
+    float fovX = activeCamera->m_fovX;                           // +0x340
 
     // Get aspect ratio (result returned in f1)
     pongCameraMgr_3E98_g(activeCamera);
 
-    // Compute destination slot: self->+24 + g_cameraActiveIndex * 912
-    uint32_t* slotsBase = *(uint32_t**)((char*)self + 24);       // +0x18
+    // Compute destination slot: self->m_slotsBase + g_cameraActiveIndex * 912
+    pongCameraMgr* slotsBase = (pongCameraMgr*)self->m_slotsBase;  // +0x18
     int idx = (int)g_cameraActiveIndex;
     char* dest = (char*)slotsBase + idx * 912;
+    pongCameraMgr* destSlot = (pongCameraMgr*)dest;
 
-    *(float*)(dest + 824) = *(float*)((char*)activeCamera + 824); // +0x338
-    *(uint8_t*)(dest + 864) = 1;                                  // +0x360
+    destSlot->m_fovParam = activeCamera->m_fovParam;             // +0x338
+    destSlot->m_activeFlag = 1;                                  // +0x360
     // f1 holds aspect ratio from pongCameraMgr_3E98_g
-    // *(float*)(dest + 828) = aspectResult;  // stored by caller convention
-    *(float*)(dest + 832) = fovX;
-    *(float*)(dest + 836) = fovY;
+    // destSlot->m_verticalFOV = aspectResult;  // stored by caller convention
+    destSlot->m_fovX = fovX;
+    destSlot->m_fovY = fovY;
 
     phBoundCapsule_3598_g(dest);
 
     // Copy matrix: activeCamera+64 -> dest (recomputed slot)
     idx = (int)g_cameraActiveIndex;
-    slotsBase = *(uint32_t**)((char*)self + 24);
+    slotsBase = (pongCameraMgr*)self->m_slotsBase;
     dest = (char*)slotsBase + idx * 912;
     pongCameraMgr_39F0_g(dest, (char*)activeCamera + 64);
 }
@@ -1689,7 +1697,7 @@ void pongCameraMgr_6280_g(void* selfPtr) {
 pongCameraState::~pongCameraState() {
     // Vtable write handled by compiler.
     // If child object at +0x10 is non-null, destroy it (vcall slot 0 with delete flag)
-    void* child = *(void**)((char*)this + 16);   // +0x10
+    void* child = m_child;  // +0x10
     if (child != nullptr) {
         typedef void (*DtorFn)(void*, int);
         void** vt = *(void***)child;
@@ -1705,10 +1713,10 @@ pongCameraState::~pongCameraState() {
 int pongCameraMgr_77E8_w(void* selfPtr, void* statePtr) {
     uint32_t* self = (uint32_t*)selfPtr;
 
-    // Lookup current node: self->flags->+48[self->+8 * 4]
-    uint32_t* flags = *(uint32_t**)((char*)self + 4);
-    int curTime = *(int*)((char*)self + 8);
-    uint32_t* nodeTable = *(uint32_t**)((char*)flags + 48);
+    // Lookup current node: self->+4 (node table ptr) -> +48[self->+8 (index)]
+    uint32_t* nodeTablePtr = *(uint32_t**)((char*)self + 4);   // +0x04
+    int curTime = *(int*)((char*)self + 8);                    // +0x08
+    uint32_t* nodeTable = *(uint32_t**)((char*)nodeTablePtr + 48);
     void* node = (void*)nodeTable[curTime];
 
     if (!pongCameraMgr_C450_g(node))
@@ -1782,10 +1790,10 @@ void pongCameraMgr_7C18(void* selfPtr, void* nodePtr, void* statePtr, uint8_t im
 void pongCameraMgr_7DF0_2hr(void* selfPtr, void* statePtr, int index) {
     uint32_t* self = (uint32_t*)selfPtr;
 
-    // Store index at self->+8, look up node from flags->+48[index]
+    // Store index at self->+8, look up node from self->+4->+48[index]
     *(int*)((char*)self + 8) = index;
-    uint32_t* flags = *(uint32_t**)((char*)self + 4);
-    uint32_t* nodeTable = *(uint32_t**)((char*)flags + 48);
+    uint32_t* nodeTablePtr = *(uint32_t**)((char*)self + 4);  // +0x04
+    uint32_t* nodeTable = *(uint32_t**)((char*)nodeTablePtr + 48);
     void* node = (void*)nodeTable[index];
 
     // If node byte+28 is zero (inactive), recurse through its link
@@ -1831,9 +1839,9 @@ void pongCameraMgr_8C10(void* selfPtr) {
     g_cameraResetFlag = 0;
 
     // Reset indices at +0x10, +0x14, +0x18 to -1
-    *(int*)((char*)self + 16) = -1;
-    *(int*)((char*)self + 20) = -1;
-    *(int*)((char*)self + 24) = -1;
+    *(int*)((char*)self + 16) = -1;   // +0x10
+    *(int*)((char*)self + 20) = -1;   // +0x14
+    *(int*)((char*)self + 24) = -1;   // +0x18
 
     // Clear lerp globals
     g_cameraLerpCounter = 0;
@@ -1841,13 +1849,13 @@ void pongCameraMgr_8C10(void* selfPtr) {
     g_cameraLerpFlags = 0;
     g_cameraLerpValue = lerpVal;
 
-    // Process hierarchy: self->flags as param
-    void* flags = *(void**)((char*)self + 4);
-    pongCameraMgr_7DF0_2hr(flags, selfPtr, 0);  // index 0
+    // Process hierarchy: self->+4 (node table ptr) as param
+    void* nodeTablePtr = *(void**)((char*)self + 4);   // +0x04
+    pongCameraMgr_7DF0_2hr(nodeTablePtr, selfPtr, 0);  // index 0
 
     // Apply transition with flag=1
-    flags = *(void**)((char*)self + 4);
-    pongCameraMgr_7EA8_g(flags, selfPtr, 1);
+    nodeTablePtr = *(void**)((char*)self + 4);
+    pongCameraMgr_7EA8_g(nodeTablePtr, selfPtr, 1);
 
     // Finalize
     pongCameraMgr_8CB0_2hr(selfPtr);
@@ -1890,9 +1898,9 @@ void pongCameraMgr_8CB0_2hr(void* selfPtr) {
     extern float g_cameraFinalFloat;  // @ const table offset -3112
     *(float*)(g_cameraDataBasePtr + 0x68D04) = g_cameraFinalFloat;
 
-    // Tail-call: game_85F0 with self->flags
-    void* flags = *(void**)((char*)selfPtr + 4);
-    game_85F0(flags);
+    // Tail-call: game_85F0 with self->+4 (node table ptr)
+    void* nodeTablePtr = *(void**)((char*)selfPtr + 4);  // +0x04
+    game_85F0(nodeTablePtr);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2082,7 +2090,7 @@ extern "C" bool pongCameraMgr_7250(void* self, void* gameState, float /*f1*/, fl
 // pongCameraMgr_3ED8_2h @ 0x821F3ED8 — 3 args: (this, gameState, extraFlag)
 // First 6E08(mode=5), if OK → 6E08(mode=3), if OK → 6E08(mode=5, val+offset)
 // Store first-call result if third call fails or produces value < first.
-extern "C" bool pongCameraMgr_3ED8_2h(void* self, void* gameState, int extra) {
+bool pongCameraMgr_3ED8_2h(void* self, void* gameState, int extra) {
     extern float g_cameraThreshold;
     extern float g_cameraTransitionOffset;  // @ 0x8202D168
 

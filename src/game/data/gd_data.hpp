@@ -1504,12 +1504,30 @@ struct plrSwingLogic {
 #include <stdint.h>
 
 // xmlNodeStruct — base class for XML-serializable data nodes
+//
+// Layout (reverse-engineered from PostLoadChildren walks):
+//   +0x00: vtable
+//   +0x04: (unused / reserved)
+//   +0x08: m_pNextSibling
+//   +0x0C: m_pFirstChild
+// Virtual slots of interest:
+//   [19]  GetTypeName() const
+//   [20]  IsType(uint32_t typeId) / PostLoadProperties (per subclass)
+//   [21]  Validate / RegisterFields (per subclass)
+//   [22]  PostLoadChildren / GetTypeName (per subclass)
 struct xmlNodeStruct {
-    void** vtable;  // +0x00
+    void**          vtable;         // +0x00
+    uint32_t        _xml_pad04;     // +0x04
+    xmlNodeStruct*  m_pNextSibling; // +0x08
+    xmlNodeStruct*  m_pFirstChild;  // +0x0C
     virtual ~xmlNodeStruct() {}
     virtual void PostLoadProperties() {}
     virtual void Validate() {}
     virtual void PostLoadChildren() {}
+    // Slot 19 — returns the class name (RTTI-like).
+    virtual const char* GetTypeName() const { return "xmlNodeStruct"; }
+    // Slot 20 — checks a type-id. Also the dispatch slot used by PostLoadChildren walkers.
+    virtual bool IsType(uint32_t /*typeId*/) { return false; }
 };
 struct gdCharData;
 
@@ -1521,10 +1539,14 @@ struct gdCharData;
  */
 class gdRivalryData : public xmlNodeStruct {
 public:
-    virtual bool IsType(uint32_t typeId);                // vfn_20 @ 0x821F0650
-    virtual const char* GetTypeName() const;             // vfn_22 @ 0x821F0698
+    virtual bool IsType(uint32_t typeId) override;       // vfn_20 @ 0x821F0650
+    virtual const char* GetTypeName() const override;    // vfn_22 @ 0x821F0698
     virtual void RegisterFields();                       // vfn_21 @ 0x821F0738
-    virtual void PostLoadProperties();                   // @ 0x821F07A8
+    virtual void PostLoadProperties() override;          // @ 0x821F07A8
+
+    const char* m_characterName;  // +0x10
+    const char* m_rivalName;      // +0x14
+    int32_t     m_rivalCharIndex; // +0x18 — cached index from FindCharacterByName
 };
 
 /**
@@ -1537,14 +1559,15 @@ public:
 class gdRivalry : public xmlNodeStruct {
 public:
     virtual ~gdRivalry() {}                              // vfn_0
-    virtual bool IsType(uint32_t typeId);                // vfn_20 @ 0x821F0888
-    virtual const char* GetTypeName() const;             // vfn_22 @ 0x821F08D0
-    virtual void PostLoadProperties() {}                 // vfn_20
-    virtual void PostLoadChildren();                     // vfn_22
+    virtual bool IsType(uint32_t typeId) override;       // vfn_20 @ 0x821F0888
+    virtual const char* GetTypeName() const override;    // vfn_22 @ 0x821F08D0
+    virtual void PostLoadProperties() override {}        // vfn_20
+    virtual void PostLoadChildren() override;            // vfn_22
 
-private:
-    // Rivalry data fields (to be determined from usage)
-    uint8_t m_rivalryData[32];
+    // Dynamic array of gdRivalryData* sized to character count.
+    gdRivalryData** m_pEntries;   // +0x10 — array of per-character entries
+    uint16_t        m_numEntries; // +0x14 — count of populated entries
+    uint16_t        m_capacity;   // +0x16 — allocated capacity
 };
 
 /**
@@ -1556,14 +1579,13 @@ private:
  */
 class gdTierMember : public xmlNodeStruct {
 public:
-    virtual bool IsType(uint32_t typeId);                // vfn_20 @ 0x821F0B88
-    virtual const char* GetTypeName() const;             // vfn_22 @ 0x821F0BD0
+    virtual bool IsType(uint32_t typeId) override;       // vfn_20 @ 0x821F0B88
+    virtual const char* GetTypeName() const override;    // vfn_22 @ 0x821F0BD0
     virtual void RegisterFields();                       // vfn_21 @ 0x821F0C68
-    virtual void PostLoadProperties();                   // vfn_20 @ 0x821F0C88
+    virtual void PostLoadProperties() override;          // vfn_20 @ 0x821F0C88
 
-private:
     const char* m_characterName;         // +0x10 - Character name string
-    gdCharData* m_pCharData;             // +0x14 - Pointer to character data
+    gdCharData* m_pCharData;             // +0x14 - Pointer to character data (index stored as ptr)
 };
 
 /**
@@ -1576,15 +1598,21 @@ private:
 class gdTier : public xmlNodeStruct {
 public:
     virtual ~gdTier() {}                                 // vfn_0
-    virtual void PostLoadProperties();                   // vfn_20 @ 0x821F0EA0
-    virtual void Validate() {}                           // vfn_21
-    virtual void PostLoadChildren();                     // vfn_22
+    virtual void PostLoadProperties() override;          // vfn_20 @ 0x821F0EA0
+    virtual void Validate() override {}                  // vfn_21
+    virtual void PostLoadChildren() override;            // vfn_22
 
-private:
-    const char* m_tierName;              // +0x10 - Tier name string
-    uint32_t m_tierLevel;                // +0x14 - Tier difficulty level
-    gdTierMember* m_pMembers;            // +0x18 - Array of tier members
-    uint32_t m_numMembers;               // +0x1C - Number of members in tier
+    // NOTE: gdLadder's PostLoadChildren reads child+0x10 as a uint32 tier index,
+    //       while gdTier::PostLoadProperties checks a TierName string at +0x10.
+    //       These overlap — treat m_tierName and m_tierLevel as a union.
+    union {
+        const char* m_tierName;          // +0x10 — string view (PostLoadProperties)
+        uint32_t    m_tierLevel;         // +0x10 — uint view  (gdLadder walker)
+    };
+    gdTierMember**  m_pMembers;          // +0x14 — member array pointer
+                                         //         (cpp arithmetic: (char*)this+20)
+    uint16_t        m_numMembers;        // +0x18
+    uint16_t        m_memberCap;         // +0x1A
 };
 
 /**
@@ -1597,20 +1625,36 @@ private:
 class gdLadder : public xmlNodeStruct {
 public:
     virtual ~gdLadder() {}                               // vfn_0
-    virtual void PostLoadProperties() {}                 // vfn_20
-    virtual void PostLoadChildren();                     // vfn_22
+    virtual void PostLoadProperties() override {}        // vfn_20
+    virtual void PostLoadChildren() override;            // vfn_22
 
-private:
-    const char* m_ladderName;            // +0x10 - Ladder name
-    gdTier* m_pTiers;                    // +0x14 - Array of tiers
-    uint32_t m_numTiers;                 // +0x18 - Number of tiers
-    uint32_t m_currentTier;              // +0x1C - Player's current tier index
+    // Layout derived from PostLoadChildren (uses +0x10 for array, uint16 count/cap at +0x14):
+    gdTier**  m_pTiers;    // +0x10  — array of 4 tier pointers (fixed capacity)
+    uint16_t  m_numTiers;  // +0x14
+    uint16_t  m_tierCap;   // +0x16
 };
 
 // Compile-time size verification
 static_assert(sizeof(gdTierMember) >= 24, "gdTierMember minimum size check");
-static_assert(sizeof(gdTier) >= 32, "gdTier minimum size check");
-static_assert(sizeof(gdLadder) >= 32, "gdLadder minimum size check");
+static_assert(sizeof(gdTier) >= 28, "gdTier minimum size check");
+static_assert(sizeof(gdLadder) >= 24, "gdLadder minimum size check");
+
+// Minimal view of the game-data manager used by rivalry / tier lookups.
+// Only the two fields consumed by gd_data.cpp are declared.
+struct gdGameDataMgrView {
+    uint8_t  _pad00[24];       // +0x00..+0x17
+    void**   m_pCharArray;     // +0x18 — array of character entries
+    uint32_t m_numCharacters;  // +0x1C — character count
+};
+
+// A character-data entry as accessed by the rivalry walker.
+// Layout is partial; only the two fields read below are declared.
+struct gdCharDataEntry {
+    uint8_t     _pad00[16];    // +0x00..+0x0F
+    const char* m_entryName;   // +0x10
+    uint8_t     _pad14[24];    // +0x14..+0x2B
+    const char* m_charName;    // +0x2C
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////

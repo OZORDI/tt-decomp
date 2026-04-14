@@ -219,11 +219,16 @@ struct FloatAverager {
 // ── ForceMatchTimeSyncMessage  [vtable @ 0x8206F5A4] ──────────────────────────
 struct ForceMatchTimeSyncMessage {
     void**      vtable;           // +0x00
+    uint32_t    _pad04;           // +0x04
+    uint64_t    m_timestamp;      // +0x08  — 64-bit timestamp
+    uint16_t    m_syncParam;      // +0x10  — 16-bit sync parameter
+    float       m_timing;         // +0x14  — timing float (for Serialise)
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b7aa0
-    virtual void vfn_2();  // [2] @ 0x823b7af0
-    virtual void vfn_3();  // [3] @ 0x823b7608
+    virtual void Deserialise(void* client);  // [2] @ 0x823b7af0
+    virtual void Serialise(void* client);    // [3] @ 0x823b7608 — actually Process
+    virtual void Process();
     virtual void vfn_5();  // [5] @ 0x823b74e0
     virtual void vfn_6();  // [6] @ 0x823b75e8
     virtual void vfn_7();  // [7] @ 0x823b75f8
@@ -301,10 +306,15 @@ struct GamerUpdateMessage {
 // ── HitDataMessage  [vtable @ 0x8206F500] ──────────────────────────
 struct HitDataMessage {
     void**      vtable;           // +0x00
+    float       m_timingRef;      // +0x04  — timing reference float
+    uint8_t     _pad08[8];        // +0x08
+    uint8_t     m_ballHitData[192]; // +0x10 — ball hit data block
+    float       m_recoveryTiming; // +0xD0  — recovery/power timing float
+    uint8_t     m_playerIndex;    // +0xD4  — player index byte
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b5b58
-    virtual void vfn_2();  // [2] @ 0x823b5bd8
+    virtual void Deserialise(void* client);  // [2] @ 0x823b5bd8
     virtual void vfn_3();  // [3] @ 0x823b5c40
     virtual void vfn_4();  // [4] @ 0x823b5ca0
     virtual void vfn_5();  // [5] @ 0x823b5970
@@ -315,10 +325,12 @@ struct HitDataMessage {
 // ── HitMessage  [vtable @ 0x8206F528] ──────────────────────────
 struct HitMessage {
     void**      vtable;           // +0x00
+    float       m_timingRef;      // +0x04  — timing reference float
+    uint8_t     m_hitFlags;       // +0x08  — hit flags byte
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b5fe0
-    virtual void vfn_2();  // [2] @ 0x823ba5f0
+    virtual void Deserialise(void* client);  // [2] @ 0x823ba5f0
     virtual void vfn_5();  // [5] @ 0x823b6040
     virtual void vfn_6();  // [6] @ 0x823b6108
     virtual void vfn_7();  // [7] @ 0x823b6118
@@ -464,10 +476,18 @@ struct MatchStatsMessage {
 // ── MatchTimeSyncMessage  [vtable @ 0x8206F554] ──────────────────────────
 struct MatchTimeSyncMessage {
     void**      vtable;           // +0x00
+    uint32_t    _pad04;           // +0x04
+    uint64_t    m_localTimestamp;  // +0x08  — local 64-bit timestamp
+    uint64_t    m_remoteTimestamp; // +0x10  — remote 64-bit timestamp
+    float       m_syncDelta;      // +0x18  — sync delta timing float
+    float       m_localTiming;    // +0x1C  — local timing float (for Serialise)
+    float       m_remoteTiming;   // +0x20  — remote timing float (for Serialise)
+    uint16_t    m_frameCounter;   // +0x24  — 16-bit frame counter
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b70a8
-    virtual void vfn_2();  // [2] @ 0x823b7130
+    virtual void Deserialise(void* client);  // [2] @ 0x823b7130
+    virtual void Serialise(void* client);
     virtual void vfn_5();  // [5] @ 0x823b6f80
     virtual void vfn_6();  // [6] @ 0x823b7088
     virtual void vfn_7();  // [7] @ 0x823b7098
@@ -931,13 +951,13 @@ struct PostPointExitMessage {
 };
 
 // ── RemoteServeReadyMessage  [vtable @ 0x8206FB20] ──────────────────────────
-struct RemoteServeReadyMessage {
-    void**      vtable;           // +0x00
+struct RemoteServeReadyMessage : public HitMessage {
+    uint16_t    m_serveParam;     // +0x0C  — 16-bit serve parameter
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b6ed8
-    virtual void vfn_2();  // [2] @ 0x823b6f20
-    virtual void vfn_3();  // [3] @ 0x823b6e98
+    virtual void Deserialise(void* client);  // [2] @ 0x823b6f20
+    virtual void Serialise(void* client);    // [3] @ 0x823b6e98
     virtual void vfn_5();  // [5] @ 0x823b6d28
     virtual void vfn_6();  // [6] @ 0x823b6e30
     virtual void vfn_7();  // [7] @ 0x823b6e40
@@ -1203,408 +1223,408 @@ struct SinglesNetworkClient {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint8_t      field_0x0001;  // +0x0001  R:1 W:0
-    uint16_t     field_0x0002;  // +0x0002  R:13 W:5
-    uint8_t      field_0x0003;  // +0x0003  R:1 W:0
-    uint32_t     field_0x0004;  // +0x0004  R:101 W:181
-    uint8_t      field_0x0005;  // +0x0005  R:2 W:0
-    uint16_t     field_0x0006;  // +0x0006  R:6 W:4
-    uint8_t      field_0x0007;  // +0x0007  R:5 W:3
-    uint64_t     field_0x0008;  // +0x0008  R:33 W:78
-    uint8_t      field_0x0009;  // +0x0009  R:21 W:3
-    uint16_t     field_0x000a;  // +0x000a  R:2 W:10
-    uint8_t      field_0x000b;  // +0x000b  R:1 W:1
-    uint32_t     field_0x000c;  // +0x000c  R:27 W:65
-    uint8_t      field_0x000d;  // +0x000d  R:2 W:5
-    uint16_t     field_0x000e;  // +0x000e  R:1 W:16
-    uint8_t      field_0x000f;  // +0x000f  R:0 W:2
-    uint64_t     field_0x0010;  // +0x0010  R:116 W:70
-    uint16_t     field_0x0012;  // +0x0012  R:0 W:4
-    uint32_t     field_0x0014;  // +0x0014  R:42 W:74
-    uint16_t     field_0x0016;  // +0x0016  R:0 W:3
-    uint64_t     field_0x0018;  // +0x0018  R:35 W:49
-    uint16_t     field_0x001a;  // +0x001a  R:0 W:2
-    uint8_t      field_0x001b;  // +0x001b  R:0 W:1
-    uint32_t     field_0x001c;  // +0x001c  R:45 W:69
-    uint8_t      field_0x001d;  // +0x001d  R:1 W:0
-    uint8_t      field_0x001e;  // +0x001e  R:1 W:1
-    uint8_t      field_0x001f;  // +0x001f  R:1 W:1
-    uint64_t     field_0x0020;  // +0x0020  R:44 W:78
-    uint8_t      field_0x0021;  // +0x0021  R:3 W:4
-    uint16_t     field_0x0022;  // +0x0022  R:1 W:1
-    uint32_t     field_0x0024;  // +0x0024  R:17 W:41
-    uint16_t     field_0x0026;  // +0x0026  R:3 W:1
-    uint64_t     field_0x0028;  // +0x0028  R:26 W:36
-    uint16_t     field_0x002a;  // +0x002a  R:2 W:1
-    uint32_t     field_0x002c;  // +0x002c  R:37 W:26
-    uint16_t     field_0x002e;  // +0x002e  R:4 W:1
-    uint32_t     field_0x0030;  // +0x0030  R:23 W:25
-    uint8_t      field_0x0031;  // +0x0031  R:0 W:4
-    uint16_t     field_0x0032;  // +0x0032  R:0 W:2
-    uint32_t     field_0x0034;  // +0x0034  R:22 W:10
-    uint64_t     field_0x0038;  // +0x0038  R:50 W:13
-    uint32_t     field_0x003c;  // +0x003c  R:42 W:6
-    uint64_t     field_0x0040;  // +0x0040  R:13 W:10
-    uint8_t      field_0x0041;  // +0x0041  R:1 W:1
-    uint16_t     field_0x0042;  // +0x0042  R:2 W:2
-    uint32_t     field_0x0044;  // +0x0044  R:9 W:14
-    uint8_t      field_0x0047;  // +0x0047  R:1 W:1
-    uint64_t     field_0x0048;  // +0x0048  R:13 W:6
-    uint8_t      field_0x004a;  // +0x004a  R:1 W:0
-    uint32_t     field_0x004c;  // +0x004c  R:6 W:5
-    uint32_t     field_0x0050;  // +0x0050  R:16 W:7
-    uint64_t     field_0x0054;  // +0x0054  R:20 W:6
-    uint8_t      field_0x0055;  // +0x0055  R:1 W:0
-    uint32_t     field_0x0058;  // +0x0058  R:1 W:4
-    uint32_t     field_0x005c;  // +0x005c  R:18 W:11
-    uint8_t      field_0x005d;  // +0x005d  R:2 W:4
-    uint8_t      field_0x005e;  // +0x005e  R:2 W:4
-    uint8_t      field_0x005f;  // +0x005f  R:3 W:5
-    uint32_t     field_0x0060;  // +0x0060  R:22 W:76
-    uint8_t      field_0x0061;  // +0x0061  R:5 W:4
-    uint8_t      field_0x0062;  // +0x0062  R:3 W:5
-    uint8_t      field_0x0063;  // +0x0063  R:0 W:4
-    uint32_t     field_0x0064;  // +0x0064  R:11 W:10
-    uint8_t      field_0x0065;  // +0x0065  R:0 W:1
-    uint8_t      field_0x0066;  // +0x0066  R:0 W:1
-    uint8_t      field_0x0067;  // +0x0067  R:0 W:4
-    uint32_t     field_0x0068;  // +0x0068  R:5 W:11
-    uint32_t     field_0x006c;  // +0x006c  R:4 W:5
-    uint64_t     field_0x0070;  // +0x0070  R:17 W:11
-    uint32_t     field_0x0074;  // +0x0074  R:11 W:7
-    uint64_t     field_0x0078;  // +0x0078  R:6 W:7
-    uint8_t      field_0x0079;  // +0x0079  R:0 W:1
-    uint8_t      field_0x007a;  // +0x007a  R:0 W:1
-    uint32_t     field_0x007c;  // +0x007c  R:1 W:4
-    uint64_t     field_0x0080;  // +0x0080  R:8 W:9
-    uint32_t     field_0x0084;  // +0x0084  R:0 W:5
-    uint8_t      field_0x0085;  // +0x0085  R:0 W:1
-    uint32_t     field_0x0088;  // +0x0088  R:2 W:13
-    uint32_t     field_0x008c;  // +0x008c  R:1 W:9
-    uint8_t      field_0x008d;  // +0x008d  R:1 W:0
-    uint8_t      field_0x008f;  // +0x008f  R:0 W:1
-    uint32_t     field_0x0090;  // +0x0090  R:2 W:8
-    uint8_t      field_0x0091;  // +0x0091  R:0 W:1
-    uint32_t     field_0x0094;  // +0x0094  R:2 W:4
-    uint16_t     field_0x0096;  // +0x0096  R:3 W:1
-    uint32_t     field_0x0098;  // +0x0098  R:5 W:7
-    uint32_t     field_0x009c;  // +0x009c  R:2 W:5
-    uint8_t      field_0x009d;  // +0x009d  R:2 W:4
-    uint32_t     field_0x00a0;  // +0x00a0  R:3 W:6
-    uint32_t     field_0x00a4;  // +0x00a4  R:9 W:4
-    uint64_t     field_0x00a8;  // +0x00a8  R:18 W:5
-    uint32_t     field_0x00ac;  // +0x00ac  R:0 W:3
-    uint64_t     field_0x00b0;  // +0x00b0  R:7 W:8
-    uint16_t     field_0x00b2;  // +0x00b2  R:0 W:1
-    uint32_t     field_0x00b4;  // +0x00b4  R:1 W:6
-    uint16_t     field_0x00b6;  // +0x00b6  R:0 W:1
-    uint64_t     field_0x00b8;  // +0x00b8  R:1 W:6
-    uint32_t     field_0x00bc;  // +0x00bc  R:0 W:4
-    uint8_t      field_0x00bd;  // +0x00bd  R:0 W:1
-    uint8_t      field_0x00bf;  // +0x00bf  R:0 W:3
-    uint32_t     field_0x00c0;  // +0x00c0  R:26 W:13
-    uint16_t     field_0x00c2;  // +0x00c2  R:1 W:0
-    uint32_t     field_0x00c4;  // +0x00c4  R:8 W:6
-    uint16_t     field_0x00c6;  // +0x00c6  R:3 W:0
-    uint32_t     field_0x00c8;  // +0x00c8  R:3 W:8
-    uint32_t     field_0x00cc;  // +0x00cc  R:5 W:8
-    uint8_t      field_0x00ce;  // +0x00ce  R:6 W:4
-    uint32_t     field_0x00d0;  // +0x00d0  R:2 W:7
-    uint16_t     field_0x00d2;  // +0x00d2  R:0 W:1
-    uint32_t     field_0x00d4;  // +0x00d4  R:3 W:7
-    uint32_t     field_0x00d8;  // +0x00d8  R:1 W:6
-    uint32_t     field_0x00dc;  // +0x00dc  R:1 W:3
-    uint64_t     field_0x00e0;  // +0x00e0  R:1 W:5
-    uint32_t     field_0x00e4;  // +0x00e4  R:1 W:3
-    uint64_t     field_0x00e8;  // +0x00e8  R:2 W:4
-    uint32_t     field_0x00ec;  // +0x00ec  R:1 W:4
-    uint8_t      field_0x00ed;  // +0x00ed  R:0 W:2
-    uint8_t      field_0x00ee;  // +0x00ee  R:1 W:2
-    uint8_t      field_0x00ef;  // +0x00ef  R:1 W:1
-    uint64_t     field_0x00f0;  // +0x00f0  R:2 W:4
-    uint8_t      field_0x00f1;  // +0x00f1  R:1 W:1
-    uint16_t     field_0x00f2;  // +0x00f2  R:0 W:1
-    uint32_t     field_0x00f4;  // +0x00f4  R:2 W:5
-    uint32_t     field_0x00f8;  // +0x00f8  R:10 W:6
-    uint32_t     field_0x00fc;  // +0x00fc  R:0 W:4
-    uint32_t     field_0x0100;  // +0x0100  R:2 W:3
-    uint32_t     field_0x0104;  // +0x0104  R:1 W:2
-    uint32_t     field_0x0108;  // +0x0108  R:1 W:3
-    uint32_t     field_0x010c;  // +0x010c  R:0 W:3
-    uint32_t     field_0x0110;  // +0x0110  R:2 W:3
-    uint32_t     field_0x0114;  // +0x0114  R:1 W:1
-    uint64_t     field_0x0118;  // +0x0118  R:1 W:3
-    uint32_t     field_0x011c;  // +0x011c  R:7 W:1
-    uint64_t     field_0x0120;  // +0x0120  R:1 W:4
-    uint32_t     field_0x0124;  // +0x0124  R:11 W:5
-    uint64_t     field_0x0128;  // +0x0128  R:8 W:4
-    uint32_t     field_0x012c;  // +0x012c  R:3 W:1
-    uint16_t     field_0x0130;  // +0x0130  R:7 W:1
-    uint16_t     field_0x0132;  // +0x0132  R:1 W:0
-    uint16_t     field_0x0134;  // +0x0134  R:1 W:0
-    uint16_t     field_0x0136;  // +0x0136  R:1 W:0
-    uint64_t     field_0x0138;  // +0x0138  R:1 W:1
-    uint8_t      field_0x0139;  // +0x0139  R:1 W:0
-    uint8_t      field_0x013a;  // +0x013a  R:1 W:0
-    uint32_t     field_0x0140;  // +0x0140  R:1 W:3
-    uint32_t     field_0x0144;  // +0x0144  R:0 W:2
-    uint32_t     field_0x0148;  // +0x0148  R:1 W:2
-    uint64_t     field_0x0150;  // +0x0150  R:0 W:2
-    uint64_t     field_0x0158;  // +0x0158  R:0 W:1
-    uint64_t     field_0x0160;  // +0x0160  R:1 W:2
-    uint8_t      field_0x0164;  // +0x0164  R:0 W:1
-    uint8_t      field_0x0168;  // +0x0168  R:0 W:1
+    uint8_t      m_bInitialized;     // +0x0001  R:1 W:0  init flag
+    uint16_t     m_sessionFlags;     // +0x0002  R:13 W:5  session state flags
+    uint8_t      m_bSessionValid;    // +0x0003  R:1 W:0  session valid flag
+    uint32_t     m_state;            // +0x0004  R:101 W:181  state machine value (0-5+)
+    uint8_t      m_bStateReady;      // +0x0005  R:2 W:0  state ready check
+    uint16_t     m_stateFlags;       // +0x0006  R:6 W:4  state transition flags
+    uint8_t      m_stateSubIdx;      // +0x0007  R:5 W:3  state sub-index
+    uint64_t     m_pBitStream;       // +0x0008  R:33 W:78  bitstream context pointer
+    uint8_t      m_bitstreamMode;    // +0x0009  R:21 W:3  bitstream read/write mode
+    uint16_t     m_bitstreamPos;     // +0x000a  R:2 W:10  bitstream bit position
+    uint8_t      m_bBitstreamReady;  // +0x000b  R:1 W:1  bitstream ready flag
+    uint32_t     m_packetSize;       // +0x000c  R:27 W:65  packet buffer size
+    uint8_t      m_packetFlags;      // +0x000d  R:2 W:5  packet flags byte
+    uint16_t     m_packetSeqNum;     // +0x000e  R:1 W:16  packet sequence number
+    uint8_t      m_bPacketPending;   // +0x000f  R:0 W:2  packet pending flag
+    uint64_t     m_pMessageQueue;    // +0x0010  R:116 W:70  message queue pointer
+    uint16_t     m_queueWritePos;    // +0x0012  R:0 W:4  queue write position
+    uint32_t     m_pNetworkSession;  // +0x0014  R:42 W:74  network session pointer
+    uint16_t     m_sessionWritePos;  // +0x0016  R:0 W:3  session write position
+    uint64_t     m_bAllPlayersReady; // +0x0018  R:35 W:49  all-players-ready flag
+    uint16_t     m_readyWritePos;    // +0x001a  R:0 W:2  ready state write pos
+    uint8_t      m_bReadyPending;    // +0x001b  R:0 W:1  ready pending flag
+    uint32_t     m_pConnectionState; // +0x001c  R:45 W:69  connection state pointer
+    uint8_t      m_bConnEstablished; // +0x001d  R:1 W:0  connection established
+    uint8_t      m_connRetryCount;   // +0x001e  R:1 W:1  connection retry count
+    uint8_t      m_connFlags;        // +0x001f  R:1 W:1  connection flags
+    uint64_t     m_pSendBuffer;      // +0x0020  R:44 W:78  send buffer pointer
+    uint8_t      m_sendFlags;        // +0x0021  R:3 W:4  send buffer flags
+    uint16_t     m_sendSeqNum;       // +0x0022  R:1 W:1  send sequence number
+    uint32_t     m_pRecvBuffer;      // +0x0024  R:17 W:41  receive buffer pointer
+    uint16_t     m_recvFlags;        // +0x0026  R:3 W:1  receive buffer flags
+    uint64_t     m_pReliableQueue;   // +0x0028  R:26 W:36  reliable message queue
+    uint16_t     m_reliableFlags;    // +0x002a  R:2 W:1  reliable queue flags
+    uint32_t     m_pPeerState;       // +0x002c  R:37 W:26  peer connection state
+    uint16_t     m_peerFlags;        // +0x002e  R:4 W:1  peer flags
+    uint32_t     m_pMatchState;      // +0x0030  R:23 W:25  match state pointer
+    uint8_t      m_matchWriteFlags;  // +0x0031  R:0 W:4  match write flags
+    uint16_t     m_matchSeqNum;      // +0x0032  R:0 W:2  match sequence number
+    uint32_t     m_pTimingState;     // +0x0034  R:22 W:10  timing state data
+    uint64_t     m_pNetMsgSingleton; // +0x0038  R:50 W:13  network message singleton
+    uint32_t     m_msgPoolCount;     // +0x003c  R:42 W:6  message pool ref count
+    uint64_t     m_pPlayerData;      // +0x0040  R:13 W:10  player data pointer
+    uint8_t      m_bPlayerDataValid; // +0x0041  R:1 W:1  player data valid
+    uint16_t     m_playerDataFlags;  // +0x0042  R:2 W:2  player data flags
+    uint32_t     m_pSessionMgr;      // +0x0044  R:9 W:14  session manager pointer
+    uint8_t      m_sessionMgrFlags;  // +0x0047  R:1 W:1  session manager flags
+    uint64_t     m_pGameState;       // +0x0048  R:13 W:6  game state pointer
+    uint8_t      m_bGameStateValid;  // +0x004a  R:1 W:0  game state valid
+    uint32_t     m_pRoundState;      // +0x004c  R:6 W:5  round state pointer
+    uint32_t     m_pSingletonRef;    // +0x0050  R:16 W:7  singleton reference
+    uint64_t     m_pServeState;      // +0x0054  R:20 W:6  serve state pointer
+    uint8_t      m_bServeActive;     // +0x0055  R:1 W:0  serve active flag
+    uint32_t     m_serveTimer;       // +0x0058  R:1 W:4  serve timer value
+    uint32_t     m_pRallyState;      // +0x005c  R:18 W:11  rally state pointer
+    uint8_t      m_rallyFlags;       // +0x005d  R:2 W:4  rally flags byte 0
+    uint8_t      m_rallyFlags2;      // +0x005e  R:2 W:4  rally flags byte 1
+    uint8_t      m_rallyFlags3;      // +0x005f  R:3 W:5  rally flags byte 2
+    uint32_t     m_pInputBuffer;     // +0x0060  R:22 W:76  input buffer pointer
+    uint8_t      m_inputFlags;       // +0x0061  R:5 W:4  input state flags
+    uint8_t      m_inputIndex;       // +0x0062  R:3 W:5  input buffer index
+    uint8_t      m_bInputPending;    // +0x0063  R:0 W:4  input pending flag
+    uint32_t     m_pSwingBuffer;     // +0x0064  R:11 W:10  swing data buffer
+    uint8_t      m_bSwingReady;      // +0x0065  R:0 W:1  swing ready flag
+    uint8_t      m_bSwingActive;     // +0x0066  R:0 W:1  swing active flag
+    uint8_t      m_swingWriteFlags;  // +0x0067  R:0 W:4  swing write flags
+    uint32_t     m_pBallHitState;    // +0x0068  R:5 W:11  ball hit state
+    uint32_t     m_pBounceState;     // +0x006c  R:4 W:5  bounce state
+    uint64_t     m_pScoreState;      // +0x0070  R:17 W:11  score state pointer
+    uint32_t     m_scoreCount;       // +0x0074  R:11 W:7  score count
+    uint64_t     m_pReplayBuffer;    // +0x0078  R:6 W:7  replay buffer pointer
+    uint8_t      m_bReplayReady;     // +0x0079  R:0 W:1  replay ready flag
+    uint8_t      m_bReplayActive;    // +0x007a  R:0 W:1  replay active flag
+    uint32_t     m_replayTimer;      // +0x007c  R:1 W:4  replay timer
+    uint64_t     m_pLobbyState;      // +0x0080  R:8 W:9  lobby state pointer
+    uint32_t     m_lobbyTimer;       // +0x0084  R:0 W:5  lobby timer
+    uint8_t      m_bLobbyReady;      // +0x0085  R:0 W:1  lobby ready flag
+    uint32_t     m_pVoiceState;      // +0x0088  R:2 W:13  voice chat state
+    uint32_t     m_pPresenceState;   // +0x008c  R:1 W:9  presence state
+    uint8_t      m_bPresenceValid;   // +0x008d  R:1 W:0  presence valid flag
+    uint8_t      m_bPresencePending; // +0x008f  R:0 W:1  presence pending
+    uint32_t     m_pStatsBuffer;     // +0x0090  R:2 W:8  stats buffer pointer
+    uint8_t      m_bStatsReady;      // +0x0091  R:0 W:1  stats ready flag
+    uint32_t     m_pLeaderboard;     // +0x0094  R:2 W:4  leaderboard pointer
+    uint16_t     m_leaderboardIdx;   // +0x0096  R:3 W:1  leaderboard index
+    uint32_t     m_pMatchConfig;     // +0x0098  R:5 W:7  match configuration
+    uint32_t     m_pGameModeData;    // +0x009c  R:2 W:5  game mode data
+    uint8_t      m_gameModeFlags;    // +0x009d  R:2 W:4  game mode flags
+    uint32_t     m_pCharSelectState; // +0x00a0  R:3 W:6  character select state
+    uint32_t     m_pTimeSyncState;   // +0x00a4  R:9 W:4  time sync state
+    uint64_t     m_syncTimestamp;    // +0x00a8  R:18 W:5  sync timestamp
+    uint32_t     m_syncWriteCount;   // +0x00ac  R:0 W:3  sync write count
+    uint64_t     m_pAckBuffer;       // +0x00b0  R:7 W:8  ack buffer pointer
+    uint16_t     m_ackWritePos;      // +0x00b2  R:0 W:1  ack write position
+    uint32_t     m_pAckState;        // +0x00b4  R:1 W:6  ack state pointer
+    uint16_t     m_ackStateFlags;    // +0x00b6  R:0 W:1  ack state flags
+    uint64_t     m_pRetransmitBuf;   // +0x00b8  R:1 W:6  retransmit buffer
+    uint32_t     m_retransmitTimer;  // +0x00bc  R:0 W:4  retransmit timer
+    uint8_t      m_bRetransmitReady; // +0x00bd  R:0 W:1  retransmit ready
+    uint8_t      m_retransmitFlags;  // +0x00bf  R:0 W:3  retransmit flags
+    uint32_t     m_pSequenceState;   // +0x00c0  R:26 W:13  sequence state
+    uint16_t     m_seqReadFlags;     // +0x00c2  R:1 W:0  sequence read flags
+    uint32_t     m_pOrderedQueue;    // +0x00c4  R:8 W:6  ordered queue
+    uint16_t     m_orderedFlags;     // +0x00c6  R:3 W:0  ordered queue flags
+    uint32_t     m_pFragmentBuf;     // +0x00c8  R:3 W:8  fragment buffer
+    uint32_t     m_pFragmentState;   // +0x00cc  R:5 W:8  fragment state
+    uint8_t      m_fragmentFlags;    // +0x00ce  R:6 W:4  fragment flags
+    uint32_t     m_pReassemblyBuf;   // +0x00d0  R:2 W:7  reassembly buffer
+    uint16_t     m_reassemblyFlags;  // +0x00d2  R:0 W:1  reassembly flags
+    uint32_t     m_pChannelState;    // +0x00d4  R:3 W:7  channel state
+    uint32_t     m_pChannelConfig;   // +0x00d8  R:1 W:6  channel config
+    uint32_t     m_pFlowControl;     // +0x00dc  R:1 W:3  flow control
+    uint64_t     m_pCongestionState; // +0x00e0  R:1 W:5  congestion state
+    uint32_t     m_congestionTimer;  // +0x00e4  R:1 W:3  congestion timer
+    uint64_t     m_pKeepAliveState;  // +0x00e8  R:2 W:4  keep-alive state
+    uint32_t     m_keepAliveTimer;   // +0x00ec  R:1 W:4  keep-alive timer
+    uint8_t      m_bKeepAliveReady;  // +0x00ed  R:0 W:2  keep-alive ready
+    uint8_t      m_keepAliveFlags;   // +0x00ee  R:1 W:2  keep-alive flags
+    uint8_t      m_bKeepAliveActive; // +0x00ef  R:1 W:1  keep-alive active
+    uint64_t     m_pHeartbeatState;  // +0x00f0  R:2 W:4  heartbeat state
+    uint8_t      m_bHeartbeatValid;  // +0x00f1  R:1 W:1  heartbeat valid
+    uint16_t     m_heartbeatFlags;   // +0x00f2  R:0 W:1  heartbeat flags
+    uint32_t     m_heartbeatTimer;   // +0x00f4  R:2 W:5  heartbeat timer
+    uint32_t     m_pQoSState;        // +0x00f8  R:10 W:6  quality of service state
+    uint32_t     m_qosWriteCount;    // +0x00fc  R:0 W:4  QoS write count
+    uint32_t     m_pLatencyState;    // +0x0100  R:2 W:3  latency tracking state
+    uint32_t     m_latencyTimer;     // +0x0104  R:1 W:2  latency timer
+    uint32_t     m_pJitterBuffer;    // +0x0108  R:1 W:3  jitter buffer
+    uint32_t     m_jitterWriteCount; // +0x010c  R:0 W:3  jitter write count
+    uint32_t     m_pBandwidthState;  // +0x0110  R:2 W:3  bandwidth state
+    uint32_t     m_bandwidthTimer;   // +0x0114  R:1 W:1  bandwidth timer
+    uint64_t     m_pNATState;        // +0x0118  R:1 W:3  NAT traversal state
+    uint32_t     m_natPunchCount;    // +0x011c  R:7 W:1  NAT punch attempt count
+    uint64_t     m_pEncryptionState; // +0x0120  R:1 W:4  encryption state
+    uint32_t     m_encryptionKey;    // +0x0124  R:11 W:5  encryption key index
+    uint64_t     m_pCompressionBuf;  // +0x0128  R:8 W:4  compression buffer
+    uint32_t     m_compressionFlags; // +0x012c  R:3 W:1  compression flags
+    uint16_t     m_peerCount;        // +0x0130  R:7 W:1  peer count
+    uint16_t     m_maxPeers;         // +0x0132  R:1 W:0  max peers
+    uint16_t     m_activePeers;      // +0x0134  R:1 W:0  active peers
+    uint16_t     m_spectatorCount;   // +0x0136  R:1 W:0  spectator count
+    uint64_t     m_pHostMigration;   // +0x0138  R:1 W:1  host migration state
+    uint8_t      m_bIsHost;          // +0x0139  R:1 W:0  is-host flag
+    uint8_t      m_bIsDedicated;     // +0x013a  R:1 W:0  is-dedicated flag
+    uint32_t     m_pMigrationBuf;    // +0x0140  R:1 W:3  migration buffer
+    uint32_t     m_migrationTimer;   // +0x0144  R:0 W:2  migration timer
+    uint32_t     m_pMigrationState;  // +0x0148  R:1 W:2  migration state
+    uint64_t     m_pDisconnectBuf;   // +0x0150  R:0 W:2  disconnect buffer
+    uint64_t     m_pDisconnectState; // +0x0158  R:0 W:1  disconnect state
+    uint64_t     m_pTimeoutState;    // +0x0160  R:1 W:2  timeout state
+    uint8_t      m_bTimeoutPending;  // +0x0164  R:0 W:1  timeout pending
+    uint8_t      m_bTimeoutActive;   // +0x0168  R:0 W:1  timeout active
     uint8_t     _pad0x0178[12];
-    uint32_t     field_0x0178;  // +0x0178  R:0 W:1
-    uint32_t     field_0x017c;  // +0x017c  R:0 W:1
-    uint32_t     field_0x0180;  // +0x0180  R:0 W:1
-    uint64_t     field_0x0188;  // +0x0188  R:0 W:2
-    uint64_t     field_0x0190;  // +0x0190  R:0 W:1
-    uint16_t     field_0x0192;  // +0x0192  R:0 W:1
-    uint64_t     field_0x0198;  // +0x0198  R:0 W:2
-    uint8_t      field_0x01a0;  // +0x01a0  R:0 W:1
+    uint32_t     m_pErrorState;      // +0x0178  R:0 W:1  error state
+    uint32_t     m_errorCode;        // +0x017c  R:0 W:1  error code
+    uint32_t     m_errorFlags;       // +0x0180  R:0 W:1  error flags
+    uint64_t     m_pDebugState;      // +0x0188  R:0 W:2  debug state
+    uint64_t     m_pDebugLog;        // +0x0190  R:0 W:1  debug log pointer
+    uint16_t     m_debugLogPos;      // +0x0192  R:0 W:1  debug log position
+    uint64_t     m_pProfileState;    // +0x0198  R:0 W:2  profile state
+    uint8_t      m_bProfileActive;   // +0x01a0  R:0 W:1  profile active
     uint8_t     _pad0x01b0[12];
-    uint32_t     field_0x01b0;  // +0x01b0  R:0 W:1
-    uint32_t     field_0x01b4;  // +0x01b4  R:2 W:1
-    uint32_t     field_0x01b8;  // +0x01b8  R:0 W:2
-    uint32_t     field_0x01bc;  // +0x01bc  R:0 W:1
-    uint32_t     field_0x01c0;  // +0x01c0  R:1 W:2
-    uint8_t      field_0x01c1;  // +0x01c1  R:0 W:1
-    uint8_t      field_0x01c3;  // +0x01c3  R:0 W:1
-    uint32_t     field_0x01c4;  // +0x01c4  R:1 W:1
-    uint8_t      field_0x01c7;  // +0x01c7  R:4 W:0
-    uint32_t     field_0x01c8;  // +0x01c8  R:4 W:4
-    uint32_t     field_0x01cc;  // +0x01cc  R:0 W:1
-    uint32_t     field_0x01d0;  // +0x01d0  R:3 W:0
-    uint32_t     field_0x01d8;  // +0x01d8  R:4 W:0
+    uint32_t     m_pMatchHistory;    // +0x01b0  R:0 W:1  match history
+    uint32_t     m_matchHistoryIdx;  // +0x01b4  R:2 W:1  match history index
+    uint32_t     m_pMatchResult;     // +0x01b8  R:0 W:2  match result
+    uint32_t     m_matchResultFlags; // +0x01bc  R:0 W:1  match result flags
+    uint32_t     m_pTournamentState; // +0x01c0  R:1 W:2  tournament state
+    uint8_t      m_bTournActive;     // +0x01c1  R:0 W:1  tournament active
+    uint8_t      m_bTournReady;      // +0x01c3  R:0 W:1  tournament ready
+    uint32_t     m_pTournConfig;     // +0x01c4  R:1 W:1  tournament config
+    uint8_t      m_tournRound;       // +0x01c7  R:4 W:0  tournament round
+    uint32_t     m_pTournBracket;    // +0x01c8  R:4 W:4  tournament bracket
+    uint32_t     m_tournBracketSize; // +0x01cc  R:0 W:1  tournament bracket size
+    uint32_t     m_pRankingState;    // +0x01d0  R:3 W:0  ranking state
+    uint32_t     m_pSkillState;      // +0x01d8  R:4 W:0  skill rating state
     uint8_t     _pad0x01e8[12];
-    uint32_t     field_0x01e8;  // +0x01e8  R:1 W:0
-    uint32_t     field_0x01ec;  // +0x01ec  R:11 W:0
-    uint16_t     field_0x01f0;  // +0x01f0  R:12 W:0
-    uint32_t     field_0x01f8;  // +0x01f8  R:1 W:0
+    uint32_t     m_pSkillRating;     // +0x01e8  R:1 W:0  skill rating value
+    uint32_t     m_pNetProperties;   // +0x01ec  R:11 W:0  network properties
+    uint16_t     m_netPropertyCount; // +0x01f0  R:12 W:0  network property count
+    uint32_t     m_pPropertyCache;   // +0x01f8  R:1 W:0  property cache
     uint8_t     _pad0x020a[14];
-    uint16_t     field_0x020a;  // +0x020a  R:0 W:3
+    uint16_t     m_xuidWritePos;     // +0x020a  R:0 W:3  XUID write position
     uint8_t     _pad0x021c[14];
-    uint32_t     field_0x021c;  // +0x021c  R:2 W:0
+    uint32_t     m_pQoSProbeResult;  // +0x021c  R:2 W:0  QoS probe result
     uint8_t     _pad0x0260[64];
-    uint16_t     field_0x0260;  // +0x0260  R:2 W:0
-    uint32_t     field_0x0268;  // +0x0268  R:0 W:1
-    uint32_t     field_0x026c;  // +0x026c  R:0 W:1
-    uint8_t      field_0x0270;  // +0x0270  R:0 W:1
+    uint16_t     m_sessionMemberCnt; // +0x0260  R:2 W:0  session member count
+    uint32_t     m_pSlotAssignment;  // +0x0268  R:0 W:1  slot assignment
+    uint32_t     m_slotFlags;        // +0x026c  R:0 W:1  slot flags
+    uint8_t      m_bSlotReady;       // +0x0270  R:0 W:1  slot ready flag
     uint8_t     _pad0x027c[8];
-    uint32_t     field_0x027c;  // +0x027c  R:2 W:0
+    uint32_t     m_pArbitration;     // +0x027c  R:2 W:0  arbitration state
     uint8_t     _pad0x0288[8];
-    uint32_t     field_0x0288;  // +0x0288  R:0 W:2
+    uint32_t     m_pArbitResult;     // +0x0288  R:0 W:2  arbitration result
     uint8_t     _pad0x0294[8];
-    uint32_t     field_0x0294;  // +0x0294  R:3 W:1
-    uint32_t     field_0x0298;  // +0x0298  R:2 W:3
-    uint32_t     field_0x029c;  // +0x029c  R:0 W:1
+    uint32_t     m_pReadyCheckState; // +0x0294  R:3 W:1  ready check state
+    uint32_t     m_readyCheckTimer;  // +0x0298  R:2 W:3  ready check timer
+    uint32_t     m_readyCheckFlags;  // +0x029c  R:0 W:1  ready check flags
     uint8_t     _pad0x02bc[28];
-    uint8_t      field_0x02bc;  // +0x02bc  R:1 W:1
+    uint8_t      m_bLoadComplete;    // +0x02bc  R:1 W:1  load complete flag
     uint8_t     _pad0x02cc[12];
-    uint32_t     field_0x02cc;  // +0x02cc  R:0 W:1
+    uint32_t     m_pLoadState;       // +0x02cc  R:0 W:1  load state
     uint8_t     _pad0x02dc[12];
-    uint32_t     field_0x02dc;  // +0x02dc  R:0 W:1
-    uint8_t      field_0x02e0;  // +0x02e0  R:1 W:1
-    uint32_t     field_0x02e4;  // +0x02e4  R:0 W:1
-    uint32_t     field_0x02e8;  // +0x02e8  R:0 W:1
-    uint32_t     field_0x02ec;  // +0x02ec  R:0 W:1
-    uint8_t      field_0x02f0;  // +0x02f0  R:0 W:2
+    uint32_t     m_pStartState;      // +0x02dc  R:0 W:1  start state
+    uint8_t      m_bMatchStarted;    // +0x02e0  R:1 W:1  match started flag
+    uint32_t     m_pWarmupState;     // +0x02e4  R:0 W:1  warmup state
+    uint32_t     m_warmupTimer;      // +0x02e8  R:0 W:1  warmup timer
+    uint32_t     m_warmupFlags;      // +0x02ec  R:0 W:1  warmup flags
+    uint8_t      m_bWarmupActive;    // +0x02f0  R:0 W:2  warmup active flag
     uint8_t     _pad0x03d4[224];
-    uint8_t      field_0x03d4;  // +0x03d4  R:11 W:7
+    uint8_t      m_playerReadyMask;  // +0x03d4  R:11 W:7  player ready bitmask
     uint8_t     _pad0x03e0[8];
-    uint32_t     field_0x03e0;  // +0x03e0  R:12 W:5
-    uint8_t      field_0x03e4;  // +0x03e4  R:0 W:2
+    uint32_t     m_pServeMachine;    // +0x03e0  R:12 W:5  serve state machine
+    uint8_t      m_bServePending;    // +0x03e4  R:0 W:2  serve pending flag
     uint8_t     _pad0x03f8[16];
-    uint32_t     field_0x03f8;  // +0x03f8  R:35 W:2
-    uint32_t     field_0x0400;  // +0x0400  R:2 W:0
-    uint32_t     field_0x0404;  // +0x0404  R:71 W:1
+    uint32_t     m_pMsgDispatcher;   // +0x03f8  R:35 W:2  message dispatcher
+    uint32_t     m_dispatcherFlags;  // +0x0400  R:2 W:0  dispatcher flags
+    uint32_t     m_pMsgProcessor;    // +0x0404  R:71 W:1  message processor
     uint8_t     _pad0x0440[56];
-    uint32_t     field_0x0440;  // +0x0440  R:0 W:1
-    uint32_t     field_0x0444;  // +0x0444  R:2 W:0
-    uint32_t     field_0x0448;  // +0x0448  R:0 W:1
-    uint8_t      field_0x044d;  // +0x044d  R:0 W:1
+    uint32_t     m_pEventQueue;      // +0x0440  R:0 W:1  event queue
+    uint32_t     m_eventQueueFlags;  // +0x0444  R:2 W:0  event queue flags
+    uint32_t     m_pEventState;      // +0x0448  R:0 W:1  event state
+    uint8_t      m_bEventPending;    // +0x044d  R:0 W:1  event pending
     uint8_t     _pad0x0460[15];
-    uint8_t      field_0x0460;  // +0x0460  R:0 W:1
+    uint8_t      m_bEventActive;     // +0x0460  R:0 W:1  event active
     uint8_t     _pad0x0498[52];
-    uint32_t     field_0x0498;  // +0x0498  R:7 W:3
-    uint32_t     field_0x049c;  // +0x049c  R:0 W:1
+    uint32_t     m_pCallbackTable;   // +0x0498  R:7 W:3  callback table
+    uint32_t     m_callbackCount;    // +0x049c  R:0 W:1  callback count
     uint8_t     _pad0x04b0[16];
-    uint16_t     field_0x04b0;  // +0x04b0  R:1 W:1
-    uint16_t     field_0x04b4;  // +0x04b4  R:2 W:1
+    uint16_t     m_notifyFlags;      // +0x04b0  R:1 W:1  notification flags
+    uint16_t     m_notifyMask;       // +0x04b4  R:2 W:1  notification mask
     uint8_t     _pad0x04c0[8];
-    uint32_t     field_0x04c0;  // +0x04c0  R:7 W:3
-    uint32_t     field_0x04c4;  // +0x04c4  R:5 W:4
-    uint32_t     field_0x04c8;  // +0x04c8  R:1 W:2
-    uint16_t     field_0x04cc;  // +0x04cc  R:0 W:2
-    uint16_t     field_0x04ce;  // +0x04ce  R:0 W:2
+    uint32_t     m_pTimerManager;    // +0x04c0  R:7 W:3  timer manager
+    uint32_t     m_pTimerState;      // +0x04c4  R:5 W:4  timer state
+    uint32_t     m_timerCount;       // +0x04c8  R:1 W:2  timer count
+    uint16_t     m_timerWritePos;    // +0x04cc  R:0 W:2  timer write position
+    uint16_t     m_timerReadPos;     // +0x04ce  R:0 W:2  timer read position
     uint8_t     _pad0x0530[94];
-    uint32_t     field_0x0530;  // +0x0530  R:3 W:0
-    uint32_t     field_0x0534;  // +0x0534  R:3 W:1
-    uint32_t     field_0x0538;  // +0x0538  R:2 W:1
+    uint32_t     m_pSnSession;       // +0x0530  R:3 W:0  snSession pointer
+    uint32_t     m_pSnPeer;          // +0x0534  R:3 W:1  snPeer pointer
+    uint32_t     m_pSnChannel;       // +0x0538  R:2 W:1  snChannel pointer
     uint8_t     _pad0x0564[40];
-    uint32_t     field_0x0564;  // +0x0564  R:11 W:2
-    uint32_t     field_0x0568;  // +0x0568  R:8 W:2
-    uint8_t      field_0x056c;  // +0x056c  R:0 W:2
+    uint32_t     m_pMsgSinkTable;    // +0x0564  R:11 W:2  message sink table
+    uint32_t     m_msgSinkCount;     // +0x0568  R:8 W:2  message sink count
+    uint8_t      m_bMsgSinkActive;   // +0x056c  R:0 W:2  message sink active
     uint8_t     _pad0x059c[44];
-    uint32_t     field_0x059c;  // +0x059c  R:0 W:1
-    uint32_t     field_0x05a0;  // +0x05a0  R:0 W:1
-    uint32_t     field_0x05a4;  // +0x05a4  R:0 W:1
-    uint32_t     field_0x05a8;  // +0x05a8  R:0 W:1
-    uint32_t     field_0x05ac;  // +0x05ac  R:0 W:1
-    uint32_t     field_0x05b0;  // +0x05b0  R:0 W:1
+    uint32_t     m_pPeerSlot0;       // +0x059c  R:0 W:1  peer slot 0
+    uint32_t     m_pPeerSlot1;       // +0x05a0  R:0 W:1  peer slot 1
+    uint32_t     m_pPeerSlot2;       // +0x05a4  R:0 W:1  peer slot 2
+    uint32_t     m_pPeerSlot3;       // +0x05a8  R:0 W:1  peer slot 3
+    uint32_t     m_pPeerSlot4;       // +0x05ac  R:0 W:1  peer slot 4
+    uint32_t     m_pPeerSlot5;       // +0x05b0  R:0 W:1  peer slot 5
     uint8_t     _pad0x0664[176];
-    uint32_t     field_0x0664;  // +0x0664  R:3 W:0
-    uint32_t     field_0x0668;  // +0x0668  R:0 W:1
+    uint32_t     m_pVoiceConfig;     // +0x0664  R:3 W:0  voice config
+    uint32_t     m_pVoiceBuffer;     // +0x0668  R:0 W:1  voice buffer
     uint8_t     _pad0x06c8[92];
-    uint16_t     field_0x06c8;  // +0x06c8  R:0 W:2
+    uint16_t     m_voiceSeqNum;      // +0x06c8  R:0 W:2  voice sequence number
     uint8_t     _pad0x07c8[252];
-    uint32_t     field_0x07c8;  // +0x07c8  R:1 W:0
+    uint32_t     m_pXNetQoSResult;   // +0x07c8  R:1 W:0  XNet QoS result
     uint8_t     _pad0x0914[328];
-    uint32_t     field_0x0914;  // +0x0914  R:0 W:1
-    uint32_t     field_0x0918;  // +0x0918  R:0 W:1
-    uint32_t     field_0x091c;  // +0x091c  R:0 W:1
-    uint64_t     field_0x0920;  // +0x0920  R:0 W:1
+    uint32_t     m_pCreateParams0;   // +0x0914  R:0 W:1  create params 0
+    uint32_t     m_pCreateParams1;   // +0x0918  R:0 W:1  create params 1
+    uint32_t     m_pCreateParams2;   // +0x091c  R:0 W:1  create params 2
+    uint64_t     m_pCreateParams3;   // +0x0920  R:0 W:1  create params 3
     uint8_t     _pad0x0990[108];
-    uint32_t     field_0x0990;  // +0x0990  R:1 W:1
-    uint32_t     field_0x0998;  // +0x0998  R:0 W:1
-    uint32_t     field_0x099c;  // +0x099c  R:0 W:1
+    uint32_t     m_pJoinState;       // +0x0990  R:1 W:1  join state
+    uint32_t     m_pJoinParams0;     // +0x0998  R:0 W:1  join params 0
+    uint32_t     m_pJoinParams1;     // +0x099c  R:0 W:1  join params 1
     uint8_t     _pad0x0a54[180];
-    uint32_t     field_0x0a54;  // +0x0a54  R:0 W:1
-    uint32_t     field_0x0a58;  // +0x0a58  R:0 W:1
+    uint32_t     m_pSearchParams0;   // +0x0a54  R:0 W:1  search params 0
+    uint32_t     m_pSearchParams1;   // +0x0a58  R:0 W:1  search params 1
     uint8_t     _pad0x0aa0[68];
-    uint8_t      field_0x0aa0;  // +0x0aa0  R:1 W:0
+    uint8_t      m_bSearchComplete;  // +0x0aa0  R:1 W:0  search complete flag
     uint8_t     _pad0x0b54[176];
-    uint32_t     field_0x0b54;  // +0x0b54  R:1 W:0
-    uint32_t     field_0x0b58;  // +0x0b58  R:1 W:0
+    uint32_t     m_pResultsList;     // +0x0b54  R:1 W:0  results list
+    uint32_t     m_resultsCount;     // +0x0b58  R:1 W:0  results count
     uint8_t     _pad0x0d3c[480];
-    uint32_t     field_0x0d3c;  // +0x0d3c  R:0 W:7
-    uint32_t     field_0x0d40;  // +0x0d40  R:1 W:0
-    uint8_t      field_0x0d48;  // +0x0d48  R:2 W:1
+    uint32_t     m_pWriteStatsState; // +0x0d3c  R:0 W:7  write stats state
+    uint32_t     m_writeStatsFlags;  // +0x0d40  R:1 W:0  write stats flags
+    uint8_t      m_bStatsWriteDone;  // +0x0d48  R:2 W:1  stats write done
     uint8_t     _pad0x0d58[12];
-    uint32_t     field_0x0d58;  // +0x0d58  R:0 W:1
-    uint32_t     field_0x0d5c;  // +0x0d5c  R:1 W:2
-    uint32_t     field_0x0d60;  // +0x0d60  R:0 W:1
-    uint32_t     field_0x0d64;  // +0x0d64  R:1 W:1
-    uint32_t     field_0x0d68;  // +0x0d68  R:0 W:1
-    uint32_t     field_0x0d6c;  // +0x0d6c  R:0 W:1
-    uint32_t     field_0x0d70;  // +0x0d70  R:0 W:1
-    uint32_t     field_0x0d74;  // +0x0d74  R:0 W:1
-    uint32_t     field_0x0d78;  // +0x0d78  R:0 W:1
-    uint32_t     field_0x0d7c;  // +0x0d7c  R:0 W:1
-    uint32_t     field_0x0d84;  // +0x0d84  R:0 W:1
+    uint32_t     m_pLbWriteState;    // +0x0d58  R:0 W:1  leaderboard write state
+    uint32_t     m_pLbReadState;     // +0x0d5c  R:1 W:2  leaderboard read state
+    uint32_t     m_lbReadFlags;      // +0x0d60  R:0 W:1  leaderboard read flags
+    uint32_t     m_pLbQueryResult;   // +0x0d64  R:1 W:1  leaderboard query result
+    uint32_t     m_lbQueryFlags0;    // +0x0d68  R:0 W:1  leaderboard query flags 0
+    uint32_t     m_lbQueryFlags1;    // +0x0d6c  R:0 W:1  leaderboard query flags 1
+    uint32_t     m_lbQueryFlags2;    // +0x0d70  R:0 W:1  leaderboard query flags 2
+    uint32_t     m_lbQueryFlags3;    // +0x0d74  R:0 W:1  leaderboard query flags 3
+    uint32_t     m_lbQueryFlags4;    // +0x0d78  R:0 W:1  leaderboard query flags 4
+    uint32_t     m_lbQueryFlags5;    // +0x0d7c  R:0 W:1  leaderboard query flags 5
+    uint32_t     m_lbQueryFlags6;    // +0x0d84  R:0 W:1  leaderboard query flags 6
     uint8_t     _pad0x0d98[16];
-    uint32_t     field_0x0d98;  // +0x0d98  R:0 W:2
-    uint32_t     field_0x0d9c;  // +0x0d9c  R:5 W:4
-    uint32_t     field_0x0da0;  // +0x0da0  R:2 W:2
-    uint8_t      field_0x0da8;  // +0x0da8  R:0 W:1
-    uint8_t      field_0x0da9;  // +0x0da9  R:0 W:1
-    uint32_t     field_0x0dac;  // +0x0dac  R:0 W:1
-    uint32_t     field_0x0db0;  // +0x0db0  R:0 W:1
-    uint32_t     field_0x0db4;  // +0x0db4  R:0 W:1
-    uint8_t      field_0x0db8;  // +0x0db8  R:0 W:1
-    uint32_t     field_0x0dbc;  // +0x0dbc  R:0 W:1
+    uint32_t     m_pStatsReader;     // +0x0d98  R:0 W:2  stats reader
+    uint32_t     m_pStatsReaderCfg;  // +0x0d9c  R:5 W:4  stats reader config
+    uint32_t     m_statsReaderState; // +0x0da0  R:2 W:2  stats reader state
+    uint8_t      m_bStatsReaderDone; // +0x0da8  R:0 W:1  stats reader done
+    uint8_t      m_bStatsReaderErr;  // +0x0da9  R:0 W:1  stats reader error
+    uint32_t     m_pAchievements;    // +0x0dac  R:0 W:1  achievements state
+    uint32_t     m_pAchieveCfg;      // +0x0db0  R:0 W:1  achievement config
+    uint32_t     m_achieveFlags;     // +0x0db4  R:0 W:1  achievement flags
+    uint8_t      m_bAchieveReady;    // +0x0db8  R:0 W:1  achievement ready
+    uint32_t     m_pAchieveResult;   // +0x0dbc  R:0 W:1  achievement result
     uint8_t     _pad0x0e10[80];
-    uint16_t     field_0x0e10;  // +0x0e10  R:0 W:2
-    uint16_t     field_0x0e12;  // +0x0e12  R:0 W:2
+    uint16_t     m_inviteWritePos;   // +0x0e10  R:0 W:2  invite write position
+    uint16_t     m_inviteReadPos;    // +0x0e12  R:0 W:2  invite read position
     uint8_t     _pad0x0ea0[138];
-    uint8_t      field_0x0ea0;  // +0x0ea0  R:2 W:0
-    uint32_t     field_0x0ea8;  // +0x0ea8  R:1 W:1
+    uint8_t      m_bInviteActive;    // +0x0ea0  R:2 W:0  invite active flag
+    uint32_t     m_pInviteState;     // +0x0ea8  R:1 W:1  invite state
     uint8_t     _pad0x0eb8[12];
-    uint32_t     field_0x0eb8;  // +0x0eb8  R:0 W:1
+    uint32_t     m_pFriendState;     // +0x0eb8  R:0 W:1  friend state
     uint8_t     _pad0x0ec8[12];
-    uint32_t     field_0x0ec8;  // +0x0ec8  R:2 W:1
-    uint32_t     field_0x0ecc;  // +0x0ecc  R:1 W:1
+    uint32_t     m_pFriendList;      // +0x0ec8  R:2 W:1  friend list
+    uint32_t     m_friendCount;      // +0x0ecc  R:1 W:1  friend count
     uint8_t     _pad0x1008[312];
-    uint8_t      field_0x1008;  // +0x1008  R:4 W:2
-    uint32_t     field_0x100c;  // +0x100c  R:1 W:3
-    uint8_t      field_0x100e;  // +0x100e  R:1 W:3
-    uint8_t      field_0x100f;  // +0x100f  R:1 W:4
-    uint32_t     field_0x1010;  // +0x1010  R:1 W:6
-    uint32_t     field_0x1014;  // +0x1014  R:3 W:4
-    uint32_t     field_0x1018;  // +0x1018  R:3 W:2
-    uint32_t     field_0x101c;  // +0x101c  R:1 W:1
+    uint8_t      m_localPlayerIdx;   // +0x1008  R:4 W:2  local player index
+    uint32_t     m_pPlayerSlotMap;   // +0x100c  R:1 W:3  player slot map
+    uint8_t      m_playerSlotFlags;  // +0x100e  R:1 W:3  player slot flags
+    uint8_t      m_playerSlotCount;  // +0x100f  R:1 W:4  player slot count
+    uint32_t     m_pPlayerMapping;   // +0x1010  R:1 W:6  player mapping
+    uint32_t     m_pPlayerConfig;    // +0x1014  R:3 W:4  player config
+    uint32_t     m_playerConfigFlags;// +0x1018  R:3 W:2  player config flags
+    uint32_t     m_pPlayerProfile;   // +0x101c  R:1 W:1  player profile
     uint8_t     _pad0x1069[73];
-    uint8_t      field_0x1069;  // +0x1069  R:0 W:1
-    uint8_t      field_0x106a;  // +0x106a  R:0 W:1
+    uint8_t      m_bProfileReady;    // +0x1069  R:0 W:1  profile ready
+    uint8_t      m_bProfileValid;    // +0x106a  R:0 W:1  profile valid
     uint8_t     _pad0x10b0[66];
-    uint32_t     field_0x10b0;  // +0x10b0  R:5 W:0
-    uint8_t      field_0x10b5;  // +0x10b5  R:1 W:0
+    uint32_t     m_pSignInState;     // +0x10b0  R:5 W:0  sign-in state
+    uint8_t      m_bSignedIn;        // +0x10b5  R:1 W:0  signed in flag
     uint8_t     _pad0x1170[183];
-    uint8_t      field_0x1170;  // +0x1170  R:0 W:1
+    uint8_t      m_bSysLinkActive;   // +0x1170  R:0 W:1  system link active
     uint8_t     _pad0x1180[12];
-    uint64_t     field_0x1180;  // +0x1180  R:0 W:1
-    uint8_t      field_0x1188;  // +0x1188  R:0 W:1
+    uint64_t     m_pSysLinkSession;  // +0x1180  R:0 W:1  system link session
+    uint8_t      m_bSysLinkReady;    // +0x1188  R:0 W:1  system link ready
     uint8_t     _pad0x1198[12];
-    uint64_t     field_0x1198;  // +0x1198  R:0 W:1
+    uint64_t     m_pSysLinkPeer;     // +0x1198  R:0 W:1  system link peer
     uint8_t     _pad0x11b1[21];
-    uint8_t      field_0x11b1;  // +0x11b1  R:2 W:4
-    uint32_t     field_0x11b4;  // +0x11b4  R:0 W:4
-    uint32_t     field_0x11b8;  // +0x11b8  R:0 W:2
-    uint32_t     field_0x11bc;  // +0x11bc  R:0 W:2
-    uint16_t     field_0x11c0;  // +0x11c0  R:1 W:0
-    uint8_t      field_0x11c4;  // +0x11c4  R:1 W:0
-    uint16_t     field_0x11c6;  // +0x11c6  R:1 W:0
+    uint8_t      m_charSelectIdx;    // +0x11b1  R:2 W:4  character select index
+    uint32_t     m_pCharSelectCfg;   // +0x11b4  R:0 W:4  character select config
+    uint32_t     m_charSelectTimer;  // +0x11b8  R:0 W:2  character select timer
+    uint32_t     m_charSelectFlags;  // +0x11bc  R:0 W:2  character select flags
+    uint16_t     m_charId;           // +0x11c0  R:1 W:0  character ID
+    uint8_t      m_charSlot;         // +0x11c4  R:1 W:0  character slot
+    uint16_t     m_charCostume;      // +0x11c6  R:1 W:0  character costume
     uint8_t     _pad0x11d4[10];
-    uint8_t      field_0x11d4;  // +0x11d4  R:2 W:0
+    uint8_t      m_bCharConfirmed;   // +0x11d4  R:2 W:0  character confirmed
     uint8_t     _pad0x1214[60];
-    uint32_t     field_0x1214;  // +0x1214  R:0 W:1
-    uint32_t     field_0x1218;  // +0x1218  R:2 W:2
-    uint32_t     field_0x121c;  // +0x121c  R:3 W:2
-    uint32_t     field_0x1220;  // +0x1220  R:1 W:3
-    uint32_t     field_0x1224;  // +0x1224  R:1 W:2
-    uint8_t      field_0x1228;  // +0x1228  R:9 W:6
-    uint32_t     field_0x122c;  // +0x122c  R:1 W:2
+    uint32_t     m_pGameRulesState;  // +0x1214  R:0 W:1  game rules state
+    uint32_t     m_pGameRulesCfg;    // +0x1218  R:2 W:2  game rules config
+    uint32_t     m_pGameRulesTimer;  // +0x121c  R:3 W:2  game rules timer
+    uint32_t     m_pGameRulesFlags;  // +0x1220  R:1 W:3  game rules flags
+    uint32_t     m_pGameRulesResult; // +0x1224  R:1 W:2  game rules result
+    uint8_t      m_gameRulesMode;    // +0x1228  R:9 W:6  game rules mode
+    uint32_t     m_pGameRulesExtra;  // +0x122c  R:1 W:2  game rules extra data
     uint8_t     _pad0x15b4[900];
-    uint32_t     field_0x15b4;  // +0x15b4  R:132 W:6
-    uint32_t     field_0x15b8;  // +0x15b8  R:3 W:2
-    uint32_t     field_0x15bc;  // +0x15bc  R:4 W:0
+    uint32_t     m_pMsgHandlerTable; // +0x15b4  R:132 W:6  message handler table
+    uint32_t     m_msgHandlerCount;  // +0x15b8  R:3 W:2  message handler count
+    uint32_t     m_msgHandlerFlags;  // +0x15bc  R:4 W:0  message handler flags
     uint8_t     _pad0x15e0[32];
-    uint32_t     field_0x15e0;  // +0x15e0  R:0 W:1
+    uint32_t     m_pMsgHandlerInit;  // +0x15e0  R:0 W:1  message handler init
     uint8_t     _pad0x1754[368];
-    uint8_t      field_0x1754;  // +0x1754  R:2 W:2
-    uint8_t      field_0x1755;  // +0x1755  R:2 W:8
-    uint32_t     field_0x1758;  // +0x1758  R:2 W:1
-    uint8_t      field_0x175c;  // +0x175c  R:1 W:2
-    uint8_t      field_0x175d;  // +0x175d  R:1 W:2
-    uint32_t     field_0x1760;  // +0x1760  R:1 W:1
-    uint8_t      field_0x1764;  // +0x1764  R:0 W:1
-    uint8_t      field_0x1765;  // +0x1765  R:0 W:1
-    uint8_t      field_0x1766;  // +0x1766  R:0 W:1
-    uint8_t      field_0x1767;  // +0x1767  R:0 W:1
+    uint8_t      m_rallyPhase;       // +0x1754  R:2 W:2  rally phase
+    uint8_t      m_rallyInputState;  // +0x1755  R:2 W:8  rally input state
+    uint32_t     m_pRallyMachine;    // +0x1758  R:2 W:1  rally state machine
+    uint8_t      m_bRallyServing;    // +0x175c  R:1 W:2  rally serving flag
+    uint8_t      m_bRallyActive2;    // +0x175d  R:1 W:2  rally active flag 2
+    uint32_t     m_pRallyConfig;     // +0x1760  R:1 W:1  rally config
+    uint8_t      m_bRallyFlag0;      // +0x1764  R:0 W:1  rally flag 0
+    uint8_t      m_bRallyFlag1;      // +0x1765  R:0 W:1  rally flag 1
+    uint8_t      m_bRallyFlag2;      // +0x1766  R:0 W:1  rally flag 2
+    uint8_t      m_bRallyFlag3;      // +0x1767  R:0 W:1  rally flag 3
     uint8_t     _pad0x17b4[73];
-    uint32_t     field_0x17b4;  // +0x17b4  R:0 W:1
-    uint32_t     field_0x17bc;  // +0x17bc  R:0 W:1
-    uint32_t     field_0x17c4;  // +0x17c4  R:0 W:1
-    uint32_t     field_0x17cc;  // +0x17cc  R:0 W:1
+    uint32_t     m_pServeBuf0;       // +0x17b4  R:0 W:1  serve buffer 0
+    uint32_t     m_pServeBuf1;       // +0x17bc  R:0 W:1  serve buffer 1
+    uint32_t     m_pServeBuf2;       // +0x17c4  R:0 W:1  serve buffer 2
+    uint32_t     m_pServeBuf3;       // +0x17cc  R:0 W:1  serve buffer 3
     uint8_t     _pad0x1864[148];
-    uint32_t     field_0x1864;  // +0x1864  R:1 W:0
+    uint32_t     m_pReplayState0;    // +0x1864  R:1 W:0  replay state 0
     uint8_t     _pad0x1870[8];
-    uint32_t     field_0x1870;  // +0x1870  R:1 W:0
+    uint32_t     m_pReplayState1;    // +0x1870  R:1 W:0  replay state 1
     uint8_t     _pad0x1888[20];
-    uint32_t     field_0x1888;  // +0x1888  R:1 W:0
+    uint32_t     m_pReplayState2;    // +0x1888  R:1 W:0  replay state 2
     uint8_t     _pad0x1918[140];
-    uint32_t     field_0x1918;  // +0x1918  R:1 W:0
+    uint32_t     m_pReplayState3;    // +0x1918  R:1 W:0  replay state 3
     uint8_t     _pad0x1978[92];
-    uint8_t      field_0x1978;  // +0x1978  R:1 W:0
+    uint8_t      m_bReplayPlaying;   // +0x1978  R:1 W:0  replay playing flag
     uint8_t     _pad0x19a8[44];
-    uint32_t     field_0x19a8;  // +0x19a8  R:5 W:1
+    uint32_t     m_pScoreDisplay;    // +0x19a8  R:5 W:1  score display state
     uint8_t     _pad0x19ec[64];
-    uint32_t     field_0x19ec;  // +0x19ec  R:2 W:1
-    uint32_t     field_0x19f0;  // +0x19f0  R:2 W:2
-    uint32_t     field_0x19f4;  // +0x19f4  R:8 W:0
+    uint32_t     m_pPointState;      // +0x19ec  R:2 W:1  point state
+    uint32_t     m_pGameScore;       // +0x19f0  R:2 W:2  game score
+    uint32_t     m_pSetScore;        // +0x19f4  R:8 W:0  set score
     uint8_t     _pad0x25c8[3024];
-    uint32_t     field_0x25c8;  // +0x25c8  R:0 W:1
-    uint8_t      field_0x25cc;  // +0x25cc  R:1 W:1
+    uint32_t     m_pTrainingState;   // +0x25c8  R:0 W:1  training state
+    uint8_t      m_bTrainingActive;  // +0x25cc  R:1 W:1  training active flag
     uint8_t     _pad0x3130[2912];
-    uint32_t     field_0x3130;  // +0x3130  R:1 W:0
+    uint32_t     m_pDrillState;      // +0x3130  R:1 W:0  drill state
     uint8_t     _pad0x391c[2024];
-    uint32_t     field_0x391c;  // +0x391c  R:2 W:0
+    uint32_t     m_pExhibitionFlags; // +0x391c  R:2 W:0  exhibition flags
     uint8_t     _pad0x3944[36];
-    uint32_t     field_0x3944;  // +0x3944  R:0 W:7
-    uint32_t     field_0x3948;  // +0x3948  R:0 W:4
+    uint32_t     m_pExhibWriteState; // +0x3944  R:0 W:7  exhibition write state
+    uint32_t     m_exhibWriteCount;  // +0x3948  R:0 W:4  exhibition write count
     uint8_t     _pad0x65eb[11423];
-    uint8_t      field_0x65eb;  // +0x65eb  R:1 W:1
+    uint8_t      m_bNetworkDebugFlag;// +0x65eb  R:1 W:1  network debug flag
 
     // ── virtual methods ──
     virtual ~SinglesNetworkClient();                  // [0] @ 0x82391f98
@@ -1639,7 +1659,7 @@ struct SinglesNetworkClient {
     // ReadStringFromStream declared below with correct signature
     void UpdateNetworkTimer();
     void CheckAllPlayersReady();
-    void WriteNetworkMessageHeader(void* messageData, void* client);
+    static void WriteNetworkMessageHeader(void* messageData, void* client);
     void* PopMessageFromQueue();
     int ProcessSessions();
     void ProcessPendingMessages();
@@ -1693,12 +1713,12 @@ struct SkipReplayMessage {
 };
 
 // ── SpectatorBallHitMessage  [vtable @ 0x8206FAC8] ──────────────────────────
-struct SpectatorBallHitMessage {
-    void**      vtable;           // +0x00
+struct SpectatorBallHitMessage : public HitMessage {
+    uint8_t     m_ballHitData[192]; // +0x10 — ball hit data block
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x823b6b00
-    virtual void vfn_2();  // [2] @ 0x823b6b48
+    virtual void Deserialise(void* client);  // [2] @ 0x823b6b48
     virtual void vfn_5();  // [5] @ 0x823b67e8
     virtual void vfn_6();  // [6] @ 0x823b68d0
     virtual void vfn_7();  // [7] @ 0x823b68e0
@@ -1865,10 +1885,10 @@ struct pongLiveManager {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint32_t     field_0x0038;  // +0x0038  R:7 W:0
-    uint32_t     field_0x003c;  // +0x003c  R:7 W:0
-    uint32_t     field_0x0044;  // +0x0044  R:0 W:1
-    uint32_t     field_0x004c;  // +0x004c  R:0 W:1
+    uint32_t     m_pPeerArray;       // +0x0038  R:7 W:0  pointer to peer array
+    uint32_t     m_numPeers;         // +0x003c  R:7 W:0  number of peers in array
+    uint32_t     m_pSpectatorSlot0;  // +0x0044  R:0 W:1  spectator slot 0
+    uint32_t     m_pSpectatorSlot1;  // +0x004c  R:0 W:1  spectator slot 1
 
     // ── virtual methods ──
     virtual ~pongLiveManager();                  // [0] @ 0x823aae40
@@ -1900,171 +1920,184 @@ struct pongNetMessageHolder {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:69 W:40
-    uint8_t      field_0x0005;  // +0x0005  R:0 W:3
-    uint16_t     field_0x0006;  // +0x0006  R:9 W:19
-    uint8_t      field_0x0007;  // +0x0007  R:0 W:1
-    void*        m_pInternalArray;  // +0x0008  R:204 W:224  (pointer to array of 2 objects)
-    uint8_t      field_0x0009;  // +0x0009  R:0 W:1
-    uint8_t      field_0x000a;  // +0x000a  R:0 W:1
-    uint32_t     field_0x000c;  // +0x000c  R:85 W:92
-    uint32_t     field_0x0010;  // +0x0010  R:4 W:13
-    uint32_t     field_0x0014;  // +0x0014  R:4 W:16
-    uint8_t      field_0x0015;  // +0x0015  R:0 W:1
-    uint8_t      field_0x0016;  // +0x0016  R:0 W:1
-    uint8_t      field_0x0017;  // +0x0017  R:0 W:1
-    uint32_t     field_0x0018;  // +0x0018  R:0 W:11
-    uint8_t      field_0x0019;  // +0x0019  R:0 W:1
-    uint8_t      field_0x001a;  // +0x001a  R:0 W:1
-    uint32_t     field_0x001c;  // +0x001c  R:0 W:4
-    uint32_t     field_0x0020;  // +0x0020  R:0 W:8
-    uint32_t     field_0x0024;  // +0x0024  R:0 W:6
-    uint32_t     field_0x0028;  // +0x0028  R:0 W:9
-    uint8_t      field_0x0029;  // +0x0029  R:0 W:1
-    uint8_t      field_0x002a;  // +0x002a  R:0 W:1
-    uint32_t     field_0x002c;  // +0x002c  R:0 W:3
-    uint32_t     field_0x0030;  // +0x0030  R:0 W:9
-    uint32_t     field_0x0034;  // +0x0034  R:0 W:8
-    uint32_t     field_0x0038;  // +0x0038  R:0 W:5
-    uint8_t      field_0x0039;  // +0x0039  R:0 W:1
-    uint8_t      field_0x003a;  // +0x003a  R:0 W:1
-    uint32_t     field_0x003c;  // +0x003c  R:0 W:4
-    uint32_t     field_0x0040;  // +0x0040  R:0 W:9
-    uint32_t     field_0x0044;  // +0x0044  R:0 W:6
-    uint32_t     field_0x0048;  // +0x0048  R:0 W:9
-    uint8_t      field_0x0049;  // +0x0049  R:0 W:1
-    uint8_t      field_0x004a;  // +0x004a  R:0 W:1
-    uint32_t     field_0x004c;  // +0x004c  R:0 W:2
-    uint16_t     field_0x004e;  // +0x004e  R:0 W:2
-    uint32_t     field_0x0050;  // +0x0050  R:0 W:7
-    uint16_t     field_0x0052;  // +0x0052  R:4 W:2
-    uint32_t     field_0x0054;  // +0x0054  R:0 W:8
-    uint32_t     field_0x0058;  // +0x0058  R:0 W:6
-    uint32_t     field_0x005c;  // +0x005c  R:0 W:1
-    uint16_t     field_0x005e;  // +0x005e  R:0 W:1
-    uint32_t     field_0x0060;  // +0x0060  R:0 W:5
-    uint16_t     field_0x0062;  // +0x0062  R:2 W:2
-    uint32_t     field_0x0064;  // +0x0064  R:0 W:6
-    uint16_t     field_0x0066;  // +0x0066  R:2 W:1
-    uint32_t     field_0x0068;  // +0x0068  R:0 W:5
-    uint32_t     field_0x006c;  // +0x006c  R:0 W:1
-    uint32_t     field_0x0070;  // +0x0070  R:0 W:4
-    uint32_t     field_0x0074;  // +0x0074  R:0 W:3
-    uint16_t     field_0x0076;  // +0x0076  R:0 W:1
-    uint32_t     field_0x0078;  // +0x0078  R:0 W:5
-    uint16_t     field_0x007a;  // +0x007a  R:2 W:1
-    uint16_t     field_0x007c;  // +0x007c  R:0 W:1
-    uint32_t     field_0x0080;  // +0x0080  R:0 W:3
-    uint32_t     field_0x0084;  // +0x0084  R:0 W:4
-    uint32_t     field_0x0088;  // +0x0088  R:0 W:3
-    uint32_t     field_0x0090;  // +0x0090  R:1 W:4
-    uint32_t     field_0x0094;  // +0x0094  R:1 W:4
-    uint32_t     field_0x0098;  // +0x0098  R:0 W:3
-    uint8_t      field_0x0099;  // +0x0099  R:0 W:1
-    uint16_t     field_0x009a;  // +0x009a  R:0 W:1
-    uint16_t     field_0x009e;  // +0x009e  R:0 W:3
-    uint16_t     field_0x00a0;  // +0x00a0  R:0 W:4
-    uint16_t     field_0x00a2;  // +0x00a2  R:8 W:4
-    uint32_t     field_0x00a4;  // +0x00a4  R:2 W:5
-    uint32_t     field_0x00a8;  // +0x00a8  R:2 W:1
-    uint32_t     field_0x00ac;  // +0x00ac  R:2 W:1
+    uint32_t     m_typeId;           // +0x0004  R:69 W:40  message type identifier
+    uint8_t      m_bTypeValid;       // +0x0005  R:0 W:3  type valid flag
+    uint16_t     m_poolIndex;        // +0x0006  R:9 W:19  pool index
+    uint8_t      m_bPoolValid;       // +0x0007  R:0 W:1  pool valid flag
+    void*        m_pInternalArray;   // +0x0008  R:204 W:224  pointer to message array
+    uint8_t      m_bArrayReady;      // +0x0009  R:0 W:1  array ready flag
+    uint8_t      m_bArrayValid;      // +0x000a  R:0 W:1  array valid flag
+    uint32_t     m_refCount;         // +0x000c  R:85 W:92  reference count
+    uint32_t     m_elemSize;         // +0x0010  R:4 W:13  element size
+    uint32_t     m_elemCapacity;     // +0x0014  R:4 W:16  element capacity
+    uint8_t      m_bCapacitySet;     // +0x0015  R:0 W:1  capacity set flag
+    uint8_t      m_bCapacityValid;   // +0x0016  R:0 W:1  capacity valid flag
+    uint8_t      m_bCapacityLocked;  // +0x0017  R:0 W:1  capacity locked flag
+    // ── message slot 0 (offset +0x18) ──
+    uint32_t     m_slot0_pData;      // +0x0018  R:0 W:11  slot 0 data pointer
+    uint8_t      m_slot0_bReady;     // +0x0019  R:0 W:1  slot 0 ready flag
+    uint8_t      m_slot0_bValid;     // +0x001a  R:0 W:1  slot 0 valid flag
+    uint32_t     m_slot0_flags;      // +0x001c  R:0 W:4  slot 0 flags
+    uint32_t     m_slot0_pVtable;    // +0x0020  R:0 W:8  slot 0 vtable
+    uint32_t     m_slot0_typeId;     // +0x0024  R:0 W:6  slot 0 type ID
+    uint32_t     m_slot0_pArray;     // +0x0028  R:0 W:9  slot 0 array pointer
+    uint8_t      m_slot0_arrReady;   // +0x0029  R:0 W:1  slot 0 array ready
+    uint8_t      m_slot0_arrValid;   // +0x002a  R:0 W:1  slot 0 array valid
+    uint32_t     m_slot0_refCount;   // +0x002c  R:0 W:3  slot 0 ref count
+    uint32_t     m_slot0_elemSize;   // +0x0030  R:0 W:9  slot 0 element size
+    uint32_t     m_slot0_elemCap;    // +0x0034  R:0 W:8  slot 0 element capacity
+    uint32_t     m_slot0_extra0;     // +0x0038  R:0 W:5  slot 0 extra data 0
+    uint8_t      m_slot0_extraF0;    // +0x0039  R:0 W:1  slot 0 extra flag 0
+    uint8_t      m_slot0_extraF1;    // +0x003a  R:0 W:1  slot 0 extra flag 1
+    // ── message slot 1 (offset +0x3c) ──
+    uint32_t     m_slot1_flags;      // +0x003c  R:0 W:4  slot 1 flags
+    uint32_t     m_slot1_pVtable;    // +0x0040  R:0 W:9  slot 1 vtable
+    uint32_t     m_slot1_typeId;     // +0x0044  R:0 W:6  slot 1 type ID
+    uint32_t     m_slot1_pArray;     // +0x0048  R:0 W:9  slot 1 array pointer
+    uint8_t      m_slot1_arrReady;   // +0x0049  R:0 W:1  slot 1 array ready
+    uint8_t      m_slot1_arrValid;   // +0x004a  R:0 W:1  slot 1 array valid
+    uint32_t     m_slot1_refCount;   // +0x004c  R:0 W:2  slot 1 ref count
+    uint16_t     m_slot1_poolIdx;    // +0x004e  R:0 W:2  slot 1 pool index
+    uint32_t     m_slot1_elemSize;   // +0x0050  R:0 W:7  slot 1 element size
+    uint16_t     m_slot1_elemIdx;    // +0x0052  R:4 W:2  slot 1 element index
+    uint32_t     m_slot1_elemCap;    // +0x0054  R:0 W:8  slot 1 element capacity
+    uint32_t     m_slot1_extra0;     // +0x0058  R:0 W:6  slot 1 extra data 0
+    uint32_t     m_slot1_extra1;     // +0x005c  R:0 W:1  slot 1 extra data 1
+    uint16_t     m_slot1_extraF0;    // +0x005e  R:0 W:1  slot 1 extra flag 0
+    // ── message slot 2 (offset +0x60) ──
+    uint32_t     m_slot2_pVtable;    // +0x0060  R:0 W:5  slot 2 vtable
+    uint16_t     m_slot2_elemIdx;    // +0x0062  R:2 W:2  slot 2 element index
+    uint32_t     m_slot2_elemCap;    // +0x0064  R:0 W:6  slot 2 element capacity
+    uint16_t     m_slot2_poolIdx;    // +0x0066  R:2 W:1  slot 2 pool index
+    uint32_t     m_slot2_extra0;     // +0x0068  R:0 W:5  slot 2 extra data 0
+    uint32_t     m_slot2_extra1;     // +0x006c  R:0 W:1  slot 2 extra data 1
+    uint32_t     m_slot2_flags;      // +0x0070  R:0 W:4  slot 2 flags
+    uint32_t     m_slot2_refCount;   // +0x0074  R:0 W:3  slot 2 ref count
+    uint16_t     m_slot2_flagsB;     // +0x0076  R:0 W:1  slot 2 flags B
+    uint32_t     m_slot2_pArray;     // +0x0078  R:0 W:5  slot 2 array pointer
+    uint16_t     m_slot2_arrIdx;     // +0x007a  R:2 W:1  slot 2 array index
+    uint16_t     m_slot2_arrFlags;   // +0x007c  R:0 W:1  slot 2 array flags
+    // ── message slot 3 (offset +0x80) ──
+    uint32_t     m_slot3_pData;      // +0x0080  R:0 W:3  slot 3 data pointer
+    uint32_t     m_slot3_flags;      // +0x0084  R:0 W:4  slot 3 flags
+    uint32_t     m_slot3_refCount;   // +0x0088  R:0 W:3  slot 3 ref count
+    // ── pool management (offset +0x90) ──
+    uint32_t     m_pool0_pData;      // +0x0090  R:1 W:4  pool 0 data
+    uint32_t     m_pool0_flags;      // +0x0094  R:1 W:4  pool 0 flags
+    uint32_t     m_pool0_refCount;   // +0x0098  R:0 W:3  pool 0 ref count
+    uint8_t      m_pool0_bReady;     // +0x0099  R:0 W:1  pool 0 ready
+    uint16_t     m_pool0_poolIdx;    // +0x009a  R:0 W:1  pool 0 pool index
+    uint16_t     m_pool0_writePos;   // +0x009e  R:0 W:3  pool 0 write position
+    uint16_t     m_pool0_readPos;    // +0x00a0  R:0 W:4  pool 0 read position
+    uint16_t     m_msgActiveCount;   // +0x00a2  R:8 W:4  active message count
+    uint32_t     m_pMsgPoolState;    // +0x00a4  R:2 W:5  message pool state
+    uint32_t     m_msgPoolSize;      // +0x00a8  R:2 W:1  message pool size
+    uint32_t     m_msgPoolCapacity;  // +0x00ac  R:2 W:1  message pool capacity
     uint8_t     _pad0x00c8[24];
-    uint32_t     field_0x00c8;  // +0x00c8  R:1 W:1
-    uint32_t     field_0x00cc;  // +0x00cc  R:0 W:1
-    uint32_t     field_0x00d0;  // +0x00d0  R:1 W:2
-    uint16_t     field_0x00d2;  // +0x00d2  R:0 W:1
-    uint32_t     field_0x00d4;  // +0x00d4  R:1 W:1
-    uint16_t     field_0x00d6;  // +0x00d6  R:0 W:1
-    uint16_t     field_0x00d8;  // +0x00d8  R:0 W:1
-    uint16_t     field_0x00da;  // +0x00da  R:2 W:1
-    uint16_t     field_0x00dc;  // +0x00dc  R:0 W:1
-    uint16_t     field_0x00e0;  // +0x00e0  R:0 W:1
+    // ── repeating message type entries (240 bytes each, 50 entries) ──
+    // entry 0 @ +0xC8
+    uint32_t     m_entry0_pHandler;  // +0x00c8  R:1 W:1  entry 0 handler
+    uint32_t     m_entry0_flags;     // +0x00cc  R:0 W:1  entry 0 flags
+    uint32_t     m_entry0_pVtable;   // +0x00d0  R:1 W:2  entry 0 vtable
+    uint16_t     m_entry0_typeFlags; // +0x00d2  R:0 W:1  entry 0 type flags
+    uint32_t     m_entry0_typeId;    // +0x00d4  R:1 W:1  entry 0 type ID
+    uint16_t     m_entry0_poolIdx;   // +0x00d6  R:0 W:1  entry 0 pool index
+    uint16_t     m_entry0_seqNum;    // +0x00d8  R:0 W:1  entry 0 seq number
+    uint16_t     m_entry0_elemIdx;   // +0x00da  R:2 W:1  entry 0 element index
+    uint16_t     m_entry0_refCount;  // +0x00dc  R:0 W:1  entry 0 ref count
+    uint16_t     m_entry0_extra;     // +0x00e0  R:0 W:1  entry 0 extra
     uint8_t     _pad0x00f0[12];
-    uint16_t     field_0x00f0;  // +0x00f0  R:0 W:1
-    uint16_t     field_0x00f6;  // +0x00f6  R:0 W:1
-    uint16_t     field_0x00f8;  // +0x00f8  R:0 W:1
-    uint16_t     field_0x00fa;  // +0x00fa  R:2 W:1
-    uint16_t     field_0x00fc;  // +0x00fc  R:0 W:1
+    // entry 1 @ +0xF0
+    uint16_t     m_entry1_pHandler;  // +0x00f0  R:0 W:1  entry 1 handler
+    uint16_t     m_entry1_seqNum;    // +0x00f6  R:0 W:1  entry 1 seq number
+    uint16_t     m_entry1_typeId;    // +0x00f8  R:0 W:1  entry 1 type ID
+    uint16_t     m_entry1_elemIdx;   // +0x00fa  R:2 W:1  entry 1 element index
+    uint16_t     m_entry1_refCount;  // +0x00fc  R:0 W:1  entry 1 ref count
     uint8_t     _pad0x0120[32];
-    uint16_t     field_0x0120;  // +0x0120  R:0 W:1
+    // entry 2 @ +0x120
+    uint16_t     m_entry2_pHandler;  // +0x0120  R:0 W:1  entry 2 handler
     uint8_t     _pad0x0160[60];
-    uint32_t     field_0x0160;  // +0x0160  R:0 W:1
-    uint32_t     field_0x0164;  // +0x0164  R:0 W:1
-    uint16_t     field_0x0166;  // +0x0166  R:0 W:1
-    uint32_t     field_0x0168;  // +0x0168  R:0 W:2
-    uint16_t     field_0x016a;  // +0x016a  R:2 W:1
-    uint32_t     field_0x016c;  // +0x016c  R:0 W:2
-    uint32_t     field_0x0170;  // +0x0170  R:0 W:1
-    uint16_t     field_0x0174;  // +0x0174  R:0 W:1
-    uint8_t      field_0x0176;  // +0x0176  R:0 W:1
+    // entry 3 @ +0x160
+    uint32_t     m_entry3_pVtable;   // +0x0160  R:0 W:1  entry 3 vtable
+    uint32_t     m_entry3_flags;     // +0x0164  R:0 W:1  entry 3 flags
+    uint16_t     m_entry3_typeFlags; // +0x0166  R:0 W:1  entry 3 type flags
+    uint32_t     m_entry3_pData;     // +0x0168  R:0 W:2  entry 3 data
+    uint16_t     m_entry3_elemIdx;   // +0x016a  R:2 W:1  entry 3 element index
+    uint32_t     m_entry3_refCount;  // +0x016c  R:0 W:2  entry 3 ref count
+    uint32_t     m_entry3_typeId;    // +0x0170  R:0 W:1  entry 3 type ID
+    uint16_t     m_entry3_poolIdx;   // +0x0174  R:0 W:1  entry 3 pool index
+    uint8_t      m_entry3_bReady;    // +0x0176  R:0 W:1  entry 3 ready flag
     uint8_t     _pad0x0184[10];
-    uint8_t      field_0x0184;  // +0x0184  R:0 W:1
-    uint8_t      field_0x0185;  // +0x0185  R:0 W:1
-    uint8_t      field_0x0186;  // +0x0186  R:0 W:1
+    uint8_t      m_entry3_extraF0;   // +0x0184  R:0 W:1  entry 3 extra flag 0
+    uint8_t      m_entry3_extraF1;   // +0x0185  R:0 W:1  entry 3 extra flag 1
+    uint8_t      m_entry3_extraF2;   // +0x0186  R:0 W:1  entry 3 extra flag 2
     uint8_t     _pad0x01a8[30];
-    uint8_t      field_0x01a8;  // +0x01a8  R:2 W:1
-    uint8_t      field_0x01a9;  // +0x01a9  R:1 W:1
+    // entry 4 @ +0x1A8
+    uint8_t      m_entry4_bActive;   // +0x01a8  R:2 W:1  entry 4 active
+    uint8_t      m_entry4_bReady;    // +0x01a9  R:1 W:1  entry 4 ready
     uint8_t     _pad0x0208[91];
-    uint16_t     field_0x0208;  // +0x0208  R:0 W:1
+    // entry 5 @ +0x208
+    uint16_t     m_entry5_pHandler;  // +0x0208  R:0 W:1  entry 5 handler
     uint8_t     _pad0x024a[62];
-    uint16_t     field_0x024a;  // +0x024a  R:0 W:1
-    uint16_t     field_0x0250;  // +0x0250  R:0 W:1
-    uint16_t     field_0x0252;  // +0x0252  R:2 W:1
-    uint16_t     field_0x0254;  // +0x0254  R:0 W:1
+    // entry 6 @ +0x24A
+    uint16_t     m_entry6_pHandler;  // +0x024a  R:0 W:1  entry 6 handler
+    uint16_t     m_entry6_pVtable;   // +0x0250  R:0 W:1  entry 6 vtable
+    uint16_t     m_entry6_elemIdx;   // +0x0252  R:2 W:1  entry 6 element index
+    uint16_t     m_entry6_refCount;  // +0x0254  R:0 W:1  entry 6 ref count
     uint8_t     _pad0x027c[36];
-    uint16_t     field_0x027c;  // +0x027c  R:0 W:1
+    uint16_t     m_entry7_pHandler;  // +0x027c  R:0 W:1  entry 7 handler
     uint8_t     _pad0x0324[164];
-    uint32_t     field_0x0324;  // +0x0324  R:0 W:1
+    uint32_t     m_entry8_pData;     // +0x0324  R:0 W:1  entry 8 data
     uint8_t     _pad0x03f2[202];
-    uint16_t     field_0x03f2;  // +0x03f2  R:0 W:1
+    uint16_t     m_entry9_pHandler;  // +0x03f2  R:0 W:1  entry 9 handler
     uint8_t     _pad0x0400[10];
-    uint16_t     field_0x0400;  // +0x0400  R:0 W:1
-    uint16_t     field_0x0402;  // +0x0402  R:2 W:1
-    uint16_t     field_0x0404;  // +0x0404  R:0 W:1
+    uint16_t     m_entry10_pVtable;  // +0x0400  R:0 W:1  entry 10 vtable
+    uint16_t     m_entry10_elemIdx;  // +0x0402  R:2 W:1  entry 10 element index
+    uint16_t     m_entry10_refCnt;   // +0x0404  R:0 W:1  entry 10 ref count
     uint8_t     _pad0x0488[128];
-    uint32_t     field_0x0488;  // +0x0488  R:0 W:1
-    uint32_t     field_0x048c;  // +0x048c  R:0 W:1
+    uint32_t     m_entry11_pData;    // +0x0488  R:0 W:1  entry 11 data
+    uint32_t     m_entry11_flags;    // +0x048c  R:0 W:1  entry 11 flags
     uint8_t     _pad0x04fe[110];
-    uint16_t     field_0x04fe;  // +0x04fe  R:0 W:1
-    uint16_t     field_0x0500;  // +0x0500  R:0 W:1
-    uint16_t     field_0x0502;  // +0x0502  R:2 W:1
-    uint16_t     field_0x0504;  // +0x0504  R:0 W:1
+    uint16_t     m_entry12_pHandler; // +0x04fe  R:0 W:1  entry 12 handler
+    uint16_t     m_entry12_pVtable;  // +0x0500  R:0 W:1  entry 12 vtable
+    uint16_t     m_entry12_elemIdx;  // +0x0502  R:2 W:1  entry 12 element index
+    uint16_t     m_entry12_refCnt;   // +0x0504  R:0 W:1  entry 12 ref count
     uint8_t     _pad0x0890[904];
-    uint32_t     field_0x0890;  // +0x0890  R:0 W:1
-    uint32_t     field_0x0894;  // +0x0894  R:0 W:1
-    uint8_t      field_0x0898;  // +0x0898  R:0 W:1
+    uint32_t     m_entry13_pData;    // +0x0890  R:0 W:1  entry 13 data
+    uint32_t     m_entry13_flags;    // +0x0894  R:0 W:1  entry 13 flags
+    uint8_t      m_entry13_bReady;   // +0x0898  R:0 W:1  entry 13 ready
     uint8_t     _pad0x1c9c[5120];
-    uint32_t     field_0x1c9c;  // +0x1c9c  R:0 W:1
-    uint32_t     field_0x1ca0;  // +0x1ca0  R:0 W:1
-    uint32_t     field_0x1ca4;  // +0x1ca4  R:0 W:1
+    uint32_t     m_entry14_pData;    // +0x1c9c  R:0 W:1  entry 14 data
+    uint32_t     m_entry14_flags;    // +0x1ca0  R:0 W:1  entry 14 flags
+    uint32_t     m_entry14_refCount; // +0x1ca4  R:0 W:1  entry 14 ref count
     uint8_t     _pad0x22f2[1610];
-    uint16_t     field_0x22f2;  // +0x22f2  R:0 W:1
+    uint16_t     m_entry15_pHandler; // +0x22f2  R:0 W:1  entry 15 handler
     uint8_t     _pad0x2300[10];
-    uint16_t     field_0x2300;  // +0x2300  R:0 W:1
-    uint16_t     field_0x2302;  // +0x2302  R:2 W:1
-    uint16_t     field_0x2304;  // +0x2304  R:0 W:1
+    uint16_t     m_entry15_pVtable;  // +0x2300  R:0 W:1  entry 15 vtable
+    uint16_t     m_entry15_elemIdx;  // +0x2302  R:2 W:1  entry 15 element index
+    uint16_t     m_entry15_refCnt;   // +0x2304  R:0 W:1  entry 15 ref count
     uint8_t     _pad0x2580[632];
-    uint32_t     field_0x2580;  // +0x2580  R:0 W:1
-    uint32_t     field_0x2584;  // +0x2584  R:0 W:1
-    uint32_t     field_0x2588;  // +0x2588  R:0 W:1
+    uint32_t     m_entry16_pData;    // +0x2580  R:0 W:1  entry 16 data
+    uint32_t     m_entry16_flags;    // +0x2584  R:0 W:1  entry 16 flags
+    uint32_t     m_entry16_refCount; // +0x2588  R:0 W:1  entry 16 ref count
     uint8_t     _pad0x2600[116];
-    uint8_t      field_0x2600;  // +0x2600  R:0 W:1
-    uint32_t     field_0x2604;  // +0x2604  R:0 W:1
+    uint8_t      m_entry16_bReady;   // +0x2600  R:0 W:1  entry 16 ready
+    uint32_t     m_entry16_extra;    // +0x2604  R:0 W:1  entry 16 extra
     uint8_t     _pad0x27e0[472];
-    uint32_t     field_0x27e0;  // +0x27e0  R:0 W:1
-    uint8_t      field_0x27e4;  // +0x27e4  R:0 W:1
+    uint32_t     m_entry17_pData;    // +0x27e0  R:0 W:1  entry 17 data
+    uint8_t      m_entry17_bReady;   // +0x27e4  R:0 W:1  entry 17 ready
     uint8_t     _pad0x2ed2[1770];
-    uint16_t     field_0x2ed2;  // +0x2ed2  R:0 W:1
+    uint16_t     m_entry18_pHandler; // +0x2ed2  R:0 W:1  entry 18 handler
     uint8_t     _pad0x2ee0[10];
-    uint16_t     field_0x2ee0;  // +0x2ee0  R:0 W:1
-    uint16_t     field_0x2ee2;  // +0x2ee2  R:2 W:1
-    uint16_t     field_0x2ee4;  // +0x2ee4  R:0 W:1
+    uint16_t     m_entry18_pVtable;  // +0x2ee0  R:0 W:1  entry 18 vtable
+    uint16_t     m_entry18_elemIdx;  // +0x2ee2  R:2 W:1  entry 18 element index
+    uint16_t     m_entry18_refCnt;   // +0x2ee4  R:0 W:1  entry 18 ref count
     uint8_t     _pad0x3e72[3978];
-    uint16_t     field_0x3e72;  // +0x3e72  R:0 W:1
+    uint16_t     m_entry19_pHandler; // +0x3e72  R:0 W:1  entry 19 handler
     uint8_t     _pad0x3e80[10];
-    uint16_t     field_0x3e80;  // +0x3e80  R:0 W:1
-    uint16_t     field_0x3e82;  // +0x3e82  R:2 W:1
-    uint16_t     field_0x3e84;  // +0x3e84  R:0 W:1
+    uint16_t     m_entry19_pVtable;  // +0x3e80  R:0 W:1  entry 19 vtable
+    uint16_t     m_entry19_elemIdx;  // +0x3e82  R:2 W:1  entry 19 element index
+    uint16_t     m_entry19_refCnt;   // +0x3e84  R:0 W:1  entry 19 ref count
 
     // ── virtual methods ──
     virtual ~pongNetMessageHolder();                  // [0] @ 0x823C5788

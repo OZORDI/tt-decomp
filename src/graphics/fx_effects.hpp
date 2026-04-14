@@ -108,12 +108,17 @@ struct fxBallSplash2D {
 // ── fxBallTrail  [vtable @ 0x820571B8] ──────────────────────────
 struct fxBallTrail {
     void**      vtable;           // +0x00
+    char        _pad04[0x3C24];   // +0x04  padding
+    uint32_t    m_effectParam;    // +0x3C28 (15400) — looked-up parameter value
+    uint32_t    m_effectDuration; // +0x3C2C (15404) — effect duration
+    char        _padB430[0x7840]; // +0x3C30  padding
+    uint32_t    m_effectIntensity;// +0xB470 (46192) — effect intensity
 
     // ── virtual methods ──
     virtual ~fxBallTrail();                  // [0] @ 0x82382450
     virtual void ScalarDtor(int flags); // [1] @ 0x82382230
     virtual void vfn_2();  // [2] @ 0x82381150
-    virtual void vfn_3();  // [3] @ 0x82381208
+    virtual void SetEffectParameters(int effectIndex, uint32_t intensity, uint32_t duration);  // [3] @ 0x82381208
     virtual void vfn_4();  // [4] @ 0x82381238
     virtual void vfn_5();  // [5] @ 0x823814f8
     virtual void vfn_6();  // [6] @ 0x82381780
@@ -202,7 +207,7 @@ struct fxCrowdGfx {
     // ── virtual methods ──
     virtual ~fxCrowdGfx();                  // [0] @ 0x82385ab0
     virtual void ScalarDtor(int flags); // [1] @ 0x82385a40
-    virtual void vfn_2();  // [2] @ 0x823856e0
+    virtual void vfn_2(int flags);  // [2] @ 0x823856e0
     virtual void vfn_3();  // [3] @ 0x82385998
     virtual void vfn_4();  // [4] @ 0x823859d0
 };

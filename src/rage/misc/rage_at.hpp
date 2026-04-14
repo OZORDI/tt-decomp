@@ -6,6 +6,18 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
+ * NOTE: atSingleton below is an AGGREGATED struct — 55 different vtable
+ * instantiations (pongPlayer, pongCreature, phSimulator, gmLogicSinglesMatch,
+ * etc.) all share the "atSingleton" RTTI name due to template inheritance.
+ * Field accesses from ALL derived classes are merged here, so:
+ *   - The same offset may be a pointer in one class and a flag in another
+ *   - Sub-byte fields (e.g. +0x05, +0x06) overlap with dword fields (+0x04)
+ *   - "Mixed type" annotations (U8+U16+U32) confirm multi-class overlap
+ *
+ * The canonical atSingleton base is only ~8 bytes (vtable + flags + refCount).
+ * Everything beyond that is class-specific. See include/rage/atSingleton.hpp
+ * and src/rage/memory.hpp for the real base class definition.
+ *
  * TODO: fill return types, params, inheritance.
  *       Cross-ref recomp/structured_pass5_final/ for each method.
  */
@@ -13,6 +25,9 @@
 #include <stdint.h>
 
 // ── atSafeDLListSimple  [15 vtables — template/MI] ──────────────────────────
+// See include/rage/atList.hpp for the full documented class (28 bytes).
+// Layout: vtable(+0x00), m_pOwner(+0x04), m_pHead(+0x08), m_pTail(+0x0C),
+//         m_pParent(+0x10), m_count(+0x14), m_flags(+0x18)
 struct atSafeDLListSimple {
     void**      vtable;           // +0x00
 
@@ -21,1266 +36,1326 @@ struct atSafeDLListSimple {
 };
 
 // ── atSingleton  [55 vtables — template/MI] ──────────────────────────
+// AGGREGATED from 55+ derived classes. See file header comment.
+// Base fields (common to all instantiations):
+//   +0x00: vtable pointer
+//   +0x04: m_nFlags  (bitfield, set/cleared per-bit in vfn_5)
+//   +0x06: m_nRefCount (uint16, checked in dtor_7628/74B8)
+// Fields beyond +0x08 are class-specific overlaps.
 struct atSingleton {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint8_t      field_0x0001;  // +0x0001  R:6 W:9
-    uint16_t     field_0x0002;  // +0x0002  R:17 W:20
-    uint8_t      field_0x0003;  // +0x0003  R:6 W:6
-    uint32_t     field_0x0004;  // +0x0004  R:492 W:302
-    uint8_t      field_0x0005;  // +0x0005  R:1 W:18
-    uint16_t     field_0x0006;  // +0x0006  R:33 W:38
-    uint8_t      field_0x0007;  // +0x0007  R:0 W:3
-    uint64_t     field_0x0008;  // +0x0008  R:399 W:385
-    uint8_t      field_0x0009;  // +0x0009  R:6 W:2
-    uint16_t     field_0x000a;  // +0x000a  R:4 W:6
-    uint8_t      field_0x000b;  // +0x000b  R:0 W:1
-    uint32_t     field_0x000c;  // +0x000c  R:171 W:112
-    uint8_t      field_0x000d;  // +0x000d  R:0 W:5
-    uint16_t     field_0x000e;  // +0x000e  R:13 W:24
-    uint8_t      field_0x000f;  // +0x000f  R:0 W:1
-    uint64_t     field_0x0010;  // +0x0010  R:175 W:88
-    uint8_t      field_0x0011;  // +0x0011  R:0 W:3
-    uint16_t     field_0x0012;  // +0x0012  R:7 W:8
-    uint8_t      field_0x0013;  // +0x0013  R:1 W:1
-    uint32_t     field_0x0014;  // +0x0014  R:227 W:89
-    uint8_t      field_0x0015;  // +0x0015  R:1 W:2
-    uint16_t     field_0x0016;  // +0x0016  R:2 W:10
-    uint8_t      field_0x0017;  // +0x0017  R:0 W:1
-    uint64_t     field_0x0018;  // +0x0018  R:142 W:70
-    uint8_t      field_0x0019;  // +0x0019  R:0 W:5
-    uint16_t     field_0x001a;  // +0x001a  R:5 W:14
-    uint8_t      field_0x001b;  // +0x001b  R:0 W:6
-    uint32_t     field_0x001c;  // +0x001c  R:90 W:67
-    uint8_t      field_0x001d;  // +0x001d  R:0 W:6
-    uint16_t     field_0x001e;  // +0x001e  R:3 W:4
-    uint8_t      field_0x001f;  // +0x001f  R:0 W:2
-    uint32_t     field_0x0020;  // +0x0020  R:74 W:95
-    uint16_t     field_0x0022;  // +0x0022  R:65 W:3
-    uint8_t      field_0x0023;  // +0x0023  R:1 W:3
-    uint32_t     field_0x0024;  // +0x0024  R:79 W:51
-    uint8_t      field_0x0025;  // +0x0025  R:0 W:3
-    uint16_t     field_0x0026;  // +0x0026  R:1 W:7
-    uint64_t     field_0x0028;  // +0x0028  R:82 W:51
-    uint8_t      field_0x0029;  // +0x0029  R:0 W:1
-    uint16_t     field_0x002a;  // +0x002a  R:1 W:6
-    uint32_t     field_0x002c;  // +0x002c  R:115 W:32
-    uint8_t      field_0x002d;  // +0x002d  R:1 W:1
-    uint16_t     field_0x002e;  // +0x002e  R:0 W:4
-    uint8_t      field_0x002f;  // +0x002f  R:0 W:1
-    uint32_t     field_0x0030;  // +0x0030  R:49 W:33
-    uint8_t      field_0x0031;  // +0x0031  R:0 W:1
-    uint16_t     field_0x0032;  // +0x0032  R:1 W:3
-    uint32_t     field_0x0034;  // +0x0034  R:40 W:35
-    uint32_t     field_0x0038;  // +0x0038  R:48 W:43
-    uint32_t     field_0x003c;  // +0x003c  R:36 W:36
-    uint16_t     field_0x003e;  // +0x003e  R:0 W:1
-    uint32_t     field_0x0040;  // +0x0040  R:14 W:31
-    uint8_t      field_0x0041;  // +0x0041  R:0 W:1
-    uint16_t     field_0x0042;  // +0x0042  R:1 W:2
-    uint8_t      field_0x0043;  // +0x0043  R:0 W:1
-    uint32_t     field_0x0044;  // +0x0044  R:14 W:29
-    uint32_t     field_0x0048;  // +0x0048  R:14 W:28
-    uint16_t     field_0x004a;  // +0x004a  R:2 W:2
-    uint32_t     field_0x004c;  // +0x004c  R:22 W:29
-    uint32_t     field_0x0050;  // +0x0050  R:637 W:28
-    uint16_t     field_0x0052;  // +0x0052  R:1 W:3
-    uint32_t     field_0x0053;  // +0x0053  R:0 W:1
-    uint32_t     field_0x0054;  // +0x0054  R:24 W:34
-    uint16_t     field_0x0056;  // +0x0056  R:0 W:1
-    uint32_t     field_0x0058;  // +0x0058  R:18 W:31
-    uint16_t     field_0x005a;  // +0x005a  R:1 W:4
-    uint32_t     field_0x005c;  // +0x005c  R:15 W:28
-    uint32_t     field_0x0060;  // +0x0060  R:12 W:27
-    uint16_t     field_0x0062;  // +0x0062  R:0 W:1
-    uint32_t     field_0x0064;  // +0x0064  R:6 W:20
-    uint8_t      field_0x0065;  // +0x0065  R:1 W:1
-    uint16_t     field_0x0066;  // +0x0066  R:2 W:2
-    uint32_t     field_0x0068;  // +0x0068  R:14 W:24
-    uint8_t      field_0x0069;  // +0x0069  R:1 W:3
-    uint16_t     field_0x006a;  // +0x006a  R:0 W:5
-    uint8_t      field_0x006b;  // +0x006b  R:0 W:2
-    uint32_t     field_0x006c;  // +0x006c  R:4 W:19
-    uint8_t      field_0x006d;  // +0x006d  R:0 W:3
-    uint16_t     field_0x006e;  // +0x006e  R:5 W:4
-    uint8_t      field_0x006f;  // +0x006f  R:0 W:1
-    uint32_t     field_0x0070;  // +0x0070  R:13 W:16
-    uint8_t      field_0x0071;  // +0x0071  R:0 W:1
-    uint8_t      field_0x0072;  // +0x0072  R:0 W:1
-    uint8_t      field_0x0073;  // +0x0073  R:0 W:1
-    uint32_t     field_0x0074;  // +0x0074  R:15 W:16
-    uint16_t     field_0x0076;  // +0x0076  R:1 W:1
-    uint32_t     field_0x0078;  // +0x0078  R:15 W:9
-    uint32_t     field_0x007c;  // +0x007c  R:7 W:13
-    uint16_t     field_0x007e;  // +0x007e  R:1 W:1
-    uint32_t     field_0x0080;  // +0x0080  R:7 W:11
-    uint16_t     field_0x0082;  // +0x0082  R:1 W:0
-    uint32_t     field_0x0084;  // +0x0084  R:348 W:14
-    uint16_t     field_0x0086;  // +0x0086  R:1 W:0
-    uint32_t     field_0x0088;  // +0x0088  R:112 W:13
-    uint16_t     field_0x008a;  // +0x008a  R:1 W:0
-    uint32_t     field_0x008c;  // +0x008c  R:53 W:13
-    uint32_t     field_0x0090;  // +0x0090  R:6 W:9
-    uint32_t     field_0x0094;  // +0x0094  R:16 W:14
-    uint16_t     field_0x0096;  // +0x0096  R:11 W:8
-    uint32_t     field_0x0098;  // +0x0098  R:25 W:17
-    uint32_t     field_0x009c;  // +0x009c  R:18 W:16
-    uint32_t     field_0x00a0;  // +0x00a0  R:13 W:10
-    uint32_t     field_0x00a4;  // +0x00a4  R:20 W:11
-    uint32_t     field_0x00a8;  // +0x00a8  R:15 W:10
-    uint16_t     field_0x00aa;  // +0x00aa  R:2 W:0
-    uint32_t     field_0x00ac;  // +0x00ac  R:12 W:10
-    uint16_t     field_0x00ae;  // +0x00ae  R:2 W:0
-    uint8_t      field_0x00af;  // +0x00af  R:0 W:1
-    uint32_t     field_0x00b0;  // +0x00b0  R:33 W:7
-    uint16_t     field_0x00b2;  // +0x00b2  R:1 W:0
-    uint32_t     field_0x00b4;  // +0x00b4  R:22 W:10
-    uint16_t     field_0x00b6;  // +0x00b6  R:4 W:0
-    uint32_t     field_0x00b8;  // +0x00b8  R:29 W:8
-    uint32_t     field_0x00bc;  // +0x00bc  R:28 W:7
-    uint32_t     field_0x00c0;  // +0x00c0  R:16 W:10
-    uint32_t     field_0x00c4;  // +0x00c4  R:31 W:10
-    uint32_t     field_0x00c8;  // +0x00c8  R:134 W:10
-    uint16_t     field_0x00ca;  // +0x00ca  R:17 W:7
-    uint32_t     field_0x00cc;  // +0x00cc  R:151 W:11
-    uint8_t      field_0x00ce;  // +0x00ce  R:1 W:1
-    uint32_t     field_0x00d0;  // +0x00d0  R:34 W:17
-    uint32_t     field_0x00d4;  // +0x00d4  R:38 W:14
-    uint8_t      field_0x00d5;  // +0x00d5  R:0 W:1
-    uint8_t      field_0x00d6;  // +0x00d6  R:0 W:1
-    uint8_t      field_0x00d7;  // +0x00d7  R:0 W:1
-    uint32_t     field_0x00d8;  // +0x00d8  R:38 W:8
-    uint32_t     field_0x00dc;  // +0x00dc  R:46 W:7
-    uint8_t      field_0x00dd;  // +0x00dd  R:0 W:1
-    uint8_t      field_0x00de;  // +0x00de  R:0 W:1
-    uint32_t     field_0x00e0;  // +0x00e0  R:12 W:8
-    uint8_t      field_0x00e1;  // +0x00e1  R:0 W:1
-    uint8_t      field_0x00e2;  // +0x00e2  R:0 W:1
-    uint32_t     field_0x00e4;  // +0x00e4  R:12 W:9
-    uint8_t      field_0x00e5;  // +0x00e5  R:0 W:1
-    uint32_t     field_0x00e8;  // +0x00e8  R:10 W:9
-    uint32_t     field_0x00ec;  // +0x00ec  R:4 W:5
-    uint8_t      field_0x00ed;  // +0x00ed  R:0 W:1
-    uint16_t     field_0x00ee;  // +0x00ee  R:1 W:2
-    uint32_t     field_0x00f0;  // +0x00f0  R:6 W:5
-    uint32_t     field_0x00f4;  // +0x00f4  R:73 W:18
-    uint32_t     field_0x00f8;  // +0x00f8  R:12 W:13
-    uint32_t     field_0x00fc;  // +0x00fc  R:11 W:4
-    uint32_t     field_0x0100;  // +0x0100  R:11 W:5
-    uint8_t      field_0x0101;  // +0x0101  R:0 W:1
-    uint32_t     field_0x0104;  // +0x0104  R:4 W:7
-    uint32_t     field_0x0108;  // +0x0108  R:36 W:8
-    uint32_t     field_0x010c;  // +0x010c  R:16 W:6
-    uint32_t     field_0x0110;  // +0x0110  R:11 W:8
-    uint32_t     field_0x0114;  // +0x0114  R:15 W:10
-    uint32_t     field_0x0118;  // +0x0118  R:88 W:29
-    uint32_t     field_0x011c;  // +0x011c  R:1 W:3
-    uint32_t     field_0x0120;  // +0x0120  R:3 W:6
-    uint32_t     field_0x0124;  // +0x0124  R:6 W:12
-    uint32_t     field_0x0128;  // +0x0128  R:12 W:13
-    uint8_t      field_0x0129;  // +0x0129  R:0 W:1
-    uint32_t     field_0x012c;  // +0x012c  R:0 W:3
-    uint32_t     field_0x0130;  // +0x0130  R:7 W:9
-    uint32_t     field_0x0134;  // +0x0134  R:0 W:10
-    uint32_t     field_0x0138;  // +0x0138  R:3 W:7
-    uint16_t     field_0x013a;  // +0x013a  R:1 W:0
-    uint32_t     field_0x013c;  // +0x013c  R:5 W:8
-    uint32_t     field_0x0140;  // +0x0140  R:7 W:5
-    uint32_t     field_0x0144;  // +0x0144  R:11 W:20
-    uint32_t     field_0x0148;  // +0x0148  R:1 W:8
-    uint32_t     field_0x014c;  // +0x014c  R:4 W:16
-    uint8_t      field_0x014d;  // +0x014d  R:0 W:1
-    uint8_t      field_0x014e;  // +0x014e  R:0 W:1
-    uint32_t     field_0x0150;  // +0x0150  R:4 W:5
-    uint8_t      field_0x0151;  // +0x0151  R:0 W:1
-    uint8_t      field_0x0152;  // +0x0152  R:0 W:1
-    uint32_t     field_0x0154;  // +0x0154  R:20 W:9
-    uint32_t     field_0x0158;  // +0x0158  R:10 W:9
-    uint8_t      field_0x0159;  // +0x0159  R:0 W:1
-    uint32_t     field_0x015c;  // +0x015c  R:50 W:9
-    uint32_t     field_0x0160;  // +0x0160  R:5 W:8
-    uint32_t     field_0x0164;  // +0x0164  R:5 W:10
-    uint32_t     field_0x0168;  // +0x0168  R:9 W:6
-    uint32_t     field_0x016c;  // +0x016c  R:8 W:4
-    uint32_t     field_0x0170;  // +0x0170  R:7 W:7
-    uint32_t     field_0x0174;  // +0x0174  R:20 W:7
-    uint32_t     field_0x0178;  // +0x0178  R:13 W:7
-    uint32_t     field_0x017c;  // +0x017c  R:9 W:4
-    uint32_t     field_0x0180;  // +0x0180  R:13 W:5
-    uint16_t     field_0x0182;  // +0x0182  R:0 W:1
-    uint32_t     field_0x0184;  // +0x0184  R:10 W:4
-    uint32_t     field_0x0188;  // +0x0188  R:13 W:7
-    uint32_t     field_0x018c;  // +0x018c  R:6 W:4
-    uint32_t     field_0x0190;  // +0x0190  R:8 W:1
-    uint32_t     field_0x0194;  // +0x0194  R:27 W:1
-    uint32_t     field_0x0198;  // +0x0198  R:30 W:2
-    uint32_t     field_0x019c;  // +0x019c  R:26 W:3
-    uint32_t     field_0x01a0;  // +0x01a0  R:27 W:4
-    uint32_t     field_0x01a4;  // +0x01a4  R:3 W:4
-    uint32_t     field_0x01a8;  // +0x01a8  R:15 W:8
-    uint8_t      field_0x01ab;  // +0x01ab  R:1 W:0
-    uint32_t     field_0x01ac;  // +0x01ac  R:4 W:3
-    uint32_t     field_0x01b0;  // +0x01b0  R:1 W:3
-    uint32_t     field_0x01b4;  // +0x01b4  R:8 W:9
-    uint32_t     field_0x01b8;  // +0x01b8  R:6 W:2
-    uint32_t     field_0x01bc;  // +0x01bc  R:36 W:1
-    uint32_t     field_0x01c0;  // +0x01c0  R:19 W:5
-    uint32_t     field_0x01c4;  // +0x01c4  R:5 W:2
-    uint8_t      field_0x01c6;  // +0x01c6  R:0 W:1
-    uint8_t      field_0x01c7;  // +0x01c7  R:17 W:4
-    uint32_t     field_0x01c8;  // +0x01c8  R:27 W:19
-    uint32_t     field_0x01cc;  // +0x01cc  R:8 W:5
-    uint32_t     field_0x01d0;  // +0x01d0  R:7 W:2
-    uint32_t     field_0x01d4;  // +0x01d4  R:8 W:1
-    uint32_t     field_0x01d8;  // +0x01d8  R:2 W:1
+    // -- base atSingleton fields (common to all 55 instantiations) --
+    uint8_t      m_nFlags_b0;   // +0x0001  R:6 W:9   [byte 0 of flags, overlaps m_nFlags]
+    uint16_t     m_nFlags_h0;   // +0x0002  R:17 W:20  [halfword 0 of flags, overlaps m_nFlags]
+    uint8_t      m_nFlags_b1;   // +0x0003  R:6 W:6   [byte 1 of flags, overlaps m_nFlags]
+    uint32_t     m_nFlags;      // +0x0004  R:492 W:302 [object state bitfield, set per-bit in vfn_5]
+    uint8_t      m_nFlags_b2;   // +0x0005  R:1 W:18  [byte within flags dword]
+    uint16_t     m_nRefCount;   // +0x0006  R:33 W:38  [reference count, checked before destroy]
+    uint8_t      m_nFlags_b3;   // +0x0007  R:0 W:3   [high byte of flags dword]
+    // -- class-specific fields begin (overlapped across 55 classes) --
+    // In some classes: +0x08 is m_pData (array ptr), m_nCurrent (+0x0C), m_nNext (+0x10)
+    // In other classes: +0x08 is m_bActive (byte flag, set to 0 in vfn_4)
+    uint64_t     m_pData;       // +0x0008  R:399 W:385 [mixed: ptr/dword/byte across classes]
+    uint8_t      m_pData_b1;    // +0x0009  R:6 W:2   [byte within +0x08 dword]
+    uint16_t     m_pData_h1;    // +0x000a  R:4 W:6   [halfword within +0x08 dword]
+    uint8_t      m_pData_b3;    // +0x000b  R:0 W:1   [byte within +0x08 dword]
+    uint32_t     m_nIndex;      // +0x000c  R:171 W:112 [current index / count in array contexts]
+    uint8_t      m_nIndex_b1;   // +0x000d  R:0 W:5   [byte within +0x0C dword]
+    uint16_t     m_nIndex_h1;   // +0x000e  R:13 W:24  [halfword within +0x0C dword]
+    uint8_t      m_nIndex_b3;   // +0x000f  R:0 W:1   [byte within +0x0C dword]
+    uint64_t     m_nNext;       // +0x0010  R:175 W:88  [next-index / linked-list ptr in array contexts]
+    uint8_t      m_nNext_b1;    // +0x0011  R:0 W:3   [byte within +0x10 dword]
+    uint16_t     m_nNext_h1;    // +0x0012  R:7 W:8   [halfword within +0x10 dword]
+    uint8_t      m_nNext_b3;    // +0x0013  R:1 W:1   [byte within +0x10 dword]
+    uint32_t     m_nCapacity;   // +0x0014  R:227 W:89  [capacity / max-count in array contexts]
+    uint8_t      m_nCapacity_b1;// +0x0015  R:1 W:2   [byte within +0x14 dword]
+    uint16_t     m_nCapacity_h1;// +0x0016  R:2 W:10  [halfword within +0x14 dword]
+    uint8_t      m_nCapacity_b3;// +0x0017  R:0 W:1   [byte within +0x14 dword]
+    uint64_t     m_pAllocator;  // +0x0018  R:142 W:70  [allocator ptr / secondary data]
+    uint8_t      m_pAllocator_b1;// +0x0019 R:0 W:5   [byte within +0x18 dword]
+    uint16_t     m_pAllocator_h1;// +0x001a R:5 W:14  [halfword within +0x18 dword]
+    uint8_t      m_pAllocator_b3;// +0x001b R:0 W:6   [byte within +0x18 dword]
+    uint32_t     m_nSize;       // +0x001c  R:90 W:67  [element size / stride]
+    uint8_t      m_nSize_b1;    // +0x001d  R:0 W:6   [byte within +0x1C dword]
+    uint16_t     m_nSize_h1;    // +0x001e  R:3 W:4   [halfword within +0x1C dword]
+    uint8_t      m_nSize_b3;    // +0x001f  R:0 W:2   [byte within +0x1C dword]
+    uint32_t     m_nState;      // +0x0020  R:74 W:95  [state variable / mode]
+    uint16_t     m_nState_h1;   // +0x0022  R:65 W:3   [halfword within +0x20 dword, often read]
+    uint8_t      m_nState_b3;   // +0x0023  R:1 W:3   [byte within +0x20 dword]
+    uint32_t     m_nParam0;     // +0x0024  R:79 W:51  [parameter / config value 0]
+    uint8_t      m_nParam0_b1;  // +0x0025  R:0 W:3   [byte within +0x24 dword]
+    uint16_t     m_nParam0_h1;  // +0x0026  R:1 W:7   [halfword within +0x24 dword]
+    uint64_t     m_nParam1;     // +0x0028  R:82 W:51  [parameter / config value 1]
+    uint8_t      m_nParam1_b1;  // +0x0029  R:0 W:1   [byte within +0x28 dword]
+    uint16_t     m_nParam1_h1;  // +0x002a  R:1 W:6   [halfword within +0x28 dword]
+    uint32_t     m_nStatus;     // +0x002c  R:115 W:32  [status / result code, read-heavy]
+    uint8_t      m_nStatus_b1;  // +0x002d  R:1 W:1   [byte within +0x2C dword]
+    uint16_t     m_nStatus_h1;  // +0x002e  R:0 W:4   [halfword within +0x2C dword]
+    uint8_t      m_nStatus_b3;  // +0x002f  R:0 W:1   [byte within +0x2C dword]
+    uint32_t     m_nCounter;    // +0x0030  R:49 W:33  [counter / timer value]
+    uint8_t      m_nCounter_b1; // +0x0031  R:0 W:1   [byte within +0x30 dword]
+    uint16_t     m_nCounter_h1; // +0x0032  R:1 W:3   [halfword within +0x30 dword]
+    uint32_t     m_nSlotA;      // +0x0034  R:40 W:35  [slot / index A]
+    uint32_t     m_nSlotB;      // +0x0038  R:48 W:43  [slot / index B]
+    uint32_t     m_nSlotC;      // +0x003c  R:36 W:36  [slot / index C]
+    uint16_t     m_nSlotC_h1;   // +0x003e  R:0 W:1   [halfword within +0x3C dword]
+    uint32_t     m_nConfig0;    // +0x0040  R:14 W:31  [config / setting 0]
+    uint8_t      m_nConfig0_b1; // +0x0041  R:0 W:1   [byte within +0x40 dword]
+    uint16_t     m_nConfig0_h1; // +0x0042  R:1 W:2   [halfword within +0x40 dword]
+    uint8_t      m_nConfig0_b3; // +0x0043  R:0 W:1   [byte within +0x40 dword]
+    uint32_t     m_nConfig1;    // +0x0044  R:14 W:29  [config / setting 1]
+    uint32_t     m_nConfig2;    // +0x0048  R:14 W:28  [config / setting 2]
+    uint16_t     m_nConfig2_h1; // +0x004a  R:2 W:2   [halfword within +0x48 dword]
+    uint32_t     m_nConfig3;    // +0x004c  R:22 W:29  [config / setting 3]
+    uint32_t     m_pInstance;   // +0x0050  R:637 W:28  [instance ptr / handle, MOST READ FIELD]
+    uint16_t     m_pInstance_h1;// +0x0052  R:1 W:3   [halfword within +0x50 dword]
+    uint32_t     m_pInstance_b1;// +0x0053  R:0 W:1   [byte within +0x50 dword]
+    uint32_t     m_nOption0;    // +0x0054  R:24 W:34  [option / param]
+    uint16_t     m_nOption0_h1; // +0x0056  R:0 W:1   [halfword within +0x54 dword]
+    uint32_t     m_nOption1;    // +0x0058  R:18 W:31  [option / param]
+    uint16_t     m_nOption1_h1; // +0x005a  R:1 W:4   [halfword within +0x58 dword]
+    uint32_t     m_nOption2;    // +0x005c  R:15 W:28  [option / param]
+    uint32_t     m_nOption3;    // +0x0060  R:12 W:27  [option / param]
+    uint16_t     m_nOption3_h1; // +0x0062  R:0 W:1   [halfword within +0x60 dword]
+    uint32_t     m_nOption4;    // +0x0064  R:6 W:20  [option / param]
+    uint8_t      m_nOption4_b1; // +0x0065  R:1 W:1   [byte within +0x64 dword]
+    uint16_t     m_nOption4_h1; // +0x0066  R:2 W:2   [halfword within +0x64 dword]
+    uint32_t     m_nOption5;    // +0x0068  R:14 W:24  [option / param]
+    uint8_t      m_nOption5_b1; // +0x0069  R:1 W:3   [byte within +0x68 dword]
+    uint16_t     m_nOption5_h1; // +0x006a  R:0 W:5   [halfword within +0x68 dword]
+    uint8_t      m_nOption5_b3; // +0x006b  R:0 W:2   [byte within +0x68 dword]
+    uint32_t     m_nOption6;    // +0x006c  R:4 W:19  [option / param]
+    uint8_t      m_nOption6_b1; // +0x006d  R:0 W:3   [byte within +0x6C dword]
+    uint16_t     m_nOption6_h1; // +0x006e  R:5 W:4   [halfword within +0x6C dword]
+    uint8_t      m_nOption6_b3; // +0x006f  R:0 W:1   [byte within +0x6C dword]
+    uint32_t     m_nOption7;    // +0x0070  R:13 W:16  [option / param]
+    uint8_t      m_nOption7_b1; // +0x0071  R:0 W:1   [byte within +0x70 dword]
+    uint8_t      m_nOption7_b2; // +0x0072  R:0 W:1   [byte within +0x70 dword]
+    uint8_t      m_nOption7_b3; // +0x0073  R:0 W:1   [byte within +0x70 dword]
+    uint32_t     m_nOption8;    // +0x0074  R:15 W:16  [option / param]
+    uint16_t     m_nOption8_h1; // +0x0076  R:1 W:1   [halfword within +0x74 dword]
+    uint32_t     m_nOption9;    // +0x0078  R:15 W:9   [option / param]
+    uint32_t     m_nOptionA;    // +0x007c  R:7 W:13  [option / param]
+    uint16_t     m_nOptionA_h1; // +0x007e  R:1 W:1   [halfword within +0x7C dword]
+    uint32_t     m_nOptionB;    // +0x0080  R:7 W:11  [option / param]
+    uint16_t     m_nOptionB_h1; // +0x0082  R:1 W:0   [halfword within +0x80 dword]
+    uint32_t     m_pHandle0;    // +0x0084  R:348 W:14  [handle/ptr 0, VERY read-heavy]
+    uint16_t     m_pHandle0_h1; // +0x0086  R:1 W:0   [halfword within +0x84 dword]
+    uint32_t     m_pHandle1;    // +0x0088  R:112 W:13  [handle/ptr 1, read-heavy]
+    uint16_t     m_pHandle1_h1; // +0x008a  R:1 W:0   [halfword within +0x88 dword]
+    uint32_t     m_pHandle2;    // +0x008c  R:53 W:13  [handle/ptr 2]
+    uint32_t     m_nValue0;     // +0x0090  R:6 W:9   [generic value 0]
+    uint32_t     m_nValue1;     // +0x0094  R:16 W:14  [generic value 1]
+    uint16_t     m_nValue1_h1;  // +0x0096  R:11 W:8   [halfword within +0x94 dword]
+    uint32_t     m_nValue2;     // +0x0098  R:25 W:17  [generic value 2]
+    uint32_t     m_nValue3;     // +0x009c  R:18 W:16  [generic value 3]
+    uint32_t     m_nValue4;     // +0x00a0  R:13 W:10  [generic value 4]
+    uint32_t     m_nValue5;     // +0x00a4  R:20 W:11  [generic value 5]
+    uint32_t     m_nValue6;     // +0x00a8  R:15 W:10  [generic value 6]
+    uint16_t     m_nValue6_h1;  // +0x00aa  R:2 W:0   [halfword within +0xA8 dword]
+    uint32_t     m_nValue7;     // +0x00ac  R:12 W:10  [generic value 7]
+    uint16_t     m_nValue7_h1;  // +0x00ae  R:2 W:0   [halfword within +0xAC dword]
+    uint8_t      m_nValue7_b3;  // +0x00af  R:0 W:1   [byte within +0xAC dword]
+    uint32_t     m_pObject0;    // +0x00b0  R:33 W:7   [object ptr 0, read-heavy]
+    uint16_t     m_pObject0_h1; // +0x00b2  R:1 W:0   [halfword within +0xB0 dword]
+    uint32_t     m_pObject1;    // +0x00b4  R:22 W:10  [object ptr 1]
+    uint16_t     m_pObject1_h1; // +0x00b6  R:4 W:0   [halfword within +0xB4 dword]
+    uint32_t     m_pObject2;    // +0x00b8  R:29 W:8   [object ptr 2, read-heavy]
+    uint32_t     m_pObject3;    // +0x00bc  R:28 W:7   [object ptr 3, read-heavy]
+    uint32_t     m_pObject4;    // +0x00c0  R:16 W:10  [object ptr 4]
+    uint32_t     m_pObject5;    // +0x00c4  R:31 W:10  [object ptr 5, read-heavy]
+    uint32_t     m_pManager;    // +0x00c8  R:134 W:10  [manager ptr / key handle, VERY read-heavy]
+    uint16_t     m_pManager_h1; // +0x00ca  R:17 W:7   [halfword within +0xC8 dword]
+    uint32_t     m_pRegistry;   // +0x00cc  R:151 W:11  [registry ptr / lookup table, MOST READ after m_pInstance]
+    uint8_t      m_pRegistry_b1;// +0x00ce  R:1 W:1   [byte within +0xCC dword]
+    uint32_t     m_pCallback0;  // +0x00d0  R:34 W:17  [callback / function ptr 0]
+    uint32_t     m_pCallback1;  // +0x00d4  R:38 W:14  [callback / function ptr 1]
+    uint8_t      m_pCallback1_b1;// +0x00d5 R:0 W:1   [byte within +0xD4 dword]
+    uint8_t      m_pCallback1_b2;// +0x00d6 R:0 W:1   [byte within +0xD4 dword]
+    uint8_t      m_pCallback1_b3;// +0x00d7 R:0 W:1   [byte within +0xD4 dword]
+    uint32_t     m_pCallback2;  // +0x00d8  R:38 W:8   [callback / function ptr 2, read-heavy]
+    uint32_t     m_pCallback3;  // +0x00dc  R:46 W:7   [callback / function ptr 3, read-heavy]
+    uint8_t      m_pCallback3_b1;// +0x00dd R:0 W:1   [byte within +0xDC dword]
+    uint8_t      m_pCallback3_b2;// +0x00de R:0 W:1   [byte within +0xDC dword]
+    uint32_t     m_nTimerA;     // +0x00e0  R:12 W:8   [timer / tick value A]
+    uint8_t      m_nTimerA_b1;  // +0x00e1  R:0 W:1   [byte within +0xE0 dword]
+    uint8_t      m_nTimerA_b2;  // +0x00e2  R:0 W:1   [byte within +0xE0 dword]
+    uint32_t     m_nTimerB;     // +0x00e4  R:12 W:9   [timer / tick value B]
+    uint8_t      m_nTimerB_b1;  // +0x00e5  R:0 W:1   [byte within +0xE4 dword]
+    uint32_t     m_nTimerC;     // +0x00e8  R:10 W:9   [timer / tick value C]
+    uint32_t     m_nTimerD;     // +0x00ec  R:4 W:5   [timer / tick value D]
+    uint8_t      m_nTimerD_b1;  // +0x00ed  R:0 W:1   [byte within +0xEC dword]
+    uint16_t     m_nTimerD_h1;  // +0x00ee  R:1 W:2   [halfword within +0xEC dword]
+    uint32_t     m_nTimerE;     // +0x00f0  R:6 W:5   [timer / tick value E]
+    uint32_t     m_pContext;    // +0x00f4  R:73 W:18  [context ptr, read-heavy]
+    uint32_t     m_nFrame;      // +0x00f8  R:12 W:13  [frame / sequence number]
+    uint32_t     m_nResult0;    // +0x00fc  R:11 W:4   [result / output value 0]
+    uint32_t     m_nResult1;    // +0x0100  R:11 W:5   [result / output value 1]
+    uint8_t      m_nResult1_b1; // +0x0101  R:0 W:1   [byte within +0x100 dword]
+    uint32_t     m_nResult2;    // +0x0104  R:4 W:7   [result / output value 2]
+    uint32_t     m_pTarget;     // +0x0108  R:36 W:8   [target ptr, read-heavy]
+    uint32_t     m_pSource;     // +0x010c  R:16 W:6   [source ptr]
+    uint32_t     m_nPhase;      // +0x0110  R:11 W:8   [phase / step index]
+    uint32_t     m_nPriority;   // +0x0114  R:15 W:10  [priority / weight]
+    uint32_t     m_pOwner;      // +0x0118  R:88 W:29  [owner ptr, read-heavy]
+    uint32_t     m_nGroupId;    // +0x011c  R:1 W:3   [group / category id]
+    uint32_t     m_nLevel;      // +0x0120  R:3 W:6   [level / depth]
+    uint32_t     m_nScore;      // +0x0124  R:6 W:12  [score / accumulator]
+    uint32_t     m_nProgress;   // +0x0128  R:12 W:13 [progress / position]
+    uint8_t      m_nProgress_b1;// +0x0129  R:0 W:1   [byte within +0x128 dword]
+    uint32_t     m_nReserved12C;// +0x012c  R:0 W:3   [write-only init field]
+    uint32_t     m_nMode;       // +0x0130  R:7 W:9   [mode / operation type]
+    uint32_t     m_nPending;    // +0x0134  R:0 W:10  [pending / queued ops, write-heavy]
+    uint32_t     m_nThreshold;  // +0x0138  R:3 W:7   [threshold / limit]
+    uint16_t     m_nThreshold_h1;// +0x013a R:1 W:0   [halfword within +0x138 dword]
+    uint32_t     m_nWeight;     // +0x013c  R:5 W:8   [weight / influence]
+    uint32_t     m_nDuration;   // +0x0140  R:7 W:5   [duration / time span]
+    uint32_t     m_nAccum;      // +0x0144  R:11 W:20 [accumulator, write-heavy]
+    uint32_t     m_nDelay;      // +0x0148  R:1 W:8   [delay / offset, write-heavy]
+    uint32_t     m_nFrequency;  // +0x014c  R:4 W:16  [frequency / rate, write-heavy]
+    uint8_t      m_nFrequency_b1;// +0x014d R:0 W:1   [byte within +0x14C dword]
+    uint8_t      m_nFrequency_b2;// +0x014e R:0 W:1   [byte within +0x14C dword]
+    uint32_t     m_nInterval;   // +0x0150  R:4 W:5   [interval / period]
+    uint8_t      m_nInterval_b1;// +0x0151  R:0 W:1   [byte within +0x150 dword]
+    uint8_t      m_nInterval_b2;// +0x0152  R:0 W:1   [byte within +0x150 dword]
+    uint32_t     m_pScene;      // +0x0154  R:20 W:9  [scene ptr, read-heavy]
+    uint32_t     m_pWorld;      // +0x0158  R:10 W:9  [world ptr]
+    uint8_t      m_pWorld_b1;   // +0x0159  R:0 W:1   [byte within +0x158 dword]
+    uint32_t     m_pSystem;     // +0x015c  R:50 W:9  [system ptr, read-heavy]
+    uint32_t     m_nChannel0;   // +0x0160  R:5 W:8   [channel / slot 0]
+    uint32_t     m_nChannel1;   // +0x0164  R:5 W:10  [channel / slot 1]
+    uint32_t     m_nChannel2;   // +0x0168  R:9 W:6   [channel / slot 2]
+    uint32_t     m_nChannel3;   // +0x016c  R:8 W:4   [channel / slot 3]
+    uint32_t     m_nBucket0;    // +0x0170  R:7 W:7   [bucket / bin 0]
+    uint32_t     m_pList0;      // +0x0174  R:20 W:7  [list ptr 0, read-heavy]
+    uint32_t     m_pList1;      // +0x0178  R:13 W:7  [list ptr 1]
+    uint32_t     m_pList2;      // +0x017c  R:9 W:4   [list ptr 2]
+    uint32_t     m_pList3;      // +0x0180  R:13 W:5  [list ptr 3]
+    uint16_t     m_pList3_h1;   // +0x0182  R:0 W:1   [halfword within +0x180 dword]
+    uint32_t     m_pList4;      // +0x0184  R:10 W:4  [list ptr 4]
+    uint32_t     m_pList5;      // +0x0188  R:13 W:7  [list ptr 5]
+    uint32_t     m_pList6;      // +0x018c  R:6 W:4   [list ptr 6]
+    uint32_t     m_pTable0;     // +0x0190  R:8 W:1   [table ptr 0, read-heavy]
+    uint32_t     m_pTable1;     // +0x0194  R:27 W:1  [table ptr 1, VERY read-heavy]
+    uint32_t     m_pTable2;     // +0x0198  R:30 W:2  [table ptr 2, VERY read-heavy]
+    uint32_t     m_pTable3;     // +0x019c  R:26 W:3  [table ptr 3, VERY read-heavy]
+    uint32_t     m_pTable4;     // +0x01a0  R:27 W:4  [table ptr 4, VERY read-heavy]
+    uint32_t     m_nTableSize;  // +0x01a4  R:3 W:4   [table size / count]
+    uint32_t     m_pArray0;     // +0x01a8  R:15 W:8  [array ptr 0]
+    uint8_t      m_pArray0_b3;  // +0x01ab  R:1 W:0   [byte within +0x1A8 dword]
+    uint32_t     m_pArray1;     // +0x01ac  R:4 W:3   [array ptr 1]
+    uint32_t     m_pArray2;     // +0x01b0  R:1 W:3   [array ptr 2]
+    uint32_t     m_nTick;       // +0x01b4  R:8 W:9   [tick / timestamp]
+    uint32_t     m_nElapsed;    // +0x01b8  R:6 W:2   [elapsed time, read-heavy]
+    uint32_t     m_pLookup;     // +0x01bc  R:36 W:1  [lookup ptr, VERY read-heavy]
+    uint32_t     m_pCache;      // +0x01c0  R:19 W:5  [cache ptr, read-heavy]
+    uint32_t     m_pCache_aux;  // +0x01c4  R:5 W:2   [cache auxiliary]
+    uint8_t      m_bCacheDirty; // +0x01c6  R:0 W:1   [cache dirty flag]
+    uint8_t      m_nCacheIdx;   // +0x01c7  R:17 W:4  [cache index, read-heavy]
+    uint32_t     m_pBuffer;     // +0x01c8  R:27 W:19 [buffer ptr]
+    uint32_t     m_nBufSize;    // +0x01cc  R:8 W:5   [buffer size]
+    uint32_t     m_nBufPos;     // +0x01d0  R:7 W:2   [buffer position]
+    uint32_t     m_nBufEnd;     // +0x01d4  R:8 W:1   [buffer end, read-heavy]
+    uint32_t     m_nBufFlags;   // +0x01d8  R:2 W:1   [buffer flags]
     uint8_t     _pad0x01e4[8];
-    uint32_t     field_0x01e4;  // +0x01e4  R:6 W:0
-    uint32_t     field_0x01e8;  // +0x01e8  R:1 W:0
-    uint32_t     field_0x01ec;  // +0x01ec  R:3 W:1
-    uint8_t      field_0x01ee;  // +0x01ee  R:1 W:1
-    uint8_t      field_0x01ef;  // +0x01ef  R:3 W:0
-    uint32_t     field_0x01f0;  // +0x01f0  R:5 W:3
-    uint32_t     field_0x01f4;  // +0x01f4  R:2 W:1
-    uint32_t     field_0x01f8;  // +0x01f8  R:0 W:3
-    uint32_t     field_0x01fc;  // +0x01fc  R:1 W:0
-    uint32_t     field_0x0200;  // +0x0200  R:1 W:0
-    uint32_t     field_0x0204;  // +0x0204  R:0 W:1
-    uint32_t     field_0x0208;  // +0x0208  R:0 W:1
-    uint32_t     field_0x020c;  // +0x020c  R:0 W:2
-    uint32_t     field_0x0210;  // +0x0210  R:0 W:1
-    uint32_t     field_0x0214;  // +0x0214  R:15 W:1
-    uint32_t     field_0x021c;  // +0x021c  R:1 W:0
-    uint32_t     field_0x0224;  // +0x0224  R:12 W:4
-    uint32_t     field_0x0228;  // +0x0228  R:2 W:2
-    uint32_t     field_0x022c;  // +0x022c  R:4 W:3
-    uint32_t     field_0x0230;  // +0x0230  R:3 W:3
-    uint32_t     field_0x0234;  // +0x0234  R:2 W:3
-    uint32_t     field_0x0238;  // +0x0238  R:2 W:1
+    uint32_t     m_nPoolTag;    // +0x01e4  R:6 W:0   [pool tag / id, read-only]
+    uint32_t     m_nPoolRef;    // +0x01e8  R:1 W:0   [pool reference, read-only]
+    uint32_t     m_nPoolState;  // +0x01ec  R:3 W:1   [pool state]
+    uint8_t      m_bPoolActive; // +0x01ee  R:1 W:1   [pool active flag]
+    uint8_t      m_nPoolType;   // +0x01ef  R:3 W:0   [pool type, read-only]
+    uint32_t     m_nSegment0;   // +0x01f0  R:5 W:3   [segment / region 0]
+    uint32_t     m_nSegment1;   // +0x01f4  R:2 W:1   [segment / region 1]
+    uint32_t     m_nSegment2;   // +0x01f8  R:0 W:3   [segment / region 2, write-only]
+    uint32_t     m_nSegment3;   // +0x01fc  R:1 W:0   [segment / region 3, read-only]
+    uint32_t     m_nSegment4;   // +0x0200  R:1 W:0   [segment / region 4, read-only]
+    uint32_t     m_nSlot204;    // +0x0204  R:0 W:1   [write-only slot]
+    uint32_t     m_nSlot208;    // +0x0208  R:0 W:1   [write-only slot]
+    uint32_t     m_nSlot20C;    // +0x020c  R:0 W:2   [write-only slot]
+    uint32_t     m_nSlot210;    // +0x0210  R:0 W:1   [write-only slot]
+    uint32_t     m_pResource;   // +0x0214  R:15 W:1  [resource ptr, read-heavy]
+    uint32_t     m_nSlot21C;    // +0x021c  R:1 W:0   [read-only slot]
+    uint32_t     m_pPlayer;     // +0x0224  R:12 W:4  [player ptr, read-heavy]
+    uint32_t     m_nPlayerIdx;  // +0x0228  R:2 W:2   [player index]
+    uint32_t     m_nPlayerState;// +0x022c  R:4 W:3   [player state]
+    uint32_t     m_nRound;      // +0x0230  R:3 W:3   [round / iteration]
+    uint32_t     m_nSet;        // +0x0234  R:2 W:3   [set / group]
+    uint32_t     m_nGame;       // +0x0238  R:2 W:1   [game / match]
     uint8_t     _pad0x0242[6];
-    uint8_t      field_0x0242;  // +0x0242  R:2 W:0
-    uint16_t     field_0x0244;  // +0x0244  R:4 W:0
-    uint8_t      field_0x0245;  // +0x0245  R:2 W:2
-    uint16_t     field_0x0246;  // +0x0246  R:8 W:1
-    uint32_t     field_0x0248;  // +0x0248  R:7 W:2
+    uint8_t      m_nMatchType;  // +0x0242  R:2 W:0   [match type, read-only]
+    uint16_t     m_nMatchFlags; // +0x0244  R:4 W:0   [match flags, read-only]
+    uint8_t      m_bMatchActive;// +0x0245  R:2 W:2   [match active flag]
+    uint16_t     m_nMatchId;    // +0x0246  R:8 W:1   [match id, read-heavy]
+    uint32_t     m_pMatch;      // +0x0248  R:7 W:2   [match ptr]
     uint8_t     _pad0x0258[12];
-    uint64_t     field_0x0258;  // +0x0258  R:0 W:1
-    uint32_t     field_0x0260;  // +0x0260  R:2 W:0
+    uint64_t     m_nTimestamp0;  // +0x0258  R:0 W:1   [timestamp, write-only]
+    uint32_t     m_pEntity0;    // +0x0260  R:2 W:0   [entity ptr, read-only]
     uint8_t     _pad0x0278[20];
-    uint32_t     field_0x0278;  // +0x0278  R:6 W:0
-    uint32_t     field_0x027c;  // +0x027c  R:3 W:0
+    uint32_t     m_pEntity1;    // +0x0278  R:6 W:0   [entity ptr, read-only]
+    uint32_t     m_pEntity2;    // +0x027c  R:3 W:0   [entity ptr, read-only]
     uint8_t     _pad0x0288[8];
-    uint32_t     field_0x0288;  // +0x0288  R:6 W:0
+    uint32_t     m_pEntity3;    // +0x0288  R:6 W:0   [entity ptr, read-only]
     uint8_t     _pad0x0294[8];
-    uint32_t     field_0x0294;  // +0x0294  R:1 W:0
-    uint32_t     field_0x0298;  // +0x0298  R:2 W:0
+    uint32_t     m_nEntity4;    // +0x0294  R:1 W:0   [entity value, read-only]
+    uint32_t     m_nEntity5;    // +0x0298  R:2 W:0   [entity value, read-only]
     uint8_t     _pad0x02a4[8];
-    uint32_t     field_0x02a4;  // +0x02a4  R:1 W:1
-    uint32_t     field_0x02a8;  // +0x02a8  R:1 W:0
+    uint32_t     m_nNode0;      // +0x02a4  R:1 W:1   [node value]
+    uint32_t     m_nNode1;      // +0x02a8  R:1 W:0   [node value, read-only]
     uint8_t     _pad0x02b4[8];
-    uint32_t     field_0x02b4;  // +0x02b4  R:2 W:4
-    uint32_t     field_0x02b8;  // +0x02b8  R:4 W:1
-    uint32_t     field_0x02bc;  // +0x02bc  R:1 W:0
-    uint32_t     field_0x02c0;  // +0x02c0  R:2 W:0
-    uint32_t     field_0x02c8;  // +0x02c8  R:1 W:0
-    uint32_t     field_0x02d0;  // +0x02d0  R:2 W:1
-    uint32_t     field_0x02d4;  // +0x02d4  R:2 W:1
+    uint32_t     m_nLink0;      // +0x02b4  R:2 W:4   [link / reference, write-heavy]
+    uint32_t     m_nLink1;      // +0x02b8  R:4 W:1   [link / reference, read-heavy]
+    uint32_t     m_nLink2;      // +0x02bc  R:1 W:0   [link / reference, read-only]
+    uint32_t     m_nLink3;      // +0x02c0  R:2 W:0   [link / reference, read-only]
+    uint32_t     m_nLink4;      // +0x02c8  R:1 W:0   [link / reference, read-only]
+    uint32_t     m_nEntry0;     // +0x02d0  R:2 W:1   [entry / record 0]
+    uint32_t     m_nEntry1;     // +0x02d4  R:2 W:1   [entry / record 1]
     uint8_t     _pad0x02e4[12];
-    uint32_t     field_0x02e4;  // +0x02e4  R:1 W:2
+    uint32_t     m_nEntry2;     // +0x02e4  R:1 W:2   [entry / record 2]
     uint8_t     _pad0x02fc[20];
-    uint8_t      field_0x02fc;  // +0x02fc  R:1 W:0
-    uint8_t      field_0x02ff;  // +0x02ff  R:0 W:5
-    uint8_t      field_0x0300;  // +0x0300  R:0 W:1
-    uint32_t     field_0x0304;  // +0x0304  R:1 W:1
-    uint32_t     field_0x0308;  // +0x0308  R:8 W:6
-    uint32_t     field_0x030c;  // +0x030c  R:3 W:2
-    uint32_t     field_0x0310;  // +0x0310  R:1 W:2
-    uint32_t     field_0x0314;  // +0x0314  R:0 W:2
-    uint32_t     field_0x0318;  // +0x0318  R:0 W:2
-    uint32_t     field_0x031c;  // +0x031c  R:0 W:2
-    uint32_t     field_0x0320;  // +0x0320  R:0 W:2
-    uint32_t     field_0x0324;  // +0x0324  R:2 W:1
-    uint32_t     field_0x0328;  // +0x0328  R:0 W:1
-    uint32_t     field_0x032c;  // +0x032c  R:1 W:3
-    uint32_t     field_0x0330;  // +0x0330  R:1 W:2
-    uint32_t     field_0x0334;  // +0x0334  R:2 W:2
-    uint32_t     field_0x0338;  // +0x0338  R:2 W:3
-    uint32_t     field_0x033c;  // +0x033c  R:2 W:3
-    uint32_t     field_0x0340;  // +0x0340  R:2 W:2
-    uint32_t     field_0x0344;  // +0x0344  R:2 W:2
+    uint8_t      m_bFlag2FC;    // +0x02fc  R:1 W:0   [boolean flag, read-only]
+    uint8_t      m_bFlag2FF;    // +0x02ff  R:0 W:5   [boolean flag, write-only]
+    uint8_t      m_bFlag300;    // +0x0300  R:0 W:1   [boolean flag, write-only]
+    uint32_t     m_nNetState;   // +0x0304  R:1 W:1   [network state]
+    uint32_t     m_nNetData0;   // +0x0308  R:8 W:6   [network data 0]
+    uint32_t     m_nNetData1;   // +0x030c  R:3 W:2   [network data 1]
+    uint32_t     m_nNetData2;   // +0x0310  R:1 W:2   [network data 2]
+    uint32_t     m_nNetData3;   // +0x0314  R:0 W:2   [network data 3, write-only]
+    uint32_t     m_nNetData4;   // +0x0318  R:0 W:2   [network data 4, write-only]
+    uint32_t     m_nNetData5;   // +0x031c  R:0 W:2   [network data 5, write-only]
+    uint32_t     m_nNetData6;   // +0x0320  R:0 W:2   [network data 6, write-only]
+    uint32_t     m_nNetData7;   // +0x0324  R:2 W:1   [network data 7]
+    uint32_t     m_nNetData8;   // +0x0328  R:0 W:1   [network data 8, write-only]
+    uint32_t     m_nRankA;      // +0x032c  R:1 W:3   [ranking / stat A]
+    uint32_t     m_nRankB;      // +0x0330  R:1 W:2   [ranking / stat B]
+    uint32_t     m_nRankC;      // +0x0334  R:2 W:2   [ranking / stat C]
+    uint32_t     m_nRankD;      // +0x0338  R:2 W:3   [ranking / stat D]
+    uint32_t     m_nRankE;      // +0x033c  R:2 W:3   [ranking / stat E]
+    uint32_t     m_nRankF;      // +0x0340  R:2 W:2   [ranking / stat F]
+    uint32_t     m_nRankG;      // +0x0344  R:2 W:2   [ranking / stat G]
     uint8_t     _pad0x0360[24];
-    uint8_t      field_0x0360;  // +0x0360  R:0 W:1
-    uint32_t     field_0x0368;  // +0x0368  R:1 W:0
+    uint8_t      m_bInit360;    // +0x0360  R:0 W:1   [init flag, write-only]
+    uint32_t     m_nInit368;    // +0x0368  R:1 W:0   [init value, read-only]
     uint8_t     _pad0x05dc[624];
-    uint32_t     field_0x05dc;  // +0x05dc  R:0 W:1
+    uint32_t     m_nInit5DC;    // +0x05dc  R:0 W:1   [init value, write-only]
     uint8_t     _pad0x06d0[240];
-    uint32_t     field_0x06d0;  // +0x06d0  R:1 W:1
-    uint32_t     field_0x06d4;  // +0x06d4  R:34 W:1
-    uint32_t     field_0x06d8;  // +0x06d8  R:2 W:1
-    uint32_t     field_0x06dc;  // +0x06dc  R:9 W:1
-    uint32_t     field_0x06e0;  // +0x06e0  R:110 W:4
-    uint32_t     field_0x06e4;  // +0x06e4  R:84 W:2
-    uint32_t     field_0x06e8;  // +0x06e8  R:21 W:4
-    uint32_t     field_0x06ec;  // +0x06ec  R:11 W:2
-    uint32_t     field_0x06f0;  // +0x06f0  R:7 W:2
-    uint32_t     field_0x06f4;  // +0x06f4  R:8 W:3
-    uint32_t     field_0x06f8;  // +0x06f8  R:10 W:5
-    uint32_t     field_0x06fc;  // +0x06fc  R:2 W:2
-    uint32_t     field_0x0700;  // +0x0700  R:3 W:2
-    uint32_t     field_0x0704;  // +0x0704  R:3 W:2
-    uint32_t     field_0x0708;  // +0x0708  R:4 W:2
-    uint32_t     field_0x070c;  // +0x070c  R:6 W:2
-    uint32_t     field_0x0710;  // +0x0710  R:6 W:2
-    uint32_t     field_0x0714;  // +0x0714  R:3 W:4
-    uint32_t     field_0x0718;  // +0x0718  R:3 W:4
-    uint32_t     field_0x071c;  // +0x071c  R:4 W:6
-    uint32_t     field_0x0720;  // +0x0720  R:3 W:3
-    uint32_t     field_0x0724;  // +0x0724  R:3 W:3
-    uint32_t     field_0x0728;  // +0x0728  R:3 W:3
-    uint32_t     field_0x072c;  // +0x072c  R:3 W:3
-    uint32_t     field_0x0730;  // +0x0730  R:4 W:6
-    uint32_t     field_0x0734;  // +0x0734  R:4 W:6
-    uint32_t     field_0x0738;  // +0x0738  R:3 W:7
-    uint32_t     field_0x073c;  // +0x073c  R:3 W:3
-    uint32_t     field_0x0740;  // +0x0740  R:3 W:3
-    uint32_t     field_0x0744;  // +0x0744  R:2 W:3
-    uint32_t     field_0x0748;  // +0x0748  R:2 W:2
-    uint32_t     field_0x074c;  // +0x074c  R:8 W:1
-    uint32_t     field_0x0750;  // +0x0750  R:1 W:1
-    uint32_t     field_0x0754;  // +0x0754  R:3 W:2
-    uint32_t     field_0x0758;  // +0x0758  R:3 W:2
-    uint32_t     field_0x075c;  // +0x075c  R:25 W:1
-    uint32_t     field_0x0760;  // +0x0760  R:23 W:1
-    uint32_t     field_0x0764;  // +0x0764  R:3 W:1
-    uint32_t     field_0x0768;  // +0x0768  R:3 W:1
-    uint32_t     field_0x076c;  // +0x076c  R:4 W:4
-    uint32_t     field_0x0770;  // +0x0770  R:6 W:4
-    uint32_t     field_0x0774;  // +0x0774  R:6 W:4
-    uint32_t     field_0x0778;  // +0x0778  R:12 W:4
-    uint32_t     field_0x077c;  // +0x077c  R:0 W:1
-    uint32_t     field_0x0780;  // +0x0780  R:1 W:2
-    uint32_t     field_0x0784;  // +0x0784  R:3 W:0
-    uint32_t     field_0x0788;  // +0x0788  R:2 W:6
-    uint32_t     field_0x078c;  // +0x078c  R:2 W:5
-    uint32_t     field_0x0790;  // +0x0790  R:2 W:2
+    // -- physics / simulation subsystem fields (0x06D0-0x07A4) --
+    // These offsets are heavily accessed (R:110 at +0x06E0, R:84 at +0x06E4)
+    // and likely belong to phSimulator or phLevelNew instances.
+    uint32_t     m_nSimState;   // +0x06d0  R:1 W:1   [simulation state]
+    uint32_t     m_pSimData;    // +0x06d4  R:34 W:1  [simulation data ptr, read-heavy]
+    uint32_t     m_nSimType;    // +0x06d8  R:2 W:1   [simulation type]
+    uint32_t     m_nSimCount;   // +0x06dc  R:9 W:1   [simulation element count]
+    uint32_t     m_pSimWorld;   // +0x06e0  R:110 W:4 [simulation world ptr, EXTREMELY read-heavy]
+    uint32_t     m_pSimScene;   // +0x06e4  R:84 W:2  [simulation scene ptr, VERY read-heavy]
+    uint32_t     m_pSimBody0;   // +0x06e8  R:21 W:4  [simulation body ptr 0]
+    uint32_t     m_pSimBody1;   // +0x06ec  R:11 W:2  [simulation body ptr 1]
+    uint32_t     m_pSimBody2;   // +0x06f0  R:7 W:2   [simulation body ptr 2]
+    uint32_t     m_pSimBody3;   // +0x06f4  R:8 W:3   [simulation body ptr 3]
+    uint32_t     m_pSimBody4;   // +0x06f8  R:10 W:5  [simulation body ptr 4]
+    uint32_t     m_nSimParam0;  // +0x06fc  R:2 W:2   [simulation param 0]
+    uint32_t     m_nSimParam1;  // +0x0700  R:3 W:2   [simulation param 1]
+    uint32_t     m_nSimParam2;  // +0x0704  R:3 W:2   [simulation param 2]
+    uint32_t     m_nSimParam3;  // +0x0708  R:4 W:2   [simulation param 3]
+    uint32_t     m_nSimParam4;  // +0x070c  R:6 W:2   [simulation param 4]
+    uint32_t     m_nSimParam5;  // +0x0710  R:6 W:2   [simulation param 5]
+    uint32_t     m_nSimCtrl0;   // +0x0714  R:3 W:4   [simulation control 0]
+    uint32_t     m_nSimCtrl1;   // +0x0718  R:3 W:4   [simulation control 1]
+    uint32_t     m_nSimCtrl2;   // +0x071c  R:4 W:6   [simulation control 2, write-heavy]
+    uint32_t     m_nSimCtrl3;   // +0x0720  R:3 W:3   [simulation control 3]
+    uint32_t     m_nSimCtrl4;   // +0x0724  R:3 W:3   [simulation control 4]
+    uint32_t     m_nSimCtrl5;   // +0x0728  R:3 W:3   [simulation control 5]
+    uint32_t     m_nSimCtrl6;   // +0x072c  R:3 W:3   [simulation control 6]
+    uint32_t     m_fSimForce0;  // +0x0730  R:4 W:6   [simulation force 0, write-heavy]
+    uint32_t     m_fSimForce1;  // +0x0734  R:4 W:6   [simulation force 1, write-heavy]
+    uint32_t     m_fSimForce2;  // +0x0738  R:3 W:7   [simulation force 2, write-heavy]
+    uint32_t     m_fSimForce3;  // +0x073c  R:3 W:3   [simulation force 3]
+    uint32_t     m_fSimForce4;  // +0x0740  R:3 W:3   [simulation force 4]
+    uint32_t     m_fSimForce5;  // +0x0744  R:2 W:3   [simulation force 5]
+    uint32_t     m_fSimForce6;  // +0x0748  R:2 W:2   [simulation force 6]
+    uint32_t     m_pSimCollider;// +0x074c  R:8 W:1   [simulation collider ptr, read-heavy]
+    uint32_t     m_nSimStep;    // +0x0750  R:1 W:1   [simulation step]
+    uint32_t     m_nSimIter0;   // +0x0754  R:3 W:2   [simulation iteration 0]
+    uint32_t     m_nSimIter1;   // +0x0758  R:3 W:2   [simulation iteration 1]
+    uint32_t     m_pSimGravity; // +0x075c  R:25 W:1  [simulation gravity ptr, VERY read-heavy]
+    uint32_t     m_pSimFriction;// +0x0760  R:23 W:1  [simulation friction ptr, VERY read-heavy]
+    uint32_t     m_nSimMask0;   // +0x0764  R:3 W:1   [simulation collision mask 0]
+    uint32_t     m_nSimMask1;   // +0x0768  R:3 W:1   [simulation collision mask 1]
+    uint32_t     m_fSimVel0;    // +0x076c  R:4 W:4   [simulation velocity 0]
+    uint32_t     m_fSimVel1;    // +0x0770  R:6 W:4   [simulation velocity 1]
+    uint32_t     m_fSimVel2;    // +0x0774  R:6 W:4   [simulation velocity 2]
+    uint32_t     m_fSimVel3;    // +0x0778  R:12 W:4  [simulation velocity 3, read-heavy]
+    uint32_t     m_nSimInit;    // +0x077c  R:0 W:1   [simulation init, write-only]
+    uint32_t     m_nSimReset;   // +0x0780  R:1 W:2   [simulation reset trigger]
+    uint32_t     m_pSimMaterial;// +0x0784  R:3 W:0   [simulation material ptr, read-only]
+    uint32_t     m_fSimAccel0;  // +0x0788  R:2 W:6   [simulation acceleration 0, write-heavy]
+    uint32_t     m_fSimAccel1;  // +0x078c  R:2 W:5   [simulation acceleration 1, write-heavy]
+    uint32_t     m_fSimAccel2;  // +0x0790  R:2 W:2   [simulation acceleration 2]
     uint8_t     _pad0x079c[8];
-    uint32_t     field_0x079c;  // +0x079c  R:4 W:2
-    uint32_t     field_0x07a0;  // +0x07a0  R:4 W:2
-    uint32_t     field_0x07a4;  // +0x07a4  R:11 W:2
+    uint32_t     m_fSimDamp0;   // +0x079c  R:4 W:2   [simulation damping 0]
+    uint32_t     m_fSimDamp1;   // +0x07a0  R:4 W:2   [simulation damping 1]
+    uint32_t     m_pSimConstraint;// +0x07a4 R:11 W:2  [simulation constraint ptr, read-heavy]
     uint8_t     _pad0x07e4[60];
-    uint32_t     field_0x07e4;  // +0x07e4  R:0 W:1
+    uint32_t     m_nRenderInit; // +0x07e4  R:0 W:1   [render init, write-only]
     uint8_t     _pad0x0818[48];
-    uint32_t     field_0x0818;  // +0x0818  R:1 W:8
-    uint32_t     field_0x081c;  // +0x081c  R:4 W:1
-    uint32_t     field_0x0820;  // +0x0820  R:5 W:1
+    // -- render / graphics subsystem fields --
+    uint32_t     m_nRenderCmd;  // +0x0818  R:1 W:8   [render command, write-heavy]
+    uint32_t     m_pRenderTarget;// +0x081c R:4 W:1   [render target ptr, read-heavy]
+    uint32_t     m_pRenderSrc;  // +0x0820  R:5 W:1   [render source ptr, read-heavy]
     uint8_t     _pad0x0834[16];
-    uint32_t     field_0x0834;  // +0x0834  R:2 W:0
-    uint8_t      field_0x083c;  // +0x083c  R:2 W:0
-    uint32_t     field_0x0840;  // +0x0840  R:1 W:0
-    uint8_t      field_0x0848;  // +0x0848  R:1 W:0
-    uint32_t     field_0x084c;  // +0x084c  R:4 W:9
+    uint32_t     m_pTexture0;   // +0x0834  R:2 W:0   [texture ptr, read-only]
+    uint8_t      m_bTexLoaded;  // +0x083c  R:2 W:0   [texture loaded flag, read-only]
+    uint32_t     m_pTexture1;   // +0x0840  R:1 W:0   [texture ptr, read-only]
+    uint8_t      m_bTexValid;   // +0x0848  R:1 W:0   [texture valid flag, read-only]
+    uint32_t     m_nShadowCfg;  // +0x084c  R:4 W:9   [shadow config, write-heavy]
     uint8_t     _pad0x08c8[120];
-    uint32_t     field_0x08c8;  // +0x08c8  R:0 W:1
-    uint32_t     field_0x08cc;  // +0x08cc  R:0 W:1
-    uint32_t     field_0x08d0;  // +0x08d0  R:0 W:1
-    uint32_t     field_0x08d4;  // +0x08d4  R:0 W:1
+    // -- shadow / post-process subsystem fields (0x08C8-0x0968) --
+    uint32_t     m_nShadowParam0;  // +0x08c8  R:0 W:1   [shadow param, write-only init]
+    uint32_t     m_nShadowParam1;  // +0x08cc  R:0 W:1   [shadow param, write-only init]
+    uint32_t     m_nShadowParam2;  // +0x08d0  R:0 W:1   [shadow param, write-only init]
+    uint32_t     m_nShadowParam3;  // +0x08d4  R:0 W:1   [shadow param, write-only init]
     uint8_t     _pad0x0938[96];
-    uint32_t     field_0x0938;  // +0x0938  R:15 W:8
-    uint32_t     field_0x093c;  // +0x093c  R:0 W:2
-    uint32_t     field_0x0940;  // +0x0940  R:0 W:2
-    uint32_t     field_0x0944;  // +0x0944  R:0 W:2
-    uint32_t     field_0x0948;  // +0x0948  R:0 W:2
-    uint32_t     field_0x094c;  // +0x094c  R:0 W:11
-    uint32_t     field_0x0950;  // +0x0950  R:0 W:11
-    uint32_t     field_0x0954;  // +0x0954  R:0 W:11
-    uint32_t     field_0x0958;  // +0x0958  R:0 W:11
-    uint32_t     field_0x095c;  // +0x095c  R:0 W:4
-    uint32_t     field_0x0960;  // +0x0960  R:0 W:4
-    uint32_t     field_0x0964;  // +0x0964  R:0 W:4
-    uint32_t     field_0x0968;  // +0x0968  R:0 W:5
+    uint32_t     m_pEffectCtrl;    // +0x0938  R:15 W:8  [effect controller ptr/handle]
+    uint32_t     m_nEffectParam0;  // +0x093c  R:0 W:2   [effect param, write-only]
+    uint32_t     m_nEffectParam1;  // +0x0940  R:0 W:2   [effect param, write-only]
+    uint32_t     m_nEffectParam2;  // +0x0944  R:0 W:2   [effect param, write-only]
+    uint32_t     m_nEffectParam3;  // +0x0948  R:0 W:2   [effect param, write-only]
+    uint32_t     m_fEffectVec0;    // +0x094c  R:0 W:11  [effect vector X, write-heavy]
+    uint32_t     m_fEffectVec1;    // +0x0950  R:0 W:11  [effect vector Y, write-heavy]
+    uint32_t     m_fEffectVec2;    // +0x0954  R:0 W:11  [effect vector Z, write-heavy]
+    uint32_t     m_fEffectVec3;    // +0x0958  R:0 W:11  [effect vector W, write-heavy]
+    uint32_t     m_nEffectMask0;   // +0x095c  R:0 W:4   [effect mask 0, write-only]
+    uint32_t     m_nEffectMask1;   // +0x0960  R:0 W:4   [effect mask 1, write-only]
+    uint32_t     m_nEffectMask2;   // +0x0964  R:0 W:4   [effect mask 2, write-only]
+    uint32_t     m_nEffectBlend;   // +0x0968  R:0 W:5   [effect blend, write-heavy]
     uint8_t     _pad0x099c[48];
-    uint32_t     field_0x099c;  // +0x099c  R:3 W:3
+    uint32_t     m_nAudioCtrl;  // +0x099c  R:3 W:3   [audio control]
     uint8_t     _pad0x09c0[32];
-    uint32_t     field_0x09c0;  // +0x09c0  R:0 W:1
-    uint32_t     field_0x09c4;  // +0x09c4  R:6 W:3
+    uint32_t     m_nAudioInit;  // +0x09c0  R:0 W:1   [audio init, write-only]
+    uint32_t     m_pAudioBus;   // +0x09c4  R:6 W:3   [audio bus ptr]
     uint8_t     _pad0x09ec[36];
-    uint32_t     field_0x09ec;  // +0x09ec  R:3 W:3
+    uint32_t     m_nAudioMix;   // +0x09ec  R:3 W:3   [audio mix level]
     uint8_t     _pad0x0a50[96];
-    uint32_t     field_0x0a50;  // +0x0a50  R:0 W:1
+    uint32_t     m_nInitA50;    // +0x0a50  R:0 W:1   [init, write-only]
     uint8_t     _pad0x0ac4[112];
-    uint32_t     field_0x0ac4;  // +0x0ac4  R:0 W:1
-    uint32_t     field_0x0ac8;  // +0x0ac8  R:0 W:1
-    uint32_t     field_0x0acc;  // +0x0acc  R:0 W:1
-    uint32_t     field_0x0ad0;  // +0x0ad0  R:0 W:1
-    uint32_t     field_0x0ad4;  // +0x0ad4  R:0 W:1
-    uint32_t     field_0x0ad8;  // +0x0ad8  R:0 W:1
+    uint32_t     m_nInitAC4;    // +0x0ac4  R:0 W:1   [init block, write-only]
+    uint32_t     m_nInitAC8;    // +0x0ac8  R:0 W:1   [init block, write-only]
+    uint32_t     m_nInitACC;    // +0x0acc  R:0 W:1   [init block, write-only]
+    uint32_t     m_nInitAD0;    // +0x0ad0  R:0 W:1   [init block, write-only]
+    uint32_t     m_nInitAD4;    // +0x0ad4  R:0 W:1   [init block, write-only]
+    uint32_t     m_nInitAD8;    // +0x0ad8  R:0 W:1   [init block, write-only]
     uint8_t     _pad0x0b30[84];
-    uint32_t     field_0x0b30;  // +0x0b30  R:9 W:2
-    uint32_t     field_0x0b34;  // +0x0b34  R:8 W:2
-    uint32_t     field_0x0b38;  // +0x0b38  R:0 W:6
+    // -- animation / skeletal subsystem fields (0x0B30-0x0C10) --
+    uint32_t     m_pAnimCtrl;     // +0x0b30  R:9 W:2   [animation controller, read-heavy]
+    uint32_t     m_pAnimData;     // +0x0b34  R:8 W:2   [animation data ptr, read-heavy]
+    uint32_t     m_nAnimWrite0;   // +0x0b38  R:0 W:6   [animation write param, write-heavy]
     uint8_t     _pad0x0b44[8];
-    uint32_t     field_0x0b44;  // +0x0b44  R:0 W:6
+    uint32_t     m_nAnimWrite1;   // +0x0b44  R:0 W:6   [animation write param, write-heavy]
     uint8_t     _pad0x0b50[8];
-    uint32_t     field_0x0b50;  // +0x0b50  R:13 W:16
-    uint32_t     field_0x0b54;  // +0x0b54  R:0 W:4
-    uint32_t     field_0x0b58;  // +0x0b58  R:0 W:4
-    uint32_t     field_0x0b5c;  // +0x0b5c  R:9 W:12
-    uint32_t     field_0x0b60;  // +0x0b60  R:1 W:8
-    uint32_t     field_0x0b64;  // +0x0b64  R:1 W:8
-    uint32_t     field_0x0b68;  // +0x0b68  R:2 W:1
+    uint32_t     m_fAnimBlend;    // +0x0b50  R:13 W:16 [animation blend weight]
+    uint32_t     m_nAnimWrite2;   // +0x0b54  R:0 W:4   [animation write param, write-only]
+    uint32_t     m_nAnimWrite3;   // +0x0b58  R:0 W:4   [animation write param, write-only]
+    uint32_t     m_fAnimRate;     // +0x0b5c  R:9 W:12  [animation playback rate]
+    uint32_t     m_nAnimCmd0;     // +0x0b60  R:1 W:8   [animation command 0, write-heavy]
+    uint32_t     m_nAnimCmd1;     // +0x0b64  R:1 W:8   [animation command 1, write-heavy]
+    uint32_t     m_nAnimSlot;     // +0x0b68  R:2 W:1   [animation slot index]
     uint8_t     _pad0x0b78[12];
-    uint32_t     field_0x0b78;  // +0x0b78  R:16 W:19
-    uint32_t     field_0x0b7c;  // +0x0b7c  R:4 W:3
-    uint32_t     field_0x0b80;  // +0x0b80  R:3 W:3
-    uint32_t     field_0x0b84;  // +0x0b84  R:3 W:1
-    uint32_t     field_0x0b88;  // +0x0b88  R:1 W:1
-    uint32_t     field_0x0b8c;  // +0x0b8c  R:3 W:1
-    uint32_t     field_0x0b90;  // +0x0b90  R:4 W:1
-    uint32_t     field_0x0b94;  // +0x0b94  R:1 W:1
-    uint32_t     field_0x0b98;  // +0x0b98  R:4 W:1
-    uint32_t     field_0x0b9c;  // +0x0b9c  R:1 W:1
-    uint32_t     field_0x0ba0;  // +0x0ba0  R:0 W:1
-    uint32_t     field_0x0ba4;  // +0x0ba4  R:0 W:1
-    uint32_t     field_0x0ba8;  // +0x0ba8  R:0 W:1
-    uint32_t     field_0x0bac;  // +0x0bac  R:0 W:1
-    uint32_t     field_0x0bb0;  // +0x0bb0  R:0 W:1
-    uint32_t     field_0x0bb4;  // +0x0bb4  R:0 W:1
-    uint32_t     field_0x0bb8;  // +0x0bb8  R:0 W:1
-    uint32_t     field_0x0bbc;  // +0x0bbc  R:0 W:1
-    uint32_t     field_0x0bc0;  // +0x0bc0  R:0 W:1
-    uint32_t     field_0x0bc4;  // +0x0bc4  R:0 W:1
-    uint32_t     field_0x0bc8;  // +0x0bc8  R:17 W:4
-    uint32_t     field_0x0bcc;  // +0x0bcc  R:8 W:4
-    uint32_t     field_0x0bd0;  // +0x0bd0  R:1 W:4
-    uint32_t     field_0x0bd4;  // +0x0bd4  R:0 W:1
-    uint32_t     field_0x0bd8;  // +0x0bd8  R:0 W:1
-    uint32_t     field_0x0bdc;  // +0x0bdc  R:0 W:2
-    uint32_t     field_0x0be0;  // +0x0be0  R:0 W:3
-    uint32_t     field_0x0be4;  // +0x0be4  R:0 W:3
-    uint32_t     field_0x0be8;  // +0x0be8  R:0 W:4
-    uint32_t     field_0x0bec;  // +0x0bec  R:0 W:4
-    uint32_t     field_0x0bf0;  // +0x0bf0  R:2 W:1
-    uint32_t     field_0x0bf4;  // +0x0bf4  R:2 W:1
-    uint32_t     field_0x0bf8;  // +0x0bf8  R:3 W:1
-    uint32_t     field_0x0bfc;  // +0x0bfc  R:3 W:1
-    uint32_t     field_0x0c00;  // +0x0c00  R:0 W:3
-    uint32_t     field_0x0c04;  // +0x0c04  R:0 W:3
-    uint32_t     field_0x0c08;  // +0x0c08  R:1 W:1
-    uint32_t     field_0x0c0c;  // +0x0c0c  R:1 W:1
-    uint32_t     field_0x0c10;  // +0x0c10  R:0 W:2
+    // -- bone / IK subsystem fields (0x0B78-0x0C10) --
+    uint32_t     m_fBoneWeight;   // +0x0b78  R:16 W:19 [bone weight / IK blend]
+    uint32_t     m_fBoneParam0;   // +0x0b7c  R:4 W:3   [bone param 0]
+    uint32_t     m_fBoneParam1;   // +0x0b80  R:3 W:3   [bone param 1]
+    uint32_t     m_fBoneParam2;   // +0x0b84  R:3 W:1   [bone param 2, read-heavy]
+    uint32_t     m_fBoneParam3;   // +0x0b88  R:1 W:1   [bone param 3]
+    uint32_t     m_fBoneParam4;   // +0x0b8c  R:3 W:1   [bone param 4, read-heavy]
+    uint32_t     m_fBoneParam5;   // +0x0b90  R:4 W:1   [bone param 5, read-heavy]
+    uint32_t     m_fBoneParam6;   // +0x0b94  R:1 W:1   [bone param 6]
+    uint32_t     m_fBoneParam7;   // +0x0b98  R:4 W:1   [bone param 7, read-heavy]
+    uint32_t     m_fBoneParam8;   // +0x0b9c  R:1 W:1   [bone param 8]
+    uint32_t     m_nBoneInit0;    // +0x0ba0  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit1;    // +0x0ba4  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit2;    // +0x0ba8  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit3;    // +0x0bac  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit4;    // +0x0bb0  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit5;    // +0x0bb4  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit6;    // +0x0bb8  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit7;    // +0x0bbc  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit8;    // +0x0bc0  R:0 W:1   [bone init, write-only]
+    uint32_t     m_nBoneInit9;    // +0x0bc4  R:0 W:1   [bone init, write-only]
+    uint32_t     m_pIKTarget;     // +0x0bc8  R:17 W:4  [IK target ptr/handle, read-heavy]
+    uint32_t     m_pIKChain;      // +0x0bcc  R:8 W:4   [IK chain ptr, read-heavy]
+    uint32_t     m_nIKState;      // +0x0bd0  R:1 W:4   [IK state, write-heavy]
+    uint32_t     m_nIKInit0;      // +0x0bd4  R:0 W:1   [IK init, write-only]
+    uint32_t     m_nIKInit1;      // +0x0bd8  R:0 W:1   [IK init, write-only]
+    uint32_t     m_nIKMode;       // +0x0bdc  R:0 W:2   [IK mode, write-only]
+    uint32_t     m_fIKLimitLo0;   // +0x0be0  R:0 W:3   [IK lower limit 0, write-only]
+    uint32_t     m_fIKLimitLo1;   // +0x0be4  R:0 W:3   [IK lower limit 1, write-only]
+    uint32_t     m_fIKLimitHi0;   // +0x0be8  R:0 W:4   [IK upper limit 0, write-only]
+    uint32_t     m_fIKLimitHi1;   // +0x0bec  R:0 W:4   [IK upper limit 1, write-only]
+    uint32_t     m_fIKPosX;       // +0x0bf0  R:2 W:1   [IK position X]
+    uint32_t     m_fIKPosY;       // +0x0bf4  R:2 W:1   [IK position Y]
+    uint32_t     m_fIKDirX;       // +0x0bf8  R:3 W:1   [IK direction X, read-heavy]
+    uint32_t     m_fIKDirY;       // +0x0bfc  R:3 W:1   [IK direction Y, read-heavy]
+    uint32_t     m_fIKGoal0;      // +0x0c00  R:0 W:3   [IK goal 0, write-only]
+    uint32_t     m_fIKGoal1;      // +0x0c04  R:0 W:3   [IK goal 1, write-only]
+    uint32_t     m_nIKJoint0;     // +0x0c08  R:1 W:1   [IK joint index 0]
+    uint32_t     m_nIKJoint1;     // +0x0c0c  R:1 W:1   [IK joint index 1]
+    uint32_t     m_nIKFlags;      // +0x0c10  R:0 W:2   [IK flags, write-only]
     uint8_t     _pad0x0c1c[8];
-    uint32_t     field_0x0c1c;  // +0x0c1c  R:2 W:1
-    uint32_t     field_0x0c20;  // +0x0c20  R:0 W:1
-    uint32_t     field_0x0c24;  // +0x0c24  R:0 W:2
-    uint32_t     field_0x0c28;  // +0x0c28  R:0 W:2
-    uint32_t     field_0x0c2c;  // +0x0c2c  R:3 W:3
-    uint32_t     field_0x0c30;  // +0x0c30  R:0 W:2
-    uint32_t     field_0x0c34;  // +0x0c34  R:0 W:4
-    uint32_t     field_0x0c38;  // +0x0c38  R:1 W:2
-    uint32_t     field_0x0c3c;  // +0x0c3c  R:4 W:3
-    uint32_t     field_0x0c40;  // +0x0c40  R:2 W:3
-    uint32_t     field_0x0c44;  // +0x0c44  R:2 W:3
-    uint32_t     field_0x0c48;  // +0x0c48  R:1 W:2
-    uint32_t     field_0x0c4c;  // +0x0c4c  R:4 W:2
-    uint32_t     field_0x0c50;  // +0x0c50  R:0 W:1
-    uint32_t     field_0x0c54;  // +0x0c54  R:0 W:1
-    uint32_t     field_0x0c58;  // +0x0c58  R:0 W:1
-    uint32_t     field_0x0c5c;  // +0x0c5c  R:0 W:1
-    uint32_t     field_0x0c60;  // +0x0c60  R:0 W:2
-    uint32_t     field_0x0c64;  // +0x0c64  R:0 W:2
-    uint32_t     field_0x0c68;  // +0x0c68  R:0 W:1
+    // -- cloth / constraint subsystem fields (0x0C1C-0x0C68) --
+    uint32_t     m_nClothState;   // +0x0c1c  R:2 W:1   [cloth simulation state]
+    uint32_t     m_nClothInit;    // +0x0c20  R:0 W:1   [cloth init, write-only]
+    uint32_t     m_nClothParam0;  // +0x0c24  R:0 W:2   [cloth param 0, write-only]
+    uint32_t     m_nClothParam1;  // +0x0c28  R:0 W:2   [cloth param 1, write-only]
+    uint32_t     m_fClothStiff;   // +0x0c2c  R:3 W:3   [cloth stiffness]
+    uint32_t     m_nClothCmd;     // +0x0c30  R:0 W:2   [cloth command, write-only]
+    uint32_t     m_nClothWrite0;  // +0x0c34  R:0 W:4   [cloth write param, write-heavy]
+    uint32_t     m_fClothDamp;    // +0x0c38  R:1 W:2   [cloth damping]
+    uint32_t     m_fClothGravity; // +0x0c3c  R:4 W:3   [cloth gravity scale]
+    uint32_t     m_fClothWindX;   // +0x0c40  R:2 W:3   [cloth wind force X]
+    uint32_t     m_fClothWindY;   // +0x0c44  R:2 W:3   [cloth wind force Y]
+    uint32_t     m_fClothWindZ;   // +0x0c48  R:1 W:2   [cloth wind force Z]
+    uint32_t     m_pClothMesh;    // +0x0c4c  R:4 W:2   [cloth mesh ptr, read-heavy]
+    uint32_t     m_nClothVert0;   // +0x0c50  R:0 W:1   [cloth vertex 0, write-only]
+    uint32_t     m_nClothVert1;   // +0x0c54  R:0 W:1   [cloth vertex 1, write-only]
+    uint32_t     m_nClothVert2;   // +0x0c58  R:0 W:1   [cloth vertex 2, write-only]
+    uint32_t     m_nClothVert3;   // +0x0c5c  R:0 W:1   [cloth vertex 3, write-only]
+    uint32_t     m_nClothBound0;  // +0x0c60  R:0 W:2   [cloth bound 0, write-only]
+    uint32_t     m_nClothBound1;  // +0x0c64  R:0 W:2   [cloth bound 1, write-only]
+    uint32_t     m_nClothEnable;  // +0x0c68  R:0 W:1   [cloth enable, write-only]
     uint8_t     _pad0x0cec[128];
-    uint32_t     field_0x0cec;  // +0x0cec  R:137 W:1
+    uint32_t     m_pCreatureInst; // +0x0cec  R:137 W:1  [creature instance ptr, EXTREMELY read-heavy]
     uint8_t     _pad0x0cfc[12];
-    uint32_t     field_0x0cfc;  // +0x0cfc  R:13 W:6
-    uint32_t     field_0x0d00;  // +0x0d00  R:0 W:3
-    uint32_t     field_0x0d04;  // +0x0d04  R:4 W:3
-    uint32_t     field_0x0d08;  // +0x0d08  R:0 W:2
-    uint32_t     field_0x0d0c;  // +0x0d0c  R:1 W:2
-    uint32_t     field_0x0d10;  // +0x0d10  R:9 W:13
-    uint32_t     field_0x0d14;  // +0x0d14  R:0 W:7
-    uint32_t     field_0x0d18;  // +0x0d18  R:4 W:11
-    uint32_t     field_0x0d1c;  // +0x0d1c  R:1 W:6
-    uint32_t     field_0x0d20;  // +0x0d20  R:6 W:7
-    uint32_t     field_0x0d24;  // +0x0d24  R:15 W:4
-    uint32_t     field_0x0d28;  // +0x0d28  R:2 W:6
-    uint32_t     field_0x0d2c;  // +0x0d2c  R:1 W:1
-    uint32_t     field_0x0d30;  // +0x0d30  R:2 W:6
-    uint32_t     field_0x0d34;  // +0x0d34  R:3 W:6
-    uint32_t     field_0x0d3c;  // +0x0d3c  R:1 W:2
-    uint32_t     field_0x0d40;  // +0x0d40  R:0 W:5
-    uint32_t     field_0x0d44;  // +0x0d44  R:5 W:17
-    uint32_t     field_0x0d48;  // +0x0d48  R:4 W:2
-    uint32_t     field_0x0d4c;  // +0x0d4c  R:3 W:5
-    uint32_t     field_0x0d50;  // +0x0d50  R:7 W:5
-    uint32_t     field_0x0d54;  // +0x0d54  R:2 W:2
-    uint32_t     field_0x0d58;  // +0x0d58  R:0 W:5
-    uint32_t     field_0x0d5c;  // +0x0d5c  R:4 W:3
-    uint32_t     field_0x0d60;  // +0x0d60  R:0 W:1
-    uint32_t     field_0x0d64;  // +0x0d64  R:0 W:1
-    uint32_t     field_0x0d68;  // +0x0d68  R:0 W:1
+    // -- swing / gameplay mechanics subsystem fields (0x0CFC-0x0D68) --
+    uint32_t     m_pSwingState;   // +0x0cfc  R:13 W:6  [swing state handle]
+    uint32_t     m_nSwingCmd;     // +0x0d00  R:0 W:3   [swing command, write-only]
+    uint32_t     m_fSwingPower;   // +0x0d04  R:4 W:3   [swing power level]
+    uint32_t     m_nSwingMode;    // +0x0d08  R:0 W:2   [swing mode, write-only]
+    uint32_t     m_nSwingPhase;   // +0x0d0c  R:1 W:2   [swing phase]
+    uint32_t     m_fSwingAngle;   // +0x0d10  R:9 W:13  [swing angle]
+    uint32_t     m_fSwingWrite0;  // +0x0d14  R:0 W:7   [swing write param, write-heavy]
+    uint32_t     m_fSwingSpin;    // +0x0d18  R:4 W:11  [swing spin/rotation, write-heavy]
+    uint32_t     m_fSwingCurve;   // +0x0d1c  R:1 W:6   [swing curve factor, write-heavy]
+    uint32_t     m_fSwingSpeed;   // +0x0d20  R:6 W:7   [swing speed]
+    uint32_t     m_pSwingAnim;    // +0x0d24  R:15 W:4  [swing animation ptr, read-heavy]
+    uint32_t     m_fSwingTime;    // +0x0d28  R:2 W:6   [swing timing, write-heavy]
+    uint32_t     m_nSwingCount;   // +0x0d2c  R:1 W:1   [swing count]
+    uint32_t     m_fSwingArc;     // +0x0d30  R:2 W:6   [swing arc, write-heavy]
+    uint32_t     m_fSwingLift;    // +0x0d34  R:3 W:6   [swing lift, write-heavy]
+    uint32_t     m_nSwingResult;  // +0x0d3c  R:1 W:2   [swing result]
+    uint32_t     m_nSwingQueue;   // +0x0d40  R:0 W:5   [swing queue, write-heavy]
+    uint32_t     m_fSwingBlend;   // +0x0d44  R:5 W:17  [swing blend, VERY write-heavy]
+    uint32_t     m_fSwingDir;     // +0x0d48  R:4 W:2   [swing direction]
+    uint32_t     m_fSwingOffset;  // +0x0d4c  R:3 W:5   [swing offset, write-heavy]
+    uint32_t     m_fSwingDist;    // +0x0d50  R:7 W:5   [swing distance]
+    uint32_t     m_nSwingType;    // +0x0d54  R:2 W:2   [swing type]
+    uint32_t     m_nSwingWrite1;  // +0x0d58  R:0 W:5   [swing write param, write-heavy]
+    uint32_t     m_fSwingWeight;  // +0x0d5c  R:4 W:3   [swing weight]
+    uint32_t     m_nSwingInit0;   // +0x0d60  R:0 W:1   [swing init, write-only]
+    uint32_t     m_nSwingInit1;   // +0x0d64  R:0 W:1   [swing init, write-only]
+    uint32_t     m_nSwingInit2;   // +0x0d68  R:0 W:1   [swing init, write-only]
     uint8_t     _pad0x0da4[56];
-    uint32_t     field_0x0da4;  // +0x0da4  R:0 W:1
+    uint32_t     m_nServeInit;    // +0x0da4  R:0 W:1   [serve init, write-only]
     uint8_t     _pad0x0dc4[28];
-    uint32_t     field_0x0dc4;  // +0x0dc4  R:4 W:2
-    uint32_t     field_0x0dc8;  // +0x0dc8  R:1 W:1
-    uint32_t     field_0x0dcc;  // +0x0dcc  R:2 W:1
-    uint32_t     field_0x0dd0;  // +0x0dd0  R:1 W:1
-    uint64_t     field_0x0dd8;  // +0x0dd8  R:7 W:3
-    uint32_t     field_0x0de0;  // +0x0de0  R:0 W:1
-    uint64_t     field_0x0de8;  // +0x0de8  R:2 W:1
-    uint64_t     field_0x0df0;  // +0x0df0  R:1 W:1
-    uint64_t     field_0x0df8;  // +0x0df8  R:0 W:1
-    uint64_t     field_0x0e00;  // +0x0e00  R:0 W:1
-    uint32_t     field_0x0e08;  // +0x0e08  R:3 W:2
-    uint32_t     field_0x0e0c;  // +0x0e0c  R:1 W:1
-    uint32_t     field_0x0e10;  // +0x0e10  R:0 W:1
-    uint32_t     field_0x0e14;  // +0x0e14  R:0 W:2
-    uint32_t     field_0x0e18;  // +0x0e18  R:0 W:1
-    uint32_t     field_0x0e1c;  // +0x0e1c  R:0 W:1
-    uint32_t     field_0x0e20;  // +0x0e20  R:3 W:7
-    uint32_t     field_0x0e24;  // +0x0e24  R:1 W:5
-    uint32_t     field_0x0e28;  // +0x0e28  R:1 W:1
-    uint32_t     field_0x0e2c;  // +0x0e2c  R:4 W:5
-    uint32_t     field_0x0e30;  // +0x0e30  R:1 W:2
-    uint32_t     field_0x0e34;  // +0x0e34  R:1 W:9
-    uint32_t     field_0x0e38;  // +0x0e38  R:1 W:3
-    uint16_t     field_0x0e3c;  // +0x0e3c  R:1 W:6
-    uint32_t     field_0x0e40;  // +0x0e40  R:23 W:6
-    uint32_t     field_0x0e44;  // +0x0e44  R:8 W:5
-    uint32_t     field_0x0e48;  // +0x0e48  R:12 W:5
-    uint32_t     field_0x0e4c;  // +0x0e4c  R:6 W:5
-    uint32_t     field_0x0e50;  // +0x0e50  R:15 W:7
-    uint32_t     field_0x0e54;  // +0x0e54  R:11 W:5
-    uint32_t     field_0x0e58;  // +0x0e58  R:1 W:2
-    uint32_t     field_0x0e5c;  // +0x0e5c  R:0 W:20
-    uint32_t     field_0x0e60;  // +0x0e60  R:26 W:4
-    uint32_t     field_0x0e64;  // +0x0e64  R:27 W:4
-    uint32_t     field_0x0e68;  // +0x0e68  R:25 W:4
-    uint32_t     field_0x0e6c;  // +0x0e6c  R:26 W:3
-    uint32_t     field_0x0e70;  // +0x0e70  R:26 W:4
-    uint32_t     field_0x0e74;  // +0x0e74  R:24 W:3
-    uint32_t     field_0x0e78;  // +0x0e78  R:0 W:2
-    uint32_t     field_0x0e7c;  // +0x0e7c  R:0 W:2
-    uint32_t     field_0x0e80;  // +0x0e80  R:0 W:2
-    uint32_t     field_0x0e84;  // +0x0e84  R:4 W:6
-    uint32_t     field_0x0e88;  // +0x0e88  R:3 W:3
-    uint32_t     field_0x0e8c;  // +0x0e8c  R:1 W:3
-    uint32_t     field_0x0e90;  // +0x0e90  R:1 W:3
-    uint32_t     field_0x0e94;  // +0x0e94  R:0 W:5
-    uint32_t     field_0x0e98;  // +0x0e98  R:12 W:5
-    uint32_t     field_0x0e9c;  // +0x0e9c  R:12 W:5
-    uint32_t     field_0x0ea0;  // +0x0ea0  R:12 W:5
-    uint32_t     field_0x0ea4;  // +0x0ea4  R:2 W:3
-    uint32_t     field_0x0ea8;  // +0x0ea8  R:2 W:3
-    uint32_t     field_0x0eac;  // +0x0eac  R:2 W:3
-    uint32_t     field_0x0eb0;  // +0x0eb0  R:2 W:5
-    uint32_t     field_0x0eb4;  // +0x0eb4  R:2 W:5
-    uint32_t     field_0x0eb8;  // +0x0eb8  R:2 W:5
-    uint32_t     field_0x0ebc;  // +0x0ebc  R:1 W:2
-    uint32_t     field_0x0ec0;  // +0x0ec0  R:0 W:2
-    uint32_t     field_0x0ec4;  // +0x0ec4  R:0 W:1
-    uint32_t     field_0x0ec8;  // +0x0ec8  R:0 W:2
-    uint32_t     field_0x0ecc;  // +0x0ecc  R:0 W:1
-    uint32_t     field_0x0ed0;  // +0x0ed0  R:0 W:2
-    uint32_t     field_0x0ed4;  // +0x0ed4  R:0 W:2
-    uint32_t     field_0x0ed8;  // +0x0ed8  R:0 W:2
-    uint32_t     field_0x0edc;  // +0x0edc  R:0 W:1
-    uint32_t     field_0x0ee0;  // +0x0ee0  R:0 W:3
-    uint32_t     field_0x0ee4;  // +0x0ee4  R:0 W:2
-    uint32_t     field_0x0ee8;  // +0x0ee8  R:0 W:1
-    uint32_t     field_0x0eec;  // +0x0eec  R:0 W:1
-    uint32_t     field_0x0ef0;  // +0x0ef0  R:0 W:1
-    uint32_t     field_0x0ef4;  // +0x0ef4  R:0 W:1
-    uint32_t     field_0x0ef8;  // +0x0ef8  R:0 W:1
-    uint32_t     field_0x0efc;  // +0x0efc  R:0 W:1
-    uint32_t     field_0x0f04;  // +0x0f04  R:4 W:4
-    uint32_t     field_0x0f08;  // +0x0f08  R:1 W:4
-    uint32_t     field_0x0f0c;  // +0x0f0c  R:5 W:4
-    uint32_t     field_0x0f14;  // +0x0f14  R:2 W:6
-    uint32_t     field_0x0f18;  // +0x0f18  R:35 W:7
-    uint32_t     field_0x0f1c;  // +0x0f1c  R:2 W:3
-    uint32_t     field_0x0f24;  // +0x0f24  R:7 W:3
-    uint32_t     field_0x0f28;  // +0x0f28  R:22 W:1
-    uint32_t     field_0x0f30;  // +0x0f30  R:2 W:2
-    uint32_t     field_0x0f34;  // +0x0f34  R:1 W:0
-    uint32_t     field_0x0f38;  // +0x0f38  R:1 W:0
-    uint32_t     field_0x0f3c;  // +0x0f3c  R:1 W:4
-    uint32_t     field_0x0f40;  // +0x0f40  R:2 W:2
-    uint32_t     field_0x0f44;  // +0x0f44  R:8 W:4
-    uint32_t     field_0x0f48;  // +0x0f48  R:5 W:2
-    uint32_t     field_0x0f4c;  // +0x0f4c  R:10 W:15
-    uint32_t     field_0x0f50;  // +0x0f50  R:7 W:10
-    uint32_t     field_0x0f54;  // +0x0f54  R:1 W:2
-    uint32_t     field_0x0f58;  // +0x0f58  R:2 W:3
-    uint32_t     field_0x0f5c;  // +0x0f5c  R:4 W:8
-    uint32_t     field_0x0f60;  // +0x0f60  R:10 W:3
-    uint32_t     field_0x0f64;  // +0x0f64  R:4 W:2
+    // -- movement / positioning subsystem fields (0x0DC4-0x0E1C) --
+    uint32_t     m_pMoveCtrl;     // +0x0dc4  R:4 W:2   [movement controller]
+    uint32_t     m_nMoveState;    // +0x0dc8  R:1 W:1   [movement state]
+    uint32_t     m_nMoveType;     // +0x0dcc  R:2 W:1   [movement type]
+    uint32_t     m_nMoveFlags;    // +0x0dd0  R:1 W:1   [movement flags]
+    uint64_t     m_fMovePosXY;    // +0x0dd8  R:7 W:3   [movement position XY, read-heavy]
+    uint32_t     m_nMoveInit;     // +0x0de0  R:0 W:1   [movement init, write-only]
+    uint64_t     m_fMoveTargXY;   // +0x0de8  R:2 W:1   [movement target XY]
+    uint64_t     m_fMoveVelXY;    // +0x0df0  R:1 W:1   [movement velocity XY]
+    uint64_t     m_fMoveAccelXY;  // +0x0df8  R:0 W:1   [movement accel XY, write-only]
+    uint64_t     m_fMoveDirXY;    // +0x0e00  R:0 W:1   [movement direction XY, write-only]
+    uint32_t     m_fMoveSpeed;    // +0x0e08  R:3 W:2   [movement speed]
+    uint32_t     m_nMoveTick;     // +0x0e0c  R:1 W:1   [movement tick]
+    uint32_t     m_nMoveCmd;      // +0x0e10  R:0 W:1   [movement command, write-only]
+    uint32_t     m_nMoveQueue;    // +0x0e14  R:0 W:2   [movement queue, write-only]
+    uint32_t     m_nMoveDone;     // +0x0e18  R:0 W:1   [movement done flag, write-only]
+    uint32_t     m_nMoveReset;    // +0x0e1c  R:0 W:1   [movement reset, write-only]
+    // -- shot / return mechanics subsystem fields (0x0E20-0x0E3C) --
+    uint32_t     m_fShotAngle;    // +0x0e20  R:3 W:7   [shot angle, write-heavy]
+    uint32_t     m_fShotSpin;     // +0x0e24  R:1 W:5   [shot spin, write-heavy]
+    uint32_t     m_nShotCount;    // +0x0e28  R:1 W:1   [shot count]
+    uint32_t     m_fShotPower;    // +0x0e2c  R:4 W:5   [shot power, write-heavy]
+    uint32_t     m_nShotResult;   // +0x0e30  R:1 W:2   [shot result]
+    uint32_t     m_fShotCurve;    // +0x0e34  R:1 W:9   [shot curve, VERY write-heavy]
+    uint32_t     m_fShotLift;     // +0x0e38  R:1 W:3   [shot lift]
+    uint16_t     m_nShotFlags;    // +0x0e3c  R:1 W:6   [shot flags, write-heavy]
+    // -- court position / spatial subsystem fields (0x0E40-0x0EFC) --
+    uint32_t     m_fCourtPosX;    // +0x0e40  R:23 W:6  [court position X, VERY read-heavy]
+    uint32_t     m_fCourtPosY;    // +0x0e44  R:8 W:5   [court position Y]
+    uint32_t     m_fCourtPosZ;    // +0x0e48  R:12 W:5  [court position Z]
+    uint32_t     m_fCourtDirX;    // +0x0e4c  R:6 W:5   [court direction X]
+    uint32_t     m_fCourtTargX;   // +0x0e50  R:15 W:7  [court target X, read-heavy]
+    uint32_t     m_fCourtTargY;   // +0x0e54  R:11 W:5  [court target Y]
+    uint32_t     m_nCourtSide;    // +0x0e58  R:1 W:2   [court side]
+    uint32_t     m_nCourtUpdate;  // +0x0e5c  R:0 W:20  [court update counter, VERY write-heavy]
+    uint32_t     m_fFootPosX;     // +0x0e60  R:26 W:4  [foot position X, VERY read-heavy]
+    uint32_t     m_fFootPosY;     // +0x0e64  R:27 W:4  [foot position Y, VERY read-heavy]
+    uint32_t     m_fFootPosZ;     // +0x0e68  R:25 W:4  [foot position Z, VERY read-heavy]
+    uint32_t     m_fFootDirX;     // +0x0e6c  R:26 W:3  [foot direction X, VERY read-heavy]
+    uint32_t     m_fFootDirY;     // +0x0e70  R:26 W:4  [foot direction Y, VERY read-heavy]
+    uint32_t     m_fFootDirZ;     // +0x0e74  R:24 W:3  [foot direction Z, VERY read-heavy]
+    uint32_t     m_nFootInit0;    // +0x0e78  R:0 W:2   [foot init 0, write-only]
+    uint32_t     m_nFootInit1;    // +0x0e7c  R:0 W:2   [foot init 1, write-only]
+    uint32_t     m_nFootInit2;    // +0x0e80  R:0 W:2   [foot init 2, write-only]
+    uint32_t     m_fStanceAngle;  // +0x0e84  R:4 W:6   [stance angle, write-heavy]
+    uint32_t     m_fStanceWidth;  // +0x0e88  R:3 W:3   [stance width]
+    uint32_t     m_fStanceShift;  // +0x0e8c  R:1 W:3   [stance shift]
+    uint32_t     m_fStanceLean;   // +0x0e90  R:1 W:3   [stance lean]
+    uint32_t     m_nStanceWrite;  // +0x0e94  R:0 W:5   [stance write param, write-heavy]
+    uint32_t     m_fReachPosX;    // +0x0e98  R:12 W:5  [reach position X, read-heavy]
+    uint32_t     m_fReachPosY;    // +0x0e9c  R:12 W:5  [reach position Y, read-heavy]
+    uint32_t     m_fReachPosZ;    // +0x0ea0  R:12 W:5  [reach position Z, read-heavy]
+    uint32_t     m_fReachDirX;    // +0x0ea4  R:2 W:3   [reach direction X]
+    uint32_t     m_fReachDirY;    // +0x0ea8  R:2 W:3   [reach direction Y]
+    uint32_t     m_fReachDirZ;    // +0x0eac  R:2 W:3   [reach direction Z]
+    uint32_t     m_fReachExtX;    // +0x0eb0  R:2 W:5   [reach extent X, write-heavy]
+    uint32_t     m_fReachExtY;    // +0x0eb4  R:2 W:5   [reach extent Y, write-heavy]
+    uint32_t     m_fReachExtZ;    // +0x0eb8  R:2 W:5   [reach extent Z, write-heavy]
+    uint32_t     m_nReachState;   // +0x0ebc  R:1 W:2   [reach state]
+    uint32_t     m_nReachCmd;     // +0x0ec0  R:0 W:2   [reach command, write-only]
+    uint32_t     m_nReachInit0;   // +0x0ec4  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachParam0;  // +0x0ec8  R:0 W:2   [reach param, write-only]
+    uint32_t     m_nReachInit1;   // +0x0ecc  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachParam1;  // +0x0ed0  R:0 W:2   [reach param, write-only]
+    uint32_t     m_nReachParam2;  // +0x0ed4  R:0 W:2   [reach param, write-only]
+    uint32_t     m_nReachParam3;  // +0x0ed8  R:0 W:2   [reach param, write-only]
+    uint32_t     m_nReachInit2;   // +0x0edc  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachWrite0;  // +0x0ee0  R:0 W:3   [reach write, write-only]
+    uint32_t     m_nReachWrite1;  // +0x0ee4  R:0 W:2   [reach write, write-only]
+    uint32_t     m_nReachInit3;   // +0x0ee8  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachInit4;   // +0x0eec  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachInit5;   // +0x0ef0  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachInit6;   // +0x0ef4  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachInit7;   // +0x0ef8  R:0 W:1   [reach init, write-only]
+    uint32_t     m_nReachInit8;   // +0x0efc  R:0 W:1   [reach init, write-only]
+    // -- stamina / energy subsystem fields (0x0F04-0x0F28) --
+    uint32_t     m_fStaminaCur;   // +0x0f04  R:4 W:4   [current stamina]
+    uint32_t     m_fStaminaDrain; // +0x0f08  R:1 W:4   [stamina drain rate, write-heavy]
+    uint32_t     m_fStaminaMax;   // +0x0f0c  R:5 W:4   [max stamina]
+    uint32_t     m_fStaminaRegen; // +0x0f14  R:2 W:6   [stamina regen, write-heavy]
+    uint32_t     m_pStaminaCtrl;  // +0x0f18  R:35 W:7  [stamina controller, EXTREMELY read-heavy]
+    uint32_t     m_fStaminaRate;  // +0x0f1c  R:2 W:3   [stamina rate]
+    uint32_t     m_pStaminaCfg;   // +0x0f24  R:7 W:3   [stamina config ptr]
+    uint32_t     m_pStaminaRef;   // +0x0f28  R:22 W:1  [stamina reference, VERY read-heavy]
+    // -- AI / behavior subsystem fields (0x0F30-0x0F64) --
+    uint32_t     m_nAIState;      // +0x0f30  R:2 W:2   [AI state]
+    uint32_t     m_pAICfg0;       // +0x0f34  R:1 W:0   [AI config 0, read-only]
+    uint32_t     m_pAICfg1;       // +0x0f38  R:1 W:0   [AI config 1, read-only]
+    uint32_t     m_nAIMode;       // +0x0f3c  R:1 W:4   [AI mode, write-heavy]
+    uint32_t     m_nAILevel;      // +0x0f40  R:2 W:2   [AI difficulty level]
+    uint32_t     m_fAIReact;      // +0x0f44  R:8 W:4   [AI reaction time, read-heavy]
+    uint32_t     m_fAIAccuracy;   // +0x0f48  R:5 W:2   [AI accuracy]
+    uint32_t     m_fAIBlend;      // +0x0f4c  R:10 W:15 [AI blend weight, write-heavy]
+    uint32_t     m_fAITarget;     // +0x0f50  R:7 W:10  [AI target weight, write-heavy]
+    uint32_t     m_nAICmd;        // +0x0f54  R:1 W:2   [AI command]
+    uint32_t     m_nAIDecision;   // +0x0f58  R:2 W:3   [AI decision]
+    uint32_t     m_fAIPower;      // +0x0f5c  R:4 W:8   [AI power, write-heavy]
+    uint32_t     m_pAICtrl;       // +0x0f60  R:10 W:3  [AI controller, read-heavy]
+    uint32_t     m_nAITimer;      // +0x0f64  R:4 W:2   [AI timer]
     uint8_t     _pad0x1000[152];
-    uint32_t     field_0x1000;  // +0x1000  R:1 W:0
-    uint16_t     field_0x1006;  // +0x1006  R:1 W:0
+    // -- sparse high-offset fields (class-specific, widely spaced) --
+    uint32_t     m_pNetObj;       // +0x1000  R:1 W:0   [network object ptr, read-only]
+    uint16_t     m_nNetSeq;       // +0x1006  R:1 W:0   [network sequence, read-only]
     uint8_t     _pad0x1104[250];
-    uint32_t     field_0x1104;  // +0x1104  R:1 W:0
+    uint32_t     m_pLevelInst;    // +0x1104  R:1 W:0   [level instance ptr, read-only]
     uint8_t     _pad0x1328[544];
-    uint32_t     field_0x1328;  // +0x1328  R:0 W:1
+    uint32_t     m_nTrainInit;    // +0x1328  R:0 W:1   [training init, write-only]
     uint8_t     _pad0x15b4[648];
-    uint32_t     field_0x15b4;  // +0x15b4  R:4 W:0
+    uint32_t     m_pHUDRef;       // +0x15b4  R:4 W:0   [HUD reference ptr, read-only]
     uint8_t     _pad0x1714[348];
-    uint32_t     field_0x1714;  // +0x1714  R:0 W:1
+    uint32_t     m_nHUDInit;      // +0x1714  R:0 W:1   [HUD init, write-only]
     uint8_t     _pad0x17f0[216];
-    uint32_t     field_0x17f0;  // +0x17f0  R:1 W:1
-    uint32_t     field_0x17f4;  // +0x17f4  R:1 W:1
-    uint32_t     field_0x17fc;  // +0x17fc  R:1 W:1
-    uint32_t     field_0x1800;  // +0x1800  R:1 W:1
-    uint32_t     field_0x1808;  // +0x1808  R:1 W:1
-    uint8_t      field_0x1810;  // +0x1810  R:0 W:1
-    uint32_t     field_0x1814;  // +0x1814  R:3 W:0
-    uint16_t     field_0x1818;  // +0x1818  R:2 W:0
-    uint16_t     field_0x181a;  // +0x181a  R:1 W:0
-    uint32_t     field_0x181c;  // +0x181c  R:1 W:1
+    // -- replay / recording subsystem fields (0x17F0-0x181C) --
+    uint32_t     m_nReplayState0; // +0x17f0  R:1 W:1   [replay state 0]
+    uint32_t     m_nReplayState1; // +0x17f4  R:1 W:1   [replay state 1]
+    uint32_t     m_nReplayState2; // +0x17fc  R:1 W:1   [replay state 2]
+    uint32_t     m_nReplayState3; // +0x1800  R:1 W:1   [replay state 3]
+    uint32_t     m_nReplayState4; // +0x1808  R:1 W:1   [replay state 4]
+    uint8_t      m_bReplayInit;   // +0x1810  R:0 W:1   [replay init flag, write-only]
+    uint32_t     m_pReplayData;   // +0x1814  R:3 W:0   [replay data ptr, read-only]
+    uint16_t     m_nReplayFrame;  // +0x1818  R:2 W:0   [replay frame number, read-only]
+    uint16_t     m_nReplayIdx;    // +0x181a  R:1 W:0   [replay index, read-only]
+    uint32_t     m_nReplayTick;   // +0x181c  R:1 W:1   [replay tick]
     uint8_t     _pad0x1840[32];
-    uint32_t     field_0x1840;  // +0x1840  R:1 W:1
+    uint32_t     m_nEmoteState;   // +0x1840  R:1 W:1   [emote state]
     uint8_t     _pad0x185c[24];
-    uint32_t     field_0x185c;  // +0x185c  R:0 W:1
+    uint32_t     m_nEmoteInit;    // +0x185c  R:0 W:1   [emote init, write-only]
     uint8_t     _pad0x1968[264];
-    uint32_t     field_0x1968;  // +0x1968  R:21 W:5
+    uint32_t     m_pInputCtrl;    // +0x1968  R:21 W:5  [input controller, VERY read-heavy]
     uint8_t     _pad0x22e8[2428];
-    uint64_t     field_0x22e8;  // +0x22e8  R:1 W:0
+    uint64_t     m_nTimestamp1;   // +0x22e8  R:1 W:0   [timestamp 1, read-only]
     uint8_t     _pad0x2318[44];
-    uint64_t     field_0x2318;  // +0x2318  R:1 W:0
+    uint64_t     m_nTimestamp2;   // +0x2318  R:1 W:0   [timestamp 2, read-only]
     uint8_t     _pad0x2580[612];
-    uint32_t     field_0x2580;  // +0x2580  R:0 W:1
-    uint32_t     field_0x2584;  // +0x2584  R:0 W:1
-    uint32_t     field_0x2588;  // +0x2588  R:0 W:1
+    uint32_t     m_nNetInit0;     // +0x2580  R:0 W:1   [network init 0, write-only]
+    uint32_t     m_nNetInit1;     // +0x2584  R:0 W:1   [network init 1, write-only]
+    uint32_t     m_nNetInit2;     // +0x2588  R:0 W:1   [network init 2, write-only]
     uint8_t     _pad0x25a8[28];
-    uint32_t     field_0x25a8;  // +0x25a8  R:1 W:0
+    uint32_t     m_pNetSession;   // +0x25a8  R:1 W:0   [network session ptr, read-only]
     uint8_t     _pad0x27e0[564];
-    uint32_t     field_0x27e0;  // +0x27e0  R:1 W:0
+    uint32_t     m_pNetPeer;      // +0x27e0  R:1 W:0   [network peer ptr, read-only]
     uint8_t     _pad0x28a4[192];
-    uint32_t     field_0x28a4;  // +0x28a4  R:0 W:1
+    uint32_t     m_nNetReset;     // +0x28a4  R:0 W:1   [network reset, write-only]
     uint8_t     _pad0x3060[1976];
-    uint8_t      field_0x3060;  // +0x3060  R:0 W:1
-    uint8_t      field_0x3061;  // +0x3061  R:0 W:1
-    uint32_t     field_0x3064;  // +0x3064  R:0 W:1
-    uint8_t      field_0x3068;  // +0x3068  R:0 W:1
-    uint32_t     field_0x3070;  // +0x3070  R:0 W:1
-    uint32_t     field_0x3074;  // +0x3074  R:0 W:1
-    uint32_t     field_0x3078;  // +0x3078  R:0 W:1
-    uint32_t     field_0x307c;  // +0x307c  R:0 W:1
-    uint32_t     field_0x3080;  // +0x3080  R:0 W:1
-    uint32_t     field_0x3084;  // +0x3084  R:0 W:1
-    uint32_t     field_0x3088;  // +0x3088  R:0 W:1
-    uint32_t     field_0x308c;  // +0x308c  R:0 W:1
-    uint32_t     field_0x3090;  // +0x3090  R:0 W:1
-    uint32_t     field_0x3098;  // +0x3098  R:0 W:1
+    // -- region 0x3060: write-only init flags (class-specific) --
+    uint8_t      m_bInitFlag0;  // +0x3060  R:0 W:1
+    uint8_t      m_bInitFlag1;  // +0x3061  R:0 W:1
+    uint32_t     m_nInitCfg0;   // +0x3064  R:0 W:1
+    uint8_t      m_bInitFlag2;  // +0x3068  R:0 W:1
+    uint32_t     m_nInitCfg1;   // +0x3070  R:0 W:1
+    uint32_t     m_nInitCfg2;   // +0x3074  R:0 W:1
+    uint32_t     m_nInitCfg3;   // +0x3078  R:0 W:1
+    uint32_t     m_nInitCfg4;   // +0x307c  R:0 W:1
+    uint32_t     m_nInitCfg5;   // +0x3080  R:0 W:1
+    uint32_t     m_nInitCfg6;   // +0x3084  R:0 W:1
+    uint32_t     m_nInitCfg7;   // +0x3088  R:0 W:1
+    uint32_t     m_nInitCfg8;   // +0x308c  R:0 W:1
+    uint32_t     m_nInitCfg9;   // +0x3090  R:0 W:1
+    uint32_t     m_nInitCfgA;   // +0x3098  R:0 W:1
     uint8_t     _pad0x33cc[816];
-    uint32_t     field_0x33cc;  // +0x33cc  R:1 W:1
+    // -- region 0x33CC: checkpoint/sync field --
+    uint32_t     m_nCheckpoint;          // +0x33cc  R:1 W:1
     uint8_t     _pad0x3880[1200];
-    uint32_t     field_0x3880;  // +0x3880  R:1 W:2
-    uint32_t     field_0x3884;  // +0x3884  R:2 W:1
-    uint32_t     field_0x3888;  // +0x3888  R:3 W:4
-    uint32_t     field_0x388c;  // +0x388c  R:2 W:4
-    uint32_t     field_0x3890;  // +0x3890  R:5 W:3
-    uint32_t     field_0x3894;  // +0x3894  R:3 W:3
-    uint32_t     field_0x3898;  // +0x3898  R:0 W:5
-    uint32_t     field_0x389c;  // +0x389c  R:2 W:3
-    uint32_t     field_0x38a0;  // +0x38a0  R:0 W:2
-    uint32_t     field_0x38a4;  // +0x38a4  R:0 W:2
-    uint32_t     field_0x38a8;  // +0x38a8  R:0 W:5
-    uint32_t     field_0x38ac;  // +0x38ac  R:0 W:5
-    uint32_t     field_0x38b0;  // +0x38b0  R:0 W:5
-    uint32_t     field_0x38b4;  // +0x38b4  R:5 W:3
-    uint32_t     field_0x38b8;  // +0x38b8  R:1 W:3
-    uint32_t     field_0x38bc;  // +0x38bc  R:0 W:4
-    uint32_t     field_0x38c0;  // +0x38c0  R:2 W:3
-    uint32_t     field_0x38c4;  // +0x38c4  R:0 W:2
-    uint32_t     field_0x38c8;  // +0x38c8  R:0 W:2
-    uint32_t     field_0x38cc;  // +0x38cc  R:0 W:5
-    uint32_t     field_0x38d0;  // +0x38d0  R:0 W:4
-    uint32_t     field_0x38d4;  // +0x38d4  R:0 W:4
-    uint32_t     field_0x38d8;  // +0x38d8  R:0 W:2
-    uint32_t     field_0x38dc;  // +0x38dc  R:0 W:2
-    uint32_t     field_0x38e0;  // +0x38e0  R:3 W:3
-    uint32_t     field_0x38e4;  // +0x38e4  R:3 W:0
-    uint32_t     field_0x38e8;  // +0x38e8  R:3 W:0
-    uint32_t     field_0x38ec;  // +0x38ec  R:1 W:0
-    uint32_t     field_0x38f0;  // +0x38f0  R:1 W:0
-    uint32_t     field_0x38f4;  // +0x38f4  R:2 W:1
-    uint32_t     field_0x38f8;  // +0x38f8  R:0 W:1
-    uint32_t     field_0x38fc;  // +0x38fc  R:8 W:3
-    uint32_t     field_0x3900;  // +0x3900  R:10 W:3
-    uint32_t     field_0x3904;  // +0x3904  R:8 W:3
-    uint32_t     field_0x3908;  // +0x3908  R:8 W:3
-    uint32_t     field_0x390c;  // +0x390c  R:6 W:2
-    uint32_t     field_0x3910;  // +0x3910  R:6 W:2
-    uint32_t     field_0x3914;  // +0x3914  R:6 W:2
-    uint32_t     field_0x3918;  // +0x3918  R:6 W:2
-    uint32_t     field_0x391c;  // +0x391c  R:1 W:2
-    uint32_t     field_0x3920;  // +0x3920  R:1 W:2
-    uint32_t     field_0x3924;  // +0x3924  R:3 W:2
-    uint32_t     field_0x3928;  // +0x3928  R:1 W:2
-    uint32_t     field_0x392c;  // +0x392c  R:2 W:1
-    uint32_t     field_0x3930;  // +0x3930  R:2 W:1
-    uint32_t     field_0x3934;  // +0x3934  R:0 W:5
-    uint32_t     field_0x3938;  // +0x3938  R:0 W:4
-    uint32_t     field_0x393c;  // +0x393c  R:0 W:1
-    uint32_t     field_0x3940;  // +0x3940  R:0 W:1
-    uint32_t     field_0x3944;  // +0x3944  R:0 W:1
-    uint32_t     field_0x3948;  // +0x3948  R:0 W:1
+    // -- region 0x3880: mixed R/W computation data --
+    uint32_t     m_nComp0;               // +0x3880  R:1 W:2
+    uint32_t     m_nComp1;               // +0x3884  R:2 W:1
+    uint32_t     m_nComp2;               // +0x3888  R:3 W:4
+    uint32_t     m_nComp3;               // +0x388c  R:2 W:4
+    uint32_t     m_nComp4;               // +0x3890  R:5 W:3
+    uint32_t     m_nComp5;               // +0x3894  R:3 W:3
+    uint32_t     m_nComp6;               // +0x3898  R:0 W:5
+    uint32_t     m_nComp7;               // +0x389c  R:2 W:3
+    uint32_t     m_nComp8;               // +0x38a0  R:0 W:2
+    uint32_t     m_nComp9;               // +0x38a4  R:0 W:2
+    uint32_t     m_nComp10;              // +0x38a8  R:0 W:5
+    uint32_t     m_nComp11;              // +0x38ac  R:0 W:5
+    uint32_t     m_nComp12;              // +0x38b0  R:0 W:5
+    uint32_t     m_nComp13;              // +0x38b4  R:5 W:3
+    uint32_t     m_nComp14;              // +0x38b8  R:1 W:3
+    uint32_t     m_nComp15;              // +0x38bc  R:0 W:4
+    uint32_t     m_nComp16;              // +0x38c0  R:2 W:3
+    uint32_t     m_nComp17;              // +0x38c4  R:0 W:2
+    uint32_t     m_nComp18;              // +0x38c8  R:0 W:2
+    uint32_t     m_nComp19;              // +0x38cc  R:0 W:5
+    uint32_t     m_nComp20;              // +0x38d0  R:0 W:4
+    uint32_t     m_nComp21;              // +0x38d4  R:0 W:4
+    uint32_t     m_nComp22;              // +0x38d8  R:0 W:2
+    uint32_t     m_nComp23;              // +0x38dc  R:0 W:2
+    uint32_t     m_nComp24;              // +0x38e0  R:3 W:3
+    uint32_t     m_nComp25;              // +0x38e4  R:3 W:0
+    uint32_t     m_nComp26;              // +0x38e8  R:3 W:0
+    uint32_t     m_nComp27;              // +0x38ec  R:1 W:0
+    uint32_t     m_nComp28;              // +0x38f0  R:1 W:0
+    uint32_t     m_nComp29;              // +0x38f4  R:2 W:1
+    uint32_t     m_nComp30;              // +0x38f8  R:0 W:1
+    // -- region 0x38FC: hot-read computation array (R:6-10) --
+    uint32_t     m_nHotVec0;             // +0x38fc  R:8 W:3
+    uint32_t     m_nHotVec1;             // +0x3900  R:10 W:3
+    uint32_t     m_nHotVec2;             // +0x3904  R:8 W:3
+    uint32_t     m_nHotVec3;             // +0x3908  R:8 W:3
+    uint32_t     m_nHotVec4;             // +0x390c  R:6 W:2
+    uint32_t     m_nHotVec5;             // +0x3910  R:6 W:2
+    uint32_t     m_nHotVec6;             // +0x3914  R:6 W:2
+    uint32_t     m_nHotVec7;             // +0x3918  R:6 W:2
+    // -- region 0x391C: mixed access 0x391C region --
+    uint32_t     m_nMixed390;            // +0x391c  R:1 W:2
+    uint32_t     m_nMixed391;            // +0x3920  R:1 W:2
+    uint32_t     m_nMixed392;            // +0x3924  R:3 W:2
+    uint32_t     m_nMixed393;            // +0x3928  R:1 W:2
+    uint32_t     m_nMixed394;            // +0x392c  R:2 W:1
+    uint32_t     m_nMixed395;            // +0x3930  R:2 W:1
+    uint32_t     m_nMixed396;            // +0x3934  R:0 W:5
+    uint32_t     m_nMixed397;            // +0x3938  R:0 W:4
+    uint32_t     m_nMixed398;            // +0x393c  R:0 W:1
+    uint32_t     m_nMixed399;            // +0x3940  R:0 W:1
+    uint32_t     m_nMixed3910;           // +0x3944  R:0 W:1
+    uint32_t     m_nMixed3911;           // +0x3948  R:0 W:1
     uint8_t     _pad0x3970[36];
-    uint32_t     field_0x3970;  // +0x3970  R:2 W:5
-    uint32_t     field_0x3974;  // +0x3974  R:7 W:2
-    uint32_t     field_0x3978;  // +0x3978  R:0 W:3
-    uint32_t     field_0x397c;  // +0x397c  R:0 W:3
-    uint32_t     field_0x3980;  // +0x3980  R:0 W:3
-    uint32_t     field_0x3984;  // +0x3984  R:36 W:8
-    uint32_t     field_0x3988;  // +0x3988  R:5 W:7
-    uint32_t     field_0x398c;  // +0x398c  R:3 W:0
-    uint32_t     field_0x3990;  // +0x3990  R:3 W:0
-    uint32_t     field_0x3994;  // +0x3994  R:12 W:7
-    uint32_t     field_0x3998;  // +0x3998  R:3 W:2
-    uint32_t     field_0x399c;  // +0x399c  R:11 W:2
-    uint32_t     field_0x39a0;  // +0x39a0  R:2 W:6
-    uint32_t     field_0x39a4;  // +0x39a4  R:7 W:3
-    uint32_t     field_0x39a8;  // +0x39a8  R:2 W:3
-    uint32_t     field_0x39ac;  // +0x39ac  R:2 W:3
-    uint32_t     field_0x39b0;  // +0x39b0  R:2 W:3
-    uint32_t     field_0x39b4;  // +0x39b4  R:8 W:2
-    uint32_t     field_0x39b8;  // +0x39b8  R:12 W:1
-    uint32_t     field_0x39bc;  // +0x39bc  R:6 W:4
-    uint32_t     field_0x39c0;  // +0x39c0  R:0 W:1
-    uint32_t     field_0x39c4;  // +0x39c4  R:0 W:1
-    uint32_t     field_0x39c8;  // +0x39c8  R:0 W:1
-    uint32_t     field_0x39cc;  // +0x39cc  R:0 W:1
-    uint32_t     field_0x39d0;  // +0x39d0  R:1 W:1
-    uint32_t     field_0x39d4;  // +0x39d4  R:1 W:1
-    uint32_t     field_0x39d8;  // +0x39d8  R:0 W:1
-    uint32_t     field_0x39dc;  // +0x39dc  R:0 W:1
-    uint32_t     field_0x39e0;  // +0x39e0  R:0 W:1
-    uint32_t     field_0x39e4;  // +0x39e4  R:0 W:1
-    uint32_t     field_0x39e8;  // +0x39e8  R:1 W:1
-    uint32_t     field_0x39ec;  // +0x39ec  R:0 W:1
-    uint32_t     field_0x39f0;  // +0x39f0  R:0 W:1
-    uint32_t     field_0x39f4;  // +0x39f4  R:2 W:1
-    uint32_t     field_0x39f8;  // +0x39f8  R:4 W:1
-    uint32_t     field_0x39fc;  // +0x39fc  R:1 W:1
-    uint32_t     field_0x3a00;  // +0x3a00  R:1 W:1
-    uint32_t     field_0x3a04;  // +0x3a04  R:1 W:1
-    uint32_t     field_0x3a08;  // +0x3a08  R:1 W:1
-    uint32_t     field_0x3a0c;  // +0x3a0c  R:0 W:1
-    uint32_t     field_0x3a10;  // +0x3a10  R:0 W:1
-    uint32_t     field_0x3a14;  // +0x3a14  R:0 W:1
-    uint32_t     field_0x3a18;  // +0x3a18  R:0 W:1
-    uint32_t     field_0x3a1c;  // +0x3a1c  R:0 W:1
-    uint32_t     field_0x3a20;  // +0x3a20  R:0 W:1
-    uint32_t     field_0x3a24;  // +0x3a24  R:0 W:1
-    uint32_t     field_0x3a28;  // +0x3a28  R:0 W:1
-    uint32_t     field_0x3a2c;  // +0x3a2c  R:0 W:1
-    uint32_t     field_0x3a30;  // +0x3a30  R:0 W:1
-    uint32_t     field_0x3a34;  // +0x3a34  R:0 W:1
-    uint32_t     field_0x3a38;  // +0x3a38  R:0 W:1
-    uint32_t     field_0x3a3c;  // +0x3a3c  R:0 W:1
-    uint32_t     field_0x3a40;  // +0x3a40  R:0 W:1
-    uint32_t     field_0x3a44;  // +0x3a44  R:0 W:1
-    uint32_t     field_0x3a48;  // +0x3a48  R:0 W:1
-    uint32_t     field_0x3a4c;  // +0x3a4c  R:0 W:1
-    uint32_t     field_0x3a50;  // +0x3a50  R:0 W:1
-    uint32_t     field_0x3a54;  // +0x3a54  R:0 W:1
-    uint32_t     field_0x3a58;  // +0x3a58  R:0 W:1
-    uint32_t     field_0x3a5c;  // +0x3a5c  R:0 W:1
-    uint32_t     field_0x3a60;  // +0x3a60  R:0 W:1
-    uint32_t     field_0x3a64;  // +0x3a64  R:0 W:1
-    uint32_t     field_0x3a68;  // +0x3a68  R:0 W:1
-    uint32_t     field_0x3a6c;  // +0x3a6c  R:0 W:1
-    uint32_t     field_0x3a70;  // +0x3a70  R:0 W:1
-    uint32_t     field_0x3a74;  // +0x3a74  R:0 W:1
-    uint32_t     field_0x3a78;  // +0x3a78  R:0 W:1
-    uint32_t     field_0x3a7c;  // +0x3a7c  R:0 W:1
-    uint32_t     field_0x3a80;  // +0x3a80  R:0 W:1
-    uint32_t     field_0x3a84;  // +0x3a84  R:0 W:1
-    uint32_t     field_0x3a88;  // +0x3a88  R:0 W:1
-    uint32_t     field_0x3a8c;  // +0x3a8c  R:0 W:1
-    uint32_t     field_0x3a90;  // +0x3a90  R:0 W:1
-    uint32_t     field_0x3a94;  // +0x3a94  R:0 W:1
-    uint32_t     field_0x3a98;  // +0x3a98  R:0 W:1
-    uint32_t     field_0x3a9c;  // +0x3a9c  R:0 W:1
-    uint32_t     field_0x3aa0;  // +0x3aa0  R:0 W:1
-    uint32_t     field_0x3aa4;  // +0x3aa4  R:0 W:1
-    uint32_t     field_0x3aa8;  // +0x3aa8  R:0 W:1
-    uint32_t     field_0x3aac;  // +0x3aac  R:0 W:1
-    uint32_t     field_0x3ab0;  // +0x3ab0  R:0 W:1
-    uint32_t     field_0x3ab4;  // +0x3ab4  R:0 W:1
-    uint32_t     field_0x3ab8;  // +0x3ab8  R:0 W:1
-    uint32_t     field_0x3abc;  // +0x3abc  R:0 W:1
-    uint32_t     field_0x3ac0;  // +0x3ac0  R:0 W:1
-    uint32_t     field_0x3ac4;  // +0x3ac4  R:0 W:1
-    uint32_t     field_0x3ac8;  // +0x3ac8  R:0 W:1
-    uint32_t     field_0x3acc;  // +0x3acc  R:0 W:1
-    uint32_t     field_0x3ad0;  // +0x3ad0  R:0 W:1
-    uint32_t     field_0x3ad4;  // +0x3ad4  R:0 W:1
-    uint32_t     field_0x3ad8;  // +0x3ad8  R:0 W:1
-    uint32_t     field_0x3adc;  // +0x3adc  R:0 W:1
-    uint32_t     field_0x3ae0;  // +0x3ae0  R:0 W:1
-    uint32_t     field_0x3ae4;  // +0x3ae4  R:0 W:1
-    uint32_t     field_0x3ae8;  // +0x3ae8  R:0 W:1
-    uint32_t     field_0x3aec;  // +0x3aec  R:0 W:1
-    uint32_t     field_0x3af0;  // +0x3af0  R:0 W:1
-    uint32_t     field_0x3af4;  // +0x3af4  R:0 W:1
-    uint32_t     field_0x3af8;  // +0x3af8  R:0 W:1
-    uint32_t     field_0x3afc;  // +0x3afc  R:0 W:1
-    uint32_t     field_0x3b00;  // +0x3b00  R:0 W:1
-    uint32_t     field_0x3b04;  // +0x3b04  R:0 W:1
-    uint32_t     field_0x3b08;  // +0x3b08  R:0 W:1
-    uint32_t     field_0x3b0c;  // +0x3b0c  R:0 W:1
-    uint32_t     field_0x3b10;  // +0x3b10  R:0 W:1
-    uint32_t     field_0x3b14;  // +0x3b14  R:0 W:1
-    uint32_t     field_0x3b18;  // +0x3b18  R:0 W:2
-    uint32_t     field_0x3b1c;  // +0x3b1c  R:0 W:2
-    uint32_t     field_0x3b20;  // +0x3b20  R:3 W:2
-    uint32_t     field_0x3b24;  // +0x3b24  R:2 W:1
-    uint32_t     field_0x3b28;  // +0x3b28  R:3 W:3
-    uint32_t     field_0x3b2c;  // +0x3b2c  R:1 W:2
-    uint32_t     field_0x3b30;  // +0x3b30  R:1 W:4
-    uint32_t     field_0x3b34;  // +0x3b34  R:19 W:2
-    uint32_t     field_0x3b38;  // +0x3b38  R:4 W:2
-    uint32_t     field_0x3b3c;  // +0x3b3c  R:1 W:1
-    uint32_t     field_0x3b40;  // +0x3b40  R:3 W:4
-    uint32_t     field_0x3b44;  // +0x3b44  R:9 W:2
-    uint32_t     field_0x3b48;  // +0x3b48  R:1 W:4
-    uint32_t     field_0x3b4c;  // +0x3b4c  R:1 W:5
-    uint32_t     field_0x3b50;  // +0x3b50  R:1 W:3
-    uint32_t     field_0x3b58;  // +0x3b58  R:3 W:3
-    uint32_t     field_0x3b5c;  // +0x3b5c  R:0 W:2
-    uint32_t     field_0x3b60;  // +0x3b60  R:0 W:2
-    uint32_t     field_0x3b64;  // +0x3b64  R:0 W:2
-    uint32_t     field_0x3b68;  // +0x3b68  R:0 W:2
-    uint32_t     field_0x3b6c;  // +0x3b6c  R:0 W:2
-    uint32_t     field_0x3b70;  // +0x3b70  R:0 W:2
-    uint32_t     field_0x3b74;  // +0x3b74  R:31 W:3
-    uint32_t     field_0x3b78;  // +0x3b78  R:27 W:1
-    uint32_t     field_0x3b7c;  // +0x3b7c  R:11 W:3
-    uint32_t     field_0x3b80;  // +0x3b80  R:8 W:1
-    uint32_t     field_0x3b84;  // +0x3b84  R:11 W:3
-    uint32_t     field_0x3b88;  // +0x3b88  R:8 W:1
-    uint32_t     field_0x3b8c;  // +0x3b8c  R:12 W:3
-    uint32_t     field_0x3b90;  // +0x3b90  R:9 W:1
-    uint32_t     field_0x3b94;  // +0x3b94  R:7 W:1
-    uint32_t     field_0x3b9c;  // +0x3b9c  R:1 W:0
-    uint32_t     field_0x3ba0;  // +0x3ba0  R:1 W:0
+    // -- region 0x3970: simulation parameters (hot: 0x3984 R:36) --
+    uint32_t     m_nSim0;                // +0x3970  R:2 W:5
+    uint32_t     m_nSim1;                // +0x3974  R:7 W:2
+    uint32_t     m_nSim2;                // +0x3978  R:0 W:3
+    uint32_t     m_nSim3;                // +0x397c  R:0 W:3
+    uint32_t     m_nSim4;                // +0x3980  R:0 W:3
+    uint32_t     m_nSim5;                // +0x3984  R:36 W:8
+    uint32_t     m_nSim6;                // +0x3988  R:5 W:7
+    uint32_t     m_nSim7;                // +0x398c  R:3 W:0
+    uint32_t     m_nSim8;                // +0x3990  R:3 W:0
+    uint32_t     m_nSim9;                // +0x3994  R:12 W:7
+    uint32_t     m_nSim10;               // +0x3998  R:3 W:2
+    uint32_t     m_nSim11;               // +0x399c  R:11 W:2
+    uint32_t     m_nSim12;               // +0x39a0  R:2 W:6
+    uint32_t     m_nSim13;               // +0x39a4  R:7 W:3
+    uint32_t     m_nSim14;               // +0x39a8  R:2 W:3
+    uint32_t     m_nSim15;               // +0x39ac  R:2 W:3
+    uint32_t     m_nSim16;               // +0x39b0  R:2 W:3
+    uint32_t     m_nSim17;               // +0x39b4  R:8 W:2
+    uint32_t     m_nSim18;               // +0x39b8  R:12 W:1
+    uint32_t     m_nSim19;               // +0x39bc  R:6 W:4
+    // -- region 0x39C0: write-only bulk init (88 fields) --
+    uint32_t     m_nBulkInit0;           // +0x39c0  R:0 W:1
+    uint32_t     m_nBulkInit1;           // +0x39c4  R:0 W:1
+    uint32_t     m_nBulkInit2;           // +0x39c8  R:0 W:1
+    uint32_t     m_nBulkInit3;           // +0x39cc  R:0 W:1
+    uint32_t     m_nBulkInit4;           // +0x39d0  R:1 W:1
+    uint32_t     m_nBulkInit5;           // +0x39d4  R:1 W:1
+    uint32_t     m_nBulkInit6;           // +0x39d8  R:0 W:1
+    uint32_t     m_nBulkInit7;           // +0x39dc  R:0 W:1
+    uint32_t     m_nBulkInit8;           // +0x39e0  R:0 W:1
+    uint32_t     m_nBulkInit9;           // +0x39e4  R:0 W:1
+    uint32_t     m_nBulkInit10;          // +0x39e8  R:1 W:1
+    uint32_t     m_nBulkInit11;          // +0x39ec  R:0 W:1
+    uint32_t     m_nBulkInit12;          // +0x39f0  R:0 W:1
+    uint32_t     m_nBulkInit13;          // +0x39f4  R:2 W:1
+    uint32_t     m_nBulkInit14;          // +0x39f8  R:4 W:1
+    uint32_t     m_nBulkInit15;          // +0x39fc  R:1 W:1
+    uint32_t     m_nBulkInit16;          // +0x3a00  R:1 W:1
+    uint32_t     m_nBulkInit17;          // +0x3a04  R:1 W:1
+    uint32_t     m_nBulkInit18;          // +0x3a08  R:1 W:1
+    uint32_t     m_nBulkInit19;          // +0x3a0c  R:0 W:1
+    uint32_t     m_nBulkInit20;          // +0x3a10  R:0 W:1
+    uint32_t     m_nBulkInit21;          // +0x3a14  R:0 W:1
+    uint32_t     m_nBulkInit22;          // +0x3a18  R:0 W:1
+    uint32_t     m_nBulkInit23;          // +0x3a1c  R:0 W:1
+    uint32_t     m_nBulkInit24;          // +0x3a20  R:0 W:1
+    uint32_t     m_nBulkInit25;          // +0x3a24  R:0 W:1
+    uint32_t     m_nBulkInit26;          // +0x3a28  R:0 W:1
+    uint32_t     m_nBulkInit27;          // +0x3a2c  R:0 W:1
+    uint32_t     m_nBulkInit28;          // +0x3a30  R:0 W:1
+    uint32_t     m_nBulkInit29;          // +0x3a34  R:0 W:1
+    uint32_t     m_nBulkInit30;          // +0x3a38  R:0 W:1
+    uint32_t     m_nBulkInit31;          // +0x3a3c  R:0 W:1
+    uint32_t     m_nBulkInit32;          // +0x3a40  R:0 W:1
+    uint32_t     m_nBulkInit33;          // +0x3a44  R:0 W:1
+    uint32_t     m_nBulkInit34;          // +0x3a48  R:0 W:1
+    uint32_t     m_nBulkInit35;          // +0x3a4c  R:0 W:1
+    uint32_t     m_nBulkInit36;          // +0x3a50  R:0 W:1
+    uint32_t     m_nBulkInit37;          // +0x3a54  R:0 W:1
+    uint32_t     m_nBulkInit38;          // +0x3a58  R:0 W:1
+    uint32_t     m_nBulkInit39;          // +0x3a5c  R:0 W:1
+    uint32_t     m_nBulkInit40;          // +0x3a60  R:0 W:1
+    uint32_t     m_nBulkInit41;          // +0x3a64  R:0 W:1
+    uint32_t     m_nBulkInit42;          // +0x3a68  R:0 W:1
+    uint32_t     m_nBulkInit43;          // +0x3a6c  R:0 W:1
+    uint32_t     m_nBulkInit44;          // +0x3a70  R:0 W:1
+    uint32_t     m_nBulkInit45;          // +0x3a74  R:0 W:1
+    uint32_t     m_nBulkInit46;          // +0x3a78  R:0 W:1
+    uint32_t     m_nBulkInit47;          // +0x3a7c  R:0 W:1
+    uint32_t     m_nBulkInit48;          // +0x3a80  R:0 W:1
+    uint32_t     m_nBulkInit49;          // +0x3a84  R:0 W:1
+    uint32_t     m_nBulkInit50;          // +0x3a88  R:0 W:1
+    uint32_t     m_nBulkInit51;          // +0x3a8c  R:0 W:1
+    uint32_t     m_nBulkInit52;          // +0x3a90  R:0 W:1
+    uint32_t     m_nBulkInit53;          // +0x3a94  R:0 W:1
+    uint32_t     m_nBulkInit54;          // +0x3a98  R:0 W:1
+    uint32_t     m_nBulkInit55;          // +0x3a9c  R:0 W:1
+    uint32_t     m_nBulkInit56;          // +0x3aa0  R:0 W:1
+    uint32_t     m_nBulkInit57;          // +0x3aa4  R:0 W:1
+    uint32_t     m_nBulkInit58;          // +0x3aa8  R:0 W:1
+    uint32_t     m_nBulkInit59;          // +0x3aac  R:0 W:1
+    uint32_t     m_nBulkInit60;          // +0x3ab0  R:0 W:1
+    uint32_t     m_nBulkInit61;          // +0x3ab4  R:0 W:1
+    uint32_t     m_nBulkInit62;          // +0x3ab8  R:0 W:1
+    uint32_t     m_nBulkInit63;          // +0x3abc  R:0 W:1
+    uint32_t     m_nBulkInit64;          // +0x3ac0  R:0 W:1
+    uint32_t     m_nBulkInit65;          // +0x3ac4  R:0 W:1
+    uint32_t     m_nBulkInit66;          // +0x3ac8  R:0 W:1
+    uint32_t     m_nBulkInit67;          // +0x3acc  R:0 W:1
+    uint32_t     m_nBulkInit68;          // +0x3ad0  R:0 W:1
+    uint32_t     m_nBulkInit69;          // +0x3ad4  R:0 W:1
+    uint32_t     m_nBulkInit70;          // +0x3ad8  R:0 W:1
+    uint32_t     m_nBulkInit71;          // +0x3adc  R:0 W:1
+    uint32_t     m_nBulkInit72;          // +0x3ae0  R:0 W:1
+    uint32_t     m_nBulkInit73;          // +0x3ae4  R:0 W:1
+    uint32_t     m_nBulkInit74;          // +0x3ae8  R:0 W:1
+    uint32_t     m_nBulkInit75;          // +0x3aec  R:0 W:1
+    uint32_t     m_nBulkInit76;          // +0x3af0  R:0 W:1
+    uint32_t     m_nBulkInit77;          // +0x3af4  R:0 W:1
+    uint32_t     m_nBulkInit78;          // +0x3af8  R:0 W:1
+    uint32_t     m_nBulkInit79;          // +0x3afc  R:0 W:1
+    uint32_t     m_nBulkInit80;          // +0x3b00  R:0 W:1
+    uint32_t     m_nBulkInit81;          // +0x3b04  R:0 W:1
+    uint32_t     m_nBulkInit82;          // +0x3b08  R:0 W:1
+    uint32_t     m_nBulkInit83;          // +0x3b0c  R:0 W:1
+    uint32_t     m_nBulkInit84;          // +0x3b10  R:0 W:1
+    uint32_t     m_nBulkInit85;          // +0x3b14  R:0 W:1
+    // -- region 0x3B18: tracking / accumulation data --
+    uint32_t     m_nTrack0;              // +0x3b18  R:0 W:2
+    uint32_t     m_nTrack1;              // +0x3b1c  R:0 W:2
+    uint32_t     m_nTrack2;              // +0x3b20  R:3 W:2
+    uint32_t     m_nTrack3;              // +0x3b24  R:2 W:1
+    uint32_t     m_nTrack4;              // +0x3b28  R:3 W:3
+    uint32_t     m_nTrack5;              // +0x3b2c  R:1 W:2
+    uint32_t     m_nTrack6;              // +0x3b30  R:1 W:4
+    uint32_t     m_nTrack7;              // +0x3b34  R:19 W:2
+    uint32_t     m_nTrack8;              // +0x3b38  R:4 W:2
+    uint32_t     m_nTrack9;              // +0x3b3c  R:1 W:1
+    uint32_t     m_nTrack10;             // +0x3b40  R:3 W:4
+    uint32_t     m_nTrack11;             // +0x3b44  R:9 W:2
+    uint32_t     m_nTrack12;             // +0x3b48  R:1 W:4
+    uint32_t     m_nTrack13;             // +0x3b4c  R:1 W:5
+    uint32_t     m_nTrack14;             // +0x3b50  R:1 W:3
+    // -- region 0x3B58: write-only init pairs --
+    uint32_t     m_nPairInit0;           // +0x3b58  R:3 W:3
+    uint32_t     m_nPairInit1;           // +0x3b5c  R:0 W:2
+    uint32_t     m_nPairInit2;           // +0x3b60  R:0 W:2
+    uint32_t     m_nPairInit3;           // +0x3b64  R:0 W:2
+    uint32_t     m_nPairInit4;           // +0x3b68  R:0 W:2
+    uint32_t     m_nPairInit5;           // +0x3b6c  R:0 W:2
+    uint32_t     m_nPairInit6;           // +0x3b70  R:0 W:2
+    // -- region 0x3B74: hot lookup table (R:7-31) --
+    uint32_t     m_nLookup0;             // +0x3b74  R:31 W:3
+    uint32_t     m_nLookup1;             // +0x3b78  R:27 W:1
+    uint32_t     m_nLookup2;             // +0x3b7c  R:11 W:3
+    uint32_t     m_nLookup3;             // +0x3b80  R:8 W:1
+    uint32_t     m_nLookup4;             // +0x3b84  R:11 W:3
+    uint32_t     m_nLookup5;             // +0x3b88  R:8 W:1
+    uint32_t     m_nLookup6;             // +0x3b8c  R:12 W:3
+    uint32_t     m_nLookup7;             // +0x3b90  R:9 W:1
+    uint32_t     m_nLookup8;             // +0x3b94  R:7 W:1
+    // -- region 0x3B9C: read-only region 0x3B9C --
+    uint32_t     m_nReadOnly3B0;         // +0x3b9c  R:1 W:0
+    uint32_t     m_nReadOnly3B1;         // +0x3ba0  R:1 W:0
     uint8_t     _pad0x3bb0[12];
-    uint32_t     field_0x3bb0;  // +0x3bb0  R:1 W:0
-    uint32_t     field_0x3bb4;  // +0x3bb4  R:1 W:0
+    uint32_t     m_nReadOnly3B5;         // +0x3bb0  R:1 W:0
+    uint32_t     m_nReadOnly3B6;         // +0x3bb4  R:1 W:0
     uint8_t     _pad0x3bd4[28];
-    uint32_t     field_0x3bd4;  // +0x3bd4  R:3 W:0
-    uint32_t     field_0x3bd8;  // +0x3bd8  R:2 W:2
-    uint32_t     field_0x3bdc;  // +0x3bdc  R:2 W:1
+    // -- region 0x3BD4: sync/state region 0x3BD4 --
+    uint32_t     m_nSync3B0;             // +0x3bd4  R:3 W:0
+    uint32_t     m_nSync3B1;             // +0x3bd8  R:2 W:2
+    uint32_t     m_nSync3B2;             // +0x3bdc  R:2 W:1
     uint8_t     _pad0x3be8[8];
-    uint32_t     field_0x3be8;  // +0x3be8  R:2 W:2
-    uint32_t     field_0x3bf0;  // +0x3bf0  R:2 W:2
-    uint32_t     field_0x3bf8;  // +0x3bf8  R:0 W:2
-    uint32_t     field_0x3bfc;  // +0x3bfc  R:0 W:1
+    uint32_t     m_nSync3B5;             // +0x3be8  R:2 W:2
+    uint32_t     m_nSync3B7;             // +0x3bf0  R:2 W:2
+    uint32_t     m_nSync3B9;             // +0x3bf8  R:0 W:2
+    uint32_t     m_nSync3B10;            // +0x3bfc  R:0 W:1
     uint8_t     _pad0x3c38[56];
-    uint32_t     field_0x3c38;  // +0x3c38  R:2 W:3
-    uint32_t     field_0x3c3c;  // +0x3c3c  R:0 W:4
-    uint32_t     field_0x3c40;  // +0x3c40  R:74 W:10
-    uint32_t     field_0x3c44;  // +0x3c44  R:0 W:3
+    // -- region 0x3C38: core logic (0x3C40 R:74, hottest) --
+    uint32_t     m_nCore3C0;             // +0x3c38  R:2 W:3
+    uint32_t     m_nCore3C1;             // +0x3c3c  R:0 W:4
+    uint32_t     m_nCore3C2;             // +0x3c40  R:74 W:10
+    uint32_t     m_nCore3C3;             // +0x3c44  R:0 W:3
     uint8_t     _pad0x3c50[8];
-    uint32_t     field_0x3c50;  // +0x3c50  R:2 W:0
-    uint16_t     field_0x3c54;  // +0x3c54  R:3 W:2
-    uint32_t     field_0x3c58;  // +0x3c58  R:2 W:0
-    uint32_t     field_0x3c60;  // +0x3c60  R:1 W:2
-    uint32_t     field_0x3c64;  // +0x3c64  R:3 W:1
-    uint32_t     field_0x3c68;  // +0x3c68  R:0 W:1
-    uint32_t     field_0x3c70;  // +0x3c70  R:0 W:1
-    uint32_t     field_0x3c78;  // +0x3c78  R:0 W:1
-    uint32_t     field_0x3c7c;  // +0x3c7c  R:0 W:1
-    uint32_t     field_0x3c80;  // +0x3c80  R:0 W:8
+    // -- region 0x3C50: state management 0x3C50 --
+    uint32_t     m_nState3C0;            // +0x3c50  R:2 W:0
+    uint16_t     m_nState3C1;            // +0x3c54  R:3 W:2
+    uint32_t     m_nState3C2;            // +0x3c58  R:2 W:0
+    uint32_t     m_nState3C4;            // +0x3c60  R:1 W:2
+    uint32_t     m_nState3C5;            // +0x3c64  R:3 W:1
+    uint32_t     m_nState3C6;            // +0x3c68  R:0 W:1
+    uint32_t     m_nState3C8;            // +0x3c70  R:0 W:1
+    uint32_t     m_nState3C10;           // +0x3c78  R:0 W:1
+    uint32_t     m_nState3C11;           // +0x3c7c  R:0 W:1
+    uint32_t     m_nState3C12;           // +0x3c80  R:0 W:8
     uint8_t     _pad0x3c8c[8];
-    uint32_t     field_0x3c8c;  // +0x3c8c  R:1 W:1
-    uint32_t     field_0x3c90;  // +0x3c90  R:1 W:8
-    uint32_t     field_0x3c94;  // +0x3c94  R:1 W:1
-    uint32_t     field_0x3c98;  // +0x3c98  R:0 W:6
-    uint32_t     field_0x3c9c;  // +0x3c9c  R:13 W:9
-    uint32_t     field_0x3ca0;  // +0x3ca0  R:3 W:2
-    uint32_t     field_0x3ca4;  // +0x3ca4  R:0 W:4
-    uint32_t     field_0x3ca8;  // +0x3ca8  R:0 W:2
-    uint32_t     field_0x3cac;  // +0x3cac  R:0 W:2
+    uint32_t     m_nState3C15;           // +0x3c8c  R:1 W:1
+    uint32_t     m_nState3C16;           // +0x3c90  R:1 W:8
+    uint32_t     m_nState3C17;           // +0x3c94  R:1 W:1
+    uint32_t     m_nState3C18;           // +0x3c98  R:0 W:6
+    uint32_t     m_nState3C19;           // +0x3c9c  R:13 W:9
+    uint32_t     m_nState3C20;           // +0x3ca0  R:3 W:2
+    uint32_t     m_nState3C21;           // +0x3ca4  R:0 W:4
+    uint32_t     m_nState3C22;           // +0x3ca8  R:0 W:2
+    uint32_t     m_nState3C23;           // +0x3cac  R:0 W:2
     uint8_t     _pad0x3cd4[36];
-    uint32_t     field_0x3cd4;  // +0x3cd4  R:4 W:1
-    uint32_t     field_0x3cd8;  // +0x3cd8  R:0 W:1
-    uint32_t     field_0x3cdc;  // +0x3cdc  R:0 W:3
-    uint32_t     field_0x3ce0;  // +0x3ce0  R:0 W:3
-    uint32_t     field_0x3ce4;  // +0x3ce4  R:0 W:3
-    uint32_t     field_0x3ce8;  // +0x3ce8  R:0 W:1
-    uint32_t     field_0x3cec;  // +0x3cec  R:0 W:3
-    uint32_t     field_0x3cf0;  // +0x3cf0  R:0 W:3
-    uint32_t     field_0x3cf4;  // +0x3cf4  R:0 W:1
-    uint32_t     field_0x3cf8;  // +0x3cf8  R:4 W:3
-    uint32_t     field_0x3cfc;  // +0x3cfc  R:1 W:1
-    uint32_t     field_0x3d00;  // +0x3d00  R:4 W:3
-    uint32_t     field_0x3d04;  // +0x3d04  R:1 W:1
-    uint32_t     field_0x3d08;  // +0x3d08  R:4 W:3
-    uint32_t     field_0x3d0c;  // +0x3d0c  R:1 W:1
-    uint32_t     field_0x3d10;  // +0x3d10  R:4 W:3
-    uint32_t     field_0x3d14;  // +0x3d14  R:1 W:1
-    uint32_t     field_0x3d18;  // +0x3d18  R:4 W:3
-    uint32_t     field_0x3d1c;  // +0x3d1c  R:1 W:1
-    uint32_t     field_0x3d20;  // +0x3d20  R:3 W:3
-    uint32_t     field_0x3d24;  // +0x3d24  R:1 W:1
-    uint32_t     field_0x3d28;  // +0x3d28  R:4 W:3
-    uint32_t     field_0x3d2c;  // +0x3d2c  R:1 W:1
-    uint32_t     field_0x3d30;  // +0x3d30  R:4 W:3
-    uint32_t     field_0x3d34;  // +0x3d34  R:1 W:1
-    uint32_t     field_0x3d38;  // +0x3d38  R:4 W:3
-    uint32_t     field_0x3d3c;  // +0x3d3c  R:1 W:1
-    uint32_t     field_0x3d40;  // +0x3d40  R:4 W:3
-    uint32_t     field_0x3d44;  // +0x3d44  R:1 W:1
-    uint32_t     field_0x3d48;  // +0x3d48  R:4 W:3
-    uint32_t     field_0x3d4c;  // +0x3d4c  R:1 W:1
-    uint32_t     field_0x3d50;  // +0x3d50  R:3 W:3
-    uint32_t     field_0x3d54;  // +0x3d54  R:1 W:1
-    uint32_t     field_0x3d58;  // +0x3d58  R:0 W:1
-    uint32_t     field_0x3d5c;  // +0x3d5c  R:1 W:3
-    uint32_t     field_0x3d60;  // +0x3d60  R:2 W:5
-    uint32_t     field_0x3d64;  // +0x3d64  R:0 W:1
-    uint32_t     field_0x3d68;  // +0x3d68  R:0 W:1
-    uint32_t     field_0x3d6c;  // +0x3d6c  R:0 W:1
-    uint32_t     field_0x3d70;  // +0x3d70  R:0 W:1
-    uint32_t     field_0x3d74;  // +0x3d74  R:0 W:1
-    uint32_t     field_0x3d78;  // +0x3d78  R:0 W:1
-    uint32_t     field_0x3d7c;  // +0x3d7c  R:0 W:1
-    uint32_t     field_0x3d80;  // +0x3d80  R:0 W:1
-    uint32_t     field_0x3d84;  // +0x3d84  R:0 W:1
-    uint32_t     field_0x3d88;  // +0x3d88  R:0 W:1
-    uint32_t     field_0x3d8c;  // +0x3d8c  R:1 W:1
-    uint32_t     field_0x3d90;  // +0x3d90  R:1 W:1
-    uint32_t     field_0x3d98;  // +0x3d98  R:0 W:1
-    uint32_t     field_0x3d9c;  // +0x3d9c  R:1 W:1
-    uint32_t     field_0x3da0;  // +0x3da0  R:12 W:1
-    uint32_t     field_0x3da4;  // +0x3da4  R:0 W:1
-    uint32_t     field_0x3da8;  // +0x3da8  R:0 W:1
-    uint32_t     field_0x3dac;  // +0x3dac  R:8 W:4
-    uint32_t     field_0x3db0;  // +0x3db0  R:8 W:4
-    uint32_t     field_0x3db4;  // +0x3db4  R:0 W:1
-    uint32_t     field_0x3db8;  // +0x3db8  R:30 W:3
-    uint32_t     field_0x3dbc;  // +0x3dbc  R:27 W:3
-    uint32_t     field_0x3dc0;  // +0x3dc0  R:0 W:2
-    uint32_t     field_0x3dc4;  // +0x3dc4  R:0 W:2
-    uint32_t     field_0x3dc8;  // +0x3dc8  R:0 W:1
-    uint32_t     field_0x3dcc;  // +0x3dcc  R:4 W:6
-    uint32_t     field_0x3dd0;  // +0x3dd0  R:0 W:5
-    uint32_t     field_0x3dd4;  // +0x3dd4  R:0 W:2
-    uint32_t     field_0x3dd8;  // +0x3dd8  R:0 W:2
-    uint32_t     field_0x3ddc;  // +0x3ddc  R:6 W:2
-    uint32_t     field_0x3de0;  // +0x3de0  R:2 W:0
-    uint32_t     field_0x3de4;  // +0x3de4  R:2 W:2
-    uint32_t     field_0x3de8;  // +0x3de8  R:6 W:0
+    // -- region 0x3CD4: value+tag slot pairs (12 pairs at 0x3CF8) --
+    uint32_t     m_nSlot0;               // +0x3cd4  R:4 W:1
+    uint32_t     m_nSlot1;               // +0x3cd8  R:0 W:1
+    uint32_t     m_nSlot2;               // +0x3cdc  R:0 W:3
+    uint32_t     m_nSlot3;               // +0x3ce0  R:0 W:3
+    uint32_t     m_nSlot4;               // +0x3ce4  R:0 W:3
+    uint32_t     m_nSlot5;               // +0x3ce8  R:0 W:1
+    uint32_t     m_nSlot6;               // +0x3cec  R:0 W:3
+    uint32_t     m_nSlot7;               // +0x3cf0  R:0 W:3
+    uint32_t     m_nSlot8;               // +0x3cf4  R:0 W:1
+    uint32_t     m_nSlot9;               // +0x3cf8  R:4 W:3
+    uint32_t     m_nSlot10;              // +0x3cfc  R:1 W:1
+    uint32_t     m_nSlot11;              // +0x3d00  R:4 W:3
+    uint32_t     m_nSlot12;              // +0x3d04  R:1 W:1
+    uint32_t     m_nSlot13;              // +0x3d08  R:4 W:3
+    uint32_t     m_nSlot14;              // +0x3d0c  R:1 W:1
+    uint32_t     m_nSlot15;              // +0x3d10  R:4 W:3
+    uint32_t     m_nSlot16;              // +0x3d14  R:1 W:1
+    uint32_t     m_nSlot17;              // +0x3d18  R:4 W:3
+    uint32_t     m_nSlot18;              // +0x3d1c  R:1 W:1
+    uint32_t     m_nSlot19;              // +0x3d20  R:3 W:3
+    uint32_t     m_nSlot20;              // +0x3d24  R:1 W:1
+    uint32_t     m_nSlot21;              // +0x3d28  R:4 W:3
+    uint32_t     m_nSlot22;              // +0x3d2c  R:1 W:1
+    uint32_t     m_nSlot23;              // +0x3d30  R:4 W:3
+    uint32_t     m_nSlot24;              // +0x3d34  R:1 W:1
+    uint32_t     m_nSlot25;              // +0x3d38  R:4 W:3
+    uint32_t     m_nSlot26;              // +0x3d3c  R:1 W:1
+    uint32_t     m_nSlot27;              // +0x3d40  R:4 W:3
+    uint32_t     m_nSlot28;              // +0x3d44  R:1 W:1
+    uint32_t     m_nSlot29;              // +0x3d48  R:4 W:3
+    uint32_t     m_nSlot30;              // +0x3d4c  R:1 W:1
+    uint32_t     m_nSlot31;              // +0x3d50  R:3 W:3
+    uint32_t     m_nSlot32;              // +0x3d54  R:1 W:1
+    uint32_t     m_nSlot33;              // +0x3d58  R:0 W:1
+    // -- region 0x3D5C: calculation / logic 0x3D5C --
+    uint32_t     m_nCalc3D0;             // +0x3d5c  R:1 W:3
+    uint32_t     m_nCalc3D1;             // +0x3d60  R:2 W:5
+    uint32_t     m_nCalc3D2;             // +0x3d64  R:0 W:1
+    uint32_t     m_nCalc3D3;             // +0x3d68  R:0 W:1
+    uint32_t     m_nCalc3D4;             // +0x3d6c  R:0 W:1
+    uint32_t     m_nCalc3D5;             // +0x3d70  R:0 W:1
+    uint32_t     m_nCalc3D6;             // +0x3d74  R:0 W:1
+    uint32_t     m_nCalc3D7;             // +0x3d78  R:0 W:1
+    uint32_t     m_nCalc3D8;             // +0x3d7c  R:0 W:1
+    uint32_t     m_nCalc3D9;             // +0x3d80  R:0 W:1
+    uint32_t     m_nCalc3D10;            // +0x3d84  R:0 W:1
+    uint32_t     m_nCalc3D11;            // +0x3d88  R:0 W:1
+    uint32_t     m_nCalc3D12;            // +0x3d8c  R:1 W:1
+    uint32_t     m_nCalc3D13;            // +0x3d90  R:1 W:1
+    uint32_t     m_nCalc3D15;            // +0x3d98  R:0 W:1
+    uint32_t     m_nCalc3D16;            // +0x3d9c  R:1 W:1
+    uint32_t     m_nCalc3D17;            // +0x3da0  R:12 W:1
+    uint32_t     m_nCalc3D18;            // +0x3da4  R:0 W:1
+    uint32_t     m_nCalc3D19;            // +0x3da8  R:0 W:1
+    // -- region 0x3DAC: hot pair region (R:30, R:27) --
+    uint32_t     m_nHotPair3D0;          // +0x3dac  R:8 W:4
+    uint32_t     m_nHotPair3D1;          // +0x3db0  R:8 W:4
+    uint32_t     m_nHotPair3D2;          // +0x3db4  R:0 W:1
+    uint32_t     m_nHotPair3D3;          // +0x3db8  R:30 W:3
+    uint32_t     m_nHotPair3D4;          // +0x3dbc  R:27 W:3
+    uint32_t     m_nHotPair3D5;          // +0x3dc0  R:0 W:2
+    uint32_t     m_nHotPair3D6;          // +0x3dc4  R:0 W:2
+    uint32_t     m_nHotPair3D7;          // +0x3dc8  R:0 W:1
+    uint32_t     m_nHotPair3D8;          // +0x3dcc  R:4 W:6
+    uint32_t     m_nHotPair3D9;          // +0x3dd0  R:0 W:5
+    uint32_t     m_nHotPair3D10;         // +0x3dd4  R:0 W:2
+    uint32_t     m_nHotPair3D11;         // +0x3dd8  R:0 W:2
+    uint32_t     m_nHotPair3D12;         // +0x3ddc  R:6 W:2
+    uint32_t     m_nHotPair3D13;         // +0x3de0  R:2 W:0
+    uint32_t     m_nHotPair3D14;         // +0x3de4  R:2 W:2
+    uint32_t     m_nHotPair3D15;         // +0x3de8  R:6 W:0
     uint8_t     _pad0x3f60[372];
-    uint32_t     field_0x3f60;  // +0x3f60  R:0 W:1
-    uint32_t     field_0x3f64;  // +0x3f64  R:0 W:1
-    uint32_t     field_0x3f68;  // +0x3f68  R:0 W:1
-    uint32_t     field_0x3f6c;  // +0x3f6c  R:0 W:1
-    uint32_t     field_0x3f70;  // +0x3f70  R:0 W:1
-    uint32_t     field_0x3f74;  // +0x3f74  R:0 W:1
-    uint32_t     field_0x3f78;  // +0x3f78  R:0 W:1
-    uint32_t     field_0x3f7c;  // +0x3f7c  R:0 W:1
-    uint32_t     field_0x3f80;  // +0x3f80  R:0 W:1
-    uint32_t     field_0x3f84;  // +0x3f84  R:0 W:1
-    uint32_t     field_0x3f88;  // +0x3f88  R:0 W:1
-    uint32_t     field_0x3f8c;  // +0x3f8c  R:0 W:1
-    uint32_t     field_0x3f90;  // +0x3f90  R:0 W:1
-    uint32_t     field_0x3f94;  // +0x3f94  R:0 W:1
-    uint32_t     field_0x3f98;  // +0x3f98  R:0 W:1
-    uint32_t     field_0x3f9c;  // +0x3f9c  R:0 W:1
-    uint32_t     field_0x3fa0;  // +0x3fa0  R:0 W:1
-    uint32_t     field_0x3fa4;  // +0x3fa4  R:0 W:1
-    uint32_t     field_0x3fa8;  // +0x3fa8  R:0 W:1
-    uint32_t     field_0x3fac;  // +0x3fac  R:0 W:1
-    uint32_t     field_0x3fb0;  // +0x3fb0  R:0 W:1
-    uint32_t     field_0x3fb4;  // +0x3fb4  R:0 W:1
-    uint32_t     field_0x3fb8;  // +0x3fb8  R:0 W:1
-    uint32_t     field_0x3fbc;  // +0x3fbc  R:0 W:1
-    uint32_t     field_0x3fc0;  // +0x3fc0  R:0 W:1
-    uint32_t     field_0x3fc4;  // +0x3fc4  R:0 W:1
-    uint32_t     field_0x3fc8;  // +0x3fc8  R:0 W:1
-    uint32_t     field_0x3fcc;  // +0x3fcc  R:0 W:1
-    uint32_t     field_0x3fd0;  // +0x3fd0  R:0 W:1
-    uint32_t     field_0x3fd4;  // +0x3fd4  R:0 W:1
-    uint32_t     field_0x3fd8;  // +0x3fd8  R:0 W:1
-    uint32_t     field_0x3fdc;  // +0x3fdc  R:0 W:1
+    // -- region 0x3F60: write-only config array (32 fields) --
+    uint32_t     m_nBulkCfg3F0;          // +0x3f60  R:0 W:1
+    uint32_t     m_nBulkCfg3F1;          // +0x3f64  R:0 W:1
+    uint32_t     m_nBulkCfg3F2;          // +0x3f68  R:0 W:1
+    uint32_t     m_nBulkCfg3F3;          // +0x3f6c  R:0 W:1
+    uint32_t     m_nBulkCfg3F4;          // +0x3f70  R:0 W:1
+    uint32_t     m_nBulkCfg3F5;          // +0x3f74  R:0 W:1
+    uint32_t     m_nBulkCfg3F6;          // +0x3f78  R:0 W:1
+    uint32_t     m_nBulkCfg3F7;          // +0x3f7c  R:0 W:1
+    uint32_t     m_nBulkCfg3F8;          // +0x3f80  R:0 W:1
+    uint32_t     m_nBulkCfg3F9;          // +0x3f84  R:0 W:1
+    uint32_t     m_nBulkCfg3F10;         // +0x3f88  R:0 W:1
+    uint32_t     m_nBulkCfg3F11;         // +0x3f8c  R:0 W:1
+    uint32_t     m_nBulkCfg3F12;         // +0x3f90  R:0 W:1
+    uint32_t     m_nBulkCfg3F13;         // +0x3f94  R:0 W:1
+    uint32_t     m_nBulkCfg3F14;         // +0x3f98  R:0 W:1
+    uint32_t     m_nBulkCfg3F15;         // +0x3f9c  R:0 W:1
+    uint32_t     m_nBulkCfg3F16;         // +0x3fa0  R:0 W:1
+    uint32_t     m_nBulkCfg3F17;         // +0x3fa4  R:0 W:1
+    uint32_t     m_nBulkCfg3F18;         // +0x3fa8  R:0 W:1
+    uint32_t     m_nBulkCfg3F19;         // +0x3fac  R:0 W:1
+    uint32_t     m_nBulkCfg3F20;         // +0x3fb0  R:0 W:1
+    uint32_t     m_nBulkCfg3F21;         // +0x3fb4  R:0 W:1
+    uint32_t     m_nBulkCfg3F22;         // +0x3fb8  R:0 W:1
+    uint32_t     m_nBulkCfg3F23;         // +0x3fbc  R:0 W:1
+    uint32_t     m_nBulkCfg3F24;         // +0x3fc0  R:0 W:1
+    uint32_t     m_nBulkCfg3F25;         // +0x3fc4  R:0 W:1
+    uint32_t     m_nBulkCfg3F26;         // +0x3fc8  R:0 W:1
+    uint32_t     m_nBulkCfg3F27;         // +0x3fcc  R:0 W:1
+    uint32_t     m_nBulkCfg3F28;         // +0x3fd0  R:0 W:1
+    uint32_t     m_nBulkCfg3F29;         // +0x3fd4  R:0 W:1
+    uint32_t     m_nBulkCfg3F30;         // +0x3fd8  R:0 W:1
+    uint32_t     m_nBulkCfg3F31;         // +0x3fdc  R:0 W:1
     uint8_t     _pad0x4010[48];
-    uint32_t     field_0x4010;  // +0x4010  R:0 W:1
+    // -- region 0x4010: sentinel/marker --
+    uint32_t     m_nSentinel40;          // +0x4010  R:0 W:1
     uint8_t     _pad0x4330[796];
-    uint32_t     field_0x4330;  // +0x4330  R:0 W:1
-    uint32_t     field_0x4334;  // +0x4334  R:0 W:1
-    uint32_t     field_0x4338;  // +0x4338  R:0 W:1
-    uint32_t     field_0x433c;  // +0x433c  R:0 W:1
-    uint32_t     field_0x4340;  // +0x4340  R:0 W:1
-    uint32_t     field_0x4344;  // +0x4344  R:0 W:1
-    uint32_t     field_0x4348;  // +0x4348  R:0 W:1
-    uint32_t     field_0x434c;  // +0x434c  R:0 W:1
-    uint32_t     field_0x4350;  // +0x4350  R:0 W:1
-    uint32_t     field_0x4354;  // +0x4354  R:0 W:1
-    uint32_t     field_0x4358;  // +0x4358  R:0 W:1
-    uint32_t     field_0x435c;  // +0x435c  R:0 W:1
-    uint32_t     field_0x4360;  // +0x4360  R:0 W:1
-    uint32_t     field_0x4364;  // +0x4364  R:0 W:1
-    uint32_t     field_0x4368;  // +0x4368  R:0 W:1
-    uint32_t     field_0x436c;  // +0x436c  R:0 W:1
-    uint32_t     field_0x4370;  // +0x4370  R:0 W:1
-    uint32_t     field_0x4374;  // +0x4374  R:0 W:1
-    uint32_t     field_0x4378;  // +0x4378  R:0 W:1
-    uint32_t     field_0x437c;  // +0x437c  R:0 W:1
-    uint32_t     field_0x4380;  // +0x4380  R:0 W:1
-    uint32_t     field_0x4384;  // +0x4384  R:0 W:1
-    uint32_t     field_0x4388;  // +0x4388  R:0 W:1
-    uint32_t     field_0x438c;  // +0x438c  R:0 W:1
-    uint32_t     field_0x4390;  // +0x4390  R:0 W:1
-    uint32_t     field_0x4394;  // +0x4394  R:0 W:1
-    uint32_t     field_0x4398;  // +0x4398  R:0 W:1
-    uint32_t     field_0x439c;  // +0x439c  R:0 W:1
-    uint32_t     field_0x43a0;  // +0x43a0  R:0 W:1
-    uint32_t     field_0x43a4;  // +0x43a4  R:0 W:1
-    uint32_t     field_0x43a8;  // +0x43a8  R:0 W:1
-    uint32_t     field_0x43ac;  // +0x43ac  R:0 W:1
+    // -- region 0x4330: write-only config array (32 fields) --
+    uint32_t     m_nBulkCfg430;          // +0x4330  R:0 W:1
+    uint32_t     m_nBulkCfg431;          // +0x4334  R:0 W:1
+    uint32_t     m_nBulkCfg432;          // +0x4338  R:0 W:1
+    uint32_t     m_nBulkCfg433;          // +0x433c  R:0 W:1
+    uint32_t     m_nBulkCfg434;          // +0x4340  R:0 W:1
+    uint32_t     m_nBulkCfg435;          // +0x4344  R:0 W:1
+    uint32_t     m_nBulkCfg436;          // +0x4348  R:0 W:1
+    uint32_t     m_nBulkCfg437;          // +0x434c  R:0 W:1
+    uint32_t     m_nBulkCfg438;          // +0x4350  R:0 W:1
+    uint32_t     m_nBulkCfg439;          // +0x4354  R:0 W:1
+    uint32_t     m_nBulkCfg4310;         // +0x4358  R:0 W:1
+    uint32_t     m_nBulkCfg4311;         // +0x435c  R:0 W:1
+    uint32_t     m_nBulkCfg4312;         // +0x4360  R:0 W:1
+    uint32_t     m_nBulkCfg4313;         // +0x4364  R:0 W:1
+    uint32_t     m_nBulkCfg4314;         // +0x4368  R:0 W:1
+    uint32_t     m_nBulkCfg4315;         // +0x436c  R:0 W:1
+    uint32_t     m_nBulkCfg4316;         // +0x4370  R:0 W:1
+    uint32_t     m_nBulkCfg4317;         // +0x4374  R:0 W:1
+    uint32_t     m_nBulkCfg4318;         // +0x4378  R:0 W:1
+    uint32_t     m_nBulkCfg4319;         // +0x437c  R:0 W:1
+    uint32_t     m_nBulkCfg4320;         // +0x4380  R:0 W:1
+    uint32_t     m_nBulkCfg4321;         // +0x4384  R:0 W:1
+    uint32_t     m_nBulkCfg4322;         // +0x4388  R:0 W:1
+    uint32_t     m_nBulkCfg4323;         // +0x438c  R:0 W:1
+    uint32_t     m_nBulkCfg4324;         // +0x4390  R:0 W:1
+    uint32_t     m_nBulkCfg4325;         // +0x4394  R:0 W:1
+    uint32_t     m_nBulkCfg4326;         // +0x4398  R:0 W:1
+    uint32_t     m_nBulkCfg4327;         // +0x439c  R:0 W:1
+    uint32_t     m_nBulkCfg4328;         // +0x43a0  R:0 W:1
+    uint32_t     m_nBulkCfg4329;         // +0x43a4  R:0 W:1
+    uint32_t     m_nBulkCfg4330;         // +0x43a8  R:0 W:1
+    uint32_t     m_nBulkCfg4331;         // +0x43ac  R:0 W:1
     uint8_t     _pad0x4730[896];
-    uint32_t     field_0x4730;  // +0x4730  R:7 W:1
-    uint32_t     field_0x4734;  // +0x4734  R:6 W:1
+    // -- region 0x4730: read-heavy region 0x4730 --
+    uint32_t     m_nRead470;             // +0x4730  R:7 W:1
+    uint32_t     m_nRead471;             // +0x4734  R:6 W:1
     uint8_t     _pad0x4740[8];
-    uint32_t     field_0x4740;  // +0x4740  R:2 W:0
+    uint32_t     m_nRead474;             // +0x4740  R:2 W:0
     uint8_t     _pad0x4770[44];
-    uint32_t     field_0x4770;  // +0x4770  R:23 W:8
-    uint32_t     field_0x4774;  // +0x4774  R:18 W:5
-    uint32_t     field_0x4778;  // +0x4778  R:28 W:10
-    uint32_t     field_0x477c;  // +0x477c  R:2 W:2
-    uint32_t     field_0x4780;  // +0x4780  R:3 W:3
-    uint32_t     field_0x4784;  // +0x4784  R:3 W:3
-    uint32_t     field_0x4788;  // +0x4788  R:3 W:3
-    uint32_t     field_0x478c;  // +0x478c  R:6 W:3
-    uint32_t     field_0x4790;  // +0x4790  R:4 W:1
-    uint32_t     field_0x4794;  // +0x4794  R:16 W:1
-    uint32_t     field_0x4798;  // +0x4798  R:8 W:1
-    uint32_t     field_0x479c;  // +0x479c  R:1 W:3
-    uint32_t     field_0x47a0;  // +0x47a0  R:3 W:6
-    uint32_t     field_0x47a4;  // +0x47a4  R:3 W:6
-    uint32_t     field_0x47a8;  // +0x47a8  R:2 W:4
-    uint32_t     field_0x47ac;  // +0x47ac  R:2 W:4
-    uint32_t     field_0x47b0;  // +0x47b0  R:2 W:4
-    uint32_t     field_0x47b4;  // +0x47b4  R:2 W:4
-    uint32_t     field_0x47b8;  // +0x47b8  R:1 W:2
-    uint32_t     field_0x47bc;  // +0x47bc  R:1 W:2
-    uint32_t     field_0x47c0;  // +0x47c0  R:9 W:2
-    uint32_t     field_0x47c4;  // +0x47c4  R:0 W:1
-    uint32_t     field_0x47c8;  // +0x47c8  R:1 W:2
-    uint32_t     field_0x47cc;  // +0x47cc  R:0 W:1
-    uint32_t     field_0x47d0;  // +0x47d0  R:0 W:1
-    uint32_t     field_0x47d4;  // +0x47d4  R:0 W:1
-    uint32_t     field_0x47d8;  // +0x47d8  R:0 W:1
+    // -- region 0x4770: physics/sim data (0x4778 R:28) --
+    uint32_t     m_nPhys0;               // +0x4770  R:23 W:8
+    uint32_t     m_nPhys1;               // +0x4774  R:18 W:5
+    uint32_t     m_nPhys2;               // +0x4778  R:28 W:10
+    uint32_t     m_nPhys3;               // +0x477c  R:2 W:2
+    uint32_t     m_nPhys4;               // +0x4780  R:3 W:3
+    uint32_t     m_nPhys5;               // +0x4784  R:3 W:3
+    uint32_t     m_nPhys6;               // +0x4788  R:3 W:3
+    uint32_t     m_nPhys7;               // +0x478c  R:6 W:3
+    uint32_t     m_nPhys8;               // +0x4790  R:4 W:1
+    uint32_t     m_nPhys9;               // +0x4794  R:16 W:1
+    uint32_t     m_nPhys10;              // +0x4798  R:8 W:1
+    uint32_t     m_nPhys11;              // +0x479c  R:1 W:3
+    uint32_t     m_nPhys12;              // +0x47a0  R:3 W:6
+    uint32_t     m_nPhys13;              // +0x47a4  R:3 W:6
+    uint32_t     m_nPhys14;              // +0x47a8  R:2 W:4
+    uint32_t     m_nPhys15;              // +0x47ac  R:2 W:4
+    uint32_t     m_nPhys16;              // +0x47b0  R:2 W:4
+    uint32_t     m_nPhys17;              // +0x47b4  R:2 W:4
+    uint32_t     m_nPhys18;              // +0x47b8  R:1 W:2
+    uint32_t     m_nPhys19;              // +0x47bc  R:1 W:2
+    uint32_t     m_nPhys20;              // +0x47c0  R:9 W:2
+    uint32_t     m_nPhys21;              // +0x47c4  R:0 W:1
+    uint32_t     m_nPhys22;              // +0x47c8  R:1 W:2
+    uint32_t     m_nPhys23;              // +0x47cc  R:0 W:1
+    uint32_t     m_nPhys24;              // +0x47d0  R:0 W:1
+    uint32_t     m_nPhys25;              // +0x47d4  R:0 W:1
+    uint32_t     m_nPhys26;              // +0x47d8  R:0 W:1
     uint8_t     _pad0x480c[48];
-    uint32_t     field_0x480c;  // +0x480c  R:0 W:1
-    uint32_t     field_0x4810;  // +0x4810  R:0 W:1
-    uint32_t     field_0x4814;  // +0x4814  R:0 W:1
-    uint32_t     field_0x4818;  // +0x4818  R:0 W:1
+    // -- region 0x480C: write-only 0x480C --
+    uint32_t     m_nStore48A0;           // +0x480c  R:0 W:1
+    uint32_t     m_nStore48A1;           // +0x4810  R:0 W:1
+    uint32_t     m_nStore48A2;           // +0x4814  R:0 W:1
+    uint32_t     m_nStore48A3;           // +0x4818  R:0 W:1
     uint8_t     _pad0x484c[48];
-    uint32_t     field_0x484c;  // +0x484c  R:1 W:2
-    uint32_t     field_0x4850;  // +0x4850  R:0 W:1
-    uint32_t     field_0x4854;  // +0x4854  R:0 W:1
-    uint32_t     field_0x4858;  // +0x4858  R:0 W:1
-    uint32_t     field_0x485c;  // +0x485c  R:0 W:1
-    uint32_t     field_0x4860;  // +0x4860  R:0 W:1
-    uint32_t     field_0x4864;  // +0x4864  R:0 W:1
-    uint32_t     field_0x4868;  // +0x4868  R:0 W:1
-    uint32_t     field_0x486c;  // +0x486c  R:0 W:1
-    uint32_t     field_0x4870;  // +0x4870  R:0 W:1
-    uint32_t     field_0x4874;  // +0x4874  R:0 W:1
-    uint32_t     field_0x4878;  // +0x4878  R:0 W:1
-    uint32_t     field_0x487c;  // +0x487c  R:0 W:1
-    uint32_t     field_0x4880;  // +0x4880  R:0 W:1
-    uint32_t     field_0x4884;  // +0x4884  R:0 W:1
-    uint32_t     field_0x4888;  // +0x4888  R:0 W:1
-    uint32_t     field_0x488c;  // +0x488c  R:0 W:1
-    uint32_t     field_0x4890;  // +0x4890  R:3 W:2
-    uint32_t     field_0x4894;  // +0x4894  R:0 W:1
-    uint32_t     field_0x4898;  // +0x4898  R:0 W:1
-    uint32_t     field_0x489c;  // +0x489c  R:0 W:1
-    uint32_t     field_0x48a0;  // +0x48a0  R:0 W:1
-    uint32_t     field_0x48a4;  // +0x48a4  R:2 W:1
-    uint32_t     field_0x48a8;  // +0x48a8  R:0 W:1
-    uint32_t     field_0x48ac;  // +0x48ac  R:0 W:1
-    uint32_t     field_0x48b0;  // +0x48b0  R:0 W:1
-    uint32_t     field_0x48b4;  // +0x48b4  R:0 W:1
+    // -- region 0x484C: write-only bulk 0x484C --
+    uint32_t     m_nStore48B0;           // +0x484c  R:1 W:2
+    uint32_t     m_nStore48B1;           // +0x4850  R:0 W:1
+    uint32_t     m_nStore48B2;           // +0x4854  R:0 W:1
+    uint32_t     m_nStore48B3;           // +0x4858  R:0 W:1
+    uint32_t     m_nStore48B4;           // +0x485c  R:0 W:1
+    uint32_t     m_nStore48B5;           // +0x4860  R:0 W:1
+    uint32_t     m_nStore48B6;           // +0x4864  R:0 W:1
+    uint32_t     m_nStore48B7;           // +0x4868  R:0 W:1
+    uint32_t     m_nStore48B8;           // +0x486c  R:0 W:1
+    uint32_t     m_nStore48B9;           // +0x4870  R:0 W:1
+    uint32_t     m_nStore48B10;          // +0x4874  R:0 W:1
+    uint32_t     m_nStore48B11;          // +0x4878  R:0 W:1
+    uint32_t     m_nStore48B12;          // +0x487c  R:0 W:1
+    uint32_t     m_nStore48B13;          // +0x4880  R:0 W:1
+    uint32_t     m_nStore48B14;          // +0x4884  R:0 W:1
+    uint32_t     m_nStore48B15;          // +0x4888  R:0 W:1
+    uint32_t     m_nStore48B16;          // +0x488c  R:0 W:1
+    uint32_t     m_nStore48B17;          // +0x4890  R:3 W:2
+    uint32_t     m_nStore48B18;          // +0x4894  R:0 W:1
+    uint32_t     m_nStore48B19;          // +0x4898  R:0 W:1
+    uint32_t     m_nStore48B20;          // +0x489c  R:0 W:1
+    uint32_t     m_nStore48B21;          // +0x48a0  R:0 W:1
+    uint32_t     m_nStore48B22;          // +0x48a4  R:2 W:1
+    uint32_t     m_nStore48B23;          // +0x48a8  R:0 W:1
+    uint32_t     m_nStore48B24;          // +0x48ac  R:0 W:1
+    uint32_t     m_nStore48B25;          // +0x48b0  R:0 W:1
+    uint32_t     m_nStore48B26;          // +0x48b4  R:0 W:1
     uint8_t     _pad0x4ac8[528];
-    uint32_t     field_0x4ac8;  // +0x4ac8  R:7 W:1
-    uint32_t     field_0x4acc;  // +0x4acc  R:3 W:6
-    uint32_t     field_0x4ad0;  // +0x4ad0  R:1 W:8
-    uint32_t     field_0x4ad8;  // +0x4ad8  R:3 W:1
+    // -- region 0x4AC8: processing data 0x4AC8 --
+    uint32_t     m_nProc4A0;             // +0x4ac8  R:7 W:1
+    uint32_t     m_nProc4A1;             // +0x4acc  R:3 W:6
+    uint32_t     m_nProc4A2;             // +0x4ad0  R:1 W:8
+    uint32_t     m_nProc4A4;             // +0x4ad8  R:3 W:1
     uint8_t     _pad0x4ae8[12];
-    uint32_t     field_0x4ae8;  // +0x4ae8  R:7 W:3
-    uint32_t     field_0x4aec;  // +0x4aec  R:3 W:1
-    uint32_t     field_0x4af0;  // +0x4af0  R:0 W:5
+    uint32_t     m_nProc4A8;             // +0x4ae8  R:7 W:3
+    uint32_t     m_nProc4A9;             // +0x4aec  R:3 W:1
+    uint32_t     m_nProc4A10;            // +0x4af0  R:0 W:5
     uint8_t     _pad0x4b34[64];
-    uint32_t     field_0x4b34;  // +0x4b34  R:6 W:3
+    // -- region 0x4B34: buffer/array data 0x4B34 --
+    uint32_t     m_nBuf4B0;              // +0x4b34  R:6 W:3
     uint8_t     _pad0x4b40[8];
-    uint32_t     field_0x4b40;  // +0x4b40  R:1 W:1
-    uint32_t     field_0x4b44;  // +0x4b44  R:2 W:4
-    uint32_t     field_0x4b48;  // +0x4b48  R:8 W:9
-    uint32_t     field_0x4b4c;  // +0x4b4c  R:4 W:5
-    uint32_t     field_0x4b50;  // +0x4b50  R:2 W:5
-    uint32_t     field_0x4b54;  // +0x4b54  R:0 W:6
-    uint32_t     field_0x4b58;  // +0x4b58  R:0 W:1
-    uint32_t     field_0x4b5c;  // +0x4b5c  R:0 W:3
-    uint32_t     field_0x4b60;  // +0x4b60  R:0 W:4
-    uint32_t     field_0x4b64;  // +0x4b64  R:8 W:3
-    uint32_t     field_0x4b68;  // +0x4b68  R:6 W:5
-    uint32_t     field_0x4b6c;  // +0x4b6c  R:3 W:7
-    uint32_t     field_0x4b70;  // +0x4b70  R:1 W:2
-    uint32_t     field_0x4b74;  // +0x4b74  R:3 W:2
-    uint32_t     field_0x4b78;  // +0x4b78  R:0 W:1
-    uint32_t     field_0x4b7c;  // +0x4b7c  R:0 W:1
-    uint32_t     field_0x4b80;  // +0x4b80  R:0 W:1
-    uint32_t     field_0x4b84;  // +0x4b84  R:0 W:1
-    uint32_t     field_0x4b88;  // +0x4b88  R:0 W:1
-    uint32_t     field_0x4b8c;  // +0x4b8c  R:0 W:1
-    uint32_t     field_0x4b90;  // +0x4b90  R:0 W:1
-    uint32_t     field_0x4b94;  // +0x4b94  R:0 W:1
+    uint32_t     m_nBuf4B3;              // +0x4b40  R:1 W:1
+    uint32_t     m_nBuf4B4;              // +0x4b44  R:2 W:4
+    uint32_t     m_nBuf4B5;              // +0x4b48  R:8 W:9
+    uint32_t     m_nBuf4B6;              // +0x4b4c  R:4 W:5
+    uint32_t     m_nBuf4B7;              // +0x4b50  R:2 W:5
+    uint32_t     m_nBuf4B8;              // +0x4b54  R:0 W:6
+    uint32_t     m_nBuf4B9;              // +0x4b58  R:0 W:1
+    uint32_t     m_nBuf4B10;             // +0x4b5c  R:0 W:3
+    uint32_t     m_nBuf4B11;             // +0x4b60  R:0 W:4
+    uint32_t     m_nBuf4B12;             // +0x4b64  R:8 W:3
+    uint32_t     m_nBuf4B13;             // +0x4b68  R:6 W:5
+    uint32_t     m_nBuf4B14;             // +0x4b6c  R:3 W:7
+    uint32_t     m_nBuf4B15;             // +0x4b70  R:1 W:2
+    uint32_t     m_nBuf4B16;             // +0x4b74  R:3 W:2
+    uint32_t     m_nBuf4B17;             // +0x4b78  R:0 W:1
+    uint32_t     m_nBuf4B18;             // +0x4b7c  R:0 W:1
+    uint32_t     m_nBuf4B19;             // +0x4b80  R:0 W:1
+    uint32_t     m_nBuf4B20;             // +0x4b84  R:0 W:1
+    uint32_t     m_nBuf4B21;             // +0x4b88  R:0 W:1
+    uint32_t     m_nBuf4B22;             // +0x4b8c  R:0 W:1
+    uint32_t     m_nBuf4B23;             // +0x4b90  R:0 W:1
+    uint32_t     m_nBuf4B24;             // +0x4b94  R:0 W:1
     uint8_t     _pad0x4bb0[24];
-    uint32_t     field_0x4bb0;  // +0x4bb0  R:0 W:10
-    uint32_t     field_0x4bb4;  // +0x4bb4  R:7 W:1
-    uint32_t     field_0x4bb8;  // +0x4bb8  R:3 W:1
-    uint32_t     field_0x4bbc;  // +0x4bbc  R:5 W:5
-    uint32_t     field_0x4bc0;  // +0x4bc0  R:0 W:1
-    uint32_t     field_0x4bc4;  // +0x4bc4  R:1 W:3
-    uint32_t     field_0x4bc8;  // +0x4bc8  R:4 W:3
-    uint32_t     field_0x4bcc;  // +0x4bcc  R:2 W:3
-    uint32_t     field_0x4bd0;  // +0x4bd0  R:7 W:3
-    uint32_t     field_0x4bd4;  // +0x4bd4  R:5 W:3
-    uint32_t     field_0x4bd8;  // +0x4bd8  R:10 W:3
-    uint32_t     field_0x4bdc;  // +0x4bdc  R:1 W:3
-    uint32_t     field_0x4be0;  // +0x4be0  R:1 W:3
-    uint32_t     field_0x4be4;  // +0x4be4  R:4 W:3
-    uint32_t     field_0x4be8;  // +0x4be8  R:2 W:3
-    uint32_t     field_0x4bec;  // +0x4bec  R:7 W:3
-    uint32_t     field_0x4bf0;  // +0x4bf0  R:5 W:3
-    uint32_t     field_0x4bf4;  // +0x4bf4  R:10 W:3
-    uint32_t     field_0x4bf8;  // +0x4bf8  R:1 W:3
+    // -- region 0x4BB0: dual parallel arrays (7+7 pattern) --
+    uint32_t     m_nDual4B0;             // +0x4bb0  R:0 W:10
+    uint32_t     m_nDual4B1;             // +0x4bb4  R:7 W:1
+    uint32_t     m_nDual4B2;             // +0x4bb8  R:3 W:1
+    uint32_t     m_nDual4B3;             // +0x4bbc  R:5 W:5
+    uint32_t     m_nDual4B4;             // +0x4bc0  R:0 W:1
+    uint32_t     m_nDual4B5;             // +0x4bc4  R:1 W:3
+    uint32_t     m_nDual4B6;             // +0x4bc8  R:4 W:3
+    uint32_t     m_nDual4B7;             // +0x4bcc  R:2 W:3
+    uint32_t     m_nDual4B8;             // +0x4bd0  R:7 W:3
+    uint32_t     m_nDual4B9;             // +0x4bd4  R:5 W:3
+    uint32_t     m_nDual4B10;            // +0x4bd8  R:10 W:3
+    uint32_t     m_nDual4B11;            // +0x4bdc  R:1 W:3
+    uint32_t     m_nDual4B12;            // +0x4be0  R:1 W:3
+    uint32_t     m_nDual4B13;            // +0x4be4  R:4 W:3
+    uint32_t     m_nDual4B14;            // +0x4be8  R:2 W:3
+    uint32_t     m_nDual4B15;            // +0x4bec  R:7 W:3
+    uint32_t     m_nDual4B16;            // +0x4bf0  R:5 W:3
+    uint32_t     m_nDual4B17;            // +0x4bf4  R:10 W:3
+    uint32_t     m_nDual4B18;            // +0x4bf8  R:1 W:3
     uint8_t     _pad0x4c0c[16];
-    uint32_t     field_0x4c0c;  // +0x4c0c  R:10 W:1
-    uint32_t     field_0x4c10;  // +0x4c10  R:1 W:8
-    uint32_t     field_0x4c14;  // +0x4c14  R:0 W:1
-    uint32_t     field_0x4c18;  // +0x4c18  R:0 W:1
-    uint32_t     field_0x4c1c;  // +0x4c1c  R:2 W:4
-    uint32_t     field_0x4c20;  // +0x4c20  R:0 W:3
-    uint32_t     field_0x4c24;  // +0x4c24  R:5 W:6
-    uint32_t     field_0x4c28;  // +0x4c28  R:0 W:1
-    uint32_t     field_0x4c2c;  // +0x4c2c  R:2 W:4
-    uint32_t     field_0x4c30;  // +0x4c30  R:2 W:4
-    uint32_t     field_0x4c34;  // +0x4c34  R:0 W:1
-    uint32_t     field_0x4c38;  // +0x4c38  R:1 W:1
-    uint32_t     field_0x4c3c;  // +0x4c3c  R:2 W:1
-    uint32_t     field_0x4c40;  // +0x4c40  R:1 W:4
-    uint32_t     field_0x4c44;  // +0x4c44  R:1 W:4
-    uint32_t     field_0x4c48;  // +0x4c48  R:1 W:4
-    uint32_t     field_0x4c4c;  // +0x4c4c  R:1 W:5
-    uint32_t     field_0x4c50;  // +0x4c50  R:0 W:1
-    uint32_t     field_0x4c54;  // +0x4c54  R:0 W:1
-    uint32_t     field_0x4c58;  // +0x4c58  R:5 W:1
-    uint32_t     field_0x4c5c;  // +0x4c5c  R:2 W:3
-    uint32_t     field_0x4c60;  // +0x4c60  R:0 W:1
-    uint32_t     field_0x4c68;  // +0x4c68  R:2 W:3
-    uint32_t     field_0x4c6c;  // +0x4c6c  R:0 W:1
-    uint32_t     field_0x4c70;  // +0x4c70  R:0 W:1
-    uint32_t     field_0x4c74;  // +0x4c74  R:25 W:4
-    uint32_t     field_0x4c78;  // +0x4c78  R:6 W:3
-    uint32_t     field_0x4c7c;  // +0x4c7c  R:1 W:3
-    uint32_t     field_0x4c80;  // +0x4c80  R:0 W:1
-    uint32_t     field_0x4c88;  // +0x4c88  R:0 W:1
-    uint32_t     field_0x4c8c;  // +0x4c8c  R:0 W:1
-    uint32_t     field_0x4c90;  // +0x4c90  R:0 W:1
-    uint32_t     field_0x4c94;  // +0x4c94  R:0 W:1
-    uint32_t     field_0x4c98;  // +0x4c98  R:0 W:1
-    uint32_t     field_0x4ca0;  // +0x4ca0  R:2 W:4
-    uint32_t     field_0x4ca4;  // +0x4ca4  R:3 W:4
-    uint32_t     field_0x4ca8;  // +0x4ca8  R:3 W:2
+    // -- region 0x4C0C: logic/state 0x4C0C (0x4C74 R:25) --
+    uint32_t     m_nLogic4C0;            // +0x4c0c  R:10 W:1
+    uint32_t     m_nLogic4C1;            // +0x4c10  R:1 W:8
+    uint32_t     m_nLogic4C2;            // +0x4c14  R:0 W:1
+    uint32_t     m_nLogic4C3;            // +0x4c18  R:0 W:1
+    uint32_t     m_nLogic4C4;            // +0x4c1c  R:2 W:4
+    uint32_t     m_nLogic4C5;            // +0x4c20  R:0 W:3
+    uint32_t     m_nLogic4C6;            // +0x4c24  R:5 W:6
+    uint32_t     m_nLogic4C7;            // +0x4c28  R:0 W:1
+    uint32_t     m_nLogic4C8;            // +0x4c2c  R:2 W:4
+    uint32_t     m_nLogic4C9;            // +0x4c30  R:2 W:4
+    uint32_t     m_nLogic4C10;           // +0x4c34  R:0 W:1
+    uint32_t     m_nLogic4C11;           // +0x4c38  R:1 W:1
+    uint32_t     m_nLogic4C12;           // +0x4c3c  R:2 W:1
+    uint32_t     m_nLogic4C13;           // +0x4c40  R:1 W:4
+    uint32_t     m_nLogic4C14;           // +0x4c44  R:1 W:4
+    uint32_t     m_nLogic4C15;           // +0x4c48  R:1 W:4
+    uint32_t     m_nLogic4C16;           // +0x4c4c  R:1 W:5
+    uint32_t     m_nLogic4C17;           // +0x4c50  R:0 W:1
+    uint32_t     m_nLogic4C18;           // +0x4c54  R:0 W:1
+    uint32_t     m_nLogic4C19;           // +0x4c58  R:5 W:1
+    uint32_t     m_nLogic4C20;           // +0x4c5c  R:2 W:3
+    uint32_t     m_nLogic4C21;           // +0x4c60  R:0 W:1
+    uint32_t     m_nLogic4C23;           // +0x4c68  R:2 W:3
+    uint32_t     m_nLogic4C24;           // +0x4c6c  R:0 W:1
+    uint32_t     m_nLogic4C25;           // +0x4c70  R:0 W:1
+    uint32_t     m_nLogic4C26;           // +0x4c74  R:25 W:4
+    uint32_t     m_nLogic4C27;           // +0x4c78  R:6 W:3
+    uint32_t     m_nLogic4C28;           // +0x4c7c  R:1 W:3
+    uint32_t     m_nLogic4C29;           // +0x4c80  R:0 W:1
+    uint32_t     m_nLogic4C31;           // +0x4c88  R:0 W:1
+    uint32_t     m_nLogic4C32;           // +0x4c8c  R:0 W:1
+    uint32_t     m_nLogic4C33;           // +0x4c90  R:0 W:1
+    uint32_t     m_nLogic4C34;           // +0x4c94  R:0 W:1
+    uint32_t     m_nLogic4C35;           // +0x4c98  R:0 W:1
+    uint32_t     m_nLogic4C37;           // +0x4ca0  R:2 W:4
+    uint32_t     m_nLogic4C38;           // +0x4ca4  R:3 W:4
+    uint32_t     m_nLogic4C39;           // +0x4ca8  R:3 W:2
     uint8_t     _pad0x4cb4[8];
-    uint32_t     field_0x4cb4;  // +0x4cb4  R:0 W:2
-    uint32_t     field_0x4cbc;  // +0x4cbc  R:1 W:0
-    uint32_t     field_0x4cc0;  // +0x4cc0  R:13 W:1
-    uint32_t     field_0x4cc4;  // +0x4cc4  R:13 W:1
-    uint32_t     field_0x4cc8;  // +0x4cc8  R:1 W:4
-    uint32_t     field_0x4ccc;  // +0x4ccc  R:1 W:2
-    uint32_t     field_0x4cd0;  // +0x4cd0  R:3 W:2
-    uint32_t     field_0x4cd4;  // +0x4cd4  R:5 W:2
-    uint32_t     field_0x4cd8;  // +0x4cd8  R:1 W:2
-    uint32_t     field_0x4cdc;  // +0x4cdc  R:1 W:2
-    uint32_t     field_0x4ce0;  // +0x4ce0  R:1 W:2
-    uint32_t     field_0x4ce4;  // +0x4ce4  R:0 W:3
+    uint32_t     m_nLogic4C42;           // +0x4cb4  R:0 W:2
+    uint32_t     m_nLogic4C44;           // +0x4cbc  R:1 W:0
+    uint32_t     m_nLogic4C45;           // +0x4cc0  R:13 W:1
+    uint32_t     m_nLogic4C46;           // +0x4cc4  R:13 W:1
+    uint32_t     m_nLogic4C47;           // +0x4cc8  R:1 W:4
+    uint32_t     m_nLogic4C48;           // +0x4ccc  R:1 W:2
+    uint32_t     m_nLogic4C49;           // +0x4cd0  R:3 W:2
+    uint32_t     m_nLogic4C50;           // +0x4cd4  R:5 W:2
+    uint32_t     m_nLogic4C51;           // +0x4cd8  R:1 W:2
+    uint32_t     m_nLogic4C52;           // +0x4cdc  R:1 W:2
+    uint32_t     m_nLogic4C53;           // +0x4ce0  R:1 W:2
+    uint32_t     m_nLogic4C54;           // +0x4ce4  R:0 W:3
     uint8_t     _pad0x4d04[28];
-    uint32_t     field_0x4d04;  // +0x4d04  R:2 W:2
-    uint32_t     field_0x4d0c;  // +0x4d0c  R:0 W:1
-    uint32_t     field_0x4d10;  // +0x4d10  R:1 W:3
-    uint32_t     field_0x4d14;  // +0x4d14  R:2 W:3
-    uint32_t     field_0x4d18;  // +0x4d18  R:2 W:2
-    uint32_t     field_0x4d1c;  // +0x4d1c  R:0 W:2
-    uint32_t     field_0x4d20;  // +0x4d20  R:0 W:2
-    uint32_t     field_0x4d24;  // +0x4d24  R:0 W:2
-    uint32_t     field_0x4d28;  // +0x4d28  R:2 W:2
-    uint32_t     field_0x4d2c;  // +0x4d2c  R:1 W:2
-    uint32_t     field_0x4d30;  // +0x4d30  R:1 W:2
-    uint32_t     field_0x4d34;  // +0x4d34  R:1 W:1
-    uint32_t     field_0x4d38;  // +0x4d38  R:0 W:1
-    uint32_t     field_0x4d3c;  // +0x4d3c  R:0 W:1
-    uint32_t     field_0x4d40;  // +0x4d40  R:9 W:1
-    uint32_t     field_0x4d44;  // +0x4d44  R:1 W:2
-    uint32_t     field_0x4d48;  // +0x4d48  R:1 W:2
-    uint32_t     field_0x4d4c;  // +0x4d4c  R:1 W:2
-    uint32_t     field_0x4d50;  // +0x4d50  R:1 W:2
-    uint32_t     field_0x4d54;  // +0x4d54  R:1 W:2
-    uint32_t     field_0x4d58;  // +0x4d58  R:1 W:2
-    uint32_t     field_0x4d5c;  // +0x4d5c  R:2 W:3
-    uint32_t     field_0x4d60;  // +0x4d60  R:2 W:3
-    uint32_t     field_0x4d64;  // +0x4d64  R:3 W:3
-    uint32_t     field_0x4d68;  // +0x4d68  R:2 W:3
-    uint32_t     field_0x4d6c;  // +0x4d6c  R:0 W:4
-    uint32_t     field_0x4d70;  // +0x4d70  R:2 W:7
-    uint32_t     field_0x4d74;  // +0x4d74  R:1 W:3
-    uint32_t     field_0x4d78;  // +0x4d78  R:1 W:3
-    uint32_t     field_0x4d80;  // +0x4d80  R:3 W:1
-    uint32_t     field_0x4d84;  // +0x4d84  R:6 W:1
-    uint32_t     field_0x4d88;  // +0x4d88  R:6 W:0
-    uint32_t     field_0x4d8c;  // +0x4d8c  R:2 W:0
-    uint32_t     field_0x4d90;  // +0x4d90  R:2 W:0
-    uint32_t     field_0x4d94;  // +0x4d94  R:2 W:2
-    uint32_t     field_0x4d98;  // +0x4d98  R:4 W:2
-    uint32_t     field_0x4d9c;  // +0x4d9c  R:4 W:2
-    uint32_t     field_0x4da4;  // +0x4da4  R:4 W:2
-    uint32_t     field_0x4da8;  // +0x4da8  R:9 W:2
-    uint32_t     field_0x4dac;  // +0x4dac  R:1 W:3
-    uint32_t     field_0x4db0;  // +0x4db0  R:1 W:3
-    uint32_t     field_0x4db4;  // +0x4db4  R:2 W:2
-    uint32_t     field_0x4db8;  // +0x4db8  R:3 W:3
+    // -- region 0x4D04: update/tick data 0x4D04 --
+    uint32_t     m_nUpdate4D0;           // +0x4d04  R:2 W:2
+    uint32_t     m_nUpdate4D2;           // +0x4d0c  R:0 W:1
+    uint32_t     m_nUpdate4D3;           // +0x4d10  R:1 W:3
+    uint32_t     m_nUpdate4D4;           // +0x4d14  R:2 W:3
+    uint32_t     m_nUpdate4D5;           // +0x4d18  R:2 W:2
+    uint32_t     m_nUpdate4D6;           // +0x4d1c  R:0 W:2
+    uint32_t     m_nUpdate4D7;           // +0x4d20  R:0 W:2
+    uint32_t     m_nUpdate4D8;           // +0x4d24  R:0 W:2
+    uint32_t     m_nUpdate4D9;           // +0x4d28  R:2 W:2
+    uint32_t     m_nUpdate4D10;          // +0x4d2c  R:1 W:2
+    uint32_t     m_nUpdate4D11;          // +0x4d30  R:1 W:2
+    uint32_t     m_nUpdate4D12;          // +0x4d34  R:1 W:1
+    uint32_t     m_nUpdate4D13;          // +0x4d38  R:0 W:1
+    uint32_t     m_nUpdate4D14;          // +0x4d3c  R:0 W:1
+    uint32_t     m_nUpdate4D15;          // +0x4d40  R:9 W:1
+    uint32_t     m_nUpdate4D16;          // +0x4d44  R:1 W:2
+    uint32_t     m_nUpdate4D17;          // +0x4d48  R:1 W:2
+    uint32_t     m_nUpdate4D18;          // +0x4d4c  R:1 W:2
+    uint32_t     m_nUpdate4D19;          // +0x4d50  R:1 W:2
+    uint32_t     m_nUpdate4D20;          // +0x4d54  R:1 W:2
+    uint32_t     m_nUpdate4D21;          // +0x4d58  R:1 W:2
+    uint32_t     m_nUpdate4D22;          // +0x4d5c  R:2 W:3
+    uint32_t     m_nUpdate4D23;          // +0x4d60  R:2 W:3
+    uint32_t     m_nUpdate4D24;          // +0x4d64  R:3 W:3
+    uint32_t     m_nUpdate4D25;          // +0x4d68  R:2 W:3
+    uint32_t     m_nUpdate4D26;          // +0x4d6c  R:0 W:4
+    uint32_t     m_nUpdate4D27;          // +0x4d70  R:2 W:7
+    uint32_t     m_nUpdate4D28;          // +0x4d74  R:1 W:3
+    uint32_t     m_nUpdate4D29;          // +0x4d78  R:1 W:3
+    uint32_t     m_nUpdate4D31;          // +0x4d80  R:3 W:1
+    uint32_t     m_nUpdate4D32;          // +0x4d84  R:6 W:1
+    uint32_t     m_nUpdate4D33;          // +0x4d88  R:6 W:0
+    uint32_t     m_nUpdate4D34;          // +0x4d8c  R:2 W:0
+    uint32_t     m_nUpdate4D35;          // +0x4d90  R:2 W:0
+    uint32_t     m_nUpdate4D36;          // +0x4d94  R:2 W:2
+    uint32_t     m_nUpdate4D37;          // +0x4d98  R:4 W:2
+    uint32_t     m_nUpdate4D38;          // +0x4d9c  R:4 W:2
+    uint32_t     m_nUpdate4D40;          // +0x4da4  R:4 W:2
+    uint32_t     m_nUpdate4D41;          // +0x4da8  R:9 W:2
+    uint32_t     m_nUpdate4D42;          // +0x4dac  R:1 W:3
+    uint32_t     m_nUpdate4D43;          // +0x4db0  R:1 W:3
+    uint32_t     m_nUpdate4D44;          // +0x4db4  R:2 W:2
+    uint32_t     m_nUpdate4D45;          // +0x4db8  R:3 W:3
     uint8_t     _pad0x4ddc[32];
-    uint32_t     field_0x4ddc;  // +0x4ddc  R:0 W:3
-    uint32_t     field_0x4de0;  // +0x4de0  R:4 W:2
-    uint32_t     field_0x4de4;  // +0x4de4  R:4 W:0
-    uint8_t      field_0x4dec;  // +0x4dec  R:4 W:0
+    // -- region 0x4DDC: tail region 0x4DDC --
+    uint32_t     m_nTail4D0;             // +0x4ddc  R:0 W:3
+    uint32_t     m_nTail4D1;             // +0x4de0  R:4 W:2
+    uint32_t     m_nTail4D2;             // +0x4de4  R:4 W:0
+    uint8_t     m_nTail4D4;             // +0x4dec  R:4 W:0
     uint8_t     _pad0x4e20[48];
-    uint32_t     field_0x4e20;  // +0x4e20  R:1 W:3
-    uint32_t     field_0x4e24;  // +0x4e24  R:2 W:1
+    // -- region 0x4E20: entry/exit 0x4E20 --
+    uint32_t     m_nEntry4E0;            // +0x4e20  R:1 W:3
+    uint32_t     m_nEntry4E1;            // +0x4e24  R:2 W:1
     uint8_t     _pad0x5430[1544];
-    uint32_t     field_0x5430;  // +0x5430  R:1 W:3
-    uint32_t     field_0x5434;  // +0x5434  R:5 W:3
+    // -- region 0x5430: block data 0x5430 --
+    uint32_t     m_nBlock540;            // +0x5430  R:1 W:3
+    uint32_t     m_nBlock541;            // +0x5434  R:5 W:3
     uint8_t     _pad0x5460[40];
-    uint32_t     field_0x5460;  // +0x5460  R:0 W:1
-    uint32_t     field_0x5464;  // +0x5464  R:0 W:1
-    uint32_t     field_0x5468;  // +0x5468  R:0 W:1
+    uint32_t     m_nBlock5412;           // +0x5460  R:0 W:1
+    uint32_t     m_nBlock5413;           // +0x5464  R:0 W:1
+    uint32_t     m_nBlock5414;           // +0x5468  R:0 W:1
     uint8_t     _pad0x5772[774];
-    uint16_t     field_0x5772;  // +0x5772  R:0 W:1
+    // -- region 0x5772: uint16 fields 0x5772 --
+    uint16_t     m_nShort5772;           // +0x5772  R:0 W:1
     uint8_t     _pad0x5780[10];
-    uint16_t     field_0x5780;  // +0x5780  R:0 W:1
-    uint16_t     field_0x5782;  // +0x5782  R:2 W:1
-    uint16_t     field_0x5784;  // +0x5784  R:0 W:1
+    uint16_t     m_nShort5780;           // +0x5780  R:0 W:1
+    uint16_t     m_nShort5782;           // +0x5782  R:2 W:1
+    uint16_t     m_nShort5784;           // +0x5784  R:0 W:1
     uint8_t     _pad0x7078[6384];
-    uint32_t     field_0x7078;  // +0x7078  R:1 W:1
+    // -- region 0x7078: final field --
+    uint32_t     m_nTailField;           // +0x7078  R:1 W:1
 
     // ── virtual methods ──
     virtual ~atSingleton();                  // [0] @ 0x821c7900

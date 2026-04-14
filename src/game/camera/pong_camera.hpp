@@ -145,34 +145,39 @@ struct pongCamGovernor {
 // ── pongCameraMgr  [2 vtables — template/MI] ──────────────────────────
 // Confirmed methods: ChangeCamera
 struct pongCameraMgr {
-    void**      vtable;           // +0x00
-    uint32_t    flags;            // +0x04
-    
-    float       m_currentTime;    // +0x08 - current timing value
-    uint32_t    field_0x000c;     // +0x0C
-    uint32_t    field_0x0010;     // +0x10
-    uint32_t    field_0x0014;     // +0x14
-    uint32_t    field_0x0018;     // +0x18
-    uint32_t    field_0x001c;     // +0x1C
-    uint32_t    field_0x0020;     // +0x20
-    uint32_t    field_0x0024;     // +0x24
-    uint32_t    field_0x0028;     // +0x28
-    uint32_t    field_0x002c;     // +0x2C
-    uint32_t    field_0x0030;     // +0x30
-    uint32_t    field_0x0034;     // +0x34
-    uint32_t    field_0x0038;     // +0x38
-    
-    // Timing array starts at offset +60 (0x3C)
-    float       m_timingArray[256];  // +0x3C - array of timing values
+    void**      vtable;             // +0x00
+    uint32_t    flags;              // +0x04
 
-    // ── virtual methods ──
-    virtual ~pongCameraMgr();                  // [0] @ 0x821658e0
-    virtual void PostLoadProperties();  // [20] @ 0x821657f8
-    virtual void PostLoadChildren();  // [22] @ 0x82165830
-    virtual void vfn_23();  // [23] @ 0x82165960
-    virtual void vfn_24();  // [24] @ 0x82165f30
-    virtual void vfn_25();  // [25] @ 0x82166068
-    virtual void vfn_27();  // [27] @ 0x82166118
+    float       m_currentTime;      // +0x08 - current timing value
+    uint32_t    field_0x0c;         // +0x0C
+    uint32_t    field_0x10;         // +0x10 - MI vtable/child ptr region
+    uint32_t    field_0x14;         // +0x14
+    void*       m_slotsBase;        // +0x18 - base ptr to camera slot array
+    uint32_t    field_0x1c;         // +0x1C
+    uint32_t    field_0x20;         // +0x20
+    uint32_t    field_0x24;         // +0x24
+    void*       m_cameraObj;        // +0x28 - active camera object ptr
+    void*       m_subState;         // +0x2C - camera sub-state ptr
+    uint32_t    field_0x30;         // +0x30
+    uint32_t    field_0x34;         // +0x34
+    uint32_t    m_resetCounter;     // +0x38 - zeroed on reset (vfn_25)
+
+    // Timing data array base (variable-length floats accessed via [index])
+    float       m_timingArray;      // +0x3C - first element of timing-array (used as &m_timingArray)
+    uint8_t     _pad_0x40[0xF0];    // +0x40..+0x12F (unknown, 240 bytes)
+    uint32_t    field_0x130;        // +0x130 (304)
+    uint8_t     _pad_0x134[0x1EC];  // +0x134..+0x31F (unknown, 492 bytes)
+    float       m_baseWidth;        // +0x320 (800)
+    float       m_horizontalFOV;    // +0x324 (804)
+    uint8_t     _pad_0x328[8];      // +0x328..+0x32F
+    int32_t     m_viewportWidth;    // +0x330 (816)
+    int32_t     m_viewportHeight;   // +0x334 (820)
+    float       m_fovParam;         // +0x338 (824)
+    float       m_verticalFOV;      // +0x33C (828)
+    float       m_fovX;             // +0x340 (832)
+    float       m_fovY;             // +0x344 (836)
+    uint8_t     _pad_0x348[0x18];   // +0x348..+0x35F
+    uint8_t     m_activeFlag;       // +0x360 (864)
 
     // ── virtual methods ──
     virtual ~pongCameraMgr();                  // [0] @ 0x821658e0
@@ -265,15 +270,101 @@ struct pongCameraMgr {
     bool ThresholdQuery_Mode17_Reverse(void* gameState, float delta);   // @ 0x821F96E0 (96E0_fw)
     bool ThresholdQuery_Mode18(void* gameState, float delta);           // @ 0x821F9778 (9778_fw)
     bool ThresholdQuery_Mode18_Reverse(void* gameState, float delta);   // @ 0x821F9810 (9810_fw)
+
+    // Camera selection by index (tail-call to pongCameraMgr_SetCameraByIndex)
+    void SelectCamera1();  // @ 0x821F7DF8
+    void SelectCamera2();  // @ 0x821F7E00
+    void SelectCamera3();  // @ 0x821F7E08
+    void SelectCamera4();  // @ 0x821F7E10
+    void SelectCamera5();  // @ 0x821F7E18
+    void SelectCamera6();  // @ 0x821F7E20
+
+    // MI destructor adjustor thunk
+    void DtorAdjustor();  // @ 0x82166DB8
+
+    // Global flag zero-checks
+    bool IsFlag98D8Clear();  // @ 0x821F98D8
+    bool IsFlag98F0Clear();  // @ 0x821F98F0
+    bool IsFlag9908Clear();  // @ 0x821F9908
+
+    // Camera mode equality checks (g_cameraMode == N)
+    bool IsCameraMode1();   // @ 0x821F7E40
+    bool IsCameraMode2();   // @ 0x821F7E60
+    bool IsCameraMode3();   // @ 0x821F7E80
+    bool IsCameraMode4();   // @ 0x821F7EA0
+    bool IsCameraMode5();   // @ 0x821F7EC0
+    bool IsCameraMode6();   // @ 0x821F7EE0
+    bool IsCameraMode7();   // @ 0x821F7F00
+    bool IsCameraMode8();   // @ 0x821F7F20
+    bool IsCameraMode9();   // @ 0x821F7F40
+    bool IsCameraMode10();  // @ 0x821F7F60
+    bool IsCameraMode11();  // @ 0x821F7F80
+    bool IsCameraMode12();  // @ 0x821F7FA0
+    bool IsCameraMode13();  // @ 0x821F7FC0
+    bool IsCameraMode14();  // @ 0x821F7FE0
+    bool IsCameraMode15();  // @ 0x821F8000
+    bool IsCameraMode16();  // @ 0x821F8020
+    bool IsCameraMode17();  // @ 0x821F8040
+    bool IsCameraMode18();  // @ 0x821F8060
+    bool IsCameraMode19();  // @ 0x821F8080
+    bool IsCameraMode20();  // @ 0x821F80A0
+    bool IsCameraMode21();  // @ 0x821F80C0
+
+    // Camera flag bit tests
+    bool HasFlag_Bit1();   // @ 0x821F6C90
+    bool HasFlag_Bit2();   // @ 0x821F6CC8
+    bool HasFlag_Bit4();   // @ 0x821F6BE8
+    bool HasFlag_Bit8();   // @ 0x821F6C20
+    bool HasFlag_Bit16();  // @ 0x821F6C58
+
+    // Parameterized camera queries (QueryA/B/C with slot index)
+    bool QueryA_2();   bool QueryA_3();   bool QueryA_5();
+    bool QueryA_16();  bool QueryA_19();  bool QueryA_20();  bool QueryA_21();
+    bool QueryB_2();   bool QueryB_3();   bool QueryB_5();
+    bool QueryB_13();  bool QueryB_15();  bool QueryB_16();
+    bool QueryB_20();  bool QueryB_21();
+    bool QueryC_2();   bool QueryC_3();   bool QueryC_5();
+    bool QueryC_13();  bool QueryC_15();  bool QueryC_16();
+    bool QueryC_20();  bool QueryC_21();
+
+    // Conditional flag reads
+    bool GetConditionalFlagA();  // @ 0x821F3700
+    bool GetConditionalFlagB();  // @ 0x821F3740
+
+    // Float threshold checks
+    bool CheckThreshold7550(float threshold);  // @ 0x821F7550
+    bool CheckThreshold7588();  // @ 0x821F7588
+    bool CheckThreshold75C8();  // @ 0x821F75C8
+    bool CheckThreshold7608();  // @ 0x821F7608
+    bool CheckThreshold7648();  // @ 0x821F7648
+    bool CheckThreshold7688();  // @ 0x821F7688
+
+    // Dual-query AND functions
+    bool CheckDualQueryAA(void* gameState);  // @ 0x821F4688
+    bool CheckDualQueryCB(void* gameState);  // @ 0x821F46F8
+    bool CheckDualQueryBC(void* gameState);  // @ 0x821F4768
+
+    // Multi-mode and offset queries
+    bool CheckMultiModeQueryA(void* gameState);  // @ 0x821F47D8
+    bool CheckOffsetQueryA(void* gameState);     // @ 0x821F4A08
+    bool CheckOffsetQueryB(void* gameState);     // @ 0x821F4A78
+    bool CheckOffsetQueryC(void* gameState);     // @ 0x821F4AE8
+
+    // Elapsed threshold checks
+    bool HasElapsedThreshold1();  // @ 0x821F4F58
+    bool HasElapsedThreshold2();  // @ 0x821F4FB8
+    bool HasElapsedThreshold3();  // @ 0x821F5018
 };
 
 // ── pongCameraState  [vtable @ 0x82036058] ──────────────────────────
 struct pongCameraState {
     void**      vtable;           // +0x00
+    uint32_t    _pad_0x04[3];     // +0x04..+0x0F
+    void*       m_child;          // +0x10 - child object (destroyed in dtor)
 
     // ── virtual methods ──
     virtual ~pongCameraState();                  // [0] @ 0x82167770
-
+};
 
 // ── pongCineCamMgr  [vtable @ 0x82036070] ──────────────────────────
 struct pongCineCamMgr {

@@ -16,18 +16,18 @@ namespace rage {
 extern void snSession_AssociateConnection(void* ctx, void* base);       // @ 0x823ED988 — "associating connection:%d with session"
 extern void snSession_ProcessPendingConnections(void* ctx, void* base); // @ 0x823EDA90
 extern void snHsmState_Init(void* ctx, void* base);                     // @ 0x823DDA08 — init HSM state, set vtables
-extern void snSession_AddChildNode(void* ctx, void* base);              // @ 0x823E93D0 — allocates + links child node into session list
+extern void snHsmState_QueueTransition(void* ctx, void* base);          // @ 0x823E93D0 — allocates + links child node into session list
 extern void snHsmContext_SetMaxTransitions(void* ctx, void* base);      // @ 0x823ED4F8 — sets max transition count + flag
-extern void snSession_DestroyState(void* ctx, void* base);              // @ 0x823E53A8 — tears down notify handlers
+extern void snMachine_DestroyNotifyHandlers(void* ctx, void* base);     // @ 0x823E53A8 — tears down notify handlers
 extern void snLinkedList_InsertNode(void* ctx, void* base);             // @ 0x823DD170 — doubly-linked list insert
 extern void snSession_GetSessionHandle(void* ctx, void* base);          // @ 0x82416650 — returns session handle
 extern void snSession_InitChildState(void* machine, void* childState);  // @ 0x823EF850 — init child state with parent context
-extern void NotifyHandler_3D80_g(void* notifyList, void* callback);     // @ 0x823B3D80 — unregister notification handler
-extern bool xam_E6C0_g(void* xamContext);                               // @ 0x8236E6C0 — XAM session start
-extern bool xam_EAB8_g(void* xamContext);                               // @ 0x8236EAB8 — XAM session delete
-extern bool xam_DD68_g(void* xamContext, void* session);                // @ 0x8236DD68 — XAM session register
-extern void snSession_95D8_fw(void* state, void* event);                // @ 0x823E95D8 — forward event to session (start variant)
-extern void snSession_9530_fw(void* state, void* event);                // @ 0x823E9530 — forward event to session (apply variant)
+extern void snNotifyHandler_Unregister(void* notifyList, void* callback); // @ 0x823B3D80 — unregister notification handler
+extern bool xamSession_Start(void* xamContext);                          // @ 0x8236E6C0 — XAM session start
+extern bool xamSession_Delete(void* xamContext);                         // @ 0x8236EAB8 — XAM session delete
+extern bool xamSession_Register(void* xamContext, void* session);        // @ 0x8236DD68 — XAM session register
+extern void snSession_ForwardStartFailed(void* state, void* event);     // @ 0x823E95D8 — forward event to session (start variant)
+extern void snSession_ForwardApplyFailed(void* state, void* event);     // @ 0x823E9530 — forward event to session (apply variant)
 
 // External functions
 extern void rage_free(void* ptr);                                       // @ 0x820C00C0 — canonical heap free (see src/crt/heap.c)
@@ -35,7 +35,7 @@ extern void snSession_QueryConfigStatus(void* ctx, void* base);         // @ 0x8
 extern void snSession_RetrieveConfig(void* ctx, void* base);            // @ 0x823DC2B0
 extern void snSession_ProcessJoinRequest(void* ctx, void* base);        // @ 0x823F2178
 extern void snConnectionRef_InitBroadcast(void* ctx, void* base);       // @ 0x82430978
-extern void rage_DebugLogNop(void* ctx, void* base);                    // @ 0x8240E6D0 — 4-byte no-op (stripped debug logging)
+extern void nop_DebugLog(void* ctx, void* base);                        // @ 0x8240E6D0 — 4-byte no-op (stripped debug logging)
 extern void snSession_AddNode(void* ctx, void* base);                   // @ 0x823EC068
 extern void xamSession_Create(void* ctx, void* base);                   // @ 0x8236D900 — XAM session creation wrapper
 extern void xamSession_Modify(void* ctx, void* base);                   // @ 0x8236D758 — XAM session modification wrapper
@@ -52,6 +52,17 @@ extern uint8_t g_offlineSessionConfig[];        // @ 0x825E51B0 — offline sess
 extern uint8_t g_sessionType[];                 // @ 0x825E5448 — session type descriptor (28 bytes)
 extern uint8_t g_applyConfigData[];             // @ 0x825E57FC — apply config data (40 bytes)
 
+// Named vtable pointers (RTTI-verified)
+extern void* g_&g_vtbl_EvtCreateFailed;            // @ 0x82072A28 — rage::EvtCreateFailed
+extern void* g_&g_vtbl_EvtApplyConfigFailed;       // @ 0x82072A64 — rage::EvtApplyConfigFailed
+extern void* g_&g_vtbl_EvtStartSessionFailed;      // @ 0x82072A8C — rage::EvtStartSessionFailed
+
+// State completion callback thunks (function pointers stored in m_pStateVtable)
+extern void snHsmCreatingOffline_OnComplete();   // @ 0x823EB0D0 — thunk for CreatingOffline completion
+extern void snHsmApplyingConfig_OnComplete();    // @ 0x823EB0E0 — thunk for ApplyingConfig completion
+extern void snHsmStartingSession_OnComplete();   // @ 0x823EB0E8 — thunk for StartingSession completion
+extern void snHsmDestroyingSession_OnComplete(); // @ 0x823EB0F0 — thunk for DestroyingSession completion
+
 // ────────────────────────────────────────────────────────────────────────────
 // snCreateMachine Base Implementation
 // ────────────────────────────────────────────────────────────────────────────
@@ -64,7 +75,7 @@ extern uint8_t g_applyConfigData[];             // @ 0x825E57FC — apply config
  */
 snCreateMachine::~snCreateMachine() {
     // Call base state cleanup
-    snSession_DestroyState(this, nullptr);
+    snMachine_DestroyNotifyHandlers(this, nullptr);
     
     // Note: Memory freeing handled by caller based on flags
     // If delete flag is set, rage_free is called
@@ -120,62 +131,50 @@ void snCreateMachine::OnEnter() {
     hsmState* currentState = GetCurrentState();
     if (!currentState) return;
     
-    // Get session from current state
-    void* session = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(currentState) + 12)
-    );
+    // Get session from current state (+0x0C = m_pChildState)
+    void* session = reinterpret_cast<void*>(currentState->m_pChildState);
     if (!session) return;
-    
-    // Get state type identifier
+
+    // Get state type identifier via virtual call (slot 1)
     uint32_t stateType = 0;
-    // Virtual call to get state type (slot 1)
     // stateType = session->GetStateType();
-    
+
     // Check if we're creating as host
     if (stateType == g_stateType_CreatingHost) {
         hsmState* hostState = GetStateByType(g_stateType_CreatingHost);
         if (hostState) {
-            // Transition to CreatingHost state at offset +84
-            void* hostStateData = reinterpret_cast<void*>(
-                reinterpret_cast<uint8_t*>(this) + 84
-            );
-            snSession_AssociateConnection(this, hostStateData);
-            snSession_ProcessPendingConnections(this, hostStateData);
+            // Transition to CreatingHost child state (+0x54)
+            snSession_AssociateConnection(this, &m_creatingHost);
+            snSession_ProcessPendingConnections(this, &m_creatingHost);
         }
         return;
     }
-    
+
     // Check if we're creating as guest
     if (stateType == g_stateType_CreatingGuest) {
         hsmState* guestState = GetStateByType(g_stateType_CreatingGuest);
         if (guestState) {
-            // Transition to CreatingGuest state at offset +108
-            void* guestStateData = reinterpret_cast<void*>(
-                reinterpret_cast<uint8_t*>(this) + 108
-            );
-            snSession_AssociateConnection(this, guestStateData);
-            snSession_ProcessPendingConnections(this, guestStateData);
+            // Transition to CreatingGuest child state (+0x6C)
+            snSession_AssociateConnection(this, &m_creatingGuest);
+            snSession_ProcessPendingConnections(this, &m_creatingGuest);
         }
         return;
     }
-    
+
     // Check if we're creating offline
     if (stateType == g_stateType_CreatingOffline) {
         hsmState* offlineState = GetStateByType(g_stateType_CreatingOffline);
         if (offlineState) {
-            // Transition to CreatingOffline state at offset +132
-            void* offlineStateData = reinterpret_cast<void*>(
-                reinterpret_cast<uint8_t*>(this) + 132
-            );
-            snSession_AssociateConnection(this, offlineStateData);
-            snSession_ProcessPendingConnections(this, offlineStateData);
+            // Transition to CreatingOffline child state (+0x84)
+            snSession_AssociateConnection(this, &m_creatingOffline);
+            snSession_ProcessPendingConnections(this, &m_creatingOffline);
         }
         return;
     }
     
     // Unknown state type - create error notification
     snHsmState_Init(this, nullptr);
-    snSession_AddChildNode(this, nullptr);
+    snHsmState_QueueTransition(this, nullptr);
 }
 
 /**
@@ -186,17 +185,19 @@ void snCreateMachine::OnEnter() {
  * is registered via snSession_InitChildState.
  */
 void snCreateMachine::InitializeChildStates() {
-    // Offsets for all 7 child HSM states within snCreateMachine
-    // CreatingHost(+84), CreatingGuest(+108), CreatingOffline(+132),
-    // RequestingConfig(+156), ApplyingConfig(+204), StartingSession(+228),
-    // DestroyingSession(+252)
-    static const int kChildStateOffsets[] = { 84, 108, 132, 156, 204, 228, 252 };
+    // All 7 embedded child HSM states within snCreateMachine
+    hsmState* childStates[] = {
+        &m_creatingHost,       // +0x54 (84)
+        &m_creatingGuest,      // +0x6C (108)
+        &m_creatingOffline,    // +0x84 (132)
+        &m_requestingConfig,   // +0x9C (156)
+        &m_applyingConfig,     // +0xCC (204)
+        &m_startingSession,    // +0xE4 (228)
+        &m_destroyingSession,  // +0xFC (252)
+    };
 
     for (int i = 0; i < 7; i++) {
-        hsmState* childState = reinterpret_cast<hsmState*>(
-            reinterpret_cast<uint8_t*>(this) + kChildStateOffsets[i]
-        );
-        snSession_InitChildState(this, childState);
+        snSession_InitChildState(this, childStates[i]);
     }
 }
 
@@ -208,22 +209,22 @@ void snCreateMachine::InitializeChildStates() {
  * the virtual shutdown method (vtable slot 4).
  */
 void snCreateMachine::ShutdownChildStates() {
-    // Same 7 child state offsets as InitializeChildStates
-    static const int kChildStateOffsets[] = { 84, 108, 132, 156, 204, 228, 252 };
+    // Same 7 embedded child states as InitializeChildStates
+    hsmState* childStates[] = {
+        &m_creatingHost,       // +0x54 (84)
+        &m_creatingGuest,      // +0x6C (108)
+        &m_creatingOffline,    // +0x84 (132)
+        &m_requestingConfig,   // +0x9C (156)
+        &m_applyingConfig,     // +0xCC (204)
+        &m_startingSession,    // +0xE4 (228)
+        &m_destroyingSession,  // +0xFC (252)
+    };
 
     for (int i = 0; i < 7; i++) {
-        hsmState* childState = reinterpret_cast<hsmState*>(
-            reinterpret_cast<uint8_t*>(this) + kChildStateOffsets[i]
-        );
-        // Check if child has a parent reference (offset +8 in the child state)
-        hsmState* parentRef = *reinterpret_cast<hsmState**>(
-            reinterpret_cast<uint8_t*>(childState) + 8
-        );
-        if (parentRef != nullptr) {
-            // Clear the parent reference
-            *reinterpret_cast<hsmState**>(
-                reinterpret_cast<uint8_t*>(childState) + 8
-            ) = nullptr;
+        hsmState* childState = childStates[i];
+        // Check if child has a parent reference (+0x08 = m_pParentState)
+        if (childState->m_pParentState != nullptr) {
+            childState->m_pParentState = nullptr;
             // Call virtual shutdown (slot 4)
             childState->Shutdown();
         }
@@ -239,19 +240,12 @@ void snCreateMachine::ShutdownChildStates() {
 void snCreateMachine::UnregisterNotifyHandler() {
     // Get the network client from the parent machine context
     SinglesNetworkClient* client = m_pNetworkClient;
-    // Access the notify handler list at client+240
-    void* notifyList = reinterpret_cast<void*>(
-        reinterpret_cast<uint8_t*>(client) + 240
-    );
-    // The notification callback is at this+24
-    void* notifyCallback = reinterpret_cast<void*>(
-        reinterpret_cast<uint8_t*>(this) + 24
-    );
-    NotifyHandler_3D80_g(notifyList, notifyCallback);
-    // Clear the callback data pointer at this+44 (24+20)
-    *reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uint8_t*>(this) + 44
-    ) = 0;
+    // Access the notify handler list at client+0xF0
+    void* notifyList = (void*)((char*)client + 0xF0);  // m_notifyHandlerList
+    // Unregister the notification callback embedded at this+0x18 (m_pStateContext)
+    snNotifyHandler_Unregister(notifyList, m_pStateContext);
+    // Clear the callback data pointer at m_pStateContext+0x14
+    *(uint32_t*)((char*)m_pStateContext + 0x14) = 0;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -294,10 +288,10 @@ void snHsmCreatingHost::OnUpdate() {
     if (!client) return;
     
     // Create session parameters
-    // Address 0x825E51F8 - host session config string
-    const char* hostConfig = reinterpret_cast<const char*>(0x825E51F8);
-    // Address 0x825E5448 - session type string
-    const char* sessionType = reinterpret_cast<const char*>(0x825E5448);
+    // Host session config from .data section
+    extern uint8_t g_hostSessionConfig[];  // @ 0x825E51F8
+    const char* hostConfig = reinterpret_cast<const char*>(g_hostSessionConfig);
+    const char* sessionType = reinterpret_cast<const char*>(g_sessionType);
     
     // Call network client to create session
     // rlEvent_Init creates the session
@@ -308,11 +302,10 @@ void snHsmCreatingHost::OnUpdate() {
     // Store session data in machine
     // machine->m_sessionHandle = sessionHandle;
     
-    // Set up state context
-    // Address -20288 from base -32193 = state vtable
-    void* stateVtable = reinterpret_cast<void*>(0x82031B10);
+    // Set up state context — thunk for CreatingHost completion
+    extern void snHsmCreatingHost_OnComplete(); // @ 0x82031B10
     machine->m_pCurrentHsmState = this;
-    machine->m_pStateVtable = stateVtable;
+    machine->m_pStateVtable = reinterpret_cast<void*>(&snHsmCreatingHost_OnComplete);
 }
 
 /**
@@ -322,9 +315,8 @@ void snHsmCreatingHost::OnUpdate() {
  * Clears the parent machine's current state context pointers.
  */
 void snHsmCreatingHost::OnExit() {
-    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-    );
+    // hsmState +0x14 = m_field_14, used as parent machine backpointer
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
     machine->m_pCurrentHsmState = nullptr;
     machine->m_pStateVtable = nullptr;
 }
@@ -359,9 +351,10 @@ void snHsmCreatingGuest::OnUpdate() {
     SinglesNetworkClient* client = machine->m_pNetworkClient;
     if (!client) return;
     
-    // Guest session config at 0x825E51D4
-    const char* guestConfig = reinterpret_cast<const char*>(0x825E51D4);
-    const char* sessionType = reinterpret_cast<const char*>(0x825E5448);
+    // Guest session config from .data section
+    extern uint8_t g_guestSessionConfig[];  // @ 0x825E51D4
+    const char* guestConfig = reinterpret_cast<const char*>(g_guestSessionConfig);
+    const char* sessionType = reinterpret_cast<const char*>(g_sessionType);
     
     // Create session as guest
     // rlEvent_Init handles guest join
@@ -369,10 +362,10 @@ void snHsmCreatingGuest::OnUpdate() {
     // Clear session handle (guest doesn't create)
     machine->m_sessionHandle = 0;
     
-    // Set up state context
-    void* stateVtable = reinterpret_cast<void*>(0x82031B08);
+    // Set up state context — thunk for CreatingGuest completion
+    extern void snHsmCreatingGuest_OnComplete(); // @ 0x82031B08
     machine->m_pCurrentHsmState = this;
-    machine->m_pStateVtable = stateVtable;
+    machine->m_pStateVtable = reinterpret_cast<void*>(&snHsmCreatingGuest_OnComplete);
 }
 
 /**
@@ -388,26 +381,20 @@ void snHsmCreatingGuest::OnTick(bool* handled) {
 
     // Get current state via virtual call (slot 10)
     hsmState* currentState = GetCurrentState();
-    void* session = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(currentState) + 12)
-    );
+    void* session = reinterpret_cast<void*>(currentState->m_pChildState);
 
     // Get session state type via virtual call (slot 1)
-    uint32_t stateType = *reinterpret_cast<uint32_t*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(session)) + 4
-    );
+    void** sessionVtbl = *(void***)session;
+    uint32_t (*getType)(void*) = (uint32_t (*)(void*))sessionVtbl[1];
+    uint32_t stateType = getType(session);
 
     // Compare with CreatingOffline state type @ 0x825D1A74
     if (stateType == g_stateType_CreatingOffline) {
         // Get parent session and transition to the offline state
         hsmState* nextState = GetStateByType(g_stateType_CreatingOffline);
-        snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-            *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-        );
-        // Offline sub-state is at parent+156
-        void* offlineState = reinterpret_cast<void*>(
-            reinterpret_cast<uint8_t*>(machine) + 156
-        );
+        snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
+        // RequestingConfig child state at parent+0x9C (156)
+        void* offlineState = reinterpret_cast<void*>(&machine->m_requestingConfig);
         snSession_AssociateConnection(nextState, offlineState);
         snSession_ProcessPendingConnections(this, offlineState);
         return;
@@ -443,20 +430,14 @@ const char* snHsmCreatingOffline::GetStateName() const {
 void snHsmCreatingOffline::OnUpdate() {
     // Get current state to access session
     hsmState* currentState = GetCurrentState();
-    void* session = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(currentState) + 12)
-    );
+    void* session = reinterpret_cast<void*>(currentState->m_pChildState);
 
     // Initialize connection for offline session
     snConnectionRef_InitBroadcast(session, g_sessionType, g_offlineSessionConfig, 0);
 
-    // Store session ID from result at offset +12
-    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-    );
-    uint32_t sessionId = *reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uint8_t*>(session) + 12
-    );
+    // Store session ID from result (+0x0C = m_pChildState, repurposed as session ID)
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
+    uint32_t sessionId = *(uint32_t*)((char*)session + 0x0C);  // m_sessionId
     machine->m_sessionId = sessionId;
 
     // Get session handle
@@ -465,36 +446,29 @@ void snHsmCreatingOffline::OnUpdate() {
     machine->m_sessionHandle = sessionHandle;
 
     // Get parent machine's parent and do second init
-    snCreateMachine* parentMachine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(machine) + 20)
-    );
+    snCreateMachine* parentMachine = reinterpret_cast<snCreateMachine*>(machine->m_field_14);
     hsmState* parentCurrentState = parentMachine->GetCurrentState();
-    void* parentSession = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(parentCurrentState) + 12)
-    );
+    void* parentSession = *(void**)((char*)parentCurrentState + 12);  // +0x0C m_pChildState
     snConnectionRef_InitBroadcast(parentSession, g_sessionType, g_offlineSessionConfig, 0);
 
     // Register with XAM session subsystem
-    void* networkClient = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(parentMachine) + 16)
-    );
-    void* xamContext = reinterpret_cast<void*>(
-        reinterpret_cast<uint8_t*>(networkClient) + 232
-    );
-    bool success = xam_DD68_g(xamContext, parentSession);
+    // Network client at parentMachine+0x10 (m_field_10)
+    void* networkClient = reinterpret_cast<void*>(parentMachine->m_field_10);
+    // XAM session context at networkClient+0xE8 (232)
+    void* xamContext = *(void**)((char*)networkClient + 0xE8);  // m_xamSessionContext
+    bool success = xamSession_Register(xamContext, parentSession);
     if (!success) {
         // Raise EvtCreateFailed event
         hsmEvent failEvent;
         snHsmState_Init(&failEvent, nullptr);
         // Set vtable to EvtCreateFailed @ 0x82072A28
-        failEvent.vtable = reinterpret_cast<void**>(0x82072A28);
-        snSession_AddChildNode(this, &failEvent);
+        failEvent.vtable = &g_vtbl_EvtCreateFailed;
+        snHsmState_QueueTransition(this, &failEvent);
     }
 
     // Set parent machine state context to point to this state
-    // thunk_fn_823DE1A0 @ 0x823EB0D0
     machine->m_pCurrentHsmState = this;
-    machine->m_pStateVtable = reinterpret_cast<void*>(0x823EB0D0);
+    machine->m_pStateVtable = reinterpret_cast<void*>(&snHsmCreatingOffline_OnComplete);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -575,14 +549,14 @@ void snHsmRequestingConfig::OnUpdate() {
     //    - Vtable pointer at 0x82031AF8 (calculated from lis -32193, addi -20264)
     // 3. Get network client from parent at offset +20, then +16
     // 4. Query config status: snSession_QueryConfigStatus @ 0x823DA940
-    // 5. Retrieve config: SinglesNetworkClient_C2B0_g @ 0x823DC2B0
+    // 5. Retrieve config: snSession_RetrieveConfig @ 0x823DC2B0
     // 6. Check config availability:
     //    - Load config data at offset +84, check if >= 0
     //    - If ready, transition to next state
     // 7. Check retry count at offset +296:
     //    - If >= 20: timeout, create error event
     //    - If >= 10: timeout, create error event
-    // 8. Process join requests: SinglesNetworkClient_2178_g @ 0x823F2178
+    // 8. Process join requests: snSession_ProcessJoinRequest @ 0x823F2178
     // 9. If timeout, create EvtRequestConfigFailed event:
     //    - Call hsmEvent_Init @ 0x823DDA08 to initialize event state
     //    - Set vtable to 0x82072A50 (rage::EvtRequestConfigFailed)
@@ -605,7 +579,7 @@ void snHsmRequestingConfig::OnExit() {
     // 1. Get parent state machine from offset +20
     // 2. Get network client from parent at offset +20, then +16
     // 3. Get notification handler at offset +164 from client, then +672
-    // 4. Call NotifyHandler_3D80_g @ 0x823B3D80 to unregister notifications
+    // 4. Call snNotifyHandler_Unregister @ 0x823B3D80 to unregister notifications
     //    - Pass state context at offset +24 (this + 24)
     // 5. Clear state context pointer at offset +44 (24 + 20)
     //    - Store 0 at that location
@@ -638,56 +612,43 @@ const char* snHsmApplyingConfig::GetStateName() const {
  * Sets the parent machine's state context to ApplyingConfig thunk.
  */
 void snHsmApplyingConfig::OnUpdate() {
-    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-    );
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
 
     // Get current state and session from parent machine
     hsmState* currentState = machine->GetCurrentState();
-    void* session = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(currentState) + 12)
-    );
+    void* session = reinterpret_cast<void*>(currentState->m_pChildState);
 
     // Initialize connection with session config data
     snConnectionRef_InitBroadcast(session, g_sessionType, g_applyConfigData, 0);
 
-    // Store session handle from result
-    uint64_t sessionHandle = *reinterpret_cast<uint64_t*>(
-        reinterpret_cast<uint8_t*>(session) + 24
-    );
-    snCreateMachine* parentMachine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(machine) + 20)
-    );
+    // Store session handle from result (+0x18)
+    uint64_t sessionHandle = *(uint64_t*)((char*)session + 0x18);  // m_sessionHandle
+    snCreateMachine* parentMachine = reinterpret_cast<snCreateMachine*>(machine->m_field_14);
     parentMachine->m_sessionHandle = sessionHandle;
 
-    // Update session flags with public/private bit from config
-    uint8_t configFlag = *reinterpret_cast<uint8_t*>(
-        reinterpret_cast<uint8_t*>(session) + 312
-    );
+    // Update session flags with public/private bit from config (+0x138 = 312)
+    uint8_t configFlag = *(uint8_t*)((char*)session + 0x138);  // m_publicPrivateFlag
     uint8_t currentFlags = parentMachine->m_flags;
     // Insert configFlag bit 0 into flags bit 7 (rlwimi r6,r7,7,0,24)
     parentMachine->m_flags = (currentFlags & 0x7F) | ((configFlag & 1) << 7);
 
     // Call XAM session modification
-    void* networkClient = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(parentMachine) + 16)
-    );
-    void* xamContext = reinterpret_cast<void*>(
-        reinterpret_cast<uint8_t*>(networkClient) + 232
-    );
+    // Network client at parentMachine+0x10 (m_field_10)
+    void* networkClient = reinterpret_cast<void*>(parentMachine->m_field_10);
+    // XAM session context at networkClient+0xE8 (232)
+    void* xamContext = *(void**)((char*)networkClient + 0xE8);  // m_xamSessionContext
     bool success = xamSession_Modify(xamContext, session);
     if (!success) {
         // Raise EvtApplyConfigFailed event
         hsmEvent failEvent;
         snHsmState_Init(&failEvent, nullptr);
-        failEvent.vtable = reinterpret_cast<void**>(0x82072A64);  // EvtApplyConfigFailed
-        snSession_9530_fw(this, &failEvent);
+        failEvent.vtable = &g_vtbl_EvtApplyConfigFailed;
+        snSession_ForwardApplyFailed(this, &failEvent);
     }
 
     // Set parent machine state context
-    // thunk_fn_823DE6C8 @ 0x823EB0E0
     machine->m_pCurrentHsmState = this;
-    machine->m_pStateVtable = reinterpret_cast<void*>(0x823EB0E0);
+    machine->m_pStateVtable = reinterpret_cast<void*>(&snHsmApplyingConfig_OnComplete);
 }
 
 /**
@@ -704,43 +665,31 @@ void snHsmApplyingConfig::OnTick(bool* handled) {
 
     // Get current state and session type
     hsmState* currentState = GetCurrentState();
-    void* session = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(currentState) + 12)
-    );
+    void* session = reinterpret_cast<void*>(currentState->m_pChildState);
     uint32_t stateType = session->GetStateType();
 
-    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-    );
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
 
     // Check for StartingSession state type @ 0x825D1AA4
     if (stateType == g_stateType_StartingSession) {
         hsmState* nextState = GetStateByType(g_stateType_StartingSession);
-        // StartingSession sub-state at parent+228
-        void* startingState = reinterpret_cast<void*>(
-            reinterpret_cast<uint8_t*>(machine) + 228
-        );
-        snSession_AssociateConnection(nextState, startingState);
-        snSession_ProcessPendingConnections(this, startingState);
+        // StartingSession child state at parent+0xE4 (228)
+        snSession_AssociateConnection(nextState, &machine->m_startingSession);
+        snSession_ProcessPendingConnections(this, &machine->m_startingSession);
         return;
     }
 
     // Check for DestroyingSession state type @ 0x825D1A8C
     // Re-query state type (same pattern as scaffold - second VCALL)
     currentState = GetCurrentState();
-    session = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(currentState) + 12)
-    );
+    session = *(void**)((char*)currentState + 12);  // +0x0C m_pChildState
     stateType = session->GetStateType();
 
     if (stateType == g_stateType_DestroyingSession) {
         hsmState* nextState = GetStateByType(g_stateType_DestroyingSession);
-        // DestroyingSession sub-state at parent+252
-        void* destroyingState = reinterpret_cast<void*>(
-            reinterpret_cast<uint8_t*>(machine) + 252
-        );
-        snSession_AssociateConnection(nextState, destroyingState);
-        snSession_ProcessPendingConnections(this, destroyingState);
+        // DestroyingSession child state at parent+0xFC (252)
+        snSession_AssociateConnection(nextState, &machine->m_destroyingSession);
+        snSession_ProcessPendingConnections(this, &machine->m_destroyingSession);
         return;
     }
 
@@ -770,32 +719,27 @@ const char* snHsmStartingSession::GetStateName() const {
  * Sets the parent machine's state context to the StartingSession thunk.
  */
 void snHsmStartingSession::OnUpdate() {
-    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-    );
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
 
     // Get network client's XAM context at offset +232
-    void* networkClient = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(machine) + 16)
-    );
-    void* xamContext = reinterpret_cast<void*>(
-        reinterpret_cast<uint8_t*>(networkClient) + 232
-    );
+    // Network client at machine+0x10 (m_field_10)
+    void* networkClient = reinterpret_cast<void*>(machine->m_field_10);
+    // XAM session context at networkClient+0xE8 (232)
+    void* xamContext = *(void**)((char*)networkClient + 0xE8);  // m_xamSessionContext
 
     // Call XAM session start
-    bool success = xam_E6C0_g(xamContext);
+    bool success = xamSession_Start(xamContext);
     if (!success) {
         // Raise EvtStartSessionFailed event
         hsmEvent failEvent;
         snHsmState_Init(&failEvent, nullptr);
-        failEvent.vtable = reinterpret_cast<void**>(0x82072A8C);  // EvtStartSessionFailed
-        snSession_95D8_fw(this, &failEvent);
+        failEvent.vtable = &g_vtbl_EvtStartSessionFailed;
+        snSession_ForwardStartFailed(this, &failEvent);
     }
 
     // Set parent machine state context
-    // thunk_fn_823DE990 @ 0x823EB0E8
     machine->m_pCurrentHsmState = this;
-    machine->m_pStateVtable = reinterpret_cast<void*>(0x823EB0E8);
+    machine->m_pStateVtable = reinterpret_cast<void*>(&snHsmStartingSession_OnComplete);
 }
 
 /**
@@ -811,23 +755,16 @@ void snHsmStartingSession::OnTick(bool* handled) {
 
     // Get current state and session type
     hsmState* currentState = GetCurrentState();
-    void* session = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(currentState) + 12)
-    );
+    void* session = reinterpret_cast<void*>(currentState->m_pChildState);
     uint32_t stateType = session->GetStateType();
 
     // Compare with DestroyingSession state type @ 0x825D1AB0
     if (stateType == g_stateType_DestroyingSession) {
         hsmState* nextState = GetStateByType(g_stateType_DestroyingSession);
-        snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-            *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-        );
-        // DestroyingSession sub-state at parent+252
-        void* destroyingState = reinterpret_cast<void*>(
-            reinterpret_cast<uint8_t*>(machine) + 252
-        );
-        snSession_AssociateConnection(nextState, destroyingState);
-        snSession_ProcessPendingConnections(this, destroyingState);
+        snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
+        // DestroyingSession child state at parent+0xFC (252)
+        snSession_AssociateConnection(nextState, &machine->m_destroyingSession);
+        snSession_ProcessPendingConnections(this, &machine->m_destroyingSession);
         return;
     }
 
@@ -858,32 +795,27 @@ const char* snHsmDestroyingSession::GetStateName() const {
  * Sets the parent machine's state context to the DestroyingSession thunk.
  */
 void snHsmDestroyingSession::OnUpdate() {
-    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + 20)
-    );
+    snCreateMachine* machine = reinterpret_cast<snCreateMachine*>(m_field_14);
 
     // Get network client's XAM context at offset +232
-    void* networkClient = reinterpret_cast<void*>(
-        *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(machine) + 16)
-    );
-    void* xamContext = reinterpret_cast<void*>(
-        reinterpret_cast<uint8_t*>(networkClient) + 232
-    );
+    // Network client at machine+0x10 (m_field_10)
+    void* networkClient = reinterpret_cast<void*>(machine->m_field_10);
+    // XAM session context at networkClient+0xE8 (232)
+    void* xamContext = *(void**)((char*)networkClient + 0xE8);  // m_xamSessionContext
 
     // Call XAM session delete
-    bool success = xam_EAB8_g(xamContext);
+    bool success = xamSession_Delete(xamContext);
     if (!success) {
         // Raise EvtCreateFailed event (reused for teardown failure)
         hsmEvent failEvent;
         snHsmState_Init(&failEvent, nullptr);
-        failEvent.vtable = reinterpret_cast<void**>(0x82072A28);  // EvtCreateFailed
-        snSession_AddChildNode(this, &failEvent);
+        failEvent.vtable = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed
+        snHsmState_QueueTransition(this, &failEvent);
     }
 
     // Set parent machine state context
-    // thunk_fn_823DEB48 @ 0x823EB0F0
     machine->m_pCurrentHsmState = this;
-    machine->m_pStateVtable = reinterpret_cast<void*>(0x823EB0F0);
+    machine->m_pStateVtable = reinterpret_cast<void*>(&snHsmDestroyingSession_OnComplete);
 }
 
 } // namespace rage

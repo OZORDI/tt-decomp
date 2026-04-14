@@ -489,15 +489,15 @@ bool gdCSCharAnimData::IsType(uint32_t typeId) {
  * Registers 9 XML serialization fields for character animation data.
  */
 void gdCSCharAnimData::RegisterFields() {
-    RegisterSerializedField(this, "FileName",      (char*)this + 16, g_stringFieldType, 0);
-    RegisterSerializedField(this, "Enabled",       (char*)this + 20, g_boolFieldType, 0);
-    RegisterSerializedField(this, "TimeOffset",    (char*)this + 32, g_floatFieldType2, 0);
-    RegisterSerializedField(this, "Duration",      (char*)this + 48, g_floatFieldType2, 0);
-    RegisterSerializedField(this, "Weight",        (char*)this + 64, g_floatFieldType, 0);
-    RegisterSerializedField(this, "EmoteRangeMin", (char*)this + 68, g_enumFieldType, 0);
-    RegisterSerializedField(this, "EmoteRangeMax", (char*)this + 72, g_floatFieldType, 0);
-    RegisterSerializedField(this, "IsEmote",       (char*)this + 76, g_floatFieldType, 0);
-    RegisterSerializedField(this, "AnimType",      (char*)this + 80, g_boolFieldType, 0);
+    RegisterSerializedField(this, "FileName",      &m_pFileName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Enabled",       &m_bEnabled, g_boolFieldType, 0);
+    RegisterSerializedField(this, "TimeOffset",    &m_timeOffset, g_floatFieldType2, 0);
+    RegisterSerializedField(this, "Duration",      &m_duration, g_floatFieldType2, 0);
+    RegisterSerializedField(this, "Weight",        &m_weight, g_floatFieldType, 0);
+    RegisterSerializedField(this, "EmoteRangeMin", &m_emoteRangeMin, g_enumFieldType, 0);
+    RegisterSerializedField(this, "EmoteRangeMax", &m_emoteRangeMax, g_floatFieldType, 0);
+    RegisterSerializedField(this, "IsEmote",       &m_bIsEmote, g_floatFieldType, 0);
+    RegisterSerializedField(this, "AnimType",      &m_animType, g_boolFieldType, 0);
 }
 
 const char* gdCSCharAnimData::GetTypeName() {
@@ -517,58 +517,43 @@ const char* gdCSCharAnimData::GetTypeName() {
 void gdCSCharAnimData::BuildFilteredArrays() {
     // First pass: count matching children
     int matchCount = 0;
-    void* node = *(void**)((char*)this + 12);  // m_pChildList
+    rage::xmlNodeStruct* node = (rage::xmlNodeStruct*)m_pFirstChild;
     while (node) {
-        // Check if child's type matches via vtable slot 20 (IsType)
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)node;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-
-        if (isType(node, g_gdCSCharAnimData_typeId)) {
+        if (node->IsType(g_gdCSCharAnimData_typeId)) {
             matchCount++;
         } else {
-            // Log type mismatch
-            typedef const char* (*GetNameFunc)(void*);
-            GetNameFunc getChildName = (GetNameFunc)(*(void***)node)[19];
-            GetNameFunc getParentName = (GetNameFunc)(*(void***)this)[19];
-            rage_DebugLog(g_str_gdCSCharAnimData_boneName, getParentName(this), getChildName(node));
+            rage_DebugLog(g_str_gdCSCharAnimData_boneName, GetTypeName(), node->GetTypeName());
         }
-        node = *(void**)((char*)node + 8);  // next pointer
+        node = (rage::xmlNodeStruct*)((gdCSCharAnimData*)node)->m_pNext;
     }
 
     // Allocate pointer array for matching entries
     struct atArray { void* data; uint16_t count; uint16_t capacity; };
-    atArray* matchArr = (atArray*)((char*)this + 84);
+    atArray* matchArr = (atArray*)(&m_field_54);
     extern "C" void xe_8E30(void* arr, uint32_t capacity);
     xe_8E30(matchArr, matchCount);
 
-    // Allocate byte flag array
-    atArray* flagArr = (atArray*)((char*)this + 92);
-    void* flagData = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
-    *(void**)flagArr = flagData;
-    *(uint16_t*)((char*)flagArr + 6) = (uint16_t)matchCount;
+    // Allocate byte flag array (at m_field_5C, 8 bytes after m_field_54)
+    atArray* flagArr = (atArray*)(&m_field_5C);
+    void* flagMem = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
+    flagArr->data = flagMem;
+    flagArr->capacity = (uint16_t)matchCount;
 
     // Second pass: populate arrays with matching children
-    node = *(void**)((char*)this + 12);
+    node = (rage::xmlNodeStruct*)m_pFirstChild;
     while (node) {
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)node;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-
-        if (isType(node, g_gdCSCharAnimData_typeId)) {
+        if (node->IsType(g_gdCSCharAnimData_typeId)) {
             // Add to pointer array
-            uint16_t idx = *(uint16_t*)((char*)matchArr + 4);
-            void** arrData = *(void***)matchArr;
-            arrData[idx] = node;
-            *(uint16_t*)((char*)matchArr + 4) = idx + 1;
+            void** arrData = (void**)matchArr->data;
+            arrData[matchArr->count] = node;
+            matchArr->count++;
 
             // Initialize flag to 0
-            uint16_t flagIdx = *(uint16_t*)((char*)flagArr + 4);
-            uint8_t* flagData = *(uint8_t**)flagArr;
-            flagData[flagIdx] = 0;
-            *(uint16_t*)((char*)flagArr + 4) = flagIdx + 1;
+            uint8_t* fData = (uint8_t*)flagArr->data;
+            fData[flagArr->count] = 0;
+            flagArr->count++;
         }
-        node = *(void**)((char*)node + 8);
+        node = (rage::xmlNodeStruct*)((gdCSCharAnimData*)node)->m_pNext;
     }
 }
 
@@ -598,60 +583,47 @@ const char* gdCSCharAnimNames::GetTypeName() {
 void gdCSCharAnimNames::BuildFilteredArrays() {
     // First pass: count matching children
     int matchCount = 0;
-    void* node = *(void**)((char*)this + 12);  // m_pChildList
+    rage::xmlNodeStruct* node = (rage::xmlNodeStruct*)m_pFirstChild;
     while (node) {
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)node;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-        if (isType(node, g_gdCSCharAnimNames_typeId)) {
+        if (node->IsType(g_gdCSCharAnimNames_typeId)) {
             matchCount++;
         }
-        node = *(void**)((char*)node + 8);
+        node = (rage::xmlNodeStruct*)((gdCSCharAnimNames*)node)->m_pNext;
     }
 
-    // Allocate pointer array
+    // Allocate pointer array (m_pAnimDataArray at +0x10)
     struct atArray { void* data; uint16_t count; uint16_t capacity; };
-    atArray* ptrArr = (atArray*)((char*)this + 16);
-    void* ptrData = (matchCount > 0) ? rage_alloc(matchCount * 4) : nullptr;
-    *(void**)ptrArr = ptrData;
-    *(uint16_t*)((char*)ptrArr + 6) = (uint16_t)matchCount;
+    atArray* ptrArr = (atArray*)&m_pAnimDataArray;
+    ptrArr->data = (matchCount > 0) ? rage_alloc(matchCount * 4) : nullptr;
+    ptrArr->capacity = (uint16_t)matchCount;
 
-    // Allocate flag array 1 (bytes)
-    atArray* flagArr1 = (atArray*)((char*)this + 24);
-    void* flagData1 = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
-    *(void**)flagArr1 = flagData1;
-    *(uint16_t*)((char*)flagArr1 + 6) = (uint16_t)matchCount;
+    // Allocate flag array 1 (m_pSelectionFlags at +0x18)
+    atArray* flagArr1 = (atArray*)&m_pSelectionFlags;
+    flagArr1->data = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
+    flagArr1->capacity = (uint16_t)matchCount;
 
-    // Allocate flag array 2 (bytes)
-    atArray* flagArr2 = (atArray*)((char*)this + 32);
-    void* flagData2 = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
-    *(void**)flagArr2 = flagData2;
-    *(uint16_t*)((char*)flagArr2 + 6) = (uint16_t)matchCount;
+    // Allocate flag array 2 (m_pNameMatchFlags at +0x20)
+    atArray* flagArr2 = (atArray*)&m_pNameMatchFlags;
+    flagArr2->data = (matchCount > 0) ? rage_alloc(matchCount) : nullptr;
+    flagArr2->capacity = (uint16_t)matchCount;
 
     // Second pass: populate arrays
-    node = *(void**)((char*)this + 12);
+    node = (rage::xmlNodeStruct*)m_pFirstChild;
     while (node) {
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)node;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-
-        if (isType(node, g_gdCSCharAnimNames_typeId)) {
+        if (node->IsType(g_gdCSCharAnimNames_typeId)) {
             // Add pointer
-            uint16_t idx = *(uint16_t*)((char*)ptrArr + 4);
-            ((void**)(*(void**)ptrArr))[idx] = node;
-            *(uint16_t*)((char*)ptrArr + 4) = idx + 1;
+            ((void**)ptrArr->data)[ptrArr->count] = node;
+            ptrArr->count++;
 
             // Set flag1 = 1
-            uint16_t fIdx1 = *(uint16_t*)((char*)flagArr1 + 4);
-            ((uint8_t*)(*(void**)flagArr1))[fIdx1] = 1;
-            *(uint16_t*)((char*)flagArr1 + 4) = fIdx1 + 1;
+            ((uint8_t*)flagArr1->data)[flagArr1->count] = 1;
+            flagArr1->count++;
 
             // Set flag2 = 0
-            uint16_t fIdx2 = *(uint16_t*)((char*)flagArr2 + 4);
-            ((uint8_t*)(*(void**)flagArr2))[fIdx2] = 0;
-            *(uint16_t*)((char*)flagArr2 + 4) = fIdx2 + 1;
+            ((uint8_t*)flagArr2->data)[flagArr2->count] = 0;
+            flagArr2->count++;
         }
-        node = *(void**)((char*)node + 8);
+        node = (rage::xmlNodeStruct*)((gdCSCharAnimNames*)node)->m_pNext;
     }
 }
 
@@ -685,24 +657,21 @@ void gdCSCamAnimShotName::PostLoadProperties() {
     xmlNodeStruct_Initialize(this);
 
     // Validate weight >= 0
-    int32_t weight = *(int32_t*)((char*)this + 16);
-    if (weight < 0) {
+    if (m_weight < 0) {
         rage_DebugLog(g_str_gdCSCamAnimShotName_negWeight);
     }
 
     // Validate ShotName is non-empty
-    const char* shotName = *(const char**)((char*)this + 24);
-    if (!shotName || strlen(shotName) == 0) {
+    if (!m_pShotName || strlen(m_pShotName) == 0) {
         rage_DebugLog(g_str_gdCSCamAnimShotName_missingShotName);
     }
 
     // Validate TimeOffset >= 0.0f
-    float timeOffset = *(float*)((char*)this + 28);
-    if (timeOffset < 0.0f) {
+    if (m_timeOffset < 0.0f) {
         rage_DebugLog(g_str_gdCSCamAnimShotName_negTimeOffset);
     }
 
-    // Look up shot name in camera animation set → store index at +32
+    // Look up shot name in camera animation set
     extern void* g_cameraAnimSetManager;  // @ 0x8271A384
     extern "C" int32_t FindShotNameInSet(void* setArray, const char* name);
 
@@ -712,12 +681,11 @@ void gdCSCamAnimShotName::PostLoadProperties() {
     uint32_t setIdx = g_activeCameraSetIndex;
     void* activeSet = ((void**)shotArray)[setIdx];
 
-    int32_t shotIndex = FindShotNameInSet(activeSet, shotName);
-    *(int32_t*)((char*)this + 32) = shotIndex;
+    m_shotIndex = FindShotNameInSet(activeSet, m_pShotName);
 
-    if (shotIndex == -1) {
+    if (m_shotIndex == -1) {
         rage_DebugLog(g_str_gdCSCamAnimShotName_shotNotFound,
-                      shotName, "unknown");
+                      m_pShotName, "unknown");
     }
 }
 
@@ -753,8 +721,8 @@ bool gdCSNameData::IsType(uint32_t typeId) {
  * Registers FileName (+16) and SceneName (+20) for XML serialization.
  */
 void gdCSNameData::RegisterFields() {
-    RegisterSerializedField(this, "FileName",  (char*)this + 16, g_stringFieldType, 0);
-    RegisterSerializedField(this, "SceneName", (char*)this + 20, g_stringFieldType, 0);
+    RegisterSerializedField(this, "FileName",  &m_pFileName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "SceneName", &m_pSceneName, g_stringFieldType, 0);
 }
 
 const char* gdCSNameData::GetTypeName() {
@@ -775,8 +743,8 @@ bool gdCutSceneData::IsType(uint32_t typeId) {
  * gdCutSceneData::RegisterFields @ 0x8240E9A8 | size: 0x64
  */
 void gdCutSceneData::RegisterFields() {
-    RegisterSerializedField(this, "CutsceneName", (char*)this + 20, g_stringFieldType, 0);
-    RegisterSerializedField(this, "Priority",     (char*)this + 24, g_floatFieldType, 0);
+    RegisterSerializedField(this, "CutsceneName", &m_pCutsceneName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Priority",     &m_priority, g_floatFieldType, 0);
 }
 
 const char* gdCutSceneData::GetTypeName() {
@@ -787,8 +755,8 @@ const char* gdCutSceneData::GetTypeName() {
  * gdCSActionLoopData::RegisterFields @ 0x8240EB80 | size: 0x64
  */
 void gdCSActionLoopData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex", (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "LoopCount",   (char*)this + 20, g_floatFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex", &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "LoopCount",   &m_loopCount, g_floatFieldType, 0);
 }
 
 /**
@@ -805,12 +773,12 @@ bool gdCSActionIfData::IsType(uint32_t typeId) {
  * gdCSActionIfData::RegisterFields @ 0x8240ECB0 | size: 0xD0
  */
 void gdCSActionIfData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex",    (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "ConditionType",  (char*)this + 20, g_stringFieldType, 0);
-    RegisterSerializedField(this, "CharacterId",    (char*)this + 24, g_enumFieldType, 0);
-    RegisterSerializedField(this, "CompareValue",   (char*)this + 28, g_enumFieldType, 0);
-    RegisterSerializedField(this, "ThenActions",    (char*)this + 32, g_stringFieldType, 0);
-    RegisterSerializedField(this, "ElseActions",    (char*)this + 36, g_stringFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex",    &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ConditionType",  &m_pConditionType, g_stringFieldType, 0);
+    RegisterSerializedField(this, "CharacterId",    &m_characterId, g_enumFieldType, 0);
+    RegisterSerializedField(this, "CompareValue",   &m_compareValue, g_enumFieldType, 0);
+    RegisterSerializedField(this, "ThenActions",    &m_pThenActions, g_stringFieldType, 0);
+    RegisterSerializedField(this, "ElseActions",    &m_pElseActions, g_stringFieldType, 0);
 }
 
 /**
@@ -831,8 +799,8 @@ bool gdCSActionWaitData::IsType(uint32_t typeId) {
  * Registers WaitType (+16) and Duration (+20) for XML serialization.
  */
 void gdCSActionWaitData::RegisterFields() {
-    RegisterSerializedField(this, "WaitType",  (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "Duration",  (char*)this + 20, g_floatFieldType, 0);
+    RegisterSerializedField(this, "WaitType",  &m_pWaitType, g_boolFieldType, 0);
+    RegisterSerializedField(this, "Duration",  &m_duration, g_floatFieldType, 0);
 }
 
 /**
@@ -849,9 +817,9 @@ bool gdCSActionCamAnimData::IsType(uint32_t typeId) {
  * gdCSActionCamAnimData::RegisterFields @ 0x8240F210 | size: 0x8C
  */
 void gdCSActionCamAnimData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex", (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "FileName",    (char*)this + 20, g_stringFieldType, 0);
-    RegisterSerializedField(this, "Loop",        (char*)this + 24, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex", &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "FileName",    &m_pCameraName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Loop",        &m_bLoop, g_boolFieldType, 0);
 }
 
 /**
@@ -868,12 +836,12 @@ bool gdCSActionCharAnimData::IsType(uint32_t typeId) {
  * gdCSActionCharAnimData::RegisterFields @ 0x8240F368 | size: 0xE4
  */
 void gdCSActionCharAnimData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex",  (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "CharacterId",  (char*)this + 20, g_floatFieldType, 0);
-    RegisterSerializedField(this, "FileName",     (char*)this + 24, g_stringFieldType, 0);
-    RegisterSerializedField(this, "BlendIn",      (char*)this + 28, g_boolFieldType, 0);
-    RegisterSerializedField(this, "BlendOut",     (char*)this + 29, g_boolFieldType, 0);
-    RegisterSerializedField(this, "FullBody",     (char*)this + 30, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex",  &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "CharacterId",  &m_characterId, g_floatFieldType, 0);
+    RegisterSerializedField(this, "FileName",     &m_pAnimName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "BlendIn",      &m_bBlendIn, g_boolFieldType, 0);
+    RegisterSerializedField(this, "BlendOut",     &m_bBlendOut, g_boolFieldType, 0);
+    RegisterSerializedField(this, "FullBody",     &m_bFullBody, g_boolFieldType, 0);
 }
 
 /**
@@ -890,9 +858,9 @@ bool gdCSActionCharVisibleData::IsType(uint32_t typeId) {
  * gdCSActionCharVisibleData::RegisterFields @ 0x8240F530 | size: 0x8C
  */
 void gdCSActionCharVisibleData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex",  (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "CharacterId",  (char*)this + 20, g_floatFieldType, 0);
-    RegisterSerializedField(this, "Visible",      (char*)this + 24, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex",  &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "CharacterId",  &m_characterId, g_floatFieldType, 0);
+    RegisterSerializedField(this, "Visible",      &m_bVisible, g_boolFieldType, 0);
 }
 
 /**
@@ -909,9 +877,9 @@ bool gdCSActionPlayAudioData::IsType(uint32_t typeId) {
  * gdCSActionPlayAudioData::RegisterFields @ 0x8240F660 | size: 0x8C
  */
 void gdCSActionPlayAudioData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex", (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "AudioType",   (char*)this + 20, g_stringFieldType, 0);
-    RegisterSerializedField(this, "AudioName",   (char*)this + 24, g_stringFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex", &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "AudioType",   &m_pAudioType, g_stringFieldType, 0);
+    RegisterSerializedField(this, "AudioName",   &m_pAudioName, g_stringFieldType, 0);
 }
 
 /**
@@ -928,10 +896,10 @@ bool gdCSActionLvlAmbAnimData::IsType(uint32_t typeId) {
  * gdCSActionLvlAmbAnimData::RegisterFields @ 0x8240FA08 | size: 0x94
  */
 void gdCSActionLvlAmbAnimData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex", (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "AnimName",    (char*)this + 20, g_stringFieldType, 0);
-    RegisterSerializedField(this, "FileName",    (char*)this + 24, g_stringFieldType, 0);
-    RegisterSerializedField(this, "Loop",        (char*)this + 28, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex", &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "AnimName",    &m_pAnimName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "FileName",    &m_pFileName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Loop",        &m_bLoop, g_boolFieldType, 0);
 }
 
 const char* gdCSActionLvlAmbAnimData::GetTypeName() {
@@ -949,14 +917,12 @@ void gdCSActionLvlAmbAnimData::PostLoadProperties() {
     xmlNodeStruct_Initialize(this);
 
     // Validate AnimName is non-empty
-    const char* ambName = *(const char**)((char*)this + 20);
-    if (!ambName || strlen(ambName) == 0) {
+    if (!m_pAnimName || strlen(m_pAnimName) == 0) {
         rage_DebugLog(g_str_gdCSActionLvlAmbAnimData_missingAmbName);
     }
 
     // Validate FileName is non-empty
-    const char* animName = *(const char**)((char*)this + 24);
-    if (!animName || strlen(animName) == 0) {
+    if (!m_pFileName || strlen(m_pFileName) == 0) {
         rage_DebugLog(g_str_gdCSActionLvlAmbAnimData_missingAnimName);
     }
 }
@@ -975,11 +941,11 @@ bool gdCSActionCharAmbAnimData::IsType(uint32_t typeId) {
  * gdCSActionCharAmbAnimData::RegisterFields @ 0x8240FC10 | size: 0xB4
  */
 void gdCSActionCharAmbAnimData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex",  (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "CharacterId",  (char*)this + 20, g_floatFieldType, 0);
-    RegisterSerializedField(this, "AnimName",     (char*)this + 24, g_stringFieldType, 0);
-    RegisterSerializedField(this, "FileName",     (char*)this + 28, g_stringFieldType, 0);
-    RegisterSerializedField(this, "Loop",         (char*)this + 32, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex",  &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "CharacterId",  &m_characterId, g_floatFieldType, 0);
+    RegisterSerializedField(this, "AnimName",     &m_pAmbName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "FileName",     &m_pFileName, g_stringFieldType, 0);
+    RegisterSerializedField(this, "Loop",         &m_bLoop, g_boolFieldType, 0);
 }
 
 const char* gdCSActionCharAmbAnimData::GetTypeName() {
@@ -998,20 +964,17 @@ void gdCSActionCharAmbAnimData::PostLoadProperties() {
     xmlNodeStruct_Initialize(this);
 
     // Validate CharacterId is set (not -1)
-    int32_t characterId = *(int32_t*)((char*)this + 20);
-    if (characterId == -1) {
+    if (m_characterId == -1) {
         rage_DebugLog(g_str_gdCSActionCharAmbAnimData_missingPlayerId);
     }
 
     // Validate AmbName is non-empty
-    const char* ambName = *(const char**)((char*)this + 24);
-    if (!ambName || strlen(ambName) == 0) {
+    if (!m_pAmbName || strlen(m_pAmbName) == 0) {
         rage_DebugLog(g_str_gdCSActionCharAmbAnimData_missingAmbName);
     }
 
-    // Validate AnimName is non-empty
-    const char* animName = *(const char**)((char*)this + 28);
-    if (!animName || strlen(animName) == 0) {
+    // Validate FileName is non-empty
+    if (!m_pFileName || strlen(m_pFileName) == 0) {
         rage_DebugLog(g_str_gdCSActionCharAmbAnimData_missingAnimName);
     }
 }
@@ -1030,8 +993,8 @@ bool gdCSActionShowAllAmbientsData::IsType(uint32_t typeId) {
  * gdCSActionShowAllAmbientsData::RegisterFields @ 0x8240FDE8 | size: 0x6C
  */
 void gdCSActionShowAllAmbientsData::RegisterFields() {
-    RegisterSerializedField(this, "ActionIndex", (char*)this + 16, g_boolFieldType, 0);
-    RegisterSerializedField(this, "ShowAll",     (char*)this + 20, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ActionIndex", &m_actionIndex, g_boolFieldType, 0);
+    RegisterSerializedField(this, "ShowAll",     &m_bShowAll, g_boolFieldType, 0);
 }
 
 const char* gdCSActionShowAllAmbientsData::GetTypeName() {

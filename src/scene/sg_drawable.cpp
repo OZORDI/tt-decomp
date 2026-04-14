@@ -93,23 +93,25 @@ void sgRMDrawable::Render() {
 /**
  * sgRMDrawable::UpdateBounds
  * @ 0x823D8EA8 | size: 0x6C
+ *
+ * Retrieves bounding data via inherited virtual slot 31 (GetBoundsData),
+ * then forwards it to the physics object via its virtual slot 5
+ * (SetBoundsFromData) to update the AABB.
  */
 void sgRMDrawable::UpdateBounds() {
     if (!m_pPhysics) {
         return;
     }
 
-    // Get the current bounding data from this node (vtable slot 31)
-    typedef void* (*GetBoundsFunc)(void*);
-    void** selfVtable = *(void***)this;
-    GetBoundsFunc getBounds = (GetBoundsFunc)selfVtable[31];
-    void* boundsData = getBounds(this);
+    // atSingleton vtable slot 31 — GetBoundsData(): returns bounds ptr
+    typedef void* (*GetBoundsDataFn)(sgRMDrawable*);
+    GetBoundsDataFn getBoundsData = (GetBoundsDataFn)(*(void***)this)[31];
+    void* boundsData = getBoundsData(this);
 
-    // Forward bounds data to the physics object for AABB update (vtable slot 5)
-    typedef void (*UpdateFunc)(void*, void*, int, int, int);
-    void** physVtable = *(void***)m_pPhysics;
-    UpdateFunc updateBounds = (UpdateFunc)physVtable[5];
-    updateBounds(m_pPhysics, boundsData, 0, 0, 0);
+    // Physics object vtable slot 5 — SetBoundsFromData(bounds, 0, 0, 0)
+    typedef void (*SetBoundsFromDataFn)(void*, void*, int, int, int);
+    SetBoundsFromDataFn setBoundsFromData = (SetBoundsFromDataFn)(*(void***)m_pPhysics)[5];
+    setBoundsFromData(m_pPhysics, boundsData, 0, 0, 0);
 }
 
 /**

@@ -1134,7 +1134,7 @@ fiAsciiTokenizer::~fiAsciiTokenizer() {
  * Adds a signed offset to the stream position at field +0xA0.
  */
 void fiAsciiTokenizer::AddOffset(int32_t offset) {
-    m_streamPos += offset;  // field_0x00a0 += offset
+    m_streamPos += offset;
 }
 
 /**
@@ -1216,7 +1216,7 @@ extern "C" void fiAsciiTokenizer_51F0(void* fileHandle, int charCode);
  */
 void fiAsciiTokenizer::WriteBeginBlock() {
     int32_t indent = m_streamPos;
-    void* file = reinterpret_cast<void*>(field_0x000c);
+    void* file = reinterpret_cast<void*>(m_fileHandle);
     while (indent != 0) {
         fiAsciiTokenizer_51F0(file, '\t');
         indent--;
@@ -1237,7 +1237,7 @@ void fiAsciiTokenizer::WriteBeginBlock() {
 void fiAsciiTokenizer::WriteEndBlock() {
     m_streamPos--;
     int32_t indent = m_streamPos;
-    void* file = reinterpret_cast<void*>(field_0x000c);
+    void* file = reinterpret_cast<void*>(m_fileHandle);
     while (indent != 0) {
         fiAsciiTokenizer_51F0(file, '\t');
         indent--;
@@ -1251,46 +1251,46 @@ void fiAsciiTokenizer::WriteEndBlock() {
  * fiAsciiTokenizer::WriteIndent @ 0x822E68A8 | size: 0x80
  * [vtable slot 28]
  *
- * If state (field_0x0014) != 1, writes m_streamPos tab characters
+ * If state (m_writeState) != 1, writes m_streamPos tab characters
  * for indentation and sets state to 1.
  */
 void fiAsciiTokenizer::WriteIndent() {
-    if (field_0x0014 == 1) {
-        field_0x0014 = 1;
+    if (m_writeState == 1) {
+        m_writeState = 1;
         return;
     }
 
     int32_t indent = m_streamPos;
-    void* file = reinterpret_cast<void*>(field_0x000c);
+    void* file = reinterpret_cast<void*>(m_fileHandle);
     if (indent != 0) {
         while (indent != 0) {
             fiAsciiTokenizer_51F0(file, '\t');
             indent--;
         }
-        field_0x0014 = 1;
+        m_writeState = 1;
         return;
     }
 
-    field_0x0014 = 1;
+    m_writeState = 1;
 }
 
 /**
  * fiAsciiTokenizer::WriteNewline @ 0x822E6928 | size: 0x70
  * [vtable slot 29]
  *
- * If state (field_0x0014) != 2, writes CR and LF characters,
+ * If state (m_writeState) != 2, writes CR and LF characters,
  * then sets state to 2.
  */
 void fiAsciiTokenizer::WriteNewline() {
-    if (field_0x0014 == 2) {
-        field_0x0014 = 2;
+    if (m_writeState == 2) {
+        m_writeState = 2;
         return;
     }
 
-    void* file = reinterpret_cast<void*>(field_0x000c);
+    void* file = reinterpret_cast<void*>(m_fileHandle);
     fiAsciiTokenizer_51F0(file, '\r');
     fiAsciiTokenizer_51F0(file, '\n');
-    field_0x0014 = 2;
+    m_writeState = 2;
 }
 
 // ── Memory allocation helpers ───────────────────────────────────────────────
@@ -1306,18 +1306,19 @@ extern "C" void* rage_Alloc(uint32_t size);
  * Allocates an array of uint32_t elements. Validates count against
  * max 0x3FFFFFFF. Returns nullptr if count is 0. Each element is 4 bytes.
  */
-extern "C" void* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
+extern "C" uint32_t* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
     if (count > 0x3FFFFFFFu) {
         fiAsciiTokenizer_1F08_g("allocation overflow");
         fiAsciiTokenizer_FB40_g(1);
     }
 
     if (count != 0) {
-        return rage_Alloc(count * 4);
+        return static_cast<uint32_t*>(rage_Alloc(count * 4));
     }
 
     return nullptr;
 }
+
 
 /**
  * AllocateBytes @ 0x8222D588 | size: 0x60
@@ -1325,18 +1326,19 @@ extern "C" void* fiAsciiTokenizer_76D8_g(void* unused, uint32_t count) {
  * Allocates a byte array. Validates count against max 0xFFFFFFFF.
  * Returns nullptr if count is 0. Each element is 1 byte.
  */
-extern "C" void* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
+extern "C" uint8_t* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
     if (count > 0xFFFFFFFFu) {
         fiAsciiTokenizer_1F08_g("allocation overflow");
         fiAsciiTokenizer_FB40_g(1);
     }
 
     if (count != 0) {
-        return rage_Alloc(count);
+        return static_cast<uint8_t*>(rage_Alloc(count));
     }
 
     return nullptr;
 }
+
 
 /**
  * AllocateUint16Array @ 0x822DF168 | size: 0x64
@@ -1344,18 +1346,19 @@ extern "C" void* fiAsciiTokenizer_D588_g(void* unused, uint32_t count) {
  * Allocates an array of uint16_t elements. Validates count against
  * max 0x7FFFFFFF. Returns nullptr if count is 0. Each element is 2 bytes.
  */
-extern "C" void* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
+extern "C" uint16_t* fiAsciiTokenizer_F168_g(void* unused, uint32_t count) {
     if (count > 0x7FFFFFFFu) {
         fiAsciiTokenizer_1F08_g("allocation overflow");
         fiAsciiTokenizer_FB40_g(1);
     }
 
     if (count != 0) {
-        return rage_Alloc(count * 2);
+        return static_cast<uint16_t*>(rage_Alloc(count * 2));
     }
 
     return nullptr;
 }
+
 
 } // namespace rage
 
@@ -1853,12 +1856,8 @@ void _thunk_tail_call_A418(void* a) {
  */
 void _nt_init_ansi_string_and_process(const char* str) {
     // ANSI_STRING: { uint16_t Length, uint16_t MaxLength, char* Buffer }
-    uint16_t length = 0;
-    uint16_t maxLength = 0;
-    void* buffer = nullptr;
-
-    // Stack struct initialization
-    struct { uint16_t len; uint16_t maxLen; void* buf; } ansiStr = {0, 0, nullptr};
+    struct ANSI_STRING { uint16_t len; uint16_t maxLen; char* buf; };
+    ANSI_STRING ansiStr = {0, 0, nullptr};
     RtlInitAnsiString(&ansiStr, str);
     _nt_process_ansi_string(&ansiStr);
 }
@@ -2198,8 +2197,8 @@ void _crt_fpscr_trampoline() {
 // C++ vtable slot WriteBool has incompatible signature; this static helper
 // implements the actual algorithm callable via the extern "C" wrapper.
 // ────────────────────────────────────────────────────────────────────────────
-static bool parStreamOutRbf_WriteFieldHeaderImpl(void* self, uint32_t fieldType, const char* fieldName) {
-    char* obj = (char*)self;
+static bool parStreamOutRbf_WriteFieldHeaderImpl(rage::parStreamOutRbf* self, uint32_t fieldType, const char* fieldName) {
+    char* obj = reinterpret_cast<char*>(self);
     void* file = *(void**)(obj + 4);
 
     // Hash table struct at self+24:
@@ -2256,7 +2255,7 @@ static bool parStreamOutRbf_WriteFieldHeaderImpl(void* self, uint32_t fieldType,
 // C++ vtable slot WriteString has incompatible signature; this static helper
 // implements the actual algorithm callable via the extern "C" wrapper.
 // ────────────────────────────────────────────────────────────────────────────
-static bool parStreamOutRbf_WriteDataImpl(void* self, const void* data, uint32_t size, uint32_t dataType) {
+static bool parStreamOutRbf_WriteDataImpl(rage::parStreamOutRbf* self, const void* data, uint32_t size, uint32_t dataType) {
     if (!data) return false;
     if (dataType > 11) return false;
 

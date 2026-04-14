@@ -194,40 +194,44 @@ uint32_t XNetQosRelease(XNQOS* pxnqos) {
 //=============================================================================
 
 /**
- * sendto @ 0x8258600C
+ * NetDll_sendto @ 0x8258600C
  * 
- * Direct passthrough to system sendto().
+ * Xbox 360 network DLL sendto. Takes an extra XNet handle parameter
+ * before the standard BSD sendto args.
  */
-int32_t sendto(int32_t s, const void* buf, int32_t len, int32_t flags,
-               const void* to, int32_t tolen) {
+int NetDll_sendto(int handle, int32_t s, const void* buf, int32_t len, int32_t flags,
+                  const void* to, int32_t tolen) {
+    (void)handle;
 #ifdef _WIN32
-    return (int32_t)::sendto((SOCKET)s, (const char*)buf, len, flags,
-                             (const struct sockaddr*)to, tolen);
+    return (int32_t)sendto((SOCKET)s, (const char*)buf, len, flags,
+                           (const struct sockaddr*)to, tolen);
 #else
-    return (int32_t)::sendto(s, buf, (size_t)len, flags,
-                             (const struct sockaddr*)to, (socklen_t)tolen);
+    return (int32_t)sendto(s, buf, (size_t)len, flags,
+                           (const struct sockaddr*)to, (socklen_t)tolen);
 #endif
 }
 
 /**
- * recvfrom @ 0x82585FEC
+ * NetDll_recvfrom @ 0x82585FEC
  * 
- * Direct passthrough to system recvfrom().
+ * Xbox 360 network DLL recvfrom. Takes an extra XNet handle parameter
+ * before the standard BSD recvfrom args.
  */
-int32_t recvfrom(int32_t s, void* buf, int32_t len, int32_t flags,
-                 void* from, int32_t* fromlen) {
+int NetDll_recvfrom(int handle, int32_t s, void* buf, int32_t len, int32_t flags,
+                    void* from, int32_t* fromlen) {
+    (void)handle;
 #ifdef _WIN32
     int fromlen_int = fromlen ? *fromlen : 0;
-    int result = (int32_t)::recvfrom((SOCKET)s, (char*)buf, len, flags,
-                                     (struct sockaddr*)from, &fromlen_int);
+    int result = (int32_t)recvfrom((SOCKET)s, (char*)buf, len, flags,
+                                   (struct sockaddr*)from, &fromlen_int);
     if (fromlen) {
         *fromlen = fromlen_int;
     }
     return result;
 #else
     socklen_t fromlen_socklen = fromlen ? (socklen_t)*fromlen : 0;
-    int result = (int32_t)::recvfrom(s, buf, (size_t)len, flags,
-                                     (struct sockaddr*)from, &fromlen_socklen);
+    int result = (int32_t)recvfrom(s, buf, (size_t)len, flags,
+                                   (struct sockaddr*)from, &fromlen_socklen);
     if (fromlen) {
         *fromlen = (int32_t)fromlen_socklen;
     }
@@ -236,26 +240,23 @@ int32_t recvfrom(int32_t s, void* buf, int32_t len, int32_t flags,
 }
 
 /**
- * inet_addr @ 0x8258601C
+ * NetDll_inet_addr @ 0x8258601C
  * 
- * Direct passthrough to system inet_addr().
+ * Xbox 360 network DLL inet_addr. Takes an extra XNet handle parameter.
  */
-uint32_t inet_addr(const char* cp) {
-#ifdef _WIN32
-    return ::inet_addr(cp);
-#else
-    return ::inet_addr(cp);
-#endif
+int32_t NetDll_inet_addr(int handle, const char* cp) {
+    (void)handle;
+    return (int32_t)inet_addr(cp);
 }
 
 /**
- * WSAGetLastError @ 0x8258602C
+ * NetDll_WSAGetLastError @ 0x8258602C
  * 
  * Returns last socket error.
  */
-int32_t WSAGetLastError(void) {
+int32_t NetDll_WSAGetLastError(void) {
 #ifdef _WIN32
-    return ::WSAGetLastError();
+    return WSAGetLastError();
 #else
     // On POSIX, map errno to WSA error codes
     switch (errno) {

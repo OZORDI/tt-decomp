@@ -20,8 +20,11 @@
 #include <cstdint>
 
 // Forward declarations
-class phBound;
-class phInst;
+namespace rage {
+class datBase;
+struct phBound;
+struct phInst;
+}  // namespace rage
 
 namespace rage {
 
@@ -69,7 +72,6 @@ public:
 //   +0x0C  m_bEnabled         — uint8_t: cloth simulation enabled flag
 //   +0x10  m_stateA           — VerletClothState: instance tracking block A
 //   +0x18  m_stateB           — VerletClothState: instance tracking block B
-//   +0x14  m_halfword20       — uint16_t at +0x14 (within stateA, overlapping)
 // ─────────────────────────────────────────────────────────────────────────────
 class phClothVerletBehavior {
 public:
@@ -101,7 +103,7 @@ public:
     virtual ~environmentCloth();  // [0] @ 0x823D7CE0 | size: 0x50
 
     // ── Data members ──
-    void* m_pClothObjects[6];     // +0x04..+0x1C: child cloth object pointers
+    datBase* m_pClothObjects[6];  // +0x04..+0x1C: child cloth object pointers
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

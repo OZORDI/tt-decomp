@@ -4,9 +4,13 @@
  */
 
 #include "fx_effects.hpp"
+#include "../rage/memory.hpp"
 
-// Global effect parameter table
-extern uint32_t* g_fxParameterTable;  // @ 0x8271A394
+// Global effect parameter table @ 0x8271A394
+extern uint32_t* g_fxParameterTable;
+
+// Base class cleanup for fxCrowdGfx hierarchy
+extern void rage_5908(void*);
 
 /**
  * fxBallTrail::SetEffectParameters @ 0x82381208 | size: 0x2C
@@ -21,45 +25,30 @@ extern uint32_t* g_fxParameterTable;  // @ 0x8271A394
  * @param duration Effect duration (r6)
  */
 void fxBallTrail::SetEffectParameters(int effectIndex, uint32_t intensity, uint32_t duration) {
-    // Calculate table lookup index: (effectIndex + 1) * 4
-    int tableIndex = (effectIndex + 1) * 4;
-    
-    // Load global parameter table pointer @ 0x8271A394
-    uint32_t* paramTable = *(uint32_t**)0x8271A394;
-    
-    // Look up parameter value from table
-    uint32_t paramValue = paramTable[tableIndex / 4];
-    
-    // Store intensity at offset 46192 (0xB470)
-    *(uint32_t*)((char*)this + 46192) = intensity;
-    
-    // Store parameter value at offset 15400 (0x3C28)
-    *(uint32_t*)((char*)this + 15400) = paramValue;
-    
-    // Store duration at offset 15404 (0x3C2C)
-    *(uint32_t*)((char*)this + 15404) = duration;
+    // Look up parameter value from global table
+    uint32_t paramValue = g_fxParameterTable[effectIndex + 1];
+
+    // Store effect parameters
+    this->m_effectIntensity = intensity;
+    this->m_effectParam = paramValue;
+    this->m_effectDuration = duration;
 }
 
 
 /**
- * fxCrowdGfx::~fxCrowdGfx @ 0x823856E0 | size: 0x50
- * [vtable slot 2 - destructor]
+ * fxCrowdGfx::vfn_2 @ 0x823856E0 | size: 0x50
+ * [vtable slot 2]
  *
- * Destructor for crowd graphics effect.
+ * Cleanup and conditional free for crowd graphics effect.
  * Calls base class cleanup (rage_5908) and optionally frees the object
  * memory if the delete-self flag (bit 0 of flags parameter) is set.
  *
- * @param flags Destructor flags (bit 0 = delete self)
+ * @param flags Flags (bit 0 = free self after cleanup)
  */
-fxCrowdGfx::~fxCrowdGfx(int flags) {
-    // Call base class cleanup
-    extern void rage_5908(void*);
+void fxCrowdGfx::vfn_2(int flags) {
     rage_5908(this);
-    
-    // Check if we should free the object memory (bit 0 of flags)
+
     if (flags & 0x1) {
-        // Free the object using RAGE memory allocator
-        extern void rage_free(void*);
         rage_free(this);
     }
 }

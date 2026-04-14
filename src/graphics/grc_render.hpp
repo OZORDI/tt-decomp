@@ -39,17 +39,22 @@ struct grcRenderTargetXenon {
     uint8_t  m_bDepthEnabled;  // +0x1D
     uint8_t  m_nMSAAMode;      // +0x1E
 
-    virtual ~grcRenderTargetXenon();    // [0] @ 0x8215E750
-    virtual void vfn_7();               // [7] @ 0x8215EB28
-    virtual void vfn_8();               // [8] @ 0x8215DD58
-    virtual void vfn_9();               // [9] @ 0x8215DD60
-    virtual void vfn_13();              // [13] @ 0x8215DD68
-    virtual void vfn_14();              // [14] @ 0x8215DD78
-    virtual uint8_t GetMSAAMode();      // [15] @ 0x8215DDB0
-    virtual void vfn_16();              // [16] @ 0x8215DD90
-    virtual void vfn_18();              // [18] @ 0x82151250
-    virtual void vfn_20();              // [20] @ 0x8215EB10
-    virtual void vfn_29();              // [29] @ 0x8215EC28
+    virtual ~grcRenderTargetXenon();                    // [0]  @ 0x8215E750
+    virtual void vfn_7();                               // [7]  @ 0x8215EB28
+    virtual uint16_t GetWidth();                        // [8]  @ 0x8215DD58
+    virtual uint16_t GetHeight();                       // [9]  @ 0x8215DD60
+    virtual void vfn_10();                              // [10] — gap/inherited
+    virtual void SetColorChannelFlag(uint8_t flag);     // [11] — called by beginScene
+    virtual void SetDepthChannelFlag(uint8_t flag);     // [12] — called by beginScene
+    virtual void SetChannelFlags(uint8_t a, uint8_t b); // [13] @ 0x8215DD68
+    virtual void GetChannelFlags(uint8_t* a, uint8_t* b); // [14] @ 0x8215DD78
+    virtual uint8_t GetMSAAMode();                      // [15] @ 0x8215DDB0
+    virtual void SetMSAAMode(uint8_t mode);             // [16] @ 0x8215DD90
+    virtual void vfn_17();                              // [17] — gap/inherited
+    virtual void GetLODParams(float* pDist, uint32_t* pLevel); // [18] @ 0x82151250
+    virtual void vfn_19();                              // [19] — gap/inherited
+    virtual void vfn_20();                              // [20] @ 0x8215EB10
+    virtual void vfn_29();                              // [29] @ 0x8215EC28
 };
 
 // ── rage::grcSetup  [vtable @ 0x82035068] ────────────────────────────────

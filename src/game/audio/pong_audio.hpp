@@ -25,7 +25,7 @@
  */
 #pragma once
 #include <stdint.h>
-#include "rage/audio/rage_audio.hpp"
+#include "../../rage/audio/rage_audio.hpp"
 
 // ── CBiquadFilterEffect  [vtable @ 0x8203B598] ─────────────────────
 // IXAPO implementation — biquad (parametric EQ) audio filter

@@ -14,7 +14,7 @@
 extern void rage_free(void* ptr);
 extern void* rage_01B8(uint32_t size, uint32_t flags);
 extern void atSingleton_dtor_7628(void* obj);
-extern void memset(void* ptr, int value, size_t size);
+// memset is provided by <cstring>
 
 /**
  * atSingleton — RAGE singleton template base class

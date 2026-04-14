@@ -287,6 +287,9 @@ struct cmControlRef {
     virtual void vfn_3();  // [3] @ 0x8227cca8
     virtual void vfn_4();  // [4] @ 0x8227cc48
     virtual void vfn_5();  // [5] @ 0x8227cbe8
+
+    // ── non-virtual methods ──
+    void GetBool(uint8_t* out);
 };
 
 // ── rage::cmCosine — defined in rage_cm_types.hpp
@@ -683,7 +686,7 @@ struct cmNamedValueSet {
     virtual void vfn_5();  // [5] @ 0x82275b30
     virtual void vfn_6();  // [6] @ 0x82275b80
     virtual void vfn_7();  // [7] @ 0x82275bd0
-    virtual void vfn_8();  // [8] @ 0x82275c20
+    virtual void vfn_8(uint32_t param1, uint32_t param2);  // [8] @ 0x82275c20
     virtual void vfn_9();  // [9] @ 0x82275c68
 };
 

@@ -192,228 +192,135 @@ struct msgEventHandler {
 
 // ── msgMsgSink  [vtable @ 0x82027B34] ──────────────────────────
 // Constructor: @ 0x822EC7F8 | Destructor: @ 0x822808A0
-// Massive object (~15 KB).  Offsets +0x18 through +0x35F are zeroed
-// in the ctor.  Offset +0x360 starts a 32-element array with 1152-byte
-// stride (32 × 0x480 = 0x9000 bytes, ending at +0x9360).
+// ── MsgSlot ──────────────────────────────────────────────────────────
+// 1152-byte (0x480) message slot entry within msgMsgSink.
+// 32 slots form the array at offset +0x360 of msgMsgSink.
+// Only the first 64 bytes carry structured fields; the remaining
+// 1088 bytes are payload/buffer space for message data.
+struct MsgSlot {
+    float        m_initFloat;      // +0x00  initialised from g_msgSinkInitFloat
+    uint32_t     m_field04;        // +0x04  (ctor: 0)
+    uint32_t     m_field08;        // +0x08  (ctor: 0)
+    uint32_t     m_field0C;        // +0x0C  (ctor: 0)
+    uint32_t     m_field10;        // +0x10  (ctor: 0)
+    uint32_t     m_activeFlag;     // +0x14  (ctor: 1) — 1 = slot active
+    uint32_t     m_template[4];    // +0x18  16-byte template copied from g_msgSinkTemplate
+    uint32_t     m_field28;        // +0x28  (ctor: 0)
+    int32_t      m_sentinel;       // +0x2C  (ctor: -1) — sentinel / linked-list terminator
+    uint32_t     m_field30;        // +0x30  (ctor: 0)
+    uint8_t      m_flagByte;       // +0x34  (ctor: 0)
+    uint8_t      _pad35[3];        // +0x35  alignment padding
+    uint32_t     m_field38;        // +0x38  (ctor: 0)
+    uint32_t     m_field3C;        // +0x3C  (ctor: 0)
+    uint8_t      m_payload[1088];  // +0x40  payload buffer (1152 - 64 = 1088)
+};  // sizeof == 0x480 (1152)
+
+// Massive object (~38 KB).  Offsets +0x18 through +0x35F are zeroed
+// in the ctor.  Offset +0x360 starts a 32-element MsgSlot array with
+// 1152-byte stride (32 x 0x480 = 0x9000 bytes, ending at +0x9360).
 struct msgMsgSink {
-    void**      vtable;           // +0x00  runtime vtable (ctor: 0x8205B0D0)
-    uint32_t     field_0x0004;  // +0x0004  R:26 W:27  (ctor: 0x8205B0DC)
-    uint8_t      field_0x0008;  // +0x0008  R:28 W:21  (ctor: 0)
-    uint8_t      _pad0009[2];
-    uint16_t     field_0x000b;  // +0x000b  R:1 W:0
-    uint32_t     field_0x000c;  // +0x000c  R:24 W:13  (ctor: 0)
-    uint32_t     field_0x0010;  // +0x0010  R:12 W:9
-    uint32_t     field_0x0014;  // +0x0014  R:20 W:13  (ctor: 0)
-    uint32_t     field_0x0018;  // +0x0018  R:14 W:14  (ctor: zeroed block start)
-    uint32_t     field_0x001c;  // +0x001c  R:22 W:3
-    uint32_t     field_0x0020;  // +0x0020  R:13 W:3
-    uint16_t     field_0x0022;  // +0x0022  R:2 W:0
-    uint32_t     field_0x0024;  // +0x0024  R:11 W:8
-    uint32_t     field_0x0028;  // +0x0028  R:20 W:11
-    uint32_t     field_0x002c;  // +0x002c  R:0 W:4
-    uint8_t      field_0x002d;  // +0x002d  R:0 W:1
-    uint32_t     field_0x0030;  // +0x0030  R:24 W:5
-    uint32_t     field_0x0034;  // +0x0034  R:32 W:13
-    uint32_t     field_0x0038;  // +0x0038  R:36 W:4
-    uint32_t     field_0x003c;  // +0x003c  R:15 W:11
-    uint32_t     field_0x0040;  // +0x0040  R:0 W:4
-    uint32_t     field_0x0044;  // +0x0044  R:0 W:8
-    uint32_t     field_0x0048;  // +0x0048  R:1 W:3
-    uint32_t     field_0x004c;  // +0x004c  R:0 W:2
-    uint32_t     field_0x0050;  // +0x0050  R:11 W:15
-    uint32_t     field_0x0054;  // +0x0054  R:4 W:9
-    uint32_t     field_0x0058;  // +0x0058  R:0 W:3
-    uint32_t     field_0x005c;  // +0x005c  R:0 W:2
-    uint32_t     field_0x0060;  // +0x0060  R:5 W:4
-    uint32_t     field_0x0064;  // +0x0064  R:2 W:3
-    uint32_t     field_0x0068;  // +0x0068  R:5 W:3
-    uint32_t     field_0x006c;  // +0x006c  R:2 W:2
-    uint32_t     field_0x0070;  // +0x0070  R:1 W:3
-    uint32_t     field_0x0074;  // +0x0074  R:0 W:1
-    uint32_t     field_0x0078;  // +0x0078  R:1 W:3
-    uint32_t     field_0x007c;  // +0x007c  R:6 W:3
-    uint32_t     field_0x0080;  // +0x0080  R:1 W:1
-    uint32_t     field_0x0084;  // +0x0084  R:6 W:6
-    uint32_t     field_0x0088;  // +0x0088  R:3 W:3
-    uint32_t     field_0x008c;  // +0x008c  R:0 W:2
-    uint32_t     field_0x0090;  // +0x0090  R:1 W:1
-    uint8_t     _pad0x00d4[64];
-    uint8_t      field_0x00d4;  // +0x00d4  R:1 W:1
-    uint8_t     _pad0x00e0[8];
-    uint32_t     field_0x00e0;  // +0x00e0  R:2 W:0
-    uint32_t     field_0x00e4;  // +0x00e4  R:1 W:0
-    uint32_t     field_0x00ec;  // +0x00ec  R:3 W:0
-    uint32_t     field_0x00f0;  // +0x00f0  R:5 W:2
-    uint32_t     field_0x00f4;  // +0x00f4  R:8 W:3
-    uint32_t     field_0x00f8;  // +0x00f8  R:4 W:3
-    uint32_t     field_0x00fc;  // +0x00fc  R:4 W:2
-    uint32_t     field_0x0100;  // +0x0100  R:3 W:1
-    uint32_t     field_0x0104;  // +0x0104  R:1 W:1
-    uint32_t     field_0x0108;  // +0x0108  R:1 W:1
-    uint16_t     field_0x010c;  // +0x010c  R:6 W:0
-    uint32_t     field_0x0114;  // +0x0114  R:3 W:0
-    uint32_t     field_0x011c;  // +0x011c  R:9 W:0
-    uint32_t     field_0x0120;  // +0x0120  R:1 W:2
-    uint32_t     field_0x0124;  // +0x0124  R:5 W:2
-    uint32_t     field_0x0128;  // +0x0128  R:4 W:0
-    uint32_t     field_0x012c;  // +0x012c  R:5 W:1
-    uint32_t     field_0x0130;  // +0x0130  R:2 W:1
-    uint32_t     field_0x0134;  // +0x0134  R:3 W:3
-    uint32_t     field_0x013c;  // +0x013c  R:3 W:0
-    uint32_t     field_0x0144;  // +0x0144  R:2 W:0
-    uint8_t      field_0x0148;  // +0x0148  R:1 W:0
-    uint32_t     field_0x014c;  // +0x014c  R:3 W:1
-    uint32_t     field_0x0150;  // +0x0150  R:0 W:2
-    uint32_t     field_0x0158;  // +0x0158  R:8 W:6
-    uint32_t     field_0x015c;  // +0x015c  R:4 W:3
-    uint32_t     field_0x0160;  // +0x0160  R:1 W:0
-    uint32_t     field_0x0164;  // +0x0164  R:1 W:0
-    uint32_t     field_0x0168;  // +0x0168  R:1 W:2
-    uint32_t     field_0x016c;  // +0x016c  R:0 W:2
-    uint32_t     field_0x0170;  // +0x0170  R:1 W:2
-    uint32_t     field_0x0174;  // +0x0174  R:1 W:3
-    uint32_t     field_0x0178;  // +0x0178  R:1 W:3
-    uint32_t     field_0x017c;  // +0x017c  R:2 W:3
-    uint32_t     field_0x0180;  // +0x0180  R:1 W:1
-    uint32_t     field_0x0184;  // +0x0184  R:3 W:3
-    uint32_t     field_0x0188;  // +0x0188  R:20 W:1
-    uint32_t     field_0x018c;  // +0x018c  R:20 W:2
-    uint32_t     field_0x0190;  // +0x0190  R:7 W:2
-    uint16_t     field_0x0194;  // +0x0194  R:0 W:2
-    uint16_t     field_0x0196;  // +0x0196  R:1 W:2
-    uint32_t     field_0x0198;  // +0x0198  R:9 W:0
-    uint32_t     field_0x019c;  // +0x019c  R:5 W:11
-    uint32_t     field_0x01a0;  // +0x01a0  R:2 W:6
-    uint32_t     field_0x01a4;  // +0x01a4  R:2 W:6
-    uint8_t     _pad0x0244[156];
-    uint16_t     field_0x0244;  // +0x0244  R:2 W:0
-    uint32_t     field_0x0248;  // +0x0248  R:1 W:0
-    uint8_t     _pad0x0288[60];
-    uint32_t     field_0x0288;  // +0x0288  R:0 W:1
-    uint8_t     _pad0x02cc[64];
-    uint32_t     field_0x02cc;  // +0x02cc  R:1 W:1
-    uint8_t     _pad0x0744[1140];
-    uint32_t     field_0x0744;  // +0x0744  R:0 W:1
-    uint32_t     field_0x0748;  // +0x0748  R:0 W:1
-    uint32_t     field_0x074c;  // +0x074c  R:0 W:1
-    uint8_t     _pad0x075c[12];
-    uint32_t     field_0x075c;  // +0x075c  R:5 W:1
-    uint32_t     field_0x0760;  // +0x0760  R:6 W:1
-    uint32_t     field_0x0764;  // +0x0764  R:2 W:1
-    uint32_t     field_0x0768;  // +0x0768  R:1 W:1
-    uint8_t     _pad0x079c[48];
-    uint32_t     field_0x079c;  // +0x079c  R:0 W:1
-    uint32_t     field_0x07a4;  // +0x07a4  R:0 W:1
-    uint8_t     _pad0x07cc[36];
-    uint32_t     field_0x07cc;  // +0x07cc  R:0 W:1
-    uint32_t     field_0x07d0;  // +0x07d0  R:0 W:1
-    uint32_t     field_0x07d4;  // +0x07d4  R:0 W:1
-    uint32_t     field_0x07d8;  // +0x07d8  R:0 W:1
-    uint32_t     field_0x07dc;  // +0x07dc  R:0 W:1
-    uint32_t     field_0x07e0;  // +0x07e0  R:0 W:1
-    uint8_t     _pad0x0824[64];
-    uint32_t     field_0x0824;  // +0x0824  R:0 W:1
-    uint32_t     field_0x0828;  // +0x0828  R:0 W:1
-    uint32_t     field_0x082c;  // +0x082c  R:0 W:1
-    uint32_t     field_0x0830;  // +0x0830  R:0 W:1
-    uint8_t     _pad0x09f4[448];
-    uint32_t     field_0x09f4;  // +0x09f4  R:0 W:1
-    uint32_t     field_0x09f8;  // +0x09f8  R:0 W:1
-    uint32_t     field_0x09fc;  // +0x09fc  R:0 W:1
-    uint32_t     field_0x0a00;  // +0x0a00  R:0 W:1
-    uint32_t     field_0x0a04;  // +0x0a04  R:0 W:1
-    uint32_t     field_0x0a08;  // +0x0a08  R:0 W:1
-    uint32_t     field_0x0a0c;  // +0x0a0c  R:0 W:1
-    uint32_t     field_0x0a10;  // +0x0a10  R:0 W:1
-    uint32_t     field_0x0a14;  // +0x0a14  R:1 W:1
-    uint32_t     field_0x0a1c;  // +0x0a1c  R:0 W:1
-    uint32_t     field_0x0a20;  // +0x0a20  R:0 W:1
-    uint32_t     field_0x0a24;  // +0x0a24  R:0 W:1
-    uint32_t     field_0x0a28;  // +0x0a28  R:0 W:1
-    uint32_t     field_0x0a2c;  // +0x0a2c  R:0 W:1
-    uint32_t     field_0x0a30;  // +0x0a30  R:0 W:1
-    uint32_t     field_0x0a34;  // +0x0a34  R:0 W:1
-    uint32_t     field_0x0a38;  // +0x0a38  R:0 W:1
-    uint32_t     field_0x0a3c;  // +0x0a3c  R:1 W:1
-    uint32_t     field_0x0a44;  // +0x0a44  R:0 W:1
-    uint32_t     field_0x0a48;  // +0x0a48  R:0 W:1
-    uint32_t     field_0x0a4c;  // +0x0a4c  R:0 W:1
-    uint32_t     field_0x0a50;  // +0x0a50  R:0 W:1
-    uint32_t     field_0x0a54;  // +0x0a54  R:0 W:1
-    uint32_t     field_0x0a58;  // +0x0a58  R:0 W:1
-    uint32_t     field_0x0a5c;  // +0x0a5c  R:0 W:1
-    uint32_t     field_0x0a60;  // +0x0a60  R:0 W:1
-    uint32_t     field_0x0a64;  // +0x0a64  R:1 W:1
-    uint32_t     field_0x0a6c;  // +0x0a6c  R:0 W:1
-    uint32_t     field_0x0a70;  // +0x0a70  R:0 W:1
-    uint32_t     field_0x0a74;  // +0x0a74  R:0 W:1
-    uint32_t     field_0x0a78;  // +0x0a78  R:0 W:1
-    uint32_t     field_0x0a7c;  // +0x0a7c  R:0 W:1
-    uint32_t     field_0x0a80;  // +0x0a80  R:0 W:1
-    uint32_t     field_0x0a84;  // +0x0a84  R:0 W:1
-    uint32_t     field_0x0a88;  // +0x0a88  R:0 W:1
-    uint32_t     field_0x0a8c;  // +0x0a8c  R:1 W:1
-    uint32_t     field_0x0a94;  // +0x0a94  R:0 W:1
-    uint32_t     field_0x0a98;  // +0x0a98  R:0 W:1
-    uint32_t     field_0x0a9c;  // +0x0a9c  R:0 W:1
-    uint32_t     field_0x0aa0;  // +0x0aa0  R:0 W:1
-    uint32_t     field_0x0aa4;  // +0x0aa4  R:0 W:1
-    uint32_t     field_0x0aa8;  // +0x0aa8  R:0 W:1
-    uint32_t     field_0x0aac;  // +0x0aac  R:0 W:1
-    uint32_t     field_0x0ab0;  // +0x0ab0  R:0 W:1
-    uint32_t     field_0x0ab4;  // +0x0ab4  R:1 W:1
-    uint32_t     field_0x0abc;  // +0x0abc  R:0 W:1
-    uint32_t     field_0x0ac0;  // +0x0ac0  R:0 W:1
-    uint32_t     field_0x0ac4;  // +0x0ac4  R:0 W:1
-    uint32_t     field_0x0ac8;  // +0x0ac8  R:0 W:1
-    uint32_t     field_0x0acc;  // +0x0acc  R:0 W:1
-    uint32_t     field_0x0ad0;  // +0x0ad0  R:0 W:1
-    uint32_t     field_0x0ad4;  // +0x0ad4  R:0 W:1
-    uint32_t     field_0x0ad8;  // +0x0ad8  R:0 W:1
-    uint32_t     field_0x0adc;  // +0x0adc  R:1 W:1
-    uint32_t     field_0x0ae4;  // +0x0ae4  R:0 W:1
-    uint32_t     field_0x0ae8;  // +0x0ae8  R:0 W:1
-    uint32_t     field_0x0aec;  // +0x0aec  R:0 W:1
-    uint32_t     field_0x0af0;  // +0x0af0  R:0 W:1
-    uint32_t     field_0x0af4;  // +0x0af4  R:0 W:1
-    uint32_t     field_0x0af8;  // +0x0af8  R:0 W:1
-    uint32_t     field_0x0afc;  // +0x0afc  R:0 W:1
-    uint32_t     field_0x0b00;  // +0x0b00  R:0 W:1
-    uint32_t     field_0x0b04;  // +0x0b04  R:1 W:1
-    uint32_t     field_0x0b0c;  // +0x0b0c  R:0 W:1
-    uint32_t     field_0x0b10;  // +0x0b10  R:0 W:1
-    uint32_t     field_0x0b14;  // +0x0b14  R:0 W:1
-    uint32_t     field_0x0b18;  // +0x0b18  R:0 W:1
-    uint32_t     field_0x0b1c;  // +0x0b1c  R:0 W:1
-    uint32_t     field_0x0b20;  // +0x0b20  R:0 W:1
-    uint32_t     field_0x0b24;  // +0x0b24  R:0 W:1
-    uint32_t     field_0x0b28;  // +0x0b28  R:0 W:1
-    uint32_t     field_0x0b2c;  // +0x0b2c  R:1 W:1
-    uint32_t     field_0x0b30;  // +0x0b30  R:0 W:1
-    uint32_t     field_0x0b34;  // +0x0b34  R:0 W:1
-    uint32_t     field_0x0b38;  // +0x0b38  R:0 W:1
-    uint32_t     field_0x0b3c;  // +0x0b3c  R:0 W:1
-    uint32_t     field_0x0b40;  // +0x0b40  R:0 W:1
-    uint32_t     field_0x0b44;  // +0x0b44  R:0 W:1
-    uint32_t     field_0x0b48;  // +0x0b48  R:0 W:1
-    uint32_t     field_0x0b4c;  // +0x0b4c  R:0 W:1
-    uint8_t     _pad0x0cec[412];
-    uint32_t     field_0x0cec;  // +0x0cec  R:1 W:0
-    uint8_t     _pad0x0f14[548];
-    uint32_t     field_0x0f14;  // +0x0f14  R:0 W:2
-    uint8_t     _pad0x35a8[9872];
-    uint32_t     field_0x35a8;  // +0x35a8  R:1 W:0
-    uint32_t     field_0x35ac;  // +0x35ac  R:1 W:0
-    uint32_t     field_0x35b0;  // +0x35b0  R:1 W:0
-    uint8_t     _pad0x35d8[36];
-    uint32_t     field_0x35d8;  // +0x35d8  R:1 W:0
-    uint8_t     _pad0x3b34[1368];
-    uint32_t     field_0x3b34;  // +0x3b34  R:0 W:1
-    uint8_t     _pad0x3b40[8];
-    uint32_t     field_0x3b40;  // +0x3b40  R:0 W:1
-    uint32_t     field_0x3b44;  // +0x3b44  R:0 W:1
-    uint8_t     _pad0x3c40[248];
-    uint32_t     field_0x3c40;  // +0x3c40  R:3 W:0
+    void**       vtable;              // +0x0000  runtime vtable (ctor: 0x8205B0D0)
+    uint32_t     m_subVtable;         // +0x0004  secondary vtable / refcount
+    uint8_t      m_controlByte;       // +0x0008  control flags (ctor: 0)
+    uint8_t      _pad0009[2];         // +0x0009
+    uint16_t     m_field0x0b;         // +0x000B
+    uint32_t     m_pSubVtable;        // +0x000C  sub-object vtable region at +12
+    uint32_t     m_field0x10;         // +0x0010
+    uint32_t     m_field0x14;         // +0x0014  (ctor: 0)
+    uint32_t     m_eventSink;         // +0x0018  event sink sub-object / network mgr (zeroed block start)
+    uint32_t     m_field0x1c;         // +0x001C  in zeroed block w/ m_eventSink
+    uint32_t     m_field0x20;         // +0x0020
+    uint16_t     m_field0x22;         // +0x0022
+    void*        m_pNestedObject;     // +0x0024  nested object ptr (dispatched via vtable)
+    void*        m_pAttachedObject;   // +0x0028  attached object (released in SetActiveAndRelease)
+    uint32_t     m_field0x2c;         // +0x002C
+    uint8_t      m_field0x2d;         // +0x002D
+    void*        m_pStateObject;      // +0x0030  state object / message buffer base
+    void*        m_pDelegate;         // +0x0034  delegate / message object
+    void*        m_pSessionMgr;       // +0x0038  session mgr (has crit section at +144)
+    int32_t      m_mode;              // +0x003C  connection mode (3 = disconnecting)
+    uint32_t     m_field0x40;         // +0x0040
+    uint32_t     m_initZero44;        // +0x0044  (InitializeExtended zeros +68..+96)
+    uint32_t     m_initZero48;        // +0x0048
+    uint32_t     m_initZero4c;        // +0x004C
+    uint32_t     m_initZero50;        // +0x0050
+    uint32_t     m_initZero54;        // +0x0054
+    uint32_t     m_initZero58;        // +0x0058
+    uint32_t     m_initZero5c;        // +0x005C
+    uint32_t     m_initZero60;        // +0x0060
+    uint32_t     m_initZero64;        // +0x0064
+    uint32_t     m_pCounterArray;     // +0x0068  counter array ptr
+    uint32_t     m_field0x6c;         // +0x006C
+    uint32_t     m_initZero70;        // +0x0070 (InitializeExtended zeros +112..+200)
+    uint32_t     m_initZero74;        // +0x0074
+    uint32_t     m_initZero78;        // +0x0078
+    void*        m_pHandler;          // +0x007C  message handler object
+    uint32_t     m_listAnchor;        // +0x0080  intrusive list anchor
+    uint32_t     m_listHead;          // +0x0084  intrusive list head
+    uint32_t     m_field0x88;         // +0x0088
+    uint32_t     m_field0x8c;         // +0x008C
+    uint32_t     m_field0x90;         // +0x0090
+    uint8_t      _pad0094[64];        // +0x0094
+    uint8_t      m_flagsD4;           // +0x00D4  flag byte (upper 5 bits cleared in InitializeExtended)
+    uint8_t      _pad00D5[8];         // +0x00D5
+    uint32_t     m_listHead2;         // +0x00E0  linked list head (vfn_79: +224)
+    uint32_t     m_listHead3;         // +0x00E4  linked list head (vfn_125: +228)
+    uint32_t     m_field0xec;         // +0x00EC
+    void*        m_pConnectionData;   // +0x00F0  connection data
+    uint32_t     m_field0xf4;         // +0x00F4
+    uint32_t     m_field0xf8;         // +0x00F8
+    uint32_t     m_fieldFC;           // +0x00FC  (vfn_6080: +252)
+    uint32_t     m_field0x100;        // +0x0100
+    uint32_t     m_field0x104;        // +0x0104
+    uint32_t     m_pLinkedList108;    // +0x0108  (vfn_43: +264 linked list)
+    uint16_t     m_field0x10c;        // +0x010C
+    uint32_t     m_field0x114;        // +0x0114
+    uint32_t     m_connectionHandle;  // +0x011C  connection handle (vfn_36: +284)
+    uint32_t     m_sessionId;         // +0x0120  session ID (+288)
+    uint16_t     m_gamerIndex;        // +0x0124  gamer index (0xFFFF = invalid, +292)
+    uint8_t      m_connectionFlags;   // +0x0128  connection flags byte (+296)
+    uint8_t      _pad0129[3];         // +0x0129
+    void*        m_pDataBuffer;       // +0x012C  data buffer ptr (+300)
+    uint32_t     m_field0x130;        // +0x0130
+    uint32_t     m_pendingRequest;    // +0x0134  pending disconnect flag (+308)
+    uint32_t     m_listSentinel;      // +0x0138  linked list sentinel (+312)
+    uint32_t     m_listNext;          // +0x013C  linked list next (+316)
+    void*        m_pSession;          // +0x0144  session pointer (+324)
+    uint8_t      m_headerTag;         // +0x0148  header tag byte (+328)
+    uint8_t      _pad0149[3];         // +0x0149
+    void*        m_pMsgBuffer;        // +0x014C  message buffer (+332)
+    uint32_t     m_dirtyFlag;         // +0x0150  dirty flag (+336)
+    uint8_t      _pad0154[4];         // +0x0154
+    uint32_t     m_field0x158;           // +0x0158
+    uint32_t     m_field0x15c;           // +0x015C
+    uint32_t     m_field0x160;           // +0x0160
+    uint32_t     m_field0x164;           // +0x0164
+    uint32_t     m_field0x168;           // +0x0168
+    uint32_t     m_field0x16c;           // +0x016C
+    uint32_t     m_field0x170;           // +0x0170
+    uint32_t     m_field0x174;           // +0x0174
+    uint32_t     m_field0x178;           // +0x0178
+    uint32_t     m_field0x17c;           // +0x017C
+    uint32_t     m_field0x180;           // +0x0180
+    uint32_t     m_field0x184;           // +0x0184
+    uint32_t     m_field0x188;           // +0x0188
+    uint32_t     m_field0x18c;           // +0x018C
+    uint32_t     m_field0x190;           // +0x0190
+    uint16_t     m_field0x194;        // +0x0194
+    uint16_t     m_field0x196;        // +0x0196
+    uint32_t     m_field0x198;           // +0x0198
+    uint32_t     m_field0x19c;           // +0x019C
+    uint32_t     m_field0x1a0;           // +0x01A0
+    uint32_t     m_field0x1a4;           // +0x01A4
+    uint8_t      _pad01A8[0x1B8];     // +0x01A8  padding to offset 0x360
+    MsgSlot      m_slots[32];         // +0x0360  32 message slots (32 x 1152 = 36864 bytes)
+    uint32_t     m_slotSentinel;      // +0x9360  sentinel after slot array
+    uint8_t      _pad9364[0x44];      // +0x9364  padding
+    uint32_t     m_tailSentinel;      // +0x93A8  tail sentinel
+    // NOTE: Old field_0x0a20..field_0x3c40 entries were all within the
+    // m_slots[32] array region (0x360-0x9360) and are now accessed via
+    // m_slots[N].m_fieldXX instead. Some (0x35a8 = offset 13736) map to
+    // specific slot payload offsets used by msgMsgSink_EF60_wrh.
 
     // ── constructor ──
     msgMsgSink();                               // @ 0x822ec7f8
@@ -425,47 +332,47 @@ struct msgMsgSink {
     virtual void vfn_8();  // [8] @ 0x82455698
     virtual void vfn_9();  // [9] @ 0x824557c8
     virtual void OnEnter();  // [11] @ 0x82455688
-    virtual void vfn_12();  // [12] @ 0x82455630
+    virtual uint16_t GetPeerDataSize();  // [12] @ 0x82455630
     virtual void GetName();  // [13] @ 0x82455640
-    virtual void vfn_14();  // [14] @ 0x82455540
+    virtual void NotifySessionEvent();  // [14] @ 0x82455540
     virtual void vfn_17();  // [17] @ 0x824559f0
     virtual void vfn_18();  // [18] @ 0x82455ab0
     virtual void vfn_19();  // [19] @ 0x82455a60
     virtual void PostLoadProperties();  // [20] @ 0x8244ee88
     virtual void Validate();  // [21] @ 0x8244ee90
-    virtual void PostLoadChildren();  // [22] @ 0x8244dd50
-    virtual void vfn_23();  // [23] @ 0x8244ddf8
-    virtual void vfn_24();  // [24] @ 0x8244dff8
-    virtual void vfn_25();  // [25] @ 0x8244dcf0
-    virtual void vfn_26();  // [26] @ 0x8244e160
+    virtual uint32_t CheckAndProcess();  // [22] @ 0x8244dd50
+    virtual uint32_t ProcessMessage(uint32_t messageFlags);  // [23] @ 0x8244ddf8
+    virtual int32_t GetStateFlagsLocked(uint32_t* outFlags);  // [24] @ 0x8244dff8
+    virtual int32_t GenerateAndCleanup();  // [25] @ 0x8244dcf0
+    virtual int32_t GetConnectionInfo(void* bufferOut, uint32_t sizeParam, uint32_t* totalSizeOut);  // [26] @ 0x8244e160
     virtual void vfn_27();  // [27] @ 0x8244e3b0
-    virtual void vfn_28();  // [28] @ 0x8244e4c0
-    virtual void vfn_29();  // [29] @ 0x8244e568
-    virtual void vfn_30();  // [30] @ 0x8244e6d0
-    virtual void vfn_31();  // [31] @ 0x8244f268
-    virtual void vfn_32();  // [32] @ 0x8244f330
-    virtual void vfn_33();  // [33] @ 0x8244dec0
-    virtual void vfn_34();  // [34] @ 0x8244e1d8
+    virtual uint32_t UpdatePrioritiesLocked(void* priorityData);  // [28] @ 0x8244e4c0
+    virtual uint32_t ApplyPrioritiesLocked(void* priorityData);  // [29] @ 0x8244e568
+    virtual int32_t FindValidMessageSlot(uint32_t searchKey);  // [30] @ 0x8244e6d0
+    virtual uint32_t SetPropertyLocked(uint32_t key, float value);  // [31] @ 0x8244f268
+    virtual uint32_t GetPropertyLocked(uint32_t key, float* outValue);  // [32] @ 0x8244f330
+    virtual uint32_t ProcessWithLock(uint32_t param);  // [33] @ 0x8244dec0
+    virtual uint32_t SetMessageBuffer(void* param);  // [34] @ 0x8244e1d8
     virtual void vfn_35();  // [35] @ 0x8244e2a0
     virtual void vfn_36();  // [36] @ 0x8244ea58
     virtual void vfn_37();  // [37] @ 0x8244ef20
-    virtual void vfn_38();  // [38] @ 0x8244df58
-    virtual void vfn_39();  // [39] @ 0x8244e050
-    virtual void vfn_40();  // [40] @ 0x8244e0c0
-    virtual void vfn_41();  // [41] @ 0x82456688
-    virtual void vfn_42();  // [42] @ 0x8244ed38
-    virtual void vfn_43();  // [43] @ 0x8244e138
+    virtual uint32_t GetStateFlags();  // [38] @ 0x8244df58
+    virtual void ProcessPendingMessages();  // [39] @ 0x8244e050
+    virtual void CleanupIfReady();  // [40] @ 0x8244e0c0
+    virtual void ForwardToMatchHandler();  // [41] @ 0x82456688
+    virtual uint32_t DispatchEventDefault();  // [42] @ 0x8244ed38
+    virtual void ClearPointers();  // [43] @ 0x8244e138
     virtual void vfn_44();  // [44] @ 0x82457b40
     virtual void vfn_45();  // [45] @ 0x824577d0
-    virtual void vfn_46();  // [46] @ 0x8244e148
-    virtual void vfn_49();  // [49] @ 0x8244e628
-    virtual void vfn_50();  // [50] @ 0x8244e680
-    virtual void vfn_52();  // [52] @ 0x8244db58
-    virtual void vfn_54();  // [54] @ 0x8244ef38
-    virtual void vfn_55();  // [55] @ 0x8244f8a8
+    virtual uint32_t GetNestedObjectValue();  // [46] @ 0x8244e148
+    virtual void FlushAndDisconnect();  // [49] @ 0x8244e628
+    virtual void BeginDisconnect();  // [50] @ 0x8244e680
+    virtual void SendEvent();  // [52] @ 0x8244db58
+    virtual void* GetSessionPointer();  // [54] @ 0x8244ef38
+    virtual void ForwardProcessMessage();  // [55] @ 0x8244f8a8
     virtual void vfn_56();  // [56] @ 0x82456e38
     virtual void vfn_57();  // [57] @ 0x82456eb0
-    virtual void vfn_59();  // [59] @ 0x821efd10
+    virtual void DispatchDefaultHandler();  // [59] @ 0x821efd10
     virtual void vfn_60();  // [60] @ 0x824564c0
     virtual void vfn_61();  // [61] @ 0x82457130
     virtual void vfn_62();  // [62] @ 0x82457c10
@@ -473,39 +380,61 @@ struct msgMsgSink {
     virtual void vfn_65();  // [65] @ 0x82456810
     virtual void vfn_66();  // [66] @ 0x82456920
     virtual void vfn_67();  // [67] @ 0x82456968
-    virtual void vfn_68();  // [68] @ 0x82456f28
+    virtual void ForwardMessageToSession(uint32_t param);  // [68] @ 0x82456f28
     virtual void vfn_75();  // [75] @ 0x82456278
-    virtual void vfn_77();  // [77] @ 0x82457dd0
-    virtual void vfn_78();  // [78] @ 0x824514e8
+    virtual void ForwardToLeaderboard();  // [77] @ 0x82457dd0
+    virtual void ForwardToRageHandler();  // [78] @ 0x824514e8
     virtual void vfn_79();  // [79] @ 0x824513d0
-    virtual void vfn_89();  // [89] @ 0x8244f8b0
-    virtual void vfn_95();  // [95] @ 0x82457ff0
+    virtual void ForwardDispatchMessage();  // [89] @ 0x8244f8b0
+    virtual void ForwardToStatsHandler();  // [95] @ 0x82457ff0
     virtual void vfn_105();  // [105] @ 0x82457ff8
     virtual void vfn_108();  // [108] @ 0x824580c0
     virtual void vfn_109();  // [109] @ 0x82456378
     virtual void vfn_113();  // [113] @ 0x82458218
     virtual void vfn_114();  // [114] @ 0x82458708
-    virtual void vfn_115();  // [115] @ 0x8244f7b8
-    virtual void vfn_116();  // [116] @ 0x824584f0
-    virtual void vfn_118();  // [118] @ 0x8246bc00
-    virtual void vfn_119();  // [119] @ 0x8244f768
-    virtual void vfn_120();  // [120] @ 0x824564a0
+    virtual uint32_t GetNameLength();  // [115] @ 0x8244f7b8
+    virtual void ForwardToSessionSync();  // [116] @ 0x824584f0
+    virtual uint32_t Release();  // [118] @ 0x8246bc00
+    virtual void* SendPulseToConnection();  // [119] @ 0x8244f768
+    virtual void DispatchEventWithSessionInfo();  // [120] @ 0x824564a0
     virtual void vfn_121();  // [121] @ 0x82458a88
     virtual void vfn_122();  // [122] @ 0x824598a0
-    virtual void vfn_123();  // [123] @ 0x82450610
+    virtual void DisconnectMatchingHandlers(void* key);  // [123] @ 0x82450610
     virtual void vfn_125();  // [125] @ 0x824505d0
     virtual void vfn_126();  // [126] @ 0x8244ff38
     virtual void vfn_128();  // [128] @ 0x8244fc80
-    virtual void vfn_129();  // [129] @ 0x8244fe80
-    virtual void vfn_130();  // [130] @ 0x8244f9e8
-    virtual void vfn_131();  // [131] @ 0x8244fee8
-    virtual void vfn_147();  // [147] @ 0x824505c8
-    virtual void vfn_148();  // [148] @ 0x824508a8
+    virtual int32_t RegisterMessageHandler(void* handler, uint32_t flags);  // [129] @ 0x8244fe80
+    virtual uint32_t FlushPendingMessagesLocked();  // [130] @ 0x8244f9e8
+    virtual int32_t QueryConnectionState(uint32_t* outConnected);  // [131] @ 0x8244fee8
+    virtual void ForwardCleanupMessage();  // [147] @ 0x824505c8
+    virtual void ForwardFinalizeMessage();  // [148] @ 0x824508a8
     
     // ── non-virtual methods (implemented) ──
     void InitializeExtended();  // @ 0x8245C078
     void ProcessMessageWithIndex(uint32_t param1, uint16_t msgIndex, uint32_t param2);  // @ 0x8244E978
     void DispatchVirtualMethod();  // @ 0x824542D0 [related to vtable slot 12]
+    uint16_t GetNestedValue(void* dataPtr);  // @ 0x8244F490
+    int32_t GenerateWithLock();  // @ 0x8244DCF0 (non-virtual wrapper)
+    void CleanupSession();
+    void SetActiveAndReleaseObject();
+    void OnDisconnect();
+    void OnReconnect();
+    void ResetEventDispatch();
+    uint32_t GetConnectionCount();
+    void NotifyStateChange();
+    void* CreateSessionLocked(uint32_t sessionParam, uint32_t flags);
+    uint32_t QueryConnectionStatus(uint32_t* outStatus);
+    uint16_t FindGamerByIndex(uint16_t index);
+    void* GetSessionData();
+    void ForwardToBaseWrite();
+    void ForwardToBaseUpdate();
+    void ForwardToBaseNotify();
+    void ForwardToBaseProcess();
+    void ForwardToEmbeddedObject();
+    void* GetSessionLock();
+    void* GetMessageBufferPtr();
+    void* GetPeerDataPtr();
+    void ReplaceMessageObject(void* newObj);
 };
 
 // ── pongBinkMovie  [vtable @ 0x82060B94] ──────────────────────────
@@ -549,403 +478,403 @@ struct pongPlayer {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint8_t      field_0x0001;  // +0x0001  R:1 W:1
-    uint32_t     field_0x0004;  // +0x0004  R:24 W:18
-    uint8_t      field_0x0005;  // +0x0005  R:1 W:0
-    uint16_t     field_0x0006;  // +0x0006  R:5 W:4
-    uint8_t      field_0x0007;  // +0x0007  R:1 W:0
-    uint32_t     field_0x0008;  // +0x0008  R:25 W:15
-    uint8_t      field_0x000a;  // +0x000a  R:1 W:0
-    uint32_t     field_0x000c;  // +0x000c  R:6 W:9
-    uint32_t     field_0x0010;  // +0x0010  R:10 W:7
-    uint32_t     field_0x0014;  // +0x0014  R:17 W:6
-    uint32_t     field_0x0018;  // +0x0018  R:10 W:3
-    uint32_t     field_0x001c;  // +0x001c  R:11 W:1
-    uint32_t     field_0x0020;  // +0x0020  R:8 W:4
-    uint32_t     field_0x0024;  // +0x0024  R:10 W:3
-    uint8_t      field_0x0026;  // +0x0026  R:0 W:1
-    uint32_t     field_0x0028;  // +0x0028  R:8 W:3
-    uint8_t      field_0x0029;  // +0x0029  R:1 W:3
-    uint8_t      field_0x002a;  // +0x002a  R:2 W:1
-    uint32_t     field_0x002c;  // +0x002c  R:29 W:4
-    uint32_t     field_0x0030;  // +0x0030  R:49 W:3
-    uint32_t     field_0x0034;  // +0x0034  R:14 W:3
-    uint32_t     field_0x0038;  // +0x0038  R:21 W:2
-    uint8_t      field_0x0039;  // +0x0039  R:0 W:1
-    uint32_t     field_0x003c;  // +0x003c  R:20 W:6
-    uint8_t      field_0x003d;  // +0x003d  R:1 W:0
-    uint8_t      field_0x003e;  // +0x003e  R:0 W:1
-    uint32_t     field_0x0040;  // +0x0040  R:10 W:3
-    uint32_t     field_0x0044;  // +0x0044  R:4 W:3
-    uint8_t      field_0x0045;  // +0x0045  R:1 W:2
-    uint32_t     field_0x0048;  // +0x0048  R:3 W:3
-    uint32_t     field_0x004c;  // +0x004c  R:4 W:12
-    uint8_t      field_0x004d;  // +0x004d  R:0 W:6
-    uint32_t     field_0x0050;  // +0x0050  R:34 W:5
-    uint32_t     field_0x0054;  // +0x0054  R:8 W:4
-    uint8_t      field_0x0055;  // +0x0055  R:2 W:2
-    uint8_t      field_0x0056;  // +0x0056  R:2 W:2
-    uint8_t      field_0x0057;  // +0x0057  R:2 W:2
-    uint8_t      field_0x0058;  // +0x0058  R:2 W:3
-    uint32_t     field_0x005c;  // +0x005c  R:0 W:1
-    uint32_t     field_0x0060;  // +0x0060  R:2 W:1
-    uint32_t     field_0x0064;  // +0x0064  R:4 W:0
-    uint32_t     field_0x0068;  // +0x0068  R:2 W:0
-    uint32_t     field_0x006c;  // +0x006c  R:2 W:0
-    uint32_t     field_0x0070;  // +0x0070  R:3 W:0
-    uint32_t     field_0x0074;  // +0x0074  R:2 W:0
-    uint32_t     field_0x0078;  // +0x0078  R:4 W:2
-    uint32_t     field_0x007c;  // +0x007c  R:6 W:0
-    uint32_t     field_0x0080;  // +0x0080  R:6 W:0
-    uint32_t     field_0x0084;  // +0x0084  R:3 W:0
-    uint8_t      field_0x0085;  // +0x0085  R:1 W:0
-    uint32_t     field_0x0088;  // +0x0088  R:8 W:0
-    uint8_t      field_0x008a;  // +0x008a  R:3 W:0
-    uint32_t     field_0x008c;  // +0x008c  R:2 W:0
-    uint32_t     field_0x0090;  // +0x0090  R:4 W:1
-    uint32_t     field_0x0094;  // +0x0094  R:2 W:5
-    uint32_t     field_0x0098;  // +0x0098  R:1 W:0
-    uint32_t     field_0x009c;  // +0x009c  R:1 W:2
-    uint8_t      field_0x009d;  // +0x009d  R:0 W:1
-    uint32_t     field_0x00a4;  // +0x00a4  R:3 W:1
-    uint32_t     field_0x00a8;  // +0x00a8  R:9 W:1
-    uint32_t     field_0x00ac;  // +0x00ac  R:9 W:10
-    uint32_t     field_0x00b0;  // +0x00b0  R:1 W:0
+    uint8_t      m_field0x1;  // +0x0001  R:1 W:1
+    uint32_t     m_flags;       // +0x0004  R:24 W:18 (atSingleton base)
+    uint8_t      m_field0x5;  // +0x0005  R:1 W:0
+    uint16_t     m_field0x6;  // +0x0006  R:5 W:4
+    uint8_t      m_field0x7;  // +0x0007  R:1 W:0
+    uint32_t     m_pCreature;   // +0x0008  R:25 W:15 pcrCreature* (debug: "creature already activated")
+    uint8_t      m_field0xa;  // +0x000a  R:1 W:0
+    uint32_t     m_flags2;      // +0x000c  R:6 W:9 second flag word
+    uint32_t     m_pBody;       // +0x0010  R:10 W:7 body/transform ptr (float at +12 = speed)
+    uint32_t     m_bActive;     // +0x0014  R:17 W:6 bool: player active (debug: "player is not active")
+    uint32_t     m_field0x18;   // +0x0018  R:10 W:3
+    uint32_t     m_pParent;     // +0x001c  R:11 W:1 parent/owner
+    uint32_t     m_field0x20;   // +0x0020  R:8 W:4
+    uint32_t     m_field0x24;   // +0x0024  R:10 W:3
+    uint8_t      m_field0x26; // +0x0026  R:0 W:1
+    uint32_t     m_field0x28;   // +0x0028  R:8 W:3
+    uint8_t      m_field0x29; // +0x0029  R:1 W:3
+    uint8_t      m_field0x2a; // +0x002a  R:2 W:1
+    uint32_t     m_pLocomotionState; // +0x002c  R:29 W:4
+    uint32_t     m_pLocoState2; // +0x0030  R:49 W:3
+    uint32_t     m_locoParam1;  // +0x0034  R:14 W:3
+    uint32_t     m_pLocoExtra; // +0x0038  R:21 W:2 aux loco-state ptr
+    uint8_t      m_field0x39; // +0x0039  R:0 W:1
+    uint32_t     m_pAnimList;   // +0x003c  R:20 W:6
+    uint8_t      m_field0x3d; // +0x003d  R:1 W:0
+    uint8_t      m_field0x3e; // +0x003e  R:0 W:1
+    uint32_t     m_field0x40;   // +0x0040  R:10 W:3
+    float        m_swingPhaseInput; // +0x0044  R:4 W:3 swing timing animation phase
+    uint8_t      m_field0x45; // +0x0045  R:1 W:2
+    float        m_swingDirectionAdj; // +0x0048  R:3 W:3 directional adjustment
+    uint32_t     m_team;        // +0x004c  R:4 W:12 team/side byte (freq-written)
+    uint8_t      m_field0x4d; // +0x004d  R:0 W:6
+    float        m_swingTimingClamp; // +0x0050  R:34 W:5 swing timing adj [0,1]
+    uint32_t     m_field0x54;   // +0x0054  R:8 W:4
+    uint8_t      m_field0x55; // +0x0055  R:2 W:2
+    uint8_t      m_field0x56; // +0x0056  R:2 W:2
+    uint8_t      m_field0x57; // +0x0057  R:2 W:2
+    uint8_t      m_field0x58; // +0x0058  R:2 W:3
+    uint32_t     m_field0x5c; // +0x005c  R:0 W:1
+    uint32_t     m_field0x60;   // +0x0060  R:2 W:1
+    uint32_t     m_field0x64;   // +0x0064  R:4 W:0
+    uint32_t     m_field0x68; // +0x0068  R:2 W:0
+    uint32_t     m_field0x6c; // +0x006c  R:2 W:0
+    uint32_t     m_field0x70;   // +0x0070  R:3 W:0
+    uint32_t     m_field0x74; // +0x0074  R:2 W:0
+    uint32_t     m_pSwingSubState; // +0x0078  R:4 W:2 pongTimingSubState*
+    uint32_t     m_pTimingState; // +0x007c  R:6 W:0 pongTimingState*
+    uint32_t     m_pRecoveryState; // +0x0080  R:6 W:0 pongRecoveryState*
+    uint32_t     m_field0x84; // +0x0084  R:3 W:0
+    uint8_t      m_field0x85; // +0x0085  R:1 W:0
+    uint32_t     m_pAnimState;  // +0x0088  R:8 W:0 pongAnimState*
+    uint8_t      m_field0x8a; // +0x008a  R:3 W:0
+    uint32_t     m_pCreatureState; // +0x008c  R:2 W:0 pongCreatureState*
+    uint32_t     m_pCreatureState2; // +0x0090  R:4 W:1 pongCreatureState*
+    uint32_t     m_pSwingData;  // +0x0094  R:2 W:5 pongSwingData*
+    uint32_t     m_field0x98; // +0x0098  R:1 W:0
+    uint32_t     m_field0x9c; // +0x009c  R:1 W:2
+    uint8_t      m_field0x9d; // +0x009d  R:0 W:1
+    uint32_t     m_pPhysicsBody; // +0x00a4  R:3 W:1 physics pose
+    uint32_t     m_pPhysicsBound; // +0x00a8  R:9 W:1 phBoundCapsule
+    uint32_t     m_physicsAux;  // +0x00ac  R:9 W:10 physics aux field
+    float        m_animTimer;   // +0x00b0  R:1 W:0 compared vs g_recoveryTimerThreshold
     uint8_t     _pad0x00bc[8];
-    uint32_t     field_0x00bc;  // +0x00bc  R:22 W:0
-    uint32_t     field_0x00c0;  // +0x00c0  R:11 W:0
-    uint8_t      field_0x00c4;  // +0x00c4  R:1 W:2
-    uint8_t      field_0x00c5;  // +0x00c5  R:1 W:1
-    uint16_t     field_0x00c6;  // +0x00c6  R:1 W:0
-    uint32_t     field_0x00c8;  // +0x00c8  R:2 W:0
-    uint32_t     field_0x00cc;  // +0x00cc  R:8 W:0
-    uint32_t     field_0x00d0;  // +0x00d0  R:0 W:1
-    uint8_t      field_0x00d7;  // +0x00d7  R:0 W:1
-    uint8_t      field_0x00d8;  // +0x00d8  R:0 W:1
+    uint32_t     m_pPlayerState; // +0x00bc  R:22 W:0 heap-alloc inner state
+    uint32_t     m_playerStateAux; // +0x00c0  R:11 W:0 adjacent to m_pPlayerState
+    uint8_t      m_field0xc4; // +0x00c4  R:1 W:2
+    uint8_t      m_bSwingActive; // +0x00c5  R:1 W:1 set by SetSwingActiveState
+    uint16_t     m_field0xc6; // +0x00c6  R:1 W:0
+    int32_t      m_swingInputResult; // +0x00c8  R:2 W:0 BF18 evaluator result
+    int32_t      m_swingInputSlot; // +0x00cc  R:8 W:0 index into g_pInputScoreTable
+    uint32_t     m_field0xd0; // +0x00d0  R:0 W:1
+    uint8_t      m_field0xd7; // +0x00d7  R:0 W:1
+    uint8_t      m_field0xd8; // +0x00d8  R:0 W:1
     uint8_t     _pad0x00e6[10];
-    uint8_t      field_0x00e6;  // +0x00e6  R:0 W:1
-    uint8_t      field_0x00ec;  // +0x00ec  R:0 W:1
-    uint8_t      field_0x00ed;  // +0x00ed  R:0 W:1
-    uint8_t      field_0x00f0;  // +0x00f0  R:2 W:0
-    uint32_t     field_0x00f4;  // +0x00f4  R:0 W:1
-    uint32_t     field_0x00f8;  // +0x00f8  R:4 W:0
-    uint32_t     field_0x0100;  // +0x0100  R:0 W:1
-    uint32_t     field_0x0104;  // +0x0104  R:1 W:1
-    uint32_t     field_0x0108;  // +0x0108  R:1 W:0
-    uint32_t     field_0x010c;  // +0x010c  R:2 W:0
-    uint64_t     field_0x0110;  // +0x0110  R:0 W:1
-    uint32_t     field_0x0118;  // +0x0118  R:0 W:1
-    uint32_t     field_0x011c;  // +0x011c  R:1 W:0
-    uint32_t     field_0x0120;  // +0x0120  R:2 W:1
-    uint32_t     field_0x0124;  // +0x0124  R:1 W:1
-    uint32_t     field_0x0128;  // +0x0128  R:0 W:1
-    uint32_t     field_0x012c;  // +0x012c  R:0 W:1
-    uint32_t     field_0x0130;  // +0x0130  R:0 W:2
-    uint16_t     field_0x0132;  // +0x0132  R:0 W:1
-    uint32_t     field_0x0134;  // +0x0134  R:0 W:2
-    uint16_t     field_0x0136;  // +0x0136  R:0 W:1
-    uint8_t      field_0x0138;  // +0x0138  R:2 W:1
-    uint8_t      field_0x0139;  // +0x0139  R:0 W:1
-    uint8_t      field_0x013a;  // +0x013a  R:0 W:1
-    uint32_t     field_0x013c;  // +0x013c  R:0 W:2
-    uint8_t      field_0x013d;  // +0x013d  R:0 W:1
-    uint32_t     field_0x0144;  // +0x0144  R:0 W:3
-    uint32_t     field_0x014c;  // +0x014c  R:0 W:1
-    uint8_t      field_0x014e;  // +0x014e  R:1 W:0
-    uint32_t     field_0x0150;  // +0x0150  R:2 W:1
-    uint8_t      field_0x0152;  // +0x0152  R:0 W:1
-    uint32_t     field_0x0154;  // +0x0154  R:1 W:2
-    uint32_t     field_0x0158;  // +0x0158  R:0 W:1
-    uint32_t     field_0x015c;  // +0x015c  R:0 W:1
-    uint8_t      field_0x0160;  // +0x0160  R:1 W:2
+    uint8_t      m_bSwingCommit1; // +0x00e6  R:0 W:1 checked in 5890_g
+    uint8_t      m_field0xec; // +0x00ec  R:0 W:1
+    uint8_t      m_field0xed; // +0x00ed  R:0 W:1
+    uint8_t      m_field0xf0; // +0x00f0  R:2 W:0
+    uint32_t     m_field0xf4; // +0x00f4  R:0 W:1
+    uint32_t     m_field0xf8; // +0x00f8  R:4 W:0
+    uint32_t     m_field0x100; // +0x0100  R:0 W:1
+    uint32_t     m_field0x104; // +0x0104  R:1 W:1
+    uint32_t     m_field0x108; // +0x0108  R:1 W:0
+    uint32_t     m_field0x10c; // +0x010c  R:2 W:0
+    uint64_t     m_field0x110; // +0x0110  R:0 W:1
+    uint32_t     m_field0x118; // +0x0118  R:0 W:1
+    uint32_t     m_field0x11c; // +0x011c  R:1 W:0
+    uint32_t     m_field0x120; // +0x0120  R:2 W:1
+    uint32_t     m_field0x124; // +0x0124  R:1 W:1
+    uint32_t     m_field0x128; // +0x0128  R:0 W:1
+    uint32_t     m_field0x12c; // +0x012c  R:0 W:1
+    uint32_t     m_field0x130; // +0x0130  R:0 W:2
+    uint16_t     m_field0x132; // +0x0132  R:0 W:1
+    uint32_t     m_field0x134; // +0x0134  R:0 W:2
+    uint16_t     m_field0x136; // +0x0136  R:0 W:1
+    uint8_t      m_field0x138; // +0x0138  R:2 W:1
+    uint8_t      m_field0x139; // +0x0139  R:0 W:1
+    uint8_t      m_field0x13a; // +0x013a  R:0 W:1
+    uint32_t     m_field0x13c; // +0x013c  R:0 W:2
+    uint8_t      m_field0x13d; // +0x013d  R:0 W:1
+    uint32_t     m_field0x144; // +0x0144  R:0 W:3
+    uint32_t     m_field0x14c; // +0x014c  R:0 W:1
+    uint8_t      m_field0x14e; // +0x014e  R:1 W:0
+    uint32_t     m_field0x150; // +0x0150  R:2 W:1
+    uint8_t      m_field0x152; // +0x0152  R:0 W:1
+    uint32_t     m_field0x154; // +0x0154  R:1 W:2
+    uint32_t     m_field0x158; // +0x0158  R:0 W:1
+    uint32_t     m_field0x15c; // +0x015c  R:0 W:1
+    uint8_t      m_field0x160; // +0x0160  R:1 W:2
     uint8_t     _pad0x0184[32];
-    uint32_t     field_0x0184;  // +0x0184  R:1 W:0
-    uint32_t     field_0x0188;  // +0x0188  R:1 W:0
-    uint8_t      field_0x018c;  // +0x018c  R:0 W:1
-    uint8_t      field_0x018d;  // +0x018d  R:1 W:1
-    uint32_t     field_0x0194;  // +0x0194  R:0 W:1
-    uint32_t     field_0x019c;  // +0x019c  R:3 W:0
+    uint32_t     m_field0x184; // +0x0184  R:1 W:0
+    uint32_t     m_field0x188; // +0x0188  R:1 W:0
+    uint8_t      m_field0x18c; // +0x018c  R:0 W:1
+    uint8_t      m_field0x18d; // +0x018d  R:1 W:1
+    uint32_t     m_field0x194; // +0x0194  R:0 W:1
+    uint32_t     m_field0x19c; // +0x019c  R:3 W:0
     uint8_t     _pad0x01bc[28];
-    uint32_t     field_0x01bc;  // +0x01bc  R:2 W:0
-    uint32_t     field_0x01c0;  // +0x01c0  R:23 W:1
-    uint32_t     field_0x01c4;  // +0x01c4  R:66 W:0
-    uint32_t     field_0x01c8;  // +0x01c8  R:5 W:0
-    uint32_t     field_0x01cc;  // +0x01cc  R:60 W:2
-    uint32_t     field_0x01d0;  // +0x01d0  R:112 W:2
-    uint32_t     field_0x01d4;  // +0x01d4  R:1 W:2
-    uint32_t     field_0x01d8;  // +0x01d8  R:0 W:1
-    uint8_t      field_0x01da;  // +0x01da  R:0 W:4
-    uint8_t      field_0x01dc;  // +0x01dc  R:0 W:1
-    uint8_t      field_0x01dd;  // +0x01dd  R:0 W:1
-    uint8_t      field_0x01de;  // +0x01de  R:0 W:1
-    uint8_t      field_0x01df;  // +0x01df  R:0 W:2
-    uint8_t      field_0x01e0;  // +0x01e0  R:0 W:1
-    uint8_t      field_0x01e1;  // +0x01e1  R:0 W:1
-    uint8_t      field_0x01e2;  // +0x01e2  R:0 W:1
-    uint32_t     field_0x01e4;  // +0x01e4  R:1 W:2
-    uint32_t     field_0x01e8;  // +0x01e8  R:4 W:1
-    uint32_t     field_0x01ec;  // +0x01ec  R:23 W:0
-    uint32_t     field_0x01f0;  // +0x01f0  R:23 W:0
-    uint32_t     field_0x01f4;  // +0x01f4  R:10 W:0
-    uint32_t     field_0x01f8;  // +0x01f8  R:0 W:1
+    uint32_t     m_pDrawData;   // +0x01bc  R:2 W:0 draw/render data object
+    uint32_t     m_drawState;   // +0x01c0  R:23 W:1 draw/state field
+    uint32_t     m_pOpponent;   // +0x01c4  R:66 W:0 pongPlayer* opponent (set once at init)
+    uint32_t     m_opponentExtra; // +0x01c8  R:5 W:0
+    uint32_t     m_opponentFlags; // +0x01cc  R:60 W:2 adjacent to m_pOpponent, heavily read
+    int32_t      m_inputSlotIdx; // +0x01d0  R:112 W:2 MOST ACCESSED — per-frame input slot
+    uint32_t     m_field0x1d4; // +0x01d4  R:1 W:2
+    uint32_t     m_field0x1d8; // +0x01d8  R:0 W:1
+    uint8_t      m_field0x1da; // +0x01da  R:0 W:4
+    uint8_t      m_field0x1dc; // +0x01dc  R:0 W:1
+    uint8_t      m_field0x1dd; // +0x01dd  R:0 W:1
+    uint8_t      m_field0x1de; // +0x01de  R:0 W:1
+    uint8_t      m_field0x1df; // +0x01df  R:0 W:2
+    uint8_t      m_field0x1e0; // +0x01e0  R:0 W:1
+    uint8_t      m_field0x1e1; // +0x01e1  R:0 W:1
+    uint8_t      m_field0x1e2; // +0x01e2  R:0 W:1
+    uint32_t     m_field0x1e4; // +0x01e4  R:1 W:2
+    uint32_t     m_field0x1e8; // +0x01e8  R:4 W:1
+    uint32_t     m_actionRead1; // +0x01ec  R:23 W:0 read-only field near m_pActionState
+    uint32_t     m_pActionState; // +0x01f0  R:23 W:0 passed to pongPlayer_InitActionState
+    uint32_t     m_actionRead2; // +0x01f4  R:10 W:0
+    uint32_t     m_field0x1f8; // +0x01f8  R:0 W:1
     uint8_t     _pad0x0220[36];
-    uint8_t      field_0x0220;  // +0x0220  R:0 W:1
+    uint8_t      m_field0x220; // +0x0220  R:0 W:1
     uint8_t     _pad0x022c[8];
-    uint8_t      field_0x022c;  // +0x022c  R:0 W:1
-    uint8_t      field_0x022d;  // +0x022d  R:0 W:1
-    uint32_t     field_0x0234;  // +0x0234  R:0 W:2
-    uint8_t      field_0x0238;  // +0x0238  R:0 W:1
+    uint8_t      m_field0x22c; // +0x022c  R:0 W:1
+    uint8_t      m_field0x22d; // +0x022d  R:0 W:1
+    uint32_t     m_field0x234; // +0x0234  R:0 W:2
+    uint8_t      m_field0x238; // +0x0238  R:0 W:1
     uint8_t     _pad0x0244[8];
-    uint32_t     field_0x0244;  // +0x0244  R:0 W:1
-    uint32_t     field_0x0248;  // +0x0248  R:0 W:1
-    uint32_t     field_0x024c;  // +0x024c  R:0 W:1
+    uint32_t     m_field0x244; // +0x0244  R:0 W:1
+    uint32_t     m_field0x248; // +0x0248  R:0 W:1
+    uint32_t     m_field0x24c; // +0x024c  R:0 W:1
     uint8_t     _pad0x027c[44];
-    uint8_t      field_0x027c;  // +0x027c  R:0 W:1
-    uint8_t      field_0x027d;  // +0x027d  R:0 W:1
-    uint32_t     field_0x0284;  // +0x0284  R:0 W:1
+    uint8_t      m_field0x27c; // +0x027c  R:0 W:1
+    uint8_t      m_field0x27d; // +0x027d  R:0 W:1
+    uint32_t     m_field0x284; // +0x0284  R:0 W:1
     uint8_t     _pad0x02cc[68];
-    uint8_t      field_0x02cc;  // +0x02cc  R:0 W:1
-    uint8_t      field_0x02cd;  // +0x02cd  R:0 W:1
-    uint32_t     field_0x02d4;  // +0x02d4  R:0 W:1
+    uint8_t      m_field0x2cc; // +0x02cc  R:0 W:1
+    uint8_t      m_field0x2cd; // +0x02cd  R:0 W:1
+    uint32_t     m_field0x2d4; // +0x02d4  R:0 W:1
     uint8_t     _pad0x031c[68];
-    uint32_t     field_0x031c;  // +0x031c  R:7 W:1
-    uint8_t      field_0x031d;  // +0x031d  R:0 W:1
-    uint32_t     field_0x0320;  // +0x0320  R:6 W:6
-    uint32_t     field_0x0324;  // +0x0324  R:4 W:5
-    uint32_t     field_0x0328;  // +0x0328  R:2 W:0
+    uint32_t     m_field0x31c;  // +0x031c  R:7 W:1
+    uint8_t      m_field0x31d; // +0x031d  R:0 W:1
+    uint32_t     m_field0x320; // +0x0320  R:6 W:6
+    uint32_t     m_field0x324; // +0x0324  R:4 W:5
+    uint32_t     m_field0x328; // +0x0328  R:2 W:0
     uint8_t     _pad0x0350[36];
-    uint32_t     field_0x0350;  // +0x0350  R:0 W:1
-    uint32_t     field_0x0354;  // +0x0354  R:0 W:1
+    uint32_t     m_field0x350; // +0x0350  R:0 W:1
+    uint32_t     m_field0x354; // +0x0354  R:0 W:1
     uint8_t     _pad0x0380[40];
-    uint32_t     field_0x0380;  // +0x0380  R:2 W:0
-    uint32_t     field_0x0388;  // +0x0388  R:2 W:0
+    uint32_t     m_field0x380; // +0x0380  R:2 W:0
+    uint32_t     m_field0x388; // +0x0388  R:2 W:0
     uint8_t     _pad0x03b0[36];
-    uint8_t      field_0x03b0;  // +0x03b0  R:0 W:1
-    uint8_t      field_0x03b1;  // +0x03b1  R:0 W:1
-    uint32_t     field_0x03b4;  // +0x03b4  R:1 W:1
-    uint32_t     field_0x03b8;  // +0x03b8  R:1 W:1
-    uint8_t      field_0x03bc;  // +0x03bc  R:0 W:2
-    uint32_t     field_0x03c0;  // +0x03c0  R:0 W:1
-    uint8_t      field_0x03c4;  // +0x03c4  R:0 W:1
-    uint8_t      field_0x03c5;  // +0x03c5  R:0 W:1
-    uint8_t      field_0x03c6;  // +0x03c6  R:0 W:1
-    uint8_t      field_0x03c7;  // +0x03c7  R:0 W:1
-    uint8_t      field_0x03c8;  // +0x03c8  R:0 W:2
-    uint32_t     field_0x03cc;  // +0x03cc  R:0 W:3
+    uint8_t      m_field0x3b0; // +0x03b0  R:0 W:1
+    uint8_t      m_field0x3b1; // +0x03b1  R:0 W:1
+    uint32_t     m_field0x3b4; // +0x03b4  R:1 W:1
+    uint32_t     m_field0x3b8; // +0x03b8  R:1 W:1
+    uint8_t      m_field0x3bc; // +0x03bc  R:0 W:2
+    uint32_t     m_field0x3c0; // +0x03c0  R:0 W:1
+    uint8_t      m_field0x3c4; // +0x03c4  R:0 W:1
+    uint8_t      m_field0x3c5; // +0x03c5  R:0 W:1
+    uint8_t      m_field0x3c6; // +0x03c6  R:0 W:1
+    uint8_t      m_field0x3c7; // +0x03c7  R:0 W:1
+    uint8_t      m_field0x3c8; // +0x03c8  R:0 W:2
+    uint32_t     m_field0x3cc; // +0x03cc  R:0 W:3
     uint8_t     _pad0x03dc[12];
-    uint32_t     field_0x03dc;  // +0x03dc  R:0 W:1
-    uint32_t     field_0x03e0;  // +0x03e0  R:10 W:1
+    uint32_t     m_field0x3dc; // +0x03dc  R:0 W:1
+    uint32_t     m_field0x3e0;  // +0x03e0  R:10 W:1
     uint8_t     _pad0x0410[44];
-    uint32_t     field_0x0410;  // +0x0410  R:0 W:1
-    uint32_t     field_0x0414;  // +0x0414  R:0 W:1
-    uint32_t     field_0x0418;  // +0x0418  R:0 W:1
+    uint32_t     m_field0x410; // +0x0410  R:0 W:1
+    uint32_t     m_field0x414; // +0x0414  R:0 W:1
+    uint32_t     m_field0x418; // +0x0418  R:0 W:1
     uint8_t     _pad0x0448[44];
-    uint32_t     field_0x0448;  // +0x0448  R:1 W:0
+    uint32_t     m_field0x448; // +0x0448  R:1 W:0
     uint8_t     _pad0x0460[20];
-    uint8_t      field_0x0460;  // +0x0460  R:1 W:7
-    uint32_t     field_0x0464;  // +0x0464  R:0 W:1
-    uint8_t      field_0x046c;  // +0x046c  R:1 W:9
-    uint32_t     field_0x0474;  // +0x0474  R:2 W:4
-    uint32_t     field_0x0478;  // +0x0478  R:2 W:0
+    uint8_t      m_field0x460; // +0x0460  R:1 W:7
+    uint32_t     m_field0x464; // +0x0464  R:0 W:1
+    uint8_t      m_field0x46c; // +0x046c  R:1 W:9
+    uint32_t     m_field0x474; // +0x0474  R:2 W:4
+    uint32_t     m_field0x478; // +0x0478  R:2 W:0
     uint8_t     _pad0x0484[8];
-    uint32_t     field_0x0484;  // +0x0484  R:0 W:1
+    uint32_t     m_field0x484; // +0x0484  R:0 W:1
     uint8_t     _pad0x0490[8];
-    uint8_t      field_0x0490;  // +0x0490  R:1 W:3
-    uint32_t     field_0x0494;  // +0x0494  R:1 W:2
+    uint8_t      m_field0x490; // +0x0490  R:1 W:3
+    uint32_t     m_field0x494; // +0x0494  R:1 W:2
     uint8_t     _pad0x04bc[36];
-    uint32_t     field_0x04bc;  // +0x04bc  R:0 W:2
-    uint32_t     field_0x04c0;  // +0x04c0  R:0 W:2
+    uint32_t     m_field0x4bc; // +0x04bc  R:0 W:2
+    uint32_t     m_field0x4c0; // +0x04c0  R:0 W:2
     uint8_t     _pad0x04e1[29];
-    uint8_t      field_0x04e1;  // +0x04e1  R:1 W:7
-    uint8_t      field_0x04e2;  // +0x04e2  R:1 W:1
-    uint8_t      field_0x04e3;  // +0x04e3  R:0 W:2
-    uint32_t     field_0x04e4;  // +0x04e4  R:2 W:3
-    uint32_t     field_0x04e8;  // +0x04e8  R:3 W:4
-    uint32_t     field_0x04ec;  // +0x04ec  R:0 W:1
-    uint8_t      field_0x04f0;  // +0x04f0  R:1 W:2
-    uint32_t     field_0x04f4;  // +0x04f4  R:0 W:2
-    uint8_t      field_0x04f8;  // +0x04f8  R:1 W:3
-    uint8_t      field_0x04f9;  // +0x04f9  R:0 W:1
-    uint32_t     field_0x04fc;  // +0x04fc  R:0 W:1
-    uint32_t     field_0x0500;  // +0x0500  R:0 W:4
-    uint32_t     field_0x0504;  // +0x0504  R:0 W:14
-    uint32_t     field_0x0508;  // +0x0508  R:0 W:1
-    uint32_t     field_0x050c;  // +0x050c  R:0 W:1
-    uint32_t     field_0x0510;  // +0x0510  R:1 W:4
-    uint32_t     field_0x0514;  // +0x0514  R:1 W:1
-    uint8_t      field_0x0518;  // +0x0518  R:2 W:2
-    uint32_t     field_0x051c;  // +0x051c  R:4 W:1
-    uint8_t      field_0x0520;  // +0x0520  R:2 W:4
-    uint8_t      field_0x0521;  // +0x0521  R:1 W:2
-    uint8_t      field_0x0522;  // +0x0522  R:3 W:2
-    uint8_t      field_0x0523;  // +0x0523  R:1 W:2
+    uint8_t      m_field0x4e1; // +0x04e1  R:1 W:7
+    uint8_t      m_field0x4e2; // +0x04e2  R:1 W:1
+    uint8_t      m_field0x4e3; // +0x04e3  R:0 W:2
+    uint32_t     m_field0x4e4; // +0x04e4  R:2 W:3
+    uint32_t     m_field0x4e8; // +0x04e8  R:3 W:4
+    uint32_t     m_field0x4ec; // +0x04ec  R:0 W:1
+    uint8_t      m_field0x4f0; // +0x04f0  R:1 W:2
+    uint32_t     m_field0x4f4; // +0x04f4  R:0 W:2
+    uint8_t      m_field0x4f8; // +0x04f8  R:1 W:3
+    uint8_t      m_field0x4f9; // +0x04f9  R:0 W:1
+    uint32_t     m_field0x4fc; // +0x04fc  R:0 W:1
+    uint32_t     m_field0x500; // +0x0500  R:0 W:4
+    uint32_t     m_initZero504; // +0x0504  R:0 W:14 write-only init field
+    uint32_t     m_field0x508; // +0x0508  R:0 W:1
+    uint32_t     m_field0x50c; // +0x050c  R:0 W:1
+    uint32_t     m_field0x510; // +0x0510  R:1 W:4
+    uint32_t     m_field0x514; // +0x0514  R:1 W:1
+    uint8_t      m_field0x518; // +0x0518  R:2 W:2
+    uint32_t     m_field0x51c; // +0x051c  R:4 W:1
+    uint8_t      m_field0x520; // +0x0520  R:2 W:4
+    uint8_t      m_field0x521; // +0x0521  R:1 W:2
+    uint8_t      m_field0x522; // +0x0522  R:3 W:2
+    uint8_t      m_field0x523; // +0x0523  R:1 W:2
     uint8_t     _pad0x0710[489];
-    uint8_t      field_0x0710;  // +0x0710  R:0 W:1
-    uint32_t     field_0x0714;  // +0x0714  R:1 W:1
-    uint32_t     field_0x0718;  // +0x0718  R:0 W:1
+    uint8_t      m_field0x710; // +0x0710  R:0 W:1
+    uint32_t     m_field0x714; // +0x0714  R:1 W:1
+    uint32_t     m_field0x718; // +0x0718  R:0 W:1
     uint8_t     _pad0x0734[24];
-    uint32_t     field_0x0734;  // +0x0734  R:1 W:0
+    uint32_t     m_field0x734; // +0x0734  R:1 W:0
     uint8_t     _pad0x074c[20];
-    uint32_t     field_0x074c;  // +0x074c  R:1 W:0
-    uint32_t     field_0x0754;  // +0x0754  R:0 W:2
-    uint8_t      field_0x0758;  // +0x0758  R:1 W:1
-    uint32_t     field_0x075c;  // +0x075c  R:2 W:2
-    uint32_t     field_0x0760;  // +0x0760  R:2 W:2
-    uint8_t      field_0x0764;  // +0x0764  R:1 W:2
-    uint8_t      field_0x0765;  // +0x0765  R:1 W:1
-    uint8_t      field_0x0766;  // +0x0766  R:1 W:0
-    uint8_t      field_0x0767;  // +0x0767  R:0 W:1
-    uint8_t      field_0x0768;  // +0x0768  R:0 W:1
-    uint32_t     field_0x076c;  // +0x076c  R:1 W:2
-    uint32_t     field_0x0770;  // +0x0770  R:1 W:2
+    uint32_t     m_field0x74c; // +0x074c  R:1 W:0
+    uint32_t     m_field0x754; // +0x0754  R:0 W:2
+    uint8_t      m_field0x758; // +0x0758  R:1 W:1
+    uint32_t     m_field0x75c; // +0x075c  R:2 W:2
+    uint32_t     m_field0x760; // +0x0760  R:2 W:2
+    uint8_t      m_field0x764; // +0x0764  R:1 W:2
+    uint8_t      m_field0x765; // +0x0765  R:1 W:1
+    uint8_t      m_field0x766; // +0x0766  R:1 W:0
+    uint8_t      m_field0x767; // +0x0767  R:0 W:1
+    uint8_t      m_field0x768; // +0x0768  R:0 W:1
+    uint32_t     m_field0x76c; // +0x076c  R:1 W:2
+    uint32_t     m_field0x770; // +0x0770  R:1 W:2
     uint8_t     _pad0x0790[28];
-    uint8_t      field_0x0790;  // +0x0790  R:0 W:1
+    uint8_t      m_field0x790; // +0x0790  R:0 W:1
     uint8_t     _pad0x0db4[1568];
-    uint32_t     field_0x0db4;  // +0x0db4  R:1 W:0
+    uint32_t     m_field0xdb4; // +0x0db4  R:1 W:0
     uint8_t     _pad0x1580[1992];
-    uint8_t      field_0x1580;  // +0x1580  R:2 W:1
-    uint8_t      field_0x1588;  // +0x1588  R:0 W:1
-    uint8_t      field_0x1589;  // +0x1589  R:0 W:1
+    uint8_t      m_field0x1580; // +0x1580  R:2 W:1
+    uint8_t      m_field0x1588; // +0x1588  R:0 W:1
+    uint8_t      m_field0x1589; // +0x1589  R:0 W:1
     uint8_t     _pad0x15e0[83];
-    uint32_t     field_0x15e0;  // +0x15e0  R:0 W:1
-    uint32_t     field_0x15e4;  // +0x15e4  R:0 W:1
-    uint32_t     field_0x15e8;  // +0x15e8  R:0 W:1
+    uint32_t     m_field0x15e0; // +0x15e0  R:0 W:1
+    uint32_t     m_field0x15e4; // +0x15e4  R:0 W:1
+    uint32_t     m_field0x15e8; // +0x15e8  R:0 W:1
     uint8_t     _pad0x17e8[508];
-    uint32_t     field_0x17e8;  // +0x17e8  R:0 W:2
-    uint32_t     field_0x17ec;  // +0x17ec  R:2 W:2
-    uint32_t     field_0x17f0;  // +0x17f0  R:13 W:0
+    uint32_t     m_field0x17e8; // +0x17e8  R:0 W:2
+    uint32_t     m_field0x17ec; // +0x17ec  R:2 W:2
+    uint32_t     m_field0x17f0; // +0x17f0  R:13 W:0
     uint8_t     _pad0x17fc[8];
-    uint32_t     field_0x17fc;  // +0x17fc  R:3 W:0
-    uint32_t     field_0x1800;  // +0x1800  R:4 W:0
-    uint32_t     field_0x1804;  // +0x1804  R:3 W:0
+    uint32_t     m_field0x17fc; // +0x17fc  R:3 W:0
+    uint32_t     m_field0x1800; // +0x1800  R:4 W:0
+    uint32_t     m_field0x1804; // +0x1804  R:3 W:0
     uint8_t     _pad0x1814[12];
-    uint32_t     field_0x1814;  // +0x1814  R:3 W:0
-    uint16_t     field_0x1818;  // +0x1818  R:7 W:0
-    uint32_t     field_0x181c;  // +0x181c  R:2 W:0
-    uint32_t     field_0x1820;  // +0x1820  R:1 W:0
-    uint32_t     field_0x1824;  // +0x1824  R:1 W:0
+    uint32_t     m_field0x1814; // +0x1814  R:3 W:0
+    uint16_t     m_field0x1818; // +0x1818  R:7 W:0
+    uint32_t     m_field0x181c; // +0x181c  R:2 W:0
+    uint32_t     m_field0x1820; // +0x1820  R:1 W:0
+    uint32_t     m_field0x1824; // +0x1824  R:1 W:0
     uint8_t     _pad0x183c[20];
-    uint32_t     field_0x183c;  // +0x183c  R:2 W:0
-    uint32_t     field_0x1840;  // +0x1840  R:5 W:0
-    uint32_t     field_0x1844;  // +0x1844  R:0 W:1
-    uint32_t     field_0x1848;  // +0x1848  R:0 W:1
+    uint32_t     m_field0x183c; // +0x183c  R:2 W:0
+    uint32_t     m_field0x1840; // +0x1840  R:5 W:0
+    uint32_t     m_field0x1844; // +0x1844  R:0 W:1
+    uint32_t     m_field0x1848; // +0x1848  R:0 W:1
     uint8_t     _pad0x1854[8];
-    uint8_t      field_0x1854;  // +0x1854  R:0 W:1
-    uint8_t      field_0x1855;  // +0x1855  R:0 W:1
-    uint32_t     field_0x1858;  // +0x1858  R:0 W:1
-    uint8_t      field_0x1860;  // +0x1860  R:0 W:2
-    uint8_t      field_0x1862;  // +0x1862  R:0 W:1
-    uint32_t     field_0x1864;  // +0x1864  R:2 W:0
-    uint64_t     field_0x1868;  // +0x1868  R:0 W:2
-    uint32_t     field_0x186c;  // +0x186c  R:0 W:1
-    uint32_t     field_0x1870;  // +0x1870  R:1 W:0
-    uint64_t     field_0x1874;  // +0x1874  R:0 W:2
-    uint32_t     field_0x1878;  // +0x1878  R:0 W:1
-    uint32_t     field_0x187c;  // +0x187c  R:0 W:1
+    uint8_t      m_field0x1854; // +0x1854  R:0 W:1
+    uint8_t      m_field0x1855; // +0x1855  R:0 W:1
+    uint32_t     m_field0x1858; // +0x1858  R:0 W:1
+    uint8_t      m_field0x1860; // +0x1860  R:0 W:2
+    uint8_t      m_field0x1862; // +0x1862  R:0 W:1
+    uint32_t     m_field0x1864; // +0x1864  R:2 W:0
+    uint64_t     m_field0x1868; // +0x1868  R:0 W:2
+    uint32_t     m_field0x186c; // +0x186c  R:0 W:1
+    uint32_t     m_field0x1870; // +0x1870  R:1 W:0
+    uint64_t     m_field0x1874; // +0x1874  R:0 W:2
+    uint32_t     m_field0x1878; // +0x1878  R:0 W:1
+    uint32_t     m_field0x187c; // +0x187c  R:0 W:1
     uint8_t     _pad0x1888[8];
-    uint32_t     field_0x1888;  // +0x1888  R:3 W:0
-    uint64_t     field_0x188c;  // +0x188c  R:0 W:2
-    uint32_t     field_0x1890;  // +0x1890  R:0 W:1
-    uint32_t     field_0x1898;  // +0x1898  R:0 W:1
+    uint32_t     m_field0x1888; // +0x1888  R:3 W:0
+    uint64_t     m_field0x188c; // +0x188c  R:0 W:2
+    uint32_t     m_field0x1890; // +0x1890  R:0 W:1
+    uint32_t     m_field0x1898; // +0x1898  R:0 W:1
     uint8_t     _pad0x18a8[12];
-    uint32_t     field_0x18a8;  // +0x18a8  R:0 W:1
-    uint32_t     field_0x18ac;  // +0x18ac  R:1 W:2
-    uint32_t     field_0x18b0;  // +0x18b0  R:2 W:1
-    uint32_t     field_0x18b4;  // +0x18b4  R:2 W:1
-    uint8_t      field_0x18b8;  // +0x18b8  R:3 W:4
-    uint8_t      field_0x18b9;  // +0x18b9  R:0 W:3
-    uint8_t      field_0x18ba;  // +0x18ba  R:0 W:1
-    uint32_t     field_0x18bc;  // +0x18bc  R:1 W:1
-    uint32_t     field_0x18c0;  // +0x18c0  R:3 W:2
-    uint32_t     field_0x18c4;  // +0x18c4  R:2 W:0
-    uint8_t      field_0x18c6;  // +0x18c6  R:0 W:2
-    uint8_t      field_0x18c8;  // +0x18c8  R:0 W:3
-    uint8_t      field_0x18c9;  // +0x18c9  R:0 W:2
-    uint8_t      field_0x18ca;  // +0x18ca  R:0 W:1
-    uint8_t      field_0x18cb;  // +0x18cb  R:0 W:1
-    uint32_t     field_0x18d0;  // +0x18d0  R:0 W:1
-    uint32_t     field_0x18d4;  // +0x18d4  R:0 W:1
-    uint32_t     field_0x18d8;  // +0x18d8  R:0 W:1
-    uint32_t     field_0x18dc;  // +0x18dc  R:0 W:1
-    uint32_t     field_0x18e0;  // +0x18e0  R:3 W:8
-    uint8_t      field_0x18e4;  // +0x18e4  R:2 W:3
-    uint32_t     field_0x18e8;  // +0x18e8  R:2 W:2
-    uint8_t      field_0x18ec;  // +0x18ec  R:1 W:2
-    uint32_t     field_0x18f0;  // +0x18f0  R:0 W:1
-    uint32_t     field_0x18f4;  // +0x18f4  R:0 W:2
-    uint32_t     field_0x18f8;  // +0x18f8  R:0 W:2
-    uint8_t      field_0x18fc;  // +0x18fc  R:0 W:1
-    uint32_t     field_0x1900;  // +0x1900  R:0 W:2
-    uint32_t     field_0x1908;  // +0x1908  R:0 W:5
-    uint32_t     field_0x190c;  // +0x190c  R:0 W:5
-    uint32_t     field_0x1910;  // +0x1910  R:0 W:5
-    uint32_t     field_0x1914;  // +0x1914  R:0 W:5
-    uint32_t     field_0x1918;  // +0x1918  R:0 W:2
-    uint32_t     field_0x191c;  // +0x191c  R:0 W:2
+    uint32_t     m_field0x18a8; // +0x18a8  R:0 W:1
+    uint32_t     m_field0x18ac; // +0x18ac  R:1 W:2
+    uint32_t     m_field0x18b0; // +0x18b0  R:2 W:1
+    uint32_t     m_field0x18b4; // +0x18b4  R:2 W:1
+    uint8_t      m_field0x18b8; // +0x18b8  R:3 W:4
+    uint8_t      m_field0x18b9; // +0x18b9  R:0 W:3
+    uint8_t      m_field0x18ba; // +0x18ba  R:0 W:1
+    uint32_t     m_field0x18bc; // +0x18bc  R:1 W:1
+    uint32_t     m_field0x18c0; // +0x18c0  R:3 W:2
+    uint32_t     m_field0x18c4; // +0x18c4  R:2 W:0
+    uint8_t      m_field0x18c6; // +0x18c6  R:0 W:2
+    uint8_t      m_field0x18c8; // +0x18c8  R:0 W:3
+    uint8_t      m_field0x18c9; // +0x18c9  R:0 W:2
+    uint8_t      m_field0x18ca; // +0x18ca  R:0 W:1
+    uint8_t      m_field0x18cb; // +0x18cb  R:0 W:1
+    uint32_t     m_field0x18d0; // +0x18d0  R:0 W:1
+    uint32_t     m_field0x18d4; // +0x18d4  R:0 W:1
+    uint32_t     m_field0x18d8; // +0x18d8  R:0 W:1
+    uint32_t     m_field0x18dc; // +0x18dc  R:0 W:1
+    uint32_t     m_field0x18e0; // +0x18e0  R:3 W:8
+    uint8_t      m_field0x18e4; // +0x18e4  R:2 W:3
+    uint32_t     m_field0x18e8; // +0x18e8  R:2 W:2
+    uint8_t      m_field0x18ec; // +0x18ec  R:1 W:2
+    uint32_t     m_field0x18f0; // +0x18f0  R:0 W:1
+    uint32_t     m_field0x18f4; // +0x18f4  R:0 W:2
+    uint32_t     m_field0x18f8; // +0x18f8  R:0 W:2
+    uint8_t      m_field0x18fc; // +0x18fc  R:0 W:1
+    uint32_t     m_field0x1900; // +0x1900  R:0 W:2
+    uint32_t     m_field0x1908; // +0x1908  R:0 W:5
+    uint32_t     m_field0x190c; // +0x190c  R:0 W:5
+    uint32_t     m_field0x1910; // +0x1910  R:0 W:5
+    uint32_t     m_field0x1914; // +0x1914  R:0 W:5
+    uint32_t     m_field0x1918; // +0x1918  R:0 W:2
+    uint32_t     m_field0x191c; // +0x191c  R:0 W:2
     uint8_t     _pad0x1940[32];
-    uint32_t     field_0x1940;  // +0x1940  R:0 W:2
-    uint32_t     field_0x1944;  // +0x1944  R:0 W:2
-    uint8_t      field_0x1948;  // +0x1948  R:0 W:2
-    uint32_t     field_0x194c;  // +0x194c  R:0 W:2
-    uint32_t     field_0x1950;  // +0x1950  R:0 W:3
-    uint32_t     field_0x1954;  // +0x1954  R:0 W:3
-    uint32_t     field_0x1958;  // +0x1958  R:1 W:3
-    uint8_t      field_0x1959;  // +0x1959  R:0 W:2
-    uint32_t     field_0x195c;  // +0x195c  R:0 W:4
-    uint8_t      field_0x195d;  // +0x195d  R:0 W:1
-    uint32_t     field_0x1960;  // +0x1960  R:2 W:3
-    uint32_t     field_0x1964;  // +0x1964  R:0 W:1
-    uint8_t      field_0x1968;  // +0x1968  R:4 W:4
-    uint8_t      field_0x1969;  // +0x1969  R:1 W:1
-    uint8_t      field_0x196c;  // +0x196c  R:4 W:1
-    uint8_t      field_0x196d;  // +0x196d  R:0 W:2
-    uint32_t     field_0x1970;  // +0x1970  R:1 W:5
-    uint32_t     field_0x1974;  // +0x1974  R:1 W:5
-    uint8_t      field_0x1978;  // +0x1978  R:1 W:0
-    uint64_t     field_0x197c;  // +0x197c  R:0 W:2
-    uint32_t     field_0x1980;  // +0x1980  R:0 W:1
-    uint32_t     field_0x1984;  // +0x1984  R:1 W:4
-    uint8_t      field_0x1988;  // +0x1988  R:1 W:3
-    uint8_t      field_0x1989;  // +0x1989  R:4 W:3
-    uint32_t     field_0x198c;  // +0x198c  R:2 W:1
+    uint32_t     m_field0x1940; // +0x1940  R:0 W:2
+    uint32_t     m_field0x1944; // +0x1944  R:0 W:2
+    uint8_t      m_field0x1948; // +0x1948  R:0 W:2
+    uint32_t     m_field0x194c; // +0x194c  R:0 W:2
+    uint32_t     m_field0x1950; // +0x1950  R:0 W:3
+    uint32_t     m_field0x1954; // +0x1954  R:0 W:3
+    uint32_t     m_field0x1958; // +0x1958  R:1 W:3
+    uint8_t      m_field0x1959; // +0x1959  R:0 W:2
+    uint32_t     m_field0x195c; // +0x195c  R:0 W:4
+    uint8_t      m_field0x195d; // +0x195d  R:0 W:1
+    uint32_t     m_field0x1960; // +0x1960  R:2 W:3
+    uint32_t     m_field0x1964; // +0x1964  R:0 W:1
+    uint8_t      m_field0x1968; // +0x1968  R:4 W:4
+    uint8_t      m_field0x1969; // +0x1969  R:1 W:1
+    uint8_t      m_field0x196c; // +0x196c  R:4 W:1
+    uint8_t      m_field0x196d; // +0x196d  R:0 W:2
+    uint32_t     m_field0x1970; // +0x1970  R:1 W:5
+    uint32_t     m_field0x1974; // +0x1974  R:1 W:5
+    uint8_t      m_field0x1978; // +0x1978  R:1 W:0
+    uint64_t     m_field0x197c; // +0x197c  R:0 W:2
+    uint32_t     m_field0x1980; // +0x1980  R:0 W:1
+    uint32_t     m_field0x1984; // +0x1984  R:1 W:4
+    uint8_t      m_field0x1988; // +0x1988  R:1 W:3
+    uint8_t      m_field0x1989; // +0x1989  R:4 W:3
+    uint32_t     m_field0x198c; // +0x198c  R:2 W:1
     uint8_t     _pad0x19a4[20];
-    uint32_t     field_0x19a4;  // +0x19a4  R:1 W:3
-    uint32_t     field_0x19a8;  // +0x19a8  R:1 W:2
-    uint32_t     field_0x19ac;  // +0x19ac  R:1 W:4
+    uint32_t     m_field0x19a4; // +0x19a4  R:1 W:3
+    uint32_t     m_field0x19a8; // +0x19a8  R:1 W:2
+    uint32_t     m_field0x19ac; // +0x19ac  R:1 W:4
     uint8_t     _pad0x19c0[16];
-    uint8_t      field_0x19c0;  // +0x19c0  R:0 W:5
-    uint8_t      field_0x19c1;  // +0x19c1  R:0 W:5
-    uint8_t      field_0x19c2;  // +0x19c2  R:0 W:5
-    uint8_t      field_0x19c3;  // +0x19c3  R:0 W:5
-    uint8_t      field_0x19c4;  // +0x19c4  R:0 W:1
-    uint8_t      field_0x19c5;  // +0x19c5  R:0 W:1
-    uint32_t     field_0x19c8;  // +0x19c8  R:2 W:1
-    uint32_t     field_0x19cc;  // +0x19cc  R:0 W:2
-    uint32_t     field_0x19d0;  // +0x19d0  R:0 W:1
-    uint8_t      field_0x19d3;  // +0x19d3  R:0 W:1
-    uint8_t      field_0x19d4;  // +0x19d4  R:0 W:2
-    uint8_t      field_0x19d5;  // +0x19d5  R:0 W:1
-    uint8_t      field_0x19d6;  // +0x19d6  R:0 W:5
-    uint8_t      field_0x19d7;  // +0x19d7  R:1 W:2
-    uint8_t      field_0x19d8;  // +0x19d8  R:0 W:2
-    uint32_t     field_0x19dc;  // +0x19dc  R:1 W:5
-    uint8_t      field_0x19e0;  // +0x19e0  R:0 W:1
-    uint8_t      field_0x19e1;  // +0x19e1  R:0 W:4
-    uint8_t      field_0x19e2;  // +0x19e2  R:0 W:3
-    uint32_t     field_0x19e4;  // +0x19e4  R:1 W:1
-    uint32_t     field_0x19e8;  // +0x19e8  R:1 W:1
-    uint8_t      field_0x19ec;  // +0x19ec  R:0 W:1
-    uint8_t      field_0x19ed;  // +0x19ed  R:1 W:4
-    uint8_t      field_0x19ee;  // +0x19ee  R:0 W:3
-    uint8_t      field_0x19ef;  // +0x19ef  R:1 W:2
-    uint8_t      field_0x19f3;  // +0x19f3  R:8 W:1
-    uint32_t     field_0x19f4;  // +0x19f4  R:7 W:9
-    uint32_t     field_0x19f8;  // +0x19f8  R:0 W:1
-    uint32_t     field_0x19fc;  // +0x19fc  R:0 W:1
+    uint8_t      m_field0x19c0; // +0x19c0  R:0 W:5
+    uint8_t      m_field0x19c1; // +0x19c1  R:0 W:5
+    uint8_t      m_field0x19c2; // +0x19c2  R:0 W:5
+    uint8_t      m_field0x19c3; // +0x19c3  R:0 W:5
+    uint8_t      m_field0x19c4; // +0x19c4  R:0 W:1
+    uint8_t      m_field0x19c5; // +0x19c5  R:0 W:1
+    uint32_t     m_field0x19c8; // +0x19c8  R:2 W:1
+    uint32_t     m_field0x19cc; // +0x19cc  R:0 W:2
+    uint32_t     m_field0x19d0; // +0x19d0  R:0 W:1
+    uint8_t      m_field0x19d3; // +0x19d3  R:0 W:1
+    uint8_t      m_field0x19d4; // +0x19d4  R:0 W:2
+    uint8_t      m_field0x19d5; // +0x19d5  R:0 W:1
+    uint8_t      m_field0x19d6; // +0x19d6  R:0 W:5
+    uint8_t      m_field0x19d7; // +0x19d7  R:1 W:2
+    uint8_t      m_field0x19d8; // +0x19d8  R:0 W:2
+    uint32_t     m_field0x19dc; // +0x19dc  R:1 W:5
+    uint8_t      m_field0x19e0; // +0x19e0  R:0 W:1
+    uint8_t      m_field0x19e1; // +0x19e1  R:0 W:4
+    uint8_t      m_field0x19e2; // +0x19e2  R:0 W:3
+    uint32_t     m_field0x19e4; // +0x19e4  R:1 W:1
+    uint32_t     m_field0x19e8; // +0x19e8  R:1 W:1
+    uint8_t      m_field0x19ec; // +0x19ec  R:0 W:1
+    uint8_t      m_field0x19ed; // +0x19ed  R:1 W:4
+    uint8_t      m_field0x19ee; // +0x19ee  R:0 W:3
+    uint8_t      m_field0x19ef; // +0x19ef  R:1 W:2
+    uint8_t      m_field0x19f3; // +0x19f3  R:8 W:1
+    uint32_t     m_field0x19f4; // +0x19f4  R:7 W:9
+    uint32_t     m_field0x19f8; // +0x19f8  R:0 W:1
+    uint32_t     m_field0x19fc; // +0x19fc  R:0 W:1
     uint8_t     _pad0x25a8[2984];
-    uint32_t     field_0x25a8;  // +0x25a8  R:3 W:0
+    uint32_t     m_field0x25a8; // +0x25a8  R:3 W:0
     uint8_t     _pad0x525c[11440];
-    uint32_t     field_0x525c;  // +0x525c  R:1 W:0
+    uint32_t     m_field0x525c; // +0x525c  R:1 W:0
 
     // ── virtual methods ──
     virtual ~pongPlayer();                  // [0] @ 0x8218b3c0
@@ -974,6 +903,12 @@ struct pongPlayer {
 static const uint16_t EVENT_SAVE_WRITE = 0x200F;  // 8207
 static const uint16_t EVENT_SAVE_LOAD  = 0x200E;  // 8206
 
+// Each save slot is a rage::parStructure instance of this size
+static const uint32_t SAVE_SLOT_SIZE = 15044;  // 0x3AC4
+static const int      SAVE_SLOT_COUNT = 4;
+// Constructor initializes slots at offsets 0x14F8..0xC544 (reverse order)
+static const uint32_t SAVE_SLOT_INIT_END = 0x10008;
+
 struct pongSaveFile {
     // Layout (from binary analysis of pongSaveFile_5260):
     //   +0x00 vtable (primary) @ 0x8203CB18
@@ -983,6 +918,11 @@ struct pongSaveFile {
     void*       m_pData;          // +0x04  owned heap pointer
     uint16_t    m_entryCount;     // +0x08  entry count (non-zero triggers free)
     uint8_t     _pad0A[2];        // +0x0A
+
+    // Helper: get raw pointer to save slot by index
+    char* getSaveSlot(uint32_t index) {
+        return reinterpret_cast<char*>(this) + index * SAVE_SLOT_SIZE;
+    }
 
     // ── virtual methods ──
     virtual ~pongSaveFile();                         // [0] @ 0x821c5210
@@ -1050,27 +990,97 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue);  // @ 0x821F4A58
 // Contains 8 KEVENT objects at offsets +84 through +196 (stride 16).
 class CCalMoviePlayer {
 public:
-    // Event wait functions (WaitForSingleObject wrappers)
-    void WaitForEvent0();  void WaitForEvent1();
-    void WaitForEvent2();  void WaitForEvent3();
-    void WaitForEvent4();  void WaitForEvent5();
-    void WaitForEvent6();  void WaitForEvent7();
+    // ── virtual methods (vtable slots) ──
+    virtual void Lock();                              // [3]  acquire internal lock
+    virtual void Unlock();                            // [5]  release internal lock
+    virtual int32_t GetError();                       // [8]  return error code
+    virtual void ProcessCommand(void* params);        // [9]  dispatch command block
+    virtual int32_t CleanupInternal();                // [13] internal cleanup
+    virtual int32_t SetBufferPairA(int32_t param);    // [16] set buffer pair A
+    virtual int32_t SetBufferPairB(int32_t param);    // [17] set buffer pair B
+    virtual void WaitForAllThreads();                 // [24] join worker threads
+    virtual void RenderFrame(int32_t param);          // [31] render a frame
+    virtual void MediaControl_Run();                  // [32] IMediaControl::Run
+    virtual void MediaControl_Pause();                // [34] IMediaControl::Pause
+    virtual void MediaControl_Stop();                 // [35] IMediaControl::Stop
+    virtual void MediaControl_GetState();             // [36] IMediaControl::GetState
+    virtual void MediaControl_StopWhenReady();        // [37] IMediaControl::StopWhenReady
+    virtual void ResetDefaults();                     // [38] reset to default state
+    virtual int32_t GetFrameResult();                 // [39] get frame decode result
+    virtual void NotifyVideoReady();                  // [40] signal video ready
+    virtual void NotifyAudioReady();                  // [41] signal audio ready
 
-    // Event signal functions (KeSetEvent wrappers)
-    void SignalEvent0();  void SignalEvent1();
-    void SignalEvent2();  void SignalEvent3();
-    void SignalEvent4();  void SignalEvent5();
-    void SignalEvent6();  void SignalEvent7();
+    // Event wait functions (WaitForSingleObject wrappers) — vslots [42]-[47]
+    virtual void WaitForEvent0();  virtual void WaitForEvent1();
+    virtual void WaitForEvent2();  virtual void WaitForEvent3();
+    virtual void WaitForEvent4();  virtual void WaitForEvent5();
+    virtual void WaitForEvent6();  virtual void WaitForEvent7();
 
-    // Event reset functions
-    void ResetEvent4();  void ResetEvent5();
-    void ResetEvent6();  void ResetEvent7();
+    // Event signal functions (KeSetEvent wrappers) — vslots [48]-[55]
+    virtual void SignalEvent0();  virtual void SignalEvent1();
+    virtual void SignalEvent2();  virtual void SignalEvent3();
+    virtual void SignalEvent4();  virtual void SignalEvent5();
+    virtual void SignalEvent6();  virtual void SignalEvent7();
 
-    // Field getters
+    // Event reset functions — vslots [56]-[59]
+    virtual void ResetEvent4();  virtual void ResetEvent5();
+    virtual void ResetEvent6();  virtual void ResetEvent7();
+
+    // Status field getters — vslots [60]-[64]
+    virtual int GetStatusFlagsA();                    // [60] field at +212
+    virtual int GetStatusFlagsB();                    // [61] field at +216
+    virtual int IsPlaying();                          // [62] field at +220
+    virtual int GetStatusFieldB();                    // [63] field at +224
+    virtual int GetStatusFieldC();                    // [64] field at +228
+
+    // Status field setters — vslots [65]-[72]
+    virtual void SetChannelStatusA(int32_t value);    // [65] set channel A status
+    virtual void SetChannelStatusB(int32_t value);    // [66] set channel B status
+    virtual void SetStatusMaskA(int32_t mask);        // [68] set status mask A
+    virtual void SetStatusMaskB(int32_t mask);        // [69] set status mask B
+    virtual void SetStatusValueA(int32_t value);      // [71] set status value A
+    virtual void SetStatusValueB(int32_t value);      // [72] set status value B
+
+    // ── data members ──
+    // Note: vtable pointer is implicit at +0x00 (4 bytes)
+    uint8_t  _pad04[40];                // +0x04  base-class / unknown fields
+    void*    m_pMediaSource;            // +0x2C (+44)  media source / audio provider interface
+    void*    m_pBufferObject;           // +0x30 (+48)  ring buffer / callback object
+    void*    m_pAudioCallbackA;         // +0x34 (+52)  audio callback A (passed to enumerator slot 3)
+    void*    m_pAudioCallbackB;         // +0x38 (+56)  audio callback B (passed to enumerator slot 4)
+    void*    m_pCallbackFunc;           // +0x3C (+60)  pending-drain callback function pointer
+    void*    m_pCallback;               // +0x40 (+64)  change-notification callback function
+    uint32_t m_audioParamA;             // +0x44 (+68)  audio param for callback A
+    uint32_t m_audioParamB;             // +0x48 (+72)  audio param for callback B
+    void*    m_pCallbackUserData;       // +0x4C (+76)  callback user-data pointer
+    uint8_t  _pad50[4];                 // +0x50 (+80)  padding
+    uint8_t  m_events[128];             // +0x54 (+84)  8 KEVENT structs, 16 bytes each (+84..+211)
+    int32_t  m_statusA;                 // +0xD4 (+212) status channel A
+    int32_t  m_statusB;                 // +0xD8 (+216) status channel B
+    int32_t  m_isPlaying;               // +0xDC (+220) playing / status flags A
+    int32_t  m_statusFieldB;            // +0xE0 (+224) status field B
+    int32_t  m_statusFieldC;            // +0xE4 (+228) status field C
+    uint32_t m_frameCounterA;           // +0xE8 (+232) frame counter A
+    uint32_t m_frameCounterB;           // +0xEC (+236) frame counter B
+    int32_t  m_activeFlag;              // +0xF0 (+240) active/pending flag
+    int32_t  m_bufferCounterA;          // +0xF4 (+244) atomic buffer counter A
+    uint32_t m_bufferCounterB;          // +0xF8 (+248) buffer counter B / pending count
+    uint32_t m_pendingCounter;          // +0xFC (+252) pending callback counter
+    uint32_t m_writePosition;           // +0x100 (+256) write position for ProcessWriteBuffer
+    void*    m_hThreadFillA;            // +0x104 (+260) thread handle: FillReadBufferA
+    void*    m_hThreadFillB;            // +0x108 (+264) thread handle: FillReadBufferB
+    void*    m_hThreadWriteA;           // +0x10C (+268) thread handle: WriteThreadProcA
+    void*    m_hThreadWriteB;           // +0x110 (+272) thread handle: WriteThreadProcB
+    uint8_t  _pad114[10100];            // +0x114 (+276) gap to fiber context
+    uint32_t m_fiberContext;            // +0x2888 (+10376) fiber/TLS context state
+
+    // ── non-virtual methods ──
+
+    // Legacy field accessors (match virtual getters above)
     int GetField212();  int GetField216();
     int GetField220();  int GetField224();  int GetField228();
 
-    // Vtable dispatch thunks
+    // Vtable dispatch thunks (delegate to virtual methods)
     int DispatchSlot32();  int DispatchSlot34();
     int DispatchSlot35();  int DispatchSlot36();  int DispatchSlot37();
 
@@ -1086,7 +1096,7 @@ public:
     int Rewind();
     int Seek();
 
-    // State field mutators
+    // State field mutators (delegate to virtual SetChannelStatusA/B)
     void SetField212(int value);
     void SetField216(int value);
 
@@ -1135,4 +1145,33 @@ public:
     int32_t InitializeWorkerThreads(void* params);     // @ 0x8248F758 - create 4 worker threads + set affinity
     void WriteThreadProcA();                           // @ 0x82490B48 - write thread for channel A
     void WriteThreadProcB();                           // @ 0x82490FA8 - write thread for channel B
+
+    // ── Data Members ──
+    //
+    // Offsets verified against binary. The class is large (~10380 bytes).
+    // Fields between known offsets are padded.
+    //
+    // +0x00: vtable pointer (implicit, from virtual methods)
+    uint8_t  _pad_04[44];             // +0x04..+0x2F  base class fields
+    char*    m_pBufferBase;           // +0x30  (48)  ring buffer base pointer
+    uint32_t m_totalBuffers;          // +0x34  (52)  total buffer count
+    uint32_t m_readIndex;             // +0x38  (56)  current read index
+    uint32_t m_writeIndex;            // +0x3C  (60)  current write index
+    void*    m_pChangeCallback;       // +0x40  (64)  change callback function pointer
+    int32_t  m_semaphore;             // +0x44  (68)  atomic semaphore / ref count
+    uint8_t  _pad_48[8];             // +0x48..+0x4F
+    void*    m_pCallbackContext;      // +0x50  (80)  callback context pointer
+    uint8_t  m_event0[16];           // +0x54  (84)   KEVENT object 0
+    uint8_t  m_event1[16];           // +0x64  (100)  KEVENT object 1
+    uint8_t  m_event2[16];           // +0x74  (116)  KEVENT object 2
+    uint8_t  m_event3[16];           // +0x84  (132)  KEVENT object 3
+    uint8_t  m_event4[16];           // +0x94  (148)  KEVENT object 4
+    uint8_t  m_event5[16];           // +0xA4  (164)  KEVENT object 5
+    uint8_t  m_event6[16];           // +0xB4  (180)  KEVENT object 6
+    uint8_t  m_event7[16];           // +0xC4  (196)  KEVENT object 7
+    int32_t  m_stateA;               // +0xD4  (212)  state field A
+    int32_t  m_stateB;               // +0xD8  (216)  state field B
+    int32_t  m_stateC;               // +0xDC  (220)  state field C / playing flag
+    int32_t  m_stateD;               // +0xE0  (224)  state field D
+    int32_t  m_stateE;               // +0xE4  (228)  state field E
 };

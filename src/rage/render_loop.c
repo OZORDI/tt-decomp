@@ -132,6 +132,29 @@ typedef struct XVideoMode {
 
 #include "rage/game_loop_types.h"
 
+/* ── Local vtable helper typedefs ─────────────────────────────────────────────
+ * A lightweight "object with vtable" alias used to replace the triple-star
+ * `*(void***)obj` pattern throughout this file. Every RAGE object that carries
+ * a vtable stores it at offset 0; reading p->vtable is identical to the
+ * `*(void***)p` read the scaffold emits.
+ *
+ * Vtable slots referenced from render_loop.c:
+ *   phObj  (physics object):       [1] IsActive/IsVisible, [7] Tick, [8] BeginRender
+ *   hsmState:                       [4] Tick
+ *   grcDisplay (display device):    [2] Destroy
+ *   audDevice  (audio object):      [0] dtor(flags)
+ *   phSimWorld (physics world):     [0] dtor(flags)
+ *   rage::sysMemAllocator:          [1] allocate(size, alignment)
+ * ─────────────────────────────────────────────────────────────────────────── */
+typedef struct rageVObj { void** vtable; } rageVObj;
+
+typedef uint8_t (*phObj_IsActiveFn)  (void* pObj);
+typedef void    (*phObj_TickFn)      (void* pObj);
+typedef void    (*phObj_BeginRenderFn)(void* pObj);
+typedef void    (*hsmState_TickFn)   (void* pState);
+typedef void    (*grcDisplay_DestroyFn)(void* pDisp);
+typedef void    (*rageObj_DtorFn)    (void* pObj, int32_t flags);
+typedef void*   (*sysMemAlloc_Fn)    (void* pAlloc, int32_t size, int32_t align);
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -217,35 +240,29 @@ void gameLoop_Tick(gameLoop* pLoop)
     /* Iterate physics objects. */
     uint8_t* pWorldBytes = (uint8_t*)pWorld;
     int32_t  nObjects    = *(int32_t*)(pWorldBytes + 48);
-    void**   pObjects    = *(void***)(pWorldBytes + 44);
+    rageVObj** pObjects  = (rageVObj**)*(void**)(pWorldBytes + 44);
 
     for (int i = 0; i <= nObjects; ++i) {
-        void* pObj = pObjects[i];
-        typedef uint8_t (*IsActiveFn)(void*);
-        uint8_t bActive = ((IsActiveFn)((void**)(*(void**)pObj))[1])(pObj);
+        rageVObj* pObj = pObjects[i];
+        uint8_t bActive = ((phObj_IsActiveFn)pObj->vtable[1])(pObj);
         if (bActive) {
-            typedef void (*ObjFn)(void*);
-            ((ObjFn)((void**)(*(void**)pObj))[7])(pObj);
+            ((phObj_TickFn)pObj->vtable[7])(pObj);
         }
     }
 
     /* Tick the standalone ball object if registered. */
-    void* pBall = *(void**)(pWorldBytes + 60);
+    rageVObj* pBall = *(rageVObj**)(pWorldBytes + 60);
     if (pBall != NULL) {
-        typedef void (*ObjFn)(void*);
-        ((ObjFn)((void**)(*(void**)pBall))[7])(pBall);
+        ((phObj_TickFn)pBall->vtable[7])(pBall);
     }
 
     /* Physics material manager post-tick. */
     phMaterialMgrImpl_UpdateActive(pWorld);
 
     /* Current HSM state's Tick (slot 4). */
-    uint8_t* pSmBytes = (uint8_t*)&pLoop->m_stateMachine;
-    int32_t  curIdx   = *(int32_t*)(pSmBytes + 12);
-    void**   pStates  = *(void***)(pSmBytes + 8);
-    void*    pState   = pStates[curIdx];
-    typedef void (*StateTickFn)(void*);
-    ((StateTickFn)((void**)(*(void**)pState))[4])(pState);
+    hsmContext* pSm    = &pLoop->m_stateMachine;
+    rageVObj*   pState = ((rageVObj**)pSm->pStates)[pSm->nCurIdx];
+    ((hsmState_TickFn)pState->vtable[4])(pState);
 
     /* Post-tick virtual on gameLoop. */
     ((VFn)pLoop->vtable[12])(pLoop);
@@ -299,23 +316,22 @@ void gameLoop_BeginRender(gameLoop* pLoop)
     void* pWorld = g_pPhysicsWorld;
     uint8_t* pWorldBytes = (uint8_t*)pWorld;
     int32_t  nObjects    = *(int32_t*)(pWorldBytes + 48);
-    void**   pObjects    = *(void***)(pWorldBytes + 44);
+    rageVObj** pObjects  = (rageVObj**)*(void**)(pWorldBytes + 44);
 
     for (int i = 0; i <= nObjects; ++i) {
-        void* pObj = pObjects[i];
-        typedef uint8_t (*IsVisibleFn)(void*);
-        uint8_t bVis = ((IsVisibleFn)((void**)(*(void**)pObj))[1])(pObj);
+        rageVObj* pObj = pObjects[i];
+        /* Vtable slot 1 serves double-duty: IsActive for Tick, IsVisible for
+         * BeginRender — same signature, same slot. */
+        uint8_t bVis = ((phObj_IsActiveFn)pObj->vtable[1])(pObj);
         if (bVis) {
-            typedef void (*ObjFn)(void*);
-            ((ObjFn)((void**)(*(void**)pObj))[8])(pObj);
+            ((phObj_BeginRenderFn)pObj->vtable[8])(pObj);
         }
     }
 
     /* Ball object BeginRender. */
-    void* pBall = *(void**)(pWorldBytes + 60);
+    rageVObj* pBall = *(rageVObj**)(pWorldBytes + 60);
     if (pBall != NULL) {
-        typedef void (*ObjFn)(void*);
-        ((ObjFn)((void**)(*(void**)pBall))[8])(pBall);
+        ((phObj_BeginRenderFn)pBall->vtable[8])(pBall);
     }
 
     /* Post-BeginRender virtual on gameLoop (slot 24). */
@@ -667,13 +683,12 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
 {
     /* 1. Destroy display device (VCALL slot 2 — no null check in scaffold). */
     {
-        typedef void (*DestroyFn)(void*);
-        void** vt = *(void***)g_display_obj_ptr;
-        ((DestroyFn)vt[2])(g_display_obj_ptr);
+        rageVObj* pDisp = (rageVObj*)g_display_obj_ptr;
+        ((grcDisplay_DestroyFn)pDisp->vtable[2])(pDisp);
     }
 
     /* 2. Destroy audio object. */
-    void* pAudio = g_audio_obj_ptr;
+    rageVObj* pAudio = (rageVObj*)g_audio_obj_ptr;
     if (pAudio != NULL) {
         /* The audio object pointer is at SDA+25444, but the actual object
          * base is 4 bytes before it (the ptr points to +4 of the object).
@@ -682,9 +697,7 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
         int32_t refCount = *(int32_t*)pAudioBase;
         if (refCount != 0) {
             /* Virtual destructor (slot 0) with flags=3. */
-            typedef void (*DtorFn)(void*, int32_t);
-            void** vt = *(void***)pAudio;
-            ((DtorFn)vt[0])(pAudio, 3);
+            ((rageObj_DtorFn)pAudio->vtable[0])(pAudio, 3);
         } else {
             rage_free(pAudioBase);
         }
@@ -706,9 +719,8 @@ void gameLoop_Shutdown_94B8(gameLoop* pLoop)
 
     /* 6. Destroy physics world if present (VCALL slot 0 with arg 1). */
     if (g_pPhysicsWorld != NULL) {
-        typedef void (*DtorFn)(void*, int32_t);
-        void** vt = *(void***)g_pPhysicsWorld;
-        ((DtorFn)vt[0])(g_pPhysicsWorld, 1);
+        rageVObj* pWorld = (rageVObj*)g_pPhysicsWorld;
+        ((rageObj_DtorFn)pWorld->vtable[0])(pWorld, 1);
         g_pPhysicsWorld = NULL;
     }
 
@@ -929,10 +941,8 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     sysMemAllocator_InitThreadHeap();
     {
         /* Allocator chain: SDA+0 → table → entry at +4 → VCALL slot 1. */
-        typedef void* (*AllocFn)(void*, int32_t, int32_t);
-        void* allocObj = *(void**)((uint8_t*)g_pAllocator + 4);
-        void** vt = *(void***)allocObj;
-        void* pNetMem = ((AllocFn)vt[1])(allocObj, 24, 16);
+        rageVObj* allocObj = *(rageVObj**)((uint8_t*)g_pAllocator + 4);
+        void* pNetMem = ((sysMemAlloc_Fn)allocObj->vtable[1])(allocObj, 24, 16);
 
         if (pNetMem != NULL) {
             /* Zero-init the 24-byte net system object. */
@@ -1000,10 +1010,8 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     /* 9. Allocate pongPostEffects (512 bytes, align 16). */
     sysMemAllocator_InitThreadHeap();
     {
-        typedef void* (*AllocFn)(void*, int32_t, int32_t);
-        void* allocObj = *(void**)((uint8_t*)g_pAllocator + 4);
-        void** vt = *(void***)allocObj;
-        void* pFxMem = ((AllocFn)vt[1])(allocObj, 512, 16);
+        rageVObj* allocObj = *(rageVObj**)((uint8_t*)g_pAllocator + 4);
+        void* pFxMem = ((sysMemAlloc_Fn)allocObj->vtable[1])(allocObj, 512, 16);
 
         if (pFxMem != NULL) {
             g_pPostEffects = pongPostEffects_Create(pFxMem);
@@ -1073,10 +1081,8 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     /* 12. Allocate display device object (84 bytes, align 16). */
     sysMemAllocator_InitThreadHeap();
     {
-        typedef void* (*AllocFn)(void*, int32_t, int32_t);
-        void* allocObj = *(void**)((uint8_t*)g_pAllocator + 4);
-        void** vt = *(void***)allocObj;
-        void* pDispMem = ((AllocFn)vt[1])(allocObj, 84, 16);
+        rageVObj* allocObj = *(rageVObj**)((uint8_t*)g_pAllocator + 4);
+        void* pDispMem = ((sysMemAlloc_Fn)allocObj->vtable[1])(allocObj, 84, 16);
 
         if (pDispMem != NULL) {
             uint8_t* pDisp = (uint8_t*)pDispMem;
@@ -1116,10 +1122,8 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
     /* 14. Allocate physics world container (64 bytes, align 16). */
     sysMemAllocator_InitThreadHeap();
     {
-        typedef void* (*AllocFn)(void*, int32_t, int32_t);
-        void* allocObj = *(void**)((uint8_t*)g_pAllocator + 4);
-        void** vt = *(void***)allocObj;
-        void* pAcMem = ((AllocFn)vt[1])(allocObj, 64, 16);
+        rageVObj* allocObj = *(rageVObj**)((uint8_t*)g_pAllocator + 4);
+        void* pAcMem = ((sysMemAlloc_Fn)allocObj->vtable[1])(allocObj, 64, 16);
 
         if (pAcMem != NULL) {
             uint8_t* pAc = (uint8_t*)pAcMem;
@@ -1161,10 +1165,8 @@ void gameLoop_Init_8F30(gameLoop* pLoop, void* pConfig)
         /* Allocate backing buffer for physics world container. */
         sysMemAllocator_InitThreadHeap();
         {
-            typedef void* (*AllocFn)(void*, int32_t, int32_t);
-            void* allocObj2 = *(void**)((uint8_t*)g_pAllocator + 4);
-            void** vt2 = *(void***)allocObj2;
-            void* pBuf = ((AllocFn)vt2[1])(allocObj2, (int32_t)nAllocSize, 16);
+            rageVObj* allocObj2 = *(rageVObj**)((uint8_t*)g_pAllocator + 4);
+            void* pBuf = ((sysMemAlloc_Fn)allocObj2->vtable[1])(allocObj2, (int32_t)nAllocSize, 16);
             *(void**)(pAc + 44)    = pBuf;
             *(uint32_t*)(pAc + 52) = 0;
             *(uint32_t*)(pAc + 56) = 0;

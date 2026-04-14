@@ -57,43 +57,7 @@ void XamLoaderTerminateTitle(void) {
 /* Network DLL Functions                                                     */
 /* ========================================================================= */
 
-/**
- * NetDll_recvfrom @ 0x82585FEC
- *
- * Xbox 360 network DLL recvfrom.  Takes an extra XNet handle parameter
- * before the standard BSD recvfrom args.  On the host, networking is not
- * supported so we return SOCKET_ERROR.
- */
-int NetDll_recvfrom(int handle, void* socket, void* buf, int len,
-                    int flags, void* from, int* fromlen) {
-    (void)handle;
-    (void)socket;
-    (void)buf;
-    (void)len;
-    (void)flags;
-    (void)from;
-    (void)fromlen;
-    return XE_SOCKET_ERROR;
-}
-
-/**
- * NetDll_sendto @ 0x8258600C
- *
- * Xbox 360 network DLL sendto.  Takes an extra XNet handle parameter
- * before the standard BSD sendto args.  On the host, networking is not
- * supported so we return SOCKET_ERROR.
- */
-int NetDll_sendto(int handle, void* socket, const void* buf, int len,
-                  int flags, const void* to, int tolen) {
-    (void)handle;
-    (void)socket;
-    (void)buf;
-    (void)len;
-    (void)flags;
-    (void)to;
-    (void)tolen;
-    return XE_SOCKET_ERROR;
-}
+/* NetDll_recvfrom and NetDll_sendto are now implemented in network.c */
 
 /* ========================================================================= */
 /* String Conversion                                                         */

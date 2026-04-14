@@ -27,7 +27,7 @@
  *   g_pCamActionsFlags @ 0x825D07D0 — additional gate word (inside lbl_825D07CC)
  */
 
-#include "graphics/grc_render.hpp"
+#include "grc_render.hpp"
 #include "rage/rage_system.hpp"
 #include <stdint.h>
 #include <string.h>   /* memcpy */
@@ -167,8 +167,23 @@ extern const uint8_t g_defaultViewportRect[16];  /* @ 0x8261A0C0 */
  *   +0x28 (40)    m_viewportRect2   — float[4]: second viewport rectangle
  *   +0x38 (56)    m_bPendingWork    — uint8: 1 if a clear is pending
  */
+/*
+ * grcGPUCommandEntry — opaque GPU command ring-buffer entry.
+ * vtable[2] = Execute(), vtable[5] = Release().
+ * The viewport rects are copied into entry+16 and entry+32.
+ */
+struct grcGPUCommandEntry {
+    void** vtable;              /* +0x00 */
+    uint8_t  _pad_04[12];      /* +0x04 */
+    float    m_viewportRect1[4];/* +0x10 */
+    float    m_viewportRect2[4];/* +0x20 */
+
+    void Execute() { typedef void (*Fn)(grcGPUCommandEntry*); ((Fn)vtable[2])(this); }
+    void Release() { typedef void (*Fn)(grcGPUCommandEntry*); ((Fn)vtable[5])(this); }
+};
+
 typedef struct {
-    void*    m_ringBuf[4];      /* +0x00 */
+    grcGPUCommandEntry* m_ringBuf[4]; /* +0x00 */
     int32_t  m_nCurrentIdx;     /* +0x10 — -1 = no live entry */
     int32_t  m_nNextIdx;        /* +0x14 — -1 = queue empty */
     float    m_viewportRect1[4];/* +0x18 */
@@ -311,18 +326,17 @@ void grcDevice_beginScene(grcDeviceBeginScene* pDevice)
     }
 
     /* ── Dispatch to render target ───────────────────────────────────────── */
-    void* pRT = pDevice->m_pRenderTarget;
+    rage::grcRenderTargetXenon* pRT =
+        (rage::grcRenderTargetXenon*)pDevice->m_pRenderTarget;
     if (pRT != NULL) {
         /* vtable[11]: set color-channel clear flag. */
-        typedef void (*SlotBoolFn)(void*, uint8_t);
-        ((SlotBoolFn)(*(void***)pRT)[11])(pRT, pDevice->m_bColorChannel);
+        pRT->SetColorChannelFlag(pDevice->m_bColorChannel);
 
         /* vtable[12]: set depth-channel clear flag. */
-        ((SlotBoolFn)(*(void***)pRT)[12])(pRT, pDevice->m_bDepthChannel);
+        pRT->SetDepthChannelFlag(pDevice->m_bDepthChannel);
 
-        /* vtable[8]: finalize BeginScene on the render target. */
-        typedef void (*SlotVoidFn)(void*);
-        ((SlotVoidFn)(*(void***)pRT)[8])(pRT);
+        /* vtable[8]: GetWidth (called for side-effect / render-target activation). */
+        pRT->GetWidth();
 
         /* Re-read gameLoop after the virtual dispatch. */
         pLoop = (uint8_t*)g_loop_obj_ptr;
@@ -374,9 +388,8 @@ void grcDevice_clear(grcDeviceClear* pDevice)
 
     /* 2. Release the previous live entry if one exists. */
     if (pDevice->m_nCurrentIdx != -1) {
-        void* pEntry = pDevice->m_ringBuf[pDevice->m_nCurrentIdx];
-        typedef void (*ReleaseFn)(void*);
-        ((ReleaseFn)(*(void***)pEntry)[5])(pEntry);
+        grcGPUCommandEntry* pEntry = pDevice->m_ringBuf[pDevice->m_nCurrentIdx];
+        pEntry->Release();
     }
 
     /* 3. Promote the next queued entry to current. */
@@ -384,19 +397,14 @@ void grcDevice_clear(grcDeviceClear* pDevice)
 
     /* 4. Execute the new entry if the queue was non-empty. */
     if (pDevice->m_nCurrentIdx != -1) {
-        void* pEntry = pDevice->m_ringBuf[pDevice->m_nCurrentIdx];
-        uint8_t* pEntryBytes = (uint8_t*)pEntry;
+        grcGPUCommandEntry* pEntry = pDevice->m_ringBuf[pDevice->m_nCurrentIdx];
 
-        /* 4b. Copy viewport rectangles into the entry's rect slots.
-         *     Source: m_viewportRect1 → entry[+16], m_viewportRect2 → entry[+32].
-         *     The original assembly does this via temporary stack buffers due
-         *     to the PowerPC ABI; a simple memcpy is equivalent. */
-        memcpy(pEntryBytes + 16, pDevice->m_viewportRect1, sizeof(pDevice->m_viewportRect1));
-        memcpy(pEntryBytes + 32, pDevice->m_viewportRect2, sizeof(pDevice->m_viewportRect2));
+        /* 4b. Copy viewport rectangles into the entry's rect slots. */
+        memcpy(pEntry->m_viewportRect1, pDevice->m_viewportRect1, sizeof(pDevice->m_viewportRect1));
+        memcpy(pEntry->m_viewportRect2, pDevice->m_viewportRect2, sizeof(pDevice->m_viewportRect2));
 
-        /* 4c. Execute: call vtable[2] on the entry. */
-        typedef void (*ExecuteFn)(void*);
-        ((ExecuteFn)(*(void***)pEntry)[2])(pEntry);
+        /* 4c. Execute the clear command. */
+        pEntry->Execute();
     }
 
     /* 5. Reset queue and viewport state for the next frame. */
@@ -682,20 +690,20 @@ void grcTextureFactoryXenon_vfn_10(
  */
 void* grcTextureReferenceBase_vfn_4(void* pThis)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    return *(void**)(self + 12);
+    rage::grcTextureReferenceBase* self = (rage::grcTextureReferenceBase*)pThis;
+    return self->m_pInternalData;
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * grcRenderTargetXenon vtable accessors — dimension / filter / LOD queries
  *
- * Field layout (from scaffolds):
+ * Field layout (see grc_render.hpp rage::grcRenderTargetXenon):
  *   +0x14 (20)  uint16_t  m_nWidth
  *   +0x16 (22)  uint16_t  m_nHeight
- *   +0x1C (28)  uint8_t   m_filterMode0
- *   +0x1D (29)  uint8_t   m_filterMode1
- *   +0x1E (30)  uint8_t   m_addressMode   (clamped to max 2)
+ *   +0x1C (28)  uint8_t   m_bColorEnabled
+ *   +0x1D (29)  uint8_t   m_bDepthEnabled
+ *   +0x1E (30)  uint8_t   m_nMSAAMode     (clamped to max 2)
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /*
@@ -704,8 +712,8 @@ void* grcTextureReferenceBase_vfn_4(void* pThis)
  */
 uint16_t grcRenderTargetXenon_vfn_8(void* pThis)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    return *(uint16_t*)(self + 20);
+    rage::grcRenderTargetXenon* self = (rage::grcRenderTargetXenon*)pThis;
+    return self->m_nWidth;
 }
 
 /*
@@ -714,53 +722,53 @@ uint16_t grcRenderTargetXenon_vfn_8(void* pThis)
  */
 uint16_t grcRenderTargetXenon_vfn_9(void* pThis)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    return *(uint16_t*)(self + 22);
+    rage::grcRenderTargetXenon* self = (rage::grcRenderTargetXenon*)pThis;
+    return self->m_nHeight;
 }
 
 /*
  * grcRenderTargetXenon_vfn_13 @ 0x8215DD68 | size: 0xC (12 bytes)
- * vtable slot 13 — SetFilterMode(a, b): stores two uint8 at +28, +29.
+ * vtable slot 13 — SetChannelFlags(a, b): stores color/depth enable at +28, +29.
  */
 void grcRenderTargetXenon_vfn_13(void* pThis, uint8_t a, uint8_t b)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    self[28] = a;
-    self[29] = b;
+    rage::grcRenderTargetXenon* self = (rage::grcRenderTargetXenon*)pThis;
+    self->m_bColorEnabled = a;
+    self->m_bDepthEnabled = b;
 }
 
 /*
  * grcRenderTargetXenon_vfn_14 @ 0x8215DD78 | size: 0x14 (20 bytes)
- * vtable slot 14 — GetFilterMode(pA, pB): reads two uint8 from +28, +29.
+ * vtable slot 14 — GetChannelFlags(pA, pB): reads color/depth enable from +28, +29.
  */
 void grcRenderTargetXenon_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    *pA = self[28];
-    *pB = self[29];
+    rage::grcRenderTargetXenon* self = (rage::grcRenderTargetXenon*)pThis;
+    *pA = self->m_bColorEnabled;
+    *pB = self->m_bDepthEnabled;
 }
 
 /*
  * grcRenderTargetXenon_vfn_15 @ 0x8215DDB0 | size: 0x8 (8 bytes)
- * vtable slot 15 — GetAddressMode(): returns uint8 at +30.
+ * vtable slot 15 — GetMSAAMode(): returns uint8 at +30.
  */
 uint8_t grcRenderTargetXenon_vfn_15(void* pThis)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    return self[30];
+    rage::grcRenderTargetXenon* self = (rage::grcRenderTargetXenon*)pThis;
+    return self->m_nMSAAMode;
 }
 
 /*
  * grcRenderTargetXenon_vfn_16 @ 0x8215DD90 | size: 0x1C (28 bytes)
- * vtable slot 16 — SetAddressMode(mode): stores mode at +30, clamped to max 2.
+ * vtable slot 16 — SetMSAAMode(mode): stores mode at +30, clamped to max 2.
  */
 void grcRenderTargetXenon_vfn_16(void* pThis, uint8_t mode)
 {
-    uint8_t* self = (uint8_t*)pThis;
+    rage::grcRenderTargetXenon* self = (rage::grcRenderTargetXenon*)pThis;
     if (mode >= 2) {
         mode = 2;
     }
-    self[30] = mode;
+    self->m_nMSAAMode = mode;
 }
 
 /*
@@ -783,63 +791,63 @@ void grcRenderTargetXenon_vfn_18(void* pThis, float* pLodDist, uint32_t* pLodLev
 /* ═══════════════════════════════════════════════════════════════════════════
  * grcTextureXenon vtable accessors — filter / LOD / mip queries
  *
- * Field layout (from scaffolds):
- *   +0x18 (24)  uint8_t   m_filterMode0
- *   +0x19 (25)  uint8_t   m_filterMode1
- *   +0x1B (27)  uint8_t   m_mipLevels
- *   +0x1C (28)  float     m_lodDistance
+ * Field layout (see grc_render.hpp rage::grcTextureXenon):
+ *   +0x18 (24)  uint8_t   m_bColorEnabled
+ *   +0x19 (25)  uint8_t   m_bDepthEnabled
+ *   +0x1B (27)  uint8_t   m_nLodLevel
+ *   +0x1C (28)  float     m_fLodBias
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /*
  * grcTextureXenon_vfn_13 @ 0x8215DDB8 | size: 0xC (12 bytes)
- * vtable slot 13 — SetFilterMode(a, b): stores two uint8 at +24, +25.
+ * vtable slot 13 — SetChannelFlags(a, b): stores color/depth enable at +24, +25.
  */
 void grcTextureXenon_vfn_13(void* pThis, uint8_t a, uint8_t b)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    self[24] = a;
-    self[25] = b;
+    rage::grcTextureXenon* self = (rage::grcTextureXenon*)pThis;
+    self->m_bColorEnabled = a;
+    self->m_bDepthEnabled = b;
 }
 
 /*
  * grcTextureXenon_vfn_14 @ 0x8215DDC8 | size: 0x14 (20 bytes)
- * vtable slot 14 — GetFilterMode(pA, pB): reads two uint8 from +24, +25.
+ * vtable slot 14 — GetChannelFlags(pA, pB): reads color/depth enable from +24, +25.
  */
 void grcTextureXenon_vfn_14(void* pThis, uint8_t* pA, uint8_t* pB)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    *pA = self[24];
-    *pB = self[25];
+    rage::grcTextureXenon* self = (rage::grcTextureXenon*)pThis;
+    *pA = self->m_bColorEnabled;
+    *pB = self->m_bDepthEnabled;
 }
 
 /*
  * grcTextureXenon_vfn_15 @ 0x8215DDE8 | size: 0x8 (8 bytes)
- * vtable slot 15 — GetMipLevels(): returns uint8 at +27.
+ * vtable slot 15 — GetLodLevel(): returns uint8 at +27.
  */
 uint8_t grcTextureXenon_vfn_15(void* pThis)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    return self[27];
+    rage::grcTextureXenon* self = (rage::grcTextureXenon*)pThis;
+    return self->m_nLodLevel;
 }
 
 /*
  * grcTextureXenon_vfn_16 @ 0x8215DDE0 | size: 0x8 (8 bytes)
- * vtable slot 16 — SetMipLevels(n): stores uint8 at +27.
+ * vtable slot 16 — SetLodLevel(n): stores uint8 at +27.
  */
 void grcTextureXenon_vfn_16(void* pThis, uint8_t n)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    self[27] = n;
+    rage::grcTextureXenon* self = (rage::grcTextureXenon*)pThis;
+    self->m_nLodLevel = n;
 }
 
 /*
  * grcTextureXenon_vfn_18 @ 0x8215DDF0 | size: 0xC (12 bytes)
- * vtable slot 18 — GetLODDistance(pOut): copies float from +28 to *pOut.
+ * vtable slot 18 — GetLodBias(pOut): copies float from +28 to *pOut.
  */
 void grcTextureXenon_vfn_18(void* pThis, float* pOut)
 {
-    uint8_t* self = (uint8_t*)pThis;
-    *pOut = *(float*)(self + 28);
+    rage::grcTextureXenon* self = (rage::grcTextureXenon*)pThis;
+    *pOut = self->m_fLodBias;
 }
 
 

@@ -54,6 +54,14 @@ extern void*    g_iccProfilePtr;
 extern void*    g_sdaBasePtr;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Named vtable constants (from .rdata, RTTI-resolved)
+// ─────────────────────────────────────────────────────────────────────────────
+static void* const kVtable_rage_datBase        = (void*)0x820276C4;  // rage::datBase
+static void* const kVtable_rage_crAnimFrame    = (void*)0x8204FCBC;  // rage::crAnimFrame
+static void* const kVtable_rage_grmShaderPreset= (void*)0x8202F668;  // rage::grmShaderPreset
+static void* const kVtable_msgMsgSink          = (void*)0x82027B34;  // msgMsgSink
+
+// ─────────────────────────────────────────────────────────────────────────────
 // rage_UnlinkAndFreeThreadpoolNode @ 0x820C88D8 | size: 0x80
 //
 // Removes a node from the global threadpool linked list, calls threadpool
@@ -196,8 +204,8 @@ void rage_crAnimFrame_Dtor(void* obj) {
         rage_ReleaseResource(resource, 1);
     }
 
-    // Reset vtable to rage::crAnimFrame base @ 0x8204FCBC
-    *(void**)obj = (void*)0x8204FCBC;
+    // Reset vtable to rage::crAnimFrame base
+    *(void**)obj = kVtable_rage_crAnimFrame;
 
     // Call crAnimFrame base destructor
     crAnimFrame_Dtor(obj);
@@ -582,8 +590,8 @@ void grmShaderFx_Destroy(void* obj, int flags) {
 //   +20: buffer pointer (freed directly)
 // ─────────────────────────────────────────────────────────────────────────────
 void grmShaderPreset_Destroy(void* obj) {
-    // Set vtable to rage::grmShaderPreset @ 0x8202F668
-    *(void**)obj = (void*)0x8202F668;
+    // Set vtable to rage::grmShaderPreset
+    *(void**)obj = kVtable_rage_grmShaderPreset;
 
     // Free buffer at offset +8
     void* buffer1 = *(void**)((uint8_t*)obj + 8);
@@ -608,8 +616,8 @@ void grmShaderPreset_Destroy(void* obj) {
         dtorFn(subObj, 1);
     }
 
-    // Reset vtable to rage::datBase @ 0x820276C4
-    *(void**)obj = (void*)0x820276C4;
+    // Reset vtable to rage::datBase
+    *(void**)obj = kVtable_rage_datBase;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -843,11 +851,11 @@ void msgMsgSink_DestroySubObjects(void* obj) {
     // Compute inner vtable pointer (+4 from obj, or nullptr if obj is null)
     void* innerPtr = (obj != nullptr) ? (void*)((uint8_t*)obj + 4) : nullptr;
 
-    // Reset inner vtable to msgMsgSink base @ 0x82027B34
-    *(void**)innerPtr = (void*)0x82027B34;
+    // Reset inner vtable to msgMsgSink base
+    *(void**)innerPtr = kVtable_msgMsgSink;
 
-    // Reset outer vtable to rage::datBase @ 0x820276C4
-    *(void**)obj = (void*)0x820276C4;
+    // Reset outer vtable to rage::datBase
+    *(void**)obj = kVtable_rage_datBase;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

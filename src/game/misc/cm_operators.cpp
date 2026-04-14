@@ -82,12 +82,12 @@ void* cmWorldRefreshableCtor_Destructor()
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Forward declarations for utility functions
-extern "C" float cmOperator_EvalFloat(void* entry);  // Evaluates an entry and returns float
-extern "C" int cmSwitch_4B60(void* switchObj);  // Evaluates switch and returns int
-extern "C" int cmNode_GetInt(void* obj);  // Evaluates object and returns int
-extern "C" bool cmCond_21B0(void* condObj);  // Evaluates condition and returns bool
-extern "C" void cmNode_GetVector(void* dest, void* src);  // Copies vector data
-extern "C" void cmCond_1038_g(void* condObj, void* dest);  // Evaluates condition into dest
+extern "C" float cmOperator_EvalFloat(void* port);    // Evaluates a cmPort and returns float
+extern "C" int cmSwitch_4B60(void* port);              // Evaluates a cmPort and returns int
+extern "C" int cmNode_GetInt(void* port);              // Evaluates a cmPort and returns int
+extern "C" bool cmCond_21B0(void* port);               // Evaluates a cmPort as bool
+extern "C" void cmNode_GetVector(void* dest, void* port);  // Evaluates a cmPort into vector
+extern "C" void cmCond_1038_g(void* port, void* dest);     // Match+CopyState via port
 
 /**
  * cmLookup::RegisterPorts @ 0x8226D840 | size: 0x40
@@ -98,18 +98,18 @@ extern "C" void cmCond_1038_g(void* condObj, void* dest);  // Evaluates conditio
  * Other: Clears cached result to 0
  */
 void cmLookup::RegisterPorts() {
-    int mode = *(int*)((char*)this + 32);
-    
-    if (mode == 1) {
-        void* obj = *(void**)((char*)this + 28);
-        uint8_t value = *(uint8_t*)((char*)obj + 16);
-        *(uint32_t*)((char*)this + 4) = value;
-    } else if (mode == 2) {
-        void* obj = *(void**)((char*)this + 28);
-        uint32_t value = *(uint32_t*)((char*)obj + 4);
-        *(uint32_t*)((char*)this + 4) = value;
+    int32_t portType = m_entries[0].valuePort.m_type;  // +0x20
+
+    if (portType == 1) {
+        // DIRECT: read byte at offset +16 of data object (cmDataObj dim field)
+        uint8_t* pData = (uint8_t*)(uintptr_t)m_entries[0].valuePort.m_pData;
+        m_cachedResult = pData[16];
+    } else if (portType == 2) {
+        // NODE: read m_cachedResult (+4) of upstream cmOperator node
+        uint32_t* pNode = (uint32_t*)(uintptr_t)m_entries[0].valuePort.m_pData;
+        m_cachedResult = pNode[1];  // upstream->m_cachedResult
     } else {
-        *(uint32_t*)((char*)this + 4) = 0;
+        m_cachedResult = 0;
     }
 }
 
@@ -122,99 +122,86 @@ void cmLookup::RegisterPorts() {
  */
 void cmLookup::GetDim(int* outResult) {
     // Evaluate the key value
-    float keyValue = cmOperator_EvalFloat((char*)this + 12);
-    
-    // Check each entry (2 entries at offsets +20 and +36)
-    for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
-        void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        // Check if key <= threshold (with NaN handling)
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
+    float keyValue = cmOperator_EvalFloat(&m_keyPort);  // +0x0C
+
+    // Check each entry (2 entries)
+    for (int i = 0; i < 2; i++) {
+        float threshold = cmOperator_EvalFloat(&m_entries[i].condPort);  // threshold port
+
+        if (keyValue <= threshold) {
             // Found match - evaluate and return this entry's result
-            void* resultObj = (char*)this + 12 + entryIndex * 16;
-            *outResult = cmSwitch_4B60(resultObj);
+            *outResult = cmSwitch_4B60(&m_entries[i].valuePort);
             return;
         }
     }
-    
-    // No match - return default value at offset +52
-    *outResult = cmSwitch_4B60((char*)this + 52);
+
+    // No match - return default value (2-entry: default port overlaps entries[2])
+    cmPort* defaultPort = (cmPort*)&m_entries[2];
+    *outResult = cmSwitch_4B60(defaultPort);
 }
 
 /**
  * cmLookup::GetFloat @ 0x8226D920 | size: 0x9c
- * 
+ *
  * Evaluates lookup table and returns matching float result (2-entry variant).
  */
 void cmLookup::GetFloat(float* outResult) {
-    float keyValue = cmOperator_EvalFloat((char*)this + 12);
-    
-    for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
-        void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
-            void* resultObj = (char*)this + 12 + entryIndex * 16;
-            *outResult = cmOperator_EvalFloat(resultObj);
+    float keyValue = cmOperator_EvalFloat(&m_keyPort);
+
+    for (int i = 0; i < 2; i++) {
+        float threshold = cmOperator_EvalFloat(&m_entries[i].condPort);
+
+        if (keyValue <= threshold) {
+            *outResult = cmOperator_EvalFloat(&m_entries[i].valuePort);
             return;
         }
     }
-    
-    *outResult = cmOperator_EvalFloat((char*)this + 52);
+
+    cmPort* defaultPort = (cmPort*)&m_entries[2];
+    *outResult = cmOperator_EvalFloat(defaultPort);
 }
 
 /**
  * cmLookup::GetBool @ 0x8226DA78 | size: 0x9c
- * 
+ *
  * Evaluates lookup table and returns matching bool result (2-entry variant).
  */
 void cmLookup::GetBool(bool* outResult) {
-    float keyValue = cmOperator_EvalFloat((char*)this + 12);
-    
-    for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
-        void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
-            void* resultObj = (char*)this + 12 + entryIndex * 16;
-            *outResult = cmCond_21B0(resultObj);
+    float keyValue = cmOperator_EvalFloat(&m_keyPort);
+
+    for (int i = 0; i < 2; i++) {
+        float threshold = cmOperator_EvalFloat(&m_entries[i].condPort);
+
+        if (keyValue <= threshold) {
+            *outResult = cmCond_21B0(&m_entries[i].valuePort);
             return;
         }
     }
-    
-    *outResult = cmCond_21B0((char*)this + 52);
+
+    cmPort* defaultPort = (cmPort*)&m_entries[2];
+    *outResult = cmCond_21B0(defaultPort);
 }
 
 /**
  * cmLookup::GetVector @ 0x8226D9C0 | size: 0xb4
- * 
+ *
  * Evaluates lookup table and returns matching vector result (2-entry variant).
  * Uses VMX128 vector operations for 16-byte data.
  */
 void cmLookup::GetVector(void* outVector) {
-    float keyValue = cmOperator_EvalFloat((char*)this + 12);
-    
-    for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
-        void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
-            void* resultObj = (char*)this + 12 + entryIndex * 16;
-            cmNode_GetVector(outVector, resultObj);
+    float keyValue = cmOperator_EvalFloat(&m_keyPort);
+
+    for (int i = 0; i < 2; i++) {
+        float threshold = cmOperator_EvalFloat(&m_entries[i].condPort);
+
+        if (keyValue <= threshold) {
+            cmNode_GetVector(outVector, &m_entries[i].valuePort);
             return;
         }
     }
-    
-    cmNode_GetVector(outVector, (char*)this + 52);
+
+    cmPort* defaultPort = (cmPort*)&m_entries[2];
+    cmNode_GetVector(outVector, defaultPort);
 }
 
 /**
@@ -224,22 +211,19 @@ void cmLookup::GetVector(void* outVector) {
  * Similar to GetDim but uses cmNode_GetInt instead of cmSwitch_4B60.
  */
 void cmLookup::GetDimValue(int* outResult) {
-    float keyValue = cmOperator_EvalFloat((char*)this + 12);
-    
-    for (int entryIndex = 1; entryIndex <= 2; entryIndex++) {
-        void* entry = (char*)this + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
-            void* resultObj = (char*)this + 12 + entryIndex * 16;
-            *outResult = cmNode_GetInt(resultObj);
+    float keyValue = cmOperator_EvalFloat(&m_keyPort);
+
+    for (int i = 0; i < 2; i++) {
+        float threshold = cmOperator_EvalFloat(&m_entries[i].condPort);
+
+        if (keyValue <= threshold) {
+            *outResult = cmNode_GetInt(&m_entries[i].valuePort);
             return;
         }
     }
-    
-    *outResult = cmNode_GetInt((char*)this + 52);
+
+    cmPort* defaultPort = (cmPort*)&m_entries[2];
+    *outResult = cmNode_GetInt(defaultPort);
 }
 
 /**
@@ -249,11 +233,12 @@ void cmLookup::GetDimValue(int* outResult) {
  * Used for batch evaluation of multiple conditions.
  */
 void cmLookup::CopyState(void* dest) {
-    void* entry = (char*)this + 12;
-    
+    // Iterate all ports starting at m_keyPort (+0x0C), 8 ports x 8 bytes each
+    cmPort* port = &m_keyPort;
+
     for (int i = 0; i < 8; i++) {
-        cmCond_1038_g(entry, dest);
-        entry = (char*)entry + 8;
+        cmCond_1038_g(port, dest);
+        port++;
     }
 }
 
@@ -267,23 +252,21 @@ void cmLookup::CopyState(void* dest) {
  * 3-entry variant: Returns matching int result from 3-entry lookup table.
  */
 void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
-    float keyValue = cmOperator_EvalFloat((char*)self + 12);
-    
-    for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
-        void* entry = (char*)self + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
-            void* resultObj = (char*)self + 12 + entryIndex * 16;
-            *outResult = cmSwitch_4B60(resultObj);
+    cmLookup* node = (cmLookup*)self;
+    float keyValue = cmOperator_EvalFloat(&node->m_keyPort);
+
+    for (int i = 0; i < 3; i++) {
+        float threshold = cmOperator_EvalFloat(&node->m_entries[i].condPort);
+
+        if (keyValue <= threshold) {
+            *outResult = cmSwitch_4B60(&node->m_entries[i].valuePort);
             return;
         }
     }
-    
-    // Default at offset +68 for 3-entry table
-    *outResult = cmSwitch_4B60((char*)self + 68);
+
+    // Default port at +0x44 for 3-entry table
+    cmPort* defaultPort = &node->m_defaultPort;
+    *outResult = cmSwitch_4B60(defaultPort);
 }
 
 /**
@@ -292,22 +275,20 @@ void cmLookup_GetDim_DBB8_1(void* self, int* outResult) {
  * 3-entry variant: Returns matching float result from 3-entry lookup table.
  */
 void cmLookup_GetFloat_DC58_1(void* self, float* outResult) {
-    float keyValue = cmOperator_EvalFloat((char*)self + 12);
-    
-    for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
-        void* entry = (char*)self + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
-            void* resultObj = (char*)self + 12 + entryIndex * 16;
-            *outResult = cmOperator_EvalFloat(resultObj);
+    cmLookup* node = (cmLookup*)self;
+    float keyValue = cmOperator_EvalFloat(&node->m_keyPort);
+
+    for (int i = 0; i < 3; i++) {
+        float threshold = cmOperator_EvalFloat(&node->m_entries[i].condPort);
+
+        if (keyValue <= threshold) {
+            *outResult = cmOperator_EvalFloat(&node->m_entries[i].valuePort);
             return;
         }
     }
-    
-    *outResult = cmOperator_EvalFloat((char*)self + 68);
+
+    cmPort* defaultPort = &node->m_defaultPort;
+    *outResult = cmOperator_EvalFloat(defaultPort);
 }
 
 /**
@@ -316,22 +297,20 @@ void cmLookup_GetFloat_DC58_1(void* self, float* outResult) {
  * 3-entry variant: Returns matching bool result from 3-entry lookup table.
  */
 void cmLookup_GetBool_DDB0_1(void* self, bool* outResult) {
-    float keyValue = cmOperator_EvalFloat((char*)self + 12);
-    
-    for (int entryIndex = 1; entryIndex <= 3; entryIndex++) {
-        void* entry = (char*)self + 20 + (entryIndex - 1) * 16;
-        float threshold = cmOperator_EvalFloat(entry);
-        
-        bool matches = (keyValue <= threshold);
-        
-        if (matches) {
-            void* resultObj = (char*)self + 12 + entryIndex * 16;
-            *outResult = cmCond_21B0(resultObj);
+    cmLookup* node = (cmLookup*)self;
+    float keyValue = cmOperator_EvalFloat(&node->m_keyPort);
+
+    for (int i = 0; i < 3; i++) {
+        float threshold = cmOperator_EvalFloat(&node->m_entries[i].condPort);
+
+        if (keyValue <= threshold) {
+            *outResult = cmCond_21B0(&node->m_entries[i].valuePort);
             return;
         }
     }
-    
-    *outResult = cmCond_21B0((char*)self + 68);
+
+    cmPort* defaultPort = &node->m_defaultPort;
+    *outResult = cmCond_21B0(defaultPort);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -559,20 +538,19 @@ void* cmOperatorCtor_pongCharViewContext() {
  *   otherwise:        return false
  */
 extern "C" bool cmCond_21B0(void* condPort) {
-    uint32_t* port = (uint32_t*)condPort;
-    int32_t type = (int32_t)port[1];
+    cmPort* port = (cmPort*)condPort;
 
-    if (type == 1) {
+    if (port->m_type == 1) {
         // DIRECT: read bool byte at offset 0 of the data object
-        void* pData = (void*)(uintptr_t)port[0];
+        void* pData = (void*)(uintptr_t)port->m_pData;
         return *(uint8_t*)pData != 0;
-    } else if (type == 2) {
-        // NODE: call upstream node->GetBool (vtable slot 3)
-        void* pNode = (void*)(uintptr_t)port[0];
-        void** vtable = *(void***)pNode;
+    } else if (port->m_type == 2) {
+        // NODE: call upstream node->GetBool via vtable slot 3
+        void* pNode = (void*)(uintptr_t)port->m_pData;
+        void** vtbl = *(void***)pNode;
+        typedef void (*VFn_GetBool)(void* self, uint8_t* out);
         uint8_t tmp;
-        typedef void (*GetBoolFn)(void*, uint8_t*);
-        ((GetBoolFn)vtable[3])(pNode, &tmp);
+        ((VFn_GetBool)vtbl[3])(pNode, &tmp);
         return tmp != 0;
     }
 
@@ -588,24 +566,23 @@ extern "C" bool cmCond_21B0(void* condPort) {
  * passing dest.
  */
 extern "C" void cmCond_1038_g(void* condPort, void* dest) {
-    uint32_t* port = (uint32_t*)condPort;
-    int32_t type = (int32_t)port[1];
+    cmPort* port = (cmPort*)condPort;
 
-    if (type != 2) return;
+    if (port->m_type != 2) return;
 
-    void* pNode = (void*)(uintptr_t)port[0];
+    void* pNode = (void*)(uintptr_t)port->m_pData;
 
-    // Call dest->vtable[3](dest, pNode) — match function
-    void** destVtable = *(void***)dest;
-    typedef bool (*MatchFn)(void*, void*);
-    bool matched = ((MatchFn)destVtable[3])(dest, pNode);
+    // dest->Match(pNode) via vtable slot 3
+    void** destVtbl = *(void***)dest;
+    typedef bool (*VFn_Match)(void* self, void* node);
+    bool matched = ((VFn_Match)destVtbl[3])(dest, pNode);
 
     if (!matched) return;
 
-    // Call pNode->vtable[18](pNode, dest) — CopyState
-    void** nodeVtable = *(void***)pNode;
-    typedef void (*CopyStateFn)(void*, void*);
-    ((CopyStateFn)nodeVtable[18])(pNode, dest);
+    // pNode->CopyState(dest) via vtable slot 18
+    void** nodeVtbl = *(void***)pNode;
+    typedef void (*VFn_CopyState)(void* self, void* dest);
+    ((VFn_CopyState)nodeVtbl[18])(pNode, dest);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -620,19 +597,19 @@ extern "C" void cmCond_1038_g(void* condPort, void* dest) {
  * the output dimension type (m_outputType at +4).
  */
 void cmCond_vfn_16(void* self) {
-    uint32_t* node = (uint32_t*)self;
-    int32_t portType = (int32_t)node[6]; // +24 = portA.m_type
+    cmCond* node = (cmCond*)self;
+    cmPort* valuePort = &node->m_entries[0].valuePort;
 
-    if (portType == 1) {
+    if (valuePort->m_type == 1) {
         // DIRECT: read dim from cmDataObj at +16
-        uint8_t* pData = (uint8_t*)(uintptr_t)node[5]; // +20 = portA.m_pData
-        node[1] = (uint32_t)pData[16];
-    } else if (portType == 2) {
-        // NODE: read m_outputType at +4
-        uint32_t* pNode = (uint32_t*)(uintptr_t)node[5];
-        node[1] = pNode[1];
+        uint8_t* pData = (uint8_t*)(uintptr_t)valuePort->m_pData;
+        node->m_outputType = (uint32_t)pData[16];
+    } else if (valuePort->m_type == 2) {
+        // NODE: read m_outputType at +4 of upstream node
+        uint32_t* pNode = (uint32_t*)(uintptr_t)valuePort->m_pData;
+        node->m_outputType = pNode[1];
     } else {
-        node[1] = 0;
+        node->m_outputType = 0;
     }
 }
 
@@ -642,16 +619,17 @@ void cmCond_vfn_16(void* self) {
  * GetDim — evaluates 2-cond node, returns int dimension from matching port.
  */
 void cmCond_vfn_5(void* self, int32_t* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = cmSwitch_4B60(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = cmSwitch_4B60(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = cmSwitch_4B60(base + 44);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[2];
+    *out = cmSwitch_4B60(defaultPort);
 }
 
 /**
@@ -660,16 +638,17 @@ void cmCond_vfn_5(void* self, int32_t* out) {
  * GetFloat — evaluates 2-cond node, returns float from matching port.
  */
 void cmCond_vfn_4(void* self, float* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = cmOperator_EvalFloat(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = cmOperator_EvalFloat(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = cmOperator_EvalFloat(base + 44);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[2];
+    *out = cmOperator_EvalFloat(defaultPort);
 }
 
 /**
@@ -678,16 +657,17 @@ void cmCond_vfn_4(void* self, float* out) {
  * GetBool — evaluates 2-cond node, returns bool from matching port.
  */
 void cmCond_vfn_3(void* self, uint8_t* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = (uint8_t)cmCond_21B0(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = (uint8_t)cmCond_21B0(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = (uint8_t)cmCond_21B0(base + 44);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[2];
+    *out = (uint8_t)cmCond_21B0(defaultPort);
 }
 
 /**
@@ -696,16 +676,17 @@ void cmCond_vfn_3(void* self, uint8_t* out) {
  * GetVector — evaluates 2-cond node, returns vec4 from matching port.
  */
 void cmCond_vfn_2(void* self, void* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            cmNode_GetVector(out, base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            cmNode_GetVector(out, &node->m_entries[i].valuePort);
             return;
         }
     }
 
-    cmNode_GetVector(out, base + 44);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[2];
+    cmNode_GetVector(out, defaultPort);
 }
 
 /**
@@ -714,16 +695,17 @@ void cmCond_vfn_2(void* self, void* out) {
  * GetInt32 — evaluates 2-cond node, returns int32 from matching port.
  */
 void cmCond_vfn_1(void* self, int32_t* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 2; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = cmNode_GetInt(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = cmNode_GetInt(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = cmNode_GetInt(base + 44);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[2];
+    *out = cmNode_GetInt(defaultPort);
 }
 
 /**
@@ -733,11 +715,12 @@ void cmCond_vfn_1(void* self, int32_t* out) {
  * starting at +12, stepping by 8 bytes, calling cmCond_1038_g on each.
  */
 void cmCond_vfn_18(void* self, void* dest) {
-    char* port = (char*)self + 12;
+    cmCond* node = (cmCond*)self;
+    // 2-cond: 5 ports = 2 cond + 2 value + 1 default, each 8 bytes
+    cmPort* port = (cmPort*)&node->m_entries[0];
 
     for (int i = 0; i < 5; i++) {
-        cmCond_1038_g(port, dest);
-        port += 8;
+        cmCond_1038_g(&port[i], dest);
     }
 }
 
@@ -752,16 +735,17 @@ void cmCond_vfn_18(void* self, void* dest) {
  * GetDim — 3-cond variant.
  */
 void cmCond_vfn_5_CF20_1(void* self, int32_t* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = cmSwitch_4B60(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = cmSwitch_4B60(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = cmSwitch_4B60(base + 60);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[3];
+    *out = cmSwitch_4B60(defaultPort);
 }
 
 /**
@@ -770,16 +754,17 @@ void cmCond_vfn_5_CF20_1(void* self, int32_t* out) {
  * GetFloat — 3-cond variant.
  */
 void cmCond_vfn_4_CF90_1(void* self, float* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = cmOperator_EvalFloat(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = cmOperator_EvalFloat(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = cmOperator_EvalFloat(base + 60);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[3];
+    *out = cmOperator_EvalFloat(defaultPort);
 }
 
 /**
@@ -788,16 +773,17 @@ void cmCond_vfn_4_CF90_1(void* self, float* out) {
  * GetBool — 3-cond variant.
  */
 void cmCond_vfn_3_D000_1(void* self, uint8_t* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = (uint8_t)cmCond_21B0(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = (uint8_t)cmCond_21B0(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = (uint8_t)cmCond_21B0(base + 60);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[3];
+    *out = (uint8_t)cmCond_21B0(defaultPort);
 }
 
 /**
@@ -806,16 +792,17 @@ void cmCond_vfn_3_D000_1(void* self, uint8_t* out) {
  * GetVector — 3-cond variant.
  */
 void cmCond_vfn_2_D070_1(void* self, void* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            cmNode_GetVector(out, base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            cmNode_GetVector(out, &node->m_entries[i].valuePort);
             return;
         }
     }
 
-    cmNode_GetVector(out, base + 60);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[3];
+    cmNode_GetVector(out, defaultPort);
 }
 
 /**
@@ -824,16 +811,17 @@ void cmCond_vfn_2_D070_1(void* self, void* out) {
  * GetInt32 — 3-cond variant.
  */
 void cmCond_vfn_1_D0F8_1(void* self, int32_t* out) {
-    char* base = (char*)self;
+    cmCond* node = (cmCond*)self;
 
     for (int i = 0; i < 3; i++) {
-        if (cmCond_21B0(base + 12 + i * 16)) {
-            *out = cmNode_GetInt(base + 20 + i * 16);
+        if (cmCond_21B0(&node->m_entries[i].condPort)) {
+            *out = cmNode_GetInt(&node->m_entries[i].valuePort);
             return;
         }
     }
 
-    *out = cmNode_GetInt(base + 60);
+    cmPort* defaultPort = (cmPort*)&node->m_entries[3];
+    *out = cmNode_GetInt(defaultPort);
 }
 
 /**
@@ -842,11 +830,12 @@ void cmCond_vfn_1_D0F8_1(void* self, int32_t* out) {
  * CopyState — 3-cond variant, iterates 7 ports.
  */
 void cmCond_vfn_18_0C50_1(void* self, void* dest) {
-    char* port = (char*)self + 12;
+    cmCond* node = (cmCond*)self;
+    // 3-cond: 7 ports = 3 cond + 3 value + 1 default, each 8 bytes
+    cmPort* port = (cmPort*)&node->m_entries[0];
 
     for (int i = 0; i < 7; i++) {
-        cmCond_1038_g(port, dest);
-        port += 8;
+        cmCond_1038_g(&port[i], dest);
     }
 }
 
@@ -1127,7 +1116,9 @@ void* cmOperatorCtor_pongNetMessageHolder(void* a1) {
  */
 // cmOperatorCtor_6690 @ 0x82186690
 int cmOperatorCtor_EvalFloat(void* self, float* outResult) {
-    void* obj = *(void**)((char*)self + 4);
+    // self is a cmPort-like struct: {vtable/ptr, pObj}
+    uint32_t* fields = (uint32_t*)self;
+    void* obj = (void*)(uintptr_t)fields[1];  // +4: pointer to evaluatable object
     if (obj != nullptr) {
         uint8_t flag = *(uint8_t*)obj;
         if (flag != 0) {
@@ -1154,18 +1145,16 @@ int cmOperatorCtor_EvalFloat(void* self, float* outResult) {
 void* cmOperatorCtor_SingletonRegister(void* obj) {
     void** mgr = (void**)g_sda_6404;
 
-    // vtable slot 2: Register(obj)
-    typedef void* (*RegisterFn)(void* self, void* obj);
-    void** vtable = *(void***)mgr;
-    RegisterFn registerFn = (RegisterFn)vtable[2];
-    void* result = registerFn(mgr, obj);
+    // mgr->Register(obj) via vtable slot 2
+    void** mgrVtbl = *(void***)mgr;
+    typedef void* (*VFn_Register)(void* self, void* obj);
+    void* result = ((VFn_Register)mgrVtbl[2])(mgr, obj);
 
     if (g_sda_660D != 0) {
-        // vtable slot 13: SetEnabled(1, 1)
-        typedef void (*SetEnabledFn)(void* self, int a1, int a2);
-        void** resultVtable = *(void***)result;
-        SetEnabledFn setEnabled = (SetEnabledFn)resultVtable[13];
-        setEnabled(result, 1, 1);
+        // result->SetEnabled(1, 1) via vtable slot 13
+        void** resVtbl = *(void***)result;
+        typedef void (*VFn_SetEnabled)(void* self, int a1, int a2);
+        ((VFn_SetEnabled)resVtbl[13])(result, 1, 1);
     }
 
     return result;
@@ -1194,10 +1183,10 @@ void cmOperatorCtor_HudFlashDispatch(void* obj) {
 // cmOperatorCtor_C3F0_2h @ 0x822EC3F0
 void cmOperatorCtor_SingletonDispatchSlot10(void* a1, void* a2) {
     void** mgr = (void**)g_sda_6404;
-    typedef void (*DispatchFn)(void* self, void* a1, void* a2, int a3);
-    void** vtable = *(void***)mgr;
-    DispatchFn dispatch = (DispatchFn)vtable[10];
-    dispatch(mgr, a1, a2, 1);
+    // mgr->Dispatch(a1, a2, 1) via vtable slot 10
+    void** mgrVtbl = *(void***)mgr;
+    typedef void (*VFn_Dispatch)(void* self, void* a1, void* a2, int a3);
+    ((VFn_Dispatch)mgrVtbl[10])(mgr, a1, a2, 1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

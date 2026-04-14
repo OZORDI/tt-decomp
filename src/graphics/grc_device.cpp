@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 /* ── External Dependencies ────────────────────────────────────────────────── */
 
@@ -19,6 +20,7 @@ extern void* g_pHudOverlay;            /* @ 0x825EBAA0 — HUD overlay object */
 
 /* Memory management */
 extern void sysMemAllocator_Free(void* ptr);             /* @ 0x820C00C0 — sysMemFree */
+extern void rage_free(void* ptr);                        /* @ 0x820C00C0 — rage memory free */
 
 /* Device management functions */
 extern void grmShaderGroup_destroy(void* pObj);    /* @ 0x82445BF8 — Destroy shader group (refcounted) */
@@ -29,6 +31,9 @@ extern void grcDeviceXenon_teardown(void* pTarget);      /* @ 0x82366CA0 — Ful
 extern void _locale_register(void* pLocale, uint32_t flags);  /* @ 0x820C02D0 */
 extern void thunk_DbgBreakPoint(void);             /* @ 0x82566B70 */
 extern void grcDevice_setRenderTarget(void* pDevice, int32_t arg); /* @ 0x82357400 — Set active render target */
+
+/* Forward declaration — defined below */
+void grcDevice_shutdownAlt(void);
 
 /* ── Global device-state pointers (extern, defined in globals) ───────────── */
 

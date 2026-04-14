@@ -11,10 +11,61 @@
 #include "globals.h"
 
 // ============================================================================
+// Named externs for top-referenced raw addresses
+// Each corresponds to a generated lbl_XXXXXXXX object. Replace raw casts
+// with these names; leave TODO for full typing where class is unknown.
+// ============================================================================
+
+/* .rdata (RTTI vtables) — typed as opaque bytes in C; real class decls
+ * live in C++ headers. TODO: replace with proper forward-declared types
+ * in a .hpp consumed via extern "C" once this file is converted. */
+extern const uint8_t lbl_8203A910[12];   /* FloatAverager vtbl #1 */
+extern const uint8_t lbl_8203A91C[12];   /* FloatAverager vtbl #2 */
+extern const uint8_t lbl_82070D78[12];   /* FloatAverager vtbl #3 */
+extern const uint8_t lbl_8207166C[12];   /* FloatAverager vtbl #4 */
+extern const uint8_t lbl_820533CC[16];   /* cmRefreshableCtor vtbl */
+extern const uint8_t lbl_82033094[72];   /* rage::fragDrawable vtbl */
+
+/* .rdata scalar/float constants */
+extern const float lbl_8202D110;  /* 4-byte float constant (heavily reused) */
+extern const double lbl_8202CFF4; /* 8-byte .rdata constant */
+
+/* .data SDA globals — untyped raw storage */
+extern uint32_t lbl_825C803C;     /* 8 bytes .data — aiTypeId / attrHash / xmlNodeStruct_typeId alias */
+extern uint32_t lbl_825C8038;     /* 4 bytes .data — aiTypeId / attrHash alias */
+extern uint32_t lbl_825CAF88;     /* 4 bytes .data — resource/string field type slot */
+extern uint32_t lbl_825C93D0;     /* 8 bytes .data — cameraProperty2 / sgNode_typeId alias */
+extern uint8_t  lbl_8261A0C0[16]; /* default viewport rect / scene reset matrix */
+extern uint8_t  lbl_82619BE0[16]; /* SIMD comparison mask */
+extern float    lbl_825C5938[4];  /* 16 bytes .data — input scale / msgSink init */
+extern uint8_t  lbl_825CB800[64]; /* identity matrix ref */
+extern uint32_t lbl_8260641C;     /* SDA+25628 — renderer state ptr slot */
+extern uint8_t  lbl_82607C40[65616]; /* SDA+31808 — TemplateRegistry backing */
+extern uint8_t  lbl_826064CC;     /* SDA+25804 — UI input enable flag */
+extern uint8_t  lbl_826063B8[8];  /* SDA+25528 — creature manager slot */
+
+/* .data — UI/system singleton pointer slots */
+extern void* lbl_8271A81C;  /* grcDevice / ui_context pointer slot */
+extern void* lbl_8271A328;  /* network timing / atSingleton / gameState ptr alias */
+extern void* lbl_8271A7B0;  /* network base/state ptr alias */
+extern void* lbl_8271A358;  /* UI manager pointer slot */
+extern void* lbl_8271A344;  /* rage::cmSampleCamActions ptr (RTTI name nearby) */
+extern void* lbl_8271A2E4;  /* game data manager slot */
+extern void* lbl_8271A2F0;  /* char view data slot */
+extern void* lbl_8271A378;  /* locomotion anim instance slot */
+extern void* lbl_8271A3A8;  /* vibration manager slot */
+
+/* Misc — strings / inside-symbol offsets (cannot be typed cleanly; TODO) */
+extern const uint32_t lbl_825D07CC;        /* "@cmSampleCamActions@rage@@" RTTI string; +4 = flags */
+extern const char     lbl_825EB988[];       /* "leur des 3" localized string */
+extern uint8_t        pongPlayer_BA20_g[]; /* 0x821EBAA0 = +0x80 into this symbol */
+extern uint8_t        lbl_820176C0[];       /* 0x82017888 = +0x1C8 into this symbol */
+
+// ============================================================================
 // Graphics System
 // ============================================================================
 
-void* g_grcDevice = (void*)0x8271A81C;
+void* g_grcDevice = (void*)&lbl_8271A81C;  /* was 0x8271A81C */
 
 /* grcDevice instances — the two device pointers used by the rendering pipeline */
 // REMOVED: g_pGrcDevice_beginScene (in globals_extended.c)  /* full device for beginScene */
@@ -86,7 +137,7 @@ void* g_display_obj_ptr = NULL;
 // UI System
 // ============================================================================
 
-void* g_uiManager = (void*)0x8271A358;
+void* g_uiManager = (void*)&lbl_8271A358;  /* was 0x8271A358 */
 void* g_uiManagerPtr = NULL;
 void* g_pHudOverlay = NULL;
 void* g_pStencilMgrObj = NULL;
@@ -99,8 +150,8 @@ uint8_t g_uiInputFlag = 0;
 // Game State
 // ============================================================================
 
-void* g_gameObject = (void*)0x82606604;
 void* g_game_obj_ptr = NULL;
+void* g_gameObject = (void*)&g_game_obj_ptr;  /* was 0x82606604 — resolved to g_game_obj_ptr */
 void* g_loop_obj_ptr = NULL;
 void* g_pGameLoop = NULL;
 void* g_pRootGameObj = NULL;
@@ -539,8 +590,9 @@ uint32_t g_character_type_id      = 0;     // @ 0x825C2BC0
 uint32_t g_character_type_id_2    = 0;     // @ 0x825C803C
 uint32_t g_character_type_id_3    = 0;     // @ 0x825C8038
 
-// Network: cmRefreshable vtable
-const void* g_cmRefreshableCtorVtable = NULL; // @ 0x820533CC
+// Network: cmRefreshableCtor vtable (RTTI, 20 vtables / virtual base MI)
+/* TODO: retype as `const cmRefreshableCtor_vtbl*` */
+const uint8_t* g_cmRefreshableCtorVtable = lbl_820533CC;  // @ 0x820533CC
 
 // Player contact zone constants
 const float g_contactZoneMinA = 0.0f;
@@ -587,14 +639,16 @@ const float g_floatNegOne    = 0.0f;       // @ 0x8202D110
 const float g_floatOne       = 0.0f;       // @ 0x8202D110
 const float g_floatZero      = 0.0f;       // @ 0x8202D110
 
-// FloatAverager vtables (network classes)
-void* g_FloatAverager_vtable_1 = NULL;     // @ 0x8203A910
-void* g_FloatAverager_vtable_2 = NULL;     // @ 0x8203A91C
-void* g_FloatAverager_vtable_3 = NULL;     // @ 0x82070D78
-void* g_FloatAverager_vtable_4 = NULL;     // @ 0x8207166C
+// FloatAverager vtables (network classes) — RTTI: FloatAverager (4 vtables, MI)
+/* TODO: retype as `const FloatAverager_vtbl*` once header exists */
+const uint8_t* g_FloatAverager_vtable_1 = lbl_8203A910;   // @ 0x8203A910
+const uint8_t* g_FloatAverager_vtable_2 = lbl_8203A91C;   // @ 0x8203A91C
+const uint8_t* g_FloatAverager_vtable_3 = lbl_82070D78;   // @ 0x82070D78
+const uint8_t* g_FloatAverager_vtable_4 = lbl_8207166C;   // @ 0x8207166C
 
-// Physics: fragDrawable vtable
-void* g_fragDrawableVtable = NULL;         // @ 0x82033094
+// Physics: rage::fragDrawable vtable
+/* TODO: retype as `const rage::fragDrawable_vtbl*` */
+const uint8_t* g_fragDrawableVtable = lbl_82033094;       // @ 0x82033094
 
 // Frame sync object
 void* g_frameSyncObj = NULL;               // @ 0x825F64F4

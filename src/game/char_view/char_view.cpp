@@ -15,7 +15,6 @@ extern "C" {
     void rage_free(void* ptr);
     void* rage_Alloc(uint32_t size);
     void rage_AssertMainThread();
-    void rage::ReleaseSingleton(void* obj);
     void audControl_Destructor(void* obj);  // @ 0x82161568
     void atArray_Destructor(void* obj);
     void atArray_Clear(void* obj);
@@ -113,7 +112,7 @@ void pongAttractState::OnEvent(int32_t eventType) {
         // Event 6: Create UI state
         // Set up global UI state array
         g_global_ui_state[13] = 2;  // State type
-        g_global_ui_state[14] = (uint32_t)m_pScreenObject;  // Screen object pointer
+        g_global_ui_state[14] = (uint32_t)(uintptr_t)m_pScreenObject;  // Screen object pointer
         
         // Initialize UI context
         FadePageGroup(g_ui_context, 0.0f, 1, 0, 0, 0);

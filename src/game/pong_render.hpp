@@ -185,14 +185,15 @@ struct pongScrnTransSwipe {
     float    m_duration;       // +0x04  transition duration
     float    m_elapsedTime;    // +0x08  current elapsed time
     bool     m_finished;       // +0x0C  true when transition complete
-    uint8_t  _pad0D[15];       // padding
-    uint32_t field_0x1C;       // +0x1C  (unknown purpose)
-    uint8_t  _pad20[28];       // padding to +0x30
+    uint8_t  _pad0D[3];        // padding
+    uint32_t m_callbackSlot;   // +0x10  passed to sysCallback_Invoke in Begin()
+    uint8_t  _pad14[8];        // padding
+    uint32_t m_callbackEnable; // +0x1C  if non-zero, Begin() fires callback at +0x10
+    uint8_t  _pad20[16];       // padding to +0x30
     float    m_progress;       // +0x30  normalized progress (0.0 to 1.0)
     uint32_t m_patternIndex;   // +0x34  current swipe pattern (0-16)
-    uint8_t  _pad38[16];       // padding to +0x38
-    float    field_0x38;       // +0x38  interpolation value
     uint8_t  m_randomize;      // +0x38  if true, pick random pattern
+    uint8_t  _pad39[3];        // padding
 
     // ── virtual methods ──
     virtual void Begin();      // [2] @ 0x82378ab0 - Initialize/reset transition
@@ -222,110 +223,89 @@ struct pongScrnTransFreezeAndFadeOut {
 struct pongShadowMap {
     void**      vtable;           // +0x00
 
-    // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:3 W:3
-    uint32_t     field_0x0008;  // +0x0008  R:13 W:2
-    uint32_t     field_0x000c;  // +0x000c  R:1 W:4
-    uint32_t     field_0x0010;  // +0x0010  R:1 W:0
-    uint32_t     field_0x0014;  // +0x0014  R:3 W:1
-    uint32_t     field_0x0018;  // +0x0018  R:1 W:0
-    uint32_t     field_0x001c;  // +0x001c  R:1 W:1
-    uint32_t     field_0x0020;  // +0x0020  R:1 W:0
-    uint32_t     field_0x0024;  // +0x0024  R:1 W:0
-    uint32_t     field_0x0028;  // +0x0028  R:3 W:0
-    uint32_t     field_0x002c;  // +0x002c  R:2 W:0
-    uint32_t     field_0x0030;  // +0x0030  R:4 W:1
-    uint32_t     field_0x0034;  // +0x0034  R:3 W:1
-    uint32_t     field_0x0038;  // +0x0038  R:1 W:0
-    uint32_t     field_0x003c;  // +0x003c  R:2 W:0
-    uint32_t     field_0x0040;  // +0x0040  R:3 W:0
-    uint32_t     field_0x0044;  // +0x0044  R:2 W:0
-    uint32_t     field_0x0048;  // +0x0048  R:3 W:0
-    uint8_t     _pad0x0080[52];
-    uint32_t     field_0x0080;  // +0x0080  R:0 W:1
-    uint32_t     field_0x0084;  // +0x0084  R:0 W:1
-    uint32_t     field_0x0088;  // +0x0088  R:0 W:1
-    uint32_t     field_0x008c;  // +0x008c  R:0 W:1
-    uint32_t     field_0x0090;  // +0x0090  R:0 W:1
-    uint32_t     field_0x0094;  // +0x0094  R:0 W:1
-    uint32_t     field_0x0098;  // +0x0098  R:0 W:1
-    uint32_t     field_0x009c;  // +0x009c  R:0 W:1
-    uint32_t     field_0x00a0;  // +0x00a0  R:1 W:1
-    uint32_t     field_0x00a4;  // +0x00a4  R:0 W:1
-    uint32_t     field_0x00a8;  // +0x00a8  R:0 W:1
-    uint32_t     field_0x00ac;  // +0x00ac  R:0 W:1
-    uint32_t     field_0x00b0;  // +0x00b0  R:0 W:1
-    uint32_t     field_0x00b4;  // +0x00b4  R:0 W:1
-    uint32_t     field_0x00b8;  // +0x00b8  R:0 W:1
-    uint32_t     field_0x00bc;  // +0x00bc  R:0 W:1
-    uint32_t     field_0x00c0;  // +0x00c0  R:0 W:1
-    uint32_t     field_0x00c4;  // +0x00c4  R:0 W:1
-    uint32_t     field_0x00c8;  // +0x00c8  R:0 W:1
-    uint32_t     field_0x00cc;  // +0x00cc  R:0 W:1
-    uint32_t     field_0x00d0;  // +0x00d0  R:0 W:1
-    uint32_t     field_0x00d4;  // +0x00d4  R:1 W:1
-    uint32_t     field_0x00d8;  // +0x00d8  R:0 W:1
-    uint32_t     field_0x00dc;  // +0x00dc  R:1 W:1
-    uint32_t     field_0x00e0;  // +0x00e0  R:1 W:1
-    uint32_t     field_0x00e4;  // +0x00e4  R:1 W:1
-    uint32_t     field_0x00e8;  // +0x00e8  R:3 W:1
-    uint32_t     field_0x00ec;  // +0x00ec  R:0 W:1
-    uint32_t     field_0x00f0;  // +0x00f0  R:0 W:1
-    uint32_t     field_0x00f4;  // +0x00f4  R:0 W:1
-    uint32_t     field_0x00f8;  // +0x00f8  R:0 W:1
-    uint32_t     field_0x00fc;  // +0x00fc  R:0 W:1
-    uint32_t     field_0x0100;  // +0x0100  R:1 W:0
-    uint8_t     _pad0x0110[12];
-    uint32_t     field_0x0110;  // +0x0110  R:0 W:1
-    uint32_t     field_0x0114;  // +0x0114  R:2 W:1
-    uint8_t      field_0x0118;  // +0x0118  R:0 W:1
-    uint8_t      field_0x0119;  // +0x0119  R:0 W:1
-    uint8_t      field_0x011a;  // +0x011a  R:0 W:1
-    uint32_t     field_0x0120;  // +0x0120  R:0 W:1
-    uint32_t     field_0x0124;  // +0x0124  R:0 W:1
-    uint32_t     field_0x0128;  // +0x0128  R:0 W:1
-    uint32_t     field_0x012c;  // +0x012c  R:0 W:1
-    uint32_t     field_0x0130;  // +0x0130  R:0 W:1
-    uint32_t     field_0x0134;  // +0x0134  R:0 W:1
-    uint32_t     field_0x0138;  // +0x0138  R:0 W:1
-    uint32_t     field_0x013c;  // +0x013c  R:0 W:1
-    uint32_t     field_0x0140;  // +0x0140  R:1 W:1
-    uint32_t     field_0x0144;  // +0x0144  R:1 W:1
-    uint8_t     _pad0x01b4[108];
-    uint32_t     field_0x01b4;  // +0x01b4  R:2 W:0
-    uint32_t     field_0x01b8;  // +0x01b8  R:1 W:0
-    uint8_t     _pad0x02d0[276];
-    uint32_t     field_0x02d0;  // +0x02d0  R:1 W:0
-    uint32_t     field_0x02d4;  // +0x02d4  R:1 W:0
-    uint8_t     _pad0x0333[91];
-    uint8_t      field_0x0333;  // +0x0333  R:1 W:0
-    uint8_t     _pad0x03b0[121];
-    uint8_t      field_0x03b0;  // +0x03b0  R:0 W:1
-    uint8_t     _pad0x03d0[28];
-    uint32_t     field_0x03d0;  // +0x03d0  R:4 W:1
-    uint32_t     field_0x03d4;  // +0x03d4  R:2 W:1
-    uint32_t     field_0x03d8;  // +0x03d8  R:0 W:1
-    uint8_t     _pad0x03f0[20];
-    uint32_t     field_0x03f0;  // +0x03f0  R:2 W:0
-    uint32_t     field_0x03f4;  // +0x03f4  R:1 W:0
-    uint32_t     field_0x03fc;  // +0x03fc  R:1 W:0
-    uint32_t     field_0x0404;  // +0x0404  R:2 W:0
-    uint32_t     field_0x0408;  // +0x0408  R:1 W:0
-    uint32_t     field_0x040c;  // +0x040c  R:1 W:0
-    uint32_t     field_0x0410;  // +0x0410  R:2 W:0
-    uint32_t     field_0x0414;  // +0x0414  R:1 W:0
-    uint32_t     field_0x041c;  // +0x041c  R:2 W:1
-    uint32_t     field_0x0420;  // +0x0420  R:1 W:1
-    uint32_t     field_0x0424;  // +0x0424  R:1 W:1
-    uint32_t     field_0x042c;  // +0x042c  R:1 W:1
-    uint32_t     field_0x0430;  // +0x0430  R:1 W:1
-    uint32_t     field_0x0434;  // +0x0434  R:0 W:1
-    uint32_t     field_0x0438;  // +0x0438  R:0 W:1
-    uint8_t      field_0x043c;  // +0x043c  R:1 W:0
-    uint32_t     field_0x0444;  // +0x0444  R:1 W:1
-    uint32_t     field_0x0448;  // +0x0448  R:4 W:0
-    uint8_t     _pad0x0460[20];
-    uint32_t     field_0x0460;  // +0x0460  R:0 W:1
+    // ── header / config block (frequently accessed) @ +0x04..+0x48 ──
+    uint32_t     m_flags;              // +0x04  R:3 W:3 — state/flags
+    uint32_t     m_state;              // +0x08  R:13 W:2 — hottest field (drives logic)
+    uint32_t     m_counter;            // +0x0c  R:1 W:4
+    uint32_t     m_activeLight;        // +0x10  R:1 W:0
+    uint32_t     m_lightMask;          // +0x14  R:3 W:1
+    uint32_t     m_param18;            // +0x18  R:1 W:0
+    uint32_t     m_param1c;            // +0x1c  R:1 W:1
+    uint32_t     m_param20;            // +0x20  R:1 W:0
+    uint32_t     m_param24;            // +0x24  R:1 W:0
+    uint32_t     m_param28;            // +0x28  R:3 W:0
+    uint32_t     m_param2c;            // +0x2c  R:2 W:0
+    uint32_t     m_param30;            // +0x30  R:4 W:1
+    uint32_t     m_param34;            // +0x34  R:3 W:1
+    uint32_t     m_param38;            // +0x38  R:1 W:0
+    uint32_t     m_param3c;            // +0x3c  R:2 W:0
+    uint32_t     m_param40;            // +0x40  R:3 W:0
+    uint32_t     m_param44;            // +0x44  R:2 W:0
+    uint32_t     m_param48;            // +0x48  R:3 W:0
+    uint8_t      _pad4c[0x34];         // padding to +0x80
+
+    // ── uniform / matrix buffer @ +0x80..+0x103 (36 words, init'd in Init) ──
+    // Pattern: mostly W:1 writes, suggesting one-shot initialization of a
+    // contiguous float/matrix block (likely shadow projection matrices).
+    uint32_t     m_matrixBlock[33];    // +0x80..+0x100 — written once at init
+    uint8_t      _pad104[0x0c];        // padding to +0x110
+
+    // ── per-light config block @ +0x110..+0x147 ──
+    uint32_t     m_cfg_110;            // +0x110  R:0 W:1
+    uint32_t     m_cfg_114;            // +0x114  R:2 W:1
+    uint8_t      m_flag_118;           // +0x118  R:0 W:1
+    uint8_t      m_flag_119;           // +0x119  R:0 W:1
+    uint8_t      m_flag_11a;           // +0x11a  R:0 W:1
+    uint8_t      _pad11b[5];           // padding to +0x120
+    uint32_t     m_cfg_120[9];         // +0x120..+0x140 — nine config words
+    uint32_t     m_cfg_144;            // +0x144  R:1 W:1
+    uint8_t      _pad148[0x6c];        // padding to +0x1b4
+
+    // ── secondary read-mostly block @ +0x1b4..+0x1bb ──
+    uint32_t     m_read_1b4;           // +0x1b4  R:2 W:0
+    uint32_t     m_read_1b8;           // +0x1b8  R:1 W:0
+    uint8_t      _pad1bc[0x114];       // padding to +0x2d0
+
+    uint32_t     m_read_2d0;           // +0x2d0  R:1 W:0
+    uint32_t     m_read_2d4;           // +0x2d4  R:1 W:0
+    uint8_t      _pad2d8[0x5b];        // padding to +0x333
+
+    uint8_t      m_flag_333;           // +0x333  R:1 W:0
+    uint8_t      _pad334[0x7c];        // padding to +0x3b0
+
+    uint8_t      m_flag_3b0;           // +0x3b0  R:0 W:1
+    uint8_t      _pad3b1[0x1f];        // padding to +0x3d0
+
+    // ── draw submission block @ +0x3d0..+0x460 ──
+    uint32_t     m_draw_3d0;           // +0x3d0  R:4 W:1
+    uint32_t     m_draw_3d4;           // +0x3d4  R:2 W:1
+    uint32_t     m_draw_3d8;           // +0x3d8  R:0 W:1
+    uint8_t      _pad3dc[0x14];        // padding to +0x3f0
+    uint32_t     m_draw_3f0;           // +0x3f0  R:2 W:0
+    uint32_t     m_draw_3f4;           // +0x3f4  R:1 W:0
+    uint32_t     _pad3f8;              // padding
+    uint32_t     m_draw_3fc;           // +0x3fc  R:1 W:0
+    uint32_t     _pad400;              // padding
+    uint32_t     m_draw_404;           // +0x404  R:2 W:0
+    uint32_t     m_draw_408;           // +0x408  R:1 W:0
+    uint32_t     m_draw_40c;           // +0x40c  R:1 W:0
+    uint32_t     m_draw_410;           // +0x410  R:2 W:0
+    uint32_t     m_draw_414;           // +0x414  R:1 W:0
+    uint32_t     _pad418;              // padding
+    uint32_t     m_draw_41c;           // +0x41c  R:2 W:1
+    uint32_t     m_draw_420;           // +0x420  R:1 W:1
+    uint32_t     m_draw_424;           // +0x424  R:1 W:1
+    uint32_t     _pad428;              // padding
+    uint32_t     m_draw_42c;           // +0x42c  R:1 W:1
+    uint32_t     m_draw_430;           // +0x430  R:1 W:1
+    uint32_t     m_draw_434;           // +0x434  R:0 W:1
+    uint32_t     m_draw_438;           // +0x438  R:0 W:1
+    uint8_t      m_flag_43c;           // +0x43c  R:1 W:0
+    uint8_t      _pad43d[7];           // padding to +0x444
+    uint32_t     m_draw_444;           // +0x444  R:1 W:1
+    uint32_t     m_draw_448;           // +0x448  R:4 W:0 — frequently read
+    uint8_t      _pad44c[0x14];        // padding to +0x460
+    uint32_t     m_tail_460;           // +0x460  R:0 W:1
 
     // ── virtual methods ──
     virtual ~pongShadowMap();                  // [0] @ 0x82144660

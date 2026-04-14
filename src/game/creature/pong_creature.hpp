@@ -45,6 +45,7 @@ struct xmlNodeStructEntryPose {
 // ── LocomotionState  [vtable @ 0x8202E154] ──────────────────────────
 struct LocomotionState {
     void**      vtable;           // +0x00
+    void*       field_0x0004;     // +0x04  linked list head pointer
 
     // ── virtual methods ──
     virtual ~LocomotionState();                  // [0] @ 0x820df648
@@ -216,6 +217,10 @@ struct LocomotionStateAnim {
 // Confirmed methods: Load
 struct LocomotionStateMf {
     void**      vtable;           // +0x00
+    uint32_t    field_0x0004;     // +0x04
+    char*       field_0x0008;     // +0x08  end pointer (EraseRange)
+    uint8_t     _pad_mf_0c[32];
+    float       field_0x0028;     // +0x28  scale factor (ComputeWeightedSum)
 
     // ── virtual methods ──
     virtual ~LocomotionStateMf();                  // [0] @ 0x820e1310
@@ -720,6 +725,12 @@ struct pongAnimationInfo {
 // Confirmed methods: UpdateBody, UpdateFace
 struct pongBlendLookAtDriver {
     void**      vtable;           // +0x00
+    uint32_t    field_0x0004;     // +0x04
+    uint32_t    field_0x0008;     // +0x08
+    uint32_t    field_0x000c;     // +0x0C
+    float       field_0x0010;     // +0x10  blend weight
+    uint8_t     _pad_blad_14[208];
+    float       field_0x00e0;     // +0xE0  current look-at angle
 
     // ── virtual methods ──
     virtual ~pongBlendLookAtDriver();                  // [0] @ 0x820d0740

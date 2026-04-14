@@ -216,58 +216,31 @@ extern "C" void* rage_alloc(uint32_t size);
 void gdTier::PostLoadChildren() {
     extern uint32_t g_gdTierMember_typeId;  // @ 0x825C5F70
 
-    // Pass 1: count matching children
+    // Pass 1: count matching children (virtual IsType / GetTypeName).
     uint32_t matchCount = 0;
-    void* pChild = *(void**)((char*)this + 12);  // m_pFirstChild
-
-    while (pChild) {
-        // Call IsType (vtable slot 20) on child
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)pChild;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-
-        if (isType(pChild, g_gdTierMember_typeId)) {
-            matchCount++;
+    for (xmlNodeStruct* pChild = m_pFirstChild; pChild; pChild = pChild->m_pNextSibling) {
+        if (pChild->IsType(g_gdTierMember_typeId)) {
+            ++matchCount;
         } else {
-            // Log unexpected child type
-            typedef const char* (*GetNameFunc)(void*);
-            GetNameFunc getName = (GetNameFunc)vtable[19];
-            rage_DebugLog(g_str_gdTier_unknownNodeType, getName(pChild));
-        }
-
-        pChild = *(void**)((char*)pChild + 8);  // m_pNextSibling
-    }
-
-    // Allocate array if not already allocated
-    uint16_t* pArrayMeta = (uint16_t*)((char*)this + 20);
-    if (pArrayMeta[3] == 0) {  // +26: allocated capacity
-        pArrayMeta[3] = (uint16_t)matchCount;
-        if (matchCount > 0) {
-            *(void**)((char*)this + 20) = rage_alloc(matchCount * 4);
-        } else {
-            *(void**)((char*)this + 20) = nullptr;
+            rage_DebugLog(g_str_gdTier_unknownNodeType, pChild->GetTypeName());
         }
     }
 
-    // Store count at +24
-    pArrayMeta[2] = (uint16_t)matchCount;
+    // Allocate member array once (capacity stored in m_memberCap).
+    if (m_memberCap == 0) {
+        m_memberCap = (uint16_t)matchCount;
+        m_pMembers  = (matchCount > 0)
+            ? (gdTierMember**)rage_alloc(matchCount * sizeof(gdTierMember*))
+            : nullptr;
+    }
+    m_numMembers = (uint16_t)matchCount;
 
-    // Pass 2: populate array
-    pChild = *(void**)((char*)this + 12);
-    uint32_t writeOffset = 0;
-
-    while (pChild) {
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)pChild;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-
-        if (isType(pChild, g_gdTierMember_typeId)) {
-            void** array = *(void***)((char*)this + 20);
-            array[writeOffset / 4] = pChild;
-            writeOffset += 4;
+    // Pass 2: populate member array in source order.
+    uint32_t writeIdx = 0;
+    for (xmlNodeStruct* pChild = m_pFirstChild; pChild; pChild = pChild->m_pNextSibling) {
+        if (pChild->IsType(g_gdTierMember_typeId)) {
+            m_pMembers[writeIdx++] = static_cast<gdTierMember*>(pChild);
         }
-
-        pChild = *(void**)((char*)pChild + 8);
     }
 }
 
@@ -319,53 +292,35 @@ void gdTierMember::PostLoadProperties() {
 void gdLadder::PostLoadChildren() {
     extern uint32_t g_gdTier_typeId;  // @ 0x825C5F80 (offset 24448 from SDA)
 
-    // Allocate array of 4 tier slots if not done
-    uint16_t* pArrayMeta = (uint16_t*)((char*)this + 16);
-    if (pArrayMeta[3] == 0) {
-        pArrayMeta[3] = 4;
-        *(void**)((char*)this + 16) = rage_alloc(16);  // 4 * 4 bytes
+    // Allocate a fixed 4-slot tier array on first call.
+    constexpr uint16_t kTierSlots = 4;
+    if (m_tierCap == 0) {
+        m_tierCap = kTierSlots;
+        m_pTiers  = (gdTier**)rage_alloc(kTierSlots * sizeof(gdTier*));
     }
-    pArrayMeta[2] = 4;
-
-    // Zero all 4 slots
-    void** array = *(void***)((char*)this + 16);
-    for (int i = 0; i < 4; i++) {
-        array[i] = nullptr;
+    m_numTiers = kTierSlots;
+    for (uint16_t i = 0; i < kTierSlots; ++i) {
+        m_pTiers[i] = nullptr;
     }
 
-    // Walk children and assign to tier slots
-    void* pChild = *(void**)((char*)this + 12);
-
-    while (pChild) {
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)pChild;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-
-        if (isType(pChild, g_gdTier_typeId)) {
-            // Get tier index from child's field at +16
-            uint32_t tierIdx = *(uint32_t*)((char*)pChild + 16);
-            void** tierArray = *(void***)((char*)this + 16);
-
-            if (tierArray[tierIdx] != nullptr) {
-                // Duplicate tier entry
+    // Walk children; place each gdTier into the slot named by its tier level (+0x10).
+    for (xmlNodeStruct* pChild = m_pFirstChild; pChild; pChild = pChild->m_pNextSibling) {
+        if (pChild->IsType(g_gdTier_typeId)) {
+            gdTier* pTier = static_cast<gdTier*>(pChild);
+            uint32_t tierIdx = pTier->m_tierLevel;  // union view of +0x10
+            if (m_pTiers[tierIdx] != nullptr) {
                 rage_DebugLog(g_str_gdLadder_duplicateLevel);
             } else {
-                tierArray[tierIdx] = pChild;
+                m_pTiers[tierIdx] = pTier;
             }
         } else {
-            typedef const char* (*GetNameFunc)(void*);
-            GetNameFunc getName = (GetNameFunc)vtable[19];
-            rage_DebugLog(g_str_gdLadder_unknownNodeType, getName(pChild));
+            rage_DebugLog(g_str_gdLadder_unknownNodeType, pChild->GetTypeName());
         }
-
-        pChild = *(void**)((char*)pChild + 8);
     }
 
-    // Validate all slots are filled
-    uint16_t count = *(uint16_t*)((char*)this + 20);
-    for (int i = 0; i < count; i++) {
-        void** tierArray = *(void***)((char*)this + 16);
-        if (tierArray[i] == nullptr) {
+    // Validate every slot got populated.
+    for (uint16_t i = 0; i < m_numTiers; ++i) {
+        if (m_pTiers[i] == nullptr) {
             rage_DebugLog(g_str_gdLadder_missingLadder, i);
         }
     }
@@ -390,74 +345,46 @@ void gdRivalry::PostLoadChildren() {
     extern uint32_t g_gdRivalryData_typeId;  // @ 0x825C5F68
     extern void* g_gameDataMgr;              // @ 0x8271A2E4
 
-    // Get character count from game data manager
-    void* dataMgr = *(void**)&g_gameDataMgr;
-    uint32_t charCount = *(uint32_t*)((char*)dataMgr + 28);
+    // Game-data manager view: +0x18 m_pCharArray, +0x1C m_numCharacters.
+    auto* dataMgr = reinterpret_cast<gdGameDataMgrView*>(g_gameDataMgr);
+    const uint32_t charCount = dataMgr->m_numCharacters;
 
-    // Allocate array if not done
-    uint16_t* pArrayMeta = (uint16_t*)((char*)this + 16);
-    if (pArrayMeta[3] == 0) {
-        pArrayMeta[3] = (uint16_t)charCount;
-        if (charCount > 0) {
-            *(void**)((char*)this + 16) = rage_alloc(charCount * 4);
-        } else {
-            *(void**)((char*)this + 16) = nullptr;
-        }
+    // Allocate per-character entry array on first call.
+    if (m_capacity == 0) {
+        m_capacity = (uint16_t)charCount;
+        m_pEntries = (charCount > 0)
+            ? (gdRivalryData**)rage_alloc(charCount * sizeof(gdRivalryData*))
+            : nullptr;
+    }
+    m_numEntries = (uint16_t)charCount;
+    for (uint32_t i = 0; i < charCount; ++i) {
+        m_pEntries[i] = nullptr;
     }
 
-    // Set count and zero all entries
-    pArrayMeta[2] = (uint16_t)charCount;
-    if (charCount > 0) {
-        void** array = *(void***)((char*)this + 16);
-        for (uint32_t i = 0; i < charCount; i++) {
-            array[i] = nullptr;
-        }
-    }
-
-    // Walk children and assign by character index
-    void* pChild = *(void**)((char*)this + 12);
-
-    while (pChild) {
-        typedef bool (*IsTypeFunc)(void*, uint32_t);
-        void** vtable = *(void***)pChild;
-        IsTypeFunc isType = (IsTypeFunc)vtable[20];
-
-        if (isType(pChild, g_gdRivalryData_typeId)) {
-            // Resolve character name to index
-            const char* charName = *(const char**)((char*)pChild + 16);
-            int32_t charIdx = FindCharacterByName(dataMgr, charName);
-
+    // Walk children and drop each gdRivalryData into its character's slot.
+    for (xmlNodeStruct* pChild = m_pFirstChild; pChild; pChild = pChild->m_pNextSibling) {
+        if (pChild->IsType(g_gdRivalryData_typeId)) {
+            auto* pRivalry = static_cast<gdRivalryData*>(pChild);
+            const int32_t charIdx = FindCharacterByName(static_cast<void*>(dataMgr),
+                                                        pRivalry->m_characterName);
             if (charIdx < 0) {
                 rage_DebugLog(g_str_gdRivalry_unknownChar);
+            } else if (m_pEntries[charIdx] != nullptr) {
+                rage_DebugLog(g_str_gdRivalry_duplicateChar, pRivalry->m_characterName);
             } else {
-                void** array = *(void***)((char*)this + 16);
-                if (array[charIdx] != nullptr) {
-                    const char* name = *(const char**)((char*)pChild + 16);
-                    rage_DebugLog(g_str_gdRivalry_duplicateChar, name);
-                } else {
-                    array[charIdx] = pChild;
-                }
+                m_pEntries[charIdx] = pRivalry;
             }
         } else {
-            typedef const char* (*GetNameFunc)(void*);
-            GetNameFunc getName = (GetNameFunc)vtable[19];
-            rage_DebugLog(g_str_gdRivalry_unknownNodeType, getName(pChild));
+            rage_DebugLog(g_str_gdRivalry_unknownNodeType, pChild->GetTypeName());
         }
-
-        pChild = *(void**)((char*)pChild + 8);
     }
 
-    // Validate all slots are filled
-    uint16_t count = *(uint16_t*)((char*)this + 20);
-    for (int i = 0; i < count; i++) {
-        void** array = *(void***)((char*)this + 16);
-        if (array[i] == nullptr) {
-            // Get character name from game data for error message
-            void* charArray = *(void**)((char*)dataMgr + 24);
-            void* charEntry = ((void**)charArray)[i];
-            const char* charName = *(const char**)((char*)charEntry + 44);
-            const char* entryName = *(const char**)((char*)charEntry + 16);
-            rage_DebugLog(g_str_gdRivalry_missingRival, entryName);
+    // Every character must have a rivalry entry — report the missing ones.
+    for (uint16_t i = 0; i < m_numEntries; ++i) {
+        if (m_pEntries[i] == nullptr) {
+            auto** charArray = reinterpret_cast<gdCharDataEntry**>(dataMgr->m_pCharArray);
+            gdCharDataEntry* entry = charArray[i];
+            rage_DebugLog(g_str_gdRivalry_missingRival, entry->m_entryName);
         }
     }
 }
@@ -493,9 +420,9 @@ const char* gdRivalryData::GetTypeName() const {
  */
 void gdRivalryData::RegisterFields() {
     RegisterSerializationField(this, "CharacterName",
-                               (char*)this + 16, g_stringFieldType, 0);
+                               &m_characterName, g_stringFieldType, 0);
     RegisterSerializationField(this, "RivalName",
-                               (char*)this + 20, g_stringFieldType, 0);
+                               &m_rivalName, g_stringFieldType, 0);
 }
 
 /**
@@ -512,23 +439,16 @@ void gdRivalryData::RegisterFields() {
 void gdRivalryData::PostLoadProperties() {
     xmlNodeStruct_Initialize(this);
 
-    // Validate CharacterName at +16
-    const char* charName = *(const char**)((char*)this + 16);
-    if (charName == nullptr || charName[0] == '\0') {
+    if (m_characterName == nullptr || m_characterName[0] == '\0') {
         rage_DebugLog(g_str_gdRivalryData_noCharName);
     }
-
-    // Validate RivalName at +20
-    const char* rivalName = *(const char**)((char*)this + 20);
-    if (rivalName == nullptr || rivalName[0] == '\0') {
+    if (m_rivalName == nullptr || m_rivalName[0] == '\0') {
         rage_DebugLog(g_str_gdRivalryData_noRivalName);
     }
 
-    // Resolve rival character index from name
-    int32_t rivalIndex = FindCharacterByName(g_gameDataMgr, rivalName);
-    *(int32_t*)((char*)this + 24) = rivalIndex;
-
-    if (rivalIndex < 0) {
+    // Resolve rival character name into the cached index field.
+    m_rivalCharIndex = FindCharacterByName(g_gameDataMgr, m_rivalName);
+    if (m_rivalCharIndex < 0) {
         rage_DebugLog(g_str_gdRivalryData_unknownRival);
     }
 }
@@ -728,22 +648,28 @@ gdPropData* xe_13E8_1(void) {
     );
     
     if (propData != NULL) {
-        // Initialize the gdPropData structure
+        // Initialize the gdPropData structure (32 bytes, vtable + 7 payload words).
         propData->vtable = (void**)0x8204A364;  // gdPropData vtable
-        
-        // Zero-initialize data fields
-        uint32_t* fields = (uint32_t*)((char*)propData + 4);
-        fields[0] = 0;  // +4
-        fields[1] = 0;  // +8
-        fields[2] = 0;  // +12
-        fields[3] = 0;  // +16
-        fields[4] = 0;  // +20
-        fields[5] = 0;  // +24
-        
-        // Set last field to -1 (invalid index sentinel)
-        ((int32_t*)fields)[6] = -1;  // +28
+
+        // Zero the 6 payload words after the vtable, then stamp an "invalid index"
+        // sentinel into the last word. The inline struct view keeps the code
+        // readable without bloating gd_data.hpp's public surface.
+        struct gdPropDataInit {
+            void**   vtable;     // +0x00
+            uint32_t w04;        // +0x04
+            uint32_t w08;        // +0x08
+            uint32_t w0C;        // +0x0C
+            uint32_t w10;        // +0x10
+            uint32_t w14;        // +0x14
+            uint32_t w18;        // +0x18
+            int32_t  w1C;        // +0x1C — invalid-index sentinel
+        };
+        auto* init = reinterpret_cast<gdPropDataInit*>(propData);
+        init->w04 = init->w08 = init->w0C = 0;
+        init->w10 = init->w14 = init->w18 = 0;
+        init->w1C = -1;
     }
-    
+
     return propData;
 }
 

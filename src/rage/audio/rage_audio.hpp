@@ -20,16 +20,21 @@ struct audBank {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:1 W:1
-    uint32_t     field_0x0008;  // +0x0008  R:3 W:3
-    uint8_t      field_0x000c;  // +0x000c  R:0 W:1
-    uint8_t      field_0x000d;  // +0x000d  R:0 W:1
-    uint32_t     field_0x0010;  // +0x0010  R:7 W:3
-    uint32_t     field_0x0018;  // +0x0018  R:1 W:0
-    uint32_t     field_0x0020;  // +0x0020  R:5 W:0
-    uint16_t     field_0x0024;  // +0x0024  R:4 W:0
-    uint32_t     field_0x0028;  // +0x0028  R:3 W:0
-    uint16_t     field_0x002c;  // +0x002c  R:5 W:0
+    uint32_t     m_nameHash;         // +0x04  R:1 W:1 — bank identifier/hash
+    uint32_t     m_state;            // +0x08  R:3 W:3 — load state
+    uint8_t      m_flagA;            // +0x0c  R:0 W:1
+    uint8_t      m_flagB;            // +0x0d  R:0 W:1
+    uint8_t      _pad0e[2];
+    uint32_t     m_pBankData;        // +0x10  R:7 W:3 — hot pointer (bank header / data)
+    uint32_t     _pad14;
+    uint32_t     m_loadParam;        // +0x18  R:1 W:0
+    uint32_t     _pad1c;
+    uint32_t     m_pEntryTable;      // +0x20  R:5 W:0 — entry table pointer
+    uint16_t     m_numEntries;       // +0x24  R:4 W:0 — entry count
+    uint16_t     _pad26;
+    uint32_t     m_pStringTable;     // +0x28  R:3 W:0
+    uint16_t     m_stringCount;      // +0x2c  R:5 W:0
+    uint16_t     _pad2e;
 
     // ── virtual methods ──
     virtual ~audBank();                  // [0] @ 0x821645f8
@@ -166,9 +171,9 @@ struct audVoiceSfx {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint32_t     field_0x0004;  // +0x0004  R:2 W:2 - likely flags or state
-    uint32_t     field_0x0008;  // +0x0008  R:4 W:2 - likely control pointer
-    void*        m_pSfxRef;      // +0x000c  R:16 W:0 - sound effect reference (heavily read)
+    uint32_t     m_state;        // +0x04  R:2 W:2 — playback state / flags
+    uint32_t     m_pControl;     // +0x08  R:4 W:2 — owning audControl pointer
+    void*        m_pSfxRef;      // +0x0c  R:16 W:0 — sound effect reference (heavily read)
 
     // ── virtual methods ──
     virtual void Stop();              // [5] @ 0x821635b8 — cmdId 16388
@@ -199,30 +204,36 @@ struct audVoiceStream {
     void**      vtable;           // +0x00
 
     // ── field access clusters ──
-    uint8_t      field_0x0001;  // +0x0001  R:0 W:2
-    uint32_t     m_flags;       // +0x0004  R:6 W:3
-    uint32_t     m_state;       // +0x0008  R:6 W:2
-    uint32_t     m_pStreamRef;  // +0x000c  R:20 W:2 — stream reference pointer (heavily read)
-    uint32_t     field_0x0010;  // +0x0010  R:1 W:2
-    uint32_t     field_0x0014;  // +0x0014  R:8 W:1
-    uint8_t     _pad0x0028[16];
-    uint32_t     field_0x0028;  // +0x0028  R:2 W:2
-    uint8_t      field_0x002d;  // +0x002d  R:1 W:0
-    uint8_t      field_0x002f;  // +0x002f  R:0 W:1
-    uint32_t     field_0x0030;  // +0x0030  R:1 W:0
-    uint32_t     field_0x0034;  // +0x0034  R:1 W:0
-    uint32_t     field_0x0038;  // +0x0038  R:2 W:0
-    uint8_t     _pad0x008c[80];
-    uint32_t     field_0x008c;  // +0x008c  R:2 W:0
-    uint8_t     _pad0x00f0[96];
-    uint32_t     field_0x00f0;  // +0x00f0  R:4 W:1
-    uint32_t     field_0x00f4;  // +0x00f4  R:4 W:1
-    uint32_t     field_0x00f8;  // +0x00f8  R:3 W:1
-    uint32_t     field_0x00fc;  // +0x00fc  R:3 W:1
-    uint32_t     field_0x0100;  // +0x0100  R:3 W:1
-    uint32_t     field_0x0104;  // +0x0104  R:4 W:1
-    uint8_t      field_0x0108;  // +0x0108  R:0 W:1
-    uint8_t      field_0x0109;  // +0x0109  R:0 W:1
+    uint8_t      _pad00;
+    uint8_t      m_priority;        // +0x01  R:0 W:2 — priority byte
+    uint8_t      _pad02[2];
+    uint32_t     m_flags;           // +0x04  R:6 W:3
+    uint32_t     m_state;           // +0x08  R:6 W:2
+    uint32_t     m_pStreamRef;      // +0x0c  R:20 W:2 — stream reference ptr (hot)
+    uint32_t     m_streamHandle;    // +0x10  R:1 W:2
+    uint32_t     m_pBankEntry;      // +0x14  R:8 W:1 — bank entry being played
+    uint8_t      _pad18[0x10];      // padding to +0x28
+    uint32_t     m_cmdResult;       // +0x28  R:2 W:2
+    uint8_t      _pad2c;
+    uint8_t      m_flag_2d;         // +0x2d  R:1 W:0
+    uint8_t      _pad2e;
+    uint8_t      m_flag_2f;         // +0x2f  R:0 W:1
+    uint32_t     m_param30;         // +0x30  R:1 W:0
+    uint32_t     m_param34;         // +0x34  R:1 W:0
+    uint32_t     m_param38;         // +0x38  R:2 W:0
+    uint8_t      _pad3c[0x50];      // padding to +0x8c
+    uint32_t     m_read_8c;         // +0x8c  R:2 W:0
+    uint8_t      _pad90[0x60];      // padding to +0xf0
+    // ── voice parameter cache @ +0xf0..+0x107 (volume/pitch/pan etc.) ──
+    uint32_t     m_volume;          // +0xf0  R:4 W:1
+    uint32_t     m_pitch;           // +0xf4  R:4 W:1
+    uint32_t     m_pan;             // +0xf8  R:3 W:1
+    uint32_t     m_reverbVol;       // +0xfc  R:3 W:1
+    uint32_t     m_effectVol;       // +0x100 R:3 W:1
+    uint32_t     m_param104;        // +0x104 R:4 W:1
+    uint8_t      m_flag_108;        // +0x108 R:0 W:1
+    uint8_t      m_flag_109;        // +0x109 R:0 W:1
+    uint8_t      _pad10a[2];
 
     // ── virtual methods ──
     virtual ~audVoiceStream();                  // [0] @ 0x82163b58

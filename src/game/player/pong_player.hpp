@@ -101,13 +101,25 @@
 // Forward declarations
 struct pcrCreature;
 struct pongTimingState;
-// pongTimingSubState: swing timing sub-state
+// pongTimingSubState: swing timing sub-state (large struct, ~342+ bytes)
 struct pongTimingSubState {
     void*       vtable;           // +0x00
-    uint8_t     _pad04[156];      // +0x04..+0x9F placeholder
-    float       m_swingProgress;  // +0xA0 (160) — used by CanAcceptSwingInput
-    uint8_t     _padA4[4];        // +0xA4
-    uint32_t    m_frameId;        // +0xA8 — frame counter / animation frame reference
+    uint8_t     _pad04[12];       // +0x04..+0x0F
+    void*       m_pBodyData;      // +0x10  body data (float at +12 = speed)
+    uint8_t     _pad14[12];       // +0x14..+0x1F
+    void*       m_pSubObject;     // +0x20 (32)  sub-object pointer (loco sub-state)
+    uint8_t     _pad24[12];       // +0x24..+0x2F
+    void*       m_pVelRecord;     // +0x30 (48)  velocity record pointer
+    uint8_t     _pad34[108];      // +0x34..+0x9F
+    float       m_swingProgress;  // +0xA0 (160) — cumulative swing progress
+    uint8_t     _padA4[4];        // +0xA4..+0xA7
+    uint32_t    m_frameId;        // +0xA8 (168) — frame counter / animation frame reference
+    uint8_t     _padAC[136];      // +0xAC..+0x133
+    uint16_t    m_locoFrameCount; // +0x134 (308) — frame count for normalised fraction
+    uint8_t     _pad136[2];       // +0x136..+0x137
+    uint8_t     m_locoFlags;      // +0x138 (312) — loco flags (bit 3=0x8, bit 2=0x4)
+    uint8_t     _pad139[27];      // +0x139..+0x153
+    int16_t     m_swingSubFrame;  // +0x154 (340) — frame ID for apex fraction computation
 };
 struct pongRecoveryState;
 struct pongAnimState;
@@ -122,57 +134,66 @@ struct vec3 {
 
 // ── Sub-struct: pongTimingState ──────────────────────────────────────────
 struct pongTimingState {
-    uint8_t     _pad0[12];
+    uint8_t     _pad0[12];       // +0x00..+0x0B
     float       m_targetX;       // +0x0C  zero-filled by CancelSwing
     float       m_targetY;       // +0x10
     float       m_targetZ;       // +0x14
-    uint8_t     _pad1[4];
-    float       m_currentTime;   // +0x1C  elapsed swing time
-    float       m_currentTime2;  // +0x20
-    float       m_peakX;         // +0x24  position component / velocity data
-    float       m_peakY;         // +0x28  confirmed: compared vs normalised fraction
-    float       m_peakTime;      // +0x2C
-    float       m_targetTime;    // +0x30  full swing duration
-    uint8_t     _pad2[24];
-    float       m_vel0;          // +0x40
-    float       m_vel1;          // +0x44
-    float       m_vel2;          // +0x48
-    uint8_t     _pad3[4];
-    float       m_vel3;          // +0x50
-    float       m_vel4;          // +0x54
-    float       m_vel5;          // +0x58
-    uint8_t     _pad4[4];
-    uint8_t     m_bComplete;     // +0x8D  cleared by CancelSwing
+    uint8_t     _pad1[4];        // +0x18..+0x1B
+    float       m_currentTime;   // +0x1C (28) elapsed swing time
+    float       m_currentTime2;  // +0x20 (32)
+    float       m_peakX;         // +0x24 (36) position component / velocity data
+    float       m_peakY;         // +0x28 (40) confirmed: compared vs normalised fraction
+    float       m_peakTime;      // +0x2C (44)
+    float       m_targetTime;    // +0x30 (48) full swing duration
+    uint8_t     _pad2[12];       // +0x34..+0x3F
+    float       m_vel0;          // +0x40 (64)
+    float       m_vel1;          // +0x44 (68)
+    float       m_vel2;          // +0x48 (72)
+    uint8_t     _pad3[4];        // +0x4C..+0x4F
+    vec3        m_swingTargetVec;// +0x50 (80) 16-byte aligned swing target vector
+    uint8_t     _pad4[45];       // +0x60..+0x8C
+    uint8_t     m_bComplete;     // +0x8D (141) cleared by CancelSwing
 };
 
 // ── Sub-struct: pongRecoveryState ────────────────────────────────────────
 struct pongRecoveryState {
-    uint8_t     _pad[44];
-    uint8_t     m_bForceBlock;   // +0x2C
-    uint8_t     _pad2[3];
-    void*       m_pFollowAction; // +0x24 ? — checked for NULL in IsSwingApexReached
-    uint8_t     _padN[64];
-    float       m_vec0[4];       // +0x50  recovery target vector slot A (copied in SetupRecoverySlots)
-    float       m_vec1[4];       // +0x60  recovery target vector slot B
-    float       m_swingPhase;    // somewhere; TODO: verify exact offset
-    float       m_recoveryTimer;    // +0xAC (172) — compared vs g_recoveryTimerThreshold in D598
+    uint8_t     _pad00[28];      // +0x00..+0x1B
+    int32_t     m_stateCode;     // +0x1C (28)  state code (0=idle)
+    int32_t     m_serverFlag;    // +0x20 (32)  server flag (1=serving)
+    void*       m_pFollowAction; // +0x24 (36)  follow-up action pointer
+    uint8_t     _pad28[4];       // +0x28..+0x2B
+    uint8_t     m_bForceBlock;   // +0x2C (44)  force-block flag
+    uint8_t     _pad2D[35];      // +0x2D..+0x4F
+    vec3        m_vec0;          // +0x50 (80)  recovery target vector slot A
+    vec3        m_vec1;          // +0x60 (96)  recovery target vector slot B
+    vec3        m_recoveryVec;   // +0x70 (112) stored recovery position vector
+    uint8_t     _pad80[44];      // +0x80..+0xAB
+    float       m_recoveryTimer; // +0xAC (172) — compared vs g_recoveryTimerThreshold
 };
 
 // ── Sub-struct: pongAnimState ────────────────────────────────────────────
 struct pongAnimState {
     void*       vtable;          // +0x00
     void*       m_pFrameArray;   // +0x04  frame-data array pointer
-    float       _pad1[22];
-    float       m_animProgress;  // +0x60  (96 bytes from base)
-    uint8_t     _pad2[312];
-    float       m_swingPhase;    // +0x19C (412 bytes) — confirmed from D908, 73E8
-    uint32_t    m_flags;         // bit 0 = IsSwingPhaseBlocked secondary
-    float       m_animPhase;     // compared vs g_swingPhaseThreshold
+    uint8_t     _pad08[8];       // +0x08..+0x0F
+    void*       m_pAnimSubState; // +0x10 (16)  anim blender sub-state (crAnimBlenderState)
+    uint8_t     _pad14[76];      // +0x14..+0x5F
+    float       m_animProgress;  // +0x60 (96)  current frame index (cast to int for array lookup)
+    uint8_t     _pad64[36];      // +0x64..+0x87
+    uint32_t    m_animSubOffset; // +0x88 (136) geometry sub-offset / lookup key
+    uint8_t     _pad8C[264];     // +0x8C..+0x193
+    int32_t     m_frameIndex;    // +0x194 (404) frame index for apex fraction computation
+    uint8_t     _pad198[4];      // +0x198..+0x19B
+    float       m_swingPhase;    // +0x19C (412) — confirmed from D908, 73E8
+    uint32_t    m_flags;         // +0x1A0 (416) bit 0 = IsSwingPhaseBlocked secondary
+    float       m_animPhase;     // +0x1A4 (420) compared vs g_swingPhaseThreshold
 };
 
 // ── Sub-struct: pongCreatureState ────────────────────────────────────────
 struct pongCreatureState {
-    void**      vtable;
+    void**      vtable;              // +0x00
+    uint8_t     _pad04[420];         // +0x04..+0x1A7
+    uint8_t     m_postPointFlag;     // +0x1A8 (424)  post-point face animation trigger
     bool IsActive() const { return ((bool(*)(const pongCreatureState*))vtable[6])(this); }
     bool IsReady()  const { return ((bool(*)(const pongCreatureState*))vtable[7])(this); }
 };

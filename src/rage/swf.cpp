@@ -267,11 +267,8 @@ void swfSCRIPTOBJECT::DeleteMember(const char* name) {
     undefinedPair.nameRef = (uint32_t)(uintptr_t)name;
     undefinedPair.type = 1;
 
-    // Notify via GetMember (vtable slot 10)
-    typedef bool (*GetMemberFunc)(void*, void*, void*);
-    void** vtable = *(void***)this;
-    GetMemberFunc getMember = (GetMemberFunc)vtable[10];
-    getMember(this, &undefinedPair, &undefinedPair);
+    // Notify via GetMember (virtual slot 10) — virtual dispatch on this
+    this->GetMember((const char*)&undefinedPair, &undefinedPair);
 
     // Remove from symbol table
     swfSymtab_Delete((char*)this + 4, name);
@@ -297,11 +294,8 @@ void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, v
     swfValue lookupKey = { (uint32_t)(uintptr_t)methodName, 7 };
     swfValue lookupResult = { 0, 0 };
 
-    // Call GetMember (vtable slot 10)
-    typedef bool (*GetMemberFunc)(void*, swfValue*, swfValue*);
-    void** vtable = *(void***)this;
-    GetMemberFunc getMember = (GetMemberFunc)vtable[10];
-    bool found = getMember(this, &lookupKey, &lookupResult);
+    // Call GetMember (virtual slot 10) — virtual dispatch on this
+    bool found = this->GetMember((const char*)&lookupKey, &lookupResult);
 
     if (!found) {
         // Method not found
@@ -322,16 +316,15 @@ void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, v
         NativeFunc fn = (NativeFunc)(uintptr_t)lookupResult.data;
         fn(this, args, argCount, outResult);
     } else if (lookupResult.type == 5) {
-        // Type 5: script object — call its Execute method (vtable slot 14)
-        void* callableObj = (void*)(uintptr_t)lookupResult.data;
+        // Type 5: script object — call its Execute method (vtable slot 14).
+        // Callable script objects are always swfACTIONFUNC (slot 14 is only
+        // defined there); virtual dispatch picks the right derived override.
+        swfACTIONFUNC* callableObj = (swfACTIONFUNC*)(uintptr_t)lookupResult.data;
 
         extern uint32_t g_swfCallDepth;  // @ 0x826064EC
         uint32_t prevDepth = g_swfCallDepth;
 
-        typedef void (*ExecuteFunc)(void*, void*, int, void*, int);
-        void** objVtable = *(void***)callableObj;
-        ExecuteFunc execute = (ExecuteFunc)objVtable[14];
-        execute(callableObj, args, argCount, this, 0);
+        callableObj->Execute(args, argCount, this, 0);
 
         // If call stack depth increased, a return value was pushed
         if ((int32_t)g_swfCallDepth > (int32_t)prevDepth) {
@@ -417,14 +410,17 @@ swfFILE::~swfFILE() {
     // Set vtable pointer (lis r11,-32249; addi r11,r11,19820)
     // Calculation: (-32249 << 16) + 19820 = 0x82074D8C
     
-    // Destroy all child resources
+    // Destroy all child resources via virtual destructor dispatch.
+    // The resource array holds pointers to swfOBJECT-derived items
+    // (swfSPRITE / swfFONT / swfSHAPE / swfBUTTON / ...).
     if (m_resourceCount > 0) {
         for (int i = 0; i < m_resourceCount; i++) {
-            void* resource = m_pResourceArray[i];
+            swfOBJECT* resource = (swfOBJECT*)m_pResourceArray[i];
             if (resource) {
-                // Call virtual destructor (slot 0) with flags=1
+                // Virtual scalar-destructor (slot 0) with flags=1 (free).
+                // TODO: once scalar-dtor is declared on swfOBJECT, use typed call.
                 void** vtable = *((void***)resource);
-                typedef void (*DestructorFn)(void*, int);
+                typedef void (*DestructorFn)(swfOBJECT*, int);
                 ((DestructorFn)vtable[0])(resource, 1);
             }
         }
@@ -581,9 +577,12 @@ void swfCMD_PlaceObject2ClipEvent_ScalarDestructor(swfCMD_PlaceObject2ClipEvent*
  * This is a common RAGE pattern for cleanup functions.
  */
 void swfCMD_DoInitAction::Cleanup() {
-    // Load vtable and call slot 1 (scalar destructor)
+    // Tail-calls the scalar destructor (vtable slot 1) with flags=0
+    // (destroy object contents but do not free the allocation).
+    // Slot 1 is the compiler-synthesised scalar dtor, not declared in
+    // the class header — retain explicit vtable indirection.
     void** vtable = *((void***)this);
-    typedef void (*ScalarDtorFn)(void*, int);
+    typedef void (*ScalarDtorFn)(swfCMD_DoInitAction*, int);
     ((ScalarDtorFn)vtable[1])(this, 0);
 }
 
@@ -718,23 +717,26 @@ void swfINSTANCE::GotoFrame(uint16_t targetFrame, uint8_t skipActions) {
         *(uint16_t*)((char*)this + 164) = nextFrame;
 
         if (skipActions == 0) {
-            // Execute frame commands
+            // Execute frame commands (linked list of swfCMD* — slot 2 Execute)
             void* curDef2 = *(void**)((char*)this + 4);
             uint16_t frameIdx = *(uint16_t*)((char*)this + 164);
             void* frameTable = *(void**)((char*)curDef2 + 12);
             void* cmdList = *(void**)((char*)frameTable + frameIdx * 8 + 4);
             while (cmdList) {
-                // Call command's Execute (vtable slot 2)
-                typedef void (*ExecFunc)(void*, void*);
+                // Virtual Execute (slot 2) on swfCMD-derived node.
+                // TODO: declare virtual void Execute(swfINSTANCE*) on swfCMD.
+                typedef void (*ExecFunc)(void*, swfINSTANCE*);
                 void** cmdVtable = *(void***)cmdList;
                 ExecFunc exec = (ExecFunc)cmdVtable[2];
                 exec(cmdList, this);
                 cmdList = *(void**)((char*)cmdList + 12);
             }
         } else {
-            // Skip actions: call definition's Execute directly
+            // Skip actions: call sprite definition's Execute (slot 2).
+            // curDef2 points to the swfFILE/swfSPRITE definition.
+            // TODO: declare virtual void Execute(swfINSTANCE*) on swfOBJECT.
             void* curDef2 = *(void**)((char*)this + 4);
-            typedef void (*DefExecFunc)(void*, void*);
+            typedef void (*DefExecFunc)(void*, swfINSTANCE*);
             void** defVtable = *(void***)curDef2;
             DefExecFunc defExec = (DefExecFunc)defVtable[2];
             defExec(curDef2, this);
@@ -763,11 +765,8 @@ void swfINSTANCE::NextFrame(void* context) {
     uint8_t savedPlaying = *(uint8_t*)((char*)this + 170);
     *(uint8_t*)((char*)this + 170) = 1;  // force playing
 
-    // Call GotoFrame (vtable slot 1)
-    typedef void (*GotoFunc)(void*, uint16_t, uint8_t);
-    void** vtable = *(void***)this;
-    GotoFunc gotoFrame = (GotoFunc)vtable[1];
-    gotoFrame(this, nextFrame, (uint8_t)(uintptr_t)context);
+    // Call GotoFrame (virtual slot 1) via virtual dispatch
+    this->GotoFrame(nextFrame, (uint8_t)(uintptr_t)context);
 
     *(uint8_t*)((char*)this + 170) = savedPlaying;  // restore
 }
@@ -786,16 +785,10 @@ void swfINSTANCE::PrevFrame() {
         void* def = *(void**)((char*)this + 4);
         uint16_t maxFrames = *(uint16_t*)((char*)def + 8);
         uint16_t lastFrame = (maxFrames + 0x10000 - 1) & 0xFFFF;  // maxFrames - 1 with wrap
-        typedef void (*GotoFunc)(void*, uint16_t, uint8_t);
-        void** vtable = *(void***)this;
-        GotoFunc gotoFrame = (GotoFunc)vtable[1];
-        gotoFrame(this, lastFrame, 0);
+        this->GotoFrame(lastFrame, 0);
     } else {
         uint16_t prevFrame = (curFrame + 0x10000 - 1) & 0xFFFF;
-        typedef void (*GotoFunc)(void*, uint16_t, uint8_t);
-        void** vtable = *(void***)this;
-        GotoFunc gotoFrame = (GotoFunc)vtable[1];
-        gotoFrame(this, prevFrame, 0);
+        this->GotoFrame(prevFrame, 0);
     }
 }
 
@@ -809,7 +802,8 @@ void swfINSTANCE::PrevFrame() {
 void swfINSTANCE::MarkDirty() {
     *(uint8_t*)((char*)this + 171) = 1;  // m_bDirty = true
 
-    void* parentSprite = *(void**)((char*)this + 176);
+    // Parent is another display-list instance (swfINSTANCE).
+    swfINSTANCE* parentSprite = *(swfINSTANCE**)((char*)this + 176);
     if (!parentSprite) return;
 
     void* memberTable = *(void**)((char*)this + 4);
@@ -818,11 +812,8 @@ void swfINSTANCE::MarkDirty() {
     uint8_t defType = *(uint8_t*)((char*)memberTable + 4);
     if (defType == 2) return;  // shapes don't need advance
 
-    // Call parent sprite's Advance (vtable slot 4)
-    typedef void (*AdvanceFunc)(void*);
-    void** sprVtable = *(void***)parentSprite;
-    AdvanceFunc advance = (AdvanceFunc)sprVtable[4];
-    advance(parentSprite);
+    // Call parent's MarkDirty (virtual slot 4) via virtual dispatch
+    parentSprite->MarkDirty();
 }
 
 /**
@@ -843,31 +834,23 @@ void swfINSTANCE::SetVisible() {
  * node's flags (+12).
  */
 void swfINSTANCE::EnumerateMembers() {
-    // Enumerate next sibling
-    void* sibling = *(void**)((char*)this + 184);
+    // Enumerate next sibling (another swfINSTANCE on the display list)
+    swfINSTANCE* sibling = *(swfINSTANCE**)((char*)this + 184);
     if (sibling) {
-        typedef void (*EnumFunc)(void*);
-        void** sibVtable = *(void***)sibling;
-        EnumFunc enumerate = (EnumFunc)sibVtable[6];
-        enumerate(sibling);
+        sibling->EnumerateMembers();
     }
 
-    // Enumerate child list
-    void* childList = *(void**)((char*)this + 180);
+    // Enumerate child list (head of children, also a swfINSTANCE)
+    swfINSTANCE* childList = *(swfINSTANCE**)((char*)this + 180);
     if (childList) {
-        typedef void (*EnumFunc)(void*);
-        void** childVtable = *(void***)childList;
-        EnumFunc enumerate = (EnumFunc)childVtable[6];
-        enumerate(childList);
+        childList->EnumerateMembers();
     }
 
-    // Enumerate sprite
-    void* sprite = *(void**)((char*)this + 160);
+    // Enumerate attached sprite/definition at +160.
+    // This is a swfSCRIPTOBJECT-derived resource (sprite definition).
+    swfSCRIPTOBJECT* sprite = *(swfSCRIPTOBJECT**)((char*)this + 160);
     if (sprite) {
-        typedef void (*EnumFunc)(void*);
-        void** sprVtable = *(void***)sprite;
-        EnumFunc enumerate = (EnumFunc)sprVtable[6];
-        enumerate(sprite);
+        sprite->EnumerateMembers();
     }
 
     // Walk action list and mark each node
@@ -890,14 +873,11 @@ void swfINSTANCE::EnumerateMembers() {
  * If no sprite, returns 0.
  */
 int swfINSTANCE::GetMemberCount() {
-    void* sprite = *(void**)((char*)this + 160);
+    swfSCRIPTOBJECT* sprite = *(swfSCRIPTOBJECT**)((char*)this + 160);
     if (!sprite) return 0;
 
-    // Call sprite's GetMemberCount (vtable slot 8)
-    typedef int (*CountFunc)(void*);
-    void** sprVtable = *(void***)sprite;
-    CountFunc getCount = (CountFunc)sprVtable[8];
-    return getCount(sprite);
+    // Virtual GetMemberCount (slot 8) via virtual dispatch
+    return sprite->GetMemberCount();
 }
 
 /**
@@ -907,13 +887,11 @@ int swfINSTANCE::GetMemberCount() {
  * If no sprite, returns 0.
  */
 int swfINSTANCE::VisitMembers() {
-    void* sprite = *(void**)((char*)this + 160);
+    swfSCRIPTOBJECT* sprite = *(swfSCRIPTOBJECT**)((char*)this + 160);
     if (!sprite) return 0;
 
-    typedef int (*VisitFunc)(void*);
-    void** sprVtable = *(void***)sprite;
-    VisitFunc visit = (VisitFunc)sprVtable[9];
-    return visit(sprite);
+    // Virtual VisitMembers (slot 9) via virtual dispatch
+    return sprite->VisitMembers();
 }
 
 /**
@@ -922,15 +900,13 @@ int swfINSTANCE::VisitMembers() {
  * Virtual function slot 11 - forwards to inner object's vfn_11.
  * The inner object is stored at offset +7332.
  */
-void swfACTIONFUNC::SetMember(const char* /*name*/, void* /*value*/) {
-    // Load inner object at offset +7332
-    void* innerObj = *((void**)((char*)this + 7332));
-
+void swfACTIONFUNC::SetMember(const char* name, void* value) {
+    // Forward to inner MovieClip's SetMember (virtual slot 11).
+    // Note: original binary discards name/value — it invokes vfn_11 with
+    // no extra args, but a real SetMember takes (name, value).
+    swfINSTANCE* innerObj = m_pInnerObject;
     if (innerObj) {
-        // Call its virtual method at slot 11
-        void** vtable = *((void***)innerObj);
-        typedef void (*VirtualFn)(void*);
-        ((VirtualFn)vtable[11])(innerObj);
+        innerObj->SetMember(name, value);
     }
 }
 
@@ -939,15 +915,11 @@ void swfACTIONFUNC::SetMember(const char* /*name*/, void* /*value*/) {
  *
  * Virtual function slot 12 - forwards to inner object's vfn_12.
  */
-void swfACTIONFUNC::DeleteMember(const char* /*name*/) {
-    // Load inner object at offset +7332
-    void* innerObj = *((void**)((char*)this + 7332));
-
+void swfACTIONFUNC::DeleteMember(const char* name) {
+    // Forward to inner MovieClip's DeleteMember (virtual slot 12).
+    swfINSTANCE* innerObj = m_pInnerObject;
     if (innerObj) {
-        // Call its virtual method at slot 12
-        void** vtable = *((void***)innerObj);
-        typedef void (*VirtualFn)(void*);
-        ((VirtualFn)vtable[12])(innerObj);
+        innerObj->DeleteMember(name);
     }
 }
 
@@ -1000,8 +972,11 @@ void swfINSTANCE::Invoke(const char* methodName, void* args, int argCount, void*
 // Forwards to inner object's scalar destructor (vtable slot 1).
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::ScalarDtor(int flags) {
-    void* innerObj = m_pInnerObject;  // +7332
-    typedef void (*ScalarDtorFn)(void*, int);
+    // Forward to inner MovieClip's scalar destructor (vtable slot 1).
+    // Slot 1 is compiler-synthesised (not a declared virtual), so retain
+    // explicit vtable indirection through a typed function pointer.
+    swfINSTANCE* innerObj = m_pInnerObject;
+    typedef void (*ScalarDtorFn)(swfINSTANCE*, int);
     void** vtable = *(void***)innerObj;
     ((ScalarDtorFn)vtable[1])(innerObj, flags);
 }
@@ -1011,10 +986,10 @@ void swfACTIONFUNC::ScalarDtor(int flags) {
 // Forwards to inner object's vtable slot 2.
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::NextFrame() {
-    void* innerObj = m_pInnerObject;
-    typedef void (*Fn)(void*);
-    void** vtable = *(void***)innerObj;
-    ((Fn)vtable[2])(innerObj);
+    // Forward to inner MovieClip's NextFrame (virtual slot 2).
+    // Original binary passes no context argument.
+    swfINSTANCE* innerObj = m_pInnerObject;
+    if (innerObj) innerObj->NextFrame(nullptr);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1022,10 +997,9 @@ void swfACTIONFUNC::NextFrame() {
 // Forwards to inner object's vtable slot 3.
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::PrevFrame() {
-    void* innerObj = m_pInnerObject;
-    typedef void (*Fn)(void*);
-    void** vtable = *(void***)innerObj;
-    ((Fn)vtable[3])(innerObj);
+    // Forward to inner MovieClip's PrevFrame (virtual slot 3).
+    swfINSTANCE* innerObj = m_pInnerObject;
+    if (innerObj) innerObj->PrevFrame();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1033,10 +1007,9 @@ void swfACTIONFUNC::PrevFrame() {
 // Forwards to inner object's vtable slot 4.
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::MarkDirty() {
-    void* innerObj = m_pInnerObject;
-    typedef void (*Fn)(void*);
-    void** vtable = *(void***)innerObj;
-    ((Fn)vtable[4])(innerObj);
+    // Forward to inner MovieClip's MarkDirty (virtual slot 4).
+    swfINSTANCE* innerObj = m_pInnerObject;
+    if (innerObj) innerObj->MarkDirty();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1044,10 +1017,9 @@ void swfACTIONFUNC::MarkDirty() {
 // Forwards to inner object's vtable slot 5.
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::SetVisible() {
-    void* innerObj = m_pInnerObject;
-    typedef void (*Fn)(void*);
-    void** vtable = *(void***)innerObj;
-    ((Fn)vtable[5])(innerObj);
+    // Forward to inner MovieClip's SetVisible (virtual slot 5).
+    swfINSTANCE* innerObj = m_pInnerObject;
+    if (innerObj) innerObj->SetVisible();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1055,10 +1027,9 @@ void swfACTIONFUNC::SetVisible() {
 // Forwards to inner object's vtable slot 6.
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::EnumerateMembers() {
-    void* innerObj = m_pInnerObject;
-    typedef void (*Fn)(void*);
-    void** vtable = *(void***)innerObj;
-    ((Fn)vtable[6])(innerObj);
+    // Forward to inner MovieClip's EnumerateMembers (virtual slot 6).
+    swfINSTANCE* innerObj = m_pInnerObject;
+    if (innerObj) innerObj->EnumerateMembers();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1066,10 +1037,9 @@ void swfACTIONFUNC::EnumerateMembers() {
 // Forwards to inner object's vtable slot 7.
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::VisitChildren() {
-    void* innerObj = m_pInnerObject;
-    typedef void (*Fn)(void*);
-    void** vtable = *(void***)innerObj;
-    ((Fn)vtable[7])(innerObj);
+    // Forward to inner MovieClip's vfn_7 (virtual slot 7).
+    swfINSTANCE* innerObj = m_pInnerObject;
+    if (innerObj) innerObj->vfn_7();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1077,10 +1047,9 @@ void swfACTIONFUNC::VisitChildren() {
 // Returns total member count: inner object's count + local variable count.
 // ─────────────────────────────────────────────────────────────────────────────
 int swfACTIONFUNC::GetMemberCount() {
-    void* innerObj = m_pInnerObject;  // +7332
-    typedef int (*CountFn)(void*);
-    void** vtable = *(void***)innerObj;
-    int innerCount = ((CountFn)vtable[8])(innerObj);
+    // Inner MovieClip's member count + this closure's local bindings.
+    swfINSTANCE* innerObj = m_pInnerObject;  // +7332
+    int innerCount = innerObj ? innerObj->GetMemberCount() : 0;
     return innerCount + m_localCount;  // +132
 }
 
@@ -1089,10 +1058,9 @@ int swfACTIONFUNC::GetMemberCount() {
 // Forwards to inner object's Invoke (vtable slot 13).
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::Invoke(const char* methodName, void* args, int argCount, void* outResult) {
-    void* innerObj = m_pInnerObject;
-    typedef void (*InvokeFn)(void*, const char*, void*, int, void*);
-    void** vtable = *(void***)innerObj;
-    ((InvokeFn)vtable[13])(innerObj, methodName, args, argCount, outResult);
+    // Forward to inner MovieClip's Invoke (virtual slot 13).
+    swfINSTANCE* innerObj = m_pInnerObject;
+    if (innerObj) innerObj->Invoke(methodName, args, argCount, outResult);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1135,19 +1103,16 @@ bool swfACTIONFUNC::GetMember(const char* name, void* result) {
         }
     }
 
-    // Not found locally — delegate to inner object
-    void* innerObj = m_pInnerObject;  // +7332
-    typedef bool (*GetMemberFn)(void*, const char*, void*);
-    void** vtable = *(void***)innerObj;
-    return ((GetMemberFn)vtable[10])(innerObj, name, result);
+    // Not found locally — delegate to inner MovieClip's GetMember (slot 10).
+    swfINSTANCE* innerObj = m_pInnerObject;  // +7332
+    if (!innerObj) return false;
+    return innerObj->GetMember(name, result);
 }
 
 int swfACTIONFUNC::VisitMembers() {
-    // Forwards to inner object's VisitMembers (vtable slot 9)
-    void* innerObj = m_pInnerObject;
-    typedef int (*VisitFn)(void*);
-    void** vtable = *(void***)innerObj;
-    return ((VisitFn)vtable[9])(innerObj);
+    // Forwards to inner MovieClip's VisitMembers (virtual slot 9).
+    swfINSTANCE* innerObj = m_pInnerObject;
+    return innerObj ? innerObj->VisitMembers() : 0;
 }
 
 
@@ -1245,12 +1210,16 @@ void swfCONTEXT_ProcessContextTree(swfCONTEXT* ctx) {
         }
     }
     
-    // Call virtual method slot 6 on object at offset +4
+    // Call virtual method slot 6 on object at offset +4 (a swfINSTANCE).
+    // Slot 6 on swfINSTANCE is EnumerateMembers; in ProcessContextTree the
+    // original binary reads the return value as a uint8_t — treat as bool.
     uint8_t callResult = 0;
     if (shouldCallVirtual) {
-        void* obj = *((void**)((char*)ctx + 4));
+        swfINSTANCE* obj = *((swfINSTANCE**)((char*)ctx + 4));
+        // Invoke slot 6 via explicit vtable as original return type differs.
+        // TODO: reconcile return type with declared swfINSTANCE::EnumerateMembers.
         void** vtable = *((void***)obj);
-        typedef uint8_t (*VirtualFn)(void*);
+        typedef uint8_t (*VirtualFn)(swfINSTANCE*);
         callResult = ((VirtualFn)vtable[6])(obj);
     }
     
@@ -1274,13 +1243,17 @@ void swfCONTEXT_ProcessContextTree(swfCONTEXT* ctx) {
             (*stackCount)++;
         }
     } else {
-        // If this is the current global context, call virtual method slot 3
+        // If this is the current global context, call virtual slot 3.
+        // On swfINSTANCE slot 3 is PrevFrame() but the original binary
+        // passes (ctx, 2, 1) — indicating the real signature is a
+        // different dispatch (likely ClipEvent / state transition) on
+        // a derived display-list node. Keep explicit vtable indirection.
         if (g_currentSwfContext == ctx) {
-            void* obj = *((void**)((char*)ctx + 4));
+            swfINSTANCE* obj = *((swfINSTANCE**)((char*)ctx + 4));
             void** vtable = *((void***)obj);
-            typedef void (*VirtualFn3)(void*, void*, int, int);
+            typedef void (*VirtualFn3)(swfINSTANCE*, void*, int, int);
             ((VirtualFn3)vtable[3])(obj, ctx, 2, 1);
-            
+
             // Clear global context
             g_currentSwfContext = nullptr;
         }

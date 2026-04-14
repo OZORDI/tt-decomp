@@ -165,10 +165,11 @@ uint32_t XNetQosRelease(XNQOS* pxnqos);
 //=============================================================================
 
 /**
- * sendto @ 0x8258600C | ordinal: varies
+ * NetDll_sendto @ 0x8258600C | ordinal: varies
  * 
- * Sends data to a specific destination (UDP).
+ * Xbox 360 network DLL sendto wrapper.
  * 
+ * @param handle  XNet handle (unused)
  * @param s       Socket descriptor
  * @param buf     Data buffer
  * @param len     Length of data
@@ -177,14 +178,15 @@ uint32_t XNetQosRelease(XNQOS* pxnqos);
  * @param tolen   Length of address structure
  * @return Number of bytes sent, or -1 on error
  */
-int32_t sendto(int32_t s, const void* buf, int32_t len, int32_t flags,
-               const void* to, int32_t tolen);
+int NetDll_sendto(int handle, int32_t s, const void* buf, int32_t len, int32_t flags,
+                  const void* to, int32_t tolen);
 
 /**
- * recvfrom @ 0x82585FEC | ordinal: varies
+ * NetDll_recvfrom @ 0x82585FEC | ordinal: varies
  * 
- * Receives data from a socket (UDP).
+ * Xbox 360 network DLL recvfrom wrapper.
  * 
+ * @param handle  XNet handle (unused)
  * @param s       Socket descriptor
  * @param buf     Buffer to receive data
  * @param len     Length of buffer
@@ -193,27 +195,28 @@ int32_t sendto(int32_t s, const void* buf, int32_t len, int32_t flags,
  * @param fromlen Pointer to address structure length
  * @return Number of bytes received, or -1 on error
  */
-int32_t recvfrom(int32_t s, void* buf, int32_t len, int32_t flags,
-                 void* from, int32_t* fromlen);
+int NetDll_recvfrom(int handle, int32_t s, void* buf, int32_t len, int32_t flags,
+                    void* from, int32_t* fromlen);
 
 /**
- * inet_addr @ 0x8258601C | ordinal: varies
+ * NetDll_inet_addr @ 0x8258601C | ordinal: varies
  * 
- * Converts a string IP address to binary form.
+ * Xbox 360 network DLL inet_addr wrapper.
  * 
- * @param cp String IP address (e.g., "192.168.1.1")
+ * @param handle XNet handle (unused)
+ * @param cp     String IP address (e.g., "192.168.1.1")
  * @return IP address in network byte order, or INADDR_NONE on error
  */
-uint32_t inet_addr(const char* cp);
+int32_t NetDll_inet_addr(int handle, const char* cp);
 
 /**
- * WSAGetLastError @ 0x8258602C | ordinal: varies
+ * NetDll_WSAGetLastError @ 0x8258602C | ordinal: varies
  * 
  * Returns the last socket error code.
  * 
  * @return Error code (WSA error codes)
  */
-int32_t WSAGetLastError(void);
+int32_t NetDll_WSAGetLastError(void);
 
 #ifdef __cplusplus
 }

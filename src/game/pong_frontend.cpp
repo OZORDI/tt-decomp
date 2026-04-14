@@ -25,7 +25,18 @@
  */
 
 #include "game/pong_frontend.hpp"
+#include "rage/types.h"
 #include <cstring>
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vtable Address Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+static void* const VTABLE_pongFrontendContext_Primary   = (void*)0x8205F7E4;
+static void* const VTABLE_pongFrontendContext_Secondary = (void*)0x8205F848;
+static void* const VTABLE_pongFrontendState_Primary     = (void*)0x8205F79C;
+static void* const VTABLE_pongFrontendState_Secondary   = (void*)0x8205F6E0;
+static void* const VTABLE_PageInfo                      = (void*)0x8203A928;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // External Globals
@@ -85,6 +96,35 @@ extern "C" {
     // HSM initialization
     void HSM_InitializeState();                                      // @ 0x8230D278 - HSM state init
     void sysMemAllocator_InitMainThread();                                 // @ 0x820C0038 - thread init
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page Group Vtable Dispatch Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+// pongPageGroup is forward-declared only. These helpers encapsulate the
+// repeated vtable dispatch patterns used on page group objects throughout
+// the frontend code, improving readability without needing the full class.
+
+/// Calls vtable slot 0 (destructor) with freeMemory flag.
+static inline void PageGroup_Destroy(void* pg, int freeMemory) {
+    typedef void (*Fn)(void*, int);
+    ((Fn)VTABLE(pg)[0])(pg, freeMemory);
+}
+
+/// Calls vtable slot 4 (SetMode).
+static inline void PageGroup_SetMode(void* pg, int mode) {
+    typedef void (*Fn)(void*, int);
+    ((Fn)VTABLE(pg)[4])(pg, mode);
+}
+
+/// Calls vtable slot 5 (Cleanup/Shutdown).
+static inline void PageGroup_Cleanup(void* pg) {
+    VCALL(pg, 5);
+}
+
+/// Sets the parent pointer at offset +24 in a page group.
+static inline void PageGroup_SetParent(void* pg, void* parent) {
+    *(void**)((char*)pg + 24) = parent;
 }
 
 // Debug string literals (preserved from binary)
@@ -311,51 +351,41 @@ bool pongFrontendContext::IsPlayerCharacterReady(pongFrontendContext* pContext,
  */
 bool pongFrontendContext::CanTransition() {
     // Register this context with the event queue system
-    uint32_t* pSelf = (uint32_t*)this;
-    void* pSecondaryVtable = (this != nullptr) ? (void*)((char*)this + 20) : nullptr;
+    void* pSecondaryVtable = (this != nullptr) ? m_pSecondaryVTable : nullptr;
 
     // Push onto event queue
     uint32_t queueIdx = g_eventQueueIndex;
-    g_eventQueueParams[queueIdx] = 128;                   // Active flag
-    g_eventQueueData[queueIdx] = pSecondaryVtable;        // Secondary vtable pointer
-    g_eventQueueTypes[queueIdx] = 22;                     // Frontend context type ID
+    g_eventQueueParams[queueIdx] = EventQueue::TYPE_FRONTEND;
+    g_eventQueueData[queueIdx] = pSecondaryVtable;
+    g_eventQueueTypes[queueIdx] = EventQueue::ID_FRONTEND_ENTER;
     g_eventQueueIndex = queueIdx + 1;
 
     // Look up the frontend state by name
     extern void* g_gameDataMgr;  // @ 0x8271A314
-    int32_t stateIdx = FindStateIndexByName(*(void**)((char*)&g_gameDataMgr + 0), "FrontEnd");
-    *(uint32_t*)((char*)this + 344) = (uint32_t)stateIdx;
+    int32_t stateIdx = FindStateIndexByName(*(void**)&g_gameDataMgr, "FrontEnd");
+    m_gameStateResult = (uint32_t)stateIdx;
 
-    // Initialize player slots (vtable slot 4 on each)
-    void* player1 = *(void**)((char*)this + 48);
-    if (player1) {
-        typedef void (*InitFunc)(void*, int);
-        void** vtable = *(void***)player1;
-        ((InitFunc)vtable[4])(player1, 0);
+    // Initialize page group 3: SetMode(0) via vtable slot 4
+    if (m_pPageGroup3) {
+        PageGroup_SetMode(m_pPageGroup3, 0);
     }
 
-    void* player2 = *(void**)((char*)this + 56);
-    if (player2) {
-        typedef void (*InitFunc)(void*, int);
-        void** vtable = *(void***)player2;
-        ((InitFunc)vtable[4])(player2, 0);
+    // Initialize page group 5: SetMode(0) via vtable slot 4
+    if (m_pPageGroup5) {
+        PageGroup_SetMode(m_pPageGroup5, 0);
     }
 
-    // Link player2's parent to player1's context
-    void* p2 = *(void**)((char*)this + 56);
-    void* p1ctx = *(void**)((char*)this + 52);
-    if (p2) {
-        *(void**)((char*)p2 + 24) = p1ctx;
+    // Link page group 5's parent to page group 4
+    if (m_pPageGroup5 && m_pPageGroup4) {
+        PageGroup_SetParent(m_pPageGroup5, m_pPageGroup4);
     }
 
-    // Store player2 in global renderer state
-    void* p2Final = *(void**)((char*)this + 56);
-    extern void* g_rendererFrontendCtx;  // @ 0x8260662C
-    *(void**)&g_rendererFrontendCtx = p2Final;
+    // Store page group 5 in global renderer state
+    g_currentPageGroup = m_pPageGroup5;
 
     // Initialize selected character indices to -1 (no selection)
-    *(int32_t*)((char*)this + 380) = -1;
-    *(int32_t*)((char*)this + 384) = -1;
+    m_playerIndices[0] = -1;
+    m_playerIndices[1] = -1;
 
     return true;
 }
@@ -393,34 +423,22 @@ void pongFrontendContext::OnEnter() {
     g_eventQueueIndex = eventIdx + 1;
     
     // Find and store the frontend state index by name
-    // String parameter @ 0x8205F3AC (likely "frontend" or similar state name)
-    const char* stateName = (const char*)0x8205F3AC;
-    m_gameStateResult = FindStateIndexByName(this, stateName);
+    // String @ 0x8205F3AC: " from lobby/limbo to %d"
+    static const char* STR_STATE_TRANSITION = " from lobby/limbo to %d";  // @ 0x8205F3AC
+    m_gameStateResult = FindStateIndexByName(this, STR_STATE_TRANSITION);
     
     // Initialize page groups
-    // Page group 3 (context+48): set mode to 0
     if (m_pPageGroup3) {
-        // Virtual call: slot 4 (byte offset +16)
-        // This likely calls SetVisible(false) or similar
-        void** vtable = *(void***)m_pPageGroup3;
-        typedef void (*SetModeFn)(void*, int);
-        SetModeFn setMode = (SetModeFn)vtable[4];
-        setMode(m_pPageGroup3, 0);
+        PageGroup_SetMode(m_pPageGroup3, 0);
     }
-    
-    // Page group 5 (context+56): set mode to 0
+
     if (m_pPageGroup5) {
-        void** vtable = *(void***)m_pPageGroup5;
-        typedef void (*SetModeFn)(void*, int);
-        SetModeFn setMode = (SetModeFn)vtable[4];
-        setMode(m_pPageGroup5, 0);
+        PageGroup_SetMode(m_pPageGroup5, 0);
     }
-    
+
     // Link page groups: page group 5 references page group 4
     if (m_pPageGroup5 && m_pPageGroup4) {
-        // Store page group 4 pointer at offset +24 in page group 5
-        uint32_t* pg5Data = (uint32_t*)m_pPageGroup5;
-        pg5Data[24 / 4] = (uint32_t)(uintptr_t)m_pPageGroup4;
+        PageGroup_SetParent(m_pPageGroup5, m_pPageGroup4);
     }
     
     // Reset player selection indices
@@ -433,24 +451,14 @@ void pongFrontendContext::OnEnter() {
 
 /**
  * pongFrontendContext::Update @ 0x8230DA70 | size: 0xC
- * 
- * Per-frame update for frontend.
- */
-/**
- * pongFrontendContext::Update @ 0x8230DA70 | size: 0xC
  *
- * Sets the frame counter/timer to 30. This simple per-frame
- * update resets the idle timeout for the frontend menu.
+ * Sets the frame counter/timer to 30. Resets the idle timeout
+ * for the frontend menu each frame.
  */
 void pongFrontendContext::Update() {
-    *(uint32_t*)((char*)this + 60) = 30;
+    m_field_3C = 30;
 }
 
-/**
- * pongFrontendContext::OnPlayerSelected @ 0x8230EAE8 | size: 0x118
- * 
- * Called when player selects a character.
- */
 /**
  * pongFrontendContext::OnPlayerSelected @ 0x8230EAE8 | size: 0x118
  *
@@ -462,14 +470,15 @@ void pongFrontendContext::Update() {
  */
 void pongFrontendContext::OnPlayerSelected(int playerIndex) {
     // Check if game is in online mode
-    extern void* g_hsmMgrPtr;  // @ 0x825EAB30
-    void* hsmMgr = *(void**)((char*)g_hsmMgrPtr + 0xAB30);
+    // g_loop_obj_ptr @ 0x825EAB30 contains the main loop object
+    extern void* g_loop_obj_ptr;
+    void* hsmMgr = *(void**)((char*)&g_loop_obj_ptr + 0);  // dereference the loop object
     bool isOnline = (*(uint8_t*)((char*)hsmMgr + 495) != 0);
 
     if (!isOnline) {
-        // Check secondary online flag
-        extern void* g_networkState;  // @ 0x8271A374
-        void* netState = *(void**)&g_networkState;
+        // Check secondary online flag @ 0x8271A374
+        extern void* g_networkStatePtr;
+        void* netState = *(void**)&g_networkStatePtr;
         if (*(uint8_t*)((char*)netState + 24) == 0) {
             return;  // Not ready
         }
@@ -503,17 +512,17 @@ void pongFrontendContext::OnPlayerSelected(int playerIndex) {
         uint8_t activeFlag = *(uint8_t*)((char*)entryData + 56);
         if (activeFlag == 0) continue;
 
-        // Check player selection flag
-        if (*(uint8_t*)((char*)this + 84 + slot) == 0) continue;
+        // Check player selection flag in playerData array
+        if (m_playerData[slot].m_bActive == 0) continue;
 
-        // Trigger character activation (vtable slot 6)
+        // Trigger character activation (vtable slot 6 = Activate)
+        // Re-fetch character entry for the activation call
         uint32_t charDataIdx2 = pGameObj[(GameObjectOffsets::PLAYER_DATA_BASE / 4) + slot];
         uint32_t entryOffset2 = (charDataIdx2 + 29) * 4;
         void* activateTarget = (void*)pGameObj[entryOffset2 / 4];
 
-        typedef void (*ActivateFunc)(void*, int, int);
-        void** vtable = *(void***)activateTarget;
-        ((ActivateFunc)vtable[6])(activateTarget, 1, 1);
+        typedef void (*ActivateFn)(void*, int, int);
+        ((ActivateFn)VTABLE(activateTarget)[6])(activateTarget, 1, 1);
     }
 }
 
@@ -526,70 +535,37 @@ void pongFrontendContext::OnPlayerSelected(int playerIndex) {
  * This follows a specific order to properly tear down the UI hierarchy.
  */
 void pongFrontendContext::OnExit() {
-    // Clean up page group 1
+    // Clean up simple page groups (destroy only)
     if (m_pPageGroup1) {
-        // Call virtual destructor (slot 0, byte offset +0)
-        void** vtable = *(void***)m_pPageGroup1;
-        typedef void (*DestructorFn)(void*, int);
-        DestructorFn destructor = (DestructorFn)vtable[0];
-        destructor(m_pPageGroup1, 1);  // 1 = free memory
+        PageGroup_Destroy(m_pPageGroup1, 1);
     }
     m_pPageGroup1 = nullptr;
-    
-    // Clean up page group 2
+
     if (m_pPageGroup2) {
-        void** vtable = *(void***)m_pPageGroup2;
-        typedef void (*DestructorFn)(void*, int);
-        DestructorFn destructor = (DestructorFn)vtable[0];
-        destructor(m_pPageGroup2, 1);
+        PageGroup_Destroy(m_pPageGroup2, 1);
     }
     m_pPageGroup2 = nullptr;
-    
-    // Clean up page group 4
+
     if (m_pPageGroup4) {
-        void** vtable = *(void***)m_pPageGroup4;
-        typedef void (*DestructorFn)(void*, int);
-        DestructorFn destructor = (DestructorFn)vtable[0];
-        destructor(m_pPageGroup4, 1);
+        PageGroup_Destroy(m_pPageGroup4, 1);
     }
     m_pPageGroup4 = nullptr;
-    
-    // Clean up page group 3 (has additional virtual call before destruction)
+
+    // Page group 3: cleanup (slot 5) then destroy
     if (m_pPageGroup3) {
-        // Call virtual method slot 5 (byte offset +20)
-        void** vtable = *(void***)m_pPageGroup3;
-        typedef void (*CleanupFn)(void*);
-        CleanupFn cleanup = (CleanupFn)vtable[5];
-        cleanup(m_pPageGroup3);
-        
-        // Then call destructor
-        typedef void (*DestructorFn)(void*, int);
-        DestructorFn destructor = (DestructorFn)vtable[0];
-        destructor(m_pPageGroup3, 1);
+        PageGroup_Cleanup(m_pPageGroup3);
+        PageGroup_Destroy(m_pPageGroup3, 1);
     }
     m_pPageGroup3 = nullptr;
-    
-    // Clean up page group 5 (main page group, also has additional cleanup)
+
+    // Page group 5 (main): cleanup (slot 5) then destroy
     if (m_pPageGroup5) {
-        // Call virtual method slot 5 (byte offset +20)
-        void** vtable = *(void***)m_pPageGroup5;
-        typedef void (*CleanupFn)(void*);
-        CleanupFn cleanup = (CleanupFn)vtable[5];
-        cleanup(m_pPageGroup5);
-        
-        // Then call destructor
-        typedef void (*DestructorFn)(void*, int);
-        DestructorFn destructor = (DestructorFn)vtable[0];
-        destructor(m_pPageGroup5, 1);
+        PageGroup_Cleanup(m_pPageGroup5);
+        PageGroup_Destroy(m_pPageGroup5, 1);
     }
     m_pPageGroup5 = nullptr;
 }
 
-/**
- * pongFrontendContext::DA80_Helper @ 0x8230DA80 | size: 0xB0
- * 
- * Helper function for frontend state management.
- */
 /**
  * pongFrontendContext::DA80_Helper @ 0x8230DA80 | size: 0xB0
  *
@@ -617,8 +593,8 @@ bool pongFrontendContext::DA80_Helper() {
         DebugLog("pongFrontendContext::DA80_Helper() - game object is null", 0);
 
         // Fall through to character count check
-        extern void* g_gameDataMgr;  // @ 0x8271A2E4
-        void* dataMgr = *(void**)&g_gameDataMgr;
+        extern void* g_gameDataMgrPtr;  // @ 0x8271A2E4
+        void* dataMgr = *(void**)&g_gameDataMgrPtr;
         int32_t charCount = *(int32_t*)((char*)dataMgr + 28);
         return (0 < charCount);
     }
@@ -632,8 +608,8 @@ bool pongFrontendContext::DA80_Helper() {
     }
 
     // Check against character count
-    extern void* g_gameDataMgr;
-    void* dataMgr = *(void**)&g_gameDataMgr;
+    extern void* g_gameDataMgrPtr;
+    void* dataMgr = *(void**)&g_gameDataMgrPtr;
     int32_t charCount = *(int32_t*)((char*)dataMgr + 28);
     return (stateIdx < charCount);
 }
@@ -960,14 +936,14 @@ void pg_CBAC_sp() {
     
     if (player0Ctrl != player1Ctrl) {
         // Linear congruential generator for random selection
-        extern uint64_t lbl_825CA2C8;  // Random seed @ 0x825CA2C8
+        extern uint64_t g_randomSeed;  // @ 0x825CA2C8
         
-        uint32_t seedHigh = (uint32_t)(lbl_825CA2C8 >> 32);
+        uint32_t seedHigh = (uint32_t)(g_randomSeed >> 32);
         uint64_t product = 0x5CDCFAA75CDCFAA7ULL * seedHigh;
         uint32_t newSeed = (uint32_t)(product >> 32);
         
         // Update both halves of the 64-bit seed
-        lbl_825CA2C8 = ((uint64_t)newSeed << 32) | newSeed;
+        g_randomSeed = ((uint64_t)newSeed << 32) | newSeed;
         
         // Convert to float [0.0, 1.0) and check if >= 0.5
         uint32_t bits = newSeed & 0x7FFFFF;
@@ -988,13 +964,14 @@ void pg_CBAC_sp() {
     
     // Format character names with separator
     extern int sub_820CA940(char* buf, size_t size, const char* fmt, ...);
-    extern uint32_t lbl_82606410;  // String table base @ 0x82606410
-    
-    const char* strTableBase = (const char*)(lbl_82606410 + 704);
+    extern uint32_t g_stringTableBase;  // @ 0x82606410
+
+    const char* strTableBase = (const char*)(g_stringTableBase + 704);
     
     // First string format (character names)
-    // Format string @ 0x8203B5BC (likely contains "%s vs %s" or similar)
-    sub_820CA940(buffer, 128, (const char*)0x8203B5BC, strTableBase, char0NameId, char1NameId);
+    // Format string @ 0x8203B5BC: "haracters -----" (part of "Characters -----")
+    static const char* STR_CHAR_SEPARATOR = (const char*)0x8203B5BC;  // @ 0x8203B5BC
+    sub_820CA940(buffer, 128, STR_CHAR_SEPARATOR, strTableBase, char0NameId, char1NameId);
     
     // Display character names
     extern void sub_821BD8E0(void* ctx);
@@ -1029,8 +1006,8 @@ void pg_CBAC_sp() {
     } else {
         if (bestOfMode == 0) {
             // Standard match: just points
-            // Format string @ 0x8203B5C8 is "---" (separator/placeholder)
-            sub_820CA940(buffer, 128, (const char*)0x8203B5C8, strTableBase, pointsToWin);
+            static const char* STR_SCORE_SEPARATOR = "---";  // @ 0x8203B5C8
+            sub_820CA940(buffer, 128, STR_SCORE_SEPARATOR, strTableBase, pointsToWin);
             sub_821BD8E0(displayCtx);
             return;
         }
@@ -1105,31 +1082,31 @@ extern "C" {
 /// Returns state field at offset +212 (width or state A).
 /// CCalMoviePlayer::GetStateA @ 0x8248EEE8 | size: 0x08
 uint32_t CCalMoviePlayer::GetStateA() {
-    return *(uint32_t*)((char*)this + 212);
+    return m_statusA;
 }
 
 /// Returns state field at offset +216 (height or state B).
 /// CCalMoviePlayer::GetStateB @ 0x8248EEF0 | size: 0x08
 uint32_t CCalMoviePlayer::GetStateB() {
-    return *(uint32_t*)((char*)this + 216);
+    return m_statusB;
 }
 
 /// Returns state field at offset +220 (frame rate or state C).
 /// CCalMoviePlayer::GetStateC @ 0x8248EEF8 | size: 0x08
 uint32_t CCalMoviePlayer::GetStateC() {
-    return *(uint32_t*)((char*)this + 220);
+    return m_isPlaying;
 }
 
 /// Returns state field at offset +224.
 /// CCalMoviePlayer::GetStateD @ 0x8248EF00 | size: 0x08
 uint32_t CCalMoviePlayer::GetStateD() {
-    return *(uint32_t*)((char*)this + 224);
+    return m_statusFieldB;
 }
 
 /// Returns state field at offset +228.
 /// CCalMoviePlayer::GetStateE @ 0x8248EF08 | size: 0x08
 uint32_t CCalMoviePlayer::GetStateE() {
-    return *(uint32_t*)((char*)this + 228);
+    return m_statusFieldC;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1140,49 +1117,49 @@ uint32_t CCalMoviePlayer::GetStateE() {
 /// Waits on event object 0 (offset +84).
 /// CCalMoviePlayer::WaitForEvent0 @ 0x8248ED88 | size: 0x18
 void CCalMoviePlayer::WaitForEvent0() {
-    KeWaitForSingleObject((char*)this + 84, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event0, 3, 1, 0, nullptr);
 }
 
 /// Waits on event object 1 (offset +100).
 /// CCalMoviePlayer::WaitForEvent1 @ 0x8248EDA0 | size: 0x18
 void CCalMoviePlayer::WaitForEvent1() {
-    KeWaitForSingleObject((char*)this + 100, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event1, 3, 1, 0, nullptr);
 }
 
 /// Waits on event object 2 (offset +116).
 /// CCalMoviePlayer::WaitForEvent2 @ 0x8248EDB8 | size: 0x18
 void CCalMoviePlayer::WaitForEvent2() {
-    KeWaitForSingleObject((char*)this + 116, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event2, 3, 1, 0, nullptr);
 }
 
 /// Waits on event object 3 (offset +132).
 /// CCalMoviePlayer::WaitForEvent3 @ 0x8248EDD0 | size: 0x18
 void CCalMoviePlayer::WaitForEvent3() {
-    KeWaitForSingleObject((char*)this + 132, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event3, 3, 1, 0, nullptr);
 }
 
 /// Waits on event object 4 (offset +148).
 /// CCalMoviePlayer::WaitForEvent4 @ 0x8248EDE8 | size: 0x18
 void CCalMoviePlayer::WaitForEvent4() {
-    KeWaitForSingleObject((char*)this + 148, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event4, 3, 1, 0, nullptr);
 }
 
 /// Waits on event object 5 (offset +164).
 /// CCalMoviePlayer::WaitForEvent5 @ 0x8248EE00 | size: 0x18
 void CCalMoviePlayer::WaitForEvent5() {
-    KeWaitForSingleObject((char*)this + 164, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event5, 3, 1, 0, nullptr);
 }
 
 /// Waits on event object 6 (offset +180).
 /// CCalMoviePlayer::WaitForEvent6 @ 0x8248EE18 | size: 0x18
 void CCalMoviePlayer::WaitForEvent6() {
-    KeWaitForSingleObject((char*)this + 180, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event6, 3, 1, 0, nullptr);
 }
 
 /// Waits on event object 7 (offset +196).
 /// CCalMoviePlayer::WaitForEvent7 @ 0x8248EE30 | size: 0x18
 void CCalMoviePlayer::WaitForEvent7() {
-    KeWaitForSingleObject((char*)this + 196, 3, 1, 0, nullptr);
+    KeWaitForSingleObject(m_event7, 3, 1, 0, nullptr);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1193,49 +1170,49 @@ void CCalMoviePlayer::WaitForEvent7() {
 /// Signals event object 0 (offset +84).
 /// CCalMoviePlayer::SignalEvent0 @ 0x8248EE48 | size: 0x10
 void CCalMoviePlayer::SignalEvent0() {
-    KeSetEvent((char*)this + 84, 1, 0);
+    KeSetEvent(m_event0, 1, 0);
 }
 
 /// Signals event object 1 (offset +100).
 /// CCalMoviePlayer::SignalEvent1 @ 0x8248EE58 | size: 0x10
 void CCalMoviePlayer::SignalEvent1() {
-    KeSetEvent((char*)this + 100, 1, 0);
+    KeSetEvent(m_event1, 1, 0);
 }
 
 /// Signals event object 2 (offset +116).
 /// CCalMoviePlayer::SignalEvent2 @ 0x8248EE68 | size: 0x10
 void CCalMoviePlayer::SignalEvent2() {
-    KeSetEvent((char*)this + 116, 1, 0);
+    KeSetEvent(m_event2, 1, 0);
 }
 
 /// Signals event object 3 (offset +132).
 /// CCalMoviePlayer::SignalEvent3 @ 0x8248EE78 | size: 0x10
 void CCalMoviePlayer::SignalEvent3() {
-    KeSetEvent((char*)this + 132, 1, 0);
+    KeSetEvent(m_event3, 1, 0);
 }
 
 /// Signals event object 4 (offset +148).
 /// CCalMoviePlayer::SignalEvent4 @ 0x8248EE88 | size: 0x10
 void CCalMoviePlayer::SignalEvent4() {
-    KeSetEvent((char*)this + 148, 1, 0);
+    KeSetEvent(m_event4, 1, 0);
 }
 
 /// Signals event object 5 (offset +164).
 /// CCalMoviePlayer::SignalEvent5 @ 0x8248EE98 | size: 0x10
 void CCalMoviePlayer::SignalEvent5() {
-    KeSetEvent((char*)this + 164, 1, 0);
+    KeSetEvent(m_event5, 1, 0);
 }
 
 /// Signals event object 6 (offset +180).
 /// CCalMoviePlayer::SignalEvent6 @ 0x8248EEA8 | size: 0x10
 void CCalMoviePlayer::SignalEvent6() {
-    KeSetEvent((char*)this + 180, 1, 0);
+    KeSetEvent(m_event6, 1, 0);
 }
 
 /// Signals event object 7 (offset +196).
 /// CCalMoviePlayer::SignalEvent7 @ 0x8248EEB8 | size: 0x10
 void CCalMoviePlayer::SignalEvent7() {
-    KeSetEvent((char*)this + 196, 1, 0);
+    KeSetEvent(m_event7, 1, 0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1246,25 +1223,25 @@ void CCalMoviePlayer::SignalEvent7() {
 /// Resets event object at offset +148.
 /// CCalMoviePlayer::ResetEvent4 @ 0x8248EEC8 | size: 0x08
 void CCalMoviePlayer::ResetEvent4() {
-    KeResetEvent((char*)this + 148);
+    KeResetEvent(m_event4);
 }
 
 /// Resets event object at offset +164.
 /// CCalMoviePlayer::ResetEvent5 @ 0x8248EED0 | size: 0x08
 void CCalMoviePlayer::ResetEvent5() {
-    KeResetEvent((char*)this + 164);
+    KeResetEvent(m_event5);
 }
 
 /// Resets event object at offset +180.
 /// CCalMoviePlayer::ResetEvent6 @ 0x8248EED8 | size: 0x08
 void CCalMoviePlayer::ResetEvent6() {
-    KeResetEvent((char*)this + 180);
+    KeResetEvent(m_event6);
 }
 
 /// Resets event object at offset +196.
 /// CCalMoviePlayer::ResetEvent7 @ 0x8248EEE0 | size: 0x08
 void CCalMoviePlayer::ResetEvent7() {
-    KeResetEvent((char*)this + 196);
+    KeResetEvent(m_event7);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1274,9 +1251,7 @@ void CCalMoviePlayer::ResetEvent7() {
 /// Returns remaining buffer count: total (offset +52) minus consumed (offset +68).
 /// CCalMoviePlayer::GetRemainingBuffers @ 0x8248DBD0 | size: 0x10
 int32_t CCalMoviePlayer::GetRemainingBuffers() {
-    int32_t total = *(int32_t*)((char*)this + 52);
-    int32_t consumed = *(int32_t*)((char*)this + 68);
-    return total - consumed;
+    return m_totalBuffers - m_semaphore;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1287,33 +1262,29 @@ int32_t CCalMoviePlayer::GetRemainingBuffers() {
 /// Sets state field A (offset +212); invokes change callback if value changed.
 /// CCalMoviePlayer::SetStateA @ 0x8248EF10 | size: 0x2C
 void CCalMoviePlayer::SetStateA(int32_t value) {
-    int32_t old = *(int32_t*)((char*)this + 212);
-    *(int32_t*)((char*)this + 212) = value;
+    int32_t old = m_statusA;
+    m_statusA = value;
     if (old == value) return;
 
-    // Change callback function pointer at offset +64
     typedef void (*CallbackFn)(void* context);
-    CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+    CallbackFn callback = (CallbackFn)m_pChangeCallback;
     if (!callback) return;
 
-    // Callback context at offset +80
-    void* context = *(void**)((char*)this + 80);
-    callback(context);
+    callback(m_pCallbackContext);
 }
 
 /// Sets state field B (offset +216); invokes change callback if value changed.
 /// CCalMoviePlayer::SetStateB @ 0x8248EF40 | size: 0x2C
 void CCalMoviePlayer::SetStateB(int32_t value) {
-    int32_t old = *(int32_t*)((char*)this + 216);
-    *(int32_t*)((char*)this + 216) = value;
+    int32_t old = m_statusB;
+    m_statusB = value;
     if (old == value) return;
 
     typedef void (*CallbackFn)(void* context);
-    CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+    CallbackFn callback = (CallbackFn)m_pChangeCallback;
     if (!callback) return;
 
-    void* context = *(void**)((char*)this + 80);
-    callback(context);
+    callback(m_pCallbackContext);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1324,9 +1295,7 @@ void CCalMoviePlayer::SetStateB(int32_t value) {
 /// Dispatches to vtable slot 14 (offset +56) with this passed as r6.
 /// CCalMoviePlayer::DispatchVSlot14 @ 0x8248E2D0 | size: 0x14
 void CCalMoviePlayer::DispatchVSlot14() {
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)this;
-    ((VFunc)vtable[14])(this);
+    VCALL(this, 14);
 }
 
 /// Dispatches to vtable slot 19 (offset +76), unpacking args from r4.
@@ -1334,26 +1303,22 @@ void CCalMoviePlayer::DispatchVSlot14() {
 /// CCalMoviePlayer::DispatchVSlot19WithArgs @ 0x8248E418 | size: 0x1C
 void CCalMoviePlayer::DispatchVSlot19WithArgs(void* args) {
     typedef void (*VFunc)(void* self, uint32_t param, void* extra, void* context);
-    void** vtable = *(void***)this;
     uint32_t param = *(uint32_t*)((char*)args + 4);
     void* extra = (char*)args + 8;
-    ((VFunc)vtable[19])(this, param, extra, args);
+    ((VFunc)VTABLE(this)[19])(this, param, extra, args);
 }
 
 /// Dispatches to vtable slot 19 (offset +76) with param=0.
 /// CCalMoviePlayer::DispatchVSlot19NoArgs @ 0x8248E438 | size: 0x14
 void CCalMoviePlayer::DispatchVSlot19NoArgs() {
     typedef void (*VFunc)(void* self, uint32_t param, uint32_t extra, uint32_t context);
-    void** vtable = *(void***)this;
-    ((VFunc)vtable[19])(this, 0, 0, 0);
+    ((VFunc)VTABLE(this)[19])(this, 0, 0, 0);
 }
 
-/// Dispatches to vtable slot 32 (offset +128).
+/// Dispatches to vtable slot 32 -- MediaControl::Run.
 /// CCalMoviePlayer::DispatchVSlot32 @ 0x8248EC68 | size: 0x10
 void CCalMoviePlayer::DispatchVSlot32() {
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)this;
-    ((VFunc)vtable[32])(this);
+    MediaControl_Run();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1361,39 +1326,31 @@ void CCalMoviePlayer::DispatchVSlot32() {
 // Call a virtual function then return 0 (STATUS_SUCCESS pattern)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Calls vtable slot 34 and returns 0.
+/// Calls MediaControl::Pause and returns 0.
 /// CCalMoviePlayer::CallVSlot34ReturnZero @ 0x8248EC88 | size: 0x30
 int32_t CCalMoviePlayer::CallVSlot34ReturnZero() {
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)this;
-    ((VFunc)vtable[34])(this);
+    MediaControl_Pause();
     return 0;
 }
 
-/// Calls vtable slot 35 and returns 0.
+/// Calls MediaControl::Stop and returns 0.
 /// CCalMoviePlayer::CallVSlot35ReturnZero @ 0x8248ECB8 | size: 0x30
 int32_t CCalMoviePlayer::CallVSlot35ReturnZero() {
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)this;
-    ((VFunc)vtable[35])(this);
+    MediaControl_Stop();
     return 0;
 }
 
-/// Calls vtable slot 36 and returns 0.
+/// Calls MediaControl::GetState and returns 0.
 /// CCalMoviePlayer::CallVSlot36ReturnZero @ 0x8248ECE8 | size: 0x30
 int32_t CCalMoviePlayer::CallVSlot36ReturnZero() {
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)this;
-    ((VFunc)vtable[36])(this);
+    MediaControl_GetState();
     return 0;
 }
 
-/// Calls vtable slot 37 and returns 0.
+/// Calls MediaControl::StopWhenReady and returns 0.
 /// CCalMoviePlayer::CallVSlot37ReturnZero @ 0x8248ED18 | size: 0x30
 int32_t CCalMoviePlayer::CallVSlot37ReturnZero() {
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)this;
-    ((VFunc)vtable[37])(this);
+    MediaControl_StopWhenReady();
     return 0;
 }
 
@@ -1403,21 +1360,25 @@ int32_t CCalMoviePlayer::CallVSlot37ReturnZero() {
 // These are unimplemented media control functions.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Debug format string @ 0x82008ACC
-// Debug param strings @ 0x82009280 (Rewind), 0x82009298 (Seek)
+// Debug format string and parameter strings for unimplemented media controls
+static const char* STR_DBG_NOT_IMPL_FMT = "CCalMoviePlayer::%s not implemented";  // @ 0x82008ACC
+static const char* STR_DBG_REWIND = "Rewind";                                      // @ 0x82009280
+static const char* STR_DBG_SEEK = "Seek";                                          // @ 0x82009298
 
-/// Rewind stub — prints debug message, returns STATUS_NOT_IMPLEMENTED.
+constexpr uint32_t STATUS_NOT_IMPLEMENTED = 0x80004001;
+
+/// Rewind stub -- prints debug message, returns STATUS_NOT_IMPLEMENTED.
 /// CCalMoviePlayer::Rewind @ 0x8248E758 | size: 0x38
 uint32_t CCalMoviePlayer::Rewind() {
-    DbgPrint((const char*)0x82008ACC, (const char*)0x82009280);
-    return 0x80004001;  // STATUS_NOT_IMPLEMENTED
+    DbgPrint(STR_DBG_NOT_IMPL_FMT, STR_DBG_REWIND);
+    return STATUS_NOT_IMPLEMENTED;
 }
 
-/// Seek stub — prints debug message, returns STATUS_NOT_IMPLEMENTED.
+/// Seek stub -- prints debug message, returns STATUS_NOT_IMPLEMENTED.
 /// CCalMoviePlayer::Seek @ 0x8248E790 | size: 0x38
 uint32_t CCalMoviePlayer::Seek() {
-    DbgPrint((const char*)0x82008ACC, (const char*)0x82009298);
-    return 0x80004001;  // STATUS_NOT_IMPLEMENTED
+    DbgPrint(STR_DBG_NOT_IMPL_FMT, STR_DBG_SEEK);
+    return STATUS_NOT_IMPLEMENTED;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1429,15 +1390,15 @@ uint32_t CCalMoviePlayer::Seek() {
 /// The multiply-by-3-shift-right-1 is done via (n + n*2) >> 1.
 /// CCalMoviePlayer::GetFrameBuffer @ 0x82483F00 | size: 0x28
 void* CCalMoviePlayer::GetFrameBuffer() {
+    // Width and height at offsets +124/+128 (within event/buffer region)
+    // TODO: add m_width/m_height fields once class layout is fully resolved
     uint32_t width = *(uint32_t*)((char*)this + 124);
     uint32_t height = *(uint32_t*)((char*)this + 128);
-    uint32_t pixels = width * height;
-    uint32_t frameSize = (pixels * 3) >> 1;  // YUV 4:2:0: 1.5 bytes per pixel
+    uint32_t frameSize = (width * height * 3) >> 1;  // YUV 4:2:0: 1.5 bytes per pixel
 
-    // Dispatch to vtable slot 20 (offset +80) with computed frame size
+    // Dispatch to vtable slot 20 with computed frame size
     typedef void* (*VFunc)(void* self, uint32_t size);
-    void** vtable = *(void***)this;
-    return ((VFunc)vtable[20])(this, frameSize);
+    return ((VFunc)VTABLE(this)[20])(this, frameSize);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1448,19 +1409,17 @@ void* CCalMoviePlayer::GetFrameBuffer() {
 /// Replaces the fiber context. Releases old context if present, acquires new one.
 /// CCalMoviePlayer::ReplaceFiberContext @ 0x8235EB30 | size: 0x40
 void CCalMoviePlayer::ReplaceFiberContext() {
-    void* existing = *(void**)((char*)this + 10376);
-    if (existing) {
+    if (m_pFiberContext) {
         _crt_tls_fiber_setup();  // Release/cleanup existing context
     }
-    void* newCtx = _crt_tls_fiber_setup();
-    *(void**)((char*)this + 10376) = newCtx;
+    m_pFiberContext = _crt_tls_fiber_setup();
 }
 
 /// Clears the fiber context pointer (with memory barrier).
 /// CCalMoviePlayer::ClearFiberContext @ 0x8235EB70 | size: 0x10
 void CCalMoviePlayer::ClearFiberContext() {
-    // eieio — enforce in-order execution of I/O (memory barrier)
-    *(void**)((char*)this + 10376) = nullptr;
+    // eieio -- enforce in-order execution of I/O (memory barrier)
+    m_pFiberContext = nullptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1469,35 +1428,37 @@ void CCalMoviePlayer::ClearFiberContext() {
 
 // External helper functions used by constructors/destructors
 extern "C" {
-    void util_8580(void* obj);           // @ 0x82488580 - base class constructor helper
-    void util_85C8(void* obj);           // @ 0x824885C8 - base class destructor helper
-    void CCalMoviePlayer_38(void* obj);  // @ 0x8248E0E8 - event initialization
-    void CCalMoviePlayer_13(void* obj);  // @ 0x8248FA48 - event cleanup
+    void CCalMoviePlayer_BaseCtorHelper(void* obj);  // @ 0x82488580 - base class constructor helper
+    void CCalMoviePlayer_BaseDtorHelper(void* obj);  // @ 0x824885C8 - base class destructor helper
+    void CCalMoviePlayer_InitEvents(void* obj);      // @ 0x8248E0E8 - event initialization
+    void CCalMoviePlayer_CleanupEvents(void* obj);   // @ 0x8248FA48 - event cleanup
 }
 
-/// CCalMoviePlayer intermediate constructor — initializes base, sets vtable, inits events.
-/// Vtable @ 0x820092C0 (CCalMoviePlayer main vtable).
+// Vtable addresses for CCalMoviePlayer hierarchy
+static void* const VTABLE_CCalMoviePlayer_Base    = (void*)0x820092C0;  // intermediate/base vtable
+static void* const VTABLE_CCalMoviePlayer_Derived = (void*)0x82008B80;  // derived class vtable
+
+/// CCalMoviePlayer intermediate constructor -- initializes base, sets vtable, inits events.
 /// CCalMoviePlayer::CtorIntermediate @ 0x8248ED48 | size: 0x40
 void CCalMoviePlayer::CtorIntermediate() {
-    util_8580(this);
-    *(void**)this = (void*)0x820092C0;  // Set CCalMoviePlayer vtable
-    CCalMoviePlayer_38(this);
+    CCalMoviePlayer_BaseCtorHelper(this);
+    *(void**)this = VTABLE_CCalMoviePlayer_Base;
+    CCalMoviePlayer_InitEvents(this);
 }
 
-/// CCalMoviePlayer derived constructor — calls intermediate ctor, sets derived vtable.
-/// Vtable @ 0x82008B80 (derived class vtable).
+/// CCalMoviePlayer derived constructor -- calls intermediate ctor, sets derived vtable.
 /// CCalMoviePlayer::CtorDerived @ 0x82487200 | size: 0x3C
 void CCalMoviePlayer::CtorDerived() {
     CtorIntermediate();
-    *(void**)this = (void*)0x82008B80;  // Set derived vtable
+    *(void**)this = VTABLE_CCalMoviePlayer_Derived;
 }
 
-/// CCalMoviePlayer derived destructor — sets intermediate vtable, cleans up events, destroys base.
+/// CCalMoviePlayer derived destructor -- sets intermediate vtable, cleans up events, destroys base.
 /// CCalMoviePlayer::DtorDerived @ 0x824915C8 | size: 0x40
 void CCalMoviePlayer::DtorDerived() {
-    *(void**)this = (void*)0x820092C0;  // Restore intermediate vtable
-    CCalMoviePlayer_13(this);
-    util_85C8(this);
+    *(void**)this = VTABLE_CCalMoviePlayer_Base;
+    CCalMoviePlayer_CleanupEvents(this);
+    CCalMoviePlayer_BaseDtorHelper(this);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1509,15 +1470,8 @@ void CCalMoviePlayer::DtorDerived() {
 /// Element pointer = base[+48] + readIndex[+56] * 60.
 /// CCalMoviePlayer::GetCurrentReadBuffer @ 0x8248DBE0 | size: 0x14 (symbol size; actual scaffold 76B)
 void* CCalMoviePlayer::GetCurrentReadBuffer() {
-    uint32_t readIdx = *(uint32_t*)((char*)this + 56);
-    char* base = *(char**)((char*)this + 48);
-    char* element = base + readIdx * 60;
-
-    // Call vtable slot 1 on the element (init/reset)
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)element;
-    ((VFunc)vtable[1])(element);
-
+    char* element = m_pBufferBase + m_readIndex * 60;
+    VCALL(element, 1);  // init/reset buffer element
     return element;
 }
 
@@ -1525,15 +1479,8 @@ void* CCalMoviePlayer::GetCurrentReadBuffer() {
 /// Element pointer = base[+48] + writeIndex[+60] * 60.
 /// CCalMoviePlayer::GetCurrentWriteBuffer @ 0x8248DC30 | size: 0x14 (symbol size; actual scaffold 76B)
 void* CCalMoviePlayer::GetCurrentWriteBuffer() {
-    uint32_t writeIdx = *(uint32_t*)((char*)this + 60);
-    char* base = *(char**)((char*)this + 48);
-    char* element = base + writeIdx * 60;
-
-    // Call vtable slot 1 on the element
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)element;
-    ((VFunc)vtable[1])(element);
-
+    char* element = m_pBufferBase + m_writeIndex * 60;
+    VCALL(element, 1);  // init/reset buffer element
     return element;
 }
 
@@ -1541,14 +1488,8 @@ void* CCalMoviePlayer::GetCurrentWriteBuffer() {
 /// Element pointer = base[+48] + index * 60.
 /// CCalMoviePlayer::GetBufferByIndex @ 0x8248DC80 | size: 0x14 (symbol size; actual scaffold 72B)
 void* CCalMoviePlayer::GetBufferByIndex(uint32_t index) {
-    char* base = *(char**)((char*)this + 48);
-    char* element = base + index * 60;
-
-    // Call vtable slot 1 on the element
-    typedef void (*VFunc)(void* self);
-    void** vtable = *(void***)element;
-    ((VFunc)vtable[1])(element);
-
+    char* element = m_pBufferBase + index * 60;
+    VCALL(element, 1);  // init/reset buffer element
     return element;
 }
 
@@ -1560,9 +1501,9 @@ void* CCalMoviePlayer::GetBufferByIndex(uint32_t index) {
 /// Advances read index; atomically decrements semaphore (offset +68) on wrap.
 /// CCalMoviePlayer::AdvanceReadIndex @ 0x8248DCC8 | size: 0x68
 void CCalMoviePlayer::AdvanceReadIndex() {
-    volatile uint32_t* pReadIdx = (volatile uint32_t*)((char*)this + 56);
-    volatile uint32_t* pTotal = (volatile uint32_t*)((char*)this + 52);
-    volatile int32_t* pSemaphore = (volatile int32_t*)((char*)this + 68);
+    volatile uint32_t* pReadIdx = (volatile uint32_t*)&m_readIndex;
+    volatile uint32_t* pTotal = (volatile uint32_t*)&m_totalBuffers;
+    volatile int32_t* pSemaphore = (volatile int32_t*)&m_semaphore;
 
     uint32_t idx = *pReadIdx + 1;
     *pReadIdx = idx;
@@ -1581,9 +1522,9 @@ void CCalMoviePlayer::AdvanceReadIndex() {
 /// Advances write index; atomically increments semaphore (offset +68) on wrap.
 /// CCalMoviePlayer::AdvanceWriteIndex @ 0x8248DD30 | size: 0x68
 void CCalMoviePlayer::AdvanceWriteIndex() {
-    volatile uint32_t* pWriteIdx = (volatile uint32_t*)((char*)this + 60);
-    volatile uint32_t* pTotal = (volatile uint32_t*)((char*)this + 52);
-    volatile int32_t* pSemaphore = (volatile int32_t*)((char*)this + 68);
+    volatile uint32_t* pWriteIdx = (volatile uint32_t*)&m_writeIndex;
+    volatile uint32_t* pTotal = (volatile uint32_t*)&m_totalBuffers;
+    volatile int32_t* pSemaphore = (volatile int32_t*)&m_semaphore;
 
     uint32_t idx = *pWriteIdx + 1;
     *pWriteIdx = idx;

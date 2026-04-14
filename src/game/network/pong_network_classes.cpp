@@ -15,13 +15,77 @@
 
 // Forward declarations
 extern "C" void rage_free(void* ptr);
-extern "C" void rage::ReleaseSingleton(void* obj);
-extern "C" void sysCallback::Invoke(void* obj, int flags);
+extern "C" void rage_ReleaseSingleton(void* obj);
+extern void sysCallback_Invoke(void* obj, int flags);
+extern "C" void rage_AssertMainThread(void);
 
-// External globals
-extern void* g_pNetworkTimer;           // @ 0x8201A328
-extern uint32_t g_playerPropType1;      // @ 0x82062D7C
-extern uint32_t g_playerPropType2;      // @ 0x820693D0
+// ── Common vtable slot signatures ───────────────────────────────────────────
+// rage allocator vtable slot 1: alloc(this, size, alignment) -> void*
+typedef void* (*RageAllocFn)(void* allocator, uint32_t size, uint32_t align);
+// Standard scalar/vector destructor: dtor(this, deletingFlag)
+typedef void  (*ScalarDtorFn)(void* self, int flags);
+// Frame timer update: update(this) — slot 2 of g_pNetworkTimer vtable
+typedef void  (*TimerUpdateFn)(void* self);
+
+// External globals (resolved from binary)
+extern void*    g_pNetworkTimer;           // lbl_8201A320 + 0x8 — frame timer instance
+extern uint32_t g_playerPropType1;         // lbl_82062D64 + 0x18 — paddle prop type id
+extern uint32_t g_playerPropType2;         // lbl_820693B4 + 0x1C — clothing prop type id
+
+// rage SDA allocator pointer (lbl_825F5E50 + 0xa1b0/+0xa1b4 region — r13 SDA base + 0)
+// g_allocator_ptr is the pointer at SDA[0]; *(void**)&g_allocator_ptr is the live allocator.
+extern void* g_allocator_ptr;              // SDA r13+0 (= 0x82600004)
+
+// Singleton storage cells
+extern void*    g_plrPropMgrSingleton;     // lbl_826066C0 — atSingleton<plrPropMgr>::sm_Instance
+extern uint32_t g_plrPropStorage;          // lbl_825CAF90 — plrPropMgr backing storage
+
+// Misc data tables / defaults
+extern uint32_t g_defaultData16[4];        // lbl_8261A0C0 — 16-byte zero-init template
+extern float    g_defaultTimestamp;        // lbl_82089A48 + 0xC
+extern float    g_defaultTimestampAlt;     // lbl_82089A58
+extern float    g_defaultTimeout;          // lbl_820358F8 + 0x30
+extern float    g_netSyncTimeout;          // lbl_820330F8 + 0x18
+
+// plrPropMgr property name strings (.rdata)
+extern char g_plrProp_paddleName[15];      // lbl_820716A8
+extern char g_plrProp_clothingName[17];    // lbl_820716B8
+extern char g_plrProp_propTypeName[];      // lbl_8207327C + 0x40 — name string referenced by GetPropertyName
+
+// ── Vtable externs ──────────────────────────────────────────────────────────
+// FloatAverager has 4 vtables (virtual base / MI)
+extern void* FloatAverager_vtable;              /* lbl_8207166C — primary */
+extern void* FloatAverager_vtable_2;            /* lbl_8203A91C — variant 1 */
+extern void* FloatAverager_vtable_3;            /* lbl_82070D78 — variant 2 */
+extern void* FloatAverager_vtable_4;            /* lbl_8203A910 — variant 3 */
+
+extern void* FrameTimeEstimate_vtable;          /* lbl_82071660 */
+extern void* AckHandling_vtable;                /* lbl_82071654 */
+extern void* pongPaddle_vtable;                 /* lbl_82071678 */
+extern void* plrPropMgr_vtable;                /* lbl_820717C4 */
+extern void* atSingleton_plrPropMgr_vtable;    /* lbl_82033C8C — atSingleton<plrPropMgr> base */
+
+extern void* SpectatorNetworkClient_vtable;     /* lbl_82070D14 */
+extern void* NetDataQuery_vtable;               /* lbl_8207116C */
+extern void* NetStateSync_vtable;               /* lbl_820713BC */
+
+// NetDataQuery nested state vtables
+extern void* NetDataQuery_stateInit_vtable;         /* lbl_820711B4 */
+extern void* NetDataQuery_stateRequestData_vtable;  /* lbl_820711FC */
+extern void* NetDataQuery_stateReceiveData_vtable;  /* lbl_82071244 */
+extern void* NetDataQuery_stateFinish_vtable;       /* lbl_8207128C */
+
+// NetStateSync nested state vtables
+extern void* NetStateSync_stateInit_vtable;                     /* lbl_82071404 */
+extern void* NetStateSync_stateWaitForSyncState_vtable;         /* lbl_8207144C */
+extern void* NetStateSync_stateEnterState_vtable;               /* lbl_82071494 */
+extern void* NetStateSync_stateRequestSyncronization_vtable;    /* lbl_820714DC */
+extern void* NetStateSync_stateSendSyncronization_vtable;       /* lbl_82071524 */
+extern void* NetStateSync_stateReceiveSyncronization_vtable;    /* lbl_8207156C */
+extern void* NetStateSync_stateWaitTime_vtable;                 /* lbl_820715B4 */
+
+// PongNetMessage base vtable — used as sentinel when releasing pool elements
+extern void* PongNetMessage_vtable;             /* lbl_8206C304 */
 
 ////////////////////////////////////////////////////////////////////////////////
 // FloatAverager @ 0x8207166C
@@ -73,9 +137,7 @@ struct FloatAverager {
  * @param flags Destruction flags (bit 0: free memory if set)
  */
 void FloatAverager_Destroy(FloatAverager* self, int flags) {
-    // Set vtable to primary FloatAverager vtable @ 0x8207166C
-    // This is the base class vtable address
-    self->vtable = (void**)0x8207166C;
+    self->vtable = (void**)&FloatAverager_vtable;
     
     // If bit 0 is set in flags, free the object memory
     // This follows the standard RAGE engine destruction pattern
@@ -96,11 +158,7 @@ void FloatAverager_Destroy(FloatAverager* self, int flags) {
  *   Result: 0x8203A91C
  */
 void FloatAverager_Destroy_7AE8(FloatAverager* self, int flags) {
-    // Set vtable to alternate FloatAverager vtable @ 0x8203A91C
-    // Python verification:
-    //   r11 = (-32252 << 16) + (-22244)
-    //   print(f"0x{r11 & 0xFFFFFFFF:08X}")  # 0x8203A91C
-    self->vtable = (void**)0x8203A91C;
+    self->vtable = (void**)&FloatAverager_vtable_2;
     
     if (flags & 0x1) {
         rage_free(self);
@@ -114,8 +172,7 @@ void FloatAverager_Destroy_7AE8(FloatAverager* self, int flags) {
  * Likely used in a different inheritance context.
  */
 void FloatAverager_Destroy_D538(FloatAverager* self, int flags) {
-    // Set vtable to alternate FloatAverager vtable @ 0x82070D78
-    self->vtable = (void**)0x82070D78;
+    self->vtable = (void**)&FloatAverager_vtable_3;
     
     if (flags & 0x1) {
         rage_free(self);
@@ -133,11 +190,7 @@ void FloatAverager_Destroy_D538(FloatAverager* self, int flags) {
  *   Result: 0x8203A910
  */
 void FloatAverager_Destroy_3EE8(FloatAverager* self, int flags) {
-    // Set vtable to alternate FloatAverager vtable @ 0x8203A910
-    // Python verification:
-    //   r11 = (-32252 << 16) + (-22256)
-    //   print(f"0x{r11 & 0xFFFFFFFF:08X}")  # 0x8203A910
-    self->vtable = (void**)0x8203A910;
+    self->vtable = (void**)&FloatAverager_vtable_4;
     
     if (flags & 0x1) {
         rage_free(self);
@@ -166,9 +219,8 @@ struct FrameTimeEstimate {
  * Destructor - sets both vtable pointers and conditionally frees memory.
  */
 void FrameTimeEstimate_Destroy(FrameTimeEstimate* self, int flags) {
-    // Set both vtable pointers
-    self->vtable1 = (void**)0x82071660;  // lis(-32249)+5728
-    self->vtable2 = (void**)0x8207166C;  // lis(-32249)+5740
+    self->vtable1 = (void**)&FrameTimeEstimate_vtable;
+    self->vtable2 = (void**)&FloatAverager_vtable;
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -233,8 +285,7 @@ void AckHandling_Destroy(AckHandling* self, int flags) {
  * Called by the destructor before freeing the object.
  */
 void AckHandling_34D0_fw(AckHandling* self) {
-    // Set vtable to AckHandling @ 0x82071654
-    self->vtable = (void**)0x82071654;
+    self->vtable = (void**)&AckHandling_vtable;
 
     uint32_t count = *(uint32_t*)((char*)self + 96);
     if ((int32_t)count <= 0) {
@@ -287,7 +338,7 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
             
             if (shouldRemove) {
                 // Release packet
-                sysCallback::Invoke(packet, 0);
+                sysCallback_Invoke(packet, 0);
                 
                 // Remove from array
                 extern void AckHandling_3828(AckHandling* self, void* packet);
@@ -315,12 +366,10 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
  * @param currentTime Current network time (float)
  */
 void AckHandling_3530_w(AckHandling* self, float currentTime) {
-    // Get network timer and call its update method
+    // Tick the global network timer via vtable slot 2 (NetworkTimer::Update)
     if (g_pNetworkTimer) {
-        void** vtable = *(void***)g_pNetworkTimer;
-        typedef void (*UpdateFn)(void*);
-        UpdateFn update = (UpdateFn)vtable[2];
-        update(g_pNetworkTimer);
+        void** timerVT = *(void***)g_pNetworkTimer;
+        ((TimerUpdateFn)timerVT[2])(g_pNetworkTimer);
     }
     
     if (self->m_packetCount <= 0) {
@@ -365,16 +414,14 @@ void AckHandling_3828(AckHandling* self, void* packet) {
     uint8_t* pkt = (uint8_t*)packet;
     uint8_t* poolBase = (uint8_t*)self + 112;
 
-    // Copy 16 bytes of default data from global @ 0x8261A0C0
-    extern uint32_t g_defaultPacketData[4];  // @ 0x8261A0C0
+    // Copy 16 bytes of default packet template
     uint32_t* dst = (uint32_t*)pkt;
-    dst[0] = g_defaultPacketData[0];
-    dst[1] = g_defaultPacketData[1];
-    dst[2] = g_defaultPacketData[2];
-    dst[3] = g_defaultPacketData[3];
+    dst[0] = g_defaultData16[0];
+    dst[1] = g_defaultData16[1];
+    dst[2] = g_defaultData16[2];
+    dst[3] = g_defaultData16[3];
 
     // Store default timestamp at +20, clear sequence at +16, clear ack at +18
-    extern float g_defaultTimestamp;  // @ 0x82089A54
     *(float*)(pkt + 20) = g_defaultTimestamp;
     *(uint16_t*)(pkt + 16) = 0;
     *(uint8_t*)(pkt + 18) = 0;
@@ -425,13 +472,11 @@ void AckHandling_AB18_w(AckHandling* self) {
     // Set sequence number to -1 at +36
     *(uint32_t*)((char*)self + 36) = 0xFFFFFFFF;
     
-    // Release existing packet at +52 if present
+    // Release existing packet at +52 via Packet vtable slot 20 (Release/dtor variant)
     void* existingPacket = *(void**)((char*)self + 52);
     if (existingPacket) {
-        void** vtable = *(void***)existingPacket;
-        typedef void (*DestructorFn)(void*, int);
-        DestructorFn dtor = (DestructorFn)vtable[20];
-        dtor(existingPacket, 0);
+        void** packetVT = *(void***)existingPacket;
+        ((ScalarDtorFn)packetVT[20])(existingPacket, 0);
         *(void**)((char*)self + 52) = nullptr;
     }
     
@@ -442,7 +487,7 @@ void AckHandling_AB18_w(AckHandling* self) {
     }
     
     // Clean up packet array at offset +72
-    sysCallback::Invoke((char*)self + 72, 0);
+    sysCallback_Invoke((char*)self + 72, 0);
     
     // Clear all packets in the array at offset +96
     uint32_t* packetArray = (uint32_t*)((char*)self + 96);
@@ -485,15 +530,12 @@ struct pongPaddle {
  * Releases renderer and other internal resources.
  */
 void pongPaddle_4190_h(pongPaddle* self) {
-    // Set vtable
-    self->vtable = (void**)0x82071678;
+    self->vtable = (void**)&pongPaddle_vtable;
     
-    // Release renderer if present
+    // Release renderer via vtable slot 0 (scalar deleting destructor)
     if (self->m_pRenderer) {
-        void** vtable = *(void***)self->m_pRenderer;
-        typedef void (*DestructorFn)(void*, int);
-        DestructorFn dtor = (DestructorFn)vtable[0];
-        dtor(self->m_pRenderer, 1);
+        void** rendererVT = *(void***)self->m_pRenderer;
+        ((ScalarDtorFn)rendererVT[0])(self->m_pRenderer, 1);
         self->m_pRenderer = nullptr;
     }
 }
@@ -565,16 +607,15 @@ struct plrPropMgr {
  * Calls cleanup method, then atSingleton destructor, then conditionally frees.
  */
 void plrPropMgr_Destroy(plrPropMgr* self, int flags) {
-    // Set vtable to plrPropMgr vtable @ 0x820717C4
-    self->vtable = (void**)0x820717C4;
+    self->vtable = (void**)&plrPropMgr_vtable;
     
     // Call cleanup method
     extern void plrPropMgr_OnActivate(plrPropMgr* self);
     plrPropMgr_OnActivate(self);
     
     // Call atSingleton destructor (base class)
-    self->vtable = (void**)0x82033C8C;  // atSingleton vtable
-    rage::ReleaseSingleton(self);
+    self->vtable = (void**)&atSingleton_plrPropMgr_vtable;
+    rage_ReleaseSingleton(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -611,12 +652,8 @@ uint8_t plrPropMgr_GetPropertyInfo(plrPropMgr* self, uint32_t propType) {
  * Address calculation: lis(-32249)+5788 = 0x82071660 + 5788 = 0x820732BC
  */
 void* plrPropMgr_PostLoadChildren(plrPropMgr* self) {
-    // Calculate address: lis(-32249)+5788
-    // Python verification:
-    // r11 = -2113470464  # lis(-32249)
-    // result = r11 + 5788
-    // print(f"0x{result & 0xFFFFFFFF:08X}")  # 0x820732BC
-    return (void*)0x820732BC;
+    // Returns pointer to .rdata property-name string at lbl_8207327C+0x40
+    return (void*)g_plrProp_propTypeName;
 }
 
 /**
@@ -635,13 +672,13 @@ void* plrPropMgr_PostLoadChildren(plrPropMgr* self) {
  */
 void plrPropMgr_Validate(plrPropMgr* self) {
     extern void RegisterSerializationField(void* obj, void* propVtable, void* propData, void* storage, int flags);
-    extern uint32_t g_plrPropStorage;  // @ 0x825CAF90
+    // (g_plrPropStorage declared at file scope)
 
-    // Register property type 1 (vtable @ 0x820716A8 = lis(-32249)+5800)
-    RegisterSerializationField(self, (void*)0x820716A8, (char*)self + 16, &g_plrPropStorage, 0);
+    extern void* plrPropMgr_propType1_vtable;  /* lbl_820716A8 */
+    extern void* plrPropMgr_propType2_vtable;  /* lbl_820716B8 */
 
-    // Register property type 2 (vtable @ 0x820716B8 = lis(-32249)+5816)
-    RegisterSerializationField(self, (void*)0x820716B8, (char*)self + 20, &g_plrPropStorage, 0);
+    RegisterSerializationField(self, &plrPropMgr_propType1_vtable, (char*)self + 16, &g_plrPropStorage, 0);
+    RegisterSerializationField(self, &plrPropMgr_propType2_vtable, (char*)self + 20, &g_plrPropStorage, 0);
 }
 
 /**
@@ -653,7 +690,7 @@ void plrPropMgr_Validate(plrPropMgr* self) {
  */
 void plrPropMgr_PostLoadSetup(plrPropMgr* self) {
     extern void* game_8FB0(void* propTypeId, int defaultInstance);
-    extern void* g_plrPropMgrSingleton;  // @ 0x826066C0
+    // (g_plrPropMgrSingleton declared at file scope)
 
     // Load default for property type 1
     void* prop1 = game_8FB0(*(void**)((char*)self + 16), 0);
@@ -717,7 +754,7 @@ void plrPropMgr_OnDeactivate(plrPropMgr* self) {
 }
 
 // pongLookAtDriver base class method — implemented elsewhere
-extern "C" void pongLookAtDriver_PostLoadProperties(void* obj);
+extern void pongLookAtDriver_PostLoadProperties(void* obj);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -749,14 +786,12 @@ struct NetDataQuery {
  * Destructor - cleans up state machine and conditionally frees memory.
  */
 void NetDataQuery_Destroy(NetDataQuery* self, int flags) {
-    // Set vtable to nested state vtable @ 0x8207116C
-    // Python: (lis(-32249) << 16) + 4460 = 0x8207116C
-    self->vtable = (void**)0x8207116C;
-    
+    self->vtable = (void**)&NetDataQuery_vtable;
+
     // Call fsmMachine base destructor
     extern void fsmMachine_Destructor_27A8(void* obj);
     fsmMachine_Destructor_27A8(self);
-    
+
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
         rage_free(self);
@@ -765,14 +800,13 @@ void NetDataQuery_Destroy(NetDataQuery* self, int flags) {
 
 /**
  * NetDataQuery::Constructor @ 0x823CA458 | size: 0x6C
- * 
+ *
  * Initializes the network data query state machine.
  * Sets up nested state objects and components.
  */
 void NetDataQuery_ctor_A458(NetDataQuery* self) {
-    // Set main vtable @ 0x82070D14
-    // Python: (lis(-32249) << 16) + 3348 = 0x82070D14
-    self->vtable = (void**)0x82070D14;
+    // SpectatorNetworkClient is the outer class; NetDataQuery is a nested FSM
+    self->vtable = (void**)&SpectatorNetworkClient_vtable;
     
     // Initialize component at offset +4364
     extern void grcDevice_FinalizeRenderSetup_1(void* obj);
@@ -783,15 +817,15 @@ void NetDataQuery_ctor_A458(NetDataQuery* self) {
     SinglesNetworkClient_2BE8_g((char*)self + 2096);
     
     // Initialize nested state object at offset +1508
-    // Set its vtable @ 0x8207116C
     void** stateObj = (void**)((char*)self + 1508);
-    *stateObj = (void**)0x8207116C;
+    *stateObj = (void**)&NetDataQuery_vtable;
+    extern void fsmMachine_Destructor_27A8(void* obj);
     fsmMachine_Destructor_27A8(stateObj);
     
     // Initialize state machine member at offset +1392
-    // Set its vtable @ 0x82070D78 (calculated from lis(-32249) + 3448)
+    // FloatAverager_vtable_3 is shared by InternalMessageRelay composition
     void** stateMachine = (void**)((char*)self + 1392);
-    *stateMachine = (void**)0x82070D78;
+    *stateMachine = (void**)&FloatAverager_vtable_3;
     
     // Call initialization
     extern void util_AA38(NetDataQuery* self);
@@ -824,14 +858,10 @@ void NetDataQuery_Process(NetDataQuery* self) {
     extern void* rage_AssertMainThread();
     rage_AssertMainThread();
     
-    // Get allocator pointer from SDA @ r13+0 (0x82600000)
-    extern void* g_allocator_ptr;
-    void** allocator = (void**)((char*)&g_allocator_ptr);
-    
-    // Allocate state array (16 bytes for 4 pointers)
-    void** vtable = *allocator;
-    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
-    AllocFn alloc = (AllocFn)vtable[1];
+    // SDA r13+0 holds the rage allocator pointer; vtable slot 1 = Allocate(size, align)
+    void** allocator = (void**)&g_allocator_ptr;
+    void** allocVT  = (void**)*allocator;
+    RageAllocFn alloc = (RageAllocFn)allocVT[1];
     *(void***)((char*)self + 8) = (void**)alloc(*allocator, 16, 16);
     
     void** stateArray = *(void***)((char*)self + 8);
@@ -841,38 +871,38 @@ void NetDataQuery_Process(NetDataQuery* self) {
     void* state0 = alloc(*allocator, 12, 16);
     if (state0) {
         *(uint32_t*)((char*)state0 + 4) = 0;
-        *(uint32_t*)((char*)state0 + 8) = (uint32_t)self;
-        *(void**)state0 = (void*)0x820711B4;
+        *(uintptr_t*)((char*)state0 + 8) = (uintptr_t)self;
+        *(void**)state0 = &NetDataQuery_stateInit_vtable;
     }
     stateArray[0] = state0;
-    
-    // Allocate and initialize state 1 @ 0x820711FC
+
+    // Allocate and initialize state 1: stateRequestData
     rage_AssertMainThread();
     void* state1 = alloc(*allocator, 12, 16);
     if (state1) {
         *(uint32_t*)((char*)state1 + 4) = 0;
-        *(uint32_t*)((char*)state1 + 8) = (uint32_t)self;
-        *(void**)state1 = (void*)0x820711FC;
+        *(uintptr_t*)((char*)state1 + 8) = (uintptr_t)self;
+        *(void**)state1 = &NetDataQuery_stateRequestData_vtable;
     }
     stateArray[1] = state1;
-    
-    // Allocate and initialize state 2: stateReceiveData @ 0x82071244
+
+    // Allocate and initialize state 2: stateReceiveData
     rage_AssertMainThread();
     void* state2 = alloc(*allocator, 12, 16);
     if (state2) {
         *(uint32_t*)((char*)state2 + 4) = 0;
-        *(uint32_t*)((char*)state2 + 8) = (uint32_t)self;
-        *(void**)state2 = (void*)0x82071244;
+        *(uintptr_t*)((char*)state2 + 8) = (uintptr_t)self;
+        *(void**)state2 = &NetDataQuery_stateReceiveData_vtable;
     }
     stateArray[2] = state2;
-    
-    // Allocate and initialize state 3: stateFinish @ 0x8207128C
+
+    // Allocate and initialize state 3: stateFinish
     rage_AssertMainThread();
     void* state3 = alloc(*allocator, 12, 16);
     if (state3) {
         *(uint32_t*)((char*)state3 + 4) = 0;
-        *(uint32_t*)((char*)state3 + 8) = (uint32_t)self;
-        *(void**)state3 = (void*)0x8207128C;
+        *(uintptr_t*)((char*)state3 + 8) = (uintptr_t)self;
+        *(void**)state3 = &NetDataQuery_stateFinish_vtable;
     }
     stateArray[3] = state3;
 }
@@ -884,7 +914,6 @@ void NetDataQuery_Process(NetDataQuery* self) {
  * Copies 16-byte default data to +540 and +556, clears counters and flags.
  */
 void NetDataQuery_OnComplete(NetDataQuery* self) {
-    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
 
     uint8_t* p = (uint8_t*)self;
 
@@ -948,9 +977,7 @@ uint8_t NetDataQuery_GetName(NetDataQuery* self, int stateIndex) {
  * Structure size: 573 bytes (0x23D)
  */
 void NetDataQuery_ctor_1530(NetDataQuery* self) {
-    // Set vtable @ 0x8207116C
-    // Python: (lis(-32249) << 16) + 4460 = 0x8207116C
-    self->vtable = (void**)0x8207116C;
+    self->vtable = (void**)&NetDataQuery_vtable;
     
     // Initialize fields
     *(uint32_t*)((char*)self + 4) = 0;
@@ -963,9 +990,8 @@ void NetDataQuery_ctor_1530(NetDataQuery* self) {
     *(uint32_t*)((char*)self + 532) = 0;
     *(uint32_t*)((char*)self + 536) = 0;
     
-    // Copy 16-byte data blocks from global @ 0x8261A0C0
-    // Python: (lis(-32158) << 16) + -24384 = 0x8261A0C0
-    uint32_t* src = (uint32_t*)0x8261A0C0;
+    // Copy 16-byte data blocks from global default data
+    uint32_t* src = g_defaultData16;
     uint32_t* dst1 = (uint32_t*)((char*)self + 540);
     uint32_t* dst2 = (uint32_t*)((char*)self + 556);
     
@@ -984,19 +1010,17 @@ void NetDataQuery_ctor_1530(NetDataQuery* self) {
  */
 void NetDataQuery_A8D8(NetDataQuery* self) {
     extern void SinglesNetworkClient_DA08(void* obj);
-    extern float g_defaultTimeout;  // @ 0x82035928 (lis(-32164)+22840)
-    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
 
     uint8_t* p = (uint8_t*)self;
 
-    // Set vtable @ 0x82070C84 (lis(-32249)+-15372)
-    *(void**)p = (void*)0x82070C84;
+    extern void* SinglesNetworkClient_intermediate_vtable;  /* lbl_82070C80 + 0x4 */
+    *(void**)p = &SinglesNetworkClient_intermediate_vtable;
 
     // Initialize sub-object at +4
     SinglesNetworkClient_DA08(p + 4);
 
-    // Set vtable to 0x82070C84 -> 0x82070C30 (lis(-32249)+-15468)
-    *(void**)p = (void*)0x82070C30;
+    extern void* SpectatorMessage_vtable;  /* lbl_82070C2C + 0x4 */
+    *(void**)p = &SpectatorMessage_vtable;
 
     // Clear state fields
     *(uint32_t*)(p + 28) = 0;
@@ -1018,8 +1042,7 @@ void NetDataQuery_A8D8(NetDataQuery* self) {
         ((uint32_t*)(p + 72))[i] = g_defaultData16[i];
     }
 
-    // Set vtable at +96 to 0x82071654 (lis(-32249)+5716)
-    *(void**)(p + 96) = (void*)0x82071654;
+    *(void**)(p + 96) = &AckHandling_vtable;
     *(uint32_t*)(p + 96 + 96) = 0;  // count = 0 at +192
 
     // Initialize pool at +96+16 via NetDataQuery_38D0_2h
@@ -1034,14 +1057,12 @@ void NetDataQuery_A8D8(NetDataQuery* self) {
 }
 
 void NetDataQuery_59F8_wrh(void* obj) {
-    extern float g_defaultTimestamp;  // @ 0x82089A54 (lis(-32248)+-25900)
-    extern float g_defaultTimeout;   // @ 0x82035928 (lis(-32164)+22840)
     extern void game_5128(void* obj);
 
     uint8_t* p = (uint8_t*)obj;
 
-    // Set vtable @ 0x82070500 (lis(-32249)+-2816)
-    *(void**)p = (void*)0x82070500;
+    extern void* NetworkStats_vtable;  /* lbl_820704F0 + 0x10 */
+    *(void**)p = &NetworkStats_vtable;
 
     // Store default timestamp at +4
     *(float*)(p + 4) = g_defaultTimestamp;
@@ -1057,7 +1078,6 @@ void NetDataQuery_59F8_wrh(void* obj) {
 }
 
 void NetDataQuery_2A30_2h(void* obj) {
-    extern float g_defaultTimestampAlt;  // @ 0x82089A58 (lis(-32248)+-25896)
 
     uint8_t* p = (uint8_t*)obj;
     float defVal = g_defaultTimestampAlt;
@@ -1174,8 +1194,6 @@ void NetDataQuery_2B28_2h(void* obj) {
  * +26:    next link (uint16_t)
  */
 void NetDataQuery_38D0_2h(void* obj) {
-    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
-    extern float g_defaultTimestamp;     // @ 0x82089A54
 
     uint8_t* p = (uint8_t*)obj;
     float defTimestamp = g_defaultTimestamp;
@@ -1255,9 +1273,7 @@ struct NetStateSync {
  * Destructor - cleans up state machine and conditionally frees memory.
  */
 void NetStateSync_Destroy(NetStateSync* self, int flags) {
-    // Set vtable @ 0x820713BC
-    // Python: (lis(-32249) << 16) + 5052 = 0x820713BC
-    self->vtable = (void**)0x820713BC;
+    self->vtable = (void**)&NetStateSync_vtable;
     
     // Call fsmMachine base destructor
     extern void fsmMachine_Destructor_27A8(void* obj);
@@ -1286,14 +1302,10 @@ void NetStateSync_Process(NetStateSync* self) {
     extern void* rage_AssertMainThread();
     rage_AssertMainThread();
     
-    // Get allocator pointer from SDA @ r13+0 (0x82600000)
-    extern void* g_allocator_ptr;  // @ 0x82600004
-    void** allocator = (void**)((char*)&g_allocator_ptr);
-    
-    // Allocate state array (28 bytes for 7 pointers)
-    void** vtable = *allocator;
-    typedef void* (*AllocFn)(void*, uint32_t, uint32_t);
-    AllocFn alloc = (AllocFn)vtable[1];
+    // SDA r13+0 holds the rage allocator pointer; vtable slot 1 = Allocate(size, align)
+    void** allocator = (void**)&g_allocator_ptr;
+    void** allocVT  = (void**)*allocator;
+    RageAllocFn alloc = (RageAllocFn)allocVT[1];
     self->m_pStateArray = (void**)alloc(*allocator, 28, 16);
     
     // Allocate and initialize each state object (12 bytes each)
@@ -1302,74 +1314,71 @@ void NetStateSync_Process(NetStateSync* self) {
     void* state0 = alloc(*allocator, 12, 16);
     if (state0) {
         *(uint32_t*)((char*)state0 + 4) = 0;  // Clear field at +4
-        *(uint32_t*)((char*)state0 + 8) = (uint32_t)self;  // Back pointer
-        *(void**)state0 = (void*)0x82071404;  // vtable
+        *(uintptr_t*)((char*)state0 + 8) = (uintptr_t)self;  // Back pointer
+        *(void**)state0 = &NetStateSync_stateInit_vtable;
     }
     self->m_pStateArray[0] = state0;
-    
-    // State 1: stateWaitForSyncState @ 0x8207144C
+
+    // State 1: stateWaitForSyncState
     rage_AssertMainThread();
     void* state1 = alloc(*allocator, 12, 16);
     if (state1) {
         *(uint32_t*)((char*)state1 + 4) = 0;
-        *(uint32_t*)((char*)state1 + 8) = (uint32_t)self;
-        *(void**)state1 = (void*)0x8207144C;
+        *(uintptr_t*)((char*)state1 + 8) = (uintptr_t)self;
+        *(void**)state1 = &NetStateSync_stateWaitForSyncState_vtable;
     }
     self->m_pStateArray[1] = state1;
-    
-    // State 2: stateEnterState @ 0x82071494
+
+    // State 2: stateEnterState
     rage_AssertMainThread();
     void* state2 = alloc(*allocator, 12, 16);
     if (state2) {
         *(uint32_t*)((char*)state2 + 4) = 0;
-        *(uint32_t*)((char*)state2 + 8) = (uint32_t)self;
-        *(void**)state2 = (void*)0x82071494;
+        *(uintptr_t*)((char*)state2 + 8) = (uintptr_t)self;
+        *(void**)state2 = &NetStateSync_stateEnterState_vtable;
     }
     self->m_pStateArray[2] = state2;
-    
-    // State 3: stateRequestSyncronization @ 0x820714DC
+
+    // State 3: stateRequestSyncronization
     rage_AssertMainThread();
     void* state3 = alloc(*allocator, 12, 16);
     if (state3) {
         *(uint32_t*)((char*)state3 + 4) = 0;
-        *(uint32_t*)((char*)state3 + 8) = (uint32_t)self;
-        *(void**)state3 = (void*)0x820714DC;
+        *(uintptr_t*)((char*)state3 + 8) = (uintptr_t)self;
+        *(void**)state3 = &NetStateSync_stateRequestSyncronization_vtable;
     }
     self->m_pStateArray[3] = state3;
-    
-    // State 4: stateSendSyncronization @ 0x82071524
+
+    // State 4: stateSendSyncronization
     rage_AssertMainThread();
     void* state4 = alloc(*allocator, 12, 16);
     if (state4) {
         *(uint32_t*)((char*)state4 + 4) = 0;
-        *(uint32_t*)((char*)state4 + 8) = (uint32_t)self;
-        *(void**)state4 = (void*)0x82071524;
+        *(uintptr_t*)((char*)state4 + 8) = (uintptr_t)self;
+        *(void**)state4 = &NetStateSync_stateSendSyncronization_vtable;
     }
     self->m_pStateArray[4] = state4;
-    
-    // State 5: stateReceiveSyncronization @ 0x8207156C
+
+    // State 5: stateReceiveSyncronization
     rage_AssertMainThread();
     void* state5 = alloc(*allocator, 12, 16);
     if (state5) {
         *(uint32_t*)((char*)state5 + 4) = 0;
-        *(uint32_t*)((char*)state5 + 8) = (uint32_t)self;
-        *(void**)state5 = (void*)0x8207156C;
+        *(uintptr_t*)((char*)state5 + 8) = (uintptr_t)self;
+        *(void**)state5 = &NetStateSync_stateReceiveSyncronization_vtable;
     }
     self->m_pStateArray[5] = state5;
-    
-    // State 6: stateWaitTime @ 0x820715B4 (16 bytes, has float at +12)
+
+    // State 6: stateWaitTime (16 bytes, has float at +12)
     rage_AssertMainThread();
     void* state6 = alloc(*allocator, 16, 16);
     if (state6) {
         *(uint32_t*)((char*)state6 + 4) = 0;
-        *(uint32_t*)((char*)state6 + 8) = (uint32_t)self;
-        
-        // Load default timeout value from global @ lis(-32253) + -12016
-        // Python: (lis(-32253) << 16) + -12016 = 0x82033110
-        float defaultTimeout = *(float*)0x82033110;
-        *(float*)((char*)state6 + 12) = defaultTimeout;
-        
-        *(void**)state6 = (void*)0x820715B4;
+        *(uintptr_t*)((char*)state6 + 8) = (uintptr_t)self;
+
+        *(float*)((char*)state6 + 12) = g_netSyncTimeout;
+
+        *(void**)state6 = &NetStateSync_stateWaitTime_vtable;
     }
     self->m_pStateArray[6] = state6;
 }
@@ -1388,8 +1397,6 @@ void NetStateSync_Process(NetStateSync* self) {
  * clears state tracking fields.
  */
 void NetStateSync_OnComplete(NetStateSync* self) {
-    extern uint32_t g_defaultData16[4];  // @ 0x8261A0C0
-    extern float g_netSyncTimeout;       // @ 0x82033110 (lis(-32253)+-12016)
 
     uint8_t* p = (uint8_t*)self;
 
@@ -1449,25 +1456,23 @@ uint8_t NetStateSync_GetName(NetStateSync* self, int stateIndex) {
 // External function declarations
 ////////////////////////////////////////////////////////////////////////////////
 
-extern "C" {
-    // fsmMachine destructor — implemented in src/rage/fsmMachine.c
-    void fsmMachine_Destructor_27A8(void* obj);
-    
-    // Network/rendering subsystem initializers
-    void grcDevice_FinalizeRenderSetup_1(void* obj);
-    void SinglesNetworkClient_2BE8_g(void* obj);
-    void SinglesNetworkClient_51C8_g(void* obj);
-    void SinglesNetworkClient_2E88_isl(void* obj);
-    void SinglesNetworkClient_DA08(void* obj);
-    void util_AA38(void* obj);
-    void game_5128(void* obj);
-    
-    // Thread assertion
-    void* rage_AssertMainThread();
-    
-    // Global allocator pointer @ 0x82600004
-    extern void* g_allocator_ptr;
-}
+// fsmMachine destructor — implemented in src/rage/fsmMachine.c
+void fsmMachine_Destructor_27A8(void* obj);
+
+// Network/rendering subsystem initializers
+void grcDevice_FinalizeRenderSetup_1(void* obj);
+void SinglesNetworkClient_2BE8_g(void* obj);
+void SinglesNetworkClient_51C8_g(void* obj);
+void SinglesNetworkClient_2E88_isl(void* obj);
+void SinglesNetworkClient_DA08(void* obj);
+void util_AA38(void* obj);
+void game_5128(void* obj);
+
+// Thread assertion
+void* rage_AssertMainThread();
+
+// Global allocator pointer @ 0x82600004
+extern void* g_allocator_ptr;
 
 
 
@@ -1491,8 +1496,7 @@ extern void pongNetMessageHolder_71C0_wrh(void* self);
 extern void pongNetMessageHolder_72A8_wrh(void* self);
 extern void pongNetMessageHolder_6F30_wrh(void* self);
 
-// PongNetMessage base vtable used as sentinel when releasing pool elements
-static void** const g_PongNetMessageBaseVtable = (void**)0x8206C304;
+// PongNetMessage base vtable is declared at top of file as PongNetMessage_vtable
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1535,7 +1539,7 @@ void pongNetMessageHolder_DestroyHitMessagePool(void* self) {
     uint8_t* elementPtr = (uint8_t*)buffer + (200 * 524);
     for (int i = 199; i >= 0; i--) {
         elementPtr -= 524;
-        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+        *(void**)elementPtr = &PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1607,7 +1611,7 @@ void pongNetMessageHolder_DestroyFocusPool(void* self) {
     uint8_t* elementPtr = (uint8_t*)buffer + (4 * 24);
     for (int i = 3; i >= 0; i--) {
         elementPtr -= 24;
-        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+        *(void**)elementPtr = &PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1655,7 +1659,7 @@ void pongNetMessageHolder_DestroyPlayerStatePool(void* self) {
     uint8_t* elementPtr = (uint8_t*)buffer + (4 * 256);
     for (int i = 3; i >= 0; i--) {
         elementPtr -= 256;
-        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+        *(void**)elementPtr = &PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1679,7 +1683,7 @@ void pongNetMessageHolder_DestroyMatchStatePool(void* self) {
     uint8_t* elementPtr = (uint8_t*)buffer + (4 * 20);
     for (int i = 3; i >= 0; i--) {
         elementPtr -= 20;
-        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+        *(void**)elementPtr = &PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1703,7 +1707,7 @@ void pongNetMessageHolder_DestroyTimeSyncPool(void* self) {
     uint8_t* elementPtr = (uint8_t*)buffer + (10 * 36);
     for (int i = 9; i >= 0; i--) {
         elementPtr -= 36;
-        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+        *(void**)elementPtr = &PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1727,7 +1731,7 @@ void pongNetMessageHolder_DestroyMovementPool(void* self) {
     uint8_t* elementPtr = (uint8_t*)buffer + (200 * 80);
     for (int i = 199; i >= 0; i--) {
         elementPtr -= 80;
-        *(void**)elementPtr = (void*)g_PongNetMessageBaseVtable;
+        *(void**)elementPtr = &PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1749,7 +1753,7 @@ void pongNetMessageHolder_DeallocateNextMatchMessagePool(void* self) {
         return;
     }
 
-    *(uint32_t*)buffer = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+    *(uint32_t*)buffer = (uint32_t)(uintptr_t)&PongNetMessage_vtable;
 
     rage_free(buffer);
     *(void**)(obj + 8) = nullptr;
@@ -1770,7 +1774,7 @@ void pongNetMessageHolder_DeallocateNextMatchSpectatorMessagePool(void* self) {
         return;
     }
 
-    *(uint32_t*)buffer = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+    *(uint32_t*)buffer = (uint32_t)(uintptr_t)&PongNetMessage_vtable;
 
     rage_free(buffer);
     *(void**)(obj + 8) = nullptr;
@@ -1819,7 +1823,7 @@ void pongNetMessageHolder_DeallocateScoreMessagePool(void* self) {
     uint8_t* cursor = (uint8_t*)buffer + 220;
     for (int i = 4; i >= 0; --i) {
         cursor -= 44;
-        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)&PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1869,7 +1873,7 @@ void pongNetMessageHolder_DeallocateForfeitMatchMessagePool(void* self) {
     uint8_t* cursor = (uint8_t*)buffer + 100;
     for (int i = 4; i >= 0; --i) {
         cursor -= 20;
-        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)&PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1919,7 +1923,7 @@ void pongNetMessageHolder_DeallocateTerminateRallyMessagePool(void* self) {
     uint8_t* cursor = (uint8_t*)buffer + 120;
     for (int i = 9; i >= 0; --i) {
         cursor -= 12;
-        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)&PongNetMessage_vtable;
     }
 
     rage_free(buffer);
@@ -1969,7 +1973,7 @@ void pongNetMessageHolder_DeallocateInternalMessageRelayPool(void* self) {
     uint8_t* cursor = (uint8_t*)buffer + 5240;
     for (int i = 9; i >= 0; --i) {
         cursor -= 524;
-        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)g_PongNetMessageBaseVtable;
+        *reinterpret_cast<uint32_t*>(cursor) = (uint32_t)(uintptr_t)&PongNetMessage_vtable;
     }
 
     rage_free(buffer);

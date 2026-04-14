@@ -153,13 +153,16 @@ public:
     void SetMember(const char* name, void* value) override;  // @ 0x823FF4A0 | size: 0x14
     void DeleteMember(const char* name) override;  // @ 0x823FF4B8 | size: 0x14
     void Invoke(const char* methodName, void* args, int argCount, void* outResult) override;  // @ 0x823FF4D0
+    virtual void Execute(void* args, int argCount, void* thisArg, int flags);  // [14] @ 0x823FF590 — AS function call entry
 
     // ── member fields ──
     uint8_t     _padAction04[120];   // padding after swfSCRIPTOBJECT fields
     int         m_localCount;        // +132 (0x84)
     uint8_t     _padLocalTable[7192]; // local name table (+136 .. +7327)
     void*       m_pLocalValues;      // +7328 (0x1CA0)
-    void*       m_pInnerObject;      // +7332 (0x1CA4)
+    // m_pInnerObject at +7332 wraps a swfINSTANCE (MovieClip) for AS closures.
+    // Declared as swfINSTANCE* so forwarding thunks can use virtual dispatch.
+    swfINSTANCE* m_pInnerObject;     // +7332 (0x1CA4)
 };
 
 /**

@@ -30,10 +30,17 @@ extern void rage_debugLog(const char* fmt, ...); // @ 0x8240E6D0
 // Signature: (obj, schemaKey, fieldPtr, fieldDesc, flags)
 extern void RegisterSerializedField(void* obj, const void* key, void* fieldPtr, const void* desc, uint32_t flags);
 
-// Virtual-call helpers (typed for readability)
-#define VCALL_slot20(obj, arg)     (((bool(*)(void*, uint32_t))(*(void***)(obj))[20])(obj, arg))
-#define VCALL_slot19(obj)     (((const char*(*)(void*))(*(void***)(obj))[19])(obj))
-
+// Generic vtable dispatch typedefs for external COM-like interfaces
+// (used by CCalMoviePlayer methods that dispatch on media/enumerator/element objects)
+typedef void     (*VFuncV)(void*);
+typedef void     (*VFuncVI)(void*, int32_t);
+typedef void     (*VFuncVP)(void*, void*);
+typedef int32_t  (*VFuncI)(void*);
+typedef int32_t  (*VFuncII)(void*, int32_t);
+typedef void*    (*VFuncP)(void*);
+typedef void     (*VFunc4)(void*, void*, void*, int32_t);
+typedef int32_t  (*VFunc3P)(void*, void*, void*);
+typedef void     (*VFuncRender)(void*, int32_t);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // fsmMachine  [vtable @ 0x8204DD14]
@@ -125,11 +132,11 @@ pongSaveFile::pongSaveFile() {
     // vtable managed by C++ runtime
     
     // Initialize 4 save slots (rage::parStructure instances)
-    // Starting from offset 0x10008 (65544) and going backwards by 15044 each iteration
-    uint32_t offset = 0x10008;
-    for (int i = 0; i < 4; i++) {
-        offset -= 15044;  // 0x3AC4 - size of rage::parStructure
-        void* saveSlot = (char*)this + offset;
+    // Starting from offset 0x10008 (65544) and going backwards by SAVE_SLOT_SIZE each iteration
+    uint32_t offset = SAVE_SLOT_INIT_END;
+    for (int i = 0; i < SAVE_SLOT_COUNT; i++) {
+        offset -= SAVE_SLOT_SIZE;
+        void* saveSlot = reinterpret_cast<char*>(this) + offset;
         util_CE30(saveSlot);  // Initialize parStructure @ 0x8234CE30
     }
     
@@ -196,9 +203,8 @@ void pongSaveFile::HandleEvent(uint16_t eventType) {
     uint32_t slotIndex = 0;
     rage::NotifyObservers(this, (void*)0x82017888, &slotIndex);
     
-    // Calculate save slot offset (each slot is 15044 bytes)
-    uint32_t slotOffset = slotIndex * 15044;
-    char* saveSlot = (char*)this + slotOffset;
+    // Get raw pointer to the selected save slot
+    char* saveSlot = getSaveSlot(slotIndex);
     
     // Clear event state for this slot
     *(uint32_t*)(saveSlot + 524) = 0;
@@ -411,7 +417,6 @@ const void* assetVersions::GetTypeDescriptor() const
     return reinterpret_cast<const void*>(0x8204E424);
 }
 
-
 // ── assetVersionsChar ─────────────────────────────────────────────────────────
 
 /**
@@ -468,7 +473,6 @@ const void* assetVersionsChar::GetTypeDescriptor() const
 {
     return reinterpret_cast<const void*>(0x8204E440);
 }
-
 
 // ── assetVersionsCharSpecific ─────────────────────────────────────────────────
 
@@ -806,7 +810,6 @@ bool pg_6770_fw(void* context, void* pageGroup) {
     return (handled != 0);
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // CCalMoviePlayer — Bink Video Player (52 small functions)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -825,14 +828,14 @@ extern "C" int KeResetEvent(void* event);
  * array at offsets +84 through +196 (stride 16 bytes per KEVENT).
  * Called to synchronize video decode/render threads.
  */
-void CCalMoviePlayer::WaitForEvent0() { KeWaitForSingleObject((char*)this + 84,  3, 1, 0, nullptr); }   // _40
-void CCalMoviePlayer::WaitForEvent1() { KeWaitForSingleObject((char*)this + 100, 3, 1, 0, nullptr); }   // _41
-void CCalMoviePlayer::WaitForEvent2() { KeWaitForSingleObject((char*)this + 116, 3, 1, 0, nullptr); }   // _42
-void CCalMoviePlayer::WaitForEvent3() { KeWaitForSingleObject((char*)this + 132, 3, 1, 0, nullptr); }   // _43
-void CCalMoviePlayer::WaitForEvent4() { KeWaitForSingleObject((char*)this + 148, 3, 1, 0, nullptr); }   // _44
-void CCalMoviePlayer::WaitForEvent5() { KeWaitForSingleObject((char*)this + 164, 3, 1, 0, nullptr); }   // _45
-void CCalMoviePlayer::WaitForEvent6() { KeWaitForSingleObject((char*)this + 180, 3, 1, 0, nullptr); }   // _46
-void CCalMoviePlayer::WaitForEvent7() { KeWaitForSingleObject((char*)this + 196, 3, 1, 0, nullptr); }   // _47
+void CCalMoviePlayer::WaitForEvent0() { KeWaitForSingleObject(&m_events[0],  3, 1, 0, nullptr); }   // _40
+void CCalMoviePlayer::WaitForEvent1() { KeWaitForSingleObject(&m_events[16], 3, 1, 0, nullptr); }   // _41
+void CCalMoviePlayer::WaitForEvent2() { KeWaitForSingleObject(&m_events[32], 3, 1, 0, nullptr); }   // _42
+void CCalMoviePlayer::WaitForEvent3() { KeWaitForSingleObject(&m_events[48], 3, 1, 0, nullptr); }   // _43
+void CCalMoviePlayer::WaitForEvent4() { KeWaitForSingleObject(&m_events[64], 3, 1, 0, nullptr); }   // _44
+void CCalMoviePlayer::WaitForEvent5() { KeWaitForSingleObject(&m_events[80], 3, 1, 0, nullptr); }   // _45
+void CCalMoviePlayer::WaitForEvent6() { KeWaitForSingleObject(&m_events[96], 3, 1, 0, nullptr); }   // _46
+void CCalMoviePlayer::WaitForEvent7() { KeWaitForSingleObject(&m_events[112], 3, 1, 0, nullptr); }   // _47
 
 // ── Pattern B: SignalEvent[0..7] (8 functions, 16B each) ──────────────────
 
@@ -840,24 +843,24 @@ void CCalMoviePlayer::WaitForEvent7() { KeWaitForSingleObject((char*)this + 196,
  * CCalMoviePlayer::SignalEvent[N] — 8 functions @ 16B each
  * Signals one of the 8 KEVENTs to wake a waiting thread.
  */
-void CCalMoviePlayer::SignalEvent0() { KeSetEvent((char*)this + 84,  1, 0); }   // _48
-void CCalMoviePlayer::SignalEvent1() { KeSetEvent((char*)this + 100, 1, 0); }   // _49
-void CCalMoviePlayer::SignalEvent2() { KeSetEvent((char*)this + 116, 1, 0); }   // _50
-void CCalMoviePlayer::SignalEvent3() { KeSetEvent((char*)this + 132, 1, 0); }   // _51
-void CCalMoviePlayer::SignalEvent4() { KeSetEvent((char*)this + 148, 1, 0); }   // _52
-void CCalMoviePlayer::SignalEvent5() { KeSetEvent((char*)this + 164, 1, 0); }   // _53
-void CCalMoviePlayer::SignalEvent6() { KeSetEvent((char*)this + 180, 1, 0); }   // _54
-void CCalMoviePlayer::SignalEvent7() { KeSetEvent((char*)this + 196, 1, 0); }   // _55
+void CCalMoviePlayer::SignalEvent0() { KeSetEvent(&m_events[0],  1, 0); }   // _48
+void CCalMoviePlayer::SignalEvent1() { KeSetEvent(&m_events[16], 1, 0); }   // _49
+void CCalMoviePlayer::SignalEvent2() { KeSetEvent(&m_events[32], 1, 0); }   // _50
+void CCalMoviePlayer::SignalEvent3() { KeSetEvent(&m_events[48], 1, 0); }   // _51
+void CCalMoviePlayer::SignalEvent4() { KeSetEvent(&m_events[64], 1, 0); }   // _52
+void CCalMoviePlayer::SignalEvent5() { KeSetEvent(&m_events[80], 1, 0); }   // _53
+void CCalMoviePlayer::SignalEvent6() { KeSetEvent(&m_events[96], 1, 0); }   // _54
+void CCalMoviePlayer::SignalEvent7() { KeSetEvent(&m_events[112], 1, 0); }   // _55
 
 // ── Pattern C: ResetEvent[4..7] (8 functions, 8B each) ────────────────────
 
 /**
  * CCalMoviePlayer::ResetEvent[N] — resets KEVENT to non-signaled state.
  */
-void CCalMoviePlayer::ResetEvent4() { KeResetEvent((char*)this + 148); }   // _56
-void CCalMoviePlayer::ResetEvent5() { KeResetEvent((char*)this + 164); }   // _57
-void CCalMoviePlayer::ResetEvent6() { KeResetEvent((char*)this + 180); }   // _58
-void CCalMoviePlayer::ResetEvent7() { KeResetEvent((char*)this + 196); }   // _59
+void CCalMoviePlayer::ResetEvent4() { KeResetEvent(&m_events[64]); }   // _56
+void CCalMoviePlayer::ResetEvent5() { KeResetEvent(&m_events[80]); }   // _57
+void CCalMoviePlayer::ResetEvent6() { KeResetEvent(&m_events[96]); }   // _58
+void CCalMoviePlayer::ResetEvent7() { KeResetEvent(&m_events[112]); }   // _59
 
 // ── Pattern D: Field getters (5 functions, 8B each) ──────────────────────
 
@@ -865,11 +868,11 @@ void CCalMoviePlayer::ResetEvent7() { KeResetEvent((char*)this + 196); }   // _5
  * CCalMoviePlayer field getters — return int32 fields at +212..+228.
  * These expose video properties: width, height, frame count, etc.
  */
-int CCalMoviePlayer::GetField212() { return *(int*)((char*)this + 212); }   // _60
-int CCalMoviePlayer::GetField216() { return *(int*)((char*)this + 216); }   // _61
-int CCalMoviePlayer::GetField220() { return *(int*)((char*)this + 220); }   // _62
-int CCalMoviePlayer::GetField224() { return *(int*)((char*)this + 224); }   // _63_a
-int CCalMoviePlayer::GetField228() { return *(int*)((char*)this + 228); }   // _63_b
+int CCalMoviePlayer::GetField212() { return m_statusA; }   // _60
+int CCalMoviePlayer::GetField216() { return m_statusB; }   // _61
+int CCalMoviePlayer::GetField220() { return m_isPlaying; }   // _62
+int CCalMoviePlayer::GetField224() { return m_statusFieldB; }   // _63_a
+int CCalMoviePlayer::GetField228() { return m_statusFieldC; }   // _63_b
 
 // ── Pattern E: Vtable dispatch thunks (5 functions, 16-48B each) ─────────
 
@@ -878,32 +881,27 @@ int CCalMoviePlayer::GetField228() { return *(int*)((char*)this + 228); }   // _
  * on self and return 0. Used by the COM-like IMediaControl interface.
  */
 int CCalMoviePlayer::DispatchSlot32() {  // EC68_p33
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[32])(this);
+    MediaControl_Run();
     return 0;
 }
 
 int CCalMoviePlayer::DispatchSlot34() {  // EC88_p33
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[34])(this);
+    MediaControl_Pause();
     return 0;
 }
 
 int CCalMoviePlayer::DispatchSlot35() {  // ECB8_p33
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[35])(this);
+    MediaControl_Stop();
     return 0;
 }
 
 int CCalMoviePlayer::DispatchSlot36() {  // ECE8_p33
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[36])(this);
+    MediaControl_GetState();
     return 0;
 }
 
 int CCalMoviePlayer::DispatchSlot37() {  // ED18_p33
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[37])(this);
+    MediaControl_StopWhenReady();
     return 0;
 }
 
@@ -930,27 +928,25 @@ int CCalMoviePlayer::Seek() {  // Seek stub
  * and a callback is registered at +64 (with userdata at +80), calls it.
  */
 void CCalMoviePlayer::SetField212(int value) {  // sub_63_1
-    int oldVal = *(int*)((char*)this + 212);
-    *(int*)((char*)this + 212) = value;
+    int oldVal = m_statusA;
+    m_statusA = value;
     if (value != oldVal) {
         typedef void (*CallbackFn)(void*, int);
-        CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+        CallbackFn callback = (CallbackFn)m_pCallback;
         if (callback) {
-            void* userData = *(void**)((char*)this + 80);
-            callback(userData, value);
+            callback(m_pCallbackUserData, value);
         }
     }
 }
 
 void CCalMoviePlayer::SetField216(int value) {  // sub_63_2
-    int oldVal = *(int*)((char*)this + 216);
-    *(int*)((char*)this + 216) = value;
+    int oldVal = m_statusB;
+    m_statusB = value;
     if (value != oldVal) {
         typedef void (*CallbackFn)(void*, int);
-        CallbackFn callback = *(CallbackFn*)((char*)this + 64);
+        CallbackFn callback = (CallbackFn)m_pCallback;
         if (callback) {
-            void* userData = *(void**)((char*)this + 80);
-            callback(userData, value);
+            callback(m_pCallbackUserData, value);
         }
     }
 }
@@ -962,7 +958,7 @@ void CCalMoviePlayer::SetField216(int value) {  // sub_63_2
  * Clears the fiber state flag at this+10376 with an eieio barrier.
  */
 void CCalMoviePlayer::ClearFiberFlag() {  // EB70
-    *(uint32_t*)((char*)this + 10376) = 0;
+    m_fiberContext = 0;
     // Original has eieio (enforce in-order I/O) — memory barrier
 }
 
@@ -971,7 +967,7 @@ void CCalMoviePlayer::ClearFiberFlag() {  // EB70
  * Returns field_52 - field_68 (total frames minus processed frames).
  */
 int CCalMoviePlayer::GetRemainingFrames() {  // DBD0
-    return *(int*)((char*)this + 52) - *(int*)((char*)this + 68);
+    return m_bufferCounterA - *(int32_t*)((char*)this + 0xFC); // TODO: name as m_availableBuffers
 }
 
 /**
@@ -980,8 +976,8 @@ int CCalMoviePlayer::GetRemainingFrames() {  // DBD0
  * Element = base_48 + (frontIndex * 60).
  */
 void* CCalMoviePlayer::GetFrontElement() {  // DBE0
-    char* base = *(char**)((char*)this + 48);
-    int frontIdx = *(int*)((char*)this + 56);
+    char* base = (char*)m_pBufferObject;
+    int frontIdx = m_readIndex;
     char* element = base + frontIdx * 60;
 
     // Activate element via vtable slot 1
@@ -997,8 +993,8 @@ void* CCalMoviePlayer::GetFrontElement() {  // DBE0
  * Same as GetFrontElement but uses the back index at +60.
  */
 void* CCalMoviePlayer::GetBackElement() {  // DC30
-    char* base = *(char**)((char*)this + 48);
-    int backIdx = *(int*)((char*)this + 60);
+    char* base = (char*)m_pBufferObject;
+    int backIdx = m_writeIndex;
     char* element = base + backIdx * 60;
 
     typedef void (*ActivateFn)(void*);
@@ -1013,7 +1009,7 @@ void* CCalMoviePlayer::GetBackElement() {  // DC30
  * Returns element at arbitrary index in ring buffer.
  */
 void* CCalMoviePlayer::GetElementByIndex(int index) {  // DC80_h
-    char* base = *(char**)((char*)this + 48);
+    char* base = (char*)m_pBufferObject;
     char* element = base + index * 60;
 
     typedef void (*ActivateFn)(void*);
@@ -1029,8 +1025,9 @@ void* CCalMoviePlayer::GetElementByIndex(int index) {  // DC80_h
  * for YUV 4:2:0 format (width × height × 1.5).
  */
 int CCalMoviePlayer::ComputeFrameSize() {  // 3F00_h
-    int width = *(int*)((char*)this + 128);
-    int height = *(int*)((char*)this + 124);
+    // NOTE: offsets +124/+128 overlap with m_events[] — different variant layout
+    int width = *(int*)((char*)&m_events[44]);   // +128 within events region
+    int height = *(int*)((char*)&m_events[40]);  // +124 within events region
     return (width * height * 3) >> 1;
 }
 
@@ -1087,12 +1084,11 @@ void CCalMoviePlayer::DtorIntermediate() {
  * it at +10376. Used to switch video decode onto a dedicated fiber.
  */
 void CCalMoviePlayer::SaveAndReplaceFiberContext() {
-    uint32_t existingCtx = *(uint32_t*)((char*)this + 10376);
-    if (existingCtx != 0) {
+    if (m_fiberContext != 0) {
         _crt_tls_fiber_setup();  // Release existing context
     }
     void* newCtx = _crt_tls_fiber_setup();
-    *(void**)((char*)this + 10376) = newCtx;
+    m_fiberContext = (uint32_t)(uintptr_t)newCtx;
 }
 
 /**
@@ -1103,10 +1099,8 @@ void CCalMoviePlayer::SaveAndReplaceFiberContext() {
  * Returns 0.
  */
 int CCalMoviePlayer::QueryPhysicsInstance(void* outResult) {
-    void* physInst = *(void**)((char*)this + 56);
-    phInst_Release(physInst);
-    void* result = *(void**)((char*)this + 56);
-    *(void**)outResult = result;
+    phInst_Release((void*)m_readIndex);
+    *(void**)outResult = (void*)m_readIndex;
     return 0;
 }
 
@@ -1136,17 +1130,16 @@ void CCalMoviePlayer::DeletingDestructor(int flags) {
  * the lock-free ring buffer — signals one buffer consumed.
  */
 void CCalMoviePlayer::AdvanceReadIndexAtomic() {
-    int32_t readIdx = *(int32_t*)((char*)this + 56);
+    int32_t readIdx = m_readIndex;
     readIdx++;
-    *(int32_t*)((char*)this + 56) = readIdx;
+    m_readIndex = readIdx;
 
-    int32_t bufCount = *(int32_t*)((char*)this + 52);
-    if ((uint32_t)readIdx >= (uint32_t)bufCount) {
-        *(int32_t*)((char*)this + 56) = 0;
+    if ((uint32_t)readIdx >= (uint32_t)m_bufferCounterA) {
+        m_readIndex = 0;
     }
 
-    // Atomic decrement of available-buffer count at +68
-    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 68);
+    // Atomic decrement of available-buffer count
+    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 0xFC); // TODO: m_availableBuffers
     int32_t oldVal, newVal;
     do {
         oldVal = *pAvail;
@@ -1163,17 +1156,16 @@ void CCalMoviePlayer::AdvanceReadIndexAtomic() {
  * filled and ready for consumption.
  */
 void CCalMoviePlayer::AdvanceWriteIndexAtomic() {
-    int32_t writeIdx = *(int32_t*)((char*)this + 60);
+    int32_t writeIdx = m_writeIndex;
     writeIdx++;
-    *(int32_t*)((char*)this + 60) = writeIdx;
+    m_writeIndex = writeIdx;
 
-    int32_t bufCount = *(int32_t*)((char*)this + 52);
-    if ((uint32_t)writeIdx >= (uint32_t)bufCount) {
-        *(int32_t*)((char*)this + 60) = 0;
+    if ((uint32_t)writeIdx >= (uint32_t)m_bufferCounterA) {
+        m_writeIndex = 0;
     }
 
-    // Atomic increment of available-buffer count at +68
-    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 68);
+    // Atomic increment of available-buffer count
+    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 0xFC); // TODO: m_availableBuffers
     int32_t oldVal, newVal;
     do {
         oldVal = *pAvail;
@@ -1190,9 +1182,7 @@ void CCalMoviePlayer::AdvanceWriteIndexAtomic() {
  */
 void CCalMoviePlayer::DispatchVSlot9ZeroArgs() {
     uint8_t params[28] = {0};
-    typedef void (*VSlot9Fn)(void*, void*);
-    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
-    fn(this, params);
+    ProcessCommand(params);
 }
 
 /**
@@ -1204,9 +1194,7 @@ void CCalMoviePlayer::DispatchVSlot9ZeroArgs() {
 void CCalMoviePlayer::DispatchVSlot9OneArg(uint32_t arg0) {
     uint8_t params[28] = {0};
     *(uint32_t*)&params[0] = arg0;
-    typedef void (*VSlot9Fn)(void*, void*);
-    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
-    fn(this, params);
+    ProcessCommand(params);
 }
 
 /**
@@ -1219,9 +1207,7 @@ void CCalMoviePlayer::DispatchVSlot9TwoArgs(uint32_t a0, uint32_t a1) {
     uint8_t params[28] = {0};
     *(uint32_t*)&params[0] = a0;
     *(uint32_t*)&params[4] = a1;
-    typedef void (*VSlot9Fn)(void*, void*);
-    VSlot9Fn fn = (VSlot9Fn)(*(void***)this)[9];
-    fn(this, params);
+    ProcessCommand(params);
 }
 
 /**
@@ -1238,31 +1224,29 @@ void CCalMoviePlayer::DispatchVSlot9TwoArgs(uint32_t a0, uint32_t a1) {
  */
 int CCalMoviePlayer::SetBufferPairByChannel(uint32_t channel, uint32_t bufA, uint32_t bufB) {
     // Lock via vtable slot 3
-    typedef void (*LockFn)(void*);
-    ((LockFn)(*(void***)this)[3])(this);
+    Lock();
 
     switch (channel - 1) {
     case 3:  // channel 4
-        *(uint32_t*)((char*)this + 56) = bufA;
-        *(uint32_t*)((char*)this + 72) = bufB;
+        m_readIndex = (int32_t)bufA;
+        *(int32_t*)((char*)this + 0x100) = bufB; // TODO: m_bufPairAlt
         break;
     case 0:  // channel 1
-        *(uint32_t*)((char*)this + 60) = bufA;
-        *(uint32_t*)((char*)this + 76) = bufB;
+        m_writeIndex = (int32_t)bufA;
+        *(int32_t*)((char*)this + 0x104) = bufB; // TODO: m_bufPairLeft
         break;
     case 1:  // channel 2
-        *(uint32_t*)((char*)this + 64) = bufA;
-        *(uint32_t*)((char*)this + 80) = bufB;
+        *(uint32_t*)&m_pCallback = bufA;
+        *(uint32_t*)&m_pCallbackUserData = bufB;
         break;
     default: // channel 3 or out of range
-        *(uint32_t*)((char*)this + 52) = bufA;
-        *(uint32_t*)((char*)this + 68) = bufB;
+        m_bufferCounterA = (int32_t)bufA;
+        *(int32_t*)((char*)this + 0xFC) = (int32_t)bufB; // TODO: m_availableBuffers
         break;
     }
 
     // Unlock via vtable slot 5
-    typedef void (*UnlockFn)(void*);
-    ((UnlockFn)(*(void***)this)[5])(this);
+    Unlock();
 
     return 0;
 }
@@ -1284,16 +1268,16 @@ int CCalMoviePlayer::SetAudioInterface(void* audioIface) {
     }
 
     // Release existing interface if present
-    void* existing = *(void**)((char*)this + 44);
+    void* existing = m_pMediaSource;
     if (existing != nullptr) {
         typedef void (*ReleaseFn)(void*);
         void** vt = *(void***)existing;
         ((ReleaseFn)vt[2])(existing);
-        *(void**)((char*)this + 44) = nullptr;
+        m_pMediaSource = nullptr;
     }
 
     // Store new interface
-    *(void**)((char*)this + 44) = audioIface;
+    m_pMediaSource = audioIface;
     return 0;
 }
 
@@ -1310,26 +1294,22 @@ int CCalMoviePlayer::SetAudioInterface(void* audioIface) {
  */
 void CCalMoviePlayer::QueryVideoProperties(void* outWidth, void* outHeight, void* outUnused) {
     // Lock
-    typedef void (*LockFn)(void*);
-    ((LockFn)(*(void***)this)[3])(this);
+    Lock();
 
     // Query width via vtable slot 60
     if (outWidth != nullptr) {
-        typedef uint32_t (*GetWidthFn)(void*);
-        uint32_t w = ((GetWidthFn)(*(void***)this)[60])(this);
+        uint32_t w = GetStatusFlagsA();
         *(uint32_t*)outWidth = w;
     }
 
     // Query height via vtable slot 61
     if (outHeight != nullptr) {
-        typedef uint32_t (*GetHeightFn)(void*);
-        uint32_t h = ((GetHeightFn)(*(void***)this)[61])(this);
+        uint32_t h = GetStatusFlagsB();
         *(uint32_t*)outHeight = h;
     }
 
     // Unlock
-    typedef void (*UnlockFn)(void*);
-    ((UnlockFn)(*(void***)this)[5])(this);
+    Unlock();
 
     // Clear optional output
     if (outUnused != nullptr) {
@@ -1345,13 +1325,13 @@ void CCalMoviePlayer::QueryVideoProperties(void* outWidth, void* outHeight, void
  * Returns 0.
  */
 int CCalMoviePlayer::GetAudioInterfaceRef(void* outAudioIface) {
-    void* audioIface = *(void**)((char*)this + 44);
+    void* audioIface = m_pMediaSource;
     if (audioIface != nullptr) {
         typedef void (*ActivateFn)(void*);
         void** vt = *(void***)audioIface;
         ((ActivateFn)vt[1])(audioIface);
     }
-    void* result = *(void**)((char*)this + 44);
+    void* result = m_pMediaSource;
     *(void**)outAudioIface = result;
     return 0;
 }
@@ -1367,7 +1347,7 @@ int CCalMoviePlayer::GetAudioInterfaceRef(void* outAudioIface) {
  * Returns 0.
  */
 int CCalMoviePlayer::QueryAudioInterfaceViaProvider(void* outResult) {
-    void* provider = *(void**)((char*)this + 44);
+    void* provider = m_pMediaSource;
     uint32_t tempIface = 0;
 
     // Call provider vtable slot 16 to get temporary interface
@@ -1403,24 +1383,22 @@ int CCalMoviePlayer::QueryAudioInterfaceViaProvider(void* outResult) {
  */
 void CCalMoviePlayer::StopPlaybackSimple(uint32_t mode, void* param) {
     if (param != nullptr) {
-        void* provider = *(void**)((char*)this + 44);
+        void* provider = m_pMediaSource;
         typedef void (*StopFn)(void*, uint32_t, void*);
         void** provVt = *(void***)provider;
         ((StopFn)provVt[19])(provider, mode, param);
     }
 
     // Finalize via provider vtable slot 21
-    void* provider = *(void**)((char*)this + 44);
+    void* provider = m_pMediaSource;
     typedef void (*FinalizeFn)(void*);
     void** provVt = *(void***)provider;
     ((FinalizeFn)provVt[21])(provider);
 
     // Release page reference if pending
-    int32_t pendingFlag = *(int32_t*)((char*)this + 240);
-    if (pendingFlag != 0) {
-        void* pageRef = *(void**)((char*)this + 268);
-        pg_6F48(pageRef);
-        *(int32_t*)((char*)this + 240) = 0;
+    if (m_activeFlag != 0) {
+        pg_6F48(m_hThreadWriteA);
+        m_activeFlag = 0;
     }
 }
 
@@ -1435,12 +1413,11 @@ void CCalMoviePlayer::StopPlaybackSimple(uint32_t mode, void* param) {
  */
 void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
     // Check if still playing via vtable slot 62
-    typedef uint32_t (*IsPlayingFn)(void*);
-    uint32_t playing = ((IsPlayingFn)(*(void***)this)[62])(this);
+    uint32_t playing = IsPlaying();
 
     if ((playing & 1) == 0) {
         // Call stop on audio provider
-        void* provider = *(void**)((char*)this + 44);
+        void* provider = m_pMediaSource;
         typedef void (*StopFn)(void*, uint32_t, void*);
         uint32_t bufCount = 0;
         void** provVt = *(void***)provider;
@@ -1453,17 +1430,15 @@ void CCalMoviePlayer::StopPlaybackFull(uint32_t mode) {
     }
 
     // Finalize via provider vtable slot 21
-    void* provider2 = *(void**)((char*)this + 44);
+    void* provider2 = m_pMediaSource;
     typedef void (*FinalizeFn)(void*);
     void** provVt2 = *(void***)provider2;
     ((FinalizeFn)provVt2[21])(provider2);
 
     // Release page reference if pending
-    int32_t pendingFlag2 = *(int32_t*)((char*)this + 240);
-    if (pendingFlag2 != 0) {
-        void* pageRef2 = *(void**)((char*)this + 268);
-        pg_6F48(pageRef2);
-        *(int32_t*)((char*)this + 240) = 0;
+    if (m_activeFlag != 0) {
+        pg_6F48(m_hThreadWriteA);
+        m_activeFlag = 0;
     }
 }
 
@@ -1484,17 +1459,12 @@ extern void rage_EAD8(void* ptr);   // @ 0x8235EAD8 - Release video callback
  * (vtable slot 5) after the write.
  */
 void CCalMoviePlayer::SetStatusFlagsA(uint32_t flagMask) {
-    typedef void (*LockFn)(void*);
-    typedef void (*UnlockFn)(void*);
-    void** vtable = *(void***)this;
 
-    ((LockFn)vtable[3])(this);
+    Lock();
 
-    char* self = (char*)this;
-    uint32_t current = *(uint32_t*)(self + 220);
-    *(uint32_t*)(self + 220) = current | flagMask;
+    m_isPlaying |= flagMask;
 
-    ((UnlockFn)vtable[5])(this);
+    Unlock();
 }
 
 /**
@@ -1503,17 +1473,12 @@ void CCalMoviePlayer::SetStatusFlagsA(uint32_t flagMask) {
  * Atomically ORs the given bitmask into the status flags at offset +224.
  */
 void CCalMoviePlayer::SetStatusFlagsB(uint32_t flagMask) {
-    typedef void (*LockFn)(void*);
-    typedef void (*UnlockFn)(void*);
-    void** vtable = *(void***)this;
 
-    ((LockFn)vtable[3])(this);
+    Lock();
 
-    char* self = (char*)this;
-    uint32_t current = *(uint32_t*)(self + 224);
-    *(uint32_t*)(self + 224) = current | flagMask;
+    m_statusFieldB |= flagMask;
 
-    ((UnlockFn)vtable[5])(this);
+    Unlock();
 }
 
 /**
@@ -1522,17 +1487,12 @@ void CCalMoviePlayer::SetStatusFlagsB(uint32_t flagMask) {
  * Atomically ORs the given bitmask into the status flags at offset +228.
  */
 void CCalMoviePlayer::SetStatusFlagsC(uint32_t flagMask) {
-    typedef void (*LockFn)(void*);
-    typedef void (*UnlockFn)(void*);
-    void** vtable = *(void***)this;
 
-    ((LockFn)vtable[3])(this);
+    Lock();
 
-    char* self = (char*)this;
-    uint32_t current = *(uint32_t*)(self + 228);
-    *(uint32_t*)(self + 228) = current | flagMask;
+    m_statusFieldC |= flagMask;
 
-    ((UnlockFn)vtable[5])(this);
+    Unlock();
 }
 
 /**
@@ -1541,17 +1501,12 @@ void CCalMoviePlayer::SetStatusFlagsC(uint32_t flagMask) {
  * Atomically clears (AND-NOT) the given bitmask from offset +220.
  */
 void CCalMoviePlayer::ClearStatusFlagsA(uint32_t flagMask) {
-    typedef void (*LockFn)(void*);
-    typedef void (*UnlockFn)(void*);
-    void** vtable = *(void***)this;
 
-    ((LockFn)vtable[3])(this);
+    Lock();
 
-    char* self = (char*)this;
-    uint32_t current = *(uint32_t*)(self + 220);
-    *(uint32_t*)(self + 220) = current & ~flagMask;
+    m_isPlaying &= ~flagMask;
 
-    ((UnlockFn)vtable[5])(this);
+    Unlock();
 }
 
 /**
@@ -1560,17 +1515,12 @@ void CCalMoviePlayer::ClearStatusFlagsA(uint32_t flagMask) {
  * Atomically clears (AND-NOT) the given bitmask from offset +224.
  */
 void CCalMoviePlayer::ClearStatusFlagsB(uint32_t flagMask) {
-    typedef void (*LockFn)(void*);
-    typedef void (*UnlockFn)(void*);
-    void** vtable = *(void***)this;
 
-    ((LockFn)vtable[3])(this);
+    Lock();
 
-    char* self = (char*)this;
-    uint32_t current = *(uint32_t*)(self + 224);
-    *(uint32_t*)(self + 224) = current & ~flagMask;
+    m_statusFieldB &= ~flagMask;
 
-    ((UnlockFn)vtable[5])(this);
+    Unlock();
 }
 
 /**
@@ -1579,17 +1529,12 @@ void CCalMoviePlayer::ClearStatusFlagsB(uint32_t flagMask) {
  * Atomically clears (AND-NOT) the given bitmask from offset +228.
  */
 void CCalMoviePlayer::ClearStatusFlagsC(uint32_t flagMask) {
-    typedef void (*LockFn)(void*);
-    typedef void (*UnlockFn)(void*);
-    void** vtable = *(void***)this;
 
-    ((LockFn)vtable[3])(this);
+    Lock();
 
-    char* self = (char*)this;
-    uint32_t current = *(uint32_t*)(self + 228);
-    *(uint32_t*)(self + 228) = current & ~flagMask;
+    m_statusFieldC &= ~flagMask;
 
-    ((UnlockFn)vtable[5])(this);
+    Unlock();
 }
 
 /**
@@ -1601,17 +1546,16 @@ void CCalMoviePlayer::ClearStatusFlagsC(uint32_t flagMask) {
  * downstream consumers that a frame has been consumed.
  */
 void CCalMoviePlayer::FlushAndNotify() {
-    char* self = (char*)this;
 
-    // Atomically decrement the semaphore at +248
-    volatile int32_t* pSemaphore = (volatile int32_t*)(self + 248);
+    // Atomically decrement the semaphore (buffer counter B)
+    volatile int32_t* pSemaphore = (volatile int32_t*)&m_bufferCounterB;
     int32_t oldVal;
     do {
         oldVal = *pSemaphore;
     } while (!__sync_bool_compare_and_swap(pSemaphore, oldVal, oldVal - 1));
 
     // Flush the audio source via vtable slot 23
-    void* pAudio = *(void**)(self + 44);
+    void* pAudio = m_pMediaSource;
     {
         typedef void (*FlushFn)(void*);
         void** audioVtable = *(void***)pAudio;
@@ -1620,16 +1564,12 @@ void CCalMoviePlayer::FlushAndNotify() {
 
     // Notify via vtable slot 49 (signal frame consumed)
     {
-        typedef void (*NotifyFn)(void*);
-        void** vtable = *(void***)this;
-        ((NotifyFn)vtable[49])(this);
+        SignalEvent1();
     }
 
     // Notify via vtable slot 51 (signal completion)
     {
-        typedef void (*CompleteFn)(void*);
-        void** vtable = *(void***)this;
-        ((CompleteFn)vtable[51])(this);
+        SignalEvent3();
     }
 }
 
@@ -1650,15 +1590,14 @@ int CCalMoviePlayer::SetVideoCallback(void* pCallback) {
     }
 
     // Release the old callback if present
-    char* self = (char*)this;
-    void* pOldCallback = *(void**)(self + 48);
+    void* pOldCallback = m_pBufferObject;
     if (pOldCallback != nullptr) {
         rage_EAD8(pOldCallback);
-        *(void**)(self + 48) = nullptr;
+        m_pBufferObject = nullptr;
     }
 
     // Store the new callback
-    *(void**)(self + 48) = pCallback;
+    m_pBufferObject = pCallback;
     return 0;
 }
 
@@ -1673,26 +1612,21 @@ int CCalMoviePlayer::SetVideoCallback(void* pCallback) {
  * Acquires lock (slot 3) before checking and releases (slot 5) after.
  */
 int CCalMoviePlayer::ValidateOutputFormat() {
-    typedef void (*LockFn)(void*);
-    typedef void (*UnlockFn)(void*);
-    typedef int (*GetDimFn)(void*);
-    typedef void (*ActivateFn)(void*, int);
-    void** vtable = *(void***)this;
 
     // Lock
-    ((LockFn)vtable[3])(this);
+    Lock();
 
     int result;
 
     // Check width via vtable slot 60
-    int width = ((GetDimFn)vtable[60])(this);
+    int width = GetStatusFlagsA();
     if (width == 3) {
         // Check height via vtable slot 61
-        int height = ((GetDimFn)vtable[61])(this);
+        int height = GetStatusFlagsB();
         if (height == 3) {
             // Both dimensions are the "ready" sentinel — activate outputs
-            ((ActivateFn)vtable[68])(this, 1);
-            ((ActivateFn)vtable[69])(this, 1);
+            SetStatusMaskA(1);
+            SetStatusMaskB(1);
             result = 0;
         } else {
             result = (int)0x80004005;  // E_FAIL
@@ -1702,7 +1636,7 @@ int CCalMoviePlayer::ValidateOutputFormat() {
     }
 
     // Unlock
-    ((UnlockFn)vtable[5])(this);
+    Unlock();
 
     return result;
 }
@@ -1745,20 +1679,15 @@ void CCalMoviePlayer::ScalarDeletingDtorBase(int flags) {
  * Called when preparing the player for a new media session.
  */
 void CCalMoviePlayer::InitializeDefaults() {
-    char* p = (char*)this;
 
-    // Zero all operational fields: +44 through +272
-    // Covers: sub-object ptr, buffer base, buffer count, read/write indices,
-    // callback, available count, callback userdata, KEVENTs (84-208),
-    // status fields (220-236), playback counters (244-272)
-    for (int i = 44; i <= 272; i += 4) {
-        *(uint32_t*)(p + i) = 0;
-    }
+    // Zero all operational fields from m_pMediaSource (+44) through m_hThreadWriteB (+272)
+    // Covers: source ptr, buffer object, callbacks, events, status fields, counters, thread handles
+    memset(&m_pMediaSource, 0, (272 + 4) - 44);
 
     // Set initial state values
-    *(uint32_t*)(p + 212) = 1;  // Status A = initial
-    *(uint32_t*)(p + 216) = 1;  // Status B = initial
-    *(uint32_t*)(p + 240) = 1;  // Active flag = 1
+    m_statusA = 1;      // Status A = initial
+    m_statusB = 1;      // Status B = initial
+    m_activeFlag = 1;   // Active flag = 1
 }
 
 /**
@@ -1775,40 +1704,28 @@ void CCalMoviePlayer::InitializeDefaults() {
  * @return 0 or positive on success, 0x80004005 (E_FAIL) if not ready.
  */
 int32_t CCalMoviePlayer::QueryPlaybackReady() {
-    typedef void (*VFuncV)(void*);
-    typedef int32_t (*VFuncI)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
 
     int32_t result;
-    void** vt = *(void***)this;
 
     // Lock
-    ((VFuncV)vt[3])(this);
+    Lock();
 
     // Check status A via vtable slot 60
-    vt = *(void***)this;
-    if (((VFuncI)vt[60])(this) == 5) {
+    if (GetStatusFlagsA() == 5) {
         // Check status B via vtable slot 61
-        vt = *(void***)this;
-        if (((VFuncI)vt[61])(this) == 5) {
+        if (GetStatusFlagsB() == 5) {
             // Both ready — query sub-object
-            void* subObj = *(void**)((char*)this + 44);
+            void* subObj = m_pMediaSource;
             void** subVt = *(void***)subObj;
             result = ((VFuncI)subVt[25])(subObj);
 
             // Signal status and events
-            vt = *(void***)this;
-            ((VFuncVI)vt[71])(this, 1);
-            vt = *(void***)this;
-            ((VFuncVI)vt[72])(this, 1);
-            vt = *(void***)this;
-            ((VFuncV)vt[48])(this);
-            vt = *(void***)this;
-            ((VFuncV)vt[49])(this);
-            vt = *(void***)this;
-            ((VFuncV)vt[50])(this);
-            vt = *(void***)this;
-            ((VFuncV)vt[51])(this);
+            SetStatusValueA(1);
+            SetStatusValueB(1);
+            SignalEvent0();
+            SignalEvent1();
+            SignalEvent2();
+            SignalEvent3();
         } else {
             result = (int32_t)0x80004005;  // E_FAIL
         }
@@ -1817,8 +1734,7 @@ int32_t CCalMoviePlayer::QueryPlaybackReady() {
     }
 
     // Unlock
-    vt = *(void***)this;
-    ((VFuncV)vt[5])(this);
+    Unlock();
 
     return result;
 }
@@ -1834,37 +1750,24 @@ int32_t CCalMoviePlayer::QueryPlaybackReady() {
  * Returns 0.
  */
 int32_t CCalMoviePlayer::ResetPlaybackState() {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-
-    void** vt = *(void***)this;
 
     // Lock
-    ((VFuncV)vt[3])(this);
+    Lock();
 
     // Set status flags
-    vt = *(void***)this;
-    ((VFuncVI)vt[71])(this, 1);
-    vt = *(void***)this;
-    ((VFuncVI)vt[72])(this, 1);
-    vt = *(void***)this;
-    ((VFuncVI)vt[68])(this, 2);
-    vt = *(void***)this;
-    ((VFuncVI)vt[69])(this, 2);
+    SetStatusValueA(1);
+    SetStatusValueB(1);
+    SetStatusMaskA(2);
+    SetStatusMaskB(2);
 
     // Signal events
-    vt = *(void***)this;
-    ((VFuncV)vt[48])(this);
-    vt = *(void***)this;
-    ((VFuncV)vt[49])(this);
-    vt = *(void***)this;
-    ((VFuncV)vt[50])(this);
-    vt = *(void***)this;
-    ((VFuncV)vt[51])(this);
+    SignalEvent0();
+    SignalEvent1();
+    SignalEvent2();
+    SignalEvent3();
 
     // Unlock
-    vt = *(void***)this;
-    ((VFuncV)vt[5])(this);
+    Unlock();
 
     return 0;
 }
@@ -1884,38 +1787,28 @@ int32_t CCalMoviePlayer::ResetPlaybackState() {
  * @return 0 or positive on success, negative on failure.
  */
 int32_t CCalMoviePlayer::PreparePlayback() {
-    typedef void (*VFuncV)(void*);
-    typedef int32_t (*VFuncI)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
 
     int32_t playbackResult = 0;
     bool skipToInit = false;
     void** vt;
 
     // Check if already in initialized state (both status == 1)
-    vt = *(void***)this;
-    if (((VFuncI)vt[60])(this) == 1) {
-        vt = *(void***)this;
-        if (((VFuncI)vt[61])(this) == 1) {
+    if (GetStatusFlagsA() == 1) {
+        if (GetStatusFlagsB() == 1) {
             skipToInit = true;
         }
     }
 
     if (!skipToInit) {
         // Not already initialized — reset and start fresh
-        vt = *(void***)this;
-        ((VFuncV)vt[24])(this);    // ResetPlaybackState
-        vt = *(void***)this;
-        ((VFuncV)vt[44])(this);    // WaitForEvent4
-        vt = *(void***)this;
-        ((VFuncV)vt[45])(this);    // WaitForEvent5
-        vt = *(void***)this;
-        ((VFuncV)vt[46])(this);    // WaitForEvent6
-        vt = *(void***)this;
-        ((VFuncV)vt[47])(this);    // WaitForEvent7
+        WaitForAllThreads();    // ResetPlaybackState
+        WaitForEvent4();    // WaitForEvent4
+        WaitForEvent5();    // WaitForEvent5
+        WaitForEvent6();    // WaitForEvent6
+        WaitForEvent7();    // WaitForEvent7
 
         // Start playback via sub-object vslot 20
-        void* subObj = *(void**)((char*)this + 44);
+        void* subObj = m_pMediaSource;
         void** subVt = *(void***)subObj;
         playbackResult = ((VFuncI)subVt[20])(subObj);
 
@@ -1925,40 +1818,29 @@ int32_t CCalMoviePlayer::PreparePlayback() {
     }
 
     // Initialize playback state
-    vt = *(void***)this;
-    ((VFuncV)vt[3])(this);         // Lock
+    Lock();         // Lock
 
-    vt = *(void***)this;
-    ((VFuncVI)vt[71])(this, -1);   // Set status A = -1
-    vt = *(void***)this;
-    ((VFuncVI)vt[72])(this, -1);   // Set status B = -1
-    vt = *(void***)this;
-    ((VFuncVI)vt[65])(this, 1);    // Set channel A = 1
-    vt = *(void***)this;
-    ((VFuncVI)vt[66])(this, 1);    // Set channel B = 1
+    SetStatusValueA(-1);   // Set status A = -1
+    SetStatusValueB(-1);   // Set status B = -1
+    SetChannelStatusA(1);    // Set channel A = 1
+    SetChannelStatusB(1);    // Set channel B = 1
 
     // Zero playback counters
-    char* p = (char*)this;
-    *(uint32_t*)(p + 232) = 0;     // Frame counter A
-    *(uint32_t*)(p + 236) = 0;     // Frame counter B
-    *(uint32_t*)(p + 240) = 1;     // Active flag = 1
-    *(uint32_t*)(p + 244) = 0;     // Buffer counter
-    *(uint32_t*)(p + 248) = 0;     // Pending count
-    *(uint32_t*)(p + 252) = 0;     // Read position
-    *(uint32_t*)(p + 256) = 0;     // Write position
+    m_frameCounterA = 0;
+    m_frameCounterB = 0;
+    m_activeFlag = 1;
+    m_bufferCounterA = 0;
+    m_bufferCounterB = 0;
+    m_pendingCounter = 0;
+    m_writePosition = 0;
 
     // Reset events 4-7
-    vt = *(void***)this;
-    ((VFuncV)vt[56])(this);        // ResetEvent4
-    vt = *(void***)this;
-    ((VFuncV)vt[57])(this);        // ResetEvent5
-    vt = *(void***)this;
-    ((VFuncV)vt[58])(this);        // ResetEvent6
-    vt = *(void***)this;
-    ((VFuncV)vt[59])(this);        // ResetEvent7
+    ResetEvent4();        // ResetEvent4
+    ResetEvent5();        // ResetEvent5
+    ResetEvent6();        // ResetEvent6
+    ResetEvent7();        // ResetEvent7
 
-    vt = *(void***)this;
-    ((VFuncV)vt[5])(this);         // Unlock
+    Unlock();         // Unlock
 
     return playbackResult;
 }
@@ -1977,17 +1859,9 @@ int32_t CCalMoviePlayer::PreparePlayback() {
  * signals events 48 and 50 (SignalEvent0/2).
  */
 void CCalMoviePlayer::ProcessWriteBuffer() {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef void (*VFunc4)(void*, void*, int32_t, int32_t);
-    typedef int32_t (*VFuncI)(void*);
-    typedef void* (*VFuncP)(void*);
-    typedef void (*VFuncVP)(void*, void*);
-
-    char* p = (char*)this;
 
     // Query sub-object at +44 for media sample set
-    void* subObj = *(void**)((char*)this + 44);
+    void* subObj = m_pMediaSource;
     void** subVt = *(void***)subObj;
 
     void* queryResult = nullptr;
@@ -1997,7 +1871,7 @@ void CCalMoviePlayer::ProcessWriteBuffer() {
     uint32_t totalCount = *(uint32_t*)((char*)queryResult + 52);
 
     // Get current write index
-    uint32_t writeIdx = *(uint32_t*)(p + 256);
+    uint32_t writeIdx = m_writePosition;
 
     // Get element by index from query result's ring buffer
     char* base = *(char**)((char*)queryResult + 48);
@@ -2035,7 +1909,7 @@ void CCalMoviePlayer::ProcessWriteBuffer() {
     }
 
     // Atomically decrement buffer counter at +244
-    volatile int32_t* pCounter = (volatile int32_t*)(p + 244);
+    volatile int32_t* pCounter = (volatile int32_t*)&m_bufferCounterA;
     int32_t oldVal;
     do {
         oldVal = *pCounter;
@@ -2046,18 +1920,16 @@ void CCalMoviePlayer::ProcessWriteBuffer() {
     if (nextIdx >= totalCount) {
         nextIdx = 0;
     }
-    *(uint32_t*)(p + 256) = nextIdx;
+    m_writePosition = nextIdx;
 
     // Dispatch read data to sub-object via vslot 22
-    subObj = *(void**)((char*)this + 44);
+    subObj = m_pMediaSource;
     subVt = *(void***)subObj;
     ((VFuncVP)subVt[22])(subObj, (void*)(uintptr_t)dataValue);
 
     // Signal events 0 and 2
-    void** vt = *(void***)this;
-    ((VFuncV)vt[48])(this);   // SignalEvent0
-    vt = *(void***)this;
-    ((VFuncV)vt[50])(this);   // SignalEvent2
+    SignalEvent0();   // SignalEvent0
+    SignalEvent2();   // SignalEvent2
 }
 
 // External helpers for buffer fill functions
@@ -2088,23 +1960,13 @@ extern "C" void pg_B850(void* threadHandle);            // @ 0x8242B850 - suspen
  * (vslot 63) bit 2 is set.
  */
 void CCalMoviePlayer::FillReadBufferA() {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef int32_t (*VFuncI)(void*);
-    typedef void (*VFunc4)(void*, void*, void*, int32_t);
-    typedef void (*VFuncVP)(void*, void*);
-    typedef int32_t (*VFunc3P)(void*, void*, void*);
-    typedef void* (*VFuncP)(void*);
 
-    char* p = (char*)this;
     void** vt;
 
     // Check status flags B — if bit 2 set, signal and return immediately
-    vt = *(void***)this;
-    int32_t flagsB = ((VFuncI)vt[63])(this);
+    int32_t flagsB = GetStatusFieldB();
     if (flagsB & 0x4) {
-        vt = *(void***)this;
-        ((VFuncV)vt[52])(this);  // SignalEvent4
+        SignalEvent4();  // SignalEvent4
         return;
     }
 
@@ -2113,24 +1975,23 @@ void CCalMoviePlayer::FillReadBufferA() {
         void* iterator = nullptr;
 
         // Get enumerator for channel 0 from sub-object at +44
-        void* subObj = *(void**)(p + 44);
+        void* subObj = m_pMediaSource;
         void** subVt = *(void***)subObj;
         ((VFunc4)subVt[15])(subObj, nullptr, &enumerator, 0);
 
         if (enumerator != nullptr) {
             // Get iterator for channel 0
-            subObj = *(void**)(p + 44);
+            subObj = m_pMediaSource;
             subVt = *(void***)subObj;
             ((VFunc4)subVt[17])(subObj, nullptr, &iterator, 0);
 
             // Check flags B — bits 1&2 must be clear to process
-            vt = *(void***)this;
-            int32_t flags = ((VFuncI)vt[63])(this);
+            int32_t flags = GetStatusFieldB();
 
             while ((flags & 0x6) == 0) {
                 // Get remaining sample count from iterator
                 uint32_t remaining = CCalMoviePlayer_DBD0(iterator);
-                uint32_t threshold = *(uint32_t*)(p + 244);
+                uint32_t threshold = m_bufferCounterA;
 
                 if (remaining > threshold) {
                     // Get/reset next element from iterator
@@ -2155,8 +2016,7 @@ void CCalMoviePlayer::FillReadBufferA() {
 
                     if (insertResult < 0) {
                         // Error/overflow — reset playback state (vslot 24)
-                        vt = *(void***)this;
-                        ((VFuncV)vt[24])(this);
+                        WaitForAllThreads();
                     }
 
                     // Release element (vslot 2)
@@ -2167,20 +2027,17 @@ void CCalMoviePlayer::FillReadBufferA() {
                     CCalMoviePlayer_DD30(iterator);
 
                     // Signal event 6 (vslot 50)
-                    vt = *(void***)this;
-                    ((VFuncV)vt[50])(this);
+                    SignalEvent2();
 
                     // If no next cursor, break to finalize
                     if (nextCursor == nullptr) break;
                 } else {
                     // Not enough samples — wait for event 0 (vslot 40)
-                    vt = *(void***)this;
-                    ((VFuncV)vt[40])(this);
+                    NotifyVideoReady();
                 }
 
                 // Re-check flags B
-                vt = *(void***)this;
-                flags = ((VFuncI)vt[63])(this);
+                flags = GetStatusFieldB();
             }
 
             // Finalize enumerator (vslot 20)
@@ -2205,29 +2062,24 @@ void CCalMoviePlayer::FillReadBufferA() {
         }
 
         // Re-check flags B — bit 2
-        vt = *(void***)this;
-        flagsB = ((VFuncI)vt[63])(this);
+        flagsB = GetStatusFieldB();
         if (flagsB & 0x4) {
-            vt = *(void***)this;
-            ((VFuncV)vt[52])(this);  // SignalEvent4
+            SignalEvent4();  // SignalEvent4
             return;
         }
 
         // Signal event 4 and suspend this thread
-        vt = *(void***)this;
-        ((VFuncV)vt[52])(this);  // SignalEvent4
+        SignalEvent4();  // SignalEvent4
 
-        pg_B850(*(void**)(p + 260));  // Suspend thread handle at +260
+        pg_B850(m_hThreadFillA);  // Suspend thread handle at +260
 
         // Re-check flags B after resume
-        vt = *(void***)this;
-        flagsB = ((VFuncI)vt[63])(this);
+        flagsB = GetStatusFieldB();
         if (flagsB & 0x4) break;
     }
 
     // Final signal event 4
-    vt = *(void***)this;
-    ((VFuncV)vt[52])(this);
+    SignalEvent4();
 }
 
 /**
@@ -2252,23 +2104,13 @@ void CCalMoviePlayer::FillReadBufferA() {
  * (vslot 64) bit 2 is set.
  */
 void CCalMoviePlayer::FillReadBufferB() {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef int32_t (*VFuncI)(void*);
-    typedef void (*VFunc4)(void*, void*, void*, int32_t);
-    typedef void (*VFuncVP)(void*, void*);
-    typedef int32_t (*VFunc3P)(void*, void*, void*);
-    typedef void* (*VFuncP)(void*);
 
-    char* p = (char*)this;
     void** vt;
 
     // Check status flags C — if bit 2 set, signal and return immediately
-    vt = *(void***)this;
-    int32_t flagsC = ((VFuncI)vt[64])(this);
+    int32_t flagsC = GetStatusFieldC();
     if (flagsC & 0x4) {
-        vt = *(void***)this;
-        ((VFuncV)vt[53])(this);  // SignalEvent5
+        SignalEvent5();  // SignalEvent5
         return;
     }
 
@@ -2277,24 +2119,23 @@ void CCalMoviePlayer::FillReadBufferB() {
         void* iterator = nullptr;
 
         // Get enumerator for channel 1 from sub-object at +44
-        void* subObj = *(void**)(p + 44);
+        void* subObj = m_pMediaSource;
         void** subVt = *(void***)subObj;
         ((VFunc4)subVt[15])(subObj, nullptr, &enumerator, 0);
 
         if (enumerator != nullptr) {
             // Get iterator for channel 1
-            subObj = *(void**)(p + 44);
+            subObj = m_pMediaSource;
             subVt = *(void***)subObj;
             ((VFunc4)subVt[17])(subObj, nullptr, &iterator, 0);
 
             // Check flags C — bits 1&2 must be clear to process
-            vt = *(void***)this;
-            int32_t flags = ((VFuncI)vt[64])(this);
+            int32_t flags = GetStatusFieldC();
 
             while ((flags & 0x6) == 0) {
                 // Get remaining sample count from iterator
                 uint32_t remaining = CCalMoviePlayer_DBD0(iterator);
-                uint32_t threshold = *(uint32_t*)(p + 248);
+                uint32_t threshold = m_bufferCounterB;
 
                 if (remaining > threshold) {
                     // Get/reset next element from iterator
@@ -2319,8 +2160,7 @@ void CCalMoviePlayer::FillReadBufferB() {
 
                     if (insertResult < 0) {
                         // Error/overflow — call vslot 24
-                        vt = *(void***)this;
-                        ((VFuncV)vt[24])(this);
+                        WaitForAllThreads();
                     }
 
                     // Release element (vslot 2)
@@ -2331,20 +2171,17 @@ void CCalMoviePlayer::FillReadBufferB() {
                     CCalMoviePlayer_DD30(iterator);
 
                     // Signal event 3 (vslot 51)
-                    vt = *(void***)this;
-                    ((VFuncV)vt[51])(this);
+                    SignalEvent3();
 
                     // If no next cursor, break to finalize
                     if (nextCursor == nullptr) break;
                 } else {
                     // Not enough samples — wait for event 1 (vslot 41)
-                    vt = *(void***)this;
-                    ((VFuncV)vt[41])(this);
+                    NotifyAudioReady();
                 }
 
                 // Re-check flags C
-                vt = *(void***)this;
-                flags = ((VFuncI)vt[64])(this);
+                flags = GetStatusFieldC();
             }
 
             // Finalize enumerator (vslot 20)
@@ -2369,29 +2206,24 @@ void CCalMoviePlayer::FillReadBufferB() {
         }
 
         // Re-check flags C — bit 2
-        vt = *(void***)this;
-        flagsC = ((VFuncI)vt[64])(this);
+        flagsC = GetStatusFieldC();
         if (flagsC & 0x4) {
-            vt = *(void***)this;
-            ((VFuncV)vt[53])(this);  // SignalEvent5
+            SignalEvent5();  // SignalEvent5
             return;
         }
 
         // Signal event 5 and suspend this thread
-        vt = *(void***)this;
-        ((VFuncV)vt[53])(this);  // SignalEvent5
+        SignalEvent5();  // SignalEvent5
 
-        pg_B850(*(void**)(p + 264));  // Suspend thread handle at +264
+        pg_B850(m_hThreadFillB);  // Suspend thread handle at +264
 
         // Re-check flags C after resume
-        vt = *(void***)this;
-        flagsC = ((VFuncI)vt[64])(this);
+        flagsC = GetStatusFieldC();
         if (flagsC & 0x4) break;
     }
 
     // Final signal event 5
-    vt = *(void***)this;
-    ((VFuncV)vt[53])(this);
+    SignalEvent5();
 }
 
 /**
@@ -2414,59 +2246,46 @@ void CCalMoviePlayer::FillReadBufferB() {
  * @return         Last frame index from vslot 39 (negative = exhausted)
  */
 int32_t CCalMoviePlayer::DrainPlaybackBuffer(uint32_t statusC) {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef int32_t (*VFuncI)(void*);
 
-    char* p = (char*)this;
     void** vt;
 
     // Store statusC into field +220
-    *(uint32_t*)(p + 220) = statusC;
+    m_isPlaying = statusC;
 
     // Get initial frame result via vslot 39 (PreparePlayback)
-    vt = *(void***)this;
-    int32_t frameResult = ((VFuncI)vt[39])(this);
+    int32_t frameResult = GetFrameResult();
 
     while (frameResult >= 0) {
         // Clear fiber flag on buffer object (inline EB70)
         {
-            char* bufObj = *(char**)(p + 48);
+            char* bufObj = (char*)m_pBufferObject;
             *(uint32_t*)(bufObj + 10376) = 0;
         }
 
         // Lock
-        vt = *(void***)this;
-        ((VFuncV)vt[3])(this);
+        Lock();
 
         // Set channels to 2 (pause/reset mode)
-        vt = *(void***)this;
-        ((VFuncVI)vt[65])(this, 2);
-        vt = *(void***)this;
-        ((VFuncVI)vt[66])(this, 2);
+        SetChannelStatusA(2);
+        SetChannelStatusB(2);
 
         // Release page references
-        pg_6F48(*(void**)(p + 260));
-        pg_6F48(*(void**)(p + 264));
-        pg_6F48(*(void**)(p + 272));
+        pg_6F48(m_hThreadFillA);
+        pg_6F48(m_hThreadFillB);
+        pg_6F48(m_hThreadWriteB);
 
         // Unlock
-        vt = *(void***)this;
-        ((VFuncV)vt[5])(this);
+        Unlock();
 
         // Wait for events 4-7
-        vt = *(void***)this;
-        ((VFuncV)vt[44])(this);
-        vt = *(void***)this;
-        ((VFuncV)vt[45])(this);
-        vt = *(void***)this;
-        ((VFuncV)vt[46])(this);
-        vt = *(void***)this;
-        ((VFuncV)vt[47])(this);
+        WaitForEvent4();
+        WaitForEvent5();
+        WaitForEvent6();
+        WaitForEvent7();
 
         // Save and replace fiber context on buffer object (inline EB30)
         {
-            char* bufObj = *(char**)(p + 48);
+            char* bufObj = (char*)m_pBufferObject;
             uint32_t existingCtx = *(uint32_t*)(bufObj + 10376);
             if (existingCtx != 0) {
                 _crt_tls_fiber_setup();
@@ -2476,46 +2295,37 @@ int32_t CCalMoviePlayer::DrainPlaybackBuffer(uint32_t statusC) {
         }
 
         // Lock
-        vt = *(void***)this;
-        ((VFuncV)vt[3])(this);
+        Lock();
 
         // Check flag A via vslot 62 — bit 1 must be set to continue
-        vt = *(void***)this;
-        int32_t flagA = ((VFuncI)vt[62])(this);
+        int32_t flagA = IsPlaying();
         if (!(flagA & 0x2)) {
             // Flag A not active — stop draining
-            vt = *(void***)this;
-            ((VFuncV)vt[5])(this);  // Unlock
+            Unlock();  // Unlock
             break;
         }
 
         // Check flag B via vslot 63 — bit 1 must be clear to continue
-        vt = *(void***)this;
-        int32_t flagB = ((VFuncI)vt[63])(this);
+        int32_t flagB = GetStatusFieldB();
         if (flagB & 0x2) {
             // Flag B set — stop draining
-            vt = *(void***)this;
-            ((VFuncV)vt[5])(this);  // Unlock
+            Unlock();  // Unlock
             break;
         }
 
         // Check flag C via vslot 64 — bit 1 must be clear to continue
-        vt = *(void***)this;
-        int32_t flagC = ((VFuncI)vt[64])(this);
+        int32_t flagC = GetStatusFieldC();
         if (flagC & 0x2) {
             // Flag C set — stop draining
-            vt = *(void***)this;
-            ((VFuncV)vt[5])(this);  // Unlock
+            Unlock();  // Unlock
             break;
         }
 
         // Unlock and continue loop
-        vt = *(void***)this;
-        ((VFuncV)vt[5])(this);
+        Unlock();
 
         // Check next frame
-        vt = *(void***)this;
-        frameResult = ((VFuncI)vt[39])(this);
+        frameResult = GetFrameResult();
     }
 
     return frameResult;
@@ -2545,117 +2355,99 @@ int32_t CCalMoviePlayer::DrainPlaybackBuffer(uint32_t statusC) {
  * @return Always 0
  */
 int32_t CCalMoviePlayer::CleanupResources() {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef int32_t (*VFuncI)(void*);
 
-    char* p = (char*)this;
     void** vt;
 
     // Signal termination to both channels (set flag 4)
-    vt = *(void***)this;
-    ((VFuncVI)vt[68])(this, 4);    // SetStatusFlagsC_A(4) — terminate channel A
-    vt = *(void***)this;
-    ((VFuncVI)vt[69])(this, 4);    // SetStatusFlagsC_B(4) — terminate channel B
+    SetStatusMaskA(4);    // SetStatusFlagsC_A(4) — terminate channel A
+    SetStatusMaskB(4);    // SetStatusFlagsC_B(4) — terminate channel B
 
     // Check if system is in default state
-    vt = *(void***)this;
-    int32_t statusA = ((VFuncI)vt[60])(this);   // GetStatusA
+    int32_t statusA = GetStatusFlagsA();   // GetStatusA
     if (statusA == 1) {
-        vt = *(void***)this;
-        int32_t statusB = ((VFuncI)vt[61])(this);   // GetStatusB
+        int32_t statusB = GetStatusFlagsB();   // GetStatusB
         if (statusB == 1) {
             goto thread_cleanup;   // Already in default state, skip to thread termination
         }
     }
 
     // Not in default state — wait for all threads to complete
-    vt = *(void***)this;
-    ((VFuncV)vt[24])(this);        // WaitForAllThreads
+    WaitForAllThreads();        // WaitForAllThreads
 
     // Release page refs and wait for events for each active handle
-    if (*(void**)(p + 260) != nullptr) {
-        pg_6F48(*(void**)(p + 260));
-        vt = *(void***)this;
-        ((VFuncV)vt[44])(this);    // WaitEvent4
+    if (m_hThreadFillA != nullptr) {
+        pg_6F48(m_hThreadFillA);
+        WaitForEvent4();    // WaitEvent4
     }
-    if (*(void**)(p + 264) != nullptr) {
-        pg_6F48(*(void**)(p + 264));
-        vt = *(void***)this;
-        ((VFuncV)vt[45])(this);    // WaitEvent5
+    if (m_hThreadFillB != nullptr) {
+        pg_6F48(m_hThreadFillB);
+        WaitForEvent5();    // WaitEvent5
     }
-    if (*(void**)(p + 268) != nullptr) {
-        pg_6F48(*(void**)(p + 268));
-        vt = *(void***)this;
-        ((VFuncV)vt[46])(this);    // WaitEvent6
+    if (m_hThreadWriteA != nullptr) {
+        pg_6F48(m_hThreadWriteA);
+        WaitForEvent6();    // WaitEvent6
     }
-    if (*(void**)(p + 272) != nullptr) {
-        pg_6F48(*(void**)(p + 272));
-        vt = *(void***)this;
-        ((VFuncV)vt[47])(this);    // WaitEvent7
+    if (m_hThreadWriteB != nullptr) {
+        pg_6F48(m_hThreadWriteB);
+        WaitForEvent7();    // WaitEvent7
     }
 
 thread_cleanup:
     // Terminate worker thread at +260 (FillReadBufferA)
-    if (*(void**)(p + 260) != nullptr) {
+    if (m_hThreadFillA != nullptr) {
         do {
-            pg_6F48(*(void**)(p + 260));
-            vt = *(void***)this;
-            ((VFuncV)vt[48])(this);    // SignalEvent0
-        } while (pg_C3B8_g(*(void**)(p + 260), 1) == 258);  // WAIT_TIMEOUT
-        pg_6F10_g(*(void**)(p + 260));
-        *(void**)(p + 260) = nullptr;
+            pg_6F48(m_hThreadFillA);
+            SignalEvent0();    // SignalEvent0
+        } while (pg_C3B8_g(m_hThreadFillA, 1) == 258);  // WAIT_TIMEOUT
+        pg_6F10_g(m_hThreadFillA);
+        m_hThreadFillA = nullptr;
     }
 
     // Terminate worker thread at +264 (FillReadBufferB)
-    if (*(void**)(p + 264) != nullptr) {
+    if (m_hThreadFillB != nullptr) {
         do {
-            pg_6F48(*(void**)(p + 264));
-            vt = *(void***)this;
-            ((VFuncV)vt[49])(this);    // SignalEvent1
-        } while (pg_C3B8_g(*(void**)(p + 264), 1) == 258);
-        pg_6F10_g(*(void**)(p + 264));
-        *(void**)(p + 264) = nullptr;
+            pg_6F48(m_hThreadFillB);
+            SignalEvent1();    // SignalEvent1
+        } while (pg_C3B8_g(m_hThreadFillB, 1) == 258);
+        pg_6F10_g(m_hThreadFillB);
+        m_hThreadFillB = nullptr;
     }
 
     // Terminate worker thread at +268 (WriteThreadProcA)
-    if (*(void**)(p + 268) != nullptr) {
+    if (m_hThreadWriteA != nullptr) {
         do {
-            pg_6F48(*(void**)(p + 268));
-            vt = *(void***)this;
-            ((VFuncV)vt[50])(this);    // SignalEvent2
-        } while (pg_C3B8_g(*(void**)(p + 268), 1) == 258);
-        pg_6F10_g(*(void**)(p + 268));
-        *(void**)(p + 268) = nullptr;
+            pg_6F48(m_hThreadWriteA);
+            SignalEvent2();    // SignalEvent2
+        } while (pg_C3B8_g(m_hThreadWriteA, 1) == 258);
+        pg_6F10_g(m_hThreadWriteA);
+        m_hThreadWriteA = nullptr;
     }
 
     // Terminate worker thread at +272 (WriteThreadProcB)
-    if (*(void**)(p + 272) != nullptr) {
+    if (m_hThreadWriteB != nullptr) {
         do {
-            pg_6F48(*(void**)(p + 272));
-            vt = *(void***)this;
-            ((VFuncV)vt[51])(this);    // SignalEvent3
-        } while (pg_C3B8_g(*(void**)(p + 272), 1) == 258);
-        pg_6F10_g(*(void**)(p + 272));
-        *(void**)(p + 272) = nullptr;
+            pg_6F48(m_hThreadWriteB);
+            SignalEvent3();    // SignalEvent3
+        } while (pg_C3B8_g(m_hThreadWriteB, 1) == 258);
+        pg_6F10_g(m_hThreadWriteB);
+        m_hThreadWriteB = nullptr;
     }
 
     // Release callback object at +48
-    if (*(void**)(p + 48) != nullptr) {
-        rage_EAD8(*(void**)(p + 48));
-        *(void**)(p + 48) = nullptr;
+    if (m_pBufferObject != nullptr) {
+        rage_EAD8(m_pBufferObject);
+        m_pBufferObject = nullptr;
     }
 
     // Release media source at +44
-    if (*(void**)(p + 44) != nullptr) {
-        void** srcVt = *(void***)(*(void**)(p + 44));
-        ((VFuncV)srcVt[2])(*(void**)(p + 44));    // Release
-        *(void**)(p + 44) = nullptr;
+    if (m_pMediaSource != nullptr) {
+        void** srcVt = *(void***)m_pMediaSource;
+        ((VFuncV)srcVt[2])(m_pMediaSource);    // Release
+        m_pMediaSource = nullptr;
     }
 
     // Reinitialize default state
-    vt = *(void***)this;
-    ((VFuncV)vt[38])(this);        // InitializeDefaults
+    ResetDefaults();        // InitializeDefaults
 
     return 0;
 }
@@ -2679,91 +2471,46 @@ thread_cleanup:
  * @return        0 on success, negative error code on failure
  */
 int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef int32_t (*VFuncI)(void*);
-    typedef int32_t (*VFuncII)(void*, int32_t);
 
-    char* p = (char*)this;
     void** vt;
     int32_t result;
 
     // Step 1: Validate via vslot 13
-    vt = *(void***)this;
-    result = ((VFuncI)vt[13])(this);
+    result = CleanupInternal();
     if (result < 0) {
         return result;
     }
 
-    // Step 2: Initialize 8 KEVENT structures
-    // Sync events at +84, +100, +116, +132 (ManualReset=1, Signaled=0)
+    // Step 2: Initialize 8 KEVENT structures in m_events[128]
+    // Each KEVENT is 16 bytes: [type(1) pad(3) signaled(4) flink(4) blink(4)]
+    // Sync events 0-3 (ManualReset=1, Signaled=0)
+    for (int i = 0; i < 4; i++) {
+        uint8_t* ev = &m_events[i * 16];
+        ev[0] = 1;                                            // ManualReset = true
+        *(uint32_t*)(ev + 4) = 0;                             // Not signaled
+        uint32_t selfAddr = (uint32_t)(uintptr_t)(ev + 8);
+        *(uint32_t*)(ev + 8) = selfAddr;                       // flink = self
+        *(uint32_t*)(ev + 12) = selfAddr;                      // blink = self
+    }
 
-    // Event 0 at +84
-    *(uint8_t*)(p + 84) = 1;       // ManualReset = true
-    *(uint32_t*)(p + 88) = 0;      // Not signaled
-    uint32_t selfAddr84 = (uint32_t)(uintptr_t)(p + 92);
-    *(uint32_t*)(p + 92) = selfAddr84;   // flink = self
-    *(uint32_t*)(p + 96) = selfAddr84;   // blink = self
-
-    // Event 1 at +100
-    *(uint8_t*)(p + 100) = 1;
-    *(uint32_t*)(p + 104) = 0;
-    uint32_t selfAddr100 = (uint32_t)(uintptr_t)(p + 108);
-    *(uint32_t*)(p + 108) = selfAddr100;
-    *(uint32_t*)(p + 112) = selfAddr100;
-
-    // Event 2 at +116
-    *(uint8_t*)(p + 116) = 1;
-    *(uint32_t*)(p + 120) = 0;
-    uint32_t selfAddr116 = (uint32_t)(uintptr_t)(p + 124);
-    *(uint32_t*)(p + 124) = selfAddr116;
-    *(uint32_t*)(p + 128) = selfAddr116;
-
-    // Event 3 at +132
-    *(uint8_t*)(p + 132) = 1;
-    *(uint32_t*)(p + 136) = 0;
-    uint32_t selfAddr132 = (uint32_t)(uintptr_t)(p + 140);
-    *(uint32_t*)(p + 140) = selfAddr132;
-    *(uint32_t*)(p + 144) = selfAddr132;
-
-    // Notification events at +148, +164, +180, +196 (NotSet=0, Value=1)
-    // Event 4 at +148
-    *(uint8_t*)(p + 148) = 0;
-    *(uint32_t*)(p + 152) = 1;
-    uint32_t selfAddr148 = (uint32_t)(uintptr_t)(p + 156);
-    *(uint32_t*)(p + 156) = selfAddr148;
-    *(uint32_t*)(p + 160) = selfAddr148;
-
-    // Event 5 at +164
-    *(uint8_t*)(p + 164) = 0;
-    *(uint32_t*)(p + 168) = 1;
-    uint32_t selfAddr164 = (uint32_t)(uintptr_t)(p + 172);
-    *(uint32_t*)(p + 172) = selfAddr164;
-    *(uint32_t*)(p + 176) = selfAddr164;
-
-    // Event 6 at +180
-    *(uint8_t*)(p + 180) = 0;
-    *(uint32_t*)(p + 184) = 1;
-    uint32_t selfAddr180 = (uint32_t)(uintptr_t)(p + 188);
-    *(uint32_t*)(p + 188) = selfAddr180;
-    *(uint32_t*)(p + 192) = selfAddr180;
-
-    // Event 7 at +196
-    *(uint8_t*)(p + 196) = 0;
-    *(uint32_t*)(p + 200) = 1;
-    uint32_t selfAddr196 = (uint32_t)(uintptr_t)(p + 204);
-    *(uint32_t*)(p + 204) = selfAddr196;
-    *(uint32_t*)(p + 208) = selfAddr196;
+    // Notification events 4-7 (NotSet=0, Value=1)
+    for (int i = 4; i < 8; i++) {
+        uint8_t* ev = &m_events[i * 16];
+        ev[0] = 0;                                            // NotSet
+        *(uint32_t*)(ev + 4) = 1;                             // Value = 1
+        uint32_t selfAddr = (uint32_t)(uintptr_t)(ev + 8);
+        *(uint32_t*)(ev + 8) = selfAddr;                       // flink = self
+        *(uint32_t*)(ev + 12) = selfAddr;                      // blink = self
+    }
 
     // Step 3: Create 4 worker threads
     // Thread 1: FillReadBufferA → stored at +260
     {
         void* thread1 = pg_6F88_w(nullptr, 0x10000,
             (void*)CCalMoviePlayer_EC88_p33, this, 4, nullptr);
-        *(void**)(p + 260) = thread1;
+        m_hThreadFillA = thread1;
         if (thread1 == nullptr) {
-            vt = *(void***)this;
-            result = ((VFuncI)vt[8])(this);    // GetError
+            result = GetError();    // GetError
         }
     }
     if (result < 0) goto cleanup;
@@ -2772,10 +2519,9 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
     {
         void* thread2 = pg_6F88_w(nullptr, 0x10000,
             (void*)CCalMoviePlayer_ECB8_p33, this, 4, nullptr);
-        *(void**)(p + 264) = thread2;
+        m_hThreadFillB = thread2;
         if (thread2 == nullptr) {
-            vt = *(void***)this;
-            result = ((VFuncI)vt[8])(this);
+            result = GetError();
         }
     }
     if (result < 0) goto cleanup;
@@ -2784,10 +2530,9 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
     {
         void* thread3 = pg_6F88_w(nullptr, 0x10000,
             (void*)CCalMoviePlayer_ECE8_p33, this, 4, nullptr);
-        *(void**)(p + 268) = thread3;
+        m_hThreadWriteA = thread3;
         if (thread3 == nullptr) {
-            vt = *(void***)this;
-            result = ((VFuncI)vt[8])(this);
+            result = GetError();
         }
     }
     if (result < 0) goto cleanup;
@@ -2796,10 +2541,9 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
     {
         void* thread4 = pg_6F88_w(nullptr, 0x10000,
             (void*)CCalMoviePlayer_ED18_p33, this, 4, nullptr);
-        *(void**)(p + 272) = thread4;
+        m_hThreadWriteB = thread4;
         if (thread4 == nullptr) {
-            vt = *(void***)this;
-            result = ((VFuncI)vt[8])(this);
+            result = GetError();
         }
     }
     if (result < 0) goto cleanup;
@@ -2820,29 +2564,26 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
             aff4 = 2;    // default for WriteThreadProcB
         }
 
-        xe_sleep_B8A8(*(void**)(p + 264), aff2);   // FillReadBufferB
-        xe_sleep_B8A8(*(void**)(p + 272), aff4);   // WriteThreadProcB
-        xe_sleep_B8A8(*(void**)(p + 260), aff1);   // FillReadBufferA
-        xe_sleep_B8A8(*(void**)(p + 268), aff3);   // WriteThreadProcA
+        xe_sleep_B8A8(m_hThreadFillB, aff2);   // FillReadBufferB
+        xe_sleep_B8A8(m_hThreadWriteB, aff4);   // WriteThreadProcB
+        xe_sleep_B8A8(m_hThreadFillA, aff1);   // FillReadBufferA
+        xe_sleep_B8A8(m_hThreadWriteA, aff3);   // WriteThreadProcA
     }
 
     // Step 5: Configure buffer pairs
     {
         uint32_t* paramsU = (uint32_t*)params;
-        vt = *(void***)this;
-        result = ((VFuncII)vt[16])(this, (int32_t)paramsU[0]);   // SetBufferPairA
+        result = SetBufferPairA((int32_t)paramsU[0]);   // SetBufferPairA
         if (result < 0) goto cleanup;
 
-        vt = *(void***)this;
-        result = ((VFuncII)vt[17])(this, (int32_t)paramsU[1]);   // SetBufferPairB
+        result = SetBufferPairB((int32_t)paramsU[1]);   // SetBufferPairB
         if (result >= 0) {
             return result;
         }
     }
 
 cleanup:
-    vt = *(void***)this;
-    ((VFuncI)vt[13])(this);    // CleanupResources
+    CleanupInternal();    // CleanupResources
     return result;
 }
 
@@ -2862,19 +2603,11 @@ cleanup:
  * Exits when status flags B bit 2 is set (terminate signal).
  */
 void CCalMoviePlayer::WriteThreadProcA() {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef int32_t (*VFuncI)(void*);
-    typedef int32_t (*VFuncII)(void*, int32_t);
-    typedef void* (*VFuncP)(void*);
-    typedef int32_t (*VFuncIPI)(void*, void*, int32_t);
 
-    char* p = (char*)this;
     void** vt;
 
     // Check initial status — if bit 2 of statusB set, exit immediately
-    vt = *(void***)this;
-    int32_t statusB = ((VFuncI)vt[63])(this);   // GetStatusFlagsB
+    int32_t statusB = GetStatusFieldB();   // GetStatusFlagsB
     if (statusB & 0x4) {
         goto exit_final;
     }
@@ -2885,7 +2618,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
         void* iterator = nullptr;
 
         // Query media source for enumerator (channel 0)
-        void* mediaSrc = *(void**)(p + 44);
+        void* mediaSrc = m_pMediaSource;
         {
             void** mVt = *(void***)mediaSrc;
             typedef int32_t (*VFuncMediaEnum)(void*, void*, int32_t, int32_t);
@@ -2894,14 +2627,14 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
         if (enumerator == nullptr) {
             // No samples — release thread page and clear active flag
-            pg_6F48(*(void**)(p + 268));
-            *(uint32_t*)(p + 240) = 0;
+            pg_6F48(m_hThreadWriteA);
+            m_activeFlag = 0;
             goto suspend;
         }
 
         // Get iterator from media source (channel 0)
         {
-            void* mediaSrc2 = *(void**)(p + 44);
+            void* mediaSrc2 = m_pMediaSource;
             void** mVt = *(void***)mediaSrc2;
             typedef int32_t (*VFuncMediaIter)(void*, void*, int32_t, int32_t);
             ((VFuncMediaIter)mVt[17])(mediaSrc2, &iterator, 0, 0);
@@ -2917,8 +2650,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
         // Inner processing loop
         for (;;) {
             // Check status flags B
-            vt = *(void***)this;
-            statusB = ((VFuncI)vt[63])(this);
+            statusB = GetStatusFieldB();
 
             if (statusB == 0) {
                 goto process_element;
@@ -2928,8 +2660,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
             if (statusB & 0x6) {
                 // Terminate or error in status
                 // Set channel A to 6
-                vt = *(void***)this;
-                ((VFuncVI)vt[65])(this, 6);
+                SetChannelStatusA(6);
 
                 // Sort enumerator with key 4
                 {
@@ -2946,12 +2677,10 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
             // Status bit 0 set — check channel A state
             {
-                vt = *(void***)this;
-                int32_t chA = ((VFuncI)vt[60])(this);   // GetStatusFlagsA
+                int32_t chA = GetStatusFlagsA();   // GetStatusFlagsA
                 if (chA != 5) {
                     // Set channel A to 4
-                    vt = *(void***)this;
-                    ((VFuncVI)vt[65])(this, 4);
+                    SetChannelStatusA(4);
 
                     // Sort enumerator with key 3
                     {
@@ -2960,28 +2689,24 @@ void CCalMoviePlayer::WriteThreadProcA() {
                     }
 
                     // Set channel A to 5
-                    vt = *(void***)this;
-                    ((VFuncVI)vt[65])(this, 5);
+                    SetChannelStatusA(5);
                 }
             }
 
             // Wait for event 0
-            vt = *(void***)this;
-            ((VFuncV)vt[42])(this);
+            WaitForEvent0();
             continue;   // back to inner loop
 
         process_element:
             // Set channel A to 3
-            vt = *(void***)this;
-            ((VFuncVI)vt[65])(this, 3);
+            SetChannelStatusA(3);
 
             // Check if iterator has elements
             {
                 uint32_t hasElem = atSingleton_vfn_28_DBC8_1(iterator);
                 if (hasElem == 0) {
                     // No more elements — loop waiting
-                    vt = *(void***)this;
-                    ((VFuncV)vt[42])(this);    // WaitEvent0
+                    WaitForEvent0();    // WaitEvent0
                     continue;
                 }
             }
@@ -3007,7 +2732,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
                 }
 
                 // Atomic increment counter at +244
-                volatile int32_t* pCounter = (volatile int32_t*)(p + 244);
+                volatile int32_t* pCounter = (volatile int32_t*)&m_bufferCounterA;
                 int32_t oldVal;
                 do {
                     oldVal = *pCounter;
@@ -3048,8 +2773,7 @@ void CCalMoviePlayer::WriteThreadProcA() {
                     } while (!__sync_bool_compare_and_swap(pCounter, oldVal, oldVal - 1));
 
                     // Wait for event 0
-                    vt = *(void***)this;
-                    ((VFuncV)vt[42])(this);
+                    WaitForEvent0();
                 }
 
                 // Release element (vslot 2)
@@ -3069,11 +2793,9 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
         cleanup_iteration:
             // Check status A & clean up
-            vt = *(void***)this;
-            int32_t chA2 = ((VFuncI)vt[60])(this);
+            int32_t chA2 = GetStatusFlagsA();
             if (chA2 != 6) {
-                vt = *(void***)this;
-                ((VFuncVI)vt[65])(this, 6);
+                SetChannelStatusA(6);
 
                 void** eVt = *(void***)enumerator;
                 ((VFuncVI)eVt[21])(enumerator, 2);
@@ -3104,30 +2826,25 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
     suspend:
         // Wait for event 4
-        vt = *(void***)this;
-        ((VFuncV)vt[44])(this);
+        WaitForEvent4();
 
         // Check status B for termination
-        vt = *(void***)this;
-        statusB = ((VFuncI)vt[63])(this);
+        statusB = GetStatusFieldB();
         if (statusB & 0x4) {
             goto exit_final;
         }
 
         // Set channel A to 7
-        vt = *(void***)this;
-        ((VFuncVI)vt[65])(this, 7);
+        SetChannelStatusA(7);
 
         // Signal completion (vslot 54)
-        vt = *(void***)this;
-        ((VFuncV)vt[54])(this);
+        SignalEvent6();
 
         // Suspend this thread
-        pg_B850(*(void**)(p + 268));
+        pg_B850(m_hThreadWriteA);
 
         // Check status B again after resume
-        vt = *(void***)this;
-        statusB = ((VFuncI)vt[63])(this);
+        statusB = GetStatusFieldB();
         if (statusB & 0x4) {
             goto exit_final;
         }
@@ -3136,12 +2853,10 @@ void CCalMoviePlayer::WriteThreadProcA() {
 
 exit_final:
     // Set channel A to 8
-    vt = *(void***)this;
-    ((VFuncVI)vt[65])(this, 8);
+    SetChannelStatusA(8);
 
     // Final signal
-    vt = *(void***)this;
-    ((VFuncV)vt[54])(this);
+    SignalEvent6();
 }
 
 /**
@@ -3163,18 +2878,11 @@ exit_final:
  *   - Has additional callback drain processing with audio callback (+60/+76)
  */
 void CCalMoviePlayer::WriteThreadProcB() {
-    typedef void (*VFuncV)(void*);
-    typedef void (*VFuncVI)(void*, int32_t);
-    typedef int32_t (*VFuncI)(void*);
-    typedef int32_t (*VFuncII)(void*, int32_t);
-    typedef void* (*VFuncP)(void*);
 
-    char* p = (char*)this;
     void** vt;
 
     // Check initial status — if bit 2 of statusC set, exit immediately
-    vt = *(void***)this;
-    int32_t statusC = ((VFuncI)vt[64])(this);   // GetStatusFlagsC
+    int32_t statusC = GetStatusFieldC();   // GetStatusFlagsC
     if (statusC & 0x4) {
         goto exit_final;
     }
@@ -3185,7 +2893,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
         void* iterator = nullptr;
 
         // Query media source for enumerator (channel 0)
-        void* mediaSrc = *(void**)(p + 44);
+        void* mediaSrc = m_pMediaSource;
         {
             void** mVt = *(void***)mediaSrc;
             typedef int32_t (*VFuncMediaEnum)(void*, void*, int32_t, int32_t);
@@ -3194,14 +2902,14 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
         if (enumerator == nullptr) {
             // No samples — release thread page and clear active flag
-            pg_6F48(*(void**)(p + 268));
-            *(uint32_t*)(p + 240) = 0;
+            pg_6F48(m_hThreadWriteA);
+            m_activeFlag = 0;
             goto suspend;
         }
 
         // Get iterator (channel 0)
         {
-            void* mediaSrc2 = *(void**)(p + 44);
+            void* mediaSrc2 = m_pMediaSource;
             void** mVt = *(void***)mediaSrc2;
             typedef int32_t (*VFuncMediaIter)(void*, void*, int32_t, int32_t);
             ((VFuncMediaIter)mVt[17])(mediaSrc2, &iterator, 0, 0);
@@ -3215,37 +2923,36 @@ void CCalMoviePlayer::WriteThreadProcB() {
         }
 
         // Setup additional audio callbacks if present
-        if (*(void**)(p + 52) != nullptr) {
+        if (m_pAudioCallbackA != nullptr) {
             void** eVt = *(void***)enumerator;
             typedef void (*VFuncCB4)(void*, int32_t, void*, uint32_t);
-            ((VFuncCB4)eVt[12])(enumerator, 3, *(void**)(p + 52), *(uint32_t*)(p + 68));
+            ((VFuncCB4)eVt[12])(enumerator, 3, m_pAudioCallbackA, m_audioParamA);
         }
-        if (*(void**)(p + 56) != nullptr) {
+        if (m_pAudioCallbackB != nullptr) {
             void** eVt = *(void***)enumerator;
             typedef void (*VFuncCB4)(void*, int32_t, void*, uint32_t);
-            ((VFuncCB4)eVt[12])(enumerator, 4, *(void**)(p + 56), *(uint32_t*)(p + 72));
+            ((VFuncCB4)eVt[12])(enumerator, 4, m_pAudioCallbackB, m_audioParamB);
         }
 
         // Save/replace fiber context on buffer object
         {
-            void* bufObj = *(void**)(p + 48);
-            if (bufObj != nullptr) {
-                CCalMoviePlayer_EB30(bufObj);
+            if (m_pBufferObject != nullptr) {
+                CCalMoviePlayer_EB30(m_pBufferObject);
             }
         }
 
         // Inner processing loop
         for (;;) {
             // Drain callback queue if present
-            void* callbackFunc = *(void**)(p + 60);
+            void* callbackFunc = m_pCallbackFunc;
             if (callbackFunc != nullptr) {
-                volatile uint32_t* pPending = (volatile uint32_t*)(p + 252);
+                volatile uint32_t* pPending = (volatile uint32_t*)&m_pendingCounter;
                 uint32_t pending = *pPending;
-                uint32_t threshold = *(uint32_t*)(p + 248);
+                uint32_t threshold = m_bufferCounterB;
                 while (pending > threshold) {
                     // Call callback
                     typedef void (*CallbackFn)(void*);
-                    ((CallbackFn)callbackFunc)(*(void**)(p + 76));
+                    ((CallbackFn)callbackFunc)(m_pCallbackUserData);
 
                     // Atomic decrement pending counter at +252
                     int32_t oldVal;
@@ -3258,8 +2965,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
             }
 
             // Check status flags C
-            vt = *(void***)this;
-            statusC = ((VFuncI)vt[64])(this);
+            statusC = GetStatusFieldC();
 
             if (statusC == 0) {
                 goto process_element_b;
@@ -3268,8 +2974,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
             // Check bits 1-2 (value & 0x6)
             if (statusC & 0x6) {
                 // Terminate — set channel B to 6
-                vt = *(void***)this;
-                ((VFuncVI)vt[66])(this, 6);
+                SetChannelStatusB(6);
 
                 // Sort enumerator with key 4
                 void** eVt = *(void***)enumerator;
@@ -3284,40 +2989,34 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
             // Check channel B state
             {
-                vt = *(void***)this;
-                int32_t chB = ((VFuncI)vt[60])(this);   // GetStatusFlagsA (shared state)
+                int32_t chB = GetStatusFlagsA();   // GetStatusFlagsA (shared state)
                 if (chB != 5) {
                     // Set channel B to 4
-                    vt = *(void***)this;
-                    ((VFuncVI)vt[66])(this, 4);
+                    SetChannelStatusB(4);
 
                     // Sort with key 3
                     void** eVt = *(void***)enumerator;
                     ((VFuncVI)eVt[21])(enumerator, 3);
 
                     // Set channel B to 5
-                    vt = *(void***)this;
-                    ((VFuncVI)vt[66])(this, 5);
+                    SetChannelStatusB(5);
                 }
             }
 
             // Wait for event 1
-            vt = *(void***)this;
-            ((VFuncV)vt[43])(this);
+            WaitForEvent1();
             continue;
 
         process_element_b:
             // Set channel B to 3
-            vt = *(void***)this;
-            ((VFuncVI)vt[66])(this, 3);
+            SetChannelStatusB(3);
 
             // Check if iterator has elements
             {
                 uint32_t hasElem = atSingleton_vfn_28_DBC8_1(iterator);
                 if (hasElem == 0) {
                     // No elements — wait
-                    vt = *(void***)this;
-                    ((VFuncV)vt[43])(this);
+                    WaitForEvent1();
                     continue;
                 }
             }
@@ -3350,7 +3049,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
                 }
 
                 // Atomic increment counter at +248
-                volatile int32_t* pCounter = (volatile int32_t*)(p + 248);
+                volatile int32_t* pCounter = (volatile int32_t*)&m_bufferCounterB;
                 int32_t oldVal;
                 do {
                     oldVal = *pCounter;
@@ -3377,8 +3076,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
                 if (insertResult >= 0) {
                     // Check status B for post-processing
-                    vt = *(void***)this;
-                    int32_t chBStatus = ((VFuncI)vt[61])(this);
+                    int32_t chBStatus = GetStatusFlagsB();
                     if (chBStatus == 5) {
                         // In pause mode — set sort key on enumerator and yield
                         {
@@ -3386,15 +3084,13 @@ void CCalMoviePlayer::WriteThreadProcB() {
                             ((VFuncVI)eVt[18])(enumerator, (int32_t)(intptr_t)adjustedPtr);
                         }
                         pg_SleepYield(33);
-                        grc_BDC0(*(void**)(p + 48));
+                        grc_BDC0(m_pBufferObject);
                     } else {
                         // Advance read index
                         CCalMoviePlayer_DCC8(iterator);
                         // Signal event for render dispatch
-                        vt = *(void***)this;
-                        typedef int32_t (*VFuncRender)(void*, uint32_t);
-                        ((VFuncRender)vt[31])(this, 0);    // vslot 31
-                        grc_BDC0(*(void**)(p + 48));
+                        RenderFrame(0);    // vslot 31
+                        grc_BDC0(m_pBufferObject);
                     }
                 } else if (insertResult == (int32_t)0x8000000A) {
                     // Timeout — undo
@@ -3408,8 +3104,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
                     } while (!__sync_bool_compare_and_swap(pCounter, oldVal, oldVal - 1));
 
                     // Wait for event 1
-                    vt = *(void***)this;
-                    ((VFuncV)vt[43])(this);
+                    WaitForEvent1();
                 }
 
                 // Release element
@@ -3429,28 +3124,26 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
         cleanup_iteration_b:
             // Check status and clean up
-            vt = *(void***)this;
-            int32_t chB2 = ((VFuncI)vt[60])(this);
+            int32_t chB2 = GetStatusFlagsA();
             if (chB2 != 6) {
-                vt = *(void***)this;
-                ((VFuncVI)vt[66])(this, 6);
+                SetChannelStatusB(6);
 
                 void** eVt = *(void***)enumerator;
                 ((VFuncVI)eVt[21])(enumerator, 2);
             }
 
             // Check and clear active flag
-            if (*(uint32_t*)(p + 240) != 0) {
-                pg_6F48(*(void**)(p + 268));
-                *(uint32_t*)(p + 240) = 0;
+            if (m_activeFlag != 0) {
+                pg_6F48(m_hThreadWriteA);
+                m_activeFlag = 0;
             }
 
             // Drain remaining callback queue
-            if (*(void**)(p + 60) != nullptr) {
-                volatile uint32_t* pPending = (volatile uint32_t*)(p + 252);
+            if (m_pCallbackFunc != nullptr) {
+                volatile uint32_t* pPending = (volatile uint32_t*)&m_pendingCounter;
                 while (*pPending != 0) {
                     typedef void (*CallbackFn)(void*);
-                    ((CallbackFn)(*(void**)(p + 60)))(*(void**)(p + 76));
+                    ((CallbackFn)m_pCallbackFunc)(m_pCallbackUserData);
 
                     int32_t oldVal;
                     do {
@@ -3461,7 +3154,7 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
             // Clear fiber flag on buffer object
             {
-                CCalMoviePlayer_EB70(*(void**)(p + 48));
+                CCalMoviePlayer_EB70(m_pBufferObject);
             }
 
             // Finalize and release enumerator
@@ -3486,30 +3179,25 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
     suspend:
         // Wait for event 5
-        vt = *(void***)this;
-        ((VFuncV)vt[45])(this);
+        WaitForEvent5();
 
         // Check status C for termination
-        vt = *(void***)this;
-        statusC = ((VFuncI)vt[64])(this);
+        statusC = GetStatusFieldC();
         if (statusC & 0x4) {
             goto exit_final;
         }
 
         // Set channel B to 7
-        vt = *(void***)this;
-        ((VFuncVI)vt[66])(this, 7);
+        SetChannelStatusB(7);
 
         // Signal completion (vslot 55)
-        vt = *(void***)this;
-        ((VFuncV)vt[55])(this);
+        SignalEvent7();
 
         // Suspend this thread
-        pg_B850(*(void**)(p + 272));
+        pg_B850(m_hThreadWriteB);
 
         // Check status C again after resume
-        vt = *(void***)this;
-        statusC = ((VFuncI)vt[64])(this);
+        statusC = GetStatusFieldC();
         if (statusC & 0x4) {
             goto exit_final;
         }
@@ -3518,12 +3206,10 @@ void CCalMoviePlayer::WriteThreadProcB() {
 
 exit_final:
     // Set channel B to 8
-    vt = *(void***)this;
-    ((VFuncVI)vt[66])(this, 8);
+    SetChannelStatusB(8);
 
     // Final signal
-    vt = *(void***)this;
-    ((VFuncV)vt[55])(this);
+    SignalEvent7();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

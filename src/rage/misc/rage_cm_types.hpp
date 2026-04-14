@@ -91,12 +91,10 @@ struct cmDataObj {
         uint8_t m_bool;     // CM_DIM_BOOL  — boolean byte
         int32_t m_int;      // CM_DIM_INT / CM_DIM_INT32
         float   m_vec4[4];  // CM_DIM_VEC4  — 16-byte aligned vec4
-    };                      // +0x00
-    // +0x04..+0x0F  additional vec4 components / padding
-    float    m_pad[3];      // +0x04 (part of vec4)
-    cmDimType m_dim;        // +0x10  dimension type code
-    uint8_t   m_flags;      // +0x11
-    uint8_t   m_pad2[2];    // +0x12
+    };                      // +0x00  (16 bytes due to vec4)
+    uint8_t  m_dim;         // +0x10  dimension type code (byte access: obj[16])
+    uint8_t  m_flags;       // +0x11  (byte access: obj[17])
+    uint8_t  m_pad2[2];     // +0x12
 };
 static_assert(sizeof(cmDataObj) == 20, "cmDataObj layout mismatch");
 
@@ -365,8 +363,6 @@ static bool cmApproachOperator_VectorApproach(
 extern void  rage_free(void* ptr);                              // @ 0x820C00C0
 extern void* rage_alloc_aligned(uint32_t size, uint32_t align);// via sysMemAllocator_InitMainThread + vcall[1]
 
-} // namespace rage
-
 /**
  * cmSwitch — multi-way conditional node (switch/case statement).
  * Evaluates a selector port and returns output from the matching case port.
@@ -382,4 +378,6 @@ struct cmSwitch : cmNodeBase {
     void GetFloat(float* out);       // [4]  @ 0x8226E910
     void GetDim(int32_t* out);       // [5]  @ 0x8226E898
 };
+
+} // namespace rage
 

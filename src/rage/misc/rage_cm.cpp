@@ -84,8 +84,8 @@
 namespace rage {
 
 // Globals and free functions declared in rage_cm_types.hpp.
-// Forward-declare static helper used before its definition in this file:
-static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
+// Forward-declare helper used before its definition in this file:
+void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32_t dim);
 
 
 // ── Types (cmDataObj, cmPortDesc, CM_PORT_*, CM_DIM_*) from rage_cm_types.hpp ─
@@ -107,7 +107,7 @@ static void cmNode_SetFromPort_Dispatch(void* dst, const cmNodePort* port, int32
  *
  * Returns dst.
  */
-static float* cmNode_GetVector(float* dst, const cmNodePort* port) {
+float* cmNode_GetVector(float* dst, const cmNodePort* port) {
     switch (port->m_type) {
     case CM_PORT_DIRECT: {
         // The data object holds the vec4 at its start; direct copy
@@ -139,7 +139,7 @@ static float* cmNode_GetVector(float* dst, const cmNodePort* port) {
  * - If port.m_type == NODE   : calls upstream_node->GetFloat(&tmpBuf) via vcall slot 4
  * - Otherwise                : returns 0.0f  (g_cm_zeroFloat)
  */
-static float cmNode_GetFloat(const cmNodePort* port) {
+float cmNode_GetFloat(const cmNodePort* port) {
     switch (port->m_type) {
     case CM_PORT_DIRECT:
         return *reinterpret_cast<const float*>(port->m_pData);
@@ -164,7 +164,7 @@ static float cmNode_GetFloat(const cmNodePort* port) {
  * - NODE  : calls vcall slot 1 (GetInt32)
  * - NONE  : returns 0
  */
-static int32_t cmNode_GetInt(const cmNodePort* port) {
+int32_t cmNode_GetInt(const cmNodePort* port) {
     switch (port->m_type) {
     case CM_PORT_DIRECT:
         return *reinterpret_cast<const int32_t*>(port->m_pData);
@@ -189,7 +189,7 @@ static int32_t cmNode_GetInt(const cmNodePort* port) {
  * - NODE  : calls vcall slot 5 (GetDim)
  * - NONE  : returns 0
  */
-static int32_t cmNode_GetDim(const cmNodePort* port) {
+int32_t cmNode_GetDim(const cmNodePort* port) {
     switch (port->m_type) {
     case CM_PORT_DIRECT:
         return *reinterpret_cast<const int32_t*>(port->m_pData);
@@ -213,7 +213,7 @@ static int32_t cmNode_GetDim(const cmNodePort* port) {
  * For a DIRECT port, reads cmDataObj::m_dim at offset +16.
  * For a NODE port, reads the connected node's m_outputType at offset +4.
  */
-static int32_t cmNode_GetPortDim(const cmNodePort* port) {
+int32_t cmNode_GetPortDim(const cmNodePort* port) {
     switch (port->m_type) {
     case CM_PORT_DIRECT: {
         const uint8_t* obj = reinterpret_cast<const uint8_t*>(port->m_pData);
@@ -243,7 +243,7 @@ static int32_t cmNode_GetPortDim(const cmNodePort* port) {
  *
  * Binary node variant: m_nConnected at node+28.
  */
-static bool cmNode_TryConnect(cmBinaryNode* node, cmPortDesc desc) {
+bool cmNode_TryConnect(cmBinaryNode* node, cmPortDesc desc) {
     if (desc.portC_dim != 0) {
         // Need 3 connected ports — binary layout has no portC; skip
         // (3-port variant exists in util_5698 but no binary nodes use it)
@@ -274,7 +274,7 @@ static bool cmNode_TryConnect(cmBinaryNode* node, cmPortDesc desc) {
  * Single-input variant of TryConnect. m_nConnected at node+20.
  * Identical logic but validates only portA.
  */
-static bool cmNode_TryConnectUnary(cmUnaryNode* node, cmPortDesc desc) {
+bool cmNode_TryConnectUnary(cmUnaryNode* node, cmPortDesc desc) {
     // desc.portB_dim unused for unary; desc.portC_dim unused
     if (desc.portA_dim != 0) {
         if (node->m_nConnected != 1) return false;
@@ -392,8 +392,8 @@ void cmNegate::GetFloat(float* out) {
 // Uses same descriptor set as cmAdd (aliased to cmAdd::RegisterPorts).
 // The unary semantic is enforced by portB always being unconnected.
 void cmNegate::RegisterPorts(cmBinaryNode* node) {
-    // Aliased to cmAdd::RegisterPorts — same binary code. Call via cmAdd vtable on this.
-    reinterpret_cast<cmAdd*>(this)->cmAdd::RegisterPorts(node);
+    // Aliased to cmAdd::RegisterPorts — same binary code. Call via cmAdd vtable on node.
+    reinterpret_cast<cmAdd*>(node)->cmAdd::RegisterPorts(node);
 }
 
 // ── cmAbs — absolute value of input. vtable @ 0x82053E8C ─────────────────────
@@ -982,6 +982,8 @@ uint8_t cmNode_GetBool(const rage::cmNodePort* port) {
     }
 }
 
+namespace rage {
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  CONTROL REFERENCE NODE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1356,6 +1358,8 @@ void cmSwitch_6case_GetDim(cmSwitch* node, int32_t* out) {
 }
 
 
+
+} // namespace rage (closes section opened at cmControlRef)
 
 /* ── External dependencies for cmNamedValueSet ────────────────────────────── */
 

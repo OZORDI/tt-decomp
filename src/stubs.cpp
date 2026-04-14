@@ -535,13 +535,7 @@ extern "C" int _heap_init_impl(void) { return 0; }
 extern "C" int _stricmp(const char* a, const char* b) { (void)a; (void)b; return 0; }
 
 // ── Network ─────────────────────────────────────────────────────────────────
-
-extern "C" int NetDll_recvfrom(int a, void* b, void* c, int d, int e, void* f, int* g) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g; return 0;
-}
-extern "C" int NetDll_sendto(int a, void* b, const void* c, int d, int e, const void* f, int g) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g; return 0;
-}
+// NetDll_recvfrom and NetDll_sendto are now implemented in xam/network.c
 extern "C" void rage_atStringCopy(const char* src, char* dest, int maxSize) {
     if (dest && maxSize > 0) dest[0] = '\0';
     (void)src;
@@ -1063,49 +1057,70 @@ void* mfMotionClipRAGE_B8D8_g(void* a, unsigned int b, unsigned int c, unsigned 
 
 void msgMsgSink::GetName() {}
 void msgMsgSink::OnEnter() {}
-void msgMsgSink::PostLoadChildren() {}
+uint32_t msgMsgSink::CheckAndProcess() { return 0; }
 void msgMsgSink::PostLoadProperties() {}
 void msgMsgSink::ScalarDtor(int flags) { (void)flags; }
 void msgMsgSink::Validate() {}
 
+void msgMsgSink::vfn_3() {}
+void msgMsgSink::vfn_8() {} void msgMsgSink::vfn_9() {}
+uint16_t msgMsgSink::GetPeerDataSize() { return 0; }
+void msgMsgSink::NotifySessionEvent() {}
+void msgMsgSink::vfn_17() {} void msgMsgSink::vfn_18() {} void msgMsgSink::vfn_19() {}
+uint32_t msgMsgSink::ProcessMessage(uint32_t messageFlags) { (void)messageFlags; return 0; }
+int32_t msgMsgSink::GetStateFlagsLocked(uint32_t* outFlags) { (void)outFlags; return 0; }
+int32_t msgMsgSink::GenerateAndCleanup() { return 0; }
+int32_t msgMsgSink::GetConnectionInfo(void* bufferOut, uint32_t sizeParam, uint32_t* totalSizeOut) { (void)bufferOut; (void)sizeParam; (void)totalSizeOut; return 0; }
+void msgMsgSink::vfn_27() {}
+uint32_t msgMsgSink::UpdatePrioritiesLocked(void* priorityData) { (void)priorityData; return 0; }
+uint32_t msgMsgSink::ApplyPrioritiesLocked(void* priorityData) { (void)priorityData; return 0; }
+int32_t msgMsgSink::FindValidMessageSlot(uint32_t searchKey) { (void)searchKey; return 0; }
+uint32_t msgMsgSink::SetPropertyLocked(uint32_t key, float value) { (void)key; (void)value; return 0; }
+uint32_t msgMsgSink::GetPropertyLocked(uint32_t key, float* outValue) { (void)key; (void)outValue; return 0; }
+uint32_t msgMsgSink::ProcessWithLock(uint32_t param) { (void)param; return 0; }
+uint32_t msgMsgSink::SetMessageBuffer(void* param) { (void)param; return 0; }
+void msgMsgSink::vfn_35() {} void msgMsgSink::vfn_36() {} void msgMsgSink::vfn_37() {}
+uint32_t msgMsgSink::GetStateFlags() { return 0; }
+void msgMsgSink::ProcessPendingMessages() {}
+void msgMsgSink::CleanupIfReady() {}
+void msgMsgSink::ForwardToMatchHandler() {}
+uint32_t msgMsgSink::DispatchEventDefault() { return 0; }
+void msgMsgSink::ClearPointers() {}
+void msgMsgSink::vfn_44() {} void msgMsgSink::vfn_45() {}
+uint32_t msgMsgSink::GetNestedObjectValue() { return 0; }
+void msgMsgSink::FlushAndDisconnect() {}
+void msgMsgSink::BeginDisconnect() {}
+void msgMsgSink::SendEvent() {}
+void* msgMsgSink::GetSessionPointer() { return nullptr; }
+void msgMsgSink::ForwardProcessMessage() {}
+void msgMsgSink::vfn_56() {} void msgMsgSink::vfn_57() {}
+void msgMsgSink::DispatchDefaultHandler() {}
+void msgMsgSink::vfn_60() {} void msgMsgSink::vfn_61() {}
+void msgMsgSink::vfn_62() {} void msgMsgSink::vfn_63() {}
+void msgMsgSink::vfn_65() {} void msgMsgSink::vfn_66() {} void msgMsgSink::vfn_67() {}
+void msgMsgSink::ForwardMessageToSession(uint32_t param) { (void)param; }
+void msgMsgSink::vfn_75() {}
+void msgMsgSink::ForwardToLeaderboard() {}
+void msgMsgSink::ForwardToRageHandler() {}
+void msgMsgSink::vfn_79() {}
+void msgMsgSink::ForwardDispatchMessage() {}
+void msgMsgSink::ForwardToStatsHandler() {}
 void msgMsgSink::vfn_105() {} void msgMsgSink::vfn_108() {}
-void msgMsgSink::vfn_109() {} void msgMsgSink::vfn_113() {}
-void msgMsgSink::vfn_114() {} void msgMsgSink::vfn_115() {}
-void msgMsgSink::vfn_116() {} void msgMsgSink::vfn_118() {}
-void msgMsgSink::vfn_119() {} void msgMsgSink::vfn_12() {}
-void msgMsgSink::vfn_120() {} void msgMsgSink::vfn_121() {}
-void msgMsgSink::vfn_122() {} void msgMsgSink::vfn_123() {}
+void msgMsgSink::vfn_109() {} void msgMsgSink::vfn_113() {} void msgMsgSink::vfn_114() {}
+uint32_t msgMsgSink::GetNameLength() { return 0; }
+void msgMsgSink::ForwardToSessionSync() {}
+uint32_t msgMsgSink::Release() { return 0; }
+void* msgMsgSink::SendPulseToConnection() { return nullptr; }
+void msgMsgSink::DispatchEventWithSessionInfo() {}
+void msgMsgSink::vfn_121() {} void msgMsgSink::vfn_122() {}
+void msgMsgSink::DisconnectMatchingHandlers(void* key) { (void)key; }
 void msgMsgSink::vfn_125() {} void msgMsgSink::vfn_126() {}
-void msgMsgSink::vfn_128() {} void msgMsgSink::vfn_129() {}
-void msgMsgSink::vfn_130() {} void msgMsgSink::vfn_131() {}
-void msgMsgSink::vfn_14() {}  void msgMsgSink::vfn_147() {}
-void msgMsgSink::vfn_148() {} void msgMsgSink::vfn_17() {}
-void msgMsgSink::vfn_18() {}  void msgMsgSink::vfn_19() {}
-void msgMsgSink::vfn_23() {}  void msgMsgSink::vfn_24() {}
-void msgMsgSink::vfn_25() {}  void msgMsgSink::vfn_26() {}
-void msgMsgSink::vfn_27() {}  void msgMsgSink::vfn_28() {}
-void msgMsgSink::vfn_29() {}  void msgMsgSink::vfn_3() {}
-void msgMsgSink::vfn_30() {}  void msgMsgSink::vfn_31() {}
-void msgMsgSink::vfn_32() {}  void msgMsgSink::vfn_33() {}
-void msgMsgSink::vfn_34() {}  void msgMsgSink::vfn_35() {}
-void msgMsgSink::vfn_36() {}  void msgMsgSink::vfn_37() {}
-void msgMsgSink::vfn_38() {}  void msgMsgSink::vfn_39() {}
-void msgMsgSink::vfn_40() {}  void msgMsgSink::vfn_41() {}
-void msgMsgSink::vfn_42() {}  void msgMsgSink::vfn_43() {}
-void msgMsgSink::vfn_44() {}  void msgMsgSink::vfn_45() {}
-void msgMsgSink::vfn_46() {}  void msgMsgSink::vfn_49() {}
-void msgMsgSink::vfn_50() {}  void msgMsgSink::vfn_52() {}
-void msgMsgSink::vfn_54() {}  void msgMsgSink::vfn_55() {}
-void msgMsgSink::vfn_56() {}  void msgMsgSink::vfn_57() {}
-void msgMsgSink::vfn_59() {}  void msgMsgSink::vfn_60() {}
-void msgMsgSink::vfn_61() {}  void msgMsgSink::vfn_62() {}
-void msgMsgSink::vfn_63() {}  void msgMsgSink::vfn_65() {}
-void msgMsgSink::vfn_66() {}  void msgMsgSink::vfn_67() {}
-void msgMsgSink::vfn_68() {}  void msgMsgSink::vfn_75() {}
-void msgMsgSink::vfn_77() {}  void msgMsgSink::vfn_78() {}
-void msgMsgSink::vfn_79() {}  void msgMsgSink::vfn_8() {}
-void msgMsgSink::vfn_89() {}  void msgMsgSink::vfn_9() {}
-void msgMsgSink::vfn_95() {}
+void msgMsgSink::vfn_128() {}
+int32_t msgMsgSink::RegisterMessageHandler(void* handler, uint32_t flags) { (void)handler; (void)flags; return 0; }
+uint32_t msgMsgSink::FlushPendingMessagesLocked() { return 0; }
+int32_t msgMsgSink::QueryConnectionState(uint32_t* outConnected) { (void)outConnected; return 0; }
+void msgMsgSink::ForwardCleanupMessage() {}
+void msgMsgSink::ForwardFinalizeMessage() {}
 
 uint32_t msgMsgSink_3C88_g(void* a, unsigned int b) { (void)a; (void)b; return 0; }
 uint32_t msgMsgSink_3D70_p39(void* a) { (void)a; return 0; }
@@ -1468,9 +1483,9 @@ void rage_Alloc(int a, void* b) { (void)a; (void)b; }
 
 void util_4628(phJoint3Dof* a, int b) { (void)a; (void)b; }
 void* util_B188(void* a, int b) { (void)a; (void)b; return nullptr; }
-void util_D988(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void util_DA90(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void util_F850(void* a, void* b) { (void)a; (void)b; }
+void snSession_AssociateConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+void snSession_ProcessPendingConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+void hsmState_AttachChild(void* a, void* b) { (void)a; (void)b; }
 
 } // namespace rage
 

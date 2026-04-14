@@ -73,8 +73,7 @@ extern void snNotifyHandler_Unregister(void* notifyList, void* handler);   // @ 
 // SendingGamerData helpers
 extern void snSendingGamerData_ProcessUpdate(void* thisPtr);               // @ 0x823E01F8 — gamer data exchange handler
 
-// Join notify utility
-extern void snJoinMachine_SetCapacity_03D0(void* list, int32_t value);     // @ 0x822603D0 — also used for join notify init
+// Join notify utility (snJoinMachine_SetCapacity @ 0x822603D0 is reused for join notify init)
 extern void snJoinMachine_CopyNotifyData(void* list, uint32_t a, uint32_t b, uint32_t c); // @ 0x822608C8
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -114,6 +113,10 @@ extern void* g_vtable_EvtSessionJoinFailed;
 // Callback/handler vtable used for join completion notification
 // @ 0x823EB0F8 — thunk for join completion callback
 extern void* g_joinCompletionHandler;
+
+// Reply timeout handler function pointer (thunk_fn_823F0D68)
+// @ 0x823F1508 — 4-byte thunk that tail-calls fn_823F0D68
+extern void thunk_snHsmWaitingForReply_TimeoutHandler(); // @ 0x823F1508
 
 // ────────────────────────────────────────────────────────────────────────────
 // snJoinMachine::OnEnter @ 0x823DF060 | size: 0xD4 | vfn_14
@@ -301,7 +304,7 @@ void snHsmWaitingForReply_OnEnter(void* thisPtr) { // vfn_14
 
     // Set up callback at +24: store self at +28, handler at +32
     *(void**)(self + 28) = thisPtr;
-    *(void**)(self + 32) = (void*)0x823F1508; // thunk_fn_823F0D68 — reply timeout handler
+    *(void**)(self + 32) = (void*)&thunk_snHsmWaitingForReply_TimeoutHandler; // reply timeout handler
 
     // Query session config from host connection
     void* networkClient = *(void**)(self + 16);

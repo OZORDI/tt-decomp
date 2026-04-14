@@ -12,6 +12,21 @@
 #pragma once
 #include <stdint.h>
 
+// ── cmPort — 8-byte data-flow graph port ────────────────────────────────────
+// Each port is a {pointer, type} pair used in CM condition/lookup nodes.
+//   type==1 (DIRECT): pData points to raw data object
+//   type==2 (NODE):   pData points to an upstream CM operator node
+struct cmPort {
+    uint32_t    m_pData;        // +0x00  pointer to data or upstream node
+    int32_t     m_type;         // +0x04  port type (1=direct, 2=node)
+};
+
+// ── cmCondEntry — 16-byte condition/value port pair ─────────────────────────
+struct cmCondEntry {
+    cmPort      condPort;       // +0x00  condition port (evaluated as bool)
+    cmPort      valuePort;      // +0x08  value port (selected when cond is true)
+};
+
 // ── cmActionCtor  [2 vtables — template/MI] ──────────────────────────
 struct cmActionCtor {
     void**      vtable;           // +0x00
@@ -58,8 +73,21 @@ struct cmBitwiseOrReporter {
 };
 
 // ── cmCond  [5 vtables — template/MI] ──────────────────────────
+// Layout (N-condition variant):
+//   +0x00  vtable
+//   +0x04  m_outputType     (set by RegisterPorts / vfn_16)
+//   +0x08  m_flags
+//   +0x0C  m_entries[0]     (cmCondEntry: 16 bytes — condPort + valuePort)
+//   ...    m_entries[N-1]
+//   +0x0C + N*16  m_defaultPort (cmPort, 8 bytes)
+//
+// 5 vtable instantiations: 2-cond, 3-cond, 4-cond, 5-cond, 6-cond
 struct cmCond {
     void**      vtable;           // +0x00
+    uint32_t    m_outputType;     // +0x04
+    uint32_t    m_flags;          // +0x08
+    cmCondEntry m_entries[6];     // +0x0C  (max 6; actual count depends on vtable variant)
+    // After entries[N-1]: default port
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8226ceb0
@@ -102,8 +130,22 @@ struct cmLinearRemap {
 };
 
 // ── cmLookup  [5 vtables — template/MI] ──────────────────────────
+// Layout (2-entry variant, 68 bytes total):
+//   +0x00  vtable
+//   +0x04  m_cachedResult
+//   +0x08  m_flags
+//   +0x0C  m_keyPort        (cmPort, 8 bytes)
+//   +0x14  m_entries[0]     (cmCondEntry, 16 bytes: threshold + result ports)
+//   +0x24  m_entries[1]     (cmCondEntry, 16 bytes)
+//   +0x34  m_defaultPort    (cmPort, 8 bytes)
+//   Total: 0x3C = 60 bytes (2-entry); 3-entry adds +16
 struct cmLookup {
     void**      vtable;           // +0x00
+    uint32_t    m_cachedResult;   // +0x04
+    uint32_t    m_flags;          // +0x08
+    cmPort      m_keyPort;        // +0x0C  key value port
+    cmCondEntry m_entries[3];     // +0x14  lookup entries (2 or 3 used)
+    cmPort      m_defaultPort;   // +0x44  default port (3-entry); 2-entry uses (cmPort*)&m_entries[2]
 
     // ── virtual methods ──
     virtual void ScalarDtor(int flags); // [1] @ 0x8226db18

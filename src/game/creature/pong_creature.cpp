@@ -12,6 +12,12 @@
 #include "game/pong_strings.hpp"
 #include <cstring>
 
+// ── Vtable dispatch helpers ─────────────────────────────────────────────────
+// VTABLE(obj)       — dereference vtable pointer from object
+// VCALL(obj, slot)  — fetch function pointer at vtable[slot]
+#define VTABLE(obj)          (*(void***)(obj))
+#define VCALL(obj, slot, T)  ((T)(VTABLE(obj)[(slot)]))
+
 // External dependencies
 extern void rage_free(void* ptr);
 extern void rage_DebugLog(const char* msg, ...);
@@ -23,6 +29,28 @@ extern void pongPlayer_GetCreatureMatrices(void* player, int index, void* outMat
 
 // Forward declarations
 bool IsMatrixIdentity(const float* matrix);  // @ 0x820C3C70 - Matrix identity check
+
+// XML callback node — passed to pongCreatureInst attribute-read handlers
+struct xmlCallbackNode {
+    void**  vtable;   // +0x00
+    void*   dataObj;  // +0x04  the data reader sub-object (has read vtable)
+};
+
+// Animation sub-data block at animData+16, used by UpdateAnimationState
+struct AnimSubData {
+    uint8_t  _pad00[12];           // +0x00
+    uint8_t  m_bRandomize;         // +0x0C  should-randomize flag
+    uint8_t  _pad0D[3];
+    float    m_blendRange;         // +0x10  blend range / fixed time value
+    uint8_t  _pad14[12];
+    uint8_t  m_simpleAnimData[16]; // +0x20  simple animation data (passed to ApplyAnimData)
+    uint8_t  m_bUseCapsule;        // +0x30  capsule collision flag
+    uint8_t  m_bCapsuleEnabled;    // +0x31  capsule enabled flag
+    uint8_t  _pad32[14];
+    float    m_capsuleStart[4];    // +0x40  capsule start position (16 bytes)
+    float    m_minTime;            // +0x50  min time / capsule end X
+    float    m_maxTime;            // +0x54  max time / capsule end Y
+};
 
 // LocomotionStateAnim helper functions
 extern void LocomotionStateAnim_SetupContainer(void* containerData, void* containerParams, float time, int p1, int p2);
@@ -178,32 +206,32 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
     memcpy(outMatrix, g_identityMatrixRef, 64);
     
     // Check if we should use remote rest matrix
-    uint8_t flags = *(uint8_t*)((char*)mover + 64);
+    uint8_t flags = mover->m_flags;
     bool useRemoteMatrix = (flags & 0x10) != 0;
-    
+
     if (useRemoteMatrix) {
         // Check if remote matrix is valid (identity check)
-        float* remoteMatrixObj = (float*)((char*)mover + 144);
+        float* remoteMatrixObj = mover->m_remoteRestMatrix;
         bool isIdentity = IsMatrixIdentity(remoteMatrixObj);
-        
+
         // If not identity, copy remote rest matrix
         if (!isIdentity) {
-            float* remoteMatrix = (float*)((char*)mover + 192);
-            
+            float* remoteMatrix = &mover->m_remoteRestMatrix[12];
+
             rage_DebugLog(g_str_pongMover_calcInitMatrix,
                         remoteMatrix[0], remoteMatrix[1], remoteMatrix[2]);
-            
+
             // Copy 4x4 matrix (64 bytes)
-            memcpy(outMatrix, (char*)mover + 144, 64);
-            
+            memcpy(outMatrix, mover->m_remoteRestMatrix, 64);
+
             // Get player and creature data
             void* player = *(void**)0x825F1238;  // g_currentPlayer
-            uint32_t creatureIndex = *(uint32_t*)((char*)mover + 68);
+            uint32_t creatureIndex = mover->m_creatureIndex;
             
             void* playerCreature = (void*)((char*)player + creatureIndex);
             void* creatureInfo = pongGame_GetCreatureInfo(player, creatureIndex);
             void* creatureStats = *(void**)((char*)creatureInfo + 44);
-            
+
             // Check if mirrored
             uint8_t playerMirror = *(uint8_t*)((char*)creatureStats + 260);
             uint8_t creatureMirror = *(uint8_t*)((char*)playerCreature + 64);
@@ -247,22 +275,22 @@ void pongMover::CalcInitMatrix(float* outMatrix, pongMover* mover, void* creatur
     
     // Default: calculate from player position
     void* player = *(void**)0x825F1238;
-    uint32_t creatureIndex = *(uint32_t*)((char*)mover + 68);
-    
+    uint32_t creatureIndex = mover->m_creatureIndex;
+
     float tempMatrix1[16];
     float tempMatrix2[16];
-    
+
     pongPlayer_GetCreatureMatrices(player, creatureIndex, tempMatrix1, tempMatrix2);
-    
+
     void* creatureInfo = pongGame_GetCreatureInfo(player, creatureIndex);
     void* creatureStats = *(void**)((char*)creatureInfo + 44);
-    
+
     // Get height offset
     float heightOffset = *(float*)((char*)creatureStats + 252);
     outMatrix[13] = heightOffset;  // Y position
-    
+
     // Check if creature is active
-    uint32_t creaturePtr = *(uint32_t*)((char*)mover + 68);
+    uint32_t creaturePtr = mover->m_creatureIndex;
     void* activeCreature = (void*)((char*)player + creaturePtr);
     bool isActive = *(uint8_t*)((char*)activeCreature + 64) != 0;
     
@@ -329,10 +357,10 @@ uint8_t game_3C70(const float* matrix) {
  */
 float pongBlendLookAtDriver::CalculateBlendFactor() {
     // Load current look-at angle from +224
-    float currentAngle = *(float*)((char*)this + 224);  // pongBlendLookAtDriver +0xE0
-    
-    // Load blend weight from +16
-    float blendWeight = *(float*)((char*)this + 16);
+    float currentAngle = this->field_0x00e0;  // pongBlendLookAtDriver +0xE0
+
+    // Load blend weight from +0x10
+    float blendWeight = this->field_0x0010;
     
     // Load reference angle from global @ 0x8202D10C
     extern const float g_lookAtRefAngle;  // @ 0x8202D10C
@@ -374,14 +402,14 @@ float pongBlendLookAtDriver::CalculateBlendFactor() {
  */
 void* LocomotionStateAnim::FindAnimationByID(uint16_t animID_high, uint8_t animID_low) {
     // Get animation count from offset +12
-    uint16_t animCount = *(uint16_t*)((char*)this + 12);
-    
+    uint16_t animCount = (uint16_t)this->field_0x000c;
+
     if (animCount == 0) {
         return nullptr;
     }
-    
+
     // Get animation array pointer from offset +8
-    void** animArray = *(void***)((char*)this + 8);
+    void** animArray = (void**)this->field_0x0008;
     
     // Construct 24-bit search key: (animID_high << 16) | animID_low
     uint32_t searchKey = ((uint32_t)animID_high << 16) | animID_low;
@@ -446,17 +474,11 @@ bool LocomotionStateAnim::SetupAnimationPair(uint16_t animID1, uint16_t animID2,
     
     // Call virtual method on first animation with offset parameter
     // vtable[17] - likely SetupBlendSource or similar
-    void** vtable1 = *(void***)anim1;
-    typedef void (*AnimSetupFunc)(void*, void*);
-    AnimSetupFunc setupFunc1 = (AnimSetupFunc)vtable1[17];
-    setupFunc1(anim1, (char*)param + 16);
-    
+    VCALL(anim1, 17, void(*)(void*, void*))(anim1, (char*)param + 16);
+
     // Call virtual method on second animation with base parameter
     // vtable[18] - likely SetupBlendTarget or similar
-    void** vtable2 = *(void***)anim2;
-    typedef void (*AnimSetupFunc2)(void*, void*);
-    AnimSetupFunc2 setupFunc2 = (AnimSetupFunc2)vtable2[18];
-    setupFunc2(anim2, param);
+    VCALL(anim2, 18, void(*)(void*, void*))(anim2, param);
     
     return true;
 }
@@ -479,8 +501,8 @@ void LocomotionState::ValidateAnimationTiming(uint32_t& animSetIndex, uint32_t& 
     const float TIMING_THRESHOLD = 0.0f;
     const uint32_t DEFAULT_ANIM_INDEX = 11;  // Default/idle animation
     
-    // Get animation set array pointer from offset 0
-    void*** animSetArray = *(void****)this;
+    // Get animation set array pointer from offset 0 (pointer to array of pointer arrays)
+    void** animSetArray = *(void***)this;
     
     // Loop until we find valid timing
     while (true) {
@@ -534,11 +556,11 @@ void LocomotionState::ValidateAnimationTiming(uint32_t& animSetIndex, uint32_t& 
  */
 void LocomotionStateAnim::CopyAnimationData() {
     // Get source and destination buffer pointers
-    void* srcBuffer = *(void**)((char*)this + 12);   // +0x0C
-    void* dstBuffer = *(void**)((char*)this + 20);   // +0x14
-    
+    void* srcBuffer = (void*)this->field_0x000c;   // +0x0C
+    void* dstBuffer = (void*)this->field_0x0014;   // +0x14
+
     // Check if we have a helper object for the copy operation
-    void* helperObj = *(void**)((char*)this + 8);    // +0x08
+    void* helperObj = (void*)this->field_0x0008;    // +0x08
     
     if (helperObj != nullptr) {
         // Use pongCreatureInst helper to perform the copy
@@ -565,7 +587,7 @@ void LocomotionStateAnim::CopyAnimationData() {
     
     // Process additional animations from the animation array
     // Get animation info structure from offset +4
-    void* animInfo = *(void**)((char*)this + 4);
+    void* animInfo = (void*)this->field_0x0004;
     
     if (animInfo == nullptr) {
         return;
@@ -624,11 +646,11 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
     }
     
     // Set up animation state with current parameters
-    void* animContainer = *(void**)((char*)this + 36);  // Animation container at +36
+    void* animContainer = (void*)this->field_0x0024;  // Animation container at +0x24
     void* containerData = *(void**)((char*)animContainer + 0);
     void* containerParams = *(void**)((char*)animContainer + 4);
-    float currentTime = *(float*)((char*)this + 8);
-    
+    float currentTime = *(float*)&this->field_0x0008;
+
     // Call setup function to prepare animations
     LocomotionStateAnim_SetupContainer(containerData, containerParams, currentTime, 1, 0);
     
@@ -653,8 +675,8 @@ void LocomotionStateAnim::ProcessAnimationList(void* animationList) {
     uint16_t animCount = *(uint16_t*)((char*)animListData + 12);
     
     if (animCount > 0) {
-        void** animArray = *(void***)((char*)animListData + 8);
-        
+        void** animArray = (void**)*(void**)((char*)animListData + 8);
+
         // Load blend weight constant (typically 1.0f for full blend)
         extern const float g_animBlendWeight;  // @ 0x8202D110
         float blendWeight = g_animBlendWeight;
@@ -705,9 +727,9 @@ LocomotionStateAnim::~LocomotionStateAnim() {
 // ─────────────────────────────────────────────────────────────────────────────
 void LocomotionStateAnim::Reset() {
     // Clear animation state fields
-    *(uint32_t*)((char*)this + 0x3C) = 0;   // m_stateFlags = 0
-    *(uint32_t*)((char*)this + 0x140) = 0;  // m_animData = null
-    *(uint32_t*)((char*)this + 0x144) = 0;  // m_animDataPtr = null
+    this->field_0x003c = 0;   // m_stateFlags = 0
+    this->field_0x0140 = 0;  // m_animData = null
+    this->field_0x0144 = 0;  // m_animDataPtr = null
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -716,11 +738,11 @@ void LocomotionStateAnim::Reset() {
 // ─────────────────────────────────────────────────────────────────────────────
 float LocomotionStateAnim::GetAnimationProgress() {
     // Get current animation data
-    void* animData = *(void**)((char*)this + 0x140);  // m_animData
-    
+    void* animData = (void*)this->field_0x0140;  // m_animData
+
     // Get animation timing values
-    float currentTime = *(float*)((char*)this + 0xB8);  // m_currentTime
-    float duration = *(float*)((char*)this + 40);
+    float currentTime = *(float*)&this->field_0x00b8;  // m_currentTime
+    float duration = *(float*)&this->field_0x0028;
     float animEndTime = *(float*)((char*)animData + 12);
     
     // Calculate progress: (endTime - currentTime) / duration
@@ -736,10 +758,10 @@ float LocomotionStateAnim::GetAnimationProgress() {
 // ─────────────────────────────────────────────────────────────────────────────
 float LocomotionStateAnim::GetAnimationDuration() {
     // Get current animation data
-    void* animData = *(void**)((char*)this + 0x140);  // m_animData
-    
+    void* animData = (void*)this->field_0x0140;  // m_animData
+
     // Get timing values
-    float duration = *(float*)((char*)this + 40);
+    float duration = *(float*)&this->field_0x0028;
     float animEndTime = *(float*)((char*)animData + 12);
     
     // Calculate total duration: endTime / duration
@@ -753,8 +775,8 @@ float LocomotionStateAnim::GetAnimationDuration() {
 // Returns true if animation has finished playing
 // ─────────────────────────────────────────────────────────────────────────────
 bool LocomotionStateAnim::IsAnimationComplete() {
-    // Check completion flag at offset +328
-    uint8_t isComplete = *(uint8_t*)((char*)this + 0x148);  // m_isComplete
+    // Check completion flag at offset +0x148
+    uint8_t isComplete = this->field_0x0148;  // m_isComplete
     
     // Return inverted: 0 means complete, non-zero means still playing
     // This is a cntlzw + rlwinm pattern: count leading zeros and extract bit
@@ -810,11 +832,11 @@ void LocomotionStateAnim::Initialize() {
     }
     
     // Initialize state fields
-    *(float*)((char*)this + 0xB8) = zero;   // m_currentTime
-    *(uint32_t*)((char*)this + 0x144) = 0;   // m_animDataPtr = null
-    *(uint32_t*)((char*)this + 0x140) = 0;   // m_animData = null
-    *(float*)((char*)this + 0x14C) = zero;   // m_blendWeight
-    *(uint8_t*)((char*)this + 0x148) = 1;    // m_isComplete = false
+    *(float*)&this->field_0x00b8 = zero;   // m_currentTime
+    this->field_0x0144 = 0;   // m_animDataPtr = null
+    this->field_0x0140 = 0;   // m_animData = null
+    *(float*)&this->field_0x014c = zero;   // m_blendWeight
+    this->field_0x0148 = 1;    // m_isComplete = false
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -866,20 +888,14 @@ float LocomotionStateAnim::CalculateBlendFactor(void* timingData) {
 // Loads animation data from file
 // ─────────────────────────────────────────────────────────────────────────────
 bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
-    // Get animation duration from parent state
-    float duration = 0.0f;
-    {
-        void** vtable = *(void***)fileLoader;
-        typedef float (*GetDurationFunc)(void*);
-        GetDurationFunc getDuration = (GetDurationFunc)vtable[5];
-        duration = getDuration(fileLoader);
-    }
+    // Get animation duration from parent state via fileLoader->vfn_5()
+    float duration = VCALL(fileLoader, 5, float(*)(void*))(fileLoader);
     
-    // Store duration at offset +12
-    *(float*)((char*)this + 12) = duration;
-    
+    // Store duration at offset +0x0C
+    *(float*)&this->field_0x000c = duration;
+
     // Initialize animation set indices
-    *(uint32_t*)((char*)this + 8) = 0;
+    this->field_0x0008 = 0;
     
     // Try to load primary animation set
     const char** animNames1 = (const char**)0x825C9B90;  // Global animation name table
@@ -900,10 +916,10 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
         }
     }
     
-    *(uint32_t*)((char*)this + 8) = animIndex1;
-    
+    this->field_0x0008 = animIndex1;
+
     // Initialize alternate animation set indices
-    *(uint32_t*)((char*)this + 4) = 0;
+    this->field_0x0004 = 0;
     
     // Try to load alternate animation set
     const char** animNames2 = (const char**)0x825C9BA0;  // Alternate animation name table
@@ -922,7 +938,7 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
         }
     }
     
-    *(uint32_t*)((char*)this + 4) = animIndex2;
+    this->field_0x0004 = animIndex2;
     
     // Load animation file name
     char fileNameBuffer[256];
@@ -937,11 +953,8 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
     void* stateData = *(void**)((char*)parentState + 24);
     void* animManager = *(void**)((char*)stateData + 96);
     
-    // Load animation from file
-    void** animMgrVtable = *(void***)animManager;
-    typedef void* (*LoadAnimFunc)(void*, const char*);
-    LoadAnimFunc loadAnim = (LoadAnimFunc)animMgrVtable[4];
-    void* loadedAnim = loadAnim(animManager, fileNameBuffer);
+    // Load animation from file via animManager->vfn_4()
+    void* loadedAnim = VCALL(animManager, 4, void*(*)(void*, const char*))(animManager, fileNameBuffer);
     
     if (loadedAnim == nullptr) {
         // Failed to load animation
@@ -950,7 +963,7 @@ bool LocomotionStateAnim::Load(void* parentState, void* fileLoader) {
     }
     
     // Store loaded animation pointer
-    *(void**)((char*)this + 0) = loadedAnim;
+    this->vtable = (void**)loadedAnim;
     
     return true;
 }
@@ -963,26 +976,26 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
     const float zero = g_floatZero;
     
     // Get animation data pointer
-    void* animData = *(void**)((char*)this + 36);
-    
+    void* animData = (void*)this->field_0x0024;
+
     if (animData == nullptr) {
         // No animation data - check if we should idle
-        uint8_t flag1 = *(uint8_t*)((char*)this + 0);
-        uint8_t flag2 = *(uint8_t*)((char*)this + 1);
-        
+        uint8_t flag1 = *(uint8_t*)&this->vtable;
+        uint8_t flag2 = this->field_0x0001;
+
         if (flag1 != 0 || flag2 != 0) {
             // Clear state and return
-            *(float*)((char*)this + 8) = zero;
-            *(uint32_t*)((char*)this + 20) = 0;
+            *(float*)&this->field_0x0008 = zero;
+            this->field_0x0014 = 0;
             return;
         }
         
         // Check frame counter
-        uint32_t frameCount = *(uint32_t*)((char*)this + 28);
+        uint32_t frameCount = this->field_0x001c;
         if (frameCount != 0) {
-            uint32_t currentFrame = *(uint32_t*)((char*)this + 24);
+            uint32_t currentFrame = this->field_0x0018;
             currentFrame++;
-            *(uint32_t*)((char*)this + 24) = currentFrame;
+            this->field_0x0018 = currentFrame;
             
             if (currentFrame < frameCount) {
                 // Still counting frames
@@ -990,32 +1003,32 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
             }
             
             // Frame count reached - trigger state change
-            uint32_t currentState = *(uint32_t*)((char*)this + 4);
+            uint32_t currentState = this->field_0x0004;
             if (currentState == 2) {
                 // Transition to state 0
-                *(uint32_t*)((char*)this + 4) = 0;
+                this->field_0x0004 = 0;
             }
         }
         
     cleanup:
-        *(float*)((char*)this + 8) = zero;
-        *(uint32_t*)((char*)this + 20) = 0;
+        *(float*)&this->field_0x0008 = zero;
+        this->field_0x0014 = 0;
         return;
     }
     
     // Animation data exists - process it
-    void* animSubData = (void*)((char*)animData + 16);
-    
+    AnimSubData* animSubData = (AnimSubData*)((char*)animData + 16);
+
     // Check if we should randomize timing
-    uint8_t shouldRandomize = *(uint8_t*)((char*)animSubData + 12);
-    
+    uint8_t shouldRandomize = animSubData->m_bRandomize;
+
     if (shouldRandomize != 0) {
         // Randomize animation timing using RNG
         // This uses a linear congruential generator (LCG)
         uint32_t* rngState = (uint32_t*)0x825C9A48;  // Global RNG state
-        
-        float minTime = *(float*)((char*)animSubData + 80);
-        float maxTime = *(float*)((char*)animSubData + 84);
+
+        float minTime = animSubData->m_minTime;
+        float maxTime = animSubData->m_maxTime;
         float timeRange = maxTime - minTime;
         
         // Generate random value: (state * 0x5CEFA7) & 0x7FFFFF
@@ -1031,7 +1044,7 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
         float scaledRandom = timeRange * randomFloat * (1.0f / 8388608.0f);  // Divide by 2^23
         float randomTime = scaledRandom + minTime;
         
-        *(float*)((char*)this + 16) = randomTime;
+        *(float*)&this->field_0x0010 = randomTime;
         
         // Generate second random value for blend weight
         seed = rngState[0];
@@ -1041,49 +1054,49 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
         rngState[0] = (uint32_t)next;
         rngState[1] = (uint32_t)(next >> 32);
         
-        float blendRange = *(float*)((char*)animSubData + 16);
+        float blendRange = animSubData->m_blendRange;
         randomFloat = (float)randomBits;
         float randomBlend = randomFloat * blendRange * (1.0f / 8388608.0f);
         
-        *(float*)((char*)this + 12) = randomBlend;
-        
+        *(float*)&this->field_0x000c = randomBlend;
+
     } else {
         // Use fixed timing
-        float fixedTime = *(float*)((char*)animSubData + 16);
-        *(float*)((char*)this + 12) = fixedTime;
+        float fixedTime = animSubData->m_blendRange;
+        *(float*)&this->field_0x000c = fixedTime;
     }
     
     // Update state based on timing
-    float currentTime = *(float*)((char*)this + 12);
-    
+    float currentTime = *(float*)&this->field_0x000c;
+
     if (currentTime < zero) {
         // Negative time - transition to state 2
-        uint32_t state = *(uint32_t*)((char*)this + 4);
+        uint32_t state = this->field_0x0004;
         if (state != 2) {
-            *(uint32_t*)((char*)this + 4) = 2;
+            this->field_0x0004 = 2;
         }
     } else if (currentTime == zero) {
         // Zero time - transition to state 1
-        uint32_t state = *(uint32_t*)((char*)this + 4);
+        uint32_t state = this->field_0x0004;
         if (state != 1) {
-            *(uint32_t*)((char*)this + 4) = 1;
+            this->field_0x0004 = 1;
         }
     } else {
         // Positive time - transition to state 0
-        uint32_t state = *(uint32_t*)((char*)this + 4);
+        uint32_t state = this->field_0x0004;
         if (state != 0) {
-            *(uint32_t*)((char*)this + 4) = 0;
+            this->field_0x0004 = 0;
         }
     }
     
     // Check if we should use capsule collision
-    uint8_t useCapsule = *(uint8_t*)((char*)animSubData + 48);
-    uint8_t capsuleEnabled = *(uint8_t*)((char*)animSubData + 49);
-    
+    uint8_t useCapsule = animSubData->m_bUseCapsule;
+    uint8_t capsuleEnabled = animSubData->m_bCapsuleEnabled;
+
     if (useCapsule != 0 && capsuleEnabled != 0) {
         // Copy capsule data and calculate collision
         float capsuleData[4];
-        float* srcCapsule = (float*)((char*)animSubData + 64);
+        float* srcCapsule = animSubData->m_capsuleStart;
         float* dstCapsule = (float*)((char*)outputState + 48);
         
         // Copy 16 bytes (4 floats)
@@ -1092,7 +1105,7 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
         }
         
         // Calculate capsule collision parameters
-        float* capsuleEnd = (float*)((char*)animSubData + 80);
+        float* capsuleEnd = &animSubData->m_minTime;
         float capsuleDiff[4];
         for (int i = 0; i < 4; i++) {
             capsuleDiff[i] = capsuleEnd[i] - dstCapsule[i];
@@ -1103,20 +1116,20 @@ void LocomotionStateAnim::UpdateAnimationState(void* outputState) {
         
     } else {
         // Use simple animation data
-        void* simpleAnimData = (void*)((char*)animSubData + 32);
+        void* simpleAnimData = animSubData->m_simpleAnimData;
         LocomotionStateAnim_ApplyAnimData(outputState, simpleAnimData);
     }
     
     // Copy final capsule data to output
-    float* finalCapsule = (float*)((char*)animSubData + 64);
+    float* finalCapsule = animSubData->m_capsuleStart;
     float* outputCapsule = (float*)((char*)outputState + 48);
     for (int i = 0; i < 4; i++) {
         outputCapsule[i] = finalCapsule[i];
     }
     
     // Clear timing fields
-    *(float*)((char*)this + 8) = zero;
-    *(uint32_t*)((char*)this + 20) = 0;
+    *(float*)&this->field_0x0008 = zero;
+    this->field_0x0014 = 0;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1215,7 +1228,7 @@ int pongCreatureInst::GetType() {  // vfn_1
  * This is the creature's collision/physics shape data.
  */
 void* pongCreatureInst::GetEmbeddedObject() {  // vfn_2
-    return (char*)this + 224;
+    return (char*)this + 0xE0;  // embedded sub-object at +0xE0
 }
 
 /**
@@ -1246,10 +1259,7 @@ void pongCreatureInst::ClearBoundingVector(void* outVector) {  // vfn_4
  * request to the more specific implementation.
  */
 void pongCreatureInst::ForwardToUpdateBounds() {  // vfn_10
-    typedef void (*UpdateFunc)(void*);
-    void** vt = *(void***)this;
-    UpdateFunc update = (UpdateFunc)vt[15];
-    update(this);
+    VCALL(this, 15, void(*)(void*))(this);
 }
 
 /**
@@ -1259,10 +1269,7 @@ void pongCreatureInst::ForwardToUpdateBounds() {  // vfn_10
  * Sets up the default bounding volume query.
  */
 void pongCreatureInst::UpdateBoundsWithDefaults() {  // vfn_9
-    typedef void (*BoundsFunc)(void*, void*, void*, int);
-    void** vt = *(void***)this;
-    BoundsFunc boundsFunc = (BoundsFunc)vt[10];
-    boundsFunc(this, (char*)this + 64, nullptr, 0);
+    VCALL(this, 10, void(*)(void*, void*, void*, int))(this, &this->field_0x0040, nullptr, 0);
 }
 
 /**
@@ -1272,10 +1279,7 @@ void pongCreatureInst::UpdateBoundsWithDefaults() {  // vfn_9
  * min/max pointers.
  */
 void pongCreatureInst::ComputeBoundsPartial(void* outMin, void* outMax) {  // vfn_14
-    typedef void (*BoundsFunc)(void*, void*, void*, int);
-    void** vt = *(void***)this;
-    BoundsFunc boundsFunc = (BoundsFunc)vt[10];
-    boundsFunc(this, outMin, outMax, 0);
+    VCALL(this, 10, void(*)(void*, void*, void*, int))(this, outMin, outMax, 0);
 }
 
 /**
@@ -1285,7 +1289,7 @@ void pongCreatureInst::ComputeBoundsPartial(void* outMin, void* outMax) {  // vf
  * then adds (index << 6) to get the entity pointer. Each entity is 64 bytes.
  */
 void* pongCreatureInst::GetEntityByIndex(int index) {  // vfn_38
-    void* inner = *(void**)((char*)this + 4);
+    void* inner = (void*)this->field_0x0004;
     void* pool = *(void**)((char*)inner + 12);
     char* base = *(char**)((char*)pool + 120);
     return base + (index << 6);
@@ -1298,7 +1302,7 @@ void* pongCreatureInst::GetEntityByIndex(int index) {  // vfn_38
  * array through the creature's skeleton data.
  */
 void* pongCreatureInst::GetBoneTransform(int boneIndex) {  // vfn_22
-    void* skeletonData = *(void**)((char*)this + 80);
+    void* skeletonData = (void*)this->field_0x0050;
     if (!skeletonData) return nullptr;
 
     void* boneArray = *(void**)((char*)skeletonData + 12);
@@ -1313,7 +1317,7 @@ void* pongCreatureInst::GetBoneTransform(int boneIndex) {  // vfn_22
  * this->field_4 -> field_84 (the creature info/stats pointer).
  */
 void* pongCreatureInst::GetCreatureInfo() {  // vfn_30
-    void* creatureData = *(void**)((char*)this + 4);
+    void* creatureData = (void*)this->field_0x0004;
     if (!creatureData) return nullptr;
     return *(void**)((char*)creatureData + 84);
 }
@@ -1326,7 +1330,7 @@ void* pongCreatureInst::GetCreatureInfo() {  // vfn_30
  * Returns nullptr if any link is null.
  */
 void* pongCreatureInst::GetPhysicsState() {  // vfn_31
-    void* inner = *(void**)((char*)this + 4);
+    void* inner = (void*)this->field_0x0004;
     if (!inner) return nullptr;
     void* physics = *(void**)((char*)inner + 12);
     if (!physics) return nullptr;
@@ -1341,7 +1345,7 @@ void* pongCreatureInst::GetPhysicsState() {  // vfn_31
  * collision flags at +16 of the resulting object.
  */
 uint32_t pongCreatureInst::GetCollisionFlags() {  // vfn_37
-    void* inner = *(void**)((char*)this + 4);
+    void* inner = (void*)this->field_0x0004;
     if (!inner) return 0;
     void* physics = *(void**)((char*)inner + 12);
     if (!physics) return 0;
@@ -1357,7 +1361,7 @@ uint32_t pongCreatureInst::GetCollisionFlags() {  // vfn_37
  * specified index. Walks: this->field_80 -> field_12 -> buffer[index*64].
  */
 void* pongCreatureInst::GetSubObjectTransform(int index) {  // vfn_3
-    void* subObjMgr = *(void**)((char*)this + 80);
+    void* subObjMgr = (void*)this->field_0x0050;
     if (!subObjMgr) return nullptr;
     void* pool = *(void**)((char*)subObjMgr + 12);
     char* base = *(char**)((char*)pool + 120);
@@ -1376,8 +1380,7 @@ void* pongCreatureInst::GetSubObjectTransform(int index) {  // vfn_3
  * creature has the visibility/render flag set.
  */
 bool pongCreatureInst::HasVisibilityFlag() {  // 5378
-    uint8_t flags = *(uint8_t*)((char*)this + 0x1AF);  // m_visibilityFlags
-    return (flags & 0x4) != 0;
+    return (this->field_0x01af & 0x4) != 0;
 }
 
 /**
@@ -1398,8 +1401,8 @@ bool pongCreatureInst::IsNetworkActive() {  // C9C8_w
  * Returns true if current >= max (i.e., index has reached capacity).
  */
 bool pongCreatureInst::IsIndexValid() {  // CF90_h
-    int32_t currentIdx = *(int32_t*)((char*)this + 12);
-    int32_t maxIdx = *(int32_t*)((char*)this + 16);
+    int32_t currentIdx = (int32_t)this->field_0x000c;
+    int32_t maxIdx = (int32_t)this->field_0x0010;
     return currentIdx >= maxIdx;
 }
 
@@ -1413,8 +1416,8 @@ bool pongCreatureInst::IsIndexValid() {  // CF90_h
  *   field_4 + (index * 176) + 96
  */
 float pongCreatureInst::GetCurrentWeight() {  // D010_h
-    void* ptrArray = *(void**)((char*)this + 0);
-    int32_t index = *(int32_t*)((char*)this + 12);
+    void* ptrArray = (void*)this->vtable;
+    int32_t index = (int32_t)this->field_0x000c;
 
     if (ptrArray) {
         // Indexed pointer array lookup
@@ -1423,7 +1426,7 @@ float pongCreatureInst::GetCurrentWeight() {  // D010_h
         return *(float*)((char*)entry + 124);
     } else {
         // Linear array fallback (stride = 176 bytes per entry)
-        char* base = *(char**)((char*)this + 4);
+        char* base = (char*)this->field_0x0004;
         return *(float*)(base + index * 176 + 96);
     }
 }
@@ -1435,11 +1438,8 @@ float pongCreatureInst::GetCurrentWeight() {  // D010_h
  * vtable slot 9 with this+32 as the data argument.
  */
 void pongCreatureInst::DelegateSlot9_Offset32(void* arg) {  // 8FC0_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef void (*SlotFunc)(void*, void*);
-    void** vt = *(void***)target;
-    SlotFunc fn = (SlotFunc)vt[9];
-    fn(target, (char*)this + 32);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    VCALL(target, 9, void(*)(void*, void*))(target, &this->field_0x0020);
 }
 
 /**
@@ -1448,11 +1448,8 @@ void pongCreatureInst::DelegateSlot9_Offset32(void* arg) {  // 8FC0_p42
  * Same pattern as DelegateSlot9_Offset32, with this+48.
  */
 void pongCreatureInst::DelegateSlot9_Offset48(void* arg) {  // 8FE0_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef void (*SlotFunc)(void*, void*);
-    void** vt = *(void***)target;
-    SlotFunc fn = (SlotFunc)vt[9];
-    fn(target, (char*)this + 48);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    VCALL(target, 9, void(*)(void*, void*))(target, &this->field_0x0030);
 }
 
 /**
@@ -1461,11 +1458,8 @@ void pongCreatureInst::DelegateSlot9_Offset48(void* arg) {  // 8FE0_p42
  * Same pattern as DelegateSlot9_Offset32, with this+64.
  */
 void pongCreatureInst::DelegateSlot9_Offset64(void* arg) {  // 9000_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef void (*SlotFunc)(void*, void*);
-    void** vt = *(void***)target;
-    SlotFunc fn = (SlotFunc)vt[9];
-    fn(target, (char*)this + 64);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    VCALL(target, 9, void(*)(void*, void*))(target, &this->field_0x0040);
 }
 
 /**
@@ -1474,11 +1468,8 @@ void pongCreatureInst::DelegateSlot9_Offset64(void* arg) {  // 9000_p42
  * Same pattern, with this+80.
  */
 void pongCreatureInst::DelegateSlot9_Offset80(void* arg) {  // 9020_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef void (*SlotFunc)(void*, void*);
-    void** vt = *(void***)target;
-    SlotFunc fn = (SlotFunc)vt[9];
-    fn(target, (char*)this + 80);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    VCALL(target, 9, void(*)(void*, void*))(target, &this->field_0x0050);
 }
 
 /**
@@ -1487,11 +1478,8 @@ void pongCreatureInst::DelegateSlot9_Offset80(void* arg) {  // 9020_p42
  * Same pattern, with this+112.
  */
 void pongCreatureInst::DelegateSlot9_Offset112(void* arg) {  // 9040_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef void (*SlotFunc)(void*, void*);
-    void** vt = *(void***)target;
-    SlotFunc fn = (SlotFunc)vt[9];
-    fn(target, (char*)this + 112);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    VCALL(target, 9, void(*)(void*, void*))(target, &this->field_0x0070);
 }
 
 /**
@@ -1500,11 +1488,8 @@ void pongCreatureInst::DelegateSlot9_Offset112(void* arg) {  // 9040_p42
  * Same pattern, with this+128.
  */
 void pongCreatureInst::DelegateSlot9_Offset128(void* arg) {  // 9060_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef void (*SlotFunc)(void*, void*);
-    void** vt = *(void***)target;
-    SlotFunc fn = (SlotFunc)vt[9];
-    fn(target, (char*)this + 128);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    VCALL(target, 9, void(*)(void*, void*))(target, &this->field_0x0080);
 }
 
 /**
@@ -1513,11 +1498,8 @@ void pongCreatureInst::DelegateSlot9_Offset128(void* arg) {  // 9060_p42
  * Same pattern, with this+144.
  */
 void pongCreatureInst::DelegateSlot9_Offset144(void* arg) {  // 9080_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef void (*SlotFunc)(void*, void*);
-    void** vt = *(void***)target;
-    SlotFunc fn = (SlotFunc)vt[9];
-    fn(target, (char*)this + 144);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    VCALL(target, 9, void(*)(void*, void*))(target, &this->field_0x0090);
 }
 
 /**
@@ -1528,12 +1510,9 @@ void pongCreatureInst::DelegateSlot9_Offset144(void* arg) {  // 9080_p42
  * animation state flags from a network message.
  */
 void pongCreatureInst::StoreVCallResultAtField429(void* arg) {  // 8E70_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef uint8_t (*GetFunc)(void*);
-    void** vt = *(void***)target;
-    GetFunc fn = (GetFunc)vt[4];
-    uint8_t result = fn(target);
-    *(uint8_t*)((char*)this + 0x1AD) = result;  // m_boneParam
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    uint8_t result = VCALL(target, 4, uint8_t(*)(void*))(target);
+    this->field_0x01ad = result;  // m_boneParam
 }
 
 /**
@@ -1542,12 +1521,9 @@ void pongCreatureInst::StoreVCallResultAtField429(void* arg) {  // 8E70_p42
  * Same pattern as StoreVCallResultAtField429, stores at this+446.
  */
 void pongCreatureInst::StoreVCallResultAtField446(void* arg) {  // 9180_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef uint8_t (*GetFunc)(void*);
-    void** vt = *(void***)target;
-    GetFunc fn = (GetFunc)vt[4];
-    uint8_t result = fn(target);
-    *(uint8_t*)((char*)this + 0x1BE) = result;  // m_blendFlag
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    uint8_t result = VCALL(target, 4, uint8_t(*)(void*))(target);
+    this->field_0x01be = result;  // m_blendFlag
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1561,10 +1537,7 @@ void pongCreatureInst::StoreVCallResultAtField446(void* arg) {  // 9180_p42
  * to the state's concrete implementation.
  */
 void LocomotionStateAnim::ForwardToVfn7() {  // BB98
-    typedef void (*Func)(void*);
-    void** vt = *(void***)this;
-    Func fn = (Func)vt[7];
-    fn(this);
+    VCALL(this, 7, void(*)(void*))(this);
 }
 
 /**
@@ -1577,9 +1550,9 @@ void LocomotionStateAnim::ForwardToVfn7() {  // BB98
  */
 int LocomotionStateAnim::CountActiveAnimLayers() {  // BA60_g
     int count = 0;
-    if (*(void**)((char*)this + 16) != nullptr) count++;
-    if (*(void**)((char*)this + 20) != nullptr) count++;
-    if (*(void**)((char*)this + 24) != nullptr) return count + 1;
+    if (this->field_0x0010 != 0) count++;
+    if (this->field_0x0014 != 0) count++;
+    if (this->field_0x0018 != 0) return count + 1;
     return count;
 }
 
@@ -1598,23 +1571,19 @@ int LocomotionStateAnim::CountActiveAnimLayers() {  // BA60_g
  * to forward calls to its inner physics/collision object.
  */
 void pongCreatureInst::ForwardVfn11() {  // CC48_p42 @ 0x8211CC48
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[11])(this);
+    VCALL(this, 11, void(*)(void*))(this);
 }
 
 void pongCreatureInst::ForwardVfn12() {  // CC58_p42 @ 0x8211CC58
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[12])(this);
+    VCALL(this, 12, void(*)(void*))(this);
 }
 
 void pongCreatureInst::ForwardVfn13() {  // CC68_p42 @ 0x8211CC68
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[13])(this);
+    VCALL(this, 13, void(*)(void*))(this);
 }
 
 void pongCreatureInst::ForwardVfn14() {  // CC78_p33 @ 0x8211CC78
-    typedef void (*Fn)(void*);
-    ((Fn)(*(void***)this)[14])(this);
+    VCALL(this, 14, void(*)(void*))(this);
 }
 
 // ── FIELD SETTERS (vcall result → store) ───────────────────────────────────
@@ -1626,10 +1595,9 @@ void pongCreatureInst::ForwardVfn14() {  // CC78_p33 @ 0x8211CC78
  * stores it at this+445. Used for syncing creature visibility flags.
  */
 void pongCreatureInst::UpdateFlag445(void* arg) {  // 8EB0_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef uint8_t (*GetFn)(void*);
-    uint8_t val = ((GetFn)(*(void***)target)[4])(target);
-    *(uint8_t*)((char*)this + 0x1BD) = val;  // m_boneFlag
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    uint8_t val = VCALL(target, 4, uint8_t(*)(void*))(target);
+    this->field_0x01bd = val;  // m_boneFlag
 }
 
 /**
@@ -1638,10 +1606,9 @@ void pongCreatureInst::UpdateFlag445(void* arg) {  // 8EB0_p42
  * Same pattern as UpdateFlag445, stores at this+447.
  */
 void pongCreatureInst::UpdateFlag447(void* arg) {  // 8F70_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef uint8_t (*GetFn)(void*);
-    uint8_t val = ((GetFn)(*(void***)target)[4])(target);
-    *(uint8_t*)((char*)this + 0x1BF) = val;  // m_mirrorFlag
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    uint8_t val = VCALL(target, 4, uint8_t(*)(void*))(target);
+    this->field_0x01bf = val;  // m_mirrorFlag
 }
 
 /**
@@ -1651,15 +1618,13 @@ void pongCreatureInst::UpdateFlag447(void* arg) {  // 8F70_p42
  * sets bit 3 (0x08) of the flags byte at this+431. If false, clears it.
  */
 void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
-    void* target = *(void**)((char*)arg + 4);
-    typedef uint8_t (*GetFn)(void*);
-    uint8_t val = ((GetFn)(*(void***)target)[4])(target);
+    void* target = ((xmlCallbackNode*)arg)->dataObj;
+    uint8_t val = VCALL(target, 4, uint8_t(*)(void*))(target);
 
-    uint8_t* flags = (uint8_t*)((char*)this + 0x1AF);  // m_visibilityFlags
     if (val) {
-        *flags |= 0x08;   // set bit 3
+        this->field_0x01af |= 0x08;   // set bit 3
     } else {
-        *flags &= ~0x08;  // clear bit 3
+        this->field_0x01af &= ~0x08;  // clear bit 3
     }
 }
 
@@ -1674,7 +1639,7 @@ void pongCreatureInst::UpdateFlagBit3(void* arg) {  // 8F00_p42
  */
 void pongCreature::LookupHashValue(void* outPtr, void* keyPtr) {  // 79F0_p45
     uint32_t key = *(uint32_t*)keyPtr;
-    void* hashTable = *(void**)((char*)this + 0xA0);  // m_hashTable
+    void* hashTable = (void*)this->field_0x00a0;  // m_hashTable
     char* entries = *(char**)((char*)hashTable + 8);
     char* entry = entries + (key << 3);
 
@@ -1694,7 +1659,7 @@ void pongCreature::LookupHashValue(void* outPtr, void* keyPtr) {  // 79F0_p45
  */
 void pongCreature::FindIndexByKey(void* outPtr, void* keyPtr) {  // 7990_p45
     uint32_t searchKey = *(uint32_t*)keyPtr;
-    void* arrayBase = *(void**)((char*)this + 0xA0);  // m_hashTable
+    void* arrayBase = (void*)this->field_0x00a0;  // m_hashTable
     char* entries = *(char**)((char*)arrayBase + 8);
     uint32_t count = *(uint32_t*)((char*)arrayBase + 12);
 
@@ -1716,15 +1681,15 @@ void pongCreature::FindIndexByKey(void* outPtr, void* keyPtr) {  // 7990_p45
  * stride: field_4 + (index * 176) + 4. Returns the uint32_t value.
  */
 uint32_t pongCreatureInst::LookupContainer() {  // CFB0_h
-    void* ptrArray = *(void**)((char*)this + 0);
-    int32_t index = *(int32_t*)((char*)this + 12);
+    void* ptrArray = (void*)this->vtable;
+    int32_t index = (int32_t)this->field_0x000c;
 
     if (ptrArray) {
         void** entries = (void**)ptrArray;
         void* entry = entries[index];
         return *(uint32_t*)((char*)entry + 4);
     } else {
-        char* base = *(char**)((char*)this + 4);
+        char* base = (char*)this->field_0x0004;
         return *(uint32_t*)(base + index * 176 + 4);
     }
 }
@@ -1737,7 +1702,7 @@ uint32_t pongCreatureInst::LookupContainer() {  // CFB0_h
  * active animation or physics slots.
  */
 bool pongCreatureInst::HasMultipleActiveSlots() {  // 7BD8_h
-    uint32_t bitfield = *(uint32_t*)((char*)this + 0x1D0);  // m_activeSlotBits
+    uint32_t bitfield = this->field_0x01d0;  // m_activeSlotBits
     int count = 0;
     while (bitfield) {
         count += (bitfield & 1);
@@ -1782,8 +1747,8 @@ void pongCreatureInst::ListInsertTail(void* node) {  // 67E8_h
  * Uses shift-left compaction to fill the gap. Decrements count at +8.
  */
 void pongCreatureInst::ArrayRemove(void* element) {  // 9420_h
-    void** array = *(void***)((char*)this + 0);
-    int32_t count = *(int32_t*)((char*)this + 8);
+    void** array = (void**)this->vtable;
+    int32_t count = (int32_t)this->field_0x0008;
 
     for (int i = 0; i < count; i++) {
         if (array[i] == element) {
@@ -1792,7 +1757,7 @@ void pongCreatureInst::ArrayRemove(void* element) {  // 9420_h
                 array[j] = array[j + 1];
             }
             array[count - 1] = nullptr;
-            *(int32_t*)((char*)this + 8) = count - 1;
+            this->field_0x0008 = count - 1;
             return;
         }
     }
@@ -1805,9 +1770,9 @@ void pongCreatureInst::ArrayRemove(void* element) {  // 9420_h
  * to the new object and releases the old one.
  */
 void pongCreatureInst::SetRefPtr(void* newObj) {  // 9030_g
-    void* oldObj = *(void**)((char*)this + 4);
+    void* oldObj = (void*)this->field_0x0004;
     if (newObj) rage_AddRef(newObj);
-    *(void**)((char*)this + 4) = newObj;
+    this->field_0x0004 = (uint32_t)(uintptr_t)newObj;
     if (oldObj) rage_Release(oldObj);
 }
 
@@ -1818,7 +1783,7 @@ void pongCreatureInst::SetRefPtr(void* newObj) {  // 9030_g
  * releases old value at the specified index.
  */
 void pongCreatureInst::SetArraySlot(int index, void* newObj) {  // E7B8_h
-    void** array = *(void***)((char*)this + 0);
+    void** array = (void**)this->vtable;
     void* oldObj = array[index];
 
     if (newObj) rage_AddRef(newObj);
@@ -1857,10 +1822,8 @@ void pongCreatureInst::Detach() {  // D470_p33
 
     // Remove from parent's child list
     void* parent = *(void**)((char*)g_creatureManager + 876);
-    void* childToRemove = *(void**)((char*)this + 0xC0);  // m_childLink
-    typedef void (*RemoveFn)(void*, void*);
-    RemoveFn removeChild = (RemoveFn)(*(void***)parent)[3];
-    removeChild(parent, childToRemove);
+    void* childToRemove = (void*)this->field_0x00c0;  // m_childLink
+    VCALL(parent, 3, void(*)(void*, void*))(parent, childToRemove);
 
     // Run cleanup
     pongCreatureInst_Cleanup(this);
@@ -1879,11 +1842,11 @@ void pongCreature::Relocate(void* relocator) {  // 8858_p46
     *(void**)this = (void*)0x82028144;  // pongCreature vtable
 
     // Rebase field_4 pointer
-    void* basePtr = *(void**)((char*)this + 4);
+    void* basePtr = (void*)this->field_0x0004;
     if (basePtr && relocator) {
         uint32_t* strideTable = *(uint32_t**)((char*)relocator + 4);
         uint32_t offset = strideTable[1];
-        *(void**)((char*)this + 4) = (char*)basePtr + offset;
+        this->field_0x0004 = (uint32_t)(uintptr_t)((char*)basePtr + offset);
     }
 
     pongCreature_Fixup(this, relocator);
@@ -1912,8 +1875,8 @@ void pongCreatureInst::SetMatrix(const void* srcMatrix) {  // 5040
 void pongCreatureInst::UpdateHeading() {  // E828_v12
 
     float heading = pongCreatureInst_ComputeHeading(this);
-    float prevHeading = *(float*)((char*)this + 8);
-    *(float*)((char*)this + 8) = heading;
+    float prevHeading = *(float*)&this->field_0x0008;
+    *(float*)&this->field_0x0008 = heading;
 
     if (heading != prevHeading) {
         pongCreatureInst_NotifyHeadingChanged(this);
@@ -1930,18 +1893,18 @@ void pongCreatureInst::UpdateHeading() {  // E828_v12
  * 16-byte aligned vectors.
  */
 void LocomotionStateAnim::ResetAccumulators() {  // B9F0_w
-    // Zero weight floats (loop 3 iterations: +28, +32, +36)
-    *(float*)((char*)this + 28) = 0.0f;
-    *(float*)((char*)this + 32) = 0.0f;
-    *(float*)((char*)this + 36) = 0.0f;
+    // Zero weight floats (loop 3 iterations: +0x1C, +0x20, +0x24)
+    *(float*)&this->field_0x001c = 0.0f;
+    *(float*)&this->field_0x0020 = 0.0f;
+    *(float*)&this->field_0x0024 = 0.0f;
 
-    // Zero interleaved counters at +16, +20, +24
-    *(uint32_t*)((char*)this + 16) = 0;
-    *(uint32_t*)((char*)this + 20) = 0;
-    *(uint32_t*)((char*)this + 24) = 0;
+    // Zero interleaved counters at +0x10, +0x14, +0x18
+    this->field_0x0010 = 0;
+    this->field_0x0014 = 0;
+    this->field_0x0018 = 0;
 
-    // Zero 4 vec128 accumulators at +48, +64, +80, +96
-    memset((char*)this + 48, 0, 64);
+    // Zero 4 vec128 accumulators at +0x30, +0x40, +0x50, +0x60
+    memset(&this->field_0x0030, 0, 64);
 }
 
 /**
@@ -2002,10 +1965,10 @@ void LocomotionStateAnim::SetMatrix(const void* srcMatrix) {  // 7B30_g
  */
 void LocomotionState::AdvanceNode() {  // EFA0_h
 
-    void* listHead = *(void**)((char*)this + 4);
+    void* listHead = this->field_0x0004;
     if (listHead) {
         void* next = LocomotionState_FindFirstActive(listHead);
-        *(void**)((char*)this + 4) = next;
+        this->field_0x0004 = next;
     }
 }
 
@@ -2040,9 +2003,7 @@ bool LocomotionStateAnim::DispatchAnimEvent(void* eventArg) {  // EEC8
     void* anim = LocomotionStateAnim_FindAnim(this);
     if (!anim) return false;
 
-    typedef bool (*EventFn)(void*, void*);
-    EventFn dispatch = (EventFn)(*(void***)anim)[18];
-    return dispatch(anim, eventArg);
+    return VCALL(anim, 18, bool(*)(void*, void*))(anim, eventArg);
 }
 
 /**
@@ -2059,9 +2020,7 @@ void LocomotionStateAnim::GetAnimPosition(void* outPosition) {  // B800_g
         return;
     }
 
-    typedef void (*GetPosFn)(void*, void*);
-    GetPosFn getPos = (GetPosFn)(*(void***)anim)[14];
-    getPos(anim, outPosition);
+    VCALL(anim, 14, void(*)(void*, void*))(anim, outPosition);
 }
 
 /**
@@ -2091,7 +2050,7 @@ void LocomotionStateAnim::AccumulateOffset(void* accumulator) {  // BDB0_g
  */
 void LocomotionStateAnim::AccumulateList() {  // D480_w
 
-    void* node = *(void**)((char*)this + 4);
+    void* node = (void*)this->field_0x0004;
     while (node) {
         LocomotionStateAnim_ProcessNode(this, node);
         LocomotionStateAnim_AccumNode(this, node);
@@ -2109,14 +2068,14 @@ void LocomotionStateAnim::AccumulateList() {  // D480_w
 void LocomotionStateAnim::RebasePointers(void* relocator) {  // 51A8_p46
     uint32_t* strideTable = *(uint32_t**)((char*)relocator + 4);
 
-    void* ptr0 = *(void**)((char*)this + 0);
+    void* ptr0 = (void*)this->vtable;
     if (ptr0) {
-        *(void**)((char*)this + 0) = (char*)ptr0 + strideTable[0];
+        this->vtable = (void**)((char*)ptr0 + strideTable[0]);
     }
 
-    void* ptr12 = *(void**)((char*)this + 12);
+    void* ptr12 = (void*)this->field_0x000c;
     if (ptr12) {
-        *(void**)((char*)this + 12) = (char*)ptr12 + strideTable[1];
+        this->field_0x000c = (uint32_t)(uintptr_t)((char*)ptr12 + strideTable[1]);
     }
 }
 
@@ -2142,18 +2101,18 @@ bool LocomotionStateAnim::IsAngleCloser(float target, float angle2, float angle3
  * sample buffering.
  */
 void LocomotionStateAnim::AdvanceRingBuffer() {  // 04C0_fw
-    int32_t index = *(int32_t*)((char*)this + 8);
-    int32_t remaining = *(int32_t*)((char*)this + 12);
+    int32_t index = (int32_t)this->field_0x0008;
+    int32_t remaining = (int32_t)this->field_0x000c;
 
     index = (index + 1) & 3;  // mod 4
     remaining--;
 
-    *(int32_t*)((char*)this + 8) = index;
-    *(int32_t*)((char*)this + 12) = remaining;
+    this->field_0x0008 = index;
+    this->field_0x000c = remaining;
 
     // Update current pointer based on new index
-    void** buffers = *(void***)((char*)this + 0);
-    *(void**)((char*)this + 16) = buffers[index];
+    void** buffers = (void**)this->vtable;
+    this->field_0x0010 = (uint32_t)(uintptr_t)buffers[index];
 }
 
 /**
@@ -2164,20 +2123,20 @@ void LocomotionStateAnim::AdvanceRingBuffer() {  // 04C0_fw
  */
 void LocomotionStateAnim::PushBack(uint32_t key, const void* vecData) {  // 4190_g
 
-    uint32_t count = *(uint32_t*)((char*)this + 8);
-    uint32_t capacity = *(uint32_t*)((char*)this + 12);
+    uint32_t count = (uint32_t)this->field_0x0008;
+    uint32_t capacity = (uint32_t)this->field_0x000c;
 
     if (count >= capacity) {
         LocomotionStateAnim_GrowArray(this);
     }
 
     // Insert at end: entry = base + count * 20 (key=4 + vec=16)
-    char* base = *(char**)((char*)this + 0);
+    char* base = (char*)this->vtable;
     char* entry = base + count * 20;
     *(uint32_t*)entry = key;
     memcpy(entry + 4, vecData, 16);
 
-    *(uint32_t*)((char*)this + 8) = count + 1;
+    this->field_0x0008 = count + 1;
 }
 
 // ── LocomotionStateMf ──────────────────────────────────────────────────────
@@ -2204,7 +2163,7 @@ void LocomotionStateMf::UpdateBlend() {  // C128_w
  * memmove. Updates the end pointer at this+8.
  */
 void LocomotionStateMf::EraseRange(void* rangeStart, void* rangeEnd) {  // 31A8
-    char* endPtr = *(char**)((char*)this + 8);
+    char* endPtr = this->field_0x0008;
     size_t tailSize = endPtr - (char*)rangeEnd;
 
     if (tailSize > 0) {
@@ -2213,7 +2172,7 @@ void LocomotionStateMf::EraseRange(void* rangeStart, void* rangeEnd) {  // 31A8
 
     // Update end pointer
     size_t erased = (char*)rangeEnd - (char*)rangeStart;
-    *(char**)((char*)this + 8) = endPtr - erased;
+    this->field_0x0008 = endPtr - erased;
 }
 
 /**
@@ -2223,7 +2182,7 @@ void LocomotionStateMf::EraseRange(void* rangeStart, void* rangeEnd) {  // 31A8
  * array, scaled by a factor from this+40.
  */
 float LocomotionStateMf::ComputeWeightedSum(const float* weights, const float* data, int count) {  // 3148_h
-    float scale = *(float*)((char*)this + 40);  // LocomotionStateMf +0x28
+    float scale = this->field_0x0028;  // LocomotionStateMf +0x28
     float sum = 0.0f;
 
     for (int i = 0; i < count; i++) {
@@ -2242,8 +2201,7 @@ float LocomotionStateMf::ComputeWeightedSum(const float* weights, const float* d
  */
 void LocomotionStateMf::SerializeTriple(void* serializer, void* data) {  // 7480_w
     typedef void (*SerializeFn)(void*, void*);
-    void** vt = *(void***)serializer;
-    SerializeFn serialize = (SerializeFn)vt[2];
+    SerializeFn serialize = VCALL(serializer, 2, SerializeFn);
 
     serialize(serializer, (char*)data + 0);
     serialize(serializer, (char*)data + 4);
@@ -2412,18 +2370,20 @@ void LocomotionStateAnim_8110_g(void* quat, float* minVec, float* maxVec) {
  */
 // LocomotionStateAnim_10D8 @ 0x820E10D8
 void LocomotionStateAnim_10D8(void* self, void* dst, void* unused, void* container, float time) {
-    // Default container to self+320 if null
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
+
+    // Default container to lsa->field_0x0140 if null
     if (container == nullptr) {
-        container = *(void**)((char*)self + 320);
+        container = (void*)lsa->field_0x0140;
     }
 
-    // If time < 0.0, use fallback from self+184
+    // If time < 0.0, use fallback from lsa->field_0x00b8
     if (time < 0.0f) {
-        time = *(float*)((char*)self + 184);
+        time = *(float*)&lsa->field_0x00b8;
     }
 
-    // Get animation list from self+28
-    void* animList = *(void**)((char*)self + 28);
+    // Get animation list from lsa->field_0x001c
+    void* animList = (void*)lsa->field_0x001c;
 
     // Configure container with timing: LocomotionStateAnim_SetupContainer(container, animList, time, 1, 0)
     LocomotionStateAnim_SetupContainer(container, animList, time, 1, 0);
@@ -2448,31 +2408,32 @@ void LocomotionStateAnim_10D8(void* self, void* dst, void* unused, void* contain
  */
 // LocomotionStateAnim_5340_p46 @ 0x82385340
 void LocomotionStateAnim_5340_p46(void* self, void* relocator) {
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
     uint32_t baseAddr = *(uint32_t*)((char*)relocator + 4);
     uint32_t stride   = *(uint32_t*)((char*)relocator + 76);
 
-    // Rebase pointer at self+4
-    uint32_t ptr4 = *(uint32_t*)((char*)self + 4);
+    // Rebase pointer at field_0x0004
+    uint32_t ptr4 = lsa->field_0x0004;
     if (ptr4 != 0) {
         uint32_t idx = (ptr4 - baseAddr) / stride;
         uint32_t offset = ((uint32_t*)relocator)[idx + 2];
-        *(uint32_t*)((char*)self + 4) = offset + ptr4;
+        lsa->field_0x0004 = offset + ptr4;
     }
 
-    // Rebase pointer at self+8
-    uint32_t ptr8 = *(uint32_t*)((char*)self + 8);
+    // Rebase pointer at field_0x0008
+    uint32_t ptr8 = (uint32_t)lsa->field_0x0008;
     if (ptr8 != 0) {
         uint32_t idx = (ptr8 - baseAddr) / stride;
         uint32_t offset = ((uint32_t*)relocator)[idx + 2];
-        *(uint32_t*)((char*)self + 8) = offset + ptr8;
+        lsa->field_0x0008 = offset + ptr8;
     }
 
-    // Rebase pointer at self+12
-    uint32_t ptr12 = *(uint32_t*)((char*)self + 12);
+    // Rebase pointer at field_0x000c
+    uint32_t ptr12 = lsa->field_0x000c;
     if (ptr12 != 0) {
         uint32_t idx = (ptr12 - baseAddr) / stride;
         uint32_t offset = ((uint32_t*)relocator)[idx + 2];
-        *(uint32_t*)((char*)self + 12) = offset + ptr12;
+        lsa->field_0x000c = offset + ptr12;
     }
 }
 
@@ -2529,18 +2490,14 @@ bool LocomotionStateAnim_C4A8_g(void* self, uint16_t animID1, uint16_t animID2, 
     }
 
     // Get world-space transform from anim1 via vtable slot 14
-    void** vt1 = *(void***)anim1;
     typedef void* (*GetTransformFn)(void*);
-    GetTransformFn getTransform14 = (GetTransformFn)vt1[14];
-    void* transform1 = getTransform14(anim1);
+    void* transform1 = VCALL(anim1, 14, GetTransformFn)(anim1);
 
     // Copy 16 bytes from transform1 into outNode+48
     memcpy((char*)outNode + 48, transform1, 16);
 
     // Get world-space transform from anim2 via vtable slot 15
-    void** vt2 = *(void***)anim2;
-    GetTransformFn getTransform15 = (GetTransformFn)vt2[15];
-    void* transform2 = getTransform15(anim2);
+    void* transform2 = VCALL(anim2, 15, GetTransformFn)(anim2);
 
     // Build rotation matrix from transform2 into outNode
     LocomotionStateAnim_AD30_g((float*)outNode, (const float*)transform2);
@@ -2559,9 +2516,10 @@ bool LocomotionStateAnim_C4A8_g(void* self, uint16_t animID1, uint16_t animID2, 
  */
 // LocomotionStateAnim_6380_g @ 0x82386380
 void LocomotionStateAnim_6380_g(void* self, void* animList) {
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
     typedef void (*AnimCallback)(void* anim, void* animData, float weight);
 
-    void* animData = *(void**)((char*)self + 36);
+    void* animData = (void*)lsa->field_0x0024;
 
     // Select callback based on mirrored flag
     AnimCallback callback = LocomotionStateAnim_C128_g;
@@ -2575,14 +2533,14 @@ void LocomotionStateAnim_6380_g(void* self, void* animList) {
     // Iterate over animation entries
     int16_t count = *(int16_t*)((char*)animList + 12);
     if (count > 0) {
-        void** animArray = *(void***)((char*)animList + 8);
+        void** animArray = (void**)*(void**)((char*)animList + 8);
         for (int i = 0; i < count; i++) {
             callback(animArray[i], animData, 0.0f);
         }
     }
 
     // Finalize
-    LocomotionStateAnim_FinalizeProcessing(*(void**)((char*)self + 36));
+    LocomotionStateAnim_FinalizeProcessing((void*)lsa->field_0x0024);
 }
 
 /**
@@ -2596,7 +2554,8 @@ void LocomotionStateAnim_6380_g(void* self, void* animList) {
  */
 // LocomotionStateAnim_A390_v12 @ 0x8224A390
 void* LocomotionStateAnim_A390_v12(void* self, uint8_t animID_high, uint16_t animID_low, int32_t* outIndex) {
-    uint16_t count = *(uint16_t*)((char*)self + 40);
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
+    uint16_t count = *(uint16_t*)&lsa->field_0x0028;
 
     int high = (int)count - 1;
     int low = 0;
@@ -2609,7 +2568,7 @@ void* LocomotionStateAnim_A390_v12(void* self, uint8_t animID_high, uint16_t ani
     // Construct 24-bit search key: (high << 16) | low
     uint32_t searchKey = ((uint32_t)animID_high << 16) | animID_low;
 
-    void** keyArray = *(void***)((char*)self + 36);
+    void** keyArray = (void**)lsa->field_0x0024;
 
     while (low <= high) {
         int mid = (low + high) / 2;
@@ -2647,9 +2606,10 @@ void* LocomotionStateAnim_A390_v12(void* self, uint8_t animID_high, uint16_t ani
  */
 // LocomotionStateAnim_BB48_g @ 0x820DBB48
 float LocomotionStateAnim_BB48_g(void* self, int count) {
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
     float total = 0.0f;
 
-    float* weights = (float*)((char*)self + 28);
+    float* weights = (float*)&lsa->field_0x001c;
     for (int i = 0; i <= count; i++) {
         total += weights[i];
     }
@@ -2742,18 +2702,17 @@ void* LocomotionStateAnim_0A30_g(void* dst, void* animSrc) {
  */
 // LocomotionStateAnim_6DD8_w @ 0x820E6DD8
 float LocomotionStateAnim_6DD8_w(void* self, float maxWeight, float frameTime) {
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
+
     // Set up frame state
     LocomotionStateAnim_6E90_w(self, frameTime);
 
     // Call vtable slot 11 to get current position
-    void** vt = *(void***)self;
-    typedef float (*GetPosFn)(void*);
-    GetPosFn getPos = (GetPosFn)vt[11];
-    float pos = getPos(self);
+    float pos = VCALL(self, 11, float(*)(void*))(self);
 
     // Get animation entry index and container data
-    uint32_t animIdx = *(uint32_t*)((char*)self + 28);
-    char* containerData = *(char**)((char*)self + 304);
+    uint32_t animIdx = lsa->field_0x001c;
+    char* containerData = (char*)lsa->field_0x0130;
     char* entry = containerData + animIdx * 68;
 
     float rangeStart = *(float*)(entry + 56);
@@ -2821,16 +2780,17 @@ bool LocomotionStateAnim_8250_fw(void* self, uint8_t mode, uint16_t animID, void
  */
 // LocomotionStateAnim_8828_g @ 0x82248828
 bool LocomotionStateAnim_8828_g(void* self, float time) {
-    uint16_t rawCount = *(uint16_t*)((char*)self + 10);
-    float duration = *(float*)((char*)self + 12);
+    LocomotionStateAnim* lsa = (LocomotionStateAnim*)self;
+    uint16_t rawCount = lsa->field_0x000a;
+    float duration = *(float*)&lsa->field_0x000c;
 
     // Compute scaled time: ((count-1) / duration) * time
     float countMinusOne = (float)((int)rawCount - 1);
     float scaledTime = (countMinusOne / duration) * time;
 
     // Read the key bytes from self for the search
-    uint8_t animID_high = *(uint8_t*)((char*)self + 5);
-    uint16_t animID_low = *(uint16_t*)((char*)self + 6);
+    uint8_t animID_high = lsa->field_0x0005;
+    uint16_t animID_low = lsa->field_0x0006;
 
     // Binary search for the key
     int32_t foundIndex;
@@ -2838,21 +2798,14 @@ bool LocomotionStateAnim_8828_g(void* self, float time) {
 
     if (result != nullptr) {
         // Found: call vtable slot 4 on result
-        void** vt = *(void***)result;
-        typedef void (*PlayFn)(void*, void*, void*);
-        PlayFn play = (PlayFn)vt[4];
-
-        void** keyArray = *(void***)((char*)self + 36);
+        void** keyArray = (void**)lsa->field_0x0024;
         void* animEntry = keyArray[foundIndex];
-        play(result, animEntry, self);
+        VCALL(result, 4, void(*)(void*, void*, void*))(result, animEntry, self);
 
         return true;
     } else {
         // Not found: call vtable slot 13
-        void** vt = *(void***)result;
-        typedef void (*FallbackFn)(void*);
-        FallbackFn fallback = (FallbackFn)vt[13];
-        fallback(result);
+        VCALL(result, 13, void(*)(void*))(result);
 
         return false;
     }
@@ -2933,7 +2886,7 @@ void pongCreatureInst::CopyAndBuildTranslationMatrix(float* outMatrix, const flo
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
     // m_pCreatureData is at this+4
-    void* creatureData = *(void**)((char*)this + 4);
+    void* creatureData = (void*)this->field_0x0004;
     uint32_t flags = *(uint32_t*)((char*)creatureData + 20);
 
     // Check bit 3 (0x8) of the flags
@@ -2953,7 +2906,7 @@ void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
 
     // Use the direct bone array at this+20
     // Stride = boneIndex * 64
-    void* directBoneArray = *(void**)((char*)this + 20);
+    void* directBoneArray = (void*)this->field_0x0014;
     int directOffset = boneIndex * 64;
     float* srcMatrix = (float*)((char*)directBoneArray + directOffset);
 
@@ -2969,7 +2922,7 @@ void pongCreatureInst::CopyBoneMatrix(int boneIndex, float* outMatrix) {
 // diagnostic message via the nop debug function and returns early.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName1, const char* boneName2) {
-    uint8_t boneCount = *(uint8_t*)((char*)this + 0x1AA);  // m_boneCount
+    uint8_t boneCount = this->field_0x01aa;  // m_boneCount
 
     if (boneCount == 0) {
         // No bones available — log and return
@@ -2982,7 +2935,7 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
 
     for (int i = 0; i < boneCount; i++) {
         // Bone pointer array at this+176 (0xB0)
-        void** boneArray = *(void***)((char*)this + 0xB0);  // m_boneArray
+        void** boneArray = (void**)this->field_0x00b0;  // m_boneArray
         void* boneEntry = boneArray[i];
 
         // Bone name string starts at boneEntry+29
@@ -3002,8 +2955,8 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
     }
 
     // Store the found indices into the mapping arrays
-    uint8_t* mappingArray1 = *(uint8_t**)((char*)this + 0xD0);  // m_boneMapping1
-    uint8_t* mappingArray2 = *(uint8_t**)((char*)this + 0xD4);  // m_boneMapping2
+    uint8_t* mappingArray1 = (uint8_t*)this->field_0x00d0;  // m_boneMapping1
+    uint8_t* mappingArray2 = (uint8_t*)this->field_0x00d4;  // m_boneMapping2
     mappingArray1[mappingIndex] = (uint8_t)foundIndex1;
     mappingArray2[mappingIndex] = (uint8_t)foundIndex2;
 }
@@ -3016,13 +2969,13 @@ void pongCreatureInst::FindBonePairByName(int mappingIndex, const char* boneName
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::ReadBoneNamesAndMap(void* xmlNode) {
     // Get the data sub-object from xmlNode+4
-    void* dataObj = *(void**)((char*)xmlNode + 4);
+    xmlCallbackNode* node = (xmlCallbackNode*)xmlNode;
+    void* dataObj = node->dataObj;
 
     // Read first bone name (vtable slot 1, max length 39) into boneName1 buffer
     char boneName1[48];
-    void** dataVtable = *(void***)dataObj;
     typedef void (*ReadStringFn)(void*, char*, int);
-    ReadStringFn readString = (ReadStringFn)dataVtable[1];
+    ReadStringFn readString = VCALL(dataObj, 1, ReadStringFn);
     readString(dataObj, boneName1, 39);
 
     // Read second bone name into boneName2 buffer
@@ -3030,9 +2983,9 @@ void pongCreatureInst::ReadBoneNamesAndMap(void* xmlNode) {
     readString(dataObj, boneName2, 39);
 
     // Increment the bone pair count at +424 (0x1A8)
-    uint8_t pairCount = *(uint8_t*)((char*)this + 0x1A8);  // m_bonePairCount
+    uint8_t pairCount = (uint8_t)this->field_0x01a8;  // m_bonePairCount
     pairCount++;
-    *(uint8_t*)((char*)this + 0x1A8) = pairCount;  // m_bonePairCount
+    this->field_0x01a8 = pairCount;  // m_bonePairCount
 
     // Find and map the bone pair using the previous count as the mapping index
     FindBonePairByName((uint8_t)(pairCount - 1), boneName1, boneName2);
@@ -3044,15 +2997,9 @@ void pongCreatureInst::ReadBoneNamesAndMap(void* xmlNode) {
 // and stores the result byte at this+429 (m_boneParam at +0x1AD).
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::StoreBoneResult(void* xmlNode) {
-    void* dataObj = *(void**)((char*)xmlNode + 4);
-
-    // Call vtable slot 4 on the data sub-object (reads a value)
-    void** dataVtable = *(void***)dataObj;
-    typedef int (*ReadValueFn)(void*);
-    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
-    int result = readValue(dataObj);
-
-    *(uint8_t*)((char*)this + 0x1AD) = (uint8_t)result;  // m_boneParam
+    void* dataObj = ((xmlCallbackNode*)xmlNode)->dataObj;
+    int result = VCALL(dataObj, 4, int(*)(void*))(dataObj);
+    this->field_0x01ad = (uint8_t)result;  // m_boneParam
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3061,14 +3008,9 @@ void pongCreatureInst::StoreBoneResult(void* xmlNode) {
 // and stores whether it is non-zero as a bool at this+445 (+0x1BD).
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::StoreBoneFlag(void* xmlNode) {
-    void* dataObj = *(void**)((char*)xmlNode + 4);
-
-    void** dataVtable = *(void***)dataObj;
-    typedef int (*ReadValueFn)(void*);
-    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
-    int result = readValue(dataObj);
-
-    *(uint8_t*)((char*)this + 0x1BD) = (result != 0) ? 1 : 0;  // m_boneFlag
+    void* dataObj = ((xmlCallbackNode*)xmlNode)->dataObj;
+    int result = VCALL(dataObj, 4, int(*)(void*))(dataObj);
+    this->field_0x01bd = (result != 0) ? 1 : 0;  // m_boneFlag
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3078,17 +3020,13 @@ void pongCreatureInst::StoreBoneFlag(void* xmlNode) {
 // If zero, clears bit 3.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::SetOrClearBoneFlag8(void* xmlNode) {
-    void* dataObj = *(void**)((char*)xmlNode + 4);
-
-    void** dataVtable = *(void***)dataObj;
-    typedef int (*ReadValueFn)(void*);
-    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
-    int result = readValue(dataObj);
+    void* dataObj = ((xmlCallbackNode*)xmlNode)->dataObj;
+    int result = VCALL(dataObj, 4, int(*)(void*))(dataObj);
 
     if (result != 0) {
-        *(uint8_t*)((char*)this + 0x1AF) |= 0x08;  // m_visibilityFlags
+        this->field_0x01af |= 0x08;  // m_visibilityFlags
     } else {
-        *(uint8_t*)((char*)this + 0x1AF) &= ~0x08;  // m_visibilityFlags
+        this->field_0x01af &= ~0x08;  // m_visibilityFlags
     }
 }
 
@@ -3098,14 +3036,9 @@ void pongCreatureInst::SetOrClearBoneFlag8(void* xmlNode) {
 // and stores whether it is non-zero as a bool at this+447 (+0x1BF).
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::StoreMirrorFlag(void* xmlNode) {
-    void* dataObj = *(void**)((char*)xmlNode + 4);
-
-    void** dataVtable = *(void***)dataObj;
-    typedef int (*ReadValueFn)(void*);
-    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
-    int result = readValue(dataObj);
-
-    *(uint8_t*)((char*)this + 0x1BF) = (result != 0) ? 1 : 0;  // m_mirrorFlag
+    void* dataObj = ((xmlCallbackNode*)xmlNode)->dataObj;
+    int result = VCALL(dataObj, 4, int(*)(void*))(dataObj);
+    this->field_0x01bf = (result != 0) ? 1 : 0;  // m_mirrorFlag
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3114,12 +3047,7 @@ void pongCreatureInst::StoreMirrorFlag(void* xmlNode) {
 // and stores the result byte at this+446 (+0x1BE).
 // ─────────────────────────────────────────────────────────────────────────────
 void pongCreatureInst::StoreBlendFlag(void* xmlNode) {
-    void* dataObj = *(void**)((char*)xmlNode + 4);
-
-    void** dataVtable = *(void***)dataObj;
-    typedef int (*ReadValueFn)(void*);
-    ReadValueFn readValue = (ReadValueFn)dataVtable[4];
-    int result = readValue(dataObj);
-
-    *(uint8_t*)((char*)this + 0x1BE) = (uint8_t)result;  // m_blendFlag
+    void* dataObj = ((xmlCallbackNode*)xmlNode)->dataObj;
+    int result = VCALL(dataObj, 4, int(*)(void*))(dataObj);
+    this->field_0x01be = (uint8_t)result;  // m_blendFlag
 }
