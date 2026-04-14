@@ -4,7 +4,7 @@
  * ================================================================
  * All 14 config files are now used.  New in v3:
  *
- *  STRING READING from default_base.bin
+ *  STRING READING from xex_excavation_tt/tt.bin (mapped image — file offset == VA - 0x82000000)
  *    resolve_address() now shows actual string content for any .rdata address.
  *    6,785 readable strings preloaded at startup, including all debug/assert
  *    messages (e.g. "pongPlayer::Activate() - creature already activated").
@@ -131,8 +131,20 @@ const LOAD_BASE = 0x82000000;
 
 function binRaw() {
   if (!_binRaw) {
-    const p = `${ORIG}/default_base.bin`;
+    // The MAPPED IMAGE is the only file where (VA - LOAD_BASE) gives the right
+    // file offset. orig/434C4803/default_base.bin is the RAW XEX file structure
+    // — file offsets there do NOT correspond to virtual addresses (sections are
+    // ordered differently in the file vs the loaded image).
+    //
+    // Verified: tt.bin matches all known debug strings; default_base.bin does
+    // NOT (e.g. 0x8202762C is "debugface" in tt.bin but garbage in default_base.bin).
+    const p = `${BASE}/xex_excavation_tt/tt.bin`;
     if (fs.existsSync(p)) _binRaw = fs.readFileSync(p);
+    // Fallback for older layouts
+    if (!_binRaw) {
+      const fallback = `${ORIG}/basefile_extracted`; // also a mapped image (7.8MB)
+      if (fs.existsSync(fallback)) _binRaw = fs.readFileSync(fallback);
+    }
   }
   return _binRaw;
 }
