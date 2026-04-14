@@ -797,7 +797,7 @@ void LocomotionState_OnEnter(void* a) { (void)a; }
 
 // ── Net / Page / Message ────────────────────────────────────────────────────
 
-void NetDataQuery_ctor_A458(void* a) { (void)a; }
+void NetDataQuery_InitNested(void* a) { (void)a; }
 void* PageGroup_GetTextEntry(void* a, const char* b) { (void)a; (void)b; return nullptr; }
 void* PageGroup_LookupText(uint32_t a, const char* b) { (void)a; (void)b; return nullptr; }
 void PageGroup_Register(void* a) { (void)a; }
@@ -832,44 +832,44 @@ void ResetShotTimingState(void* a) { (void)a; }
 
 void* RtlEnterCriticalSection_D6F0_fw(void* a) { (void)a; return nullptr; }
 void SendContextMessage(int a, int b, int c, int d) { (void)a; (void)b; (void)c; (void)d; }
-void ServeStartedMessage_5728(void* a, void* b, void* c, float d) { (void)a; (void)b; (void)c; (void)d; }
+void Player_ApplyServeStarted(void* a, void* b, void* c, float d) { (void)a; (void)b; (void)c; (void)d; }
 void SetPageGroupVisible(void* a) { (void)a; }
 
 // ── SinglesNetworkClient free-function stubs ────────────────────────────────
 
 void snBitStream_Reset(void* a) { (void)a; }
 void snBitStream_WriteBits(void* a, uint32_t b, int c) { (void)a; (void)b; (void)c; }
-uint32_t SinglesNetworkClient_0738_g(void* a, const char* b, uint32_t c) { (void)a; (void)b; (void)c; return 0; }
+uint32_t netStream_WriteString(void* a, const char* b, uint32_t c) { (void)a; (void)b; (void)c; return 0; }
 void* rlEvent_Init(void* a, int b, void* c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e; return nullptr;
 }
 void snBitStream_ReadSigned(void* a, uint32_t* b, int c) { (void)a; (void)b; (void)c; }
-void SinglesNetworkClient_0F80_g(void* a) { (void)a; }
-uint8_t SinglesNetworkClient_1178_g(void* a) { (void)a; return 0; }
-void SinglesNetworkClient_2F28_g(void* a) { (void)a; }
-void SinglesNetworkClient_2FD8_g(void* a) { (void)a; }
-void SinglesNetworkClient_4128_g(void* a, int b, void* c, int d, int e) {
+void NetworkClient_BeginJoinRequest(void* a) { (void)a; }
+uint8_t NetworkClient_PollJoinResponse(void* a) { (void)a; return 0; }
+void NetworkClient_InitInternalState(void* a) { (void)a; }
+void NetworkClient_ResetLocalState(void* a) { (void)a; }
+void NetworkClient_DispatchMessage(void* a, int b, void* c, int d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
-int SinglesNetworkClient_4928_g(void* a) { (void)a; return 0; }
+int NetworkClient_GetMessageId(void* a) { (void)a; return 0; }
 void SinglesNetworkClient_4FB0_g(void* a) { (void)a; }
-void* SinglesNetworkClient_58E8_g(uint8_t a) { (void)a; return nullptr; }
-void SinglesNetworkClient_5998_g(void* a) { (void)a; }
-void SinglesNetworkClient_5A40_g(void* a) { (void)a; }
-bool SinglesNetworkClient_5EA0_g(void* a, uint32_t* b) { (void)a; (void)b; return false; }
-void SinglesNetworkClient_6918_g(void* a, bool b) { (void)a; (void)b; }
-void SinglesNetworkClient_70A0_g(void* a, uint8_t* b) { (void)a; (void)b; }
+void* NetworkClient_LookupPlayer(uint8_t a) { (void)a; return nullptr; }
+void NetworkClient_AbortMessageProcessing(void* a) { (void)a; }
+void NetworkClient_EndMessageProcessing(void* a) { (void)a; }
+bool NetworkClient_TryDequeueMessage(void* a, uint32_t* b) { (void)a; (void)b; return false; }
+void netStream_WriteBool(void* a, bool b) { (void)a; (void)b; }
+void NetworkClient_ReadQueuedMessageSource(void* a, uint8_t* b) { (void)a; (void)b; }
 void snBitStream_ValidateWrite(void* a) { (void)a; }
 int SinglesNetworkClient_8CC0_w(void* a) { (void)a; return 0; }
 void snBitStream_ReadBits(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 void* snSession_FindProperty(void* a, const char* b) { (void)a; (void)b; return nullptr; }
-void* SinglesNetworkClient_9720_g(void* a, void* b) { (void)a; (void)b; return nullptr; }
-bool SinglesNetworkClient_A250_g(void* a, void* b) { (void)a; (void)b; return false; }
+void* NetworkClient_BuildDispatchContext(void* a, void* b) { (void)a; (void)b; return nullptr; }
+bool NetworkClient_ValidateMessageSlot(void* a, void* b) { (void)a; (void)b; return false; }
 void snSession_BeginOperation(void* a) { (void)a; }
 uint8_t snSession_AcquireLock(void* a) { (void)a; return 0; }
 void snSession_ReleaseLock(void* a) { (void)a; }
 void SinglesNetworkClient_BE30_g(void* a, int b) { (void)a; (void)b; }
-void* SinglesNetworkClient_C838_g(void* a) { (void)a; return nullptr; }
+void* NetworkClient_GetNextMessage(void* a) { (void)a; return nullptr; }
 
 // ── SpectatorNetworkClient members ──────────────────────────────────────────
 
@@ -1036,7 +1036,7 @@ void hudFlashBase_DrawFlashOverlay(void* a, void* b, void* c, float d, int e) {
 
 // ── IO free functions ───────────────────────────────────────────────────────
 
-uint8_t io_9E30(io* self) { (void)self; return 0; }
+uint8_t io_ExecuteStateAction(io* self) { (void)self; return 0; }
 int io_Input_poll_9D68(void* a) { (void)a; return 0; }
 
 // ── Jump table / kernel free functions ──────────────────────────────────────
@@ -1512,11 +1512,11 @@ namespace { struct FakeTypeInfo { void* vtable; const char* name; }; }
 extern "C" const FakeTypeInfo _ZTI8hsmState = { nullptr, "hsmState" };
 
 void util_03C0(void* a, uint32_t* b) { (void)a; (void)b; }
-void util_0AF0(void* a, void* b) { (void)a; (void)b; }
-void util_0AF0(void* a, void* b, short c) { (void)a; (void)b; (void)c; }
+int netStream_ReadStringRaw(void* a, void* b) { (void)a; (void)b; return 0; }
+void netStream_ReadBlock(void* a, void* b, short c) { (void)a; (void)b; (void)c; }
 int util_5A70(void* a, void* b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
 void sysMemAllocator_PlatformFree(void* a, unsigned int b) { (void)a; (void)b; }
-void util_7970(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
+void netStream_ReadS16(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 // ReadBallHitDataFromNetwork dependency (see src/game/network/pong_network_io.cpp).
 // util_1668 — sign-magnitude signed-8-bit bit-stream reader, not yet lifted.
 uint8_t netStream_ReadS8SignMagnitude(void* client, void* outByte) { (void)client; (void)outByte; return 0; }

@@ -978,12 +978,12 @@ extern LoopObject* g_loop_obj_ptr;  // @ 0x825EAB30
 extern void* g_creditsRoll;         // @ 0x8271A358
 
 // Function declarations
-void io_9B88_w(io* self);           // @ 0x822F9B88
-uint8_t io_9E30(io* self);          // @ 0x822F9E30 - returns success flag
+void io_ProcessStateTransition(io* self);           // @ 0x822F9B88 (was io_9B88_w)
+uint8_t io_ExecuteStateAction(io* self);            // @ 0x822F9E30 (was io_9E30) - returns success flag
 void CreditsRoll_Deactivate(void* roll, int a, int b);  // @ 0x8222AAF8
 
 // Page group input processing
-bool pg_4A58_fw(void* pPageGroup, float* pInputValue);  // @ 0x821F4A58
+bool bkGroup_DispatchInputWithUiFlag(void* pPageGroup, float* pInputValue);  // @ 0x821F4A58 (was pg_4A58_fw)
 
 // ── CCalMoviePlayer ──────────────────────────────────────────────────
 // Movie/video playback system using Xbox 360 kernel synchronization.

@@ -157,7 +157,7 @@ void FloatAverager_Destroy(FloatAverager* self, int flags) {
  *   addi r11, r11, -22244  ; Add low 16 bits
  *   Result: 0x8203A91C
  */
-void FloatAverager_Destroy_7AE8(FloatAverager* self, int flags) {
+void FloatAverager_Destroy_MIBase1(FloatAverager* self, int flags) {
     self->vtable = (void**)&FloatAverager_vtable_2;
     
     if (flags & 0x1) {
@@ -171,7 +171,7 @@ void FloatAverager_Destroy_7AE8(FloatAverager* self, int flags) {
  * Destructor variant with vtable @ 0x82070D78.
  * Likely used in a different inheritance context.
  */
-void FloatAverager_Destroy_D538(FloatAverager* self, int flags) {
+void FloatAverager_Destroy_MIBase2(FloatAverager* self, int flags) {
     self->vtable = (void**)&FloatAverager_vtable_3;
     
     if (flags & 0x1) {
@@ -189,7 +189,7 @@ void FloatAverager_Destroy_D538(FloatAverager* self, int flags) {
  *   addi r11, r11, -22256  ; Add low 16 bits
  *   Result: 0x8203A910
  */
-void FloatAverager_Destroy_3EE8(FloatAverager* self, int flags) {
+void FloatAverager_Destroy_MIBase3(FloatAverager* self, int flags) {
     self->vtable = (void**)&FloatAverager_vtable_4;
     
     if (flags & 0x1) {
@@ -268,8 +268,8 @@ struct AckHandling {
  */
 void AckHandling_Destroy(AckHandling* self, int flags) {
     // Call cleanup function first
-    extern void AckHandling_34D0_fw(AckHandling* self);
-    AckHandling_34D0_fw(self);
+    extern void AckHandling_ReleaseAllPackets(AckHandling* self);
+    AckHandling_ReleaseAllPackets(self);
     
     // If bit 0 is set in flags, free the object memory
     if (flags & 0x1) {
@@ -281,10 +281,10 @@ void AckHandling_Destroy(AckHandling* self, int flags) {
  * AckHandling::Cleanup @ 0x823D34D0 | size: 0x5C
  *
  * Internal cleanup — iterates through all tracked packets,
- * calls AckHandling_3828 to release each one, and decrements the count.
+ * calls AckHandling_ReleasePacket to release each one, and decrements the count.
  * Called by the destructor before freeing the object.
  */
-void AckHandling_34D0_fw(AckHandling* self) {
+void AckHandling_ReleaseAllPackets(AckHandling* self) {
     self->vtable = (void**)&AckHandling_vtable;
 
     uint32_t count = *(uint32_t*)((char*)self + 96);
@@ -301,8 +301,8 @@ void AckHandling_34D0_fw(AckHandling* self) {
         void* packet = *(void**)(base + curCount * 4);
 
         // Release the packet
-        extern void AckHandling_3828(AckHandling* self, void* packet);
-        AckHandling_3828(self, packet);
+        extern void AckHandling_ReleasePacket(AckHandling* self, void* packet);
+        AckHandling_ReleasePacket(self, packet);
 
         count--;
     }
@@ -341,8 +341,8 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
                 sysCallback_Invoke(packet, 0);
                 
                 // Remove from array
-                extern void AckHandling_3828(AckHandling* self, void* packet);
-                AckHandling_3828(self, packet);
+                extern void AckHandling_ReleasePacket(AckHandling* self, void* packet);
+                AckHandling_ReleasePacket(self, packet);
                 
                 // Compact array
                 self->m_packetCount--;
@@ -365,7 +365,7 @@ void AckHandling_ProcessSequence(AckHandling* self, void* sequenceInfo) {
  * 
  * @param currentTime Current network time (float)
  */
-void AckHandling_3530_w(AckHandling* self, float currentTime) {
+void AckHandling_Update(AckHandling* self, float currentTime) {
     // Tick the global network timer via vtable slot 2 (NetworkTimer::Update)
     if (g_pNetworkTimer) {
         void** timerVT = *(void***)g_pNetworkTimer;
@@ -387,8 +387,8 @@ void AckHandling_3530_w(AckHandling* self, float currentTime) {
         
         if (timedOut) {
             // Remove timed-out packet
-            extern void AckHandling_3828(AckHandling* self, void* packet);
-            AckHandling_3828(self, packet);
+            extern void AckHandling_ReleasePacket(AckHandling* self, void* packet);
+            AckHandling_ReleasePacket(self, packet);
             
             self->m_packetCount--;
             if (writeIdx < (int)self->m_packetCount) {
@@ -410,7 +410,7 @@ void AckHandling_3530_w(AckHandling* self, float currentTime) {
  * clears sequence number/ack flag, stores default timestamp),
  * then links it into the free list at base+112.
  */
-void AckHandling_3828(AckHandling* self, void* packet) {
+void AckHandling_ReleasePacket(AckHandling* self, void* packet) {
     uint8_t* pkt = (uint8_t*)packet;
     uint8_t* poolBase = (uint8_t*)self + 112;
 
@@ -458,7 +458,7 @@ void AckHandling_3828(AckHandling* self, void* packet) {
  * Initializes the acknowledgment handler with default values.
  * Sets up timeout values, clears state, and initializes packet array.
  */
-void AckHandling_AB18_w(AckHandling* self) {
+void AckHandling_Initialize(AckHandling* self) {
     // Initialize timeout values at offsets +40 and +44
     // Load default timeout value from global
     float defaultTimeout = 5.0f;  // Would be loaded from global @ lis(-32164)+22840
@@ -497,7 +497,7 @@ void AckHandling_AB18_w(AckHandling* self) {
         for (uint32_t i = 0; i < packetCount; i++) {
             void* packet = (void*)packetArray[4 + i];  // Packets start at +16 from array base
             if (packet) {
-                AckHandling_3828(self, packet);
+                AckHandling_ReleasePacket(self, packet);
             }
         }
         packetArray[24] = 0;  // Clear count
@@ -804,7 +804,7 @@ void NetDataQuery_Destroy(NetDataQuery* self, int flags) {
  * Initializes the network data query state machine.
  * Sets up nested state objects and components.
  */
-void NetDataQuery_ctor_A458(NetDataQuery* self) {
+void NetDataQuery_InitNested(NetDataQuery* self) {
     // SpectatorNetworkClient is the outer class; NetDataQuery is a nested FSM
     self->vtable = (void**)&SpectatorNetworkClient_vtable;
     
@@ -976,7 +976,7 @@ uint8_t NetDataQuery_GetName(NetDataQuery* self, int stateIndex) {
  * 
  * Structure size: 573 bytes (0x23D)
  */
-void NetDataQuery_ctor_1530(NetDataQuery* self) {
+void NetDataQuery_ConstructSmall(NetDataQuery* self) {
     self->vtable = (void**)&NetDataQuery_vtable;
     
     // Initialize fields
@@ -1008,7 +1008,7 @@ void NetDataQuery_ctor_1530(NetDataQuery* self) {
  * 
  * Additional helper methods for network data query operations.
  */
-void NetDataQuery_A8D8(NetDataQuery* self) {
+void NetDataQuery_InitStateSync(NetDataQuery* self) {
     extern void SinglesNetworkClient_DA08(void* obj);
 
     uint8_t* p = (uint8_t*)self;
@@ -1045,9 +1045,9 @@ void NetDataQuery_A8D8(NetDataQuery* self) {
     *(void**)(p + 96) = &AckHandling_vtable;
     *(uint32_t*)(p + 96 + 96) = 0;  // count = 0 at +192
 
-    // Initialize pool at +96+16 via NetDataQuery_38D0_2h
-    extern void NetDataQuery_38D0_2h(void* obj);
-    NetDataQuery_38D0_2h(p + 96 + 16);
+    // Initialize pool at +96+16 via NetDataQuery_InitAckPool
+    extern void NetDataQuery_InitAckPool(void* obj);
+    NetDataQuery_InitAckPool(p + 96 + 16);
 
     // Initialize component at +784
     extern void SinglesNetworkClient_2E88_isl(void* obj);
@@ -1056,7 +1056,7 @@ void NetDataQuery_A8D8(NetDataQuery* self) {
     *(uint8_t*)(p + 980) = 0;
 }
 
-void NetDataQuery_59F8_wrh(void* obj) {
+void NetDataQuery_InitNetworkStats(void* obj) {
     extern void game_5128(void* obj);
 
     uint8_t* p = (uint8_t*)obj;
@@ -1077,7 +1077,7 @@ void NetDataQuery_59F8_wrh(void* obj) {
     *(uint8_t*)(p + 212) = 0xFF;
 }
 
-void NetDataQuery_2A30_2h(void* obj) {
+void NetDataQuery_InitFrameBlocks(void* obj) {
 
     uint8_t* p = (uint8_t*)obj;
     float defVal = g_defaultTimestampAlt;
@@ -1193,7 +1193,7 @@ void NetDataQuery_2B28_2h(void* obj) {
  * +20-23: default float timestamp
  * +26:    next link (uint16_t)
  */
-void NetDataQuery_38D0_2h(void* obj) {
+void NetDataQuery_InitAckPool(void* obj) {
 
     uint8_t* p = (uint8_t*)obj;
     float defTimestamp = g_defaultTimestamp;

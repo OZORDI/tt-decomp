@@ -567,7 +567,8 @@ const void* assetVersionsCharSpecific::GetTypeDescriptor() const
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// util_61F0 @ 0x823961F0 | size: 0x114
+// hsmContext_BeginTimeSyncState @ 0x823961F0 | size: 0x114
+// (was: util_61F0 — renamed to reflect HSM state + time-sync behavior)
 //
 // Utility function for initializing state machine context with debug logging.
 // Sets up dual 16-byte data structures and transitions to state 2.
@@ -584,12 +585,12 @@ extern "C" {
 }
 
 /**
- * util_61F0 @ 0x823961F0 | size: 0x114
- * 
+ * hsmContext_BeginTimeSyncState @ 0x823961F0 | size: 0x114
+ *
  * Initializes state machine context with logging and dual data structures.
  * Only executes if the initialization flag at +1092 is not set.
  */
-void util_61F0(void* pContext, float timeValue, uint32_t param) {
+void hsmContext_BeginTimeSyncState(void* pContext, float timeValue, uint32_t param) {
     // Check initialization flag at offset +1092
     uint32_t initFlag = *(uint32_t*)((char*)pContext + 1092);
     
@@ -646,19 +647,20 @@ void util_61F0(void* pContext, float timeValue, uint32_t param) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// io_9B88_w @ 0x822F9B88 | size: 0x9C
+// io_ProcessStateTransition @ 0x822F9B88 | size: 0x9C
+// (was: io_9B88_w)
 //
 // State transition handler for io system.
 // Checks if state flag 2 is set, and if so:
 //   1. Sets state flag 1, clears state flag 2
-//   2. Calls io_9E30 to perform state-specific operations
+//   2. Calls io_ExecuteStateAction to perform state-specific operations
 //   3. Decrements global loop counter if operation succeeded
 //   4. Checks pause/active flags to determine if credits roll should be triggered
 //
 // This appears to be part of the game's state machine that manages transitions
 // between gameplay and frontend/attract modes.
 // ─────────────────────────────────────────────────────────────────────────────
-void io_9B88_w(io* self) {
+void io_ProcessStateTransition(io* self) {
     // Check if state flag 2 is set
     if (self->m_stateFlag2 == 0) {
         return;
@@ -669,7 +671,7 @@ void io_9B88_w(io* self) {
     self->m_stateFlag2 = 0;
     
     // Perform state-specific operations
-    uint8_t success = io_9E30(self);
+    uint8_t success = io_ExecuteStateAction(self);
     
     // Get global loop object
     LoopObject* loopObj = g_loop_obj_ptr;
@@ -691,7 +693,7 @@ void io_9B88_w(io* self) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pg_4A58_fw @ 0x821F4A58 | size: 0x7C
+// bkGroup_DispatchInputWithUiFlag @ 0x821F4A58 | size: 0x7C (was pg_4A58_fw)
 //
 // Page group input handler with conditional flag check.
 // Builds a parameter array and delegates to bkGroup_DispatchEvent for processing.
@@ -711,12 +713,12 @@ extern bool bkGroup_DispatchEvent(void* pInputValue, void* pPageGroup, int event
                     uint32_t* params, int paramCount) __asm__("_pg_6F68");
 
 /**
- * pg_4A58_fw @ 0x821F4A58 | size: 0x7C
- * 
+ * bkGroup_DispatchInputWithUiFlag @ 0x821F4A58 | size: 0x7C
+ *
  * Processes page group input with conditional flag checking.
  * Builds a 4-element parameter array and calls bkGroup_DispatchEvent for processing.
  */
-bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
+bool bkGroup_DispatchInputWithUiFlag(void* pPageGroup, float* pInputValue) {
     // Build parameter array on stack
     // Array layout: [1, 0, flag, 2]
     uint32_t params[4];
@@ -738,7 +740,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
 }
 
 /**
- * pg_4900_fw @ 0x821F4900 | size: 0x5C
+ * bkGroup_DispatchSelectEvent @ 0x821F4900 | size: 0x5C (was pg_4900_fw)
  * 
  * Page group input handler wrapper.
  * Swaps parameters and calls bkGroup_DispatchEvent with fixed event type and parameters.
@@ -751,7 +753,7 @@ bool pg_4A58_fw(void* pPageGroup, float* pInputValue) {
  *   - true if input was processed successfully (non-zero result)
  *   - false if processing failed (zero result)
  */
-bool pg_4900_fw(void* pPageGroup, void* pInputValue) {
+bool bkGroup_DispatchSelectEvent(void* pPageGroup, void* pInputValue) {
     // Build parameter array on stack
     // Array layout: [3, 1]
     uint32_t params[2];
@@ -780,7 +782,7 @@ extern "C" uint8_t bkGroup_DispatchEvent(void* pageGroup, void* context, int eve
                            uint32_t* eventData, int enableFlag, int reserved) __asm__("_pg_6F68");
 
 /**
- * pg_6770_fw @ 0x821F6770 | size: 0x5C
+ * bkGroup_DispatchCancelEvent @ 0x821F6770 | size: 0x5C (was pg_6770_fw)
  *
  * Page group event handler wrapper with context/page group argument swap.
  * 
@@ -792,7 +794,7 @@ extern "C" uint8_t bkGroup_DispatchEvent(void* pageGroup, void* context, int eve
  * @param pageGroup Page group UI object
  * @return true if event was handled successfully, false otherwise
  */
-bool pg_6770_fw(void* context, void* pageGroup) {
+bool bkGroup_DispatchCancelEvent(void* context, void* pageGroup) {
     // Event data structure: { type: 4, value: 0 }
     // Type 4 may indicate a specific UI event category
     uint32_t eventData[2] = { 4, 0 };
@@ -1042,11 +1044,11 @@ extern "C" void* _crt_tls_fiber_setup();         // @ 0x82566B78 - fiber context
 extern "C" void _locale_register(void* ptr);     // @ 0x820C02D0 - memory dealloc
 extern "C" void pg_SleepYield(int frames);           // @ 0x82566C80 - wait N frames
 extern "C" void sysIpcHandle_Release(void* ptr) __asm__("_pg_6F48");              // @ 0x82566F48 - release page ref
-extern "C" uint32_t pg_C3B8_g(void* handle, int timeout); // @ 0x8242C3B8 - wait with timeout
-extern "C" void pg_6F10_g(void* handle);         // @ 0x82566F10 - close handle
-extern "C" void* pg_6F88_w(void* r3, uint32_t stackSize, void* entryPoint,
-                            void* context, uint32_t priority, void* r8); // @ 0x82566F88 - create thread
-extern "C" void xe_sleep_B8A8(void* threadHandle, int32_t proc); // @ 0x8242B8A8 - set thread affinity
+extern "C" uint32_t sysThread_WaitTimeout(void* handle, int timeout) __asm__("_pg_C3B8_g"); // @ 0x8242C3B8 - wait with timeout
+extern "C" void sysIpcHandle_Close(void* handle) __asm__("_pg_6F10_g");                     // @ 0x82566F10 - close handle
+extern "C" void* sysThread_Create(void* r3, uint32_t stackSize, void* entryPoint,
+                            void* context, uint32_t priority, void* r8) __asm__("_pg_6F88_w"); // @ 0x82566F88 - create thread
+extern "C" int xe_SetThreadProcessor(void* threadHandle, uint32_t proc); // @ 0x8242B8A8 - defined in src/rage/core/app_init.c (accepts thread handle pointer)
 extern "C" void rmcDrawable_Release(void* ptr) __asm__("_rage_EAD8");            // @ 0x8235EAD8 - release callback object
 
 // Thread entry points for CCalMoviePlayer worker threads
@@ -1061,7 +1063,7 @@ extern "C" void* CCalRingBuffer_PeekWriteSlot(void* obj) __asm__("_CCalMoviePlay
 extern "C" void CCalRingBuffer_AdvanceWriteIndex(void* obj) __asm__("_CCalMoviePlayer_DCC8");           // @ 0x8248DCC8 - advance read index atomic
 extern "C" void CCalMoviePlayer_AcquireFiberContext(void* obj) __asm__("_CCalMoviePlayer_EB30");           // @ 0x8235EB30 - save/replace fiber context
 extern "C" void CCalMoviePlayer_ReleaseFiberContext(void* obj) __asm__("_CCalMoviePlayer_EB70");           // @ 0x8235EB70 - clear fiber flag
-extern "C" void grc_BDC0(void* obj);                       // @ 0x8235BDC0 - release grc resource
+extern "C" void grcBuffer_Release(void* obj) __asm__("_grc_BDC0");  // @ 0x8235BDC0 - release grc resource
 
 /**
  * CCalMoviePlayer::DtorIntermediate @ 0x824915C8 | size: 0x40
@@ -2398,8 +2400,8 @@ thread_cleanup:
         do {
             sysIpcHandle_Release(m_hThreadFillA);
             SignalEvent0();    // SignalEvent0
-        } while (pg_C3B8_g(m_hThreadFillA, 1) == 258);  // WAIT_TIMEOUT
-        pg_6F10_g(m_hThreadFillA);
+        } while (sysThread_WaitTimeout(m_hThreadFillA, 1) == 258);  // WAIT_TIMEOUT
+        sysIpcHandle_Close(m_hThreadFillA);
         m_hThreadFillA = nullptr;
     }
 
@@ -2408,8 +2410,8 @@ thread_cleanup:
         do {
             sysIpcHandle_Release(m_hThreadFillB);
             SignalEvent1();    // SignalEvent1
-        } while (pg_C3B8_g(m_hThreadFillB, 1) == 258);
-        pg_6F10_g(m_hThreadFillB);
+        } while (sysThread_WaitTimeout(m_hThreadFillB, 1) == 258);
+        sysIpcHandle_Close(m_hThreadFillB);
         m_hThreadFillB = nullptr;
     }
 
@@ -2418,8 +2420,8 @@ thread_cleanup:
         do {
             sysIpcHandle_Release(m_hThreadWriteA);
             SignalEvent2();    // SignalEvent2
-        } while (pg_C3B8_g(m_hThreadWriteA, 1) == 258);
-        pg_6F10_g(m_hThreadWriteA);
+        } while (sysThread_WaitTimeout(m_hThreadWriteA, 1) == 258);
+        sysIpcHandle_Close(m_hThreadWriteA);
         m_hThreadWriteA = nullptr;
     }
 
@@ -2428,8 +2430,8 @@ thread_cleanup:
         do {
             sysIpcHandle_Release(m_hThreadWriteB);
             SignalEvent3();    // SignalEvent3
-        } while (pg_C3B8_g(m_hThreadWriteB, 1) == 258);
-        pg_6F10_g(m_hThreadWriteB);
+        } while (sysThread_WaitTimeout(m_hThreadWriteB, 1) == 258);
+        sysIpcHandle_Close(m_hThreadWriteB);
         m_hThreadWriteB = nullptr;
     }
 
@@ -2506,7 +2508,7 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
     // Step 3: Create 4 worker threads
     // Thread 1: FillReadBufferA → stored at +260
     {
-        void* thread1 = pg_6F88_w(nullptr, 0x10000,
+        void* thread1 = sysThread_Create(nullptr, 0x10000,
             (void*)CCalMoviePlayer_EC88_p33, this, 4, nullptr);
         m_hThreadFillA = thread1;
         if (thread1 == nullptr) {
@@ -2517,7 +2519,7 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
 
     // Thread 2: FillReadBufferB → stored at +264
     {
-        void* thread2 = pg_6F88_w(nullptr, 0x10000,
+        void* thread2 = sysThread_Create(nullptr, 0x10000,
             (void*)CCalMoviePlayer_ECB8_p33, this, 4, nullptr);
         m_hThreadFillB = thread2;
         if (thread2 == nullptr) {
@@ -2528,7 +2530,7 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
 
     // Thread 3: WriteThreadProcA → stored at +268
     {
-        void* thread3 = pg_6F88_w(nullptr, 0x10000,
+        void* thread3 = sysThread_Create(nullptr, 0x10000,
             (void*)CCalMoviePlayer_ECE8_p33, this, 4, nullptr);
         m_hThreadWriteA = thread3;
         if (thread3 == nullptr) {
@@ -2539,7 +2541,7 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
 
     // Thread 4: WriteThreadProcB → stored at +272
     {
-        void* thread4 = pg_6F88_w(nullptr, 0x10000,
+        void* thread4 = sysThread_Create(nullptr, 0x10000,
             (void*)CCalMoviePlayer_ED18_p33, this, 4, nullptr);
         m_hThreadWriteB = thread4;
         if (thread4 == nullptr) {
@@ -2564,10 +2566,10 @@ int32_t CCalMoviePlayer::InitializeWorkerThreads(void* params) {
             aff4 = 2;    // default for WriteThreadProcB
         }
 
-        xe_sleep_B8A8(m_hThreadFillB, aff2);   // FillReadBufferB
-        xe_sleep_B8A8(m_hThreadWriteB, aff4);   // WriteThreadProcB
-        xe_sleep_B8A8(m_hThreadFillA, aff1);   // FillReadBufferA
-        xe_sleep_B8A8(m_hThreadWriteA, aff3);   // WriteThreadProcA
+        xe_SetThreadProcessor(m_hThreadFillB, aff2);   // FillReadBufferB
+        xe_SetThreadProcessor(m_hThreadWriteB, aff4);   // WriteThreadProcB
+        xe_SetThreadProcessor(m_hThreadFillA, aff1);   // FillReadBufferA
+        xe_SetThreadProcessor(m_hThreadWriteA, aff3);   // WriteThreadProcA
     }
 
     // Step 5: Configure buffer pairs
@@ -3084,13 +3086,13 @@ void CCalMoviePlayer::WriteThreadProcB() {
                             ((VFuncVI)eVt[18])(enumerator, (int32_t)(intptr_t)adjustedPtr);
                         }
                         pg_SleepYield(33);
-                        grc_BDC0(m_pBufferObject);
+                        grcBuffer_Release(m_pBufferObject);
                     } else {
                         // Advance read index
                         CCalRingBuffer_AdvanceWriteIndex(iterator);
                         // Signal event for render dispatch
                         RenderFrame(0);    // vslot 31
-                        grc_BDC0(m_pBufferObject);
+                        grcBuffer_Release(m_pBufferObject);
                     }
                 } else if (insertResult == (int32_t)0x8000000A) {
                     // Timeout — undo
