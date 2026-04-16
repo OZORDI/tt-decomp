@@ -81,7 +81,7 @@ extern void*    g_loop_obj_ptr;             // @ 0x825EAB30
 extern const char* g_error_attract_exit;    // @ 0x8205E064
 extern const char* g_error_charview_enter;  // @ 0x8205F0F8
 extern const char* g_error_charview_exit;   // @ 0x8205F134
-extern const char* g_stateName_attract;     // @ 0x8205E094 — "point_off_serves"
+extern const char* g_stateName_attract;     // @ 0x8205E094 — "pongAttractState"
 extern const char* g_stateName_charView;    // @ 0x8205EF5C
 
 // ────────────────────────────────────────────────────────────────────────────

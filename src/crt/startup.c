@@ -358,9 +358,9 @@ extern int32_t g_atexit_guard_0;      /* @ 0x82733048 */
 extern int32_t g_atexit_guard_1;      /* @ 0x8273304C */
 extern void*   g_xex_exec_info;       /* @ 0x825E6E64 */
 
-/* DbgPrint format string @ 0x820013D0 (.rdata, 48 bytes) */
-static const char* const kExitFmtStr =
-    "exit() returned to __mainCRTStartup (code %d)\n";
+/* DbgPrint format string @ 0x820013D0 (.rdata) */
+static const char* const kXapiReturnValueFmt =
+    "[XAPI RETURN VALUE] %d";
 
 /**
  * __mainCRTStartup @ 0x8242BD20 | size: 0x1C8
@@ -514,6 +514,6 @@ void __mainCRTStartup(void)
     _doexit_entry();
 
     /* Print exit code for debugging, then terminate. */
-    DbgPrint(kExitFmtStr, exitCode);
+    DbgPrint(kXapiReturnValueFmt, exitCode);
     XamLoaderTerminateTitle();
 }
