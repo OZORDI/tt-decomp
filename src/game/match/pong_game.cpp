@@ -121,19 +121,24 @@ extern "C" const char* pongGameState_GetName() {
 // @ vtable 0x82071AEC (primary), 0x82071B50 (secondary - multiple inheritance)
 // ────────────────────────────────────────────────────────────────────────────
 
-// ────────────────────────────────────────────────────────────────────────────
-// Game-state data pointed at by pongGameContext::m_pGameState.
-// Offsets derived from register traffic inside pongGameContext::Process.
-struct pongGameStateData {
-    void*    unk_00;              // +0x00
-    void*    m_pHsmContext;       // +0x04 — HSM context (currentState int32 at +0x10)
-    uint8_t  _pad_08[0x04];       // +0x08..+0x0B
-    float    m_fCharVarClampMax;  // +0x0C — 0x80D float upper bound (clamped from hash)
-    uint32_t m_uHashStash;        // +0x10 — 0x86D stashes atSingleton("i") result here
-    uint8_t  _pad_14;             // +0x14
-    uint8_t  m_bMenuAccept;       // +0x15 — set=1 on 0x85C-accept / 0x2027 / 0x3831 / 0x382D / 0x3837
-    uint8_t  m_bMenuBack;         // +0x16 — set=1 on 0x85C-back / 0x85D-default / 0x80C
-    uint8_t  m_bMenuCancel;       // +0x17 — set=1 on 0x85D in state-2 path
+struct pongGameContext {
+    void**  vtable;           // +0x00
+    void*   m_pGameState;     // +0x04 - Current game state
+    // ... more fields discovered from Process() analysis
+    
+    // Virtual methods (context interface)
+    virtual ~pongGameContext();
+    virtual void OnExit() {}                         // [12]
+    virtual void ProcessInput() {}                   // [14]
+    virtual void OnUpdate() {}                       // [16]
+    virtual void OnRender() {}                       // [17]
+    virtual void OnShutdown() {}                     // [18]
+    virtual void PostLoadChildren() {}               // [22]
+    
+    // Non-virtual methods
+    // Process: r3=this, r4=event (msgId u16 at +0, payload at +4).
+    // Returns 0 (success); signature matches captured-reg layout for the cascade.
+    int Process(void* eventState, void* event);
 };
 // Offsets are PPC-32 (4-byte pointers). Static-asserts omitted: void* is 8
 // bytes on the 64-bit host compiler so offsetof would mismatch. See the
@@ -544,80 +549,84 @@ int pongGameContext::Process(void* eventState, void* event) {
     const uint16_t msgId = *(uint16_t*)event;
 
     // ── 0x08xx block (msgUI: frontend / HUD) ──────────────────────────────
-    if (msgId == 0x80C) {  // 2060 — clear character-view slots + re-run variation calc
-        HandleMsg_ClearCharViewSlots(event);
+    if (msgId == 0x80C) {  // 2060 — character variation change (resets floats +52..+72)
+        // TODO: case body — see agent a9829ab
         return 0;
     }
-    if (msgId == 0x85A) {  // 2138 — forward to match-logic context (game_7208)
-        HandleMsg_ForwardToMatchLogic(event);
+    if (msgId == 0x85A) {  // 2138 — game state transition (calls game_7208)
+        // TODO: case body — see agent a9829ab
         return 0;
     }
-    if (msgId == 0x85B) {
-        // 2139 — bare no-op in the original cascade. The compare sets r11=1
-        // (via r26) and the guard at loc_823D5C90 only falls *into* the
-        // menu-back body when r11's low byte is zero (bne to epilogue
-        // otherwise). So the effective behaviour for 2139 is: return.
+    if (msgId == 0x85B) {  // 2139 — bare stub (early-return only in original)
+        // TODO: case body — see agent a9829ab
         return 0;
     }
-    if (msgId == 0x85C) {  // 2140 — menu-back / cancel request (input-state gated)
-        HandleMsg_MenuBackRequest(event);
+    if (msgId == 0x85C) {  // 2140 — input/menu navigation (checks input state +8==3)
+        // TODO: case body — see agent a9829ab
         return 0;
     }
-    if (msgId == 0x85D) {  // 2141 — kQuitConfirm: input->m_leaveState=5, set +0x16 or +0x17
-        HandleMsg_MenuQuitConfirm(event);
+    if (msgId == 0x85D) {  // 2141 — sets input field +0x30=5, touches event +0x16/+0x17
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    if (msgId == 0x80D) {  // 2061 — clamp char-variation float from atSingleton("f")
-        HandleMsg_CharVarFloatClamp(event);
+    if (msgId == 0x80D) {  // 2061 — toggles event +0x1F flag; float compare via atStringHash "f"
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    if (msgId == 0x86D) {  // 2157 — stash atSingleton("i") integer into event +0x10
-        HandleMsg_StoreHashIntoEvent(event);
+    if (msgId == 0x86D) {  // 2157 — reads atStringHash "i", stores r6 into *(event+0x10)
+        // TODO: case body — see agent a57c057
         return 0;
     }
 
     // ── 0x20xx block (msgGame: gameplay / match) ──────────────────────────
-    if (msgId == 0x2001) {  // 8193 — ReadyUp: input +0x30=2, forward event to game_7858
-        HandleMsg_ReadyUp(event);
+    if (msgId == 0x2001) {  // 8193 — sets input +0x30=2, calls sub_823D7858(event)
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    // 0x2007/0x200E/0x200F all branch into the loc_823D6248 suspend-set path.
-    if (msgId == 0x2007 || msgId == 0x200E || msgId == 0x200F) {
-        HandleMsg_SuspendSet(event);
+    if (msgId == 0x2007) {  // 8199 — sets *(this+0x1D)=1 (paired with 0x200A/0x200E/0x200F)
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    if (msgId == 0x200A) {  // 8202 — clear suspend flag (+0x1D=0)
-        HandleMsg_SuspendClear(event);
+    if (msgId == 0x200A) {  // 8202 — clears *(this+0x1D)=0
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    if (msgId == 0x2019) {  // 8217 — msgNet::kJoinFromHudRequested (the crown)
-        HandleMsg_JoinFromHudRequested(event);
+    if (msgId == 0x200E) {  // 8206 — falls through to 0x2007-style set (see loc_823D6248)
+        // TODO: case body — see agent a57c057
+        return 0;
+    }
+    if (msgId == 0x200F) {  // 8207 — falls through to 0x200E (see loc_823D622C)
+        // TODO: case body — see agent a57c057
+        return 0;
+    }
+    if (msgId == 0x2019) {  // 8217 — msgNet::kJoinFromHudRequested (sets event+0x1E, observer notify)
+        // TODO: case body — see agent a57c057
         return 0;
     }
     if (msgId == 0x201B) {  // 8219 — input state fork, atStringHash "i", NotifyObservers w/ 0xA0/0x2/0x6
-        // TODO: case body — large (~130 lines), shares the kJoinFromHud epilogue.
-        // See loc_823D62A4..loc_823D6420 in recomp @ 0x823D5B00. Defer.
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    if (msgId == 0x2027) {  // 8231 — msgUI::kPostNetTourneyUIEnd
-        HandleMsg_TourneyFinishedBackToFrontend(event);
+    if (msgId == 0x2027) {  // 8231 — msgUI::kPostNetTourneyUIEnd, sets *(event+0x16)=1
+        // TODO: case body — see agent a57c057
         return 0;
     }
 
     // ── 0x38xx block (msgNet: network / tourney) ──────────────────────────
     if (msgId == 0x381C) {  // 14364 — bare early-return stub (no body in original)
+        // TODO: case body — see agent a57c057
         return 0;
     }
     if (msgId == 0x382D) {  // 14381 — sets *(event+0x15)=1
-        HandleMsg_NetAccept(event);
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    if (msgId == 0x3831) {  // 14385 — msgNet::kTourneyNextMatchReady
-        HandleMsg_TourneyNextMatchReady(event);
+    if (msgId == 0x3831) {  // 14385 — msgNet::kTourneyNextMatchReady, sets *(event+0x15)=1
+        // TODO: case body — see agent a57c057
         return 0;
     }
-    if (msgId == 0x3837) {  // 14391 — gate on atSingleton("i") != 0, then set +0x15
-        HandleMsg_NetHashGate(event);
+    if (msgId == 0x3837) {  // 14391 — checks atStringHash "i" != 0, sets *(event+0x15)=1
+        // TODO: case body — see agent a57c057
         return 0;
     }
 
