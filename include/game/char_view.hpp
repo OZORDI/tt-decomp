@@ -455,13 +455,16 @@ public:
      */
     virtual ~pongCharViewContext();
     
-    // TODO: Research and rename these methods
-    virtual void vfn_11();        // @ 0x8230A898
-    virtual void vfn_12();        // @ 0x8230AB50
-    virtual void vfn_16();        // @ 0x8230AC90
-    virtual void vfn_17();        // @ 0x8230AF50
-    virtual void vfn_18();        // @ 0x8230C0A8
-    virtual void vfn_23();        // @ 0x8230A8F8
+    // Singleton / UI-lifecycle methods (lifted).
+    virtual void RegisterWithUI();       // vfn_11 @ 0x8230A898
+    virtual void ReleaseManagedObject(); // vfn_12 @ 0x8230AB50
+    virtual void vfn_16();               // @ 0x8230AC90 — pose/animation (Agent 14)
+    virtual void NotifySlotActivity();   // vfn_17 @ 0x8230AF50
+    virtual void vfn_18();               // @ 0x8230C0A8 — pose/animation (Agent 14)
+    virtual void vfn_23();               // @ 0x8230A8F8 — settings.xml init
+
+    // Non-virtual helpers.
+    void ConfirmSelection();             // @ 0x8230C400 ("Accept" button handler)
 
 protected:
     void** m_vtable;              // +0x00 - primary vtable

@@ -1051,9 +1051,163 @@ pongCharViewContext::~pongCharViewContext() {
     
     // Clean up embedded object at +80
     atArray_Clear(&m_embeddedObject);
-    
+
     // Update vtables to final state
     m_vtable2 = (void**)g_vtable_pong_char_view_context_3;
     m_vtable = (void**)g_vtable_pong_char_view_state;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// pongCharViewContext singleton methods — UI registration, lifecycle, and
+// confirmation helpers. The heavy Update/pose logic (vfn_16 / vfn_18) is
+// intentionally *not* lifted here; it lives with the pose/animation work
+// because it manipulates per-player state fields at +452/+212/+288.
+// ────────────────────────────────────────────────────────────────────────────
+
+// Helper externs used by the pongCharViewContext singleton methods. These
+// are already declared elsewhere in the lift but we forward-declare what is
+// strictly needed here so the file compiles standalone.
+extern "C" {
+    // pongCharViewContext_vfn_11 helpers — UI state array writeback.
+    // (g_ui_state_counter / g_ui_object_ptrs / g_ui_object_types are already
+    //  extern'd via char_view_globals.hpp.)
+
+    // pongCharViewContext_C400_p46 helpers.
+    void  hsmContext_SetNextState_2800(void* hsm, int32_t eventCode);  // @ 0x82222800
+    void  util_94B8(void* dialogTpl, int32_t a, int32_t b, void* strA, void* strB);  // @ 0x823794B8
+    extern void* lbl_8271A320;            // @ 0x8271A320 — active charView data
+    extern uint8_t g_noSelectionDialogTpl[20];  // @ 0x825C9F28 — 20-byte dialog template
+}
+
+/**
+ * pongCharViewContext::RegisterWithUI (vfn_11)
+ * @ 0x8230A898 | size: 0x60
+ *
+ * Pushes this context onto the global UI state array as a fixed-size slot
+ * (type=20, flags=0x80). When called with `this == nullptr` the object-pointer
+ * slot is zeroed but the type/flag slots are still populated — matches the
+ * pattern seen in pongAttractState::OnEnter. After the push, g_ui_state_counter
+ * is incremented by 1.
+ *
+ * Returns 1 in the original (always) — kept as void here since no caller
+ * examines the value.
+ */
+void pongCharViewContext::RegisterWithUI() {
+    // The stored UI object pointer is (this + 20) — the secondary (MI) vtable,
+    // matching how the attract context is registered. The original clears
+    // this to zero when r3 == 0 (cmplwi cr6,r3,0), but a properly-dispatched
+    // virtual call on a non-null object makes that branch unreachable.
+    void* pSecondary = reinterpret_cast<uint8_t*>(this) + 20;
+
+    uint32_t index = g_ui_state_counter;
+
+    g_ui_object_flags[index] = 0x80;            // active flag
+    g_ui_object_ptrs[index]  = pSecondary;      // +secondary vtable pointer
+    g_ui_object_types[index] = 20;              // UI slot-type ID
+
+    g_ui_state_counter = index + 1;
+}
+
+/**
+ * pongCharViewContext::ReleaseManagedObject (vfn_12)
+ * @ 0x8230AB50 | size: 0x54
+ *
+ * Tears down the managed character-data object stored at +44 (the hudCharView
+ * instance allocated in vfn_23). Calls its virtual destructor (slot 0 with
+ * delete-flag=1), then nulls the pointer. Always returns 1 in the original.
+ */
+void pongCharViewContext::ReleaseManagedObject() {
+    if (m_pManagedObject == nullptr) {
+        return;
+    }
+
+    // Virtual destructor with "delete" flag (slot 0).
+    using DtorFn = void (*)(void*, int32_t);
+    void** vtable = *reinterpret_cast<void***>(m_pManagedObject);
+    DtorFn dtor = reinterpret_cast<DtorFn>(vtable[0]);
+    dtor(m_pManagedObject, 1);
+
+    m_pManagedObject = nullptr;
+}
+
+/**
+ * pongCharViewContext::NotifySlotActivity (vfn_17)
+ * @ 0x8230AF50 | size: 0xAC
+ *
+ * Iterates the two player slots (bytes +77, +78 — the "active" flags set by
+ * vfn_16) and, for each slot whose byte is non-zero, dispatches slot-6 (the
+ * "activity notify" method) on the corresponding UI object at
+ *   g_ui_object_ptrs[ slot + 29 ]
+ * (the +29 offset is how this class's two UI slots are keyed in the global
+ * pointer table — slot 29/30 are the char-view object entries).
+ *
+ * Guarded by the standard "main-thread && not mid-shutdown" predicate used
+ * throughout the charView code (TLS flag @ 0x82600000+495 must be zero and
+ * the char-view enable flag at g_loop_obj_ptr+24 must be non-zero).
+ */
+void pongCharViewContext::NotifySlotActivity() {
+    // Predicate: same check as vfn_16. Bail out if char view is mid-shutdown.
+    uint8_t* tls495 = reinterpret_cast<uint8_t*>(g_tls_base) + 495;
+    bool ready = (*tls495 != 0);
+    if (!ready) {
+        uint8_t* loopFlag = reinterpret_cast<uint8_t*>(g_loop_obj_ptr) + 24;
+        ready = (*loopFlag != 0);
+    }
+    if (!ready) return;
+
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    for (int slot = 0; slot < 2; ++slot) {
+        uint8_t active = self[77 + slot];
+        if (active == 0) continue;
+
+        // Global object-pointer table is indexed by (slot + 29) * 4 bytes.
+        void* uiObj = g_ui_object_ptrs[slot + 29];
+        if (uiObj == nullptr) continue;
+
+        // Dispatch vtable slot 6 (the "notify activity" method).
+        using NotifyFn = void (*)(void*);
+        void** vtable = *reinterpret_cast<void***>(uiObj);
+        NotifyFn notify = reinterpret_cast<NotifyFn>(vtable[6]);
+        notify(uiObj);
+    }
+}
+
+/**
+ * pongCharViewContext::ConfirmSelection (helper @ 0x8230C400)
+ * @ 0x8230C400 | size: 0x8C
+ *
+ * "Accept" handler wired to the char-view menu's primary button. Always
+ * requests a state transition (event 6) via hsmContext_SetNextState_2800,
+ * then checks the two-player character indices stored at +16 / +20 of the
+ * active charView data object. If either slot is unassigned (-1), the
+ * confirmation is aborted by presenting a modal dialog via util_94B8 with
+ * template lbl_8205F838 (the "please select a character" warning).
+ */
+void pongCharViewContext::ConfirmSelection() {
+    // Request the state transition regardless — the caller always does this.
+    hsmContext_SetNextState_2800(g_tls_base, 6);
+
+    // Validate that both player slots have an assigned character.
+    struct CharViewData {
+        uint8_t  padding[16];
+        int32_t  slotA;   // +16
+        int32_t  slotB;   // +20
+    };
+    auto* data = static_cast<CharViewData*>(lbl_8271A320);
+
+    bool bothAssigned = (data->slotA != -1) && (data->slotB != -1);
+    if (bothAssigned) {
+        return;  // All good; the state transition proceeds.
+    }
+
+    // Missing selection — pop the warning dialog. The 20-byte template at
+    // lbl_825C9F28 is two int64 + one int32 (unpacked into r6/r7/r8/r9 in
+    // the original). Pass both halves verbatim.
+    uint64_t tplLo = *reinterpret_cast<uint64_t*>(&g_noSelectionDialogTpl[0]);
+    uint64_t tplHi = *reinterpret_cast<uint64_t*>(&g_noSelectionDialogTpl[8]);
+    util_94B8(reinterpret_cast<void*>(&g_noSelectionDialogTpl[0]),
+              2, 1,
+              reinterpret_cast<void*>(tplLo),
+              reinterpret_cast<void*>(tplHi));
 }
 
