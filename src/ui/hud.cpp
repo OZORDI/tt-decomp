@@ -1079,3 +1079,240 @@ void hudLeaderboard::vfn_5()
     hudLeaderboard_PostSubmit(this, 0);
     hudFlashBase_SetReadingMode(this, 1);
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// hudFlashBase — shared base-class virtual thunks inherited by all 18 HUD
+// derivatives (hudBoot, hudCharView, hudController, hudCredits, hudDialog,
+// hudFrontEnd, hudHUD, hudLeaderboard, hudLegals, hudList, hudLoadingScreen,
+// hudLogosScreen, hudPause, hudShell, hudTrainingHUD, hudTrainingLoadScreen,
+// hudTrainingPopUp, hudUnlocks).
+//
+// The primary vtable at 0x8205A780 has 8 slots:
+//   [0] sub_822EAFC8  — "ScalarDtor" thunk (actually Update dispatcher)
+//   [1] loc_8231EFD0  — InnerDtor (lifted separately)
+//   [2] sub_822EB058  — Update(dt)
+//   [3] sub_822EB0E8  — TickRelease (reload-guard release path)
+//   [4] nullsub_1     — no-op
+//   [5] sub_822EB148  — OnExit
+//   [6] nullsub_1     — no-op
+//   [7] nullsub_1     — no-op
+//
+// These four non-trivial base bodies are shared by every derivative that does
+// not override them. All pattern the same way: call hudFlashBase_IsNetworkDirty
+// (0x822EB2A8), do class-specific work, and tail-call
+// hudFlashBase_PublishPageGroup (0x822EB320) iff the network state was dirty
+// on entry. MI HAZARD: implemented on the hudFlashBase base class only —
+// derived-class overrides (e.g. hudShell::vfn_2, hudPause::OnExit) are
+// handled separately in their own bodies elsewhere in this file.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Full-update tick helper @ 0x822EBF88 — runs when m_bEnabled (+84) is set in
+// the Update path, handles the heavy-weight state refresh and re-binding.
+extern "C" void hudFlashBase_FullUpdateTick(void* pThis);
+
+// Reload-guard release helper @ 0x823F9868 — called in TickRelease when the
+// page-group is still bound; releases the transient render slot without
+// publishing.
+extern "C" void rage_renderSlot_release(void* pPageGroup);
+
+// Page-group halfword-to-float scale used by the per-tick dispatcher
+// (stored as 256.0f at 0x8202D9E0; dt = int16/256.0f).
+static const float g_hudFlashBase_PageGroupScale = 256.0f;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudFlashBase::ScalarDtor (slot 1) @ 0x822EAFC8 | size: 0x8C
+//
+// Despite the RTTI-assigned "scalar_destructor" label this slot is actually
+// the per-tick Flash scheduler entry point — it never frees storage. Each
+// frame the scheduler calls this thunk, which:
+//   1. Samples hudFlashBase_IsNetworkDirty() to decide whether a publish is
+//      needed at the end of the tick.
+//   2. Reads m_pPageGroup (+92); fetches the nested renderer sub-object at
+//      pageGroup+24, then pulls a signed int16 at +44 of that sub-object —
+//      this is the current scaled frame dt in 1/256-second units.
+//   3. Converts the int16 to float dt (val / 256.0f) and virtual-dispatches
+//      to Update (slot 3) on `this`.
+//   4. If the network state was dirty on entry, tail-calls
+//      hudFlashBase_PublishPageGroup() to republish the page group.
+//
+// The RTTI-assigned "scalar_destructor" name is inherited from the vtable
+// slot-1 convention; kept for compatibility with the declared header method,
+// but the body is really Update-driven scheduling.
+// ─────────────────────────────────────────────────────────────────────────────
+void hudFlashBase::ScalarDtor()
+{
+    uint8_t* self = (uint8_t*)this;
+
+    // Sample dirty flag before any dispatch (B2A8 returns bool in r3).
+    bool netDirty = hudFlashBase_IsNetworkDirty(this);
+
+    // Page group pointer at +92 (0x5C).
+    uint8_t* pageGroup = *(uint8_t**)(self + 92);
+
+    // Renderer sub-object lives at pageGroup+24; scaled frame dt is a signed
+    // int16 at +44 of that sub-object.
+    uint8_t* renderSub = *(uint8_t**)(pageGroup + 24);
+    int16_t  rawScaled = *(int16_t*)(renderSub + 44);
+    float    dt        = (float)(int32_t)rawScaled / g_hudFlashBase_PageGroupScale;
+
+    // Virtual dispatch to this->Update(dt). Slot 3 sits at byte offset +12
+    // in the vtable. Preserves derived overrides that override Update.
+    typedef void (*UpdateFn)(hudFlashBase*, float);
+    UpdateFn pfnUpdate = *(UpdateFn*)(*(uint8_t**)self + 12);
+    pfnUpdate(this, dt);
+
+    // Publish only if the dirty flag was set on entry.
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudFlashBase::Update (slot 3) @ 0x822EB058 | size: 0x8C
+//
+// Core per-tick update body dispatched by ScalarDtor above. Steps:
+//   1. Sample hudFlashBase_IsNetworkDirty() up-front.
+//   2. If m_bEnabled (uint8 at +84) is non-zero, run the heavy-weight
+//      refresh helper at 0x822EBF88 (hudFlashBase_FullUpdateTick) — this
+//      walks the page-group, rebinds entries, and propagates field writes.
+//   3. Virtual-dispatch slot 1 (byte +4 into vtable) on m_pPageGroup (+92)
+//      with (1, 0, dt) — this is the page-group's own per-frame tick, and
+//      is the only slot-1 VCALL in the cluster against a page-group, not
+//      against `this`.
+//   4. Republish via hudFlashBase_PublishPageGroup() iff the initial dirty
+//      flag was set (identical tail to ScalarDtor).
+// ─────────────────────────────────────────────────────────────────────────────
+void hudFlashBase::Update(float dt)
+{
+    uint8_t* self = (uint8_t*)this;
+
+    bool netDirty = hudFlashBase_IsNetworkDirty(this);
+
+    // m_bEnabled at +84 gates the full refresh path.
+    if (*(uint8_t*)(self + 84) != 0) {
+        hudFlashBase_FullUpdateTick(this);
+    }
+
+    // Page-group tick: virtual-call its slot 1 with (kind=1, slot=0, dt).
+    void* pageGroup = *(void**)(self + 92);
+    typedef void (*PageGroupTick)(void*, int, int, float);
+    PageGroupTick pfn = *(PageGroupTick*)(*(uint8_t**)pageGroup + 4);
+    pfn(pageGroup, 1, 0, dt);
+
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudFlashBase::vfn_4 (TickRelease) @ 0x822EB0E8 | size: 0x60
+//
+// Lightweight companion to Update. Same dirty-check idiom:
+//   1. Sample hudFlashBase_IsNetworkDirty().
+//   2. If m_pPageGroup (+92) is bound, forward the bare pointer to the
+//      render-slot release helper at 0x823F9868 (rage_renderSlot_release) —
+//      this releases a transient renderer hold without publishing or
+//      invoking the page-group's own tick.
+//   3. Republish iff dirty on entry.
+//
+// Fires from the scheduler when the HUD is to be quiesced but the page
+// binding is kept intact (e.g., between menu transitions).
+// ─────────────────────────────────────────────────────────────────────────────
+void hudFlashBase::vfn_4()
+{
+    uint8_t* self = (uint8_t*)this;
+
+    bool netDirty = hudFlashBase_IsNetworkDirty(this);
+
+    void* pageGroup = *(void**)(self + 92);
+    if (pageGroup != nullptr) {
+        rage_renderSlot_release(pageGroup);
+    }
+
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudFlashBase::OnExit (slot 6) @ 0x822EB148 | size: 0xA0
+//
+// Shared hide/close path. Reads the global SinglesNetworkClient singleton at
+// 0x826064F4 (SDA r13+25844) to decide which branch to take:
+//
+//   fast-path (client present AND its byte at +104 is clear):
+//     • Virtual-dispatch slot 7 (byte +28) on `this` — derived classes that
+//       override slot 7 do their own on-exit work here. Base declares a
+//       nullsub at slot 7 so the default is a no-op.
+//     • Enqueue a draw-bucket entry at (this+4) keyed by client->+88
+//       (pongDrawBucket_AddEntry @ 0x822278D8) — this schedules the final
+//       hide-frame into the render pipeline.
+//
+//   slow-path (no client or client is in the "teardown" phase, byte +104
+//   non-zero):
+//     • Virtual-dispatch the real destructor (slot 0) on (this+4) — i.e.,
+//       on the secondary MI sub-object. The second argument 0 suppresses
+//       the scalar-delete free; the storage is owned elsewhere.
+//
+// The hudFlashBase_OnExit alias declared at the top of this file (used by
+// hudPause::OnExit tail-calls) resolves to this body.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// SinglesNetworkClient singleton pointer @ 0x826064F4 (SDA r13+25844).
+// Null while the client is unloaded; non-null with byte +104 set during
+// the teardown phase.
+extern "C" void* g_pSinglesNetworkClient;
+
+// pongDrawBucket_AddEntry @ 0x822278D8 — schedules a render-bucket entry.
+extern "C" void pongDrawBucket_AddEntry(void* pEntry, void* pKey);
+
+void hudFlashBase::OnExit()
+{
+    uint8_t* self = (uint8_t*)this;
+
+    uint8_t* client = (uint8_t*)g_pSinglesNetworkClient;
+
+    // Fast path: client present and not in teardown (byte +104 clear).
+    if (client != nullptr && client[104] == 0) {
+        // Dispatch derived slot 7 on `this` (default: nullsub_1).
+        typedef void (*Slot7)(hudFlashBase*);
+        Slot7 pfnSlot7 = *(Slot7*)(*(uint8_t**)self + 28);
+        pfnSlot7(this);
+
+        // Enqueue the hide frame into the draw bucket, keyed by client+88.
+        void* drawKey = *(void**)(client + 88);
+        pongDrawBucket_AddEntry(self + 4, drawKey);
+        return;
+    }
+
+    // Slow path: destroy the secondary MI sub-object at (this+4) without
+    // freeing (deleteFlag=0 — storage is owned by the outer object).
+    uint8_t* subObj = self + 4;
+    typedef void (*Slot0)(void*, uint32_t);
+    Slot0 pfnDtor = *(Slot0*)(*(uint8_t**)subObj);
+    pfnDtor(subObj, 0);
+}
+
+
+// C-linkage trampoline that resolves the forward declaration at line 26
+// used by hudPause::OnExit (and any other non-member tail-call site).
+extern "C" void hudFlashBase_OnExit(void* pThis)
+{
+    static_cast<hudFlashBase*>(pThis)->OnExit();
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudFlashBase trivial base slots — all resolve to nullsub_1 in the binary:
+//   raw slot 4 (post-TickRelease) | raw slot 6 (post-OnExit) | raw slot 7
+// The hud.hpp declaration omits them because they carry no body; any
+// derived class that appears to dispatch through these slots is actually
+// dispatching through its own override (hudPause::OnExit, hudLoadingScreen
+// tail slots, etc.). Left documented here so future lifters don't spend
+// budget rediscovering this.
+// ─────────────────────────────────────────────────────────────────────────────
