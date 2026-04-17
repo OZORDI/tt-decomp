@@ -1005,10 +1005,10 @@ void pongDrillSoftShot::ScalarDestructor(int flags) {
 
 /**
  * noSoftShotsTipData::PostLoadProperties @ 0x821F2678 | size: 0x48
- * 
+ *
  * Validates that the provided type hash matches one of the allowed shot types
  * for the "no soft shots" tip. Returns true if the type is valid.
- * 
+ *
  * This tip data validates against three specific shot type hashes stored in globals.
  */
 bool noSoftShotsTipData::PostLoadProperties(uint32_t typeHash) {
@@ -1026,319 +1026,246 @@ bool noSoftShotsTipData::PostLoadProperties(uint32_t typeHash) {
     return (typeHash == g_shotType3_825C8038);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// pongTrainingUIContext — drill / mini-games HSM context singleton
-// Mirrors pongGameContext (src/game/match/pong_game.cpp). Multiple-inheritance
-// layout with secondary vtable at +0x14; child drill session at +0x1C.
-// ─────────────────────────────────────────────────────────────────────────────
+// =============================================================================
+// pongDrill state-machine subclass vtable slots
+// -----------------------------------------------------------------------------
+// Each concrete drill subclass overrides three short slots off the base
+// pongTrainingDrill vtable:
+//   vfn_17 GetDrillTypeIndex  — integer drill-type tag used to index
+//                               g_pDrillSaveData (see pongTrainingDrill::OnBallHit).
+//                               Base returns 0; only Spin/FocusShot/
+//                               CounterSpin/Smash override it.
+//   vfn_18 GetConfigName      — pointer to the XML config-node name string.
+//   vfn_21 HasActiveTarget    — returns true iff the subclass-specific target
+//                               index field is in its "active" range
+//                               (>= 0 or >= 1 depending on subclass).
+//
+// All addresses verified via mcp__tt-decomp__get_function_recomp. Offsets
+// into the instance match the raw PPC loads in each scaffold.
+// =============================================================================
 
-// Forward declarations for helpers consumed by the 6 lifted slots.
-extern "C" {
-    // Guest memory management / debug log.
-    void  rage_free_00C0(void* ptr);                                            // @ 0x820C00C0
-    void  xe_main_thread_init_0038(void);                                       // @ 0x820C0038
-    void  nop_8240E6D0(const char* fmt, ...);                                   // @ 0x8240E6D0 — debug/log sink
-    void* rage_ADF8(void* classCtx, int param1, int allocSize);                 // @ 0x822EADF8 — allocator + ctor
-
-    // Message-system bridge (shared with pongGameContext).
-    int   msgEventHandler_E8C0_g(void* handlerTail);                            // @ 0x8225E8C0
-
-    // Network/match helpers driven by OnUpdate when the drill completes.
-    uint8_t SinglesNetworkClient_45D0_g(void* ctx);                             // @ 0x821045D0 — "is leaving?" probe
-    uint8_t SinglesNetworkClient_B2A8_g(void* ctx);                             // @ 0x822EB2A8
-    void    SinglesNetworkClient_B1E8_g(void* ctx);                             // @ 0x822EB1E8
-    void*   SinglesNetworkClient_9318_g(void* ctx, const char* key);            // @ 0x823F9318 — key lookup
-    void    SinglesNetworkClient_B320_g(void* ctx);                             // @ 0x822EB320
-    void    SinglesNetworkClient_9C58_g(void* child);                           // @ 0x82319C58
-    void    SinglesNetworkClient_9ED0_g(void* child);                           // @ 0x82319ED0
-    uint8_t SinglesNetworkClient_9BC8_g(void* ctx);                             // @ 0x82309BC8
-    void    SinglesNetworkClient_9B40_g(void* ctx);                             // @ 0x82309B40
-
-    // HSM state transition.
-    void  hsmContext_SetNextState_2800(void* hsmCtx, int stateIdx);             // @ 0x82222800
-
-    // Child drill session factory tail.
-    void* game_7EB8(void* raw);                                                 // @ 0x82317EB8
-}
-
-// SDA / global data consumed by pongTrainingUIContext.
-extern void* lbl_8271A350;   // training-drill slot pool base (msg 3)
-extern void* lbl_8271A32C;   // training-drill global count   (msg 3 gate)
-extern void* lbl_8271A82C;   // finalize target (network finalize receiver)
-extern void* lbl_8271884C;   // msg-handler registration table (byte + stride)
-extern void* lbl_82606390;   // SDA: hsm-state root (read as r13+0x2F70)
-extern void* lbl_82606514;   // SDA: UI context back-pointer
-
-// ────────────────────────────────────────────────────────────────────────────
-// pongTrainingUIContext — 6 true vtable slots lifted from 0x82307080..0x82307520
-// ────────────────────────────────────────────────────────────────────────────
+// ── pongDrillMovement ────────────────────────────────────────────────────────
 
 /**
- * pongTrainingUIContext::Dtor  [0]  @ 0x82307080 | size: 0x9C
+ * pongDrillMovement::GetConfigName
+ * @ 0x8210CBE0 | size: 0xC
  *
- * MI-aware destructor. Writes the primary vtable stamp at +0x00 and the
- * secondary at +0x14, then invokes slot 0 on the child drill session at
- * +0x1C with flags=1 (also-free). After the child teardown, re-stamps
- * with the transient intermediate slots before returning control to the
- * caller; if the low bit of `flags` is set, hands the object back to
- * rage_free.
- *
- * Stamp encodings (from lis/addi pairs):
- *   0x8205E6D4  primary vtable       (pongTrainingUIContext)
- *   0x8205E73C  secondary vtable     (MI thunk block, 12 bytes)
- *   0x82027B34  transient base stamp (lis -32254, +31540)
- *   0x820276C4  transient secondary  (lis -32254, +30404)
+ * Returns the XML config node name for this drill.
  */
-void pongTrainingUIContext::Dtor(int flags) {
-    // Initial stamp pair sets the primary / secondary vtables to the
-    // pongTrainingUIContext globals. The recomp emits two stw pairs — the
-    // first writes the class-specific VAs, the child-chain slot 0 VCALL
-    // runs, then the transient intermediates are stored before returning.
-    vtable            = 0x8205E6D4u;  // primary
-    m_vtableSecondary = 0x8205E73Cu;
-
-    // Tear down the child drill-session object if present.
-    if (m_pChildCtx != 0) {
-        void* child = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pChildCtx));
-        using DtorFn = void(*)(void*, int);
-        void** childVt = *(void***)child;
-        reinterpret_cast<DtorFn>(childVt[0])(child, 1);
-    }
-
-    // Transient base-class stamps.
-    m_vtableSecondary = 0x82027B34u;
-    vtable            = 0x820276C4u;
-
-    if ((flags & 0x1) != 0) {
-        rage_free_00C0(this);
-    }
+const char* pongDrillMovement::GetConfigName() {
+    return "Movement";  // @ 0x820318F0 (.rdata, 9 bytes)
 }
 
 /**
- * pongTrainingUIContext::OnEnter  [11]  @ 0x82307120 | size: 0x60
+ * pongDrillMovement::HasActiveTarget
+ * @ 0x8210CBF0 | size: 0x8
  *
- * Registers this context's embedded event-handler (`this + 20`) with the
- * global message-handler table at 0x8271884C. The table uses a parallel
- * 1-byte-strided table at 14952 + r11 for handler IDs, and a 4-byte-strided
- * table at 14696 + r11 for parameter slots; the slot count at 14436 is
- * incremented each call. The registration key (param at 14696 + r11) is
- * a constant 1040 — which is the drill-mode handler ID.
+ * Thunk — reads m_movementFlag (+36) and returns it as a bool. Non-zero
+ * movement state counts as an active target.
+ *
+ * Original: lbz r3,36(r3); blr
  */
-void pongTrainingUIContext::OnEnter() {
-    // Handler pointer = this + 20 (the MI-offset 'secondary' view of `this`).
-    // When this==nullptr the recomp slams the pointer to 0; we replicate.
-    void* handler = (this != nullptr)
-        ? reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(this) + 20)
-        : nullptr;
+bool pongDrillMovement::HasActiveTarget() {
+    return m_movementFlag != 0;
+}
 
-    // Global tables live inside the lbl_82713000..lbl_82718000 cluster; the
-    // three addresses are:
-    //   r9 + 14436  → u32 slot counter               (@ 0x82713024 + 14436)
-    //   r8 + 14952  → u8  handler-kind byte-table
-    //   r7 + 14440  → u32 handler pointer table
-    //   r6 + 14696  → u32 key/stride table
-    // Addresses are hoisted via lis -32161 = 0x82017000 — so:
-    //   0x82017000 + 14436 = 0x820186A4
-    //   0x82017000 + 14952 = 0x820188A8
-    //   0x82017000 + 14440 = 0x820186A8
-    //   0x82017000 + 14696 = 0x820187A8
-    extern uint32_t lbl_820186A4_counter;   // u32 slot counter
-    extern uint8_t  lbl_820188A8_kinds[];   // u8  handler-kind table (byte stride)
-    extern uint32_t lbl_820186A8_handlers[];// u32 handler pointer table (word stride)
-    extern uint32_t lbl_820187A8_keys[];    // u32 key/stride table (word stride)
+// ── pongDrillServeMeter ──────────────────────────────────────────────────────
 
-    uint32_t slotIdx = lbl_820186A4_counter;
-    lbl_820188A8_kinds[slotIdx]   = 128;   // handler-kind = 128 (MI-thunk dispatch)
-    lbl_820186A8_handlers[slotIdx] = (uint32_t)(uintptr_t)handler;
-    lbl_820187A8_keys[slotIdx]     = 1040; // drill-mode key
-    lbl_820186A4_counter           = slotIdx + 1;
+/**
+ * pongDrillServeMeter::GetConfigName
+ * @ 0x8210CBF8 | size: 0xC
+ */
+const char* pongDrillServeMeter::GetConfigName() {
+    return "Serve Meter";  // @ 0x820318FC (.rdata, 12 bytes)
 }
 
 /**
- * pongTrainingUIContext::OnExit  [12]  @ 0x82307180 | size: 0x34
+ * pongDrillServeMeter::HasActiveTarget
+ * @ 0x8210CC20 | size: 0x1C
  *
- * Deregisters the embedded event-handler slot. The recomp delegates
- * straight to msgEventHandler_E8C0_g(this+20) which walks the same table
- * populated by OnEnter and removes the matching entry, then returns 1 to
- * the caller (always true — reports "registration was valid").
+ * Reads m_meterTargetIdx (+48). For the serve meter a target index of 1
+ * or higher denotes an active phase; 0 (or negative) means idle.
+ *
+ * Original: lwz r11,48(r3); cmpwi r11,1; li r11,1; bge loc; li r11,0
  */
-void pongTrainingUIContext::OnExit() {
-    void* handler = (this != nullptr)
-        ? reinterpret_cast<void*>(reinterpret_cast<uint8_t*>(this) + 20)
-        : nullptr;
-    msgEventHandler_E8C0_g(handler);
-    // Original returns 1 in r3; this skeleton is void — no caller inspects.
+bool pongDrillServeMeter::HasActiveTarget() {
+    return (int32_t)m_meterTargetIdx >= 1;
+}
+
+// ── pongDrillServing ─────────────────────────────────────────────────────────
+
+/**
+ * pongDrillServing::GetConfigName
+ * @ 0x8210CC10 | size: 0xC
+ */
+const char* pongDrillServing::GetConfigName() {
+    return "Serve Aim";  // @ 0x82031908 (.rdata, 10 bytes)
+}
+
+// ── pongDrillReturn ──────────────────────────────────────────────────────────
+
+/**
+ * pongDrillReturn::GetConfigName
+ * @ 0x8210CC48 | size: 0xC
+ */
+const char* pongDrillReturn::GetConfigName() {
+    return "Return";  // @ 0x82031914 (.rdata, 7 bytes)
 }
 
 /**
- * pongTrainingUIContext::OnUpdate  [16]  @ 0x823071B8 | size: 0x128
+ * pongDrillReturn::HasActiveTarget
+ * @ 0x8210CD80 | size: 0x1C
  *
- * Per-frame drill session driver. Two-phase:
+ * Reads m_returnTargetIdx (+36). Non-negative index = active target.
  *
- *   Phase 1 (drill-complete handoff):
- *     If m_bPendingStateAdvance is set, walk the drill-save registry at
- *     lbl_8271A350 (base) + lbl_8271A32C (count).slot*15044 and stamp
- *     offset +536 = 3 (msg kind) on the matching record. Clears the flag
- *     and raises m_bNetFinalizePending.
- *
- *   Phase 2 (network finalize):
- *     If m_bNetFinalizePending is set AND SinglesNetworkClient_45D0_g says
- *     "not leaving", run the three-step finalize (+B2A8, +B1E8, +9318 key
- *     "Loading Traing" etc.) and clear the flag.
- *
- *   Tail: If HSM state +0xC == 13 (drill-active state), VCALL slot 2 on
- *         the child session; if the child's "post-eval" byte (+96) fires
- *         and the UI finalize probe (+9BC8/+9B40) returns nonzero, drive
- *         hsmContext_SetNextState to state 9 (post-drill summary).
+ * Original: lwz r11,36(r3); cmpwi r11,0; li r11,1; bge loc; li r11,0
  */
-void pongTrainingUIContext::OnUpdate() {
-    // Phase 1 — drill-session completion handoff.
-    if (m_bPendingStateAdvance) {
-        void* slotBase = lbl_8271A350;
-        // Count of active drill-save records (u32 at lbl_8271A32C).
-        uint32_t count = *(uint32_t*)((uint8_t*)lbl_8271A32C + 4);
-        uint8_t* record = (uint8_t*)slotBase + count * 15044u;
-        *(uint32_t*)(record + 536) = 3;  // msg kind 3 = "drill complete"
-        m_bPendingStateAdvance = false;
-        m_bNetFinalizePending  = true;
-    }
+bool pongDrillReturn::HasActiveTarget() {
+    return m_returnTargetIdx >= 0;
+}
 
-    // Phase 2 — finalize the network slot now that the drill is tallied.
-    if (m_bNetFinalizePending) {
-        if (SinglesNetworkClient_45D0_g(this) == 0) {
-            void* child = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pChildCtx));
-            uint8_t probe = SinglesNetworkClient_B2A8_g(child);
-            SinglesNetworkClient_B1E8_g(child);
+// ── pongDrillPlacement ───────────────────────────────────────────────────────
 
-            // Slot lookup keyed on "Loading Traing" const string.
-            void* slot = SinglesNetworkClient_9318_g(child, (const char*)0x8205E5D8);
-            if (slot != nullptr) {
-                *(uint32_t*)((uint8_t*)slot + 0) = 0;
-                *(uint32_t*)((uint8_t*)slot + 4) = 3;
-            }
-            if (probe != 0) {
-                SinglesNetworkClient_B320_g(child);
-            }
-            m_bNetFinalizePending = false;
-        }
-    }
+/**
+ * pongDrillPlacement::GetConfigName
+ * @ 0x8210CC60 | size: 0xC
+ */
+const char* pongDrillPlacement::GetConfigName() {
+    return "Placement";  // @ 0x8203191C (.rdata, 10 bytes)
+}
 
-    // Tail — HSM state gate on +0xC of SDA hsm-state root (r13+0x2F70 = 0x82606390).
-    uint8_t* hsmRoot = (uint8_t*)lbl_82606390;
-    int32_t hsmState = *(int32_t*)(hsmRoot + 12);
-    if (hsmState != 13) {
-        return;
-    }
+// ── pongDrillSoftShot ────────────────────────────────────────────────────────
 
-    void* child = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pChildCtx));
-    using Vfn2 = void(*)(void*);
-    void** childVt = *(void***)child;
-    reinterpret_cast<Vfn2>(childVt[2])(child);  // slot 2 (byte +8) — tick drill
-
-    uint8_t postEval = *((uint8_t*)child + 96);
-    if (postEval == 0) {
-        return;
-    }
-
-    // UI finalize probe lives at lbl_8271A82C — usually the post-drill HUD.
-    void* uiFinalize = lbl_8271A82C;
-    if (SinglesNetworkClient_9BC8_g(uiFinalize) != 0) {
-        SinglesNetworkClient_9B40_g(uiFinalize);
-    }
-    hsmContext_SetNextState_2800(lbl_82606390, 9);  // state 9 = post-drill summary
+/**
+ * pongDrillSoftShot::GetConfigName
+ * @ 0x8210CC78 | size: 0xC
+ */
+const char* pongDrillSoftShot::GetConfigName() {
+    return "Soft Shot";  // @ 0x82031928 (.rdata, 10 bytes)
 }
 
 /**
- * pongTrainingUIContext::OnRender  [18]  @ 0x823072E0 | size: 0x40
+ * pongDrillSoftShot::HasActiveTarget
+ * @ 0x8210CC88 | size: 0x1C
  *
- * Gated render pass. Pulls the HSM state from lbl_82606390+0xC; bails when
- * not 13 (drill-active). Also bails when the input-state singleton's
- * suspended byte (+27 of lbl_82606028) is nonzero — the UI is frozen.
- * Otherwise dispatches slot 6 (byte +24 in vtable) on the child drill
- * session at m_pChildCtx.
+ * Reads m_softShotTargetIdx (+52). Non-negative index = active target.
  */
-void pongTrainingUIContext::OnRender() {
-    uint8_t* hsmRoot = (uint8_t*)lbl_82606390;
-    int32_t  hsmState = *(int32_t*)(hsmRoot + 12);
-    if (hsmState != 13) {
-        return;
-    }
+bool pongDrillSoftShot::HasActiveTarget() {
+    return m_softShotTargetIdx >= 0;
+}
 
-    // Input-state suspend byte (+27) — reused from pong_game.cpp wiring.
-    extern void* lbl_82606028;   // input-state back-pointer (SDA +0x1308)
-    uint8_t* input = (uint8_t*)lbl_82606028;
-    if (input[27] != 0) {
-        return;
-    }
+// ── pongDrillCharging ────────────────────────────────────────────────────────
 
-    void* child = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pChildCtx));
-    using Vfn6 = void(*)(void*);
-    void** childVt = *(void***)child;
-    reinterpret_cast<Vfn6>(childVt[6])(child);  // slot 6 (byte +24)
+/**
+ * pongDrillCharging::GetConfigName
+ * @ 0x8210CCB0 | size: 0xC
+ */
+const char* pongDrillCharging::GetConfigName() {
+    return "Charging";  // @ 0x82031934 (.rdata, 9 bytes)
 }
 
 /**
- * pongTrainingUIContext::Init  [23]  @ 0x82307420 | size: 0x100
+ * pongDrillCharging::HasActiveTarget
+ * @ 0x8210CCC0 | size: 0x1C
  *
- * Constructs the child drill-session object. Logs "Loading Traing Mode
- * UI..." (0x8205E5D8, binary-original typo preserved), calls the engine
- * init sink, then walks SDA r13+0x4 (= 0x82600004) to reach the singles-
- * match logic factory — VCALL slot 1 (byte +4). Nonzero return feeds into
- * game_7EB8 (session wrap); result cached in r31. Allocates a 208-byte
- * drill-context object via rage_ADF8 with key-offset +50 (= 0x82714B8A:
- * "drillUIContext" string head), stores it at this+28. VCALL slot 3 on
- * the fresh child with f1 = *(float*)0x825C8C78 (the drill-tick dt).
- * Tail runs the three SinglesNetworkClient helpers + logs "Training Mode
- * UI loaded." (0x8205E5F4).
+ * Reads m_chargingTargetIdx (+56). Non-negative index = active target.
  */
-void pongTrainingUIContext::Init() {
-    nop_8240E6D0((const char*)0x8205E5D8);  // "Loading Traing Mode UI..."
-    xe_main_thread_init_0038();
+bool pongDrillCharging::HasActiveTarget() {
+    return m_chargingTargetIdx >= 0;
+}
 
-    // SDA root lookup: r13+0x4 → global class registry pointer.
-    extern void* g_SDA_root;  // @ 0x82600000
-    void* registry = *(void**)((uint8_t*)&g_SDA_root + 4);
+// ── pongDrillSpin ────────────────────────────────────────────────────────────
 
-    // VCALL slot 1 (byte +4) with (r4=29012, r5=16) — factory probe for
-    // "singles-match" logic class; nonzero path runs game_7EB8 tail wrap.
-    using FactoryFn = void*(*)(void*, int, int);
-    void** regVt = *(void***)registry;
-    void* factory = reinterpret_cast<FactoryFn>(regVt[1])(registry, 29012, 16);
+/**
+ * pongDrillSpin::GetDrillTypeIndex
+ * @ 0x8210CCE0 | size: 0x8
+ *
+ * Returns the drill-type slot (7) for the Spin drill. The base class
+ * returns 0; this override lets pongTrainingDrill::OnBallHit index the
+ * proper slot in g_pDrillSaveData for save-data tracking.
+ */
+int pongDrillSpin::GetDrillTypeIndex() {
+    return kDrillTypeSpin;  // 7
+}
 
-    void* childRaw = nullptr;
-    if (factory != nullptr) {
-        childRaw = game_7EB8(factory);
-    }
+/**
+ * pongDrillSpin::GetConfigName
+ * @ 0x8210CCE8 | size: 0xC
+ */
+const char* pongDrillSpin::GetConfigName() {
+    return "Spin";  // @ 0x82031940 (.rdata, 5 bytes)
+}
 
-    m_pChildCtx = (uint32_t)(uintptr_t)childRaw;
+/**
+ * pongDrillSpin::HasActiveTarget
+ * @ 0x8210CD10 | size: 0x1C
+ *
+ * Reads m_spinTargetIdx (+40). Non-negative index = active target.
+ */
+bool pongDrillSpin::HasActiveTarget() {
+    return m_spinTargetIdx >= 0;
+}
 
-    // Allocate the 208-byte drill-context from the class registry (param1=+50
-    // is the "drillUIContext" class name index; param2=208 is object size).
-    extern uint8_t lbl_82606028_base[]; // see OnRender
-    uint32_t classNameIdx = *(uint32_t*)((uint8_t*)lbl_82606514) + 50;
-    rage_ADF8(childRaw, (int)classNameIdx, 208);
+// ── pongDrillFocusShot ───────────────────────────────────────────────────────
 
-    // VCALL slot 3 (byte +12) on the fresh child with the drill dt scalar.
-    if (childRaw != nullptr) {
-        extern const float lbl_825C90BC_drillDT;  // @ 0x825C90BC + 84
-        using InitFn = void(*)(void*, float);
-        void** childVt = *(void***)childRaw;
-        reinterpret_cast<InitFn>(childVt[3])(childRaw, lbl_825C90BC_drillDT);
-    }
+/**
+ * pongDrillFocusShot::GetDrillTypeIndex
+ * @ 0x8210CCF8 | size: 0x8
+ */
+int pongDrillFocusShot::GetDrillTypeIndex() {
+    return kDrillTypeFocusShot;  // 8
+}
 
-    // Network finalize / post-init triad.
-    uint8_t probe = SinglesNetworkClient_B2A8_g(childRaw);
-    SinglesNetworkClient_9C58_g(childRaw);
-    SinglesNetworkClient_9ED0_g(childRaw);
-    if (probe != 0) {
-        SinglesNetworkClient_B320_g(childRaw);
-    }
+/**
+ * pongDrillFocusShot::GetConfigName
+ * @ 0x8210CD00 | size: 0xC
+ */
+const char* pongDrillFocusShot::GetConfigName() {
+    return "Focus Shot";  // @ 0x82031948 (.rdata, 11 bytes)
+}
 
-    // Stamp default drill dt on child+8 and finish.
-    extern const float lbl_825C90BC_drillDT;
-    if (childRaw != nullptr) {
-        *(float*)((uint8_t*)childRaw + 8) = lbl_825C90BC_drillDT;
-    }
+// ── pongDrillCounterSpin ─────────────────────────────────────────────────────
 
-    nop_8240E6D0((const char*)0x8205E5F4);  // "Training Mode UI loaded."
+/**
+ * pongDrillCounterSpin::GetDrillTypeIndex
+ * @ 0x8210CD30 | size: 0x8
+ */
+int pongDrillCounterSpin::GetDrillTypeIndex() {
+    return kDrillTypeCounterSpin;  // 9
+}
+
+/**
+ * pongDrillCounterSpin::GetConfigName
+ * @ 0x8210CD38 | size: 0xC
+ */
+const char* pongDrillCounterSpin::GetConfigName() {
+    return "Counter Spin";  // @ 0x82031954 (.rdata, 13 bytes)
+}
+
+/**
+ * pongDrillCounterSpin::HasActiveTarget
+ * @ 0x8210CD48 | size: 0x1C
+ *
+ * Reads m_counterSpinTargetIdx (+72). Non-negative index = active target.
+ */
+bool pongDrillCounterSpin::HasActiveTarget() {
+    return m_counterSpinTargetIdx >= 0;
+}
+
+// ── pongDrillSmash ───────────────────────────────────────────────────────────
+
+/**
+ * pongDrillSmash::GetDrillTypeIndex
+ * @ 0x8210CD68 | size: 0x8
+ */
+int pongDrillSmash::GetDrillTypeIndex() {
+    return kDrillTypeSmash;  // 10
+}
+
+/**
+ * pongDrillSmash::GetConfigName
+ * @ 0x8210CD70 | size: 0xC
+ */
+const char* pongDrillSmash::GetConfigName() {
+    return "Smash";  // @ 0x82031964 (.rdata, 6 bytes)
 }

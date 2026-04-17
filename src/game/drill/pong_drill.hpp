@@ -327,7 +327,8 @@ struct tooFarFromTableTipData {
 /**
  * Drill type indices — values returned by vfn_17 (GetDrillTypeIndex) on each
  * subclass. Used as the drill-type slot into g_pDrillSaveData. Base class
- * default is 0; only Spin/FocusShot/CounterSpin/Smash override it.
+ * default is 0; subclasses that share slot 0 rely on their drill-set index
+ * plus contextual data to disambiguate.
  */
 enum pongDrillTypeIndex : int {
     kDrillTypeBase        = 0,   // base pongTrainingDrill / unclassified
@@ -429,7 +430,7 @@ public:
     virtual void OnStart() override {}                 // vfn_5
     virtual void Process() override {}                 // vfn_9
     virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CBE0 — "Movement"
-    virtual bool vfn_22() override;                    // vfn_22 @ 0x8210CBF0 — m_movementFlag non-zero (byte read)
+    virtual bool HasActiveTarget() override;           // vfn_22 thunk @ 0x8210CBF0 — m_movementFlag
 
 private:
     enum MovementState {
@@ -461,7 +462,7 @@ public:
     virtual void Update() override {}
     virtual void Process() override {}
     virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CBF8 — "Serve Meter"
-    virtual bool HasActiveTarget() override;           // vfn_21 @ 0x8210CC20 — m_meterTargetIdx >= 1
+    virtual bool HasActiveTarget() override;           // vfn_21 @ 0x8210CC20 — m_meterTargetIdx (+48) >= 1
 
 private:
     // Base class ends at +36 (0x24); this subclass begins here.
@@ -495,7 +496,7 @@ public:
     virtual void Update() override {}
     virtual void Process() override {}
     virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CC48 — "Return"
-    virtual bool HasActiveTarget() override;           // vfn_21 alias @ 0x8210CD80 — m_returnTargetIdx >= 0
+    virtual bool HasActiveTarget() override;           // vfn_21 alias @ 0x8210CD80 — m_returnTargetIdx (+36) >= 0
 
 private:
     // Base class ends at +36 (0x24); target field is the first subclass member.
@@ -529,7 +530,7 @@ public:
     virtual void Update() override {}
     virtual void Process() override {}
     virtual const char* GetConfigName() override;       // vfn_18 @ 0x8210CC78 — "Soft Shot"
-    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CC88 — m_softShotTargetIdx >= 0
+    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CC88 — m_softShotTargetIdx (+52) >= 0
 
     void ScalarDestructor(int flags);
 
@@ -551,7 +552,7 @@ public:
     virtual void Update() override {}
     virtual void Process() override {}
     virtual const char* GetConfigName() override;       // vfn_18 @ 0x8210CCB0 — "Charging"
-    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CCC0 — m_chargingTargetIdx >= 0
+    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CCC0 — m_chargingTargetIdx (+56) >= 0
 
 private:
     // Base class ends at +36 (0x24); target field sits at +56 (0x38).
@@ -567,12 +568,17 @@ private:
  */
 class pongDrillSpin : public pongTrainingDrill {
 public:
-    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CCE0
-    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CCE8
-    virtual bool HasActiveTarget() override;         // vfn_21 @ 0x8210CD10
+    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CCE0 — returns kDrillTypeSpin=7
+    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CCE8 — "Spin"
+    virtual bool HasActiveTarget() override;         // vfn_21 @ 0x8210CD10 — m_spinTargetIdx (+40) >= 0
 
     virtual void Init() override {}      // vfn_3 @ 0x821101E0
     virtual void Process() override {}   // vfn_8 @ 0x82110218
+
+private:
+    // Base class ends at +36 (0x24); target field sits at +40 (0x28).
+    uint8_t m_pad24[4];                              // +0x24..+0x27 — subclass state (uninvestigated)
+    int32_t m_spinTargetIdx;                         // +0x28 (+40) — active spin target; >=0 = active
 };
 
 /**
@@ -583,9 +589,9 @@ public:
  */
 class pongDrillFocusShot : public pongTrainingDrill {
 public:
-    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CCF8
-    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD00
-    
+    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CCF8 — returns kDrillTypeFocusShot=8
+    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD00 — "Focus Shot"
+
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
@@ -601,7 +607,7 @@ class pongDrillCounterSpin : public pongTrainingDrill {
 public:
     virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CD30 — returns kDrillTypeCounterSpin=9
     virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD38 — "Counter Spin"
-    virtual bool HasActiveTarget() override;         // vfn_21 @ 0x8210CD48 — m_counterSpinTargetIdx >= 0
+    virtual bool HasActiveTarget() override;         // vfn_21 @ 0x8210CD48 — m_counterSpinTargetIdx (+72) >= 0
 
     virtual void Init() override {}
     virtual void Update() override {}
