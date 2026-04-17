@@ -1316,3 +1316,525 @@ extern "C" void hudFlashBase_OnExit(void* pThis)
 // tail slots, etc.). Left documented here so future lifters don't spend
 // budget rediscovering this.
 // ─────────────────────────────────────────────────────────────────────────────
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// hudCharView / hudCredits / hudDialog / hudLegals cluster
+//
+// All four inherit from hudFlashBase. Their slot-0/2/3/5 base methods live
+// at 0x822EAFC8 / 0x822EB058 / 0x822EB0E8 / 0x822EB148 — the overrides below
+// are the class-specific slot 2 (Update), slot 5 (OnEnter/publish), and one
+// slot 6 (OnExit). All four publish state through the SinglesNetworkClient
+// layer; each "Entry*" yielded by FindSlot (0x823F9318) has layout
+// { u32 value; u32 type; } where type is 1=string and 3=bool/u32.
+//
+// Shared helpers (declared earlier in this file):
+//   hudFlashBase_IsNetworkDirty, hudFlashBase_GetPageGroup,
+//   hudFlashBase_PublishPageGroup, SinglesNetworkClient_FindParam,
+//   SinglesNetworkClient_ReadInt, g_hudShell_UpdateBlock,
+//   g_hudFlash_DefaultAlpha (default-alpha float @ 0x8202D108 — via
+//   g_hudPause_DefaultAlpha alias in the hudPause section).
+// ═════════════════════════════════════════════════════════════════════════════
+
+// New SinglesNetworkClient helpers used by this cluster.
+extern "C" void* SinglesNetworkClient_FindSlot(void* pageGroup,
+                                               const void* key);     // @ 0x823F9318
+extern "C" void  SinglesNetworkClient_PushByKey(void* pageGroup,
+                                                const void* key,
+                                                void* pValue);       // @ 0x823F9808
+extern "C" void  SinglesNetworkClient_PushStatIndexed(void* pageGroup,
+                                                      const void* composite,
+                                                      int playerIdx,
+                                                      int statIdx,
+                                                      void* pValue); // @ 0x823F96D0
+extern "C" void  SinglesNetworkClient_Flush(void* pThis);            // @ 0x82321190
+extern "C" void  hudDialog_PublishFinal(void* pThis);                // @ 0x82321A20
+extern "C" void  hudFlashBase_RequestShow(void* pThis);              // @ 0x822EAFC8
+extern "C" void* xam_LiveCreateEnumerator(int a, int b, int c, int d);
+// rage_atStringCopy already declared above with signature (void* src, void* dst, int cap).
+
+// Stats-page world-state pointer — SDA r2(-32161) - 21712. Field +512 is the
+// active page index (1 == stats tab); +24 chains to a per-player row table.
+extern void* g_pStatsContext;
+
+// Composite stat name "characterStats" @ 0x82060714 (size 0xF).
+extern const char g_szCharacterStats[];
+
+// Default-alpha constant alias — points at the same float as g_hudPause_DefaultAlpha
+// (0x8202D108). Named generically for the shared cluster.
+extern const float g_hudFlash_DefaultAlpha;
+
+// Opaque page-group key literals — the text is owned by the network strings
+// pool but the pass5 body addresses them via r11-relative offsets. Names
+// below encode position + role so future agents can join them back up.
+extern const void* const g_hudKey_StatsPageGate;      // r11-19736
+extern const void* const g_hudKey_CreditsSummary;     // r11+9312
+extern const void* const g_hudKey_DialogAuthText;     // r11-96
+extern const void* const g_hudKey_CreditsSubmit;      // r11+9324
+extern const void* const g_hudKey_CreditsSubmit2;     // r11-14644
+extern const void* const g_hudKey_CharViewStats;      // r11+9544
+extern const void* const g_hudKey_CharViewPrefix;     // r11+9556
+extern const void* const g_hudKey_LegalsUrl1;         // r11-7400
+extern const void* const g_hudKey_LegalsUrl2;         // r11-8264
+extern const void* const g_hudKey_LegalsUrl3;         // r11-8272
+extern const void* const g_hudKey_LegalsBufferTpl1;   // r11-5328
+extern const void* const g_hudKey_LegalsBuffer1Key;   // r11-5304
+extern const void* const g_hudKey_LegalsBufferTpl2;   // r11-5284
+extern const void* const g_hudKey_LegalsBuffer2Key;   // r11-5256
+extern const void* const g_hudKey_DialogKey10144;
+extern const void* const g_hudKey_DialogKey10152;
+extern const void* const g_hudKey_DialogKey10160;
+extern const void* const g_hudKey_DialogKey10172;
+extern const void* const g_hudKey_DialogKey10184;
+extern const void* const g_hudKey_DialogKey10200;
+extern const void* const g_hudKey_DialogKey10212;
+
+// Fixed "disconnected" literal @ 0x82060F23 — used by hudDialog::OnEnter.
+extern const char g_szDialog_Disconnected[];
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudCredits::OnExit (slot 6) @ 0x82320880 | size: 0x10
+//
+// Resets the credits movie's per-frame alpha scalar at +8 back to the global
+// default (same float @ 0x8202D108 hudPause also uses), then tail-calls the
+// shared hudFlashBase::OnExit hide path.
+// ─────────────────────────────────────────────────────────────────────────────
+void hudCredits::OnExit()
+{
+    uint8_t* self = (uint8_t*)this;
+    *(float*)(self + 8) = g_hudFlash_DefaultAlpha;
+    hudFlashBase_OnExit(this);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudCharView::vfn_2 (Update / per-tick) @ 0x82320D68 | size: 0x90
+//
+//   1. VCALL slot 3 (base Update(dt)) with the shared tick-delta scalar.
+//   2. Query dirty + page-group.
+//   3. Look up the "charView prefix" param; if present, cache its int at +100.
+//   4. If dirty at entry, republish.
+// ─────────────────────────────────────────────────────────────────────────────
+void hudCharView::vfn_2()
+{
+    uint8_t* self = (uint8_t*)this;
+
+    // 1) Base Update(dt) via vtable slot 3 (byte offset +12).
+    const float tickDelta = *(const float*)(g_hudShell_UpdateBlock + 84);
+    typedef void (*UpdateFn)(void*, float);
+    UpdateFn baseUpdate = *(UpdateFn*)((*(uint8_t**)self) + 12);
+    baseUpdate(this, tickDelta);
+
+    // 2) Dirty-flag + page-group.
+    bool  netDirty  = hudFlashBase_IsNetworkDirty(this);
+    void* pageGroup = hudFlashBase_GetPageGroup(this);
+
+    // 3) Pull the charView prefix param; cache int at +100.
+    void* pParam = SinglesNetworkClient_FindParam(pageGroup,
+                                                  &g_hudKey_CharViewPrefix);
+    if (pParam != nullptr) {
+        int value = SinglesNetworkClient_ReadInt(pParam);
+        *(int*)(self + 100) = value;
+    }
+
+    // 4) Republish on dirty.
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudCharView::OnEnter (slot 5) @ 0x82320BE0 | size: 0x184
+//
+// Publishes initial char-view state into the network page-group:
+//   1. If the ready-flag at +96 is set, pre-kick via base slot-1.
+//   2. Query dirty + page-group; seed the cached int at +100 to -1.
+//   3. StatsPageGate → bool (g_pStatsContext->page == 1).
+//   4. CharViewStats → bool true.
+//   5. If +96 was set, clear it, flush the write buffer, and publish a 4-wide
+//      stat row per character (count at g_pStatsContext +28; row table at
+//      +24, each entry +76 into the pointee gives 4 consecutive u32 stats).
+//   6. Republish on dirty; clear +97.
+//   7. Final base slot-1 kick.
+// ─────────────────────────────────────────────────────────────────────────────
+void hudCharView::OnEnter()
+{
+    uint8_t* self    = (uint8_t*)this;
+    uint8_t  preFlag = self[96];
+
+    // 1) Pre-publish kick when +96 is set.
+    if (preFlag != 0) {
+        hudFlashBase_RequestShow(this);
+    }
+
+    // 2) Dirty + page-group; seed cached int to -1.
+    bool  netDirty      = hudFlashBase_IsNetworkDirty(this);
+    *(int*)(self + 100) = -1;
+    void* pageGroup     = hudFlashBase_GetPageGroup(this);
+
+    const int kTypeBool = 3;
+    int  statsPage = *(int*)((uint8_t*)g_pStatsContext + 512);
+    int  gateVal   = (statsPage == 1) ? 1 : 0;
+
+    // 3) StatsPageGate — bool.
+    void* pEntry = SinglesNetworkClient_FindSlot(pageGroup,
+                                                 &g_hudKey_StatsPageGate);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 1) = kTypeBool;
+        *((int*)pEntry + 0) = (gateVal != 0) ? 1 : 0;
+    }
+
+    // 4) CharViewStats — always bool true.
+    pEntry = SinglesNetworkClient_FindSlot(pageGroup, &g_hudKey_CharViewStats);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 1) = kTypeBool;
+        *((int*)pEntry + 0) = 1;
+    }
+
+    // 5) Flush + publish indexed stats if +96 was set.
+    if (self[96] != 0) {
+        self[96] = 0;
+        SinglesNetworkClient_Flush(this);
+
+        int statsCount = *(int*)((*(uint8_t**)g_pStatsContext) + 28);
+        if (statsCount > 0) {
+            uint8_t* statsBase = *(uint8_t**)((*(uint8_t**)g_pStatsContext) + 24);
+            for (int playerIdx = 0; playerIdx < statsCount; ++playerIdx) {
+                uint8_t* rowPtr = *(uint8_t**)(statsBase + playerIdx * 4) + 76;
+                for (int statIdx = 0; statIdx < 4; ++statIdx) {
+                    int statValue = *(int*)(rowPtr + statIdx * 4);
+                    SinglesNetworkClient_PushStatIndexed(pageGroup,
+                                                         g_szCharacterStats,
+                                                         playerIdx,
+                                                         statIdx,
+                                                         &statValue);
+                }
+            }
+        }
+    }
+
+    // 6) Republish on dirty; clear edit-pending flag.
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+    self[97] = 0;
+
+    // 7) Final base slot-1 kick.
+    hudFlashBase_RequestShow(this);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudLegals::OnEnter (slot 5) @ 0x82309580 | size: 0x1BC
+//
+// Legals-screen publish pass:
+//   • Two xam live-enumerator handles (xam_6C88(0,1,0,0)) at self+228/+232.
+//   • Clear self+224; call derived slot-1 initialiser.
+//   • Publish StatsPageGate + LegalsUrl1/2/3 as bools (true/false/false).
+//   • Copy two 64-byte rodata templates into self+96 and self+160; publish
+//     their addresses under LegalsBuffer1/2Key as strings (type=1).
+//   • Republish on initial dirty.
+// ─────────────────────────────────────────────────────────────────────────────
+void hudLegals::OnEnter()
+{
+    uint8_t* self = (uint8_t*)this;
+
+    // Two xam live-enumerator handles.
+    void* hEnum1 = xam_LiveCreateEnumerator(0, 1, 0, 0);
+    *(void**)(self + 228) = hEnum1;
+    void* hEnum2 = xam_LiveCreateEnumerator(0, 1, 0, 0);
+    *(void**)(self + 232) = hEnum2;
+
+    // Clear ready-byte and call derived slot-1 initialiser.
+    self[224] = 0;
+    typedef void (*Slot1Fn)(void*);
+    Slot1Fn slot1 = *(Slot1Fn*)((*(uint8_t**)self) + 4);
+    slot1(this);
+
+    // Dirty + page-group.
+    bool  netDirty  = hudFlashBase_IsNetworkDirty(this);
+    void* pageGroup = hudFlashBase_GetPageGroup(this);
+
+    const int kTypeBool   = 3;
+    const int kTypeString = 1;
+    int  statsPage = *(int*)((uint8_t*)g_pStatsContext + 512);
+    int  gateVal   = (statsPage == 1) ? 1 : 0;
+
+    // StatsPageGate — bool.
+    void* pEntry = SinglesNetworkClient_FindSlot(pageGroup,
+                                                 &g_hudKey_StatsPageGate);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 1) = kTypeBool;
+        *((int*)pEntry + 0) = (gateVal != 0) ? 1 : 0;
+    }
+
+    // LegalsUrl1 — bool true.
+    pEntry = SinglesNetworkClient_FindSlot(pageGroup, &g_hudKey_LegalsUrl1);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 1;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // LegalsUrl2 — bool false.
+    pEntry = SinglesNetworkClient_FindSlot(pageGroup, &g_hudKey_LegalsUrl2);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // LegalsUrl3 — bool false.
+    pEntry = SinglesNetworkClient_FindSlot(pageGroup, &g_hudKey_LegalsUrl3);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // First legals buffer: template copy → self+96; publish as string.
+    // rage_atStringCopy signature is (src, dst, cap).
+    char* buf1 = (char*)(self + 96);
+    rage_atStringCopy((void*)&g_hudKey_LegalsBufferTpl1, buf1, 64);
+    pEntry = SinglesNetworkClient_FindSlot(pageGroup,
+                                           &g_hudKey_LegalsBuffer1Key);
+    if (pEntry != nullptr) {
+        *((char**)pEntry + 0) = buf1;
+        *((int*)pEntry + 1)   = kTypeString;
+    }
+
+    // Second legals buffer: mirror at self+160.
+    char* buf2 = (char*)(self + 160);
+    rage_atStringCopy((void*)&g_hudKey_LegalsBufferTpl2, buf2, 64);
+    pEntry = SinglesNetworkClient_FindSlot(pageGroup,
+                                           &g_hudKey_LegalsBuffer2Key);
+    if (pEntry != nullptr) {
+        *((char**)pEntry + 0) = buf2;
+        *((int*)pEntry + 1)   = kTypeString;
+    }
+
+    // Republish on dirty.
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudCredits::OnEnter (slot 5) @ 0x82320138 | size: 0x194
+//
+// Credits-page publish pass:
+//   • Derived slot-1 init.
+//   • Zero flag bytes at self+152/+153/+156; hoist two anim scalars from
+//     (*(self+148))[+20,+24] into self+164 / self+168.
+//   • If the "row marked" byte at self+154 is set, clear it and publish the
+//     stats-page gate (bool), push self+160 via CreditsSummary, and copy a
+//     32-char template into self+188 publishing as DialogAuthText string.
+//   • Always publish CreditsSubmit2 as bool true.
+//   • Publish CreditsSubmit = (+155 set ? 100 : 0), type=bool (3).
+//   • Republish on dirty; final slot-1 kick.
+// ─────────────────────────────────────────────────────────────────────────────
+void hudCredits::OnEnter()
+{
+    uint8_t* self = (uint8_t*)this;
+
+    // Derived slot-1 init.
+    typedef void (*Slot1Fn)(void*);
+    Slot1Fn slot1 = *(Slot1Fn*)((*(uint8_t**)self) + 4);
+    slot1(this);
+
+    // Capture dirty state early.
+    bool netDirty = hudFlashBase_IsNetworkDirty(this);
+
+    // Reset flag bytes; hoist anim scalars.
+    uint8_t* pAnimBlock = *(uint8_t**)(self + 148);
+    self[152] = 0;
+    self[153] = 0;
+    self[156] = 0;
+    *(float*)(self + 164) = *(const float*)(pAnimBlock + 20);
+    *(float*)(self + 168) = *(const float*)(pAnimBlock + 24);
+
+    // Page-group for the publish batch.
+    void* pageGroup = hudFlashBase_GetPageGroup(this);
+
+    const int kTypeBool   = 3;
+    const int kTypeString = 1;
+
+    // "Row marked" payload gate.
+    if (self[154] != 0) {
+        self[154] = 0;
+
+        int  statsPage = *(int*)((uint8_t*)g_pStatsContext + 512);
+        int  gateVal   = (statsPage == 1) ? 1 : 0;
+
+        void* pEntry = SinglesNetworkClient_FindSlot(pageGroup,
+                                                     &g_hudKey_StatsPageGate);
+        if (pEntry != nullptr) {
+            *((int*)pEntry + 1) = kTypeBool;
+            *((int*)pEntry + 0) = (gateVal != 0) ? 1 : 0;
+        }
+
+        // Push u32 at self+160 into CreditsSummary (9808 writes directly).
+        SinglesNetworkClient_PushByKey(pageGroup,
+                                       &g_hudKey_CreditsSummary,
+                                       (void*)(self + 160));
+
+        // Copy 32-char template into self+188; publish as string.
+        char* buf = (char*)(self + 188);
+        rage_atStringCopy((void*)&g_hudKey_DialogAuthText, buf, 32);
+        void* pPg2 = hudFlashBase_GetPageGroup(this);
+        void* pStrEntry = SinglesNetworkClient_FindSlot(pPg2,
+                                                        &g_hudKey_DialogAuthText);
+        if (pStrEntry != nullptr) {
+            *((char**)pStrEntry + 0) = buf;
+            *((int*)pStrEntry + 1)   = kTypeString;
+        }
+    }
+
+    // CreditsSubmit2 — bool true (always).
+    void* pEntry = SinglesNetworkClient_FindSlot(pageGroup,
+                                                 &g_hudKey_CreditsSubmit2);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 1;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // CreditsSubmit — 100 if advance-flag set, else 0; type=bool (3).
+    int submitValue = (self[155] != 0) ? 100 : 0;
+    pEntry = SinglesNetworkClient_FindSlot(pageGroup, &g_hudKey_CreditsSubmit);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = submitValue;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // Republish on dirty; final slot-1 kick.
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+    Slot1Fn slot1Tail = *(Slot1Fn*)((*(uint8_t**)self) + 4);
+    slot1Tail(this);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudDialog::OnEnter (slot 5) @ 0x82321858 | size: 0x1C8
+//
+// Dialog-screen publish pass:
+//   • Clear self+97; derived slot-1 init.
+//   • For each key, re-fetch the page-group (original loads B1E8 per key):
+//       StatsPageGate   → bool (page == 1)
+//       DialogKey10144  → bool false
+//       DialogKey10152  → string @ g_szDialog_Disconnected
+//       DialogKey10160/72/84/10200/12 → bool false
+//   • Call hudDialog_PublishFinal (0x82321A20).
+//   • Republish on dirty; final slot-1 kick.
+// ─────────────────────────────────────────────────────────────────────────────
+void hudDialog::OnEnter()
+{
+    uint8_t* self = (uint8_t*)this;
+
+    // Clear edit-pending, then derived slot-1 init.
+    self[97] = 0;
+    typedef void (*Slot1Fn)(void*);
+    Slot1Fn slot1 = *(Slot1Fn*)((*(uint8_t**)self) + 4);
+    slot1(this);
+
+    // Dirty + gate value.
+    bool netDirty  = hudFlashBase_IsNetworkDirty(this);
+    int  statsPage = *(int*)((uint8_t*)g_pStatsContext + 512);
+    int  gateVal   = (statsPage == 1) ? 1 : 0;
+
+    const int kTypeBool   = 3;
+    const int kTypeString = 1;
+
+    // StatsPageGate.
+    void* pPg    = hudFlashBase_GetPageGroup(this);
+    void* pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_StatsPageGate);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 1) = kTypeBool;
+        *((int*)pEntry + 0) = (gateVal != 0) ? 1 : 0;
+    }
+
+    // DialogKey10144 — bool false.
+    pPg    = hudFlashBase_GetPageGroup(this);
+    pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_DialogKey10144);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // DialogKey10152 — string.
+    pPg    = hudFlashBase_GetPageGroup(this);
+    pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_DialogKey10152);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 1)         = kTypeString;
+        *((const char**)pEntry + 0) = g_szDialog_Disconnected;
+    }
+
+    // DialogKey10160 / 10172 / 10184 — bool false.
+    pPg    = hudFlashBase_GetPageGroup(this);
+    pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_DialogKey10160);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+    pPg    = hudFlashBase_GetPageGroup(this);
+    pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_DialogKey10172);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+    pPg    = hudFlashBase_GetPageGroup(this);
+    pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_DialogKey10184);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // DialogKey10200 / 10212 — bool false.
+    pPg    = hudFlashBase_GetPageGroup(this);
+    pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_DialogKey10200);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+    pPg    = hudFlashBase_GetPageGroup(this);
+    pEntry = SinglesNetworkClient_FindSlot(pPg, &g_hudKey_DialogKey10212);
+    if (pEntry != nullptr) {
+        *((int*)pEntry + 0) = 0;
+        *((int*)pEntry + 1) = kTypeBool;
+    }
+
+    // Finalize.
+    hudDialog_PublishFinal(this);
+
+    // Republish on dirty; final slot-1 kick.
+    if (netDirty) {
+        hudFlashBase_PublishPageGroup(this);
+    }
+    Slot1Fn slot1Tail = *(Slot1Fn*)((*(uint8_t**)self) + 4);
+    slot1Tail(this);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudCredits::vfn_2 (Update) @ 0x823202D0 | size: 0x5AC (1452 bytes)
+//
+// DEFERRED per task policy — 1456-byte body contains a credits-scroll ramp
+// over self+164/+168 with saturate/wrap against rodata constants at
+// 0x8202C4E8 (float) and 0x8207A370 (double), multiple fsel blend branches,
+// a private sliding-window text iterator at 0x82322C28, and 4+ distinct
+// 9318-keyed state publishes. Cleaner to lift with a dedicated float-layout
+// map than to sketch piecemeal here.
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hudDialog::vfn_2 (Update) @ 0x82322090 | size: 0x23C (572 bytes)
+//
+// DEFERRED — 572-byte body interleaves a float cursor advance on self+100
+// (guarded by g_pStatsContext+13 player-input byte) with an fsel-saturation
+// against the 0x8207A370 double, a page-advance branch writing the stats
+// context at +12/+16, and a util_FFF8 text-formatter call keyed off
+// self+136/+140. Shares the saturate/fsel pattern with hudCredits::vfn_2 —
+// best lifted alongside that one.
+// ─────────────────────────────────────────────────────────────────────────────
