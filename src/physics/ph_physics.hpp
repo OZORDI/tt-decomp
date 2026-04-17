@@ -1992,15 +1992,27 @@ struct phSimulator {
 
     virtual ~phSimulator();                       // [0] @ 0x822C14A0
     virtual void ScalarDtor(int flags);           // [1] @ 0x822C4C18
-    virtual void vfn_2();                         // [2] @ 0x822C4228
+    virtual void vfn_2(uint32_t* breakableRec);   // [2] @ 0x822C4228
     virtual void vfn_3();                         // [3] @ 0x822C1D18
     virtual void vfn_4();                         // [4] @ 0x822C1F00
     virtual void vfn_5();                         // [5] @ 0x822C4308
     virtual void vfn_6();                         // [6] @ 0x822C3128
     virtual void vfn_7();                         // [7] @ 0x822C40C0
 
+    // Non-virtual slot implementations (called directly via vtable indexing in the
+    // recomp; header declarations here so the class name binds correctly).
+    void dtor(uint32_t deletingFlag);             // impl of vtable[0]
+    uint32_t scalarDtor(float timeStep);          // impl of vtable[1]
+    void preStep(float timeStep);                 // impl of vtable[3] / 0x822C1CB0
+
     // debug string: "phSimulator::FindWeakestInst(): Maximum number of breakable components %d exceeded: %d"
-    void FindWeakestInst();
+    phInst* FindWeakestInst(uint32_t* breakableArray,
+                            phInst** instArray,
+                            int32_t instCount,
+                            float* outScore,
+                            uint32_t unused_r8,
+                            uint32_t* outSwapA,
+                            uint32_t* outSwapB);
 };
 
 // ── rage::phSleep  [vtable @ 0x8203327C] ─────────────────────────────────────
