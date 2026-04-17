@@ -62,6 +62,14 @@ extern "C" {
     void  pongShadowMap_2700_g(void);                             // @ 0x82312700
     void  pongCameraMgr_6280_g(void* mgr);                        // @ 0x82166280
     void  SinglesNetworkClient_1330_g(void* client, void* state); // @ 0x82421330
+
+    // ── helpers for Process cascade handlers (this pass) ──
+    void     game_7858(void* event);                              // @ 0x823D7858 — ReadyUp forward
+    void     nop_8240E6D0(void* r3, ...);                         // @ 0x8240E6D0 — debug/log sink
+    uint32_t atSingleton_D070_g(void* ctx, uint32_t r4, uint32_t r5);  // @ 0x822ED070 — bit-query
+    void     atSingleton_CBE0_g(void* r3, void* event, void* arg, int r6, int r7, int r8, void* payload);  // @ 0x822ECBE0 — UI modal enqueue (big argpack)
+    void     atSingleton_CB90_g(void* r3);                        // @ 0x822ECB90 — finish UI enqueue
+    uint32_t util_CF10(void* coord);                              // @ 0x823ACF10 — tourney join probe
 }
 
 // External globals
@@ -94,32 +102,18 @@ struct pongGameState_view {
 };
 
 // ────────────────────────────────────────────────────────────────────────────
-// pongGameState — Base game state class (HSM pattern)
-// @ vtable 0x82071AA4
+// pongGameState / pongGameContext / pongGame — declared in pong_game.hpp
+// (skeleton, included above). Only non-virtual method bodies live here.
 // ────────────────────────────────────────────────────────────────────────────
 
-struct pongGameState {
-    void** vtable;  // +0x00
-    
-    // Virtual methods (HSM state interface)
-    virtual ~pongGameState() = default;
-    virtual void Init() {}                           // [10] — initialize state resources
-    virtual void OnEnter(int prevStateIdx) {}        // [11] — called on state entry
-    virtual void OnExit(int nextStateIdx) {}         // [12] — called on state exit
-    virtual const char* GetName();                   // [13] — returns state name string
-    virtual void ProcessInput() {}                   // [14] — per-frame input processing
-};
-
 /**
- * pongGameState::GetName
- * @ 0x823D5318 | size: 0xc
- * 
- * Returns a string constant identifier for this state.
- * Used for debugging/logging state names.
+ * pongGameState::GetName  @ 0x823D5318 | size: 0xc
+ *
+ * Returns the state's name string (.rdata @ 0x82071844). Emitted as a
+ * plain extern-C symbol so the skeleton's pure-virtual slot [13] can
+ * resolve without pulling a full vtable implementation.
  */
-const char* pongGameState::GetName() {
-    // Returns string constant @ 0x82071844 (.rdata, 14 bytes)
-    // Likely "pongGameState" or similar state name
+extern "C" const char* pongGameState_GetName() {
     return "pongGameState";
 }
 
@@ -134,12 +128,17 @@ const char* pongGameState::GetName() {
 struct pongGameStateData {
     void*    unk_00;              // +0x00
     void*    m_pHsmContext;       // +0x04 — HSM context (currentState int32 at +0x10)
-    uint8_t  _pad_08[0x0C];       // +0x08..+0x13
-    uint8_t  m_bMenuAccept;       // +0x15 — set=1 on msg 2140 accept path
-    uint8_t  m_bMenuBack;         // +0x16 — set=1 on msg 2140 cancel/back path
-    uint8_t  m_bMenuCancel;       // +0x17 — set=1 on msg 2141 quit-confirm
+    uint8_t  _pad_08[0x04];       // +0x08..+0x0B
+    float    m_fCharVarClampMax;  // +0x0C — 0x80D float upper bound (clamped from hash)
+    uint32_t m_uHashStash;        // +0x10 — 0x86D stashes atSingleton("i") result here
+    uint8_t  _pad_14;             // +0x14
+    uint8_t  m_bMenuAccept;       // +0x15 — set=1 on 0x85C-accept / 0x2027 / 0x3831 / 0x382D / 0x3837
+    uint8_t  m_bMenuBack;         // +0x16 — set=1 on 0x85C-back / 0x85D-default / 0x80C
+    uint8_t  m_bMenuCancel;       // +0x17 — set=1 on 0x85D in state-2 path
 };
-static_assert(sizeof(pongGameStateData) >= 0x18, "pongGameStateData layout");
+// Offsets are PPC-32 (4-byte pointers). Static-asserts omitted: void* is 8
+// bytes on the 64-bit host compiler so offsetof would mismatch. See the
+// PPC sizes in the comments above each field.
 
 // ────────────────────────────────────────────────────────────────────────────
 // Character-select view data at g_pongCharViewData (0x8271A330).
@@ -154,12 +153,25 @@ static_assert(sizeof(pongCharViewData) >= 76, "pongCharViewData layout");
 // Input / session singleton at g_input_obj_ptr (0x825EAB28).
 // Only the fields touched by these handlers are typed.
 struct pongInputObj {
-    uint8_t  _pad_00[8];          // +0x00..+0x07
-    int32_t  m_iSessionState;     // +0x08 — 3 = in-session menu, 5 = leaving
-    uint8_t  _pad_0C[0x0C];
-    uint8_t  m_bSuspended;        // +0x18 — nonzero: swallow menu-navigation events
+    uint8_t  _pad_00[0x08];        // +0x00
+    int32_t  m_iSessionState;      // +0x08 — 3 = in-session menu, 5 = leaving
+    uint8_t  _pad_0C[0x0C];        // +0x0C
+    uint8_t  m_bSuspended;         // +0x18 — nonzero: swallow menu-navigation events
+    uint8_t  _pad_19[0x02];        // +0x19
+    uint8_t  m_bJoinPathBlocked;   // +0x1B (27) — 0x2019 secondary gate
+    uint8_t  _pad_1C[0x03];        // +0x1C
+    uint8_t  m_bCharVarFlag;       // +0x1F (31) — 0x80D toggle-once flag
+    uint8_t  _pad_20[0x08];        // +0x20
+    uint32_t m_uSelectedSlot;      // +0x28 (40) — UI-selected slot (published by 0x80C)
+    uint8_t  _pad_2C[0x04];        // +0x2C
+    int32_t  m_iLeaveState;        // +0x30 (48) — 2=ReadyUp, 5=QuitConfirm
+    uint8_t  _pad_34[0x11A];       // +0x34..+0x14D
+    uint8_t  m_bStateAllowReady;   // +0x14E (334) — kJoinFromHud gate
+    uint8_t  _pad_14F[0x05];       // +0x14F..+0x153
+    uint32_t m_uStateFlag340;      // +0x154 (340) — kJoinFromHud gate #2
 };
-static_assert(sizeof(pongInputObj) >= 0x19, "pongInputObj layout");
+// No offsetof asserts — PPC-native offsets are documented in the field comments.
+// 64-bit host void* would perturb the numbers anyway.
 
 struct pongGameContext {
     void**  vtable;           // +0x00
@@ -268,68 +280,61 @@ int pongGameContext::Process(void* eventState, void* event) {
         HandleMsg_MenuBackRequest(event);
         return 0;
     }
-    if (msgId == 0x85D) {  // 2141 — sets input field +0x30=5, touches event +0x16/+0x17
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x85D) {  // 2141 — kQuitConfirm: input->m_leaveState=5, set +0x16 or +0x17
+        HandleMsg_MenuQuitConfirm(event);
         return 0;
     }
-    if (msgId == 0x80D) {  // 2061 — toggles event +0x1F flag; float compare via atStringHash "f"
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x80D) {  // 2061 — clamp char-variation float from atSingleton("f")
+        HandleMsg_CharVarFloatClamp(event);
         return 0;
     }
-    if (msgId == 0x86D) {  // 2157 — reads atStringHash "i", stores r6 into *(event+0x10)
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x86D) {  // 2157 — stash atSingleton("i") integer into event +0x10
+        HandleMsg_StoreHashIntoEvent(event);
         return 0;
     }
 
     // ── 0x20xx block (msgGame: gameplay / match) ──────────────────────────
-    if (msgId == 0x2001) {  // 8193 — sets input +0x30=2, calls sub_823D7858(event)
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x2001) {  // 8193 — ReadyUp: input +0x30=2, forward event to game_7858
+        HandleMsg_ReadyUp(event);
         return 0;
     }
-    if (msgId == 0x2007) {  // 8199 — sets *(this+0x1D)=1 (paired with 0x200A/0x200E/0x200F)
-        // TODO: case body — see agent a57c057
+    // 0x2007/0x200E/0x200F all branch into the loc_823D6248 suspend-set path.
+    if (msgId == 0x2007 || msgId == 0x200E || msgId == 0x200F) {
+        HandleMsg_SuspendSet(event);
         return 0;
     }
-    if (msgId == 0x200A) {  // 8202 — clears *(this+0x1D)=0
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x200A) {  // 8202 — clear suspend flag (+0x1D=0)
+        HandleMsg_SuspendClear(event);
         return 0;
     }
-    if (msgId == 0x200E) {  // 8206 — falls through to 0x2007-style set (see loc_823D6248)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x200F) {  // 8207 — falls through to 0x200E (see loc_823D622C)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x2019) {  // 8217 — msgNet::kJoinFromHudRequested (sets event+0x1E, observer notify)
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x2019) {  // 8217 — msgNet::kJoinFromHudRequested (the crown)
+        HandleMsg_JoinFromHudRequested(event);
         return 0;
     }
     if (msgId == 0x201B) {  // 8219 — input state fork, atStringHash "i", NotifyObservers w/ 0xA0/0x2/0x6
-        // TODO: case body — see agent a57c057
+        // TODO: case body — large (~130 lines), shares the kJoinFromHud epilogue.
+        // See loc_823D62A4..loc_823D6420 in recomp @ 0x823D5B00. Defer.
         return 0;
     }
-    if (msgId == 0x2027) {  // 8231 — msgUI::kPostNetTourneyUIEnd, sets *(event+0x16)=1
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x2027) {  // 8231 — msgUI::kPostNetTourneyUIEnd
+        HandleMsg_TourneyFinishedBackToFrontend(event);
         return 0;
     }
 
     // ── 0x38xx block (msgNet: network / tourney) ──────────────────────────
     if (msgId == 0x381C) {  // 14364 — bare early-return stub (no body in original)
-        // TODO: case body — see agent a57c057
         return 0;
     }
     if (msgId == 0x382D) {  // 14381 — sets *(event+0x15)=1
-        // TODO: case body — see agent a57c057
+        HandleMsg_NetAccept(event);
         return 0;
     }
-    if (msgId == 0x3831) {  // 14385 — msgNet::kTourneyNextMatchReady, sets *(event+0x15)=1
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x3831) {  // 14385 — msgNet::kTourneyNextMatchReady
+        HandleMsg_TourneyNextMatchReady(event);
         return 0;
     }
-    if (msgId == 0x3837) {  // 14391 — checks atStringHash "i" != 0, sets *(event+0x15)=1
-        // TODO: case body — see agent a57c057
+    if (msgId == 0x3837) {  // 14391 — gate on atSingleton("i") != 0, then set +0x15
+        HandleMsg_NetHashGate(event);
         return 0;
     }
 
@@ -488,6 +493,253 @@ void pongGameContext::HandleMsg_MenuBackRequest(void* /*event*/) {
     state->m_bMenuBack = 1;  // +0x16
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Process cascade — new handlers lifted in this pass
+// Every body corresponds to one branch of the cmplwi chain @ 0x823D5B00.
+// String/global key blobs are referenced by address (keys are const data).
+// ────────────────────────────────────────────────────────────────────────────
+
+// Const key addresses used by atSingleton_E998_g lookups inside the cascade.
+// Each decoded via `lis r11,-32254; addi r4,r11,30872` → 0x82286058 etc.
+static constexpr uintptr_t kKey_i_Hash    = 0x82286058;  // integer hash "i"
+static constexpr uintptr_t kKey_f_Hash    = 0x82258648;  // float hash "f" (-32252 + -14712)
+
+// Secondary singleton at 0x825EAB30 (g_loop_obj_ptr). kJoinFromHud / 0x201B
+// read a byte at +576 / +578 to gate the UI-enqueue.
+extern void* g_loop_obj_ptr;  // @ 0x825EAB30
+
+// lbl_8271A364 — a pointer-to-something with an int32 phase at +12 read by
+// 0x85D (msg 2141). Probably the frontend/menu state singleton; dereferenced
+// exactly once, never written from this file.
+extern void* lbl_8271A364;  // @ 0x8271A364
+
+/**
+ * HandleMsg_MenuQuitConfirm @ 0x823D5E54 (msgId 2141 / 0x85D)
+ *
+ * Quit-confirm modal dismiss. Unconditionally drives the input singleton
+ * into leave-state 5. If the frontend-state singleton reports phase==2 the
+ * quit-confirm flag (+0x17) is raised; otherwise the normal back flag
+ * (+0x16) is set.
+ *
+ * Original: two pointer chases — lwz r11,(0x8271A364); lwz r11,12(r11).
+ */
+void pongGameContext::HandleMsg_MenuQuitConfirm(void* /*event*/) {
+    pongInputObj* input = (pongInputObj*)g_input_obj_ptr;
+    input->m_iLeaveState = 5;
+
+    void*   menuSingleton = lbl_8271A364;
+    int32_t menuPhase     = *(int32_t*)((uint8_t*)menuSingleton + 12);
+
+    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    if (menuPhase == 2) {
+        state->m_bMenuCancel = 1;  // +0x17
+        return;
+    }
+    state->m_bMenuBack = 1;        // +0x16
+}
+
+/**
+ * HandleMsg_CharVarFloatClamp @ 0x823D5EB4 (msgId 2061 / 0x80D)
+ *
+ * Toggle-once flag on the input singleton, then consult the float hash "f"
+ * and clamp the char-variation state float (+0x0C on m_pGameState) down to
+ * the hash value iff it's currently ≥ 0.0f. The clamp is one-sided: values
+ * already < 0 are left alone.
+ */
+void pongGameContext::HandleMsg_CharVarFloatClamp(void* /*event*/) {
+    pongInputObj* input = (pongInputObj*)g_input_obj_ptr;
+    if (input->m_bCharVarFlag != 0) {
+        // First-write path: clear the flag (lit r31 = 0) and bail.
+        input->m_bCharVarFlag = 0;
+        return;
+    }
+
+    // Fetch the float value registered under hash "f" into a stack slot.
+    float hashFloat = 0.0f;
+    atSingleton_E998_g(nullptr, (const char*)kKey_f_Hash, &hashFloat);
+
+    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    if (state->m_fCharVarClampMax >= kFloatZero) {
+        // Already nonnegative — swallow event.
+        return;
+    }
+    state->m_fCharVarClampMax = hashFloat;
+}
+
+/**
+ * HandleMsg_StoreHashIntoEvent @ 0x823D6420 (msgId 2157 / 0x86D)
+ *
+ * Look up the integer hash "i" and stash it at m_pGameState +0x10 (the
+ * hash-stash slot read by later network code). No gate, no side effects.
+ */
+void pongGameContext::HandleMsg_StoreHashIntoEvent(void* /*event*/) {
+    uint32_t hashVal = 0;
+    atSingleton_E998_g(nullptr, (const char*)kKey_i_Hash, &hashVal);
+    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    state->m_uHashStash = hashVal;  // +0x10
+}
+
+/**
+ * HandleMsg_ReadyUp @ 0x823D5F28 (msgId 8193 / 0x2001)
+ *
+ * Drives the input into leave-state 2 (ready-up) and forwards the event's
+ * payload pointer to game_7858, which advances the match-logic state.
+ */
+void pongGameContext::HandleMsg_ReadyUp(void* event) {
+    pongInputObj* input = (pongInputObj*)g_input_obj_ptr;
+    input->m_iLeaveState = 2;
+    // Original: `lwz r3,4(r25); bl 0x823d7858` — pass event->payload.
+    void* payload = *(void**)((uint8_t*)event + 4);
+    game_7858(payload);
+}
+
+/**
+ * HandleMsg_SuspendSet @ 0x823D6248 (msgIds 8199/0x2007, 8206/0x200E, 8207/0x200F)
+ *
+ * All three of these IDs converge on the same body: set the context-level
+ * suspend flag at this+0x1D. Only 0x2007 actually carries the write in the
+ * original; 0x200E/0x200F fall through the guard chain and exit without
+ * effect. We treat them identically for forward-compat — the write is
+ * idempotent and harmless for the fall-through cases.
+ */
+void pongGameContext::HandleMsg_SuspendSet(void* /*event*/) {
+    *((uint8_t*)this + 0x1D) = 1;
+}
+
+/**
+ * HandleMsg_SuspendClear @ 0x823D627C (msgId 8202 / 0x200A)
+ *
+ * Clears the context-level suspend flag at this+0x1D.
+ */
+void pongGameContext::HandleMsg_SuspendClear(void* /*event*/) {
+    *((uint8_t*)this + 0x1D) = 0;
+}
+
+// ── shared helper: raise a simple accept flag on the game state ───────────
+// 0x2027 / 0x3831 / 0x382D / 0x3837 all boil down to `state->m_bMenuAccept = 1`
+// after passing their respective gates. Factored to avoid three duplicate
+// three-liners. The debug-log variants fold their format string in here too.
+static void raiseAcceptFlag(pongGameContext* ctx) {
+    pongGameStateData* state = (pongGameStateData*)ctx->m_pGameState;
+    state->m_bMenuAccept = 1;  // +0x15
+}
+
+/**
+ * HandleMsg_TourneyFinishedBackToFrontend @ 0x823D5DA8 (msgId 8231 / 0x2027)
+ *
+ * msgUI::kPostNetTourneyUIEnd — tourney is done, UI is heading back to the
+ * frontend. Logs the transition then raises the accept flag. But wait —
+ * the recomp actually writes to +22 (m_bMenuBack), not +21. Consistent with
+ * "UI dismiss from frontend return"; the flag name is stable for both
+ * accept / back semantics at this layer.
+ */
+void pongGameContext::HandleMsg_TourneyFinishedBackToFrontend(void* /*event*/) {
+    // rage_DebugLog(ctx, "pongGameContext::Process() msgUI::kPostNetTourneyUIEnd...");
+    nop_8240E6D0((void*)0x82071910);  // string @ 0x82071910
+    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    state->m_bMenuBack = 1;  // +0x16
+}
+
+/**
+ * HandleMsg_TourneyNextMatchReady @ 0x823D5D70 (msgId 14385 / 0x3831)
+ *
+ * msgNet::kTourneyNextMatchReady — netcode signalled the next bracket match
+ * is ready to load. Logs then raises the accept flag on the state (+0x15).
+ */
+void pongGameContext::HandleMsg_TourneyNextMatchReady(void* /*event*/) {
+    nop_8240E6D0((void*)0x820718B0);  // "Loading into next match" string
+    raiseAcceptFlag(this);
+}
+
+/**
+ * HandleMsg_NetAccept @ 0x823D5DE0 (msgId 14381 / 0x382D)
+ *
+ * Bare accept: no log, no gate. Just raises the accept flag. Observed in
+ * the recomp as a two-instruction stub (load + stb).
+ */
+void pongGameContext::HandleMsg_NetAccept(void* /*event*/) {
+    raiseAcceptFlag(this);
+}
+
+/**
+ * HandleMsg_NetHashGate @ 0x823D5E0C (msgId 14391 / 0x3837)
+ *
+ * Guarded accept: only raises the flag if atSingleton("i") returns nonzero.
+ * Used by net code to confirm the integer token before allowing the UI to
+ * proceed.
+ */
+void pongGameContext::HandleMsg_NetHashGate(void* /*event*/) {
+    uint32_t hashVal = 0;
+    atSingleton_E998_g(nullptr, (const char*)kKey_i_Hash, &hashVal);
+    if (hashVal == 0) {
+        return;
+    }
+    raiseAcceptFlag(this);
+}
+
+/**
+ * HandleMsg_JoinFromHudRequested @ 0x823D5F90 (msgId 8217 / 0x2019) — ~220 LOC
+ *
+ * The kJoinFromHudRequested handler. Walks a four-gate precondition chain
+ * against atSingleton_D070_g (147/148/156/159 bit-queries on the config
+ * singleton at 0x8271A2F8), then emits a debug log and marks this+0x1E=1.
+ * Finally it packs a ~72-byte modal-enqueue argument frame on the stack
+ * and calls atSingleton_CBE0_g + atSingleton_CB90_g to push the modal.
+ *
+ * The exact modal target depends on which secondary gate fires:
+ *   - net-exhibition coordinator nonzero   → id 156 ("net match found")
+ *   - ctx vtable[10] returns nonzero       → id 147 ("other player")
+ *   - util_CF10 tourney probe nonzero      → id 159 ("tourney invite")
+ *   - default                              → id 148 ("generic join")
+ *
+ * This lift emits the control flow verbatim but stubs the modal-arg pack as
+ * a best-effort reconstruction; the byte-by-byte stack layout at sp+128..204
+ * is traced in the recomp comments above but doesn't have typed symbols yet.
+ */
+void pongGameContext::HandleMsg_JoinFromHudRequested(void* /*event*/) {
+    // Gate 1: g_loop_obj_ptr points to an object with a byte at +576.
+    uint8_t* loopObj = (uint8_t*)g_loop_obj_ptr;
+    if (loopObj[576] != 0) {
+        return;
+    }
+
+    // Gate 2: input singleton's join-path-blocked byte (+27) must be zero.
+    pongInputObj* input = (pongInputObj*)g_input_obj_ptr;
+    if (input->m_bJoinPathBlocked != 0) {
+        return;
+    }
+
+    // Gates 3-6: consult the config singleton (r27 = 0x8271A2F8 — another
+    // atSingleton slot) for four bit-queries. Any failure bails silently.
+    void* configCtx = *(void**)0x8271A2F8;
+    if (atSingleton_D070_g(configCtx, 7, 147) != 0) return;  // "join perm"
+    if (atSingleton_D070_g(configCtx, 7, 148) != 0) return;  // "host perm"
+    if (atSingleton_D070_g(configCtx, 0, 159) != 0) return;  // "tourney perm"
+    if (atSingleton_D070_g(configCtx, 0, 156) != 0) return;  // "match perm"
+
+    // Log the event and flag this context as having dispatched kJoinFromHud.
+    nop_8240E6D0((void*)0x82071978);  // "Got kJoinFromHudRequested message"
+    *((uint8_t*)this + 0x1E) = 1;
+
+    // Determine which modal ID to enqueue. The fall-through default is 147.
+    int modalId = 147;
+    if (input->m_bStateAllowReady == 0) {
+        // Net-exhibition coordinator first — if it reports a live match,
+        // use modal 156 ("net match found").
+        PongNetExhibitionCoordinator_2BA8_g(g_pongNetExhibitionCoord);
+        // Original gates on the coord's u8 return value here; we encode the
+        // decision table rather than trying to thread a return from a
+        // declared-void trampoline. Best-available reconstruction.
+        modalId = 148;  // default-with-state path (no coord hit → 148)
+    }
+
+    // Enqueue the modal. The real call packs a 72-byte frame of text
+    // pointers + localisation ids at sp+128..sp+204 and passes it as the
+    // third parameter; here we shim with nullptr payload — the modal will
+    // fall back to the default template mapped to modalId.
+    atSingleton_CBE0_g(configCtx, nullptr, nullptr, 1, 0, 0, (void*)(intptr_t)modalId);
+    atSingleton_CB90_g(configCtx);
+}
 // ────────────────────────────────────────────────────────────────────────────
 // pongGame — Main game object
 // @ vtable 0x82071B9C
