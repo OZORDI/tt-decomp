@@ -586,3 +586,48 @@ private:
 
 // Compile-time size verification
 static_assert(sizeof(pongTrainingDrill) >= 36, "pongTrainingDrill minimum size check");
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongTrainingUIContext — drill / mini-games HSM context singleton
+// vtables @ 0x8205E6D4 primary (104 bytes / 26 slots),
+//          0x8205E73C secondary (12 bytes / MI thunk block)
+//
+// Mirrors the pongGameContext pattern: multiple-inheritance layout with the
+// secondary vtable stamp at +0x14 and a guest-owned child state at +0x1C
+// ("m_pGameState" analog). The "Loading Traing Mode UI..." debug string
+// (0x8205E5D8) anchors this class to the drill/mini-game subsystem.
+//
+//   slot 0    destructor              @ 0x82307080
+//   slot 11   OnEnter (register)      @ 0x82307120   — registers msg handler @ table lbl_8271884C
+//   slot 12   OnExit (deregister)     @ 0x82307180   — delegates to msgEventHandler_E8C0_g
+//   slot 16   OnUpdate                @ 0x823071B8   — pumps child VCALL slot 2, hsm state gate
+//   slot 18   OnRender                @ 0x823072E0   — tail VCALL slot 6 when state==13
+//   slot 23   Init/Load               @ 0x82307420   — allocates child (size 208) + "Training Mode UI loaded."
+//
+// POD layout — vtable pointers are stored as raw u32 data fields so guest
+// PPC32 pointer widths survive host-side offsetof checks.
+// ─────────────────────────────────────────────────────────────────────────────
+struct pongTrainingUIContext {
+    // NOTE: guest PPC32 pointers are stored as uint32_t to preserve the 4-byte
+    // layout on 64-bit hosts. Cast to void*/void** at use sites.
+    uint32_t vtable;                 // +0x00  primary vtable VA (0x8205E6D4)
+    uint8_t  _opaqueBase[16];        // +0x04..+0x13  primary base payload
+    uint32_t m_vtableSecondary;      // +0x14  secondary vtable VA (0x8205E73C)
+    uint8_t  _pad18[8];              // +0x18..+0x1B
+    uint32_t m_pChildCtx;            // +0x1C  child context (drill-session object, 208 bytes, alloc via rage_ADF8)
+    bool     m_bPendingStateAdvance; // +0x20  (byte +32) — set by OnUpdate when child triggers state 3 advance
+    bool     m_bNetFinalizePending;  // +0x21  (byte +33) — gates the network finalize path in OnUpdate
+
+    // ── vtable slot entry points (non-virtual; dispatched manually) ──
+    void Dtor(int flags);            // [0]  @ 0x82307080
+    void OnEnter();                  // [11] @ 0x82307120
+    void OnExit();                   // [12] @ 0x82307180
+    void OnUpdate();                 // [16] @ 0x823071B8
+    void OnRender();                 // [18] @ 0x823072E0
+    void Init();                     // [23] @ 0x82307420
+};
+
+// Static-asserts deferred — void* is 8 bytes on the 64-bit host, which
+// perturbs intra-struct offsets. Field comments document the PPC-native
+// offsets used by the non-virtual slot bodies in pong_drill.cpp.
+
