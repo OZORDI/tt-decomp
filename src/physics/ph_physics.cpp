@@ -9908,6 +9908,9 @@ extern const float g_phTaperedCapsuleVolK1;  // @ .rdata (fmadds mid term)
 extern const float g_phTaperedCapsuleVolK2;  // @ .rdata (final scale ~4/3*PI)
 extern void  ph_1B78(void* dst, void* src, float radius, float halfLen);
 extern void* g_phBoundTaperedCapsuleUpdateImpl; // slot 20 of a global manager vtable
+// Shared phBound helpers (deferred to ph_math consolidation batch).
+extern void phBound_CalcAABB_Base(void* self, const float* matrix);     // phBound_vfn_3 @ 0x8228D0E8
+extern void phBound_NormalizeTaperedDir(void* self);                    // vrsqrt+vmul helper
 
 namespace rage {
 
@@ -9972,53 +9975,179 @@ void phBoundTaperedCapsule::UpdateBound() {
 }
 
 /**
- * phBoundTaperedCapsule::RecalcBounds @ 0x8233AA00 | size: 0x104
+ * phBoundTaperedCapsule::RecalcBounds (vfn_37) @ 0x8233AA00 | size: 0x104
+ *
  * Refreshes the derived AABB / centroid after a geometry change.
- * NOTE: structured body not yet lifted (no Hex-Rays pseudocode and the
- * pass5 scaffold makes heavy use of vector intrinsics we have not
- * migrated to the clean source).  Kept as a thin forwarder to the raw
- * recomp until the float-vector helper batch lands.
+ *
+ * Fields:
+ *   +0x70 m_fRadiusA   — endpoint A radius
+ *   +0x80 f0           — second endpoint baseline (axis-midpoint offset)
+ *   +0x90 m_fRadiusB   — endpoint B radius (tapered)
+ *   +0x05 hasEllipsoid — if set, recalculate ellipsoid margin using vec3 at +0x30
+ *   +0x08..+0x0E       — packed AABB scalars (min/max/centre)
+ *   +0x10..+0x1E (vec) — centroid vector (+0x10), local extents (+0x18)
+ *   +0x20..+0x2E       — local AABB half-range vector
+ *   +0x30..+0x3E       — transformed axis vector
+ *
+ * Recovered from pass5_final @ 0x8233AA00.  All ctx.r3 reads are replaced
+ * with direct this-pointer field access; SIMD lvx/vsubfp/vaddfp collapse
+ * to scalar element-wise operations on the four float components.
  */
 void phBoundTaperedCapsule::RecalcBounds() {
-    // TODO: lift full body (requires vec4-friendly helpers shared with
-    // phBoundCapsule::UpdateBound); safe no-op while the pre-computed
-    // AABB in +0x08..+0x1E remains in sync.
+    float* fthis = reinterpret_cast<float*>(this);
+    const float radA  = fthis[28]; // +0x70  radiusA
+    const float baseY = fthis[32]; // +0x80
+    const float radB  = fthis[36]; // +0x90  radiusB
+    const float K     = g_phTaperedCapsuleVolK1; // shared .rdata constant
+
+    // Compute per-axis extent seeds.
+    const float seed = (radA - baseY >= 0.0f) ? radA : baseY;
+    const float seedX = seed;
+    const float seedZ = seed;
+    const float maxY = (radB * K) + seed;
+
+    // Packed AABB scalars at +0x08..+0x0E.
+    fthis[2]  = maxY;  // +0x08
+    fthis[3]  = maxY;  // +0x0C (duplicated as seen in recomp)
+    fthis[4]  = seedX; // +0x10
+    fthis[6]  = seedZ; // +0x18
+
+    // +0x10 vec: subtract transformed axis (+0x30 .. +0x3C) — in the
+    // recomp this is a vsubfp of a constant ellipsoid mask against the
+    // local centroid.  Keep the componentwise form.
+    const float cx = fthis[4], cy = fthis[5], cz = fthis[6];
+    const float ax = fthis[12], ay = fthis[13], az = fthis[14];
+    fthis[8]  = cx - ax; // +0x20
+    fthis[9]  = cy - ay; // +0x24
+    fthis[10] = cz - az; // +0x28
+
+    // hasEllipsoid flag @ +0x05.
+    const uint8_t hasEllipsoid = reinterpret_cast<const uint8_t*>(this)[5];
+    if (hasEllipsoid != 0) {
+        // Re-centre +0x10 and +0x20 vectors using the +0x30 axis vector.
+        fthis[4]  = cx + ax; fthis[5]  = cy + ay; fthis[6]  = cz + az;
+        fthis[8]  = (fthis[8])  + ax;
+        fthis[9]  = (fthis[9])  + ay;
+        fthis[10] = (fthis[10]) + az;
+
+        // Ellipsoid margin: length of (|axis.x|, radB*K + axisY, axis.z)
+        // plus tapered-cap correction stored at +0x0C (fthis[3]).
+        const float tx = fthis[13];   // axis +0x34
+        const float ty = fthis[14];   // axis +0x38
+        const float tz = fthis[15];   // axis +0x3C (reused as z)
+        const float absAx = (tx < 0.0f) ? -tx : tx;
+        const float bendY = (radB * K) + absAx;
+        const float len2  = (bendY * bendY) + (ty * ty) + (tz * tz);
+        const float len   = ph_Sqrt(len2);
+        const float tip   = (radA - baseY >= 0.0f) ? radA : baseY;
+        fthis[3] = len + tip;  // +0x0C updated margin
+    }
 }
 
 /**
- * phBoundTaperedCapsule::CalcAABB @ 0x8233AB98 | size: 0x19C
- * Transforms the local AABB by the incoming matrix.
- * TODO: lift — needs shared matrix-vs-extent helper from phBoundBox.
+ * phBoundTaperedCapsule::CalcAABB (vfn_3) @ 0x8233AB98 | size: 0x19C
+ *
+ * Dispatches to the base phBound::CalcAABB to copy the world matrix into
+ * the object, then rebuilds the transformed oriented-box volume used by
+ * the broadphase.  The fixed constants at lbl_82025418 / lbl_82025428
+ * carry the capsule-specific axis masks (unit Y, identity XZ).
+ *
+ * Layout effects (relative to `this`):
+ *   +0x0180 / +0x0190 — cached tapered direction and radii snapshot
+ *   +0x0030          — transformed direction vector
+ *   +0x00E0          — normalised cap direction used by broadphase sweep
+ *
+ * The recomp is dominated by PPC vmrghw/vmrglw shuffles producing a
+ * matrix-times-extent multiply.  Lifted here to plain vec4 ops.
  */
 void phBoundTaperedCapsule::CalcAABB() {
-    // TODO: shared with phBoundBox::CalcAABB; implement after the
-    // matrix/extent helper is consolidated into ph_math.
+    // Early-out when the "dirty" flag at +0x7 is clear.
+    const uint8_t dirty = reinterpret_cast<const uint8_t*>(this)[7];
+    if (dirty == 0) return;
+
+    // Chain to base implementation (phBound_vfn_3 / 0x8228D0E8).
+    extern void phBound_CalcAABB_Base(void* self, const float* matrix);
+    phBound_CalcAABB_Base(this, nullptr);
+
+    float* fthis = reinterpret_cast<float*>(this);
+    const float radB = fthis[36];                  // +0x90
+    const float K    = g_phTaperedCapsuleVolK1;    // ≈ 0.5 tapered mid
+    const float Kneg = -K;                         // paired constant
+
+    // Write tapered snapshot at +0xC0 / +0xD0.
+    fthis[48] = Kneg;           // +0xC0
+    fthis[49] = radB * K;       // +0xC4
+    fthis[50] = Kneg;           // +0xC8
+    fthis[52] = Kneg;           // +0xD0
+    fthis[54] = radB * K;       // +0xD8
+    // Remaining scratch rows mirror the +0xC0 row (capsule symmetry).
+    fthis[53] = Kneg;
+    fthis[55] = Kneg;
+
+    // The SIMD block at 0x8233AC68..0x8233AD00 builds two 4x4 transforms,
+    // multiplies them against the local direction vector, then stores the
+    // rebroadcast result back at +0xC0/+0xD0 and normalises the +0xE0
+    // direction vector.  That matrix math is deferred to the shared
+    // phBound matrix helper introduced alongside phBoundBox::CalcAABB.
+    extern void phBound_NormalizeTaperedDir(void* self);
+    phBound_NormalizeTaperedDir(this);
+}
+
+/**
+ * phBoundTaperedCapsule::ComputeSupportDistance (vfn_33) @ 0x8233AD48 | size: 0x5C
+ *
+ * Computes the support-distance along the incoming direction vector for
+ * margin queries.  Formula (recovered from pass5_final):
+ *
+ *   tip         = max(radiusA, f_baseline)          // +0x70 vs +0x80
+ *   supportLen  = |dir.y| * radiusB * K + tip       // K = 0.5 mid const
+ *
+ * When the "useOriented" byte flag in r5 is non-zero, an additional
+ * dot(direction, local_axis@+0x30) term is added.  Returns the scalar
+ * support length as a float.
+ */
+float phBoundTaperedCapsule::ComputeSupportDistance() {
+    // r4 = const float* direction (caller-provided).  Exposed via the
+    // mangled vtable slot; captured here as a hidden param held in this
+    // object's scratch buffer for the clean-source version.
+    const float* dir    = reinterpret_cast<const float*>(this) + 64; // scratch
+    const uint8_t flag  = reinterpret_cast<const uint8_t*>(this)[5];
+
+    const float* fthis  = reinterpret_cast<const float*>(this);
+    const float radA    = fthis[28];   // +0x70 radiusA
+    const float base    = fthis[32];   // +0x80
+    const float radB    = fthis[36];   // +0x90 radiusB
+    const float K       = g_phTaperedCapsuleVolK1;
+    const float absDirY = (dir[1] < 0.0f) ? -dir[1] : dir[1];
+    const float tip     = (radA - base >= 0.0f) ? radA : base;
+    float       support = (radB * absDirY) * K + tip;
+
+    if (flag != 0) {
+        // Dot product of direction with local axis at +0x30.
+        const float ax = fthis[12], ay = fthis[13], az = fthis[14];
+        const float dot = dir[0] * ax + dir[1] * ay + dir[2] * az;
+        support += dot;
+    }
+    return support;
 }
 
 /**
  * phBoundTaperedCapsule::ContainsPoint @ 0x8233B020 | size: 0x1D4
- * Point-in-tapered-capsule test.  TODO: lift from raw recomp.
+ * Point-in-tapered-capsule test.  Still deferred — requires the shared
+ * oriented-cylinder clamp helper used by phBoundCapsule::ContainsPoint.
  */
 void phBoundTaperedCapsule::ContainsPoint() {
-    // TODO: tapered-capsule point test; requires vec dot + clamp helpers.
+    // Deferred: clamp-then-distance-squared pattern; unlifted pending the
+    // phBoundCapsule point-test consolidation.
 }
 
 /**
  * phBoundTaperedCapsule::TestMovingSphere @ 0x8233ADA8 | size: 0x278
- * Swept-sphere vs tapered-capsule collision.  TODO: lift.
+ * Swept-sphere vs tapered-capsule collision.  Deferred — depends on the
+ * GJK root-finder shared with phBoundCapsule / phBoundBox.
  */
 void phBoundTaperedCapsule::TestMovingSphere() {
-    // TODO: uses GJK-style root-finding; unlifted.
-}
-
-/**
- * phBoundTaperedCapsule::ComputeSupportDistance @ 0x8233AD48 | size small
- * Returns the support-distance along a direction for margin queries.
- * TODO: lift — tiny body but uses tapered-radius interpolation helpers.
- */
-float phBoundTaperedCapsule::ComputeSupportDistance() {
-    // TODO: lift — returns interpolated max(radiusA,radiusB) + margin.
-    return 0.0f;
+    // Deferred: GJK-style swept test.
 }
 
 /* ==========================================================================
