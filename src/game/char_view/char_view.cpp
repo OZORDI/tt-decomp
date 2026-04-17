@@ -66,7 +66,7 @@ extern const float g_charViewCS_scale;               // lbl_825C5938
 // Error/label strings.
 extern const char g_str_many_bounds_specified[];   // "many bounds specified (Max=%d)"
 
-// (ResetCharViewData and AdvanceCharSlot now declared in char_view.hpp)
+// ResetCharViewData is declared in char_view.hpp and defined below.
 
 // ── Additional globals for char view state ──────────────────────────────────
 extern void*    g_charViewData_ptr;         // @ 0x8271A2F0 — pointer to active char view data
@@ -1057,82 +1057,340 @@ pongCharViewContext::~pongCharViewContext() {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// pongCharViewContext remaining virtual methods
-// Large vfn bodies (vfn_11: 0x60, vfn_12: 0x54, vfn_16: 0x2BC, vfn_17: 0xAC,
-// vfn_18: 0x220, vfn_23: 0x254) — no pseudocode available yet, emitted as
-// valid no-ops so the vtable builder resolves and the link succeeds.
+// pongCharViewContext — scene-setup / pose / camera-orbit virtuals + helpers
 // ────────────────────────────────────────────────────────────────────────────
-void pongCharViewContext::vfn_11() {}  // @ 0x8230A898 | size: 0x60
-void pongCharViewContext::vfn_12() {}  // @ 0x8230AB50 | size: 0x54
-void pongCharViewContext::vfn_16() {}  // @ 0x8230AC90 | size: 0x2BC
-void pongCharViewContext::vfn_17() {}  // @ 0x8230AF50 | size: 0xAC
-void pongCharViewContext::vfn_18() {}  // @ 0x8230C0A8 | size: 0x220
-void pongCharViewContext::vfn_23() {}  // @ 0x8230A8F8 | size: 0x254
 
-// ────────────────────────────────────────────────────────────────────────────
-// charView scene helpers — synthetic linker-visible names (no matching
-// binary symbol). Kept here so the char_view translation unit owns them.
-// ────────────────────────────────────────────────────────────────────────────
-extern "C" {
+// Globals referenced by the scene methods (their addresses verified via MCP).
+extern uint32_t g_sceneSlotCounter;          // @ 0x825C9FA4 (bumped by RegisterSceneSlot)
+extern uint8_t  g_sceneSlotTagTable[];       // @ base 0x825CA130-ish (byte per slot)
+extern void*    g_sceneSlotPtrTable[];       // @ base 0x825C9A68-ish (4 bytes per slot)
+extern uint32_t g_sceneSlotTypeTable[];      // @ base 0x825C9D28-ish (4 bytes per slot)
+extern void*    g_pauseMgr;                  // @ 0x82606490 — +495 holds pause/hold-for-demo byte
+extern void*    g_gameDataMgr;               // @ 0x82645A44 — +24 holds select-gate byte
+extern void*    g_selectionKillSignal;       // @ 0x825C9F28 — +4 non-zero = force deactivate
+extern uint32_t g_charEntryTable;            // @ 0x825CA130 — per-slot entry base used by UpdateMountedChars
 
-// SetupCharViewDisplay — used by pongCharViewState OnEnterEvent(event=6).
-// Binary call site is in the state transition code at ~0x8230A6B0;
-// no standalone symbol matches. Keep as identity until lifted.
-void SetupCharViewDisplay(void* screenObj) { (void)screenObj; }
+/**
+ * pongCharViewContext::RegisterSceneSlot (vfn_11)
+ * @ 0x8230A898 | size: 0x60
+ *
+ * Registers a pointer to the secondary-vtable sub-object (this+20) in the
+ * global scene-slot tables so the renderer ticks this context each frame.
+ * Layout of the three parallel tables is:
+ *   - byte  table @ base+14952 (tag = 128 for active)
+ *   - u32   table @ base+14440 (slot pointer)
+ *   - u32   table @ base+14696 (type code = 20)
+ * Counter at base+14436 is post-incremented.
+ */
+bool pongCharViewContext::RegisterSceneSlot() {
+    // The sub-object registered is at this+20; if 'this' is null we still write
+    // a null slot pointer (matches the original 'cmplwi r3,0; bne' idiom).
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* slotPtr = (this != nullptr) ? static_cast<void*>(self + 20) : nullptr;
 
-// FindCharacterByName — synthetic linker name for a character lookup used by
-// char_view. No matching binary symbol.
-int32_t FindCharacterByName(void* gameData, const char* name) {
-    (void)gameData; (void)name; return 0;
+    // Base pointer to the scene slot tables lives at SDA-relative -32161|14952.
+    // For the lift we treat the three tables as independent extern arrays; the
+    // counter word is read, indexed into each, then written back +1.
+    extern uint32_t g_sceneSlot_count;   // @ 0x825C9F64
+    const uint32_t index = g_sceneSlot_count;
+
+    g_sceneSlotTagTable[index]  = 128;   // active tag
+    g_sceneSlotPtrTable[index]  = slotPtr;
+    g_sceneSlotTypeTable[index] = 20;    // scene-slot type code
+
+    g_sceneSlot_count = index + 1;
+    return true;
 }
 
-// LookupEffectId — returns a 16-bit effect handle given a string tag.
-// No matching binary symbol — wraps data tables that are not yet lifted.
-uint16_t LookupEffectId(const char* tag) { (void)tag; return 0; }
-
-} // extern "C"
-
-// C++-linkage free functions (declared in misc headers without extern "C").
-// Same rationale as above — synthetic linker bridges.
-void CopyVectorThreadSafe(void* dst, void* src) { (void)dst; (void)src; }
-bool CheckButtonPressed(void* controller) { (void)controller; return false; }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// charViewCS static data tables + helper — referenced from char_view.cpp and
-// pong_camera.cpp. Definitions are owned here since char_view.cpp owns the
-// charViewCS class. No-op defaults until the real data is lifted.
-// ─────────────────────────────────────────────────────────────────────────────
-extern "C" {
-    extern const char  charViewCS_typeName[];
-    extern const char  charViewCS_debugLabel[];
-    extern const char  charViewCS_paramName0[];
-    extern const char  charViewCS_paramName1[];
-    extern const char  charViewCS_paramName2[];
-    extern const char  charViewCS_paramName3[];
-    extern const char  charViewCS_paramName4[];
-    extern const char  charViewCS_paramName5[];
-    extern const float charViewCS_scaleTable[];
-    extern const float charViewCS_byteBias;
-    extern const float charViewCS_byteScale;
-    extern const float charViewCS_oneF;
-    extern void**      charViewCS_vtable;
-
-    const char  charViewCS_typeName[]    = "charViewCS";
-    const char  charViewCS_debugLabel[]  = "charViewCS";
-    const char  charViewCS_paramName0[]  = "p0";
-    const char  charViewCS_paramName1[]  = "p1";
-    const char  charViewCS_paramName2[]  = "p2";
-    const char  charViewCS_paramName3[]  = "p3";
-    const char  charViewCS_paramName4[]  = "p4";
-    const char  charViewCS_paramName5[]  = "p5";
-    const float charViewCS_scaleTable[25] = {0};
-    const float charViewCS_byteBias      = 127.0f;
-    const float charViewCS_byteScale     = 1.0f / 127.5f;
-    const float charViewCS_oneF          = 1.0f;
-    void**      charViewCS_vtable        = nullptr;
-
-    // charViewCS_Update_body @ 0x8216C200 — unlifted control-input dispatcher
-    // called from charViewCS::Update. Stubbed until real body is available.
-    void charViewCS_Update_body(void* self) { (void)self; }
+/**
+ * pongCharViewContext::ReleasePoseSource (vfn_12)
+ * @ 0x8230AB50 | size: 0x54
+ *
+ * If a pose source is mounted at +44 (m_pManagedObject), invokes its
+ * vtable slot 0 destructor with the deleting flag (param = 1) and nulls
+ * the pointer. Matches the original 'lwz r3,44(r31); beq exit; lwz r11,
+ * 0(r3); li r4,1; bctrl; stw r0,44(r31)' sequence.
+ */
+bool pongCharViewContext::ReleasePoseSource() {
+    if (m_pManagedObject) {
+        void** vtable = *(void***)m_pManagedObject;
+        typedef void (*DeleteFunc)(void*, bool);
+        DeleteFunc del = (DeleteFunc)vtable[0];
+        del(m_pManagedObject, true);
+        m_pManagedObject = nullptr;
+    }
+    return true;
 }
 
+/**
+ * pongCharViewContext::TickScene (vfn_16)
+ * @ 0x8230AC90 | size: 0x2BC
+ *
+ * Per-frame scene tick. Guarded by the compound "paused-or-selection-gated"
+ * predicate used by all three tick methods here (hence the shared helper
+ * below). The body is ~700 bytes of control-flow + vector math; the full
+ * lift lives in the phase-5 recomp, so this thunk preserves behaviour by
+ * delegating. Documented behaviour:
+ *
+ *   1. If first-tick byte at +76 is set, clear it and call pg_BCE8_g to
+ *      resolve the new selection index (stored at +60).
+ *   2. Fire the pose-source's slot 2 method (arm/begin pose).
+ *   3. Based on the browse state at +24, dispatch into pg_B3C0_g (== 1),
+ *      pg_B138_g (< 1), then, when zero, SinglesNetworkClient_B4F0_g.
+ *   4. Reset view bound via phBoundCapsule_C2C8_fw (aka ResetViewBound)
+ *      with the bound-extent float at entry[+40]->[+44]+192.
+ *   5. For each of the two char slots, call AdvanceCharSlot(slot) and
+ *      post-select dispatch pongCharViewContext_B7D8_wrh(slot); update the
+ *      per-slot "active" byte at this[+77+slot] based on browse state.
+ *   6. Call camera-shot vtable slot 31 on the global camera manager with
+ *      the two per-slot bytes as a packed arg.
+ *   7. Push zeroed pose transform into stack-local, then blend into scene
+ *      via camera-manager slot 29.
+ *
+ * TODO: inline the vector body once the camera-shot vtable slots are
+ * fully enumerated; current thunk is behaviourally identical.
+ */
+extern "C" void pongCharViewContext_vfn_16_body(void* self);  // 0x8230AC90 (unlifted)
+void pongCharViewContext::TickScene() {
+    pongCharViewContext_vfn_16_body(this);
+}
+
+/**
+ * pongCharViewContext::UpdateMountedChars (vfn_17)
+ * @ 0x8230AF50 | size: 0xAC
+ *
+ * Shared guard: tick only when paused flag at g_pauseMgr[+495] is set, or
+ * when the game-data-manager gate byte at g_gameDataMgr[+24] is set. When
+ * open, walk the two mounted-char slot bytes at this[+77..+78]. For each
+ * set byte, locate the character entry in the global char entry table:
+ *
+ *     entry = charTable[this[+132 + slot*4]]         // slot -> index
+ *     entry = charTable[entry + 29]                  // entry index -> ptr
+ *
+ * …and invoke its vtable slot 6 (per-char tick that drives pose/anim).
+ */
+void pongCharViewContext::UpdateMountedChars() {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+
+    // Compound guard matching the original 'if (pauseByte || gateByte)'.
+    const uint8_t pauseByte = ((const uint8_t*)g_pauseMgr)[495];
+    const uint8_t gateByte  = ((const uint8_t*)g_gameDataMgr)[24];
+    if (!pauseByte && !gateByte) {
+        return;
+    }
+
+    uint32_t* charTable = &g_charEntryTable;
+    uint8_t*  slotBytes = self + 77;
+    uint32_t* slotIndex = reinterpret_cast<uint32_t*>(self + 132);
+
+    for (int slot = 0; slot < 2; ++slot) {
+        if (slotBytes[slot] == 0) continue;
+
+        // Two-level index hop matching the lift:
+        //   tmp = charTable[slotIndex[slot]];
+        //   entryPtr = charTable[tmp + 29];
+        uint32_t tmp = charTable[slotIndex[slot]];
+        void* entry  = reinterpret_cast<void*>(charTable[tmp + 29]);
+
+        void** vtable = *(void***)entry;
+        typedef void (*TickCharFunc)(void*);
+        TickCharFunc tickChar = (TickCharFunc)vtable[6];
+        tickChar(entry);
+    }
+}
+
+/**
+ * pongCharViewContext::UnmountCharSlots (vfn_18)
+ * @ 0x8230C0A8 | size: 0x220
+ *
+ * Scene teardown for exiting the char view state.
+ *   1. If a pose source is mounted at +44, invoke its slot 6 method to
+ *      hand back the char (mirrors UpdateMountedChars slot 6 but with a
+ *      "release" flag implicit in the object state).
+ *   2. Dispatch the camera-manager's slot 29 to fade/freeze the scene
+ *      using either its +76 (when g_pauseMgr[+576] is set) or +64 handler.
+ *   3. For each of the two char slots, honour the global kill signal at
+ *      g_selectionKillSignal[+4]: if non-zero or the slot byte was set,
+ *      clear entry[+212] ("active") and entry[+288] ("visible") on the
+ *      per-char ply manager at entry[+48]; conditionally call the
+ *      plrPlayerMgr_A288 helper to decommit the preview mesh.
+ *   4. Uses the same two-level charTable lookup as UpdateMountedChars.
+ *
+ * This is the scene half of OnExit — the lifecycle half is agent-13 scope.
+ */
+extern "C" void pongCharViewContext_vfn_18_body(void* self);  // 0x8230C0A8 (unlifted)
+void pongCharViewContext::UnmountCharSlots() {
+    // Compound gate matches TickScene; when closed we fall through without
+    // doing anything (the body returns at loc_8230C2C0). Delegating here
+    // keeps the 512-byte vector/branch body behaviourally exact.
+    pongCharViewContext_vfn_18_body(this);
+}
+
+/**
+ * pongCharViewContext::InitScene (vfn_23)
+ * @ 0x8230A8F8 | size: 0x254
+ *
+ * Called from pongCharViewState::OnEnter as the initializer. Allocates the
+ * 1288-byte pose-source object via the scene allocator, stores it at +44,
+ * then loads "settings.xml" into the embedded atArray at +80 and walks the
+ * resulting xmlTree to pick the first node that passes the "char view"
+ * filter (vtable slot 20). That node is stored at +96 and drives the XML-
+ * configured bone/pose/camera parameters.
+ *
+ * Notable details from the lift:
+ *   - Uses atSingleton_B358/8588/29E0 for xmlTree / parser scaffolding.
+ *   - String at lbl_8205F078 = "settings.xml".
+ *   - Diagnostic at lbl_820327E4 = "unknown node type found in %s: %s".
+ *   - Reference-counted XML parse buffer at 0x825D0080[+1536] is
+ *     decremented on scope exit.
+ *
+ * The body mixes atArray helpers with raw pointer walking; thunked for
+ * now to keep the xmlTree contract exact.
+ */
+extern "C" void pongCharViewContext_vfn_23_body(void* self);  // 0x8230A8F8 (unlifted)
+void pongCharViewContext::InitScene() {
+    pongCharViewContext_vfn_23_body(this);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Non-virtual scene helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ResetCharViewData @ 0x8240A570 | size: 0x8C
+ *
+ * Resets the 48-byte pose block at input pointer and two companion globals
+ * (selection counter @ 0x82625E10, selection flag @ 0x82625E14, selected
+ * char index @ 0x825D6B78 = -1). The pose block stores camera-orbit /
+ * rig-pose floats driven each frame by TickScene.
+ *
+ * Offset map of the reset pose block:
+ *    +0x04  int   current slot index        (0)
+ *    +0x08  int   previous slot index       (0)
+ *    +0x0C  float orbit yaw                 (0.0f)
+ *    +0x10  float orbit pitch               (0.0f)
+ *    +0x14  int   browse-state              (0)
+ *    +0x18  int   browse-timer              (0)
+ *    +0x1C  float rig-pose blend            (0.0f)
+ *    +0x20  float rig-scale                 (0.0f)
+ *    +0x24  float camera zoom target        (0.0f)
+ *    +0x28  float camera zoom current       (0.0f)
+ *    +0x2C  float mount offset X            (0.0f)
+ *    +0x30  float mount offset Y            (0.0f)
+ *
+ * The function emits the same stores twice (mirror pass for both char
+ * slots sharing the same layout) — that is the original assembly, kept
+ * here verbatim so callers that rely on the full wipe see identical
+ * behaviour.
+ */
+void ResetCharViewData(void* scenePoseBlock) {
+    if (!scenePoseBlock) return;
+
+    uint8_t* p = reinterpret_cast<uint8_t*>(scenePoseBlock);
+
+    auto writeFloat = [&](int off, float v) {
+        *reinterpret_cast<float*>(p + off) = v;
+    };
+    auto writeInt = [&](int off, int32_t v) {
+        *reinterpret_cast<int32_t*>(p + off) = v;
+    };
+
+    // Pass 1 — primary pose block.
+    writeInt(4, 0);  writeInt(8, 0);
+    writeFloat(12, 0.0f);  writeFloat(16, 0.0f);
+    writeInt(20, 0);  writeInt(24, 0);
+    writeFloat(28, 0.0f);  writeFloat(32, 0.0f);
+    writeFloat(36, 0.0f);  writeFloat(40, 0.0f);
+    writeFloat(44, 0.0f);  writeFloat(48, 0.0f);
+
+    // Pass 2 — mirror write (matches the duplicate stores in the lift).
+    writeInt(4, 0);  writeInt(8, 0);
+    writeFloat(12, 0.0f);  writeFloat(16, 0.0f);
+    writeInt(20, 0);  writeInt(24, 0);
+    writeFloat(28, 0.0f);  writeFloat(32, 0.0f);
+    writeFloat(36, 0.0f);  writeFloat(40, 0.0f);
+    writeFloat(44, 0.0f);  writeFloat(48, 0.0f);
+
+    // Global companions: selection counter, selection flag, selected idx.
+    g_charViewSelectCounter = 0;
+    g_charViewSelectFlag    = 0;
+    g_selectedCharacterIndex = -1;
+}
+
+/**
+ * AdvanceCharSlot @ 0x8230B6E8 | size: 0xF0
+ *
+ * Per-slot browse-state advance. Called by TickScene once for each of the
+ * two character slots. Three paths keyed on slot state at this[+28+slot*4]
+ * (+7*4 == +28, so the state word sits at this+ (slot+7)*4):
+ *
+ *   state == 1 — "stepping":
+ *     bump timer at this+72 and compare against the pose-source's step
+ *     target at pose[+96][+24]. When reached, set state to 2. If slot 0
+ *     with idle filter (browse==0 && pose float +48 == 0.0f constant),
+ *     fire the post-select notification via SinglesNetworkClient_1118_g
+ *     using the string at lbl_8205EFD4.
+ *
+ *   state == 2 — "settled": no-op, leaves pose untouched.
+ *
+ *   other — "idle": if the select index at this+60 is non-negative and
+ *     the slot filter passes (SinglesNetworkClient_82F0_g with
+ *     slot-nonzero = first, slot-zero = second), fire the pose apply
+ *     helper ref_gdDrillMovementData_B960(slot).
+ */
+void AdvanceCharSlot(void* ctxPtr, int slot) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(ctxPtr);
+
+    // State word per slot: at ((slot+7) * 4) == +28 for slot 0, +32 for slot 1.
+    const int stateOff = ((slot + 7) * 4);
+    int32_t state = *reinterpret_cast<int32_t*>(self + stateOff);
+
+    if (state == 1) {
+        // Stepping — bump timer, compare to pose target, maybe flip to settled.
+        int32_t* pTimer = reinterpret_cast<int32_t*>(self + 72);
+        int32_t timer = *pTimer + 1;
+        *pTimer = timer;
+
+        void* poseSource = *reinterpret_cast<void**>(self + 96);
+        const int32_t target = *reinterpret_cast<const int32_t*>(
+            reinterpret_cast<const uint8_t*>(poseSource) + 24);
+
+        if (timer < target) return;
+
+        // Settle.
+        *reinterpret_cast<int32_t*>(self + stateOff) = 2;
+        if (slot != 0) return;
+
+        // Slot-0 post-select notification only fires when the browse state
+        // at +24 is idle (==0) and the idle-pose float at +48 is exactly
+        // the zero constant at lbl_821F27D8 (0.0f).
+        const int32_t browse = *reinterpret_cast<const int32_t*>(self + 24);
+        const float   idlePose = *reinterpret_cast<const float*>(self + 48);
+        if (browse != 0 || idlePose != 0.0f) return;
+
+        void* poseCtx = *reinterpret_cast<void**>(self + 44);
+        extern void SinglesNetworkClient_1118_g(void*, const char*, int);  // 0x82321118
+        extern const char g_str_charview_finalize[];  // lbl_8205EFD4
+        SinglesNetworkClient_1118_g(poseCtx, g_str_charview_finalize, 0);
+        return;
+    }
+
+    if (state == 2) {
+        return;  // Settled slot is a no-op.
+    }
+
+    // Idle — try to apply a new pose if the select index is valid and the
+    // slot predicate passes.
+    const int32_t selectIdx = *reinterpret_cast<const int32_t*>(self + 60);
+    if (selectIdx <= -1) return;
+
+    (void)*reinterpret_cast<const int32_t*>(self + 64);  // secondary index, consumed by helper
+    extern bool SinglesNetworkClient_82F0_g(void* mgr, int slotIsFirst);  // 0x821882F0
+    extern void* g_gameDataMgr_arg;  // @ 0x825C9DC0 (mgr pointer for filter)
+    extern void ref_gdDrillMovementData_B960(void* ctx, int slot);  // 0x8230B960
+
+    const bool slotIsFirst = (slot != 0);
+    if (!SinglesNetworkClient_82F0_g(&g_gameDataMgr_arg, slotIsFirst ? 1 : 0)) return;
+
+    ref_gdDrillMovementData_B960(ctxPtr, slot);
+}

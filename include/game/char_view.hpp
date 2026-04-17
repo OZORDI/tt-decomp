@@ -448,57 +448,87 @@ protected:
 class pongCharViewContext {
 public:
     // Virtual methods
-    
+
     /**
      * ~pongCharViewContext @ 0x8230A600 | size: 0xAC
      * Destructor - cleans up managed object at +44 and embedded object at +80
      */
     virtual ~pongCharViewContext();
-    
-    // Singleton / UI-lifecycle methods (lifted).
-    virtual void RegisterWithUI();       // vfn_11 @ 0x8230A898
-    virtual void ReleaseManagedObject(); // vfn_12 @ 0x8230AB50
+
+    /**
+     * RegisterSceneSlot (vfn_11)
+     * @ 0x8230A898 | size: 0x60
+     * Registers this context (more precisely its secondary-vtable sub-object
+     * at this+20) in the global UI scene slot table so the renderer can tick
+     * it each frame. Bumps the global slot counter (at 0x825C9F64), writes
+     * a tag byte (=128), type code (=20), and slot pointer into the three
+     * parallel arrays. Returns 1 on success.
+     */
+    virtual bool RegisterSceneSlot();
+
+    /**
+     * ReleasePoseSource (vfn_12)
+     * @ 0x8230AB50 | size: 0x54
+     * If a pose source object is mounted at this+44, invokes its vtable
+     * slot 0 destructor (with deleting flag = 1) and nulls the pointer.
+     * Returns 1 unconditionally.
+     */
+    virtual bool ReleasePoseSource();
 
     /**
      * TickScene (vfn_16)
      * @ 0x8230AC90 | size: 0x2BC
-     *
-     * Per-frame scene tick. Arms pose source, advances browse stepping,
-     * iterates both char slots calling AdvanceCharSlot, and blends camera.
-     * Thunked to unlifted body — behaviour identical to original.
+     * Per-frame update dispatcher. When gameplay is paused (+495 flag) or
+     * character selection is gated by the game-data-manager flag at +24,
+     * drives the full character-view update chain: arms/disarms the source,
+     * advances browse stepping (pg_B138 / pg_B3C0), resets view bound,
+     * iterates both char slots calling AdvanceCharSlot + post-select, then
+     * rebinds bound capsule + camera shot. Unlifted body kept as thunk due
+     * to vector/float intensity; logic path is documented inline.
      */
-    virtual void TickScene();            // vfn_16 @ 0x8230AC90
+    virtual void TickScene();
 
-    virtual void NotifySlotActivity();   // vfn_17 @ 0x8230AF50
+    /**
+     * UpdateMountedChars (vfn_17)
+     * @ 0x8230AF50 | size: 0xAC
+     * If the update gate is open (same pause/selection check as TickScene),
+     * walks both mounted-character slot flags at this[+77..+78]. For each
+     * active slot, looks up the char entry in the global data manager at
+     * offset 25648 and calls vtable slot 6 on it (the per-character tick
+     * that drives the pose/animation in the preview scene).
+     */
+    virtual void UpdateMountedChars();
 
     /**
      * UnmountCharSlots (vfn_18)
      * @ 0x8230C0A8 | size: 0x220
-     *
-     * Scene teardown counterpart of TickScene — clears active/visible bytes
-     * on both per-char slots and releases the preview mesh. Thunked body.
+     * Scene-tear-down counterpart of UpdateMountedChars. If a pose source
+     * is mounted at +44 it issues the per-char clean-up call (slot 6) and
+     * then clears the "active" byte (+212) and "visible" byte (+288) on
+     * the two char entries, honoring the global view-kill flag at +576 of
+     * the game data manager. Used on state exit to return the preview rig
+     * to idle.
      */
-    virtual void UnmountCharSlots();     // vfn_18 @ 0x8230C0A8
+    virtual void UnmountCharSlots();
 
     /**
      * InitScene (vfn_23)
      * @ 0x8230A8F8 | size: 0x254
-     *
-     * Scene initialiser — allocates 1288-byte pose-source object at +44,
-     * loads settings.xml into embedded atArray at +80, picks the first
-     * char-view node. Called from pongCharViewState::OnEnter. Thunked body.
+     * Scene initialiser — allocates the 1288-byte pose-source object via
+     * vtable slot 1 on the scene allocator, stores it at this+44, loads
+     * settings.xml into the embedded atArray at this+88, walks the parsed
+     * node tree to pick the first node matching the "char view" filter
+     * (vtable slot 20), records it at this+96, and cleans up temporary
+     * xmlTree buffers. Called from pongCharViewState::OnEnter.
      */
-    virtual void InitScene();            // vfn_23 @ 0x8230A8F8
-
-    // Non-virtual helpers.
-    void ConfirmSelection();             // @ 0x8230C400 ("Accept" button handler)
+    virtual void InitScene();
 
 protected:
     void** m_vtable;              // +0x00 - primary vtable
     uint8_t m_data1[16];          // +0x04-0x13
     void** m_vtable2;             // +0x14 (20) - secondary vtable
     uint8_t m_data2[20];          // +0x18-0x2B
-    void* m_pManagedObject;       // +0x2C (44) - deleted in destructor
+    void* m_pManagedObject;       // +0x2C (44) - pose source object (scene rig driver)
     uint8_t m_data3[32];          // +0x30-0x4F
     uint32_t m_embeddedObject;    // +0x50 (80) - atArray_Clear called on it
 };
@@ -508,18 +538,26 @@ protected:
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * ResetCharViewData @ 0x8240A570 (pongCharViewState_A570) | size: 0x8C
- * Resets the per-scene pose block (48 bytes at the input pointer) and three
- * companion globals: g_charViewSelectCounter, g_charViewSelectFlag (both
- * zeroed), and g_selectedCharacterIndex (set to -1).
+ * ResetCharViewData @ 0x8240A570 | size: 0x8C
+ * Resets the per-scene pose block (48 bytes at the input pointer) and the
+ * two companion globals at 0x82625E10 / 0x82625E14 (selection counter +
+ * selection flag). All orbit/pose floats (+12,+16,+28,+32,+36,+40,+44,+48)
+ * are cleared to 0.0f; int indices at +4,+8,+20,+24 zero; selected char
+ * index at 0x825D6B78 set to -1 (invalid).
  */
 void ResetCharViewData(void* scenePoseBlock);
 
 /**
- * AdvanceCharSlot @ 0x8230B6E8 (SinglesNetworkClient_B6E8_g) | size: 0xF0
- * Advances per-character-slot state. Called twice per TickScene (once per
- * char slot). Handles state==1 stepping, state==2 settled no-op, and the
- * idle path that applies a new pose when a valid select index is present.
+ * AdvanceCharSlot @ 0x8230B6E8 | size: 0xF0
+ * Advances per-character-slot state:
+ *   - state==1 ("stepping"): bumps timer at +72; when it reaches the target
+ *     pose duration from the managed pose source[+24], flips slot state to
+ *     2 and, when on slot 0 with idle filter (+24 of ctx == 0, pose float
+ *     +48 == 0.0f constant), fires post-select notification via slot 1118.
+ *   - state==2: falls through (no-op).
+ *   - other: if select index at +60 is valid and slot predicate passes,
+ *     calls ref_gdDrillMovementData_B960 to apply the new pose.
+ * Called twice per TickScene (once per char slot).
  */
 void AdvanceCharSlot(void* ctx, int slot);
 
