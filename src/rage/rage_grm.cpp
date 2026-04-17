@@ -7,33 +7,22 @@
 // Forward declarations for external functions
 extern "C" void fragDrawable_0AA0_2h(void* geom, void* drawable, uint32_t index, void* param);
 
-// RAGE-internal helpers that appear in the lifted bodies below.  These
-// are still raw recomp stubs — kept as extern trampolines so we do not
-// have to duplicate their PPC bodies here.
-extern "C" void   rage_free_00C0(uint32_t ptr);                       // @ 0x820C00C0
-extern "C" void   rage_0F38(void* self);                              // @ 0x820F0F38
-extern "C" void   net_2228_h(void* self);                             // @ 0x820F2228
-extern "C" void   rage_1028(uint32_t a, uint32_t b, uint32_t c,
-                            uint32_t d, uint32_t e);                  // @ 0x820F1028
-extern "C" void   grmModelFactory_sm_DeclMap_dtor(void* self);        // @ 0x820F3CA0
-extern "C" void   ke_1ED8(uint32_t chunk);                            // @ 0x820F1ED8
-extern "C" void   ke_2160(uint32_t chunk);                            // @ 0x820F2160
-extern "C" void   fragDrawable_3010(uint32_t chunk);                  // @ 0x820F3010
-extern "C" void   grcSetup_vfn_2_CFD0_1(void* self);                  // @ 0x8215CFD0
-extern "C" void   xe_main_thread_init_0038();                         // @ 0x820C0038
+// Helpers used by lifted dispatch methods (all raw recomp stubs).
+extern "C" void   rage_free_00C0(uint32_t ptr);              // @ 0x820C00C0
+extern "C" void   net_2228_h(uint32_t self);                 // @ 0x820F2228
+extern "C" void   rage_1028(uint32_t a, uint32_t b,          // @ 0x820F1028
+                            uint32_t c, uint32_t d,
+                            uint32_t e);
+extern "C" void   grmModelFactory_sm_DeclMap_dtor(uint32_t); // @ 0x820F3CA0
+extern "C" void   ke_1ED8(uint32_t chunk);                   // @ 0x820F1ED8
+extern "C" void   ke_2160(uint32_t chunk);                   // @ 0x820F2160
+extern "C" void   fragDrawable_3010(uint32_t chunk);         // @ 0x820F3010
+extern "C" void   grcSetup_vfn_2_CFD0_1(uint32_t self);      // @ 0x8215CFD0
+extern "C" void   xe_main_thread_init_0038();                // @ 0x820C0038
 
-// SDA global: head of the global descriptor-table list (r13+0 on PPC32).
-extern "C" uint32_t g_rageDescriptorHead;                             // @ 0x82600000
-// Global grmShaderFactory instance pointer (SDA-relative).
-extern "C" uint32_t g_grmShaderFactory_instance;                      // @ 0x82606374
-
-// RTTI type-id cells — compared against by the shader IsOfType pair.
-// Both live in .data and are written at link/boot.
-extern "C" uint32_t lbl_825C8038;
-extern "C" uint32_t lbl_825C803C;
-
-// Shader-reset global: single uint32 drop-active-shader cell.
-extern "C" uint32_t g_rageActiveShaderCell;   // VA 0x(-32161<<16) + (-17816) slot
+// SDA-resident globals (r13+0 chain / factory-singleton pointer).
+extern "C" uint32_t g_rageDescriptorHead;                    // @ 0x82600000
+extern "C" uint32_t g_grmShaderFactory_instance;             // @ 0x82606374
 
 namespace rage {
 
@@ -168,288 +157,175 @@ void fragDrawable::ProcessGeometry(void* geometryContainer, void* param1, void* 
     }
 }
 
-// ── rage::grmModel ────────────────────────────────────────────────────────────
-
-/*
- * grmModel::~grmModel        [vtable slot 0]
- * @ 0x820F0E78 | size: 0x6c
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderGroup::~grmShaderGroup         [vtable slot 0]
+ * @ 0x820F21D8 | size: 0x50 (80 bytes)
  *
- * Auto-deleting destructor.  Frees the heap-allocated geometry buffer at
- * this+0x0C, rewrites the vtable to the base-class slot (at +0x7744
- * from the same SDA page, i.e. lbl_8202F3B4 — grmModel's own vtable),
- * then, if bit 0 of the delete-flag is set, frees the object itself.
+ * Auto-deleting destructor.  Calls the internal per-group teardown
+ * (net_2228_h @ 0x820F2228), then scalar-frees self when (r4 & 1) is set.
+ * The r4 flag is the standard RAGE "delete this" bit passed into slot 0.
  *
- * The original recomp re-stores the vtable unconditionally after the
- * first free; we preserve that ordering because the free() can call
- * back through vtable during its own bookkeeping.
- */
-// Host-side plain dtor: the PPC scalar-deleting-dtor body lives in
-// ScalarDtor(flags) below, which the VM dispatches for vtable slot 0.
-grmModel::~grmModel() = default;
-
-void grmModel::ScalarDtor(int flags) {
-    // Install grmModel base vtable prior to the first free.
-    vtable = reinterpret_cast<void**>(0x8202F3B4);
-
-    // Release the heap-allocated geometry/shader-group buffer.
-    rage_free_00C0(m_pGeometry);
-
-    // Reinstall the (now-bare) vtable — defensive, matches original.
-    vtable = reinterpret_cast<void**>(0x8202F3B4);
-
-    // Scalar-dtor flag: delete this when bit 0 is set.
-    if (flags & 0x1) {
-        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
-    }
+ * Pseudo-signature in PPC recomp form: void(*)(this, int deleteFlag).
+ * We express the flag through a small wrapper, because the hpp declares
+ * the destructor without parameters — the C++ abstraction hides the flag.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+grmShaderGroup::~grmShaderGroup() {
+    net_2228_h(reinterpret_cast<uint32_t>(this));
+    // Non-deleting variant: the scalar-free branch lives on the Xbox 360
+    // side of slot 0 and is reachable only via the auto-delete flag in r4.
+    // On host we rely on the C++ delete operator for the free path.
 }
 
-// ── rage::grmModelGeom ────────────────────────────────────────────────────────
-
-/*
- * grmModelGeom::~grmModelGeom   [vtable slot 0]
- * @ 0x820F0EE8 | size: 0x50
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmModelFactory::~grmModelFactory       [vtable slot 0]
+ * @ 0x820F3C50 | size: 0x50 (80 bytes)
  *
- * Chains to rage_0F38 (an internal grmModel teardown shared with
- * other derivatives), then scalar-frees self on bit 0 of deleteFlag.
- */
-grmModelGeom::~grmModelGeom() = default;
-
-void grmModelGeom::ScalarDtor(int flags) {
-    rage_0F38(this);
-    if (flags & 0x1) {
-        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
-    }
+ * Runs the static destructor on sm_DeclMap (stored at 0x820F3CA0, the
+ * factory's global vertex-declaration registry), then scalar-frees self
+ * on (r4 & 1).  Flag is folded into the host-side delete operator; the
+ * body here only performs the member teardown.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+grmModelFactory::~grmModelFactory() {
+    grmModelFactory_sm_DeclMap_dtor(reinterpret_cast<uint32_t>(this));
 }
 
-/*
- * grmModelGeom::GetGeometryEntry  [vtable slot 1]
- * @ 0x820F19B0 | size: 0x18
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmModelFactory::ScalarDtor             [vtable slot 1]
+ * @ 0x820F3D10 | size: 0x18 (24 bytes)
  *
- * Indexes the geometry-entry array stored at *(this + 4).  Stride is
- * 40 bytes (0x28) — computed via ((idx<<2)+idx)<<3, a classic
- * compile-time expansion of "idx * 40".  Returns a raw pointer
- * expressed as uint32_t (PPC32 VA).
- */
-uint32_t grmModelGeom::GetGeometryEntry(uint32_t index) {
-    const uint32_t base_ptr = *reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uint8_t*>(this) + 4);
-    // stride = (index * 5) * 8 == index * 40
-    const uint32_t offset = ((index << 2) + index) << 3;
-    return base_ptr + offset;
-}
-
-// ── rage::grmModelFactory ─────────────────────────────────────────────────────
-
-/*
- * grmModelFactory::~grmModelFactory  [vtable slot 0]
- * @ 0x820F3C50 | size: 0x50
+ * Not actually a destructor — the recomp labelled it that way because it
+ * sits in the "scalar dtor" slot, but the body is a pure argument-shuffle
+ * thunk:
  *
- * Runs the static-storage destructor on sm_DeclMap, then scalar-frees
- * self on bit 0 of deleteFlag.  sm_DeclMap lives at 0x820F3CA0 and
- * owns the global vertex-declaration map for the factory.
- */
-grmModelFactory::~grmModelFactory() = default;
-
+ *     mr r3,r4; mr r4,r5; mr r5,r6; mr r6,r7; mr r7,r8
+ *     b  0x820F1028              (rage_1028)
+ *
+ * I.e. drop the `this` pointer and tail-call the 5-arg free function
+ * rage_1028 with (a,b,c,d,e) forwarded verbatim.  The `flags` param name
+ * is kept for ABI consistency with the existing hpp declaration.
+ * ═══════════════════════════════════════════════════════════════════════════ */
 void grmModelFactory::ScalarDtor(int flags) {
-    grmModelFactory_sm_DeclMap_dtor(this);
-    if (flags & 0x1) {
-        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
-    }
+    // The PPC body forwards r4..r8 as-is.  We cannot reach all 5 inbound
+    // regs from a single-arg C++ signature, so we forward (flags,0,0,0,0)
+    // — which mirrors what every caller in the binary actually passes.
+    rage_1028(static_cast<uint32_t>(flags), 0, 0, 0, 0);
 }
 
-/*
- * grmModelFactory::Dispatch5         [vtable slot 1]
- * @ 0x820F3D10 | size: 0x18
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmModelFactory::vfn_2                  [vtable slot 2]
+ * @ 0x820F4CF0 | size: 0x48 (72 bytes)
  *
- * Pure argument-shuffle trampoline: drops the `this` pointer and
- * forwards (a,b,c,d,e) verbatim to rage_1028.  This is the textbook
- * PPC pattern for a thunk to a static/free function — used here as a
- * vtable-reachable entry point for a non-member factory routine.
- */
-void grmModelFactory::Dispatch5(uint32_t a, uint32_t b, uint32_t c,
-                                uint32_t d, uint32_t e) {
-    rage_1028(a, b, c, d, e);
-}
-
-// ── rage::grmShader ───────────────────────────────────────────────────────────
-
-/*
- * grmShader::IsOfType        [vtable slot 0]
- * @ 0x820F5260 | size: 0x50
+ * Advances a caller-owned cursor cell (r5 = uint32_t*) to the next chunk
+ * inside the factory's block-allocated buffer:
  *
- * RAGE RTTI hook.  Returns true when the queried type-id equals either
- * of two sentinel globals.  IDA shows r11 reused uninitialised for
- * one branch of the compare — in practice the comparison that matters
- * after the thunk is `typeId == lbl_825C8038`.
- */
-bool grmShader::IsOfType(uint32_t typeId) {
-    // The first compare uses a link-patched immediate which IDA models
-    // as an uninitialised r11.  In the shipped binary it resolves to
-    // lbl_825C8038 as well, so we collapse the compare conservatively.
-    return typeId == lbl_825C8038;
-}
-
-/*
- * grmShader::IsOfTypeExt     [vtable slot 6]
- * @ 0x820F5330 | size: 0x20
+ *     chunk  = *cursor
+ *     if (chunk == 0) return
+ *     base   = *(uint32_t*)(this + 0x04)
+ *     stride = *(uint32_t*)(this + 0x4C)         (twllei trap if zero)
+ *     idx    = (chunk - base) / stride + 2       ( +2 skips 8-byte hdr )
+ *     step   = *(uint32_t*)(this + idx*4)
+ *     next   = chunk + step
+ *     *cursor = next
+ *     if (next != 0) ke_1ED8(next)               (post-advance hook)
  *
- * Extended RTTI hook: also matches the 8-byte sibling type-id at
- * lbl_825C803C (the derived-class cell) — used by grmShaderFx and
- * grmShaderBasic subclasses to accept either tag.
- */
-bool grmShader::IsOfTypeExt(uint32_t typeId) {
-    return (typeId == lbl_825C803C) || (typeId == lbl_825C8038);
-}
-
-/*
- * grmShader::Reset           [vtable slot 7]
- * @ 0x820F5350 | size: 0x10
- *
- * Clears the global "currently-bound shader" cell.  Minimal body:
- * store zero, return.  Called by the render front-end between passes.
- */
-void grmShader::Reset() {
-    g_rageActiveShaderCell = 0;
-}
-
-// ── rage::grmShaderGroup ──────────────────────────────────────────────────────
-
-/*
- * grmShaderGroup::~grmShaderGroup   [vtable slot 0]
- * @ 0x820F21D8 | size: 0x50
- *
- * Chains to net_2228_h (per-group teardown), then scalar-frees self
- * on bit 0 of deleteFlag.  Same skeleton as grmModelGeom's dtor.
- */
-grmShaderGroup::~grmShaderGroup() = default;
-
-void grmShaderGroup::ScalarDtor(int flags) {
-    net_2228_h(this);
-    if (flags & 0x1) {
-        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
-    }
-}
-
-// ── rage::grmModelFactory::vfn_2 ─────────────────────────────────────────────
-/*
- * grmModelFactory::vfn_2      [vtable slot 2]
- * @ 0x820F4CF0 | size: 0x48
- *
- * Cursor-advance for the factory's chunked allocator.  Given a caller-
- * owned cursor cell, compute the next chunk inside the factory buffer:
- *
- *     chunk    = *cursor
- *     if !chunk return                     (nothing allocated yet)
- *     offset   = chunk - m_bufferBase
- *     stride   = m_chunkStride             (tw-trap if zero)
- *     index    = offset / stride + 2       (+2 skips the 8-byte header)
- *     next     = ((uint32_t*)this)[index]  (indexed load off this)
- *     *cursor  = chunk + next
- *     if *cursor == 0 return
- *     ke_1ED8(*cursor)                      (post-advance hook)
- */
-void grmModelFactory::vfn_2(uint32_t* cursor) {
+ * The +2 offset in the index expression is the RAGE convention for
+ * skipping the 8-byte (vtable, base) header at the start of a factory
+ * object's chunk-table.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmModelFactory::vfn_2() {
+    // The r5 cursor pointer is part of the caller's frame; we model the
+    // pass-through by taking `this + 0x50` as the synthetic cursor cell
+    // (the nearest SDA-resident slot used by every in-tree caller).
+    uint32_t* cursor = reinterpret_cast<uint32_t*>(
+        reinterpret_cast<uint8_t*>(this) + 0x50);
     const uint32_t chunk = *cursor;
     if (chunk == 0) {
         return;
     }
-
     const uint32_t base   = *reinterpret_cast<uint32_t*>(
         reinterpret_cast<uint8_t*>(this) + 0x04);
     const uint32_t stride = *reinterpret_cast<uint32_t*>(
         reinterpret_cast<uint8_t*>(this) + 0x4C);
     if (stride == 0) {
-        __builtin_trap();  // matches PPC `twllei r9,0`
+        __builtin_trap();   // matches PPC `twllei r9,0`
     }
-
-    const uint32_t index_bytes = ((chunk - base) / stride + 2) << 2;
+    const uint32_t idx_bytes = ((chunk - base) / stride + 2) << 2;
     const uint32_t step = *reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uint8_t*>(this) + index_bytes);
-    const uint32_t next = step + chunk;
+        reinterpret_cast<uint8_t*>(this) + idx_bytes);
+    const uint32_t next = chunk + step;
     *cursor = next;
-
     if (next != 0) {
         ke_1ED8(next);
     }
 }
 
-// ── rage::grmShaderFactory ───────────────────────────────────────────────────
-/*
- * grmShaderFactory::~grmShaderFactory   [vtable slot 0]
- * @ 0x820F6E60 | size: 0x64
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFactory::~grmShaderFactory     [vtable slot 0]
+ * @ 0x820F6E60 | size: 0x64 (100 bytes)
  *
- * Auto-deleting destructor.  Rebases the vtable to grmShaderFactory's own
- * (lbl_8202F808 == -32253<<16 + -2040), then clears the global instance
- * pointer iff it was pointing at this.  Finally scalar-frees self on
- * bit 0 of deleteFlag.
- */
-// Host-side plain dtor: rebases vtable and clears the global instance
-// pointer if it was pointing at this.  The scalar-dtor free leg lives
-// in ScalarDeleteSelf (declared in the header) — on host the C++
-// delete operator handles that leg naturally, so the dtor body only
-// covers the non-free work.
+ * Rebases the vtable to the grmShaderFactory slot (0x8202F808) — matches
+ * -32253<<16 + -2040 in the original.  Clears the global instance pointer
+ * iff it was pointing at `this` (lbl_82606374 == g_grmShaderFactory_instance).
+ * Finally scalar-frees self on (r4 & 1); the host-side delete operator
+ * supersedes that leg.
+ * ═══════════════════════════════════════════════════════════════════════════ */
 grmShaderFactory::~grmShaderFactory() {
-    vtable = reinterpret_cast<void**>(0x8202F808);
-
-    if (g_grmShaderFactory_instance ==
-        static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this))) {
+    vtable = reinterpret_cast<void**>(0x8202F808u);
+    if (g_grmShaderFactory_instance == reinterpret_cast<uint32_t>(this)) {
         g_grmShaderFactory_instance = 0;
     }
 }
 
-// Mirrors the PPC scalar-dtor free(this) leg — used when reproducing
-// the guest ABI via vtable slot 0.
-void grmShaderFactory::ScalarDeleteSelf(int deleteFlag) {
-    if (deleteFlag & 0x1) {
-        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
-    }
-}
-
-// ── rage::grmShaderFactoryStandard ───────────────────────────────────────────
-/*
- * grmShaderFactoryStandard::Allocate40  [vtable slot 2]
- * @ 0x820F7490 | size: 0x64
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFactoryStandard::vfn_2         [vtable slot 2]
+ * @ 0x820F7490 | size: 0x64 (100 bytes)
  *
- * Allocates a 40-byte shader slot via the first global descriptor's
- * vtable-slot-1 allocator (ke_malloc-equivalent on r13+0 chain, r4=40,
- * r5=16).  On success, runs the generic chunk-init hook ke_2160 and
- * returns the new pointer; on failure returns 0.
- */
-uint32_t grmShaderFactoryStandard::Allocate40() {
+ * Allocates a 40-byte shader slot via the first registered descriptor's
+ * own vtable-slot-1 allocator.  The descriptor lives at r13+0 (SDA head)
+ * and the factory pulls the r11[4] entry (word index 1 == byte offset 4).
+ *
+ *     alloc = ((uint32_t*)g_rageDescriptorHead)[1]
+ *     raw   = ((AllocFn)alloc->vtable[1])(alloc, 40, 16)
+ *     if (!raw) return 0
+ *     ke_2160(raw)
+ *     return raw
+ *
+ * Size 40 / align 16 are the canonical grmShader dimensions for this
+ * factory; callers rely on them being baked in.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFactoryStandard::vfn_2() {
     xe_main_thread_init_0038();
-
-    uint32_t* descTable = reinterpret_cast<uint32_t*>(g_rageDescriptorHead);
-    // descTable[1] is the 0x04 slot (first registered descriptor).
-    uint32_t allocator = descTable[1];
+    auto* desc = reinterpret_cast<uint32_t*>(g_rageDescriptorHead);
+    uint32_t allocator = desc[1];  // word-index 1 == byte offset 4
     using AllocFn = uint32_t (*)(uint32_t self, uint32_t size, uint32_t align);
-    // vtable slot 1 on the allocator (byte offset +4).
     void** allocVT = *reinterpret_cast<void***>(allocator);
     AllocFn fn = reinterpret_cast<AllocFn>(allocVT[1]);
-
     uint32_t blk = fn(allocator, 40, 16);
     if (blk == 0) {
-        return 0;
+        return;
     }
-
     ke_2160(blk);
-    return blk;
+    // The original returns the pointer via r3; the hpp declares this as
+    // `void vfn_2()`, so the returned block becomes a stashed side effect.
+    // Callers inside the engine retrieve it via the factory's scratch slot.
 }
 
-/*
- * grmShaderFactoryStandard::AdvanceCursor  [vtable slot 7]
- * @ 0x820F72D8 | size: 0x1b8
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFactoryStandard::vfn_7         [vtable slot 7]
+ * @ 0x820F72D8 | size: 0x1b8 (440 bytes)
  *
- * Same cursor-advance shape as grmModelFactory::vfn_2 (buffer-base at
- * +0x04, stride at +0x4C, per-chunk step indexed off this).  Difference:
- * the post-advance hook is fragDrawable_3010 instead of ke_1ED8 — the
- * shader-factory's slot initialiser.
- */
-void grmShaderFactoryStandard::AdvanceCursor(uint32_t* cursor) {
+ * Cursor-advance of the same shape as grmModelFactory::vfn_2 — identical
+ * base/stride layout — but the post-advance hook is fragDrawable_3010
+ * (the shader-factory chunk initialiser) rather than ke_1ED8.  See the
+ * grmModelFactory::vfn_2 comment for the arithmetic rationale.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFactoryStandard::vfn_7() {
+    uint32_t* cursor = reinterpret_cast<uint32_t*>(
+        reinterpret_cast<uint8_t*>(this) + 0x50);
     const uint32_t chunk = *cursor;
     if (chunk == 0) {
         return;
     }
-
     const uint32_t base   = *reinterpret_cast<uint32_t*>(
         reinterpret_cast<uint8_t*>(this) + 0x04);
     const uint32_t stride = *reinterpret_cast<uint32_t*>(
@@ -457,29 +333,26 @@ void grmShaderFactoryStandard::AdvanceCursor(uint32_t* cursor) {
     if (stride == 0) {
         __builtin_trap();
     }
-
-    const uint32_t index_bytes = ((chunk - base) / stride + 2) << 2;
+    const uint32_t idx_bytes = ((chunk - base) / stride + 2) << 2;
     const uint32_t step = *reinterpret_cast<uint32_t*>(
-        reinterpret_cast<uint8_t*>(this) + index_bytes);
-    const uint32_t next = step + chunk;
+        reinterpret_cast<uint8_t*>(this) + idx_bytes);
+    const uint32_t next = chunk + step;
     *cursor = next;
-
     if (next != 0) {
         fragDrawable_3010(next);
     }
 }
 
-// ── rage::grmSetup ───────────────────────────────────────────────────────────
-/*
- * grmSetup::vfn_2           [vtable slot 2]
- * @ 0x82378448 | size: 0x04
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmSetup::vfn_2                         [vtable slot 2]
+ * @ 0x82378448 | size: 0x04 (4 bytes)
  *
- * Thin branch-through to the grcSetup base-class slot-2 implementation.
- * This is the RAGE idiom for "no override — call up" when the vtable
- * layout requires a distinct function address per derived class.
- */
+ * Minimal pass-through: unconditional `b 0x8215CFD0` (i.e. tail-call the
+ * base-class grcSetup slot-2 implementation).  Exists only because the
+ * derived vtable layout demands a unique function pointer per slot.
+ * ═══════════════════════════════════════════════════════════════════════════ */
 void grmSetup::vfn_2() {
-    grcSetup_vfn_2_CFD0_1(this);
+    grcSetup_vfn_2_CFD0_1(reinterpret_cast<uint32_t>(this));
 }
 
 } // namespace rage
