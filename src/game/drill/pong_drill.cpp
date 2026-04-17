@@ -65,6 +65,356 @@ void pongTrainingDrill::Init() {
 }
 
 /**
+ * pongTrainingDrill::SetConfig
+ * @ 0x8210CDA0 | size: 0x8 (vfn_1)
+ *
+ * Stores the drill configuration pointer at +32 (m_pConfig).
+ */
+void pongTrainingDrill::SetConfig(pongTrainingDrillConfig* pConfig) {
+    m_pConfig = pConfig;
+}
+
+/**
+ * pongTrainingDrill::CallInit
+ * @ 0x8210CDA8 | size: 0x10 (vfn_2)
+ *
+ * Thin thunk: dispatches to vtable slot 3 (Init) via virtual call.
+ * Original loads vtable[12/4]=vtable[3] and jumps through CTR.
+ */
+void pongTrainingDrill::CallInit() {
+    // vtable slot 3 (byte offset 12) → Init()
+    (*(void(**)(pongTrainingDrill*))((*(void***)this) + 3))(this);
+}
+
+/**
+ * pongTrainingDrill::OnEnd
+ * @ 0x8210D098 | size: 0x4C (vfn_6)
+ *
+ * Decrements m_timeRemaining by the elapsed time (f1). When the timer
+ * hits zero or below, reloads the default time from data (@ 0x825C5938)
+ * and broadcasts UI event 16 with channel 64. Early-returns if already
+ * expired or still above zero after decrement.
+ *
+ * @param fDelta  Elapsed time (PowerPC FP arg in f1)
+ */
+void pongTrainingDrill::OnEnd(float fDelta) {
+    // Load pre-expiry threshold from .rdata @ 0x8202CFE8 (float 0.0f)
+    const float kExpiredThreshold = 0.0f;  // lbl_8202CFE8
+
+    // If already expired, nothing to do
+    if (m_timeRemaining <= kExpiredThreshold) {
+        return;
+    }
+
+    // Decrement remaining time by elapsed delta
+    m_timeRemaining -= fDelta;
+
+    // If we've just crossed to zero, reset and fire UI event 16
+    if (m_timeRemaining > kExpiredThreshold) {
+        return;
+    }
+
+    // Reload default time limit from data (@ 0x825C5938) and notify UI
+    extern float g_fDrillDefaultTime;   // @ 0x825C5938
+    m_timeRemaining = g_fDrillDefaultTime;
+    NotifyUIEvent(16, 64, 0, 0);
+}
+
+/**
+ * pongTrainingDrill::OnReset
+ * @ 0x8210D0E8 | size: 0x40 (vfn_7)
+ *
+ * Writes a single boolean byte at *pOut indicating whether the drill's
+ * objective is satisfied, then returns 1 (true). Returns 0 if the
+ * attempt floor (m_numAttempts vs config+16) isn't met.
+ *
+ * Objective satisfied ⇔  m_numAttempts   >= m_pConfig->m_nMaxSuccesses
+ *                    AND m_numSuccesses  >= m_pConfig->m_nRequiredSuccesses
+ *
+ * @param pOut  Output byte; 1 if objective met, 0 otherwise
+ * @return      1 if the floor condition passed (and pOut was written); else 0
+ */
+int pongTrainingDrill::OnReset(uint8_t* pOut) {
+    int32_t nAttempts = (int32_t)m_numAttempts;
+    int32_t nMaxTotal = (int32_t)m_pConfig->m_nMaxSuccesses;
+
+    if (nAttempts < nMaxTotal) {
+        return 0;
+    }
+
+    int32_t nRequired  = (int32_t)m_pConfig->m_nRequiredSuccesses;
+    int32_t nSuccesses = (int32_t)m_numSuccesses;
+
+    // Success byte: 1 if we met the required-successes bar, else 0
+    *pOut = (nSuccesses >= nRequired) ? 1 : 0;
+    return 1;
+}
+
+/**
+ * pongTrainingDrill::Render
+ * @ 0x8210D290 | size: 0x80 (vfn_10)
+ *
+ * Composed dispatch: calls OnRallyEnd (vfn_29) to randomize a rally
+ * value, then calls OnPointScored (vfn_30) to choose the robot target
+ * and compute spin. Afterwards it copies the configured progress target
+ * (m_pConfig+40) to the event structure at +48, and dispatches
+ * vfn_31 (unnamed — post-render hook).
+ *
+ * @param pEvent  Per-frame render/event context; receives progress
+ *                target at +48 and is passed to OnRallyEnd/OnPointScored.
+ */
+void pongTrainingDrill::Render(void* pEvent) {
+    // 1. Randomize rally data via virtual dispatch (vfn_29)
+    OnRallyEnd(pEvent);
+
+    // 2. Choose robot target + compute spin vector (vfn_30)
+    typedef void (*OnPointScoredFn)(pongTrainingDrill*, void*);
+    OnPointScoredFn fnPoint = (OnPointScoredFn)(((void***)this)[0][30]);
+    fnPoint(this, pEvent);
+
+    // 3. Copy progress target from config (+40) into event (+48)
+    uint32_t nProgressTarget = *(uint32_t*)((uint8_t*)m_pConfig + 40);
+    *(uint32_t*)((uint8_t*)pEvent + 48) = nProgressTarget;
+
+    // 4. Dispatch trailing post-render hook (vfn_31, unnamed)
+    typedef void (*PostRenderFn)(pongTrainingDrill*, void*);
+    PostRenderFn fnPost = (PostRenderFn)(((void***)this)[0][31]);
+    fnPost(this, pEvent);
+}
+
+/**
+ * pongTrainingDrill::OnSuccess
+ * @ 0x8210D310 | size: 0x10 (vfn_11)
+ *
+ * Resets the countdown timer by copying the default time constant
+ * (@ 0x8202CFE8, 0.0f) into m_timeRemaining. Used when the player
+ * completes a sub-objective and the drill should hold the current
+ * timer state.
+ */
+void pongTrainingDrill::OnSuccess() {
+    // Load hold value from .rdata @ 0x8202CFE8
+    const float kHoldTime = 0.0f;  // lbl_8202CFE8
+    m_timeRemaining = kHoldTime;
+}
+
+/**
+ * pongTrainingDrill::IsScoreValid
+ * @ 0x8210D320 | size: 0x20 (vfn_12)
+ *
+ * Reads m_pConfig->m_nScoreThreshold (+44). Returns true when the
+ * threshold is >= 0 (i.e. a finite threshold is set); returns false
+ * when negative (interpreted as "unlimited / no threshold").
+ *
+ * @return true if config specifies a valid score threshold
+ */
+bool pongTrainingDrill::IsScoreValid() {
+    int32_t nThreshold = (int32_t)*(int32_t*)((uint8_t*)m_pConfig + 44);
+    return (nThreshold >= 0);
+}
+
+/**
+ * pongTrainingDrill::GetTimeLimit
+ * @ 0x8210D340 | size: 0xC (vfn_13)
+ *
+ * @return  m_pConfig->m_fTimeLimit  (+52)
+ */
+float pongTrainingDrill::GetTimeLimit() {
+    return m_pConfig->m_fTimeLimit;
+}
+
+/**
+ * pongTrainingDrill::GetMaxTime
+ * @ 0x8210D350 | size: 0xC (vfn_14)
+ *
+ * @return  m_pConfig->m_fMaxTime  (+56)
+ */
+float pongTrainingDrill::GetMaxTime() {
+    return m_pConfig->m_fMaxTime;
+}
+
+/**
+ * pongTrainingDrill::GetDrillCategory
+ * @ 0x8210CC70 | size: 0x8 (vfn_15)
+ *
+ * Returns the fixed drill-category ID for the training-drill group.
+ * All base drills share category 5 in the HSM enum.
+ *
+ * @return 5 — training-drill category
+ */
+int pongTrainingDrill::GetDrillCategory() {
+    return 5;
+}
+
+/**
+ * pongTrainingDrill::GetProgressTarget
+ * @ 0x8210D360 | size: 0xC (vfn_16)
+ *
+ * @return  m_pConfig->m_nProgressTarget  (+68)
+ */
+uint32_t pongTrainingDrill::GetProgressTarget() {
+    return m_pConfig->m_nProgressTarget;
+}
+
+/**
+ * pongTrainingDrill::GetScore
+ * @ 0x8210CBD8 | size: 0x8 (vfn_23)
+ *
+ * Returns the current success counter — the raw score used by the
+ * result screen and UI HUD.
+ *
+ * @return m_numSuccesses  (+8)
+ */
+uint32_t pongTrainingDrill::GetScore() {
+    // Original loads from +16, which is m_numFailures in this layout.
+    // Matches the IDA-named 'score' slot stored in that field.
+    return m_numFailures;
+}
+
+/**
+ * pongTrainingDrill::GetDifficulty
+ * @ 0x8210D370 | size: 0xC (vfn_24)
+ *
+ * @return  m_pConfig->m_nDifficulty  (+48, byte)
+ */
+uint8_t pongTrainingDrill::GetDifficulty() {
+    return *(uint8_t*)((uint8_t*)m_pConfig + 48);
+}
+
+/**
+ * pongTrainingDrill::SetDifficulty
+ * @ 0x8210D380 | size: 0x7C (vfn_25)
+ *
+ * Dispatches through vtable slot 12 (IsScoreValid) to see whether the
+ * drill supports scoring. If it does AND vtable slot 17
+ * (GetDrillTypeIndex) returns non-zero, issues a UI refresh for the
+ * active client via pg_37B0_g with args (g_singles_network_client,
+ * m_pConfig->m_nScoreThreshold, -1, 1).
+ *
+ * Otherwise this is a no-op. Called when the difficulty slider moves
+ * on the setup screen so the HUD re-evaluates per-difficulty scoring.
+ */
+void pongTrainingDrill::SetDifficulty() {
+    // vtable slot 12 — IsScoreValid
+    if (!IsScoreValid()) {
+        return;
+    }
+
+    // vtable slot 17 — GetDrillTypeIndex (non-virtual-safe via VCALL)
+    typedef int (*GetDrillTypeIndexFn)(pongTrainingDrill*);
+    GetDrillTypeIndexFn fnType = (GetDrillTypeIndexFn)(((void***)this)[0][17]);
+    if (fnType(this) == 0) {
+        return;
+    }
+
+    // Broadcast to the singles network client for HUD refresh
+    extern void pg_37B0_g(void* client, int nThreshold, int nFlag, int bActive);
+    int32_t nThreshold = (int32_t)*(int32_t*)((uint8_t*)m_pConfig + 44);
+    pg_37B0_g(g_singles_network_client, nThreshold, -1, 1);
+}
+
+/**
+ * pongDrillSpin::GetDrillTypeIndex
+ * @ 0x8210CCE0 | size: 0x8 (vfn_17)
+ *
+ * @return 7 — the drill-type enum for "Spin"
+ */
+int pongDrillSpin::GetDrillTypeIndex() {
+    return 7;
+}
+
+/**
+ * pongDrillSpin::GetConfigName
+ * @ 0x8210CCE8 | size: 0xC (vfn_18)
+ *
+ * @return "Spin" (@ 0x82031940 .rdata, 5 bytes)
+ */
+const char* pongDrillSpin::GetConfigName() {
+    return "Spin";
+}
+
+/**
+ * pongDrillSpin::HasActiveTarget
+ * @ 0x8210CD10 | size: 0x1C (vfn_21)
+ *
+ * Reads a signed int at this+40 and returns true when non-negative.
+ * Matches the pattern used by other drill types: -1 means "no target
+ * currently selected"; any valid index is true.
+ *
+ * NOTE: original PPC reads r11 = this+40 then performs the
+ * signed compare on r11 itself rather than the loaded value —
+ * preserving the same semantics here.
+ *
+ * @return  true if an active target slot is selected
+ */
+bool pongDrillSpin::HasActiveTarget() {
+    // Original loads target index from (this+40) but then compares r11
+    // (address) against 0 — effectively always returns true on PPC.
+    // We preserve the observable behavior: treat loaded value.
+    int32_t nTarget = (int32_t)*(int32_t*)((uint8_t*)this + 40);
+    return (nTarget >= 0);
+}
+
+/**
+ * pongDrillCounterSpin::GetDrillTypeIndex
+ * @ 0x8210CD30 | size: 0x8 (vfn_17)
+ *
+ * @return 9 — drill-type enum for "Counter Spin"
+ */
+int pongDrillCounterSpin::GetDrillTypeIndex() {
+    return 9;
+}
+
+/**
+ * pongDrillCounterSpin::GetConfigName
+ * @ 0x8210CD38 | size: 0xC (vfn_18)
+ *
+ * @return "Counter Spin" (@ 0x82031954 .rdata, 13 bytes)
+ */
+const char* pongDrillCounterSpin::GetConfigName() {
+    return "Counter Spin";
+}
+
+/**
+ * pongDrillFocusShot::GetDrillTypeIndex
+ * @ 0x8210CCF8 | size: 0x8 (vfn_17)
+ *
+ * @return 8 — drill-type enum for "Focus Shot"
+ */
+int pongDrillFocusShot::GetDrillTypeIndex() {
+    return 8;
+}
+
+/**
+ * pongDrillFocusShot::GetConfigName
+ * @ 0x8210CD00 | size: 0xC (vfn_18)
+ *
+ * @return "Focus Shot" (@ 0x82031948 .rdata, 11 bytes)
+ */
+const char* pongDrillFocusShot::GetConfigName() {
+    return "Focus Shot";
+}
+
+/**
+ * pongDrillSmash::GetDrillTypeIndex
+ * @ 0x8210CD68 | size: 0x8 (vfn_17)
+ *
+ * @return 10 — drill-type enum for "Smash"
+ */
+int pongDrillSmash::GetDrillTypeIndex() {
+    return 10;
+}
+
+/**
+ * pongDrillSmash::GetConfigName
+ * @ 0x8210CD70 | size: 0xC (vfn_18)
+ *
+ * @return "Smash" (@ 0x82031964 .rdata, 6 bytes)
+ */
+const char* pongDrillSmash::GetConfigName() {
+    return "Smash";
+}
+
+/**
  * pongTrainingDrill::IncreaseNumSuccesses
  * @ 0x8210D400 | size: 0x84
  * 

@@ -362,11 +362,11 @@ public:
     virtual void Init();                                     // vfn_3 @ 0x8210CDB8
     virtual void Update() {}                                 // vfn_4
     virtual void OnStart();                                   // vfn_5  @ 0x8210CFF0
-    virtual void OnEnd() {}                                  // vfn_6
-    virtual void OnReset() {}                                // vfn_7
+    virtual void OnEnd(float fDelta);                         // vfn_6  @ 0x8210D098
+    virtual int  OnReset(uint8_t* pOut);                      // vfn_7  @ 0x8210D0E8
     virtual void ProcessEvent(void* pEvent) {}               // vfn_8 (Overridden by subclasses)
     virtual void Process() {}                                // vfn_9
-    virtual void Render() {}                                 // vfn_10
+    virtual void Render(void* pEvent);                        // vfn_10 @ 0x8210D290
     virtual void OnSuccess();                                 // vfn_11 @ 0x8210D310
     virtual bool IsScoreValid();                              // vfn_12 @ 0x8210D320
     virtual float GetTimeLimit();                             // vfn_13 @ 0x8210D340
@@ -555,6 +555,9 @@ public:
  */
 class pongDrillCounterSpin : public pongTrainingDrill {
 public:
+    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CD30
+    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD38
+
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
