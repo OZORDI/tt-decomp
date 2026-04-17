@@ -334,6 +334,174 @@ void fxSpecialFx_vfn_0(void* thisPtr, int flags) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// fxSpecialFx — effect-pool manager role
+// ---------------------------------------------------------------------
+// The class doubles as the per-frame palette/pool owner. Layout
+// (derived from FindFreeEntry / ResetPalette / ReleasePalette / Tick):
+//
+//   +0x2C (44)  struct fxSlot* slots[]          outer slot array
+//   +0x30 (48)  uint16_t       slotCount         halfword — slots in use
+//   +0x80 (128) struct fxSlot::entry** entries  inner per-slot entry array
+//   +0x84 (132) uint16_t       entryCount        halfword — per-slot cap
+//   +0xE0 (224) uint32_t       framePalette      palette snapshot
+//   +0xE8 (232) void*          allocator         cached sysMem allocator*
+//   +0xEC (236) uint8_t        isActive          live-flag byte
+//
+// Each per-slot `entry` is an 8-byte record: { u8 activeA, u8 activeB,
+// u16 _pad, void* effect }. NewEffect scans for the first entry with
+// both active-bytes zero, flips both to 1, and returns entry->effect.
+// Tick (rtti_9840_0) walks every slot and virtual-dispatches slot 5 on
+// every active effect — the per-frame "tick all effects" loop.
+// ─────────────────────────────────────────────────────────────────────
+
+// Globals & externs referenced by the pool/tick path.
+extern void   phBoundCapsule_FE58_g(void* capsuleScratch);          // @ 0x8240FE58 — capsule init
+extern void*  game_6E78(void* slotArrayPlus32);                     // @ 0x82426E78 — resolve slot entry array
+extern void   hudFlashBase_4128_g(int mode);                        // @ 0x82154128 — frame flash gate
+extern void   sysMemSimpleAllocator_7D90(void* allocator);          // @ 0x82187D90 — per-slot allocator open
+extern void*  lbl_82606318;                                         // .data scratch word cleared each slot
+
+// Struct layout constants for the pool role.
+static constexpr int kFxMgrSlotsPtrOff    = 44;    // +0x2C — slot[] base
+static constexpr int kFxMgrSlotCountOff   = 48;    // +0x30 — halfword count
+static constexpr int kFxMgrEntriesOff     = 128;   // +0x80 — entry[] base
+static constexpr int kFxMgrEntryCountOff  = 132;   // +0x84 — halfword cap
+static constexpr int kFxMgrPaletteSnapOff = 224;   // +0xE0 — palette snapshot
+static constexpr int kFxMgrAllocatorOff   = 232;   // +0xE8 — sysMem allocator*
+static constexpr int kFxMgrActiveOff      = 236;   // +0xEC — live-flag byte
+static constexpr int kFxSlotEntrySize     = 4;     // entries are void*[N]
+static constexpr int kFxEntryActiveA      = 0;     // entry byte 0
+static constexpr int kFxEntryActiveB      = 1;     // entry byte 1
+static constexpr int kFxEntryEffectPtr    = 4;     // entry+4 → effect
+
+/**
+ * fxSpecialFx::FindFreeEntry @ 0x824279C8 | size: 0xAC
+ * Allocates (claims) the first idle entry in the pool.
+ *   - Resolves the per-slot entry array via game_6E78(this+32).
+ *   - Scans [0, entryCount) looking for the first entry whose byte[0]
+ *     AND byte[1] are both zero.
+ *   - On hit: sets entry->activeA = entry->activeB = 1 and returns
+ *     entry->effect (the stable effect pointer at entry+4).
+ *   - On miss (or when the slot head is null / empty): returns nullptr.
+ *
+ * Think of this as the manager's "NewEffect" — it doesn't allocate new
+ * storage, but hands out the next idle slot in the pre-sized palette.
+ */
+void* fxSpecialFx_FindFreeEntry(void* thisPtr) {
+    char* self = (char*)thisPtr;
+    void* slotHead = game_6E78(self + 32);
+    if (slotHead == nullptr) {
+        return nullptr;
+    }
+    int entryCount = *(int16_t*)((char*)slotHead + kFxMgrEntryCountOff);
+    if (entryCount <= 0) {
+        return nullptr;
+    }
+    char** entries = *(char***)((char*)slotHead + kFxMgrEntriesOff);
+    for (int i = 0; i < entryCount; ++i) {
+        char* entry = entries[i];
+        if (entry[kFxEntryActiveA] == 0 && entry[kFxEntryActiveB] == 0) {
+            entry[kFxEntryActiveA] = 1;
+            entry[kFxEntryActiveB] = 1;
+            return *(void**)(entry + kFxEntryEffectPtr);
+        }
+    }
+    return nullptr;
+}
+
+/**
+ * fxSpecialFx::Tick @ 0x82427B28 | size: 0x118 (rtti_9840_0)
+ *
+ * Per-frame dispatch over the active effect palette. This is the "tick
+ * all active effects" workhorse invoked from the frame loop.
+ *
+ *   1. phBoundCapsule_FE58_g(this) — prepare scratch capsule state.
+ *   2. pongShadowMap_38C0_g(g_ambientStreamingHeap, &lbl_825CB800 - 18432,
+ *      &lbl_825CB800 - 18432) — rebind shadow slot for this frame.
+ *   3. Locate the palette block at
+ *         palette = (char*)this + ((allocator[+40] << 3) & ~7) + 36
+ *      (allocator-indexed palette offset — the "round-up to qword" that
+ *      vfn_25 also performs). Its halfword at +4 is the palette entry
+ *      count.
+ *   4. For each palette slot i:
+ *         - hudFlashBase_4128_g(1)   — per-slot flash beat
+ *         - Propagate bit 0 of the palette snapshot depending on whether
+ *           (this+224) still matches the mirrored palette slot from the
+ *           global (offsets -17736/-17740 against 0x825EB***).
+ *         - Read entry = palette.entries[i] and call
+ *           sysMemSimpleAllocator_7D90 on its allocator (r3 = lbl_82606318
+ *           refill target).
+ *         - Inner loop over entry->count (halfword at entry+4): for each
+ *           j, vcall slot 5 of entry->list[j] — this is the per-effect
+ *           Tick dispatch.
+ *         - Clear lbl_82606318 at the end of each outer iteration.
+ *
+ * The "vtable slot 5" seen here corresponds to per-effect Tick (the same
+ * slot used by fxAmbient::Tick / fxBallTrail::Tick aliases) — so this
+ * walks the whole palette and ticks every live sub-effect once per frame.
+ */
+void fxSpecialFx_Tick(void* thisPtr) {
+    char* self = (char*)thisPtr;
+
+    // 1. Scratch capsule init (takes `this` as its workspace).
+    phBoundCapsule_FE58_g(self);
+
+    // 2. Re-bind shadow/env slot for this frame.
+    extern uint32_t lbl_825CB800_arr[];   // alias to the 64-byte scratch
+    pongShadowMap_38C0_g(g_ambientStreamingHeap,
+                         (void*)lbl_825CB800_arr,
+                         (void*)lbl_825CB800_arr);
+
+    // 3. Compute palette pointer via the allocator-rounded offset.
+    void* allocator = *(void**)(self + kFxMgrAllocatorOff);
+    uint32_t paletteOff =
+        (uint32_t)(((uintptr_t)*(uint32_t*)((char*)allocator + 40) << 3) & ~7u) + 36;
+    char* palette     = self + paletteOff;
+    int paletteCount  = *(int16_t*)(palette + 4);
+    if (paletteCount <= 0) {
+        return;
+    }
+
+    // Mirrored palette slot globals (ambient streaming module).
+    extern uint32_t g_fxPaletteMirrorA;    // 0x825EB***  (r21:-17736)
+    extern uint32_t g_fxPaletteMirrorB;    // 0x825EB***  (r24:-17740)
+    extern uint32_t g_fxPaletteSnapshot;   // 0x825EB***  (r22:-17632)
+
+    // 4. Per-slot tick loop.
+    for (int i = 0; i < paletteCount; ++i) {
+        hudFlashBase_4128_g(1);
+
+        // Snapshot of "active palette index" at this+224 → mirror global.
+        uint32_t cur = *(uint32_t*)(self + kFxMgrPaletteSnapOff);
+        g_fxPaletteSnapshot = cur;
+
+        // Toggle low bit of mirrorB based on whether cur matches mirrorA.
+        if (g_fxPaletteMirrorB == g_fxPaletteMirrorA) {
+            g_fxPaletteMirrorB &= ~1u;
+        } else {
+            g_fxPaletteMirrorB |= 1u;
+        }
+
+        // Resolve per-slot entry (palette+0 = entry[] base, i-strided).
+        char* entry = *(char**)(*(char**)(palette + 0) + i * kFxSlotEntrySize);
+
+        // Refill per-entry allocator. r3 = lbl_82606318 in the lift.
+        sysMemSimpleAllocator_7D90(&lbl_82606318);
+
+        int subCount = *(int16_t*)(entry + 4);
+        for (int j = 0; j < subCount; ++j) {
+            void* sub = *(void**)(*(char**)(entry + 0) + j * kFxSlotEntrySize);
+            void** vt = *(void***)sub;
+            typedef void (*tick_t)(void*);
+            ((tick_t)vt[5])(sub);   // vtable slot 5 — per-effect Tick
+        }
+
+        // Clear the per-slot scratch word.
+        *(uint32_t*)&lbl_82606318 = 0;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // fxCrowdAnim — RTTI helpers (2 methods to round the batch to 10)
 // ─────────────────────────────────────────────────────────────────────
 
