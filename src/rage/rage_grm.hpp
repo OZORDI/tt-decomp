@@ -94,12 +94,20 @@ struct grmEdgeModel {
     void Create();
 };
 
-// ── rage::grmModel  [vtable @ 0x8202F3B4] ──────────────────────────
+// ── rage::grmModel  [vtable @ 0x8202F3B4, size 0x18 = 6 slots] ─────
+// Geometry/model container.  Holds a pointer to a heap-allocated
+// shader-group/geometry array at +0x0C; dtor frees that buffer and
+// conditionally frees the object itself (scalar-dtor flag in r4 bit 0).
 struct grmModel {
     void**      vtable;           // +0x00
+    uint8_t     pad_04[0x08];     // +0x04
+    uint32_t    m_pGeometry;      // +0x0C  heap-allocated geometry buffer
 
     // ── virtual methods ──
-    virtual ~grmModel();                  // [0] @ 0x820f0e78
+    // [0] auto-deleting destructor:
+    //   free(m_pGeometry); *vtable = grmModel_base_vtable;
+    //   if (r4 & 1) free(this);
+    virtual ~grmModel(int deleteFlag);      // [0] @ 0x820f0e78  size 0x6c
 };
 
 // ── rage::grmModelFactory  [vtable @ 0x8202F5A8] ──────────────────────────
@@ -107,40 +115,69 @@ struct grmModelFactory {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~grmModelFactory();                  // [0] @ 0x820f3c50
-    virtual void ScalarDtor(int flags); // [1] @ 0x820f3d10
-    virtual void vfn_2();  // [2] @ 0x820f4cf0
+    // [0] dtor calls static destructor on sm_DeclMap then conditionally
+    //     frees the object if (flag & 1).
+    virtual ~grmModelFactory(int deleteFlag); // [0] @ 0x820f3c50  size 0x50
+    // [1] 5-arg trampoline: shuffles r4..r8 into r3..r7 and tail-calls
+    //     rage_1028 (likely a static Create/Register forwarder).
+    virtual void Dispatch5(uint32_t a, uint32_t b, uint32_t c,
+                           uint32_t d, uint32_t e);  // [1] @ 0x820f3d10  size 0x18
+    virtual void vfn_2();                    // [2] @ 0x820f4cf0
 };
 
 // ── rage::grmModelGeom  [vtable @ 0x8202F3CC] ──────────────────────────
+// Derived from grmModel; dtor chains through grmModel internals (rage_0F38).
 struct grmModelGeom {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~grmModelGeom();                  // [0] @ 0x820f0ee8
-    virtual void ScalarDtor(int flags); // [1] @ 0x820f19b0
-    virtual void vfn_3();  // [3] @ 0x820f1348
+    virtual ~grmModelGeom(int deleteFlag);   // [0] @ 0x820f0ee8  size 0x50
+    // [1] geometry accessor: returns &((uint8_t*)(this[1]))[index * 0x28]
+    //     — fetches a 40-byte geometry entry from an array at this+0x04.
+    virtual uint32_t GetGeometryEntry(uint32_t index); // [1] @ 0x820f19b0  size 0x18
+    virtual void vfn_3();                    // [3] @ 0x820f1348
 };
 
 // ── rage::grmSetup  [vtable @ 0x8204E984] ──────────────────────────
+// Dispatch-side bootstrap object; slot 1 installs two singletons
+// (grmShaderFactoryStandard + grmShaderFx) into SDA globals, then slot 2
+// is a thin alias that forwards to the grcSetup base-class implementation.
 struct grmSetup {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x82378218
-    virtual void vfn_2();  // [2] @ 0x82378448
-    virtual void vfn_6();  // [6] @ 0x82378338
+    virtual void ScalarDtor(int flags);         // [1] @ 0x82378218
+    // [2] Base-class passthrough: unconditionally tail-calls
+    //     grcSetup_vfn_2_CFD0_1 (the rage::grcSetup slot-2 implementation).
+    virtual void vfn_2();                       // [2] @ 0x82378448  size 0x4
+    virtual void vfn_6();                       // [6] @ 0x82378338
 };
 
-// ── rage::grmShader  [vtable @ 0x8202F5C4] ──────────────────────────
+// ── rage::grmShader  [vtable @ 0x8202F5C4, size 0x4c = 19 slots] ──────
+// Base shader-binding object.  Slots 0/1 are RAGE's standard
+// RTTI type-check pair (compare param against a global type-id cell
+// at lbl_825C8038 / lbl_825C803C).  Slot 1 (scalar-dtor) is the
+// real draw-loop dispatcher — see .cpp for the analysis.
 struct grmShader {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~grmShader();                  // [0] @ 0x820f5260
-    virtual void ScalarDtor(int flags); // [1] @ 0x820f5360
-    virtual void vfn_6();  // [6] @ 0x820f5330
-    virtual void vfn_7();  // [7] @ 0x820f5350
+    // [0] RTTI IsOfType: returns (param == classId_A) || (param == classId_B).
+    //     classId_A is loaded from uninitialized r11 in this stub — the
+    //     real impl is patched at link/runtime; behavioural net effect:
+    //     returns (param == lbl_825C8038).
+    virtual bool IsOfType(uint32_t typeId);         // [0] @ 0x820f5260  size 0x50
+    // [1] BatchDraw: iterates child primitives calling slots 11/8/9/7
+    //     with caller-supplied floats f1..f5 and four int args boxed
+    //     through the FP pipeline (int→double→float).  Real draw loop.
+    virtual void BatchDraw(int32_t i0, int32_t i1, int32_t i2, int32_t i3,
+                           float f1, float f2, float f3, float f4, float f5,
+                           uint32_t ctx);               // [1] @ 0x820f5360  size 0x190
+    // [6] RTTI IsOfTypeExt: (param == lbl_825C803C) || (param == lbl_825C8038).
+    virtual bool IsOfTypeExt(uint32_t typeId);      // [6] @ 0x820f5330  size 0x20
+    // [7] Reset: clears a global state word (-17816 off g_state r10)
+    //     — seen in many RAGE shader subsystems as "drop-active-shader".
+    virtual void Reset();                            // [7] @ 0x820f5350  size 0x10
 };
 
 // ── rage::grmShaderBasic  [vtable @ 0x8202F8FC] ──────────────────────────
@@ -167,25 +204,44 @@ struct grmShaderBasicClamped {
 };
 
 // ── rage::grmShaderFactory  [vtable @ 0x8202F808] ──────────────────────────
+// Dispatch-side singleton/registry for grmShader instances.  Slot 0 is the
+// auto-deleting destructor which also drops the global instance pointer
+// (lbl_82606374) iff (sm_pInstance == this).
 struct grmShaderFactory {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~grmShaderFactory();                  // [0] @ 0x820f6e60
+    // [0] auto-deleting destructor: rebases vtable, clears the global
+    //     instance pointer if (sm_pInstance == this), then optionally
+    //     frees the object when (deleteFlag & 1).
+    virtual ~grmShaderFactory(int deleteFlag);    // [0] @ 0x820f6e60  size 0x64
 };
 
 // ── rage::grmShaderFactoryStandard  [vtable @ 0x8202F830] ──────────────────────────
+// Concrete grmShaderFactory subclass.  Layout (inferred from vfn_6 cursor
+// advance, which mirrors grmModelFactory::vfn_2):
+//   +0x04 : uint32_t  m_bufferBase   (chunk base)
+//   +0x4C : uint32_t  m_chunkStride
 struct grmShaderFactoryStandard {
     void**      vtable;           // +0x00
+    uint32_t    m_bufferBase;     // +0x04  chunk base address
+    uint8_t     pad_08[0x44];     // +0x08
+    uint32_t    m_chunkStride;    // +0x4C
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x820f6ec8
-    virtual void vfn_2();  // [2] @ 0x820f7490
-    virtual void vfn_3();  // [3] @ 0x820f7640
-    virtual void vfn_4();  // [4] @ 0x820f74f8
-    virtual void vfn_5();  // [5] @ 0x820f7190
-    virtual void vfn_6();  // [6] @ 0x820f7290
-    virtual void vfn_7();  // [7] @ 0x820f72d8
+    virtual void ScalarDtor(int flags);         // [1] @ 0x820f6ec8
+    // [2] Allocates & returns a 40-byte shader slot via the global
+    //     sm_DeclMap allocator (vtable slot 1 on lbl_82600004).  Calls
+    //     ke_2160 on the fresh block before returning.
+    virtual uint32_t Allocate40();              // [2] @ 0x820f7490  size 0x64
+    virtual void vfn_3();                       // [3] @ 0x820f7640
+    virtual void vfn_4();                       // [4] @ 0x820f74f8
+    virtual void vfn_5();                       // [5] @ 0x820f7190
+    virtual void vfn_6();                       // [6] @ 0x820f7290
+    // [7] advances a pointer-cursor to the next chunk within this factory's
+    //     allocator buffer — same shape as grmModelFactory::vfn_2, then
+    //     tail-calls fragDrawable_3010 post-allocation hook.
+    virtual void AdvanceCursor(uint32_t* cursor); // [7] @ 0x820f72d8  size 0x1b8
 };
 
 // ── rage::grmShaderFx  [vtable @ 0x8202F2DC] ──────────────────────────
@@ -218,7 +274,9 @@ struct grmShaderGroup {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~grmShaderGroup();                  // [0] @ 0x820f21d8
+    // [0] dtor: calls net_2228_h (internal teardown) then conditionally
+    //     frees the object if (flag & 1).
+    virtual ~grmShaderGroup(int deleteFlag);      // [0] @ 0x820f21d8  size 0x50
 };
 
 // ── rage::grmShaderPreset  [vtable @ 0x8202F668] ──────────────────────────
