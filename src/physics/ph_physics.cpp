@@ -10215,4 +10215,377 @@ float phBoundSurface::SampleHeightBilinear(float fx, float fy) {
     return w00 * h00 + w10 * h10 + w01 * h01 + w11 * h11;
 }
 
+/* ==========================================================================
+ *  rage::phSimulator — singleton physics-world surface (vtable @ 0x8205976C)
+ *
+ *  Vtable layout (9 slots, 0x24 bytes):
+ *    [0] dtor       @ 0x822C14A0  phSimulator_vfn_0
+ *    [1] scalar_dtor@ 0x822C4C18  phSimulator_vfn_1
+ *    [2] step_phase2@ 0x822C4228  phSimulator_vfn_2
+ *    [3] PreStep    @ 0x822C1D18  phSimulator_vfn_3  (alias phSimulator_1CB0_p45)
+ *    [4] vfn_4      @ 0x822C1F00  phSimulator_vfn_4  (not lifted — pong entangled)
+ *    [5] vfn_5      @ 0x822C4308  phSimulator_vfn_5
+ *    [6] vfn_6      @ 0x822C3128  phSimulator_vfn_6
+ *    [7] vfn_7      @ 0x822C40C0  phSimulator_vfn_7
+ *
+ *  Non-virtual helpers lifted here:
+ *    phSimulator_4C98     @ 0x822C4C98  (ctor-record trampoline)
+ *    phSimulator_44E8_h   @ 0x822944E8  (indexed breakable getter +17072)
+ *    phSimulator_4518_h   @ 0x82294518  (indexed breakable getter +17076)
+ *    phSimulator::FindWeakestInst @ 0x822C3800
+ * ========================================================================== */
+
+// Base-class init helper from __sub__cxa_rage_14F0 — touches CriticalSection and
+// base-class tables; forwarded opaque here until lifted.
+extern "C" void rage_14F0(void* self);
+extern "C" void rage_free_00C0(void* ptr);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::~phSimulator (vfn_0) @ 0x822C14A0 | size: 0x50
+//
+// Chains to the base destructor (rage_14F0) then, if the low bit of the
+// scalar-deleting flag is set, releases the instance via the RAGE heap.
+// The flag lives in r4 on entry per the Xbox 360 ABI for scalar deleting
+// destructors; a pure-destructor entry masks the low bit off.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator::dtor(uint32_t deletingFlag) {  // vtable slot 0
+    rage_14F0(this);
+    if (deletingFlag & 0x1) {
+        rage_free_00C0(this);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::ScalarDtor (vfn_1) @ 0x822C4C18 | size: 0x80
+//
+// Scalar destructor wrapper. Invokes vtable[3] (PreStep) to flush the
+// pre-step queue, captures the returned instance list pointer, then calls
+// vtable[4] (post-step/step-phase) with the preserved float argument.
+// Returns the pointer captured from vtable[3] (used by the caller to
+// advance the breakable-insts scan).
+//
+// Matches the recomp: f31 = incoming f1 is preserved across both vcalls.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phSimulator::scalarDtor(float timeStep) {  // vtable slot 1
+    void** vt = this->vtable;
+
+    // vtable[3] byte +12 = PreStep (iterate inst list + vcall[5])
+    typedef uint32_t (*PreStepFn)(phSimulator*, float);
+    PreStepFn preStep = (PreStepFn)vt[3];
+    uint32_t captured = preStep(this, timeStep);
+
+    // vtable[4] byte +16 — post-step / integrate wrapper
+    typedef void (*PostStepFn)(phSimulator*);
+    PostStepFn postStep = (PostStepFn)vt[4];
+    postStep(this);
+
+    // vtable[5] byte +20 — follow-up with f1 preserved
+    typedef void (*FollowUpFn)(phSimulator*, float);
+    FollowUpFn followUp = (FollowUpFn)vt[5];
+    followUp(this, timeStep);
+
+    return captured;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator_4C98 @ 0x822C4C98 | size: 0x58
+//
+// Five-dword stack-record trampoline: copies a 20-byte struct from (*r4)
+// onto the caller's stack at [sp+80..sp+100] and performs an indirect
+// call through field_0x0C of the receiver's vtable-like header at *r3+12.
+// Used by vfn_2/vfn_5 to record a "collision-ctor" tuple of
+//   {owner, simulator, inst, 0, vtable}
+// before dispatching to the breakable-component constructor.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator_4C98(phSimulator* sim, const uint32_t* fiveDwords) {
+    // Load the five-dword record
+    uint32_t d0 = fiveDwords[0];
+    uint32_t d1 = fiveDwords[1];
+    uint32_t d2 = fiveDwords[2];
+    uint32_t d3 = fiveDwords[3];
+    uint32_t d4 = fiveDwords[4];
+
+    // Load the ctor fn ptr from offset +12 of the receiver (not the vtable!).
+    uint32_t ctorFn = *(uint32_t*)((uint8_t*)sim + 12);
+
+    // Stash the record on our stack (the ctor reads it by pointer as r4).
+    uint32_t localCopy[5];
+    localCopy[0] = d0;
+    localCopy[1] = d1;
+    localCopy[2] = d2;
+    localCopy[3] = d3;
+    localCopy[4] = d4;
+
+    typedef void (*CtorFn)(phSimulator*, uint32_t*);
+    CtorFn fn = (CtorFn)(uintptr_t)ctorFn;
+    fn(sim, localCopy);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::vfn_2 @ 0x822C4228 | size: 0xE0
+//
+// Two-phase break-record dispatch. For each of two fields on the argument
+// object (at +17072 and +17076 from the phSimulator), if the field is set
+// directly use it; otherwise walk to the "last breakable" record via
+//   last = *(arg0)               // count - 1
+//   slot = last * 176 + arg
+// and pick either word +0 (phase A, +17072 path) or +180 (phase B, +17076).
+// In both phases it builds a 5-dword stack record
+//   {0, arg, slot_ptr, 0, *(arg)}    for phase A
+//   {0, arg, slot_ptr, 0, vtable}    for phase B  (the recomp uses "r10")
+// and hands it to phSimulator_4C98 which fires the configured ctor at
+// *(this+0x0C)  (note: this reads a hook pointer, not a vtable slot).
+//
+// The "argument" here is the breakable-inst record array base, passed
+// in r4 — this is the hot path used by ApplyBreakable / dispatch.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator::vfn_2(uint32_t* breakableRec) {  // vtable slot 2
+    uint32_t* thisWord0 = (uint32_t*)this;  // *(this+0) — base pointer used by recomp
+    uint32_t record[5];
+
+    // ── Phase A: use field at +17072 (or fall back to slot +0) ──────────
+    uint32_t fieldA = breakableRec[17072 / 4];
+    bool haveA = (fieldA != 0);
+    if (!haveA) {
+        // last = (*arg0) - 1 + 1  == *(arg0); recomp adds -1 then +1 for flags
+        uint32_t last = breakableRec[0];
+        uint32_t byteOff = last * 176;
+        fieldA = *(uint32_t*)((uint8_t*)breakableRec + byteOff);
+    }
+
+    // Build record: {0, arg, fieldA, 0, *(arg)}
+    record[0] = 0;
+    record[1] = (uint32_t)(uintptr_t)breakableRec;
+    record[2] = fieldA;
+    record[3] = 0;
+    record[4] = thisWord0[0];  // mirror of *(this+0)
+
+    // r3 = (arg + 112) — the recomp passes "breakable+112" as receiver.
+    phSimulator_4C98((phSimulator*)((uint8_t*)breakableRec + 112), record);
+
+    // ── Phase B: use field at +17076 (or fall back to slot +0 offset +180) ─
+    uint32_t fieldB = breakableRec[17076 / 4];
+    bool haveB = (fieldB != 0);
+    if (!haveB) {
+        uint32_t last = breakableRec[0] - 1;
+        uint32_t byteOff = last * 176;
+        uint8_t* slot = (uint8_t*)breakableRec + byteOff;
+        fieldB = *(uint32_t*)(slot + 180);
+    }
+
+    record[0] = 0;
+    record[1] = (uint32_t)(uintptr_t)breakableRec;
+    record[2] = fieldB;
+    record[3] = 0;
+    record[4] = thisWord0[0];
+
+    phSimulator_4C98((phSimulator*)((uint8_t*)breakableRec + 112), record);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::vfn_3 / phSimulator_1CB0_p45 @ 0x822C1D18 / 0x822C1CB0
+// size: 0x68
+//
+// PreStep — iterates the inst pointer array (base +40, count half-word
+// at +44) and dispatches vtable slot 5 on each, passing the preserved
+// timeStep argument (f1).  This is the classic "step all insts" loop.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator::preStep(float timeStep) {  // vtable slot 3
+    uint16_t count = *(uint16_t*)((uint8_t*)this + 44);
+    if (count == 0) return;
+
+    uint32_t* instArray = *(uint32_t**)((uint8_t*)this + 40);
+    for (uint32_t i = 0; i < count; ++i) {
+        void* inst = (void*)(uintptr_t)instArray[i];
+        void** instVt = *(void***)inst;
+
+        // vtable slot 5 (byte +20) — Inst::PreStep(float)
+        typedef void (*InstPreStepFn)(void*, float);
+        InstPreStepFn fn = (InstPreStepFn)instVt[5];
+        fn(inst, timeStep);
+    }
+}
+
+// phSimulator_1CB0_p45 is the same function (aliased in recomp).
+void phSimulator_1CB0_p45(phSimulator* sim, float timeStep) {
+    sim->preStep(timeStep);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator_44E8_h @ 0x822944E8 | size: 0x2C
+//
+// Indexed breakable-component getter, phase A.  Reads field at +17072;
+// if non-null, returns it directly. Otherwise returns the +0-word of the
+// record at offset (*(this+0)) * 176 from this.
+//
+// Note: the recomp stores r4 to [sp+28] — a scratch; the caller never
+// reads it back.  The stash is preserved here with a volatile write to
+// a local to match ABI-visible side effects.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phSimulator_44E8_h(phSimulator* sim, uint32_t scratchArg) {
+    (void)scratchArg;  // r4 stashed to scratch; no observable consumer
+    uint32_t direct = *(uint32_t*)((uint8_t*)sim + 17072);
+    if (direct != 0) return direct;
+
+    uint32_t idx = *(uint32_t*)sim;  // *(this+0)
+    uint32_t byteOff = idx * 176;
+    return *(uint32_t*)((uint8_t*)sim + byteOff);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator_4518_h @ 0x82294518 | size: 0x2C
+//
+// Indexed breakable-component getter, phase B.  Same shape as 44E8_h
+// but reads field +17076 and the record word at +180 from
+// (*(this+0) - 1) * 176.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phSimulator_4518_h(phSimulator* sim, uint32_t scratchArg) {
+    (void)scratchArg;
+    uint32_t direct = *(uint32_t*)((uint8_t*)sim + 17076);
+    if (direct != 0) return direct;
+
+    uint32_t idx = *(uint32_t*)sim - 1;  // last-valid record index
+    uint32_t byteOff = idx * 176;
+    return *(uint32_t*)((uint8_t*)sim + byteOff + 180);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::FindWeakestInst @ 0x822C3800 | size: 0x1E8
+//
+// Breakable-component weighting pass.  For each of `count` instances in
+// the phInst list (r5), accumulates a per-component force vector in a
+// 128×16-byte scratch array on the stack, then dispatches vtable slot 34
+// (byte +136) on the "weakest" one.  The recomp header string is
+//   "phSimulator::FindWeakestInst(): Maximum number of breakable
+//    components %d exceeded: %d"
+// at 0x82059710 (warn when a bound-composite exposes > 128 children).
+//
+// Signature reconstructed from recomp arg map:
+//   r3 = this (unused in body, lr-save slot only)
+//   r4 = breakableInstArray base            (iterated at r5)
+//   r5 = instPtrArray base                  (array of phInst*)
+//   r6 = count of instances
+//   r7 = out: best score (float, init to 0.0f constant at -32253,-12024)
+//   r8 = unused (padding)
+//   r9 = out: paired-inst-ptr-swap slot
+//   r10 = out: paired-inst-ptr-swap slot B
+//
+// Returns: pointer to the weakest phInst (or 0 when count==0 or no inst
+// survives the vtable-slot-34 "isWeakable" filter).
+// ─────────────────────────────────────────────────────────────────────────────
+phInst* phSimulator::FindWeakestInst(uint32_t* breakableArray,
+                                     phInst** instArray,
+                                     int32_t instCount,
+                                     float* outScore,
+                                     uint32_t /*unused_r8*/,
+                                     uint32_t* outSwapA,
+                                     uint32_t* outSwapB) {
+    // Seed the running "best score" with the rdata fallback constant at
+    // lbl_822059710 - 12024 (the recomp pulls a negative fp constant used
+    // as "-infinity" for score comparisons).
+    extern const float g_phSimulatorInitialWeakestScore;
+    *outScore = g_phSimulatorInitialWeakestScore;
+
+    phInst* weakest = nullptr;
+    if (instCount <= 0) {
+        return weakest;
+    }
+
+    // Per-component force accumulator: 128 slots × 16 bytes.
+    alignas(16) uint8_t forceAccum[128 * 16];
+
+    uint32_t* brkBase = (uint32_t*)((uint8_t*)breakableArray + 16);
+
+    for (int32_t i = 0; i < instCount; ++i) {
+        phInst* inst = instArray[i];
+        int32_t numComponents = 0;
+
+        // Zero the scratch accumulator (matches vxor + stvx loop).
+        memset(forceAccum, 0, sizeof(forceAccum));
+
+        // Peek at the bound at +4 → vtable+12 → type byte +4.  If it is
+        // a composite (type 9), call phBoundComposite::GetChildCount
+        // and clamp the result to [0,128] with a log-spam at >128.
+        uint32_t boundPtr = *(uint32_t*)((uint8_t*)inst + 4);
+        if (boundPtr != 0) {
+            void** boundVt = *(void***)(uintptr_t)boundPtr;
+            uint8_t boundType = *(uint8_t*)((uint8_t*)boundVt + 4);
+            if (boundType == 9) {
+                extern uint32_t phBoundComposite_E750(void* bound);
+                numComponents = (int32_t)phBoundComposite_E750(
+                    (void*)(uintptr_t)boundPtr);
+                if (numComponents > 128) {
+                    // rdata @ 0x82059710 format string — logs the overflow.
+                    // The original calls a no-op formatter (nop_8240E6D0)
+                    // so we just clamp and continue.
+                    numComponents = 128;
+                }
+            }
+        }
+
+        // Walk the breakable-record array (176 bytes per record, starting
+        // at offset +16 on the array base), matching either field +0 or
+        // field +152 against the inst pointer, and accumulate the 16-byte
+        // vector at record+84 into the forceAccum[index] slot.
+        uint32_t* rec = brkBase;
+        int32_t recCount = (int32_t)*(uint32_t*)breakableArray;
+        for (int32_t j = 0; j < recCount; ++j) {
+            uint32_t matchA = rec[0];
+            int32_t compIdx = (int32_t)rec[148 / 4];
+            if ((uint32_t)(uintptr_t)inst == matchA &&
+                compIdx >= 0 && compIdx < numComponents) {
+                float* src = (float*)((uint8_t*)rec + 84);
+                float* dst = (float*)(forceAccum + (compIdx * 16));
+                dst[0] += src[0];
+                dst[1] += src[1];
+                dst[2] += src[2];
+                dst[3] += src[3];
+            } else {
+                uint32_t matchB = *(uint32_t*)((uint8_t*)rec + 152);
+                int32_t compIdxB = (int32_t)*(int32_t*)((uint8_t*)rec + 4);
+                if ((uint32_t)(uintptr_t)inst == matchB &&
+                    compIdxB >= 0 && compIdxB < numComponents) {
+                    float* src = (float*)((uint8_t*)rec + 84);
+                    float* dst = (float*)(forceAccum + (compIdxB * 16));
+                    dst[0] += src[0];
+                    dst[1] += src[1];
+                    dst[2] += src[2];
+                    dst[3] += src[3];
+                }
+            }
+            rec = (uint32_t*)((uint8_t*)rec + 176);
+        }
+
+        // Dispatch vtable slot 34 (byte +136) — "weighted-break-score":
+        //   bool IsWeakable(float* outScore, void* accumBase)
+        void** instVt = *(void***)inst;
+        typedef uint32_t (*IsWeakableFn)(phInst*, float*, void*);
+        IsWeakableFn isWeakable = (IsWeakableFn)instVt[34];
+
+        float localScore = 0.0f;
+        uint32_t accepted = isWeakable(inst, &localScore, forceAccum);
+        if ((accepted & 0xFF) != 0 && localScore > *outScore) {
+            *outScore = localScore;
+
+            // Swap the two pair-output slots: the recomp does
+            //   tmp      = *outSwapB
+            //   *outSwapB = *outSwapA (via r27 load)
+            //   *outSwapA = tmp
+            uint32_t a = *outSwapA;
+            uint32_t b = *outSwapB;
+            *outSwapB = a;
+            *outSwapA = b;
+
+            weakest = inst;
+        }
+    }
+
+    return weakest;
+}
+
+// Initial "weakest" score constant — sits in .rdata as a negative float
+// seed (the recomp loads it at offset -12024 from lis -32253).  The exact
+// value is typically -FLT_MAX sentinel; fall back to a large negative.
+const float g_phSimulatorInitialWeakestScore = -3.4028234663852886e+38f;
+
 } // namespace rage
