@@ -66,18 +66,19 @@ struct pongDrawBucketManager {
                   uint32_t bucketMask);     // @ 0x822278D8 — register renderable in buckets
 };
 
-// ── pongDrawable  [vtable @ 0x8204DD9C] ──────────────────────────
+// ── pongDrawable  [vtable @ 0x8204DB10] ──────────────────────────
+// TODO: implement 14 missing slots — 0x8225BD28, 0x8225BC60, 0x82223210,
+//       0x8225C7E0, 0x8225C838, 0x8225C910, 0x8225C430, 0x8225C368,
+//       0x82124168, 0x8225C018, 0x8225C0A0, 0x8225BF88, 0x8225C158, 0x8225C238
 struct pongDrawable {
     void**      vtable;           // +0x00
 
-    // ── virtual methods ──
-    virtual ~pongDrawable();                  // [0] @ 0x82222e20
-    virtual void vfn_2();  // [2] @ 0x8225bd28
-    virtual void vfn_3();  // [3] @ 0x8225bc60
-    virtual void vfn_4();  // [4] @ 0x82223210
+    // ── virtual methods ── (15 slots total)
+    virtual ~pongDrawable();                  // [0] @ 0x8225B880
 };
 
 // ── pongGammaControl  [vtable @ 0x820346E4] ──────────────────────────
+// Data-only class, 0 vtable entries — DO NOT add methods. Empty RTTI shell (likely LTO-stripped helpers).
 struct pongGammaControl {
     void**      vtable;           // +0x00
 };
@@ -120,17 +121,19 @@ struct pongPostEffects {
     virtual ~pongPostEffects();                  // [0] @ 0x8213f4b0
 };
 
-// ── pongRenderThread  [vtable @ 0x82059634] ──────────────────────────
+// ── pongRenderThread  [vtable @ 0x820581D8] ──────────────────────────
+// No virtual methods; real work lives in non-virtual pongRenderThread__Thread state machine. Dtor 0x822C05D8 is non-virtual.
 struct pongRenderThread {
     void**      vtable;           // +0x00
-
-    // ── virtual methods ──
-    virtual ~pongRenderThread();                  // [0] @ 0x822c05d8
 };
 
-// ── pongRenderable  [vtable @ 0x82032404] ──────────────────────────
+// ── pongRenderable  [vtable @ 0x82030F18] ──────────────────────────
+// Abstract interface marker — concrete subclass supplies dispatch. pongDrawable entries implement this.
 struct pongRenderable {
     void**      vtable;           // +0x00
+
+    // ── virtual methods ── (1 slot, nullsub)
+    virtual void vfn_0();  // [0] nullsub
 };
 
 // ── pongScreenCapture  [vtable @ 0x8205B0EC] ──────────────────────────
@@ -139,6 +142,7 @@ struct pongScreenCapture {
 };
 
 // ── pongScreenCaptureMgr  [vtable @ 0x820591E4] ──────────────────────────
+// RTTI-only ship-stub (atSingleton never instantiated at runtime). Same pattern as gdUnlockProfile — planned online/gamertag-card feature cut before ship. Dtor 0x822BC288 is MSVC scalar-deleting-dtor template.
 struct pongScreenCaptureMgr {
     void**      vtable;           // +0x00
 
@@ -315,6 +319,7 @@ struct pongShadowMap {
 };
 
 // ── pongSurface  [vtable @ 0x8204F70C] ──────────────────────────
+// VERIFY render-vs-physics: vfn_1 callees land in ph* namespace — may be collision surface not grcRenderTarget wrapper.
 struct pongSurface {
     void**      vtable;           // +0x00
 
