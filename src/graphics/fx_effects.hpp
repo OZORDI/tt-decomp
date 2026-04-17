@@ -72,7 +72,7 @@ struct fxBallSpin {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_3();  // [3] @ 0x82388a00
+    virtual void Reset();  // [3] @ 0x82388a00 — zero 6 vec-slots, seed scale floats + live flags
 };
 
 // ── fxBallSpinDataMgr  [vtable @ 0x8206B3A4] ──────────────────────────
@@ -116,7 +116,7 @@ struct fxBallSpinWispData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x823880b8
+    virtual void ScalarDtor(int flags); // [1] @ 0x823880b8 — stamp vtable then optional rage_free_00C0
 };
 
 // ── fxBallSplash2D  [2 vtables — template/MI] ──────────────────────────
@@ -310,7 +310,7 @@ struct fxReticle {
     // ── virtual methods ──
     virtual ~fxReticle();                  // [0] @ 0x82384588
     virtual void ScalarDtor(int flags); // [1] @ 0x82384930
-    virtual void vfn_2();  // [2] @ 0x82384780
+    virtual void RegisterReticleTypes();   // [2] @ 0x82384780 — bind 3 datType factories: ideal_reticle/actual_reticle/reticle
 };
 
 // ── fxSpecialFx  [2 vtables — template/MI] ──────────────────────────
@@ -361,7 +361,7 @@ struct fxTrailData {
     // ── virtual methods ──
     virtual ~fxTrailData();                  // [0] @ 0x82380b70
     virtual void ScalarDtor(int flags); // [1] @ 0x82380918
-    virtual void vfn_3();  // [3] @ 0x82380938
+    virtual void RegisterFields(void* parser);  // [3] @ 0x82380938 — parSchema field bindings for 5 floats + 2 bytes
 };
 
 // ── fxTrailDataMgr  [vtable @ 0x8206ACD0] ──────────────────────────
