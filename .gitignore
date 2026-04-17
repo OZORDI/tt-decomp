@@ -19,6 +19,8 @@ orig/*/*
 
 # Build files
 build/
+build_check/
+build_verify/
 .ninja_*
 build.ninja
 
