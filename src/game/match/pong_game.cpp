@@ -41,7 +41,6 @@ extern "C" {
     void gdGameData_CalculateVariation(void* gdData, uint32_t r4, uint32_t r5, uint32_t r6, int32_t r7);
     void* pg_C2A0_g(void* r3, uint32_t r4);
     void game_7208(void* r3);
-    void rage::NotifyObservers(void* r4, void* r5);
     void PongNetExhibitionCoordinator_2BA8_g(void* r3);
     // atSingleton lookup — reads/writes a slot into sp+112 via r5 out-ptr.
     // Signature matches raw ppcrecomp trampoline: (this, key, outSlot).
@@ -173,61 +172,345 @@ struct pongInputObj {
 // No offsetof asserts — PPC-native offsets are documented in the field comments.
 // 64-bit host void* would perturb the numbers anyway.
 
-struct pongGameContext {
-    void**  vtable;           // +0x00
-    void*   m_pGameState;     // +0x04 - Current game state
-    // ... more fields discovered from Process() analysis
+// pongGameContext struct + static_asserts live in pong_game.hpp (skeleton,
+// included above). Only method bodies + file-local globals follow.
 
-    // Virtual methods (context interface)
-    virtual ~pongGameContext();
-    virtual void OnExit() {}                         // [12]
-    virtual void ProcessInput() {}                   // [14]
-    virtual void OnUpdate() {}                       // [16]
-    virtual void OnRender() {}                       // [17]
-    virtual void OnShutdown() {}                     // [18]
-    virtual void PostLoadChildren() {}               // [22]
+// Extra SDA/data globals referenced by the lifted vtable slots.
+extern void* lbl_8271A2EC;   // shadow/mode table root
+extern void* lbl_8271A2F0;   // match-logic singleton root
+extern void* lbl_8271A308;   // UI-tick singleton
+extern void* lbl_8271A31C;   // shadow-config arg
+extern void* lbl_8271A2F8;   // lerp-queue state handle
 
-    // Non-virtual methods
-    // Process: r3=this, r4=event (msgId u16 at +0, payload at +4).
-    // Returns 0 (success); signature matches captured-reg layout for the cascade.
-    int Process(void* eventState, void* event);
-
-    // Per-msgId handler bodies lifted from the cmplwi cascade.
-    // Naming follows the observable effect on game state, not the raw msgId.
-    void HandleMsg_ClearCharViewSlots(void* event);     // msgId 2060 (0x80C)
-    void HandleMsg_ForwardToMatchLogic(void* event);    // msgId 2138 (0x85A)
-    void HandleMsg_MenuBackRequest(void* event);        // msgId 2140 (0x85C)
-
-    // Lifted in this pass — simple event-flag setters and small helpers.
-    void HandleMsg_MenuQuitConfirm(void* event);        // msgId 2141 (0x85D)
-    void HandleMsg_CharVarFloatClamp(void* event);      // msgId 2061 (0x80D)
-    void HandleMsg_StoreHashIntoEvent(void* event);     // msgId 2157 (0x86D)
-    void HandleMsg_ReadyUp(void* event);                // msgId 8193 (0x2001)
-    void HandleMsg_SuspendSet(void* event);             // msgId 8199 (0x2007) & 8206/8207 fall-through
-    void HandleMsg_SuspendClear(void* event);           // msgId 8202 (0x200A)
-    void HandleMsg_TourneyFinishedBackToFrontend(void*);// msgId 8231 (0x2027)
-    void HandleMsg_TourneyNextMatchReady(void* event);  // msgId 14385 (0x3831)
-    void HandleMsg_NetAccept(void* event);              // msgId 14381 (0x382D)
-    void HandleMsg_NetHashGate(void* event);            // msgId 14391 (0x3837)
-    void HandleMsg_JoinFromHudRequested(void* event);   // msgId 8217 (0x2019)
-};
+// ────────────────────────────────────────────────────────────────────────────
+// 7 true vtable slots — lifted from 0x823D5328..0x823D5AE8
+// ────────────────────────────────────────────────────────────────────────────
 
 /**
- * pongGameContext::~pongGameContext (destructor)
- * @ 0x823D5328 | size: 0x60
- * 
- * Destructor for pongGameContext. Sets up vtable pointers for proper
- * destruction order (multiple inheritance), then optionally frees memory.
+ * pongGameContext::Dtor  [0]  @ 0x823D5328 | size: 0x60
+ *
+ * MI-aware destructor. Writes the primary vtable stamp at +0x00 and the
+ * secondary at +0x14 (with a transient intermediate stamp stored first;
+ * the two-store sequence at +20 is bit-exact to the original). When the
+ * low bit of `flags` is set, hands the object back to rage_free.
+ *
+ * Stamp encodings (from lis/addi pairs):
+ *   0x82072B54  primary stamp   (-32249, +6992)
+ *   0x82027B54  intermediate    (-32254, +31540)  — transient
+ *   0x820776C4  secondary stamp (-32254, +30404)
  */
-pongGameContext::~pongGameContext() {
-    // Set up vtable pointers for destruction
-    // These are vtable addresses for proper MI cleanup:
-    // 0x820C1B50 — secondary vtable
-    // 0x82027B54 — base class vtable
-    // 0x82027724 — another base class vtable
-    
-    // If bit 0 of the flags parameter is set, free the memory
-    // Standard C++ destructor pattern with optional delete
+void pongGameContext::Dtor(int flags) {
+    // Guest VAs stored as uint32_t in the layout; method body records the
+    // transient→final vtable stamps exactly as the PPC recomp emits them.
+    m_vtableSecondary = 0x82027B54u;  // transient
+    m_vtableSecondary = 0x820776C4u;  // final
+    vtable            = 0x82072B54u;
+
+    if ((flags & 0x1) != 0) {
+        rage_free(this);
+    }
+}
+
+/**
+ * pongGameContext::OnExit  [12]  @ 0x823D5388 | size: 0xB4
+ *
+ * Tears down the three child HSM-state members (local player / network
+ * client / spectator). Each child's slot-0 dtor is invoked with the
+ * "also free" flag (r4=1); the slot is then nulled. After the children
+ * are gone, atSingleton_ECE0_h de-registers the gameState and rage_free
+ * releases the gameState slot.
+ */
+void pongGameContext::OnExit() {
+    // Each child field is a guest VA (uint32_t). Cast back to hsmState* to
+    // walk its host-visible vtable, matching the PPC recomp semantics.
+    if (m_pLocalPlayerState != 0) {
+        hsmState* child = reinterpret_cast<hsmState*>(static_cast<uintptr_t>(m_pLocalPlayerState));
+        using DtorFn = void(*)(hsmState*, int);
+        reinterpret_cast<DtorFn>(child->vtable[0])(child, 1);
+    }
+    m_pLocalPlayerState = 0;
+
+    if (m_pNetworkClientState != 0) {
+        hsmState* child = reinterpret_cast<hsmState*>(static_cast<uintptr_t>(m_pNetworkClientState));
+        using DtorFn = void(*)(hsmState*, int);
+        reinterpret_cast<DtorFn>(child->vtable[0])(child, 1);
+    }
+    m_pNetworkClientState = 0;
+
+    if (m_pSpectatorState != 0) {
+        hsmState* child = reinterpret_cast<hsmState*>(static_cast<uintptr_t>(m_pSpectatorState));
+        using DtorFn = void(*)(hsmState*, int);
+        reinterpret_cast<DtorFn>(child->vtable[0])(child, 1);
+    }
+    m_pSpectatorState = 0;
+
+    void* gs = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    atSingleton_ECE0_h(gs);
+    rage_free(gs);
+}
+
+/**
+ * pongGameContext::ProcessInput  [14]  @ 0x823D5440 | size: 0xA8
+ *
+ * Per-frame input fan-out. VCALL slot 5 on local-player + spectator
+ * children; polls the input singleton. On "active" result + netclient
+ * present, clears netclient's +1384 transient gate. Ticks lbl_8271A308
+ * via util_9F28 and clears m_bPostLoadDone (next frame re-runs post-load).
+ */
+void pongGameContext::ProcessInput() {
+    if (m_pLocalPlayerState != 0) {
+        hsmState* local = reinterpret_cast<hsmState*>(static_cast<uintptr_t>(m_pLocalPlayerState));
+        using Vfn5 = void(*)(hsmState*);
+        reinterpret_cast<Vfn5>(local->vtable[5])(local);
+    }
+
+    int polled = io_Input_poll_9D68(g_input_obj_ptr);
+    if (polled != 0 && m_pNetworkClientState != 0) {
+        uint8_t* nc = reinterpret_cast<uint8_t*>(static_cast<uintptr_t>(m_pNetworkClientState));
+        *reinterpret_cast<uint32_t*>(nc + 1384) = 0;
+    }
+
+    if (m_pSpectatorState != 0) {
+        hsmState* spec = reinterpret_cast<hsmState*>(static_cast<uintptr_t>(m_pSpectatorState));
+        using Vfn5 = void(*)(hsmState*);
+        reinterpret_cast<Vfn5>(spec->vtable[5])(spec);
+    }
+
+    util_9F28(lbl_8271A308);
+    m_bPostLoadDone = false;
+}
+
+/**
+ * pongGameContext::OnUpdate  [16]  @ 0x823D54E8 | size: 0x238
+ *
+ * Gated on (!m_bSuspended && gs->+137 && gs->+138). Gameplay path VCALLs
+ * slots 2/3/4 on m_pGameState around a guard-record dtor, kicks
+ * atSingleton_A600_h when the shadow word is nonzero, then ticks the UI
+ * singleton + scene-render. Otherwise the camera manager runs. Tail runs
+ * only when gameplay ISN'T ticking — spectator/netclient sync gated on
+ * g_pongGlobalMode.
+ */
+void pongGameContext::OnUpdate() {
+    // Guest VAs are u32 in storage; cast to host pointers for dereferencing.
+    void* gsPtr  = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    void* spPtr  = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pSpectatorState));
+    void* lpPtr  = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pLocalPlayerState));
+    void* ncPtr  = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pNetworkClientState));
+
+    bool shouldTick = false;
+    if (!m_bSuspended) {
+        pongGameState_view* gs = static_cast<pongGameState_view*>(gsPtr);
+        shouldTick = (gs->m_bFlagA != 0 && gs->m_bFlagB != 0);
+    }
+
+    if (shouldTick) {
+        using Vfn = void(*)(void*);
+        void** gsVtable = *(void***)gsPtr;
+        reinterpret_cast<Vfn>(gsVtable[2])(gsPtr);  // slot 2 (byte +8)
+
+        struct GuardRec { uint32_t a, b; };
+        GuardRec guard;
+        uint32_t payload = *(uint32_t*)((uint8_t*)lbl_8271A2F0 + 4);
+        guard.a = payload;
+        guard.b = payload;
+        pongGameContext_A070(&guard);
+
+        void* sub = *(void**)((uint8_t*)lbl_8271A2F0 + 32);
+        if (sub != nullptr) {
+            using DtorFn = void(*)(void*, void*);
+            void** subVt = *(void***)sub;
+            reinterpret_cast<DtorFn>(subVt[0])(sub, &guard);
+        }
+
+        reinterpret_cast<Vfn>(gsVtable[3])(gsPtr);  // slot 3 (byte +12)
+        reinterpret_cast<Vfn>(gsVtable[4])(gsPtr);  // slot 4 (byte +16)
+
+        uint32_t* shadowTable = *(uint32_t**)lbl_8271A2EC;
+        uint32_t  shadowWord  = shadowTable[0x8CF0 / 4];
+        if (shadowWord != 0) {
+            float payloadFloat = *(const float*)0x82072B08;
+            atSingleton_A600_h(lbl_8271A2F0, payloadFloat);
+        }
+
+        pg_A070_h(lbl_8271A308);
+
+        void* sceneObj  = g_pSceneRenderObj;
+        void* shadowArg = *(void**)lbl_8271A31C;
+        atSingleton_5A68_h(sceneObj, shadowArg);
+    } else {
+        pongCameraMgr_6280_g(g_pongCameraMgr);
+    }
+
+    // Tail runs only when gameplay ISN'T ticking (menus / loading).
+    bool shouldTick2 = false;
+    if (!m_bSuspended) {
+        pongGameState_view* gs = static_cast<pongGameState_view*>(gsPtr);
+        shouldTick2 = (gs->m_bFlagA != 0 && gs->m_bFlagB != 0);
+    }
+    if (shouldTick2) {
+        return;
+    }
+    if (!m_bActiveFlagA) {
+        return;
+    }
+    pongInputObj* input = (pongInputObj*)g_input_obj_ptr;
+    uint8_t guardA = *((uint8_t*)input + 493);
+    uint8_t guardB = *((uint8_t*)input + 494);
+    if (guardA != 0 && guardB != 0) {
+        return;
+    }
+
+    using Vfn2 = void(*)(void*);
+    if (g_pongGlobalMode == 1) {
+        void** vt = *(void***)spPtr;
+        reinterpret_cast<Vfn2>(vt[2])(spPtr);
+    } else {
+        void** vt = *(void***)lpPtr;
+        reinterpret_cast<Vfn2>(vt[2])(lpPtr);
+        SinglesNetworkClient_1330_g(ncPtr, lpPtr);
+    }
+}
+
+/**
+ * pongGameContext::OnRender  [17]  @ 0x823D5720 | size: 0x1D0
+ *
+ * Gated on the same predicate as OnUpdate. Assembles a guard-record,
+ * dtors the match-logic singleton's +36 child, optionally drives
+ * util_D0F8 with a vec3-bundle, then ticks the lerp queue.
+ */
+void pongGameContext::OnRender() {
+    void* gsPtr = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    bool shouldTick = false;
+    if (!m_bSuspended) {
+        pongGameState_view* gs = static_cast<pongGameState_view*>(gsPtr);
+        shouldTick = (gs->m_bFlagA != 0 && gs->m_bFlagB != 0);
+    }
+    if (!shouldTick) {
+        return;
+    }
+
+    struct GuardRec { uint32_t a, b; };
+    GuardRec guard;
+    uint32_t payload = *(uint32_t*)((uint8_t*)lbl_8271A2F0 + 4);
+    guard.a = payload;
+    guard.b = payload;
+    pongGameContext_A070(&guard);
+
+    void* sub = *(void**)((uint8_t*)lbl_8271A2F0 + 36);
+    if (sub != nullptr) {
+        using DtorFn = void(*)(void*, void*);
+        void** subVt = *(void***)sub;
+        reinterpret_cast<DtorFn>(subVt[0])(sub, &guard);
+    }
+
+    uint32_t* shadowTable = *(uint32_t**)lbl_8271A2EC;
+    uint32_t  shadowWord  = shadowTable[0x8CF0 / 4];
+    if (shadowWord != 0 && pongGameContext_CEE8_wrh(lbl_8271A2F0)) {
+        // Pass5 scaffolding: the geometry-record tight-bounds branch only
+        // changes which vec3 seeds each slot; the bundle dispatched to
+        // util_D0F8 is semantically identical in both branches.
+        void* state = *(void**)lbl_8271A2F8;
+        float vecBuf[12] = {0};
+        util_D0F8(state, &vecBuf[0], &vecBuf[3], &vecBuf[6], &vecBuf[9]);
+    }
+
+    pongLerpQueue_C838_g(lbl_8271A2F0);
+}
+
+/**
+ * pongGameContext::OnShutdown  [18]  @ 0x823D58F0 | size: 0x140
+ *
+ * pongGameContext_6970_h (shadow/mode query) gates netclient teardown.
+ * Second gate picks spectator vs. local-player for the slot-6 VCALL.
+ * Always stamps m_bSuspended and m_bOverlayFlag from input +495/+24/+64.
+ */
+void pongGameContext::OnShutdown() {
+    if (pongGameContext_6970_h(this)) {
+        struct GuardRec { uint32_t a, b; };
+        GuardRec guard;
+        uint32_t payload = *(uint32_t*)((uint8_t*)lbl_8271A2F0 + 4);
+        guard.a = payload;
+        guard.b = payload;
+        pongGameContext_A070(&guard);
+
+        void* sub = *(void**)((uint8_t*)lbl_8271A2F0 + 40);
+        if (sub != nullptr) {
+            using DtorFn = void(*)(void*, void*);
+            void** subVt = *(void***)sub;
+            reinterpret_cast<DtorFn>(subVt[0])(sub, &guard);
+        }
+    }
+
+    pongInputObj* input = (pongInputObj*)g_input_obj_ptr;
+    bool runTail = true;
+    if (!pongGameContext_6970_h(this)) {
+        if (!m_bActiveFlagA) {
+            runTail = false;
+        } else {
+            uint8_t guardA = *((uint8_t*)input + 493);
+            uint8_t guardB = *((uint8_t*)input + 494);
+            if (guardA != 0 && guardB != 0) {
+                runTail = false;
+            }
+        }
+    }
+
+    if (runTail) {
+        using Vfn6 = void(*)(void*);
+        if (g_pongGlobalMode == 1) {
+            void* spPtr = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pSpectatorState));
+            void** vt = *(void***)spPtr;
+            reinterpret_cast<Vfn6>(vt[6])(spPtr);  // slot 6 (byte +24)
+        } else {
+            void* lpPtr = reinterpret_cast<void*>(static_cast<uintptr_t>(m_pLocalPlayerState));
+            void** vt = *(void***)lpPtr;
+            reinterpret_cast<Vfn6>(vt[6])(lpPtr);
+        }
+    }
+
+    uint8_t inputByte495 = *((uint8_t*)input + 495);
+    uint8_t inputByte24  = *((uint8_t*)input + 24);
+    m_bSuspended   = (inputByte495 != 0) || (inputByte24 != 0);
+    m_bOverlayFlag = (*((uint8_t*)input + 64) != 0);
+}
+
+/**
+ * pongGameContext::PostLoadChildren  [22]  @ 0x823D5A30 | size: 0xC0
+ *
+ * Dtors the match-logic singleton's +44 (spectator) child through slot 0,
+ * then VCALL slot 6 on the +32 → +4 nested child of m_pGameState.
+ * Shadow-mode==1 AND shadowTable+0x8CFA != 0 ⇒ pongShadowMap_2700_g.
+ */
+void pongGameContext::PostLoadChildren() {
+    struct GuardRec { uint32_t a, b; };
+    GuardRec guard;
+    uint32_t payload = *(uint32_t*)((uint8_t*)lbl_8271A2F0 + 4);
+    guard.a = payload;
+    guard.b = payload;
+    pongGameContext_A070(&guard);
+
+    void* spec = *(void**)((uint8_t*)lbl_8271A2F0 + 44);
+    if (spec != nullptr) {
+        using DtorFn = void(*)(void*, void*);
+        void** specVt = *(void***)spec;
+        reinterpret_cast<DtorFn>(specVt[0])(spec, &guard);
+    }
+
+    uint8_t* bytes     = reinterpret_cast<uint8_t*>(static_cast<uintptr_t>(m_pGameState));
+    void*    stateRoot = *(void**)(bytes + 32);
+    void*    innerNode = *(void**)((uint8_t*)stateRoot + 4);
+    using Vfn6 = void(*)(void*);
+    void**   innerVt   = *(void***)innerNode;
+    reinterpret_cast<Vfn6>(innerVt[6])(innerNode);
+
+    uint32_t* shadowTable = *(uint32_t**)lbl_8271A2EC;
+    uint32_t  mode        = shadowTable[0x8CF0 / 4];
+    if (mode == 1) {
+        uint8_t extraGate = *((uint8_t*)shadowTable + 0x8CFA);
+        if (extraGate != 0) {
+            pongShadowMap_2700_g();
+        }
+    }
 }
 
 /**
@@ -366,7 +649,7 @@ void pongGameContext::HandleMsg_ClearCharViewSlots(void* /*event*/) {
     }
 
     // If the HSM is already in state 6 (post-load/transition), we're done.
-    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
     int32_t currentState = *(int32_t*)((uint8_t*)state->m_pHsmContext + 0x10);
     if (currentState == 6) {
         return;
@@ -443,7 +726,7 @@ void pongGameContext::HandleMsg_ForwardToMatchLogic(void* /*event*/) {
  */
 void pongGameContext::HandleMsg_MenuBackRequest(void* /*event*/) {
     pongInputObj*      input = (pongInputObj*)g_input_obj_ptr;
-    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
 
     if (input->m_iSessionState == 3) {
         // Query an atSingleton registry for a pending modal-close hook.
@@ -530,7 +813,7 @@ void pongGameContext::HandleMsg_MenuQuitConfirm(void* /*event*/) {
     void*   menuSingleton = lbl_8271A364;
     int32_t menuPhase     = *(int32_t*)((uint8_t*)menuSingleton + 12);
 
-    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
     if (menuPhase == 2) {
         state->m_bMenuCancel = 1;  // +0x17
         return;
@@ -558,7 +841,7 @@ void pongGameContext::HandleMsg_CharVarFloatClamp(void* /*event*/) {
     float hashFloat = 0.0f;
     atSingleton_E998_g(nullptr, (const char*)kKey_f_Hash, &hashFloat);
 
-    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
     if (state->m_fCharVarClampMax >= kFloatZero) {
         // Already nonnegative — swallow event.
         return;
@@ -575,7 +858,7 @@ void pongGameContext::HandleMsg_CharVarFloatClamp(void* /*event*/) {
 void pongGameContext::HandleMsg_StoreHashIntoEvent(void* /*event*/) {
     uint32_t hashVal = 0;
     atSingleton_E998_g(nullptr, (const char*)kKey_i_Hash, &hashVal);
-    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
     state->m_uHashStash = hashVal;  // +0x10
 }
 
@@ -620,7 +903,7 @@ void pongGameContext::HandleMsg_SuspendClear(void* /*event*/) {
 // after passing their respective gates. Factored to avoid three duplicate
 // three-liners. The debug-log variants fold their format string in here too.
 static void raiseAcceptFlag(pongGameContext* ctx) {
-    pongGameStateData* state = (pongGameStateData*)ctx->m_pGameState;
+    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(ctx->m_pGameState));
     state->m_bMenuAccept = 1;  // +0x15
 }
 
@@ -636,7 +919,7 @@ static void raiseAcceptFlag(pongGameContext* ctx) {
 void pongGameContext::HandleMsg_TourneyFinishedBackToFrontend(void* /*event*/) {
     // rage_DebugLog(ctx, "pongGameContext::Process() msgUI::kPostNetTourneyUIEnd...");
     nop_8240E6D0((void*)0x82071910);  // string @ 0x82071910
-    pongGameStateData* state = (pongGameStateData*)m_pGameState;
+    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
     state->m_bMenuBack = 1;  // +0x16
 }
 
@@ -740,15 +1023,6 @@ void pongGameContext::HandleMsg_JoinFromHudRequested(void* /*event*/) {
     atSingleton_CBE0_g(configCtx, nullptr, nullptr, 1, 0, 0, (void*)(intptr_t)modalId);
     atSingleton_CB90_g(configCtx);
 }
-// ────────────────────────────────────────────────────────────────────────────
-// pongGame — Main game object
-// @ vtable 0x82071B9C
-// ────────────────────────────────────────────────────────────────────────────
-
-struct pongGame {
-    void** vtable;  // +0x00
-};
-
 // ────────────────────────────────────────────────────────────────────────────
 // NOTES
 // ────────────────────────────────────────────────────────────────────────────
