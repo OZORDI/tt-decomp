@@ -1200,3 +1200,254 @@ void fxAmbient::ApplyBoneOverrides() {
         sub_82388758(self, 0, 1);
     }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Batch pt3 — four additional subclass vtable overrides
+// fxBallSpin, fxBallSpinWispData, fxReticle, fxTrailData
+// ═══════════════════════════════════════════════════════════════════════════
+
+// External RAGE runtime helpers referenced by these four methods.
+// (atFactory_GetFactory is already declared near fxSpecialFx above; rage_free_00C0
+//  is declared in the fxAmbient block.)
+extern void* rage_datTypeFactory_Create(void* holder, const char* typeName,
+                                        const char* modName, int flag1,
+                                        int zero);                // @ 0x822E3040
+extern void  fiStreamBuf_Close(void* stream);                     // @ 0x822E3B38
+extern void  atSingleton_5218(void* dst, void* desc);             // @ 0x82385218
+extern void  atSingleton_53E0_w(void* dst, const char* name,
+                                void* desc);                      // @ 0x823853E0
+extern void  pongHairData_7B60_g(void* parser, int kind,
+                                 const char* name, void* addr,
+                                 int flag1, int unused, int zero);  // @ 0x82177B60
+
+// .rdata string literals read by fxReticle::RegisterReticleTypes.
+extern const char  fxReticle_s_modId[];         // @ 0x82032358 — "fx"
+extern const char  fxReticle_s_idealName[];     // @ 0x8206AE10 — "ideal_reticle"
+extern const char  fxReticle_s_actualName[];    // @ 0x8206AE20 — "actual_reticle"
+extern const char  fxReticle_s_reticleName[];   // @ 0x8206AE30 — "reticle"
+extern const char  fxReticle_s_targetName[];    // @ 0x8206AE38 — "Target"
+extern void**      fxReticle_s_fiTokenizerVt;   // @ 0x8205A594 — rage::fiTokenizer vtable
+extern uintptr_t   g_fxReticleSingleton;        // @ 0x825D0080 — atSingletonHolder<fxReticleMgr>
+
+// .rdata string literals read by fxTrailData::RegisterFields. Each lives
+// at a 12-byte stride inside the tunable-string pool at 0x82065560+.
+extern const char  fxTrailData_s_fieldName0[];  // @ 0x82065560 — kind 5 → field at this+16
+extern const char  fxTrailData_s_fieldName1[];  // @ 0x82065568 — kind 6 → field at this+20
+extern const char  fxTrailData_s_fieldName2[];  // @ 0x82065574 — kind 6 → field at this+24
+extern const char  fxTrailData_s_fieldName3[];  // @ 0x82065580 — kind 9 → field at this+32
+extern const char  fxTrailData_s_fieldName4[];  // @ 0x8206558C — kind 9 → field at this+48
+extern const char  fxTrailData_s_flagName0[];   // @ 0x82065598 — kind 1 → byte at this+64
+extern const char  fxTrailData_s_flagName1[];   // @ 0x820655A8 — kind 1 → byte at this+65
+
+// fxBallSpinWispData vtable re-stamped by its ScalarDtor.
+extern void** fxBallSpinWispData_vtable;        // @ 0x8206B394
+
+// .rdata scalar seed used by fxBallSpin::Reset (1.0f constant near
+// lbl @ r10-12024; same constant family as kFxOne but fetched via a
+// load in the original to force a specific load-pipeline scheduling).
+extern const float lbl_fxBallSpin_oneF;         // @ 0x82077948
+
+/**
+ * fxBallSpin::Reset @ 0x82388A00 | size: 0x84  [vtable slot 3]
+ *
+ * Zeroes the six 16-byte vector slots that make up the spin control cage
+ * (this+176, +192, +208, +224, +240, +256), then seeds the three scale
+ * floats at +28/+32/+36 to 1.0f and stamps the two "live" bytes at +24/+25.
+ *
+ * Mirrors the shape of fxBallSpinTex::Reset but on a narrower 6-slot cage
+ * (the tex variant also clears seg6/seg7 scalar floats and a trail-accum
+ * triplet). This one is the bare spin-line reset used by fxBallSpin proper.
+ */
+void fxBallSpin::Reset() {
+    char* self = reinterpret_cast<char*>(this);
+    const float oneF = lbl_fxBallSpin_oneF;  // equals 1.0f
+
+    // Seed live flags + three scale floats first (matches PPC issue order).
+    field<uint8_t>(this, kSpinLiveFlagA) = 1;   // +24
+    field<uint8_t>(this, kSpinLiveFlagB) = 1;   // +25
+    field<float  >(this, kSpinScale0)    = oneF;  // +28
+    field<float  >(this, kSpinScale1)    = oneF;  // +32
+    field<float  >(this, kSpinScale2)    = oneF;  // +36
+
+    // Zero the six 16-byte vector segments (same offsets as fxBallSpinTex
+    // first six slots: kSpinSeg0..kSpinSeg5).
+    const int segOffsets[6] = {kSpinSeg0, kSpinSeg1, kSpinSeg2,
+                               kSpinSeg3, kSpinSeg4, kSpinSeg5};
+    for (int off : segOffsets) {
+        uint64_t* v = reinterpret_cast<uint64_t*>(self + off);
+        v[0] = 0;
+        v[1] = 0;
+    }
+}
+
+/**
+ * fxBallSpinWispData::ScalarDtor @ 0x823880B8 | size: 0x48  [vtable slot 1]
+ *
+ * Standard "scalar deleting destructor" pattern: re-stamps this object's
+ * own vtable (at 0x8206B394), then — if caller-flag bit 0 is set — frees
+ * the object through rage_free_00C0.
+ *
+ * Unlike the composite fxBallSpinTex destructor, fxBallSpinWispData has no
+ * owned buffers to release; this method is purely a vtable-patch plus
+ * optional free-self.
+ */
+void fxBallSpinWispData::ScalarDtor(int flags) {
+    // Re-stamp own vtable (covers the case where a base dtor ran first and
+    // patched in its own vtable pointer).
+    this->vtable = fxBallSpinWispData_vtable;
+
+    if (flags & 0x1) {
+        rage_free_00C0(this);
+    }
+}
+
+/**
+ * fxReticle::RegisterReticleTypes @ 0x82384780 | size: 0x1B0  [vtable slot 2]
+ *
+ * Builds the three reticle sub-objects by looking up three named datType
+ * factories out of the fxReticleMgr atSingleton and binding each resulting
+ * rage::fiTokenizer-backed descriptor to a 32-byte embedded slot on the
+ * reticle instance:
+ *
+ *   - "ideal_reticle"  → this+48  (slot A — desired aim target)
+ *   - "actual_reticle" → this+64  (slot B — current shown reticle)
+ *   - "reticle"        → this+80  (slot C — base/default reticle)
+ *                        additional bind @ this+96 via atSingleton_53E0_w
+ *                        using the "Target" subkey name.
+ *
+ * After all three binds finish, decrement the singleton refcount at +1536.
+ *
+ * Each factory is fetched via:
+ *   atFactory_GetFactory(&g_fxReticleSingleton);      // initialize holder
+ *   desc = rage_datTypeFactory_Create(holder, typeName, "fx", 1, 0);
+ *
+ * The 32-byte local descriptor laid out on the stack for each bind is:
+ *   +0   fiTokenizer_vtable
+ *   +4   type-name ("ideal_reticle" / etc)
+ *   +8   kind = 1
+ *   +12  desc ptr (factory output)
+ *   +16  stride = 32
+ *   +20  mode = 2
+ *   +24  zero
+ *   +28  zero
+ * and a trailing 4-byte zero pad at struct+(156 or 152).
+ *
+ * The third invocation additionally calls atSingleton_53E0_w with the
+ * "Target" subkey to register a named sub-slot at this+96.
+ */
+void fxReticle::RegisterReticleTypes() {
+    char* self = reinterpret_cast<char*>(this);
+    void* holder = &g_fxReticleSingleton;
+
+    // Prime the singleton holder (sets up the factory tree lazily).
+    atFactory_GetFactory(holder);
+
+    // ── Slot A: "ideal_reticle" → this+48 ────────────────────────────
+    void* descA = rage_datTypeFactory_Create(holder,
+                                             fxReticle_s_idealName,
+                                             fxReticle_s_modId, 1, 0);
+    if (descA != nullptr) {
+        // Assemble 32-byte fiTokenizer descriptor on the stack. Using an
+        // int-keyed struct-like layout would be nicer, but the exact
+        // field ordering here is load-bearing for the downstream binder.
+        uint32_t descBuf[40];
+        descBuf[0]  = reinterpret_cast<uintptr_t>(fxReticle_s_fiTokenizerVt);
+        descBuf[1]  = reinterpret_cast<uintptr_t>(fxReticle_s_idealName);
+        descBuf[2]  = 1;                                  // kind flag
+        descBuf[3]  = reinterpret_cast<uintptr_t>(descA); // factory desc
+        descBuf[4]  = 32;                                 // stride
+        descBuf[5]  = 2;                                  // mode
+        descBuf[6]  = 0;
+        descBuf[7]  = 0;                                  // byte at +28
+        descBuf[39] = 0;                                  // trailing pad
+        atSingleton_5218(self + 48, descBuf);
+        fiStreamBuf_Close(descA);
+    }
+
+    // ── Slot B: "actual_reticle" → this+64 ───────────────────────────
+    void* descB = rage_datTypeFactory_Create(holder,
+                                             fxReticle_s_actualName,
+                                             fxReticle_s_modId, 1, 0);
+    if (descB != nullptr) {
+        uint32_t descBuf[40];
+        descBuf[0]  = reinterpret_cast<uintptr_t>(fxReticle_s_fiTokenizerVt);
+        descBuf[1]  = reinterpret_cast<uintptr_t>(fxReticle_s_actualName);
+        descBuf[2]  = 1;
+        descBuf[3]  = reinterpret_cast<uintptr_t>(descB);
+        descBuf[4]  = 32;
+        descBuf[5]  = 2;
+        descBuf[6]  = 0;
+        descBuf[7]  = 0;
+        descBuf[39] = 0;
+        atSingleton_5218(self + 64, descBuf);
+        fiStreamBuf_Close(descB);
+    }
+
+    // ── Slot C: "reticle" → this+80 (and +96 for "Target" subkey) ───
+    void* descC = rage_datTypeFactory_Create(holder,
+                                             fxReticle_s_reticleName,
+                                             fxReticle_s_modId, 1, 0);
+    if (descC != nullptr) {
+        uint32_t descBuf[40];
+        descBuf[0]  = reinterpret_cast<uintptr_t>(fxReticle_s_fiTokenizerVt);
+        descBuf[1]  = reinterpret_cast<uintptr_t>(fxReticle_s_reticleName);
+        descBuf[2]  = 1;
+        descBuf[3]  = reinterpret_cast<uintptr_t>(descC);
+        descBuf[4]  = 32;
+        descBuf[5]  = 2;
+        descBuf[6]  = 0;
+        descBuf[7]  = 0;
+        descBuf[39] = 0;
+        atSingleton_53E0_w(self + 80, fxReticle_s_targetName, descBuf);
+        // The PPC lift also invokes the 5218 variant on this+96 with the
+        // same descriptor after 53E0_w has pushed its own descriptor; the
+        // exact path collapses to a single 53E0_w call in the inlined form.
+        atSingleton_53E0_w(self + 96, fxReticle_s_targetName, descBuf);
+        fiStreamBuf_Close(descC);
+    }
+
+    // Decrement refcount at +1536 of the singleton holder.
+    uint32_t* rc = reinterpret_cast<uint32_t*>(
+        reinterpret_cast<char*>(&g_fxReticleSingleton) + 1536);
+    *rc = *rc - 1;
+}
+
+/**
+ * fxTrailData::RegisterFields @ 0x82380938 | size: 0x114  [vtable slot 3]
+ *
+ * Registers seven tunable parameters with the parSchema-style `parser`
+ * (pongHairData_7B60_g) so save/load code can round-trip the trail cfg.
+ *
+ * Mapping (all bind `flag1=1, unused=0, zero=0`):
+ *
+ *   | kind | field addr | source name label              |
+ *   |-|-|-|
+ *   | 5    | this + 16  | fxTrailData_s_fieldName0 (vec?)|
+ *   | 6    | this + 20  | fxTrailData_s_fieldName1 (float)|
+ *   | 6    | this + 24  | fxTrailData_s_fieldName2 (float)|
+ *   | 9    | this + 32  | fxTrailData_s_fieldName3 (vec4)|
+ *   | 9    | this + 48  | fxTrailData_s_fieldName4 (vec4)|
+ *   | 1    | this + 64  | fxTrailData_s_flagName0  (byte)|
+ *   | 1    | this + 65  | fxTrailData_s_flagName1  (byte)|
+ *
+ * The kind values align with the reflection system used elsewhere in the
+ * codebase (see char_view.cpp and pong_camera.cpp — 1=byte, 5=vec3-ish,
+ * 6=float, 9=vec4).
+ */
+void fxTrailData::RegisterFields(void* parser) {
+    char* self = reinterpret_cast<char*>(this);
+
+    // Two small floats / one 3-component header.
+    pongHairData_7B60_g(parser, 5, fxTrailData_s_fieldName0, self + 16, 1, 0, 0);
+    pongHairData_7B60_g(parser, 6, fxTrailData_s_fieldName1, self + 20, 1, 0, 0);
+    pongHairData_7B60_g(parser, 6, fxTrailData_s_fieldName2, self + 24, 1, 0, 0);
+
+    // Two 4-component vectors (kind 9).
+    pongHairData_7B60_g(parser, 9, fxTrailData_s_fieldName3, self + 32, 1, 0, 0);
+    pongHairData_7B60_g(parser, 9, fxTrailData_s_fieldName4, self + 48, 1, 0, 0);
+
+    // Two consecutive bytes — standard enable/mode flag pair.
+    pongHairData_7B60_g(parser, 1, fxTrailData_s_flagName0,  self + 64, 1, 0, 0);
+    pongHairData_7B60_g(parser, 1, fxTrailData_s_flagName1,  self + 65, 1, 0, 0);
+}
