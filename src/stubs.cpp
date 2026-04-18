@@ -167,20 +167,10 @@ int main(int argc, char** argv) {
 }
 
 // ── Singleton Functions ─────────────────────────────────────────────────────
-
-void atHashMap_Clear(void* map) {
-    (void)map;
-}
+// atHashMap_Clear / atSingleton_Find / atSingleton_Remove — moved to
+// src/rage/data/at_types.cpp.
 
 void rage_GameLoopThreadEntry(void* singleton) {
-    (void)singleton;
-}
-
-void atSingleton_Find(void* ptr) {
-    (void)ptr;
-}
-
-void atSingleton_Remove(void* singleton) {
     (void)singleton;
 }
 
@@ -193,10 +183,7 @@ void audSystem_Configure(void* config) {
 void audSystem_Shutdown(void) {}
 
 // ── Data Reference Functions ────────────────────────────────────────────────
-
-void datRef_Release(void* ref) {
-    (void)ref;
-}
+// datRef_Release — moved to src/rage/data/at_types.cpp.
 
 // ── File I/O Functions ──────────────────────────────────────────────────────
 
@@ -212,9 +199,7 @@ void* _calloc_crt(int count, int size) {
 
 void _crt_fiber_destroy(void) {}
 
-void fiAsciiTokenizer_InitializeTokenizer(void* tokenizer) {
-    (void)tokenizer;
-}
+// fiAsciiTokenizer_InitializeTokenizer — moved to src/rage/io/fiAsciiTokenizer.cpp.
 
 void _tls_dtor_cleanup(void) {}
 
@@ -237,9 +222,7 @@ void* fiStream_Open(const char* path, int mode) {
     return nullptr;
 }
 
-void parStreamOutXml_vprintf(void* stream, const char* format, ...) {
-    (void)stream; (void)format;
-}
+// parStreamOutXml_vprintf — moved to src/rage/data/par_xml_types.cpp.
 
 // ── Graphics Device Functions ───────────────────────────────────────────────
 
@@ -376,7 +359,7 @@ void XeTlsBlock_InitStack(void* pXtf, void* stackBase, uint32_t stackSize) {
     (void)pXtf; (void)stackBase; (void)stackSize;
 }
 
-void rage_parStructure_Init_stub(void) {}
+// rage_parStructure_Init_stub — moved to src/rage/data/par_xml_types.cpp.
 
 // ── XAM Functions ───────────────────────────────────────────────────────────
 
@@ -402,8 +385,7 @@ void* XePhysicalAlloc_stub(uint32_t sizeBytes, int32_t protectFlags,
 void XeTlsBlock_BindMainThread(void* ctx) { (void)ctx; }
 
 // ── XML Functions ───────────────────────────────────────────────────────────
-
-void xmlNodeStruct_vfn_2(void* node) { (void)node; }
+// xmlNodeStruct_vfn_2 — moved to src/rage/data/par_xml_types.cpp.
 
 // ── Render Target Functions ─────────────────────────────────────────────────
 
@@ -552,28 +534,17 @@ extern "C" void LocomotionStateMf_UpdateTransforms(void* a) { (void)a; }
 extern "C" void* LocomotionState_FindFirstActive(void* a) { (void)a; return nullptr; }
 
 // ── Serialization / XML ─────────────────────────────────────────────────────
-
-extern "C" void RegisterSerializationField(void* a, const char* b, void* c, void* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-extern "C" void RegisterSerializedField(void* a, const char* b, void* c, void* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-extern "C" void xmlNodeStruct_BaseInitialize(void* a) { (void)a; }
-extern "C" void xmlNodeStruct_SerializeField(void* a, const char* b, void* c, void* d, uint32_t e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
+// RegisterSerializationField / RegisterSerializedField /
+// xmlNodeStruct_BaseInitialize / xmlNodeStruct_SerializeField —
+//   moved to src/rage/data/par_xml_types.cpp.
 
 // ── atArray / atSingleton ───────────────────────────────────────────────────
-
-extern "C" void* atArray_Destructor(void* a) { (void)a; return nullptr; }
-extern "C" void atFactory_GetFactory(void* a) { (void)a; }
-extern "C" void* atSingleton_CAD0_g(void* a) { (void)a; return nullptr; }
-extern "C" void parStruct_SerializeMembers(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+// atArray_Destructor is address-backed in src/rage/memory/atArray.cpp.
+// atFactory_GetFactory / atSingleton_CAD0_g / parStruct_SerializeMembers —
+//   moved to src/rage/data/at_types.cpp and src/rage/data/par_xml_types.cpp.
 
 // ── Audio ───────────────────────────────────────────────────────────────────
-
-extern "C" void xapo_UnpackBuffer(void* a, void* b) { (void)a; (void)b; }
+// xapo_UnpackBuffer — moved to src/rage/io/fiStreamBuf.cpp.
 
 // ── CM (Control Machine) System ─────────────────────────────────────────────
 
@@ -595,13 +566,11 @@ extern "C" int cmNode_GetDim_stub(void* a) { (void)a; return 0; }
 extern "C" float cmVec4_Atan2(float* a, float* b) { (void)a; (void)b; return 0.0f; }
 
 // ── File I/O / Tokenizer ────────────────────────────────────────────────────
-
-extern "C" void fiAsciiTokenizer_SetString(void* a, const char* b, const char* c) { (void)a; (void)b; (void)c; }
-extern "C" void fiAsciiTokenizer_Process(void* a, int b) { (void)a; (void)b; }
+// fiAsciiTokenizer_SetString / fiAsciiTokenizer_Process —
+//   moved to src/rage/io/fiAsciiTokenizer.cpp.
 
 // ── parStream ───────────────────────────────────────────────────────────────
-
-extern "C" float parStreamInXml_ReadFloat(void* a) { (void)a; return 0.0f; }
+// parStreamInXml_ReadFloat — moved to src/rage/data/par_xml_types.cpp.
 
 // ── Game Logic ──────────────────────────────────────────────────────────────
 
@@ -660,14 +629,11 @@ extern "C" void pongPlayer_SyncWord(void* a, void* b) { (void)a; (void)b; }
 extern "C" void rage_AddRef(void* a) { (void)a; }
 extern "C" void rage_Release(void* a) { (void)a; }
 extern "C" void rage_ReleaseSingleton(void* a) { (void)a; }
-extern "C" void* parStreamInXml_FindChildByName(const void* a, const char* b) { (void)a; (void)b; return nullptr; }
-extern "C" void parMember_Destructor(void) {}
+// parStreamInXml_FindChildByName / parMember_Destructor —
+//   moved to src/rage/data/par_xml_types.cpp.
 extern "C" const void* rage_cmIntegrate_vtable = nullptr;
-extern "C" void fiStreamBuf_Read_stub(void* a, void* b, uint32_t c) { (void)a; (void)b; (void)c; }
-extern "C" void* rage_datTypeFactory_Create_stub(void* a, const char* b, int c, void* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return nullptr;
-}
-extern "C" void fiStreamBuf_Close_stub(void* a) { (void)a; }
+// fiStreamBuf_Read_stub / fiStreamBuf_Close_stub — moved to src/rage/io/fiStreamBuf.cpp.
+// rage_datTypeFactory_Create_stub — moved to src/rage/data/par_xml_types.cpp.
 
 // ── SWF / Scaleform ─────────────────────────────────────────────────────────
 
@@ -799,9 +765,8 @@ void PostPageGroupMessage(void* a, int b, int c, int d, int e) {
 
 void ReadBitsFromStream(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 
-void RegisterSerializedField(void* a, const char* b, void* c, const void* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
+// RegisterSerializedField (const-qualified overload) — moved to
+//   src/rage/data/par_xml_types.cpp.
 
 void ResetShotTimingState(void* a) { (void)a; }
 
@@ -854,20 +819,12 @@ void WriteInt8Bits(void* client, int16_t value, int bits) {
 }
 
 // ── atArray / atSingleton helpers ───────────────────────────────────────────
-
-void atArray_Clear(void* obj) { (void)obj; }
-void atSingleton_0128_wrh(void* a, uint32_t b) { (void)a; (void)b; }
+// atArray_Clear, atSingleton_0128_wrh, atSingleton_2038, atSingleton_23C0,
+// atSingleton_29E8_p25, atSingleton_5CD0_fw, atSingleton_8E88_p42,
+// atSingleton_QueryEventData, datArray_Grow —
+//   moved to src/rage/data/at_types.cpp.
 float math_SafeReciprocal(float a, double b) { (void)a; (void)b; return 0.0f; }
-void atSingleton_2038(void* a, uint32_t b) { (void)a; (void)b; }
-void datArray_Grow(void* a, uint32_t b) { (void)a; (void)b; }
-void atSingleton_23C0(void* a) { (void)a; }
-void atSingleton_29E8_p25(void* a) { (void)a; }
-void atSingleton_5CD0_fw(void* a, uint32_t b) { (void)a; (void)b; }
-void atSingleton_8E88_p42(void* a, void* b, uint32_t c, uint32_t d, uint32_t e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
 void* atSingletonPool_AllocEntry(uint32_t a) { (void)a; return nullptr; }
-void atSingleton_QueryEventData(void* a, void* b) { (void)a; (void)b; }
 
 // ── Audio ───────────────────────────────────────────────────────────────────
 
@@ -888,8 +845,7 @@ void cmOperator_5FC8_g(void* a, uint32_t* b, uint32_t* c) { (void)a; (void)b; (v
 void crAnimBlenderState_Init(void* a) { (void)a; }
 
 // ── File I/O / Tokenizer ────────────────────────────────────────────────────
-
-float fiAsciiTokenizer_2628_g(float a) { (void)a; return 0.0f; }
+// fiAsciiTokenizer_2628_g — moved to src/rage/io/fiAsciiTokenizer.cpp.
 
 // ── Game logic functions ────────────────────────────────────────────────────
 
@@ -1018,7 +974,7 @@ void msgMsgSink::vfn_44() {} void msgMsgSink::vfn_45() {}
 // src/game/network/pong_network_io.cpp
 
 void sysCallback_Invoke(void* a, int b) { (void)a; (void)b; }
-void xmlNodeStruct_Initialize(void* a) { (void)a; }
+// xmlNodeStruct_Initialize — moved to src/rage/data/par_xml_types.cpp.
 
 
 // ============================================================================
@@ -1066,7 +1022,7 @@ void phBoundCapsule_A080_g(void* a) { (void)a; }
 // ── phInst / phObject ───────────────────────────────────────────────────────
 
 void phInst_A3A0_p33(void* a) { (void)a; }
-void* atHashMap_Find(void* a, const void* b) { (void)a; (void)b; return nullptr; }
+// atHashMap_Find — moved to src/rage/data/at_types.cpp.
 
 void* phObject::vfn_17(void* a) { (void)a; return nullptr; }
 void phObject::vfn_20() {}
@@ -1161,13 +1117,11 @@ void* Allocate(unsigned long size, unsigned long alignment) {
 }
 
 void _locale_register(void* a, void* b) { (void)a; (void)b; }
-void atSingleton_8068_h(void* a) { (void)a; }
-void atSingleton_8A48_p42(void* a) { (void)a; }
+// atSingleton_8068_h / atSingleton_8A48_p42 — moved to src/rage/data/at_types.cpp.
 void aud_1498(void* a) { (void)a; }
 void aud_6A20_wrap_6A20(void* a) { (void)a; }
-void fiAsciiTokenizer_ReadToken(void* a, int b) { (void)a; (void)b; }
-uint8_t fiAsciiTokenizer_ReadBool(void* a, void* b, void* c) { (void)a; (void)b; (void)c; return 0; }
-void fiAsciiTokenizer_Destroy(void* a) { (void)a; }
+// fiAsciiTokenizer_ReadToken / _ReadBool / _Destroy —
+//   moved to src/rage/io/fiAsciiTokenizer.cpp.
 
 // namespace rage globals
 extern const float g_capsuleVolK1 = 1.5f;
@@ -1257,7 +1211,7 @@ void hsmState_AttachChild(void* a, void* b) { (void)a; (void)b; }
 void rage_27C0(void* a) { (void)a; }
 void* rage_Allocate(unsigned int a) { (void)a; return nullptr; }
 void rage_C1A8(void* a) { (void)a; }
-void datResource_Load(void* a, const char* b) { (void)a; (void)b; }
+// datResource_Load — moved to src/rage/data/at_types.cpp.
 void rage_FF70(void* a) { (void)a; }
 void rage_free(void* p) { free(p); }
 void rage_threadpool_cleanup_6878() {}
@@ -1296,9 +1250,8 @@ void* rage_Alloc(unsigned int a) { (void)a; return nullptr; }
 void xe_GetLoadContext() {}
 void xe_GetLoadContext(void* a) { (void)a; }
 void rage_AssertMainThread() {}
-void xmlNodeStruct_Init(void* a) { (void)a; }
-int xml_ReadInt(const char* a) { (void)a; return 0; }
-void xml_ReadString(const char* a, char* b, int c) { (void)a; if (b && c > 0) b[0] = '\0'; }
+// xmlNodeStruct_Init / xml_ReadInt / xml_ReadString —
+//   moved to src/rage/data/par_xml_types.cpp.
 
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a; (void)b; (void)c; }
 // fsmMachine_Destroy — real impl in src/rage/core/fsmMachine.c
@@ -1309,19 +1262,16 @@ extern "C" {
 // _c_PostStateTransitionRequest — lifted in src/rage/core/hsm.cpp
 // RtlEnterCriticalSection / RtlLeaveCriticalSection — C-linkage already
 // provided by extern "C" definitions in Section 1
-void _c_atArray_Clear(void* a) __asm__("_atArray_Clear");
-void _c_atArray_Clear(void* a) { atArray_Clear(a); }
+// _atArray_Clear / _atHashMap_Find / _xmlNodeStruct_Initialize wrappers —
+//   moved alongside their implementations in src/rage/data/at_types.cpp and
+//   src/rage/data/par_xml_types.cpp.
 void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
 void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
 // _c_hsmContext_SetNextState — lifted in src/rage/core/hsm.cpp
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pg_6F68(a,b,c,d,e); }
-void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
-void _c_atHashMap_Find(void* a, const void* b) { atHashMap_Find(a,b); }
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
 void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
-void _c_xmlNodeStruct_Initialize(void* o) __asm__("_xmlNodeStruct_Initialize");
-void _c_xmlNodeStruct_Initialize(void* o) { xmlNodeStruct_Initialize(o); }
 }
 
 // ── dcamPolarCam vtable stubs (asm labels from globals_linker.cpp) ───────────

@@ -18,7 +18,7 @@ namespace rage { class atSingleton; }
 // PostStateTransitionRequest — lifted in src/rage/core/hsm.cpp
 void RtlEnterCriticalSection(void*) {}
 void RtlLeaveCriticalSection(void*) {}
-void atArray_Clear(void*) {}
+// atArray_Clear — moved to src/rage/data/at_types.cpp.
 void audControl_Destructor(void*) {}
 void fsmMachine_Destroy(void*) {}
 void hsmContext_SetNextState(void*, int) {}
@@ -40,9 +40,8 @@ float phBoundCapsule_0FE0_g(float a, float b) { (void)b; return a; }
 void phBoundCapsule_5138_g(void*, void*, void*) {}
 void phBoundCapsule_A080_g(void*) {}
 void phInst_A3A0_p33(void*) {}
-void atHashMap_Find(void*, const void*) {}
-// ph_59C8, ph_9E50, ph_9EC0_1, ph_CEE0, ph_E010, ph_E088, ph_EF40,
-// ph_ForwardTarget — lifted to src/physics/ph_update_object.cpp (namespace rage).
+// atHashMap_Find — moved to src/rage/data/at_types.cpp.
+void ph_59C8(void*, const char*, int) {}
 void* phArchetype_Find(void*, const char*) { return nullptr; }
 void ph_9E50(void*, void*) {}
 void* ph_9EC0_1(void*) { return nullptr; }
@@ -60,7 +59,7 @@ void pongCameraMgr_ValidateTransition(void*, TransitionParams*, int, TransitionF
 // pongPlayer_{42E0_g,73E8_g,AB48_g} — defined in src/game/player/pong_player_swing.cpp
 void rage_free(void* p) { free(p); }
 void sysCallback_Invoke(void*, int) {}
-void xmlNodeStruct_Initialize(void*) {}
+// xmlNodeStruct_Initialize — moved to src/rage/data/par_xml_types.cpp.
 
 // hsmState methods are in stubs_linker_2.cpp
 // rage::ReleaseSingleton is in stubs_linker_3.cpp
@@ -72,19 +71,16 @@ void _c_RtlEnterCriticalSection(void* cs) __asm__("_RtlEnterCriticalSection");
 void _c_RtlEnterCriticalSection(void* cs) { RtlEnterCriticalSection(cs); }
 void _c_RtlLeaveCriticalSection(void* cs) __asm__("_RtlLeaveCriticalSection");
 void _c_RtlLeaveCriticalSection(void* cs) { RtlLeaveCriticalSection(cs); }
-void _c_atArray_Clear(void* a) __asm__("_atArray_Clear");
-void _c_atArray_Clear(void* a) { atArray_Clear(a); }
+// _atArray_Clear / _atHashMap_Find / _xmlNodeStruct_Initialize wrappers —
+//   moved alongside their implementations in src/rage/data/at_types.cpp
+//   and src/rage/data/par_xml_types.cpp.
 void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
 void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
 // _c_hsmContext_SetNextState — lifted in src/rage/core/hsm.cpp
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pgPageGroup_DispatchEvent(a,b,c,d,e); }
-void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
-void _c_atHashMap_Find(void* a, const void* b) { atHashMap_Find(a,b); }
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
 void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
-void _c_xmlNodeStruct_Initialize(void* o) __asm__("_xmlNodeStruct_Initialize");
-void _c_xmlNodeStruct_Initialize(void* o) { xmlNodeStruct_Initialize(o); }
 }
 
 // ── C++ signatures that differ from stubs_final ─────────────────────────────
