@@ -133,7 +133,8 @@ set(SOURCES
     
     # Animation
     src/anim/pcr_anim_blenders.cpp
-    
+    src/anim/locomotion.cpp
+
     # Physics
     src/physics/ph_physics.cpp
     src/physics/ph_update_object.cpp

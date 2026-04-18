@@ -487,22 +487,7 @@ extern "C" void rage_atStringCopy(const char* src, char* dest, int maxSize) {
 // SinglesNetworkClient_SetMode — lifted in src/game/network/pong_network.cpp
 
 // ── Locomotion State / Animation ────────────────────────────────────────────
-
-extern "C" void LocomotionStateAnim_AccumNode(void* a, void* b) { (void)a; (void)b; }
-extern "C" void LocomotionStateAnim_ApplySpeed(void* a) { (void)a; }
-extern "C" void LocomotionStateAnim_ComputeOffset(void* a, void* b) { (void)a; (void)b; }
-extern "C" void* LocomotionStateAnim_FindAnim(void* a) { (void)a; return nullptr; }
-extern "C" void LocomotionStateAnim_GrowArray(void* a) { (void)a; }
-extern "C" void LocomotionStateAnim_InitCapsuleImpl(void* a, float b, const void* c) { (void)a; (void)b; (void)c; }
-extern "C" void LocomotionStateAnim_ProcessNode(void* a, void* b) { (void)a; (void)b; }
-extern "C" void LocomotionStateAnim_SetMatrixImpl(void* a, const void* b) { (void)a; (void)b; }
-extern "C" void LocomotionStateAnim_SetSpeed(void* a, float b) { (void)a; (void)b; }
-extern "C" void LocomotionStateMf_ApplyConstraints(void* a) { (void)a; }
-extern "C" void LocomotionStateMf_BlendPoses(void* a) { (void)a; }
-extern "C" void LocomotionStateMf_Finish(void* a) { (void)a; }
-extern "C" void LocomotionStateMf_ScaleWeights(void* a) { (void)a; }
-extern "C" void LocomotionStateMf_UpdateTransforms(void* a) { (void)a; }
-extern "C" void* LocomotionState_FindFirstActive(void* a) { (void)a; return nullptr; }
+// Lifted to src/anim/locomotion.cpp (P10).
 
 // ── Serialization / XML ─────────────────────────────────────────────────────
 // RegisterSerializationField / RegisterSerializedField /
@@ -675,20 +660,7 @@ void GetPlayerID(void* a, unsigned int b) { (void)a; (void)b; }
 void HSM_QueueNotification(void* a) { (void)a; }
 
 // ── LocomotionStateAnim members ─────────────────────────────────────────────
-
-void LocomotionStateAnim::ScalarDtor(int flags) { (void)flags; }
-void LocomotionStateAnim::UpdateAnimation(float dt, void* out, float w) { (void)dt; (void)out; (void)w; }
-bool LocomotionStateAnim::EvaluateAnimation(void* out) { (void)out; return false; }
-bool LocomotionStateAnim::GetAnimTransform(void* out) { (void)out; return false; }
-
-void LocomotionStateAnim_8278_g(void* a, void* b) { (void)a; (void)b; }
-void LocomotionStateAnim_88E0_g(void* a, void* b, float c, int d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-void LocomotionStateAnim_BlendLocomotionAnims(uint32_t a, void* b, float c) { (void)a; (void)b; (void)c; }
-void LocomotionStateAnim_C8F8_g(void* a) { (void)a; }
-void LocomotionStateAnim_TransitionLocomotionState(uint32_t a, void* b, float c) { (void)a; (void)b; (void)c; }
-void LocomotionState_OnEnter(void* a) { (void)a; }
+// Lifted to src/anim/locomotion.cpp (P10).
 
 // ── Net / Page / Message ────────────────────────────────────────────────────
 
@@ -780,8 +752,7 @@ void cmMetafileTuningSet_vfn_8(void* a, uint32_t b, uint32_t c) { (void)a; (void
 void cmOperator_5FC8_g(void* a, uint32_t* b, uint32_t* c) { (void)a; (void)b; (void)c; }
 
 // ── Animation ───────────────────────────────────────────────────────────────
-
-void crAnimBlenderState_Init(void* a) { (void)a; }
+// Lifted to src/anim/locomotion.cpp (P10).
 
 // ── File I/O / Tokenizer ────────────────────────────────────────────────────
 // fiAsciiTokenizer_2628_g — moved to src/rage/io/fiAsciiTokenizer.cpp.
@@ -871,10 +842,7 @@ void jumptable_5C20(void* a) { (void)a; }
 // snListNode_Init lifted to src/game/network/pong_network_io.cpp
 
 // ── Motion clip free function ───────────────────────────────────────────────
-
-void* mfMotionClipRAGE_B8D8_g(void* a, unsigned int b, unsigned int c, unsigned int d) {
-    (void)a; (void)b; (void)c; (void)d; return nullptr;
-}
+// Lifted to src/anim/locomotion.cpp (P10).
 
 // ── msgMsgSink member functions ─────────────────────────────────────────────
 
@@ -923,9 +891,7 @@ void rage_debugLog(const char* fmt, ...) { (void)fmt; }
 void rage_debugLog(const void* ptr, ...) { (void)ptr; }
 
 // ── Animation blending ──────────────────────────────────────────────────────
-
-void pcrAnimBlender_Initialize(void* a) { (void)a; }
-int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* a) { (void)a; return 0; }
+// Lifted to src/anim/locomotion.cpp (P10).
 
 // ── Page Group helpers → src/rage/swf.cpp ───────────────────────────────────
 
@@ -1193,32 +1159,4 @@ namespace rage {
 // (42E0_g, 73E8_g, AB48_g, 9CD0_g — real bodies already in pong_player_swing.cpp)
 
 // ── pcrAnimBlender / pcrAnimState (from stubs_final.cpp) ────────────────────
-
-void pcrAnimBlender_ApplyClipWeights(void* a, unsigned b, float c, float d) { (void)a; (void)b; (void)c; (void)d; }
-void pcrAnimState_ComputePosition(vec3* a, pongAnimState* b) { (void)a; (void)b; }
-
-// ── P1/15 batch: helpers referenced by msg_msg_sink.cpp lifts ───────────────
-// These are out-of-partition free functions that will be decomped by P3.
-// Minimal stubs so the linker resolves them.
-extern "C" {
-void  msgMsgSink_43A8_g(void* self) { (void)self; }
-void  msgMsgSink_46B8_g(void* self, int mode) { (void)self; (void)mode; }
-void* msgMsgSink_A4F8_g(void* newObj, void* desc, void* self, int flag, int idx)
-    { (void)newObj; (void)desc; (void)self; (void)flag; (void)idx; return nullptr; }
-int   rage_A2C0(void* obj, unsigned code, void* data) { (void)obj; (void)code; (void)data; return 0; }
-int   rage_A1F0(void* obj, int flag, void* data) { (void)obj; (void)flag; (void)data; return 0; }
-int   rage_4960(void* self) { (void)self; return 0; }
-void* atSingleton_6F98_g(void) { return nullptr; }
-void  rage_7918(void* self) { (void)self; }
-void  game_6F40_h(void* self) { (void)self; }
-void  msgMsgSink_5F40_g(void* self, unsigned short idx, void* a, void* b) { (void)self; (void)idx; (void)a; (void)b; }
-void  msgMsgSink_5C10_g(void* obj, unsigned short idx, unsigned* p) { (void)obj; (void)idx; (void)p; }
-void* rage_01B8(unsigned size, unsigned alloc) { (void)size; (void)alloc; return nullptr; }
-void  fiAsciiTokenizer_3C68_g(unsigned b) { (void)b; }
-void  fiAsciiTokenizer_31F0_g(void) {}
-void  msgMsgSink_32A0_h(void* a, int f) { (void)a; (void)f; }
-}
-void msgMsgSink_5708_fw(void* self, unsigned int idx) { (void)self; (void)idx; }
-void msgMsgSink_F3F8_w(void* self) { (void)self; }
-void** g_handlerTable_8258FBFC = nullptr;
-void (*g_msgSinkPreShutdownCb_825E6E94)(void) = nullptr;
+// Lifted to src/anim/locomotion.cpp (P10).

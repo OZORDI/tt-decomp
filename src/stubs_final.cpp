@@ -22,12 +22,20 @@ void RtlLeaveCriticalSection(void*) {}
 void audControl_Destructor(void*) {}
 void fsmMachine_Destroy(void*) {}
 void hsmContext_SetNextState(void*, int) {}
-// msgMsgSink_5098_g .. msgMsgSink_F518_wrh + net_6BA0_fw lifted to
-// src/game/network/pong_network_io.cpp
-void pcrAnimBlender_ApplyClipWeights(void*, unsigned, float, float) {}
-void pcrAnimBlender_Initialize(void*) {}
-void pcrAnimState_ComputePosition(vec3*, pongAnimState*) {}
-void pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender*) {}
+void msgMsgSink_5098_g(void*, bool) {}
+void msgMsgSink_6138_2hr(void*) {}
+void msgMsgSink_6220_w(void*) {}
+void msgMsgSink_84C0_gen(void*) {}
+void msgMsgSink_A970_2h(void*) {}
+void msgMsgSink_D168_sp(void*) {}
+void msgMsgSink_D1D8_sp(void*) {}
+void msgMsgSink_DB70_g(void*, unsigned) {}
+void msgMsgSink_E860_g(void*, unsigned, unsigned, unsigned) {}
+unsigned msgMsgSink_F518_wrh(unsigned) { return 0; }
+void net_6BA0_fw(void*, void*, void*) {}
+// pcrAnimBlender_ApplyClipWeights, pcrAnimBlender_Initialize,
+// pcrAnimState_ComputePosition, pcrPostPointBlender_GetActiveClipIndex
+// lifted to src/anim/locomotion.cpp (P10).
 void pgPageGroup_DispatchEvent(void*, void*, int, unsigned*, int) {}
 void* pg_9C00_g(void*) { return nullptr; }
 void pg_ApplyTransition(void*, TransitionParams*, int, TransitionFlags*, int) {}
