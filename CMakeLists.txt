@@ -43,12 +43,10 @@ set(SOURCES
     src/crt/exit.c
     src/crt/heap.c
     src/crt/memory.c
-    src/crt/ppc_helpers.c
     src/crt/startup.c
     src/crt/string.c
     src/globals.c
     src/stubs.cpp
-    src/flirt_batch_04.cpp
 
     # XAM (Xbox Application Model)
     src/xam/audio.c
@@ -127,7 +125,6 @@ set(SOURCES
     src/game/network/xonline_strings.cpp
     src/game/player/pong_player.cpp
     src/game/pong_render.cpp
-    src/game/pong_vfn_stubs.cpp
     src/game/match/hsm_log_strings.cpp
     src/game/match/pong_states.cpp
     src/game/match/match_rtti_strings.cpp

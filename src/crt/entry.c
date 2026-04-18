@@ -17,10 +17,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if defined(TT_ENABLE_NATIVE_CRT_HOOKS)
-int crt_hooks_register(void);
-#endif
-
 /* ── XeTlsBlock — Xbox 360 Thread Frame descriptor ──────────────────
  * Minimal struct definition matching the fields accessed by entry.c.
  * Full layout TBD as more thread-management functions are decompiled. */
@@ -141,14 +137,6 @@ void sysMemAllocator_InitMainThread(void)
  */
 void __crt_main_entry(void* pStartupParms, void* pBase)
 {
-#if defined(TT_ENABLE_NATIVE_CRT_HOOKS)
-    static int s_crtHooksInstalled = 0;
-    if (!s_crtHooksInstalled) {
-        crt_hooks_register();
-        s_crtHooksInstalled = 1;
-    }
-#endif
-
     sysMemAllocator_InitMainThread();
     (void)rage_main_stub(pStartupParms, pBase);
 }
