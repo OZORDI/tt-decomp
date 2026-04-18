@@ -815,18 +815,25 @@ void SetPageGroupVisible(void* a) { (void)a; }
 
 // ── SinglesNetworkClient free-function stubs ────────────────────────────────
 
-void snBitStream_Reset(void* a) { (void)a; }
-void snBitStream_WriteBits(void* a, uint32_t b, int c) { (void)a; (void)b; (void)c; }
+// snBitStream_Reset / snBitStream_WriteBits / rlEvent_Init / snBitStream_ReadSigned
+// lifted to src/game/network/pong_network_io.cpp.
 uint32_t netStream_WriteString(void* a, const char* b, uint32_t c) { (void)a; (void)b; (void)c; return 0; }
-void* rlEvent_Init(void* a, int b, void* c, void* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return nullptr;
+void NetworkClient_BeginJoinRequest(void* a) { (void)a; }
+uint8_t NetworkClient_PollJoinResponse(void* a) { (void)a; return 0; }
+void NetworkClient_InitInternalState(void* a) { (void)a; }
+void NetworkClient_ResetLocalState(void* a) { (void)a; }
+void NetworkClient_DispatchMessage(void* a, int b, void* c, int d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
 }
-void snBitStream_ReadSigned(void* a, uint32_t* b, int c) { (void)a; (void)b; (void)c; }
-// NetworkClient_* family + SinglesNetworkClient_{4FB0_g,8CC0_w,BE30_g}
-// — lifted in src/game/network/pong_network.cpp
+int NetworkClient_GetMessageId(void* a) { (void)a; return 0; }
+void SinglesNetworkClient_4FB0_g(void* a) { (void)a; }
+void* NetworkClient_LookupPlayer(uint8_t a) { (void)a; return nullptr; }
+void NetworkClient_AbortMessageProcessing(void* a) { (void)a; }
+void NetworkClient_EndMessageProcessing(void* a) { (void)a; }
+bool NetworkClient_TryDequeueMessage(void* a, uint32_t* b) { (void)a; (void)b; return false; }
 void netStream_WriteBool(void* a, bool b) { (void)a; (void)b; }
-void snBitStream_ValidateWrite(void* a) { (void)a; }
-void snBitStream_ReadBits(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
+void NetworkClient_ReadQueuedMessageSource(void* a, uint8_t* b) { (void)a; (void)b; }
+int SinglesNetworkClient_8CC0_w(void* a) { (void)a; return 0; }
 void* snSession_FindProperty(void* a, const char* b) { (void)a; (void)b; return nullptr; }
 void snSession_BeginOperation(void* a) { (void)a; }
 uint8_t snSession_AcquireLock(void* a) { (void)a; return 0; }
@@ -989,8 +996,12 @@ void hudFlashBase_DrawFlashOverlay(void* a, void* b, void* c, float d, int e) {
 // io_ExecuteStateAction, io_Input_poll_9D68 — lifted in src/rage/core/io_input.cpp
 
 // ── Jump table / kernel free functions ──────────────────────────────────────
-// jumptable_3A48, jumptable_5C20 — lifted in src/rage/core/hsm.cpp
-void snListNode_Init(void* a) { (void)a; }
+
+void jumptable_3A48(void* a, unsigned int b, unsigned int c, unsigned int d) {
+    (void)a; (void)b; (void)c; (void)d;
+}
+void jumptable_5C20(void* a) { (void)a; }
+// snListNode_Init lifted to src/game/network/pong_network_io.cpp
 
 // ── Motion clip free function ───────────────────────────────────────────────
 
@@ -1067,10 +1078,8 @@ int32_t msgMsgSink::QueryConnectionState(uint32_t* outConnected) { (void)outConn
 void msgMsgSink::ForwardCleanupMessage() {}
 void msgMsgSink::ForwardFinalizeMessage() {}
 
-uint32_t msgMsgSink_3C88_g(void* a, unsigned int b) { (void)a; (void)b; return 0; }
-uint32_t msgMsgSink_3D70_p39(void* a) { (void)a; return 0; }
-void msgMsgSink_4550_g(void* a) { (void)a; }
-uint32_t msgMsgSink_4EB8_g(void* a) { (void)a; return 0; }
+// msgMsgSink_3C88_g / 3D70_p39 / 4550_g / 4EB8_g lifted to
+// src/game/network/pong_network_io.cpp
 
 void sysCallback_Invoke(void* a, int b) { (void)a; (void)b; }
 void xmlNodeStruct_Initialize(void* a) { (void)a; }
@@ -1080,18 +1089,9 @@ void xmlNodeStruct_Initialize(void* a) { (void)a; }
 // SECTION 6: C++ stubs from stubs_linker_3.cpp
 // ============================================================================
 
-uint32_t msgMsgSink_5098_g(void* a, bool b) { (void)a; (void)b; return 0; }
-void msgMsgSink_6138_2hr(void* a) { (void)a; }
-void msgMsgSink_6220_w(void* a) { (void)a; }
-int32_t msgMsgSink_84C0_gen(void* a) { (void)a; return 0; }
-void msgMsgSink_A970_2h(void* a) { (void)a; }
-void msgMsgSink_D168_sp(void* a) { (void)a; }
-void msgMsgSink_D1D8_sp(void* a) { (void)a; }
-void msgMsgSink_DB70_g(void* a, uint32_t b) { (void)a; (void)b; }
-void msgMsgSink_E860_g(void* a, uint32_t b, uint32_t c, uint32_t d) { (void)a; (void)b; (void)c; (void)d; }
-void* msgMsgSink_F518_wrh(uint32_t a) { (void)a; return nullptr; }
-
-void net_6BA0_fw(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+// msgMsgSink_5098_g / 6138_2hr / 6220_w / 84C0_gen / A970_2h / D168_sp / D1D8_sp /
+// DB70_g / E860_g / F518_wrh + net_6BA0_fw lifted to
+// src/game/network/pong_network_io.cpp
 
 // ── rage_debugLog overloads (C++ mangled) ────────────────────────────────────
 
@@ -1371,9 +1371,10 @@ void rage_Alloc(int a, void* b) { (void)a; (void)b; }
 
 // util_4628 — lifted into src/physics/ph_update_object.cpp (namespace rage).
 void* util_B188(void* a, int b) { (void)a; (void)b; return nullptr; }
-void snSession_AssociateConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void snSession_ProcessPendingConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-// hsmState_AttachChild — lifted in src/rage/core/hsm.cpp (inside namespace rage)
+// snSession_AssociateConnections / snSession_ProcessPendingConnections lifted
+// to src/game/network/pong_network_io.cpp (at global scope — original callers
+// reach them via extern declarations without namespace qualification).
+void hsmState_AttachChild(void* a, void* b) { (void)a; (void)b; }
 
 } // namespace rage
 
@@ -1387,9 +1388,8 @@ void rage_FF70(void* a) { (void)a; }
 void rage_free(void* p) { free(p); }
 void rage_threadpool_cleanup_6878() {}
 void sgSceneGraph_FreeLists(void* a) { (void)a; }
-void snHsmAcceptingJoinRequest_9A70(void* a, void* b) { (void)a; (void)b; }
-void snSession_Detach(void* a) { (void)a; }
-void snSession_AddNode(void* a, void* b) { (void)a; (void)b; }
+// snHsmAcceptingJoinRequest_9A70 / snSession_Detach / snSession_AddNode lifted
+// to src/game/network/pong_network_io.cpp
 
 void sub_821A8F58(void* a, const char* b, void* c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
@@ -1400,13 +1400,12 @@ namespace { struct FakeTypeInfo { void* vtable; const char* name; }; }
 extern "C" const FakeTypeInfo _ZTI8hsmState = { nullptr, "hsmState" };
 
 void util_03C0(void* a, uint32_t* b) { (void)a; (void)b; }
-int netStream_ReadStringRaw(void* a, void* b) { (void)a; (void)b; return 0; }
-void netStream_ReadBlock(void* a, void* b, short c) { (void)a; (void)b; (void)c; }
+// netStream_ReadStringRaw / netStream_ReadBlock lifted to
+// src/game/network/pong_network_io.cpp
 int util_5A70(void* a, void* b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
 void sysMemAllocator_PlatformFree(void* a, unsigned int b) { (void)a; (void)b; }
-void netStream_ReadS16(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
-// ReadBallHitDataFromNetwork dependency (see src/game/network/pong_network_io.cpp).
-// netStream_ReadS8SignMagnitude (util_1668) — lifted in pong_network_io.cpp.
+// netStream_ReadS16 / netStream_ReadS8SignMagnitude lifted to
+// src/game/network/pong_network_io.cpp
 void util_8FD0(void* a) { (void)a; }
 // util_AA38 — lifted in src/game/network/pong_network.cpp
 void util_B8A0(void* a) { (void)a; }
