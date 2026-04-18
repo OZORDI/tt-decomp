@@ -99,7 +99,9 @@ struct pongLightGlowMgr {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~pongLightGlowMgr();                  // [0] @ 0x8237d060
+    // [0] PPC32 scalar-deleting-dtor — takes hidden `flags` arg.
+    // Split out as Dtor(int flags) per pongGameContext convention.
+    virtual void Dtor(int flags);                 // [0] @ 0x8237d060
 };
 
 // ── pongLightGlowSquare  [vtable @ 0x8206A704] ──────────────────────────
@@ -212,7 +214,9 @@ struct pongScrnTransFreezeAndFadeOut {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual ~pongScrnTransFreezeAndFadeOut();                  // [0] @ 0x82378450
+    // [0] PPC32 scalar-deleting-dtor — takes hidden `flags` arg.
+    // Split out as Dtor(int flags) per pongGameContext convention.
+    virtual void Dtor(int flags);                              // [0] @ 0x82378450
     virtual void vfn_2();  // [2] @ 0x823784f0
     virtual void vfn_3();  // [3] @ 0x82378578
     virtual void vfn_4();  // [4] @ 0x82378610

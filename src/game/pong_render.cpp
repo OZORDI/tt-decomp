@@ -352,7 +352,7 @@ struct SwipePattern {
 extern SwipePattern g_swipePatterns[17];  // @ 0x825D09A0
 
 // External function references
-extern void sysCallback_Invoke(void* obj, int param);  // @ 0x8225FFF8
+extern "C" void sysCallback_Invoke(void* obj, int param);  // @ 0x8225FFF8
 extern void util_PackColorRGBA(uint32_t* outColor, const float* inVector);  // @ 0x8223F840
 extern void hudFlashBase_DrawFlashOverlay(void* hudObj, void* corner1, void* corner2, 
                                  float alpha, int reverseFlag);  // @ 0x82140420
@@ -838,7 +838,10 @@ extern void*     g_renderObjB_825FEAB0;                        // @ 0x825FEAB0 (
 //   lwz  r10, 24(r11)     <- vtable[6]  (slot 6 = 24/4)
 //   mtctr r10 / bctr      <- tail call
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransFreezeAndFadeOut::~pongScrnTransFreezeAndFadeOut()
+// PPC32 scalar-deleting-dtor idiom: the synthesized vtable[0] thunk takes a
+// hidden `flags` arg.  Split out as `Dtor(int flags)` following the
+// pongGameContext convention (see src/game/match/pong_game.cpp:202).
+void pongScrnTransFreezeAndFadeOut::Dtor(int /*flags*/)
 {
     // Shared thunk @ 0x82378450 — dispatches to vtable[6] of the actual
     // class (polymorphic Reset-on-destroy pattern).  Compiler synthesizes
@@ -1231,11 +1234,12 @@ extern "C" void  rage_free_MemAlloc(void* ptr);             // @ 0x820C00C0
 extern       void* const g_rage_vtable_Base_8205A168;       // @ 0x8205A168
 extern       void* const g_pongLightGlowMgr_vtable_Final;   // @ 0x82035484
 
-void pongLightGlowMgr::~pongLightGlowMgr()
+// PPC32 scalar-deleting-dtor idiom: slot [0] takes a hidden `flags` arg where
+// (flags & 1) selects self-free.  Modeled as `Dtor(int flags)` following the
+// pongGameContext convention (see src/game/match/pong_game.cpp:202).
+void pongLightGlowMgr::Dtor(int flags)
 {
-    // Flag is passed via a hidden 2nd arg in the synthesized dtor; in a
-    // hand-written dtor we rely on the caller to invoke ~+ operator delete.
-    // The scaffold stamps the base-class vtable first:
+    // Stamp the base-class vtable first:
     //   this->vtable = &g_rage_vtable_Base_8205A168;
     vtable = reinterpret_cast<void**>(
         const_cast<void*>(g_rage_vtable_Base_8205A168));
@@ -1251,7 +1255,8 @@ void pongLightGlowMgr::~pongLightGlowMgr()
     vtable = reinterpret_cast<void**>(
         const_cast<void*>(g_pongLightGlowMgr_vtable_Final));
 
-    // Self-free is handled by the generated deleting-dtor thunk; no explicit
-    // call here (rage_free_MemAlloc(this) fires only when the delete-flag bit
-    // from the hidden 2nd arg is set).
+    // Self-free when the delete-flag bit is set in the hidden 2nd arg.
+    if ((flags & 0x1) != 0) {
+        rage_free_MemAlloc(this);
+    }
 }
