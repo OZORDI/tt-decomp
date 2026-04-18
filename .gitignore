@@ -93,6 +93,12 @@ gamefiles/*
 *.xex
 *.iso
 
+# Large binary excavation artifacts (reproducible from tt.xex; not for worktrees)
+xex_excavation_tt/tt.bin
+xex_excavation_tt/tt_decrypted.xex
+xex_excavation_tt/tt_decrypted.xex.asm
+xex_excavation_tt/tt_decrypted.xex.i64
+
 # Backup files
 *-backup-*.tar.gz
 
