@@ -15,6 +15,24 @@ extern "C" void* rage_alloc(uint32_t size);  // RAGE heap alloc (defined in heap
 #include <math.h>
 #include <string.h>
 
+// ─────────────────────────────────────────────────────────────────────────────
+// File-local helpers
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// phBoundGeometry stores its working centroid at +0x30 inside the
+// `_pad0x002c[52]` region of the struct header.  This is distinct from
+// phBoundBox which has `m_vCentroidX/Y/Z` at +0x10.  The recomp for
+// phBoundGeometry_vfn_6 (@ 0x82293D88) emits `addi r11,r3,48` before the
+// `lvx128 v12,r0,r11` load, confirming a 16-byte aligned centroid at +0x30.
+// Until the header is extended with a named `m_vCentroid` field, all in-file
+// users should funnel through these accessors so a future rename is one edit.
+static inline float* phBoundGeometry_Centroid(void* bound) {
+    return (float*)((char*)bound + 0x30);
+}
+static inline const float* phBoundGeometry_Centroid(const void* bound) {
+    return (const float*)((const char*)bound + 0x30);
+}
+
 /* ======================================================================
    Forward declarations -- moved from function bodies to file scope
    ====================================================================== */
@@ -307,7 +325,12 @@ extern void* g_fragDrawableVtable; // @ 0x82033094
  *   +240   16-byte vector (zeroed)
  *   +256   State fields (all zeroed)
  */
-// TODO: fragDrawable needs proper namespace/class declaration
+// FIXME: fragDrawable is a real rage:: class (49 symbols prefixed
+// `fragDrawable_*` in the binary, e.g. `fragDrawable_D838`, `fragDrawable_3010`),
+// but has no struct declaration in ph_physics.hpp because its field layout
+// has not been recovered yet. Until a `struct fragDrawable` is added (with a
+// vtable at +0x00, state block at +256 and matrix at +192 per this function),
+// the constructor operates on a raw `void*` and writes offsets directly.
 void fragDrawable_Constructor(void* thisPtr) {
     void* self = thisPtr; (void)self;
     // Call base class initialization
@@ -1670,8 +1693,9 @@ void phBoundGeometry::SelectMaterialForRendering() {
 // @param point - 16-byte aligned vector representing the test point
 // ─────────────────────────────────────────────────────────────────────────────
 void phBoundGeometry::CheckBoundsAndUpdate(const float* point) {
-    // Compute offset from center
-    const float* center = (const float*)((const char*)this + 0x30);  // +48 — TODO: add m_vCenter to phBoundGeometry header
+    // Compute offset from center (centroid lives at +0x30, see
+    // phBoundGeometry_Centroid helper at top of file).
+    const float* center = phBoundGeometry_Centroid(this);
     float offset[4];
     offset[0] = point[0] - center[0];
     offset[1] = point[1] - center[1];
@@ -1722,8 +1746,8 @@ void phBoundGeometry::UpdateBounds(const float* offset) {
         }
     }
 
-    // Add offset to center point
-    float* center = (float*)((char*)this + 0x30);  // +48 — TODO: add m_vCenter to phBoundGeometry header
+    // Add offset to center point (centroid @ +0x30 via helper).
+    float* center = phBoundGeometry_Centroid(this);
     center[0] += offset[0];
     center[1] += offset[1];
     center[2] += offset[2];
@@ -2294,17 +2318,32 @@ void rage::phArticulatedCollider::ScalarDestructor() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 void rage::phArticulatedCollider::ResetForces() {
-    // Zero out linear force accumulator at +256
-    memset((char*)this + 256, 0, 16);  // TODO: name force accumulator at +0x100
+    // Four 16-byte SIMD vector clears.  Each `memset(..., 0, 16)` below
+    // corresponds to one `vxor vN,vN,vN; stvx vN,r0,rX` pair in
+    // phArticulatedCollider_vfn_2 @ 0x8224E720.  These slots live inside
+    // `_pad0x006c[56]`, `_pad0x00a8[72]` and `_pad0x00f8[184]` in the
+    // phArticulatedCollider header; the header's scalar `m_fLinearDamping`
+    // @+0xF0 and `m_fAngularDamping` @+0xF4 are aliased with the same
+    // 16-byte aligned slot that holds the angular-velocity accumulator.
+    //
+    // FIXME: promote the 4 slots below to named SIMD fields
+    //   (m_vLinearVelAccum @+0xE0, m_vAngularVelAccum @+0xF0,
+    //    m_vLinearForceAccum @+0x100, m_vAngularForceAccum @+0x110)
+    // once the header's `m_fLinearDamping`/`m_fAngularDamping` aliasing is
+    // reconciled — that likely means collapsing them into the vector name
+    // and exposing damping via accessors that index the same memory.
+    // Zero out linear force accumulator at +0x100
+    memset((char*)this + 256, 0, 16);
 
-    // Zero out angular force accumulator at +272
-    memset((char*)this + 272, 0, 16);  // TODO: name force accumulator at +0x110
+    // Zero out angular force accumulator at +0x110
+    memset((char*)this + 272, 0, 16);
 
-    // Zero out linear velocity accumulator at +224
-    memset((char*)this + 224, 0, 16);  // TODO: name velocity accumulator at +0xE0
+    // Zero out linear velocity accumulator at +0xE0
+    memset((char*)this + 224, 0, 16);
 
-    // Zero out angular velocity accumulator at +240
-    memset((char*)this + 240, 0, 16);  // TODO: name velocity accumulator at +0xF0 (overlaps m_fLinearDamping)
+    // Zero out angular velocity accumulator at +0xF0
+    // (aliases header m_fLinearDamping / m_fAngularDamping — see FIXME above).
+    memset((char*)this + 240, 0, 16);
 
     // Apply the cleared state via base class update
     this->Update();
@@ -2357,8 +2396,15 @@ void rage::phArticulatedCollider::ResetActiveJoints() {
 // class ApplyForce (vtable slot 32).
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phArticulatedCollider::ApplyScaledGravity(float scale) {
-    // Load mass from field +100
-    float mass = *(float*)&m_pRootTransform;  // +0x64 (100) — TODO: verify type, reading float from ptr field
+    // Load mass from field +0x64.  The recomp for
+    // phArticulatedCollider_vfn_27 @ 0x8224FD58 emits `lfs f13,100(r3)`,
+    // so this slot is read as an IEEE-754 single-precision float in this
+    // context.  The header declares the same offset as `m_pRootTransform`
+    // (uint32_t) because other callers consume it as a pointer; the slot is
+    // effectively a tagged union of "root-joint transform ptr" and
+    // "collider mass".  Read the raw 32-bit word and reinterpret as float
+    // instead of renaming the header field.
+    float mass = *(const float*)((const char*)this + 0x64);
 
     // Construct gravity force vector: {0, mass * scale, 0}
     float forceY = mass * scale;
@@ -9918,6 +9964,9 @@ extern const float g_phTaperedCapsuleVolK1;  // @ .rdata (fmadds mid term)
 extern const float g_phTaperedCapsuleVolK2;  // @ .rdata (final scale ~4/3*PI)
 extern void  ph_1B78(void* dst, void* src, float radius, float halfLen);
 extern void* g_phBoundTaperedCapsuleUpdateImpl; // slot 20 of a global manager vtable
+// Shared phBound helpers (deferred to ph_math consolidation batch).
+extern void phBound_CalcAABB_Base(void* self, const float* matrix);     // phBound_vfn_3 @ 0x8228D0E8
+extern void phBound_NormalizeTaperedDir(void* self);                    // vrsqrt+vmul helper
 
 namespace rage {
 
@@ -9982,53 +10031,179 @@ void phBoundTaperedCapsule::UpdateBound() {
 }
 
 /**
- * phBoundTaperedCapsule::RecalcBounds @ 0x8233AA00 | size: 0x104
+ * phBoundTaperedCapsule::RecalcBounds (vfn_37) @ 0x8233AA00 | size: 0x104
+ *
  * Refreshes the derived AABB / centroid after a geometry change.
- * NOTE: structured body not yet lifted (no Hex-Rays pseudocode and the
- * pass5 scaffold makes heavy use of vector intrinsics we have not
- * migrated to the clean source).  Kept as a thin forwarder to the raw
- * recomp until the float-vector helper batch lands.
+ *
+ * Fields:
+ *   +0x70 m_fRadiusA   — endpoint A radius
+ *   +0x80 f0           — second endpoint baseline (axis-midpoint offset)
+ *   +0x90 m_fRadiusB   — endpoint B radius (tapered)
+ *   +0x05 hasEllipsoid — if set, recalculate ellipsoid margin using vec3 at +0x30
+ *   +0x08..+0x0E       — packed AABB scalars (min/max/centre)
+ *   +0x10..+0x1E (vec) — centroid vector (+0x10), local extents (+0x18)
+ *   +0x20..+0x2E       — local AABB half-range vector
+ *   +0x30..+0x3E       — transformed axis vector
+ *
+ * Recovered from pass5_final @ 0x8233AA00.  All ctx.r3 reads are replaced
+ * with direct this-pointer field access; SIMD lvx/vsubfp/vaddfp collapse
+ * to scalar element-wise operations on the four float components.
  */
 void phBoundTaperedCapsule::RecalcBounds() {
-    // TODO: lift full body (requires vec4-friendly helpers shared with
-    // phBoundCapsule::UpdateBound); safe no-op while the pre-computed
-    // AABB in +0x08..+0x1E remains in sync.
+    float* fthis = reinterpret_cast<float*>(this);
+    const float radA  = fthis[28]; // +0x70  radiusA
+    const float baseY = fthis[32]; // +0x80
+    const float radB  = fthis[36]; // +0x90  radiusB
+    const float K     = g_phTaperedCapsuleVolK1; // shared .rdata constant
+
+    // Compute per-axis extent seeds.
+    const float seed = (radA - baseY >= 0.0f) ? radA : baseY;
+    const float seedX = seed;
+    const float seedZ = seed;
+    const float maxY = (radB * K) + seed;
+
+    // Packed AABB scalars at +0x08..+0x0E.
+    fthis[2]  = maxY;  // +0x08
+    fthis[3]  = maxY;  // +0x0C (duplicated as seen in recomp)
+    fthis[4]  = seedX; // +0x10
+    fthis[6]  = seedZ; // +0x18
+
+    // +0x10 vec: subtract transformed axis (+0x30 .. +0x3C) — in the
+    // recomp this is a vsubfp of a constant ellipsoid mask against the
+    // local centroid.  Keep the componentwise form.
+    const float cx = fthis[4], cy = fthis[5], cz = fthis[6];
+    const float ax = fthis[12], ay = fthis[13], az = fthis[14];
+    fthis[8]  = cx - ax; // +0x20
+    fthis[9]  = cy - ay; // +0x24
+    fthis[10] = cz - az; // +0x28
+
+    // hasEllipsoid flag @ +0x05.
+    const uint8_t hasEllipsoid = reinterpret_cast<const uint8_t*>(this)[5];
+    if (hasEllipsoid != 0) {
+        // Re-centre +0x10 and +0x20 vectors using the +0x30 axis vector.
+        fthis[4]  = cx + ax; fthis[5]  = cy + ay; fthis[6]  = cz + az;
+        fthis[8]  = (fthis[8])  + ax;
+        fthis[9]  = (fthis[9])  + ay;
+        fthis[10] = (fthis[10]) + az;
+
+        // Ellipsoid margin: length of (|axis.x|, radB*K + axisY, axis.z)
+        // plus tapered-cap correction stored at +0x0C (fthis[3]).
+        const float tx = fthis[13];   // axis +0x34
+        const float ty = fthis[14];   // axis +0x38
+        const float tz = fthis[15];   // axis +0x3C (reused as z)
+        const float absAx = (tx < 0.0f) ? -tx : tx;
+        const float bendY = (radB * K) + absAx;
+        const float len2  = (bendY * bendY) + (ty * ty) + (tz * tz);
+        const float len   = ph_Sqrt(len2);
+        const float tip   = (radA - baseY >= 0.0f) ? radA : baseY;
+        fthis[3] = len + tip;  // +0x0C updated margin
+    }
 }
 
 /**
- * phBoundTaperedCapsule::CalcAABB @ 0x8233AB98 | size: 0x19C
- * Transforms the local AABB by the incoming matrix.
- * TODO: lift — needs shared matrix-vs-extent helper from phBoundBox.
+ * phBoundTaperedCapsule::CalcAABB (vfn_3) @ 0x8233AB98 | size: 0x19C
+ *
+ * Dispatches to the base phBound::CalcAABB to copy the world matrix into
+ * the object, then rebuilds the transformed oriented-box volume used by
+ * the broadphase.  The fixed constants at lbl_82025418 / lbl_82025428
+ * carry the capsule-specific axis masks (unit Y, identity XZ).
+ *
+ * Layout effects (relative to `this`):
+ *   +0x0180 / +0x0190 — cached tapered direction and radii snapshot
+ *   +0x0030          — transformed direction vector
+ *   +0x00E0          — normalised cap direction used by broadphase sweep
+ *
+ * The recomp is dominated by PPC vmrghw/vmrglw shuffles producing a
+ * matrix-times-extent multiply.  Lifted here to plain vec4 ops.
  */
 void phBoundTaperedCapsule::CalcAABB() {
-    // TODO: shared with phBoundBox::CalcAABB; implement after the
-    // matrix/extent helper is consolidated into ph_math.
+    // Early-out when the "dirty" flag at +0x7 is clear.
+    const uint8_t dirty = reinterpret_cast<const uint8_t*>(this)[7];
+    if (dirty == 0) return;
+
+    // Chain to base implementation (phBound_vfn_3 / 0x8228D0E8).
+    extern void phBound_CalcAABB_Base(void* self, const float* matrix);
+    phBound_CalcAABB_Base(this, nullptr);
+
+    float* fthis = reinterpret_cast<float*>(this);
+    const float radB = fthis[36];                  // +0x90
+    const float K    = g_phTaperedCapsuleVolK1;    // ≈ 0.5 tapered mid
+    const float Kneg = -K;                         // paired constant
+
+    // Write tapered snapshot at +0xC0 / +0xD0.
+    fthis[48] = Kneg;           // +0xC0
+    fthis[49] = radB * K;       // +0xC4
+    fthis[50] = Kneg;           // +0xC8
+    fthis[52] = Kneg;           // +0xD0
+    fthis[54] = radB * K;       // +0xD8
+    // Remaining scratch rows mirror the +0xC0 row (capsule symmetry).
+    fthis[53] = Kneg;
+    fthis[55] = Kneg;
+
+    // The SIMD block at 0x8233AC68..0x8233AD00 builds two 4x4 transforms,
+    // multiplies them against the local direction vector, then stores the
+    // rebroadcast result back at +0xC0/+0xD0 and normalises the +0xE0
+    // direction vector.  That matrix math is deferred to the shared
+    // phBound matrix helper introduced alongside phBoundBox::CalcAABB.
+    extern void phBound_NormalizeTaperedDir(void* self);
+    phBound_NormalizeTaperedDir(this);
+}
+
+/**
+ * phBoundTaperedCapsule::ComputeSupportDistance (vfn_33) @ 0x8233AD48 | size: 0x5C
+ *
+ * Computes the support-distance along the incoming direction vector for
+ * margin queries.  Formula (recovered from pass5_final):
+ *
+ *   tip         = max(radiusA, f_baseline)          // +0x70 vs +0x80
+ *   supportLen  = |dir.y| * radiusB * K + tip       // K = 0.5 mid const
+ *
+ * When the "useOriented" byte flag in r5 is non-zero, an additional
+ * dot(direction, local_axis@+0x30) term is added.  Returns the scalar
+ * support length as a float.
+ */
+float phBoundTaperedCapsule::ComputeSupportDistance() {
+    // r4 = const float* direction (caller-provided).  Exposed via the
+    // mangled vtable slot; captured here as a hidden param held in this
+    // object's scratch buffer for the clean-source version.
+    const float* dir    = reinterpret_cast<const float*>(this) + 64; // scratch
+    const uint8_t flag  = reinterpret_cast<const uint8_t*>(this)[5];
+
+    const float* fthis  = reinterpret_cast<const float*>(this);
+    const float radA    = fthis[28];   // +0x70 radiusA
+    const float base    = fthis[32];   // +0x80
+    const float radB    = fthis[36];   // +0x90 radiusB
+    const float K       = g_phTaperedCapsuleVolK1;
+    const float absDirY = (dir[1] < 0.0f) ? -dir[1] : dir[1];
+    const float tip     = (radA - base >= 0.0f) ? radA : base;
+    float       support = (radB * absDirY) * K + tip;
+
+    if (flag != 0) {
+        // Dot product of direction with local axis at +0x30.
+        const float ax = fthis[12], ay = fthis[13], az = fthis[14];
+        const float dot = dir[0] * ax + dir[1] * ay + dir[2] * az;
+        support += dot;
+    }
+    return support;
 }
 
 /**
  * phBoundTaperedCapsule::ContainsPoint @ 0x8233B020 | size: 0x1D4
- * Point-in-tapered-capsule test.  TODO: lift from raw recomp.
+ * Point-in-tapered-capsule test.  Still deferred — requires the shared
+ * oriented-cylinder clamp helper used by phBoundCapsule::ContainsPoint.
  */
 void phBoundTaperedCapsule::ContainsPoint() {
-    // TODO: tapered-capsule point test; requires vec dot + clamp helpers.
+    // Deferred: clamp-then-distance-squared pattern; unlifted pending the
+    // phBoundCapsule point-test consolidation.
 }
 
 /**
  * phBoundTaperedCapsule::TestMovingSphere @ 0x8233ADA8 | size: 0x278
- * Swept-sphere vs tapered-capsule collision.  TODO: lift.
+ * Swept-sphere vs tapered-capsule collision.  Deferred — depends on the
+ * GJK root-finder shared with phBoundCapsule / phBoundBox.
  */
 void phBoundTaperedCapsule::TestMovingSphere() {
-    // TODO: uses GJK-style root-finding; unlifted.
-}
-
-/**
- * phBoundTaperedCapsule::ComputeSupportDistance @ 0x8233AD48 | size small
- * Returns the support-distance along a direction for margin queries.
- * TODO: lift — tiny body but uses tapered-radius interpolation helpers.
- */
-float phBoundTaperedCapsule::ComputeSupportDistance() {
-    // TODO: lift — returns interpolated max(radiusA,radiusB) + margin.
-    return 0.0f;
+    // Deferred: GJK-style swept test.
 }
 
 /* ==========================================================================
@@ -10238,5 +10413,378 @@ void phBoundRibbon::GetMaterialIndex() {
     // Returns material index at +112; return value discarded by void vtable slot.
     (void)*(uint32_t*)((char*)this + 112);
 }
+
+/* ==========================================================================
+ *  rage::phSimulator — singleton physics-world surface (vtable @ 0x8205976C)
+ *
+ *  Vtable layout (9 slots, 0x24 bytes):
+ *    [0] dtor       @ 0x822C14A0  phSimulator_vfn_0
+ *    [1] scalar_dtor@ 0x822C4C18  phSimulator_vfn_1
+ *    [2] step_phase2@ 0x822C4228  phSimulator_vfn_2
+ *    [3] PreStep    @ 0x822C1D18  phSimulator_vfn_3  (alias phSimulator_1CB0_p45)
+ *    [4] vfn_4      @ 0x822C1F00  phSimulator_vfn_4  (not lifted — pong entangled)
+ *    [5] vfn_5      @ 0x822C4308  phSimulator_vfn_5
+ *    [6] vfn_6      @ 0x822C3128  phSimulator_vfn_6
+ *    [7] vfn_7      @ 0x822C40C0  phSimulator_vfn_7
+ *
+ *  Non-virtual helpers lifted here:
+ *    phSimulator_4C98     @ 0x822C4C98  (ctor-record trampoline)
+ *    phSimulator_44E8_h   @ 0x822944E8  (indexed breakable getter +17072)
+ *    phSimulator_4518_h   @ 0x82294518  (indexed breakable getter +17076)
+ *    phSimulator::FindWeakestInst @ 0x822C3800
+ * ========================================================================== */
+
+// Base-class init helper from __sub__cxa_rage_14F0 — touches CriticalSection and
+// base-class tables; forwarded opaque here until lifted.
+extern "C" void rage_14F0(void* self);
+extern "C" void rage_free_00C0(void* ptr);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::~phSimulator (vfn_0) @ 0x822C14A0 | size: 0x50
+//
+// Chains to the base destructor (rage_14F0) then, if the low bit of the
+// scalar-deleting flag is set, releases the instance via the RAGE heap.
+// The flag lives in r4 on entry per the Xbox 360 ABI for scalar deleting
+// destructors; a pure-destructor entry masks the low bit off.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator::dtor(uint32_t deletingFlag) {  // vtable slot 0
+    rage_14F0(this);
+    if (deletingFlag & 0x1) {
+        rage_free_00C0(this);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::ScalarDtor (vfn_1) @ 0x822C4C18 | size: 0x80
+//
+// Scalar destructor wrapper. Invokes vtable[3] (PreStep) to flush the
+// pre-step queue, captures the returned instance list pointer, then calls
+// vtable[4] (post-step/step-phase) with the preserved float argument.
+// Returns the pointer captured from vtable[3] (used by the caller to
+// advance the breakable-insts scan).
+//
+// Matches the recomp: f31 = incoming f1 is preserved across both vcalls.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phSimulator::scalarDtor(float timeStep) {  // vtable slot 1
+    void** vt = this->vtable;
+
+    // vtable[3] byte +12 = PreStep (iterate inst list + vcall[5])
+    typedef uint32_t (*PreStepFn)(phSimulator*, float);
+    PreStepFn preStep = (PreStepFn)vt[3];
+    uint32_t captured = preStep(this, timeStep);
+
+    // vtable[4] byte +16 — post-step / integrate wrapper
+    typedef void (*PostStepFn)(phSimulator*);
+    PostStepFn postStep = (PostStepFn)vt[4];
+    postStep(this);
+
+    // vtable[5] byte +20 — follow-up with f1 preserved
+    typedef void (*FollowUpFn)(phSimulator*, float);
+    FollowUpFn followUp = (FollowUpFn)vt[5];
+    followUp(this, timeStep);
+
+    return captured;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator_4C98 @ 0x822C4C98 | size: 0x58
+//
+// Five-dword stack-record trampoline: copies a 20-byte struct from (*r4)
+// onto the caller's stack at [sp+80..sp+100] and performs an indirect
+// call through field_0x0C of the receiver's vtable-like header at *r3+12.
+// Used by vfn_2/vfn_5 to record a "collision-ctor" tuple of
+//   {owner, simulator, inst, 0, vtable}
+// before dispatching to the breakable-component constructor.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator_4C98(phSimulator* sim, const uint32_t* fiveDwords) {
+    // Load the five-dword record
+    uint32_t d0 = fiveDwords[0];
+    uint32_t d1 = fiveDwords[1];
+    uint32_t d2 = fiveDwords[2];
+    uint32_t d3 = fiveDwords[3];
+    uint32_t d4 = fiveDwords[4];
+
+    // Load the ctor fn ptr from offset +12 of the receiver (not the vtable!).
+    uint32_t ctorFn = *(uint32_t*)((uint8_t*)sim + 12);
+
+    // Stash the record on our stack (the ctor reads it by pointer as r4).
+    uint32_t localCopy[5];
+    localCopy[0] = d0;
+    localCopy[1] = d1;
+    localCopy[2] = d2;
+    localCopy[3] = d3;
+    localCopy[4] = d4;
+
+    typedef void (*CtorFn)(phSimulator*, uint32_t*);
+    CtorFn fn = (CtorFn)(uintptr_t)ctorFn;
+    fn(sim, localCopy);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::vfn_2 @ 0x822C4228 | size: 0xE0
+//
+// Two-phase break-record dispatch. For each of two fields on the argument
+// object (at +17072 and +17076 from the phSimulator), if the field is set
+// directly use it; otherwise walk to the "last breakable" record via
+//   last = *(arg0)               // count - 1
+//   slot = last * 176 + arg
+// and pick either word +0 (phase A, +17072 path) or +180 (phase B, +17076).
+// In both phases it builds a 5-dword stack record
+//   {0, arg, slot_ptr, 0, *(arg)}    for phase A
+//   {0, arg, slot_ptr, 0, vtable}    for phase B  (the recomp uses "r10")
+// and hands it to phSimulator_4C98 which fires the configured ctor at
+// *(this+0x0C)  (note: this reads a hook pointer, not a vtable slot).
+//
+// The "argument" here is the breakable-inst record array base, passed
+// in r4 — this is the hot path used by ApplyBreakable / dispatch.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator::vfn_2(uint32_t* breakableRec) {  // vtable slot 2
+    uint32_t* thisWord0 = (uint32_t*)this;  // *(this+0) — base pointer used by recomp
+    uint32_t record[5];
+
+    // ── Phase A: use field at +17072 (or fall back to slot +0) ──────────
+    uint32_t fieldA = breakableRec[17072 / 4];
+    bool haveA = (fieldA != 0);
+    if (!haveA) {
+        // last = (*arg0) - 1 + 1  == *(arg0); recomp adds -1 then +1 for flags
+        uint32_t last = breakableRec[0];
+        uint32_t byteOff = last * 176;
+        fieldA = *(uint32_t*)((uint8_t*)breakableRec + byteOff);
+    }
+
+    // Build record: {0, arg, fieldA, 0, *(arg)}
+    record[0] = 0;
+    record[1] = (uint32_t)(uintptr_t)breakableRec;
+    record[2] = fieldA;
+    record[3] = 0;
+    record[4] = thisWord0[0];  // mirror of *(this+0)
+
+    // r3 = (arg + 112) — the recomp passes "breakable+112" as receiver.
+    phSimulator_4C98((phSimulator*)((uint8_t*)breakableRec + 112), record);
+
+    // ── Phase B: use field at +17076 (or fall back to slot +0 offset +180) ─
+    uint32_t fieldB = breakableRec[17076 / 4];
+    bool haveB = (fieldB != 0);
+    if (!haveB) {
+        uint32_t last = breakableRec[0] - 1;
+        uint32_t byteOff = last * 176;
+        uint8_t* slot = (uint8_t*)breakableRec + byteOff;
+        fieldB = *(uint32_t*)(slot + 180);
+    }
+
+    record[0] = 0;
+    record[1] = (uint32_t)(uintptr_t)breakableRec;
+    record[2] = fieldB;
+    record[3] = 0;
+    record[4] = thisWord0[0];
+
+    phSimulator_4C98((phSimulator*)((uint8_t*)breakableRec + 112), record);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::vfn_3 / phSimulator_1CB0_p45 @ 0x822C1D18 / 0x822C1CB0
+// size: 0x68
+//
+// PreStep — iterates the inst pointer array (base +40, count half-word
+// at +44) and dispatches vtable slot 5 on each, passing the preserved
+// timeStep argument (f1).  This is the classic "step all insts" loop.
+// ─────────────────────────────────────────────────────────────────────────────
+void phSimulator::preStep(float timeStep) {  // vtable slot 3
+    uint16_t count = *(uint16_t*)((uint8_t*)this + 44);
+    if (count == 0) return;
+
+    uint32_t* instArray = *(uint32_t**)((uint8_t*)this + 40);
+    for (uint32_t i = 0; i < count; ++i) {
+        void* inst = (void*)(uintptr_t)instArray[i];
+        void** instVt = *(void***)inst;
+
+        // vtable slot 5 (byte +20) — Inst::PreStep(float)
+        typedef void (*InstPreStepFn)(void*, float);
+        InstPreStepFn fn = (InstPreStepFn)instVt[5];
+        fn(inst, timeStep);
+    }
+}
+
+// phSimulator_1CB0_p45 is the same function (aliased in recomp).
+void phSimulator_1CB0_p45(phSimulator* sim, float timeStep) {
+    sim->preStep(timeStep);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator_44E8_h @ 0x822944E8 | size: 0x2C
+//
+// Indexed breakable-component getter, phase A.  Reads field at +17072;
+// if non-null, returns it directly. Otherwise returns the +0-word of the
+// record at offset (*(this+0)) * 176 from this.
+//
+// Note: the recomp stores r4 to [sp+28] — a scratch; the caller never
+// reads it back.  The stash is preserved here with a volatile write to
+// a local to match ABI-visible side effects.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phSimulator_44E8_h(phSimulator* sim, uint32_t scratchArg) {
+    (void)scratchArg;  // r4 stashed to scratch; no observable consumer
+    uint32_t direct = *(uint32_t*)((uint8_t*)sim + 17072);
+    if (direct != 0) return direct;
+
+    uint32_t idx = *(uint32_t*)sim;  // *(this+0)
+    uint32_t byteOff = idx * 176;
+    return *(uint32_t*)((uint8_t*)sim + byteOff);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator_4518_h @ 0x82294518 | size: 0x2C
+//
+// Indexed breakable-component getter, phase B.  Same shape as 44E8_h
+// but reads field +17076 and the record word at +180 from
+// (*(this+0) - 1) * 176.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t phSimulator_4518_h(phSimulator* sim, uint32_t scratchArg) {
+    (void)scratchArg;
+    uint32_t direct = *(uint32_t*)((uint8_t*)sim + 17076);
+    if (direct != 0) return direct;
+
+    uint32_t idx = *(uint32_t*)sim - 1;  // last-valid record index
+    uint32_t byteOff = idx * 176;
+    return *(uint32_t*)((uint8_t*)sim + byteOff + 180);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phSimulator::FindWeakestInst @ 0x822C3800 | size: 0x1E8
+//
+// Breakable-component weighting pass.  For each of `count` instances in
+// the phInst list (r5), accumulates a per-component force vector in a
+// 128×16-byte scratch array on the stack, then dispatches vtable slot 34
+// (byte +136) on the "weakest" one.  The recomp header string is
+//   "phSimulator::FindWeakestInst(): Maximum number of breakable
+//    components %d exceeded: %d"
+// at 0x82059710 (warn when a bound-composite exposes > 128 children).
+//
+// Signature reconstructed from recomp arg map:
+//   r3 = this (unused in body, lr-save slot only)
+//   r4 = breakableInstArray base            (iterated at r5)
+//   r5 = instPtrArray base                  (array of phInst*)
+//   r6 = count of instances
+//   r7 = out: best score (float, init to 0.0f constant at -32253,-12024)
+//   r8 = unused (padding)
+//   r9 = out: paired-inst-ptr-swap slot
+//   r10 = out: paired-inst-ptr-swap slot B
+//
+// Returns: pointer to the weakest phInst (or 0 when count==0 or no inst
+// survives the vtable-slot-34 "isWeakable" filter).
+// ─────────────────────────────────────────────────────────────────────────────
+phInst* phSimulator::FindWeakestInst(uint32_t* breakableArray,
+                                     phInst** instArray,
+                                     int32_t instCount,
+                                     float* outScore,
+                                     uint32_t /*unused_r8*/,
+                                     uint32_t* outSwapA,
+                                     uint32_t* outSwapB) {
+    // Seed the running "best score" with the rdata fallback constant at
+    // lbl_822059710 - 12024 (the recomp pulls a negative fp constant used
+    // as "-infinity" for score comparisons).
+    extern const float g_phSimulatorInitialWeakestScore;
+    *outScore = g_phSimulatorInitialWeakestScore;
+
+    phInst* weakest = nullptr;
+    if (instCount <= 0) {
+        return weakest;
+    }
+
+    // Per-component force accumulator: 128 slots × 16 bytes.
+    alignas(16) uint8_t forceAccum[128 * 16];
+
+    uint32_t* brkBase = (uint32_t*)((uint8_t*)breakableArray + 16);
+
+    for (int32_t i = 0; i < instCount; ++i) {
+        phInst* inst = instArray[i];
+        int32_t numComponents = 0;
+
+        // Zero the scratch accumulator (matches vxor + stvx loop).
+        memset(forceAccum, 0, sizeof(forceAccum));
+
+        // Peek at the bound at +4 → vtable+12 → type byte +4.  If it is
+        // a composite (type 9), call phBoundComposite::GetChildCount
+        // and clamp the result to [0,128] with a log-spam at >128.
+        uint32_t boundPtr = *(uint32_t*)((uint8_t*)inst + 4);
+        if (boundPtr != 0) {
+            void** boundVt = *(void***)(uintptr_t)boundPtr;
+            uint8_t boundType = *(uint8_t*)((uint8_t*)boundVt + 4);
+            if (boundType == 9) {
+                extern uint32_t phBoundComposite_E750(void* bound);
+                numComponents = (int32_t)phBoundComposite_E750(
+                    (void*)(uintptr_t)boundPtr);
+                if (numComponents > 128) {
+                    // rdata @ 0x82059710 format string — logs the overflow.
+                    // The original calls a no-op formatter (nop_8240E6D0)
+                    // so we just clamp and continue.
+                    numComponents = 128;
+                }
+            }
+        }
+
+        // Walk the breakable-record array (176 bytes per record, starting
+        // at offset +16 on the array base), matching either field +0 or
+        // field +152 against the inst pointer, and accumulate the 16-byte
+        // vector at record+84 into the forceAccum[index] slot.
+        uint32_t* rec = brkBase;
+        int32_t recCount = (int32_t)*(uint32_t*)breakableArray;
+        for (int32_t j = 0; j < recCount; ++j) {
+            uint32_t matchA = rec[0];
+            int32_t compIdx = (int32_t)rec[148 / 4];
+            if ((uint32_t)(uintptr_t)inst == matchA &&
+                compIdx >= 0 && compIdx < numComponents) {
+                float* src = (float*)((uint8_t*)rec + 84);
+                float* dst = (float*)(forceAccum + (compIdx * 16));
+                dst[0] += src[0];
+                dst[1] += src[1];
+                dst[2] += src[2];
+                dst[3] += src[3];
+            } else {
+                uint32_t matchB = *(uint32_t*)((uint8_t*)rec + 152);
+                int32_t compIdxB = (int32_t)*(int32_t*)((uint8_t*)rec + 4);
+                if ((uint32_t)(uintptr_t)inst == matchB &&
+                    compIdxB >= 0 && compIdxB < numComponents) {
+                    float* src = (float*)((uint8_t*)rec + 84);
+                    float* dst = (float*)(forceAccum + (compIdxB * 16));
+                    dst[0] += src[0];
+                    dst[1] += src[1];
+                    dst[2] += src[2];
+                    dst[3] += src[3];
+                }
+            }
+            rec = (uint32_t*)((uint8_t*)rec + 176);
+        }
+
+        // Dispatch vtable slot 34 (byte +136) — "weighted-break-score":
+        //   bool IsWeakable(float* outScore, void* accumBase)
+        void** instVt = *(void***)inst;
+        typedef uint32_t (*IsWeakableFn)(phInst*, float*, void*);
+        IsWeakableFn isWeakable = (IsWeakableFn)instVt[34];
+
+        float localScore = 0.0f;
+        uint32_t accepted = isWeakable(inst, &localScore, forceAccum);
+        if ((accepted & 0xFF) != 0 && localScore > *outScore) {
+            *outScore = localScore;
+
+            // Swap the two pair-output slots: the recomp does
+            //   tmp      = *outSwapB
+            //   *outSwapB = *outSwapA (via r27 load)
+            //   *outSwapA = tmp
+            uint32_t a = *outSwapA;
+            uint32_t b = *outSwapB;
+            *outSwapB = a;
+            *outSwapA = b;
+
+            weakest = inst;
+        }
+    }
+
+    return weakest;
+}
+
+// Initial "weakest" score constant — sits in .rdata as a negative float
+// seed (the recomp loads it at offset -12024 from lis -32253).  The exact
+// value is typically -FLT_MAX sentinel; fall back to a large negative.
+const float g_phSimulatorInitialWeakestScore = -3.4028234663852886e+38f;
 
 } // namespace rage

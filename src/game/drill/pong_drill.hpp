@@ -325,9 +325,22 @@ struct tooFarFromTableTipData {
 
 
 /**
+ * Drill type indices — values returned by vfn_17 (GetDrillTypeIndex) on each
+ * subclass. Used as the drill-type slot into g_pDrillSaveData. Base class
+ * default is 0; only Spin/FocusShot/CounterSpin/Smash override it.
+ */
+enum pongDrillTypeIndex : int {
+    kDrillTypeBase        = 0,   // base pongTrainingDrill / unclassified
+    kDrillTypeSpin        = 7,   // pongDrillSpin::vfn_17 @ 0x8210CCE0
+    kDrillTypeFocusShot   = 8,   // pongDrillFocusShot::vfn_17 @ 0x8210CCF8
+    kDrillTypeCounterSpin = 9,   // pongDrillCounterSpin::vfn_17 @ 0x8210CD30
+    kDrillTypeSmash       = 10,  // pongDrillSmash::vfn_17 @ 0x8210CD68
+};
+
+/**
  * pongTrainingDrill (Base Class)
  * @ RTTI: 0x82031C3C
- * 
+ *
  * Base class for all training drills. Manages success/failure tracking,
  * timing, and common drill state.
  */
@@ -362,11 +375,11 @@ public:
     virtual void Init();                                     // vfn_3 @ 0x8210CDB8
     virtual void Update() {}                                 // vfn_4
     virtual void OnStart();                                   // vfn_5  @ 0x8210CFF0
-    virtual void OnEnd() {}                                  // vfn_6
-    virtual void OnReset() {}                                // vfn_7
+    virtual void OnEnd(float fDelta);                         // vfn_6  @ 0x8210D098
+    virtual int  OnReset(uint8_t* pOut);                      // vfn_7  @ 0x8210D0E8
     virtual void ProcessEvent(void* pEvent) {}               // vfn_8 (Overridden by subclasses)
     virtual void Process() {}                                // vfn_9
-    virtual void Render() {}                                 // vfn_10
+    virtual void Render(void* pEvent);                        // vfn_10 @ 0x8210D290
     virtual void OnSuccess();                                 // vfn_11 @ 0x8210D310
     virtual bool IsScoreValid();                              // vfn_12 @ 0x8210D320
     virtual float GetTimeLimit();                             // vfn_13 @ 0x8210D340
@@ -378,7 +391,7 @@ public:
     virtual void vfn_19() {}
     virtual void vfn_20() {}
     virtual bool HasActiveTarget() { return false; }         // vfn_21
-    virtual void vfn_22() {}
+    virtual bool vfn_22() { return false; }                  // vfn_22 — secondary active-state probe (byte read)
     virtual uint32_t GetScore();                              // vfn_23 @ 0x8210CBD8
     virtual uint8_t GetDifficulty();                          // vfn_24 @ 0x8210D370
     virtual void SetDifficulty();                             // vfn_25 @ 0x8210D380
@@ -411,10 +424,12 @@ protected:
  */
 class pongDrillMovement : public pongTrainingDrill {
 public:
-    virtual void Init() override;        // vfn_3 @ 0x8210DB48
-    virtual void Update() override {}    // vfn_4
-    virtual void OnStart() override {}   // vfn_5
-    virtual void Process() override {}   // vfn_9
+    virtual void Init() override;                      // vfn_3 @ 0x8210DB48
+    virtual void Update() override {}                  // vfn_4
+    virtual void OnStart() override {}                 // vfn_5
+    virtual void Process() override {}                 // vfn_9
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CBE0 — "Movement"
+    virtual bool vfn_22() override;                    // vfn_22 @ 0x8210CBF0 — m_movementFlag non-zero (byte read)
 
 private:
     enum MovementState {
@@ -445,6 +460,13 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CBF8 — "Serve Meter"
+    virtual bool HasActiveTarget() override;           // vfn_21 @ 0x8210CC20 — m_meterTargetIdx >= 1
+
+private:
+    // Base class ends at +36 (0x24); this subclass begins here.
+    uint8_t  m_pad24[12];                              // +0x24..+0x2F — subclass state (uninvestigated)
+    uint32_t m_meterTargetIdx;                         // +0x30 (+48) — active meter target index; >=1 = active
 };
 
 /**
@@ -458,6 +480,7 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CC10 — "Serve Aim"
 };
 
 /**
@@ -471,6 +494,12 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CC48 — "Return"
+    virtual bool HasActiveTarget() override;           // vfn_21 alias @ 0x8210CD80 — m_returnTargetIdx >= 0
+
+private:
+    // Base class ends at +36 (0x24); target field is the first subclass member.
+    int32_t m_returnTargetIdx;                         // +0x24 (+36) — current return target; >=0 = active
 };
 
 /**
@@ -484,6 +513,7 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CC60 — "Placement"
 };
 
 /**
@@ -498,8 +528,15 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;       // vfn_18 @ 0x8210CC78 — "Soft Shot"
+    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CC88 — m_softShotTargetIdx >= 0
 
     void ScalarDestructor(int flags);
+
+private:
+    // Base class ends at +36 (0x24); target field sits at +52 (0x34).
+    uint8_t m_pad24[16];                                // +0x24..+0x33 — subclass state (uninvestigated)
+    int32_t m_softShotTargetIdx;                        // +0x34 (+52) — active soft-shot target; >=0 = active
 };
 
 /**
@@ -513,6 +550,13 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;       // vfn_18 @ 0x8210CCB0 — "Charging"
+    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CCC0 — m_chargingTargetIdx >= 0
+
+private:
+    // Base class ends at +36 (0x24); target field sits at +56 (0x38).
+    uint8_t m_pad24[20];                                // +0x24..+0x37 — subclass state (uninvestigated)
+    int32_t m_chargingTargetIdx;                        // +0x38 (+56) — active charging target; >=0 = active
 };
 
 /**
@@ -555,9 +599,18 @@ public:
  */
 class pongDrillCounterSpin : public pongTrainingDrill {
 public:
+    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CD30 — returns kDrillTypeCounterSpin=9
+    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD38 — "Counter Spin"
+    virtual bool HasActiveTarget() override;         // vfn_21 @ 0x8210CD48 — m_counterSpinTargetIdx >= 0
+
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+
+private:
+    // Base class ends at +36 (0x24); target field sits at +72 (0x48).
+    uint8_t m_pad24[36];                             // +0x24..+0x47 — subclass state (uninvestigated)
+    int32_t m_counterSpinTargetIdx;                  // +0x48 (+72) — active counter-spin target; >=0 = active
 };
 
 /**
@@ -586,3 +639,48 @@ private:
 
 // Compile-time size verification
 static_assert(sizeof(pongTrainingDrill) >= 36, "pongTrainingDrill minimum size check");
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongTrainingUIContext — drill / mini-games HSM context singleton
+// vtables @ 0x8205E6D4 primary (104 bytes / 26 slots),
+//          0x8205E73C secondary (12 bytes / MI thunk block)
+//
+// Mirrors the pongGameContext pattern: multiple-inheritance layout with the
+// secondary vtable stamp at +0x14 and a guest-owned child state at +0x1C
+// ("m_pGameState" analog). The "Loading Traing Mode UI..." debug string
+// (0x8205E5D8) anchors this class to the drill/mini-game subsystem.
+//
+//   slot 0    destructor              @ 0x82307080
+//   slot 11   OnEnter (register)      @ 0x82307120   — registers msg handler @ table lbl_8271884C
+//   slot 12   OnExit (deregister)     @ 0x82307180   — delegates to msgEventHandler_E8C0_g
+//   slot 16   OnUpdate                @ 0x823071B8   — pumps child VCALL slot 2, hsm state gate
+//   slot 18   OnRender                @ 0x823072E0   — tail VCALL slot 6 when state==13
+//   slot 23   Init/Load               @ 0x82307420   — allocates child (size 208) + "Training Mode UI loaded."
+//
+// POD layout — vtable pointers are stored as raw u32 data fields so guest
+// PPC32 pointer widths survive host-side offsetof checks.
+// ─────────────────────────────────────────────────────────────────────────────
+struct pongTrainingUIContext {
+    // NOTE: guest PPC32 pointers are stored as uint32_t to preserve the 4-byte
+    // layout on 64-bit hosts. Cast to void*/void** at use sites.
+    uint32_t vtable;                 // +0x00  primary vtable VA (0x8205E6D4)
+    uint8_t  _opaqueBase[16];        // +0x04..+0x13  primary base payload
+    uint32_t m_vtableSecondary;      // +0x14  secondary vtable VA (0x8205E73C)
+    uint8_t  _pad18[8];              // +0x18..+0x1B
+    uint32_t m_pChildCtx;            // +0x1C  child context (drill-session object, 208 bytes, alloc via rage_ADF8)
+    bool     m_bPendingStateAdvance; // +0x20  (byte +32) — set by OnUpdate when child triggers state 3 advance
+    bool     m_bNetFinalizePending;  // +0x21  (byte +33) — gates the network finalize path in OnUpdate
+
+    // ── vtable slot entry points (non-virtual; dispatched manually) ──
+    void Dtor(int flags);            // [0]  @ 0x82307080
+    void OnEnter();                  // [11] @ 0x82307120
+    void OnExit();                   // [12] @ 0x82307180
+    void OnUpdate();                 // [16] @ 0x823071B8
+    void OnRender();                 // [18] @ 0x823072E0
+    void Init();                     // [23] @ 0x82307420
+};
+
+// Static-asserts deferred — void* is 8 bytes on the 64-bit host, which
+// perturbs intra-struct offsets. Field comments document the PPC-native
+// offsets used by the non-virtual slot bodies in pong_drill.cpp.
+

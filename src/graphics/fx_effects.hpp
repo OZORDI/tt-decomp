@@ -6,8 +6,9 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * Progressively lifted. Types, params, and inheritance are filled in as
+ * each method is decoded; see fx_effects.cpp for authoritative impls and
+ * recomp/structured_pass5_final/ for raw PPC references.
  */
 #pragma once
 #include <stdint.h>
@@ -72,7 +73,7 @@ struct fxBallSpin {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void vfn_3();  // [3] @ 0x82388a00
+    virtual void Reset();  // [3] @ 0x82388a00 — zero 6 vec-slots, seed scale floats + live flags
 };
 
 // ── fxBallSpinDataMgr  [vtable @ 0x8206B3A4] ──────────────────────────
@@ -116,7 +117,7 @@ struct fxBallSpinWispData {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    virtual void ScalarDtor(int flags); // [1] @ 0x823880b8
+    virtual void ScalarDtor(int flags); // [1] @ 0x823880b8 — stamp vtable then optional rage_free_00C0
 };
 
 // ── fxBallSplash2D  [2 vtables — template/MI] ──────────────────────────
@@ -310,17 +311,43 @@ struct fxReticle {
     // ── virtual methods ──
     virtual ~fxReticle();                  // [0] @ 0x82384588
     virtual void ScalarDtor(int flags); // [1] @ 0x82384930
-    virtual void vfn_2();  // [2] @ 0x82384780
+    virtual void RegisterReticleTypes();   // [2] @ 0x82384780 — bind 3 datType factories: ideal_reticle/actual_reticle/reticle
 };
 
 // ── fxSpecialFx  [2 vtables — template/MI] ──────────────────────────
 // Vfn aliasing observed in binary (pass5_final):
 //   vfn_22 == vfn_20, vfn_26 == vfn_23, vfn_29 == vfn_27.
-// Presumed container/owner of a set of fxSpecialFxEntry-like effect
-// slots (count @ +0x30 halfword, array base @ +0x2C) with a running
-// "active palette count" index @ +0xE8 and an is-active byte @ +0xEC.
+//
+// This class doubles as the **effect-pool manager** — it owns the
+// palette of per-frame effect entries and drives their per-frame Tick.
+// Layout derived from FindFreeEntry / ResetPalette / ReleasePalette /
+// Tick (rtti_9840_0):
+//   +0x00    void**     vtable             (primary vtable)
+//   +0x2C    fxSlot*    slots[]            outer slot array (per-pass)
+//   +0x30    uint16_t   slotCount          halfword — active slots
+//   +0x80    entry**    entries            per-slot entry[] base
+//   +0x84    uint16_t   entryCount         halfword — per-slot cap
+//   +0xE0    uint32_t   framePalette       palette snapshot index
+//   +0xE8    void*      allocator          cached sysMem allocator
+//   +0xEC    uint8_t    isActive           live-flag byte
+// Each entry is an 8-byte record { u8 activeA, u8 activeB, u16 _pad,
+// void* effect }. FindFreeEntry ("NewEffect") claims the first entry
+// whose activeA == activeB == 0, sets both to 1, and returns
+// entry->effect. Tick walks every palette slot and vcalls slot 5
+// (the common per-effect Tick) on every live child.
 struct fxSpecialFx {
     void**      vtable;           // +0x00
+    char        _pad04[0x28];     // +0x04
+    void**      m_slots;          // +0x2C — outer slot array
+    uint16_t    m_slotCount;      // +0x30 — halfword
+    char        _pad32[0x4C];     // +0x32
+    void**      m_entries;        // +0x80 — per-slot entry[] base
+    uint16_t    m_entryCount;     // +0x84 — halfword
+    char        _pad86[0x5A];     // +0x86
+    uint32_t    m_framePalette;   // +0xE0 — palette snapshot
+    char        _padE4[0x4];      // +0xE4
+    void*       m_allocator;      // +0xE8 — sysMem allocator*
+    uint8_t     m_isActive;       // +0xEC — live-flag
 
     // ── virtual methods ──
     virtual ~fxSpecialFx();                          // [0]  @ 0x82427050 — atSingleton cleanup + optional delete
@@ -332,9 +359,18 @@ struct fxSpecialFx {
     virtual void ReleasePalette();                   // [27] @ 0x82427a78 — free palette alloc across entries
     virtual void ReleasePaletteAlias();              // [29] @ 0x82427b08 — alias of vfn_27
 
-    // ── non-virtual helpers (from pass5) ──
+    // ── non-virtual manager helpers (from pass5) ──
+    // Pool allocation: claim first idle entry and flag it live.
+    // Returns the stable effect pointer stored at entry+4, or nullptr
+    // when the pool is full / not yet primed.
     void* FindFreeEntry();                           // @ 0x824279C8 (fxSpecialFx_79C8_p46)
+
+    // Per-entry factory prime (copy template into entry).
     void  PrimeEntryFromTemplate(uint32_t entryPtr); // @ 0x82428738 (fxSpecialFx_8738_wrh)
+
+    // Per-frame dispatch: ticks every live effect in the palette by
+    // virtual-dispatching slot 5 on each entry's child list.
+    void  Tick();                                    // @ 0x82427B28 (fxSpecialFx_rtti_9840_0)
 };
 
 // ── fxStringGroup  [vtable @ 0x8203A430] ──────────────────────────
@@ -361,7 +397,7 @@ struct fxTrailData {
     // ── virtual methods ──
     virtual ~fxTrailData();                  // [0] @ 0x82380b70
     virtual void ScalarDtor(int flags); // [1] @ 0x82380918
-    virtual void vfn_3();  // [3] @ 0x82380938
+    virtual void RegisterFields(void* parser);  // [3] @ 0x82380938 — parSchema field bindings for 5 floats + 2 bytes
 };
 
 // ── fxTrailDataMgr  [vtable @ 0x8206ACD0] ──────────────────────────

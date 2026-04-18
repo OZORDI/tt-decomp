@@ -32,11 +32,15 @@
 // Vtable Address Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-static void* const VTABLE_pongFrontendContext_Primary   = (void*)0x8205F7E4;
-static void* const VTABLE_pongFrontendContext_Secondary = (void*)0x8205F848;
-static void* const VTABLE_pongFrontendState_Primary     = (void*)0x8205F79C;
-static void* const VTABLE_pongFrontendState_Secondary   = (void*)0x8205F6E0;
-static void* const VTABLE_PageInfo                      = (void*)0x8203A928;
+static void* const VTABLE_pongFrontendContext_Primary   = (void*)0x8205F7E4;  // vtable for pongFrontendContext (primary, 26 slots)
+static void* const VTABLE_pongFrontendContext_Secondary = (void*)0x8205F848;  // vtable for pongFrontendContext (MI/virtual base, 3 slots)
+static void* const VTABLE_pongFrontendState_Primary     = (void*)0x8205F79C;  // vtable for pongFrontendState
+// NOTE: 0x8205F6E0 is NOT a vtable — it is the debug string
+// "pongFrontendState::WaitForCharLoadToEnd() - waiting for player[%d] load to finish"
+// stored in .rdata. The original binary stores this address at +0x14 in pongFrontendState,
+// which may be a debug/RTTI pointer rather than a secondary vtable.
+static void* const ADDR_pongFrontendState_DebugStr      = (void*)0x8205F6E0;  // debug string ptr, not a vtable
+static void* const VTABLE_PageInfo                      = (void*)0x8203A928;  // vtable for rage::xmlTree
 
 // ─────────────────────────────────────────────────────────────────────────────
 // External Globals
@@ -64,7 +68,7 @@ extern uint8_t  g_eventQueueParams[];   // @ 0x825F3A68 - event parameter bytes 
 
 // Frontend page group global
 // Points to the currently active UI page group (menu hierarchy root)
-extern void* g_currentPageGroup;        // @ 0x8260662C - current active page group
+extern pongPageGroup* g_currentPageGroup;  // @ 0x8260662C - current active page group
 
 // ─────────────────────────────────────────────────────────────────────────────
 // External Function Declarations
@@ -106,25 +110,25 @@ extern "C" {
 // the frontend code, improving readability without needing the full class.
 
 /// Calls vtable slot 0 (destructor) with freeMemory flag.
-static inline void PageGroup_Destroy(void* pg, int freeMemory) {
-    typedef void (*Fn)(void*, int);
+static inline void PageGroup_Destroy(pongPageGroup* pg, int freeMemory) {
+    typedef void (*Fn)(pongPageGroup*, int);
     ((Fn)VTABLE(pg)[0])(pg, freeMemory);
 }
 
 /// Calls vtable slot 4 (SetMode).
-static inline void PageGroup_SetMode(void* pg, int mode) {
-    typedef void (*Fn)(void*, int);
+static inline void PageGroup_SetMode(pongPageGroup* pg, int mode) {
+    typedef void (*Fn)(pongPageGroup*, int);
     ((Fn)VTABLE(pg)[4])(pg, mode);
 }
 
 /// Calls vtable slot 5 (Cleanup/Shutdown).
-static inline void PageGroup_Cleanup(void* pg) {
+static inline void PageGroup_Cleanup(pongPageGroup* pg) {
     VCALL(pg, 5);
 }
 
 /// Sets the parent pointer at offset +24 in a page group.
-static inline void PageGroup_SetParent(void* pg, void* parent) {
-    *(void**)((char*)pg + 24) = parent;
+static inline void PageGroup_SetParent(pongPageGroup* pg, pongPageGroup* parent) {
+    *(pongPageGroup**)((uint8_t*)pg + 24) = parent;
 }
 
 // Debug string literals (preserved from binary)
@@ -203,7 +207,7 @@ pongFrontendContext::pongFrontendContext(rage::hsmContext* pHSMContext) {
     // Set up vtables
     // Primary vtable @ 0x8205F7E4
     // Secondary vtable @ 0x8205F848 (also used as event data pointer)
-    m_pSecondaryVTable = (void*)0x8205F848;
+    m_pSecondaryVTable = VTABLE_pongFrontendContext_Secondary;  // MI base vtable
     
     // Initialize context data
     m_pHSMContext = pHSMContext;
@@ -234,7 +238,7 @@ pongFrontendContext::pongFrontendContext(rage::hsmContext* pHSMContext) {
     m_field_15C = 0;
     m_gameStateResult = 0;
     m_field_160 = 0;
-    m_pageInfo.m_pVTable = (void*)0x8203A928;
+    m_pageInfo.m_pVTable = VTABLE_PageInfo;  // vtable for rage::xmlTree
     m_pageInfo.m_field_04 = 0;
     m_pageInfo.m_field_08 = 0;
     m_pageInfo.m_field_0C = 0;
@@ -335,8 +339,7 @@ bool pongFrontendContext::IsPlayerCharacterReady(pongFrontendContext* pContext,
     }
     
     // Check active flag (offset +32) - must be non-zero
-    uint8_t* charDataBytes = (uint8_t*)charDataPtr;
-    uint8_t activeFlag = charDataBytes[PlayerDataOffsets::ACTIVE_FLAG];
+    uint8_t activeFlag = ((uint8_t*)charData)[PlayerDataOffsets::ACTIVE_FLAG];
     if (activeFlag == 0) {
         return false;
     }
@@ -361,7 +364,7 @@ bool pongFrontendContext::CanTransition() {
     g_eventQueueIndex = queueIdx + 1;
 
     // Look up the frontend state by name
-    extern void* g_gameDataMgr;  // @ 0x8271A314
+    extern struct gdGameData* g_gameDataMgr;  // @ 0x8271A314
     int32_t stateIdx = FindStateIndexByName(*(void**)&g_gameDataMgr, "FrontEnd");
     m_gameStateResult = (uint32_t)stateIdx;
 
@@ -391,13 +394,20 @@ bool pongFrontendContext::CanTransition() {
 }
 
 /**
- * pongFrontendContext::OnEnter @ 0x8230D958 | size: 0x114
- * 
- * Called when entering frontend state.
- * 
- * Sets up the event queue, initializes page groups, and prepares
- * the frontend for player selection.
- * 
+ * pongFrontendContext::OnEnter @ 0x8230D198 | size: 0xDC (220 bytes)
+ *
+ * Vtable slot 11 on pongFrontendContext. Called when entering the
+ * frontend state — posts a frontend-enter event (ID 22) to the event
+ * queue, resolves the "Frontend" state index by name (string ref
+ * @ 0x8205B45E inside this function), initializes page groups, and
+ * stores the main page group in a global.
+ *
+ * NOTE: Previously doc-commented as @ 0x8230D958 (vfn_12). That is
+ * wrong: the "Frontend" string xref originates in vfn_11 @ 0x8230D198
+ * (220 B), and vfn_12 @ 0x8230D958 (276 B) is a cleanup routine that
+ * nullifies fields +40/+44/+48/+52/+56 via vtable slot 5, holds no
+ * string references, and is not implemented in this file.
+ *
  * Event Queue Entry:
  * - Type: 128 (0x80) - frontend event marker
  * - ID: 22 - frontend state enter event
@@ -423,8 +433,8 @@ void pongFrontendContext::OnEnter() {
     g_eventQueueIndex = eventIdx + 1;
     
     // Find and store the frontend state index by name
-    // String @ 0x8205F3AC: " from lobby/limbo to %d"
-    static const char* STR_STATE_TRANSITION = " from lobby/limbo to %d";  // @ 0x8205F3AC
+    // String @ 0x8205F3AC: "Frontend"
+    static const char* STR_STATE_TRANSITION = "Frontend";  // @ 0x8205F3AC
     m_gameStateResult = FindStateIndexByName(this, STR_STATE_TRANSITION);
     
     // Initialize page groups
@@ -472,14 +482,14 @@ void pongFrontendContext::OnPlayerSelected(int playerIndex) {
     // Check if game is in online mode
     // g_loop_obj_ptr @ 0x825EAB30 contains the main loop object
     extern void* g_loop_obj_ptr;
-    void* hsmMgr = *(void**)((char*)&g_loop_obj_ptr + 0);  // dereference the loop object
-    bool isOnline = (*(uint8_t*)((char*)hsmMgr + 495) != 0);
+    uint8_t* hsmMgr = (uint8_t*)g_loop_obj_ptr;
+    bool isOnline = (hsmMgr[495] != 0);
 
     if (!isOnline) {
         // Check secondary online flag @ 0x8271A374
         extern void* g_networkStatePtr;
-        void* netState = *(void**)&g_networkStatePtr;
-        if (*(uint8_t*)((char*)netState + 24) == 0) {
+        uint8_t* netState = (uint8_t*)g_networkStatePtr;
+        if (netState[24] == 0) {
             return;  // Not ready
         }
     }
@@ -501,7 +511,7 @@ void pongFrontendContext::OnPlayerSelected(int playerIndex) {
         // Check character ID at +48 of computed entry
         uint32_t stride = charDataIdx * 3;
         uint32_t tableOffset = stride * 16;
-        uint32_t* entryData = (uint32_t*)((char*)pGameObj + tableOffset);
+        uint32_t* entryData = (uint32_t*)((uint8_t*)pGameObj + tableOffset);
 
         void* charData = (void*)entryData[64 / 4];
         if (charData != charEntry) continue;
@@ -509,7 +519,7 @@ void pongFrontendContext::OnPlayerSelected(int playerIndex) {
         int32_t loadState = (int32_t)entryData[48 / 4];
         if (loadState < 0) continue;
 
-        uint8_t activeFlag = *(uint8_t*)((char*)entryData + 56);
+        uint8_t activeFlag = ((uint8_t*)entryData)[56];
         if (activeFlag == 0) continue;
 
         // Check player selection flag in playerData array
@@ -594,8 +604,8 @@ bool pongFrontendContext::DA80_Helper() {
 
         // Fall through to character count check
         extern void* g_gameDataMgrPtr;  // @ 0x8271A2E4
-        void* dataMgr = *(void**)&g_gameDataMgrPtr;
-        int32_t charCount = *(int32_t*)((char*)dataMgr + 28);
+        uint32_t* dataMgr = (uint32_t*)g_gameDataMgrPtr;
+        int32_t charCount = (int32_t)dataMgr[28 / 4];  // offset +28 = character count
         return (0 < charCount);
     }
 
@@ -609,8 +619,8 @@ bool pongFrontendContext::DA80_Helper() {
 
     // Check against character count
     extern void* g_gameDataMgrPtr;
-    void* dataMgr = *(void**)&g_gameDataMgrPtr;
-    int32_t charCount = *(int32_t*)((char*)dataMgr + 28);
+    uint32_t* dataMgr = (uint32_t*)g_gameDataMgrPtr;
+    int32_t charCount = (int32_t)dataMgr[28 / 4];  // offset +28 = character count
     return (stateIdx < charCount);
 }
 
@@ -624,7 +634,8 @@ bool pongFrontendContext::DA80_Helper() {
  * Constructor - initializes frontend state with default values.
  * 
  * This constructor sets up:
- * - Vtable pointers (primary @ 0x8205F79C, secondary @ 0x8205F6E0)
+ * - Vtable pointer (primary @ 0x8205F79C = pongFrontendState)
+ * - Debug string pointer (@ 0x8205F6E0, not a vtable)
  * - HSM context reference
  * - Player data arrays (2 players, 128 bytes each)
  * - UI page management structures
@@ -632,8 +643,8 @@ bool pongFrontendContext::DA80_Helper() {
  */
 pongFrontendState::pongFrontendState(rage::hsmContext* pHSMContext) {
     // Set up vtables
-    m_pVTable = (void*)0x8205F79C;
-    m_pVTable2 = (void*)0x8205F6E0;
+    m_pVTable = VTABLE_pongFrontendState_Primary;   // vtable for pongFrontendState
+    m_pVTable2 = ADDR_pongFrontendState_DebugStr;  // debug string ptr, not a vtable
     
     // Initialize HSM context
     m_pHSMContext = pHSMContext;
@@ -845,7 +856,7 @@ void pongFrontendState::OnExit(int nextStateIdx) {
  * 
  * Returns the frontend context.
  */
-void* pongFrontendState::GetContext() {
+pongFrontendContext* pongFrontendState::GetContext() {
     return m_pContext;
 }
 
@@ -894,30 +905,44 @@ void pongFrontendState::Init() {
 // Match Setup Display Functions
 // ─────────────────────────────────────────────────────────────────────────────
 
+// TODO: pg_CBAC_sp @ 0x821BCBAC | size: 0x24 (36 bytes) — not yet lifted.
+//       Previous lift at this label was a misattribution; the ~100-line body
+//       below actually belongs to pg_2DA8_g @ 0x821B2DA8 (512 bytes), which
+//       owns the "%s:%s_VS_%s" and "%s:SINGLEGAME_%dPOINTS" string xrefs.
+
 /**
- * pg_CBAC_sp @ 0x821BCBAC | size: 0x24 (36 bytes)
- * 
+ * pg_2DA8_g @ 0x821B2DA8 | size: 0x200 (512 bytes)
+ *
  * Formats and displays game mode configuration string for match setup screen.
  * Generates localized strings like "POINTS_5MINUTES", "BESTOF3_11POINTS", etc.
- * 
+ *
+ * String refs confirmed from the binary to live inside this function:
+ *   0x8203B5BC  "%s:%s_VS_%s"
+ *   0x8203B5C8  "%s:SINGLEGAME_%dPOINTS"
+ *   (plus adjacent format strings for BESTOF / MINUTES variants)
+ *
+ * NOTE: Previously mislabeled as pg_CBAC_sp @ 0x821BCBAC. That function
+ * is only 36 bytes in the binary and cannot hold this body; see the
+ * TODO stub above for the correct 36-byte function still to be lifted.
+ *
  * Flow:
  * 1. Get UI display context
  * 2. Get player 0 and player 1 controller objects
  * 3. Randomly select character name variant (50% chance if players differ)
  * 4. Format and display character names with separator
  * 5. Format and display game mode string based on match settings
- * 
+ *
  * Match settings from g_input_obj_ptr:
  *   +12:  bool isTimedMatch
  *   +16:  float timeLimit (seconds)
  *   +300: uint32_t matchType (0=5pts, 1=7pts, 2=11pts, other=21pts)
  *   +304: uint32_t bestOfMode (0=standard, 1=best-of-3, 2=best-of-5)
- * 
+ *
  * Random number generation:
  *   Uses linear congruential generator with multiplier 0x5CDCFAA75CDCFAA7
  *   Extracts 23 bits and converts to float [0.0, 1.0) for 50/50 decision
  */
-void pg_CBAC_sp() {
+void pg_2DA8_g_cxx() {
     char buffer[176];
     
     // Get UI display context (returns handle for text display)
@@ -956,9 +981,11 @@ void pg_CBAC_sp() {
     // Character data +16 or +20 -> name ID (depends on random choice)
     int nameFieldOffset = useAlternateName ? 20 : 16;
     
-    void* char0Data = *(void**)((uint8_t*)player0Ctrl + 52);
-    void* char1Data = *(void**)((uint8_t*)player1Ctrl + 52);
-    
+    uint8_t* ctrl0 = (uint8_t*)player0Ctrl;
+    uint8_t* ctrl1 = (uint8_t*)player1Ctrl;
+    void* char0Data = *(void**)(ctrl0 + 52);
+    void* char1Data = *(void**)(ctrl1 + 52);
+
     uint32_t char0NameId = *(uint32_t*)((uint8_t*)char0Data + nameFieldOffset);
     uint32_t char1NameId = *(uint32_t*)((uint8_t*)char1Data + nameFieldOffset);
     
@@ -969,17 +996,18 @@ void pg_CBAC_sp() {
     const char* strTableBase = (const char*)(g_stringTableBase + 704);
     
     // First string format (character names)
-    // Format string @ 0x8203B5BC: "haracters -----" (part of "Characters -----")
-    static const char* STR_CHAR_SEPARATOR = (const char*)0x8203B5BC;  // @ 0x8203B5BC
-    sub_820CA940(buffer, 128, STR_CHAR_SEPARATOR, strTableBase, char0NameId, char1NameId);
+    // Format string @ 0x8203B5BC: "%s:%s_VS_%s"
+    static const char* STR_VS_FORMAT = "%s:%s_VS_%s";  // @ 0x8203B5BC
+    sub_820CA940(buffer, 128, STR_VS_FORMAT, strTableBase, char0NameId, char1NameId);
     
     // Display character names
     extern void sub_821BD8E0(void* ctx);
     sub_821BD8E0(displayCtx);
     
     // Get match configuration
-    uint32_t matchType = *(uint32_t*)((uint8_t*)g_input_obj_ptr + 300);
-    uint32_t bestOfMode = *(uint32_t*)((uint8_t*)g_input_obj_ptr + 304);
+    uint8_t* inputObj = (uint8_t*)g_input_obj_ptr;
+    uint32_t matchType = *(uint32_t*)(inputObj + 300);
+    uint32_t bestOfMode = *(uint32_t*)(inputObj + 304);
     
     // Determine points to win
     int pointsToWin;
@@ -994,11 +1022,11 @@ void pg_CBAC_sp() {
     }
     
     // Format game mode string
-    bool isTimedMatch = *(uint8_t*)((uint8_t*)g_input_obj_ptr + 12) != 0;
-    
+    bool isTimedMatch = inputObj[12] != 0;
+
     if (isTimedMatch) {
         // Timed match: "POINTS_XMINUTES"
-        float timeSeconds = *(float*)((uint8_t*)g_input_obj_ptr + 16);
+        float timeSeconds = *(float*)(inputObj + 16);
         int timeMinutes = (int)(timeSeconds * 0.016666668f);
         
         sub_820CA940(buffer, 128, "%s:%dPOINTS_%dMINUTES", 
@@ -1006,7 +1034,7 @@ void pg_CBAC_sp() {
     } else {
         if (bestOfMode == 0) {
             // Standard match: just points
-            static const char* STR_SCORE_SEPARATOR = "---";  // @ 0x8203B5C8
+            static const char* STR_SCORE_SEPARATOR = "%s:SINGLEGAME_%dPOINTS";  // @ 0x8203B5C8
             sub_820CA940(buffer, 128, STR_SCORE_SEPARATOR, strTableBase, pointsToWin);
             sub_821BD8E0(displayCtx);
             return;
@@ -1303,8 +1331,9 @@ void CCalMoviePlayer::DispatchVSlot14() {
 /// CCalMoviePlayer::DispatchVSlot19WithArgs @ 0x8248E418 | size: 0x1C
 void CCalMoviePlayer::DispatchVSlot19WithArgs(void* args) {
     typedef void (*VFunc)(void* self, uint32_t param, void* extra, void* context);
-    uint32_t param = *(uint32_t*)((char*)args + 4);
-    void* extra = (char*)args + 8;
+    uint8_t* argBytes = (uint8_t*)args;
+    uint32_t param = *(uint32_t*)(argBytes + 4);
+    void* extra = argBytes + 8;
     ((VFunc)VTABLE(this)[19])(this, param, extra, args);
 }
 
@@ -1361,9 +1390,9 @@ int32_t CCalMoviePlayer::CallVSlot37ReturnZero() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Debug format string and parameter strings for unimplemented media controls
-static const char* STR_DBG_NOT_IMPL_FMT = "CCalMoviePlayer::%s not implemented";  // @ 0x82008ACC
-static const char* STR_DBG_REWIND = "Rewind";                                      // @ 0x82009280
-static const char* STR_DBG_SEEK = "Seek";                                          // @ 0x82009298
+static const char* STR_DBG_NOT_IMPL_FMT = "CAL: NYI %s";  // @ 0x82008ACC
+static const char* STR_DBG_REWIND = "CCalMoviePlayer::Rewind";                                      // @ 0x82009280
+static const char* STR_DBG_SEEK = "CCalMoviePlayer::Seek";                                          // @ 0x82009298
 
 constexpr uint32_t STATUS_NOT_IMPLEMENTED = 0x80004001;
 
@@ -1392,8 +1421,9 @@ uint32_t CCalMoviePlayer::Seek() {
 void* CCalMoviePlayer::GetFrameBuffer() {
     // Width and height at offsets +124/+128 (within event/buffer region)
     // TODO: add m_width/m_height fields once class layout is fully resolved
-    uint32_t width = *(uint32_t*)((char*)this + 124);
-    uint32_t height = *(uint32_t*)((char*)this + 128);
+    uint8_t* self = (uint8_t*)this;
+    uint32_t width = *(uint32_t*)(self + 124);
+    uint32_t height = *(uint32_t*)(self + 128);
     uint32_t frameSize = (width * height * 3) >> 1;  // YUV 4:2:0: 1.5 bytes per pixel
 
     // Dispatch to vtable slot 20 with computed frame size
@@ -1435,14 +1465,14 @@ extern "C" {
 }
 
 // Vtable addresses for CCalMoviePlayer hierarchy
-static void* const VTABLE_CCalMoviePlayer_Base    = (void*)0x820092C0;  // intermediate/base vtable
-static void* const VTABLE_CCalMoviePlayer_Derived = (void*)0x82008B80;  // derived class vtable
+static void* const VTABLE_CCalMoviePlayer_Base    = (void*)0x820092C0;  // vtable for CCalMoviePlayer (intermediate/base, 292 bytes)
+static void* const VTABLE_CCalMoviePlayer_Derived = (void*)0x82008B80;  // vtable for CCalMoviePlayer (derived, 296 bytes)
 
 /// CCalMoviePlayer intermediate constructor -- initializes base, sets vtable, inits events.
 /// CCalMoviePlayer::CtorIntermediate @ 0x8248ED48 | size: 0x40
 void CCalMoviePlayer::CtorIntermediate() {
     CCalMoviePlayer_BaseCtorHelper(this);
-    *(void**)this = VTABLE_CCalMoviePlayer_Base;
+    *(void**)this = VTABLE_CCalMoviePlayer_Base;  // vtable for CCalMoviePlayer (base)
     CCalMoviePlayer_InitEvents(this);
 }
 
@@ -1450,13 +1480,13 @@ void CCalMoviePlayer::CtorIntermediate() {
 /// CCalMoviePlayer::CtorDerived @ 0x82487200 | size: 0x3C
 void CCalMoviePlayer::CtorDerived() {
     CtorIntermediate();
-    *(void**)this = VTABLE_CCalMoviePlayer_Derived;
+    *(void**)this = VTABLE_CCalMoviePlayer_Derived;  // vtable for CCalMoviePlayer (derived)
 }
 
 /// CCalMoviePlayer derived destructor -- sets intermediate vtable, cleans up events, destroys base.
 /// CCalMoviePlayer::DtorDerived @ 0x824915C8 | size: 0x40
 void CCalMoviePlayer::DtorDerived() {
-    *(void**)this = VTABLE_CCalMoviePlayer_Base;
+    *(void**)this = VTABLE_CCalMoviePlayer_Base;  // revert to base vtable for CCalMoviePlayer
     CCalMoviePlayer_CleanupEvents(this);
     CCalMoviePlayer_BaseDtorHelper(this);
 }

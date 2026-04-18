@@ -51,10 +51,10 @@ extern "C" void thunk_snMigrateNotifyCallback(void);  // @ 0x823F3190 — migrat
 extern "C" void thunk_snWaitingForMigrateMsgCallback(void);  // @ 0x823F31A0 — waiting-for-migrate-msg notify callback thunk
 
 // Named vtable pointers (RTTI-verified)
-extern void* g_&g_vtbl_EvtAcquireHostFailed;      // @ 0x8207346C — rage::EvtAcquireHostFailed
-extern void* g_&g_vtbl_EvtAcquireHostSucceeded;    // @ 0x82073458 — rage::EvtAcquireHostSucceeded
-extern void* g_&g_vtbl_EvtMigrateAsGuestSucceeded; // @ 0x82073480 — rage::EvtMigrateAsGuestSucceeded
-extern void* g_&g_vtbl_EvtMigrateAsGuestFailed;    // @ 0x82073494 — rage::EvtMigrateAsGuestFailed
+extern void* g_vtbl_EvtAcquireHostFailed;      // @ 0x8207346C — rage::EvtAcquireHostFailed
+extern void* g_vtbl_EvtAcquireHostSucceeded;    // @ 0x82073458 — rage::EvtAcquireHostSucceeded
+extern void* g_vtbl_EvtMigrateAsGuestSucceeded; // @ 0x82073480 — rage::EvtMigrateAsGuestSucceeded
+extern void* g_vtbl_EvtMigrateAsGuestFailed;    // @ 0x82073494 — rage::EvtMigrateAsGuestFailed
 
 // Additional state transition helpers
 extern void snNotifyingGuests_TransitionFailed(void* state, void* event);  // @ 0x823EA100 — NotifyingGuests transition failure
@@ -77,19 +77,19 @@ extern uint32_t g_evtType_GuestMigrateBegin;     // @ 0x825D1B04 (offset 6916)
 extern uint32_t g_evtType_GuestMigrateNotify;    // @ 0x825D1B10 (offset 6928)
 
 // vtable references
-extern void* g_&g_vtbl_hsmEvent;                   // @ 0x82072864 — rage::hsmEvent base
+extern void* g_vtbl_hsmEvent;                   // @ 0x82072864 — rage::hsmEvent base
 
 // ────────────────────────────────────────────────────────────────────────────
 // State Name Strings (from .rdata)
 // ────────────────────────────────────────────────────────────────────────────
 
-static const char* const s_MigrateMachine        = "MigrateMachine";        // @ 0x82074660
-static const char* const s_AcquiringHost         = "AcquiringHost";         // @ 0x82074670
-static const char* const s_Migrating             = "Migrating";             // @ 0x82074680
-static const char* const s_NotifyingGuests       = "NotifyingGuests";       // @ 0x8207468C
-static const char* const s_MigratingAsGuest      = "MigratingAsGuest";      // @ 0x8207469C
-static const char* const s_snWaitingForMigrateMsg = "snWaitingForMigrateMsg"; // @ 0x820746B0
-static const char* const s_snMigrating           = "snMigrating";           // @ 0x820746C8
+static const char* const s_MigrateMachine        = "MigrateMachine";        // @ 0x82072660
+static const char* const s_AcquiringHost         = "AcquiringHost";         // @ 0x82072670
+static const char* const s_Migrating             = "Migrating";             // @ 0x82072680
+static const char* const s_NotifyingGuests       = "NotifyingGuests";       // @ 0x8207268C
+static const char* const s_MigratingAsGuest      = "MigratingAsGuest";      // @ 0x8207269C
+static const char* const s_snWaitingForMigrateMsg = "snWaitingForMigrateMsg"; // @ 0x820726B0
+static const char* const s_snMigrating           = "snMigrating";           // @ 0x820726C8
 
 namespace snMigrateMachine_States {
 
@@ -119,10 +119,12 @@ void snAcquiringHost_OnEnter(void* thisPtr) {
 }
 
 /**
- * snAcquiringHost::OnExit @ 0x823E1C60 | size: 0x4 | vfn_15
- * Tail-calls snAcquiringHost_OnExitBody to handle host acquisition exit.
+ * snAcquiringHost::vfn_15 thunk @ 0x823E1C60 | size: 0x4
+ * Tail-calls snAcquiringHost_OnExitBody. Distinct from the canonical vfn_6
+ * OnExit (0x823E1F80) defined below — vfn_15 is a secondary dispatch slot
+ * in the hsm state vtable layout, not the primary OnExit handler.
  */
-void snAcquiringHost_OnExit(void* thisPtr) {
+void snAcquiringHost_OnExit_Thunk(void* thisPtr) {
     snAcquiringHost_OnExitBody(thisPtr);
 }
 

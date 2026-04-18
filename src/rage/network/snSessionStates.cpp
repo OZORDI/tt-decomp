@@ -1,5 +1,5 @@
 /**
- * snSessionStates.cpp — Session Network State Machine Implementation
+ * snSessionStates.cpp -- Session Network State Machine Implementation
  * Rockstar Presents Table Tennis (Xbox 360, 2006)
  *
  * Implementation of hierarchical state machines for active session management.
@@ -11,43 +11,144 @@
 
 namespace rage {
 
-// Forward declarations
+// ---- Forward declarations / Struct layouts ----
+
 class SinglesNetworkClient;
+struct snListNode;
+struct snSessionData;
+struct hsmStateBase;
+struct hsmEventNode;
+struct hsmEventData;
+
+// Doubly-linked list used for event queues and connection lists
+struct snLinkedList {
+    snListNode* m_pHead;  // +0x00
+    snListNode* m_pTail;  // +0x04
+    int32_t m_nCount;     // +0x08
+};
+
+// Node in a doubly-linked list
+struct snListNode {
+    void*       m_pVtable;  // +0x00
+    snListNode* m_pPrev;    // +0x04
+    snListNode* m_pNext;    // +0x08
+    uint8_t     m_flags;    // +0x0C  (bit 7 = dequeued marker)
+};
+
+// HSM event base: 12-byte allocatable node (vtable + 8 bytes payload)
+// When queued in a linked list, m_nEventParam1/m_nEventParam2 are reused as prev/next pointers.
+struct hsmEventNode {
+    void* m_pVtable;              // +0x00
+    union {
+        uint32_t       m_nEventParam1;  // +0x04 (payload when not queued)
+        hsmEventNode*  m_pPrev;         // +0x04 (link when queued)
+    };
+    union {
+        uint32_t       m_nEventParam2;  // +0x08 (payload when not queued)
+        hsmEventNode*  m_pNext;         // +0x08 (link when queued)
+    };
+};
+
+// HSM event data passed on the stack (24 bytes, larger than the allocated node)
+struct hsmEventData {
+    void*    m_pVtable;       // +0x00
+    uint32_t m_nEventParam1;  // +0x04
+    uint32_t m_nEventParam2;  // +0x08
+    uint32_t m_nSessionId;    // +0x0C
+    uint64_t m_sessionHandle; // +0x10
+    // padding to 24 bytes
+};
+
+// Embedded notifier (used at state+24 in Joining, Destroying, etc.)
+struct snNotifier {
+    void*         m_pLinked;    // +0x00  linked object (has its own vtable)
+    hsmStateBase* m_pOwner;     // +0x04  back-pointer to owning state
+    void*         m_pCallback;  // +0x08  pending callback function pointer
+};
+
+// hsmState base layout (24-byte header)
+struct hsmStateBase {
+    void**         m_pVtable;        // +0x00
+    snSessionData* m_pSessionCtx;    // +0x04  session context pointer
+    hsmStateBase*  m_pParent;        // +0x08  parent state
+    void*          m_field_0x0C;     // +0x0C
+    snSessionData* m_pSession;       // +0x10  session back-pointer
+    hsmStateBase*  m_pSelf;          // +0x14  self-reference / owner
+};
+
+// snSession layout (partial -- only offsets used in this file)
+struct snSessionData {
+    void**                 m_pVtable;          // +0x0000
+    uint8_t                _pad0[16];          // +0x0004 .. +0x0013
+    SinglesNetworkClient*  m_pNetworkClient;   // +0x0014
+    uint8_t                _pad1[68];          // +0x0018 .. +0x005B
+    snLinkedList           m_connectionList;    // +0x005C = offset 92
+    uint8_t                _pad1b[60];         // +0x0068 .. +0x00A3
+    SinglesNetworkClient*  m_pNetworkClientAlt;// +0x00A4 = offset 164
+    uint8_t                _pad3[64];          // +0x00A8 .. +0x00E7
+    snLinkedList           m_notifyList;        // +0x00E8 = offset 232
+    uint8_t                _pad4[32];          // +0x00F4 .. +0x0113
+    uint32_t               m_nSessionId;       // +0x0114 = offset 276
+    uint64_t               m_sessionHandle;    // +0x0118 = offset 280
+    uint8_t                _pad5[3456];        // +0x0120 .. +0x0E9F
+    uint8_t                m_sessionFlags;     // +0x0EA0 = offset 3744
+    uint8_t                _pad6[39];          // +0x0EA1 .. +0x0EC7
+    uint32_t               m_field_0xEC8;      // +0x0EC8 = offset 3784
+    uint8_t                _pad7[5880];        // +0x0ECC .. +0x25C7
+    int32_t                m_nJoinRefCount;    // +0x25C8 = offset 9672
+};
+
+// HSM event queue context: has vtable, allocator ptr, and linked list
+struct hsmEventAllocator {
+    void** m_pVtable;   // +0x00  vtable with alloc at slot 1
+};
+
+struct hsmEventQueue {
+    void*             m_pVtable;     // +0x00
+    hsmEventAllocator* m_pAllocator; // +0x04  allocator object
+    snLinkedList       m_list;       // +0x08
+};
+
+// HSM context returned by vfn_11 (partial)
+struct hsmContext {
+    uint8_t         _pad[56];
+    hsmEventQueue*  m_pEventQueue;  // +0x38 = offset 56
+};
 
 // External utility functions
-extern void snSession_AssociateConnections(void* context, void* session, void* connectionList); // @ 0x823ED988
-extern void snSession_ProcessPendingConnections(void* context, void* session, void* connectionList); // @ 0x823EDA90
-extern void hsmState_AttachChild(void* parent, void* childState);           // @ 0x823EF850
+extern void snSession_AssociateConnections(hsmContext* context, hsmStateBase* state, void* connectionList); // @ 0x823ED988
+extern void snSession_ProcessPendingConnections(hsmContext* context, hsmStateBase* state, void* connectionList); // @ 0x823EDA90
+extern void hsmState_AttachChild(hsmStateBase* parent, hsmStateBase* childState); // @ 0x823EF850
 
 // HSM base destructors and event initialization
-extern void hsmState_DestroySession(void* thisPtr);   // @ 0x823E9010 — hsmState base destructor
-extern void hsmNotifyState_Destroy(void* thisPtr);     // @ 0x823E5E20 — notifier destructor
-extern void hsmChildState_Destroy_5C58(void* thisPtr); // @ 0x823E5C58 — child state destructor
-extern void hsmChildState_Destroy_6178(void* thisPtr); // @ 0x823E6178 — child state destructor
-extern void hsmEvent_Init(void* pEvent);               // @ 0x823DDA08 — init HSM event
-extern void snSession_AddNode(void* queue, void* node); // @ linked list insert
+extern void hsmState_DestroySession(hsmStateBase* thisPtr);   // @ 0x823E9010 -- hsmState base destructor
+extern void hsmNotifyState_Destroy(hsmStateBase* thisPtr);     // @ 0x823E5E20 -- notifier destructor
+extern void hsmChildState_Destroy_5C58(hsmStateBase* thisPtr); // @ 0x823E5C58 -- child state destructor
+extern void hsmChildState_Destroy_6178(hsmStateBase* thisPtr); // @ 0x823E6178 -- child state destructor
+extern void hsmEvent_Init(hsmEventData* pEvent);               // @ 0x823DDA08 -- init HSM event
+extern void snSession_AddNode(snLinkedList* queue, hsmEventNode* node); // @ linked list insert
 
 // Named vtable pointers (RTTI-verified)
-extern void* g_vtbl_EvtCreateSucceeded;   // @ 0x82072AA0 — rage::EvtCreateSucceeded
-extern void* g_vtbl_EvtCreateFailed;      // @ 0x82072A28 — rage::EvtCreateFailed
-extern void* g_vtbl_EvtDestroy;           // @ 0x82072968 — rage::EvtDestroy
-extern void* g_vtbl_hsmEvent;             // @ 0x82072864 — rage::hsmEvent base (also declared below)
-extern void* g_vtbl_EvtStartSessionFailed; // @ 0x82072A8C — rage::EvtStartSessionFailed
-extern void* g_vtbl_hsmState;             // @ 0x82073CAC — hsmState
-extern void* g_vtbl_hsmStateBase;         // @ 0x82073F1C — rage::hsmStateBase
+extern void* g_vtbl_EvtCreateSucceeded;   // @ 0x82072AA0 -- rage::EvtCreateSucceeded
+extern void* g_vtbl_EvtCreateFailed;      // @ 0x82072A28 -- rage::EvtCreateFailed
+extern void* g_vtbl_EvtDestroy;           // @ 0x82072968 -- rage::EvtDestroy
+extern void* g_vtbl_hsmEvent;             // @ 0x82072864 -- rage::hsmEvent base (also declared below)
+extern void* g_vtbl_EvtStartSessionFailed; // @ 0x82072A8C -- rage::EvtStartSessionFailed
+extern void* g_vtbl_hsmState;             // @ 0x82073CAC -- hsmState
+extern void* g_vtbl_hsmStateBase;         // @ 0x82073F1C -- rage::hsmStateBase
 
-// ────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 // snSession_snRoot_snChangingPresence State Machine
-// ────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 /**
  * snSession_snRoot_snChangingPresence::GetStateName @ 0x823E3040 | size: 0x50
  *
  * Manages network connections during a session presence change.
- * 
+ *
  * This function is part of the snChangingPresence state which handles transitions
  * in session presence (e.g., "in menu" -> "in game", "playing" -> "paused").
- * 
+ *
  * Process:
  *   1. Call vfn_11 on this object (returns a context/state object)
  *   2. Get the network client's connection list from m_pNetworkClient
@@ -59,41 +160,39 @@ extern void* g_vtbl_hsmStateBase;         // @ 0x82073F1C — rage::hsmStateBase
  *
  * @note This is vtable slot 13 in the snChangingPresence state machine
  */
-void snSession_snRoot_snChangingPresence_vfn_13(void* thisPtr) {
-    void* session = thisPtr;
-    
-    void** vtable = *(void***)thisPtr;
-    void* (*vfn_11)(void*) = (void* (*)(void*))vtable[11];
-    void* context = vfn_11(thisPtr);
-    
-    SinglesNetworkClient* networkClient = *(SinglesNetworkClient**)((char*)session + 20);  // +0x14
-    void* connectionList = (char*)networkClient + 5780;  // +0x1694 — m_connectionList
-    
-    snSession_AssociateConnections(context, session, connectionList);
-    snSession_ProcessPendingConnections(context, session, connectionList);
+void snSession_snRoot_snChangingPresence_vfn_13(hsmStateBase* thisPtr) { // @ 0x823E3040
+    hsmContext* (*vfn_11)(hsmStateBase*) = (hsmContext* (*)(hsmStateBase*))thisPtr->m_pVtable[11];
+    hsmContext* context = vfn_11(thisPtr);
+
+    snSessionData* session = thisPtr->m_pSession;
+    SinglesNetworkClient* networkClient = session->m_pNetworkClient;
+    void* connectionList = (char*)networkClient + 5780;  // +0x1694 m_connectionList
+
+    snSession_AssociateConnections(context, thisPtr, connectionList);
+    snSession_ProcessPendingConnections(context, thisPtr, connectionList);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 // snSession HSM State Names (15 GetStateName functions, 12B each)
 // All return a const char* from .rdata pointing to the state's display name.
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 // State name string addresses (verified from binary)
-static const char* const s_snRoot              = "snRoot";              // @ 0x820746D4
-static const char* const s_snJoining           = "Joining";             // @ 0x820746DC
-static const char* const s_snLeaving           = "Leaving";             // @ 0x820746E4
-static const char* const s_snDormant           = "Dormant";             // @ 0x820746EC
-static const char* const s_snCreating          = "Creating";            // @ 0x820746F4
-static const char* const s_snDestroying        = "Destroying";          // @ 0x82074700
-static const char* const s_snChangingPresence  = "ChangingPresence";    // @ 0x8207470C
-static const char* const s_snChanging          = "Changing";            // @ 0x82074720
-static const char* const s_snWaitingForReplies = "WaitingForReplies";   // @ 0x8207472C
-static const char* const s_snActive            = "Active";              // @ 0x82074740
-static const char* const s_snArbGuestReg       = "ArbGuestRegistering"; // @ 0x82074748
-static const char* const s_snInProgress        = "InProgress";          // @ 0x8207475C
-static const char* const s_snStarting          = "Starting";            // @ 0x82074768
-static const char* const s_snArbHostReg        = "ArbHostRegistering";  // @ 0x82074774
-static const char* const s_snEnding            = "Ending";              // @ 0x82074788
+static const char* const s_snRoot              = "snRoot";              // @ 0x820726D4
+static const char* const s_snJoining           = "Joining";             // @ 0x820726DC
+static const char* const s_snLeaving           = "Leaving";             // @ 0x820726E4
+static const char* const s_snDormant           = "Dormant";             // @ 0x820726EC
+static const char* const s_snCreating          = "Creating";            // @ 0x820726F4
+static const char* const s_snDestroying        = "Destroying";          // @ 0x82072700
+static const char* const s_snChangingPresence  = "ChangingPresence";    // @ 0x8207270C
+static const char* const s_snChanging          = "Changing";            // @ 0x82072720
+static const char* const s_snWaitingForReplies = "WaitingForReplies";   // @ 0x8207272C
+static const char* const s_snActive            = "Active";              // @ 0x82072740
+static const char* const s_snArbGuestReg       = "ArbGuestRegistering"; // @ 0x82072748
+static const char* const s_snInProgress        = "InProgress";          // @ 0x8207275C
+static const char* const s_snStarting          = "Starting";            // @ 0x82072768
+static const char* const s_snArbHostReg        = "ArbHostRegistering";  // @ 0x82072774
+static const char* const s_snEnding            = "Ending";              // @ 0x82072788
 
 namespace snSession_States {
 
@@ -113,26 +212,26 @@ const char* snStarting_GetName()          { return s_snStarting; }          // @
 const char* snArbHostReg_GetName()        { return s_snArbHostReg; }        // @ 0x823E4100 vfn_2
 const char* snEnding_GetName()            { return s_snEnding; }            // @ 0x823E45A0 vfn_2
 
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 // snSession HSM OnEnter / OnExit Handlers
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 /**
  * snJoining::OnEnter @ 0x823E2660 | size: 0x14 | vfn_14
- * Increments the join reference count at session+9672.
+ * Increments the join reference count at session+0x25C8.
  */
-void snJoining_OnEnter(void* thisPtr) {
-    void* session = *(void**)((char*)thisPtr + 16);
-    (*(int32_t*)((char*)session + 9672))  /* +0x25C8 m_joinRefCount */++;
+void snJoining_OnEnter(hsmStateBase* thisPtr) { // @ 0x823E2660
+    snSessionData* session = (snSessionData*)thisPtr->m_pSession;
+    session->m_nJoinRefCount++;
 }
 
 /**
  * snJoining::OnExit @ 0x823E2678 | size: 0x14 | vfn_15
- * Decrements the join reference count at session+9672.
+ * Decrements the join reference count at session+0x25C8.
  */
-void snJoining_OnExit_DecrementRef(void* thisPtr) {
-    void* session = *(void**)((char*)thisPtr + 16);
-    (*(int32_t*)((char*)session + 9672))  /* +0x25C8 m_joinRefCount */--;
+void snJoining_OnExit_DecrementRef(hsmStateBase* thisPtr) { // @ 0x823E2678
+    snSessionData* session = (snSessionData*)thisPtr->m_pSession;
+    session->m_nJoinRefCount--;
 }
 
 /**
@@ -143,25 +242,25 @@ void snJoining_OnExit_DecrementRef(void* thisPtr) {
  * pointer and invokes the notifier's Cancel function (vtable slot 4 of
  * the linked object at +0, i.e. vfn at byte offset +16).
  */
-void snJoining_OnExit(void* thisPtr) {
-    char* notifier = (char*)thisPtr + 24;
-    void* pending = *(void**)(notifier + 8);
-    if (pending == nullptr) return;
+void snJoining_OnExit(hsmStateBase* thisPtr) { // @ 0x823E2930
+    snNotifier* notifier = (snNotifier*)((char*)thisPtr + 24);
+    if (notifier->m_pCallback == nullptr) return;
 
-    void* linked = *(void**)(notifier + 0);
-    *(void**)(notifier + 8) = nullptr;
-    // Cancel the pending notification via vtable slot 4
-    void (*cancelFn)(void*) = *(void (**)(void*))((char*)linked + 16);
+    void* linked = notifier->m_pLinked;
+    notifier->m_pCallback = nullptr;
+    // Cancel the pending notification via vtable slot 4 (byte offset +16 = slot 4)
+    void** linkedVtable = *(void***)linked;
+    void (*cancelFn)(snNotifier*) = (void (*)(snNotifier*))linkedVtable[4];
     cancelFn(notifier);
 }
 
 /**
  * snDormant::OnEnter @ 0x823E2970 | size: 0x10 | vfn_14
- * Clears the field at session+3784 to 0 on entering dormant state.
+ * Clears the field at session+0xEC8 to 0 on entering dormant state.
  */
-void snDormant_OnEnter(void* thisPtr) {
-    void* session = *(void**)((char*)thisPtr + 16);
-    *(uint32_t*)((char*)session + 3784)  /* +0xEC8 */ = 0;
+void snDormant_OnEnter(hsmStateBase* thisPtr) { // @ 0x823E2970
+    snSessionData* session = (snSessionData*)thisPtr->m_pSession;
+    session->m_field_0xEC8 = 0;
 }
 
 /**
@@ -170,8 +269,8 @@ void snDormant_OnEnter(void* thisPtr) {
  * Exit handler for the Active::Idle state.
  * Detaches the child state at this+24 via hsmState_AttachChild (AttachChildState).
  */
-void snIdle_OnExit(void* thisPtr) {
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
+void snIdle_OnExit(hsmStateBase* thisPtr) { // @ 0x823EE740
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)((char*)thisPtr + 24));
 }
 
 /**
@@ -180,22 +279,21 @@ void snIdle_OnExit(void* thisPtr) {
  * Exit handler for the Active::Starting state.
  * Detaches two child states at this+24 and this+1412 via hsmState_AttachChild.
  */
-void snStarting_OnExit(void* thisPtr) {
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 1412);
+void snStarting_OnExit(hsmStateBase* thisPtr) { // @ 0x823E44E0
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)((char*)thisPtr + 24));
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)((char*)thisPtr + 1412));
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 // snSession Utility Functions
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 /**
  * snSession::HasPendingJoins @ 0x823E71F0 | size: 0x1C
- * Returns true if the join reference count (session+9672) is > 0.
+ * Returns true if the join reference count (session+0x25C8) is > 0.
  */
-bool snSession_HasPendingJoins(void* session) {
-    int32_t joinRefCount = *(int32_t*)((char*)session + 9672);
-    return joinRefCount > 0;
+bool snSession_HasPendingJoins(snSessionData* session) { // @ 0x823E71F0
+    return session->m_nJoinRefCount > 0;
 }
 
 /**
@@ -203,23 +301,24 @@ bool snSession_HasPendingJoins(void* session) {
  * Walks a linked list (next pointer at +20) to find the last node.
  * Returns nullptr if the initial node pointer (at +0) is null.
  */
-void* snSession_FindListTail(void* listHead) {
-    void* node = *(void**)listHead;
+snListNode* snSession_FindListTail(snListNode** listHead) { // @ 0x823EA980
+    snListNode* node = *listHead;
     if (!node) return nullptr;
 
-    while (*(void**)((char*)node + 20) != nullptr) {
-        node = *(void**)((char*)node + 20);
+    // Walk via next pointer at +20 (different list node layout with 20-byte stride)
+    while (*(snListNode**)((char*)node + 20) != nullptr) {
+        node = *(snListNode**)((char*)node + 20);
     }
     return node;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession HSM State Destructors — Batch 2
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// snSession HSM State Destructors -- Batch 2
+// --------------------------------------------------------------------------
 
 // External destructor helpers for Joining and Leaving states
-extern void snJoinMachine_DestroyNotifier(void* thisPtr);  // @ 0x823E56C0 — Joining rlNotifier dtor body
-extern void snLeaveMachine_DestroyBody(void* thisPtr);     // @ 0x823E5900 — Leaving-level destructor body
+extern void snJoinMachine_DestroyNotifier(snNotifier* thisPtr);  // @ 0x823E56C0 -- Joining rlNotifier dtor body
+extern void snLeaveMachine_DestroyBody(hsmStateBase* thisPtr);   // @ 0x823E5900 -- Leaving-level destructor body
 
 /**
  * snJoining::~snJoining @ 0x823E5498 | size: 0x5C | vfn_0
@@ -227,8 +326,8 @@ extern void snLeaveMachine_DestroyBody(void* thisPtr);     // @ 0x823E5900 — L
  * Destructor for the Joining state. Tears down the embedded rlNotifier
  * at this+24 via snJoinMachine_DestroyNotifier, then calls hsmState base destructor.
  */
-void snJoining_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5498
-    snJoinMachine_DestroyNotifier((char*)thisPtr + 24);
+void snJoining_Destructor(hsmStateBase* thisPtr, uint32_t flags) { // @ 0x823E5498
+    snJoinMachine_DestroyNotifier((snNotifier*)((char*)thisPtr + 24));
     hsmState_DestroySession(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
@@ -241,35 +340,35 @@ void snJoining_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5498
  * Destructor for the Leaving state. Tears down the embedded leave machine
  * state at this+24 via snLeaveMachine_DestroyBody, then calls hsmState base destructor.
  */
-void snLeaving_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5788
-    snLeaveMachine_DestroyBody((char*)thisPtr + 24);
+void snLeaving_Destructor(hsmStateBase* thisPtr, uint32_t flags) { // @ 0x823E5788
+    snLeaveMachine_DestroyBody((hsmStateBase*)((char*)thisPtr + 24));
     hsmState_DestroySession(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession HSM OnEnter Handlers — Batch 2
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// snSession HSM OnEnter Handlers -- Batch 2
+// --------------------------------------------------------------------------
 
 // External helpers for OnEnter handlers
-extern void snLinkedList_InsertNode(void* listHead, void* node);            // @ 0x823DD170
-extern bool snLeaveMachine_TryLeave(void* thisPtr);                         // @ 0x823E8558
-extern void snSession_TransitionDestroying(void* thisPtr, void* evtState);  // @ 0x823EAA20
-extern void snSession_TransitionChanging(void* thisPtr, void* evtState);    // @ 0x823EAB70
-extern void snSession_TransitionStarting(void* thisPtr, void* evtState);    // @ 0x823EAC18
-extern void snSession_TransitionEnding(void* thisPtr, void* evtState);      // @ 0x823EACC0
-extern void snHsmContext_SetMaxTransitions(void* thisPtr, int32_t limit);    // @ 0x823ED4F8
-extern void SinglesNetworkClient_RegisterNotify(void* networkClient);       // @ 0x823DA940
-extern bool xamSession_StartSession(void* sessionNotify);                    // @ 0x8236E6C0
-extern bool xamSession_EndSession(void* sessionNotify);                      // @ 0x8236E920
+extern void snLinkedList_InsertNode(snLinkedList* listHead, snNotifier* node); // @ 0x823DD170
+extern bool snLeaveMachine_TryLeave(hsmStateBase* thisPtr);                    // @ 0x823E8558
+extern void snSession_TransitionDestroying(hsmStateBase* thisPtr, hsmEventData* evtState);  // @ 0x823EAA20
+extern void snSession_TransitionChanging(hsmStateBase* thisPtr, hsmEventData* evtState);    // @ 0x823EAB70
+extern void snSession_TransitionStarting(hsmStateBase* thisPtr, hsmEventData* evtState);    // @ 0x823EAC18
+extern void snSession_TransitionEnding(hsmStateBase* thisPtr, hsmEventData* evtState);      // @ 0x823EACC0
+extern void snHsmContext_SetMaxTransitions(hsmStateBase* thisPtr, int32_t limit);            // @ 0x823ED4F8
+extern void SinglesNetworkClient_RegisterNotify(SinglesNetworkClient* networkClient);       // @ 0x823DA940
+extern bool xamSession_StartSession(snLinkedList* sessionNotify);              // @ 0x8236E6C0
+extern bool xamSession_EndSession(snLinkedList* sessionNotify);                // @ 0x8236E920
 
 // Thunk function pointers used as notification callbacks
-extern void thunk_fn_snSession_2D48();   // @ 0x823EB108 — Destroying notification callback
-extern void thunk_fn_snSession_88F8();   // @ 0x823EB118 — WaitingForReplies notification callback
-extern void thunk_fn_snSession_4110();   // @ 0x823EB120 — StartingSession notification callback
-extern void thunk_fn_snSession_45B0();   // @ 0x823EB128 — Ending notification callback
+extern void thunk_fn_snSession_2D48();   // @ 0x823EB108 -- Destroying notification callback
+extern void thunk_fn_snSession_88F8();   // @ 0x823EB118 -- WaitingForReplies notification callback
+extern void thunk_fn_snSession_4110();   // @ 0x823EB120 -- StartingSession notification callback
+extern void thunk_fn_snSession_45B0();   // @ 0x823EB128 -- Ending notification callback
 
 /**
  * snRoot::OnEnter @ 0x823E49E0 | size: 0x84 | vfn_5
@@ -285,15 +384,16 @@ extern void thunk_fn_snSession_45B0();   // @ 0x823EB128 — Ending notification
  *   - this+4292  (Destroying)
  *   - this+5756  (Migrating)
  */
-void snRoot_OnEnter(void* thisPtr) { // @ 0x823E49E0
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 24);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 48);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 376);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 424);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 3392);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 4048);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 4292);
-    hsmState_AttachChild(thisPtr, (char*)thisPtr + 5756);
+void snRoot_OnEnter(hsmStateBase* thisPtr) { // @ 0x823E49E0
+    char* base = (char*)thisPtr;
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 24));    // Dormant
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 48));    // Joining
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 376));   // Leaving
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 424));   // Creating
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 3392));  // ChangingPresence
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 4048));  // Active
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 4292));  // Destroying
+    hsmState_AttachChild(thisPtr, (hsmStateBase*)(base + 5756));  // Migrating
 }
 
 /**
@@ -304,22 +404,20 @@ void snRoot_OnEnter(void* thisPtr) { // @ 0x823E49E0
  * the child's fields, then calls the child's OnEnter (vfn_5) and sets
  * the child's parent pointer to this.
  */
-void snJoining_OnEnterState(void* thisPtr) { // @ 0x823E3F50
-    char* child = (char*)thisPtr + 24;
-    void* session = *(void**)((char*)thisPtr + 16);
+void snJoining_OnEnterState(hsmStateBase* thisPtr) { // @ 0x823E3F50
+    hsmStateBase* child = (hsmStateBase*)((char*)thisPtr + 24);
 
     // Initialize child state fields
-    *(void**)(child + 20) = child;     // self-reference
-    *(void**)(child + 4) = session;    // session pointer
-    *(void**)(child + 16) = session;   // session pointer (parent context)
+    child->m_pSelf       = child;               // self-reference
+    child->m_pSessionCtx = thisPtr->m_pSession;  // session pointer
+    child->m_pSession    = thisPtr->m_pSession;  // session pointer (parent context)
 
     // Call child's OnEnter via vtable slot 5
-    void** vtable = *(void***)child;
-    void (*childOnEnter)(void*) = (void (*)(void*))vtable[5];
+    void (*childOnEnter)(hsmStateBase*) = (void (*)(hsmStateBase*))child->m_pVtable[5];
     childOnEnter(child);
 
     // Set child's parent to this state
-    *(void**)(child + 8) = thisPtr;
+    child->m_pParent = thisPtr;
 }
 
 /**
@@ -330,28 +428,28 @@ void snJoining_OnEnterState(void* thisPtr) { // @ 0x823E3F50
  * the session's linked list, then initiates leave machine. If leave
  * fails immediately, creates an event to transition to Destroying.
  */
-void snDestroying_OnEnter(void* thisPtr) { // @ 0x823E2E30
-    char* notifier = (char*)thisPtr + 24;
-    void* session = *(void**)((char*)thisPtr + 16);
+void snDestroying_OnEnter(hsmStateBase* thisPtr) { // @ 0x823E2E30
+    snNotifier* notifier = (snNotifier*)((char*)thisPtr + 24);
+    snSessionData* session = (snSessionData*)thisPtr->m_pSession;
 
     // Increment join reference count
-    (*(int32_t*)((char*)session + 9672))  /* +0x25C8 m_joinRefCount */++;
+    session->m_nJoinRefCount++;
 
     // Set up notification callback (thunk -> snSession_2D48)
-    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_2D48;
-    *(void**)(notifier + 4) = thisPtr;
+    notifier->m_pCallback = (void*)&thunk_fn_snSession_2D48;
+    notifier->m_pOwner = thisPtr;
 
-    // Register notifier in session's linked list at session+232
-    snLinkedList_InsertNode((char*)session + 232, notifier);
+    // Register notifier in session's linked list at session+0xE8
+    snLinkedList_InsertNode(&session->m_notifyList, notifier);
 
     // Attempt to leave the session
     bool leaveResult = snLeaveMachine_TryLeave(thisPtr);
     if (!leaveResult) {
-        // Leave failed immediately — create event and transition
-        char evtState[24];
-        hsmEvent_Init(evtState);
-        *(void**)evtState = (void*)&thunk_fn_snSession_2D48; // vtable
-        snSession_TransitionDestroying(thisPtr, evtState);
+        // Leave failed immediately -- create event and transition
+        hsmEventData evtState;
+        hsmEvent_Init(&evtState);
+        evtState.m_pVtable = (void*)&thunk_fn_snSession_2D48; // vtable
+        snSession_TransitionDestroying(thisPtr, &evtState);
     }
 }
 
@@ -363,23 +461,22 @@ void snDestroying_OnEnter(void* thisPtr) { // @ 0x823E2E30
  * the notification callback, and registers with the network client's
  * notification list.
  */
-void snWaitingForReplies_OnEnter(void* thisPtr) { // @ 0x823E3530
-    char* notifier = (char*)thisPtr + 24;
+void snWaitingForReplies_OnEnter(hsmStateBase* thisPtr) { // @ 0x823E3530
+    snNotifier* notifier = (snNotifier*)((char*)thisPtr + 24);
 
-    // Clear reply counter
+    // Clear reply counter at this+48
     *(uint32_t*)((char*)thisPtr + 48) = 0;
 
     // Set max transition count
     snHsmContext_SetMaxTransitions(thisPtr, 10000);
 
     // Set up notification callback (thunk -> SinglesNetworkClient_88F8)
-    *(void**)(notifier + 4) = thisPtr;
-    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_88F8;
+    notifier->m_pOwner = thisPtr;
+    notifier->m_pCallback = (void*)&thunk_fn_snSession_88F8;
 
     // Register with network client's notification list
-    void* session = *(void**)((char*)thisPtr + 16);
-    void* networkClient = *(void**)((char*)session + 164);
-    SinglesNetworkClient_RegisterNotify(networkClient);
+    snSessionData* session = thisPtr->m_pSession;
+    SinglesNetworkClient_RegisterNotify(session->m_pNetworkClientAlt);
 }
 
 /**
@@ -390,25 +487,25 @@ void snWaitingForReplies_OnEnter(void* thisPtr) { // @ 0x823E3530
  * then calls xamSession_StartSession. If start returns immediately,
  * creates an event to transition.
  */
-void snStartingSession_OnEnter(void* thisPtr) { // @ 0x823E41F8
-    char* notifier = (char*)thisPtr + 24;
-    void* session = *(void**)((char*)thisPtr + 16);
+void snStartingSession_OnEnter(hsmStateBase* thisPtr) { // @ 0x823E41F8
+    snNotifier* notifier = (snNotifier*)((char*)thisPtr + 24);
+    snSessionData* session = (snSessionData*)thisPtr->m_pSession;
 
     // Set up notification callback (thunk -> snSession_4110)
-    *(void**)(notifier + 4) = thisPtr;
-    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_4110;
+    notifier->m_pOwner = thisPtr;
+    notifier->m_pCallback = (void*)&thunk_fn_snSession_4110;
 
-    // Register notifier in session's linked list at session+232
-    snLinkedList_InsertNode((char*)session + 232, notifier);
+    // Register notifier in session's linked list at session+0xE8
+    snLinkedList_InsertNode(&session->m_notifyList, notifier);
 
     // Attempt to start session via XAM
-    bool result = xamSession_StartSession((char*)session + 232);
+    bool result = xamSession_StartSession(&session->m_notifyList);
     if (!result) {
-        // Start completed immediately — create event and transition
-        char evtState[24];
-        hsmEvent_Init(evtState);
-        *(void**)evtState = (void*)&thunk_fn_snSession_4110; // vtable
-        snSession_TransitionStarting(thisPtr, evtState);
+        // Start completed immediately -- create event and transition
+        hsmEventData evtState;
+        hsmEvent_Init(&evtState);
+        evtState.m_pVtable = (void*)&thunk_fn_snSession_4110; // vtable
+        snSession_TransitionStarting(thisPtr, &evtState);
     }
 }
 
@@ -420,34 +517,34 @@ void snStartingSession_OnEnter(void* thisPtr) { // @ 0x823E41F8
  * session's linked list, then calls xamSession_EndSession. If end
  * returns immediately, creates an event to transition.
  */
-void snEnding_OnEnter(void* thisPtr) { // @ 0x823E4698
-    char* notifier = (char*)thisPtr + 24;
-    void* session = *(void**)((char*)thisPtr + 16);
+void snEnding_OnEnter(hsmStateBase* thisPtr) { // @ 0x823E4698
+    snNotifier* notifier = (snNotifier*)((char*)thisPtr + 24);
+    snSessionData* session = (snSessionData*)thisPtr->m_pSession;
 
     // Increment join reference count
-    (*(int32_t*)((char*)session + 9672))  /* +0x25C8 m_joinRefCount */++;
+    session->m_nJoinRefCount++;
 
     // Set up notification callback (thunk -> snSession_45B0)
-    *(void**)(notifier + 8) = (void*)&thunk_fn_snSession_45B0;
-    *(void**)(notifier + 4) = thisPtr;
+    notifier->m_pCallback = (void*)&thunk_fn_snSession_45B0;
+    notifier->m_pOwner = thisPtr;
 
-    // Register notifier in session's linked list at session+232
-    snLinkedList_InsertNode((char*)session + 232, notifier);
+    // Register notifier in session's linked list at session+0xE8
+    snLinkedList_InsertNode(&session->m_notifyList, notifier);
 
     // Attempt to end session via XAM
-    bool result = xamSession_EndSession((char*)session + 232);
+    bool result = xamSession_EndSession(&session->m_notifyList);
     if (!result) {
-        // End completed immediately — create event and transition
-        char evtState[24];
-        hsmEvent_Init(evtState);
-        *(void**)evtState = (void*)&thunk_fn_snSession_45B0; // vtable
-        snSession_TransitionEnding(thisPtr, evtState);
+        // End completed immediately -- create event and transition
+        hsmEventData evtState;
+        hsmEvent_Init(&evtState);
+        evtState.m_pVtable = (void*)&thunk_fn_snSession_45B0; // vtable
+        snSession_TransitionEnding(thisPtr, &evtState);
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession HSM OnExit Handlers — Batch 2
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// snSession HSM OnExit Handlers -- Batch 2
+// --------------------------------------------------------------------------
 
 /**
  * snActive::OnExit_Full @ 0x823E4918 | size: 0xC4 | vfn_6
@@ -457,40 +554,42 @@ void snEnding_OnEnter(void* thisPtr) { // @ 0x823E4698
  * notification (at child+8) is checked; if non-null, cleared and
  * cancelled via its vtable slot 4 (Cancel).
  */
-void snActive_OnExit_Full(void* thisPtr) { // @ 0x823E4918
-    // Detach child at this+24
-    char* child1 = (char*)thisPtr + 24;
-    if (*(void**)(child1 + 8) != nullptr) {
+void snActive_OnExit_Full(hsmStateBase* thisPtr) { // @ 0x823E4918
+    char* base = (char*)thisPtr;
+
+    // Cancel notifier at this+24 (Idle)
+    snNotifier* child1 = (snNotifier*)(base + 24);
+    if (child1->m_pCallback != nullptr) {
         void** vtable1 = *(void***)child1;
-        *(void**)(child1 + 8) = nullptr;
-        void (*cancel1)(void*) = (void (*)(void*))vtable1[4];
+        child1->m_pCallback = nullptr;
+        void (*cancel1)(snNotifier*) = (void (*)(snNotifier*))vtable1[4];
         cancel1(child1);
     }
 
-    // Detach child at this+1436
-    char* child2 = (char*)thisPtr + 1436;
-    if (*(void**)(child2 + 8) != nullptr) {
+    // Cancel notifier at this+1436 (InProgress)
+    snNotifier* child2 = (snNotifier*)(base + 1436);
+    if (child2->m_pCallback != nullptr) {
         void** vtable2 = *(void***)child2;
-        *(void**)(child2 + 8) = nullptr;
-        void (*cancel2)(void*) = (void (*)(void*))vtable2[4];
+        child2->m_pCallback = nullptr;
+        void (*cancel2)(snNotifier*) = (void (*)(snNotifier*))vtable2[4];
         cancel2(child2);
     }
 
-    // Detach child at this+1460
-    char* child3 = (char*)thisPtr + 1460;
-    if (*(void**)(child3 + 8) != nullptr) {
+    // Cancel notifier at this+1460 (Starting)
+    snNotifier* child3 = (snNotifier*)(base + 1460);
+    if (child3->m_pCallback != nullptr) {
         void** vtable3 = *(void***)child3;
-        *(void**)(child3 + 8) = nullptr;
-        void (*cancel3)(void*) = (void (*)(void*))vtable3[4];
+        child3->m_pCallback = nullptr;
+        void (*cancel3)(snNotifier*) = (void (*)(snNotifier*))vtable3[4];
         cancel3(child3);
     }
 
-    // Detach child at this+2920
-    char* child4 = (char*)thisPtr + 2920;
-    if (*(void**)(child4 + 8) != nullptr) {
+    // Cancel notifier at this+2920 (Ending)
+    snNotifier* child4 = (snNotifier*)(base + 2920);
+    if (child4->m_pCallback != nullptr) {
         void** vtable4 = *(void***)child4;
-        *(void**)(child4 + 8) = nullptr;
-        void (*cancel4)(void*) = (void (*)(void*))vtable4[4];
+        child4->m_pCallback = nullptr;
+        void (*cancel4)(snNotifier*) = (void (*)(snNotifier*))vtable4[4];
         cancel4(child4);
     }
 }
@@ -503,42 +602,44 @@ void snActive_OnExit_Full(void* thisPtr) { // @ 0x823E4918
  * If the notifier's pending pointer (+8) is non-null, clears it and
  * calls the notifier's Cancel function (vtable slot 4).
  */
-void snStarting_OnExit_Full(void* thisPtr) { // @ 0x823E4520
-    // Cancel notifier at this+24
-    char* notifier1 = (char*)thisPtr + 24;
-    if (*(void**)(notifier1 + 8) != nullptr) {
+void snStarting_OnExit_Full(hsmStateBase* thisPtr) { // @ 0x823E4520
+    char* base = (char*)thisPtr;
+
+    // Cancel notifier at this+24 (ArbHostRegistering)
+    snNotifier* notifier1 = (snNotifier*)(base + 24);
+    if (notifier1->m_pCallback != nullptr) {
         void** vtable1 = *(void***)notifier1;
-        *(void**)(notifier1 + 8) = nullptr;
-        void (*cancel1)(void*) = (void (*)(void*))vtable1[4];
+        notifier1->m_pCallback = nullptr;
+        void (*cancel1)(snNotifier*) = (void (*)(snNotifier*))vtable1[4];
         cancel1(notifier1);
     }
 
-    // Cancel notifier at this+1412
-    char* notifier2 = (char*)thisPtr + 1412;
-    if (*(void**)(notifier2 + 8) != nullptr) {
+    // Cancel notifier at this+1412 (StartingSession)
+    snNotifier* notifier2 = (snNotifier*)(base + 1412);
+    if (notifier2->m_pCallback != nullptr) {
         void** vtable2 = *(void***)notifier2;
-        *(void**)(notifier2 + 8) = nullptr;
-        void (*cancel2)(void*) = (void (*)(void*))vtable2[4];
+        notifier2->m_pCallback = nullptr;
+        void (*cancel2)(snNotifier*) = (void (*)(snNotifier*))vtable2[4];
         cancel2(notifier2);
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession HSM OnTick / Event Handlers — Batch 2
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// snSession HSM OnTick / Event Handlers -- Batch 2
+// --------------------------------------------------------------------------
 
 // Event type ID globals (RTTI descriptors loaded at runtime)
-extern uint32_t g_evtType_SessionClosed;         // @ 0x825D1978 — used by snRoot
-extern uint32_t g_evtType_SessionDeregistered;    // @ 0x825D1984 — used by snRoot
-extern uint32_t g_evtType_PresenceChanged;        // @ 0x825D18AC — used by snChanging
-extern uint32_t g_evtType_SessionStarted;         // @ 0x825D1924 — used by snInProgress
-extern uint32_t g_evtType_SessionEnded;           // @ 0x825D1930 — used by snEnding (1st)
-extern uint32_t g_evtType_SessionEndedAlt;        // @ 0x825D193C — used by snEnding (2nd)
+extern uint32_t g_evtType_SessionClosed;         // @ 0x825D1978 -- used by snRoot
+extern uint32_t g_evtType_SessionDeregistered;    // @ 0x825D1984 -- used by snRoot
+extern uint32_t g_evtType_PresenceChanged;        // @ 0x825D18AC -- used by snChanging
+extern uint32_t g_evtType_SessionStarted;         // @ 0x825D1924 -- used by snInProgress
+extern uint32_t g_evtType_SessionEnded;           // @ 0x825D1930 -- used by snEnding (1st)
+extern uint32_t g_evtType_SessionEndedAlt;        // @ 0x825D193C -- used by snEnding (2nd)
 
 // External session helpers
-extern void snSession_HandleClose(void* thisPtr);                            // @ 0x823E8BB0
-extern void SinglesNetworkClient_ProcessChange(void* thisPtr);               // @ 0x823E87F8
-extern void snSession_NotifyStateChange(void* session, int32_t type, int32_t param); // @ 0x82371BF8
+extern void snSession_HandleClose(hsmStateBase* thisPtr);                     // @ 0x823E8BB0
+extern void SinglesNetworkClient_ProcessChange(hsmStateBase* thisPtr);        // @ 0x823E87F8
+extern void snSession_NotifyStateChange(snSessionData* session, int32_t type, int32_t param); // @ 0x82371BF8
 
 /**
  * snRoot::OnTick @ 0x823E2590 | size: 0xBC | vfn_12
@@ -548,18 +649,17 @@ extern void snSession_NotifyStateChange(void* session, int32_t type, int32_t par
  * calls snSession_HandleClose to process session shutdown.
  * Otherwise sets the consumed flag to false.
  */
-void snRoot_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E2590
+void snRoot_OnTick(hsmStateBase* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E2590
     *consumed = 1;
 
     // Get event via vfn_10 (GetCurrentEvent)
-    void** vtable = *(void***)thisPtr;
-    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* (*getEvent)(hsmStateBase*) = (void* (*)(hsmStateBase*))thisPtr->m_pVtable[10];
     void* evtObj = getEvent(thisPtr);
 
     // Get event type via vfn_1
-    void* evtData = *(void**)((char*)evtObj + 12);
+    hsmEventNode* evtData = *(hsmEventNode**)((char*)evtObj + 12);
     void** evtVtable = *(void***)evtData;
-    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t (*getType)(hsmEventNode*) = (int32_t (*)(hsmEventNode*))evtVtable[1];
     int32_t evtType = getType(evtData);
 
     // Check for SessionClosed event
@@ -569,12 +669,11 @@ void snRoot_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E2
     }
 
     // Check for SessionDeregistered event (second check)
-    vtable = *(void***)thisPtr;
-    getEvent = (void* (*)(void*))vtable[10];
+    getEvent = (void* (*)(hsmStateBase*))thisPtr->m_pVtable[10];
     evtObj = getEvent(thisPtr);
-    evtData = *(void**)((char*)evtObj + 12);
+    evtData = *(hsmEventNode**)((char*)evtObj + 12);
     evtVtable = *(void***)evtData;
-    getType = (int32_t (*)(void*))evtVtable[1];
+    getType = (int32_t (*)(hsmEventNode*))evtVtable[1];
     evtType = getType(evtData);
 
     if (evtType == *(int32_t*)&g_evtType_SessionDeregistered) {
@@ -595,16 +694,15 @@ void snRoot_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E2
  * processes pending connection changes. Also calls
  * SinglesNetworkClient_ProcessChange to update presence.
  */
-void snChanging_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E3470
+void snChanging_OnTick(hsmStateBase* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E3470
     *consumed = 1;
 
     // Get event type
-    void** vtable = *(void***)thisPtr;
-    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* (*getEvent)(hsmStateBase*) = (void* (*)(hsmStateBase*))thisPtr->m_pVtable[10];
     void* evtObj = getEvent(thisPtr);
-    void* evtData = *(void**)((char*)evtObj + 12);
+    hsmEventNode* evtData = *(hsmEventNode**)((char*)evtObj + 12);
     void** evtVtable = *(void***)evtData;
-    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t (*getType)(hsmEventNode*) = (int32_t (*)(hsmEventNode*))evtVtable[1];
     int32_t evtType = getType(evtData);
 
     if (evtType != *(int32_t*)&g_evtType_PresenceChanged) {
@@ -613,13 +711,13 @@ void snChanging_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x8
     }
 
     // Get context via vfn_11
-    vtable = *(void***)thisPtr;
-    void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
-    void* context = getContext(thisPtr);
+    hsmContext* (*getContext)(hsmStateBase*) = (hsmContext* (*)(hsmStateBase*))thisPtr->m_pVtable[11];
+    hsmContext* context = getContext(thisPtr);
 
     // Get network client's connection list at offset +0x16C4
-    SinglesNetworkClient* networkClient = *(SinglesNetworkClient**)((char*)thisPtr + 20);  // +0x14
-    void* connectionList = (char*)networkClient + 5828;  // +0x16C4 — m_connectionList (changing)
+    snSessionData* session = thisPtr->m_pSession;
+    SinglesNetworkClient* networkClient = session->m_pNetworkClient;
+    void* connectionList = (char*)networkClient + 5828;  // +0x16C4 m_connectionList (changing)
 
     // Associate connections
     snSession_AssociateConnections(context, thisPtr, connectionList);
@@ -639,24 +737,23 @@ void snChanging_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x8
  * pending replies), creates a transition event. Otherwise clears the
  * consumed flag.
  */
-void snWaitingForReplies_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E35D0
+void snWaitingForReplies_OnTick(hsmStateBase* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E35D0
     *consumed = 1;
 
     // Get event type
-    void** vtable = *(void***)thisPtr;
-    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* (*getEvent)(hsmStateBase*) = (void* (*)(hsmStateBase*))thisPtr->m_pVtable[10];
     void* evtObj = getEvent(thisPtr);
-    void* evtData = *(void**)((char*)evtObj + 12);
+    hsmEventNode* evtData = *(hsmEventNode**)((char*)evtObj + 12);
     void** evtVtable = *(void***)evtData;
-    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t (*getType)(hsmEventNode*) = (int32_t (*)(hsmEventNode*))evtVtable[1];
     int32_t result = getType(evtData);
 
     if (result == 0) {
-        // All replies received — create transition event
-        char evtState[24];
-        hsmEvent_Init(evtState);
-        *(void**)evtState = (void*)&thunk_fn_snSession_88F8; // vtable
-        snSession_TransitionChanging(thisPtr, evtState);
+        // All replies received -- create transition event
+        hsmEventData evtState;
+        hsmEvent_Init(&evtState);
+        evtState.m_pVtable = (void*)&thunk_fn_snSession_88F8; // vtable
+        snSession_TransitionChanging(thisPtr, &evtState);
     } else {
         *consumed = 0;
     }
@@ -670,16 +767,15 @@ void snWaitingForReplies_OnTick(void* thisPtr, void* event, uint8_t* consumed) {
  * get context, then associates connections at network client offset
  * +3344 and processes pending connections.
  */
-void snInProgress_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E3FC0
+void snInProgress_OnTick(hsmStateBase* thisPtr, void* event, uint8_t* consumed) { // @ 0x823E3FC0
     *consumed = 1;
 
     // Get event type
-    void** vtable = *(void***)thisPtr;
-    void* (*getEvent)(void*) = (void* (*)(void*))vtable[10];
+    void* (*getEvent)(hsmStateBase*) = (void* (*)(hsmStateBase*))thisPtr->m_pVtable[10];
     void* evtObj = getEvent(thisPtr);
-    void* evtData = *(void**)((char*)evtObj + 12);
+    hsmEventNode* evtData = *(hsmEventNode**)((char*)evtObj + 12);
     void** evtVtable = *(void***)evtData;
-    int32_t (*getType)(void*) = (int32_t (*)(void*))evtVtable[1];
+    int32_t (*getType)(hsmEventNode*) = (int32_t (*)(hsmEventNode*))evtVtable[1];
     int32_t evtType = getType(evtData);
 
     if (evtType != *(int32_t*)&g_evtType_SessionStarted) {
@@ -688,13 +784,13 @@ void snInProgress_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0
     }
 
     // Get context via vfn_11
-    vtable = *(void***)thisPtr;
-    void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
-    void* context = getContext(thisPtr);
+    hsmContext* (*getContext)(hsmStateBase*) = (hsmContext* (*)(hsmStateBase*))thisPtr->m_pVtable[11];
+    hsmContext* context = getContext(thisPtr);
 
     // Get network client's connection list at offset +0xD10
-    SinglesNetworkClient* networkClient = *(SinglesNetworkClient**)((char*)thisPtr + 20);  // +0x14
-    void* connectionList = (char*)networkClient + 3344;  // +0xD10 — m_connectionList (inProgress)
+    snSessionData* session = thisPtr->m_pSession;
+    SinglesNetworkClient* networkClient = session->m_pNetworkClient;
+    void* connectionList = (char*)networkClient + 3344;  // +0xD10 m_connectionList (inProgress)
 
     // Associate and process connections
     snSession_AssociateConnections(context, thisPtr, connectionList);
@@ -705,30 +801,28 @@ void snInProgress_OnTick(void* thisPtr, void* event, uint8_t* consumed) { // @ 0
  * snStarting::OnUpdate @ 0x823E4078 | size: 0x88 | vfn_13
  *
  * Update handler for the Starting sub-state. Checks session flags at
- * session+3744 bits 3 and 7. If bit 3 is set and bit 7 is clear,
+ * session+0xEA0 bits 3 and 7. If bit 3 is set and bit 7 is clear,
  * selects the child at this+24 (ArbHostRegistering). Otherwise selects
  * the child at this+1412 (StartingSession). Then calls vfn_11 to get
  * context, associates connections and processes pending connections.
  */
-void snStarting_OnUpdate(void* thisPtr) { // @ 0x823E4078
-    void* session = *(void**)((char*)thisPtr + 16);
-    uint8_t flags = *(uint8_t*)((char*)session + 3744)  /* +0xEA0 m_sessionFlags */;
+void snStarting_OnUpdate(hsmStateBase* thisPtr) { // @ 0x823E4078
+    snSessionData* session = thisPtr->m_pSession;
+    uint8_t flags = session->m_sessionFlags;
 
-    void* context;
-    char* selectedChild;
+    hsmContext* context;
+    hsmStateBase* selectedChild;
+
+    hsmContext* (*getContext)(hsmStateBase*) = (hsmContext* (*)(hsmStateBase*))thisPtr->m_pVtable[11];
 
     if ((flags & 0x08) != 0 && (flags & 0x80) == 0) {
-        // Bit 3 set, bit 7 clear — use ArbHostRegistering child
-        void** vtable = *(void***)thisPtr;
-        void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
+        // Bit 3 set, bit 7 clear -- use ArbHostRegistering child
         context = getContext(thisPtr);
-        selectedChild = (char*)thisPtr + 24;
+        selectedChild = (hsmStateBase*)((char*)thisPtr + 24);
     } else {
         // Use StartingSession child
-        void** vtable = *(void***)thisPtr;
-        void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
         context = getContext(thisPtr);
-        selectedChild = (char*)thisPtr + 1412;
+        selectedChild = (hsmStateBase*)((char*)thisPtr + 1412);
     }
 
     // Associate and process connections using selected child
@@ -736,12 +830,12 @@ void snStarting_OnUpdate(void* thisPtr) { // @ 0x823E4078
     snSession_ProcessPendingConnections(context, thisPtr, selectedChild);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession HSM State Destructors — Batch 3
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// snSession HSM State Destructors -- Batch 3
+// --------------------------------------------------------------------------
 
 // External destructor helpers
-extern void snMigrateMachine_DestroyBody(void* thisPtr);  // @ 0x823E5B50 — snMigrating-level destructor body
+extern void snMigrateMachine_DestroyBody(hsmStateBase* thisPtr);  // @ 0x823E5B50 -- snMigrating-level destructor body
 
 /**
  * snMigrating::~snMigrating @ 0x823E5998 | size: 0x5C | vfn_0
@@ -750,8 +844,8 @@ extern void snMigrateMachine_DestroyBody(void* thisPtr);  // @ 0x823E5B50 — sn
  * child at this+24 via snMigrateMachine_DestroyBody, then calls hsmState base destructor.
  * Conditionally frees memory if flags bit 0 is set.
  */
-void snMigrating_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5998
-    snMigrateMachine_DestroyBody((char*)thisPtr + 24);
+void snMigrating_Destructor(hsmStateBase* thisPtr, uint32_t flags) { // @ 0x823E5998
+    snMigrateMachine_DestroyBody((hsmStateBase*)((char*)thisPtr + 24));
     hsmState_DestroySession(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
@@ -766,9 +860,9 @@ void snMigrating_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5998
  * Changing notifier at this+24 via snSession_5E20_gen, then calls hsmState
  * base destructor. Conditionally frees memory.
  */
-void snChangingPresence_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5BF0
-    hsmChildState_Destroy_5C58((char*)thisPtr + 72);
-    hsmNotifyState_Destroy((char*)thisPtr + 24);
+void snChangingPresence_Destructor(hsmStateBase* thisPtr, uint32_t flags) { // @ 0x823E5BF0
+    hsmChildState_Destroy_5C58((hsmStateBase*)((char*)thisPtr + 72));
+    hsmNotifyState_Destroy((hsmStateBase*)((char*)thisPtr + 24));
     hsmState_DestroySession(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
@@ -782,62 +876,59 @@ void snChangingPresence_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E5
  * Destroys the embedded child at this+24 via hsmChildState_Destroy_6178, then calls hsmState
  * base destructor. Conditionally frees memory.
  */
-void snArbGuestRegistering_Destructor(void* thisPtr, uint32_t flags) { // @ 0x823E6068
-    hsmChildState_Destroy_6178((char*)thisPtr + 24);
+void snArbGuestRegistering_Destructor(hsmStateBase* thisPtr, uint32_t flags) { // @ 0x823E6068
+    hsmChildState_Destroy_6178((hsmStateBase*)((char*)thisPtr + 24));
     hsmState_DestroySession(thisPtr);
     if (flags & 1) {
         rage_free(thisPtr);
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession Notification Callback Handlers — Batch 3
+// --------------------------------------------------------------------------
+// snSession Notification Callback Handlers -- Batch 3
 //
 // These handle async operation results. Each checks the result code (r5),
 // and on success creates an EvtCreateSucceeded event with session data,
 // or on failure creates an EvtCreateFailed event. Both are dispatched
 // via snSession_DispatchEventWithData or snSession_DispatchSimpleEvent.
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 // External event dispatch helpers
-extern void snSession_DispatchEventWithData(void* thisPtr, void* eventData);  // @ 0x823E9478
-extern void snSession_DispatchSimpleEvent(void* thisPtr, void* eventData);    // @ 0x823E93D0
-extern void snSession_DispatchStartEvent(void* thisPtr, void* eventData);     // @ 0x823E95D8
+extern void snSession_DispatchEventWithData(hsmStateBase* thisPtr, hsmEventData* eventData);  // @ 0x823E9478
+extern void snSession_DispatchSimpleEvent(hsmStateBase* thisPtr, hsmEventData* eventData);    // @ 0x823E93D0
+extern void snSession_DispatchStartEvent(hsmStateBase* thisPtr, hsmEventData* eventData);     // @ 0x823E95D8
 
 /**
  * snSession_DD70_w @ 0x823DDD70 | size: 0x84
  *
  * Notification callback for create-guest operations (result codes 2/3).
  * On result=2 (success): constructs EvtCreateSucceeded event with session
- * data from session+276/280, dispatches via snSession_DispatchEventWithData.
+ * data from session+0x114/0x118, dispatches via snSession_DispatchEventWithData.
  * On result=3 (failure): constructs EvtCreateFailed event, dispatches via
  * snSession_DispatchSimpleEvent.
  */
-void snSession_DD70_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DDD70
+void snSession_DD70_w(hsmStateBase* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DDD70
     if (resultCode == 2) {
-        // Success — build EvtCreateSucceeded with session data
-        void* session = *(void**)((char*)thisPtr + 20);
-        uint32_t sessionId = *(uint32_t*)((char*)session + 276);
+        // Success -- build EvtCreateSucceeded with session data
+        snSessionData* session = (snSessionData*)thisPtr->m_pSelf;
 
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(uint32_t*)(eventData + 12) = sessionId;
-        // Copy 8 bytes of session handle from session+280
-        uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
-        *(uint64_t*)(eventData + 16) = sessionHandle;
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_nSessionId = session->m_nSessionId;
+        eventData.m_sessionHandle = session->m_sessionHandle;
         // Set vtable to EvtCreateSucceeded
-        *(void**)eventData = &g_vtbl_EvtCreateSucceeded;
+        eventData.m_pVtable = &g_vtbl_EvtCreateSucceeded;
 
-        snSession_DispatchEventWithData(thisPtr, eventData);
+        snSession_DispatchEventWithData(thisPtr, &eventData);
         return;
     }
 
     if (resultCode == 3) {
-        // Failure — build EvtCreateFailed
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(void**)eventData = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
-        snSession_DispatchSimpleEvent(thisPtr, eventData);
+        // Failure -- build EvtCreateFailed
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_pVtable = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, &eventData);
     }
 }
 
@@ -848,27 +939,25 @@ void snSession_DD70_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
  * Same pattern as DD70_w: on result=8 (success), creates EvtCreateSucceeded;
  * on result=9 (failure), creates EvtCreateFailed.
  */
-void snSession_E1A0_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DE1A0
+void snSession_E1A0_w(hsmStateBase* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DE1A0
     if (resultCode == 8) {
-        void* session = *(void**)((char*)thisPtr + 20);
-        uint32_t sessionId = *(uint32_t*)((char*)session + 276);
+        snSessionData* session = (snSessionData*)thisPtr->m_pSelf;
 
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(uint32_t*)(eventData + 12) = sessionId;
-        uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
-        *(uint64_t*)(eventData + 16) = sessionHandle;
-        *(void**)eventData = &g_vtbl_EvtCreateSucceeded;  // EvtCreateSucceeded vtable
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_nSessionId = session->m_nSessionId;
+        eventData.m_sessionHandle = session->m_sessionHandle;
+        eventData.m_pVtable = &g_vtbl_EvtCreateSucceeded;  // EvtCreateSucceeded vtable
 
-        snSession_DispatchEventWithData(thisPtr, eventData);
+        snSession_DispatchEventWithData(thisPtr, &eventData);
         return;
     }
 
     if (resultCode == 9) {
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(void**)eventData = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
-        snSession_DispatchSimpleEvent(thisPtr, eventData);
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_pVtable = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, &eventData);
     }
 }
 
@@ -880,27 +969,25 @@ void snSession_E1A0_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // 
  * On result=11 (failure), creates EvtStartSessionFailed event and
  * dispatches via snSession_DispatchStartEvent.
  */
-void snSession_E990(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DE990
+void snSession_E990(hsmStateBase* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DE990
     if (resultCode == 10) {
-        void* session = *(void**)((char*)thisPtr + 20);
-        uint32_t sessionId = *(uint32_t*)((char*)session + 276);
+        snSessionData* session = (snSessionData*)thisPtr->m_pSelf;
 
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(uint32_t*)(eventData + 12) = sessionId;
-        uint64_t sessionHandle = *(uint64_t*)((char*)session + 280);
-        *(uint64_t*)(eventData + 16) = sessionHandle;
-        *(void**)eventData = &g_vtbl_EvtCreateSucceeded;  // EvtCreateSucceeded vtable
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_nSessionId = session->m_nSessionId;
+        eventData.m_sessionHandle = session->m_sessionHandle;
+        eventData.m_pVtable = &g_vtbl_EvtCreateSucceeded;  // EvtCreateSucceeded vtable
 
-        snSession_DispatchEventWithData(thisPtr, eventData);
+        snSession_DispatchEventWithData(thisPtr, &eventData);
         return;
     }
 
     if (resultCode == 11) {
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(void**)eventData = &g_vtbl_EvtStartSessionFailed;  // EvtStartSessionFailed vtable
-        snSession_DispatchStartEvent(thisPtr, eventData);
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_pVtable = &g_vtbl_EvtStartSessionFailed;  // EvtStartSessionFailed vtable
+        snSession_DispatchStartEvent(thisPtr, &eventData);
     }
 }
 
@@ -912,75 +999,66 @@ void snSession_E990(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 
  * and dispatch via snSession_DispatchSimpleEvent. Returns early if
  * neither code matches.
  */
-void snSession_EB48_w(void* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DEB48
+void snSession_EB48_w(hsmStateBase* thisPtr, void* /*unused*/, int32_t resultCode) { // @ 0x823DEB48
     if (resultCode == 14) {
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(void**)eventData = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
-        snSession_DispatchSimpleEvent(thisPtr, eventData);
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_pVtable = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, &eventData);
         return;
     }
 
     if (resultCode == 15) {
-        uint8_t eventData[24];
-        hsmEvent_Init(eventData);
-        *(void**)eventData = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
-        snSession_DispatchSimpleEvent(thisPtr, eventData);
+        hsmEventData eventData;
+        hsmEvent_Init(&eventData);
+        eventData.m_pVtable = &g_vtbl_EvtCreateFailed;  // EvtCreateFailed vtable
+        snSession_DispatchSimpleEvent(thisPtr, &eventData);
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession Event Queue and Utility Functions — Batch 3
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// snSession Event Queue and Utility Functions -- Batch 3
+// --------------------------------------------------------------------------
 
 /**
  * snSession::EnqueueDestroyEvent @ 0x823E6D68 | size: 0xAC
  *
  * Creates and enqueues an EvtDestroy event into the session's event queue.
  * Gets the event queue from context+56 (via vfn_11 on the session offset+212),
- * allocates a 24-byte event node via the queue's allocator (vfn_1 at +4),
+ * allocates a 12-byte event node via the queue's allocator (vfn_1 at +4),
  * copies the EvtDestroy data into it, and inserts it into the queue via
  * snSession_AddNode.
  *
  * Returns true if the event was successfully enqueued, false if allocation failed.
  */
-bool snSession_EnqueueDestroyEvent(void* thisPtr) { // @ 0x823E6D68
-    char* sessionOffset = (char*)thisPtr + 212;
+bool snSession_EnqueueDestroyEvent(snSessionData* thisPtr) { // @ 0x823E6D68
+    hsmEventQueue* queue = (hsmEventQueue*)((char*)thisPtr + 212);
 
     // Initialize event data on stack with EvtDestroy vtable
-    uint8_t eventData[24];
-    hsmEvent_Init(eventData);
-    *(void**)eventData = &g_vtbl_EvtDestroy;  // EvtDestroy vtable
-
-    // Get event queue via vfn_11 (session+212 has its own vtable)
-    void** vtable = *(void***)sessionOffset;
+    hsmEventData eventData;
+    hsmEvent_Init(&eventData);
+    eventData.m_pVtable = &g_vtbl_EvtDestroy;
 
     // Allocate event node: call allocator (vfn_1) with size=12, flags=0
-    void* allocator = *(void**)((char*)sessionOffset + 4);
-    void** allocVtable = *(void***)allocator;
-    void* (*allocFn)(void*, int32_t, int32_t) = (void* (*)(void*, int32_t, int32_t))allocVtable[1];
-    void* eventNode = allocFn(allocator, 12, 0);
+    hsmEventAllocator* allocator = queue->m_pAllocator;
+    hsmEventNode* (*allocFn)(hsmEventAllocator*, int32_t, int32_t) =
+        (hsmEventNode* (*)(hsmEventAllocator*, int32_t, int32_t))allocator->m_pVtable[1];
+    hsmEventNode* eventNode = allocFn(allocator, 12, 0);
 
     if (eventNode == nullptr) {
         return false;
     }
 
-    // Set event node vtable to hsmEvent base
-    *(void**)eventNode = &g_vtbl_hsmEvent;
+    // Set hsmEvent base vtable then overwrite with EvtDestroy
+    eventNode->m_pVtable = &g_vtbl_hsmEvent;
+    eventNode->m_pVtable = &g_vtbl_EvtDestroy;
 
-    // Copy event data fields into the node
-    // Set EvtDestroy vtable on node
-    *(void**)eventNode = &g_vtbl_EvtDestroy;
-
-    // Copy fields from stack event data to allocated node
-    uint32_t field1 = *(uint32_t*)(eventData + 4);
-    uint32_t field2 = *(uint32_t*)(eventData + 8);
-    *(uint32_t*)((char*)eventNode + 4) = field1;
-    *(uint32_t*)((char*)eventNode + 8) = field2;
+    // Copy payload fields from stack event data to allocated node
+    eventNode->m_nEventParam1 = eventData.m_nEventParam1;
+    eventNode->m_nEventParam2 = eventData.m_nEventParam2;
 
     // Insert into event queue
-    void* eventQueue = (char*)sessionOffset + 8;  // queue at offset+8 from session+212
-    snSession_AddNode(eventQueue, eventNode);
+    snSession_AddNode(&queue->m_list, eventNode);
 
     return true;
 }
@@ -996,39 +1074,39 @@ bool snSession_EnqueueDestroyEvent(void* thisPtr) { // @ 0x823E6D68
  * If non-empty, the node is inserted after the current tail.
  * In both cases, the list count is incremented.
  */
-void snSession_AddEventNode(void* list, void* node) { // @ 0x823EC068
-    void* head = *(void**)list;
+void snSession_AddEventNode(snLinkedList* list, hsmEventNode* node) { // @ 0x823EC068
+    snListNode* head = list->m_pHead;
 
     if (head != nullptr) {
-        // List is non-empty — insert after tail
-        void* tail = *(void**)((char*)list + 4);
+        // List is non-empty -- insert after tail
+        snListNode* tail = list->m_pTail;
 
         // New node's next = tail's current next (should be null for tail)
-        void* tailNext = *(void**)((char*)tail + 8);
-        *(void**)((char*)node + 8) = tailNext;
+        hsmEventNode* tailEvt = (hsmEventNode*)tail;
+        hsmEventNode* tailNext = tailEvt->m_pNext;
+        node->m_pNext = tailNext;
 
         if (tailNext != nullptr) {
             // tailNext.prev = node
-            *(void**)((char*)tailNext + 4) = node;
+            tailNext->m_pPrev = node;
         } else {
             // node becomes the new tail
-            *(void**)((char*)list + 4) = node;
+            list->m_pTail = (snListNode*)node;
         }
 
         // Link node after old tail
-        *(void**)((char*)tail + 8) = node;
-        *(void**)((char*)node + 4) = tail;
+        tailEvt->m_pNext = node;
+        node->m_pPrev = tailEvt;
     } else {
-        // List is empty — node becomes head and tail
-        *(void**)list = node;
-        *(void**)((char*)list + 4) = node;
-        *(void**)((char*)node + 4) = nullptr;  // prev = null
-        *(void**)((char*)node + 8) = nullptr;  // next = null  (offset stored at node+4+4)
+        // List is empty -- node becomes head and tail
+        list->m_pHead = (snListNode*)node;
+        list->m_pTail = (snListNode*)node;
+        node->m_pPrev = nullptr;
+        node->m_pNext = nullptr;
     }
 
     // Increment count
-    int32_t count = *(int32_t*)((char*)list + 8);
-    *(int32_t*)((char*)list + 8) = count + 1;
+    list->m_nCount++;
 }
 
 /**
@@ -1039,26 +1117,26 @@ void snSession_AddEventNode(void* list, void* node) { // @ 0x823EC068
  * vtable slot 6, then sets the vtable to hsmStateBase and zeros out all
  * fields (offsets 4, 8, 12, 16, 20).
  */
-void snSession_ResetHsmState(void* thisPtr) { // @ 0x823E8EE0
+void snSession_ResetHsmState(hsmStateBase* thisPtr) { // @ 0x823E8EE0
     // Set vtable to hsmState
-    *(void**)thisPtr = &g_vtbl_hsmState;
+    thisPtr->m_pVtable = (void**)&g_vtbl_hsmState;
 
     // Call vtable slot 6 (cleanup function) via indirect call
-    void** vtable = *(void***)thisPtr;
+    void** vtable = thisPtr->m_pVtable;
     void (*cleanupFn)(void*) = (void (*)(void*))vtable[6];
     cleanupFn(thisPtr);
 
     // Reset to hsmStateBase vtable and zero all fields
-    *(void**)thisPtr = &g_vtbl_hsmStateBase;
-    *(uint32_t*)((char*)thisPtr + 16) = 0;
-    *(uint32_t*)((char*)thisPtr + 20) = 0;
-    *(uint32_t*)((char*)thisPtr + 4) = 0;
-    *(uint32_t*)((char*)thisPtr + 8) = 0;
-    *(uint32_t*)((char*)thisPtr + 12) = 0;
+    thisPtr->m_pVtable     = (void**)&g_vtbl_hsmStateBase;
+    thisPtr->m_pSession    = nullptr;
+    thisPtr->m_pSelf       = nullptr;
+    thisPtr->m_pSessionCtx = nullptr;
+    thisPtr->m_pParent     = nullptr;
+    thisPtr->m_field_0x0C  = nullptr;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession Event Dispatch Forwarders — Batch 4 (8 functions, 164B each)
+// --------------------------------------------------------------------------
+// snSession Event Dispatch Forwarders -- Batch 4 (8 functions, 164B each)
 //
 // All follow the same pattern:
 //   1. Get HSM context via vfn_11, read event queue at context+56
@@ -1066,62 +1144,59 @@ void snSession_ResetHsmState(void* thisPtr) { // @ 0x823E8EE0
 //   3. If allocation succeeds, set up hsmEvent base vtable, copy 8 bytes
 //      of event data from the caller's event struct (at +4), then set the
 //      specific event subclass vtable, and enqueue via snSession_AddEventNode
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
 
 // Event vtable pointers (RTTI-verified)
-extern void* g_vtbl_hsmEvent;                     // @ 0x82072864 — rage::hsmEvent base
-extern void* g_vtbl_EvtApplyConfigFailed;          // @ 0x82072A64 — rage::EvtApplyConfigFailed
-extern void* g_vtbl_EvtStartSessionFailed;         // @ 0x82072A8C — rage::EvtStartSessionFailed
-extern void* g_vtbl_EvtSessionJoinFailed;          // @ 0x82072DD0 — rage::EvtSessionJoinFailed
-extern void* g_vtbl_EvtJoinSucceeded;              // @ 0x82072CF4 — rage::EvtJoinSucceeded
-extern void* g_vtbl_EvtLeaveSucceeded;             // @ 0x820730BC — rage::EvtLeaveSucceeded
-extern void* g_vtbl_EvtMigrateSucceeded;           // @ 0x820728C8 — rage::EvtMigrateSucceeded
-extern void* g_vtbl_EvtMigrateFailed;              // @ 0x820728DC — rage::EvtMigrateFailed
-extern void* g_vtbl_EvtChangePresenceSucceeded;    // @ 0x820728A0 — rage::EvtChangePresenceSucceeded
+extern void* g_vtbl_hsmEvent;                     // @ 0x82072864 -- rage::hsmEvent base
+extern void* g_vtbl_EvtApplyConfigFailed;          // @ 0x82072A64 -- rage::EvtApplyConfigFailed
+extern void* g_vtbl_EvtStartSessionFailed;         // @ 0x82072A8C -- rage::EvtStartSessionFailed
+extern void* g_vtbl_EvtSessionJoinFailed;          // @ 0x82072DD0 -- rage::EvtSessionJoinFailed
+extern void* g_vtbl_EvtJoinSucceeded;              // @ 0x82072CF4 -- rage::EvtJoinSucceeded
+extern void* g_vtbl_EvtLeaveSucceeded;             // @ 0x820730BC -- rage::EvtLeaveSucceeded
+extern void* g_vtbl_EvtMigrateSucceeded;           // @ 0x820728C8 -- rage::EvtMigrateSucceeded
+extern void* g_vtbl_EvtMigrateFailed;              // @ 0x820728DC -- rage::EvtMigrateFailed
+extern void* g_vtbl_EvtChangePresenceSucceeded;    // @ 0x820728A0 -- rage::EvtChangePresenceSucceeded
 
 /**
  * Helper: enqueues a typed HSM event into the session's event queue.
  * All 8 dispatch forwarders below share this exact logic, differing
  * only in the final event vtable written to the allocated node.
  */
-static void snSession_EnqueueTypedEvent(void* thisPtr, void* eventData, void* eventVtbl) {
+static void snSession_EnqueueTypedEvent(hsmStateBase* thisPtr, hsmEventData* eventData, void* eventVtbl) {
     // Get HSM context via vfn_11
-    void** vtable = *(void***)thisPtr;
-    void* (*getContext)(void*) = (void* (*)(void*))vtable[11];
-    void* context = getContext(thisPtr);
+    hsmContext* (*getContext)(hsmStateBase*) = (hsmContext* (*)(hsmStateBase*))thisPtr->m_pVtable[11];
+    hsmContext* context = getContext(thisPtr);
 
     // Get event queue at context+56
-    void* eventQueue = *(void**)((char*)context + 56);
+    hsmEventQueue* eventQueue = context->m_pEventQueue;
 
-    // Allocate 12-byte event node via queue allocator (vfn_1 at +4)
-    void** queueVtbl = *(void***)((char*)eventQueue + 4);
-    void* (*allocNode)(void*, uint32_t, uint32_t) =
-        (void* (*)(void*, uint32_t, uint32_t))queueVtbl[1];
-    void* node = allocNode((char*)eventQueue + 4, 12, 0);
+    // Allocate 12-byte event node via queue allocator (vfn_1)
+    hsmEventAllocator* allocator = eventQueue->m_pAllocator;
+    hsmEventNode* (*allocNode)(hsmEventAllocator*, uint32_t, uint32_t) =
+        (hsmEventNode* (*)(hsmEventAllocator*, uint32_t, uint32_t))allocator->m_pVtable[1];
+    hsmEventNode* node = allocNode(allocator, 12, 0);
 
     if (node == nullptr) return;
 
     // Set hsmEvent base vtable
-    *(void**)node = &g_vtbl_hsmEvent;
+    node->m_pVtable = &g_vtbl_hsmEvent;
 
-    // Copy 8 bytes of event payload from eventData+4
-    char* src = (char*)eventData + 4;
-    char* dst = (char*)node + 4;
-    *(uint32_t*)dst = *(uint32_t*)src;
-    *(uint32_t*)(dst + 4) = *(uint32_t*)(src + 4);
+    // Copy 8 bytes of event payload
+    node->m_nEventParam1 = eventData->m_nEventParam1;
+    node->m_nEventParam2 = eventData->m_nEventParam2;
 
     // Set specific event subclass vtable
-    *(void**)node = eventVtbl;
+    node->m_pVtable = eventVtbl;
 
-    // Enqueue into event queue
-    snSession_AddEventNode((char*)eventQueue + 8, node);
+    // Enqueue into event queue list
+    snSession_AddEventNode(&eventQueue->m_list, node);
 }
 
 /**
  * snSession::EnqueueEvtApplyConfigFailed @ 0x823E9530 | size: 0xA4
  * Enqueues an EvtApplyConfigFailed event into the session event queue.
  */
-void snSession_EnqueueEvtApplyConfigFailed(void* thisPtr, void* eventData) { // @ 0x823E9530
+void snSession_EnqueueEvtApplyConfigFailed(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823E9530
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtApplyConfigFailed);
 }
 
@@ -1129,7 +1204,7 @@ void snSession_EnqueueEvtApplyConfigFailed(void* thisPtr, void* eventData) { // 
  * snSession::EnqueueEvtStartSessionFailed @ 0x823E95D8 | size: 0xA4
  * Enqueues an EvtStartSessionFailed event into the session event queue.
  */
-void snSession_EnqueueEvtStartSessionFailed(void* thisPtr, void* eventData) { // @ 0x823E95D8
+void snSession_EnqueueEvtStartSessionFailed(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823E95D8
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtStartSessionFailed);
 }
 
@@ -1137,7 +1212,7 @@ void snSession_EnqueueEvtStartSessionFailed(void* thisPtr, void* eventData) { //
  * snSession::EnqueueEvtSessionJoinFailed @ 0x823E9680 | size: 0xA4
  * Enqueues an EvtSessionJoinFailed event into the session event queue.
  */
-void snSession_EnqueueEvtSessionJoinFailed(void* thisPtr, void* eventData) { // @ 0x823E9680
+void snSession_EnqueueEvtSessionJoinFailed(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823E9680
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtSessionJoinFailed);
 }
 
@@ -1145,7 +1220,7 @@ void snSession_EnqueueEvtSessionJoinFailed(void* thisPtr, void* eventData) { // 
  * snSession::EnqueueEvtJoinSucceeded @ 0x823E9728 | size: 0xA4
  * Enqueues an EvtJoinSucceeded event into the session event queue.
  */
-void snSession_EnqueueEvtJoinSucceeded(void* thisPtr, void* eventData) { // @ 0x823E9728
+void snSession_EnqueueEvtJoinSucceeded(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823E9728
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtJoinSucceeded);
 }
 
@@ -1153,7 +1228,7 @@ void snSession_EnqueueEvtJoinSucceeded(void* thisPtr, void* eventData) { // @ 0x
  * snSession::EnqueueEvtLeaveSucceeded @ 0x823E9B18 | size: 0xA4
  * Enqueues an EvtLeaveSucceeded event into the session event queue.
  */
-void snSession_EnqueueEvtLeaveSucceeded(void* thisPtr, void* eventData) { // @ 0x823E9B18
+void snSession_EnqueueEvtLeaveSucceeded(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823E9B18
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtLeaveSucceeded);
 }
 
@@ -1161,7 +1236,7 @@ void snSession_EnqueueEvtLeaveSucceeded(void* thisPtr, void* eventData) { // @ 0
  * snSession::EnqueueEvtMigrateSucceeded @ 0x823E9F08 | size: 0xA4
  * Enqueues an EvtMigrateSucceeded event into the session event queue.
  */
-void snSession_EnqueueEvtMigrateSucceeded(void* thisPtr, void* eventData) { // @ 0x823E9F08
+void snSession_EnqueueEvtMigrateSucceeded(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823E9F08
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtMigrateSucceeded);
 }
 
@@ -1169,7 +1244,7 @@ void snSession_EnqueueEvtMigrateSucceeded(void* thisPtr, void* eventData) { // @
  * snSession::EnqueueEvtMigrateFailed @ 0x823E9FB0 | size: 0xA4
  * Enqueues an EvtMigrateFailed event into the session event queue.
  */
-void snSession_EnqueueEvtMigrateFailed(void* thisPtr, void* eventData) { // @ 0x823E9FB0
+void snSession_EnqueueEvtMigrateFailed(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823E9FB0
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtMigrateFailed);
 }
 
@@ -1177,13 +1252,13 @@ void snSession_EnqueueEvtMigrateFailed(void* thisPtr, void* eventData) { // @ 0x
  * snSession::EnqueueEvtChangePresenceSucceeded @ 0x823EAAC8 | size: 0xA4
  * Enqueues an EvtChangePresenceSucceeded event into the session event queue.
  */
-void snSession_EnqueueEvtChangePresenceSucceeded(void* thisPtr, void* eventData) { // @ 0x823EAAC8
+void snSession_EnqueueEvtChangePresenceSucceeded(hsmStateBase* thisPtr, hsmEventData* eventData) { // @ 0x823EAAC8
     snSession_EnqueueTypedEvent(thisPtr, eventData, &g_vtbl_EvtChangePresenceSucceeded);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// snSession Connection List Management — Batch 4 (2 functions)
-// ─────────────────────────────────────────────────────────────────────────────
+// --------------------------------------------------------------------------
+// snSession Connection List Management -- Batch 4 (2 functions)
+// --------------------------------------------------------------------------
 
 /**
  * snSession::InsertConnectionNode @ 0x823EDD10 | size: 0xA4
@@ -1203,45 +1278,40 @@ void snSession_EnqueueEvtChangePresenceSucceeded(void* thisPtr, void* eventData)
  *   +8: next pointer
  *   +12: flags byte (bit 7 = "dequeued" marker)
  */
-void snSession_InsertConnectionNode(void* thisPtr, void* node) { // @ 0x823EDD10
+void snSession_InsertConnectionNode(snSessionData* thisPtr, snListNode* node) { // @ 0x823EDD10
     if (node == nullptr) return;
 
     // Check if bit 7 of flags is clear (meaning node is dequeued)
-    uint8_t flags = *(uint8_t*)((char*)node + 12);
-    if ((flags & 0x80) == 0) return;
+    if ((node->m_flags & 0x80) == 0) return;
 
-    char* list = (char*)thisPtr + 92;
-    void* head = *(void**)list;
+    snLinkedList* list = &thisPtr->m_connectionList;
+    snListNode* head = list->m_pHead;
 
     if (head != nullptr) {
-        // List is non-empty — insert before the current tail's next
-        void* tail = *(void**)(list + 4);
-        void* tailNext = *(void**)((char*)tail + 8);
+        // List is non-empty -- insert after the current tail
+        snListNode* tail = list->m_pTail;
 
-        // Link new node after tail
-        *(void**)((char*)node + 8) = tailNext;
-        if (tailNext != nullptr) {
-            *(void**)((char*)tailNext + 4) = node;
+        node->m_pNext = tail->m_pNext;
+        if (tail->m_pNext != nullptr) {
+            tail->m_pNext->m_pPrev = node;
         } else {
-            *(void**)(list + 4) = node;
+            list->m_pTail = node;
         }
-        *(void**)((char*)tail + 8) = node;
-        *(void**)((char*)node + 4) = tail;
+        tail->m_pNext = node;
+        node->m_pPrev = tail;
     } else {
-        // List is empty — node becomes both head and tail
-        *(void**)list = node;
-        *(void**)(list + 4) = node;
-        *(void**)((char*)node + 4) = nullptr;  // node+8 = prev
-        *(void**)((char*)node + 8) = nullptr;  // node+8 actually... node+4 = next field offset
+        // List is empty -- node becomes both head and tail
+        list->m_pHead = node;
+        list->m_pTail = node;
+        node->m_pPrev = nullptr;
+        node->m_pNext = nullptr;
     }
 
     // Increment count
-    uint32_t count = *(uint32_t*)(list + 8);
-    *(uint32_t*)(list + 8) = count + 1;
+    list->m_nCount++;
 
     // Clear bit 7 of flags (mark as queued)
-    flags = *(uint8_t*)((char*)node + 12);
-    *(uint8_t*)((char*)node + 12) = flags & 0x7F;
+    node->m_flags = node->m_flags & 0x7F;
 }
 
 /**
@@ -1252,48 +1322,44 @@ void snSession_InsertConnectionNode(void* thisPtr, void* node) { // @ 0x823EDD10
  * has bit 7 clear (not queued / already removed). On removal, sets bit 7
  * of the flags byte and decrements the list count at list+8.
  */
-void snSession_RemoveConnectionNode(void* thisPtr, void* node) { // @ 0x823EDDB8
+void snSession_RemoveConnectionNode(snSessionData* thisPtr, snListNode* node) { // @ 0x823EDDB8
     if (node == nullptr) return;
 
     // Check if bit 7 of flags is set (meaning node is queued)
-    uint8_t flags = *(uint8_t*)((char*)node + 12);
-    if ((flags & 0x80) != 0) return;
+    if ((node->m_flags & 0x80) != 0) return;
 
-    char* nodeLinks = (char*)node + 4;  // prev/next links start at node+4
-    char* list = (char*)thisPtr + 92;
+    snLinkedList* list = &thisPtr->m_connectionList;
 
-    void* prev = *(void**)nodeLinks;       // node+4 = prev
-    void* next = *(void**)(nodeLinks + 4); // node+8 = next
+    snListNode* prev = node->m_pPrev;
+    snListNode* next = node->m_pNext;
 
     if (prev == nullptr) {
-        // Node is the head — update head to next
-        *(void**)list = next;  // list+0 = head
+        // Node is the head -- update head to next
+        list->m_pHead = next;
         if (next != nullptr) {
-            *(void**)((char*)next + 4) = nullptr;
+            next->m_pPrev = nullptr;
         } else {
-            *(void**)(list + 4) = nullptr;  // list+4 = tail
+            list->m_pTail = nullptr;
         }
     } else {
-        // Node has a predecessor — unlink
-        *(void**)((char*)prev + 8) = next;  // prev->next = node->next
+        // Node has a predecessor -- unlink
+        prev->m_pNext = next;
         if (next != nullptr) {
-            *(void**)((char*)next + 4) = prev;  // next->prev = node->prev
+            next->m_pPrev = prev;
         } else {
-            *(void**)(list + 4) = prev;  // update tail
+            list->m_pTail = prev;
         }
     }
 
     // Clear links
-    *(void**)nodeLinks = nullptr;
-    *(void**)(nodeLinks + 4) = nullptr;
+    node->m_pPrev = nullptr;
+    node->m_pNext = nullptr;
 
     // Decrement count
-    uint32_t count = *(uint32_t*)(list + 8);
-    *(uint32_t*)(list + 8) = count - 1;
+    list->m_nCount--;
 
     // Set bit 7 of flags (mark as dequeued)
-    flags = *(uint8_t*)((char*)node + 12);
-    *(uint8_t*)((char*)node + 12) = flags | 0x80;
+    node->m_flags = node->m_flags | 0x80;
 }
 
 } // namespace snSession_States

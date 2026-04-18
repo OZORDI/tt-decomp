@@ -53,9 +53,9 @@ extern uint8_t g_sessionType[];                 // @ 0x825E5448 — session type
 extern uint8_t g_applyConfigData[];             // @ 0x825E57FC — apply config data (40 bytes)
 
 // Named vtable pointers (RTTI-verified)
-extern void* g_&g_vtbl_EvtCreateFailed;            // @ 0x82072A28 — rage::EvtCreateFailed
-extern void* g_&g_vtbl_EvtApplyConfigFailed;       // @ 0x82072A64 — rage::EvtApplyConfigFailed
-extern void* g_&g_vtbl_EvtStartSessionFailed;      // @ 0x82072A8C — rage::EvtStartSessionFailed
+extern void* g_vtbl_EvtCreateFailed;            // @ 0x82072A28 — rage::EvtCreateFailed
+extern void* g_vtbl_EvtApplyConfigFailed;       // @ 0x82072A64 — rage::EvtApplyConfigFailed
+extern void* g_vtbl_EvtStartSessionFailed;      // @ 0x82072A8C — rage::EvtStartSessionFailed
 
 // State completion callback thunks (function pointers stored in m_pStateVtable)
 extern void snHsmCreatingOffline_OnComplete();   // @ 0x823EB0D0 — thunk for CreatingOffline completion

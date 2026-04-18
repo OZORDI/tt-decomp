@@ -69,10 +69,14 @@ const float g_default_float_value_2 = 0.0f;  // @ 0x825CAF90
 // ────────────────────────────────────────────────────────────────────────────
 
 // Error message for unhandled events
-const char* g_error_unhandled_event = "Unhandled event in attract state";  // @ 0x8205E110
+// TODO: unresolved — claimed @ 0x8205E110 but that address lies inside the
+// pongAttractContext vtable (lbl_8205E0F4, size 0x64), not a string region.
+// Referenced by char_view.cpp:165 (rage_debugLog call); left as "" until the
+// real format string is located in the binary.
+const char* g_error_unhandled_event = "";
 
 // Error message for character type mismatch
-const char* g_error_type_mismatch = "Character type mismatch in view data";  // @ 0x8203F2E0
+const char* g_error_type_mismatch = "unknown node type found in %s node: %s";  // @ 0x8203F2E0
 
 // ────────────────────────────────────────────────────────────────────────────
 // VTable Addresses
@@ -124,13 +128,13 @@ void* g_loop_obj_ptr = nullptr;  // @ 0x825EAB30
 // Error / Debug Strings
 // ────────────────────────────────────────────────────────────────────────────
 
-const char* g_error_attract_exit = "pongAttractState::OnExitEvent — unhandled event";    // @ 0x8205E064
-const char* g_error_charview_enter = "pongCharViewState::OnEnterEvent — unhandled event"; // @ 0x8205F0F8
-const char* g_error_charview_exit = "pongCharViewState::OnExitEvent — unhandled event";   // @ 0x8205F134
+const char* g_error_attract_exit = "exiting attract state to invalid state %s (%d)";    // @ 0x8205E064
+const char* g_error_charview_enter = "Entering character viewer state from invalid state %s (%d)"; // @ 0x8205F0F8
+const char* g_error_charview_exit = "Exiting character viewer state to invalid state %s (%d)";   // @ 0x8205F134
 
 // ────────────────────────────────────────────────────────────────────────────
 // State Name Strings
 // ────────────────────────────────────────────────────────────────────────────
 
-const char* g_stateName_attract = "point_off_serves";  // @ 0x8205E094
-const char* g_stateName_charView = "char_view_select"; // @ 0x8205EF5C
+const char* g_stateName_attract = "pongAttractState";  // @ 0x8205E094
+const char* g_stateName_charView = "pongCharViewState"; // @ 0x8205EF5C

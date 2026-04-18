@@ -11,11 +11,11 @@ extern "C" void* CreateSimplePhysicsInstance(void* physSystem, void* physType); 
 extern "C" void  LinkPhysicsResource(void* physInstance, void* resource);                   // @ 0x8227D220
 
 // Global physics system singleton
-extern void* g_physicsSystem;           // @ 0x82606568
+extern void* g_physicsSystem;           // @ 0x82606568 (phSimulator*)
 // Global renderer state (contains camera/LOD data)
 extern void* g_rendererState;           // @ 0x8260641C
 // Global draw bucket for deferred rendering
-extern void* g_drawBucket;              // @ 0x826064F4
+extern void* g_drawBucket;              // @ 0x826064F4 (pongDrawBucketManager*)
 
 /**
  * sgPhysicalObject::Transform

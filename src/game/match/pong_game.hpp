@@ -13,6 +13,7 @@
  */
 #pragma once
 #include <stdint.h>
+#include <cstddef>  // offsetof
 
 // ── lvlLevel  [vtable @ 0x8204F4FC] ──────────────────────────
 struct lvlLevel {
@@ -101,23 +102,83 @@ struct pongGame {
     void**      vtable;           // +0x00
 };
 
-// ── pongGameContext  [2 vtables — template/MI] ──────────────────────────
-// Confirmed methods: Process
+// ── pongGameContext  [vtables @ 0x82071AEC primary + 0x82071B50 secondary] ────
+//
+// Multiple-inheritance class, 36 bytes total. The RTTI thunk at +0x14 is
+// displaced by -20 so callers hitting the secondary vtable still land on the
+// primary-relative `this`. Only 7 true slots override vtable entries; every
+// other slot is inherited from an atSingleton-style base.
+//
+//   slot 0    destructor            @ 0x823d5328
+//   slot 12   OnExit                @ 0x823d5388
+//   slot 14   ProcessInput          @ 0x823d5440
+//   slot 16   OnUpdate              @ 0x823d54e8
+//   slot 17   OnRender              @ 0x823d5720
+//   slot 18   OnShutdown            @ 0x823d58f0
+//   slot 22   PostLoadChildren      @ 0x823d5a30   (slot 21 alias)
+//
+// POD layout — vtable pointers are stored as raw data fields so `offsetof`
+// can verify the 36-byte payload exactly. Methods are non-virtual to avoid
+// the implicit C++ vptr shift that would invalidate the asserts below.
 struct pongGameContext {
-    void**      vtable;           // +0x00
+    // NOTE: guest PPC32 pointers are stored as uint32_t to preserve the 4-byte
+    // layout on 64-bit hosts. Cast to void*/void** at use sites.
+    uint32_t vtable;                 // +0x00  primary vtable VA (0x82071AEC)
+    uint8_t  _opaqueBase[16];        // +0x04..+0x13  primary base payload
+    uint32_t m_vtableSecondary;      // +0x14  secondary vtable VA (0x82071B50)
+    uint32_t _opaqueAt18;            // +0x18  opaque u32
+    uint32_t m_pGameState;           // +0x1C  pongGameState* (r11 in vfn_16)
+    uint32_t m_pNodeList;            // +0x20  atMap-like head (used by vfn_17)
+    uint32_t m_pLocalPlayerState;    // +0x24  hsmState* (local player)
+    uint32_t m_pNetworkClientState;  // +0x28  hsmState* (network client)
+    uint32_t m_pSpectatorState;      // +0x2C  hsmState* (spectator)
+    bool     m_bPostLoadDone;        // +0x30  cleared by ProcessInput
+    bool     m_bActiveFlagA;         // +0x31
+    uint8_t  _pad32;                 // +0x32
+    bool     m_bSuspended;           // +0x33  gates OnUpdate/OnRender/OnShutdown
+    bool     m_bOverlayFlag;         // +0x34
 
-    // ── virtual methods ──
-    virtual ~pongGameContext();                  // [0] @ 0x823d5328
-    virtual void OnExit();                      // [12] @ 0x823d5388
-    virtual void ProcessInput();                // [14] @ 0x823d5440
-    virtual void OnUpdate();                    // [16] @ 0x823d54e8
-    virtual void OnRender();                    // [17] @ 0x823d5720
-    virtual void OnShutdown();                  // [18] @ 0x823d58f0
-    virtual void PostLoadChildren();            // [22] @ 0x823d5a30
+    // ── vtable slot entry points (non-virtual; dispatched manually) ──
+    void Dtor(int flags);             // [0]  @ 0x823d5328
+    void OnExit();                    // [12] @ 0x823d5388
+    void ProcessInput();              // [14] @ 0x823d5440
+    void OnUpdate();                  // [16] @ 0x823d54e8
+    void OnRender();                  // [17] @ 0x823d5720
+    void OnShutdown();                // [18] @ 0x823d58f0
+    void PostLoadChildren();          // [22] @ 0x823d5a30
 
     // ── non-virtual methods (from debug strings) ──
-    void Process();
+    // Process: r3=this, r4=event (msgId u16 at +0, payload at +4). Returns 0.
+    int Process(void* eventState, void* event);
+
+    // Per-msgId handler bodies split out of the cmplwi cascade.
+    void HandleMsg_ClearCharViewSlots(void* event);   // msgId 2060 (0x80C)
+    void HandleMsg_ForwardToMatchLogic(void* event);  // msgId 2138 (0x85A)
+    void HandleMsg_MenuBackRequest(void* event);      // msgId 2140 (0x85C)
+
+    // Extra handlers lifted on a sibling branch (bodies in pong_game.cpp).
+    void HandleMsg_MenuQuitConfirm(void* event);        // msgId 2141 (0x85D)
+    void HandleMsg_CharVarFloatClamp(void* event);      // msgId 2061 (0x80D)
+    void HandleMsg_StoreHashIntoEvent(void* event);     // msgId 2157 (0x86D)
+    void HandleMsg_ReadyUp(void* event);                // msgId 8193 (0x2001)
+    void HandleMsg_SuspendSet(void* event);             // msgId 8199 (0x2007) etc.
+    void HandleMsg_SuspendClear(void* event);           // msgId 8202 (0x200A)
+    void HandleMsg_TourneyFinishedBackToFrontend(void*);// msgId 8231 (0x2027)
+    void HandleMsg_TourneyNextMatchReady(void* event);  // msgId 14385 (0x3831)
+    void HandleMsg_NetAccept(void* event);              // msgId 14381 (0x382D)
+    void HandleMsg_NetHashGate(void* event);            // msgId 14391 (0x3837)
+    void HandleMsg_JoinFromHudRequested(void* event);   // msgId 8217 (0x2019)
 };
+
+static_assert(sizeof(pongGameContext)                          >= 0x35, "pongGameContext payload is 53 bytes (0x35)");
+static_assert(offsetof(pongGameContext, m_vtableSecondary)     == 0x14, "pongGameContext secondary vtable offset");
+static_assert(offsetof(pongGameContext, m_pGameState)          == 0x1C, "pongGameContext m_pGameState offset");
+static_assert(offsetof(pongGameContext, m_pLocalPlayerState)   == 0x24, "pongGameContext m_pLocalPlayerState offset");
+static_assert(offsetof(pongGameContext, m_pNetworkClientState) == 0x28, "pongGameContext m_pNetworkClientState offset");
+static_assert(offsetof(pongGameContext, m_pSpectatorState)     == 0x2C, "pongGameContext m_pSpectatorState offset");
+static_assert(offsetof(pongGameContext, m_bPostLoadDone)       == 0x30, "pongGameContext m_bPostLoadDone offset");
+static_assert(offsetof(pongGameContext, m_bSuspended)          == 0x33, "pongGameContext m_bSuspended offset");
+static_assert(offsetof(pongGameContext, m_bOverlayFlag)        == 0x34, "pongGameContext m_bOverlayFlag offset");
 
 // ── pongGameState  [vtable @ 0x82071AA4] ──────────────────────────
 struct pongGameState {

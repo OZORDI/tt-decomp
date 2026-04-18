@@ -205,7 +205,7 @@ void creditsData::BuildActiveList() {
             ++validCount;
         } else {
             // Log BoneName mismatch
-            const char* key = "BoneName";   // @ 0x8203F2E0
+            const char* key = "unknown node type found in %s node: %s";   // @ 0x8203F2E0
             const char* self_name = VCALL_slot19(node);
             const char* our_name  = VCALL_slot19(this);
             rage_debugLog(key, our_name, self_name);
@@ -964,7 +964,7 @@ void pongLegalsState::Init() {
     m_pContext = ctx;
 
     // Debug log
-    rage_debugLog("pongLegalsState::Init - context");   // @ 0x8205F864
+    rage_debugLog("Loading legals screen...");   // @ 0x8205F864
 
     // Allocate page-group sub-object (240 bytes, 16-byte aligned)
     rage_AssertMainThread();
@@ -985,7 +985,7 @@ void pongLegalsState::Init() {
     // Register with the state manager
     PageGroup_Register(pageGroup);
 
-    rage_debugLog("pongLegalsState::Init - done");   // @ 0x8205F880
+    rage_debugLog("Legals screen loaded.");   // @ 0x8205F880
 }
 
 /**
@@ -1116,7 +1116,7 @@ static void pongDialogContext_secondaryBase_dtor(void* base, bool shouldFree) {
  *   7. Stores the page group in g_dialogPageGroup global.
  */
 void pongDialogContext::Register() {
-    rage_debugLog("pongDialogContext::Register enter");   // @ 0x8205F240
+    rage_debugLog("Loading dialog box...");   // @ 0x8205F240
 
     rage_AssertMainThread();
 
@@ -1141,7 +1141,7 @@ void pongDialogContext::Register() {
     extern void* g_dialogPageGroup;   // @ 0x82606628  [.data, 4 bytes]
     g_dialogPageGroup = m_pPageGroup;
 
-    rage_debugLog("pongDialogContext::Register done");   // @ 0x8205F258
+    rage_debugLog("Dialog box loaded.");   // @ 0x8205F258
 }
 
 /**

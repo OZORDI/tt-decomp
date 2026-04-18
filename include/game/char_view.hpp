@@ -455,13 +455,43 @@ public:
      */
     virtual ~pongCharViewContext();
     
-    // TODO: Research and rename these methods
-    virtual void vfn_11();        // @ 0x8230A898
-    virtual void vfn_12();        // @ 0x8230AB50
-    virtual void vfn_16();        // @ 0x8230AC90
-    virtual void vfn_17();        // @ 0x8230AF50
-    virtual void vfn_18();        // @ 0x8230C0A8
-    virtual void vfn_23();        // @ 0x8230A8F8
+    // Singleton / UI-lifecycle methods (lifted).
+    virtual void RegisterWithUI();       // vfn_11 @ 0x8230A898
+    virtual void ReleaseManagedObject(); // vfn_12 @ 0x8230AB50
+
+    /**
+     * TickScene (vfn_16)
+     * @ 0x8230AC90 | size: 0x2BC
+     *
+     * Per-frame scene tick. Arms pose source, advances browse stepping,
+     * iterates both char slots calling AdvanceCharSlot, and blends camera.
+     * Thunked to unlifted body — behaviour identical to original.
+     */
+    virtual void TickScene();            // vfn_16 @ 0x8230AC90
+
+    virtual void NotifySlotActivity();   // vfn_17 @ 0x8230AF50
+
+    /**
+     * UnmountCharSlots (vfn_18)
+     * @ 0x8230C0A8 | size: 0x220
+     *
+     * Scene teardown counterpart of TickScene — clears active/visible bytes
+     * on both per-char slots and releases the preview mesh. Thunked body.
+     */
+    virtual void UnmountCharSlots();     // vfn_18 @ 0x8230C0A8
+
+    /**
+     * InitScene (vfn_23)
+     * @ 0x8230A8F8 | size: 0x254
+     *
+     * Scene initialiser — allocates 1288-byte pose-source object at +44,
+     * loads settings.xml into embedded atArray at +80, picks the first
+     * char-view node. Called from pongCharViewState::OnEnter. Thunked body.
+     */
+    virtual void InitScene();            // vfn_23 @ 0x8230A8F8
+
+    // Non-virtual helpers.
+    void ConfirmSelection();             // @ 0x8230C400 ("Accept" button handler)
 
 protected:
     void** m_vtable;              // +0x00 - primary vtable
@@ -472,6 +502,26 @@ protected:
     uint8_t m_data3[32];          // +0x30-0x4F
     uint32_t m_embeddedObject;    // +0x50 (80) - atArray_Clear called on it
 };
+
+// ────────────────────────────────────────────────────────────────────────────
+// Non-virtual scene-side helpers (free functions in the binary)
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ResetCharViewData @ 0x8240A570 (pongCharViewState_A570) | size: 0x8C
+ * Resets the per-scene pose block (48 bytes at the input pointer) and three
+ * companion globals: g_charViewSelectCounter, g_charViewSelectFlag (both
+ * zeroed), and g_selectedCharacterIndex (set to -1).
+ */
+void ResetCharViewData(void* scenePoseBlock);
+
+/**
+ * AdvanceCharSlot @ 0x8230B6E8 (SinglesNetworkClient_B6E8_g) | size: 0xF0
+ * Advances per-character-slot state. Called twice per TickScene (once per
+ * char slot). Handles state==1 stepping, state==2 settled no-op, and the
+ * idle path that applies a new pose when a valid select index is present.
+ */
+void AdvanceCharSlot(void* ctx, int slot);
 
 // ────────────────────────────────────────────────────────────────────────────
 // hudCharView — HUD Character View Component

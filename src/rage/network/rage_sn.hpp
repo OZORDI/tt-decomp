@@ -11,6 +11,7 @@
  */
 #pragma once
 #include <stdint.h>
+#include <stddef.h>
 
 namespace rage::12::UQosResult::rage::VrlQos::?$rlNotifier {
 
@@ -1048,26 +1049,30 @@ struct snEvent : public hsmEvent {
     void**      vtable;           // +0x00
 };
 
-// ── rage::snGamer  [vtable @ 0x82073E64] ──────────────────────────
+// ── rage::snGamer  @ 0x82073E64 | size: 0x1c (vtable 7 slots) ──────────────────────────
+// Dtor chains to atSafeDLListSimple_ctor_8EF8(this) — embeds a list head.
 struct snGamer {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;           // +0x00  -> 0x82073E64
 
-    // ── virtual methods ──
-    virtual ~snGamer();                  // [0] @ 0x823ed038
+    // ── non-virtual slot methods ──
+    // virtual ~snGamer();                     // [0] @ 0x823ED038  (slot 0, dtor, 0x5c bytes)
+    void dtor(uint32_t flags);
 };
+static_assert(sizeof(uint32_t) == 4, "PPC32 ptr width");
 
-// ── rage::snJoinMachine  [vtable @ 0x82072E34] ──────────────────────────
+// ── rage::snJoinMachine  @ 0x82072E34 | size: 0x48 (vtable 18 slots) ──────────────────────────
+// Dtor chains to NotifyHandler_56C0_g — inherits from rage::2::VsnNotifyBase NotifyHandler.
 struct snJoinMachine {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;           // +0x00  -> 0x82072E34
 
-    // ── virtual methods ──
-    virtual ~snJoinMachine();                  // [0] @ 0x823e5e88
-    virtual void vfn_2();  // [2] @ 0x823df050
-    virtual void vfn_5();  // [5] @ 0x823e0358
-    virtual void vfn_6();  // [6] @ 0x823e03b8
-    virtual void vfn_12();  // [12] @ 0x823df138
-    virtual void vfn_13();  // [13] @ 0x823f0a70
-    virtual void vfn_14();  // [14] @ 0x823df060
+    // ── non-virtual slot methods ──
+    void dtor(uint32_t flags);    // [0]  @ 0x823E5E88 (0x50 bytes)
+    void slot_2();                // [2]  @ 0x823DF050
+    void slot_5();                // [5]  @ 0x823E0358
+    void slot_6();                // [6]  @ 0x823E03B8
+    void slot_12();               // [12] @ 0x823DF138
+    void slot_13();               // [13] @ 0x823F0A70
+    void slot_14();               // [14] @ 0x823DF060
 };
 
 } // namespace rage
@@ -1126,18 +1131,19 @@ struct snSendingGamerData {
 
 namespace rage {
 
-// ── rage::snLeaveMachine  [vtable @ 0x820731EC] ──────────────────────────
+// ── rage::snLeaveMachine  @ 0x820731EC | size: 0x48 (vtable 18 slots) ──────────────────────────
+// Dtor aliased to snJoinMachine_vfn_0 pattern.
 struct snLeaveMachine {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;           // +0x00  -> 0x820731EC
 
-    // ── virtual methods ──
-    virtual ~snLeaveMachine();                  // [0] @ 0x823e5ed8
-    virtual void vfn_2();  // [2] @ 0x823e0890
-    virtual void vfn_5();  // [5] @ 0x823e16f8
-    virtual void vfn_6();  // [6] @ 0x823e1750
-    virtual void vfn_12();  // [12] @ 0x823e08c8
-    virtual void vfn_13();  // [13] @ 0x823f1ba8
-    virtual void vfn_14();  // [14] @ 0x823e08a0
+    // ── non-virtual slot methods ──
+    void dtor(uint32_t flags);    // [0]  @ 0x823E5ED8 (0x50 bytes)
+    void slot_2();                // [2]  @ 0x823E0890
+    void slot_5();                // [5]  @ 0x823E16F8
+    void slot_6();                // [6]  @ 0x823E1750
+    void slot_12();               // [12] @ 0x823E08C8
+    void slot_13();               // [13] @ 0x823F1BA8
+    void slot_14();               // [14] @ 0x823E08A0
 };
 
 } // namespace rage
@@ -1182,18 +1188,19 @@ struct snHsmWaitingForReply {
 
 namespace rage {
 
-// ── rage::snMigrateMachine  [vtable @ 0x820734AC] ──────────────────────────
+// ── rage::snMigrateMachine  @ 0x820734AC | size: 0x48 (vtable 18 slots) ──────────────────────────
+// Dtor lifted in rage_sn.cpp.
 struct snMigrateMachine {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;           // +0x00  -> 0x820734AC
 
-    // ── virtual methods ──
-    virtual ~snMigrateMachine();                  // [0] @ 0x823e5f28
-    virtual void vfn_2();  // [2] @ 0x823e18e8
-    virtual void vfn_5();  // [5] @ 0x823e2448
-    virtual void vfn_6();  // [6] @ 0x823e2488
-    virtual void vfn_12();  // [12] @ 0x823e1a08
-    virtual void vfn_13();  // [13] @ 0x823e18f8
-    virtual void vfn_14();  // [14] @ 0x823f2788
+    // ── non-virtual slot methods ──
+    void dtor(uint32_t flags);    // [0]  @ 0x823E5F28 (0x50 bytes, LIFTED)
+    void slot_2();                // [2]  @ 0x823E18E8
+    void slot_5();                // [5]  @ 0x823E2448
+    void slot_6();                // [6]  @ 0x823E2488
+    void slot_12();               // [12] @ 0x823E1A08
+    void slot_13();               // [13] @ 0x823E18F8
+    void slot_14();               // [14] @ 0x823F2788
 };
 
 } // namespace rage
@@ -1246,12 +1253,13 @@ struct snWaitingForMigrateMsg {
 
 namespace rage {
 
-// ── rage::snNotifyBase  [vtable @ 0x82072A1C] ──────────────────────────
+// ── rage::snNotifyBase  @ 0x82072A1C | size: 0x0C (vtable 3 slots) ──────────────────────────
+// Trivial dtor — just rewrites vtable pointer then optionally frees.
 struct snNotifyBase {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;           // +0x00  -> 0x82072A1C
 
-    // ── virtual methods ──
-    virtual ~snNotifyBase();                  // [0] @ 0x823dd8e0
+    // ── non-virtual slot methods ──
+    void dtor(uint32_t flags);    // [0] @ 0x823DD8E0 (0x48 bytes)
 };
 
 // ── rage::snNotifyFoundOnline  [vtable @ 0x82074118] ──────────────────────────
@@ -1305,27 +1313,84 @@ struct snNotifySyslinkRequest {
     void**      vtable;           // +0x00
 };
 
-// ── rage::snSession  [vtable @ 0x82072854] ──────────────────────────
+// ── rage::snSession  [vtable @ 0x82072854, vsize 0x10] ─────────────────────
+//
+// Session container. Owns a snRoot hsmState tree. NOT itself an HSM node.
+// Partial field layout verified against snSessionStates.cpp (lifted code).
+// Full concrete layout is `struct snSessionData` in snSessionStates.cpp
+// (≥ 0x25CC bytes; m_nJoinRefCount @ +0x25C8).
+//
+// Known offsets (cross-verified via vfn_13 @ 0x823E3040):
+//   +0x0000  vtable               → 0x82072854
+//   +0x0014  m_pNetworkClient
+//   +0x005C  m_connectionList     (snLinkedList: head/tail/count)
+//   +0x00A4  m_pNetworkClientAlt
+//   +0x00E8  m_notifyList         (snLinkedList: head/tail/count)
+//   +0x0114  m_nSessionId
+//   +0x0118  m_sessionHandle
+//   +0x0EA0  m_sessionFlags
+//   +0x25C8  m_nJoinRefCount
 struct snSession {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;                 // +0x0000  PPC32 guest-ptr → 0x82072854
+    uint8_t     _pad_0x04[0x10];        // +0x0004
+    uint32_t    m_pNetworkClient;       // +0x0014  SinglesNetworkClient*
+    uint8_t     _pad_0x18[0x44];        // +0x0018
+    uint32_t    m_connList_head;        // +0x005C
+    uint32_t    m_connList_tail;        // +0x0060
+    int32_t     m_connList_count;       // +0x0064
+    uint8_t     _pad_0x68[0x3C];        // +0x0068
+    uint32_t    m_pNetworkClientAlt;    // +0x00A4
+    uint8_t     _pad_0xA8[0x40];        // +0x00A8
+    uint32_t    m_notifyList_head;      // +0x00E8
+    uint32_t    m_notifyList_tail;      // +0x00EC
+    int32_t     m_notifyList_count;     // +0x00F0
+    uint8_t     _pad_0xF4[0x20];        // +0x00F4
+    uint32_t    m_nSessionId;           // +0x0114
+    uint64_t    m_sessionHandle;        // +0x0118
+    // Tail bytes through +0x25CC live in snSessionData (snSessionStates.cpp).
 };
+static_assert(offsetof(snSession, m_pNetworkClient)    == 0x14,  "snSession::m_pNetworkClient @ 0x14");
+static_assert(offsetof(snSession, m_connList_head)     == 0x5C,  "snSession::m_connectionList @ 0x5C");
+static_assert(offsetof(snSession, m_pNetworkClientAlt) == 0xA4,  "snSession::m_pNetworkClientAlt @ 0xA4");
+static_assert(offsetof(snSession, m_notifyList_head)   == 0xE8,  "snSession::m_notifyList @ 0xE8");
+static_assert(offsetof(snSession, m_nSessionId)        == 0x114, "snSession::m_nSessionId @ 0x114");
+static_assert(offsetof(snSession, m_sessionHandle)     == 0x118, "snSession::m_sessionHandle @ 0x118");
 
 } // namespace rage
 
 namespace rage::snSession {
 
-// ── rage::snSession::snRoot  [vtable @ 0x820736B4] ──────────────────────────
+// ── rage::snSession::snRoot  [vtable @ 0x820736B4, vsize 0x48 → 18 entries] ──
+//
+// Root HSM state of a snSession. Inherits hsmStateBase layout (24-byte hdr).
+// Excavation lists 12 visible virtuals for snRoot_snSession_rage.
+// Notable slots (VAs verified via MCP resolve_address):
+//   [ 2] GetStateName   @ 0x823E2580 | size: 0x0C  (returns "snRoot")
+//   [12] OnDispatch     @ 0x823E2590 | size: 0xBC
 struct snRoot {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;                 // +0x00  → 0x820736B4
+    uint32_t    m_pSessionCtx;          // +0x04  hsmStateBase context ptr
+    uint32_t    m_pParent;              // +0x08  parent hsm state
+    uint32_t    m_field_0x0C;           // +0x0C
+    uint32_t    m_pSession;             // +0x10  back-ptr to snSession
+    uint32_t    m_pSelf;                // +0x14  self/owner ptr
 };
+static_assert(offsetof(snRoot, m_pSession) == 0x10, "snRoot::m_pSession @ 0x10");
 
 } // namespace rage::snSession
 
 namespace rage::snSession::snRoot {
 
-// ── rage::snSession::snRoot::snActive  [vtable @ 0x82073984] ──────────────────────────
+// ── rage::snSession::snRoot::snActive  [vtable @ 0x82073984, vsize 0x48] ──
+// Excavation: snActive_snRoot_snSession_rage → 12 virtuals.
+// Notable: [1] dtor @ 0x823E3850 | [11] OnDispatch @ 0x823E3860 size 0x464
 struct snActive {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;                 // +0x00  → 0x82073984
+    uint32_t    m_pSessionCtx;          // +0x04
+    uint32_t    m_pParent;              // +0x08
+    uint32_t    m_field_0x0C;           // +0x0C
+    uint32_t    m_pSession;             // +0x10
+    uint32_t    m_pSelf;                // +0x14
 };
 
 } // namespace rage::snSession::snRoot
@@ -1440,12 +1505,13 @@ struct snMigrating {
 
 namespace rage {
 
-// ── rage::snSessionFinder  [vtable @ 0x82074124] ──────────────────────────
+// ── rage::snSessionFinder  @ 0x82074124 | size: 0x10 (vtable 4 slots) ──────────────────────────
+// Dtor chains to game_AE90 (likely hsmMachine base).
 struct snSessionFinder {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;           // +0x00  -> 0x82074124
 
-    // ── virtual methods ──
-    virtual ~snSessionFinder();                  // [0] @ 0x823eed30
+    // ── non-virtual slot methods ──
+    void dtor(uint32_t flags);    // [0] @ 0x823EED30 (0x50 bytes)
 };
 
 } // namespace rage
@@ -1498,12 +1564,21 @@ struct slfBroadcasting {
 
 namespace rage {
 
-// ── rage::snSessionManager  [vtable @ 0x82073E50] ──────────────────────────
+// ── rage::snSessionManager  @ 0x82073E50 | size: 0x14 (vtable 5 slots) ──────────────────────────
+// Dtor calls rage_C378(this), game_CE28(this+720), atSafeDLListSimple_ctor_A798(this+12).
+// Implies embedded atSafeDLListSimple at +0x0C and a subobject at +0x2D0.
 struct snSessionManager {
-    void**      vtable;           // +0x00
+    uint32_t    vtable;                 // +0x00  -> 0x82073E50
+    uint32_t    unknown_04;             // +0x04
+    uint32_t    unknown_08;             // +0x08
+    uint8_t     list_head[/*sz=?*/ 8];  // +0x0C atSafeDLListSimple head
+    // ...
+    // +0x2D0 subobject managed by game_CE28
 
-    // ── virtual methods ──
-    virtual ~snSessionManager();                  // [0] @ 0x823ec0d8
+    // ── non-virtual slot methods ──
+    void dtor(uint32_t flags);          // [0] @ 0x823EC0D8 (0x6c bytes)
 };
+static_assert(offsetof(snSessionManager, list_head) == 0x0C,
+              "snSessionManager list_head offset from dtor disasm");
 
 } // namespace rage
