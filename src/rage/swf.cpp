@@ -1267,5 +1267,142 @@ void swfCONTEXT_ProcessContextTree(swfCONTEXT* ctx) {
     }
 }
 
+// ============================================================================
+// SWF namespace-rage globals (moved from stubs.cpp)
+// These are the canonical definitions used across the UI/SWF subsystem.
+// ============================================================================
+void*    g_currentSwfContext = nullptr;
+uint32_t g_swfCallDepth = 0;
+float    g_swfFrameScale = 1.0f;
+void*    g_swfGlobalObject = nullptr;
+void*    g_swfGlobalScope = nullptr;
+void*    g_swfStringBuffer = nullptr;
+void*    g_vtable_swfSCRIPTOBJECT = nullptr;
+
+// ── swfINSTANCE::vfn_7 @ 0x823FC908 size:0x144 ──
+// Member lookup/insert by 16-bit key (+164/+166/+168/+176/+184).
+// Allocates from g_swfInstancePool when missing. Pending full decomp.
+void swfINSTANCE::vfn_7() {}
 
 } // namespace rage
+
+// ============================================================================
+// Stubs pending full implementation — pg_/PageGroup/swf*/hudFlashBase/Dialog
+// (moved from src/stubs.cpp and src/stubs_final.cpp). These bodies remain
+// as no-ops until their callees (pg_5B10_fw, pg_5BC8_fw, pg_80D0, pg_C3B8_g,
+// pg_6C40_g, pg_6C80_g, pongCameraMgr_5CE8_2hr, etc.) are themselves lifted.
+// ============================================================================
+
+// Forward decls for typed params used below.
+struct TransitionParams;
+struct TransitionFlags;
+
+// ── pg_* / PageGroup / Dialog / TextEntry / CreditsRoll ─────────────────────
+bool pg_6F68(void* a, void* b, int c, unsigned int* d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e; return false;
+}
+void* pg_9C00_g(void* a) { (void)a; return nullptr; }
+void* pg_9C00_g(void* a, int b) { (void)a; (void)b; return nullptr; }
+uint8_t pg_ApplyTransition(void* a, TransitionParams* b, int c, TransitionFlags* d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e; return 0;
+}
+void pg_E6E0(int a, int b, int c, int d) { (void)a; (void)b; (void)c; (void)d; }
+void pg_EDE0_gen(void) {}
+
+extern "C" void pg_6C40_g(void* a) { (void)a; }
+extern "C" void pgBase_AcquireRef(void* a, int b) { (void)a; (void)b; }
+
+void pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned int* d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+
+extern "C" {
+void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
+void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) {
+    pg_6F68(a, b, c, d, e);
+}
+} // extern "C"
+
+void* PageGroup_GetTextEntry(void* a, const char* b) { (void)a; (void)b; return nullptr; }
+void* PageGroup_LookupText(uint32_t a, const char* b) { (void)a; (void)b; return nullptr; }
+void PageGroup_Register(void* a) { (void)a; }
+void* PageGroup_SetState(void* a) { (void)a; return nullptr; }
+
+extern "C" {
+void DestroyPageGroup(void* group) { (void)group; }
+int GetPageGroupState(void* group) { (void)group; return 0; }
+void ProcessPageGroupInput(void* group) { (void)group; }
+void UpdatePageGroup(void* group) { (void)group; }
+void NotifyUIEvent(int event) { (void)event; }
+void* GetStateContextName(void* a) { (void)a; return nullptr; }
+void FadePageGroup(void* a, float b, uint32_t c, uint32_t d, uint32_t e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+void FadePageGroupOut(void* a, float b, int c, int d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+} // extern "C"
+
+// C++-linkage FadePageGroup overload (different signature).
+void FadePageGroup(void* a, int b, int c, float d, float e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+
+// C++-linkage PostPageGroupMessage overloads.
+void PostPageGroupMessage(int a, int b, int c, int d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+void PostPageGroupMessage(uint32_t a, uint8_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f) {
+    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
+}
+void PostPageGroupMessage(void* a, int b, int c, int d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+
+extern "C" void PostPageGroupMessage_C(int a, int b, int c, int d) __asm__("_PostPageGroupMessage");
+extern "C" void PostPageGroupMessage_C(int a, int b, int c, int d) {
+    (void)a; (void)b; (void)c; (void)d;
+}
+
+void DismissPageGroup(void* a) { (void)a; }
+void InitializePageGroup(void* a) { (void)a; }
+void SetPageGroupVisible(void* a) { (void)a; }
+
+uint8_t Dialog_IsComplete(void* a) { (void)a; return 0; }
+void* DialogPageGroup_Construct(void* a) { (void)a; return nullptr; }
+void* LegalsPageGroup_Construct(void* a) { (void)a; return nullptr; }
+
+int32_t TextEntry_GetValue(void* a) { (void)a; return 0; }
+
+void CreditsRoll_Deactivate(void* a, int b, int c) { (void)a; (void)b; (void)c; }
+void* CreditsRoll_NotifyEntry(void* a, uint32_t b) { (void)a; (void)b; return nullptr; }
+
+// ── hudFlashBase_* ──────────────────────────────────────────────────────────
+void hudFlashBase_0F08_g(void* a, int b, float c, float d, int e, int f, int g) {
+    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g;
+}
+void hudFlashBase_DrawFlashOverlay(void* a, void* b, void* c, float d, int e) {
+    (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+
+namespace rage {
+void hudFlashBase_9CA8_h(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+} // namespace rage
+
+// ── swf* free functions ─────────────────────────────────────────────────────
+extern "C" {
+void swfContext_Cleanup(void* context) { (void)context; }
+void swfFile_DestroyResources(void* file) { (void)file; }
+void swfInstance_Cleanup(void* instance) { (void)instance; }
+float swfComputeFramePosition(void* a, void* b, float* c, float* d) {
+    (void)a; (void)b; if (c) *c = 0.0f; if (d) *d = 0.0f; return 0.0f;
+}
+const char* swfInternString(const char* a, void* b, int c) {
+    (void)b; (void)c; return a;
+}
+void swfPopResult(void* a) { (void)a; }
+void swfSymtab_Delete(void* a, const char* b) { (void)a; (void)b; }
+void swfSymtab_Enumerate(void* a) { (void)a; }
+void swfSymtab_Insert(void* a, const char* b, void* c) { (void)a; (void)b; (void)c; }
+void* swfSymtab_Lookup(void* a, const char* b) { (void)a; (void)b; return nullptr; }
+} // extern "C"

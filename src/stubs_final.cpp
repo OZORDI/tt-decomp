@@ -28,10 +28,7 @@ void pcrAnimBlender_ApplyClipWeights(void*, unsigned, float, float) {}
 void pcrAnimBlender_Initialize(void*) {}
 void pcrAnimState_ComputePosition(vec3*, pongAnimState*) {}
 void pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender*) {}
-void pgPageGroup_DispatchEvent(void*, void*, int, unsigned*, int) {}
-void* pg_9C00_g(void*) { return nullptr; }
-void pg_ApplyTransition(void*, TransitionParams*, int, TransitionFlags*, int) {}
-void pg_E6E0(int, int, int, int) {}
+// pgPageGroup_DispatchEvent / pg_9C00_g / pg_ApplyTransition / pg_E6E0 → src/rage/swf.cpp
 void* phArchetype_Load(const char*, void*) { return nullptr; }
 float phBoundCapsule_01D0_g(float v) { return v; }
 float phBoundCapsule_01D8_g(float v) { return v; }
@@ -76,16 +73,18 @@ void _c_RtlLeaveCriticalSection(void* cs) { RtlLeaveCriticalSection(cs); }
 //   and src/rage/data/par_xml_types.cpp.
 void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
 void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
-// _c_hsmContext_SetNextState — lifted in src/rage/core/hsm.cpp
-void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
-void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pgPageGroup_DispatchEvent(a,b,c,d,e); }
+void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
+void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
+// _c_pgPageGroup_DispatchEvent (_pg_6F68 alias) → src/rage/swf.cpp
+void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
+void _c_atHashMap_Find(void* a, const void* b) { atHashMap_Find(a,b); }
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
 void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
 }
 
 // ── C++ signatures that differ from stubs_final ─────────────────────────────
-void* pg_9C00_g(void* p, int i) { (void)p;(void)i; return nullptr; }
-// pongBallInstance_4980_g — moved to src/game/ball/pong_ball.cpp
+// pg_9C00_g(void*, int) → src/rage/swf.cpp
+void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)b;(void)c; }
 namespace rage { struct phJoint3Dof; void phBoundCapsule_01D0_g(phJoint3Dof* j, float f) { (void)j;(void)f; } }
 

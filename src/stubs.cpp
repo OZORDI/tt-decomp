@@ -275,7 +275,7 @@ void rage_strchr(void) {}
 
 void pongPostEffects_Create(void* effects) { (void)effects; }
 void contentManager_LoadUserContent(void) {}
-void pg_EDE0_gen(void) {}
+// pg_EDE0_gen → src/rage/swf.cpp
 
 // ── RAGE Engine Functions ───────────────────────────────────────────────────
 
@@ -338,11 +338,7 @@ void* rage_malloc(size_t size) {
     return nullptr;
 }
 
-// ── SWF (Scaleform) Functions ───────────────────────────────────────────────
-
-void swfContext_Cleanup(void* context) { (void)context; }
-void swfFile_DestroyResources(void* file) { (void)file; }
-void swfInstance_Cleanup(void* instance) { (void)instance; }
+// ── SWF (Scaleform) Functions → src/rage/swf.cpp ────────────────────────────
 
 // ── Memory Allocator Functions ──────────────────────────────────────────────
 
@@ -394,16 +390,9 @@ void ConfigureRenderTargets(void) {}
 void InitializeRenderConfig(void) {}
 void SetupRenderFiber(void) {}
 
-// ── Page Group Functions ────────────────────────────────────────────────────
+// ── Page Group Functions → src/rage/swf.cpp ─────────────────────────────────
 
-void DestroyPageGroup(void* group) { (void)group; }
-int GetPageGroupState(void* group) { (void)group; return 0; }
-void ProcessPageGroupInput(void* group) { (void)group; }
-void UpdatePageGroup(void* group) { (void)group; }
-
-// ── UI Event Functions ──────────────────────────────────────────────────────
-
-void NotifyUIEvent(int event) { (void)event; }
+// ── UI Event Functions → src/rage/swf.cpp ───────────────────────────────────
 
 // ── Training Functions ──────────────────────────────────────────────────────
 // SetTrainingState — lifted in src/rage/core/hsm.cpp
@@ -464,24 +453,15 @@ extern "C" void fragDrawable_0AA0_2h(void* a, void* b, uint32_t c, void* d) {
 
 extern "C" void DbgPrint(const char* fmt, ...) { (void)fmt; }
 
-// ── UI / Page Groups ────────────────────────────────────────────────────────
+// ── UI / Page Groups → src/rage/swf.cpp ─────────────────────────────────────
 
-extern "C" void FadePageGroup(void* a, float b, uint32_t c, uint32_t d, uint32_t e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-extern "C" void FadePageGroupOut(void* a, float b, int c, int d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-extern "C" void PostPageGroupMessage(int a, int b, int c, int d) {
-    (void)a; (void)b; (void)c; (void)d;
-}
-// SetupCharViewDisplay — moved to src/game/char_view/char_view.cpp
+extern "C" void SetupCharViewDisplay(void* a) { (void)a; }
 
 // ── Game Data ───────────────────────────────────────────────────────────────
 
-// FindCharacterByName — moved to src/game/char_view/char_view.cpp
-extern "C" void* GetStateContextName(void* a) { (void)a; return nullptr; }
-// LookupEffectId — moved to src/game/char_view/char_view.cpp
+extern "C" int32_t FindCharacterByName(void* a, const char* b) { (void)a; (void)b; return 0; }
+// GetStateContextName → src/rage/swf.cpp
+extern "C" uint16_t LookupEffectId(const char* a) { (void)a; return 0; }
 extern "C" int32_t util_2458_FindCharacterIndex(void* a, const char* b) { (void)a; (void)b; return 0; }
 
 // ── Xbox 360 Kernel / XAM ───────────────────────────────────────────────────
@@ -585,10 +565,7 @@ extern "C" void cmOperator_SetLabel(void* a, const char* b, const char* c, uint3
 }
 
 
-// ── Page Group Internals ────────────────────────────────────────────────────
-
-extern "C" void pg_6C40_g(void* a) { (void)a; }
-extern "C" void pgBase_AcquireRef(void* a, int b) { (void)a; (void)b; }
+// ── Page Group Internals → src/rage/swf.cpp ─────────────────────────────────
 
 // ── Camera Manager ──────────────────────────────────────────────────────────
 
@@ -635,19 +612,7 @@ extern "C" const void* rage_cmIntegrate_vtable = nullptr;
 // fiStreamBuf_Read_stub / fiStreamBuf_Close_stub — moved to src/rage/io/fiStreamBuf.cpp.
 // rage_datTypeFactory_Create_stub — moved to src/rage/data/par_xml_types.cpp.
 
-// ── SWF / Scaleform ─────────────────────────────────────────────────────────
-
-extern "C" float swfComputeFramePosition(void* a, void* b, float* c, float* d) {
-    (void)a; (void)b; if (c) *c = 0.0f; if (d) *d = 0.0f; return 0.0f;
-}
-extern "C" const char* swfInternString(const char* a, void* b, int c) {
-    (void)b; (void)c; return a;
-}
-extern "C" void swfPopResult(void* a) { (void)a; }
-extern "C" void swfSymtab_Delete(void* a, const char* b) { (void)a; (void)b; }
-extern "C" void swfSymtab_Enumerate(void* a) { (void)a; }
-extern "C" void swfSymtab_Insert(void* a, const char* b, void* c) { (void)a; (void)b; (void)c; }
-extern "C" void* swfSymtab_Lookup(void* a, const char* b) { (void)a; (void)b; return nullptr; }
+// ── SWF / Scaleform → src/rage/swf.cpp ──────────────────────────────────────
 
 // ── System / Memory ─────────────────────────────────────────────────────────
 
@@ -713,16 +678,10 @@ void CShelvingFilterEffect::CalcInputFrames() {}
 void ComputeNetworkHash(void* a, int b) { (void)a; (void)b; }
 // CopyVectorThreadSafe — moved to src/game/char_view/char_view.cpp
 void DeserializeNetworkData(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
-uint8_t Dialog_IsComplete(void* a) { (void)a; return 0; }
-void DismissPageGroup(void* a) { (void)a; }
-
-void FadePageGroup(void* a, int b, int c, float d, float e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
+// Dialog_IsComplete / DismissPageGroup / FadePageGroup / InitializePageGroup → src/rage/swf.cpp
 
 void GetPlayerID(void* a, unsigned int b) { (void)a; (void)b; }
-// HSM_QueueNotification — lifted in src/rage/core/hsm.cpp
-void InitializePageGroup(void* a) { (void)a; }
+void HSM_QueueNotification(void* a) { (void)a; }
 
 // ── LocomotionStateAnim members ─────────────────────────────────────────────
 
@@ -742,24 +701,13 @@ void LocomotionState_OnEnter(void* a) { (void)a; }
 
 // ── Net / Page / Message ────────────────────────────────────────────────────
 
-// NetDataQuery_InitNested — lifted in src/game/network/pong_network.cpp
-void* PageGroup_GetTextEntry(void* a, const char* b) { (void)a; (void)b; return nullptr; }
-void* PageGroup_LookupText(uint32_t a, const char* b) { (void)a; (void)b; return nullptr; }
-void PageGroup_Register(void* a) { (void)a; }
-void* PageGroup_SetState(void* a) { (void)a; return nullptr; }
+void NetDataQuery_InitNested(void* a) { (void)a; }
+// PageGroup_GetTextEntry/LookupText/Register/SetState → src/rage/swf.cpp
 
 // PlayerMovementMessage_54B0_h — lifted in src/game/network/pong_network.cpp
 
-void PostPageGroupMessage(int a, int b, int c, int d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-void PostPageGroupMessage(uint32_t a, uint8_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
-}
-void PostPageGroupMessage(void* a, int b, int c, int d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-// PostStateTransitionRequest — lifted in src/rage/core/hsm.cpp
+// PostPageGroupMessage (3 overloads) → src/rage/swf.cpp
+void PostStateTransitionRequest(void* a, int b) { (void)a; (void)b; }
 
 // QueueGameMessage — lifted in src/game/network/pong_network.cpp
 
@@ -771,9 +719,9 @@ void ReadBitsFromStream(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 void ResetShotTimingState(void* a) { (void)a; }
 
 void* RtlEnterCriticalSection_D6F0_fw(void* a) { (void)a; return nullptr; }
-// SendContextMessage — lifted in src/game/network/pong_network.cpp
-// Player_ApplyServeStarted — lifted in src/game/network/pong_network.cpp
-void SetPageGroupVisible(void* a) { (void)a; }
+void SendContextMessage(int a, int b, int c, int d) { (void)a; (void)b; (void)c; (void)d; }
+void Player_ApplyServeStarted(void* a, void* b, void* c, float d) { (void)a; (void)b; (void)c; (void)d; }
+// SetPageGroupVisible → src/rage/swf.cpp
 
 // ── SinglesNetworkClient free-function stubs ────────────────────────────────
 
@@ -805,7 +753,7 @@ void snSession_ReleaseLock(void* a) { (void)a; }
 
 // ── Misc ────────────────────────────────────────────────────────────────────
 
-int32_t TextEntry_GetValue(void* a) { (void)a; return 0; }
+// TextEntry_GetValue → src/rage/swf.cpp
 void WriteBallHitDataToNetwork(void* a, void* b) { (void)a; (void)b; }
 void WriteFloatToNetworkStream(void* a, float b) { (void)a; (void)b; }
 
@@ -849,19 +797,18 @@ void crAnimBlenderState_Init(void* a) { (void)a; }
 
 // ── Game logic functions ────────────────────────────────────────────────────
 
-void* DialogPageGroup_Construct(void* a) { (void)a; return nullptr; }
+// DialogPageGroup_Construct → src/rage/swf.cpp
 void game_2E80(void* a) { (void)a; }
 void game_2EE0(void* a) { (void)a; }
 void game_36E8(void* a, const float* b) { (void)a; (void)b; }
 void game_3860(void* a, int b, const char* c) { (void)a; (void)b; (void)c; }
 void game_8EE8(void* a) { (void)a; }
-void* LegalsPageGroup_Construct(void* a) { (void)a; return nullptr; }
+// LegalsPageGroup_Construct → src/rage/swf.cpp
 void game_9CF8_h(void* a, uint32_t b) { (void)a; (void)b; }
 void game_9D10_h(void* a, uint32_t b) { (void)a; (void)b; }
 void game_9D28_h(void* a, uint32_t b) { (void)a; (void)b; }
 void game_AA88(void* a) { (void)a; }
-void CreditsRoll_Deactivate(void* a, int b, int c) { (void)a; (void)b; (void)c; }
-void* CreditsRoll_NotifyEntry(void* a, uint32_t b) { (void)a; (void)b; return nullptr; }
+// CreditsRoll_Deactivate / CreditsRoll_NotifyEntry → src/rage/swf.cpp
 void game_CD20(void* a) { (void)a; }
 void game_D060(void* a) { (void)a; }
 void game_D3B0_h(void* a) { (void)a; }
@@ -919,14 +866,7 @@ void hsmState::Reset() {
     *reinterpret_cast<uint32_t*>(self + 0x0C) = 0;
 }
 
-// ── HUD Flash free functions ────────────────────────────────────────────────
-
-void hudFlashBase_0F08_g(void* a, int b, float c, float d, int e, int f, int g) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g;
-}
-void hudFlashBase_DrawFlashOverlay(void* a, void* b, void* c, float d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
+// ── HUD Flash free functions → src/rage/swf.cpp ─────────────────────────────
 
 // ── IO free functions ───────────────────────────────────────────────────────
 // io_ExecuteStateAction, io_Input_poll_9D68 — lifted in src/rage/core/io_input.cpp
@@ -996,17 +936,7 @@ void rage_debugLog(const void* ptr, ...) { (void)ptr; }
 void pcrAnimBlender_Initialize(void* a) { (void)a; }
 int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* a) { (void)a; return 0; }
 
-// ── Page Group helpers ──────────────────────────────────────────────────────
-
-bool pg_6F68(void* a, void* b, int c, unsigned int* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return false;
-}
-void* pg_9C00_g(void* a) { (void)a; return nullptr; }
-void* pg_9C00_g(void* a, int b) { (void)a; (void)b; return nullptr; }
-uint8_t pg_ApplyTransition(void* a, TransitionParams* b, int c, TransitionFlags* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return 0;
-}
-void pg_E6E0(int a, int b, int c, int d) { (void)a; (void)b; (void)c; (void)d; }
+// ── Page Group helpers → src/rage/swf.cpp ───────────────────────────────────
 
 void* phArchetype_Load(const char* a, void* b) { (void)a; (void)b; return nullptr; }
 
@@ -1128,20 +1058,17 @@ extern const float g_capsuleVolK1 = 1.5f;
 extern const float g_capsuleVolK2 = 4.18879f;
 uint8_t  g_contextStack[128] = {};
 void*    g_currentGeometry = nullptr;
-void*    g_currentSwfContext = nullptr;
+// g_currentSwfContext → src/rage/swf.cpp
 uint32_t* g_iccProfilePtr = nullptr;
 uint32_t  g_mmioStoredValue = 0;
 void*    g_phAllocator = nullptr;
 uint32_t g_phCollisionFlags = 0;
 uint16_t g_phDefaultStatusId = 0;
 void*    g_phGlobalState = nullptr;
-uint32_t g_swfCallDepth = 0;
-float    g_swfFrameScale = 1.0f;
-void*    g_swfGlobalObject = nullptr;
-void*    g_swfGlobalScope = nullptr;
-void*    g_swfStringBuffer = nullptr;
+// g_swfCallDepth / g_swfFrameScale / g_swfGlobalObject / g_swfGlobalScope /
+// g_swfStringBuffer → src/rage/swf.cpp
 void*    g_vtable_cmApproach2 = nullptr;
-void*    g_vtable_swfSCRIPTOBJECT = nullptr;
+// g_vtable_swfSCRIPTOBJECT → src/rage/swf.cpp
 
 // grcTextureReferenceBase virtual stubs
 void grcTextureReferenceBase::vfn_1() {}
@@ -1165,7 +1092,7 @@ namespace rage {
 void grcTextureReferenceBase::vfn_25() {}
 void grcTextureReferenceBase::vfn_3() {}
 
-void swfINSTANCE::vfn_7() {}
+// swfINSTANCE::vfn_7 → src/rage/swf.cpp
 
 int phBoundOTGrid::Collide3D(float a, float b, float c, float d, float e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
 int phBoundOTGrid::Collide3DFull(float a, float b, float c, float d, float e, float f) { (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; return 0; }
@@ -1177,7 +1104,7 @@ int phBoundOTGrid::CollideLineX(float a, float b, float c) { (void)a; (void)b; (
 int phBoundOTGrid::CollidePlaneXY(float a, float b, float c) { (void)a; (void)b; (void)c; return 0; }
 int phBoundOTGrid::CollidePlaneXZ(float a, float b, float c, float d) { (void)a; (void)b; (void)c; (void)d; return 0; }
 
-void hudFlashBase_9CA8_h(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+// hudFlashBase_9CA8_h → src/rage/swf.cpp
 
 void ke_ConstructObject(void* a) { (void)a; }
 void ke_DestroyObjectA(void* a) { (void)a; }
@@ -1267,9 +1194,11 @@ extern "C" {
 //   src/rage/data/par_xml_types.cpp.
 void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
 void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
-// _c_hsmContext_SetNextState — lifted in src/rage/core/hsm.cpp
-void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
-void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pg_6F68(a,b,c,d,e); }
+void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
+void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
+// _c_pgPageGroup_DispatchEvent (_pg_6F68 alias) → src/rage/swf.cpp
+void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
+void _c_atHashMap_Find(void* a, const void* b) { atHashMap_Find(a,b); }
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
 void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
 }
@@ -1292,11 +1221,7 @@ namespace rage {
     void ReleaseSingleton(atSingleton_rage*) {}
 }
 
-// ── pgPageGroup_DispatchEvent ───────────────────────────────────────────────
-
-void pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned int* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
+// ── pgPageGroup_DispatchEvent → src/rage/swf.cpp ────────────────────────────
 
 // pongPlayer swing free functions — lifted to src/game/player/pong_player_swing.cpp
 // (42E0_g, 73E8_g, AB48_g, 9CD0_g — real bodies already in pong_player_swing.cpp)
