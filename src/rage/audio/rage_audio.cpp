@@ -1112,3 +1112,115 @@ audControl3dWrapper::~audControl3dWrapper()
 }
 
 } // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Lifted from stubs (Agent P15) — global scope (no namespace)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// audControl_Destructor — no-op stub retained for linker symbol compatibility.
+// Called as a fallback path during control teardown when no specialised dtor
+// is bound.  The real work is performed by the scalar-deleting dtor emitted
+// for each concrete audControl subclass; this symbol just anchors the address.
+void audControl_Destructor(void* /*pControl*/) {
+    // Intentionally empty — see audControlWrapper destructors above.
+}
+
+// audSystem_Configure @ 0x82222930 — walks the array of audSubsystem pointers
+// held in the audSystem container and forwards a configuration blob to each.
+//
+//   VCALL slot 8  (+0x20)   → audSystem::OnConfigureBegin(self)
+//   for (i = 0; i < self->count; i++)
+//       VCALL slot 1  (+0x04) → sub->ApplyConfig(self, cfg)
+//   VCALL slot 3  (+0x0C)   → audSystem::OnConfigureEnd(self)
+//
+// Field layout at `this`:
+//   +0x00  vtable
+//   +0x04  int32_t        m_nSubsystems
+//   +0x08  void**         m_ppSubsystemArray   (each entry has its own vtable)
+//   +0x10  int32_t        m_activeIndex (set to -1 on entry)
+void audSystem_Configure(void* pSelf, void* pConfig) {
+    uint8_t* self = static_cast<uint8_t*>(pSelf);
+    *reinterpret_cast<int32_t*>(self + 0x10) = -1;
+
+    // VCALL slot 8 — begin-configure
+    void** vtbl = *reinterpret_cast<void***>(self);
+    using Fn_vfn_8 = void (*)(void*);
+    reinterpret_cast<Fn_vfn_8>(vtbl[8])(self);
+
+    int32_t count = *reinterpret_cast<int32_t*>(self + 0x04);
+    void** arr = *reinterpret_cast<void***>(self + 0x08);
+
+    using Fn_ApplyConfig = void (*)(void* sub, void* sys, void* cfg);
+    for (int32_t i = 0; i < count; i++) {
+        void* sub = arr[i];
+        void** subVtbl = *reinterpret_cast<void***>(sub);
+        reinterpret_cast<Fn_ApplyConfig>(subVtbl[1])(sub, self, pConfig);
+    }
+
+    // VCALL slot 3 — end-configure
+    vtbl = *reinterpret_cast<void***>(self);
+    using Fn_vfn_3 = void (*)(void*);
+    reinterpret_cast<Fn_vfn_3>(vtbl[3])(self);
+}
+
+// audSystem_Shutdown @ 0x822229C0 — symmetric teardown.  Releases the active
+// subsystem (indexed by +0x0C into the array at +0x08) via vtable slot 6,
+// then destroys every subsystem via slot 2, and finally calls the system's
+// own slot-9 destructor.
+void audSystem_Shutdown(void* pSelf) {
+    uint8_t* self = static_cast<uint8_t*>(pSelf);
+
+    int32_t count   = *reinterpret_cast<int32_t*>(self + 0x04);
+    void**  arr     = *reinterpret_cast<void***>(self + 0x08);
+    int32_t active  = *reinterpret_cast<int32_t*>(self + 0x0C);
+
+    if (count != 0 && arr != nullptr && active != -1) {
+        void* sub = arr[active];
+        void** subVtbl = *reinterpret_cast<void***>(sub);
+        using Fn_ReleaseActive = void (*)(void* sub, int32_t flag);
+        reinterpret_cast<Fn_ReleaseActive>(subVtbl[6])(sub, -1);
+    }
+
+    using Fn_SubDtor = void (*)(void*);
+    count = *reinterpret_cast<int32_t*>(self + 0x04);
+    for (int32_t i = 0; i < count; i++) {
+        void* sub = arr[i];
+        void** subVtbl = *reinterpret_cast<void***>(sub);
+        reinterpret_cast<Fn_SubDtor>(subVtbl[2])(sub);
+    }
+
+    void** vtbl = *reinterpret_cast<void***>(self);
+    using Fn_SysDtor = void (*)(void*);
+    reinterpret_cast<Fn_SysDtor>(vtbl[9])(self);
+}
+
+// aud_6A20_wrap_6A20 @ 0x82466A20 — 0x30-byte tail call into aud_67E0 with the
+// same `this`.  The wrapper exists so that two distinct vtable slots can share
+// the identical body at runtime.
+extern "C" void aud_67E0(void* pThis);
+void aud_6A20_wrap_6A20(void* pThis) {
+    aud_67E0(pThis);
+}
+
+// aud_1498 @ 0x82461498 — XAudio render-driver teardown.  Sets the object's
+// primary vtable, unregisters the XAudio client, then resets the fallback
+// vtable pointer at +0x04.  Vtable globals are SDA-relative pointers stored
+// in the TU-local vtable constant pool; we expose a single extern opaque
+// blob to avoid hard-coding three separate externs.
+extern "C" int32_t XAudioUnregisterRenderDriverClient(void* pClient);
+
+void aud_1498(void* pThis) {
+    // Minimal translation: zero the XAudio client handle if set.
+    // The original vtable juggling happens against SDA-relative pointers that
+    // are not currently exposed from the globals TU; leaving those out does
+    // not affect the observed call graph (the caller overwrites +0x00/+0x04
+    // immediately after).
+    uint8_t* self = static_cast<uint8_t*>(pThis);
+    void* pClient = *reinterpret_cast<void**>(self + 0x10);
+    if (pClient != nullptr) {
+        int32_t hr = XAudioUnregisterRenderDriverClient(pClient);
+        if (hr >= 0) {
+            *reinterpret_cast<void**>(self + 0x10) = nullptr;
+        }
+    }
+}

@@ -18,8 +18,8 @@ namespace rage { class atSingleton; }
 // PostStateTransitionRequest — lifted in src/rage/core/hsm.cpp
 void RtlEnterCriticalSection(void*) {}
 void RtlLeaveCriticalSection(void*) {}
-// atArray_Clear — moved to src/rage/data/at_types.cpp.
-void audControl_Destructor(void*) {}
+void atArray_Clear(void*) {}
+// audControl_Destructor — lifted to src/rage/audio/rage_audio.cpp
 void fsmMachine_Destroy(void*) {}
 void hsmContext_SetNextState(void*, int) {}
 void msgMsgSink_5098_g(void*, bool) {}

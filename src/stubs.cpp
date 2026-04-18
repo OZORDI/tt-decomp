@@ -32,26 +32,9 @@ using std::atexit;
 #include "rage/rage_swf.hpp"
 #include "physics/ph_physics.hpp"
 
-// Forward declarations for audio effect classes (pong_audio.hpp needs rage_audio.hpp)
-struct CDelayEffect {
-    virtual void CalcInputFrames();
-    virtual void GetRegistrationProperties();
-    virtual void IsInputFormatSupported();
-    virtual void LockForProcess();
-    virtual void Process();
-};
-struct CPeakMeterEffect {
-    virtual void CalcInputFrames();
-    virtual void GetRegistrationProperties();
-    virtual void IsInputFormatSupported();
-    virtual void LockForProcess();
-    virtual void Process();
-    virtual void UnlockForProcess();
-};
-struct CShelvingFilterEffect {
-    virtual void CalcInputFrames();
-    virtual void LockForProcess();
-};
+// Audio effect classes (CDelayEffect/CPeakMeterEffect/CShelvingFilterEffect)
+// have real class defs in src/game/audio/pong_audio.hpp and real impls in
+// src/game/audio/pong_audio_effects.cpp + pong_audio.cpp.
 
 // Forward declarations for types used by stubs
 struct vec3;
@@ -175,12 +158,8 @@ void rage_GameLoopThreadEntry(void* singleton) {
 }
 
 // ── Audio System Functions ──────────────────────────────────────────────────
-
-void audSystem_Configure(void* config) {
-    (void)config;
-}
-
-void audSystem_Shutdown(void) {}
+// audSystem_Configure / audSystem_Shutdown — real impls moved to
+// src/rage/audio/rage_audio.cpp (Agent P15 lift).
 
 // ── Data Reference Functions ────────────────────────────────────────────────
 // datRef_Release — moved to src/rage/data/at_types.cpp.
@@ -225,6 +204,10 @@ void* fiStream_Open(const char* path, int mode) {
 // parStreamOutXml_vprintf — moved to src/rage/data/par_xml_types.cpp.
 
 // ── Graphics Device Functions ───────────────────────────────────────────────
+// grcDevice_shutdown/shutdownAlt — real impl in src/graphics/grc_device.cpp
+// grcDevice_beginScene/clear     — real impl in src/graphics/grc_render.cpp
+// grcDevice_Present              — no-op retained for host-side presentation
+// grcDevice_SubInit / WaitFence  — thin stubs; referenced from app_init.c
 
 #if defined(TT_PLATFORM_PC)
 extern void sdl_PollAndSwap(void);
@@ -238,14 +221,6 @@ void grcDevice_Present(void) {
 
 void grcDevice_SubInit(void* device) { (void)device; }
 void grcDevice_WaitFence(void) {}
-void grcDevice_beginScene(void) {}
-
-void grcDevice_clear(uint32_t flags, uint32_t color, float depth, uint8_t stencil) {
-    (void)flags; (void)color; (void)depth; (void)stencil;
-}
-
-void grcDevice_shutdown(void) {}
-void grcDevice_shutdownAlt(void) {}
 
 void* grcDisplay_Create(void) { return nullptr; }
 
@@ -273,7 +248,7 @@ void rage_strchr(void) {}
 
 // ── Game Functions ──────────────────────────────────────────────────────────
 
-void pongPostEffects_Create(void* effects) { (void)effects; }
+// pongPostEffects_Create — lifted to src/game/pong_render.cpp (returns void*)
 void contentManager_LoadUserContent(void) {}
 // pg_EDE0_gen → src/rage/swf.cpp
 
@@ -384,11 +359,8 @@ void XeTlsBlock_BindMainThread(void* ctx) { (void)ctx; }
 // xmlNodeStruct_vfn_2 — moved to src/rage/data/par_xml_types.cpp.
 
 // ── Render Target Functions ─────────────────────────────────────────────────
-
-void CleanupRenderTargets(void) {}
-void ConfigureRenderTargets(void) {}
-void InitializeRenderConfig(void) {}
-void SetupRenderFiber(void) {}
+// CleanupRenderTargets / ConfigureRenderTargets / InitializeRenderConfig /
+// SetupRenderFiber — real impls in src/rage/render_lifecycle.c
 
 // ── Page Group Functions → src/rage/swf.cpp ─────────────────────────────────
 
@@ -432,10 +404,14 @@ extern "C" void phInst_SetMatrix_Impl(void* a, void* b, void* c, void* d) {
 }
 extern "C" void* phInst_BFB8_2hr(void* a) { (void)a; return nullptr; }
 extern "C" void phInst_Cleanup(void* a) { (void)a; }
-// ph_Atan2, ph_Normalize, ke_DispatchPhysics — lifted into
-// src/physics/ph_update_object.cpp (extern "C" free functions).
+extern "C" float ph_Atan2(float y, float x) { (void)y; (void)x; return 0.0f; }
+extern "C" float ph_Normalize(float x) { (void)x; return 0.0f; }
+extern "C" void ke_DispatchPhysics(void* a) { (void)a; }
+// grc_SetupResource: synthetic glue, no real address in binary. Link anchor.
 extern "C" void grc_SetupResource(void* a, void* b) { (void)a; (void)b; }
 extern "C" void msgMsgSink_Broadcast(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+// fragDrawable_0AA0_2h @ 0x820F0AA0 size:0xAC — SIMD-heavy (sp_wrong flag).
+// Real impl pending deferred lift; this anchor keeps callers in rage_grm.cpp linking.
 extern "C" void fragDrawable_0AA0_2h(void* a, void* b, uint32_t c, void* d) {
     (void)a; (void)b; (void)c; (void)d;
 }
@@ -630,23 +606,9 @@ extern "C" void cmNode_GetVector(void* a, void* b) { (void)a; (void)b; }
 // ── BallHitMessage ──────────────────────────────────────────────────────────
 // BallHitMessage_ctor_69C8 — lifted in src/game/network/pong_network.cpp
 
-// ── CDelayEffect / CPeakMeterEffect / CShelvingFilterEffect ─────────────────
-
-void CDelayEffect::CalcInputFrames() {}
-void CDelayEffect::GetRegistrationProperties() {}
-void CDelayEffect::IsInputFormatSupported() {}
-void CDelayEffect::LockForProcess() {}
-void CDelayEffect::Process() {}
-
-void CPeakMeterEffect::CalcInputFrames() {}
-// CPeakMeterEffect::GetRegistrationProperties — lifted in pong_audio_effects.cpp
-// CPeakMeterEffect::GetPeakValues (vfn_3)      — lifted in pong_audio_effects.cpp
-// CPeakMeterEffect::LockForProcess  (vfn_4)    — lifted in pong_audio_effects.cpp
-// CPeakMeterEffect::UnlockForProcess (vfn_5)   — lifted in pong_audio_effects.cpp
-// CPeakMeterEffect::Process         (vfn_6)    — lifted in pong_audio_effects.cpp
-
-void CShelvingFilterEffect::CalcInputFrames() {}
-// CShelvingFilterEffect::SetParameter (vfn_4)  — lifted in pong_audio_effects.cpp
+// CDelayEffect/CPeakMeterEffect/CShelvingFilterEffect:
+// Real class defs in src/game/audio/pong_audio.hpp
+// Real impls in pong_audio_effects.cpp and pong_audio.cpp
 
 // ── Misc free functions ─────────────────────────────────────────────────────
 
@@ -738,8 +700,7 @@ float math_SafeReciprocal(float a, double b) { (void)a; (void)b; return 0.0f; }
 void* atSingletonPool_AllocEntry(uint32_t a) { (void)a; return nullptr; }
 
 // ── Audio ───────────────────────────────────────────────────────────────────
-
-void audControl_Destructor(void* obj) { (void)obj; }
+// audControl_Destructor — lifted to src/rage/audio/rage_audio.cpp
 
 // charViewCS virtual methods vfn_3/4/6/7/9/10/11 — moved to
 // src/game/char_view/char_view.cpp where they're lifted with semantic names
@@ -780,6 +741,9 @@ void game_DA60() {}
 
 // ── Graphics ────────────────────────────────────────────────────────────────
 
+// grc_2CC8 @ 0x82352CC8 size:0xF0 — graphics resource setup, pending lift.
+// grc_EB10 @ 0x8214EB10 size:0x12C — device state save/restore, pending lift.
+// Both are real symbols; these are link anchors until deferred lift lands.
 void grc_2CC8(void* a, uint32_t b, uint32_t c) { (void)a; (void)b; (void)c; }
 void grc_EB10(void* a) { (void)a; }
 
@@ -984,11 +948,12 @@ void* Allocate(unsigned long size, unsigned long alignment) {
 }
 
 void _locale_register(void* a, void* b) { (void)a; (void)b; }
-// atSingleton_8068_h / atSingleton_8A48_p42 — moved to src/rage/data/at_types.cpp.
-void aud_1498(void* a) { (void)a; }
-void aud_6A20_wrap_6A20(void* a) { (void)a; }
-// fiAsciiTokenizer_ReadToken / _ReadBool / _Destroy —
-//   moved to src/rage/io/fiAsciiTokenizer.cpp.
+void atSingleton_8068_h(void* a) { (void)a; }
+void atSingleton_8A48_p42(void* a) { (void)a; }
+// aud_1498 / aud_6A20_wrap_6A20 — lifted to src/rage/audio/rage_audio.cpp (global scope)
+void fiAsciiTokenizer_ReadToken(void* a, int b) { (void)a; (void)b; }
+uint8_t fiAsciiTokenizer_ReadBool(void* a, void* b, void* c) { (void)a; (void)b; (void)c; return 0; }
+void fiAsciiTokenizer_Destroy(void* a) { (void)a; }
 
 // namespace rage globals
 extern const float g_capsuleVolK1 = 1.5f;
@@ -1008,12 +973,13 @@ void*    g_vtable_cmApproach2 = nullptr;
 // g_vtable_swfSCRIPTOBJECT → src/rage/swf.cpp
 
 // grcTextureReferenceBase virtual stubs
+// vfn_21 / vfn_22 — real impls in src/graphics/texture_reference.cpp
+// vfn_1/2/3/10/19/23/24/25 — pure forward-to-inner-texture thunks, kept here
+//   as link anchors for the vtable slots that no concrete subclass overrides.
 void grcTextureReferenceBase::vfn_1() {}
 void grcTextureReferenceBase::vfn_10() {}
 void grcTextureReferenceBase::vfn_19() {}
 void grcTextureReferenceBase::vfn_2() {}
-grcTexture* grcTextureReferenceBase::vfn_21(void* a, void* b, void* c) { (void)a; (void)b; (void)c; return nullptr; }
-void grcTextureReferenceBase::vfn_22(void* a) { (void)a; }
 void grcTextureReferenceBase::vfn_23() {}
 void grcTextureReferenceBase::vfn_24() {}
 
@@ -1121,9 +1087,10 @@ extern "C" {
 // _c_PostStateTransitionRequest — lifted in src/rage/core/hsm.cpp
 // RtlEnterCriticalSection / RtlLeaveCriticalSection — C-linkage already
 // provided by extern "C" definitions in Section 1
-// _atArray_Clear / _atHashMap_Find / _xmlNodeStruct_Initialize wrappers —
-//   moved alongside their implementations in src/rage/data/at_types.cpp and
-//   src/rage/data/par_xml_types.cpp.
+void _c_atArray_Clear(void* a) __asm__("_atArray_Clear");
+void _c_atArray_Clear(void* a) { atArray_Clear(a); }
+// audControl_Destructor lifted to src/rage/audio/rage_audio.cpp — forward-declare here.
+extern void audControl_Destructor(void* pControl);
 void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
 void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
 void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
@@ -1136,6 +1103,12 @@ void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
 }
 
 // ── dcamPolarCam vtable stubs (asm labels from globals_linker.cpp) ───────────
+// Real addresses (camera state update/query functions — SIMD-heavy):
+//   dcamPolarCam_vfn_6 @ 0x8227E1A8 size:0x160
+//   dcamPolarCam_vfn_7 @ 0x823F77D0 size:0xAC
+//   dcamPolarCam_vfn_8 @ 0x823F7B08 size:0x11C
+//   dcamPolarCam_vfn_9 @ 0x8227DD98 size:0x124
+// Kept as link anchors for dcam vtable emission; real lifts pending.
 
 void dcamPolarCam_vfn_6_impl() __asm__("dcamPolarCam_vfn_6");
 void dcamPolarCam_vfn_6_impl() {}

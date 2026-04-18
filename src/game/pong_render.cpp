@@ -782,35 +782,15 @@ void pongScrnTransFreezeAndCrossFade::Reset() {
     m_alpha = g_floatZero;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// pongDrawBucket static + per-instance helpers
-//   InitStatics  @ 0x822260B8 | size: 0x264
-//   Load         @ 0x82225150 | size: 0x1EC
-// No pseudocode available for either — emitted as valid no-ops so the render
-// translation unit owns them.
-// ─────────────────────────────────────────────────────────────────────────────
-void pongDrawBucket::InitStatics() {}
-void pongDrawBucket::Load(const char* name, int maxEntries, void* bucketData) {
-    (void)name; (void)maxEntries; (void)bucketData;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongScrnTransFadeIn_EndTransition — synthetic linker name (no binary
-// symbol). Called by screen-transition teardown code as a finalizer.
+// pongPostEffects_Create — construct the post-effects object into the memory
+// block supplied by the caller.  Reconstruction is pending; the factory is
+// called from render_loop.c at init time and stored in g_pPostEffects.  Until
+// the full ctor is lifted, we return the incoming pointer so the caller gets
+// a non-null handle and subsequent effect calls can be short-circuited by the
+// individual vtable entries.
 // ─────────────────────────────────────────────────────────────────────────────
-void pongScrnTransFadeIn_EndTransition(void* transition) { (void)transition; }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// pongDrawBucket_AddEntry @ 0x822278D8
-// Submits a renderable to the deferred draw bucket. Two call sites use
-// different linkages (ph_update_object.cpp: C++, sg_physical.cpp: C).
-// Provide both until unified.
-// ─────────────────────────────────────────────────────────────────────────────
-void pongDrawBucket_AddEntry(void* bucket, void* renderable, void* priority) {
-    (void)bucket; (void)renderable; (void)priority;
-}
-extern "C" void pongDrawBucket_AddEntry_C(void* bucket, void* renderable, void* priority)
-    __asm__("_pongDrawBucket_AddEntry");
-extern "C" void pongDrawBucket_AddEntry_C(void* bucket, void* renderable, void* priority) {
-    (void)bucket; (void)renderable; (void)priority;
+extern "C" void* pongPostEffects_Create(void* pMem) {
+    return pMem;
 }
