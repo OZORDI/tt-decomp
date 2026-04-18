@@ -1002,40 +1002,17 @@ void* mfMotionClipRAGE_B8D8_g(void* a, unsigned int b, unsigned int c, unsigned 
 //  ProcessPendingMessages / CleanupIfReady / ForwardToMatchHandler /
 //  DispatchEventDefault / ClearPointers — already lifted earlier)
 
-uint32_t msgMsgSink::GetNestedObjectValue() { return 0; }
-void msgMsgSink::FlushAndDisconnect() {}
-void msgMsgSink::BeginDisconnect() {}
-void msgMsgSink::SendEvent() {}
-void* msgMsgSink::GetSessionPointer() { return nullptr; }
-void msgMsgSink::ForwardProcessMessage() {}
-void msgMsgSink::vfn_56() {} void msgMsgSink::vfn_57() {}
-void msgMsgSink::DispatchDefaultHandler() {}
-void msgMsgSink::vfn_60() {} void msgMsgSink::vfn_61() {}
-void msgMsgSink::vfn_62() {} void msgMsgSink::vfn_63() {}
-void msgMsgSink::vfn_65() {} void msgMsgSink::vfn_66() {} void msgMsgSink::vfn_67() {}
-void msgMsgSink::ForwardMessageToSession(uint32_t param) { (void)param; }
-void msgMsgSink::vfn_75() {}
-void msgMsgSink::ForwardToLeaderboard() {}
-void msgMsgSink::ForwardToRageHandler() {}
-void msgMsgSink::vfn_79() {}
-void msgMsgSink::ForwardDispatchMessage() {}
-void msgMsgSink::ForwardToStatsHandler() {}
-void msgMsgSink::vfn_105() {} void msgMsgSink::vfn_108() {}
-void msgMsgSink::vfn_109() {} void msgMsgSink::vfn_113() {} void msgMsgSink::vfn_114() {}
-uint32_t msgMsgSink::GetNameLength() { return 0; }
-void msgMsgSink::ForwardToSessionSync() {}
-uint32_t msgMsgSink::Release() { return 0; }
-void* msgMsgSink::SendPulseToConnection() { return nullptr; }
-void msgMsgSink::DispatchEventWithSessionInfo() {}
-void msgMsgSink::vfn_121() {} void msgMsgSink::vfn_122() {}
-void msgMsgSink::DisconnectMatchingHandlers(void* key) { (void)key; }
-void msgMsgSink::vfn_125() {} void msgMsgSink::vfn_126() {}
-void msgMsgSink::vfn_128() {}
-int32_t msgMsgSink::RegisterMessageHandler(void* handler, uint32_t flags) { (void)handler; (void)flags; return 0; }
-uint32_t msgMsgSink::FlushPendingMessagesLocked() { return 0; }
-int32_t msgMsgSink::QueryConnectionState(uint32_t* outConnected) { (void)outConnected; return 0; }
-void msgMsgSink::ForwardCleanupMessage() {}
-void msgMsgSink::ForwardFinalizeMessage() {}
+void msgMsgSink::vfn_3() {}
+void msgMsgSink::vfn_8() {} void msgMsgSink::vfn_9() {}
+uint16_t msgMsgSink::GetPeerDataSize() { return 0; }
+void msgMsgSink::NotifySessionEvent() {}
+void msgMsgSink::vfn_17() {} void msgMsgSink::vfn_18() {} void msgMsgSink::vfn_19() {}
+uint32_t msgMsgSink::ProcessMessage(uint32_t messageFlags) { (void)messageFlags; return 0; }
+int32_t msgMsgSink::GetStateFlagsLocked(uint32_t* outFlags) { (void)outFlags; return 0; }
+void msgMsgSink::vfn_27() {}
+void msgMsgSink::vfn_35() {} void msgMsgSink::vfn_36() {} void msgMsgSink::vfn_37() {}
+void msgMsgSink::vfn_44() {} void msgMsgSink::vfn_45() {}
+// P2 batch 2 stubs lifted → src/game/network/msg_msg_sink.cpp
 
 // msgMsgSink_3C88_g / 3D70_p39 / 4550_g / 4EB8_g lifted to
 // src/game/network/pong_network_io.cpp
