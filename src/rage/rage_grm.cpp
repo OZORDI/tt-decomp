@@ -183,7 +183,11 @@ void fragDrawable::ProcessGeometry(void* geometryContainer, void* param1, void* 
  * first free; we preserve that ordering because the free() can call
  * back through vtable during its own bookkeeping.
  */
-grmModel::~grmModel(int deleteFlag) {
+// Host-side plain dtor: the PPC scalar-deleting-dtor body lives in
+// ScalarDtor(flags) below, which the VM dispatches for vtable slot 0.
+grmModel::~grmModel() = default;
+
+void grmModel::ScalarDtor(int flags) {
     // Install grmModel base vtable prior to the first free.
     vtable = reinterpret_cast<void**>(0x8202F3B4);
 
@@ -194,8 +198,8 @@ grmModel::~grmModel(int deleteFlag) {
     vtable = reinterpret_cast<void**>(0x8202F3B4);
 
     // Scalar-dtor flag: delete this when bit 0 is set.
-    if (deleteFlag & 0x1) {
-        rage_free_00C0(reinterpret_cast<uint32_t>(this));
+    if (flags & 0x1) {
+        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -208,10 +212,12 @@ grmModel::~grmModel(int deleteFlag) {
  * Chains to rage_0F38 (an internal grmModel teardown shared with
  * other derivatives), then scalar-frees self on bit 0 of deleteFlag.
  */
-grmModelGeom::~grmModelGeom(int deleteFlag) {
+grmModelGeom::~grmModelGeom() = default;
+
+void grmModelGeom::ScalarDtor(int flags) {
     rage_0F38(this);
-    if (deleteFlag & 0x1) {
-        rage_free_00C0(reinterpret_cast<uint32_t>(this));
+    if (flags & 0x1) {
+        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -242,10 +248,12 @@ uint32_t grmModelGeom::GetGeometryEntry(uint32_t index) {
  * self on bit 0 of deleteFlag.  sm_DeclMap lives at 0x820F3CA0 and
  * owns the global vertex-declaration map for the factory.
  */
-grmModelFactory::~grmModelFactory(int deleteFlag) {
+grmModelFactory::~grmModelFactory() = default;
+
+void grmModelFactory::ScalarDtor(int flags) {
     grmModelFactory_sm_DeclMap_dtor(this);
-    if (deleteFlag & 0x1) {
-        rage_free_00C0(reinterpret_cast<uint32_t>(this));
+    if (flags & 0x1) {
+        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -313,10 +321,12 @@ void grmShader::Reset() {
  * Chains to net_2228_h (per-group teardown), then scalar-frees self
  * on bit 0 of deleteFlag.  Same skeleton as grmModelGeom's dtor.
  */
-grmShaderGroup::~grmShaderGroup(int deleteFlag) {
+grmShaderGroup::~grmShaderGroup() = default;
+
+void grmShaderGroup::ScalarDtor(int flags) {
     net_2228_h(this);
-    if (deleteFlag & 0x1) {
-        rage_free_00C0(reinterpret_cast<uint32_t>(this));
+    if (flags & 0x1) {
+        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
     }
 }
 
@@ -373,15 +383,25 @@ void grmModelFactory::vfn_2(uint32_t* cursor) {
  * pointer iff it was pointing at this.  Finally scalar-frees self on
  * bit 0 of deleteFlag.
  */
-grmShaderFactory::~grmShaderFactory(int deleteFlag) {
+// Host-side plain dtor: rebases vtable and clears the global instance
+// pointer if it was pointing at this.  The scalar-dtor free leg lives
+// in ScalarDeleteSelf (declared in the header) — on host the C++
+// delete operator handles that leg naturally, so the dtor body only
+// covers the non-free work.
+grmShaderFactory::~grmShaderFactory() {
     vtable = reinterpret_cast<void**>(0x8202F808);
 
-    if (g_grmShaderFactory_instance == reinterpret_cast<uint32_t>(this)) {
+    if (g_grmShaderFactory_instance ==
+        static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this))) {
         g_grmShaderFactory_instance = 0;
     }
+}
 
+// Mirrors the PPC scalar-dtor free(this) leg — used when reproducing
+// the guest ABI via vtable slot 0.
+void grmShaderFactory::ScalarDeleteSelf(int deleteFlag) {
     if (deleteFlag & 0x1) {
-        rage_free_00C0(reinterpret_cast<uint32_t>(this));
+        rage_free_00C0(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(this)));
     }
 }
 
