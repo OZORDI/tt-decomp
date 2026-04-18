@@ -142,3 +142,18 @@ recomp/legacy/
 
 # Reference projects (link to them instead)
 Reference Projects/
+ref projects/
+
+# Claude Code session scratchpads
+.claude/guides/
+.claude/worktrees/
+
+# Extra build directories
+build_check_vmx/
+build_flirt07/
+build_main/
+
+# FLIRT / IDA excavation artifacts (reproducible from tt.xex)
+xex_excavation_tt/*.py
+xex_excavation_tt/flirt_labeled*.txt
+xex_excavation_tt/*.i64
