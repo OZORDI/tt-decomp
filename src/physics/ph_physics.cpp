@@ -3439,6 +3439,16 @@ void  phInst::SetField9(void* val) { this->m_nRefCount = (uint32_t)(uintptr_t)va
 void  phInst::SetField11(void* val) { this->m_CriticalSection = (uint64_t)(uintptr_t)val; }  // +0x10
 
 /**
+ * phInst::SetRotationQuat @ 0x82488830 | size: 0x8
+ * Single-instruction setter: stw r4, 52(r3) / blr.
+ * Writes the incoming pointer into m_pRotationQuat (field +0x34).
+ * Identified via FLIRT as phInst_11.
+ */
+void phInst::SetRotationQuat(void* val) {  // phInst_11 @ 0x82488830
+    this->m_pRotationQuat = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(val));
+}
+
+/**
  * phInst::GetStaticSize @ 0x8216B628 | size: 0xC
  * Returns a static size constant (likely sizeof the base instance).
  */

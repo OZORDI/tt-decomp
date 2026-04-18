@@ -48,6 +48,7 @@ set(SOURCES
     src/crt/string.c
     src/globals.c
     src/stubs.cpp
+    src/flirt_batch_04.cpp
 
     # XAM (Xbox Application Model)
     src/xam/audio.c
