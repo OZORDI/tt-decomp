@@ -735,3 +735,25 @@ const char* gdaiMeterLogic::GetTypeName() {
     // The actual string appears to be part of a larger validation message
     return reinterpret_cast<const char*>(0x820418FC);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// plrPlayerMgr — vtable thunks lifted from src/stubs.cpp
+//
+// The destructor and a handful of helpers already live in this file (see
+// plrPlayerMgr::~plrPlayerMgr above).  These 12 methods are the remaining
+// vtable slots; their real bodies span 100-770 lines each.  Each is landed
+// here as a placeholder with the raw xex address annotated for follow-up.
+////////////////////////////////////////////////////////////////////////////////
+
+void plrPlayerMgr::PostLoadProperties() {}    // [vfn_20] @ 0x82188b38 — identity check
+void plrPlayerMgr::Validate() {}              // [vfn_21] @ 0x82189ad8 — two RegisterSerializationField calls
+void plrPlayerMgr::PostLoadChildren() {}      // [vfn_22] @ 0x82188b70 — returns constant rdata ptr
+void plrPlayerMgr::vfn_23() {}                // @ 0x82188dd8 — 769 lines — character/anim array init
+void plrPlayerMgr::vfn_24() {}                // @ 0x821893d8 — teardown helper (msgEventHandler + pg_6F10 loop)
+void plrPlayerMgr::vfn_25() {}                // @ 0x821894c8 — per-player reset of +116..+180 fields
+void plrPlayerMgr::vfn_27() {}                // @ 0x82189548 — forwards through vtable slot 31
+void plrPlayerMgr::vfn_28() {}                // @ 0x821899e8 — calls vtable slot 6 on each sub-player
+void plrPlayerMgr::vfn_29() {}                // @ 0x82189a70 — forwards to pongPlayer_Draw for each slot
+void plrPlayerMgr::vfn_30() {}                // @ 0x82189ad0 — tail-call to pcrPostPointBlender_4DA0_2hr
+void plrPlayerMgr::vfn_31() {}                // @ 0x82189600 — 358+ lines — dispatch for slot 5/8/12 vcalls
+void plrPlayerMgr::vfn_32() {}                // @ 0x82189738 — 358+ lines — RequestPlayerLoad / FinishLoad path

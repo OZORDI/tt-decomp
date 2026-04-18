@@ -5713,3 +5713,86 @@ extern "C" void pongPlayer_D908_g(pongPlayer* self);
  * Large time/threshold compare over m_pAnimState + m_pTimingState; already
  * stub-declared.  TODO: port the full body now that 9C08 is in place.
  */
+
+////////////////////////////////////////////////////////////////////////////////
+// Stubs lifted from src/stubs.cpp — pongPlayer free functions
+//
+// These are placeholder bodies for large functions (1KB-3KB each) pending
+// full translation.  Signatures match the call-sites already established in
+// this file and in pong_player_swing.cpp.  Each entry records the raw xex
+// address so future work can resolve the Hex-Rays pseudocode.
+////////////////////////////////////////////////////////////////////////////////
+
+// pongPlayer_0270_g @ 0x821E0270 | size: 0x240
+// Resolves a court-space point for a target by blending endpoint vectors
+// against a per-player factor.  TODO: port the pseudo-code in orig/.
+extern "C" int pongPlayer_0270_g(void* /*self*/) { return 0; }
+
+// pongPlayer_1460_g @ 0x821A1460 | size: 0x13F8 (5112 bytes)
+// Massive composite — one of the core per-frame player processors.
+// TODO: decompose into smaller helpers and lift.
+extern "C" void pongPlayer_1460_g(void* /*self*/, int /*arg*/) {}
+
+// pongPlayer_5B60_gen @ 0x82195B60 | size: 0xA0
+// Boolean predicate; returns a gate status.  TODO: lift.
+extern "C" bool pongPlayer_5B60_gen(pongPlayer* /*p*/) { return false; }
+
+// pongPlayer_6470_g @ 0x821D6470 | size: 0x13C
+// Two signatures were historically declared for this symbol (vec3* vs float*).
+// They are C++-overloaded here; callers include both forms.
+void pongPlayer_6470_g(float* /*a*/, void* /*b*/, int /*c*/) {}
+void pongPlayer_6470_g(vec3*  /*a*/, void* /*b*/) {}
+
+// pongPlayer_B208_g @ 0x820CB208 | size: 0x15C
+// Applies a swing vector to the player's swing state (extern-decl above).
+// Definition left as no-op until the full body is ported.
+void pongPlayer_B208_g(void* /*state*/, vec3* /*swingVec*/,
+                         uint8_t /*suppressFlip*/) {}
+
+// pongPlayer_BF18_g @ 0x820CBF18 | size: 0x3A4
+// Swing-target selector; real impl returns a selection index.
+extern "C" int pongPlayer_BF18_g(void* /*self*/, int /*a*/, vec3* /*b*/,
+                                   vec3* /*c*/, int /*d*/) { return 0; }
+
+// pongPlayer_C678_g @ 0x820CC678 | size: 0xBB0 (2992 bytes)
+// UpdateLocomotionState — enormous.  TODO: subdivide and lift.
+// C678_g is the binary-address symbol; UpdateLocomotionState is the semantic
+// alias used by pongPlayer::Process at line 307.
+extern "C" void pongPlayer_C678_g(pongPlayer* /*state*/) {}
+void pongPlayer_UpdateLocomotionState(pongPlayer* state) {
+    pongPlayer_C678_g(state);
+}
+
+// pongPlayer_DE98_g @ 0x820CDE98 | size: 0x168 — IsInReturnPosition (bool query).
+extern "C" bool pongPlayer_DE98_g(void* /*self*/) { return false; }
+
+// pongPlayer_FD20_g @ 0x821EFD20 | size: 0x1A4
+// Court bounds + interpolation helper invoked by E7B0_g.
+void pongPlayer_FD20_g(void* /*a*/, int /*b*/, void* /*c*/,
+                         void* /*d*/, int /*e*/, void* /*f*/,
+                         void* /*g*/, unsigned char /*h*/) {}
+
+// Player-system entry points exposed as named symbols (from stubs.cpp).
+extern "C" void pongPlayer_ApplyNetStateImpl(void* /*self*/) {}
+extern "C" void pongPlayer_GetPlayerPosition(void* /*self*/, void* /*out*/) {}
+extern "C" void pongPlayer_InitShotImpl(void* /*self*/) {}
+extern "C" void pongPlayer_Interpolate(void* /*self*/, void* /*arg*/) {}
+extern "C" void pongPlayer_ResetMoverImpl(void* /*self*/) {}
+
+////////////////////////////////////////////////////////////////////////////////
+// State-handler shims — pongPlayer_StateHandler_{9188..91E8}
+//
+// The concrete (class-method) bodies live earlier in this file as
+// pongPlayer::VtMarkNetDirty{Position,Rotation,Velocity,Animation,ShotState,
+// Stamina,Score}.  These extern "C" entry points retain the by-hex-address
+// names used by the static recomp scaffold; each one is a 0x10-byte thunk in
+// the binary that tail-calls game_91F8 (the net-dirty trigger).
+////////////////////////////////////////////////////////////////////////////////
+
+extern "C" void pongPlayer_StateHandler_9188(void* /*self*/) {}  // @ 0x82199188
+extern "C" void pongPlayer_StateHandler_9198(void* /*self*/) {}  // @ 0x82199198
+extern "C" void pongPlayer_StateHandler_91A8(void* /*self*/) {}  // @ 0x821991A8
+extern "C" void pongPlayer_StateHandler_91B8(void* /*self*/) {}  // @ 0x821991B8
+extern "C" void pongPlayer_StateHandler_91C8(void* /*self*/) {}  // @ 0x821991C8
+extern "C" void pongPlayer_StateHandler_91D8(void* /*self*/) {}  // @ 0x821991D8
+extern "C" void pongPlayer_StateHandler_91E8(void* /*self*/) {}  // @ 0x821991E8
