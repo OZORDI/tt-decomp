@@ -414,6 +414,158 @@ const char* pongDrillSmash::GetConfigName() {
     return "Smash";
 }
 
+// =============================================================================
+// pongDrill state-machine subclass vtable slots (Agent 2 port)
+// -----------------------------------------------------------------------------
+// Short overrides for the remaining drill subclasses. Each overrides:
+//   vfn_18 GetConfigName   — pointer to the XML config-node name string.
+//   vfn_21 HasActiveTarget — true iff the subclass-specific target index is
+//                            in its "active" range (>= 0 or >= 1 depending
+//                            on subclass).
+// All addresses verified via mcp__tt-decomp__resolve_address; offsets match
+// the raw PPC loads in each scaffold.
+// =============================================================================
+
+/**
+ * pongDrillMovement::GetConfigName
+ * @ 0x8210CBE0 | size: 0xC (vfn_18)
+ *
+ * @return "Movement" (@ 0x820318F0 .rdata, 9 bytes)
+ */
+const char* pongDrillMovement::GetConfigName() {
+    return "Movement";
+}
+
+/**
+ * pongDrillMovement::vfn_22
+ * @ 0x8210CBF0 | size: 0x8 (vfn_22 — secondary active-state probe)
+ *
+ * Thunk — reads m_movementFlag (+36) as a byte and returns it as a bool.
+ * Distinct from HasActiveTarget (vfn_21); other subclasses override vfn_21
+ * with a word-indexed target-idx test, but Movement uses this byte-flag
+ * slot instead.
+ *
+ * Original: lbz r3,36(r3); blr
+ */
+bool pongDrillMovement::vfn_22() {
+    return m_movementFlag != 0;
+}
+
+/**
+ * pongDrillServeMeter::GetConfigName
+ * @ 0x8210CBF8 | size: 0xC (vfn_18)
+ *
+ * @return "Serve Meter" (@ 0x820318FC .rdata, 12 bytes)
+ */
+const char* pongDrillServeMeter::GetConfigName() {
+    return "Serve Meter";
+}
+
+/**
+ * pongDrillServeMeter::HasActiveTarget
+ * @ 0x8210CC20 | size: 0x1C (vfn_21)
+ *
+ * Reads m_meterTargetIdx (+48). For the serve meter a target index of 1
+ * or higher denotes an active phase; 0 (or negative) means idle.
+ *
+ * Original: lwz r11,48(r3); cmpwi r11,1; li r11,1; bge loc; li r11,0
+ */
+bool pongDrillServeMeter::HasActiveTarget() {
+    return (int32_t)m_meterTargetIdx >= 1;
+}
+
+/**
+ * pongDrillServing::GetConfigName
+ * @ 0x8210CC10 | size: 0xC (vfn_18)
+ *
+ * @return "Serve Aim" (@ 0x82031908 .rdata, 10 bytes)
+ */
+const char* pongDrillServing::GetConfigName() {
+    return "Serve Aim";
+}
+
+/**
+ * pongDrillReturn::GetConfigName
+ * @ 0x8210CC48 | size: 0xC (vfn_18)
+ *
+ * @return "Return" (@ 0x82031914 .rdata, 7 bytes)
+ */
+const char* pongDrillReturn::GetConfigName() {
+    return "Return";
+}
+
+/**
+ * pongDrillReturn::HasActiveTarget
+ * @ 0x8210CD80 | size: 0x1C (vfn_21 alias)
+ *
+ * Reads m_returnTargetIdx (+36). Non-negative index = active target.
+ *
+ * Original: lwz r11,36(r3); cmpwi r11,0; li r11,1; bge loc; li r11,0
+ */
+bool pongDrillReturn::HasActiveTarget() {
+    return m_returnTargetIdx >= 0;
+}
+
+/**
+ * pongDrillPlacement::GetConfigName
+ * @ 0x8210CC60 | size: 0xC (vfn_18)
+ *
+ * @return "Placement" (@ 0x8203191C .rdata, 10 bytes)
+ */
+const char* pongDrillPlacement::GetConfigName() {
+    return "Placement";
+}
+
+/**
+ * pongDrillSoftShot::GetConfigName
+ * @ 0x8210CC78 | size: 0xC (vfn_18)
+ *
+ * @return "Soft Shot" (@ 0x82031928 .rdata, 10 bytes)
+ */
+const char* pongDrillSoftShot::GetConfigName() {
+    return "Soft Shot";
+}
+
+/**
+ * pongDrillSoftShot::HasActiveTarget
+ * @ 0x8210CC88 | size: 0x1C (vfn_21)
+ *
+ * Reads m_softShotTargetIdx (+52). Non-negative index = active target.
+ */
+bool pongDrillSoftShot::HasActiveTarget() {
+    return m_softShotTargetIdx >= 0;
+}
+
+/**
+ * pongDrillCharging::GetConfigName
+ * @ 0x8210CCB0 | size: 0xC (vfn_18)
+ *
+ * @return "Charging" (@ 0x82031934 .rdata, 9 bytes)
+ */
+const char* pongDrillCharging::GetConfigName() {
+    return "Charging";
+}
+
+/**
+ * pongDrillCharging::HasActiveTarget
+ * @ 0x8210CCC0 | size: 0x1C (vfn_21)
+ *
+ * Reads m_chargingTargetIdx (+56). Non-negative index = active target.
+ */
+bool pongDrillCharging::HasActiveTarget() {
+    return m_chargingTargetIdx >= 0;
+}
+
+/**
+ * pongDrillCounterSpin::HasActiveTarget
+ * @ 0x8210CD48 | size: 0x1C (vfn_21)
+ *
+ * Reads m_counterSpinTargetIdx (+72). Non-negative index = active target.
+ */
+bool pongDrillCounterSpin::HasActiveTarget() {
+    return m_counterSpinTargetIdx >= 0;
+}
+
 /**
  * pongTrainingDrill::IncreaseNumSuccesses
  * @ 0x8210D400 | size: 0x84

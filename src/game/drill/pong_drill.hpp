@@ -325,9 +325,22 @@ struct tooFarFromTableTipData {
 
 
 /**
+ * Drill type indices — values returned by vfn_17 (GetDrillTypeIndex) on each
+ * subclass. Used as the drill-type slot into g_pDrillSaveData. Base class
+ * default is 0; only Spin/FocusShot/CounterSpin/Smash override it.
+ */
+enum pongDrillTypeIndex : int {
+    kDrillTypeBase        = 0,   // base pongTrainingDrill / unclassified
+    kDrillTypeSpin        = 7,   // pongDrillSpin::vfn_17 @ 0x8210CCE0
+    kDrillTypeFocusShot   = 8,   // pongDrillFocusShot::vfn_17 @ 0x8210CCF8
+    kDrillTypeCounterSpin = 9,   // pongDrillCounterSpin::vfn_17 @ 0x8210CD30
+    kDrillTypeSmash       = 10,  // pongDrillSmash::vfn_17 @ 0x8210CD68
+};
+
+/**
  * pongTrainingDrill (Base Class)
  * @ RTTI: 0x82031C3C
- * 
+ *
  * Base class for all training drills. Manages success/failure tracking,
  * timing, and common drill state.
  */
@@ -378,7 +391,7 @@ public:
     virtual void vfn_19() {}
     virtual void vfn_20() {}
     virtual bool HasActiveTarget() { return false; }         // vfn_21
-    virtual void vfn_22() {}
+    virtual bool vfn_22() { return false; }                  // vfn_22 — secondary active-state probe (byte read)
     virtual uint32_t GetScore();                              // vfn_23 @ 0x8210CBD8
     virtual uint8_t GetDifficulty();                          // vfn_24 @ 0x8210D370
     virtual void SetDifficulty();                             // vfn_25 @ 0x8210D380
@@ -411,10 +424,12 @@ protected:
  */
 class pongDrillMovement : public pongTrainingDrill {
 public:
-    virtual void Init() override;        // vfn_3 @ 0x8210DB48
-    virtual void Update() override {}    // vfn_4
-    virtual void OnStart() override {}   // vfn_5
-    virtual void Process() override {}   // vfn_9
+    virtual void Init() override;                      // vfn_3 @ 0x8210DB48
+    virtual void Update() override {}                  // vfn_4
+    virtual void OnStart() override {}                 // vfn_5
+    virtual void Process() override {}                 // vfn_9
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CBE0 — "Movement"
+    virtual bool vfn_22() override;                    // vfn_22 @ 0x8210CBF0 — m_movementFlag non-zero (byte read)
 
 private:
     enum MovementState {
@@ -445,6 +460,13 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CBF8 — "Serve Meter"
+    virtual bool HasActiveTarget() override;           // vfn_21 @ 0x8210CC20 — m_meterTargetIdx >= 1
+
+private:
+    // Base class ends at +36 (0x24); this subclass begins here.
+    uint8_t  m_pad24[12];                              // +0x24..+0x2F — subclass state (uninvestigated)
+    uint32_t m_meterTargetIdx;                         // +0x30 (+48) — active meter target index; >=1 = active
 };
 
 /**
@@ -458,6 +480,7 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CC10 — "Serve Aim"
 };
 
 /**
@@ -471,6 +494,12 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CC48 — "Return"
+    virtual bool HasActiveTarget() override;           // vfn_21 alias @ 0x8210CD80 — m_returnTargetIdx >= 0
+
+private:
+    // Base class ends at +36 (0x24); target field is the first subclass member.
+    int32_t m_returnTargetIdx;                         // +0x24 (+36) — current return target; >=0 = active
 };
 
 /**
@@ -484,6 +513,7 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;      // vfn_18 @ 0x8210CC60 — "Placement"
 };
 
 /**
@@ -498,8 +528,15 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;       // vfn_18 @ 0x8210CC78 — "Soft Shot"
+    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CC88 — m_softShotTargetIdx >= 0
 
     void ScalarDestructor(int flags);
+
+private:
+    // Base class ends at +36 (0x24); target field sits at +52 (0x34).
+    uint8_t m_pad24[16];                                // +0x24..+0x33 — subclass state (uninvestigated)
+    int32_t m_softShotTargetIdx;                        // +0x34 (+52) — active soft-shot target; >=0 = active
 };
 
 /**
@@ -513,6 +550,13 @@ public:
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+    virtual const char* GetConfigName() override;       // vfn_18 @ 0x8210CCB0 — "Charging"
+    virtual bool HasActiveTarget() override;            // vfn_21 @ 0x8210CCC0 — m_chargingTargetIdx >= 0
+
+private:
+    // Base class ends at +36 (0x24); target field sits at +56 (0x38).
+    uint8_t m_pad24[20];                                // +0x24..+0x37 — subclass state (uninvestigated)
+    int32_t m_chargingTargetIdx;                        // +0x38 (+56) — active charging target; >=0 = active
 };
 
 /**
@@ -555,12 +599,18 @@ public:
  */
 class pongDrillCounterSpin : public pongTrainingDrill {
 public:
-    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CD30
-    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD38
+    virtual int GetDrillTypeIndex() override;        // vfn_17 @ 0x8210CD30 — returns kDrillTypeCounterSpin=9
+    virtual const char* GetConfigName() override;    // vfn_18 @ 0x8210CD38 — "Counter Spin"
+    virtual bool HasActiveTarget() override;         // vfn_21 @ 0x8210CD48 — m_counterSpinTargetIdx >= 0
 
     virtual void Init() override {}
     virtual void Update() override {}
     virtual void Process() override {}
+
+private:
+    // Base class ends at +36 (0x24); target field sits at +72 (0x48).
+    uint8_t m_pad24[36];                             // +0x24..+0x47 — subclass state (uninvestigated)
+    int32_t m_counterSpinTargetIdx;                  // +0x48 (+72) — active counter-spin target; >=0 = active
 };
 
 /**
