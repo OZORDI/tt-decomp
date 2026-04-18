@@ -10086,4 +10086,147 @@ float phBoundSurface::SampleHeightBilinear(float fx, float fy) {
     return w00 * h00 + w10 * h10 + w01 * h01 + w11 * h11;
 }
 
+
+// ───────────────────────────────────────────────────────────────────────────
+// Phase 16 / flirt-batch-04 (F5): phArticulatedCollider joint-link bitfield
+// accessors. Each joint-link record is 24 bytes within the articulated
+// collider's link array, starting at offset (linkIndex + 48)*24 for the
+// global-indexed family and at linkIndex*24 + constOffset for the per-joint
+// family. Bit layouts match the link-descriptor words at +1156/+1164/+1168/
+// +1172 inside each link record (the four packed 32-bit control words that
+// follow the joint's base transform). Inferred from repeated shift/mask
+// patterns across ~12 tightly-related leaf accessors @ 0x823554D8..0x82355DF0.
+// ───────────────────────────────────────────────────────────────────────────
+
+// Link-descriptor control words live in each 24-byte link record at offsets
+// +1156/+1164/+1168/+1172. All accessors below operate on raw byte offsets
+// rather than a typedef so they stay independent of the surrounding struct.
+
+// @ 0x823554D8 | size: 0x34 — extract 3-bit "kind" nibble from word1 combined
+// with word0 (indexed family, linkIndex offset by +48).
+uint32_t phArticulatedCollider_ReadLinkKind_0x54D8(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint8_t* link = base + (static_cast<uint32_t>(linkIndex + 48) * 24u);
+    const uint32_t w0 = *reinterpret_cast<const uint32_t*>(link + 16);
+    const uint32_t w1 = *reinterpret_cast<const uint32_t*>(link + 12);
+    const uint32_t topBit  = (w0 >> 11) & 0x1u;
+    const uint32_t narrow  = (w1 >> 21) & 0x7FFu;
+    const uint32_t mask    = topBit - 1u;        // 0xFFFFFFFF when topBit==0, else 0
+    const uint32_t lo      = narrow & mask;
+    const uint32_t hi      = (~mask) & 0x4u;     // bit2 asserted when topBit==1
+    return (hi | (lo & ~0x4u)) & 0x7u;
+}
+
+// @ 0x82355668 | size: 0x34 — sibling variant reading 13-bit "kind-wide" nibble.
+uint32_t phArticulatedCollider_ReadLinkKindWide_0x5668(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint8_t* link = base + (static_cast<uint32_t>(linkIndex + 48) * 24u);
+    const uint32_t w0 = *reinterpret_cast<const uint32_t*>(link + 16);
+    const uint32_t w1 = *reinterpret_cast<const uint32_t*>(link + 12);
+    const uint32_t topBit  = (w0 >> 10) & 0x1u;
+    const uint32_t narrow  = (w1 >> 19) & 0x1FFFu;
+    const uint32_t mask    = topBit - 1u;
+    const uint32_t lo      = narrow & mask;
+    const uint32_t hi      = (~mask) & 0x4u;
+    return (hi | (lo & ~0x4u)) & 0x7u;
+}
+
+// @ 0x82355778 | size: 0x14 — 2-bit flag at word3 bits 22..23 for link linkIndex.
+uint32_t phArticulatedCollider_ReadLinkFlag2_0x5778(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
+        base + static_cast<uint32_t>(linkIndex) * 24u + 1164);
+    return (w3 >> 23) & 0x3u;
+}
+
+// @ 0x82355B38 | size: 0x1C — returns -1 (all ones) if low 2 bits of word3 set, else 0.
+int32_t phArticulatedCollider_LinkHasLowBits_0x5B38(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
+        base + static_cast<uint32_t>(linkIndex) * 24u + 1172);
+    return (w3 & 0x3u) ? -1 : 0;
+}
+
+// @ 0x82355B90 | size: 0x14 — 3-bit field, word packed at stride*24 + 48*24 base.
+uint32_t phArticulatedCollider_ReadLinkSubtype_0x5B90(const void* collider, uint32_t linkByte) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t offs = (linkByte + 48) * 24u;
+    const uint32_t w    = *reinterpret_cast<const uint32_t*>(base + offs + 0);
+    return (w >> 10) & 0x7u;
+}
+
+// @ 0x82355BE0 | size: 0x14
+uint32_t phArticulatedCollider_ReadLinkSubtype_0x5BE0(const void* collider, uint32_t linkByte) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t offs = (linkByte + 48) * 24u;
+    const uint32_t w    = *reinterpret_cast<const uint32_t*>(base + offs + 0);
+    return (w >> 13) & 0x7u;
+}
+
+// @ 0x82355C30 | size: 0x14 — half-word read at link.word0 low nibble.
+uint32_t phArticulatedCollider_ReadLinkSubtypeHalf_0x5C30(const void* collider, uint32_t linkByte) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t offs = (linkByte + 48) * 24u;
+    const uint16_t w    = *reinterpret_cast<const uint16_t*>(base + offs + 0);
+    return static_cast<uint32_t>(w) & 0x7u;
+}
+
+// @ 0x82355C88 | size: 0x14 — low 2 bits of word3 bit-rotated right 3.
+uint32_t phArticulatedCollider_ReadLinkFlag2_0x5C88(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
+        base + static_cast<uint32_t>(linkIndex) * 24u + 1172);
+    return (w3 >> 3) & 0x3u;
+}
+
+// @ 0x82355CE0 | size: 0x18 — signed 5-bit child count stored in word2 bits 0..4.
+int32_t phArticulatedCollider_ReadLinkChildCount_0x5CE0(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t w2   = *reinterpret_cast<const uint32_t*>(
+        base + static_cast<uint32_t>(linkIndex) * 24u + 1168);
+    const int32_t shifted = static_cast<int32_t>(w2 << 5);
+    return shifted >> 27;  // arithmetic shift sign-extends
+}
+
+// @ 0x82355D38 | size: 0x14 — arithmetic shift of word2 right 27 (top-5-bit signed field).
+int32_t phArticulatedCollider_ReadLinkTopSigned_0x5D38(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t w2   = *reinterpret_cast<const uint32_t*>(
+        base + static_cast<uint32_t>(linkIndex) * 24u + 1168);
+    return static_cast<int32_t>(w2) >> 27;
+}
+
+// @ 0x82355D90 | size: 0x14 — single-bit flag at word3 bit 1.
+uint32_t phArticulatedCollider_ReadLinkBit1_0x5D90(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
+        base + static_cast<uint32_t>(linkIndex) * 24u + 1172);
+    return (w3 >> 1) & 0x1u;
+}
+
+// @ 0x82355DF0 | size: 0x18 — inverted flag at word0 bit 10.
+uint32_t phArticulatedCollider_ReadLinkInvFlag_0x5DF0(const void* collider, int linkIndex) {
+    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
+    const uint32_t w0   = *reinterpret_cast<const uint32_t*>(
+        base + static_cast<uint32_t>(linkIndex) * 24u + 1156);
+    return ((~w0) >> 10) & 0x1u;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundRibbon::GetMaterialIndex (vfn_12) @ 0x8229D6C0 | size: 0x8 (8 bytes)
+//
+// Returns the material-index word stored at offset +112 on the ribbon bound.
+// Mirrors the phBoundSphere::GetMaterialIndex / phBoundCapsule::GetMaterialIndex
+// pattern: a single-load vtable thunk that the caller of the vtable slot reads
+// back via r3. Declared as void in the header to match the vtable signature.
+// (FLIRT batch-03 disposition: this is the only genuine standalone function in
+// the 0x8221a6b8..0x822aaea4 range; the other 63 FLIRT hits fall inside larger
+// already-lifted symbols and are false matches on short prologue bytes.)
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundRibbon::GetMaterialIndex() {
+    // Returns material index at +112; return value discarded by void vtable slot.
+    (void)*(uint32_t*)((char*)this + 112);
+}
+
 } // namespace rage
