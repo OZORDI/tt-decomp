@@ -1557,6 +1557,7 @@ struct phInst {
     void* GetField14();
     void SetField9(void* val);
     void SetField11(void* val);
+    void SetRotationQuat(void* val);  // phInst_11 @ 0x82488830 — stw r4,52(r3)
     int GetStaticSize();
     int StoreSize(int* outParam);
     void ForwardSlot23(void* arg);
